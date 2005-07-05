@@ -20,12 +20,28 @@ MA 02111-1307, USA. */
 
 #ifndef SERVER_H
 #define SERVER_H
-/* the client banner doesn't say hey! look i'm a client ! */
+
 #include "libssh/libssh.h"
+#include "libssh/priv.h"
 #define SERVERBANNER CLIENTBANNER
 
-int bind_socket();
-int listen_socket(int s);
-int accept_socket(int s);
+struct ssh_bind_struct {
+    struct error_struct error;
+    int bindfd;
+    SSH_OPTIONS *options;
+    int blocking;
+    int toaccept;
+};
+
+typedef struct ssh_bind_struct SSH_BIND;
+
+SSH_BIND *ssh_bind_new();
+void ssh_bind_set_options(SSH_BIND *ssh_bind, SSH_OPTIONS *options);
+int ssh_bind_listen(SSH_BIND *ssh_bind);
+void ssh_bind_set_blocking(SSH_BIND *ssh_bind,int blocking);
+int ssh_bind_get_fd(SSH_BIND *ssh_bind);
+int ssh_bind_set_toaccept(SSH_BIND *ssh_bind);
+SSH_SESSION *ssh_bind_accept(SSH_BIND *ssh_bind);
+
 
 #endif

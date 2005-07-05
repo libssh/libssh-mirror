@@ -25,8 +25,6 @@ MA 02111-1307, USA. */
 /* from times to times, you need to serve your friends */
 /* and, perhaps, ssh connections. */
 
-#ifdef WITH_SERVER
-
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -37,40 +35,92 @@ MA 02111-1307, USA. */
 #include <string.h>
 #include "libssh/libssh.h"
 #include "libssh/server.h"
-
-int bind_socket() {
+static int bind_socket(char *hostname, int port) {
     struct sockaddr_in myaddr;
     int opt = 1;
     int s = socket(PF_INET, SOCK_STREAM, 0);
+    struct hostent *hp=NULL;
+#ifdef HAVE_GETHOSTBYADDR
+    hp=gethostbyaddr(hostname,4,AF_INET);
+#endif
+#ifdef HAVE_GETHOSTBYNAME
+    if(!hp)
+        hp=gethostbyname(hostname);
+#endif
+    if(!hp){
+        close(s);
+        return -1;
+    }
+    
     memset(&myaddr, 0, sizeof(myaddr));
-    myaddr.sin_family = AF_INET;
-    myaddr.sin_port = htons(2222);
+    memcpy(&myaddr.sin_addr,hp->h_addr,hp->h_length);
+    myaddr.sin_family=hp->h_addrtype;
+    myaddr.sin_port = htons(port);
     setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
     if (bind(s, (struct sockaddr *) &myaddr, sizeof(myaddr)) < 0) {
-	ssh_set_error(NULL, SSH_FATAL, "%s", strerror(errno));
-	return -1;
+	    close(s);
+        return -1;
     }
-    /* ok, bound */
     return s;
 }
 
-int listen_socket(int socket) {
-    int i = listen(socket, 1);
-    if (i < 0)
-	ssh_set_error(NULL, SSH_FATAL, "listening on %d : %s",
-		      strerror(errno));
-    return i;
+SSH_BIND *ssh_bind_new(){
+    SSH_BIND *ptr=malloc(sizeof(SSH_BIND));
+    memset(ptr,0,sizeof(*ptr));
+    ptr->bindfd=-1;
+    return ptr;
 }
 
-int accept_socket(int socket) {
-    int i = accept(socket, NULL, NULL);
-    if (i < 0)
-	ssh_set_error(NULL, SSH_FATAL, "accepting client on socket %d : %s",
-		      strerror(errno));
-    return i;
+void ssh_bind_set_options(SSH_BIND *ssh_bind, SSH_OPTIONS *options){
+    ssh_bind->options=options;
 }
 
+int ssh_bind_listen(SSH_BIND *ssh_bind){
+    char *host;
+    int fd;
+    if(!ssh_bind->options)
+        return -1;
+    host=ssh_bind->options->bindaddr;
+    if(!host)
+        host="0.0.0.0";
+    fd=bind_socket(host,ssh_bind->options->bindport);
+    if(fd<0)
+        return -1;
+    ssh_bind->bindfd=fd;
+    if(listen(fd,10)<0){
+        close(fd);
+        return -1;
+    }
+    return 0;
+}
 
+void ssh_bind_set_blocking(SSH_BIND *ssh_bind, int blocking){
+    ssh_bind->blocking=blocking?1:0;
+}
+
+int ssh_bind_get_fd(SSH_BIND *ssh_bind){
+    return ssh_bind->bindfd;
+}
+
+void ssh_bind_fd_toaccept(SSH_BIND *ssh_bind){
+    ssh_bind->toaccept=1;
+}
+
+SSH_SESSION *ssh_bind_accept(SSH_BIND *ssh_bind){
+    SSH_SESSION *session;
+    if(ssh_bind->bindfd<0)
+        return NULL;
+    int fd=accept(ssh_bind->bindfd,NULL,NULL);
+    if(fd<0)
+        return NULL;
+    session=ssh_new(ssh_options_copy(ssh_bind->options));
+    session->server=1;
+    session->fd=fd;
+    return session;
+}
+
+/*
+  
 SSH_SESSION *getserver(SSH_OPTIONS * options) {
     int socket;
     int fd;
@@ -105,8 +155,8 @@ int server_set_kex(SSH_SESSION * session) {
 	return -1;
     }
     memset(server,0,sizeof(KEX));
-    /* the program might ask for a specific cookie to be sent. useful for server
-       debugging */
+    // the program might ask for a specific cookie to be sent. useful for server
+    //   debugging
     if (options->wanted_cookie)
         memcpy(server->cookie, options->wanted_cookie, 16);
     else
@@ -125,4 +175,5 @@ int server_set_kex(SSH_SESSION * session) {
     return 0;
 }
 
-#endif /* HAVE_SERVER */
+*/
+

@@ -27,20 +27,23 @@ MA 02111-1307, USA. */
 static int verbosity;
 
 /* ssh_set_error registers an error with a description. the error code is the class of error, and description is obvious.*/
-void ssh_set_error(SSH_SESSION *session,int code,char *descr,...){
-  va_list va;
-  va_start(va,descr);
-  vsnprintf(session->error_buffer,ERROR_BUFFERLEN,descr,va);
-  va_end(va);
-  session->error_code=code;
+void ssh_set_error(void *error,int code,char *descr,...){
+    struct error_struct *err= error;
+    va_list va;
+    va_start(va,descr);
+    vsnprintf(err->error_buffer,ERROR_BUFFERLEN,descr,va);
+    va_end(va);
+    err->error_code=code;
 }
 
-char *ssh_get_error(SSH_SESSION *session){
-    return session->error_buffer;
+char *ssh_get_error(void *error){
+    struct error_struct *err=error;
+    return err->error_buffer;
 }
 
-int ssh_get_error_code(SSH_SESSION *session){
-    return session->error_code;
+int ssh_get_error_code(void *error){
+    struct error_struct *err=error;
+    return err->error_code;
 }
 
 void ssh_say(int priority, char *format,...){

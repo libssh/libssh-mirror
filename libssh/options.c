@@ -35,6 +35,7 @@ SSH_OPTIONS *ssh_options_new(){
     option->fd=-1;
     option->ssh2allowed=1;
     option->ssh1allowed=0;
+    option->bindport=22;
     return option;
 }
 

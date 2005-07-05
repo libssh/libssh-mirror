@@ -91,8 +91,8 @@ typedef u_int8_t u8;
 #define SSH_EINTR 3
 
 
-char *ssh_get_error(SSH_SESSION *session); 
-int ssh_get_error_code(SSH_SESSION *session);
+char *ssh_get_error(void *error); 
+int ssh_get_error_code(void *error);
 void ssh_say(int priority,char *format,...);
 void ssh_set_verbosity(int num);
 

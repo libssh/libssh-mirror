@@ -223,12 +223,23 @@ struct channel_struct {
     int blocking;
 };
 
+
+struct error_struct {
+/* error handling */
+    int error_code;
+    char error_buffer[ERROR_BUFFERLEN];
+};
+
+
 struct ssh_session {
+    struct error_struct error;
     int fd;
     SSH_OPTIONS *options;
     char *serverbanner;
     char *clientbanner;
     int protoversion;
+    int server;
+    int client;
     u32 send_seq;
     u32 recv_seq;
 /* status flags */
@@ -272,9 +283,6 @@ struct ssh_session {
     int exec_channel_opened; /* version 1 only. more 
                                 info in channels1.c */
 
-/* error handling */
-    int error_code;
-    char error_buffer[ERROR_BUFFERLEN];
 /* keyb interactive data */
     struct ssh_kbdint *kbdint;
     int version; /* 1 or 2 */
@@ -294,7 +302,7 @@ void ssh_cleanup(SSH_SESSION *session);
 
 
 /* errors.c */
-void ssh_set_error(SSH_SESSION *session,int code,char *descr,...);
+void ssh_set_error(void *error,int code,char *descr,...);
 
 /* in dh.c */
 /* DH key generation */
@@ -360,12 +368,15 @@ void channel_handle(SSH_SESSION *session, int type);
 CHANNEL *channel_new(SSH_SESSION *session);
 void channel_default_bufferize(CHANNEL *channel, void *data, int len,
         int is_stderr);
+
+
 /* options.c */
-void options_free(SSH_OPTIONS *opt);
+
+void ssh_options_free(SSH_OPTIONS *opt);
 /* this function must be called when no specific username has been asked. it has to guess it */
-int options_default_username(SSH_OPTIONS *opt);
-int options_default_ssh_dir(SSH_OPTIONS *opt);
-int options_default_known_hosts_file(SSH_OPTIONS *opt);
+int ssh_options_default_username(SSH_OPTIONS *opt);
+int ssh_options_default_ssh_dir(SSH_OPTIONS *opt);
+int ssh_options_default_known_hosts_file(SSH_OPTIONS *opt);
 
 /* buffer.c */
 void buffer_add_ssh_string(BUFFER *buffer,STRING *string);
