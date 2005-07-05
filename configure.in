@@ -1,0 +1,60 @@
+#                                               -*- Autoconf -*-
+# Process this file with autoconf to produce a configure script.
+
+AC_PREREQ(2.57)
+AC_INIT(libssh, 0.2-dev , aris@0xbadc0de.be)
+AC_CONFIG_SRCDIR([sample.c])
+AC_CONFIG_HEADER([config.h])
+
+# Check for the OS.
+AC_CANONICAL_HOST
+case "$host" in
+	*-apple*)
+	DYLIB_EXTENSION="dylib"
+	LIBSSH_LDFLAGS="-dynamiclib -prebind -seg1addr 0x3a000000 -install_name \"${libdir}/libssh.dylib\" -headerpad_max_install_names -current_version 0.1"
+	;;
+	*)
+	DYLIB_EXTENSION="so"
+	LIBSSH_LDFLAGS="-shared"
+	;;
+esac
+AC_SUBST(DYLIB_EXTENSION)
+AC_SUBST(LIBSSH_LDFLAGS)
+
+# Checks for programs.
+AC_PROG_CC
+AC_PROG_INSTALL
+AC_PROG_LN_S
+AC_PROG_MAKE_SET
+AC_PROG_RANLIB
+AC_C_BIGENDIAN
+
+# Checks for libraries.
+AC_CHECK_LIB([crypto], [BN_init])
+AC_CHECK_LIB([z], [deflateInit_])
+AC_CHECK_LIB([resolv],[gethostbyname])
+AC_CHECK_LIB([nsl],[gethostbyname])
+
+# Checks for header files.
+AC_HEADER_STDC
+AC_CHECK_HEADERS([fcntl.h netdb.h netinet/in.h stdlib.h string.h sys/socket.h \
+sys/time.h termios.h unistd.h openssl/aes.h openssl/blowfish.h zlib.h \
+sys/poll.h ])
+
+# Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+AC_HEADER_TIME
+
+# Checks for library functions.
+AC_FUNC_MALLOC
+AC_FUNC_MEMCMP
+AC_FUNC_REALLOC
+AC_FUNC_SELECT_ARGTYPES
+AC_TYPE_SIGNAL
+AC_FUNC_VPRINTF
+AC_CHECK_FUNCS([endpwent gethostbyaddr gethostbyname getpass memmove memset \
+ select socket strchr strdup strerror strstr poll])
+
+AC_CONFIG_FILES([Makefile
+                 libssh/Makefile])
+AC_OUTPUT
