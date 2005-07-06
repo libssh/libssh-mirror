@@ -35,7 +35,7 @@ MA 02111-1307, USA. */
 #include <string.h>
 #include "libssh/libssh.h"
 #include "libssh/server.h"
-static int bind_socket(char *hostname, int port) {
+static int bind_socket(SSH_BIND *ssh_bind,char *hostname, int port) {
     struct sockaddr_in myaddr;
     int opt = 1;
     int s = socket(PF_INET, SOCK_STREAM, 0);
@@ -48,6 +48,7 @@ static int bind_socket(char *hostname, int port) {
         hp=gethostbyname(hostname);
 #endif
     if(!hp){
+        ssh_set_error(ssh_bind,SSH_FATAL,"resolving %s: %s",hostname,hstrerror(h_errno));
         close(s);
         return -1;
     }
@@ -58,6 +59,8 @@ static int bind_socket(char *hostname, int port) {
     myaddr.sin_port = htons(port);
     setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
     if (bind(s, (struct sockaddr *) &myaddr, sizeof(myaddr)) < 0) {
+        ssh_set_error(ssh_bind,SSH_FATAL,"Binding to %s:%d : %s",hostname,port,
+                strerror(errno));
 	    close(s);
         return -1;
     }
@@ -83,11 +86,13 @@ int ssh_bind_listen(SSH_BIND *ssh_bind){
     host=ssh_bind->options->bindaddr;
     if(!host)
         host="0.0.0.0";
-    fd=bind_socket(host,ssh_bind->options->bindport);
+    fd=bind_socket(ssh_bind,host,ssh_bind->options->bindport);
     if(fd<0)
         return -1;
     ssh_bind->bindfd=fd;
     if(listen(fd,10)<0){
+        ssh_set_error(ssh_bind,SSH_FATAL,"listening to socket %d: %s",
+                fd,strerror(errno));
         close(fd);
         return -1;
     }
@@ -108,41 +113,30 @@ void ssh_bind_fd_toaccept(SSH_BIND *ssh_bind){
 
 SSH_SESSION *ssh_bind_accept(SSH_BIND *ssh_bind){
     SSH_SESSION *session;
-    if(ssh_bind->bindfd<0)
+    if(ssh_bind->bindfd<0){
+        ssh_set_error(ssh_bind,SSH_FATAL,"Can't accept new clients on a "
+                "not bound socket.");
         return NULL;
+    }
     int fd=accept(ssh_bind->bindfd,NULL,NULL);
-    if(fd<0)
+    if(fd<0){
+        ssh_set_error(ssh_bind,SSH_FATAL,"Accepting a new connection: %s",
+                strerror(errno));
         return NULL;
+    }
     session=ssh_new(ssh_options_copy(ssh_bind->options));
     session->server=1;
     session->fd=fd;
     return session;
 }
 
-/*
-  
-SSH_SESSION *getserver(SSH_OPTIONS * options) {
-    int socket;
-    int fd;
-    SSH_SESSION *session;
-    socket = bind_socket();
-    if (socket < 0)
-        return NULL;
-    if (listen_socket(socket) < 0)
-        return NULL;
-    fd = accept_socket(socket);
-    close(socket);
-    if (fd < 0) {
-        return NULL;
-    }
-    session = malloc(sizeof(SSH_SESSION));
-    memset(session, 0, sizeof(SSH_SESSION));
-    session->fd = fd;
-    session->options = options;
-    ssh_send_banner(session);
-    return session;
+/* do the banner and key exchange */
+int ssh_accept(SSH_SESSION *session){
+    ssh_send_banner(session,1);
+    return 0;
 }
 
+/*
 extern char *supported_methods[];
 int server_set_kex(SSH_SESSION * session) {
     KEX *server = &session->server_kex;

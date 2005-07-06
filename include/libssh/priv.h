@@ -300,6 +300,9 @@ struct ssh_kbdint {
 
 void ssh_cleanup(SSH_SESSION *session);
 
+/* client.c */
+
+int ssh_send_banner(SSH_SESSION *session, int is_server);
 
 /* errors.c */
 void ssh_set_error(void *error,int code,char *descr,...);

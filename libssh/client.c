@@ -49,14 +49,14 @@ char *ssh_get_banner(SSH_SESSION *session){
         }
     i++;
     }
-    ssh_set_error(NULL,SSH_FATAL,"Too large banner");
+    ssh_set_error(session,SSH_FATAL,"Too large banner");
     return NULL;
 }
 
 int ssh_analyze_banner(SSH_SESSION *session, int *ssh1, int *ssh2){
     char *banner=session->serverbanner;
     if(strncmp(banner,"SSH-",4)!=0){
-        ssh_set_error(NULL,SSH_FATAL,"Protocol mismatch: %s",banner);
+        ssh_set_error(session,SSH_FATAL,"Protocol mismatch: %s",banner);
         return -1;
     }
     /* a typical banner is :
@@ -77,7 +77,7 @@ int ssh_analyze_banner(SSH_SESSION *session, int *ssh1, int *ssh2){
             *ssh2=1;
             break;
         default:
-            ssh_set_error(NULL,SSH_FATAL,"Protocol mismatch: %s",banner);
+            ssh_set_error(session,SSH_FATAL,"Protocol mismatch: %s",banner);
             return -1;
     }
     return 0;
@@ -88,15 +88,19 @@ int ssh_analyze_banner(SSH_SESSION *session, int *ssh1, int *ssh2){
 /* switch SSH1/1.5/2 */
 /* and quit when the server is SSH1 only */
 
-void ssh_send_banner(SSH_SESSION *session){
-    char *banner;
+int ssh_send_banner(SSH_SESSION *session,int server){
+     char *banner;
     char buffer[128];
     banner=session->version==1?CLIENTBANNER1:CLIENTBANNER2;
     if(session->options->banner)
         banner=session->options->banner;
-    session->clientbanner=strdup(banner);
-    snprintf(buffer,128,"%s\r\n",session->clientbanner);
+    if(server)
+        session->serverbanner=strdup(banner);
+    else
+        session->clientbanner=strdup(banner);
+    snprintf(buffer,128,"%s\r\n",banner);
     write(session->fd,buffer,strlen(buffer));
+    return 0;
 }
 
 
@@ -114,19 +118,19 @@ int dh_handshake(SSH_SESSION *session){
         return -1;
     pubkey=buffer_get_ssh_string(session->in_buffer);
     if(!pubkey){
-        ssh_set_error(NULL,SSH_FATAL,"No public key in packet");
+        ssh_set_error(session,SSH_FATAL,"No public key in packet");
         return -1;
     }
     dh_import_pubkey(session,pubkey);
     f=buffer_get_ssh_string(session->in_buffer);
     if(!f){
-        ssh_set_error(NULL,SSH_FATAL,"No F number in packet");
+        ssh_set_error(session,SSH_FATAL,"No F number in packet");
         return -1;
     }
     dh_import_f(session,f);
     free(f);
     if(!(signature=buffer_get_ssh_string(session->in_buffer))){
-        ssh_set_error(NULL,SSH_FATAL,"No signature in packet");
+        ssh_set_error(session,SSH_FATAL,"No signature in packet");
         return -1;
     }
 
@@ -222,7 +226,7 @@ int ssh_connect(SSH_SESSION *session){
           return -1;
       }
   }
-  ssh_send_banner(session);
+  ssh_send_banner(session,0);
   set_status(options,0.5);
   switch(session->version){
       case 2:

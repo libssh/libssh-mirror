@@ -368,6 +368,7 @@ int ssh_options_getopt(SSH_OPTIONS *options, int *argcptr, char **argv){
     if(cont && localaddr)
         ssh_options_set_bind(options,localaddr,0);
     ssh_options_set_port(options,port);
+    options->bindport=port;
     if(ssh1){
         ssh_options_allow_ssh1(options,1);
         ssh_options_allow_ssh2(options,0);

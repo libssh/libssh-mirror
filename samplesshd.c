@@ -24,13 +24,26 @@ MA 02111-1307, USA. */
 #include <libssh/server.h>
 #include <unistd.h>
 int main(int argc, char **argv){
-#ifdef WITH_SERVER
-    SSH_OPTIONS *opts=ssh_getopt(&argc,argv);
-    SSH_SESSION *server=getserver(opts);
-    if(!server){
-      printf("pwned : %s\n",ssh_get_error(NULL));
-      exit(-1);
+    SSH_OPTIONS *options=ssh_options_new();
+    SSH_SESSION *session;
+    SSH_BIND *ssh_bind;
+    ssh_options_getopt(options,&argc,argv);
+    ssh_bind=ssh_bind_new();
+    ssh_bind_set_options(ssh_bind,options);
+    if(ssh_bind_listen(ssh_bind)<0){
+        printf("Error listening to socket: %s\n",ssh_get_error(ssh_bind));
+        return 1;
     }
+    session=ssh_bind_accept(ssh_bind);
+    if(!session){
+      printf("error accepting a connection : %s\n",ssh_get_error(ssh_bind));
+      return 1;
+    }
+    printf("Socket connecté : %d\n",ssh_get_fd(session));
+    return 0;
+}
+
+    /*    
     server->clientbanner=ssh_get_banner(server);
     if(!server->clientbanner){
         printf("%s\n",ssh_get_error(NULL));
@@ -45,6 +58,6 @@ int main(int argc, char **argv){
     list_kex(&server->client_kex);
 
     while(1);
-#endif
     return 0;
 }
+*/
