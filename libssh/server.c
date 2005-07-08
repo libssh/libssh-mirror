@@ -127,6 +127,7 @@ SSH_SESSION *ssh_bind_accept(SSH_BIND *ssh_bind){
     session=ssh_new(ssh_options_copy(ssh_bind->options));
     session->server=1;
     session->fd=fd;
+    session->options=ssh_options_copy(ssh_bind->options);
     return session;
 }
 

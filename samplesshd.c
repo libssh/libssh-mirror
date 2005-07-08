@@ -40,6 +40,7 @@ int main(int argc, char **argv){
       return 1;
     }
     printf("Socket connecté : %d\n",ssh_get_fd(session));
+    ssh_accept(session);
     return 0;
 }
 
