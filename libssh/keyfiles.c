@@ -74,7 +74,8 @@ PRIVATE_KEY  *privatekey_from_file(SSH_SESSION *session,char *filename,int type,
             dsa=PEM_read_DSAPrivateKey(file,NULL,(void *)get_password_specified,passphrase);
         fclose(file);
         if(!dsa){
-            ssh_set_error(session,SSH_FATAL,"parsing private key %s : %s",filename,ERR_error_string(ERR_get_error(),NULL));
+            ssh_set_error(session,SSH_FATAL,"parsing private key %s"
+                ": %s",filename,ERR_error_string(ERR_get_error(),NULL));
         return NULL;
         }
     }
@@ -89,7 +90,8 @@ PRIVATE_KEY  *privatekey_from_file(SSH_SESSION *session,char *filename,int type,
             rsa=PEM_read_RSAPrivateKey(file,NULL,(void *)get_password_specified,passphrase);
         fclose(file);
         if(!rsa){
-            ssh_set_error(session,SSH_FATAL,"parsing private key %s : %s",filename,ERR_error_string(ERR_get_error(),NULL));
+            ssh_set_error(session,SSH_FATAL,"parsing private key %s"
+                ": %s",filename,ERR_error_string(ERR_get_error(),NULL));
         return NULL;
         }
     } else {
@@ -97,6 +99,44 @@ PRIVATE_KEY  *privatekey_from_file(SSH_SESSION *session,char *filename,int type,
         return NULL;
     }    
     
+    privkey=malloc(sizeof(PRIVATE_KEY));
+    privkey->type=type;
+    privkey->dsa_priv=dsa;
+    privkey->rsa_priv=rsa;
+    return privkey;
+}
+
+/* same that privatekey_from_file() but without any passphrase things. */
+PRIVATE_KEY  *_privatekey_from_file(void *session,char *filename,int type){
+    FILE *file=fopen(filename,"r");
+    PRIVATE_KEY *privkey;
+    DSA *dsa=NULL;
+    RSA *rsa=NULL;
+    if(!file){
+        ssh_set_error(session,SSH_REQUEST_DENIED,"Error opening %s : %s",filename,strerror(errno));
+        return NULL;
+    }
+    if(type==TYPE_DSS){
+        dsa=PEM_read_DSAPrivateKey(file,NULL,NULL,NULL);
+        fclose(file);
+        if(!dsa){
+            ssh_set_error(session,SSH_FATAL,"parsing private key %s"
+                    ": %s",filename,ERR_error_string(ERR_get_error(),NULL));
+            return NULL;
+        }
+    }
+    else if (type==TYPE_RSA){
+        rsa=PEM_read_RSAPrivateKey(file,NULL,NULL,NULL);
+        fclose(file);
+        if(!rsa){
+            ssh_set_error(session,SSH_FATAL,"parsing private key %s"
+                    ": %s",filename,ERR_error_string(ERR_get_error(),NULL));
+            return NULL;
+        }
+    } else {
+        ssh_set_error(session,SSH_FATAL,"Invalid private key type %d",type);
+        return NULL;
+    }
     privkey=malloc(sizeof(PRIVATE_KEY));
     privkey->type=type;
     privkey->dsa_priv=dsa;

@@ -1,7 +1,7 @@
 /* base64 contains the needed support for base64 alphabet system, */
 /* as described in RFC1521 */
 /*
-Copyright 2003,04 Aris Adamantiadis
+Copyright 2003-2005 Aris Adamantiadis
 
 This file is part of the SSH Library
 

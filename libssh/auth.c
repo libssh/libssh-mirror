@@ -1,6 +1,6 @@
 /* auth.c deals with authentication methods */
 /*
-Copyright 2003 Aris Adamantiadis
+Copyright 2003-2005 Aris Adamantiadis
 
 This file is part of the SSH Library
 

@@ -104,7 +104,7 @@ int ssh_send_banner(SSH_SESSION *session,int server){
 }
 
 
-int dh_handshake(SSH_SESSION *session){
+static int dh_handshake(SSH_SESSION *session){
     STRING *e,*f,*pubkey,*signature;
     packet_clear_out(session);
     buffer_add_u8(session->out_buffer,SSH2_MSG_KEXDH_INIT);
@@ -186,6 +186,7 @@ int ssh_connect(SSH_SESSION *session){
       ssh_set_error(session,SSH_FATAL,"Must set options before connect");
       return -1;
   }
+  session->client=1;
   ssh_crypto_init();
   if(options->fd==-1 && !options->host){
       ssh_set_error(session,SSH_FATAL,"Hostname required");
@@ -222,7 +223,6 @@ int ssh_connect(SSH_SESSION *session){
           ssh_set_error(session,SSH_FATAL,
                   "no version of SSH protocol usable (banner: %s)",
                   session->serverbanner);
-          ssh_disconnect(session);
           return -1;
       }
   }
@@ -231,19 +231,16 @@ int ssh_connect(SSH_SESSION *session){
   switch(session->version){
       case 2:
         if(ssh_get_kex(session,0)){
-            ssh_disconnect(session);
             return -1;
         }
         set_status(options,0.6);
-        list_kex(&session->server_kex);
+        ssh_list_kex(&session->server_kex);
         if(set_kex(session)){
-            ssh_disconnect(session);
             return -1;
         }
-        send_kex(session,0);
+        ssh_send_kex(session,0);
         set_status(options,0.8);
         if(dh_handshake(session)){
-            ssh_disconnect(session);
             return -1;
         } 
         set_status(options,1.0);
@@ -251,7 +248,6 @@ int ssh_connect(SSH_SESSION *session){
         break;
     case 1:
         if(ssh_get_kex1(session)){
-            ssh_disconnect(session);
             return -1;
         }
         set_status(options,0.6);

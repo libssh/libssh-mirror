@@ -27,7 +27,10 @@ int main(int argc, char **argv){
     SSH_OPTIONS *options=ssh_options_new();
     SSH_SESSION *session;
     SSH_BIND *ssh_bind;
+    SSH_MESSAGE *message;
     ssh_options_getopt(options,&argc,argv);
+    ssh_options_set_dsa_server_key(options,"/etc/ssh/ssh_host_dsa_key");
+    ssh_options_set_rsa_server_key(options,"/etc/ssh/ssh_host_rsa_key");
     ssh_bind=ssh_bind_new();
     ssh_bind_set_options(ssh_bind,options);
     if(ssh_bind_listen(ssh_bind)<0){
@@ -40,25 +43,14 @@ int main(int argc, char **argv){
       return 1;
     }
     printf("Socket connecté : %d\n",ssh_get_fd(session));
-    ssh_accept(session);
+    if(ssh_accept(session)){
+        printf("ssh_accept : %s\n",ssh_get_error(session));
+        return 1;
+    }
+    do {
+        message=ssh_message_get(session);
+    } while (message);
+    printf("error : %s\n",ssh_get_error(session));
     return 0;
 }
 
-    /*    
-    server->clientbanner=ssh_get_banner(server);
-    if(!server->clientbanner){
-        printf("%s\n",ssh_get_error(NULL));
-        return -1;
-    }
-    server_set_kex(server);
-    send_kex(server,1);
-    if (ssh_get_kex(server,1)){
-        printf("%s \n",ssh_get_error(NULL));
-        return -1;
-    }
-    list_kex(&server->client_kex);
-
-    while(1);
-    return 0;
-}
-*/

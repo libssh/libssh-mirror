@@ -299,7 +299,6 @@ static int crypt_set_algorithms2(SSH_SESSION *session){
     }
     ssh_say(2,"Set input algorithm %s\n",wanted);
     session->next_crypto->in_cipher=cipher_new(i);
-    
     /* compression */
     if(strstr(session->client_kex.methods[SSH_COMP_C_S],"zlib"))
         session->next_crypto->do_compress_out=1;
@@ -327,3 +326,61 @@ int crypt_set_algorithms(SSH_SESSION *session){
         crypt_set_algorithms2(session);
 }
 
+int crypt_set_algorithms_server(SSH_SESSION *session){
+    /* we must scan the kex entries to find crypto algorithms and set their appropriate structure */
+    int i=0;
+    /* out */
+    char *server=session->server_kex.methods[SSH_CRYPT_S_C];
+    char *client=session->client_kex.methods[SSH_CRYPT_S_C];
+    char *match=ssh_find_matching(client,server);
+    while(ssh_ciphertab[i].name && strcmp(match,ssh_ciphertab[i].name))
+        i++;
+    if(!ssh_ciphertab[i].name){
+        ssh_set_error(session,SSH_FATAL,"Crypt_set_algorithms : no crypto algorithm function found for %s",server);
+        return -1;
+    }
+    ssh_say(2,"Set output algorithm %s\n",match);
+    session->next_crypto->out_cipher=cipher_new(i);
+    i=0;
+    /* in */
+    client=session->client_kex.methods[SSH_CRYPT_C_S];
+    server=session->server_kex.methods[SSH_CRYPT_S_C];
+    match=ssh_find_matching(client,server); 
+    while(ssh_ciphertab[i].name && strcmp(match,ssh_ciphertab[i].name))
+        i++;
+    if(!ssh_ciphertab[i].name){
+        ssh_set_error(session,SSH_FATAL,"Crypt_set_algorithms : no crypto algorithm function found for %s",server);
+        return -1;
+    }
+    ssh_say(2,"Set input algorithm %s\n",match);
+    session->next_crypto->in_cipher=cipher_new(i);
+    /* compression */
+    client=session->client_kex.methods[SSH_CRYPT_C_S];
+    server=session->server_kex.methods[SSH_CRYPT_C_S];
+    match=ssh_find_matching(client,server);
+    if(match && !strcmp(match,"zlib")){
+        ssh_say(2,"enabling C->S compression\n");
+        session->next_crypto->do_compress_in=1;
+    }
+    
+    client=session->client_kex.methods[SSH_CRYPT_S_C];
+    server=session->server_kex.methods[SSH_CRYPT_S_C];
+    match=ssh_find_matching(client,server);
+    if(match && !strcmp(match,"zlib")){
+        ssh_say(2,"enabling S->C compression\n");
+        session->next_crypto->do_compress_out=1;
+    }
+
+    server=session->server_kex.methods[SSH_HOSTKEYS];
+    client=session->client_kex.methods[SSH_HOSTKEYS];
+    match=ssh_find_matching(client,server);
+    if(!strcmp(match,"ssh-dss"))
+        session->hostkeys=TYPE_DSS;
+    else if(!strcmp(match,"ssh-rsa"))
+        session->hostkeys=TYPE_RSA;
+    else {
+        ssh_set_error(session,SSH_FATAL,"cannot know what %s is into %s",match,server);
+        return -1;
+    }
+    return 0;
+}

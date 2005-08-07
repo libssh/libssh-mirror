@@ -43,5 +43,23 @@ int ssh_bind_get_fd(SSH_BIND *ssh_bind);
 int ssh_bind_set_toaccept(SSH_BIND *ssh_bind);
 SSH_SESSION *ssh_bind_accept(SSH_BIND *ssh_bind);
 
+int ssh_accept(SSH_SESSION *session);
+
+/* messages.c */
+
+struct ssh_auth_request {
+    char *username;
+    int method;
+    char *password;
+};
+
+struct ssh_message {
+    int type;
+    struct ssh_auth_request auth_request;
+};
+
+typedef struct ssh_message SSH_MESSAGE;
+
+SSH_MESSAGE *ssh_message_get(SSH_SESSION *session);
 
 #endif

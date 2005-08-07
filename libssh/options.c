@@ -43,33 +43,37 @@ void ssh_options_set_port(SSH_OPTIONS *opt, unsigned int port){
     opt->port=port&0xffff;
 }
 SSH_OPTIONS *ssh_options_copy(SSH_OPTIONS *opt){
-	SSH_OPTIONS *ret=ssh_options_new();    
+    SSH_OPTIONS *ret=ssh_options_new();    
     int i;
-	ret->fd=opt->fd;
+    ret->fd=opt->fd;
     ret->port=opt->port;
     if(opt->username)
-    	ret->username=strdup(opt->username);
+        ret->username=strdup(opt->username);
     if(opt->host)
-    	ret->host=strdup(opt->host);
+        ret->host=strdup(opt->host);
     if(opt->bindaddr)
-    	ret->host=strdup(opt->bindaddr);
+        ret->host=strdup(opt->bindaddr);
     if(opt->identity)
-    	ret->identity=strdup(opt->identity);
+        ret->identity=strdup(opt->identity);
     if(opt->ssh_dir)
         ret->ssh_dir=strdup(opt->ssh_dir);
-	if(opt->known_hosts_file)
-		ret->known_hosts_file=strdup(opt->known_hosts_file);
-	for(i=0;i<10;++i)
-		if(opt->wanted_methods[i])
-			ret->wanted_methods[i]=strdup(opt->wanted_methods[i]);
-	ret->passphrase_function=opt->passphrase_function;
-	ret->connect_status_function=opt->connect_status_function;
-	ret->connect_status_arg=opt->connect_status_arg;
-	ret->timeout=opt->timeout;
-	ret->timeout_usec=opt->timeout_usec;
+    if(opt->known_hosts_file)
+        ret->known_hosts_file=strdup(opt->known_hosts_file);
+    if(opt->dsakey)
+        ret->dsakey=strdup(opt->dsakey);
+    if(opt->rsakey)
+        ret->rsakey=strdup(opt->rsakey);
+    for(i=0;i<10;++i)
+        if(opt->wanted_methods[i])
+            ret->wanted_methods[i]=strdup(opt->wanted_methods[i]);
+    ret->passphrase_function=opt->passphrase_function;
+    ret->connect_status_function=opt->connect_status_function;
+    ret->connect_status_arg=opt->connect_status_arg;
+    ret->timeout=opt->timeout;
+    ret->timeout_usec=opt->timeout_usec;
     ret->ssh2allowed=opt->ssh2allowed;
     ret->ssh1allowed=opt->ssh1allowed;
-	return ret;
+    return ret;
 }
 
 void ssh_options_free(SSH_OPTIONS *opt){
@@ -85,6 +89,10 @@ void ssh_options_free(SSH_OPTIONS *opt){
         free(opt->bindaddr);
     if(opt->ssh_dir)
         free(opt->ssh_dir);
+    if(opt->dsakey)
+        free(opt->dsakey);
+    if(opt->rsakey)
+        free(opt->rsakey);
     for(i=0;i<10;i++)
         if(opt->wanted_methods[i])
             free(opt->wanted_methods[i]);
@@ -140,6 +148,13 @@ void ssh_options_set_identity(SSH_OPTIONS *opt, char *identity){
     char buffer[1024];
     snprintf(buffer,1024,identity,ssh_get_user_home_dir());
     opt->identity=strdup(buffer);
+}
+
+void ssh_options_set_dsa_server_key(SSH_OPTIONS *opt, char *dsakey){
+    opt->dsakey=strdup(dsakey);
+}
+void ssh_options_set_rsa_server_key(SSH_OPTIONS *opt, char *rsakey){
+    opt->rsakey=strdup(rsakey);
 }
 
 void ssh_options_set_banner(SSH_OPTIONS *opt, char *banner){

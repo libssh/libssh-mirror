@@ -67,16 +67,12 @@ static bignum p;
 
 /* maybe it might be enhanced .... */
 /* XXX Do it. */		
-void ssh_get_random(void *where, int len){
-	static int rndfd=0;
-        if(!rndfd){
-                rndfd=open("/dev/urandom",O_RDONLY);
-                if(rndfd<0){
-                        fprintf(stderr,"Can't open /dev/urandom\n");
-                        exit(-1);
-                }
-        }
-        read(rndfd,where,len);
+int ssh_get_random(void *where, int len, int strong){
+    if(strong){
+        return RAND_bytes(where,len);
+    } else {
+        return RAND_pseudo_bytes(where,len);
+    }
 }
 
 /* it inits the values g and p which are used for DH key agreement */
@@ -101,11 +97,16 @@ void ssh_print_bignum(char *which,bignum num){
 }
 
 void ssh_print_hexa(char *descr,unsigned char *what, int len){
-	int i;
-	printf("%s : ",descr);
-	for(i=0;i<len-1;i++)
-		printf("%.2hhx:",what[i]);
-	printf("%.2hhx\n",what[i]);
+    int i;
+    printf("%s : ",descr);
+    if(len>16)
+        printf ("\n        ");
+    for(i=0;i<len-1;i++){
+        printf("%.2hhx:",what[i]);
+        if((i+1) % 16 ==0)
+            printf("\n        ");
+    }
+    printf("%.2hhx\n",what[i]);
 }
 
 void dh_generate_x(SSH_SESSION *session){
@@ -116,7 +117,16 @@ void dh_generate_x(SSH_SESSION *session){
 	ssh_print_bignum("x",session->next_crypto->x);
 #endif
 }
-
+/* used by server */
+void dh_generate_y(SSH_SESSION *session){
+    session->next_crypto->y=bignum_new();
+    bignum_rand(session->next_crypto->y,128,0,-1);
+    /* not harder than this */
+#ifdef DEBUG_CRYPTO
+	ssh_print_bignum("y",session->next_crypto->y);
+#endif
+}
+/* used by server */
 void dh_generate_e(SSH_SESSION *session){
     bignum_CTX ctx=bignum_ctx_new();
     session->next_crypto->e=bignum_new();
@@ -127,6 +137,15 @@ void dh_generate_e(SSH_SESSION *session){
     bignum_ctx_free(ctx);
 }
 
+void dh_generate_f(SSH_SESSION *session){
+    bignum_CTX ctx=bignum_ctx_new();
+    session->next_crypto->f=bignum_new();
+    bignum_mod_exp(session->next_crypto->f,g,session->next_crypto->y,p,ctx);
+#ifdef DEBUG_CRYPTO
+    ssh_print_bignum("f",session->next_crypto->f);
+#endif
+    bignum_ctx_free(ctx);
+}
 
 STRING *make_bignum_string(bignum num){
     STRING *ptr;
@@ -156,6 +175,11 @@ STRING *dh_get_e(SSH_SESSION *session){
 	return make_bignum_string(session->next_crypto->e);
 }
 
+/* used by server */
+
+STRING *dh_get_f(SSH_SESSION *session){
+    return make_bignum_string(session->next_crypto->f);
+}
 void dh_import_pubkey(SSH_SESSION *session,STRING *pubkey_string){
     session->next_crypto->server_pubkey=pubkey_string;
 }
@@ -167,10 +191,23 @@ void dh_import_f(SSH_SESSION *session,STRING *f_string){
 #endif
 }
 
+/* used by the server implementation */
+void dh_import_e(SSH_SESSION *session, STRING *e_string){
+    session->next_crypto->e=make_string_bn(e_string);
+#ifdef DEBUG_CRYPTO
+    ssh_print_bignum("e",session->next_crypto->e);
+#endif
+}
+
 void dh_build_k(SSH_SESSION *session){
     bignum_CTX ctx=bignum_ctx_new();
     session->next_crypto->k=bignum_new();
-    bignum_mod_exp(session->next_crypto->k,session->next_crypto->f,session->next_crypto->x,p,ctx);
+    /* the server and clients don't use the same numbers */
+    if(session->client){
+        bignum_mod_exp(session->next_crypto->k,session->next_crypto->f,session->next_crypto->x,p,ctx);
+    } else {
+        bignum_mod_exp(session->next_crypto->k,session->next_crypto->e,session->next_crypto->y,p,ctx);
+    }
 #ifdef DEBUG_CRYPTO
     ssh_print_bignum("shared secret key",session->next_crypto->k);
 #endif
@@ -179,62 +216,95 @@ void dh_build_k(SSH_SESSION *session){
 
 static void sha_add(STRING *str,SHACTX *ctx){
     sha1_update(ctx,str,string_len(str)+4);
+#ifdef DEBUG_CRYPTO
+    ssh_print_hexa("partial hashed sessionid",str,string_len(str)+4);
+#endif
 }
 
 void make_sessionid(SSH_SESSION *session){
     SHACTX *ctx;
     STRING *num,*str;
-    int len;
+    BUFFER *server_hash, *client_hash;
+    BUFFER *buf=buffer_new();
+    u32 len;
     ctx=sha1_init();
 
     str=string_from_char(session->clientbanner);
-    sha_add(str,ctx);
+    buffer_add_ssh_string(buf,str);
+    //sha_add(str,ctx);
     free(str);
 
     str=string_from_char(session->serverbanner);
-    sha_add(str,ctx);
+    buffer_add_ssh_string(buf,str);
+    //sha_add(str,ctx);
     free(str);
+    if(session->client){
+        server_hash=session->in_hashbuf;
+        client_hash=session->out_hashbuf;
+    } else{
+        server_hash=session->out_hashbuf;
+        client_hash=session->in_hashbuf;
+    }
+    buffer_add_u32(server_hash,0);
+    buffer_add_u8(server_hash,0);
+    buffer_add_u32(client_hash,0);
+    buffer_add_u8(client_hash,0);
 
-    buffer_add_u32(session->in_hashbuf,0);
-    buffer_add_u8(session->in_hashbuf,0);
-    buffer_add_u32(session->out_hashbuf,0);
-    buffer_add_u8(session->out_hashbuf,0);
+    len=ntohl(buffer_get_len(client_hash));
+    //sha1_update(ctx,&len,4);
+    buffer_add_u32(buf,len);
+    buffer_add_data(buf,buffer_get(client_hash),buffer_get_len(client_hash));
+    //sha1_update(ctx,buffer_get(client_hash),buffer_get_len(client_hash));
+    buffer_free(client_hash);
 
-    len=ntohl(buffer_get_len(session->out_hashbuf));
-    sha1_update(ctx,&len,4);
+    len=ntohl(buffer_get_len(server_hash));
+    buffer_add_u32(buf,len);
+    //sha1_update(ctx,&len,4);
 
-    sha1_update(ctx,buffer_get(session->out_hashbuf),buffer_get_len(session->out_hashbuf));
-    buffer_free(session->out_hashbuf);
-    session->out_hashbuf=NULL;
-
-    len=ntohl(buffer_get_len(session->in_hashbuf));
-    sha1_update(ctx,&len,4);
-
-    sha1_update(ctx,buffer_get(session->in_hashbuf),buffer_get_len(session->in_hashbuf));
-    buffer_free(session->in_hashbuf);
+    buffer_add_data(buf,buffer_get(server_hash),buffer_get_len(server_hash));
+//    ssh_print_hexa("server_hash",buffer_get(server_hash),buffer_get_len(server_hash));
+    //sha1_update(ctx,buffer_get(server_hash),buffer_get_len(server_hash));
+    buffer_free(server_hash);
+    
     session->in_hashbuf=NULL;
-    sha1_update(ctx,session->next_crypto->server_pubkey,len=(string_len(session->next_crypto->server_pubkey)+4));
+    session->out_hashbuf=NULL;
+    len=string_len(session->next_crypto->server_pubkey)+4;
+    buffer_add_data(buf,session->next_crypto->server_pubkey,len);
+//    sha1_update(ctx,session->next_crypto->server_pubkey,len);
     num=make_bignum_string(session->next_crypto->e);
-    sha1_update(ctx,num,len=(string_len(num)+4));
+    len=string_len(num)+4;
+    buffer_add_data(buf,num,len);
+    //sha1_update(ctx,num,len);
     free(num);
     num=make_bignum_string(session->next_crypto->f);
-    sha1_update(ctx,num,len=(string_len(num)+4));
+    len=string_len(num)+4;
+    buffer_add_data(buf,num,len);
+//    sha1_update(ctx,num,len=(string_len(num)+4));
     free(num);
     num=make_bignum_string(session->next_crypto->k);
-    sha1_update(ctx,num,len=(string_len(num)+4));
+    len=string_len(num)+4;
+    buffer_add_data(buf,num,len);
+//    sha1_update(ctx,num,len);
     free(num);
-    sha1_final(session->next_crypto->session_id,ctx);
-
 #ifdef DEBUG_CRYPTO
-		printf("Session hash : ");
-		ssh_print_hexa("session id",session->next_crypto->session_id,SHA_DIGEST_LENGTH);
+    ssh_print_hexa("hash buffer",buffer_get(buf),buffer_get_len(buf));
+#endif
+    sha1_update(ctx,buffer_get(buf),buffer_get_len(buf));
+    sha1_final(session->next_crypto->session_id,ctx);
+    buffer_free(buf);
+#ifdef DEBUG_CRYPTO
+    printf("Session hash : ");
+    ssh_print_hexa("session id",session->next_crypto->session_id,SHA_DIGEST_LENGTH);
 #endif
 }
 
 void hashbufout_add_cookie(SSH_SESSION *session){
     session->out_hashbuf=buffer_new();
     buffer_add_u8(session->out_hashbuf,20);
-    buffer_add_data(session->out_hashbuf,session->client_kex.cookie,16);
+    if(session->server)
+        buffer_add_data(session->out_hashbuf,session->server_kex.cookie,16);
+    else
+        buffer_add_data(session->out_hashbuf,session->client_kex.cookie,16);
 }
 
 
@@ -259,12 +329,22 @@ void generate_session_keys(SSH_SESSION *session){
     k_string=make_bignum_string(session->next_crypto->k);
 
     /* IV */
-    generate_one_key(k_string,session->next_crypto->session_id,session->next_crypto->encryptIV,'A');
-    generate_one_key(k_string,session->next_crypto->session_id,session->next_crypto->decryptIV,'B');
-
-    generate_one_key(k_string,session->next_crypto->session_id,session->next_crypto->encryptkey,'C');
-
+    if(session->client){
+        generate_one_key(k_string,session->next_crypto->session_id,session->next_crypto->encryptIV,'A');
+        generate_one_key(k_string,session->next_crypto->session_id,session->next_crypto->decryptIV,'B');
+    } else {
+        generate_one_key(k_string,session->next_crypto->session_id,session->next_crypto->decryptIV,'A');
+        generate_one_key(k_string,session->next_crypto->session_id,session->next_crypto->encryptIV,'B');
+    }
+    if(session->client){
+        generate_one_key(k_string,session->next_crypto->session_id,session->next_crypto->encryptkey,'C');
+        generate_one_key(k_string,session->next_crypto->session_id,session->next_crypto->decryptkey,'D');
+    } else {
+        generate_one_key(k_string,session->next_crypto->session_id,session->next_crypto->decryptkey,'C');
+        generate_one_key(k_string,session->next_crypto->session_id,session->next_crypto->encryptkey,'D');
+    }
     /* some ciphers need more than 20 bytes of input key */
+    /* XXX verify it's ok for server implementation */
     if(session->next_crypto->out_cipher->keylen > SHA_DIGEST_LENGTH*8){
         ctx=sha1_init();
         sha1_update(ctx,k_string,string_len(k_string)+4);
@@ -273,8 +353,6 @@ void generate_session_keys(SSH_SESSION *session){
         sha1_final(session->next_crypto->encryptkey+SHA_DIGEST_LEN,ctx);
     }
 
-    generate_one_key(k_string,session->next_crypto->session_id,session->next_crypto->decryptkey,'D');
-
     if(session->next_crypto->in_cipher->keylen > SHA_DIGEST_LENGTH*8){
         ctx=sha1_init();
         sha1_update(ctx,k_string,string_len(k_string)+4);
@@ -282,13 +360,17 @@ void generate_session_keys(SSH_SESSION *session){
         sha1_update(ctx,session->next_crypto->decryptkey,SHA_DIGEST_LENGTH);
         sha1_final(session->next_crypto->decryptkey+SHA_DIGEST_LEN,ctx);
     }
-
-    generate_one_key(k_string,session->next_crypto->session_id,session->next_crypto->encryptMAC,'E');
-    generate_one_key(k_string,session->next_crypto->session_id,session->next_crypto->decryptMAC,'F');
+    if(session->client){
+        generate_one_key(k_string,session->next_crypto->session_id,session->next_crypto->encryptMAC,'E');
+        generate_one_key(k_string,session->next_crypto->session_id,session->next_crypto->decryptMAC,'F');
+    } else {
+        generate_one_key(k_string,session->next_crypto->session_id,session->next_crypto->decryptMAC,'E');
+        generate_one_key(k_string,session->next_crypto->session_id,session->next_crypto->encryptMAC,'F');
+    }
 
 #ifdef DEBUG_CRYPTO
-    ssh_print_hexa("client->server IV",session->next_crypto->encryptIV,SHA_DIGEST_LENGTH);
-    ssh_print_hexa("server->client IV",session->next_crypto->decryptIV,SHA_DIGEST_LENGTH);
+    ssh_print_hexa("encrypt IV",session->next_crypto->encryptIV,SHA_DIGEST_LENGTH);
+    ssh_print_hexa("decrypt IV",session->next_crypto->decryptIV,SHA_DIGEST_LENGTH);
     ssh_print_hexa("encryption key",session->next_crypto->encryptkey,16);
     ssh_print_hexa("decryption key",session->next_crypto->decryptkey,16);
     ssh_print_hexa("Encryption MAC",session->next_crypto->encryptMAC,SHA_DIGEST_LENGTH);
@@ -346,6 +428,9 @@ static int sig_verify(SSH_SESSION *session, PUBLIC_KEY *pubkey, SIGNATURE *signa
     int valid=0;
     char hash[SHA_DIGEST_LENGTH];
     sha1(digest,SHA_DIGEST_LENGTH,hash);
+#ifdef DEBUG_CRYPTO
+    ssh_print_hexa("hash to be verified with dsa",hash,SHA_DIGEST_LENGTH);
+#endif
     switch(pubkey->type){
         case TYPE_DSS:
             valid=DSA_do_verify(hash,SHA_DIGEST_LENGTH,signature->dsa_sign,
@@ -392,7 +477,7 @@ int signature_verify(SSH_SESSION *session,STRING *signature){
     if(session->options->wanted_methods[SSH_HOSTKEYS]){
          if(match(session->options->wanted_methods[SSH_HOSTKEYS],pubkey->type_c)){
              ssh_set_error(session,SSH_FATAL,"Public key from server (%s) doesn't match user preference (%s)",
-             pubkey->type,session->options->wanted_methods[SSH_HOSTKEYS]);
+             pubkey->type_c,session->options->wanted_methods[SSH_HOSTKEYS]);
              publickey_free(pubkey);
              return -1;
          }

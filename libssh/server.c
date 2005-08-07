@@ -1,9 +1,6 @@
 /* server.c */
-
-/* No. It doesn't work yet. It's just hard to have 2 separated trees, one for releases 
- * and one for development */
 /*
-Copyright 2004 Aris Adamantiadis
+Copyright 2004,2005 Aris Adamantiadis
 
 This file is part of the SSH Library
 
@@ -35,6 +32,7 @@ MA 02111-1307, USA. */
 #include <string.h>
 #include "libssh/libssh.h"
 #include "libssh/server.h"
+#include "libssh/ssh2.h"
 static int bind_socket(SSH_BIND *ssh_bind,char *hostname, int port) {
     struct sockaddr_in myaddr;
     int opt = 1;
@@ -113,55 +111,79 @@ void ssh_bind_fd_toaccept(SSH_BIND *ssh_bind){
 
 SSH_SESSION *ssh_bind_accept(SSH_BIND *ssh_bind){
     SSH_SESSION *session;
+    PRIVATE_KEY *dsa=NULL, *rsa=NULL;
     if(ssh_bind->bindfd<0){
         ssh_set_error(ssh_bind,SSH_FATAL,"Can't accept new clients on a "
                 "not bound socket.");
         return NULL;
     }
+    if(!ssh_bind->options->dsakey && !ssh_bind->options->rsakey){
+        ssh_set_error(ssh_bind,SSH_FATAL,"DSA or RSA host key file must be set before accept()");
+        return NULL;
+    }
+    if(ssh_bind->options->dsakey){
+        dsa=_privatekey_from_file(ssh_bind,ssh_bind->options->dsakey,TYPE_DSS);
+        if(!dsa)
+            return NULL;
+        ssh_say(2,"Dsa private key read successfuly\n");
+    }
+    if(ssh_bind->options->rsakey){
+        rsa=_privatekey_from_file(ssh_bind,ssh_bind->options->rsakey,TYPE_RSA);
+        if(!rsa){
+            if(dsa)
+                private_key_free(dsa);
+            return NULL;
+        }
+        ssh_say(2,"RSA private key read successfuly\n");
+    }
     int fd=accept(ssh_bind->bindfd,NULL,NULL);
     if(fd<0){
         ssh_set_error(ssh_bind,SSH_FATAL,"Accepting a new connection: %s",
                 strerror(errno));
+        if(dsa)
+            private_key_free(dsa);
+        if(rsa)
+            private_key_free(rsa);
         return NULL;
     }
-    session=ssh_new(ssh_options_copy(ssh_bind->options));
+    session=ssh_new();
     session->server=1;
+    session->version=2;
     session->fd=fd;
     session->options=ssh_options_copy(ssh_bind->options);
+    session->dsa_key=dsa;
+    session->rsa_key=rsa;
     return session;
 }
-
-/* do the banner and key exchange */
-int ssh_accept(SSH_SESSION *session){
-    ssh_send_banner(session,1);
-    return 0;
-}
-
-/*
 extern char *supported_methods[];
+
 int server_set_kex(SSH_SESSION * session) {
     KEX *server = &session->server_kex;
     SSH_OPTIONS *options = session->options;
     int i;
     char *wanted;
-    if (!options) {
-        ssh_set_error(session, SSH_FATAL,
-		      "Options structure is null(client's bug)");
-	return -1;
-    }
     memset(server,0,sizeof(KEX));
     // the program might ask for a specific cookie to be sent. useful for server
     //   debugging
     if (options->wanted_cookie)
         memcpy(server->cookie, options->wanted_cookie, 16);
     else
-        ssh_get_random(server->cookie, 16);
+        ssh_get_random(server->cookie, 16,0);
+    if(session->dsa_key && session->rsa_key){
+        ssh_options_set_wanted_algos(options,SSH_HOSTKEYS,"ssh-dss,ssh-rsa");
+    } else {
+        if(session->dsa_key)
+            ssh_options_set_wanted_algos(options,SSH_HOSTKEYS,"ssh-dss");
+        else
+            ssh_options_set_wanted_algos(options,SSH_HOSTKEYS,"ssh-rsa");
+    }
     server->methods = malloc(10 * sizeof(char **));
     for (i = 0; i < 10; i++) {
-	if (!(wanted = options->wanted_methods[i]))
-	    wanted = supported_methods[i];
-	server->methods[i] = wanted;
-    printf("server->methods[%d]=%s\n",i,wanted);
+	    if (!(wanted = options->wanted_methods[i]))
+	        wanted = supported_methods[i];
+	    server->methods[i] = wanted;
+        printf("server->methods[%d]=%s\n",i,wanted);
+    }
 	if (!server->methods[i]) {
 	    ssh_set_error(session, SSH_FATAL, 
 	    	"kex error : did not find algo");
@@ -170,5 +192,76 @@ int server_set_kex(SSH_SESSION * session) {
     return 0;
 }
 
-*/
+static int dh_handshake_server(SSH_SESSION *session){
+    STRING *e,*f,*pubkey,*sign;
+    PUBLIC_KEY *pub;
+    PRIVATE_KEY *prv;
+    BUFFER *buf=buffer_new();
+    if(packet_wait(session, SSH2_MSG_KEXDH_INIT ,1))
+        return -1;
+    e=buffer_get_ssh_string(session->in_buffer);
+    if(!e){
+        ssh_set_error(session,SSH_FATAL,"No e number in client request");
+        return -1;
+    }
+    dh_import_e(session,e);
+    dh_generate_y(session);
+    dh_generate_f(session);
+    f=dh_get_f(session);
+    switch(session->hostkeys){
+        case TYPE_DSS:
+            prv=session->dsa_key;
+            break;
+        case TYPE_RSA:
+            prv=session->rsa_key;
+            break;
+    }
+    pub=publickey_from_privatekey(prv);
+    pubkey=publickey_to_string(pub);
+    publickey_free(pub);
+    dh_import_pubkey(session,pubkey);
+    dh_build_k(session);
+    make_sessionid(session);
+    sign=ssh_sign_session_id(session,prv);
+    buffer_free(buf);
+    private_key_free(prv);
+    buffer_add_u8(session->out_buffer,SSH2_MSG_KEXDH_REPLY);
+    buffer_add_ssh_string(session->out_buffer,pubkey);
+    buffer_add_ssh_string(session->out_buffer,f);
+    buffer_add_ssh_string(session->out_buffer,sign);
+    free(sign);
+    packet_send(session);
+    free(f);
+    packet_clear_out(session);
+    buffer_add_u8(session->out_buffer,SSH2_MSG_NEWKEYS);
+    packet_send(session);
+    ssh_say(2,"SSH_MSG_NEWKEYS sent\n");
+
+    packet_wait(session,SSH2_MSG_NEWKEYS,1);
+    ssh_say(2,"Got SSH_MSG_NEWKEYS\n");
+    generate_session_keys(session);
+    /* once we got SSH2_MSG_NEWKEYS we can switch next_crypto and current_crypto */
+    if(session->current_crypto)
+        crypto_free(session->current_crypto);
+    /* XXX later, include a function to change keys */
+    session->current_crypto=session->next_crypto;
+    session->next_crypto=crypto_new();
+    return 0;
+}
+/* do the banner and key exchange */
+int ssh_accept(SSH_SESSION *session){
+    ssh_send_banner(session,1);
+    ssh_crypto_init();
+    session->clientbanner=ssh_get_banner(session);
+    server_set_kex(session);
+    ssh_send_kex(session,1);
+    if(ssh_get_kex(session,1))
+        return -1;
+    ssh_list_kex(&session->client_kex);
+    crypt_set_algorithms_server(session);
+    if(dh_handshake_server(session))
+        return -1;
+    session->connected=1;
+    return 0;
+}
 

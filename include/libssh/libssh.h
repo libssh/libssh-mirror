@@ -103,10 +103,12 @@ void ssh_set_verbosity(int num);
  /* 0 : important messages only */
  /* -1 : no messages */
 
-/* in client.c */
-
+/* session.c */
 SSH_SESSION *ssh_new();
 void ssh_set_options(SSH_SESSION *session, SSH_OPTIONS *options);
+int ssh_get_fd(SSH_SESSION *session);
+
+/* client.c */
 int ssh_connect();
 void ssh_disconnect(SSH_SESSION *session);
 int ssh_service_request(SSH_SESSION *session,char *service);
@@ -134,14 +136,11 @@ void ssh_crypto_init();
 
 /* useful for debug */
 void ssh_print_hexa(char *descr,unsigned char *what, int len);
-void ssh_get_random(void *,int);
+int ssh_get_random(void *where,int len,int strong);
 
 /* this one can be called by the client to see the hash of the public key before accepting it */
 int ssh_get_pubkey_hash(SSH_SESSION *session,char hash[MD5_DIGEST_LEN]);
 STRING *ssh_get_pubkey(SSH_SESSION *session);
-
-/* deprecated */
-int pubkey_get_hash(SSH_SESSION *session,char hash[MD5_DIGEST_LEN]);
 
 /* in connect.c */
 int ssh_fd_poll(SSH_SESSION *session);
@@ -152,6 +151,8 @@ void publickey_free(PUBLIC_KEY *key);
 /* in keyfiles.c */
 
 PRIVATE_KEY *privatekey_from_file(SSH_SESSION *session,char *filename,int type,char *passphrase);
+STRING *publickey_to_string(PUBLIC_KEY *key);
+PUBLIC_KEY *publickey_from_privatekey(PRIVATE_KEY *prv);
 void private_key_free(PRIVATE_KEY *prv);
 STRING *publickey_from_file(SSH_SESSION *session, char *filename,int *_type);
 STRING *publickey_from_next_file(SSH_SESSION *session,char **pub_keys_path,char **keys_path,

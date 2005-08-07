@@ -138,7 +138,7 @@ static int packet_read2(SSH_SESSION *session){
         ssh_set_error(session,SSH_FATAL,"Packet too short to read padding");
         return -1;
     }
-    ssh_say(3,"%hhd bytes padding\n",padding);
+    ssh_say(3,"%hhd bytes padding, %d bytes left in buffer\n",padding,buffer_get_rest_len(session->in_buffer));
     if(padding > buffer_get_rest_len(session->in_buffer)){
         ssh_set_error(session,SSH_FATAL,"invalid padding: %d (%d resting)",padding,buffer_get_rest_len(session->in_buffer));
 #ifdef DEBUG_CRYPTO
@@ -147,8 +147,10 @@ static int packet_read2(SSH_SESSION *session){
         return -1;
     }
     buffer_pass_bytes_end(session->in_buffer,padding);
+    ssh_say(3,"After padding, %d bytes left in buffer\n",buffer_get_rest_len(session->in_buffer));
 #ifdef HAVE_LIBZ
     if(session->current_crypto && session->current_crypto->do_compress_in){
+        ssh_say(3,"Decompressing ...\n");
         decompress_buffer(session,session->in_buffer);
     }
 #endif
@@ -320,6 +322,7 @@ static int packet_send2(SSH_SESSION *session){
     ssh_say(3,"Writing on the wire a packet having %ld bytes before",currentlen);
 #ifdef HAVE_LIBZ
     if(session->current_crypto && session->current_crypto->do_compress_out){
+        ssh_say(3,"Compressing ...\n");
         compress_buffer(session,session->out_buffer);
         currentlen=buffer_get_len(session->out_buffer);
     }
@@ -328,7 +331,7 @@ static int packet_send2(SSH_SESSION *session){
     if(padding<4)
         padding+=blocksize;
     if(session->current_crypto)
-        ssh_get_random(padstring,padding);
+        ssh_get_random(padstring,padding,0);
     else
         memset(padstring,0,padding);
     finallen=htonl(currentlen+padding+1);

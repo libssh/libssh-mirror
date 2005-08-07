@@ -67,6 +67,10 @@ void ssh_cleanup(SSH_SESSION *session){
                 free(session->server_kex.methods[i]);
     free(session->client_kex.methods);
     free(session->server_kex.methods);
+    if(session->dsa_key)
+        private_key_free(session->dsa_key);
+    if(session->rsa_key)
+        private_key_free(session->rsa_key);
     memset(session,'X',sizeof(SSH_SESSION)); /* burn connection, it could hangs 
                                                 sensitive datas */
     free(session);

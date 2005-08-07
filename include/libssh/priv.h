@@ -177,10 +177,12 @@ struct ssh_options_struct {
     long timeout_usec;
     int ssh2allowed;
     int ssh1allowed;
+    char *dsakey;
+    char *rsakey; /* host key for server implementation */
 };
 
 typedef struct ssh_crypto_struct {
-    bignum e,f,x,k;
+    bignum e,f,x,k,y;
     char session_id[SHA_DIGEST_LEN];
     
     char encryptIV[SHA_DIGEST_LEN*2];
@@ -286,6 +288,10 @@ struct ssh_session {
 /* keyb interactive data */
     struct ssh_kbdint *kbdint;
     int version; /* 1 or 2 */
+    /* server host keys */
+    PRIVATE_KEY *rsa_key;
+    PRIVATE_KEY *dsa_key;
+    int hostkeys; /* contains type of host key wanted by client, in server impl */
 };
 
 struct ssh_kbdint {
@@ -303,6 +309,7 @@ void ssh_cleanup(SSH_SESSION *session);
 /* client.c */
 
 int ssh_send_banner(SSH_SESSION *session, int is_server);
+char *ssh_get_banner(SSH_SESSION *session);
 
 /* errors.c */
 void ssh_set_error(void *error,int code,char *descr,...);
@@ -311,8 +318,13 @@ void ssh_set_error(void *error,int code,char *descr,...);
 /* DH key generation */
 void dh_generate_e(SSH_SESSION *session);
 void dh_generate_x(SSH_SESSION *session);
+void dh_generate_y(SSH_SESSION *session);
+void dh_generate_f(SSH_SESSION *session);
+
 STRING *dh_get_e(SSH_SESSION *session);
+STRING *dh_get_f(SSH_SESSION *session);
 void dh_import_f(SSH_SESSION *session,STRING *f_string);
+void dh_import_e(SSH_SESSION *session, STRING *e_string);
 void dh_import_pubkey(SSH_SESSION *session,STRING *pubkey_string);
 void dh_build_k(SSH_SESSION *session);
 void make_sessionid(SSH_SESSION *session);
@@ -348,13 +360,18 @@ int ssh_connect_host(SSH_SESSION *session, const char *host,const char
 
 /* in kex.c */
 extern char *ssh_kex_nums[];
-void send_kex(SSH_SESSION *session,int server_kex);
-void list_kex(KEX *kex);
+void ssh_send_kex(SSH_SESSION *session,int server_kex);
+void ssh_list_kex(KEX *kex);
 int set_kex(SSH_SESSION *session);
 int ssh_get_kex(SSH_SESSION *session, int server_kex);
 int verify_existing_algo(int algo,char *name);
 char **space_tokenize(char *chain);
 int ssh_get_kex1(SSH_SESSION *session);
+char *ssh_find_matching(char *in_d, char *what_d);
+
+/* in keyfiles.c */
+
+PRIVATE_KEY  *_privatekey_from_file(void *session,char *filename,int type);
 
 /* in keys.c */
 char *ssh_type_to_char(int type);
@@ -365,6 +382,7 @@ SIGNATURE *signature_from_string(STRING *signature,PUBLIC_KEY *pubkey,int needed
 void signature_free(SIGNATURE *sign);
 STRING *ssh_do_sign(SSH_SESSION *session,BUFFER *sigbuf, 
         PRIVATE_KEY *privatekey);
+STRING *ssh_sign_session_id(SSH_SESSION *session, PRIVATE_KEY *privatekey);
 STRING *ssh_encrypt_rsa1(SSH_SESSION *session, STRING *data, PUBLIC_KEY *key);
 /* channel.c */
 void channel_handle(SSH_SESSION *session, int type);
@@ -420,6 +438,7 @@ int decompress_buffer(SSH_SESSION *session,BUFFER *buf);
 
 /* wrapper.c */
 int crypt_set_algorithms(SSH_SESSION *);
+int crypt_set_algorithms_server(SSH_SESSION *session);
 CRYPTO *crypto_new();
 void crypto_free(CRYPTO *crypto);
 bignum bignum_new();

@@ -37,7 +37,7 @@ MA 02111-1307, USA. */
 #define AES ""
 #endif
 
-#define DES "3des-cbc,"
+#define DES "3des-cbc"
 #ifdef HAVE_LIBZ
 #define ZLIB "none,zlib"
 #else
@@ -121,7 +121,7 @@ char **space_tokenize(char *chain){
 /* and a list of prefered objects (what_d) */
 /* it will return a strduped pointer on the first prefered object found in the available objects list */
 
-static char *find_matching(char *in_d, char *what_d){
+char *ssh_find_matching(char *in_d, char *what_d){
     char ** tok_in, **tok_what;
     int i_in, i_what;
     char *ret;
@@ -190,7 +190,7 @@ int ssh_get_kex(SSH_SESSION *session,int server_kex ){
     return 0;
 }
 
-void list_kex(KEX *kex){
+void ssh_list_kex(KEX *kex){
     int i=0;
 #ifdef DEBUG_CRYPTO
     ssh_print_hexa("session cookie",kex->cookie,16);
@@ -214,13 +214,13 @@ int set_kex(SSH_SESSION *session){
     if(options->wanted_cookie)
         memcpy(client->cookie,options->wanted_cookie,16);
     else
-        ssh_get_random(client->cookie,16);
+        ssh_get_random(client->cookie,16,0);
     client->methods=malloc(10 * sizeof(char **));
     memset(client->methods,0,10*sizeof(char **));
     for (i=0;i<10;i++){
         if(!(wanted=options->wanted_methods[i]))
             wanted=default_methods[i];
-        client->methods[i]=find_matching(server->methods[i],wanted);
+        client->methods[i]=ssh_find_matching(server->methods[i],wanted);
         if(!client->methods[i] && i < SSH_LANG_C_S){
             ssh_set_error(session,SSH_FATAL,"kex error : did not find one of algos %s in list %s for %s",
             wanted,server->methods[i],ssh_kex_nums[i]);
@@ -234,7 +234,7 @@ int set_kex(SSH_SESSION *session){
 }
 
 /* this function only sends the predefined set of kex methods */    
-void send_kex(SSH_SESSION *session, int server_kex){
+void ssh_send_kex(SSH_SESSION *session, int server_kex){
     STRING *str;
     int i=0;
     KEX *kex=(server_kex ? &session->server_kex : &session->client_kex);
@@ -242,7 +242,7 @@ void send_kex(SSH_SESSION *session, int server_kex){
     buffer_add_u8(session->out_buffer,SSH2_MSG_KEXINIT);
     buffer_add_data(session->out_buffer,kex->cookie,16);
     hashbufout_add_cookie(session);
-    list_kex(kex);
+    ssh_list_kex(kex);
     for(i=0;i<10;i++){
         str=string_from_char(kex->methods[i]);
         buffer_add_ssh_string(session->out_hashbuf,str);
@@ -260,7 +260,7 @@ int verify_existing_algo(int algo, char *name){
     char *ptr;
     if(algo>9 || algo <0)
         return -1;
-    ptr=find_matching(supported_methods[algo],name);
+    ptr=ssh_find_matching(supported_methods[algo],name);
     if(ptr){
         free(ptr);
         return 1;
@@ -303,7 +303,7 @@ STRING *encrypt_session_key(SSH_SESSION *session, PUBLIC_KEY *svrkey,
     STRING *data1,*data2;
     /* first, generate a session key */
     
-    ssh_get_random(session->next_crypto->encryptkey,32);
+    ssh_get_random(session->next_crypto->encryptkey,32,1);
     memcpy(buffer,session->next_crypto->encryptkey,32);
     memcpy(session->next_crypto->decryptkey,
             session->next_crypto->encryptkey,32);

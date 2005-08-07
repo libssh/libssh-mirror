@@ -2,7 +2,7 @@
 /* decoding a public key (both rsa and dsa), decoding a signature (rsa and dsa), veryfying them */
 
 /*
-Copyright 2003,04 Aris Adamantiadis
+Copyright 2003-2005 Aris Adamantiadis
 
 This file is part of the SSH Library
 
@@ -154,6 +154,77 @@ PUBLIC_KEY *publickey_from_string(STRING *pubkey_s){
     buffer_free(tmpbuf);
     free(type);
     return NULL;
+}
+
+PUBLIC_KEY *publickey_from_privatekey(PRIVATE_KEY *prv){
+    PUBLIC_KEY *key=malloc(sizeof(PUBLIC_KEY));
+    key->type=prv->type;
+    switch(key->type){
+        case TYPE_DSS:
+            key->dsa_pub=DSA_new();
+            key->dsa_pub->p=BN_dup(prv->dsa_priv->p);
+            key->dsa_pub->q=BN_dup(prv->dsa_priv->q);
+            key->dsa_pub->pub_key=BN_dup(prv->dsa_priv->pub_key);
+            key->dsa_pub->g=BN_dup(prv->dsa_priv->g);
+            break;
+        case TYPE_RSA:
+        case TYPE_RSA1:
+            key->rsa_pub=RSA_new();
+            key->rsa_pub->e=BN_dup(prv->rsa_priv->e);
+            key->rsa_pub->n=BN_dup(prv->rsa_priv->n);
+            break;
+    }
+    key->type_c=ssh_type_to_char(prv->type);
+    return key;
+}
+
+static void dsa_public_to_string(DSA *key, BUFFER *buffer){
+    STRING *p,*q,*g,*n;
+    p=make_bignum_string(key->p);
+    q=make_bignum_string(key->q);
+    g=make_bignum_string(key->g);
+    n=make_bignum_string(key->pub_key);
+    buffer_add_ssh_string(buffer,p);
+    buffer_add_ssh_string(buffer,q);
+    buffer_add_ssh_string(buffer,g);
+    buffer_add_ssh_string(buffer,n);
+    free(p);
+    free(q);
+    free(g);
+    free(n);
+}
+
+static void rsa_public_to_string(RSA *key, BUFFER *buffer){
+    STRING *e, *n;
+    e=make_bignum_string(key->e);
+    n=make_bignum_string(key->n);
+    buffer_add_ssh_string(buffer,e);
+    buffer_add_ssh_string(buffer,n);
+    free(e);
+    free(n);
+}
+
+STRING *publickey_to_string(PUBLIC_KEY *key){
+    STRING *type;
+    STRING *ret;
+    BUFFER *buf;
+    type=string_from_char(ssh_type_to_char(key->type));
+    buf=buffer_new();
+    buffer_add_ssh_string(buf,type);
+    switch(key->type){
+        case TYPE_DSS:
+            dsa_public_to_string(key->dsa_pub,buf);
+            break;
+        case TYPE_RSA:
+        case TYPE_RSA1:
+            rsa_public_to_string(key->rsa_pub,buf);
+            break;
+    }
+    ret=string_new(buffer_get_len(buf));
+    string_fill(ret,buffer_get(buf),buffer_get_len(buf));
+    buffer_free(buf);
+    free(type);
+    return ret;
 }
 
 /* Signature decoding functions */
@@ -325,22 +396,31 @@ static STRING *RSA_do_sign(void *payload,int len,RSA *privkey){
     return sign;
 }
 
+/* this function signs the session id (known as H) as a string then the content of sigbuf */
 STRING *ssh_do_sign(SSH_SESSION *session,BUFFER *sigbuf, PRIVATE_KEY *privatekey){
     SHACTX *ctx;
     STRING *session_str=string_new(SHA_DIGEST_LEN);
     char hash[SHA_DIGEST_LEN];
     SIGNATURE *sign;
     STRING *signature;
-    string_fill(session_str,session->current_crypto->session_id,SHA_DIGEST_LENGTH);
+    CRYPTO *crypto=session->current_crypto?session->current_crypto:session->next_crypto;
+    string_fill(session_str,crypto->session_id,SHA_DIGEST_LENGTH);
     ctx=sha1_init();
     sha1_update(ctx,session_str,string_len(session_str)+4);
     sha1_update(ctx,buffer_get(sigbuf),buffer_get_len(sigbuf));
     sha1_final(hash,ctx);
+#ifdef DEBUG_CRYPTO
+    ssh_print_hexa("Hash being signed with dsa",hash,SHA_DIGEST_LENGTH);
+#endif
     free(session_str);
     sign=malloc(sizeof(SIGNATURE));
     switch(privatekey->type){
         case TYPE_DSS:
             sign->dsa_sign=DSA_do_sign(hash,SHA_DIGEST_LENGTH,privatekey->dsa_priv);
+#ifdef DEBUG_CRYPTO
+            ssh_print_bignum("r",sign->dsa_sign->r);
+            ssh_print_bignum("s",sign->dsa_sign->s);
+#endif
             sign->rsa_sign=NULL;
             break;
         case TYPE_RSA:
@@ -366,5 +446,45 @@ STRING *ssh_encrypt_rsa1(SSH_SESSION *session, STRING *data, PUBLIC_KEY *key){
     RSA_public_encrypt(len,data->string,ret->string,key->rsa_pub,
             RSA_PKCS1_PADDING);
     return ret;
+}
+
+
+/* this function signs the session id */
+STRING *ssh_sign_session_id(SSH_SESSION *session, PRIVATE_KEY *privatekey){
+    SHACTX *ctx;
+    char hash[SHA_DIGEST_LEN];
+    SIGNATURE *sign;
+    STRING *signature;
+    CRYPTO *crypto=session->current_crypto?session->current_crypto:session->next_crypto;
+    ctx=sha1_init();
+    sha1_update(ctx,crypto->session_id,SHA_DIGEST_LENGTH);
+    sha1_final(hash,ctx);
+#ifdef DEBUG_CRYPTO
+    ssh_print_hexa("Hash being signed with dsa",hash,SHA_DIGEST_LENGTH);
+#endif
+    sign=malloc(sizeof(SIGNATURE));
+    switch(privatekey->type){
+        case TYPE_DSS:
+            sign->dsa_sign=DSA_do_sign(hash,SHA_DIGEST_LENGTH,privatekey->dsa_priv);
+#ifdef DEBUG_CRYPTO
+            ssh_print_bignum("r",sign->dsa_sign->r);
+            ssh_print_bignum("s",sign->dsa_sign->s);
+#endif
+            sign->rsa_sign=NULL;
+            break;
+        case TYPE_RSA:
+            sign->rsa_sign=RSA_do_sign(hash,SHA_DIGEST_LENGTH,privatekey->rsa_priv);
+            sign->dsa_sign=NULL;
+            break;
+    }
+    sign->type=privatekey->type;
+    if(!sign->dsa_sign && !sign->rsa_sign){
+        ssh_set_error(session,SSH_FATAL,"Signing : openssl error");
+        signature_free(sign);
+        return NULL;
+    }
+    signature=signature_to_string(sign);
+    signature_free(sign);
+    return signature;
 }
 
