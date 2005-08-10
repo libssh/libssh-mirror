@@ -32,6 +32,7 @@ SSH_SESSION *ssh_new() {
     memset(session,0,sizeof(SSH_SESSION));
     session->next_crypto=crypto_new();
     session->maxchannel=FIRST_CHANNEL;
+    session->fd=-1;
     return session;
 }
 

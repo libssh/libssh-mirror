@@ -210,7 +210,6 @@ int ssh_connect(SSH_SESSION *session){
   ssh_say(2,"banner : %s\n",session->serverbanner);
   /* here we analyse the different protocols the server allows */
   if(ssh_analyze_banner(session,&ssh1,&ssh2)){
-      ssh_disconnect(session);
       return -1;
   }
   /* here we decide which version of the protocol to use */

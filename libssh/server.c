@@ -38,12 +38,8 @@ static int bind_socket(SSH_BIND *ssh_bind,char *hostname, int port) {
     int opt = 1;
     int s = socket(PF_INET, SOCK_STREAM, 0);
     struct hostent *hp=NULL;
-#ifdef HAVE_GETHOSTBYADDR
-    hp=gethostbyaddr(hostname,4,AF_INET);
-#endif
 #ifdef HAVE_GETHOSTBYNAME
-    if(!hp)
-        hp=gethostbyname(hostname);
+    hp=gethostbyname(hostname);
 #endif
     if(!hp){
         ssh_set_error(ssh_bind,SSH_FATAL,"resolving %s: %s",hostname,hstrerror(h_errno));

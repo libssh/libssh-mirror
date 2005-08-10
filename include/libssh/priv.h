@@ -291,6 +291,8 @@ struct ssh_session {
     /* server host keys */
     PRIVATE_KEY *rsa_key;
     PRIVATE_KEY *dsa_key;
+    /* auths accepted by server */
+    int auth_methods; 
     int hostkeys; /* contains type of host key wanted by client, in server impl */
 };
 
@@ -389,7 +391,8 @@ void channel_handle(SSH_SESSION *session, int type);
 CHANNEL *channel_new(SSH_SESSION *session);
 void channel_default_bufferize(CHANNEL *channel, void *data, int len,
         int is_stderr);
-
+u32 ssh_channel_new_id(SSH_SESSION *session);
+CHANNEL *ssh_channel_from_local(SSH_SESSION *session,u32 num);
 
 /* options.c */
 

@@ -50,21 +50,21 @@ CHANNEL *channel_new(SSH_SESSION *session){
     return channel;
 }
 
-static u32 channel_new_id(SSH_SESSION *session){
+u32 ssh_channel_new_id(SSH_SESSION *session){
     u32 ret=session->maxchannel;
     session->maxchannel++;
     return ret;
 }
 
 static int channel_open(CHANNEL *channel,char *type_c,int window,
-int maxpacket,BUFFER *payload){
+        int maxpacket,BUFFER *payload){
     SSH_SESSION *session=channel->session;
     STRING *type=string_from_char(type_c);
     u32 foo;
     int err;
     packet_clear_out(session);
     buffer_add_u8(session->out_buffer,SSH2_MSG_CHANNEL_OPEN);
-    channel->local_channel=channel_new_id(session);
+    channel->local_channel=ssh_channel_new_id(session);
     channel->local_maxpacket=maxpacket;
     channel->local_window=window;
     ssh_say(2,"creating a channel %d with %d window and %d max packet\n",
@@ -121,7 +121,7 @@ int maxpacket,BUFFER *payload){
     return -1;
 }
 
-static CHANNEL *find_local_channel(SSH_SESSION *session,u32 num){
+CHANNEL *ssh_channel_from_local(SSH_SESSION *session,u32 num){
     // we assume we are always the local
     CHANNEL *initchan,*channel;
     initchan=session->channels;
@@ -154,7 +154,7 @@ static CHANNEL *channel_from_msg(SSH_SESSION *session){
         ssh_set_error(session,SSH_FATAL,"Getting channel from message : short read");
         return NULL;
     }
-    channel=find_local_channel(session,ntohl(chan));
+    channel=ssh_channel_from_local(session,ntohl(chan));
     if(!channel)
         ssh_set_error(session,SSH_FATAL,"Server specified invalid channel %d",ntohl(chan));
     return channel;

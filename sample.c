@@ -176,22 +176,30 @@ void shell(SSH_SESSION *session){
     CHANNEL *channel;
     struct termios terminal_local;
     int interactive=isatty(0);
+    channel = channel_new(session);
     if(interactive){
         tcgetattr(0,&terminal_local);
         memcpy(&terminal,&terminal_local,sizeof(struct termios));
-        cfmakeraw(&terminal_local);
-        tcsetattr(0,TCSANOW,&terminal_local);
-        setsignal();
     }
-    signal(SIGTERM,do_cleanup);
-    channel = channel_new(session);
-    channel_open_session(channel);
+    if(channel_open_session(channel)){
+        printf("error opening channel : %s\n",ssh_get_error(session));
+        return;
+    }
     chan=channel;
     if(interactive){
         channel_request_pty(channel);
         sizechanged();
     }
-    channel_request_shell(channel);
+    if(channel_request_shell(channel)){
+        printf("Requesting shell : %s\n",ssh_get_error(session));
+        return;
+    }
+    if(interactive){
+        cfmakeraw(&terminal_local);
+        tcsetattr(0,TCSANOW,&terminal_local);
+        setsignal();
+    }
+    signal(SIGTERM,do_cleanup);
     select_loop(session,channel);
 }
 

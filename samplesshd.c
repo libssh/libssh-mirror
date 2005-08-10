@@ -23,11 +23,24 @@ MA 02111-1307, USA. */
 #include <libssh/libssh.h>
 #include <libssh/server.h>
 #include <unistd.h>
+#include <string.h>
+
+int auth_password(char *user, char *password){
+    if(strcmp(user,"aris"))
+        return 0;
+    if(strcmp(password,"lala"))
+        return 0;
+    return 1; // authenticated 
+}
+
 int main(int argc, char **argv){
     SSH_OPTIONS *options=ssh_options_new();
     SSH_SESSION *session;
     SSH_BIND *ssh_bind;
     SSH_MESSAGE *message;
+    CHANNEL *chan;
+    int auth=0;
+    int sftp=0;
     ssh_options_getopt(options,&argc,argv);
     ssh_options_set_dsa_server_key(options,"/etc/ssh/ssh_host_dsa_key");
     ssh_options_set_rsa_server_key(options,"/etc/ssh/ssh_host_rsa_key");
@@ -49,8 +62,77 @@ int main(int argc, char **argv){
     }
     do {
         message=ssh_message_get(session);
-    } while (message);
-    printf("error : %s\n",ssh_get_error(session));
+        if(!message)
+            break;
+        switch(ssh_message_type(message)){
+            case SSH_AUTH_REQUEST:
+                switch(ssh_message_subtype(message)){
+                    case SSH_AUTH_PASSWORD:
+                        printf("User %s wants to auth with pass %s\n",
+                               ssh_message_auth_user(message),
+                               ssh_message_auth_password(message));
+                        if(auth_password(ssh_message_auth_user(message),
+                           ssh_message_auth_password(message))){
+                               auth=1;
+                               ssh_message_auth_reply_success(message,0);
+                               break;
+                           }
+                        // not authenticated, send default message
+                    case SSH_AUTH_NONE:
+                    default:
+                        ssh_message_auth_set_methods(message,SSH_AUTH_PASSWORD);
+                        ssh_message_reply_default(message);
+                        break;
+                }
+                break;
+            default:
+                ssh_message_reply_default(message);
+        }
+        ssh_message_free(message);
+    } while (!auth);
+    if(!auth){
+        printf("error : %s\n",ssh_get_error(session));
+        return 1;
+    }
+    do {
+        message=ssh_message_get(session);
+        if(message){
+            switch(ssh_message_type(message)){
+                case SSH_CHANNEL_REQUEST_OPEN:
+                    if(ssh_message_subtype(message)==SSH_CHANNEL_SESSION){
+                        chan=ssh_message_channel_request_open_reply_accept(message);
+                        break;
+                    }
+                default:
+                ssh_message_reply_default(message);
+            }
+            ssh_message_free(message);
+        }
+    } while(message && !chan);
+    if(!chan){
+        printf("error : %s\n",ssh_get_error(session));
+        return 1;
+    }
+    do {
+        message=ssh_message_get(session);
+        if(message && ssh_message_type(message)==SSH_CHANNEL_REQUEST && 
+           ssh_message_subtype(message)==SSH_CHANNEL_REQUEST_SUBSYSTEM){
+            if(!strcmp(ssh_message_channel_request_subsystem(message),"sftp")){
+                sftp=1;
+                ssh_message_channel_request_reply_success(message);
+                break;
+            }
+           }
+        if(!sftp){
+            ssh_message_reply_default(message);
+        }
+        ssh_message_free(message);
+    } while (message && !sftp);
+    if(!sftp){
+        printf("error : %s\n",ssh_get_error(session));
+        return 1;
+    }
+    printf("it works !\n");
     return 0;
 }
 

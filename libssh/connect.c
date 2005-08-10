@@ -61,12 +61,9 @@ int ssh_connect_host(SSH_SESSION *session, const char *host, const char
     int s;
     while(++count>1)
         --count;
-#ifdef HAVE_GETHOSTBYADDR
-    hp=gethostbyaddr(host,4,AF_INET);
-#endif
+
 #ifdef HAVE_GETHOSTBYNAME
-    if(!hp)
-        hp=gethostbyname(host);
+    hp=gethostbyname(host);
 #endif
     if(!hp){
         --count;
