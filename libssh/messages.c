@@ -380,6 +380,26 @@ void ssh_message_free(SSH_MESSAGE *msg){
                 free(msg->auth_request.password);
             }
             break;
+        case SSH_CHANNEL_REQUEST_OPEN:
+            if(msg->channel_request_open.originator)
+                free(msg->channel_request_open.originator);
+            if(msg->channel_request_open.destination)
+                free(msg->channel_request_open.destination);
+            break;
+        case SSH_CHANNEL_REQUEST:
+            if(msg->channel_request.TERM)
+                free(msg->channel_request.TERM);
+            if(msg->channel_request.modes)
+                free(msg->channel_request.modes);
+            if(msg->channel_request.var_name)
+                free(msg->channel_request.var_name);
+            if(msg->channel_request.var_value)
+                free(msg->channel_request.var_value);
+            if(msg->channel_request.command)
+                free(msg->channel_request.command);
+            if(msg->channel_request.subsystem)
+                free(msg->channel_request.subsystem);
+            break;
     }
     memset(msg,0,sizeof(*msg));
     free(msg);

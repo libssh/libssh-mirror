@@ -41,6 +41,7 @@ int main(int argc, char **argv){
     CHANNEL *chan;
     int auth=0;
     int sftp=0;
+    int i;
     ssh_options_getopt(options,&argc,argv);
     ssh_options_set_dsa_server_key(options,"/etc/ssh/ssh_host_dsa_key");
     ssh_options_set_rsa_server_key(options,"/etc/ssh/ssh_host_rsa_key");
@@ -116,12 +117,12 @@ int main(int argc, char **argv){
     do {
         message=ssh_message_get(session);
         if(message && ssh_message_type(message)==SSH_CHANNEL_REQUEST && 
-           ssh_message_subtype(message)==SSH_CHANNEL_REQUEST_SUBSYSTEM){
-            if(!strcmp(ssh_message_channel_request_subsystem(message),"sftp")){
+           ssh_message_subtype(message)==SSH_CHANNEL_REQUEST_SHELL){
+//            if(!strcmp(ssh_message_channel_request_subsystem(message),"sftp")){
                 sftp=1;
                 ssh_message_channel_request_reply_success(message);
                 break;
-            }
+ //           }
            }
         if(!sftp){
             ssh_message_reply_default(message);
@@ -133,6 +134,12 @@ int main(int argc, char **argv){
         return 1;
     }
     printf("it works !\n");
+    BUFFER *buf=buffer_new();
+    do{
+        i=channel_read(chan,buf,0,0);
+        if(i>0)
+            write(1,buffer_get(buf),buffer_get_len(buf));
+    } while (i>0);
     return 0;
 }
 
