@@ -24,7 +24,7 @@
 #include <string.h>
 #include "libssh/libssh.h"
 #include "libssh/priv.h"
-
+#include "libssh/server.h"
 #define FIRST_CHANNEL 42 // why not ? it helps to find bugs.
 
 SSH_SESSION *ssh_new() {
@@ -72,6 +72,10 @@ void ssh_cleanup(SSH_SESSION *session){
         private_key_free(session->dsa_key);
     if(session->rsa_key)
         private_key_free(session->rsa_key);
+    if(session->ssh_message){
+        ssh_message_free(session->ssh_message);
+        free(session->ssh_message);
+    }
     memset(session,'X',sizeof(SSH_SESSION)); /* burn connection, it could hangs 
                                                 sensitive datas */
     free(session);

@@ -211,6 +211,8 @@ static int dh_handshake_server(SSH_SESSION *session){
         case TYPE_RSA:
             prv=session->rsa_key;
             break;
+        default:
+            prv=NULL;
     }
     pub=publickey_from_privatekey(prv);
     pubkey=publickey_to_string(pub);

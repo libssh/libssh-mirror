@@ -34,7 +34,11 @@ MA 02111-1307, USA. */
 #include <string.h>
 
 static SSH_MESSAGE *message_new(SSH_SESSION *session){
-    SSH_MESSAGE *msg=malloc(sizeof(SSH_MESSAGE));
+    SSH_MESSAGE *msg=session->ssh_message;
+    if(!msg){
+        msg=malloc(sizeof(SSH_MESSAGE));
+        session->ssh_message=msg;
+    }
     memset(msg,0,sizeof (*msg));
     msg->session=session;
     return msg;
@@ -402,5 +406,4 @@ void ssh_message_free(SSH_MESSAGE *msg){
             break;
     }
     memset(msg,0,sizeof(*msg));
-    free(msg);
 }

@@ -213,14 +213,14 @@ void dh_build_k(SSH_SESSION *session){
 #endif
     bignum_ctx_free(ctx);
 }
-
+/*
 static void sha_add(STRING *str,SHACTX *ctx){
     sha1_update(ctx,str,string_len(str)+4);
 #ifdef DEBUG_CRYPTO
     ssh_print_hexa("partial hashed sessionid",str,string_len(str)+4);
 #endif
 }
-
+*/
 void make_sessionid(SSH_SESSION *session){
     SHACTX *ctx;
     STRING *num,*str;

@@ -294,6 +294,7 @@ struct ssh_session {
     /* auths accepted by server */
     int auth_methods; 
     int hostkeys; /* contains type of host key wanted by client, in server impl */
+    struct ssh_message *ssh_message; /* ssh message */
 };
 
 struct ssh_kbdint {
@@ -465,7 +466,7 @@ u64 ntohll(u64);
 #define htonll(x) ntohll(x)
 
 /* channels1.c */
-CHANNEL *channel_open_session1(SSH_SESSION *session);
+int channel_open_session1(CHANNEL *channel);
 int channel_request_pty_size1(CHANNEL *channel, char *terminal,int cols, 
         int rows);
 int channel_change_pty_size1(CHANNEL *channel, int cols, int rows);

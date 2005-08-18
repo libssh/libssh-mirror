@@ -56,5 +56,6 @@ AC_CHECK_FUNCS([endpwent gethostbyaddr gethostbyname getpass memmove memset \
  select socket strchr strdup strerror strstr poll])
 
 AC_CONFIG_FILES([Makefile
-                 libssh/Makefile])
+                 libssh/Makefile
+                 sftp_server/Makefile])
 AC_OUTPUT

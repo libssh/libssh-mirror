@@ -2,7 +2,7 @@
 /* don't look further if you believe this is just FTP over some tunnel. It IS different */
 /* This file contains code written by Nick Zitzmann */
 /*
-Copyright 2003 Aris Adamantiadis
+Copyright 2003-2005 Aris Adamantiadis
 
 This file is part of the SSH Library
 
@@ -59,6 +59,16 @@ SFTP_SESSION *sftp_new(SSH_SESSION *session){
     }
     return sftp;
 }
+
+#ifndef NO_SERVER
+SFTP_SESSION *sftp_server_new(SSH_SESSION *session, CHANNEL *chan){
+    SFTP_SESSION *sftp=malloc(sizeof(SFTP_SESSION));
+    memset(sftp,0,sizeof(SFTP_SESSION));
+    sftp->session=session;
+    sftp->channel=chan;
+    return sftp;
+}
+#endif
 
 void sftp_free(SFTP_SESSION *sftp){
     struct request_queue *ptr;

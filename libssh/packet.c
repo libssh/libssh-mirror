@@ -375,7 +375,7 @@ static int packet_send1(SSH_SESSION *session){
 */
     padding=blocksize-(currentlen % blocksize);
     if(session->current_crypto)
-        ssh_get_random(padstring,padding);
+        ssh_get_random(padstring,padding,0);
     else
         memset(padstring,0,padding);
     finallen=htonl(currentlen);

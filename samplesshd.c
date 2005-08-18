@@ -140,6 +140,7 @@ int main(int argc, char **argv){
         if(i>0)
             write(1,buffer_get(buf),buffer_get_len(buf));
     } while (i>0);
+    ssh_disconnect(session);
     return 0;
 }
 
