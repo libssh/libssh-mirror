@@ -845,6 +845,11 @@ if test -n "$ac_init_help"; then
    esac
   cat <<\_ACEOF
 
+Optional Features:
+  --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
+  --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
+  --enable-ssh1           support SSH1
+
 Some influential environment variables:
   CC          C compiler command
   CFLAGS      C compiler flags
@@ -1399,6 +1404,24 @@ case "$host" in
 esac
 
 
+
+enable_ssh1=${enable_ssh1:-"no"}
+# Check whether --enable-ssh1 or --disable-ssh1 was given.
+if test "${enable_ssh1+set}" = set; then
+  enableval="$enable_ssh1"
+
+fi;
+echo "$as_me:$LINENO: checking for SSH1 support" >&5
+echo $ECHO_N "checking for SSH1 support... $ECHO_C" >&6
+if test $enable_ssh1 = "yes" ; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_SSH1 1
+_ACEOF
+
+fi
+echo "$as_me:$LINENO: result: $enable_ssh1" >&5
+echo "${ECHO_T}$enable_ssh1" >&6
 
 # Checks for programs.
 ac_ext=c

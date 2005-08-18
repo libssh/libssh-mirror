@@ -170,3 +170,6 @@
 
 /* Define to rpl_realloc if the replacement function should be used. */
 #undef realloc
+
+#undef HAVE_SSH1
+

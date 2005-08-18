@@ -2,7 +2,7 @@
 OBJECTS= client.o packet.o dh.o crypt.o connect.o error.o buffer.o \
 	string.o kex.o channels.o options.o keys.o auth.o base64.o \
         keyfiles.o misc.o gzip.o wrapper.o sftp.o server.o crc32.o \
-	session.o messages.o
+	session.o messages.o channels1.o auth1.o
 SHELL = /bin/sh
 VPATH = @srcdir@
 
