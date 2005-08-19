@@ -40,14 +40,14 @@ AC_C_BIGENDIAN
 # Checks for libraries.
 AC_CHECK_LIB([crypto], [BN_init])
 AC_CHECK_LIB([z], [deflateInit_])
-AC_CHECK_LIB([resolv],[gethostbyname])
-AC_CHECK_LIB([nsl],[gethostbyname])
+AC_SEARCH_LIBS([hstrerror],[nsl resolv])
+AC_SEARCH_LIBS([gethostbyname],[nsl resolv])
 
 # Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS([fcntl.h netdb.h netinet/in.h stdlib.h string.h sys/socket.h \
 sys/time.h termios.h unistd.h openssl/aes.h openssl/blowfish.h zlib.h \
-sys/poll.h ])
+sys/poll.h stdint.h pty.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST

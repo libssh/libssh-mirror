@@ -287,13 +287,17 @@ static STRING *make_rsa1_string(STRING *e, STRING *n){
 static void build_session_id1(SSH_SESSION *session, STRING *servern, 
         STRING *hostn){
     MD5CTX *md5=md5_init();
+#ifdef DEBUG_CRYPTO
     ssh_print_hexa("host modulus",hostn->string,string_len(hostn));
     ssh_print_hexa("server modulus",servern->string,string_len(servern));
+#endif
     md5_update(md5,hostn->string,string_len(hostn));
     md5_update(md5,servern->string,string_len(servern));
     md5_update(md5,session->server_kex.cookie,8);
     md5_final(session->next_crypto->session_id,md5);
+#ifdef DEBUG_CRYPTO
     ssh_print_hexa("session_id",session->next_crypto->session_id,MD5_DIGEST_LEN);
+#endif
 }
 
 STRING *encrypt_session_key(SSH_SESSION *session, PUBLIC_KEY *svrkey,
@@ -307,7 +311,9 @@ STRING *encrypt_session_key(SSH_SESSION *session, PUBLIC_KEY *svrkey,
     memcpy(buffer,session->next_crypto->encryptkey,32);
     memcpy(session->next_crypto->decryptkey,
             session->next_crypto->encryptkey,32);
+#ifdef DEBUG_CRYPTO
     ssh_print_hexa("session key",buffer,32);
+#endif
     /* xor session key with session_id */
     for (i=0;i<16;++i)
         buffer[i]^=session->next_crypto->session_id[i];

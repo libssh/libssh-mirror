@@ -12,6 +12,7 @@ The goal is to show the API in action. It's not a reference on how terminal
 clients must be made or how a client should react.
 */
 
+#include "config.h"
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -20,7 +21,9 @@ clients must be made or how a client should react.
 
 #include <sys/select.h>
 #include <sys/time.h>
+#ifdef HAVE_PTY_H
 #include <pty.h>
+#endif
 #include <signal.h>
 #include <errno.h>
 #include <libssh/libssh.h>
@@ -76,6 +79,17 @@ int opts(int argc, char **argv){
         usage();
     return 0;
 }
+
+#ifndef HAVE_PTY_H
+static void cfmakeraw(struct termios *termios_p){
+    termios_p->c_iflag &= ~(IGNBRK|BRKINT|PARMRK|ISTRIP|INLCR|IGNCR|ICRNL|IXON);
+    termios_p->c_oflag &= ~OPOST;
+    termios_p->c_lflag &= ~(ECHO|ECHONL|ICANON|ISIG|IEXTEN);
+    termios_p->c_cflag &= ~(CSIZE|PARENB);
+    termios_p->c_cflag |= CS8;
+}
+#endif
+
 
 void do_cleanup(){
     tcsetattr(0,TCSANOW,&terminal);

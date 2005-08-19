@@ -24,6 +24,9 @@ MA 02111-1307, USA. */
 #include <unistd.h>
 #include <sys/select.h> /* for fd_set * */
 #include <sys/types.h>
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
 #define LIBSSH_VERSION "libssh-0.2-dev"
 
 #ifdef __cplusplus
@@ -40,10 +43,10 @@ typedef struct ssh_session SSH_SESSION;
 typedef struct ssh_kbdint SSH_KBDINT;
 
 /* integer values */
-typedef u_int32_t u32;
-typedef u_int16_t u16;
-typedef u_int64_t u64;
-typedef u_int8_t u8;
+typedef uint32_t u32;
+typedef uint16_t u16;
+typedef uint64_t u64;
+typedef uint8_t u8;
 
 /* the offsets of methods */
 #define SSH_KEX 0
@@ -109,7 +112,7 @@ void ssh_set_options(SSH_SESSION *session, SSH_OPTIONS *options);
 int ssh_get_fd(SSH_SESSION *session);
 
 /* client.c */
-int ssh_connect();
+int ssh_connect(SSH_SESSION *session);
 void ssh_disconnect(SSH_SESSION *session);
 int ssh_service_request(SSH_SESSION *session,char *service);
 char *ssh_get_issue_banner(SSH_SESSION *session);

@@ -172,4 +172,5 @@
 #undef realloc
 
 #undef HAVE_SSH1
-
+#undef HAVE_PTY_H
+#undef HAVE_STDINT_H

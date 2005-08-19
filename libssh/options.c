@@ -34,7 +34,11 @@ SSH_OPTIONS *ssh_options_new(){
     option->port=22; /* set the default port */
     option->fd=-1;
     option->ssh2allowed=1;
+#ifdef HAVE_SSH1
+    option->ssh1allowed=1;
+#else
     option->ssh1allowed=0;
+#endif
     option->bindport=22;
     return option;
 }
@@ -283,7 +287,11 @@ int ssh_options_getopt(SSH_OPTIONS *options, int *argcptr, char **argv){
     char *identity=NULL;
     char **save=malloc(argc * sizeof(char *));
     int current=0;
+#ifdef HAVE_SSH1
+    int ssh1=1;
+#else
     int ssh1=0;
+#endif
     int ssh2=1;
     
     int saveoptind=optind; /* need to save 'em */
@@ -384,13 +392,8 @@ int ssh_options_getopt(SSH_OPTIONS *options, int *argcptr, char **argv){
         ssh_options_set_bind(options,localaddr,0);
     ssh_options_set_port(options,port);
     options->bindport=port;
-    if(ssh1){
-        ssh_options_allow_ssh1(options,1);
-        ssh_options_allow_ssh2(options,0);
-    } else { // default behaviour 
-        ssh_options_allow_ssh1(options,0);
-        ssh_options_allow_ssh2(options,1);
-    }
+    ssh_options_allow_ssh1(options,ssh1);
+    ssh_options_allow_ssh2(options,ssh2);
         
     if(!cont){
         return -1;
