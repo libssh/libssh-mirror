@@ -38,7 +38,7 @@ int main(int argc, char **argv){
     SSH_SESSION *session;
     SSH_BIND *ssh_bind;
     SSH_MESSAGE *message;
-    CHANNEL *chan;
+    CHANNEL *chan=0;
     int auth=0;
     int sftp=0;
     int i;
