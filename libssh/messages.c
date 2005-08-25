@@ -186,6 +186,7 @@ CHANNEL *ssh_message_channel_request_open_reply_accept(SSH_MESSAGE *msg){
     chan->remote_channel=msg->channel_request_open.sender;
     chan->remote_maxpacket=msg->channel_request_open.packet_size;
     chan->remote_window=msg->channel_request_open.window;
+    chan->open=1;
     packet_clear_out(msg->session);
     buffer_add_u8(msg->session->out_buffer,SSH2_MSG_CHANNEL_OPEN_CONFIRMATION);
     buffer_add_u32(msg->session->out_buffer,htonl(chan->remote_channel));

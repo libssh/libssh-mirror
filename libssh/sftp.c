@@ -42,6 +42,8 @@ MA 02111-1307, USA. */
 static void sftp_packet_free(SFTP_PACKET *packet);
 void sftp_enqueue(SFTP_SESSION *session, SFTP_MESSAGE *msg);
 static void sftp_message_free(SFTP_MESSAGE *msg);
+SFTP_PACKET *sftp_packet_read(SFTP_SESSION *sftp);
+int sftp_packet_write(SFTP_SESSION *sftp,u8 type, BUFFER *payload);
 
 SFTP_SESSION *sftp_new(SSH_SESSION *session){
     SFTP_SESSION *sftp=malloc(sizeof(SFTP_SESSION));
@@ -67,6 +69,35 @@ SFTP_SESSION *sftp_server_new(SSH_SESSION *session, CHANNEL *chan){
     sftp->session=session;
     sftp->channel=chan;
     return sftp;
+}
+
+int sftp_server_init(SFTP_SESSION *sftp){
+    SFTP_PACKET *packet=sftp_packet_read(sftp);
+    u32 version;
+    BUFFER *reply;
+    if(!packet)
+        return -1;
+    if(packet->type != SSH_FXP_INIT){
+        ssh_set_error(sftp->session,SSH_FATAL,"Packet read of type %d instead of SSH_FXP_INIT",
+                      packet->type);
+        sftp_packet_free(packet);
+        return -1;
+    }
+    ssh_say(2,"received SSH_FXP_INIT\n");
+    buffer_get_u32(packet->payload,&version);
+    version=ntohl(version);
+    ssh_say(2,"client version %d\n");
+    sftp->client_version=version;
+    sftp_packet_free(packet);
+    reply=buffer_new();
+    buffer_add_u32(reply,ntohl(LIBSFTP_VERSION));
+    if(sftp_packet_write(sftp,SSH_FXP_VERSION,reply)==-1){
+        buffer_free(reply);
+        return -1;
+    }
+    buffer_free(reply);
+    ssh_say(2,"server version sent\n");
+    return 0;
 }
 #endif
 

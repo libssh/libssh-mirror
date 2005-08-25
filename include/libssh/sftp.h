@@ -30,6 +30,7 @@ typedef struct sftp_session_struct {
     SSH_SESSION *session;
     CHANNEL *channel;
     int server_version;
+    int client_version;
     struct request_queue *queue;
     u32 id_counter;
 } SFTP_SESSION ;
@@ -137,6 +138,12 @@ int sftp_mkdir(SFTP_SESSION *sftp, char *directory, SFTP_ATTRIBUTES *attr);
 int sftp_rename(SFTP_SESSION *sftp, char *original, char *newname);
 int sftp_setstat(SFTP_SESSION *sftp, char *file, SFTP_ATTRIBUTES *attr);
 char *sftp_canonicalize_path(SFTP_SESSION *sftp, char *path);
+
+#ifndef NO_SERVER
+SFTP_SESSION *sftp_server_new(SSH_SESSION *session, CHANNEL *chan);
+int sftp_server_init(SFTP_SESSION *sftp);
+#endif
+
 
 /* SFTP commands and constants */
 #define SSH_FXP_INIT 1

@@ -175,16 +175,11 @@ int server_set_kex(SSH_SESSION * session) {
     }
     server->methods = malloc(10 * sizeof(char **));
     for (i = 0; i < 10; i++) {
-	    if (!(wanted = options->wanted_methods[i]))
-	        wanted = supported_methods[i];
-	    server->methods[i] = wanted;
+        if (!(wanted = options->wanted_methods[i]))
+            wanted = supported_methods[i];
+        server->methods[i] = strdup(wanted);
         printf("server->methods[%d]=%s\n",i,wanted);
     }
-	if (!server->methods[i]) {
-	    ssh_set_error(session, SSH_FATAL, 
-	    	"kex error : did not find algo");
-	    return -1;
-	}
     return 0;
 }
 
@@ -222,7 +217,15 @@ static int dh_handshake_server(SSH_SESSION *session){
     make_sessionid(session);
     sign=ssh_sign_session_id(session,prv);
     buffer_free(buf);
-    private_key_free(prv);
+    /* free private keys as they should not be readable past this point */
+    if(session->rsa_key){
+        private_key_free(session->rsa_key);
+        session->rsa_key=NULL;
+    }
+    if(session->dsa_key){
+        private_key_free(session->dsa_key);
+        session->dsa_key=NULL;
+    }
     buffer_add_u8(session->out_buffer,SSH2_MSG_KEXDH_REPLY);
     buffer_add_ssh_string(session->out_buffer,pubkey);
     buffer_add_ssh_string(session->out_buffer,f);
