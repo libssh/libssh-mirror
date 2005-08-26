@@ -39,11 +39,8 @@ MA 02111-1307, USA. */
 
 
 /* functions */
-static void sftp_packet_free(SFTP_PACKET *packet);
 void sftp_enqueue(SFTP_SESSION *session, SFTP_MESSAGE *msg);
 static void sftp_message_free(SFTP_MESSAGE *msg);
-SFTP_PACKET *sftp_packet_read(SFTP_SESSION *sftp);
-int sftp_packet_write(SFTP_SESSION *sftp,u8 type, BUFFER *payload);
 
 SFTP_SESSION *sftp_new(SSH_SESSION *session){
     SFTP_SESSION *sftp=malloc(sizeof(SFTP_SESSION));
@@ -97,6 +94,10 @@ int sftp_server_init(SFTP_SESSION *sftp){
     }
     buffer_free(reply);
     ssh_say(2,"server version sent\n");
+    if(version > LIBSFTP_VERSION)
+        sftp->version=LIBSFTP_VERSION;
+    else
+        sftp->version=version;
     return 0;
 }
 #endif
@@ -204,7 +205,7 @@ int sftp_read_and_dispatch(SFTP_SESSION *session){
     return 0;
 }
 
-static void sftp_packet_free(SFTP_PACKET *packet){
+void sftp_packet_free(SFTP_PACKET *packet){
     if(packet->payload)
         buffer_free(packet->payload);
     free(packet);

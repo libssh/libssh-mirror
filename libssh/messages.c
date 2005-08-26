@@ -282,7 +282,7 @@ int ssh_message_channel_request_reply_success(SSH_MESSAGE *msg){
     u32 channel;
     if(msg->channel_request.want_reply){
         channel=msg->channel_request.channel->remote_channel;
-        ssh_say(2,"Sending a default channel_success denied to channel %d\n",channel);
+        ssh_say(2,"Sending a channel_request success to channel %d\n",channel);
         packet_clear_out(msg->session);
         buffer_add_u8(msg->session->out_buffer,SSH2_MSG_CHANNEL_SUCCESS);
         buffer_add_u32(msg->session->out_buffer,htonl(channel));

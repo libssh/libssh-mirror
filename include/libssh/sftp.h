@@ -31,8 +31,10 @@ typedef struct sftp_session_struct {
     CHANNEL *channel;
     int server_version;
     int client_version;
+    int version;
     struct request_queue *queue;
     u32 id_counter;
+    void **handles;
 } SFTP_SESSION ;
 
 typedef struct {
@@ -67,6 +69,22 @@ typedef struct {
     u32 id;
 } SFTP_MESSAGE;
 
+/* this is a bunch of all data that could be into a message */
+typedef struct sftp_client_message{
+    SFTP_SESSION *sftp;
+    u8 type;
+    u32 id;
+    char *filename; /* can be "path" */
+    u32 flags;
+    struct sftp_attributes *attr;
+    STRING *handle;
+    u64 offset;
+    u32 len;
+    int attr_num;
+    BUFFER *attrbuf; /* used by sftp_reply_attrs */
+    STRING *data; /* can be newpath of rename() */
+} SFTP_CLIENT_MESSAGE;
+
 typedef struct request_queue{
     struct request_queue *next;
     SFTP_MESSAGE *message;
@@ -83,7 +101,7 @@ typedef struct {
 } STATUS_MESSAGE;
 
 /* don't worry much of these aren't really used */
-typedef struct {
+typedef struct sftp_attributes{
     char *name;
     char *longname; /* some weird stuff */
     u32 flags;
@@ -144,6 +162,27 @@ SFTP_SESSION *sftp_server_new(SSH_SESSION *session, CHANNEL *chan);
 int sftp_server_init(SFTP_SESSION *sftp);
 #endif
 
+/* this is not a public interface */
+#define SFTP_HANDLES 256
+SFTP_PACKET *sftp_packet_read(SFTP_SESSION *sftp);
+int sftp_packet_write(SFTP_SESSION *sftp,u8 type, BUFFER *payload);
+void sftp_packet_free(SFTP_PACKET *packet);
+void buffer_add_attributes(BUFFER *buffer, SFTP_ATTRIBUTES *attr);
+
+/* sftpserver.c */
+
+SFTP_CLIENT_MESSAGE *sftp_get_client_message(SFTP_SESSION *sftp);
+void sftp_client_message_free(SFTP_CLIENT_MESSAGE *msg);
+int sftp_reply_name(SFTP_CLIENT_MESSAGE *msg, char *name, SFTP_ATTRIBUTES *attr);
+int sftp_reply_handle(SFTP_CLIENT_MESSAGE *msg, STRING *handle);
+STRING *sftp_handle_alloc(SFTP_SESSION *sftp, void *info);
+int sftp_reply_attr(SFTP_CLIENT_MESSAGE *msg, SFTP_ATTRIBUTES *attr);
+void *sftp_handle(SFTP_SESSION *sftp, STRING *handle);
+int sftp_reply_status(SFTP_CLIENT_MESSAGE *msg, u32 status, char *message);
+int sftp_reply_names_add(SFTP_CLIENT_MESSAGE *msg, char *file, char *longname,
+                         SFTP_ATTRIBUTES *attr);
+int sftp_reply_names(SFTP_CLIENT_MESSAGE *msg);
+void sftp_handle_remove(SFTP_SESSION *sftp, void *handle);
 
 /* SFTP commands and constants */
 #define SSH_FXP_INIT 1
@@ -224,6 +263,26 @@ int sftp_server_init(SFTP_SESSION *sftp);
 #define SSH_FXF_TRUNC 0x10
 #define SSH_FXF_EXCL 0x20
 #define SSH_FXF_TEXT 0x40
+
+#define SFTP_OPEN SSH_FXP_OPEN
+#define SFTP_CLOSE SSH_FXP_CLOSE
+#define SFTP_READ SSH_FXP_READ
+#define SFTP_WRITE SSH_FXP_WRITE
+#define SFTP_LSTAT SSH_FXP_LSTAT
+#define SFTP_FSTAT SSH_FXP_FSTAT
+#define SFTP_SETSTAT SSH_FXP_SETSTAT
+#define SFTP_FSETSTAT SSH_FXP_FSETSTAT
+#define SFTP_OPENDIR SSH_FXP_OPENDIR
+#define SFTP_READDIR SSH_FXP_READDIR
+#define SFTP_REMOVE SSH_FXP_REMOVE
+#define SFTP_MKDIR SSH_FXP_MKDIR
+#define SFTP_RMDIR SSH_FXP_RMDIR
+#define SFTP_REALPATH SSH_FXP_REALPATH
+#define SFTP_STAT SSH_FXP_STAT
+#define SFTP_RENAME SSH_FXP_RENAME
+#define SFTP_READLINK SSH_FXP_READLINK
+#define SFTP_SYMLINK SSH_FXP_SYMLINK
+
 
 #ifdef __cplusplus
 } ;
