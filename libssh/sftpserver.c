@@ -76,11 +76,11 @@ SFTP_CLIENT_MESSAGE *sftp_get_client_message(SFTP_SESSION *sftp){
             tmp=buffer_get_ssh_string(payload);
             msg->filename=string_to_char(tmp);
             free(tmp);
-#warning attributes
+            msg->attr=sftp_parse_attr(sftp, payload,0);
             break;
         case SSH_FXP_FSETSTAT:
             msg->handle=buffer_get_ssh_string(payload);
-#warning attributes
+            msg->attr=sftp_parse_attr(sftp, payload,0);
             break;
         case SSH_FXP_LSTAT:
         case SSH_FXP_STAT:
@@ -90,6 +90,12 @@ SFTP_CLIENT_MESSAGE *sftp_get_client_message(SFTP_SESSION *sftp){
             if(sftp->version >3)
                 buffer_get_u32(payload,&msg->flags);
             break;
+        case SSH_FXP_OPEN:
+            tmp=buffer_get_ssh_string(payload);
+            msg->filename=string_to_char(tmp);
+            free(tmp);
+            buffer_get_u32(payload,&msg->flags);
+            msg->attr=sftp_parse_attr(sftp, payload,0);
         case SSH_FXP_FSTAT:
             msg->handle=buffer_get_ssh_string(payload);
             buffer_get_u32(payload,&msg->flags);
@@ -198,6 +204,17 @@ int sftp_reply_status(SFTP_CLIENT_MESSAGE *msg, u32 status, char *message){
     return r<0;
 }
 
+int sftp_reply_data(SFTP_CLIENT_MESSAGE *msg, void *data, int len){
+    BUFFER *out=buffer_new();
+    int r;
+    buffer_add_u32(out,msg->id);
+    buffer_add_u32(out,ntohl(len));
+    buffer_add_data(out,data,len);
+    r=sftp_packet_write(msg->sftp,SSH_FXP_DATA,out);
+    buffer_free(out);
+    return r<0;
+}
+
 /* this function will return you a new handle to give the client.
  * the function accepts an info that can be retrieved later with
  * the handle. Care is given that a corrupted handle won't give a
@@ -233,6 +250,7 @@ void *sftp_handle(SFTP_SESSION *sftp, STRING *handle){
         return NULL;
     return sftp->handles[val];
 }
+
 void sftp_handle_remove(SFTP_SESSION *sftp, void *handle){
     int i;
     for(i=0;i<SFTP_HANDLES;++i){

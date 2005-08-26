@@ -168,7 +168,7 @@ SFTP_PACKET *sftp_packet_read(SFTP_SESSION *sftp);
 int sftp_packet_write(SFTP_SESSION *sftp,u8 type, BUFFER *payload);
 void sftp_packet_free(SFTP_PACKET *packet);
 void buffer_add_attributes(BUFFER *buffer, SFTP_ATTRIBUTES *attr);
-
+SFTP_ATTRIBUTES *sftp_parse_attr(SFTP_SESSION *session, BUFFER *buf,int expectname);
 /* sftpserver.c */
 
 SFTP_CLIENT_MESSAGE *sftp_get_client_message(SFTP_SESSION *sftp);
@@ -182,6 +182,7 @@ int sftp_reply_status(SFTP_CLIENT_MESSAGE *msg, u32 status, char *message);
 int sftp_reply_names_add(SFTP_CLIENT_MESSAGE *msg, char *file, char *longname,
                          SFTP_ATTRIBUTES *attr);
 int sftp_reply_names(SFTP_CLIENT_MESSAGE *msg);
+int sftp_reply_data(SFTP_CLIENT_MESSAGE *msg, void *data, int len);
 void sftp_handle_remove(SFTP_SESSION *sftp, void *handle);
 
 /* SFTP commands and constants */

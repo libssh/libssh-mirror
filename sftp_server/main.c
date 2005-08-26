@@ -31,6 +31,8 @@ MA 02111-1307, USA. */
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
 
 #define TYPE_DIR 1
 #define TYPE_FILE 1
@@ -100,10 +102,15 @@ SFTP_ATTRIBUTES *attr_from_stat(struct stat *statbuf){
     return attr;
 }
 
-int handle_lstat(SFTP_CLIENT_MESSAGE *msg){
+int handle_stat(SFTP_CLIENT_MESSAGE *msg,int follow){
     struct stat statbuf;
     SFTP_ATTRIBUTES *attr;
-    if(lstat(msg->filename,&statbuf)){
+    int ret;
+    if(follow)
+        ret=stat(msg->filename,&statbuf);
+    else 
+        ret=lstat(msg->filename,&statbuf);
+    if(ret<0){
         reply_status(msg);
         return 0;
     }
@@ -113,10 +120,80 @@ int handle_lstat(SFTP_CLIENT_MESSAGE *msg){
     return 0;
 }
 
+char *long_name(char *file, struct stat *statbuf){
+    static char buf[256];
+    char buf2[100];
+    int mode=statbuf->st_mode;
+    char *time,*ptr;
+    strcpy(buf,"");
+    switch(mode & S_IFMT){
+        case S_IFDIR:
+            strcat(buf,"d");
+            break;
+        default:
+            strcat(buf,"-");
+            break;
+    }
+    /* user */
+    if(mode & 0400)
+        strcat(buf,"r");
+    else
+        strcat(buf,"-");
+    if(mode & 0200)
+        strcat(buf,"w");
+    else
+        strcat(buf,"-");
+    if(mode & 0100){
+        if(mode & S_ISUID)
+            strcat(buf,"s");
+        else
+            strcat(buf,"x");
+    } else
+        strcat(buf,"-");
+    /*group*/
+    if(mode & 040)
+        strcat(buf,"r");
+    else
+        strcat(buf,"-");
+    if(mode & 020)
+        strcat(buf,"w");
+    else
+        strcat(buf,"-");
+    if(mode & 010)
+        strcat(buf,"x");
+    else
+        strcat(buf,"-");
+    /* other */
+    if(mode & 04)
+        strcat(buf,"r");
+    else
+        strcat(buf,"-");
+    if(mode & 02)
+        strcat(buf,"w");
+    else
+        strcat(buf,"-");
+    if(mode & 01)
+        strcat(buf,"x");
+    else
+        strcat(buf,"-");
+    strcat(buf," ");
+    snprintf(buf2,sizeof(buf2),"%3d %d %d %d",(int)statbuf->st_nlink,
+             (int)statbuf->st_uid,(int)statbuf->st_gid,(int)statbuf->st_size);
+    strcat(buf,buf2);
+    time=ctime(&statbuf->st_mtime)+4;
+    if((ptr=strchr(time,'\n')))
+        *ptr=0;
+    snprintf(buf2,sizeof(buf2)," %s %s",time,file);
+    // +4 to remove the "WED "
+    strcat(buf,buf2);
+    return buf;
+}
+
 int handle_readdir(SFTP_CLIENT_MESSAGE *msg){
     struct sftp_handle *handle=sftp_handle(msg->sftp,msg->handle);
     SFTP_ATTRIBUTES *attr;
     struct dirent *dir;
+    char *longname;
     struct stat statbuf;
     char file[1024];
     int i;
@@ -136,7 +213,8 @@ int handle_readdir(SFTP_CLIENT_MESSAGE *msg){
             memset(&statbuf,0,sizeof(statbuf));
         }
         attr=attr_from_stat(&statbuf);
-        sftp_reply_names_add(msg,dir->d_name,file,attr);
+        longname=long_name(dir->d_name,&statbuf);
+        sftp_reply_names_add(msg,dir->d_name,longname,attr);
         sftp_attributes_free(attr);
     }
     /* if there was at least one file, don't send the eof yet */
@@ -145,6 +223,36 @@ int handle_readdir(SFTP_CLIENT_MESSAGE *msg){
         return 0;
     }
     sftp_reply_names(msg);
+    return 0;
+}
+
+int handle_read(SFTP_CLIENT_MESSAGE *msg){
+    struct sftp_handle *handle=sftp_handle(msg->sftp,msg->handle);
+    u32 len=msg->len;
+    void *data;
+    int r;
+    if(!handle || handle->type!=TYPE_FILE){
+        sftp_reply_status(msg,SSH_FX_BAD_MESSAGE,"invalid handle");
+        return 0;
+    }
+    if(len>(2<<15)){
+        /* 32000 */
+        len=2<<15;
+    }
+    data=malloc(len);
+    fseeko(handle->file,msg->offset,SEEK_SET);
+    r=fread(data,1,len,handle->file);
+    ssh_say(2,"read %d bytes\n",r);
+    if(r<=0 && (len>0)){
+        if(feof(handle->file)){
+            sftp_reply_status(msg,SSH_FX_EOF,"End of file");
+        } else {
+            reply_status(msg);
+        }
+        return 0;
+    }
+    sftp_reply_data(msg,data,r);
+    free(data);
     return 0;
 }
 
@@ -167,6 +275,66 @@ int handle_close(SFTP_CLIENT_MESSAGE *msg){
     return 0;
 }
 
+int handle_open(SFTP_CLIENT_MESSAGE *msg){
+    int flags=0;
+    int fd;
+    FILE *file;
+    char *mode="r";
+    struct sftp_handle *hdl;
+    STRING *handle;
+    if(msg->flags & SSH_FXF_READ)
+        flags |= O_RDONLY;
+    if(msg->flags & SSH_FXF_WRITE)
+        flags |= O_WRONLY;
+    if(msg->flags & SSH_FXF_APPEND)
+        flags |= O_APPEND;
+    if(msg->flags & SSH_FXF_TRUNC)
+        flags |= O_TRUNC;
+    if(msg->flags & SSH_FXF_EXCL)
+        flags |= O_EXCL;
+    if(msg->flags & SSH_FXF_CREAT)
+        flags |= O_CREAT;
+    fd=open(msg->filename,flags,msg->attr->permissions);
+    if(fd<0){
+        reply_status(msg);
+        return 0;
+    }
+    switch(flags& (O_RDONLY | O_WRONLY | O_APPEND | O_TRUNC)){
+        case O_RDONLY:
+            mode="r";
+            break;
+        case (O_WRONLY|O_RDONLY):
+            mode="r+";
+            break;
+        case (O_WRONLY|O_TRUNC):
+            mode="w";
+            break;
+        case (O_WRONLY | O_RDONLY | O_APPEND):
+            mode="a+";
+            break;
+        default:
+            switch(flags & (O_RDONLY | O_WRONLY)){
+                case O_RDONLY:
+                    mode="r";
+                    break;
+                case O_WRONLY:
+                    mode="w";
+                    break;
+            }
+    }
+    file=fdopen(fd,mode);
+    hdl=malloc(sizeof(struct sftp_handle));
+    memset(hdl,0,sizeof(struct sftp_handle));
+    hdl->type=TYPE_FILE;
+    hdl->offset=0;
+    hdl->file=file;
+    hdl->name=strdup(msg->filename);
+    handle=sftp_handle_alloc(msg->sftp,hdl);
+    sftp_reply_handle(msg,handle);
+    free(handle);
+    return 0;
+}
+
 int sftploop(SSH_SESSION *session, SFTP_SESSION *sftp){
     SFTP_CLIENT_MESSAGE *msg;
     char buffer[PATH_MAX];
@@ -186,8 +354,9 @@ int sftploop(SSH_SESSION *session, SFTP_SESSION *sftp){
                 handle_opendir(msg);
                 break;
             case SFTP_LSTAT:
+            case SFTP_STAT:
                 ssh_say(1,"client stat(%s)\n",msg->filename);
-                handle_lstat(msg);
+                handle_stat(msg,msg->type==SFTP_STAT);
                 break;
             case SFTP_READDIR:
                 ssh_say(1,"client readdir\n");
@@ -197,6 +366,17 @@ int sftploop(SSH_SESSION *session, SFTP_SESSION *sftp){
                 ssh_say(1,"client close\n");
                 handle_close(msg);
                 break;
+            case SFTP_OPEN:
+                ssh_say(1,"client open(%s)\n",msg->filename);
+                handle_open(msg);
+                break;
+            case SFTP_READ:
+                ssh_say(1,"client read(off=%ld,len=%d)\n",msg->offset,msg->len);
+                handle_read(msg);
+                break;
+            default:
+                ssh_say(1,"Unknown message %d\n",msg->type);
+                sftp_reply_status(msg,SSH_FX_OP_UNSUPPORTED,"Unsupported message");
         }
         sftp_client_message_free(msg);
     } while (1);

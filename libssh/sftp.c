@@ -244,7 +244,7 @@ int sftp_init(SFTP_SESSION *sftp){
     if(ext_data_s)
         free(ext_data_s);
     sftp_packet_free(packet);
-    sftp->server_version=version;
+    sftp->version=sftp->server_version=version;
     return 0;
 }
 
@@ -643,7 +643,7 @@ void buffer_add_attributes(BUFFER *buffer, SFTP_ATTRIBUTES *attr){
 
     
 SFTP_ATTRIBUTES *sftp_parse_attr(SFTP_SESSION *session, BUFFER *buf,int expectname){
-    switch(session->server_version){
+    switch(session->version){
         case 4:
             return sftp_parse_attr_4(session,buf,expectname);
         case 3:
