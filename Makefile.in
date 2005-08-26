@@ -1,7 +1,7 @@
 SHELL = /bin/sh
 VPATH = @srcdir@
 
-subdirs = libssh/
+subdirs = libssh/ sftp_server/
 top_srcdir = @top_srcdir@
 srcdir = @srcdir@
 prefix = @prefix@
