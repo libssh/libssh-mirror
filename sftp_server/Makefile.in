@@ -1,0 +1,37 @@
+
+OBJECTS= main.o
+SHELL = /bin/sh
+VPATH = @srcdir@
+
+subdirs = @subdirs@
+top_srcdir = @top_srcdir@
+srcdir = @srcdir@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+bindir = $(exec_prefix)/bin
+incldir= $(prefix)/include
+infodir = $(prefix)/info
+libdir = $(prefix)/lib/
+mandir = $(prefix)/man/man1
+
+CC = @CC@
+CFLAGS = @CFLAGS@ -Wall -g -I../include/
+LDFLAGS = -L../libssh/ -lssh
+LIBS = @LIBS@
+INSTALL = @INSTALL@
+DYLIB_EXTENSION = @DYLIB_EXTENSION@
+LIBSSH_LDFLAGS = @LIBSSH_LDFLAGS@
+
+all: sftp_server
+
+sftp_server: $(OBJECTS) ../libssh/libssh.$(DYLIB_EXTENSION)
+	$(CC) -o sftp_server $(OBJECTS) $(LIBS) $(LDFLAGS)
+install: all
+	$(top_srcdir)/mkinstalldirs $(incldir)
+	$(top_srcdir)/mkinstalldirs $(libdir)
+	$(INSTALL) sftp_server  $(bindir)
+clean:
+	rm -f *~ sftp_server *.o
+distclean: clean
+	rm -f Makefile
+
