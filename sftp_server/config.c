@@ -32,7 +32,46 @@ char *rsa=NULL;
 
 list *groups;
 list *users;
+/* users is a list of users. The key of this list is the user name.
+ the data of the list is a list of groups. both data & key from this list
+ is the group name */
 struct group *current_group=NULL;
+char *current_group_name;
+int add_user(char *user){
+    list *groups_from_user;
+//    list *the_user;
+    printf("add_user(%s)\n",user);
+    if(!list_find(current_group->users,user)){
+        current_group->users=list_add(current_group->users,user,strdup(user));
+    }
+    groups_from_user=list_find(users,user);
+    if(!groups_from_user){
+        // the user isn't registered yet
+        groups_from_user=list_add(NULL,current_group_name,current_group_name);
+        users=list_add(users,user,groups_from_user);
+    } else {
+    // add the group name to the list of groups the user is bound to.
+        if(!list_find(groups_from_user,current_group_name)) // don't add it if it is already set
+            list_set(users,user,list_add(groups_from_user,current_group_name,current_group_name));
+    }
+    return 0;
+}
+
+int add_group(char *group){
+    struct group *grp=list_find(groups,group);
+    list *usr;
+    if(!grp){
+        printf("no such group %s\n",group);
+        return -1;
+    }
+    usr=grp->users;
+    while(usr){
+        add_user(usr->key);
+        usr=usr->next;
+    }
+    return 0;
+}
+
 int group_callback(const char *shortvar, const char *var, const char *arguments, const char *value, lc_flags_t flags, void *extra){
     switch(flags){
         case LC_FLAGS_SECTIONSTART:
@@ -48,6 +87,7 @@ int group_callback(const char *shortvar, const char *var, const char *arguments,
             current_group=malloc(sizeof(struct group));
             memset(current_group,0,sizeof(struct group));
             groups=list_add(groups,arguments,current_group);
+            current_group_name=strdup(arguments);
             break;
         case LC_FLAGS_SECTIONEND:
             printf("end of group\n\n");
@@ -55,6 +95,45 @@ int group_callback(const char *shortvar, const char *var, const char *arguments,
             break;
         default:
             printf("%s - %s\n", shortvar, value);
+            if(!strcasecmp(shortvar,"user")){
+                char *ptr;
+                char *user=(char *)value;
+                do{
+                    ptr=strchr(user,',');
+                    if(ptr){
+                        *ptr=0;
+                        ++ptr;
+                    }
+                    while(*user==' ')
+                        ++user;
+                    add_user(user);
+                    user=ptr;
+                } while (user);
+            }
+            if(!strcasecmp(shortvar,"group")){
+                char *ptr;
+                char *group=(char *)value;
+                do{
+                    ptr=strchr(group,',');
+                    if(ptr){
+                        *ptr=0;
+                        ++ptr;
+                    }
+                    while(*group==' ')
+                        ++group;
+                    add_group(group);
+                    group=ptr;
+                } while (group);
+            }
+            if(!strcasecmp(shortvar,"uid")){
+                current_group->uid=strdup(value);
+            }
+            if(!strcasecmp(shortvar,"gid")){
+                current_group->gid=strdup(value);
+            }
+            if(!strcasecmp(shortvar,"chroot")){
+                current_group->chroot=strdup(value);
+            }
     }
     return LC_CBRET_OKAY;
 }
@@ -71,6 +150,32 @@ int dir_callback(const char *shortvar, const char *var, const char *arguments, c
             printf("%s - %s\n",shortvar, value);
     }
     return LC_CBRET_OKAY;
+}
+
+void list_config(){
+    list *ptr=groups;
+    list *user;
+    printf("listing groups\n");
+    while(ptr){
+        printf("group %s\n",ptr->key);
+        user=((struct group *)ptr->data)->users;
+        while(user){
+            printf("  user %s\n",user->key);
+            user=user->next;
+        }
+        ptr=ptr->next;
+    }
+    printf("listing users\n");
+    user=users;
+    while(user){
+        printf("user %s\n",user->key);
+        ptr=user->data;
+        while(ptr){
+            printf("  group %s\n",ptr->key);
+            ptr=ptr->next;
+        }
+        user=user->next;
+    }
 }
 
 int parse_config(char *file){
@@ -96,5 +201,6 @@ int parse_config(char *file){
     if(r<0)
         printf("lc_process_file=%d,%s\n",r,lc_geterrstr());
     lc_cleanup();
+    list_config();
     return 0;
 }

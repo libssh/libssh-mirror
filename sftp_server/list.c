@@ -38,3 +38,13 @@ void *list_find(list *ptr, const char *key){
     }
     return NULL;
 }
+
+void list_set(list *ptr, const char *key, void *data){
+    while(ptr){
+        if(!strcmp(key,ptr->key)){
+            ptr->data=data;
+            return;
+        }
+        ptr=ptr->next;
+    }
+}

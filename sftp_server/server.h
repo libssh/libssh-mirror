@@ -10,9 +10,11 @@ typedef struct list_struct {
 
 list *list_add(list *ptr, const char *key, void *data);
 void *list_find(list *ptr, const char *key);
+void list_set(list *ptr, const char *key, void *data);
+
 struct group {
     list *users;
     char *chroot;
-    int uid;
-    int gid;
+    char *uid;
+    char *gid;
 };
