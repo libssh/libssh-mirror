@@ -1,0 +1,154 @@
+.TH LC_REGISTER_VAR 3 "25 Oct 04" "libconfig 0.1.16"
+.SH NAME
+lc_register_var \- Register a variable for automatic processing.
+
+.SH SYNOPSIS
+.B #include <libconfig.h>
+.sp
+.BI "int lc_register_var(const char *" var ", lc_var_type_t " type ", void *" data ", char " opt ");"
+
+.SH DESCRIPTION
+The
+.BR lc_register_var (3)
+function registers a variable for automatic processing.
+The
+.IR var
+parameter specifies the variable name for processing.  This name can exist in a configuration file, an environment variable, or on the command line.
+The
+.IR opt
+parameter specifies the single letter short option that can be specified on the command line to change the value of the variable specified by the
+.IR data
+parameter.  A value of '\0' can be specified for no short option.
+
+The
+.IR type 
+parameter is of type
+.IR lc_var_type_t
+which specifies the type of the
+.IR data
+parameter.
+Valid values for
+.IR type
+are:
+.TP
+LC_VAR_STRING
+For a string type variable.  The data passed should be of type "char **".  The data will be set to a region of memory that has been allocated with malloc() and can be released be free()'d.
+.TP
+LC_VAR_LONG_LONG
+For a "long long" integer type variable.  The data passed should be of type "long long *".
+.TP
+LC_VAR_LONG
+For a "long" integer type variable.  The data passed should be of type "long *".
+.TP
+LC_VAR_INT
+For a "int" integer type variable.  The data passed should be of type "int *".
+.TP
+LC_VAR_SHORT
+For a "short" integer type variable.  The data passed should be of type "short *".
+.TP
+LC_VAR_BOOL
+For a boolean type variable.  The data passed should be of type "int *".  When a true value is specified the variable is set to 1.  When a false value is specified the variable is set to 0.  Any other value sets the variable to -1.  Valid true values are: enable, true, yes, on, y, and 1.  Valid false values are: disable, false, off, no, n, and 0.
+.TP
+LC_VAR_FILENAME
+Not implemented.
+.TP
+LC_VAR_DIRECTORY
+Not implemented.
+.TP
+LC_VAR_SIZE_LONG_LONG
+For a "long long" integer type that can have size modifiers, such as 'G' or gigabytes, 'M' for megabytes, 'K' for kilobytes.  The data passed should be of type "long long *".
+.TP
+LC_VAR_SIZE_LONG
+For a "long" integer type that can have size modifiers, such as 'G' or gigabytes, 'M' for megabytes, 'K' for kilobytes.  The data passed should be of type "long *".
+.TP
+LC_VAR_SIZE_INT
+For a "int" integer type that can have size modifiers, such as 'G' or gigabytes, 'M' for megabytes, 'K' for kilobytes.  The data passed should be of type "int *".
+.TP
+LC_VAR_SIZE_SHORT
+For a "short" integer type that can have size modifiers, such as 'G' or gigabytes, 'M' for megabytes, 'K' for kilobytes.  The data passed should be of type "short *".
+.TP
+LC_VAR_SIZE_SIZE_T
+For a "size_t" data type that can have size modifiers, such as 'G' or gigabytes, 'M' for megabytes, 'K' for kilobytes.  The data passed should be of type "size_t *".
+.TP
+LC_VAR_TIME
+Not implemented.
+.TP
+LC_VAR_DATE
+Not implemented.
+.TP
+LC_VAR_BOOL_BY_EXISTANCE
+This type of variable takes no arguments, it is set to true (1) by its existance in a configuration file, environment variable, or on the command line.  If it is not specified, the value of the data passed is not changed.  The data passed should be of type "int *".
+.TP
+LC_VAR_CIDR
+This type of variable accepts a CIDR format netmask and IP.  This is not yet implemented. (XXX)
+.TP
+LC_VAR_IP
+This type of variable accepts an IP address in decimal-dot format.  The value is stored in a uint32_t.
+.TP
+LC_VAR_ADDR
+This type of variable accepts an address in either host or decimal-dot format.  The value is stored in a uint32_t.  This is not yet implemented. (XXX)
+
+.SH "RETURN VALUE"
+On success 0 is returned, otherwise -1 is returned.
+
+.SH EXAMPLE
+.nf
+#include <libconfig.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+int main(int argc, char **argv) {
+	int lc_p_ret, lc_rv_ret;
+	char *filename = NULL;
+	long int counter = -1;
+
+	lc_rv_ret = lc_register_var("Begin", LC_VAR_LONG,
+	                            &counter, 'c');
+	if (lc_rv_ret != 0) {
+		fprintf(stderr, "Error registering variable: %i.\\n",
+		        lc_geterrno());
+		return(EXIT_FAILURE);
+	}
+
+	lc_rv_ret = lc_register_var("File", LC_VAR_STRING,
+	                            &filename, 'f');
+	if (lc_rv_ret != 0) {
+		fprintf(stderr, "Error registering variable: %i.\\n",
+		        lc_geterrno());
+		return(EXIT_FAILURE);
+	}
+
+	lc_p_ret = lc_process(argc, argv, "example", LC_CONF_APACHE,
+	                      NULL);
+
+	lc_cleanup();
+
+	if (lc_p_ret != 0) {
+		fprintf(stderr, "Error processing configuration: \\
+		        %s\\n", lc_geterrstr());
+		return(EXIT_FAILURE);
+	}
+
+	if (filename != NULL) {
+		printf("File specified was: %s\\n", filename);
+	} else {
+		printf("No filename specified.\\n");
+	}
+
+	if (counter != -1) {
+		printf("Counter was specified as: %ld\\n", counter);
+	} else {
+		printf("Counter was not specified.\\n");
+	}
+
+	return(EXIT_SUCCESS);
+}
+.fi
+
+.SH "SEE ALSO"
+.BR lc_register_callback (3),
+.BR lc_geterrno (3),
+.BR lc_geterrstr (3),
+.BR lc_cleanup (3),
+.BR lc_process_file (3),
+.BR lc_process (3)

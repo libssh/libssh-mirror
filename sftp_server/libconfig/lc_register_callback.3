@@ -1,0 +1,233 @@
+.TH LC_REGISTER_CALLBACK 3 "25 Oct 04" "libconfig 0.1.16"
+.SH NAME
+lc_register_callback \- Register a function for callback in config processing.
+
+.SH SYNOPSIS
+.B #include <libconfig.h>
+.sp
+.BI "int lc_register_callback(const char *" var ", char " opt ", lc_var_type_t " type ", int (*" callback ")(const char *, const char *, const char *, const char *, lc_flags_t, void *), void *" extra ");"
+
+.SH DESCRIPTION
+The
+.BR lc_register_callback (3)
+function registers a function to be called when
+.IR var
+is encounted in a configuration file, command line, or environment variable.
+The parameters are as follows:
+.TP
+.IR "const char *var"
+.RS
+The
+.IR var
+parameter indicates the name of the variable to register for a callback when encountered in a configuration file, the environment, or as a long option.  The
+.IR var
+may be prefixed with "*." to indicate that the object can occur in any section or subsection.
+.RE
+
+.TP
+.IR "const char opt"
+.RS
+The
+.IR opt
+parameter indicates the single charectar short option to use from the command line to invoke the register callback.  A value of 0 indicates that no short option is acceptable.
+.RE
+
+.TP
+.IR "lc_var_type_t type"
+.RS
+The
+.IR type
+parameter indicates the type of values that are acceptable for this callback.  A value of LC_VAR_NONE means that the command will accept no arguments, while a value of LC_VAR_UNKNOWN indicates that it's not known whether or not an argument is applicable, this will also disable command line processing.  Any other value is currently ignored.
+.RE
+
+.TP
+.IR "int (*callback)(...)"
+.RS
+The
+.IR callback
+parameter indicates the name of the function to invoke when the above parameters are met.  The specified function should take 6 parameters, see below for more information.  This value may not be NULL.
+.RE
+
+.TP
+.IR "void *extra"
+.RS
+The
+.IR extra
+parameter is a pointer that can be used to pass data to the callback upon invocation, it will not be mangled or examined by any function.
+.RE
+
+The arguments to the function specified as
+.IR callback
+are as follows:
+.TP
+.I "const char *shortvar"
+.RS
+The
+.I shortvar
+parameter is the local variable name, provided as a convience.  It is the portion of the variable name after the first "dot" (.) in the fully qualified variable name.  The "dot" (.) value in the fully qualified variable name indicates a section or subsection that the variable belongs to.
+This may be
+.B NULL
+if the
+.IR var
+parameter to
+.BR lc_register_callback (3)
+was
+.B NULL
+too.
+.RE
+.TP
+.I "const char *var"
+.RS
+The
+.I var
+parameter is the fully qualified variable name.  It includes in the prefix any sections and subsections that contain this variable.
+This may be
+.B NULL
+if the
+.IR var
+parameter to
+.BR lc_register_callback (3)
+was
+.B NULL
+too.
+.RE
+.TP
+.I "const char *arguments"
+.RS
+The
+.I arguments
+parameter provides the arguments passed to the variable, currently only sections may have arguments.
+This may be
+.B NULL
+if there were no arguments specified, or if arguments were not applicable.
+.RE
+.TP
+.I "const char *value"
+.RS
+The
+.I value
+parameter provides the value of the variable specified.
+This may be
+.B NULL
+if no value was specified.  Values are required if the
+.IR type
+parameter to
+.BR lc_register_callback (3)
+was not specified as one of LC_VAR_NONE, LC_VAR_SECTION, LC_VAR_SECTIONSTART, or LC_VAR_SECTIONEND.
+.RE
+.TP
+.I "lc_flags_t flags"
+.RS
+The flags parameter provides information about the type of command being called.  The valid values are:
+.IP LC_FLAGS_VAR
+To indicate a regular variable in a configuration file.
+.IP LC_FLAGS_CMDLINE
+To indicate a command line option has been used to invoke this option.
+.IP LC_FLAGS_SECTIONSTART
+To indicate that this command represents the beginning of a section.
+.IP LC_FLAGS_SECTIONEND
+To indicate that this command represents the end of a section.
+.RE
+.TP
+.I "void *extra"
+.RS
+The
+.I extra
+parameter is just a copy of the
+.IR extra
+parameter passed to
+.BR lc_register_callback (3)
+when the callback was registered.
+.RE
+
+The
+.IR callback
+function should return one of three values:
+.TP
+LC_CBRET_IGNORESECTION
+Returning LC_CBRET_IGNORESECTION from a callback that begins a section causes the entire section to be ignored without generating an error.
+.TP
+LC_CBRET_OKAY
+Returning LC_CBRET_OKAY from a callback indicates that all went well and further processing may continue.
+.TP
+LC_CBRET_ERROR
+Returnning LC_CBRET_ERROR from a callback indicates that the command failed for some reason, the error will be passed back down the chain back to the
+.BR lc_process (3)
+call that began processing the configuration data.  If LC_CBRET_ERROR is returned from a callback that begins a section, the entire section is ignored.
+
+
+.SH "RETURN VALUE"
+On success 0 is returned, otherwise -1 is returned.
+
+.SH EXAMPLE
+.nf
+#include <libconfig.h>
+#include <strings.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+int callback_ifmodule(const char *shortvar, const char *var,
+                      const char *arguments, const char *value,
+                      lc_flags_t flags, void *extra) {
+	if (flags == LC_FLAGS_SECTIONEND) {
+		return(LC_CBRET_OKAY);
+	}
+
+	if (flags != LC_FLAGS_SECTIONSTART) {
+		fprintf(stderr, "IfModule can only be used as a \\
+		        section.\\n");
+		return(LC_CBRET_ERROR);
+	}
+	if (arguments == NULL) {
+		fprintf(stderr, "You must specify an argument to \\
+		        IfModule.\\n");
+		return(LC_CBRET_ERROR);
+	}
+
+	printf("IfModule %s\\n", arguments);
+
+	if (strcasecmp(arguments, "MyModule") == 0) {
+		return(LC_CBRET_IGNORESECTION);
+	}
+
+	return(LC_CBRET_OKAY);
+}
+
+int main(int argc, char **argv) {
+	int lc_rc_ret = 0, lc_p_ret;
+
+	lc_rc_ret = lc_register_callback("*.IfModule", 0, LC_VAR_NONE,
+	                                 callback_ifmodule, NULL);
+
+	if (lc_rc_ret != 0) {
+		fprintf(stderr, "Error registering callback.\\n");
+		return(EXIT_FAILURE);
+	}
+
+	lc_p_ret = lc_process(argc, argv, "example", LC_CONF_APACHE,
+	                      NULL);
+
+	lc_cleanup();
+
+	if (lc_p_ret != 0) {
+		fprintf(stderr, "Error processing configuration: \\
+		        %s\\n", lc_geterrstr());
+		return(EXIT_FAILURE);
+	}
+
+	return(EXIT_SUCCESS);
+}
+.fi
+
+.SH ERRORS
+.TP
+.B ENOMEM
+Memory could not be allocated to create the needed internal structures.
+
+.SH "SEE ALSO"
+.BR lc_register_var (3),
+.BR lc_geterrno (3),
+.BR lc_geterrstr (3),
+.BR lc_cleanup (3),
+.BR lc_process_file (3),
+.BR lc_process (3)

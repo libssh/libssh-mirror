@@ -1,7 +1,7 @@
-/* sshd.c */
-/* yet another ssh daemon (Yawn!) */
+/* main.c */
+/* Core of the sftp server */
 /*
-Copyright 2004 Aris Adamantiadis
+Copyright 2005 Aris Adamantiadis
 
 This file is part of the SSH Library
 
@@ -33,6 +33,7 @@ MA 02111-1307, USA. */
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include "server.h"
 
 #define TYPE_DIR 1
 #define TYPE_FILE 1
@@ -201,7 +202,7 @@ int handle_readdir(SFTP_CLIENT_MESSAGE *msg){
         sftp_reply_status(msg,SSH_FX_BAD_MESSAGE,"invalid handle");
         return 0;
     }
-    for(i=0; !handle->eof && i<10;++i){
+    for(i=0; !handle->eof && i<50;++i){
         dir=readdir(handle->dir);
         if(!dir){
             handle->eof=1;
@@ -472,6 +473,7 @@ int main(int argc, char **argv){
     CHANNEL *chan=NULL;
     SFTP_SESSION *sftp=NULL;
     ssh_options_getopt(options,&argc,argv);
+    parse_config("sftp.conf");
     ssh_options_set_dsa_server_key(options,"/etc/ssh/ssh_host_dsa_key");
     ssh_options_set_rsa_server_key(options,"/etc/ssh/ssh_host_rsa_key");
     ssh_bind=ssh_bind_new();

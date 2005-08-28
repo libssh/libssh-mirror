@@ -1,0 +1,27 @@
+                                libconfig 0.1.16
+
+Release information:
+  pkg:  libconfig version 0.1.16
+  url:  http://www.rkeene.org/files/oss/libconfig/devel/libconfig-0.1.16.tar.gz
+  web:  http://www.rkeene.org/oss/libconfig/
+  date: Sat Dec 25 19:55:24 CST 2004
+  mail: libconfig@rkeene.org
+--------------------------------------------------------------------------
+
+Libconfig uses GNU autoconf configure scripts to build and should build on
+almost any platform.
+
+Building it should be as easy as:
+	$ ./configure
+	$ make
+	$ make install
+
+(note that `make' must not be BSD make, all other makes work fine.)
+
+
+OPTIONAL DEPENDENCIES:
+	* libopennet (http://www.rkeene.org/oss/libopennet/)
+	  Libopennet allows URLs to be opened as easily as files, if it is
+	  available (and the --without-libopennet argument isn't passed to
+	  the `configure' script) libconfig will be able to process config
+	  files that are passed as URLs.
