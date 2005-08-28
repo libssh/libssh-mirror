@@ -33,7 +33,11 @@ MA 02111-1307, USA. */
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <security/pam_appl.h>
+
 #include "server.h"
+
+#define SERVICE "sftp"
 
 #define TYPE_DIR 1
 #define TYPE_FILE 1
@@ -46,12 +50,61 @@ struct sftp_handle {
     FILE *file;
 };
 
+char *user_password;
+int password_conv(int num_msg, const struct pam_message **msg,
+                  struct pam_response **resp, void *appdata)
+{
+    int i=0;
+    for(i=0;i<num_msg;++i){
+        resp[i]=malloc(sizeof (struct pam_response));
+        resp[i]->resp_retcode=0;
+        switch(msg[i]->msg_style){
+            case PAM_PROMPT_ECHO_ON:
+                //printf("PAM: %s",msg[i]->msg);
+                resp[i]->resp=strdup(user_password);
+                break;
+            case PAM_PROMPT_ECHO_OFF:
+                //printf("PAM: %s",msg[i]->msg);
+                resp[i]->resp=strdup(user_password);
+                break;
+            case PAM_ERROR_MSG:
+                //printf("PAM_ERROR: %s",msg[i]->msg);
+                break;
+            case PAM_TEXT_INFO:
+                //printf("PAM TEXT: %s",msg[i]->msg);
+                break;
+            default:
+                break;
+        }
+    }
+    return PAM_SUCCESS;
+}
+
+
+struct pam_conv pam_conv ={ password_conv, NULL };
+/* returns 1 if authenticated, 0 if failed,
+ -1 if you must leave */
 int auth_password(char *user, char *password){
-    if(strcmp(user,"aris"))
+    pam_handle_t *pamh;
+    int ret;
+    static int tries=0;
+    if(tries>3)
+        return -1;
+    tries++;
+    user_password=password;
+    ret=pam_start(SERVICE,user,&pam_conv,&pamh);
+    if(ret==PAM_SUCCESS)
+        ret=pam_authenticate(pamh,0);
+    if(ret==PAM_SUCCESS)
+        ret=pam_acct_mgmt(pamh,0);
+    memset(password,0,strlen(password));
+    if(ret==PAM_SUCCESS){
+        pam_end(pamh,PAM_SUCCESS);
+        return 1;
+    } else {
+        pam_end(pamh,PAM_AUTH_ERR);
         return 0;
-    if(strcmp(password,"lala"))
-        return 0;
-    return 1; // authenticated 
+    }
 }
 
 int reply_status(SFTP_CLIENT_MESSAGE *msg){
@@ -388,7 +441,7 @@ int sftploop(SSH_SESSION *session, SFTP_SESSION *sftp){
 
 int do_auth(SSH_SESSION *session){
     SSH_MESSAGE *message;
-    int auth=0;
+    int auth=-1;
     do {
         message=ssh_message_get(session);
         if(!message)
@@ -397,20 +450,31 @@ int do_auth(SSH_SESSION *session){
             case SSH_AUTH_REQUEST:
                 switch(ssh_message_subtype(message)){
                     case SSH_AUTH_PASSWORD:
-                        printf("User %s wants to auth with pass %s\n",
-                               ssh_message_auth_user(message),
-                               ssh_message_auth_password(message));
-                        if(auth_password(ssh_message_auth_user(message),
-                           ssh_message_auth_password(message))){
-                               auth=1;
-                               ssh_message_auth_reply_success(message,0);
-                               break;
-                           }
+                        ssh_say(1,"User %s wants to auth by password\n",
+                               ssh_message_auth_user(message));
+                        auth=auth_password(ssh_message_auth_user(message),
+                                           ssh_message_auth_password(message));
+                        switch(auth){
+                            case 1:
+                                ssh_say(1,"Authentication success\n");
+                                ssh_message_auth_reply_success(message,0);
+                                break;
+                            case -1:
+                                ssh_say(1,"Too much tries\n");
+                                // too much auth tried
+                                ssh_disconnect(session);
+                                exit(1);
+                            case 0:
+                                ssh_say(1,"Auth refused\n");
+                                break;
+                        }
+                        if(auth==1)
+                            break;
                         // not authenticated, send default message
                     case SSH_AUTH_NONE:
-                        ssh_message_auth_reply_success(message,0);
-                        auth=1;
-                        break;
+                        //ssh_message_auth_reply_success(message,0);
+                        //auth=1;
+                        //break;
                     default:
                         ssh_message_auth_set_methods(message,SSH_AUTH_PASSWORD);
                         ssh_message_reply_default(message);
@@ -421,7 +485,7 @@ int do_auth(SSH_SESSION *session){
                 ssh_message_reply_default(message);
         }
         ssh_message_free(message);
-    } while (!auth);
+    } while (auth!=1);
     return auth;
 }
 
@@ -492,7 +556,7 @@ int main(int argc, char **argv){
         printf("ssh_accept : %s\n",ssh_get_error(session));
         return 1;
     }
-    if(do_auth(session)<=0){
+    if(do_auth(session)<0){
         printf("error : %s\n",ssh_get_error(session));
         return 1;
     }

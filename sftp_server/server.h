@@ -18,3 +18,12 @@ struct group {
     char *uid;
     char *gid;
 };
+
+struct dir {
+    char *name;
+    list *subdir;
+    list *List;
+    list *Read;
+    list *Write;
+};
+

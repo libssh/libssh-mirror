@@ -14,9 +14,9 @@ libdir = $(prefix)/lib/
 mandir = $(prefix)/man/man1
 
 CC = gcc
-CFLAGS = -g -O2 -Wall -g -I../include/ -Ilibconfig/
+CFLAGS =  -Wall -g -I../include/ -Ilibconfig/
 LDFLAGS = -L../libssh/ -lssh -Llibconfig/
-LIBS = -lz -lcrypto  -lconfig
+LIBS = -lz -lcrypto  -lconfig -lpam -lcrypto
 INSTALL = /usr/bin/install -c
 DYLIB_EXTENSION = so
 LIBSSH_LDFLAGS = -shared

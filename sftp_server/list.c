@@ -22,6 +22,8 @@ MA 02111-1307, USA. */
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdlib.h>
+
 list *list_add(list *ptr, const char *key, void *data){
     list *new=malloc(sizeof(list));
     new->next=ptr;

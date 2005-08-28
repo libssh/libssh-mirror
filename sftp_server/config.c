@@ -23,6 +23,7 @@ MA 02111-1307, USA. */
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
+#include <stdlib.h>
 #include "server.h"
 /* shortvar is "port" in "port 22" */
 
@@ -32,6 +33,7 @@ char *rsa=NULL;
 
 list *groups;
 list *users;
+struct dir *root_dir=NULL;
 /* users is a list of users. The key of this list is the user name.
  the data of the list is a list of groups. both data & key from this list
  is the group name */
@@ -137,17 +139,47 @@ int group_callback(const char *shortvar, const char *var, const char *arguments,
     }
     return LC_CBRET_OKAY;
 }
+struct dir *create_directory(const char *directory);
+struct dir *current_dir=NULL;
+int append_groups(list **plist, const char *groups){
+    char *begin=strdup(groups);
+    char *ptr;
+    char *grp=begin;
+    do{
+        ptr=strchr(grp,',');
+        if(ptr){
+            *ptr=0;
+            ++ptr;
+        }
+        while(*grp==' ')
+            ++grp;
+        if(!list_find(*plist,grp))
+            *plist=list_add(*plist,grp,strdup(grp));
+        grp=ptr;
+    } while (grp);
+    return 0;
+}
 
 int dir_callback(const char *shortvar, const char *var, const char *arguments, const char *value, lc_flags_t flags, void *extra){
     switch(flags){
         case LC_FLAGS_SECTIONSTART:
-            printf("new dir %s\n",arguments);
+            if(current_dir){
+                printf("Cannot define a directory into a directory !\n");
+                return LC_CBRET_ERROR;
+            }
+            current_dir=create_directory(arguments);
             break;
         case LC_FLAGS_SECTIONEND:
-            printf("end of dir\n\n");
+            current_dir=NULL;
             break;
         default:
-            printf("%s - %s\n",shortvar, value);
+            if(!strcasecmp(shortvar,"list"))
+                append_groups(&current_dir->List,value);
+            if(!strcasecmp(shortvar,"read"))
+                append_groups(&current_dir->Read,value);
+            if(!strcasecmp(shortvar,"write"))
+                append_groups(&current_dir->Write,value);
+//            printf("%s - %s\n",shortvar, value);
     }
     return LC_CBRET_OKAY;
 }
@@ -176,6 +208,61 @@ void list_config(){
         }
         user=user->next;
     }
+}
+
+char **cut_directory(const char *dir){
+    char *tmp=strdup(dir);
+    char *ptr;
+    char *ret[128];
+    char **answer;
+    int i=0;
+    while(tmp && *tmp && i<128){
+        while(*tmp=='/')
+            ++tmp;
+        ptr=strchr(tmp,'/');
+        if(ptr){
+            *ptr=0;
+            ++ptr;
+        }
+        ret[i]=strdup(tmp);
+        tmp=ptr;
+        i++;
+    }
+    answer=malloc((i+1)*sizeof(char *));
+    memcpy(answer,ret,sizeof(char *)*i);
+    answer[i]=NULL;
+    return answer;
+}
+
+struct dir *dir_new(){
+    struct dir *dir=malloc(sizeof(struct dir));
+    memset(dir,0,sizeof(*dir));
+    return dir;
+}
+/* it doesn't really create the directory. it makes the tree to the directory
+ * and returns a link to the last node */
+struct dir *create_directory(const char *directory){
+    char **tokens=cut_directory(directory);
+    int i=0;
+    struct dir *dir,*ptr;
+    if(!root_dir){
+        root_dir=dir_new();
+        root_dir->name="";
+    }
+    dir=root_dir;
+    for(i=0;tokens[i];++i){
+        ptr=list_find(dir->subdir,tokens[i]);
+        if(!ptr){
+            ptr=dir_new();
+            ptr->name=strdup(tokens[i]);
+            dir->subdir=list_add(dir->subdir,tokens[i],ptr);
+        }
+        dir=ptr;
+    }
+    for(i=0;tokens[i];++i)
+        free(tokens[i]);
+    free(tokens);
+    return dir;
 }
 
 int parse_config(char *file){

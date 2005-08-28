@@ -13,7 +13,7 @@ libdir = $(prefix)/lib/
 mandir = $(prefix)/man/man1
 
 CC = @CC@
-CFLAGS = @CFLAGS@ -Iinclude/ -Wall -g
+CFLAGS = @CFLAGS@ -Iinclude/ -Wall 
 LDFLAGS = @LDFLAGS@ 
 LIBS = -lssh -Llibssh/
 INSTALL = @INSTALL@
