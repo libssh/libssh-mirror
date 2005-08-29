@@ -247,6 +247,28 @@ int handle_read(SFTP_CLIENT_MESSAGE *msg){
     return 0;
 }
 
+int handle_write(SFTP_CLIENT_MESSAGE *msg){
+    struct sftp_handle *handle=sftp_handle(msg->sftp,msg->handle);
+    u32 len=string_len(msg->data);
+    int r;
+    if(!handle || handle->type!=TYPE_FILE){
+        sftp_reply_status(msg,SSH_FX_BAD_MESSAGE,"invalid handle");
+        return 0;
+    }
+    fseeko(handle->file,msg->offset,SEEK_SET);
+    do {
+        r=fwrite(string_data(msg->data),1,len,handle->file);
+        ssh_say(2,"wrote %d bytes\n",r);
+        if(r<=0 && (msg->data>0)){
+            reply_status(msg);
+        return 0;
+        }
+        len-=r;
+    } while (len>0);
+    sftp_reply_status(msg,SSH_FX_OK,"");
+    return 0;
+}
+
 int handle_close(SFTP_CLIENT_MESSAGE *msg){
     struct sftp_handle *handle=sftp_handle(msg->sftp,msg->handle);
     if(!handle){
@@ -362,9 +384,22 @@ int sftploop(SSH_SESSION *session, SFTP_SESSION *sftp){
                 handle_open(msg);
                 break;
             case SFTP_READ:
-                ssh_say(1,"client read(off=%ld,len=%d)\n",msg->offset,msg->len);
+                ssh_say(1,"client read(off=%lld,len=%d)\n",msg->offset,msg->len);
                 handle_read(msg);
                 break;
+            case SFTP_WRITE:
+                ssh_say(1,"client write(off=%lld len=%d)\n)\n",msg->offset,string_len(msg->data));
+                handle_write(msg);
+                break;
+            case SFTP_SETSTAT:
+            case SFTP_FSETSTAT:
+            case SFTP_REMOVE:
+            case SFTP_MKDIR:
+            case SFTP_RMDIR:
+            case SFTP_FSTAT:
+            case SFTP_RENAME:
+            case SFTP_READLINK:
+            case SFTP_SYMLINK:
             default:
                 ssh_say(1,"Unknown message %d\n",msg->type);
                 sftp_reply_status(msg,SSH_FX_OP_UNSUPPORTED,"Unsupported message");

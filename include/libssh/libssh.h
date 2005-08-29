@@ -134,6 +134,7 @@ char *string_to_char(STRING *str);
 STRING *string_copy(STRING *str);
 /* burns the data inside a string */
 void string_burn(STRING *str);
+void *string_data(STRING *str);
 
 /* deprecated */
 void ssh_crypto_init();

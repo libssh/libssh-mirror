@@ -68,3 +68,6 @@ void string_burn(STRING *s){
     memset(s->string,'X',string_len(s));
 }
 
+void *string_data(STRING *s){
+    return s->string;
+}
