@@ -45,6 +45,7 @@ SSH_OPTIONS *ssh_options_new(){
 
 void ssh_options_set_port(SSH_OPTIONS *opt, unsigned int port){
     opt->port=port&0xffff;
+    opt->bindport=port&0xffff;
 }
 SSH_OPTIONS *ssh_options_copy(SSH_OPTIONS *opt){
     SSH_OPTIONS *ret=ssh_options_new();    
@@ -391,7 +392,7 @@ int ssh_options_getopt(SSH_OPTIONS *options, int *argcptr, char **argv){
     if(cont && localaddr)
         ssh_options_set_bind(options,localaddr,0);
     ssh_options_set_port(options,port);
-    options->bindport=port;
+    //options->bindport=port;
     ssh_options_allow_ssh1(options,ssh1);
     ssh_options_allow_ssh2(options,ssh2);
         

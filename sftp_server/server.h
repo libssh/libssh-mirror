@@ -24,7 +24,10 @@ typedef struct list_struct {
 list *list_add(list *ptr, const char *key, void *data);
 void *list_find(list *ptr, const char *key);
 void list_set(list *ptr, const char *key, void *data);
-
+/* config.c */
+extern int port;
+extern char *dsa;
+extern char *rsa;
 struct group {
     list *users;
     char *chroot;

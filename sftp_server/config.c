@@ -292,7 +292,7 @@ int parse_config(char *file){
         printf("lc_process_file=%d,%s\n",r,lc_geterrstr());
     lc_cleanup();
     //list_config();
-    return 0;
+    return r<0;
 }
 
 list *find_groups(char *user){

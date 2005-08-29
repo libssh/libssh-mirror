@@ -24,17 +24,21 @@ LIBSSH_LDFLAGS = -shared
 
 all: sftp_server
 
-main.o: server.h
-list.o: server.h
-config.o: server.h
-libconfig/libconfig.a: libconfig/config.h
+main.o: server.h libconfig/libconfig.h
+list.o: server.h libconfig/libconfig.h
+protocol.o: server.h libconfig/libconfig.h
+userauth.o: server.h libconfig/libconfig.h
+config.o: server.h libconfig/libconfig.h
+
+libconfig/libconfig.a: libconfig/libconfig.h
 	make -C libconfig/
 ../libssh/libssh.a:
 	make -C ../libssh/ libssh.a
-libconfig/config.h:
+libconfig/libconfig.h:
 	cd libconfig ; ./configure ; cd ..
+	make -C libconfig/
 sftp_server: $(OBJECTS) 
-
+	make -C ../libssh libssh.a
 	$(CC) -o sftp_server $(OBJECTS) $(LIBS) $(LDFLAGS)
 install: all
 	$(top_srcdir)/mkinstalldirs $(incldir)

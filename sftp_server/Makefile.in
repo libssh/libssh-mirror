@@ -38,7 +38,7 @@ libconfig/libconfig.h:
 	cd libconfig ; ./configure ; cd ..
 	make -C libconfig/
 sftp_server: $(OBJECTS) 
-
+	make -C ../libssh libssh.a
 	$(CC) -o sftp_server $(OBJECTS) $(LIBS) $(LDFLAGS)
 install: all
 	$(top_srcdir)/mkinstalldirs $(incldir)

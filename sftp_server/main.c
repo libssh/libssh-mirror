@@ -69,17 +69,34 @@ CHANNEL *recv_channel(SSH_SESSION *session){
         return NULL;
     return chan;
 }
-        
+
 int main(int argc, char **argv){
     SSH_OPTIONS *options=ssh_options_new();
     SSH_SESSION *session;
     SSH_BIND *ssh_bind;
     CHANNEL *chan=NULL;
     SFTP_SESSION *sftp=NULL;
+    int ret;
     ssh_options_getopt(options,&argc,argv);
-    parse_config("sftp.conf");
-    ssh_options_set_dsa_server_key(options,"/etc/ssh/ssh_host_dsa_key");
-    ssh_options_set_rsa_server_key(options,"/etc/ssh/ssh_host_rsa_key");
+    if(argc>1)
+        ret=parse_config(argv[1]);
+    else
+        ret=parse_config("mercurius.conf");
+    if(ret != 0){
+        printf("Error parsing configuration file\n");
+        return 1;
+    }
+    if(!rsa && !dsa){
+        printf("There must be at least one RSA or DSA host key\n");
+        return 1;
+    }
+    if(dsa)
+        ssh_options_set_dsa_server_key(options,dsa);
+    if(rsa)
+        ssh_options_set_rsa_server_key(options,rsa);
+    printf("port : %d\n",port);
+    if(port!=0)
+        ssh_options_set_port(options,port);
     ssh_bind=ssh_bind_new();
     ssh_bind_set_options(ssh_bind,options);
     if(ssh_bind_listen(ssh_bind)<0){
