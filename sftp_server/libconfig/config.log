@@ -56,7 +56,7 @@ configure:1498: found /usr/bin/gcc
 configure:1508: result: gcc
 configure:1752: checking for C compiler version
 configure:1755: gcc --version </dev/null >&5
-gcc (GCC) 3.4.4 (Gentoo 3.4.4, ssp-3.4.4-1.0, pie-8.7.8)
+gcc (GCC) 3.4.4 (Gentoo 3.4.4-r1, ssp-3.4.4-1.0, pie-8.7.8)
 Copyright (C) 2004 Free Software Foundation, Inc.
 This is free software; see the source for copying conditions.  There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
@@ -64,9 +64,9 @@ warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 configure:1758: $? = 0
 configure:1760: gcc -v </dev/null >&5
 Reading specs from /usr/lib/gcc/x86_64-pc-linux-gnu/3.4.4/specs
-Configured with: /var/tmp/portage/gcc-3.4.4/work/gcc-3.4.4/configure --enable-version-specific-runtime-libs --prefix=/usr --bindir=/usr/x86_64-pc-linux-gnu/gcc-bin/3.4.4 --includedir=/usr/lib/gcc/x86_64-pc-linux-gnu/3.4.4/include --datadir=/usr/share/gcc-data/x86_64-pc-linux-gnu/3.4.4 --mandir=/usr/share/gcc-data/x86_64-pc-linux-gnu/3.4.4/man --infodir=/usr/share/gcc-data/x86_64-pc-linux-gnu/3.4.4/info --with-gxx-include-dir=/usr/lib/gcc/x86_64-pc-linux-gnu/3.4.4/include/g++-v3 --host=x86_64-pc-linux-gnu --build=x86_64-pc-linux-gnu --disable-altivec --enable-nls --without-included-gettext --with-system-zlib --disable-checking --disable-werror --disable-libunwind-exceptions --enable-multilib --disable-libgcj --enable-languages=c,c++,f77 --enable-shared --enable-threads=posix --enable-__cxa_atexit --enable-clocale=gnu
+Configured with: /var/tmp/portage/gcc-3.4.4-r1/work/gcc-3.4.4/configure --prefix=/usr --bindir=/usr/x86_64-pc-linux-gnu/gcc-bin/3.4.4 --includedir=/usr/lib/gcc/x86_64-pc-linux-gnu/3.4.4/include --datadir=/usr/share/gcc-data/x86_64-pc-linux-gnu/3.4.4 --mandir=/usr/share/gcc-data/x86_64-pc-linux-gnu/3.4.4/man --infodir=/usr/share/gcc-data/x86_64-pc-linux-gnu/3.4.4/info --with-gxx-include-dir=/usr/lib/gcc/x86_64-pc-linux-gnu/3.4.4/include/g++-v3 --host=x86_64-pc-linux-gnu --build=x86_64-pc-linux-gnu --disable-altivec --enable-nls --without-included-gettext --with-system-zlib --disable-checking --disable-werror --disable-libunwind-exceptions --enable-multilib --disable-libgcj --enable-languages=c,c++,f77 --enable-shared --enable-threads=posix --enable-__cxa_atexit --enable-clocale=gnu
 Thread model: posix
-gcc version 3.4.4 (Gentoo 3.4.4, ssp-3.4.4-1.0, pie-8.7.8)
+gcc version 3.4.4 (Gentoo 3.4.4-r1, ssp-3.4.4-1.0, pie-8.7.8)
 configure:1763: $? = 0
 configure:1765: gcc -V </dev/null >&5
 gcc: `-V' option must have argument

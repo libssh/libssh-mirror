@@ -1,4 +1,4 @@
-OBJECTS= main.o config.o list.o
+OBJECTS= main.o config.o list.o libconfig/libconfig.a
 SHELL = /bin/sh
 VPATH = @srcdir@
 
@@ -15,8 +15,8 @@ mandir = $(prefix)/man/man1
 
 CC = @CC@
 CFLAGS = @CFLAGS@ -Wall -g -I../include/ -Ilibconfig/
-LDFLAGS = -L../libssh/ -lssh -Llibconfig/
-LIBS = @LIBS@ -lconfig -lpam -lcrypto
+LDFLAGS = -L../libssh/ -lssh 
+LIBS = @LIBS@ -lpam -lcrypto
 INSTALL = @INSTALL@
 DYLIB_EXTENSION = @DYLIB_EXTENSION@
 LIBSSH_LDFLAGS = @LIBSSH_LDFLAGS@
@@ -26,9 +26,12 @@ all: sftp_server
 main.o: server.h
 list.o: server.h
 config.o: server.h
-
-sftp_server: $(OBJECTS) ../libssh/libssh.$(DYLIB_EXTENSION)
+libconfig/libconfig.a: libconfig/config.h
 	make -C libconfig/
+libconfig/config.h:
+	cd libconfig ; ./configure ; cd ..
+sftp_server: $(OBJECTS) ../libssh/libssh.$(DYLIB_EXTENSION) 
+
 	$(CC) -o sftp_server $(OBJECTS) $(LIBS) $(LDFLAGS)
 install: all
 	$(top_srcdir)/mkinstalldirs $(incldir)
