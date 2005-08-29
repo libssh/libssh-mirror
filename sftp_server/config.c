@@ -136,6 +136,8 @@ int group_callback(const char *shortvar, const char *var, const char *arguments,
             if(!strcasecmp(shortvar,"chroot")){
                 current_group->chroot=strdup(value);
             }
+            if(!strcasecmp(shortvar,"nopassword"))
+                current_group->nopassword=1;
     }
     return LC_CBRET_OKAY;
 }
@@ -278,6 +280,7 @@ int parse_config(char *file){
     r=lc_register_callback("group.uid",0,LC_VAR_UNKNOWN,group_callback,NULL);
     r=lc_register_callback("group.chroot",0,LC_VAR_UNKNOWN,group_callback,NULL);
     r=lc_register_callback("group.group",0,LC_VAR_UNKNOWN,group_callback,NULL);
+    r=lc_register_callback("group.nopassword",0,LC_VAR_NONE,group_callback,NULL);
 //    lc_register_var("dir", LC_VAR_SECTION, NULL, 0);
     r=lc_register_callback("dir",0,LC_VAR_NONE,dir_callback,NULL);
     r=lc_register_callback("dir.list",0,LC_VAR_UNKNOWN,dir_callback,NULL);
@@ -289,5 +292,54 @@ int parse_config(char *file){
         printf("lc_process_file=%d,%s\n",r,lc_geterrstr());
     lc_cleanup();
     list_config();
+    return 0;
+}
+
+list *find_groups(char *user){
+    return list_find(users,user);
+}
+
+char *user_chroot(char *user){
+    char *c_grp;
+    list *group=find_groups(user);
+    struct group *grp;
+    while(group){
+        c_grp=group->key;
+        grp=list_find(groups,c_grp);
+        if(grp->chroot)
+            return grp->chroot;
+        group=group->next;
+    }
+    return NULL;
+}
+
+char *user_uid(char *user){
+    char *c_grp;
+    list *group=find_groups(user);
+    struct group *grp;
+    while(group){
+        c_grp=group->key;
+        grp=list_find(groups,c_grp);
+        if(grp->uid)
+            return grp->uid;
+        group=group->next;
+    }
+    return NULL;
+}
+
+/* 0 if it's not specified. 1 if the user doesn't need a password */
+int user_nopassword(char *user){
+    char *c_grp;
+    list *group=find_groups(user);
+    struct group *grp;
+    if(!group)
+        return 0; //user doesn't exist
+    while(group){
+        c_grp=group->key;
+        grp=list_find(groups,c_grp);
+        if(grp->nopassword)
+            return 1;
+        group=group->next;
+    }
     return 0;
 }

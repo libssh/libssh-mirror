@@ -35,6 +35,7 @@ MA 02111-1307, USA. */
 #include <stdio.h>
 #include <signal.h>
 #include <security/pam_appl.h>
+#include <pwd.h>
 
 #include "server.h"
 
@@ -81,7 +82,59 @@ int password_conv(int num_msg, const struct pam_message **msg,
     return PAM_SUCCESS;
 }
 
-
+/* postauth_conf returns -1 on error, else 0 */
+int postauth_conf(char *user){
+    /* first, find a chroot if any */
+    char *root,*ptr;
+    char *char_uid;
+    char buffer[256];
+    int uid;
+    struct passwd *pw=getpwnam(user);
+    root=user_chroot(user);
+    if(root){
+        if((ptr=strstr(root,"$HOME"))){
+            if(!pw)
+                return -1; // this user has no user directory
+            *ptr=0;
+            snprintf(buffer,sizeof(buffer),"%s%s/%s",
+                     root,pw->pw_dir,ptr+strlen("$HOME"));
+        }
+        else 
+            snprintf(buffer,sizeof(buffer),"%s",root);
+    }
+    /* we don't chroot right now because we still need getpwnam() */
+    char_uid=user_uid(user);
+    if(!char_uid){
+        if(!pw)
+            return -1; // user doesn't exist !
+        char_uid=user;
+    }
+    uid=atoi(char_uid);
+    if(uid==0 && char_uid[0]!=0){
+        pw=getpwnam(char_uid);
+        if(!pw)
+            return -1;
+        uid=pw->pw_uid;
+    }
+    if(root && chroot(buffer)){
+        return -1; // cannot chroot
+    }
+    if(root){
+        chdir("/");
+    } else {
+        if(pw)
+            chdir(pw->pw_dir);
+        else
+            chdir("/");
+    }
+    if(setuid(uid)){
+        return -1; // cannot setuid
+    }
+    return 0;
+}
+    
+    
+        
 struct pam_conv pam_conv ={ password_conv, NULL };
 /* returns 1 if authenticated, 0 if failed,
  -1 if you must leave */
@@ -101,6 +154,8 @@ int auth_password(char *user, char *password){
     memset(password,0,strlen(password));
     if(ret==PAM_SUCCESS){
         pam_end(pamh,PAM_SUCCESS);
+        if(postauth_conf(user))
+            return -1;
         return 1;
     } else {
         pam_end(pamh,PAM_AUTH_ERR);
@@ -469,13 +524,32 @@ int do_auth(SSH_SESSION *session){
                                 ssh_say(1,"Auth refused\n");
                                 break;
                         }
-                        if(auth==1)
+                        if(auth==1){
                             break;
+                        } else {
+                            ssh_message_auth_set_methods(message,SSH_AUTH_PASSWORD);
+                            ssh_message_reply_default(message);
+                        } 
+                        break;
                         // not authenticated, send default message
                     case SSH_AUTH_NONE:
-                        //ssh_message_auth_reply_success(message,0);
-                        //auth=1;
-                        //break;
+                        if(user_nopassword(ssh_message_auth_user(message))){
+                            if(postauth_conf(ssh_message_auth_user(message))==0){
+                                ssh_message_auth_reply_success(message,0);
+                                auth=1;
+                                ssh_say(1,"Authentication success for %s(no password)\n",
+                                    ssh_message_auth_user(message));
+                                break;
+                            } else {
+                                ssh_say(1,"Post-auth failed\n");
+                                ssh_message_auth_set_methods(message,SSH_AUTH_PASSWORD);
+                                ssh_message_reply_default(message);
+                            }
+                        } else {
+                            ssh_message_auth_set_methods(message,SSH_AUTH_PASSWORD);
+                            ssh_message_reply_default(message);
+                        }
+                        break;
                     default:
                         ssh_message_auth_set_methods(message,SSH_AUTH_PASSWORD);
                         ssh_message_reply_default(message);

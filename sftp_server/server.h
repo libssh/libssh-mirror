@@ -1,6 +1,9 @@
 /* server.h */
 /* headers for the sftp server project */
 int parse_config(char *file);
+char *user_chroot(char *user);
+char *user_uid(char *user);
+int user_nopassword(char *user);
 
 typedef struct list_struct {
     struct list_struct *next;
@@ -17,6 +20,7 @@ struct group {
     char *chroot;
     char *uid;
     char *gid;
+    int nopassword;
 };
 
 struct dir {
