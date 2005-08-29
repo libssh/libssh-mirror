@@ -186,7 +186,7 @@ int server_set_kex(SSH_SESSION * session) {
         if (!(wanted = options->wanted_methods[i]))
             wanted = supported_methods[i];
         server->methods[i] = strdup(wanted);
-        printf("server->methods[%d]=%s\n",i,wanted);
+        //printf("server->methods[%d]=%s\n",i,wanted);
     }
     return 0;
 }

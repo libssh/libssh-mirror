@@ -42,7 +42,7 @@ char *current_group_name;
 int add_user(char *user){
     list *groups_from_user;
 //    list *the_user;
-    printf("add_user(%s)\n",user);
+    //printf("add_user(%s)\n",user);
     if(!list_find(current_group->users,user)){
         current_group->users=list_add(current_group->users,user,strdup(user));
     }
@@ -77,7 +77,7 @@ int add_group(char *group){
 int group_callback(const char *shortvar, const char *var, const char *arguments, const char *value, lc_flags_t flags, void *extra){
     switch(flags){
         case LC_FLAGS_SECTIONSTART:
-            printf("new group %s\n",arguments);
+            //printf("new group %s\n",arguments);
             if(current_group){
                 printf("can't include a section into a section\n");
                 return LC_CBRET_ERROR;
@@ -92,11 +92,11 @@ int group_callback(const char *shortvar, const char *var, const char *arguments,
             current_group_name=strdup(arguments);
             break;
         case LC_FLAGS_SECTIONEND:
-            printf("end of group\n\n");
+            //printf("end of group\n\n");
             current_group=NULL;
             break;
         default:
-            printf("%s - %s\n", shortvar, value);
+            //printf("%s - %s\n", shortvar, value);
             if(!strcasecmp(shortvar,"user")){
                 char *ptr;
                 char *user=(char *)value;
@@ -291,7 +291,7 @@ int parse_config(char *file){
     if(r<0)
         printf("lc_process_file=%d,%s\n",r,lc_geterrstr());
     lc_cleanup();
-    list_config();
+    //list_config();
     return 0;
 }
 

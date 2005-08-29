@@ -1,4 +1,5 @@
-OBJECTS= main.o config.o list.o libconfig/libconfig.a
+OBJECTS= main.o config.o list.o protocol.o userauth.o \
+		libconfig/libconfig.a ../libssh/libssh.a
 SHELL = /bin/sh
 
 
@@ -14,8 +15,8 @@ libdir = $(prefix)/lib/
 mandir = $(prefix)/man/man1
 
 CC = gcc
-CFLAGS = -g -O2 -Wall -g -I../include/ -Ilibconfig/
-LDFLAGS = -L../libssh/ -lssh 
+CFLAGS = -g -O2 -Wall -I../include/ -Ilibconfig/
+LDFLAGS = 
 LIBS = -lz -lcrypto  -lpam -lcrypto
 INSTALL = /usr/bin/install -c
 DYLIB_EXTENSION = so
@@ -28,9 +29,11 @@ list.o: server.h
 config.o: server.h
 libconfig/libconfig.a: libconfig/config.h
 	make -C libconfig/
+../libssh/libssh.a:
+	make -C ../libssh/ libssh.a
 libconfig/config.h:
 	cd libconfig ; ./configure ; cd ..
-sftp_server: $(OBJECTS) ../libssh/libssh.$(DYLIB_EXTENSION) 
+sftp_server: $(OBJECTS) 
 
 	$(CC) -o sftp_server $(OBJECTS) $(LIBS) $(LDFLAGS)
 install: all
