@@ -81,6 +81,12 @@ void ssh_cleanup(SSH_SESSION *session){
     free(session);
 }
 
+void ssh_silent_disconnect(SSH_SESSION *session){
+    close(session->fd);
+    session->alive=0;
+    ssh_disconnect(session);
+}
+
 void ssh_set_options(SSH_SESSION *session, SSH_OPTIONS *options){
     session->options=options;
 }

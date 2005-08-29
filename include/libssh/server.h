@@ -42,7 +42,7 @@ void ssh_bind_set_blocking(SSH_BIND *ssh_bind,int blocking);
 int ssh_bind_get_fd(SSH_BIND *ssh_bind);
 int ssh_bind_set_toaccept(SSH_BIND *ssh_bind);
 SSH_SESSION *ssh_bind_accept(SSH_BIND *ssh_bind);
-
+void ssh_bind_free(SSH_BIND *ssh_bind);
 int ssh_accept(SSH_SESSION *session);
 
 /* messages.c */

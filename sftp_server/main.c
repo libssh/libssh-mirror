@@ -33,6 +33,7 @@ MA 02111-1307, USA. */
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <signal.h>
 #include <security/pam_appl.h>
 
 #include "server.h"
@@ -546,11 +547,20 @@ int main(int argc, char **argv){
         printf("Error listening to socket: %s\n",ssh_get_error(ssh_bind));
         return 1;
     }
-    session=ssh_bind_accept(ssh_bind);
-    if(!session){
-      printf("error accepting a connection : %s\n",ssh_get_error(ssh_bind));
-      return 1;
+    signal(SIGCHLD,SIG_IGN);
+    while(1){
+        session=ssh_bind_accept(ssh_bind);
+        if(!session){
+            printf("error accepting a connection : %s\n",ssh_get_error(ssh_bind));
+            return 1;
+        }
+        if(fork()==0){
+            break;
+        }
+        ssh_silent_disconnect(session);
     }
+    ssh_bind_free(ssh_bind);
+    
     printf("Socket connected : %d\n",ssh_get_fd(session));
     if(ssh_accept(session)){
         printf("ssh_accept : %s\n",ssh_get_error(session));

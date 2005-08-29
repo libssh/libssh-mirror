@@ -1,0 +1,5 @@
+sftp    auth      required  pam_unix.so    try_first_pass
+sftp    account   required  pam_unix.so
+sftp    password  required  pam_permit.so
+sftp    session   required  pam_permit.so
+

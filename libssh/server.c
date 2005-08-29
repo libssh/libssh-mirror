@@ -151,6 +151,14 @@ SSH_SESSION *ssh_bind_accept(SSH_BIND *ssh_bind){
     session->rsa_key=rsa;
     return session;
 }
+
+void ssh_bind_free(SSH_BIND *ssh_bind){
+    if(ssh_bind->bindfd>=0)
+        close(ssh_bind->bindfd);
+    ssh_bind->bindfd=-1;
+    free(ssh_bind);
+}
+
 extern char *supported_methods[];
 
 int server_set_kex(SSH_SESSION * session) {

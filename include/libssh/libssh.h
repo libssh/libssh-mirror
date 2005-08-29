@@ -110,6 +110,7 @@ void ssh_set_verbosity(int num);
 SSH_SESSION *ssh_new();
 void ssh_set_options(SSH_SESSION *session, SSH_OPTIONS *options);
 int ssh_get_fd(SSH_SESSION *session);
+void ssh_silent_disconnect(SSH_SESSION *session);
 
 /* client.c */
 int ssh_connect(SSH_SESSION *session);
