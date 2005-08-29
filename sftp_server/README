@@ -1,0 +1,56 @@
+         Mercurius : a secure ftp server
+         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+What does it do ?
+-----------------
+Mercurius is a sftp server. secure ftp is not FTP over SSL. It's a file transfert protocol (not ftp) over SSH.
+Mercurius uses libssh as a transport layer, meaning it doesn't need a ssh server running. Which also mean it cannot run on the same server port that your current ssh server.
+
+Well, openssh also has a sftp server, what then?
+------------------------------------------------
+
+Openssh's server was meant to transfert files from users of the system. Mercurius is meant to transfert files from regular users or anonymous users, with configurations :
+
+-users can be set into groups. These groups have different capabilities. Let's say you have a webmaster, a sysadmin, a user (joe) and a public ftp.
+
+you want your sysadmin to have full access all over the disk, and be authenticated
+You want your public ftp just to have right of reading files into the ftp directory
+you want the webmaster to be able to add files into the ftp directory
+You want joe to access only his homedir readwrite.
+
+We then have a configuration file. The groups are defined this way:
+<group users>
+user joe, someother
+chroot $HOME/
+</group>
+<group anonymous>
+user ftp, anonymous
+chroot /home/ftp
+uid ftp
+</group>
+<group admin>
+user admin
+chroot /home
+uid root
+</group>
+<group webmaster>
+chroot /home/ftp
+</group>
+
+At this state, you have the kernel ACL that controls your users. You may want to add usermode ACL. Well, you'll wait tomorow's snapshot :)
+
+How to compile that crap ?
+--------------------------
+
+Well, you'll need other craps to have it to compile, like libssl and libpam.
+under debian, they are libssl-dev and libpam-dev packages. I don't know for others.
+just untar, ./configure ; make
+there are 2 important files : sftp_server and mercurius.conf. by default, the server will use the config file into the current dir.
+Then, you have to configure PAM for our service : sftp.
+in most distro, there is a library /etc/pam.d/
+i've given sample pam config files to put there into the pam/ directory, but if they don't work, just copy /etc/pam.d/login or gdm on /etc/pam.d/sftp
+
+What's working/not working ?
+----------------------------
+there is no file upload support yet. The directory ACL is parsed but not run yet. The authentication errors may be cryptic. It might crash and dump a core (I'd like a backtrace if possible).
+
