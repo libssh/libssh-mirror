@@ -27,6 +27,7 @@ MA 02111-1307, USA. */
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
 #include <netdb.h>
 #include <errno.h>
 #include <string.h>

@@ -155,7 +155,7 @@ void select_loop(SSH_SESSION *session,CHANNEL *channel){
             }
         }
         if(outchannel[0]){
-            while(channel_poll(outchannel[0],0)){
+            while(channel && channel_poll(outchannel[0],0)){
                 lus=channel_read(outchannel[0],readbuf,0,0);
                 if(lus==-1){
                     ssh_say(0,"error reading channel : %s\n",ssh_get_error(session));
@@ -163,10 +163,12 @@ void select_loop(SSH_SESSION *session,CHANNEL *channel){
                 }
                 if(lus==0){
                     ssh_say(1,"EOF received\n");
+                    channel_free(channel);
+                    channel=NULL;
                 } else
                     write(1,buffer_get(readbuf),lus);
             }
-            while(channel_poll(outchannel[0],1)){ /* stderr */
+            while(channel && channel_poll(outchannel[0],1)){ /* stderr */
                 lus=channel_read(outchannel[0],readbuf,0,1);
                 if(lus==-1){
                     ssh_say(0,"error reading channel : %s\n",ssh_get_error(session));
@@ -174,11 +176,13 @@ void select_loop(SSH_SESSION *session,CHANNEL *channel){
                 }
                 if(lus==0){
                     ssh_say(1,"EOF received\n");
+                    channel_free(channel);
+                    channel=NULL;
                 } else
                     write(2,buffer_get(readbuf),lus);
             }
         }
-        if(!channel_is_open(channel)){
+        if(channel && !channel_is_open(channel)){
             channel_free(channel);
             channel=NULL;
         }

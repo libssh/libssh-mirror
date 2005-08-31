@@ -674,6 +674,8 @@ int channel_poll(CHANNEL *channel, int is_stderr){
         } else
             return 0; /* nothing is available has said fd_poll */
     }
+    if(channel->remote_eof)
+        return 1;
     return buffer_get_len(buffer);
 }
 
