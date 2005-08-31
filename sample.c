@@ -80,7 +80,7 @@ int opts(int argc, char **argv){
     return 0;
 }
 
-#ifndef HAVE_PTY_H
+#ifndef HAVE_CFMAKERAW
 static void cfmakeraw(struct termios *termios_p){
     termios_p->c_iflag &= ~(IGNBRK|BRKINT|PARMRK|ISTRIP|INLCR|IGNCR|ICRNL|IXON);
     termios_p->c_oflag &= ~OPOST;

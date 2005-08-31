@@ -3,6 +3,8 @@
 /* Define to 1 if you don't have `vprintf' but do have `_doprnt.' */
 #undef HAVE_DOPRNT
 
+#undef HAVE_CFMAKERAW
+
 /* Define to 1 if you have the `endpwent' function. */
 #undef HAVE_ENDPWENT
 

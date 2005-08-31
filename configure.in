@@ -60,7 +60,7 @@ AC_FUNC_REALLOC
 AC_FUNC_SELECT_ARGTYPES
 AC_TYPE_SIGNAL
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS([endpwent gethostbyaddr gethostbyname getpass memmove memset \
+AC_CHECK_FUNCS([endpwent gethostbyaddr gethostbyname getpass memmove memset cfmakeraw\
  select socket strchr strdup strerror strstr poll])
 
 AC_CONFIG_FILES([Makefile

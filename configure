@@ -5086,7 +5086,8 @@ done
 
 
 
-for ac_func in endpwent gethostbyaddr gethostbyname getpass memmove memset \
+
+for ac_func in endpwent gethostbyaddr gethostbyname getpass memmove memset cfmakeraw\
  select socket strchr strdup strerror strstr poll
 do
 as_ac_var=`echo "ac_cv_func_$ac_func" | $as_tr_sh`
