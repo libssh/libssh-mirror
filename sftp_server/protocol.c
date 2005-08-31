@@ -29,8 +29,10 @@ MA 02111-1307, USA. */
 #include <netdb.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/param.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "server.h"
 
 #define TYPE_DIR 1
