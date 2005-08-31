@@ -3691,9 +3691,11 @@ done
 
 
 
+
+
 for ac_header in fcntl.h netdb.h netinet/in.h stdlib.h string.h sys/socket.h \
 sys/time.h termios.h unistd.h openssl/aes.h openssl/blowfish.h zlib.h \
-sys/poll.h stdint.h pty.h
+sys/poll.h stdint.h pty.h pam/pam_appl.h security/pam_appl.h
 do
 as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
 if eval "test \"\${$as_ac_Header+set}\" = set"; then

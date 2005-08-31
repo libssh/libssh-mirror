@@ -47,7 +47,7 @@ AC_SEARCH_LIBS([gethostbyname],[nsl resolv])
 AC_HEADER_STDC
 AC_CHECK_HEADERS([fcntl.h netdb.h netinet/in.h stdlib.h string.h sys/socket.h \
 sys/time.h termios.h unistd.h openssl/aes.h openssl/blowfish.h zlib.h \
-sys/poll.h stdint.h pty.h])
+sys/poll.h stdint.h pty.h pam/pam_appl.h security/pam_appl.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST

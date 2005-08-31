@@ -23,7 +23,16 @@ MA 02111-1307, USA. */
 #include <libssh/libssh.h>
 #include <libssh/server.h>
 //#include <libssh/sftp.h>
-#include <security/pam_appl.h>
+#ifdef HAVE_SECURITY_PAM_APPL_H
+  #include <security/pam_appl.h>
+#else 
+  #ifdef HAVE_PAM_PAM_APPL_H
+    #include <pam/pam_appl.h>
+  #else
+    #error your system has'nt PAM development files installed
+  #endif
+#endif
+
 #include <pwd.h>
 #include <errno.h>
 #include <string.h>
