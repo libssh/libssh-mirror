@@ -24,6 +24,7 @@ clients must be made or how a client should react.
 #ifdef HAVE_PTY_H
 #include <pty.h>
 #endif
+#include <sys/ioctl.h>
 #include <signal.h>
 #include <errno.h>
 #include <libssh/libssh.h>

@@ -29,7 +29,7 @@ MA 02111-1307, USA. */
   #ifdef HAVE_PAM_PAM_APPL_H
     #include <pam/pam_appl.h>
   #else
-    #error your system has'nt PAM development files installed
+    #error "your system has'nt PAM development files installed"
   #endif
 #endif
 
