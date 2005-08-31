@@ -70,6 +70,10 @@ CHANNEL *recv_channel(SSH_SESSION *session){
     return chan;
 }
 
+void usage(char *prog){
+    fprintf(stderr,"Usage : %s [-vD] [-f config]\n",prog);
+}
+
 int main(int argc, char **argv){
     SSH_OPTIONS *options=ssh_options_new();
     SSH_SESSION *session;
@@ -77,11 +81,27 @@ int main(int argc, char **argv){
     CHANNEL *chan=NULL;
     SFTP_SESSION *sftp=NULL;
     int ret;
+    int donotfork=0;
+    char *config="mercurius.conf";
     ssh_options_getopt(options,&argc,argv);
-    if(argc>1)
-        ret=parse_config(argv[1]);
-    else
-        ret=parse_config("mercurius.conf");
+    while((ret=getopt(argc, argv, "Df:"))!=-1){
+        switch(ret){
+            case 'D':
+                donotfork=1;
+                break;
+            case 'f':
+                config=strdup(optarg);
+                break;
+            case '?':
+                usage(argv[0]);
+                exit(1);
+        }
+    }
+    if(optind<argc) {
+        usage(argv[0]);
+        exit(1);
+    }
+    ret=parse_config(config);
     if(ret != 0){
         printf("Error parsing configuration file\n");
         return 1;
@@ -94,7 +114,7 @@ int main(int argc, char **argv){
         ssh_options_set_dsa_server_key(options,dsa);
     if(rsa)
         ssh_options_set_rsa_server_key(options,rsa);
-    printf("port : %d\n",port);
+    //printf("port : %d\n",port);
     if(port!=0)
         ssh_options_set_port(options,port);
     ssh_bind=ssh_bind_new();
@@ -104,6 +124,12 @@ int main(int argc, char **argv){
         return 1;
     }
     signal(SIGCHLD,SIG_IGN);
+    if(!donotfork){
+        ssh_say(1,"Going into background...\n");
+        if(fork()){
+            exit(0);
+        }
+    }
     while(1){
         session=ssh_bind_accept(ssh_bind);
         if(!session){
@@ -117,7 +143,7 @@ int main(int argc, char **argv){
     }
     ssh_bind_free(ssh_bind);
     
-    printf("Socket connected : %d\n",ssh_get_fd(session));
+    //printf("Socket connected : %d\n",ssh_get_fd(session));
     if(ssh_accept(session)){
         printf("ssh_accept : %s\n",ssh_get_error(session));
         return 1;
@@ -126,7 +152,7 @@ int main(int argc, char **argv){
         printf("error : %s\n",ssh_get_error(session));
         return 1;
     }
-    printf("user authenticated\n");
+    ssh_say(1,"user authenticated\n");
     chan=recv_channel(session);
     if(!chan){
         printf("error : %s\n",ssh_get_error(session));
@@ -137,9 +163,9 @@ int main(int argc, char **argv){
         printf("error : %s\n",ssh_get_error(session));
         return 1;
     }
-    printf("Sftp session open by client\n");
+    ssh_say(1,"Sftp session open by client\n");
     sftploop(session,sftp);
+    ssh_say(1,"Client disconnected\n");
     ssh_disconnect(session);
     return 0;
 }
-

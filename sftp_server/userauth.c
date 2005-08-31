@@ -25,6 +25,7 @@ MA 02111-1307, USA. */
 //#include <libssh/sftp.h>
 #include <security/pam_appl.h>
 #include <pwd.h>
+#include <errno.h>
 #include <string.h>
 #include "server.h"
 
@@ -71,8 +72,10 @@ int postauth_conf(char *user){
     root=user_chroot(user);
     if(root){
         if((ptr=strstr(root,"$HOME"))){
-            if(!pw)
+            if(!pw){
+                ssh_say(1,"Postauth failed : no home directory for user %s\n",user);
                 return -1; // this user has no user directory
+            }
             *ptr=0;
             snprintf(buffer,sizeof(buffer),"%s%s/%s",
                      root,pw->pw_dir,ptr+strlen("$HOME"));
@@ -83,18 +86,23 @@ int postauth_conf(char *user){
     /* we don't chroot right now because we still need getpwnam() */
     char_uid=user_uid(user);
     if(!char_uid){
-        if(!pw)
+        if(!pw){
+            ssh_say(1,"postauth failed : user %s doesn't exist(try to set the uid setting)\n",user);
             return -1; // user doesn't exist !
+        }
         char_uid=user;
     }
     uid=atoi(char_uid);
     if(uid==0 && char_uid[0]!=0){
         pw=getpwnam(char_uid);
-        if(!pw)
+        if(!pw){
+            ssh_say(1,"postauth failed : user %s does not exist\n",char_uid);
             return -1;
+        }
         uid=pw->pw_uid;
     }
     if(root && chroot(buffer)){
+        ssh_say(1,"Postauth failed : chroot failed (%s)\n",strerror(errno));
         return -1; // cannot chroot
     }
     if(root){
@@ -106,13 +114,13 @@ int postauth_conf(char *user){
             chdir("/");
     }
     if(setuid(uid)){
+        ssh_say(1,"Postauth failed : cannot set uid (%)\n",strerror(errno));
         return -1; // cannot setuid
     }
     return 0;
 }
     
-    
-        
+
 struct pam_conv pam_conv ={ password_conv, NULL };
 /* returns 1 if authenticated, 0 if failed,
  -1 if you must leave */
@@ -136,6 +144,7 @@ int auth_password(char *user, char *password){
             return -1;
         return 1;
     } else {
+        ssh_say(1,"password auth failed for user %s\n",user);
         pam_end(pamh,PAM_AUTH_ERR);
         return 0;
     }
