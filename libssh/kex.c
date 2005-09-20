@@ -300,8 +300,19 @@ static void build_session_id1(SSH_SESSION *session, STRING *servern,
 #endif
 }
 
+/* returns 1 if the modulus of k1 is < than the one of k2 */
+static int modulus_smaller(PUBLIC_KEY *k1, PUBLIC_KEY *k2){
+    RSA *r1=k1->rsa_pub;
+    RSA *r2=k2->rsa_pub;
+    if(BN_cmp(r1->n,r2->n)<0)
+        return 1;
+    else
+        return 0;
+}
+
+#define ABS(A) ( (A)<0 ? -(A):(A) )
 STRING *encrypt_session_key(SSH_SESSION *session, PUBLIC_KEY *svrkey,
-        PUBLIC_KEY *hostkey){
+        PUBLIC_KEY *hostkey,int slen, int hlen ){
     char buffer[32];
     int i;
     STRING *data1,*data2;
@@ -319,9 +330,19 @@ STRING *encrypt_session_key(SSH_SESSION *session, PUBLIC_KEY *svrkey,
         buffer[i]^=session->next_crypto->session_id[i];
     data1=string_new(32);
     string_fill(data1,buffer,32);
-    data2=ssh_encrypt_rsa1(session,data1,svrkey);
-    free(data1);
-    data1=ssh_encrypt_rsa1(session,data2,hostkey);
+    if(ABS(hlen-slen)<128){
+        ssh_say(1,"Difference between server modulus and host modulus is only %d. It's illegal and may not work\n",
+                ABS(hlen-slen));
+    }
+    if(modulus_smaller(svrkey,hostkey)){
+        data2=ssh_encrypt_rsa1(session,data1,svrkey);
+        free(data1);
+        data1=ssh_encrypt_rsa1(session,data2,hostkey);
+    } else {
+        data2=ssh_encrypt_rsa1(session,data1,hostkey);
+        free(data1);
+        data1=ssh_encrypt_rsa1(session,data2,svrkey);
+    }
     return data1;
 }
 
@@ -417,7 +438,7 @@ int ssh_get_kex1(SSH_SESSION *session){
     buffer_add_u8(session->out_buffer,SSH_CIPHER_3DES);
     buffer_add_data(session->out_buffer,session->server_kex.cookie,8);
     
-    enc_session=encrypt_session_key(session,svr,host);
+    enc_session=encrypt_session_key(session,svr,host,server_bits, host_bits);
     bits=string_len(enc_session)*8 - 7;
     ssh_say(2,"%d bits,%d bytes encrypted session\n",bits,string_len(enc_session));
     bits=htons(bits);
@@ -435,7 +456,9 @@ int ssh_get_kex1(SSH_SESSION *session){
     session->current_crypto=session->next_crypto;
     session->next_crypto=NULL;
     if(packet_wait(session,SSH_SMSG_SUCCESS,1)){
-        ssh_set_error(session,SSH_FATAL,"Key exchange failed : %s\n",ssh_get_error(session));
+        char buffer[1024];
+        snprintf(buffer,sizeof(buffer),"Key exchange failed : %s",ssh_get_error(session));
+        ssh_set_error(session,SSH_FATAL,"%s",buffer);
         return -1;
     }
     ssh_say(1,"received SSH_SMSG_SUCCESS\n");

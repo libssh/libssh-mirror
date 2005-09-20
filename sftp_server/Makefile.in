@@ -1,4 +1,4 @@
-OBJECTS= main.o config.o list.o protocol.o userauth.o \
+OBJECTS= main.o config.o list.o protocol.o userauth.o file.o acl.o \
 		libconfig/libconfig.a ../libssh/libssh.a
 SHELL = /bin/sh
 VPATH = @srcdir@
