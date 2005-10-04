@@ -32,15 +32,16 @@ MA 02111-1307, USA. */
 #include <netinet/in.h>
 #include <fcntl.h>
 #include "libssh/priv.h"
-#ifdef HAVE_SYS_POLL_H
-#include <sys/poll.h>
-#endif
 
 #ifndef HAVE_GETHOSTBYNAME
 #ifndef HAVE_GETHOSTBYADDR
 #error "your system doesn't have gethostbyname nor gethostbyaddr"
 #endif
 #endif
+#ifndef HAVE_SELECT
+#error "Your system must have select()"
+#endif
+
 static void sock_set_nonblocking(int sock) {
     fcntl(sock,F_SETFL,O_NONBLOCK);
 }
@@ -118,7 +119,7 @@ int ssh_connect_host(SSH_SESSION *session, const char *host, const char
         struct timeval to;
         fd_set set;
         int ret=0;
-        int len=sizeof(ret);
+        unsigned int len=sizeof(ret);
         to.tv_sec=timeout;
         to.tv_usec=usec;
         sock_set_nonblocking(s);
@@ -157,46 +158,45 @@ int ssh_connect_host(SSH_SESSION *session, const char *host, const char
     return s;
 }
 
-/* returns 1 if bytes are available on the stream, 0 instead */
-int ssh_fd_poll(SSH_SESSION *session){
-#ifdef HAVE_POLL
-    struct pollfd fdset;
-#else
+/* returns 1 if bytes are available to read on the stream, 0 instead */
+/* -1 on select() error. */
+int ssh_fd_poll(SSH_SESSION *session, int *write, int *except){
     struct timeval sometime;
-    fd_set descriptor;
-#endif
-    if(session->data_to_read)
-        return(session->data_to_read);
-#ifdef HAVE_POLL
-    fdset.fd=session->fd;
-    fdset.events=POLLHUP|POLLIN|POLLPRI;
-    fdset.revents=0;
-    if(poll(&fdset,1,0)==0)
+    fd_set rdes; // read set
+    fd_set wdes; // writing set
+    fd_set edes; // exception set
+    
+    FD_ZERO(&rdes);
+    FD_ZERO(&wdes);
+    FD_ZERO(&edes);
+    
+    if(!session->alive){
+        *except=1;
+        *write=0;
         return 0;
-    if(fdset.revents & (POLLHUP|POLLIN|POLLPRI))
-        return (session->data_to_read=1);
-    return 0;
-#elif HAVE_SELECT
+    }
+    if(!session->data_to_read)
+        FD_SET(session->fd,&rdes);
+    if(!session->data_to_write)
+        FD_SET(session->fd,&wdes);
+    FD_SET(session->fd,&edes);
     
     /* Set to return immediately (no blocking) */
     sometime.tv_sec = 0;
     sometime.tv_usec = 0;
     
-    /* Set up descriptor */
-    FD_ZERO(&descriptor);
-    FD_SET(session->fd, &descriptor);
-    
     /* Make the call, and listen for errors */
-    if (select(session->fd + 1, &descriptor, NULL, NULL, &sometime) < 0) {
+    if (select(session->fd + 1, &rdes,&wdes,&edes, &sometime) < 0) {
     	ssh_set_error(NULL,SSH_FATAL, "select: %s", strerror(errno));
     	return -1;
     }
-    session->data_to_read=FD_ISSET(session->fd,&descriptor);
+    if(!session->data_to_read)
+        session->data_to_read=FD_ISSET(session->fd,&rdes);
+    if(!session->data_to_write)
+        session->data_to_write=FD_ISSET(session->fd,&wdes);
+    *except=FD_ISSET(session->fd,&edes);
+    *write=session->data_to_write;
     return session->data_to_read;
-#else
-#error This system does not have poll() or select(), so ssh_fd_poll() will not work correctly
-	return 0;
-#endif
 }
 
 /* this function is a complete wrapper for the select syscall. it does more than wrapping ... */

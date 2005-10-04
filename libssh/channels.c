@@ -661,18 +661,20 @@ int channel_read(CHANNEL *channel, BUFFER *buffer,int bytes,int is_stderr){
 /* returns the number of bytes available, 0 if nothing is currently available, -1 if error */
 int channel_poll(CHANNEL *channel, int is_stderr){
     BUFFER *buffer;
+    int r=0,w=0,err=0;
     if(is_stderr)
         buffer=channel->stderr_buffer;
     else 
         buffer=channel->stdout_buffer;
     
     while(buffer_get_rest_len(buffer)==0 && !channel->remote_eof){
-        if(ssh_fd_poll(channel->session)){
-            if(packet_read(channel->session)||packet_translate(channel->session))
-                return -1;
-            packet_parse(channel->session);
-        } else
-            return 0; /* nothing is available has said fd_poll */
+        r=ssh_fd_poll(channel->session,&w,&err);
+        if(r<=0)
+            return r; // error or no data available
+        /* if an exception happened, it will be trapped by packet_read() */
+        if(packet_read(channel->session)||packet_translate(channel->session))
+            return -1;
+        packet_parse(channel->session);
     }
     if(channel->remote_eof)
         return 1;
@@ -700,4 +702,18 @@ int channel_read_nonblocking(CHANNEL *channel, char *dest, int len, int is_stder
 SSH_SESSION *channel_get_session(CHANNEL *channel){
     return channel->session;
 }
-
+/*
+int channel_select(CHANNEL *readchans, CHANNEL *writechans, CHANNEL *exceptchans, struct 
+        timeval * timeout){
+    fd_set rset;
+    fd_set wset;
+    fd_set eset;
+    int rmax=-1, wmax=-1, emax=-1; // nothing to do with the low quality editor :)
+    int i;
+    FD_ZERO(rset);
+    FD_ZERO(wset);
+    FD_ZERO(eset);
+    for(i=0;readchans[i];++i){
+        if(!readchans[i].
+            
+*/

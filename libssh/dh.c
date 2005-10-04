@@ -42,9 +42,11 @@ MA 02111-1307, USA. */
 #include <netdb.h>
 #include "libssh/priv.h"
 
+#ifdef HAVE_LIBCRYPTO
 #include <openssl/rand.h>
 #include <openssl/evp.h>
 #include <openssl/err.h>
+#endif
 #include <string.h>
 #include "libssh/crypto.h"    
 static unsigned char p_value[] = {
@@ -65,13 +67,23 @@ static unsigned long g_int = 2 ;	/* G is defined as 2 by the ssh2 standards */
 static bignum g;
 static bignum p;
 
+int connections = 0;
+
 /* maybe it might be enhanced .... */
 /* XXX Do it. */		
 int ssh_get_random(void *where, int len, int strong){
     if(strong){
+#ifdef HAVE_LIBGCRYPT
+        gcry_randomize(where,len,GCRY_VERY_STRONG_RANDOM);
+        return 1;
+    } else {
+        gcry_randomize(where,len,GCRY_STRONG_RANDOM);
+        return 1;
+#elif defined HAVE_LIBCRYPTO
         return RAND_bytes(where,len);
     } else {
         return RAND_pseudo_bytes(where,len);
+#endif
     }
 }
 
@@ -79,19 +91,39 @@ int ssh_get_random(void *where, int len, int strong){
 void ssh_crypto_init(){
     static int init=0;
     if(!init){
+#ifdef HAVE_LIBGCRYPT
+        gcry_check_version(NULL);
+#endif
         g=bignum_new();
         bignum_set_word(g,g_int);
+#ifdef HAVE_LIBGCRYPT
+        bignum_bin2bn(p_value,P_LEN,&p);
+#elif defined HAVE_LIBCRYPTO
         p=bignum_new();
         bignum_bin2bn(p_value,P_LEN,p);
+#endif
         init++;
+    }
+    if (!connections++){
+#ifdef HAVE_LIBGCRYPT
+        gcry_control(GCRYCTL_INIT_SECMEM,524288,0);
+        gcry_control(GCRYCTL_INITIALIZATION_FINISHED,0);
+#elif defined HAVE_LIBCRYPTO
+        OpenSSL_add_all_algorithms();
+#endif
     }
 }
 
 /* prints the bignum on stderr */
 void ssh_print_bignum(char *which,bignum num){
+#ifdef HAVE_LIBGCRYPT
+    unsigned char *hex;
+    bignum_bn2hex(num,&hex);
+#elif defined HAVE_LIBCRYPTO
     char *hex;
-    fprintf(stderr,"%s value: ",which);
     hex=bignum_bn2hex(num);
+#endif
+    fprintf(stderr,"%s value: ",which);
     fprintf(stderr,"%s\n",hex);
     free(hex);	
 }
@@ -111,7 +143,11 @@ void ssh_print_hexa(char *descr,unsigned char *what, int len){
 
 void dh_generate_x(SSH_SESSION *session){
     session->next_crypto->x=bignum_new();
+#ifdef HAVE_LIBGCRYPT
+    bignum_rand(session->next_crypto->x,128);
+#elif defined HAVE_LIBCRYPTO
     bignum_rand(session->next_crypto->x,128,0,-1);
+#endif
 	/* not harder than this */
 #ifdef DEBUG_CRYPTO
 	ssh_print_bignum("x",session->next_crypto->x);
@@ -120,7 +156,11 @@ void dh_generate_x(SSH_SESSION *session){
 /* used by server */
 void dh_generate_y(SSH_SESSION *session){
     session->next_crypto->y=bignum_new();
+#ifdef HAVE_LIBGCRYPT
+    bignum_rand(session->next_crypto->y,128);
+#elif defined HAVE_LIBCRYPTO
     bignum_rand(session->next_crypto->y,128,0,-1);
+#endif
     /* not harder than this */
 #ifdef DEBUG_CRYPTO
 	ssh_print_bignum("y",session->next_crypto->y);
@@ -128,31 +168,46 @@ void dh_generate_y(SSH_SESSION *session){
 }
 /* used by server */
 void dh_generate_e(SSH_SESSION *session){
+#ifdef HAVE_LIBCRYPTO
     bignum_CTX ctx=bignum_ctx_new();
+#endif
     session->next_crypto->e=bignum_new();
+#ifdef HAVE_LIBGCRYPT
+    bignum_mod_exp(session->next_crypto->e,g,session->next_crypto->x,p);
+#elif defined HAVE_LIBCRYPTO
     bignum_mod_exp(session->next_crypto->e,g,session->next_crypto->x,p,ctx);
+#endif
 #ifdef DEBUG_CRYPTO
     ssh_print_bignum("e",session->next_crypto->e);
 #endif
+#ifdef HAVE_LIBCRYPTO
     bignum_ctx_free(ctx);
+#endif
 }
 
 void dh_generate_f(SSH_SESSION *session){
+#ifdef HAVE_LIBCRYPTO
     bignum_CTX ctx=bignum_ctx_new();
+#endif
     session->next_crypto->f=bignum_new();
+#ifdef HAVE_LIBGCRYPT
+    bignum_mod_exp(session->next_crypto->f,g,session->next_crypto->y,p);
+#elif defined HAVE_LIBCRYPTO
     bignum_mod_exp(session->next_crypto->f,g,session->next_crypto->y,p,ctx);
+#endif
 #ifdef DEBUG_CRYPTO
     ssh_print_bignum("f",session->next_crypto->f);
 #endif
+#ifdef HAVE_LIBCRYPTO
     bignum_ctx_free(ctx);
+#endif
 }
 
 STRING *make_bignum_string(bignum num){
     STRING *ptr;
     int pad=0;
-    int len=bignum_num_bytes(num);
-    int bits=bignum_num_bits(num);
-    int finallen;
+    unsigned int len=bignum_num_bytes(num);
+    unsigned int bits=bignum_num_bits(num);
     /* remember if the fist bit is set, it is considered as a negative number. so 0's must be appended */
     if(!(bits%8) && bignum_is_bit_set(num,bits-1))
         pad++;
@@ -161,14 +216,24 @@ STRING *make_bignum_string(bignum num){
     ptr->size=htonl(len+pad);
     if(pad)
         ptr->string[0]=0;
-    finallen=bignum_bn2bin(num,ptr->string+pad);
+#ifdef HAVE_LIBGCRYPT
+    bignum_bn2bin(num,len,ptr->string+pad);
+#elif HAVE_LIBCRYPTO
+    bignum_bn2bin(num,ptr->string+pad);
+#endif
     return ptr;
 }
 
 bignum make_string_bn(STRING *string){
-	int len=ntohl(string->size);
+	bignum bn;
+	unsigned int len=string_len(string);
 	ssh_say(3,"Importing a %d bits,%d bytes object ...\n",len*8,len);
-	return bignum_bin2bn(string->string,len,NULL);
+#ifdef HAVE_LIBGCRYPT
+        bignum_bin2bn(string->string,len,&bn);
+#elif defined HAVE_LIBCRYPTO
+        bn=bignum_bin2bn(string->string,len,NULL);
+#endif
+	return bn;
 }
 
 STRING *dh_get_e(SSH_SESSION *session){
@@ -200,21 +265,33 @@ void dh_import_e(SSH_SESSION *session, STRING *e_string){
 }
 
 void dh_build_k(SSH_SESSION *session){
+#ifdef HAVE_LIBCRYPTO
     bignum_CTX ctx=bignum_ctx_new();
+#endif
     session->next_crypto->k=bignum_new();
     /* the server and clients don't use the same numbers */
+#ifdef HAVE_LIBGCRYPT
+    if(session->client){
+        bignum_mod_exp(session->next_crypto->k,session->next_crypto->f,session->next_crypto->x,p);
+    } else {
+        bignum_mod_exp(session->next_crypto->k,session->next_crypto->e,session->next_crypto->y,p);
+    }
+#elif defined HAVE_LIBCRYPTO
     if(session->client){
         bignum_mod_exp(session->next_crypto->k,session->next_crypto->f,session->next_crypto->x,p,ctx);
     } else {
         bignum_mod_exp(session->next_crypto->k,session->next_crypto->e,session->next_crypto->y,p,ctx);
     }
+#endif
 #ifdef DEBUG_CRYPTO
     ssh_print_bignum("shared secret key",session->next_crypto->k);
 #endif
+#ifdef HAVE_LIBCRYPTO
     bignum_ctx_free(ctx);
+#endif
 }
 /*
-static void sha_add(STRING *str,SHACTX *ctx){
+static void sha_add(STRING *str,SHACTX ctx){
     sha1_update(ctx,str,string_len(str)+4);
 #ifdef DEBUG_CRYPTO
     ssh_print_hexa("partial hashed sessionid",str,string_len(str)+4);
@@ -222,7 +299,7 @@ static void sha_add(STRING *str,SHACTX *ctx){
 }
 */
 void make_sessionid(SSH_SESSION *session){
-    SHACTX *ctx;
+    SHACTX ctx;
     STRING *num,*str;
     BUFFER *server_hash, *client_hash;
     BUFFER *buf=buffer_new();
@@ -294,7 +371,7 @@ void make_sessionid(SSH_SESSION *session){
     buffer_free(buf);
 #ifdef DEBUG_CRYPTO
     printf("Session hash : ");
-    ssh_print_hexa("session id",session->next_crypto->session_id,SHA_DIGEST_LENGTH);
+    ssh_print_hexa("session id",session->next_crypto->session_id,SHA_DIGEST_LEN);
 #endif
 }
 
@@ -314,18 +391,18 @@ void hashbufin_add_cookie(SSH_SESSION *session,unsigned char *cookie){
     buffer_add_data(session->in_hashbuf,cookie,16);
 }
 
-static void generate_one_key(STRING *k,char session_id[SHA_DIGEST_LENGTH],char output[SHA_DIGEST_LENGTH],char letter){
-    SHACTX *ctx=sha1_init();
+static void generate_one_key(STRING *k,unsigned char session_id[SHA_DIGEST_LEN],unsigned char output[SHA_DIGEST_LEN],char letter){
+    SHACTX ctx=sha1_init();
     sha1_update(ctx,k,string_len(k)+4);
-    sha1_update(ctx,session_id,SHA_DIGEST_LENGTH);
+    sha1_update(ctx,session_id,SHA_DIGEST_LEN);
     sha1_update(ctx,&letter,1);
-    sha1_update(ctx,session_id,SHA_DIGEST_LENGTH);
+    sha1_update(ctx,session_id,SHA_DIGEST_LEN);
     sha1_final(output,ctx);
 }
 
 void generate_session_keys(SSH_SESSION *session){
     STRING *k_string;
-    SHACTX *ctx;
+    SHACTX ctx;
     k_string=make_bignum_string(session->next_crypto->k);
 
     /* IV */
@@ -345,19 +422,19 @@ void generate_session_keys(SSH_SESSION *session){
     }
     /* some ciphers need more than 20 bytes of input key */
     /* XXX verify it's ok for server implementation */
-    if(session->next_crypto->out_cipher->keylen > SHA_DIGEST_LENGTH*8){
+    if(session->next_crypto->out_cipher->keysize > SHA_DIGEST_LEN*8){
         ctx=sha1_init();
         sha1_update(ctx,k_string,string_len(k_string)+4);
-        sha1_update(ctx,session->next_crypto->session_id,SHA_DIGEST_LENGTH);
-        sha1_update(ctx,session->next_crypto->encryptkey,SHA_DIGEST_LENGTH);
+        sha1_update(ctx,session->next_crypto->session_id,SHA_DIGEST_LEN);
+        sha1_update(ctx,session->next_crypto->encryptkey,SHA_DIGEST_LEN);
         sha1_final(session->next_crypto->encryptkey+SHA_DIGEST_LEN,ctx);
     }
 
-    if(session->next_crypto->in_cipher->keylen > SHA_DIGEST_LENGTH*8){
+    if(session->next_crypto->in_cipher->keysize > SHA_DIGEST_LEN*8){
         ctx=sha1_init();
         sha1_update(ctx,k_string,string_len(k_string)+4);
-        sha1_update(ctx,session->next_crypto->session_id,SHA_DIGEST_LENGTH);
-        sha1_update(ctx,session->next_crypto->decryptkey,SHA_DIGEST_LENGTH);
+        sha1_update(ctx,session->next_crypto->session_id,SHA_DIGEST_LEN);
+        sha1_update(ctx,session->next_crypto->decryptkey,SHA_DIGEST_LEN);
         sha1_final(session->next_crypto->decryptkey+SHA_DIGEST_LEN,ctx);
     }
     if(session->client){
@@ -369,19 +446,19 @@ void generate_session_keys(SSH_SESSION *session){
     }
 
 #ifdef DEBUG_CRYPTO
-    ssh_print_hexa("encrypt IV",session->next_crypto->encryptIV,SHA_DIGEST_LENGTH);
-    ssh_print_hexa("decrypt IV",session->next_crypto->decryptIV,SHA_DIGEST_LENGTH);
+    ssh_print_hexa("encrypt IV",session->next_crypto->encryptIV,SHA_DIGEST_LEN);
+    ssh_print_hexa("decrypt IV",session->next_crypto->decryptIV,SHA_DIGEST_LEN);
     ssh_print_hexa("encryption key",session->next_crypto->encryptkey,16);
     ssh_print_hexa("decryption key",session->next_crypto->decryptkey,16);
-    ssh_print_hexa("Encryption MAC",session->next_crypto->encryptMAC,SHA_DIGEST_LENGTH);
+    ssh_print_hexa("Encryption MAC",session->next_crypto->encryptMAC,SHA_DIGEST_LEN);
     ssh_print_hexa("Decryption MAC",session->next_crypto->decryptMAC,20);
 #endif
     free(k_string);
 }
 
-int ssh_get_pubkey_hash(SSH_SESSION *session,char hash[MD5_DIGEST_LEN]){
+int ssh_get_pubkey_hash(SSH_SESSION *session,unsigned char hash[MD5_DIGEST_LEN]){
     STRING *pubkey=session->current_crypto->server_pubkey;
-    MD5CTX *ctx;
+    MD5CTX ctx;
     int len=string_len(pubkey);
 
     ctx=md5_init();
@@ -390,7 +467,7 @@ int ssh_get_pubkey_hash(SSH_SESSION *session,char hash[MD5_DIGEST_LEN]){
     return MD5_DIGEST_LEN;
 }
 
-int pubkey_get_hash(SSH_SESSION *session, char hash[MD5_DIGEST_LEN]){
+int pubkey_get_hash(SSH_SESSION *session, unsigned char hash[MD5_DIGEST_LEN]){
     return ssh_get_pubkey_hash(session,hash);
 }
 
@@ -424,33 +501,59 @@ static int match(char *group,char *object){
 }
 
 static int sig_verify(SSH_SESSION *session, PUBLIC_KEY *pubkey, SIGNATURE *signature, 
-        char *digest){
+        unsigned char *digest){
+#ifdef HAVE_LIBGCRYPT
+    gcry_error_t valid=0;
+    gcry_sexp_t gcryhash;
+#elif defined HAVE_LIBCRYPTO
     int valid=0;
-    char hash[SHA_DIGEST_LENGTH];
-    sha1(digest,SHA_DIGEST_LENGTH,hash);
+#endif
+    unsigned char hash[SHA_DIGEST_LEN+1];
+    sha1(digest,SHA_DIGEST_LEN,hash+1);
+    hash[0]=0;
 #ifdef DEBUG_CRYPTO
-    ssh_print_hexa("hash to be verified with dsa",hash,SHA_DIGEST_LENGTH);
+    ssh_print_hexa("hash to be verified with dsa",hash+1,SHA_DIGEST_LEN);
 #endif
     switch(pubkey->type){
         case TYPE_DSS:
-            valid=DSA_do_verify(hash,SHA_DIGEST_LENGTH,signature->dsa_sign,
+#ifdef HAVE_LIBGCRYPT
+            gcry_sexp_build(&gcryhash, NULL, "%b", SHA_DIGEST_LEN+1, hash);
+            valid=gcry_pk_verify(signature->dsa_sign,gcryhash,pubkey->dsa_pub);
+            gcry_sexp_release(gcryhash);
+            if(valid==0)
+              return 0;
+            if (gcry_err_code(valid)!=GPG_ERR_BAD_SIGNATURE){
+              ssh_set_error(NULL,SSH_FATAL,"DSA error : %s", gcry_strerror(valid));
+#elif defined HAVE_LIBCRYPTO
+            valid=DSA_do_verify(hash+1,SHA_DIGEST_LEN,signature->dsa_sign,
                 pubkey->dsa_pub);
             if(valid==1)
                 return 0;
             if(valid==-1){
                 ssh_set_error(session,SSH_FATAL,"DSA error : %s",ERR_error_string(ERR_get_error(),NULL));
+#endif
                 return -1;
             }
             ssh_set_error(session,SSH_FATAL,"Invalid DSA signature");
             return -1;
         case TYPE_RSA:
         case TYPE_RSA1:
-        valid=RSA_verify(NID_sha1,hash,SHA_DIGEST_LENGTH,
+#ifdef HAVE_LIBGCRYPT
+            gcry_sexp_build(&gcryhash,NULL,"(data(flags pkcs1)(hash sha1 %b))",SHA_DIGEST_LEN,hash+1);
+            valid=gcry_pk_verify(signature->rsa_sign,gcryhash,pubkey->rsa_pub);
+            gcry_sexp_release(gcryhash);
+            if(valid==0)
+              return 0;
+            if(gcry_err_code(valid)!=GPG_ERR_BAD_SIGNATURE){
+                ssh_set_error(NULL,SSH_FATAL,"RSA error : %s",gcry_strerror(valid));
+#elif defined HAVE_LIBCRYPTO
+            valid=RSA_verify(NID_sha1,hash+1,SHA_DIGEST_LEN,
             signature->rsa_sign->string,string_len(signature->rsa_sign),pubkey->rsa_pub);
             if(valid==1)
                 return 0;
             if(valid==-1){
                 ssh_set_error(session,SSH_FATAL,"RSA error : %s",ERR_error_string(ERR_get_error(),NULL));
+#endif
                 return -1;
             }
             ssh_set_error(session,SSH_FATAL,"Invalid RSA signature");

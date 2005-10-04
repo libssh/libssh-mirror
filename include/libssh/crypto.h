@@ -33,15 +33,30 @@ MA 02111-1307, USA. */
 #ifdef des_set_key
 #undef des_set_key
 #endif
+#ifdef GCRYPT
+#include <gcrypt.h>
+#endif
+
 struct crypto_struct {
     char *name; /* ssh name of the algorithm */
     unsigned int blocksize; /* blocksize of the algo */
     unsigned int keylen; /* length of the key structure */
+#ifdef HAVE_LIBGCRYPT
+    gcry_cipher_hd_t *key;
+#elif defined HAVE_LIBCRYPTO
     void *key; /* a key buffer allocated for the algo */
+#endif
     unsigned int keysize; /* bytes of key used. != keylen */
+#ifdef HAVE_LIBGCRYPT
+    void (*set_encrypt_key)(struct crypto_struct *cipher, void *key, void *IV); /* sets the new key for immediate use */
+    void (*set_decrypt_key)(struct crypto_struct *cipher, void *key, void *IV);
+    void (*cbc_encrypt)(struct crypto_struct *cipher, void *in, void *out,unsigned long len);
+    void (*cbc_decrypt)(struct crypto_struct *cipher, void *in, void *out,unsigned long len);
+#elif defined HAVE_LIBCRYPTO
     void (*set_encrypt_key)(struct crypto_struct *cipher, void *key); /* sets the new key for immediate use */
     void (*set_decrypt_key)(struct crypto_struct *cipher, void *key);
     void (*cbc_encrypt)(struct crypto_struct *cipher, void *in, void *out,unsigned long len,void *IV);
     void (*cbc_decrypt)(struct crypto_struct *cipher, void *in, void *out,unsigned long len,void *IV);
+#endif
 };
 

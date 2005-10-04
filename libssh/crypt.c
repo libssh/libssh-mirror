@@ -22,11 +22,14 @@ MA 02111-1307, USA. */
 
 #include <unistd.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
+#ifdef OPENSSL_CRYPTO
 #include <openssl/blowfish.h>
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
+#endif
 
 #include <netdb.h>
 #include "libssh/priv.h"
@@ -45,25 +48,34 @@ int packet_decrypt(SSH_SESSION *session, void *data,u32 len){
     struct crypto_struct *crypto=session->current_crypto->in_cipher;
     char *out=malloc(len);
     ssh_say(3,"Decrypting %d bytes data\n",len);
+#ifdef HAVE_LIBGCRYPT
+    crypto->set_decrypt_key(crypto,session->current_crypto->decryptkey,session->current_crypto->decryptIV);
+    crypto->cbc_decrypt(crypto,data,out,len);
+#elif defined HAVE_LIBCRYPTO
     crypto->set_decrypt_key(crypto,session->current_crypto->decryptkey);
     crypto->cbc_decrypt(crypto,data,out,len,session->current_crypto->decryptIV);
+#endif
     memcpy(data,out,len);
     memset(out,0,len);
     free(out);
     return 0;
 }
     
-char * packet_encrypt(SSH_SESSION *session,void *data,u32 len){
+unsigned char * packet_encrypt(SSH_SESSION *session,void *data,u32 len){
     struct crypto_struct *crypto;
-    HMAC_CTX *ctx;
+    HMACCTX ctx;
     char *out;
-    int finallen;
+    unsigned int finallen;
     u32 seq=ntohl(session->send_seq);
     if(!session->current_crypto)
         return NULL; /* nothing to do here */
     crypto= session->current_crypto->out_cipher;
     ssh_say(3,"seq num = %d, len = %d\n",session->send_seq,len);
+#ifdef HAVE_LIBGCRYPT
+    crypto->set_encrypt_key(crypto,session->current_crypto->encryptkey,session->current_crypto->encryptIV);
+#elif defined HAVE_LIBCRYPTO
     crypto->set_encrypt_key(crypto,session->current_crypto->encryptkey);
+#endif
     out=malloc(len);
     if(session->version==2){
         ctx=hmac_init(session->current_crypto->encryptMAC,20,HMAC_SHA1);	
@@ -77,7 +89,11 @@ char * packet_encrypt(SSH_SESSION *session,void *data,u32 len){
         ssh_print_hexa("packet hmac",session->current_crypto->hmacbuf,20);
 #endif
     }
+#ifdef HAVE_LIBGCRYPT
+    crypto->cbc_encrypt(crypto,data,out,len);
+#elif defined HAVE_LIBCRYPTO
     crypto->cbc_encrypt(crypto,data,out,len,session->current_crypto->encryptIV);
+#endif
     memcpy(data,out,len);
     memset(out,0,len);
     free(out);
@@ -87,10 +103,10 @@ char * packet_encrypt(SSH_SESSION *session,void *data,u32 len){
         return NULL;
 }
 
-int packet_hmac_verify(SSH_SESSION *session,BUFFER *buffer,char *mac){
-    HMAC_CTX *ctx;
+int packet_hmac_verify(SSH_SESSION *session,BUFFER *buffer,unsigned char *mac){
+    HMACCTX ctx;
     unsigned char hmacbuf[EVP_MAX_MD_SIZE];
-    int len;
+    unsigned int len;
     u32 seq=htonl(session->recv_seq);
     ctx=hmac_init(session->current_crypto->decryptMAC,20,HMAC_SHA1);
     hmac_update(ctx,(unsigned char *)&seq,sizeof(u32));

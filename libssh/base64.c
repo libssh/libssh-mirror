@@ -193,10 +193,10 @@ static void _bin_to_base64(unsigned char *dest, unsigned char source[3], int len
     }
 }
 
-char *bin_to_base64(unsigned char *source, int len){
+unsigned char *bin_to_base64(unsigned char *source, int len){
     int flen=len + (3 - (len %3)); /* round to upper 3 multiple */
-    char *buffer;
-    char *ptr;
+    unsigned char *buffer;
+    unsigned char *ptr;
     flen=(4 * flen)/3 + 1 ;
     ptr=buffer=malloc(flen);
     while(len>0){

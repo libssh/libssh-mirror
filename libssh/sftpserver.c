@@ -26,6 +26,7 @@ MA 02111-1307, USA. */
 #include <stdlib.h>
 #include <string.h>
 #include <netdb.h>
+#include <stdio.h>
 
 SFTP_CLIENT_MESSAGE *sftp_get_client_message(SFTP_SESSION *sftp){
     SFTP_PACKET *packet=sftp_packet_read(sftp);

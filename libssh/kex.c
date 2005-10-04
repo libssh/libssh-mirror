@@ -26,6 +26,11 @@ MA 02111-1307, USA. */
 #include "libssh/ssh2.h"
 #include "libssh/ssh1.h"
 
+#ifdef HAVE_LIBGCRYPT
+#define BLOWFISH "blowfish-cbc,"
+#define AES "aes256-cbc,aes192-cbc,aes128-cbc,"
+#define DES "3des-cbc"
+#elif defined HAVE_LIBCRYPTO
 #ifdef HAVE_OPENSSL_BLOWFISH_H
 #define BLOWFISH "blowfish-cbc,"
 #else
@@ -36,13 +41,15 @@ MA 02111-1307, USA. */
 #else
 #define AES ""
 #endif
-
 #define DES "3des-cbc"
+#endif
+
 #ifdef HAVE_LIBZ
 #define ZLIB "none,zlib"
 #else
 #define ZLIB "none"
 #endif
+
 char *default_methods[]={
 	"diffie-hellman-group1-sha1","ssh-dss,ssh-rsa",AES BLOWFISH DES,AES BLOWFISH
         DES, "hmac-sha1","hmac-sha1","none","none","","",NULL };
@@ -286,7 +293,7 @@ static STRING *make_rsa1_string(STRING *e, STRING *n){
 
 static void build_session_id1(SSH_SESSION *session, STRING *servern, 
         STRING *hostn){
-    MD5CTX *md5=md5_init();
+    MD5CTX md5=md5_init();
 #ifdef DEBUG_CRYPTO
     ssh_print_hexa("host modulus",hostn->string,string_len(hostn));
     ssh_print_hexa("server modulus",servern->string,string_len(servern));
@@ -313,7 +320,7 @@ static int modulus_smaller(PUBLIC_KEY *k1, PUBLIC_KEY *k2){
 #define ABS(A) ( (A)<0 ? -(A):(A) )
 STRING *encrypt_session_key(SSH_SESSION *session, PUBLIC_KEY *svrkey,
         PUBLIC_KEY *hostkey,int slen, int hlen ){
-    char buffer[32];
+    unsigned char buffer[32];
     int i;
     STRING *data1,*data2;
     /* first, generate a session key */

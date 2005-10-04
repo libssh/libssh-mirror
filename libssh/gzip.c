@@ -29,6 +29,7 @@ MA 02111-1307, USA. */
 #ifndef NO_GZIP
 #include <zlib.h>
 #include <string.h>
+#include <stdlib.h>
 #define BLOCKSIZE 4092
 
 static z_stream *initcompress(SSH_SESSION *session,int level){

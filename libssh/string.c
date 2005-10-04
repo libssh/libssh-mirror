@@ -26,7 +26,7 @@ MA 02111-1307, USA. */
 #include <string.h>
 #include "libssh/priv.h"
 
-STRING *string_new(u32 size){
+STRING *string_new(unsigned int size){
     STRING *str=malloc(size + 4);
     str->size=htonl(size);
     return str;

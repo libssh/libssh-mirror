@@ -358,7 +358,7 @@ int main(int argc, char **argv){
     char *banner;
     int state;
     char buf[10];
-    char hash[MD5_DIGEST_LEN];
+    unsigned char hash[MD5_DIGEST_LEN];
 
     options=ssh_options_new();
     if(ssh_options_getopt(options,&argc, argv))

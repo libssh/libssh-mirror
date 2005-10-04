@@ -23,6 +23,7 @@ MA 02111-1307, USA. */
 #include "libssh/ssh1.h"
 #include <string.h>
 #include <netdb.h>
+#include <stdlib.h>
 
 /*
 static void burn(char *ptr){
@@ -187,7 +188,7 @@ int ssh_userauth1_password(SSH_SESSION *session,char *username,char *password){
          */
         password_s=string_new(128);
         ssh_get_random(password_s->string,128,0);
-        strcpy(password_s->string,password);
+        strcpy((char *)password_s->string,password);
     }
 
     packet_clear_out(session);

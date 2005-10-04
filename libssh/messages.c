@@ -32,6 +32,7 @@ MA 02111-1307, USA. */
 #include "libssh/ssh2.h"
 #include <netdb.h>
 #include <string.h>
+#include <stdlib.h>
 
 static SSH_MESSAGE *message_new(SSH_SESSION *session){
     SSH_MESSAGE *msg=session->ssh_message;

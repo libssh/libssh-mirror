@@ -25,6 +25,7 @@ MA 02111-1307, USA. */
 
 #ifndef _LIBSSH_PRIV_H
 #define _LIBSSH_PRIV_H
+#include "config.h"
 #include "libssh/libssh.h"
 
 /* Debugging constants */
@@ -45,25 +46,51 @@ MA 02111-1307, USA. */
 #define TYPE_RSA1 3
 
 /* profiling constants. Don't touch them unless you know what you do */
-#define OPENSSL_CRYPTO
+#ifdef HAVE_LIBCRYPTO
 #define OPENSSL_BIGNUMS
-
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /* wrapper things */
+#ifdef HAVE_LIBGCRYPT
+#include <gcrypt.h>
+typedef gcry_md_hd_t SHACTX;
+typedef gcry_md_hd_t MD5CTX;
+typedef gcry_md_hd_t HMACCTX;
+#ifdef MD5_DIGEST_LEN
+    #undef MD5_DIGEST_LEN
+#endif
+#define SHA_DIGEST_LEN 20
+#define MD5_DIGEST_LEN 16
+#define EVP_MAX_MD_SIZE 36
 
-#ifdef OPENSSL_CRYPTO
+typedef gcry_mpi_t bignum;
+
+#define bignum_new() gcry_mpi_new(0)
+#define bignum_free(num) gcry_mpi_release(num)
+#define bignum_set_word(bn,n) gcry_mpi_set_ui(bn,n)
+#define bignum_bin2bn(bn,datalen,data) gcry_mpi_scan(data,GCRYMPI_FMT_USG,bn,datalen,NULL)
+#define bignum_bn2hex(num,data) gcry_mpi_aprint(GCRYMPI_FMT_HEX,data,NULL,num)
+#define bignum_hex2bn(num,datalen,data) gcry_mpi_scan(num,GCRYMPI_FMT_HEX,data,datalen,NULL)
+#define bignum_rand(num,bits) gcry_mpi_randomize(num,bits,GCRY_STRONG_RANDOM),gcry_mpi_set_bit(num,bits-1),gcry_mpi_set_bit(num,0)
+#define bignum_mod_exp(dest,generator,exp,modulo) gcry_mpi_powm(dest,generator,exp,modulo)
+#define bignum_num_bits(num) gcry_mpi_get_nbits(num)
+#define bignum_num_bytes(num) ((gcry_mpi_get_nbits(num)+7)/8)
+#define bignum_is_bit_set(num,bit) gcry_mpi_test_bit(num,bit)
+#define bignum_bn2bin(num,datalen,data) gcry_mpi_print(GCRYMPI_FMT_USG,data,datalen,NULL,num)
+
+#elif defined HAVE_LIBCRYPTO
 #include <openssl/dsa.h>
 #include <openssl/rsa.h>
 #include <openssl/sha.h>
 #include <openssl/md5.h>
 #include <openssl/hmac.h>
-typedef SHA_CTX SHACTX;
-typedef MD5_CTX MD5CTX;
-typedef HMAC_CTX HMACCTX;
+typedef SHA_CTX* SHACTX;
+typedef MD5_CTX*  MD5CTX;
+typedef HMAC_CTX* HMACCTX;
 #ifdef MD5_DIGEST_LEN
     #undef MD5_DIGEST_LEN
 #endif
@@ -91,29 +118,30 @@ typedef BN_CTX* bignum_CTX;
 #define bignum_bn2bin(num,ptr) BN_bn2bin(num,ptr)
 
 #endif /* OPENSSL_BIGNUMS */
+
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
 
 /* wrapper.c */
-MD5CTX *md5_init(void);
-void md5_update(MD5CTX *c, const void *data, unsigned long len);
-void md5_final(unsigned char *md,MD5CTX *c);
-SHACTX *sha1_init(void);
-void sha1_update(SHACTX *c, const void *data, unsigned long len);
-void sha1_final(unsigned char *md,SHACTX *c);
+MD5CTX md5_init(void);
+void md5_update(MD5CTX c, const void *data, unsigned long len);
+void md5_final(unsigned char *md,MD5CTX c);
+SHACTX sha1_init(void);
+void sha1_update(SHACTX c, const void *data, unsigned long len);
+void sha1_final(unsigned char *md,SHACTX c);
 void sha1(unsigned char *digest,int len,unsigned char *hash);
 #define HMAC_SHA1 1
 #define HMAC_MD5 2
-HMACCTX *hmac_init(const void *key,int len,int type);
-void hmac_update(HMACCTX *c, const void *data, unsigned long len);
-void hmac_final(HMACCTX *ctx,unsigned char *hashmacbuf,int *len);
+HMACCTX hmac_init(const void *key,int len,int type);
+void hmac_update(HMACCTX c, const void *data, unsigned long len);
+void hmac_final(HMACCTX ctx,unsigned char *hashmacbuf,unsigned int *len);
 
 /* strings and buffers */
 /* must be 32 bits number + immediatly our data */
 struct string_struct {
 	u32 size;
-	char string[MAX_PACKET_LEN];
+	unsigned char string[MAX_PACKET_LEN];
 } __attribute__ ((packed));
 
 
@@ -132,27 +160,42 @@ typedef struct packet_struct {
 } PACKET;
 
 typedef struct kex_struct {
-	char cookie[16];
+	unsigned char cookie[16];
 	char **methods;
 } KEX;
 
 struct public_key_struct {
     int type;
     char *type_c; /* Don't free it ! it is static */
+#ifdef HAVE_LIBGCRYPT
+    gcry_sexp_t dsa_pub;
+    gcry_sexp_t rsa_pub;
+#elif HAVE_LIBCRYPTO
     DSA *dsa_pub;
     RSA *rsa_pub;
+#endif
 };
 
 struct private_key_struct {
     int type;
+#ifdef HAVE_LIBGCRYPT
+    gcry_sexp_t dsa_priv;
+    gcry_sexp_t rsa_priv;
+#elif defined HAVE_LIBCRYPTO
     DSA *dsa_priv;
     RSA *rsa_priv;
+#endif
 };
 
 typedef struct signature_struct {
     int type;
+#ifdef HAVE_LIBGCRYPT
+    gcry_sexp_t dsa_sign;
+    gcry_sexp_t rsa_sign;
+#elif defined HAVE_LIBCRYPTO
     DSA_SIG *dsa_sign;
     STRING *rsa_sign;
+#endif
 } SIGNATURE;
 
 struct ssh_options_struct {
@@ -183,17 +226,17 @@ struct ssh_options_struct {
 
 typedef struct ssh_crypto_struct {
     bignum e,f,x,k,y;
-    char session_id[SHA_DIGEST_LEN];
+    unsigned char session_id[SHA_DIGEST_LEN];
     
-    char encryptIV[SHA_DIGEST_LEN*2];
-    char decryptIV[SHA_DIGEST_LEN*2];
+    unsigned char encryptIV[SHA_DIGEST_LEN*2];
+    unsigned char decryptIV[SHA_DIGEST_LEN*2];
 
-    char decryptkey[SHA_DIGEST_LEN*2];
-    char encryptkey[SHA_DIGEST_LEN*2];
+    unsigned char decryptkey[SHA_DIGEST_LEN*2];
+    unsigned char encryptkey[SHA_DIGEST_LEN*2];
 
-    char encryptMAC[SHA_DIGEST_LEN];
-    char decryptMAC[SHA_DIGEST_LEN];
-    char hmacbuf[EVP_MAX_MD_SIZE];
+    unsigned char encryptMAC[SHA_DIGEST_LEN];
+    unsigned char decryptMAC[SHA_DIGEST_LEN];
+    unsigned char hmacbuf[EVP_MAX_MD_SIZE];
     struct crypto_struct *in_cipher, *out_cipher; /* the cipher structures/objects */
     STRING *server_pubkey;
     char *server_pubkey_type;
@@ -302,7 +345,7 @@ struct ssh_kbdint {
     char *name;
     char *instruction;
     char **prompts;
-    char *echo; /* bool array */
+    unsigned char *echo; /* bool array */
     char **answers;
 };
 /* session.c */
@@ -320,6 +363,7 @@ void ssh_set_error(void *error,int code,char *descr,...);
 /* in dh.c */
 /* DH key generation */
 void dh_generate_e(SSH_SESSION *session);
+void ssh_print_bignum(char *which,bignum num);
 void dh_generate_x(SSH_SESSION *session);
 void dh_generate_y(SSH_SESSION *session);
 void dh_generate_f(SSH_SESSION *session);
@@ -343,9 +387,9 @@ STRING *make_bignum_string(bignum num);
 /* in crypt.c */
 u32 packet_decrypt_len(SSH_SESSION *session,char *crypted);
 int packet_decrypt(SSH_SESSION *session, void *packet,unsigned int len);
-char *packet_encrypt(SSH_SESSION *session,void *packet,unsigned int len);
+unsigned char *packet_encrypt(SSH_SESSION *session,void *packet,unsigned int len);
  /* it returns the hmac buffer if exists*/
-int packet_hmac_verify(SSH_SESSION *session,BUFFER *buffer,char *mac);
+int packet_hmac_verify(SSH_SESSION *session,BUFFER *buffer,unsigned char *mac);
 
 /* in packet.c */
 void packet_clear_out(SSH_SESSION *session);
@@ -434,7 +478,7 @@ int buffer_pass_bytes(BUFFER *buffer, int len);
 
 /* in base64.c */
 BUFFER *base64_to_bin(char *source);
-char *bin_to_base64(unsigned char *source, int len);
+unsigned char *bin_to_base64(unsigned char *source, int len);
 
 /* gzip.c */
 int compress_buffer(SSH_SESSION *session,BUFFER *buf);
@@ -445,7 +489,6 @@ int crypt_set_algorithms(SSH_SESSION *);
 int crypt_set_algorithms_server(SSH_SESSION *session);
 CRYPTO *crypto_new();
 void crypto_free(CRYPTO *crypto);
-bignum bignum_new();
 
 /* crc32.c */
 u32 ssh_crc32(char *buffer, int len);

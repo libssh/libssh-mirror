@@ -32,7 +32,7 @@ MA 02111-1307, USA. */
 #include "libssh/crypto.h"
 
 /* XXX include selected mac size */
-static int macsize=SHA_DIGEST_LENGTH;
+static int macsize=SHA_DIGEST_LEN;
 
 /* completeread will read blocking until len bytes have been read */
 static int completeread(int fd, void *buffer, int len){
@@ -55,7 +55,7 @@ static int completeread(int fd, void *buffer, int len){
 static int packet_read2(SSH_SESSION *session){
     u32 len;
     void *packet=NULL;
-    char mac[30];
+    unsigned char mac[30];
     char buffer[16];
     int be_read,i;
     int to_be_read;
@@ -316,7 +316,7 @@ static int packet_send2(SSH_SESSION *session){
     u32 finallen;
     u8 padding;
     u32 currentlen=buffer_get_len(session->out_buffer);
-    char *hmac;
+    unsigned char *hmac;
     int ret=0;
     unsigned int blocksize=(session->current_crypto?session->current_crypto->out_cipher->blocksize:8);
     ssh_say(3,"Writing on the wire a packet having %ld bytes before",currentlen);

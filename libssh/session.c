@@ -22,6 +22,7 @@
 
 /* ssh_new() returns a newly allocated SSH_SESSION structure pointer */
 #include <string.h>
+#include <stdlib.h>
 #include "libssh/libssh.h"
 #include "libssh/priv.h"
 #include "libssh/server.h"

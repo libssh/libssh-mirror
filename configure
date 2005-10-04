@@ -2786,6 +2786,10 @@ esac
 
 
 # Checks for libraries.
+# AC_CHECK_LIB([gcrypt], [gcry_md_open])
+# if test "$ac_cv_lib_gcrypt_gcry_md_open" != yes; then
+#   AC_CHECK_LIB([crypto], [BN_init])
+# fi
 
 echo "$as_me:$LINENO: checking for BN_init in -lcrypto" >&5
 echo $ECHO_N "checking for BN_init in -lcrypto... $ECHO_C" >&6
@@ -3693,9 +3697,12 @@ done
 
 
 
+
+
 for ac_header in fcntl.h netdb.h netinet/in.h stdlib.h string.h sys/socket.h \
-sys/time.h termios.h unistd.h openssl/aes.h openssl/blowfish.h zlib.h \
-sys/poll.h stdint.h pty.h pam/pam_appl.h security/pam_appl.h
+sys/time.h termios.h unistd.h openssl/aes.h openssl/blowfish.h \
+openssl/des.h zlib.h sys/poll.h stdint.h pty.h pam/pam_appl.h \
+security/pam_appl.h gcrypt.h
 do
 as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
 if eval "test \"\${$as_ac_Header+set}\" = set"; then
@@ -5089,8 +5096,8 @@ done
 
 
 
-for ac_func in endpwent gethostbyaddr gethostbyname getpass memmove memset cfmakeraw\
- select socket strchr strdup strerror strstr poll
+for ac_func in endpwent gethostbyaddr gethostbyname getpass memmove memset \
+cfmakeraw select socket strchr strdup strerror strstr poll
 do
 as_ac_var=`echo "ac_cv_func_$ac_func" | $as_tr_sh`
 echo "$as_me:$LINENO: checking for $ac_func" >&5

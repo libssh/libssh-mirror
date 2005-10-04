@@ -27,8 +27,178 @@ MA 02111-1307, USA. */
 
 #include "libssh/priv.h"
 #include "libssh/crypto.h"
+#include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
-#ifdef OPENSSL_CRYPTO
+#ifdef HAVE_LIBGCRYPT
+#include <gcrypt.h>
+
+SHACTX sha1_init(){
+    SHACTX ret;
+    gcry_md_open(&ret,GCRY_MD_SHA1,GCRY_MD_FLAG_SECURE);
+    return ret;
+}
+void sha1_update(SHACTX c, const void *data, unsigned long len){
+    gcry_md_write(c,data,len);
+}
+void sha1_final(unsigned char *md,SHACTX c){
+    gcry_md_final(c);
+    memcpy(md, gcry_md_read(c, 0), SHA_DIGEST_LEN);
+    gcry_md_close(c);
+}
+void sha1(unsigned char *digest,int len,unsigned char *hash){
+    gcry_md_hash_buffer(GCRY_MD_SHA1,hash,digest,len);
+}
+
+MD5CTX md5_init(){
+    MD5CTX ret;
+    gcry_md_open(&ret,GCRY_MD_MD5,GCRY_MD_FLAG_SECURE);
+    return ret;
+}
+void md5_update(MD5CTX c, const void *data, unsigned long len){
+    gcry_md_write(c,data,len);
+}
+void md5_final(unsigned char *md,MD5CTX c){
+    gcry_md_final(c);
+    memcpy(md, gcry_md_read(c, 0), MD5_DIGEST_LEN);
+    gcry_md_close(c);
+}
+
+HMACCTX hmac_init(const void *key, int len,int type){
+    HMACCTX c;
+    switch(type){
+        case HMAC_SHA1:
+            gcry_md_open(&c,GCRY_MD_SHA1, GCRY_MD_FLAG_HMAC | GCRY_MD_FLAG_SECURE);
+            break;
+        case HMAC_MD5:
+            gcry_md_open(&c,GCRY_MD_MD5, GCRY_MD_FLAG_HMAC | GCRY_MD_FLAG_SECURE);
+            break;
+        default:
+            c=NULL;
+        }
+    gcry_md_setkey(c,key,len);
+    return c;
+}
+void hmac_update(HMACCTX c, const void *data, unsigned long len){
+    gcry_md_write(c,data,len);
+}
+
+void hmac_final(HMACCTX c,unsigned char *hashmacbuf,unsigned int *len){
+    *len = gcry_md_get_algo_dlen(gcry_md_get_algo(c));
+    memcpy(hashmacbuf, gcry_md_read(c, 0), *len);
+    gcry_md_close(c);
+}
+
+static void alloc_key(struct crypto_struct *cipher){
+    cipher->key=malloc(cipher->keylen);
+}
+
+/* the wrapper functions for blowfish */
+static void blowfish_set_key(struct crypto_struct *cipher, void *key, void *IV){
+    if(!cipher->key){
+        alloc_key(cipher);
+        gcry_cipher_open(&cipher->key[0],GCRY_CIPHER_BLOWFISH,GCRY_CIPHER_MODE_CBC,GCRY_CIPHER_SECURE);
+        gcry_cipher_setkey(cipher->key[0],key,16);
+        gcry_cipher_setiv(cipher->key[0],IV,8);
+    }
+}
+
+static void blowfish_encrypt(struct crypto_struct *cipher, void *in, void *out,unsigned long len){
+    gcry_cipher_encrypt(cipher->key[0],out,len,in,len);
+}
+
+static void blowfish_decrypt(struct crypto_struct *cipher, void *in, void *out, unsigned long len){
+    gcry_cipher_decrypt(cipher->key[0],out,len,in,len);
+}
+
+static void aes_set_key(struct crypto_struct *cipher, void *key, void *IV){
+    if(!cipher->key){
+        alloc_key(cipher);
+        switch(cipher->keysize){
+          case 128:
+            gcry_cipher_open(&cipher->key[0],GCRY_CIPHER_AES128,GCRY_CIPHER_MODE_CBC,GCRY_CIPHER_SECURE);
+            break;
+          case 192:
+            gcry_cipher_open(&cipher->key[0],GCRY_CIPHER_AES192,GCRY_CIPHER_MODE_CBC,GCRY_CIPHER_SECURE);
+            break;
+          case 256:
+            gcry_cipher_open(&cipher->key[0],GCRY_CIPHER_AES256,GCRY_CIPHER_MODE_CBC,GCRY_CIPHER_SECURE);
+            break;
+        }
+        gcry_cipher_setkey(cipher->key[0],key,cipher->keysize/8);
+        gcry_cipher_setiv(cipher->key[0], IV, 16);
+    }
+}
+
+static void aes_encrypt(struct crypto_struct *cipher, void *in, void *out, unsigned long len){
+    gcry_cipher_encrypt(cipher->key[0],out,len,in,len);
+}
+
+static void aes_decrypt(struct crypto_struct *cipher, void *in, void *out,unsigned long len){
+    gcry_cipher_decrypt(cipher->key[0],out,len,in,len);
+}
+
+static void des3_set_key(struct crypto_struct *cipher, void *key, void *IV){
+    if(!cipher->key){
+        alloc_key(cipher);
+        gcry_cipher_open(&cipher->key[0],GCRY_CIPHER_3DES,GCRY_CIPHER_MODE_CBC,GCRY_CIPHER_SECURE);
+        gcry_cipher_setkey(cipher->key[0],key,24);
+        gcry_cipher_setiv(cipher->key[0],IV,8);
+    }
+}
+
+static void des3_encrypt(struct crypto_struct *cipher, void *in, void *out, 
+        unsigned long len){
+    gcry_cipher_encrypt(cipher->key[0],out,len,in,len);
+}
+
+static void des3_decrypt(struct crypto_struct *cipher, void *in, void *out, 
+        unsigned long len){
+    gcry_cipher_decrypt(cipher->key[0],out,len,in,len);
+}
+
+static void des3_1_set_key(struct crypto_struct *cipher, void *key, void *IV){
+    if(!cipher->key){
+        alloc_key(cipher);
+        gcry_cipher_open(&cipher->key[0],GCRY_CIPHER_DES,GCRY_CIPHER_MODE_CBC,GCRY_CIPHER_SECURE);
+        gcry_cipher_setkey(cipher->key[0],key,8);
+        gcry_cipher_setiv(cipher->key[0],IV,8);
+        gcry_cipher_open(&cipher->key[1],GCRY_CIPHER_DES,GCRY_CIPHER_MODE_CBC,GCRY_CIPHER_SECURE);
+        gcry_cipher_setkey(cipher->key[1],key+8,8);
+        gcry_cipher_setiv(cipher->key[1],IV+8,8);
+        gcry_cipher_open(&cipher->key[2],GCRY_CIPHER_DES,GCRY_CIPHER_MODE_CBC,GCRY_CIPHER_SECURE);
+        gcry_cipher_setkey(cipher->key[2],key+16,8);
+        gcry_cipher_setiv(cipher->key[2],IV+16,8);
+    }
+}
+
+static void des3_1_encrypt(struct crypto_struct *cipher, void *in, void *out, 
+        unsigned long len){
+    gcry_cipher_encrypt(cipher->key[0],out,len,in,len);
+    gcry_cipher_decrypt(cipher->key[1],in,len,out,len);
+    gcry_cipher_encrypt(cipher->key[2],out,len,in,len);
+}
+
+static void des3_1_decrypt(struct crypto_struct *cipher, void *in, void *out, 
+        unsigned long len){
+    gcry_cipher_decrypt(cipher->key[2],out,len,in,len);
+    gcry_cipher_encrypt(cipher->key[1],in,len,out,len);
+    gcry_cipher_decrypt(cipher->key[0],out,len,in,len);
+}
+
+/* the table of supported ciphers */
+static struct crypto_struct ssh_ciphertab[]={
+    { "blowfish-cbc", 8 ,sizeof (gcry_cipher_hd_t),NULL,128,blowfish_set_key,blowfish_set_key,blowfish_encrypt, blowfish_decrypt},
+    { "aes128-cbc",16,sizeof(gcry_cipher_hd_t),NULL,128,aes_set_key,aes_set_key,aes_encrypt,aes_decrypt},
+    { "aes192-cbc",16,sizeof(gcry_cipher_hd_t),NULL,192,aes_set_key,aes_set_key,aes_encrypt,aes_decrypt},
+    { "aes256-cbc",16,sizeof(gcry_cipher_hd_t),NULL,256,aes_set_key,aes_set_key,aes_encrypt,aes_decrypt},
+    { "3des-cbc",8,sizeof(gcry_cipher_hd_t),NULL,192,des3_set_key, 
+        des3_set_key,des3_encrypt, des3_decrypt},
+    { "3des-cbc-ssh1",8,sizeof(gcry_cipher_hd_t)*3,NULL,192,des3_1_set_key, 
+        des3_1_set_key,des3_1_encrypt, des3_1_decrypt},
+    { NULL,0,0,NULL,0,NULL,NULL,NULL}
+};
+#elif defined HAVE_LIBCRYPTO
 #include <openssl/sha.h>
 #include <openssl/md5.h>
 #include <openssl/dsa.h>
@@ -43,22 +213,24 @@ MA 02111-1307, USA. */
 #define HAS_BLOWFISH
 #include <openssl/blowfish.h>
 #endif
-
+#ifdef HAVE_OPENSSL_DES_H
+#define HAS_DES
 #include <openssl/des.h>
+#endif
 
 #if (OPENSSL_VERSION_NUMBER<0x009070000)
 #define OLD_CRYPTO
 #endif
 
-SHACTX *sha1_init(){
-    SHACTX *c=malloc(sizeof(SHACTX));
+SHACTX sha1_init(){
+    SHACTX c=malloc(sizeof(*c));
     SHA1_Init(c);
     return c;
 }
-void sha1_update(SHACTX *c, const void *data, unsigned long len){
+void sha1_update(SHACTX c, const void *data, unsigned long len){
     SHA1_Update(c,data,len);
 }
-void sha1_final(unsigned char *md,SHACTX *c){
+void sha1_final(unsigned char *md,SHACTX c){
     SHA1_Final(md,c);
     free(c);
 }
@@ -66,21 +238,21 @@ void sha1(unsigned char *digest,int len,unsigned char *hash){
     SHA1(digest,len,hash);
 }
 
-MD5CTX *md5_init(){
-    MD5CTX *c=malloc(sizeof(MD5CTX));
+MD5CTX md5_init(){
+    MD5CTX c=malloc(sizeof(MD5CTX));
     MD5_Init(c);
     return c;
 }
-void md5_update(MD5CTX *c, const void *data, unsigned long len){
+void md5_update(MD5CTX c, const void *data, unsigned long len){
     MD5_Update(c,data,len);
 }
-void md5_final(unsigned char *md,MD5CTX *c){
+void md5_final(unsigned char *md,MD5CTX c){
     MD5_Final(md,c);
     free(c);
 }
 
-HMACCTX *hmac_init(const void *key, int len,int type){
-    HMAC_CTX *ctx;
+HMACCTX hmac_init(const void *key, int len,int type){
+    HMACCTX ctx;
     ctx=malloc(sizeof(HMAC_CTX));
 #ifndef OLD_CRYPTO
     HMAC_CTX_init(ctx); // openssl 0.9.7 requires it.
@@ -98,10 +270,10 @@ HMACCTX *hmac_init(const void *key, int len,int type){
         }
     return ctx;
 }
-void hmac_update(HMACCTX *ctx,const void *data, unsigned long len){
+void hmac_update(HMACCTX ctx,const void *data, unsigned long len){
     HMAC_Update(ctx,data,len);
 }
-void hmac_final(HMACCTX *ctx,unsigned char *hashmacbuf,int *len){
+void hmac_final(HMACCTX ctx,unsigned char *hashmacbuf,unsigned int *len){
    HMAC_Final(ctx,hashmacbuf,len);
 #ifndef OLD_CRYPTO
    HMAC_CTX_cleanup(ctx);
@@ -152,7 +324,7 @@ static void aes_decrypt(struct crypto_struct *cipher, void *in, void *out, unsig
     AES_cbc_encrypt(in,out,len,cipher->key,IV,AES_DECRYPT);
 }
 #endif
-
+#ifdef HAS_DES
 static void des3_set_key(struct crypto_struct *cipher, void *key){
     if(!cipher->key){
         alloc_key(cipher);
@@ -205,10 +377,8 @@ static void des3_1_decrypt(struct crypto_struct *cipher, void *in, void *out,
     ssh_print_hexa("decrypt IV after",IV,24);
 #endif
 }
+#endif
 
-
-
-    
 /* the table of supported ciphers */
 static struct crypto_struct ssh_ciphertab[]={
 #ifdef HAS_BLOWFISH
@@ -223,10 +393,12 @@ static struct crypto_struct ssh_ciphertab[]={
     { "aes256-cbc",16,sizeof(AES_KEY),NULL,256,aes_set_encrypt_key,
         aes_set_decrypt_key,aes_encrypt,aes_decrypt},
 #endif
+#ifdef HAS_DES
     { "3des-cbc",8,sizeof(DES_key_schedule)*3,NULL,192,des3_set_key, 
         des3_set_key,des3_encrypt, des3_decrypt},
     { "3des-cbc-ssh1",8,sizeof(DES_key_schedule)*3,NULL,192,des3_set_key, 
         des3_set_key,des3_1_encrypt, des3_1_decrypt},
+#endif
      { NULL,0,0,NULL,0,NULL,NULL,NULL}
 };
 #endif /* OPENSSL_CRYPTO */
@@ -240,9 +412,17 @@ struct crypto_struct *cipher_new(int offset){
 }
 
 void cipher_free(struct crypto_struct *cipher){
+#ifdef HAVE_LIBGCRYPT
+    int i;
+#endif
     if(cipher->key){
-        // destroy the key
+#ifdef HAVE_LIBGCRYPT
+        for (i=0;i<cipher->keylen/sizeof (gcry_cipher_hd_t);i++)
+          gcry_cipher_close(cipher->key[i]);
+#elif defined HAVE_LIBCRYPTO
+        /* destroy the key */
         memset(cipher->key,0,cipher->keylen);
+#endif
         free(cipher->key);
     }
     free(cipher);

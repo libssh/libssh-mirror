@@ -20,13 +20,12 @@ MA 02111-1307, USA. */
 
 #ifndef _LIBSSH_H
 #define _LIBSSH_H
-#include <libssh/config.h>
 #include <unistd.h>
 #include <sys/select.h> /* for fd_set * */
 #include <sys/types.h>
-#ifdef HAVE_STDINT_H
+
 #include <stdint.h>
-#endif
+
 #define LIBSSH_VERSION "libssh-0.2-dev"
 
 #ifdef __cplusplus
@@ -126,7 +125,7 @@ const char *ssh_copyright();
 STRING *string_from_char(char *what);
 /* it returns the string len in host byte orders. str->size is big endian warning ! */
 int string_len(STRING *str);
-STRING *string_new(u32 size);
+STRING *string_new(unsigned int size);
 /* string_fill copies the data in the string. it does NOT check for boundary so allocate enough place with string_new */
 void string_fill(STRING *str,void *data,int len);
 /* returns a newly allocated char array with the str string and a final nul caracter */
@@ -144,11 +143,11 @@ void ssh_print_hexa(char *descr,unsigned char *what, int len);
 int ssh_get_random(void *where,int len,int strong);
 
 /* this one can be called by the client to see the hash of the public key before accepting it */
-int ssh_get_pubkey_hash(SSH_SESSION *session,char hash[MD5_DIGEST_LEN]);
+int ssh_get_pubkey_hash(SSH_SESSION *session,unsigned char hash[MD5_DIGEST_LEN]);
 STRING *ssh_get_pubkey(SSH_SESSION *session);
 
 /* in connect.c */
-int ssh_fd_poll(SSH_SESSION *session);
+int ssh_fd_poll(SSH_SESSION *session,int *write, int *except);
 int ssh_select(CHANNEL **channels,CHANNEL **outchannels, int maxfd, fd_set *readfds, struct timeval *timeout);
 
 void publickey_free(PUBLIC_KEY *key);

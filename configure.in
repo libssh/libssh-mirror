@@ -38,7 +38,11 @@ AC_PROG_RANLIB
 AC_C_BIGENDIAN
 
 # Checks for libraries.
-AC_CHECK_LIB([crypto], [BN_init])
+# AC_CHECK_LIB([gcrypt], [gcry_md_open])
+# if test "$ac_cv_lib_gcrypt_gcry_md_open" != yes; then
+#   AC_CHECK_LIB([crypto], [BN_init])
+# fi
+AC_CHECK_LIB([crypto],[BN_init])
 AC_CHECK_LIB([z], [deflateInit_])
 AC_SEARCH_LIBS([hstrerror],[nsl resolv])
 AC_SEARCH_LIBS([gethostbyname],[nsl resolv])
@@ -46,8 +50,9 @@ AC_SEARCH_LIBS([gethostbyname],[nsl resolv])
 # Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS([fcntl.h netdb.h netinet/in.h stdlib.h string.h sys/socket.h \
-sys/time.h termios.h unistd.h openssl/aes.h openssl/blowfish.h zlib.h \
-sys/poll.h stdint.h pty.h pam/pam_appl.h security/pam_appl.h])
+sys/time.h termios.h unistd.h openssl/aes.h openssl/blowfish.h \
+openssl/des.h zlib.h sys/poll.h stdint.h pty.h pam/pam_appl.h \
+security/pam_appl.h gcrypt.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -60,8 +65,8 @@ AC_FUNC_REALLOC
 AC_FUNC_SELECT_ARGTYPES
 AC_TYPE_SIGNAL
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS([endpwent gethostbyaddr gethostbyname getpass memmove memset cfmakeraw\
- select socket strchr strdup strerror strstr poll])
+AC_CHECK_FUNCS([endpwent gethostbyaddr gethostbyname getpass memmove memset \
+cfmakeraw select socket strchr strdup strerror strstr poll])
 
 AC_CONFIG_FILES([Makefile
                  libssh/Makefile
