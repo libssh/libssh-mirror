@@ -3,6 +3,7 @@ VPATH = @srcdir@
 
 subdirs = libssh/ sftp_server/
 top_srcdir = @top_srcdir@
+top_builddir = .
 srcdir = @srcdir@
 prefix = @prefix@
 exec_prefix = @exec_prefix@
@@ -18,6 +19,7 @@ LDFLAGS = @LDFLAGS@
 LIBS = -lssh -Llibssh/
 INSTALL = @INSTALL@
 LN= @LN_S@
+LIBTOOL= @LIBTOOL@
 OBJECTS= sample.o samplesshd.o
 VERSION=0.12-dev
 DISTLIB=libssh-$(VERSION)
@@ -27,16 +29,16 @@ all: $(CONFIG) $(OBJECTS)
 	  (cd $$dir && $(MAKE) all) \
 	  || case "$(MFLAGS)" in *k*) fail=yes;; *) exit 1;; esac; \
 	done && test -z "$$fail"
-	$(CC) -o samplessh sample.o $(LDFLAGS) $(LIBS)
+	$(LIBTOOL) --mode=link $(CC) -o samplessh sample.o $(LDFLAGS) $(LIBS)
 	$(LN) -sf samplessh samplesftp
-	$(CC) -o samplesshd samplesshd.o $(LDFLAGS) $(LIBS)
+	$(LIBTOOL) --mode=link $(CC) -o samplesshd samplesshd.o $(LDFLAGS) $(LIBS)
 $(CONFIG):
 	$(LN) -f ../../config.h $(CONFIG)
 dist:
 	rm -fr $(DISTLIB)
 	mkdir $(DISTLIB)
 	cp Makefile.in configure.in configure config.h.in install-sh \
-	mkinstalldirs config.sub config.guess $(DISTLIB)
+	ltmain.sh mkinstalldirs config.sub config.guess $(DISTLIB)
 	mkdir $(DISTLIB)/libssh
 	mkdir $(DISTLIB)/include
 	mkdir $(DISTLIB)/include/libssh
@@ -44,8 +46,8 @@ dist:
 	cp libssh/Makefile.in $(DISTLIB)/libssh/
 	cp libssh/*.c $(DISTLIB)/libssh/
 	cp include/libssh/libssh.h include/libssh/sftp.h \
-	include/libssh/priv.h \
-	include/libssh/crypto.h include/libssh/ssh2.h  \
+	include/libssh/priv.h include/libssh/crypto.h \
+	include/libssh/ssh1.h include/libssh/ssh2.h  \
 	include/libssh/server.h $(DISTLIB)/include/libssh/
 	cp *.c COPYING README AUTHORS CHANGELOG $(DISTLIB)/
 	cp doc/* $(DISTLIB)/doc/
@@ -64,16 +66,16 @@ install: all
 	$(INSTALL) include/libssh/ssh2.h $(incldir)/libssh/
 	$(INSTALL) include/libssh/ssh1.h $(incldir)/libssh/
 clean:
-	/bin/rm -f *~ *.o ssh sftp
+	$(LIBTOOL) --mode=clean rm -f *~ *.o samplessh samplesftp samplesshd include/libssh/config.h
 	@for dir in ${subdirs}; do \
 	  (cd $$dir && $(MAKE) clean) \
 	  || case "$(MFLAGS)" in *k*) fail=yes;; *) exit 1;; esac; \
 	done && test -z "$$fail"
 
 distclean: clean
-	/bin/rm -f Makefile config.h config.status config.cache config.log
 	@for dir in ${subdirs}; do \
 	  (cd $$dir && $(MAKE) distclean) \
 	  || case "$(MFLAGS)" in *k*) fail=yes;; *) exit 1;; esac; \
 	done && test -z "$$fail"
+	rm -f Makefile config.h config.status config.cache config.log libtool
 

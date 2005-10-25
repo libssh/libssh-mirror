@@ -81,6 +81,7 @@ typedef gcry_mpi_t bignum;
 #define bignum_num_bytes(num) ((gcry_mpi_get_nbits(num)+7)/8)
 #define bignum_is_bit_set(num,bit) gcry_mpi_test_bit(num,bit)
 #define bignum_bn2bin(num,datalen,data) gcry_mpi_print(GCRYMPI_FMT_USG,data,datalen,NULL,num)
+#define bignum_cmp(num1,num2) gcry_mpi_cmp(num1,num2)
 
 #elif defined HAVE_LIBCRYPTO
 #include <openssl/dsa.h>
@@ -116,6 +117,7 @@ typedef BN_CTX* bignum_CTX;
 #define bignum_num_bits(num) BN_num_bits(num)
 #define bignum_is_bit_set(num,bit) BN_is_bit_set(num,bit)
 #define bignum_bn2bin(num,ptr) BN_bn2bin(num,ptr)
+#define bignum_cmp(num1,num2) BN_cmp(num1,num2)
 
 #endif /* OPENSSL_BIGNUMS */
 

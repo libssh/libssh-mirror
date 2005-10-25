@@ -21,6 +21,7 @@ MA 02111-1307, USA. */
 
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <netdb.h>
 #include "libssh/priv.h"
 #include "libssh/ssh2.h"
@@ -309,9 +310,21 @@ static void build_session_id1(SSH_SESSION *session, STRING *servern,
 
 /* returns 1 if the modulus of k1 is < than the one of k2 */
 static int modulus_smaller(PUBLIC_KEY *k1, PUBLIC_KEY *k2){
-    RSA *r1=k1->rsa_pub;
-    RSA *r2=k2->rsa_pub;
-    if(BN_cmp(r1->n,r2->n)<0)
+    bignum n1;
+    bignum n2;
+#ifdef HAVE_LIBGCRYPT
+    gcry_sexp_t sexp;
+    sexp=gcry_sexp_find_token(k1->rsa_pub,"n",0);
+    n1=gcry_sexp_nth_mpi(sexp,1,GCRYMPI_FMT_STD);
+    gcry_sexp_release(sexp);
+    sexp=gcry_sexp_find_token(k2->rsa_pub,"n",0);
+    n2=gcry_sexp_nth_mpi(sexp,1,GCRYMPI_FMT_STD);
+    gcry_sexp_release(sexp);
+#elif defined HAVE_LIBCRYPTO
+    n1=k1->rsa_pub->n;
+    n2=k2->rsa_pub->n;
+#endif
+    if(bignum_cmp(n1,n2)<0)
         return 1;
     else
         return 0;

@@ -6,8 +6,8 @@ OBJECTS= client.o packet.o dh.o crypt.o connect.o error.o buffer.o \
 SHELL = /bin/sh
 VPATH = @srcdir@
 
-subdirs = @subdirs@
 top_srcdir = @top_srcdir@
+top_builddir = @top_builddir@
 srcdir = @srcdir@
 prefix = @prefix@
 exec_prefix = @exec_prefix@
@@ -18,27 +18,34 @@ libdir = $(prefix)/lib/
 mandir = $(prefix)/man/man1
 
 CC = @CC@
-CFLAGS = @CFLAGS@ -Wall -g -I../include/ -fPIC
+CFLAGS = @CFLAGS@ -Wall -g -I../include/
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 INSTALL = @INSTALL@
-DYLIB_EXTENSION = @DYLIB_EXTENSION@
+LIBTOOL = @LIBTOOL@
 LIBSSH_LDFLAGS = @LIBSSH_LDFLAGS@
+LIBSSH_VERS = @LIBSSH_VERS@
+LIBSSH_CURRENT = @LIBSSH_CURRENT@
+LIBSSH_REVISION = @LIBSSH_REVISION@
+LIBSSH_AGE = @LIBSSH_AGE@
+
+.c.o:
+	$(LIBTOOL) --mode=compile $(CC) $(CFLAGS) -c $<
 
 all: libssh.so
 
-libssh.so: $(OBJECTS)
-	$(CC) -o libssh.$(DYLIB_EXTENSION) $(LIBSSH_LDFLAGS) $(OBJECTS) $(LIBS) $(LDFLAGS)
-libssh.a: $(OBJECTS)
-	rm -f libssh.a
-	ar q libssh.a $(OBJECTS)
-	@RANLIB@ libssh.a
+libssh.la: $(OBJECTS) libssh.vers
+	$(LIBTOOL) --mode=link $(CC) -o libssh.la -export-dynamic -version-info $(LIBSSH_CURRENT):$(LIBSSH_REVISION):$(LIBSSH_AGE) -rpath $(libdir) $(OBJECTS:.o=.lo) $(LIBS) $(LIBSSH_LDFLAGS) $(LIBSSH_VERS) $(LDFLAGS)
+
+libssh.so: libssh.la
+libssh.a: libssh.la
+
 install: all
 	$(top_srcdir)/mkinstalldirs $(incldir)
 	$(top_srcdir)/mkinstalldirs $(libdir)
-	$(INSTALL) libssh.$(DYLIB_EXTENSION) $(libdir)
+	$(LIBTOOL) --mode=install $(INSTALL) libssh.la $(libdir)
 clean:
-	rm -f *~ libssh.a libssh.so *.o
+	$(LIBTOOL) --mode=clean rm -f *~ libssh.la *.lo
 distclean: clean
 	rm -f Makefile
 

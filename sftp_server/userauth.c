@@ -36,6 +36,8 @@ MA 02111-1307, USA. */
 #include <pwd.h>
 #include <errno.h>
 #include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include "server.h"
 
 #define SERVICE "sftp"
