@@ -110,6 +110,10 @@ SSH_SESSION *ssh_new();
 void ssh_set_options(SSH_SESSION *session, SSH_OPTIONS *options);
 int ssh_get_fd(SSH_SESSION *session);
 void ssh_silent_disconnect(SSH_SESSION *session);
+void ssh_set_fd_toread(SSH_SESSION *session);
+void ssh_set_fd_towrite(SSH_SESSION *session);
+void ssh_set_fd_except(SSH_SESSION *session);
+
 
 /* client.c */
 int ssh_connect(SSH_SESSION *session);
@@ -185,6 +189,9 @@ int channel_poll(CHANNEL *channel, int is_stderr);
 int channel_close(CHANNEL *channel);
 int channel_read_nonblocking(CHANNEL *channel, char *dest, int len, int is_stderr);
 int channel_is_open(CHANNEL *channel);
+int channel_is_closed(CHANNEL *channel);
+int channel_select(CHANNEL **readchans, CHANNEL **writechans, CHANNEL **exceptchans, struct 
+        timeval * timeout);
 /* in options.c */
 
 SSH_OPTIONS *ssh_options_new();

@@ -477,6 +477,10 @@ int channel_is_open(CHANNEL *channel){
     return (channel->open!=0);
 }
 
+int channel_is_closed(CHANNEL *channel){
+    return (channel->open==0);
+}
+
 int channel_is_eof(CHANNEL *channel){
     if((channel->stdout_buffer && buffer_get_rest_len(channel->stdout_buffer)
                 >0) || (channel->stderr_buffer && buffer_get_rest_len(
@@ -702,18 +706,146 @@ int channel_read_nonblocking(CHANNEL *channel, char *dest, int len, int is_stder
 SSH_SESSION *channel_get_session(CHANNEL *channel){
     return channel->session;
 }
-/*
-int channel_select(CHANNEL *readchans, CHANNEL *writechans, CHANNEL *exceptchans, struct 
+
+/* This function acts as a meta select. */
+/* first, channels are analyzed to seek potential can-write or can-read ones. */
+/* Then, if no channel has been elected, it goes in a loop with the posix select(2) */
+/* this is made in two parts : Protocol select and Network select */
+
+/* the protocol select does not use the network functions at all */
+
+static int channel_protocol_select(CHANNEL **rchans, CHANNEL **wchans, CHANNEL **echans,
+                            CHANNEL **rout, CHANNEL **wout, CHANNEL **eout){
+    CHANNEL *chan;
+    int i,j;
+    j=0;
+    for(i=0;rchans[i];++i){
+        chan=rchans[i];
+        while(chan->open && chan->session->data_to_read){
+            channel_poll(chan,0);
+        }
+        if( (chan->stdout_buffer && buffer_get_len(chan->stdout_buffer)>0) ||
+             (chan->stderr_buffer && buffer_get_len(chan->stderr_buffer)>0)){
+            rout[j]=chan;
+            ++j;
+        }
+    }
+    rout[j]=NULL;
+    j=0;
+    for(i=0;wchans[i];++i){
+        chan=wchans[i];
+        /* it's not our business to seek if the file descriptor is writable */
+        if(chan->session->data_to_write && chan->open && (chan->remote_window>0)){
+            wout[j]=chan;
+            ++j;
+        }
+    }
+    wout[j]=NULL;
+    j=0;
+    for(i=0;echans[i];++i){
+        chan=echans[i];
+        if(chan->session->fd==-1 || !chan->open || chan->remote_eof || chan->session->data_except){
+            eout[j]=chan;
+            ++j;
+        }
+    }
+    wout[j]=NULL;
+    return 0;
+}
+
+/* just count number of pointers in the array */
+static int count_ptrs(CHANNEL **ptrs){
+    int c;
+    for(c=0;ptrs[c];++c)
+        ;
+    return c;
+}
+
+int channel_select(CHANNEL **readchans, CHANNEL **writechans, CHANNEL **exceptchans, struct 
         timeval * timeout){
     fd_set rset;
     fd_set wset;
     fd_set eset;
-    int rmax=-1, wmax=-1, emax=-1; // nothing to do with the low quality editor :)
-    int i;
-    FD_ZERO(rset);
-    FD_ZERO(wset);
-    FD_ZERO(eset);
-    for(i=0;readchans[i];++i){
-        if(!readchans[i].
-            
-*/
+    CHANNEL *dummy=NULL;
+    CHANNEL **rchans, **wchans, **echans;
+    int fdmax=-1;
+    int i,fd;
+    /* don't allow NULL pointers */
+    if(!readchans)
+        readchans=&dummy;
+    if(!writechans)
+        writechans=&dummy;
+    if(!exceptchans)
+        exceptchans=&dummy;
+    if(!readchans[0] && !writechans[0] && !exceptchans[0]){
+        /* no channel to poll ?? go away ! */
+        return 0;
+    }
+    /* prepare the outgoing temporary arrays */
+    rchans=malloc(sizeof(CHANNEL *) * (count_ptrs(readchans)+1));
+    wchans=malloc(sizeof(CHANNEL *) * (count_ptrs(writechans)+1));
+    echans=malloc(sizeof(CHANNEL *) * (count_ptrs(exceptchans)+1));
+
+    /* first, try without doing network stuff */
+    /* then, select and redo the networkless stuff */
+    do {
+        channel_protocol_select(readchans,writechans,exceptchans,rchans,wchans,echans);
+        if(rchans[0]||wchans[0]||echans[0]){
+            /* we've got one without doing any select */
+            /* overwrite the begining arrays */
+            memcpy(readchans,rchans, (count_ptrs(rchans)+1)*sizeof(CHANNEL *));
+            memcpy(writechans,wchans, (count_ptrs(wchans)+1)*sizeof(CHANNEL *));
+            memcpy(exceptchans,echans, (count_ptrs(echans)+1)*sizeof(CHANNEL *));
+            free(rchans);
+            free(wchans);
+            free(echans);
+            return 0;
+        }
+        ssh_say(3,"doing a select for the different channels\n");
+        /* since we verified the invalid fd cases into the networkless select,
+        we can be sure all fd are valid ones */
+        FD_ZERO(&rset);
+        FD_ZERO(&wset);
+        FD_ZERO(&eset);
+        for(i=0;readchans[i];++i){
+            fd=readchans[i]->session->fd;
+            if(!FD_ISSET(fd,&rset)){
+                FD_SET(fd,&rset);
+                if(fd>=fdmax)
+                    fdmax=fd+1;
+            }
+        }
+        for(i=0;writechans[i];++i){
+            fd=writechans[i]->session->fd;
+            if(!FD_ISSET(fd,&wset)){
+                FD_SET(fd,&wset);
+                if(fd>=fdmax)
+                    fdmax=fd+1;
+            }
+        }
+        for(i=0;exceptchans[i];++i){
+            fd=exceptchans[i]->session->fd;
+            if(!FD_ISSET(fd,&eset)){
+                FD_SET(fd,&eset);
+                if(fd>=fdmax)
+                    fdmax=fd+1;
+            }
+        }
+        /* here we go */
+        select(fdmax,&rset,&wset,&eset,timeout);
+        for(i=0;readchans[i];++i){
+            if(FD_ISSET(readchans[i]->session->fd,&rset))
+                readchans[i]->session->data_to_read=1;
+        }
+        for(i=0;writechans[i];++i){
+            if(FD_ISSET(writechans[i]->session->fd,&wset))
+                writechans[i]->session->data_to_write=1;
+        }
+        for(i=0;exceptchans[i];++i){
+            if(FD_ISSET(exceptchans[i]->session->fd,&eset))
+                exceptchans[i]->session->data_except=1;
+        }
+    } while(1); /* return to do loop */
+    /* not reached */
+    return 0;
+}

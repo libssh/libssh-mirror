@@ -122,10 +122,10 @@ void select_loop(SSH_SESSION *session,CHANNEL *channel){
     struct timeval timeout;
     char buffer[10];
     BUFFER *readbuf=buffer_new();
-    CHANNEL *channels[]={channel,NULL};
-    CHANNEL *outchannel[2];
+    CHANNEL *channels[2];
     int lus;
     int eof=0;
+    int maxfd;
     int ret;
     while(channel){
        /* when a signal is caught, ssh_select will return
@@ -141,23 +141,40 @@ void select_loop(SSH_SESSION *session,CHANNEL *channel){
                 FD_SET(0,&fds);
             timeout.tv_sec=30;
             timeout.tv_usec=0;
-            ret=ssh_select(channels,outchannel,0+1,&fds,&timeout);
+            FD_SET(ssh_get_fd(session),&fds);
+            maxfd=ssh_get_fd(session)+1;
+            ret=select(maxfd,&fds,NULL,NULL,&timeout);
+            if(ret==EINTR)
+                continue;
+            if(FD_ISSET(0,&fds)){
+                lus=read(0,buffer,10);
+                if(lus)
+                    channel_write(channel,buffer,lus);
+                else {
+                    eof=1;
+                    channel_send_eof(channel);
+                }
+            }
+            if(FD_ISSET(ssh_get_fd(session),&fds)){
+                ssh_set_fd_toread(session);
+            }
+            channels[0]=channel; // set the first channel we want to read from
+            channels[1]=NULL;
+            ret=channel_select(channels,NULL,NULL,NULL); // no specific timeout - just poll
             if(signal_delayed)
-                sizechanged();        
-        } while (ret==SSH_EINTR);
-        if(FD_ISSET(0,&fds)){
-            lus=read(0,buffer,10);
-            if(lus){
-                channel_write(channel,buffer,lus);
-            }
-            else{
-                eof=1;
-                channel_send_eof(channel);
-            }
+                sizechanged();
+        } while (ret==EINTR || ret==SSH_EINTR);
+
+        // we already looked for input from stdin. Now, we are looking for input from the channel
+        
+        if(channel && channel_is_closed(channel)){
+            channel_free(channel);
+            channel=NULL;
+            channels[0]=NULL;
         }
-        if(outchannel[0]){
-            while(channel && channel_poll(outchannel[0],0)){
-                lus=channel_read(outchannel[0],readbuf,0,0);
+        if(channels[0]){
+            while(channel && channel_is_open(channel) && channel_poll(channel,0)){
+                lus=channel_read(channel,readbuf,0,0);
                 if(lus==-1){
                     ssh_say(0,"error reading channel : %s\n",ssh_get_error(session));
                     return;
@@ -165,12 +182,12 @@ void select_loop(SSH_SESSION *session,CHANNEL *channel){
                 if(lus==0){
                     ssh_say(1,"EOF received\n");
                     channel_free(channel);
-                    channel=NULL;
+                    channel=channels[0]=NULL;
                 } else
                     write(1,buffer_get(readbuf),lus);
             }
-            while(channel && channel_poll(outchannel[0],1)){ /* stderr */
-                lus=channel_read(outchannel[0],readbuf,0,1);
+            while(channel && channel_is_open(channel) && channel_poll(channel,1)){ /* stderr */
+                lus=channel_read(channel,readbuf,0,1);
                 if(lus==-1){
                     ssh_say(0,"error reading channel : %s\n",ssh_get_error(session));
                     return;
@@ -178,18 +195,19 @@ void select_loop(SSH_SESSION *session,CHANNEL *channel){
                 if(lus==0){
                     ssh_say(1,"EOF received\n");
                     channel_free(channel);
-                    channel=NULL;
+                    channel=channels[0]=NULL;
                 } else
                     write(2,buffer_get(readbuf),lus);
             }
         }
-        if(channel && !channel_is_open(channel)){
+        if(channel && channel_is_closed(channel)){
             channel_free(channel);
             channel=NULL;
         }
     }
     buffer_free(readbuf);
 }
+
 
 void shell(SSH_SESSION *session){
     CHANNEL *channel;

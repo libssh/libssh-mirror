@@ -3852,6 +3852,20 @@ fi
 done
 
 
+#Warn user when no openssl available
+#FIXME ! how to make it work with gcrypt ?
+if test x"$ac_cv_header_openssl_aes_h" != x"yes" ||
+x"$ac_cv_header_openssl_blowfish_h" != x"yes"; then
+        echo "Can't find valid openssl files e.g openssl/aes.h"
+        echo "Please install Openssl-devel"
+        exit
+fi
+
+if ! test x"$ac_cv_header_zlib_h" = x"yes"; then
+        echo "Can't find zlib.h"
+        echo "Compression support won't be compiled in"
+fi
+
 # Checks for typedefs, structures, and compiler characteristics.
 echo "$as_me:$LINENO: checking for an ANSI C-conforming const" >&5
 echo $ECHO_N "checking for an ANSI C-conforming const... $ECHO_C" >&6
