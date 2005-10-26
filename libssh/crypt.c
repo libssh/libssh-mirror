@@ -36,12 +36,12 @@ MA 02111-1307, USA. */
 #include "libssh/crypto.h"
 
 u32 packet_decrypt_len(SSH_SESSION *session, char *crypted){
-    u32 *decrypted;
+    u32 decrypted;
     if(session->current_crypto)
         packet_decrypt(session,crypted,session->current_crypto->in_cipher->blocksize);
-    decrypted=(u32 *)crypted;
-    ssh_say(3,"size decrypted : %lx\n",ntohl(*decrypted));
-    return ntohl(*decrypted);
+    memcpy(&decrypted,crypted,sizeof(decrypted));
+    ssh_say(3,"size decrypted : %lx\n",ntohl(decrypted));
+    return ntohl(decrypted);
 }
     
 int packet_decrypt(SSH_SESSION *session, void *data,u32 len){

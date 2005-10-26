@@ -1,7 +1,7 @@
 SHELL = /bin/sh
 VPATH = @srcdir@
 
-subdirs = libssh/ sftp_server/
+subdirs = libssh sftp_server
 top_srcdir = @top_srcdir@
 top_builddir = .
 srcdir = @srcdir@
@@ -14,26 +14,41 @@ libdir = $(prefix)/lib/
 mandir = $(prefix)/man/man1
 
 CC = @CC@
-CFLAGS = @CFLAGS@ -Iinclude/ -Wall 
+CFLAGS = @CFLAGS@ -Iinclude -Wall 
 LDFLAGS = @LDFLAGS@ 
-LIBS = -lssh -Llibssh/
+LIBS = -lssh -Llibssh
 INSTALL = @INSTALL@
-LN= @LN_S@
-LIBTOOL= @LIBTOOL@
-OBJECTS= sample.o samplesshd.o
-VERSION=0.12-dev
-DISTLIB=libssh-$(VERSION)
-CONFIG=include/libssh/config.h
-all: $(CONFIG) $(OBJECTS)
+LN = @LN_S@
+LIBTOOL = @LIBTOOL@
+OBJECTS = sample.o samplesshd.o
+APPS = samplessh samplesftp samplesshd
+VERSION = 0.12-dev
+DISTLIB = libssh-$(VERSION)
+CONFIG = include/libssh/config.h
+
+.PHONY: all
+all: $(CONFIG) SUBDIRS $(OBJECTS) $(APPS)
+
+.PHONY: SUBDIRS
+SUBDIRS:
 	@for dir in ${subdirs}; do \
 	  (cd $$dir && $(MAKE) all) \
 	  || case "$(MFLAGS)" in *k*) fail=yes;; *) exit 1;; esac; \
 	done && test -z "$$fail"
-	$(LIBTOOL) --mode=link $(CC) -o samplessh sample.o $(LDFLAGS) $(LIBS)
-	$(LN) -sf samplessh samplesftp
-	$(LIBTOOL) --mode=link $(CC) -o samplesshd samplesshd.o $(LDFLAGS) $(LIBS)
+
+% : %.o
+	$(LIBTOOL) --mode=link $(CC) -o $@ $< $(LDFLAGS) $(LIBS)
+
+samplessh: sample.o
+	$(LIBTOOL) --mode=link $(CC) -o $@ $< $(LDFLAGS) $(LIBS)
+
+samplesftp: samplessh
+	$(LN) -f samplessh samplesftp
+
 $(CONFIG):
 	$(LN) -f ../../config.h $(CONFIG)
+
+.PHONY: dist
 dist:
 	rm -fr $(DISTLIB)
 	mkdir $(DISTLIB)
@@ -52,6 +67,8 @@ dist:
 	cp *.c COPYING README AUTHORS CHANGELOG $(DISTLIB)/
 	cp doc/* $(DISTLIB)/doc/
 	tar czf $(DISTLIB).tgz $(DISTLIB)/
+
+.PHONY: install
 install: all
 	@for dir in ${subdirs}; do \
 	  (cd $$dir && $(MAKE) install) \
@@ -65,6 +82,8 @@ install: all
 	$(INSTALL) include/libssh/server.h $(incldir)/libssh/
 	$(INSTALL) include/libssh/ssh2.h $(incldir)/libssh/
 	$(INSTALL) include/libssh/ssh1.h $(incldir)/libssh/
+
+.PHONY: clean
 clean:
 	$(LIBTOOL) --mode=clean rm -f *~ *.o samplessh samplesftp samplesshd include/libssh/config.h
 	@for dir in ${subdirs}; do \
@@ -72,10 +91,10 @@ clean:
 	  || case "$(MFLAGS)" in *k*) fail=yes;; *) exit 1;; esac; \
 	done && test -z "$$fail"
 
+.PHONY: distclean
 distclean: clean
 	@for dir in ${subdirs}; do \
 	  (cd $$dir && $(MAKE) distclean) \
 	  || case "$(MFLAGS)" in *k*) fail=yes;; *) exit 1;; esac; \
 	done && test -z "$$fail"
 	rm -f Makefile config.h config.status config.cache config.log libtool
-
