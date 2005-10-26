@@ -519,6 +519,11 @@ int channel_request_shell1(CHANNEL *channel);
 int channel_request_exec1(CHANNEL *channel, char *cmd);
 void channel_handle1(SSH_SESSION *session,int type);
 int channel_write1(CHANNEL *channel, void *data, int len);
+
+/* session.c */
+
+int ssh_handle_packets(SSH_SESSION *session);
+
 #ifdef __cplusplus
 } ;
 #endif

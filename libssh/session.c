@@ -112,6 +112,21 @@ void ssh_set_fd_except(SSH_SESSION *session){
     session->data_except=1;
 }
 
+/* looks if there is data to read on the socket and parse it. */
+int ssh_handle_packets(SSH_SESSION *session){
+    int w,err,r;
+    do {
+        r=ssh_fd_poll(session,&w,&err);
+        if(r<=0)
+            return r; // error or no data available
+        /* if an exception happened, it will be trapped by packet_read() */
+        if(packet_read(session)||packet_translate(session))
+            return -1;
+        packet_parse(session);
+    } while(r>0);
+    return r;
+}
+
 int ssh_get_status(SSH_SESSION *session){
     int ret=0;
     if(session->closed)

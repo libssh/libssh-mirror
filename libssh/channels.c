@@ -25,6 +25,7 @@ MA 02111-1307, USA. */
 #include <netdb.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <errno.h>
 
 #include "libssh/priv.h"
 #include "libssh/ssh2.h"
@@ -665,20 +666,16 @@ int channel_read(CHANNEL *channel, BUFFER *buffer,int bytes,int is_stderr){
 /* returns the number of bytes available, 0 if nothing is currently available, -1 if error */
 int channel_poll(CHANNEL *channel, int is_stderr){
     BUFFER *buffer;
-    int r=0,w=0,err=0;
+    int r=0;
     if(is_stderr)
         buffer=channel->stderr_buffer;
     else 
         buffer=channel->stdout_buffer;
     
     while(buffer_get_rest_len(buffer)==0 && !channel->remote_eof){
-        r=ssh_fd_poll(channel->session,&w,&err);
+        r=ssh_handle_packets(channel->session);
         if(r<=0)
-            return r; // error or no data available
-        /* if an exception happened, it will be trapped by packet_read() */
-        if(packet_read(channel->session)||packet_translate(channel->session))
-            return -1;
-        packet_parse(channel->session);
+            return r;
     }
     if(channel->remote_eof)
         return 1;
@@ -722,7 +719,7 @@ static int channel_protocol_select(CHANNEL **rchans, CHANNEL **wchans, CHANNEL *
     for(i=0;rchans[i];++i){
         chan=rchans[i];
         while(chan->open && chan->session->data_to_read){
-            channel_poll(chan,0);
+            ssh_handle_packets(chan->session);
         }
         if( (chan->stdout_buffer && buffer_get_len(chan->stdout_buffer)>0) ||
              (chan->stderr_buffer && buffer_get_len(chan->stderr_buffer)>0)){
@@ -770,6 +767,7 @@ int channel_select(CHANNEL **readchans, CHANNEL **writechans, CHANNEL **exceptch
     CHANNEL **rchans, **wchans, **echans;
     int fdmax=-1;
     int i,fd;
+    int r;
     /* don't allow NULL pointers */
     if(!readchans)
         readchans=&dummy;
@@ -832,7 +830,14 @@ int channel_select(CHANNEL **readchans, CHANNEL **writechans, CHANNEL **exceptch
             }
         }
         /* here we go */
-        select(fdmax,&rset,&wset,&eset,timeout);
+        r=select(fdmax,&rset,&wset,&eset,timeout);
+        /* leave if select was interrupted */
+        if(r==EINTR){
+            free(rchans);
+            free(wchans);
+            free(echans);
+            return SSH_EINTR;
+        }
         for(i=0;readchans[i];++i){
             if(FD_ISSET(readchans[i]->session->fd,&rset))
                 readchans[i]->session->data_to_read=1;

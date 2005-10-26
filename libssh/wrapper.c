@@ -253,7 +253,7 @@ void md5_final(unsigned char *md,MD5CTX c){
 
 HMACCTX hmac_init(const void *key, int len,int type){
     HMACCTX ctx;
-    ctx=malloc(sizeof(HMAC_CTX));
+    ctx=malloc(sizeof(*ctx));
 #ifndef OLD_CRYPTO
     HMAC_CTX_init(ctx); // openssl 0.9.7 requires it.
 #endif
