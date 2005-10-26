@@ -32,17 +32,17 @@ AC_SUBST(LIBSSH_LDFLAGS)
 AC_MSG_CHECKING([version script options])
 case "$host" in
 	*-*-linux*)
-	LIBSSH_VERS="$LIBSSH_LDFLAGS -Wl,--version-script,libssh.vers -Wl,-01"
+	LIBSSH_VERS="$LIBSSH_LDFLAGS -Wl,--version-script,libssh.vers"
 	;;
 	*-*-gnu*)
-	LIBSSH_VERS="$LIBSSH_LDFLAGS -Wl,--version-script,libssh.vers-Wl,-01"
+	LIBSSH_VERS="$LIBSSH_LDFLAGS -Wl,--version-script,libssh.vers"
 	;;
 esac
 AC_ARG_WITH([versioned-symbol],
 	AC_HELP_STRING([--with-versioned-symbol],[Use versioned symbols]),
 	[echo $withval > plop
 	if test $withval = "yes"; then
-	   LIBSSH_VERS="$LIBSSH_LDFLAGS -Wl,--version-script,libssh.vers-Wl,-01"
+	   LIBSSH_VERS="$LIBSSH_LDFLAGS -Wl,--version-script,libssh.vers"
 	 else
 	   LIBSSH_VERS=""
 	 fi], [ : ])
