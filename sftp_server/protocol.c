@@ -33,6 +33,7 @@ MA 02111-1307, USA. */
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <limits.h>
 #include <time.h>
 #include "server.h"
 

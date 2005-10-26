@@ -474,11 +474,11 @@ int channel_write(CHANNEL *channel ,void *data,int len){
 }
 
 int channel_is_open(CHANNEL *channel){
-    return (channel->open!=0);
+    return (channel->open!=0 && channel->session->alive);
 }
 
 int channel_is_closed(CHANNEL *channel){
-    return (channel->open==0);
+    return (channel->open==0 || !channel->session->alive);
 }
 
 int channel_is_eof(CHANNEL *channel){
@@ -749,7 +749,7 @@ static int channel_protocol_select(CHANNEL **rchans, CHANNEL **wchans, CHANNEL *
             ++j;
         }
     }
-    wout[j]=NULL;
+    eout[j]=NULL;
     return 0;
 }
 

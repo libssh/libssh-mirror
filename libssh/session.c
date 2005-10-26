@@ -138,3 +138,6 @@ const char *ssh_get_disconnect_message(SSH_SESSION *session){
     return NULL;
 }
 
+int ssh_get_version(SSH_SESSION *session){
+    return session->version;
+}

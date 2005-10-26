@@ -176,7 +176,9 @@ int ssh_userauth1_password(SSH_SESSION *session,char *username,char *password){
      * easy to guess password sizes.
      * not that sure ...
      */
-    if(strlen(password)>=128){
+    /* XXX fix me here ! */
+    /* cisco IOS doesn't like when a password is followed by zeroes and random pad. */
+    if(strlen(password)>=0){
         /* not risky to disclose the size of such a big password .. */
         password_s=string_from_char(password);
     } else {

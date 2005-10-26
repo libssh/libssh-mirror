@@ -311,11 +311,15 @@ int ssh_userauth_autopubkey(SSH_SESSION *session){
                 free(id);
             }
             free(pubkey);
+            free(privkeyfile);
             return err;
         } else
         if(err != SSH_AUTH_SUCCESS){
             ssh_say(2,"Public key refused by server\n");
             free(pubkey);
+            pubkey=NULL;
+            free(privkeyfile);
+            privkeyfile=NULL;
             continue;
         }
         /* pubkey accepted by server ! */
@@ -323,6 +327,9 @@ int ssh_userauth_autopubkey(SSH_SESSION *session){
         if(!privkey){
             ssh_say(0,"Reading private key %s failed (bad passphrase ?)\n",privkeyfile);
             free(pubkey);
+            pubkey=NULL;
+            free(privkeyfile);
+            privkeyfile=NULL;
             continue; /* continue the loop with other pubkey */
         }
         err=ssh_userauth_pubkey(session,NULL,pubkey,privkey);
@@ -333,12 +340,16 @@ int ssh_userauth_autopubkey(SSH_SESSION *session){
                 free(id);
             }
             free(pubkey);
+            free(privkeyfile);
             private_key_free(privkey);
             return err;
         } else
         if(err != SSH_AUTH_SUCCESS){
             ssh_say(0,"Weird : server accepted our public key but refused the signature\nit might be a bug of libssh\n");
             free(pubkey);
+            pubkey=NULL;
+            free(privkeyfile);
+            privkeyfile=NULL;
             private_key_free(privkey);
             continue;
         }
@@ -354,6 +365,7 @@ int ssh_userauth_autopubkey(SSH_SESSION *session){
         }
         return SSH_AUTH_SUCCESS;
     }
+    /* at this point, pubkey is NULL and so is privkeyfile */
     ssh_say(1,"Tried every public key, none matched\n");
     ssh_set_error(session,SSH_NO_ERROR,"no public key matched");
     if(id){

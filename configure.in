@@ -67,12 +67,17 @@ AC_C_BIGENDIAN
 
 # Checks for libraries.
 AC_CHECK_LIB([gcrypt], [gcry_md_open])
+AC_ARG_WITH([libgcrypt],
+    AC_HELP_STRING([--with-libgcypt],[Use libgcrypt instead of libcrypto]),
+    [AC_CHECK_LIB([gcrypt], [gcry_md_open])])
+
 if test "$ac_cv_lib_gcrypt_gcry_md_open" != yes; then
   AC_CHECK_LIB([crypto], [BN_init])
 fi
-#AC_CHECK_LIB([crypto],[BN_init])
+
 AC_CHECK_LIB([z], [deflateInit_])
 AC_SEARCH_LIBS([hstrerror],[nsl resolv])
+AC_SEARCH_LIBS([getaddrinfo],[nsl resolv])
 AC_SEARCH_LIBS([gethostbyname],[nsl resolv])
 
 # Checks for header files.
@@ -108,7 +113,7 @@ AC_FUNC_REALLOC
 AC_FUNC_SELECT_ARGTYPES
 AC_TYPE_SIGNAL
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS([endpwent gethostbyaddr gethostbyname getpass memmove memset \
+AC_CHECK_FUNCS([endpwent getaddrinfo gethostbyname getpass memmove memset \
 cfmakeraw select socket strchr strdup strerror strstr poll])
 
 AC_CONFIG_FILES([Makefile

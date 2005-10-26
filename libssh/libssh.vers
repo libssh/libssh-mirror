@@ -3,7 +3,8 @@ SSH_0.2 {
     ssh_get_error; ssh_get_error_code; ssh_say; ssh_set_verbosity;
     ssh_new; ssh_set_options; ssh_get_fd; ssh_silent_disconnect;
     ssh_connect; ssh_disconnect; ssh_service_request; ssh_get_issue_banner;
-    ssh_copyright;
+    ssh_copyright; ssh_get_version;
+    ssh_set_fd_toread; ssh_set_fd_towrite; ssh_set_fd_except;
     string_from_char; string_len; string_new; string_fill; string_to_char;
     string_copy; string_burn; string_data;
     ssh_crypto_init;
@@ -19,6 +20,7 @@ SSH_0.2 {
     channel_request_exec; channel_request_sftp; channel_write;
     channel_send_eof; channel_read; channel_poll; channel_close;
     channel_read_nonblocking; channel_is_open;
+    channel_is_closed; channel_is_eof; channel_select;
     ssh_options_new; ssh_options_copy; ssh_options_set_wanted_algos;
     ssh_options_set_username; ssh_options_set_port; ssh_options_getopt;
     ssh_options_set_host; ssh_options_set_fd; ssh_options_set_bind;

@@ -22,9 +22,7 @@ MA 02111-1307, USA. */
 #define _LIBSSH_H
 #include <unistd.h>
 #include <sys/select.h> /* for fd_set * */
-#include <sys/types.h>
-
-#include <stdint.h>
+#include <inttypes.h>
 
 #define LIBSSH_VERSION "libssh-0.2-dev"
 
@@ -110,6 +108,7 @@ SSH_SESSION *ssh_new();
 void ssh_set_options(SSH_SESSION *session, SSH_OPTIONS *options);
 int ssh_get_fd(SSH_SESSION *session);
 void ssh_silent_disconnect(SSH_SESSION *session);
+int ssh_get_version(SSH_SESSION *session);
 void ssh_set_fd_toread(SSH_SESSION *session);
 void ssh_set_fd_towrite(SSH_SESSION *session);
 void ssh_set_fd_except(SSH_SESSION *session);

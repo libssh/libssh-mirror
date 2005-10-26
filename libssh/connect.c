@@ -22,6 +22,7 @@ MA 02111-1307, USA. */
 
 #include <netdb.h>
 #include <string.h>
+#include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -33,11 +34,6 @@ MA 02111-1307, USA. */
 #include <fcntl.h>
 #include "libssh/priv.h"
 
-#ifndef HAVE_GETHOSTBYNAME
-#ifndef HAVE_GETHOSTBYADDR
-#error "your system doesn't have gethostbyname nor gethostbyaddr"
-#endif
-#endif
 #ifndef HAVE_SELECT
 #error "Your system must have select()"
 #endif
@@ -49,71 +45,67 @@ static void sock_set_blocking(int sock){
     fcntl(sock,F_SETFL,0);
 }
 
+static int getai(const char *host, int port, struct addrinfo **ai)
+{
+    struct addrinfo hints;
+    char *service=NULL;
+    char s_port[10];
+   
+    memset(&hints,0,sizeof(hints));
+    hints.ai_protocol=IPPROTO_TCP;
+    hints.ai_socktype=SOCK_STREAM;
+    if(port==0){
+        hints.ai_flags=AI_PASSIVE;
+    } else {
+        snprintf(s_port,sizeof(s_port),"%hu",port);
+	service=s_port;
+    }
+    return getaddrinfo(host,service,&hints,ai);
+}
+
 /* connect_host connects to an IPv4 (or IPv6) host */
 /* specified by its IP address or hostname. */
 /* output is the file descriptor, <0 if failed. */
 
 int ssh_connect_host(SSH_SESSION *session, const char *host, const char 
         *bind_addr, int port,long timeout, long usec){
-    struct sockaddr_in sa;
-    struct sockaddr_in bindsa;
-    struct hostent *hp=NULL;
-    static int count=0; /* for reentrencity */
     int s;
-    while(++count>1)
-        --count;
+    int my_errno;
+    struct addrinfo *ai;
 
-#ifdef HAVE_GETHOSTBYNAME
-    hp=gethostbyname(host);
-#endif
-    if(!hp){
-        --count;
-        ssh_set_error(session,SSH_FATAL,"Failed to resolve hostname %s (%s)",host,hstrerror(h_errno));
+    my_errno=getai(host, port, &ai);
+    if (my_errno){
+        ssh_set_error(session,SSH_FATAL,"Failed to resolve hostname %s (%d)",host,my_errno);
         return -1;
     }
-    memset(&sa,0,sizeof(sa));
-    memcpy(&sa.sin_addr,hp->h_addr,hp->h_length);
-    sa.sin_family=hp->h_addrtype;
-    sa.sin_port=htons((unsigned short)port);
-    --count;
     
-    if(bind_addr){
-        ssh_say(2,"resolving %s\n",bind_addr);
-        hp=NULL;
-        while(++count>1)
-            --count;
-#ifdef HAVE_GETHOSTBYADDR
-        hp=gethostbyaddr(bind_addr,4,AF_INET);
-#endif
-#ifdef HAVE_GETHOSTBYNAME
-        if(!hp)
-            hp=gethostbyname(bind_addr);
-#endif
-        if(!hp){
-            --count;
-            ssh_set_error(session,SSH_FATAL,"Failed to resolve bind address %s (%s)",bind_addr,hstrerror(h_errno));
-            return -1;
-        }
-    }
-    memset(&bindsa,0,sizeof(bindsa));
     /* create socket */
-    s=socket(sa.sin_family,SOCK_STREAM,0);
+    s=socket(ai->ai_family,ai->ai_socktype,ai->ai_protocol);
     if(s<0){
-        if(bind_addr)
-            --count;
         ssh_set_error(session,SSH_FATAL,"socket : %s",strerror(errno));
+        freeaddrinfo(ai);
         return s;
     }
 
     if(bind_addr){
-        memcpy(&bindsa.sin_addr,hp->h_addr,hp->h_length);
-        bindsa.sin_family=hp->h_addrtype;
-        --count;
-        if(bind(s,(struct sockaddr *)&bindsa,sizeof(bindsa))<0){
+        struct addrinfo *bind_ai;
+
+        ssh_say(2,"resolving %s\n",bind_addr);
+	my_errno=getai(host,0,&bind_ai);
+	if (my_errno){
+            ssh_set_error(session,SSH_FATAL,"Failed to resolve bind address %s (%d)",bind_addr,my_errno);
+	    freeaddrinfo(ai);
+            return -1;
+        }
+
+        if(bind(s,bind_ai->ai_addr,bind_ai->ai_addrlen)<0){
             ssh_set_error(session,SSH_FATAL,"Binding local address : %s",strerror(errno));
+	    freeaddrinfo(ai);
+	    freeaddrinfo(bind_ai);
             close(s);
             return -1;
         }
+	freeaddrinfo(bind_ai);
     }
     if(timeout){
         struct timeval to;
@@ -123,7 +115,8 @@ int ssh_connect_host(SSH_SESSION *session, const char *host, const char
         to.tv_sec=timeout;
         to.tv_usec=usec;
         sock_set_nonblocking(s);
-        connect(s,(struct sockaddr* )&sa,sizeof(sa));
+	connect(s,ai->ai_addr,ai->ai_addrlen);
+        freeaddrinfo(ai);
         FD_ZERO(&set);
         FD_SET(s,&set);
         ret=select(s+1,NULL,&set,NULL,&to);
@@ -150,11 +143,12 @@ int ssh_connect_host(SSH_SESSION *session, const char *host, const char
         sock_set_blocking(s);
         return s;
     }
-    if(connect(s,(struct sockaddr *)&sa,sizeof(sa))< 0){
-        close(s);
+    if(connect(s,ai->ai_addr,ai->ai_addrlen)<0){
         ssh_set_error(session,SSH_FATAL,"connect: %s",strerror(errno));
-        return -1;
+        close(s);
+        s=-1;
     }
+    freeaddrinfo(ai);
     return s;
 }
 
@@ -220,13 +214,15 @@ int ssh_select(CHANNEL **channels,CHANNEL **outchannels, int maxfd, fd_set *read
     j=0;
     // polls every channel.
     for(i=0;channels[i];i++){
-        if(channel_poll(channels[i],0)>0){
-            outchannels[j]=channels[i];
-            j++;
-        } else
-        if(channel_poll(channels[i],1)>0){
-            outchannels[j]=channels[i];
-            j++;
+        if(channels[i]->session->alive){
+            if(channel_poll(channels[i],0)>0){
+                outchannels[j]=channels[i];
+                j++;
+            } else
+            if(channel_poll(channels[i],1)>0){
+                outchannels[j]=channels[i];
+                j++;
+            }
         }
     }
     outchannels[j]=NULL;
@@ -261,13 +257,13 @@ int ssh_select(CHANNEL **channels,CHANNEL **outchannels, int maxfd, fd_set *read
     }
     /* set the data_to_read flag on each session */
     for(i=0;channels[i];i++)
-        if(FD_ISSET(channels[i]->session->fd,&localset))
+        if(channels[i]->session->alive && FD_ISSET(channels[i]->session->fd,&localset))
             channels[i]->session->data_to_read=1;
             
     /* now, test each channel */
     j=0;
     for(i=0;channels[i];i++){
-        if(FD_ISSET(channels[i]->session->fd,&localset))
+        if(channels[i]->session->alive && FD_ISSET(channels[i]->session->fd,&localset))
             if((channel_poll(channels[i],0)>0) || (channel_poll(channels[i],1)>0)){
                 outchannels[j]=channels[i];
                 j++;
