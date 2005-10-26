@@ -722,7 +722,8 @@ static int channel_protocol_select(CHANNEL **rchans, CHANNEL **wchans, CHANNEL *
             ssh_handle_packets(chan->session);
         }
         if( (chan->stdout_buffer && buffer_get_len(chan->stdout_buffer)>0) ||
-             (chan->stderr_buffer && buffer_get_len(chan->stderr_buffer)>0)){
+             (chan->stderr_buffer && buffer_get_len(chan->stderr_buffer)>0) ||
+            chan->remote_eof){
             rout[j]=chan;
             ++j;
         }
@@ -741,7 +742,7 @@ static int channel_protocol_select(CHANNEL **rchans, CHANNEL **wchans, CHANNEL *
     j=0;
     for(i=0;echans[i];++i){
         chan=echans[i];
-        if(chan->session->fd==-1 || !chan->open || chan->remote_eof || chan->session->data_except){
+        if(chan->session->fd==-1 || !chan->open || chan->session->data_except){
             eout[j]=chan;
             ++j;
         }

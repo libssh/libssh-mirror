@@ -239,7 +239,7 @@ void sha1(unsigned char *digest,int len,unsigned char *hash){
 }
 
 MD5CTX md5_init(){
-    MD5CTX c=malloc(sizeof(c));
+    MD5CTX c=malloc(sizeof(*c));
     MD5_Init(c);
     return c;
 }

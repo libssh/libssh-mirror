@@ -31,10 +31,12 @@ BUFFER *buffer_new(){
     }
 
 void buffer_free(BUFFER *buffer){
+//    printf("buffer %p : free(%p);\n",buffer,buffer->data);
     if(buffer->data){
         memset(buffer->data,0,buffer->allocated); /* burn the data */
         free(buffer->data);
         }
+    memset(buffer,'x',sizeof (*buffer));
     free(buffer);
     }
 
@@ -46,7 +48,9 @@ void buffer_reinit(BUFFER *buffer){
 
 static void realloc_buffer(BUFFER *buffer,int needed){
     needed=(needed+0x7f) & ~0x7f;
+//    printf("buffer %p : realloc(%x,%d)=",buffer,buffer->data,needed);
     buffer->data=realloc(buffer->data,needed);
+//    printf("%p\n",buffer->data);
     buffer->allocated=needed;
 }
 
