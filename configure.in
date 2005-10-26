@@ -66,9 +66,9 @@ AC_PROG_LIBTOOL
 AC_C_BIGENDIAN
 
 # Checks for libraries.
-AC_CHECK_LIB([gcrypt], [gcry_md_open])
+#AC_CHECK_LIB([gcrypt], [gcry_md_open])
 AC_ARG_WITH([libgcrypt],
-    AC_HELP_STRING([--with-libgcypt],[Use libgcrypt instead of libcrypto]),
+    AC_HELP_STRING([--with-libgcrypt],[Use libgcrypt instead of libcrypto]),
     [AC_CHECK_LIB([gcrypt], [gcry_md_open])])
 
 if test "$ac_cv_lib_gcrypt_gcry_md_open" != yes; then
