@@ -45,7 +45,7 @@ install: all
 	$(top_srcdir)/mkinstalldirs $(libdir)
 	$(LIBTOOL) --mode=install $(INSTALL) libssh.la $(libdir)
 clean:
-	$(LIBTOOL) --mode=clean rm -f *~ libssh.la *.lo
+	$(LIBTOOL) --mode=clean rm -f *~ libssh.la *.lo *.o
 distclean: clean
 	rm -f Makefile
 

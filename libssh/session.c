@@ -34,6 +34,7 @@ SSH_SESSION *ssh_new() {
     session->next_crypto=crypto_new();
     session->maxchannel=FIRST_CHANNEL;
     session->fd=-1;
+    session->blocking=1;
     return session;
 }
 

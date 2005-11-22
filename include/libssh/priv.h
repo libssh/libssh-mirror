@@ -304,7 +304,7 @@ struct ssh_session {
                          not block */
     int data_to_write;
     int data_except;
-    int blocking; // functions should not block
+    int blocking; // functions should block
     
     STRING *banner; /* that's the issue banner from 
                        the server */
@@ -315,6 +315,14 @@ struct ssh_session {
     BUFFER *in_buffer;
     PACKET in_packet;
     BUFFER *out_buffer;
+    
+    BUFFER *out_socket_buffer;
+    BUFFER *in_socket_buffer;
+    
+    /* the states are used by the nonblocking stuff to remember */
+    /* where it was before being interrupted */
+    int packet_state;
+    
     KEX server_kex;
     KEX client_kex;
     BUFFER *in_hashbuf;
