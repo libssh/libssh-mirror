@@ -58,7 +58,6 @@ static int completeread(int fd, void *buffer, int len){
 
 static int socket_read(SSH_SESSION *session,int len){
     int except, can_write;
-    int ret;
     int to_read;
     int r;
     char *buf;
@@ -70,17 +69,17 @@ static int socket_read(SSH_SESSION *session,int len){
         return SSH_OK;
     if(session->blocking){
         buf=malloc(to_read);
-        ret=completeread(session->fd,buf,to_read);
+        r=completeread(session->fd,buf,to_read);
         session->data_to_read=0;
-        if(ret==SSH_ERROR || ret ==0){
+        if(r==SSH_ERROR || r ==0){
             ssh_set_error(session,SSH_FATAL,
-                (ret==0)?"Connection closed by remote host" : "Error reading socket");
+                (r==0)?"Connection closed by remote host" : "Error reading socket");
             close(session->fd);
             session->fd=-1;
             session->data_except=1;
             return SSH_ERROR;
         }
-            
+
         buffer_add_data(session->in_socket_buffer,buf,to_read);
         free(buf);
         return SSH_OK;
@@ -95,7 +94,7 @@ static int socket_read(SSH_SESSION *session,int len){
         r=read(session->fd,buffer,sizeof(buffer));
         if(r<=0){
             ssh_set_error(session,SSH_FATAL,
-                (ret==0)?"Connection closed by remote host" : "Error reading socket");
+                (r==0)?"Connection closed by remote host" : "Error reading socket");
             close(session->fd);
             session->fd=-1;
             session->data_except=1;
@@ -114,7 +113,6 @@ static int packet_read2(SSH_SESSION *session){
     void *packet=NULL;
     unsigned char mac[30];
     char buffer[16];
-    int be_read,i;
     int to_be_read;
     int ret;
     u8 padding;
@@ -167,7 +165,8 @@ static int packet_read2(SSH_SESSION *session){
             }
             if(session->current_crypto){
                 /* decrypt the rest of the packet (blocksize bytes already have been decrypted */
-                packet_decrypt(session,buffer_get(session->in_buffer)+blocksize,buffer_get_len(session->in_buffer)-blocksize);
+                packet_decrypt(session,buffer_get(session->in_buffer)+blocksize,
+                               buffer_get_len(session->in_buffer)-blocksize);
                 memcpy(mac,buffer_get_rest(session->in_socket_buffer),macsize);
                 buffer_pass_bytes(session->in_socket_buffer,macsize);
                 if(packet_hmac_verify(session,session->in_buffer,mac)){
@@ -175,16 +174,20 @@ static int packet_read2(SSH_SESSION *session){
                     return SSH_ERROR;
                 }
             }
-            buffer_pass_bytes(session->in_buffer,sizeof(u32));   /*pass the size which has been processed before*/
+            buffer_pass_bytes(session->in_buffer,sizeof(u32));   
+                /*pass the size which has been processed before*/
             if(!buffer_get_u8(session->in_buffer,&padding)){
                 ssh_set_error(session,SSH_FATAL,"Packet too short to read padding");
                 return SSH_ERROR;
             }
-            ssh_say(3,"%hhd bytes padding, %d bytes left in buffer\n",padding,buffer_get_rest_len(session->in_buffer));
+            ssh_say(3,"%hhd bytes padding, %d bytes left in buffer\n",
+                    padding,buffer_get_rest_len(session->in_buffer));
             if(padding > buffer_get_rest_len(session->in_buffer)){
-                ssh_set_error(session,SSH_FATAL,"invalid padding: %d (%d resting)",padding,buffer_get_rest_len(session->in_buffer));
+                ssh_set_error(session,SSH_FATAL,"invalid padding: %d (%d resting)",
+                              padding,buffer_get_rest_len(session->in_buffer));
 #ifdef DEBUG_CRYPTO
-                ssh_print_hexa("incrimined packet",buffer_get(session->in_buffer),buffer_get_len(session->in_buffer));
+                ssh_print_hexa("incrimined packet",
+                               buffer_get(session->in_buffer),buffer_get_len(session->in_buffer));
 #endif
                 return SSH_ERROR;
             }
@@ -209,105 +212,86 @@ static int packet_read2(SSH_SESSION *session){
 static int packet_read1(SSH_SESSION *session){
     u32 len;
     void *packet=NULL;
-//    char buffer[16];
-    int be_read,i;
+    int ret;
     int to_be_read;
     u32 padding;
     u32 crc;
     ssh_say(3,"packet_read1()\n");
-//    unsigned int blocksize=8;
-    session->data_to_read=0; /* clear the dataavailable flag */
     if(!session->alive || session->data_except)
-        return -1; // the error message was already set
-    memset(&session->in_packet,0,sizeof(PACKET));
-    if(session->in_buffer)
-        buffer_free(session->in_buffer);
-    session->in_buffer=buffer_new();
-
-    be_read=completeread(session->fd,&len,sizeof(u32));
-    if(be_read!=sizeof(u32)){
-        if(be_read<=0){
-            session->alive=0;
-            session->data_except=1;
-            close(session->fd);
-            session->fd=-1;
-            ssh_set_error(session,SSH_FATAL,
-            (be_read==0)?"Connection closed by remote host" : "Error reading socket");
-            return -1;
-        }
-        ssh_set_error(session,SSH_FATAL,"read_packet(): asked %d bytes, received %d",sizeof(u32),be_read);
-        return -1;
-    }
-    /* len is not encrypted */
-    len=ntohl(len);
-    
-    if(len> MAX_PACKET_LEN){
-        ssh_set_error(session,SSH_FATAL,"read_packet(): Packet len too high(%uld %.8lx)",len,len);
-        return -1;
-    }
-    ssh_say(3,"%d bytes packet\n",len);
-    /* SSH-1 has a fixed padding lenght */
-    padding=8-(len % 8);
-    to_be_read=len+padding;
-   /* handle the case in which the whole packet size = blocksize */
-    if(to_be_read !=0){
-        packet=malloc(to_be_read);
-        i=completeread(session->fd,packet,to_be_read);
-        if(i<=0){
-            session->alive=0;
-            session->data_except=1;
-            close(session->fd);
-            session->fd=-1;
-            ssh_set_error(session,SSH_FATAL,"Server closed connection");
-            return -1;
-        }
-        if(i!=to_be_read){
+        return SSH_ERROR; // the error message was already set
+    switch (session->packet_state){
+        case PACKET_STATE_INIT:
+            memset(&session->in_packet,0,sizeof(PACKET));
+            if(session->in_buffer)
+                buffer_reinit(session->in_buffer);
+            else
+                session->in_buffer=buffer_new();
+            ret=socket_read(session,sizeof(u32));
+            if(ret!=SSH_OK)
+                return ret; // could be SSH_AGAIN
+            buffer_get_u32(session->in_socket_buffer,&len);
+            /*            be_read=completeread(session->fd,&len,sizeof(u32)); */
+           /* len is not encrypted */
+            len=ntohl(len); 
+            if(len> MAX_PACKET_LEN){
+                ssh_set_error(session,SSH_FATAL,"read_packet(): Packet len too high(%uld %.8lx)",len,len);
+                return SSH_ERROR;
+            }
+            ssh_say(3,"%d bytes packet\n",len);
+            session->in_packet.len=len;
+            session->packet_state=PACKET_STATE_SIZEREAD;
+        case PACKET_STATE_SIZEREAD:
+            len=session->in_packet.len;
+            /* SSH-1 has a fixed padding lenght */
+            padding=8-(len % 8);
+            to_be_read=len+padding;
+            /* it is *not* possible that to_be_read be < 8. */
+            ret=socket_read(session,to_be_read);
+            if(ret != SSH_OK)
+                return ret; // can be SSH_ERROR or SSH_AGAIN
+            packet=malloc(to_be_read);
+            memcpy(packet,buffer_get_rest(session->in_socket_buffer),to_be_read);
+            buffer_pass_bytes(session->in_socket_buffer,to_be_read);
+            buffer_add_data(session->in_buffer,packet,to_be_read);
             free(packet);
-            packet=NULL;
-            ssh_say(3,"Read only %d, wanted %d\n",i,to_be_read);
-            ssh_set_error(session,SSH_FATAL,"read_packet(): read only %d, wanted %d",i,to_be_read);
-            return -1;
-        }
-        ssh_say(3,"Read a %d bytes packet\n",len);
-        buffer_add_data(session->in_buffer,packet,to_be_read);
-        free(packet);
-    }
+            
 #ifdef DEBUG_CRYPTO
-    ssh_print_hexa("read packet:",buffer_get(session->in_buffer),
-            buffer_get_len(session->in_buffer));
+            ssh_print_hexa("read packet:",buffer_get(session->in_buffer),
+                buffer_get_len(session->in_buffer));
 #endif
-    if(session->current_crypto){
+            if(session->current_crypto){
         /* we decrypt everything, missing the lenght part (which was previously
          * read, unencrypted, and is not part of the buffer
          */
-        packet_decrypt(session,buffer_get(session->in_buffer),buffer_get_len(session->in_buffer));
-    }
+                packet_decrypt(session,buffer_get(session->in_buffer),buffer_get_len(session->in_buffer));
+            }
 #ifdef DEBUG_CRYPTO
-ssh_print_hexa("read packet decrypted:",buffer_get(session->in_buffer),buffer_get_len(session->in_buffer));
+            ssh_print_hexa("read packet decrypted:",
+                           buffer_get(session->in_buffer),buffer_get_len(session->in_buffer));
 #endif
-    ssh_say(3,"%d bytes padding\n",padding);
-    if((len+padding) != buffer_get_rest_len(session->in_buffer) || (len+padding) < sizeof(u32)){
-        ssh_say(2,"no crc32 in packet\n");
-        ssh_set_error(session,SSH_FATAL,"no crc32 in packet");
-        return -1;
-    }
-    memcpy(&crc,buffer_get_rest(session->in_buffer)+(len+padding)-sizeof(u32),
+            ssh_say(3,"%d bytes padding\n",padding);
+            if((len+padding) != buffer_get_rest_len(session->in_buffer) || (len+padding) < sizeof(u32)){
+                ssh_say(2,"no crc32 in packet\n");
+                ssh_set_error(session,SSH_FATAL,"no crc32 in packet");
+                return SSH_ERROR;
+            }
+            memcpy(&crc,buffer_get_rest(session->in_buffer)+(len+padding)-sizeof(u32),
             sizeof(u32));
-    buffer_pass_bytes_end(session->in_buffer,sizeof(u32));
-    crc=ntohl(crc);
-    if(ssh_crc32(buffer_get_rest(session->in_buffer),(len+padding)-sizeof(u32))!=crc){
+            buffer_pass_bytes_end(session->in_buffer,sizeof(u32));
+            crc=ntohl(crc);
+            if(ssh_crc32(buffer_get_rest(session->in_buffer),(len+padding)-sizeof(u32))!=crc){
 #ifdef DEBUG_CRYPTO
-        ssh_print_hexa("crc32 on",buffer_get_rest(session->in_buffer),
+                ssh_print_hexa("crc32 on",buffer_get_rest(session->in_buffer),
                 len + padding - sizeof(u32));
 #endif
-        ssh_say(2,"invalid crc32\n");
-        ssh_set_error(session,SSH_FATAL,"invalid crc32 : expected %.8lx, "
+                ssh_say(2,"invalid crc32\n");
+                ssh_set_error(session,SSH_FATAL,"invalid crc32 : expected %.8lx, "
                 "got %.8lx",crc,
                 ssh_crc32(buffer_get_rest(session->in_buffer),len+padding-sizeof(u32)) );
-        return -1;
-    }
-    buffer_pass_bytes(session->in_buffer,padding);   /*pass the padding*/
-    ssh_say(3,"the packet is valid\n");
+                return SSH_ERROR;
+            }
+            buffer_pass_bytes(session->in_buffer,padding);   /*pass the padding*/
+            ssh_say(3,"the packet is valid\n");
 /* will do that later 
 #ifdef HAVE_LIBZ
     if(session->current_crypto && session->current_crypto->do_compress_in){
@@ -315,8 +299,12 @@ ssh_print_hexa("read packet decrypted:",buffer_get(session->in_buffer),buffer_ge
     }
 #endif
 */
-    session->recv_seq++;
-    return 0;
+            session->recv_seq++;
+            session->packet_state=PACKET_STATE_INIT;
+            return SSH_OK;
+    }
+    ssh_set_error(session,SSH_FATAL,"Invalid state into packet_read2() : %d",session->packet_state);
+    return SSH_ERROR;
 }
 
 #endif /* HAVE_SSH1 */
@@ -357,6 +345,8 @@ static int atomic_write(int fd, void *buffer, int len){
     return SSH_OK;
 }
 
+/* when doing a nonblocking write, you should issue the packet_write only once, then 
+ * do packet_nonblocking_flush() until you get a SSH_OK or a SSH_ERROR */
 int packet_nonblocking_flush(SSH_SESSION *session){
     int except, can_write;
     int w;
@@ -364,6 +354,7 @@ int packet_nonblocking_flush(SSH_SESSION *session){
     while(session->data_to_write && buffer_get_rest_len(session->out_socket_buffer)>0){
         w=write(session->fd,buffer_get_rest(session->out_socket_buffer),
                 buffer_get_rest_len(session->out_socket_buffer));
+        session->data_to_write=0;
         if(w<0){
             session->data_to_write=0;
             session->data_except=1;
@@ -375,13 +366,16 @@ int packet_nonblocking_flush(SSH_SESSION *session){
             return SSH_ERROR;
         }
         buffer_pass_bytes(session->out_socket_buffer,w);
+        /* refresh the socket status */
+        ssh_fd_poll(session,&can_write,&except);
     }
     if(buffer_get_rest_len(session->out_socket_buffer)>0)
         return SSH_AGAIN;  /* there is data pending */
     return SSH_OK; // all data written
 }
 
-int packet_flush(SSH_SESSION *session){
+/* blocking packet flush */
+int packet_blocking_flush(SSH_SESSION *session){
     if(atomic_write(session->fd,buffer_get_rest(session->out_socket_buffer),
        buffer_get_rest_len(session->out_socket_buffer))){
         session->data_to_write=0;
@@ -408,7 +402,7 @@ static int socket_write(SSH_SESSION *session){
     if(!session->blocking){
         return packet_nonblocking_flush(session);
     } else
-        return packet_flush(session);
+        return packet_blocking_flush(session);
 }
 
 static int packet_send2(SSH_SESSION *session){
