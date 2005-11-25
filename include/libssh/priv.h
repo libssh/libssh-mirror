@@ -73,6 +73,8 @@ typedef gcry_mpi_t bignum;
 #define bignum_free(num) gcry_mpi_release(num)
 #define bignum_set_word(bn,n) gcry_mpi_set_ui(bn,n)
 #define bignum_bin2bn(bn,datalen,data) gcry_mpi_scan(data,GCRYMPI_FMT_USG,bn,datalen,NULL)
+#define bignum_bn2dec(num) my_gcry_bn2dec(num)
+#define bignum_dec2bn(num, data) my_gcry_dec2bn(data, num)
 #define bignum_bn2hex(num,data) gcry_mpi_aprint(GCRYMPI_FMT_HEX,data,NULL,num)
 #define bignum_hex2bn(num,datalen,data) gcry_mpi_scan(num,GCRYMPI_FMT_HEX,data,datalen,NULL)
 #define bignum_rand(num,bits) gcry_mpi_randomize(num,bits,GCRY_STRONG_RANDOM),gcry_mpi_set_bit(num,bits-1),gcry_mpi_set_bit(num,0)
@@ -108,6 +110,8 @@ typedef BN_CTX* bignum_CTX;
 #define bignum_free(num) BN_clear_free(num)
 #define bignum_set_word(bn,n) BN_set_word(bn,n)
 #define bignum_bin2bn(bn,datalen,data) BN_bin2bn(bn,datalen,data)
+#define bignum_bn2dec(num) BN_bn2dec(num)
+#define bignum_dec2bn(bn,data) BN_dec2bn(data,bn)
 #define bignum_bn2hex(num) BN_bn2hex(num)
 #define bignum_rand(rnd, bits, top, bottom) BN_rand(rnd,bits,top,bottom)
 #define bignum_ctx_new() BN_CTX_new()
@@ -531,6 +535,12 @@ int channel_write1(CHANNEL *channel, void *data, int len);
 /* session.c */
 
 int ssh_handle_packets(SSH_SESSION *session);
+
+#ifdef HAVE_LIBGCRYPT
+/* gcrypt_missing.c */
+int my_gcry_dec2bn(bignum *bn, const char *data);
+char *my_gcry_bn2dec(bignum bn);
+#endif /* !HAVE_LIBGCRYPT */
 
 #ifdef __cplusplus
 } ;

@@ -312,22 +312,29 @@ static void build_session_id1(SSH_SESSION *session, STRING *servern,
 static int modulus_smaller(PUBLIC_KEY *k1, PUBLIC_KEY *k2){
     bignum n1;
     bignum n2;
+    int res;
 #ifdef HAVE_LIBGCRYPT
     gcry_sexp_t sexp;
     sexp=gcry_sexp_find_token(k1->rsa_pub,"n",0);
-    n1=gcry_sexp_nth_mpi(sexp,1,GCRYMPI_FMT_STD);
+    n1=gcry_sexp_nth_mpi(sexp,1,GCRYMPI_FMT_USG);
     gcry_sexp_release(sexp);
     sexp=gcry_sexp_find_token(k2->rsa_pub,"n",0);
-    n2=gcry_sexp_nth_mpi(sexp,1,GCRYMPI_FMT_STD);
+    n2=gcry_sexp_nth_mpi(sexp,1,GCRYMPI_FMT_USG);
     gcry_sexp_release(sexp);
 #elif defined HAVE_LIBCRYPTO
     n1=k1->rsa_pub->n;
     n2=k2->rsa_pub->n;
 #endif
     if(bignum_cmp(n1,n2)<0)
-        return 1;
+        res=1;
     else
-        return 0;
+        res=0;
+#ifdef HAVE_LIBGCRYPT
+    bignum_free(n1);
+    bignum_free(n2);
+#endif
+    return res;
+    
 }
 
 #define ABS(A) ( (A)<0 ? -(A):(A) )

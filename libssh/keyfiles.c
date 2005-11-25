@@ -29,7 +29,9 @@ MA 02111-1307, USA. */
 #include <stdlib.h>
 #include <fcntl.h>
 #include "libssh/priv.h"
-#ifdef HAVE_LIBCRYPTO
+#ifdef HAVE_LIBGCRYPT
+#include <gcrypt.h>
+#elif defined HAVE_LIBCRYPTO
 #include <openssl/pem.h>
 #include <openssl/dsa.h>
 #include <openssl/err.h>
@@ -732,6 +734,15 @@ STRING *publickey_from_next_file(SSH_SESSION *session,char **pub_keys_path,char 
     return pubkey;
 }
 
+static int alldigits(char *s)
+{
+       while (*s) {
+               if (((*s) < '0') || ((*s) > '9')) return 0;
+               s++;
+       }
+       return 1;
+}
+
 #define FOUND_OTHER ( (void *)-1)
 #define FILE_NOT_FOUND ((void *)-2)
 /* will return a token array containing [host,]ip keytype key */
@@ -741,6 +752,7 @@ static char **ssh_parse_knownhost(char *filename, char *hostname, char *type){
     FILE *file=fopen(filename,"r");
     char buffer[4096];
     char *ptr;
+    char *found_type;
     char **tokens;
     char **ret=NULL;
     if(!file)
@@ -753,16 +765,29 @@ static char **ssh_parse_knownhost(char *filename, char *hostname, char *type){
             continue; /* skip empty lines */
         tokens=space_tokenize(buffer);
         if(!tokens[0] || !tokens[1] || !tokens[2]){
-            /* it should have exactly 3 tokens */
+            /* it should have at least 3 tokens */
             free(tokens[0]);
             free(tokens);
             continue;
         }
+       found_type = tokens[1];
         if(tokens[3]){
-            /* 3 tokens only, not four */
-            free(tokens[0]);
-            free(tokens);
-            continue;
+           /* openssh rsa1 format has 4 tokens on the line. Recognize it
+              by the fact that everything is all digits */
+           if (tokens[4]) {
+               /* that's never valid */
+               free(tokens[0]);
+               free(tokens);
+               continue;
+           }
+           if (alldigits(tokens[1]) && alldigits(tokens[2]) && alldigits(tokens[3])) {
+               found_type = "ssh-rsa1";
+           } else {
+               /* 3 tokens only, not four */
+               free(tokens[0]);
+               free(tokens);
+               continue;
+           }
         }
         ptr=tokens[0];
         while(*ptr==' ')
@@ -772,7 +797,7 @@ static char **ssh_parse_knownhost(char *filename, char *hostname, char *type){
         if(strncasecmp(ptr,hostname,strlen(hostname))==0){
             if(ptr[strlen(hostname)]==' ' || ptr[strlen(hostname)]=='\0' 
                     || ptr[strlen(hostname)]==','){
-                if(strcasecmp(tokens[1],type)==0){
+                if(strcasecmp(found_type, type)==0){
                     fclose(file);
                     return tokens;
                 } else {
@@ -814,8 +839,39 @@ int ssh_is_server_known(SSH_SESSION *session){
     /* Some time, we may verify the IP address did not change. I honestly think */
     /* it's not an important matter as IP address are known not to be secure */
     /* and the crypto stuff is enough to prove the server's identity */
-    pubkey_64=tokens[2];
-    pubkey_buffer=base64_to_bin(pubkey_64);
+    if (alldigits(tokens[1])) { /* openssh rsa1 format */
+       bignum tmpbn;
+       int i;
+       unsigned int len;
+       STRING *tmpstring;
+
+       pubkey_buffer = buffer_new();
+       tmpstring = string_from_char("ssh-rsa1");
+       buffer_add_ssh_string(pubkey_buffer, tmpstring);
+
+       for (i = 2; i < 4; i++) { /* e, then n */
+               tmpbn = NULL;
+               bignum_dec2bn(tokens[i], &tmpbn);
+               /* for some reason, make_bignum_string does not work
+                  because of the padding which it does --kv */
+               /* tmpstring = make_bignum_string(tmpbn); */
+               /* do it manually instead */
+               len = bignum_num_bytes(tmpbn);
+               tmpstring = malloc(4 + len);
+               tmpstring->size = htonl(len);
+#ifdef HAVE_LIBGCRYPT
+               bignum_bn2bin(tmpbn, len, tmpstring->string);
+#elif defined HAVE_LIBCRYPTO
+               bignum_bn2bin(tmpbn, tmpstring->string);
+#endif
+               bignum_free(tmpbn);
+               buffer_add_ssh_string(pubkey_buffer, tmpstring);
+               free(tmpstring);
+       }
+    } else {
+       pubkey_64=tokens[2];
+       pubkey_buffer=base64_to_bin(pubkey_64);
+    }
     /* at this point, we may free the tokens */
     free(tokens[0]);
     free(tokens);
@@ -853,9 +909,47 @@ int ssh_write_knownhost(SSH_SESSION *session){
         session->options->known_hosts_file,strerror(errno));
         return -1;
     }
-    pubkey_64=bin_to_base64(pubkey->string,string_len(pubkey));
-    snprintf(buffer,sizeof(buffer),"%s %s %s\n",session->options->host,session->current_crypto->server_pubkey_type,pubkey_64);
-    free(pubkey_64);
+    if (!strcmp(session->current_crypto->server_pubkey_type, "ssh-rsa1")) {
+       /* openssh uses a different format for ssh-rsa1 keys.
+          Be compatible --kv */
+       char *e_string, *n_string;
+       bignum e, n;
+       PUBLIC_KEY *key = publickey_from_string(pubkey);
+       int rsa_size;
+#ifdef HAVE_LIBGCRYPT
+       gcry_sexp_t sexp;
+       sexp=gcry_sexp_find_token(key->rsa_pub,"e",0);
+       e=gcry_sexp_nth_mpi(sexp,1,GCRYMPI_FMT_USG);
+       gcry_sexp_release(sexp);
+       sexp=gcry_sexp_find_token(key->rsa_pub,"n",0);
+       n=gcry_sexp_nth_mpi(sexp,1,GCRYMPI_FMT_USG);
+       gcry_sexp_release(sexp);
+       rsa_size=(gcry_pk_get_nbits(key->rsa_pub)+7)/8;
+#elif defined HAVE_LIBCRYPTO
+       e = key->rsa_pub->e;
+       n = key->rsa_pub->n;
+       rsa_size = RSA_size(key->rsa_pub);
+#endif
+       e_string = bignum_bn2dec(e);
+       n_string = bignum_bn2dec(n);
+       snprintf(buffer, sizeof(buffer), "%s %d %s %s\n",
+               session->options->host, rsa_size << 3,
+               e_string, n_string);
+#ifdef HAVE_LIBGCRYPT
+       free(e_string);
+       gcry_mpi_release(e);
+       free(n_string);
+       gcry_mpi_release(n);
+#elif defined HAVE_LIBCRYPTO
+       OPENSSL_free(e_string);
+       OPENSSL_free(n_string);
+#endif
+       free(key);
+    } else {
+       pubkey_64=bin_to_base64(pubkey->string,string_len(pubkey));
+       snprintf(buffer,sizeof(buffer),"%s %s %s\n",session->options->host,session->current_crypto->server_pubkey_type,pubkey_64);
+       free(pubkey_64);
+    }
     fwrite(buffer,strlen(buffer),1,file);
     fclose(file);
     return 0;
