@@ -319,7 +319,7 @@ void do_sftp(SSH_SESSION *session){
         ssh_say(0,"Error reading file : %s\n",ssh_get_error(session));     
     sftp_file_close(fichier);
     sftp_file_close(to);
-    printf("fichiers fermés\n");
+    printf("fichiers fermï¿½\n");
     to=sftp_open(sftp,"/tmp/grosfichier",O_WRONLY|O_CREAT,NULL);
     for(i=0;i<1000;++i){
         len=sftp_write(to,data,8000);
@@ -331,7 +331,7 @@ void do_sftp(SSH_SESSION *session){
     sftp_file_close(to);
     /* close the sftp session */
     sftp_free(sftp);
-    printf("session sftp terminée\n");
+    printf("session sftp terminï¿½\n");
 }
 
 int auth_kbdint(SSH_SESSION *session){
@@ -463,6 +463,11 @@ int main(int argc, char **argv){
         memset(password,0,strlen(password));
     }
     ssh_say(1,"Authentication success\n");
+    printf("%s\n",argv[0]);
+    if(strstr(argv[0],"sftp")){
+        sftp=1;
+        ssh_say(1,"doing sftp instead\n");
+    }
     if(!sftp){
         if(!cmds[0])
             shell(session);

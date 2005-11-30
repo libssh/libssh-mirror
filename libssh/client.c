@@ -104,62 +104,100 @@ int ssh_send_banner(SSH_SESSION *session,int server){
     return 0;
 }
 
-
+#define DH_STATE_INIT 0
+#define DH_STATE_INIT_TO_SEND 1
+#define DH_STATE_INIT_SENT 2
+#define DH_STATE_NEWKEYS_TO_SEND 3
+#define DH_STATE_NEWKEYS_SENT 4
+#define DH_STATE_FINISHED 5
 static int dh_handshake(SSH_SESSION *session){
     STRING *e,*f,*pubkey,*signature;
-    packet_clear_out(session);
-    buffer_add_u8(session->out_buffer,SSH2_MSG_KEXDH_INIT);
-    dh_generate_x(session);
-    dh_generate_e(session);
-    e=dh_get_e(session);
-    buffer_add_ssh_string(session->out_buffer,e);
-    packet_send(session);
-    free(e);
-    if(packet_wait(session,SSH2_MSG_KEXDH_REPLY,1))
-        return -1;
-    pubkey=buffer_get_ssh_string(session->in_buffer);
-    if(!pubkey){
-        ssh_set_error(session,SSH_FATAL,"No public key in packet");
-        return -1;
+    int ret;
+    switch(session->dh_handshake_state){
+        case DH_STATE_INIT:
+            packet_clear_out(session);
+            buffer_add_u8(session->out_buffer,SSH2_MSG_KEXDH_INIT);
+            dh_generate_x(session);
+            dh_generate_e(session);
+            e=dh_get_e(session);
+            buffer_add_ssh_string(session->out_buffer,e);
+            ret=packet_send(session);
+            free(e);
+            session->dh_handshake_state=DH_STATE_INIT_TO_SEND;
+            if(ret==SSH_ERROR)
+                return ret;
+        case DH_STATE_INIT_TO_SEND:
+            ret=packet_flush(session,0);
+            if(ret!=SSH_OK)
+                return ret; // SSH_ERROR or SSH_AGAIN
+            session->dh_handshake_state=DH_STATE_INIT_SENT;
+        case DH_STATE_INIT_SENT:
+            ret=packet_wait(session,SSH2_MSG_KEXDH_REPLY,1);
+            if(ret != SSH_OK)
+                return ret;
+            pubkey=buffer_get_ssh_string(session->in_buffer);
+            if(!pubkey){
+                ssh_set_error(session,SSH_FATAL,"No public key in packet");
+                return SSH_ERROR;
+            }
+            dh_import_pubkey(session,pubkey);
+            f=buffer_get_ssh_string(session->in_buffer);
+            if(!f){
+                ssh_set_error(session,SSH_FATAL,"No F number in packet");
+                return SSH_ERROR;
+            }
+            dh_import_f(session,f);
+            free(f);
+            if(!(signature=buffer_get_ssh_string(session->in_buffer))){
+                ssh_set_error(session,SSH_FATAL,"No signature in packet");
+                return SSH_ERROR;
+            }
+            session->dh_server_signature=signature;
+            dh_build_k(session);
+            // send the MSG_NEWKEYS
+            packet_clear_out(session);
+            buffer_add_u8(session->out_buffer,SSH2_MSG_NEWKEYS);
+            packet_send(session);
+            session->dh_handshake_state=DH_STATE_NEWKEYS_TO_SEND;
+        case DH_STATE_NEWKEYS_TO_SEND:
+            ret=packet_flush(session,0);
+            if(ret != SSH_OK)
+                return ret;
+            ssh_say(2,"SSH_MSG_NEWKEYS sent\n");
+            session->dh_handshake_state=DH_STATE_NEWKEYS_SENT;
+        case DH_STATE_NEWKEYS_SENT:
+            ret=packet_wait(session,SSH2_MSG_NEWKEYS,1);
+            if(ret != SSH_OK)
+                return ret;
+            ssh_say(2,"Got SSH_MSG_NEWKEYS\n");
+            make_sessionid(session);
+            /* set the cryptographic functions for the next crypto */
+            /* (it is needed for generate_session_keys for key lenghts) */
+            if(crypt_set_algorithms(session))
+                return SSH_ERROR;
+            generate_session_keys(session);
+            /* verify the host's signature. XXX do it sooner */
+            signature=session->dh_server_signature;
+            session->dh_server_signature=NULL;
+            if(signature_verify(session,signature)){
+                free(signature);
+                return SSH_ERROR;
+            }
+            free(signature);	/* forget it for now ... */
+            /* once we got SSH2_MSG_NEWKEYS we can switch next_crypto and current_crypto */
+            if(session->current_crypto)
+                crypto_free(session->current_crypto);
+                /* XXX later, include a function to change keys */
+            session->current_crypto=session->next_crypto;
+            session->next_crypto=crypto_new();
+            session->dh_handshake_state=DH_STATE_FINISHED;
+            return SSH_OK;
+        default:
+            ssh_set_error(session,SSH_FATAL,"Invalid state in dh_handshake():%d",session->dh_handshake_state);
+            return SSH_ERROR;
     }
-    dh_import_pubkey(session,pubkey);
-    f=buffer_get_ssh_string(session->in_buffer);
-    if(!f){
-        ssh_set_error(session,SSH_FATAL,"No F number in packet");
-        return -1;
-    }
-    dh_import_f(session,f);
-    free(f);
-    if(!(signature=buffer_get_ssh_string(session->in_buffer))){
-        ssh_set_error(session,SSH_FATAL,"No signature in packet");
-        return -1;
-    }
-
-    dh_build_k(session);
-    packet_wait(session,SSH2_MSG_NEWKEYS,1);
-    ssh_say(2,"Got SSH_MSG_NEWKEYS\n");
-    packet_clear_out(session);
-    buffer_add_u8(session->out_buffer,SSH2_MSG_NEWKEYS);
-    packet_send(session);
-    ssh_say(2,"SSH_MSG_NEWKEYS sent\n");
-    make_sessionid(session);
-    /* set the cryptographic functions for the next crypto (it is needed for generate_session_keys for key lenghts) */
-    if(crypt_set_algorithms(session))
-        return -1;
-    generate_session_keys(session);
-    /* verify the host's signature. XXX do it sooner */
-    if(signature_verify(session,signature)){
-        free(signature);
-        return -1;
-    }
-    free(signature);	/* forget it for now ... */
-    /* once we got SSH2_MSG_NEWKEYS we can switch next_crypto and current_crypto */
-    if(session->current_crypto)
-        crypto_free(session->current_crypto);
-    /* XXX later, include a function to change keys */
-    session->current_crypto=session->next_crypto;
-    session->next_crypto=crypto_new();
-    return 0;
+    /* not reached */
+    return SSH_ERROR;
 }
 
 int ssh_service_request(SSH_SESSION *session,char *service){
@@ -185,13 +223,13 @@ int ssh_connect(SSH_SESSION *session){
   SSH_OPTIONS *options=session->options;
   if(!session->options){
       ssh_set_error(session,SSH_FATAL,"Must set options before connect");
-      return -1;
+      return SSH_ERROR;
   }
   session->client=1;
   ssh_crypto_init();
   if(options->fd==-1 && !options->host){
       ssh_set_error(session,SSH_FATAL,"Hostname required");
-      return -1;
+      return SSH_ERROR;
   } 
   if(options->fd != -1)
       fd=options->fd;

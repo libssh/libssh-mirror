@@ -335,19 +335,19 @@ int packet_translate(SSH_SESSION *session){
 
 static int atomic_write(int fd, void *buffer, int len){
     int written;
-    do {
+    while(len >0) {
         written=write(fd,buffer,len);
         if(written==0 || written==-1)
-            return -1;
+            return SSH_ERROR;
         len-=written;
         buffer+=written;
-    } while (len > 0);
+    }
     return SSH_OK;
 }
 
 /* when doing a nonblocking write, you should issue the packet_write only once, then 
  * do packet_nonblocking_flush() until you get a SSH_OK or a SSH_ERROR */
-int packet_nonblocking_flush(SSH_SESSION *session){
+static int packet_nonblocking_flush(SSH_SESSION *session){
     int except, can_write;
     int w;
     ssh_fd_poll(session,&can_write,&except); /* internally sets data_to_write */
@@ -375,7 +375,11 @@ int packet_nonblocking_flush(SSH_SESSION *session){
 }
 
 /* blocking packet flush */
-int packet_blocking_flush(SSH_SESSION *session){
+static int packet_blocking_flush(SSH_SESSION *session){
+    if(session->data_except)
+        return SSH_ERROR;
+    if(buffer_get_rest(session->out_socket_buffer)==0)
+        return SSH_OK;
     if(atomic_write(session->fd,buffer_get_rest(session->out_socket_buffer),
        buffer_get_rest_len(session->out_socket_buffer))){
         session->data_to_write=0;
@@ -390,6 +394,16 @@ int packet_blocking_flush(SSH_SESSION *session){
     session->data_to_write=0;
     buffer_reinit(session->out_socket_buffer);
     return SSH_OK; // no data pending
+}
+
+/* Write the the bufferized output. If the session is blocking, or enforce_blocking 
+ * is set, the call may block. Otherwise, it won't block.
+ * return SSH°OK if everything has been sent, SSH_AGAIN if there are still things 
+ * to send on buffer, SSH_ERROR if there is an error. */
+int packet_flush(SSH_SESSION *session, int enforce_blocking){
+    if(enforce_blocking || session->blocking)
+        return packet_blocking_flush(session);
+    return packet_nonblocking_flush(session);
 }
 
 /* this function places the outgoing packet buffer into an outgoing socket buffer */
@@ -596,15 +610,17 @@ static int packet_wait1(SSH_SESSION *session,int type,int blocking){
 }
 #endif /* HAVE_SSH1 */
 static int packet_wait2(SSH_SESSION *session,int type,int blocking){
+    int ret;
     while(1){
-        if(packet_read2(session))
-            return -1;
+        ret=packet_read2(session);
+        if(ret != SSH_OK)
+            return ret;
         if(packet_translate(session))
-            return -1;
+            return SSH_ERROR;
         switch(session->in_packet.type){
            case SSH2_MSG_DISCONNECT:
                packet_parse(session);
-                return -1;
+                return SSH_ERROR;
            case SSH2_MSG_CHANNEL_WINDOW_ADJUST:
            case SSH2_MSG_CHANNEL_DATA:
            case SSH2_MSG_CHANNEL_EXTENDED_DATA:
@@ -612,20 +628,20 @@ static int packet_wait2(SSH_SESSION *session,int type,int blocking){
            case SSH2_MSG_CHANNEL_EOF:
            case SSH2_MSG_CHANNEL_CLOSE:
                packet_parse(session);
-                break;;
+               break;
            case SSH2_MSG_IGNORE:
                break;
            default:
                if(type && (type != session->in_packet.type)){
                    ssh_set_error(session,SSH_FATAL,"waitpacket(): Received a %d type packet, was waiting for a %d\n",session->in_packet.type,type);
-                   return -1;
+                   return SSH_ERROR;
                }
-               return 0;
+               return SSH_OK;
            }
         if(blocking==0)
-            return 0;
+            return SSH_OK; //shouldn't it return SSH_AGAIN here ?
     }
-    return 0;
+    return SSH_OK;
 }
 int packet_wait(SSH_SESSION *session, int type, int block){
 #ifdef HAVE_SSH1

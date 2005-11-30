@@ -326,6 +326,8 @@ struct ssh_session {
     /* the states are used by the nonblocking stuff to remember */
     /* where it was before being interrupted */
     int packet_state;
+    int dh_handshake_state;
+    STRING *dh_server_signature; //information used by dh_handshake.
     
     KEX server_kex;
     KEX client_kex;
@@ -413,7 +415,7 @@ int packet_send(SSH_SESSION *session);
 int packet_read(SSH_SESSION *session);
 int packet_translate(SSH_SESSION *session);
 int packet_wait(SSH_SESSION *session,int type,int blocking);
-
+int packet_flush(SSH_SESSION *session, int enforce_blocking);
 /* connect.c */
 SSH_SESSION *ssh_session_new();
 int ssh_connect_host(SSH_SESSION *session, const char *host,const char 
