@@ -63,6 +63,45 @@ static int getai(const char *host, int port, struct addrinfo **ai)
     return getaddrinfo(host,service,&hints,ai);
 }
 
+int ssh_connect_ai_timeout(SSH_SESSION *session, char *host, int port, struct addrinfo *ai,
+                           long timeout, long usec,int s)
+{
+    struct timeval to;
+    fd_set set;
+    int ret=0;
+    unsigned int len=sizeof(ret);
+    to.tv_sec=timeout;
+    to.tv_usec=usec;
+    sock_set_nonblocking(s);
+    connect(s,ai->ai_addr,ai->ai_addrlen);
+    freeaddrinfo(ai);
+    FD_ZERO(&set);
+    FD_SET(s,&set);
+    ret=select(s+1,NULL,&set,NULL,&to);
+    if(ret==0){
+        /* timeout */
+        ssh_set_error(session,SSH_FATAL,"Timeout while connecting to %s:%d",host,port);
+        close(s);
+        return -1;
+    }
+    if(ret<0){
+        ssh_set_error(session,SSH_FATAL,"Select error : %s",strerror(errno));
+        close(s);
+        return -1;
+    }
+    /* get connect(2) return code. zero means no error */
+    getsockopt(s,SOL_SOCKET,SO_ERROR,&ret,&len);
+    if (ret!=0){
+        ssh_set_error(session,SSH_FATAL,"Connecting : %s",strerror(ret));
+        close(s);
+        return -1;
+    }
+    /* s is connected ? */
+    ssh_say(3,"socket connected with timeout\n");
+    sock_set_blocking(s);
+    return s;
+}
+
 /* connect_host connects to an IPv4 (or IPv6) host */
 /* specified by its IP address or hostname. */
 /* output is the file descriptor, <0 if failed. */
@@ -108,40 +147,7 @@ int ssh_connect_host(SSH_SESSION *session, const char *host, const char
 	freeaddrinfo(bind_ai);
     }
     if(timeout){
-        struct timeval to;
-        fd_set set;
-        int ret=0;
-        unsigned int len=sizeof(ret);
-        to.tv_sec=timeout;
-        to.tv_usec=usec;
-        sock_set_nonblocking(s);
-	connect(s,ai->ai_addr,ai->ai_addrlen);
-        freeaddrinfo(ai);
-        FD_ZERO(&set);
-        FD_SET(s,&set);
-        ret=select(s+1,NULL,&set,NULL,&to);
-        if(ret==0){
-            /* timeout */
-            ssh_set_error(session,SSH_FATAL,"Timeout while connecting to %s:%d",host,port);
-            close(s);
-            return -1;
-        }
-        if(ret<0){
-            ssh_set_error(session,SSH_FATAL,"Select error : %s",strerror(errno));
-            close(s);
-            return -1;
-        }
-        /* get connect(2) return code. zero means no error */
-        getsockopt(s,SOL_SOCKET,SO_ERROR,&ret,&len);
-        if (ret!=0){
-            ssh_set_error(session,SSH_FATAL,"Connecting : %s",strerror(ret));
-            close(s);
-            return -1;
-        }
-        /* s is connected ? */
-        ssh_say(3,"socket connected with timeout\n");
-        sock_set_blocking(s);
-        return s;
+        return ssh_connect_ai_timeout(session,host,port,ai,timeout,usec,s);
     }
     if(connect(s,ai->ai_addr,ai->ai_addrlen)<0){
         ssh_set_error(session,SSH_FATAL,"connect: %s",strerror(errno));
