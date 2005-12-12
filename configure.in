@@ -84,8 +84,7 @@ AC_SEARCH_LIBS([gethostbyname],[nsl resolv])
 AC_HEADER_STDC
 AC_CHECK_HEADERS([fcntl.h netdb.h netinet/in.h stdlib.h string.h sys/socket.h \
 sys/time.h termios.h unistd.h openssl/aes.h openssl/blowfish.h \
-openssl/des.h zlib.h sys/poll.h stdint.h pty.h pam/pam_appl.h \
-security/pam_appl.h gcrypt.h])
+openssl/des.h zlib.h sys/poll.h stdint.h pty.h gcrypt.h])
 
 #Warn user when no openssl available
 #FIXME ! how to make it work with gcrypt ?
@@ -117,6 +116,5 @@ AC_CHECK_FUNCS([endpwent getaddrinfo gethostbyname getpass memmove memset \
 cfmakeraw select socket strchr strdup strerror strstr poll])
 
 AC_CONFIG_FILES([Makefile
-                 libssh/Makefile
-                 sftp_server/Makefile])
+                 libssh/Makefile])
 AC_OUTPUT
