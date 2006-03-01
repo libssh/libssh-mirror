@@ -78,7 +78,7 @@ unsigned char * packet_encrypt(SSH_SESSION *session,void *data,u32 len){
 #endif
     out=malloc(len);
     if(session->version==2){
-        ctx=hmac_init(session->current_crypto->encryptMAC,20,HMAC_SHA1);	
+        ctx=hmac_init(session->current_crypto->encryptMAC,20,HMAC_SHA1);
         hmac_update(ctx,(unsigned char *)&seq,sizeof(u32));
         hmac_update(ctx,data,len);
         hmac_final(ctx,session->current_crypto->hmacbuf,&finallen);

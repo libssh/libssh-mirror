@@ -35,7 +35,7 @@ MA 02111-1307, USA. */
 
 SHACTX sha1_init(){
     SHACTX ret;
-    gcry_md_open(&ret,GCRY_MD_SHA1,GCRY_MD_FLAG_SECURE);
+    gcry_md_open(&ret,GCRY_MD_SHA1,0);
     return ret;
 }
 void sha1_update(SHACTX c, const void *data, unsigned long len){
@@ -52,7 +52,7 @@ void sha1(unsigned char *digest,int len,unsigned char *hash){
 
 MD5CTX md5_init(){
     MD5CTX ret;
-    gcry_md_open(&ret,GCRY_MD_MD5,GCRY_MD_FLAG_SECURE);
+    gcry_md_open(&ret,GCRY_MD_MD5,0);
     return ret;
 }
 void md5_update(MD5CTX c, const void *data, unsigned long len){
@@ -68,10 +68,10 @@ HMACCTX hmac_init(const void *key, int len,int type){
     HMACCTX c;
     switch(type){
         case HMAC_SHA1:
-            gcry_md_open(&c,GCRY_MD_SHA1, GCRY_MD_FLAG_HMAC | GCRY_MD_FLAG_SECURE);
+            gcry_md_open(&c,GCRY_MD_SHA1, GCRY_MD_FLAG_HMAC);
             break;
         case HMAC_MD5:
-            gcry_md_open(&c,GCRY_MD_MD5, GCRY_MD_FLAG_HMAC | GCRY_MD_FLAG_SECURE);
+            gcry_md_open(&c,GCRY_MD_MD5, GCRY_MD_FLAG_HMAC);
             break;
         default:
             c=NULL;
@@ -97,7 +97,7 @@ static void alloc_key(struct crypto_struct *cipher){
 static void blowfish_set_key(struct crypto_struct *cipher, void *key, void *IV){
     if(!cipher->key){
         alloc_key(cipher);
-        gcry_cipher_open(&cipher->key[0],GCRY_CIPHER_BLOWFISH,GCRY_CIPHER_MODE_CBC,GCRY_CIPHER_SECURE);
+        gcry_cipher_open(&cipher->key[0],GCRY_CIPHER_BLOWFISH,GCRY_CIPHER_MODE_CBC,0);
         gcry_cipher_setkey(cipher->key[0],key,16);
         gcry_cipher_setiv(cipher->key[0],IV,8);
     }
@@ -116,13 +116,13 @@ static void aes_set_key(struct crypto_struct *cipher, void *key, void *IV){
         alloc_key(cipher);
         switch(cipher->keysize){
           case 128:
-            gcry_cipher_open(&cipher->key[0],GCRY_CIPHER_AES128,GCRY_CIPHER_MODE_CBC,GCRY_CIPHER_SECURE);
+            gcry_cipher_open(&cipher->key[0],GCRY_CIPHER_AES128,GCRY_CIPHER_MODE_CBC,0);
             break;
           case 192:
-            gcry_cipher_open(&cipher->key[0],GCRY_CIPHER_AES192,GCRY_CIPHER_MODE_CBC,GCRY_CIPHER_SECURE);
+            gcry_cipher_open(&cipher->key[0],GCRY_CIPHER_AES192,GCRY_CIPHER_MODE_CBC,0);
             break;
           case 256:
-            gcry_cipher_open(&cipher->key[0],GCRY_CIPHER_AES256,GCRY_CIPHER_MODE_CBC,GCRY_CIPHER_SECURE);
+            gcry_cipher_open(&cipher->key[0],GCRY_CIPHER_AES256,GCRY_CIPHER_MODE_CBC,0);
             break;
         }
         gcry_cipher_setkey(cipher->key[0],key,cipher->keysize/8);
@@ -141,7 +141,7 @@ static void aes_decrypt(struct crypto_struct *cipher, void *in, void *out,unsign
 static void des3_set_key(struct crypto_struct *cipher, void *key, void *IV){
     if(!cipher->key){
         alloc_key(cipher);
-        gcry_cipher_open(&cipher->key[0],GCRY_CIPHER_3DES,GCRY_CIPHER_MODE_CBC,GCRY_CIPHER_SECURE);
+        gcry_cipher_open(&cipher->key[0],GCRY_CIPHER_3DES,GCRY_CIPHER_MODE_CBC,0);
         gcry_cipher_setkey(cipher->key[0],key,24);
         gcry_cipher_setiv(cipher->key[0],IV,8);
     }
@@ -160,13 +160,13 @@ static void des3_decrypt(struct crypto_struct *cipher, void *in, void *out,
 static void des3_1_set_key(struct crypto_struct *cipher, void *key, void *IV){
     if(!cipher->key){
         alloc_key(cipher);
-        gcry_cipher_open(&cipher->key[0],GCRY_CIPHER_DES,GCRY_CIPHER_MODE_CBC,GCRY_CIPHER_SECURE);
+        gcry_cipher_open(&cipher->key[0],GCRY_CIPHER_DES,GCRY_CIPHER_MODE_CBC,0);
         gcry_cipher_setkey(cipher->key[0],key,8);
         gcry_cipher_setiv(cipher->key[0],IV,8);
-        gcry_cipher_open(&cipher->key[1],GCRY_CIPHER_DES,GCRY_CIPHER_MODE_CBC,GCRY_CIPHER_SECURE);
+        gcry_cipher_open(&cipher->key[1],GCRY_CIPHER_DES,GCRY_CIPHER_MODE_CBC,0);
         gcry_cipher_setkey(cipher->key[1],key+8,8);
         gcry_cipher_setiv(cipher->key[1],IV+8,8);
-        gcry_cipher_open(&cipher->key[2],GCRY_CIPHER_DES,GCRY_CIPHER_MODE_CBC,GCRY_CIPHER_SECURE);
+        gcry_cipher_open(&cipher->key[2],GCRY_CIPHER_DES,GCRY_CIPHER_MODE_CBC,0);
         gcry_cipher_setkey(cipher->key[2],key+16,8);
         gcry_cipher_setiv(cipher->key[2],IV+16,8);
     }

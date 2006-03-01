@@ -20,13 +20,11 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA. */
 
 #include <stdio.h>
-#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 #include <netdb.h>
 #include "libssh/priv.h"
 #include "libssh/ssh2.h"
-extern int connections;
 
 #define set_status(opt,status) do {\
         if (opt->connect_status_function) \
@@ -316,12 +314,6 @@ void ssh_disconnect(SSH_SESSION *session){
     }
     session->alive=0;
     ssh_cleanup(session);
-    if (!--connections)
-#ifdef HAVE_LIBGCRYPT
-      gcry_control(GCRYCTL_TERM_SECMEM);
-#elif defined HAVE_LIBCRYPTO
-      EVP_cleanup();
-#endif
 }
 
 const char *ssh_copyright(){

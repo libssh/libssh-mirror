@@ -208,7 +208,7 @@ int privatekey_decrypt(int algo, int mode, unsigned int key_len,
   if (passphrase_len <= 0)
     return 0;
   passphrase_to_key(passphrase, passphrase_len, iv, key, key_len);
-  if (gcry_cipher_open(&cipher, algo, mode, GCRY_CIPHER_SECURE)
+  if (gcry_cipher_open(&cipher, algo, mode, 0)
       || gcry_cipher_setkey(cipher, key, key_len)
       || gcry_cipher_setiv(cipher, iv, iv_len)
       || !(tmp = malloc(buffer_get_len(data) * sizeof (char)))

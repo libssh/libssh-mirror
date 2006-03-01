@@ -37,9 +37,9 @@ MA 02111-1307, USA. */
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <fcntl.h>
 #include <netdb.h>
+#include <string.h>
+#include "libssh/crypto.h"    
 #include "libssh/priv.h"
 
 #ifdef HAVE_LIBCRYPTO
@@ -47,8 +47,7 @@ MA 02111-1307, USA. */
 #include <openssl/evp.h>
 #include <openssl/err.h>
 #endif
-#include <string.h>
-#include "libssh/crypto.h"    
+
 static unsigned char p_value[] = {
         0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xC9, 0x0F, 0xDA, 0xA2,
         0x21, 0x68, 0xC2, 0x34, 0xC4, 0xC6, 0x62, 0x8B, 0x80, 0xDC, 0x1C, 0xD1,
@@ -66,8 +65,6 @@ static unsigned char p_value[] = {
 static unsigned long g_int = 2 ;	/* G is defined as 2 by the ssh2 standards */
 static bignum g;
 static bignum p;
-
-int connections = 0;
 
 /* maybe it might be enhanced .... */
 /* XXX Do it. */		
@@ -93,6 +90,11 @@ void ssh_crypto_init(){
     if(!init){
 #ifdef HAVE_LIBGCRYPT
         gcry_check_version(NULL);
+	if (!gcry_control(GCRYCTL_INITIALIZATION_FINISHED_P,0))
+	{
+	  gcry_control(GCRYCTL_INIT_SECMEM, 4096);
+	  gcry_control(GCRYCTL_INITIALIZATION_FINISHED,0);
+	}
 #endif
         g=bignum_new();
         bignum_set_word(g,g_int);
@@ -101,16 +103,9 @@ void ssh_crypto_init(){
 #elif defined HAVE_LIBCRYPTO
         p=bignum_new();
         bignum_bin2bn(p_value,P_LEN,p);
-#endif
-        init++;
-    }
-    if (!connections++){
-#ifdef HAVE_LIBGCRYPT
-        gcry_control(GCRYCTL_INIT_SECMEM,524288,0);
-        gcry_control(GCRYCTL_INITIALIZATION_FINISHED,0);
-#elif defined HAVE_LIBCRYPTO
         OpenSSL_add_all_algorithms();
 #endif
+        init++;
     }
 }
 
