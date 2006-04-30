@@ -60,6 +60,7 @@ dist:
 	mkdir $(DISTLIB)/doc
 	cp libssh/Makefile.in $(DISTLIB)/libssh/
 	cp libssh/*.c $(DISTLIB)/libssh/
+	cp libssh/libssh.vers $(DISTLIB)/libssh/
 	cp include/libssh/libssh.h include/libssh/sftp.h \
 	include/libssh/priv.h include/libssh/crypto.h \
 	include/libssh/ssh1.h include/libssh/ssh2.h  \
