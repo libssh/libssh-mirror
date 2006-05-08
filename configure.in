@@ -40,8 +40,7 @@ case "$host" in
 esac
 AC_ARG_WITH([versioned-symbol],
 	AC_HELP_STRING([--with-versioned-symbol],[Use versioned symbols]),
-	[echo $withval > plop
-	if test $withval = "yes"; then
+	[if test "$withval" = "yes"; then
 	   LIBSSH_VERS="$LIBSSH_LDFLAGS -Wl,--version-script,libssh.vers"
 	 else
 	   LIBSSH_VERS=""
@@ -52,7 +51,7 @@ AC_SUBST(LIBSSH_VERS)
 enable_ssh1=${enable_ssh1:-"no"}
 AC_ARG_ENABLE(ssh1, [  --enable-ssh1           support SSH1])
 AC_MSG_CHECKING([for SSH1 support])
-if test $enable_ssh1 = "yes" ; then
+if test "$enable_ssh1" = "yes" ; then
   AC_DEFINE(HAVE_SSH1,1,[Define to 1 if you want to enable SSH1])
 fi
 AC_MSG_RESULT([$enable_ssh1])
@@ -66,12 +65,15 @@ AC_PROG_LIBTOOL
 AC_C_BIGENDIAN
 
 # Checks for libraries.
-#AC_CHECK_LIB([gcrypt], [gcry_md_open])
+with_gcrypt=${with_gcrypt:-"no"}
 AC_ARG_WITH([libgcrypt],
     AC_HELP_STRING([--with-libgcrypt],[Use libgcrypt instead of libcrypto]),
-    [AC_CHECK_LIB([gcrypt], [gcry_md_open])])
+    [if test "$withval" = "yes"; then
+       with_gcrypt="yes"
+       AC_CHECK_LIB([gcrypt], [gcry_md_open])
+     fi], [ : ])
 
-if test "$ac_cv_lib_gcrypt_gcry_md_open" != yes; then
+if test "$with_gcrypt" = "no"; then
   AC_CHECK_LIB([crypto], [BN_init])
 fi
 
@@ -87,14 +89,19 @@ sys/time.h termios.h unistd.h openssl/aes.h openssl/blowfish.h \
 openssl/des.h zlib.h sys/poll.h stdint.h pty.h gcrypt.h])
 
 #Warn user when no openssl available
-#FIXME ! how to make it work with gcrypt ?
-#I can't make it work. help would be appreciated
-#if test x"$ac_cv_header_openssl_aes_h" != x"yes" ||
-#x"$ac_cv_header_openssl_blowfish_h" != x"yes"; then
-#        echo "Can't find valid openssl files [e.g openssl/aes.h]"
-#        echo "Please install Openssl-devel"
-#        exit
-#fi
+if test "$with_gcrypt" = "no" && (test "$ac_cv_header_openssl_aes_h" != "yes" ||
+				  test "$ac_cv_header_openssl_blowfish_h" != "yes"); then
+        echo "Can't find valid openssl files [e.g openssl/aes.h]"
+        echo "Please install Openssl-devel"
+        exit
+fi
+
+#Warn user when no libgcrypt available
+if test "$with_gcrypt" = "yes" && test "$ac_cv_header_gcrypt_h" != "yes"; then
+	echo "Can't find valid libgcrypt files [e.g gcrypt.h]"
+	echo "Please install libgcrypt-devel"
+	exit
+fi
 
 #if ! test x"$ac_cv_header_zlib_h" != x"yes"; then
 #        echo "Can't find zlib.h"
