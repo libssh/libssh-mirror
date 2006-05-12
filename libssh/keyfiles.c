@@ -134,15 +134,16 @@ int asn1_check_sequence(BUFFER *buffer)
   unsigned char *j;
   int i;
   u32 size;
+  u32 padding;
 
   if (!buffer_get_data(buffer,&tmp,1) || tmp != ASN1_SEQUENCE)
     return 0;
   size=asn1_get_len(buffer);
-  if (size != buffer_get_len(buffer) - buffer->pos)
+  if ((padding = buffer_get_len(buffer) - buffer->pos - size) > 0)
     for (i = buffer_get_len(buffer) - buffer->pos - size,
          j = buffer_get(buffer) + size + buffer->pos; i; i--, j++)
     {
-      if (*j != 1)                           /* padding is allowed */
+      if (*j != padding)                     /* padding is allowed */
         return 0;                            /* but nothing else */
     }
   return 1;
