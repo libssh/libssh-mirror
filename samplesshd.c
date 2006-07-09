@@ -94,6 +94,7 @@ int main(int argc, char **argv){
     } while (!auth);
     if(!auth){
         printf("error : %s\n",ssh_get_error(session));
+	ssh_finalize();
         return 1;
     }
     do {
@@ -113,6 +114,7 @@ int main(int argc, char **argv){
     } while(message && !chan);
     if(!chan){
         printf("error : %s\n",ssh_get_error(session));
+	ssh_finalize();
         return 1;
     }
     do {
@@ -142,6 +144,7 @@ int main(int argc, char **argv){
             write(1,buffer_get(buf),buffer_get_len(buf));
     } while (i>0);
     ssh_disconnect(session);
+    ssh_finalize();
     return 0;
 }
 

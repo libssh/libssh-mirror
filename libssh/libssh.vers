@@ -3,7 +3,7 @@ SSH_0.2 {
     ssh_get_error; ssh_get_error_code; ssh_say; ssh_set_verbosity;
     ssh_new; ssh_set_options; ssh_get_fd; ssh_silent_disconnect;
     ssh_connect; ssh_disconnect; ssh_service_request; ssh_get_issue_banner;
-    ssh_copyright; ssh_get_version;
+    ssh_copyright; ssh_get_version; ssh_finalize;
     ssh_set_fd_toread; ssh_set_fd_towrite; ssh_set_fd_except;
     string_from_char; string_len; string_new; string_fill; string_to_char;
     string_copy; string_burn; string_data;

@@ -391,6 +391,7 @@ int main(int argc, char **argv){
     if(ssh_connect(session)){
         fprintf(stderr,"Connection failed : %s\n",ssh_get_error(session));
         ssh_disconnect(session);
+	ssh_finalize();
         return 1;
     }
     state=ssh_is_server_known(session);
@@ -403,6 +404,7 @@ int main(int argc, char **argv){
             ssh_print_hexa("Public key hash",hash,MD5_DIGEST_LEN);
             fprintf(stderr,"For security reason, connection will be stopped\n");
             ssh_disconnect(session);
+	    ssh_finalize();
             exit(-1);
         case SSH_SERVER_FOUND_OTHER:
             fprintf(stderr,"The host key for this server was not found but an other type of key exists.\n");
@@ -410,6 +412,7 @@ int main(int argc, char **argv){
                 "into thinking the key does not exist\n"
                 "We advise you to rerun the client with -d or -r for more safety.\n");
                 ssh_disconnect(session);
+		ssh_finalize();
                 exit(-1);
         case SSH_SERVER_NOT_KNOWN:
             fprintf(stderr,"The server is unknown. Do you trust the host key ?\n");
@@ -431,6 +434,7 @@ int main(int argc, char **argv){
         case SSH_SERVER_ERROR:
             fprintf(stderr,"%s",ssh_get_error(session));
             ssh_disconnect(session);
+	    ssh_finalize();
             exit(-1);
     }
 
@@ -438,6 +442,7 @@ int main(int argc, char **argv){
     auth=ssh_userauth_autopubkey(session);
     if(auth==SSH_AUTH_ERROR){
         fprintf(stderr,"Authenticating with pubkey: %s\n",ssh_get_error(session));
+	ssh_finalize();
         return -1;
     }
     banner=ssh_get_issue_banner(session);
@@ -450,6 +455,7 @@ int main(int argc, char **argv){
         if(auth==SSH_AUTH_ERROR){
             fprintf(stderr,"authenticating with keyb-interactive: %s\n",
                     ssh_get_error(session));
+	    ssh_finalize();
             return -1;
         }
     }
@@ -458,6 +464,7 @@ int main(int argc, char **argv){
         if(ssh_userauth_password(session,NULL,password) != SSH_AUTH_SUCCESS){
             fprintf(stderr,"Authentication failed: %s\n",ssh_get_error(session));
             ssh_disconnect(session);
+	    ssh_finalize();
             return -1;
         }
         memset(password,0,strlen(password));
@@ -479,6 +486,7 @@ int main(int argc, char **argv){
     if(!sftp && !cmds[0])
         do_cleanup();
     ssh_disconnect(session);
+    ssh_finalize();
 
     return 0;
 }

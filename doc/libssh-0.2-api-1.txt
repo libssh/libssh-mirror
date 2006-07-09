@@ -48,6 +48,19 @@ things that each kind of object must do.
 
 B. Description of objects and functions
 
+Initialization and finalization
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Initialization is for now called automatically, so you don't have to take care
+of that.
+As for finalization, we need to finalize the underlying cryptographic library
+(either OpenSSL or libgcrypt). Be sure that you call ssh_finalize when this
+library won't be used anymore, even by other libraries (i.e. if you use libssh
+and another library that uses OpenSSL, call ssh_finalize when any function of
+both these libraries won't be called).
+If you trust your operating system to clean up the mess after a process
+terminates, you can skip this call.
+
 Options structure
 ~~~~~~~~~~~~~~~~~
 
@@ -350,6 +363,8 @@ object will be created and returned to the programmer. then, all standard
 channel functions will run.
 
 C. Change log of this document
+
+3. Add paragraph about initalization and finalization.
 
 2. ssh_options_set_username finaly is kept into the options, because it can be
 set by ssh_options_getopt()
