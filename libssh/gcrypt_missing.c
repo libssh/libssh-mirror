@@ -1,10 +1,8 @@
 /* gcrypt_missing.c */
-/* This part of the library handles private and public key files needed for publickey authentication,*/
-/* as well as servers public hashes verifications and certifications. Lot of code here handles openssh */
-/* implementations (key files aren't standardized yet). */
+/* This file contains routines that are in OpenSSL but not in libgcrypt */
 
 /*
-Copyright 2003,04 Aris Adamantiadis
+Copyright 2003,04,06 Aris Adamantiadis
 
 This file is part of the SSH Library
 
