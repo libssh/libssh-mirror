@@ -27,7 +27,22 @@ MA 02111-1307, USA. */
 #include <sys/types.h>
 #include "libssh/priv.h"
 
-/* by default, ssh1 support is not allowed */
+/** defgroup ssh_options
+ * \brief options settings for a new ssh session
+ */
+/** \addtogroup ssh_options
+ * @{ */
+
+/** This structure is freed automaticaly by ssh_disconnect()
+ * when you use it. \n
+ * It can be used by only one ssh_connect(), not more.\n
+ * also by default, ssh1 support is not allowed 
+ *
+ * \brief initializes a new option structure
+ * \returns an empty intialized option structure.
+ * \see ssh_getopt()
+*/
+
 SSH_OPTIONS *ssh_options_new(){
     SSH_OPTIONS *option=malloc(sizeof(SSH_OPTIONS));
     memset(option,0,sizeof(SSH_OPTIONS));
@@ -401,3 +416,7 @@ int ssh_options_getopt(SSH_OPTIONS *options, int *argcptr, char **argv){
     } else
         return 0 ;   
 }
+
+
+
+/** @} */

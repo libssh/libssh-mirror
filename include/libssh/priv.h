@@ -150,7 +150,8 @@ struct string_struct {
 	unsigned char string[MAX_PACKET_LEN];
 } __attribute__ ((packed));
 
-
+/** Describes a buffer state at a moment
+ */
 struct buffer_struct {
     char *data;
     int used;

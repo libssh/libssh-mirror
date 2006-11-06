@@ -220,6 +220,8 @@ void ssh_options_set_rsa_server_key(SSH_OPTIONS *opt, char *rsakey);
 
 /* buffer.c */
 
+/** creates a new buffer 
+ */
 BUFFER *buffer_new();
 void buffer_free(BUFFER *buffer);
 /* buffer_get returns a pointer to the begining of the buffer. no position is taken into account */
