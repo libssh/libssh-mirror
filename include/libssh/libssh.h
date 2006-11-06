@@ -247,6 +247,9 @@ char *ssh_userauth_kbdint_getinstruction(SSH_SESSION *session);
 char *ssh_userauth_kbdint_getprompt(SSH_SESSION *session, int i, char *echo);
 void ssh_userauth_kbdint_setanswer(SSH_SESSION *session, unsigned int i, char *answer);
 
+
+/* init.c */
+int ssh_finalize();
 #ifdef __cplusplus
 } ;
 #endif

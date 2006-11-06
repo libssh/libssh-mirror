@@ -40,7 +40,7 @@ MA 02111-1307, USA. */
  *
  * \brief initializes a new option structure
  * \returns an empty intialized option structure.
- * \see ssh_getopt()
+ * \see ssh_options_getopt()
 */
 
 SSH_OPTIONS *ssh_options_new(){
@@ -58,10 +58,23 @@ SSH_OPTIONS *ssh_options_new(){
     return option;
 }
 
+/** \brief set port to connect or to bind for a connection
+ * \param opt options structure
+ * \param port port to connect or to bind
+ */
 void ssh_options_set_port(SSH_OPTIONS *opt, unsigned int port){
     opt->port=port&0xffff;
     opt->bindport=port&0xffff;
 }
+
+/** you may need to duplication an option structure if you make several
+ * sessions with the same options.\n
+ * You cannot use twice the same option structure in ssh_session_connect.
+ * \brief copies an option structure
+ * \param opt option structure to copy
+ * \returns new copied option structure
+ * \see ssh_session_connect()
+ */
 SSH_OPTIONS *ssh_options_copy(SSH_OPTIONS *opt){
     SSH_OPTIONS *ret=ssh_options_new();    
     int i;
@@ -96,6 +109,10 @@ SSH_OPTIONS *ssh_options_copy(SSH_OPTIONS *opt){
     return ret;
 }
 
+/** \internal
+ * \brief frees an option structure
+ * \param opt option structure
+ */
 void ssh_options_free(SSH_OPTIONS *opt){
     int i;
     if(opt->username)
@@ -120,7 +137,10 @@ void ssh_options_free(SSH_OPTIONS *opt){
     free(opt);
 }
 
-
+/** \brief set destination hostname
+ * \param opt option structure
+ * \param hostname host name to connect
+ */
 void ssh_options_set_host(SSH_OPTIONS *opt, const char *hostname){
     char *ptr=strdup(hostname);
     char *ptr2=strchr(ptr,'@');
@@ -137,65 +157,122 @@ void ssh_options_set_host(SSH_OPTIONS *opt, const char *hostname){
         opt->host=ptr;
 }
 
+/** \brief set username for authentication
+ * \bug this should not be set at options time
+ * \param opt options structure
+ * \param username user name to authenticate
+ */
 void ssh_options_set_username(SSH_OPTIONS *opt, char *username){
     if(opt->username)
         free(opt->username);
     opt->username=strdup(username);
 }
 
+/** If you wish to open the socket yourself for a reason
+ * or another, set the file descriptor.\n
+ * don't forget to use ssh_option_set_hostname() as the hostname
+ * is used as a key in the known_host mechanism
+ * \brief set a file descriptor for connection
+ * \param opt options structure
+ * \param fd an opened file descriptor to use
+ */
 void ssh_options_set_fd(SSH_OPTIONS *opt, int fd){
     opt->fd=fd;
 }
 
+/** In case your client has multiple IP adresses, select the local address
+ * and port to use for the socket.\n
+ * If the address or port is not bindable, it may be impossible to
+ * connect.
+ * \brief set the local address and port binding
+ * \param opt options structure
+ * \param bindaddr bind address in form of hostname or ip address
+ * \param port port number to bind
+ */
 void ssh_options_set_bind(SSH_OPTIONS *opt, char *bindaddr,int port){
     opt->bindaddr=strdup(bindaddr);
     opt->bindport=port;
 }
 
+/** the ssh directory is used for files like known_hosts and
+ * identity (public and private keys)\n
+ * \brief set the ssh directory
+ * \param opt options structure
+ * \param dir directory. It may include "%s" which will be replaced by
+ * the user home directory
+ * \see ssh_options_set_user_home_dir()
+ */
 void ssh_options_set_ssh_dir(SSH_OPTIONS *opt, char *dir){
     char buffer[1024];
     snprintf(buffer,1024,dir,ssh_get_user_home_dir());
     opt->ssh_dir=strdup(buffer);
 }
 
+/** the known hosts file is used to certify remote hosts are genuine.
+ * \brief set the known hosts file name
+ * \param opt options structure
+ * \param dir path to the file including its name. "%s" will be substitued
+ * with the user home directory
+ * \see ssh_options_set_user_home_dir()
+ */
 void ssh_options_set_known_hosts_file(SSH_OPTIONS *opt, char *dir){
     char buffer[1024];
     snprintf(buffer,1024,dir,ssh_get_user_home_dir());
     opt->known_hosts_file=strdup(buffer);
 }
 
+/** the identity file is used authenticate with public key.
+ * \brief set the identity file name
+ * \param opt options structure
+ * \param identity path to the file including its name. "%s" will be substitued
+ * with the user home directory
+ * \see ssh_options_set_user_home_dir()
+ */
 void ssh_options_set_identity(SSH_OPTIONS *opt, char *identity){
     char buffer[1024];
     snprintf(buffer,1024,identity,ssh_get_user_home_dir());
     opt->identity=strdup(buffer);
 }
 
+/** \warning I don't remember what these functions are supposed
+ * to set
+ */
 void ssh_options_set_dsa_server_key(SSH_OPTIONS *opt, char *dsakey){
     opt->dsakey=strdup(dsakey);
 }
+/** \warning I don't remember what these functions are supposed
+ * to set
+ */
 void ssh_options_set_rsa_server_key(SSH_OPTIONS *opt, char *rsakey){
     opt->rsakey=strdup(rsakey);
 }
 
+/** \brief set the server banner sent to clients
+ * \param opt options structure
+ * \param banner a text banner to be shown
+ */
 void ssh_options_set_banner(SSH_OPTIONS *opt, char *banner){
     if(opt->banner)
         free(opt->banner);
     opt->banner=strdup(banner);
 }
 
-/* what's the deal here ? some options MUST be set before authentication or key exchange,
- * otherwise default values are going to be used. what must be configurable :
- * Public key certification method *
- * key exchange method (dh-sha1 for instance)*
- * c->s, s->c ciphers *
- * c->s s->c macs *
- * c->s s->c compression */
-
-/* they all return 0 if all went well, 1 or !=0 if not. the most common error is unmatched algo (unimplemented) */
-/* don't forget other errors can happen if no matching algo is found in sshd answer */
-
-#warning ssh_options_get_supported_algos
-
+/** the methods are:\n
+ * KEX_HOSTKEY (server public key type) : ssh-rsa or ssh-dss\n
+ * KEX_CRYPT_C_S (symmetric cipher client to server)\n
+ * KEX_CRYPT_S_C (symmetric cipher server to client)\n
+ * KEX_COMP_C_S (Compression client to server): zlib or none\n
+ * KEX_COMP_S_C (Compression server to client): zlib or none\n
+ * You don't have to use this function if using the default ciphers
+ * is okay for you\n
+ * in order to enable compression client to server, do\n
+ * ret=ssh_options_set_wanted_algos(opt,KEX_COMP_C_S,"zlib");
+ * \brief set the algorithms to be used for cryptography and compression
+ * \param opt options structure
+ * \param algo method which needs to be changed
+ * \param list list of algorithms to be used, in order of preference and separated by commas
+ * \return 0 on success, -1 on error (most likely an algorithm is not available)
+ */
 int ssh_options_set_wanted_algos(SSH_OPTIONS *opt,int algo, char *list){
     if(algo > SSH_LANG_S_C || algo < 0){
         ssh_set_error(NULL,SSH_REQUEST_DENIED,"algo %d out of range",algo);
@@ -264,16 +341,36 @@ int ssh_options_default_known_hosts_file(SSH_OPTIONS *opt){
     return 0;
 }
 
+/** During ssh_connect(), libssh will call the callback with status from
+ * 0.0 to 1.0
+ * \brief set a callback to show connection status in realtime
+ * \param opt options structure
+ * \param callback a function pointer to a callback in form f(void *userarg, float status)
+ * \param arg value to be given as argument to the callback function when it is called
+ * \see ssh_connect()
+ */
 void ssh_options_set_status_callback(SSH_OPTIONS *opt, void (*callback)(void *arg, float status), void *arg ){
     opt->connect_status_function=callback;
     opt->connect_status_arg=arg;
 }
 
+/** \bug currently it only timeouts the socket connection, not the
+ * complete exchange
+ * \brief set a timeout for the connection
+ * \param opt options structure
+ * \param seconds number of seconds
+ * \param usec number of micro seconds
+ */
 void ssh_options_set_timeout(SSH_OPTIONS *opt, long seconds,long usec){
     opt->timeout=seconds;
     opt->timeout_usec=usec;
 }
 
+/** Default value is 0 (no connection to SSH1 servers) 
+ * \brief allow or deny the connection to SSH1 servers
+ * \param opt options structure
+ * \param allow nonzero values allow ssh1
+ */
 void ssh_options_allow_ssh1(SSH_OPTIONS *opt, int allow){
     if(allow)
         opt->ssh1allowed=1;
@@ -281,6 +378,11 @@ void ssh_options_allow_ssh1(SSH_OPTIONS *opt, int allow){
         opt->ssh1allowed=0;
 }
 
+/** Default value is 1 (allow connection to SSH2 servers)
+ * \brief allow or deny the connection to SSH2 servers
+ * \param opt options structure
+ * \param allow nonzero values allow ssh2
+ */
 void ssh_options_allow_ssh2(SSH_OPTIONS *opt, int allow){
     if(allow)
         opt->ssh2allowed=1;
@@ -288,6 +390,21 @@ void ssh_options_allow_ssh2(SSH_OPTIONS *opt, int allow){
         opt->ssh2allowed=0;
 }
 
+/**
+ * This is a helper for your application to generate the appropriate
+ * options from the command line arguments.\n
+ * the argv array and argc value are changed so that parsed
+ * arguments won't appear anymore in them.\n
+ * The single arguments (without switches) are not parsed. thus,
+ * myssh -u aris localhost \n
+ * command won't set the hostname value of options to localhost.
+ * \brief parse command line arguments
+ * \param options an empty option structure pointer
+ * \param argcptr pointer to argument count
+ * \param argv arguments list pointer
+ * \returns 0 on success, -1 on error
+ * \sa ssh_options_new()
+ */
 int ssh_options_getopt(SSH_OPTIONS *options, int *argcptr, char **argv){
     int i;
     int argc=*argcptr;
