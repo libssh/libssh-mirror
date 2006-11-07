@@ -215,6 +215,15 @@ int ssh_service_request(SSH_SESSION *session,char *service){
     return 0;
 }
 
+/** \addtogroup ssh_session
+ *  * @{ */
+
+/** \brief connect to the ssh server
+ * \param session ssh session
+ * \return 0 on success, SSH_ERROR on error
+ * \see ssh_new()
+ * \see ssh_disconnect()
+ */
 int ssh_connect(SSH_SESSION *session){
   int fd;
   int ssh1, ssh2;
@@ -293,12 +302,21 @@ int ssh_connect(SSH_SESSION *session){
   return 0;
 }
 
+/** this is the banner showing a disclaimer to users who log in,
+ * typicaly their right or the fact that they will be monitored
+ * \brief get the issue banner from the server
+ * \param session ssh session
+ * \return NULL if there is no issue banner, else a string containing it.
+ */
 char *ssh_get_issue_banner(SSH_SESSION *session){
     if(!session->banner)
         return NULL;
     return string_to_char(session->banner);
 }
 
+/** \brief disconnect from a session (client or server)
+ * \param session ssh session
+ */
 void ssh_disconnect(SSH_SESSION *session){
     STRING *str;
     if(session->fd!= -1) {
@@ -317,7 +335,9 @@ void ssh_disconnect(SSH_SESSION *session){
 }
 
 const char *ssh_copyright(){
-    return LIBSSH_VERSION " (c) 2003-2005 Aris Adamantiadis (aris@0xbadc0de.be)"
+    return LIBSSH_VERSION " (c) 2003-2006 Aris Adamantiadis (aris@0xbadc0de.be)"
     " Distributed under the LGPL, please refer to COPYING file for informations"
     " about your rights" ;
 }
+/** @} */
+

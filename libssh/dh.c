@@ -451,6 +451,16 @@ void generate_session_keys(SSH_SESSION *session){
     free(k_string);
 }
 
+/** \addtogroup ssh_session
+ * @{ */
+/** \brief get the md5 hash of the server public key
+ * \param session ssh session
+ * \param hash destination for the md5 hash
+ * \return size of the hash in bytes
+ * \warning it is very important that you verify at some moment that the hash matches
+ * a known server. If you don't do it, cryptography won't help you at making things secure
+ * \see ssh_is_server_known()
+ */
 int ssh_get_pubkey_hash(SSH_SESSION *session,unsigned char hash[MD5_DIGEST_LEN]){
     STRING *pubkey=session->current_crypto->server_pubkey;
     MD5CTX ctx;
@@ -462,6 +472,8 @@ int ssh_get_pubkey_hash(SSH_SESSION *session,unsigned char hash[MD5_DIGEST_LEN])
     return MD5_DIGEST_LEN;
 }
 
+/** \deprecated same as ssh_get_pubkey_hash()
+ */
 int pubkey_get_hash(SSH_SESSION *session, unsigned char hash[MD5_DIGEST_LEN]){
     return ssh_get_pubkey_hash(session,hash);
 }
@@ -560,7 +572,6 @@ static int sig_verify(SSH_SESSION *session, PUBLIC_KEY *pubkey, SIGNATURE *signa
 return -1;
 }
 
-    
 int signature_verify(SSH_SESSION *session,STRING *signature){
     PUBLIC_KEY *pubkey;
     SIGNATURE *sign;
@@ -593,3 +604,6 @@ int signature_verify(SSH_SESSION *session,STRING *signature){
     publickey_free(pubkey);
     return err;
 }
+
+/** @} */
+

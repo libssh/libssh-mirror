@@ -158,8 +158,16 @@ int ssh_connect_host(SSH_SESSION *session, const char *host, const char
     return s;
 }
 
-/* returns 1 if bytes are available to read on the stream, 0 instead */
-/* -1 on select() error. */
+/** \addtogroup ssh_session
+ *  * @{ */
+
+/** \internal
+ * \brief polls the stream for activity
+ * \param session ssh session
+ * \param write value pointed to set to 1 if it is possible to write
+ * \param except value pointed to set to 1 if there is an exception
+ * \return 1 if it is possible to read, 0 otherwise, -1 on error
+ */
 int ssh_fd_poll(SSH_SESSION *session, int *write, int *except){
     struct timeval sometime;
     fd_set rdes; // read set
@@ -199,7 +207,20 @@ int ssh_fd_poll(SSH_SESSION *session, int *write, int *except){
     return session->data_to_read;
 }
 
-/* this function is a complete wrapper for the select syscall. it does more than wrapping ... */
+
+/** This functions acts more or less like the select(2) syscall.\n
+ * There is no support for writing or exceptions.\n
+ * \brief wrapper for the select syscall
+ * \param channels arrays of channels pointers finished by an NULL. It is never rewritten/
+ * \param outchannels arrays of same size that "channels", it hasn't to be initialized
+ * \param maxfd maximum +1 file descriptor from readfds
+ * \param readfds an fd_set of file descriptors to be select'ed for reading
+ * \param timeout a timeout for the select
+ * \see select(2)
+ * \return -1 if an error occured. E_INTR if it was interrupted. In that case, just restart it.
+ * \warning libssh is not threadsafe. That means that if a signal is caught during the processing
+ * of this function, you cannot call ssh functions on sessions that are busy with ssh_select()
+ */
 int ssh_select(CHANNEL **channels,CHANNEL **outchannels, int maxfd, fd_set *readfds, struct timeval *timeout){
     struct timeval zerotime;
     fd_set localset,localset2;
@@ -283,3 +304,5 @@ int ssh_select(CHANNEL **channels,CHANNEL **outchannels, int maxfd, fd_set *read
     memcpy(readfds,&localset2,sizeof(fd_set));
     return 0;
 }
+
+/** @} */

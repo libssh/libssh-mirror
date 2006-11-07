@@ -815,7 +815,24 @@ static char **ssh_parse_knownhost(char *filename, char *hostname, char *type){
     return ret;
 }
 
-/* public function to test if the server is known or not */
+/** \addtogroup ssh_session
+ * @{ */
+/** checks the user's known host file for a previous connection to the
+ * current server.
+ * \brief test if the server is known
+ * \param session ssh session
+ * \return SSH_SERVER_KNOWN_OK : the server is known and has not changed\n
+ * SSH_SERVER_KNOWN_CHANGED : The server key has changed. Either you are under
+ * attack or the administrator changed the key. you HAVE to warn the user about
+ * a possible attack\n
+ * SSH_SERVER_FOUND_OTHER : the server gave use a key of a type while we
+ * had an other type recorded. It is a possible attack \n
+ * SSH_SERVER_NOT_KNOWN : the server is unknown. User should confirm the MD5 is correct\n
+ * SSH_SERVER_ERROR : Some error happened
+ * \see ssh_options_set_wanted_algo()
+ * \see ssh_get_pubkey_hash()
+ * \bug there is no current way to remove or modify an entry into the known host table
+ */
 int ssh_is_server_known(SSH_SESSION *session){
     char *pubkey_64;
     BUFFER *pubkey_buffer;
@@ -893,6 +910,11 @@ int ssh_is_server_known(SSH_SESSION *session){
     return SSH_SERVER_KNOWN_OK;
 }
 
+/** You generaly uses it when ssh_is_server_known() answered SSH_SERVER_NOT_KNOWN 
+ * \brief write the current server as known in the known hosts file
+ * \param session ssh session
+ * \return 0 on success, -1 on error
+ */
 int ssh_write_knownhost(SSH_SESSION *session){
     unsigned char *pubkey_64;
     STRING *pubkey=session->current_crypto->server_pubkey;
@@ -955,3 +977,6 @@ int ssh_write_knownhost(SSH_SESSION *session){
     fclose(file);
     return 0;
 }
+
+/** @} */
+

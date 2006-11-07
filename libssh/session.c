@@ -28,6 +28,15 @@
 #include "libssh/server.h"
 #define FIRST_CHANNEL 42 // why not ? it helps to find bugs.
 
+/** defgroup ssh_session
+ * \brief functions that manage a session
+ */
+/** \addtogroup ssh_session
+ * @{ */
+
+/** \brief creates a new ssh session
+ * \returns new ssh_session pointer
+ */
 SSH_SESSION *ssh_new() {
     SSH_SESSION *session=malloc(sizeof (SSH_SESSION));
     memset(session,0,sizeof(SSH_SESSION));
@@ -83,36 +92,68 @@ void ssh_cleanup(SSH_SESSION *session){
     free(session);
 }
 
+/** \brief disconnect impolitely from remote host
+ * \param session current ssh session
+ */
 void ssh_silent_disconnect(SSH_SESSION *session){
     close(session->fd);
     session->alive=0;
     ssh_disconnect(session);
 }
 
+/** \brief set the options for the current session
+ * \param session ssh session
+ * \param options options structure
+ * \see ssh_new()
+ * \see ssh_options_new()
+ */
 void ssh_set_options(SSH_SESSION *session, SSH_OPTIONS *options){
     session->options=options;
 }
 
+/** \brief set the session in blocking/nonblocking mode
+ * \param session ssh session
+ * \param blocking zero for nonblocking mode
+ * \bug nonblocking code is in development and won't work as expected
+ */
 void ssh_set_blocking(SSH_SESSION *session,int blocking){
     session->blocking=blocking?1:0;
 }
 
+/** In case you'd need the file descriptor of the connection 
+ * to the server/client 
+ * \brief recover the fd of connection
+ * \param session ssh session
+ * \return file descriptor of the connection, or -1 if it is
+ * not connected
+ */
 int ssh_get_fd(SSH_SESSION *session){
     return session->fd;
 }
 
+/** \brief say to the session it has data to read on the file descriptor without blocking
+ * \param session ssh session
+ */
 void ssh_set_fd_toread(SSH_SESSION *session){
     session->data_to_read=1;
 }
 
+/** \brief say the session it may write to the file descriptor without blocking
+ * \param session ssh session
+ */
 void ssh_set_fd_towrite(SSH_SESSION *session){
     session->data_to_write=1;
 }
 
+/** \brief say the session it has an exception to catch on the file descriptor
+ * \param session ssh session
+ */
 void ssh_set_fd_except(SSH_SESSION *session){
     session->data_except=1;
 }
 
+/** \warning I don't remember if this should be internal or not
+ */
 /* looks if there is data to read on the socket and parse it. */
 int ssh_handle_packets(SSH_SESSION *session){
     int w,err,r;
@@ -128,6 +169,11 @@ int ssh_handle_packets(SSH_SESSION *session){
     return r;
 }
 
+/** \brief get session status
+ * \param session ssh session
+ * \returns a bitmask including SSH_CLOSED, SSH_READ_PENDING or SSH_CLOSED_ERROR
+ * which respectively means the session is closed, has data to read on the connection socket and session was closed due to an error
+ */
 int ssh_get_status(SSH_SESSION *session){
     int ret=0;
     if(session->closed)
@@ -139,6 +185,11 @@ int ssh_get_status(SSH_SESSION *session){
     return ret;
 }
 
+/** \brief get the disconnect message from the server
+ * \param session ssh session
+ * \return message sent by the server along with the disconnect, or NULL in which case the reason of the disconnect may be found with ssh_get_error.
+ * \see ssh_get_error()
+ */
 const char *ssh_get_disconnect_message(SSH_SESSION *session){
     if(!session->closed)
         ssh_set_error(session,SSH_REQUEST_DENIED,"Connection not closed"
@@ -154,6 +205,13 @@ const char *ssh_get_disconnect_message(SSH_SESSION *session){
     return NULL;
 }
 
+/** \brief get the protocol version of the session
+ * \param session ssh session
+ * \return 1 or 2, for ssh1 or ssh2
+ */
 int ssh_get_version(SSH_SESSION *session){
     return session->version;
 }
+
+/** @} */
+
