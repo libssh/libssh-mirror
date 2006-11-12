@@ -43,6 +43,7 @@ SSH_SESSION *ssh_new() {
     session->next_crypto=crypto_new();
     session->maxchannel=FIRST_CHANNEL;
     session->fd=-1;
+    session->alive=0;
     session->blocking=1;
     return session;
 }
@@ -96,8 +97,10 @@ void ssh_cleanup(SSH_SESSION *session){
  * \param session current ssh session
  */
 void ssh_silent_disconnect(SSH_SESSION *session){
-    close(session->fd);
+    if(session->fd>=0)
+        close(session->fd);
     session->alive=0;
+    session->fd=-1;
     ssh_disconnect(session);
 }
 

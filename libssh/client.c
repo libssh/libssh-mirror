@@ -36,7 +36,7 @@ char *ssh_get_banner(SSH_SESSION *session){
     char buffer[128];
     int i = 0;
     while (i < 127) {
-        if(read(session->fd, &buffer[i], 1)<=0){
+        if(session->fd >=0 && read(session->fd, &buffer[i], 1)<=0){
             ssh_set_error(session,SSH_FATAL,"Remote host closed connection");
             return NULL;
         }
@@ -232,6 +232,7 @@ int ssh_connect(SSH_SESSION *session){
       ssh_set_error(session,SSH_FATAL,"Must set options before connect");
       return SSH_ERROR;
   }
+  session->alive=0;
   session->client=1;
   ssh_crypto_init();
   if(options->fd==-1 && !options->host){
@@ -249,43 +250,63 @@ int ssh_connect(SSH_SESSION *session){
   session->fd=fd;
   session->alive=1;
   if(!(session->serverbanner=ssh_get_banner(session))){
-      close(fd);
+      if(session->fd>=0)
+        close(session->fd);
+      session->fd=-1;
+      session->alive=0;
       return -1;
   }
   set_status(options,0.4);
   ssh_say(2,"banner : %s\n",session->serverbanner);
   /* here we analyse the different protocols the server allows */
   if(ssh_analyze_banner(session,&ssh1,&ssh2)){
+      if(session->fd>=0)
+          close(session->fd);
+      session->fd=-1;
+      session->alive=0;
       return -1;
   }
   /* here we decide which version of the protocol to use */
   if(ssh2 && options->ssh2allowed)
       session->version=2;
+  else if(ssh1 && options->ssh1allowed)
+      session->version=1;
   else {
-      if(ssh1 && options->ssh1allowed)
-          session->version=1;
-      else {
-          ssh_set_error(session,SSH_FATAL,
-                  "no version of SSH protocol usable (banner: %s)",
-                  session->serverbanner);
-          return -1;
-      }
+      ssh_set_error(session,SSH_FATAL,
+        "no version of SSH protocol usable (banner: %s)",
+        session->serverbanner);
+        close(session->fd);
+        session->fd=-1;
+        session->alive=0;
+        return -1;
   }
   ssh_send_banner(session,0);
   set_status(options,0.5);
   switch(session->version){
       case 2:
         if(ssh_get_kex(session,0)){
+            if(session->fd>=0)
+                close(session->fd);
+            session->fd=-1;
+            session->alive=0;
             return -1;
         }
         set_status(options,0.6);
         ssh_list_kex(&session->server_kex);
         if(set_kex(session)){
+            if(session->fd>=0)
+                close(session->fd);
+            session->fd=-1;
+            session->alive=0;
             return -1;
         }
         ssh_send_kex(session,0);
         set_status(options,0.8);
         if(dh_handshake(session)){
+            if(session->fd>=0)
+                close(session->fd);
+            session->fd=-1;
+            session->alive=0;
             return -1;
         } 
         set_status(options,1.0);
@@ -293,6 +314,10 @@ int ssh_connect(SSH_SESSION *session){
         break;
     case 1:
         if(ssh_get_kex1(session)){
+            if(session->fd>=0)
+                close(session->fd);
+            session->fd=-1;
+            session->alive=0;
             return -1;
         }
         set_status(options,0.6);

@@ -39,6 +39,8 @@ static int completeread(int fd, void *buffer, int len){
     int r;
     int total=0;
     int toread=len;
+    if(fd<0)
+        return SSH_ERROR;
     while((r=read(fd,buffer+total,toread))){
         if(r==-1)
             return SSH_ERROR;
@@ -76,6 +78,7 @@ static int socket_read(SSH_SESSION *session,int len){
                 (r==0)?"Connection closed by remote host" : "Error reading socket");
             close(session->fd);
             session->fd=-1;
+            session->alive=0;
             session->data_except=1;
             return SSH_ERROR;
         }
@@ -91,7 +94,10 @@ static int socket_read(SSH_SESSION *session,int len){
             return SSH_AGAIN;
         session->data_to_read=0;
         /* read as much as we can */
-        r=read(session->fd,buffer,sizeof(buffer));
+        if(session->fd>0)
+            r=read(session->fd,buffer,sizeof(buffer));
+        else
+            r=-1;
         if(r<=0){
             ssh_set_error(session,SSH_FATAL,
                 (r==0)?"Connection closed by remote host" : "Error reading socket");
@@ -335,6 +341,8 @@ int packet_translate(SSH_SESSION *session){
 
 static int atomic_write(int fd, void *buffer, int len){
     int written;
+    if(fd<0)
+        return SSH_ERROR;
     while(len >0) {
         written=write(fd,buffer,len);
         if(written==0 || written==-1)
@@ -352,9 +360,12 @@ static int packet_nonblocking_flush(SSH_SESSION *session){
     int w;
     ssh_fd_poll(session,&can_write,&except); /* internally sets data_to_write */
     while(session->data_to_write && buffer_get_rest_len(session->out_socket_buffer)>0){
-        w=write(session->fd,buffer_get_rest(session->out_socket_buffer),
+        if(session->fd<0){
+            w=write(session->fd,buffer_get_rest(session->out_socket_buffer),
                 buffer_get_rest_len(session->out_socket_buffer));
-        session->data_to_write=0;
+            session->data_to_write=0;
+        } else
+            w=-1; /* write failed */
         if(w<0){
             session->data_to_write=0;
             session->data_except=1;
@@ -376,6 +387,10 @@ static int packet_nonblocking_flush(SSH_SESSION *session){
 
 /* blocking packet flush */
 static int packet_blocking_flush(SSH_SESSION *session){
+    if(session->fd<0) {
+        session->alive=0;
+        return SSH_ERROR;
+    }
     if(session->data_except)
         return SSH_ERROR;
     if(buffer_get_rest(session->out_socket_buffer)==0)

@@ -79,7 +79,7 @@ fi
 
 AC_CHECK_LIB([z], [deflateInit_])
 AC_SEARCH_LIBS([hstrerror],[nsl resolv])
-AC_SEARCH_LIBS([getaddrinfo],[nsl resolv])
+AC_SEARCH_LIBS([getaddrinfo],[nsl socket])
 AC_SEARCH_LIBS([gethostbyname],[nsl resolv])
 
 # Checks for header files.

@@ -146,7 +146,7 @@ int ssh_connect_host(SSH_SESSION *session, const char *host, const char
         }
 	freeaddrinfo(bind_ai);
     }
-    if(timeout){
+    if(timeout||usec){
         return ssh_connect_ai_timeout(session,host,port,ai,timeout,usec,s);
     }
     if(connect(s,ai->ai_addr,ai->ai_addrlen)<0){
@@ -178,9 +178,10 @@ int ssh_fd_poll(SSH_SESSION *session, int *write, int *except){
     FD_ZERO(&wdes);
     FD_ZERO(&edes);
     
-    if(!session->alive){
+    if(!session->alive || session->fd<0){
         *except=1;
         *write=0;
+        session->alive=0;
         return 0;
     }
     if(!session->data_to_read)
