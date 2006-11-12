@@ -32,6 +32,17 @@ MA 02111-1307, USA. */
 #define WINDOWLIMIT 1024
 #define WINDOWBASE 32000
 
+/** defgroup ssh_channel
+ * \brief functions that manage a channel
+ */
+
+/** \addtogroup ssh_channel
+ * @{ */
+
+/** \brief allocate a new channel
+ * \param session ssh session
+ * \return an allocated channel. As this function doesn't speak with server, it never fails
+ */
 CHANNEL *channel_new(SSH_SESSION *session){
     CHANNEL *channel=malloc(sizeof(CHANNEL));
     memset(channel,0,sizeof(CHANNEL));
@@ -344,6 +355,16 @@ void channel_default_bufferize(CHANNEL *channel, void *data, int len, int is_std
     }
 }
 
+/** \brief open a session channel (suited for a shell. Not tcp)
+ * \param channel an allocated channel (see channel_new())
+ * \return SSH_OK on success\n
+ * SSH_ERROR on error
+ * \see channel_open_forward()
+ * \see channel_request_env()
+ * \see channel_request_shell()
+ * \see channel_request_exec()
+ * \warning API changed from 0.11
+ */
 int channel_open_session(CHANNEL *channel){
 #ifdef HAVE_SSH1
     if(channel->session->version==2)
@@ -355,8 +376,16 @@ int channel_open_session(CHANNEL *channel){
 #endif
 }    
 
-/* tcpip forwarding */
-
+/** \brief open a TCP/IP forwarding channel.
+ * \param channel an allocated channel (see channel_new())
+ * \param remotehost remote host to be connected (host name or IP)
+ * \param remoteport remote port
+ * \param sourcehost source host (your local computer). It's facultative and for logging purpose
+ * \param localport source port (your local computer). It's facultative and for logging purpose
+ * \return SSH_ERROR on error\n
+ * SSH_OK on success
+ * \warning API changed from 0.11
+ */
 int channel_open_forward(CHANNEL *channel,char *remotehost, int remoteport, char *sourcehost, int localport){
     BUFFER *payload=buffer_new();
     STRING *str=string_from_char(remotehost);
@@ -373,7 +402,10 @@ int channel_open_forward(CHANNEL *channel,char *remotehost, int remoteport, char
     return ret;
 }
 
-
+/** \brief close and free a channel
+ * \param channel channel to free
+ * \warning any data unread on channel will be lost
+ */
 void channel_free(CHANNEL *channel){
     SSH_SESSION *session=channel->session;
     if(session->alive && channel->open)
@@ -397,6 +429,14 @@ void channel_free(CHANNEL *channel){
     free(channel);
 }
 
+/** it doesn't close the channel. You may still read from it but not write. 
+ * \brief send an end of file on the channel
+ * \param channel channel
+ * \return SSH_ERROR on error\n
+ * SSH_SUCCESS on success
+ * \see channel_close()
+ * \see channel_free()
+ */
 int channel_send_eof(CHANNEL *channel){
     SSH_SESSION *session=channel->session;
     int ret;
@@ -410,6 +450,15 @@ int channel_send_eof(CHANNEL *channel){
     return ret;
 }
 
+/** It sends an end of file and then closes the channel. You won't be able
+ * to recover any data the server was going to send or was in buffers.
+ * \brief close a channel
+ * \param channel channel
+ * \return SSH_ERROR on error\n
+ * SSH_SUCCESS on success
+ * \see channel_free()
+ * \see channel_eof()
+ */
 int channel_close(CHANNEL *channel){
     SSH_SESSION *session=channel->session;
     int ret=0;
@@ -428,8 +477,14 @@ int channel_close(CHANNEL *channel){
     return ret;
 }
 
-/* Blocking write */
-/* The exact len is written */
+/** \brief blocking write on channel
+ * \param channel channel
+ * \param data pointer to data to write
+ * \param len length of data
+ * \return number of bytes written on success\n
+ * SSH_ERROR on error
+ * \see channel_read()
+ */
 int channel_write(CHANNEL *channel ,void *data,int len){
     SSH_SESSION *session=channel->session;
     int effectivelen;
@@ -474,14 +529,29 @@ int channel_write(CHANNEL *channel ,void *data,int len){
     return origlen;
 }
 
+/** \brief returns if the channel is open or not
+ * \param channel channel
+ * \return 0 if channel is closed, nonzero otherwise
+ * \see channel_is_closed()
+ */
 int channel_is_open(CHANNEL *channel){
     return (channel->open!=0 && channel->session->alive);
 }
+
+/** \brief returns if the channel is closed or not
+ * \param channel channel
+ * \return 0 if channel is opened, nonzero otherwise
+ * \see channel_is_open()
+ */
 
 int channel_is_closed(CHANNEL *channel){
     return (channel->open==0 || !channel->session->alive);
 }
 
+/** \brief returns if the remote has sent an EOF
+ * \param channel channel
+ * \return 0 if there is no EOF, nonzero otherwise
+ */
 int channel_is_eof(CHANNEL *channel){
     if((channel->stdout_buffer && buffer_get_rest_len(channel->stdout_buffer)
                 >0) || (channel->stderr_buffer && buffer_get_rest_len(
@@ -490,6 +560,12 @@ int channel_is_eof(CHANNEL *channel){
     return (channel->remote_eof!=0);
 }
 
+/** \brief put the channel into nonblocking mode
+ * \param channel channel
+ * \param blocking boolean for blocking or nonblocking
+ * \bug This functionnality is still under development and
+ * doesn't work correctly
+ */
 void channel_set_blocking(CHANNEL *channel, int blocking){
     channel->blocking=blocking;
 }
@@ -523,6 +599,14 @@ static int channel_request(CHANNEL *channel,char *request, BUFFER *buffer,int re
     return err;
 }
 
+/** \brief requests a pty with a specific type and size
+ * \param channel channel
+ * \param terminal terminal type ("vt100, xterm,...")
+ * \param col number of cols
+ * \param row number of rows
+ * \return SSH_SUCCESS on success\n
+ * SSH_ERROR on error
+ */
 int channel_request_pty_size(CHANNEL *channel, char *terminal, int col, int row){
     STRING *term;
     BUFFER *buffer;
@@ -547,10 +631,24 @@ int channel_request_pty_size(CHANNEL *channel, char *terminal, int col, int row)
     return err;
 }
 
+/** \brief requests a pty
+ * \param channel channel
+ * \see channel_request_pty_size()
+ * \return SSH_SUCCESS on success\n
+ * SSH_ERROR on error
+ */
 int channel_request_pty(CHANNEL *channel){
     return channel_request_pty_size(channel,"xterm",80,24);
 }
 
+/** \brief change the size of the terminal associated to a channel
+ * \param channel channel
+ * \param cols new number of cols
+ * \param rows new number of rows
+ * \warning Do not call it from a signal handler if you are not
+ * sure any other libssh function using the same channel/session
+ * is running at same time (not 100% threadsafe)
+ */
 int channel_change_pty_size(CHANNEL *channel,int cols,int rows){
     BUFFER *buffer;
     int err;
@@ -568,7 +666,12 @@ int channel_change_pty_size(CHANNEL *channel,int cols,int rows){
     buffer_free(buffer);
     return err;
 }    
-    
+
+/** \brief requests a shell
+ * \param channel
+ * \returns SSH_SUCCESS on success\n
+ * SSH_ERROR on error
+ */
 int channel_request_shell(CHANNEL *channel){
 #ifdef HAVE_SSH1
     if(channel->version==1)
@@ -577,6 +680,14 @@ int channel_request_shell(CHANNEL *channel){
     return channel_request(channel,"shell",NULL,1);
 }
 
+/** \brief requests a subsystem (for example sftp)
+ * \param channel channel
+ * \param system subsystem to request (for example sftp)
+ * \return SSH_SUCCESS on success\n
+ * SSH_ERROR on error
+ * \warning you normally don't have to call it to have sftp
+ * \see sftp_new()
+ */
 int channel_request_subsystem(CHANNEL *channel, char *system){
     BUFFER* buffer=buffer_new();
     int ret;
@@ -592,7 +703,14 @@ int channel_request_sftp( CHANNEL *channel){
     return channel_request_subsystem(channel, "sftp");
 }
 
-
+/** \brief set the environement variables
+ * \param channel channel
+ * \param name name of the variable
+ * \param value value
+ * \return SSH_SUCCESS on success\n
+ * SSH_ERROR on error
+ * \warning some environement variables may be refused by security
+ * */
 int channel_request_env(CHANNEL *channel,char *name, char *value){
     BUFFER *buffer=buffer_new();
     int ret;
@@ -607,6 +725,14 @@ int channel_request_env(CHANNEL *channel,char *name, char *value){
     return ret;
 }
 
+/** it's similar to sh -c "command"
+ * \brief run a shell command without an interactive shell
+ * \param channel channel
+ * \param cmd command to execute (by ex. "ls ~/ -al | grep -i reports")
+ * \return SSH_SUCCESS on success\n
+ * SSH_ERROR on error
+ * \see channel_request_shell()
+ */
 int channel_request_exec(CHANNEL *channel, char *cmd){
     BUFFER *buffer;
     int ret;
@@ -628,7 +754,17 @@ int channel_request_exec(CHANNEL *channel, char *cmd){
 /* reads into a channel and put result into buffer */
 /* returns number of bytes read, 0 if eof or such and -1 in case of error */
 /* if bytes != 0, the exact number of bytes are going to be read */
-
+/** \brief reads data from a channel
+ * \param channel channel
+ * \param buffer buffer which will get the data
+ * \param bytes number of bytes to be read. If it is bigger
+ * than 0, the exact size will be read, else (bytes=0) it will return
+ * once anything is available
+ * \param is_stderr boolean value to mark reading from the stderr flow.
+ * \return number of bytes read\n
+ * 0 on end of file\n
+ * SSH_ERROR on error
+ */
 int channel_read(CHANNEL *channel, BUFFER *buffer,int bytes,int is_stderr){
     BUFFER *stdbuf=NULL;
     int len;
@@ -663,7 +799,16 @@ int channel_read(CHANNEL *channel, BUFFER *buffer,int bytes,int is_stderr){
     return buffer_get_len(buffer);
 }
 
-/* returns the number of bytes available, 0 if nothing is currently available, -1 if error */
+/** \brief polls the channel for data to read
+ * \param channel channel
+ * \param is_stderr boolean to select the stderr stream
+ * \return number of bytes available for reading\n
+ * 0 if nothing is available\n
+ * SSH_ERROR on error
+ * \warning don't forget to check for EOF as it would 
+ * return 0 here
+ * \see channel_is_eof()
+ */
 int channel_poll(CHANNEL *channel, int is_stderr){
     BUFFER *buffer;
     int r=0;
@@ -684,6 +829,20 @@ int channel_poll(CHANNEL *channel, int is_stderr){
 
 /* nonblocking read on the specified channel. it will return <=len bytes of data read
  atomicly. */
+/** This read will make a nonblocking read (unlike channel_read()) and won't force you
+ * to deal with BUFFER's
+ * \brief nonblocking read
+ * \param channel channel
+ * \param dest pointer to destination for data
+ * \param len maximum length of data to be read
+ * \param is_stderr boolean to select the stderr stream
+ * \return number of bytes read\n
+ * 0 if nothing is available\n
+ * SSH_ERROR on error
+ * \warning don't forget to check for EOF as it would 
+ * return 0 here
+ * \see channel_is_eof()
+ */
 int channel_read_nonblocking(CHANNEL *channel, char *dest, int len, int is_stderr){
     int to_read=channel_poll(channel,is_stderr);
     int lu;
@@ -700,6 +859,10 @@ int channel_read_nonblocking(CHANNEL *channel, char *dest, int len, int is_stder
     return lu;
 }
 
+/** \brief recover the session in which belong a channel
+ * \param channel channel
+ * \return the session pointer
+ */
 SSH_SESSION *channel_get_session(CHANNEL *channel){
     return channel->session;
 }
@@ -759,6 +922,16 @@ static int count_ptrs(CHANNEL **ptrs){
     return c;
 }
 
+/** the list of pointers are then actualized and will only contain pointers to
+ * channels that are respectively readable, writable or have an exception to trap
+ * \brief act as the standard select(2) for channels
+ * \param readchans a NULL pointer or an array of channel pointers, finished by a NULL
+ * \param writechans a NULL pointer or an array of channel pointers, finished by a NULL
+ * \param exceptchans a NULL pointer or an array of channel pointers, finished by a NULL
+ * \param timeout timeout as defined by select(2)
+ * \return SSH_SUCCESS operation successful\n
+ * SSH_EINTR select(2) syscall was interrupted, relaunch the function
+ */
 int channel_select(CHANNEL **readchans, CHANNEL **writechans, CHANNEL **exceptchans, struct 
         timeval * timeout){
     fd_set rset;
@@ -855,3 +1028,6 @@ int channel_select(CHANNEL **readchans, CHANNEL **writechans, CHANNEL **exceptch
     /* not reached */
     return 0;
 }
+
+/** @} */
+

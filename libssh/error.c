@@ -23,6 +23,13 @@ MA 02111-1307, USA. */
 #include <stdio.h>
 #include <stdarg.h>
 #include "libssh/priv.h"
+/** defgroup ssh_error
+ * \brief error handling
+ */
+
+/** \addtogroup ssh_error
+ * @{
+ */
 
 static int verbosity;
 
@@ -36,11 +43,24 @@ void ssh_set_error(void *error,int code,char *descr,...){
     err->error_code=code;
 }
 
+/** \brief retrieve an error text message
+ * \param error the ssh session pointer
+ * \return a static string describing the error
+ */
 char *ssh_get_error(void *error){
     struct error_struct *err=error;
     return err->error_buffer;
 }
 
+/** \brief retrieve the error code from the last
+ * error
+ * \param error the ssh session pointer
+ * \return SSH_NO_ERROR no error occured\n
+ * SSH_REQUEST_DENIED The last request was denied but situation
+ * is recoverable\n
+ * SSH_FATAL A fatal error occured. this could be an unexpected disconnection\n
+ * Other error codes are internal but can be considered same than SSH_FATAL
+ */
 int ssh_get_error_code(void *error){
     struct error_struct *err=error;
     return err->error_code;
@@ -57,3 +77,5 @@ void ssh_say(int priority, char *format,...){
 void ssh_set_verbosity(int num){
     verbosity=num;
 }
+
+/** @} */

@@ -26,6 +26,12 @@ MA 02111-1307, USA. */
 #include <string.h>
 #include <netdb.h>
 
+/** defgroup ssh_auth
+ * \brief functions to authenticate
+ */
+/** \addtogroup ssh_auth
+ * @{ */
+
 static int ask_userauth(SSH_SESSION *session){
     if(session->auth_service_asked)
         return 0;
@@ -114,6 +120,16 @@ static int wait_auth_status(SSH_SESSION *session,int kbdint){
 
 /* use the "none" authentication question */
 
+/** \brief Try to authenticate through the "none" method
+ * \param session ssh session
+ * \param username username to authenticate. You can specify NULL if
+ * ssh_option_set_username() has been used. You cannot try two different logins in a row.
+ * \returns SSH_AUTH_ERROR : a serious error happened\n
+ * SSH_AUTH_DENIED : Authentication failed : use another method\n
+ * SSH_AUTH_PARTIAL : You've been partially authenticated, you still have to use another method\n
+ * SSH_AUTH_SUCCESS : Authentication success
+ */
+
 int ssh_userauth_none(SSH_SESSION *session,char *username){
     STRING *user;
     STRING *service;
@@ -145,6 +161,20 @@ int ssh_userauth_none(SSH_SESSION *session,char *username){
     packet_send(session);
     return wait_auth_status(session,0);
 }
+
+/** \brief Try to authenticate through public key
+ * \param session ssh session
+ * \param username username to authenticate. You can specify NULL if
+ * ssh_option_set_username() has been used. You cannot try two different logins in a row.
+ * \param type type of public key. This value is given by publickey_from_file()
+ * \param publickey a public key returned by publickey_from_file()
+ * \returns SSH_AUTH_ERROR : a serious error happened\n
+ * SSH_AUTH_DENIED : The server doesn't accept that public key as an authentication token. Try another key or another method\n
+ * SSH_AUTH_SUCCESS : The public key is accepted, you want now to use ssh_userauth_pubkey()
+ * \see publickey_from_file()
+ * \see privatekey_from_file()
+ * \see ssh_userauth_pubkey()
+ */
 
 int ssh_userauth_offer_pubkey(SSH_SESSION *session, char *username,int type, STRING *publickey){
     STRING *user;
@@ -186,6 +216,23 @@ int ssh_userauth_offer_pubkey(SSH_SESSION *session, char *username,int type, STR
     free(algo);
     return err;
 }
+
+
+/** \brief Try to authenticate through public key
+ * \param session ssh session
+ * \param username username to authenticate. You can specify NULL if
+ * ssh_option_set_username() has been used. You cannot try two different logins in a row.
+ * \param publickey a public key returned by publickey_from_file()
+ * \param privatekey a private key returned by privatekey_from_file()
+ * \returns SSH_AUTH_ERROR : a serious error happened\n
+ * SSH_AUTH_DENIED : Authentication failed : use another method\n
+ * SSH_AUTH_PARTIAL : You've been partially authenticated, you still have to use another method\n
+ * SSH_AUTH_SUCCESS : Authentication success
+ * \see publickey_from_file()
+ * \see privatekey_from_file()
+ * \see private_key_free()
+ * \see ssh_userauth_offer_pubkey()
+ */
 
 int ssh_userauth_pubkey(SSH_SESSION *session, char *username, STRING *publickey, PRIVATE_KEY *privatekey){
     STRING *user;
@@ -234,6 +281,19 @@ int ssh_userauth_pubkey(SSH_SESSION *session, char *username, STRING *publickey,
     return err;
 }
 
+/** \brief Try to authenticate by password
+ * \param session ssh session
+ * \param username username to authenticate. You can specify NULL if
+ * ssh_option_set_username() has been used. You cannot try two different logins in a row.
+ * \param password password to use. Take care to clean it after authentication
+ * \returns SSH_AUTH_ERROR : a serious error happened\n
+ * SSH_AUTH_DENIED : Authentication failed : use another method\n
+ * SSH_AUTH_PARTIAL : You've been partially authenticated, you still have to use another method\n
+ * SSH_AUTH_SUCCESS : Authentication success
+ * \see ssh_userauth_kbdint()
+ */
+
+
 int ssh_userauth_password(SSH_SESSION *session,char *username,char *password){
     STRING *user;
     STRING *service;
@@ -280,6 +340,20 @@ static char *pub_keys_path[]={NULL,"%s/.ssh/identity.pub","%s/.ssh/id_dsa.pub","
 
 /* this function initialy was in the client */
 /* but the fools are the ones who never change mind */
+
+/** it may fail, for instance it doesn't ask for a password and uses a default
+ * asker for passphrases (in case the private key is encrypted)
+ * \brief Tries to automaticaly authenticate with public key and "none"
+ * \param session ssh session
+ * \returns SSH_AUTH_ERROR : a serious error happened\n
+ * SSH_AUTH_DENIED : Authentication failed : use another method\n
+ * SSH_AUTH_PARTIAL : You've been partially authenticated, you still have to use another method\n
+ * SSH_AUTH_SUCCESS : Authentication success
+ * \see ssh_userauth_kbdint()
+ * \see ssh_userauth_password()
+ * \see ssh_options_set_identity()
+ */
+
 int ssh_userauth_autopubkey(SSH_SESSION *session){
     int count=1; /* bypass identity */
     int type=0;
@@ -540,6 +614,24 @@ static int kbdauth_send(SSH_SESSION *session) {
     return wait_auth_status(session,1);
 }
 
+/** \brief Try to authenticate through the "keyboard-interactive" method
+ * \param session ssh session
+ * \param user username to authenticate. You can specify NULL if
+ * ssh_option_set_username() has been used. You cannot try two different logins in a row.
+ * \param submethods undocumented. Set it to NULL
+ * \returns SSH_AUTH_ERROR : a serious error happened\n
+ * SSH_AUTH_DENIED : Authentication failed : use another method\n
+ * SSH_AUTH_PARTIAL : You've been partially authenticated, you still have to use another method\n
+ * SSH_AUTH_SUCCESS : Authentication success\n
+ * SSH_AUTH_INFO : The server asked some questions. Use ssh_userauth_kbdint_getnprompts() and such.
+ * \see ssh_userauth_kbdint_getnprompts()
+ * \see ssh_userauth_kbdint_getname()
+ * \see ssh_userauth_kbdint_getinstruction()
+ * \see ssh_userauth_kbdint_getprompt()
+ * \see ssh_userauth_kbdint_setanswer()
+ */
+
+
 /* the heart of the whole keyboard interactive login */
 int ssh_userauth_kbdint(SSH_SESSION *session,char *user,char *submethods){
     int err;
@@ -583,26 +675,65 @@ int ssh_userauth_kbdint(SSH_SESSION *session,char *user,char *submethods){
     return err;
 }
 
+/** You have called ssh_userauth_kbdint() and got SSH_AUTH_INFO. this 
+ * function returns the questions from the server
+ * \brief get the number of prompts (questions) the server has given
+ * \param session ssh session
+ * \returns number of prompts
+ */
+
 int ssh_userauth_kbdint_getnprompts(SSH_SESSION *session){
     return session->kbdint->nprompts;
 }
+
+/** You have called ssh_userauth_kbdint() and got SSH_AUTH_INFO. this 
+ * function returns the questions from the server
+ * \brief get the "name" of the message block
+ * \param session ssh session
+ * \returns name of the message block. Do not free it
+ */
 
 char *ssh_userauth_kbdint_getname(SSH_SESSION *session){
     return session->kbdint->name;
 }
 
+/** You have called ssh_userauth_kbdint() and got SSH_AUTH_INFO. this 
+ * function returns the questions from the server
+ * \brief get the "instruction" of the message block
+ * \param session ssh session
+ * \returns instruction of the message block
+ */
+
 char *ssh_userauth_kbdint_getinstruction(SSH_SESSION *session){
     return session->kbdint->instruction;
 }
 
+/** You have called ssh_userauth_kbdint() and got SSH_AUTH_INFO. this 
+ * function returns the questions from the server
+ * \brief get a prompt from a message block
+ * \param session ssh session
+ * \param i index number of the ith prompt
+ * \param echo when different of NULL, it will obtain a boolean meaning that the
+ * resulting user input should be echoed or not (like passwords)
+ * \returns pointer to the prompt. Do not free it
+ */
+
 char *ssh_userauth_kbdint_getprompt(SSH_SESSION *session, int i, 
         char *echo){
-    if(i > session->kbdint->nprompts)
+    if(i > session->kbdint->nprompts || i<0)
         return NULL;
     if(echo)
         *echo=session->kbdint->echo[i];
     return session->kbdint->prompts[i];
 }
+
+/** You have called ssh_userauth_kbdint() and got SSH_AUTH_INFO. this 
+ * function returns the questions from the server
+ * \brief set the answer for a question from a message block.
+ * \param session ssh session
+ * \param i index number of the ith prompt
+ * \param answer answer to give to server
+ */
 
 void ssh_userauth_kbdint_setanswer(SSH_SESSION *session, unsigned int i, char *answer){
     if (i>session->kbdint->nprompts)
@@ -617,3 +748,6 @@ void ssh_userauth_kbdint_setanswer(SSH_SESSION *session, unsigned int i, char *a
     }
     session->kbdint->answers[i]=strdup(answer);
 }
+
+/** @} */
+
