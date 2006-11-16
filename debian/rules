@@ -1,0 +1,22 @@
+#!/usr/bin/make -f
+# Sample debian/rules that uses cdbs.  Originaly written by Robert Millan.
+# This file is public domain.
+  
+DEB_AUTO_CLEANUP_RCS            := yes
+
+# Add here any variable or target overrides you need
+
+  
+include /usr/share/cdbs/1/class/autotools.mk
+include /usr/share/cdbs/1/rules/debhelper.mk
+#include /usr/share/cdbs/1/rules/simple-patchsys.mk
+
+DEB_CONFIGURE_EXTRA_FLAGS = --with-libgcrypt --with-ssh1
+DEB_DBG_PACKAGE_libssh2 = libssh2-dbg
+
+clean::
+	rm -rf .libs/
+	rm -rf doxygen/
+
+install/libssh-dev::
+	doxygen
