@@ -42,9 +42,9 @@ libssh.so: libssh.la
 libssh.a: libssh.la
 
 install: all
-	$(top_srcdir)/mkinstalldirs $(incldir)
-	$(top_srcdir)/mkinstalldirs $(libdir)
-	$(LIBTOOL) --mode=install $(INSTALL) libssh.la $(libdir)
+	$(top_srcdir)/mkinstalldirs $(DESTDIR)$(incldir)
+	$(top_srcdir)/mkinstalldirs $(DESTDIR)$(libdir)
+	$(LIBTOOL) --mode=install $(INSTALL) libssh.la $(DESTDIR)$(libdir)
 clean:
 	$(LIBTOOL) --mode=clean rm -f *~ libssh.la *.lo *.o
 distclean: clean
