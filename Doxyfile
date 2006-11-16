@@ -5,7 +5,7 @@
 #---------------------------------------------------------------------------
 PROJECT_NAME           = libssh
 PROJECT_NUMBER         = 0.2-dev
-OUTPUT_DIRECTORY       = /home/aris/dev/libssh/trunk/doxygen/
+OUTPUT_DIRECTORY       = doxygen/
 CREATE_SUBDIRS         = NO
 OUTPUT_LANGUAGE        = English
 USE_WINDOWS_ENCODING   = NO
@@ -82,8 +82,8 @@ WARN_LOGFILE           =
 #---------------------------------------------------------------------------
 # configuration options related to the input files
 #---------------------------------------------------------------------------
-INPUT                  = /home/aris/dev/libssh/trunk/include/ \
-                         /home/aris/dev/libssh/trunk/libssh/
+INPUT                  = include/ \
+                         libssh/
 FILE_PATTERNS          = *.c \
                          *.cc \
                          *.cpp \
