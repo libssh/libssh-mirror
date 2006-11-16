@@ -10,7 +10,7 @@ AC_CONFIG_HEADER([config.h])
 #   (Interfaces removed:    CURRENT++, AGE=0, REVISION=0)
 #   (Interfaces added:      CURRENT++, AGE++, REVISION=0)
 #   (No interfaces changed:                   REVISION++)
-LIBSSH_CURRENT=0
+LIBSSH_CURRENT=1
 LIBSSH_AGE=0
 LIBSSH_REVISION=0
 AC_SUBST(LIBSSH_CURRENT)
