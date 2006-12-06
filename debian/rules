@@ -11,7 +11,7 @@ include /usr/share/cdbs/1/class/autotools.mk
 include /usr/share/cdbs/1/rules/debhelper.mk
 #include /usr/share/cdbs/1/rules/simple-patchsys.mk
 
-DEB_CONFIGURE_EXTRA_FLAGS = --with-libgcrypt --with-ssh1
+DEB_CONFIGURE_EXTRA_FLAGS = --with-libgcrypt --enable-ssh1
 DEB_DBG_PACKAGE_libssh2 = libssh2-dbg
 
 clean::
