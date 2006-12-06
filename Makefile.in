@@ -65,7 +65,7 @@ dist:
 	include/libssh/priv.h include/libssh/crypto.h \
 	include/libssh/ssh1.h include/libssh/ssh2.h  \
 	include/libssh/server.h $(DISTLIB)/include/libssh/
-	cp *.c COPYING README AUTHORS CHANGELOG $(DISTLIB)/
+	cp *.c COPYING README AUTHORS CHANGELOG Doxyfile $(DISTLIB)/
 	cp doc/* $(DISTLIB)/doc/
 	tar czf $(DISTLIB).tgz $(DISTLIB)/
 
