@@ -15,6 +15,8 @@ Description: A tiny C SSH library
  is made by the programmer. With libssh, you can remotely execute programs,
  transfer files, use a secure and transparent tunnel for your remote programs.
  With its SFTP implementation, you can play with remote files easily.
+ .
+  Homepage: http://0xbadc0de.be/wiki/doku.php?id=libssh:libssh
 
 Package: libssh-dev
 Section: libdevel
@@ -28,6 +30,8 @@ Description: A tiny C SSH library. Development files and documentation
  With its SFTP implementation, you can play with remote files easily.
  .
  This package contains development files.
+ .
+  Homepage: http://0xbadc0de.be/wiki/doku.php?id=libssh:libssh
 
 Package: libssh2-dbg
 Section: libdevel
@@ -41,3 +45,5 @@ Description: A tiny C SSH library. Debug symbols
  With its SFTP implementation, you can play with remote files easily.
  .
  This package contains debug symbols.
+ .
+  Homepage: http://0xbadc0de.be/wiki/doku.php?id=libssh:libssh
