@@ -10,8 +10,9 @@ exec_prefix = @exec_prefix@
 bindir = $(exec_prefix)/bin
 incldir= $(prefix)/include
 infodir = $(prefix)/info
-libdir = $(prefix)/lib/
-mandir = $(prefix)/man/man1
+libdir = $(prefix)/lib
+mandir = $(prefix)/share/man
+docdir = $(prefix)/share/doc
 
 CC = @CC@
 CFLAGS = @CFLAGS@ -Iinclude -Wall 
@@ -69,6 +70,10 @@ dist:
 	cp doc/* $(DISTLIB)/doc/
 	tar czf $(DISTLIB).tgz $(DISTLIB)/
 
+.PHONY: doc
+doc:
+	doxygen
+
 .PHONY: install
 install: all
 	@for dir in ${subdirs}; do \
@@ -84,9 +89,19 @@ install: all
 	$(INSTALL) include/libssh/ssh2.h $(DESTDIR)$(incldir)/libssh/
 	$(INSTALL) include/libssh/ssh1.h $(DESTDIR)$(incldir)/libssh/
 
+.PHONY: install-doc
+install-doc: doc
+	$(top_srcdir)/mkinstalldirs $(DESTDIR)$(docdir)/libssh/html
+	$(INSTALL) doxygen/html/* $(DESTDIR)$(docdir)/libssh/html
+	$(top_srcdir)/mkinstalldirs $(DESTDIR)$(docdir)/libssh/examples
+	$(INSTALL) sample.c samplesshd.c $(DESTDIR)$(docdir)/libssh/examples
+	$(top_srcdir)/mkinstalldirs $(DESTDIR)$(mandir)/man3
+	$(INSTALL) doxygen/man/man3/* $(DESTDIR)$(mandir)/man3
+
 .PHONY: clean
 clean:
 	$(LIBTOOL) --mode=clean rm -f *~ *.o samplessh samplesftp samplesshd include/libssh/config.h
+	rm -rf doxygen
 	@for dir in ${subdirs}; do \
 	  (cd $$dir && $(MAKE) clean) \
 	  || case "$(MFLAGS)" in *k*) fail=yes;; *) exit 1;; esac; \
