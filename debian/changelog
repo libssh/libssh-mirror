@@ -1,6 +1,6 @@
-libssh (0.2~svn20061116-1) unstable; urgency=low
+libssh (0.2~svn20061206-1) unstable; urgency=low
 
   * Initial release (Closes: #316872)
 
- -- Laurent Bigonville <bigon@bigon.be>  Thu, 16 Nov 2006 20:44:31 +0100
+ -- Laurent Bigonville <bigon@bigon.be>  Thu,  7 Dec 2006 00:05:12 +0100
 

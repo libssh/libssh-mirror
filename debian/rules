@@ -14,5 +14,5 @@ include /usr/share/cdbs/1/rules/debhelper.mk
 DEB_CONFIGURE_EXTRA_FLAGS = --with-libgcrypt --enable-ssh1
 DEB_DBG_PACKAGE_libssh2 = libssh2-dbg
 
-install/libssh-dev::
+install/libssh2-dev::
 	make install-doc DESTDIR=debian/tmp

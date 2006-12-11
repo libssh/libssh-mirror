@@ -1,8 +1,9 @@
 Source: libssh
 Section: libs
 Priority: optional
-Maintainer: Laurent Bigonville <bigon@bigon.be>
-Build-Depends: cdbs, debhelper (>= 5.0.0), libgcrypt11-dev, zlib1g-dev, doxygen
+Maintainer: Jean-Philippe Garcia Ballester <giga@le-pec.org>
+Uploaders: Laurent Bigonville <bigon@bigon.be>
+Build-Depends: cdbs, debhelper (>= 5.0.0), libgcrypt11-dev, libz-dev, doxygen
 Standards-Version: 3.7.2
 
 Package: libssh2
@@ -18,10 +19,12 @@ Description: A tiny C SSH library
  .
   Homepage: http://0xbadc0de.be/wiki/doku.php?id=libssh:libssh
 
-Package: libssh-dev
+Package: libssh2-dev
+Provides: libssh-dev
 Section: libdevel
 Architecture: any
 Depends: libssh2 (= ${Source-Version}), libgcrypt11-dev, zlib1g-dev
+Conflicts: libssh-dev
 Description: A tiny C SSH library. Development files and documentation
  The ssh library was designed to be used by programmers needing a working SSH
  implementation by the mean of a library. The complete control of the client
