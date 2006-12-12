@@ -105,6 +105,7 @@ static int socket_read(SSH_SESSION *session,int len){
                 close(session->fd);
             session->fd=-1;
             session->data_except=1;
+            session->alive=0;
             return SSH_ERROR;
         }
         buffer_add_data(session->in_socket_buffer,buffer,r);
