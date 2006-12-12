@@ -101,7 +101,8 @@ static int socket_read(SSH_SESSION *session,int len){
         if(r<=0){
             ssh_set_error(session,SSH_FATAL,
                 (r==0)?"Connection closed by remote host" : "Error reading socket");
-            close(session->fd);
+            if(session->fd>=0)
+                close(session->fd);
             session->fd=-1;
             session->data_except=1;
             return SSH_ERROR;
@@ -359,8 +360,13 @@ static int packet_nonblocking_flush(SSH_SESSION *session){
     int except, can_write;
     int w;
     ssh_fd_poll(session,&can_write,&except); /* internally sets data_to_write */
+    if(session->fd<0){
+        session->alive=0;
+        ssh_set_error(session,SSH_FATAL,"Writing packet : error on socket (or connection closed): %s",strerror(errno));
+        return SSH_ERROR;
+    }
     while(session->data_to_write && buffer_get_rest_len(session->out_socket_buffer)>0){
-        if(session->fd<0){
+        if(session->fd>=0){
             w=write(session->fd,buffer_get_rest(session->out_socket_buffer),
                 buffer_get_rest_len(session->out_socket_buffer));
             session->data_to_write=0;

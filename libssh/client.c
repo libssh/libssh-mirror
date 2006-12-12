@@ -36,7 +36,7 @@ char *ssh_get_banner(SSH_SESSION *session){
     char buffer[128];
     int i = 0;
     while (i < 127) {
-        if(session->fd >=0 && read(session->fd, &buffer[i], 1)<=0){
+        if(session->fd <0 || read(session->fd, &buffer[i], 1)<=0){
             ssh_set_error(session,SSH_FATAL,"Remote host closed connection");
             return NULL;
         }
