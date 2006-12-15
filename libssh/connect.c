@@ -38,6 +38,10 @@ MA 02111-1307, USA. */
 #error "Your system must have select()"
 #endif
 
+#ifndef HAVE_GETADDRINFO
+#error "Your system must have getaddrinfo()"
+#endif
+
 static void sock_set_nonblocking(int sock) {
     fcntl(sock,F_SETFL,O_NONBLOCK);
 }
@@ -53,6 +57,7 @@ static int getai(const char *host, int port, struct addrinfo **ai)
    
     memset(&hints,0,sizeof(hints));
     hints.ai_protocol=IPPROTO_TCP;
+    hints.ai_family=PF_UNSPEC;
     hints.ai_socktype=SOCK_STREAM;
     if(port==0){
         hints.ai_flags=AI_PASSIVE;
@@ -108,51 +113,62 @@ int ssh_connect_ai_timeout(SSH_SESSION *session, const char *host, int port, str
 
 int ssh_connect_host(SSH_SESSION *session, const char *host, const char 
         *bind_addr, int port,long timeout, long usec){
-    int s;
+    int s=-1;
     int my_errno;
-    struct addrinfo *ai;
+    struct addrinfo *ai, *ai2;
 
     my_errno=getai(host, port, &ai);
     if (my_errno){
-        ssh_set_error(session,SSH_FATAL,"Failed to resolve hostname %s (%d)",host,my_errno);
+        ssh_set_error(session,SSH_FATAL,"Failed to resolve hostname %s (%s)",host,gai_strerror(my_errno));
         return -1;
     }
     
-    /* create socket */
-    s=socket(ai->ai_family,ai->ai_socktype,ai->ai_protocol);
-    if(s<0){
-        ssh_set_error(session,SSH_FATAL,"socket : %s",strerror(errno));
-        freeaddrinfo(ai);
-        return s;
-    }
-
-    if(bind_addr){
-        struct addrinfo *bind_ai;
-
-        ssh_say(2,"resolving %s\n",bind_addr);
-	my_errno=getai(host,0,&bind_ai);
-	if (my_errno){
-            ssh_set_error(session,SSH_FATAL,"Failed to resolve bind address %s (%d)",bind_addr,my_errno);
-	    freeaddrinfo(ai);
-            return -1;
+    for(ai2=ai;ai2!=NULL;ai2=ai2->ai_next){
+        /* create socket */
+        s=socket(ai2->ai_family,ai2->ai_socktype,ai2->ai_protocol);
+        if(s<0){
+            ssh_set_error(session,SSH_FATAL,"socket : %s",strerror(errno));
+            continue;
         }
 
-        if(bind(s,bind_ai->ai_addr,bind_ai->ai_addrlen)<0){
-            ssh_set_error(session,SSH_FATAL,"Binding local address : %s",strerror(errno));
-	    freeaddrinfo(ai);
-	    freeaddrinfo(bind_ai);
+        if(bind_addr){
+            struct addrinfo *bind_ai, *bind_ai2;
+
+            ssh_say(2,"resolving %s\n",bind_addr);
+            my_errno=getai(host,0,&bind_ai);
+            if (my_errno){
+                ssh_set_error(session,SSH_FATAL,"Failed to resolve bind address %s (%s)",bind_addr,gai_strerror(my_errno));
+                return -1;
+            }
+
+            for(bind_ai2=bind_ai;bind_ai2!=NULL;bind_ai2=bind_ai2->ai_next){
+                if(bind(s,bind_ai2->ai_addr,bind_ai2->ai_addrlen)<0){
+                    ssh_set_error(session,SSH_FATAL,"Binding local address : %s",strerror(errno));
+                    continue;
+                }    
+		else{
+                    break;
+		}
+            }
+            freeaddrinfo(bind_ai);
+            if(bind_ai2==NULL){ /*cannot bind to any local addresses*/
+                close(s);
+                s=-1;
+                continue;
+            }
+        }
+        if(timeout||usec){
+            return ssh_connect_ai_timeout(session,host,port,ai2,timeout,usec,s);
+        }
+        if(connect(s,ai2->ai_addr,ai2->ai_addrlen)<0){
+            ssh_set_error(session,SSH_FATAL,"connect: %s",strerror(errno));
             close(s);
-            return -1;
+            s=-1;
+            continue;
         }
-	freeaddrinfo(bind_ai);
-    }
-    if(timeout||usec){
-        return ssh_connect_ai_timeout(session,host,port,ai,timeout,usec,s);
-    }
-    if(connect(s,ai->ai_addr,ai->ai_addrlen)<0){
-        ssh_set_error(session,SSH_FATAL,"connect: %s",strerror(errno));
-        close(s);
-        s=-1;
+        else{ /*we are connected*/
+            break;
+        }
     }
     freeaddrinfo(ai);
     return s;
