@@ -14,5 +14,8 @@ include /usr/share/cdbs/1/rules/debhelper.mk
 DEB_CONFIGURE_EXTRA_FLAGS = --with-libgcrypt --enable-ssh1
 DEB_DBG_PACKAGE_libssh-2 = libssh-2-dbg
 
+install/libssh-2::
+	install -D -m 644 debian/libssh-2.lintian-overrides debian/libssh-2/usr/share/lintian/overrides/libssh-2
+
 install/libssh-2-dev::
 	make install-doc DESTDIR=debian/tmp

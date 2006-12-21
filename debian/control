@@ -3,7 +3,7 @@ Section: libs
 Priority: optional
 Maintainer: Jean-Philippe Garcia Ballester <giga@le-pec.org>
 Uploaders: Laurent Bigonville <bigon@bigon.be>
-Build-Depends: cdbs, debhelper (>= 5.0.0), libgcrypt11-dev, libz-dev, doxygen
+Build-Depends: cdbs, debhelper (>= 5), libgcrypt11-dev, libz-dev, doxygen
 Standards-Version: 3.7.2
 
 Package: libssh-2
@@ -37,6 +37,7 @@ Description: A tiny C SSH library. Development files and documentation
   Homepage: http://0xbadc0de.be/wiki/doku.php?id=libssh:libssh
 
 Package: libssh-2-dbg
+Priority: extra
 Section: libdevel
 Architecture: any
 Depends: libssh-2 (= ${Source-Version})
