@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.57)
-AC_INIT(libssh, 0.2rc , aris@0xbadc0de.be)
+AC_INIT(libssh, 0.2 , aris@0xbadc0de.be)
 AC_CONFIG_SRCDIR([sample.c])
 AC_CONFIG_HEADER([config.h])
 

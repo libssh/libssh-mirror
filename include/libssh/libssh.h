@@ -24,7 +24,7 @@ MA 02111-1307, USA. */
 #include <sys/select.h> /* for fd_set * */
 #include <inttypes.h>
 
-#define LIBSSH_VERSION "libssh-0.2rc"
+#define LIBSSH_VERSION "libssh-0.2"
 
 #ifdef __cplusplus
 extern "C" {

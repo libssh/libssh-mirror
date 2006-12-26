@@ -23,7 +23,7 @@ LN = @LN_S@
 LIBTOOL = @LIBTOOL@
 OBJECTS = sample.o samplesshd.o
 APPS = samplessh samplesftp samplesshd
-VERSION = 0.2rc
+VERSION = 0.2
 DISTLIB = libssh-$(VERSION)
 CONFIG = include/libssh/config.h
 

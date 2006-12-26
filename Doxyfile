@@ -4,7 +4,7 @@
 # Project related configuration options
 #---------------------------------------------------------------------------
 PROJECT_NAME           = libssh
-PROJECT_NUMBER         = 0.2rc
+PROJECT_NUMBER         = 0.2
 OUTPUT_DIRECTORY       = doxygen/
 CREATE_SUBDIRS         = NO
 OUTPUT_LANGUAGE        = English
