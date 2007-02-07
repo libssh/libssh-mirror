@@ -40,11 +40,12 @@ SUBDIRS:
 % : %.o
 	$(LIBTOOL) --mode=link $(CC) -o $@ $< $(LDFLAGS) $(LIBS)
 
-samplessh: sample.o
+samplessh: sample.o SUBDIRS
 	$(LIBTOOL) --mode=link $(CC) -o $@ $< $(LDFLAGS) $(LIBS)
 
 samplesftp: samplessh
 	$(LN) -f samplessh samplesftp
+samplesshd: SUBDIRS
 
 $(CONFIG):
 	$(LN) -f ../../config.h $(CONFIG)
