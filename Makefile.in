@@ -83,13 +83,13 @@ install: all
 	  || case "$(MFLAGS)" in *k*) fail=yes;; *) exit 1;; esac; \
 	done && test -z "$$fail"
 	$(top_srcdir)/mkinstalldirs $(DESTDIR)$(incldir)/libssh
-	$(INSTALL) include/libssh/libssh.h $(DESTDIR)$(incldir)/libssh/
-	$(INSTALL) include/libssh/config.h $(DESTDIR)$(incldir)/libssh/
-	$(INSTALL) include/libssh/sftp.h $(DESTDIR)$(incldir)/libssh/
-	$(INSTALL) include/libssh/crypto.h $(DESTDIR)$(incldir)/libssh/
-	$(INSTALL) include/libssh/server.h $(DESTDIR)$(incldir)/libssh/
-	$(INSTALL) include/libssh/ssh2.h $(DESTDIR)$(incldir)/libssh/
-	$(INSTALL) include/libssh/ssh1.h $(DESTDIR)$(incldir)/libssh/
+	$(INSTALL) -m644 include/libssh/libssh.h $(DESTDIR)$(incldir)/libssh/
+	$(INSTALL) -m644 include/libssh/config.h $(DESTDIR)$(incldir)/libssh/
+	$(INSTALL) -m644 include/libssh/sftp.h $(DESTDIR)$(incldir)/libssh/
+	$(INSTALL) -m644 include/libssh/crypto.h $(DESTDIR)$(incldir)/libssh/
+	$(INSTALL) -m644 include/libssh/server.h $(DESTDIR)$(incldir)/libssh/
+	$(INSTALL) -m644 include/libssh/ssh2.h $(DESTDIR)$(incldir)/libssh/
+	$(INSTALL) -m644 include/libssh/ssh1.h $(DESTDIR)$(incldir)/libssh/
 
 .PHONY: install-doc
 install-doc: doc
