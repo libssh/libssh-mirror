@@ -365,6 +365,63 @@ struct ssh_kbdint {
     unsigned char *echo; /* bool array */
     char **answers;
 };
+
+/* server data */
+
+struct ssh_bind_struct {
+    struct error_struct error;
+    int bindfd;
+    SSH_OPTIONS *options;
+    int blocking;
+    int toaccept;
+};
+
+struct ssh_auth_request {
+    char *username;
+    int method;
+    char *password;
+};
+
+struct ssh_channel_request_open {
+    int type;
+    u32 sender;
+    u32 window;
+    u32 packet_size;
+    char *originator;
+    u16 orignator_port;
+    char *destination;
+    u16 destination_port;
+};
+
+struct ssh_channel_request {
+    int type;
+    CHANNEL *channel;
+    u8 want_reply;
+    /* pty-req type specifics */
+    char *TERM;
+    u32 width;
+    u32 height;
+    u32 pxwidth;
+    u32 pxheight;
+    STRING *modes;
+    
+    /* env type request */
+    char *var_name;
+    char *var_value;
+    /* exec type request */
+    char *command;
+    /* subsystem */
+    char *subsystem;
+};
+
+struct ssh_message {
+    SSH_SESSION *session;
+    int type;
+    struct ssh_auth_request auth_request;
+    struct ssh_channel_request_open channel_request_open;
+    struct ssh_channel_request channel_request;
+};
+
 /* session.c */
 
 void ssh_cleanup(SSH_SESSION *session);

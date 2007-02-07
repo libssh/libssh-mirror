@@ -22,16 +22,7 @@ MA 02111-1307, USA. */
 #define SERVER_H
 
 #include "libssh/libssh.h"
-#include "libssh/priv.h"
 #define SERVERBANNER CLIENTBANNER
-
-struct ssh_bind_struct {
-    struct error_struct error;
-    int bindfd;
-    SSH_OPTIONS *options;
-    int blocking;
-    int toaccept;
-};
 
 typedef struct ssh_bind_struct SSH_BIND;
 
@@ -58,27 +49,10 @@ int ssh_accept(SSH_SESSION *session);
 #define SSH_AUTH_KEYBINT (1<<4)
 #define SSH_AUTH_UNKNOWN 0
 
-struct ssh_auth_request {
-    char *username;
-    int method;
-    char *password;
-};
-
-
 #define SSH_CHANNEL_SESSION 1
 #define SSH_CHANNEL_TCPIP 2
 #define SSH_CHANNEL_X11 3
 #define SSH_CHANNEL_UNKNOWN 4
-struct ssh_channel_request_open {
-    int type;
-    u32 sender;
-    u32 window;
-    u32 packet_size;
-    char *originator;
-    u16 orignator_port;
-    char *destination;
-    u16 destination_port;
-};
 
 #define SSH_CHANNEL_REQUEST_PTY 1
 #define SSH_CHANNEL_REQUEST_EXEC 2
@@ -87,35 +61,6 @@ struct ssh_channel_request_open {
 #define SSH_CHANNEL_REQUEST_SUBSYSTEM 5
 #define SSH_CHANNEL_REQUEST_WINDOW_CHANGE 6
 #define SSH_CHANNEL_REQUEST_UNKNOWN 7
-
-struct ssh_channel_request {
-    int type;
-    CHANNEL *channel;
-    u8 want_reply;
-    /* pty-req type specifics */
-    char *TERM;
-    u32 width;
-    u32 height;
-    u32 pxwidth;
-    u32 pxheight;
-    STRING *modes;
-    
-    /* env type request */
-    char *var_name;
-    char *var_value;
-    /* exec type request */
-    char *command;
-    /* subsystem */
-    char *subsystem;
-};
-
-struct ssh_message {
-    SSH_SESSION *session;
-    int type;
-    struct ssh_auth_request auth_request;
-    struct ssh_channel_request_open channel_request_open;
-    struct ssh_channel_request channel_request;
-};
 
 typedef struct ssh_message SSH_MESSAGE;
 

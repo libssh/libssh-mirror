@@ -32,6 +32,7 @@ MA 02111-1307, USA. */
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
+#include "libssh/priv.h"
 #include "libssh/libssh.h"
 #include "libssh/server.h"
 #include "libssh/ssh2.h"
