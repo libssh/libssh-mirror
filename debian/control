@@ -24,8 +24,9 @@ Provides: libssh-dev
 Section: libdevel
 Architecture: any
 Depends: libssh-2 (= ${Source-Version}), libgcrypt11-dev, zlib1g-dev
+Suggests: libssh-2-doc
 Conflicts: libssh-dev
-Description: A tiny C SSH library. Development files and documentation
+Description: A tiny C SSH library. Development files
  The ssh library was designed to be used by programmers needing a working SSH
  implementation by the mean of a library. The complete control of the client
  is made by the programmer. With libssh, you can remotely execute programs,
@@ -49,5 +50,22 @@ Description: A tiny C SSH library. Debug symbols
  With its SFTP implementation, you can play with remote files easily.
  .
  This package contains debug symbols.
+ .
+  Homepage: http://0xbadc0de.be/wiki/doku.php?id=libssh:libssh
+
+Package: libssh-2-doc
+Section: doc
+Architecture: all
+Suggests: doc-base
+Conflicts: libssh-2-doc (<< 0.2-2)
+Replaces: libssh-2-doc (<< 0.2-2)
+Description: A tiny C SSH library. Documentation files
+ The ssh library was designed to be used by programmers needing a working SSH
+ implementation by the mean of a library. The complete control of the client
+ is made by the programmer. With libssh, you can remotely execute programs,
+ transfer files, use a secure and transparent tunnel for your remote programs.
+ With its SFTP implementation, you can play with remote files easily.
+ .
+ This package contains documentation files.
  .
   Homepage: http://0xbadc0de.be/wiki/doku.php?id=libssh:libssh

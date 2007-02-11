@@ -17,5 +17,5 @@ DEB_DBG_PACKAGE_libssh-2 = libssh-2-dbg
 install/libssh-2::
 	install -D -m 644 debian/libssh-2.lintian-overrides debian/libssh-2/usr/share/lintian/overrides/libssh-2
 
-install/libssh-2-dev::
+install/libssh-2-doc::
 	make install-doc DESTDIR=debian/tmp
