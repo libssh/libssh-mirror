@@ -264,6 +264,7 @@ static int dh_handshake_server(SSH_SESSION *session){
 int ssh_accept(SSH_SESSION *session){
     ssh_send_banner(session,1);
     ssh_crypto_init();
+    session->alive=1;
     session->clientbanner=ssh_get_banner(session);
     server_set_kex(session);
     ssh_send_kex(session,1);

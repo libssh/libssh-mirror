@@ -642,7 +642,8 @@ static int packet_wait2(SSH_SESSION *session,int type,int blocking){
         switch(session->in_packet.type){
            case SSH2_MSG_DISCONNECT:
                packet_parse(session);
-                return SSH_ERROR;
+               ssh_say(2,"received disconnect packet\n");
+               return SSH_ERROR;
            case SSH2_MSG_CHANNEL_WINDOW_ADJUST:
            case SSH2_MSG_CHANNEL_DATA:
            case SSH2_MSG_CHANNEL_EXTENDED_DATA:
