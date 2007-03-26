@@ -57,8 +57,7 @@ Package: libssh-2-doc
 Section: doc
 Architecture: all
 Suggests: doc-base
-Conflicts: libssh-2-doc (<< 0.2-2)
-Replaces: libssh-2-doc (<< 0.2-2)
+Replaces: libssh-2-dev (<= 0.2-1)
 Description: A tiny C SSH library. Documentation files
  The ssh library was designed to be used by programmers needing a working SSH
  implementation by the mean of a library. The complete control of the client

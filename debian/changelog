@@ -1,8 +1,16 @@
-libssh (0.2-2) unstable; urgency=low
+libssh (0.2+svn20070321-2) unstable; urgency=low
 
-  * Split devel package into devel and documentation packages
+  * Split devel package into devel and documentation packages 
 
- -- Laurent Bigonville <bigon@bigon.be>  Sun, 11 Feb 2007 18:55:11 +0100
+ -- Laurent Bigonville <bigon@bigon.be>  Mon, 26 Mar 2007 15:29:51 +0200
+
+libssh (0.2+svn20070321-1) unstable; urgency=low
+
+  * New svn snapshot:
+    - Fix broken include in include/libssh/server.h (Closes: #410020)
+    - Fix nasty bug in server side code
+
+ -- Laurent Bigonville <bigon@bigon.be>  Mon, 26 Mar 2007 15:06:40 +0200
 
 libssh (0.2-1) unstable; urgency=low
 
