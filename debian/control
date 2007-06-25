@@ -5,6 +5,7 @@ Maintainer: Jean-Philippe Garcia Ballester <giga@le-pec.org>
 Uploaders: Laurent Bigonville <bigon@bigon.be>
 Build-Depends: cdbs, debhelper (>= 5), libgcrypt11-dev, libz-dev, doxygen
 Standards-Version: 3.7.2
+XS-Vcs-Svn: svn://svn.berlios.de/libssh/trunk
 
 Package: libssh-2
 Section: libs
@@ -23,7 +24,7 @@ Package: libssh-2-dev
 Provides: libssh-dev
 Section: libdevel
 Architecture: any
-Depends: libssh-2 (= ${Source-Version}), libgcrypt11-dev, zlib1g-dev
+Depends: libssh-2 (= ${binary:Version}), libgcrypt11-dev, zlib1g-dev
 Suggests: libssh-2-doc
 Conflicts: libssh-dev
 Description: A tiny C SSH library. Development files
@@ -41,7 +42,7 @@ Package: libssh-2-dbg
 Priority: extra
 Section: libdevel
 Architecture: any
-Depends: libssh-2 (= ${Source-Version})
+Depends: libssh-2 (= ${binary:Version})
 Description: A tiny C SSH library. Debug symbols
  The ssh library was designed to be used by programmers needing a working SSH
  implementation by the mean of a library. The complete control of the client
@@ -57,7 +58,7 @@ Package: libssh-2-doc
 Section: doc
 Architecture: all
 Suggests: doc-base
-Replaces: libssh-2-dev (<= 0.2-1)
+Replaces: libssh-2-dev (<< 0.2+svn20070321-2)
 Description: A tiny C SSH library. Documentation files
  The ssh library was designed to be used by programmers needing a working SSH
  implementation by the mean of a library. The complete control of the client

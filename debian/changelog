@@ -1,3 +1,17 @@
+libssh (0.2+svn20070321-4) UNRELEASED; urgency=low
+
+  * debian/control:
+    - Add XS-Vcs-Svn field.
+    - Change to ${binary:Version} for versionized dependencies.
+
+ -- Laurent Bigonville <bigon@bigon.be>  Mon, 25 Jun 2007 17:44:02 +0200
+
+libssh (0.2+svn20070321-3) unstable; urgency=low
+
+  * Fix wrong versionized Replaces for -doc package
+
+ -- Laurent Bigonville <bigon@bigon.be>  Thu,  5 Apr 2007 17:58:27 +0200
+
 libssh (0.2+svn20070321-2) unstable; urgency=low
 
   * Split devel package into devel and documentation packages 
