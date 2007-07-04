@@ -6,6 +6,7 @@ Uploaders: Laurent Bigonville <bigon@bigon.be>
 Build-Depends: cdbs, debhelper (>= 5), libgcrypt11-dev, libz-dev, doxygen
 Standards-Version: 3.7.2
 XS-Vcs-Svn: svn://svn.berlios.de/libssh/trunk
+XS-Vcs-Browser: http://svn.berlios.de/wsvn/libssh/trunk/
 
 Package: libssh-2
 Section: libs
