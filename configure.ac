@@ -2,7 +2,8 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.57)
-AC_INIT(libssh, 0.2 , aris@0xbadc0de.be)
+AC_INIT([libssh], 0.2, [aris@0xbadc0de.be])
+AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([sample.c])
 AC_CONFIG_HEADER([config.h])
 
@@ -123,5 +124,7 @@ AC_CHECK_FUNCS([endpwent getaddrinfo gethostbyname getpass memmove memset \
 cfmakeraw select socket strchr strdup strerror strstr poll])
 
 AC_CONFIG_FILES([Makefile
-                 libssh/Makefile])
+                 libssh/Makefile
+		 include/Makefile
+		 include/libssh/Makefile])
 AC_OUTPUT
