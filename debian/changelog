@@ -1,10 +1,17 @@
-libssh (0.2+svn20070321-4) UNRELEASED; urgency=low
+libssh (0.2+svn20070321-5) UNRELEASED; urgency=low
+
+  * NOT RELEASED YET
+
+ -- Laurent Bigonville <bigon@bigon.be>  Mon, 30 Jul 2007 14:35:14 +0200
+
+libssh (0.2+svn20070321-4) unstable; urgency=low
 
   * debian/control:
     - Add XS-Vcs-Svn and XS-Vcs-Browser fields.
     - Change to ${binary:Version} for versionized dependencies.
+  * Add debian/README.Debian to disambiguate the package name 
 
- -- Laurent Bigonville <bigon@bigon.be>  Wed, 04 Jul 2007 21:06:40 +0200
+ -- Laurent Bigonville <bigon@bigon.be>  Fri, 27 Jul 2007 15:00:06 +0200
 
 libssh (0.2+svn20070321-3) unstable; urgency=low
 
