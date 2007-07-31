@@ -8,6 +8,6 @@ libssh_la_SOURCES = auth1.c auth.c base64.c buffer.c	\
 		 packet.c server.c session.c sftp.c	\
 		 sftpserver.c string.c wrapper.c
 
-libssh_la_CPPFLAGS = -I$(srcdir)/../include
+libssh_la_CPPFLAGS = -I$(top_srcdir)/include
 
 libssh_la_LDFLAGS = -version-info $(LIBSSH_CURRENT):$(LIBSSH_REVISION):$(LIBSSH_AGE)
