@@ -8,9 +8,6 @@ noinst_PROGRAMS = samplesshd samplessh
 
 noinst_DATA = samplesftp doxygen
 
-libsshdir = $(includedir)/libssh
-libssh_HEADERS = config.h
-
 samplessh_SOURCES = sample.c
 
 samplesshd_SOURCES = samplesshd.c
