@@ -3,9 +3,11 @@
 
 AC_PREREQ(2.57)
 AC_INIT([libssh], 0.2, [aris@0xbadc0de.be])
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE(1.9)
 AC_CONFIG_SRCDIR([sample.c])
 AC_CONFIG_HEADER([config.h])
+
+AM_MAINTAINER_MODE
 
 # LT Version numbers, remember to change them just *before* a release.
 #   (Interfaces removed:    CURRENT++, AGE=0, REVISION=0)
@@ -64,6 +66,9 @@ AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AC_PROG_LIBTOOL
 AC_C_BIGENDIAN
+
+AC_CHECK_PROG([DOXYGEN], [doxygen], [yes], [no])
+AM_CONDITIONAL([HAS_DOXYGEN], [test x"$DOXYGEN" = xyes])
 
 # Checks for libraries.
 with_gcrypt=${with_gcrypt:-"no"}
