@@ -1,8 +1,10 @@
 libssh (0.2+svn20070321-5) UNRELEASED; urgency=low
 
   * NOT RELEASED YET
+  * Use now official Vcs-* field
+  * Use new Homepage field instead of old pseudo-field
 
- -- Laurent Bigonville <bigon@bigon.be>  Mon, 30 Jul 2007 14:35:14 +0200
+ -- Laurent Bigonville <bigon@bigon.be>  Thu, 08 Nov 2007 05:59:18 +0100
 
 libssh (0.2+svn20070321-4) unstable; urgency=low
 

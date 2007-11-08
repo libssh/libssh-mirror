@@ -5,8 +5,9 @@ Maintainer: Jean-Philippe Garcia Ballester <giga@le-pec.org>
 Uploaders: Laurent Bigonville <bigon@bigon.be>
 Build-Depends: cdbs, debhelper (>= 5), libgcrypt11-dev, libz-dev, doxygen
 Standards-Version: 3.7.2
-XS-Vcs-Svn: svn://svn.berlios.de/libssh/trunk
-XS-Vcs-Browser: http://svn.berlios.de/wsvn/libssh/trunk/
+Vcs-Svn: svn://svn.berlios.de/libssh/trunk
+Vcs-Browser: http://svn.berlios.de/wsvn/libssh/trunk/
+Homepage: http://0xbadc0de.be/wiki/doku.php?id=libssh:libssh
 
 Package: libssh-2
 Section: libs
@@ -18,8 +19,6 @@ Description: A tiny C SSH library
  is made by the programmer. With libssh, you can remotely execute programs,
  transfer files, use a secure and transparent tunnel for your remote programs.
  With its SFTP implementation, you can play with remote files easily.
- .
-  Homepage: http://0xbadc0de.be/wiki/doku.php?id=libssh:libssh
 
 Package: libssh-2-dev
 Provides: libssh-dev
@@ -36,8 +35,6 @@ Description: A tiny C SSH library. Development files
  With its SFTP implementation, you can play with remote files easily.
  .
  This package contains development files.
- .
-  Homepage: http://0xbadc0de.be/wiki/doku.php?id=libssh:libssh
 
 Package: libssh-2-dbg
 Priority: extra
@@ -52,8 +49,6 @@ Description: A tiny C SSH library. Debug symbols
  With its SFTP implementation, you can play with remote files easily.
  .
  This package contains debug symbols.
- .
-  Homepage: http://0xbadc0de.be/wiki/doku.php?id=libssh:libssh
 
 Package: libssh-2-doc
 Section: doc
@@ -68,5 +63,3 @@ Description: A tiny C SSH library. Documentation files
  With its SFTP implementation, you can play with remote files easily.
  .
  This package contains documentation files.
- .
-  Homepage: http://0xbadc0de.be/wiki/doku.php?id=libssh:libssh
