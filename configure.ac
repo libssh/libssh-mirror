@@ -52,7 +52,7 @@ AC_ARG_WITH([versioned-symbol],
 AC_SUBST(LIBSSH_VERS)
 
 enable_ssh1=${enable_ssh1:-"no"}
-AC_ARG_ENABLE(ssh1, [  --enable-ssh1           support SSH1])
+AC_ARG_ENABLE(ssh1, AC_HELP_STRING([--enable-ssh1], [enable SSH1 support]))
 AC_MSG_CHECKING([for SSH1 support])
 if test "$enable_ssh1" = "yes" ; then
   AC_DEFINE(HAVE_SSH1,1,[Define to 1 if you want to enable SSH1])
