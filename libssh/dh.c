@@ -39,8 +39,9 @@ MA 02111-1307, USA. */
 #include <stdlib.h>
 #include <netdb.h>
 #include <string.h>
-#include "libssh/crypto.h"    
+    
 #include "libssh/priv.h"
+#include "libssh/crypto.h"
 
 #ifdef HAVE_LIBCRYPTO
 #include <openssl/rand.h>
@@ -452,8 +453,8 @@ void generate_session_keys(SSH_SESSION *session){
 #ifdef DEBUG_CRYPTO
     ssh_print_hexa("encrypt IV",session->next_crypto->encryptIV,SHA_DIGEST_LEN);
     ssh_print_hexa("decrypt IV",session->next_crypto->decryptIV,SHA_DIGEST_LEN);
-    ssh_print_hexa("encryption key",session->next_crypto->encryptkey,16);
-    ssh_print_hexa("decryption key",session->next_crypto->decryptkey,16);
+    ssh_print_hexa("encryption key",session->next_crypto->encryptkey,session->next_crypto->out_cipher->keysize);
+    ssh_print_hexa("decryption key",session->next_crypto->decryptkey,session->next_crypto->in_cipher->keysize);
     ssh_print_hexa("Encryption MAC",session->next_crypto->encryptMAC,SHA_DIGEST_LEN);
     ssh_print_hexa("Decryption MAC",session->next_crypto->decryptMAC,20);
 #endif
