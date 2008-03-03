@@ -824,7 +824,7 @@ int channel_poll(CHANNEL *channel, int is_stderr){
     }
     if(channel->remote_eof)
         return 1;
-    return buffer_get_len(buffer);
+    return buffer_get_rest_len(buffer);
 }
 
 /* nonblocking read on the specified channel. it will return <=len bytes of data read
