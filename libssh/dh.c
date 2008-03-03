@@ -65,6 +65,7 @@ static unsigned char p_value[] = {
 static unsigned long g_int = 2 ;	/* G is defined as 2 by the ssh2 standards */
 static bignum g;
 static bignum p;
+static int ssh_crypto_inited=0;
 
 /* maybe it might be enhanced .... */
 /* XXX Do it. */		
@@ -84,10 +85,10 @@ int ssh_get_random(void *where, int len, int strong){
     }
 }
 
+
 /* it inits the values g and p which are used for DH key agreement */
 void ssh_crypto_init(){
-    static int init=0;
-    if(!init){
+    if(ssh_crypto_inited == 0){
 #ifdef HAVE_LIBGCRYPT
         gcry_check_version(NULL);
 	if (!gcry_control(GCRYCTL_INITIALIZATION_FINISHED_P,0))
@@ -105,10 +106,18 @@ void ssh_crypto_init(){
         bignum_bin2bn(p_value,P_LEN,p);
         OpenSSL_add_all_algorithms();
 #endif
-        init++;
+        ssh_crypto_inited++;
     }
 }
 
+void ssh_crypto_finalize(){
+    if(ssh_crypto_inited){
+        bignum_free(g);
+        bignum_free(p);
+        ssh_crypto_inited=0;
+    }
+}
+   
 /* prints the bignum on stderr */
 void ssh_print_bignum(char *which,bignum num){
 #ifdef HAVE_LIBGCRYPT

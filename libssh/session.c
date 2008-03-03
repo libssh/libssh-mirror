@@ -58,6 +58,10 @@ void ssh_cleanup(SSH_SESSION *session){
         buffer_free(session->in_buffer);
     if(session->out_buffer)
         buffer_free(session->out_buffer);
+    if(session->in_socket_buffer)
+        buffer_free(session->in_socket_buffer);
+    if(session->out_socket_buffer)
+        buffer_free(session->out_socket_buffer);
     if(session->banner)
         free(session->banner);
     if(session->options)

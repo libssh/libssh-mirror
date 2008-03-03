@@ -25,6 +25,7 @@ MA 02111-1307, USA. */
 
 int ssh_finalize()
 {
+  ssh_crypto_finalize();
 #ifdef HAVE_LIBGCRYPT
   gcry_control(GCRYCTL_TERM_SECMEM);
 #elif defined HAVE_LIBCRYPTO
