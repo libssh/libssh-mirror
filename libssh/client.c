@@ -36,7 +36,7 @@ char *ssh_get_banner(SSH_SESSION *session){
     char buffer[128];
     int i = 0;
     while (i < 127) {
-        if(session->fd <0 || read(session->fd, &buffer[i], 1)<=0){
+        if(!ssh_socket_is_open(session->socket) || ssh_socket_read(session->socket, &buffer[i], 1)<=0){
             ssh_set_error(session,SSH_FATAL,"Remote host closed connection");
             return NULL;
         }
@@ -98,7 +98,7 @@ int ssh_send_banner(SSH_SESSION *session,int server){
     else
         session->clientbanner=strdup(banner);
     snprintf(buffer,128,"%s\r\n",banner);
-    write(session->fd,buffer,strlen(buffer));
+    ssh_socket_write(session->socket,buffer,strlen(buffer));
     return 0;
 }
 
@@ -247,12 +247,10 @@ int ssh_connect(SSH_SESSION *session){
   if(fd<0)
       return -1;
   set_status(options,0.2);
-  session->fd=fd;
+  ssh_socket_set_fd(session->socket,fd);
   session->alive=1;
   if(!(session->serverbanner=ssh_get_banner(session))){
-      if(session->fd>=0)
-        close(session->fd);
-      session->fd=-1;
+      ssh_socket_close(session->socket);
       session->alive=0;
       return -1;
   }
@@ -260,9 +258,7 @@ int ssh_connect(SSH_SESSION *session){
   ssh_say(2,"banner : %s\n",session->serverbanner);
   /* here we analyse the different protocols the server allows */
   if(ssh_analyze_banner(session,&ssh1,&ssh2)){
-      if(session->fd>=0)
-          close(session->fd);
-      session->fd=-1;
+      ssh_socket_close(session->socket);
       session->alive=0;
       return -1;
   }
@@ -275,8 +271,7 @@ int ssh_connect(SSH_SESSION *session){
       ssh_set_error(session,SSH_FATAL,
         "no version of SSH protocol usable (banner: %s)",
         session->serverbanner);
-        close(session->fd);
-        session->fd=-1;
+        ssh_socket_close(session->socket);
         session->alive=0;
         return -1;
   }
@@ -285,27 +280,21 @@ int ssh_connect(SSH_SESSION *session){
   switch(session->version){
       case 2:
         if(ssh_get_kex(session,0)){
-            if(session->fd>=0)
-                close(session->fd);
-            session->fd=-1;
+            ssh_socket_close(session->socket);
             session->alive=0;
             return -1;
         }
         set_status(options,0.6);
         ssh_list_kex(&session->server_kex);
         if(set_kex(session)){
-            if(session->fd>=0)
-                close(session->fd);
-            session->fd=-1;
+            ssh_socket_close(session->socket);
             session->alive=0;
             return -1;
         }
         ssh_send_kex(session,0);
         set_status(options,0.8);
         if(dh_handshake(session)){
-            if(session->fd>=0)
-                close(session->fd);
-            session->fd=-1;
+            ssh_socket_close(session->socket);
             session->alive=0;
             return -1;
         } 
@@ -314,9 +303,7 @@ int ssh_connect(SSH_SESSION *session){
         break;
     case 1:
         if(ssh_get_kex1(session)){
-            if(session->fd>=0)
-                close(session->fd);
-            session->fd=-1;
+            ssh_socket_close(session->socket);
             session->alive=0;
             return -1;
         }
@@ -344,7 +331,7 @@ char *ssh_get_issue_banner(SSH_SESSION *session){
  */
 void ssh_disconnect(SSH_SESSION *session){
     STRING *str;
-    if(session->fd!= -1) {
+    if(ssh_socket_is_open(session->socket)) {
         packet_clear_out(session);
         buffer_add_u8(session->out_buffer,SSH2_MSG_DISCONNECT);
         buffer_add_u32(session->out_buffer,htonl(SSH2_DISCONNECT_BY_APPLICATION));
@@ -352,15 +339,14 @@ void ssh_disconnect(SSH_SESSION *session){
         buffer_add_ssh_string(session->out_buffer,str);
         free(str);
         packet_send(session);
-        close(session->fd);
-        session->fd=-1;
+        ssh_socket_close(session->socket);
     }
     session->alive=0;
     ssh_cleanup(session);
 }
 
 const char *ssh_copyright(){
-    return LIBSSH_VERSION " (c) 2003-2006 Aris Adamantiadis (aris@0xbadc0de.be)"
+    return LIBSSH_VERSION " (c) 2003-2008 Aris Adamantiadis (aris@0xbadc0de.be)"
     " Distributed under the LGPL, please refer to COPYING file for informations"
     " about your rights" ;
 }

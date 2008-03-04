@@ -905,7 +905,7 @@ static int channel_protocol_select(CHANNEL **rchans, CHANNEL **wchans, CHANNEL *
     j=0;
     for(i=0;echans[i];++i){
         chan=echans[i];
-        if(chan->session->fd==-1 || !chan->open || chan->session->data_except){
+        if(!ssh_socket_is_open(chan->session->socket) || !chan->open || chan->session->data_except){
             eout[j]=chan;
             ++j;
         }
@@ -940,7 +940,7 @@ int channel_select(CHANNEL **readchans, CHANNEL **writechans, CHANNEL **exceptch
     CHANNEL *dummy=NULL;
     CHANNEL **rchans, **wchans, **echans;
     int fdmax=-1;
-    int i,fd;
+    int i;
     int r;
     /* don't allow NULL pointers */
     if(!readchans)
@@ -980,12 +980,25 @@ int channel_select(CHANNEL **readchans, CHANNEL **writechans, CHANNEL **exceptch
         FD_ZERO(&wset);
         FD_ZERO(&eset);
         for(i=0;readchans[i];++i){
-            fd=readchans[i]->session->fd;
+        	if(!ssh_socket_fd_isset(readchans[i]->session->socket,&rset))
+        		ssh_socket_fd_set(readchans[i]->session->socket, &rset, &fdmax);
+        }
+        for(i=0;writechans[i];++i){
+        	if(!ssh_socket_fd_isset(writechans[i]->session->socket,&wset))
+        		ssh_socket_fd_set(writechans[i]->session->socket,&wset, &fdmax);
+        }
+        for(i=0;exceptchans[i];++i){
+            if(!ssh_socket_fd_isset(exceptchans[i]->session->socket,&eset))
+            	ssh_socket_fd_set(exceptchans[i]->session->socket,&eset,&fdmax);
+        }
+
+/*            fd=readchans[i]->session->fd;
             if(!FD_ISSET(fd,&rset)){
                 FD_SET(fd,&rset);
                 if(fd>=fdmax)
                     fdmax=fd+1;
             }
+
         }
         for(i=0;writechans[i];++i){
             fd=writechans[i]->session->fd;
@@ -995,6 +1008,7 @@ int channel_select(CHANNEL **readchans, CHANNEL **writechans, CHANNEL **exceptch
                     fdmax=fd+1;
             }
         }
+
         for(i=0;exceptchans[i];++i){
             fd=exceptchans[i]->session->fd;
             if(!FD_ISSET(fd,&eset)){
@@ -1003,6 +1017,7 @@ int channel_select(CHANNEL **readchans, CHANNEL **writechans, CHANNEL **exceptch
                     fdmax=fd+1;
             }
         }
+*/
         /* here we go */
         r=select(fdmax,&rset,&wset,&eset,timeout);
         /* leave if select was interrupted */
@@ -1013,15 +1028,15 @@ int channel_select(CHANNEL **readchans, CHANNEL **writechans, CHANNEL **exceptch
             return SSH_EINTR;
         }
         for(i=0;readchans[i];++i){
-            if(FD_ISSET(readchans[i]->session->fd,&rset))
+        	if(ssh_socket_fd_isset(readchans[i]->session->socket,&rset))
                 readchans[i]->session->data_to_read=1;
         }
         for(i=0;writechans[i];++i){
-            if(FD_ISSET(writechans[i]->session->fd,&wset))
+            if(ssh_socket_fd_isset(writechans[i]->session->socket,&wset))
                 writechans[i]->session->data_to_write=1;
         }
         for(i=0;exceptchans[i];++i){
-            if(FD_ISSET(exceptchans[i]->session->fd,&eset))
+            if(ssh_socket_fd_isset(exceptchans[i]->session->socket,&eset))
                 exceptchans[i]->session->data_except=1;
         }
     } while(1); /* return to do loop */

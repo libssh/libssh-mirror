@@ -148,7 +148,8 @@ SSH_SESSION *ssh_bind_accept(SSH_BIND *ssh_bind){
     session=ssh_new();
     session->server=1;
     session->version=2;
-    session->fd=fd;
+    session->socket=ssh_socket_new();
+    ssh_socket_set_fd(session->socket,fd);
     session->options=ssh_options_copy(ssh_bind->options);
     session->dsa_key=dsa;
     session->rsa_key=rsa;

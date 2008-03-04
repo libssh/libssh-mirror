@@ -285,7 +285,7 @@ struct error_struct {
 
 struct ssh_session {
     struct error_struct error;
-    int fd;
+    struct socket *socket;
     SSH_OPTIONS *options;
     char *serverbanner;
     char *clientbanner;
@@ -421,6 +421,21 @@ struct ssh_message {
     struct ssh_channel_request_open channel_request_open;
     struct ssh_channel_request channel_request;
 };
+
+/* socketc.c */
+
+struct socket;
+struct socket *ssh_socket_new();
+void ssh_socket_free(struct socket *s);
+void ssh_socket_set_fd(struct socket *s, int fd);
+int ssh_socket_get_fd(struct socket *s);
+void ssh_socket_close(struct socket *s);
+int ssh_socket_read(struct socket *s, void *buffer, int len);
+int ssh_socket_write(struct socket *s,const void *buffer, int len);
+int ssh_socket_is_open(struct socket *s);
+int ssh_socket_fd_isset(struct socket *s, fd_set *set);
+void ssh_socket_fd_set(struct socket *s, fd_set *set, int *fd_max);
+int ssh_socket_completeread(struct socket *s, void *buffer, int len);
 
 /* session.c */
 
@@ -603,7 +618,7 @@ char *my_gcry_bn2dec(bignum bn);
 #endif /* !HAVE_LIBGCRYPT */
 
 #ifdef __cplusplus
-} ;
+} 
 #endif
 
 #endif /* _LIBSSH_PRIV_H */

@@ -42,7 +42,7 @@ SSH_SESSION *ssh_new() {
     memset(session,0,sizeof(SSH_SESSION));
     session->next_crypto=crypto_new();
     session->maxchannel=FIRST_CHANNEL;
-    session->fd=-1;
+    session->socket=ssh_socket_new();
     session->alive=0;
     session->blocking=1;
     return session;
@@ -70,7 +70,8 @@ void ssh_cleanup(SSH_SESSION *session){
         crypto_free(session->current_crypto);
     if(session->next_crypto)
         crypto_free(session->next_crypto);
-
+    if(session->socket)
+    	ssh_socket_free(session->socket);
     // delete all channels
     while(session->channels)
         channel_free(session->channels);
@@ -101,10 +102,8 @@ void ssh_cleanup(SSH_SESSION *session){
  * \param session current ssh session
  */
 void ssh_silent_disconnect(SSH_SESSION *session){
-    if(session->fd>=0)
-        close(session->fd);
+    ssh_socket_close(session->socket);
     session->alive=0;
-    session->fd=-1;
     ssh_disconnect(session);
 }
 
@@ -135,7 +134,7 @@ void ssh_set_blocking(SSH_SESSION *session,int blocking){
  * not connected
  */
 int ssh_get_fd(SSH_SESSION *session){
-    return session->fd;
+    return ssh_socket_get_fd(session->socket);
 }
 
 /** \brief say to the session it has data to read on the file descriptor without blocking

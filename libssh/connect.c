@@ -189,37 +189,38 @@ int ssh_fd_poll(SSH_SESSION *session, int *write, int *except){
     fd_set rdes; // read set
     fd_set wdes; // writing set
     fd_set edes; // exception set
+    int fdmax=-1;
     
     FD_ZERO(&rdes);
     FD_ZERO(&wdes);
     FD_ZERO(&edes);
     
-    if(!session->alive || session->fd<0){
+    if(!session->alive || !ssh_socket_is_open(session->socket)){
         *except=1;
         *write=0;
         session->alive=0;
         return 0;
     }
     if(!session->data_to_read)
-        FD_SET(session->fd,&rdes);
+        ssh_socket_fd_set(session->socket,&rdes,&fdmax);
     if(!session->data_to_write)
-        FD_SET(session->fd,&wdes);
-    FD_SET(session->fd,&edes);
+        ssh_socket_fd_set(session->socket,&wdes,&fdmax);
+    ssh_socket_fd_set(session->socket,&edes,&fdmax);
     
     /* Set to return immediately (no blocking) */
     sometime.tv_sec = 0;
     sometime.tv_usec = 0;
     
     /* Make the call, and listen for errors */
-    if (select(session->fd + 1, &rdes,&wdes,&edes, &sometime) < 0) {
+    if (select(fdmax, &rdes,&wdes,&edes, &sometime) < 0) {
     	ssh_set_error(NULL,SSH_FATAL, "select: %s", strerror(errno));
     	return -1;
     }
     if(!session->data_to_read)
-        session->data_to_read=FD_ISSET(session->fd,&rdes);
+        session->data_to_read=ssh_socket_fd_isset(session->socket,&rdes);
     if(!session->data_to_write)
-        session->data_to_write=FD_ISSET(session->fd,&wdes);
-    *except=FD_ISSET(session->fd,&edes);
+        session->data_to_write=ssh_socket_fd_isset(session->socket,&wdes);
+    *except=ssh_socket_fd_isset(session->socket,&edes);
     *write=session->data_to_write;
     return session->data_to_read;
 }
@@ -285,9 +286,7 @@ int ssh_select(CHANNEL **channels,CHANNEL **outchannels, int maxfd, fd_set *read
     memcpy(&localset,readfds,sizeof(fd_set));
     for(i=0;channels[i];i++){
         if(channels[i]->session->alive){
-            FD_SET(channels[i]->session->fd,&localset);
-            if(channels[i]->session->fd>maxfd-1)
-                maxfd=channels[i]->session->fd+1;
+            ssh_socket_fd_set(channels[i]->session->socket,&localset,&maxfd);
         }
     }
     rep=select(maxfd,&localset,NULL,NULL,timeout);
@@ -301,13 +300,13 @@ int ssh_select(CHANNEL **channels,CHANNEL **outchannels, int maxfd, fd_set *read
     }
     /* set the data_to_read flag on each session */
     for(i=0;channels[i];i++)
-        if(channels[i]->session->alive && FD_ISSET(channels[i]->session->fd,&localset))
+        if(channels[i]->session->alive && ssh_socket_fd_isset(channels[i]->session->socket,&localset))
             channels[i]->session->data_to_read=1;
             
     /* now, test each channel */
     j=0;
     for(i=0;channels[i];i++){
-        if(channels[i]->session->alive && FD_ISSET(channels[i]->session->fd,&localset))
+        if(channels[i]->session->alive && ssh_socket_fd_isset(channels[i]->session->socket,&localset))
             if((channel_poll(channels[i],0)>0) || (channel_poll(channels[i],1)>0)){
                 outchannels[j]=channels[i];
                 j++;

@@ -34,25 +34,7 @@ MA 02111-1307, USA. */
 /* XXX include selected mac size */
 static int macsize=SHA_DIGEST_LEN;
 
-/* completeread will read blocking until len bytes have been read */
-static int completeread(int fd, void *buffer, int len){
-    int r;
-    int total=0;
-    int toread=len;
-    if(fd<0)
-        return SSH_ERROR;
-    while((r=read(fd,buffer+total,toread))){
-        if(r==-1)
-            return SSH_ERROR;
-        total += r;
-        toread-=r;
-        if(total==len)
-            return len;
-        if(r==0)
-            return 0;
-    }
-    return total ; /* connection closed */
-}
+
 
 /* in nonblocking mode, socket_read will read as much as it can, and return */
 /* SSH_OK if it has read at least len bytes, otherwise, SSH_AGAIN. */
@@ -71,13 +53,12 @@ static int socket_read(SSH_SESSION *session,int len){
         return SSH_OK;
     if(session->blocking){
         buf=malloc(to_read);
-        r=completeread(session->fd,buf,to_read);
+        r=ssh_socket_completeread(session->socket,buf,to_read);
         session->data_to_read=0;
         if(r==SSH_ERROR || r ==0){
             ssh_set_error(session,SSH_FATAL,
                 (r==0)?"Connection closed by remote host" : "Error reading socket");
-            close(session->fd);
-            session->fd=-1;
+            ssh_socket_close(session->socket);
             session->alive=0;
             session->data_except=1;
             return SSH_ERROR;
@@ -94,16 +75,14 @@ static int socket_read(SSH_SESSION *session,int len){
             return SSH_AGAIN;
         session->data_to_read=0;
         /* read as much as we can */
-        if(session->fd>0)
-            r=read(session->fd,buffer,sizeof(buffer));
+        if(ssh_socket_is_open(session->socket))
+            r=ssh_socket_read(session->socket,buffer,sizeof(buffer));
         else
             r=-1;
         if(r<=0){
             ssh_set_error(session,SSH_FATAL,
                 (r==0)?"Connection closed by remote host" : "Error reading socket");
-            if(session->fd>=0)
-                close(session->fd);
-            session->fd=-1;
+            ssh_socket_close(session->socket);
             session->data_except=1;
             session->alive=0;
             return SSH_ERROR;
@@ -341,12 +320,13 @@ int packet_translate(SSH_SESSION *session){
     return 0;
 }
 
-static int atomic_write(int fd, void *buffer, int len){
+// FIXME moves it in socket.c and rename it ssh_socket_completewrite()
+static int atomic_write(struct socket *s, void *buffer, int len){
     int written;
-    if(fd<0)
+    if(!ssh_socket_is_open(s))
         return SSH_ERROR;
     while(len >0) {
-        written=write(fd,buffer,len);
+        written=ssh_socket_write(s,buffer,len);
         if(written==0 || written==-1)
             return SSH_ERROR;
         len-=written;
@@ -361,14 +341,15 @@ static int packet_nonblocking_flush(SSH_SESSION *session){
     int except, can_write;
     int w;
     ssh_fd_poll(session,&can_write,&except); /* internally sets data_to_write */
-    if(session->fd<0){
+    if(!ssh_socket_is_open(session->socket)){
         session->alive=0;
+        // FIXME use ssh_socket_get_errno
         ssh_set_error(session,SSH_FATAL,"Writing packet : error on socket (or connection closed): %s",strerror(errno));
         return SSH_ERROR;
     }
     while(session->data_to_write && buffer_get_rest_len(session->out_socket_buffer)>0){
-        if(session->fd>=0){
-            w=write(session->fd,buffer_get_rest(session->out_socket_buffer),
+        if(ssh_socket_is_open(session->socket)){
+            w=ssh_socket_write(session->socket,buffer_get_rest(session->out_socket_buffer),
                 buffer_get_rest_len(session->out_socket_buffer));
             session->data_to_write=0;
         } else
@@ -377,8 +358,8 @@ static int packet_nonblocking_flush(SSH_SESSION *session){
             session->data_to_write=0;
             session->data_except=1;
             session->alive=0;
-            close(session->fd);
-            session->fd=-1;
+            ssh_socket_close(session->socket);
+            // FIXME use ssh_socket_get_errno()
             ssh_set_error(session,SSH_FATAL,"Writing packet : error on socket (or connection closed): %s",
                           strerror(errno));
             return SSH_ERROR;
@@ -394,7 +375,7 @@ static int packet_nonblocking_flush(SSH_SESSION *session){
 
 /* blocking packet flush */
 static int packet_blocking_flush(SSH_SESSION *session){
-    if(session->fd<0) {
+    if(!ssh_socket_is_open(session->socket)) {
         session->alive=0;
         return SSH_ERROR;
     }
@@ -402,13 +383,13 @@ static int packet_blocking_flush(SSH_SESSION *session){
         return SSH_ERROR;
     if(buffer_get_rest(session->out_socket_buffer)==0)
         return SSH_OK;
-    if(atomic_write(session->fd,buffer_get_rest(session->out_socket_buffer),
+    if(atomic_write(session->socket,buffer_get_rest(session->out_socket_buffer),
        buffer_get_rest_len(session->out_socket_buffer))){
         session->data_to_write=0;
         session->data_except=1;
         session->alive=0;
-        close(session->fd);
-        session->fd=-1;
+        ssh_socket_close(session->socket);
+        // FIXME use the proper errno
         ssh_set_error(session,SSH_FATAL,"Writing packet : error on socket (or connection closed): %s",
                          strerror(errno));
         return SSH_ERROR;
@@ -545,8 +526,7 @@ void packet_parse(SSH_SESSION *session){
             case SSH_MSG_DISCONNECT:
                 ssh_say(2,"Received SSH_MSG_DISCONNECT\n");
                 ssh_set_error(session,SSH_FATAL,"Received SSH_MSG_DISCONNECT");
-                close(session->fd);
-                session->fd=-1;
+                ssh_socket_close(session->socket);
                 session->alive=0;
                 return;
             case SSH_SMSG_STDOUT_DATA:
@@ -572,8 +552,7 @@ void packet_parse(SSH_SESSION *session){
                 free(error_s);
                 free(error);
             }
-            close(session->fd);
-            session->fd=-1;
+            ssh_socket_close(session->socket);
             session->alive=0;
             return;
         case SSH2_MSG_CHANNEL_WINDOW_ADJUST:
