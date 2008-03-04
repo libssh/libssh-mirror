@@ -275,11 +275,11 @@ void ssh_options_set_banner(SSH_OPTIONS *opt, char *banner){
  */
 int ssh_options_set_wanted_algos(SSH_OPTIONS *opt,int algo, char *list){
     if(algo > SSH_LANG_S_C || algo < 0){
-        ssh_set_error(NULL,SSH_REQUEST_DENIED,"algo %d out of range",algo);
+        ssh_set_error(opt,SSH_REQUEST_DENIED,"algo %d out of range",algo);
         return -1;
     }
     if( (!opt->use_nonexisting_algo) && !verify_existing_algo(algo,list)){
-        ssh_set_error(NULL,SSH_REQUEST_DENIED,"Setting method : no algorithm "
+        ssh_set_error(opt,SSH_REQUEST_DENIED,"Setting method : no algorithm "
                 "for method \"%s\" (%s)\n",ssh_kex_nums[algo],list);
         return -1;
     }
@@ -289,7 +289,7 @@ int ssh_options_set_wanted_algos(SSH_OPTIONS *opt,int algo, char *list){
     return 0;
 }
 
-static char *get_username_from_uid(int uid){
+static char *get_username_from_uid(SSH_OPTIONS *opt, int uid){
     struct passwd *pwd;
     char *user;
     while((pwd=getpwent())){
@@ -300,7 +300,7 @@ static char *get_username_from_uid(int uid){
         }
     }
     endpwent();
-    ssh_set_error(NULL,SSH_FATAL,"uid %d doesn't exist !",uid);
+    ssh_set_error(opt,SSH_FATAL,"uid %d doesn't exist !",uid);
     return NULL;
 }
 
@@ -314,7 +314,7 @@ int ssh_options_default_username(SSH_OPTIONS *opt){
         opt->username=strdup(user);
         return 0;
     }
-    user=get_username_from_uid(getuid());
+    user=get_username_from_uid(opt,getuid());
     if(user){
         opt->username=user;
         return 0;
@@ -483,7 +483,7 @@ int ssh_options_getopt(SSH_OPTIONS *options, int *argcptr, char **argv){
         save[current++]=argv[optind++];
         
     if(usersa && usedss){
-        ssh_set_error(NULL,SSH_FATAL,"either RSA or DSS must be chosen");
+        ssh_set_error(options,SSH_FATAL,"either RSA or DSS must be chosen");
         cont=0;
     }
     ssh_set_verbosity(debuglevel);

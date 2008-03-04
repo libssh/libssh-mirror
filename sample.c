@@ -379,8 +379,10 @@ int main(int argc, char **argv){
     unsigned char hash[MD5_DIGEST_LEN];
 
     options=ssh_options_new();
-    if(ssh_options_getopt(options,&argc, argv))
-        usage();
+    if(ssh_options_getopt(options,&argc, argv)){
+    	fprintf(stderr,"error parsing command line :%s\n",ssh_get_error(options));
+    	usage();	
+    }
     opts(argc,argv);
     signal(SIGTERM,do_exit);
     if(user)

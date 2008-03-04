@@ -205,7 +205,15 @@ typedef struct signature_struct {
 #endif
 } SIGNATURE;
 
+
+struct error_struct {
+/* error handling */
+    int error_code;
+    char error_buffer[ERROR_BUFFERLEN];
+};
+
 struct ssh_options_struct {
+    struct error_struct error;
     char *banner; /* explicit banner to send */
     char *username;
     char *host;
@@ -274,14 +282,6 @@ struct channel_struct {
     int version;
     int blocking;
 };
-
-
-struct error_struct {
-/* error handling */
-    int error_code;
-    char error_buffer[ERROR_BUFFERLEN];
-};
-
 
 struct ssh_session {
     struct error_struct error;
