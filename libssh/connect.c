@@ -213,7 +213,7 @@ int ssh_fd_poll(SSH_SESSION *session, int *write, int *except){
     
     /* Make the call, and listen for errors */
     if (select(fdmax, &rdes,&wdes,&edes, &sometime) < 0) {
-    	ssh_set_error(NULL,SSH_FATAL, "select: %s", strerror(errno));
+    	ssh_set_error(session,SSH_FATAL, "select: %s", strerror(errno));
     	return -1;
     }
     if(!session->data_to_read)

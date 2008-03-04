@@ -937,7 +937,7 @@ int ssh_write_knownhost(SSH_SESSION *session){
           Be compatible --kv */
        char *e_string, *n_string;
        bignum e, n;
-       PUBLIC_KEY *key = publickey_from_string(pubkey);
+       PUBLIC_KEY *key = publickey_from_string(session, pubkey);
        int rsa_size;
 #ifdef HAVE_LIBGCRYPT
        gcry_sexp_t sexp;

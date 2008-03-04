@@ -540,7 +540,7 @@ static int sig_verify(SSH_SESSION *session, PUBLIC_KEY *pubkey, SIGNATURE *signa
             if(valid==0)
               return 0;
             if (gcry_err_code(valid)!=GPG_ERR_BAD_SIGNATURE){
-              ssh_set_error(NULL,SSH_FATAL,"DSA error : %s", gcry_strerror(valid));
+              ssh_set_error(session,SSH_FATAL,"DSA error : %s", gcry_strerror(valid));
 #elif defined HAVE_LIBCRYPTO
             valid=DSA_do_verify(hash+1,SHA_DIGEST_LEN,signature->dsa_sign,
                 pubkey->dsa_pub);
@@ -562,7 +562,7 @@ static int sig_verify(SSH_SESSION *session, PUBLIC_KEY *pubkey, SIGNATURE *signa
             if(valid==0)
               return 0;
             if(gcry_err_code(valid)!=GPG_ERR_BAD_SIGNATURE){
-                ssh_set_error(NULL,SSH_FATAL,"RSA error : %s",gcry_strerror(valid));
+                ssh_set_error(session,SSH_FATAL,"RSA error : %s",gcry_strerror(valid));
 #elif defined HAVE_LIBCRYPTO
             valid=RSA_verify(NID_sha1,hash+1,SHA_DIGEST_LEN,
             signature->rsa_sign->string,string_len(signature->rsa_sign),pubkey->rsa_pub);
@@ -590,7 +590,7 @@ int signature_verify(SSH_SESSION *session,STRING *signature){
         ssh_say(1,"Host key wasn't verified\n");
         return 0;
     }
-    pubkey=publickey_from_string(session->next_crypto->server_pubkey);
+    pubkey=publickey_from_string(session,session->next_crypto->server_pubkey);
     if(!pubkey)
         return -1;
     if(session->options->wanted_methods[SSH_HOSTKEYS]){
@@ -601,7 +601,7 @@ int signature_verify(SSH_SESSION *session,STRING *signature){
              return -1;
          }
     }
-    sign=signature_from_string(signature,pubkey,pubkey->type);
+    sign=signature_from_string(session, signature,pubkey,pubkey->type);
     if(!sign){
         ssh_set_error(session,SSH_FATAL,"Invalid signature blob");
         publickey_free(pubkey);

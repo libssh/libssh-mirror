@@ -44,7 +44,7 @@ char *ssh_type_to_char(int type){
     }
 }
 
-PUBLIC_KEY *publickey_make_dss(BUFFER *buffer){
+PUBLIC_KEY *publickey_make_dss(SSH_SESSION *session, BUFFER *buffer){
     STRING *p,*q,*g,*pubkey;
     PUBLIC_KEY *key=malloc(sizeof(PUBLIC_KEY));
     key->type=TYPE_DSS;
@@ -55,7 +55,7 @@ PUBLIC_KEY *publickey_make_dss(BUFFER *buffer){
     pubkey=buffer_get_ssh_string(buffer);
     buffer_free(buffer); /* we don't need it anymore */
     if(!p || !q || !g || !pubkey){
-        ssh_set_error(NULL,SSH_FATAL,"Invalid DSA public key");
+        ssh_set_error(session,SSH_FATAL,"Invalid DSA public key");
         if(p)
             free(p);
         if(q)
@@ -68,7 +68,7 @@ PUBLIC_KEY *publickey_make_dss(BUFFER *buffer){
         return NULL;
     }
 #ifdef HAVE_LIBGCRYPT
-    gcry_sexp_build(&key->dsa_pub,NULL,"(public-key(dsa(p %b)(q %b)(g %b)(y %b)))",string_len(p),p->string,string_len(q),q->string,string_len(g),g->string,string_len(pubkey),pubkey->string);
+    gcry_sexp_build(&key->dsa_pub,session,"(public-key(dsa(p %b)(q %b)(g %b)(y %b)))",string_len(p),p->string,string_len(q),q->string,string_len(g),g->string,string_len(pubkey),pubkey->string);
 #elif defined HAVE_LIBCRYPTO
     key->dsa_pub=DSA_new();
     key->dsa_pub->p=make_string_bn(p);
@@ -83,7 +83,7 @@ PUBLIC_KEY *publickey_make_dss(BUFFER *buffer){
     return key;
 }
 
-PUBLIC_KEY *publickey_make_rsa(BUFFER *buffer, char *type){
+PUBLIC_KEY *publickey_make_rsa(SSH_SESSION *session, BUFFER *buffer, char *type){
     STRING *e,*n;
     PUBLIC_KEY *key=malloc(sizeof(PUBLIC_KEY));
     if(!strcmp(type,"ssh-rsa"))
@@ -95,7 +95,7 @@ PUBLIC_KEY *publickey_make_rsa(BUFFER *buffer, char *type){
     n=buffer_get_ssh_string(buffer);
     buffer_free(buffer); /* we don't need it anymore */
     if(!e || !n){
-        ssh_set_error(NULL,SSH_FATAL,"Invalid RSA public key");
+        ssh_set_error(session,SSH_FATAL,"Invalid RSA public key");
         if(e)
             free(e);
         if(n)
@@ -144,7 +144,7 @@ void publickey_free(PUBLIC_KEY *key){
     free(key);
 }
 
-PUBLIC_KEY *publickey_from_string(STRING *pubkey_s){
+PUBLIC_KEY *publickey_from_string(SSH_SESSION *session, STRING *pubkey_s){
     BUFFER *tmpbuf=buffer_new();
     STRING *type_s;
     char *type;
@@ -153,24 +153,24 @@ PUBLIC_KEY *publickey_from_string(STRING *pubkey_s){
     type_s=buffer_get_ssh_string(tmpbuf);
     if(!type_s){
         buffer_free(tmpbuf);
-        ssh_set_error(NULL,SSH_FATAL,"Invalid public key format");
+        ssh_set_error(session,SSH_FATAL,"Invalid public key format");
         return NULL;
     }
     type=string_to_char(type_s);
     free(type_s);
     if(!strcmp(type,"ssh-dss")){
         free(type);
-        return publickey_make_dss(tmpbuf);
+        return publickey_make_dss(session, tmpbuf);
     }
     if(!strcmp(type,"ssh-rsa")){
         free(type);
-        return publickey_make_rsa(tmpbuf,"ssh-rsa");
+        return publickey_make_rsa(session, tmpbuf,"ssh-rsa");
     }
     if(!strcmp(type,"ssh-rsa1")){
         free(type);
-        return publickey_make_rsa(tmpbuf,"ssh-rsa1");
+        return publickey_make_rsa(session, tmpbuf,"ssh-rsa1");
     }
-    ssh_set_error(NULL,SSH_FATAL,"unknown public key protocol %s",type);
+    ssh_set_error(session,SSH_FATAL,"unknown public key protocol %s",type);
     buffer_free(tmpbuf);
     free(type);
     return NULL;
@@ -428,7 +428,7 @@ STRING *signature_to_string(SIGNATURE *sign){
 }
 
 /* TODO : split this function in two so it becomes smaller */
-SIGNATURE *signature_from_string(STRING *signature,PUBLIC_KEY *pubkey,int needed_type){
+SIGNATURE *signature_from_string(SSH_SESSION *session, STRING *signature,PUBLIC_KEY *pubkey,int needed_type){
 #ifdef HAVE_LIBGCRYPT
     gcry_sexp_t sig;
 #elif defined HAVE_LIBCRYPTO
@@ -444,7 +444,7 @@ SIGNATURE *signature_from_string(STRING *signature,PUBLIC_KEY *pubkey,int needed
     buffer_add_data(tmpbuf,signature->string,string_len(signature));
     type_s=buffer_get_ssh_string(tmpbuf);
     if(!type_s){
-        ssh_set_error(NULL,SSH_FATAL,"Invalid signature packet");
+        ssh_set_error(session,SSH_FATAL,"Invalid signature packet");
         buffer_free(tmpbuf);
         return NULL;
     }
@@ -453,7 +453,7 @@ SIGNATURE *signature_from_string(STRING *signature,PUBLIC_KEY *pubkey,int needed
     switch(needed_type){
         case TYPE_DSS:
             if(strcmp(type,"ssh-dss")){
-                ssh_set_error(NULL,SSH_FATAL,"Invalid signature type : %s",type);
+                ssh_set_error(session,SSH_FATAL,"Invalid signature type : %s",type);
                 buffer_free(tmpbuf);
                 free(type);
                 return NULL;
@@ -461,14 +461,14 @@ SIGNATURE *signature_from_string(STRING *signature,PUBLIC_KEY *pubkey,int needed
             break;
         case TYPE_RSA:
             if(strcmp(type,"ssh-rsa")){
-                ssh_set_error(NULL,SSH_FATAL,"Invalid signature type : %s",type);
+                ssh_set_error(session,SSH_FATAL,"Invalid signature type : %s",type);
                 buffer_free(tmpbuf);
                 free(type);
                 return NULL;
             }
             break;
         default:
-            ssh_set_error(NULL,SSH_FATAL,"Invalid signature type : %s",type);
+            ssh_set_error(session,SSH_FATAL,"Invalid signature type : %s",type);
             free(type);
             buffer_free(tmpbuf);
             return NULL;
@@ -520,7 +520,7 @@ SIGNATURE *signature_from_string(STRING *signature,PUBLIC_KEY *pubkey,int needed
             if(len>rsalen){
                 free(e);
                 free(sign);
-                ssh_set_error(NULL,SSH_FATAL,"signature too big ! %d instead of %d",len,rsalen);
+                ssh_set_error(session,SSH_FATAL,"signature too big ! %d instead of %d",len,rsalen);
                 return NULL;
             }
             if(len<rsalen)

@@ -493,7 +493,7 @@ static int crypt_set_algorithms1(SSH_SESSION *session){
     while(ssh_ciphertab[i].name && strcmp(ssh_ciphertab[i].name,"3des-cbc-ssh1"))
         ++i;
     if(!ssh_ciphertab[i].name){
-        ssh_set_error(NULL,SSH_FATAL,"cipher 3des-cbc-ssh1 not found !");
+        ssh_set_error(session,SSH_FATAL,"cipher 3des-cbc-ssh1 not found !");
         return -1;
     }
     session->next_crypto->out_cipher=cipher_new(i);

@@ -408,7 +408,7 @@ int ssh_get_kex1(SSH_SESSION *session){
     }
     ssh_say(3,"Got a SSH_SMSG_PUBLIC_KEY\n");
     if(buffer_get_data(session->in_buffer,session->server_kex.cookie,8)!=8){
-        ssh_set_error(NULL,SSH_FATAL,"Can't get cookie in buffer");
+        ssh_set_error(session,SSH_FATAL,"Can't get cookie in buffer");
         return -1;
     }
     buffer_get_u32(session->in_buffer,&server_bits);
@@ -422,7 +422,7 @@ int ssh_get_kex1(SSH_SESSION *session){
     ko=buffer_get_u32(session->in_buffer,&supported_authentications_mask);
     if((ko!=sizeof(u32)) || !host_mod || !host_exp || !server_mod || !server_exp){
         ssh_say(2,"Invalid SSH_SMSG_PUBLIC_KEY packet\n");
-        ssh_set_error(NULL,SSH_FATAL,"Invalid SSH_SMSG_PUBLIC_KEY packet");
+        ssh_set_error(session,SSH_FATAL,"Invalid SSH_SMSG_PUBLIC_KEY packet");
         if(host_mod)
             free(host_mod);
         if(host_exp)
@@ -449,15 +449,15 @@ int ssh_get_kex1(SSH_SESSION *session){
     free(server_mod);
     free(host_exp);
     free(host_mod);
-    svr=publickey_from_string(serverkey);
-    host=publickey_from_string(hostkey);
+    svr=publickey_from_string(session, serverkey);
+    host=publickey_from_string(session, hostkey);
     session->next_crypto->server_pubkey=string_copy(hostkey);
     session->next_crypto->server_pubkey_type="ssh-rsa1";
 
     /* now, we must choose an encryption algo */
     /* hardcode 3des */
     if(!(supported_ciphers_mask & (1<<SSH_CIPHER_3DES))){
-        ssh_set_error(NULL,SSH_FATAL,"Remote server doesn't accept 3des");
+        ssh_set_error(session,SSH_FATAL,"Remote server doesn't accept 3des");
         return -1;
     }
     packet_clear_out(session);

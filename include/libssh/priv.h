@@ -511,10 +511,10 @@ PRIVATE_KEY  *_privatekey_from_file(void *session,char *filename,int type);
 
 /* in keys.c */
 char *ssh_type_to_char(int type);
-PUBLIC_KEY *publickey_make_dss(BUFFER *buffer);
-PUBLIC_KEY *publickey_make_rsa(BUFFER *buffer,char *type);
-PUBLIC_KEY *publickey_from_string(STRING *pubkey_s);
-SIGNATURE *signature_from_string(STRING *signature,PUBLIC_KEY *pubkey,int needed_type);
+PUBLIC_KEY *publickey_make_dss(SSH_SESSION *session, BUFFER *buffer);
+PUBLIC_KEY *publickey_make_rsa(SSH_SESSION *session, BUFFER *buffer,char *type);
+PUBLIC_KEY *publickey_from_string(SSH_SESSION *session, STRING *pubkey_s);
+SIGNATURE *signature_from_string(SSH_SESSION *session, STRING *signature,PUBLIC_KEY *pubkey,int needed_type);
 void signature_free(SIGNATURE *sign);
 STRING *ssh_do_sign(SSH_SESSION *session,BUFFER *sigbuf, 
         PRIVATE_KEY *privatekey);
