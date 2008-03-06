@@ -463,8 +463,8 @@ static int crypt_set_algorithms2(SSH_SESSION *session){
     while(ssh_ciphertab[i].name && strcmp(wanted,ssh_ciphertab[i].name))
         i++;
     if(!ssh_ciphertab[i].name){
-        ssh_set_error(session,SSH_FATAL,"Crypt_set_algorithms : no crypto algorithm function found for %s",wanted);
-        return -1;
+        ssh_set_error(session,SSH_FATAL,"Crypt_set_algorithms2 : no crypto algorithm function found for %s",wanted);
+        return SSH_ERROR;
     }
     ssh_say(2,"Set output algorithm %s\n",wanted);
     session->next_crypto->out_cipher=cipher_new(i);
@@ -475,7 +475,7 @@ static int crypt_set_algorithms2(SSH_SESSION *session){
         i++;
     if(!ssh_ciphertab[i].name){
         ssh_set_error(session,SSH_FATAL,"Crypt_set_algorithms : no crypto algorithm function found for %s",wanted);
-        return -1;
+        return SSH_ERROR;
     }
     ssh_say(2,"Set input algorithm %s\n",wanted);
     session->next_crypto->in_cipher=cipher_new(i);
@@ -484,7 +484,7 @@ static int crypt_set_algorithms2(SSH_SESSION *session){
         session->next_crypto->do_compress_out=1;
     if(strstr(session->client_kex.methods[SSH_COMP_S_C],"zlib"))
         session->next_crypto->do_compress_in=1;
-    return 0;
+    return SSH_OK;
 }
 
 static int crypt_set_algorithms1(SSH_SESSION *session){
@@ -498,7 +498,7 @@ static int crypt_set_algorithms1(SSH_SESSION *session){
     }
     session->next_crypto->out_cipher=cipher_new(i);
     session->next_crypto->in_cipher=cipher_new(i);
-    return 0;
+    return SSH_OK;
 }
 
 int crypt_set_algorithms(SSH_SESSION *session){
@@ -506,6 +506,7 @@ int crypt_set_algorithms(SSH_SESSION *session){
         crypt_set_algorithms2(session);
 }
 
+// TODO Obviously too much cut and paste here
 int crypt_set_algorithms_server(SSH_SESSION *session){
     /* we must scan the kex entries to find crypto algorithms and set their appropriate structure */
     int i=0;
@@ -513,11 +514,15 @@ int crypt_set_algorithms_server(SSH_SESSION *session){
     char *server=session->server_kex.methods[SSH_CRYPT_S_C];
     char *client=session->client_kex.methods[SSH_CRYPT_S_C];
     char *match=ssh_find_matching(client,server);
+    if(!match){
+        ssh_set_error(session,SSH_FATAL,"Crypt_set_algorithms_server : no matching algorithm function found for %s",server);
+        return SSH_ERROR;
+    }
     while(ssh_ciphertab[i].name && strcmp(match,ssh_ciphertab[i].name))
         i++;
     if(!ssh_ciphertab[i].name){
-        ssh_set_error(session,SSH_FATAL,"Crypt_set_algorithms : no crypto algorithm function found for %s",server);
-        return -1;
+        ssh_set_error(session,SSH_FATAL,"Crypt_set_algorithms_server : no crypto algorithm function found for %s",server);
+        return SSH_ERROR;
     }
     ssh_say(2,"Set output algorithm %s\n",match);
     session->next_crypto->out_cipher=cipher_new(i);
@@ -525,12 +530,16 @@ int crypt_set_algorithms_server(SSH_SESSION *session){
     /* in */
     client=session->client_kex.methods[SSH_CRYPT_C_S];
     server=session->server_kex.methods[SSH_CRYPT_S_C];
-    match=ssh_find_matching(client,server); 
+    match=ssh_find_matching(client,server);
+    if(!match){
+        ssh_set_error(session,SSH_FATAL,"Crypt_set_algorithms_server : no matching algorithm function found for %s",server);
+        return SSH_ERROR;
+    }
     while(ssh_ciphertab[i].name && strcmp(match,ssh_ciphertab[i].name))
         i++;
     if(!ssh_ciphertab[i].name){
-        ssh_set_error(session,SSH_FATAL,"Crypt_set_algorithms : no crypto algorithm function found for %s",server);
-        return -1;
+        ssh_set_error(session,SSH_FATAL,"Crypt_set_algorithms_server : no crypto algorithm function found for %s",server);
+        return SSH_ERROR;
     }
     ssh_say(2,"Set input algorithm %s\n",match);
     session->next_crypto->in_cipher=cipher_new(i);
@@ -560,7 +569,7 @@ int crypt_set_algorithms_server(SSH_SESSION *session){
         session->hostkeys=TYPE_RSA;
     else {
         ssh_set_error(session,SSH_FATAL,"cannot know what %s is into %s",match,server);
-        return -1;
+        return SSH_ERROR;
     }
-    return 0;
+    return SSH_OK;
 }
