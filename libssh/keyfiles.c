@@ -457,16 +457,11 @@ int read_dsa_privatekey(FILE *fp, gcry_sexp_t *r, int cb(char *, int , int , cha
 }
 #endif /* GCRYPT */
 
+
+/* completely deprecated */
 static int default_get_password(char *buf, int size,int rwflag, char *descr){
-    char *pass;
-    char buffer[256];
-    int len;
-    snprintf(buffer,256,"Please enter passphrase for %s",descr);
-    pass=getpass(buffer);
-    snprintf(buf,size,"%s",pass);
-    len=strlen(buf);
-    memset(pass,0,strlen(pass));
-    return len;
+	memset(buf,0,size);
+	return 0;
 }
 
 /* in case the passphrase has been given in parameter */
