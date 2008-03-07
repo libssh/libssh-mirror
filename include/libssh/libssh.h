@@ -29,7 +29,7 @@ MA 02111-1307, USA. */
 #endif
 #include <inttypes.h>
 
-#define LIBSSH_VERSION "libssh-0.2"
+#define LIBSSH_VERSION "libssh-0.2.1-svn"
 
 #ifdef __cplusplus
 extern "C" {
