@@ -20,17 +20,21 @@ along with the SSH Library; see the file COPYING.  If not, write to
 the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA. */
 
-#include <netdb.h>
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <sys/types.h>
+#ifdef _WIN32
+#define _WIN32_WINNT 0x0501 //getaddrinfo, freeaddrinfo, getnameinfo
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#else
+#include <netdb.h>
 #include <sys/socket.h>
 #include <sys/select.h>
-#include <sys/time.h>
 #include <netinet/in.h>
+#endif
 #include <fcntl.h>
 #include "libssh/priv.h"
 
@@ -42,12 +46,23 @@ MA 02111-1307, USA. */
 #error "Your system must have getaddrinfo()"
 #endif
 
-static void sock_set_nonblocking(int sock) {
+#ifndef _WIN32
+static void sock_set_nonblocking(socket_t sock) {
     fcntl(sock,F_SETFL,O_NONBLOCK);
 }
-static void sock_set_blocking(int sock){
+static void sock_set_blocking(socket_t sock){
     fcntl(sock,F_SETFL,0);
 }
+#else
+static void sock_set_nonblocking(socket_t sock) {
+        u_long nonblocking = 1;
+        ioctlsocket(sock, FIONBIO, &nonblocking);
+}
+static void sock_set_blocking(socket_t sock){
+        u_long nonblocking = 0;
+        ioctlsocket(sock, FIONBIO, &nonblocking);
+}
+#endif
 
 static int getai(const char *host, int port, struct addrinfo **ai)
 {
@@ -69,7 +84,7 @@ static int getai(const char *host, int port, struct addrinfo **ai)
 }
 
 int ssh_connect_ai_timeout(SSH_SESSION *session, const char *host, int port, struct addrinfo *ai,
-                           long timeout, long usec,int s)
+                           long timeout, long usec,socket_t s)
 {
     struct timeval to;
     fd_set set;
@@ -94,6 +109,7 @@ int ssh_connect_ai_timeout(SSH_SESSION *session, const char *host, int port, str
         close(s);
         return -1;
     }
+    ret = 0;
     /* get connect(2) return code. zero means no error */
     getsockopt(s,SOL_SOCKET,SO_ERROR,&ret,&len);
     if (ret!=0){
@@ -111,9 +127,9 @@ int ssh_connect_ai_timeout(SSH_SESSION *session, const char *host, int port, str
 /* specified by its IP address or hostname. */
 /* output is the file descriptor, <0 if failed. */
 
-int ssh_connect_host(SSH_SESSION *session, const char *host, const char 
+socket_t ssh_connect_host(SSH_SESSION *session, const char *host, const char 
         *bind_addr, int port,long timeout, long usec){
-    int s=-1;
+    socket_t s=-1;
     int my_errno;
     struct addrinfo *ai, *ai2;
 
@@ -239,7 +255,7 @@ int ssh_fd_poll(SSH_SESSION *session, int *write, int *except){
  * \warning libssh is not threadsafe. That means that if a signal is caught during the processing
  * of this function, you cannot call ssh functions on sessions that are busy with ssh_select()
  */
-int ssh_select(CHANNEL **channels,CHANNEL **outchannels, int maxfd, fd_set *readfds, struct timeval *timeout){
+int ssh_select(CHANNEL **channels,CHANNEL **outchannels, socket_t maxfd, fd_set *readfds, struct timeval *timeout){
     struct timeval zerotime;
     fd_set localset,localset2;
     int rep;

@@ -18,15 +18,17 @@ You should have received a copy of the GNU Lesser General Public License
 along with the SSH Library; see the file COPYING.  If not, write to
 the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA. */
+
+#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <netdb.h>
 #include "libssh/libssh.h"
 #include "libssh/sftp.h"
 #include "libssh/ssh2.h"
 #include "libssh/priv.h"
-#include <unistd.h>
-#include <stdlib.h>
-#include <string.h>
-#include <netdb.h>
-#include <stdio.h>
+
 
 SFTP_CLIENT_MESSAGE *sftp_get_client_message(SFTP_SESSION *sftp){
     SFTP_PACKET *packet=sftp_packet_read(sftp);

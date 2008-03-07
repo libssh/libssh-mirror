@@ -21,7 +21,12 @@ MA 02111-1307, USA. */
 #ifndef _LIBSSH_H
 #define _LIBSSH_H
 #include <unistd.h>
+#ifndef _WIN32
 #include <sys/select.h> /* for fd_set * */
+#endif
+#ifdef _WIN32
+#include <winsock2.h>
+#endif
 #include <inttypes.h>
 
 #define LIBSSH_VERSION "libssh-0.2"
@@ -44,6 +49,13 @@ typedef uint32_t u32;
 typedef uint16_t u16;
 typedef uint64_t u64;
 typedef uint8_t u8;
+
+/* Socket type */
+#ifdef _WIN32
+#define socket_t SOCKET
+#else
+typedef int socket_t;
+#endif
 
 /* the offsets of methods */
 #define SSH_KEX 0
@@ -110,7 +122,7 @@ void ssh_set_verbosity(int num);
 /* session.c */
 SSH_SESSION *ssh_new();
 void ssh_set_options(SSH_SESSION *session, SSH_OPTIONS *options);
-int ssh_get_fd(SSH_SESSION *session);
+socket_t ssh_get_fd(SSH_SESSION *session);
 void ssh_silent_disconnect(SSH_SESSION *session);
 int ssh_get_version(SSH_SESSION *session);
 void ssh_set_fd_toread(SSH_SESSION *session);

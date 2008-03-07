@@ -19,19 +19,22 @@
  * along with the SSH Library; see the file COPYING.  If not, write to
  * the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
  * MA 02111-1307, USA. */
-#include "libssh/priv.h"
+
 #include <unistd.h>
 #include <errno.h>
-#ifdef _WIN_32
+#ifdef _WIN32
 #include <winsock2.h>
-#endif
+#else
 #include <sys/types.h>
 #include <sys/socket.h>
+#endif
+#include "libssh/priv.h"
 
 struct socket {
-	int fd;
+	socket_t fd;
 	int last_errno;
 };
+
 
 /*
  * \internal
@@ -48,6 +51,7 @@ struct socket *ssh_socket_new(){
  * \brief Deletes a socket object
  */
 void ssh_socket_free(struct socket *s){
+    ssh_socket_close(s);
 	free(s);
 }
 
@@ -58,10 +62,11 @@ void ssh_socket_close(struct socket *s){
 	if(ssh_socket_is_open(s)){
 #ifdef _WIN_32
 		closesocket(s->fd);
+		s->last_errno=WSAGetLastError();
 #else
 		close(s->fd);
-#endif
 		s->last_errno=errno;
+#endif		
 		s->fd=-1;
 	}
 }
@@ -69,14 +74,14 @@ void ssh_socket_close(struct socket *s){
 /* \internal
  * \brief sets the file descriptor of the socket
  */
-void ssh_socket_set_fd(struct socket *s, int fd){
+void ssh_socket_set_fd(struct socket *s, socket_t fd){
 	s->fd=fd;
 }
 
 /* \internal
  * \brief returns the file descriptor of the socket
  */
-int ssh_socket_get_fd(struct socket *s){
+socket_t ssh_socket_get_fd(struct socket *s){
 	return s->fd;
 }
 
@@ -92,7 +97,11 @@ int ssh_socket_is_open(struct socket *s){
  */
 int ssh_socket_read(struct socket *s, void *buffer, int len){
 	int r=recv(s->fd,buffer,len,0);
-	s->last_errno=errno;
+#ifndef _WIN32	
+    s->last_errno=errno;
+#else
+    s->last_errno=WSAGetLastError();
+#endif	
 	return r;
 }
 
@@ -101,7 +110,12 @@ int ssh_socket_read(struct socket *s, void *buffer, int len){
  */
 int ssh_socket_write(struct socket *s,const void *buffer, int len){
 	int w=send(s->fd,buffer,len,0);
-	s->last_errno=errno;
+#ifndef _WIN32
+    s->last_errno=errno;
+#else
+    s->last_errno=WSAGetLastError();
+#endif
+
 	return w;
 }
 

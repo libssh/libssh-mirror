@@ -26,13 +26,14 @@ MA 02111-1307, USA. */
  * functions to handle it (or use the default handlers if she doesn't know what to
  * do */
 
+#include <string.h>
+#include <stdlib.h>
+#include <netdb.h>
 #include "libssh/libssh.h"
 #include "libssh/priv.h"
 #include "libssh/server.h"
 #include "libssh/ssh2.h"
-#include <netdb.h>
-#include <string.h>
-#include <stdlib.h>
+
 
 static SSH_MESSAGE *message_new(SSH_SESSION *session){
     SSH_MESSAGE *msg=session->ssh_message;

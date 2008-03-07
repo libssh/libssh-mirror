@@ -24,6 +24,7 @@ MA 02111-1307, USA. */
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <netdb.h>
 
 #ifdef OPENSSL_CRYPTO
 #include <openssl/blowfish.h>
@@ -31,7 +32,6 @@ MA 02111-1307, USA. */
 #include <openssl/hmac.h>
 #endif
 
-#include <netdb.h>
 #include "libssh/priv.h"
 #include "libssh/crypto.h"
 

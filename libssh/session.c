@@ -133,7 +133,8 @@ void ssh_set_blocking(SSH_SESSION *session,int blocking){
  * \return file descriptor of the connection, or -1 if it is
  * not connected
  */
-int ssh_get_fd(SSH_SESSION *session){
+
+socket_t ssh_get_fd(SSH_SESSION *session){
     return ssh_socket_get_fd(session->socket);
 }
 

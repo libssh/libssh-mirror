@@ -25,10 +25,22 @@ MA 02111-1307, USA. */
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdio.h>
-#include <sys/types.h>
+#ifdef _WIN32
+#include <winsock2.h>
+#define SOCKOPT_TYPE_ARG4 char
+
+/* We need to provide hstrerror. Not we can't call the parameter h_errno because it's #defined */
+inline char* hstrerror(int h_errno_val) {
+    static char text[50];
+    snprintf(text,sizeof(text),"gethostbyname error %d\n", h_errno_val);
+    return text;
+}
+#else
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#define SOCKOPT_TYPE_ARG4 int
+#endif
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
@@ -36,10 +48,12 @@ MA 02111-1307, USA. */
 #include "libssh/libssh.h"
 #include "libssh/server.h"
 #include "libssh/ssh2.h"
-static int bind_socket(SSH_BIND *ssh_bind,char *hostname, int port) {
+
+// TODO: must use getaddrinfo
+static socket_t bind_socket(SSH_BIND *ssh_bind,char *hostname, int port) {
     struct sockaddr_in myaddr;
     int opt = 1;
-    int s = socket(PF_INET, SOCK_STREAM, 0);
+    socket_t s = socket(PF_INET, SOCK_STREAM, 0);
     struct hostent *hp=NULL;
 #ifdef HAVE_GETHOSTBYNAME
     hp=gethostbyname(hostname);
