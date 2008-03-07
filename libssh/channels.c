@@ -805,8 +805,7 @@ int channel_read(CHANNEL *channel, BUFFER *buffer,int bytes,int is_stderr){
  * \return number of bytes available for reading\n
  * 0 if nothing is available\n
  * SSH_ERROR on error
- * \warning don't forget to check for EOF as it would 
- * return 0 here
+ * \warning When the channel is in EOF state, the function returns 1
  * \see channel_is_eof()
  */
 int channel_poll(CHANNEL *channel, int is_stderr){
