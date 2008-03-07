@@ -235,6 +235,7 @@ int ssh_connect(SSH_SESSION *session){
   session->alive=0;
   session->client=1;
   ssh_crypto_init();
+  ssh_socket_init();
   if(options->fd==-1 && !options->host){
       ssh_set_error(session,SSH_FATAL,"Hostname required");
       return SSH_ERROR;

@@ -24,11 +24,20 @@ MA 02111-1307, USA. */
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
-#include <pwd.h>
 #include <sys/types.h>
+
+#ifdef _WIN32
+#define _WIN32_IE 0x0400 //SHGetSpecialFolderPath
+#include <shlobj.h>
+#include <winsock2.h>
+#else
+#include <pwd.h>
 #include <netdb.h>
+#endif
+
 #include "libssh/libssh.h"
 
+#ifndef _WIN32
 /* if the program was executed suid root, don't trust the user ! */
 static int is_trusted(){
     if(geteuid()!=getuid())
@@ -76,6 +85,18 @@ char *ssh_get_user_home_dir(){
     }
     return get_homedir_from_uid(getuid());
 }
+
+#else /* _WIN32 */
+
+char *ssh_get_user_home_dir(){
+	static char szPath[MAX_PATH];
+	if (SHGetSpecialFolderPathA(NULL, szPath, CSIDL_PROFILE, TRUE))
+		return szPath;
+	else
+		return NULL;
+}
+
+#endif
 
 /* we have read access on file */
 int ssh_file_readaccess_ok(char *file){

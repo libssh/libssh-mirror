@@ -23,7 +23,9 @@ MA 02111-1307, USA. */
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#ifndef _WIN32
 #include <pwd.h>
+#endif
 #include <sys/types.h>
 #include "libssh/priv.h"
 
@@ -176,7 +178,7 @@ void ssh_options_set_username(SSH_OPTIONS *opt, char *username){
  * \param opt options structure
  * \param fd an opened file descriptor to use
  */
-void ssh_options_set_fd(SSH_OPTIONS *opt, int fd){
+void ssh_options_set_fd(SSH_OPTIONS *opt, socket_t fd){
     opt->fd=fd;
 }
 
@@ -289,6 +291,7 @@ int ssh_options_set_wanted_algos(SSH_OPTIONS *opt,int algo, char *list){
     return 0;
 }
 
+#ifndef _WIN32
 static char *get_username_from_uid(SSH_OPTIONS *opt, int uid){
     struct passwd *pwd;
     char *user;
@@ -303,6 +306,7 @@ static char *get_username_from_uid(SSH_OPTIONS *opt, int uid){
     ssh_set_error(opt,SSH_FATAL,"uid %d doesn't exist !",uid);
     return NULL;
 }
+#endif
 
 /* this function must be called when no specific username has been asked. it has to guess it */
 int ssh_options_default_username(SSH_OPTIONS *opt){
@@ -314,11 +318,23 @@ int ssh_options_default_username(SSH_OPTIONS *opt){
         opt->username=strdup(user);
         return 0;
     }
+#ifndef _WIN32
     user=get_username_from_uid(opt,getuid());
     if(user){
         opt->username=user;
         return 0;
     }
+#else
+    DWORD Size = 0;
+    GetUserName(NULL, &Size); //Get Size
+    user = malloc(Size);
+    if (GetUserName(user, &Size)){
+    	opt->username=user;
+    	return 0;
+    } else {
+    	free(user);
+    }
+#endif
     return -1;
 }
 

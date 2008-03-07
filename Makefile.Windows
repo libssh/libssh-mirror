@@ -1,0 +1,33 @@
+CC= gcc
+INCS= -I. -Iinclude -Ic:/progra~1/gnuwin32/include
+CFLAGS= $(INCS)
+LINK= -L. -Lc:/progra~1/gnuwin32/lib  -lws2_32 -lcrypto -lgdi32 -lshell32 -lz
+
+libssh_HEADERS= config.h include/libssh/crypto.h include/libssh/libssh.h include/libssh/priv.h include/libssh/server.h include/libssh/sftp.h include/libssh/ssh1.h include/libssh/ssh2.h
+libssh_OBJS = libssh/auth1.o libssh/auth.o libssh/base64.o libssh/buffer.o	\
+		 libssh/channels1.o libssh/channels.o libssh/client.o libssh/connect.o	\
+		 libssh/crc32.o libssh/crypt.o libssh/dh.o libssh/error.o libssh/gcrypt_missing.o	\
+		 libssh/gzip.o libssh/init.o libssh/kex.o libssh/keyfiles.o	\
+		 libssh/keys.o libssh/messages.o libssh/misc.o libssh/options.o	\
+		 libssh/packet.o libssh/server.o libssh/session.o libssh/sftp.o	\
+		 libssh/sftpserver.o libssh/string.o libssh/wrapper.o libssh/socket.o
+
+
+all: libssh.dll samplesshd.exe
+
+config.h: config.h.win32-openssl
+	copy config.h.win32-openssl config.h
+
+%.o: %.c $(libssh_HEADERS)
+	$(CC) -c $< -o $@ $(CFLAGS)
+
+sample.exe: sample.o $(libssh_OBJS)
+	$(CC) $< -o $@ $(libssh_OBJS) $(LINK)
+samplesshd.exe: samplesshd.o $(libssh_OBJS)
+	$(CC) $< -o $@ $(libssh_OBJS) $(LINK)
+
+libssh.dll: $(libssh_OBJS)
+	$(CC) -shared $(libssh_OBJS) -o libssh.dll $(LINK)
+
+clean:
+	rm -f $(libssh_OBJS) samplesshd.exe sample.exe libssh.dll config.h

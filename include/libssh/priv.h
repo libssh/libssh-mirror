@@ -222,7 +222,7 @@ struct ssh_options_struct {
     char *identity;
     char *ssh_dir;
     char *known_hosts_file;
-    int fd; /* specificaly wanted file descriptor, don't connect host */
+    socket_t fd; /* specificaly wanted file descriptor, don't connect host */
     int port;
     int dont_verify_hostkey; /* Don't spare time, don't check host key ! unneeded to say it's dangerous and not safe */
     int use_nonexisting_algo; /* if user sets a not supported algorithm for kex, don't complain */
@@ -370,7 +370,7 @@ struct ssh_kbdint {
 
 struct ssh_bind_struct {
     struct error_struct error;
-    int bindfd;
+    socket_t bindfd;
     SSH_OPTIONS *options;
     int blocking;
     int toaccept;
@@ -425,10 +425,11 @@ struct ssh_message {
 /* socketc.c */
 
 struct socket;
+void ssh_socket_init();
 struct socket *ssh_socket_new();
 void ssh_socket_free(struct socket *s);
-void ssh_socket_set_fd(struct socket *s, int fd);
-int ssh_socket_get_fd(struct socket *s);
+void ssh_socket_set_fd(struct socket *s, socket_t fd);
+socket_t ssh_socket_get_fd(struct socket *s);
 void ssh_socket_close(struct socket *s);
 int ssh_socket_read(struct socket *s, void *buffer, int len);
 int ssh_socket_write(struct socket *s,const void *buffer, int len);

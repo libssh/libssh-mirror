@@ -22,6 +22,9 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA. */
 
 #include "libssh/priv.h"
+#ifdef _WIN32
+#include <winsock2.h>
+#endif
 
 int ssh_finalize()
 {
@@ -30,6 +33,9 @@ int ssh_finalize()
   gcry_control(GCRYCTL_TERM_SECMEM);
 #elif defined HAVE_LIBCRYPTO
   EVP_cleanup();
+#endif
+#ifdef _WIN32
+  WSACleanup();
 #endif
   return 0;
 }

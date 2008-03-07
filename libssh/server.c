@@ -94,6 +94,7 @@ int ssh_bind_listen(SSH_BIND *ssh_bind){
     int fd;
     if(!ssh_bind->options)
         return -1;
+    ssh_socket_init();
     host=ssh_bind->options->bindaddr;
     if(!host)
         host="0.0.0.0";

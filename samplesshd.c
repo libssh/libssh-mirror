@@ -25,6 +25,11 @@ MA 02111-1307, USA. */
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
+#ifdef _WIN32
+#define KEYS_FOLDER
+#else
+#define KEYS_FOLDER "/etc/ssh/"
+#endif
 
 int auth_password(char *user, char *password){
     if(strcmp(user,"aris"))
@@ -114,7 +119,7 @@ int main(int argc, char **argv){
     } while(message && !chan);
     if(!chan){
         printf("error : %s\n",ssh_get_error(session));
-	ssh_finalize();
+        ssh_finalize();
         return 1;
     }
     do {

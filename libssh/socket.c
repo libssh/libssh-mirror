@@ -35,7 +35,18 @@ struct socket {
 	int last_errno;
 };
 
-
+/*
+ * \internal
+ * \brief inits the socket system (windows specific)
+ */
+void ssh_socket_init(){
+#ifdef _WIN32
+    struct WSAData wsaData;
+    if (WSAStartup(MAKEWORD(2, 0), &wsaData)) {
+        ssh_say(1,"Error initialising Windows sockets.\n");
+    }
+#endif
+}
 /*
  * \internal
  * \brief creates a new Socket object
