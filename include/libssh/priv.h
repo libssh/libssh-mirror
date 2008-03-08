@@ -25,7 +25,7 @@ MA 02111-1307, USA. */
 
 #ifndef _LIBSSH_PRIV_H
 #define _LIBSSH_PRIV_H
-#include "libssh/config.h"
+#include "config.h"
 #include "libssh/libssh.h"
 
 /* Debugging constants */
