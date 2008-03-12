@@ -167,7 +167,7 @@ STRING *ssh_get_pubkey(SSH_SESSION *session);
 
 /* in connect.c */
 int ssh_fd_poll(SSH_SESSION *session,int *write, int *except);
-int ssh_select(CHANNEL **channels,CHANNEL **outchannels, int maxfd, fd_set *readfds, struct timeval *timeout);
+int ssh_select(CHANNEL **channels,CHANNEL **outchannels, socket_t maxfd, fd_set *readfds, struct timeval *timeout);
 
 void publickey_free(PUBLIC_KEY *key);
 
@@ -217,7 +217,7 @@ void ssh_options_set_username(SSH_OPTIONS *opt,char *username);
 void ssh_options_set_port(SSH_OPTIONS *opt, unsigned int port);
 int ssh_options_getopt(SSH_OPTIONS *options, int *argcptr, char **argv);
 void ssh_options_set_host(SSH_OPTIONS *opt, const char *host);
-void ssh_options_set_fd(SSH_OPTIONS *opt, int fd);
+void ssh_options_set_fd(SSH_OPTIONS *opt, socket_t fd);
 void ssh_options_set_bind(SSH_OPTIONS *opt, char *bindaddr,int port);
 void ssh_options_set_identity(SSH_OPTIONS *opt, char *identity);
 void ssh_options_set_status_callback(SSH_OPTIONS *opt, void (*callback)

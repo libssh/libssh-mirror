@@ -492,7 +492,7 @@ int packet_wait(SSH_SESSION *session,int type,int blocking);
 int packet_flush(SSH_SESSION *session, int enforce_blocking);
 /* connect.c */
 SSH_SESSION *ssh_session_new();
-int ssh_connect_host(SSH_SESSION *session, const char *host,const char 
+socket_t ssh_connect_host(SSH_SESSION *session, const char *host,const char 
         *bind_addr, int port, long timeout, long usec);
 
 /* in kex.c */
