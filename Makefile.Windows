@@ -30,4 +30,4 @@ libssh.dll: $(libssh_OBJS)
 	$(CC) -shared $(libssh_OBJS) -o libssh.dll $(LINK)
 
 clean:
-	rm -f $(libssh_OBJS) samplesshd.exe sample.exe libssh.dll config.h
+	rm -f $(libssh_OBJS) samplesshd.exe sample.exe samplesshd.o sample.o libssh.dll config.h

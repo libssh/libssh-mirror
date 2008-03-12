@@ -37,7 +37,6 @@ MA 02111-1307, USA. */
 #include <openssl/err.h>
 #include <openssl/rsa.h>
 #endif
-#include <netinet/in.h>
 #define MAXLINESIZE 80
 #ifdef HAVE_LIBGCRYPT
 #define MAX_KEY_SIZE 32
