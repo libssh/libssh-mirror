@@ -23,7 +23,6 @@ MA 02111-1307, USA. */
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <netdb.h>
 #include "libssh/priv.h"
 
 STRING *string_new(unsigned int size){

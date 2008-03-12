@@ -24,7 +24,6 @@ MA 02111-1307, USA. */
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <netdb.h>
 
 #ifdef OPENSSL_CRYPTO
 #include <openssl/blowfish.h>

@@ -32,7 +32,6 @@ MA 02111-1307, USA. */
 #include <winsock2.h>
 #else
 #include <pwd.h>
-#include <netdb.h>
 #endif
 
 #include "libssh/libssh.h"

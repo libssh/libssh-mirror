@@ -25,7 +25,6 @@ MA 02111-1307, USA. */
 #include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
-#include <netdb.h>
 #include "libssh/priv.h"
 #include "libssh/ssh2.h"
 #include "libssh/sftp.h"
