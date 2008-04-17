@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Jean-Philippe Garcia Ballester <giga@le-pec.org>
 Uploaders: Laurent Bigonville <bigon@bigon.be>
 Build-Depends: cdbs, debhelper (>= 5), libgcrypt11-dev, libz-dev, doxygen
-Standards-Version: 3.7.2
+Standards-Version: 3.7.3
 Vcs-Svn: svn://svn.berlios.de/libssh/trunk
 Vcs-Browser: http://svn.berlios.de/wsvn/libssh/trunk/
 Homepage: http://0xbadc0de.be/wiki/doku.php?id=libssh:libssh

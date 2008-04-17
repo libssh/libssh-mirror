@@ -3,6 +3,8 @@ libssh (0.2+svn20070321-5) UNRELEASED; urgency=low
   * NOT RELEASED YET
   * Use now official Vcs-* field
   * Use new Homepage field instead of old pseudo-field
+  * BumpStandards-Version to 3.7.3 (no further changes)
+  * debian/libssh-2-doc.doc-base: fix doc-base-unknown-section
 
  -- Laurent Bigonville <bigon@bigon.be>  Thu, 08 Nov 2007 05:59:18 +0100
 
