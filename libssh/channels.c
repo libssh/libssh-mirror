@@ -818,7 +818,7 @@ int channel_poll(CHANNEL *channel, int is_stderr){
     while(buffer_get_rest_len(buffer)==0 && !channel->remote_eof){
         r=ssh_handle_packets(channel->session);
         if(r<=0)
-            return r;
+            break;
     }
     if(channel->remote_eof)
         return 1;
