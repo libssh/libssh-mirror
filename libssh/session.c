@@ -1,7 +1,7 @@
 /* session.c */
 /* contains the non-networking functions ssh_* */
 /*
- * Copyright 2005 Aris Adamantiadis
+ * Copyright 2005-2008 Aris Adamantiadis
  *
  * This file is part of the SSH Library
  *
@@ -20,7 +20,6 @@
  * the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
  * MA 02111-1307, USA. */
 
-/* ssh_new() returns a newly allocated SSH_SESSION structure pointer */
 #include <string.h>
 #include <stdlib.h>
 #include "libssh/libssh.h"
@@ -28,7 +27,7 @@
 #include "libssh/server.h"
 #define FIRST_CHANNEL 42 // why not ? it helps to find bugs.
 
-/** defgroup ssh_session
+/** \defgroup ssh_session SSH Session
  * \brief functions that manage a session
  */
 /** \addtogroup ssh_session

@@ -1,7 +1,5 @@
-/* buffer.c */
-/* Well, buffers */
 /*
-Copyright 2003 Aris Adamantiadis
+Copyright 2003-2008 Aris Adamantiadis
 
 This file is part of the SSH Library
 
@@ -24,7 +22,7 @@ MA 02111-1307, USA. */
 #include <string.h>
 #include "libssh/priv.h"
 
-/** defgroup ssh_buffer
+/** \defgroup ssh_buffer SSH Buffers
  * \brief buffer handling
  */
 

@@ -13,7 +13,7 @@ samplessh_SOURCES = sample.c
 samplesshd_SOURCES = samplesshd.c
 
 samplesftp: samplessh
-	$(LN_S) samplessh samplesftp
+	$(LN_S) -f samplessh samplesftp
 
 if HAS_DOXYGEN
 install-doc: doxygen

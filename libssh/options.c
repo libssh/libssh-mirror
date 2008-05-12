@@ -1,7 +1,7 @@
 /* options.c */
 /* handle pre-connection options */
 /*
-Copyright 2003 Aris Adamantiadis
+Copyright 2003-2008 Aris Adamantiadis
 
 This file is part of the SSH Library
 
@@ -29,8 +29,8 @@ MA 02111-1307, USA. */
 #include <sys/types.h>
 #include "libssh/priv.h"
 
-/** defgroup ssh_options
- * \brief options settings for a new ssh session
+/** \defgroup ssh_options SSH Options
+ * \brief options settings for a new SSH session
  */
 /** \addtogroup ssh_options
  * @{ */

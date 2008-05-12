@@ -1,7 +1,5 @@
-/* error.c */
-/* it does contain error processing functions */
 /*
-Copyright 2003,04 Aris Adamantiadis
+Copyright 2003-2008 Aris Adamantiadis
 
 This file is part of the SSH Library
 
@@ -23,7 +21,7 @@ MA 02111-1307, USA. */
 #include <stdio.h>
 #include <stdarg.h>
 #include "libssh/priv.h"
-/** defgroup ssh_error
+/** \defgroup ssh_error SSH Errors
  * \brief error handling
  */
 

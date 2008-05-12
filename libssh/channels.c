@@ -1,7 +1,5 @@
-/* channels.c */
-/* It has support for ... ssh channels */
 /*
-Copyright 2003 Aris Adamantiadis
+Copyright 2003-2008 Aris Adamantiadis
 
 This file is part of the SSH Library
 
@@ -31,7 +29,7 @@ MA 02111-1307, USA. */
 #define WINDOWLIMIT 1024
 #define WINDOWBASE 32000
 
-/** defgroup ssh_channel
+/** \defgroup ssh_channel SSH Channels
  * \brief functions that manage a channel
  */
 

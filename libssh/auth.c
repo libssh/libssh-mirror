@@ -25,8 +25,8 @@ MA 02111-1307, USA. */
 #include <stdio.h>
 #include <string.h>
 
-/** defgroup ssh_auth
- * \brief functions to authenticate
+/** \defgroup ssh_auth Authentication functions
+ * \brief functions to authenticate to servers
  */
 /** \addtogroup ssh_auth
  * @{ */
@@ -169,6 +169,7 @@ int ssh_userauth_none(SSH_SESSION *session,char *username){
  * \param publickey a public key returned by publickey_from_file()
  * \returns SSH_AUTH_ERROR : a serious error happened\n
  * SSH_AUTH_DENIED : The server doesn't accept that public key as an authentication token. Try another key or another method\n
+ * SSH_AUTH_PARTIAL : You've been partially authenticated, you still have to use another method\n
  * SSH_AUTH_SUCCESS : The public key is accepted, you want now to use ssh_userauth_pubkey()
  * \see publickey_from_file()
  * \see privatekey_from_file()

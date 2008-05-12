@@ -1,5 +1,3 @@
-/*string.c */
-/* string manipulations... */
 /*
 Copyright 2003-2008 Aris Adamantiadis
 
@@ -24,7 +22,7 @@ MA 02111-1307, USA. */
 #include <unistd.h>
 #include <string.h>
 #include "libssh/priv.h"
-/** defgroup ssh_string
+/** \defgroup ssh_string SSH Strings
  * \brief string manipulations
  */
 /** \addtogroup ssh_string
