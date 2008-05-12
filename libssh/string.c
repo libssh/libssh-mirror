@@ -1,7 +1,7 @@
 /*string.c */
 /* string manipulations... */
 /*
-Copyright 2003 Aris Adamantiadis
+Copyright 2003-2008 Aris Adamantiadis
 
 This file is part of the SSH Library
 
@@ -24,7 +24,17 @@ MA 02111-1307, USA. */
 #include <unistd.h>
 #include <string.h>
 #include "libssh/priv.h"
+/** defgroup ssh_string
+ * \brief string manipulations
+ */
+/** \addtogroup ssh_string
+ * @{ */
 
+/** 
+ * \brief Creates a new SSH String object
+ * \param size size of the string
+ * \return the newly allocated string
+ */
 STRING *string_new(unsigned int size){
     STRING *str=malloc(size + 4);
     str->size=htonl(size);
@@ -35,6 +45,12 @@ void string_fill(STRING *str,void *data,int len){
     memcpy(str->string,data,len);
 }
 
+/**
+ * \brief Creates a ssh stream using a C string
+ * \param what source 0-terminated C string
+ * \return the newly allocated string.
+ * \warning The nul byte is not copied nor counted in the ouput string.
+ */
 STRING *string_from_char(char *what){
 	STRING *ptr;
 	int len=strlen(what);
@@ -44,10 +60,22 @@ STRING *string_from_char(char *what){
 	return ptr;
 }
 
+/**
+ * \brief returns the size of a SSH string
+ * \param str the input SSH string
+ * \return size of the content of str
+ */
 int string_len(STRING *str){
 	return ntohl(str->size);
 }
 
+/**
+ * \brief convert a SSH string to a C nul-terminated string
+ * \param str the input SSH string
+ * \return a malloc'ed string pointer.
+ * \warning If the input SSH string contains zeroes, some parts of 
+ * the output string may not be readable with regular libc functions.
+ */
 char *string_to_char(STRING *str){
     int len=ntohl(str->size)+1;
     char *string=malloc(len);
@@ -70,3 +98,13 @@ void string_burn(STRING *s){
 void *string_data(STRING *s){
     return s->string;
 }
+
+/**
+ * \brief desallocate a STRING object
+ * \param s String to delete
+ */
+void string_free(STRING *s){
+	free(s);
+}
+
+/** @} */
