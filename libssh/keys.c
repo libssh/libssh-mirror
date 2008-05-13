@@ -28,7 +28,9 @@ MA 02111-1307, USA. */
 #endif
 #include "libssh/priv.h"
 
-
+/** \addtogroup ssh_auth
+ * @{
+ */
 /* Public key decoding functions */
 
 char *ssh_type_to_char(int type){
@@ -175,6 +177,11 @@ PUBLIC_KEY *publickey_from_string(SSH_SESSION *session, STRING *pubkey_s){
     return NULL;
 }
 
+/** \brief Makes a PUBLIC_KEY object out of a PRIVATE_KEY object
+ * \param prv the Private key
+ * \returns the public key
+ * \see publickey_to_string()
+ */
 PUBLIC_KEY *publickey_from_privatekey(PRIVATE_KEY *prv){
     PUBLIC_KEY *key=malloc(sizeof(PUBLIC_KEY));
 #ifdef HAVE_LIBGCRYPT
@@ -323,6 +330,11 @@ static void rsa_public_to_string(RSA *key, BUFFER *buffer){
     free(n);
 }
 
+/** \brief makes a SSH String out of a PUBLIC_KEY object
+ * \param key the public key
+ * \returns a SSH String containing the public key
+ * \see string_free()
+ */
 STRING *publickey_to_string(PUBLIC_KEY *key){
     STRING *type;
     STRING *ret;
@@ -743,4 +755,4 @@ STRING *ssh_sign_session_id(SSH_SESSION *session, PRIVATE_KEY *privatekey){
     signature_free(sign);
     return signature;
 }
-
+/** @} */

@@ -468,8 +468,19 @@ static int get_password_specified(char *buf,int size, int rwflag, char *password
     snprintf(buf,size,"%s",password);
     return strlen(buf);
 }
-
+/** \addtogroup ssh_auth
+ * @{
+ */
 /* TODO : implement it to read both DSA and RSA at once */
+/** \brief Reads a SSH private key from a file
+ * \param session SSH Session
+ * \param filename Filename containing the private key
+ * \param type Type of the private key. One of TYPE_DSS or TYPE_RSA.
+ * \param passphrase Passphrase to decrypt the private key. Set to null if none is needed or it is unknown.
+ * \returns a PRIVATE_KEY object containing the private key, or NULL if it failed.
+ * \see private_key_free()
+ * \see publickey_from_privatekey()
+ */
 PRIVATE_KEY  *privatekey_from_file(SSH_SESSION *session,char *filename,int type,char *passphrase){
     FILE *file=fopen(filename,"r");
     PRIVATE_KEY *privkey;
@@ -612,6 +623,9 @@ PRIVATE_KEY  *_privatekey_from_file(void *session,char *filename,int type){
     return privkey;
 }
 
+/** \brief Desallocate a private key
+ * \param prv a PRIVATE_KEY object
+ */
 void private_key_free(PRIVATE_KEY *prv){
 #ifdef HAVE_LIBGCRYPT
     if(prv->dsa_priv)
@@ -628,6 +642,14 @@ void private_key_free(PRIVATE_KEY *prv){
     free(prv);
 }
 
+/** \brief Retrieve a public key from a file
+ * \param session the SSH session
+ * \param filename Filename of the key
+ * \param _type Pointer to a integer. If it is not null, it contains the type of the key after execution.
+ * \return a SSH String containing the public key, or NULL if it failed.
+ * \see string_free()
+ * \see publickey_from_privatekey()
+ */
 STRING *publickey_from_file(SSH_SESSION *session,char *filename,int *_type){
     BUFFER *buffer;
     int type;
@@ -809,6 +831,8 @@ static char **ssh_parse_knownhost(char *filename, char *hostname, char *type){
     return ret;
 }
 
+/** @}
+ */
 /** \addtogroup ssh_session
  * @{ */
 /** checks the user's known host file for a previous connection to the
@@ -904,7 +928,7 @@ int ssh_is_server_known(SSH_SESSION *session){
     return SSH_SERVER_KNOWN_OK;
 }
 
-/** You generaly uses it when ssh_is_server_known() answered SSH_SERVER_NOT_KNOWN 
+/** You generaly use it when ssh_is_server_known() answered SSH_SERVER_NOT_KNOWN 
  * \brief write the current server as known in the known hosts file
  * \param session ssh session
  * \return 0 on success, -1 on error
