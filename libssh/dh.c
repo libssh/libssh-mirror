@@ -288,6 +288,8 @@ void dh_build_k(SSH_SESSION *session){
     }
 #endif
 #ifdef DEBUG_CRYPTO
+    ssh_print_hexa("session server cookie",session->server_kex.cookie,16);
+    ssh_print_hexa("session client cookie",session->client_kex.cookie,16);
     ssh_print_bignum("shared secret key",session->next_crypto->k);
 #endif
 #ifdef HAVE_LIBCRYPTO

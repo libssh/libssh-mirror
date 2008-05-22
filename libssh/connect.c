@@ -29,6 +29,7 @@ MA 02111-1307, USA. */
 #define _WIN32_WINNT 0x0501 //getaddrinfo, freeaddrinfo, getnameinfo
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#include "wspiapi.h"
 #else
 #include <netdb.h>
 #include <sys/socket.h>
@@ -62,6 +63,13 @@ static void sock_set_blocking(socket_t sock){
         u_long nonblocking = 0;
         ioctlsocket(sock, FIONBIO, &nonblocking);
 }
+
+char WSAAPI *gai_strerrorA(int code){
+     static char buffer[256];
+     snprintf(buffer,256,"Undetermined error code (%d)",code);
+     return buffer;
+}
+
 #endif
 
 static int getai(const char *host, int port, struct addrinfo **ai)
@@ -111,7 +119,7 @@ int ssh_connect_ai_timeout(SSH_SESSION *session, const char *host, int port, str
     }
     ret = 0;
     /* get connect(2) return code. zero means no error */
-    getsockopt(s,SOL_SOCKET,SO_ERROR,&ret,&len);
+    getsockopt(s,SOL_SOCKET,SO_ERROR,(char *)&ret,&len);
     if (ret!=0){
         ssh_set_error(session,SSH_FATAL,"Connecting : %s",strerror(ret));
         close(s);

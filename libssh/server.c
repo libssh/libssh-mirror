@@ -68,7 +68,7 @@ static socket_t bind_socket(SSH_BIND *ssh_bind,char *hostname, int port) {
     memcpy(&myaddr.sin_addr,hp->h_addr,hp->h_length);
     myaddr.sin_family=hp->h_addrtype;
     myaddr.sin_port = htons(port);
-    setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt));
     if (bind(s, (struct sockaddr *) &myaddr, sizeof(myaddr)) < 0) {
         ssh_set_error(ssh_bind,SSH_FATAL,"Binding to %s:%d : %s",hostname,port,
                 strerror(errno));

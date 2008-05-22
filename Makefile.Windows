@@ -1,7 +1,11 @@
 CC= gcc
-INCS= -I. -Iinclude -Ic:/progra~1/gnuwin32/include
+DLLWRAP=dllwrap.exe
+DEFFILE=libssh.def
+STATICLIB=libssh.a
+LIB="c:\Program files\Microsoft Visual Studio .NET 2003\vc7\bin\lib.exe"
+INCS= -I. -Iinclude -Ic:/openssl/include -I"c:\Program files\gnuwin32\include"
 CFLAGS= $(INCS)
-LINK= -L. -Lc:/progra~1/gnuwin32/lib  -lws2_32 -lcrypto -lgdi32 -lshell32 -lz
+LINK= -L. c:/openssl/lib/MinGW/libeay32.a  "c:\program files\gnuwin32\lib\libz.a" c:\Dev-cpp\lib\libws2_32.a #-lws2_32 ##-lgdi32 -lshell32
 
 libssh_HEADERS= config.h include/libssh/crypto.h include/libssh/libssh.h include/libssh/priv.h include/libssh/server.h include/libssh/sftp.h include/libssh/ssh1.h include/libssh/ssh2.h
 libssh_OBJS = libssh/auth1.o libssh/auth.o libssh/base64.o libssh/buffer.o	\
@@ -13,7 +17,7 @@ libssh_OBJS = libssh/auth1.o libssh/auth.o libssh/base64.o libssh/buffer.o	\
 		 libssh/sftpserver.o libssh/string.o libssh/wrapper.o libssh/socket.o
 
 
-all: libssh.dll samplesshd.exe
+all: libssh.dll samplesshd.exe libssh.lib
 
 config.h: config.h.win32-openssl
 	copy config.h.win32-openssl config.h
@@ -27,7 +31,10 @@ samplesshd.exe: samplesshd.o $(libssh_OBJS)
 	$(CC) $< -o $@ $(libssh_OBJS) $(LINK)
 
 libssh.dll: $(libssh_OBJS)
-	$(CC) -shared $(libssh_OBJS) -o libssh.dll $(LINK)
+#	$(CC) -shared $(libssh_OBJS) -o libssh.dll $(LINK)
+	$(DLLWRAP) --export-all-symbols --output-def $(DEFFILE) --implib $(STATICLIB) $(libssh_OBJS) $(LINK)  -o libssh.dll 
 
+libssh.lib: libssh.dll
+	lib.bat
 clean:
 	rm -f $(libssh_OBJS) samplesshd.exe sample.exe samplesshd.o sample.o libssh.dll config.h
