@@ -20,14 +20,24 @@ MA 02111-1307, USA. */
 
 #ifndef _LIBSSH_H
 #define _LIBSSH_H
+#ifndef _MSC_VER
 #include <unistd.h>
+#include <inttypes.h>
+#else
+//visual studio hasn't inttypes.h so it doesn't know uint32_t
+typedef unsigned int uint32_t;
+typedef unsigned short uint16_t;
+typedef unsigned char uint8_t;
+typedef unsigned long long uint64_t;
+
+#endif
 #ifndef _WIN32
 #include <sys/select.h> /* for fd_set * */
 #endif
 #ifdef _WIN32
 #include <winsock2.h>
 #endif
-#include <inttypes.h>
+
 
 #define LIBSSH_VERSION "libssh-0.2.1-svn"
 
