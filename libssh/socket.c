@@ -71,7 +71,7 @@ void ssh_socket_free(struct socket *s){
  */
 void ssh_socket_close(struct socket *s){
 	if(ssh_socket_is_open(s)){
-#ifdef _WIN_32
+#ifdef _WIN32
 		closesocket(s->fd);
 		s->last_errno=WSAGetLastError();
 #else
