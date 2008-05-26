@@ -162,7 +162,7 @@ void ssh_set_fd_except(SSH_SESSION *session){
  */
 /* looks if there is data to read on the socket and parse it. */
 int ssh_handle_packets(SSH_SESSION *session){
-    int w,err,r;
+    int w,err,r,i=0;
     do {
         r=ssh_fd_poll(session,&w,&err);
         if(r<=0)
@@ -171,7 +171,8 @@ int ssh_handle_packets(SSH_SESSION *session){
         if(packet_read(session)||packet_translate(session))
             return -1;
         packet_parse(session);
-    } while(r>0);
+        ++i;
+    } while(r>0 && i<5);
     return r;
 }
 

@@ -766,6 +766,9 @@ int channel_read(CHANNEL *channel, BUFFER *buffer,int bytes,int is_stderr){
     BUFFER *stdbuf=NULL;
     int len;
     buffer_reinit(buffer);
+    int maxread=bytes;
+    if(bytes==0)
+        maxread=MAX_PACKET_LEN;
     /* maybe i should always set a buffer to avoid races between channel_default_bufferize and channel_read */
     if(is_stderr)
         stdbuf=channel->stderr_buffer;
@@ -778,6 +781,8 @@ int channel_read(CHANNEL *channel, BUFFER *buffer,int bytes,int is_stderr){
             return 0;
         if(channel->remote_eof)
             break; /* return the resting bytes in buffer */
+        if(buffer_get_rest_len(stdbuf)>=maxread) // stop reading when buffer is full enough
+            break;
         if(packet_read(channel->session)||packet_translate(channel->session))
             return -1;
         packet_parse(channel->session);
