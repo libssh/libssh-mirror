@@ -941,19 +941,19 @@ int sftp_read(SFTP_FILE *handle, void *data, int len){
 }
 
 /** This function does an asynchronous read on a file. Its goal is to avoid the slowdowns related to
- * the request/response pattern of a synchronous read.
- * To use if, you must call the function two times.
- * The first time, *id must be a pointer to an integer containing 0. The function will always return SSH_AGAIN the first time.
- * The second time, the function will block until the data have been read, and will return the number of bytes read.
- * If the file is opened in non-blocking mode, the second-time reading will return SSH_AGAIN until the data are available.
+ * the request/response pattern of a synchronous read.\n
+ * To use if, you must call the function two times.\n
+ * The first time, *id must be a pointer to an integer containing 0. The function will always return SSH_AGAIN the first time.\n
+ * The second time, the function will block until the data have been read, and will return the number of bytes read.\n
+ * If the file is opened in non-blocking mode, the second-time reading will return SSH_AGAIN until the data are available.\n
  * \brief Asynchronous read on a file
  * \param file the file handle
  * \param data pointer to the data to be written
  * \param len length of data to be read
  * \param id a pointer to an identifier
- * \return 0 When the file is EOF
- * SSH_AGAIN the function has to be called again
- * SSH_ERROR in case of error
+ * \return 0 When the file is EOF\n
+ * SSH_AGAIN the function has to be called again\n
+ * SSH_ERROR in case of error\n
  * otherwise, the number of bytes read is returned
  * \warning when calling the function for the first time, the internal offset is updated
  * corresponding to the len parameter. If the length effectively read is different from the
