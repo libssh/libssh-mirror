@@ -21,6 +21,11 @@ along with the SSH Library; see the file COPYING.  If not, write to
 the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA. */
 
+/** \defgroup ssh_sftp SFTP functions
+ * \brief SFTP handling functions
+ */
+/** \addtogroup ssh_sftp
+ * @{ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -935,6 +940,106 @@ int sftp_read(SFTP_FILE *handle, void *data, int len){
     return -1; /* not reached */
 }
 
+/** This function does an asynchronous read on a file. Its goal is to avoid the slowdowns related to
+ * the request/response pattern of a synchronous read.
+ * To use if, you must call the function two times.
+ * The first time, *id must be a pointer to an integer containing 0. The function will always return SSH_AGAIN the first time.
+ * The second time, the function will block until the data have been read, and will return the number of bytes read.
+ * If the file is opened in non-blocking mode, the second-time reading will return SSH_AGAIN until the data are available.
+ * \brief Asynchronous read on a file
+ * \param file the file handle
+ * \param data pointer to the data to be written
+ * \param len length of data to be read
+ * \param id a pointer to an identifier
+ * \return 0 When the file is EOF
+ * SSH_AGAIN the function has to be called again
+ * SSH_ERROR in case of error
+ * otherwise, the number of bytes read is returned
+ * \warning when calling the function for the first time, the internal offset is updated
+ * corresponding to the len parameter. If the length effectively read is different from the
+ * len parameter, every following read() will be out of sync.
+ * */
+int sftp_async_read(SFTP_FILE *file, void *data, int len, int *id){
+    SFTP_MESSAGE *msg=NULL;
+    STATUS_MESSAGE *status;
+    SFTP_SESSION *sftp=file->sftp;
+    STRING *datastring;
+    int err=0;
+    BUFFER *buffer;
+    if(id==NULL){
+    	ssh_set_error(sftp->session,SSH_REQUEST_DENIED,"id parameter must not be null");
+    	return -1;
+    }
+    if(file->eof)
+        return 0;
+    if(*id==0){
+    	// launch a new request
+    	buffer=buffer_new();
+    	*id=sftp_get_new_id(sftp);
+    	buffer_add_u32(buffer,*id);
+    	buffer_add_ssh_string(buffer,file->handle);
+    	buffer_add_u64(buffer,htonll(file->offset));
+    	buffer_add_u32(buffer,htonl(len));
+    	sftp_packet_write(sftp,SSH_FXP_READ,buffer);
+    	buffer_free(buffer);
+    	file->offset += len; // assume we'll read len bytes
+    	return SSH_AGAIN; // must call back
+    } else {
+    	// handle an existing request
+    	while(!msg){
+    		if (file->nonblocking){
+    			if(channel_poll(sftp->channel,0)==0){
+    				/* we cannot block */
+    	            return SSH_AGAIN;
+    	        }
+    	    }
+    	    if(sftp_read_and_dispatch(sftp))
+    	    /* something nasty has happened */
+    	    	return -1;
+    	    msg=sftp_dequeue(sftp,*id);
+    	}
+    	*id=0;
+    	switch (msg->packet_type){
+    		case SSH_FXP_STATUS:
+    			status=parse_status_msg(msg);
+    	        sftp_message_free(msg);
+    	        if(!status)
+    	        	return -1;
+    	        if(status->status != SSH_FX_EOF){
+    	        	ssh_set_error(sftp->session,SSH_REQUEST_DENIED,"sftp server : %s",status->errormsg);
+    	            err=-1;
+    	        } else
+    	        	file->eof=1;
+    	        status_msg_free(status);
+    	        return err?err:0;
+    	    case SSH_FXP_DATA:
+    	        datastring=buffer_get_ssh_string(msg->payload);
+    	        sftp_message_free(msg);
+    	        if(!datastring){
+    	            ssh_set_error(sftp->session,SSH_FATAL,"Received invalid DATA packet from sftp server");
+    	            return -1;
+    	        }
+    	        if(string_len(datastring)>len){
+    	            ssh_set_error(sftp->session,SSH_FATAL,"Received a too big DATA packet from sftp server : %d and asked for %d",
+    	                string_len(datastring),len);
+    	            free(datastring);
+    	            return -1;
+    	        }
+    	        len=string_len(datastring);
+    	        //handle->offset+=len; 
+    	        /* We already have set the offset previously. All we can do is warn that the expected len
+    	         * and effective lengths are different */
+    	        memcpy(data,datastring->string,len);
+    	        free(datastring);
+    	        return len;
+    	    default:
+    	        ssh_set_error(sftp->session,SSH_FATAL,"Received message %d during read!",msg->packet_type);
+    	        sftp_message_free(msg);
+    	        return -1;
+    	    }
+    }
+    
+}
 int sftp_write(SFTP_FILE *file, void *data, int len){
     SFTP_MESSAGE *msg=NULL;
     STATUS_MESSAGE *status;
@@ -1328,5 +1433,6 @@ SFTP_ATTRIBUTES *sftp_fstat(SFTP_FILE *file) {
     return NULL;
 }
 
-
 #endif /* NO_SFTP */
+
+/** @} */

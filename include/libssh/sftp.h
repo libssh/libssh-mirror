@@ -146,6 +146,7 @@ int sftp_file_close(SFTP_FILE *file);
 /* access are the sames than the ones from ansi fopen() */
 SFTP_FILE *sftp_open(SFTP_SESSION *session, char *file, int access, SFTP_ATTRIBUTES *attr);
 int sftp_read(SFTP_FILE *file, void *dest, int len);
+int sftp_async_read(SFTP_FILE *file, void *data, int len, int *id);
 int sftp_write(SFTP_FILE *file, void *source, int len);
 void sftp_seek(SFTP_FILE *file, int new_offset);
 unsigned long sftp_tell(SFTP_FILE *file);
