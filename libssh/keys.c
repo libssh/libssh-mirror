@@ -535,7 +535,7 @@ SIGNATURE *signature_from_string(SSH_SESSION *session, STRING *signature,PUBLIC_
                 return NULL;
             }
             if(len<rsalen)
-                ssh_say(0,"Len %d < %d\n",len,rsalen);
+                ssh_log(session,SSH_LOG_RARE,"RSA signature len %d < %d",len,rsalen);
             sign->type=TYPE_RSA;
 #ifdef HAVE_LIBGCRYPT
             gcry_sexp_build(&sig,NULL,"(sig-val(rsa(s %b)))",string_len(e),e->string);
@@ -576,7 +576,7 @@ void signature_free(SIGNATURE *sign){
 #endif
             break;
         default:
-            ssh_say(1,"freeing a signature with no type !\n");
+            ssh_log(NULL,SSH_LOG_RARE,"freeing a signature with no type !\n");
     }
     free(sign);
 }

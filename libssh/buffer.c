@@ -227,7 +227,7 @@ STRING *buffer_get_ssh_string(BUFFER *buffer){
         return NULL; /* it is indeed */
     str=string_new(hostlen);
     if(buffer_get_data(buffer,str->string,hostlen)!=hostlen){
-        ssh_say(0,"buffer_get_ssh_string: oddish : second test failed when first was successful. len=%d",hostlen);
+    	// should never happen
         free(str);
         return NULL;
         }

@@ -130,7 +130,7 @@ int ssh_connect_ai_timeout(SSH_SESSION *session, const char *host, int port, str
         return -1;
     }
     /* s is connected ? */
-    ssh_say(3,"socket connected with timeout\n");
+    ssh_log(session,SSH_LOG_PACKET,"socket connected with timeout\n");
     sock_set_blocking(s);
     leave_function();
     return s;
@@ -164,7 +164,7 @@ socket_t ssh_connect_host(SSH_SESSION *session, const char *host, const char
         if(bind_addr){
             struct addrinfo *bind_ai, *bind_ai2;
 
-            ssh_say(2,"resolving %s\n",bind_addr);
+            ssh_log(session,SSH_LOG_PACKET,"resolving %s\n",bind_addr);
             my_errno=getai(host,0,&bind_ai);
             if (my_errno){
                 ssh_set_error(session,SSH_FATAL,"Failed to resolve bind address %s (%s)",bind_addr,gai_strerror(my_errno));

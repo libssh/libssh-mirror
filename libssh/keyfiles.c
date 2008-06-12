@@ -727,23 +727,23 @@ STRING *publickey_from_next_file(SSH_SESSION *session,char **pub_keys_path,char 
     ++*count;
     /* are them readable ? */
     snprintf(public,256,pub,home);
-    ssh_say(2,"Trying to open %s\n",public);
+    ssh_log(session,SSH_LOG_PACKET,"Trying to open public key %s",public);
     if(!ssh_file_readaccess_ok(public)){
-        ssh_say(2,"Failed\n");
+        ssh_log(session,SSH_LOG_PACKET,"Failed");
         return publickey_from_next_file(session,pub_keys_path,keys_path,privkeyfile,type,count);
     } 
     snprintf(private,256,priv,home);
-    ssh_say(2,"Trying to open %s\n",private);
+    ssh_log(session,SSH_LOG_PACKET,"Trying to open private key %s",private);
     if(!ssh_file_readaccess_ok(private)){
-        ssh_say(2,"Failed\n");
+        ssh_log(session,SSH_LOG_PACKET,"Failed");
         return publickey_from_next_file(session,pub_keys_path,keys_path,privkeyfile,type,count);
     }
-    ssh_say(2,"Okay both files ok\n");
+    ssh_log(session,SSH_LOG_PACKET,"Success reading public and private key");
     /* ok, we are sure both the priv8 and public key files are readable : we return the public one as a string,
         and the private filename in arguments */
     pubkey=publickey_from_file(session,public,type);
     if(!pubkey){
-        ssh_say(2,"Wasn't able to open public key file %s : %s\n",public,ssh_get_error(session));
+        ssh_log(session,SSH_LOG_PACKET,"Wasn't able to open public key file %s : %s",public,ssh_get_error(session));
         return publickey_from_next_file(session,pub_keys_path,keys_path,privkeyfile,type,count);
     }
     *privkeyfile=realloc(*privkeyfile,strlen(private)+1);

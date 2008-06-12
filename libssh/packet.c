@@ -161,7 +161,7 @@ static int packet_read2(SSH_SESSION *session){
                 packet=malloc(to_be_read);
                 memcpy(packet,buffer_get_rest(session->in_socket_buffer),to_be_read-current_macsize);
                 buffer_pass_bytes(session->in_socket_buffer,to_be_read-current_macsize);
-                ssh_say(3,"Read a %d bytes packet\n",len);
+                ssh_log(session,SSH_LOG_PACKET,"Read a %d bytes packet",len);
                 buffer_add_data(session->in_buffer,packet,to_be_read-current_macsize);
                 free(packet);
             }

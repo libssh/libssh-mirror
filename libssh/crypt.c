@@ -39,14 +39,14 @@ u32 packet_decrypt_len(SSH_SESSION *session, char *crypted){
     if(session->current_crypto)
         packet_decrypt(session,crypted,session->current_crypto->in_cipher->blocksize);
     memcpy(&decrypted,crypted,sizeof(decrypted));
-    ssh_say(3,"size decrypted : %lx\n",ntohl(decrypted));
+    ssh_log(session,SSH_LOG_PACKET,"packet size decrypted : %d (0x%lx)",ntohl(decrypted),ntohl(decrypted));
     return ntohl(decrypted);
 }
     
 int packet_decrypt(SSH_SESSION *session, void *data,u32 len){
     struct crypto_struct *crypto=session->current_crypto->in_cipher;
     char *out=malloc(len);
-    ssh_say(3,"Decrypting %d bytes data\n",len);
+    ssh_log(session,SSH_LOG_PACKET,"Decrypting %d bytes",len);
 #ifdef HAVE_LIBGCRYPT
     crypto->set_decrypt_key(crypto,session->current_crypto->decryptkey,session->current_crypto->decryptIV);
     crypto->cbc_decrypt(crypto,data,out,len);
@@ -69,7 +69,7 @@ unsigned char * packet_encrypt(SSH_SESSION *session,void *data,u32 len){
     if(!session->current_crypto)
         return NULL; /* nothing to do here */
     crypto= session->current_crypto->out_cipher;
-    ssh_say(3,"seq num = %d, len = %d\n",session->send_seq,len);
+    ssh_log(session,SSH_LOG_PACKET,"encrypting packet with seq num: %d, len: %d",session->send_seq,len);
 #ifdef HAVE_LIBGCRYPT
     crypto->set_encrypt_key(crypto,session->current_crypto->encryptkey,session->current_crypto->encryptIV);
 #elif defined HAVE_LIBCRYPTO

@@ -80,15 +80,19 @@ SFTP_SESSION *sftp_server_new(SSH_SESSION *session, CHANNEL *chan){
 }
 
 int sftp_server_init(SFTP_SESSION *sftp){
+	sftp_enter_function();
     SFTP_PACKET *packet=sftp_packet_read(sftp);
     u32 version;
     BUFFER *reply;
-    if(!packet)
-        return -1;
+    if(!packet){
+        sftp_leave_function();
+    	return -1;
+    }
     if(packet->type != SSH_FXP_INIT){
         ssh_set_error(sftp->session,SSH_FATAL,"Packet read of type %d instead of SSH_FXP_INIT",
                       packet->type);
         sftp_packet_free(packet);
+        sftp_leave_function();
         return -1;
     }
     ssh_say(2,"received SSH_FXP_INIT\n");
@@ -101,6 +105,7 @@ int sftp_server_init(SFTP_SESSION *sftp){
     buffer_add_u32(reply,ntohl(LIBSFTP_VERSION));
     if(sftp_packet_write(sftp,SSH_FXP_VERSION,reply)==-1){
         buffer_free(reply);
+        sftp_leave_function();
         return -1;
     }
     buffer_free(reply);
@@ -109,6 +114,7 @@ int sftp_server_init(SFTP_SESSION *sftp){
         sftp->version=LIBSFTP_VERSION;
     else
         sftp->version=version;
+    sftp_leave_function();
     return 0;
 }
 #endif
