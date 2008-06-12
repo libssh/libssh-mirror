@@ -33,6 +33,7 @@ typedef unsigned long long uint64_t;
 #endif
 #ifndef _WIN32
 #include <sys/select.h> /* for fd_set * */
+#include <netdb.h>
 #endif
 #ifdef _WIN32
 #include <winsock2.h>
@@ -123,11 +124,15 @@ void ssh_say(int priority,char *format,...);
 void ssh_set_verbosity(int num);
 
  /* There is a verbosity level */
- /* 3 : packet level */
- /* 2 : protocol level */
- /* 1 : functions level */
- /* 0 : important messages only */
- /* -1 : no messages */
+ 
+#define SSH_LOG_NOLOG 0 // no log
+#define SSH_LOG_RARE 1 // rare conditions
+#define SSH_LOG_ENTRY 2 // user-accessible entrypoints
+#define SSH_LOG_PACKET 3 // packet id and size
+#define SSH_LOG_FUNCTIONS 4 // every function in and return
+
+/* log.c */
+void ssh_log(SSH_SESSION *session, int prioriry, char *format, ...);
 
 /* session.c */
 SSH_SESSION *ssh_new();
@@ -240,6 +245,9 @@ void ssh_options_allow_ssh1(SSH_OPTIONS *opt, int allow);
 void ssh_options_allow_ssh2(SSH_OPTIONS *opt, int allow);
 void ssh_options_set_dsa_server_key(SSH_OPTIONS *opt, char *dsakey);
 void ssh_options_set_rsa_server_key(SSH_OPTIONS *opt, char *rsakey);
+void ssh_options_set_log_function(SSH_OPTIONS *opt, 
+		void (*callback)(const char *message, SSH_SESSION *session, int verbosity ));
+void ssh_options_set_log_verbosity(SSH_OPTIONS *opt, int verbosity);
 
 
 /* buffer.c */

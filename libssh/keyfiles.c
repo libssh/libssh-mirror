@@ -850,6 +850,7 @@ static char **ssh_parse_knownhost(char *filename, char *hostname, char *type){
  * \see ssh_options_set_wanted_algo()
  * \see ssh_get_pubkey_hash()
  * \bug there is no current way to remove or modify an entry into the known host table
+ * \todo TODO this is a real mess. Clean this up someday
  */
 int ssh_is_server_known(SSH_SESSION *session){
     char *pubkey_64;

@@ -108,6 +108,8 @@ SSH_OPTIONS *ssh_options_copy(SSH_OPTIONS *opt){
     ret->timeout_usec=opt->timeout_usec;
     ret->ssh2allowed=opt->ssh2allowed;
     ret->ssh1allowed=opt->ssh1allowed;
+    ret->log_function=opt->log_function;
+    ret->log_verbosity=opt->log_verbosity;
     return ret;
 }
 
@@ -406,6 +408,29 @@ void ssh_options_allow_ssh2(SSH_OPTIONS *opt, int allow){
         opt->ssh2allowed=0;
 }
 
+/** Default is a write on stderr
+ * \brief Change the writer callback for logging
+ * \param opt options structure
+ * \param callback a callback function for the printing
+ * \warning the message string may contain format string characters.
+ */
+void ssh_options_set_log_function(SSH_OPTIONS *opt, 
+		void (*callback)(const char *message, SSH_SESSION *session, int priority )){
+	opt->log_function=callback;
+}
+
+/** \brief set this session's logging priority
+ * \param opt options structure
+ * \param verbosity verbosity of the messages. Every log smaller or equal to verbosity will be shown\n
+ * SSH_LOG_NOLOG No logging \n
+ * SSH_LOG_RARE Rare conditions or warnings\n
+ * SSH_LOG_ENTRY Api-accessible entrypoints\n
+ * SSH_LOG_PACKET Packet id and size\n
+ * SSH_LOG_FUNCTIONS function entering and leaving\n
+ */
+void ssh_options_set_log_verbosity(SSH_OPTIONS *opt, int verbosity){
+	opt->log_verbosity=verbosity;
+}
 /**
  * This is a helper for your application to generate the appropriate
  * options from the command line arguments.\n
@@ -502,7 +527,7 @@ int ssh_options_getopt(SSH_OPTIONS *options, int *argcptr, char **argv){
         ssh_set_error(options,SSH_FATAL,"either RSA or DSS must be chosen");
         cont=0;
     }
-    ssh_set_verbosity(debuglevel);
+    ssh_options_set_log_verbosity(options,debuglevel);
     optind=saveoptind;
     if(!cont){
         free(save);

@@ -32,16 +32,16 @@ MA 02111-1307, USA. */
  * @{ */
 
 static int ask_userauth(SSH_SESSION *session){
+	int ret=0;
+	enter_function();
     if(session->auth_service_asked)
-        return 0;
-    else {
-        if(ssh_service_request(session,"ssh-userauth"))
-            return -1;
-        else
-            session->auth_service_asked++;
-    }
-    return 0;
-    
+        ret = 0;
+    else if(ssh_service_request(session,"ssh-userauth"))
+    	ret = -1;
+    else
+        session->auth_service_asked++;
+    leave_function();
+    return ret;
 }
 
 static void burn(char *ptr){
@@ -55,6 +55,7 @@ static int wait_auth_status(SSH_SESSION *session,int kbdint){
     STRING *can_continue;
     u8 partial=0;
     char *c_cont;
+    enter_function();
     while(cont){
         if(packet_read(session))
             break;
@@ -66,6 +67,7 @@ static int wait_auth_status(SSH_SESSION *session,int kbdint){
                 if(!can_continue || buffer_get_u8(session->in_buffer,&partial)!=1 ){
                     ssh_set_error(session,SSH_FATAL,
                             "invalid SSH_MSG_USERAUTH_FAILURE message");
+                    leave_function();
                     return SSH_AUTH_ERROR;
                 }
                 c_cont=string_to_char(can_continue);
@@ -114,6 +116,7 @@ static int wait_auth_status(SSH_SESSION *session,int kbdint){
                 break;
         }
     }
+    leave_function();
     return err;
 }
 
@@ -133,19 +136,27 @@ int ssh_userauth_none(SSH_SESSION *session,char *username){
     STRING *user;
     STRING *service;
     STRING *method;
+    int ret;
+    enter_function();
 #ifdef HAVE_SSH1
-    if(session->version==1)
-        return ssh_userauth1_none(session,username);
+    if(session->version==1){
+        ret = ssh_userauth1_none(session,username);
+        leave_function();
+        return ret;
+    }
 #endif
     if(!username)
         if(!(username=session->options->username)){
-            if(ssh_options_default_username(session->options))
-                return SSH_AUTH_ERROR;
-            else
+            if(ssh_options_default_username(session->options)){
+                leave_function();
+            	return SSH_AUTH_ERROR;
+            } else
                 username=session->options->username;
         }
-    if(ask_userauth(session))
-        return SSH_AUTH_ERROR;
+    if(ask_userauth(session)){
+    	leave_function();
+    	return SSH_AUTH_ERROR;
+    }
     user=string_from_char(username);
     method=string_from_char("none");
     service=string_from_char("ssh-connection");
@@ -158,7 +169,9 @@ int ssh_userauth_none(SSH_SESSION *session,char *username){
     free(method);
     free(user);
     packet_send(session);
-    return wait_auth_status(session,0);
+    ret = wait_auth_status(session,0);
+    leave_function();
+    return ret;
 }
 
 /** \brief Try to authenticate through public key
@@ -182,19 +195,26 @@ int ssh_userauth_offer_pubkey(SSH_SESSION *session, char *username,int type, STR
     STRING *method;
     STRING *algo;
     int err=SSH_AUTH_ERROR;
+    enter_function();
 #ifdef HAVE_SSH1
-    if(session->version==1)
-        return ssh_userauth1_offer_pubkey(session,username,type,publickey);
+    if(session->version==1){
+        err= ssh_userauth1_offer_pubkey(session,username,type,publickey);
+        leave_function();
+        return err;
+    }
 #endif
     if(!username)
         if(!(username=session->options->username)){
-            if(ssh_options_default_username(session->options))
-                return SSH_AUTH_ERROR;
-            else
+            if(ssh_options_default_username(session->options)){
+                leave_function();
+            	return SSH_AUTH_ERROR;
+            } else
                 username=session->options->username;
         }
-    if(ask_userauth(session))
-        return SSH_AUTH_ERROR;
+    if(ask_userauth(session)){
+        leave_function();
+    	return SSH_AUTH_ERROR;
+    }
     user=string_from_char(username);
     service=string_from_char("ssh-connection");
     method=string_from_char("publickey");
@@ -214,6 +234,7 @@ int ssh_userauth_offer_pubkey(SSH_SESSION *session, char *username,int type, STR
     free(method);
     free(service);
     free(algo);
+    leave_function();
     return err;
 }
 
@@ -241,17 +262,21 @@ int ssh_userauth_pubkey(SSH_SESSION *session, char *username, STRING *publickey,
     STRING *algo;
     STRING *sign;
     int err=SSH_AUTH_ERROR;
+    enter_function();
 //    if(session->version==1)
 //        return ssh_userauth1_pubkey(session,username,publickey,privatekey);
     if(!username)
         if(!(username=session->options->username)){
-            if(ssh_options_default_username(session->options))
-                return err;
-            else
+            if(ssh_options_default_username(session->options)){
+            	leave_function();
+            	return err;
+            } else
                 username=session->options->username;
         }
-    if(ask_userauth(session))
-        return err;
+    if(ask_userauth(session)){
+        leave_function();
+    	return err;
+    }
     user=string_from_char(username);
     service=string_from_char("ssh-connection");
     method=string_from_char("publickey");
@@ -278,6 +303,7 @@ int ssh_userauth_pubkey(SSH_SESSION *session, char *username, STRING *publickey,
     free(service);
     free(method);
     free(algo);
+    leave_function();
     return err;
 }
 
@@ -300,19 +326,27 @@ int ssh_userauth_password(SSH_SESSION *session,char *username,char *password){
     STRING *method;
     STRING *password_s;
     int err;
+    enter_function();
 #ifdef HAVE_SSH1
-    if(session->version==1)
-        return ssh_userauth1_password(session,username,password);
+    if(session->version==1){
+        err = ssh_userauth1_password(session,username,password);
+        leave_function();
+        return err;
+    }
 #endif
     if(!username)
         if(!(username=session->options->username)){
-            if(ssh_options_default_username(session->options))
-                return SSH_AUTH_ERROR;
-            else
+            if(ssh_options_default_username(session->options)){
+                err = SSH_AUTH_ERROR;
+                leave_function();
+                return err;
+            } else
                 username=session->options->username;
         }
-    if(ask_userauth(session))
-        return SSH_AUTH_ERROR;
+    if(ask_userauth(session)){
+    	leave_function();
+    	return SSH_AUTH_ERROR;
+    }
     user=string_from_char(username);
     service=string_from_char("ssh-connection");
     method=string_from_char("password");
@@ -332,6 +366,7 @@ int ssh_userauth_password(SSH_SESSION *session,char *username,char *password){
     free(password_s);
     packet_send(session);
     err=wait_auth_status(session,0);
+    leave_function();
     return err;
 }
 
@@ -362,9 +397,11 @@ int ssh_userauth_autopubkey(SSH_SESSION *session){
     char *privkeyfile=NULL;
     PRIVATE_KEY *privkey;
     char *id=NULL;
+    enter_function();
     // always testing none
     err=ssh_userauth_none(session,NULL);
     if(err==SSH_AUTH_ERROR || err==SSH_AUTH_SUCCESS){
+    	leave_function();
         return err;
     }
     if(session->options->identity){
@@ -386,6 +423,7 @@ int ssh_userauth_autopubkey(SSH_SESSION *session){
             }
             free(pubkey);
             free(privkeyfile);
+            leave_function();
             return err;
         } else
         if(err != SSH_AUTH_SUCCESS){
@@ -416,6 +454,7 @@ int ssh_userauth_autopubkey(SSH_SESSION *session){
             free(pubkey);
             free(privkeyfile);
             private_key_free(privkey);
+            leave_function();
             return err;
         } else
         if(err != SSH_AUTH_SUCCESS){
@@ -437,6 +476,7 @@ int ssh_userauth_autopubkey(SSH_SESSION *session){
             keys_path[0]=NULL;
             free(id);
         }
+        leave_function();
         return SSH_AUTH_SUCCESS;
     }
     /* at this point, pubkey is NULL and so is privkeyfile */
@@ -447,7 +487,7 @@ int ssh_userauth_autopubkey(SSH_SESSION *session){
         keys_path[0]=NULL;
         free(id);
     }
-
+    leave_function();
     return SSH_AUTH_DENIED;
 }
 
@@ -525,6 +565,8 @@ static int kbdauth_init(SSH_SESSION *session,
     STRING *submethods_s=(submethods ? string_from_char(submethods): string_from_char(""));
     STRING *service=string_from_char("ssh-connection");
     STRING *method=string_from_char("keyboard-interactive");
+    int err;
+    enter_function();
     packet_clear_out(session);
     buffer_add_u8(session->out_buffer,SSH2_MSG_USERAUTH_REQUEST);
     buffer_add_ssh_string(session->out_buffer,user_s);
@@ -536,9 +578,13 @@ static int kbdauth_init(SSH_SESSION *session,
     free(service);
     free(method);
     free(submethods_s);
-    if(packet_send(session))
-        return SSH_AUTH_ERROR;
-    return wait_auth_status(session,1);
+    if(packet_send(session)){
+        leave_function();
+    	return SSH_AUTH_ERROR;
+    }
+    err=wait_auth_status(session,1);
+    leave_function();
+    return err;
 }
 
 static int kbdauth_info_get(SSH_SESSION *session){
@@ -547,6 +593,7 @@ static int kbdauth_info_get(SSH_SESSION *session){
     STRING *tmp;
     u32 nprompts;
     int i;
+    enter_function();
     name=buffer_get_ssh_string(session->in_buffer);
     instruction=buffer_get_ssh_string(session->in_buffer);
     tmp=buffer_get_ssh_string(session->in_buffer);
@@ -558,6 +605,7 @@ static int kbdauth_info_get(SSH_SESSION *session){
             free(instruction);
         // tmp must be empty if we got here
         ssh_set_error(session,SSH_FATAL,"Invalid USERAUTH_INFO_REQUEST msg");
+        leave_function();
         return SSH_AUTH_ERROR;
     }
     if(tmp)
@@ -573,6 +621,7 @@ static int kbdauth_info_get(SSH_SESSION *session){
     nprompts=ntohl(nprompts);
     if(nprompts>KBDINT_MAX_PROMPT){
         ssh_set_error(session,SSH_FATAL,"Too much prompt asked from server: %lu(0x%.8lx)",nprompts,nprompts);
+        leave_function();
         return SSH_AUTH_ERROR;
     }
     session->kbdint->nprompts=nprompts;
@@ -585,11 +634,13 @@ static int kbdauth_info_get(SSH_SESSION *session){
         buffer_get_u8(session->in_buffer,&session->kbdint->echo[i]);
         if(!tmp){
             ssh_set_error(session,SSH_FATAL,"Short INFO_REQUEST packet");
+            leave_function();
             return SSH_AUTH_ERROR;
         }
         session->kbdint->prompts[i]=string_to_char(tmp);
         free(tmp);
     }
+    leave_function();
     return SSH_AUTH_INFO; /* we are not auth. but we parsed the packet */
 }
 
@@ -597,6 +648,8 @@ static int kbdauth_info_get(SSH_SESSION *session){
 static int kbdauth_send(SSH_SESSION *session) {
     STRING *answer;
     int i;
+    int err;
+    enter_function();
     packet_clear_out(session);
     buffer_add_u8(session->out_buffer,SSH2_MSG_USERAUTH_INFO_RESPONSE);
     buffer_add_u32(session->out_buffer,htonl(session->kbdint->nprompts));
@@ -609,9 +662,13 @@ static int kbdauth_send(SSH_SESSION *session) {
         string_burn(answer);
         free(answer);
     }
-    if(packet_send(session))
-        return SSH_AUTH_ERROR;
-    return wait_auth_status(session,1);
+    if(packet_send(session)){
+        leave_function();
+    	return SSH_AUTH_ERROR;
+    }
+    err = wait_auth_status(session,1);
+    leave_function();
+    return err;
 }
 
 /** \brief Try to authenticate through the "keyboard-interactive" method
@@ -637,25 +694,32 @@ int ssh_userauth_kbdint(SSH_SESSION *session,char *user,char *submethods){
     int err;
     if(session->version==1)
         return SSH_AUTH_DENIED; // no keyb-interactive for ssh1
+    enter_function();
     if( !session->kbdint){
         /* first time we call. we must ask for a challenge */
         if(!user)
             if(!(user=session->options->username)){
-                if(ssh_options_default_username(session->options))
-                    return SSH_AUTH_ERROR;
-                else
+                if(ssh_options_default_username(session->options)){
+                    leave_function();
+                	return SSH_AUTH_ERROR;
+                } else
                     user=session->options->username;
             }
-        if(ask_userauth(session))
-            return SSH_AUTH_ERROR;
+        if(ask_userauth(session)){
+            leave_function();
+        	return SSH_AUTH_ERROR;
+        }
         err=kbdauth_init(session,user,submethods);
-        if(err!=SSH_AUTH_INFO)
-            return err; /* error or first try success */
+        if(err!=SSH_AUTH_INFO){
+            leave_function();
+        	return err; /* error or first try success */
+        }
         err=kbdauth_info_get(session);
         if(err==SSH_AUTH_ERROR){
             kbdint_free(session->kbdint);
             session->kbdint=NULL;
         }
+        leave_function();
         return err;
     }
     /* if we are at this point, it's because session->kbdint exists */
@@ -665,13 +729,16 @@ int ssh_userauth_kbdint(SSH_SESSION *session,char *user,char *submethods){
     err=kbdauth_send(session);
     kbdint_free(session->kbdint);
     session->kbdint=NULL;
-    if(err!=SSH_AUTH_INFO)
-        return err;
+    if(err!=SSH_AUTH_INFO){
+        leave_function();
+    	return err;
+    }
     err=kbdauth_info_get(session);
     if(err==SSH_AUTH_ERROR){
         kbdint_free(session->kbdint);
         session->kbdint=NULL;
     }
+    leave_function();
     return err;
 }
 

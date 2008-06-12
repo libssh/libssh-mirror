@@ -42,6 +42,8 @@ MA 02111-1307, USA. */
 /* can fetch it, while continuing to read for other messages (it is inspecified in which order messages may */
 /* be sent back to the client */
 
+#define sftp_enter_function() _enter_function(sftp->channel->session)
+#define sftp_leave_function() _leave_function(sftp->channel->session)
 
 /* functions */
 void sftp_enqueue(SFTP_SESSION *session, SFTP_MESSAGE *msg);
@@ -49,18 +51,22 @@ static void sftp_message_free(SFTP_MESSAGE *msg);
 
 SFTP_SESSION *sftp_new(SSH_SESSION *session){
     SFTP_SESSION *sftp=malloc(sizeof(SFTP_SESSION));
+    enter_function();
     memset(sftp,0,sizeof(SFTP_SESSION));
     sftp->session=session;
     sftp->channel=channel_new(session);
     if(channel_open_session(sftp->channel)){
         channel_free(sftp->channel);
         free(sftp);
+        leave_function();
         return NULL;
     }
     if(channel_request_sftp(sftp->channel)){
         sftp_free(sftp);
+        leave_function();
         return NULL;
     }
+    leave_function();
     return sftp;
 }
 
@@ -138,11 +144,13 @@ int sftp_packet_write(SFTP_SESSION *sftp,u8 type, BUFFER *payload){
 SFTP_PACKET *sftp_packet_read(SFTP_SESSION *sftp){
     SFTP_PACKET *packet=malloc(sizeof(SFTP_PACKET));
     u32 size;
+    sftp_enter_function();
     packet->sftp=sftp;
     packet->payload=buffer_new();
     if(channel_read(sftp->channel,packet->payload,4,0)<=0){
         buffer_free(packet->payload);
         free(packet);
+        sftp_leave_function();
         return NULL;
     }
     buffer_get_u32(packet->payload,&size);
@@ -150,6 +158,7 @@ SFTP_PACKET *sftp_packet_read(SFTP_SESSION *sftp){
     if(channel_read(sftp->channel,packet->payload,1,0)<=0){
         buffer_free(packet->payload);
         free(packet);
+        sftp_leave_function();
         return NULL;
     }
     buffer_get_u8(packet->payload,&packet->type);
@@ -157,8 +166,10 @@ SFTP_PACKET *sftp_packet_read(SFTP_SESSION *sftp){
         if(channel_read(sftp->channel,packet->payload,size-1,0)<=0){
             buffer_free(packet->payload);
             free(packet);
+            sftp_leave_function();
             return NULL;
         }
+    sftp_leave_function();
     return packet;
 }
 
@@ -196,17 +207,23 @@ SFTP_MESSAGE *sftp_get_message(SFTP_PACKET *packet){
     return msg;
 }
 
-int sftp_read_and_dispatch(SFTP_SESSION *session){
+int sftp_read_and_dispatch(SFTP_SESSION *sftp){
     SFTP_PACKET *packet;
     SFTP_MESSAGE *message=NULL;
-    packet=sftp_packet_read(session);
-    if(!packet)
-        return -1; /* something nasty happened reading the packet */
+    sftp_enter_function();
+    packet=sftp_packet_read(sftp);
+    if(!packet){
+        sftp_leave_function();
+    	return -1; /* something nasty happened reading the packet */
+    }
     message=sftp_get_message(packet);
     sftp_packet_free(packet);
-    if(!message)
-        return -1;
-    sftp_enqueue(session,message);
+    if(!message){
+        sftp_leave_function();
+    	return -1;
+    }
+    sftp_enqueue(sftp,message);
+    sftp_leave_function();
     return 0;
 }
 
@@ -222,15 +239,19 @@ int sftp_init(SFTP_SESSION *sftp){
     STRING *ext_name_s=NULL, *ext_data_s=NULL;
     char *ext_name,*ext_data;
     u32 version=htonl(LIBSFTP_VERSION);
+    sftp_enter_function();
     buffer_add_u32(buffer,version);
     sftp_packet_write(sftp,SSH_FXP_INIT,buffer);
     buffer_free(buffer);
     packet=sftp_packet_read(sftp);
-    if(!packet)
-        return -1;
+    if(!packet){
+        sftp_leave_function();
+    	return -1;
+    }
     if(packet->type != SSH_FXP_VERSION){
         ssh_set_error(sftp->session,SSH_FATAL,"Received a %d messages instead of SSH_FXP_VERSION",packet->type);
         sftp_packet_free(packet);
+        sftp_leave_function();
         return -1;
     }
     buffer_get_u32(packet->payload,&version);
@@ -250,6 +271,7 @@ int sftp_init(SFTP_SESSION *sftp){
         free(ext_data_s);
     sftp_packet_free(packet);
     sftp->version=sftp->server_version=version;
+    sftp_leave_function();
     return 0;
 }
 

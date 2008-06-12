@@ -1,7 +1,7 @@
 /* dh.c */
 /* this file contains usefull stuff for Diffie helman algorithm against SSH 2 */
 /*
-Copyright 2003 Aris Adamantiadis
+Copyright 2003-2008 Aris Adamantiadis
 
 This file is part of the SSH Library
 
@@ -310,6 +310,7 @@ void make_sessionid(SSH_SESSION *session){
     BUFFER *server_hash, *client_hash;
     BUFFER *buf=buffer_new();
     u32 len;
+    enter_function();
     ctx=sha1_init();
 
     str=string_from_char(session->clientbanner);
@@ -379,6 +380,7 @@ void make_sessionid(SSH_SESSION *session){
     printf("Session hash : ");
     ssh_print_hexa("session id",session->next_crypto->session_id,SHA_DIGEST_LEN);
 #endif
+    leave_function();
 }
 
 void hashbufout_add_cookie(SSH_SESSION *session){
@@ -409,6 +411,7 @@ static void generate_one_key(STRING *k,unsigned char session_id[SHA_DIGEST_LEN],
 void generate_session_keys(SSH_SESSION *session){
     STRING *k_string;
     SHACTX ctx;
+    enter_function();
     k_string=make_bignum_string(session->next_crypto->k);
 
     /* IV */
@@ -460,6 +463,7 @@ void generate_session_keys(SSH_SESSION *session){
     ssh_print_hexa("Decryption MAC",session->next_crypto->decryptMAC,20);
 #endif
     free(k_string);
+    leave_function();
 }
 
 /** \addtogroup ssh_session
@@ -587,18 +591,24 @@ int signature_verify(SSH_SESSION *session,STRING *signature){
     PUBLIC_KEY *pubkey;
     SIGNATURE *sign;
     int err;
+    enter_function();
     if(session->options->dont_verify_hostkey){
         ssh_say(1,"Host key wasn't verified\n");
+        leave_function();
         return 0;
     }
     pubkey=publickey_from_string(session,session->next_crypto->server_pubkey);
-    if(!pubkey)
-        return -1;
+    if(!pubkey){
+    	leave_function();
+    	return -1;
+    }
+
     if(session->options->wanted_methods[SSH_HOSTKEYS]){
          if(match(session->options->wanted_methods[SSH_HOSTKEYS],pubkey->type_c)){
              ssh_set_error(session,SSH_FATAL,"Public key from server (%s) doesn't match user preference (%s)",
              pubkey->type_c,session->options->wanted_methods[SSH_HOSTKEYS]);
              publickey_free(pubkey);
+             leave_function();
              return -1;
          }
     }
@@ -606,6 +616,7 @@ int signature_verify(SSH_SESSION *session,STRING *signature){
     if(!sign){
         ssh_set_error(session,SSH_FATAL,"Invalid signature blob");
         publickey_free(pubkey);
+        leave_function();
         return -1;
     }
     ssh_say(1,"Going to verify a %s type signature\n",pubkey->type_c);
@@ -613,6 +624,7 @@ int signature_verify(SSH_SESSION *session,STRING *signature){
     signature_free(sign);
     session->next_crypto->server_pubkey_type=pubkey->type_c;
     publickey_free(pubkey);
+    leave_function();
     return err;
 }
 

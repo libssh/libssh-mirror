@@ -98,6 +98,7 @@ int ssh_connect_ai_timeout(SSH_SESSION *session, const char *host, int port, str
     fd_set set;
     int ret=0;
     unsigned int len=sizeof(ret);
+    enter_function();
     to.tv_sec=timeout;
     to.tv_usec=usec;
     sock_set_nonblocking(s);
@@ -110,11 +111,13 @@ int ssh_connect_ai_timeout(SSH_SESSION *session, const char *host, int port, str
         /* timeout */
         ssh_set_error(session,SSH_FATAL,"Timeout while connecting to %s:%d",host,port);
         close(s);
+        leave_function();
         return -1;
     }
     if(ret<0){
         ssh_set_error(session,SSH_FATAL,"Select error : %s",strerror(errno));
         close(s);
+        leave_function();
         return -1;
     }
     ret = 0;
@@ -123,11 +126,13 @@ int ssh_connect_ai_timeout(SSH_SESSION *session, const char *host, int port, str
     if (ret!=0){
         ssh_set_error(session,SSH_FATAL,"Connecting : %s",strerror(ret));
         close(s);
+        leave_function();
         return -1;
     }
     /* s is connected ? */
     ssh_say(3,"socket connected with timeout\n");
     sock_set_blocking(s);
+    leave_function();
     return s;
 }
 
@@ -140,10 +145,11 @@ socket_t ssh_connect_host(SSH_SESSION *session, const char *host, const char
     socket_t s=-1;
     int my_errno;
     struct addrinfo *ai, *ai2;
-
+    enter_function();
     my_errno=getai(host, port, &ai);
     if (my_errno){
         ssh_set_error(session,SSH_FATAL,"Failed to resolve hostname %s (%s)",host,gai_strerror(my_errno));
+        leave_function();
         return -1;
     }
     
@@ -162,6 +168,7 @@ socket_t ssh_connect_host(SSH_SESSION *session, const char *host, const char
             my_errno=getai(host,0,&bind_ai);
             if (my_errno){
                 ssh_set_error(session,SSH_FATAL,"Failed to resolve bind address %s (%s)",bind_addr,gai_strerror(my_errno));
+                leave_function();
                 return -1;
             }
 
@@ -182,12 +189,15 @@ socket_t ssh_connect_host(SSH_SESSION *session, const char *host, const char
             }
         }
         if(timeout||usec){
-            return ssh_connect_ai_timeout(session,host,port,ai2,timeout,usec,s);
+            socket_t ret=ssh_connect_ai_timeout(session,host,port,ai2,timeout,usec,s);
+            leave_function();
+            return ret;
         }
         if(connect(s,ai2->ai_addr,ai2->ai_addrlen)<0){
             ssh_set_error(session,SSH_FATAL,"connect: %s",strerror(errno));
             close(s);
             s=-1;
+            leave_function();
             continue;
         }
         else{ /*we are connected*/
@@ -195,6 +205,7 @@ socket_t ssh_connect_host(SSH_SESSION *session, const char *host, const char
         }
     }
     freeaddrinfo(ai);
+    leave_function();
     return s;
 }
 
@@ -214,7 +225,7 @@ int ssh_fd_poll(SSH_SESSION *session, int *write, int *except){
     fd_set wdes; // writing set
     fd_set edes; // exception set
     int fdmax=-1;
-    
+    enter_function();
     FD_ZERO(&rdes);
     FD_ZERO(&wdes);
     FD_ZERO(&edes);
@@ -223,6 +234,7 @@ int ssh_fd_poll(SSH_SESSION *session, int *write, int *except){
         *except=1;
         *write=0;
         session->alive=0;
+        leave_function();
         return 0;
     }
     if(!session->data_to_read)
@@ -238,6 +250,7 @@ int ssh_fd_poll(SSH_SESSION *session, int *write, int *except){
     /* Make the call, and listen for errors */
     if (select(fdmax, &rdes,&wdes,&edes, &sometime) < 0) {
     	ssh_set_error(session,SSH_FATAL, "select: %s", strerror(errno));
+    	leave_function();
     	return -1;
     }
     if(!session->data_to_read)
@@ -246,6 +259,7 @@ int ssh_fd_poll(SSH_SESSION *session, int *write, int *except){
         session->data_to_write=ssh_socket_fd_isset(session->socket,&wdes);
     *except=ssh_socket_fd_isset(session->socket,&edes);
     *write=session->data_to_write;
+    leave_function();
     return session->data_to_read;
 }
 

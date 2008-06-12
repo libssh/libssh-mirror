@@ -34,20 +34,26 @@ MA 02111-1307, USA. */
 char *ssh_get_banner(SSH_SESSION *session){
     char buffer[128];
     int i = 0;
+    char *ret;
+    enter_function();
     while (i < 127) {
         if(!ssh_socket_is_open(session->socket) || ssh_socket_read(session->socket, &buffer[i], 1)<=0){
             ssh_set_error(session,SSH_FATAL,"Remote host closed connection");
+            leave_function();
             return NULL;
         }
         if (buffer[i] == '\r')
             buffer[i] = 0;
         if (buffer[i] == '\n') {
             buffer[i] = 0;
-            return strdup(buffer);
+            ret= strdup(buffer);
+            leave_function();
+            return ret;
         }
     i++;
     }
     ssh_set_error(session,SSH_FATAL,"Too large banner");
+    leave_function();
     return NULL;
 }
 
@@ -89,6 +95,7 @@ int ssh_analyze_banner(SSH_SESSION *session, int *ssh1, int *ssh2){
 int ssh_send_banner(SSH_SESSION *session,int server){
      char *banner;
     char buffer[128];
+    enter_function();
     banner=session->version==1?CLIENTBANNER1:CLIENTBANNER2;
     if(session->options->banner)
         banner=session->options->banner;
@@ -98,6 +105,7 @@ int ssh_send_banner(SSH_SESSION *session,int server){
         session->clientbanner=strdup(banner);
     snprintf(buffer,128,"%s\r\n",banner);
     ssh_socket_write(session->socket,buffer,strlen(buffer));
+    leave_function();
     return 0;
 }
 
@@ -110,6 +118,7 @@ int ssh_send_banner(SSH_SESSION *session,int server){
 static int dh_handshake(SSH_SESSION *session){
     STRING *e,*f,*pubkey,*signature;
     int ret;
+    enter_function();
     switch(session->dh_handshake_state){
         case DH_STATE_INIT:
             packet_clear_out(session);
@@ -121,32 +130,41 @@ static int dh_handshake(SSH_SESSION *session){
             ret=packet_send(session);
             free(e);
             session->dh_handshake_state=DH_STATE_INIT_TO_SEND;
-            if(ret==SSH_ERROR)
+            if(ret==SSH_ERROR){
+            	leave_function();
                 return ret;
+            }
         case DH_STATE_INIT_TO_SEND:
             ret=packet_flush(session,0);
-            if(ret!=SSH_OK)
-                return ret; // SSH_ERROR or SSH_AGAIN
+            if(ret!=SSH_OK){
+                leave_function();
+            	return ret; // SSH_ERROR or SSH_AGAIN
+            }
             session->dh_handshake_state=DH_STATE_INIT_SENT;
         case DH_STATE_INIT_SENT:
             ret=packet_wait(session,SSH2_MSG_KEXDH_REPLY,1);
-            if(ret != SSH_OK)
-                return ret;
+            if(ret != SSH_OK){
+                leave_function();
+            	return ret;
+            }
             pubkey=buffer_get_ssh_string(session->in_buffer);
             if(!pubkey){
                 ssh_set_error(session,SSH_FATAL,"No public key in packet");
+                leave_function();
                 return SSH_ERROR;
             }
             dh_import_pubkey(session,pubkey);
             f=buffer_get_ssh_string(session->in_buffer);
             if(!f){
                 ssh_set_error(session,SSH_FATAL,"No F number in packet");
+                leave_function();
                 return SSH_ERROR;
             }
             dh_import_f(session,f);
             free(f);
             if(!(signature=buffer_get_ssh_string(session->in_buffer))){
                 ssh_set_error(session,SSH_FATAL,"No signature in packet");
+                leave_function();
                 return SSH_ERROR;
             }
             session->dh_server_signature=signature;
@@ -158,26 +176,33 @@ static int dh_handshake(SSH_SESSION *session){
             session->dh_handshake_state=DH_STATE_NEWKEYS_TO_SEND;
         case DH_STATE_NEWKEYS_TO_SEND:
             ret=packet_flush(session,0);
-            if(ret != SSH_OK)
-                return ret;
+            if(ret != SSH_OK){
+                leave_function();
+            	return ret;
+            }
             ssh_say(2,"SSH_MSG_NEWKEYS sent\n");
             session->dh_handshake_state=DH_STATE_NEWKEYS_SENT;
         case DH_STATE_NEWKEYS_SENT:
             ret=packet_wait(session,SSH2_MSG_NEWKEYS,1);
-            if(ret != SSH_OK)
-                return ret;
+            if(ret != SSH_OK){
+                leave_function();
+            	return ret;
+            }
             ssh_say(2,"Got SSH_MSG_NEWKEYS\n");
             make_sessionid(session);
             /* set the cryptographic functions for the next crypto */
             /* (it is needed for generate_session_keys for key lenghts) */
-            if(crypt_set_algorithms(session))
-                return SSH_ERROR;
+            if(crypt_set_algorithms(session)){
+                leave_function();
+            	return SSH_ERROR;
+            }
             generate_session_keys(session);
             /* verify the host's signature. XXX do it sooner */
             signature=session->dh_server_signature;
             session->dh_server_signature=NULL;
             if(signature_verify(session,signature)){
                 free(signature);
+                leave_function();
                 return SSH_ERROR;
             }
             free(signature);	/* forget it for now ... */
@@ -188,17 +213,21 @@ static int dh_handshake(SSH_SESSION *session){
             session->current_crypto=session->next_crypto;
             session->next_crypto=crypto_new();
             session->dh_handshake_state=DH_STATE_FINISHED;
+            leave_function();
             return SSH_OK;
         default:
             ssh_set_error(session,SSH_FATAL,"Invalid state in dh_handshake():%d",session->dh_handshake_state);
+            leave_function();
             return SSH_ERROR;
     }
     /* not reached */
+    leave_function();
     return SSH_ERROR;
 }
 
 int ssh_service_request(SSH_SESSION *session,char *service){
     STRING *service_s;
+    enter_function();
     packet_clear_out(session);
     buffer_add_u8(session->out_buffer,SSH2_MSG_SERVICE_REQUEST);
     service_s=string_from_char(service);
@@ -208,9 +237,11 @@ int ssh_service_request(SSH_SESSION *session,char *service){
     ssh_say(3,"Sent SSH_MSG_SERVICE_REQUEST (service %s)\n",service);
     if(packet_wait(session,SSH2_MSG_SERVICE_ACCEPT,1)){
         ssh_set_error(session,SSH_FATAL,"did not receive SERVICE_ACCEPT");
+        leave_function();
         return -1;
     }
     ssh_say(3,"Received SSH_MSG_SERVICE_ACCEPT (service %s)\n",service);
+    leave_function();
     return 0;
 }
 
@@ -231,12 +262,14 @@ int ssh_connect(SSH_SESSION *session){
       ssh_set_error(session,SSH_FATAL,"Must set options before connect");
       return SSH_ERROR;
   }
+  enter_function();
   session->alive=0;
   session->client=1;
   ssh_crypto_init();
   ssh_socket_init();
   if(options->fd==-1 && !options->host){
       ssh_set_error(session,SSH_FATAL,"Hostname required");
+      leave_function();
       return SSH_ERROR;
   } 
   if(options->fd != -1)
@@ -244,14 +277,17 @@ int ssh_connect(SSH_SESSION *session){
   else
       fd=ssh_connect_host(session,options->host,options->bindaddr,options->port,
           options->timeout,options->timeout_usec);    
-  if(fd<0)
-      return -1;
+  if(fd<0){
+	  leave_function();
+	  return -1;
+  }
   set_status(options,0.2);
   ssh_socket_set_fd(session->socket,fd);
   session->alive=1;
   if(!(session->serverbanner=ssh_get_banner(session))){
       ssh_socket_close(session->socket);
       session->alive=0;
+      leave_function();
       return -1;
   }
   set_status(options,0.4);
@@ -260,6 +296,7 @@ int ssh_connect(SSH_SESSION *session){
   if(ssh_analyze_banner(session,&ssh1,&ssh2)){
       ssh_socket_close(session->socket);
       session->alive=0;
+      leave_function();
       return -1;
   }
   /* here we decide which version of the protocol to use */
@@ -273,6 +310,7 @@ int ssh_connect(SSH_SESSION *session){
         session->serverbanner);
         ssh_socket_close(session->socket);
         session->alive=0;
+        leave_function();
         return -1;
   }
   ssh_send_banner(session,0);
@@ -282,6 +320,7 @@ int ssh_connect(SSH_SESSION *session){
         if(ssh_get_kex(session,0)){
             ssh_socket_close(session->socket);
             session->alive=0;
+            leave_function();
             return -1;
         }
         set_status(options,0.6);
@@ -289,6 +328,7 @@ int ssh_connect(SSH_SESSION *session){
         if(set_kex(session)){
             ssh_socket_close(session->socket);
             session->alive=0;
+            leave_function();
             return -1;
         }
         ssh_send_kex(session,0);
@@ -296,6 +336,7 @@ int ssh_connect(SSH_SESSION *session){
         if(dh_handshake(session)){
             ssh_socket_close(session->socket);
             session->alive=0;
+            leave_function();
             return -1;
         } 
         set_status(options,1.0);
@@ -305,12 +346,14 @@ int ssh_connect(SSH_SESSION *session){
         if(ssh_get_kex1(session)){
             ssh_socket_close(session->socket);
             session->alive=0;
+            leave_function();
             return -1;
         }
         set_status(options,0.6);
         session->connected=1;
         break;  
   }
+  leave_function();
   return 0;
 }
 
@@ -331,6 +374,7 @@ char *ssh_get_issue_banner(SSH_SESSION *session){
  */
 void ssh_disconnect(SSH_SESSION *session){
     STRING *str;
+    enter_function();
     if(ssh_socket_is_open(session->socket)) {
         packet_clear_out(session);
         buffer_add_u8(session->out_buffer,SSH2_MSG_DISCONNECT);
@@ -342,6 +386,7 @@ void ssh_disconnect(SSH_SESSION *session){
         ssh_socket_close(session->socket);
     }
     session->alive=0;
+    leave_function();
     ssh_cleanup(session);
 }
 

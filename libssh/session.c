@@ -44,10 +44,12 @@ SSH_SESSION *ssh_new() {
     session->socket=ssh_socket_new();
     session->alive=0;
     session->blocking=1;
+    session->log_indent=0;
     return session;
 }
 
 void ssh_cleanup(SSH_SESSION *session){
+	enter_function();
     int i;
     if(session->serverbanner)
         free(session->serverbanner);
@@ -95,15 +97,19 @@ void ssh_cleanup(SSH_SESSION *session){
     memset(session,'X',sizeof(SSH_SESSION)); /* burn connection, it could hangs 
                                                 sensitive datas */
     free(session);
+    //leave_function();
 }
 
 /** \brief disconnect impolitely from remote host
  * \param session current ssh session
  */
 void ssh_silent_disconnect(SSH_SESSION *session){
+	enter_function();
+	ssh_log(session,SSH_LOG_ENTRY,"ssh_silent_disconnect()");
     ssh_socket_close(session->socket);
     session->alive=0;
     ssh_disconnect(session);
+    //leave_function();
 }
 
 /** \brief set the options for the current session
@@ -114,6 +120,7 @@ void ssh_silent_disconnect(SSH_SESSION *session){
  */
 void ssh_set_options(SSH_SESSION *session, SSH_OPTIONS *options){
     session->options=options;
+    session->log_verbosity=options->log_verbosity;
 }
 
 /** \brief set the session in blocking/nonblocking mode
@@ -163,16 +170,22 @@ void ssh_set_fd_except(SSH_SESSION *session){
 /* looks if there is data to read on the socket and parse it. */
 int ssh_handle_packets(SSH_SESSION *session){
     int w,err,r,i=0;
+    enter_function();
     do {
         r=ssh_fd_poll(session,&w,&err);
-        if(r<=0)
+        if(r<=0){
+        	leave_function();
             return r; // error or no data available
+        }
         /* if an exception happened, it will be trapped by packet_read() */
-        if(packet_read(session)||packet_translate(session))
-            return -1;
+        if(packet_read(session)||packet_translate(session)){
+            leave_function();
+        	return -1;
+        }
         packet_parse(session);
         ++i;
     } while(r>0 && i<5);
+    leave_function();
     return r;
 }
 

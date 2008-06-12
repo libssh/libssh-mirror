@@ -48,9 +48,11 @@ static SSH_MESSAGE *message_new(SSH_SESSION *session){
 static int handle_service_request(SSH_SESSION *session){
     STRING *service;
     char *service_c;
+    enter_function();
     service=buffer_get_ssh_string(session->in_buffer);
     if(!service){
         ssh_set_error(session,SSH_FATAL,"Invalid SSH_MSG_SERVICE_REQUEST packet");
+        leave_function();
         return -1;
     }
     service_c=string_to_char(service);
@@ -61,6 +63,7 @@ static int handle_service_request(SSH_SESSION *session){
     buffer_add_ssh_string(session->out_buffer,service);
     packet_send(session);
     free(service);
+    leave_function();
     return 0;
 }
 
@@ -76,6 +79,7 @@ static SSH_MESSAGE *handle_userauth_request(SSH_SESSION *session){
     STRING *method=buffer_get_ssh_string(session->in_buffer);
     SSH_MESSAGE *msg;
     char *service_c,*method_c;
+    enter_function();
     msg=message_new(session);
     msg->type=SSH_AUTH_REQUEST;
     msg->auth_request.username=string_to_char(user);
@@ -88,6 +92,7 @@ static SSH_MESSAGE *handle_userauth_request(SSH_SESSION *session){
     if(!strcmp(method_c,"none")){
         msg->auth_request.method=SSH_AUTH_NONE;
         free(method_c);
+        leave_function();
         return msg;
     }
     if(!strcmp(method_c,"password")){
@@ -99,10 +104,12 @@ static SSH_MESSAGE *handle_userauth_request(SSH_SESSION *session){
         pass=buffer_get_ssh_string(session->in_buffer);
         msg->auth_request.password=string_to_char(pass);
         free(pass);
+        leave_function();
         return msg;
     }
     msg->auth_request.method=SSH_AUTH_UNKNOWN;
     free(method_c);
+    leave_function();
     return msg;
 }
 
@@ -121,18 +128,21 @@ void ssh_message_auth_set_methods(SSH_MESSAGE *msg,int methods){
 static int ssh_message_auth_reply_default(SSH_MESSAGE *msg,int partial){
     char methods_c[128]="";
     STRING *methods;
-    packet_clear_out(msg->session);
-    buffer_add_u8(msg->session->out_buffer,SSH2_MSG_USERAUTH_FAILURE);
-    if(msg->session->auth_methods==0){
-        msg->session->auth_methods=SSH_AUTH_PUBLICKEY|SSH_AUTH_PASSWORD;
+    SSH_SESSION *session=msg->session;
+    int ret;
+    enter_function();
+    packet_clear_out(session);
+    buffer_add_u8(session->out_buffer,SSH2_MSG_USERAUTH_FAILURE);
+    if(session->auth_methods==0){
+        session->auth_methods=SSH_AUTH_PUBLICKEY|SSH_AUTH_PASSWORD;
     }
-    if(msg->session->auth_methods & SSH_AUTH_PUBLICKEY)
+    if(session->auth_methods & SSH_AUTH_PUBLICKEY)
         strcat(methods_c,"publickey,");
-    if(msg->session->auth_methods & SSH_AUTH_KEYBINT)
+    if(session->auth_methods & SSH_AUTH_KEYBINT)
         strcat(methods_c,"keyboard-interactive,");
-    if(msg->session->auth_methods & SSH_AUTH_PASSWORD)
+    if(session->auth_methods & SSH_AUTH_PASSWORD)
         strcat(methods_c,"password,");
-    if(msg->session->auth_methods & SSH_AUTH_HOSTBASED)
+    if(session->auth_methods & SSH_AUTH_HOSTBASED)
         strcat(methods_c,"hostbased,");
     methods_c[strlen(methods_c)-1]=0; // strip the comma. We are sure there is at 
     // least one word into the list
@@ -141,10 +151,12 @@ static int ssh_message_auth_reply_default(SSH_MESSAGE *msg,int partial){
     buffer_add_ssh_string(msg->session->out_buffer,methods);
     free(methods);
     if(partial)
-        buffer_add_u8(msg->session->out_buffer,1);
+        buffer_add_u8(session->out_buffer,1);
     else
-        buffer_add_u8(msg->session->out_buffer,0); // no partial success
-    return packet_send(msg->session);
+        buffer_add_u8(session->out_buffer,0); // no partial success
+    ret = packet_send(msg->session);
+    leave_function();
+    return ret;
 }
 
 int ssh_message_auth_reply_success(SSH_MESSAGE *msg,int partial){
@@ -156,6 +168,7 @@ int ssh_message_auth_reply_success(SSH_MESSAGE *msg,int partial){
 }
 
 static SSH_MESSAGE *handle_channel_request_open(SSH_SESSION *session){
+	enter_function();
     SSH_MESSAGE *msg=message_new(session);
     STRING *type;
     char *type_c;
@@ -173,32 +186,38 @@ static SSH_MESSAGE *handle_channel_request_open(SSH_SESSION *session){
     msg->channel_request_open.packet_size=ntohl(packet);
     if(!strcmp(type_c,"session")){
         msg->channel_request_open.type=SSH_CHANNEL_SESSION;
+        leave_function();
         return msg;
     }
     msg->channel_request_open.type=SSH_CHANNEL_UNKNOWN;
+    leave_function();
     return msg;
 }
 
 CHANNEL *ssh_message_channel_request_open_reply_accept(SSH_MESSAGE *msg){
-    CHANNEL *chan=channel_new(msg->session);
-    chan->local_channel=ssh_channel_new_id(msg->session);
+	SSH_SESSION *session=msg->session;
+	enter_function();
+    CHANNEL *chan=channel_new(session);
+    chan->local_channel=ssh_channel_new_id(session);
     chan->local_maxpacket=35000;
     chan->local_window=32000;
     chan->remote_channel=msg->channel_request_open.sender;
     chan->remote_maxpacket=msg->channel_request_open.packet_size;
     chan->remote_window=msg->channel_request_open.window;
     chan->open=1;
-    packet_clear_out(msg->session);
-    buffer_add_u8(msg->session->out_buffer,SSH2_MSG_CHANNEL_OPEN_CONFIRMATION);
-    buffer_add_u32(msg->session->out_buffer,htonl(chan->remote_channel));
-    buffer_add_u32(msg->session->out_buffer,htonl(chan->local_channel));
-    buffer_add_u32(msg->session->out_buffer,htonl(chan->local_window));
-    buffer_add_u32(msg->session->out_buffer,htonl(chan->local_maxpacket));
+    packet_clear_out(session);
+    buffer_add_u8(session->out_buffer,SSH2_MSG_CHANNEL_OPEN_CONFIRMATION);
+    buffer_add_u32(session->out_buffer,htonl(chan->remote_channel));
+    buffer_add_u32(session->out_buffer,htonl(chan->local_channel));
+    buffer_add_u32(session->out_buffer,htonl(chan->local_window));
+    buffer_add_u32(session->out_buffer,htonl(chan->local_maxpacket));
     ssh_say(2,"Accepting a channel request_open for chan %d\n",chan->remote_channel);
-    if(packet_send(msg->session)){
+    if(packet_send(session)){
         channel_free(chan);
+        leave_function();
         return NULL;
     }
+    leave_function();
     return chan;
 }
 
@@ -219,6 +238,7 @@ static SSH_MESSAGE *handle_channel_request(SSH_SESSION *session){
     char *type_c;
     u8 want_reply;
     SSH_MESSAGE *msg=message_new(session);
+    enter_function();
     buffer_get_u32(session->in_buffer,&channel);
     channel=ntohl(channel);
     type=buffer_get_ssh_string(session->in_buffer);
@@ -247,6 +267,7 @@ static SSH_MESSAGE *handle_channel_request(SSH_SESSION *session){
         msg->channel_request.pxwidth=ntohl(msg->channel_request.pxwidth);
         msg->channel_request.pxheight=ntohl(msg->channel_request.pxheight);
         msg->channel_request.modes=buffer_get_ssh_string(session->in_buffer);
+        leave_function();
         return msg;
     }
     if(!strcmp(type_c,"subsystem")){
@@ -257,10 +278,12 @@ static SSH_MESSAGE *handle_channel_request(SSH_SESSION *session){
         free(subsys);
         msg->channel_request.type=SSH_CHANNEL_REQUEST_SUBSYSTEM;
         msg->channel_request.subsystem=subsys_c;
+        leave_function();
         return msg;
     }
     if(!strcmp(type_c,"shell")){
         msg->channel_request.type=SSH_CHANNEL_REQUEST_SHELL;
+        leave_function();
         return msg;
     }
     if(!strcmp(type_c,"exec")){
@@ -268,10 +291,12 @@ static SSH_MESSAGE *handle_channel_request(SSH_SESSION *session){
         msg->channel_request.type=SSH_CHANNEL_REQUEST_EXEC;
         msg->channel_request.command=string_to_char(cmd);
         free(cmd);
+        leave_function();
         return msg;
     }
     
     msg->channel_request.type=SSH_CHANNEL_UNKNOWN;
+    leave_function();
     return msg;
 }
 
@@ -310,34 +335,43 @@ static int ssh_message_channel_request_reply_default(SSH_MESSAGE *msg){
 }
 
 SSH_MESSAGE *ssh_message_get(SSH_SESSION *session){
+	SSH_MESSAGE *ret;
+	enter_function();
     while(1){
-        if(packet_read(session))
-            return NULL;
-        if(packet_translate(session))
-            return NULL;
+        if(packet_read(session) || packet_translate(session)){
+        	leave_function();
+        	return NULL;
+        }
         switch(session->in_packet.type){
             case SSH2_MSG_SERVICE_REQUEST:
-                if(handle_service_request(session))
-                    return NULL;
+                if(handle_service_request(session)){
+                	leave_function();
+                	return NULL;
+                }
                 break;
             case SSH2_MSG_IGNORE:
             case SSH2_MSG_DEBUG:
                 break;
             case SSH2_MSG_USERAUTH_REQUEST:
-                return handle_userauth_request(session);
-                break;
+                ret = handle_userauth_request(session);
+                leave_function();
+                return ret;
             case SSH2_MSG_CHANNEL_OPEN:
-                return handle_channel_request_open(session);
-                break;
+                ret = handle_channel_request_open(session);
+                leave_function();
+                return ret;
             case SSH2_MSG_CHANNEL_REQUEST:
-                return handle_channel_request(session);
-                break;
+                ret = handle_channel_request(session);
+                leave_function();
+                return ret;
             default:
                 handle_unimplemented(session);
                 ssh_set_error(session,SSH_FATAL,"Unhandled message %d\n",session->in_packet.type);
+                leave_function();
                 return NULL;
         }
     }
+    leave_function();
     return NULL;
 }
 

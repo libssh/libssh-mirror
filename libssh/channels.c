@@ -71,6 +71,7 @@ static int channel_open(CHANNEL *channel,char *type_c,int window,
     STRING *type=string_from_char(type_c);
     u32 foo;
     int err;
+    enter_function();
     packet_clear_out(session);
     buffer_add_u8(session->out_buffer,SSH2_MSG_CHANNEL_OPEN);
     channel->local_channel=ssh_channel_new_id(session);
@@ -94,6 +95,7 @@ static int channel_open(CHANNEL *channel,char *type_c,int window,
             if(channel->local_channel!=ntohl(foo)){
                 ssh_set_error(session,SSH_FATAL,"server answered with sender chan num %d instead of given %d",
                 ntohl(foo),channel->local_channel);
+                leave_function();
                 return -1;
                 }
             buffer_get_u32(session->in_buffer,&foo);
@@ -107,6 +109,7 @@ static int channel_open(CHANNEL *channel,char *type_c,int window,
             ssh_say(3,"Remote window : %ld, maxpacket : %ld\n",
 	        channel->remote_window, channel->remote_maxpacket);
 	        channel->open=1;
+	        leave_function();
             return 0;
         case SSH2_MSG_CHANNEL_OPEN_FAILURE:
             {
@@ -121,12 +124,15 @@ static int channel_open(CHANNEL *channel,char *type_c,int window,
                     channel->local_channel,ntohl(code),error);
                 free(error);
                 free(error_s);
+                leave_function();
                 return -1;
             }
         default:
             ssh_set_error(session,SSH_FATAL,"Received unknown packet %d\n",session->in_packet.type);
+            leave_function();
             return -1;
         }
+    leave_function();
     return -1;
 }
 
@@ -145,6 +151,7 @@ CHANNEL *ssh_channel_from_local(SSH_SESSION *session,u32 num){
 
 static void grow_window(SSH_SESSION *session, CHANNEL *channel){
     u32 new_window=WINDOWBASE;
+    enter_function();
     packet_clear_out(session);
     buffer_add_u8(session->out_buffer,SSH2_MSG_CHANNEL_WINDOW_ADJUST);
     buffer_add_u32(session->out_buffer,htonl(channel->remote_channel));
@@ -154,6 +161,7 @@ static void grow_window(SSH_SESSION *session, CHANNEL *channel){
         channel->local_channel,channel->remote_channel,
         channel->local_window + new_window);
     channel->local_window+=new_window;
+    leave_function();
 }
 
 static CHANNEL *channel_from_msg(SSH_SESSION *session){
@@ -173,27 +181,32 @@ static void channel_rcv_change_window(SSH_SESSION *session){
     u32 bytes;
     CHANNEL *channel;
     int err;
+    enter_function();
     channel=channel_from_msg(session);
     if(!channel)
         ssh_say(0,"%s\n",ssh_get_error(session));
     err = buffer_get_u32(session->in_buffer,&bytes);
     if(!channel || err!= sizeof(u32)){
         ssh_say(1,"Error getting a window adjust message : invalid packet\n");
+        leave_function();
         return;
     }
     bytes=ntohl(bytes);
     ssh_say(3,"Adding %d bytes to channel (%d:%d) (from %d bytes)\n",bytes,
         channel->local_channel,channel->remote_channel,channel->remote_window);
     channel->remote_window+=bytes;
+    leave_function();
 }
 
 /* is_stderr is set to 1 if the data are extended, ie stderr */
 static void channel_rcv_data(SSH_SESSION *session,int is_stderr){
     STRING *str;
     CHANNEL *channel;
+    enter_function();
     channel=channel_from_msg(session);
     if(!channel){
         ssh_say(0,"%s",ssh_get_error(session));
+        leave_function();
         return;
     }
     if(is_stderr){
@@ -205,6 +218,7 @@ static void channel_rcv_data(SSH_SESSION *session,int is_stderr){
 
     if(!str){
         ssh_say(0,"Invalid data packet !\n");
+        leave_function();
         return;
     }
     ssh_say(3,"adding %d bytes data in %d\n",string_len(str),is_stderr);
@@ -219,26 +233,32 @@ static void channel_rcv_data(SSH_SESSION *session,int is_stderr){
     if(channel->local_window < WINDOWLIMIT)
         grow_window(session,channel); /* i wonder if this is the correct place to do that */
     free(str);
+    leave_function();
 }
 
 static void channel_rcv_eof(SSH_SESSION *session){
     CHANNEL *channel;
+    enter_function();
     channel=channel_from_msg(session);
     if(!channel){
         ssh_say(0,"%s\n",ssh_get_error(session));
+        leave_function();
         return;
     }
     ssh_say(2,"Received eof on channel (%d:%d)\n",channel->local_channel,
         channel->remote_channel);
 //    channel->remote_window=0;
     channel->remote_eof=1;
+    leave_function();
 }
 
 static void channel_rcv_close(SSH_SESSION *session){
     CHANNEL *channel;
+    enter_function();
     channel=channel_from_msg(session);
     if(!channel){
         ssh_say(0,"%s\n",ssh_get_error(session));
+        leave_function();
         return;
     }
     ssh_say(2,"Received close on channel (%d:%d)\n",channel->local_channel,
@@ -253,6 +273,7 @@ static void channel_rcv_close(SSH_SESSION *session){
     channel->remote_eof=1;
     /* the remote eof doesn't break things if there was still data into read
      * buffer because the eof is ignored until the buffer is empty. */
+    leave_function();
 }
 
 static void channel_rcv_request(SSH_SESSION *session){
@@ -260,13 +281,16 @@ static void channel_rcv_request(SSH_SESSION *session){
     char *request;
     u32 status;
     CHANNEL *channel=channel_from_msg(session);
+    enter_function();
     if(!channel){
         ssh_say(1,"%s\n",ssh_get_error(session));
+        leave_function();
         return;
     }
     request_s=buffer_get_ssh_string(session->in_buffer);
     if(!request_s){
         ssh_say(0,"Invalid MSG_CHANNEL_REQUEST\n");
+        leave_function();
         return;
     }
     buffer_get_u8(session->in_buffer,(u8 *)&status);
@@ -274,9 +298,10 @@ static void channel_rcv_request(SSH_SESSION *session){
     if(!strcmp(request,"exit-status")){
         buffer_get_u32(session->in_buffer,&status);
         status=ntohl(status);
-/* XXX do something with status, we might need it */
+/* TODO do something with status, we might need it */
         free(request_s);
         free(request);
+        leave_function();
         return ;
     }
     if(!strcmp(request,"exit-signal")){
@@ -289,6 +314,7 @@ static void channel_rcv_request(SSH_SESSION *session){
             ssh_say(0,"Invalid MSG_CHANNEL_REQUEST\n");
             free(request_s);
             free(request);
+            leave_function();
             return;
         }
         signal=string_to_char(signal_s);
@@ -300,15 +326,18 @@ static void channel_rcv_request(SSH_SESSION *session){
         free(signal);
         free(request_s);
         free(request);
+        leave_function();
         return;
     }
     ssh_say(0,"Unknown request %s\n",request);
     free(request_s);
     free(request);
+    leave_function();
 }
 
 /* channel_handle is called by wait_packet, ie, when there is channel informations to handle . */
 void channel_handle(SSH_SESSION *session, int type){
+	enter_function();
     ssh_say(3,"Channel_handle(%d)\n",type);
     switch(type){
         case SSH2_MSG_CHANNEL_WINDOW_ADJUST:
@@ -332,6 +361,7 @@ void channel_handle(SSH_SESSION *session, int type){
         default:
             ssh_say(0,"Unexpected message %d\n",type);
         }
+    leave_function();
 }
 
 /* when data has been received from the ssh server, it can be applied to the known
@@ -386,7 +416,9 @@ int channel_open_session(CHANNEL *channel){
 int channel_open_forward(CHANNEL *channel,char *remotehost, int remoteport, char *sourcehost, int localport){
     BUFFER *payload=buffer_new();
     STRING *str=string_from_char(remotehost);
+    SSH_SESSION *session=channel->session;
     int ret;
+    enter_function();
     buffer_add_ssh_string(payload,str);
     free(str);
     str=string_from_char(sourcehost);
@@ -396,6 +428,7 @@ int channel_open_forward(CHANNEL *channel,char *remotehost, int remoteport, char
     buffer_add_u32(payload,htonl(localport));
     ret=channel_open(channel,"direct-tcpip",64000,32000,payload);
     buffer_free(payload);
+    leave_function();
     return ret;
 }
 
@@ -405,6 +438,7 @@ int channel_open_forward(CHANNEL *channel,char *remotehost, int remoteport, char
  */
 void channel_free(CHANNEL *channel){
     SSH_SESSION *session=channel->session;
+    enter_function();
     if(session->alive && channel->open)
         channel_close(channel);
     /* handle the "my channel is first on session list" case */
@@ -424,6 +458,7 @@ void channel_free(CHANNEL *channel){
     /* debug trick to catch use after frees */
     memset(channel,'X',sizeof(CHANNEL));
     free(channel);
+    leave_function();
 }
 
 /** it doesn't close the channel. You may still read from it but not write. 
@@ -437,6 +472,7 @@ void channel_free(CHANNEL *channel){
 int channel_send_eof(CHANNEL *channel){
     SSH_SESSION *session=channel->session;
     int ret;
+    enter_function();
     packet_clear_out(session);
     buffer_add_u8(session->out_buffer,SSH2_MSG_CHANNEL_EOF);
     buffer_add_u32(session->out_buffer,htonl(channel->remote_channel));
@@ -444,6 +480,7 @@ int channel_send_eof(CHANNEL *channel){
     ssh_say(1,"Sent a EOF on client channel (%d:%d)\n",channel->local_channel,
         channel->remote_channel);
     channel->local_eof=1;
+    leave_function();
     return ret;
 }
 
@@ -459,10 +496,13 @@ int channel_send_eof(CHANNEL *channel){
 int channel_close(CHANNEL *channel){
     SSH_SESSION *session=channel->session;
     int ret=0;
+    enter_function();
     if(!channel->local_eof)
         ret=channel_send_eof(channel);
-    if(ret)
-        return ret;
+    if(ret){
+        leave_function();
+    	return ret;
+    }
     packet_clear_out(session);
     buffer_add_u8(session->out_buffer,SSH2_MSG_CHANNEL_CLOSE);
     buffer_add_u32(session->out_buffer,htonl(channel->remote_channel));
@@ -471,6 +511,7 @@ int channel_close(CHANNEL *channel){
         channel->remote_channel);
     if(!ret)
         channel->open =0;
+    leave_function();
     return ret;
 }
 
@@ -486,18 +527,23 @@ int channel_write(CHANNEL *channel ,void *data,int len){
     SSH_SESSION *session=channel->session;
     int effectivelen;
     int origlen=len;
+    enter_function();
     if(channel->local_eof){
         ssh_set_error(session,SSH_REQUEST_DENIED,"Can't write to channel %d:%d"
             " after EOF was sent",channel->local_channel,channel->remote_channel);
+        leave_function();
         return -1;
     }
     if(!channel->open || channel->delayed_close){
         ssh_set_error(session,SSH_REQUEST_DENIED,"Remote channel is closed");
+        leave_function();
         return -1;
     }
 #ifdef HAVE_SSH1
-    if(channel->version==1)
-        return channel_write1(channel,data,len);
+    if(channel->version==1){
+        err = channel_write1(channel,data,len);
+        leave_function();
+        return err;
 #endif
     while(len >0){
         if(channel->remote_window<len){
@@ -523,6 +569,7 @@ int channel_write(CHANNEL *channel ,void *data,int len){
         len -= effectivelen;
         data+=effectivelen;
     }
+    leave_function();
     return origlen;
 }
 
@@ -571,6 +618,7 @@ static int channel_request(CHANNEL *channel,char *request, BUFFER *buffer,int re
     STRING *request_s=string_from_char(request);
     SSH_SESSION *session=channel->session;
     int err;
+    enter_function();
     packet_clear_out(session);
     buffer_add_u8(session->out_buffer,SSH2_MSG_CHANNEL_REQUEST);
     buffer_add_u32(session->out_buffer,htonl(channel->remote_channel));
@@ -581,8 +629,10 @@ static int channel_request(CHANNEL *channel,char *request, BUFFER *buffer,int re
     packet_send(session);
     ssh_say(3,"Sent a SSH_MSG_CHANNEL_REQUEST %s\n",request);
     free(request_s);
-    if(!reply)
-        return 0;
+    if(!reply){
+    	leave_function();
+    	return 0;
+    }
     err=packet_wait(session,SSH2_MSG_CHANNEL_SUCCESS,1);
     if(err)
         if(session->in_packet.type==SSH2_MSG_CHANNEL_FAILURE){
@@ -593,6 +643,7 @@ static int channel_request(CHANNEL *channel,char *request, BUFFER *buffer,int re
             ssh_say(3,"Received an unexpected %d message\n",session->in_packet.type);
     else
         ssh_say(3,"Received a SUCCESS\n");
+    leave_function();
     return err;
 }
 
@@ -607,10 +658,15 @@ static int channel_request(CHANNEL *channel,char *request, BUFFER *buffer,int re
 int channel_request_pty_size(CHANNEL *channel, char *terminal, int col, int row){
     STRING *term;
     BUFFER *buffer;
+    SSH_SESSION *session=channel->session;
     int err;
+    enter_function();
 #ifdef HAVE_SSH1
-    if(channel->version==1)
-        return channel_request_pty_size1(channel,terminal, col, row);
+    if(channel->version==1){
+        err = channel_request_pty_size1(channel,terminal, col, row);
+        leave_function();
+        return err;
+    }
 #endif
     term=string_from_char(terminal);
     buffer=buffer_new();
@@ -625,6 +681,7 @@ int channel_request_pty_size(CHANNEL *channel, char *terminal, int col, int row)
     free(term);
     err=channel_request(channel,"pty-req",buffer,1);
     buffer_free(buffer);
+    leave_function();
     return err;
 }
 
@@ -649,9 +706,14 @@ int channel_request_pty(CHANNEL *channel){
 int channel_change_pty_size(CHANNEL *channel,int cols,int rows){
     BUFFER *buffer;
     int err;
+    SSH_SESSION *session=channel->session;
+    enter_function();
 #ifdef HAVE_SSH1
-    if(channel->version==1)
-        return channel_change_pty_size1(channel,cols,rows);
+    if(channel->version==1){
+        err = channel_change_pty_size1(channel,cols,rows);
+        leave_function();
+        return err;
+    }
 #endif
     buffer=buffer_new();
     //buffer_add_u8(buffer,0);
@@ -661,6 +723,7 @@ int channel_change_pty_size(CHANNEL *channel,int cols,int rows){
     buffer_add_u32(buffer,0);
     err=channel_request(channel,"window-change",buffer,0);
     buffer_free(buffer);
+    leave_function();
     return err;
 }    
 
@@ -764,9 +827,11 @@ int channel_request_exec(CHANNEL *channel, char *cmd){
  */
 int channel_read(CHANNEL *channel, BUFFER *buffer,int bytes,int is_stderr){
     BUFFER *stdbuf=NULL;
+    SSH_SESSION *session=channel->session;
     int len;
     buffer_reinit(buffer);
     int maxread=bytes;
+    enter_function();
     if(bytes==0)
         maxread=MAX_PACKET_LEN;
     /* maybe i should always set a buffer to avoid races between channel_default_bufferize and channel_read */
@@ -777,15 +842,19 @@ int channel_read(CHANNEL *channel, BUFFER *buffer,int bytes,int is_stderr){
     
     /* block reading if asked bytes=0 */
     while((buffer_get_rest_len(stdbuf)==0) || (buffer_get_rest_len(stdbuf) < bytes)){
-        if(channel->remote_eof && buffer_get_rest_len(stdbuf)==0)
-            return 0;
+        if(channel->remote_eof && buffer_get_rest_len(stdbuf)==0){
+            leave_function();
+        	return 0;
+        }
         if(channel->remote_eof)
             break; /* return the resting bytes in buffer */
         if(buffer_get_rest_len(stdbuf)>=maxread) // stop reading when buffer is full enough
             break;
-        if(packet_read(channel->session)||packet_translate(channel->session))
-            return -1;
-        packet_parse(channel->session);
+        if(packet_read(session)||packet_translate(session)){
+            leave_function();
+        	return -1;
+        }
+        packet_parse(session);
     }
     
     if(bytes==0){
@@ -798,6 +867,7 @@ int channel_read(CHANNEL *channel, BUFFER *buffer,int bytes,int is_stderr){
         buffer_add_data(buffer,buffer_get_rest(stdbuf),len);
         buffer_pass_bytes(stdbuf,len);
     }
+    leave_function();
     return buffer_get_len(buffer);
 }
 
@@ -812,7 +882,9 @@ int channel_read(CHANNEL *channel, BUFFER *buffer,int bytes,int is_stderr){
  */
 int channel_poll(CHANNEL *channel, int is_stderr){
     BUFFER *buffer;
+    SSH_SESSION *session=channel->session;
     int r=0;
+    enter_function();
     if(is_stderr)
         buffer=channel->stderr_buffer;
     else 
@@ -823,8 +895,11 @@ int channel_poll(CHANNEL *channel, int is_stderr){
         if(r<=0)
             break;
     }
-    if(channel->remote_eof)
-        return 1;
+    if(channel->remote_eof){
+    	leave_function();
+    	return 1;
+    }
+    leave_function();
     return buffer_get_rest_len(buffer);
 }
 
@@ -845,11 +920,14 @@ int channel_poll(CHANNEL *channel, int is_stderr){
  * \see channel_is_eof()
  */
 int channel_read_nonblocking(CHANNEL *channel, char *dest, int len, int is_stderr){
+	SSH_SESSION *session=channel->session;
+	enter_function();
     int to_read=channel_poll(channel,is_stderr);
     int lu;
     BUFFER *buffer=buffer_new();
     if(to_read<=0){
         buffer_free(buffer);
+        leave_function();
         return to_read; /* may be an error code */
     }
     if(to_read>len)
@@ -857,6 +935,7 @@ int channel_read_nonblocking(CHANNEL *channel, char *dest, int len, int is_stder
     lu=channel_read(channel,buffer,to_read,is_stderr);
     memcpy(dest,buffer_get(buffer),lu>=0?lu:0);
     buffer_free(buffer);
+    leave_function();
     return lu;
 }
 

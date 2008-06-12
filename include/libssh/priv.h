@@ -237,6 +237,8 @@ struct ssh_options_struct {
     int ssh1allowed;
     char *dsakey;
     char *rsakey; /* host key for server implementation */
+    int log_verbosity;
+    void (*log_function)(const char *message, SSH_SESSION *session, int verbosity); //log callback
 };
 
 typedef struct ssh_crypto_struct {
@@ -355,6 +357,8 @@ struct ssh_session {
     int auth_methods; 
     int hostkeys; /* contains type of host key wanted by client, in server impl */
     struct ssh_message *ssh_message; /* ssh message */
+    int log_verbosity; /*cached copy of the option structure */
+    int log_indent; /* indentation level in enter_function logs */
 };
 
 struct ssh_kbdint {
@@ -611,6 +615,27 @@ int channel_write1(CHANNEL *channel, void *data, int len);
 /* session.c */
 
 int ssh_handle_packets(SSH_SESSION *session);
+
+/* log.c */
+
+#define _enter_function(sess) \
+	do {\
+		if((sess)->log_verbosity >= SSH_LOG_FUNCTIONS){ \
+			ssh_log((sess),SSH_LOG_FUNCTIONS,"entering function %s line %d in " __FILE__ , __FUNCTION__,__LINE__);\
+			(sess)->log_indent++; \
+		} \
+	} while(0)
+
+#define _leave_function(sess) \
+	do { \
+		if((sess)->log_verbosity >= SSH_LOG_FUNCTIONS){ \
+			(sess)->log_indent--; \
+			ssh_log((sess),SSH_LOG_FUNCTIONS,"leaving function %s line %d in " __FILE__ , __FUNCTION__,__LINE__);\
+		}\
+	} while(0)
+
+#define enter_function() _enter_function(session)
+#define leave_function() _leave_function(session)
 
 #ifdef HAVE_LIBGCRYPT
 /* gcrypt_missing.c */

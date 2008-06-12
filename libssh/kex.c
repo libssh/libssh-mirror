@@ -165,10 +165,14 @@ int ssh_get_kex(SSH_SESSION *session,int server_kex ){
     STRING *str;
     char *strings[10];
     int i;
-    if(packet_wait(session,SSH2_MSG_KEXINIT,1))
-        return -1;
+    enter_function();
+    if(packet_wait(session,SSH2_MSG_KEXINIT,1)){
+    	leave_function();
+    	return -1;
+    }
     if(buffer_get_data(session->in_buffer,session->server_kex.cookie,16)!=16){
         ssh_set_error(session,SSH_FATAL,"get_kex(): no cookie in packet");
+        leave_function();
         return -1;
     }
     hashbufin_add_cookie(session,session->server_kex.cookie);
@@ -194,6 +198,7 @@ int ssh_get_kex(SSH_SESSION *session,int server_kex ){
         for(i=0;i<10;++i)
             session->server_kex.methods[i]=strings[i];
     }
+    leave_function();
     return 0;
 }
 
@@ -217,6 +222,7 @@ int set_kex(SSH_SESSION *session){
     SSH_OPTIONS *options=session->options;
     int i;
     char *wanted;
+    enter_function();
     /* the client might ask for a specific cookie to be sent. useful for server debugging */
     if(options->wanted_cookie)
         memcpy(client->cookie,options->wanted_cookie,16);
@@ -231,12 +237,14 @@ int set_kex(SSH_SESSION *session){
         if(!client->methods[i] && i < SSH_LANG_C_S){
             ssh_set_error(session,SSH_FATAL,"kex error : did not find one of algos %s in list %s for %s",
             wanted,server->methods[i],ssh_kex_nums[i]);
+            leave_function();
             return -1;
         } else {
             if(i>=SSH_LANG_C_S && !client->methods[i])
                 client->methods[i]=strdup(""); // we can safely do that for languages
         }
     }
+    leave_function();
     return 0;
 }
 
@@ -245,6 +253,7 @@ void ssh_send_kex(SSH_SESSION *session, int server_kex){
     STRING *str;
     int i=0;
     KEX *kex=(server_kex ? &session->server_kex : &session->client_kex);
+    enter_function();
     packet_clear_out(session);
     buffer_add_u8(session->out_buffer,SSH2_MSG_KEXINIT);
     buffer_add_data(session->out_buffer,kex->cookie,16);
@@ -260,6 +269,7 @@ void ssh_send_kex(SSH_SESSION *session, int server_kex){
     buffer_add_u8(session->out_buffer,0);
     buffer_add_u32(session->out_buffer,0);
     packet_send(session);
+    leave_function();
 }
 
 /* returns 1 if at least one of the name algos is in the default algorithms table */
@@ -401,13 +411,16 @@ int ssh_get_kex1(SSH_SESSION *session){
     PUBLIC_KEY *svr,*host;
     int ko;
     u16 bits;
+    enter_function();
     ssh_say(3,"Waiting for a SSH_SMSG_PUBLIC_KEY\n");
     if(packet_wait(session,SSH_SMSG_PUBLIC_KEY,1)){
+    	leave_function();
         return -1;
     }
     ssh_say(3,"Got a SSH_SMSG_PUBLIC_KEY\n");
     if(buffer_get_data(session->in_buffer,session->server_kex.cookie,8)!=8){
         ssh_set_error(session,SSH_FATAL,"Can't get cookie in buffer");
+        leave_function();
         return -1;
     }
     buffer_get_u32(session->in_buffer,&server_bits);
@@ -430,6 +443,7 @@ int ssh_get_kex1(SSH_SESSION *session){
             free(server_mod);
         if(server_exp)
             free(server_exp);
+        leave_function();
         return -1;
     }
     server_bits=ntohl(server_bits);
@@ -457,6 +471,7 @@ int ssh_get_kex1(SSH_SESSION *session){
     /* hardcode 3des */
     if(!(supported_ciphers_mask & (1<<SSH_CIPHER_3DES))){
         ssh_set_error(session,SSH_FATAL,"Remote server doesn't accept 3des");
+        leave_function();
         return -1;
     }
     packet_clear_out(session);
@@ -477,18 +492,21 @@ int ssh_get_kex1(SSH_SESSION *session){
 
     packet_send(session); 
     /* we can set encryption */
-    if(crypt_set_algorithms(session))
-        return -1;
+    if(crypt_set_algorithms(session)){
+    	leave_function();
+    	return -1;
+    }
     session->current_crypto=session->next_crypto;
     session->next_crypto=NULL;
     if(packet_wait(session,SSH_SMSG_SUCCESS,1)){
         char buffer[1024];
         snprintf(buffer,sizeof(buffer),"Key exchange failed : %s",ssh_get_error(session));
         ssh_set_error(session,SSH_FATAL,"%s",buffer);
+        leave_function();
         return -1;
     }
     ssh_say(1,"received SSH_SMSG_SUCCESS\n");
+    leave_function();
     return 0;
     
 }
-
