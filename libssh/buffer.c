@@ -52,6 +52,18 @@ void buffer_free(BUFFER *buffer){
     free(buffer);
     }
 
+static void realloc_buffer(BUFFER *buffer,int needed){
+	int smallest=1;
+	// find the smallest power of two which is greater or equal to needed
+	while(smallest<=needed)
+		smallest <<= 1;
+	needed=smallest;
+//    printf("buffer %p : realloc(%x,%d)=",buffer,buffer->data,needed);
+    buffer->data=realloc(buffer->data,needed);
+//    printf("%p\n",buffer->data);
+    buffer->allocated=needed;
+}
+
 /* \internal
  * \brief reinitialize a buffer
  * \param buffer buffer
@@ -60,15 +72,11 @@ void buffer_reinit(BUFFER *buffer){
     memset(buffer->data,0,buffer->used);
     buffer->used=0;
     buffer->pos=0;
+    if(buffer->allocated > 127){
+    	realloc_buffer(buffer,127);
+    }
 }
 
-static void realloc_buffer(BUFFER *buffer,int needed){
-    needed=(needed+0x7f) & ~0x7f;
-//    printf("buffer %p : realloc(%x,%d)=",buffer,buffer->data,needed);
-    buffer->data=realloc(buffer->data,needed);
-//    printf("%p\n",buffer->data);
-    buffer->allocated=needed;
-}
 /** \internal
  * \brief add data at tail of the buffer
  * \param buffer buffer
