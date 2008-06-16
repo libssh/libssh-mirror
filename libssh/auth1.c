@@ -1,6 +1,6 @@
 /* auth1.c deals with authentication with SSH-1 protocol */
 /*
-Copyright 2005 Aris Adamantiadis
+Copyright (c) 2005-2008 Aris Adamantiadis
 
 This file is part of the SSH Library
 
@@ -52,7 +52,6 @@ static int send_username(SSH_SESSION *session, char *username){
     /* returns SSH_AUTH_SUCCESS or SSH_AUTH_DENIED */
     if(session->auth_service_asked)
         return session->auth_service_asked; 
-    packet_clear_out(session);
     buffer_add_u8(session->out_buffer,SSH_CMSG_USER);
     if(!username)
         if(!(username=session->options->username)){
@@ -192,7 +191,6 @@ int ssh_userauth1_password(SSH_SESSION *session,char *username,char *password){
         strcpy((char *)password_s->string,password);
     }
 
-    packet_clear_out(session);
     buffer_add_u8(session->out_buffer,SSH_CMSG_AUTH_PASSWORD);
     buffer_add_ssh_string(session->out_buffer,password_s);
     string_burn(password_s);

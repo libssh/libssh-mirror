@@ -1,5 +1,5 @@
 /*
-Copyright 2003-2008 Aris Adamantiadis
+Copyright (c) 2003-2008 Aris Adamantiadis
 
 This file is part of the SSH Library
 
@@ -75,7 +75,7 @@ static void realloc_buffer(BUFFER *buffer,int needed){
  * \param data data pointer
  * \param len length of data
  */
-void buffer_add_data(BUFFER *buffer,void *data,int len){
+void buffer_add_data(BUFFER *buffer,const void *data,int len){
     if(buffer->allocated < buffer->used+len)
         realloc_buffer(buffer,buffer->used+len);
     memcpy(buffer->data+buffer->used,data,len);
@@ -105,7 +105,7 @@ void buffer_add_u8(BUFFER *buffer,u8 data){
  * \param data data to add
  * \param len length of data
  */
-void buffer_add_data_begin(BUFFER *buffer, void *data, int len){
+void buffer_add_data_begin(BUFFER *buffer, const void *data, int len){
     if(buffer->allocated < buffer->used + len)
         realloc_buffer(buffer,buffer->used+len);
     memmove(buffer->data+len,buffer->data,buffer->used);

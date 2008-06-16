@@ -58,7 +58,6 @@ static int handle_service_request(SSH_SESSION *session){
     service_c=string_to_char(service);
     ssh_say(2,"Sending a SERVICE_ACCEPT for service %s\n",service_c);
     free(service_c);
-    packet_clear_out(session);
     buffer_add_u8(session->out_buffer,SSH2_MSG_SERVICE_ACCEPT);
     buffer_add_ssh_string(session->out_buffer,service);
     packet_send(session);
@@ -68,7 +67,6 @@ static int handle_service_request(SSH_SESSION *session){
 }
 
 static void handle_unimplemented(SSH_SESSION *session){
-    packet_clear_out(session);
     buffer_add_u32(session->out_buffer,htonl(session->recv_seq-1));
     packet_send(session);
 }
@@ -131,7 +129,6 @@ static int ssh_message_auth_reply_default(SSH_MESSAGE *msg,int partial){
     SSH_SESSION *session=msg->session;
     int ret;
     enter_function();
-    packet_clear_out(session);
     buffer_add_u8(session->out_buffer,SSH2_MSG_USERAUTH_FAILURE);
     if(session->auth_methods==0){
         session->auth_methods=SSH_AUTH_PUBLICKEY|SSH_AUTH_PASSWORD;
@@ -162,7 +159,6 @@ static int ssh_message_auth_reply_default(SSH_MESSAGE *msg,int partial){
 int ssh_message_auth_reply_success(SSH_MESSAGE *msg,int partial){
     if(partial)
         return ssh_message_auth_reply_default(msg,partial);
-    packet_clear_out(msg->session);
     buffer_add_u8(msg->session->out_buffer,SSH2_MSG_USERAUTH_SUCCESS);
     return packet_send(msg->session);
 }
@@ -205,7 +201,6 @@ CHANNEL *ssh_message_channel_request_open_reply_accept(SSH_MESSAGE *msg){
     chan->remote_maxpacket=msg->channel_request_open.packet_size;
     chan->remote_window=msg->channel_request_open.window;
     chan->open=1;
-    packet_clear_out(session);
     buffer_add_u8(session->out_buffer,SSH2_MSG_CHANNEL_OPEN_CONFIRMATION);
     buffer_add_u32(session->out_buffer,htonl(chan->remote_channel));
     buffer_add_u32(session->out_buffer,htonl(chan->local_channel));
@@ -223,7 +218,6 @@ CHANNEL *ssh_message_channel_request_open_reply_accept(SSH_MESSAGE *msg){
 
 static int ssh_message_channel_request_open_reply_default(SSH_MESSAGE *msg){
     ssh_say(2,"Refusing a channel\n");
-    packet_clear_out(msg->session);
     buffer_add_u8(msg->session->out_buffer,SSH2_MSG_CHANNEL_OPEN_FAILURE);
     buffer_add_u32(msg->session->out_buffer,htonl(msg->channel_request_open.sender));
     buffer_add_u32(msg->session->out_buffer,htonl(SSH2_OPEN_ADMINISTRATIVELY_PROHIBITED));
@@ -309,7 +303,6 @@ int ssh_message_channel_request_reply_success(SSH_MESSAGE *msg){
     if(msg->channel_request.want_reply){
         channel=msg->channel_request.channel->remote_channel;
         ssh_say(2,"Sending a channel_request success to channel %d\n",channel);
-        packet_clear_out(msg->session);
         buffer_add_u8(msg->session->out_buffer,SSH2_MSG_CHANNEL_SUCCESS);
         buffer_add_u32(msg->session->out_buffer,htonl(channel));
         return packet_send(msg->session);
@@ -324,7 +317,6 @@ static int ssh_message_channel_request_reply_default(SSH_MESSAGE *msg){
     if(msg->channel_request.want_reply){
         channel=msg->channel_request.channel->remote_channel;
         ssh_say(2,"Sending a default channel_request denied to channel %d\n",channel);
-        packet_clear_out(msg->session);
         buffer_add_u8(msg->session->out_buffer,SSH2_MSG_CHANNEL_FAILURE);
         buffer_add_u32(msg->session->out_buffer,htonl(channel));
         return packet_send(msg->session);

@@ -1,7 +1,7 @@
 /* session.c */
 /* contains the non-networking functions ssh_* */
 /*
- * Copyright 2005-2008 Aris Adamantiadis
+ * Copyright (c) 2005-2008 Aris Adamantiadis
  *
  * This file is part of the SSH Library
  *
@@ -41,10 +41,12 @@ SSH_SESSION *ssh_new() {
     memset(session,0,sizeof(SSH_SESSION));
     session->next_crypto=crypto_new();
     session->maxchannel=FIRST_CHANNEL;
-    session->socket=ssh_socket_new();
+    session->socket=ssh_socket_new(session);
     session->alive=0;
     session->blocking=1;
     session->log_indent=0;
+    session->out_buffer=buffer_new();
+    session->in_buffer=buffer_new();
     return session;
 }
 
@@ -59,10 +61,6 @@ void ssh_cleanup(SSH_SESSION *session){
         buffer_free(session->in_buffer);
     if(session->out_buffer)
         buffer_free(session->out_buffer);
-    if(session->in_socket_buffer)
-        buffer_free(session->in_socket_buffer);
-    if(session->out_socket_buffer)
-        buffer_free(session->out_socket_buffer);
     if(session->banner)
         free(session->banner);
     if(session->options)
@@ -105,7 +103,6 @@ void ssh_cleanup(SSH_SESSION *session){
  */
 void ssh_silent_disconnect(SSH_SESSION *session){
 	enter_function();
-	ssh_log(session,SSH_LOG_ENTRY,"ssh_silent_disconnect()");
     ssh_socket_close(session->socket);
     session->alive=0;
     ssh_disconnect(session);

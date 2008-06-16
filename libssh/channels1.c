@@ -67,7 +67,6 @@ int channel_request_pty_size1(CHANNEL *channel, char *terminal, int col,
     STRING *str;
     SSH_SESSION *session=channel->session;
     str=string_from_char(terminal);
-    packet_clear_out(session);
     buffer_add_u8(session->out_buffer,SSH_CMSG_REQUEST_PTY);
     buffer_add_ssh_string(session->out_buffer,str);
     free(str);
@@ -105,7 +104,6 @@ int channel_request_pty_size1(CHANNEL *channel, char *terminal, int col,
 
 int channel_change_pty_size1(CHANNEL *channel, int cols, int rows){
     SSH_SESSION *session=channel->session;
-    packet_clear_out(session);
     buffer_add_u8(session->out_buffer,SSH_CMSG_WINDOW_SIZE);
     buffer_add_u32(session->out_buffer,ntohl(rows));
     buffer_add_u32(session->out_buffer,ntohl(cols));
@@ -132,7 +130,6 @@ int channel_change_pty_size1(CHANNEL *channel, int cols, int rows){
 
 int channel_request_shell1(CHANNEL *channel){
     SSH_SESSION *session=channel->session;
-    packet_clear_out(session);
     buffer_add_u8(session->out_buffer,SSH_CMSG_EXEC_SHELL);
     if(packet_send(session))
         return -1;
@@ -143,7 +140,6 @@ int channel_request_shell1(CHANNEL *channel){
 int channel_request_exec1(CHANNEL *channel, char *cmd){
     SSH_SESSION *session=channel->session;
     STRING *command=string_from_char(cmd);
-    packet_clear_out(session);
     buffer_add_u8(session->out_buffer,SSH_CMSG_EXEC_CMD);
     buffer_add_ssh_string(session->out_buffer,command);
     free(command);
@@ -179,7 +175,6 @@ static void channel_rcv_close1(SSH_SESSION *session){
     /* actually status is lost somewhere */
     channel->open=0;
     channel->remote_eof=1;
-    packet_clear_out(session);
     buffer_add_u8(session->out_buffer,SSH_CMSG_EXIT_CONFIRMATION);
     packet_send(session);
 }
@@ -204,7 +199,6 @@ int channel_write1(CHANNEL *channel, void *data, int len){
     int origlen=len;
     int effectivelen;
     while(len>0){
-        packet_clear_out(session);
         buffer_add_u8(session->out_buffer,SSH_CMSG_STDIN_DATA);
         if(len > 32000)
             effectivelen=32000;

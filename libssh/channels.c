@@ -1,5 +1,5 @@
 /*
-Copyright 2003-2008 Aris Adamantiadis
+Copyright (c) 2003-2008 Aris Adamantiadis
 
 This file is part of the SSH Library
 
@@ -72,7 +72,6 @@ static int channel_open(CHANNEL *channel,char *type_c,int window,
     u32 foo;
     int err;
     enter_function();
-    packet_clear_out(session);
     buffer_add_u8(session->out_buffer,SSH2_MSG_CHANNEL_OPEN);
     channel->local_channel=ssh_channel_new_id(session);
     channel->local_maxpacket=maxpacket;
@@ -152,7 +151,6 @@ CHANNEL *ssh_channel_from_local(SSH_SESSION *session,u32 num){
 static void grow_window(SSH_SESSION *session, CHANNEL *channel){
     u32 new_window=WINDOWBASE;
     enter_function();
-    packet_clear_out(session);
     buffer_add_u8(session->out_buffer,SSH2_MSG_CHANNEL_WINDOW_ADJUST);
     buffer_add_u32(session->out_buffer,htonl(channel->remote_channel));
     buffer_add_u32(session->out_buffer,htonl(new_window));
@@ -473,7 +471,6 @@ int channel_send_eof(CHANNEL *channel){
     SSH_SESSION *session=channel->session;
     int ret;
     enter_function();
-    packet_clear_out(session);
     buffer_add_u8(session->out_buffer,SSH2_MSG_CHANNEL_EOF);
     buffer_add_u32(session->out_buffer,htonl(channel->remote_channel));
     ret=packet_send(session);
@@ -503,7 +500,6 @@ int channel_close(CHANNEL *channel){
         leave_function();
     	return ret;
     }
-    packet_clear_out(session);
     buffer_add_u8(session->out_buffer,SSH2_MSG_CHANNEL_CLOSE);
     buffer_add_u32(session->out_buffer,htonl(channel->remote_channel));
     ret=packet_send(session);
@@ -527,6 +523,7 @@ int channel_write(CHANNEL *channel ,void *data,int len){
     SSH_SESSION *session=channel->session;
     int effectivelen;
     int origlen=len;
+    int err;
     enter_function();
     if(channel->local_eof){
         ssh_set_error(session,SSH_REQUEST_DENIED,"Can't write to channel %d:%d"
@@ -544,6 +541,7 @@ int channel_write(CHANNEL *channel ,void *data,int len){
         err = channel_write1(channel,data,len);
         leave_function();
         return err;
+    }
 #endif
     while(len >0){
         if(channel->remote_window<len){
@@ -558,7 +556,6 @@ int channel_write(CHANNEL *channel ,void *data,int len){
             effectivelen=len>channel->remote_window?channel->remote_window:len;
         } else
             effectivelen=len;
-        packet_clear_out(session);
         buffer_add_u8(session->out_buffer,SSH2_MSG_CHANNEL_DATA);
         buffer_add_u32(session->out_buffer,htonl(channel->remote_channel));
         buffer_add_u32(session->out_buffer,htonl(effectivelen));
@@ -619,7 +616,6 @@ static int channel_request(CHANNEL *channel,char *request, BUFFER *buffer,int re
     SSH_SESSION *session=channel->session;
     int err;
     enter_function();
-    packet_clear_out(session);
     buffer_add_u8(session->out_buffer,SSH2_MSG_CHANNEL_REQUEST);
     buffer_add_u32(session->out_buffer,htonl(channel->remote_channel));
     buffer_add_ssh_string(session->out_buffer,request_s);

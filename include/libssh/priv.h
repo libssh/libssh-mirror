@@ -1,5 +1,5 @@
 /*
-Copyright 2003,04 Aris Adamantiadis
+Copyright (c) 2003-2008 Aris Adamantiadis
 
 This file is part of the SSH Library
 
@@ -322,10 +322,7 @@ struct ssh_session {
     BUFFER *in_buffer;
     PACKET in_packet;
     BUFFER *out_buffer;
-    
-    BUFFER *out_socket_buffer;
-    BUFFER *in_socket_buffer;
-    
+       
     /* the states are used by the nonblocking stuff to remember */
     /* where it was before being interrupted */
     int packet_state;
@@ -426,11 +423,11 @@ struct ssh_message {
     struct ssh_channel_request channel_request;
 };
 
-/* socketc.c */
+/* socket.c */
 
 struct socket;
 void ssh_socket_init();
-struct socket *ssh_socket_new();
+struct socket *ssh_socket_new(SSH_SESSION *session);
 void ssh_socket_free(struct socket *s);
 void ssh_socket_set_fd(struct socket *s, socket_t fd);
 socket_t ssh_socket_get_fd(struct socket *s);
@@ -441,6 +438,10 @@ int ssh_socket_is_open(struct socket *s);
 int ssh_socket_fd_isset(struct socket *s, fd_set *set);
 void ssh_socket_fd_set(struct socket *s, fd_set *set, int *fd_max);
 int ssh_socket_completeread(struct socket *s, void *buffer, int len);
+int ssh_socket_wait_for_data(struct socket *s, SSH_SESSION *session,int len);
+int ssh_socket_nonblocking_flush(struct socket *s);
+int ssh_socket_blocking_flush(struct socket *s);
+int ssh_socket_poll(struct socket *s, int *write, int *except);
 
 /* session.c */
 
@@ -486,7 +487,7 @@ unsigned char *packet_encrypt(SSH_SESSION *session,void *packet,unsigned int len
 int packet_hmac_verify(SSH_SESSION *session,BUFFER *buffer,unsigned char *mac);
 
 /* in packet.c */
-void packet_clear_out(SSH_SESSION *session);
+
 void packet_parse(SSH_SESSION *session);
 int packet_send(SSH_SESSION *session);
 
@@ -546,8 +547,8 @@ void buffer_add_ssh_string(BUFFER *buffer,STRING *string);
 void buffer_add_u8(BUFFER *buffer, u8 data);
 void buffer_add_u32(BUFFER *buffer, u32 data);
 void buffer_add_u64(BUFFER *buffer,u64 data);
-void buffer_add_data(BUFFER *buffer, void *data, int len);
-void buffer_add_data_begin(BUFFER *buffer,void *data,int len);
+void buffer_add_data(BUFFER *buffer,const void *data, int len);
+void buffer_add_data_begin(BUFFER *buffer,const void *data,int len);
 void buffer_add_buffer(BUFFER *buffer, BUFFER *source);
 void buffer_reinit(BUFFER *buffer);
 

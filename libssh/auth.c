@@ -1,6 +1,6 @@
 /* auth.c deals with authentication methods */
 /*
-Copyright 2003-2005 Aris Adamantiadis
+Copyright (c) 2003-2008 Aris Adamantiadis
 
 This file is part of the SSH Library
 
@@ -160,7 +160,6 @@ int ssh_userauth_none(SSH_SESSION *session,char *username){
     user=string_from_char(username);
     method=string_from_char("none");
     service=string_from_char("ssh-connection");
-    packet_clear_out(session);
     buffer_add_u8(session->out_buffer,SSH2_MSG_USERAUTH_REQUEST);
     buffer_add_ssh_string(session->out_buffer,user);
     buffer_add_ssh_string(session->out_buffer,service);
@@ -220,7 +219,6 @@ int ssh_userauth_offer_pubkey(SSH_SESSION *session, char *username,int type, STR
     method=string_from_char("publickey");
     algo=string_from_char(ssh_type_to_char(type));
 
-    packet_clear_out(session);
     buffer_add_u8(session->out_buffer,SSH2_MSG_USERAUTH_REQUEST);
     buffer_add_ssh_string(session->out_buffer,user);
     buffer_add_ssh_string(session->out_buffer,service);
@@ -284,7 +282,6 @@ int ssh_userauth_pubkey(SSH_SESSION *session, char *username, STRING *publickey,
     
     
     /* we said previously the public key was accepted */
-    packet_clear_out(session);
     buffer_add_u8(session->out_buffer,SSH2_MSG_USERAUTH_REQUEST);
     buffer_add_ssh_string(session->out_buffer,user);
     buffer_add_ssh_string(session->out_buffer,service);
@@ -352,7 +349,6 @@ int ssh_userauth_password(SSH_SESSION *session,char *username,char *password){
     method=string_from_char("password");
     password_s=string_from_char(password);
 
-    packet_clear_out(session);
     buffer_add_u8(session->out_buffer,SSH2_MSG_USERAUTH_REQUEST);
     buffer_add_ssh_string(session->out_buffer,user);
     buffer_add_ssh_string(session->out_buffer,service);
@@ -567,7 +563,6 @@ static int kbdauth_init(SSH_SESSION *session,
     STRING *method=string_from_char("keyboard-interactive");
     int err;
     enter_function();
-    packet_clear_out(session);
     buffer_add_u8(session->out_buffer,SSH2_MSG_USERAUTH_REQUEST);
     buffer_add_ssh_string(session->out_buffer,user_s);
     buffer_add_ssh_string(session->out_buffer,service);
@@ -650,7 +645,6 @@ static int kbdauth_send(SSH_SESSION *session) {
     int i;
     int err;
     enter_function();
-    packet_clear_out(session);
     buffer_add_u8(session->out_buffer,SSH2_MSG_USERAUTH_INFO_RESPONSE);
     buffer_add_u32(session->out_buffer,htonl(session->kbdint->nprompts));
     for(i=0;i<session->kbdint->nprompts;++i){

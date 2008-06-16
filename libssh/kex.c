@@ -1,6 +1,6 @@
 /* kex.c is used well, in key exchange :-) */
 /*
-Copyright 2003 Aris Adamantiadis
+Copyright (c) 2003-2008 Aris Adamantiadis
 
 This file is part of the SSH Library
 
@@ -254,7 +254,6 @@ void ssh_send_kex(SSH_SESSION *session, int server_kex){
     int i=0;
     KEX *kex=(server_kex ? &session->server_kex : &session->client_kex);
     enter_function();
-    packet_clear_out(session);
     buffer_add_u8(session->out_buffer,SSH2_MSG_KEXINIT);
     buffer_add_data(session->out_buffer,kex->cookie,16);
     hashbufout_add_cookie(session);
@@ -412,12 +411,12 @@ int ssh_get_kex1(SSH_SESSION *session){
     int ko;
     u16 bits;
     enter_function();
-    ssh_say(3,"Waiting for a SSH_SMSG_PUBLIC_KEY\n");
+    ssh_log(session,SSH_LOG_PROTOCOL,"Waiting for a SSH_SMSG_PUBLIC_KEY");
     if(packet_wait(session,SSH_SMSG_PUBLIC_KEY,1)){
     	leave_function();
         return -1;
     }
-    ssh_say(3,"Got a SSH_SMSG_PUBLIC_KEY\n");
+    ssh_log(session,SSH_LOG_PROTOCOL,"Got a SSH_SMSG_PUBLIC_KEY");
     if(buffer_get_data(session->in_buffer,session->server_kex.cookie,8)!=8){
         ssh_set_error(session,SSH_FATAL,"Can't get cookie in buffer");
         leave_function();
@@ -433,7 +432,7 @@ int ssh_get_kex1(SSH_SESSION *session){
     buffer_get_u32(session->in_buffer,&supported_ciphers_mask);
     ko=buffer_get_u32(session->in_buffer,&supported_authentications_mask);
     if((ko!=sizeof(u32)) || !host_mod || !host_exp || !server_mod || !server_exp){
-        ssh_say(2,"Invalid SSH_SMSG_PUBLIC_KEY packet\n");
+        ssh_log(session,SSH_LOG_RARE,"Invalid SSH_SMSG_PUBLIC_KEY packet");
         ssh_set_error(session,SSH_FATAL,"Invalid SSH_SMSG_PUBLIC_KEY packet");
         if(host_mod)
             free(host_mod);
@@ -451,8 +450,8 @@ int ssh_get_kex1(SSH_SESSION *session){
     protocol_flags=ntohl(protocol_flags);
     supported_ciphers_mask=ntohl(supported_ciphers_mask);
     supported_authentications_mask=ntohl(supported_authentications_mask);
-    ssh_say(1,"server bits: %d ; host bits: %d\nProtocol flags : %.8lx ; "
-            "cipher mask : %.8lx ; auth mask: %.8lx\n",server_bits,
+    ssh_log(session,SSH_LOG_PROTOCOL,"server bits: %d ; host bits: %d Protocol flags : %.8lx ; "
+            "cipher mask : %.8lx ; auth mask: %.8lx",server_bits,
             host_bits,protocol_flags,supported_ciphers_mask,
             supported_authentications_mask);
     serverkey=make_rsa1_string(server_exp,server_mod);
@@ -474,14 +473,14 @@ int ssh_get_kex1(SSH_SESSION *session){
         leave_function();
         return -1;
     }
-    packet_clear_out(session);
+    ssh_log(session,SSH_LOG_PROTOCOL,"sending SSH_CMSG_SESSION_KEY");
     buffer_add_u8(session->out_buffer,SSH_CMSG_SESSION_KEY);
     buffer_add_u8(session->out_buffer,SSH_CIPHER_3DES);
     buffer_add_data(session->out_buffer,session->server_kex.cookie,8);
     
     enc_session=encrypt_session_key(session,svr,host,server_bits, host_bits);
     bits=string_len(enc_session)*8 - 7;
-    ssh_say(2,"%d bits,%d bytes encrypted session\n",bits,string_len(enc_session));
+    ssh_log(session,SSH_LOG_PROTOCOL,"%d bits,%d bytes encrypted session",bits,string_len(enc_session));
     bits=htons(bits);
     /* the encrypted mpint */
     buffer_add_data(session->out_buffer,&bits,sizeof(u16));
@@ -505,7 +504,7 @@ int ssh_get_kex1(SSH_SESSION *session){
         leave_function();
         return -1;
     }
-    ssh_say(1,"received SSH_SMSG_SUCCESS\n");
+    ssh_log(session,SSH_LOG_PROTOCOL,"received SSH_SMSG_SUCCESS\n");
     leave_function();
     return 0;
     

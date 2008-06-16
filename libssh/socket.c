@@ -1,7 +1,7 @@
 /* socket.c */
 /* the Socket class */
 /*
- * Copyright 2008 Aris Adamantiadis
+ * Copyright (c) 2008 Aris Adamantiadis
  *
  * This file is part of the SSH Library
  *
@@ -22,6 +22,7 @@
 
 #include <unistd.h>
 #include <errno.h>
+#include <string.h>
 #ifdef _WIN32
 #include <winsock2.h>
 #else
@@ -30,9 +31,17 @@
 #endif
 #include "libssh/priv.h"
 
+/** \defgroup ssh_socket Sockets
+ * \addtogroup ssh_socket
+ * @{
+ */
+
 struct socket {
 	socket_t fd;
 	int last_errno;
+    BUFFER *out_buffer;
+    BUFFER *in_buffer;
+    SSH_SESSION *session;
 };
 
 /*
@@ -51,10 +60,13 @@ void ssh_socket_init(){
  * \internal
  * \brief creates a new Socket object
  */
-struct socket *ssh_socket_new(){
+struct socket *ssh_socket_new(SSH_SESSION *session){
 	struct socket *s=malloc(sizeof(struct socket));
 	s->fd=-1;
 	s->last_errno=-1;
+	s->session=session;
+	s->in_buffer=buffer_new();
+	s->out_buffer=buffer_new();
 	return s;
 }
 
@@ -63,6 +75,8 @@ struct socket *ssh_socket_new(){
  */
 void ssh_socket_free(struct socket *s){
     ssh_socket_close(s);
+    buffer_free(s->in_buffer);
+    buffer_free(s->out_buffer);
 	free(s);
 }
 
@@ -106,7 +120,7 @@ int ssh_socket_is_open(struct socket *s){
 /* \internal
  * \brief read len bytes from socket into buffer
  */
-int ssh_socket_read(struct socket *s, void *buffer, int len){
+int ssh_socket_unbuffered_read(struct socket *s, void *buffer, int len){
 	int r=recv(s->fd,buffer,len,0);
 #ifndef _WIN32	
     s->last_errno=errno;
@@ -117,9 +131,9 @@ int ssh_socket_read(struct socket *s, void *buffer, int len){
 }
 
 /* \internal
- * \brief writes len bytes from byffer to socket
+ * \brief writes len bytes from buffer to socket
  */
-int ssh_socket_write(struct socket *s,const void *buffer, int len){
+int ssh_socket_unbuffered_write(struct socket *s,const void *buffer, int len){
 	int w=send(s->fd,buffer,len,0);
 #ifndef _WIN32
     s->last_errno=errno;
@@ -152,7 +166,7 @@ void ssh_socket_fd_set(struct socket *s, fd_set *set, int *fd_max){
 	}
 }
 
-/* \internal
+/** \internal
  * \brief reads blocking until len bytes have been read
  */
 int ssh_socket_completeread(struct socket *s, void *buffer, int len){
@@ -161,7 +175,7 @@ int ssh_socket_completeread(struct socket *s, void *buffer, int len){
     int toread=len;
     if(!ssh_socket_is_open(s))
         return SSH_ERROR;
-    while((r=ssh_socket_read(s,buffer+total,toread))){
+    while((r=ssh_socket_unbuffered_read(s,buffer+total,toread))){
         if(r==-1)
             return SSH_ERROR;
         total += r;
@@ -173,3 +187,270 @@ int ssh_socket_completeread(struct socket *s, void *buffer, int len){
     }
     return total ; /* connection closed */
 }
+
+/** \internal
+ * \brief Blocking write of len bytes
+ */
+
+int ssh_socket_completewrite(struct socket *s, void *buffer, int len){
+	SSH_SESSION *session=s->session;
+	enter_function();
+    int written;
+    if(!ssh_socket_is_open(s)){
+        leave_function();
+    	return SSH_ERROR;
+    }
+    while(len >0) {
+        written=ssh_socket_unbuffered_write(s,buffer,len);
+        if(written==0 || written==-1){
+        	leave_function();
+            return SSH_ERROR;
+        }
+        len-=written;
+        buffer+=written;
+    }
+    leave_function();
+    return SSH_OK;
+}
+
+/** \internal
+ * \brief buffered read of data (complete)
+ * \returns SSH_OK or SSH_ERROR.
+ * \returns SSH_AGAIN in nonblocking mode
+ */
+int ssh_socket_read(struct socket *s, void *buffer, int len){
+	SSH_SESSION *session=s->session;
+	enter_function();
+	int ret=ssh_socket_wait_for_data(s,s->session,len);
+	if(ret != SSH_OK){
+		leave_function();
+		return ret;
+	}
+	memcpy(buffer,buffer_get_rest(s->in_buffer),len);
+	buffer_pass_bytes(s->in_buffer,len);
+	leave_function();
+	return SSH_OK;
+}
+
+#define WRITE_BUFFERING_THRESHOLD 65536
+/** \internal
+ * \brief buffered write of data
+ * \returns SSH_OK, or SSH_ERROR
+ * \warning has no effect on socket before a flush 
+ */
+int ssh_socket_write(struct socket *s,const void *buffer, int len){
+	SSH_SESSION *session=s->session;
+	enter_function();
+	int ret;
+	buffer_add_data(s->out_buffer,buffer,len);
+	if(buffer_get_rest_len(s->out_buffer) > WRITE_BUFFERING_THRESHOLD)
+		ret=ssh_socket_nonblocking_flush(s);
+	else
+		ret=len;
+	leave_function();
+	return ret;
+}
+
+
+/** \internal
+ * \brief wait for data on socket
+ * \param s socket
+ * \param session the ssh session
+ * \param len number of bytes to be read
+ * \returns SSH_OK bytes are available on socket
+ * \returns SSH_AGAIN need to call later for data
+ * \returns SSH_ERROR error happened
+ */
+int ssh_socket_wait_for_data(struct socket *s, SSH_SESSION *session,int len){
+    int except, can_write;
+    int to_read;
+    int r;
+    char *buf;
+    char buffer[4096];
+    enter_function();
+    to_read=len - buffer_get_rest_len(s->in_buffer);
+    if(to_read <= 0){
+    	leave_function();
+        return SSH_OK;
+    }
+    if(session->blocking){
+        buf=malloc(to_read);
+        r=ssh_socket_completeread(session->socket,buf,to_read);
+        session->data_to_read=0;
+        if(r==SSH_ERROR || r ==0){
+            ssh_set_error(session,SSH_FATAL,
+                (r==0)?"Connection closed by remote host" : "Error reading socket");
+            ssh_socket_close(session->socket);
+            session->alive=0;
+            session->data_except=1;
+            leave_function();
+            return SSH_ERROR;
+        }
+
+        buffer_add_data(s->in_buffer,buf,to_read);
+        free(buf);
+        leave_function();
+        return SSH_OK;
+    }
+    /* nonblocking read */
+    do {
+        ssh_socket_poll(s,&can_write,&except); /* internally sets data_to_read */
+        if(!session->data_to_read){
+            leave_function();
+        	return SSH_AGAIN;
+        }
+        session->data_to_read=0;
+        /* read as much as we can */
+        if(ssh_socket_is_open(session->socket))
+            r=ssh_socket_unbuffered_read(session->socket,buffer,sizeof(buffer));
+        else
+            r=-1;
+        if(r<=0){
+            ssh_set_error(session,SSH_FATAL,
+                (r==0)?"Connection closed by remote host" : "Error reading socket");
+            ssh_socket_close(session->socket);
+            session->data_except=1;
+            session->alive=0;
+            leave_function();
+            return SSH_ERROR;
+        }
+        buffer_add_data(s->in_buffer,buffer,r);
+    } while(buffer_get_rest_len(s->in_buffer)<len);
+    leave_function();
+    return SSH_OK;
+}
+
+/* \internal
+ * \brief polls the socket for data
+ * \param session ssh session
+ * \param write value pointed to set to 1 if it is possible to write
+ * \param except value pointed to set to 1 if there is an exception
+ * \return 1 if it is possible to read, 0 otherwise, -1 on error
+ */
+int ssh_socket_poll(struct socket *s, int *write, int *except){
+	SSH_SESSION *session=s->session;
+    struct timeval sometime;
+    fd_set rdes; // read set
+    fd_set wdes; // writing set
+    fd_set edes; // exception set
+    int fdmax=-1;
+    FD_ZERO(&rdes);
+    FD_ZERO(&wdes);
+    FD_ZERO(&edes);
+    
+    if(!ssh_socket_is_open(s)){
+        *except=1;
+        *write=0;
+        return 0;
+    }
+    if(!session->data_to_read)
+        ssh_socket_fd_set(s,&rdes,&fdmax);
+    if(!session->data_to_write)
+        ssh_socket_fd_set(s,&wdes,&fdmax);
+    ssh_socket_fd_set(s,&edes,&fdmax);
+    
+    /* Set to return immediately (no blocking) */
+    sometime.tv_sec = 0;
+    sometime.tv_usec = 0;
+    
+    /* Make the call, and listen for errors */
+    if (select(fdmax, &rdes,&wdes,&edes, &sometime) < 0) {
+    	ssh_set_error(session,SSH_FATAL, "select: %s", strerror(errno));
+    	leave_function();
+    	return -1;
+    }
+    if(!session->data_to_read)
+        session->data_to_read=ssh_socket_fd_isset(session->socket,&rdes);
+    if(!session->data_to_write)
+        session->data_to_write=ssh_socket_fd_isset(session->socket,&wdes);
+    *except=ssh_socket_fd_isset(session->socket,&edes);
+    *write=session->data_to_write;
+    return session->data_to_read;
+}
+
+/** \internal
+ * \brief nonblocking flush of the output buffer
+ */
+int ssh_socket_nonblocking_flush(struct socket *s){
+    int except, can_write;
+    int w;
+    SSH_SESSION *session=s->session;
+    enter_function();
+    ssh_socket_poll(s,&can_write,&except); /* internally sets data_to_write */
+    if(!ssh_socket_is_open(s)){
+        session->alive=0;
+        // FIXME use ssh_socket_get_errno
+        ssh_set_error(session,SSH_FATAL,"Writing packet : error on socket (or connection closed): %s",strerror(errno));
+        leave_function();
+        return SSH_ERROR;
+    }
+    while(session->data_to_write && buffer_get_rest_len(s->out_buffer)>0){
+        if(ssh_socket_is_open(s)){
+            w=ssh_socket_unbuffered_write(s,buffer_get_rest(s->out_buffer),
+                buffer_get_rest_len(s->out_buffer));
+            session->data_to_write=0;
+        } else
+            w=-1; /* write failed */
+        if(w<0){
+            session->data_to_write=0;
+            session->data_except=1;
+            session->alive=0;
+            ssh_socket_close(s);
+            // FIXME use ssh_socket_get_errno()
+            ssh_set_error(session,SSH_FATAL,"Writing packet : error on socket (or connection closed): %s",
+                          strerror(errno));
+            leave_function();
+            return SSH_ERROR;
+        }
+        buffer_pass_bytes(s->out_buffer,w);
+        /* refresh the socket status */
+        ssh_fd_poll(session,&can_write,&except);
+    }
+    if(buffer_get_rest_len(s->out_buffer)>0){
+        leave_function();
+    	return SSH_AGAIN;  /* there is data pending */
+    }
+    leave_function();
+    return SSH_OK; // all data written
+}
+
+
+/** \internal
+ * \brief locking flush of the output buffer
+ */
+int ssh_socket_blocking_flush(struct socket *s){
+	SSH_SESSION *session=s->session;
+	enter_function();
+    if(!ssh_socket_is_open(s)) {
+        session->alive=0;
+        leave_function();
+        return SSH_ERROR;
+    }
+    if(session->data_except){
+        leave_function();
+    	return SSH_ERROR;
+    }
+    if(buffer_get_rest_len(s->out_buffer)==0){
+    	leave_function();
+        return SSH_OK;
+    }
+    if(ssh_socket_completewrite(s,buffer_get_rest(s->out_buffer),
+       buffer_get_rest_len(s->out_buffer))){
+        session->data_to_write=0;
+        session->data_except=1;
+        session->alive=0;
+        ssh_socket_close(s);
+        // FIXME use the proper errno
+        ssh_set_error(session,SSH_FATAL,"Writing packet : error on socket (or connection closed): %s",
+                         strerror(errno));
+        leave_function();
+        return SSH_ERROR;
+    }
+    session->data_to_write=0;
+    buffer_reinit(s->out_buffer);
+    leave_function();
+    return SSH_OK; // no data pending
+}
+
+/** @}
+ */

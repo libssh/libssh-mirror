@@ -1,7 +1,7 @@
 /* connect.c */
 /* it handles connections to ssh servers */
 /*
-Copyright 2003 Aris Adamantiadis
+Copyright (c) 2003-2008 Aris Adamantiadis
 
 This file is part of the SSH Library
 
@@ -220,47 +220,7 @@ socket_t ssh_connect_host(SSH_SESSION *session, const char *host, const char
  * \return 1 if it is possible to read, 0 otherwise, -1 on error
  */
 int ssh_fd_poll(SSH_SESSION *session, int *write, int *except){
-    struct timeval sometime;
-    fd_set rdes; // read set
-    fd_set wdes; // writing set
-    fd_set edes; // exception set
-    int fdmax=-1;
-    enter_function();
-    FD_ZERO(&rdes);
-    FD_ZERO(&wdes);
-    FD_ZERO(&edes);
-    
-    if(!session->alive || !ssh_socket_is_open(session->socket)){
-        *except=1;
-        *write=0;
-        session->alive=0;
-        leave_function();
-        return 0;
-    }
-    if(!session->data_to_read)
-        ssh_socket_fd_set(session->socket,&rdes,&fdmax);
-    if(!session->data_to_write)
-        ssh_socket_fd_set(session->socket,&wdes,&fdmax);
-    ssh_socket_fd_set(session->socket,&edes,&fdmax);
-    
-    /* Set to return immediately (no blocking) */
-    sometime.tv_sec = 0;
-    sometime.tv_usec = 0;
-    
-    /* Make the call, and listen for errors */
-    if (select(fdmax, &rdes,&wdes,&edes, &sometime) < 0) {
-    	ssh_set_error(session,SSH_FATAL, "select: %s", strerror(errno));
-    	leave_function();
-    	return -1;
-    }
-    if(!session->data_to_read)
-        session->data_to_read=ssh_socket_fd_isset(session->socket,&rdes);
-    if(!session->data_to_write)
-        session->data_to_write=ssh_socket_fd_isset(session->socket,&wdes);
-    *except=ssh_socket_fd_isset(session->socket,&edes);
-    *write=session->data_to_write;
-    leave_function();
-    return session->data_to_read;
+    return ssh_socket_poll(session->socket,write,except);
 }
 
 

@@ -1,6 +1,6 @@
 /* client.c file */
 /*
-Copyright 2003-2005 Aris Adamantiadis
+Copyright (c) 2003-2008 Aris Adamantiadis
 
 This file is part of the SSH Library
 
@@ -37,7 +37,7 @@ char *ssh_get_banner(SSH_SESSION *session){
     char *ret;
     enter_function();
     while (i < 127) {
-        if(!ssh_socket_is_open(session->socket) || ssh_socket_read(session->socket, &buffer[i], 1)<=0){
+        if(ssh_socket_read(session->socket, &buffer[i], 1)!= SSH_OK){
             ssh_set_error(session,SSH_FATAL,"Remote host closed connection");
             leave_function();
             return NULL;
@@ -105,6 +105,7 @@ int ssh_send_banner(SSH_SESSION *session,int server){
         session->clientbanner=strdup(banner);
     snprintf(buffer,128,"%s\r\n",banner);
     ssh_socket_write(session->socket,buffer,strlen(buffer));
+    ssh_socket_blocking_flush(session->socket);
     leave_function();
     return 0;
 }
@@ -121,7 +122,6 @@ static int dh_handshake(SSH_SESSION *session){
     enter_function();
     switch(session->dh_handshake_state){
         case DH_STATE_INIT:
-            packet_clear_out(session);
             buffer_add_u8(session->out_buffer,SSH2_MSG_KEXDH_INIT);
             dh_generate_x(session);
             dh_generate_e(session);
@@ -170,7 +170,6 @@ static int dh_handshake(SSH_SESSION *session){
             session->dh_server_signature=signature;
             dh_build_k(session);
             // send the MSG_NEWKEYS
-            packet_clear_out(session);
             buffer_add_u8(session->out_buffer,SSH2_MSG_NEWKEYS);
             packet_send(session);
             session->dh_handshake_state=DH_STATE_NEWKEYS_TO_SEND;
@@ -228,7 +227,6 @@ static int dh_handshake(SSH_SESSION *session){
 int ssh_service_request(SSH_SESSION *session,char *service){
     STRING *service_s;
     enter_function();
-    packet_clear_out(session);
     buffer_add_u8(session->out_buffer,SSH2_MSG_SERVICE_REQUEST);
     service_s=string_from_char(service);
     buffer_add_ssh_string(session->out_buffer,service_s);
@@ -376,7 +374,6 @@ void ssh_disconnect(SSH_SESSION *session){
     STRING *str;
     enter_function();
     if(ssh_socket_is_open(session->socket)) {
-        packet_clear_out(session);
         buffer_add_u8(session->out_buffer,SSH2_MSG_DISCONNECT);
         buffer_add_u32(session->out_buffer,htonl(SSH2_DISCONNECT_BY_APPLICATION));
         str=string_from_char("Bye Bye");

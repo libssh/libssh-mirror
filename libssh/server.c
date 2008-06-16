@@ -163,7 +163,7 @@ SSH_SESSION *ssh_bind_accept(SSH_BIND *ssh_bind){
     session=ssh_new();
     session->server=1;
     session->version=2;
-    session->socket=ssh_socket_new();
+    session->socket=ssh_socket_new(session);
     ssh_socket_set_fd(session->socket,fd);
     session->options=ssh_options_copy(ssh_bind->options);
     session->dsa_key=dsa;
@@ -260,7 +260,6 @@ static int dh_handshake_server(SSH_SESSION *session){
     free(sign);
     packet_send(session);
     free(f);
-    packet_clear_out(session);
     buffer_add_u8(session->out_buffer,SSH2_MSG_NEWKEYS);
     packet_send(session);
     ssh_say(2,"SSH_MSG_NEWKEYS sent\n");

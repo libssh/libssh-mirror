@@ -1,7 +1,7 @@
 /* packet.c */	
 /* packet building functions */
 /*
-Copyright 2003 Aris Adamantiadis
+Copyright (c) 2003-2008 Aris Adamantiadis
 
 This file is part of the SSH Library
 
@@ -37,66 +37,6 @@ static int macsize=SHA_DIGEST_LEN;
 /* SSH_OK if it has read at least len bytes, otherwise, SSH_AGAIN. */
 /* in blocking mode, it will read at least len bytes and will block until it's ok. */
 
-static int socket_read(SSH_SESSION *session,int len){
-	enter_function();
-    int except, can_write;
-    int to_read;
-    int r;
-    char *buf;
-    char buffer[4096];
-    if(!session->in_socket_buffer)
-        session->in_socket_buffer=buffer_new();
-    to_read=len - buffer_get_rest_len(session->in_socket_buffer);
-    if(to_read <= 0){
-    	leave_function();
-        return SSH_OK;
-    }
-    if(session->blocking){
-        buf=malloc(to_read);
-        r=ssh_socket_completeread(session->socket,buf,to_read);
-        session->data_to_read=0;
-        if(r==SSH_ERROR || r ==0){
-            ssh_set_error(session,SSH_FATAL,
-                (r==0)?"Connection closed by remote host" : "Error reading socket");
-            ssh_socket_close(session->socket);
-            session->alive=0;
-            session->data_except=1;
-            leave_function();
-            return SSH_ERROR;
-        }
-
-        buffer_add_data(session->in_socket_buffer,buf,to_read);
-        free(buf);
-        leave_function();
-        return SSH_OK;
-    }
-    /* nonblocking read */
-    do {
-        ssh_fd_poll(session,&can_write,&except); /* internally sets data_to_read */
-        if(!session->data_to_read){
-            leave_function();
-        	return SSH_AGAIN;
-        }
-        session->data_to_read=0;
-        /* read as much as we can */
-        if(ssh_socket_is_open(session->socket))
-            r=ssh_socket_read(session->socket,buffer,sizeof(buffer));
-        else
-            r=-1;
-        if(r<=0){
-            ssh_set_error(session,SSH_FATAL,
-                (r==0)?"Connection closed by remote host" : "Error reading socket");
-            ssh_socket_close(session->socket);
-            session->data_except=1;
-            session->alive=0;
-            leave_function();
-            return SSH_ERROR;
-        }
-        buffer_add_data(session->in_socket_buffer,buffer,r);
-    } while(buffer_get_rest_len(session->in_socket_buffer)<len);
-    leave_function();
-    return SSH_OK;
-}
 
 #define PACKET_STATE_INIT 0
 #define PACKET_STATE_SIZEREAD 1
@@ -123,14 +63,14 @@ static int packet_read2(SSH_SESSION *session){
                 buffer_reinit(session->in_buffer);
             else
                 session->in_buffer=buffer_new();
-            ret=socket_read(session,blocksize);
+            ret=ssh_socket_wait_for_data(session->socket,session,blocksize);
             if(ret != SSH_OK){
                 leave_function();
             	return ret; // can be SSH_ERROR or SSH_AGAIN
             }
 //    be_read=completeread(session->fd,buffer,blocksize);
-            memcpy(buffer,buffer_get_rest(session->in_socket_buffer),blocksize);
-            buffer_pass_bytes(session->in_socket_buffer,blocksize); // mark them as read
+            // can't fail since we're sure there is enough data in socket buffer
+            ssh_socket_read(session->socket,buffer,blocksize);
             len=packet_decrypt_len(session,buffer);
             buffer_add_data(session->in_buffer,buffer,blocksize);
             if(len> MAX_PACKET_LEN){
@@ -153,14 +93,13 @@ static int packet_read2(SSH_SESSION *session){
             to_be_read=len-blocksize+sizeof(u32) + current_macsize;
             /* if to_be_read is zero, the whole packet was blocksize bytes. */
             if(to_be_read != 0){ 
-                ret=socket_read(session,to_be_read);
+                ret=ssh_socket_wait_for_data(session->socket,session,to_be_read);
                 if(ret!=SSH_OK){
                     leave_function();
                 	return ret;
                 }
                 packet=malloc(to_be_read);
-                memcpy(packet,buffer_get_rest(session->in_socket_buffer),to_be_read-current_macsize);
-                buffer_pass_bytes(session->in_socket_buffer,to_be_read-current_macsize);
+                ssh_socket_read(session->socket,packet,to_be_read-current_macsize);
                 ssh_log(session,SSH_LOG_PACKET,"Read a %d bytes packet",len);
                 buffer_add_data(session->in_buffer,packet,to_be_read-current_macsize);
                 free(packet);
@@ -169,8 +108,7 @@ static int packet_read2(SSH_SESSION *session){
                 /* decrypt the rest of the packet (blocksize bytes already have been decrypted */
                 packet_decrypt(session,buffer_get(session->in_buffer)+blocksize,
                                buffer_get_len(session->in_buffer)-blocksize);
-                memcpy(mac,buffer_get_rest(session->in_socket_buffer),macsize);
-                buffer_pass_bytes(session->in_socket_buffer,macsize);
+                ssh_socket_read(session->socket,mac,macsize);
                 if(packet_hmac_verify(session,session->in_buffer,mac)){
                     ssh_set_error(session,SSH_FATAL,"HMAC error");
                     leave_function();
@@ -223,9 +161,11 @@ static int packet_read1(SSH_SESSION *session){
     int to_be_read;
     u32 padding;
     u32 crc;
-    ssh_say(3,"packet_read1()\n");
-    if(!session->alive || session->data_except)
-        return SSH_ERROR; // the error message was already set
+    enter_function();
+    if(!session->alive || session->data_except){
+        leave_function();
+    	return SSH_ERROR; // the error message was already set
+    }
     switch (session->packet_state){
         case PACKET_STATE_INIT:
             memset(&session->in_packet,0,sizeof(PACKET));
@@ -233,18 +173,19 @@ static int packet_read1(SSH_SESSION *session){
                 buffer_reinit(session->in_buffer);
             else
                 session->in_buffer=buffer_new();
-            ret=socket_read(session,sizeof(u32));
-            if(ret!=SSH_OK)
-                return ret; // could be SSH_AGAIN
-            buffer_get_u32(session->in_socket_buffer,&len);
-            /*            be_read=completeread(session->fd,&len,sizeof(u32)); */
+            ret=ssh_socket_read(session->socket,&len,sizeof(u32));
+            if(ret!=SSH_OK){
+                leave_function();
+            	return ret; // could be SSH_AGAIN
+            }
            /* len is not encrypted */
             len=ntohl(len); 
             if(len> MAX_PACKET_LEN){
                 ssh_set_error(session,SSH_FATAL,"read_packet(): Packet len too high(%uld %.8lx)",len,len);
+                leave_function();
                 return SSH_ERROR;
             }
-            ssh_say(3,"%d bytes packet\n",len);
+            ssh_log(session,SSH_LOG_PACKET,"reading a %d bytes packet",len);
             session->in_packet.len=len;
             session->packet_state=PACKET_STATE_SIZEREAD;
         case PACKET_STATE_SIZEREAD:
@@ -253,12 +194,13 @@ static int packet_read1(SSH_SESSION *session){
             padding=8-(len % 8);
             to_be_read=len+padding;
             /* it is *not* possible that to_be_read be < 8. */
-            ret=socket_read(session,to_be_read);
-            if(ret != SSH_OK)
-                return ret; // can be SSH_ERROR or SSH_AGAIN
             packet=malloc(to_be_read);
-            memcpy(packet,buffer_get_rest(session->in_socket_buffer),to_be_read);
-            buffer_pass_bytes(session->in_socket_buffer,to_be_read);
+            ret=ssh_socket_read(session->socket,packet,to_be_read);
+            if(ret != SSH_OK){
+            	free(packet);
+            	leave_function();
+            	return ret; // can be SSH_ERROR or SSH_AGAIN
+            }
             buffer_add_data(session->in_buffer,packet,to_be_read);
             free(packet);
             
@@ -276,10 +218,11 @@ static int packet_read1(SSH_SESSION *session){
             ssh_print_hexa("read packet decrypted:",
                            buffer_get(session->in_buffer),buffer_get_len(session->in_buffer));
 #endif
-            ssh_say(3,"%d bytes padding\n",padding);
+            ssh_log(session,SSH_LOG_PACKET,"%d bytes padding",padding);
             if((len+padding) != buffer_get_rest_len(session->in_buffer) || (len+padding) < sizeof(u32)){
-                ssh_say(2,"no crc32 in packet\n");
+                ssh_log(session,SSH_LOG_RARE,"no crc32 in packet");
                 ssh_set_error(session,SSH_FATAL,"no crc32 in packet");
+                leave_function();
                 return SSH_ERROR;
             }
             memcpy(&crc,buffer_get_rest(session->in_buffer)+(len+padding)-sizeof(u32),
@@ -291,14 +234,15 @@ static int packet_read1(SSH_SESSION *session){
                 ssh_print_hexa("crc32 on",buffer_get_rest(session->in_buffer),
                 len + padding - sizeof(u32));
 #endif
-                ssh_say(2,"invalid crc32\n");
+                ssh_log(session,SSH_LOG_RARE,"invalid crc32");
                 ssh_set_error(session,SSH_FATAL,"invalid crc32 : expected %.8lx, "
                 "got %.8lx",crc,
                 ssh_crc32(buffer_get_rest(session->in_buffer),len+padding-sizeof(u32)) );
+                leave_function();
                 return SSH_ERROR;
             }
             buffer_pass_bytes(session->in_buffer,padding);   /*pass the padding*/
-            ssh_say(3,"the packet is valid\n");
+            ssh_log(session,SSH_LOG_PACKET,"the packet is valid");
 /* will do that later 
 #ifdef HAVE_LIBZ
     if(session->current_crypto && session->current_crypto->do_compress_in){
@@ -308,9 +252,11 @@ static int packet_read1(SSH_SESSION *session){
 */
             session->recv_seq++;
             session->packet_state=PACKET_STATE_INIT;
+            leave_function();
             return SSH_OK;
     }
-    ssh_set_error(session,SSH_FATAL,"Invalid state into packet_read2() : %d",session->packet_state);
+    ssh_set_error(session,SSH_FATAL,"Invalid state into packet_read1() : %d",session->packet_state);
+    leave_function();
     return SSH_ERROR;
 }
 
@@ -345,123 +291,23 @@ int packet_translate(SSH_SESSION *session){
     return 0;
 }
 
-// FIXME moves it in socket.c and rename it ssh_socket_completewrite()
-static int atomic_write(struct socket *s, void *buffer, int len){
-    int written;
-    if(!ssh_socket_is_open(s))
-        return SSH_ERROR;
-    while(len >0) {
-        written=ssh_socket_write(s,buffer,len);
-        if(written==0 || written==-1)
-            return SSH_ERROR;
-        len-=written;
-        buffer+=written;
-    }
-    return SSH_OK;
-}
-
-/* when doing a nonblocking write, you should issue the packet_write only once, then 
- * do packet_nonblocking_flush() until you get a SSH_OK or a SSH_ERROR */
-static int packet_nonblocking_flush(SSH_SESSION *session){
-    int except, can_write;
-    int w;
-    enter_function();
-    ssh_fd_poll(session,&can_write,&except); /* internally sets data_to_write */
-    if(!ssh_socket_is_open(session->socket)){
-        session->alive=0;
-        // FIXME use ssh_socket_get_errno
-        ssh_set_error(session,SSH_FATAL,"Writing packet : error on socket (or connection closed): %s",strerror(errno));
-        leave_function();
-        return SSH_ERROR;
-    }
-    while(session->data_to_write && buffer_get_rest_len(session->out_socket_buffer)>0){
-        if(ssh_socket_is_open(session->socket)){
-            w=ssh_socket_write(session->socket,buffer_get_rest(session->out_socket_buffer),
-                buffer_get_rest_len(session->out_socket_buffer));
-            session->data_to_write=0;
-        } else
-            w=-1; /* write failed */
-        if(w<0){
-            session->data_to_write=0;
-            session->data_except=1;
-            session->alive=0;
-            ssh_socket_close(session->socket);
-            // FIXME use ssh_socket_get_errno()
-            ssh_set_error(session,SSH_FATAL,"Writing packet : error on socket (or connection closed): %s",
-                          strerror(errno));
-            leave_function();
-            return SSH_ERROR;
-        }
-        buffer_pass_bytes(session->out_socket_buffer,w);
-        /* refresh the socket status */
-        ssh_fd_poll(session,&can_write,&except);
-    }
-    if(buffer_get_rest_len(session->out_socket_buffer)>0){
-        leave_function();
-    	return SSH_AGAIN;  /* there is data pending */
-    }
-    leave_function();
-    return SSH_OK; // all data written
-}
-
-/* blocking packet flush */
-static int packet_blocking_flush(SSH_SESSION *session){
-	enter_function();
-    if(!ssh_socket_is_open(session->socket)) {
-        session->alive=0;
-        leave_function();
-        return SSH_ERROR;
-    }
-    if(session->data_except){
-        leave_function();
-    	return SSH_ERROR;
-    }
-    if(buffer_get_rest(session->out_socket_buffer)==0){
-    	leave_function();
-        return SSH_OK;
-    }
-    if(atomic_write(session->socket,buffer_get_rest(session->out_socket_buffer),
-       buffer_get_rest_len(session->out_socket_buffer))){
-        session->data_to_write=0;
-        session->data_except=1;
-        session->alive=0;
-        ssh_socket_close(session->socket);
-        // FIXME use the proper errno
-        ssh_set_error(session,SSH_FATAL,"Writing packet : error on socket (or connection closed): %s",
-                         strerror(errno));
-        leave_function();
-        return SSH_ERROR;
-    }
-    session->data_to_write=0;
-    buffer_reinit(session->out_socket_buffer);
-    leave_function();
-    return SSH_OK; // no data pending
-}
-
 /* Write the the bufferized output. If the session is blocking, or enforce_blocking 
  * is set, the call may block. Otherwise, it won't block.
  * return SSH°OK if everything has been sent, SSH_AGAIN if there are still things 
  * to send on buffer, SSH_ERROR if there is an error. */
 int packet_flush(SSH_SESSION *session, int enforce_blocking){
     if(enforce_blocking || session->blocking)
-        return packet_blocking_flush(session);
-    return packet_nonblocking_flush(session);
+        return ssh_socket_blocking_flush(session->socket);
+    return ssh_socket_nonblocking_flush(session->socket);
 }
 
 /* this function places the outgoing packet buffer into an outgoing socket buffer */
-static int socket_write(SSH_SESSION *session){
+static int packet_write(SSH_SESSION *session){
 	int ret;
 	enter_function();
-    if(!session->out_socket_buffer){
-        session->out_socket_buffer=buffer_new();
-    }
-    buffer_add_data(session->out_socket_buffer,
-               buffer_get(session->out_buffer),buffer_get_len(session->out_buffer));
-    if(!session->blocking)
-        ret = packet_nonblocking_flush(session);
-      else
-        ret = packet_blocking_flush(session);
-    leave_function();
+	ssh_socket_write(session->socket,buffer_get(session->out_buffer),buffer_get_len(session->out_buffer));
+	ret=packet_flush(session,0);
+	leave_function();
     return ret;
 }
 
@@ -497,7 +343,7 @@ static int packet_send2(SSH_SESSION *session){
     hmac=packet_encrypt(session,buffer_get(session->out_buffer),buffer_get_len(session->out_buffer));
     if(hmac)
         buffer_add_data(session->out_buffer,hmac,20);
-    ret=socket_write(session);
+    ret=packet_write(session);
     session->send_seq++;
     buffer_reinit(session->out_buffer);
     leave_function();
@@ -513,7 +359,8 @@ static int packet_send1(SSH_SESSION *session){
     u32 currentlen=buffer_get_len(session->out_buffer)+sizeof(u32);
     int ret=0;
     unsigned int blocksize=(session->current_crypto?session->current_crypto->out_cipher->blocksize:8);
-    ssh_say(3,"Writing on the wire a packet having %ld bytes before",currentlen);
+    enter_function();
+    ssh_log(session,SSH_LOG_PACKET,"Sending a %d bytes long packet",currentlen);
 /*
 #ifdef HAVE_LIBZ
     if(session->current_crypto && session->current_crypto->do_compress_out){
@@ -528,7 +375,7 @@ static int packet_send1(SSH_SESSION *session){
     else
         memset(padstring,0,padding);
     finallen=htonl(currentlen);
-    ssh_say(3,",%d bytes after comp + %d padding bytes = %d bytes packet\n",currentlen,padding,(ntohl(finallen)));
+    ssh_log(session,SSH_LOG_PACKET,"%d bytes after comp + %d padding bytes = %d bytes packet",currentlen,padding,(ntohl(finallen)));
     buffer_add_data_begin(session->out_buffer,&padstring,padding);
     buffer_add_data_begin(session->out_buffer,&finallen,sizeof(u32));
     crc=ssh_crc32(buffer_get(session->out_buffer)+sizeof(u32),buffer_get_len(session->out_buffer)-sizeof(u32));
@@ -542,9 +389,11 @@ static int packet_send1(SSH_SESSION *session){
     ssh_print_hexa("encrypted packet",buffer_get(session->out_buffer),
             buffer_get_len(session->out_buffer));
 #endif
-    ret=socket_write(session);
+    ssh_socket_write(session->socket,buffer_get(session->out_buffer),buffer_get_len(session->out_buffer));
+    ret=packet_flush(session,0);
     session->send_seq++;
     buffer_reinit(session->out_buffer);
+    leave_function();
     return ret;     /* SSH_OK, AGAIN or ERROR */
 }
 
@@ -620,16 +469,18 @@ void packet_parse(SSH_SESSION *session){
 
 #ifdef HAVE_SSH1
 static int packet_wait1(SSH_SESSION *session,int type,int blocking){
-    ssh_say(3,"packet_wait1 waiting for %d\n",type);
+	enter_function();
+    ssh_log(session,SSH_LOG_PROTOCOL,"packet_wait1 waiting for %d",type);
     while(1){
-        if(packet_read1(session))
+        if(packet_read1(session) || packet_translate(session)){
+            leave_function();
             return -1;
-        if(packet_translate(session))
-            return -1;
-        ssh_say(3,"packet_wait 1 received %d\n",session->in_packet.type);
+        }
+        ssh_log(session,SSH_LOG_PACKET,"packet_wait 1 received a type %d packet",session->in_packet.type);
         switch(session->in_packet.type){
             case SSH_MSG_DISCONNECT:
                 packet_parse(session);
+                leave_function();
                 return -1;
             case SSH_SMSG_STDOUT_DATA:
             case SSH_SMSG_STDERR_DATA:
@@ -645,13 +496,18 @@ static int packet_wait1(SSH_SESSION *session,int type,int blocking){
             default:
                if(type && (type != session->in_packet.type)){
                    ssh_set_error(session,SSH_FATAL,"waitpacket(): Received a %d type packet, was waiting for a %d\n",session->in_packet.type,type);
+                   leave_function();
                    return -1;
                }
+               leave_function();
                return 0;
            }
-        if(blocking==0)
-            return 0;
+        if(blocking==0){
+            leave_function();
+        	return 0;
+        }
     }
+    leave_function();
     return 0;
 }
 #endif /* HAVE_SSH1 */
@@ -709,12 +565,3 @@ int packet_wait(SSH_SESSION *session, int type, int block){
 #endif
         return packet_wait2(session,type,block);
 }
-
-
-void packet_clear_out(SSH_SESSION *session){
-    if(session->out_buffer)
-        buffer_reinit(session->out_buffer);
-    else
-        session->out_buffer=buffer_new();
-}
-

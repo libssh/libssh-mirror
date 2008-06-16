@@ -1,5 +1,5 @@
 /*
-Copyright 2003,04 Aris Adamantiadis
+Copyright (c) 2003-2008 Aris Adamantiadis
 
 This file is part of the SSH Library
 
@@ -122,15 +122,37 @@ char *ssh_get_error(void *error);
 int ssh_get_error_code(void *error);
 void ssh_say(int priority,char *format,...);
 void ssh_set_verbosity(int num);
+/** \addtogroup ssh_log
+ * @{
+ */
+ /** \brief Verbosity level for logging and help to debugging 
+  */
 
- /* There is a verbosity level */
- 
-#define SSH_LOG_NOLOG 0 // no log
+enum {
+	/** No logging at all
+	 */
+	SSH_LOG_NOLOG=0,
+	/** Only rare and noteworthy events
+	 */
+	SSH_LOG_RARE,
+	/** High level protocol informations 
+	 */
+	SSH_LOG_PROTOCOL,
+	/** Lower level protocol infomations, packet level
+	 */
+	SSH_LOG_PACKET, 
+	/** Every function path
+	 */
+	SSH_LOG_FUNCTIONS 
+};
+/** @}
+ */
+/*#define SSH_LOG_NOLOG 0 // no log
 #define SSH_LOG_RARE 1 // rare conditions
 #define SSH_LOG_ENTRY 2 // user-accessible entrypoints
 #define SSH_LOG_PACKET 3 // packet id and size
 #define SSH_LOG_FUNCTIONS 4 // every function in and return
-
+*/
 /* log.c */
 void ssh_log(SSH_SESSION *session, int prioriry, char *format, ...);
 
