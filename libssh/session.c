@@ -145,21 +145,22 @@ socket_t ssh_get_fd(SSH_SESSION *session){
  * \param session ssh session
  */
 void ssh_set_fd_toread(SSH_SESSION *session){
-    session->data_to_read=1;
+    ssh_socket_set_toread(session->socket);
 }
 
 /** \brief say the session it may write to the file descriptor without blocking
  * \param session ssh session
  */
 void ssh_set_fd_towrite(SSH_SESSION *session){
-    session->data_to_write=1;
+    ssh_socket_set_towrite(session->socket);
+	
 }
 
 /** \brief say the session it has an exception to catch on the file descriptor
  * \param session ssh session
  */
 void ssh_set_fd_except(SSH_SESSION *session){
-    session->data_except=1;
+   ssh_socket_set_except(session->socket);
 }
 
 /** \warning I don't remember if this should be internal or not
@@ -193,11 +194,12 @@ int ssh_handle_packets(SSH_SESSION *session){
  */
 int ssh_get_status(SSH_SESSION *session){
     int ret=0;
+    int socketstate=ssh_socket_get_status(session->socket);
     if(session->closed)
         ret |= SSH_CLOSED;
-    if(session->channel_bytes_toread > 0 || session->data_to_read)
+    if(socketstate & SSH_READ_PENDING)
         ret |= SSH_READ_PENDING;
-    if(session->closed && session->closed_by_except)
+    if(session->closed && socketstate & SSH_CLOSED_ERROR)
         ret |= SSH_CLOSED_ERROR;
     return ret;
 }

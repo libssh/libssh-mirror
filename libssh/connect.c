@@ -299,7 +299,7 @@ int ssh_select(CHANNEL **channels,CHANNEL **outchannels, socket_t maxfd, fd_set 
     /* set the data_to_read flag on each session */
     for(i=0;channels[i];i++)
         if(channels[i]->session->alive && ssh_socket_fd_isset(channels[i]->session->socket,&localset))
-            channels[i]->session->data_to_read=1;
+            ssh_socket_set_toread(channels[i]->session->socket);
             
     /* now, test each channel */
     j=0;

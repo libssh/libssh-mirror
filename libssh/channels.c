@@ -957,7 +957,7 @@ static int channel_protocol_select(CHANNEL **rchans, CHANNEL **wchans, CHANNEL *
     j=0;
     for(i=0;rchans[i];++i){
         chan=rchans[i];
-        while(chan->open && chan->session->data_to_read){
+        while(chan->open && ssh_socket_data_available(chan->session->socket)){
             ssh_handle_packets(chan->session);
         }
         if( (chan->stdout_buffer && buffer_get_len(chan->stdout_buffer)>0) ||
@@ -972,7 +972,7 @@ static int channel_protocol_select(CHANNEL **rchans, CHANNEL **wchans, CHANNEL *
     for(i=0;wchans[i];++i){
         chan=wchans[i];
         /* it's not our business to seek if the file descriptor is writable */
-        if(chan->session->data_to_write && chan->open && (chan->remote_window>0)){
+        if(ssh_socket_data_writable(chan->session->socket) && chan->open && (chan->remote_window>0)){
             wout[j]=chan;
             ++j;
         }
@@ -981,7 +981,7 @@ static int channel_protocol_select(CHANNEL **rchans, CHANNEL **wchans, CHANNEL *
     j=0;
     for(i=0;echans[i];++i){
         chan=echans[i];
-        if(!ssh_socket_is_open(chan->session->socket) || !chan->open || chan->session->data_except){
+        if(!ssh_socket_is_open(chan->session->socket) || !chan->open){
             eout[j]=chan;
             ++j;
         }
@@ -1105,15 +1105,15 @@ int channel_select(CHANNEL **readchans, CHANNEL **writechans, CHANNEL **exceptch
         }
         for(i=0;readchans[i];++i){
         	if(ssh_socket_fd_isset(readchans[i]->session->socket,&rset))
-                readchans[i]->session->data_to_read=1;
+                ssh_socket_set_toread(readchans[i]->session->socket);
         }
         for(i=0;writechans[i];++i){
             if(ssh_socket_fd_isset(writechans[i]->session->socket,&wset))
-                writechans[i]->session->data_to_write=1;
+                ssh_socket_set_towrite(writechans[i]->session->socket);
         }
         for(i=0;exceptchans[i];++i){
             if(ssh_socket_fd_isset(exceptchans[i]->session->socket,&eset))
-                exceptchans[i]->session->data_except=1;
+                ssh_socket_set_except(exceptchans[i]->session->socket);
         }
     } while(1); /* return to do loop */
     /* not reached */

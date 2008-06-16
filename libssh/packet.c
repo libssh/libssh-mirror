@@ -52,7 +52,7 @@ static int packet_read2(SSH_SESSION *session){
     unsigned int blocksize=(session->current_crypto?session->current_crypto->in_cipher->blocksize:8);
     int current_macsize=session->current_crypto?macsize:0;
     enter_function();
-    if(!session->alive || session->data_except){
+    if(!session->alive){
     	leave_function();
         return SSH_ERROR; // the error message was already set into this session
     }
@@ -162,7 +162,7 @@ static int packet_read1(SSH_SESSION *session){
     u32 padding;
     u32 crc;
     enter_function();
-    if(!session->alive || session->data_except){
+    if(!session->alive){
         leave_function();
     	return SSH_ERROR; // the error message was already set
     }

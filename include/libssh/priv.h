@@ -307,10 +307,6 @@ struct ssh_session {
     int auth_service_asked;
     
 /* socket status */
-    int data_to_read; /* reading now on socket will 
-                         not block */
-    int data_to_write;
-    int data_except;
     int blocking; // functions should block
     
     STRING *banner; /* that's the issue banner from 
@@ -336,9 +332,6 @@ struct ssh_session {
     CRYPTO *current_crypto;
     CRYPTO *next_crypto;  /* next_crypto is going to be used after a SSH2_MSG_NEWKEYS */
 
-    int channel_bytes_toread; /* left number of bytes 
-                                 in the channel buffers
-                                 */
     CHANNEL *channels; /* linked list of channels */
     int maxchannel;
     int exec_channel_opened; /* version 1 only. more 
@@ -442,7 +435,12 @@ int ssh_socket_wait_for_data(struct socket *s, SSH_SESSION *session,int len);
 int ssh_socket_nonblocking_flush(struct socket *s);
 int ssh_socket_blocking_flush(struct socket *s);
 int ssh_socket_poll(struct socket *s, int *write, int *except);
-
+void ssh_socket_set_towrite(struct socket *s);
+void ssh_socket_set_toread(struct socket *s);
+void ssh_socket_set_except(struct socket *s);
+int ssh_socket_get_status(struct socket *s);
+int ssh_socket_data_available(struct socket *s);
+int ssh_socket_data_writable(struct socket *s);
 /* session.c */
 
 void ssh_cleanup(SSH_SESSION *session);
