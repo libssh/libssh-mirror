@@ -182,7 +182,7 @@ int ssh_handle_packets(SSH_SESSION *session){
         }
         packet_parse(session);
         ++i;
-    } while(r>0 && i<5);
+    } while(r>0);
     leave_function();
     return r;
 }

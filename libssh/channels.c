@@ -26,8 +26,8 @@ MA 02111-1307, USA. */
 
 #include "libssh/priv.h"
 #include "libssh/ssh2.h"
-#define WINDOWLIMIT 1024
-#define WINDOWBASE 32000
+#define WINDOWLIMIT 2048
+#define WINDOWBASE 64000
 
 /** \defgroup ssh_channel SSH Channels
  * \brief functions that manage a channel
@@ -155,7 +155,7 @@ static void grow_window(SSH_SESSION *session, CHANNEL *channel){
     buffer_add_u32(session->out_buffer,htonl(channel->remote_channel));
     buffer_add_u32(session->out_buffer,htonl(new_window));
     packet_send(session);
-    ssh_say(3,"growing window (channel %d:%d) to %d bytes\n",
+    ssh_log(session,SSH_LOG_PROTOCOL,"growing window (channel %d:%d) to %d bytes",
         channel->local_channel,channel->remote_channel,
         channel->local_window + new_window);
     channel->local_window+=new_window;
@@ -190,7 +190,7 @@ static void channel_rcv_change_window(SSH_SESSION *session){
         return;
     }
     bytes=ntohl(bytes);
-    ssh_say(3,"Adding %d bytes to channel (%d:%d) (from %d bytes)\n",bytes,
+    ssh_log(session,SSH_LOG_PROTOCOL,"Adding %d bytes to channel (%d:%d) (from %d bytes)",bytes,
         channel->local_channel,channel->remote_channel,channel->remote_window);
     channel->remote_window+=bytes;
     leave_function();
@@ -219,17 +219,18 @@ static void channel_rcv_data(SSH_SESSION *session,int is_stderr){
         leave_function();
         return;
     }
-    ssh_say(3,"adding %d bytes data in %d\n",string_len(str),is_stderr);
+    ssh_log(session,SSH_LOG_PROTOCOL,"Channel receiving %d bytes data in %d (local win=%d remote win=%d)",string_len(str),is_stderr,
+    		channel->local_window,channel->remote_window);
     /* what shall we do in this case ? let's accept it anyway */
     if(string_len(str)>channel->local_window)
-        ssh_say(0,"Data packet too big for our window(%d vs %d)",string_len(str),channel->local_window);
+        ssh_log(session,SSH_LOG_RARE,"Data packet too big for our window(%d vs %d)",string_len(str),channel->local_window);
     channel_default_bufferize(channel,str->string,string_len(str), is_stderr);
-    if(string_len(str)>=channel->local_window)
+    if(string_len(str)<=channel->local_window)
         channel->local_window-=string_len(str);
     else
         channel->local_window=0; /* buggy remote */
-    if(channel->local_window < WINDOWLIMIT)
-        grow_window(session,channel); /* i wonder if this is the correct place to do that */
+    ssh_log(session,SSH_LOG_PROTOCOL,"Channel windows are now (local win=%d remote win=%d)",
+    		channel->local_window,channel->remote_window);
     free(str);
     leave_function();
 }
@@ -852,7 +853,8 @@ int channel_read(CHANNEL *channel, BUFFER *buffer,int bytes,int is_stderr){
         }
         packet_parse(session);
     }
-    
+    if(channel->local_window < WINDOWLIMIT)
+    	grow_window(session,channel);
     if(bytes==0){
         /* write the ful buffer informations */
         buffer_add_data(buffer,buffer_get_rest(stdbuf),buffer_get_rest_len(stdbuf));
