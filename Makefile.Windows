@@ -14,7 +14,8 @@ libssh_OBJS = libssh/auth1.o libssh/auth.o libssh/base64.o libssh/buffer.o	\
 		 libssh/gzip.o libssh/init.o libssh/kex.o libssh/keyfiles.o	\
 		 libssh/keys.o libssh/messages.o libssh/misc.o libssh/options.o	\
 		 libssh/packet.o libssh/server.o libssh/session.o libssh/sftp.o	\
-		 libssh/sftpserver.o libssh/string.o libssh/wrapper.o libssh/socket.o
+		 libssh/sftpserver.o libssh/string.o libssh/wrapper.o libssh/socket.o \
+		 libssh/log.o
 
 
 all: libssh.dll samplesshd.exe libssh.lib
