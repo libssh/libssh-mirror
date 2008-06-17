@@ -428,6 +428,9 @@ void packet_parse(SSH_SESSION *session){
             case SSH_SMSG_EXITSTATUS:
                 channel_handle1(session,type);
                 return;
+            case SSH_MSG_DEBUG:
+            case SSH_MSG_IGNORE:
+            	break;
             default:
                 ssh_say(2,"Unexpected message code %d\n",type);
             }
@@ -461,7 +464,7 @@ void packet_parse(SSH_SESSION *session){
         case SSH2_MSG_DEBUG:
             return;
         default:
-            ssh_say(0,"Received unhandled msg %d\n",type);
+            ssh_log(session,SSH_LOG_RARE,"Received unhandled packet %d",type);
     }
 #ifdef HAVE_SSH1
     }
@@ -489,12 +492,11 @@ static int packet_wait1(SSH_SESSION *session,int type,int blocking){
                 channel_handle1(session,type);
                 break;
             case SSH_MSG_DEBUG:
+            case SSH_MSG_IGNORE:
             	break;
 /*          case SSH2_MSG_CHANNEL_CLOSE:
                packet_parse(session);
                 break;;
-           case SSH2_MSG_IGNORE:
-               break;
 */               
             default:
                if(type && (type != session->in_packet.type)){
