@@ -497,6 +497,7 @@ int ssh_get_kex1(SSH_SESSION *session){
     }
     session->current_crypto=session->next_crypto;
     session->next_crypto=NULL;
+    ssh_log(session,SSH_LOG_PROTOCOL,"Waiting for a SSH_SMSG_SUCCESS");
     if(packet_wait(session,SSH_SMSG_SUCCESS,1)){
         char buffer[1024];
         snprintf(buffer,sizeof(buffer),"Key exchange failed : %s",ssh_get_error(session));

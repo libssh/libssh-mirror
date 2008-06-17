@@ -67,22 +67,19 @@ static bignum g;
 static bignum p;
 static int ssh_crypto_inited=0;
 
-/* maybe it might be enhanced .... */
-/* XXX Do it. */		
 int ssh_get_random(void *where, int len, int strong){
-    if(strong){
+    
 #ifdef HAVE_LIBGCRYPT
-        gcry_randomize(where,len,GCRY_VERY_STRONG_RANDOM);
-        return 1;
-    } else {
-        gcry_randomize(where,len,GCRY_STRONG_RANDOM);
-        return 1;
+	// not using GCRY_VERY_STRONG_RANDOM which is a bit overkill
+	gcry_randomize(where,len,GCRY_STRONG_RANDOM);
+    return 1;
 #elif defined HAVE_LIBCRYPTO
+    if(strong){
         return RAND_bytes(where,len);
     } else {
         return RAND_pseudo_bytes(where,len);
-#endif
     }
+#endif
 }
 
 

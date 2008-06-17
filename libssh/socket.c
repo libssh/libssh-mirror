@@ -23,6 +23,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
+#include <stdlib.h>
 #ifdef _WIN32
 #include <winsock2.h>
 #else

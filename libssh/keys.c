@@ -69,7 +69,7 @@ PUBLIC_KEY *publickey_make_dss(SSH_SESSION *session, BUFFER *buffer){
         return NULL;
     }
 #ifdef HAVE_LIBGCRYPT
-    gcry_sexp_build(&key->dsa_pub,session,"(public-key(dsa(p %b)(q %b)(g %b)(y %b)))",string_len(p),p->string,string_len(q),q->string,string_len(g),g->string,string_len(pubkey),pubkey->string);
+    gcry_sexp_build(&key->dsa_pub,NULL,"(public-key(dsa(p %b)(q %b)(g %b)(y %b)))",string_len(p),p->string,string_len(q),q->string,string_len(g),g->string,string_len(pubkey),pubkey->string);
 #elif defined HAVE_LIBCRYPTO
     key->dsa_pub=DSA_new();
     key->dsa_pub->p=make_string_bn(p);
