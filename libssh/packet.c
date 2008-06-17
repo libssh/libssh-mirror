@@ -458,6 +458,7 @@ void packet_parse(SSH_SESSION *session){
 
             channel_handle(session,type);
         case SSH2_MSG_IGNORE:
+        case SSH2_MSG_DEBUG:
             return;
         default:
             ssh_say(0,"Received unhandled msg %d\n",type);
@@ -487,6 +488,8 @@ static int packet_wait1(SSH_SESSION *session,int type,int blocking){
             case SSH_SMSG_EXITSTATUS:
                 channel_handle1(session,type);
                 break;
+            case SSH_MSG_DEBUG:
+            	break;
 /*          case SSH2_MSG_CHANNEL_CLOSE:
                packet_parse(session);
                 break;;
