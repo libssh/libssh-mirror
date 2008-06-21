@@ -72,6 +72,9 @@ struct socket *ssh_socket_new(SSH_SESSION *session){
 	s->session=session;
 	s->in_buffer=buffer_new();
 	s->out_buffer=buffer_new();
+	s->data_to_read=0;
+	s->data_to_write=0;
+	s->data_except=0;
 	return s;
 }
 
