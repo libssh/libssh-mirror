@@ -148,8 +148,8 @@ CHANNEL *ssh_channel_from_local(SSH_SESSION *session,u32 num){
     return channel;
 }
 
-static void grow_window(SSH_SESSION *session, CHANNEL *channel){
-    u32 new_window=WINDOWBASE;
+static void grow_window(SSH_SESSION *session, CHANNEL *channel, int minimumsize){
+    u32 new_window=minimumsize>WINDOWBASE ? minimumsize : WINDOWBASE;
     enter_function();
     buffer_add_u8(session->out_buffer,SSH2_MSG_CHANNEL_WINDOW_ADJUST);
     buffer_add_u32(session->out_buffer,htonl(channel->remote_channel));
@@ -837,6 +837,10 @@ int channel_read(CHANNEL *channel, BUFFER *buffer,int bytes,int is_stderr){
     else 
         stdbuf=channel->stdout_buffer;
     
+    /* We may have problem if the window is too small to accept as much data as asked */
+    ssh_log(session,SSH_LOG_PROTOCOL,"Read (%d) buffered : %d bytes. Window: %d",bytes,buffer_get_rest_len(stdbuf),channel->local_window);
+    if(bytes > buffer_get_rest_len(stdbuf) + channel->local_window)
+    	grow_window(session,channel,bytes - buffer_get_rest_len(stdbuf));
     /* block reading if asked bytes=0 */
     while((buffer_get_rest_len(stdbuf)==0) || (buffer_get_rest_len(stdbuf) < bytes)){
         if(channel->remote_eof && buffer_get_rest_len(stdbuf)==0){
@@ -854,7 +858,7 @@ int channel_read(CHANNEL *channel, BUFFER *buffer,int bytes,int is_stderr){
         packet_parse(session);
     }
     if(channel->local_window < WINDOWLIMIT)
-    	grow_window(session,channel);
+    	grow_window(session,channel,0);
     if(bytes==0){
         /* write the ful buffer informations */
         buffer_add_data(buffer,buffer_get_rest(stdbuf),buffer_get_rest_len(stdbuf));
