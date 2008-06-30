@@ -148,7 +148,9 @@ int main(int argc, char **argv){
         if(i>0)
             write(1,buffer_get(buf),buffer_get_len(buf));
     } while (i>0);
+    buffer_free(buf);
     ssh_disconnect(session);
+    ssh_bind_free(ssh_bind);
     ssh_finalize();
     return 0;
 }

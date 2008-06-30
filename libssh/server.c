@@ -163,6 +163,7 @@ SSH_SESSION *ssh_bind_accept(SSH_BIND *ssh_bind){
     session=ssh_new();
     session->server=1;
     session->version=2;
+    ssh_socket_free(session->socket);
     session->socket=ssh_socket_new(session);
     ssh_socket_set_fd(session->socket,fd);
     session->options=ssh_options_copy(ssh_bind->options);
@@ -175,6 +176,8 @@ void ssh_bind_free(SSH_BIND *ssh_bind){
     if(ssh_bind->bindfd>=0)
         close(ssh_bind->bindfd);
     ssh_bind->bindfd=-1;
+    if(ssh_bind->options)
+    	ssh_options_free(ssh_bind->options);
     free(ssh_bind);
 }
 
@@ -223,6 +226,7 @@ static int dh_handshake_server(SSH_SESSION *session){
         return -1;
     }
     dh_import_e(session,e);
+    free(e);
     dh_generate_y(session);
     dh_generate_f(session);
     f=dh_get_f(session);

@@ -447,6 +447,8 @@ void crypto_free(CRYPTO *crypto){
         bignum_free(crypto->f);
     if(crypto->x)
         bignum_free(crypto->x);
+    if(crypto->y)
+    	bignum_free(crypto->y);
     if(crypto->k)
         bignum_free(crypto->k);
     /* lot of other things */
@@ -509,6 +511,7 @@ int crypt_set_algorithms(SSH_SESSION *session){
 // TODO Obviously too much cut and paste here
 int crypt_set_algorithms_server(SSH_SESSION *session){
     /* we must scan the kex entries to find crypto algorithms and set their appropriate structure */
+	enter_function();
     int i=0;
     /* out */
     char *server=session->server_kex.methods[SSH_CRYPT_S_C];
@@ -516,16 +519,21 @@ int crypt_set_algorithms_server(SSH_SESSION *session){
     char *match=ssh_find_matching(client,server);
     if(!match){
         ssh_set_error(session,SSH_FATAL,"Crypt_set_algorithms_server : no matching algorithm function found for %s",server);
+        free(match);
+        leave_function();
         return SSH_ERROR;
     }
     while(ssh_ciphertab[i].name && strcmp(match,ssh_ciphertab[i].name))
         i++;
     if(!ssh_ciphertab[i].name){
         ssh_set_error(session,SSH_FATAL,"Crypt_set_algorithms_server : no crypto algorithm function found for %s",server);
+        free(match);
+        leave_function();
         return SSH_ERROR;
     }
     ssh_log(session,SSH_LOG_PACKET,"Set output algorithm %s",match);
     session->next_crypto->out_cipher=cipher_new(i);
+    free(match);
     i=0;
     /* in */
     client=session->client_kex.methods[SSH_CRYPT_C_S];
@@ -533,16 +541,21 @@ int crypt_set_algorithms_server(SSH_SESSION *session){
     match=ssh_find_matching(client,server);
     if(!match){
         ssh_set_error(session,SSH_FATAL,"Crypt_set_algorithms_server : no matching algorithm function found for %s",server);
+        free(match);
+        leave_function();
         return SSH_ERROR;
     }
     while(ssh_ciphertab[i].name && strcmp(match,ssh_ciphertab[i].name))
         i++;
     if(!ssh_ciphertab[i].name){
         ssh_set_error(session,SSH_FATAL,"Crypt_set_algorithms_server : no crypto algorithm function found for %s",server);
+        free(match);
+        leave_function();
         return SSH_ERROR;
     }
     ssh_log(session,SSH_LOG_PACKET,"Set input algorithm %s",match);
     session->next_crypto->in_cipher=cipher_new(i);
+    free(match);
     /* compression */
     client=session->client_kex.methods[SSH_CRYPT_C_S];
     server=session->server_kex.methods[SSH_CRYPT_C_S];
@@ -551,6 +564,7 @@ int crypt_set_algorithms_server(SSH_SESSION *session){
         ssh_log(session,SSH_LOG_PACKET,"enabling C->S compression");
         session->next_crypto->do_compress_in=1;
     }
+    free(match);
     
     client=session->client_kex.methods[SSH_CRYPT_S_C];
     server=session->server_kex.methods[SSH_CRYPT_S_C];
@@ -559,7 +573,8 @@ int crypt_set_algorithms_server(SSH_SESSION *session){
         ssh_log(session,SSH_LOG_PACKET,"enabling S->C compression\n");
         session->next_crypto->do_compress_out=1;
     }
-
+    free(match);
+    
     server=session->server_kex.methods[SSH_HOSTKEYS];
     client=session->client_kex.methods[SSH_HOSTKEYS];
     match=ssh_find_matching(client,server);
@@ -569,7 +584,11 @@ int crypt_set_algorithms_server(SSH_SESSION *session){
         session->hostkeys=TYPE_RSA;
     else {
         ssh_set_error(session,SSH_FATAL,"cannot know what %s is into %s",match,server);
+        free(match);
+        leave_function();
         return SSH_ERROR;
     }
+    free(match);
+    leave_function();
     return SSH_OK;
 }

@@ -84,6 +84,8 @@ static SSH_MESSAGE *handle_userauth_request(SSH_SESSION *session){
     free(user);
     service_c=string_to_char(service);
     method_c=string_to_char(method);
+    free(service);
+    free(method);
     ssh_say(2,"auth request for service %s, method %s for user '%s'\n",service_c,method_c,
             msg->auth_request.username);
     free(service_c);
@@ -182,10 +184,12 @@ static SSH_MESSAGE *handle_channel_request_open(SSH_SESSION *session){
     msg->channel_request_open.packet_size=ntohl(packet);
     if(!strcmp(type_c,"session")){
         msg->channel_request_open.type=SSH_CHANNEL_SESSION;
+        free(type_c);
         leave_function();
         return msg;
     }
     msg->channel_request_open.type=SSH_CHANNEL_UNKNOWN;
+    free(type_c);
     leave_function();
     return msg;
 }
@@ -247,6 +251,7 @@ static SSH_MESSAGE *handle_channel_request(SSH_SESSION *session){
     if(!strcmp(type_c,"pty-req")){
         STRING *term;
         char *term_c;
+        free(type_c);
         term=buffer_get_ssh_string(session->in_buffer);
         term_c=string_to_char(term);
         free(term);
@@ -267,6 +272,7 @@ static SSH_MESSAGE *handle_channel_request(SSH_SESSION *session){
     if(!strcmp(type_c,"subsystem")){
         STRING *subsys;
         char *subsys_c;
+        free(type_c);
         subsys=buffer_get_ssh_string(session->in_buffer);
         subsys_c=string_to_char(subsys);
         free(subsys);
@@ -276,12 +282,14 @@ static SSH_MESSAGE *handle_channel_request(SSH_SESSION *session){
         return msg;
     }
     if(!strcmp(type_c,"shell")){
+    	free(type_c);
         msg->channel_request.type=SSH_CHANNEL_REQUEST_SHELL;
         leave_function();
         return msg;
     }
     if(!strcmp(type_c,"exec")){
         STRING *cmd=buffer_get_ssh_string(session->in_buffer);
+        free(type_c);
         msg->channel_request.type=SSH_CHANNEL_REQUEST_EXEC;
         msg->channel_request.command=string_to_char(cmd);
         free(cmd);
@@ -290,6 +298,7 @@ static SSH_MESSAGE *handle_channel_request(SSH_SESSION *session){
     }
     
     msg->channel_request.type=SSH_CHANNEL_UNKNOWN;
+    free(type_c);
     leave_function();
     return msg;
 }
