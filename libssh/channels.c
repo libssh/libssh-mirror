@@ -26,8 +26,9 @@ MA 02111-1307, USA. */
 
 #include "libssh/priv.h"
 #include "libssh/ssh2.h"
-#define WINDOWLIMIT 2048
-#define WINDOWBASE 64000
+
+#define WINDOWBASE 128000
+#define WINDOWLIMIT (WINDOWBASE/2)
 
 /** \defgroup ssh_channel SSH Channels
  * \brief functions that manage a channel
