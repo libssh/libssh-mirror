@@ -845,8 +845,8 @@ SFTP_FILE *sftp_open(SFTP_SESSION *sftp, char *file, int access, SFTP_ATTRIBUTES
     u32 id=sftp_get_new_id(sftp);
     BUFFER *buffer=buffer_new();
     STRING *filename;
-    if(access & O_RDONLY)
-        flags|=SSH_FXF_READ;
+    if(access == O_RDONLY)
+        flags|=SSH_FXF_READ; // if any of the other flag is set, READ should not be set initialy
     if(access & O_WRONLY)
         flags |= SSH_FXF_WRITE;
     if(access & O_RDWR)
