@@ -32,6 +32,22 @@
 #endif
 #include "libssh/priv.h"
 
+#if !defined(HAVE_SELECT) && !defined(HAVE_POLL)
+#error Your system must have either select() or poll()
+#endif
+
+#if !defined(HAVE_POLL) && !defined(_WIN32)
+#warning your system does not have poll. Select has known limitations
+#define SELECT_LIMIT_CHECK
+#endif
+
+#ifdef HAVE_POLL
+#define USE_POLL
+#include <poll.h>
+#else
+#define USE_SELECT
+#endif
+
 /** \defgroup ssh_socket Sockets
  * \addtogroup ssh_socket
  * @{
@@ -40,7 +56,7 @@
 struct socket {
 	socket_t fd;
 	int last_errno;
-    int data_to_read; /* reading now on socket will 
+    int data_to_read; /* reading now on socket will
                          not block */
     int data_to_write;
     int data_except;
@@ -99,7 +115,7 @@ void ssh_socket_close(struct socket *s){
 #else
 		close(s->fd);
 		s->last_errno=errno;
-#endif		
+#endif
 		s->fd=-1;
 	}
 }
@@ -133,7 +149,7 @@ int ssh_socket_unbuffered_read(struct socket *s, void *buffer, int len){
 	if(s->data_except)
 		return -1;
 	r=recv(s->fd,buffer,len,0);
-#ifndef _WIN32	
+#ifndef _WIN32
     s->last_errno=errno;
 #else
     s->last_errno=WSAGetLastError();
@@ -255,7 +271,7 @@ int ssh_socket_read(struct socket *s, void *buffer, int len){
 /** \internal
  * \brief buffered write of data
  * \returns SSH_OK, or SSH_ERROR
- * \warning has no effect on socket before a flush 
+ * \warning has no effect on socket before a flush
  */
 int ssh_socket_write(struct socket *s,const void *buffer, int len){
 	SSH_SESSION *session=s->session;
@@ -337,6 +353,9 @@ int ssh_socket_wait_for_data(struct socket *s, SSH_SESSION *session,int len){
     return SSH_OK;
 }
 
+#ifdef USE_SELECT
+/* ssh_socket_poll, select() version */
+
 /* \internal
  * \brief polls the socket for data
  * \param session ssh session
@@ -351,25 +370,35 @@ int ssh_socket_poll(struct socket *s, int *write, int *except){
     fd_set wdes; // writing set
     fd_set edes; // exception set
     int fdmax=-1;
+
+    enter_function();
     FD_ZERO(&rdes);
     FD_ZERO(&wdes);
     FD_ZERO(&edes);
-    
+
     if(!ssh_socket_is_open(s)){
         *except=1;
         *write=0;
         return 0;
     }
+#ifdef SELECT_LIMIT_CHECK
+    // some systems don't handle the fds > FD_SETSIZE
+    if(s->fd > FD_SETSIZE){
+    	ssh_set_error(session, SSH_REQUEST_DENIED, "File descriptor out of range for select : %d",s->fd);
+    	leave_function();
+    	return -1;
+    }
+#endif
     if(!s->data_to_read)
         ssh_socket_fd_set(s,&rdes,&fdmax);
     if(!s->data_to_write)
         ssh_socket_fd_set(s,&wdes,&fdmax);
     ssh_socket_fd_set(s,&edes,&fdmax);
-    
+
     /* Set to return immediately (no blocking) */
     sometime.tv_sec = 0;
     sometime.tv_usec = 0;
-    
+
     /* Make the call, and listen for errors */
     if (select(fdmax, &rdes,&wdes,&edes, &sometime) < 0) {
     	ssh_set_error(session,SSH_FATAL, "select: %s", strerror(errno));
@@ -384,8 +413,50 @@ int ssh_socket_poll(struct socket *s, int *write, int *except){
     	s->data_except=ssh_socket_fd_isset(s,&edes);
     *except=s->data_except;
     *write=s->data_to_write;
+    leave_function();
     return s->data_to_read;
 }
+#endif
+
+#ifdef USE_POLL
+/* ssh_socket_poll, poll() version */
+int ssh_socket_poll(struct socket *s, int *write, int *except){
+	SSH_SESSION *session=s->session;
+	struct pollfd fd[1];
+	int err;
+
+	enter_function();
+    if(!ssh_socket_is_open(s)){
+        *except=1;
+        *write=0;
+        return 0;
+    }
+    fd->fd=s->fd;
+    fd->events=0;
+    if(!s->data_to_read)
+        fd->events |= POLLIN;
+    if(!s->data_to_write)
+        fd->events |= POLLOUT;
+
+    /* Make the call, and listen for errors */
+    err=poll(fd,1,0);
+    if(err<0){
+    	ssh_set_error(session,SSH_FATAL, "select: %s", strerror(errno));
+    	leave_function();
+    	return -1;
+    }
+    if(!s->data_to_read)
+        s->data_to_read=fd->revents & POLLIN;
+    if(!s->data_to_write)
+        s->data_to_write=fd->revents & POLLOUT;
+    if(!s->data_except)
+    	s->data_except=fd->revents & POLLERR;
+    *except=s->data_except;
+    *write=s->data_to_write;
+    leave_function();
+    return s->data_to_read;
+}
+#endif
 
 /** \internal
  * \brief nonblocking flush of the output buffer
