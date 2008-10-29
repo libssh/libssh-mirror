@@ -13,8 +13,8 @@ AM_MAINTAINER_MODE
 #   (Interfaces removed:    CURRENT++, AGE=0, REVISION=0)
 #   (Interfaces added:      CURRENT++, AGE++, REVISION=0)
 #   (No interfaces changed:                   REVISION++)
-LIBSSH_CURRENT=2
-LIBSSH_AGE=0
+LIBSSH_CURRENT=3
+LIBSSH_AGE=1
 LIBSSH_REVISION=0
 AC_SUBST(LIBSSH_CURRENT)
 AC_SUBST(LIBSSH_AGE)

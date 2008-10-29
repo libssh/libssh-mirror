@@ -414,7 +414,7 @@ int ssh_socket_poll(struct socket *s, int *write, int *except){
     *except=s->data_except;
     *write=s->data_to_write;
     leave_function();
-    return s->data_to_read;
+    return s->data_to_read || (buffer_get_rest_len(s->in_buffer)>0);
 }
 #endif
 
@@ -454,7 +454,7 @@ int ssh_socket_poll(struct socket *s, int *write, int *except){
     *except=s->data_except;
     *write=s->data_to_write;
     leave_function();
-    return s->data_to_read;
+    return s->data_to_read || (buffer_get_rest_len(s->in_buffer)>0);
 }
 #endif
 
@@ -491,7 +491,7 @@ int ssh_socket_nonblocking_flush(struct socket *s){
         }
         buffer_pass_bytes(s->out_buffer,w);
         /* refresh the socket status */
-        ssh_fd_poll(session,&can_write,&except);
+        ssh_socket_poll(session->socket,&can_write,&except);
     }
     if(buffer_get_rest_len(s->out_buffer)>0){
         leave_function();

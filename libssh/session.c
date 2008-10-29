@@ -92,7 +92,7 @@ void ssh_cleanup(SSH_SESSION *session){
         ssh_message_free(session->ssh_message);
         free(session->ssh_message);
     }
-    memset(session,'X',sizeof(SSH_SESSION)); /* burn connection, it could hangs 
+    memset(session,'X',sizeof(SSH_SESSION)); /* burn connection, it could hangs
                                                 sensitive datas */
     free(session);
     //leave_function();
@@ -129,8 +129,8 @@ void ssh_set_blocking(SSH_SESSION *session,int blocking){
     session->blocking=blocking?1:0;
 }
 
-/** In case you'd need the file descriptor of the connection 
- * to the server/client 
+/** In case you'd need the file descriptor of the connection
+ * to the server/client
  * \brief recover the fd of connection
  * \param session ssh session
  * \return file descriptor of the connection, or -1 if it is
@@ -153,7 +153,7 @@ void ssh_set_fd_toread(SSH_SESSION *session){
  */
 void ssh_set_fd_towrite(SSH_SESSION *session){
     ssh_socket_set_towrite(session->socket);
-	
+
 }
 
 /** \brief say the session it has an exception to catch on the file descriptor
@@ -170,7 +170,7 @@ int ssh_handle_packets(SSH_SESSION *session){
     int w,err,r,i=0;
     enter_function();
     do {
-        r=ssh_fd_poll(session,&w,&err);
+        r=ssh_socket_poll(session->socket,&w,&err);
         if(r<=0){
         	leave_function();
             return r; // error or no data available

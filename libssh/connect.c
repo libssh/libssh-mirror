@@ -77,7 +77,7 @@ static int getai(const char *host, int port, struct addrinfo **ai)
     struct addrinfo hints;
     char *service=NULL;
     char s_port[10];
-   
+
     memset(&hints,0,sizeof(hints));
     hints.ai_protocol=IPPROTO_TCP;
     hints.ai_family=PF_UNSPEC;
@@ -140,7 +140,7 @@ int ssh_connect_ai_timeout(SSH_SESSION *session, const char *host, int port, str
 /* specified by its IP address or hostname. */
 /* output is the file descriptor, <0 if failed. */
 
-socket_t ssh_connect_host(SSH_SESSION *session, const char *host, const char 
+socket_t ssh_connect_host(SSH_SESSION *session, const char *host, const char
         *bind_addr, int port,long timeout, long usec){
     socket_t s=-1;
     int my_errno;
@@ -152,7 +152,7 @@ socket_t ssh_connect_host(SSH_SESSION *session, const char *host, const char
         leave_function();
         return -1;
     }
-    
+
     for(ai2=ai;ai2!=NULL;ai2=ai2->ai_next){
         /* create socket */
         s=socket(ai2->ai_family,ai2->ai_socktype,ai2->ai_protocol);
@@ -176,7 +176,7 @@ socket_t ssh_connect_host(SSH_SESSION *session, const char *host, const char
                 if(bind(s,bind_ai2->ai_addr,bind_ai2->ai_addrlen)<0){
                     ssh_set_error(session,SSH_FATAL,"Binding local address : %s",strerror(errno));
                     continue;
-                }    
+                }
 		else{
                     break;
 		}
@@ -211,18 +211,6 @@ socket_t ssh_connect_host(SSH_SESSION *session, const char *host, const char
 
 /** \addtogroup ssh_session
  *  * @{ */
-
-/** \internal
- * \brief polls the stream for activity
- * \param session ssh session
- * \param write value pointed to set to 1 if it is possible to write
- * \param except value pointed to set to 1 if there is an exception
- * \return 1 if it is possible to read, 0 otherwise, -1 on error
- */
-int ssh_fd_poll(SSH_SESSION *session, int *write, int *except){
-    return ssh_socket_poll(session->socket,write,except);
-}
-
 
 /** This functions acts more or less like the select(2) syscall.\n
  * There is no support for writing or exceptions.\n
@@ -300,7 +288,7 @@ int ssh_select(CHANNEL **channels,CHANNEL **outchannels, socket_t maxfd, fd_set 
     for(i=0;channels[i];i++)
         if(channels[i]->session->alive && ssh_socket_fd_isset(channels[i]->session->socket,&localset))
             ssh_socket_set_toread(channels[i]->session->socket);
-            
+
     /* now, test each channel */
     j=0;
     for(i=0;channels[i];i++){

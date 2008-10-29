@@ -62,7 +62,7 @@ int channel_open_session1(CHANNEL *chan){
  *  much simplier under ssh2. I just hope the defaults values are ok ...
  */
 
-int channel_request_pty_size1(CHANNEL *channel, char *terminal, int col, 
+int channel_request_pty_size1(CHANNEL *channel, char *terminal, int col,
         int row){
     STRING *str;
     SSH_SESSION *session=channel->session;
@@ -163,13 +163,13 @@ static void channel_rcv_data1(SSH_SESSION *session, int is_stderr){
     channel_default_bufferize(channel,str->string,string_len(str),
                     is_stderr);
     free(str);
-}       
+}
 
 static void channel_rcv_close1(SSH_SESSION *session){
     CHANNEL *channel=session->channels;
     u32 status;
     buffer_get_u32(session->in_buffer,&status);
-    /* it's much more than a channel closing. spec says it's the last 
+    /* it's much more than a channel closing. spec says it's the last
      * message sent by server (strange)
      */
     /* actually status is lost somewhere */
@@ -190,7 +190,7 @@ void channel_handle1(SSH_SESSION *session, int type){
             break;
         default:
             ssh_say(0,"Unexepected message %d\n",type);
-            
+
     }
 }
 
