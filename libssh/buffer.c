@@ -37,7 +37,7 @@ BUFFER *buffer_new(){
     BUFFER *buffer=malloc(sizeof(BUFFER));
     memset(buffer,0,sizeof(BUFFER));
     return buffer;
-    }
+}
 
 /** \brief desallocate a buffer
  * \param buffer buffer to free
@@ -47,10 +47,10 @@ void buffer_free(BUFFER *buffer){
     if(buffer->data){
         memset(buffer->data,0,buffer->allocated); /* burn the data */
         free(buffer->data);
-        }
+    }
     memset(buffer,'x',sizeof (*buffer));
     free(buffer);
-    }
+}
 
 static void realloc_buffer(BUFFER *buffer,int needed){
 	int smallest=1;
@@ -88,12 +88,12 @@ void buffer_add_data(BUFFER *buffer,const void *data,int len){
         realloc_buffer(buffer,buffer->used+len);
     memcpy(buffer->data+buffer->used,data,len);
     buffer->used+=len;
-    }
+}
 
 void buffer_add_ssh_string(BUFFER *buffer,STRING *string){
     u32 len=ntohl(string->size);
     buffer_add_data(buffer,string,len+sizeof(u32));
-    }
+}
 
 void buffer_add_u32(BUFFER *buffer,u32 data){
     buffer_add_data(buffer,&data,sizeof(data));
@@ -172,7 +172,7 @@ int buffer_get_rest_len(BUFFER *buffer){
 }
 
 /** \internal
- * has effect to "eat" bytes at head of the buffer 
+ * has effect to "eat" bytes at head of the buffer
  * \brief advance the position in the buffer
  * \param buffer buffer
  * \param len number of bytes to eat
@@ -209,7 +209,7 @@ int buffer_get_data(BUFFER *buffer, void *data, int len){
     memcpy(data,buffer->data+buffer->pos,len);
     buffer->pos+=len;
     return len;   /* no yet support for partial reads (is it really needed ?? ) */
-}    
+}
 
 int buffer_get_u8(BUFFER *buffer, u8 *data){
     return buffer_get_data(buffer,data,sizeof(u8));

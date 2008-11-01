@@ -179,21 +179,29 @@ SFTP_PACKET *sftp_packet_read(SFTP_SESSION *sftp){
     return packet;
 }
 
-static SFTP_MESSAGE *sftp_message_new(){
+static SFTP_MESSAGE *sftp_message_new(SFTP_SESSION *sftp){
+	sftp_enter_function();
     SFTP_MESSAGE *msg=malloc(sizeof(SFTP_MESSAGE));
     memset(msg,0,sizeof(*msg));
     msg->payload=buffer_new();
+    msg->sftp=sftp;
+    sftp_leave_function();
     return msg;
 }
 
 static void sftp_message_free(SFTP_MESSAGE *msg){
+	SFTP_SESSION *sftp=msg->sftp;
+	sftp_enter_function();
     if(msg->payload)
         buffer_free(msg->payload);
     free(msg);
+    sftp_leave_function();
 }
 
 SFTP_MESSAGE *sftp_get_message(SFTP_PACKET *packet){
-    SFTP_MESSAGE *msg=sftp_message_new();
+	SFTP_SESSION *sftp=packet->sftp;
+	SFTP_MESSAGE *msg=sftp_message_new(sftp);
+	sftp_enter_function();
     msg->sftp=packet->sftp;
     msg->packet_type=packet->type;
     if((packet->type!=SSH_FXP_STATUS)&&(packet->type!=SSH_FXP_HANDLE) &&
@@ -201,15 +209,18 @@ SFTP_MESSAGE *sftp_get_message(SFTP_PACKET *packet){
     && (packet->type != SSH_FXP_NAME)){
         ssh_set_error(packet->sftp->session,SSH_FATAL,"get_message : unknown packet type %d\n",packet->type);
         sftp_message_free(msg);
+        sftp_leave_function();
         return NULL;
     }
     if(buffer_get_u32(packet->payload,&msg->id)!=sizeof(u32)){
         ssh_set_error(packet->sftp->session,SSH_FATAL,"invalid packet %d : no ID",packet->type);
         sftp_message_free(msg);
+        sftp_leave_function();
         return NULL;
     }
     ssh_say(2,"packet with id %d type %d\n",msg->id,msg->packet_type);
     buffer_add_data(msg->payload,buffer_get_rest(packet->payload),buffer_get_rest_len(packet->payload));
+    sftp_leave_function();
     return msg;
 }
 
@@ -674,7 +685,7 @@ void buffer_add_attributes(BUFFER *buffer, SFTP_ATTRIBUTES *attr){
 	}
 }
 
-    
+
 SFTP_ATTRIBUTES *sftp_parse_attr(SFTP_SESSION *session, BUFFER *buf,int expectname){
     switch(session->version){
         case 4:
@@ -888,7 +899,7 @@ SFTP_FILE *sftp_open(SFTP_SESSION *sftp, char *file, int access, SFTP_ATTRIBUTES
             ssh_set_error(sftp->session,SSH_FATAL,"Received message %d during open!",msg->packet_type);
             sftp_message_free(msg);
     }
-    return NULL; 
+    return NULL;
 }
 
 void sftp_file_set_nonblocking(SFTP_FILE *handle){
@@ -907,7 +918,7 @@ int sftp_read(SFTP_FILE *handle, void *data, int len){
     int err=0;
     BUFFER *buffer;
     if(handle->eof)
-        return 0; 
+        return 0;
     buffer=buffer_new();
     id=sftp_get_new_id(handle->sftp);
     buffer_add_u32(buffer,id);
@@ -1054,7 +1065,7 @@ int sftp_async_read(SFTP_FILE *file, void *data, int len, int *id){
     	            return -1;
     	        }
     	        len=string_len(datastring);
-    	        //handle->offset+=len; 
+    	        //handle->offset+=len;
     	        /* We already have set the offset previously. All we can do is warn that the expected len
     	         * and effective lengths are different */
     	        memcpy(data,datastring->string,len);
@@ -1066,7 +1077,7 @@ int sftp_async_read(SFTP_FILE *file, void *data, int len, int *id){
     	        return -1;
     	    }
     }
-    
+
 }
 int sftp_write(SFTP_FILE *file, void *data, int len){
     SFTP_MESSAGE *msg=NULL;
@@ -1148,7 +1159,7 @@ int sftp_rm(SFTP_SESSION *sftp, char *file) {
         msg = sftp_dequeue(sftp, id);
     }
     if (msg->packet_type == SSH_FXP_STATUS) {
-         /* by specification, this command's only supposed to return SSH_FXP_STATUS */    
+         /* by specification, this command's only supposed to return SSH_FXP_STATUS */
          status = parse_status_msg(msg);
          sftp_message_free(msg);
          if (!status)
@@ -1347,7 +1358,7 @@ char *sftp_canonicalize_path(SFTP_SESSION *sftp, char *path)
 	STATUS_MESSAGE *status = NULL;
 	char *cname;
 	u32 ignored;
-	
+
 	buffer_add_u32(buffer, id);
 	buffer_add_ssh_string(buffer, pathstr);
 	free(pathstr);
