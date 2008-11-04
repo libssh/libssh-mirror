@@ -51,7 +51,7 @@ static int send_username(SSH_SESSION *session, char *username){
     STRING *user;
     /* returns SSH_AUTH_SUCCESS or SSH_AUTH_DENIED */
     if(session->auth_service_asked)
-        return session->auth_service_asked; 
+        return session->auth_service_asked;
     buffer_add_u8(session->out_buffer,SSH_CMSG_USER);
     if(!username)
         if(!(username=session->options->username)){
@@ -112,6 +112,9 @@ int ssh_userauth_offer_pubkey(SSH_SESSION *session, char *username,int type, STR
     return err;
 }
 */
+/** \internal
+ * \todo implement ssh1 public key
+ */
 int ssh_userauth1_offer_pubkey(SSH_SESSION *session, char *username, int type,
         STRING *pubkey){
     return SSH_AUTH_DENIED;
@@ -138,8 +141,8 @@ int ssh_userauth_pubkey(SSH_SESSION *session, char *username, STRING *publickey,
     service=string_from_char("ssh-connection");
     method=string_from_char("publickey");
     algo=string_from_char(ssh_type_to_char(privatekey->type));
-    
-    
+
+
 */    /* we said previously the public key was accepted */
 /*    packet_clear_out(session);
     buffer_add_u8(session->out_buffer,SSH2_MSG_USERAUTH_REQUEST);
@@ -196,7 +199,7 @@ int ssh_userauth1_password(SSH_SESSION *session,char *username,char *password){
     string_burn(password_s);
     free(password_s);
     packet_send(session);
-    return wait_auth1_status(session); 
+    return wait_auth1_status(session);
 }
 
 #endif /* HAVE_SSH1 */

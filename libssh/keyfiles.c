@@ -93,7 +93,7 @@ u32 asn1_get_len(BUFFER *buffer)
 {
   u32 len;
   unsigned char tmp[4];
-  
+
   if (!buffer_get_data(buffer,tmp,1))
     return 0;
   if (tmp[0] > 127)
@@ -115,7 +115,7 @@ STRING *asn1_get_int(BUFFER *buffer)
   STRING *ret;
   unsigned char type;
   u32 size;
-  
+
   if (!buffer_get_data(buffer,&type,1) || type != ASN1_INTEGER)
     return NULL;
   size=asn1_get_len(buffer);
@@ -201,7 +201,7 @@ int privatekey_decrypt(int algo, int mode, unsigned int key_len,
   unsigned char key[MAX_KEY_SIZE];
   unsigned char *tmp;
   gcry_error_t err;
-  
+
   if (!algo)
     return 1;
   passphrase_len=cb(passphrase, MAX_PASSPHRASE_SIZE, 0, desc);
@@ -221,12 +221,12 @@ int privatekey_decrypt(int algo, int mode, unsigned int key_len,
   memcpy(buffer_get(data), tmp, buffer_get_len(data));
   gcry_cipher_close(cipher);
   return 1;
-} 
+}
 
 int privatekey_dek_header(char *header, unsigned int header_len, int *algo, int *mode, unsigned int *key_len, unsigned char **iv, unsigned int *iv_len)
 {
   unsigned int iv_pos;
-  
+
   if (header_len > 13 && !strncmp("DES-EDE3-CBC", header, 12))
   {
     *algo = GCRY_CIPHER_3DES;
@@ -376,7 +376,7 @@ int read_rsa_privatekey(FILE *fp, gcry_sexp_t *r,
   STRING *u;
   STRING *v;
   BUFFER *buffer;
- 
+
   if (!(buffer=privatekey_file_to_buffer(fp, TYPE_RSA, cb, desc)))
     return 0;
   if (!asn1_check_sequence(buffer))
@@ -423,7 +423,7 @@ int read_dsa_privatekey(FILE *fp, gcry_sexp_t *r, int cb(char *, int , int , cha
   STRING *x;
   STRING *v;
   BUFFER *buffer;
- 
+
   if (!(buffer=privatekey_file_to_buffer(fp, TYPE_DSS, cb, desc)))
     return 0;
   if (!asn1_check_sequence(buffer))
@@ -554,8 +554,8 @@ PRIVATE_KEY  *privatekey_from_file(SSH_SESSION *session,char *filename,int type,
     } else {
         ssh_set_error(session,SSH_FATAL,"Invalid private key type %d",type);
         return NULL;
-    }    
-    
+    }
+
     privkey=malloc(sizeof(PRIVATE_KEY));
     privkey->type=type;
     privkey->dsa_priv=dsa;
@@ -623,7 +623,7 @@ PRIVATE_KEY  *_privatekey_from_file(void *session,char *filename,int type){
     return privkey;
 }
 
-/** \brief Desallocate a private key
+/** \brief deallocate a private key
  * \param prv a PRIVATE_KEY object
  */
 void private_key_free(PRIVATE_KEY *prv){
@@ -731,7 +731,7 @@ STRING *publickey_from_next_file(SSH_SESSION *session,char **pub_keys_path,char 
     if(!ssh_file_readaccess_ok(public)){
         ssh_log(session,SSH_LOG_PACKET,"Failed");
         return publickey_from_next_file(session,pub_keys_path,keys_path,privkeyfile,type,count);
-    } 
+    }
     snprintf(private,256,priv,home);
     ssh_log(session,SSH_LOG_PACKET,"Trying to open private key %s",private);
     if(!ssh_file_readaccess_ok(private)){
@@ -812,7 +812,7 @@ static char **ssh_parse_knownhost(char *filename, char *hostname, char *type){
         /* we allow spaces or ',' to follow the hostname. It's generaly an IP */
         /* we don't care about ip, if the host key match there is no problem with ip */
         if(strncasecmp(ptr,hostname,strlen(hostname))==0){
-            if(ptr[strlen(hostname)]==' ' || ptr[strlen(hostname)]=='\0' 
+            if(ptr[strlen(hostname)]==' ' || ptr[strlen(hostname)]=='\0'
                     || ptr[strlen(hostname)]==','){
                 if(strcasecmp(found_type, type)==0){
                     fclose(file);
@@ -929,7 +929,7 @@ int ssh_is_server_known(SSH_SESSION *session){
     return SSH_SERVER_KNOWN_OK;
 }
 
-/** You generaly use it when ssh_is_server_known() answered SSH_SERVER_NOT_KNOWN 
+/** You generaly use it when ssh_is_server_known() answered SSH_SERVER_NOT_KNOWN
  * \brief write the current server as known in the known hosts file
  * \param session ssh session
  * \return 0 on success, -1 on error

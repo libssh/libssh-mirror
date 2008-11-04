@@ -87,10 +87,9 @@ int ssh_analyze_banner(SSH_SESSION *session, int *ssh1, int *ssh2){
     return 0;
 }
 
-/* ssh_send_banner sends a SSH banner to the server */
-/* TODO select a banner compatible with server version */
-/* switch SSH1/1.5/2 */
-/* and quit when the server is SSH1 only */
+/** \internal
+ *  \brief ssh_send_banner sends a SSH banner to the server
+ */
 
 int ssh_send_banner(SSH_SESSION *session,int server){
      char *banner;
@@ -269,12 +268,12 @@ int ssh_connect(SSH_SESSION *session){
       ssh_set_error(session,SSH_FATAL,"Hostname required");
       leave_function();
       return SSH_ERROR;
-  } 
+  }
   if(options->fd != -1)
       fd=options->fd;
   else
       fd=ssh_connect_host(session,options->host,options->bindaddr,options->port,
-          options->timeout,options->timeout_usec);    
+          options->timeout,options->timeout_usec);
   if(fd<0){
 	  leave_function();
 	  return -1;
@@ -336,7 +335,7 @@ int ssh_connect(SSH_SESSION *session){
             session->alive=0;
             leave_function();
             return -1;
-        } 
+        }
         set_status(options,1.0);
         session->connected=1;
         break;
@@ -349,14 +348,14 @@ int ssh_connect(SSH_SESSION *session){
         }
         set_status(options,0.6);
         session->connected=1;
-        break;  
+        break;
   }
   leave_function();
   return 0;
 }
 
 /** this is the banner showing a disclaimer to users who log in,
- * typicaly their right or the fact that they will be monitored
+ * typically their right or the fact that they will be monitored
  * \brief get the issue banner from the server
  * \param session ssh session
  * \return NULL if there is no issue banner, else a string containing it.

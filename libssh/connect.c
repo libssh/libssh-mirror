@@ -136,9 +136,12 @@ int ssh_connect_ai_timeout(SSH_SESSION *session, const char *host, int port, str
     return s;
 }
 
-/* connect_host connects to an IPv4 (or IPv6) host */
-/* specified by its IP address or hostname. */
-/* output is the file descriptor, <0 if failed. */
+/** \internal
+ * \brief connect_host connects to an IPv4 (or IPv6) host
+ * specified by its IP address or hostname.
+ * \returns file descriptor
+ * \returns less than 0 value
+ */
 
 socket_t ssh_connect_host(SSH_SESSION *session, const char *host, const char
         *bind_addr, int port,long timeout, long usec){

@@ -19,8 +19,11 @@ along with the SSH Library; see the file COPYING.  If not, write to
 the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA. */
 
-/* from times to times, you need to serve your friends */
-/* and, perhaps, ssh connections. */
+/**
+ * \defgroup ssh_server SSH Server
+ * \addtogroup ssh_server
+ * @{
+ */
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -63,7 +66,7 @@ static socket_t bind_socket(SSH_BIND *ssh_bind,char *hostname, int port) {
         close(s);
         return -1;
     }
-    
+
     memset(&myaddr, 0, sizeof(myaddr));
     memcpy(&myaddr.sin_addr,hp->h_addr,hp->h_length);
     myaddr.sin_family=hp->h_addrtype;
@@ -296,4 +299,5 @@ int ssh_accept(SSH_SESSION *session){
     session->connected=1;
     return 0;
 }
-
+/** @}
+ */

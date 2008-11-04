@@ -18,13 +18,16 @@ You should have received a copy of the GNU Lesser General Public License
 along with the SSH Library; see the file COPYING.  If not, write to
 the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA. */
-
-/* this file contains the Message parsing utilities for server programs using 
- * libssh. The main loop of the program will call ssh_message_get(session) to 
+/** \defgroup ssh_messages SSH Messages
+ * this file contains the Message parsing utilities for server programs using
+ * libssh. The main loop of the program will call ssh_message_get(session) to
  * get messages as they come. they are not 1-1 with the protocol messages.
  * then, the user will know what kind of a message it is and use the appropriate
  * functions to handle it (or use the default handlers if she doesn't know what to
- * do */
+ * do
+ * \addtogroup ssh_messages
+ * @{
+ */
 
 #include <string.h>
 #include <stdlib.h>
@@ -143,7 +146,7 @@ static int ssh_message_auth_reply_default(SSH_MESSAGE *msg,int partial){
         strcat(methods_c,"password,");
     if(session->auth_methods & SSH_AUTH_HOSTBASED)
         strcat(methods_c,"hostbased,");
-    methods_c[strlen(methods_c)-1]=0; // strip the comma. We are sure there is at 
+    methods_c[strlen(methods_c)-1]=0; // strip the comma. We are sure there is at
     // least one word into the list
     ssh_say(2,"Sending a auth failure. methods that can continue : %s\n",methods_c);
     methods=string_from_char(methods_c);
@@ -296,7 +299,7 @@ static SSH_MESSAGE *handle_channel_request(SSH_SESSION *session){
         leave_function();
         return msg;
     }
-    
+
     msg->channel_request.type=SSH_CHANNEL_UNKNOWN;
     free(type_c);
     leave_function();
@@ -444,3 +447,5 @@ void ssh_message_free(SSH_MESSAGE *msg){
     }
     memset(msg,0,sizeof(*msg));
 }
+/** @}
+ */

@@ -28,7 +28,7 @@ MA 02111-1307, USA. */
 /** \addtogroup ssh_string
  * @{ */
 
-/** 
+/**
  * \brief Creates a new SSH String object
  * \param size size of the string
  * \return the newly allocated string
@@ -71,7 +71,7 @@ int string_len(STRING *str){
  * \brief convert a SSH string to a C nul-terminated string
  * \param str the input SSH string
  * \return a malloc'ed string pointer.
- * \warning If the input SSH string contains zeroes, some parts of 
+ * \warning If the input SSH string contains zeroes, some parts of
  * the output string may not be readable with regular libc functions.
  */
 char *string_to_char(STRING *str){
@@ -89,6 +89,9 @@ STRING *string_copy(STRING *str){
     return ret;
 }
 
+/** \brief destroy data in a string so it couldn't appear in a core dump
+ * \param s string to burn
+ */
 void string_burn(STRING *s){
     memset(s->string,'X',string_len(s));
 }
@@ -98,7 +101,7 @@ void *string_data(STRING *s){
 }
 
 /**
- * \brief desallocate a STRING object
+ * \brief deallocate a STRING object
  * \param s String to delete
  */
 void string_free(STRING *s){

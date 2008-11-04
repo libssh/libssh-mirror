@@ -39,7 +39,7 @@ BUFFER *buffer_new(){
     return buffer;
 }
 
-/** \brief desallocate a buffer
+/** \brief deallocate a buffer
  * \param buffer buffer to free
  */
 void buffer_free(BUFFER *buffer){
@@ -90,19 +90,36 @@ void buffer_add_data(BUFFER *buffer,const void *data,int len){
     buffer->used+=len;
 }
 
+/** \internal
+ * \brief add a SSH string to the tail of buffer
+ * \param buffer buffer
+ * \param string SSH String to add
+ */
 void buffer_add_ssh_string(BUFFER *buffer,STRING *string){
     u32 len=ntohl(string->size);
     buffer_add_data(buffer,string,len+sizeof(u32));
 }
-
+/** \internal
+ * \brief add a 32 bits unsigned integer to the tail of buffer
+ * \param buffer buffer
+ * \param data 32 bits integer
+ */
 void buffer_add_u32(BUFFER *buffer,u32 data){
     buffer_add_data(buffer,&data,sizeof(data));
 }
-
+/** \internal
+ * \brief add a 64 bits unsigned integer to the tail of buffer
+ * \param buffer buffer
+ * \param data 64 bits integer
+ */
 void buffer_add_u64(BUFFER *buffer,u64 data){
     buffer_add_data(buffer,&data,sizeof(data));
 }
-
+/** \internal
+ * \brief add a 8 bits unsigned integer to the tail of buffer
+ * \param buffer buffer
+ * \param data 8 bits integer
+ */
 void buffer_add_u8(BUFFER *buffer,u8 data){
     buffer_add_data(buffer,&data,sizeof(u8));
 }
@@ -203,6 +220,14 @@ int buffer_pass_bytes_end(BUFFER *buffer,int len){
     return len;
 }
 
+/** \internal
+ * \brief gets remaining data out of the buffer. Adjust the read pointer.
+ * \param buffer Buffer to read
+ * \param data data buffer where to store the data
+ * \param len length to read from the buffer
+ * \returns 0 if there is not enough data in buffer
+ * \returns len otherwise.
+ */
 int buffer_get_data(BUFFER *buffer, void *data, int len){
     if(buffer->pos+len>buffer->used)
         return 0;  /*no enough data in buffer */
@@ -210,19 +235,43 @@ int buffer_get_data(BUFFER *buffer, void *data, int len){
     buffer->pos+=len;
     return len;   /* no yet support for partial reads (is it really needed ?? ) */
 }
-
+/** \internal
+ * \brief gets a 8 bits unsigned int out of the buffer. Adjusts the read pointer.
+ * \param buffer Buffer to read
+ * \param data pointer to a u8 where to store the data
+ * \returns 0 if there is not enough data in buffer
+ * \returns 1 otherwise.
+ */
 int buffer_get_u8(BUFFER *buffer, u8 *data){
     return buffer_get_data(buffer,data,sizeof(u8));
 }
 
+/** \internal
+ * \brief gets a 32 bits unsigned int out of the buffer. Adjusts the read pointer.
+ * \param buffer Buffer to read
+ * \param data pointer to a u32 where to store the data
+ * \returns 0 if there is not enough data in buffer
+ * \returns 4 otherwise.
+ */
 int buffer_get_u32(BUFFER *buffer, u32 *data){
     return buffer_get_data(buffer,data,sizeof(u32));
 }
-
+/** \internal
+ * \brief gets a 64 bits unsigned int out of the buffer. Adjusts the read pointer.
+ * \param buffer Buffer to read
+ * \param data pointer to a u64 where to store the data
+ * \returns 0 if there is not enough data in buffer
+ * \returns 8 otherwise.
+ */
 int buffer_get_u64(BUFFER *buffer, u64 *data){
     return buffer_get_data(buffer,data,sizeof(u64));
 }
-
+/** \internal
+ * \brief gets a SSH String out of the buffer. Adjusts the read pointer.
+ * \param buffer Buffer to read
+ * \returns The SSH String read
+ * \returns NULL otherwise.
+ */
 STRING *buffer_get_ssh_string(BUFFER *buffer){
     u32 stringlen;
     u32 hostlen;
@@ -241,8 +290,14 @@ STRING *buffer_get_ssh_string(BUFFER *buffer){
         }
     return str;
 }
+/** \internal
+ * \brief gets a mpint out of the buffer. Adjusts the read pointer.
+ * SSH-1 only
+ * \param buffer Buffer to read
+ * \returns the SSH String containing the mpint
+ * \returns NULL otherwise
+ */
 
-/* this one is SSH-1 only */
 STRING *buffer_get_mpint(BUFFER *buffer){
     u16 bits;
     u32 len;

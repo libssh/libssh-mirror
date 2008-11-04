@@ -44,8 +44,12 @@ static int get_equals(char *string);
 
 /* first part : base 64 to binary */
 
-/* base64_to_bin translates a base64 string into a binary one. important, if something went wrong (ie incorrect char)*/
-/* it returns NULL */
+/** \brief base64_to_bin translates a base64 string into a binary one. important,
+ * \returns NULL if something went wrong (ie incorrect char)
+ * \returns BUFFER containing the decoded string
+ * \internal
+ */
+
 BUFFER *base64_to_bin(char *source){
     int len;
     int equals;
@@ -120,7 +124,7 @@ BUFFER *base64_to_bin(char *source){
    }
    return NULL;
 }
-    
+
 #define BLOCK(letter,n) do { ptr=strchr(alphabet,source[n]);\
                                         if(!ptr) return -1;\
                                         i=ptr-alphabet;\
@@ -144,7 +148,7 @@ static int to_block4(unsigned long *block, char *source,int num){
     return 0;
 }
 
-/* num = numbers of final bytes to be decoded */ 
+/* num = numbers of final bytes to be decoded */
 static int _base64_to_bin(unsigned char dest[3], char *source,int num){
    unsigned long block;
    if(to_block4(&block,source,num))
@@ -164,7 +168,7 @@ static int get_equals(char *string){
         *ptr=0;
         ptr++;
     }
-    
+
     return num;
 }
 
@@ -181,18 +185,21 @@ static void _bin_to_base64(unsigned char *dest, unsigned char source[3], int len
         case 2:
             dest[0]=alphabet[source[0]>>2];
             dest[1]=alphabet[(source[1]>>4) | ((source[0] & BITS(2)) << 4)];
-            dest[2]=alphabet[(source[1]&BITS(4)) << 2]; 
+            dest[2]=alphabet[(source[1]&BITS(4)) << 2];
             dest[3]='=';
             break;
         case 3:
-            dest[0]=alphabet[(source[0]>>2)]; 
+            dest[0]=alphabet[(source[0]>>2)];
             dest[1]=alphabet[(source[1]>>4) | ((source[0] & BITS(2)) << 4)];
-            dest[2]=alphabet[ (source[2] >> 6) | (source[1]&BITS(4)) << 2]; 
+            dest[2]=alphabet[ (source[2] >> 6) | (source[1]&BITS(4)) << 2];
             dest[3]=alphabet[source[2]&BITS(6)];
         break;
     }
 }
-
+/** \brief Converts binary data to a base64 string
+ * \returns the converted string
+ * \internal
+ */
 unsigned char *bin_to_base64(unsigned char *source, int len){
     int flen=len + (3 - (len %3)); /* round to upper 3 multiple */
     unsigned char *buffer;

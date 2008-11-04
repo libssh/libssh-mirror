@@ -382,7 +382,7 @@ void channel_default_bufferize(CHANNEL *channel, void *data, int len, int is_std
     }
 }
 
-/** \brief open a session channel (suited for a shell. Not tcp)
+/** \brief open a session channel (suited for a shell. Not tcp Forwarding)
  * \param channel an allocated channel (see channel_new())
  * \return SSH_OK on success\n
  * SSH_ERROR on error
@@ -401,7 +401,7 @@ int channel_open_session(CHANNEL *channel){
     else
         return channel_open_session1(channel);
 #endif
-}    
+}
 
 /** \brief open a TCP/IP forwarding channel.
  * \param channel an allocated channel (see channel_new())
@@ -461,7 +461,7 @@ void channel_free(CHANNEL *channel){
     leave_function();
 }
 
-/** it doesn't close the channel. You may still read from it but not write. 
+/** it doesn't close the channel. You may still read from it but not write.
  * \brief send an end of file on the channel
  * \param channel channel
  * \return SSH_ERROR on error\n
@@ -723,7 +723,7 @@ int channel_change_pty_size(CHANNEL *channel,int cols,int rows){
     buffer_free(buffer);
     leave_function();
     return err;
-}    
+}
 
 /** \brief requests a shell
  * \param channel
@@ -756,7 +756,7 @@ int channel_request_subsystem(CHANNEL *channel, char *system){
     buffer_free(buffer);
     return ret;
 }
-    
+
 int channel_request_sftp( CHANNEL *channel){
     return channel_request_subsystem(channel, "sftp");
 }
@@ -835,9 +835,9 @@ int channel_read(CHANNEL *channel, BUFFER *buffer,int bytes,int is_stderr){
     /* maybe i should always set a buffer to avoid races between channel_default_bufferize and channel_read */
     if(is_stderr)
         stdbuf=channel->stderr_buffer;
-    else 
+    else
         stdbuf=channel->stdout_buffer;
-    
+
     /* We may have problem if the window is too small to accept as much data as asked */
     ssh_log(session,SSH_LOG_PROTOCOL,"Read (%d) buffered : %d bytes. Window: %d",bytes,buffer_get_rest_len(stdbuf),channel->local_window);
     if(bytes > buffer_get_rest_len(stdbuf) + channel->local_window)
@@ -890,9 +890,9 @@ int channel_poll(CHANNEL *channel, int is_stderr){
     enter_function();
     if(is_stderr)
         buffer=channel->stderr_buffer;
-    else 
+    else
         buffer=channel->stdout_buffer;
-    
+
     while(buffer_get_rest_len(buffer)==0 && !channel->remote_eof){
         r=ssh_handle_packets(channel->session);
         if(r<=0)
@@ -918,7 +918,7 @@ int channel_poll(CHANNEL *channel, int is_stderr){
  * \return number of bytes read\n
  * 0 if nothing is available\n
  * SSH_ERROR on error
- * \warning don't forget to check for EOF as it would 
+ * \warning don't forget to check for EOF as it would
  * return 0 here
  * \see channel_is_eof()
  */
@@ -1015,7 +1015,7 @@ static int count_ptrs(CHANNEL **ptrs){
  * \return SSH_SUCCESS operation successful\n
  * SSH_EINTR select(2) syscall was interrupted, relaunch the function
  */
-int channel_select(CHANNEL **readchans, CHANNEL **writechans, CHANNEL **exceptchans, struct 
+int channel_select(CHANNEL **readchans, CHANNEL **writechans, CHANNEL **exceptchans, struct
         timeval * timeout){
     fd_set rset;
     fd_set wset;

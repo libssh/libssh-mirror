@@ -23,6 +23,7 @@ MA 02111-1307, USA. */
 
 /** \defgroup ssh_sftp SFTP functions
  * \brief SFTP handling functions
+ * \bug Write docs !
  */
 /** \addtogroup ssh_sftp
  * @{ */
