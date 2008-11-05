@@ -24,17 +24,21 @@ install-doc: doxygen
 	$(INSTALL) -d $(DESTDIR)$(mandir)/man3
 	$(INSTALL) --mode=644 doxygen/man/man3/* $(DESTDIR)$(mandir)/man3
 
-doxygen:
+doxygen: clean-local
 	@echo "Running doxygen..."
 	doxygen $(srcdir)/Doxyfile
+doxygen-dev: clean-local
+	@echo "Running internal doxygen"
+	doxygen $(srcdir)/Doxyfile.internal
 else
 doxygen:
+doxygen-dev:
 install-doc: doxygen
 endif
 
 clean-local:
 	-rm -rf doxygen
 
-EXTRA_DIST = Doxyfile
+EXTRA_DIST = Doxyfile Doxyfile.internal
 
 CLEANFILES = samplesftp

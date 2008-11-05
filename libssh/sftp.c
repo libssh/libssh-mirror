@@ -50,6 +50,11 @@ MA 02111-1307, USA. */
 void sftp_enqueue(SFTP_SESSION *session, SFTP_MESSAGE *msg);
 static void sftp_message_free(SFTP_MESSAGE *msg);
 
+/** \brief start a new SFTP session
+ * \param session the SSH session
+ * \returns a SFTP_SESSION handle on success
+ * \returns NULL in case of an error
+ */
 SFTP_SESSION *sftp_new(SSH_SESSION *session){
     SFTP_SESSION *sftp=malloc(sizeof(SFTP_SESSION));
     enter_function();
@@ -120,6 +125,9 @@ int sftp_server_init(SFTP_SESSION *sftp){
 }
 #endif
 
+/** \brief Close and deallocate a SFTP session
+ * \param sftp the SFTP session handle
+ */
 void sftp_free(SFTP_SESSION *sftp){
     struct request_queue *ptr;
     channel_send_eof(sftp->channel);
@@ -347,8 +355,11 @@ SFTP_MESSAGE *sftp_dequeue(SFTP_SESSION *session, u32 id){
     return NULL;
 }
 
-/* assigns a new sftp ID for new requests and assures there is no collision between them. */
-u32 sftp_get_new_id(SFTP_SESSION *session){
+/** \internal
+ * \brief assigns a new sftp ID for new requests and assures there is no collision between them.
+ * returns a new ID ready to use in a request
+ */
+inline u32 sftp_get_new_id(SFTP_SESSION *session){
     return ++session->id_counter;
 }
 
@@ -408,7 +419,13 @@ SFTP_FILE *parse_handle_msg(SFTP_MESSAGE *msg){
     }
     return file;
 }
-
+/** \brief open a directory
+ * \param sftp SFTP session handle
+ * \param path path to the directory
+ * \return a SFTP_DIR handle
+ * \see sftp_readdir()
+ * \see sftp_dir_close()
+ */
 SFTP_DIR *sftp_opendir(SFTP_SESSION *sftp, char *path){
     SFTP_DIR *dir=NULL;
     SFTP_FILE *file;
@@ -700,10 +717,23 @@ SFTP_ATTRIBUTES *sftp_parse_attr(SFTP_SESSION *session, BUFFER *buf,int expectna
     return NULL;
 }
 
+/** \brief return the version of the SFTP protocol supported by the server
+ * \param sftp SFTP session handle
+ * \returns server version
+ */
 int sftp_server_version(SFTP_SESSION *sftp){
     return sftp->server_version;
 }
 
+/** \brief Read file attributes of a directory
+ * \param sftp SFTP session handle
+ * \param dir SFTP_DIR open directory handle
+ * \return a SFTP_ATTRIBUTE handle
+ * \return NULL End of directory
+ * \see sftp_opendir()
+ * \see sftp_attribute_free()
+ * \see sftp_dir_close()
+ */
 SFTP_ATTRIBUTES *sftp_readdir(SFTP_SESSION *sftp, SFTP_DIR *dir){
     BUFFER *payload;
     u32 id;
@@ -766,10 +796,19 @@ SFTP_ATTRIBUTES *sftp_readdir(SFTP_SESSION *sftp, SFTP_DIR *dir){
     return attr;
 }
 
+/** \brief Tell if the directory has reached End Of File
+ * \param dir SFTP_DIR open handle
+ * \returns non-zero value if the directory has reached EOF
+ * \see sftp_readdir()
+ */
 int sftp_dir_eof(SFTP_DIR *dir){
     return (dir->eof);
 }
 
+/** \brief Free a SFTP_ATTRIBUTE handle
+ * \param file SFTP_ATTRIBUTE handle to free
+ * \see sftp_readdir()
+ */
 void sftp_attributes_free(SFTP_ATTRIBUTES *file){
     if(file->name)
         free(file->name);
@@ -823,8 +862,14 @@ static int sftp_handle_close(SFTP_SESSION *sftp, STRING *handle){
     return -1;
 }
 
+/** \brief Close an open file
+ * \param file SFTP_FILE handle to an open file
+ * \returns SSH_NO_ERROR File closed successfully
+ * \returns SSH_ERROR An error happened
+ * \see sftp_file_open()
+ */
 int sftp_file_close(SFTP_FILE *file){
-    int err=0;
+    int err=SSH_NO_ERROR;
     if(file->name)
         free(file->name);
     if(file->handle){
@@ -835,8 +880,14 @@ int sftp_file_close(SFTP_FILE *file){
     return err;
 }
 
+/** \brief Close an open directory
+ * \param dir SFTP_DIR handle to an open directory
+ * \returns SSH_NO_ERROR directory closed successfully
+ * \returns SSH_ERROR An error happened
+ * \see sftp_opendir()
+ */
 int sftp_dir_close(SFTP_DIR *dir){
-    int err=0;
+    int err=SSH_NO_ERROR;
     if(dir->name)
         free(dir->name);
     if(dir->handle){
@@ -849,6 +900,9 @@ int sftp_dir_close(SFTP_DIR *dir){
     return err;
 }
 
+/** \brief Open a remote file
+ * \todo please complete doc
+ */
 SFTP_FILE *sftp_open(SFTP_SESSION *sftp, char *file, int access, SFTP_ATTRIBUTES *attr){
     SFTP_FILE *handle;
     SFTP_MESSAGE *msg=NULL;
@@ -982,104 +1036,125 @@ int sftp_read(SFTP_FILE *handle, void *data, int len){
 
 /** This function does an asynchronous read on a file. Its goal is to avoid the slowdowns related to
  * the request/response pattern of a synchronous read.\n
- * To use if, you must call the function two times.\n
- * The first time, *id must be a pointer to an integer containing 0. The function will always return SSH_AGAIN the first time.\n
- * The second time, the function will block until the data have been read, and will return the number of bytes read.\n
- * If the file is opened in non-blocking mode, the second-time reading will return SSH_AGAIN until the data are available.\n
- * \brief Asynchronous read on a file
- * \param file the file handle
- * \param data pointer to the data to be written
- * \param len length of data to be read
- * \param id a pointer to an identifier
- * \return 0 When the file is EOF\n
- * SSH_AGAIN the function has to be called again\n
- * SSH_ERROR in case of error\n
- * otherwise, the number of bytes read is returned
- * \warning when calling the function for the first time, the internal offset is updated
- * corresponding to the len parameter. If the length effectively read is different from the
- * len parameter, every following read() will be out of sync.
+ * To do so, you must call 2 functions : sftp_async_read_begin() and sftp_async_read().\n
+ * The first step is to call sftp_async_read_begin(). This function returns a request identifier.\n
+ * The second step is to call sftp_async_read using the said identifier.\n
+ * \brief Start an asynchronous read on a file
+ * \param file SFTP_FILE handle on an open file
+ * \param len Length of data to be read
+ * \return A u32 identifier corresponding to the sent request.
+ * \warning When calling this function, the internal offset is updated
+ * corresponding to the len parameter.
+ * \warning A call to sftp_async_read_begin() sends a request to the server. When the server answers,
+ * libssh allocates memory to store it until sftp_async_read() is called.\n
+ * Not calling sftp_async_read() will lead to memory leaks.
+ * \see sftp_async_read()
+ * \see sftp_open()
  * */
-int sftp_async_read(SFTP_FILE *file, void *data, int len, int *id){
+
+u32 sftp_async_read_begin(SFTP_FILE *file, int len){
+    SFTP_SESSION *sftp=file->sftp;
+    BUFFER *buffer;
+    u32 id;
+    sftp_function_start();
+	buffer=buffer_new();
+	id=sftp_get_new_id(sftp);
+	buffer_add_u32(buffer,id);
+	buffer_add_ssh_string(buffer,file->handle);
+	buffer_add_u64(buffer,htonll(file->offset));
+	buffer_add_u32(buffer,htonl(len));
+	sftp_packet_write(sftp,SSH_FXP_READ,buffer);
+	buffer_free(buffer);
+	file->offset += len; // assume we'll read len bytes
+	sftp_function_end();
+	return id;
+}
+
+/** \brief Wait for an asynchronous read to complete, and save the data
+ * \param file The SFTP_FILE handle on the file
+ * \param data Pointer on the destination buffer
+ * \param size Size of the destination buffer. It should be bigger or equal
+ * to the length parameter of the sftp_async_read_begin() call
+ * \param id Identifier returned by sftp_async_read_begin()
+ * \return SSH_ERROR on error
+ * \return SSH_AGAIN if the file is opened in nonblocking mode and the request hasn't been
+ * executed yet
+ * \return 0 on end of file
+ * \return Number of bytes read otherwise
+ * \warning A call to this function with an invalid identifier will never return
+ * \see sftp_async_read_begin()
+ */
+int sftp_async_read(SFTP_FILE *file, void *data, int size, u32 id){
     SFTP_MESSAGE *msg=NULL;
     STATUS_MESSAGE *status;
     SFTP_SESSION *sftp=file->sftp;
     STRING *datastring;
     int err=0;
-    BUFFER *buffer;
-    if(id==NULL){
-    	ssh_set_error(sftp->session,SSH_REQUEST_DENIED,"id parameter must not be null");
-    	return -1;
-    }
-    if(file->eof)
-        return 0;
-    if(*id==0){
-    	// launch a new request
-    	buffer=buffer_new();
-    	*id=sftp_get_new_id(sftp);
-    	buffer_add_u32(buffer,*id);
-    	buffer_add_ssh_string(buffer,file->handle);
-    	buffer_add_u64(buffer,htonll(file->offset));
-    	buffer_add_u32(buffer,htonl(len));
-    	sftp_packet_write(sftp,SSH_FXP_READ,buffer);
-    	buffer_free(buffer);
-    	file->offset += len; // assume we'll read len bytes
-    	return SSH_AGAIN; // must call back
-    } else {
-    	// handle an existing request
-    	while(!msg){
-    		if (file->nonblocking){
-    			if(channel_poll(sftp->channel,0)==0){
-    				/* we cannot block */
-    	            return SSH_AGAIN;
-    	        }
-    	    }
-    	    if(sftp_read_and_dispatch(sftp))
-    	    /* something nasty has happened */
-    	    	return -1;
-    	    msg=sftp_dequeue(sftp,*id);
-    	}
-    	*id=0;
-    	switch (msg->packet_type){
-    		case SSH_FXP_STATUS:
-    			status=parse_status_msg(msg);
-    	        sftp_message_free(msg);
-    	        if(!status)
-    	        	return -1;
-    	        if(status->status != SSH_FX_EOF){
-    	        	ssh_set_error(sftp->session,SSH_REQUEST_DENIED,"sftp server : %s",status->errormsg);
-    	            err=-1;
-    	        } else
-    	        	file->eof=1;
-    	        status_msg_free(status);
-    	        return err?err:0;
-    	    case SSH_FXP_DATA:
-    	        datastring=buffer_get_ssh_string(msg->payload);
-    	        sftp_message_free(msg);
-    	        if(!datastring){
-    	            ssh_set_error(sftp->session,SSH_FATAL,"Received invalid DATA packet from sftp server");
-    	            return -1;
-    	        }
-    	        if(string_len(datastring)>len){
-    	            ssh_set_error(sftp->session,SSH_FATAL,"Received a too big DATA packet from sftp server : %d and asked for %d",
-    	                string_len(datastring),len);
-    	            free(datastring);
-    	            return -1;
-    	        }
-    	        len=string_len(datastring);
-    	        //handle->offset+=len;
-    	        /* We already have set the offset previously. All we can do is warn that the expected len
-    	         * and effective lengths are different */
-    	        memcpy(data,datastring->string,len);
-    	        free(datastring);
-    	        return len;
-    	    default:
-    	        ssh_set_error(sftp->session,SSH_FATAL,"Received message %d during read!",msg->packet_type);
-    	        sftp_message_free(msg);
-    	        return -1;
-    	    }
+    int len;
+    sftp_function_start();
+    if(file->eof){
+    	sftp_function_end();
+    	return 0;
     }
 
+	// handle an existing request
+	while(!msg){
+		if (file->nonblocking){
+			if(channel_poll(sftp->channel,0)==0){
+				/* we cannot block */
+				return SSH_AGAIN;
+			}
+		}
+		if(sftp_read_and_dispatch(sftp))
+		/* something nasty has happened */
+			return -1;
+		msg=sftp_dequeue(sftp,id);
+	}
+	switch (msg->packet_type){
+		case SSH_FXP_STATUS:
+			status=parse_status_msg(msg);
+			sftp_message_free(msg);
+			if(!status)
+				return -1;
+			if(status->status != SSH_FX_EOF){
+				ssh_set_error(sftp->session,SSH_REQUEST_DENIED,"sftp server : %s",status->errormsg);
+				err=-1;
+			} else
+				file->eof=1;
+			status_msg_free(status);
+			sftp_function_end();
+			return err?err:0;
+		case SSH_FXP_DATA:
+			datastring=buffer_get_ssh_string(msg->payload);
+			sftp_message_free(msg);
+			if(!datastring){
+				ssh_set_error(sftp->session,SSH_FATAL,"Received invalid DATA packet from sftp server");
+				sftp_function_end();
+				return -1;
+			}
+			if(string_len(datastring)>size){
+				ssh_set_error(sftp->session,SSH_FATAL,"Received a too big DATA packet from sftp server : %d and asked for %d",
+					string_len(datastring),size);
+				free(datastring);
+				sftp_function_end();
+				return SSH_ERROR;
+			}
+			len=string_len(datastring);
+			//handle->offset+=len;
+			/* We already have set the offset previously. All we can do is warn that the expected len
+			 * and effective lengths are different */
+			memcpy(data,datastring->string,len);
+			free(datastring);
+			sftp_function_end();
+			return len;
+		default:
+			ssh_set_error(sftp->session,SSH_FATAL,"Received message %d during read!",msg->packet_type);
+			sftp_message_free(msg);
+			sftp_function_end();
+			return SSH_ERROR;
+	}
 }
+
 int sftp_write(SFTP_FILE *file, void *data, int len){
     SFTP_MESSAGE *msg=NULL;
     STATUS_MESSAGE *status;
