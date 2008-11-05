@@ -1056,7 +1056,7 @@ u32 sftp_async_read_begin(SFTP_FILE *file, int len){
     SFTP_SESSION *sftp=file->sftp;
     BUFFER *buffer;
     u32 id;
-    sftp_function_start();
+    sftp_enter_function();
 	buffer=buffer_new();
 	id=sftp_get_new_id(sftp);
 	buffer_add_u32(buffer,id);
@@ -1066,7 +1066,7 @@ u32 sftp_async_read_begin(SFTP_FILE *file, int len){
 	sftp_packet_write(sftp,SSH_FXP_READ,buffer);
 	buffer_free(buffer);
 	file->offset += len; // assume we'll read len bytes
-	sftp_function_end();
+	sftp_leave_function();
 	return id;
 }
 
@@ -1091,9 +1091,9 @@ int sftp_async_read(SFTP_FILE *file, void *data, int size, u32 id){
     STRING *datastring;
     int err=0;
     int len;
-    sftp_function_start();
+    sftp_enter_function();
     if(file->eof){
-    	sftp_function_end();
+    	sftp_leave_function();
     	return 0;
     }
 
@@ -1105,38 +1105,43 @@ int sftp_async_read(SFTP_FILE *file, void *data, int size, u32 id){
 				return SSH_AGAIN;
 			}
 		}
-		if(sftp_read_and_dispatch(sftp))
-		/* something nasty has happened */
-			return -1;
+		if(sftp_read_and_dispatch(sftp)){
+			/* something nasty has happened */
+			sftp_leave_function();
+			return SSH_ERROR;
+		}
 		msg=sftp_dequeue(sftp,id);
 	}
 	switch (msg->packet_type){
 		case SSH_FXP_STATUS:
 			status=parse_status_msg(msg);
 			sftp_message_free(msg);
-			if(!status)
+			if(!status){
+				sftp_leave_function();
 				return -1;
+			}
 			if(status->status != SSH_FX_EOF){
 				ssh_set_error(sftp->session,SSH_REQUEST_DENIED,"sftp server : %s",status->errormsg);
+				sftp_leave_function();
 				err=-1;
 			} else
 				file->eof=1;
 			status_msg_free(status);
-			sftp_function_end();
+			sftp_leave_function();
 			return err?err:0;
 		case SSH_FXP_DATA:
 			datastring=buffer_get_ssh_string(msg->payload);
 			sftp_message_free(msg);
 			if(!datastring){
 				ssh_set_error(sftp->session,SSH_FATAL,"Received invalid DATA packet from sftp server");
-				sftp_function_end();
+				sftp_leave_function();
 				return -1;
 			}
 			if(string_len(datastring)>size){
 				ssh_set_error(sftp->session,SSH_FATAL,"Received a too big DATA packet from sftp server : %d and asked for %d",
 					string_len(datastring),size);
 				free(datastring);
-				sftp_function_end();
+				sftp_leave_function();
 				return SSH_ERROR;
 			}
 			len=string_len(datastring);
@@ -1145,14 +1150,15 @@ int sftp_async_read(SFTP_FILE *file, void *data, int size, u32 id){
 			 * and effective lengths are different */
 			memcpy(data,datastring->string,len);
 			free(datastring);
-			sftp_function_end();
+			sftp_leave_function();
 			return len;
 		default:
 			ssh_set_error(sftp->session,SSH_FATAL,"Received message %d during read!",msg->packet_type);
 			sftp_message_free(msg);
-			sftp_function_end();
+			sftp_leave_function();
 			return SSH_ERROR;
 	}
+	sftp_leave_function();
 }
 
 int sftp_write(SFTP_FILE *file, void *data, int len){
