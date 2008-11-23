@@ -399,7 +399,7 @@ static struct crypto_struct ssh_ciphertab[]={
     { "3des-cbc-ssh1",8,sizeof(DES_key_schedule)*3,NULL,192,des3_set_key, 
         des3_set_key,des3_1_encrypt, des3_1_decrypt},
 #endif
-     { NULL,0,0,NULL,0,NULL,NULL,NULL}
+     { NULL,0,0,NULL,0,NULL,NULL,NULL,NULL}
 };
 #endif /* OPENSSL_CRYPTO */
 

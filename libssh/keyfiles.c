@@ -938,6 +938,7 @@ int ssh_write_knownhost(SSH_SESSION *session){
     unsigned char *pubkey_64;
     STRING *pubkey=session->current_crypto->server_pubkey;
     char buffer[4096];
+    size_t len = 0;
     FILE *file;
     ssh_options_default_known_hosts_file(session->options);
     if(!session->options->host){
@@ -992,7 +993,11 @@ int ssh_write_knownhost(SSH_SESSION *session){
        snprintf(buffer,sizeof(buffer),"%s %s %s\n",session->options->host,session->current_crypto->server_pubkey_type,pubkey_64);
        free(pubkey_64);
     }
-    fwrite(buffer,strlen(buffer),1,file);
+    len = strlen(buffer);
+    if (fwrite(buffer, len, 1, file) != len || ferror(file)) {
+      fclose(file);
+      return -1;
+    }
     fclose(file);
     return 0;
 }

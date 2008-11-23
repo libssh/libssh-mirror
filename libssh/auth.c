@@ -587,7 +587,7 @@ static int kbdauth_info_get(SSH_SESSION *session){
     STRING *instruction;
     STRING *tmp;
     u32 nprompts;
-    int i;
+    u32 i;
     enter_function();
     name=buffer_get_ssh_string(session->in_buffer);
     instruction=buffer_get_ssh_string(session->in_buffer);
@@ -642,7 +642,7 @@ static int kbdauth_info_get(SSH_SESSION *session){
 /* sends challenge back to the server */
 static int kbdauth_send(SSH_SESSION *session) {
     STRING *answer;
-    int i;
+    u32 i;
     int err;
     enter_function();
     buffer_add_u8(session->out_buffer,SSH2_MSG_USERAUTH_INFO_RESPONSE);
