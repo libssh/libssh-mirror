@@ -440,6 +440,19 @@ int main(int argc, char **argv){
             exit(-1);
     }
 
+    ssh_userauth_none(session, NULL);
+
+    auth = ssh_auth_list(session);
+    printf("auth: 0x%04x\n", auth);
+    printf("supported auth methods: ");
+    if (auth & SSH_AUTH_METHOD_PUBLICKEY) {
+      printf("publickey");
+    }
+    if (auth & SSH_AUTH_METHOD_INTERACTIVE) {
+      printf(", keyboard-interactive");
+    }
+    printf("\n");
+
     /* no ? you should :) */
     auth=ssh_userauth_autopubkey(session);
     if(auth==SSH_AUTH_ERROR){
@@ -462,7 +475,7 @@ int main(int argc, char **argv){
         }
     }
     if(auth!=SSH_AUTH_SUCCESS){
-        password=getpass("Password : ");
+        password=getpass("Password: ");
         if(ssh_userauth_password(session,NULL,password) != SSH_AUTH_SUCCESS){
             fprintf(stderr,"Authentication failed: %s\n",ssh_get_error(session));
             ssh_disconnect(session);

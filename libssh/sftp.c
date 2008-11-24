@@ -28,6 +28,7 @@ MA 02111-1307, USA. */
 /** \addtogroup ssh_sftp
  * @{ */
 
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
@@ -49,6 +50,7 @@ MA 02111-1307, USA. */
 /* functions */
 void sftp_enqueue(SFTP_SESSION *session, SFTP_MESSAGE *msg);
 static void sftp_message_free(SFTP_MESSAGE *msg);
+static void sftp_set_errno(SFTP_SESSION *sftp, int errnum);
 
 /** \brief start a new SFTP session
  * \param session the SSH session
@@ -186,6 +188,20 @@ SFTP_PACKET *sftp_packet_read(SFTP_SESSION *sftp){
         }
     sftp_leave_function();
     return packet;
+}
+
+static void sftp_set_errno(SFTP_SESSION *sftp, int errnum) {
+  if (sftp != NULL) {
+    sftp->errnum = errnum;
+  }
+}
+
+int sftp_get_error(SFTP_SESSION *sftp) {
+  if (sftp == NULL) {
+    return -1;
+  }
+
+  return sftp->errnum;
 }
 
 static SFTP_MESSAGE *sftp_message_new(SFTP_SESSION *sftp){
@@ -419,6 +435,7 @@ SFTP_FILE *parse_handle_msg(SFTP_MESSAGE *msg){
     }
     return file;
 }
+
 /** \brief open a directory
  * \param sftp SFTP session handle
  * \param path path to the directory
@@ -426,7 +443,7 @@ SFTP_FILE *parse_handle_msg(SFTP_MESSAGE *msg){
  * \see sftp_readdir()
  * \see sftp_dir_close()
  */
-SFTP_DIR *sftp_opendir(SFTP_SESSION *sftp, char *path){
+SFTP_DIR *sftp_opendir(SFTP_SESSION *sftp, const char *path){
     SFTP_DIR *dir=NULL;
     SFTP_FILE *file;
     STATUS_MESSAGE *status;
@@ -452,6 +469,7 @@ SFTP_DIR *sftp_opendir(SFTP_SESSION *sftp, char *path){
             sftp_message_free(msg);
             if(!status)
                 return NULL;
+            sftp_set_errno(sftp, status->status);
             ssh_set_error(sftp->session,SSH_REQUEST_DENIED,"sftp server : %s",status->errormsg);
             status_msg_free(status);
             return NULL;
@@ -760,10 +778,14 @@ SFTP_ATTRIBUTES *sftp_readdir(SFTP_SESSION *sftp, SFTP_DIR *dir){
                 sftp_message_free(msg);
                 if(!status)
                     return NULL;
-                if(status->status==SSH_FX_EOF){
-                    dir->eof=1;
+                sftp_set_errno(sftp, status->status);
+                switch (status->status) {
+                  case SSH_FX_EOF:
+                    dir->eof = 1;
                     status_msg_free(status);
                     return NULL;
+                  default:
+                    break;
                 }
                 ssh_set_error(sftp->session,SSH_FATAL,"Unknown error status : %d",status->status);
                 status_msg_free(status);
@@ -849,12 +871,18 @@ static int sftp_handle_close(SFTP_SESSION *sftp, STRING *handle){
             sftp_message_free(msg);
             if(!status)
                 return -1;
-            if(status->status != SSH_FX_OK){
-                ssh_set_error(sftp->session,SSH_REQUEST_DENIED,"sftp server : %s",status->errormsg);
-                err=-1;
+            sftp_set_errno(sftp, status->status);
+            switch (status->status) {
+              case SSH_FX_OK:
+                status_msg_free(status);
+                return err;
+                break;
+              default:
+                break;
             }
+            ssh_set_error(sftp->session,SSH_REQUEST_DENIED,"sftp server : %s",status->errormsg);
             status_msg_free(status);
-            return err;
+            return -1;
         default:
             ssh_set_error(sftp->session,SSH_FATAL,"Received message %d during sftp_handle_close!",msg->packet_type);
             sftp_message_free(msg);
@@ -903,7 +931,7 @@ int sftp_dir_close(SFTP_DIR *dir){
 /** \brief Open a remote file
  * \todo please complete doc
  */
-SFTP_FILE *sftp_open(SFTP_SESSION *sftp, char *file, int access, SFTP_ATTRIBUTES *attr){
+SFTP_FILE *sftp_open(SFTP_SESSION *sftp, const char *file, int access, SFTP_ATTRIBUTES *attr){
     SFTP_FILE *handle;
     SFTP_MESSAGE *msg=NULL;
     STATUS_MESSAGE *status;
@@ -943,6 +971,7 @@ SFTP_FILE *sftp_open(SFTP_SESSION *sftp, char *file, int access, SFTP_ATTRIBUTES
             sftp_message_free(msg);
             if(!status)
                 return NULL;
+            sftp_set_errno(sftp, status->status);
             ssh_set_error(sftp->session,SSH_REQUEST_DENIED,"sftp server : %s",status->errormsg);
             status_msg_free(status);
             return NULL;
@@ -1000,14 +1029,18 @@ int sftp_read(SFTP_FILE *handle, void *data, int len){
             sftp_message_free(msg);
             if(!status)
                 return -1;
-            if(status->status != SSH_FX_EOF){
-                ssh_set_error(sftp->session,SSH_REQUEST_DENIED,"sftp server : %s",status->errormsg);
-                err=-1;
-            }
-            else
+            sftp_set_errno(sftp, status->status);
+            switch (status->status) {
+              case SSH_FX_EOF:
                 handle->eof=1;
+                status_msg_free(status);
+                return err ? err : 0;
+              default:
+                break;
+            }
+            ssh_set_error(sftp->session,SSH_REQUEST_DENIED,"sftp server : %s",status->errormsg);
             status_msg_free(status);
-            return err?err:0;
+            return -1;
         case SSH_FXP_DATA:
             datastring=buffer_get_ssh_string(msg->payload);
             sftp_message_free(msg);
@@ -1120,6 +1153,7 @@ int sftp_async_read(SFTP_FILE *file, void *data, int size, u32 id){
 				sftp_leave_function();
 				return -1;
 			}
+			sftp_set_errno(sftp, status->status);
 			if(status->status != SSH_FX_EOF){
 				ssh_set_error(sftp->session,SSH_REQUEST_DENIED,"sftp server : %s",status->errormsg);
 				sftp_leave_function();
@@ -1161,7 +1195,7 @@ int sftp_async_read(SFTP_FILE *file, void *data, int size, u32 id){
 	sftp_leave_function();
 }
 
-int sftp_write(SFTP_FILE *file, void *data, int len){
+int sftp_write(SFTP_FILE *file, const void *data, int len){
     SFTP_MESSAGE *msg=NULL;
     STATUS_MESSAGE *status;
     STRING *datastring;
@@ -1194,13 +1228,19 @@ int sftp_write(SFTP_FILE *file, void *data, int len){
             sftp_message_free(msg);
             if(!status)
                 return -1;
-            if(status->status != SSH_FX_OK){
-                ssh_set_error(sftp->session,SSH_REQUEST_DENIED,"sftp server : %s",status->errormsg);
-                err=-1;
+            sftp_set_errno(sftp, status->status);
+            switch (status->status) {
+              case SSH_FX_OK:
+                file->offset+=len;
+                status_msg_free(status);
+                return err ? err : len;
+              default:
+                break;
             }
+            ssh_set_error(sftp->session,SSH_REQUEST_DENIED,"sftp server : %s",status->errormsg);
             file->offset+=len;
             status_msg_free(status);
-            return (err?err:len);
+            return -1;
         default:
             ssh_set_error(sftp->session,SSH_FATAL,"Received message %d during write!",msg->packet_type);
             sftp_message_free(msg);
@@ -1246,14 +1286,18 @@ int sftp_rm(SFTP_SESSION *sftp, char *file) {
          sftp_message_free(msg);
          if (!status)
              return -1;
-         if (status->status != SSH_FX_OK) {
-          /* status should be SSH_FX_OK if the command was successful, if it didn't, then there was an error */
-              ssh_set_error(sftp->session,SSH_REQUEST_DENIED, "sftp server: %s", status->errormsg);
-              status_msg_free(status);
-              return -1;
+         sftp_set_errno(sftp, status->status);
+         switch (status->status) {
+           case SSH_FX_OK:
+             status_msg_free(status);
+             return 0;
+           default:
+             break;
          }
+         /* status should be SSH_FX_OK if the command was successful, if it didn't, then there was an error */
+         ssh_set_error(sftp->session,SSH_REQUEST_DENIED, "sftp server: %s", status->errormsg);
          status_msg_free(status);
-         return 0;   /* at this point, everything turned out OK */
+         return -1;
     } else {
         ssh_set_error(sftp->session,SSH_FATAL, "Received message %d when attempting to remove file", msg->packet_type);
         sftp_message_free(msg);
@@ -1262,7 +1306,7 @@ int sftp_rm(SFTP_SESSION *sftp, char *file) {
 }
 
 /* code written by Nick */
-int sftp_rmdir(SFTP_SESSION *sftp, char *directory) {
+int sftp_rmdir(SFTP_SESSION *sftp, const char *directory) {
     u32 id = sftp_get_new_id(sftp);
     BUFFER *buffer = buffer_new();
     STRING *filename = string_from_char(directory);
@@ -1285,18 +1329,21 @@ int sftp_rmdir(SFTP_SESSION *sftp, char *directory) {
     {
         status = parse_status_msg(msg);
         sftp_message_free(msg);
-        if (!status)
-        {
+        if (!status) {
             return -1;
         }
-        else if (status->status != SSH_FX_OK)   /* status should be SSH_FX_OK if the command was successful, if it didn't, then there was an error */
-        {
-            ssh_set_error(sftp->session,SSH_REQUEST_DENIED, "sftp server: %s", status->errormsg);
+        sftp_set_errno(sftp, status->status);
+        switch (status->status) {
+          case SSH_FX_OK:
             status_msg_free(status);
-            return -1;
+            return 0;
+            break;
+          default:
+            break;
         }
+        ssh_set_error(sftp->session,SSH_REQUEST_DENIED, "sftp server: %s", status->errormsg);
         status_msg_free(status);
-        return 0;   /* at this point, everything turned out OK */
+        return -1;
     }
     else
     {
@@ -1307,12 +1354,13 @@ int sftp_rmdir(SFTP_SESSION *sftp, char *directory) {
 }
 
 /* Code written by Nick */
-int sftp_mkdir(SFTP_SESSION *sftp, char *directory, SFTP_ATTRIBUTES *attr) {
+int sftp_mkdir(SFTP_SESSION *sftp, const char *directory, SFTP_ATTRIBUTES *attr) {
     u32 id = sftp_get_new_id(sftp);
     BUFFER *buffer = buffer_new();
     STRING *path = string_from_char(directory);
     SFTP_MESSAGE *msg = NULL;
     STATUS_MESSAGE *status = NULL;
+    SFTP_ATTRIBUTES *errno_attr = NULL;
 
     buffer_add_u32(buffer, id);
     buffer_add_ssh_string(buffer, path);
@@ -1329,17 +1377,33 @@ int sftp_mkdir(SFTP_SESSION *sftp, char *directory, SFTP_ATTRIBUTES *attr) {
         /* by specification, this command's only supposed to return SSH_FXP_STATUS */
         status = parse_status_msg(msg);
         sftp_message_free(msg);
-        if (!status)
-            return -1;
-        else
-        if (status->status != SSH_FX_OK) {
-            /* status should be SSH_FX_OK if the command was successful, if it didn't, then there was an error */
-            ssh_set_error(sftp->session,SSH_REQUEST_DENIED, "sftp server: %s", status->errormsg);
-            status_msg_free(status);
-            return -1;
+        if (status == NULL) {
+          return -1;
         }
+        sftp_set_errno(sftp, status->status);
+        switch (status->status) {
+          case SSH_FX_FAILURE:
+            /*
+             * mkdir always returns a failure, even if the path already exists.
+             * To be POSIX conform and to be able to map it to EEXIST a stat
+             * call should be issued here
+             */
+            errno_attr = sftp_lstat(sftp, directory);
+            if (errno_attr != NULL) {
+              sftp_set_errno(sftp, SSH_FX_FILE_ALREADY_EXISTS);
+            }
+            break;
+          case SSH_FX_OK:
+            status_msg_free(status);
+            return 0;
+            break;
+          default:
+            break;
+        }
+        /* status should be SSH_FX_OK if the command was successful, if it didn't, then there was an error */
+        ssh_set_error(sftp->session,SSH_REQUEST_DENIED, "sftp server: %s", status->errormsg);
         status_msg_free(status);
-        return 0;   /* at this point, everything turned out OK */
+        return -1;
     } else {
        ssh_set_error(sftp->session,SSH_FATAL, "Received message %d when attempting to make directory", msg->packet_type);
        sftp_message_free(msg);
@@ -1348,7 +1412,7 @@ int sftp_mkdir(SFTP_SESSION *sftp, char *directory, SFTP_ATTRIBUTES *attr) {
 }
 
 /* code written by nick */
-int sftp_rename(SFTP_SESSION *sftp, char *original, char *newname) {
+int sftp_rename(SFTP_SESSION *sftp, const char *original, const char *newname) {
     u32 id = sftp_get_new_id(sftp);
     BUFFER *buffer = buffer_new();
     STRING *oldpath = string_from_char(original);
@@ -1374,14 +1438,18 @@ int sftp_rename(SFTP_SESSION *sftp, char *original, char *newname) {
         sftp_message_free(msg);
         if (!status)
             return -1;
-        else if (status->status != SSH_FX_OK) {
-               /* status should be SSH_FX_OK if the command was successful, if it didn't, then there was an error */
-            ssh_set_error(sftp->session,SSH_REQUEST_DENIED, "sftp server: %s", status->errormsg);
+        sftp_set_errno(sftp, status->status);
+        switch (status->status) {
+          case SSH_FX_OK:
             status_msg_free(status);
-            return -1;
+            return 0;
+          default:
+            break;
         }
+        /* status should be SSH_FX_OK if the command was successful, if it didn't, then there was an error */
+        ssh_set_error(sftp->session,SSH_REQUEST_DENIED, "sftp server: %s", status->errormsg);
         status_msg_free(status);
-        return 0;   /* at this point, everything turned out OK */
+        return -1;
     } else {
         ssh_set_error(sftp->session,SSH_FATAL, "Received message %d when attempting to rename", msg->packet_type);
         sftp_message_free(msg);
@@ -1390,7 +1458,7 @@ int sftp_rename(SFTP_SESSION *sftp, char *original, char *newname) {
 }
 
 /* Code written by Nick */
-int sftp_setstat(SFTP_SESSION *sftp, char *file, SFTP_ATTRIBUTES *attr) {
+int sftp_setstat(SFTP_SESSION *sftp, const char *file, SFTP_ATTRIBUTES *attr) {
     u32 id = sftp_get_new_id(sftp);
     BUFFER *buffer = buffer_new();
     STRING *path = string_from_char(file);
@@ -1414,14 +1482,18 @@ int sftp_setstat(SFTP_SESSION *sftp, char *file, SFTP_ATTRIBUTES *attr) {
         sftp_message_free(msg);
         if (!status)
             return -1;
-        else if (status->status != SSH_FX_OK) {
-               /* status should be SSH_FX_OK if the command was successful, if it didn't, then there was an error */
-            ssh_set_error(sftp->session,SSH_REQUEST_DENIED, "sftp server: %s", status->errormsg);
+        sftp_set_errno(sftp, status->status);
+        switch (status->status) {
+          case SSH_FX_OK:
             status_msg_free(status);
-            return -1;
+            return 0;
+          default:
+            break;
         }
+        /* status should be SSH_FX_OK if the command was successful, if it didn't, then there was an error */
+        ssh_set_error(sftp->session,SSH_REQUEST_DENIED, "sftp server: %s", status->errormsg);
         status_msg_free(status);
-        return 0;   /* at this point, everything turned out OK */
+        return -1;
     } else {
         ssh_set_error(sftp->session,SSH_FATAL, "Received message %d when attempting to set stats", msg->packet_type);
         sftp_message_free(msg);
@@ -1430,7 +1502,7 @@ int sftp_setstat(SFTP_SESSION *sftp, char *file, SFTP_ATTRIBUTES *attr) {
 }
 
 /* another code written by Nick */
-char *sftp_canonicalize_path(SFTP_SESSION *sftp, char *path)
+char *sftp_canonicalize_path(SFTP_SESSION *sftp, const char *path)
 {
 	u32 id = sftp_get_new_id(sftp);
 	BUFFER *buffer = buffer_new();
@@ -1477,7 +1549,7 @@ char *sftp_canonicalize_path(SFTP_SESSION *sftp, char *path)
 	return NULL;
 }
 
-SFTP_ATTRIBUTES *sftp_xstat(SFTP_SESSION *sftp, char *path,int param){
+SFTP_ATTRIBUTES *sftp_xstat(SFTP_SESSION *sftp, const char *path, int param){
     u32 id=sftp_get_new_id(sftp);
     BUFFER *buffer=buffer_new();
     STRING *pathstr= string_from_char(path);
@@ -1504,6 +1576,7 @@ SFTP_ATTRIBUTES *sftp_xstat(SFTP_SESSION *sftp, char *path,int param){
         sftp_message_free(msg);
         if(!status)
             return NULL;
+        sftp_set_errno(sftp, status->status);
         ssh_set_error(sftp->session,SSH_REQUEST_DENIED,"sftp server: %s",status->errormsg);
         status_msg_free(status);
         return NULL;
@@ -1513,10 +1586,10 @@ SFTP_ATTRIBUTES *sftp_xstat(SFTP_SESSION *sftp, char *path,int param){
     return NULL;
 }
 
-SFTP_ATTRIBUTES *sftp_stat(SFTP_SESSION *session, char *path){
+SFTP_ATTRIBUTES *sftp_stat(SFTP_SESSION *session, const char *path){
     return sftp_xstat(session,path,SSH_FXP_STAT);
 }
-SFTP_ATTRIBUTES *sftp_lstat(SFTP_SESSION *session, char *path){
+SFTP_ATTRIBUTES *sftp_lstat(SFTP_SESSION *session, const char *path){
     return sftp_xstat(session,path,SSH_FXP_LSTAT);
 }
 

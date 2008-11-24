@@ -34,6 +34,7 @@ typedef struct sftp_session_struct {
     int version;
     struct request_queue *queue;
     u32 id_counter;
+    int errnum;
     void **handles;
 } SFTP_SESSION ;
 
@@ -131,33 +132,34 @@ typedef struct sftp_attributes{
 SFTP_SESSION *sftp_new(SSH_SESSION *session);
 void sftp_free(SFTP_SESSION *sftp);
 int sftp_init(SFTP_SESSION *sftp);
-SFTP_DIR *sftp_opendir(SFTP_SESSION *session, char *path);
+int sftp_get_error(SFTP_SESSION *sftp);
+SFTP_DIR *sftp_opendir(SFTP_SESSION *session, const char *path);
 /* reads one file and attribute from opened directory. fails at end */
 SFTP_ATTRIBUTES *sftp_readdir(SFTP_SESSION *session, SFTP_DIR *dir);
 /* returns 1 if the directory was EOF */
 int sftp_dir_eof(SFTP_DIR *dir);
-SFTP_ATTRIBUTES *sftp_stat(SFTP_SESSION *session, char *path);
-SFTP_ATTRIBUTES *sftp_lstat(SFTP_SESSION *session, char *path);
+SFTP_ATTRIBUTES *sftp_stat(SFTP_SESSION *session, const char *path);
+SFTP_ATTRIBUTES *sftp_lstat(SFTP_SESSION *session, const char *path);
 /* sftp_lstat stats a file but doesn't follow symlinks */
 SFTP_ATTRIBUTES *sftp_fstat(SFTP_FILE *file);
 void sftp_attributes_free(SFTP_ATTRIBUTES *file);
 int sftp_dir_close(SFTP_DIR *dir);
 int sftp_file_close(SFTP_FILE *file);
 /* access are the sames than the ones from ansi fopen() */
-SFTP_FILE *sftp_open(SFTP_SESSION *session, char *file, int access, SFTP_ATTRIBUTES *attr);
+SFTP_FILE *sftp_open(SFTP_SESSION *session, const char *file, int access, SFTP_ATTRIBUTES *attr);
 int sftp_read(SFTP_FILE *file, void *dest, int len);
 u32 sftp_async_read_begin(SFTP_FILE *file, int len);
 int sftp_async_read(SFTP_FILE *file, void *data, int len, u32 id);
-int sftp_write(SFTP_FILE *file, void *source, int len);
+int sftp_write(SFTP_FILE *file, const void *source, int len);
 void sftp_seek(SFTP_FILE *file, int new_offset);
 unsigned long sftp_tell(SFTP_FILE *file);
 void sftp_rewind(SFTP_FILE *file);
 int sftp_rm(SFTP_SESSION *sftp, char *file);
-int sftp_rmdir(SFTP_SESSION *sftp, char *directory);
-int sftp_mkdir(SFTP_SESSION *sftp, char *directory, SFTP_ATTRIBUTES *attr);
-int sftp_rename(SFTP_SESSION *sftp, char *original, char *newname);
-int sftp_setstat(SFTP_SESSION *sftp, char *file, SFTP_ATTRIBUTES *attr);
-char *sftp_canonicalize_path(SFTP_SESSION *sftp, char *path);
+int sftp_rmdir(SFTP_SESSION *sftp, const char *directory);
+int sftp_mkdir(SFTP_SESSION *sftp, const char *directory, SFTP_ATTRIBUTES *attr);
+int sftp_rename(SFTP_SESSION *sftp, const char *original, const  char *newname);
+int sftp_setstat(SFTP_SESSION *sftp, const char *file, SFTP_ATTRIBUTES *attr);
+char *sftp_canonicalize_path(SFTP_SESSION *sftp, const char *path);
 
 #ifndef NO_SERVER
 SFTP_SESSION *sftp_server_new(SSH_SESSION *session, CHANNEL *chan);

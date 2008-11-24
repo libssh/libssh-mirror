@@ -91,6 +91,11 @@ typedef int socket_t;
 #define SSH_AUTH_INFO 3
 #define SSH_AUTH_ERROR -1
 
+#define SSH_AUTH_METHOD_PASSWORD 0x0001
+#define SSH_AUTH_METHOD_PUBLICKEY 0x0002
+#define SSH_AUTH_METHOD_HOSTBASED 0x0004
+#define SSH_AUTH_METHOD_INTERACTIVE 0x0008
+
 /* status flags */
 
 #define SSH_CLOSED (1<<0)
@@ -120,7 +125,7 @@ typedef int socket_t;
 
 char *ssh_get_error(void *error); 
 int ssh_get_error_code(void *error);
-void ssh_say(int priority,char *format,...);
+void ssh_say(int priority, const char *format, ...);
 void ssh_set_verbosity(int num);
 /** \addtogroup ssh_log
  * @{
@@ -178,12 +183,12 @@ const char *ssh_copyright();
 
 /* You can use these functions, they won't change */
 /* makestring returns a newly allocated string from a char * ptr */
-STRING *string_from_char(char *what);
+STRING *string_from_char(const char *what);
 /* it returns the string len in host byte orders. str->size is big endian warning ! */
 int string_len(STRING *str);
 STRING *string_new(unsigned int size);
 /* string_fill copies the data in the string. it does NOT check for boundary so allocate enough place with string_new */
-void string_fill(STRING *str,void *data,int len);
+void string_fill(STRING *str, const void *data,int len);
 /* returns a newly allocated char array with the str string and a final nul caracter */
 char *string_to_char(STRING *str);
 STRING *string_copy(STRING *str);
@@ -196,7 +201,7 @@ void string_free(STRING *str);
 void ssh_crypto_init();
 
 /* useful for debug */
-void ssh_print_hexa(char *descr,unsigned char *what, int len);
+void ssh_print_hexa(char *descr, const unsigned char *what, int len);
 int ssh_get_random(void *where,int len,int strong);
 
 /* this one can be called by the client to see the hash of the public key before accepting it */
@@ -250,25 +255,25 @@ int channel_select(CHANNEL **readchans, CHANNEL **writechans, CHANNEL **exceptch
 
 SSH_OPTIONS *ssh_options_new();
 SSH_OPTIONS *ssh_options_copy(SSH_OPTIONS *opt);
-int ssh_options_set_wanted_algos(SSH_OPTIONS *opt,int algo, char *list);
-void ssh_options_set_username(SSH_OPTIONS *opt,char *username);
+int ssh_options_set_wanted_algos(SSH_OPTIONS *opt, int algo, const char *list);
+void ssh_options_set_username(SSH_OPTIONS *opt, const char *username);
 void ssh_options_set_port(SSH_OPTIONS *opt, unsigned int port);
 int ssh_options_getopt(SSH_OPTIONS *options, int *argcptr, char **argv);
 void ssh_options_set_host(SSH_OPTIONS *opt, const char *host);
 void ssh_options_set_fd(SSH_OPTIONS *opt, socket_t fd);
-void ssh_options_set_bind(SSH_OPTIONS *opt, char *bindaddr,int port);
-void ssh_options_set_identity(SSH_OPTIONS *opt, char *identity);
+void ssh_options_set_bind(SSH_OPTIONS *opt, const char *bindaddr, int port);
+void ssh_options_set_identity(SSH_OPTIONS *opt, const char *identity);
 void ssh_options_set_status_callback(SSH_OPTIONS *opt, void (*callback)
         (void *arg, float status), void *arg);
 void ssh_options_set_timeout(SSH_OPTIONS *opt, long seconds, long usec);
-void ssh_options_set_ssh_dir(SSH_OPTIONS *opt, char *dir);
-void ssh_options_set_known_hosts_file(SSH_OPTIONS *opt, char *dir);
+void ssh_options_set_ssh_dir(SSH_OPTIONS *opt, const char *dir);
+void ssh_options_set_known_hosts_file(SSH_OPTIONS *opt, const char *dir);
 void ssh_options_allow_ssh1(SSH_OPTIONS *opt, int allow);
 void ssh_options_allow_ssh2(SSH_OPTIONS *opt, int allow);
-void ssh_options_set_dsa_server_key(SSH_OPTIONS *opt, char *dsakey);
-void ssh_options_set_rsa_server_key(SSH_OPTIONS *opt, char *rsakey);
-void ssh_options_set_log_function(SSH_OPTIONS *opt, 
-		void (*callback)(const char *message, SSH_SESSION *session, int verbosity ));
+void ssh_options_set_dsa_server_key(SSH_OPTIONS *opt, const char *dsakey);
+void ssh_options_set_rsa_server_key(SSH_OPTIONS *opt, const char *rsakey);
+void ssh_options_set_log_function(SSH_OPTIONS *opt,
+    void (*callback)(const char *message, SSH_SESSION *session, int verbosity ));
 void ssh_options_set_log_verbosity(SSH_OPTIONS *opt, int verbosity);
 
 
@@ -289,17 +294,18 @@ int buffer_get_len(BUFFER *buffer);
   AUTH_SUCCESS if success,
   AUTH_PARTIAL if partial success,
   AUTH_DENIED if refused */
-int ssh_userauth_none(SSH_SESSION *session,char *username);
-int ssh_userauth_password(SSH_SESSION *session,char *username,char *password);
-int ssh_userauth_offer_pubkey(SSH_SESSION *session, char *username,int type, STRING *publickey);
-int ssh_userauth_pubkey(SSH_SESSION *session, char *username, STRING *publickey, PRIVATE_KEY *privatekey);
+int ssh_userauth_list(SSH_SESSION *session, const char *username);
+int ssh_userauth_none(SSH_SESSION *session, const char *username);
+int ssh_userauth_password(SSH_SESSION *session, const char *username, const char *password);
+int ssh_userauth_offer_pubkey(SSH_SESSION *session, const char *username, int type, STRING *publickey);
+int ssh_userauth_pubkey(SSH_SESSION *session, const char *username, STRING *publickey, PRIVATE_KEY *privatekey);
 int ssh_userauth_autopubkey(SSH_SESSION *session);
-int ssh_userauth_kbdint(SSH_SESSION *session, char *user, char *submethods);
+int ssh_userauth_kbdint(SSH_SESSION *session, const char *user, const char *submethods);
 int ssh_userauth_kbdint_getnprompts(SSH_SESSION *session);
 char *ssh_userauth_kbdint_getname(SSH_SESSION *session);
 char *ssh_userauth_kbdint_getinstruction(SSH_SESSION *session);
 char *ssh_userauth_kbdint_getprompt(SSH_SESSION *session, int i, char *echo);
-void ssh_userauth_kbdint_setanswer(SSH_SESSION *session, unsigned int i, char *answer);
+void ssh_userauth_kbdint_setanswer(SSH_SESSION *session, unsigned int i, const char *answer);
 
 
 /* init.c */

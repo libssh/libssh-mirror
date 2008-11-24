@@ -63,11 +63,12 @@ char *ssh_kex_nums[]={
 	"compression algo server->client","languages client->server","languages server->client",NULL};
 
 /* tokenize will return a token of strings delimited by ",". the first element has to be freed */
-static char **tokenize(char *chain){
+static char **tokenize(const char *chain){
     char **tokens;
     int n=1;
     int i=0;
-    char *ptr=chain=strdup(chain);
+    char *tmp = strdup(chain);
+    char *ptr = tmp;
     while(*ptr){
         if(*ptr==','){
             n++;
@@ -77,7 +78,7 @@ static char **tokenize(char *chain){
     }
     /* now n contains the number of tokens, the first possibly empty if the list was empty too e.g. "" */
     tokens=malloc(sizeof(char *) * (n+1) ); /* +1 for the null */
-    ptr=chain;
+    ptr=tmp;
     for(i=0;i<n;i++){
         tokens[i]=ptr;
         while(*ptr)
@@ -89,11 +90,12 @@ static char **tokenize(char *chain){
 }
 
 /* same as tokenize(), but with spaces instead of ',' */
-char **space_tokenize(char *chain){
+char **space_tokenize(const char *chain){
     char **tokens;
     int n=1;
     int i=0;
-    char *ptr=chain=strdup(chain);
+    char *tmp = strdup(chain);
+    char *ptr = tmp;
     while(*ptr==' ')
         ++ptr; /* skip initial spaces */
     while(*ptr){
@@ -108,7 +110,7 @@ char **space_tokenize(char *chain){
     }
     /* now n contains the number of tokens, the first possibly empty if the list was empty too e.g. "" */
     tokens=malloc(sizeof(char *) * (n+1) ); /* +1 for the null */
-    ptr=chain; /* we don't pass the initial spaces because the "chain" pointer is needed by the caller */
+    ptr=tmp; /* we don't pass the initial spaces because the "tmp" pointer is needed by the caller */
                     /* function to free the tokens. */
     for(i=0;i<n;i++){
         tokens[i]=ptr;
@@ -128,7 +130,7 @@ char **space_tokenize(char *chain){
 /* and a list of prefered objects (what_d) */
 /* it will return a strduped pointer on the first prefered object found in the available objects list */
 
-char *ssh_find_matching(char *in_d, char *what_d){
+char *ssh_find_matching(const char *in_d, const char *what_d){
     char ** tok_in, **tok_what;
     int i_in, i_what;
     char *ret;
@@ -272,7 +274,7 @@ void ssh_send_kex(SSH_SESSION *session, int server_kex){
 }
 
 /* returns 1 if at least one of the name algos is in the default algorithms table */
-int verify_existing_algo(int algo, char *name){
+int verify_existing_algo(int algo, const char *name){
     char *ptr;
     if(algo>9 || algo <0)
         return -1;

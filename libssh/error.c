@@ -64,7 +64,7 @@ int ssh_get_error_code(void *error){
     return err->error_code;
 }
 
-void ssh_say(int priority, char *format,...){
+void ssh_say(int priority, const char *format, ...){
     va_list va;
     va_start(va,format);
     if(priority <= verbosity)

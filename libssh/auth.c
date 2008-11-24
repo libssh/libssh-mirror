@@ -52,9 +52,10 @@ static void burn(char *ptr){
 static int wait_auth_status(SSH_SESSION *session,int kbdint){
     int err=SSH_AUTH_ERROR;
     int cont=1;
-    STRING *can_continue;
+    STRING *auth;
     u8 partial=0;
-    char *c_cont;
+    int todo = 0;
+    char *auth_methods = NULL;
     enter_function();
     while(cont){
         if(packet_read(session))
@@ -63,24 +64,39 @@ static int wait_auth_status(SSH_SESSION *session,int kbdint){
             break;
         switch(session->in_packet.type){
             case SSH2_MSG_USERAUTH_FAILURE:
-                can_continue=buffer_get_ssh_string(session->in_buffer);
-                if(!can_continue || buffer_get_u8(session->in_buffer,&partial)!=1 ){
+                auth = buffer_get_ssh_string(session->in_buffer);
+                if(!auth || buffer_get_u8(session->in_buffer,&partial)!=1 ){
                     ssh_set_error(session,SSH_FATAL,
                             "invalid SSH_MSG_USERAUTH_FAILURE message");
                     leave_function();
                     return SSH_AUTH_ERROR;
                 }
-                c_cont=string_to_char(can_continue);
-                if(partial){
+                auth_methods = string_to_char(auth);
+                if(partial) {
                     err=SSH_AUTH_PARTIAL;
-                    ssh_set_error(session,SSH_NO_ERROR,"partial success, authentications that can continue : %s",c_cont);
-                }
-                else {
+                    ssh_set_error(session,SSH_NO_ERROR,"partial success, authentications that can continue : %s", auth_methods);
+                } else {
                     err=SSH_AUTH_DENIED;
-                    ssh_set_error(session,SSH_REQUEST_DENIED,"Access denied. authentications that can continue : %s",c_cont);
+                    ssh_set_error(session,SSH_REQUEST_DENIED,"Access denied. authentications that can continue : %s", auth_methods);
+
+                    session->auth_methods = 0;
+                    if (strstr(auth_methods, "password") != NULL) {
+                        session->auth_methods |= SSH_AUTH_METHOD_PASSWORD;
+                    }
+                    if (strstr(auth_methods, "keyboard-interactive") != NULL) {
+                        session->auth_methods |= SSH_AUTH_METHOD_INTERACTIVE;
+                    }
+                    if (strstr(auth_methods, "publickey") != NULL) {
+                        session->auth_methods |= SSH_AUTH_METHOD_PUBLICKEY;
+                    }
+                    if (strstr(auth_methods, "hostbased") != NULL) {
+                        session->auth_methods |= SSH_AUTH_METHOD_HOSTBASED;
+                    }
                 }
-                free(can_continue);
-                free(c_cont);
+
+
+                free(auth);
+                free(auth_methods);
                 cont=0;
                 break;
             case SSH2_MSG_USERAUTH_PK_OK:
@@ -120,6 +136,13 @@ static int wait_auth_status(SSH_SESSION *session,int kbdint){
     return err;
 }
 
+int ssh_auth_list(SSH_SESSION *session) {
+    if (session == NULL) {
+        return -1;
+    }
+    return session->auth_methods;
+}
+
 /* use the "none" authentication question */
 
 /** \brief Try to authenticate through the "none" method
@@ -132,7 +155,7 @@ static int wait_auth_status(SSH_SESSION *session,int kbdint){
  * SSH_AUTH_SUCCESS : Authentication success
  */
 
-int ssh_userauth_none(SSH_SESSION *session,char *username){
+int ssh_userauth_none(SSH_SESSION *session, const char *username){
     STRING *user;
     STRING *service;
     STRING *method;
@@ -188,7 +211,7 @@ int ssh_userauth_none(SSH_SESSION *session,char *username){
  * \see ssh_userauth_pubkey()
  */
 
-int ssh_userauth_offer_pubkey(SSH_SESSION *session, char *username,int type, STRING *publickey){
+int ssh_userauth_offer_pubkey(SSH_SESSION *session, const char *username,int type, STRING *publickey){
     STRING *user;
     STRING *service;
     STRING *method;
@@ -253,7 +276,7 @@ int ssh_userauth_offer_pubkey(SSH_SESSION *session, char *username,int type, STR
  * \see ssh_userauth_offer_pubkey()
  */
 
-int ssh_userauth_pubkey(SSH_SESSION *session, char *username, STRING *publickey, PRIVATE_KEY *privatekey){
+int ssh_userauth_pubkey(SSH_SESSION *session, const char *username, STRING *publickey, PRIVATE_KEY *privatekey){
     STRING *user;
     STRING *service;
     STRING *method;
@@ -317,7 +340,7 @@ int ssh_userauth_pubkey(SSH_SESSION *session, char *username, STRING *publickey,
  */
 
 
-int ssh_userauth_password(SSH_SESSION *session,char *username,char *password){
+int ssh_userauth_password(SSH_SESSION *session, const char *username, const char *password){
     STRING *user;
     STRING *service;
     STRING *method;
@@ -556,7 +579,7 @@ static void kbdint_clean(struct ssh_kbdint *kbd){
 /* this function sends the first packet as explained in section 3.1
  * of the draft */
 static int kbdauth_init(SSH_SESSION *session,
-        char *user, char *submethods){
+        const char *user, const char *submethods){
     STRING *user_s=string_from_char(user);
     STRING *submethods_s=(submethods ? string_from_char(submethods): string_from_char(""));
     STRING *service=string_from_char("ssh-connection");
@@ -684,7 +707,7 @@ static int kbdauth_send(SSH_SESSION *session) {
 
 
 /* the heart of the whole keyboard interactive login */
-int ssh_userauth_kbdint(SSH_SESSION *session,char *user,char *submethods){
+int ssh_userauth_kbdint(SSH_SESSION *session, const char *user, const char *submethods){
     int err;
     if(session->version==1)
         return SSH_AUTH_DENIED; // no keyb-interactive for ssh1
@@ -779,7 +802,7 @@ char *ssh_userauth_kbdint_getinstruction(SSH_SESSION *session){
  * \returns pointer to the prompt. Do not free it
  */
 
-char *ssh_userauth_kbdint_getprompt(SSH_SESSION *session, int i, 
+char *ssh_userauth_kbdint_getprompt(SSH_SESSION *session, int i,
         char *echo){
     if(i > session->kbdint->nprompts || i<0)
         return NULL;
@@ -796,7 +819,7 @@ char *ssh_userauth_kbdint_getprompt(SSH_SESSION *session, int i,
  * \param answer answer to give to server
  */
 
-void ssh_userauth_kbdint_setanswer(SSH_SESSION *session, unsigned int i, char *answer){
+void ssh_userauth_kbdint_setanswer(SSH_SESSION *session, unsigned int i, const char *answer){
     if (i>session->kbdint->nprompts)
         return;
     if(!session->kbdint->answers){

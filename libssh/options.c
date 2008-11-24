@@ -166,7 +166,7 @@ void ssh_options_set_host(SSH_OPTIONS *opt, const char *hostname){
  * \param opt options structure
  * \param username user name to authenticate
  */
-void ssh_options_set_username(SSH_OPTIONS *opt, char *username){
+void ssh_options_set_username(SSH_OPTIONS *opt, const char *username){
     if(opt->username)
         free(opt->username);
     opt->username=strdup(username);
@@ -193,7 +193,7 @@ void ssh_options_set_fd(SSH_OPTIONS *opt, socket_t fd){
  * \param bindaddr bind address in form of hostname or ip address
  * \param port port number to bind
  */
-void ssh_options_set_bind(SSH_OPTIONS *opt, char *bindaddr,int port){
+void ssh_options_set_bind(SSH_OPTIONS *opt, const char *bindaddr, int port){
     opt->bindaddr=strdup(bindaddr);
     opt->bindport=port;
 }
@@ -206,7 +206,7 @@ void ssh_options_set_bind(SSH_OPTIONS *opt, char *bindaddr,int port){
  * the user home directory
  * \see ssh_options_set_user_home_dir()
  */
-void ssh_options_set_ssh_dir(SSH_OPTIONS *opt, char *dir){
+void ssh_options_set_ssh_dir(SSH_OPTIONS *opt, const char *dir){
     char buffer[1024];
     snprintf(buffer,1024,dir,ssh_get_user_home_dir());
     opt->ssh_dir=strdup(buffer);
@@ -219,7 +219,7 @@ void ssh_options_set_ssh_dir(SSH_OPTIONS *opt, char *dir){
  * with the user home directory
  * \see ssh_options_set_user_home_dir()
  */
-void ssh_options_set_known_hosts_file(SSH_OPTIONS *opt, char *dir){
+void ssh_options_set_known_hosts_file(SSH_OPTIONS *opt, const char *dir){
     char buffer[1024];
     snprintf(buffer,1024,dir,ssh_get_user_home_dir());
     opt->known_hosts_file=strdup(buffer);
@@ -232,7 +232,7 @@ void ssh_options_set_known_hosts_file(SSH_OPTIONS *opt, char *dir){
  * with the user home directory
  * \see ssh_options_set_user_home_dir()
  */
-void ssh_options_set_identity(SSH_OPTIONS *opt, char *identity){
+void ssh_options_set_identity(SSH_OPTIONS *opt, const char *identity){
     char buffer[1024];
     snprintf(buffer,1024,identity,ssh_get_user_home_dir());
     opt->identity=strdup(buffer);
@@ -241,13 +241,13 @@ void ssh_options_set_identity(SSH_OPTIONS *opt, char *identity){
 /** \warning I don't remember what these functions are supposed
  * to set
  */
-void ssh_options_set_dsa_server_key(SSH_OPTIONS *opt, char *dsakey){
+void ssh_options_set_dsa_server_key(SSH_OPTIONS *opt, const char *dsakey){
     opt->dsakey=strdup(dsakey);
 }
 /** \warning I don't remember what these functions are supposed
  * to set
  */
-void ssh_options_set_rsa_server_key(SSH_OPTIONS *opt, char *rsakey){
+void ssh_options_set_rsa_server_key(SSH_OPTIONS *opt, const char *rsakey){
     opt->rsakey=strdup(rsakey);
 }
 
@@ -255,7 +255,7 @@ void ssh_options_set_rsa_server_key(SSH_OPTIONS *opt, char *rsakey){
  * \param opt options structure
  * \param banner a text banner to be shown
  */
-void ssh_options_set_banner(SSH_OPTIONS *opt, char *banner){
+void ssh_options_set_banner(SSH_OPTIONS *opt, const char *banner){
     if(opt->banner)
         free(opt->banner);
     opt->banner=strdup(banner);
@@ -277,7 +277,7 @@ void ssh_options_set_banner(SSH_OPTIONS *opt, char *banner){
  * \param list list of algorithms to be used, in order of preference and separated by commas
  * \return 0 on success, -1 on error (most likely an algorithm is not available)
  */
-int ssh_options_set_wanted_algos(SSH_OPTIONS *opt,int algo, char *list){
+int ssh_options_set_wanted_algos(SSH_OPTIONS *opt, int algo, const char *list){
     if(algo > SSH_LANG_S_C || algo < 0){
         ssh_set_error(opt,SSH_REQUEST_DENIED,"algo %d out of range",algo);
         return -1;

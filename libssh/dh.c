@@ -129,7 +129,7 @@ void ssh_print_bignum(char *which,bignum num){
     free(hex);	
 }
 
-void ssh_print_hexa(char *descr,unsigned char *what, int len){
+void ssh_print_hexa(char *descr, const unsigned char *what, int len){
     int i;
     printf("%s : ",descr);
     if(len>16)

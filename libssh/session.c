@@ -43,6 +43,7 @@ SSH_SESSION *ssh_new() {
     session->maxchannel=FIRST_CHANNEL;
     session->socket=ssh_socket_new(session);
     session->alive=0;
+    session->auth_methods=0;
     session->blocking=1;
     session->log_indent=0;
     session->out_buffer=buffer_new();

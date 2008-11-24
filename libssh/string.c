@@ -39,7 +39,7 @@ STRING *string_new(unsigned int size){
     return str;
 }
 
-void string_fill(STRING *str,void *data,int len){
+void string_fill(STRING *str, const void *data,int len){
     memcpy(str->string,data,len);
 }
 
@@ -49,7 +49,7 @@ void string_fill(STRING *str,void *data,int len){
  * \return the newly allocated string.
  * \warning The nul byte is not copied nor counted in the ouput string.
  */
-STRING *string_from_char(char *what){
+STRING *string_from_char(const char *what){
 	STRING *ptr;
 	int len=strlen(what);
 	ptr=malloc(4 + len);
