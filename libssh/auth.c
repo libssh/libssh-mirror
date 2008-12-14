@@ -109,7 +109,7 @@ static int wait_auth_status(SSH_SESSION *session,int kbdint){
                     cont=0;
                     break;
                 }
-                /* continue through success */ 
+                /* continue through success */
             case SSH2_MSG_USERAUTH_SUCCESS:
                 err=SSH_AUTH_SUCCESS;
                 cont=0;
@@ -141,6 +141,12 @@ int ssh_auth_list(SSH_SESSION *session) {
         return -1;
     }
     return session->auth_methods;
+}
+
+int ssh_userauth_list(SSH_SESSION *session, const char *username){
+	if(session->auth_methods==0)
+		ssh_userauth_none(session,username);
+	return ssh_auth_list(session);
 }
 
 /* use the "none" authentication question */
@@ -302,8 +308,8 @@ int ssh_userauth_pubkey(SSH_SESSION *session, const char *username, STRING *publ
     service=string_from_char("ssh-connection");
     method=string_from_char("publickey");
     algo=string_from_char(ssh_type_to_char(privatekey->type));
-    
-    
+
+
     /* we said previously the public key was accepted */
     buffer_add_u8(session->out_buffer,SSH2_MSG_USERAUTH_REQUEST);
     buffer_add_ssh_string(session->out_buffer,user);
@@ -542,7 +548,7 @@ static void kbdint_free(struct ssh_kbdint *kbd){
     }
     free(kbd);
 }
-    
+
 static void kbdint_clean(struct ssh_kbdint *kbd){
     int i,n=kbd->nprompts;
     if(kbd->name){
@@ -759,7 +765,7 @@ int ssh_userauth_kbdint(SSH_SESSION *session, const char *user, const char *subm
     return err;
 }
 
-/** You have called ssh_userauth_kbdint() and got SSH_AUTH_INFO. this 
+/** You have called ssh_userauth_kbdint() and got SSH_AUTH_INFO. this
  * function returns the questions from the server
  * \brief get the number of prompts (questions) the server has given
  * \param session ssh session
@@ -770,7 +776,7 @@ int ssh_userauth_kbdint_getnprompts(SSH_SESSION *session){
     return session->kbdint->nprompts;
 }
 
-/** You have called ssh_userauth_kbdint() and got SSH_AUTH_INFO. this 
+/** You have called ssh_userauth_kbdint() and got SSH_AUTH_INFO. this
  * function returns the questions from the server
  * \brief get the "name" of the message block
  * \param session ssh session
@@ -781,7 +787,7 @@ char *ssh_userauth_kbdint_getname(SSH_SESSION *session){
     return session->kbdint->name;
 }
 
-/** You have called ssh_userauth_kbdint() and got SSH_AUTH_INFO. this 
+/** You have called ssh_userauth_kbdint() and got SSH_AUTH_INFO. this
  * function returns the questions from the server
  * \brief get the "instruction" of the message block
  * \param session ssh session
@@ -792,7 +798,7 @@ char *ssh_userauth_kbdint_getinstruction(SSH_SESSION *session){
     return session->kbdint->instruction;
 }
 
-/** You have called ssh_userauth_kbdint() and got SSH_AUTH_INFO. this 
+/** You have called ssh_userauth_kbdint() and got SSH_AUTH_INFO. this
  * function returns the questions from the server
  * \brief get a prompt from a message block
  * \param session ssh session
@@ -811,7 +817,7 @@ char *ssh_userauth_kbdint_getprompt(SSH_SESSION *session, int i,
     return session->kbdint->prompts[i];
 }
 
-/** You have called ssh_userauth_kbdint() and got SSH_AUTH_INFO. this 
+/** You have called ssh_userauth_kbdint() and got SSH_AUTH_INFO. this
  * function returns the questions from the server
  * \brief set the answer for a question from a message block.
  * \param session ssh session

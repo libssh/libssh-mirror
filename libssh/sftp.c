@@ -133,7 +133,6 @@ int sftp_server_init(SFTP_SESSION *sftp){
 void sftp_free(SFTP_SESSION *sftp){
     struct request_queue *ptr;
     channel_send_eof(sftp->channel);
-    channel_free(sftp->channel);
     ptr=sftp->queue;
     while(ptr){
         struct request_queue *old;
@@ -142,6 +141,7 @@ void sftp_free(SFTP_SESSION *sftp){
         free(ptr);
         ptr=old;
     }
+    channel_free(sftp->channel);
     memset(sftp,0,sizeof(*sftp));
     free(sftp);
 }
@@ -1253,6 +1253,9 @@ void sftp_seek(SFTP_FILE *file, int new_offset){
     file->offset=new_offset;
 }
 
+void sftp_seek64(SFTP_FILE *file, u64 new_offset){
+	file->offset=new_offset;
+}
 unsigned long sftp_tell(SFTP_FILE *file){
     return file->offset;
 }

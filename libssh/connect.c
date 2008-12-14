@@ -29,7 +29,7 @@ MA 02111-1307, USA. */
 #define _WIN32_WINNT 0x0501 //getaddrinfo, freeaddrinfo, getnameinfo
 #include <winsock2.h>
 #include <ws2tcpip.h>
-//#include "wspiapi.h"
+#include "wspiapi.h" //workaround for w2k systems
 #else
 #include <netdb.h>
 #include <sys/socket.h>

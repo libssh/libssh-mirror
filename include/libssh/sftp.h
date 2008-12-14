@@ -152,6 +152,7 @@ u32 sftp_async_read_begin(SFTP_FILE *file, int len);
 int sftp_async_read(SFTP_FILE *file, void *data, int len, u32 id);
 int sftp_write(SFTP_FILE *file, const void *source, int len);
 void sftp_seek(SFTP_FILE *file, int new_offset);
+void sftp_seek64(SFTP_FILE *file, u64 new_offset);
 unsigned long sftp_tell(SFTP_FILE *file);
 void sftp_rewind(SFTP_FILE *file);
 int sftp_rm(SFTP_SESSION *sftp, char *file);
