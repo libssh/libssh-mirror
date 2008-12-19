@@ -20,6 +20,8 @@ You should have received a copy of the GNU Lesser General Public License
 along with the SSH Library; see the file COPYING.  If not, write to
 the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA. */
+
+#include <limits.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
@@ -37,52 +39,18 @@ MA 02111-1307, USA. */
 #include "libssh/libssh.h"
 
 #ifndef _WIN32
-/* if the program was executed suid root, don't trust the user ! */
-static int is_trusted(){
-    if(geteuid()!=getuid())
-        return 0;
-    return 1;
-}
-
-static char *get_homedir_from_uid(int uid){
-    struct passwd *pwd;
-    char *home;
-    while((pwd=getpwent())){
-        if(pwd->pw_uid == uid){
-            home=strdup(pwd->pw_dir);
-            endpwent();
-            return home;
-        }
-    }
-    endpwent();
-    return NULL;
-}
-
-static char *get_homedir_from_login(char *user){
-    struct passwd *pwd;
-    char *home;
-    while((pwd=getpwent())){
-        if(!strcmp(pwd->pw_name,user)){
-            home=strdup(pwd->pw_dir);
-            endpwent();
-            return home;
-        }
-    }
-    endpwent();
-    return NULL;
-}
-        
 char *ssh_get_user_home_dir(){
-    char *home;
-    char *user;
-    int trusted=is_trusted();
-    if(trusted){
-        if((home=getenv("HOME")))
-            return strdup(home);
-        if((user=getenv("USER")))
-            return get_homedir_from_login(user);
+    static char szPath[PATH_MAX] = {0};
+    struct passwd *pwd = NULL;
+
+    pwd = getpwuid(getuid());
+    if (pwd == NULL) {
+      return NULL;
     }
-    return get_homedir_from_uid(getuid());
+
+    snprintf(szPath, PATH_MAX - 1, "%s", pwd->pw_dir);
+
+    return szPath;
 }
 
 #else /* _WIN32 */

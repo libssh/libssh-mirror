@@ -294,32 +294,28 @@ int ssh_options_set_wanted_algos(SSH_OPTIONS *opt, int algo, const char *list){
 }
 
 #ifndef _WIN32
-static char *get_username_from_uid(SSH_OPTIONS *opt, int uid){
-    struct passwd *pwd;
-    char *user;
-    while((pwd=getpwent())){
-        if(pwd->pw_uid == uid){
-            user=strdup(pwd->pw_name);
-            endpwent();
-            return user;
-        }
+static char *get_username_from_uid(SSH_OPTIONS *opt, uid_t uid){
+    struct passwd *pwd = NULL;
+
+    pwd = getpwuid(uid);
+
+    if (pwd == NULL) {
+      ssh_set_error(opt,SSH_FATAL,"uid %d doesn't exist !",uid);
+      return NULL;
     }
-    endpwent();
-    ssh_set_error(opt,SSH_FATAL,"uid %d doesn't exist !",uid);
-    return NULL;
+
+    return strdup(pwd->pw_name);
 }
 #endif
 
 /* this function must be called when no specific username has been asked. it has to guess it */
 int ssh_options_default_username(SSH_OPTIONS *opt){
-    char *user;
-    if(opt->username)
-        return 0;
-    user=getenv("USER");
-    if(user){
-        opt->username=strdup(user);
+    char *user = NULL;
+
+    if (opt->username) {
         return 0;
     }
+
 #ifndef _WIN32
     user=get_username_from_uid(opt,getuid());
     if(user){
