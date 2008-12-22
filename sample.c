@@ -290,20 +290,20 @@ void do_sftp(SSH_SESSION *session){
         ssh_say(0,"error : %s\n",ssh_get_error(session));
         return;
     }
-    if(sftp_dir_close(dir)){
+    if(sftp_closedir(dir)){
         ssh_say(0,"Error : %s\n",ssh_get_error(session));
         return;
     }
     /* this will open a file and copy it into your /home directory */
     /* the small buffer size was intended to stress the library. of course, you can use a buffer till 20kbytes without problem */
 
-    fichier=sftp_open(sftp,"/usr/bin/ssh",O_RDONLY,NULL);
+    fichier=sftp_open(sftp,"/usr/bin/ssh",O_RDONLY, 0);
     if(!fichier){
         ssh_say(0,"Error opening /usr/bin/ssh : %s\n",ssh_get_error(session));
         return;
     }
     /* open a file for writing... */
-    to=sftp_open(sftp,"ssh-copy",O_WRONLY | O_CREAT,NULL);
+    to=sftp_open(sftp,"ssh-copy",O_WRONLY | O_CREAT, 0);
     if(!to){
         ssh_say(0,"Error opening ssh-copy for writing : %s\n",ssh_get_error(session));
         return;
@@ -316,11 +316,11 @@ void do_sftp(SSH_SESSION *session){
     }
     printf("finished\n");
     if(len<0)
-        ssh_say(0,"Error reading file : %s\n",ssh_get_error(session));     
-    sftp_file_close(fichier);
-    sftp_file_close(to);
-    printf("fichiers ferm�\n");
-    to=sftp_open(sftp,"/tmp/grosfichier",O_WRONLY|O_CREAT,NULL);
+        ssh_say(0,"Error reading file : %s\n",ssh_get_error(session));
+    sftp_close(fichier);
+    sftp_close(to);
+    printf("fichiers ferm\n");
+    to=sftp_open(sftp,"/tmp/grosfichier",O_WRONLY|O_CREAT, 0644);
     for(i=0;i<1000;++i){
         len=sftp_write(to,data,8000);
         printf("wrote %d bytes\n",len);
@@ -328,7 +328,7 @@ void do_sftp(SSH_SESSION *session){
             printf("chunk %d : %d (%s)\n",i,len,ssh_get_error(session));
         }
     }
-    sftp_file_close(to);
+    sftp_close(to);
     /* close the sftp session */
     sftp_free(sftp);
     printf("session sftp termin�\n");

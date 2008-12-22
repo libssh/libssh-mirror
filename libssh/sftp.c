@@ -896,7 +896,7 @@ static int sftp_handle_close(SFTP_SESSION *sftp, STRING *handle){
  * \returns SSH_ERROR An error happened
  * \see sftp_file_open()
  */
-int sftp_file_close(SFTP_FILE *file){
+int sftp_close(SFTP_FILE *file){
     int err=SSH_NO_ERROR;
     if(file->name)
         free(file->name);
@@ -904,6 +904,7 @@ int sftp_file_close(SFTP_FILE *file){
         err=sftp_handle_close(file->sftp,file->handle);
         free(file->handle);
     }
+    /* FIXME: check server response and implement errno */
     free(file);
     return err;
 }
@@ -914,7 +915,7 @@ int sftp_file_close(SFTP_FILE *file){
  * \returns SSH_ERROR An error happened
  * \see sftp_opendir()
  */
-int sftp_dir_close(SFTP_DIR *dir){
+int sftp_closedir(SFTP_DIR *dir){
     int err=SSH_NO_ERROR;
     if(dir->name)
         free(dir->name);
@@ -922,6 +923,7 @@ int sftp_dir_close(SFTP_DIR *dir){
         err=sftp_handle_close(dir->sftp,dir->handle);
         free(dir->handle);
     }
+    /* FIXME: check server response and implement errno */
     if(dir->buffer)
         buffer_free(dir->buffer);
     free(dir);
@@ -931,14 +933,20 @@ int sftp_dir_close(SFTP_DIR *dir){
 /** \brief Open a remote file
  * \todo please complete doc
  */
-SFTP_FILE *sftp_open(SFTP_SESSION *sftp, const char *file, int access, SFTP_ATTRIBUTES *attr){
+SFTP_FILE *sftp_open(SFTP_SESSION *sftp, const char *file, int access, mode_t mode){
     SFTP_FILE *handle;
     SFTP_MESSAGE *msg=NULL;
     STATUS_MESSAGE *status;
+    SFTP_ATTRIBUTES attr;
     u32 flags=0;
     u32 id=sftp_get_new_id(sftp);
     BUFFER *buffer=buffer_new();
     STRING *filename;
+
+    ZERO_STRUCT(attr);
+    attr.permissions = mode;
+    attr.flags = SSH_FILEXFER_ATTR_PERMISSIONS;
+
     if(access == O_RDONLY)
         flags|=SSH_FXF_READ; // if any of the other flag is set, READ should not be set initialy
     if(access & O_WRONLY)
@@ -956,7 +964,7 @@ SFTP_FILE *sftp_open(SFTP_SESSION *sftp, const char *file, int access, SFTP_ATTR
     buffer_add_ssh_string(buffer,filename);
     free(filename);
     buffer_add_u32(buffer,htonl(flags));
-    buffer_add_attributes(buffer,attr);
+    buffer_add_attributes(buffer,&attr);
     sftp_packet_write(sftp,SSH_FXP_OPEN,buffer);
     buffer_free(buffer);
     while(!msg){
@@ -993,7 +1001,7 @@ void sftp_file_set_blocking(SFTP_FILE *handle){
     handle->nonblocking=0;
 }
 
-int sftp_read(SFTP_FILE *handle, void *data, int len){
+ssize_t sftp_read(SFTP_FILE *handle, void *buf, size_t count){
     SFTP_MESSAGE *msg=NULL;
     STATUS_MESSAGE *status;
     SFTP_SESSION *sftp=handle->sftp;
@@ -1008,7 +1016,7 @@ int sftp_read(SFTP_FILE *handle, void *data, int len){
     buffer_add_u32(buffer,id);
     buffer_add_ssh_string(buffer,handle->handle);
     buffer_add_u64(buffer,htonll(handle->offset));
-    buffer_add_u32(buffer,htonl(len));
+    buffer_add_u32(buffer,htonl(count));
     sftp_packet_write(handle->sftp,SSH_FXP_READ,buffer);
     buffer_free(buffer);
     while(!msg){
@@ -1048,17 +1056,17 @@ int sftp_read(SFTP_FILE *handle, void *data, int len){
                 ssh_set_error(sftp->session,SSH_FATAL,"Received invalid DATA packet from sftp server");
                 return -1;
             }
-            if(string_len(datastring)>len){
+            if(string_len(datastring) > count){
                 ssh_set_error(sftp->session,SSH_FATAL,"Received a too big DATA packet from sftp server : %d and asked for %d",
-                    string_len(datastring),len);
+                    string_len(datastring), count);
                 free(datastring);
                 return -1;
             }
-            len=string_len(datastring);
-            handle->offset+=len;
-            memcpy(data,datastring->string,len);
+            count = string_len(datastring);
+            handle->offset+= count;
+            memcpy(buf, datastring->string, count);
             free(datastring);
-            return len;
+            return count;
         default:
             ssh_set_error(sftp->session,SSH_FATAL,"Received message %d during read!",msg->packet_type);
             sftp_message_free(msg);
@@ -1195,7 +1203,7 @@ int sftp_async_read(SFTP_FILE *file, void *data, int size, u32 id){
 	sftp_leave_function();
 }
 
-int sftp_write(SFTP_FILE *file, const void *data, int len){
+ssize_t sftp_write(SFTP_FILE *file, const void *buf, size_t count){
     SFTP_MESSAGE *msg=NULL;
     STATUS_MESSAGE *status;
     STRING *datastring;
@@ -1208,8 +1216,8 @@ int sftp_write(SFTP_FILE *file, const void *data, int len){
     buffer_add_u32(buffer,id);
     buffer_add_ssh_string(buffer,file->handle);
     buffer_add_u64(buffer,htonll(file->offset));
-    datastring=string_new(len);
-    string_fill(datastring,data,len);
+    datastring=string_new(count);
+    string_fill(datastring, buf, count);
     buffer_add_ssh_string(buffer,datastring);
     free(datastring);
     if(sftp_packet_write(file->sftp,SSH_FXP_WRITE,buffer) != buffer_get_len(buffer)){
@@ -1231,14 +1239,14 @@ int sftp_write(SFTP_FILE *file, const void *data, int len){
             sftp_set_errno(sftp, status->status);
             switch (status->status) {
               case SSH_FX_OK:
-                file->offset+=len;
+                file->offset += count;
                 status_msg_free(status);
-                return err ? err : len;
+                return err ? err : count;
               default:
                 break;
             }
             ssh_set_error(sftp->session,SSH_REQUEST_DENIED,"sftp server : %s",status->errormsg);
-            file->offset+=len;
+            file->offset += count;
             status_msg_free(status);
             return -1;
         default:
@@ -1264,8 +1272,12 @@ void sftp_rewind(SFTP_FILE *file){
     file->offset=0;
 }
 
+int sftp_rm(SFTP_SESSION *sftp, const char *file) {
+  return sftp_unlink(sftp, file);
+}
+
 /* code written by Nick */
-int sftp_rm(SFTP_SESSION *sftp, char *file) {
+int sftp_unlink(SFTP_SESSION *sftp, const char *file) {
     u32 id = sftp_get_new_id(sftp);
     BUFFER *buffer = buffer_new();
     STRING *filename = string_from_char(file);
@@ -1357,18 +1369,23 @@ int sftp_rmdir(SFTP_SESSION *sftp, const char *directory) {
 }
 
 /* Code written by Nick */
-int sftp_mkdir(SFTP_SESSION *sftp, const char *directory, SFTP_ATTRIBUTES *attr) {
+int sftp_mkdir(SFTP_SESSION *sftp, const char *directory, mode_t mode) {
     u32 id = sftp_get_new_id(sftp);
     BUFFER *buffer = buffer_new();
     STRING *path = string_from_char(directory);
     SFTP_MESSAGE *msg = NULL;
     STATUS_MESSAGE *status = NULL;
+    SFTP_ATTRIBUTES attr;
     SFTP_ATTRIBUTES *errno_attr = NULL;
+
+    ZERO_STRUCT(attr);
+    attr.permissions = mode;
+    attr.flags = SSH_FILEXFER_ATTR_PERMISSIONS;
 
     buffer_add_u32(buffer, id);
     buffer_add_ssh_string(buffer, path);
     free(path);
-    buffer_add_attributes(buffer, attr);
+    buffer_add_attributes(buffer, &attr);
     sftp_packet_write(sftp, SSH_FXP_MKDIR, buffer);
     buffer_free(buffer);
     while (!msg) {
@@ -1428,6 +1445,8 @@ int sftp_rename(SFTP_SESSION *sftp, const char *original, const char *newname) {
     free(oldpath);
     buffer_add_ssh_string(buffer, newpath);
     free(newpath);
+    /* POSIX rename atomically replaces newpath, we should do the same */
+    buffer_add_u32(buffer, SSH_FXF_RENAME_OVERWRITE);
     sftp_packet_write(sftp, SSH_FXP_RENAME, buffer);
     buffer_free(buffer);
     while (!msg) {
@@ -1502,6 +1521,45 @@ int sftp_setstat(SFTP_SESSION *sftp, const char *file, SFTP_ATTRIBUTES *attr) {
         sftp_message_free(msg);
     }
     return -1;
+}
+
+int sftp_chown(SFTP_SESSION *sftp, const char *file, uid_t owner, gid_t group) {
+  SFTP_ATTRIBUTES attr;
+
+  ZERO_STRUCT(attr);
+
+  attr.uid = owner;
+  attr.gid = group;
+  attr.flags = SSH_FILEXFER_ATTR_OWNERGROUP;
+
+  return sftp_setstat(sftp, file, &attr);
+}
+
+int sftp_chmod(SFTP_SESSION *sftp, const char *file, mode_t mode) {
+  SFTP_ATTRIBUTES attr;
+
+  ZERO_STRUCT(attr);
+  attr.permissions = mode;
+  attr.flags = SSH_FILEXFER_ATTR_PERMISSIONS;
+
+  return sftp_setstat(sftp, file, &attr);
+}
+
+int sftp_utimes(SFTP_SESSION *sftp, const char *file, const struct timeval *times) {
+  SFTP_ATTRIBUTES attr;
+
+  ZERO_STRUCT(attr);
+
+  attr.atime = times[0].tv_sec;
+  attr.atime_nseconds = times[0].tv_usec;
+
+  attr.mtime = times[1].tv_sec;
+  attr.mtime_nseconds = times[1].tv_usec;
+
+  attr.flags |= SSH_FILEXFER_ATTR_ACCESSTIME | SSH_FILEXFER_ATTR_MODIFYTIME |
+    SSH_FILEXFER_ATTR_SUBSECOND_TIMES;
+
+  return sftp_setstat(sftp, file, &attr);
 }
 
 /* another code written by Nick */

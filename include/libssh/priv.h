@@ -636,6 +636,12 @@ int ssh_handle_packets(SSH_SESSION *session);
 #define enter_function() _enter_function(session)
 #define leave_function() _leave_function(session)
 
+/** Zero a structure */
+#define ZERO_STRUCT(x) memset((char *)&(x), 0, sizeof(x))
+
+/** Zero a structure given a pointer to the structure */
+#define ZERO_STRUCTP(x) do { if ((x) != NULL) memset((char *)(x), 0, sizeof(*(x))); } while(0)
+
 #ifdef HAVE_LIBGCRYPT
 /* gcrypt_missing.c */
 int my_gcry_dec2bn(bignum *bn, const char *data);

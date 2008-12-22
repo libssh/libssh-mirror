@@ -26,6 +26,12 @@ MA 02111-1307, USA. */
 extern "C" {
 #endif
 
+#ifdef __GNUC__
+#define SFTP_DEPRECATED __attribute__ ((deprecated))
+#else
+#define SFTP_DEPRECATED
+#endif
+
 typedef struct sftp_session_struct {
     SSH_SESSION *session;
     CHANNEL *channel;
@@ -143,23 +149,27 @@ SFTP_ATTRIBUTES *sftp_lstat(SFTP_SESSION *session, const char *path);
 /* sftp_lstat stats a file but doesn't follow symlinks */
 SFTP_ATTRIBUTES *sftp_fstat(SFTP_FILE *file);
 void sftp_attributes_free(SFTP_ATTRIBUTES *file);
-int sftp_dir_close(SFTP_DIR *dir);
-int sftp_file_close(SFTP_FILE *file);
+int sftp_closedir(SFTP_DIR *dir);
+int sftp_close(SFTP_FILE *file);
 /* access are the sames than the ones from ansi fopen() */
-SFTP_FILE *sftp_open(SFTP_SESSION *session, const char *file, int access, SFTP_ATTRIBUTES *attr);
-int sftp_read(SFTP_FILE *file, void *dest, int len);
+SFTP_FILE *sftp_open(SFTP_SESSION *session, const char *file, int access, mode_t mode);
+ssize_t sftp_read(SFTP_FILE *file, void *buf, size_t count);
 u32 sftp_async_read_begin(SFTP_FILE *file, int len);
 int sftp_async_read(SFTP_FILE *file, void *data, int len, u32 id);
-int sftp_write(SFTP_FILE *file, const void *source, int len);
+ssize_t sftp_write(SFTP_FILE *file, const void *buf, size_t count);
 void sftp_seek(SFTP_FILE *file, int new_offset);
 void sftp_seek64(SFTP_FILE *file, u64 new_offset);
 unsigned long sftp_tell(SFTP_FILE *file);
 void sftp_rewind(SFTP_FILE *file);
-int sftp_rm(SFTP_SESSION *sftp, char *file);
+int sftp_rm(SFTP_SESSION *sftp, const char *file) SFTP_DEPRECATED;
+int sftp_unlink(SFTP_SESSION *sftp, const char *file);
 int sftp_rmdir(SFTP_SESSION *sftp, const char *directory);
-int sftp_mkdir(SFTP_SESSION *sftp, const char *directory, SFTP_ATTRIBUTES *attr);
+int sftp_mkdir(SFTP_SESSION *sftp, const char *directory, mode_t mode);
 int sftp_rename(SFTP_SESSION *sftp, const char *original, const  char *newname);
 int sftp_setstat(SFTP_SESSION *sftp, const char *file, SFTP_ATTRIBUTES *attr);
+int sftp_chown(SFTP_SESSION *sftp, const char *file, uid_t owner, gid_t group);
+int sftp_chmod(SFTP_SESSION *sftp, const char *file, mode_t mode);
+int sftp_utimes(SFTP_SESSION *sftp, const char *file, const struct timeval *times);
 char *sftp_canonicalize_path(SFTP_SESSION *sftp, const char *path);
 
 #ifndef NO_SERVER
@@ -270,6 +280,11 @@ void sftp_handle_remove(SFTP_SESSION *sftp, void *handle);
 #define SSH_FXF_EXCL 0x20
 #define SSH_FXF_TEXT 0x40
 
+/* rename flags */
+#define SSH_FXF_RENAME_OVERWRITE  0x00000001
+#define SSH_FXF_RENAME_ATOMIC     0x00000002
+#define SSH_FXF_RENAME_NATIVE     0x00000004
+
 #define SFTP_OPEN SSH_FXP_OPEN
 #define SFTP_CLOSE SSH_FXP_CLOSE
 #define SFTP_READ SSH_FXP_READ
@@ -288,6 +303,7 @@ void sftp_handle_remove(SFTP_SESSION *sftp, void *handle);
 #define SFTP_RENAME SSH_FXP_RENAME
 #define SFTP_READLINK SSH_FXP_READLINK
 #define SFTP_SYMLINK SSH_FXP_SYMLINK
+
 
 
 #ifdef __cplusplus
