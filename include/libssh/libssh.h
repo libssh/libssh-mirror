@@ -40,7 +40,7 @@ typedef unsigned long long uint64_t;
 #endif
 
 
-#define LIBSSH_VERSION "libssh-0.2.1-svn"
+#define LIBSSH_VERSION "libssh-0.3-svn"
 
 #ifdef __cplusplus
 extern "C" {

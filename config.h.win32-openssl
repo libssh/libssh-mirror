@@ -156,7 +156,7 @@
 #define PACKAGE_TARNAME "libssh"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "0.2.1-win-svn"
+#define PACKAGE_VERSION "0.3-win-svn"
 
 /* Define as the return type of signal handlers (`int' or `void'). */
 #define RETSIGTYPE void
@@ -177,7 +177,7 @@
 #define TIME_WITH_SYS_TIME 1
 
 /* Version number of package */
-#define VERSION "0.2.1-win-svn"
+#define VERSION "0.3-win-svn"
 
 /* Define to 1 if your processor stores words with the most significant byte
    first (like Motorola and SPARC, unlike Intel and VAX). */
