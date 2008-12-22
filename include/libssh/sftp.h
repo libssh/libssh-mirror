@@ -19,6 +19,23 @@ along with the SSH Library; see the file COPYING.  If not, write to
 the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA. */
 
+/**
+ * @file sftp.h
+ *
+ * @brief SFTP handling functions
+ *
+ * SFTP commands are channeled by the ssh sftp subsystem. Every packet is
+ * sent/read using a SFTP_PACKET type structure. Related to these packets,
+ * most of the server answers are messages having an ID and a message
+ * specific part. It is described by SFTP_MESSAGE when reading a message,
+ * the sftp system puts it into the queue, so the process having asked for
+ * it can fetch it, while continuing to read for other messages (it is
+ * inspecified in which order messages may be sent back to the client
+ *
+ * @defgroup ssh_sftp SFTP functions
+ * @{
+ */
+
 #ifndef SFTP_H
 #define SFTP_H
 #include <libssh/libssh.h>
@@ -135,45 +152,467 @@ typedef struct sftp_attributes{
 
 #define LIBSFTP_VERSION 3
 
+/**
+ * @brief Start a new sftp session.
+ *
+ * @param session       The ssh session to use.
+ *
+ * @return              A new sftp session or NULL on error.
+ */
 SFTP_SESSION *sftp_new(SSH_SESSION *session);
+
+/**
+ * @brief Close and deallocate a sftp session.
+ *
+ * @param sftp          The sftp session handle to free.
+ */
 void sftp_free(SFTP_SESSION *sftp);
+
+/**
+ * @brief Initialize the sftp session with the server.
+ *
+ * @param sftp          The sftp session to initialize.
+ *
+ * @return              0 on success, < 0 on error with ssh error set.
+ */
 int sftp_init(SFTP_SESSION *sftp);
+
+/**
+ * @brief Get the last sftp error.
+ *
+ * Use this function to get the latest error set by a posix like sftp function.
+ *
+ * @param sftp          The sftp session where the error is saved.
+ *
+ * @return              The saved error (see server responses), < 0 if an error
+ *                      in the function occured.
+ */
 int sftp_get_error(SFTP_SESSION *sftp);
+
+/**
+ * @brief Open a directory used to obtain directory entries.
+ *
+ * @param session       The sftp session handle to open the directory.
+ * @param path          The path of the directory to open.
+ *
+ * @return              A sftp directory handle or NULL on error with ssh and
+ *                      sftp error set.
+ *
+ * @see                 sftp_readdir
+ * @see                 sftp_closedir
+ */
 SFTP_DIR *sftp_opendir(SFTP_SESSION *session, const char *path);
-/* reads one file and attribute from opened directory. fails at end */
+
+/**
+ * @brief Get a single file attributes structure of a directory.
+ *
+ * @param session      The sftp session handle to read the directory entry.
+ * @param dir          The opened sftp directory handle to read from.
+ *
+ * @return             A file attribute structure or NULL at the end of the
+ *                     directory.
+ *
+ * @see                sftp_opendir()
+ * @see                sftp_attribute_free()
+ * @see                sftp_closedir()
+ */
 SFTP_ATTRIBUTES *sftp_readdir(SFTP_SESSION *session, SFTP_DIR *dir);
-/* returns 1 if the directory was EOF */
+
+/**
+ * @brief Tell if the directory has reached EOF (End Of File).
+ *
+ * @param dir           The sftp directory handle.
+ *
+ * @return              1 if the directory is EOF, 0 if not.
+ *
+ * @see                 sftp_readdir()
+ */
 int sftp_dir_eof(SFTP_DIR *dir);
+
+/**
+ * @brief Get information about a file or directory.
+ *
+ * @param session       The sftp session handle.
+ * @param path          The path to the file or directory to obtain the
+ *                      information.
+ *
+ * @return              The sftp attributes structure of the file or directory,
+ *                      NULL on error with ssh and sftp error set.
+ */
 SFTP_ATTRIBUTES *sftp_stat(SFTP_SESSION *session, const char *path);
+
+/**
+ * @brief Get information about a file or directory.
+ *
+ * Identical to sftp_stat, but if the file or directory is a symbolic link,
+ * then the link itself is stated, not the file that it refers to.
+ *
+ * @param session       The sftp session handle.
+ * @param path          The path to the file or directory to obtain the
+ *                      information.
+ *
+ * @return              The sftp attributes structure of the file or directory,
+ *                      NULL on error with ssh and sftp error set.
+ */
 SFTP_ATTRIBUTES *sftp_lstat(SFTP_SESSION *session, const char *path);
-/* sftp_lstat stats a file but doesn't follow symlinks */
+
+/**
+ * @brief Get information about a file or directory from a file handle.
+ *
+ * @param file          The sftp file handle to get the stat information.
+ *
+ * @return              The sftp attributes structure of the file or directory,
+ *                      NULL on error with ssh and sftp error set.
+ */
 SFTP_ATTRIBUTES *sftp_fstat(SFTP_FILE *file);
+
+/**
+ * @brief Free a sftp attribute structure.
+ *
+ * @param file          The sftp attribute structure to free.
+ */
 void sftp_attributes_free(SFTP_ATTRIBUTES *file);
+
+/**
+ * @brief Close a directory handle opened by sftp_opendir().
+ *
+ * @param dir           The sftp directory handle to close.
+ *
+ * @return              Returns SSH_NO_ERROR or SSH_ERROR if an error occured.
+ */
 int sftp_closedir(SFTP_DIR *dir);
+
+/**
+ * @deprecated          Use sftp_closedir() instead.
+ */
+int sftp_dir_close(SFTP_DIR *dir) SFTP_DEPRECATED;
+
+/**
+ * @brief Close an open file handle.
+ *
+ * @param file          The open sftp file handle to close.
+ *
+ * @return              Returns SSH_NO_ERROR or SSH_ERROR if an error occured.
+ *
+ * @see                 sftp_open()
+ */
 int sftp_close(SFTP_FILE *file);
-/* access are the sames than the ones from ansi fopen() */
+
+/**
+ * @deprecated          Use sftp_close() instead.
+ */
+int sftp_file_close(SFTP_FILE *file) SFTP_DEPRECATED;
+
+/**
+ * @brief Open a file on the server.
+ *
+ * @param session       The sftp session handle.
+ *
+ * @param file          The file to be opened.
+ *
+ * @param access        Is one of O_RDONLY, O_WRONLY or O_RDWR which request
+ *                      opening  the  file  read-only,write-only or read/write.
+ *                      Acesss may also be bitwise-or'd with one or  more of
+ *                      the following:
+ *                      O_CREAT - If the file does not exist it will be
+ *                      created.
+ *                      O_EXCL - When  used with O_CREAT, if the file already
+ *                      exists it is an error and the open will fail.
+ *                      O_TRUNC - If the file already exists it will be
+ *                      truncated.
+ *
+ * @param mode          Mode specifies the permissions to use if a new file is
+ *                      created.  It  is  modified  by  the process's umask in
+ *                      the usual way: The permissions of the created file are
+ *                      (mode & ~umask)
+ *
+ * @return              A sftp file handle, NULL on error with ssh and sftp
+ *                      error set.
+ */
 SFTP_FILE *sftp_open(SFTP_SESSION *session, const char *file, int access, mode_t mode);
+
+/**
+ * @brief Read from a file using an opened sftp file handle.
+ *
+ * @param file          The opened sftp file handle to be read from.
+ *
+ * @param buf           Pointer to buffer to recieve read data.
+ *
+ * @param count         Size of the buffer in bytes.
+ *
+ * @return              Number of bytes written, < 0 on error with ssh and sftp
+ *                      error set.
+ */
 ssize_t sftp_read(SFTP_FILE *file, void *buf, size_t count);
+
+/**
+ * @brief Start an asynchronous read from a file using an opened sftp file handle.
+ *
+ * Its goal is to avoid the slowdowns related to the request/response pattern
+ * of a synchronous read. To do so, you must call 2 functions:
+ *
+ * sftp_async_read_begin() and sftp_async_read().
+ *
+ * The first step is to call sftp_async_read_begin(). This function returns a
+ * request identifier. The second step is to call sftp_async_read() using the
+ * returned identifier.
+ *
+ * @param file          The opened sftp file handle to be read from.
+ *
+ * @param len           Size to read in bytes.
+ *
+ * @return              A u32 identifier corresponding to the sent request.
+ *
+ * @warning             When calling this function, the internal offset is
+ *                      updated corresponding to the len parameter.
+ *
+ * @warning             A call to sftp_async_read_begin() sends a request to
+ *                      the server. When the server answers, libssh allocates
+ *                      memory to store it until sftp_async_read() is called.
+ *                      Not calling sftp_async_read() will lead to memory
+ *                      leaks.
+ *
+ * @see                 sftp_async_read()
+ * @see                 sftp_open()
+ */
 u32 sftp_async_read_begin(SFTP_FILE *file, int len);
+
+/**
+ * @brief Wait for an asynchronous read to complete and save the data.
+ *
+ * @param file          The opened sftp file handle to be read from.
+ *
+ * @param data          Pointer to buffer to recieve read data.
+ *
+ * @param len           Size of the buffer in bytes. It should be bigger or
+ *                      equal to the length parameter of the
+ *                      sftp_async_read_begin() call.
+ *
+ * @param id            The identifier returned by the sftp_async_read_begin()
+ *                      function.
+ *
+ * @return              Number of bytes read, 0 on EOF, SSH_ERROR if an error
+ *                      occured, SSH_AGAIN SSH_AGAIN if the file is opened in
+ *                      nonblocking mode and the request hasn't been executed
+ *                      yet.
+ *
+ * @warning             A call to this function with an invalid identifier
+ *                      will never return.
+ *
+ * @see sftp_async_read_begin()
+ */
 int sftp_async_read(SFTP_FILE *file, void *data, int len, u32 id);
+
+/**
+ * @brief Write to a file using an opened sftp file handle.
+ *
+ * @param file          Open sftp file handle to write to.
+ *
+ * @param buf           Pointer to buffer to write data.
+ *
+ * @param count         Size of buffer in bytes.
+ *
+ * @return              Number of bytes written, < 0 on error with ssh and sftp
+ *                      error set.
+ *
+ * @see                 sftp_open()
+ * @see                 sftp_read()
+ * @see                 sftp_close()
+ */
 ssize_t sftp_write(SFTP_FILE *file, const void *buf, size_t count);
+
+/**
+ * @brief Seek to a specific location in a file.
+ *
+ * @param file         Open sftp file handle to seek in.
+ *
+ * @param new_offset   Offset in bytes to seek.
+ */
 void sftp_seek(SFTP_FILE *file, int new_offset);
+
+/**
+ * @brief Seek to a specific location in a file. This is the
+ * 64bit version.
+ *
+ * @param file         Open sftp file handle to seek in.
+ *
+ * @param new_offset   Offset in bytes to seek.
+ */
 void sftp_seek64(SFTP_FILE *file, u64 new_offset);
+
+/**
+ * @brief Report current byte position in file.
+ *
+ * @param file          Open sftp file handle.
+ *
+ * @return              The offset of the current byte relative to the beginning
+ *                      of the file associated with the file descriptor. < 0 on
+ *                      error.
+ */
 unsigned long sftp_tell(SFTP_FILE *file);
+
+/**
+ * @brief Rewinds the position of the file pointer to the beginning of the
+ * file.
+ *
+ * @param file          Open sftp file handle.
+ */
 void sftp_rewind(SFTP_FILE *file);
+
+/**
+ * @deprecated          Use sftp_unlink() instead.
+ */
 int sftp_rm(SFTP_SESSION *sftp, const char *file) SFTP_DEPRECATED;
+
+/**
+ * @brief Unlink (delete) a file.
+ *
+ * @param sftp          The sftp session handle.
+ *
+ * @param file          The file to unlink/delete.
+ *
+ * @return              0 on success, < 0 on error with ssh and sftp error set.
+ */
 int sftp_unlink(SFTP_SESSION *sftp, const char *file);
+
+/**
+ * @brief Remove a directoy.
+ *
+ * @param sftp          The sftp session handle.
+ *
+ * @param directory     The directory to remove.
+ *
+ * @return              0 on success, < 0 on error with ssh and sftp error set.
+ */
 int sftp_rmdir(SFTP_SESSION *sftp, const char *directory);
+
+/**
+ * @brief Create a directory.
+ *
+ * @param sftp          The sftp session handle.
+ *
+ * @param directory     The directory to create.
+ *
+ * @param mode          Specifies the permissions to use. It is modified by the
+ *                      process's umask in the usual way:
+ *                      The permissions of the created file are (mode & ~umask)
+ *
+ * @return              0 on success, < 0 on error with ssh and sftp error set.
+ */
 int sftp_mkdir(SFTP_SESSION *sftp, const char *directory, mode_t mode);
+
+/**
+ * @brief Rename or move a file or directory.
+ *
+ * @param sftp          The sftp session handle.
+ *
+ * @param original      The original url (source url) of file or directory to
+ *                      be moved.
+ *
+ * @param newname       The new url (destination url) of the file or directory
+ *                      after the move.
+ *
+ * @return              0 on success, < 0 on error with ssh and sftp error set.
+ */
 int sftp_rename(SFTP_SESSION *sftp, const char *original, const  char *newname);
+
+/**
+ * @brief Set file attributes on a file, directory or symbolic link.
+ *
+ * @param sftp          The sftp session handle.
+ *
+ * @param file          The file which attributes should be changed.
+ *
+ * @param attr          The file attributes structure with the attributes set
+ *                      which should be changed.
+ *
+ * @return              0 on success, < 0 on error with ssh and sftp error set.
+ */
 int sftp_setstat(SFTP_SESSION *sftp, const char *file, SFTP_ATTRIBUTES *attr);
+
+/**
+ * @brief Change the file owner and group
+ *
+ * @param sftp          The sftp session handle.
+ *
+ * @param file          The file which owner and group should be changed.
+ *
+ * @param owner         The new owner which should be set.
+ *
+ * @param group         The new group which should be set.
+ *
+ * @return              0 on success, < 0 on error with ssh and sftp error set.
+ */
 int sftp_chown(SFTP_SESSION *sftp, const char *file, uid_t owner, gid_t group);
+
+/**
+ * @brief Change permissions of a file
+ *
+ * @param sftp          The sftp session handle.
+ *
+ * @param file          The file which owner and group should be changed.
+ *
+ * @param mode          Specifies the permissions to use. It is modified by the
+ *                      process's umask in the usual way:
+ *                      The permissions of the created file are (mode & ~umask)
+ *
+ * @return              0 on success, < 0 on error with ssh and sftp error set.
+ */
 int sftp_chmod(SFTP_SESSION *sftp, const char *file, mode_t mode);
+
+/**
+ * @brief Change the last modification and access time of a file.
+ *
+ * @param sftp          The sftp session handle.
+ *
+ * @param file          The file which owner and group should be changed.
+ *
+ * @param times         A timeval structure which contains the desired access
+ *                      and modification time.
+ *
+ * @return              0 on success, < 0 on error with ssh and sftp error set.
+ */
 int sftp_utimes(SFTP_SESSION *sftp, const char *file, const struct timeval *times);
+
+/**
+ * @brief Canonicalize a sftp path.
+ *
+ * @param sftp          The sftp session handle.
+ *
+ * @param path          The path to be canonicalized.
+ *
+ * @return              The canonicalize path, NULL on error.
+ */
 char *sftp_canonicalize_path(SFTP_SESSION *sftp, const char *path);
 
+/**
+ * @brief Get the version of the SFTP protocol supported by the server
+ *
+ * @param sftp          The sftp session handle.
+ *
+ * @return              The server version.
+ */
+int sftp_server_version(SFTP_SESSION *sftp);
+
 #ifndef NO_SERVER
+/**
+ * @brief Create a new sftp server session.
+ *
+ * @param session       The ssh session to use.
+ *
+ * @param chan          The ssh channel to use.
+ *
+ * @return              A new sftp server session.
+ */
 SFTP_SESSION *sftp_server_new(SSH_SESSION *session, CHANNEL *chan);
+
+/**
+ * @brief Intialize the sftp server.
+ *
+ * @param sftp         The sftp session to init.
+ *
+ * @return             0 on success, < 0 on error.
+ */
 int sftp_server_init(SFTP_SESSION *sftp);
 #endif
 
@@ -311,3 +750,5 @@ void sftp_handle_remove(SFTP_SESSION *sftp, void *handle);
 #endif
 
 #endif /* SFTP_H */
+
+/** @} */

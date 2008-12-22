@@ -21,13 +21,6 @@ along with the SSH Library; see the file COPYING.  If not, write to
 the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA. */
 
-/** \defgroup ssh_sftp SFTP functions
- * \brief SFTP handling functions
- * \bug Write docs !
- */
-/** \addtogroup ssh_sftp
- * @{ */
-
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,13 +29,6 @@ MA 02111-1307, USA. */
 #include "libssh/ssh2.h"
 #include "libssh/sftp.h"
 #ifndef NO_SFTP
-/* here how it works : sftp commands are channeled by the ssh sftp subsystem. */
-/* every packet are sent/read using a SFTP_PACKET type structure. */
-/* into these packets, most of the server answers are messages having an ID and */
-/* having a message specific part. it is described by SFTP_MESSAGE */
-/* when reading a message, the sftp system puts it into the queue, so the process having asked for it */
-/* can fetch it, while continuing to read for other messages (it is inspecified in which order messages may */
-/* be sent back to the client */
 
 #define sftp_enter_function() _enter_function(sftp->channel->session)
 #define sftp_leave_function() _leave_function(sftp->channel->session)
@@ -52,11 +38,6 @@ void sftp_enqueue(SFTP_SESSION *session, SFTP_MESSAGE *msg);
 static void sftp_message_free(SFTP_MESSAGE *msg);
 static void sftp_set_errno(SFTP_SESSION *sftp, int errnum);
 
-/** \brief start a new SFTP session
- * \param session the SSH session
- * \returns a SFTP_SESSION handle on success
- * \returns NULL in case of an error
- */
 SFTP_SESSION *sftp_new(SSH_SESSION *session){
     SFTP_SESSION *sftp=malloc(sizeof(SFTP_SESSION));
     enter_function();
@@ -127,9 +108,6 @@ int sftp_server_init(SFTP_SESSION *sftp){
 }
 #endif
 
-/** \brief Close and deallocate a SFTP session
- * \param sftp the SFTP session handle
- */
 void sftp_free(SFTP_SESSION *sftp){
     struct request_queue *ptr;
     channel_send_eof(sftp->channel);
@@ -196,6 +174,7 @@ static void sftp_set_errno(SFTP_SESSION *sftp, int errnum) {
   }
 }
 
+/* Get the last sftp error */
 int sftp_get_error(SFTP_SESSION *sftp) {
   if (sftp == NULL) {
     return -1;
@@ -275,6 +254,7 @@ void sftp_packet_free(SFTP_PACKET *packet){
     free(packet);
 }
 
+/* Initialize the sftp session with the server. */
 int sftp_init(SFTP_SESSION *sftp){
     SFTP_PACKET *packet;
     BUFFER *buffer=buffer_new();
@@ -371,9 +351,9 @@ SFTP_MESSAGE *sftp_dequeue(SFTP_SESSION *session, u32 id){
     return NULL;
 }
 
-/** \internal
- * \brief assigns a new sftp ID for new requests and assures there is no collision between them.
- * returns a new ID ready to use in a request
+/*
+ * Assigns a new sftp ID for new requests and assures there is no collision between them.
+ * Returns a new ID ready to use in a request
  */
 inline u32 sftp_get_new_id(SFTP_SESSION *session){
     return ++session->id_counter;
@@ -436,13 +416,7 @@ SFTP_FILE *parse_handle_msg(SFTP_MESSAGE *msg){
     return file;
 }
 
-/** \brief open a directory
- * \param sftp SFTP session handle
- * \param path path to the directory
- * \return a SFTP_DIR handle
- * \see sftp_readdir()
- * \see sftp_dir_close()
- */
+/* Open a directory */
 SFTP_DIR *sftp_opendir(SFTP_SESSION *sftp, const char *path){
     SFTP_DIR *dir=NULL;
     SFTP_FILE *file;
@@ -735,23 +709,12 @@ SFTP_ATTRIBUTES *sftp_parse_attr(SFTP_SESSION *session, BUFFER *buf,int expectna
     return NULL;
 }
 
-/** \brief return the version of the SFTP protocol supported by the server
- * \param sftp SFTP session handle
- * \returns server version
- */
+/* Get the version of the SFTP protocol supported by the server */
 int sftp_server_version(SFTP_SESSION *sftp){
     return sftp->server_version;
 }
 
-/** \brief Read file attributes of a directory
- * \param sftp SFTP session handle
- * \param dir SFTP_DIR open directory handle
- * \return a SFTP_ATTRIBUTE handle
- * \return NULL End of directory
- * \see sftp_opendir()
- * \see sftp_attribute_free()
- * \see sftp_dir_close()
- */
+/* Get a single file attributes structure of a directory. */
 SFTP_ATTRIBUTES *sftp_readdir(SFTP_SESSION *sftp, SFTP_DIR *dir){
     BUFFER *payload;
     u32 id;
@@ -818,19 +781,12 @@ SFTP_ATTRIBUTES *sftp_readdir(SFTP_SESSION *sftp, SFTP_DIR *dir){
     return attr;
 }
 
-/** \brief Tell if the directory has reached End Of File
- * \param dir SFTP_DIR open handle
- * \returns non-zero value if the directory has reached EOF
- * \see sftp_readdir()
- */
+/* Tell if the directory has reached EOF (End Of File). */
 int sftp_dir_eof(SFTP_DIR *dir){
     return (dir->eof);
 }
 
-/** \brief Free a SFTP_ATTRIBUTE handle
- * \param file SFTP_ATTRIBUTE handle to free
- * \see sftp_readdir()
- */
+/* Free a SFTP_ATTRIBUTE handle */
 void sftp_attributes_free(SFTP_ATTRIBUTES *file){
     if(file->name)
         free(file->name);
@@ -890,12 +846,11 @@ static int sftp_handle_close(SFTP_SESSION *sftp, STRING *handle){
     return -1;
 }
 
-/** \brief Close an open file
- * \param file SFTP_FILE handle to an open file
- * \returns SSH_NO_ERROR File closed successfully
- * \returns SSH_ERROR An error happened
- * \see sftp_file_open()
- */
+int sftp_file_close(SFTP_FILE *file) {
+  sftp_close(file);
+}
+
+/* Close an open file handle. */
 int sftp_close(SFTP_FILE *file){
     int err=SSH_NO_ERROR;
     if(file->name)
@@ -909,12 +864,12 @@ int sftp_close(SFTP_FILE *file){
     return err;
 }
 
-/** \brief Close an open directory
- * \param dir SFTP_DIR handle to an open directory
- * \returns SSH_NO_ERROR directory closed successfully
- * \returns SSH_ERROR An error happened
- * \see sftp_opendir()
- */
+
+int sftp_dir_close(SFTP_DIR *dir) {
+  return sftp_closedir(dir);
+}
+
+/* Close an open directory. */
 int sftp_closedir(SFTP_DIR *dir){
     int err=SSH_NO_ERROR;
     if(dir->name)
@@ -930,9 +885,7 @@ int sftp_closedir(SFTP_DIR *dir){
     return err;
 }
 
-/** \brief Open a remote file
- * \todo please complete doc
- */
+/* Open a file on the server. */
 SFTP_FILE *sftp_open(SFTP_SESSION *sftp, const char *file, int access, mode_t mode){
     SFTP_FILE *handle;
     SFTP_MESSAGE *msg=NULL;
@@ -1001,6 +954,7 @@ void sftp_file_set_blocking(SFTP_FILE *handle){
     handle->nonblocking=0;
 }
 
+/* Read from a file using an opened sftp file handle. */
 ssize_t sftp_read(SFTP_FILE *handle, void *buf, size_t count){
     SFTP_MESSAGE *msg=NULL;
     STATUS_MESSAGE *status;
@@ -1075,24 +1029,7 @@ ssize_t sftp_read(SFTP_FILE *handle, void *buf, size_t count){
     return -1; /* not reached */
 }
 
-/** This function does an asynchronous read on a file. Its goal is to avoid the slowdowns related to
- * the request/response pattern of a synchronous read.\n
- * To do so, you must call 2 functions : sftp_async_read_begin() and sftp_async_read().\n
- * The first step is to call sftp_async_read_begin(). This function returns a request identifier.\n
- * The second step is to call sftp_async_read using the said identifier.\n
- * \brief Start an asynchronous read on a file
- * \param file SFTP_FILE handle on an open file
- * \param len Length of data to be read
- * \return A u32 identifier corresponding to the sent request.
- * \warning When calling this function, the internal offset is updated
- * corresponding to the len parameter.
- * \warning A call to sftp_async_read_begin() sends a request to the server. When the server answers,
- * libssh allocates memory to store it until sftp_async_read() is called.\n
- * Not calling sftp_async_read() will lead to memory leaks.
- * \see sftp_async_read()
- * \see sftp_open()
- * */
-
+/* Start an asynchronous read from a file using an opened sftp file handle. */
 u32 sftp_async_read_begin(SFTP_FILE *file, int len){
     SFTP_SESSION *sftp=file->sftp;
     BUFFER *buffer;
@@ -1111,20 +1048,7 @@ u32 sftp_async_read_begin(SFTP_FILE *file, int len){
 	return id;
 }
 
-/** \brief Wait for an asynchronous read to complete, and save the data
- * \param file The SFTP_FILE handle on the file
- * \param data Pointer on the destination buffer
- * \param size Size of the destination buffer. It should be bigger or equal
- * to the length parameter of the sftp_async_read_begin() call
- * \param id Identifier returned by sftp_async_read_begin()
- * \return SSH_ERROR on error
- * \return SSH_AGAIN if the file is opened in nonblocking mode and the request hasn't been
- * executed yet
- * \return 0 on end of file
- * \return Number of bytes read otherwise
- * \warning A call to this function with an invalid identifier will never return
- * \see sftp_async_read_begin()
- */
+/* Wait for an asynchronous read to complete and save the data. */
 int sftp_async_read(SFTP_FILE *file, void *data, int size, u32 id){
     SFTP_MESSAGE *msg=NULL;
     STATUS_MESSAGE *status;
@@ -1257,6 +1181,7 @@ ssize_t sftp_write(SFTP_FILE *file, const void *buf, size_t count){
     return -1; /* not reached */
 }
 
+/* Seek to a specific location in a file. */
 void sftp_seek(SFTP_FILE *file, int new_offset){
     file->offset=new_offset;
 }
@@ -1264,14 +1189,18 @@ void sftp_seek(SFTP_FILE *file, int new_offset){
 void sftp_seek64(SFTP_FILE *file, u64 new_offset){
 	file->offset=new_offset;
 }
+
+/* Report current byte position in file. */
 unsigned long sftp_tell(SFTP_FILE *file){
     return file->offset;
 }
 
+/* Rewinds the position of the file pointer to the beginning of the file.*/
 void sftp_rewind(SFTP_FILE *file){
     file->offset=0;
 }
 
+/* deprecated */
 int sftp_rm(SFTP_SESSION *sftp, const char *file) {
   return sftp_unlink(sftp, file);
 }
@@ -1480,6 +1409,7 @@ int sftp_rename(SFTP_SESSION *sftp, const char *original, const char *newname) {
 }
 
 /* Code written by Nick */
+/* Set file attributes on a file, directory or symbolic link. */
 int sftp_setstat(SFTP_SESSION *sftp, const char *file, SFTP_ATTRIBUTES *attr) {
     u32 id = sftp_get_new_id(sftp);
     BUFFER *buffer = buffer_new();
@@ -1523,6 +1453,7 @@ int sftp_setstat(SFTP_SESSION *sftp, const char *file, SFTP_ATTRIBUTES *attr) {
     return -1;
 }
 
+/* Change the file owner and group */
 int sftp_chown(SFTP_SESSION *sftp, const char *file, uid_t owner, gid_t group) {
   SFTP_ATTRIBUTES attr;
 
@@ -1535,6 +1466,7 @@ int sftp_chown(SFTP_SESSION *sftp, const char *file, uid_t owner, gid_t group) {
   return sftp_setstat(sftp, file, &attr);
 }
 
+/* Change permissions of a file */
 int sftp_chmod(SFTP_SESSION *sftp, const char *file, mode_t mode) {
   SFTP_ATTRIBUTES attr;
 
@@ -1545,6 +1477,7 @@ int sftp_chmod(SFTP_SESSION *sftp, const char *file, mode_t mode) {
   return sftp_setstat(sftp, file, &attr);
 }
 
+/* Change the last modification and access time of a file. */
 int sftp_utimes(SFTP_SESSION *sftp, const char *file, const struct timeval *times) {
   SFTP_ATTRIBUTES attr;
 
@@ -1690,4 +1623,3 @@ SFTP_ATTRIBUTES *sftp_fstat(SFTP_FILE *file) {
 
 #endif /* NO_SFTP */
 
-/** @} */
