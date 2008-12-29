@@ -192,22 +192,29 @@ int passphrase_to_key(char *data, unsigned int datalen, unsigned char *salt, uns
 
 int privatekey_decrypt(int algo, int mode, unsigned int key_len,
                        unsigned char *iv, unsigned int iv_len,
-                       BUFFER *data, int cb(char *,int , int , char *),
+                       BUFFER *data, ssh_auth_callback cb,
+                       void *userdata,
                        char *desc)
 {
   gcry_cipher_hd_t cipher;
-  unsigned int passphrase_len;
-  char passphrase[MAX_PASSPHRASE_SIZE];
-  unsigned char key[MAX_KEY_SIZE];
+  int rc = -1;
+  char passphrase[MAX_PASSPHRASE_SIZE] = {0};
+  unsigned char key[MAX_KEY_SIZE] = {0};
   unsigned char *tmp;
   gcry_error_t err;
 
   if (!algo)
     return 1;
-  passphrase_len=cb(passphrase, MAX_PASSPHRASE_SIZE, 0, desc);
-  if (passphrase_len <= 0)
-    return 0;
-  passphrase_to_key(passphrase, passphrase_len, iv, key, key_len);
+
+  if (cb) {
+    rc = (*cb)(desc, passphrase, MAX_PASSPHRASE_SIZE, 0, 0, userdata);
+    if (rc < 0) {
+      return 0;
+    }
+  } else if (cb == NULL && userdata != NULL) {
+    sprintf(buf, MAX_PASSPHRASE_SIZE, "%s", userdata);
+  }
+  passphrase_to_key(passphrase, strlen(passphrase), iv, key, key_len);
   if (gcry_cipher_open(&cipher, algo, mode, 0)
       || gcry_cipher_setkey(cipher, key, key_len)
       || gcry_cipher_setiv(cipher, iv, iv_len)
@@ -274,7 +281,7 @@ int privatekey_dek_header(char *header, unsigned int header_len, int *algo, int 
   return 1;
 }
 
-BUFFER *privatekey_file_to_buffer(FILE *fp, int type, int cb(char *, int , int , char *), char *desc)
+BUFFER *privatekey_file_to_buffer(FILE *fp, int type, ssh_auth_callback cb, void *userdata, char *desc)
 {
   char buf[MAXLINESIZE];
   char *header_begin;
@@ -353,7 +360,7 @@ BUFFER *privatekey_file_to_buffer(FILE *fp, int type, int cb(char *, int , int ,
   buffer_free(buffer);
   if (algo)
   {
-    if (!privatekey_decrypt(algo, mode, key_len, iv, iv_len, ret, cb, desc))
+    if (!privatekey_decrypt(algo, mode, key_len, iv, iv_len, ret, cb, userdata, desc))
     {
       free(iv);
       return NULL;
@@ -364,7 +371,7 @@ BUFFER *privatekey_file_to_buffer(FILE *fp, int type, int cb(char *, int , int ,
 }
 
 int read_rsa_privatekey(FILE *fp, gcry_sexp_t *r,
-                        int cb(char *, int , int , char *), char *desc)
+                        ssh_auth_callback cb, void *userdata, char *desc)
 {
   STRING *n;
   STRING *e;
@@ -377,7 +384,7 @@ int read_rsa_privatekey(FILE *fp, gcry_sexp_t *r,
   STRING *v;
   BUFFER *buffer;
 
-  if (!(buffer=privatekey_file_to_buffer(fp, TYPE_RSA, cb, desc)))
+  if (!(buffer=privatekey_file_to_buffer(fp, TYPE_RSA, cb, userdata, desc)))
     return 0;
   if (!asn1_check_sequence(buffer))
   {
@@ -414,7 +421,7 @@ int read_rsa_privatekey(FILE *fp, gcry_sexp_t *r,
   return 1;
 }
 
-int read_dsa_privatekey(FILE *fp, gcry_sexp_t *r, int cb(char *, int , int , char *), char *desc)
+int read_dsa_privatekey(FILE *fp, gcry_sexp_t *r, ssh_auth_callback cb, void *userdata; char *desc)
 {
   STRING *p;
   STRING *q;
@@ -424,7 +431,7 @@ int read_dsa_privatekey(FILE *fp, gcry_sexp_t *r, int cb(char *, int , int , cha
   STRING *v;
   BUFFER *buffer;
 
-  if (!(buffer=privatekey_file_to_buffer(fp, TYPE_DSS, cb, desc)))
+  if (!(buffer=privatekey_file_to_buffer(fp, TYPE_DSS, cb, userdata, desc)))
     return 0;
   if (!asn1_check_sequence(buffer))
   {
@@ -456,18 +463,23 @@ int read_dsa_privatekey(FILE *fp, gcry_sexp_t *r, int cb(char *, int , int , cha
 }
 #endif /* GCRYPT */
 
+static int pem_get_password(char *buf, int size, int rwflag, void *userdata) {
+  SSH_SESSION *session = userdata;
 
-/* completely deprecated */
-static int default_get_password(char *buf, int size,int rwflag, char *descr){
-	memset(buf,0,size);
-	return 0;
-}
+  ZERO_STRUCTP(buf);
 
-/* in case the passphrase has been given in parameter */
-static int get_password_specified(char *buf,int size, int rwflag, char *password){
-    snprintf(buf,size,"%s",password);
+  if (session && session->options->auth_function) {
+    if ((*session->options->auth_function)("Passphrase for private key:", buf, size, 0, 0,
+        session->options->auth_userdata ? session->options->auth_userdata : NULL) < 0) {
+      return 0;
+    }
+
     return strlen(buf);
+  }
+
+  return 0;
 }
+
 /** \addtogroup ssh_auth
  * @{
  */
@@ -481,9 +493,11 @@ static int get_password_specified(char *buf,int size, int rwflag, char *password
  * \see private_key_free()
  * \see publickey_from_privatekey()
  */
-PRIVATE_KEY  *privatekey_from_file(SSH_SESSION *session,char *filename,int type,char *passphrase){
+PRIVATE_KEY  *privatekey_from_file(SSH_SESSION *session,char *filename,int type, const char *passphrase){
     FILE *file=fopen(filename,"r");
     PRIVATE_KEY *privkey;
+    ssh_auth_callback auth_cb = NULL;
+    void *auth_ud = NULL;
 #ifdef HAVE_LIBGCRYPT
     gcry_sexp_t dsa=NULL;
     gcry_sexp_t rsa=NULL;
@@ -498,24 +512,28 @@ PRIVATE_KEY  *privatekey_from_file(SSH_SESSION *session,char *filename,int type,
     }
     if(type==TYPE_DSS){
         if(!passphrase){
-            if(session && session->options->passphrase_function)
+          if (session && session->options->auth_function) {
+            auth_cb = session->options->auth_function;
+            if (session->options->auth_userdata) {
+              auth_ud = session->options->auth_userdata;
+            }
 #ifdef HAVE_LIBGCRYPT
-                valid = read_dsa_privatekey(file,&dsa, session->options->passphrase_function,"DSA private key");
-            else
-                valid = read_dsa_privatekey(file,&dsa,(void *)default_get_password, "DSA private key");
+            valid = read_dsa_privatekey(file,&dsa, auth_cb, auth_ud, "Passphrase for private key:");
+          }
+        } else {
+          valid = read_dsa_privatekey(file,&dsa, NULL, passphrase, NULL);
         }
-        else
-            valid = read_dsa_privatekey(file,&dsa,(void *)get_password_specified,passphrase);
         fclose(file);
-        if(!valid){
-            ssh_set_error(session,SSH_FATAL,"parsing private key %s",filename);
+        if(!valid) {
+          ssh_set_error(session,SSH_FATAL,"parsing private key %s",filename);
 #elif defined HAVE_LIBCRYPTO
-                dsa=PEM_read_DSAPrivateKey(file,NULL, session->options->passphrase_function,"DSA private key");
-            else
-                dsa=PEM_read_DSAPrivateKey(file,NULL,(void *)default_get_password, "DSA private key");
+            dsa = PEM_read_DSAPrivateKey(file,NULL, pem_get_password, session);
+          } else {
+            dsa = PEM_read_DSAPrivateKey(file,NULL, NULL, NULL);
+          }
+        } else {
+          dsa = PEM_read_DSAPrivateKey(file, NULL, NULL, (void *) passphrase);
         }
-        else
-            dsa=PEM_read_DSAPrivateKey(file,NULL,(void *)get_password_specified,passphrase);
         fclose(file);
         if(!dsa){
             ssh_set_error(session,SSH_FATAL,"parsing private key %s"
@@ -526,24 +544,28 @@ PRIVATE_KEY  *privatekey_from_file(SSH_SESSION *session,char *filename,int type,
     }
     else if (type==TYPE_RSA){
         if(!passphrase){
-            if(session && session->options->passphrase_function)
+            if(session && session->options->auth_function) {
+              auth_cb = session->options->auth_function;
+              if (session->options->auth_userdata) {
+                auth_ud = session->options->auth_userdata;
+              }
 #ifdef HAVE_LIBGCRYPT
-                valid = read_rsa_privatekey(file,&rsa, session->options->passphrase_function,"RSA private key");
-            else
-                valid = read_rsa_privatekey(file,&rsa,(void *)default_get_password, "RSA private key");
+              valid = read_rsa_privatekey(file, &rsa, auth_cb, auth_ud, "Passphrase for private key:");
+            }
+        } else {
+            valid = read_rsa_privatekey(file, &rsa, NULL, passphrase, NULL);
         }
-        else
-            valid = read_rsa_privatekey(file,&rsa,(void *)get_password_specified,passphrase);
         fclose(file);
         if(!valid){
             ssh_set_error(session,SSH_FATAL,"parsing private key %s",filename);
 #elif defined HAVE_LIBCRYPTO
-                rsa=PEM_read_RSAPrivateKey(file,NULL, session->options->passphrase_function,"RSA private key");
-            else
-                rsa=PEM_read_RSAPrivateKey(file,NULL,(void *)default_get_password, "RSA private key");
+              rsa = PEM_read_RSAPrivateKey(file, NULL, pem_get_password, session);
+            } else {
+              rsa = PEM_read_RSAPrivateKey(file, NULL, NULL, NULL);
+            }
+        } else {
+          rsa = PEM_read_RSAPrivateKey(file, NULL, NULL, (void *) passphrase);
         }
-        else
-            rsa=PEM_read_RSAPrivateKey(file,NULL,(void *)get_password_specified,passphrase);
         fclose(file);
         if(!rsa){
             ssh_set_error(session,SSH_FATAL,"parsing private key %s"

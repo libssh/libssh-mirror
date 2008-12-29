@@ -101,7 +101,8 @@ SSH_OPTIONS *ssh_options_copy(SSH_OPTIONS *opt){
     for(i=0;i<10;++i)
         if(opt->wanted_methods[i])
             ret->wanted_methods[i]=strdup(opt->wanted_methods[i]);
-    ret->passphrase_function=opt->passphrase_function;
+    ret->auth_function=opt->auth_function;
+    ret->auth_userdata=opt->auth_userdata;
     ret->connect_status_function=opt->connect_status_function;
     ret->connect_status_arg=opt->connect_status_arg;
     ret->timeout=opt->timeout;
@@ -571,6 +572,14 @@ int ssh_options_getopt(SSH_OPTIONS *options, int *argcptr, char **argv){
         return 0 ;   
 }
 
+void ssh_options_set_auth_callback(SSH_OPTIONS *opt, ssh_auth_callback cb,
+    void *userdata) {
+  if (opt == NULL) {
+    return;
+  }
 
+  opt->auth_function = cb;
+  opt->auth_userdata = userdata;
+}
 
 /** @} */

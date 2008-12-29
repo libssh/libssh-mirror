@@ -454,7 +454,7 @@ int main(int argc, char **argv){
     printf("\n");
 
     /* no ? you should :) */
-    auth=ssh_userauth_autopubkey(session);
+    auth=ssh_userauth_autopubkey(session, NULL);
     if(auth==SSH_AUTH_ERROR){
         fprintf(stderr,"Authenticating with pubkey: %s\n",ssh_get_error(session));
 	    ssh_finalize();

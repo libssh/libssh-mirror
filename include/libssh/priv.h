@@ -228,7 +228,8 @@ struct ssh_options_struct {
     int use_nonexisting_algo; /* if user sets a not supported algorithm for kex, don't complain */
     char *wanted_methods[10]; /* the kex methods can be choosed. better use the kex fonctions to do that */
     void *wanted_cookie; /* wants a specific cookie to be sent ? if null, generate a new one */
-    void *passphrase_function; /* this functions will be called if a keyphrase is needed. look keyfiles.c for more info */
+    ssh_auth_callback auth_function; /* this functions will be called if e.g. a keyphrase is needed. */
+    void *auth_userdata;
     void (*connect_status_function)(void *arg, float status); /* status callback function */
     void *connect_status_arg; /* arbitrary argument */
     long timeout; /* seconds */

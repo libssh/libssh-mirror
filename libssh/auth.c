@@ -405,6 +405,9 @@ static char *pub_keys_path[]={NULL,"%s/.ssh/identity.pub","%s/.ssh/id_dsa.pub","
  * asker for passphrases (in case the private key is encrypted)
  * \brief Tries to automaticaly authenticate with public key and "none"
  * \param session ssh session
+ * \param passphrase use this passphrase to unlock the privatekey. Use
+ *                   NULL if you don't want to use a passphrase or the
+ *                   user should be asked.
  * \returns SSH_AUTH_ERROR : a serious error happened\n
  * SSH_AUTH_DENIED : Authentication failed : use another method\n
  * SSH_AUTH_PARTIAL : You've been partially authenticated, you still have to use another method\n
@@ -414,7 +417,7 @@ static char *pub_keys_path[]={NULL,"%s/.ssh/identity.pub","%s/.ssh/id_dsa.pub","
  * \see ssh_options_set_identity()
  */
 
-int ssh_userauth_autopubkey(SSH_SESSION *session){
+int ssh_userauth_autopubkey(SSH_SESSION *session, const char *passphrase) {
     int count=1; /* bypass identity */
     int type=0;
     int err;
@@ -460,7 +463,7 @@ int ssh_userauth_autopubkey(SSH_SESSION *session){
             continue;
         }
         /* pubkey accepted by server ! */
-        privkey=privatekey_from_file(session,privkeyfile,type,NULL);
+        privkey=privatekey_from_file(session,privkeyfile,type,passphrase);
         if(!privkey){
             ssh_say(0,"Reading private key %s failed (bad passphrase ?)\n",privkeyfile);
             free(pubkey);

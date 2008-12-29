@@ -216,7 +216,7 @@ void publickey_free(PUBLIC_KEY *key);
 
 /* in keyfiles.c */
 
-PRIVATE_KEY *privatekey_from_file(SSH_SESSION *session,char *filename,int type,char *passphrase);
+PRIVATE_KEY *privatekey_from_file(SSH_SESSION *session,char *filename,int type,const char *passphrase);
 STRING *publickey_to_string(PUBLIC_KEY *key);
 PUBLIC_KEY *publickey_from_privatekey(PRIVATE_KEY *prv);
 void private_key_free(PRIVATE_KEY *prv);
@@ -253,6 +253,22 @@ int channel_select(CHANNEL **readchans, CHANNEL **writechans, CHANNEL **exceptch
         timeval * timeout);
 /* in options.c */
 
+/**
+ * @brief SSH authentication callback.
+ *
+ * @param prompt        Prompt to be displayed.
+ * @param buf           Buffer to save the password. You should null-terminate it.
+ * @param len           Length of the buffer.
+ * @param echo          Enable or disable the echo of what you type.
+ * @param verify        Should the password be verified?
+ * @param userdata      Userdata to be passed to the callback function. Useful
+ *                      for GUI applications.
+ *
+ * @return              0 on success, < 0 on error.
+ */
+typedef int (*ssh_auth_callback) (const char *prompt, char *buf, size_t len,
+    int echo, int verify, void *userdata);
+
 SSH_OPTIONS *ssh_options_new();
 SSH_OPTIONS *ssh_options_copy(SSH_OPTIONS *opt);
 int ssh_options_set_wanted_algos(SSH_OPTIONS *opt, int algo, const char *list);
@@ -275,6 +291,17 @@ void ssh_options_set_rsa_server_key(SSH_OPTIONS *opt, const char *rsakey);
 void ssh_options_set_log_function(SSH_OPTIONS *opt,
     void (*callback)(const char *message, SSH_SESSION *session, int verbosity ));
 void ssh_options_set_log_verbosity(SSH_OPTIONS *opt, int verbosity);
+
+/**
+ * @brief Set the authentication callback.
+ *
+ * @param opt           The options structure to use.
+ * @param cb            The callback function to use.
+ * @param userdata      A pointer to some user data you can pass to the
+ *                      callback.
+ */
+void ssh_options_set_auth_callback(SSH_OPTIONS *opt, ssh_auth_callback cb,
+    void *userdata);
 
 
 /* buffer.c */
@@ -299,7 +326,7 @@ int ssh_userauth_none(SSH_SESSION *session, const char *username);
 int ssh_userauth_password(SSH_SESSION *session, const char *username, const char *password);
 int ssh_userauth_offer_pubkey(SSH_SESSION *session, const char *username, int type, STRING *publickey);
 int ssh_userauth_pubkey(SSH_SESSION *session, const char *username, STRING *publickey, PRIVATE_KEY *privatekey);
-int ssh_userauth_autopubkey(SSH_SESSION *session);
+int ssh_userauth_autopubkey(SSH_SESSION *session, const char *passphrase);
 int ssh_userauth_kbdint(SSH_SESSION *session, const char *user, const char *submethods);
 int ssh_userauth_kbdint_getnprompts(SSH_SESSION *session);
 char *ssh_userauth_kbdint_getname(SSH_SESSION *session);
