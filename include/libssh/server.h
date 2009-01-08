@@ -24,6 +24,10 @@ MA 02111-1307, USA. */
 #include "libssh/libssh.h"
 #define SERVERBANNER CLIENTBANNER
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct ssh_bind_struct SSH_BIND;
 
 SSH_BIND *ssh_bind_new();
@@ -83,4 +87,8 @@ char *ssh_message_channel_request_pty_term(SSH_MESSAGE *msg);
 char *ssh_message_channel_request_subsystem(SSH_MESSAGE *msg);
 int ssh_message_channel_request_reply_success(SSH_MESSAGE *msg);
 
-#endif
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
+
+#endif /* SERVER_H */
