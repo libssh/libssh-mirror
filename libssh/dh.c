@@ -84,7 +84,7 @@ int ssh_get_random(void *where, int len, int strong){
 
 
 /* it inits the values g and p which are used for DH key agreement */
-void ssh_crypto_init(){
+void ssh_crypto_init(void){
     if(ssh_crypto_inited == 0){
 #ifdef HAVE_LIBGCRYPT
         gcry_check_version(NULL);
@@ -107,7 +107,7 @@ void ssh_crypto_init(){
     }
 }
 
-void ssh_crypto_finalize(){
+void ssh_crypto_finalize(void){
     if(ssh_crypto_inited){
         bignum_free(g);
         bignum_free(p);
@@ -486,7 +486,7 @@ int ssh_get_pubkey_hash(SSH_SESSION *session,unsigned char hash[MD5_DIGEST_LEN])
 
 /** \deprecated same as ssh_get_pubkey_hash()
  */
-int pubkey_get_hash(SSH_SESSION *session, unsigned char hash[MD5_DIGEST_LEN]){
+static int pubkey_get_hash(SSH_SESSION *session, unsigned char hash[MD5_DIGEST_LEN]){
     return ssh_get_pubkey_hash(session,hash);
 }
 
