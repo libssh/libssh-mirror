@@ -484,12 +484,6 @@ int ssh_get_pubkey_hash(SSH_SESSION *session,unsigned char hash[MD5_DIGEST_LEN])
     return MD5_DIGEST_LEN;
 }
 
-/** \deprecated same as ssh_get_pubkey_hash()
- */
-static int pubkey_get_hash(SSH_SESSION *session, unsigned char hash[MD5_DIGEST_LEN]){
-    return ssh_get_pubkey_hash(session,hash);
-}
-
 STRING *ssh_get_pubkey(SSH_SESSION *session){
     return string_copy(session->current_crypto->server_pubkey);
 }
