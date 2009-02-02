@@ -36,7 +36,7 @@
 /** \brief creates a new ssh session
  * \returns new ssh_session pointer
  */
-SSH_SESSION *ssh_new() {
+SSH_SESSION *ssh_new(void) {
     SSH_SESSION *session=malloc(sizeof (SSH_SESSION));
     memset(session,0,sizeof(SSH_SESSION));
     session->next_crypto=crypto_new();
@@ -53,8 +53,9 @@ SSH_SESSION *ssh_new() {
 }
 
 void ssh_cleanup(SSH_SESSION *session){
-	enter_function();
     int i;
+    enter_function();
+
     if(session->serverbanner)
         free(session->serverbanner);
     if(session->clientbanner)

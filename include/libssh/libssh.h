@@ -162,14 +162,17 @@ enum {
 void ssh_log(SSH_SESSION *session, int prioriry, char *format, ...);
 
 /* session.c */
-SSH_SESSION *ssh_new();
-void ssh_set_options(SSH_SESSION *session, SSH_OPTIONS *options);
+SSH_SESSION *ssh_new(void);
 socket_t ssh_get_fd(SSH_SESSION *session);
-void ssh_silent_disconnect(SSH_SESSION *session);
 int ssh_get_version(SSH_SESSION *session);
+int ssh_get_status(SSH_SESSION *session){
+const char *ssh_get_disconnect_message(SSH_SESSION *session);
+void ssh_set_options(SSH_SESSION *session, SSH_OPTIONS *options);
 void ssh_set_fd_toread(SSH_SESSION *session);
 void ssh_set_fd_towrite(SSH_SESSION *session);
 void ssh_set_fd_except(SSH_SESSION *session);
+void ssh_set_blocking(SSH_SESSION *session, int blocking);
+void ssh_silent_disconnect(SSH_SESSION *session);
 
 
 /* client.c */
