@@ -81,7 +81,7 @@ static socket_t bind_socket(SSH_BIND *ssh_bind,char *hostname, int port) {
     return s;
 }
 
-SSH_BIND *ssh_bind_new(){
+SSH_BIND *ssh_bind_new(void){
     SSH_BIND *ptr=malloc(sizeof(SSH_BIND));
     memset(ptr,0,sizeof(*ptr));
     ptr->bindfd=-1;
@@ -129,6 +129,8 @@ void ssh_bind_fd_toaccept(SSH_BIND *ssh_bind){
 SSH_SESSION *ssh_bind_accept(SSH_BIND *ssh_bind){
     SSH_SESSION *session;
     PRIVATE_KEY *dsa=NULL, *rsa=NULL;
+    int fd = -1;
+
     if(ssh_bind->bindfd<0){
         ssh_set_error(ssh_bind,SSH_FATAL,"Can't accept new clients on a "
                 "not bound socket.");
@@ -153,7 +155,7 @@ SSH_SESSION *ssh_bind_accept(SSH_BIND *ssh_bind){
         }
         ssh_say(2,"RSA private key read successfuly\n");
     }
-    int fd=accept(ssh_bind->bindfd,NULL,NULL);
+    fd = accept(ssh_bind->bindfd, NULL, NULL);
     if(fd<0){
         ssh_set_error(ssh_bind,SSH_FATAL,"Accepting a new connection: %s",
                 strerror(errno));
@@ -186,7 +188,7 @@ void ssh_bind_free(SSH_BIND *ssh_bind){
 
 extern char *supported_methods[];
 
-int server_set_kex(SSH_SESSION * session) {
+static int server_set_kex(SSH_SESSION * session) {
     KEX *server = &session->server_kex;
     SSH_OPTIONS *options = session->options;
     int i;
