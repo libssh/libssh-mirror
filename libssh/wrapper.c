@@ -404,14 +404,14 @@ static struct crypto_struct ssh_ciphertab[]={
 #endif /* OPENSSL_CRYPTO */
 
 /* it allocates a new cipher structure based on its offset into the global table */
-struct crypto_struct *cipher_new(int offset){
+static struct crypto_struct *cipher_new(int offset){
     struct crypto_struct *cipher=malloc(sizeof(struct crypto_struct));
     /* note the memcpy will copy the pointers : so, you shouldn't free them */
     memcpy(cipher,&ssh_ciphertab[offset],sizeof(*cipher));
     return cipher;
 }
 
-void cipher_free(struct crypto_struct *cipher){
+static void cipher_free(struct crypto_struct *cipher){
 #ifdef HAVE_LIBGCRYPT
     int i;
 #endif
@@ -428,7 +428,7 @@ void cipher_free(struct crypto_struct *cipher){
     free(cipher);
 }
 
-CRYPTO *crypto_new(){
+CRYPTO *crypto_new(void){
     CRYPTO *crypto=malloc(sizeof (CRYPTO));
     memset(crypto,0,sizeof(*crypto));
     return crypto;
@@ -510,13 +510,18 @@ int crypt_set_algorithms(SSH_SESSION *session){
 
 // TODO Obviously too much cut and paste here
 int crypt_set_algorithms_server(SSH_SESSION *session){
+    char *server = NULL;
+    char *client = NULL;
+    char *match = NULL;
+    int i = 0;
+
     /* we must scan the kex entries to find crypto algorithms and set their appropriate structure */
-	enter_function();
-    int i=0;
+    enter_function();
     /* out */
-    char *server=session->server_kex.methods[SSH_CRYPT_S_C];
-    char *client=session->client_kex.methods[SSH_CRYPT_S_C];
-    char *match=ssh_find_matching(client,server);
+    server = session->server_kex.methods[SSH_CRYPT_S_C];
+    client = session->client_kex.methods[SSH_CRYPT_S_C];
+    match = ssh_find_matching(client,server);
+
     if(!match){
         ssh_set_error(session,SSH_FATAL,"Crypt_set_algorithms_server : no matching algorithm function found for %s",server);
         free(match);

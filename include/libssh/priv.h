@@ -620,7 +620,7 @@ int decompress_buffer(SSH_SESSION *session,BUFFER *buf);
 /* wrapper.c */
 int crypt_set_algorithms(SSH_SESSION *);
 int crypt_set_algorithms_server(SSH_SESSION *session);
-CRYPTO *crypto_new();
+CRYPTO *crypto_new(void);
 void crypto_free(CRYPTO *crypto);
 
 /* crc32.c */
