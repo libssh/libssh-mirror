@@ -57,7 +57,7 @@ char *ssh_get_banner(SSH_SESSION *session){
     return NULL;
 }
 
-int ssh_analyze_banner(SSH_SESSION *session, int *ssh1, int *ssh2){
+static int ssh_analyze_banner(SSH_SESSION *session, int *ssh1, int *ssh2){
     char *banner=session->serverbanner;
     if(strncmp(banner,"SSH-",4)!=0){
         ssh_set_error(session,SSH_FATAL,"Protocol mismatch: %s",banner);
