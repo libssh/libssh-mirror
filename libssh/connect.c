@@ -91,8 +91,8 @@ static int getai(const char *host, int port, struct addrinfo **ai)
     return getaddrinfo(host,service,&hints,ai);
 }
 
-int ssh_connect_ai_timeout(SSH_SESSION *session, const char *host, int port, struct addrinfo *ai,
-                           long timeout, long usec,socket_t s)
+static int ssh_connect_ai_timeout(SSH_SESSION *session, const char *host,
+    int port, struct addrinfo *ai, long timeout, long usec,socket_t s)
 {
     struct timeval to;
     fd_set set;
