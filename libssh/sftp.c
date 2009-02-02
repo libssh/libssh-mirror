@@ -1145,7 +1145,6 @@ ssize_t sftp_write(SFTP_FILE *file, const void *buf, size_t count){
     STRING *datastring;
     SFTP_SESSION *sftp=file->sftp;
     int id;
-    int err=0;
     BUFFER *buffer;
     buffer=buffer_new();
     id=sftp_get_new_id(file->sftp);
@@ -1178,7 +1177,7 @@ ssize_t sftp_write(SFTP_FILE *file, const void *buf, size_t count){
               case SSH_FX_OK:
                 file->offset += count;
                 status_msg_free(status);
-                return err ? err : count;
+                return count;
               default:
                 break;
             }
