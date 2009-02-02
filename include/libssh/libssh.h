@@ -308,7 +308,7 @@ void ssh_options_set_auth_callback(SSH_OPTIONS *opt, ssh_auth_callback cb,
 
 /** creates a new buffer 
  */
-BUFFER *buffer_new();
+BUFFER *buffer_new(void);
 void buffer_free(BUFFER *buffer);
 /* buffer_get returns a pointer to the begining of the buffer. no position is taken into account */
 void *buffer_get(BUFFER *buffer);

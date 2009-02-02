@@ -154,9 +154,9 @@ struct string_struct {
  */
 struct buffer_struct {
     char *data;
-    int used;
-    int allocated;
-    int pos;
+    u32 used;
+    u32 allocated;
+    u32 pos;
 };
 
 /* i should remove it one day */
@@ -599,14 +599,14 @@ int buffer_get_u8(BUFFER *buffer,u8 *data);
 int buffer_get_u32(BUFFER *buffer,u32 *data);
 int buffer_get_u64(BUFFER *buffer, u64 *data);
 
-int buffer_get_data(BUFFER *buffer,void *data,int requestedlen);
+u32 buffer_get_data(BUFFER *buffer, void *data, u32 requestedlen);
 /* buffer_get_ssh_string() is an exception. if the String read is too large or invalid, it will answer NULL. */
 STRING *buffer_get_ssh_string(BUFFER *buffer);
 /* gets a string out of a SSH-1 mpint */
 STRING *buffer_get_mpint(BUFFER *buffer);
 /* buffer_pass_bytes acts as if len bytes have been read (used for padding) */
-int buffer_pass_bytes_end(BUFFER *buffer,int len);
-int buffer_pass_bytes(BUFFER *buffer, int len);
+int buffer_pass_bytes_end(BUFFER *buffer, u32 len);
+int buffer_pass_bytes(BUFFER *buffer, u32 len);
 
 /* in base64.c */
 BUFFER *base64_to_bin(char *source);

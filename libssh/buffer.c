@@ -33,7 +33,7 @@ MA 02111-1307, USA. */
 /** \brief creates a new buffer
  * \return a new initialized buffer
  */
-BUFFER *buffer_new(){
+BUFFER *buffer_new(void) {
     BUFFER *buffer=malloc(sizeof(BUFFER));
     memset(buffer,0,sizeof(BUFFER));
     return buffer;
@@ -195,7 +195,7 @@ int buffer_get_rest_len(BUFFER *buffer){
  * \param len number of bytes to eat
  * \return new size of the buffer
  */
-int buffer_pass_bytes(BUFFER *buffer,int len){
+int buffer_pass_bytes(BUFFER *buffer, u32 len){
     if(buffer->used < buffer->pos+len)
         return 0;
     buffer->pos+=len;
@@ -213,7 +213,7 @@ int buffer_pass_bytes(BUFFER *buffer,int len){
  * \param len number of bytes to remove from tail
  * \return new size of the buffer
  */
-int buffer_pass_bytes_end(BUFFER *buffer,int len){
+int buffer_pass_bytes_end(BUFFER *buffer, u32 len){
     if(buffer->used < buffer->pos + len)
         return 0;
     buffer->used-=len;
@@ -228,7 +228,7 @@ int buffer_pass_bytes_end(BUFFER *buffer,int len){
  * \returns 0 if there is not enough data in buffer
  * \returns len otherwise.
  */
-int buffer_get_data(BUFFER *buffer, void *data, int len){
+u32 buffer_get_data(BUFFER *buffer, void *data, u32 len){
     if(buffer->pos+len>buffer->used)
         return 0;  /*no enough data in buffer */
     memcpy(data,buffer->data+buffer->pos,len);
