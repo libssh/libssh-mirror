@@ -200,9 +200,6 @@ void string_burn(STRING *str);
 void *string_data(STRING *str);
 void string_free(STRING *str);
 
-/* deprecated */
-void ssh_crypto_init(void);
-
 /* useful for debug */
 void ssh_print_hexa(char *descr, const unsigned char *what, int len);
 int ssh_get_random(void *where,int len,int strong);
