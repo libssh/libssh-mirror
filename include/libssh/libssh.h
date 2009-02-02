@@ -317,6 +317,7 @@ int buffer_get_len(BUFFER *buffer);
 
 
 /* in auth.c */
+int ssh_auth_list(SSH_SESSION *session);
 /* these functions returns AUTH_ERROR is some serious error has happened,
   AUTH_SUCCESS if success,
   AUTH_PARTIAL if partial success,
@@ -331,7 +332,7 @@ int ssh_userauth_kbdint(SSH_SESSION *session, const char *user, const char *subm
 int ssh_userauth_kbdint_getnprompts(SSH_SESSION *session);
 char *ssh_userauth_kbdint_getname(SSH_SESSION *session);
 char *ssh_userauth_kbdint_getinstruction(SSH_SESSION *session);
-char *ssh_userauth_kbdint_getprompt(SSH_SESSION *session, int i, char *echo);
+char *ssh_userauth_kbdint_getprompt(SSH_SESSION *session, unsigned int i, char *echo);
 void ssh_userauth_kbdint_setanswer(SSH_SESSION *session, unsigned int i, const char *answer);
 
 

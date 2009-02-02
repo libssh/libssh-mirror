@@ -54,7 +54,6 @@ static int wait_auth_status(SSH_SESSION *session,int kbdint){
     int cont=1;
     STRING *auth;
     u8 partial=0;
-    int todo = 0;
     char *auth_methods = NULL;
     enter_function();
     while(cont){
@@ -823,9 +822,9 @@ char *ssh_userauth_kbdint_getinstruction(SSH_SESSION *session){
  * \returns pointer to the prompt. Do not free it
  */
 
-char *ssh_userauth_kbdint_getprompt(SSH_SESSION *session, int i,
+char *ssh_userauth_kbdint_getprompt(SSH_SESSION *session, unsigned int i,
         char *echo){
-    if(i > session->kbdint->nprompts || i<0)
+    if(i > session->kbdint->nprompts)
         return NULL;
     if(echo)
         *echo=session->kbdint->echo[i];
