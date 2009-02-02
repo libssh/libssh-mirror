@@ -331,6 +331,10 @@ int sftp_file_close(SFTP_FILE *file) SFTP_DEPRECATED;
  */
 SFTP_FILE *sftp_open(SFTP_SESSION *session, const char *file, int access, mode_t mode);
 
+void sftp_file_set_nonblocking(SFTP_FILE *handle);
+
+void sftp_file_set_blocking(SFTP_FILE *handle);
+
 /**
  * @brief Read from a file using an opened sftp file handle.
  *
@@ -375,7 +379,7 @@ ssize_t sftp_read(SFTP_FILE *file, void *buf, size_t count);
  * @see                 sftp_async_read()
  * @see                 sftp_open()
  */
-u32 sftp_async_read_begin(SFTP_FILE *file, int len);
+u32 sftp_async_read_begin(SFTP_FILE *file, u32 len);
 
 /**
  * @brief Wait for an asynchronous read to complete and save the data.
@@ -401,7 +405,7 @@ u32 sftp_async_read_begin(SFTP_FILE *file, int len);
  *
  * @see sftp_async_read_begin()
  */
-int sftp_async_read(SFTP_FILE *file, void *data, int len, u32 id);
+int sftp_async_read(SFTP_FILE *file, void *data, u32 len, u32 id);
 
 /**
  * @brief Write to a file using an opened sftp file handle.

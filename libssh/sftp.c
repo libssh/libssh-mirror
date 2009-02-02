@@ -69,10 +69,12 @@ SFTP_SESSION *sftp_server_new(SSH_SESSION *session, CHANNEL *chan){
 }
 
 int sftp_server_init(SFTP_SESSION *sftp){
-	sftp_enter_function();
-    SFTP_PACKET *packet=sftp_packet_read(sftp);
-    u32 version;
+    SFTP_PACKET *packet;
     BUFFER *reply;
+    u32 version;
+
+    sftp_enter_function();
+    packet=sftp_packet_read(sftp);
     if(!packet){
         sftp_leave_function();
     	return -1;
@@ -125,12 +127,14 @@ void sftp_free(SFTP_SESSION *sftp){
 }
 
 int sftp_packet_write(SFTP_SESSION *sftp,u8 type, BUFFER *payload){
-    u32 size;
+    int size;
     buffer_add_data_begin(payload,&type,sizeof(u8));
     size=htonl(buffer_get_len(payload));
     buffer_add_data_begin(payload,&size,sizeof(u32));
     size=channel_write(sftp->channel,buffer_get(payload),buffer_get_len(payload));
-    if(size != buffer_get_len(payload)){
+    if (size < 0) {
+      return -1;
+    } else if((u32) size != buffer_get_len(payload)){
         ssh_say(1,"had to write %d bytes, wrote only %d\n",buffer_get_len(payload),size);
     }
     return size;
@@ -184,8 +188,10 @@ int sftp_get_error(SFTP_SESSION *sftp) {
 }
 
 static SFTP_MESSAGE *sftp_message_new(SFTP_SESSION *sftp){
-	sftp_enter_function();
-    SFTP_MESSAGE *msg=malloc(sizeof(SFTP_MESSAGE));
+    SFTP_MESSAGE *msg;
+    sftp_enter_function();
+
+    msg=malloc(sizeof(SFTP_MESSAGE));
     memset(msg,0,sizeof(*msg));
     msg->payload=buffer_new();
     msg->sftp=sftp;
@@ -202,7 +208,7 @@ static void sftp_message_free(SFTP_MESSAGE *msg){
     sftp_leave_function();
 }
 
-SFTP_MESSAGE *sftp_get_message(SFTP_PACKET *packet){
+static SFTP_MESSAGE *sftp_get_message(SFTP_PACKET *packet){
 	SFTP_SESSION *sftp=packet->sftp;
 	SFTP_MESSAGE *msg=sftp_message_new(sftp);
 	sftp_enter_function();
@@ -228,7 +234,7 @@ SFTP_MESSAGE *sftp_get_message(SFTP_PACKET *packet){
     return msg;
 }
 
-int sftp_read_and_dispatch(SFTP_SESSION *sftp){
+static int sftp_read_and_dispatch(SFTP_SESSION *sftp){
     SFTP_PACKET *packet;
     SFTP_MESSAGE *message=NULL;
     sftp_enter_function();
@@ -297,14 +303,14 @@ int sftp_init(SFTP_SESSION *sftp){
     return 0;
 }
 
-REQUEST_QUEUE *request_queue_new(SFTP_MESSAGE *msg){
+static REQUEST_QUEUE *request_queue_new(SFTP_MESSAGE *msg){
     REQUEST_QUEUE *queue=malloc(sizeof(REQUEST_QUEUE));
     memset(queue,0,sizeof(REQUEST_QUEUE));
     queue->message=msg;
     return queue;
 }
 
-void request_queue_free(REQUEST_QUEUE *queue){
+static void request_queue_free(REQUEST_QUEUE *queue){
     memset(queue,0,sizeof(*queue));
     free(queue);
 }
@@ -325,7 +331,7 @@ void sftp_enqueue(SFTP_SESSION *session, SFTP_MESSAGE *msg){
 }
 
 /* pulls of a message from the queue based on the ID. returns null if no message has been found */
-SFTP_MESSAGE *sftp_dequeue(SFTP_SESSION *session, u32 id){
+static SFTP_MESSAGE *sftp_dequeue(SFTP_SESSION *session, u32 id){
     REQUEST_QUEUE *queue,*prev=NULL;
     SFTP_MESSAGE *msg;
     if(session->queue==NULL){
@@ -355,11 +361,11 @@ SFTP_MESSAGE *sftp_dequeue(SFTP_SESSION *session, u32 id){
  * Assigns a new sftp ID for new requests and assures there is no collision between them.
  * Returns a new ID ready to use in a request
  */
-inline u32 sftp_get_new_id(SFTP_SESSION *session){
+static inline u32 sftp_get_new_id(SFTP_SESSION *session){
     return ++session->id_counter;
 }
 
-STATUS_MESSAGE *parse_status_msg(SFTP_MESSAGE *msg){
+static STATUS_MESSAGE *parse_status_msg(SFTP_MESSAGE *msg){
     STATUS_MESSAGE *status;
     if(msg->packet_type != SSH_FXP_STATUS){
         ssh_set_error(msg->sftp->session, SSH_FATAL,"Not a ssh_fxp_status message passed in !");
@@ -384,7 +390,7 @@ STATUS_MESSAGE *parse_status_msg(SFTP_MESSAGE *msg){
     return status;
 }
 
-void status_msg_free(STATUS_MESSAGE *status){
+static void status_msg_free(STATUS_MESSAGE *status){
     if(status->errormsg)
         free(status->errormsg);
     if(status->error)
@@ -396,7 +402,7 @@ void status_msg_free(STATUS_MESSAGE *status){
     free(status);
 }
 
-SFTP_FILE *parse_handle_msg(SFTP_MESSAGE *msg){
+static SFTP_FILE *parse_handle_msg(SFTP_MESSAGE *msg){
     SFTP_FILE *file;
     if(msg->packet_type != SSH_FXP_HANDLE){
         ssh_set_error(msg->sftp->session,SSH_FATAL,"Not a ssh_fxp_handle message passed in !");
@@ -471,12 +477,17 @@ SFTP_DIR *sftp_opendir(SFTP_SESSION *sftp, const char *path){
 /* please excuse me for the inaccuracy of the code. it isn't my fault, it's sftp draft's one */
 /* this code is dead anyway ... */
 /* version 4 specific code */
-SFTP_ATTRIBUTES *sftp_parse_attr_4(SFTP_SESSION *sftp,BUFFER *buf,int expectnames){
+static SFTP_ATTRIBUTES *sftp_parse_attr_4(SFTP_SESSION *sftp, BUFFER *buf,
+    int expectnames) {
     u32 flags=0;
     SFTP_ATTRIBUTES *attr=malloc(sizeof(SFTP_ATTRIBUTES));
     STRING *owner=NULL;
     STRING *group=NULL;
     int ok=0;
+
+    /* unused member variable */
+    (void) expectnames;
+
     memset(attr,0,sizeof(*attr));
     /* it isn't really a loop, but i use it because it's like a try..catch.. construction in C */
     do {
@@ -590,7 +601,8 @@ SFTP_ATTRIBUTES *sftp_parse_attr_4(SFTP_SESSION *sftp,BUFFER *buf,int expectname
         string   extended_data
         ...      more extended data (extended_type - extended_data pairs),
                    so that number of pairs equals extended_count              */
-SFTP_ATTRIBUTES *sftp_parse_attr_3(SFTP_SESSION *sftp,BUFFER *buf,int expectname){
+static SFTP_ATTRIBUTES *sftp_parse_attr_3(SFTP_SESSION *sftp, BUFFER *buf,
+    int expectname) {
     u32 flags=0;
     STRING *name;
     STRING *longname;
@@ -847,7 +859,7 @@ static int sftp_handle_close(SFTP_SESSION *sftp, STRING *handle){
 }
 
 int sftp_file_close(SFTP_FILE *file) {
-  sftp_close(file);
+  return sftp_close(file);
 }
 
 /* Close an open file handle. */
@@ -1030,7 +1042,7 @@ ssize_t sftp_read(SFTP_FILE *handle, void *buf, size_t count){
 }
 
 /* Start an asynchronous read from a file using an opened sftp file handle. */
-u32 sftp_async_read_begin(SFTP_FILE *file, int len){
+u32 sftp_async_read_begin(SFTP_FILE *file, u32 len){
     SFTP_SESSION *sftp=file->sftp;
     BUFFER *buffer;
     u32 id;
@@ -1049,13 +1061,13 @@ u32 sftp_async_read_begin(SFTP_FILE *file, int len){
 }
 
 /* Wait for an asynchronous read to complete and save the data. */
-int sftp_async_read(SFTP_FILE *file, void *data, int size, u32 id){
+int sftp_async_read(SFTP_FILE *file, void *data, u32 size, u32 id){
     SFTP_MESSAGE *msg=NULL;
     STATUS_MESSAGE *status;
     SFTP_SESSION *sftp=file->sftp;
     STRING *datastring;
     int err=0;
-    int len;
+    u32 len;
     sftp_enter_function();
     if(file->eof){
     	sftp_leave_function();
@@ -1144,7 +1156,8 @@ ssize_t sftp_write(SFTP_FILE *file, const void *buf, size_t count){
     string_fill(datastring, buf, count);
     buffer_add_ssh_string(buffer,datastring);
     free(datastring);
-    if(sftp_packet_write(file->sftp,SSH_FXP_WRITE,buffer) != buffer_get_len(buffer)){
+    if((u32) sftp_packet_write(file->sftp,SSH_FXP_WRITE,buffer)
+        != buffer_get_len(buffer)) {
         ssh_say(1,"sftp_packet_write did not write as much data as expected\n");
     }
     buffer_free(buffer);
@@ -1543,7 +1556,7 @@ char *sftp_canonicalize_path(SFTP_SESSION *sftp, const char *path)
 	return NULL;
 }
 
-SFTP_ATTRIBUTES *sftp_xstat(SFTP_SESSION *sftp, const char *path, int param){
+static SFTP_ATTRIBUTES *sftp_xstat(SFTP_SESSION *sftp, const char *path, int param){
     u32 id=sftp_get_new_id(sftp);
     BUFFER *buffer=buffer_new();
     STRING *pathstr= string_from_char(path);
