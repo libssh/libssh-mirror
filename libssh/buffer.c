@@ -174,7 +174,7 @@ void *buffer_get_rest(BUFFER *buffer){
  * \return length of the buffer
  * \see buffer_get()
  */
-int buffer_get_len(BUFFER *buffer){
+u32 buffer_get_len(BUFFER *buffer){
     return buffer->used;
 }
 
@@ -184,7 +184,7 @@ int buffer_get_len(BUFFER *buffer){
  * \return length of the buffer
  * \see buffer_get_rest()
  */
-int buffer_get_rest_len(BUFFER *buffer){
+u32 buffer_get_rest_len(BUFFER *buffer){
     return buffer->used - buffer->pos;
 }
 
@@ -195,7 +195,7 @@ int buffer_get_rest_len(BUFFER *buffer){
  * \param len number of bytes to eat
  * \return new size of the buffer
  */
-int buffer_pass_bytes(BUFFER *buffer, u32 len){
+u32 buffer_pass_bytes(BUFFER *buffer, u32 len){
     if(buffer->used < buffer->pos+len)
         return 0;
     buffer->pos+=len;
@@ -213,7 +213,7 @@ int buffer_pass_bytes(BUFFER *buffer, u32 len){
  * \param len number of bytes to remove from tail
  * \return new size of the buffer
  */
-int buffer_pass_bytes_end(BUFFER *buffer, u32 len){
+u32 buffer_pass_bytes_end(BUFFER *buffer, u32 len){
     if(buffer->used < buffer->pos + len)
         return 0;
     buffer->used-=len;

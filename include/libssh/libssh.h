@@ -315,7 +315,7 @@ void buffer_free(BUFFER *buffer);
 /* buffer_get returns a pointer to the begining of the buffer. no position is taken into account */
 void *buffer_get(BUFFER *buffer);
 /* same here */
-int buffer_get_len(BUFFER *buffer);
+u32 buffer_get_len(BUFFER *buffer);
 
 
 /* in auth.c */

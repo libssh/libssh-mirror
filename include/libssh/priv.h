@@ -592,7 +592,7 @@ void buffer_reinit(BUFFER *buffer);
 /* buffer_get_rest returns a pointer to the current position into the buffer */
 void *buffer_get_rest(BUFFER *buffer);
 /* buffer_get_rest_len returns the number of bytes which can be read */
-int buffer_get_rest_len(BUFFER *buffer);
+u32 buffer_get_rest_len(BUFFER *buffer);
 
 /* buffer_read_*() returns the number of bytes read, except for ssh strings */
 int buffer_get_u8(BUFFER *buffer,u8 *data);
@@ -605,8 +605,8 @@ STRING *buffer_get_ssh_string(BUFFER *buffer);
 /* gets a string out of a SSH-1 mpint */
 STRING *buffer_get_mpint(BUFFER *buffer);
 /* buffer_pass_bytes acts as if len bytes have been read (used for padding) */
-int buffer_pass_bytes_end(BUFFER *buffer, u32 len);
-int buffer_pass_bytes(BUFFER *buffer, u32 len);
+u32 buffer_pass_bytes_end(BUFFER *buffer, u32 len);
+u32 buffer_pass_bytes(BUFFER *buffer, u32 len);
 
 /* in base64.c */
 BUFFER *base64_to_bin(char *source);
