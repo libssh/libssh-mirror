@@ -45,7 +45,7 @@ MA 02111-1307, USA. */
  * \see ssh_options_getopt()
 */
 
-SSH_OPTIONS *ssh_options_new(){
+SSH_OPTIONS *ssh_options_new(void) {
     SSH_OPTIONS *option=malloc(sizeof(SSH_OPTIONS));
     memset(option,0,sizeof(SSH_OPTIONS));
     option->port=22; /* set the default port */

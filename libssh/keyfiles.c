@@ -466,6 +466,9 @@ int read_dsa_privatekey(FILE *fp, gcry_sexp_t *r, ssh_auth_callback cb, void *us
 static int pem_get_password(char *buf, int size, int rwflag, void *userdata) {
   SSH_SESSION *session = userdata;
 
+  /* unused flag */
+  (void) rwflag;
+
   ZERO_STRUCTP(buf);
 
   if (session && session->options->auth_function) {

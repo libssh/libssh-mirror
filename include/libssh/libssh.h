@@ -271,7 +271,7 @@ SSH_SESSION *channel_get_session(CHANNEL *channel);
 typedef int (*ssh_auth_callback) (const char *prompt, char *buf, size_t len,
     int echo, int verify, void *userdata);
 
-SSH_OPTIONS *ssh_options_new();
+SSH_OPTIONS *ssh_options_new(void);
 SSH_OPTIONS *ssh_options_copy(SSH_OPTIONS *opt);
 int ssh_options_set_wanted_algos(SSH_OPTIONS *opt, int algo, const char *list);
 void ssh_options_set_username(SSH_OPTIONS *opt, const char *username);
@@ -290,6 +290,7 @@ void ssh_options_allow_ssh1(SSH_OPTIONS *opt, int allow);
 void ssh_options_allow_ssh2(SSH_OPTIONS *opt, int allow);
 void ssh_options_set_dsa_server_key(SSH_OPTIONS *opt, const char *dsakey);
 void ssh_options_set_rsa_server_key(SSH_OPTIONS *opt, const char *rsakey);
+void ssh_options_set_banner(SSH_OPTIONS *opt, const char *banner);
 void ssh_options_set_log_function(SSH_OPTIONS *opt,
     void (*callback)(const char *message, SSH_SESSION *session, int verbosity ));
 void ssh_options_set_log_verbosity(SSH_OPTIONS *opt, int verbosity);
@@ -339,8 +340,9 @@ void ssh_userauth_kbdint_setanswer(SSH_SESSION *session, unsigned int i, const c
 
 
 /* init.c */
-int ssh_finalize();
+int ssh_finalize(void);
+
 #ifdef __cplusplus
-} 
+}
 #endif
 #endif /* _LIBSSH_H */

@@ -633,7 +633,7 @@ int ssh_userauth1_password(SSH_SESSION *session, char *username,
         char *password);
 /* in misc.c */
 /* gets the user home dir. */
-char *ssh_get_user_home_dir();
+char *ssh_get_user_home_dir(void);
 int ssh_file_readaccess_ok(char *file);
 
 /* macro for byte ordering */

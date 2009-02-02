@@ -43,9 +43,7 @@
  * and * as wildcards), and zero if it does not match.
  */
 
-int
-match_pattern(const char *s, const char *pattern)
-{
+static int match_pattern(const char *s, const char *pattern) {
 	for (;;) {
 		/* If at end of pattern, accept if also at end of string. */
 		if (!*pattern)
@@ -108,10 +106,8 @@ match_pattern(const char *s, const char *pattern)
  * a positive match, 0 if there is no match at all.
  */
 
-int
-match_pattern_list(const char *string, const char *pattern, u_int len,
-    int dolower)
-{
+static int match_pattern_list(const char *string, const char *pattern,
+    u_int len, int dolower) {
 	char sub[1024];
 	int negated;
 	int got_positive;
@@ -168,8 +164,6 @@ match_pattern_list(const char *string, const char *pattern, u_int len,
  * indicate negation).  Returns -1 if negation matches, 1 if there is
  * a positive match, 0 if there is no match at all.
  */
-int
-match_hostname(const char *host, const char *pattern, u_int len)
-{
+static int match_hostname(const char *host, const char *pattern, u_int len) {
 	return match_pattern_list(host, pattern, len, 1);
 }

@@ -348,7 +348,7 @@ static int modulus_smaller(PUBLIC_KEY *k1, PUBLIC_KEY *k2){
 }
 
 #define ABS(A) ( (A)<0 ? -(A):(A) )
-STRING *encrypt_session_key(SSH_SESSION *session, PUBLIC_KEY *svrkey,
+static STRING *encrypt_session_key(SSH_SESSION *session, PUBLIC_KEY *svrkey,
         PUBLIC_KEY *hostkey,int slen, int hlen ){
     unsigned char buffer[32];
     int i;

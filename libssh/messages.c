@@ -169,11 +169,13 @@ int ssh_message_auth_reply_success(SSH_MESSAGE *msg,int partial){
 }
 
 static SSH_MESSAGE *handle_channel_request_open(SSH_SESSION *session){
-	enter_function();
-    SSH_MESSAGE *msg=message_new(session);
+    SSH_MESSAGE *msg;
     STRING *type;
     char *type_c;
-    u32 sender,window,packet;
+    u32 sender, window, packet;
+
+    enter_function();
+    msg=message_new(session);
     msg->type=SSH_CHANNEL_REQUEST_OPEN;
     type=buffer_get_ssh_string(session->in_buffer);
     type_c=string_to_char(type);
@@ -198,9 +200,11 @@ static SSH_MESSAGE *handle_channel_request_open(SSH_SESSION *session){
 }
 
 CHANNEL *ssh_message_channel_request_open_reply_accept(SSH_MESSAGE *msg){
-	SSH_SESSION *session=msg->session;
-	enter_function();
-    CHANNEL *chan=channel_new(session);
+    SSH_SESSION *session=msg->session;
+    CHANNEL *chan;
+
+    enter_function();
+    chan=channel_new(session);
     chan->local_channel=ssh_channel_new_id(session);
     chan->local_maxpacket=35000;
     chan->local_window=32000;

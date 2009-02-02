@@ -33,7 +33,7 @@ MA 02111-1307, USA. */
  * \brief finalize and cleanup all libssh and cryptographic data structures
  * \returns 0
  */
-int ssh_finalize()
+int ssh_finalize(void)
 {
   ssh_crypto_finalize();
 #ifdef HAVE_LIBGCRYPT

@@ -360,7 +360,7 @@ STRING *publickey_to_string(PUBLIC_KEY *key){
 
 /* Signature decoding functions */
 
-STRING *signature_to_string(SIGNATURE *sign){
+static STRING *signature_to_string(SIGNATURE *sign){
     STRING *str;
     STRING *rs;
 #ifdef HAVE_LIBGCRYPT
@@ -692,6 +692,10 @@ STRING *ssh_encrypt_rsa1(SSH_SESSION *session, STRING *data, PUBLIC_KEY *key){
     RSA_public_encrypt(len,data->string,ret->string,key->rsa_pub,
             RSA_PKCS1_PADDING);
 #endif
+
+    /* unused member variable */
+    (void) session;
+
     return ret;
 }
 

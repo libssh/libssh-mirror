@@ -36,10 +36,10 @@ MA 02111-1307, USA. */
 #include <pwd.h>
 #endif
 
-#include "libssh/libssh.h"
+#include "libssh/priv.h"
 
 #ifndef _WIN32
-char *ssh_get_user_home_dir(){
+char *ssh_get_user_home_dir(void) {
     static char szPath[PATH_MAX] = {0};
     struct passwd *pwd = NULL;
 
@@ -55,7 +55,7 @@ char *ssh_get_user_home_dir(){
 
 #else /* _WIN32 */
 
-char *ssh_get_user_home_dir(){
+char *ssh_get_user_home_dir(void) {
 	static char szPath[MAX_PATH];
 	if (SHGetSpecialFolderPathA(NULL, szPath, CSIDL_PROFILE, TRUE))
 		return szPath;
@@ -71,7 +71,6 @@ int ssh_file_readaccess_ok(char *file){
         return 1;
     return 0;
 }
-
 
 u64 ntohll(u64 a){
 #ifdef WORDS_BIGENDIAN
