@@ -63,7 +63,7 @@ STRING *string_from_char(const char *what){
  * \param str the input SSH string
  * \return size of the content of str
  */
-int string_len(STRING *str){
+u32 string_len(STRING *str){
 	return ntohl(str->size);
 }
 

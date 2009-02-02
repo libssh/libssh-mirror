@@ -185,7 +185,7 @@ const char *ssh_copyright(void);
 /* makestring returns a newly allocated string from a char * ptr */
 STRING *string_from_char(const char *what);
 /* it returns the string len in host byte orders. str->size is big endian warning ! */
-int string_len(STRING *str);
+u32 string_len(STRING *str);
 STRING *string_new(unsigned int size);
 /* string_fill copies the data in the string. it does NOT check for boundary so allocate enough place with string_new */
 void string_fill(STRING *str, const void *data,int len);
