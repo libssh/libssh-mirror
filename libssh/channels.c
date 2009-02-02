@@ -521,11 +521,10 @@ int channel_close(CHANNEL *channel){
  * SSH_ERROR on error
  * \see channel_read()
  */
-int channel_write(CHANNEL *channel ,void *data,int len){
+int channel_write(CHANNEL *channel, void *data, u32 len) {
     SSH_SESSION *session=channel->session;
     int effectivelen;
     int origlen=len;
-    int err;
     enter_function();
     if(channel->local_eof){
         ssh_set_error(session,SSH_REQUEST_DENIED,"Can't write to channel %d:%d"
@@ -540,7 +539,7 @@ int channel_write(CHANNEL *channel ,void *data,int len){
     }
 #ifdef HAVE_SSH1
     if(channel->version==1){
-        err = channel_write1(channel,data,len);
+        int err = channel_write1(channel,data,len);
         leave_function();
         return err;
     }
@@ -793,13 +792,14 @@ int channel_request_env(CHANNEL *channel,char *name, char *value){
  */
 int channel_request_exec(CHANNEL *channel, char *cmd){
     BUFFER *buffer;
+    STRING *command;
     int ret;
 #ifdef HAVE_SSH1
     if(channel->version==1)
         return channel_request_exec1(channel, cmd);
 #endif
     buffer=buffer_new();
-    STRING *command=string_from_char(cmd);
+    command=string_from_char(cmd);
     buffer_add_ssh_string(buffer,command);
     free(command);
     ret=channel_request(channel,"exec",buffer,1);
@@ -823,12 +823,13 @@ int channel_request_exec(CHANNEL *channel, char *cmd){
  * 0 on end of file\n
  * SSH_ERROR on error
  */
-int channel_read(CHANNEL *channel, BUFFER *buffer,int bytes,int is_stderr){
+int channel_read(CHANNEL *channel, BUFFER *buffer, u32 bytes, int is_stderr) {
     BUFFER *stdbuf=NULL;
     SSH_SESSION *session=channel->session;
-    int len;
+    u32 maxread=bytes;
+    u32 len;
+
     buffer_reinit(buffer);
-    int maxread=bytes;
     enter_function();
     if(bytes==0)
         maxread=MAX_PACKET_LEN;
@@ -922,12 +923,15 @@ int channel_poll(CHANNEL *channel, int is_stderr){
  * return 0 here
  * \see channel_is_eof()
  */
-int channel_read_nonblocking(CHANNEL *channel, char *dest, int len, int is_stderr){
-	SSH_SESSION *session=channel->session;
-	enter_function();
-    int to_read=channel_poll(channel,is_stderr);
+int channel_read_nonblocking(CHANNEL *channel, char *dest, u32 len, int is_stderr){
+    SSH_SESSION *session = channel->session;
+    BUFFER *buffer;
     int lu;
-    BUFFER *buffer=buffer_new();
+    u32 to_read;
+
+    enter_function();
+    to_read=channel_poll(channel,is_stderr);
+    buffer=buffer_new();
     if(to_read<=0){
         buffer_free(buffer);
         leave_function();
