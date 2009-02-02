@@ -386,7 +386,7 @@ void ssh_disconnect(SSH_SESSION *session){
     ssh_cleanup(session);
 }
 
-const char *ssh_copyright(){
+const char *ssh_copyright(void) {
     return LIBSSH_VERSION " (c) 2003-2008 Aris Adamantiadis (aris@0xbadc0de.be)"
     " Distributed under the LGPL, please refer to COPYING file for informations"
     " about your rights" ;
