@@ -71,7 +71,7 @@ struct socket {
  * \internal
  * \brief inits the socket system (windows specific)
  */
-void ssh_socket_init(){
+void ssh_socket_init(void){
 #ifdef _WIN32
     struct WSAData wsaData;
     if (WSAStartup(MAKEWORD(2, 0), &wsaData)) {
@@ -175,7 +175,7 @@ int ssh_socket_is_open(struct socket *s){
 /* \internal
  * \brief read len bytes from socket into buffer
  */
-int ssh_socket_unbuffered_read(struct socket *s, void *buffer, int len){
+static int ssh_socket_unbuffered_read(struct socket *s, void *buffer, u32 len) {
 	int r;
 	if(s->data_except)
 		return -1;
@@ -194,7 +194,8 @@ int ssh_socket_unbuffered_read(struct socket *s, void *buffer, int len){
 /* \internal
  * \brief writes len bytes from buffer to socket
  */
-int ssh_socket_unbuffered_write(struct socket *s,const void *buffer, int len){
+static int ssh_socket_unbuffered_write(struct socket *s,const void *buffer,
+    u32 len) {
 	int w;
 	if(s->data_except)
 		return -1;
@@ -235,10 +236,10 @@ void ssh_socket_fd_set(struct socket *s, fd_set *set, int *fd_max){
 /** \internal
  * \brief reads blocking until len bytes have been read
  */
-int ssh_socket_completeread(struct socket *s, void *buffer, int len){
+int ssh_socket_completeread(struct socket *s, void *buffer, u32 len){
     int r;
-    int total=0;
-    int toread=len;
+    u32 total=0;
+    u32 toread=len;
     if(!ssh_socket_is_open(s))
         return SSH_ERROR;
     while((r=ssh_socket_unbuffered_read(s,buffer+total,toread))){
@@ -258,10 +259,11 @@ int ssh_socket_completeread(struct socket *s, void *buffer, int len){
  * \brief Blocking write of len bytes
  */
 
-int ssh_socket_completewrite(struct socket *s, void *buffer, int len){
-	SSH_SESSION *session=s->session;
-	enter_function();
+int ssh_socket_completewrite(struct socket *s, void *buffer, u32 len){
+    SSH_SESSION *session=s->session;
     int written;
+
+    enter_function();
     if(!ssh_socket_is_open(s)){
         leave_function();
     	return SSH_ERROR;
@@ -286,8 +288,10 @@ int ssh_socket_completewrite(struct socket *s, void *buffer, int len){
  */
 int ssh_socket_read(struct socket *s, void *buffer, int len){
 	SSH_SESSION *session=s->session;
+	int ret;
+
 	enter_function();
-	int ret=ssh_socket_wait_for_data(s,s->session,len);
+	ret = ssh_socket_wait_for_data(s, s->session, len);
 	if(ret != SSH_OK){
 		leave_function();
 		return ret;
@@ -306,8 +310,9 @@ int ssh_socket_read(struct socket *s, void *buffer, int len){
  */
 int ssh_socket_write(struct socket *s,const void *buffer, int len){
 	SSH_SESSION *session=s->session;
-	enter_function();
 	int ret;
+
+	enter_function();
 	buffer_add_data(s->out_buffer,buffer,len);
 	if(buffer_get_rest_len(s->out_buffer) > WRITE_BUFFERING_THRESHOLD)
 		ret=ssh_socket_nonblocking_flush(s);
@@ -327,7 +332,7 @@ int ssh_socket_write(struct socket *s,const void *buffer, int len){
  * \returns SSH_AGAIN need to call later for data
  * \returns SSH_ERROR error happened
  */
-int ssh_socket_wait_for_data(struct socket *s, SSH_SESSION *session,int len){
+int ssh_socket_wait_for_data(struct socket *s, SSH_SESSION *session, u32 len){
     int except, can_write;
     int to_read;
     int r;
@@ -378,7 +383,7 @@ int ssh_socket_wait_for_data(struct socket *s, SSH_SESSION *session,int len){
             leave_function();
             return SSH_ERROR;
         }
-        buffer_add_data(s->in_buffer,buffer,r);
+        buffer_add_data(s->in_buffer,buffer, (u32) r);
     } while(buffer_get_rest_len(s->in_buffer)<len);
     leave_function();
     return SSH_OK;

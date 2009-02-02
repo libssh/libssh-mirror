@@ -455,7 +455,7 @@ int agent_ident_count(struct ssh_session *session);
 /* socket.c */
 
 struct socket;
-void ssh_socket_init();
+void ssh_socket_init(void);
 struct socket *ssh_socket_new(SSH_SESSION *session);
 void ssh_socket_free(struct socket *s);
 void ssh_socket_set_fd(struct socket *s, socket_t fd);
@@ -469,8 +469,9 @@ int ssh_socket_write(struct socket *s,const void *buffer, int len);
 int ssh_socket_is_open(struct socket *s);
 int ssh_socket_fd_isset(struct socket *s, fd_set *set);
 void ssh_socket_fd_set(struct socket *s, fd_set *set, int *fd_max);
-int ssh_socket_completeread(struct socket *s, void *buffer, int len);
-int ssh_socket_wait_for_data(struct socket *s, SSH_SESSION *session,int len);
+int ssh_socket_completeread(struct socket *s, void *buffer, u32 len);
+int ssh_socket_completewrite(struct socket *s, void *buffer, u32 len);
+int ssh_socket_wait_for_data(struct socket *s, SSH_SESSION *session, u32 len);
 int ssh_socket_nonblocking_flush(struct socket *s);
 int ssh_socket_blocking_flush(struct socket *s);
 int ssh_socket_poll(struct socket *s, int *write, int *except);
