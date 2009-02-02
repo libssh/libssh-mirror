@@ -286,6 +286,12 @@ struct channel_struct {
     int blocking;
 };
 
+struct agent_struct {
+  struct socket *sock;
+  STRING *ident;
+  unsigned int count;
+};
+
 struct ssh_session {
     struct error_struct error;
     struct socket *socket;
@@ -337,6 +343,7 @@ struct ssh_session {
     int maxchannel;
     int exec_channel_opened; /* version 1 only. more 
                                 info in channels1.c */
+    AGENT *agent; /* ssh agent */
 
 /* keyb interactive data */
     struct ssh_kbdint *kbdint;
@@ -417,6 +424,34 @@ struct ssh_message {
     struct ssh_channel_request channel_request;
 };
 
+/* agent.c */
+/**
+ * @brief Create a new ssh agent structure.
+ *
+ * @return An allocated ssh agent structure or NULL on error.
+ */
+struct agent_struct *agent_new(struct ssh_session *session);
+
+void agent_close(struct agent_struct *agent);
+/**
+ * @brief Free an allocated ssh agent structure.
+ *
+ * @param agent The ssh agent structure to free.
+ */
+void agent_free(struct agent_struct *agent);
+#ifndef _WIN32
+/**
+ * @brief Check if the ssh agent is running.
+ *
+ * @param session The ssh session to check for the agent.
+ *
+ * @return 1 if it is running, 0 if not.
+ */
+int agent_running(struct ssh_session *session);
+
+int agent_ident_count(struct ssh_session *session);
+#endif
+
 /* socket.c */
 
 struct socket;
@@ -425,6 +460,9 @@ struct socket *ssh_socket_new(SSH_SESSION *session);
 void ssh_socket_free(struct socket *s);
 void ssh_socket_set_fd(struct socket *s, socket_t fd);
 socket_t ssh_socket_get_fd(struct socket *s);
+#ifndef _WIN32
+int ssh_socket_unix(struct socket *s, const char *path);
+#endif
 void ssh_socket_close(struct socket *s);
 int ssh_socket_read(struct socket *s, void *buffer, int len);
 int ssh_socket_write(struct socket *s,const void *buffer, int len);
@@ -636,6 +674,9 @@ int ssh_handle_packets(SSH_SESSION *session);
 
 #define enter_function() _enter_function(session)
 #define leave_function() _leave_function(session)
+
+/** Free memory space */
+#define SAFE_FREE(x) do { if ((x) != NULL) {free(x); x=NULL;} } while(0)
 
 /** Zero a structure */
 #define ZERO_STRUCT(x) memset((char *)&(x), 0, sizeof(x))

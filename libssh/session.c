@@ -48,6 +48,7 @@ SSH_SESSION *ssh_new() {
     session->log_indent=0;
     session->out_buffer=buffer_new();
     session->in_buffer=buffer_new();
+    session->agent=agent_new(session);
     return session;
 }
 
@@ -75,6 +76,8 @@ void ssh_cleanup(SSH_SESSION *session){
     // delete all channels
     while(session->channels)
         channel_free(session->channels);
+    if (session->agent)
+        agent_free(session->agent);
     if(session->client_kex.methods)
         for(i=0;i<10;i++)
             if(session->client_kex.methods[i])

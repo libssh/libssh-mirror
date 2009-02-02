@@ -1,6 +1,6 @@
 lib_LTLIBRARIES = libssh.la
 
-libssh_la_SOURCES = auth1.c auth.c base64.c buffer.c	\
+libssh_la_SOURCES = agent.c auth1.c auth.c base64.c buffer.c	\
 		 channels1.c channels.c client.c connect.c	\
 		 crc32.c crypt.c dh.c error.c gcrypt_missing.c	\
 		 gzip.c init.c kex.c keyfiles.c	\

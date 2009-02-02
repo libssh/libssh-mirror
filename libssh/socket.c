@@ -27,8 +27,10 @@
 #ifdef _WIN32
 #include <winsock2.h>
 #else
+#include <fcntl.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/un.h>
 #endif
 #include "libssh/priv.h"
 
@@ -103,6 +105,35 @@ void ssh_socket_free(struct socket *s){
     buffer_free(s->out_buffer);
 	free(s);
 }
+
+#ifndef _WIN32
+int ssh_socket_unix(struct socket *s, const char *path) {
+  struct sockaddr_un sunaddr;
+
+  sunaddr.sun_family = AF_UNIX;
+  snprintf(sunaddr.sun_path, sizeof(sunaddr.sun_path), "%s", path);
+
+  s->fd = socket(AF_UNIX, SOCK_STREAM, 0);
+  if (s->fd < 0) {
+    return -1;
+  }
+
+  if (fcntl(s->fd, F_SETFD, 1) == -1) {
+    close(s->fd);
+    s->fd = -1;
+    return -1;
+  }
+
+  if (connect(s->fd, (struct sockaddr *) &sunaddr,
+        sizeof(sunaddr)) < 0) {
+    close(s->fd);
+    s->fd = -1;
+    return -1;
+  }
+
+  return 0;
+}
+#endif
 
 /* \internal
  * \brief closes a socket

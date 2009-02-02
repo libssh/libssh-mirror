@@ -52,6 +52,7 @@ typedef struct public_key_struct PUBLIC_KEY;
 typedef struct private_key_struct PRIVATE_KEY;
 typedef struct ssh_options_struct SSH_OPTIONS;
 typedef struct channel_struct CHANNEL;
+typedef struct agent_struct AGENT;
 typedef struct ssh_session SSH_SESSION;
 typedef struct ssh_kbdint SSH_KBDINT;
 

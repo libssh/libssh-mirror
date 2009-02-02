@@ -432,6 +432,18 @@ int ssh_userauth_autopubkey(SSH_SESSION *session, const char *passphrase) {
     	leave_function();
         return err;
     }
+
+    /* try ssh-agent keys first */
+#ifndef _WIN32
+#if 0
+    if (agent_running(session)) {
+      ssh_say(1, "SSH Agent is running\n");
+      count = agent_ident_count(session);
+      ssh_say(1, "SSH Agent has %d key(s)\n", count);
+    }
+#endif
+#endif
+
     if(session->options->identity){
         ssh_say(2,"Trying identity file %s\n",session->options->identity);
         keys_path[0]=session->options->identity;
