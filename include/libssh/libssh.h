@@ -253,6 +253,7 @@ int channel_is_closed(CHANNEL *channel);
 int channel_select(CHANNEL **readchans, CHANNEL **writechans, CHANNEL **exceptchans, struct 
         timeval * timeout);
 SSH_SESSION *channel_get_session(CHANNEL *channel);
+int channel_get_exit_status(CHANNEL *channel);
 /* in options.c */
 
 /**

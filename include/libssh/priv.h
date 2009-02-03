@@ -284,6 +284,7 @@ struct channel_struct {
     void *userarg;
     int version;
     int blocking;
+    int exit_status;
 };
 
 struct agent_struct {

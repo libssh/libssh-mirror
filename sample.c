@@ -180,7 +180,9 @@ void select_loop(SSH_SESSION *session,CHANNEL *channel){
                     return;
                 }
                 if(lus==0){
-                    ssh_say(1,"EOF received\n");
+                    ssh_log(session,SSH_LOG_RARE,"EOF received\n");
+                    ssh_log(session,SSH_LOG_RARE,"exit-status : %d\n",channel_get_exit_status(channel));
+
                     channel_free(channel);
                     channel=channels[0]=NULL;
                 } else
@@ -194,6 +196,7 @@ void select_loop(SSH_SESSION *session,CHANNEL *channel){
                 }
                 if(lus==0){
                     ssh_log(session,SSH_LOG_RARE,"EOF received\n");
+                    ssh_log(session,SSH_LOG_RARE,"exit-status : %d\n",channel_get_exit_status(channel));
                     channel_free(channel);
                     channel=channels[0]=NULL;
                 } else

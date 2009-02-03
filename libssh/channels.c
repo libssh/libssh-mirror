@@ -57,6 +57,7 @@ CHANNEL *channel_new(SSH_SESSION *session){
     channel->prev=session->channels->prev;
     channel->next->prev=channel;
     channel->prev->next=channel;
+    channel->exit_status=-1;
     return channel;
 }
 
@@ -299,6 +300,7 @@ static void channel_rcv_request(SSH_SESSION *session){
         ssh_log(session,SSH_LOG_PACKET,"received exit-status");
         buffer_get_u32(session->in_buffer,&status);
         status=ntohl(status);
+        channel->exit_status=status;
 /* TODO do something with status, we might need it */
         free(request_s);
         free(request);
@@ -953,6 +955,16 @@ int channel_read_nonblocking(CHANNEL *channel, char *dest, u32 len, int is_stder
  */
 SSH_SESSION *channel_get_session(CHANNEL *channel){
     return channel->session;
+}
+
+/** \brief get the exit status of the channel (error code from the executed instruction).
+ * \param channel channel
+ * \return -1 no exit status was returned.
+ * \return other values : exit status
+ */
+
+int channel_get_exit_status(CHANNEL *channel){
+    return channel->exit_status;
 }
 
 /* This function acts as a meta select. */
