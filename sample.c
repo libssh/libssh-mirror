@@ -193,7 +193,7 @@ void select_loop(SSH_SESSION *session,CHANNEL *channel){
                     return;
                 }
                 if(lus==0){
-                    ssh_say(1,"EOF received\n");
+                    ssh_log(session,SSH_LOG_RARE,"EOF received\n");
                     channel_free(channel);
                     channel=channels[0]=NULL;
                 } else

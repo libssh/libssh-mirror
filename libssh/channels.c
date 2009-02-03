@@ -296,6 +296,7 @@ static void channel_rcv_request(SSH_SESSION *session){
     buffer_get_u8(session->in_buffer,(u8 *)&status);
     request=string_to_char(request_s);
     if(!strcmp(request,"exit-status")){
+        ssh_log(session,SSH_LOG_PACKET,"received exit-status");
         buffer_get_u32(session->in_buffer,&status);
         status=ntohl(status);
 /* TODO do something with status, we might need it */
