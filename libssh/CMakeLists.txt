@@ -15,7 +15,7 @@ set(LIBSSH_PRIVATE_INCLUDE_DIRS
 )
 
 set(LIBSSH_LIBRARY
-  libssh
+  ssh
   CACHE INTERNAL "libssh library"
 )
 
