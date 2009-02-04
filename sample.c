@@ -168,6 +168,8 @@ void select_loop(SSH_SESSION *session,CHANNEL *channel){
         // we already looked for input from stdin. Now, we are looking for input from the channel
         
         if(channel && channel_is_closed(channel)){
+            ssh_log(session,SSH_LOG_RARE,"exit-status : %d\n",channel_get_exit_status(channel));
+
             channel_free(channel);
             channel=NULL;
             channels[0]=NULL;
