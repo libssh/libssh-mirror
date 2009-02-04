@@ -48,16 +48,16 @@ CHANNEL *channel_new(SSH_SESSION *session){
     channel->version=session->version;
     channel->stdout_buffer=buffer_new();
     channel->stderr_buffer=buffer_new();
-     if(!session->channels){
+    channel->exit_status=-1;
+    if(!session->channels){
         session->channels=channel;
         channel->next=channel->prev=channel;
         return channel;
-        }
+    }
     channel->next=session->channels;
     channel->prev=session->channels->prev;
     channel->next->prev=channel;
     channel->prev->next=channel;
-    channel->exit_status=-1;
     return channel;
 }
 
