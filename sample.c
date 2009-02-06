@@ -40,7 +40,7 @@ char *cmds[MAXCMD];
 struct termios terminal;
 void do_sftp(SSH_SESSION *session);
 
-void add_cmd(char *cmd){
+static void add_cmd(char *cmd){
     int n;
     for(n=0;cmds[n] && (n<MAXCMD);n++);
     if(n==MAXCMD)
@@ -48,7 +48,7 @@ void add_cmd(char *cmd){
     cmds[n]=strdup(cmd);
 }
 
-void usage(){
+static void usage(){
     fprintf(stderr,"Usage : ssh [options] [login@]hostname\n"
     "Options :\n"
     "  -l user : log in as user\n"
@@ -58,7 +58,7 @@ void usage(){
     exit(0);
 }
 
-int opts(int argc, char **argv){
+static int opts(int argc, char **argv){
     int i;
     if(strstr(argv[0],"sftp"))
         sftp=1;
@@ -92,32 +92,42 @@ static void cfmakeraw(struct termios *termios_p){
 #endif
 
 
-void do_cleanup(){
-    tcsetattr(0,TCSANOW,&terminal);
+static void do_cleanup(int i) {
+  /* unused variable */
+  (void) i;
+
+  tcsetattr(0,TCSANOW,&terminal);
 }
-void do_exit(){
-    do_cleanup();
-    exit(0);
+
+static void do_exit(int i) {
+  /* unused variable */
+  (void) i;
+
+  do_cleanup(0);
+  exit(0);
 }
+
 CHANNEL *chan;
 int signal_delayed=0;
-void setsignal();
-void sigwindowchanged(){
-    signal_delayed=1;
+
+static void sigwindowchanged(int i){
+  (void) i;
+  signal_delayed=1;
 }
-void sizechanged(){
+
+static void setsignal(void){
+    signal(SIGWINCH, sigwindowchanged);
+    signal_delayed=0;
+}
+
+static void sizechanged(void){
     struct winsize win = { 0, 0, 0, 0 };
     ioctl(1, TIOCGWINSZ, &win);
     channel_change_pty_size(chan,win.ws_col, win.ws_row);
 //    printf("Changed pty size\n");
     setsignal();
 }
-void setsignal(){
-    signal(SIGWINCH,sigwindowchanged);
-    signal_delayed=0;
-}
-
-void select_loop(SSH_SESSION *session,CHANNEL *channel){
+static void select_loop(SSH_SESSION *session,CHANNEL *channel){
     fd_set fds;
     struct timeval timeout;
     char buffer[10];
@@ -214,7 +224,7 @@ void select_loop(SSH_SESSION *session,CHANNEL *channel){
 }
 
 
-void shell(SSH_SESSION *session){
+static void shell(SSH_SESSION *session){
     CHANNEL *channel;
     struct termios terminal_local;
     int interactive=isatty(0);
@@ -245,7 +255,7 @@ void shell(SSH_SESSION *session){
     select_loop(session,channel);
 }
 
-void batch_shell(SSH_SESSION *session){
+static void batch_shell(SSH_SESSION *session){
     CHANNEL *channel;
     char buffer[1024];
     int i,s=0;
@@ -339,7 +349,7 @@ void do_sftp(SSH_SESSION *session){
     printf("session sftp termin�\n");
 }
 
-int auth_kbdint(SSH_SESSION *session){
+static int auth_kbdint(SSH_SESSION *session){
     int err=ssh_userauth_kbdint(session,NULL,NULL);
     char *name,*instruction,*prompt,*ptr;
     char buffer[128];
@@ -389,7 +399,7 @@ int main(int argc, char **argv){
     	usage();	
     }
     opts(argc,argv);
-    signal(SIGTERM,do_exit);
+    signal(SIGTERM, do_exit);
     if(user)
         ssh_options_set_username(options,user);
     ssh_options_set_host(options,host);
@@ -503,7 +513,7 @@ int main(int argc, char **argv){
     else
         do_sftp(session);    
     if(!sftp && !cmds[0])
-        do_cleanup();
+        do_cleanup(0);
     ssh_disconnect(session);
     ssh_finalize();
 
