@@ -45,6 +45,25 @@ char *ssh_type_to_char(int type){
     }
 }
 
+int ssh_type_from_name(char *name) {
+  if (strcmp(name, "rsa1") == 0) {
+    return TYPE_RSA1;
+  } else if (strcmp(name, "rsa") == 0) {
+    return TYPE_RSA;
+  } else if (strcmp(name, "dsa") == 0) {
+    return TYPE_DSS;
+  } else if (strcmp(name, "ssh-rsa1") == 0) {
+    return TYPE_RSA1;
+  } else if (strcmp(name, "ssh-rsa") == 0) {
+    return TYPE_RSA;
+  } else if (strcmp(name, "ssh-dss") == 0) {
+    return TYPE_DSS;
+  }
+
+  ssh_say(2, "key_type_from_name: unknown key type '%s'\n", name);
+  return -1;
+}
+
 PUBLIC_KEY *publickey_make_dss(SSH_SESSION *session, BUFFER *buffer){
     STRING *p,*q,*g,*pubkey;
     PUBLIC_KEY *key=malloc(sizeof(PUBLIC_KEY));
@@ -600,6 +619,38 @@ static STRING *RSA_do_sign(void *payload,int len,RSA *privkey){
     return sign;
 }
 #endif
+
+STRING *ssh_do_sign_with_agent(struct ssh_session *session,
+    struct buffer_struct *buf, struct public_key_struct *publickey) {
+  struct buffer_struct *sigbuf = NULL;
+  struct string_struct *signature = NULL;
+  struct string_struct *session_id = NULL;
+  struct ssh_crypto_struct *crypto = NULL;
+
+  if (session->current_crypto) {
+    crypto = session->current_crypto;
+  } else {
+    crypto = session->next_crypto;
+  }
+
+  /* prepend session identifier */
+  session_id = string_new(SHA_DIGEST_LEN);
+  string_fill(session_id, crypto->session_id, SHA_DIGEST_LEN);
+
+  sigbuf = buffer_new();
+
+  buffer_add_ssh_string(sigbuf, session_id);
+
+  /* append out buffer */
+  buffer_add_buffer(sigbuf, buf);
+
+  /* create signature */
+  signature = agent_sign_data(session, sigbuf, publickey);
+
+  buffer_free(sigbuf);
+
+  return signature;
+}
 
 /* this function signs the session id (known as H) as a string then the content of sigbuf */
 STRING *ssh_do_sign(SSH_SESSION *session,BUFFER *sigbuf, PRIVATE_KEY *privatekey){

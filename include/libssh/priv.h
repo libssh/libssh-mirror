@@ -289,7 +289,7 @@ struct channel_struct {
 
 struct agent_struct {
   struct socket *sock;
-  STRING *ident;
+  BUFFER *ident;
   unsigned int count;
 };
 
@@ -450,7 +450,17 @@ void agent_free(struct agent_struct *agent);
  */
 int agent_running(struct ssh_session *session);
 
-int agent_ident_count(struct ssh_session *session);
+int agent_get_ident_count(struct ssh_session *session);
+
+struct public_key_struct *agent_get_next_ident(struct ssh_session *session,
+    char **comment);
+
+struct public_key_struct *agent_get_first_ident(struct ssh_session *session,
+    char **comment);
+
+STRING *agent_sign_data(struct ssh_session *session,
+    struct buffer_struct *data,
+    struct public_key_struct *pubkey);
 #endif
 
 /* socket.c */
@@ -560,11 +570,20 @@ PRIVATE_KEY  *_privatekey_from_file(void *session,char *filename,int type);
 
 /* in keys.c */
 char *ssh_type_to_char(int type);
+int ssh_type_from_name(char *name);
+
+PRIVATE_KEY *privatekey_make_dss(SSH_SESSION *session, BUFFER *buffer);
+PRIVATE_KEY *privatekey_make_rsa(SSH_SESSION *session, BUFFER *buffer,
+    char *type);
+PRIVATE_KEY *privatekey_from_string(SSH_SESSION *session, STRING *privkey_s);
+
 PUBLIC_KEY *publickey_make_dss(SSH_SESSION *session, BUFFER *buffer);
 PUBLIC_KEY *publickey_make_rsa(SSH_SESSION *session, BUFFER *buffer,char *type);
 PUBLIC_KEY *publickey_from_string(SSH_SESSION *session, STRING *pubkey_s);
 SIGNATURE *signature_from_string(SSH_SESSION *session, STRING *signature,PUBLIC_KEY *pubkey,int needed_type);
 void signature_free(SIGNATURE *sign);
+STRING *ssh_do_sign_with_agent(struct ssh_session *session,
+    struct buffer_struct *buf, struct public_key_struct *publickey);
 STRING *ssh_do_sign(SSH_SESSION *session,BUFFER *sigbuf, 
         PRIVATE_KEY *privatekey);
 STRING *ssh_sign_session_id(SSH_SESSION *session, PRIVATE_KEY *privatekey);

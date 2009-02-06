@@ -23,6 +23,17 @@
 
 /* This file is based on authfd.c from OpenSSH */
 
+/*
+ * How does the ssh-agent work?
+ *
+ * a) client sends a request to get a list of all keys
+ *    the agent returns the cound and all public keys
+ * b) iterate over them to check if the server likes one
+ * c) the client sends a sign request to the agent
+ *    type, pubkey as blob, data to sign, flags
+ *    the agent returns the signed data
+ */
+
 #ifndef _WIN32
 
 #include <stdlib.h>
@@ -50,7 +61,7 @@ static u32 agent_get_u32(const void *vp) {
   v |= (u32)p[2] << 8;
   v |= (u32)p[3];
 
-  return (v);
+  return v;
 }
 
 static void agent_put_u32(void *vp, u32 v) {
@@ -107,7 +118,7 @@ static size_t atomicio(struct socket *s, void *buf, size_t n, int do_read) {
 AGENT *agent_new(struct ssh_session *session) {
   AGENT *agent = NULL;
 
-  agent = malloc(sizeof(*agent));
+  agent = calloc(1, sizeof(*agent));
   if (agent) {
     agent->count = 0;
     agent->sock = ssh_socket_new(session);
@@ -124,7 +135,9 @@ void agent_close(struct agent_struct *agent) {
 
 void agent_free(AGENT *agent) {
   if (agent) {
-    string_free(agent->ident);
+    if (agent->ident) {
+      buffer_free(agent->ident);
+    }
     if (agent->sock) {
       agent_close(agent);
       ssh_socket_free(agent->sock);
@@ -152,76 +165,68 @@ static int agent_connect(SSH_SESSION *session) {
   return -1;
 }
 
-static int agent_decode_reply(int type) {
+#if 0
+static int agent_decode_reply(struct ssh_session *session, int type) {
   switch (type) {
     case SSH_AGENT_FAILURE:
     case SSH2_AGENT_FAILURE:
     case SSH_COM_AGENT2_FAILURE:
-      ssh_say(1, "SSH_AGENT_FAILURE\n");
+      ssh_log(session, SSH_LOG_RARE, "SSH_AGENT_FAILURE");
       return 0;
     case SSH_AGENT_SUCCESS:
       return 1;
     default:
+      ssh_set_error(session, SSH_FATAL,
+          "Bad response from authentication agent: %d", type);
       /* TODO: fatal */
       break;
   }
 
   return -1;
 }
+#endif
 
 static int agent_talk(struct ssh_session *session,
     struct buffer_struct *request, struct buffer_struct *reply) {
-  size_t len = 0;
-  unsigned char payload[1024] = {0};
+  u32 len = 0;
+  u8 payload[1024] = {0};
 
   len = buffer_get_len(request);
-  ssh_say(2, "agent_talk - len of request: %u\n", len);
+  ssh_log(session, SSH_LOG_PACKET, "agent_talk - len of request: %u", len);
   agent_put_u32(payload, len);
 
-#if 0
-  /* send length and then the request packet */
-  if (ssh_socket_completewrite(session->agent->sock, payload, 4) == SSH_OK) {
-    buffer_get_data(request, payload, len);
-    fprintf(stderr, "agent_talk - sending request, payload = %u\n", payload[0]);
-    if (ssh_socket_completewrite(session->agent->sock, payload, len)
-        != SSH_OK) {
-      return -1;
-    }
-  } else {
-    return -1;
-  }
-#endif
   /* send length and then the request packet */
   if (atomicio(session->agent->sock, payload, 4, 0) == 4) {
     buffer_get_data(request, payload, len);
-    ssh_say(2, "agent_talk - sending request, payload = %u\n", payload[0]);
+    ssh_log(session, SSH_LOG_PACKET,
+        "agent_talk - sending request, payload[0] = %u", payload[0]);
     if (atomicio(session->agent->sock, payload, len, 0)
         != len) {
+      ssh_log(session, SSH_LOG_PACKET, "atomicio sending request failed: %s",
+          strerror(errno));
       return -1;
     }
   } else {
+    ssh_log(session, SSH_LOG_PACKET,
+        "atomicio sending request length failed: %s",
+        strerror(errno));
     return -1;
   }
 
-  session->blocking = 0;
-
-#if 0
-  /* wait for response, read the length of the response packet */
-  if (ssh_socket_read(session->agent->sock, payload, 4) != SSH_OK) {
-    fprintf(stderr, "agent_talk - error: %s\n", ssh_get_error(session));
-    return -1;
-  }
-#endif
   /* wait for response, read the length of the response packet */
   if (atomicio(session->agent->sock, payload, 4, 1) != 4) {
+    ssh_log(session, SSH_LOG_PACKET, "atomicio read response length failed: %s",
+        strerror(errno));
     return -1;
   }
 
   len = agent_get_u32(payload);
   if (len > 256 * 1024) {
+    ssh_set_error(session, SSH_FATAL,
+        "Authentication response too long: %u", len);
     return -1;
   }
-  ssh_say(2, "agent_talk - response length: %u\n", len);
+  ssh_log(session, SSH_LOG_PACKET, "agent_talk - response length: %u", len);
 
   while (len > 0) {
     size_t n = len;
@@ -229,7 +234,8 @@ static int agent_talk(struct ssh_session *session,
       n = sizeof(payload);
     }
     if (atomicio(session->agent->sock, payload, n, 1) != n) {
-      ssh_say(1, "Error reading response from authentication socket.");
+      ssh_log(session, SSH_LOG_RARE,
+          "Error reading response from authentication socket.");
       return -1;
     }
     buffer_add_data(reply, payload, n);
@@ -239,12 +245,12 @@ static int agent_talk(struct ssh_session *session,
   return 0;
 }
 
-int agent_ident_count(SSH_SESSION *session) {
+int agent_get_ident_count(struct ssh_session *session) {
   BUFFER *request = NULL;
   BUFFER *reply = NULL;
   unsigned int type = 0;
   unsigned int c1 = 0, c2 = 0;
-  unsigned char buf[4] = {0};
+  u8 buf[4] = {0};
 
   switch (session->version) {
     case 1:
@@ -273,24 +279,155 @@ int agent_ident_count(SSH_SESSION *session) {
 
   /* get message type and verify the answer */
   buffer_get_u8(reply, (u8 *) &type);
-  ssh_say(2, "agent_ident_count - answer type: %d, expected answer: %d\n",
+  ssh_log(session, SSH_LOG_PACKET,
+      "agent_ident_count - answer type: %d, expected answer: %d",
       type, c2);
   if (agent_failed(type)) {
     return 0;
   } else if (type != c2) {
-    /* TODO: fatal, set ssh error? */
+    ssh_set_error(session, SSH_FATAL,
+        "Bad authentication reply message type: %d", type);
     return -1;
   }
 
   buffer_get_u32(reply, (u32 *) buf);
   session->agent->count = agent_get_u32(buf);
-  ssh_say(2, "agent_ident_count - count: %d\n", session->agent->count);
+  ssh_log(session, SSH_LOG_PACKET, "agent_ident_count - count: %d",
+      session->agent->count);
   if (session->agent->count > 1024) {
-    /* TODO: fatal, set ssh error? */
+    ssh_set_error(session, SSH_FATAL,
+        "Too many identities in authentication reply: %d",
+        session->agent->count);
+    buffer_free(reply);
     return -1;
   }
 
+  if (session->agent->ident) {
+    buffer_free(session->agent->ident);
+  }
+  session->agent->ident = reply;
+
   return session->agent->count;
+}
+
+/* caller has to free commment */
+struct public_key_struct *agent_get_first_ident(struct ssh_session *session,
+    char **comment) {
+  if (agent_get_ident_count(session) > 0) {
+    return agent_get_next_ident(session, comment);
+  }
+
+  return NULL;
+}
+
+/* caller has to free commment */
+struct public_key_struct *agent_get_next_ident(struct ssh_session *session,
+    char **comment) {
+  struct public_key_struct *pubkey = NULL;
+  struct string_struct *blob = NULL;
+  struct string_struct *tmp = NULL;
+
+  if (session->agent->count == 0) {
+    return NULL;
+  }
+
+  switch(session->version) {
+    case 1:
+      /* TODO */
+      break;
+    case 2:
+      /* get the blob */
+      blob = buffer_get_ssh_string(session->agent->ident);
+      if (blob == NULL) {
+        return NULL;
+      }
+
+      /* get the comment */
+      tmp = buffer_get_ssh_string(session->agent->ident);
+      if (tmp == NULL) {
+        string_free(blob);
+
+        return NULL;
+      }
+
+      if (comment) {
+        *comment = string_to_char(tmp);
+      } else {
+        string_free(blob);
+        string_free(tmp);
+
+        return NULL;
+      }
+      string_free(tmp);
+
+      /* get key from blob */
+      pubkey = publickey_from_string(session, blob);
+      string_free(blob);
+      break;
+    default:
+      return NULL;
+  }
+
+  return pubkey;
+}
+
+STRING *agent_sign_data(struct ssh_session *session,
+    struct buffer_struct *data,
+    struct public_key_struct *pubkey) {
+  struct string_struct *blob = NULL;
+  struct string_struct *sig = NULL;
+  struct buffer_struct *request = NULL;
+  struct buffer_struct *reply = NULL;
+  int type = SSH2_AGENT_FAILURE;
+  int flags = 0;
+  u32 dlen = 0;
+
+  /* create blob from the pubkey */
+  blob = publickey_to_string(pubkey);
+
+  request = buffer_new();
+
+  /* create request */
+  buffer_add_u8(request, SSH2_AGENTC_SIGN_REQUEST);
+
+  /* adds len + blob */
+  buffer_add_ssh_string(request, blob);
+
+  /* Add data */
+  dlen = buffer_get_len(data);
+  buffer_add_u32(request, htonl(dlen));
+  buffer_add_data(request, buffer_get(data), dlen);
+
+  buffer_add_u32(request, htonl(flags));
+
+  string_free(blob);
+
+  reply = buffer_new();
+
+  /* send the request */
+  if (agent_talk(session, request, reply) < 0) {
+    buffer_free(request);
+    return NULL;
+  }
+  buffer_free(request);
+
+  /* check if reply is valid */
+  buffer_get_u8(reply, (u8 *) &type);
+  if (agent_failed(type)) {
+    ssh_log(session, SSH_LOG_RARE, "Agent reports failure in signing the key");
+    buffer_free(reply);
+    return NULL;
+  } else if (type != SSH2_AGENT_SIGN_RESPONSE) {
+    ssh_set_error(session, SSH_FATAL, "Bad authentication response: %d", type);
+    buffer_free(reply);
+    return NULL;
+  }
+
+  sig = buffer_get_ssh_string(reply);
+
+  buffer_free(reply);
+
+  return sig;
 }
 
 int agent_running(SSH_SESSION *session) {

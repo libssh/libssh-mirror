@@ -331,6 +331,8 @@ int ssh_userauth_none(SSH_SESSION *session, const char *username);
 int ssh_userauth_password(SSH_SESSION *session, const char *username, const char *password);
 int ssh_userauth_offer_pubkey(SSH_SESSION *session, const char *username, int type, STRING *publickey);
 int ssh_userauth_pubkey(SSH_SESSION *session, const char *username, STRING *publickey, PRIVATE_KEY *privatekey);
+int ssh_userauth_agent_pubkey(SSH_SESSION *session, const char *username,
+    PUBLIC_KEY *publickey);
 int ssh_userauth_autopubkey(SSH_SESSION *session, const char *passphrase);
 int ssh_userauth_kbdint(SSH_SESSION *session, const char *user, const char *submethods);
 int ssh_userauth_kbdint_getnprompts(SSH_SESSION *session);

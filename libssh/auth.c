@@ -332,6 +332,87 @@ int ssh_userauth_pubkey(SSH_SESSION *session, const char *username, STRING *publ
     return err;
 }
 
+/** \brief Try to authenticate through public key with ssh agent
+ * \param session ssh session
+ * \param username username to authenticate. You can specify NULL if
+ * ssh_option_set_username() has been used. You cannot try two different logins in a row.
+ * \param publickey a public key returned by publickey_from_file()
+ * \param privatekey a private key returned by privatekey_from_file()
+ * \returns SSH_AUTH_ERROR : a serious error happened\n
+ * SSH_AUTH_DENIED : Authentication failed : use another method\n
+ * SSH_AUTH_PARTIAL : You've been partially authenticated, you still have to use another method\n
+ * SSH_AUTH_SUCCESS : Authentication success
+ * \see publickey_from_file()
+ * \see privatekey_from_file()
+ * \see private_key_free()
+ * \see ssh_userauth_offer_pubkey()
+ */
+
+int ssh_userauth_agent_pubkey(SSH_SESSION *session, const char *username,
+    PUBLIC_KEY *publickey) {
+  STRING *user;
+  STRING *service;
+  STRING *method;
+  STRING *algo;
+  STRING *key;
+  STRING *sign;
+  int err = SSH_AUTH_ERROR;
+
+  enter_function();
+  if (! agent_running(session)) {
+    return err;
+  }
+
+  if(username == NULL) {
+    if((username = session->options->username) == NULL) {
+      if (ssh_options_default_username(session->options)) {
+        leave_function();
+        return err;
+      } else {
+        username=session->options->username;
+      }
+    }
+  }
+  if (ask_userauth(session)) {
+    leave_function();
+    return err;
+  }
+
+  user = string_from_char(username);
+  service = string_from_char("ssh-connection");
+  method = string_from_char("publickey");
+  algo = string_from_char(ssh_type_to_char(publickey->type));
+  key = publickey_to_string(publickey);
+
+  /* we said previously the public key was accepted */
+  buffer_add_u8(session->out_buffer, SSH2_MSG_USERAUTH_REQUEST);
+  buffer_add_ssh_string(session->out_buffer, user);
+  buffer_add_ssh_string(session->out_buffer, service);
+  buffer_add_ssh_string(session->out_buffer, method);
+  buffer_add_u8(session->out_buffer, 1);
+  buffer_add_ssh_string(session->out_buffer, algo);
+  buffer_add_ssh_string(session->out_buffer, key);
+#if 0
+  sign=ssh_do_sign(session,session->out_buffer,privatekey);
+  sign = agent_sign_data(session, session->out_buffer, publickey);
+#endif
+  sign = ssh_do_sign_with_agent(session, session->out_buffer, publickey);
+
+  if (sign) {
+    buffer_add_ssh_string(session->out_buffer, sign);
+    string_free(sign);
+    packet_send(session);
+    err = wait_auth_status(session,0);
+  }
+  string_free(user);
+  string_free(service);
+  string_free(method);
+  string_free(algo);
+  leave_function();
+
+  return err;
+}
+
 /** \brief Try to authenticate by password
  * \param session ssh session
  * \param username username to authenticate. You can specify NULL if
@@ -421,10 +502,13 @@ int ssh_userauth_autopubkey(SSH_SESSION *session, const char *passphrase) {
     int type=0;
     int err;
     STRING *pubkey;
+    struct public_key_struct *publickey;
     char *privkeyfile=NULL;
     PRIVATE_KEY *privkey;
-    char *id=NULL;
+    char *id = NULL;
+
     enter_function();
+
     // always testing none
     err=ssh_userauth_none(session,NULL);
     if(err==SSH_AUTH_ERROR || err==SSH_AUTH_SUCCESS){
@@ -434,13 +518,69 @@ int ssh_userauth_autopubkey(SSH_SESSION *session, const char *passphrase) {
 
     /* try ssh-agent keys first */
 #ifndef _WIN32
-#if 0
     if (agent_running(session)) {
-      ssh_say(1, "SSH Agent is running\n");
-      count = agent_ident_count(session);
-      ssh_say(1, "SSH Agent has %d key(s)\n", count);
-    }
-#endif
+      ssh_log(session, SSH_LOG_RARE,
+          "Trying to authenticate with SSH agent keys");
+
+      for (publickey = agent_get_first_ident(session, &privkeyfile);
+          publickey != NULL;
+          publickey = agent_get_next_ident(session, &privkeyfile)) {
+
+        ssh_log(session, SSH_LOG_RARE, "Trying identity %s", privkeyfile);
+
+        pubkey = publickey_to_string(publickey);
+        if (pubkey) {
+          err = ssh_userauth_offer_pubkey(session, NULL, publickey->type, pubkey);
+          string_free(pubkey);
+          if (err == SSH_AUTH_ERROR) {
+            SAFE_FREE(id);
+            SAFE_FREE(privkeyfile);
+            publickey_free(publickey);
+            leave_function();
+
+            return err;
+          } else if (err != SSH_AUTH_SUCCESS) {
+            ssh_log(session, SSH_LOG_PACKET, "Public key refused by server\n");
+            SAFE_FREE(id);
+            SAFE_FREE(privkeyfile);
+            publickey_free(publickey);
+            continue;
+          }
+          ssh_log(session, SSH_LOG_RARE, "Public key accepted");
+          /* pubkey accepted by server ! */
+          err = ssh_userauth_agent_pubkey(session, NULL, publickey);
+          if (err == SSH_AUTH_ERROR) {
+            SAFE_FREE(id);
+            SAFE_FREE(privkeyfile);
+            publickey_free(publickey);
+            leave_function();
+
+            return err;
+          } else if (err != SSH_AUTH_SUCCESS) {
+              ssh_log(session, SSH_LOG_RARE,
+                  "Server accepted public key but refused the signature\n"
+                  "It might be a bug of libssh\n");
+            SAFE_FREE(id);
+            SAFE_FREE(privkeyfile);
+            publickey_free(publickey);
+            continue;
+          }
+          /* auth success */
+          ssh_log(session, SSH_LOG_RARE, "Authentication using %s success\n",
+              privkeyfile);
+          SAFE_FREE(id);
+          SAFE_FREE(privkeyfile);
+          publickey_free(publickey);
+
+          leave_function();
+
+          return SSH_AUTH_SUCCESS;
+        } /* if pubkey */
+        SAFE_FREE(id);
+        SAFE_FREE(privkeyfile);
+        publickey_free(publickey);
+      } /* for each privkey */
+    } /* if agent is running */
 #endif
 
     if(session->options->identity){
