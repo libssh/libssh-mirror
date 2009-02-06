@@ -332,6 +332,7 @@ int ssh_userauth_pubkey(SSH_SESSION *session, const char *username, STRING *publ
     return err;
 }
 
+#ifdef _WIN32
 /** \brief Try to authenticate through public key with ssh agent
  * \param session ssh session
  * \param username username to authenticate. You can specify NULL if
@@ -392,10 +393,7 @@ int ssh_userauth_agent_pubkey(SSH_SESSION *session, const char *username,
   buffer_add_u8(session->out_buffer, 1);
   buffer_add_ssh_string(session->out_buffer, algo);
   buffer_add_ssh_string(session->out_buffer, key);
-#if 0
-  sign=ssh_do_sign(session,session->out_buffer,privatekey);
-  sign = agent_sign_data(session, session->out_buffer, publickey);
-#endif
+
   sign = ssh_do_sign_with_agent(session, session->out_buffer, publickey);
 
   if (sign) {
@@ -412,6 +410,7 @@ int ssh_userauth_agent_pubkey(SSH_SESSION *session, const char *username,
 
   return err;
 }
+#endif /* _WIN32 */
 
 /** \brief Try to authenticate by password
  * \param session ssh session
