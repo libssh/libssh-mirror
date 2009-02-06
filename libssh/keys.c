@@ -620,7 +620,7 @@ static STRING *RSA_do_sign(void *payload,int len,RSA *privkey){
 }
 #endif
 
-#ifdef _WIN32
+#ifndef _WIN32
 STRING *ssh_do_sign_with_agent(struct ssh_session *session,
     struct buffer_struct *buf, struct public_key_struct *publickey) {
   struct buffer_struct *sigbuf = NULL;

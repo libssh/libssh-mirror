@@ -332,13 +332,12 @@ int ssh_userauth_pubkey(SSH_SESSION *session, const char *username, STRING *publ
     return err;
 }
 
-#ifdef _WIN32
+#ifndef _WIN32
 /** \brief Try to authenticate through public key with ssh agent
  * \param session ssh session
  * \param username username to authenticate. You can specify NULL if
  * ssh_option_set_username() has been used. You cannot try two different logins in a row.
- * \param publickey a public key returned by publickey_from_file()
- * \param privatekey a private key returned by privatekey_from_file()
+ * \param publickey the public key provided by the agent
  * \returns SSH_AUTH_ERROR : a serious error happened\n
  * SSH_AUTH_DENIED : Authentication failed : use another method\n
  * SSH_AUTH_PARTIAL : You've been partially authenticated, you still have to use another method\n
