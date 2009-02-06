@@ -31,7 +31,7 @@ MA 02111-1307, USA. */
 #define KEYS_FOLDER "/etc/ssh/"
 #endif
 
-int auth_password(char *user, char *password){
+static int auth_password(char *user, char *password){
     if(strcmp(user,"aris"))
         return 0;
     if(strcmp(password,"lala"))
@@ -45,6 +45,7 @@ int main(int argc, char **argv){
     SSH_BIND *ssh_bind;
     SSH_MESSAGE *message;
     CHANNEL *chan=0;
+    BUFFER *buf;
     int auth=0;
     int sftp=0;
     int i;
@@ -142,7 +143,7 @@ int main(int argc, char **argv){
         return 1;
     }
     printf("it works !\n");
-    BUFFER *buf=buffer_new();
+    buf=buffer_new();
     do{
         i=channel_read(chan,buf,0,0);
         if(i>0)
