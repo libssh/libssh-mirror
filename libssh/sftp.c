@@ -36,7 +36,7 @@ MA 02111-1307, USA. */
 /* functions */
 void sftp_enqueue(SFTP_SESSION *session, SFTP_MESSAGE *msg);
 static void sftp_message_free(SFTP_MESSAGE *msg);
-static void sftp_set_errno(SFTP_SESSION *sftp, int errnum);
+static void sftp_set_error(SFTP_SESSION *sftp, int errnum);
 
 SFTP_SESSION *sftp_new(SSH_SESSION *session){
     SFTP_SESSION *sftp=malloc(sizeof(SFTP_SESSION));
@@ -172,7 +172,7 @@ SFTP_PACKET *sftp_packet_read(SFTP_SESSION *sftp){
     return packet;
 }
 
-static void sftp_set_errno(SFTP_SESSION *sftp, int errnum) {
+static void sftp_set_error(SFTP_SESSION *sftp, int errnum) {
   if (sftp != NULL) {
     sftp->errnum = errnum;
   }
@@ -449,7 +449,7 @@ SFTP_DIR *sftp_opendir(SFTP_SESSION *sftp, const char *path){
             sftp_message_free(msg);
             if(!status)
                 return NULL;
-            sftp_set_errno(sftp, status->status);
+            sftp_set_error(sftp, status->status);
             ssh_set_error(sftp->session,SSH_REQUEST_DENIED,"sftp server : %s",status->errormsg);
             status_msg_free(status);
             return NULL;
@@ -753,7 +753,7 @@ SFTP_ATTRIBUTES *sftp_readdir(SFTP_SESSION *sftp, SFTP_DIR *dir){
                 sftp_message_free(msg);
                 if(!status)
                     return NULL;
-                sftp_set_errno(sftp, status->status);
+                sftp_set_error(sftp, status->status);
                 switch (status->status) {
                   case SSH_FX_EOF:
                     dir->eof = 1;
@@ -839,7 +839,7 @@ static int sftp_handle_close(SFTP_SESSION *sftp, STRING *handle){
             sftp_message_free(msg);
             if(!status)
                 return -1;
-            sftp_set_errno(sftp, status->status);
+            sftp_set_error(sftp, status->status);
             switch (status->status) {
               case SSH_FX_OK:
                 status_msg_free(status);
@@ -944,7 +944,7 @@ SFTP_FILE *sftp_open(SFTP_SESSION *sftp, const char *file, int access, mode_t mo
             sftp_message_free(msg);
             if(!status)
                 return NULL;
-            sftp_set_errno(sftp, status->status);
+            sftp_set_error(sftp, status->status);
             ssh_set_error(sftp->session,SSH_REQUEST_DENIED,"sftp server : %s",status->errormsg);
             status_msg_free(status);
             return NULL;
@@ -1003,7 +1003,7 @@ ssize_t sftp_read(SFTP_FILE *handle, void *buf, size_t count){
             sftp_message_free(msg);
             if(!status)
                 return -1;
-            sftp_set_errno(sftp, status->status);
+            sftp_set_error(sftp, status->status);
             switch (status->status) {
               case SSH_FX_EOF:
                 handle->eof=1;
@@ -1097,7 +1097,7 @@ int sftp_async_read(SFTP_FILE *file, void *data, u32 size, u32 id){
 				sftp_leave_function();
 				return -1;
 			}
-			sftp_set_errno(sftp, status->status);
+			sftp_set_error(sftp, status->status);
 			if(status->status != SSH_FX_EOF){
 				ssh_set_error(sftp->session,SSH_REQUEST_DENIED,"sftp server : %s",status->errormsg);
 				sftp_leave_function();
@@ -1172,7 +1172,7 @@ ssize_t sftp_write(SFTP_FILE *file, const void *buf, size_t count){
             sftp_message_free(msg);
             if(!status)
                 return -1;
-            sftp_set_errno(sftp, status->status);
+            sftp_set_error(sftp, status->status);
             switch (status->status) {
               case SSH_FX_OK:
                 file->offset += count;
@@ -1242,7 +1242,7 @@ int sftp_unlink(SFTP_SESSION *sftp, const char *file) {
          sftp_message_free(msg);
          if (!status)
              return -1;
-         sftp_set_errno(sftp, status->status);
+         sftp_set_error(sftp, status->status);
          switch (status->status) {
            case SSH_FX_OK:
              status_msg_free(status);
@@ -1288,7 +1288,7 @@ int sftp_rmdir(SFTP_SESSION *sftp, const char *directory) {
         if (!status) {
             return -1;
         }
-        sftp_set_errno(sftp, status->status);
+        sftp_set_error(sftp, status->status);
         switch (status->status) {
           case SSH_FX_OK:
             status_msg_free(status);
@@ -1341,7 +1341,7 @@ int sftp_mkdir(SFTP_SESSION *sftp, const char *directory, mode_t mode) {
         if (status == NULL) {
           return -1;
         }
-        sftp_set_errno(sftp, status->status);
+        sftp_set_error(sftp, status->status);
         switch (status->status) {
           case SSH_FX_FAILURE:
             /*
@@ -1351,7 +1351,7 @@ int sftp_mkdir(SFTP_SESSION *sftp, const char *directory, mode_t mode) {
              */
             errno_attr = sftp_lstat(sftp, directory);
             if (errno_attr != NULL) {
-              sftp_set_errno(sftp, SSH_FX_FILE_ALREADY_EXISTS);
+              sftp_set_error(sftp, SSH_FX_FILE_ALREADY_EXISTS);
             }
             break;
           case SSH_FX_OK:
@@ -1401,7 +1401,7 @@ int sftp_rename(SFTP_SESSION *sftp, const char *original, const char *newname) {
         sftp_message_free(msg);
         if (!status)
             return -1;
-        sftp_set_errno(sftp, status->status);
+        sftp_set_error(sftp, status->status);
         switch (status->status) {
           case SSH_FX_OK:
             status_msg_free(status);
@@ -1446,7 +1446,7 @@ int sftp_setstat(SFTP_SESSION *sftp, const char *file, SFTP_ATTRIBUTES *attr) {
         sftp_message_free(msg);
         if (!status)
             return -1;
-        sftp_set_errno(sftp, status->status);
+        sftp_set_error(sftp, status->status);
         switch (status->status) {
           case SSH_FX_OK:
             status_msg_free(status);
@@ -1582,7 +1582,7 @@ static SFTP_ATTRIBUTES *sftp_xstat(SFTP_SESSION *sftp, const char *path, int par
         sftp_message_free(msg);
         if(!status)
             return NULL;
-        sftp_set_errno(sftp, status->status);
+        sftp_set_error(sftp, status->status);
         ssh_set_error(sftp->session,SSH_REQUEST_DENIED,"sftp server: %s",status->errormsg);
         status_msg_free(status);
         return NULL;
