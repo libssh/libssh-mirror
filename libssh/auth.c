@@ -359,7 +359,7 @@ int ssh_userauth_agent_pubkey(SSH_SESSION *session, const char *username,
   int err = SSH_AUTH_ERROR;
 
   enter_function();
-  if (! agent_running(session)) {
+  if (! agent_is_running(session)) {
     return err;
   }
 
@@ -516,7 +516,7 @@ int ssh_userauth_autopubkey(SSH_SESSION *session, const char *passphrase) {
 
     /* try ssh-agent keys first */
 #ifndef _WIN32
-    if (agent_running(session)) {
+    if (agent_is_running(session)) {
       ssh_log(session, SSH_LOG_RARE,
           "Trying to authenticate with SSH agent keys");
 

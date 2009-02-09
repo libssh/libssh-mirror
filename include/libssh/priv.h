@@ -448,7 +448,7 @@ void agent_free(struct agent_struct *agent);
  *
  * @return 1 if it is running, 0 if not.
  */
-int agent_running(struct ssh_session *session);
+int agent_is_running(struct ssh_session *session);
 
 int agent_get_ident_count(struct ssh_session *session);
 

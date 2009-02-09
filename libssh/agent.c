@@ -430,7 +430,7 @@ STRING *agent_sign_data(struct ssh_session *session,
   return sig;
 }
 
-int agent_running(SSH_SESSION *session) {
+int agent_is_running(SSH_SESSION *session) {
   if (session == NULL || session->agent == NULL) {
     return 0;
   }
