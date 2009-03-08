@@ -48,7 +48,9 @@ SSH_SESSION *ssh_new(void) {
     session->log_indent=0;
     session->out_buffer=buffer_new();
     session->in_buffer=buffer_new();
+#ifndef _WIN32
     session->agent=agent_new(session);
+#endif /* _WIN32 */
     return session;
 }
 
@@ -77,8 +79,10 @@ void ssh_cleanup(SSH_SESSION *session){
     // delete all channels
     while(session->channels)
         channel_free(session->channels);
+#ifndef _WIN32
     if (session->agent)
         agent_free(session->agent);
+#endif /* _WIN32 */
     if(session->client_kex.methods)
         for(i=0;i<10;i++)
             if(session->client_kex.methods[i])

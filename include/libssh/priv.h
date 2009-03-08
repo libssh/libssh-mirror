@@ -425,6 +425,7 @@ struct ssh_message {
     struct ssh_channel_request channel_request;
 };
 
+#ifndef _WIN32
 /* agent.c */
 /**
  * @brief Create a new ssh agent structure.
@@ -434,13 +435,14 @@ struct ssh_message {
 struct agent_struct *agent_new(struct ssh_session *session);
 
 void agent_close(struct agent_struct *agent);
+
 /**
  * @brief Free an allocated ssh agent structure.
  *
  * @param agent The ssh agent structure to free.
  */
 void agent_free(struct agent_struct *agent);
-#ifndef _WIN32
+
 /**
  * @brief Check if the ssh agent is running.
  *
