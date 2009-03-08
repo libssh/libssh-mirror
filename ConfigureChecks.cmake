@@ -25,10 +25,16 @@ check_include_file(openssl/des.h HAVE_OPENSSL_DES_H)
 
 # FUNCTIONS
 check_function_exists(cfmakeraw HAVE_CFMAKERAW)
-check_function_exists(getaddrinfo HAVE_GETADDRINFO)
-check_function_exists(gethostbyname HAVE_GETHOSTBYNAME)
-check_function_exists(poll HAVE_POLL)
-check_function_exists(select HAVE_SELECT)
+if (WIN32)
+  set(HAVE_GETADDRINFO TRUE)
+  set(HAVE_GETHOSTBYNAME TRUE)
+  set(HAVE_SELECT TRUE)
+else (WIN32)
+  check_function_exists(getaddrinfo HAVE_GETADDRINFO)
+  check_function_exists(gethostbyname HAVE_GETHOSTBYNAME)
+  check_function_exists(poll HAVE_POLL)
+  check_function_exists(select HAVE_SELECT)
+endif (WIN32)
 
 # LIBRARIES
 if (CRYPTO_LIBRARY)
