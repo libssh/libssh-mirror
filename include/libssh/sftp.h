@@ -49,6 +49,15 @@ extern "C" {
 #define SFTP_DEPRECATED
 #endif
 
+#ifdef _WIN32
+#ifndef uid_t
+  typedef long uid_t;
+#endif /* uid_t */
+#ifndef gid_t
+  typedef long gid_t;
+#endif /* gid_t */
+#endif /* _WIN32 */
+
 typedef struct sftp_session_struct {
     SSH_SESSION *session;
     CHANNEL *channel;
