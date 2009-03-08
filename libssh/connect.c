@@ -64,11 +64,13 @@ static void sock_set_blocking(socket_t sock){
         ioctlsocket(sock, FIONBIO, &nonblocking);
 }
 
+#ifndef gai_strerror
 char WSAAPI *gai_strerrorA(int code){
      static char buffer[256];
      snprintf(buffer,256,"Undetermined error code (%d)",code);
      return buffer;
 }
+#endif
 
 #endif
 
