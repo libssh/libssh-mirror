@@ -33,6 +33,8 @@ else (ZLIB_LIBRARIES AND ZLIB_INCLUDE_DIRS)
   find_library(Z_LIBRARY
     NAMES
       z
+      zlib
+      zlib1
     PATHS
       /usr/lib
       /usr/local/lib
