@@ -196,7 +196,7 @@ static struct crypto_struct ssh_ciphertab[]={
         des3_set_key,des3_encrypt, des3_decrypt},
     { "3des-cbc-ssh1",8,sizeof(gcry_cipher_hd_t)*3,NULL,192,des3_1_set_key, 
         des3_1_set_key,des3_1_encrypt, des3_1_decrypt},
-    { NULL,0,0,NULL,0,NULL,NULL,NULL}
+    { NULL,0,0,NULL,0,NULL,NULL,NULL,NULL }
 };
 #elif defined HAVE_LIBCRYPTO
 #include <openssl/sha.h>
@@ -413,7 +413,7 @@ static struct crypto_struct *cipher_new(int offset){
 
 static void cipher_free(struct crypto_struct *cipher){
 #ifdef HAVE_LIBGCRYPT
-    int i;
+    unsigned int i;
 #endif
     if(cipher->key){
 #ifdef HAVE_LIBGCRYPT
