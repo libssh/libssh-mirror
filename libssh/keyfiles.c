@@ -212,7 +212,7 @@ int privatekey_decrypt(int algo, int mode, unsigned int key_len,
       return 0;
     }
   } else if (cb == NULL && userdata != NULL) {
-    sprintf(buf, MAX_PASSPHRASE_SIZE, "%s", userdata);
+    sprintf(passphrase, MAX_PASSPHRASE_SIZE, "%s", userdata);
   }
   passphrase_to_key(passphrase, strlen(passphrase), iv, key, key_len);
   if (gcry_cipher_open(&cipher, algo, mode, 0)
@@ -421,7 +421,7 @@ int read_rsa_privatekey(FILE *fp, gcry_sexp_t *r,
   return 1;
 }
 
-int read_dsa_privatekey(FILE *fp, gcry_sexp_t *r, ssh_auth_callback cb, void *userdata; char *desc)
+int read_dsa_privatekey(FILE *fp, gcry_sexp_t *r, ssh_auth_callback cb, void *userdata, char *desc)
 {
   STRING *p;
   STRING *q;
@@ -606,7 +606,7 @@ PRIVATE_KEY  *_privatekey_from_file(void *session,char *filename,int type){
     }
     if(type==TYPE_DSS){
 #ifdef HAVE_LIBGCRYPT
-        valid=read_dsa_privatekey(file,&dsa,NULL,NULL);
+        valid=read_dsa_privatekey(file,&dsa,NULL,NULL,NULL);
         fclose(file);
         if(!valid){
             ssh_set_error(session,SSH_FATAL,"parsing private key %s"
@@ -623,7 +623,7 @@ PRIVATE_KEY  *_privatekey_from_file(void *session,char *filename,int type){
     }
     else if (type==TYPE_RSA){
 #ifdef HAVE_LIBGCRYPT
-        valid=read_rsa_privatekey(file,&rsa,NULL,NULL);
+        valid=read_rsa_privatekey(file,&rsa,NULL,NULL,NULL);
         fclose(file);
         if(!valid){
             ssh_set_error(session,SSH_FATAL,"parsing private key %s"
