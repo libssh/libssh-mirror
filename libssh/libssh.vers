@@ -1,4 +1,4 @@
-SSH_0.2 {
+SSH_0.3 {
   global:
     ssh_get_error; ssh_get_error_code; ssh_say; ssh_set_verbosity;
     ssh_new; ssh_set_options; ssh_get_fd; ssh_silent_disconnect;
