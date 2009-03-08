@@ -151,7 +151,7 @@ int asn1_check_sequence(BUFFER *buffer)
 int read_line(char *data, unsigned int len, FILE *fp)
 {
   char tmp;
-  int i;
+  unsigned int i;
 
   for (i=0; fread(&tmp, 1, 1, fp) && tmp!='\n' && i<len; data[i++]=tmp)
     ;
@@ -212,7 +212,7 @@ int privatekey_decrypt(int algo, int mode, unsigned int key_len,
       return 0;
     }
   } else if (cb == NULL && userdata != NULL) {
-    sprintf(passphrase, MAX_PASSPHRASE_SIZE, "%s", userdata);
+    snprintf(passphrase, MAX_PASSPHRASE_SIZE, "%s", (char *) userdata);
   }
   passphrase_to_key(passphrase, strlen(passphrase), iv, key, key_len);
   if (gcry_cipher_open(&cipher, algo, mode, 0)
@@ -463,6 +463,7 @@ int read_dsa_privatekey(FILE *fp, gcry_sexp_t *r, ssh_auth_callback cb, void *us
 }
 #endif /* GCRYPT */
 
+#ifdef HAVE_LIBCRYPTO
 static int pem_get_password(char *buf, int size, int rwflag, void *userdata) {
   SSH_SESSION *session = userdata;
 
@@ -482,6 +483,7 @@ static int pem_get_password(char *buf, int size, int rwflag, void *userdata) {
 
   return 0;
 }
+#endif /* HAVE_LIBCRYPTO */
 
 /** \addtogroup ssh_auth
  * @{
@@ -524,7 +526,7 @@ PRIVATE_KEY  *privatekey_from_file(SSH_SESSION *session,char *filename,int type,
             valid = read_dsa_privatekey(file,&dsa, auth_cb, auth_ud, "Passphrase for private key:");
           }
         } else {
-          valid = read_dsa_privatekey(file,&dsa, NULL, passphrase, NULL);
+          valid = read_dsa_privatekey(file,&dsa, NULL, (void *) passphrase, NULL);
         }
         fclose(file);
         if(!valid) {
@@ -556,7 +558,7 @@ PRIVATE_KEY  *privatekey_from_file(SSH_SESSION *session,char *filename,int type,
               valid = read_rsa_privatekey(file, &rsa, auth_cb, auth_ud, "Passphrase for private key:");
             }
         } else {
-            valid = read_rsa_privatekey(file, &rsa, NULL, passphrase, NULL);
+            valid = read_rsa_privatekey(file, &rsa, NULL, (void *) passphrase, NULL);
         }
         fclose(file);
         if(!valid){
