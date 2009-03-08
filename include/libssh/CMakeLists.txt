@@ -14,5 +14,7 @@ INSTALL(
     ${libssh_HDRS}
   DESTINATION
     ${INCLUDE_INSTALL_DIR}/${APPLICATION_NAME}
+  COMPONENT
+    libraries
 )
 

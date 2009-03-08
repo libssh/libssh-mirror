@@ -40,12 +40,12 @@ find_package(ZLIB REQUIRED)
 
 find_package(OpenSSL)
 
-if (NOT CRYPTO_FOUND)
+if (NOT CRYPTO_LIBRARY)
   find_package(GCrypt)
-  if (NOT GCRYPT_FOUND)
+  if (NOT GCRYPT_LIBRARY)
     message(FATAL_ERROR "Could not find OpenSSL or GCrypt")
-  endif (NOT GCRYPT_FOUND)
-endif (NOT CRYPTO_FOUND)
+  endif (NOT GCRYPT_LIBRARY)
+endif (NOT CRYPTO_LIBRARY)
 
 # config.h checks
 include(ConfigureChecks.cmake)
