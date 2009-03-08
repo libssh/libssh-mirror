@@ -107,11 +107,11 @@ static int match_pattern(const char *s, const char *pattern) {
  */
 
 static int match_pattern_list(const char *string, const char *pattern,
-    u_int len, int dolower) {
+    unsigned int len, int dolower) {
 	char sub[1024];
 	int negated;
 	int got_positive;
-	u_int i, subi;
+	unsigned int i, subi;
 
 	got_positive = 0;
 	for (i = 0; i < len;) {
@@ -164,6 +164,6 @@ static int match_pattern_list(const char *string, const char *pattern,
  * indicate negation).  Returns -1 if negation matches, 1 if there is
  * a positive match, 0 if there is no match at all.
  */
-static int match_hostname(const char *host, const char *pattern, u_int len) {
+static int match_hostname(const char *host, const char *pattern, unsigned int len) {
 	return match_pattern_list(host, pattern, len, 1);
 }
