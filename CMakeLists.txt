@@ -59,8 +59,10 @@ add_subdirectory(libssh)
 # build samples
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
-add_executable(samplessh sample.c)
-add_executable(samplesshd samplesshd.c)
+if (UNIX AND NOT WIN32)
+  add_executable(samplessh sample.c)
+  add_executable(samplesshd samplesshd.c)
 
-target_link_libraries(samplessh ${LIBSSH_LIBRARY})
-target_link_libraries(samplesshd ${LIBSSH_LIBRARY})
+  target_link_libraries(samplessh ${LIBSSH_LIBRARY})
+  target_link_libraries(samplesshd ${LIBSSH_LIBRARY})
+endif (UNIX AND NOT WIN32)
