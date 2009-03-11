@@ -69,6 +69,7 @@ SFTP_SESSION *sftp_server_new(SSH_SESSION *session, CHANNEL *chan){
 }
 
 int sftp_server_init(SFTP_SESSION *sftp){
+    struct ssh_session *session = sftp->session;
     SFTP_PACKET *packet;
     BUFFER *reply;
     u32 version;
@@ -80,16 +81,17 @@ int sftp_server_init(SFTP_SESSION *sftp){
     	return -1;
     }
     if(packet->type != SSH_FXP_INIT){
-        ssh_set_error(sftp->session,SSH_FATAL,"Packet read of type %d instead of SSH_FXP_INIT",
-                      packet->type);
+        ssh_set_error(session, SSH_FATAL,
+            "Packet read of type %d instead of SSH_FXP_INIT",
+            packet->type);
         sftp_packet_free(packet);
         sftp_leave_function();
         return -1;
     }
-    ssh_say(2,"received SSH_FXP_INIT\n");
+    ssh_log(session, SSH_LOG_PACKET, "received SSH_FXP_INIT");
     buffer_get_u32(packet->payload,&version);
     version=ntohl(version);
-    ssh_say(2,"client version %d\n");
+    ssh_log(session, SSH_LOG_PACKET, "Client version: %d", version);
     sftp->client_version=version;
     sftp_packet_free(packet);
     reply=buffer_new();
@@ -100,7 +102,7 @@ int sftp_server_init(SFTP_SESSION *sftp){
         return -1;
     }
     buffer_free(reply);
-    ssh_say(2,"server version sent\n");
+    ssh_log(session, SSH_LOG_RARE, "Server version sent");
     if(version > LIBSFTP_VERSION)
         sftp->version=LIBSFTP_VERSION;
     else
@@ -135,7 +137,10 @@ int sftp_packet_write(SFTP_SESSION *sftp,u8 type, BUFFER *payload){
     if (size < 0) {
       return -1;
     } else if((u32) size != buffer_get_len(payload)){
-        ssh_say(1,"had to write %d bytes, wrote only %d\n",buffer_get_len(payload),size);
+        ssh_log(sftp->session, SSH_LOG_PACKET,
+            "Had to write %d bytes, wrote only %d",
+            buffer_get_len(payload),
+            size);
     }
     return size;
 }
@@ -228,7 +233,10 @@ static SFTP_MESSAGE *sftp_get_message(SFTP_PACKET *packet){
         sftp_leave_function();
         return NULL;
     }
-    ssh_say(2,"packet with id %d type %d\n",msg->id,msg->packet_type);
+    ssh_log(packet->sftp->session, SSH_LOG_PACKET,
+        "Packet with id %d type %d",
+        msg->id,
+        msg->packet_type);
     buffer_add_data(msg->payload,buffer_get_rest(packet->payload),buffer_get_rest_len(packet->payload));
     sftp_leave_function();
     return msg;
@@ -285,11 +293,14 @@ int sftp_init(SFTP_SESSION *sftp){
     buffer_get_u32(packet->payload,&version);
     version=ntohl(version);
     if(!(ext_name_s=buffer_get_ssh_string(packet->payload))||!(ext_data_s=buffer_get_ssh_string(packet->payload)))
-        ssh_say(2,"sftp server version %d\n",version);
+        ssh_log(sftp->session, SSH_LOG_RARE,
+            "sftp server version %d", version);
     else{
         ext_name=string_to_char(ext_name_s);
         ext_data=string_to_char(ext_data_s);
-        ssh_say(2,"sftp server version %d (%s,%s)\n",version,ext_name,ext_data);
+        ssh_log(sftp->session, SSH_LOG_RARE,
+            "sftp server version %d (%s,%s)",
+            version, ext_name, ext_data);
         free(ext_name);
         free(ext_data);
     }
@@ -315,14 +326,16 @@ static void request_queue_free(REQUEST_QUEUE *queue){
     free(queue);
 }
 
-void sftp_enqueue(SFTP_SESSION *session, SFTP_MESSAGE *msg){
+void sftp_enqueue(SFTP_SESSION *sftp, SFTP_MESSAGE *msg){
     REQUEST_QUEUE *queue=request_queue_new(msg);
     REQUEST_QUEUE *ptr;
-    ssh_say(2,"queued msg type %d id %d\n",msg->id,msg->packet_type);
-    if(!session->queue)
-        session->queue=queue;
+    ssh_log(sftp->session, SSH_LOG_PACKET,
+        "queued msg type %d id %d",
+        msg->id, msg->packet_type);
+    if(!sftp->queue)
+        sftp->queue=queue;
     else {
-        ptr=session->queue;
+        ptr=sftp->queue;
         while(ptr->next){
             ptr=ptr->next; /* find end of linked list */
         }
@@ -331,24 +344,27 @@ void sftp_enqueue(SFTP_SESSION *session, SFTP_MESSAGE *msg){
 }
 
 /* pulls of a message from the queue based on the ID. returns null if no message has been found */
-static SFTP_MESSAGE *sftp_dequeue(SFTP_SESSION *session, u32 id){
+static SFTP_MESSAGE *sftp_dequeue(SFTP_SESSION *sftp, u32 id){
     REQUEST_QUEUE *queue,*prev=NULL;
     SFTP_MESSAGE *msg;
-    if(session->queue==NULL){
+    if(sftp->queue==NULL){
         return NULL;
     }
-    queue=session->queue;
+    queue=sftp->queue;
     while(queue){
         if(queue->message->id==id){
             /* remove from queue */
             if(prev==NULL){
-                session->queue=queue->next;
+                sftp->queue=queue->next;
             } else {
                 prev->next=queue->next;
             }
             msg=queue->message;
             request_queue_free(queue);
-            ssh_say(2,"dequeued msg id %d type %d\n",msg->id,msg->packet_type);
+            ssh_log(sftp->session, SSH_LOG_PACKET,
+                "Dequeued msg id %d type %d",
+                msg->id,
+                msg->packet_type);
             return msg;
         }
         prev=queue;
@@ -616,7 +632,7 @@ static SFTP_ATTRIBUTES *sftp_parse_attr_3(SFTP_SESSION *sftp, BUFFER *buf,
                 break;
             attr->name=string_to_char(name);
             free(name);
-            ssh_say(2,"name : %s\n",attr->name);
+            ssh_log(sftp->session, SSH_LOG_RARE, "Name: %s", attr->name);
             if(!(longname=buffer_get_ssh_string(buf)))
                 break;
             attr->longname=string_to_char(longname);
@@ -626,12 +642,12 @@ static SFTP_ATTRIBUTES *sftp_parse_attr_3(SFTP_SESSION *sftp, BUFFER *buf,
             break;
         flags=ntohl(flags);
         attr->flags=flags;
-        ssh_say(2,"flags : %.8lx\n",flags);
+        ssh_log(sftp->session, SSH_LOG_RARE, "Flags: %.8lx\n", flags);
         if(flags & SSH_FILEXFER_ATTR_SIZE){
             if(buffer_get_u64(buf,&attr->size)!=sizeof(u64))
                 break;
             attr->size=ntohll(attr->size);
-            ssh_say(2,"size : %lld\n",attr->size);
+            ssh_log(sftp->session, SSH_LOG_RARE, "Size: %lld\n", attr->size);
         }
         if(flags & SSH_FILEXFER_ATTR_UIDGID){
             if(buffer_get_u32(buf,&attr->uid)!=sizeof(u32))
@@ -740,7 +756,8 @@ SFTP_ATTRIBUTES *sftp_readdir(SFTP_SESSION *sftp, SFTP_DIR *dir){
         buffer_add_ssh_string(payload,dir->handle);
         sftp_packet_write(sftp,SSH_FXP_READDIR,payload);
         buffer_free(payload);
-        ssh_say(2,"sent a ssh_fxp_readdir with id %d\n",id);
+        ssh_log(sftp->session, SSH_LOG_PACKET,
+            "Sent a ssh_fxp_readdir with id %d", id);
         while(!msg){
             if(sftp_read_and_dispatch(sftp))
                 /* something nasty has happened */
@@ -783,7 +800,7 @@ SFTP_ATTRIBUTES *sftp_readdir(SFTP_SESSION *sftp, SFTP_DIR *dir){
         ssh_set_error(sftp->session,SSH_FATAL,"Count of files sent by the server is zero, which is invalid, or libsftp bug");
         return NULL;
     }
-    ssh_say(2,"Count is %d\n",dir->count);
+    ssh_log(sftp->session, SSH_LOG_RARE, "Count is %d", dir->count);
     attr=sftp_parse_attr(sftp,dir->buffer,1);
     dir->count--;
     if(dir->count==0){
@@ -1157,7 +1174,8 @@ ssize_t sftp_write(SFTP_FILE *file, const void *buf, size_t count){
     free(datastring);
     if((u32) sftp_packet_write(file->sftp,SSH_FXP_WRITE,buffer)
         != buffer_get_len(buffer)) {
-        ssh_say(1,"sftp_packet_write did not write as much data as expected\n");
+        ssh_log(sftp->session, SSH_LOG_PACKET,
+            "sftp_packet_write did not write as much data as expected");
     }
     buffer_free(buffer);
     while(!msg){
