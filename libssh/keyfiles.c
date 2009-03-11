@@ -49,8 +49,7 @@ MA 02111-1307, USA. */
 #define ASN1_SEQUENCE 48
 #define PKCS5_SALT_LEN 8
 
-int load_iv(char *header, unsigned char *iv, int iv_len)
-{
+static int load_iv(char *header, unsigned char *iv, int iv_len) {
   int i;
   int j;
   int k;
@@ -79,8 +78,7 @@ int load_iv(char *header, unsigned char *iv, int iv_len)
   return 1;
 }
 
-u32 char_to_u32(unsigned char *data, u32 size)
-{
+static u32 char_to_u32(unsigned char *data, u32 size) {
   u32 ret;
   u32 i;
 
@@ -89,8 +87,7 @@ u32 char_to_u32(unsigned char *data, u32 size)
   return ret;
 }
 
-u32 asn1_get_len(BUFFER *buffer)
-{
+static u32 asn1_get_len(BUFFER *buffer) {
   u32 len;
   unsigned char tmp[4];
 
@@ -110,8 +107,7 @@ u32 asn1_get_len(BUFFER *buffer)
   return len;
 }
 
-STRING *asn1_get_int(BUFFER *buffer)
-{
+static STRING *asn1_get_int(BUFFER *buffer) {
   STRING *ret;
   unsigned char type;
   u32 size;
@@ -127,8 +123,7 @@ STRING *asn1_get_int(BUFFER *buffer)
   return ret;
 }
 
-int asn1_check_sequence(BUFFER *buffer)
-{
+static int asn1_check_sequence(BUFFER *buffer) {
   unsigned char tmp;
   unsigned char *j;
   int i;
@@ -148,8 +143,7 @@ int asn1_check_sequence(BUFFER *buffer)
   return 1;
 }
 
-int read_line(char *data, unsigned int len, FILE *fp)
-{
+static int read_line(char *data, unsigned int len, FILE *fp) {
   char tmp;
   unsigned int i;
 
@@ -162,8 +156,8 @@ int read_line(char *data, unsigned int len, FILE *fp)
   return 0;
 }
 
-int passphrase_to_key(char *data, unsigned int datalen, unsigned char *salt, unsigned char *key,unsigned int keylen)
-{
+static int passphrase_to_key(char *data, unsigned int datalen,
+    unsigned char *salt, unsigned char *key, unsigned int keylen) {
   MD5CTX md;
   unsigned char digest[MD5_DIGEST_LEN];
   unsigned int i;
@@ -190,7 +184,7 @@ int passphrase_to_key(char *data, unsigned int datalen, unsigned char *salt, uns
   return 1;
 }
 
-int privatekey_decrypt(int algo, int mode, unsigned int key_len,
+static int privatekey_decrypt(int algo, int mode, unsigned int key_len,
                        unsigned char *iv, unsigned int iv_len,
                        BUFFER *data, ssh_auth_callback cb,
                        void *userdata,
@@ -230,8 +224,9 @@ int privatekey_decrypt(int algo, int mode, unsigned int key_len,
   return 1;
 }
 
-int privatekey_dek_header(char *header, unsigned int header_len, int *algo, int *mode, unsigned int *key_len, unsigned char **iv, unsigned int *iv_len)
-{
+static int privatekey_dek_header(char *header, unsigned int header_len,
+    int *algo, int *mode, unsigned int *key_len, unsigned char **iv,
+    unsigned int *iv_len) {
   unsigned int iv_pos;
 
   if (header_len > 13 && !strncmp("DES-EDE3-CBC", header, 12))
@@ -281,9 +276,9 @@ int privatekey_dek_header(char *header, unsigned int header_len, int *algo, int 
   return 1;
 }
 
-BUFFER *privatekey_file_to_buffer(FILE *fp, int type, ssh_auth_callback cb, void *userdata, char *desc)
-{
-  char buf[MAXLINESIZE];
+static BUFFER *privatekey_file_to_buffer(FILE *fp, int type,
+    ssh_auth_callback cb, void *userdata, char *desc) {
+  char buf[MAXLINESIZE] = {0};
   char *header_begin;
   unsigned int header_begin_size;
   char *header_end;
@@ -370,9 +365,8 @@ BUFFER *privatekey_file_to_buffer(FILE *fp, int type, ssh_auth_callback cb, void
   return ret;
 }
 
-int read_rsa_privatekey(FILE *fp, gcry_sexp_t *r,
-                        ssh_auth_callback cb, void *userdata, char *desc)
-{
+static int read_rsa_privatekey(FILE *fp, gcry_sexp_t *r,
+    ssh_auth_callback cb, void *userdata, char *desc) {
   STRING *n;
   STRING *e;
   STRING *d;
@@ -421,8 +415,8 @@ int read_rsa_privatekey(FILE *fp, gcry_sexp_t *r,
   return 1;
 }
 
-int read_dsa_privatekey(FILE *fp, gcry_sexp_t *r, ssh_auth_callback cb, void *userdata, char *desc)
-{
+static int read_dsa_privatekey(FILE *fp, gcry_sexp_t *r, ssh_auth_callback cb,
+    void *userdata, char *desc) {
   STRING *p;
   STRING *q;
   STRING *g;
