@@ -72,12 +72,16 @@ struct socket {
  * \internal
  * \brief inits the socket system (windows specific)
  */
-void ssh_socket_init(void){
+void ssh_socket_init(void) {
 #ifdef _WIN32
-    struct WSAData wsaData;
-    if (WSAStartup(MAKEWORD(2, 0), &wsaData)) {
-        ssh_say(1,"Error initialising Windows sockets.\n");
-    }
+  struct WSAData wsaData;
+
+  if (WSAStartup(MAKEWORD(2, 0), &wsaData)) {
+    /* FIXME print error */
+  }
+#else
+  /* not useed in unix */
+  (void) session;
 #endif
 }
 /*
