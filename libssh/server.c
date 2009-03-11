@@ -144,7 +144,6 @@ SSH_SESSION *ssh_bind_accept(SSH_BIND *ssh_bind){
         dsa=_privatekey_from_file(ssh_bind,ssh_bind->options->dsakey,TYPE_DSS);
         if(!dsa)
             return NULL;
-        ssh_say(2,"Dsa private key read successfuly\n");
     }
     if(ssh_bind->options->rsakey){
         rsa=_privatekey_from_file(ssh_bind,ssh_bind->options->rsakey,TYPE_RSA);
@@ -153,7 +152,6 @@ SSH_SESSION *ssh_bind_accept(SSH_BIND *ssh_bind){
                 private_key_free(dsa);
             return NULL;
         }
-        ssh_say(2,"RSA private key read successfuly\n");
     }
     fd = accept(ssh_bind->bindfd, NULL, NULL);
     if(fd<0){
@@ -271,10 +269,10 @@ static int dh_handshake_server(SSH_SESSION *session){
     free(f);
     buffer_add_u8(session->out_buffer,SSH2_MSG_NEWKEYS);
     packet_send(session);
-    ssh_say(2,"SSH_MSG_NEWKEYS sent\n");
+    ssh_log(session, SSH_LOG_PACKET, "SSH_MSG_NEWKEYS sent");
 
     packet_wait(session,SSH2_MSG_NEWKEYS,1);
-    ssh_say(2,"Got SSH_MSG_NEWKEYS\n");
+    ssh_log(session, SSH_LOG_PACKET, "Got SSH_MSG_NEWKEYS");
     generate_session_keys(session);
     /* once we got SSH2_MSG_NEWKEYS we can switch next_crypto and current_crypto */
     if(session->current_crypto)
