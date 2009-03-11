@@ -60,7 +60,6 @@ int ssh_type_from_name(char *name) {
     return TYPE_DSS;
   }
 
-  ssh_say(2, "key_type_from_name: unknown key type '%s'\n", name);
   return -1;
 }
 
@@ -563,8 +562,8 @@ SIGNATURE *signature_from_string(SSH_SESSION *session, STRING *signature,PUBLIC_
             sign->rsa_sign=e;
 #endif
 #ifdef DEBUG_CRYPTO
-            ssh_say(0,"Len : %d\n",len);
-            ssh_print_hexa("rsa signature",e->string,len);
+            ssh_log(session, SSH_LOG_FUNCTIONS, "len e: %d", len);
+            ssh_print_hexa("rsa signature", e->string, len);
 #endif
 #ifdef HAVE_LIBGCRYPT
             free(e);
