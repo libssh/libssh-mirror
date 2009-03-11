@@ -117,10 +117,12 @@ static int wait_auth_status(SSH_SESSION *session,int kbdint){
                 {
                     STRING *banner=buffer_get_ssh_string(session->in_buffer);
                     if(!banner){
-                        ssh_say(1,"The banner message was invalid. continuing though\n");
+                        ssh_log(session, SSH_LOG_PACKET,
+                            "The banner message was invalid. continuing though\n");
                         break;
                     }
-                    ssh_say(2,"Received a message banner\n");
+                    ssh_log(session, SSH_LOG_PACKET,
+                        "Received a message banner\n");
                     if(session->banner)
                         free(session->banner); /* erase the older one */
                     session->banner=banner;
@@ -582,7 +584,8 @@ int ssh_userauth_autopubkey(SSH_SESSION *session, const char *passphrase) {
 #endif
 
     if(session->options->identity){
-        ssh_say(2,"Trying identity file %s\n",session->options->identity);
+        ssh_log(session, SSH_LOG_RARE,
+            "Trying identity file %s\n", session->options->identity);
         keys_path[0]=session->options->identity;
         /* let's hope alloca exists */
         id=malloc(strlen(session->options->identity)+1 + 4);
@@ -604,7 +607,7 @@ int ssh_userauth_autopubkey(SSH_SESSION *session, const char *passphrase) {
             return err;
         } else
         if(err != SSH_AUTH_SUCCESS){
-            ssh_say(2,"Public key refused by server\n");
+            ssh_log(session, SSH_LOG_RARE, "Public key refused by server\n");
             free(pubkey);
             pubkey=NULL;
             free(privkeyfile);
@@ -614,7 +617,9 @@ int ssh_userauth_autopubkey(SSH_SESSION *session, const char *passphrase) {
         /* pubkey accepted by server ! */
         privkey=privatekey_from_file(session,privkeyfile,type,passphrase);
         if(!privkey){
-            ssh_say(0,"Reading private key %s failed (bad passphrase ?)\n",privkeyfile);
+            ssh_log(session, SSH_LOG_FUNCTIONS,
+                "Reading private key %s failed (bad passphrase ?)\n",
+                privkeyfile);
             free(pubkey);
             pubkey=NULL;
             free(privkeyfile);
@@ -635,7 +640,9 @@ int ssh_userauth_autopubkey(SSH_SESSION *session, const char *passphrase) {
             return err;
         } else
         if(err != SSH_AUTH_SUCCESS){
-            ssh_say(0,"Weird : server accepted our public key but refused the signature\nit might be a bug of libssh\n");
+            ssh_log(session, SSH_LOG_FUNCTIONS,
+                "Weird : server accepted our public key but refused the signature\n"
+                "it might be a bug of libssh\n");
             free(pubkey);
             pubkey=NULL;
             free(privkeyfile);
@@ -644,7 +651,8 @@ int ssh_userauth_autopubkey(SSH_SESSION *session, const char *passphrase) {
             continue;
         }
         /* auth success */
-        ssh_say(1,"Authentication using %s success\n",privkeyfile);
+        ssh_log(session, SSH_LOG_RARE,
+            "Authentication using %s success\n", privkeyfile);
         free(pubkey);
         private_key_free(privkey);
         free(privkeyfile);
@@ -657,7 +665,8 @@ int ssh_userauth_autopubkey(SSH_SESSION *session, const char *passphrase) {
         return SSH_AUTH_SUCCESS;
     }
     /* at this point, pubkey is NULL and so is privkeyfile */
-    ssh_say(1,"Tried every public key, none matched\n");
+    ssh_log(session, SSH_LOG_FUNCTIONS,
+        "Tried every public key, none matched\n");
     ssh_set_error(session,SSH_NO_ERROR,"no public key matched");
     if(id){
         pub_keys_path[0]=NULL;
