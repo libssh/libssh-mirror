@@ -122,8 +122,9 @@ static int packet_read2(SSH_SESSION *session){
                 leave_function();
                 return SSH_ERROR;
             }
-            ssh_say(3,"%hhd bytes padding, %d bytes left in buffer\n",
-                    padding,buffer_get_rest_len(session->in_buffer));
+            ssh_log(session, SSH_LOG_RARE,
+                "%hhd bytes padding, %d bytes left in buffer",
+                padding, buffer_get_rest_len(session->in_buffer));
             if(padding > buffer_get_rest_len(session->in_buffer)){
                 ssh_set_error(session,SSH_FATAL,"invalid padding: %d (%d resting)",
                               padding,buffer_get_rest_len(session->in_buffer));
@@ -135,10 +136,12 @@ static int packet_read2(SSH_SESSION *session){
                 return SSH_ERROR;
             }
             buffer_pass_bytes_end(session->in_buffer,padding);
-            ssh_say(3,"After padding, %d bytes left in buffer\n",buffer_get_rest_len(session->in_buffer));
+            ssh_log(session, SSH_LOG_RARE,
+                "After padding, %d bytes left in buffer",
+                buffer_get_rest_len(session->in_buffer));
 #ifdef HAVE_LIBZ
             if(session->current_crypto && session->current_crypto->do_compress_in){
-                ssh_say(3,"Decompressing ...\n");
+                ssh_log(session, SSH_LOG_RARE, "Decompressing in_buffer ...");
                 decompress_buffer(session,session->in_buffer);
             }
 #endif
@@ -279,13 +282,14 @@ int packet_translate(SSH_SESSION *session){
         leave_function();
     	return -1;
     }
-    ssh_say(3,"Final size %d\n",buffer_get_rest_len(session->in_buffer));
+    ssh_log(session, SSH_LOG_RARE, "Final size %d",
+        buffer_get_rest_len(session->in_buffer));
     if(!buffer_get_u8(session->in_buffer,&session->in_packet.type)){
         ssh_set_error(session,SSH_FATAL,"Packet too short to read type");
         leave_function();
         return -1;
     }
-    ssh_say(3,"type %hhd\n",session->in_packet.type);
+    ssh_log(session, SSH_LOG_RARE, "Type %hhd", session->in_packet.type);
     session->in_packet.valid=1;
     leave_function();
     return 0;
@@ -320,10 +324,11 @@ static int packet_send2(SSH_SESSION *session){
     int ret=0;
     unsigned int blocksize=(session->current_crypto?session->current_crypto->out_cipher->blocksize:8);
     enter_function();
-    ssh_say(3,"Writing on the wire a packet having %ld bytes before",currentlen);
+    ssh_log(session, SSH_LOG_RARE,
+        "Writing on the wire a packet having %ld bytes before", currentlen);
 #ifdef HAVE_LIBZ
     if(session->current_crypto && session->current_crypto->do_compress_out){
-        ssh_say(3,"Compressing ...\n");
+        ssh_log(session, SSH_LOG_RARE, "Compressing in_buffer ...");
         compress_buffer(session,session->out_buffer);
         currentlen=buffer_get_len(session->out_buffer);
     }
@@ -336,7 +341,9 @@ static int packet_send2(SSH_SESSION *session){
     else
         memset(padstring,0,padding);
     finallen=htonl(currentlen+padding+1);
-    ssh_say(3,",%d bytes after comp + %d padding bytes = %d bytes packet\n",currentlen,padding,(ntohl(finallen)));
+    ssh_log(session, SSH_LOG_RARE,
+        "%d bytes after comp + %d padding bytes = %d bytes packet",
+        currentlen, padding, (ntohl(finallen)));
     buffer_add_data_begin(session->out_buffer,&padding,sizeof(u8));
     buffer_add_data_begin(session->out_buffer,&finallen,sizeof(u32));
     buffer_add_data(session->out_buffer,padstring,padding);
@@ -418,8 +425,8 @@ void packet_parse(SSH_SESSION *session){
         /* SSH-1 */
         switch(type){
             case SSH_MSG_DISCONNECT:
-                ssh_say(2,"Received SSH_MSG_DISCONNECT\n");
-                ssh_set_error(session,SSH_FATAL,"Received SSH_MSG_DISCONNECT");
+                ssh_log(session, SSH_LOG_PACKET, "Received SSH_MSG_DISCONNECT");
+                ssh_set_error(session, SSH_FATAL, "Received SSH_MSG_DISCONNECT");
                 ssh_socket_close(session->socket);
                 session->alive=0;
                 return;
@@ -432,7 +439,8 @@ void packet_parse(SSH_SESSION *session){
             case SSH_MSG_IGNORE:
             	break;
             default:
-                ssh_say(2,"Unexpected message code %d\n",type);
+                ssh_log(session, SSH_LOG_PACKET,
+                    "Unexpected message code %d", type);
             }
         return;
     } else {
@@ -443,8 +451,9 @@ void packet_parse(SSH_SESSION *session){
             error_s=buffer_get_ssh_string(session->in_buffer);
             if(error_s)
                 error=string_to_char(error_s);
-            ssh_say(2,"Received SSH_MSG_DISCONNECT\n");
-            ssh_set_error(session,SSH_FATAL,"Received SSH_MSG_DISCONNECT : %s",error);
+            ssh_log(session, SSH_LOG_PACKET, "Received SSH_MSG_DISCONNECT\n");
+            ssh_set_error(session, SSH_FATAL,
+                "Received SSH_MSG_DISCONNECT: %s",error);
             if(error_s){
                 free(error_s);
                 free(error);
@@ -532,7 +541,7 @@ static int packet_wait2(SSH_SESSION *session,int type,int blocking){
         switch(session->in_packet.type){
            case SSH2_MSG_DISCONNECT:
                packet_parse(session);
-               ssh_say(2,"received disconnect packet\n");
+               ssh_log(session, SSH_LOG_PACKET, "received disconnect packet");
                leave_function();
                return SSH_ERROR;
            case SSH2_MSG_CHANNEL_WINDOW_ADJUST:
