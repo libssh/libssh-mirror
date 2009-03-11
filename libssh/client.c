@@ -178,7 +178,7 @@ static int dh_handshake(SSH_SESSION *session){
                 leave_function();
             	return ret;
             }
-            ssh_say(2,"SSH_MSG_NEWKEYS sent\n");
+            ssh_log(session, SSH_LOG_RARE, "SSH_MSG_NEWKEYS sent\n");
             session->dh_handshake_state=DH_STATE_NEWKEYS_SENT;
         case DH_STATE_NEWKEYS_SENT:
             ret=packet_wait(session,SSH2_MSG_NEWKEYS,1);
@@ -186,7 +186,7 @@ static int dh_handshake(SSH_SESSION *session){
                 leave_function();
             	return ret;
             }
-            ssh_say(2,"Got SSH_MSG_NEWKEYS\n");
+            ssh_log(session, SSH_LOG_RARE, "Got SSH_MSG_NEWKEYS\n");
             make_sessionid(session);
             /* set the cryptographic functions for the next crypto */
             /* (it is needed for generate_session_keys for key lenghts) */
@@ -231,13 +231,15 @@ int ssh_service_request(SSH_SESSION *session,char *service){
     buffer_add_ssh_string(session->out_buffer,service_s);
     free(service_s);
     packet_send(session);
-    ssh_say(3,"Sent SSH_MSG_SERVICE_REQUEST (service %s)\n",service);
+    ssh_log(session, SSH_LOG_PACKET,
+        "Sent SSH_MSG_SERVICE_REQUEST (service %s)\n", service);
     if(packet_wait(session,SSH2_MSG_SERVICE_ACCEPT,1)){
         ssh_set_error(session,SSH_FATAL,"did not receive SERVICE_ACCEPT");
         leave_function();
         return -1;
     }
-    ssh_say(3,"Received SSH_MSG_SERVICE_ACCEPT (service %s)\n",service);
+    ssh_log(session, SSH_LOG_PACKET,
+        "Received SSH_MSG_SERVICE_ACCEPT (service %s)\n", service);
     leave_function();
     return 0;
 }
@@ -288,7 +290,7 @@ int ssh_connect(SSH_SESSION *session){
       return -1;
   }
   set_status(options,0.4);
-  ssh_say(2,"banner : %s\n",session->serverbanner);
+  ssh_log(session, SSH_LOG_RARE, "banner: %s\n", session->serverbanner);
   /* here we analyse the different protocols the server allows */
   if(ssh_analyze_banner(session,&ssh1,&ssh2)){
       ssh_socket_close(session->socket);
