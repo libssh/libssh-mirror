@@ -59,7 +59,8 @@ static int handle_service_request(SSH_SESSION *session){
         return -1;
     }
     service_c=string_to_char(service);
-    ssh_say(2,"Sending a SERVICE_ACCEPT for service %s\n",service_c);
+    ssh_log(session, SSH_LOG_PACKET,
+        "Sending a SERVICE_ACCEPT for service %s", service_c);
     free(service_c);
     buffer_add_u8(session->out_buffer,SSH2_MSG_SERVICE_ACCEPT);
     buffer_add_ssh_string(session->out_buffer,service);
@@ -89,7 +90,9 @@ static SSH_MESSAGE *handle_userauth_request(SSH_SESSION *session){
     method_c=string_to_char(method);
     free(service);
     free(method);
-    ssh_say(2,"auth request for service %s, method %s for user '%s'\n",service_c,method_c,
+    ssh_log(session, SSH_LOG_PACKET,
+        "Auth request for service %s, method %s for user '%s'",
+        service_c, method_c,
             msg->auth_request.username);
     free(service_c);
     if(!strcmp(method_c,"none")){
@@ -148,7 +151,8 @@ static int ssh_message_auth_reply_default(SSH_MESSAGE *msg,int partial){
         strcat(methods_c,"hostbased,");
     methods_c[strlen(methods_c)-1]=0; // strip the comma. We are sure there is at
     // least one word into the list
-    ssh_say(2,"Sending a auth failure. methods that can continue : %s\n",methods_c);
+    ssh_log(session, SSH_LOG_PACKET,
+        "Sending a auth failure. methods that can continue: %s", methods_c);
     methods=string_from_char(methods_c);
     buffer_add_ssh_string(msg->session->out_buffer,methods);
     free(methods);
@@ -179,7 +183,8 @@ static SSH_MESSAGE *handle_channel_request_open(SSH_SESSION *session){
     msg->type=SSH_CHANNEL_REQUEST_OPEN;
     type=buffer_get_ssh_string(session->in_buffer);
     type_c=string_to_char(type);
-    ssh_say(2,"clients wants to open a %s channel\n",type_c);
+    ssh_log(session, SSH_LOG_PACKET,
+        "Clients wants to open a %s channel", type_c);
     free(type);
     buffer_get_u32(session->in_buffer,&sender);
     buffer_get_u32(session->in_buffer,&window);
@@ -217,7 +222,8 @@ CHANNEL *ssh_message_channel_request_open_reply_accept(SSH_MESSAGE *msg){
     buffer_add_u32(session->out_buffer,htonl(chan->local_channel));
     buffer_add_u32(session->out_buffer,htonl(chan->local_window));
     buffer_add_u32(session->out_buffer,htonl(chan->local_maxpacket));
-    ssh_say(2,"Accepting a channel request_open for chan %d\n",chan->remote_channel);
+    ssh_log(session, SSH_LOG_PACKET,
+        "Accepting a channel request_open for chan %d", chan->remote_channel);
     if(packet_send(session)){
         channel_free(chan);
         leave_function();
@@ -228,7 +234,7 @@ CHANNEL *ssh_message_channel_request_open_reply_accept(SSH_MESSAGE *msg){
 }
 
 static int ssh_message_channel_request_open_reply_default(SSH_MESSAGE *msg){
-    ssh_say(2,"Refusing a channel\n");
+    ssh_log(msg->session, SSH_LOG_FUNCTIONS, "Refusing a channel");
     buffer_add_u8(msg->session->out_buffer,SSH2_MSG_CHANNEL_OPEN_FAILURE);
     buffer_add_u32(msg->session->out_buffer,htonl(msg->channel_request_open.sender));
     buffer_add_u32(msg->session->out_buffer,htonl(SSH2_OPEN_ADMINISTRATIVELY_PROHIBITED));
@@ -250,8 +256,9 @@ static SSH_MESSAGE *handle_channel_request(SSH_SESSION *session){
     buffer_get_u8(session->in_buffer,&want_reply);
     type_c=string_to_char(type);
     free(type);
-    ssh_say(2,"received a %s channel_request for channel %d (want_reply=%hhd)\n",
-            type_c,channel,want_reply);
+    ssh_log(session, SSH_LOG_PACKET,
+        "Received a %s channel_request for channel %d (want_reply=%hhd)",
+        type_c, channel, want_reply);
     msg->type=SSH_CHANNEL_REQUEST;
     msg->channel_request.channel=ssh_channel_from_local(session,channel);
     msg->channel_request.want_reply=want_reply;
@@ -318,12 +325,14 @@ int ssh_message_channel_request_reply_success(SSH_MESSAGE *msg){
     u32 channel;
     if(msg->channel_request.want_reply){
         channel=msg->channel_request.channel->remote_channel;
-        ssh_say(2,"Sending a channel_request success to channel %d\n",channel);
+        ssh_log(msg->session, SSH_LOG_PACKET,
+            "Sending a channel_request success to channel %d", channel);
         buffer_add_u8(msg->session->out_buffer,SSH2_MSG_CHANNEL_SUCCESS);
         buffer_add_u32(msg->session->out_buffer,htonl(channel));
         return packet_send(msg->session);
     } else {
-        ssh_say(2,"The client doesn't want to know the request successed\n");
+        ssh_log(msg->session, SSH_LOG_PACKET,
+            "The client doesn't want to know the request successed");
         return 0;
     }
 }
@@ -332,12 +341,14 @@ static int ssh_message_channel_request_reply_default(SSH_MESSAGE *msg){
     u32 channel;
     if(msg->channel_request.want_reply){
         channel=msg->channel_request.channel->remote_channel;
-        ssh_say(2,"Sending a default channel_request denied to channel %d\n",channel);
+        ssh_log(msg->session, SSH_LOG_PACKET,
+            "Sending a default channel_request denied to channel %d", channel);
         buffer_add_u8(msg->session->out_buffer,SSH2_MSG_CHANNEL_FAILURE);
         buffer_add_u32(msg->session->out_buffer,htonl(channel));
         return packet_send(msg->session);
     } else {
-        ssh_say(2,"The client doesn't want to know the request failed ! \n");
+        ssh_log(msg->session, SSH_LOG_PACKET,
+            "The client doesn't want to know the request failed!");
         return 0;
     }
 }
@@ -411,8 +422,9 @@ int ssh_message_reply_default(SSH_MESSAGE *msg){
             return ssh_message_channel_request_reply_default(msg);
             break;
         default:
-            ssh_say(1,"Don't know what to default reply to %d type\n",
-                    msg->type);
+            ssh_log(msg->session, SSH_LOG_PACKET,
+                "Don't know what to default reply to %d type",
+                msg->type);
             break;
     }
     return 0;
