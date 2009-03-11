@@ -47,7 +47,7 @@ int channel_open_session1(CHANNEL *chan){
     }
     session->exec_channel_opened=1;
     chan->open=1;
-    ssh_say(2,"Opened a ssh1 channel session\n");
+    ssh_log(session, SSH_LOG_PACKET, "Opened a ssh1 channel session");
     return 0;
 }
 /*  10 SSH_CMSG_REQUEST_PTY
@@ -75,7 +75,7 @@ int channel_request_pty_size1(CHANNEL *channel, char *terminal, int col,
     buffer_add_u32(session->out_buffer,0); /* x */
     buffer_add_u32(session->out_buffer,0); /* y */
     buffer_add_u8(session->out_buffer,0); /* tty things */
-    ssh_say(2,"Opening a ssh1 pty\n");
+    ssh_log(session, SSH_LOG_FUNCTIONS, "Opening a ssh1 pty");
     if(packet_send(session))
         return -1;
     if(packet_read(session))
@@ -84,16 +84,16 @@ int channel_request_pty_size1(CHANNEL *channel, char *terminal, int col,
         return -1;
     switch (session->in_packet.type){
         case SSH_SMSG_SUCCESS:
-            ssh_say(2,"pty : Success\n");
+            ssh_log(session, SSH_LOG_RARE, "pty: Success");
             return 0;
             break;
         case SSH_SMSG_FAILURE:
             ssh_set_error(session,SSH_REQUEST_DENIED,
                     "Server denied PTY allocation");
-            ssh_say(2,"pty : denied\n");
+            ssh_log(session, SSH_LOG_RARE, "pty : denied\n");
             break;
         default:
-            ssh_say(2,"pty : error\n");
+            ssh_log(session, SSH_LOG_RARE, "pty : error\n");
             ssh_set_error(session,SSH_FATAL,
                     "Received unexpected packet type %d",
                     session->in_packet.type);
@@ -111,15 +111,15 @@ int channel_change_pty_size1(CHANNEL *channel, int cols, int rows){
     buffer_add_u32(session->out_buffer,0);
     if(packet_send(session))
         return -1;
-    ssh_say(2,"Change pty size send\n");
+    ssh_log(session, SSH_LOG_RARE, "Change pty size send");
     packet_wait(session,SSH_SMSG_SUCCESS,1);
     switch (session->in_packet.type){
         case SSH_SMSG_SUCCESS:
-            ssh_say(2,"pty size changed\n");
+            ssh_log(session, SSH_LOG_RARE, "pty size changed");
             return 0;
             break;
         case SSH_SMSG_FAILURE:
-            ssh_say(2,"pty size change denied\n");
+            ssh_log(session, SSH_LOG_RARE, "pty size change denied");
             ssh_set_error(session,SSH_REQUEST_DENIED,"pty size change denied");
             return -1;
     }
@@ -133,7 +133,7 @@ int channel_request_shell1(CHANNEL *channel){
     buffer_add_u8(session->out_buffer,SSH_CMSG_EXEC_SHELL);
     if(packet_send(session))
         return -1;
-    ssh_say(2,"Launched a shell\n");
+    ssh_log(session, SSH_LOG_RARE, "Launched a shell");
     return 0;
 }
 
@@ -145,7 +145,7 @@ int channel_request_exec1(CHANNEL *channel, char *cmd){
     free(command);
     if(packet_send(session))
         return -1;
-    ssh_say(2,"executing %s...\n",cmd);
+    ssh_log(session, SSH_LOG_RARE, "Executing %s ...",cmd);
     return 0;
 }
 
@@ -156,10 +156,11 @@ static void channel_rcv_data1(SSH_SESSION *session, int is_stderr){
                                // are comming
     str=buffer_get_ssh_string(session->in_buffer);
     if(!str){
-        ssh_say(0,"Invalid data packet !\n");
+        ssh_log(session, SSH_LOG_FUNCTIONS, "Invalid data packet !\n");
         return;
     }
-    ssh_say(3,"adding %d bytes data in %d\n",string_len(str),is_stderr);
+    ssh_log(session, SSH_LOG_RARE,
+        "Adding %d bytes data in %d", string_len(str), is_stderr);
     channel_default_bufferize(channel,str->string,string_len(str),
                     is_stderr);
     free(str);
@@ -180,7 +181,7 @@ static void channel_rcv_close1(SSH_SESSION *session){
 }
 
 void channel_handle1(SSH_SESSION *session, int type){
-    ssh_say(3,"Channel_handle1(%d)\n",type);
+    ssh_log(session, SSH_LOG_RARE, "Channel_handle1(%d)", type);
     switch (type){
         case SSH_SMSG_STDOUT_DATA:
             channel_rcv_data1(session,0);
@@ -189,7 +190,7 @@ void channel_handle1(SSH_SESSION *session, int type){
             channel_rcv_close1(session);
             break;
         default:
-            ssh_say(0,"Unexepected message %d\n",type);
+            ssh_log(session, SSH_LOG_FUNCTIONS, "Unexepected message %d", type);
 
     }
 }
