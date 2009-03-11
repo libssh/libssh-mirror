@@ -79,9 +79,6 @@ void ssh_socket_init(void) {
   if (WSAStartup(MAKEWORD(2, 0), &wsaData)) {
     /* FIXME print error */
   }
-#else
-  /* not useed in unix */
-  (void) session;
 #endif
 }
 /*
