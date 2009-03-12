@@ -1,6 +1,6 @@
 SSH_0.3 {
   global:
-    ssh_get_error; ssh_get_error_code; ssh_say; ssh_set_verbosity;
+    ssh_get_error; ssh_get_error_code;
     ssh_new; ssh_set_options; ssh_get_fd; ssh_silent_disconnect;
     ssh_connect; ssh_disconnect; ssh_service_request; ssh_get_issue_banner;
     ssh_copyright; ssh_get_version; ssh_finalize;

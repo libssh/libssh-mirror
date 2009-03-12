@@ -125,8 +125,7 @@ typedef int socket_t;
 
 char *ssh_get_error(void *error); 
 int ssh_get_error_code(void *error);
-void ssh_say(int priority, const char *format, ...);
-void ssh_set_verbosity(int num);
+
 /** \addtogroup ssh_log
  * @{
  */
