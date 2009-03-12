@@ -218,7 +218,9 @@ STRING *make_bignum_string(bignum num){
     /* remember if the fist bit is set, it is considered as a negative number. so 0's must be appended */
     if(!(bits%8) && bignum_is_bit_set(num,bits-1))
         pad++;
-    ssh_say(3,"%d bits, %d bytes, %d padding\n",bits,len,pad);
+#ifdef DEBUG_CRYPTO
+    fprintf(stderr, "%d bits, %d bytes, %d padding\n", bits, len, pad);
+#endif /* DEBUG_CRYPTO */
     ptr=malloc(4 + len + pad);
     ptr->size=htonl(len+pad);
     if(pad)
@@ -234,7 +236,10 @@ STRING *make_bignum_string(bignum num){
 bignum make_string_bn(STRING *string){
 	bignum bn;
 	unsigned int len=string_len(string);
-	ssh_say(3,"Importing a %d bits,%d bytes object ...\n",len*8,len);
+#ifdef DEBUG_CRYPTO
+        fprintf(stderr, "Importing a %d bits, %d bytes object ...\n",
+            len * 8, len);
+#endif /* DEBUG_CRYPTO */
 #ifdef HAVE_LIBGCRYPT
         bignum_bin2bn(string->string,len,&bn);
 #elif defined HAVE_LIBCRYPTO
@@ -590,7 +595,7 @@ int signature_verify(SSH_SESSION *session,STRING *signature){
     int err;
     enter_function();
     if(session->options->dont_verify_hostkey){
-        ssh_say(1,"Host key wasn't verified\n");
+        ssh_log(session, SSH_LOG_FUNCTIONS, "Host key wasn't verified");
         leave_function();
         return 0;
     }
@@ -616,7 +621,8 @@ int signature_verify(SSH_SESSION *session,STRING *signature){
         leave_function();
         return -1;
     }
-    ssh_say(1,"Going to verify a %s type signature\n",pubkey->type_c);
+    ssh_log(session, SSH_LOG_FUNCTIONS,
+        "Going to verify a %s type signature", pubkey->type_c);
     err=sig_verify(session,pubkey,sign,session->next_crypto->session_id);
     signature_free(sign);
     session->next_crypto->server_pubkey_type=pubkey->type_c;
