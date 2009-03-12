@@ -188,7 +188,8 @@ static void select_loop(SSH_SESSION *session,CHANNEL *channel){
             while(channel && channel_is_open(channel) && channel_poll(channel,0)){
                 lus=channel_read(channel,readbuf,0,0);
                 if(lus==-1){
-                    ssh_say(0,"error reading channel : %s\n",ssh_get_error(session));
+                    fprintf(stderr, "Error reading channel: %s\n",
+                        ssh_get_error(session));
                     return;
                 }
                 if(lus==0){
@@ -203,7 +204,8 @@ static void select_loop(SSH_SESSION *session,CHANNEL *channel){
             while(channel && channel_is_open(channel) && channel_poll(channel,1)){ /* stderr */
                 lus=channel_read(channel,readbuf,0,1);
                 if(lus==-1){
-                    ssh_say(0,"error reading channel : %s\n",ssh_get_error(session));
+                    fprintf(stderr, "Error reading channel: %s\n",
+                        ssh_get_error(session));
                     return;
                 }
                 if(lus==0){
@@ -281,32 +283,35 @@ void do_sftp(SSH_SESSION *session){
     int i;
     char data[8000];
     if(!sftp){
-        ssh_say(0,"sftp error initialising channel : %s\n",ssh_get_error(session));
+        fprintf(stderr, "sftp error initialising channel: %s\n",
+            ssh_get_error(session));
         return;
     }
     if(sftp_init(sftp)){
-        ssh_say(0,"error initialising sftp : %s\n",ssh_get_error(session));
+        fprintf(stderr, "error initialising sftp: %s\n",
+            ssh_get_error(session));
         return;
     }
     /* the connection is made */
     /* opening a directory */
     dir=sftp_opendir(sftp,"./");
     if(!dir) {
-        ssh_say(0,"Directory not opened(%s)\n",ssh_get_error(session));
+        fprintf(stderr, "Directory not opened(%s)\n", ssh_get_error(session));
         return ;
     }
     /* reading the whole directory, file by file */
     while((file=sftp_readdir(sftp,dir))){
-        ssh_say(0,"%30s(%.8lo) : %.5d.%.5d : %.10lld bytes\n",file->name,file->permissions,file->uid,file->gid,file->size);
+        fprintf(stderr, "%30s(%.8o) : %.5d.%.5d : %.10ld bytes\n",
+            file->name, file->permissions, file->uid, file->gid, file->size);
         sftp_attributes_free(file);
     }
     /* when file=NULL, an error has occured OR the directory listing is end of file */
     if(!sftp_dir_eof(dir)){
-        ssh_say(0,"error : %s\n",ssh_get_error(session));
+        fprintf(stderr, "Error: %s\n", ssh_get_error(session));
         return;
     }
     if(sftp_closedir(dir)){
-        ssh_say(0,"Error : %s\n",ssh_get_error(session));
+        fprintf(stderr, "Error: %s\n", ssh_get_error(session));
         return;
     }
     /* this will open a file and copy it into your /home directory */
@@ -314,24 +319,27 @@ void do_sftp(SSH_SESSION *session){
 
     fichier=sftp_open(sftp,"/usr/bin/ssh",O_RDONLY, 0);
     if(!fichier){
-        ssh_say(0,"Error opening /usr/bin/ssh : %s\n",ssh_get_error(session));
+        fprintf(stderr, "Error opening /usr/bin/ssh: %s\n",
+            ssh_get_error(session));
         return;
     }
     /* open a file for writing... */
     to=sftp_open(sftp,"ssh-copy",O_WRONLY | O_CREAT, 0);
     if(!to){
-        ssh_say(0,"Error opening ssh-copy for writing : %s\n",ssh_get_error(session));
+        fprintf(stderr, "Error opening ssh-copy for writing: %s\n",
+            ssh_get_error(session));
         return;
     }
     while((len=sftp_read(fichier,data,4096)) > 0){
         if(sftp_write(to,data,len)!=len){
-            ssh_say(0,"error writing %d bytes : %s\n",len,ssh_get_error(session));
+            fprintf(stderr, "Error writing %d bytes: %s\n",
+                len, ssh_get_error(session));
             return;
         }
     }
     printf("finished\n");
     if(len<0)
-        ssh_say(0,"Error reading file : %s\n",ssh_get_error(session));
+        fprintf(stderr, "Error reading file: %s\n", ssh_get_error(session));
     sftp_close(fichier);
     sftp_close(to);
     printf("fichiers ferm\n");
@@ -499,10 +507,10 @@ int main(int argc, char **argv){
         }
         memset(password,0,strlen(password));
     }
-    ssh_say(1,"Authentication success\n");
+    ssh_log(session, SSH_LOG_FUNCTIONS, "Authentication success");
     if(strstr(argv[0],"sftp")){
         sftp=1;
-        ssh_say(1,"doing sftp instead\n");
+        ssh_log(session, SSH_LOG_FUNCTIONS, "Doing sftp instead");
     }
     if(!sftp){
         if(!cmds[0])
