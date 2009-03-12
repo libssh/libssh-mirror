@@ -323,7 +323,7 @@ int ssh_connect(SSH_SESSION *session){
             return -1;
         }
         set_status(options,0.6);
-        ssh_list_kex(&session->server_kex);
+        ssh_list_kex(session, &session->server_kex);
         if(set_kex(session)){
             ssh_socket_close(session->socket);
             session->alive=0;

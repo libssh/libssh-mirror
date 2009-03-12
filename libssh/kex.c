@@ -137,14 +137,12 @@ char *ssh_find_matching(const char *in_d, const char *what_d){
     
     if( ! (in_d && what_d))
         return NULL; /* don't deal with null args */
-    ssh_say(3,"find_matching(\"%s\",\"%s\") = ",in_d,what_d);
     tok_in=tokenize(in_d);
     tok_what=tokenize(what_d);
     for(i_in=0; tok_in[i_in]; ++i_in){
         for(i_what=0; tok_what[i_what] ; ++i_what){
             if(!strcmp(tok_in[i_in],tok_what[i_what])){
                 /* match */            
-                ssh_say(3,"\"%s\"\n",tok_in[i_in]);
                 ret=strdup(tok_in[i_in]);
                 /* free the tokens */
                 free(tok_in[0]);
@@ -155,7 +153,6 @@ char *ssh_find_matching(const char *in_d, const char *what_d){
             }
         }
     }
-    ssh_say(3,"NULL\n");
     free(tok_in[0]);
     free(tok_what[0]);
     free(tok_in);
@@ -204,14 +201,17 @@ int ssh_get_kex(SSH_SESSION *session,int server_kex ){
     return 0;
 }
 
-void ssh_list_kex(KEX *kex){
-    int i=0;
+void ssh_list_kex(struct ssh_session *session, KEX *kex) {
+  int i = 0;
+
 #ifdef DEBUG_CRYPTO
-    ssh_print_hexa("session cookie",kex->cookie,16);
+  ssh_print_hexa("session cookie", kex->cookie, 16);
 #endif
-    for(i=0;i<10;i++){
-        ssh_say(2,"%s : %s\n",ssh_kex_nums[i],kex->methods[i]);
-    }
+
+  for(i = 0; i < 10; i++) {
+    ssh_log(session, SSH_LOG_FUNCTIONS, "%s: %s",
+        ssh_kex_nums[i], kex->methods[i]);
+  }
 }
 
 /* set_kex basicaly look at the option structure of the session and set the output kex message */
@@ -259,7 +259,7 @@ void ssh_send_kex(SSH_SESSION *session, int server_kex){
     buffer_add_u8(session->out_buffer,SSH2_MSG_KEXINIT);
     buffer_add_data(session->out_buffer,kex->cookie,16);
     hashbufout_add_cookie(session);
-    ssh_list_kex(kex);
+    ssh_list_kex(session, kex);
     for(i=0;i<10;i++){
         str=string_from_char(kex->methods[i]);
         buffer_add_ssh_string(session->out_hashbuf,str);
@@ -368,8 +368,10 @@ static STRING *encrypt_session_key(SSH_SESSION *session, PUBLIC_KEY *svrkey,
     data1=string_new(32);
     string_fill(data1,buffer,32);
     if(ABS(hlen-slen)<128){
-        ssh_say(1,"Difference between server modulus and host modulus is only %d. It's illegal and may not work\n",
-                ABS(hlen-slen));
+        ssh_log(session, SSH_LOG_FUNCTIONS,
+            "Difference between server modulus and host modulus is only %d. "
+            "It's illegal and may not work",
+            ABS(hlen-slen));
     }
     if(modulus_smaller(svrkey,hostkey)){
         data2=ssh_encrypt_rsa1(session,data1,svrkey);

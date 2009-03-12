@@ -558,7 +558,7 @@ socket_t ssh_connect_host(SSH_SESSION *session, const char *host,const char
 /* in kex.c */
 extern char *ssh_kex_nums[];
 void ssh_send_kex(SSH_SESSION *session,int server_kex);
-void ssh_list_kex(KEX *kex);
+void ssh_list_kex(SSH_SESSION *session, KEX *kex);
 int set_kex(SSH_SESSION *session);
 int ssh_get_kex(SSH_SESSION *session, int server_kex);
 int verify_existing_algo(int algo, const char *name);

@@ -292,7 +292,7 @@ int ssh_accept(SSH_SESSION *session){
     ssh_send_kex(session,1);
     if(ssh_get_kex(session,1))
         return -1;
-    ssh_list_kex(&session->client_kex);
+    ssh_list_kex(session, &session->client_kex);
     crypt_set_algorithms_server(session);
     if(dh_handshake_server(session))
         return -1;
