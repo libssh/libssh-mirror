@@ -38,7 +38,6 @@ SFTP_CLIENT_MESSAGE *sftp_get_client_message(SFTP_SESSION *sftp){
     if(!packet)
         return NULL;
     payload=packet->payload;
-    ssh_say(2,"received sftp packet type %d\n",packet->type);
     msg->type=packet->type;
     msg->sftp=sftp;
     buffer_get_u32(payload,&msg->id);
