@@ -642,12 +642,13 @@ static SFTP_ATTRIBUTES *sftp_parse_attr_3(SFTP_SESSION *sftp, BUFFER *buf,
             break;
         flags=ntohl(flags);
         attr->flags=flags;
-        ssh_log(sftp->session, SSH_LOG_RARE, "Flags: %.8lx\n", flags);
+        ssh_log(sftp->session, SSH_LOG_RARE,
+            "Flags: %.8lx\n", (long unsigned int) flags);
         if(flags & SSH_FILEXFER_ATTR_SIZE){
             if(buffer_get_u64(buf,&attr->size)!=sizeof(u64))
                 break;
             attr->size=ntohll(attr->size);
-            ssh_log(sftp->session, SSH_LOG_RARE, "Size: %lld\n", attr->size);
+            ssh_log(sftp->session, SSH_LOG_RARE, "Size: %lu\n", attr->size);
         }
         if(flags & SSH_FILEXFER_ATTR_UIDGID){
             if(buffer_get_u32(buf,&attr->uid)!=sizeof(u32))

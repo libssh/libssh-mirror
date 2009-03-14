@@ -455,9 +455,12 @@ int ssh_get_kex1(SSH_SESSION *session){
     supported_ciphers_mask=ntohl(supported_ciphers_mask);
     supported_authentications_mask=ntohl(supported_authentications_mask);
     ssh_log(session,SSH_LOG_PROTOCOL,"server bits: %d ; host bits: %d Protocol flags : %.8lx ; "
-            "cipher mask : %.8lx ; auth mask: %.8lx",server_bits,
-            host_bits,protocol_flags,supported_ciphers_mask,
-            supported_authentications_mask);
+            "cipher mask : %.8lx ; auth mask: %.8lx",
+            server_bits,
+            host_bits,
+            (unsigned long int) protocol_flags,
+            (unsigned long int) supported_ciphers_mask,
+            (unsigned long int) supported_authentications_mask);
     serverkey=make_rsa1_string(server_exp,server_mod);
     hostkey=make_rsa1_string(host_exp,host_mod);
     build_session_id1(session,server_mod,host_mod);

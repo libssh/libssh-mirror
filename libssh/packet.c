@@ -325,7 +325,7 @@ static int packet_send2(SSH_SESSION *session){
     unsigned int blocksize=(session->current_crypto?session->current_crypto->out_cipher->blocksize:8);
     enter_function();
     ssh_log(session, SSH_LOG_RARE,
-        "Writing on the wire a packet having %ld bytes before", currentlen);
+        "Writing on the wire a packet having %u bytes before", currentlen);
 #ifdef HAVE_LIBZ
     if(session->current_crypto && session->current_crypto->do_compress_out){
         ssh_log(session, SSH_LOG_RARE, "Compressing in_buffer ...");

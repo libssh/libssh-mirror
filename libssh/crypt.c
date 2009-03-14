@@ -39,7 +39,10 @@ u32 packet_decrypt_len(SSH_SESSION *session, char *crypted){
     if(session->current_crypto)
         packet_decrypt(session,crypted,session->current_crypto->in_cipher->blocksize);
     memcpy(&decrypted,crypted,sizeof(decrypted));
-    ssh_log(session,SSH_LOG_PACKET,"packet size decrypted : %d (0x%lx)",ntohl(decrypted),ntohl(decrypted));
+    ssh_log(session, SSH_LOG_PACKET,
+        "Packet size decrypted: %lu (0x%lx)",
+        (long unsigned int) ntohl(decrypted),
+        (long unsigned int) ntohl(decrypted));
     return ntohl(decrypted);
 }
     

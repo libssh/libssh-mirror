@@ -113,9 +113,9 @@ static int channel_open(CHANNEL *channel,char *type_c,int window,
                 channel->local_channel,
                 channel->remote_channel);
             ssh_log(session, SSH_LOG_PROTOCOL,
-                "Remote window : %ld, maxpacket : %ld",
-                channel->remote_window,
-                channel->remote_maxpacket);
+                "Remote window : %lu, maxpacket : %lu",
+                (long unsigned int) channel->remote_window,
+                (long unsigned int) channel->remote_maxpacket);
             channel->open=1;
             leave_function();
             return 0;
