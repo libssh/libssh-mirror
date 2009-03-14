@@ -41,6 +41,13 @@ typedef unsigned long long uint64_t;
 
 #define LIBSSH_VERSION "libssh-0.3-svn"
 
+/* GCC have printf type attribute check.  */
+#ifdef __GNUC__
+#define PRINTF_ATTRIBUTE(a,b) __attribute__ ((__format__ (__printf__, a, b)))
+#else
+#define PRINTF_ATTRIBUTE(a,b)
+#endif /* __GNUC__ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -158,7 +165,7 @@ enum {
 #define SSH_LOG_FUNCTIONS 4 // every function in and return
 */
 /* log.c */
-void ssh_log(SSH_SESSION *session, int prioriry, char *format, ...);
+void ssh_log(SSH_SESSION *session, int prioriry, const char *format, ...) PRINTF_ATTRIBUTE(3, 4);
 
 /* session.c */
 SSH_SESSION *ssh_new(void);

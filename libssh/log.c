@@ -33,7 +33,7 @@
  * \param verbosity verbosity of the event
  * \param format format string of the log entry
  */
-void ssh_log(SSH_SESSION *session, int verbosity, char *format, ...){
+void ssh_log(SSH_SESSION *session, int verbosity, const char *format, ...) {
 	char buffer[1024];
 	char buf2[256];
 	int min;
