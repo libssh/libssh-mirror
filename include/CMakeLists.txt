@@ -1,3 +1,3 @@
-project(headers)
+project(headers C)
 
 add_subdirectory(libssh)

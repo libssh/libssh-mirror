@@ -1,4 +1,4 @@
-project(libssh-library)
+project(libssh-library C)
 
 set(LIBSSH_PUBLIC_INCLUDE_DIRS
   ${CMAKE_SOURCE_DIR}/include

@@ -1,4 +1,4 @@
-project(libssh-headers)
+project(libssh-headers C)
 
 set(libssh_HDRS
   libssh.h
