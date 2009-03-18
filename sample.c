@@ -301,8 +301,12 @@ void do_sftp(SSH_SESSION *session){
     }
     /* reading the whole directory, file by file */
     while((file=sftp_readdir(sftp,dir))){
-        fprintf(stderr, "%30s(%.8o) : %.5d.%.5d : %.10ld bytes\n",
-            file->name, file->permissions, file->uid, file->gid, file->size);
+        fprintf(stderr, "%30s(%.8o) : %.5d.%.5d : %.10llu bytes\n",
+            file->name,
+            file->permissions,
+            file->uid,
+            file->gid,
+            (long long unsigned int) file->size);
         sftp_attributes_free(file);
     }
     /* when file=NULL, an error has occured OR the directory listing is end of file */
