@@ -38,7 +38,7 @@ Description: A tiny C SSH library. Development files
 
 Package: libssh-2-dbg
 Priority: extra
-Section: libdevel
+Section: debug
 Architecture: any
 Depends: libssh-2 (= ${binary:Version})
 Description: A tiny C SSH library. Debug symbols
