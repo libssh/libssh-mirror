@@ -2,7 +2,8 @@ libssh (0.2+svn20070321-5) UNRELEASED; urgency=low
 
   * NOT RELEASED YET
   * debian/control:
-    - Use my debian.org address in Uploaders
+    - Use my debian.org address in Uploaders and takeover the package
+      with Jean-Philippe permission
     - Use now official Vcs-* field
     - Use new Homepage field instead of old pseudo-field
     - Bump Standards-Version to 3.8.1 (no further changes)

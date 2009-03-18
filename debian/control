@@ -1,8 +1,7 @@
 Source: libssh
 Section: libs
 Priority: optional
-Maintainer: Jean-Philippe Garcia Ballester <giga@le-pec.org>
-Uploaders: Laurent Bigonville <bigon@debian.org>
+Maintainer: Laurent Bigonville <bigon@debian.org>
 Build-Depends: cdbs, debhelper (>= 5), libgcrypt11-dev, libz-dev, doxygen
 Standards-Version: 3.8.1
 Vcs-Svn: svn://svn.berlios.de/libssh/trunk
