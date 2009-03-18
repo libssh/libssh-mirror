@@ -8,9 +8,9 @@ libssh (0.2+svn20070321-5) UNRELEASED; urgency=low
     - Bump Standards-Version to 3.8.1 (no further changes)
     - Use debug section for -dbg package
     - Add ${misc:Depends} to please lintian
-  * debian/libssh-2-doc.doc-base: fix doc-base-unknown-section
+  * debian/libssh-2-doc.doc-base: Fix doc-base-uses-applications-section
 
- -- Laurent Bigonville <bigon@bigon.be>  Thu, 08 Nov 2007 05:59:18 +0100
+ -- Laurent Bigonville <bigon@debian.org>  Thu, 08 Nov 2007 05:59:18 +0100
 
 libssh (0.2+svn20070321-4) unstable; urgency=low
 

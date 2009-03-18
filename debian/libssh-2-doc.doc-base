@@ -2,7 +2,7 @@ Document: libssh
 Title: Debian libssh Manual
 Author: Aris Adamantiadis <aris@0xbadc0de.be>
 Abstract: This manual describes libssh API.
-Section: Apps/Programming
+Section: Programming/C
 
 Format: HTML
 Index: /usr/share/doc/libssh-2-doc/html/index.html
