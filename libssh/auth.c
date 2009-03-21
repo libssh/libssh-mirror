@@ -1,6 +1,7 @@
 /* auth.c deals with authentication methods */
 /*
 Copyright (c) 2003-2008 Aris Adamantiadis
+Copyright (c) 2008-2009 Andreas Schneider <mail@cynapses.org>
 
 This file is part of the SSH Library
 
@@ -25,7 +26,7 @@ MA 02111-1307, USA. */
 #include <stdio.h>
 #include <string.h>
 
-/** \defgroup ssh_auth Authentication functions
+/** \defgroup ssh_auth SSH Authentication functions
  * \brief functions to authenticate to servers
  */
 /** \addtogroup ssh_auth
