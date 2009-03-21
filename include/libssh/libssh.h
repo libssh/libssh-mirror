@@ -39,7 +39,25 @@ typedef unsigned long long uint64_t;
 #include <netdb.h>
 #endif /* _WIN32 */
 
-#define LIBSSH_VERSION "libssh-0.3-svn"
+#define SSH_STRINGIFY(s) SSH_TOSTRING(s)
+#define SSH_TOSTRING(s) #s
+
+/* libssh version macros */
+#define SSH_VERSION_INT(a, b, c) (a << 16 | b << 8 | c)
+#define SSH_VERSION_DOT(a, b, c) a ##.## b ##.## c
+#define SSH_VERSION(a, b, c) SSH_VERSION_DOT(a, b, c)
+
+/* libssh version */
+#define LIBSSH_VERSION_MAJOR  0
+#define LIBSSH_VERSION_MINOR  3
+#define LIBSSH_VERSION_MICRO  0
+
+#define LIBSSH_VERSION_INT SSH_VERSION_INT(LIBSSH_VERSION_MAJOR, \
+                                           LIBSSH_VERSION_MINOR, \
+                                           LIBSSH_VERSION_MICRO)
+#define LIBSSH_VERSION     SSH_VERSION(LIBSSH_VERSION_MAJOR, \
+                                       LIBSSH_VERSION_MINOR, \
+                                       LIBSSH_VERSION_MICRO)
 
 /* GCC have printf type attribute check.  */
 #ifdef __GNUC__
@@ -132,6 +150,9 @@ typedef int socket_t;
 
 char *ssh_get_error(void *error); 
 int ssh_get_error_code(void *error);
+
+/* version checks */
+const char *ssh_version(int req_version);
 
 /** \addtogroup ssh_log
  * @{

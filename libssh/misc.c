@@ -3,6 +3,7 @@
 
 /*
 Copyright 2003 Aris Adamantiadis
+Copyright 2009 Andreas Schneider <mail@cynapses.org>
 
 This file is part of the SSH Library
 
@@ -37,6 +38,12 @@ MA 02111-1307, USA. */
 #endif
 
 #include "libssh/priv.h"
+
+/** \defgroup ssh_misc SSH Misc
+ * \brief Misc functions
+ */
+/** \addtogroup ssh_misc
+ * @{ */
 
 #ifndef _WIN32
 char *ssh_get_user_home_dir(void) {
@@ -83,3 +90,43 @@ u64 ntohll(u64 a){
     return (( ((u64)low) << 32) | ( high));
 #endif
 }
+
+/**
+ * @brief Check if libssh is the required version or get the version
+ * string.
+ *
+ * @param req_version   The version required.
+ *
+ * @return              If the version of libssh is newer than the version
+ *                      required it will return a version string.
+ *                      NULL if the version is older.
+ *
+ * Example:
+ *
+ * @code
+ *  if (ssh_version(SSH_VERSION_INT(0,2,1)) == NULL) {
+ *    fprintf(stderr, "libssh version is too old!\n");
+ *    exit(1);
+ *  }
+ *
+ *  if (debug) {
+ *    printf("libssh %s\n", ssh_version(0));
+ *  }
+ * @endcode
+ */
+const char *ssh_version(int req_version) {
+  if (req_version <= LIBSSH_VERSION_INT) {
+#ifdef HAVE_LIBGCRYPT
+    return SSH_STRINGIFY(LIBSSH_VERSION) "/gnutls/zlib";
+#elif defined HAVE_LIBCRYPTO
+    return SSH_STRINGIFY(LIBSSH_VERSION) "/openssl/zlib";
+#else
+    return SSH_STRINGIFY(LIBSSH_VERSION);
+#endif
+  }
+
+  return NULL;
+}
+
+/** @} */
+

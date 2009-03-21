@@ -37,8 +37,8 @@ MA 02111-1307, USA. */
 /* some constants */
 #define MAX_PACKET_LEN 262144
 #define ERROR_BUFFERLEN 1024
-#define CLIENTBANNER1 "SSH-1.5-" LIBSSH_VERSION
-#define CLIENTBANNER2 "SSH-2.0-" LIBSSH_VERSION
+#define CLIENTBANNER1 "SSH-1.5-libssh-" SSH_STRINGIFY(LIBSSH_VERSION)
+#define CLIENTBANNER2 "SSH-2.0-libssh-" SSH_STRINGIFY(LIBSSH_VERSION)
 #define KBDINT_MAX_PROMPT 256 /* more than openssh's :) */
 /* some types for public keys */
 #define TYPE_DSS 1

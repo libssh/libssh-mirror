@@ -50,11 +50,13 @@ static void add_cmd(char *cmd){
 
 static void usage(){
     fprintf(stderr,"Usage : ssh [options] [login@]hostname\n"
+    "sample client - libssh-%s\n"
     "Options :\n"
     "  -l user : log in as user\n"
     "  -p port : connect to port\n"
     "  -d : use DSS to verify host public key\n"
-    "  -r : use RSA to verify host public key\n");
+    "  -r : use RSA to verify host public key\n",
+    ssh_version(0));
     exit(0);
 }
 
