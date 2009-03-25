@@ -63,6 +63,6 @@ if (UNIX AND NOT WIN32)
   add_executable(samplessh sample.c)
   add_executable(samplesshd samplesshd.c)
 
-  target_link_libraries(samplessh ${LIBSSH_LIBRARY})
-  target_link_libraries(samplesshd ${LIBSSH_LIBRARY})
+  target_link_libraries(samplessh ${LIBSSH_SHARED_LIBRARY})
+  target_link_libraries(samplesshd ${LIBSSH_SHARED_LIBRARY})
 endif (UNIX AND NOT WIN32)

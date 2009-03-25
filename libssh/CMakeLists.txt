@@ -12,13 +12,19 @@ set(LIBSSH_PRIVATE_INCLUDE_DIRS
   ${ZLIB_INCLUDE_DIRS}
 )
 
-set(LIBSSH_LIBRARY
-  ssh
-  CACHE INTERNAL "libssh library"
+set(LIBSSH_SHARED_LIBRARY
+  ssh_shared
+  CACHE INTERNAL "libssh shared library"
 )
 
+if (WITH_STATIC_LIB)
+  set(LIBSSH_STATIC_LIBRARY
+    ssh_static
+    CACHE INTERNAL "libssh static library"
+  )
+endif (WITH_STATIC_LIB)
+
 set(LIBSSH_LINK_LIBRARIES
-  ${LIBSSH_LIBRARY}
   ${ZLIB_LIBRARIES}
 )
 
@@ -34,6 +40,7 @@ if (CRYPTO_LIBRARY)
     ${LIBSSH_PRIVATE_INCLUDE_DIRS}
     ${OPENSSL_INCLUDE_DIRS}
   )
+
   set(LIBSSH_LINK_LIBRARIES
     ${LIBSSH_LINK_LIBRARIES}
     ${CRYPTO_LIBRARY}
@@ -45,6 +52,7 @@ if (GCRYPT_LIBRARY)
     ${LIBSSH_PRIVATE_INCLUDE_DIRS}
     ${GCRYPT_INCLUDE_DIRS}
   )
+
   set(LIBSSH_LINK_LIBRARIES
     ${LIBSSH_LINK_LIBRARIES}
     ${GCRYPT_LIBRARY}
@@ -95,25 +103,53 @@ include_directories(
   ${LIBSSH_PRIVATE_INCLUDE_DIRS}
 )
 
-add_library(${LIBSSH_LIBRARY} SHARED ${libssh_SRCS})
+add_library(${LIBSSH_SHARED_LIBRARY} SHARED ${libssh_SRCS})
 
-target_link_libraries(${LIBSSH_LINK_LIBRARIES})
+target_link_libraries(${LIBSSH_SHARED_LIBRARY} ${LIBSSH_LINK_LIBRARIES})
 
 set_target_properties(
-  ${LIBSSH_LIBRARY}
+  ${LIBSSH_SHARED_LIBRARY}
     PROPERTIES
       VERSION
         ${LIBRARY_VERSION}
       SOVERSION
         ${LIBRARY_SOVERSION}
+      OUTPUT_NAME
+        ssh
 )
 
 install(
   TARGETS
-    ${LIBSSH_LIBRARY}
+    ${LIBSSH_SHARED_LIBRARY}
   DESTINATION
     ${LIB_INSTALL_DIR}
   COMPONENT
     libraries
 )
+
+if (WITH_STATIC_LIB)
+  add_library(${LIBSSH_STATIC_LIBRARY} STATIC ${libssh_SRCS})
+
+  target_link_libraries(${LIBSSH_STATIC_LIBRARY} ${LIBSSH_LINK_LIBRARIES})
+
+  set_target_properties(
+    ${LIBSSH_STATIC_LIBRARY}
+      PROPERTIES
+        VERSION
+          ${LIBRARY_VERSION}
+        SOVERSION
+          ${LIBRARY_SOVERSION}
+        OUTPUT_NAME
+          ssh
+  )
+
+  install(
+    TARGETS
+      ${LIBSSH_STATIC_LIBRARY}
+    DESTINATION
+      ${LIB_INSTALL_DIR}
+    COMPONENT
+      libraries
+  )
+endif (WITH_STATIC_LIB)
 
