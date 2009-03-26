@@ -43,7 +43,7 @@ typedef unsigned long long uint64_t;
 #define SSH_TOSTRING(s) #s
 
 /* libssh version macros */
-#define SSH_VERSION_INT(a, b, c) (a << 16 | b << 8 | c)
+#define SSH_VERSION_INT(a, b, c) ((a) << 16 | (b) << 8 | (c))
 #define SSH_VERSION_DOT(a, b, c) a ##.## b ##.## c
 #define SSH_VERSION(a, b, c) SSH_VERSION_DOT(a, b, c)
 
