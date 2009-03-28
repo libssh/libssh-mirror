@@ -8,6 +8,13 @@ set(libssh_HDRS
   ssh2.h
 )
 
+if (WITH_SERVER)
+  set(libssh_HDRS
+    ${libssh_HDRS}
+    server.h
+  )
+endif (WITH_SERVER)
+
 install(
   FILES
     ${libssh_HDRS}
@@ -16,19 +23,4 @@ install(
   COMPONENT
     headers
 )
-
-if (WITH_SERVER)
-  set(server_HDRS
-    server.h
-  )
-
-  install(
-    FILES
-      ${server_HDRS}
-    DESTINATION
-      ${INCLUDE_INSTALL_DIR}/${APPLICATION_NAME}
-    COMPONENT
-      libraries
-  )
-endif (WITH_SERVER)
 

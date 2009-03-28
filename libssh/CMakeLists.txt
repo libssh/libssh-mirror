@@ -89,7 +89,6 @@ set(libssh_SRCS
   misc.c
   options.c
   packet.c
-  server.c
   session.c
   sftp.c
   sftpserver.c
@@ -97,6 +96,13 @@ set(libssh_SRCS
   string.c
   wrapper.c
 )
+
+if (WITH_SERVER)
+  set(libssh_SRCS
+    ${libssh_SRCS}
+    server.c
+  )
+endif (WITH_SERVER)
 
 include_directories(
   ${LIBSSH_PUBLIC_INCLUDE_DIRS}
