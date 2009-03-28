@@ -59,7 +59,7 @@ SFTP_SESSION *sftp_new(SSH_SESSION *session){
     return sftp;
 }
 
-#ifndef NO_SERVER
+#ifdef WITH_SERVER
 SFTP_SESSION *sftp_server_new(SSH_SESSION *session, CHANNEL *chan){
     SFTP_SESSION *sftp=malloc(sizeof(SFTP_SESSION));
     memset(sftp,0,sizeof(SFTP_SESSION));
@@ -110,7 +110,7 @@ int sftp_server_init(SFTP_SESSION *sftp){
     sftp_leave_function();
     return 0;
 }
-#endif
+#endif /* WITH_SERVER */
 
 void sftp_free(SFTP_SESSION *sftp){
     struct request_queue *ptr;

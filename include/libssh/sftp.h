@@ -607,7 +607,7 @@ char *sftp_canonicalize_path(SFTP_SESSION *sftp, const char *path);
  */
 int sftp_server_version(SFTP_SESSION *sftp);
 
-#ifndef NO_SERVER
+#ifdef WITH_SERVER
 /**
  * @brief Create a new sftp server session.
  *
@@ -627,7 +627,7 @@ SFTP_SESSION *sftp_server_new(SSH_SESSION *session, CHANNEL *chan);
  * @return             0 on success, < 0 on error.
  */
 int sftp_server_init(SFTP_SESSION *sftp);
-#endif
+#endif  /* WITH_SERVER */
 
 /* this is not a public interface */
 #define SFTP_HANDLES 256

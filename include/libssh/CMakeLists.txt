@@ -3,18 +3,32 @@ project(libssh-headers C)
 set(libssh_HDRS
   libssh.h
   crypto.h
-  server.h
   sftp.h
   ssh1.h
   ssh2.h
 )
 
-INSTALL(
+install(
   FILES
     ${libssh_HDRS}
   DESTINATION
     ${INCLUDE_INSTALL_DIR}/${APPLICATION_NAME}
   COMPONENT
-    libraries
+    headers
 )
+
+if (WITH_SERVER)
+  set(server_HDRS
+    server.h
+  )
+
+  install(
+    FILES
+      ${server_HDRS}
+    DESTINATION
+      ${INCLUDE_INSTALL_DIR}/${APPLICATION_NAME}
+    COMPONENT
+      libraries
+  )
+endif (WITH_SERVER)
 

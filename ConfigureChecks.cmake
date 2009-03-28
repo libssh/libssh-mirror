@@ -58,3 +58,7 @@ if (WITH_SSH1)
   set(WITH_SSH1 1)
 endif (WITH_SSH1)
 
+if (WITH_SERVER)
+  set(WITH_SERVER 1)
+endif (WITH_SERVER)
+
