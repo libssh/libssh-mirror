@@ -245,7 +245,7 @@ struct ssh_options_struct {
 typedef struct ssh_crypto_struct {
     bignum e,f,x,k,y;
     unsigned char session_id[SHA_DIGEST_LEN];
-    
+
     unsigned char encryptIV[SHA_DIGEST_LEN*2];
     unsigned char decryptIV[SHA_DIGEST_LEN*2];
 
@@ -307,32 +307,32 @@ struct ssh_session {
 /* status flags */
     int closed;
     int closed_by_except;
-    
-    int connected; 
+
+    int connected;
     /* !=0 when the user got a session handle */
     int alive;
     /* two previous are deprecated */
     int auth_service_asked;
-    
+
 /* socket status */
     int blocking; // functions should block
-    
-    STRING *banner; /* that's the issue banner from 
+
+    STRING *banner; /* that's the issue banner from
                        the server */
     char *remotebanner; /* that's the SSH- banner from
                            remote host. */
-    char *discon_msg; /* disconnect message from 
+    char *discon_msg; /* disconnect message from
                          the remote host */
     BUFFER *in_buffer;
     PACKET in_packet;
     BUFFER *out_buffer;
-       
+
     /* the states are used by the nonblocking stuff to remember */
     /* where it was before being interrupted */
     int packet_state;
     int dh_handshake_state;
     STRING *dh_server_signature; //information used by dh_handshake.
-    
+
     KEX server_kex;
     KEX client_kex;
     BUFFER *in_hashbuf;
@@ -342,7 +342,7 @@ struct ssh_session {
 
     CHANNEL *channels; /* linked list of channels */
     int maxchannel;
-    int exec_channel_opened; /* version 1 only. more 
+    int exec_channel_opened; /* version 1 only. more
                                 info in channels1.c */
     AGENT *agent; /* ssh agent */
 
@@ -353,7 +353,7 @@ struct ssh_session {
     PRIVATE_KEY *rsa_key;
     PRIVATE_KEY *dsa_key;
     /* auths accepted by server */
-    int auth_methods; 
+    int auth_methods;
     int hostkeys; /* contains type of host key wanted by client, in server impl */
     struct ssh_message *ssh_message; /* ssh message */
     int log_verbosity; /*cached copy of the option structure */
@@ -407,7 +407,7 @@ struct ssh_channel_request {
     u32 pxwidth;
     u32 pxheight;
     STRING *modes;
-    
+
     /* env type request */
     char *var_name;
     char *var_value;
@@ -552,7 +552,7 @@ int packet_wait(SSH_SESSION *session,int type,int blocking);
 int packet_flush(SSH_SESSION *session, int enforce_blocking);
 /* connect.c */
 SSH_SESSION *ssh_session_new();
-socket_t ssh_connect_host(SSH_SESSION *session, const char *host,const char 
+socket_t ssh_connect_host(SSH_SESSION *session, const char *host,const char
         *bind_addr, int port, long timeout, long usec);
 
 /* in kex.c */
@@ -586,7 +586,7 @@ SIGNATURE *signature_from_string(SSH_SESSION *session, STRING *signature,PUBLIC_
 void signature_free(SIGNATURE *sign);
 STRING *ssh_do_sign_with_agent(struct ssh_session *session,
     struct buffer_struct *buf, struct public_key_struct *publickey);
-STRING *ssh_do_sign(SSH_SESSION *session,BUFFER *sigbuf, 
+STRING *ssh_do_sign(SSH_SESSION *session,BUFFER *sigbuf,
         PRIVATE_KEY *privatekey);
 STRING *ssh_sign_session_id(SSH_SESSION *session, PRIVATE_KEY *privatekey);
 STRING *ssh_encrypt_rsa1(SSH_SESSION *session, STRING *data, PUBLIC_KEY *key);
@@ -656,7 +656,7 @@ u32 ssh_crc32(char *buffer, int len);
 int ssh_userauth1_none(SSH_SESSION *session, char *username);
 int ssh_userauth1_offer_pubkey(SSH_SESSION *session, char *username,
         int type, STRING *pubkey);
-int ssh_userauth1_password(SSH_SESSION *session, char *username, 
+int ssh_userauth1_password(SSH_SESSION *session, char *username,
         char *password);
 /* in misc.c */
 /* gets the user home dir. */
@@ -669,7 +669,7 @@ u64 ntohll(u64);
 
 /* channels1.c */
 int channel_open_session1(CHANNEL *channel);
-int channel_request_pty_size1(CHANNEL *channel, char *terminal,int cols, 
+int channel_request_pty_size1(CHANNEL *channel, char *terminal,int cols,
         int rows);
 int channel_change_pty_size1(CHANNEL *channel, int cols, int rows);
 int channel_request_shell1(CHANNEL *channel);
@@ -680,6 +680,9 @@ int channel_write1(CHANNEL *channel, void *data, int len);
 /* session.c */
 
 int ssh_handle_packets(SSH_SESSION *session);
+
+/* match.c */
+int match_hostname(const char *host, const char *pattern, unsigned int len);
 
 /* log.c */
 
@@ -718,7 +721,7 @@ char *my_gcry_bn2dec(bignum bn);
 #endif /* !HAVE_LIBGCRYPT */
 
 #ifdef __cplusplus
-} 
+}
 #endif
 
 #endif /* _LIBSSH_PRIV_H */
