@@ -45,10 +45,11 @@ if (GCRYPT_LIBRARY)
   set(HAVE_LIBGCRYPT 1)
 endif (GCRYPT_LIBRARY)
 
-if (ZLIB_LIBRARY)
-  set(HAVE_ZLIB 1)
-endif (ZLIB_LIBRARY)
+if (Z_LIBRARY)
+  set(HAVE_LIBZ 1)
+endif (Z_LIBRARY)
 
 if (WITH_SSH1)
   set(HAVE_SSH1 1)
 endif (WITH_SSH1)
+
