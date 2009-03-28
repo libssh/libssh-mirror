@@ -22,6 +22,8 @@ MA 02111-1307, USA. */
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+
+#include "config.h"
 #include "libssh/priv.h"
 #include "libssh/ssh2.h"
 #include "libssh/ssh1.h"
@@ -44,7 +46,7 @@ MA 02111-1307, USA. */
 #define DES "3des-cbc"
 #endif
 
-#ifdef HAVE_LIBZ
+#if defined(HAVE_LIBZ) && defined(WITH_LIBZ)
 #define ZLIB "none,zlib"
 #else
 #define ZLIB "none"

@@ -29,6 +29,8 @@ MA 02111-1307, USA. */
 #include <stdlib.h>
 #include <sys/types.h>
 
+#include "config.h"
+
 #ifdef _WIN32
 #define _WIN32_IE 0x0400 //SHGetSpecialFolderPath
 #include <shlobj.h>
@@ -38,6 +40,24 @@ MA 02111-1307, USA. */
 #endif
 
 #include "libssh/priv.h"
+
+#ifdef HAVE_LIBGCRYPT
+#define GCRYPT_STRING "/gnutls"
+#else
+#define GCRYPT_STRING ""
+#endif
+
+#ifdef HAVE_LIBCRYPTO
+#define CRYPTO_STRING "/openssl"
+#else
+#define CRYPTO_STRING ""
+#endif
+
+#if defined(HAVE_LIBZ) && defined(WITH_LIBZ)
+#define LIBZ_STRING "/zlib"
+#else
+#define LIBZ_STRING ""
+#endif
 
 /** \defgroup ssh_misc SSH Misc
  * \brief Misc functions
@@ -116,13 +136,8 @@ u64 ntohll(u64 a){
  */
 const char *ssh_version(int req_version) {
   if (req_version <= LIBSSH_VERSION_INT) {
-#ifdef HAVE_LIBGCRYPT
-    return SSH_STRINGIFY(LIBSSH_VERSION) "/gnutls/zlib";
-#elif defined HAVE_LIBCRYPTO
-    return SSH_STRINGIFY(LIBSSH_VERSION) "/openssl/zlib";
-#else
-    return SSH_STRINGIFY(LIBSSH_VERSION);
-#endif
+    return SSH_STRINGIFY(LIBSSH_VERSION) GCRYPT_STRING CRYPTO_STRING
+      LIBZ_STRING;
   }
 
   return NULL;

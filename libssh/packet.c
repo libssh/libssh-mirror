@@ -24,10 +24,12 @@ MA 02111-1307, USA. */
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
+#include <errno.h>
+
+#include "config.h"
 #include "libssh/priv.h"
 #include "libssh/ssh2.h"
 #include "libssh/ssh1.h"
-#include <errno.h>
 #include "libssh/crypto.h"
 
 /* XXX include selected mac size */
@@ -139,7 +141,7 @@ static int packet_read2(SSH_SESSION *session){
             ssh_log(session, SSH_LOG_RARE,
                 "After padding, %d bytes left in buffer",
                 buffer_get_rest_len(session->in_buffer));
-#ifdef HAVE_LIBZ
+#if defined(HAVE_LIBZ) && defined(WITH_LIBZ)
             if(session->current_crypto && session->current_crypto->do_compress_in){
                 ssh_log(session, SSH_LOG_RARE, "Decompressing in_buffer ...");
                 decompress_buffer(session,session->in_buffer);
@@ -247,7 +249,7 @@ static int packet_read1(SSH_SESSION *session){
             buffer_pass_bytes(session->in_buffer,padding);   /*pass the padding*/
             ssh_log(session,SSH_LOG_PACKET,"the packet is valid");
 /* will do that later 
-#ifdef HAVE_LIBZ
+#if defined(HAVE_LIBZ) && defined(WITH_LIBZ)
     if(session->current_crypto && session->current_crypto->do_compress_in){
         decompress_buffer(session,session->in_buffer);
     }
@@ -326,7 +328,7 @@ static int packet_send2(SSH_SESSION *session){
     enter_function();
     ssh_log(session, SSH_LOG_RARE,
         "Writing on the wire a packet having %u bytes before", currentlen);
-#ifdef HAVE_LIBZ
+#if defined(HAVE_LIBZ) && defined(WITH_LIBZ)
     if(session->current_crypto && session->current_crypto->do_compress_out){
         ssh_log(session, SSH_LOG_RARE, "Compressing in_buffer ...");
         compress_buffer(session,session->out_buffer);
@@ -369,7 +371,7 @@ static int packet_send1(SSH_SESSION *session){
     enter_function();
     ssh_log(session,SSH_LOG_PACKET,"Sending a %d bytes long packet",currentlen);
 /*
-#ifdef HAVE_LIBZ
+#if defined(HAVE_LIBZ) && defined(WITH_LIBZ)
     if(session->current_crypto && session->current_crypto->do_compress_out){
         compress_buffer(session,session->out_buffer);
         currentlen=buffer_get_len(session->out_buffer);

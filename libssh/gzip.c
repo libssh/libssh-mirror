@@ -19,17 +19,16 @@ You should have received a copy of the GNU Lesser General Public License
 along with the SSH Library; see the file COPYING.  If not, write to
 the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA. */
-#include "libssh/priv.h"
-#ifdef HAVE_LIBZ
-#undef NO_GZIP
-#else
-#define NO_GZIP
-#endif
 
-#ifndef NO_GZIP
+#include "config.h"
+#include "libssh/priv.h"
+
+#if defined(HAVE_LIBZ) && defined(WITH_LIBZ)
+
 #include <zlib.h>
 #include <string.h>
 #include <stdlib.h>
+
 #define BLOCKSIZE 4092
 
 static z_stream *initcompress(SSH_SESSION *session,int level){
@@ -42,7 +41,7 @@ static z_stream *initcompress(SSH_SESSION *session,int level){
     return stream;
 }
 
-BUFFER *gzip_compress(SSH_SESSION *session,BUFFER *source,int level){
+static BUFFER *gzip_compress(SSH_SESSION *session,BUFFER *source,int level){
     BUFFER *dest;
     static unsigned char out_buf[BLOCKSIZE];
     void *in_ptr=buffer_get(source);
@@ -96,7 +95,7 @@ static z_stream *initdecompress(SSH_SESSION *session){
     return stream;
 }
 
-BUFFER *gzip_decompress(SSH_SESSION *session,BUFFER *source){
+static BUFFER *gzip_decompress(SSH_SESSION *session,BUFFER *source){
     BUFFER *dest;
     static unsigned char out_buf[BLOCKSIZE];
     void *in_ptr=buffer_get_rest(source);
@@ -138,4 +137,5 @@ int decompress_buffer(SSH_SESSION *session,BUFFER *buf){
     return 0;
 }
 
-#endif /* NO_GZIP */
+#endif /* HAVE_LIBZ && WITH_LIBZ */
+
