@@ -19,7 +19,7 @@
  * MA 02111-1307, USA. */
 
 
-/** \defgroup ssh_log SSH logging
+/** \defgroup ssh_log SSH Logging
  * \brief Logging functions for debugging and problem resolving
  */
 /** \addtogroup ssh_log

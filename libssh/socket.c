@@ -51,7 +51,7 @@
 #define USE_SELECT
 #endif
 
-/** \defgroup ssh_socket Sockets
+/** \defgroup ssh_socket SSH Sockets
  * \addtogroup ssh_socket
  * @{
  */
