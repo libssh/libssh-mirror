@@ -63,7 +63,7 @@
 #cmakedefine WITH_LIBZ 1
 
 /* Define to 1 if you want to enable SSH1 */
-#cmakedefine HAVE_SSH1 1
+#cmakedefine WITH_SSH1 1
 
 /* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
    significant byte first (like Motorola and SPARC, unlike Intel). */
