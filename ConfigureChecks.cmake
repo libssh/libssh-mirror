@@ -55,6 +55,6 @@ if (WITH_LIBZ)
 endif (WITH_LIBZ)
 
 if (WITH_SSH1)
-  set(HAVE_SSH1 1)
+  set(WITH_SSH1 1)
 endif (WITH_SSH1)
 
