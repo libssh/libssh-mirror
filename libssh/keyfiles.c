@@ -783,9 +783,11 @@ static int alldigits(char *s)
 }
 /** @}
  */
+/** \addtogroup ssh_session
+ * @{ */
 
 /** \brief lowercases a string
- * \arg string string to lowercase
+ * \param string string to lowercase
  * \internal
  */
 static void lowercase(char *string){
@@ -805,6 +807,9 @@ static void tokens_free(char **tokens){
 }
 /** \brief returns one line of known host file
  * will return a token array containing (host|ip) keytype key
+ * \param file pointer to the known host file. Could be pointing to NULL at start
+ * \param filename file name of the known host file
+ * \param found_type pointer to a string to be set with the found key type
  * \internal
  * \returns NULL if no match was found or the file was not found
  * \returns found_type type of key (ie "dsa","ssh-rsa1"). Don't free that value.
@@ -863,7 +868,7 @@ static char **ssh_get_knownhost_line(SSH_SESSION *session,FILE **file, char *fil
 
 /** \brief Check the public key in the known host line matches the
  * public key of the currently connected server.
- * \arg tokens list of tokens in the known_hosts line.
+ * \param tokens list of tokens in the known_hosts line.
  * \return 1 if the key matches
  * \return 0 if the key doesn't match
  * \return -1 on error
@@ -927,17 +932,64 @@ static int check_public_key(SSH_SESSION *session, char **tokens){
 	return 1;
 }
 
+/** \brief checks if a hostname matches a openssh-style hashed known host
+ * \param host host to check
+ * \param hashed hashed value
+ * \returns 1 if it matches
+ * \returns 0 otherwise
+ */
+static int match_hashed_host(SSH_SESSION *session, char *host, char *sourcehash){
+	/* Openssh hash structure :
+	 * |1|base64 encoded salt|base64 encoded hash
+	 * hash is produced that way :
+	 * hash := HMAC_SHA1(key=salt,data=host)
+	 */
+	char *source;
+	char *b64hash;
+	BUFFER *salt;
+	BUFFER *hash;
+	HMACCTX mac;
+	int match;
+	unsigned char buffer[256];
+	unsigned int size=sizeof(buffer);
 
+	enter_function();
+	if(strncmp(sourcehash,"|1|",3) != 0)
+		return 0;
+	source=strdup(sourcehash+3);
+	b64hash=strchr(source,'|');
+	if(!b64hash){
+		/* Invalid hash */
+		free(source);
+		leave_function();
+		return 0;
+	}
+	*b64hash='\0';
+	b64hash++;
+	salt=base64_to_bin(source);
+	hash=base64_to_bin(b64hash);
+	free(source);
+	mac=hmac_init(buffer_get(salt),buffer_get_len(salt),HMAC_SHA1);
+	hmac_update(mac,host,strlen(host));
+	hmac_final(mac,buffer,&size);
+	if(size == buffer_get_len(hash) && memcmp(buffer,buffer_get(hash),size)==0)
+		match=1;
+	else
+		match=0;
+	buffer_free(salt);
+	buffer_free(hash);
+	ssh_log(session,SSH_LOG_PACKET,"Matching a hashed host : %s match=%d",host,match);
+	leave_function();
+	return match;
+}
 /* How it's working :
  * 1- we open the known host file and bitch if it doesn't exist
  * 2- we need to examine each line of the file, until going on state SSH_SERVER_KNOWN_OK:
  *  - there's a match. if the key is good, state is SSH_SERVER_KNOWN_OK,
  *    else it's SSH_SERVER_KNOWN_CHANGED (or SSH_SERVER_FOUND_OTHER)
  *  - there's no match : no change
- *  - there's an antimatch : no change (that line is simply ignored)
  */
-/** \addtogroup ssh_session
- * @{ */
+
 /** checks the user's known host file for a previous connection to the
  * current server.
  * \brief test if the server is known
@@ -953,7 +1005,6 @@ static int check_public_key(SSH_SESSION *session, char **tokens){
  * \see ssh_options_set_wanted_algo()
  * \see ssh_get_pubkey_hash()
  * \bug there is no current way to remove or modify an entry into the known host table
- * \todo TODO this is a real mess. Clean this up someday
  */
 int ssh_is_server_known(SSH_SESSION *session){
 
@@ -978,7 +1029,9 @@ int ssh_is_server_known(SSH_SESSION *session){
     	/* End of file, return the current state */
     	if(tokens==NULL)
     		break;
-    	match=match_hostname(host,tokens[0],strlen(tokens[0]));
+    	match=match_hashed_host(session,host,tokens[0]);
+    	if(!match)
+    		match=match_hostname(host,tokens[0],strlen(tokens[0]));
     	if(match){
     		// We got a match. Now check the key type
     		if(strcmp(session->current_crypto->server_pubkey_type,type)!=0){
