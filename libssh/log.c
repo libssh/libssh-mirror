@@ -1,7 +1,9 @@
 /*
- * Copyright 2008 Aris Adamantiadis
+ * log.c - logging and debugging functions
  *
  * This file is part of the SSH Library
+ *
+ * Copyright (c) 2008      by Aris Adamantiadis
  *
  * The SSH Library is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -16,18 +18,22 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with the SSH Library; see the file COPYING.  If not, write to
  * the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
- * MA 02111-1307, USA. */
+ * MA 02111-1307, USA.
+ *
+ * vim: ts=2 sw=2 et cindent
+ */
 
+#include "libssh/priv.h"
+#include <stdio.h>
+#include <stdarg.h>
+#include <string.h>
 
 /** \defgroup ssh_log SSH Logging
  * \brief Logging functions for debugging and problem resolving
  */
 /** \addtogroup ssh_log
  * @{ */
-#include "libssh/priv.h"
-#include <stdio.h>
-#include <stdarg.h>
-#include <string.h>
+
 /** \brief logs an event
  * \param session the SSH session
  * \param verbosity verbosity of the event

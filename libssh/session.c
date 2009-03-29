@@ -1,9 +1,9 @@
-/* session.c */
-/* contains the non-networking functions ssh_* */
 /*
- * Copyright (c) 2005-2008 Aris Adamantiadis
+ * session.c - non-networking functions
  *
  * This file is part of the SSH Library
+ *
+ * Copyright (c) 2005-2008 by Aris Adamantiadis
  *
  * The SSH Library is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,7 +18,10 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with the SSH Library; see the file COPYING.  If not, write to
  * the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
- * MA 02111-1307, USA. */
+ * MA 02111-1307, USA.
+ *
+ * vim: ts=2 sw=2 et cindent
+ */
 
 #include <string.h>
 #include <stdlib.h>

@@ -1,27 +1,29 @@
-/* keyfiles.c */
-/* This part of the library handles private and public key files needed for publickey authentication,*/
-/* as well as servers public hashes verifications and certifications. Lot of code here handles openssh */
-/* implementations (key files aren't standardized yet). */
-
 /*
-Copyright 2003,04 Aris Adamantiadis
+ * keyfiles.c - private and public key handling for authentication.
+ *
+ * This file is part of the SSH Library
+ *
+ * Copyright (c) 2003-2009 by Aris Adamantiadis
+ * Copyright (c) 2009      by Andreas Schneider <mail@cynapses.org>
+ *
+ * The SSH Library is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation; either version 2.1 of the License, or (at your
+ * option) any later version.
+ *
+ * The SSH Library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ * or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+ * License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with the SSH Library; see the file COPYING.  If not, write to
+ * the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
+ * MA 02111-1307, USA.
+ *
+ * vim: ts=2 sw=2 et cindent
+ */
 
-This file is part of the SSH Library
-
-The SSH Library is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or (at your
-option) any later version.
-
-The SSH Library is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
-License for more details.
-
-You should have received a copy of the GNU Lesser General Public License
-along with the SSH Library; see the file COPYING.  If not, write to
-the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
-MA 02111-1307, USA. */
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>

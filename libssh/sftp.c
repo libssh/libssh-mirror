@@ -1,25 +1,30 @@
-/* scp.c contains the needed function to work with file transfer protocol over ssh*/
-/* don't look further if you believe this is just FTP over some tunnel. It IS different */
-/* This file contains code written by Nick Zitzmann */
 /*
-Copyright 2003-2005 Aris Adamantiadis
+ * sftp.c - Secure FTP functions
+ *
+ * This file is part of the SSH Library
+ *
+ * Copyright (c) 2005-2008 by Aris Adamantiadis
+ * Copyright (c) 2008-2009 by Andreas Schneider <mail@cynapses.org>
+ *
+ * The SSH Library is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation; either version 2.1 of the License, or (at your
+ * option) any later version.
+ *
+ * The SSH Library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ * or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+ * License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with the SSH Library; see the file COPYING.  If not, write to
+ * the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
+ * MA 02111-1307, USA.
+ *
+ * vim: ts=2 sw=2 et cindent
+ */
 
-This file is part of the SSH Library
-
-The SSH Library is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or (at your
-option) any later version.
-
-The SSH Library is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
-License for more details.
-
-You should have received a copy of the GNU Lesser General Public License
-along with the SSH Library; see the file COPYING.  If not, write to
-the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
-MA 02111-1307, USA. */
+/* This file contains code written by Nick Zitzmann */
 
 #include <errno.h>
 #include <stdlib.h>

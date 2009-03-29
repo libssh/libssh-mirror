@@ -1,39 +1,45 @@
-/* dh.c */
-/* this file contains usefull stuff for Diffie helman algorithm against SSH 2 */
 /*
-Copyright 2003-2008 Aris Adamantiadis
+ * dh.c - Diffie-Helman algorithm code against SSH 2
+ *
+ * This file is part of the SSH Library
+ *
+ * Copyright (c) 2003-2008 by Aris Adamantiadis
+ *
+ * The SSH Library is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation; either version 2.1 of the License, or (at your
+ * option) any later version.
+ *
+ * The SSH Library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ * or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+ * License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with the SSH Library; see the file COPYING.  If not, write to
+ * the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
+ * MA 02111-1307, USA.
+ *
+ * vim: ts=2 sw=2 et cindent
+ */
 
-This file is part of the SSH Library
-
-The SSH Library is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or (at your
-option) any later version.
-
-The SSH Library is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
-License for more details.
-
-You should have received a copy of the GNU Lesser General Public License
-along with the SSH Library; see the file COPYING.  If not, write to
-the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
-MA 02111-1307, USA. */
-
-/* Let us resume the dh protocol. */
-/* Each side computes a private prime number, x at client side, y at server side. */
-/* g and n are two numbers common to every ssh software. */
-/* client's public key (e) is calculated by doing */
-/* e = g^x mod p */
-/* client sents e to the server . */
-/* the server computes his own public key, f */
-/* f = g^y mod p */
-/* it sents it to the client */
-/* the common key K is calculated by the client by doing */
-/* k = f^x mod p */
-/* the server does the same with the client public key e */
-/* k' = e^y mod p */
-/* if everything went correctly, k and k' are equal */
+/*
+ * Let us resume the dh protocol.
+ * Each side computes a private prime number, x at client side, y at server
+ * side.
+ * g and n are two numbers common to every ssh software.
+ * client's public key (e) is calculated by doing:
+ * e = g^x mod p
+ * client sents e to the server.
+ * the server computes his own public key, f
+ * f = g^y mod p
+ * it sents it to the client
+ * the common key K is calculated by the client by doing
+ * k = f^x mod p
+ * the server does the same with the client public key e
+ * k' = e^y mod p
+ * if everything went correctly, k and k' are equal
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
