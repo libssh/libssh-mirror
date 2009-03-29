@@ -789,13 +789,10 @@ static int alldigits(char *s)
  * @{ */
 
 /**
- * @brief Lowercase a string.
- *
- * @param  str          String to lowercase.
- *
- * @return              The lowered string or NULL on error.
- *
- * @internal
+ * \brief Lowercase a string.
+ * \param  str          String to lowercase.
+ * \return              The malloced lowered string or NULL on error.
+ * \internal
  */
 static char *lowercase(const char* str) {
   char *p = 0;
@@ -1061,13 +1058,12 @@ int ssh_is_server_known(SSH_SESSION *session){
 			match=check_public_key(session,tokens);
 			tokens_free(tokens);
 			if(match<0){
-				leave_function();
-				return SSH_SERVER_ERROR;
+				ret = SSH_SERVER_ERROR;
+                break;
 			}
 			if(match==1){
-				fclose(file);
-				leave_function();
-				return SSH_SERVER_KNOWN_OK;
+				ret=SSH_SERVER_KNOWN_OK;
+                break;
 			}
 			if(match==0){
 				/* We override the status with the wrong key state */
@@ -1076,6 +1072,8 @@ int ssh_is_server_known(SSH_SESSION *session){
     	}
     } while (1);
     SAFE_FREE(host);
+	if(file)
+        fclose(file);
     /* Return the current state at end of file */
     leave_function();
     return ret;
