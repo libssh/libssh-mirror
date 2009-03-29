@@ -786,15 +786,30 @@ static int alldigits(char *s)
 /** \addtogroup ssh_session
  * @{ */
 
-/** \brief lowercases a string
- * \param string string to lowercase
- * \internal
+/**
+ * @brief Lowercase a string.
+ *
+ * @param  str          String to lowercase.
+ *
+ * @return              The lowered string or NULL on error.
+ *
+ * @internal
  */
-static void lowercase(char *string){
-	for (;*string;string++){
-		*string=tolower(*string);
-	}
+static char *lowercase(const char* str) {
+  char *p = 0;
+  char *new = strdup(str);
+
+  if((str == NULL) || (new == NULL)) {
+    return NULL;
+  }
+
+  for (p = new; *p; p++) {
+    *p = tolower(*p);
+  }
+
+  return new;
 }
+
 /** \brief frees a token array
  * \internal
  */
@@ -1021,8 +1036,7 @@ int ssh_is_server_known(SSH_SESSION *session){
         leave_function();
         return SSH_SERVER_ERROR;
     }
-    host=strdup(session->options->host);
-    lowercase(host);
+    host = lowercase(session->options->host);
     do {
     	tokens=ssh_get_knownhost_line(session,&file,session->options->known_hosts_file,&type);
     	//
@@ -1059,6 +1073,7 @@ int ssh_is_server_known(SSH_SESSION *session){
 			}
     	}
     } while (1);
+    SAFE_FREE(host);
     /* Return the current state at end of file */
     leave_function();
     return ret;
