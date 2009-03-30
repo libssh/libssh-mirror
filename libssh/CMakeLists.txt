@@ -69,7 +69,6 @@ set(libssh_SRCS
   channels1.c
   channels.c
   client.c
-  CMakeLists.txt
   connect.c
   crc32.c
   crypt.c
@@ -81,9 +80,7 @@ set(libssh_SRCS
   kex.c
   keyfiles.c
   keys.c
-  libssh.vers
   log.c
-  Makefile.am
   match.c
   messages.c
   misc.c
