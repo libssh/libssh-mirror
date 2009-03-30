@@ -8,7 +8,7 @@ SSH_0.3 {
     string_from_char; string_len; string_new; string_fill; string_to_char;
     string_copy; string_burn; string_data;
     ssh_crypto_init;
-    ssh_print_hexa; ssh_get_random;
+    ssh_get_hexa; ssh_print_hexa; ssh_get_random;
     ssh_get_pubkey_hash; ssh_get_pubkey;
     ssh_fd_poll; ssh_select; publickey_free;
     privatekey_from_file; publickey_to_string; publickey_from_privatekey;

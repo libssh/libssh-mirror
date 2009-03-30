@@ -141,17 +141,54 @@ void ssh_print_bignum(char *which,bignum num){
     free(hex);	
 }
 
-void ssh_print_hexa(char *descr, const unsigned char *what, int len){
-    int i;
-    printf("%s : ",descr);
-    if(len>16)
-        printf ("\n        ");
-    for(i=0;i<len-1;i++){
-        printf("%.2hhx:",what[i]);
-        if((i+1) % 16 ==0)
-            printf("\n        ");
+/**
+ * @brief Convert a buffer into a colon separated hex string.
+ * The caller has to free the memory.
+ *
+ * @param  what         What should be converted to a hex string.
+ *
+ * @param  len          Length of the buffer to convert.
+ *
+ * @return              The hex string or NULL on error.
+ */
+char *ssh_get_hexa(const unsigned char *what, size_t len) {
+  char *hexa = NULL;
+  size_t i;
+
+  hexa = malloc(len * 3 + 1);
+  if (hexa == NULL) {
+    return NULL;
+  }
+
+  ZERO_STRUCTP(hexa);
+
+  for (i = 0; i < len; i++) {
+    char hex[4];
+    snprintf(hex, sizeof(hex), "%02x:", what[i]);
+    strcat(hexa, hex);
+  }
+
+  hexa[(len * 3) - 1] = '\0';
+
+  return hexa;
+}
+
+/**
+ * @brief Print a buffer as colon separated hex string.
+ *
+ * @param  descr        Description printed infront of the hex string.
+ *
+ * @param  what         What should be converted to a hex string.
+ *
+ * @param  len          Length of the buffer to convert.
+ */
+void ssh_print_hexa(const char *descr, const unsigned char *what, size_t len) {
+    char *hexa = ssh_get_hexa(what, len);
+
+    if (hexa == NULL) {
+      return;
     }
-    printf("%.2hhx\n",what[i]);
+    printf("%s: %s\n", descr, hexa);
 }
 
 void dh_generate_x(SSH_SESSION *session){

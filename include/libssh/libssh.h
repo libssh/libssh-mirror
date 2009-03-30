@@ -231,7 +231,8 @@ void *string_data(STRING *str);
 void string_free(STRING *str);
 
 /* useful for debug */
-void ssh_print_hexa(char *descr, const unsigned char *what, int len);
+char *ssh_get_hexa(const unsigned char *what, size_t len);
+void ssh_print_hexa(const char *descr, const unsigned char *what, size_t len);
 int ssh_get_random(void *where,int len,int strong);
 
 /* this one can be called by the client to see the hash of the public key before accepting it */

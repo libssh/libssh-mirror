@@ -403,6 +403,7 @@ int main(int argc, char **argv){
     int auth=0;
     char *password;
     char *banner;
+    char *hexa;
     int state;
     char buf[10];
     unsigned char hash[MD5_DIGEST_LEN];
@@ -446,9 +447,11 @@ int main(int argc, char **argv){
 		    ssh_finalize();
             exit(-1);
         case SSH_SERVER_NOT_KNOWN:
+            ssh_get_pubkey_hash(session, hash);
+            hexa = ssh_get_hexa(hash, MD5_DIGEST_LEN);
             fprintf(stderr,"The server is unknown. Do you trust the host key ?\n");
-            ssh_get_pubkey_hash(session,hash);
-            ssh_print_hexa("Public key hash",hash,MD5_DIGEST_LEN);
+            fprintf(stderr, "Public key hash: %s\n", hexa);
+            free(hexa);
             fgets(buf,sizeof(buf),stdin);
             if(strncasecmp(buf,"yes",3)!=0){
                 ssh_disconnect(session);
