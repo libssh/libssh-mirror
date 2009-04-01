@@ -307,7 +307,10 @@ static int dh_handshake_server(SSH_SESSION *session){
         crypto_free(session->current_crypto);
     /* XXX later, include a function to change keys */
     session->current_crypto=session->next_crypto;
-    session->next_crypto=crypto_new();
+    session->next_crypto = crypto_new();
+    if (session->next_crypto == NULL) {
+      return -1;
+    }
     return 0;
 }
 /* do the banner and key exchange */

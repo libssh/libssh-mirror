@@ -213,7 +213,13 @@ static int dh_handshake(SSH_SESSION *session){
                 crypto_free(session->current_crypto);
                 /* XXX later, include a function to change keys */
             session->current_crypto=session->next_crypto;
-            session->next_crypto=crypto_new();
+
+            session->next_crypto = crypto_new();
+            if (session->next_crypto == NULL) {
+              leave_function();
+              return SSH_ERROR;
+            }
+
             session->dh_handshake_state=DH_STATE_FINISHED;
             leave_function();
             return SSH_OK;

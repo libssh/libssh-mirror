@@ -993,10 +993,14 @@ static int match_hashed_host(SSH_SESSION *session, char *host, char *sourcehash)
 	if(strncmp(sourcehash,"|1|",3) != 0)
 		return 0;
 	source=strdup(sourcehash+3);
+        if (source == NULL) {
+          leave_function();
+          return 0;
+        }
 	b64hash=strchr(source,'|');
 	if(!b64hash){
 		/* Invalid hash */
-		free(source);
+		SAFE_FREE(source);
 		leave_function();
 		return 0;
 	}
@@ -1006,6 +1010,11 @@ static int match_hashed_host(SSH_SESSION *session, char *host, char *sourcehash)
 	hash=base64_to_bin(b64hash);
 	free(source);
 	mac=hmac_init(buffer_get(salt),buffer_get_len(salt),HMAC_SHA1);
+        if (mac == NULL) {
+          SAFE_FREE(source);
+          leave_function();
+          return 0;
+        }
 	hmac_update(mac,host,strlen(host));
 	hmac_final(mac,buffer,&size);
 	if(size == buffer_get_len(hash) && memcmp(buffer,buffer_get(hash),size)==0)

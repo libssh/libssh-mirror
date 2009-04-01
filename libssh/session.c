@@ -43,6 +43,9 @@ SSH_SESSION *ssh_new(void) {
     SSH_SESSION *session=malloc(sizeof (SSH_SESSION));
     memset(session,0,sizeof(SSH_SESSION));
     session->next_crypto=crypto_new();
+    if (session->next_crypto == NULL) {
+      goto err;
+    }
     session->maxchannel=FIRST_CHANNEL;
     session->socket = ssh_socket_new(session);
     if (session->socket == NULL) {

@@ -353,9 +353,17 @@ static STRING *make_rsa1_string(STRING *e, STRING *n){
     return ret;
 }
 
+/* TODO FIXME add return value and error checking in callers */
 static void build_session_id1(SSH_SESSION *session, STRING *servern, 
         STRING *hostn){
-    MD5CTX md5=md5_init();
+    MD5CTX md5;
+
+    md5 = md5_init();
+    if (md5 == NULL) {
+      return;
+    }
+
+
 #ifdef DEBUG_CRYPTO
     ssh_print_hexa("host modulus",hostn->string,string_len(hostn));
     ssh_print_hexa("server modulus",servern->string,string_len(servern));

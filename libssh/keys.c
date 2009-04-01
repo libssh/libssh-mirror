@@ -715,7 +715,11 @@ STRING *ssh_do_sign(SSH_SESSION *session,BUFFER *sigbuf, PRIVATE_KEY *privatekey
       return NULL;
     }
     string_fill(session_str,crypto->session_id,SHA_DIGEST_LEN);
-    ctx=sha1_init();
+    ctx = sha1_init();
+    if (ctx == NULL) {
+      SAFE_FREE(session_str);
+      return NULL;
+    }
     sha1_update(ctx,session_str,string_len(session_str)+4);
     SAFE_FREE(session_str);
     sha1_update(ctx,buffer_get(sigbuf),buffer_get_len(sigbuf));
@@ -818,7 +822,10 @@ STRING *ssh_sign_session_id(SSH_SESSION *session, PRIVATE_KEY *privatekey){
 #ifdef HAVE_LIBGCRYPT
     gcry_sexp_t data_sexp;
 #endif
-    ctx=sha1_init();
+    ctx = sha1_init();
+    if (ctx == NULL) {
+      return NULL;
+    }
     sha1_update(ctx,crypto->session_id,SHA_DIGEST_LEN);
     sha1_final(hash+1,ctx);
     hash[0]=0;

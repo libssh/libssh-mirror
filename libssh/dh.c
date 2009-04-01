@@ -355,6 +355,8 @@ static void sha_add(STRING *str,SHACTX ctx){
 #endif
 }
 */
+
+/* TODO FIXME add memory checking and a return value */
 void make_sessionid(SSH_SESSION *session){
     SHACTX ctx;
     STRING *num,*str;
@@ -362,7 +364,11 @@ void make_sessionid(SSH_SESSION *session){
     BUFFER *buf=buffer_new();
     u32 len;
     enter_function();
-    ctx=sha1_init();
+
+    ctx = sha1_init();
+    if (ctx == NULL) {
+      return;
+    }
 
     str=string_from_char(session->clientbanner);
     buffer_add_ssh_string(buf,str);
@@ -450,8 +456,12 @@ void hashbufin_add_cookie(SSH_SESSION *session,unsigned char *cookie){
     buffer_add_data(session->in_hashbuf,cookie,16);
 }
 
+/* TODO FIXME add return value for memory checks */
 static void generate_one_key(STRING *k,unsigned char session_id[SHA_DIGEST_LEN],unsigned char output[SHA_DIGEST_LEN],char letter){
     SHACTX ctx=sha1_init();
+    if (ctx == NULL) {
+      return;
+    }
     sha1_update(ctx,k,string_len(k)+4);
     sha1_update(ctx,session_id,SHA_DIGEST_LEN);
     sha1_update(ctx,&letter,1);
@@ -459,6 +469,7 @@ static void generate_one_key(STRING *k,unsigned char session_id[SHA_DIGEST_LEN],
     sha1_final(output,ctx);
 }
 
+/* TODO FIXME add return value for memory checks */
 void generate_session_keys(SSH_SESSION *session){
     STRING *k_string;
     SHACTX ctx;
@@ -484,6 +495,9 @@ void generate_session_keys(SSH_SESSION *session){
     /* XXX verify it's ok for server implementation */
     if(session->next_crypto->out_cipher->keysize > SHA_DIGEST_LEN*8){
         ctx=sha1_init();
+        if (ctx == NULL) {
+          return;
+        }
         sha1_update(ctx,k_string,string_len(k_string)+4);
         sha1_update(ctx,session->next_crypto->session_id,SHA_DIGEST_LEN);
         sha1_update(ctx,session->next_crypto->encryptkey,SHA_DIGEST_LEN);
@@ -533,6 +547,10 @@ int ssh_get_pubkey_hash(SSH_SESSION *session,unsigned char hash[MD5_DIGEST_LEN])
     int len=string_len(pubkey);
 
     ctx=md5_init();
+    if (ctx == NULL) {
+      return 0;
+    }
+
     md5_update(ctx,pubkey->string,len);
     md5_final(hash,ctx);
     return MD5_DIGEST_LEN;

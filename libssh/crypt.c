@@ -90,7 +90,10 @@ unsigned char * packet_encrypt(SSH_SESSION *session,void *data,u32 len){
 #endif
     out=malloc(len);
     if(session->version==2){
-        ctx=hmac_init(session->current_crypto->encryptMAC,20,HMAC_SHA1);
+        ctx = hmac_init(session->current_crypto->encryptMAC,20,HMAC_SHA1);
+        if (ctx == NULL) {
+          return NULL;
+        }
         hmac_update(ctx,(unsigned char *)&seq,sizeof(u32));
         hmac_update(ctx,data,len);
         hmac_final(ctx,session->current_crypto->hmacbuf,&finallen);
@@ -115,12 +118,16 @@ unsigned char * packet_encrypt(SSH_SESSION *session,void *data,u32 len){
         return NULL;
 }
 
+/* TODO FIXME think about the return value isn't 0 enough and -1 on error */
 int packet_hmac_verify(SSH_SESSION *session,BUFFER *buffer,unsigned char *mac){
     HMACCTX ctx;
     unsigned char hmacbuf[EVP_MAX_MD_SIZE];
     unsigned int len;
     u32 seq=htonl(session->recv_seq);
     ctx=hmac_init(session->current_crypto->decryptMAC,20,HMAC_SHA1);
+    if (ctx == NULL) {
+      return -1;
+    }
     hmac_update(ctx,(unsigned char *)&seq,sizeof(u32));
     hmac_update(ctx,buffer_get(buffer),buffer_get_len(buffer));
     hmac_final(ctx,hmacbuf,&len);

@@ -38,6 +38,17 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
+/* TODO FIXME */
+static int alloc_key(struct crypto_struct *cipher) {
+    cipher->key = malloc(cipher->keylen);
+    if (cipher->key == NULL) {
+      return -1;
+    }
+
+    return 0;
+}
+
 #ifdef HAVE_LIBGCRYPT
 #include <gcrypt.h>
 
@@ -97,17 +108,16 @@ void hmac_final(HMACCTX c,unsigned char *hashmacbuf,unsigned int *len){
     gcry_md_close(c);
 }
 
-static void alloc_key(struct crypto_struct *cipher){
-    cipher->key=malloc(cipher->keylen);
-}
-
 /* the wrapper functions for blowfish */
 static void blowfish_set_key(struct crypto_struct *cipher, void *key, void *IV){
-    if(!cipher->key){
-        alloc_key(cipher);
-        gcry_cipher_open(&cipher->key[0],GCRY_CIPHER_BLOWFISH,GCRY_CIPHER_MODE_CBC,0);
-        gcry_cipher_setkey(cipher->key[0],key,16);
-        gcry_cipher_setiv(cipher->key[0],IV,8);
+    if(cipher->key == NULL) {
+      /* TODO FIXME */
+      if (alloc_key(cipher) < 0) {
+        return;
+      }
+      gcry_cipher_open(&cipher->key[0],GCRY_CIPHER_BLOWFISH,GCRY_CIPHER_MODE_CBC,0);
+      gcry_cipher_setkey(cipher->key[0],key,16);
+      gcry_cipher_setiv(cipher->key[0],IV,8);
     }
 }
 
@@ -121,7 +131,10 @@ static void blowfish_decrypt(struct crypto_struct *cipher, void *in, void *out, 
 
 static void aes_set_key(struct crypto_struct *cipher, void *key, void *IV){
     if(!cipher->key){
-        alloc_key(cipher);
+        /* TODO FIXME */
+        if (alloc_key(cipher) < 0) {
+          return;
+        }
         switch(cipher->keysize){
           case 128:
             gcry_cipher_open(&cipher->key[0],GCRY_CIPHER_AES128,GCRY_CIPHER_MODE_CBC,0);
@@ -148,7 +161,10 @@ static void aes_decrypt(struct crypto_struct *cipher, void *in, void *out,unsign
 
 static void des3_set_key(struct crypto_struct *cipher, void *key, void *IV){
     if(!cipher->key){
-        alloc_key(cipher);
+        /* TODO FIXME */
+        if (alloc_key(cipher) < 0) {
+          return;
+        }
         gcry_cipher_open(&cipher->key[0],GCRY_CIPHER_3DES,GCRY_CIPHER_MODE_CBC,0);
         gcry_cipher_setkey(cipher->key[0],key,24);
         gcry_cipher_setiv(cipher->key[0],IV,8);
@@ -167,7 +183,10 @@ static void des3_decrypt(struct crypto_struct *cipher, void *in, void *out,
 
 static void des3_1_set_key(struct crypto_struct *cipher, void *key, void *IV){
     if(!cipher->key){
-        alloc_key(cipher);
+        /* TODO FIXME */
+        if (alloc_key(cipher) < 0) {
+          return;
+        }
         gcry_cipher_open(&cipher->key[0],GCRY_CIPHER_DES,GCRY_CIPHER_MODE_CBC,0);
         gcry_cipher_setkey(cipher->key[0],key,8);
         gcry_cipher_setiv(cipher->key[0],IV,8);
@@ -231,7 +250,10 @@ static struct crypto_struct ssh_ciphertab[]={
 #endif
 
 SHACTX sha1_init(){
-    SHACTX c=malloc(sizeof(*c));
+    SHACTX c = malloc(sizeof(*c));
+    if (c == NULL) {
+      return NULL;
+    }
     SHA1_Init(c);
     return c;
 }
@@ -247,7 +269,10 @@ void sha1(unsigned char *digest,int len,unsigned char *hash){
 }
 
 MD5CTX md5_init(){
-    MD5CTX c=malloc(sizeof(*c));
+    MD5CTX c = malloc(sizeof(*c));
+    if (c == NULL) {
+      return NULL;
+    }
     MD5_Init(c);
     return c;
 }
@@ -261,7 +286,11 @@ void md5_final(unsigned char *md,MD5CTX c){
 
 HMACCTX hmac_init(const void *key, int len,int type){
     HMACCTX ctx;
-    ctx=malloc(sizeof(*ctx));
+
+    ctx = malloc(sizeof(*ctx));
+    if (ctx == NULL) {
+      return NULL;
+    }
 #ifndef OLD_CRYPTO
     HMAC_CTX_init(ctx); // openssl 0.9.7 requires it.
 #endif
@@ -291,15 +320,14 @@ void hmac_final(HMACCTX ctx,unsigned char *hashmacbuf,unsigned int *len){
    free(ctx);
 }
 
-static void alloc_key(struct crypto_struct *cipher){
-    cipher->key=malloc(cipher->keylen);
-}
-
 #ifdef HAS_BLOWFISH
 /* the wrapper functions for blowfish */
 static void blowfish_set_key(struct crypto_struct *cipher, void *key){
     if(!cipher->key){
-        alloc_key(cipher);
+        /* TODO FIXME */
+        if (alloc_key(cipher) < 0) {
+          return;
+        }
         BF_set_key(cipher->key,16,key);
     }
 }
@@ -315,13 +343,19 @@ static void blowfish_decrypt(struct crypto_struct *cipher, void *in, void *out,u
 #ifdef HAS_AES
 static void aes_set_encrypt_key(struct crypto_struct *cipher, void *key){
     if(!cipher->key){
-        alloc_key(cipher);
+        /* TODO FIXME */
+        if (alloc_key(cipher) < 0) {
+          return;
+        }
         AES_set_encrypt_key(key,cipher->keysize,cipher->key);
     }
 }
 static void aes_set_decrypt_key(struct crypto_struct *cipher, void *key){
     if(!cipher->key){
-        alloc_key(cipher);
+        /* TODO FIXME */
+        if (alloc_key(cipher) < 0) {
+          return;
+        }
         AES_set_decrypt_key(key,cipher->keysize,cipher->key);
     }
 }
@@ -335,7 +369,10 @@ static void aes_decrypt(struct crypto_struct *cipher, void *in, void *out, unsig
 #ifdef HAS_DES
 static void des3_set_key(struct crypto_struct *cipher, void *key){
     if(!cipher->key){
-        alloc_key(cipher);
+        /* TODO FIXME */
+        if (alloc_key(cipher) < 0) {
+          return;
+        }
         DES_set_odd_parity(key);
         DES_set_odd_parity(key+8);
         DES_set_odd_parity(key+16);
@@ -413,7 +450,13 @@ static struct crypto_struct ssh_ciphertab[]={
 
 /* it allocates a new cipher structure based on its offset into the global table */
 static struct crypto_struct *cipher_new(int offset){
-    struct crypto_struct *cipher=malloc(sizeof(struct crypto_struct));
+    struct crypto_struct *cipher;
+
+    cipher = malloc(sizeof(struct crypto_struct));
+    if (cipher == NULL) {
+      return NULL;
+    }
+
     /* note the memcpy will copy the pointers : so, you shouldn't free them */
     memcpy(cipher,&ssh_ciphertab[offset],sizeof(*cipher));
     return cipher;
@@ -436,10 +479,17 @@ static void cipher_free(struct crypto_struct *cipher){
     free(cipher);
 }
 
-CRYPTO *crypto_new(void){
-    CRYPTO *crypto=malloc(sizeof (CRYPTO));
-    memset(crypto,0,sizeof(*crypto));
-    return crypto;
+CRYPTO *crypto_new(void) {
+  CRYPTO *crypto;
+
+  crypto = malloc(sizeof (CRYPTO));
+  if (crypto == NULL) {
+    return NULL;
+  }
+
+  ZERO_STRUCTP(crypto);
+
+  return crypto;
 }
 
 void crypto_free(CRYPTO *crypto){
@@ -477,7 +527,13 @@ static int crypt_set_algorithms2(SSH_SESSION *session){
         return SSH_ERROR;
     }
     ssh_log(session,SSH_LOG_PACKET,"Set output algorithm %s",wanted);
-    session->next_crypto->out_cipher=cipher_new(i);
+
+    session->next_crypto->out_cipher = cipher_new(i);
+    if (session->next_crypto->out_cipher == NULL) {
+      ssh_set_error(session, SSH_FATAL, "No space left");
+      return SSH_ERROR;
+    }
+
     i=0;
     /* in */
     wanted=session->client_kex.methods[SSH_CRYPT_S_C];
@@ -488,7 +544,13 @@ static int crypt_set_algorithms2(SSH_SESSION *session){
         return SSH_ERROR;
     }
     ssh_log(session,SSH_LOG_PACKET,"Set input algorithm %s",wanted);
-    session->next_crypto->in_cipher=cipher_new(i);
+
+    session->next_crypto->in_cipher = cipher_new(i);
+    if (session->next_crypto->in_cipher == NULL) {
+      ssh_set_error(session, SSH_FATAL, "No space left");
+      return SSH_ERROR;
+    }
+
     /* compression */
     if(strstr(session->client_kex.methods[SSH_COMP_C_S],"zlib"))
         session->next_crypto->do_compress_out=1;
@@ -506,8 +568,19 @@ static int crypt_set_algorithms1(SSH_SESSION *session){
         ssh_set_error(session,SSH_FATAL,"cipher 3des-cbc-ssh1 not found !");
         return -1;
     }
-    session->next_crypto->out_cipher=cipher_new(i);
-    session->next_crypto->in_cipher=cipher_new(i);
+
+    session->next_crypto->out_cipher = cipher_new(i);
+    if (session->next_crypto->out_cipher == NULL) {
+      ssh_set_error(session, SSH_FATAL, "No space left");
+      return SSH_ERROR;
+    }
+
+    session->next_crypto->in_cipher = cipher_new(i);
+    if (session->next_crypto->in_cipher == NULL) {
+      ssh_set_error(session, SSH_FATAL, "No space left");
+      return SSH_ERROR;
+    }
+
     return SSH_OK;
 }
 
@@ -545,8 +618,14 @@ int crypt_set_algorithms_server(SSH_SESSION *session){
         return SSH_ERROR;
     }
     ssh_log(session,SSH_LOG_PACKET,"Set output algorithm %s",match);
-    session->next_crypto->out_cipher=cipher_new(i);
-    free(match);
+    SAFE_FREE(match);
+
+    session->next_crypto->out_cipher = cipher_new(i);
+    if (session->next_crypto->out_cipher == NULL) {
+      ssh_set_error(session, SSH_FATAL, "No space left");
+      leave_function();
+      return SSH_ERROR;
+    }
     i=0;
     /* in */
     client=session->client_kex.methods[SSH_CRYPT_C_S];
@@ -567,8 +646,15 @@ int crypt_set_algorithms_server(SSH_SESSION *session){
         return SSH_ERROR;
     }
     ssh_log(session,SSH_LOG_PACKET,"Set input algorithm %s",match);
-    session->next_crypto->in_cipher=cipher_new(i);
-    free(match);
+    SAFE_FREE(match);
+
+    session->next_crypto->in_cipher = cipher_new(i);
+    if (session->next_crypto->in_cipher == NULL) {
+      ssh_set_error(session, SSH_FATAL, "No space left");
+      leave_function();
+      return SSH_ERROR;
+    }
+
     /* compression */
     client=session->client_kex.methods[SSH_CRYPT_C_S];
     server=session->server_kex.methods[SSH_CRYPT_C_S];
