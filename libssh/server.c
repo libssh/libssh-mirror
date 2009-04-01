@@ -86,7 +86,10 @@ static socket_t bind_socket(SSH_BIND *ssh_bind,char *hostname, int port) {
 }
 
 SSH_BIND *ssh_bind_new(void){
-    SSH_BIND *ptr=malloc(sizeof(SSH_BIND));
+    SSH_BIND *ptr = malloc(sizeof(SSH_BIND));
+    if (ptr == NULL) {
+      return NULL;
+    }
     memset(ptr,0,sizeof(*ptr));
     ptr->bindfd=-1;
     return ptr;
@@ -221,6 +224,9 @@ static int server_set_kex(SSH_SESSION * session) {
             ssh_options_set_wanted_algos(options,SSH_HOSTKEYS,"ssh-rsa");
     }
     server->methods = malloc(10 * sizeof(char **));
+    if (server->methods == NULL) {
+      return -1;
+    }
     for (i = 0; i < 10; i++) {
         if (!(wanted = options->wanted_methods[i]))
             wanted = supported_methods[i];
