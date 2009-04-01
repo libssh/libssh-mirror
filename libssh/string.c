@@ -39,14 +39,41 @@
  * \param size size of the string
  * \return the newly allocated string
  */
-STRING *string_new(unsigned int size){
-    STRING *str=malloc(size + 4);
-    str->size=htonl(size);
-    return str;
+struct string_struct *string_new(size_t size) {
+  struct string_struct *str = NULL;
+
+  if (size == 0) {
+    return NULL;
+  }
+  str = malloc(size + 4);
+  if (str == NULL) {
+    return NULL;
+  }
+  ZERO_STRUCTP(str);
+
+  str->size = htonl(size);
+  return str;
 }
 
-void string_fill(STRING *str, const void *data,int len){
-    memcpy(str->string,data,len);
+/**
+ * @brief Fill a string with given data. The string should be big enough.
+ *
+ * @param s        An allocated string to fill with data.
+ *
+ * @param data     The data to fill the string with.
+ *
+ * @param len      Size of data.
+ *
+ * @return         0 on success, < 0 on error.
+ */
+int string_fill(struct string_struct *s, const void *data, size_t len) {
+  if ((s == NULL) || (data == NULL) ||
+      (len == 0) || (len > s->size)) {
+    return -1;
+  }
+
+  memcpy(s->string, data, len);
+  return 0;
 }
 
 /**
@@ -55,22 +82,31 @@ void string_fill(STRING *str, const void *data,int len){
  * \return the newly allocated string.
  * \warning The nul byte is not copied nor counted in the ouput string.
  */
-STRING *string_from_char(const char *what){
-	STRING *ptr;
-	int len=strlen(what);
-	ptr=malloc(4 + len);
-	ptr->size=htonl(len);
-	memcpy(ptr->string,what,len);
-	return ptr;
+struct string_struct *string_from_char(const char *what) {
+  struct string_struct *ptr = NULL;
+  size_t len = strlen(what);
+
+  ptr = malloc(4 + len);
+  if (ptr == NULL) {
+    return NULL;
+  }
+  ptr->size = htonl(len);
+  memcpy(ptr->string, what, len);
+
+  return ptr;
 }
 
 /**
  * \brief returns the size of a SSH string
  * \param str the input SSH string
- * \return size of the content of str
+ * \return size of the content of str, 0 on error
  */
-u32 string_len(STRING *str){
-	return ntohl(str->size);
+size_t string_len(struct string_struct *s) {
+  if (s == NULL) {
+    return 0;
+  }
+
+  return ntohl(s->size);
 }
 
 /**
@@ -80,38 +116,69 @@ u32 string_len(STRING *str){
  * \warning If the input SSH string contains zeroes, some parts of
  * the output string may not be readable with regular libc functions.
  */
-char *string_to_char(STRING *str){
-    int len=ntohl(str->size)+1;
-    char *string=malloc(len);
-    memcpy(string,str->string,len-1);
-    string[len-1]=0;
-    return string;
+char *string_to_char(struct string_struct *s) {
+  size_t len = ntohl(s->size) + 1;
+  char *new = malloc(len);
+
+  if (new == NULL) {
+    return NULL;
+  }
+  memcpy(new, s->string, len - 1);
+  new[len - 1] = '\0';
+  return new;
 }
 
-STRING *string_copy(STRING *str){
-    STRING *ret=malloc(ntohl(str->size)+4);
-    ret->size=str->size;
-    memcpy(ret->string,str->string,ntohl(str->size));
-    return ret;
+/**
+ * @brief Copy a string, return a newly allocated string. The caller has to
+ *        free the string.
+ *
+ * @param s             String to copy.
+ *
+ * @return              Newly allocated copy of the string, NULL on error.
+ */
+struct string_struct *string_copy(struct string_struct *s) {
+  struct string_struct *new = malloc(ntohl(s->size) + 4);
+
+  if (new == NULL) {
+    return NULL;
+  }
+  new->size = s->size;
+  memcpy(new->string, s->string, ntohl(s->size));
+
+  return new;
 }
 
 /** \brief destroy data in a string so it couldn't appear in a core dump
  * \param s string to burn
  */
-void string_burn(STRING *s){
-    memset(s->string,'X',string_len(s));
+void string_burn(struct string_struct *s) {
+  if (s == NULL) {
+    return;
+  }
+  memset(s->string, 'X', string_len(s));
 }
 
-void *string_data(STRING *s){
-    return s->string;
+/**
+ * @brief Get the payload of the string.
+ *
+ * @param s             The string to get the data from.
+ *
+ * @return              Return the data of the string or NULL on error.
+ */
+void *string_data(struct string_struct *s) {
+  if (s == NULL) {
+    return NULL;
+  }
+
+  return s->string;
 }
 
 /**
  * \brief deallocate a STRING object
  * \param s String to delete
  */
-void string_free(STRING *s){
-	free(s);
+void string_free(struct string_struct *s) {
+  SAFE_FREE(s);
 }
 
 /** @} */

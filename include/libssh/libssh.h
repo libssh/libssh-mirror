@@ -212,16 +212,17 @@ int ssh_service_request(SSH_SESSION *session,char *service);
 char *ssh_get_issue_banner(SSH_SESSION *session);
 /* get copyright informations */
 const char *ssh_copyright(void);
+
 /* string.h */
 
 /* You can use these functions, they won't change */
-/* makestring returns a newly allocated string from a char * ptr */
+/* string_from_char returns a newly allocated string from a char *ptr */
 STRING *string_from_char(const char *what);
 /* it returns the string len in host byte orders. str->size is big endian warning ! */
-u32 string_len(STRING *str);
-STRING *string_new(unsigned int size);
-/* string_fill copies the data in the string. it does NOT check for boundary so allocate enough place with string_new */
-void string_fill(STRING *str, const void *data,int len);
+size_t string_len(STRING *str);
+STRING *string_new(size_t size);
+/* string_fill copies the data in the string. */
+int string_fill(STRING *str, const void *data, size_t len);
 /* returns a newly allocated char array with the str string and a final nul caracter */
 char *string_to_char(STRING *str);
 STRING *string_copy(STRING *str);
