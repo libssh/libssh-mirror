@@ -44,8 +44,15 @@ static void sftp_message_free(SFTP_MESSAGE *msg);
 static void sftp_set_error(SFTP_SESSION *sftp, int errnum);
 
 SFTP_SESSION *sftp_new(SSH_SESSION *session){
-    SFTP_SESSION *sftp=malloc(sizeof(SFTP_SESSION));
+    SFTP_SESSION *sftp;
+
     enter_function();
+
+    sftp = malloc(sizeof(SFTP_SESSION));
+    if (sftp == NULL) {
+      return NULL;
+    }
+
     memset(sftp,0,sizeof(SFTP_SESSION));
     sftp->session=session;
     sftp->channel=channel_new(session);
@@ -71,7 +78,13 @@ SFTP_SESSION *sftp_new(SSH_SESSION *session){
 
 #ifdef WITH_SERVER
 SFTP_SESSION *sftp_server_new(SSH_SESSION *session, CHANNEL *chan){
-    SFTP_SESSION *sftp=malloc(sizeof(SFTP_SESSION));
+    SFTP_SESSION *sftp;
+
+    sftp = malloc(sizeof(SFTP_SESSION));
+    if (sftp == NULL) {
+      return NULL;
+    }
+
     memset(sftp,0,sizeof(SFTP_SESSION));
     sftp->session=session;
     sftp->channel=chan;
@@ -156,9 +169,15 @@ int sftp_packet_write(SFTP_SESSION *sftp,u8 type, BUFFER *payload){
 }
 
 SFTP_PACKET *sftp_packet_read(SFTP_SESSION *sftp){
-    SFTP_PACKET *packet=malloc(sizeof(SFTP_PACKET));
+    SFTP_PACKET *packet;
     u32 size;
+
     sftp_enter_function();
+    packet = malloc(sizeof(SFTP_PACKET));
+    if (packet == NULL) {
+      return NULL;
+    }
+
     packet->sftp=sftp;
     packet->payload=buffer_new();
     if(channel_read(sftp->channel,packet->payload,4,0)<=0){
@@ -204,9 +223,14 @@ int sftp_get_error(SFTP_SESSION *sftp) {
 
 static SFTP_MESSAGE *sftp_message_new(SFTP_SESSION *sftp){
     SFTP_MESSAGE *msg;
+
     sftp_enter_function();
 
-    msg=malloc(sizeof(SFTP_MESSAGE));
+    msg = malloc(sizeof(SFTP_MESSAGE));
+    if (msg == NULL) {
+      return NULL;
+    }
+
     memset(msg,0,sizeof(*msg));
     msg->payload=buffer_new();
     msg->sftp=sftp;
@@ -325,7 +349,13 @@ int sftp_init(SFTP_SESSION *sftp){
 }
 
 static REQUEST_QUEUE *request_queue_new(SFTP_MESSAGE *msg){
-    REQUEST_QUEUE *queue=malloc(sizeof(REQUEST_QUEUE));
+    REQUEST_QUEUE *queue;
+
+    queue = malloc(sizeof(REQUEST_QUEUE));
+    if (queue == NULL) {
+      return NULL;
+    }
+
     memset(queue,0,sizeof(REQUEST_QUEUE));
     queue->message=msg;
     return queue;
@@ -397,7 +427,12 @@ static STATUS_MESSAGE *parse_status_msg(SFTP_MESSAGE *msg){
         ssh_set_error(msg->sftp->session, SSH_FATAL,"Not a ssh_fxp_status message passed in !");
         return NULL;
     }
-    status=malloc(sizeof(STATUS_MESSAGE));
+
+    status = malloc(sizeof(STATUS_MESSAGE));
+    if (status == NULL) {
+      return NULL;
+    }
+
     memset(status,0,sizeof(*status));
     status->id=msg->id;
     if( (buffer_get_u32(msg->payload,&status->status)!= 4)
@@ -434,7 +469,12 @@ static SFTP_FILE *parse_handle_msg(SFTP_MESSAGE *msg){
         ssh_set_error(msg->sftp->session,SSH_FATAL,"Not a ssh_fxp_handle message passed in !");
         return NULL;
     }
-    file=malloc(sizeof(SFTP_FILE));
+
+    file = malloc(sizeof(SFTP_FILE));
+    if (file == NULL) {
+      return NULL;
+    }
+
     memset(file,0,sizeof(*file));
     file->sftp=msg->sftp;
     file->handle=buffer_get_ssh_string(msg->payload);
@@ -482,8 +522,11 @@ SFTP_DIR *sftp_opendir(SFTP_SESSION *sftp, const char *path){
         case SSH_FXP_HANDLE:
             file=parse_handle_msg(msg);
             sftp_message_free(msg);
-            if(file){
-                dir=malloc(sizeof(SFTP_DIR));
+            if (file) {
+                dir = malloc(sizeof(SFTP_DIR));
+                if (dir == NULL) {
+                  return NULL;
+                }
                 memset(dir,0,sizeof(*dir));
                 dir->sftp=sftp;
                 dir->name=strdup(path);
@@ -506,13 +549,18 @@ SFTP_DIR *sftp_opendir(SFTP_SESSION *sftp, const char *path){
 static SFTP_ATTRIBUTES *sftp_parse_attr_4(SFTP_SESSION *sftp, BUFFER *buf,
     int expectnames) {
     u32 flags=0;
-    SFTP_ATTRIBUTES *attr=malloc(sizeof(SFTP_ATTRIBUTES));
+    SFTP_ATTRIBUTES *attr;
     STRING *owner=NULL;
     STRING *group=NULL;
     int ok=0;
 
     /* unused member variable */
     (void) expectnames;
+
+    attr = malloc(sizeof(SFTP_ATTRIBUTES));
+    if (attr == NULL) {
+      return NULL;
+    }
 
     memset(attr,0,sizeof(*attr));
     /* it isn't really a loop, but i use it because it's like a try..catch.. construction in C */
@@ -632,8 +680,14 @@ static SFTP_ATTRIBUTES *sftp_parse_attr_3(SFTP_SESSION *sftp, BUFFER *buf,
     u32 flags=0;
     STRING *name;
     STRING *longname;
-    SFTP_ATTRIBUTES *attr=malloc(sizeof(SFTP_ATTRIBUTES));
+    SFTP_ATTRIBUTES *attr;
     int ok=0;
+
+    attr = malloc(sizeof(SFTP_ATTRIBUTES));
+    if (attr == NULL) {
+      return NULL;
+    }
+
     memset(attr,0,sizeof(*attr));
     /* it isn't really a loop, but i use it because it's like a try..catch.. construction in C */
     do {
