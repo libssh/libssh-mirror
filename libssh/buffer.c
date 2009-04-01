@@ -53,6 +53,10 @@ struct buffer_struct *buffer_new(void) {
  * \param buffer buffer to free
  */
 void buffer_free(struct buffer_struct *buffer) {
+  if (buffer == NULL) {
+    return;
+  }
+
   if (buffer->data) {
     /* burn the data */
     memset(buffer->data, 0, buffer->allocated);
