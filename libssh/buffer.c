@@ -36,50 +36,62 @@
  */
 
 /** \brief creates a new buffer
- * \return a new initialized buffer
+ * \return a new initialized buffer, NULL on error.
  */
-BUFFER *buffer_new(void) {
-    BUFFER *buffer=malloc(sizeof(BUFFER));
-    memset(buffer,0,sizeof(BUFFER));
-    return buffer;
+struct buffer_struct *buffer_new(void) {
+  struct buffer_struct *buf = malloc(sizeof(struct buffer_struct));
+
+  if (buf == NULL) {
+    return NULL;
+  }
+  ZERO_STRUCTP(buf);
+
+  return buf;
 }
 
 /** \brief deallocate a buffer
  * \param buffer buffer to free
  */
-void buffer_free(BUFFER *buffer){
-//    printf("buffer %p : free(%p);\n",buffer,buffer->data);
-    if(buffer->data){
-        memset(buffer->data,0,buffer->allocated); /* burn the data */
-        free(buffer->data);
-    }
-    memset(buffer,'x',sizeof (*buffer));
-    free(buffer);
+void buffer_free(struct buffer_struct *buffer) {
+  if (buffer->data) {
+    /* burn the data */
+    memset(buffer->data, 0, buffer->allocated);
+    SAFE_FREE(buffer->data);
+  }
+  memset(buffer, 'X', sizeof(*buffer));
+  SAFE_FREE(buffer);
 }
 
-static void realloc_buffer(BUFFER *buffer,int needed){
-	int smallest=1;
-	// find the smallest power of two which is greater or equal to needed
-	while(smallest<=needed)
-		smallest <<= 1;
-	needed=smallest;
-//    printf("buffer %p : realloc(%x,%d)=",buffer,buffer->data,needed);
-    buffer->data=realloc(buffer->data,needed);
-//    printf("%p\n",buffer->data);
-    buffer->allocated=needed;
+static int realloc_buffer(struct buffer_struct *buffer, int needed) {
+  int smallest = 1;
+  /* Find the smallest power of two which is greater or equal to needed */
+  while(smallest <= needed) {
+    smallest <<= 1;
+  }
+  needed = smallest;
+  buffer->data = realloc(buffer->data, needed);
+  if (buffer->data == NULL) {
+    return -1;
+  }
+  buffer->allocated = needed;
+  return 0;
 }
 
 /* \internal
  * \brief reinitialize a buffer
  * \param buffer buffer
+ * \return 0 on sucess, < 0 on error
  */
-void buffer_reinit(BUFFER *buffer){
-    memset(buffer->data,0,buffer->used);
-    buffer->used=0;
-    buffer->pos=0;
-    if(buffer->allocated > 127){
-    	realloc_buffer(buffer,127);
+int buffer_reinit(struct buffer_struct *buffer) {
+  memset(buffer->data, 0, buffer->used);
+  buffer->used = 0;
+  buffer->pos = 0;
+  if(buffer->allocated > 127) {
+    if (realloc_buffer(buffer, 127) < 0) {
+      return -1;
     }
+  }
+  return 0;
 }
 
 /** \internal
@@ -88,45 +100,74 @@ void buffer_reinit(BUFFER *buffer){
  * \param data data pointer
  * \param len length of data
  */
-void buffer_add_data(BUFFER *buffer,const void *data,int len){
-    if(buffer->allocated < buffer->used+len)
-        realloc_buffer(buffer,buffer->used+len);
-    memcpy(buffer->data+buffer->used,data,len);
-    buffer->used+=len;
+int buffer_add_data(struct buffer_struct *buffer, const void *data, u32 len) {
+  if (buffer->allocated < (buffer->used + len)) {
+    if (realloc_buffer(buffer, buffer->used + len) < 0) {
+      return -1;
+    }
+  }
+
+  memcpy(buffer->data+buffer->used, data, len);
+  buffer->used+=len;
+  return 0;
 }
 
 /** \internal
  * \brief add a SSH string to the tail of buffer
  * \param buffer buffer
  * \param string SSH String to add
+ * \return 0 on success, -1 on error.
  */
-void buffer_add_ssh_string(BUFFER *buffer,STRING *string){
-    u32 len=ntohl(string->size);
-    buffer_add_data(buffer,string,len+sizeof(u32));
+int buffer_add_ssh_string(struct buffer_struct *buffer,
+    struct string_struct *string) {
+  u32 len = 0;
+
+  len = ntohl(string->size);
+  if (buffer_add_data(buffer, string, len + sizeof(u32)) < 0) {
+    return -1;
+  }
+
+  return 0;
 }
 /** \internal
  * \brief add a 32 bits unsigned integer to the tail of buffer
  * \param buffer buffer
  * \param data 32 bits integer
+ * \return 0 on success, -1 on error.
  */
-void buffer_add_u32(BUFFER *buffer,u32 data){
-    buffer_add_data(buffer,&data,sizeof(data));
+int buffer_add_u32(struct buffer_struct *buffer,u32 data){
+  if (buffer_add_data(buffer, &data, sizeof(data)) < 0) {
+    return -1;
+  }
+
+  return 0;
 }
+
 /** \internal
  * \brief add a 64 bits unsigned integer to the tail of buffer
  * \param buffer buffer
  * \param data 64 bits integer
+ * \return 0 on success, -1 on error.
  */
-void buffer_add_u64(BUFFER *buffer,u64 data){
-    buffer_add_data(buffer,&data,sizeof(data));
+int buffer_add_u64(struct buffer_struct *buffer, u64 data){
+  if (buffer_add_data(buffer, &data, sizeof(data)) < 0) {
+    return -1;
+  }
+
+  return 0;
 }
 /** \internal
  * \brief add a 8 bits unsigned integer to the tail of buffer
  * \param buffer buffer
  * \param data 8 bits integer
+ * \return 0 on success, -1 on error.
  */
-void buffer_add_u8(BUFFER *buffer,u8 data){
-    buffer_add_data(buffer,&data,sizeof(u8));
+int buffer_add_u8(struct buffer_struct *buffer,u8 data){
+  if (buffer_add_data(buffer, &data, sizeof(u8)) < 0) {
+    return -1;
+  }
+
+  return 0;
 }
 
 /** \internal
@@ -134,22 +175,34 @@ void buffer_add_u8(BUFFER *buffer,u8 data){
  * \param buffer buffer
  * \param data data to add
  * \param len length of data
+ * \return 0 on success, -1 on error.
  */
-void buffer_add_data_begin(BUFFER *buffer, const void *data, int len){
-    if(buffer->allocated < buffer->used + len)
-        realloc_buffer(buffer,buffer->used+len);
-    memmove(buffer->data+len,buffer->data,buffer->used);
-    memcpy(buffer->data,data,len);
-    buffer->used+=len;
+int buffer_add_data_begin(struct buffer_struct *buffer, const void *data, u32 len) {
+  if (buffer->allocated < (buffer->used + len)) {
+    if (realloc_buffer(buffer, buffer->used + len) < 0) {
+      return -1;
+    }
+  }
+  memmove(buffer->data + len, buffer->data, buffer->used);
+  memcpy(buffer->data, data, len);
+  buffer->used += len;
+
+  return 0;
 }
 
 /** \internal
  * \brief append data from a buffer to tail of another
  * \param buffer destination buffer
  * \param source source buffer. Doesn't take position in buffer into account
+ * \return 0 on success, -1 on error.
  */
-void buffer_add_buffer(BUFFER *buffer, BUFFER *source){
-    buffer_add_data(buffer,buffer_get(source),buffer_get_len(source));
+int buffer_add_buffer(struct buffer_struct *buffer,
+    struct buffer_struct *source) {
+  if (buffer_add_data(buffer, buffer_get(source), buffer_get_len(source)) < 0) {
+    return -1;
+  }
+
+  return 0;
 }
 
 /** \brief get a pointer on the head of the buffer
@@ -159,8 +212,8 @@ void buffer_add_buffer(BUFFER *buffer, BUFFER *source){
  * \see buffer_get_rest()
  * \see buffer_get_len()
  */
-void *buffer_get(BUFFER *buffer){
-    return buffer->data;
+void *buffer_get(struct buffer_struct *buffer){
+  return buffer->data;
 }
 
 /** \internal
@@ -170,8 +223,8 @@ void *buffer_get(BUFFER *buffer){
  * \see buffer_get_rest_len()
  * \see buffer_get()
  */
-void *buffer_get_rest(BUFFER *buffer){
-    return buffer->data+buffer->pos;
+void *buffer_get_rest(struct buffer_struct *buffer){
+    return buffer->data + buffer->pos;
 }
 
 /** \brief get length of the buffer, not counting position
@@ -179,7 +232,7 @@ void *buffer_get_rest(BUFFER *buffer){
  * \return length of the buffer
  * \see buffer_get()
  */
-u32 buffer_get_len(BUFFER *buffer){
+u32 buffer_get_len(struct buffer_struct *buffer){
     return buffer->used;
 }
 
@@ -189,7 +242,7 @@ u32 buffer_get_len(BUFFER *buffer){
  * \return length of the buffer
  * \see buffer_get_rest()
  */
-u32 buffer_get_rest_len(BUFFER *buffer){
+u32 buffer_get_rest_len(struct buffer_struct *buffer){
     return buffer->used - buffer->pos;
 }
 
@@ -200,7 +253,7 @@ u32 buffer_get_rest_len(BUFFER *buffer){
  * \param len number of bytes to eat
  * \return new size of the buffer
  */
-u32 buffer_pass_bytes(BUFFER *buffer, u32 len){
+u32 buffer_pass_bytes(struct buffer_struct *buffer, u32 len){
     if(buffer->used < buffer->pos+len)
         return 0;
     buffer->pos+=len;
@@ -218,7 +271,7 @@ u32 buffer_pass_bytes(BUFFER *buffer, u32 len){
  * \param len number of bytes to remove from tail
  * \return new size of the buffer
  */
-u32 buffer_pass_bytes_end(BUFFER *buffer, u32 len){
+u32 buffer_pass_bytes_end(struct buffer_struct *buffer, u32 len){
     if(buffer->used < buffer->pos + len)
         return 0;
     buffer->used-=len;
@@ -233,7 +286,7 @@ u32 buffer_pass_bytes_end(BUFFER *buffer, u32 len){
  * \returns 0 if there is not enough data in buffer
  * \returns len otherwise.
  */
-u32 buffer_get_data(BUFFER *buffer, void *data, u32 len){
+u32 buffer_get_data(struct buffer_struct *buffer, void *data, u32 len){
     if(buffer->pos+len>buffer->used)
         return 0;  /*no enough data in buffer */
     memcpy(data,buffer->data+buffer->pos,len);
@@ -247,7 +300,7 @@ u32 buffer_get_data(BUFFER *buffer, void *data, u32 len){
  * \returns 0 if there is not enough data in buffer
  * \returns 1 otherwise.
  */
-int buffer_get_u8(BUFFER *buffer, u8 *data){
+int buffer_get_u8(struct buffer_struct *buffer, u8 *data){
     return buffer_get_data(buffer,data,sizeof(u8));
 }
 
@@ -258,7 +311,7 @@ int buffer_get_u8(BUFFER *buffer, u8 *data){
  * \returns 0 if there is not enough data in buffer
  * \returns 4 otherwise.
  */
-int buffer_get_u32(BUFFER *buffer, u32 *data){
+int buffer_get_u32(struct buffer_struct *buffer, u32 *data){
     return buffer_get_data(buffer,data,sizeof(u32));
 }
 /** \internal
@@ -268,7 +321,7 @@ int buffer_get_u32(BUFFER *buffer, u32 *data){
  * \returns 0 if there is not enough data in buffer
  * \returns 8 otherwise.
  */
-int buffer_get_u64(BUFFER *buffer, u64 *data){
+int buffer_get_u64(struct buffer_struct *buffer, u64 *data){
     return buffer_get_data(buffer,data,sizeof(u64));
 }
 /** \internal
@@ -277,23 +330,30 @@ int buffer_get_u64(BUFFER *buffer, u64 *data){
  * \returns The SSH String read
  * \returns NULL otherwise.
  */
-STRING *buffer_get_ssh_string(BUFFER *buffer){
-    u32 stringlen;
-    u32 hostlen;
-    STRING *str;
-    if(buffer_get_u32(buffer,&stringlen)==0)
-        return NULL;
-    hostlen=ntohl(stringlen);
-    /* verify if there is enough space in buffer to get it */
-    if(buffer->pos+hostlen>buffer->used)
-        return NULL; /* it is indeed */
-    str=string_new(hostlen);
-    if(buffer_get_data(buffer,str->string,hostlen)!=hostlen){
-    	// should never happen
-        free(str);
-        return NULL;
-        }
-    return str;
+struct string_struct *buffer_get_ssh_string(struct buffer_struct *buffer) {
+  u32 stringlen;
+  u32 hostlen;
+  struct string_struct *str = NULL;
+
+  if (buffer_get_u32(buffer, &stringlen) == 0) {
+    return NULL;
+  }
+  hostlen = ntohl(stringlen);
+  /* verify if there is enough space in buffer to get it */
+  if ((buffer->pos + hostlen) > buffer->used) {
+    return NULL; /* it is indeed */
+  }
+  str = string_new(hostlen);
+  if (str == NULL) {
+    return NULL;
+  }
+  if (buffer_get_data(buffer, str->string, hostlen) != hostlen) {
+    /* should never happen */
+    SAFE_FREE(str);
+    return NULL;
+  }
+
+  return str;
 }
 /** \internal
  * \brief gets a mpint out of the buffer. Adjusts the read pointer.
@@ -303,22 +363,28 @@ STRING *buffer_get_ssh_string(BUFFER *buffer){
  * \returns NULL otherwise
  */
 
-STRING *buffer_get_mpint(BUFFER *buffer){
-    u16 bits;
-    u32 len;
-    STRING *str;
-    if(buffer_get_data(buffer,&bits,sizeof(u16))!= sizeof(u16))
-        return NULL;
-    bits=ntohs(bits);
-    len=(bits+7)/8;
-    if(buffer->pos+len > buffer->used)
-        return NULL;
-    str=string_new(len);
-    if(buffer_get_data(buffer,str->string,len)!=len){
-        free(str);
-        return NULL;
-    }
-    return str;
+struct string_struct *buffer_get_mpint(struct buffer_struct *buffer) {
+  u16 bits;
+  u32 len;
+  struct string_struct *str = NULL;
+
+  if (buffer_get_data(buffer, &bits, sizeof(u16)) != sizeof(u16)) {
+    return NULL;
+  }
+  bits = ntohs(bits);
+  len = (bits + 7) / 8;
+  if ((buffer->pos + len) > buffer->used) {
+    return NULL;
+  }
+  str = string_new(len);
+  if (str == NULL) {
+    return NULL;
+  }
+  if (buffer_get_data(buffer, str->string, len) != len) {
+    SAFE_FREE(str);
+    return NULL;
+  }
+  return str;
 }
 /** @} */
 

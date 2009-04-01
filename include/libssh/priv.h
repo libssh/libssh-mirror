@@ -613,14 +613,14 @@ int ssh_options_default_ssh_dir(SSH_OPTIONS *opt);
 int ssh_options_default_known_hosts_file(SSH_OPTIONS *opt);
 
 /* buffer.c */
-void buffer_add_ssh_string(BUFFER *buffer,STRING *string);
-void buffer_add_u8(BUFFER *buffer, u8 data);
-void buffer_add_u32(BUFFER *buffer, u32 data);
-void buffer_add_u64(BUFFER *buffer,u64 data);
-void buffer_add_data(BUFFER *buffer,const void *data, int len);
-void buffer_add_data_begin(BUFFER *buffer,const void *data,int len);
-void buffer_add_buffer(BUFFER *buffer, BUFFER *source);
-void buffer_reinit(BUFFER *buffer);
+int buffer_add_ssh_string(BUFFER *buffer, STRING *string);
+int buffer_add_u8(BUFFER *buffer, u8 data);
+int buffer_add_u32(BUFFER *buffer, u32 data);
+int buffer_add_u64(BUFFER *buffer, u64 data);
+int buffer_add_data(BUFFER *buffer, const void *data, u32 len);
+int buffer_add_data_begin(BUFFER *buffer, const void *data, u32 len);
+int buffer_add_buffer(BUFFER *buffer, BUFFER *source);
+int buffer_reinit(BUFFER *buffer);
 
 /* buffer_get_rest returns a pointer to the current position into the buffer */
 void *buffer_get_rest(BUFFER *buffer);
@@ -628,8 +628,8 @@ void *buffer_get_rest(BUFFER *buffer);
 u32 buffer_get_rest_len(BUFFER *buffer);
 
 /* buffer_read_*() returns the number of bytes read, except for ssh strings */
-int buffer_get_u8(BUFFER *buffer,u8 *data);
-int buffer_get_u32(BUFFER *buffer,u32 *data);
+int buffer_get_u8(BUFFER *buffer, u8 *data);
+int buffer_get_u32(BUFFER *buffer, u32 *data);
 int buffer_get_u64(BUFFER *buffer, u64 *data);
 
 u32 buffer_get_data(BUFFER *buffer, void *data, u32 requestedlen);
