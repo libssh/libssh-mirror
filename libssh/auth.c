@@ -594,6 +594,11 @@ int ssh_userauth_autopubkey(SSH_SESSION *session, const char *passphrase) {
         keys_path[0]=session->options->identity;
         /* let's hope alloca exists */
         id=malloc(strlen(session->options->identity)+1 + 4);
+        if (id == NULL) {
+          keys_path[0] = NULL;
+          leave_function();
+          return SSH_AUTH_ERROR;
+        }
         sprintf(id,"%s.pub",session->options->identity);
         pub_keys_path[0]=id;
         count =0;
@@ -682,8 +687,12 @@ int ssh_userauth_autopubkey(SSH_SESSION *session, const char *passphrase) {
     return SSH_AUTH_DENIED;
 }
 
-static struct ssh_kbdint *kbdint_new(){
-    struct ssh_kbdint *kbd=malloc(sizeof (struct ssh_kbdint));
+static struct ssh_kbdint *kbdint_new() {
+    struct ssh_kbdint *kbd = malloc(sizeof (struct ssh_kbdint));
+
+    if (kbd == NULL) {
+      return NULL;
+    }
     memset(kbd,0,sizeof(*kbd));
     return kbd;
 }
@@ -800,8 +809,14 @@ static int kbdauth_info_get(SSH_SESSION *session){
     }
     if(tmp)
         free(tmp); // no use
-    if(!session->kbdint)
-        session->kbdint=kbdint_new();
+    if(!session->kbdint) {
+      session->kbdint = kbdint_new();
+      if (session->kbdint == NULL) {
+        ssh_set_error(session, SSH_FATAL, "Not enough space");
+        leave_function();
+        return SSH_AUTH_ERROR;
+      }
+    }
     else
         kbdint_clean(session->kbdint);
     session->kbdint->name=string_to_char(name);
@@ -816,8 +831,21 @@ static int kbdauth_info_get(SSH_SESSION *session){
     }
     session->kbdint->nprompts=nprompts;
     session->kbdint->prompts=malloc(nprompts*sizeof(char *));
+    if (session->kbdint->prompts == NULL) {
+      session->kbdint->nprompts = 0;
+      ssh_set_error(session, SSH_FATAL, "No space left");
+      leave_function();
+      return SSH_AUTH_ERROR;
+    }
     memset(session->kbdint->prompts,0,nprompts*sizeof(char *));
     session->kbdint->echo=malloc(nprompts);
+    if (session->kbdint->echo == NULL) {
+      session->kbdint->nprompts = 0;
+      SAFE_FREE(session->kbdint->prompts);
+      ssh_set_error(session, SSH_FATAL, "No space left");
+      leave_function();
+      return SSH_AUTH_ERROR;
+    }
     memset(session->kbdint->echo,0,nprompts);
     for(i=0;i<nprompts;++i){
         tmp=buffer_get_ssh_string(session->in_buffer);
@@ -994,9 +1022,12 @@ char *ssh_userauth_kbdint_getprompt(SSH_SESSION *session, unsigned int i,
 void ssh_userauth_kbdint_setanswer(SSH_SESSION *session, unsigned int i, const char *answer){
     if (i>session->kbdint->nprompts)
         return;
-    if(!session->kbdint->answers){
-        session->kbdint->answers=malloc(sizeof(char*)*session->kbdint->nprompts);
-        memset(session->kbdint->answers,0,sizeof(char *) * session->kbdint->nprompts);
+    if (session->kbdint->answers == NULL) {
+      session->kbdint->answers = malloc(sizeof(char*) * session->kbdint->nprompts);
+      if (session->kbdint->answers == NULL) {
+        return;
+      }
+      memset(session->kbdint->answers, 0, sizeof(char *) * session->kbdint->nprompts);
     }
     if(session->kbdint->answers[i]){
         burn(session->kbdint->answers[i]);
