@@ -88,22 +88,32 @@ void ssh_socket_init(void) {
  * \internal
  * \brief creates a new Socket object
  */
-struct socket *ssh_socket_new(SSH_SESSION *session){
-	struct socket *s;
+struct socket *ssh_socket_new(SSH_SESSION *session) {
+  struct socket *s;
 
-        s = malloc(sizeof(struct socket));
-        if (s = NULL) {
-          return NULL;
-        }
-	s->fd=-1;
-	s->last_errno=-1;
-	s->session=session;
-	s->in_buffer=buffer_new();
-	s->out_buffer=buffer_new();
-	s->data_to_read=0;
-	s->data_to_write=0;
-	s->data_except=0;
-	return s;
+  s = malloc(sizeof(struct socket));
+  if (s == NULL) {
+    return NULL;
+  }
+  s->fd = -1;
+  s->last_errno = -1;
+  s->session = session;
+  s->in_buffer = buffer_new();
+  if (s->in_buffer == NULL) {
+    SAFE_FREE(s);
+    return NULL;
+  }
+  s->out_buffer=buffer_new();
+  if (s->out_buffer == NULL) {
+    buffer_free(s->in_buffer);
+    SAFE_FREE(s);
+    return NULL;
+  }
+  s->data_to_read = 0;
+  s->data_to_write = 0;
+  s->data_except = 0;
+
+  return s;
 }
 
 /* \internal

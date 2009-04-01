@@ -186,6 +186,14 @@ SSH_SESSION *ssh_bind_accept(SSH_BIND *ssh_bind){
 
     ssh_socket_free(session->socket);
     session->socket=ssh_socket_new(session);
+    if (session->socket == NULL) {
+      if (dsa)
+        private_key_free(dsa);
+      if (rsa)
+        private_key_free(rsa);
+      ssh_cleanup(session);
+      return NULL;
+    }
     ssh_socket_set_fd(session->socket,fd);
     session->dsa_key=dsa;
     session->rsa_key=rsa;

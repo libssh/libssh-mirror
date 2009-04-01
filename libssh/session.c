@@ -44,7 +44,10 @@ SSH_SESSION *ssh_new(void) {
     memset(session,0,sizeof(SSH_SESSION));
     session->next_crypto=crypto_new();
     session->maxchannel=FIRST_CHANNEL;
-    session->socket=ssh_socket_new(session);
+    session->socket = ssh_socket_new(session);
+    if (session->socket == NULL) {
+      goto err;
+    }
     session->alive=0;
     session->auth_methods=0;
     session->blocking=1;
