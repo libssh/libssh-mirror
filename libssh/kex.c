@@ -538,7 +538,8 @@ int ssh_get_kex1(SSH_SESSION *session){
     
     enc_session=encrypt_session_key(session,svr,host,server_bits, host_bits);
     bits=string_len(enc_session)*8 - 7;
-    ssh_log(session,SSH_LOG_PROTOCOL,"%d bits,%d bytes encrypted session",bits,string_len(enc_session));
+    ssh_log(session, SSH_LOG_PROTOCOL, "%d bits, %zu bytes encrypted session",
+        bits, string_len(enc_session));
     bits=htons(bits);
     /* the encrypted mpint */
     buffer_add_data(session->out_buffer,&bits,sizeof(u16));
