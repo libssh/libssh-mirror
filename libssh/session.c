@@ -40,23 +40,40 @@
  * \returns new ssh_session pointer
  */
 SSH_SESSION *ssh_new(void) {
-    SSH_SESSION *session=malloc(sizeof (SSH_SESSION));
-    memset(session,0,sizeof(SSH_SESSION));
-    session->next_crypto=crypto_new();
-    if (session->next_crypto == NULL) {
-      goto err;
-    }
-    session->maxchannel=FIRST_CHANNEL;
-    session->socket = ssh_socket_new(session);
-    if (session->socket == NULL) {
-      goto err;
-    }
-    session->alive=0;
-    session->auth_methods=0;
-    session->blocking=1;
-    session->log_indent=0;
-    session->out_buffer=buffer_new();
-    session->in_buffer=buffer_new();
+  SSH_SESSION *session;
+  session = malloc(sizeof (SSH_SESSION));
+  if (session == NULL) {
+    return NULL;
+  }
+
+  ZERO_STRUCTP(session);
+
+  session->next_crypto = crypto_new();
+  if (session->next_crypto == NULL) {
+    goto err;
+  }
+
+  session->maxchannel = FIRST_CHANNEL;
+  session->socket = ssh_socket_new(session);
+  if (session->socket == NULL) {
+    goto err;
+  }
+
+  session->alive = 0;
+  session->auth_methods = 0;
+  session->blocking = 1;
+  session->log_indent = 0;
+
+  session->out_buffer = buffer_new();
+  if (session->out_buffer == NULL) {
+    goto err;
+  }
+
+  session->in_buffer=buffer_new();
+  if (session->in_buffer == NULL) {
+    goto err;
+  }
+
 #ifndef _WIN32
     session->agent = agent_new(session);
     if (session->agent == NULL) {
