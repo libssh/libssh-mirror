@@ -89,7 +89,12 @@ void ssh_socket_init(void) {
  * \brief creates a new Socket object
  */
 struct socket *ssh_socket_new(SSH_SESSION *session){
-	struct socket *s=malloc(sizeof(struct socket));
+	struct socket *s;
+
+        s = malloc(sizeof(struct socket));
+        if (s = NULL) {
+          return NULL;
+        }
 	s->fd=-1;
 	s->last_errno=-1;
 	s->session=session;
@@ -351,6 +356,10 @@ int ssh_socket_wait_for_data(struct socket *s, SSH_SESSION *session, u32 len){
     }
     if(session->blocking){
         buf=malloc(to_read);
+        if (buf == NULL) {
+          leave_function();
+          return SSH_ERROR;
+        }
         r=ssh_socket_completeread(session->socket,buf,to_read);
         if(r==SSH_ERROR || r ==0){
             ssh_set_error(session,SSH_FATAL,

@@ -52,9 +52,16 @@ SSH_SESSION *ssh_new(void) {
     session->out_buffer=buffer_new();
     session->in_buffer=buffer_new();
 #ifndef _WIN32
-    session->agent=agent_new(session);
+    session->agent = agent_new(session);
+    if (session->agent == NULL) {
+      goto err;
+    }
 #endif /* _WIN32 */
     return session;
+
+err:
+    ssh_cleanup(session);
+    return NULL;
 }
 
 void ssh_cleanup(SSH_SESSION *session){

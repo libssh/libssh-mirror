@@ -124,6 +124,9 @@ AGENT *agent_new(struct ssh_session *session) {
   if (agent) {
     agent->count = 0;
     agent->sock = ssh_socket_new(session);
+    if (agent->sock == NULL) {
+      return NULL;
+    }
   }
 
   return agent;
