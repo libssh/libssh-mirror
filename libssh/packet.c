@@ -101,9 +101,14 @@ static int packet_read2(SSH_SESSION *session){
                 ret=ssh_socket_wait_for_data(session->socket,session,to_be_read);
                 if(ret!=SSH_OK){
                     leave_function();
-                	return ret;
+                    return ret;
                 }
-                packet=malloc(to_be_read);
+                packet = malloc(to_be_read);
+                if (packet == NULL) {
+                  ssh_set_error(session, SSH_FATAL, "No space left");
+                  leave_function();
+                  return SSH_ERROR;
+                }
                 ssh_socket_read(session->socket,packet,to_be_read-current_macsize);
                 ssh_log(session,SSH_LOG_PACKET,"Read a %d bytes packet",len);
                 buffer_add_data(session->in_buffer,packet,to_be_read-current_macsize);
@@ -207,7 +212,12 @@ static int packet_read1(SSH_SESSION *session){
             padding=8-(len % 8);
             to_be_read=len+padding;
             /* it is *not* possible that to_be_read be < 8. */
-            packet=malloc(to_be_read);
+            packet = malloc(to_be_read);
+            if (packet == NULL) {
+              ssh_set_error(session, SSH_FATAL,"No space left");
+              leave_function();
+              return SSH_ERROR;
+            }
             ret=ssh_socket_read(session->socket,packet,to_be_read);
             if(ret != SSH_OK){
             	free(packet);
