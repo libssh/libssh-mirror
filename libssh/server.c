@@ -170,10 +170,20 @@ SSH_SESSION *ssh_bind_accept(SSH_BIND *ssh_bind){
     session=ssh_new();
     session->server=1;
     session->version=2;
+    session->options = ssh_options_copy(ssh_bind->options);
+    if (session->options == NULL) {
+      ssh_set_error(ssh_bind, SSH_FATAL, "No space left");
+      if (dsa)
+        private_key_free(dsa);
+      if (rsa)
+        private_key_free(rsa);
+      ssh_cleanup(session);
+      return NULL;
+    }
+
     ssh_socket_free(session->socket);
     session->socket=ssh_socket_new(session);
     ssh_socket_set_fd(session->socket,fd);
-    session->options=ssh_options_copy(ssh_bind->options);
     session->dsa_key=dsa;
     session->rsa_key=rsa;
     return session;

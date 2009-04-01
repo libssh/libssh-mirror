@@ -50,7 +50,13 @@
 */
 
 SSH_OPTIONS *ssh_options_new(void) {
-    SSH_OPTIONS *option=malloc(sizeof(SSH_OPTIONS));
+    SSH_OPTIONS *option;
+
+    option = malloc(sizeof(SSH_OPTIONS));
+    if (options == NULL) {
+      return NULL;
+    }
+
     memset(option,0,sizeof(SSH_OPTIONS));
     option->port=22; /* set the default port */
     option->fd=-1;
@@ -82,8 +88,14 @@ void ssh_options_set_port(SSH_OPTIONS *opt, unsigned int port){
  * \see ssh_session_connect()
  */
 SSH_OPTIONS *ssh_options_copy(SSH_OPTIONS *opt){
-    SSH_OPTIONS *ret=ssh_options_new();    
+    SSH_OPTIONS *ret;
     int i;
+
+    ret = ssh_options_new();
+    if (ret == NULL) {
+      return NULL;
+    }
+
     ret->fd=opt->fd;
     ret->port=opt->port;
     if(opt->username)
@@ -331,6 +343,9 @@ int ssh_options_default_username(SSH_OPTIONS *opt){
     DWORD Size = 0;
     GetUserName(NULL, &Size); //Get Size
     user = malloc(Size);
+    if (user == NULL) {
+      return -1;
+    }
     if (GetUserName(user, &Size)){
     	opt->username=user;
     	return 0;
@@ -460,7 +475,7 @@ int ssh_options_getopt(SSH_OPTIONS *options, int *argcptr, char **argv){
     char *cipher=NULL;
     char *localaddr=NULL;
     char *identity=NULL;
-    char **save=malloc(argc * sizeof(char *));
+    char **save = NULL;
     int current=0;
 #ifdef HAVE_SSH1
     int ssh1=1;
@@ -471,6 +486,12 @@ int ssh_options_getopt(SSH_OPTIONS *options, int *argcptr, char **argv){
     
     int saveoptind=optind; /* need to save 'em */
     int saveopterr=opterr;
+
+    save = malloc(argc * sizeof(char *));
+    if (save == NULL) {
+      return -1;
+    }
+
     opterr=0; /* shut up getopt */
     while(cont && ((i=getopt(argc,argv,"c:i:Cl:p:vb:rd12"))!=-1)){
 
