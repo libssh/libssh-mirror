@@ -111,8 +111,13 @@ static int packet_read2(SSH_SESSION *session){
             }
             if(session->current_crypto){
                 /* decrypt the rest of the packet (blocksize bytes already have been decrypted */
-                packet_decrypt(session,buffer_get(session->in_buffer)+blocksize,
-                               buffer_get_len(session->in_buffer)-blocksize);
+                if (packet_decrypt(session,
+                      buffer_get(session->in_buffer) + blocksize,
+                      buffer_get_len(session->in_buffer) - blocksize) < 0) {
+                    ssh_set_error(session, SSH_FATAL, "Decrypt error");
+                    leave_function();
+                    return SSH_ERROR;
+                }
                 ssh_socket_read(session->socket,mac,macsize);
                 if(packet_hmac_verify(session,session->in_buffer,mac)){
                     ssh_set_error(session,SSH_FATAL,"HMAC error");
@@ -216,11 +221,17 @@ static int packet_read1(SSH_SESSION *session){
             ssh_print_hexa("read packet:",buffer_get(session->in_buffer),
                 buffer_get_len(session->in_buffer));
 #endif
-            if(session->current_crypto){
-        /* we decrypt everything, missing the lenght part (which was previously
-         * read, unencrypted, and is not part of the buffer
-         */
-                packet_decrypt(session,buffer_get(session->in_buffer),buffer_get_len(session->in_buffer));
+            if (session->current_crypto) {
+              /* we decrypt everything, missing the lenght part (which was
+               * previously read, unencrypted, and is not part of the buffer
+               */
+              if (packet_decrypt(session,
+                    buffer_get(session->in_buffer),
+                    buffer_get_len(session->in_buffer)) < 0) {
+                ssh_set_error(session, SSH_FATAL, "Packet decrypt error");
+                leave_function();
+                return SSH_ERROR;
+              }
             }
 #ifdef DEBUG_CRYPTO
             ssh_print_hexa("read packet decrypted:",

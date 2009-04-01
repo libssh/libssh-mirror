@@ -39,8 +39,12 @@
 
 u32 packet_decrypt_len(SSH_SESSION *session, char *crypted){
     u32 decrypted;
-    if(session->current_crypto)
-        packet_decrypt(session,crypted,session->current_crypto->in_cipher->blocksize);
+    if (session->current_crypto) {
+      if (packet_decrypt(session, crypted,
+            session->current_crypto->in_cipher->blocksize) < 0) {
+        return ntohl(0);
+      }
+    }
     memcpy(&decrypted,crypted,sizeof(decrypted));
     ssh_log(session, SSH_LOG_PACKET,
         "Packet size decrypted: %lu (0x%lx)",
@@ -52,6 +56,9 @@ u32 packet_decrypt_len(SSH_SESSION *session, char *crypted){
 int packet_decrypt(SSH_SESSION *session, void *data,u32 len){
     struct crypto_struct *crypto=session->current_crypto->in_cipher;
     char *out=malloc(len);
+    if (out == NULL) {
+      return -1;
+    }
     ssh_log(session,SSH_LOG_PACKET,"Decrypting %d bytes",len);
 #ifdef HAVE_LIBGCRYPT
     crypto->set_decrypt_key(crypto,session->current_crypto->decryptkey,session->current_crypto->decryptIV);
