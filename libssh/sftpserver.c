@@ -34,13 +34,21 @@
 
 
 SFTP_CLIENT_MESSAGE *sftp_get_client_message(SFTP_SESSION *sftp){
-    SFTP_PACKET *packet=sftp_packet_read(sftp);
-    SFTP_CLIENT_MESSAGE *msg=malloc(sizeof (SFTP_CLIENT_MESSAGE));
+    SFTP_PACKET *packet;
+    SFTP_CLIENT_MESSAGE *msg;
     BUFFER *payload;
     STRING *tmp;
+
+    msg = malloc(sizeof (SFTP_CLIENT_MESSAGE));
+    if (msg == NULL) {
+      return NULL;
+    }
     memset(msg,0,sizeof(SFTP_CLIENT_MESSAGE));
-    if(!packet)
-        return NULL;
+
+    packet = sftp_packet_read(sftp);
+    if (packet == NULL) {
+      return NULL;
+    }
     payload=packet->payload;
     msg->type=packet->type;
     msg->sftp=sftp;
@@ -228,9 +236,13 @@ STRING *sftp_handle_alloc(SFTP_SESSION *sftp, void *info){
     int i;
     u32 val;
     STRING *ret;
-    if(!sftp->handles){
-        sftp->handles=malloc(sizeof(void *) * SFTP_HANDLES);
-        memset(sftp->handles,0,sizeof(void *)*SFTP_HANDLES);
+
+    if (sftp->handles == NULL) {
+      sftp->handles = malloc(sizeof(void *) * SFTP_HANDLES);
+      if (sftp->handles == NULL) {
+        return NULL;
+      }
+      memset(sftp->handles,0,sizeof(void *)*SFTP_HANDLES);
     }
     for(i=0; i<SFTP_HANDLES;++i)
         if(!sftp->handles[i])
