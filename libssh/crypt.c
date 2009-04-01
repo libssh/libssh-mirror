@@ -88,10 +88,14 @@ unsigned char * packet_encrypt(SSH_SESSION *session,void *data,u32 len){
 #elif defined HAVE_LIBCRYPTO
     crypto->set_encrypt_key(crypto,session->current_crypto->encryptkey);
 #endif
-    out=malloc(len);
+    out = malloc(len);
+    if (out == NULL) {
+      return NULL;
+    }
     if(session->version==2){
         ctx = hmac_init(session->current_crypto->encryptMAC,20,HMAC_SHA1);
         if (ctx == NULL) {
+          SAFE_FREE(out);
           return NULL;
         }
         hmac_update(ctx,(unsigned char *)&seq,sizeof(u32));
