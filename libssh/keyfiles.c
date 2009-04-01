@@ -223,6 +223,7 @@ static int privatekey_decrypt(int algo, int mode, unsigned int key_len,
     return 0;
   }
   memcpy(buffer_get(data), tmp, buffer_get_len(data));
+  SAFE_FREE(tmp);
   gcry_cipher_close(cipher);
   return 1;
 }
@@ -275,6 +276,9 @@ static int privatekey_dek_header(char *header, unsigned int header_len,
   else
     return 0;
   *iv = malloc(*iv_len);
+  if (*iv == NULL) {
+    return 0;
+  }
   load_iv(header + iv_pos, *iv, *iv_len);
   return 1;
 }
@@ -580,7 +584,10 @@ PRIVATE_KEY  *privatekey_from_file(SSH_SESSION *session,char *filename,int type,
         return NULL;
     }
 
-    privkey=malloc(sizeof(PRIVATE_KEY));
+    privkey = malloc(sizeof(PRIVATE_KEY));
+    if (privkey == NULL) {
+      return NULL;
+    }
     privkey->type=type;
     privkey->dsa_priv=dsa;
     privkey->rsa_priv=rsa;
@@ -640,7 +647,10 @@ PRIVATE_KEY  *_privatekey_from_file(void *session,char *filename,int type){
         ssh_set_error(session,SSH_FATAL,"Invalid private key type %d",type);
         return NULL;
     }
-    privkey=malloc(sizeof(PRIVATE_KEY));
+    privkey = malloc(sizeof(PRIVATE_KEY));
+    if (privkey == NULL) {
+      return NULL;
+    }
     privkey->type=type;
     privkey->dsa_priv=dsa;
     privkey->rsa_priv=rsa;
@@ -921,6 +931,10 @@ static int check_public_key(SSH_SESSION *session, char **tokens){
 			/* do it manually instead */
 			len = bignum_num_bytes(tmpbn);
 			tmpstring = malloc(4 + len);
+                        if (tmpstring == NULL) {
+                          return -1;
+                          ssh_set_error(session, SSH_FATAL, "No space left");
+                        }
 			tmpstring->size = htonl(len);
 #ifdef HAVE_LIBGCRYPT
 			bignum_bn2bin(tmpbn, len, tmpstring->string);
