@@ -53,7 +53,7 @@ SSH_OPTIONS *ssh_options_new(void) {
     SSH_OPTIONS *option;
 
     option = malloc(sizeof(SSH_OPTIONS));
-    if (options == NULL) {
+    if (option == NULL) {
       return NULL;
     }
 
