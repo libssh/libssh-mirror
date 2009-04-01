@@ -49,7 +49,6 @@ struct string_struct *string_new(size_t size) {
   if (str == NULL) {
     return NULL;
   }
-  ZERO_STRUCTP(str);
 
   str->size = htonl(size);
   return str;
@@ -103,7 +102,7 @@ struct string_struct *string_from_char(const char *what) {
  */
 size_t string_len(struct string_struct *s) {
   if (s == NULL) {
-    return 0;
+    return ntohl(0);
   }
 
   return ntohl(s->size);
