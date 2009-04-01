@@ -68,7 +68,13 @@ int ssh_type_from_name(char *name) {
 
 PUBLIC_KEY *publickey_make_dss(SSH_SESSION *session, BUFFER *buffer){
     STRING *p,*q,*g,*pubkey;
-    PUBLIC_KEY *key=malloc(sizeof(PUBLIC_KEY));
+    PUBLIC_KEY *key;
+
+    key = malloc(sizeof(PUBLIC_KEY));
+    if (key == NULL) {
+      return NULL;
+    }
+
     key->type=TYPE_DSS;
     key->type_c="ssh-dss";
     p=buffer_get_ssh_string(buffer);
@@ -107,7 +113,12 @@ PUBLIC_KEY *publickey_make_dss(SSH_SESSION *session, BUFFER *buffer){
 
 PUBLIC_KEY *publickey_make_rsa(SSH_SESSION *session, BUFFER *buffer, char *type){
     STRING *e,*n;
-    PUBLIC_KEY *key=malloc(sizeof(PUBLIC_KEY));
+    PUBLIC_KEY *key;
+
+    key = malloc(sizeof(PUBLIC_KEY));
+    if (key == NULL) {
+      return NULL;
+    }
     if(!strcmp(type,"ssh-rsa"))
         key->type=TYPE_RSA;
     else
@@ -204,13 +215,18 @@ PUBLIC_KEY *publickey_from_string(SSH_SESSION *session, STRING *pubkey_s){
  * \see publickey_to_string()
  */
 PUBLIC_KEY *publickey_from_privatekey(PRIVATE_KEY *prv){
-    PUBLIC_KEY *key=malloc(sizeof(PUBLIC_KEY));
+    PUBLIC_KEY *key;
 #ifdef HAVE_LIBGCRYPT
     gcry_sexp_t sexp;
     const char *tmp;
     size_t size;
     STRING *p,*q,*g,*y,*e,*n;
-#endif
+#endif /* HAVE_LIBGCRYPT */
+
+    key=malloc(sizeof(PUBLIC_KEY));
+    if (key == NULL) {
+      return NULL;
+    }
     key->type=prv->type;
     switch(key->type){
         case TYPE_DSS:
@@ -467,16 +483,31 @@ SIGNATURE *signature_from_string(SSH_SESSION *session, STRING *signature,PUBLIC_
     DSA_SIG *sig;
     STRING *r,*s;
 #endif
-    SIGNATURE *sign=malloc(sizeof(SIGNATURE));
-    BUFFER *tmpbuf=buffer_new();
+    SIGNATURE *sign;
+    BUFFER *tmpbuf;
     STRING *rs;
     STRING *type_s,*e;
     int len,rsalen;
     char *type;
+
+    sign = malloc(sizeof(SIGNATURE));
+    if (sign == NULL) {
+      ssh_set_error(session, SSH_FATAL, "No space left");
+      return NULL;
+    }
+
+    tmpbuf = buffer_new();
+    if (tmpbuf == NULL) {
+      ssh_set_error(session, SSH_FATAL, "No space left");
+      signature_free(sign);
+      return NULL;
+    }
+
     buffer_add_data(tmpbuf,signature->string,string_len(signature));
     type_s=buffer_get_ssh_string(tmpbuf);
     if(!type_s){
         ssh_set_error(session,SSH_FATAL,"Invalid signature packet");
+        signature_free(sign);
         buffer_free(tmpbuf);
         return NULL;
     }
@@ -486,6 +517,7 @@ SIGNATURE *signature_from_string(SSH_SESSION *session, STRING *signature,PUBLIC_
         case TYPE_DSS:
             if(strcmp(type,"ssh-dss")){
                 ssh_set_error(session,SSH_FATAL,"Invalid signature type : %s",type);
+                signature_free(sign);
                 buffer_free(tmpbuf);
                 free(type);
                 return NULL;
@@ -494,6 +526,7 @@ SIGNATURE *signature_from_string(SSH_SESSION *session, STRING *signature,PUBLIC_
         case TYPE_RSA:
             if(strcmp(type,"ssh-rsa")){
                 ssh_set_error(session,SSH_FATAL,"Invalid signature type : %s",type);
+                signature_free(sign);
                 buffer_free(tmpbuf);
                 free(type);
                 return NULL;
@@ -502,6 +535,7 @@ SIGNATURE *signature_from_string(SSH_SESSION *session, STRING *signature,PUBLIC_
         default:
             ssh_set_error(session,SSH_FATAL,"Invalid signature type : %s",type);
             free(type);
+            signature_free(sign);
             buffer_free(tmpbuf);
             return NULL;
     }
@@ -513,6 +547,7 @@ SIGNATURE *signature_from_string(SSH_SESSION *session, STRING *signature,PUBLIC_
             if(!rs || string_len(rs)!=40){ /* 40 is the dual signature blob len. */
                 if(rs)
                     free(rs);
+                signature_free(sign);
                 return NULL;
             }
             /* we make use of strings (because we have all-made functions to convert them to bignums (ou pas ;)*/
@@ -540,7 +575,8 @@ SIGNATURE *signature_from_string(SSH_SESSION *session, STRING *signature,PUBLIC_
         case TYPE_RSA:
             e=buffer_get_ssh_string(tmpbuf);
             buffer_free(tmpbuf);
-            if(!e){
+            if(e == NULL) {
+                signature_free(sign);
                 return NULL;
             }
             len=string_len(e);
@@ -551,7 +587,7 @@ SIGNATURE *signature_from_string(SSH_SESSION *session, STRING *signature,PUBLIC_
 #endif
             if(len>rsalen){
                 free(e);
-                free(sign);
+                signature_free(sign);
                 ssh_set_error(session,SSH_FATAL,"signature too big ! %d instead of %d",len,rsalen);
                 return NULL;
             }
@@ -607,9 +643,15 @@ void signature_free(SIGNATURE *sign){
 /* i think now, maybe it's a bad idea to name it has it should have be named in libcrypto */
 static STRING *RSA_do_sign(void *payload,int len,RSA *privkey){
     STRING *sign;
-    void *buffer=malloc(RSA_size(privkey));
+    void *buffer;
     unsigned int size;
     int err;
+
+    buffer = malloc(RSA_size(privkey));
+    if (buffer == NULL) {
+      return NULL;
+    }
+
     err=RSA_sign(NID_sha1,payload,len,buffer,&size,privkey);
     if(!err){
         free(buffer);
@@ -659,25 +701,36 @@ STRING *ssh_do_sign_with_agent(struct ssh_session *session,
 /* this function signs the session id (known as H) as a string then the content of sigbuf */
 STRING *ssh_do_sign(SSH_SESSION *session,BUFFER *sigbuf, PRIVATE_KEY *privatekey){
     SHACTX ctx;
-    STRING *session_str=string_new(SHA_DIGEST_LEN);
+    STRING *session_str;
     unsigned char hash[SHA_DIGEST_LEN+1];
 #ifdef HAVE_LIBGCRYPT
     gcry_sexp_t gcryhash;
 #endif
     SIGNATURE *sign;
     STRING *signature;
-    CRYPTO *crypto=session->current_crypto?session->current_crypto:session->next_crypto;
+    CRYPTO *crypto = session->current_crypto?session->current_crypto:session->next_crypto;
+
+    session_str = string_new(SHA_DIGEST_LEN);
+    if (session_str == NULL) {
+      return NULL;
+    }
     string_fill(session_str,crypto->session_id,SHA_DIGEST_LEN);
     ctx=sha1_init();
     sha1_update(ctx,session_str,string_len(session_str)+4);
+    SAFE_FREE(session_str);
     sha1_update(ctx,buffer_get(sigbuf),buffer_get_len(sigbuf));
     sha1_final(hash+1,ctx);
     hash[0]=0;
+
 #ifdef DEBUG_CRYPTO
     ssh_print_hexa("Hash being signed with dsa",hash+1,SHA_DIGEST_LEN);
 #endif
-    free(session_str);
-    sign=malloc(sizeof(SIGNATURE));
+
+    sign = malloc(sizeof(SIGNATURE));
+    if (sign == NULL) {
+      return NULL;
+    }
+
     switch(privatekey->type){
         case TYPE_DSS:
 #ifdef HAVE_LIBGCRYPT
@@ -772,7 +825,12 @@ STRING *ssh_sign_session_id(SSH_SESSION *session, PRIVATE_KEY *privatekey){
 #ifdef DEBUG_CRYPTO
     ssh_print_hexa("Hash being signed with dsa",hash+1,SHA_DIGEST_LEN);
 #endif
-    sign=malloc(sizeof(SIGNATURE));
+
+    sign = malloc(sizeof(SIGNATURE));
+    if (sign == NULL) {
+      return NULL;
+    }
+
     switch(privatekey->type){
         case TYPE_DSS:
 #ifdef HAVE_LIBGCRYPT
