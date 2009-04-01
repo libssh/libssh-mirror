@@ -848,6 +848,12 @@ static char **ssh_get_knownhost_line(SSH_SESSION *session,FILE **file, char *fil
         if(!buffer[0] || buffer[0]=='#')
             continue; /* skip empty lines */
         tokens=space_tokenize(buffer);
+        if (tokens == NULL) {
+          fclose(*file);
+          *file = NULL;
+          leave_function();
+          return NULL;
+        }
         if(!tokens[0] || !tokens[1] || !tokens[2]){
             /* it should have at least 3 tokens */
             tokens_free(tokens);
@@ -870,6 +876,8 @@ static char **ssh_get_knownhost_line(SSH_SESSION *session,FILE **file, char *fil
                continue;
            }
         }
+        fclose(*file);
+        *file = NULL;
         leave_function();
         return tokens;
     }

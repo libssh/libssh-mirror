@@ -73,8 +73,14 @@ static char **tokenize(const char *chain){
     char **tokens;
     int n=1;
     int i=0;
-    char *tmp = strdup(chain);
-    char *ptr = tmp;
+    char *tmp;
+    char *ptr;
+
+    tmp = strdup(chain);
+    if (tmp == NULL) {
+      return NULL;
+    }
+    ptr = tmp;
     while(*ptr){
         if(*ptr==','){
             n++;
@@ -84,6 +90,10 @@ static char **tokenize(const char *chain){
     }
     /* now n contains the number of tokens, the first possibly empty if the list was empty too e.g. "" */
     tokens=malloc(sizeof(char *) * (n+1) ); /* +1 for the null */
+    if (tokens == NULL) {
+      SAFE_FREE(tmp);
+      return NULL;
+    }
     ptr=tmp;
     for(i=0;i<n;i++){
         tokens[i]=ptr;
@@ -100,8 +110,15 @@ char **space_tokenize(const char *chain){
     char **tokens;
     int n=1;
     int i=0;
-    char *tmp = strdup(chain);
-    char *ptr = tmp;
+    char *tmp;
+    char *ptr;
+
+    tmp = strdup(chain);
+    if (tmp == NULL) {
+      return NULL;
+    }
+    ptr = tmp;
+
     while(*ptr==' ')
         ++ptr; /* skip initial spaces */
     while(*ptr){
@@ -115,7 +132,11 @@ char **space_tokenize(const char *chain){
         ptr++;
     }
     /* now n contains the number of tokens, the first possibly empty if the list was empty too e.g. "" */
-    tokens=malloc(sizeof(char *) * (n+1) ); /* +1 for the null */
+    tokens = malloc(sizeof(char *) * (n + 1)); /* +1 for the null */
+    if (tokens == NULL) {
+      SAFE_FREE(tmp);
+      return NULL;
+    }
     ptr=tmp; /* we don't pass the initial spaces because the "tmp" pointer is needed by the caller */
                     /* function to free the tokens. */
     for(i=0;i<n;i++){
@@ -140,11 +161,22 @@ char *ssh_find_matching(const char *in_d, const char *what_d){
     char ** tok_in, **tok_what;
     int i_in, i_what;
     char *ret;
-    
-    if( ! (in_d && what_d))
-        return NULL; /* don't deal with null args */
-    tok_in=tokenize(in_d);
-    tok_what=tokenize(what_d);
+
+    if ((in_d == NULL) || (what_d == NULL)) {
+      return NULL; /* don't deal with null args */
+    }
+
+    tok_in = tokenize(in_d);
+    if (tok_in == NULL) {
+      return NULL;
+    }
+
+    tok_what = tokenize(what_d);
+    if (tok_what == NULL) {
+      SAFE_FREE(tok_in[0]);
+      SAFE_FREE(tok_in);
+    }
+
     for(i_in=0; tok_in[i_in]; ++i_in){
         for(i_what=0; tok_what[i_what] ; ++i_what){
             if(!strcmp(tok_in[i_in],tok_what[i_what])){
@@ -195,11 +227,19 @@ int ssh_get_kex(SSH_SESSION *session,int server_kex ){
     }
     /* copy the server kex info into an array of strings */
     if(server_kex){
-        session->client_kex.methods=malloc( 10 * sizeof(char **));
+        session->client_kex.methods = malloc(10 * sizeof(char **));
+        if (session->client_kex.methods == NULL) {
+          leave_function();
+          return -1;
+        }
         for(i=0;i<10;++i)
             session->client_kex.methods[i]=strings[i];
     } else { // client     
-        session->server_kex.methods=malloc( 10 * sizeof(char **));
+        session->server_kex.methods = malloc(10 * sizeof(char **));
+        if (session->server_kex.methods == NULL) {
+          leave_function();
+          return -1;
+        }
         for(i=0;i<10;++i)
             session->server_kex.methods[i]=strings[i];
     }
@@ -237,6 +277,11 @@ int set_kex(SSH_SESSION *session){
     else
         ssh_get_random(client->cookie,16,0);
     client->methods=malloc(10 * sizeof(char **));
+    if (client->methods == NULL) {
+      ssh_set_error(session, SSH_FATAL, "No space left");
+      leave_function();
+      return -1;
+    }
     memset(client->methods,0,10*sizeof(char **));
     for (i=0;i<10;i++){
         if(!(wanted=options->wanted_methods[i]))
