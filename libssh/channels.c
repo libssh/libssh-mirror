@@ -246,7 +246,7 @@ static void channel_rcv_data(SSH_SESSION *session,int is_stderr){
         return;
     }
     ssh_log(session, SSH_LOG_PROTOCOL,
-        "Channel receiving %d bytes data in %d (local win=%d remote win=%d)",
+        "Channel receiving %zu bytes data in %d (local win=%d remote win=%d)",
         string_len(str),
         is_stderr,
         channel->local_window,
@@ -254,7 +254,7 @@ static void channel_rcv_data(SSH_SESSION *session,int is_stderr){
     /* what shall we do in this case ? let's accept it anyway */
     if(string_len(str)>channel->local_window)
         ssh_log(session, SSH_LOG_RARE,
-            "Data packet too big for our window(%d vs %d)",
+            "Data packet too big for our window(%zu vs %d)",
             string_len(str),
             channel->local_window);
     channel_default_bufferize(channel,str->string,string_len(str), is_stderr);
