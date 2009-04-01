@@ -44,9 +44,13 @@
 
 static SSH_MESSAGE *message_new(SSH_SESSION *session){
     SSH_MESSAGE *msg=session->ssh_message;
-    if(!msg){
-        msg=malloc(sizeof(SSH_MESSAGE));
-        session->ssh_message=msg;
+
+    if (msg == NULL) {
+        msg = malloc(sizeof(SSH_MESSAGE));
+        if (msg == NULL) {
+          return NULL;
+        }
+        session->ssh_message = msg;
     }
     memset(msg,0,sizeof (*msg));
     msg->session=session;
@@ -87,7 +91,12 @@ static SSH_MESSAGE *handle_userauth_request(SSH_SESSION *session){
     SSH_MESSAGE *msg;
     char *service_c,*method_c;
     enter_function();
-    msg=message_new(session);
+
+    msg = message_new(session);
+    if (msg == NULL) {
+      return NULL;
+    }
+
     msg->type=SSH_AUTH_REQUEST;
     msg->auth_request.username=string_to_char(user);
     free(user);
@@ -184,7 +193,10 @@ static SSH_MESSAGE *handle_channel_request_open(SSH_SESSION *session){
     u32 sender, window, packet;
 
     enter_function();
-    msg=message_new(session);
+    msg = message_new(session);
+    if (msg == NULL) {
+      return NULL;
+    }
     msg->type=SSH_CHANNEL_REQUEST_OPEN;
     type=buffer_get_ssh_string(session->in_buffer);
     type_c=string_to_char(type);
@@ -257,8 +269,13 @@ static SSH_MESSAGE *handle_channel_request(SSH_SESSION *session){
     STRING *type;
     char *type_c;
     u8 want_reply;
-    SSH_MESSAGE *msg=message_new(session);
+    SSH_MESSAGE *msg;
+
     enter_function();
+    msg = message_new(session);
+    if (msg == NULL) {
+      return NULL;
+    }
     buffer_get_u32(session->in_buffer,&channel);
     channel=ntohl(channel);
     type=buffer_get_ssh_string(session->in_buffer);
