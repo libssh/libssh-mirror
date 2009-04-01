@@ -215,6 +215,10 @@ CHANNEL *ssh_message_channel_request_open_reply_accept(SSH_MESSAGE *msg){
 
     enter_function();
     chan=channel_new(session);
+    if (chan == NULL) {
+      leave_function();
+      return NULL;
+    }
     chan->local_channel=ssh_channel_new_id(session);
     chan->local_maxpacket=35000;
     chan->local_window=32000;

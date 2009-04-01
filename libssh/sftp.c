@@ -49,6 +49,11 @@ SFTP_SESSION *sftp_new(SSH_SESSION *session){
     memset(sftp,0,sizeof(SFTP_SESSION));
     sftp->session=session;
     sftp->channel=channel_new(session);
+    if (sftp->channel == NULL) {
+      SAFE_FREE(sftp);
+      leave_function();
+      return NULL;
+    }
     if(channel_open_session(sftp->channel)){
         channel_free(sftp->channel);
         free(sftp);

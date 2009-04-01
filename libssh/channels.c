@@ -48,6 +48,10 @@
  */
 CHANNEL *channel_new(SSH_SESSION *session){
     CHANNEL *channel=malloc(sizeof(CHANNEL));
+
+    if (channel == NULL) {
+      return NULL;
+    }
     memset(channel,0,sizeof(CHANNEL));
     channel->session=session;
     channel->version=session->version;
@@ -1107,9 +1111,21 @@ int channel_select(CHANNEL **readchans, CHANNEL **writechans, CHANNEL **exceptch
         return 0;
     }
     /* prepare the outgoing temporary arrays */
-    rchans=malloc(sizeof(CHANNEL *) * (count_ptrs(readchans)+1));
-    wchans=malloc(sizeof(CHANNEL *) * (count_ptrs(writechans)+1));
-    echans=malloc(sizeof(CHANNEL *) * (count_ptrs(exceptchans)+1));
+    rchans = malloc(sizeof(CHANNEL *) * (count_ptrs(readchans) + 1));
+    if (rchans == NULL) {
+      return SSH_ERROR;
+    }
+    wchans = malloc(sizeof(CHANNEL *) * (count_ptrs(writechans) + 1));
+    if (wchans == NULL) {
+      SAFE_FREE(rchans);
+      return SSH_ERROR;
+    }
+    echans = malloc(sizeof(CHANNEL *) * (count_ptrs(exceptchans) + 1));
+    if (echans == NULL) {
+      SAFE_FREE(rchans);
+      SAFE_FREE(wchans);
+      return SSH_ERROR;
+    }
 
     /* first, try without doing network stuff */
     /* then, select and redo the networkless stuff */
