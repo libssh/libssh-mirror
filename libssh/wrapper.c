@@ -487,7 +487,7 @@ CRYPTO *crypto_new(void) {
     return NULL;
   }
 
-  ZERO_STRUCTP(crypto);
+  memset(crypto, 0, sizeof(CRYPTO));
 
   return crypto;
 }

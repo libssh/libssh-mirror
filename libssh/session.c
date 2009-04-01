@@ -46,7 +46,7 @@ SSH_SESSION *ssh_new(void) {
     return NULL;
   }
 
-  memset(session, '0', sizeof(SSH_SESSION));
+  memset(session, 0, sizeof(SSH_SESSION));
 
   session->next_crypto = crypto_new();
   if (session->next_crypto == NULL) {

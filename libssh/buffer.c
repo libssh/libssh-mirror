@@ -44,7 +44,7 @@ struct buffer_struct *buffer_new(void) {
   if (buf == NULL) {
     return NULL;
   }
-  ZERO_STRUCTP(buf);
+  memset(buf, 0, sizeof(struct buffer_struct));
 
   return buf;
 }
