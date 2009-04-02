@@ -641,16 +641,29 @@ int ssh_options_set_status_callback(SSH_OPTIONS *opt,
   return 0;
 }
 
-/** \bug currently it only timeouts the socket connection, not the
- * complete exchange
- * \brief set a timeout for the connection
- * \param opt options structure
- * \param seconds number of seconds
- * \param usec number of micro seconds
+/**
+ * @brief Set a timeout for the connection.
+ *
+ * @param opt           The options structure to use.
+ *
+ * @param seconds       Number of seconds.
+ *
+ * @param usec          Number of micro seconds.
+ *
+ * @return 0 on success, < 0 on error.
+ *
+ * @bug Currently it only timeouts the socket connection, not the
+ *      complete exchange.
  */
-void ssh_options_set_timeout(SSH_OPTIONS *opt, long seconds,long usec){
-    opt->timeout=seconds;
-    opt->timeout_usec=usec;
+int ssh_options_set_timeout(SSH_OPTIONS *opt, long seconds, long usec) {
+  if (opts == NULL) {
+    return -1;
+  }
+
+  opt->timeout=seconds;
+  opt->timeout_usec=usec;
+
+  return 0;
 }
 
 /** Default value is 0 (no connection to SSH1 servers) 

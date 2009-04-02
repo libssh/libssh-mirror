@@ -314,13 +314,13 @@ int ssh_options_getopt(SSH_OPTIONS *options, int *argcptr, char **argv);
 int ssh_options_set_host(SSH_OPTIONS *opt, const char *host);
 int ssh_options_set_fd(SSH_OPTIONS *opt, socket_t fd);
 int ssh_options_set_bind(SSH_OPTIONS *opt, const char *bindaddr, int port);
-void ssh_options_set_timeout(SSH_OPTIONS *opt, long seconds, long usec);
 int ssh_options_set_ssh_dir(SSH_OPTIONS *opt, const char *dir);
 int ssh_options_set_known_hosts_file(SSH_OPTIONS *opt, const char *dir);
 int ssh_options_set_identity(SSH_OPTIONS *opt, const char *identity);
 int ssh_options_set_banner(SSH_OPTIONS *opt, const char *banner);
 int ssh_options_set_status_callback(SSH_OPTIONS *opt, void (*callback)
         (void *arg, float status), void *arg);
+int ssh_options_set_timeout(SSH_OPTIONS *opt, long seconds, long usec);
 void ssh_options_allow_ssh1(SSH_OPTIONS *opt, int allow);
 void ssh_options_allow_ssh2(SSH_OPTIONS *opt, int allow);
 void ssh_options_set_dsa_server_key(SSH_OPTIONS *opt, const char *dsakey);
