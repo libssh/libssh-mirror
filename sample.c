@@ -420,8 +420,14 @@ int main(int argc, char **argv){
     }
     opts(argc,argv);
     signal(SIGTERM, do_exit);
-    if(user)
-        ssh_options_set_username(options,user);
+
+    if (user) {
+      if (ssh_options_set_username(options,user) < 0) {
+        ssh_options_free(options);
+        return 1;
+      }
+    }
+
     if (ssh_options_set_host(options,host) < 0) {
       ssh_options_free(options);
       return 1;

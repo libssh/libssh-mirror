@@ -257,15 +257,28 @@ int ssh_options_set_host(SSH_OPTIONS *opt, const char *hostname){
   return 0;
 }
 
-/** \brief set username for authentication
- * \bug this should not be set at options time
- * \param opt options structure
- * \param username user name to authenticate
+/**
+ * @brief Set the username for authentication
+ *
+ * @param opt           The options structure to use.
+ *
+ * @param username      The username to authenticate.
+ *
+ * @return 0 on success, -1 on error.
+ *
+ * @bug this should not be set at options time
  */
-void ssh_options_set_username(SSH_OPTIONS *opt, const char *username){
-    if(opt->username)
-        free(opt->username);
-    opt->username=strdup(username);
+int ssh_options_set_username(SSH_OPTIONS *opt, const char *username) {
+  if (opt->username) {
+    SAFE_FREE(opt->username);
+  }
+
+  opt->username = strdup(username);
+  if (opt->username == NULL) {
+    return -1;
+  }
+
+  return 0;
 }
 
 /** If you wish to open the socket yourself for a reason

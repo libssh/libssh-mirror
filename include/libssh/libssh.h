@@ -308,7 +308,7 @@ SSH_OPTIONS *ssh_options_new(void);
 SSH_OPTIONS *ssh_options_copy(SSH_OPTIONS *opt);
 void ssh_options_free(SSH_OPTIONS *opt);
 int ssh_options_set_wanted_algos(SSH_OPTIONS *opt, int algo, const char *list);
-void ssh_options_set_username(SSH_OPTIONS *opt, const char *username);
+int ssh_options_set_username(SSH_OPTIONS *opt, const char *username);
 void ssh_options_set_port(SSH_OPTIONS *opt, unsigned int port);
 int ssh_options_getopt(SSH_OPTIONS *options, int *argcptr, char **argv);
 int ssh_options_set_host(SSH_OPTIONS *opt, const char *host);
