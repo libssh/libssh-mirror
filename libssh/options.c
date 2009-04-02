@@ -740,17 +740,29 @@ int ssh_options_set_log_function(SSH_OPTIONS *opt,
   return 0;
 }
 
-/** \brief set this session's logging priority
- * \param opt options structure
- * \param verbosity verbosity of the messages. Every log smaller or equal to verbosity will be shown\n
- * SSH_LOG_NOLOG No logging \n
- * SSH_LOG_RARE Rare conditions or warnings\n
- * SSH_LOG_ENTRY Api-accessible entrypoints\n
- * SSH_LOG_PACKET Packet id and size\n
- * SSH_LOG_FUNCTIONS function entering and leaving\n
+/**
+ * @brief Set the session logging priority.
+ *
+ * @param opt           The options structure to use.
+ *
+ * @param verbosity     The verbosity of the messages. Every log smaller or
+ *                      equal to verbosity will be shown\n
+ *                      SSH_LOG_NOLOG No logging \n
+ *                      SSH_LOG_RARE Rare conditions or warnings\n
+ *                      SSH_LOG_ENTRY Api-accessible entrypoints\n
+ *                      SSH_LOG_PACKET Packet id and size\n
+ *                      SSH_LOG_FUNCTIONS function entering and leaving\n
+ *
+ * @return 0 on success, < 0 on error.
  */
-void ssh_options_set_log_verbosity(SSH_OPTIONS *opt, int verbosity){
-	opt->log_verbosity=verbosity;
+int ssh_options_set_log_verbosity(SSH_OPTIONS *opt, int verbosity) {
+  if (opt == NULL) {
+    return -1;
+  }
+
+  opt->log_verbosity = verbosity;
+
+  return 0;
 }
 /**
  * This is a helper for your application to generate the appropriate
