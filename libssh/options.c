@@ -479,7 +479,10 @@ int ssh_options_set_banner(SSH_OPTIONS *opt, const char *banner) {
   return 0;
 }
 
-/** the methods are:\n
+/**
+ * @brief Set the algorithms to be used for cryptography and compression.
+ *
+ * The methods are:\n
  * KEX_HOSTKEY (server public key type) : ssh-rsa or ssh-dss\n
  * KEX_CRYPT_C_S (symmetric cipher client to server)\n
  * KEX_CRYPT_S_C (symmetric cipher server to client)\n
@@ -488,27 +491,42 @@ int ssh_options_set_banner(SSH_OPTIONS *opt, const char *banner) {
  * You don't have to use this function if using the default ciphers
  * is okay for you\n
  * in order to enable compression client to server, do\n
- * ret=ssh_options_set_wanted_algos(opt,KEX_COMP_C_S,"zlib");
- * \brief set the algorithms to be used for cryptography and compression
- * \param opt options structure
- * \param algo method which needs to be changed
- * \param list list of algorithms to be used, in order of preference and separated by commas
- * \return 0 on success, -1 on error (most likely an algorithm is not available)
+ * @code
+ * ret = ssh_options_set_wanted_algos(opt,KEX_COMP_C_S,"zlib");
+ * @endcode
+ *
+ * @param opt           The options structure to use.
+ *
+ * @param algo          The method which needs to be changed.
+ *
+ * @param list          A list of algorithms to be used, in order of preference
+ *                      and separated by commas.
+ *
+ * @return 0 on success, < 0 on error
  */
-int ssh_options_set_wanted_algos(SSH_OPTIONS *opt, int algo, const char *list){
-    if(algo > SSH_LANG_S_C || algo < 0){
-        ssh_set_error(opt,SSH_REQUEST_DENIED,"algo %d out of range",algo);
-        return -1;
-    }
-    if( (!opt->use_nonexisting_algo) && !verify_existing_algo(algo,list)){
-        ssh_set_error(opt,SSH_REQUEST_DENIED,"Setting method : no algorithm "
-                "for method \"%s\" (%s)\n",ssh_kex_nums[algo],list);
-        return -1;
-    }
-    if(opt->wanted_methods[algo])
-        free(opt->wanted_methods[algo]);
-    opt->wanted_methods[algo]=strdup(list);    
-    return 0;
+int ssh_options_set_wanted_algos(SSH_OPTIONS *opt, int algo, const char *list) {
+  if (opt == NULL || list == NULL) {
+    return -1;
+  }
+
+  if(algo > SSH_LANG_S_C || algo < 0) {
+    ssh_set_error(opt, SSH_REQUEST_DENIED, "algo %d out of range", algo);
+    return -1;
+  }
+
+  if ((!opt->use_nonexisting_algo) && !verify_existing_algo(algo, list)) {
+    ssh_set_error(opt, SSH_REQUEST_DENIED, "Setting method: no algorithm "
+        "for method \"%s\" (%s)\n", ssh_kex_nums[algo], list);
+    return -1;
+  }
+
+  SAFE_FREE(opt->wanted_methods[algo]);
+  opt->wanted_methods[algo] = strdup(list);
+  if (opt->wanted_methods[algo] == NULL) {
+    return -1;
+  }
+
+  return 0;
 }
 
 #ifndef _WIN32
