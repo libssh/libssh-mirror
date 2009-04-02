@@ -211,24 +211,50 @@ void ssh_options_free(SSH_OPTIONS *opt) {
   SAFE_FREE(opt);
 }
 
-/** \brief set destination hostname
- * \param opt option structure
- * \param hostname host name to connect
+/**
+ * @brief Set destination hostname
+ *
+ * @param opt           The option structure to use.
+ *
+ * @param hostname      The host name to connect.
+ *
+ * @return 0 on succes, < 0 on error.
  */
-void ssh_options_set_host(SSH_OPTIONS *opt, const char *hostname){
-    char *ptr=strdup(hostname);
-    char *ptr2=strchr(ptr,'@');
-    if(opt->host) // don't leak memory
-        free(opt->host);
-    if(ptr2){
-        *ptr2=0;
-        opt->host=strdup(ptr2+1);
-        if(opt->username)
-            free(opt->username);
-        opt->username=strdup(ptr);
-        free(ptr);
-    } else
-        opt->host=ptr;
+int ssh_options_set_host(SSH_OPTIONS *opt, const char *hostname){
+  char *h;
+  char *p;
+
+  h = strdup(hostname);
+  if (h == NULL) {
+    return -1;
+  }
+  p = strchr(h, '@');
+
+  if (opt->host) {
+    SAFE_FREE(opt->host);
+  }
+
+  if (p) {
+    *p = '\0';
+    opt->host = strdup(p + 1);
+    if (opt->host == NULL) {
+      SAFE_FREE(h);
+      return -1;
+    }
+
+    if (opt->username) {
+      SAFE_FREE(opt->username);
+    }
+    opt->username = strdup(h);
+    SAFE_FREE(h);
+    if (opt->username == NULL) {
+      return -1;
+    }
+  } else {
+    opt->host = h;
+  }
+
+  return 0;
 }
 
 /** \brief set username for authentication

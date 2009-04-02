@@ -422,7 +422,10 @@ int main(int argc, char **argv){
     signal(SIGTERM, do_exit);
     if(user)
         ssh_options_set_username(options,user);
-    ssh_options_set_host(options,host);
+    if (ssh_options_set_host(options,host) < 0) {
+      ssh_options_free(options);
+      return 1;
+    }
     session=ssh_new();
     ssh_set_options(session,options);
     if(ssh_connect(session)){

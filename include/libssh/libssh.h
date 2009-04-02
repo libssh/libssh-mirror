@@ -311,7 +311,7 @@ int ssh_options_set_wanted_algos(SSH_OPTIONS *opt, int algo, const char *list);
 void ssh_options_set_username(SSH_OPTIONS *opt, const char *username);
 void ssh_options_set_port(SSH_OPTIONS *opt, unsigned int port);
 int ssh_options_getopt(SSH_OPTIONS *options, int *argcptr, char **argv);
-void ssh_options_set_host(SSH_OPTIONS *opt, const char *host);
+int ssh_options_set_host(SSH_OPTIONS *opt, const char *host);
 void ssh_options_set_fd(SSH_OPTIONS *opt, socket_t fd);
 void ssh_options_set_bind(SSH_OPTIONS *opt, const char *bindaddr, int port);
 void ssh_options_set_identity(SSH_OPTIONS *opt, const char *identity);
