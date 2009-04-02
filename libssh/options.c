@@ -355,18 +355,35 @@ int ssh_options_set_bind(SSH_OPTIONS *opt, const char *bindaddr, int port) {
   return 0;
 }
 
-/** the ssh directory is used for files like known_hosts and
- * identity (public and private keys)\n
- * \brief set the ssh directory
- * \param opt options structure
- * \param dir directory. It may include "%s" which will be replaced by
- * the user home directory
- * \see ssh_options_set_user_home_dir()
+/**
+ * @brief Set the ssh directory.
+ *
+ * The ssh directory is used for files like known_hosts and identity (public
+ * and private keys)
+ *
+ * @param opt           The options structure to use.
+ *
+ * @param dir           The directory to set. It may include "%s" which will be
+ *                      replaced by the user home directory.
+ *
+ * @return 0 on success, < 0 on error.
+ *
+ * @see ssh_options_set_user_home_dir()
  */
-void ssh_options_set_ssh_dir(SSH_OPTIONS *opt, const char *dir){
-    char buffer[1024];
-    snprintf(buffer,1024,dir,ssh_get_user_home_dir());
-    opt->ssh_dir=strdup(buffer);
+int ssh_options_set_ssh_dir(SSH_OPTIONS *opt, const char *dir) {
+  char buffer[1024] = {0};
+
+  if (opt == NULL || dir == NULL) {
+    return -1;
+  }
+
+  snprintf(buffer, 1024, dir, ssh_get_user_home_dir());
+  opt->ssh_dir = strdup(buffer);
+  if (opt->ssh_dir == NULL) {
+    return -1;
+  }
+
+  return 0;
 }
 
 /** the known hosts file is used to certify remote hosts are genuine.
