@@ -50,7 +50,11 @@ char *ssh_get_banner(SSH_SESSION *session){
             buffer[i] = 0;
         if (buffer[i] == '\n') {
             buffer[i] = 0;
-            ret= strdup(buffer);
+            ret = strdup(buffer);
+            if (ret == NULL) {
+              leave_function();
+              return NULL;
+            }
             leave_function();
             return ret;
         }
@@ -91,26 +95,43 @@ static int ssh_analyze_banner(SSH_SESSION *session, int *ssh1, int *ssh2){
     return 0;
 }
 
-/** \internal
- *  \brief ssh_send_banner sends a SSH banner to the server
+/** @internal
+ * @brief Sends a SSH banner to the server.
+ *
+ * @param session      The SSH session to use.
+ *
+ * @param server       Send client or server banner.
+ *
+ * @return 0 on success, < 0 on error.
  */
+int ssh_send_banner(SSH_SESSION *session, int server) {
+  const char *banner;
+  char buffer[128] = {0};
 
-int ssh_send_banner(SSH_SESSION *session,int server){
-     char *banner;
-    char buffer[128];
-    enter_function();
-    banner=session->version==1?CLIENTBANNER1:CLIENTBANNER2;
-    if(session->options->banner)
-        banner=session->options->banner;
-    if(server)
-        session->serverbanner=strdup(banner);
-    else
-        session->clientbanner=strdup(banner);
-    snprintf(buffer,128,"%s\r\n",banner);
-    ssh_socket_write(session->socket,buffer,strlen(buffer));
-    ssh_socket_blocking_flush(session->socket);
-    leave_function();
-    return 0;
+  enter_function();
+  banner = session->version == 1 ? CLIENTBANNER1 : CLIENTBANNER2;
+
+  if (session->options->banner) {
+    banner=session->options->banner;
+  }
+
+  if (server) {
+    session->serverbanner = strdup(banner);
+    if (session->serverbanner == NULL) {
+      return -1;
+    }
+  } else {
+    session->clientbanner = strdup(banner);
+    if (session->clientbanner == NULL) {
+      return -1;
+    }
+  }
+  snprintf(buffer, 128, "%s\r\n", banner);
+  ssh_socket_write(session->socket, buffer, strlen(buffer));
+  ssh_socket_blocking_flush(session->socket);
+  leave_function();
+
+  return 0;
 }
 
 #define DH_STATE_INIT 0
