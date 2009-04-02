@@ -606,7 +606,6 @@ CHANNEL *ssh_channel_from_local(SSH_SESSION *session,u32 num);
 
 /* options.c */
 
-void ssh_options_free(SSH_OPTIONS *opt);
 /* this function must be called when no specific username has been asked. it has to guess it */
 int ssh_options_default_username(SSH_OPTIONS *opt);
 int ssh_options_default_ssh_dir(SSH_OPTIONS *opt);

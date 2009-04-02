@@ -21,7 +21,7 @@ SSH_0.3 {
     channel_send_eof; channel_read; channel_poll; channel_close;
     channel_read_nonblocking; channel_is_open;
     channel_is_closed; channel_is_eof; channel_select;
-    ssh_options_new; ssh_options_copy; ssh_options_set_wanted_algos;
+    ssh_options_new; ssh_options_copy; ssh_options_free; ssh_options_set_wanted_algos;
     ssh_options_set_username; ssh_options_set_port; ssh_options_getopt;
     ssh_options_set_host; ssh_options_set_fd; ssh_options_set_bind;
     ssh_options_set_identity; ssh_options_set_status_callback;
