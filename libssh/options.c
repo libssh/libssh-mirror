@@ -95,6 +95,10 @@ SSH_OPTIONS *ssh_options_copy(SSH_OPTIONS *opt) {
   SSH_OPTIONS *new = NULL;
   int i;
 
+  if (opt == NULL) {
+    return NULL;
+  }
+
   new = ssh_options_new();
   if (new == NULL) {
     return NULL;
@@ -224,6 +228,10 @@ int ssh_options_set_host(SSH_OPTIONS *opt, const char *hostname){
   char *h;
   char *p;
 
+  if (opt == NULL || hostname == NULL) {
+    return -1;
+  }
+
   h = strdup(hostname);
   if (h == NULL) {
     return -1;
@@ -269,6 +277,10 @@ int ssh_options_set_host(SSH_OPTIONS *opt, const char *hostname){
  * @bug this should not be set at options time
  */
 int ssh_options_set_username(SSH_OPTIONS *opt, const char *username) {
+  if (opt == NULL || username == NULL) {
+    return -1;
+  }
+
   if (opt->username) {
     SAFE_FREE(opt->username);
   }
