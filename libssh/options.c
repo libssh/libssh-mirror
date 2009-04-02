@@ -548,10 +548,6 @@ static char *get_username_from_uid(SSH_OPTIONS *opt, uid_t uid){
 int ssh_options_default_username(SSH_OPTIONS *opt) {
   char *user = NULL;
 
-  if (opt == NULL) {
-    return -1;
-  }
-
   if (opt->username) {
     return 0;
   }
@@ -579,13 +575,20 @@ int ssh_options_default_username(SSH_OPTIONS *opt) {
   return -1;
 }
 
-int ssh_options_default_ssh_dir(SSH_OPTIONS *opt){
-    char buffer[256];
-    if(opt->ssh_dir)
-        return 0;
-    snprintf(buffer,256,"%s/.ssh/",ssh_get_user_home_dir());
-    opt->ssh_dir=strdup(buffer);
+int ssh_options_default_ssh_dir(SSH_OPTIONS *opt) {
+  char buffer[256] = {0};
+
+  if (opt->ssh_dir) {
     return 0;
+  }
+
+  snprintf(buffer, 256, "%s/.ssh/", ssh_get_user_home_dir());
+  opt->ssh_dir = strdup(buffer);
+  if (opt->ssh_dir == NULL) {
+    return -1;
+  }
+
+  return 0;
 }
 
 int ssh_options_default_known_hosts_file(SSH_OPTIONS *opt){
