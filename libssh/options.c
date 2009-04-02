@@ -611,17 +611,34 @@ int ssh_options_default_known_hosts_file(SSH_OPTIONS *opt) {
   return 0;
 }
 
-/** During ssh_connect(), libssh will call the callback with status from
+/**
+ * @brief Set a callback to show connection status in realtime.
+ *
+ * During ssh_connect(), libssh will call the callback with status from
  * 0.0 to 1.0
- * \brief set a callback to show connection status in realtime
- * \param opt options structure
- * \param callback a function pointer to a callback in form f(void *userarg, float status)
- * \param arg value to be given as argument to the callback function when it is called
- * \see ssh_connect()
+ *
+ * @param opt           The options structure to use.
+ *
+ * @param callback      A function pointer to a callback in form
+ *                      f(void *userarg, float status).
+ *
+ * @param arg           The value to be given as argument to the callback
+ *                      function when it is called.
+ *
+ * @return 0 on success, < 0 on error.
+ *
+ * @see ssh_connect()
  */
-void ssh_options_set_status_callback(SSH_OPTIONS *opt, void (*callback)(void *arg, float status), void *arg ){
-    opt->connect_status_function=callback;
-    opt->connect_status_arg=arg;
+int ssh_options_set_status_callback(SSH_OPTIONS *opt,
+    void (*callback)(void *arg, float status), void *arg) {
+  if (opt == NULL || callback == NULL) {
+    return -1;
+  }
+
+  opt->connect_status_function = callback;
+  opt->connect_status_arg = arg;
+
+  return 0;
 }
 
 /** \bug currently it only timeouts the socket connection, not the
