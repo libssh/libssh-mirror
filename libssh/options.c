@@ -249,9 +249,7 @@ int ssh_options_set_host(SSH_OPTIONS *opt, const char *hostname){
   }
   p = strchr(h, '@');
 
-  if (opt->host) {
-    SAFE_FREE(opt->host);
-  }
+  SAFE_FREE(opt->host);
 
   if (p) {
     *p = '\0';
@@ -261,9 +259,7 @@ int ssh_options_set_host(SSH_OPTIONS *opt, const char *hostname){
       return -1;
     }
 
-    if (opt->username) {
-      SAFE_FREE(opt->username);
-    }
+    SAFE_FREE(opt->username);
     opt->username = strdup(h);
     SAFE_FREE(h);
     if (opt->username == NULL) {
@@ -292,10 +288,7 @@ int ssh_options_set_username(SSH_OPTIONS *opt, const char *username) {
     return -1;
   }
 
-  if (opt->username) {
-    SAFE_FREE(opt->username);
-  }
-
+  SAFE_FREE(opt->username);
   opt->username = strdup(username);
   if (opt->username == NULL) {
     return -1;
@@ -346,6 +339,7 @@ int ssh_options_set_bind(SSH_OPTIONS *opt, const char *bindaddr, int port) {
     return -1;
   }
 
+  SAFE_FREE(opt->bindaddr);
   opt->bindaddr = strdup(bindaddr);
   if (opt->bindaddr == NULL) {
     return -1;
@@ -378,6 +372,7 @@ int ssh_options_set_ssh_dir(SSH_OPTIONS *opt, const char *dir) {
   }
 
   snprintf(buffer, 1024, dir, ssh_get_user_home_dir());
+  SAFE_FREE(opt->ssh_dir);
   opt->ssh_dir = strdup(buffer);
   if (opt->ssh_dir == NULL) {
     return -1;
