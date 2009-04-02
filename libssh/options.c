@@ -176,7 +176,7 @@ err:
   return NULL;
 }
 
-/** @internal
+/**
  * @brief Frees an option structure.
  *
  * @param opt           Option structure to free.
