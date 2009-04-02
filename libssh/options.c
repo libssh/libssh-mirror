@@ -691,16 +691,29 @@ int ssh_options_allow_ssh1(SSH_OPTIONS *opt, int allow) {
   return 0;
 }
 
-/** Default value is 1 (allow connection to SSH2 servers)
- * \brief allow or deny the connection to SSH2 servers
- * \param opt options structure
- * \param allow nonzero values allow ssh2
+/**
+ * @brief Allow or deny the connection to SSH2 servers.
+ *
+ * Default value is 1 (allow connection to SSH2 servers).
+ *
+ * @param opt           The options structure to use.
+ *
+ * @param allow         Non zero values allow ssh2.
+ *
+ * @return 0 on success, < 0 on error.
  */
-void ssh_options_allow_ssh2(SSH_OPTIONS *opt, int allow){
-    if(allow)
-        opt->ssh2allowed=1;
-    else
-        opt->ssh2allowed=0;
+int ssh_options_allow_ssh2(SSH_OPTIONS *opt, int allow) {
+  if (opt == NULL) {
+    return -1;
+  }
+
+  if (allow) {
+    opt->ssh2allowed = 1;
+  } else {
+    opt->ssh2allowed = 0;
+  }
+
+  return 0;
 }
 
 /** Default is a write on stderr
