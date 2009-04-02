@@ -42,9 +42,6 @@
 struct string_struct *string_new(size_t size) {
   struct string_struct *str = NULL;
 
-  if (size == 0) {
-    return NULL;
-  }
   str = malloc(size + 4);
   if (str == NULL) {
     return NULL;
