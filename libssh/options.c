@@ -591,14 +591,24 @@ int ssh_options_default_ssh_dir(SSH_OPTIONS *opt) {
   return 0;
 }
 
-int ssh_options_default_known_hosts_file(SSH_OPTIONS *opt){
-    char buffer[1024];
-    if(opt->known_hosts_file)
-        return 0;
-    ssh_options_default_ssh_dir(opt);
-    snprintf(buffer,1024,"%s/known_hosts",opt->ssh_dir);
-    opt->known_hosts_file=strdup(buffer);
+int ssh_options_default_known_hosts_file(SSH_OPTIONS *opt) {
+  char buffer[1024] = {0};
+
+  if (opt->known_hosts_file) {
     return 0;
+  }
+
+  if (ssh_options_default_ssh_dir(opt) < 0) {
+    return -1;
+  }
+
+  snprintf(buffer, 1024, "%s/known_hosts", opt->ssh_dir);
+  opt->known_hosts_file = strdup(buffer);
+  if (opt->known_hosts_file == NULL) {
+    return -1;
+  }
+
+  return 0;
 }
 
 /** During ssh_connect(), libssh will call the callback with status from
