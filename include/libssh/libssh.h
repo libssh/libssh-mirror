@@ -328,16 +328,7 @@ int ssh_options_set_log_function(SSH_OPTIONS *opt,
 int ssh_options_set_log_verbosity(SSH_OPTIONS *opt, int verbosity);
 void ssh_options_set_dsa_server_key(SSH_OPTIONS *opt, const char *dsakey);
 void ssh_options_set_rsa_server_key(SSH_OPTIONS *opt, const char *rsakey);
-
-/**
- * @brief Set the authentication callback.
- *
- * @param opt           The options structure to use.
- * @param cb            The callback function to use.
- * @param userdata      A pointer to some user data you can pass to the
- *                      callback.
- */
-void ssh_options_set_auth_callback(SSH_OPTIONS *opt, ssh_auth_callback cb,
+int ssh_options_set_auth_callback(SSH_OPTIONS *opt, ssh_auth_callback cb,
     void *userdata);
 
 

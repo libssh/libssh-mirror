@@ -800,7 +800,7 @@ int ssh_options_getopt(SSH_OPTIONS *options, int *argcptr, char **argv){
     int ssh1=0;
 #endif
     int ssh2=1;
-    
+
     int saveoptind=optind; /* need to save 'em */
     int saveopterr=opterr;
 
@@ -914,14 +914,28 @@ int ssh_options_getopt(SSH_OPTIONS *options, int *argcptr, char **argv){
         return 0 ;   
 }
 
-void ssh_options_set_auth_callback(SSH_OPTIONS *opt, ssh_auth_callback cb,
+/**
+ * @brief Set the authentication callback.
+ *
+ * @param opt           The options structure to use.
+ *
+ * @param cb            The callback function to use.
+ *
+ * @param userdata      A pointer to some user data you can pass to the
+ *                      callback.
+ *
+ * @return 0 on success, < 0 on error.
+ */
+int ssh_options_set_auth_callback(SSH_OPTIONS *opt, ssh_auth_callback cb,
     void *userdata) {
-  if (opt == NULL) {
-    return;
+  if (opt == NULL || cb == NULL) {
+    return -1;
   }
 
   opt->auth_function = cb;
   opt->auth_userdata = userdata;
+
+  return 0;
 }
 
 /** @} */
