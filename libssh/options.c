@@ -545,34 +545,38 @@ static char *get_username_from_uid(SSH_OPTIONS *opt, uid_t uid){
 #endif
 
 /* this function must be called when no specific username has been asked. it has to guess it */
-int ssh_options_default_username(SSH_OPTIONS *opt){
-    char *user = NULL;
+int ssh_options_default_username(SSH_OPTIONS *opt) {
+  char *user = NULL;
 
-    if (opt->username) {
-        return 0;
-    }
+  if (opt == NULL) {
+    return -1;
+  }
+
+  if (opt->username) {
+    return 0;
+  }
 
 #ifndef _WIN32
-    user=get_username_from_uid(opt,getuid());
-    if(user){
-        opt->username=user;
-        return 0;
-    }
+  user = get_username_from_uid(opt,getuid());
+  if (user) {
+    opt->username = user;
+    return 0;
+  }
 #else
-    DWORD Size = 0;
-    GetUserName(NULL, &Size); //Get Size
-    user = malloc(Size);
-    if (user == NULL) {
-      return -1;
-    }
-    if (GetUserName(user, &Size)){
-    	opt->username=user;
-    	return 0;
-    } else {
-    	free(user);
-    }
-#endif
+  DWORD Size = 0;
+  GetUserName(NULL, &Size); //Get Size
+  user = malloc(Size);
+  if (user == NULL) {
     return -1;
+  }
+  if (GetUserName(user, &Size)) {
+    opt->username=user;
+    return 0;
+  } else {
+    SAFE_FREE(user);
+  }
+#endif
+  return -1;
 }
 
 int ssh_options_default_ssh_dir(SSH_OPTIONS *opt){
