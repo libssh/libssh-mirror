@@ -496,6 +496,7 @@ void generate_session_keys(SSH_SESSION *session){
     if(session->next_crypto->out_cipher->keysize > SHA_DIGEST_LEN*8){
         ctx=sha1_init();
         if (ctx == NULL) {
+          leave_function();
           return;
         }
         sha1_update(ctx,k_string,string_len(k_string)+4);
@@ -533,27 +534,52 @@ void generate_session_keys(SSH_SESSION *session){
 
 /** \addtogroup ssh_session
  * @{ */
-/** \brief get the md5 hash of the server public key
- * \param session ssh session
- * \param hash destination for the md5 hash
- * \return size of the hash in bytes
- * \warning it is very important that you verify at some moment that the hash matches
- * a known server. If you don't do it, cryptography won't help you at making things secure
- * \see ssh_is_server_known()
+/**
+ * @brief Allocates a buffer with the MD5 hash of the server public key.
+ *
+ * @param  session      The SSH session to use.
+ *
+ * @param  hash         The buffer to allocate.
+ *
+ * @return The bytes allocated or < 0 on error.
+ *
+ * @warning It is very important that you verify at some moment that the hash
+ *          matches a known server. If you don't do it, cryptography wont help
+ *          you at making things secure
+ *
+ * @see ssh_is_server_known()
+ * @see ssh_get_hexa()
+ * @see ssh_print_hexa()
  */
-int ssh_get_pubkey_hash(SSH_SESSION *session,unsigned char hash[MD5_DIGEST_LEN]){
-    STRING *pubkey=session->current_crypto->server_pubkey;
-    MD5CTX ctx;
-    int len=string_len(pubkey);
+int ssh_get_pubkey_hash(SSH_SESSION *session, unsigned char **hash) {
+  STRING *pubkey;
+  MD5CTX ctx;
+  unsigned char *h;
 
-    ctx=md5_init();
-    if (ctx == NULL) {
-      return 0;
-    }
+  if (session == NULL || hash == NULL) {
+    return -1;
+  }
 
-    md5_update(ctx,pubkey->string,len);
-    md5_final(hash,ctx);
-    return MD5_DIGEST_LEN;
+  *hash = NULL;
+
+  h = malloc(sizeof(unsigned char *) * MD5_DIGEST_LEN);
+  if (h == NULL) {
+    return -1;
+  }
+
+  ctx = md5_init();
+  if (ctx == NULL) {
+    return -1;
+  }
+
+  pubkey = session->current_crypto->server_pubkey;
+
+  md5_update(ctx, pubkey->string, string_len(pubkey));
+  md5_final(h, ctx);
+
+  *hash = h;
+
+  return MD5_DIGEST_LEN;
 }
 
 STRING *ssh_get_pubkey(SSH_SESSION *session){

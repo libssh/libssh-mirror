@@ -406,7 +406,8 @@ int main(int argc, char **argv){
     char *hexa;
     int state;
     char buf[10];
-    unsigned char hash[MD5_DIGEST_LEN];
+    unsigned char *hash = NULL;
+    int hlen;
 
     options=ssh_options_new();
     if(ssh_options_getopt(options,&argc, argv)){
@@ -427,13 +428,20 @@ int main(int argc, char **argv){
         return 1;
     }
     state=ssh_is_server_known(session);
+
+    hlen = ssh_get_pubkey_hash(session, &hash);
+    if (hlen < 0) {
+      ssh_disconnect(session);
+      ssh_finalize();
+      return 1;
+    }
     switch(state){
         case SSH_SERVER_KNOWN_OK:
             break; /* ok */
         case SSH_SERVER_KNOWN_CHANGED:
             fprintf(stderr,"Host key for server changed : server's one is now :\n");
-            ssh_get_pubkey_hash(session,hash);
-            ssh_print_hexa("Public key hash",hash,MD5_DIGEST_LEN);
+            ssh_print_hexa("Public key hash",hash, hlen);
+            free(hash);
             fprintf(stderr,"For security reason, connection will be stopped\n");
             ssh_disconnect(session);
 	        ssh_finalize();
@@ -447,8 +455,8 @@ int main(int argc, char **argv){
 		    ssh_finalize();
             exit(-1);
         case SSH_SERVER_NOT_KNOWN:
-            ssh_get_pubkey_hash(session, hash);
-            hexa = ssh_get_hexa(hash, MD5_DIGEST_LEN);
+            hexa = ssh_get_hexa(hash, hlen);
+            free(hash);
             fprintf(stderr,"The server is unknown. Do you trust the host key ?\n");
             fprintf(stderr, "Public key hash: %s\n", hexa);
             free(hexa);

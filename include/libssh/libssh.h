@@ -237,7 +237,7 @@ void ssh_print_hexa(const char *descr, const unsigned char *what, size_t len);
 int ssh_get_random(void *where,int len,int strong);
 
 /* this one can be called by the client to see the hash of the public key before accepting it */
-int ssh_get_pubkey_hash(SSH_SESSION *session,unsigned char hash[MD5_DIGEST_LEN]);
+int ssh_get_pubkey_hash(SSH_SESSION *session, unsigned char **hash);
 STRING *ssh_get_pubkey(SSH_SESSION *session);
 
 /* in connect.c */
