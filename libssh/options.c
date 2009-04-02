@@ -79,83 +79,136 @@ void ssh_options_set_port(SSH_OPTIONS *opt, unsigned int port){
     opt->bindport=port&0xffff;
 }
 
-/** you may need to duplication an option structure if you make several
- * sessions with the same options.\n
- * You cannot use twice the same option structure in ssh_session_connect.
- * \brief copies an option structure
- * \param opt option structure to copy
- * \returns new copied option structure
- * \see ssh_session_connect()
+/**
+ * @brief Duplicate an option structure.
+ *
+ * If you make several sessions with the same options this is useful. You
+ * cannot use twice the same option structure in ssh_session_connect.
+ *
+ * @param opt           Option structure to copy.
+ *
+ * @returns New copied option structure, NULL on error.
+ *
+ * @see ssh_session_connect()
  */
-SSH_OPTIONS *ssh_options_copy(SSH_OPTIONS *opt){
-    SSH_OPTIONS *ret;
-    int i;
+SSH_OPTIONS *ssh_options_copy(SSH_OPTIONS *opt) {
+  SSH_OPTIONS *new = NULL;
+  int i;
 
-    ret = ssh_options_new();
-    if (ret == NULL) {
+  new = ssh_options_new();
+  if (new == NULL) {
+    return NULL;
+  }
+
+  if (opt->username) {
+    new->username = strdup(opt->username);
+    if (new->username == NULL) {
+      goto err;
+    }
+  }
+  if (opt->host) {
+    new->host = strdup(opt->host);
+    if (new->host == NULL) {
+      goto err;
+    }
+  }
+  if (opt->bindaddr) {
+    new->host = strdup(opt->bindaddr);
+    if (new->host == NULL) {
+      goto err;
+    }
+  }
+  if (opt->identity) {
+    new->identity=strdup(opt->identity);
+    if (new->identity == NULL) {
       return NULL;
     }
+  }
+  if (opt->ssh_dir) {
+    new->ssh_dir = strdup(opt->ssh_dir);
+    if (new->ssh_dir == NULL) {
+      goto err;
+    }
+  }
+  if (opt->known_hosts_file) {
+    new->known_hosts_file = strdup(opt->known_hosts_file);
+    if (new->known_hosts_file == NULL) {
+      goto err;
+    }
+  }
+  if (opt->dsakey) {
+    new->dsakey = strdup(opt->dsakey);
+    if (new->dsakey == NULL) {
+      goto err;
+    }
+  }
+  if (opt->rsakey) {
+    new->rsakey = strdup(opt->rsakey);
+    if (new->rsakey == NULL) {
+      goto err;
+    }
+  }
+  for (i = 0; i < 10; ++i) {
+    if (opt->wanted_methods[i]) {
+      new->wanted_methods[i] = strdup(opt->wanted_methods[i]);
+      if (new->wanted_methods[i] == NULL) {
+        goto err;
+      }
+    }
+  }
 
-    ret->fd=opt->fd;
-    ret->port=opt->port;
-    if(opt->username)
-        ret->username=strdup(opt->username);
-    if(opt->host)
-        ret->host=strdup(opt->host);
-    if(opt->bindaddr)
-        ret->host=strdup(opt->bindaddr);
-    if(opt->identity)
-        ret->identity=strdup(opt->identity);
-    if(opt->ssh_dir)
-        ret->ssh_dir=strdup(opt->ssh_dir);
-    if(opt->known_hosts_file)
-        ret->known_hosts_file=strdup(opt->known_hosts_file);
-    if(opt->dsakey)
-        ret->dsakey=strdup(opt->dsakey);
-    if(opt->rsakey)
-        ret->rsakey=strdup(opt->rsakey);
-    for(i=0;i<10;++i)
-        if(opt->wanted_methods[i])
-            ret->wanted_methods[i]=strdup(opt->wanted_methods[i]);
-    ret->auth_function=opt->auth_function;
-    ret->auth_userdata=opt->auth_userdata;
-    ret->connect_status_function=opt->connect_status_function;
-    ret->connect_status_arg=opt->connect_status_arg;
-    ret->timeout=opt->timeout;
-    ret->timeout_usec=opt->timeout_usec;
-    ret->ssh2allowed=opt->ssh2allowed;
-    ret->ssh1allowed=opt->ssh1allowed;
-    ret->log_function=opt->log_function;
-    ret->log_verbosity=opt->log_verbosity;
-    return ret;
+  new->fd = opt->fd;
+  new->port = opt->port;
+  new->auth_function = opt->auth_function;
+  new->auth_userdata = opt->auth_userdata;
+  new->connect_status_function = opt->connect_status_function;
+  new->connect_status_arg = opt->connect_status_arg;
+  new->timeout = opt->timeout;
+  new->timeout_usec = opt->timeout_usec;
+  new->ssh2allowed = opt->ssh2allowed;
+  new->ssh1allowed = opt->ssh1allowed;
+  new->log_function = opt->log_function;
+  new->log_verbosity = opt->log_verbosity;
+
+  return new;
+err:
+  ssh_options_free(new);
+  return NULL;
 }
 
-/** \internal
- * \brief frees an option structure
- * \param opt option structure
+/** @internal
+ * @brief Frees an option structure.
+ *
+ * @param opt           Option structure to free.
  */
-void ssh_options_free(SSH_OPTIONS *opt){
-    int i;
-    if(opt->username)
-        free(opt->username);
-    if(opt->identity)
-        free(opt->identity);
-    /* we don't touch the banner. if the implementation did use it, they have to free it */
-    if(opt->host)
-        free(opt->host);
-    if(opt->bindaddr)
-        free(opt->bindaddr);
-    if(opt->ssh_dir)
-        free(opt->ssh_dir);
-    if(opt->dsakey)
-        free(opt->dsakey);
-    if(opt->rsakey)
-        free(opt->rsakey);
-    for(i=0;i<10;i++)
-        if(opt->wanted_methods[i])
-            free(opt->wanted_methods[i]);
-    memset(opt,0,sizeof(SSH_OPTIONS));
-    free(opt);
+void ssh_options_free(SSH_OPTIONS *opt) {
+  int i;
+
+  if (opt == NULL) {
+    return;
+  }
+
+  /*
+   * We don't touch the banner. If the implementation
+   * did use it, they have to free it
+   */
+
+  SAFE_FREE(opt->username);
+  SAFE_FREE(opt->host);
+  SAFE_FREE(opt->identity);
+  SAFE_FREE(opt->bindaddr);
+  SAFE_FREE(opt->ssh_dir);
+  SAFE_FREE(opt->known_hosts_file);
+  SAFE_FREE(opt->dsakey);
+  SAFE_FREE(opt->rsakey);
+
+  for (i = 0; i < 10; i++) {
+    if (opt->wanted_methods[i]) {
+      free(opt->wanted_methods[i]);
+    }
+  }
+  ZERO_STRUCTP(opt);
+  SAFE_FREE(opt);
 }
 
 /** \brief set destination hostname
