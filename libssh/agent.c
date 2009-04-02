@@ -93,7 +93,6 @@ static size_t atomicio(struct socket *s, void *buf, size_t n, int do_read) {
     }
     switch (res) {
       case -1:
-        /* TODO: set error */
         if (errno == EINTR) {
           continue;
         }
@@ -183,7 +182,6 @@ static int agent_decode_reply(struct ssh_session *session, int type) {
     default:
       ssh_set_error(session, SSH_FATAL,
           "Bad response from authentication agent: %d", type);
-      /* TODO: fatal */
       break;
   }
 
@@ -338,8 +336,7 @@ struct public_key_struct *agent_get_next_ident(struct ssh_session *session,
 
   switch(session->version) {
     case 1:
-      /* TODO */
-      break;
+      return NULL;
     case 2:
       /* get the blob */
       blob = buffer_get_ssh_string(session->agent->ident);
