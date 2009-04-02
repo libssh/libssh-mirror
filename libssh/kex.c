@@ -293,8 +293,13 @@ int set_kex(SSH_SESSION *session){
             leave_function();
             return -1;
         } else {
-            if(i>=SSH_LANG_C_S && !client->methods[i])
-                client->methods[i]=strdup(""); // we can safely do that for languages
+          if ((i >= SSH_LANG_C_S) && (client->methods[i] == NULL)) {
+            /* we can safely do that for languages */
+            client->methods[i] = strdup("");
+            if (client->methods[i] == NULL) {
+              return -1;
+            }
+          }
         }
     }
     leave_function();
