@@ -666,16 +666,29 @@ int ssh_options_set_timeout(SSH_OPTIONS *opt, long seconds, long usec) {
   return 0;
 }
 
-/** Default value is 0 (no connection to SSH1 servers) 
- * \brief allow or deny the connection to SSH1 servers
- * \param opt options structure
- * \param allow nonzero values allow ssh1
+/**
+ * @brief Allow or deny the connection to SSH1 servers.
+ *
+ * Default value is 0 (no connection to SSH1 servers).
+ *
+ * @param opt           The options structure to use.
+ *
+ * @param allow         Non zero value allow ssh1.
+ *
+ * @return 0 on success, < 0 on error.
  */
-void ssh_options_allow_ssh1(SSH_OPTIONS *opt, int allow){
-    if(allow)
-        opt->ssh1allowed=1;
-    else
-        opt->ssh1allowed=0;
+int ssh_options_allow_ssh1(SSH_OPTIONS *opt, int allow) {
+  if (opt == NULL) {
+    return -1;
+  }
+
+  if (allow) {
+    opt->ssh1allowed = 1;
+  } else {
+    opt->ssh1allowed = 0;
+  }
+
+  return 0;
 }
 
 /** Default value is 1 (allow connection to SSH2 servers)

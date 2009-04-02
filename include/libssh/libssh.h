@@ -321,7 +321,7 @@ int ssh_options_set_banner(SSH_OPTIONS *opt, const char *banner);
 int ssh_options_set_status_callback(SSH_OPTIONS *opt, void (*callback)
         (void *arg, float status), void *arg);
 int ssh_options_set_timeout(SSH_OPTIONS *opt, long seconds, long usec);
-void ssh_options_allow_ssh1(SSH_OPTIONS *opt, int allow);
+int ssh_options_allow_ssh1(SSH_OPTIONS *opt, int allow);
 void ssh_options_allow_ssh2(SSH_OPTIONS *opt, int allow);
 void ssh_options_set_dsa_server_key(SSH_OPTIONS *opt, const char *dsakey);
 void ssh_options_set_rsa_server_key(SSH_OPTIONS *opt, const char *rsakey);
