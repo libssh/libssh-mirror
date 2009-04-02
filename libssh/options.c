@@ -326,18 +326,33 @@ int ssh_options_set_fd(SSH_OPTIONS *opt, socket_t fd) {
   return 0;
 }
 
-/** In case your client has multiple IP adresses, select the local address
- * and port to use for the socket.\n
- * If the address or port is not bindable, it may be impossible to
- * connect.
- * \brief set the local address and port binding
- * \param opt options structure
- * \param bindaddr bind address in form of hostname or ip address
- * \param port port number to bind
+/**
+ * @brief Set the local address and port binding.
+ *
+ * In case your client has multiple IP adresses, select the local address and
+ * port to use for the socket.\n
+ * If the address or port is not bindable, it may be impossible to connect.
+ *
+ * @param opt           The options structure to use.
+ *
+ * @param bindaddr      The bind address in form of hostname or ip address.
+ *
+ * @param port          The port number to bind.
+ *
+ * @return 0 on success, < 0 on error.
  */
-void ssh_options_set_bind(SSH_OPTIONS *opt, const char *bindaddr, int port){
-    opt->bindaddr=strdup(bindaddr);
-    opt->bindport=port;
+int ssh_options_set_bind(SSH_OPTIONS *opt, const char *bindaddr, int port) {
+  if (opt == NULL || bindaddr == NULL) {
+    return -1;
+  }
+
+  opt->bindaddr = strdup(bindaddr);
+  if (opt->bindaddr == NULL) {
+    return -1;
+  }
+  opt->bindport = port;
+
+  return 0;
 }
 
 /** the ssh directory is used for files like known_hosts and
