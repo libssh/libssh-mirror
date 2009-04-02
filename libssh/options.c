@@ -716,15 +716,28 @@ int ssh_options_allow_ssh2(SSH_OPTIONS *opt, int allow) {
   return 0;
 }
 
-/** Default is a write on stderr
- * \brief Change the writer callback for logging
- * \param opt options structure
- * \param callback a callback function for the printing
- * \warning the message string may contain format string characters.
+/**
+ * @brief Change the writer callback for logging.
+ *
+ * Default is a write on stderr.
+ *
+ * @param opt           The options structure to use.
+ *
+ * @param callback      A callback function for the printing.
+ *
+ * @return 0 on success, < 0 on error.
+ *
+ * @warning The message string may contain format string characters.
  */
-void ssh_options_set_log_function(SSH_OPTIONS *opt, 
-		void (*callback)(const char *message, SSH_SESSION *session, int priority )){
-	opt->log_function=callback;
+int ssh_options_set_log_function(SSH_OPTIONS *opt,
+    void (*callback)(const char *message, SSH_SESSION *session, int priority)) {
+  if (opt == NULL || callback == NULL) {
+    return -1;
+  }
+
+  opt->log_function = callback;
+
+  return 0;
 }
 
 /** \brief set this session's logging priority
