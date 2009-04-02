@@ -57,7 +57,7 @@ echo "Usage: `basename $0` [--prefix /install_prefix|--build [debug|final]|--cle
 
 cd ${BUILDDIR}
 
-OPTIONS="--graphviz=${BUILDDIR}/libssh.dot -DUNIT_TESTING=ON -DWITH_STATIC_LIB=ON"
+OPTIONS="--graphviz=${BUILDDIR}/libssh.dot -DUNIT_TESTING=ON"
 
 while test -n "$1"; do
 	PARAM="$1"

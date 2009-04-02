@@ -385,11 +385,15 @@ static int auth_kbdint(SSH_SESSION *session){
                 buffer[sizeof(buffer)-1]=0;
                 if((ptr=strchr(buffer,'\n')))
                     *ptr=0;
-                ssh_userauth_kbdint_setanswer(session,i,buffer);
+                if (ssh_userauth_kbdint_setanswer(session,i,buffer) < 0) {
+                  return SSH_AUTH_ERROR;
+                }
                 memset(buffer,0,strlen(buffer));
             } else {
                 ptr=getpass(prompt);
-                ssh_userauth_kbdint_setanswer(session,i,ptr);
+                if (ssh_userauth_kbdint_setanswer(session,i,ptr) < 0) {
+                  return SSH_AUTH_ERROR;
+                }
             }
         }
         err=ssh_userauth_kbdint(session,NULL,NULL);

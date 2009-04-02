@@ -371,7 +371,8 @@ int ssh_userauth_kbdint_getnprompts(SSH_SESSION *session);
 char *ssh_userauth_kbdint_getname(SSH_SESSION *session);
 char *ssh_userauth_kbdint_getinstruction(SSH_SESSION *session);
 char *ssh_userauth_kbdint_getprompt(SSH_SESSION *session, unsigned int i, char *echo);
-void ssh_userauth_kbdint_setanswer(SSH_SESSION *session, unsigned int i, const char *answer);
+int ssh_userauth_kbdint_setanswer(SSH_SESSION *session, unsigned int i,
+    const char *answer);
 
 
 /* init.c */

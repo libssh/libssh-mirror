@@ -1017,23 +1017,33 @@ char *ssh_userauth_kbdint_getprompt(SSH_SESSION *session, unsigned int i,
  * \param session ssh session
  * \param i index number of the ith prompt
  * \param answer answer to give to server
+ * \return 0 on success, < 0 on error.
  */
+int ssh_userauth_kbdint_setanswer(SSH_SESSION *session, unsigned int i,
+    const char *answer) {
+  if (i > session->kbdint->nprompts) {
+    return -1;
+  }
 
-void ssh_userauth_kbdint_setanswer(SSH_SESSION *session, unsigned int i, const char *answer){
-    if (i>session->kbdint->nprompts)
-        return;
+  if (session->kbdint->answers == NULL) {
+    session->kbdint->answers = malloc(sizeof(char*) * session->kbdint->nprompts);
     if (session->kbdint->answers == NULL) {
-      session->kbdint->answers = malloc(sizeof(char*) * session->kbdint->nprompts);
-      if (session->kbdint->answers == NULL) {
-        return;
-      }
-      memset(session->kbdint->answers, 0, sizeof(char *) * session->kbdint->nprompts);
+      return -1;
     }
-    if(session->kbdint->answers[i]){
-        burn(session->kbdint->answers[i]);
-        free(session->kbdint->answers[i]);
-    }
-    session->kbdint->answers[i]=strdup(answer);
+    memset(session->kbdint->answers, 0, sizeof(char *) * session->kbdint->nprompts);
+  }
+
+  if (session->kbdint->answers[i]) {
+    burn(session->kbdint->answers[i]);
+    SAFE_FREE(session->kbdint->answers[i]);
+  }
+
+  session->kbdint->answers[i] = strdup(answer);
+  if (session->kbdint->answers[i] == NULL) {
+    return -1;
+  }
+
+  return 0;
 }
 
 /** @} */
