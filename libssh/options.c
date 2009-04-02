@@ -412,17 +412,35 @@ int ssh_options_set_known_hosts_file(SSH_OPTIONS *opt, const char *dir){
   return 0;
 }
 
-/** the identity file is used authenticate with public key.
- * \brief set the identity file name
- * \param opt options structure
- * \param identity path to the file including its name. "%s" will be substitued
- * with the user home directory
- * \see ssh_options_set_user_home_dir()
+/**
+ * @brief Set the identity file name.
+ *
+ * The identity file is used authenticate with public key.
+ *
+ * @param opt           The options structure to use.
+ *
+ * @param identity      The path to the file including its name. "%s" will be
+ *                      substitued with the user home directory.
+ *
+ * @return 0 on success, < 0 on error.
+ *
+ * @see ssh_options_set_user_home_dir()
  */
-void ssh_options_set_identity(SSH_OPTIONS *opt, const char *identity){
-    char buffer[1024];
-    snprintf(buffer,1024,identity,ssh_get_user_home_dir());
-    opt->identity=strdup(buffer);
+int ssh_options_set_identity(SSH_OPTIONS *opt, const char *identity){
+  char buffer[1024] = {0};
+
+  if (opt == NULL || identity == NULL) {
+    return -1;
+  }
+
+  snprintf(buffer, 1024, identity, ssh_get_user_home_dir());
+  SAFE_FREE(opt->identity);
+  opt->identity = strdup(buffer);
+  if (opt->identity == NULL) {
+    return -1;
+  }
+
+  return 0;
 }
 
 /** \warning I don't remember what these functions are supposed
