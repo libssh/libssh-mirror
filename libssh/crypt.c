@@ -42,7 +42,7 @@ u32 packet_decrypt_len(SSH_SESSION *session, char *crypted){
     if (session->current_crypto) {
       if (packet_decrypt(session, crypted,
             session->current_crypto->in_cipher->blocksize) < 0) {
-        return ntohl(0);
+        return 0;
       }
     }
     memcpy(&decrypted,crypted,sizeof(decrypted));
