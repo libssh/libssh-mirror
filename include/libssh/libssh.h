@@ -312,7 +312,7 @@ int ssh_options_set_username(SSH_OPTIONS *opt, const char *username);
 int ssh_options_set_port(SSH_OPTIONS *opt, unsigned int port);
 int ssh_options_getopt(SSH_OPTIONS *options, int *argcptr, char **argv);
 int ssh_options_set_host(SSH_OPTIONS *opt, const char *host);
-void ssh_options_set_fd(SSH_OPTIONS *opt, socket_t fd);
+int ssh_options_set_fd(SSH_OPTIONS *opt, socket_t fd);
 void ssh_options_set_bind(SSH_OPTIONS *opt, const char *bindaddr, int port);
 void ssh_options_set_identity(SSH_OPTIONS *opt, const char *identity);
 void ssh_options_set_status_callback(SSH_OPTIONS *opt, void (*callback)

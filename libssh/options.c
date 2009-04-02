@@ -304,16 +304,26 @@ int ssh_options_set_username(SSH_OPTIONS *opt, const char *username) {
   return 0;
 }
 
-/** If you wish to open the socket yourself for a reason
- * or another, set the file descriptor.\n
- * don't forget to use ssh_option_set_hostname() as the hostname
- * is used as a key in the known_host mechanism
- * \brief set a file descriptor for connection
- * \param opt options structure
- * \param fd an opened file descriptor to use
+/**
+ * @brief Set a file descriptor for connection.
+ *
+ * If you wish to open the socket yourself for a reason or another, set the
+ * file descriptor. Don't forget to use ssh_option_set_hostname() as the
+ * hostname is used as a key in the known_host mechanism.
+ *
+ * @param opt           The options structure to use.
+ *
+ * @param fd            An opened file descriptor to use.
+ *
+ * @return 0 on success, < 0 on error.
  */
-void ssh_options_set_fd(SSH_OPTIONS *opt, socket_t fd){
-    opt->fd=fd;
+int ssh_options_set_fd(SSH_OPTIONS *opt, socket_t fd) {
+  if (opt == NULL) {
+    return -1;
+  }
+  opt->fd = fd;
+
+  return 0;
 }
 
 /** In case your client has multiple IP adresses, select the local address
