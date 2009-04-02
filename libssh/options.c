@@ -386,17 +386,35 @@ int ssh_options_set_ssh_dir(SSH_OPTIONS *opt, const char *dir) {
   return 0;
 }
 
-/** the known hosts file is used to certify remote hosts are genuine.
- * \brief set the known hosts file name
- * \param opt options structure
- * \param dir path to the file including its name. "%s" will be substitued
- * with the user home directory
- * \see ssh_options_set_user_home_dir()
+/**
+ * @brief Set the known hosts file name.
+ *
+ * The known hosts file is used to certify remote hosts are genuine.
+ *
+ * @param opt           The options structure to use.
+ *
+ * @param dir           The path to the file including its name. "%s" will be
+ *                      substitued with the user home directory.
+ *
+ * @return 0 on success, < 0 on error.
+ *
+ * @see ssh_options_set_user_home_dir()
  */
-void ssh_options_set_known_hosts_file(SSH_OPTIONS *opt, const char *dir){
-    char buffer[1024];
-    snprintf(buffer,1024,dir,ssh_get_user_home_dir());
-    opt->known_hosts_file=strdup(buffer);
+int ssh_options_set_known_hosts_file(SSH_OPTIONS *opt, const char *dir){
+  char buffer[1024] = {0};
+
+  if (opt == NULL || dir == NULL) {
+    return -1;
+  }
+
+  snprintf(buffer, 1024, dir, ssh_get_user_home_dir());
+  SAFE_FREE(opt->known_hosts_file);
+  opt->known_hosts_file = strdup(buffer);
+  if (opt->known_hosts_file == NULL) {
+    return -1;
+  }
+
+  return 0;
 }
 
 /** the identity file is used authenticate with public key.

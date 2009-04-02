@@ -319,7 +319,7 @@ void ssh_options_set_status_callback(SSH_OPTIONS *opt, void (*callback)
         (void *arg, float status), void *arg);
 void ssh_options_set_timeout(SSH_OPTIONS *opt, long seconds, long usec);
 int ssh_options_set_ssh_dir(SSH_OPTIONS *opt, const char *dir);
-void ssh_options_set_known_hosts_file(SSH_OPTIONS *opt, const char *dir);
+int ssh_options_set_known_hosts_file(SSH_OPTIONS *opt, const char *dir);
 void ssh_options_allow_ssh1(SSH_OPTIONS *opt, int allow);
 void ssh_options_allow_ssh2(SSH_OPTIONS *opt, int allow);
 void ssh_options_set_dsa_server_key(SSH_OPTIONS *opt, const char *dsakey);
