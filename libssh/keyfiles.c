@@ -886,8 +886,6 @@ static char **ssh_get_knownhost_line(SSH_SESSION *session,FILE **file, char *fil
                continue;
            }
         }
-        fclose(*file);
-        *file = NULL;
         leave_function();
         return tokens;
     }
