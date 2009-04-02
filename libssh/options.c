@@ -656,7 +656,7 @@ int ssh_options_set_status_callback(SSH_OPTIONS *opt,
  *      complete exchange.
  */
 int ssh_options_set_timeout(SSH_OPTIONS *opt, long seconds, long usec) {
-  if (opts == NULL) {
+  if (opt == NULL) {
     return -1;
   }
 
