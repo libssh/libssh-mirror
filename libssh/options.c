@@ -456,14 +456,27 @@ void ssh_options_set_rsa_server_key(SSH_OPTIONS *opt, const char *rsakey){
     opt->rsakey=strdup(rsakey);
 }
 
-/** \brief set the server banner sent to clients
- * \param opt options structure
- * \param banner a text banner to be shown
+/**
+ * @brief Set the server banner sent to clients.
+ *
+ * @param opt           The options structure to use.
+ *
+ * @param banner        A text banner to be shown.
+ *
+ * @return 0 on success, < 0 on error.
  */
-void ssh_options_set_banner(SSH_OPTIONS *opt, const char *banner){
-    if(opt->banner)
-        free(opt->banner);
-    opt->banner=strdup(banner);
+int ssh_options_set_banner(SSH_OPTIONS *opt, const char *banner) {
+  if (opt == NULL || banner == NULL) {
+    return -1;
+  }
+
+  SAFE_FREE(opt->banner);
+  opt->banner = strdup(banner);
+  if (opt->banner == NULL) {
+    return -1;
+  }
+
+  return 0;
 }
 
 /** the methods are:\n

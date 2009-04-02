@@ -320,11 +320,11 @@ void ssh_options_set_timeout(SSH_OPTIONS *opt, long seconds, long usec);
 int ssh_options_set_ssh_dir(SSH_OPTIONS *opt, const char *dir);
 int ssh_options_set_known_hosts_file(SSH_OPTIONS *opt, const char *dir);
 int ssh_options_set_identity(SSH_OPTIONS *opt, const char *identity);
+int ssh_options_set_banner(SSH_OPTIONS *opt, const char *banner);
 void ssh_options_allow_ssh1(SSH_OPTIONS *opt, int allow);
 void ssh_options_allow_ssh2(SSH_OPTIONS *opt, int allow);
 void ssh_options_set_dsa_server_key(SSH_OPTIONS *opt, const char *dsakey);
 void ssh_options_set_rsa_server_key(SSH_OPTIONS *opt, const char *rsakey);
-void ssh_options_set_banner(SSH_OPTIONS *opt, const char *banner);
 void ssh_options_set_log_function(SSH_OPTIONS *opt,
     void (*callback)(const char *message, SSH_SESSION *session, int verbosity ));
 void ssh_options_set_log_verbosity(SSH_OPTIONS *opt, int verbosity);
