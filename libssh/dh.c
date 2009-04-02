@@ -591,6 +591,9 @@ static int match(char *group,char *object){
     char *ptr,*saved;
     char *end;
     ptr=strdup(group);
+    if (ptr == NULL) {
+      return -1;
+    }
     saved=ptr;
     while(1){
         end=strchr(ptr,',');
