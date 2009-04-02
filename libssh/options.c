@@ -70,13 +70,24 @@ SSH_OPTIONS *ssh_options_new(void) {
     return option;
 }
 
-/** \brief set port to connect or to bind for a connection
- * \param opt options structure
- * \param port port to connect or to bind
+/**
+ * @brief Set port to connect or to bind for a connection.
+ *
+ * @param opt           The options structure to use.
+ *
+ * @param port          The port to connect or to bind.
+ *
+ * @return 0 on success, < 0 on error.
  */
-void ssh_options_set_port(SSH_OPTIONS *opt, unsigned int port){
-    opt->port=port&0xffff;
-    opt->bindport=port&0xffff;
+int ssh_options_set_port(SSH_OPTIONS *opt, unsigned int port) {
+  if (opt == NULL) {
+    return -1;
+  }
+
+  opt->port = port & 0xffff;
+  opt->bindport = port & 0xffff;
+
+  return 0;
 }
 
 /**
