@@ -529,7 +529,12 @@ SFTP_DIR *sftp_opendir(SFTP_SESSION *sftp, const char *path){
                 }
                 memset(dir,0,sizeof(*dir));
                 dir->sftp=sftp;
-                dir->name=strdup(path);
+                dir->name = strdup(path);
+                if (dir->name == NULL) {
+                  SAFE_FREE(dir);
+                  SAFE_FREE(file);
+                  return NULL;
+                }
                 dir->handle=file->handle;
                 free(file);
             }
