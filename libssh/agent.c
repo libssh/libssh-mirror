@@ -136,6 +136,10 @@ AGENT *agent_new(struct ssh_session *session) {
 }
 
 void agent_close(struct agent_struct *agent) {
+  if (agent == NULL) {
+    return;
+  }
+
   if (getenv("SSH_AUTH_SOCK")) {
     ssh_socket_close(agent->sock);
   }
