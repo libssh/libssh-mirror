@@ -223,13 +223,20 @@ static int server_set_kex(SSH_SESSION * session) {
         memcpy(server->cookie, options->wanted_cookie, 16);
     else
         ssh_get_random(server->cookie, 16,0);
-    if(session->dsa_key && session->rsa_key){
-        ssh_options_set_wanted_algos(options,SSH_HOSTKEYS,"ssh-dss,ssh-rsa");
+    if (session->dsa_key && session->rsa_key) {
+      if (ssh_options_set_wanted_algos(options, SSH_HOSTKEYS, "ssh-dss,ssh-rsa") < 0) {
+        return -1;
+      }
     } else {
-        if(session->dsa_key)
-            ssh_options_set_wanted_algos(options,SSH_HOSTKEYS,"ssh-dss");
-        else
-            ssh_options_set_wanted_algos(options,SSH_HOSTKEYS,"ssh-rsa");
+      if (session->dsa_key) {
+        if (ssh_options_set_wanted_algos(options, SSH_HOSTKEYS, "ssh-dss") < 0) {
+          return -1;
+        }
+      } else {
+        if (ssh_options_set_wanted_algos(options, SSH_HOSTKEYS, "ssh-rsa") < 0) {
+          return -1;
+        }
+      }
     }
     server->methods = malloc(10 * sizeof(char **));
     if (server->methods == NULL) {
@@ -246,7 +253,6 @@ static int server_set_kex(SSH_SESSION * session) {
           SAFE_FREE(server->methods);
           return -1;
         }
-        //printf("server->methods[%d]=%s\n",i,wanted);
     }
     return 0;
 }
@@ -326,7 +332,9 @@ int ssh_accept(SSH_SESSION *session){
     ssh_crypto_init();
     session->alive=1;
     session->clientbanner=ssh_get_banner(session);
-    server_set_kex(session);
+    if (server_set_kex(session) < 0) {
+      return -1;
+    }
     ssh_send_kex(session,1);
     if(ssh_get_kex(session,1))
         return -1;
