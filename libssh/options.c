@@ -796,19 +796,25 @@ int ssh_options_set_log_verbosity(SSH_OPTIONS *opt, int verbosity) {
   return 0;
 }
 /**
+ * @brief Parse command line arguments.
+ *
  * This is a helper for your application to generate the appropriate
  * options from the command line arguments.\n
- * the argv array and argc value are changed so that parsed
- * arguments won't appear anymore in them.\n
+ * The argv array and argc value are changed so that the parsed
+ * arguments wont appear anymore in them.\n
  * The single arguments (without switches) are not parsed. thus,
- * myssh -u aris localhost \n
- * command won't set the hostname value of options to localhost.
- * \brief parse command line arguments
- * \param options an empty option structure pointer
- * \param argcptr pointer to argument count
- * \param argv arguments list pointer
- * \returns 0 on success, -1 on error
- * \sa ssh_options_new()
+ * myssh -l user localhost\n
+ * The command wont set the hostname value of options to localhost.
+ *
+ * @param options       An empty option structure pointer.
+ *
+ * @param argcptr       The pointer to the argument count.
+ *
+ * @param argv          The arguments list pointer.
+ *
+ * @returns 0 on success, < 0 on error.
+ *
+ * @see ssh_options_new()
  */
 int ssh_options_getopt(SSH_OPTIONS *options, int *argcptr, char **argv) {
   char *user = NULL;
