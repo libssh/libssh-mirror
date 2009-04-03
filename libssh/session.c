@@ -105,35 +105,37 @@ void ssh_cleanup(SSH_SESSION *session) {
   crypto_free(session->next_crypto);
   ssh_socket_free(session->socket);
   ssh_options_free(session->options);
-    // delete all channels
-    while(session->channels)
-        channel_free(session->channels);
+  /* delete all channels */
+  while (session->channels) {
+    channel_free(session->channels);
+  }
 #ifndef _WIN32
-    if (session->agent)
-        agent_free(session->agent);
+  agent_free(session->agent);
 #endif /* _WIN32 */
-    if(session->client_kex.methods)
-        for(i=0;i<10;i++)
-            if(session->client_kex.methods[i])
-                free(session->client_kex.methods[i]);
-    if(session->server_kex.methods)
-        for(i=0;i<10;++i)
-            if(session->server_kex.methods[i])
-                free(session->server_kex.methods[i]);
-    free(session->client_kex.methods);
-    free(session->server_kex.methods);
-    if(session->dsa_key)
-        private_key_free(session->dsa_key);
-    if(session->rsa_key)
-        private_key_free(session->rsa_key);
-    if(session->ssh_message){
-        ssh_message_free(session->ssh_message);
-        free(session->ssh_message);
+  if (session->client_kex.methods) {
+    for (i = 0; i < 10; i++) {
+      SAFE_FREE(session->client_kex.methods[i]);
     }
-    memset(session,'X',sizeof(SSH_SESSION)); /* burn connection, it could hangs
-                                                sensitive datas */
-    free(session);
-    //leave_function();
+  }
+
+  if (session->server_kex.methods) {
+    for (i = 0; i < 10; i++) {
+      SAFE_FREE(session->server_kex.methods[i]);
+    }
+  }
+  SAFE_FREE(session->client_kex.methods);
+  SAFE_FREE(session->server_kex.methods);
+
+  private_key_free(session->dsa_key);
+  private_key_free(session->rsa_key);
+  ssh_message_free(session->ssh_message);
+  SAFE_FREE(session->ssh_message);
+
+  /* burn connection, it could hang sensitive datas */
+  memset(session,'X',sizeof(SSH_SESSION));
+
+  SAFE_FREE(session);
+  /* FIXME: leave_function(); ??? */
 }
 
 /** \brief disconnect impolitely from remote host
