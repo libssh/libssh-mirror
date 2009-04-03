@@ -214,7 +214,7 @@ extern char *supported_methods[];
 static int server_set_kex(SSH_SESSION * session) {
     KEX *server = &session->server_kex;
     SSH_OPTIONS *options = session->options;
-    int i;
+    int i, j;
     char *wanted;
     memset(server,0,sizeof(KEX));
     // the program might ask for a specific cookie to be sent. useful for server
@@ -239,6 +239,13 @@ static int server_set_kex(SSH_SESSION * session) {
         if (!(wanted = options->wanted_methods[i]))
             wanted = supported_methods[i];
         server->methods[i] = strdup(wanted);
+        if (server->methods[i] == NULL) {
+          for (j = i - 1; j <= 0; j--) {
+            SAFE_FREE(server->methods[j]);
+          }
+          SAFE_FREE(server->methods);
+          return -1;
+        }
         //printf("server->methods[%d]=%s\n",i,wanted);
     }
     return 0;
