@@ -810,139 +810,176 @@ int ssh_options_set_log_verbosity(SSH_OPTIONS *opt, int verbosity) {
  * \returns 0 on success, -1 on error
  * \sa ssh_options_new()
  */
-int ssh_options_getopt(SSH_OPTIONS *options, int *argcptr, char **argv){
-    int i;
-    int argc=*argcptr;
-    char *user=NULL;
-    int port=22;
-    int debuglevel=0;
-    int usersa=0;
-    int usedss=0;
-    int compress=0;
-    int cont=1;
-    char *cipher=NULL;
-    char *localaddr=NULL;
-    char *identity=NULL;
-    char **save = NULL;
-    int current=0;
+int ssh_options_getopt(SSH_OPTIONS *options, int *argcptr, char **argv) {
+  char *user = NULL;
+  char *cipher = NULL;
+  char *localaddr = NULL;
+  char *identity = NULL;
+  char **save = NULL;
+  int i = 0;
+  int argc = *argcptr;
+  int port = 22;
+  int debuglevel = 0;
+  int usersa = 0;
+  int usedss = 0;
+  int compress = 0;
+  int cont = 1;
+  int current = 0;
 #ifdef HAVE_SSH1
-    int ssh1=1;
+  int ssh1 = 1;
 #else
-    int ssh1=0;
+  int ssh1 = 0;
 #endif
-    int ssh2=1;
+  int ssh2 = 1;
 
-    int saveoptind=optind; /* need to save 'em */
-    int saveopterr=opterr;
+  int saveoptind = optind; /* need to save 'em */
+  int saveopterr = opterr;
 
-    save = malloc(argc * sizeof(char *));
-    if (save == NULL) {
-      return -1;
-    }
+  save = malloc(argc * sizeof(char *));
+  if (save == NULL) {
+    return -1;
+  }
 
-    opterr=0; /* shut up getopt */
-    while(cont && ((i=getopt(argc,argv,"c:i:Cl:p:vb:rd12"))!=-1)){
-
-        switch(i){
-            case 'l':
-                user=optarg;
-                break;
-            case 'p':
-                port=atoi(optarg)&0xffff;
-                break;
-            case 'v':
-                debuglevel++;
-                break;
-            case 'r':
-                usersa++;
-                break;
-            case 'd':
-                usedss++;
-                break;
-            case 'c':
-                cipher=optarg;
-                break;
-            case 'i':
-                identity=optarg;
-                break;
-            case 'b':
-                localaddr=optarg;
-                break;
-            case 'C':
-                compress++;
-                break;
-            case '2':
-                ssh2=1;
-                ssh1=0;
-                break;
-            case '1':
-                ssh2=0;
-                ssh1=1;
-                break;
-            default:
-                {
-                char opt[3]="- ";
-                opt[1]=optopt;
-                save[current++]=strdup(opt);
-                if(optarg)
-                    save[current++]=argv[optind+1];
-            }
+  opterr = 0; /* shut up getopt */
+  while(cont && ((i = getopt(argc, argv, "c:i:Cl:p:vb:rd12")) != -1)) {
+    switch(i) {
+      case 'l':
+        user = optarg;
+        break;
+      case 'p':
+        port = atoi(optarg) & 0xffff;
+        break;
+      case 'v':
+        debuglevel++;
+        break;
+      case 'r':
+        usersa++;
+        break;
+      case 'd':
+        usedss++;
+        break;
+      case 'c':
+        cipher = optarg;
+        break;
+      case 'i':
+        identity = optarg;
+        break;
+      case 'b':
+        localaddr = optarg;
+        break;
+      case 'C':
+        compress++;
+        break;
+      case '2':
+        ssh2 = 1;
+        ssh1 = 0;
+        break;
+      case '1':
+        ssh2 = 0;
+        ssh1 = 1;
+        break;
+      default:
+        {
+          char opt[3]="- ";
+          opt[1] = optopt;
+          save[current] = strdup(opt);
+          if (save[current] == NULL) {
+            SAFE_FREE(save);
+            return -1;
+          }
+          current++;
+          if (optarg) {
+            save[current++] = argv[optind + 1];
+          }
         }
+    } /* switch */
+  } /* while */
+  opterr = saveopterr;
+  while (optind < argc) {
+    save[current++] = argv[optind++];
+  }
+
+  if (usersa && usedss) {
+    ssh_set_error(options, SSH_FATAL, "Either RSA or DSS must be chosen");
+    cont = 0;
+  }
+
+  ssh_options_set_log_verbosity(options, debuglevel);
+
+  optind = saveoptind;
+
+  if(!cont) {
+    SAFE_FREE(save);
+    return -1;
+  }
+
+  /* first recopy the save vector into the original's */
+  for (i = 0; i < current; i++) {
+    /* don't erase argv[0] */
+    argv[ i + 1] = save[i];
+  }
+  argv[current + 1] = NULL;
+  *argcptr = current + 1;
+  SAFE_FREE(save);
+
+  /* set a new option struct */
+  if (compress) {
+    if (ssh_options_set_wanted_algos(options, SSH_COMP_C_S, "zlib") < 0) {
+      cont = 0;
     }
-    opterr=saveopterr;
-    while(optind < argc)
-        save[current++]=argv[optind++];
-        
-    if(usersa && usedss){
-        ssh_set_error(options,SSH_FATAL,"either RSA or DSS must be chosen");
-        cont=0;
+    if (ssh_options_set_wanted_algos(options, SSH_COMP_S_C, "zlib") < 0) {
+      cont = 0;
     }
-    ssh_options_set_log_verbosity(options,debuglevel);
-    optind=saveoptind;
-    if(!cont){
-        free(save);
-        return -1;
+  }
+
+  if (cont && cipher) {
+    if (ssh_options_set_wanted_algos(options, SSH_CRYPT_C_S, cipher) < 0) {
+      cont = 0;
     }
-    /* first recopy the save vector into original's */
-    for(i=0;i<current;i++)
-        argv[i+1]=save[i]; // don't erase argv[0]
-    argv[current+1]=NULL;
-    *argcptr=current+1;
-    free(save);
-    /* set a new option struct */
-    if(compress){
-        if(ssh_options_set_wanted_algos(options,SSH_COMP_C_S,"zlib"))
-            cont=0;
-        if(ssh_options_set_wanted_algos(options,SSH_COMP_S_C,"zlib"))
-            cont=0;
+    if (cont && ssh_options_set_wanted_algos(options, SSH_CRYPT_S_C, cipher) < 0) {
+      cont = 0;
     }
-    if(cont &&cipher){
-        if(ssh_options_set_wanted_algos(options,SSH_CRYPT_C_S,cipher))
-            cont=0;
-        if(cont && ssh_options_set_wanted_algos(options,SSH_CRYPT_S_C,cipher))
-            cont=0;
+  }
+
+  if (cont && usersa) {
+    if (ssh_options_set_wanted_algos(options, SSH_HOSTKEYS, "ssh-rsa") < 0) {
+      cont = 0;
     }
-    if(cont && usersa)
-        if(ssh_options_set_wanted_algos(options,SSH_HOSTKEYS,"ssh-rsa"))
-            cont=0;
-    if(cont && usedss)
-        if(ssh_options_set_wanted_algos(options,SSH_HOSTKEYS,"ssh-dss"))
-            cont=0;
-    if(cont && user)
-        ssh_options_set_username(options,user);
-    if(cont && identity)
-        ssh_options_set_identity(options,identity);
-    if(cont && localaddr)
-        ssh_options_set_bind(options,localaddr,0);
-    ssh_options_set_port(options,port);
-    //options->bindport=port;
-    ssh_options_allow_ssh1(options,ssh1);
-    ssh_options_allow_ssh2(options,ssh2);
-        
-    if(!cont){
-        return -1;
-    } else
-        return 0 ;   
+  }
+
+  if (cont && usedss) {
+    if (ssh_options_set_wanted_algos(options, SSH_HOSTKEYS, "ssh-dss") < 0) {
+      cont = 0;
+    }
+  }
+
+  if (cont && user) {
+    if (ssh_options_set_username(options, user) < 0) {
+      cont = 0;
+    }
+  }
+
+  if (cont && identity) {
+    if (ssh_options_set_identity(options, identity) < 0) {
+      cont = 0;
+    }
+  }
+
+  if (cont && localaddr) {
+    if (ssh_options_set_bind(options, localaddr, 0) < 0) {
+      cont = 0;
+    }
+  }
+
+  ssh_options_set_port(options, port);
+  ssh_options_allow_ssh1(options, ssh1);
+  ssh_options_allow_ssh2(options, ssh2);
+
+  if (!cont) {
+    return -1;
+  }
+
+  return 0;
 }
 
 /**
