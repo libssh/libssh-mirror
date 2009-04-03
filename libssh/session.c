@@ -41,6 +41,7 @@
  */
 SSH_SESSION *ssh_new(void) {
   SSH_SESSION *session;
+
   session = malloc(sizeof (SSH_SESSION));
   if (session == NULL) {
     return NULL;
@@ -87,28 +88,23 @@ err:
     return NULL;
 }
 
-void ssh_cleanup(SSH_SESSION *session){
-    int i;
-    enter_function();
+void ssh_cleanup(SSH_SESSION *session) {
+  int i;
+  enter_function();
 
-    if(session->serverbanner)
-        free(session->serverbanner);
-    if(session->clientbanner)
-        free(session->clientbanner);
-    if(session->in_buffer)
-        buffer_free(session->in_buffer);
-    if(session->out_buffer)
-        buffer_free(session->out_buffer);
-    if(session->banner)
-        free(session->banner);
-    if(session->options)
-        ssh_options_free(session->options);
-    if(session->current_crypto)
-        crypto_free(session->current_crypto);
-    if(session->next_crypto)
-        crypto_free(session->next_crypto);
-    if(session->socket)
-    	ssh_socket_free(session->socket);
+  if (session == NULL) {
+    return;
+  }
+
+  SAFE_FREE(session->serverbanner);
+  SAFE_FREE(session->clientbanner);
+  SAFE_FREE(session->banner);
+  buffer_free(session->in_buffer);
+  buffer_free(session->out_buffer);
+  crypto_free(session->current_crypto);
+  crypto_free(session->next_crypto);
+  ssh_socket_free(session->socket);
+  ssh_options_free(session->options);
     // delete all channels
     while(session->channels)
         channel_free(session->channels);

@@ -120,10 +120,13 @@ struct socket *ssh_socket_new(SSH_SESSION *session) {
  * \brief Deletes a socket object
  */
 void ssh_socket_free(struct socket *s){
-    ssh_socket_close(s);
-    buffer_free(s->in_buffer);
-    buffer_free(s->out_buffer);
-	free(s);
+  if (s == NULL) {
+    return;
+  }
+  ssh_socket_close(s);
+  buffer_free(s->in_buffer);
+  buffer_free(s->out_buffer);
+  SAFE_FREE(s);
 }
 
 #ifndef _WIN32
