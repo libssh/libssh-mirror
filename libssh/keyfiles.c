@@ -661,6 +661,9 @@ PRIVATE_KEY  *_privatekey_from_file(void *session,char *filename,int type){
  * \param prv a PRIVATE_KEY object
  */
 void private_key_free(PRIVATE_KEY *prv){
+  if (prv == NULL) {
+    return;
+  }
 #ifdef HAVE_LIBGCRYPT
     if(prv->dsa_priv)
         gcry_sexp_release(prv->dsa_priv);
