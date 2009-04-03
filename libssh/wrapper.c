@@ -466,6 +466,10 @@ static void cipher_free(struct crypto_struct *cipher){
 #ifdef HAVE_LIBGCRYPT
     unsigned int i;
 #endif
+    if (cipher == NULL) {
+      return;
+    }
+
     if(cipher->key){
 #ifdef HAVE_LIBGCRYPT
         for (i=0;i<cipher->keylen/sizeof (gcry_cipher_hd_t);i++)
@@ -493,6 +497,9 @@ CRYPTO *crypto_new(void) {
 }
 
 void crypto_free(CRYPTO *crypto){
+  if (crypto == NULL) {
+    return;
+  }
     if(crypto->server_pubkey)
         free(crypto->server_pubkey);
     if(crypto->in_cipher)
