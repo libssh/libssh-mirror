@@ -457,6 +457,9 @@ int ssh_message_reply_default(SSH_MESSAGE *msg){
 }
 
 void ssh_message_free(SSH_MESSAGE *msg){
+  if (msg == NULL) {
+    return;
+  }
     switch(msg->type){
         case SSH_AUTH_REQUEST:
             if(msg->auth_request.username)
