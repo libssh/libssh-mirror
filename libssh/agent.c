@@ -119,13 +119,17 @@ static size_t atomicio(struct socket *s, void *buf, size_t n, int do_read) {
 AGENT *agent_new(struct ssh_session *session) {
   AGENT *agent = NULL;
 
-  agent = calloc(1, sizeof(*agent));
-  if (agent) {
-    agent->count = 0;
-    agent->sock = ssh_socket_new(session);
-    if (agent->sock == NULL) {
-      return NULL;
-    }
+  agent = malloc(sizeof(AGENT));
+  if (agent == NULL) {
+    return NULL;
+  }
+  ZERO_STRUCTP(agent);
+
+  agent->count = 0;
+  agent->sock = ssh_socket_new(session);
+  if (agent->sock == NULL) {
+    SAFE_FREE(agent);
+    return NULL;
   }
 
   return agent;
