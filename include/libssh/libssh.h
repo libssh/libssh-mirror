@@ -326,8 +326,8 @@ int ssh_options_allow_ssh2(SSH_OPTIONS *opt, int allow);
 int ssh_options_set_log_function(SSH_OPTIONS *opt,
     void (*callback)(const char *message, SSH_SESSION *session, int verbosity));
 int ssh_options_set_log_verbosity(SSH_OPTIONS *opt, int verbosity);
-void ssh_options_set_dsa_server_key(SSH_OPTIONS *opt, const char *dsakey);
-void ssh_options_set_rsa_server_key(SSH_OPTIONS *opt, const char *rsakey);
+int ssh_options_set_dsa_server_key(SSH_OPTIONS *opt, const char *dsakey);
+int ssh_options_set_rsa_server_key(SSH_OPTIONS *opt, const char *rsakey);
 int ssh_options_set_auth_callback(SSH_OPTIONS *opt, ssh_auth_callback cb,
     void *userdata);
 

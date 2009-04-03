@@ -443,17 +443,48 @@ int ssh_options_set_identity(SSH_OPTIONS *opt, const char *identity){
   return 0;
 }
 
-/** \warning I don't remember what these functions are supposed
- * to set
+/**
+ * @brief Set the path to the dsa ssh host key.
+ *
+ * @param  opt          The options structure to use.
+ *
+ * @param  dsakey       The path to the dsa key to set.
+ *
+ * @return 0 on success, < 0 on error.
  */
-void ssh_options_set_dsa_server_key(SSH_OPTIONS *opt, const char *dsakey){
-    opt->dsakey=strdup(dsakey);
+int ssh_options_set_dsa_server_key(SSH_OPTIONS *opt, const char *dsakey) {
+  if (opt == NULL || dsakey == NULL) {
+    return -1;
+  }
+
+  opt->dsakey = strdup(dsakey);
+  if (opt->dsakey == NULL) {
+    return -1;
+  }
+
+  return 0;
 }
-/** \warning I don't remember what these functions are supposed
- * to set
+
+/**
+ * @brief Set the path to the ssh host rsa key.
+ *
+ * @param  opt          The options structure to use.
+ *
+ * @param  rsakey       The path to the rsa key to set.
+ *
+ * @return 0 on success, < 0 on error.
  */
-void ssh_options_set_rsa_server_key(SSH_OPTIONS *opt, const char *rsakey){
-    opt->rsakey=strdup(rsakey);
+int ssh_options_set_rsa_server_key(SSH_OPTIONS *opt, const char *rsakey) {
+  if (opt == NULL || rsakey == NULL) {
+    return -1;
+  }
+
+  opt->rsakey = strdup(rsakey);
+  if (opt->rsakey == NULL) {
+    return -1;
+  }
+
+  return 0;
 }
 
 /**
