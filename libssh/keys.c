@@ -152,29 +152,31 @@ PUBLIC_KEY *publickey_make_rsa(SSH_SESSION *session, BUFFER *buffer, char *type)
     return key;
 }
 
-void publickey_free(PUBLIC_KEY *key){
-    if(!key)
-        return;
-    switch(key->type){
-        case TYPE_DSS:
+void publickey_free(PUBLIC_KEY *key) {
+  if (key == NULL) {
+    return;
+  }
+
+  switch(key->type) {
+    case TYPE_DSS:
 #ifdef HAVE_LIBGCRYPT
-            gcry_sexp_release(key->dsa_pub);
+      gcry_sexp_release(key->dsa_pub);
 #elif HAVE_LIBCRYPTO
-            DSA_free(key->dsa_pub);
+      DSA_free(key->dsa_pub);
 #endif
-            break;
-        case TYPE_RSA:
-        case TYPE_RSA1:
+      break;
+    case TYPE_RSA:
+    case TYPE_RSA1:
 #ifdef HAVE_LIBGCRYPT
-            gcry_sexp_release(key->rsa_pub);
+      gcry_sexp_release(key->rsa_pub);
 #elif defined HAVE_LIBCRYPTO
-            RSA_free(key->rsa_pub);
+      RSA_free(key->rsa_pub);
 #endif
-            break;
-        default:
-            break;
-    }
-    free(key);
+      break;
+    default:
+      break;
+  }
+  SAFE_FREE(key);
 }
 
 PUBLIC_KEY *publickey_from_string(SSH_SESSION *session, STRING *pubkey_s){
@@ -613,29 +615,31 @@ SIGNATURE *signature_from_string(SSH_SESSION *session, STRING *signature,PUBLIC_
     }
 }
 
-void signature_free(SIGNATURE *sign){
-    if(!sign)
-        return;
-    switch(sign->type){
-        case TYPE_DSS:
+void signature_free(SIGNATURE *sign) {
+  if (sign == NULL) {
+    return;
+  }
+
+  switch(sign->type) {
+    case TYPE_DSS:
 #ifdef HAVE_LIBGCRYPT
-            gcry_sexp_release(sign->dsa_sign);
+      gcry_sexp_release(sign->dsa_sign);
 #elif defined HAVE_LIBCRYPTO
-            DSA_SIG_free(sign->dsa_sign);
+      DSA_SIG_free(sign->dsa_sign);
 #endif
-            break;
-        case TYPE_RSA:
-        case TYPE_RSA1:
+      break;
+    case TYPE_RSA:
+    case TYPE_RSA1:
 #ifdef HAVE_LIBGCRYPT
-            gcry_sexp_release(sign->rsa_sign);
+      gcry_sexp_release(sign->rsa_sign);
 #elif defined HAVE_LIBCRYPTO
-            free(sign->rsa_sign);
+      SAFE_FREE(sign->rsa_sign);
 #endif
-            break;
-        default:
-            ssh_log(NULL,SSH_LOG_RARE,"freeing a signature with no type !\n");
+      break;
+    default:
+      ssh_log(NULL, SSH_LOG_RARE, "Freeing a signature with no type!\n");
     }
-    free(sign);
+  SAFE_FREE(sign);
 }
 
 #ifdef HAVE_LIBCRYPTO
