@@ -462,25 +462,27 @@ static struct crypto_struct *cipher_new(int offset){
     return cipher;
 }
 
-static void cipher_free(struct crypto_struct *cipher){
+static void cipher_free(struct crypto_struct *cipher) {
 #ifdef HAVE_LIBGCRYPT
-    unsigned int i;
+  unsigned int i;
 #endif
-    if (cipher == NULL) {
-      return;
-    }
 
-    if(cipher->key){
+  if (cipher == NULL) {
+    return;
+  }
+
+  if(cipher->key) {
 #ifdef HAVE_LIBGCRYPT
-        for (i=0;i<cipher->keylen/sizeof (gcry_cipher_hd_t);i++)
-          gcry_cipher_close(cipher->key[i]);
-#elif defined HAVE_LIBCRYPTO
-        /* destroy the key */
-        memset(cipher->key,0,cipher->keylen);
-#endif
-        free(cipher->key);
+    for (i = 0; i < (cipher->keylen / sizeof(gcry_cipher_hd_t)); i++) {
+      gcry_cipher_close(cipher->key[i]);
     }
-    free(cipher);
+#elif defined HAVE_LIBCRYPTO
+    /* destroy the key */
+    memset(cipher->key, 0, cipher->keylen);
+#endif
+    SAFE_FREE(cipher->key);
+  }
+  SAFE_FREE(cipher);
 }
 
 CRYPTO *crypto_new(void) {
@@ -500,26 +502,22 @@ void crypto_free(CRYPTO *crypto){
   if (crypto == NULL) {
     return;
   }
-    if(crypto->server_pubkey)
-        free(crypto->server_pubkey);
-    if(crypto->in_cipher)
-        cipher_free(crypto->in_cipher);
-    if(crypto->out_cipher)
-        cipher_free(crypto->out_cipher);
-    if(crypto->e)
-        bignum_free(crypto->e);
-    if(crypto->f)
-        bignum_free(crypto->f);
-    if(crypto->x)
-        bignum_free(crypto->x);
-    if(crypto->y)
-    	bignum_free(crypto->y);
-    if(crypto->k)
-        bignum_free(crypto->k);
-    /* lot of other things */
-    /* i'm lost in my own code. good work */
-    memset(crypto,0,sizeof(*crypto));
-    free(crypto);
+
+  SAFE_FREE(crypto->server_pubkey);
+
+  cipher_free(crypto->in_cipher);
+  cipher_free(crypto->out_cipher);
+
+  bignum_free(crypto->e);
+  bignum_free(crypto->f);
+  bignum_free(crypto->x);
+  bignum_free(crypto->y);
+  bignum_free(crypto->k);
+  /* lot of other things */
+  /* i'm lost in my own code. good work */
+  memset(crypto,0,sizeof(*crypto));
+
+  SAFE_FREE(crypto);
 }
 
 static int crypt_set_algorithms2(SSH_SESSION *session){
