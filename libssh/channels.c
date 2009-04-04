@@ -482,29 +482,39 @@ int channel_open_forward(CHANNEL *channel,char *remotehost, int remoteport, char
  * \param channel channel to free
  * \warning any data unread on channel will be lost
  */
-void channel_free(CHANNEL *channel){
-    SSH_SESSION *session=channel->session;
-    enter_function();
-    if(session->alive && channel->open)
-        channel_close(channel);
-    /* handle the "my channel is first on session list" case */
-    if(session->channels==channel)
-        session->channels=channel->next;
-    /* handle the "my channel is the only on session list" case */
-    if(channel->next == channel){
-        session->channels=NULL;
-    } else {
-        channel->prev->next=channel->next;
-        channel->next->prev=channel->prev;
-    }
-    if(channel->stdout_buffer)
-        buffer_free(channel->stdout_buffer);
-    if(channel->stderr_buffer)
-        buffer_free(channel->stderr_buffer);
-    /* debug trick to catch use after frees */
-    memset(channel,'X',sizeof(CHANNEL));
-    free(channel);
+void channel_free(CHANNEL *channel) {
+  SSH_SESSION *session = channel->session;
+  enter_function();
+
+  if (channel == NULL) {
     leave_function();
+    return;
+  }
+
+  if (session->alive && channel->open) {
+    channel_close(channel);
+  }
+
+  /* handle the "my channel is first on session list" case */
+  if (session->channels == channel) {
+    session->channels = channel->next;
+  }
+
+  /* handle the "my channel is the only on session list" case */
+  if (channel->next == channel) {
+    session->channels = NULL;
+  } else {
+    channel->prev->next = channel->next;
+    channel->next->prev = channel->prev;
+  }
+
+  buffer_free(channel->stdout_buffer);
+  buffer_free(channel->stderr_buffer);
+
+  /* debug trick to catch use after frees */
+  memset(channel, 'X', sizeof(CHANNEL));
+  SAFE_FREE(channel);
+  leave_function();
 }
 
 /** it doesn't close the channel. You may still read from it but not write.
