@@ -276,7 +276,7 @@ static void batch_shell(SSH_SESSION *session){
         
 /* it's just a proof of concept code for sftp, till i write a real documentation about it */
 void do_sftp(SSH_SESSION *session){
-    SFTP_SESSION *sftp=sftp_new(session);
+    SFTP_SESSION *sftp_session=sftp_new(session);
     SFTP_DIR *dir;
     SFTP_ATTRIBUTES *file;
     SFTP_FILE *fichier;
@@ -284,25 +284,25 @@ void do_sftp(SSH_SESSION *session){
     int len=1;
     int i;
     char data[8000];
-    if(!sftp){
+    if(!sftp_session){
         fprintf(stderr, "sftp error initialising channel: %s\n",
             ssh_get_error(session));
         return;
     }
-    if(sftp_init(sftp)){
+    if(sftp_init(sftp_session)){
         fprintf(stderr, "error initialising sftp: %s\n",
             ssh_get_error(session));
         return;
     }
     /* the connection is made */
     /* opening a directory */
-    dir=sftp_opendir(sftp,"./");
+    dir=sftp_opendir(sftp_session,"./");
     if(!dir) {
         fprintf(stderr, "Directory not opened(%s)\n", ssh_get_error(session));
         return ;
     }
     /* reading the whole directory, file by file */
-    while((file=sftp_readdir(sftp,dir))){
+    while((file=sftp_readdir(sftp_session,dir))){
         fprintf(stderr, "%30s(%.8o) : %.5d.%.5d : %.10llu bytes\n",
             file->name,
             file->permissions,
@@ -323,14 +323,14 @@ void do_sftp(SSH_SESSION *session){
     /* this will open a file and copy it into your /home directory */
     /* the small buffer size was intended to stress the library. of course, you can use a buffer till 20kbytes without problem */
 
-    fichier=sftp_open(sftp,"/usr/bin/ssh",O_RDONLY, 0);
+    fichier=sftp_open(sftp_session,"/usr/bin/ssh",O_RDONLY, 0);
     if(!fichier){
         fprintf(stderr, "Error opening /usr/bin/ssh: %s\n",
             ssh_get_error(session));
         return;
     }
     /* open a file for writing... */
-    to=sftp_open(sftp,"ssh-copy",O_WRONLY | O_CREAT, 0);
+    to=sftp_open(sftp_session,"ssh-copy",O_WRONLY | O_CREAT, 0);
     if(!to){
         fprintf(stderr, "Error opening ssh-copy for writing: %s\n",
             ssh_get_error(session));
@@ -349,7 +349,7 @@ void do_sftp(SSH_SESSION *session){
     sftp_close(fichier);
     sftp_close(to);
     printf("fichiers ferm\n");
-    to=sftp_open(sftp,"/tmp/grosfichier",O_WRONLY|O_CREAT, 0644);
+    to=sftp_open(sftp_session,"/tmp/grosfichier",O_WRONLY|O_CREAT, 0644);
     for(i=0;i<1000;++i){
         len=sftp_write(to,data,8000);
         printf("wrote %d bytes\n",len);
@@ -359,7 +359,7 @@ void do_sftp(SSH_SESSION *session){
     }
     sftp_close(to);
     /* close the sftp session */
-    sftp_free(sftp);
+    sftp_free(sftp_session);
     printf("session sftp termin�\n");
 }
 
