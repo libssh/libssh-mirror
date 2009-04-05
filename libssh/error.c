@@ -36,7 +36,7 @@
  */
 
 /* ssh_set_error registers an error with a description. the error code is the class of error, and description is obvious.*/
-void ssh_set_error(void *error,int code,char *descr,...){
+void ssh_set_error(void *error, int code, const char *descr, ...) {
     struct error_struct *err= error;
     va_list va;
     va_start(va,descr);
