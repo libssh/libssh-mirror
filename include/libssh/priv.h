@@ -510,7 +510,7 @@ int ssh_send_banner(SSH_SESSION *session, int is_server);
 char *ssh_get_banner(SSH_SESSION *session);
 
 /* errors.c */
-void ssh_set_error(void *error, int code, const char *descr, ...);
+void ssh_set_error(void *error, int code, const char *descr, ...) PRINTF_ATTRIBUTE(3, 4);
 
 /* in dh.c */
 /* DH key generation */
