@@ -1112,7 +1112,8 @@ ssize_t sftp_read(SFTP_FILE *handle, void *buf, size_t count){
                 return -1;
             }
             if(string_len(datastring) > count){
-                ssh_set_error(sftp->session,SSH_FATAL,"Received a too big DATA packet from sftp server : %d and asked for %d",
+                ssh_set_error(sftp->session, SSH_FATAL,
+                    "Received a too big DATA packet from sftp server: %zu and asked for %zu",
                     string_len(datastring), count);
                 free(datastring);
                 return -1;
@@ -1205,7 +1206,8 @@ int sftp_async_read(SFTP_FILE *file, void *data, u32 size, u32 id){
 				return -1;
 			}
 			if(string_len(datastring)>size){
-				ssh_set_error(sftp->session,SSH_FATAL,"Received a too big DATA packet from sftp server : %d and asked for %d",
+				ssh_set_error(sftp->session, SSH_FATAL,
+                                    "Received a too big DATA packet from sftp server: %zu and asked for %u",
 					string_len(datastring),size);
 				free(datastring);
 				sftp_leave_function();
