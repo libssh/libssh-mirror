@@ -263,7 +263,7 @@ typedef struct ssh_crypto_struct {
     unsigned char hmacbuf[EVP_MAX_MD_SIZE];
     struct crypto_struct *in_cipher, *out_cipher; /* the cipher structures/objects */
     STRING *server_pubkey;
-    char *server_pubkey_type;
+    const char *server_pubkey_type;
     int do_compress_out; /* idem */
     int do_compress_in; /* don't set them, set the option instead */
     void *compress_out_ctx; /* don't touch it */
@@ -562,7 +562,7 @@ socket_t ssh_connect_host(SSH_SESSION *session, const char *host,const char
         *bind_addr, int port, long timeout, long usec);
 
 /* in kex.c */
-extern char *ssh_kex_nums[];
+extern const char *ssh_kex_nums[];
 void ssh_send_kex(SSH_SESSION *session,int server_kex);
 void ssh_list_kex(SSH_SESSION *session, KEX *kex);
 int set_kex(SSH_SESSION *session);

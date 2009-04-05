@@ -56,17 +56,48 @@
 #define ZLIB "none"
 #endif
 
-char *default_methods[]={
-	"diffie-hellman-group1-sha1","ssh-dss,ssh-rsa",AES BLOWFISH DES,AES BLOWFISH
-        DES, "hmac-sha1","hmac-sha1","none","none","","",NULL };
-char *supported_methods[]={
-    "diffie-hellman-group1-sha1","ssh-dss,ssh-rsa",AES BLOWFISH DES,AES BLOWFISH
-        DES, "hmac-sha1","hmac-sha1",ZLIB,ZLIB,"","",NULL };
+const char *default_methods[] = {
+  "diffie-hellman-group1-sha1",
+  "ssh-dss,ssh-rsa",
+  AES BLOWFISH DES,
+  AES BLOWFISH DES,
+  "hmac-sha1",
+  "hmac-sha1",
+  "none",
+  "none",
+  "",
+  "",
+  NULL
+};
+
+const char *supported_methods[] = {
+  "diffie-hellman-group1-sha1",
+  "ssh-dss,ssh-rsa",
+  AES BLOWFISH DES,
+  AES BLOWFISH DES,
+  "hmac-sha1",
+  "hmac-sha1",
+  ZLIB,
+  ZLIB,
+  "",
+  "",
+  NULL
+};
+
 /* descriptions of the key exchange packet */
-char *ssh_kex_nums[]={
-	"kex algos","server host key algo","encryption client->server","encryption server->client",
-	"mac algo client->server","mac algo server->client","compression algo client->server",
-	"compression algo server->client","languages client->server","languages server->client",NULL};
+const char *ssh_kex_nums[] = {
+  "kex algos",
+  "server host key algo",
+  "encryption client->server",
+  "encryption server->client",
+  "mac algo client->server",
+  "mac algo server->client",
+  "compression algo client->server",
+  "compression algo server->client",
+  "languages client->server",
+  "languages server->client",
+  NULL
+};
 
 /* tokenize will return a token of strings delimited by ",". the first element has to be freed */
 static char **tokenize(const char *chain){
@@ -269,7 +300,7 @@ int set_kex(SSH_SESSION *session){
     KEX *client=&session->client_kex;
     SSH_OPTIONS *options=session->options;
     int i;
-    char *wanted;
+    const char *wanted;
     enter_function();
     /* the client might ask for a specific cookie to be sent. useful for server debugging */
     if(options->wanted_cookie)
