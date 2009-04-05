@@ -151,7 +151,7 @@ typedef int socket_t;
 #define SSH_ERROR -1 /* error of some kind */
 #define SSH_AGAIN 1  /* the nonblocking call must be repeated */
 
-char *ssh_get_error(void *error); 
+const char *ssh_get_error(void *error); 
 int ssh_get_error_code(void *error);
 
 /* version checks */

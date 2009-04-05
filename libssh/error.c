@@ -49,7 +49,7 @@ void ssh_set_error(void *error, int code, const char *descr, ...) {
  * \param error the ssh session pointer
  * \return a static string describing the error
  */
-char *ssh_get_error(void *error){
+const char *ssh_get_error(void *error){
     struct error_struct *err=error;
     return err->error_buffer;
 }
