@@ -838,7 +838,9 @@ static int kbdauth_info_get(SSH_SESSION *session){
     free(instruction);
     nprompts=ntohl(nprompts);
     if(nprompts>KBDINT_MAX_PROMPT){
-        ssh_set_error(session,SSH_FATAL,"Too much prompt asked from server: %lu(0x%.8lx)",nprompts,nprompts);
+        ssh_set_error(session, SSH_FATAL,
+            "Too much prompt asked from server: %u (0x%.4x)",
+            nprompts, nprompts);
         leave_function();
         return SSH_AUTH_ERROR;
     }

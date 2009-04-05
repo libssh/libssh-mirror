@@ -79,7 +79,8 @@ static int packet_read2(SSH_SESSION *session){
             len=packet_decrypt_len(session,buffer);
             buffer_add_data(session->in_buffer,buffer,blocksize);
             if(len> MAX_PACKET_LEN){
-                ssh_set_error(session,SSH_FATAL,"read_packet(): Packet len too high(%uld %.8lx)",len,len);
+                ssh_set_error(session, SSH_FATAL,
+                    "read_packet(): Packet len too high(%u %.4x)", len, len);
                 leave_function();
                 return SSH_ERROR;
             }

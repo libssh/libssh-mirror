@@ -1677,7 +1677,8 @@ static SFTP_ATTRIBUTES *sftp_xstat(SFTP_SESSION *sftp, const char *path, int par
         status_msg_free(status);
         return NULL;
     }
-    ssh_set_error(sftp->session,SSH_FATAL,"Received mesg %d during stat(),mesg->packet_type");
+    ssh_set_error(sftp->session, SSH_FATAL,
+        "Received mesg %d during stat()", msg->packet_type);
     sftp_message_free(msg);
     return NULL;
 }
@@ -1718,7 +1719,8 @@ SFTP_ATTRIBUTES *sftp_fstat(SFTP_FILE *file) {
         status_msg_free(status);
         return NULL;
     }
-    ssh_set_error(file->sftp->session,SSH_FATAL,"Received mesg %d during fstat(),mesg->packet_type");
+    ssh_set_error(file->sftp->session, SSH_FATAL,
+        "Received msg %d during fstat()", msg->packet_type);
     sftp_message_free(msg);
     return NULL;
 }
