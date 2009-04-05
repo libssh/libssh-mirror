@@ -499,7 +499,8 @@ static int pem_get_password(char *buf, int size, int rwflag, void *userdata) {
  * \see private_key_free()
  * \see publickey_from_privatekey()
  */
-PRIVATE_KEY  *privatekey_from_file(SSH_SESSION *session,char *filename,int type, const char *passphrase){
+PRIVATE_KEY  *privatekey_from_file(SSH_SESSION *session, const char *filename,
+    int type, const char *passphrase) {
     FILE *file=fopen(filename,"r");
     PRIVATE_KEY *privkey;
     ssh_auth_callback auth_cb = NULL;
@@ -684,7 +685,8 @@ void private_key_free(PRIVATE_KEY *prv) {
  * \see string_free()
  * \see publickey_from_privatekey()
  */
-STRING *publickey_from_file(SSH_SESSION *session,char *filename,int *_type){
+STRING *publickey_from_file(SSH_SESSION *session, const char *filename,
+    int *_type) {
     BUFFER *buffer;
     int type;
     STRING *str;

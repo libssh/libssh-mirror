@@ -248,11 +248,12 @@ void publickey_free(PUBLIC_KEY *key);
 
 /* in keyfiles.c */
 
-PRIVATE_KEY *privatekey_from_file(SSH_SESSION *session,char *filename,int type,const char *passphrase);
+PRIVATE_KEY *privatekey_from_file(SSH_SESSION *session, const char *filename,
+    int type, const char *passphrase);
 STRING *publickey_to_string(PUBLIC_KEY *key);
 PUBLIC_KEY *publickey_from_privatekey(PRIVATE_KEY *prv);
 void private_key_free(PRIVATE_KEY *prv);
-STRING *publickey_from_file(SSH_SESSION *session, char *filename,int *_type);
+STRING *publickey_from_file(SSH_SESSION *session, const char *filename,int *_type);
 STRING *publickey_from_next_file(SSH_SESSION *session, const char **pub_keys_path,
     const char **keys_path, char **privkeyfile, int *type, int *count);
 int ssh_is_server_known(SSH_SESSION *session);
