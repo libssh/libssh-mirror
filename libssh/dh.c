@@ -587,7 +587,7 @@ STRING *ssh_get_pubkey(SSH_SESSION *session){
 }
 
 /* XXX i doubt it is still needed, or may need some fix */
-static int match(char *group,char *object){
+static int match(const char *group, const char *object){
     char *ptr,*saved;
     char *end;
     ptr=strdup(group);
