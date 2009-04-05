@@ -249,7 +249,11 @@ static int agent_talk(struct ssh_session *session,
           "Error reading response from authentication socket.");
       return -1;
     }
-    buffer_add_data(reply, payload, n);
+    if (buffer_add_data(reply, payload, n) < 0) {
+      ssh_log(session, SSH_LOG_FUNCTIONS,
+          "Not enough space");
+      return -1;
+    }
     len -= n;
   }
 
@@ -278,9 +282,16 @@ int agent_get_ident_count(struct ssh_session *session) {
 
   /* send message to the agent requesting the list of identities */
   request = buffer_new();
-  buffer_add_u8(request, c1);
+  if (buffer_add_u8(request, c1) < 0) {
+    ssh_set_error(session, SSH_FATAL, "Not enough space");
+    return -1;
+  }
 
   reply = buffer_new();
+  if (reply == NULL) {
+    ssh_set_error(session, SSH_FATAL, "Not enough space");
+    return -1;
+  }
 
   if (agent_talk(session, request, reply) < 0) {
     buffer_free(request);
@@ -396,23 +407,39 @@ STRING *agent_sign_data(struct ssh_session *session,
   blob = publickey_to_string(pubkey);
 
   request = buffer_new();
+  if (request == NULL) {
+    goto error;
+  }
 
   /* create request */
-  buffer_add_u8(request, SSH2_AGENTC_SIGN_REQUEST);
+  if (buffer_add_u8(request, SSH2_AGENTC_SIGN_REQUEST) < 0) {
+    goto error;
+  }
 
   /* adds len + blob */
-  buffer_add_ssh_string(request, blob);
+  if (buffer_add_ssh_string(request, blob) < 0) {
+    goto error;
+  }
 
   /* Add data */
   dlen = buffer_get_len(data);
-  buffer_add_u32(request, htonl(dlen));
-  buffer_add_data(request, buffer_get(data), dlen);
+  if (buffer_add_u32(request, htonl(dlen)) < 0) {
+    goto error;
+  }
+  if (buffer_add_data(request, buffer_get(data), dlen) < 0) {
+    goto error;
+  }
 
-  buffer_add_u32(request, htonl(flags));
+  if (buffer_add_u32(request, htonl(flags)) < 0) {
+    goto error;
+  }
 
   string_free(blob);
 
   reply = buffer_new();
+  if (reply == NULL) {
+    goto error;
+  }
 
   /* send the request */
   if (agent_talk(session, request, reply) < 0) {
@@ -422,7 +449,9 @@ STRING *agent_sign_data(struct ssh_session *session,
   buffer_free(request);
 
   /* check if reply is valid */
-  buffer_get_u8(reply, (u8 *) &type);
+  if (buffer_get_u8(reply, (u8 *) &type) < 0) {
+    goto error;
+  }
   if (agent_failed(type)) {
     ssh_log(session, SSH_LOG_RARE, "Agent reports failure in signing the key");
     buffer_free(reply);
@@ -438,6 +467,13 @@ STRING *agent_sign_data(struct ssh_session *session,
   buffer_free(reply);
 
   return sig;
+error:
+  ssh_set_error(session, SSH_FATAL, "Not enough memory");
+  string_free(blob);
+  buffer_free(request);
+  buffer_free(reply);
+
+  return NULL;
 }
 
 int agent_is_running(SSH_SESSION *session) {
