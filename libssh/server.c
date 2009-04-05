@@ -57,7 +57,8 @@ inline char* hstrerror(int h_errno_val) {
 #include "libssh/ssh2.h"
 
 // TODO: must use getaddrinfo
-static socket_t bind_socket(SSH_BIND *ssh_bind,char *hostname, int port) {
+static socket_t bind_socket(SSH_BIND *ssh_bind, const char *hostname,
+    int port) {
     struct sockaddr_in myaddr;
     int opt = 1;
     socket_t s = socket(PF_INET, SOCK_STREAM, 0);
@@ -100,7 +101,7 @@ void ssh_bind_set_options(SSH_BIND *ssh_bind, SSH_OPTIONS *options){
 }
 
 int ssh_bind_listen(SSH_BIND *ssh_bind){
-    char *host;
+    const char *host;
     int fd;
     if(!ssh_bind->options)
         return -1;
