@@ -987,7 +987,7 @@ int sftp_closedir(SFTP_DIR *dir){
 }
 
 /* Open a file on the server. */
-SFTP_FILE *sftp_open(SFTP_SESSION *sftp, const char *file, int access, mode_t mode){
+SFTP_FILE *sftp_open(SFTP_SESSION *sftp, const char *file, int flags, mode_t mode){
     SFTP_FILE *handle;
     SFTP_MESSAGE *msg=NULL;
     STATUS_MESSAGE *status;
@@ -1001,17 +1001,17 @@ SFTP_FILE *sftp_open(SFTP_SESSION *sftp, const char *file, int access, mode_t mo
     attr.permissions = mode;
     attr.flags = SSH_FILEXFER_ATTR_PERMISSIONS;
 
-    if(access == O_RDONLY)
+    if(flags == O_RDONLY)
         flags|=SSH_FXF_READ; // if any of the other flag is set, READ should not be set initialy
-    if(access & O_WRONLY)
+    if(flags & O_WRONLY)
         flags |= SSH_FXF_WRITE;
-    if(access & O_RDWR)
+    if(flags & O_RDWR)
         flags|=(SSH_FXF_WRITE | SSH_FXF_READ);
-    if(access & O_CREAT)
+    if(flags & O_CREAT)
         flags |=SSH_FXF_CREAT;
-    if(access & O_TRUNC)
+    if(flags & O_TRUNC)
         flags |=SSH_FXF_TRUNC;
-    if(access & O_EXCL)
+    if(flags & O_EXCL)
         flags |= SSH_FXF_EXCL;
     buffer_add_u32(buffer,id);
     filename=string_from_char(file);

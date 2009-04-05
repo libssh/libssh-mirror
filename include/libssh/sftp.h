@@ -340,7 +340,8 @@ int sftp_file_close(SFTP_FILE *file) SFTP_DEPRECATED;
  * @return              A sftp file handle, NULL on error with ssh and sftp
  *                      error set.
  */
-SFTP_FILE *sftp_open(SFTP_SESSION *session, const char *file, int access, mode_t mode);
+SFTP_FILE *sftp_open(SFTP_SESSION *session, const char *file, int flags,
+    mode_t mode);
 
 void sftp_file_set_nonblocking(SFTP_FILE *handle);
 
