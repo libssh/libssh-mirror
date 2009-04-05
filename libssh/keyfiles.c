@@ -739,8 +739,8 @@ STRING *publickey_from_file(SSH_SESSION *session,char *filename,int *_type){
 
 /* why recursing ? i'll explain. on top, publickey_from_next_file will be executed until NULL returned */
 /* we can't return null if one of the possible keys is wrong. we must test them before getting over */
-STRING *publickey_from_next_file(SSH_SESSION *session,char **pub_keys_path,char **keys_path,
-                            char **privkeyfile,int *type,int *count){
+STRING *publickey_from_next_file(SSH_SESSION *session, const char **pub_keys_path,
+    const char **keys_path, char **privkeyfile, int *type, int *count) {
     static char *home=NULL;
     char public[256];
     char private[256];

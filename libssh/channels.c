@@ -76,8 +76,8 @@ u32 ssh_channel_new_id(SSH_SESSION *session){
     return ret;
 }
 
-static int channel_open(CHANNEL *channel,char *type_c,int window,
-        int maxpacket,BUFFER *payload){
+static int channel_open(CHANNEL *channel, const char *type_c, int window,
+    int maxpacket, BUFFER *payload) {
     SSH_SESSION *session=channel->session;
     STRING *type=string_from_char(type_c);
     u32 foo;
@@ -348,7 +348,7 @@ static void channel_rcv_request(SSH_SESSION *session){
     if(!strcmp(request,"exit-signal")){
         STRING *signal_s;
         char *signal;
-        char *core="(core dumped)";
+        const char *core = "(core dumped)";
         u8 i;
         signal_s=buffer_get_ssh_string(session->in_buffer);
         if(!signal_s){
@@ -459,7 +459,8 @@ int channel_open_session(CHANNEL *channel){
  * SSH_OK on success
  * \warning API changed from 0.11
  */
-int channel_open_forward(CHANNEL *channel,char *remotehost, int remoteport, char *sourcehost, int localport){
+int channel_open_forward(CHANNEL *channel, const char *remotehost,
+    int remoteport, const char *sourcehost, int localport) {
     BUFFER *payload=buffer_new();
     STRING *str=string_from_char(remotehost);
     SSH_SESSION *session=channel->session;
@@ -581,7 +582,7 @@ int channel_close(CHANNEL *channel){
  * SSH_ERROR on error
  * \see channel_read()
  */
-int channel_write(CHANNEL *channel, void *data, u32 len) {
+int channel_write(CHANNEL *channel, const void *data, u32 len) {
     SSH_SESSION *session=channel->session;
     int effectivelen;
     int origlen=len;
@@ -675,7 +676,8 @@ void channel_set_blocking(CHANNEL *channel, int blocking){
     channel->blocking=blocking;
 }
 
-static int channel_request(CHANNEL *channel,char *request, BUFFER *buffer,int reply){
+static int channel_request(CHANNEL *channel, const char *request,
+    BUFFER *buffer, int reply) {
     STRING *request_s=string_from_char(request);
     SSH_SESSION *session=channel->session;
     int err;
@@ -718,7 +720,8 @@ static int channel_request(CHANNEL *channel,char *request, BUFFER *buffer,int re
  * \return SSH_SUCCESS on success\n
  * SSH_ERROR on error
  */
-int channel_request_pty_size(CHANNEL *channel, char *terminal, int col, int row){
+int channel_request_pty_size(CHANNEL *channel, const char *terminal,
+    int col, int row) {
     STRING *term;
     BUFFER *buffer;
     SSH_SESSION *session=channel->session;
@@ -811,10 +814,10 @@ int channel_request_shell(CHANNEL *channel){
  * \warning you normally don't have to call it to have sftp
  * \see sftp_new()
  */
-int channel_request_subsystem(CHANNEL *channel, char *system){
+int channel_request_subsystem(CHANNEL *channel, const char *sys){
     BUFFER* buffer=buffer_new();
     int ret;
-    STRING *subsystem=string_from_char(system);
+    STRING *subsystem=string_from_char(sys);
     buffer_add_ssh_string(buffer,subsystem);
     free(subsystem);
     ret=channel_request(channel,"subsystem",buffer,1);
@@ -834,7 +837,7 @@ int channel_request_sftp( CHANNEL *channel){
  * SSH_ERROR on error
  * \warning some environement variables may be refused by security
  * */
-int channel_request_env(CHANNEL *channel,char *name, char *value){
+int channel_request_env(CHANNEL *channel, const char *name, const char *value){
     BUFFER *buffer=buffer_new();
     int ret;
     STRING *string=string_from_char(name);
@@ -856,7 +859,7 @@ int channel_request_env(CHANNEL *channel,char *name, char *value){
  * SSH_ERROR on error
  * \see channel_request_shell()
  */
-int channel_request_exec(CHANNEL *channel, char *cmd){
+int channel_request_exec(CHANNEL *channel, const char *cmd) {
     BUFFER *buffer;
     STRING *command;
     int ret;

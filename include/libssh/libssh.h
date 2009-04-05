@@ -253,26 +253,28 @@ STRING *publickey_to_string(PUBLIC_KEY *key);
 PUBLIC_KEY *publickey_from_privatekey(PRIVATE_KEY *prv);
 void private_key_free(PRIVATE_KEY *prv);
 STRING *publickey_from_file(SSH_SESSION *session, char *filename,int *_type);
-STRING *publickey_from_next_file(SSH_SESSION *session,char **pub_keys_path,char **keys_path,
-                            char **privkeyfile,int *type,int *count);
+STRING *publickey_from_next_file(SSH_SESSION *session, const char **pub_keys_path,
+    const char **keys_path, char **privkeyfile, int *type, int *count);
 int ssh_is_server_known(SSH_SESSION *session);
 int ssh_write_knownhost(SSH_SESSION *session);
 
 /* in channels.c */
 
 CHANNEL *channel_new(SSH_SESSION *session);
-int channel_open_forward(CHANNEL *channel,char *remotehost, int remoteport, char *sourcehost, int localport);
+int channel_open_forward(CHANNEL *channel, const char *remotehost,
+    int remoteport, const char *sourcehost, int localport);
 int channel_open_session(CHANNEL *channel);
 void channel_free(CHANNEL *channel);
 int channel_request_pty(CHANNEL *channel);
-int channel_request_pty_size(CHANNEL *channel, char *term,int cols, int rows);
+int channel_request_pty_size(CHANNEL *channel, const char *term,
+    int cols, int rows);
 int channel_change_pty_size(CHANNEL *channel,int cols,int rows);
 int channel_request_shell(CHANNEL *channel);
-int channel_request_subsystem(CHANNEL *channel, char *system);
-int channel_request_env(CHANNEL *channel,char *name, char *value);
-int channel_request_exec(CHANNEL *channel, char *cmd);
+int channel_request_subsystem(CHANNEL *channel, const char *system);
+int channel_request_env(CHANNEL *channel, const char *name, const char *value);
+int channel_request_exec(CHANNEL *channel, const char *cmd);
 int channel_request_sftp(CHANNEL *channel);
-int channel_write(CHANNEL *channel, void *data, u32 len);
+int channel_write(CHANNEL *channel, const void *data, u32 len);
 int channel_send_eof(CHANNEL *channel);
 int channel_is_eof(CHANNEL *channel);
 int channel_read(CHANNEL *channel, BUFFER *buffer, u32 bytes, int is_stderr);
