@@ -44,7 +44,7 @@
 #endif
 
 struct crypto_struct {
-    char *name; /* ssh name of the algorithm */
+    const char *name; /* ssh name of the algorithm */
     unsigned int blocksize; /* blocksize of the algo */
     unsigned int keylen; /* length of the key structure */
 #ifdef HAVE_LIBGCRYPT
