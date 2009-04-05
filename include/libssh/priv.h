@@ -493,7 +493,7 @@ int ssh_socket_completewrite(struct socket *s, void *buffer, u32 len);
 int ssh_socket_wait_for_data(struct socket *s, SSH_SESSION *session, u32 len);
 int ssh_socket_nonblocking_flush(struct socket *s);
 int ssh_socket_blocking_flush(struct socket *s);
-int ssh_socket_poll(struct socket *s, int *write, int *except);
+int ssh_socket_poll(struct socket *s, int *writeable, int *except);
 void ssh_socket_set_towrite(struct socket *s);
 void ssh_socket_set_toread(struct socket *s);
 void ssh_socket_set_except(struct socket *s);

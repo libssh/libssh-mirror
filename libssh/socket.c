@@ -422,11 +422,11 @@ int ssh_socket_wait_for_data(struct socket *s, SSH_SESSION *session, u32 len){
 /* \internal
  * \brief polls the socket for data
  * \param session ssh session
- * \param write value pointed to set to 1 if it is possible to write
+ * \param writeable value pointed to set to 1 if it is possible to write
  * \param except value pointed to set to 1 if there is an exception
  * \return 1 if it is possible to read, 0 otherwise, -1 on error
  */
-int ssh_socket_poll(struct socket *s, int *write, int *except){
+int ssh_socket_poll(struct socket *s, int *writeable, int *except){
 	SSH_SESSION *session=s->session;
     struct timeval sometime;
     fd_set rdes; // read set
@@ -441,7 +441,7 @@ int ssh_socket_poll(struct socket *s, int *write, int *except){
 
     if(!ssh_socket_is_open(s)){
         *except=1;
-        *write=0;
+        *writeable=0;
         return 0;
     }
 #ifdef SELECT_LIMIT_CHECK
@@ -475,7 +475,7 @@ int ssh_socket_poll(struct socket *s, int *write, int *except){
     if(!s->data_except)
     	s->data_except=ssh_socket_fd_isset(s,&edes);
     *except=s->data_except;
-    *write=s->data_to_write;
+    *writeable=s->data_to_write;
     leave_function();
     return s->data_to_read || (buffer_get_rest_len(s->in_buffer)>0);
 }
@@ -483,7 +483,7 @@ int ssh_socket_poll(struct socket *s, int *write, int *except){
 
 #ifdef USE_POLL
 /* ssh_socket_poll, poll() version */
-int ssh_socket_poll(struct socket *s, int *write, int *except){
+int ssh_socket_poll(struct socket *s, int *writeable, int *except) {
 	SSH_SESSION *session=s->session;
 	struct pollfd fd[1];
 	int err;
@@ -491,7 +491,7 @@ int ssh_socket_poll(struct socket *s, int *write, int *except){
 	enter_function();
     if(!ssh_socket_is_open(s)){
         *except=1;
-        *write=0;
+        *writeable = 0;
         return 0;
     }
     fd->fd=s->fd;
@@ -515,7 +515,7 @@ int ssh_socket_poll(struct socket *s, int *write, int *except){
     if(!s->data_except)
     	s->data_except=fd->revents & POLLERR;
     *except=s->data_except;
-    *write=s->data_to_write;
+    *writeable = s->data_to_write;
     leave_function();
     return s->data_to_read || (buffer_get_rest_len(s->in_buffer)>0);
 }
