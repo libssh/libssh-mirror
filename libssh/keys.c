@@ -36,7 +36,7 @@
  */
 /* Public key decoding functions */
 
-char *ssh_type_to_char(int type){
+const char *ssh_type_to_char(int type) {
     switch(type){
         case TYPE_DSS:
             return "ssh-dss";
@@ -111,7 +111,8 @@ PUBLIC_KEY *publickey_make_dss(SSH_SESSION *session, BUFFER *buffer){
     return key;
 }
 
-PUBLIC_KEY *publickey_make_rsa(SSH_SESSION *session, BUFFER *buffer, char *type){
+PUBLIC_KEY *publickey_make_rsa(SSH_SESSION *session, BUFFER *buffer,
+    const char *type) {
     STRING *e,*n;
     PUBLIC_KEY *key;
 

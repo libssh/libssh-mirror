@@ -744,8 +744,8 @@ STRING *publickey_from_next_file(SSH_SESSION *session, const char **pub_keys_pat
     static char *home=NULL;
     char public[256];
     char private[256];
-    char *priv;
-    char *pub;
+    const char *priv;
+    const char *pub;
     STRING *pubkey;
     if(!home)
         home=ssh_get_user_home_dir();
@@ -843,7 +843,8 @@ static void tokens_free(char **tokens) {
  * \returns found_type type of key (ie "dsa","ssh-rsa1"). Don't free that value.
  */
 
-static char **ssh_get_knownhost_line(SSH_SESSION *session,FILE **file, char *filename,char **found_type){
+static char **ssh_get_knownhost_line(SSH_SESSION *session, FILE **file,
+    const char *filename, const char **found_type) {
     char buffer[4096];
     char *ptr;
     char **tokens;
@@ -1057,7 +1058,7 @@ int ssh_is_server_known(SSH_SESSION *session){
 
     char **tokens;
     char *host;
-    char *type;
+    const char *type;
     int match;
     FILE *file=NULL;
     int ret=SSH_SERVER_NOT_KNOWN;

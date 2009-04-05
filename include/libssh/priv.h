@@ -179,7 +179,7 @@ typedef struct kex_struct {
 
 struct public_key_struct {
     int type;
-    char *type_c; /* Don't free it ! it is static */
+    const char *type_c; /* Don't free it ! it is static */
 #ifdef HAVE_LIBGCRYPT
     gcry_sexp_t dsa_pub;
     gcry_sexp_t rsa_pub;
@@ -577,7 +577,7 @@ char *ssh_find_matching(const char *in_d, const char *what_d);
 PRIVATE_KEY  *_privatekey_from_file(void *session,char *filename,int type);
 
 /* in keys.c */
-char *ssh_type_to_char(int type);
+const char *ssh_type_to_char(int type);
 int ssh_type_from_name(char *name);
 
 PRIVATE_KEY *privatekey_make_dss(SSH_SESSION *session, BUFFER *buffer);
@@ -586,7 +586,7 @@ PRIVATE_KEY *privatekey_make_rsa(SSH_SESSION *session, BUFFER *buffer,
 PRIVATE_KEY *privatekey_from_string(SSH_SESSION *session, STRING *privkey_s);
 
 PUBLIC_KEY *publickey_make_dss(SSH_SESSION *session, BUFFER *buffer);
-PUBLIC_KEY *publickey_make_rsa(SSH_SESSION *session, BUFFER *buffer,char *type);
+PUBLIC_KEY *publickey_make_rsa(SSH_SESSION *session, BUFFER *buffer, const char *type);
 PUBLIC_KEY *publickey_from_string(SSH_SESSION *session, STRING *pubkey_s);
 SIGNATURE *signature_from_string(SSH_SESSION *session, STRING *signature,PUBLIC_KEY *pubkey,int needed_type);
 void signature_free(SIGNATURE *sign);
