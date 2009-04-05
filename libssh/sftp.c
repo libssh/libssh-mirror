@@ -992,7 +992,7 @@ SFTP_FILE *sftp_open(SFTP_SESSION *sftp, const char *file, int flags, mode_t mod
     SFTP_MESSAGE *msg=NULL;
     STATUS_MESSAGE *status;
     SFTP_ATTRIBUTES attr;
-    u32 flags=0;
+    u32 sftp_flags = 0;
     u32 id=sftp_get_new_id(sftp);
     BUFFER *buffer=buffer_new();
     STRING *filename;
@@ -1002,22 +1002,22 @@ SFTP_FILE *sftp_open(SFTP_SESSION *sftp, const char *file, int flags, mode_t mod
     attr.flags = SSH_FILEXFER_ATTR_PERMISSIONS;
 
     if(flags == O_RDONLY)
-        flags|=SSH_FXF_READ; // if any of the other flag is set, READ should not be set initialy
+        sftp_flags|=SSH_FXF_READ; // if any of the other flag is set, READ should not be set initialy
     if(flags & O_WRONLY)
-        flags |= SSH_FXF_WRITE;
+        sftp_flags |= SSH_FXF_WRITE;
     if(flags & O_RDWR)
-        flags|=(SSH_FXF_WRITE | SSH_FXF_READ);
+        sftp_flags|=(SSH_FXF_WRITE | SSH_FXF_READ);
     if(flags & O_CREAT)
-        flags |=SSH_FXF_CREAT;
+        sftp_flags |=SSH_FXF_CREAT;
     if(flags & O_TRUNC)
-        flags |=SSH_FXF_TRUNC;
+        sftp_flags |=SSH_FXF_TRUNC;
     if(flags & O_EXCL)
-        flags |= SSH_FXF_EXCL;
+        sftp_flags |= SSH_FXF_EXCL;
     buffer_add_u32(buffer,id);
     filename=string_from_char(file);
     buffer_add_ssh_string(buffer,filename);
     free(filename);
-    buffer_add_u32(buffer,htonl(flags));
+    buffer_add_u32(buffer,htonl(sftp_flags));
     buffer_add_attributes(buffer,&attr);
     sftp_packet_write(sftp,SSH_FXP_OPEN,buffer);
     buffer_free(buffer);
