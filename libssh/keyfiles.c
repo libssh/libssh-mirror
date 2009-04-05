@@ -596,7 +596,8 @@ PRIVATE_KEY  *privatekey_from_file(SSH_SESSION *session, const char *filename,
 }
 
 /* same that privatekey_from_file() but without any passphrase things. */
-PRIVATE_KEY  *_privatekey_from_file(void *session,char *filename,int type){
+PRIVATE_KEY *_privatekey_from_file(void *session, const char *filename,
+    int type) {
     FILE *file=fopen(filename,"r");
     PRIVATE_KEY *privkey;
 #ifdef HAVE_LIBGCRYPT

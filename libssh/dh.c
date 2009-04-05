@@ -128,7 +128,7 @@ void ssh_crypto_finalize(void){
 }
    
 /* prints the bignum on stderr */
-void ssh_print_bignum(char *which,bignum num){
+void ssh_print_bignum(const char *which,bignum num){
 #ifdef HAVE_LIBGCRYPT
     unsigned char *hex;
     bignum_bn2hex(num,&hex);

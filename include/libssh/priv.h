@@ -515,7 +515,7 @@ void ssh_set_error(void *error, int code, const char *descr, ...) PRINTF_ATTRIBU
 /* in dh.c */
 /* DH key generation */
 void dh_generate_e(SSH_SESSION *session);
-void ssh_print_bignum(char *which,bignum num);
+void ssh_print_bignum(const char *which,bignum num);
 void dh_generate_x(SSH_SESSION *session);
 void dh_generate_y(SSH_SESSION *session);
 void dh_generate_f(SSH_SESSION *session);
@@ -574,15 +574,16 @@ char *ssh_find_matching(const char *in_d, const char *what_d);
 
 /* in keyfiles.c */
 
-PRIVATE_KEY  *_privatekey_from_file(void *session,char *filename,int type);
+PRIVATE_KEY *_privatekey_from_file(void *session, const char *filename,
+    int type);
 
 /* in keys.c */
 const char *ssh_type_to_char(int type);
-int ssh_type_from_name(char *name);
+int ssh_type_from_name(const char *name);
 
 PRIVATE_KEY *privatekey_make_dss(SSH_SESSION *session, BUFFER *buffer);
 PRIVATE_KEY *privatekey_make_rsa(SSH_SESSION *session, BUFFER *buffer,
-    char *type);
+    const char *type);
 PRIVATE_KEY *privatekey_from_string(SSH_SESSION *session, STRING *privkey_s);
 
 PUBLIC_KEY *publickey_make_dss(SSH_SESSION *session, BUFFER *buffer);
@@ -658,15 +659,15 @@ void crypto_free(CRYPTO *crypto);
 u32 ssh_crc32(char *buffer, int len);
 
 /* auth1.c */
-int ssh_userauth1_none(SSH_SESSION *session, char *username);
-int ssh_userauth1_offer_pubkey(SSH_SESSION *session, char *username,
+int ssh_userauth1_none(SSH_SESSION *session, const char *username);
+int ssh_userauth1_offer_pubkey(SSH_SESSION *session, const char *username,
         int type, STRING *pubkey);
-int ssh_userauth1_password(SSH_SESSION *session, char *username,
-        char *password);
+int ssh_userauth1_password(SSH_SESSION *session, const char *username,
+        const char *password);
 /* in misc.c */
 /* gets the user home dir. */
 char *ssh_get_user_home_dir(void);
-int ssh_file_readaccess_ok(char *file);
+int ssh_file_readaccess_ok(const char *file);
 
 /* macro for byte ordering */
 u64 ntohll(u64);

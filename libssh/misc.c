@@ -95,7 +95,7 @@ char *ssh_get_user_home_dir(void) {
 #endif
 
 /* we have read access on file */
-int ssh_file_readaccess_ok(char *file){
+int ssh_file_readaccess_ok(const char *file){
     if(!access(file,R_OK))
         return 1;
     return 0;

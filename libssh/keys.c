@@ -48,7 +48,7 @@ const char *ssh_type_to_char(int type) {
     }
 }
 
-int ssh_type_from_name(char *name) {
+int ssh_type_from_name(const char *name) {
   if (strcmp(name, "rsa1") == 0) {
     return TYPE_RSA1;
   } else if (strcmp(name, "rsa") == 0) {
