@@ -480,8 +480,21 @@ int ssh_userauth_password(SSH_SESSION *session, const char *username, const char
     return err;
 }
 
-static char *keys_path[]={NULL,"%s/.ssh/identity","%s/.ssh/id_dsa","%s/.ssh/id_rsa",NULL};
-static char *pub_keys_path[]={NULL,"%s/.ssh/identity.pub","%s/.ssh/id_dsa.pub","%s/.ssh/id_rsa.pub",NULL};
+static const char *keys_path[] = {
+  NULL,
+  "%s/.ssh/identity",
+  "%s/.ssh/id_dsa",
+  "%s/.ssh/id_rsa",
+  NULL
+};
+
+static const char *pub_keys_path[] = {
+  NULL,
+  "%s/.ssh/identity.pub",
+  "%s/.ssh/id_dsa.pub",
+  "%s/.ssh/id_rsa.pub",
+  NULL
+};
 
 /* this function initialy was in the client */
 /* but the fools are the ones who never change mind */
