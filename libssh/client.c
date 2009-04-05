@@ -254,7 +254,7 @@ static int dh_handshake(SSH_SESSION *session){
     return SSH_ERROR;
 }
 
-int ssh_service_request(SSH_SESSION *session,char *service){
+int ssh_service_request(SSH_SESSION *session, const char *service) {
     STRING *service_s;
     enter_function();
     buffer_add_u8(session->out_buffer,SSH2_MSG_SERVICE_REQUEST);
