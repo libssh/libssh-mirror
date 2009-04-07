@@ -532,8 +532,8 @@ void dh_import_pubkey(SSH_SESSION *session,STRING *pubkey_string);
 void dh_build_k(SSH_SESSION *session);
 int make_sessionid(SSH_SESSION *session);
 /* add data for the final cookie */
-void hashbufin_add_cookie(SSH_SESSION *session,unsigned char *cookie);
-void hashbufout_add_cookie(SSH_SESSION *session);
+int hashbufin_add_cookie(SSH_SESSION *session, unsigned char *cookie);
+int hashbufout_add_cookie(SSH_SESSION *session);
 void generate_session_keys(SSH_SESSION *session);
 /* returns 1 if server signature ok, 0 otherwise. The NEXT crypto is checked, not the current one */
 int signature_verify(SSH_SESSION *session,STRING *signature);

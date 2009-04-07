@@ -502,20 +502,50 @@ error:
   return rc;
 }
 
-void hashbufout_add_cookie(SSH_SESSION *session){
-    session->out_hashbuf=buffer_new();
-    buffer_add_u8(session->out_hashbuf,20);
-    if(session->server)
-        buffer_add_data(session->out_hashbuf,session->server_kex.cookie,16);
-    else
-        buffer_add_data(session->out_hashbuf,session->client_kex.cookie,16);
+int hashbufout_add_cookie(SSH_SESSION *session) {
+  session->out_hashbuf = buffer_new();
+  if (session->out_hashbuf == NULL) {
+    return -1;
+  }
+
+  if (buffer_add_u8(session->out_hashbuf, 20) < 0) {
+    buffer_free(session->out_hashbuf);
+    return -1;
+  }
+
+  if (session->server) {
+    if (buffer_add_data(session->out_hashbuf,
+          session->server_kex.cookie, 16) < 0) {
+      buffer_free(session->out_hashbuf);
+      return -1;
+    }
+  } else {
+    if (buffer_add_data(session->out_hashbuf,
+          session->client_kex.cookie, 16) < 0) {
+      buffer_free(session->out_hashbuf);
+      return -1;
+    }
+  }
+
+  return 0;
 }
 
+int hashbufin_add_cookie(SSH_SESSION *session, unsigned char *cookie) {
+  session->in_hashbuf = buffer_new();
+  if (session->in_hashbuf == NULL) {
+    return -1;
+  }
 
-void hashbufin_add_cookie(SSH_SESSION *session,unsigned char *cookie){
-    session->in_hashbuf=buffer_new();
-    buffer_add_u8(session->in_hashbuf,20);
-    buffer_add_data(session->in_hashbuf,cookie,16);
+  if (buffer_add_u8(session->in_hashbuf, 20) < 0) {
+    buffer_free(session->in_hashbuf);
+    return -1;
+  }
+  if (buffer_add_data(session->in_hashbuf,cookie, 16) < 0) {
+    buffer_free(session->in_hashbuf);
+    return -1;
+  }
+
+  return 0;
 }
 
 /* TODO FIXME add return value for memory checks */

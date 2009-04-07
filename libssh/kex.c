@@ -243,7 +243,11 @@ int ssh_get_kex(SSH_SESSION *session,int server_kex ){
         leave_function();
         return -1;
     }
-    hashbufin_add_cookie(session,session->server_kex.cookie);
+    if (hashbufin_add_cookie(session, session->server_kex.cookie) < 0) {
+        ssh_set_error(session, SSH_FATAL, "get_kex(): adding cookie failed");
+        leave_function();
+        return -1;
+    }
     memset(strings,0,sizeof(char *)*10);
     for(i=0;i<10;++i){
         str=buffer_get_ssh_string(session->in_buffer);
@@ -337,7 +341,8 @@ int set_kex(SSH_SESSION *session){
     return 0;
 }
 
-/* this function only sends the predefined set of kex methods */    
+/* this function only sends the predefined set of kex methods */
+/* TODO add return value! */
 void ssh_send_kex(SSH_SESSION *session, int server_kex){
     STRING *str;
     int i=0;
@@ -345,7 +350,9 @@ void ssh_send_kex(SSH_SESSION *session, int server_kex){
     enter_function();
     buffer_add_u8(session->out_buffer,SSH2_MSG_KEXINIT);
     buffer_add_data(session->out_buffer,kex->cookie,16);
-    hashbufout_add_cookie(session);
+    if (hashbufout_add_cookie(session) < 0) {
+      return;
+    }
     ssh_list_kex(session, kex);
     for(i=0;i<10;i++){
         str=string_from_char(kex->methods[i]);
