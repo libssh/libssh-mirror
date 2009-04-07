@@ -229,57 +229,83 @@ char *ssh_find_matching(const char *in_d, const char *what_d){
     return NULL;
 }
 
-int ssh_get_kex(SSH_SESSION *session,int server_kex ){
-    STRING *str;
-    char *strings[10];
-    int i;
-    enter_function();
-    if(packet_wait(session,SSH2_MSG_KEXINIT,1)){
-    	leave_function();
-    	return -1;
-    }
-    if(buffer_get_data(session->in_buffer,session->server_kex.cookie,16)!=16){
-        ssh_set_error(session,SSH_FATAL,"get_kex(): no cookie in packet");
-        leave_function();
-        return -1;
-    }
-    if (hashbufin_add_cookie(session, session->server_kex.cookie) < 0) {
-        ssh_set_error(session, SSH_FATAL, "get_kex(): adding cookie failed");
-        leave_function();
-        return -1;
-    }
-    memset(strings,0,sizeof(char *)*10);
-    for(i=0;i<10;++i){
-        str=buffer_get_ssh_string(session->in_buffer);
-        if(!str)
-            break;
-        if(str){
-            buffer_add_ssh_string(session->in_hashbuf,str);
-            strings[i]=string_to_char(str);
-            free(str);
-        } else
-            strings[i]=NULL;
-    }
-    /* copy the server kex info into an array of strings */
-    if(server_kex){
-        session->client_kex.methods = malloc(10 * sizeof(char **));
-        if (session->client_kex.methods == NULL) {
-          leave_function();
-          return -1;
-        }
-        for(i=0;i<10;++i)
-            session->client_kex.methods[i]=strings[i];
-    } else { // client     
-        session->server_kex.methods = malloc(10 * sizeof(char **));
-        if (session->server_kex.methods == NULL) {
-          leave_function();
-          return -1;
-        }
-        for(i=0;i<10;++i)
-            session->server_kex.methods[i]=strings[i];
-    }
+int ssh_get_kex(SSH_SESSION *session, int server_kex) {
+  STRING *str = NULL;
+  char *strings[10];
+  int i;
+
+  enter_function();
+
+  if (packet_wait(session, SSH2_MSG_KEXINIT, 1)) {
     leave_function();
-    return 0;
+    return -1;
+  }
+
+  if (buffer_get_data(session->in_buffer,session->server_kex.cookie,16) != 16) {
+    ssh_set_error(session, SSH_FATAL, "get_kex(): no cookie in packet");
+    leave_function();
+    return -1;
+  }
+
+  if (hashbufin_add_cookie(session, session->server_kex.cookie) < 0) {
+    ssh_set_error(session, SSH_FATAL, "get_kex(): adding cookie failed");
+    leave_function();
+    return -1;
+  }
+
+  memset(strings, 0, sizeof(char *) * 10);
+
+  for (i = 0; i < 10; i++) {
+    str = buffer_get_ssh_string(session->in_buffer);
+    if (str == NULL) {
+      break;
+    }
+
+    if (buffer_add_ssh_string(session->in_hashbuf, str) < 0) {
+      goto error;
+    }
+
+    strings[i] = string_to_char(str);
+    if (strings[i] == NULL) {
+      goto error;
+    }
+    string_free(str);
+    str = NULL;
+  }
+
+  /* copy the server kex info into an array of strings */
+  if (server_kex) {
+    session->client_kex.methods = malloc(10 * sizeof(char **));
+    if (session->client_kex.methods == NULL) {
+      leave_function();
+      return -1;
+    }
+
+    for (i = 0; i < 10; i++) {
+      session->client_kex.methods[i] = strings[i];
+    }
+  } else { /* client */
+    session->server_kex.methods = malloc(10 * sizeof(char **));
+    if (session->server_kex.methods == NULL) {
+      leave_function();
+      return -1;
+    }
+
+    for (i = 0; i < 10; i++) {
+      session->server_kex.methods[i] = strings[i];
+    }
+  }
+
+  leave_function();
+  return 0;
+error:
+  string_free(str);
+  for (i = 0; i < 10; i++) {
+    SAFE_FREE(strings[i]);
+  }
+
+  leave_function();
+  return -1;
 }
 
 void ssh_list_kex(struct ssh_session *session, KEX *kex) {

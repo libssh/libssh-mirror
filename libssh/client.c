@@ -351,7 +351,7 @@ int ssh_connect(SSH_SESSION *session){
   set_status(options,0.5);
   switch(session->version){
       case 2:
-        if(ssh_get_kex(session,0)){
+        if(ssh_get_kex(session,0) < 0) {
             ssh_socket_close(session->socket);
             session->alive=0;
             leave_function();

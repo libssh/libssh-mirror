@@ -339,8 +339,9 @@ int ssh_accept(SSH_SESSION *session){
       return -1;
     }
     ssh_send_kex(session,1);
-    if(ssh_get_kex(session,1))
+    if(ssh_get_kex(session,1) < 0) {
         return -1;
+    }
     ssh_list_kex(session, &session->client_kex);
     crypt_set_algorithms_server(session);
     if(dh_handshake_server(session))
