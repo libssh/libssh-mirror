@@ -442,17 +442,34 @@ int verify_existing_algo(int algo, const char *name){
 /* makes a STRING contating 3 strings : ssh-rsa1,e and n */
 /* this is a public key in openssh's format */
 static STRING *make_rsa1_string(STRING *e, STRING *n){
-    BUFFER *buffer=buffer_new();
-    STRING *rsa=string_from_char("ssh-rsa1");
-    STRING *ret;
-    buffer_add_ssh_string(buffer,rsa);
-    free(rsa);
-    buffer_add_ssh_string(buffer,e);
-    buffer_add_ssh_string(buffer,n);
-    ret=string_new(buffer_get_len(buffer));
-    string_fill(ret,buffer_get(buffer),buffer_get_len(buffer));
-    buffer_free(buffer);
-    return ret;
+  BUFFER *buffer = NULL;
+  STRING *rsa = NULL;
+  STRING *ret = NULL;
+
+  buffer = buffer_new();
+  rsa = string_from_char("ssh-rsa1");
+
+  if (buffer_add_ssh_string(buffer, rsa) < 0) {
+    goto error;
+  }
+  if (buffer_add_ssh_string(buffer, e) < 0) {
+    goto error;
+  }
+  if (buffer_add_ssh_string(buffer, n) < 0) {
+    goto error;
+  }
+
+  ret = string_new(buffer_get_len(buffer));
+  if (ret == NULL) {
+    goto error;
+  }
+
+  string_fill(ret, buffer_get(buffer), buffer_get_len(buffer));
+error:
+  buffer_free(buffer);
+  string_free(rsa);
+
+  return ret;
 }
 
 /* TODO FIXME add return value and error checking in callers */
