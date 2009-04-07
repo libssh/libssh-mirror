@@ -271,7 +271,11 @@ static void channel_rcv_data(SSH_SESSION *session,int is_stderr){
             "Data packet too big for our window(%zu vs %d)",
             string_len(str),
             channel->local_window);
-    channel_default_bufferize(channel,str->string,string_len(str), is_stderr);
+    if (channel_default_bufferize(channel,str->string,string_len(str), is_stderr) < 0) {
+      string_free(str);
+      leave_function();
+      return;
+    }
     if(string_len(str)<=channel->local_window)
         channel->local_window-=string_len(str);
     else
@@ -424,22 +428,41 @@ void channel_handle(SSH_SESSION *session, int type){
 /* when data has been received from the ssh server, it can be applied to the known
     user function, with help of the callback, or inserted here */
 /* XXX is the window changed ? */
-void channel_default_bufferize(CHANNEL *channel, void *data, int len, int is_stderr){
-    struct ssh_session *session = channel->session;
+int channel_default_bufferize(CHANNEL *channel, void *data, int len,
+    int is_stderr) {
+  struct ssh_session *session = channel->session;
 
-    ssh_log(session, SSH_LOG_RARE,
-        "placing %d bytes into channel buffer (stderr=%d)", len, is_stderr);
-    if(!is_stderr){
-        /* stdout */
-        if(!channel->stdout_buffer)
-            channel->stdout_buffer=buffer_new();
-        buffer_add_data(channel->stdout_buffer,data,len);
-    } else {
-        /* stderr */
-        if(!channel->stderr_buffer)
-            channel->stderr_buffer=buffer_new();
-        buffer_add_data(channel->stderr_buffer,data,len);
+  ssh_log(session, SSH_LOG_RARE,
+      "placing %d bytes into channel buffer (stderr=%d)", len, is_stderr);
+  if (! is_stderr) {
+    /* stdout */
+    if(channel->stdout_buffer == NULL) {
+      channel->stdout_buffer = buffer_new();
+      if (channel->stdout_buffer == NULL) {
+        return -1;
+      }
     }
+
+    if (buffer_add_data(channel->stdout_buffer, data, len) < 0) {
+      buffer_free(channel->stdout_buffer);
+      return -1;
+    }
+  } else {
+    /* stderr */
+    if (channel->stderr_buffer == NULL) {
+      channel->stderr_buffer = buffer_new();
+      if (channel->stderr_buffer == NULL) {
+        return -1;
+      }
+    }
+
+    if (buffer_add_data(channel->stderr_buffer, data, len) < 0) {
+      buffer_free(channel->stderr_buffer);
+      return -1;
+    }
+  }
+
+  return 0;
 }
 
 /** \brief open a session channel (suited for a shell. Not tcp Forwarding)

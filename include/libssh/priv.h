@@ -600,7 +600,7 @@ STRING *ssh_encrypt_rsa1(SSH_SESSION *session, STRING *data, PUBLIC_KEY *key);
 /* channel.c */
 void channel_handle(SSH_SESSION *session, int type);
 CHANNEL *channel_new(SSH_SESSION *session);
-void channel_default_bufferize(CHANNEL *channel, void *data, int len,
+int channel_default_bufferize(CHANNEL *channel, void *data, int len,
         int is_stderr);
 u32 ssh_channel_new_id(SSH_SESSION *session);
 CHANNEL *ssh_channel_from_local(SSH_SESSION *session,u32 num);
