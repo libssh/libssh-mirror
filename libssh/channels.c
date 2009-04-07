@@ -1111,7 +1111,7 @@ int channel_request_env(CHANNEL *channel, const char *name, const char *value) {
     goto error;
   }
 
-  string_free(string);
+  string_free(str);
   str = string_from_char(value);
   if (str == NULL) {
     goto error;
