@@ -168,44 +168,77 @@ int ssh_userauth_list(SSH_SESSION *session, const char *username){
  */
 
 int ssh_userauth_none(SSH_SESSION *session, const char *username){
-    STRING *user;
-    STRING *service;
-    STRING *method;
-    int ret;
+    STRING *user = NULL;
+    STRING *service = NULL;
+    STRING *method = NULL;
+    int rc = SSH_AUTH_ERROR;
+
     enter_function();
 #ifdef HAVE_SSH1
     if(session->version==1){
-        ret = ssh_userauth1_none(session,username);
+        err = ssh_userauth1_none(session,username);
         leave_function();
-        return ret;
+        return rc;
     }
 #endif
     if(!username)
         if(!(username=session->options->username)){
             if(ssh_options_default_username(session->options)){
                 leave_function();
-            	return SSH_AUTH_ERROR;
+                return rc;
             } else
                 username=session->options->username;
         }
-    if(ask_userauth(session)){
-    	leave_function();
-    	return SSH_AUTH_ERROR;
+    if (ask_userauth(session)) {
+      leave_function();
+      return rc;
     }
-    user=string_from_char(username);
-    method=string_from_char("none");
-    service=string_from_char("ssh-connection");
-    buffer_add_u8(session->out_buffer,SSH2_MSG_USERAUTH_REQUEST);
-    buffer_add_ssh_string(session->out_buffer,user);
-    buffer_add_ssh_string(session->out_buffer,service);
-    buffer_add_ssh_string(session->out_buffer,method);
-    free(service);
-    free(method);
-    free(user);
-    packet_send(session);
-    ret = wait_auth_status(session,0);
+    user = string_from_char(username);
+    if (user == NULL) {
+      goto error;
+    }
+    method = string_from_char("none");
+    if (method == NULL) {
+      goto error;
+    }
+    service = string_from_char("ssh-connection");
+    if (service == NULL) {
+      goto error;
+    }
+
+    if (buffer_add_u8(session->out_buffer, SSH2_MSG_USERAUTH_REQUEST) < 0) {
+      goto error;
+    }
+    if (buffer_add_ssh_string(session->out_buffer, user) < 0) {
+      goto error;
+    }
+    if (buffer_add_ssh_string(session->out_buffer, service) < 0) {
+      goto error;
+    }
+    if (buffer_add_ssh_string(session->out_buffer, method) < 0) {
+      goto error;
+    }
+
+    string_free(service);
+    string_free(method);
+    string_free(user);
+
+    if (packet_send(session) != SSH_OK) {
+      leave_function();
+      return rc;
+    }
+    rc = wait_auth_status(session, 0);
+
     leave_function();
-    return ret;
+    return rc;
+error:
+    buffer_free(session->out_buffer);
+    string_free(service);
+    string_free(method);
+    string_free(user);
+
+    leave_function();
+    return rc;
 }
 
 /** \brief Try to authenticate through public key
@@ -224,51 +257,94 @@ int ssh_userauth_none(SSH_SESSION *session, const char *username){
  */
 
 int ssh_userauth_offer_pubkey(SSH_SESSION *session, const char *username,int type, STRING *publickey){
-    STRING *user;
-    STRING *service;
-    STRING *method;
-    STRING *algo;
-    int err=SSH_AUTH_ERROR;
+    STRING *user = NULL;
+    STRING *service = NULL;
+    STRING *method = NULL;
+    STRING *algo = NULL;
+    int rc = SSH_AUTH_ERROR;
+
     enter_function();
 #ifdef HAVE_SSH1
     if(session->version==1){
         err= ssh_userauth1_offer_pubkey(session,username,type,publickey);
         leave_function();
-        return err;
+        return rc;
     }
 #endif
     if(!username)
         if(!(username=session->options->username)){
             if(ssh_options_default_username(session->options)){
                 leave_function();
-            	return SSH_AUTH_ERROR;
+                return rc;
             } else
                 username=session->options->username;
         }
     if(ask_userauth(session)){
         leave_function();
-    	return SSH_AUTH_ERROR;
+        return rc;
     }
-    user=string_from_char(username);
-    service=string_from_char("ssh-connection");
-    method=string_from_char("publickey");
-    algo=string_from_char(ssh_type_to_char(type));
 
-    buffer_add_u8(session->out_buffer,SSH2_MSG_USERAUTH_REQUEST);
-    buffer_add_ssh_string(session->out_buffer,user);
-    buffer_add_ssh_string(session->out_buffer,service);
-    buffer_add_ssh_string(session->out_buffer,method);
-    buffer_add_u8(session->out_buffer,0);
-    buffer_add_ssh_string(session->out_buffer,algo);
-    buffer_add_ssh_string(session->out_buffer,publickey);
-    packet_send(session);
-    err=wait_auth_status(session,0);
-    free(user);
-    free(method);
-    free(service);
-    free(algo);
+    user = string_from_char(username);
+    if (user == NULL) {
+      goto error;
+    }
+    service = string_from_char("ssh-connection");
+    if (service == NULL) {
+      goto error;
+    }
+    method = string_from_char("publickey");
+    if (method == NULL) {
+      goto error;
+    }
+    algo = string_from_char(ssh_type_to_char(type));
+    if (algo == NULL) {
+      goto error;
+    }
+
+    if (buffer_add_u8(session->out_buffer, SSH2_MSG_USERAUTH_REQUEST) < 0) {
+      goto error;
+    }
+    if (buffer_add_ssh_string(session->out_buffer, user) < 0) {
+      goto error;
+    }
+    if (buffer_add_ssh_string(session->out_buffer, service) < 0) {
+      goto error;
+    }
+    if (buffer_add_ssh_string(session->out_buffer, method) < 0) {
+      goto error;
+    }
+    if (buffer_add_u8(session->out_buffer, 0) < 0) {
+      goto error;
+    }
+    if (buffer_add_ssh_string(session->out_buffer, algo) < 0) {
+      goto error;
+    }
+    if (buffer_add_ssh_string(session->out_buffer, publickey) < 0) {
+      goto error;
+    }
+
+    string_free(user);
+    string_free(method);
+    string_free(service);
+    string_free(algo);
+
+    if (packet_send(session) != SSH_OK) {
+      leave_function();
+      return rc;
+    }
+    rc = wait_auth_status(session,0);
+
     leave_function();
-    return err;
+    return rc;
+error:
+    buffer_free(session->out_buffer);
+    string_free(user);
+    string_free(method);
+    string_free(service);
+    string_free(algo);
+
+    leave_function();
+    return rc;
 }
 
 
@@ -289,54 +365,98 @@ int ssh_userauth_offer_pubkey(SSH_SESSION *session, const char *username,int typ
  */
 
 int ssh_userauth_pubkey(SSH_SESSION *session, const char *username, STRING *publickey, PRIVATE_KEY *privatekey){
-    STRING *user;
-    STRING *service;
-    STRING *method;
-    STRING *algo;
-    STRING *sign;
-    int err=SSH_AUTH_ERROR;
+    STRING *user = NULL;
+    STRING *service = NULL;
+    STRING *method = NULL;
+    STRING *algo = NULL;
+    STRING *sign = NULL;
+    int rc = SSH_AUTH_ERROR;
+
     enter_function();
 //    if(session->version==1)
 //        return ssh_userauth1_pubkey(session,username,publickey,privatekey);
     if(!username)
         if(!(username=session->options->username)){
             if(ssh_options_default_username(session->options)){
-            	leave_function();
-            	return err;
+              leave_function();
+              return rc;
             } else
                 username=session->options->username;
         }
     if(ask_userauth(session)){
         leave_function();
-    	return err;
+        return rc;
     }
-    user=string_from_char(username);
-    service=string_from_char("ssh-connection");
-    method=string_from_char("publickey");
-    algo=string_from_char(ssh_type_to_char(privatekey->type));
 
+    user = string_from_char(username);
+    if (user == NULL) {
+      goto error;
+    }
+    service = string_from_char("ssh-connection");
+    if (service == NULL) {
+      goto error;
+    }
+    method = string_from_char("publickey");
+    if (method == NULL) {
+      goto error;
+    }
+    algo = string_from_char(ssh_type_to_char(privatekey->type));
+    if (algo == NULL) {
+      goto error;
+    }
 
     /* we said previously the public key was accepted */
-    buffer_add_u8(session->out_buffer,SSH2_MSG_USERAUTH_REQUEST);
-    buffer_add_ssh_string(session->out_buffer,user);
-    buffer_add_ssh_string(session->out_buffer,service);
-    buffer_add_ssh_string(session->out_buffer,method);
-    buffer_add_u8(session->out_buffer,1);
-    buffer_add_ssh_string(session->out_buffer,algo);
-    buffer_add_ssh_string(session->out_buffer,publickey);
-    sign=ssh_do_sign(session,session->out_buffer,privatekey);
-    if(sign){
-        buffer_add_ssh_string(session->out_buffer,sign);
-        free(sign);
-        packet_send(session);
-        err=wait_auth_status(session,0);
+    if (buffer_add_u8(session->out_buffer, SSH2_MSG_USERAUTH_REQUEST) < 0) {
+      goto error;
     }
-    free(user);
-    free(service);
-    free(method);
-    free(algo);
+    if (buffer_add_ssh_string(session->out_buffer, user) < 0) {
+      goto error;
+    }
+    if (buffer_add_ssh_string(session->out_buffer, service) < 0) {
+      goto error;
+    }
+    if (buffer_add_ssh_string(session->out_buffer, method) < 0) {
+      goto error;
+    }
+    if (buffer_add_u8(session->out_buffer, 1) < 0) {
+      goto error;
+    }
+    if (buffer_add_ssh_string(session->out_buffer, algo) < 0) {
+      goto error;
+    }
+    if (buffer_add_ssh_string(session->out_buffer, publickey) < 0) {
+      goto error;
+    }
+    sign = ssh_do_sign(session,session->out_buffer, privatekey);
+    if (sign) {
+      if (buffer_add_ssh_string(session->out_buffer,sign) < 0) {
+        goto error;
+      }
+      string_free(sign);
+
+      if (packet_send(session) != SSH_OK) {
+        leave_function();
+        return rc;
+      }
+      rc = wait_auth_status(session,0);
+    }
+
+    string_free(user);
+    string_free(service);
+    string_free(method);
+    string_free(algo);
+
     leave_function();
-    return err;
+    return rc;
+error:
+    buffer_free(session->out_buffer);
+    string_free(user);
+    string_free(service);
+    string_free(method);
+    string_free(algo);
+
+    leave_function();
+    return rc;
 }
 
 #ifndef _WIN32
@@ -357,24 +477,24 @@ int ssh_userauth_pubkey(SSH_SESSION *session, const char *username, STRING *publ
 
 int ssh_userauth_agent_pubkey(SSH_SESSION *session, const char *username,
     PUBLIC_KEY *publickey) {
-  STRING *user;
-  STRING *service;
-  STRING *method;
-  STRING *algo;
-  STRING *key;
-  STRING *sign;
-  int err = SSH_AUTH_ERROR;
+  STRING *user = NULL;
+  STRING *service = NULL;
+  STRING *method = NULL;
+  STRING *algo = NULL;
+  STRING *key = NULL;
+  STRING *sign = NULL;
+  int rc = SSH_AUTH_ERROR;
 
   enter_function();
   if (! agent_is_running(session)) {
-    return err;
+    return rc;
   }
 
   if(username == NULL) {
     if((username = session->options->username) == NULL) {
       if (ssh_options_default_username(session->options)) {
         leave_function();
-        return err;
+        return rc;
       } else {
         username=session->options->username;
       }
@@ -382,31 +502,65 @@ int ssh_userauth_agent_pubkey(SSH_SESSION *session, const char *username,
   }
   if (ask_userauth(session)) {
     leave_function();
-    return err;
+    return rc;
   }
 
   user = string_from_char(username);
+  if (user == NULL) {
+    goto error;
+  }
   service = string_from_char("ssh-connection");
+  if (service == NULL) {
+    goto error;
+  }
   method = string_from_char("publickey");
+  if (method == NULL) {
+    goto error;
+  }
   algo = string_from_char(ssh_type_to_char(publickey->type));
+  if (algo == NULL) {
+    goto error;
+  }
   key = publickey_to_string(publickey);
+  if (key == NULL) {
+    goto error;
+  }
 
   /* we said previously the public key was accepted */
-  buffer_add_u8(session->out_buffer, SSH2_MSG_USERAUTH_REQUEST);
-  buffer_add_ssh_string(session->out_buffer, user);
-  buffer_add_ssh_string(session->out_buffer, service);
-  buffer_add_ssh_string(session->out_buffer, method);
-  buffer_add_u8(session->out_buffer, 1);
-  buffer_add_ssh_string(session->out_buffer, algo);
-  buffer_add_ssh_string(session->out_buffer, key);
+  if (buffer_add_u8(session->out_buffer, SSH2_MSG_USERAUTH_REQUEST) < 0) {
+    goto error;
+  }
+  if (buffer_add_ssh_string(session->out_buffer, user) < 0) {
+    goto error;
+  }
+  if (buffer_add_ssh_string(session->out_buffer, service) < 0) {
+    goto error;
+  }
+  if (buffer_add_ssh_string(session->out_buffer, method) < 0) {
+    goto error;
+  }
+  if (buffer_add_u8(session->out_buffer, 1) < 0) {
+    goto error;
+  }
+  if (buffer_add_ssh_string(session->out_buffer, algo) < 0) {
+    goto error;
+  }
+  if (buffer_add_ssh_string(session->out_buffer, key) < 0) {
+    goto error;
+  }
 
   sign = ssh_do_sign_with_agent(session, session->out_buffer, publickey);
 
   if (sign) {
-    buffer_add_ssh_string(session->out_buffer, sign);
+    if (buffer_add_ssh_string(session->out_buffer, sign) < 0) {
+      goto error;
+    }
     string_free(sign);
-    packet_send(session);
-    err = wait_auth_status(session,0);
+    if (packet_send(session) != SSH_OK) {
+      leave_function();
+      return rc;
+    }
+    rc = wait_auth_status(session,0);
   }
   string_free(user);
   string_free(service);
@@ -414,7 +568,17 @@ int ssh_userauth_agent_pubkey(SSH_SESSION *session, const char *username,
   string_free(algo);
   leave_function();
 
-  return err;
+  return rc;
+error:
+  buffer_free(session->out_buffer);
+  string_free(sign);
+  string_free(user);
+  string_free(service);
+  string_free(method);
+  string_free(algo);
+
+  leave_function();
+  return rc;
 }
 #endif /* _WIN32 */
 
@@ -432,52 +596,93 @@ int ssh_userauth_agent_pubkey(SSH_SESSION *session, const char *username,
 
 
 int ssh_userauth_password(SSH_SESSION *session, const char *username, const char *password){
-    STRING *user;
-    STRING *service;
-    STRING *method;
-    STRING *password_s;
-    int err;
+    STRING *user = NULL;
+    STRING *service = NULL;
+    STRING *method = NULL;
+    STRING *pwd = NULL;
+    int rc = SSH_AUTH_ERROR;
+
     enter_function();
 #ifdef HAVE_SSH1
     if(session->version==1){
-        err = ssh_userauth1_password(session,username,password);
+        rc = ssh_userauth1_password(session,username,password);
         leave_function();
-        return err;
+        return rc;
     }
 #endif
     if(!username)
         if(!(username=session->options->username)){
             if(ssh_options_default_username(session->options)){
-                err = SSH_AUTH_ERROR;
                 leave_function();
-                return err;
+                return rc;
             } else
                 username=session->options->username;
         }
-    if(ask_userauth(session)){
-    	leave_function();
-    	return SSH_AUTH_ERROR;
+    if(ask_userauth(session)) {
+      leave_function();
+      return rc;
     }
-    user=string_from_char(username);
-    service=string_from_char("ssh-connection");
-    method=string_from_char("password");
-    password_s=string_from_char(password);
 
-    buffer_add_u8(session->out_buffer,SSH2_MSG_USERAUTH_REQUEST);
-    buffer_add_ssh_string(session->out_buffer,user);
-    buffer_add_ssh_string(session->out_buffer,service);
-    buffer_add_ssh_string(session->out_buffer,method);
-    buffer_add_u8(session->out_buffer,0);
-    buffer_add_ssh_string(session->out_buffer,password_s);
-    free(user);
-    free(service);
-    free(method);
-    memset(password_s,0,strlen(password)+4);
-    free(password_s);
-    packet_send(session);
-    err=wait_auth_status(session,0);
+    user = string_from_char(username);
+    if (user == NULL) {
+      goto error;
+    }
+    service = string_from_char("ssh-connection");
+    if (service == NULL) {
+      goto error;
+    }
+    method = string_from_char("password");
+    if (method == NULL) {
+      goto error;
+    }
+    pwd = string_from_char(password);
+    if (pwd == NULL) {
+      goto error;
+    }
+
+    if (buffer_add_u8(session->out_buffer, SSH2_MSG_USERAUTH_REQUEST) < 0) {
+      goto error;
+    }
+    if (buffer_add_ssh_string(session->out_buffer, user) < 0) {
+      goto error;
+    }
+    if (buffer_add_ssh_string(session->out_buffer, service) < 0) {
+      goto error;
+    }
+    if (buffer_add_ssh_string(session->out_buffer, method) < 0) {
+      goto error;
+    }
+    if (buffer_add_u8(session->out_buffer, 0) < 0) {
+      goto error;
+    }
+    if (buffer_add_ssh_string(session->out_buffer, pwd) < 0) {
+      goto error;
+    }
+
+    string_free(user);
+    string_free(service);
+    string_free(method);
+    string_burn(pwd);
+    string_free(pwd);
+
+    if (packet_send(session) != SSH_OK) {
+      leave_function();
+      return rc;
+    }
+    rc = wait_auth_status(session, 0);
+
     leave_function();
-    return err;
+    return rc;
+error:
+    buffer_free(session->out_buffer);
+    string_free(user);
+    string_free(service);
+    string_free(method);
+    string_burn(pwd);
+    string_free(pwd);
+
+    leave_function();
+    return rc;
 }
 
 static const char *keys_path[] = {
@@ -772,31 +977,74 @@ static void kbdint_clean(struct ssh_kbdint *kbd){
 
 /* this function sends the first packet as explained in section 3.1
  * of the draft */
-static int kbdauth_init(SSH_SESSION *session,
-        const char *user, const char *submethods){
-    STRING *user_s=string_from_char(user);
-    STRING *submethods_s=(submethods ? string_from_char(submethods): string_from_char(""));
-    STRING *service=string_from_char("ssh-connection");
-    STRING *method=string_from_char("keyboard-interactive");
-    int err;
-    enter_function();
-    buffer_add_u8(session->out_buffer,SSH2_MSG_USERAUTH_REQUEST);
-    buffer_add_ssh_string(session->out_buffer,user_s);
-    buffer_add_ssh_string(session->out_buffer,service);
-    buffer_add_ssh_string(session->out_buffer,method);
-    buffer_add_u32(session->out_buffer,0); // language tag
-    buffer_add_ssh_string(session->out_buffer,submethods_s);
-    free(user_s);
-    free(service);
-    free(method);
-    free(submethods_s);
-    if(packet_send(session)){
-        leave_function();
-    	return SSH_AUTH_ERROR;
-    }
-    err=wait_auth_status(session,1);
+static int kbdauth_init(SSH_SESSION *session, const char *user,
+    const char *submethods) {
+  STRING *usr = NULL;
+  STRING *sub = NULL;
+  STRING *service = NULL;
+  STRING *method = NULL;
+  int rc = SSH_AUTH_ERROR;
+
+  enter_function();
+
+  usr = string_from_char(user);
+  if (usr == NULL) {
+    goto error;
+  }
+  sub = (submethods ? string_from_char(submethods) : string_from_char(""));
+  if (sub == NULL) {
+    goto error;
+  }
+  service = string_from_char("ssh-connection");
+  if (service == NULL) {
+    goto error;
+  }
+  method = string_from_char("keyboard-interactive");
+  if (method == NULL) {
+    goto error;
+  }
+
+  if (buffer_add_u8(session->out_buffer, SSH2_MSG_USERAUTH_REQUEST) < 0) {
+    goto error;
+  }
+  if (buffer_add_ssh_string(session->out_buffer, usr) < 0) {
+    goto error;
+  }
+  if (buffer_add_ssh_string(session->out_buffer, service) < 0) {
+    goto error;
+  }
+  if (buffer_add_ssh_string(session->out_buffer, method) < 0) {
+    goto error;
+  }
+  if (buffer_add_u32(session->out_buffer, 0) < 0) {
+    goto error;
+  }
+  if (buffer_add_ssh_string(session->out_buffer, sub) < 0) {
+    goto error;
+  }
+
+  string_free(usr);
+  string_free(service);
+  string_free(method);
+  string_free(sub);
+
+  if (packet_send(session) != SSH_OK) {
     leave_function();
-    return err;
+    return rc;
+  }
+  rc = wait_auth_status(session,1);
+
+  leave_function();
+  return rc;
+error:
+  buffer_free(session->out_buffer);
+  string_free(usr);
+  string_free(service);
+  string_free(method);
+  string_free(sub);
+
+  leave_function();
+  return rc;
 }
 
 static int kbdauth_info_get(SSH_SESSION *session){
@@ -879,28 +1127,52 @@ static int kbdauth_info_get(SSH_SESSION *session){
 
 /* sends challenge back to the server */
 static int kbdauth_send(SSH_SESSION *session) {
-    STRING *answer;
-    u32 i;
-    int err;
-    enter_function();
-    buffer_add_u8(session->out_buffer,SSH2_MSG_USERAUTH_INFO_RESPONSE);
-    buffer_add_u32(session->out_buffer,htonl(session->kbdint->nprompts));
-    for(i=0;i<session->kbdint->nprompts;++i){
-        if(session->kbdint->answers[i])
-            answer=string_from_char(session->kbdint->answers[i]);
-        else
-            answer=string_from_char("");
-        buffer_add_ssh_string(session->out_buffer,answer);
-        string_burn(answer);
-        free(answer);
+  STRING *answer = NULL;
+  int rc = SSH_AUTH_ERROR;
+  u32 i;
+
+  enter_function();
+
+  if (buffer_add_u8(session->out_buffer,SSH2_MSG_USERAUTH_INFO_RESPONSE) < 0) {
+    goto error;
+  }
+  if (buffer_add_u32(session->out_buffer, htonl(session->kbdint->nprompts)) < 0) {
+    goto error;
+  }
+
+  for (i = 0; i < session->kbdint->nprompts; i++) {
+    if (session->kbdint->answers[i]) {
+      answer = string_from_char(session->kbdint->answers[i]);
+    } else {
+      answer = string_from_char("");
     }
-    if(packet_send(session)){
-        leave_function();
-    	return SSH_AUTH_ERROR;
+    if (answer == NULL) {
+      goto error;
     }
-    err = wait_auth_status(session,1);
+
+    if (buffer_add_ssh_string(session->out_buffer, answer) < 0) {
+      goto error;
+    }
+
+    string_burn(answer);
+    string_free(answer);
+  }
+
+  if (packet_send(session) != SSH_OK) {
     leave_function();
-    return err;
+    return rc;
+  }
+  rc = wait_auth_status(session,1);
+
+  leave_function();
+  return rc;
+error:
+  buffer_free(session->out_buffer);
+  string_burn(answer);
+  string_free(answer);
+
+  leave_function();
+  return rc;
 }
 
 /** \brief Try to authenticate through the "keyboard-interactive" method
