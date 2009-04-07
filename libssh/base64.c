@@ -56,23 +56,28 @@ static int get_equals(char *string);
 BUFFER *base64_to_bin(char *source){
     int len;
     int equals;
-    BUFFER *buffer=buffer_new();
+    BUFFER *buffer = NULL;
     unsigned char block[3];
 
     /* get the number of equals signs, which mirrors the padding */
     equals=get_equals(source);
     if(equals>2){
-        buffer_free(buffer);
         return NULL;
+    }
+
+    buffer = buffer_new();
+    if (buffer == NULL) {
+      return NULL;
     }
 
     len=strlen(source);
     while(len>4){
         if(_base64_to_bin(block,source,3)){
-            buffer_free(buffer);
-            return NULL;
+            goto error;
         }
-        buffer_add_data(buffer,block,3);
+        if (buffer_add_data(buffer, block, 3) < 0) {
+          goto error;
+        }
         len-=4;
         source+=4;
     }
@@ -83,49 +88,50 @@ BUFFER *base64_to_bin(char *source){
    an integral multiple of 4 characters with no "=" padding */
         case 4:
             if(equals!=0){
-                buffer_free(buffer);
-                return NULL;
+              goto error;
             }
             if(_base64_to_bin(block,source,3)){
-                buffer_free(buffer);
-                return NULL;
+              goto error;
             }
-            buffer_add_data(buffer,block,3);
+            if (buffer_add_data(buffer,block,3) < 0) {
+              goto error;
+            }
             return buffer;
 /*(2) the final quantum of encoding input is exactly 8 bits; here, the final
    unit of encoded output will be two characters followed by two "="
    padding characters */
         case 2:
             if(equals!=2){
-                buffer_free(buffer);
-                return NULL;
+              goto error;
             }
             if(_base64_to_bin(block,source,1)){
-                buffer_free(buffer);
-                return NULL;
+              goto error;
             }
-            buffer_add_data(buffer,block,1);
+            if (buffer_add_data(buffer,block,1) < 0) {
+              goto error;
+            }
             return buffer;
 /* the final quantum of encoding input is
    exactly 16 bits; here, the final unit of encoded output will be three
    characters followed by one "=" padding character */
         case 3:
             if(equals!=1){
-                buffer_free(buffer);
-                return NULL;
+              goto error;
             }
             if(_base64_to_bin(block,source,2)){
-                buffer_free(buffer);
-                return NULL;
+              goto error;
             }
-            buffer_add_data(buffer,block,2);
+            if (buffer_add_data(buffer,block,2) < 0) {
+              goto error;
+            }
             return buffer;
         default:
             /* 4,3,2 are the only padding size allowed */
-            buffer_free(buffer);
-            return NULL;
+            goto error;
    }
-   return NULL;
+error:
+  buffer_free(buffer);
+  return NULL;
 }
 
 #define BLOCK(letter,n) do { ptr=strchr(alphabet,source[n]);\
