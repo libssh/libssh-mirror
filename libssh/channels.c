@@ -44,30 +44,44 @@
 
 /** \brief allocate a new channel
  * \param session ssh session
- * \return an allocated channel. As this function doesn't speak with server, it never fails
+ * \return An allocated channel, NULL on error.
  */
-CHANNEL *channel_new(SSH_SESSION *session){
-    CHANNEL *channel=malloc(sizeof(CHANNEL));
+CHANNEL *channel_new(SSH_SESSION *session) {
+  CHANNEL *channel = NULL;
 
-    if (channel == NULL) {
-      return NULL;
-    }
-    memset(channel,0,sizeof(CHANNEL));
-    channel->session=session;
-    channel->version=session->version;
-    channel->stdout_buffer=buffer_new();
-    channel->stderr_buffer=buffer_new();
-    channel->exit_status=-1;
-    if(!session->channels){
-        session->channels=channel;
-        channel->next=channel->prev=channel;
-        return channel;
-    }
-    channel->next=session->channels;
-    channel->prev=session->channels->prev;
-    channel->next->prev=channel;
-    channel->prev->next=channel;
+  channel = malloc(sizeof(CHANNEL));
+  if (channel == NULL) {
+    return NULL;
+  }
+  memset(channel,0,sizeof(CHANNEL));
+
+  channel->stdout_buffer = buffer_new();
+  if (channel->stdout_buffer == NULL) {
+    SAFE_FREE(channel);
+    return NULL;
+  }
+
+  channel->stderr_buffer = buffer_new();
+  if (channel->stderr_buffer == NULL) {
+    SAFE_FREE(channel);
+    return NULL;
+  }
+
+  channel->session = session;
+  channel->version = session->version;
+  channel->exit_status = -1;
+
+  if(session->channels == NULL) {
+    session->channels = channel;
+    channel->next = channel->prev = channel;
     return channel;
+  }
+  channel->next = session->channels;
+  channel->prev = session->channels->prev;
+  channel->next->prev = channel;
+  channel->prev->next = channel;
+
+  return channel;
 }
 
 u32 ssh_channel_new_id(SSH_SESSION *session){
