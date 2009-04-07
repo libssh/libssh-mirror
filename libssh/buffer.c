@@ -68,16 +68,19 @@ void buffer_free(struct buffer_struct *buffer) {
 
 static int realloc_buffer(struct buffer_struct *buffer, int needed) {
   int smallest = 1;
+  char *new = NULL;
   /* Find the smallest power of two which is greater or equal to needed */
   while(smallest <= needed) {
     smallest <<= 1;
   }
   needed = smallest;
-  buffer->data = realloc(buffer->data, needed);
-  if (buffer->data == NULL) {
+  new = realloc(buffer->data, needed);
+  if (new == NULL) {
     return -1;
   }
+  buffer->data = new;
   buffer->allocated = needed;
+
   return 0;
 }
 
