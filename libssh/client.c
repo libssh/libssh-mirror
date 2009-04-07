@@ -212,7 +212,11 @@ static int dh_handshake(SSH_SESSION *session){
             	return ret;
             }
             ssh_log(session, SSH_LOG_RARE, "Got SSH_MSG_NEWKEYS\n");
-            make_sessionid(session);
+            ret = make_sessionid(session);
+            if (ret != SSH_OK) {
+              leave_function();
+              return SSH_ERROR;
+            }
             /* set the cryptographic functions for the next crypto */
             /* (it is needed for generate_session_keys for key lenghts) */
             if(crypt_set_algorithms(session)){

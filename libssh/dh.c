@@ -356,88 +356,150 @@ static void sha_add(STRING *str,SHACTX ctx){
 }
 */
 
-/* TODO FIXME add memory checking and a return value */
-void make_sessionid(SSH_SESSION *session){
-    SHACTX ctx;
-    STRING *num,*str;
-    BUFFER *server_hash, *client_hash;
-    BUFFER *buf=buffer_new();
-    u32 len;
-    enter_function();
+int make_sessionid(SSH_SESSION *session) {
+  SHACTX ctx;
+  STRING *num = NULL;
+  STRING *str = NULL;
+  BUFFER *server_hash = NULL;
+  BUFFER *client_hash = NULL;
+  BUFFER *buf = NULL;
+  u32 len;
+  int rc = SSH_ERROR;
 
-    ctx = sha1_init();
-    if (ctx == NULL) {
-      return;
-    }
+  enter_function();
 
-    str=string_from_char(session->clientbanner);
-    buffer_add_ssh_string(buf,str);
-    //sha_add(str,ctx);
-    free(str);
+  ctx = sha1_init();
+  if (ctx == NULL) {
+    return rc;
+  }
 
-    str=string_from_char(session->serverbanner);
-    buffer_add_ssh_string(buf,str);
-    //sha_add(str,ctx);
-    free(str);
-    if(session->client){
-        server_hash=session->in_hashbuf;
-        client_hash=session->out_hashbuf;
-    } else{
-        server_hash=session->out_hashbuf;
-        client_hash=session->in_hashbuf;
-    }
-    buffer_add_u32(server_hash,0);
-    buffer_add_u8(server_hash,0);
-    buffer_add_u32(client_hash,0);
-    buffer_add_u8(client_hash,0);
+  buf = buffer_new();
+  if (buf == NULL) {
+    return rc;
+  }
 
-    len=ntohl(buffer_get_len(client_hash));
-    //sha1_update(ctx,&len,4);
-    buffer_add_u32(buf,len);
-    buffer_add_data(buf,buffer_get(client_hash),buffer_get_len(client_hash));
-    //sha1_update(ctx,buffer_get(client_hash),buffer_get_len(client_hash));
-    buffer_free(client_hash);
+  str = string_from_char(session->clientbanner);
+  if (str == NULL) {
+    goto error;
+  }
 
-    len=ntohl(buffer_get_len(server_hash));
-    buffer_add_u32(buf,len);
-    //sha1_update(ctx,&len,4);
+  if (buffer_add_ssh_string(buf, str) < 0) {
+    goto error;
+  }
+  string_free(str);
 
-    buffer_add_data(buf,buffer_get(server_hash),buffer_get_len(server_hash));
-//    ssh_print_hexa("server_hash",buffer_get(server_hash),buffer_get_len(server_hash));
-    //sha1_update(ctx,buffer_get(server_hash),buffer_get_len(server_hash));
-    buffer_free(server_hash);
-    
-    session->in_hashbuf=NULL;
-    session->out_hashbuf=NULL;
-    len=string_len(session->next_crypto->server_pubkey)+4;
-    buffer_add_data(buf,session->next_crypto->server_pubkey,len);
-//    sha1_update(ctx,session->next_crypto->server_pubkey,len);
-    num=make_bignum_string(session->next_crypto->e);
-    len=string_len(num)+4;
-    buffer_add_data(buf,num,len);
-    //sha1_update(ctx,num,len);
-    free(num);
-    num=make_bignum_string(session->next_crypto->f);
-    len=string_len(num)+4;
-    buffer_add_data(buf,num,len);
-//    sha1_update(ctx,num,len=(string_len(num)+4));
-    free(num);
-    num=make_bignum_string(session->next_crypto->k);
-    len=string_len(num)+4;
-    buffer_add_data(buf,num,len);
-//    sha1_update(ctx,num,len);
-    free(num);
+  str = string_from_char(session->serverbanner);
+  if (str == NULL) {
+    goto error;
+  }
+
+  if (buffer_add_ssh_string(buf, str) < 0) {
+    goto error;
+  }
+
+  if (session->client) {
+    server_hash = session->in_hashbuf;
+    client_hash = session->out_hashbuf;
+  } else {
+    server_hash = session->out_hashbuf;
+    client_hash = session->in_hashbuf;
+  }
+
+  if (buffer_add_u32(server_hash, 0) < 0) {
+    goto error;
+  }
+  if (buffer_add_u8(server_hash, 0) < 0) {
+    goto error;
+  }
+  if (buffer_add_u32(client_hash, 0) < 0) {
+    goto error;
+  }
+  if (buffer_add_u8(client_hash, 0) < 0) {
+    goto error;
+  }
+
+  len = ntohl(buffer_get_len(client_hash));
+  if (buffer_add_u32(buf,len) < 0) {
+    goto error;
+  }
+  if (buffer_add_data(buf, buffer_get(client_hash),
+        buffer_get_len(client_hash)) < 0) {
+    goto error;
+  }
+
+  len = ntohl(buffer_get_len(server_hash));
+  if (buffer_add_u32(buf, len) < 0) {
+    goto error;
+  }
+  if (buffer_add_data(buf, buffer_get(server_hash),
+        buffer_get_len(server_hash)) < 0) {
+    goto error;
+  }
+
+  len = string_len(session->next_crypto->server_pubkey) + 4;
+  if (buffer_add_data(buf, session->next_crypto->server_pubkey, len) < 0) {
+    goto error;
+  }
+
+  num = make_bignum_string(session->next_crypto->e);
+  if (num == NULL) {
+    goto error;
+  }
+
+  len = string_len(num) + 4;
+  if (buffer_add_data(buf, num, len) < 0) {
+    goto error;
+  }
+
+  string_free(num);
+  num = make_bignum_string(session->next_crypto->f);
+  if (num == NULL) {
+    goto error;
+  }
+
+  len = string_len(num) + 4;
+  if (buffer_add_data(buf, num, len) < 0) {
+    goto error;
+  }
+
+  string_free(num);
+  num = make_bignum_string(session->next_crypto->k);
+  if (num == NULL) {
+    goto error;
+  }
+
+  len = string_len(num) + 4;
+  if (buffer_add_data(buf, num, len) < 0) {
+    goto error;
+  }
+
 #ifdef DEBUG_CRYPTO
-    ssh_print_hexa("hash buffer",buffer_get(buf),buffer_get_len(buf));
+  ssh_print_hexa("hash buffer", buffer_get(buf), buffer_get_len(buf));
 #endif
-    sha1_update(ctx,buffer_get(buf),buffer_get_len(buf));
-    sha1_final(session->next_crypto->session_id,ctx);
-    buffer_free(buf);
+
+  sha1_update(ctx, buffer_get(buf), buffer_get_len(buf));
+  sha1_final(session->next_crypto->session_id, ctx);
+
 #ifdef DEBUG_CRYPTO
-    printf("Session hash : ");
-    ssh_print_hexa("session id",session->next_crypto->session_id,SHA_DIGEST_LEN);
+  printf("Session hash: ");
+  ssh_print_hexa("session id", session->next_crypto->session_id, SHA_DIGEST_LEN);
 #endif
-    leave_function();
+
+  rc = SSH_OK;
+error:
+  buffer_free(buf);
+  buffer_free(client_hash);
+  buffer_free(server_hash);
+
+  session->in_hashbuf = NULL;
+  session->out_hashbuf = NULL;
+
+  string_free(str);
+  string_free(num);
+
+  leave_function();
+
+  return rc;
 }
 
 void hashbufout_add_cookie(SSH_SESSION *session){

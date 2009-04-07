@@ -290,7 +290,9 @@ static int dh_handshake_server(SSH_SESSION *session){
     publickey_free(pub);
     dh_import_pubkey(session,pubkey);
     dh_build_k(session);
-    make_sessionid(session);
+    if (make_sessionid(session) != SSH_OK) {
+      return -1;
+    }
     sign=ssh_sign_session_id(session,prv);
     buffer_free(buf);
     /* free private keys as they should not be readable past this point */

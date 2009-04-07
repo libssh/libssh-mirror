@@ -530,7 +530,7 @@ void dh_import_f(SSH_SESSION *session,STRING *f_string);
 void dh_import_e(SSH_SESSION *session, STRING *e_string);
 void dh_import_pubkey(SSH_SESSION *session,STRING *pubkey_string);
 void dh_build_k(SSH_SESSION *session);
-void make_sessionid(SSH_SESSION *session);
+int make_sessionid(SSH_SESSION *session);
 /* add data for the final cookie */
 void hashbufin_add_cookie(SSH_SESSION *session,unsigned char *cookie);
 void hashbufout_add_cookie(SSH_SESSION *session);
