@@ -563,7 +563,7 @@ socket_t ssh_connect_host(SSH_SESSION *session, const char *host,const char
 
 /* in kex.c */
 extern const char *ssh_kex_nums[];
-void ssh_send_kex(SSH_SESSION *session,int server_kex);
+int ssh_send_kex(SSH_SESSION *session, int server_kex);
 void ssh_list_kex(SSH_SESSION *session, KEX *kex);
 int set_kex(SSH_SESSION *session);
 int ssh_get_kex(SSH_SESSION *session, int server_kex);

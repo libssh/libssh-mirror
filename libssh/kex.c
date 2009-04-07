@@ -368,29 +368,62 @@ int set_kex(SSH_SESSION *session){
 }
 
 /* this function only sends the predefined set of kex methods */
-/* TODO add return value! */
-void ssh_send_kex(SSH_SESSION *session, int server_kex){
-    STRING *str;
-    int i=0;
-    KEX *kex=(server_kex ? &session->server_kex : &session->client_kex);
-    enter_function();
-    buffer_add_u8(session->out_buffer,SSH2_MSG_KEXINIT);
-    buffer_add_data(session->out_buffer,kex->cookie,16);
-    if (hashbufout_add_cookie(session) < 0) {
-      return;
+int ssh_send_kex(SSH_SESSION *session, int server_kex) {
+  KEX *kex = (server_kex ? &session->server_kex : &session->client_kex);
+  STRING *str = NULL;
+  int i;
+
+  enter_function();
+
+  if (buffer_add_u8(session->out_buffer, SSH2_MSG_KEXINIT) < 0) {
+    goto error;
+  }
+  if (buffer_add_data(session->out_buffer, kex->cookie, 16) < 0) {
+    goto error;
+  }
+
+  if (hashbufout_add_cookie(session) < 0) {
+    goto error;
+  }
+
+  ssh_list_kex(session, kex);
+
+  for (i = 0; i < 10; i++) {
+    str = string_from_char(kex->methods[i]);
+    if (str == NULL) {
+      goto error;
     }
-    ssh_list_kex(session, kex);
-    for(i=0;i<10;i++){
-        str=string_from_char(kex->methods[i]);
-        buffer_add_ssh_string(session->out_hashbuf,str);
-        buffer_add_ssh_string(session->out_buffer,str);
-        free(str);
+
+    if (buffer_add_ssh_string(session->out_hashbuf, str) < 0) {
+      goto error;
     }
-    i=0;
-    buffer_add_u8(session->out_buffer,0);
-    buffer_add_u32(session->out_buffer,0);
-    packet_send(session);
+    if (buffer_add_ssh_string(session->out_buffer, str) < 0) {
+      goto error;
+    }
+    string_free(str);
+  }
+
+  if (buffer_add_u8(session->out_buffer, 0) < 0) {
+    goto error;
+  }
+  if (buffer_add_u32(session->out_buffer, 0) < 0) {
+    goto error;
+  }
+
+  if (packet_send(session) != SSH_OK) {
     leave_function();
+    return -1;
+  }
+
+  leave_function();
+  return 0;
+error:
+  buffer_free(session->out_buffer);
+  buffer_free(session->out_hashbuf);
+  string_free(str);
+
+  leave_function();
+  return -1;
 }
 
 /* returns 1 if at least one of the name algos is in the default algorithms table */
