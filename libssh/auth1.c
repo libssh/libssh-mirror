@@ -23,59 +23,78 @@
  * vim: ts=2 sw=2 et cindent
  */
 
-#include "libssh/priv.h"
-#include "libssh/ssh1.h"
 #include <string.h>
 #include <stdlib.h>
 
-/*
-static void burn(char *ptr){
-    if(ptr)
-        memset(ptr,'X',strlen(ptr));
-}
-*/
+#include "libssh/priv.h"
+#include "libssh/ssh1.h"
+
 #ifdef HAVE_SSH1
-static int wait_auth1_status(SSH_SESSION *session){
-    /* wait for a packet */
-    if(packet_read(session))
-        return SSH_AUTH_ERROR;
-    if(packet_translate(session))
-        return SSH_AUTH_ERROR;
-    switch(session->in_packet.type){
-        case SSH_SMSG_SUCCESS:
-            return SSH_AUTH_SUCCESS;
-        case SSH_SMSG_FAILURE:
-            return SSH_AUTH_DENIED;
-    }
-    ssh_set_error(session,SSH_FATAL,"Was waiting for a SUCCESS or "
-    "FAILURE, got %d",session->in_packet.type);
+static int wait_auth1_status(SSH_SESSION *session) {
+  /* wait for a packet */
+  if (packet_read(session)) {
     return SSH_AUTH_ERROR;
+  }
+
+  if(packet_translate(session)) {
+    return SSH_AUTH_ERROR;
+  }
+
+  switch(session->in_packet.type) {
+    case SSH_SMSG_SUCCESS:
+      return SSH_AUTH_SUCCESS;
+    case SSH_SMSG_FAILURE:
+      return SSH_AUTH_DENIED;
+  }
+
+  ssh_set_error(session, SSH_FATAL, "Was waiting for a SUCCESS or "
+      "FAILURE, got %d", session->in_packet.type);
+
+  return SSH_AUTH_ERROR;
 }
-static int send_username(SSH_SESSION *session, const char *username){
-    STRING *user;
-    /* returns SSH_AUTH_SUCCESS or SSH_AUTH_DENIED */
-    if(session->auth_service_asked)
-        return session->auth_service_asked;
-    buffer_add_u8(session->out_buffer,SSH_CMSG_USER);
-    if(!username)
-        if(!(username=session->options->username)){
-            if(ssh_options_default_username(session->options))
-                return session->auth_service_asked=SSH_AUTH_ERROR;
-            else
-                username=session->options->username;
-        }
-    user=string_from_char(username);
-    buffer_add_ssh_string(session->out_buffer,user);
-    free(user);
-    packet_send(session);
-    session->auth_service_asked=wait_auth1_status(session);
+
+static int send_username(SSH_SESSION *session, const char *username) {
+  STRING *user = NULL;
+  /* returns SSH_AUTH_SUCCESS or SSH_AUTH_DENIED */
+  if(session->auth_service_asked) {
     return session->auth_service_asked;
+  }
+
+  if (!username) {
+    if(!(username = session->options->username)) {
+      if(ssh_options_default_username(session->options)) {
+        return session->auth_service_asked = SSH_AUTH_ERROR;
+      } else {
+        username = session->options->username;
+      }
+    }
+  }
+  user = string_from_char(username);
+  if (user == NULL) {
+    return SSH_AUTH_ERROR;
+  }
+
+  if (buffer_add_u8(session->out_buffer, SSH_CMSG_USER) < 0) {
+    string_free(user);
+    return SSH_AUTH_ERROR;
+  }
+  if (buffer_add_ssh_string(session->out_buffer, user) < 0) {
+    string_free(user);
+    return SSH_AUTH_ERROR;
+  }
+  string_free(user);
+  if (packet_send(session) != SSH_OK) {
+    return SSH_AUTH_ERROR;
+  }
+
+  session->auth_service_asked = wait_auth1_status(session);
+
+  return session->auth_service_asked;
 }
 
 /* use the "none" authentication question */
-
-int ssh_userauth1_none(SSH_SESSION *session,const char *username){
-    return send_username(session,username);
+int ssh_userauth1_none(SSH_SESSION *session, const char *username){
+    return send_username(session, username);
 }
 
 /*
@@ -119,8 +138,8 @@ int ssh_userauth_offer_pubkey(SSH_SESSION *session, char *username,int type, STR
 /** \internal
  * \todo implement ssh1 public key
  */
-int ssh_userauth1_offer_pubkey(SSH_SESSION *session, const char *username, int type,
-        STRING *pubkey){
+int ssh_userauth1_offer_pubkey(SSH_SESSION *session, const char *username,
+    int type, STRING *pubkey) {
     return SSH_AUTH_DENIED;
 }
 
@@ -171,39 +190,63 @@ int ssh_userauth_pubkey(SSH_SESSION *session, char *username, STRING *publickey,
 }
 */
 
-int ssh_userauth1_password(SSH_SESSION *session,const char *username,const char *password){
-    STRING *password_s;
-    int err;
-    err=send_username(session,username);
-    if(err!=SSH_AUTH_DENIED)
-        return err;
-    /* we trick a bit here. A known flaw in SSH1 protocol is that it's
-     * easy to guess password sizes.
-     * not that sure ...
-     */
-    /* XXX fix me here ! */
-    /* cisco IOS doesn't like when a password is followed by zeroes and random pad. */
-    if(1 || strlen(password)>=128){
-        /* not risky to disclose the size of such a big password .. */
-        password_s=string_from_char(password);
-    } else {
-        /* fill the password string from random things. the strcpy
-         * ensure there is at least a nul byte after the password.
-         * most implementation won't see the garbage at end.
-         * why garbage ? because nul bytes will be compressed by
-         * gzip and disclose password len.
-         */
-        password_s=string_new(128);
-        ssh_get_random(password_s->string,128,0);
-        strcpy((char *)password_s->string,password);
-    }
+int ssh_userauth1_password(SSH_SESSION *session, const char *username,
+    const char *password) {
+  STRING *pwd = NULL;
+  int rc;
 
-    buffer_add_u8(session->out_buffer,SSH_CMSG_AUTH_PASSWORD);
-    buffer_add_ssh_string(session->out_buffer,password_s);
-    string_burn(password_s);
-    free(password_s);
-    packet_send(session);
-    return wait_auth1_status(session);
+  rc = send_username(session, username);
+  if (rc != SSH_AUTH_DENIED) {
+    return rc;
+  }
+
+  /* we trick a bit here. A known flaw in SSH1 protocol is that it's
+   * easy to guess password sizes.
+   * not that sure ...
+   */
+
+  /* XXX fix me here ! */
+  /* cisco IOS doesn't like when a password is followed by zeroes and random pad. */
+  if(1 || strlen(password) >= 128) {
+    /* not risky to disclose the size of such a big password .. */
+    pwd = string_from_char(password);
+    if (pwd == NULL) {
+      return SSH_AUTH_ERROR;
+    }
+  } else {
+    /* fill the password string from random things. the strcpy
+     * ensure there is at least a nul byte after the password.
+     * most implementation won't see the garbage at end.
+     * why garbage ? because nul bytes will be compressed by
+     * gzip and disclose password len.
+     */
+    pwd = string_new(128);
+    if (pwd == NULL) {
+      return SSH_AUTH_ERROR;
+    }
+    ssh_get_random( pwd->string, 128, 0);
+    strcpy((char *) pwd->string, password);
+  }
+
+  if (buffer_add_u8(session->out_buffer, SSH_CMSG_AUTH_PASSWORD) < 0) {
+    string_burn(pwd);
+    string_free(pwd);
+    return SSH_AUTH_ERROR;
+  }
+  if (buffer_add_ssh_string(session->out_buffer, pwd) < 0) {
+    string_burn(pwd);
+    string_free(pwd);
+    return SSH_AUTH_ERROR;
+  }
+
+  string_burn(pwd);
+  string_free(pwd);
+
+  if (packet_send(session) != SSH_OK) {
+    return SSH_AUTH_ERROR;
+  }
+
+  return wait_auth1_status(session);
 }
 
 #endif /* HAVE_SSH1 */
