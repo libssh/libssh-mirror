@@ -66,49 +66,83 @@ int ssh_type_from_name(const char *name) {
   return -1;
 }
 
-PUBLIC_KEY *publickey_make_dss(SSH_SESSION *session, BUFFER *buffer){
-    STRING *p,*q,*g,*pubkey;
-    PUBLIC_KEY *key;
+PUBLIC_KEY *publickey_make_dss(SSH_SESSION *session, BUFFER *buffer) {
+  STRING *p = NULL;
+  STRING *q = NULL;
+  STRING *g = NULL;
+  STRING *pubkey = NULL;
+  PUBLIC_KEY *key = NULL;
 
-    key = malloc(sizeof(PUBLIC_KEY));
-    if (key == NULL) {
-      return NULL;
-    }
+  key = malloc(sizeof(PUBLIC_KEY));
+  if (key == NULL) {
+    return NULL;
+  }
 
-    key->type=TYPE_DSS;
-    key->type_c="ssh-dss";
-    p=buffer_get_ssh_string(buffer);
-    q=buffer_get_ssh_string(buffer);
-    g=buffer_get_ssh_string(buffer);
-    pubkey=buffer_get_ssh_string(buffer);
-    buffer_free(buffer); /* we don't need it anymore */
-    if(!p || !q || !g || !pubkey){
-        ssh_set_error(session,SSH_FATAL,"Invalid DSA public key");
-        if(p)
-            free(p);
-        if(q)
-            free(q);
-        if(g)
-            free(g);
-        if(pubkey)
-            free(pubkey);
-        free(key);
-        return NULL;
-    }
+  key->type=TYPE_DSS;
+  key->type_c="ssh-dss";
+
+  p = buffer_get_ssh_string(buffer);
+  q = buffer_get_ssh_string(buffer);
+  g = buffer_get_ssh_string(buffer);
+  pubkey = buffer_get_ssh_string(buffer);
+
+  buffer_free(buffer); /* we don't need it anymore */
+
+  if (p == NULL || q == NULL || g == NULL || pubkey == NULL) {
+    ssh_set_error(session, SSH_FATAL, "Invalid DSA public key");
+    goto error;
+  }
+
 #ifdef HAVE_LIBGCRYPT
-    gcry_sexp_build(&key->dsa_pub,NULL,"(public-key(dsa(p %b)(q %b)(g %b)(y %b)))",string_len(p),p->string,string_len(q),q->string,string_len(g),g->string,string_len(pubkey),pubkey->string);
+  gcry_sexp_build(&key->dsa_pub, NULL,
+      "(public-key(dsa(p %b)(q %b)(g %b)(y %b)))",
+      string_len(p), p->string,
+      string_len(q), q->string,
+      string_len(g), g->string,
+      string_len(pubkey), pubkey->string);
+  if (key->dsa_pub == NULL) {
+    goto error;
+  }
 #elif defined HAVE_LIBCRYPTO
-    key->dsa_pub=DSA_new();
-    key->dsa_pub->p=make_string_bn(p);
-    key->dsa_pub->q=make_string_bn(q);
-    key->dsa_pub->g=make_string_bn(g);
-    key->dsa_pub->pub_key=make_string_bn(pubkey);
-#endif
-    free(p);
-    free(q);
-    free(g);
-    free(pubkey);
-    return key;
+
+  key->dsa_pub = DSA_new();
+  if (key->dsa_pub == NULL) {
+    goto error;
+  }
+  key->dsa_pub->p = make_string_bn(p);
+  key->dsa_pub->q = make_string_bn(q);
+  key->dsa_pub->g = make_string_bn(g);
+  key->dsa_pub->pub_key = make_string_bn(pubkey);
+  if (key->dsa_pub->p == NULL ||
+      key->dsa_pub->q == NULL ||
+      key->dsa_pub->g == NULL ||
+      key->dsa_pub->pub_key == NULL) {
+    goto error;
+  }
+#endif /* HAVE_LIBCRYPTO */
+
+  string_burn(p);
+  string_free(p);
+  string_burn(q);
+  string_free(q);
+  string_burn(g);
+  string_free(g);
+  string_burn(pubkey);
+  string_free(pubkey);
+
+  return key;
+error:
+  string_burn(p);
+  string_free(p);
+  string_burn(q);
+  string_free(q);
+  string_burn(g);
+  string_free(g);
+  string_burn(pubkey);
+  string_free(pubkey);
+  publickey_free(key);
+
+  return key;
 }
 
 PUBLIC_KEY *publickey_make_rsa(SSH_SESSION *session, BUFFER *buffer,
