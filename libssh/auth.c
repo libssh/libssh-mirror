@@ -176,7 +176,7 @@ int ssh_userauth_none(SSH_SESSION *session, const char *username){
     enter_function();
 #ifdef HAVE_SSH1
     if(session->version==1){
-        err = ssh_userauth1_none(session,username);
+        ssh_userauth1_none(session,username);
         leave_function();
         return rc;
     }
@@ -266,7 +266,7 @@ int ssh_userauth_offer_pubkey(SSH_SESSION *session, const char *username,int typ
     enter_function();
 #ifdef HAVE_SSH1
     if(session->version==1){
-        err= ssh_userauth1_offer_pubkey(session,username,type,publickey);
+        ssh_userauth1_offer_pubkey(session,username,type,publickey);
         leave_function();
         return rc;
     }

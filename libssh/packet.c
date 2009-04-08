@@ -200,7 +200,7 @@ static int packet_read1(SSH_SESSION *session){
            /* len is not encrypted */
             len=ntohl(len); 
             if(len> MAX_PACKET_LEN){
-                ssh_set_error(session,SSH_FATAL,"read_packet(): Packet len too high(%uld %.8lx)",len,len);
+                ssh_set_error(session,SSH_FATAL,"read_packet(): Packet len too high(%u %.8x)",len,len);
                 leave_function();
                 return SSH_ERROR;
             }
@@ -265,8 +265,8 @@ static int packet_read1(SSH_SESSION *session){
                 len + padding - sizeof(u32));
 #endif
                 ssh_log(session,SSH_LOG_RARE,"invalid crc32");
-                ssh_set_error(session,SSH_FATAL,"invalid crc32 : expected %.8lx, "
-                "got %.8lx",crc,
+                ssh_set_error(session,SSH_FATAL,"invalid crc32 : expected %.8x, "
+                "got %.8x",crc,
                 ssh_crc32(buffer_get_rest(session->in_buffer),len+padding-sizeof(u32)) );
                 leave_function();
                 return SSH_ERROR;

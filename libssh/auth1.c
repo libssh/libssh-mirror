@@ -51,7 +51,7 @@ static int wait_auth1_status(SSH_SESSION *session){
     "FAILURE, got %d",session->in_packet.type);
     return SSH_AUTH_ERROR;
 }
-static int send_username(SSH_SESSION *session, char *username){
+static int send_username(SSH_SESSION *session, const char *username){
     STRING *user;
     /* returns SSH_AUTH_SUCCESS or SSH_AUTH_DENIED */
     if(session->auth_service_asked)
@@ -74,7 +74,7 @@ static int send_username(SSH_SESSION *session, char *username){
 
 /* use the "none" authentication question */
 
-int ssh_userauth1_none(SSH_SESSION *session,char *username){
+int ssh_userauth1_none(SSH_SESSION *session,const char *username){
     return send_username(session,username);
 }
 
@@ -119,7 +119,7 @@ int ssh_userauth_offer_pubkey(SSH_SESSION *session, char *username,int type, STR
 /** \internal
  * \todo implement ssh1 public key
  */
-int ssh_userauth1_offer_pubkey(SSH_SESSION *session, char *username, int type,
+int ssh_userauth1_offer_pubkey(SSH_SESSION *session, const char *username, int type,
         STRING *pubkey){
     return SSH_AUTH_DENIED;
 }
@@ -171,7 +171,7 @@ int ssh_userauth_pubkey(SSH_SESSION *session, char *username, STRING *publickey,
 }
 */
 
-int ssh_userauth1_password(SSH_SESSION *session,char *username,char *password){
+int ssh_userauth1_password(SSH_SESSION *session,const char *username,const char *password){
     STRING *password_s;
     int err;
     err=send_username(session,username);
@@ -183,7 +183,7 @@ int ssh_userauth1_password(SSH_SESSION *session,char *username,char *password){
      */
     /* XXX fix me here ! */
     /* cisco IOS doesn't like when a password is followed by zeroes and random pad. */
-    if(strlen(password)>=0){
+    if(1 || strlen(password)>=128){
         /* not risky to disclose the size of such a big password .. */
         password_s=string_from_char(password);
     } else {

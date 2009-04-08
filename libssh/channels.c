@@ -927,7 +927,7 @@ int channel_request_pty_size(CHANNEL *channel, const char *terminal,
   enter_function();
 #ifdef HAVE_SSH1
   if (channel->version==1) {
-    err = channel_request_pty_size1(channel,terminal, col, row);
+    channel_request_pty_size1(channel,terminal, col, row);
     leave_function();
     return rc;
     }

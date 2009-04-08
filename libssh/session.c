@@ -104,7 +104,6 @@ void ssh_cleanup(SSH_SESSION *session) {
   crypto_free(session->current_crypto);
   crypto_free(session->next_crypto);
   ssh_socket_free(session->socket);
-  ssh_options_free(session->options);
   /* delete all channels */
   while (session->channels) {
     channel_free(session->channels);
@@ -130,6 +129,7 @@ void ssh_cleanup(SSH_SESSION *session) {
   private_key_free(session->rsa_key);
   ssh_message_free(session->ssh_message);
   SAFE_FREE(session->ssh_message);
+  ssh_options_free(session->options);
 
   /* burn connection, it could hang sensitive datas */
   memset(session,'X',sizeof(SSH_SESSION));
