@@ -299,81 +299,166 @@ error:
  * \returns the public key
  * \see publickey_to_string()
  */
-PUBLIC_KEY *publickey_from_privatekey(PRIVATE_KEY *prv){
-    PUBLIC_KEY *key;
+PUBLIC_KEY *publickey_from_privatekey(PRIVATE_KEY *prv) {
+  PUBLIC_KEY *key = NULL;
 #ifdef HAVE_LIBGCRYPT
-    gcry_sexp_t sexp;
-    const char *tmp;
-    size_t size;
-    STRING *p,*q,*g,*y,*e,*n;
+  gcry_sexp_t sexp;
+  const char *tmp = NULL;
+  size_t size;
+  STRING *p = NULL;
+  STRING *q = NULL;
+  STRING *g = NULL;
+  STRING *y = NULL;
+  STRING *e = NULL;
+  STRING *n = NULL;
 #endif /* HAVE_LIBGCRYPT */
 
-    key=malloc(sizeof(PUBLIC_KEY));
-    if (key == NULL) {
-      return NULL;
-    }
-    key->type=prv->type;
-    switch(key->type){
-        case TYPE_DSS:
+  key = malloc(sizeof(PUBLIC_KEY));
+  if (key == NULL) {
+    return NULL;
+  }
+
+  key->type = prv->type;
+  switch(key->type) {
+    case TYPE_DSS:
 #ifdef HAVE_LIBGCRYPT
-            sexp=gcry_sexp_find_token(prv->dsa_priv,"p",0);
-            tmp=gcry_sexp_nth_data(sexp,1,&size);
-            p=string_new(size);
-            string_fill(p,(char *)tmp,size);
-            gcry_sexp_release(sexp);
-            sexp=gcry_sexp_find_token(prv->dsa_priv,"q",0);
-            tmp=gcry_sexp_nth_data(sexp,1,&size);
-            q=string_new(size);
-            string_fill(q,(char *)tmp,size);
-            gcry_sexp_release(sexp);
-            sexp=gcry_sexp_find_token(prv->dsa_priv,"g",0);
-            tmp=gcry_sexp_nth_data(sexp,1,&size);
-            g=string_new(size);
-            string_fill(g,(char *)tmp,size);
-            gcry_sexp_release(sexp);
-            sexp=gcry_sexp_find_token(prv->dsa_priv,"y",0);
-            tmp=gcry_sexp_nth_data(sexp,1,&size);
-            y=string_new(size);
-            string_fill(y,(char *)tmp,size);
-            gcry_sexp_release(sexp);
-            gcry_sexp_build(&key->dsa_pub,NULL,"(public-key(dsa(p %b)(q %b)(g %b)(y %b)))",string_len(p),p->string,string_len(q),q->string,string_len(g),g->string,string_len(y),y->string);
-            free(p);
-            free(q);
-            free(g);
-            free(y);
+      sexp = gcry_sexp_find_token(prv->dsa_priv, "p", 0);
+      tmp = gcry_sexp_nth_data(sexp, 1, &size);
+      p = string_new(size);
+      if (p == NULL) {
+        goto error;
+      }
+      string_fill(p,(char *) tmp, size);
+      gcry_sexp_release(sexp);
+
+      sexp = gcry_sexp_find_token(prv->dsa_priv,"q",0);
+      tmp = gcry_sexp_nth_data(sexp,1,&size);
+      q = string_new(size);
+      if (q == NULL) {
+        goto error;
+      }
+      string_fill(q,(char *) tmp,size);
+      gcry_sexp_release(sexp);
+
+      sexp = gcry_sexp_find_token(prv->dsa_priv, "g", 0);
+      tmp = gcry_sexp_nth_data(sexp,1,&size);
+      g = string_new(size);
+      if (g == NULL) {
+        goto error;
+      }
+      string_fill(g,(char *) tmp,size);
+      gcry_sexp_release(sexp);
+
+      sexp=gcry_sexp_find_token(prv->dsa_priv,"y",0);
+      tmp=gcry_sexp_nth_data(sexp,1,&size);
+      y = string_new(size);
+      if (y == NULL) {
+        goto error;
+      }
+      string_fill(y,(char *) tmp,size);
+      gcry_sexp_release(sexp);
+
+      gcry_sexp_build(&key->dsa_pub, NULL,
+          "(public-key(dsa(p %b)(q %b)(g %b)(y %b)))",
+          string_len(p), p->string,
+          string_len(q), q->string,
+          string_len(g), g->string,
+          string_len(y), y->string);
+
+      string_burn(p);
+      string_free(p);
+      string_burn(q);
+      string_free(q);
+      string_burn(g);
+      string_free(g);
+      string_burn(y);
+      string_free(y);
 #elif defined HAVE_LIBCRYPTO
-            key->dsa_pub=DSA_new();
-            key->dsa_pub->p=BN_dup(prv->dsa_priv->p);
-            key->dsa_pub->q=BN_dup(prv->dsa_priv->q);
-            key->dsa_pub->pub_key=BN_dup(prv->dsa_priv->pub_key);
-            key->dsa_pub->g=BN_dup(prv->dsa_priv->g);
-#endif
-            break;
-        case TYPE_RSA:
-        case TYPE_RSA1:
+      key->dsa_pub = DSA_new();
+      if (key->dsa_pub == NULL) {
+        goto error;
+      }
+      key->dsa_pub->p = BN_dup(prv->dsa_priv->p);
+      key->dsa_pub->q = BN_dup(prv->dsa_priv->q);
+      key->dsa_pub->g = BN_dup(prv->dsa_priv->g);
+      key->dsa_pub->pub_key = BN_dup(prv->dsa_priv->pub_key);
+      if (key->dsa_pub->p == NULL ||
+          key->dsa_pub->q == NULL ||
+          key->dsa_pub->g == NULL ||
+          key->dsa_pub->pub_key == NULL) {
+        goto error;
+      }
+#endif /* HAVE_LIBCRYPTO */
+      break;
+    case TYPE_RSA:
+    case TYPE_RSA1:
 #ifdef HAVE_LIBGCRYPT
-            sexp=gcry_sexp_find_token(prv->rsa_priv,"n",0);
-            tmp=gcry_sexp_nth_data(sexp,1,&size);
-            n=string_new(size);
-            string_fill(n,(char *)tmp,size);
-            gcry_sexp_release(sexp);
-            sexp=gcry_sexp_find_token(prv->rsa_priv,"e",0);
-            tmp=gcry_sexp_nth_data(sexp,1,&size);
-            e=string_new(size);
-            string_fill(e,(char *)tmp,size);
-            gcry_sexp_release(sexp);
-            gcry_sexp_build(&key->rsa_pub,NULL,"(public-key(rsa(n %b)(e %b)))",string_len(n),n->string,string_len(e),e->string);
-            free(e);
-            free(n);
+      sexp = gcry_sexp_find_token(prv->rsa_priv, "n", 0);
+      tmp = gcry_sexp_nth_data(sexp, 1, &size);
+      n = string_new(size);
+      if (n == NULL) {
+        goto error;
+      }
+      string_fill(n, (char *) tmp, size);
+      gcry_sexp_release(sexp);
+
+      sexp = gcry_sexp_find_token(prv->rsa_priv, "e", 0);
+      tmp = gcry_sexp_nth_data(sexp, 1, &size);
+      e = string_new(size);
+      if (e == NULL) {
+        goto error;
+      }
+      string_fill(e, (char *) tmp, size);
+      gcry_sexp_release(sexp);
+
+      gcry_sexp_build(&key->rsa_pub, NULL,
+          "(public-key(rsa(n %b)(e %b)))",
+          string_len(n), n->string,
+          string_len(e), e->string);
+      if (key->rsa_pub == NULL) {
+        goto error;
+      }
+
+      string_burn(e);
+      string_free(e);
+      string_burn(n);
+      string_free(n);
 #elif defined HAVE_LIBCRYPTO
-            key->rsa_pub=RSA_new();
-            key->rsa_pub->e=BN_dup(prv->rsa_priv->e);
-            key->rsa_pub->n=BN_dup(prv->rsa_priv->n);
+      key->rsa_pub = RSA_new();
+      if (key->rsa_pub == NULL) {
+        goto error;
+      }
+      key->rsa_pub->e = BN_dup(prv->rsa_priv->e);
+      key->rsa_pub->n = BN_dup(prv->rsa_priv->n);
+      if (key->rsa_pub->e == NULL ||
+          key->rsa_pub->n == NULL) {
+        goto error;
+      }
 #endif
-            break;
-    }
-    key->type_c=ssh_type_to_char(prv->type);
-    return key;
+      break;
+  }
+  key->type_c = ssh_type_to_char(prv->type);
+
+  return key;
+error:
+#ifdef HAVE_LIBGCRYPT
+  string_burn(p);
+  string_free(p);
+  string_burn(q);
+  string_free(q);
+  string_burn(g);
+  string_free(g);
+  string_burn(y);
+  string_free(y);
+
+  string_burn(e);
+  string_free(e);
+  string_burn(n);
+  string_free(n);
+#endif
+  publickey_free(key);
+
+  return NULL;
 }
 
 #ifdef HAVE_LIBGCRYPT
