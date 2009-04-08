@@ -462,79 +462,151 @@ error:
 }
 
 #ifdef HAVE_LIBGCRYPT
-static void dsa_public_to_string(gcry_sexp_t key, BUFFER *buffer){
+static int dsa_public_to_string(gcry_sexp_t key, BUFFER *buffer) {
 #elif defined HAVE_LIBCRYPTO
-static void dsa_public_to_string(DSA *key, BUFFER *buffer){
+static int dsa_public_to_string(DSA *key, BUFFER *buffer) {
 #endif
-    STRING *p,*q,*g,*n;
+  STRING *p = NULL;
+  STRING *q = NULL;
+  STRING *g = NULL;
+  STRING *n = NULL;
+
+  int rc = -1;
+
 #ifdef HAVE_LIBGCRYPT
-    const char *tmp;
-    size_t size;
-    gcry_sexp_t sexp;
-    sexp=gcry_sexp_find_token(key,"p",0);
-    tmp=gcry_sexp_nth_data(sexp,1,&size);
-    p=string_new(size);
-    string_fill(p,(char *)tmp,size);
-    gcry_sexp_release(sexp);
-    sexp=gcry_sexp_find_token(key,"q",0);
-    tmp=gcry_sexp_nth_data(sexp,1,&size);
-    q=string_new(size);
-    string_fill(q,(char *)tmp,size);
-    gcry_sexp_release(sexp);
-    sexp=gcry_sexp_find_token(key,"g",0);
-    tmp=gcry_sexp_nth_data(sexp,1,&size);
-    g=string_new(size);
-    string_fill(g,(char *)tmp,size);
-    gcry_sexp_release(sexp);
-    sexp=gcry_sexp_find_token(key,"y",0);
-    tmp=gcry_sexp_nth_data(sexp,1,&size);
-    n=string_new(size);
-    string_fill(n,(char *)tmp,size);
-    gcry_sexp_release(sexp);
+  const char *tmp = NULL;
+  size_t size;
+  gcry_sexp_t sexp;
+
+  sexp = gcry_sexp_find_token(key, "p", 0);
+  tmp = gcry_sexp_nth_data(sexp, 1, &size);
+  p = string_new(size);
+  if (p == NULL) {
+    goto error;
+  }
+  string_fill(p, (char *) tmp, size);
+  gcry_sexp_release(sexp);
+
+  sexp = gcry_sexp_find_token(key, "q", 0);
+  tmp = gcry_sexp_nth_data(sexp, 1, &size);
+  q = string_new(size);
+  if (q == NULL) {
+    goto error;
+  }
+  string_fill(q, (char *) tmp, size);
+  gcry_sexp_release(sexp);
+
+  sexp = gcry_sexp_find_token(key, "g", 0);
+  tmp = gcry_sexp_nth_data(sexp, 1, &size);
+  g = string_new(size);
+  if (g == NULL) {
+    goto error;
+  }
+  string_fill(g, (char *) tmp, size);
+  gcry_sexp_release(sexp);
+
+  sexp = gcry_sexp_find_token(key, "y", 0);
+  tmp = gcry_sexp_nth_data(sexp, 1, &size);
+  n = string_new(size);
+  if (n == NULL) {
+    goto error;
+  }
+  string_fill(n, (char *) tmp, size);
+  gcry_sexp_release(sexp);
+
 #elif defined HAVE_LIBCRYPTO
-    p=make_bignum_string(key->p);
-    q=make_bignum_string(key->q);
-    g=make_bignum_string(key->g);
-    n=make_bignum_string(key->pub_key);
-#endif
-    buffer_add_ssh_string(buffer,p);
-    buffer_add_ssh_string(buffer,q);
-    buffer_add_ssh_string(buffer,g);
-    buffer_add_ssh_string(buffer,n);
-    free(p);
-    free(q);
-    free(g);
-    free(n);
+  p = make_bignum_string(key->p);
+  q = make_bignum_string(key->q);
+  g = make_bignum_string(key->g);
+  n = make_bignum_string(key->pub_key);
+  if (p == NULL || q == NULL || g == NULL || n == NULL) {
+    goto error;
+  }
+#endif /* HAVE_LIBCRYPTO */
+  if (buffer_add_ssh_string(buffer, p) < 0) {
+    goto error;
+  }
+  if (buffer_add_ssh_string(buffer, q) < 0) {
+    goto error;
+  }
+  if (buffer_add_ssh_string(buffer, g) < 0) {
+    goto error;
+  }
+  if (buffer_add_ssh_string(buffer, n) < 0) {
+    goto error;
+  }
+
+  rc = 0;
+error:
+  string_burn(p);
+  string_free(p);
+  string_burn(q);
+  string_free(q);
+  string_burn(g);
+  string_free(g);
+  string_burn(n);
+  string_free(n);
+
+  return rc;
 }
 
 #ifdef HAVE_LIBGCRYPT
-static void rsa_public_to_string(gcry_sexp_t key, BUFFER *buffer){
+static int rsa_public_to_string(gcry_sexp_t key, BUFFER *buffer) {
 #elif defined HAVE_LIBCRYPTO
-static void rsa_public_to_string(RSA *key, BUFFER *buffer){
+static int rsa_public_to_string(RSA *key, BUFFER *buffer) {
 #endif
-    STRING *e, *n;
+
+  STRING *e = NULL;
+  STRING *n = NULL;
+
+  int rc = -1;
+
 #ifdef HAVE_LIBGCRYPT
-    const char *tmp;
-    size_t size;
-    gcry_sexp_t sexp;
-    sexp=gcry_sexp_find_token(key,"n",0);
-    tmp=gcry_sexp_nth_data(sexp,1,&size);
-    n=string_new(size);
-    string_fill(n,(char *)tmp,size);
-    gcry_sexp_release(sexp);
-    sexp=gcry_sexp_find_token(key,"e",0);
-    tmp=gcry_sexp_nth_data(sexp,1,&size);
-    e=string_new(size);
-    string_fill(e,(char *)tmp,size);
-    gcry_sexp_release(sexp);
+  const char *tmp;
+  size_t size;
+  gcry_sexp_t sexp;
+
+  sexp = gcry_sexp_find_token(key, "n", 0);
+  tmp = gcry_sexp_nth_data(sexp, 1, &size);
+  n = string_new(size);
+  if (n == NULL) {
+    goto error;
+  }
+  string_fill(n, (char *) tmp, size);
+  gcry_sexp_release(sexp);
+
+  sexp = gcry_sexp_find_token(key, "e", 0);
+  tmp = gcry_sexp_nth_data(sexp, 1, &size);
+  e = string_new(size);
+  if (e == NULL) {
+    goto error;
+  }
+  string_fill(e, (char *) tmp, size);
+  gcry_sexp_release(sexp);
+
 #elif defined HAVE_LIBCRYPTO
-    e=make_bignum_string(key->e);
-    n=make_bignum_string(key->n);
+  e = make_bignum_string(key->e);
+  n = make_bignum_string(key->n);
+  if (e == NULL || n == NULL) {
+    goto error;
+  }
 #endif
-    buffer_add_ssh_string(buffer,e);
-    buffer_add_ssh_string(buffer,n);
-    free(e);
-    free(n);
+
+  if (buffer_add_ssh_string(buffer, e) < 0) {
+    goto error;
+  }
+  if (buffer_add_ssh_string(buffer, n) < 0) {
+    goto error;
+  }
+
+  rc = 0;
+error:
+  string_burn(e);
+  string_free(e);
+  string_burn(n);
+  string_free(n);
+
+  return rc;
 }
 
 /** \brief makes a SSH String out of a PUBLIC_KEY object
@@ -542,27 +614,46 @@ static void rsa_public_to_string(RSA *key, BUFFER *buffer){
  * \returns a SSH String containing the public key
  * \see string_free()
  */
-STRING *publickey_to_string(PUBLIC_KEY *key){
-    STRING *type;
-    STRING *ret;
-    BUFFER *buf;
-    type=string_from_char(ssh_type_to_char(key->type));
-    buf=buffer_new();
-    buffer_add_ssh_string(buf,type);
-    switch(key->type){
-        case TYPE_DSS:
-            dsa_public_to_string(key->dsa_pub,buf);
-            break;
-        case TYPE_RSA:
-        case TYPE_RSA1:
-            rsa_public_to_string(key->rsa_pub,buf);
-            break;
-    }
-    ret=string_new(buffer_get_len(buf));
-    string_fill(ret,buffer_get(buf),buffer_get_len(buf));
-    buffer_free(buf);
-    free(type);
-    return ret;
+STRING *publickey_to_string(PUBLIC_KEY *key) {
+  STRING *type = NULL;
+  STRING *ret = NULL;
+  BUFFER *buf = NULL;
+
+  buf = buffer_new();
+  if (buf == NULL) {
+    return NULL;
+  }
+
+  type = string_from_char(ssh_type_to_char(key->type));
+  if (type == NULL) {
+    goto error;
+  }
+  buffer_add_ssh_string(buf, type);
+  switch(key->type){
+    case TYPE_DSS:
+      if (dsa_public_to_string(key->dsa_pub,buf) < 0) {
+        goto error;
+      }
+      break;
+    case TYPE_RSA:
+    case TYPE_RSA1:
+      if (rsa_public_to_string(key->rsa_pub,buf) < 0) {
+        goto error;
+      }
+      break;
+  }
+
+  ret = string_new(buffer_get_len(buf));
+  if (ret == NULL) {
+    goto error;
+  }
+
+  string_fill(ret, buffer_get(buf), buffer_get_len(buf));
+error:
+  buffer_free(buf);
+  string_free(type);
+
+  return ret;
 }
 
 /* Signature decoding functions */
