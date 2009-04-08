@@ -782,5 +782,5 @@ error:
   publickey_free(host);
 
   leave_function();
-  return -1;
+  return rc;
 }
