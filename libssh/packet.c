@@ -460,7 +460,9 @@ void packet_parse(SSH_SESSION *session){
             case SSH_SMSG_STDOUT_DATA:
             case SSH_SMSG_STDERR_DATA:
             case SSH_SMSG_EXITSTATUS:
-                channel_handle1(session,type);
+                if (channel_handle1(session,type) < 0) {
+                  return;
+                }
                 return;
             case SSH_MSG_DEBUG:
             case SSH_MSG_IGNORE:
@@ -525,7 +527,10 @@ static int packet_wait1(SSH_SESSION *session,int type,int blocking){
             case SSH_SMSG_STDOUT_DATA:
             case SSH_SMSG_STDERR_DATA:
             case SSH_SMSG_EXITSTATUS:
-                channel_handle1(session,type);
+                if (channel_handle1(session,type) < 0) {
+                  leave_function();
+                  return -1;
+                }
                 break;
             case SSH_MSG_DEBUG:
             case SSH_MSG_IGNORE:

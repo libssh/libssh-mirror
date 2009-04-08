@@ -283,7 +283,9 @@ int channel_handle1(SSH_SESSION *session, int type) {
       }
       break;
     case SSH_SMSG_EXITSTATUS:
-      channel_rcv_close1(session);
+      if (channel_rcv_close1(session) < 0) {
+        return -1;
+      }
       break;
     default:
       ssh_log(session, SSH_LOG_FUNCTIONS, "Unexepected message %d", type);
