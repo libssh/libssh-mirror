@@ -121,6 +121,12 @@ PUBLIC_KEY *publickey_make_dss(SSH_SESSION *session, BUFFER *buffer) {
   }
 #endif /* HAVE_LIBCRYPTO */
 
+#ifdef DEBUG_CRYPTO
+  ssh_print_hexa("p", p->string, string_len(p));
+  ssh_print_hexa("q", q->string, string_len(q));
+  ssh_print_hexa("g", g->string, string_len(g));
+#endif
+
   string_burn(p);
   string_free(p);
   string_burn(q);
@@ -147,44 +153,71 @@ error:
 
 PUBLIC_KEY *publickey_make_rsa(SSH_SESSION *session, BUFFER *buffer,
     const char *type) {
-    STRING *e,*n;
-    PUBLIC_KEY *key;
+  STRING *e = NULL;
+  STRING *n = NULL;
+  PUBLIC_KEY *key = NULL;
 
-    key = malloc(sizeof(PUBLIC_KEY));
-    if (key == NULL) {
-      return NULL;
-    }
-    if(!strcmp(type,"ssh-rsa"))
-        key->type=TYPE_RSA;
-    else
-        key->type=TYPE_RSA1;
-    key->type_c=type;
-    e=buffer_get_ssh_string(buffer);
-    n=buffer_get_ssh_string(buffer);
-    buffer_free(buffer); /* we don't need it anymore */
-    if(!e || !n){
-        ssh_set_error(session,SSH_FATAL,"Invalid RSA public key");
-        if(e)
-            free(e);
-        if(n)
-            free(n);
-        free(key);
-        return NULL;
-    }
+  key = malloc(sizeof(PUBLIC_KEY));
+  if (key == NULL) {
+    return NULL;
+  }
+
+  if (strcmp(type, "ssh-rsa") == 0) {
+    key->type = TYPE_RSA;
+  } else {
+    key->type = TYPE_RSA1;
+  }
+
+  key->type_c = type;
+  e = buffer_get_ssh_string(buffer);
+  n = buffer_get_ssh_string(buffer);
+  buffer_free(buffer); /* we don't need it anymore */
+
+  if(e == NULL || n == NULL) {
+    ssh_set_error(session, SSH_FATAL, "Invalid RSA public key");
+    goto error;
+  }
 #ifdef HAVE_LIBGCRYPT
-    gcry_sexp_build(&key->rsa_pub,NULL,"(public-key(rsa(n %b)(e %b)))",string_len(n),n->string,string_len(e),e->string);
+  gcry_sexp_build(&key->rsa_pub, NULL,
+      "(public-key(rsa(n %b)(e %b)))",
+      string_len(n), n->string,
+      string_len(e),e->string);
+  if (key->rsa_pub == NULL) {
+    goto error;
+  }
 #elif HAVE_LIBCRYPTO
-    key->rsa_pub=RSA_new();
-    key->rsa_pub->e=make_string_bn(e);
-    key->rsa_pub->n=make_string_bn(n);
+  key->rsa_pub = RSA_new();
+  if (key->rsa_pub == NULL) {
+    goto error;
+  }
+
+  key->rsa_pub->e = make_string_bn(e);
+  key->rsa_pub->n = make_string_bn(n);
+  if (key->rsa_pub->e == NULL ||
+      key->rsa_pub->n == NULL) {
+    goto error;
+  }
 #endif
+
 #ifdef DEBUG_CRYPTO
-    ssh_print_hexa("e",e->string,string_len(e));
-    ssh_print_hexa("n",n->string,string_len(n));
+  ssh_print_hexa("e", e->string, string_len(e));
+  ssh_print_hexa("n", n->string, string_len(n));
 #endif
-    free(e);
-    free(n);
-    return key;
+
+  string_burn(e);
+  string_free(e);
+  string_burn(n);
+  string_free(n);
+
+  return key;
+error:
+  string_burn(e);
+  string_free(e);
+  string_burn(n);
+  string_free(n);
+  publickey_free(key);
+
+  return NULL;
 }
 
 void publickey_free(PUBLIC_KEY *key) {
