@@ -247,36 +247,51 @@ void publickey_free(PUBLIC_KEY *key) {
   SAFE_FREE(key);
 }
 
-PUBLIC_KEY *publickey_from_string(SSH_SESSION *session, STRING *pubkey_s){
-    BUFFER *tmpbuf=buffer_new();
-    STRING *type_s;
-    char *type;
+PUBLIC_KEY *publickey_from_string(SSH_SESSION *session, STRING *pubkey_s) {
+  BUFFER *tmpbuf = NULL;
+  STRING *type_s = NULL;
+  char *type = NULL;
 
-    buffer_add_data(tmpbuf,pubkey_s->string,string_len(pubkey_s));
-    type_s=buffer_get_ssh_string(tmpbuf);
-    if(!type_s){
-        buffer_free(tmpbuf);
-        ssh_set_error(session,SSH_FATAL,"Invalid public key format");
-        return NULL;
-    }
-    type=string_to_char(type_s);
-    free(type_s);
-    if(!strcmp(type,"ssh-dss")){
-        free(type);
-        return publickey_make_dss(session, tmpbuf);
-    }
-    if(!strcmp(type,"ssh-rsa")){
-        free(type);
-        return publickey_make_rsa(session, tmpbuf,"ssh-rsa");
-    }
-    if(!strcmp(type,"ssh-rsa1")){
-        free(type);
-        return publickey_make_rsa(session, tmpbuf,"ssh-rsa1");
-    }
-    ssh_set_error(session,SSH_FATAL,"unknown public key protocol %s",type);
-    buffer_free(tmpbuf);
-    free(type);
+  tmpbuf = buffer_new();
+  if (tmpbuf == NULL) {
     return NULL;
+  }
+
+  if (buffer_add_data(tmpbuf, pubkey_s->string, string_len(pubkey_s)) < 0) {
+    goto error;
+  }
+
+  type_s = buffer_get_ssh_string(tmpbuf);
+  if (type_s == NULL) {
+    ssh_set_error(session,SSH_FATAL,"Invalid public key format");
+    goto error;
+  }
+
+  type = string_to_char(type_s);
+  string_free(type_s);
+
+  if (type == NULL) {
+    goto error;
+  }
+
+  if(strcmp(type, "ssh-dss") == 0) {
+    SAFE_FREE(type);
+    return publickey_make_dss(session, tmpbuf);
+  }
+  if(strcmp(type,"ssh-rsa") == 0) {
+    SAFE_FREE(type);
+    return publickey_make_rsa(session, tmpbuf,"ssh-rsa");
+  }
+  if (strcmp(type,"ssh-rsa1") == 0) {
+    SAFE_FREE(type);
+    return publickey_make_rsa(session, tmpbuf,"ssh-rsa1");
+  }
+
+  ssh_set_error(session, SSH_FATAL, "Unknown public key protocol %s", type);
+error:
+  buffer_free(tmpbuf);
+  SAFE_FREE(type);
+  return NULL;
 }
 
 /** \brief Makes a PUBLIC_KEY object out of a PRIVATE_KEY object
