@@ -50,6 +50,8 @@ int channel_open_session1(CHANNEL *chan){
     }
     session->exec_channel_opened=1;
     chan->open=1;
+    chan->local_maxpacket = 32000;
+    chan->local_window = 64000;
     ssh_log(session, SSH_LOG_PACKET, "Opened a ssh1 channel session");
     return 0;
 }
@@ -163,7 +165,7 @@ static void channel_rcv_data1(SSH_SESSION *session, int is_stderr){
         return;
     }
     ssh_log(session, SSH_LOG_RARE,
-        "Adding %d bytes data in %d", string_len(str), is_stderr);
+        "Adding %zd bytes data in %d", string_len(str), is_stderr);
     channel_default_bufferize(channel,str->string,string_len(str),
                     is_stderr);
     free(str);
