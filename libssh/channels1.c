@@ -68,7 +68,7 @@ int channel_open_session1(CHANNEL *chan){
  *  much simplier under ssh2. I just hope the defaults values are ok ...
  */
 
-int channel_request_pty_size1(CHANNEL *channel, char *terminal, int col,
+int channel_request_pty_size1(CHANNEL *channel, const char *terminal, int col,
     int row) {
   SSH_SESSION *session = channel->session;
   STRING *str = NULL;
@@ -100,7 +100,7 @@ int channel_request_pty_size1(CHANNEL *channel, char *terminal, int col,
   if (buffer_add_u32(session->out_buffer, 0) < 0) { /* y */
     return -1;
   }
-  if (buffer_add_u8(session->out_buffer, 0); < 0) { /* tty things */
+  if (buffer_add_u8(session->out_buffer, 0) < 0) { /* tty things */
     return -1;
   }
 
@@ -294,7 +294,7 @@ int channel_handle1(SSH_SESSION *session, int type) {
   return 0;
 }
 
-int channel_write1(CHANNEL *channel, void *data, int len) {
+int channel_write1(CHANNEL *channel, const void *data, int len) {
   SSH_SESSION *session = channel->session;
   int origlen = len;
   int effectivelen;
