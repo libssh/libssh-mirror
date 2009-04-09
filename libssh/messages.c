@@ -633,20 +633,29 @@ int ssh_message_channel_request_reply_success(SSH_MESSAGE *msg) {
   return SSH_OK;
 }
 
-static int ssh_message_channel_request_reply_default(SSH_MESSAGE *msg){
-    u32 channel;
-    if(msg->channel_request.want_reply){
-        channel=msg->channel_request.channel->remote_channel;
-        ssh_log(msg->session, SSH_LOG_PACKET,
-            "Sending a default channel_request denied to channel %d", channel);
-        buffer_add_u8(msg->session->out_buffer,SSH2_MSG_CHANNEL_FAILURE);
-        buffer_add_u32(msg->session->out_buffer,htonl(channel));
-        return packet_send(msg->session);
-    } else {
-        ssh_log(msg->session, SSH_LOG_PACKET,
-            "The client doesn't want to know the request failed!");
-        return 0;
+static int ssh_message_channel_request_reply_default(SSH_MESSAGE *msg) {
+  u32 channel;
+
+  if (msg->channel_request.want_reply) {
+    channel = msg->channel_request.channel->remote_channel;
+
+    ssh_log(msg->session, SSH_LOG_PACKET,
+        "Sending a default channel_request denied to channel %d", channel);
+
+    if (buffer_add_u8(msg->session->out_buffer, SSH2_MSG_CHANNEL_FAILURE) < 0) {
+      return SSH_ERROR;
     }
+    if (buffer_add_u32(msg->session->out_buffer, htonl(channel)) < 0) {
+      return SSH_ERROR;
+    }
+
+    return packet_send(msg->session);
+  }
+
+  ssh_log(msg->session, SSH_LOG_PACKET,
+      "The client doesn't want to know the request failed!");
+
+  return SSH_OK;
 }
 
 SSH_MESSAGE *ssh_message_get(SSH_SESSION *session){
