@@ -314,39 +314,61 @@ int ssh_message_auth_reply_success(SSH_MESSAGE *msg, int partial) {
   return packet_send(msg->session);
 }
 
-static SSH_MESSAGE *handle_channel_request_open(SSH_SESSION *session){
-    SSH_MESSAGE *msg;
-    STRING *type;
-    char *type_c;
-    u32 sender, window, packet;
+static SSH_MESSAGE *handle_channel_request_open(SSH_SESSION *session) {
+  SSH_MESSAGE *msg = NULL;
+  STRING *type = NULL;
+  char *type_c = NULL;
+  u32 sender, window, packet;
 
-    enter_function();
-    msg = message_new(session);
-    if (msg == NULL) {
-      return NULL;
-    }
-    msg->type=SSH_CHANNEL_REQUEST_OPEN;
-    type=buffer_get_ssh_string(session->in_buffer);
-    type_c=string_to_char(type);
-    ssh_log(session, SSH_LOG_PACKET,
-        "Clients wants to open a %s channel", type_c);
-    free(type);
-    buffer_get_u32(session->in_buffer,&sender);
-    buffer_get_u32(session->in_buffer,&window);
-    buffer_get_u32(session->in_buffer,&packet);
-    msg->channel_request_open.sender=ntohl(sender);
-    msg->channel_request_open.window=ntohl(window);
-    msg->channel_request_open.packet_size=ntohl(packet);
-    if(!strcmp(type_c,"session")){
-        msg->channel_request_open.type=SSH_CHANNEL_SESSION;
-        free(type_c);
-        leave_function();
-        return msg;
-    }
-    msg->channel_request_open.type=SSH_CHANNEL_UNKNOWN;
-    free(type_c);
+  enter_function();
+
+  msg = message_new(session);
+  if (msg == NULL) {
+    return NULL;
+  }
+
+  msg->type = SSH_CHANNEL_REQUEST_OPEN;
+
+  type = buffer_get_ssh_string(session->in_buffer);
+  if (type == NULL) {
+    goto error;
+  }
+  type_c = string_to_char(type);
+  if (type_c == NULL) {
+    goto error;
+  }
+
+  ssh_log(session, SSH_LOG_PACKET,
+      "Clients wants to open a %s channel", type_c);
+  string_free(type);
+
+  buffer_get_u32(session->in_buffer, &sender);
+  buffer_get_u32(session->in_buffer, &window);
+  buffer_get_u32(session->in_buffer, &packet);
+
+  msg->channel_request_open.sender = ntohl(sender);
+  msg->channel_request_open.window = ntohl(window);
+  msg->channel_request_open.packet_size = ntohl(packet);
+
+  if (strcmp(type_c,"session") == 0) {
+    msg->channel_request_open.type = SSH_CHANNEL_SESSION;
+    SAFE_FREE(type_c);
     leave_function();
     return msg;
+  }
+
+  msg->channel_request_open.type = SSH_CHANNEL_UNKNOWN;
+  SAFE_FREE(type_c);
+
+  leave_function();
+  return msg;
+error:
+  string_free(type);
+  SAFE_FREE(type_c);
+  ssh_message_free(msg);
+
+  leave_function();
+  return NULL;
 }
 
 CHANNEL *ssh_message_channel_request_open_reply_accept(SSH_MESSAGE *msg){
