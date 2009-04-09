@@ -211,16 +211,30 @@ error:
   return NULL;
 }
 
-char *ssh_message_auth_user(SSH_MESSAGE *msg){
-    return msg->auth_request.username;
+char *ssh_message_auth_user(SSH_MESSAGE *msg) {
+  if (msg == NULL || msg->auth_request == NULL) {
+    return NULL;
+  }
+
+  return msg->auth_request.username;
 }
 
 char *ssh_message_auth_password(SSH_MESSAGE *msg){
-    return msg->auth_request.password;
+  if (msg == NULL || msg->auth_request == NULL) {
+    return NULL;
+  }
+
+  return msg->auth_request.password;
 }
 
-void ssh_message_auth_set_methods(SSH_MESSAGE *msg,int methods){
-    msg->session->auth_methods=methods;
+int ssh_message_auth_set_methods(SSH_MESSAGE *msg, int methods) {
+  if (msg == NULL || msg->session == NULL) {
+    return -1;
+  }
+
+  msg->session->auth_methods = methods;
+
+  return 0;
 }
 
 static int ssh_message_auth_reply_default(SSH_MESSAGE *msg,int partial){
