@@ -43,18 +43,19 @@
 
 
 static SSH_MESSAGE *message_new(SSH_SESSION *session){
-    SSH_MESSAGE *msg=session->ssh_message;
+  SSH_MESSAGE *msg = session->ssh_message;
 
+  if (msg == NULL) {
+    msg = malloc(sizeof(SSH_MESSAGE));
     if (msg == NULL) {
-        msg = malloc(sizeof(SSH_MESSAGE));
-        if (msg == NULL) {
-          return NULL;
-        }
-        session->ssh_message = msg;
+      return NULL;
     }
-    memset(msg,0,sizeof (*msg));
-    msg->session=session;
-    return msg;
+    session->ssh_message = msg;
+  }
+  memset(msg, 0, sizeof(*msg));
+  msg->session = session;
+
+  return msg;
 }
 
 static int handle_service_request(SSH_SESSION *session){
