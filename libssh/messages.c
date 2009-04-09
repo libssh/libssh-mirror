@@ -99,9 +99,16 @@ error:
   return rc;
 }
 
-static void handle_unimplemented(SSH_SESSION *session){
-    buffer_add_u32(session->out_buffer,htonl(session->recv_seq-1));
-    packet_send(session);
+static int handle_unimplemented(SSH_SESSION *session) {
+  if (buffer_add_u32(session->out_buffer, htonl(session->recv_seq - 1)) < 0) {
+    return -1;
+  }
+
+  if (packet_send(session) != SSH_OK) {
+    return -1;
+  }
+
+  return 0;
 }
 
 static SSH_MESSAGE *handle_userauth_request(SSH_SESSION *session){
@@ -430,8 +437,10 @@ SSH_MESSAGE *ssh_message_get(SSH_SESSION *session){
                 leave_function();
                 return ret;
             default:
-                handle_unimplemented(session);
-                ssh_set_error(session,SSH_FATAL,"Unhandled message %d\n",session->in_packet.type);
+                if (handle_unimplemented(session) == 0) {
+                  ssh_set_error(session, SSH_FATAL,
+                      "Unhandled message %d\n", session->in_packet.type);
+                }
                 leave_function();
                 return NULL;
         }
