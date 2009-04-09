@@ -324,6 +324,7 @@ static SSH_MESSAGE *handle_channel_request_open(SSH_SESSION *session) {
 
   msg = message_new(session);
   if (msg == NULL) {
+    leave_function();
     return NULL;
   }
 
@@ -371,37 +372,61 @@ error:
   return NULL;
 }
 
-CHANNEL *ssh_message_channel_request_open_reply_accept(SSH_MESSAGE *msg){
-    SSH_SESSION *session=msg->session;
-    CHANNEL *chan;
+CHANNEL *ssh_message_channel_request_open_reply_accept(SSH_MESSAGE *msg) {
+  SSH_SESSION *session = msg->session;
+  CHANNEL *chan = NULL;
 
-    enter_function();
-    chan=channel_new(session);
-    if (chan == NULL) {
-      leave_function();
-      return NULL;
-    }
-    chan->local_channel=ssh_channel_new_id(session);
-    chan->local_maxpacket=35000;
-    chan->local_window=32000;
-    chan->remote_channel=msg->channel_request_open.sender;
-    chan->remote_maxpacket=msg->channel_request_open.packet_size;
-    chan->remote_window=msg->channel_request_open.window;
-    chan->open=1;
-    buffer_add_u8(session->out_buffer,SSH2_MSG_CHANNEL_OPEN_CONFIRMATION);
-    buffer_add_u32(session->out_buffer,htonl(chan->remote_channel));
-    buffer_add_u32(session->out_buffer,htonl(chan->local_channel));
-    buffer_add_u32(session->out_buffer,htonl(chan->local_window));
-    buffer_add_u32(session->out_buffer,htonl(chan->local_maxpacket));
-    ssh_log(session, SSH_LOG_PACKET,
-        "Accepting a channel request_open for chan %d", chan->remote_channel);
-    if(packet_send(session)){
-        channel_free(chan);
-        leave_function();
-        return NULL;
-    }
+  enter_function();
+
+  if (msg == NULL) {
     leave_function();
-    return chan;
+    return NULL;
+  }
+
+  chan = channel_new(session);
+  if (chan == NULL) {
+    leave_function();
+    return NULL;
+  }
+
+  chan->local_channel = ssh_channel_new_id(session);
+  chan->local_maxpacket = 35000;
+  chan->local_window = 32000;
+  chan->remote_channel = msg->channel_request_open.sender;
+  chan->remote_maxpacket = msg->channel_request_open.packet_size;
+  chan->remote_window = msg->channel_request_open.window;
+  chan->open = 1;
+
+  if (buffer_add_u8(session->out_buffer, SSH2_MSG_CHANNEL_OPEN_CONFIRMATION) < 0) {
+    goto error;
+  }
+  if (buffer_add_u32(session->out_buffer, htonl(chan->remote_channel)) < 0) {
+    goto error;
+  }
+  if (buffer_add_u32(session->out_buffer, htonl(chan->local_channel)) < 0) {
+    goto error;
+  }
+  if (buffer_add_u32(session->out_buffer, htonl(chan->local_window)) < 0) {
+    goto error;
+  }
+  if (buffer_add_u32(session->out_buffer, htonl(chan->local_maxpacket)) < 0) {
+    goto error;
+  }
+
+  ssh_log(session, SSH_LOG_PACKET,
+      "Accepting a channel request_open for chan %d", chan->remote_channel);
+
+  if (packet_send(session) != SSH_OK) {
+    goto error;
+  }
+
+  leave_function();
+  return chan;
+error:
+  channel_free(chan);
+
+  leave_function();
+  return NULL;
 }
 
 static int ssh_message_channel_request_open_reply_default(SSH_MESSAGE *msg){
