@@ -604,20 +604,33 @@ char *ssh_message_channel_request_subsystem(SSH_MESSAGE *msg){
     return msg->channel_request.subsystem;
 }
 
-int ssh_message_channel_request_reply_success(SSH_MESSAGE *msg){
-    u32 channel;
-    if(msg->channel_request.want_reply){
-        channel=msg->channel_request.channel->remote_channel;
-        ssh_log(msg->session, SSH_LOG_PACKET,
-            "Sending a channel_request success to channel %d", channel);
-        buffer_add_u8(msg->session->out_buffer,SSH2_MSG_CHANNEL_SUCCESS);
-        buffer_add_u32(msg->session->out_buffer,htonl(channel));
-        return packet_send(msg->session);
-    } else {
-        ssh_log(msg->session, SSH_LOG_PACKET,
-            "The client doesn't want to know the request successed");
-        return 0;
+int ssh_message_channel_request_reply_success(SSH_MESSAGE *msg) {
+  u32 channel;
+
+  if (msg == NULL) {
+    return SSH_ERROR;
+  }
+
+  if (msg->channel_request.want_reply) {
+    channel = msg->channel_request.channel->remote_channel;
+
+    ssh_log(msg->session, SSH_LOG_PACKET,
+        "Sending a channel_request success to channel %d", channel);
+
+    if (buffer_add_u8(msg->session->out_buffer, SSH2_MSG_CHANNEL_SUCCESS) < 0) {
+      return SSH_ERROR;
     }
+    if (buffer_add_u32(msg->session->out_buffer, htonl(channel)) < 0) {
+      return SSH_ERROR;
+    }
+
+    return packet_send(msg->session);
+  }
+
+  ssh_log(msg->session, SSH_LOG_PACKET,
+      "The client doesn't want to know the request succeeded");
+
+  return SSH_OK;
 }
 
 static int ssh_message_channel_request_reply_default(SSH_MESSAGE *msg){
