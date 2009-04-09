@@ -58,26 +58,45 @@ static SSH_MESSAGE *message_new(SSH_SESSION *session){
   return msg;
 }
 
-static int handle_service_request(SSH_SESSION *session){
-    STRING *service;
-    char *service_c;
-    enter_function();
-    service=buffer_get_ssh_string(session->in_buffer);
-    if(!service){
-        ssh_set_error(session,SSH_FATAL,"Invalid SSH_MSG_SERVICE_REQUEST packet");
-        leave_function();
-        return -1;
-    }
-    service_c=string_to_char(service);
-    ssh_log(session, SSH_LOG_PACKET,
-        "Sending a SERVICE_ACCEPT for service %s", service_c);
-    free(service_c);
-    buffer_add_u8(session->out_buffer,SSH2_MSG_SERVICE_ACCEPT);
-    buffer_add_ssh_string(session->out_buffer,service);
-    packet_send(session);
-    free(service);
+static int handle_service_request(SSH_SESSION *session) {
+  STRING *service = NULL;
+  char *service_c = NULL;
+  int rc = -1;
+
+  enter_function();
+
+  service = buffer_get_ssh_string(session->in_buffer);
+  if (service == NULL) {
+    ssh_set_error(session, SSH_FATAL, "Invalid SSH_MSG_SERVICE_REQUEST packet");
     leave_function();
-    return 0;
+    return -1;
+  }
+
+  service_c = string_to_char(service);
+  if (service_c == NULL) {
+    goto error;
+  }
+
+  ssh_log(session, SSH_LOG_PACKET,
+      "Sending a SERVICE_ACCEPT for service %s", service_c);
+  SAFE_FREE(service_c);
+
+  if (buffer_add_u8(session->out_buffer, SSH2_MSG_SERVICE_ACCEPT) < 0) {
+    goto error;
+  }
+  if (buffer_add_ssh_string(session->out_buffer, service) < 0) {
+    goto error;
+  }
+  if (packet_send(session) != SSH_OK) {
+    goto error;
+  }
+
+  rc = 0;
+error:
+  string_free(service);
+  leave_function();
+
+  return rc;
 }
 
 static void handle_unimplemented(SSH_SESSION *session){
