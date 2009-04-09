@@ -112,52 +112,103 @@ static int handle_unimplemented(SSH_SESSION *session) {
 }
 
 static SSH_MESSAGE *handle_userauth_request(SSH_SESSION *session){
-    STRING *user=buffer_get_ssh_string(session->in_buffer);
-    STRING *service=buffer_get_ssh_string(session->in_buffer);
-    STRING *method=buffer_get_ssh_string(session->in_buffer);
-    SSH_MESSAGE *msg;
-    char *service_c,*method_c;
+  STRING *user = NULL;
+  STRING *service = NULL;
+  STRING *method = NULL;
+  SSH_MESSAGE *msg = NULL;
+  char *service_c = NULL;
+  char *method_c = NULL
+
     enter_function();
 
-    msg = message_new(session);
-    if (msg == NULL) {
-      return NULL;
-    }
+  msg = message_new(session);
+  if (msg == NULL) {
+    return NULL;
+  }
 
-    msg->type=SSH_AUTH_REQUEST;
-    msg->auth_request.username=string_to_char(user);
-    free(user);
-    service_c=string_to_char(service);
-    method_c=string_to_char(method);
-    free(service);
-    free(method);
-    ssh_log(session, SSH_LOG_PACKET,
-        "Auth request for service %s, method %s for user '%s'",
-        service_c, method_c,
-            msg->auth_request.username);
-    free(service_c);
-    if(!strcmp(method_c,"none")){
-        msg->auth_request.method=SSH_AUTH_NONE;
-        free(method_c);
-        leave_function();
-        return msg;
-    }
-    if(!strcmp(method_c,"password")){
-        STRING *pass;
-        u8 tmp;
-        msg->auth_request.method=SSH_AUTH_PASSWORD;
-        free(method_c);
-        buffer_get_u8(session->in_buffer,&tmp);
-        pass=buffer_get_ssh_string(session->in_buffer);
-        msg->auth_request.password=string_to_char(pass);
-        free(pass);
-        leave_function();
-        return msg;
-    }
-    msg->auth_request.method=SSH_AUTH_UNKNOWN;
-    free(method_c);
+  user = buffer_get_ssh_string(session->in_buffer);
+  if (user == NULL) {
+    goto error;
+  }
+  service = buffer_get_ssh_string(session->in_buffer);
+  if (service == NULL) {
+    goto error;
+  }
+  method = buffer_get_ssh_string(session->in_buffer);
+  if (method == NULL) {
+    goto error;
+  }
+
+  msg->type = SSH_AUTH_REQUEST;
+  msg->auth_request.username = string_to_char(user);
+  if (msg->auth_request.username == NULL) {
+    goto error;
+  }
+  string_free(user);
+
+  service_c = string_to_char(service);
+  if (service_c == NULL) {
+    goto error;
+  }
+  method_c = string_to_char(method);
+  if (method_c == NULL) {
+    goto error;
+  }
+
+  string_free(service);
+  string_free(method);
+
+  ssh_log(session, SSH_LOG_PACKET,
+      "Auth request for service %s, method %s for user '%s'",
+      service_c, method_c,
+      msg->auth_request.username);
+
+  SAFE_FREE(service_c);
+
+  if (strcmp(method_c, "none") == 0) {
+    msg->auth_request.method = SSH_AUTH_NONE;
+    SAFE_FREE(method_c);
     leave_function();
     return msg;
+  }
+
+  if (strcmp(method_c, "password") == 0) {
+    STRING *pass == NULL;
+    u8 tmp;
+
+    msg->auth_request.method = SSH_AUTH_PASSWORD;
+    SAFE_FREE(method_c);
+    buffer_get_u8(session->in_buffer, &tmp);
+    pass = buffer_get_ssh_string(session->in_buffer);
+    if (pass == NULL) {
+      goto error;
+    }
+    msg->auth_request.password = string_to_char(pass);
+    string_free(pass);
+    if (msg->auth_request.password == NULL) {
+      goto error;
+    }
+    leave_function();
+    return msg;
+  }
+
+  msg->auth_request.method = SSH_AUTH_UNKNOWN;
+  SAFE_FREE(method_c);
+
+  leave_function();
+  return msg;
+error:
+  string_free(user);
+  string_free(service);
+  string_free(method);
+
+  SAFE_FREE(method_c);
+  SAFE_FREE(service_c);
+
+  ssh_message_free(msg);
+
+  leave_function();
+  return NULL;
 }
 
 char *ssh_message_auth_user(SSH_MESSAGE *msg){
