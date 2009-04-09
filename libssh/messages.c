@@ -458,83 +458,146 @@ error:
   return SSH_ERROR;
 }
 
-static SSH_MESSAGE *handle_channel_request(SSH_SESSION *session){
-    u32 channel;
-    STRING *type;
-    char *type_c;
-    u8 want_reply;
-    SSH_MESSAGE *msg;
+static SSH_MESSAGE *handle_channel_request(SSH_SESSION *session) {
+  SSH_MESSAGE *msg = NULL;
+  STRING *type = NULL;
+  char *type_c = NULL;
+  u32 channel;
+  u8 want_reply;
 
-    enter_function();
-    msg = message_new(session);
-    if (msg == NULL) {
-      return NULL;
+  enter_function();
+
+  msg = message_new(session);
+  if (msg == NULL) {
+    return NULL;
+  }
+
+  buffer_get_u32(session->in_buffer, &channel);
+  channel = ntohl(channel);
+
+  type = buffer_get_ssh_string(session->in_buffer);
+  if (type == NULL) {
+    goto error;
+  }
+  type_c = string_to_char(type);
+  if (type_c == NULL) {
+    goto error;
+  }
+  string_free(type);
+
+  buffer_get_u8(session->in_buffer,&want_reply);
+
+  ssh_log(session, SSH_LOG_PACKET,
+      "Received a %s channel_request for channel %d (want_reply=%hhd)",
+      type_c, channel, want_reply);
+
+  msg->type = SSH_CHANNEL_REQUEST;
+  msg->channel_request.channel = ssh_channel_from_local(session, channel);
+  msg->channel_request.want_reply = want_reply;
+
+  if (strcmp(type_c, "pty-req") == 0) {
+    STRING *term = NULL;
+    char *term_c = NULL;
+    SAFE_FREE(type_c);
+
+    term = buffer_get_ssh_string(session->in_buffer);
+    if (term == NULL) {
+      goto error;
     }
-    buffer_get_u32(session->in_buffer,&channel);
-    channel=ntohl(channel);
-    type=buffer_get_ssh_string(session->in_buffer);
-    buffer_get_u8(session->in_buffer,&want_reply);
-    type_c=string_to_char(type);
-    free(type);
-    ssh_log(session, SSH_LOG_PACKET,
-        "Received a %s channel_request for channel %d (want_reply=%hhd)",
-        type_c, channel, want_reply);
-    msg->type=SSH_CHANNEL_REQUEST;
-    msg->channel_request.channel=ssh_channel_from_local(session,channel);
-    msg->channel_request.want_reply=want_reply;
-    if(!strcmp(type_c,"pty-req")){
-        STRING *term;
-        char *term_c;
-        free(type_c);
-        term=buffer_get_ssh_string(session->in_buffer);
-        term_c=string_to_char(term);
-        free(term);
-        msg->channel_request.type=SSH_CHANNEL_REQUEST_PTY;
-        msg->channel_request.TERM=term_c;
-        buffer_get_u32(session->in_buffer,&msg->channel_request.width);
-        buffer_get_u32(session->in_buffer,&msg->channel_request.height);
-        buffer_get_u32(session->in_buffer,&msg->channel_request.pxwidth);
-        buffer_get_u32(session->in_buffer,&msg->channel_request.pxheight);
-        msg->channel_request.width=ntohl(msg->channel_request.width);
-        msg->channel_request.height=ntohl(msg->channel_request.height);
-        msg->channel_request.pxwidth=ntohl(msg->channel_request.pxwidth);
-        msg->channel_request.pxheight=ntohl(msg->channel_request.pxheight);
-        msg->channel_request.modes=buffer_get_ssh_string(session->in_buffer);
-        leave_function();
-        return msg;
+    term_c = string_to_char(term);
+    if (term_c == NULL) {
+      string_free(term);
+      goto error;
     }
-    if(!strcmp(type_c,"subsystem")){
-        STRING *subsys;
-        char *subsys_c;
-        free(type_c);
-        subsys=buffer_get_ssh_string(session->in_buffer);
-        subsys_c=string_to_char(subsys);
-        free(subsys);
-        msg->channel_request.type=SSH_CHANNEL_REQUEST_SUBSYSTEM;
-        msg->channel_request.subsystem=subsys_c;
-        leave_function();
-        return msg;
-    }
-    if(!strcmp(type_c,"shell")){
-    	free(type_c);
-        msg->channel_request.type=SSH_CHANNEL_REQUEST_SHELL;
-        leave_function();
-        return msg;
-    }
-    if(!strcmp(type_c,"exec")){
-        STRING *cmd=buffer_get_ssh_string(session->in_buffer);
-        free(type_c);
-        msg->channel_request.type=SSH_CHANNEL_REQUEST_EXEC;
-        msg->channel_request.command=string_to_char(cmd);
-        free(cmd);
-        leave_function();
-        return msg;
+    string_free(term);
+
+    msg->channel_request.type = SSH_CHANNEL_REQUEST_PTY;
+    msg->channel_request.TERM = term_c;
+
+    buffer_get_u32(session->in_buffer, &msg->channel_request.width);
+    buffer_get_u32(session->in_buffer, &msg->channel_request.height);
+    buffer_get_u32(session->in_buffer, &msg->channel_request.pxwidth);
+    buffer_get_u32(session->in_buffer, &msg->channel_request.pxheight);
+
+    msg->channel_request.width = ntohl(msg->channel_request.width);
+    msg->channel_request.height = ntohl(msg->channel_request.height);
+    msg->channel_request.pxwidth = ntohl(msg->channel_request.pxwidth);
+    msg->channel_request.pxheight = ntohl(msg->channel_request.pxheight);
+    msg->channel_request.modes = buffer_get_ssh_string(session->in_buffer);
+    if (msg->channel_request.modes == NULL) {
+      SAFE_FREE(term_c);
+      goto error;
     }
 
-    msg->channel_request.type=SSH_CHANNEL_UNKNOWN;
-    free(type_c);
     leave_function();
     return msg;
+  }
+
+  if (strcmp(type_c, "subsystem") == 0) {
+    STRING *subsys = NULL;
+    char *subsys_c = NULL;
+
+    SAFE_FREE(type_c);
+
+    subsys = buffer_get_ssh_string(session->in_buffer);
+    if (subsys == NULL) {
+      goto error;
+    }
+    subsys_c = string_to_char(subsys);
+    if (subsys_c == NULL) {
+      string_free(subsys);
+      goto error;
+    }
+    string_free(subsys);
+
+    msg->channel_request.type = SSH_CHANNEL_REQUEST_SUBSYSTEM;
+    msg->channel_request.subsystem = subsys_c;
+
+    leave_function();
+    return msg;
+  }
+
+  if (strcmp(type_c, "shell") == 0) {
+    SAFE_FREE(type_c);
+    msg->channel_request.type = SSH_CHANNEL_REQUEST_SHELL;
+
+    leave_function();
+    return msg;
+  }
+  if (strcmp(type_c, "exec") == 0) {
+    STRING *cmd = NULL;
+
+    SAFE_FREE(type_c);
+
+    cmd = buffer_get_ssh_string(session->in_buffer);
+    if (cmd == NULL) {
+      goto error;
+    }
+
+    msg->channel_request.type = SSH_CHANNEL_REQUEST_EXEC;
+    msg->channel_request.command = string_to_char(cmd);
+    if (msg->channel_request.command == NULL) {
+      string_free(cmd);
+      goto error;
+    }
+    string_free(cmd);
+
+    leave_function();
+    return msg;
+  }
+
+  msg->channel_request.type = SSH_CHANNEL_UNKNOWN;
+  SAFE_FREE(type_c);
+
+  leave_function();
+  return msg;
+error:
+  string_free(type);
+  SAFE_FREE(type_c);
+  ssh_message_free(msg);
+
+  leave_function();
+  return NULL;
 }
 
 char *ssh_message_channel_request_subsystem(SSH_MESSAGE *msg){
