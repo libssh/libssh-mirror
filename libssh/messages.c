@@ -117,9 +117,9 @@ static SSH_MESSAGE *handle_userauth_request(SSH_SESSION *session){
   STRING *method = NULL;
   SSH_MESSAGE *msg = NULL;
   char *service_c = NULL;
-  char *method_c = NULL
+  char *method_c = NULL;
 
-    enter_function();
+  enter_function();
 
   msg = message_new(session);
   if (msg == NULL) {
@@ -173,7 +173,7 @@ static SSH_MESSAGE *handle_userauth_request(SSH_SESSION *session){
   }
 
   if (strcmp(method_c, "password") == 0) {
-    STRING *pass == NULL;
+    STRING *pass = NULL;
     u8 tmp;
 
     msg->auth_request.method = SSH_AUTH_PASSWORD;
@@ -212,7 +212,7 @@ error:
 }
 
 char *ssh_message_auth_user(SSH_MESSAGE *msg) {
-  if (msg == NULL || msg->auth_request == NULL) {
+  if (msg == NULL) {
     return NULL;
   }
 
@@ -220,7 +220,7 @@ char *ssh_message_auth_user(SSH_MESSAGE *msg) {
 }
 
 char *ssh_message_auth_password(SSH_MESSAGE *msg){
-  if (msg == NULL || msg->auth_request == NULL) {
+  if (msg == NULL) {
     return NULL;
   }
 
@@ -237,38 +237,65 @@ int ssh_message_auth_set_methods(SSH_MESSAGE *msg, int methods) {
   return 0;
 }
 
-static int ssh_message_auth_reply_default(SSH_MESSAGE *msg,int partial){
-    char methods_c[128]="";
-    STRING *methods;
-    SSH_SESSION *session=msg->session;
-    int ret;
-    enter_function();
-    buffer_add_u8(session->out_buffer,SSH2_MSG_USERAUTH_FAILURE);
-    if(session->auth_methods==0){
-        session->auth_methods=SSH_AUTH_PUBLICKEY|SSH_AUTH_PASSWORD;
+static int ssh_message_auth_reply_default(SSH_MESSAGE *msg,int partial) {
+  SSH_SESSION *session = msg->session;
+  char methods_c[128] = {0};
+  STRING *methods = NULL;
+  int rc = SSH_ERROR;
+
+  enter_function();
+
+  if (buffer_add_u8(session->out_buffer, SSH2_MSG_USERAUTH_FAILURE) < 0) {
+    return rc;
+  }
+
+  if (session->auth_methods == 0) {
+    session->auth_methods = SSH_AUTH_PUBLICKEY | SSH_AUTH_PASSWORD;
+  }
+  if (session->auth_methods & SSH_AUTH_PUBLICKEY) {
+    strcat(methods_c, "publickey,");
+  }
+  if (session->auth_methods & SSH_AUTH_KEYBINT) {
+    strcat(methods_c, "keyboard-interactive,");
+  }
+  if (session->auth_methods & SSH_AUTH_PASSWORD) {
+    strcat(methods_c, "password,");
+  }
+  if (session->auth_methods & SSH_AUTH_HOSTBASED) {
+    strcat(methods_c, "hostbased,");
+  }
+
+  /* Strip the comma. */
+  methods_c[strlen(methods_c) - 1] = '\0'; // strip the comma. We are sure there is at
+
+  ssh_log(session, SSH_LOG_PACKET,
+      "Sending a auth failure. methods that can continue: %s", methods_c);
+
+  methods = string_from_char(methods_c);
+  if (methods == NULL) {
+    goto error;
+  }
+
+  if (buffer_add_ssh_string(msg->session->out_buffer, methods) < 0) {
+    goto error;
+  }
+
+  if (partial) {
+    if (buffer_add_u8(session->out_buffer, 1) < 0) {
+      goto error;
     }
-    if(session->auth_methods & SSH_AUTH_PUBLICKEY)
-        strcat(methods_c,"publickey,");
-    if(session->auth_methods & SSH_AUTH_KEYBINT)
-        strcat(methods_c,"keyboard-interactive,");
-    if(session->auth_methods & SSH_AUTH_PASSWORD)
-        strcat(methods_c,"password,");
-    if(session->auth_methods & SSH_AUTH_HOSTBASED)
-        strcat(methods_c,"hostbased,");
-    methods_c[strlen(methods_c)-1]=0; // strip the comma. We are sure there is at
-    // least one word into the list
-    ssh_log(session, SSH_LOG_PACKET,
-        "Sending a auth failure. methods that can continue: %s", methods_c);
-    methods=string_from_char(methods_c);
-    buffer_add_ssh_string(msg->session->out_buffer,methods);
-    free(methods);
-    if(partial)
-        buffer_add_u8(session->out_buffer,1);
-    else
-        buffer_add_u8(session->out_buffer,0); // no partial success
-    ret = packet_send(msg->session);
-    leave_function();
-    return ret;
+  } else {
+    if (buffer_add_u8(session->out_buffer, 0) < 0) {
+      goto error;
+    }
+  }
+
+  rc = packet_send(msg->session);
+error:
+  string_free(methods);
+
+  leave_function();
+  return rc;
 }
 
 int ssh_message_auth_reply_success(SSH_MESSAGE *msg,int partial){
