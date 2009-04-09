@@ -298,11 +298,20 @@ error:
   return rc;
 }
 
-int ssh_message_auth_reply_success(SSH_MESSAGE *msg,int partial){
-    if(partial)
-        return ssh_message_auth_reply_default(msg,partial);
-    buffer_add_u8(msg->session->out_buffer,SSH2_MSG_USERAUTH_SUCCESS);
-    return packet_send(msg->session);
+int ssh_message_auth_reply_success(SSH_MESSAGE *msg, int partial) {
+  if (msg == NULL) {
+    return SSH_ERROR;
+  }
+
+  if (partial) {
+    return ssh_message_auth_reply_default(msg, partial);
+  }
+
+  if (buffer_add_u8(msg->session->out_buffer,SSH2_MSG_USERAUTH_SUCCESS) < 0) {
+    return SSH_ERROR;
+  }
+
+  return packet_send(msg->session);
 }
 
 static SSH_MESSAGE *handle_channel_request_open(SSH_SESSION *session){
