@@ -489,37 +489,31 @@ void ssh_message_free(SSH_MESSAGE *msg){
   if (msg == NULL) {
     return;
   }
-    switch(msg->type){
-        case SSH_AUTH_REQUEST:
-            if(msg->auth_request.username)
-                free(msg->auth_request.username);
-            if(msg->auth_request.password){
-                memset(msg->auth_request.password,0,strlen(msg->auth_request.password));
-                free(msg->auth_request.password);
-            }
-            break;
-        case SSH_CHANNEL_REQUEST_OPEN:
-            if(msg->channel_request_open.originator)
-                free(msg->channel_request_open.originator);
-            if(msg->channel_request_open.destination)
-                free(msg->channel_request_open.destination);
-            break;
-        case SSH_CHANNEL_REQUEST:
-            if(msg->channel_request.TERM)
-                free(msg->channel_request.TERM);
-            if(msg->channel_request.modes)
-                free(msg->channel_request.modes);
-            if(msg->channel_request.var_name)
-                free(msg->channel_request.var_name);
-            if(msg->channel_request.var_value)
-                free(msg->channel_request.var_value);
-            if(msg->channel_request.command)
-                free(msg->channel_request.command);
-            if(msg->channel_request.subsystem)
-                free(msg->channel_request.subsystem);
-            break;
-    }
-    memset(msg,0,sizeof(*msg));
+
+  switch(msg->type) {
+    case SSH_AUTH_REQUEST:
+      SAFE_FREE(msg->auth_request.username);
+      if (msg->auth_request.password) {
+        memset(msg->auth_request.password, 0,
+            strlen(msg->auth_request.password));
+        SAFE_FREE(msg->auth_request.password);
+      }
+      break;
+    case SSH_CHANNEL_REQUEST_OPEN:
+      SAFE_FREE(msg->channel_request_open.originator);
+      SAFE_FREE(msg->channel_request_open.destination);
+      break;
+    case SSH_CHANNEL_REQUEST:
+      SAFE_FREE(msg->channel_request.TERM);
+      SAFE_FREE(msg->channel_request.modes);
+      SAFE_FREE(msg->channel_request.var_name);
+      SAFE_FREE(msg->channel_request.var_value);
+      SAFE_FREE(msg->channel_request.command);
+      SAFE_FREE(msg->channel_request.subsystem);
+      break;
+  }
+  memset(msg, 0, sizeof(*msg));
+  SAFE_FREE(msg);
 }
 /** @}
  */

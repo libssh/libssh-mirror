@@ -128,7 +128,6 @@ void ssh_cleanup(SSH_SESSION *session) {
   private_key_free(session->dsa_key);
   private_key_free(session->rsa_key);
   ssh_message_free(session->ssh_message);
-  SAFE_FREE(session->ssh_message);
   ssh_options_free(session->options);
 
   /* burn connection, it could hang sensitive datas */
