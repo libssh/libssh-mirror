@@ -429,14 +429,33 @@ error:
   return NULL;
 }
 
-static int ssh_message_channel_request_open_reply_default(SSH_MESSAGE *msg){
-    ssh_log(msg->session, SSH_LOG_FUNCTIONS, "Refusing a channel");
-    buffer_add_u8(msg->session->out_buffer,SSH2_MSG_CHANNEL_OPEN_FAILURE);
-    buffer_add_u32(msg->session->out_buffer,htonl(msg->channel_request_open.sender));
-    buffer_add_u32(msg->session->out_buffer,htonl(SSH2_OPEN_ADMINISTRATIVELY_PROHIBITED));
-    buffer_add_u32(msg->session->out_buffer,0); // reason is an empty string
-    buffer_add_u32(msg->session->out_buffer,0); // language too
-    return packet_send(msg->session);
+static int ssh_message_channel_request_open_reply_default(SSH_MESSAGE *msg) {
+  ssh_log(msg->session, SSH_LOG_FUNCTIONS, "Refusing a channel");
+
+  if (buffer_add_u8(msg->session->out_buffer
+        , SSH2_MSG_CHANNEL_OPEN_FAILURE) < 0) {
+    goto error;
+  }
+  if (buffer_add_u32(msg->session->out_buffer,
+        htonl(msg->channel_request_open.sender)) < 0) {
+    goto error;
+  }
+  if (buffer_add_u32(msg->session->out_buffer,
+        htonl(SSH2_OPEN_ADMINISTRATIVELY_PROHIBITED)) < 0) {
+    goto error;
+  }
+  /* reason is an empty string */
+  if (buffer_add_u32(msg->session->out_buffer, 0) < 0) {
+    goto error;
+  }
+  /* language too */
+  if (buffer_add_u32(msg->session->out_buffer, 0) < 0) {
+    goto error;
+  }
+
+  return packet_send(msg->session);
+error:
+  return SSH_ERROR;
 }
 
 static SSH_MESSAGE *handle_channel_request(SSH_SESSION *session){
