@@ -658,47 +658,56 @@ static int ssh_message_channel_request_reply_default(SSH_MESSAGE *msg) {
   return SSH_OK;
 }
 
-SSH_MESSAGE *ssh_message_get(SSH_SESSION *session){
-	SSH_MESSAGE *ret;
-	enter_function();
-    while(1){
-        if(packet_read(session) || packet_translate(session)){
-        	leave_function();
-        	return NULL;
-        }
-        switch(session->in_packet.type){
-            case SSH2_MSG_SERVICE_REQUEST:
-                if(handle_service_request(session)){
-                	leave_function();
-                	return NULL;
-                }
-                break;
-            case SSH2_MSG_IGNORE:
-            case SSH2_MSG_DEBUG:
-                break;
-            case SSH2_MSG_USERAUTH_REQUEST:
-                ret = handle_userauth_request(session);
-                leave_function();
-                return ret;
-            case SSH2_MSG_CHANNEL_OPEN:
-                ret = handle_channel_request_open(session);
-                leave_function();
-                return ret;
-            case SSH2_MSG_CHANNEL_REQUEST:
-                ret = handle_channel_request(session);
-                leave_function();
-                return ret;
-            default:
-                if (handle_unimplemented(session) == 0) {
-                  ssh_set_error(session, SSH_FATAL,
-                      "Unhandled message %d\n", session->in_packet.type);
-                }
-                leave_function();
-                return NULL;
-        }
+SSH_MESSAGE *ssh_message_get(SSH_SESSION *session) {
+  SSH_MESSAGE *msg = NULL;
+
+  enter_function();
+
+  if (msg == NULL) {
+    goto error;
+  }
+
+  do {
+    if ((packet_read(session) != SSH_OK) ||
+        (packet_translate(session) != SSH_OK)) {
+      goto error;
     }
-    leave_function();
-    return NULL;
+    switch(session->in_packet.type) {
+      case SSH2_MSG_SERVICE_REQUEST:
+        if (handle_service_request(session) < 0) {
+          goto error;
+        }
+        break;
+      case SSH2_MSG_IGNORE:
+      case SSH2_MSG_DEBUG:
+        break;
+      case SSH2_MSG_USERAUTH_REQUEST:
+        msg = handle_userauth_request(session);
+
+        leave_function();
+        return msg;
+      case SSH2_MSG_CHANNEL_OPEN:
+        msg = handle_channel_request_open(session);
+
+        leave_function();
+        return msg;
+      case SSH2_MSG_CHANNEL_REQUEST:
+        msg = handle_channel_request(session);
+        leave_function();
+
+        return msg;
+      default:
+        if (handle_unimplemented(session) == 0) {
+          ssh_set_error(session, SSH_FATAL,
+              "Unhandled message %d\n", session->in_packet.type);
+        }
+        goto error;
+    }
+  } while(1);
+
+error:
+  leave_function();
+  return NULL;
 }
 
 int ssh_message_type(SSH_MESSAGE *msg){
