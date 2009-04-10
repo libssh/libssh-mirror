@@ -67,49 +67,54 @@
 /** \addtogroup ssh_misc
  * @{ */
 
-#ifndef _WIN32
+#ifdef _WIN32
+
 char *ssh_get_user_home_dir(void) {
-    static char szPath[PATH_MAX] = {0};
-    struct passwd *pwd = NULL;
+  static char szPath[MAX_PATH] = {0};
 
-    pwd = getpwuid(getuid());
-    if (pwd == NULL) {
-      return NULL;
-    }
-
-    snprintf(szPath, PATH_MAX - 1, "%s", pwd->pw_dir);
-
+  if (SHGetSpecialFolderPathA(NULL, szPath, CSIDL_PROFILE, TRUE)) {
     return szPath;
-}
+  }
 
+  return NULL;
+}
 #else /* _WIN32 */
 
 char *ssh_get_user_home_dir(void) {
-	static char szPath[MAX_PATH];
-	if (SHGetSpecialFolderPathA(NULL, szPath, CSIDL_PROFILE, TRUE))
-		return szPath;
-	else
-		return NULL;
+  static char szPath[PATH_MAX] = {0};
+  struct passwd *pwd = NULL;
+
+  pwd = getpwuid(getuid());
+  if (pwd == NULL) {
+    return NULL;
+  }
+
+  snprintf(szPath, PATH_MAX - 1, "%s", pwd->pw_dir);
+
+  return szPath;
 }
 
 #endif
 
 /* we have read access on file */
-int ssh_file_readaccess_ok(const char *file){
-    if(!access(file,R_OK))
-        return 1;
+int ssh_file_readaccess_ok(const char *file) {
+  if (access(file, R_OK) < 0) {
     return 0;
+  }
+
+  return 1;
 }
 
-u64 ntohll(u64 a){
+u64 ntohll(u64 a) {
 #ifdef WORDS_BIGENDIAN
-    return a;
+  return a;
 #else
-    u32 low=a & 0xffffffff;
-    u32 high = a >> 32 ;
-    low=ntohl(low);
-    high=ntohl(high);
-    return (( ((u64)low) << 32) | ( high));
+  u32 low = a & 0xffffffff;
+  u32 high = a >> 32 ;
+  low = ntohl(low);
+  high = ntohl(high);
+
+  return ((((u64) low) << 32) | ( high));
 #endif
 }
 
