@@ -710,40 +710,51 @@ error:
   return NULL;
 }
 
-int ssh_message_type(SSH_MESSAGE *msg){
-    return msg->type;
-}
-
-int ssh_message_subtype(SSH_MESSAGE *msg){
-    switch(msg->type){
-        case SSH_AUTH_REQUEST:
-            return msg->auth_request.method;
-        case SSH_CHANNEL_REQUEST_OPEN:
-            return msg->channel_request_open.type;
-        case SSH_CHANNEL_REQUEST:
-            return msg->channel_request.type;
-    }
+int ssh_message_type(SSH_MESSAGE *msg) {
+  if (msg == NULL) {
     return -1;
+  }
+
+  return msg->type;
 }
 
-int ssh_message_reply_default(SSH_MESSAGE *msg){
-    switch(msg->type){
-        case SSH_AUTH_REQUEST:
-            return ssh_message_auth_reply_default(msg,0);
-            break;
-        case SSH_CHANNEL_REQUEST_OPEN:
-            return ssh_message_channel_request_open_reply_default(msg);
-            break;
-        case SSH_CHANNEL_REQUEST:
-            return ssh_message_channel_request_reply_default(msg);
-            break;
-        default:
-            ssh_log(msg->session, SSH_LOG_PACKET,
-                "Don't know what to default reply to %d type",
-                msg->type);
-            break;
-    }
-    return 0;
+int ssh_message_subtype(SSH_MESSAGE *msg) {
+  if (msg == NULL) {
+    return -1;
+  }
+
+  switch(msg->type) {
+    case SSH_AUTH_REQUEST:
+      return msg->auth_request.method;
+    case SSH_CHANNEL_REQUEST_OPEN:
+      return msg->channel_request_open.type;
+    case SSH_CHANNEL_REQUEST:
+      return msg->channel_request.type;
+  }
+
+  return -1;
+}
+
+int ssh_message_reply_default(SSH_MESSAGE *msg) {
+  if (msg == NULL) {
+    return -1;
+  }
+
+  switch(msg->type) {
+    case SSH_AUTH_REQUEST:
+      return ssh_message_auth_reply_default(msg, 0);
+    case SSH_CHANNEL_REQUEST_OPEN:
+      return ssh_message_channel_request_open_reply_default(msg);
+    case SSH_CHANNEL_REQUEST:
+      return ssh_message_channel_request_reply_default(msg);
+    default:
+      ssh_log(msg->session, SSH_LOG_PACKET,
+          "Don't know what to default reply to %d type",
+          msg->type);
+      break;
+  }
+
+  return -1;
 }
 
 void ssh_message_free(SSH_MESSAGE *msg){
