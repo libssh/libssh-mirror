@@ -46,129 +46,170 @@ static int macsize=SHA_DIGEST_LEN;
 #define PACKET_STATE_INIT 0
 #define PACKET_STATE_SIZEREAD 1
 
-static int packet_read2(SSH_SESSION *session){
-    u32 len;
-    void *packet=NULL;
-    unsigned char mac[30];
-    char buffer[16];
-    int to_be_read;
-    int ret;
-    u8 padding;
-    unsigned int blocksize=(session->current_crypto?session->current_crypto->in_cipher->blocksize:8);
-    int current_macsize=session->current_crypto?macsize:0;
-    enter_function();
-    if(!session->alive){
-    	leave_function();
-        return SSH_ERROR; // the error message was already set into this session
-    }
-    switch(session->packet_state){
-        case PACKET_STATE_INIT:    
-            memset(&session->in_packet,0,sizeof(PACKET));
-            if(session->in_buffer)
-                buffer_reinit(session->in_buffer);
-            else
-                session->in_buffer=buffer_new();
-            ret=ssh_socket_wait_for_data(session->socket,session,blocksize);
-            if(ret != SSH_OK){
-                leave_function();
-            	return ret; // can be SSH_ERROR or SSH_AGAIN
-            }
-//    be_read=completeread(session->fd,buffer,blocksize);
-            // can't fail since we're sure there is enough data in socket buffer
-            ssh_socket_read(session->socket,buffer,blocksize);
-            len=packet_decrypt_len(session,buffer);
-            buffer_add_data(session->in_buffer,buffer,blocksize);
-            if(len> MAX_PACKET_LEN){
-                ssh_set_error(session, SSH_FATAL,
-                    "read_packet(): Packet len too high(%u %.4x)", len, len);
-                leave_function();
-                return SSH_ERROR;
-            }
-            to_be_read=len-blocksize+sizeof(u32);
-            if(to_be_read<0){
-                /* remote sshd sends invalid sizes?*/
-                ssh_set_error(session,SSH_FATAL,"given numbers of bytes left to be read <0 (%d)!",to_be_read);
-                leave_function();
-                return SSH_ERROR;
-            }
-            /* saves the status of the current operations */
-            session->in_packet.len=len;
-            session->packet_state=PACKET_STATE_SIZEREAD;
-        case PACKET_STATE_SIZEREAD:
-            len=session->in_packet.len;
-            to_be_read=len-blocksize+sizeof(u32) + current_macsize;
-            /* if to_be_read is zero, the whole packet was blocksize bytes. */
-            if(to_be_read != 0){ 
-                ret=ssh_socket_wait_for_data(session->socket,session,to_be_read);
-                if(ret!=SSH_OK){
-                    leave_function();
-                    return ret;
-                }
-                packet = malloc(to_be_read);
-                if (packet == NULL) {
-                  ssh_set_error(session, SSH_FATAL, "No space left");
-                  leave_function();
-                  return SSH_ERROR;
-                }
-                ssh_socket_read(session->socket,packet,to_be_read-current_macsize);
-                ssh_log(session,SSH_LOG_PACKET,"Read a %d bytes packet",len);
-                buffer_add_data(session->in_buffer,packet,to_be_read-current_macsize);
-                free(packet);
-            }
-            if(session->current_crypto){
-                /* decrypt the rest of the packet (blocksize bytes already have been decrypted */
-                if (packet_decrypt(session,
-                      buffer_get(session->in_buffer) + blocksize,
-                      buffer_get_len(session->in_buffer) - blocksize) < 0) {
-                    ssh_set_error(session, SSH_FATAL, "Decrypt error");
-                    leave_function();
-                    return SSH_ERROR;
-                }
-                ssh_socket_read(session->socket,mac,macsize);
-                if(packet_hmac_verify(session,session->in_buffer,mac)){
-                    ssh_set_error(session,SSH_FATAL,"HMAC error");
-                    leave_function();
-                    return SSH_ERROR;
-                }
-            }
-            buffer_pass_bytes(session->in_buffer,sizeof(u32));   
-                /*pass the size which has been processed before*/
-            if(!buffer_get_u8(session->in_buffer,&padding)){
-                ssh_set_error(session,SSH_FATAL,"Packet too short to read padding");
-                leave_function();
-                return SSH_ERROR;
-            }
-            ssh_log(session, SSH_LOG_RARE,
-                "%hhd bytes padding, %d bytes left in buffer",
-                padding, buffer_get_rest_len(session->in_buffer));
-            if(padding > buffer_get_rest_len(session->in_buffer)){
-                ssh_set_error(session,SSH_FATAL,"invalid padding: %d (%d resting)",
-                              padding,buffer_get_rest_len(session->in_buffer));
-#ifdef DEBUG_CRYPTO
-                ssh_print_hexa("incrimined packet",
-                               buffer_get(session->in_buffer),buffer_get_len(session->in_buffer));
-#endif
-                leave_function();
-                return SSH_ERROR;
-            }
-            buffer_pass_bytes_end(session->in_buffer,padding);
-            ssh_log(session, SSH_LOG_RARE,
-                "After padding, %d bytes left in buffer",
-                buffer_get_rest_len(session->in_buffer));
-#if defined(HAVE_LIBZ) && defined(WITH_LIBZ)
-            if(session->current_crypto && session->current_crypto->do_compress_in){
-                ssh_log(session, SSH_LOG_RARE, "Decompressing in_buffer ...");
-                decompress_buffer(session,session->in_buffer);
-            }
-#endif
-            session->recv_seq++;
-            session->packet_state=PACKET_STATE_INIT;
-            leave_function();
-            return SSH_OK;
-    }
-    ssh_set_error(session,SSH_FATAL,"Invalid state into packet_read2() : %d",session->packet_state);
+static int packet_read2(SSH_SESSION *session) {
+  unsigned int blocksize = (session->current_crypto ?
+      session->current_crypto->in_cipher->blocksize : 8);
+  int current_macsize = session->current_crypto ? macsize : 0;
+  unsigned char mac[30] = {0};
+  char buffer[16] = {0};
+  void *packet=NULL;
+  int to_be_read;
+  int rc = SSH_ERROR;
+
+  u32 len;
+  u8 padding;
+
+  enter_function();
+
+  if (session->alive == 0) {
+    /* The error message was already set into this session */
     leave_function();
     return SSH_ERROR;
+  }
+
+  switch(session->packet_state) {
+    case PACKET_STATE_INIT:
+      memset(&session->in_packet, 0, sizeof(PACKET));
+
+      if (session->in_buffer) {
+        if (buffer_reinit(session->in_buffer) < 0) {
+          goto error;
+        }
+      } else {
+        session->in_buffer = buffer_new();
+        if (session->in_buffer == NULL) {
+          goto error;
+        }
+      }
+
+      rc = ssh_socket_wait_for_data(session->socket, session, blocksize);
+      if (rc != SSH_OK) {
+        goto error;
+      }
+      rc = SSH_ERROR;
+      /* can't fail since we're sure there is enough data in socket buffer */
+      ssh_socket_read(session->socket, buffer, blocksize);
+      len = packet_decrypt_len(session, buffer);
+
+      if (buffer_add_data(session->in_buffer, buffer, blocksize) < 0) {
+        goto error;
+      }
+
+      if(len > MAX_PACKET_LEN) {
+        ssh_set_error(session, SSH_FATAL,
+            "read_packet(): Packet len too high(%u %.4x)", len, len);
+        goto error;
+      }
+
+      to_be_read = len - blocksize + sizeof(u32);
+      if (to_be_read < 0) {
+        /* remote sshd sends invalid sizes? */
+        ssh_set_error(session, SSH_FATAL,
+            "given numbers of bytes left to be read < 0 (%d)!", to_be_read);
+        goto error;
+      }
+
+      /* saves the status of the current operations */
+      session->in_packet.len = len;
+      session->packet_state = PACKET_STATE_SIZEREAD;
+    case PACKET_STATE_SIZEREAD:
+      len = session->in_packet.len;
+      to_be_read = len - blocksize + sizeof(u32) + current_macsize;
+      /* if to_be_read is zero, the whole packet was blocksize bytes. */
+      if (to_be_read != 0) {
+        rc = ssh_socket_wait_for_data(session->socket,session,to_be_read);
+        if (rc != SSH_OK) {
+          goto error;
+        }
+        rc = SSH_ERROR;
+
+        packet = malloc(to_be_read);
+        if (packet == NULL) {
+          ssh_set_error(session, SSH_FATAL, "No space left");
+          goto error;
+        }
+        ssh_socket_read(session->socket,packet,to_be_read-current_macsize);
+
+        ssh_log(session,SSH_LOG_PACKET,"Read a %d bytes packet",len);
+
+        if (buffer_add_data(session->in_buffer, packet,
+              to_be_read - current_macsize) < 0) {
+          SAFE_FREE(packet);
+          goto error;
+        }
+        SAFE_FREE(packet);
+      }
+
+      if (session->current_crypto) {
+        /*
+         * decrypt the rest of the packet (blocksize bytes already
+         * have been decrypted)
+         */
+        if (packet_decrypt(session,
+              buffer_get(session->in_buffer) + blocksize,
+              buffer_get_len(session->in_buffer) - blocksize) < 0) {
+          ssh_set_error(session, SSH_FATAL, "Decrypt error");
+          goto error;
+        }
+        ssh_socket_read(session->socket, mac, macsize);
+
+        if (packet_hmac_verify(session, session->in_buffer, mac)) {
+          ssh_set_error(session, SSH_FATAL, "HMAC error");
+          goto error;
+        }
+      }
+
+      buffer_pass_bytes(session->in_buffer, sizeof(u32));
+
+      /* pass the size which has been processed before */
+      if (buffer_get_u8(session->in_buffer, &padding) == 0) {
+        ssh_set_error(session, SSH_FATAL, "Packet too short to read padding");
+        goto error;
+      }
+
+      ssh_log(session, SSH_LOG_RARE,
+          "%hhd bytes padding, %d bytes left in buffer",
+          padding, buffer_get_rest_len(session->in_buffer));
+
+      if (padding > buffer_get_rest_len(session->in_buffer)) {
+        ssh_set_error(session, SSH_FATAL,
+            "Invalid padding: %d (%d resting)",
+            padding,
+            buffer_get_rest_len(session->in_buffer));
+#ifdef DEBUG_CRYPTO
+        ssh_print_hexa("incrimined packet",
+            buffer_get(session->in_buffer),
+            buffer_get_len(session->in_buffer));
+#endif
+        goto error;
+      }
+      buffer_pass_bytes_end(session->in_buffer, padding);
+
+      ssh_log(session, SSH_LOG_RARE,
+          "After padding, %d bytes left in buffer",
+          buffer_get_rest_len(session->in_buffer));
+#if defined(HAVE_LIBZ) && defined(WITH_LIBZ)
+      if (session->current_crypto && session->current_crypto->do_compress_in) {
+        ssh_log(session, SSH_LOG_RARE, "Decompressing in_buffer ...");
+        if (decompress_buffer(session, session->in_buffer) < 0) {
+          goto error;
+        }
+      }
+#endif
+      session->recv_seq++;
+      session->packet_state = PACKET_STATE_INIT;
+
+      leave_function();
+      return SSH_OK;
+  }
+
+  ssh_set_error(session, SSH_FATAL,
+      "Invalid state into packet_read2(): %d",
+      session->packet_state);
+
+error:
+  leave_function();
+  return rc;
 }
 
 #ifdef HAVE_SSH1
