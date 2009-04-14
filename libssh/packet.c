@@ -412,14 +412,23 @@ int packet_flush(SSH_SESSION *session, int enforce_blocking) {
   return ssh_socket_nonblocking_flush(session->socket);
 }
 
-/* this function places the outgoing packet buffer into an outgoing socket buffer */
-static int packet_write(SSH_SESSION *session){
-	int ret;
-	enter_function();
-	ssh_socket_write(session->socket,buffer_get(session->out_buffer),buffer_get_len(session->out_buffer));
-	ret=packet_flush(session,0);
-	leave_function();
-    return ret;
+/*
+ * This function places the outgoing packet buffer into an outgoing
+ * socket buffer
+ */
+static int packet_write(SSH_SESSION *session) {
+  int rc = SSH_ERROR;
+
+  enter_function();
+
+  ssh_socket_write(session->socket,
+      buffer_get(session->out_buffer),
+      buffer_get_len(session->out_buffer));
+
+  rc = packet_flush(session, 0);
+
+  leave_function();
+  return rc;
 }
 
 static int packet_send2(SSH_SESSION *session){
