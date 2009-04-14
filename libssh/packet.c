@@ -431,46 +431,73 @@ static int packet_write(SSH_SESSION *session) {
   return rc;
 }
 
-static int packet_send2(SSH_SESSION *session){
-    char padstring[32];
-    u32 finallen;
-    u8 padding;
-    u32 currentlen=buffer_get_len(session->out_buffer);
-    unsigned char *hmac;
-    int ret=0;
-    unsigned int blocksize=(session->current_crypto?session->current_crypto->out_cipher->blocksize:8);
-    enter_function();
-    ssh_log(session, SSH_LOG_RARE,
-        "Writing on the wire a packet having %u bytes before", currentlen);
+static int packet_send2(SSH_SESSION *session) {
+  unsigned int blocksize = (session->current_crypto ?
+      session->current_crypto->out_cipher->blocksize : 8);
+  u32 currentlen = buffer_get_len(session->out_buffer);
+  unsigned char *hmac = NULL;
+  char padstring[32] = {0};
+  int rc = SSH_ERROR;
+  u32 finallen;
+  u8 padding;
+
+  enter_function();
+
+  ssh_log(session, SSH_LOG_RARE,
+      "Writing on the wire a packet having %u bytes before", currentlen);
+
 #if defined(HAVE_LIBZ) && defined(WITH_LIBZ)
-    if(session->current_crypto && session->current_crypto->do_compress_out){
-        ssh_log(session, SSH_LOG_RARE, "Compressing in_buffer ...");
-        compress_buffer(session,session->out_buffer);
-        currentlen=buffer_get_len(session->out_buffer);
+  if (session->current_crypto && session->current_crypto->do_compress_out) {
+    ssh_log(session, SSH_LOG_RARE, "Compressing in_buffer ...");
+    if (compress_buffer(session,session->out_buffer) < 0) {
+      goto error;
     }
+    currentlen = buffer_get_len(session->out_buffer);
+  }
 #endif
-    padding=(blocksize- ((currentlen+5) % blocksize));
-    if(padding<4)
-        padding+=blocksize;
-    if(session->current_crypto)
-        ssh_get_random(padstring,padding,0);
-    else
-        memset(padstring,0,padding);
-    finallen=htonl(currentlen+padding+1);
-    ssh_log(session, SSH_LOG_RARE,
-        "%d bytes after comp + %d padding bytes = %d bytes packet",
-        currentlen, padding, (ntohl(finallen)));
-    buffer_add_data_begin(session->out_buffer,&padding,sizeof(u8));
-    buffer_add_data_begin(session->out_buffer,&finallen,sizeof(u32));
-    buffer_add_data(session->out_buffer,padstring,padding);
-    hmac=packet_encrypt(session,buffer_get(session->out_buffer),buffer_get_len(session->out_buffer));
-    if(hmac)
-        buffer_add_data(session->out_buffer,hmac,20);
-    ret=packet_write(session);
-    session->send_seq++;
-    buffer_reinit(session->out_buffer);
-    leave_function();
-    return ret; /* SSH_OK, AGAIN or ERROR */
+  padding = (blocksize - ((currentlen +5) % blocksize));
+  if(padding < 4) {
+    padding += blocksize;
+  }
+
+  if (session->current_crypto) {
+    ssh_get_random(padstring, padding, 0);
+  } else {
+    memset(padstring,0,padding);
+  }
+
+  finallen = htonl(currentlen + padding + 1);
+  ssh_log(session, SSH_LOG_RARE,
+      "%d bytes after comp + %d padding bytes = %d bytes packet",
+      currentlen, padding, (ntohl(finallen)));
+
+  if (buffer_add_data_begin(session->out_buffer, &padding, sizeof(u8)) < 0) {
+    goto error;
+  }
+  if (buffer_add_data_begin(session->out_buffer, &finallen, sizeof(u32)) < 0) {
+    goto error;
+  }
+  if (buffer_add_data(session->out_buffer, padstring, padding) < 0) {
+    goto error;
+  }
+
+  hmac = packet_encrypt(session, buffer_get(session->out_buffer),
+      buffer_get_len(session->out_buffer));
+  if (hmac) {
+    if (buffer_add_data(session->out_buffer, hmac, 20) < 0) {
+      goto error;
+    }
+  }
+
+  rc = packet_write(session);
+  session->send_seq++;
+
+  if (buffer_reinit(session->out_buffer) < 0) {
+    rc = SSH_ERROR;
+  }
+error:
+  leave_function();
+  return rc; /* SSH_OK, AGAIN or ERROR */
 }
 
 #ifdef HAVE_SSH1
