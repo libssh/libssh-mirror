@@ -199,83 +199,103 @@ int ssh_socket_is_open(struct socket *s) {
  * \brief read len bytes from socket into buffer
  */
 static int ssh_socket_unbuffered_read(struct socket *s, void *buffer, u32 len) {
-	int r;
-	if(s->data_except)
-		return -1;
-	r=recv(s->fd,buffer,len,0);
-#ifndef _WIN32
-    s->last_errno=errno;
+  int rc = -1;
+
+  if (s->data_except) {
+    return -1;
+  }
+
+  rc = recv(s->fd,buffer, len, 0);
+#ifdef _WIN32
+  s->last_errno = WSAGetLastError();
 #else
-    s->last_errno=WSAGetLastError();
+  s->last_errno = errno;
 #endif
-    s->data_to_read=0;
-    if(r<0)
-    	s->data_except=1;
-	return r;
+  s->data_to_read = 0;
+
+  if (rc < 0) {
+    s->data_except = 1;
+  }
+
+  return rc;
 }
 
 /* \internal
  * \brief writes len bytes from buffer to socket
  */
-static int ssh_socket_unbuffered_write(struct socket *s,const void *buffer,
+static int ssh_socket_unbuffered_write(struct socket *s, const void *buffer,
     u32 len) {
-	int w;
-	if(s->data_except)
-		return -1;
-	w=send(s->fd,buffer,len,0);
-#ifndef _WIN32
-    s->last_errno=errno;
+  int w = -1;
+
+  if (s->data_except) {
+    return -1;
+  }
+
+  w = send(s->fd,buffer, len, 0);
+#ifdef _WIN32
+  s->last_errno = WSAGetLastError();
 #else
-    s->last_errno=WSAGetLastError();
+  s->last_errno = errno;
 #endif
-    s->data_to_write=0;
-    if(w<0)
-    	s->data_except=1;
-	return w;
+  s->data_to_write = 0;
+
+  if (w < 0) {
+    s->data_except = 1;
+  }
+
+  return w;
 }
 
 /* \internal
  * \brief returns nonzero if the current socket is in the fd_set
  */
-int ssh_socket_fd_isset(struct socket *s, fd_set *set){
-	if(s->fd==-1)
-		return 0;
-	return FD_ISSET(s->fd,set);
+int ssh_socket_fd_isset(struct socket *s, fd_set *set) {
+  if(s->fd == -1) {
+    return 0;
+  }
+  return FD_ISSET(s->fd,set);
 }
 
 /* \internal
  * \brief sets the current fd in a fd_set and updates the fd_max
  */
 
-void ssh_socket_fd_set(struct socket *s, fd_set *set, int *fd_max){
-	if(s->fd==-1)
-		return;
-	FD_SET(s->fd,set);
-	if(s->fd>= *fd_max){
-		*fd_max=s->fd+1;
-	}
+void ssh_socket_fd_set(struct socket *s, fd_set *set, int *fd_max) {
+  if (s->fd == -1)
+    return;
+  FD_SET(s->fd,set);
+  if (s->fd >= *fd_max) {
+    *fd_max = s->fd + 1;
+  }
 }
 
 /** \internal
  * \brief reads blocking until len bytes have been read
  */
-int ssh_socket_completeread(struct socket *s, void *buffer, u32 len){
-    int r;
-    u32 total=0;
-    u32 toread=len;
-    if(!ssh_socket_is_open(s))
-        return SSH_ERROR;
-    while((r=ssh_socket_unbuffered_read(s,buffer+total,toread))){
-        if(r==-1)
-            return SSH_ERROR;
-        total += r;
-        toread-=r;
-        if(total==len)
-            return len;
-        if(r==0)
-            return 0;
+int ssh_socket_completeread(struct socket *s, void *buffer, u32 len) {
+  int r = -1;
+  u32 total = 0;
+  u32 toread = len;
+  if(! ssh_socket_is_open(s)) {
+    return SSH_ERROR;
+  }
+
+  while((r = ssh_socket_unbuffered_read(s, buffer + total, toread))) {
+    if (r < 0) {
+      return SSH_ERROR;
     }
-    return total ; /* connection closed */
+    total += r;
+    toread -= r;
+    if (total == len) {
+      return len;
+    }
+    if (r == 0) {
+      return 0;
+    }
+  }
+
+  /* connection closed */
+  return total;
 }
 
 /** \internal
