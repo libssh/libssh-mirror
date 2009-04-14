@@ -589,72 +589,77 @@ int packet_send(SSH_SESSION *session) {
   return packet_send2(session);
 }
 
-void packet_parse(SSH_SESSION *session){
-    int type=session->in_packet.type;
-    u32 foo;
-    STRING *error_s;
-    char *error=NULL;
-#ifdef HAVE_SSH1
-    if(session->version==1){
-        /* SSH-1 */
-        switch(type){
-            case SSH_MSG_DISCONNECT:
-                ssh_log(session, SSH_LOG_PACKET, "Received SSH_MSG_DISCONNECT");
-                ssh_set_error(session, SSH_FATAL, "Received SSH_MSG_DISCONNECT");
-                ssh_socket_close(session->socket);
-                session->alive=0;
-                return;
-            case SSH_SMSG_STDOUT_DATA:
-            case SSH_SMSG_STDERR_DATA:
-            case SSH_SMSG_EXITSTATUS:
-                if (channel_handle1(session,type) < 0) {
-                  return;
-                }
-                return;
-            case SSH_MSG_DEBUG:
-            case SSH_MSG_IGNORE:
-            	break;
-            default:
-                ssh_log(session, SSH_LOG_PACKET,
-                    "Unexpected message code %d", type);
-            }
-        return;
-    } else {
-#endif /* HAVE_SSH1 */
-    switch(type){
-        case SSH2_MSG_DISCONNECT:
-            buffer_get_u32(session->in_buffer,&foo);
-            error_s=buffer_get_ssh_string(session->in_buffer);
-            if(error_s)
-                error=string_to_char(error_s);
-            ssh_log(session, SSH_LOG_PACKET, "Received SSH_MSG_DISCONNECT\n");
-            ssh_set_error(session, SSH_FATAL,
-                "Received SSH_MSG_DISCONNECT: %s",error);
-            if(error_s){
-                free(error_s);
-                free(error);
-            }
-            ssh_socket_close(session->socket);
-            session->alive=0;
-            return;
-        case SSH2_MSG_CHANNEL_WINDOW_ADJUST:
-        case SSH2_MSG_CHANNEL_DATA:
-        case SSH2_MSG_CHANNEL_EXTENDED_DATA:
-        case SSH2_MSG_CHANNEL_REQUEST:
-        case SSH2_MSG_CHANNEL_EOF:
-        case SSH2_MSG_CHANNEL_CLOSE:
+void packet_parse(SSH_SESSION *session) {
+  STRING *error_s = NULL;
+  char *error = NULL;
+  int type = session->in_packet.type;
+  u32 tmp;
 
-            channel_handle(session,type);
-        case SSH2_MSG_IGNORE:
-        case SSH2_MSG_DEBUG:
-            return;
-        default:
-            ssh_log(session,SSH_LOG_RARE,"Received unhandled packet %d",type);
+#ifdef HAVE_SSH1
+  if (session->version == 1) {
+    /* SSH-1 */
+    switch(type) {
+      case SSH_MSG_DISCONNECT:
+        ssh_log(session, SSH_LOG_PACKET, "Received SSH_MSG_DISCONNECT");
+        ssh_set_error(session, SSH_FATAL, "Received SSH_MSG_DISCONNECT");
+
+        ssh_socket_close(session->socket);
+        session->alive = 0;
+        return;
+      case SSH_SMSG_STDOUT_DATA:
+      case SSH_SMSG_STDERR_DATA:
+      case SSH_SMSG_EXITSTATUS:
+        channel_handle1(session,type)
+        return;
+      case SSH_MSG_DEBUG:
+      case SSH_MSG_IGNORE:
+        break;
+      default:
+        ssh_log(session, SSH_LOG_PACKET,
+            "Unexpected message code %d", type);
+    }
+    return;
+  } else {
+#endif /* HAVE_SSH1 */
+    switch(type) {
+      case SSH2_MSG_DISCONNECT:
+        buffer_get_u32(session->in_buffer, &tmp);
+        error_s = buffer_get_ssh_string(session->in_buffer);
+        if (error_s == NULL) {
+          return;
+        }
+        error = string_to_char(error_s);
+        string_free(error_s);
+        if (error == NULL) {
+          return;
+        }
+        ssh_log(session, SSH_LOG_PACKET, "Received SSH_MSG_DISCONNECT\n");
+        ssh_set_error(session, SSH_FATAL,
+            "Received SSH_MSG_DISCONNECT: %s",error);
+
+        SAFE_FREE(error);
+
+        ssh_socket_close(session->socket);
+        session->alive = 0;
+
+        return;
+      case SSH2_MSG_CHANNEL_WINDOW_ADJUST:
+      case SSH2_MSG_CHANNEL_DATA:
+      case SSH2_MSG_CHANNEL_EXTENDED_DATA:
+      case SSH2_MSG_CHANNEL_REQUEST:
+      case SSH2_MSG_CHANNEL_EOF:
+      case SSH2_MSG_CHANNEL_CLOSE:
+        channel_handle(session,type);
+      case SSH2_MSG_IGNORE:
+      case SSH2_MSG_DEBUG:
+        return;
+      default:
+        ssh_log(session, SSH_LOG_RARE, "Received unhandled packet %d", type);
     }
 #ifdef HAVE_SSH1
-    }
+  }
 #endif
-}    
+}
 
 #ifdef HAVE_SSH1
 static int packet_wait1(SSH_SESSION *session,int type,int blocking){
