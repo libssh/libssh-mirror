@@ -140,12 +140,17 @@ void ssh_cleanup(SSH_SESSION *session) {
 /** \brief disconnect impolitely from remote host
  * \param session current ssh session
  */
-void ssh_silent_disconnect(SSH_SESSION *session){
-	enter_function();
-    ssh_socket_close(session->socket);
-    session->alive=0;
-    ssh_disconnect(session);
-    //leave_function();
+void ssh_silent_disconnect(SSH_SESSION *session) {
+  enter_function();
+
+  if (session == NULL) {
+    return;
+  }
+
+  ssh_socket_close(session->socket);
+  session->alive = 0;
+  ssh_disconnect(session);
+  /* FIXME: leave_function(); ??? */
 }
 
 /** \brief set the options for the current session
@@ -154,9 +159,13 @@ void ssh_silent_disconnect(SSH_SESSION *session){
  * \see ssh_new()
  * \see ssh_options_new()
  */
-void ssh_set_options(SSH_SESSION *session, SSH_OPTIONS *options){
-    session->options=options;
-    session->log_verbosity=options->log_verbosity;
+void ssh_set_options(SSH_SESSION *session, SSH_OPTIONS *options) {
+  if (session == NULL || options == NULL) {
+    return;
+  }
+
+  session->options = options;
+  session->log_verbosity = options->log_verbosity;
 }
 
 /** \brief set the session in blocking/nonblocking mode
@@ -164,8 +173,12 @@ void ssh_set_options(SSH_SESSION *session, SSH_OPTIONS *options){
  * \param blocking zero for nonblocking mode
  * \bug nonblocking code is in development and won't work as expected
  */
-void ssh_set_blocking(SSH_SESSION *session,int blocking){
-    session->blocking=blocking?1:0;
+void ssh_set_blocking(SSH_SESSION *session, int blocking) {
+  if (session == NULL) {
+    return;
+  }
+
+  session->blocking = blocking ? 1 : 0;
 }
 
 /** In case you'd need the file descriptor of the connection
@@ -175,31 +188,45 @@ void ssh_set_blocking(SSH_SESSION *session,int blocking){
  * \return file descriptor of the connection, or -1 if it is
  * not connected
  */
+socket_t ssh_get_fd(SSH_SESSION *session) {
+  if (session == NULL) {
+    return -1;
+  }
 
-socket_t ssh_get_fd(SSH_SESSION *session){
-    return ssh_socket_get_fd(session->socket);
+  return ssh_socket_get_fd(session->socket);
 }
 
 /** \brief say to the session it has data to read on the file descriptor without blocking
  * \param session ssh session
  */
-void ssh_set_fd_toread(SSH_SESSION *session){
-    ssh_socket_set_toread(session->socket);
+void ssh_set_fd_toread(SSH_SESSION *session) {
+  if (session == NULL) {
+    return;
+  }
+
+  ssh_socket_set_toread(session->socket);
 }
 
 /** \brief say the session it may write to the file descriptor without blocking
  * \param session ssh session
  */
-void ssh_set_fd_towrite(SSH_SESSION *session){
-    ssh_socket_set_towrite(session->socket);
+void ssh_set_fd_towrite(SSH_SESSION *session) {
+  if (session == NULL) {
+    return;
+  }
 
+  ssh_socket_set_towrite(session->socket);
 }
 
 /** \brief say the session it has an exception to catch on the file descriptor
  * \param session ssh session
  */
-void ssh_set_fd_except(SSH_SESSION *session){
-   ssh_socket_set_except(session->socket);
+void ssh_set_fd_except(SSH_SESSION *session) {
+  if (session == NULL) {
+    return;
+  }
+
+  ssh_socket_set_except(session->socket);
 }
 
 /** \warning I don't remember if this should be internal or not
