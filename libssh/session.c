@@ -232,26 +232,33 @@ void ssh_set_fd_except(SSH_SESSION *session) {
 /** \warning I don't remember if this should be internal or not
  */
 /* looks if there is data to read on the socket and parse it. */
-int ssh_handle_packets(SSH_SESSION *session){
-    int w,err,r,i=0;
-    enter_function();
-    do {
-        r=ssh_socket_poll(session->socket,&w,&err);
-        if(r<=0){
-        	leave_function();
-            return r; // error or no data available
-        }
-        /* if an exception happened, it will be trapped by packet_read() */
-        if ((packet_read(session) != SSH_OK) ||
-            (packet_translate(session) != SSH_OK)) {
-            leave_function();
-        	return -1;
-        }
-        packet_parse(session);
-        ++i;
-    } while(r>0);
-    leave_function();
-    return r;
+int ssh_handle_packets(SSH_SESSION *session) {
+  int w = 0;
+  int e = 0;
+  int rc = -1;
+
+  enter_function();
+
+  do {
+    rc = ssh_socket_poll(session->socket, &w, &e);
+    if (rc <= 0) {
+      /* error or no data available */
+      leave_function();
+      return rc;
+    }
+
+    /* if an exception happened, it will be trapped by packet_read() */
+    if ((packet_read(session) != SSH_OK) ||
+        (packet_translate(session) != SSH_OK)) {
+      leave_function();
+      return -1;
+    }
+
+    packet_parse(session);
+  } while(rc > 0);
+
+  leave_function();
+  return rc;
 }
 
 /** \brief get session status
