@@ -60,15 +60,15 @@
  */
 
 struct socket {
-	socket_t fd;
-	int last_errno;
-    int data_to_read; /* reading now on socket will
-                         not block */
-    int data_to_write;
-    int data_except;
-    BUFFER *out_buffer;
-    BUFFER *in_buffer;
-    SSH_SESSION *session;
+  socket_t fd;
+  int last_errno;
+  int data_to_read; /* reading now on socket will
+                       not block */
+  int data_to_write;
+  int data_except;
+  BUFFER *out_buffer;
+  BUFFER *in_buffer;
+  SSH_SESSION *session;
 };
 
 /*
@@ -162,37 +162,37 @@ int ssh_socket_unix(struct socket *s, const char *path) {
  * \brief closes a socket
  */
 void ssh_socket_close(struct socket *s){
-	if(ssh_socket_is_open(s)){
+  if (ssh_socket_is_open(s)) {
 #ifdef _WIN32
-		closesocket(s->fd);
-		s->last_errno=WSAGetLastError();
+    closesocket(s->fd);
+    s->last_errno = WSAGetLastError();
 #else
-		close(s->fd);
-		s->last_errno=errno;
+    close(s->fd);
+    s->last_errno = errno;
 #endif
-		s->fd=-1;
-	}
+    s->fd=-1;
+  }
 }
 
 /* \internal
  * \brief sets the file descriptor of the socket
  */
-void ssh_socket_set_fd(struct socket *s, socket_t fd){
-	s->fd=fd;
+void ssh_socket_set_fd(struct socket *s, socket_t fd) {
+  s->fd = fd;
 }
 
 /* \internal
  * \brief returns the file descriptor of the socket
  */
-socket_t ssh_socket_get_fd(struct socket *s){
-	return s->fd;
+socket_t ssh_socket_get_fd(struct socket *s) {
+  return s->fd;
 }
 
 /* \internal
  * \brief returns nonzero if the socket is open
  */
-int ssh_socket_is_open(struct socket *s){
-	return s->fd != -1;
+int ssh_socket_is_open(struct socket *s) {
+  return s->fd != -1;
 }
 
 /* \internal
