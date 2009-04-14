@@ -482,98 +482,119 @@ int ssh_socket_wait_for_data(struct socket *s, SSH_SESSION *session, u32 len) {
  * \param except value pointed to set to 1 if there is an exception
  * \return 1 if it is possible to read, 0 otherwise, -1 on error
  */
-int ssh_socket_poll(struct socket *s, int *writeable, int *except){
-	SSH_SESSION *session=s->session;
-    struct timeval sometime;
-    fd_set rdes; // read set
-    fd_set wdes; // writing set
-    fd_set edes; // exception set
-    int fdmax=-1;
+int ssh_socket_poll(struct socket *s, int *writeable, int *except) {
+  SSH_SESSION *session = s->session;
+  struct timeval sometime;
+  fd_set rdes; // read set
+  fd_set wdes; // writing set
+  fd_set edes; // exception set
+  int fdmax =- 1;
 
-    enter_function();
-    FD_ZERO(&rdes);
-    FD_ZERO(&wdes);
-    FD_ZERO(&edes);
+  enter_function();
 
-    if(!ssh_socket_is_open(s)){
-        *except=1;
-        *writeable=0;
-        return 0;
-    }
+  FD_ZERO(&rdes);
+  FD_ZERO(&wdes);
+  FD_ZERO(&edes);
+
+  if (!ssh_socket_is_open(s)) {
+    *except = 1;
+    *writeable = 0;
+    return 0;
+  }
 #ifdef SELECT_LIMIT_CHECK
-    // some systems don't handle the fds > FD_SETSIZE
-    if(s->fd > FD_SETSIZE){
-    	ssh_set_error(session, SSH_REQUEST_DENIED, "File descriptor out of range for select : %d",s->fd);
-    	leave_function();
-    	return -1;
-    }
-#endif
-    if(!s->data_to_read)
-        ssh_socket_fd_set(s,&rdes,&fdmax);
-    if(!s->data_to_write)
-        ssh_socket_fd_set(s,&wdes,&fdmax);
-    ssh_socket_fd_set(s,&edes,&fdmax);
+  // some systems don't handle the fds > FD_SETSIZE
+  if(s->fd > FD_SETSIZE){
+    ssh_set_error(session, SSH_REQUEST_DENIED,
+        "File descriptor out of range for select: %d", s->fd);
 
-    /* Set to return immediately (no blocking) */
-    sometime.tv_sec = 0;
-    sometime.tv_usec = 0;
-
-    /* Make the call, and listen for errors */
-    if (select(fdmax, &rdes,&wdes,&edes, &sometime) < 0) {
-    	ssh_set_error(session,SSH_FATAL, "select: %s", strerror(errno));
-    	leave_function();
-    	return -1;
-    }
-    if(!s->data_to_read)
-        s->data_to_read=ssh_socket_fd_isset(s,&rdes);
-    if(!s->data_to_write)
-        s->data_to_write=ssh_socket_fd_isset(s,&wdes);
-    if(!s->data_except)
-    	s->data_except=ssh_socket_fd_isset(s,&edes);
-    *except=s->data_except;
-    *writeable=s->data_to_write;
     leave_function();
-    return s->data_to_read || (buffer_get_rest_len(s->in_buffer)>0);
+    return -1;
+  }
+#endif
+  if (!s->data_to_read) {
+    ssh_socket_fd_set(s, &rdes, &fdmax);
+  }
+  if (!s->data_to_write) {
+    ssh_socket_fd_set(s, &wdes, &fdmax);
+  }
+  ssh_socket_fd_set(s, &edes, &fdmax);
+
+  /* Set to return immediately (no blocking) */
+  sometime.tv_sec = 0;
+  sometime.tv_usec = 0;
+
+  /* Make the call, and listen for errors */
+  if (select(fdmax, &rdes, &wdes, &edes, &sometime) < 0) {
+    ssh_set_error(session, SSH_FATAL, "select(): %s", strerror(errno));
+    leave_function();
+    return -1;
+  }
+
+  if (!s->data_to_read) {
+    s->data_to_read = ssh_socket_fd_isset(s, &rdes);
+  }
+  if (!s->data_to_write) {
+    s->data_to_write = ssh_socket_fd_isset(s, &wdes);
+  }
+  if (!s->data_except) {
+    s->data_except = ssh_socket_fd_isset(s, &edes);
+  }
+  *except = s->data_except;
+  *writeable = s->data_to_write;
+
+  leave_function();
+  return (s->data_to_read || (buffer_get_rest_len(s->in_buffer) > 0));
 }
 #endif
 
 #ifdef USE_POLL
 /* ssh_socket_poll, poll() version */
 int ssh_socket_poll(struct socket *s, int *writeable, int *except) {
-	SSH_SESSION *session=s->session;
-	struct pollfd fd[1];
-	int err;
+  SSH_SESSION *session = s->session;
+  struct pollfd fd[1];
+  int rc = -1;
 
-	enter_function();
-    if(!ssh_socket_is_open(s)){
-        *except=1;
-        *writeable = 0;
-        return 0;
-    }
-    fd->fd=s->fd;
-    fd->events=0;
-    if(!s->data_to_read)
-        fd->events |= POLLIN;
-    if(!s->data_to_write)
-        fd->events |= POLLOUT;
+  enter_function();
 
-    /* Make the call, and listen for errors */
-    err=poll(fd,1,0);
-    if(err<0){
-    	ssh_set_error(session,SSH_FATAL, "select: %s", strerror(errno));
-    	leave_function();
-    	return -1;
-    }
-    if(!s->data_to_read)
-        s->data_to_read=fd->revents & POLLIN;
-    if(!s->data_to_write)
-        s->data_to_write=fd->revents & POLLOUT;
-    if(!s->data_except)
-    	s->data_except=fd->revents & POLLERR;
-    *except=s->data_except;
-    *writeable = s->data_to_write;
+  if (!ssh_socket_is_open(s)) {
+    *except = 1;
+    *writeable = 0;
+    return 0;
+  }
+
+  fd->fd = s->fd;
+  fd->events = 0;
+
+  if (!s->data_to_read) {
+    fd->events |= POLLIN;
+  }
+  if (!s->data_to_write) {
+    fd->events |= POLLOUT;
+  }
+
+  /* Make the call, and listen for errors */
+  rc = poll(fd, 1, 0);
+  if (rc < 0) {
+    ssh_set_error(session, SSH_FATAL, "poll(): %s", strerror(errno));
     leave_function();
-    return s->data_to_read || (buffer_get_rest_len(s->in_buffer)>0);
+    return -1;
+  }
+
+  if (!s->data_to_read) {
+    s->data_to_read = fd->revents & POLLIN;
+  }
+  if (!s->data_to_write) {
+    s->data_to_write = fd->revents & POLLOUT;
+  }
+  if (!s->data_except) {
+    s->data_except = fd->revents & POLLERR;
+  }
+
+  *except = s->data_except;
+  *writeable = s->data_to_write;
+
+  leave_function();
+  return (s->data_to_read || (buffer_get_rest_len(s->in_buffer) > 0));
 }
 #endif
 
