@@ -161,7 +161,7 @@ int channel_change_pty_size1(CHANNEL *channel, int cols, int rows) {
 
   ssh_log(session, SSH_LOG_RARE, "Change pty size send");
 
-  if (packet_wait(session, SSH_SMSG_SUCCESS, 1) < 0) {
+  if (packet_wait(session, SSH_SMSG_SUCCESS, 1) != SSH_OK) {
     return -1;
   }
 

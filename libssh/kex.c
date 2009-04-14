@@ -236,7 +236,7 @@ int ssh_get_kex(SSH_SESSION *session, int server_kex) {
 
   enter_function();
 
-  if (packet_wait(session, SSH2_MSG_KEXINIT, 1)) {
+  if (packet_wait(session, SSH2_MSG_KEXINIT, 1) != SSH_OK) {
     leave_function();
     return -1;
   }
@@ -624,7 +624,7 @@ int ssh_get_kex1(SSH_SESSION *session) {
 
   enter_function();
   ssh_log(session, SSH_LOG_PROTOCOL, "Waiting for a SSH_SMSG_PUBLIC_KEY");
-  if (packet_wait(session, SSH_SMSG_PUBLIC_KEY, 1)) {
+  if (packet_wait(session, SSH_SMSG_PUBLIC_KEY, 1) != SSH_OK) {
     leave_function();
     return -1;
   }
@@ -760,7 +760,7 @@ int ssh_get_kex1(SSH_SESSION *session) {
   session->next_crypto = NULL;
 
   ssh_log(session, SSH_LOG_PROTOCOL, "Waiting for a SSH_SMSG_SUCCESS");
-  if (packet_wait(session,SSH_SMSG_SUCCESS,1)) {
+  if (packet_wait(session,SSH_SMSG_SUCCESS,1) != SSH_OK) {
     char buffer[1024] = {0};
     snprintf(buffer, sizeof(buffer),
         "Key exchange failed: %s", ssh_get_error(session));

@@ -662,105 +662,120 @@ void packet_parse(SSH_SESSION *session) {
 }
 
 #ifdef HAVE_SSH1
-static int packet_wait1(SSH_SESSION *session,int type,int blocking){
-	enter_function();
-    ssh_log(session,SSH_LOG_PROTOCOL,"packet_wait1 waiting for %d",type);
-    while(1){
-        if ((packet_read1(session) != SSH_OK) ||
-            (packet_translate(session) != SSH_OK)) {
-            leave_function();
-            return -1;
-        }
-        ssh_log(session,SSH_LOG_PACKET,"packet_wait 1 received a type %d packet",session->in_packet.type);
-        switch(session->in_packet.type){
-            case SSH_MSG_DISCONNECT:
-                packet_parse(session);
-                leave_function();
-                return -1;
-            case SSH_SMSG_STDOUT_DATA:
-            case SSH_SMSG_STDERR_DATA:
-            case SSH_SMSG_EXITSTATUS:
-                if (channel_handle1(session,type) < 0) {
-                  leave_function();
-                  return -1;
-                }
-                break;
-            case SSH_MSG_DEBUG:
-            case SSH_MSG_IGNORE:
-            	break;
-/*          case SSH2_MSG_CHANNEL_CLOSE:
-               packet_parse(session);
-                break;;
-*/               
-            default:
-               if(type && (type != session->in_packet.type)){
-                   ssh_set_error(session,SSH_FATAL,"waitpacket(): Received a %d type packet, was waiting for a %d\n",session->in_packet.type,type);
-                   leave_function();
-                   return -1;
-               }
-               leave_function();
-               return 0;
-           }
-        if(blocking==0){
-            leave_function();
-        	return 0;
-        }
+static int packet_wait1(SSH_SESSION *session, int type, int blocking) {
+
+  enter_function();
+
+  ssh_log(session, SSH_LOG_PROTOCOL, "packet_wait1 waiting for %d", type);
+
+  do {
+    if ((packet_read1(session) != SSH_OK) ||
+        (packet_translate(session) != SSH_OK)) {
+      leave_function();
+      return SSH_ERROR;
     }
-    leave_function();
-    return 0;
+    ssh_log(session, SSH_LOG_PACKET, "packet_wait1() received a type %d packet",
+        session->in_packet.type);
+    switch (session->in_packet.type) {
+      case SSH_MSG_DISCONNECT:
+        packet_parse(session);
+        leave_function();
+        return SSH_ERROR;
+      case SSH_SMSG_STDOUT_DATA:
+      case SSH_SMSG_STDERR_DATA:
+      case SSH_SMSG_EXITSTATUS:
+        if (channel_handle1(session,type) < 0) {
+          leave_function();
+          return SSH_ERROR;
+        }
+        break;
+      case SSH_MSG_DEBUG:
+      case SSH_MSG_IGNORE:
+        break;
+        /*          case SSH2_MSG_CHANNEL_CLOSE:
+                    packet_parse(session);
+                    break;;
+                    */               
+      default:
+        if (type && (type != session->in_packet.type)) {
+          ssh_set_error(session, SSH_FATAL,
+              "packet_wait1(): Received a %d type packet, but expected %d\n",
+              session->in_packet.type, type);
+          leave_function();
+          return SSH_ERROR;
+        }
+        leave_function();
+        return SSH_OK;
+    }
+
+    if (blocking == 0) {
+      leave_function();
+      return SSH_OK;
+    }
+  } while(1);
+
+  leave_function();
+  return SSH_OK;
 }
 #endif /* HAVE_SSH1 */
-static int packet_wait2(SSH_SESSION *session,int type,int blocking){
-    int ret;
-    enter_function();
-    while(1){
-        ret=packet_read2(session);
-        if(ret != SSH_OK){
-            leave_function();
-        	return ret;
-        }
-        if (packet_translate(session) != SSH_OK) {
-            leave_function();
-            return SSH_ERROR;
-        }
-        switch(session->in_packet.type){
-           case SSH2_MSG_DISCONNECT:
-               packet_parse(session);
-               ssh_log(session, SSH_LOG_PACKET, "received disconnect packet");
-               leave_function();
-               return SSH_ERROR;
-           case SSH2_MSG_CHANNEL_WINDOW_ADJUST:
-           case SSH2_MSG_CHANNEL_DATA:
-           case SSH2_MSG_CHANNEL_EXTENDED_DATA:
-           case SSH2_MSG_CHANNEL_REQUEST:
-           case SSH2_MSG_CHANNEL_EOF:
-           case SSH2_MSG_CHANNEL_CLOSE:
-               packet_parse(session);
-               break;
-           case SSH2_MSG_IGNORE:
-               break;
-           default:
-               if(type && (type != session->in_packet.type)){
-                   ssh_set_error(session,SSH_FATAL,"waitpacket(): Received a %d type packet, was waiting for a %d\n",session->in_packet.type,type);
-                   leave_function();
-                   return SSH_ERROR;
-               }
-               leave_function();
-               return SSH_OK;
-           }
-        if(blocking==0){
-            leave_function();
-        	return SSH_OK; //shouldn't it return SSH_AGAIN here ?
-        }
+
+static int packet_wait2(SSH_SESSION *session, int type, int blocking) {
+  int rc = SSH_ERROR;
+
+  enter_function();
+  do {
+    rc = packet_read2(session);
+    if (rc != SSH_OK) {
+      leave_function();
+      return rc;
     }
-    leave_function();
-    return SSH_OK;
+    if (packet_translate(session) != SSH_OK) {
+      leave_function();
+      return SSH_ERROR;
+    }
+    switch (session->in_packet.type) {
+      case SSH2_MSG_DISCONNECT:
+        packet_parse(session);
+        ssh_log(session, SSH_LOG_PACKET, "received disconnect packet");
+        leave_function();
+        return SSH_ERROR;
+      case SSH2_MSG_CHANNEL_WINDOW_ADJUST:
+      case SSH2_MSG_CHANNEL_DATA:
+      case SSH2_MSG_CHANNEL_EXTENDED_DATA:
+      case SSH2_MSG_CHANNEL_REQUEST:
+      case SSH2_MSG_CHANNEL_EOF:
+      case SSH2_MSG_CHANNEL_CLOSE:
+        packet_parse(session);
+        break;
+      case SSH2_MSG_IGNORE:
+        break;
+      default:
+        if (type && (type != session->in_packet.type)) {
+          ssh_set_error(session, SSH_FATAL,
+              "packet_wait2(): Received a %d type packet, but expected a %d\n",
+              session->in_packet.type, type);
+          leave_function();
+          return SSH_ERROR;
+        }
+        leave_function();
+        return SSH_OK;
+    }
+    if (blocking == 0) {
+      leave_function();
+      return SSH_OK; //shouldn't it return SSH_AGAIN here ?
+    }
+  } while(1);
+
+  leave_function();
+  return SSH_OK;
 }
-int packet_wait(SSH_SESSION *session, int type, int block){
+
+int packet_wait(SSH_SESSION *session, int type, int block) {
 #ifdef HAVE_SSH1
-    if(session->version==1)
-        return packet_wait1(session,type,block);
-    else
+  if (session->version == 1) {
+    return packet_wait1(session, type, block);
+  }
 #endif
-        return packet_wait2(session,type,block);
+  return packet_wait2(session, type, block);
 }
+

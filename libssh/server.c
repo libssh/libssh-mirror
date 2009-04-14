@@ -263,7 +263,7 @@ static int dh_handshake_server(SSH_SESSION *session){
     PUBLIC_KEY *pub;
     PRIVATE_KEY *prv;
     BUFFER *buf=buffer_new();
-    if(packet_wait(session, SSH2_MSG_KEXDH_INIT ,1))
+    if (packet_wait(session, SSH2_MSG_KEXDH_INIT, 1) != SSH_OK)
         return -1;
     e=buffer_get_ssh_string(session->in_buffer);
     if(!e){

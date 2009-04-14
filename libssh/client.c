@@ -268,7 +268,7 @@ int ssh_service_request(SSH_SESSION *session, const char *service) {
     packet_send(session);
     ssh_log(session, SSH_LOG_PACKET,
         "Sent SSH_MSG_SERVICE_REQUEST (service %s)\n", service);
-    if(packet_wait(session,SSH2_MSG_SERVICE_ACCEPT,1)){
+    if (packet_wait(session,SSH2_MSG_SERVICE_ACCEPT,1) != SSH_OK) {
         ssh_set_error(session,SSH_FATAL,"did not receive SERVICE_ACCEPT");
         leave_function();
         return -1;
