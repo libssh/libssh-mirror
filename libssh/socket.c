@@ -386,65 +386,90 @@ int ssh_socket_write(struct socket *s, const void *buffer, int len) {
  * \returns SSH_AGAIN need to call later for data
  * \returns SSH_ERROR error happened
  */
-int ssh_socket_wait_for_data(struct socket *s, SSH_SESSION *session, u32 len){
-    int except, can_write;
-    int to_read;
-    int r;
-    char *buf;
-    char buffer[4096];
-    enter_function();
-    to_read=len - buffer_get_rest_len(s->in_buffer);
-    if(to_read <= 0){
-    	leave_function();
-        return SSH_OK;
-    }
-    if(session->blocking){
-        buf=malloc(to_read);
-        if (buf == NULL) {
-          leave_function();
-          return SSH_ERROR;
-        }
-        r=ssh_socket_completeread(session->socket,buf,to_read);
-        if(r==SSH_ERROR || r ==0){
-            ssh_set_error(session,SSH_FATAL,
-                (r==0)?"Connection closed by remote host" : "Error reading socket");
-            ssh_socket_close(session->socket);
-            session->alive=0;
-            free(buf);
-            leave_function();
-            return SSH_ERROR;
-        }
+int ssh_socket_wait_for_data(struct socket *s, SSH_SESSION *session, u32 len) {
+  char buffer[4096] = {0};
+  char *buf = NULL;
+  int except;
+  int can_write;
+  int to_read;
+  int r;
 
-        buffer_add_data(s->in_buffer,buf,to_read);
-        free(buf);
-        leave_function();
-        return SSH_OK;
-    }
-    /* nonblocking read */
-    do {
-        ssh_socket_poll(s,&can_write,&except); /* internally sets data_to_read */
-        if(!s->data_to_read){
-            leave_function();
-        	return SSH_AGAIN;
-        }
+  enter_function();
 
-        /* read as much as we can */
-        if(ssh_socket_is_open(session->socket))
-            r=ssh_socket_unbuffered_read(session->socket,buffer,sizeof(buffer));
-        else
-            r=-1;
-        if(r<=0){
-            ssh_set_error(session,SSH_FATAL,
-                (r==0)?"Connection closed by remote host" : "Error reading socket");
-            ssh_socket_close(session->socket);
-            session->alive=0;
-            leave_function();
-            return SSH_ERROR;
-        }
-        buffer_add_data(s->in_buffer,buffer, (u32) r);
-    } while(buffer_get_rest_len(s->in_buffer)<len);
+  to_read = len - buffer_get_rest_len(s->in_buffer);
+
+  if (to_read <= 0) {
     leave_function();
     return SSH_OK;
+  }
+
+  if (session->blocking) {
+    buf = malloc(to_read);
+    if (buf == NULL) {
+      leave_function();
+      return SSH_ERROR;
+    }
+
+    r = ssh_socket_completeread(session->socket,buf,to_read);
+    if (r == SSH_ERROR || r == 0) {
+      ssh_set_error(session, SSH_FATAL,
+          (r == 0) ? "Connection closed by remote host" :
+          "Error reading socket");
+      ssh_socket_close(session->socket);
+      session->alive = 0;
+      SAFE_FREE(buf);
+
+      leave_function();
+      return SSH_ERROR;
+    }
+
+    if (buffer_add_data(s->in_buffer,buf,to_read) < 0) {
+      SAFE_FREE(buf);
+      leave_function();
+      return SSH_ERROR;
+    }
+
+    SAFE_FREE(buf);
+
+    leave_function();
+    return SSH_OK;
+  }
+
+  /* nonblocking read */
+  do {
+    /* internally sets data_to_read */
+    r = ssh_socket_poll(s, &can_write, &except);
+    if (r < 0 || !s->data_to_read) {
+      leave_function();
+      return SSH_AGAIN;
+    }
+
+    /* read as much as we can */
+    if (ssh_socket_is_open(session->socket)) {
+      r = ssh_socket_unbuffered_read(session->socket, buffer, sizeof(buffer));
+    } else {
+      r =- 1;
+    }
+
+    if (r <= 0) {
+      ssh_set_error(session, SSH_FATAL,
+          (r == 0) ? "Connection closed by remote host" :
+          "Error reading socket");
+      ssh_socket_close(session->socket);
+      session->alive = 0;
+
+      leave_function();
+      return SSH_ERROR;
+    }
+
+    if (buffer_add_data(s->in_buffer,buffer, (u32) r) < 0) {
+      leave_function();
+      return SSH_ERROR;
+    }
+  } while(buffer_get_rest_len(s->in_buffer) < len);
+
+  leave_function();
+  return SSH_OK;
 }
 
 #ifdef USE_SELECT
