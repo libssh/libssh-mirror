@@ -501,61 +501,92 @@ error:
 }
 
 #ifdef HAVE_SSH1
-static int packet_send1(SSH_SESSION *session){
-    char padstring[32];
-    u32 finallen;
-    u8 padding;
-    u32 crc;
-    u32 currentlen=buffer_get_len(session->out_buffer)+sizeof(u32);
-    int ret=0;
-    unsigned int blocksize=(session->current_crypto?session->current_crypto->out_cipher->blocksize:8);
-    enter_function();
-    ssh_log(session,SSH_LOG_PACKET,"Sending a %d bytes long packet",currentlen);
-/*
+static int packet_send1(SSH_SESSION *session) {
+  unsigned int blocksize = (session->current_crypto ?
+      session->current_crypto->out_cipher->blocksize : 8);
+  u32 currentlen = buffer_get_len(session->out_buffer) + sizeof(u32);
+  char padstring[32] = {0};
+  int rc = SSH_ERROR;
+  u32 finallen;
+  u32 crc;
+  u8 padding;
+
+  enter_function();
+  ssh_log(session,SSH_LOG_PACKET,"Sending a %d bytes long packet",currentlen);
+
+/* TODO FIXME
 #if defined(HAVE_LIBZ) && defined(WITH_LIBZ)
-    if(session->current_crypto && session->current_crypto->do_compress_out){
-        compress_buffer(session,session->out_buffer);
-        currentlen=buffer_get_len(session->out_buffer);
+  if (session->current_crypto && session->current_crypto->do_compress_out) {
+    if (compress_buffer(session, session->out_buffer) < 0) {
+      goto error;
     }
+    currentlen = buffer_get_len(session->out_buffer);
+  }
 #endif
 */
-    padding=blocksize-(currentlen % blocksize);
-    if(session->current_crypto)
-        ssh_get_random(padstring,padding,0);
-    else
-        memset(padstring,0,padding);
-    finallen=htonl(currentlen);
-    ssh_log(session,SSH_LOG_PACKET,"%d bytes after comp + %d padding bytes = %d bytes packet",currentlen,padding,(ntohl(finallen)));
-    buffer_add_data_begin(session->out_buffer,&padstring,padding);
-    buffer_add_data_begin(session->out_buffer,&finallen,sizeof(u32));
-    crc=ssh_crc32(buffer_get(session->out_buffer)+sizeof(u32),buffer_get_len(session->out_buffer)-sizeof(u32));
-    buffer_add_u32(session->out_buffer,ntohl(crc));
+  padding = blocksize - (currentlen % blocksize);
+  if (session->current_crypto) {
+    ssh_get_random(padstring, padding, 0);
+  } else {
+    memset(padstring, 0, padding);
+  }
+
+  finallen = htonl(currentlen);
+  ssh_log(session, SSH_LOG_PACKET,
+      "%d bytes after comp + %d padding bytes = %d bytes packet",
+      currentlen, padding, ntohl(finallen));
+
+  if (buffer_add_data_begin(session->out_buffer,i &padstring, padding) < 0) {
+    goto error;
+  }
+  if (buffer_add_data_begin(session->out_buffer, &finallen, sizeof(u32)) < 0) {
+    goto error;
+  }
+
+  crc = ssh_crc32(buffer_get(session->out_buffer) + sizeof(u32),
+      buffer_get_len(session->out_buffer) - sizeof(u32));
+
+  if (buffer_add_u32(session->out_buffer, ntohl(crc)) < 0) {
+    goto error;
+  }
+
 #ifdef DEBUG_CRYPTO
-    ssh_print_hexa("clear packet",buffer_get(session->out_buffer),
-            buffer_get_len(session->out_buffer));
+  ssh_print_hexa("Clear packet", buffer_get(session->out_buffer),
+      buffer_get_len(session->out_buffer));
 #endif
-    packet_encrypt(session,buffer_get(session->out_buffer)+sizeof(u32),buffer_get_len(session->out_buffer)-sizeof(u32));
+
+  packet_encrypt(session, buffer_get(session->out_buffer) + sizeof(u32),
+      buffer_get_len(session->out_buffer) - sizeof(u32));
+
 #ifdef DEBUG_CRYPTO
-    ssh_print_hexa("encrypted packet",buffer_get(session->out_buffer),
-            buffer_get_len(session->out_buffer));
+  ssh_print_hexa("encrypted packet",buffer_get(session->out_buffer),
+      buffer_get_len(session->out_buffer));
 #endif
-    ssh_socket_write(session->socket,buffer_get(session->out_buffer),buffer_get_len(session->out_buffer));
-    ret=packet_flush(session,0);
-    session->send_seq++;
-    buffer_reinit(session->out_buffer);
-    leave_function();
-    return ret;     /* SSH_OK, AGAIN or ERROR */
+  if (ssh_socket_write(session->socket, buffer_get(session->out_buffer),
+      buffer_get_len(session->out_buffer)) == SSH_ERROR) {
+    goto error;
+  }
+
+  rc = packet_flush(session, 0);
+  session->send_seq++;
+
+  if (buffer_reinit(session->out_buffer) < 0) {
+    rc = SSH_ERROR;
+  }
+error:
+  leave_function();
+  return rc;     /* SSH_OK, AGAIN or ERROR */
 }
 
 #endif /* HAVE_SSH1 */
 
-int packet_send(SSH_SESSION *session){
+int packet_send(SSH_SESSION *session) {
 #ifdef HAVE_SSH1
-    if (session->version==1)
-        return packet_send1(session);
-    else 
+  if (session->version == 1) {
+    return packet_send1(session);
+  }
 #endif
-        return packet_send2(session);
+  return packet_send2(session);
 }
 
 void packet_parse(SSH_SESSION *session){
