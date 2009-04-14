@@ -261,21 +261,36 @@ int ssh_handle_packets(SSH_SESSION *session) {
   return rc;
 }
 
-/** \brief get session status
- * \param session ssh session
- * \returns a bitmask including SSH_CLOSED, SSH_READ_PENDING or SSH_CLOSED_ERROR
- * which respectively means the session is closed, has data to read on the connection socket and session was closed due to an error
+/**
+ * @brief Get session status
+ *
+ * @param session       The ssh session to use.
+ *
+ * @returns A bitmask including SSH_CLOSED, SSH_READ_PENDING or SSH_CLOSED_ERROR
+ *          which respectively means the session is closed, has data to read on
+ *          the connection socket and session was closed due to an error.
  */
-int ssh_get_status(SSH_SESSION *session){
-    int ret=0;
-    int socketstate=ssh_socket_get_status(session->socket);
-    if(session->closed)
-        ret |= SSH_CLOSED;
-    if(socketstate & SSH_READ_PENDING)
-        ret |= SSH_READ_PENDING;
-    if(session->closed && socketstate & SSH_CLOSED_ERROR)
-        ret |= SSH_CLOSED_ERROR;
-    return ret;
+int ssh_get_status(SSH_SESSION *session) {
+  int socketstate;
+  int r = 0;
+
+  if (session == NULL) {
+    return 0;
+  }
+
+  socketstate = ssh_socket_get_status(session->socket);
+
+  if (session->closed) {
+    r |= SSH_CLOSED;
+  }
+  if (socketstate & SSH_READ_PENDING) {
+    r |= SSH_READ_PENDING;
+  }
+  if (session->closed && (socketstate & SSH_CLOSED_ERROR)) {
+    r |= SSH_CLOSED_ERROR;
+  }
+
+  return r;
 }
 
 /** \brief get the disconnect message from the server
