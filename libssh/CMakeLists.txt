@@ -62,11 +62,9 @@ endif (GCRYPT_LIBRARY)
 
 set(libssh_SRCS
   agent.c
-  auth1.c
   auth.c
   base64.c
   buffer.c
-  channels1.c
   channels.c
   client.c
   connect.c
@@ -93,6 +91,14 @@ set(libssh_SRCS
   string.c
   wrapper.c
 )
+
+if (WITH_SSH1)
+  set(libssh_SRCS
+    ${libssh_SRCS}
+    auth1.c
+    channels1.c
+  )
+endif (WITH_SERVER)
 
 if (WITH_SERVER)
   set(libssh_SRCS
