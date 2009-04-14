@@ -714,33 +714,38 @@ int ssh_socket_blocking_flush(struct socket *s) {
   return SSH_OK; // no data pending
 }
 
-void ssh_socket_set_towrite(struct socket *s){
-	s->data_to_write=1;
+void ssh_socket_set_towrite(struct socket *s) {
+  s->data_to_write = 1;
 }
 
-void ssh_socket_set_toread(struct socket *s){
-	s->data_to_read=1;
+void ssh_socket_set_toread(struct socket *s) {
+  s->data_to_read = 1;
 }
 
-void ssh_socket_set_except(struct socket *s){
-	s->data_except=1;
+void ssh_socket_set_except(struct socket *s) {
+  s->data_except = 1;
 }
 
-int ssh_socket_data_available(struct socket *s){
-	return s->data_to_read;
+int ssh_socket_data_available(struct socket *s) {
+  return s->data_to_read;
 }
 
-int ssh_socket_data_writable(struct socket *s){
-	return s->data_to_write;
+int ssh_socket_data_writable(struct socket *s) {
+  return s->data_to_write;
 }
 
-int ssh_socket_get_status(struct socket *s){
-	int r=0;
-	if(s->data_to_read)
-		r |= SSH_READ_PENDING;
-	if(s->data_except)
-		r|= SSH_CLOSED_ERROR;
-	return r;
+int ssh_socket_get_status(struct socket *s) {
+  int r = 0;
+
+  if (s->data_to_read) {
+    r |= SSH_READ_PENDING;
+  }
+
+  if (s->data_except) {
+    r |= SSH_CLOSED_ERROR;
+  }
+
+  return r;
 }
 
 /** @}
