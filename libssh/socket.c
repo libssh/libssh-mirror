@@ -301,27 +301,29 @@ int ssh_socket_completeread(struct socket *s, void *buffer, u32 len) {
 /** \internal
  * \brief Blocking write of len bytes
  */
+int ssh_socket_completewrite(struct socket *s, const void *buffer, u32 len) {
+  SSH_SESSION *session = s->session;
+  int written = -1;
 
-int ssh_socket_completewrite(struct socket *s, void *buffer, u32 len){
-    SSH_SESSION *session=s->session;
-    int written;
+  enter_function();
 
-    enter_function();
-    if(!ssh_socket_is_open(s)){
-        leave_function();
-    	return SSH_ERROR;
-    }
-    while(len >0) {
-        written=ssh_socket_unbuffered_write(s,buffer,len);
-        if(written==0 || written==-1){
-        	leave_function();
-            return SSH_ERROR;
-        }
-        len-=written;
-        buffer+=written;
-    }
+  if(! ssh_socket_is_open(s)) {
     leave_function();
-    return SSH_OK;
+    return SSH_ERROR;
+  }
+
+  while (len >0) {
+    written = ssh_socket_unbuffered_write(s, buffer, len);
+    if (written == 0 || written == -1) {
+      leave_function();
+      return SSH_ERROR;
+    }
+    len -= written;
+    buffer += written;
+  }
+
+  leave_function();
+  return SSH_OK;
 }
 
 /** \internal
