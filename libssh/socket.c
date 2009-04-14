@@ -332,19 +332,22 @@ int ssh_socket_completewrite(struct socket *s, const void *buffer, u32 len) {
  * \returns SSH_AGAIN in nonblocking mode
  */
 int ssh_socket_read(struct socket *s, void *buffer, int len){
-	SSH_SESSION *session=s->session;
-	int ret;
+  SSH_SESSION *session = s->session;
+  int rc = SSH_ERROR;
 
-	enter_function();
-	ret = ssh_socket_wait_for_data(s, s->session, len);
-	if(ret != SSH_OK){
-		leave_function();
-		return ret;
-	}
-	memcpy(buffer,buffer_get_rest(s->in_buffer),len);
-	buffer_pass_bytes(s->in_buffer,len);
-	leave_function();
-	return SSH_OK;
+  enter_function();
+
+  rc = ssh_socket_wait_for_data(s, s->session, len);
+  if (rc != SSH_OK) {
+    leave_function();
+    return rc;
+  }
+
+  memcpy(buffer, buffer_get_rest(s->in_buffer), len);
+  buffer_pass_bytes(s->in_buffer, len);
+
+  leave_function();
+  return SSH_OK;
 }
 
 #define WRITE_BUFFERING_THRESHOLD 65536
@@ -353,18 +356,24 @@ int ssh_socket_read(struct socket *s, void *buffer, int len){
  * \returns SSH_OK, or SSH_ERROR
  * \warning has no effect on socket before a flush
  */
-int ssh_socket_write(struct socket *s,const void *buffer, int len){
-	SSH_SESSION *session=s->session;
-	int ret;
+int ssh_socket_write(struct socket *s, const void *buffer, int len) {
+  SSH_SESSION *session = s->session;
+  int rc = SSH_ERROR;
 
-	enter_function();
-	buffer_add_data(s->out_buffer,buffer,len);
-	if(buffer_get_rest_len(s->out_buffer) > WRITE_BUFFERING_THRESHOLD)
-		ret=ssh_socket_nonblocking_flush(s);
-	else
-		ret=len;
-	leave_function();
-	return ret;
+  enter_function();
+
+  if (buffer_add_data(s->out_buffer, buffer, len) < 0) {
+    return SSH_ERROR;
+  }
+
+  if (buffer_get_rest_len(s->out_buffer) > WRITE_BUFFERING_THRESHOLD) {
+    rc = ssh_socket_nonblocking_flush(s);
+  } else {
+    rc = len;
+  }
+
+  leave_function();
+  return rc;
 }
 
 
