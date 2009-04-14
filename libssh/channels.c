@@ -1223,7 +1223,8 @@ int channel_read(CHANNEL *channel, BUFFER *buffer, u32 bytes, int is_stderr) {
             break; /* return the resting bytes in buffer */
         if(buffer_get_rest_len(stdbuf)>=maxread) // stop reading when buffer is full enough
             break;
-        if(packet_read(session)||packet_translate(session)){
+        if ((packet_read(session)) != SSH_OK ||
+            (packet_translate(session) != SSH_OK)) {
             leave_function();
         	return -1;
         }

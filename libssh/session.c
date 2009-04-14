@@ -215,7 +215,8 @@ int ssh_handle_packets(SSH_SESSION *session){
             return r; // error or no data available
         }
         /* if an exception happened, it will be trapped by packet_read() */
-        if(packet_read(session)||packet_translate(session)){
+        if ((packet_read(session) != SSH_OK) ||
+            (packet_translate(session) != SSH_OK)) {
             leave_function();
         	return -1;
         }

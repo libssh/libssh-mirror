@@ -32,11 +32,11 @@
 #ifdef HAVE_SSH1
 static int wait_auth1_status(SSH_SESSION *session) {
   /* wait for a packet */
-  if (packet_read(session)) {
+  if (packet_read(session) != SSH_OK) {
     return SSH_AUTH_ERROR;
   }
 
-  if(packet_translate(session)) {
+  if(packet_translate(session) != SSH_OK) {
     return SSH_AUTH_ERROR;
   }
 

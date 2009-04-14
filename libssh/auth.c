@@ -64,7 +64,7 @@ static int wait_auth_status(SSH_SESSION *session,int kbdint){
     while(cont){
         if(packet_read(session))
             break;
-        if(packet_translate(session))
+        if(packet_translate(session) != SSH_OK)
             break;
         switch(session->in_packet.type){
             case SSH2_MSG_USERAUTH_FAILURE:

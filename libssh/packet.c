@@ -373,24 +373,29 @@ int packet_read(SSH_SESSION *session) {
   return packet_read2(session);
 }
 
-int packet_translate(SSH_SESSION *session){
-	enter_function();
-    memset(&session->in_packet,0,sizeof(PACKET));
-    if(!session->in_buffer){
-        leave_function();
-    	return -1;
-    }
-    ssh_log(session, SSH_LOG_RARE, "Final size %d",
-        buffer_get_rest_len(session->in_buffer));
-    if(!buffer_get_u8(session->in_buffer,&session->in_packet.type)){
-        ssh_set_error(session,SSH_FATAL,"Packet too short to read type");
-        leave_function();
-        return -1;
-    }
-    ssh_log(session, SSH_LOG_RARE, "Type %hhd", session->in_packet.type);
-    session->in_packet.valid=1;
+int packet_translate(SSH_SESSION *session) {
+  enter_function();
+
+  memset(&session->in_packet, 0, sizeof(PACKET));
+  if(session->in_buffer == NULL) {
     leave_function();
-    return 0;
+    return SSH_ERROR;
+  }
+
+  ssh_log(session, SSH_LOG_RARE, "Final size %d",
+      buffer_get_rest_len(session->in_buffer));
+
+  if(buffer_get_u8(session->in_buffer, &session->in_packet.type) == 0) {
+    ssh_set_error(session, SSH_FATAL, "Packet too short to read type");
+    leave_function();
+    return SSH_ERROR;
+  }
+
+  ssh_log(session, SSH_LOG_RARE, "Type %hhd", session->in_packet.type);
+  session->in_packet.valid = 1;
+
+  leave_function();
+  return SSH_OK;
 }
 
 /* Write the the bufferized output. If the session is blocking, or enforce_blocking 
@@ -585,7 +590,8 @@ static int packet_wait1(SSH_SESSION *session,int type,int blocking){
 	enter_function();
     ssh_log(session,SSH_LOG_PROTOCOL,"packet_wait1 waiting for %d",type);
     while(1){
-        if(packet_read1(session) || packet_translate(session)){
+        if ((packet_read1(session) != SSH_OK) ||
+            (packet_translate(session) != SSH_OK)) {
             leave_function();
             return -1;
         }
@@ -637,7 +643,7 @@ static int packet_wait2(SSH_SESSION *session,int type,int blocking){
             leave_function();
         	return ret;
         }
-        if(packet_translate(session)){
+        if (packet_translate(session) != SSH_OK) {
             leave_function();
             return SSH_ERROR;
         }
