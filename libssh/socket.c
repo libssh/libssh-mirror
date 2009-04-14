@@ -670,35 +670,48 @@ int ssh_socket_nonblocking_flush(struct socket *s) {
 /** \internal
  * \brief locking flush of the output packet buffer
  */
-int ssh_socket_blocking_flush(struct socket *s){
-	SSH_SESSION *session=s->session;
-	enter_function();
-    if(!ssh_socket_is_open(s)) {
-        session->alive=0;
-        leave_function();
-        return SSH_ERROR;
-    }
-    if(s->data_except){
-        leave_function();
-    	return SSH_ERROR;
-    }
-    if(buffer_get_rest_len(s->out_buffer)==0){
-    	leave_function();
-        return SSH_OK;
-    }
-    if(ssh_socket_completewrite(s,buffer_get_rest(s->out_buffer),
-       buffer_get_rest_len(s->out_buffer))){
-        session->alive=0;
-        ssh_socket_close(s);
-        // FIXME use the proper errno
-        ssh_set_error(session,SSH_FATAL,"Writing packet : error on socket (or connection closed): %s",
-                         strerror(errno));
-        leave_function();
-        return SSH_ERROR;
-    }
-    buffer_reinit(s->out_buffer);
+int ssh_socket_blocking_flush(struct socket *s) {
+  SSH_SESSION *session = s->session;
+
+  enter_function();
+
+  if (!ssh_socket_is_open(s)) {
+    session->alive = 0;
+
     leave_function();
-    return SSH_OK; // no data pending
+    return SSH_ERROR;
+  }
+
+  if (s->data_except) {
+    leave_function();
+    return SSH_ERROR;
+  }
+
+  if (buffer_get_rest_len(s->out_buffer) == 0) {
+    leave_function();
+    return SSH_OK;
+  }
+
+  if (ssh_socket_completewrite(s, buffer_get_rest(s->out_buffer),
+        buffer_get_rest_len(s->out_buffer)) != SSH_OK) {
+    session->alive = 0;
+    ssh_socket_close(s);
+    /* FIXME use the proper errno */
+    ssh_set_error(session, SSH_FATAL,
+        "Writing packet: error on socket (or connection closed): %s",
+        strerror(errno));
+
+    leave_function();
+    return SSH_ERROR;
+  }
+
+  if (buffer_reinit(s->out_buffer) < 0) {
+    leave_function();
+    return SSH_ERROR;
+  }
+
+  leave_function();
+  return SSH_OK; // no data pending
 }
 
 void ssh_socket_set_towrite(struct socket *s){
