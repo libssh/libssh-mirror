@@ -298,19 +298,25 @@ int ssh_get_status(SSH_SESSION *session) {
  * \return message sent by the server along with the disconnect, or NULL in which case the reason of the disconnect may be found with ssh_get_error.
  * \see ssh_get_error()
  */
-const char *ssh_get_disconnect_message(SSH_SESSION *session){
-    if(!session->closed)
-        ssh_set_error(session,SSH_REQUEST_DENIED,"Connection not closed"
-                " yet");
-    else if(session->closed_by_except)
-        ssh_set_error(session,SSH_REQUEST_DENIED,"Connection closed by "
-                "socket error");
-    else if(!session->discon_msg)
-        ssh_set_error(session,SSH_FATAL,"Connection correctly closed but "
-                "no disconnect message");
-    else
-        return session->discon_msg;
+const char *ssh_get_disconnect_message(SSH_SESSION *session) {
+  if (session == NULL) {
     return NULL;
+  }
+
+  if (!session->closed) {
+    ssh_set_error(session, SSH_REQUEST_DENIED,
+        "Connection not closed yet");
+  } else if(session->closed_by_except) {
+    ssh_set_error(session, SSH_REQUEST_DENIED,
+        "Connection closed by socket error");
+  } else if(!session->discon_msg) {
+    ssh_set_error(session, SSH_FATAL,
+        "Connection correctly closed but no disconnect message");
+  } else {
+    return session->discon_msg;
+  }
+
+  return NULL;
 }
 
 /** \brief get the protocol version of the session
