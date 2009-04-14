@@ -319,12 +319,19 @@ const char *ssh_get_disconnect_message(SSH_SESSION *session) {
   return NULL;
 }
 
-/** \brief get the protocol version of the session
- * \param session ssh session
- * \return 1 or 2, for ssh1 or ssh2
+/**
+ * @brief Get the protocol version of the session.
+ *
+ * @param session       The ssh session to use.
+ *
+ * @return 1 or 2, for ssh1 or ssh2, < 0 on error.
  */
-int ssh_get_version(SSH_SESSION *session){
-    return session->version;
+int ssh_get_version(SSH_SESSION *session) {
+  if (session == NULL) {
+    return -1;
+  }
+
+  return session->version;
 }
 
 /** @} */
