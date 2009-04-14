@@ -398,14 +398,18 @@ int packet_translate(SSH_SESSION *session) {
   return SSH_OK;
 }
 
-/* Write the the bufferized output. If the session is blocking, or enforce_blocking 
- * is set, the call may block. Otherwise, it won't block.
- * return SSH°OK if everything has been sent, SSH_AGAIN if there are still things 
- * to send on buffer, SSH_ERROR if there is an error. */
-int packet_flush(SSH_SESSION *session, int enforce_blocking){
-    if(enforce_blocking || session->blocking)
-        return ssh_socket_blocking_flush(session->socket);
-    return ssh_socket_nonblocking_flush(session->socket);
+/*
+ * Write the the bufferized output. If the session is blocking, or
+ * enforce_blocking is set, the call may block. Otherwise, it won't block.
+ * Return SSH_OK if everything has been sent, SSH_AGAIN if there are still
+ * things to send on buffer, SSH_ERROR if there is an error.
+ */
+int packet_flush(SSH_SESSION *session, int enforce_blocking) {
+  if (enforce_blocking || session->blocking) {
+    return ssh_socket_blocking_flush(session->socket);
+  }
+
+  return ssh_socket_nonblocking_flush(session->socket);
 }
 
 /* this function places the outgoing packet buffer into an outgoing socket buffer */
