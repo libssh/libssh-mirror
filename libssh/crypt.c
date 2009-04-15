@@ -81,53 +81,70 @@ int packet_decrypt(SSH_SESSION *session, void *data,u32 len) {
   return 0;
 }
 
-unsigned char * packet_encrypt(SSH_SESSION *session,void *data,u32 len){
-    struct crypto_struct *crypto;
-    HMACCTX ctx;
-    char *out;
-    unsigned int finallen;
-    u32 seq=ntohl(session->send_seq);
-    if(!session->current_crypto)
-        return NULL; /* nothing to do here */
-    crypto= session->current_crypto->out_cipher;
-    ssh_log(session,SSH_LOG_PACKET,"encrypting packet with seq num: %d, len: %d",session->send_seq,len);
+unsigned char *packet_encrypt(SSH_SESSION *session, void *data, u32 len) {
+  struct crypto_struct *crypto = NULL;
+  HMACCTX ctx = NULL;
+  char *out = NULL;
+  unsigned int finallen;
+  u32 seq;
+
+  if (!session->current_crypto) {
+    return NULL; /* nothing to do here */
+  }
+
+  out = malloc(len);
+  if (out == NULL) {
+    return NULL;
+  }
+
+  seq = ntohl(session->send_seq);
+  crypto = session->current_crypto->out_cipher;
+
+  ssh_log(session, SSH_LOG_PACKET, 
+      "Encrypting packet with seq num: %d, len: %d",
+      session->send_seq,len);
+
 #ifdef HAVE_LIBGCRYPT
-    crypto->set_encrypt_key(crypto,session->current_crypto->encryptkey,session->current_crypto->encryptIV);
+  crypto->set_encrypt_key(crypto, session->current_crypto->encryptkey,
+      session->current_crypto->encryptIV);
 #elif defined HAVE_LIBCRYPTO
-    crypto->set_encrypt_key(crypto,session->current_crypto->encryptkey);
+  crypto->set_encrypt_key(crypto, session->current_crypto->encryptkey);
 #endif
-    out = malloc(len);
-    if (out == NULL) {
+
+  if (session->version == 2) {
+    ctx = hmac_init(session->current_crypto->encryptMAC,20,HMAC_SHA1);
+    if (ctx == NULL) {
+      SAFE_FREE(out);
       return NULL;
     }
-    if(session->version==2){
-        ctx = hmac_init(session->current_crypto->encryptMAC,20,HMAC_SHA1);
-        if (ctx == NULL) {
-          SAFE_FREE(out);
-          return NULL;
-        }
-        hmac_update(ctx,(unsigned char *)&seq,sizeof(u32));
-        hmac_update(ctx,data,len);
-        hmac_final(ctx,session->current_crypto->hmacbuf,&finallen);
+    hmac_update(ctx,(unsigned char *)&seq,sizeof(u32));
+    hmac_update(ctx,data,len);
+    hmac_final(ctx,session->current_crypto->hmacbuf,&finallen);
 #ifdef DEBUG_CRYPTO
-        ssh_print_hexa("mac :",data,len);
-        if(finallen!=20)
-            printf("Final len is %d\n",finallen);
-        ssh_print_hexa("packet hmac",session->current_crypto->hmacbuf,20);
-#endif
+    ssh_print_hexa("mac: ",data,len);
+    if (finallen != 20) {
+      printf("Final len is %d\n",finallen);
     }
-#ifdef HAVE_LIBGCRYPT
-    crypto->cbc_encrypt(crypto,data,out,len);
-#elif defined HAVE_LIBCRYPTO
-    crypto->cbc_encrypt(crypto,data,out,len,session->current_crypto->encryptIV);
+    ssh_print_hexa("Packet hmac", session->current_crypto->hmacbuf, 20);
 #endif
-    memcpy(data,out,len);
-    memset(out,0,len);
-    free(out);
-    if(session->version==2)
-        return session->current_crypto->hmacbuf;
-    else
-        return NULL;
+  }
+
+#ifdef HAVE_LIBGCRYPT
+  crypto->cbc_encrypt(crypto, data, out, len);
+#elif defined HAVE_LIBCRYPTO
+  crypto->cbc_encrypt(crypto, data, out, len,
+      session->current_crypto->encryptIV);
+#endif
+
+  memcpy(data, out, len);
+  memset(out, 0, len);
+  SAFE_FREE(out);
+
+  if (session->version == 2) {
+    return session->current_crypto->hmacbuf;
+  }
+
+  return NULL;
 }
 
 /* TODO FIXME think about the return value isn't 0 enough and -1 on error */
