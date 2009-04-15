@@ -55,26 +55,32 @@ u32 packet_decrypt_len(SSH_SESSION *session, char *crypted){
   return ntohl(decrypted);
 }
 
-int packet_decrypt(SSH_SESSION *session, void *data,u32 len){
-    struct crypto_struct *crypto=session->current_crypto->in_cipher;
-    char *out=malloc(len);
-    if (out == NULL) {
-      return -1;
-    }
-    ssh_log(session,SSH_LOG_PACKET,"Decrypting %d bytes",len);
+int packet_decrypt(SSH_SESSION *session, void *data,u32 len) {
+  struct crypto_struct *crypto = session->current_crypto->in_cipher;
+  char *out = NULL;
+
+  out = malloc(len);
+  if (out == NULL) {
+    return -1;
+  }
+
+  ssh_log(session,SSH_LOG_PACKET, "Decrypting %d bytes", len);
+
 #ifdef HAVE_LIBGCRYPT
-    crypto->set_decrypt_key(crypto,session->current_crypto->decryptkey,session->current_crypto->decryptIV);
-    crypto->cbc_decrypt(crypto,data,out,len);
+  crypto->set_decrypt_key(crypto,session->current_crypto->decryptkey,session->current_crypto->decryptIV);
+  crypto->cbc_decrypt(crypto,data,out,len);
 #elif defined HAVE_LIBCRYPTO
-    crypto->set_decrypt_key(crypto,session->current_crypto->decryptkey);
-    crypto->cbc_decrypt(crypto,data,out,len,session->current_crypto->decryptIV);
+  crypto->set_decrypt_key(crypto,session->current_crypto->decryptkey);
+  crypto->cbc_decrypt(crypto,data,out,len,session->current_crypto->decryptIV);
 #endif
-    memcpy(data,out,len);
-    memset(out,0,len);
-    free(out);
-    return 0;
+
+  memcpy(data,out,len);
+  memset(out,0,len);
+
+  SAFE_FREE(out);
+  return 0;
 }
-    
+
 unsigned char * packet_encrypt(SSH_SESSION *session,void *data,u32 len){
     struct crypto_struct *crypto;
     HMACCTX ctx;
