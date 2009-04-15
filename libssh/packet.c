@@ -153,7 +153,7 @@ static int packet_read2(SSH_SESSION *session) {
         }
         ssh_socket_read(session->socket, mac, macsize);
 
-        if (packet_hmac_verify(session, session->in_buffer, mac)) {
+        if (packet_hmac_verify(session, session->in_buffer, mac) < 0) {
           ssh_set_error(session, SSH_FATAL, "HMAC error");
           goto error;
         }

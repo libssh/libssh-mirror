@@ -147,23 +147,45 @@ unsigned char *packet_encrypt(SSH_SESSION *session, void *data, u32 len) {
   return NULL;
 }
 
-/* TODO FIXME think about the return value isn't 0 enough and -1 on error */
-int packet_hmac_verify(SSH_SESSION *session,BUFFER *buffer,unsigned char *mac){
-    HMACCTX ctx;
-    unsigned char hmacbuf[EVP_MAX_MD_SIZE];
-    unsigned int len;
-    u32 seq=htonl(session->recv_seq);
-    ctx=hmac_init(session->current_crypto->decryptMAC,20,HMAC_SHA1);
-    if (ctx == NULL) {
-      return -1;
-    }
-    hmac_update(ctx,(unsigned char *)&seq,sizeof(u32));
-    hmac_update(ctx,buffer_get(buffer),buffer_get_len(buffer));
-    hmac_final(ctx,hmacbuf,&len);
+/**
+ * @internal
+ *
+ * @brief Verify the hmac of a packet
+ *
+ * @param  session      The session to use.
+ * @param  buffer       The buffer to verify the hmac from.
+ * @param  mac          The mac to compare with the hmac.
+ *
+ * @return              0 if hmac and mac are equal, < 0 if not or an error
+ *                      occured.
+ */
+int packet_hmac_verify(SSH_SESSION *session, BUFFER *buffer,
+    unsigned char *mac) {
+  unsigned char hmacbuf[EVP_MAX_MD_SIZE] = {0};
+  HMACCTX ctx;
+  unsigned int len;
+  u32 seq;
+
+  ctx = hmac_init(session->current_crypto->decryptMAC, 20, HMAC_SHA1);
+  if (ctx == NULL) {
+    return -1;
+  }
+
+  seq = htonl(session->recv_seq);
+
+  hmac_update(ctx, (unsigned char *) &seq, sizeof(u32));
+  hmac_update(ctx, buffer_get(buffer), buffer_get_len(buffer));
+  hmac_final(ctx, hmacbuf, &len);
+
 #ifdef DEBUG_CRYPTO
-    ssh_print_hexa("received mac",mac,len);
-    ssh_print_hexa("Computed mac",hmacbuf,len);
-    ssh_print_hexa("seq",(unsigned char *)&seq,sizeof(u32));
+  ssh_print_hexa("received mac",mac,len);
+  ssh_print_hexa("Computed mac",hmacbuf,len);
+  ssh_print_hexa("seq",(unsigned char *)&seq,sizeof(u32));
 #endif
-    return memcmp(mac,hmacbuf,len);
+  if (memcmp(mac, hmacbuf, len) == 0) {
+    return 0;
+  }
+
+  return -1
 }
+
