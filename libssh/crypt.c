@@ -186,6 +186,6 @@ int packet_hmac_verify(SSH_SESSION *session, BUFFER *buffer,
     return 0;
   }
 
-  return -1
+  return -1;
 }
 
