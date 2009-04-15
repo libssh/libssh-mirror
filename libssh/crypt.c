@@ -38,21 +38,23 @@
 #include "libssh/crypto.h"
 
 u32 packet_decrypt_len(SSH_SESSION *session, char *crypted){
-    u32 decrypted;
-    if (session->current_crypto) {
-      if (packet_decrypt(session, crypted,
-            session->current_crypto->in_cipher->blocksize) < 0) {
-        return 0;
-      }
+  u32 decrypted;
+
+  if (session->current_crypto) {
+    if (packet_decrypt(session, crypted,
+          session->current_crypto->in_cipher->blocksize) < 0) {
+      return 0;
     }
-    memcpy(&decrypted,crypted,sizeof(decrypted));
-    ssh_log(session, SSH_LOG_PACKET,
-        "Packet size decrypted: %lu (0x%lx)",
-        (long unsigned int) ntohl(decrypted),
-        (long unsigned int) ntohl(decrypted));
-    return ntohl(decrypted);
+  }
+
+  memcpy(&decrypted,crypted,sizeof(decrypted));
+  ssh_log(session, SSH_LOG_PACKET,
+      "Packet size decrypted: %lu (0x%lx)",
+      (long unsigned int) ntohl(decrypted),
+      (long unsigned int) ntohl(decrypted));
+  return ntohl(decrypted);
 }
-    
+
 int packet_decrypt(SSH_SESSION *session, void *data,u32 len){
     struct crypto_struct *crypto=session->current_crypto->in_cipher;
     char *out=malloc(len);
