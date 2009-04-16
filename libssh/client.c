@@ -174,122 +174,177 @@ int ssh_send_banner(SSH_SESSION *session, int server) {
 #define DH_STATE_NEWKEYS_TO_SEND 3
 #define DH_STATE_NEWKEYS_SENT 4
 #define DH_STATE_FINISHED 5
-static int dh_handshake(SSH_SESSION *session){
-    STRING *e,*f,*pubkey,*signature;
-    int ret;
-    enter_function();
-    switch(session->dh_handshake_state){
-        case DH_STATE_INIT:
-            buffer_add_u8(session->out_buffer,SSH2_MSG_KEXDH_INIT);
-            dh_generate_x(session);
-            dh_generate_e(session);
-            e=dh_get_e(session);
-            buffer_add_ssh_string(session->out_buffer,e);
-            ret=packet_send(session);
-            free(e);
-            session->dh_handshake_state=DH_STATE_INIT_TO_SEND;
-            if(ret==SSH_ERROR){
-            	leave_function();
-                return ret;
-            }
-        case DH_STATE_INIT_TO_SEND:
-            ret=packet_flush(session,0);
-            if(ret!=SSH_OK){
-                leave_function();
-            	return ret; // SSH_ERROR or SSH_AGAIN
-            }
-            session->dh_handshake_state=DH_STATE_INIT_SENT;
-        case DH_STATE_INIT_SENT:
-            ret=packet_wait(session,SSH2_MSG_KEXDH_REPLY,1);
-            if(ret != SSH_OK){
-                leave_function();
-            	return ret;
-            }
-            pubkey=buffer_get_ssh_string(session->in_buffer);
-            if(!pubkey){
-                ssh_set_error(session,SSH_FATAL,"No public key in packet");
-                leave_function();
-                return SSH_ERROR;
-            }
-            dh_import_pubkey(session,pubkey);
-            f=buffer_get_ssh_string(session->in_buffer);
-            if(!f){
-                ssh_set_error(session,SSH_FATAL,"No F number in packet");
-                leave_function();
-                return SSH_ERROR;
-            }
-            dh_import_f(session,f);
-            free(f);
-            if(!(signature=buffer_get_ssh_string(session->in_buffer))){
-                ssh_set_error(session,SSH_FATAL,"No signature in packet");
-                leave_function();
-                return SSH_ERROR;
-            }
-            session->dh_server_signature=signature;
-            dh_build_k(session);
-            // send the MSG_NEWKEYS
-            buffer_add_u8(session->out_buffer,SSH2_MSG_NEWKEYS);
-            packet_send(session);
-            session->dh_handshake_state=DH_STATE_NEWKEYS_TO_SEND;
-        case DH_STATE_NEWKEYS_TO_SEND:
-            ret=packet_flush(session,0);
-            if(ret != SSH_OK){
-                leave_function();
-            	return ret;
-            }
-            ssh_log(session, SSH_LOG_RARE, "SSH_MSG_NEWKEYS sent\n");
-            session->dh_handshake_state=DH_STATE_NEWKEYS_SENT;
-        case DH_STATE_NEWKEYS_SENT:
-            ret=packet_wait(session,SSH2_MSG_NEWKEYS,1);
-            if(ret != SSH_OK){
-                leave_function();
-            	return ret;
-            }
-            ssh_log(session, SSH_LOG_RARE, "Got SSH_MSG_NEWKEYS\n");
-            ret = make_sessionid(session);
-            if (ret != SSH_OK) {
-              leave_function();
-              return SSH_ERROR;
-            }
-            /* set the cryptographic functions for the next crypto */
-            /* (it is needed for generate_session_keys for key lenghts) */
-            if(crypt_set_algorithms(session)){
-                leave_function();
-            	return SSH_ERROR;
-            }
-            generate_session_keys(session);
-            /* verify the host's signature. XXX do it sooner */
-            signature=session->dh_server_signature;
-            session->dh_server_signature=NULL;
-            if(signature_verify(session,signature)){
-                free(signature);
-                leave_function();
-                return SSH_ERROR;
-            }
-            free(signature);	/* forget it for now ... */
-            /* once we got SSH2_MSG_NEWKEYS we can switch next_crypto and current_crypto */
-            if(session->current_crypto)
-                crypto_free(session->current_crypto);
-                /* XXX later, include a function to change keys */
-            session->current_crypto=session->next_crypto;
+static int dh_handshake(SSH_SESSION *session) {
+  STRING *e = NULL;
+  STRING *f = NULL;
+  STRING *pubkey = NULL;
+  STRING *signature = NULL;
+  int rc = SSH_ERROR;
 
-            session->next_crypto = crypto_new();
-            if (session->next_crypto == NULL) {
-              leave_function();
-              return SSH_ERROR;
-            }
+  enter_function();
 
-            session->dh_handshake_state=DH_STATE_FINISHED;
-            leave_function();
-            return SSH_OK;
-        default:
-            ssh_set_error(session,SSH_FATAL,"Invalid state in dh_handshake():%d",session->dh_handshake_state);
-            leave_function();
-            return SSH_ERROR;
-    }
-    /* not reached */
-    leave_function();
-    return SSH_ERROR;
+  switch (session->dh_handshake_state) {
+    case DH_STATE_INIT:
+      if (buffer_add_u8(session->out_buffer, SSH2_MSG_KEXDH_INIT) < 0) {
+        goto error;
+      }
+
+      dh_generate_x(session);
+      dh_generate_e(session);
+
+      e = dh_get_e(session);
+      if (e == NULL) {
+        goto error;
+      }
+
+      if (buffer_add_ssh_string(session->out_buffer, e) < 0) {
+        goto error;
+      }
+      string_burn(e);
+      string_free(e);
+
+      rc = packet_send(session);
+      if (rc == SSH_ERROR) {
+        goto error;
+      }
+
+      session->dh_handshake_state = DH_STATE_INIT_TO_SEND;
+    case DH_STATE_INIT_TO_SEND:
+      rc = packet_flush(session, 0);
+      if (rc != SSH_OK) {
+        goto error;
+      }
+      session->dh_handshake_state = DH_STATE_INIT_SENT;
+    case DH_STATE_INIT_SENT:
+      rc = packet_wait(session, SSH2_MSG_KEXDH_REPLY, 1);
+      if (rc != SSH_OK) {
+        goto error;
+      }
+
+      pubkey = buffer_get_ssh_string(session->in_buffer);
+      if (pubkey == NULL){
+        ssh_set_error(session,SSH_FATAL, "No public key in packet");
+        rc = SSH_ERROR;
+        goto error;
+      }
+      dh_import_pubkey(session, pubkey);
+
+      f = buffer_get_ssh_string(session->in_buffer);
+      if (f == NULL) {
+        ssh_set_error(session,SSH_FATAL, "No F number in packet");
+        rc = SSH_ERROR;
+        goto error;
+      }
+      dh_import_f(session, f);
+      string_burn(f);
+      string_free(f);
+
+      signature = buffer_get_ssh_string(session->in_buffer);
+      if (signature == NULL) {
+        ssh_set_error(session, SSH_FATAL, "No signature in packet");
+        rc = SSH_ERROR;
+        goto error;
+      }
+      session->dh_server_signature = signature;
+      dh_build_k(session);
+
+      /* Send the MSG_NEWKEYS */
+      if (buffer_add_u8(session->out_buffer, SSH2_MSG_NEWKEYS) < 0) {
+        rc = SSH_ERROR;
+        goto error;
+      }
+
+      rc = packet_send(session);
+      if (rc == SSH_ERROR) {
+        goto error;
+      }
+
+      session->dh_handshake_state = DH_STATE_NEWKEYS_TO_SEND;
+    case DH_STATE_NEWKEYS_TO_SEND:
+      rc = packet_flush(session, 0);
+      if (rc != SSH_OK) {
+        goto error;
+      }
+      ssh_log(session, SSH_LOG_RARE, "SSH_MSG_NEWKEYS sent\n");
+
+      session->dh_handshake_state = DH_STATE_NEWKEYS_SENT;
+    case DH_STATE_NEWKEYS_SENT:
+      rc = packet_wait(session, SSH2_MSG_NEWKEYS, 1);
+      if (rc != SSH_OK) {
+        goto error;
+      }
+      ssh_log(session, SSH_LOG_RARE, "Got SSH_MSG_NEWKEYS\n");
+
+      rc = make_sessionid(session);
+      if (rc != SSH_OK) {
+        goto error;
+      }
+
+      /*
+       * Set the cryptographic functions for the next crypto
+       * (it is needed for generate_session_keys for key lenghts)
+       */
+      if (crypt_set_algorithms(session)) {
+        rc = SSH_ERROR;
+        goto error;
+      }
+
+      generate_session_keys(session);
+
+      /* Verify the host's signature. FIXME do it sooner */
+      signature = session->dh_server_signature;
+      session->dh_server_signature = NULL;
+      if (signature_verify(session, signature)) {
+        rc = SSH_ERROR;
+        goto error;
+      }
+
+      /* forget it for now ... */
+      string_burn(signature);
+      string_free(signature);
+
+      /*
+       * Once we got SSH2_MSG_NEWKEYS we can switch next_crypto and
+       * current_crypto
+       */
+      if (session->current_crypto) {
+        crypto_free(session->current_crypto);
+      }
+
+      /* FIXME later, include a function to change keys */
+      session->current_crypto = session->next_crypto;
+
+      session->next_crypto = crypto_new();
+      if (session->next_crypto == NULL) {
+        rc = SSH_ERROR;
+        goto error;
+      }
+
+      session->dh_handshake_state = DH_STATE_FINISHED;
+
+      leave_function();
+      return SSH_OK;
+    default:
+      ssh_set_error(session, SSH_FATAL, "Invalid state in dh_handshake(): %d",
+          session->dh_handshake_state);
+
+      leave_function();
+      return SSH_ERROR;
+  }
+
+  /* not reached */
+error:
+  string_burn(e);
+  string_free(e);
+  string_burn(f);
+  string_free(f);
+  string_burn(pubkey);
+  string_free(pubkey);
+  string_burn(signature);
+  string_free(signature);
+
+  leave_function();
+  return rc;
 }
 
 int ssh_service_request(SSH_SESSION *session, const char *service) {
