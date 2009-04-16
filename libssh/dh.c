@@ -265,6 +265,9 @@ int dh_generate_e(SSH_SESSION *session) {
 
   session->next_crypto->e = bignum_new();
   if (session->next_crypto->e == NULL) {
+#ifdef HAVE_LIBCRYPTO
+    bignum_ctx_free(ctx);
+#endif
     return -1;
   }
 
@@ -295,6 +298,9 @@ int dh_generate_f(SSH_SESSION *session) {
 
   session->next_crypto->f = bignum_new();
   if (session->next_crypto->f == NULL) {
+#ifdef HAVE_LIBCRYPTO
+    bignum_ctx_free(ctx);
+#endif
     return -1;
   }
 
