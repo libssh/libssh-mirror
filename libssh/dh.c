@@ -872,69 +872,99 @@ static int match(const char *group, const char *object){
   return 0;
 }
 
-static int sig_verify(SSH_SESSION *session, PUBLIC_KEY *pubkey, SIGNATURE *signature, 
-        unsigned char *digest){
+static int sig_verify(SSH_SESSION *session, PUBLIC_KEY *pubkey,
+    SIGNATURE *signature, unsigned char *digest) {
 #ifdef HAVE_LIBGCRYPT
-    gcry_error_t valid=0;
-    gcry_sexp_t gcryhash;
+  gcry_error_t valid = 0;
+  gcry_sexp_t gcryhash;
 #elif defined HAVE_LIBCRYPTO
-    int valid=0;
+  int valid = 0;
 #endif
-    unsigned char hash[SHA_DIGEST_LEN+1];
-    sha1(digest,SHA_DIGEST_LEN,hash+1);
-    hash[0]=0;
+  unsigned char hash[SHA_DIGEST_LEN + 1] = {0};
+
+  sha1(digest,SHA_DIGEST_LEN, hash + 1);
+
 #ifdef DEBUG_CRYPTO
-    ssh_print_hexa("hash to be verified with dsa",hash+1,SHA_DIGEST_LEN);
+  ssh_print_hexa("Hash to be verified with dsa", hash + 1, SHA_DIGEST_LEN);
 #endif
-    switch(pubkey->type){
-        case TYPE_DSS:
+
+  switch(pubkey->type) {
+    case TYPE_DSS:
 #ifdef HAVE_LIBGCRYPT
-            gcry_sexp_build(&gcryhash, NULL, "%b", SHA_DIGEST_LEN+1, hash);
-            valid=gcry_pk_verify(signature->dsa_sign,gcryhash,pubkey->dsa_pub);
-            gcry_sexp_release(gcryhash);
-            if(valid==0)
-              return 0;
-            if (gcry_err_code(valid)!=GPG_ERR_BAD_SIGNATURE){
-              ssh_set_error(session,SSH_FATAL,"DSA error : %s", gcry_strerror(valid));
+      valid = gcry_sexp_build(&gcryhash, NULL, "%b", SHA_DIGEST_LEN + 1, hash);
+      if (valid != 0) {
+        ssh_set_error(session, SSH_FATAL,
+            "RSA error: %s", gcry_strerror(valid));
+        return -1;
+      }
+      valid = gcry_pk_verify(signature->dsa_sign, gcryhash, pubkey->dsa_pub);
+      gcry_sexp_release(gcryhash);
+      if (valid == 0) {
+        return 0;
+      }
+
+      if (gcry_err_code(valid) != GPG_ERR_BAD_SIGNATURE) {
+        ssh_set_error(session, SSH_FATAL,
+            "DSA error: %s", gcry_strerror(valid));
+        return -1;
+      }
 #elif defined HAVE_LIBCRYPTO
-            valid=DSA_do_verify(hash+1,SHA_DIGEST_LEN,signature->dsa_sign,
-                pubkey->dsa_pub);
-            if(valid==1)
-                return 0;
-            if(valid==-1){
-                ssh_set_error(session,SSH_FATAL,"DSA error : %s",ERR_error_string(ERR_get_error(),NULL));
+      valid = DSA_do_verify(hash + 1, SHA_DIGEST_LEN, signature->dsa_sign,
+          pubkey->dsa_pub);
+      if (valid == 1) {
+        return 0;
+      }
+
+      if (valid == -1) {
+        ssh_set_error(session, SSH_FATAL,
+            "DSA error: %s", ERR_error_string(ERR_get_error(), NULL));
+        return -1;
+      }
 #endif
-                return -1;
-            }
-            ssh_set_error(session,SSH_FATAL,"Invalid DSA signature");
-            return -1;
-        case TYPE_RSA:
-        case TYPE_RSA1:
+      ssh_set_error(session, SSH_FATAL, "Invalid DSA signature");
+      return -1;
+
+    case TYPE_RSA:
+    case TYPE_RSA1:
 #ifdef HAVE_LIBGCRYPT
-            gcry_sexp_build(&gcryhash,NULL,"(data(flags pkcs1)(hash sha1 %b))",SHA_DIGEST_LEN,hash+1);
-            valid=gcry_pk_verify(signature->rsa_sign,gcryhash,pubkey->rsa_pub);
-            gcry_sexp_release(gcryhash);
-            if(valid==0)
-              return 0;
-            if(gcry_err_code(valid)!=GPG_ERR_BAD_SIGNATURE){
-                ssh_set_error(session,SSH_FATAL,"RSA error : %s",gcry_strerror(valid));
+      valid = gcry_sexp_build(&gcryhash, NULL,
+          "(data(flags pkcs1)(hash sha1 %b))", SHA_DIGEST_LEN, hash + 1);
+      if (valid != 0) {
+        ssh_set_error(session, SSH_FATAL,
+            "RSA error: %s", gcry_strerror(valid));
+        return -1;
+      }
+      valid = gcry_pk_verify(signature->rsa_sign,gcryhash,pubkey->rsa_pub);
+      gcry_sexp_release(gcryhash);
+      if (valid == 0) {
+        return 0;
+      }
+      if (gcry_err_code(valid) != GPG_ERR_BAD_SIGNATURE) {
+        ssh_set_error(session, SSH_FATAL,
+            "RSA error: %s", gcry_strerror(valid));
+        return -1;
+      }
 #elif defined HAVE_LIBCRYPTO
-            valid=RSA_verify(NID_sha1,hash+1,SHA_DIGEST_LEN,
-            signature->rsa_sign->string,string_len(signature->rsa_sign),pubkey->rsa_pub);
-            if(valid==1)
-                return 0;
-            if(valid==-1){
-                ssh_set_error(session,SSH_FATAL,"RSA error : %s",ERR_error_string(ERR_get_error(),NULL));
+      valid = RSA_verify(NID_sha1, hash + 1, SHA_DIGEST_LEN,
+          signature->rsa_sign->string, string_len(signature->rsa_sign),
+          pubkey->rsa_pub);
+      if (valid == 1) {
+        return 0;
+      }
+      if (valid == -1) {
+        ssh_set_error(session, SSH_FATAL,
+            "RSA error: %s", ERR_error_string(ERR_get_error(), NULL));
+        return -1;
+      }
 #endif
-                return -1;
-            }
-            ssh_set_error(session,SSH_FATAL,"Invalid RSA signature");
-            return -1;
-       default:
-            ssh_set_error(session,SSH_FATAL,"Unknown public key type");
-            return -1;
-   }
-return -1;
+      ssh_set_error(session, SSH_FATAL, "Invalid RSA signature");
+      return -1;
+    default:
+      ssh_set_error(session, SSH_FATAL, "Unknown public key type");
+      return -1;
+  }
+
+  return -1;
 }
 
 int signature_verify(SSH_SESSION *session,STRING *signature){
