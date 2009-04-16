@@ -586,24 +586,49 @@ char *ssh_get_issue_banner(SSH_SESSION *session) {
   return string_to_char(session->banner);
 }
 
-/** \brief disconnect from a session (client or server)
- * \param session ssh session
+/**
+ * @brief Disconnect from a session (client or server).
+ *
+ * @param session       The SSH session to disconnect.
  */
-void ssh_disconnect(SSH_SESSION *session){
-    STRING *str;
-    enter_function();
-    if(ssh_socket_is_open(session->socket)) {
-        buffer_add_u8(session->out_buffer,SSH2_MSG_DISCONNECT);
-        buffer_add_u32(session->out_buffer,htonl(SSH2_DISCONNECT_BY_APPLICATION));
-        str=string_from_char("Bye Bye");
-        buffer_add_ssh_string(session->out_buffer,str);
-        free(str);
-        packet_send(session);
-        ssh_socket_close(session->socket);
-    }
-    session->alive=0;
+void ssh_disconnect(SSH_SESSION *session) {
+  STRING *str = NULL;
+
+  enter_function();
+
+  if (session == NULL) {
     leave_function();
-    ssh_cleanup(session);
+    return;
+  }
+
+  if (ssh_socket_is_open(session->socket)) {
+    if (buffer_add_u8(session->out_buffer, SSH2_MSG_DISCONNECT) < 0) {
+      goto error;
+    }
+    if (buffer_add_u32(session->out_buffer,
+          htonl(SSH2_DISCONNECT_BY_APPLICATION)) < 0) {
+      goto error;
+    }
+
+    str = string_from_char("Bye Bye");
+    if (str == NULL) {
+      goto error;
+    }
+
+    if (buffer_add_ssh_string(session->out_buffer,str) < 0) {
+      string_free(str);
+      goto error;
+    }
+    string_free(str);
+
+    packet_send(session);
+    ssh_socket_close(session->socket);
+  }
+  session->alive = 0;
+
+error:
+  leave_function();
+  ssh_cleanup(session);
 }
 
 const char *ssh_copyright(void) {
