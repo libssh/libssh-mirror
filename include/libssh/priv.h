@@ -533,7 +533,7 @@ int make_sessionid(SSH_SESSION *session);
 /* add data for the final cookie */
 int hashbufin_add_cookie(SSH_SESSION *session, unsigned char *cookie);
 int hashbufout_add_cookie(SSH_SESSION *session);
-void generate_session_keys(SSH_SESSION *session);
+int generate_session_keys(SSH_SESSION *session);
 /* returns 1 if server signature ok, 0 otherwise. The NEXT crypto is checked, not the current one */
 int signature_verify(SSH_SESSION *session,STRING *signature);
 bignum make_string_bn(STRING *string);

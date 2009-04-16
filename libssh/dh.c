@@ -662,80 +662,135 @@ int hashbufin_add_cookie(SSH_SESSION *session, unsigned char *cookie) {
   return 0;
 }
 
-/* TODO FIXME add return value for memory checks */
-static void generate_one_key(STRING *k,unsigned char session_id[SHA_DIGEST_LEN],unsigned char output[SHA_DIGEST_LEN],char letter){
-    SHACTX ctx=sha1_init();
-    if (ctx == NULL) {
-      return;
-    }
-    sha1_update(ctx,k,string_len(k)+4);
-    sha1_update(ctx,session_id,SHA_DIGEST_LEN);
-    sha1_update(ctx,&letter,1);
-    sha1_update(ctx,session_id,SHA_DIGEST_LEN);
-    sha1_final(output,ctx);
+static int generate_one_key(STRING *k,
+    unsigned char session_id[SHA_DIGEST_LEN],
+    unsigned char output[SHA_DIGEST_LEN],
+    char letter) {
+  SHACTX ctx = NULL;
+
+  ctx = sha1_init();
+  if (ctx == NULL) {
+    return -1;
+  }
+
+  sha1_update(ctx, k, string_len(k) + 4);
+  sha1_update(ctx, session_id, SHA_DIGEST_LEN);
+  sha1_update(ctx, &letter, 1);
+  sha1_update(ctx, session_id, SHA_DIGEST_LEN);
+  sha1_final(output, ctx);
+
+  return 0;
 }
 
-/* TODO FIXME add return value for memory checks */
-void generate_session_keys(SSH_SESSION *session){
-    STRING *k_string;
-    SHACTX ctx;
-    enter_function();
-    k_string=make_bignum_string(session->next_crypto->k);
+int generate_session_keys(SSH_SESSION *session) {
+  STRING *k_string = NULL;
+  SHACTX ctx = NULL;
+  int rc = -1;
 
-    /* IV */
-    if(session->client){
-        generate_one_key(k_string,session->next_crypto->session_id,session->next_crypto->encryptIV,'A');
-        generate_one_key(k_string,session->next_crypto->session_id,session->next_crypto->decryptIV,'B');
-    } else {
-        generate_one_key(k_string,session->next_crypto->session_id,session->next_crypto->decryptIV,'A');
-        generate_one_key(k_string,session->next_crypto->session_id,session->next_crypto->encryptIV,'B');
-    }
-    if(session->client){
-        generate_one_key(k_string,session->next_crypto->session_id,session->next_crypto->encryptkey,'C');
-        generate_one_key(k_string,session->next_crypto->session_id,session->next_crypto->decryptkey,'D');
-    } else {
-        generate_one_key(k_string,session->next_crypto->session_id,session->next_crypto->decryptkey,'C');
-        generate_one_key(k_string,session->next_crypto->session_id,session->next_crypto->encryptkey,'D');
-    }
-    /* some ciphers need more than 20 bytes of input key */
-    /* XXX verify it's ok for server implementation */
-    if(session->next_crypto->out_cipher->keysize > SHA_DIGEST_LEN*8){
-        ctx=sha1_init();
-        if (ctx == NULL) {
-          leave_function();
-          return;
-        }
-        sha1_update(ctx,k_string,string_len(k_string)+4);
-        sha1_update(ctx,session->next_crypto->session_id,SHA_DIGEST_LEN);
-        sha1_update(ctx,session->next_crypto->encryptkey,SHA_DIGEST_LEN);
-        sha1_final(session->next_crypto->encryptkey+SHA_DIGEST_LEN,ctx);
-    }
+  enter_function();
 
-    if(session->next_crypto->in_cipher->keysize > SHA_DIGEST_LEN*8){
-        ctx=sha1_init();
-        sha1_update(ctx,k_string,string_len(k_string)+4);
-        sha1_update(ctx,session->next_crypto->session_id,SHA_DIGEST_LEN);
-        sha1_update(ctx,session->next_crypto->decryptkey,SHA_DIGEST_LEN);
-        sha1_final(session->next_crypto->decryptkey+SHA_DIGEST_LEN,ctx);
+  k_string = make_bignum_string(session->next_crypto->k);
+  if (k_string == NULL) {
+    goto error;
+  }
+
+  /* IV */
+  if (session->client) {
+    if (generate_one_key(k_string, session->next_crypto->session_id,
+          session->next_crypto->encryptIV, 'A') < 0) {
+      goto error;
     }
-    if(session->client){
-        generate_one_key(k_string,session->next_crypto->session_id,session->next_crypto->encryptMAC,'E');
-        generate_one_key(k_string,session->next_crypto->session_id,session->next_crypto->decryptMAC,'F');
-    } else {
-        generate_one_key(k_string,session->next_crypto->session_id,session->next_crypto->decryptMAC,'E');
-        generate_one_key(k_string,session->next_crypto->session_id,session->next_crypto->encryptMAC,'F');
+    if (generate_one_key(k_string, session->next_crypto->session_id,
+          session->next_crypto->decryptIV, 'B') < 0) {
+      goto error;
     }
+  } else {
+    if (generate_one_key(k_string, session->next_crypto->session_id,
+          session->next_crypto->decryptIV, 'A') < 0) {
+      goto error;
+    }
+    if (generate_one_key(k_string, session->next_crypto->session_id,
+          session->next_crypto->encryptIV, 'B') < 0) {
+      goto error;
+    }
+  }
+  if (session->client) {
+    if (generate_one_key(k_string, session->next_crypto->session_id,
+          session->next_crypto->encryptkey, 'C') < 0) {
+      goto error;
+    }
+    if (generate_one_key(k_string, session->next_crypto->session_id,
+          session->next_crypto->decryptkey, 'D') < 0) {
+      goto error;
+    }
+  } else {
+    if (generate_one_key(k_string, session->next_crypto->session_id,
+          session->next_crypto->decryptkey, 'C') < 0) {
+      goto error;
+    }
+    if (generate_one_key(k_string, session->next_crypto->session_id,
+          session->next_crypto->encryptkey, 'D') < 0) {
+      goto error;
+    }
+  }
+
+  /* some ciphers need more than 20 bytes of input key */
+  /* XXX verify it's ok for server implementation */
+  if (session->next_crypto->out_cipher->keysize > SHA_DIGEST_LEN * 8) {
+    ctx = sha1_init();
+    if (ctx == NULL) {
+      goto error;
+    }
+    sha1_update(ctx, k_string, string_len(k_string) + 4);
+    sha1_update(ctx, session->next_crypto->session_id, SHA_DIGEST_LEN);
+    sha1_update(ctx, session->next_crypto->encryptkey, SHA_DIGEST_LEN);
+    sha1_final(session->next_crypto->encryptkey + SHA_DIGEST_LEN, ctx);
+  }
+
+  if (session->next_crypto->in_cipher->keysize > SHA_DIGEST_LEN * 8) {
+    ctx = sha1_init();
+    sha1_update(ctx, k_string, string_len(k_string) + 4);
+    sha1_update(ctx, session->next_crypto->session_id, SHA_DIGEST_LEN);
+    sha1_update(ctx, session->next_crypto->decryptkey, SHA_DIGEST_LEN);
+    sha1_final(session->next_crypto->decryptkey + SHA_DIGEST_LEN, ctx);
+  }
+  if(session->client) {
+    if (generate_one_key(k_string, session->next_crypto->session_id,
+          session->next_crypto->encryptMAC, 'E') < 0) {
+      goto error;
+    }
+    if (generate_one_key(k_string, session->next_crypto->session_id,
+          session->next_crypto->decryptMAC, 'F') < 0) {
+      goto error;
+    }
+  } else {
+    if (generate_one_key(k_string, session->next_crypto->session_id,
+          session->next_crypto->decryptMAC, 'E') < 0) {
+      goto error;
+    }
+    if (generate_one_key(k_string, session->next_crypto->session_id,
+          session->next_crypto->encryptMAC, 'F') < 0) {
+      goto error;
+    }
+  }
 
 #ifdef DEBUG_CRYPTO
-    ssh_print_hexa("encrypt IV",session->next_crypto->encryptIV,SHA_DIGEST_LEN);
-    ssh_print_hexa("decrypt IV",session->next_crypto->decryptIV,SHA_DIGEST_LEN);
-    ssh_print_hexa("encryption key",session->next_crypto->encryptkey,session->next_crypto->out_cipher->keysize);
-    ssh_print_hexa("decryption key",session->next_crypto->decryptkey,session->next_crypto->in_cipher->keysize);
-    ssh_print_hexa("Encryption MAC",session->next_crypto->encryptMAC,SHA_DIGEST_LEN);
-    ssh_print_hexa("Decryption MAC",session->next_crypto->decryptMAC,20);
+  ssh_print_hexa("Encrypt IV", session->next_crypto->encryptIV, SHA_DIGEST_LEN);
+  ssh_print_hexa("Decrypt IV", session->next_crypto->decryptIV, SHA_DIGEST_LEN);
+  ssh_print_hexa("Encryption key", session->next_crypto->encryptkey,
+      session->next_crypto->out_cipher->keysize);
+  ssh_print_hexa("Decryption key", session->next_crypto->decryptkey,
+      session->next_crypto->in_cipher->keysize);
+  ssh_print_hexa("Encryption MAC", session->next_crypto->encryptMAC, SHA_DIGEST_LEN);
+  ssh_print_hexa("Decryption MAC", session->next_crypto->decryptMAC, 20);
 #endif
-    free(k_string);
-    leave_function();
+
+  rc = 0;
+error:
+  string_free(k_string);
+  leave_function();
+
+  return rc;
 }
 
 /** \addtogroup ssh_session

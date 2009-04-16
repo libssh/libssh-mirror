@@ -313,7 +313,10 @@ static int dh_handshake(SSH_SESSION *session) {
         goto error;
       }
 
-      generate_session_keys(session);
+      if (generate_session_keys(session) < 0) {
+        rc = SSH_ERROR;
+        goto error;
+      }
 
       /* Verify the host's signature. FIXME do it sooner */
       signature = session->dh_server_signature;

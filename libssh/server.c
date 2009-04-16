@@ -330,7 +330,9 @@ static int dh_handshake_server(SSH_SESSION *session){
 
     packet_wait(session,SSH2_MSG_NEWKEYS,1);
     ssh_log(session, SSH_LOG_PACKET, "Got SSH_MSG_NEWKEYS");
-    generate_session_keys(session);
+    if (generate_session_keys(session) < 0) {
+      return -1;
+    }
     /* once we got SSH2_MSG_NEWKEYS we can switch next_crypto and current_crypto */
     if(session->current_crypto)
         crypto_free(session->current_crypto);
