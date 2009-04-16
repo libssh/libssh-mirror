@@ -38,7 +38,6 @@
  */
 int ssh_finalize(void)
 {
-  ssh_crypto_finalize();
 #ifdef HAVE_LIBGCRYPT
   gcry_control(GCRYCTL_TERM_SECMEM);
 #elif defined HAVE_LIBCRYPTO

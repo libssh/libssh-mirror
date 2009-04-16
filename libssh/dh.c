@@ -69,9 +69,6 @@ static unsigned char p_value[] = {
 #define P_LEN 128	/* Size in bytes of the p number */
 
 static unsigned long g_int = 2 ;	/* G is defined as 2 by the ssh2 standards */
-static bignum g;
-static bignum p;
-static int ssh_crypto_inited=0;
 
 int ssh_get_random(void *where, int len, int strong){
 
@@ -96,37 +93,51 @@ int ssh_get_random(void *where, int len, int strong){
 
 
 /* it inits the values g and p which are used for DH key agreement */
-void ssh_crypto_init(void){
-    if(ssh_crypto_inited == 0){
+int ssh_crypto_init(struct ssh_session *session) {
 #ifdef HAVE_LIBGCRYPT
-        gcry_check_version(NULL);
-	if (!gcry_control(GCRYCTL_INITIALIZATION_FINISHED_P,0))
-	{
-	  gcry_control(GCRYCTL_INIT_SECMEM, 4096);
-	  gcry_control(GCRYCTL_INITIALIZATION_FINISHED,0);
-	}
+  gcry_check_version(NULL);
+
+  if (!gcry_control(GCRYCTL_INITIALIZATION_FINISHED_P,0)) {
+    gcry_control(GCRYCTL_INIT_SECMEM, 4096);
+    gcry_control(GCRYCTL_INITIALIZATION_FINISHED,0);
+  }
 #endif
-        g=bignum_new();
-        bignum_set_word(g,g_int);
+
+  session->dh_g = bignum_new();
+  if (session->dh_g == NULL) {
+    return -1;
+  }
+  bignum_set_word(session->dh_g, g_int);
+
 #ifdef HAVE_LIBGCRYPT
-        bignum_bin2bn(p_value,P_LEN,&p);
+  bignum_bin2bn(p_value, P_LEN, &session->dh_p);
+  if (session->dh_p == NULL) {
+    bignum_free(session->dh_g);
+    session->dh_g = NULL;
+    return -1;
+  }
 #elif defined HAVE_LIBCRYPTO
-        p=bignum_new();
-        bignum_bin2bn(p_value,P_LEN,p);
-        OpenSSL_add_all_algorithms();
+  session->dh_p = bignum_new();
+  if (session->dh_p == NULL) {
+    bignum_free(session->dh_g);
+    session->dh_g = NULL;
+    return -1;
+  }
+  bignum_bin2bn(p_value, P_LEN, session->dh_p);
+  OpenSSL_add_all_algorithms();
 #endif
-        ssh_crypto_inited++;
-    }
+
+  return 0;
 }
 
-void ssh_crypto_finalize(void){
-    if(ssh_crypto_inited){
-        bignum_free(g);
-        bignum_free(p);
-        ssh_crypto_inited=0;
-    }
+void ssh_crypto_finalize(struct ssh_session *session) {
+  bignum_free(session->dh_g);
+  session->dh_g = NULL;
+
+  bignum_free(session->dh_p);
+  session->dh_p = NULL;
 }
-   
+
 /* prints the bignum on stderr */
 void ssh_print_bignum(const char *which,bignum num){
 #ifdef HAVE_LIBGCRYPT
@@ -223,9 +234,11 @@ void dh_generate_e(SSH_SESSION *session){
 #endif
     session->next_crypto->e=bignum_new();
 #ifdef HAVE_LIBGCRYPT
-    bignum_mod_exp(session->next_crypto->e,g,session->next_crypto->x,p);
+    bignum_mod_exp(session->next_crypto->e, session->dh_g,
+        session->next_crypto->x, session->dh_p);
 #elif defined HAVE_LIBCRYPTO
-    bignum_mod_exp(session->next_crypto->e,g,session->next_crypto->x,p,ctx);
+    bignum_mod_exp(session->next_crypto->e, session->dh_g,
+        session->next_crypto->x, session->dh_p, ctx);
 #endif
 #ifdef DEBUG_CRYPTO
     ssh_print_bignum("e",session->next_crypto->e);
@@ -241,9 +254,11 @@ void dh_generate_f(SSH_SESSION *session){
 #endif
     session->next_crypto->f=bignum_new();
 #ifdef HAVE_LIBGCRYPT
-    bignum_mod_exp(session->next_crypto->f,g,session->next_crypto->y,p);
+    bignum_mod_exp(session->next_crypto->f, session->dh_g,
+        session->next_crypto->y, session->dh_p);
 #elif defined HAVE_LIBCRYPTO
-    bignum_mod_exp(session->next_crypto->f,g,session->next_crypto->y,p,ctx);
+    bignum_mod_exp(session->next_crypto->f, session->dh_g,
+        session->next_crypto->y, session->dh_p, ctx);
 #endif
 #ifdef DEBUG_CRYPTO
     ssh_print_bignum("f",session->next_crypto->f);
@@ -327,15 +342,19 @@ void dh_build_k(SSH_SESSION *session){
     /* the server and clients don't use the same numbers */
 #ifdef HAVE_LIBGCRYPT
     if(session->client){
-        bignum_mod_exp(session->next_crypto->k,session->next_crypto->f,session->next_crypto->x,p);
+        bignum_mod_exp(session->next_crypto->k, session->next_crypto->f,
+            session->next_crypto->x, session->dh_p);
     } else {
-        bignum_mod_exp(session->next_crypto->k,session->next_crypto->e,session->next_crypto->y,p);
+        bignum_mod_exp(session->next_crypto->k, session->next_crypto->e,
+            session->next_crypto->y, session->dh_p);
     }
 #elif defined HAVE_LIBCRYPTO
     if(session->client){
-        bignum_mod_exp(session->next_crypto->k,session->next_crypto->f,session->next_crypto->x,p,ctx);
+        bignum_mod_exp(session->next_crypto->k, session->next_crypto->f,
+            session->next_crypto->x, session->dh_p, ctx);
     } else {
-        bignum_mod_exp(session->next_crypto->k,session->next_crypto->e,session->next_crypto->y,p,ctx);
+        bignum_mod_exp(session->next_crypto->k, session->next_crypto->e,
+            session->next_crypto->y, session->dh_p, ctx);
     }
 #endif
 #ifdef DEBUG_CRYPTO

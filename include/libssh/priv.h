@@ -339,6 +339,10 @@ struct ssh_session {
     int dh_handshake_state;
     STRING *dh_server_signature; //information used by dh_handshake.
 
+    /* dh crypto */
+    bignum dh_g;
+    bignum dh_p;
+
     KEX server_kex;
     KEX client_kex;
     BUFFER *in_hashbuf;
@@ -520,9 +524,8 @@ void dh_generate_x(SSH_SESSION *session);
 void dh_generate_y(SSH_SESSION *session);
 void dh_generate_f(SSH_SESSION *session);
 
-/* FIXME: replace me with a thread safe function */
-void ssh_crypto_init(void);
-void ssh_crypto_finalize(void);
+int ssh_crypto_init(SSH_SESSION *session);
+void ssh_crypto_finalize(SSH_SESSION *session);
 
 STRING *dh_get_e(SSH_SESSION *session);
 STRING *dh_get_f(SSH_SESSION *session);

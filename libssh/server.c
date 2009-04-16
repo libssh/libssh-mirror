@@ -332,7 +332,9 @@ static int dh_handshake_server(SSH_SESSION *session){
 /* do the banner and key exchange */
 int ssh_accept(SSH_SESSION *session){
     ssh_send_banner(session,1);
-    ssh_crypto_init();
+    if (ssh_crypto_init(session) < 0) {
+      return -1;
+    }
     session->alive=1;
     session->clientbanner=ssh_get_banner(session);
     if (server_set_kex(session) < 0) {
