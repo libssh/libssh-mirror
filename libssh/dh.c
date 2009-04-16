@@ -139,14 +139,16 @@ int ssh_crypto_init(void) {
   return 0;
 }
 
-void ssh_crypto_finalize(void){
-    if(ssh_crypto_inited){
-        bignum_free(g);
-        bignum_free(p);
-        ssh_crypto_inited=0;
-    }
+void ssh_crypto_finalize(void) {
+  if(ssh_crypto_inited) {
+    bignum_free(g);
+    g = NULL;
+    bignum_free(p);
+    p = NULL;
+    ssh_crypto_inited = 0;
+  }
 }
-   
+
 /* prints the bignum on stderr */
 void ssh_print_bignum(const char *which,bignum num){
 #ifdef HAVE_LIBGCRYPT
