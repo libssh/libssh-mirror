@@ -68,6 +68,9 @@
 /* Define to 1 if you want to enable server support */
 #cmakedefine WITH_SERVER 1
 
+/* Define to 1 if you want to enable debug output for crypto functions */
+#cmakedefine DEBUG_CRYPTO 1
+
 /* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
    significant byte first (like Motorola and SPARC, unlike Intel). */
 #if defined AC_APPLE_UNIVERSAL_BUILD
