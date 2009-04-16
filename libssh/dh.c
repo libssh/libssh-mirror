@@ -160,7 +160,7 @@ void ssh_print_bignum(const char *which, bignum num) {
   hex = bignum_bn2hex(num);
 #endif
   fprintf(stderr, "%s value: ", which);
-  fprintf(stderr,"%s\n", hex == NULL ? "(null)" : hex);
+  fprintf(stderr, "%s\n", (hex == NULL) ? "(null)" : (char *) hex);
   SAFE_FREE(hex);
 }
 
