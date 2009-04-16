@@ -150,17 +150,17 @@ void ssh_crypto_finalize(void) {
 }
 
 /* prints the bignum on stderr */
-void ssh_print_bignum(const char *which,bignum num){
+void ssh_print_bignum(const char *which, bignum num) {
 #ifdef HAVE_LIBGCRYPT
-    unsigned char *hex;
-    bignum_bn2hex(num,&hex);
+  unsigned char *hex = NULL;
+  bignum_bn2hex(num, &hex);
 #elif defined HAVE_LIBCRYPTO
-    char *hex;
-    hex=bignum_bn2hex(num);
+  char *hex = NULL;
+  hex = bignum_bn2hex(num);
 #endif
-    fprintf(stderr,"%s value: ",which);
-    fprintf(stderr,"%s\n",hex);
-    free(hex);	
+  fprintf(stderr, "%s value: ", which);
+  fprintf(stderr,"%s\n", hex == NULL ? "(null)" : hex);
+  SAFE_FREE(hex);
 }
 
 /**
