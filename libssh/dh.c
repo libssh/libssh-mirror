@@ -4,6 +4,7 @@
  * This file is part of the SSH Library
  *
  * Copyright (c) 2003-2008 by Aris Adamantiadis
+ * Copyright (c) 2009      by Andreas Schneider <mail@cynapses.org>
  *
  * The SSH Library is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -847,32 +848,28 @@ STRING *ssh_get_pubkey(SSH_SESSION *session){
     return string_copy(session->current_crypto->server_pubkey);
 }
 
-/* XXX i doubt it is still needed, or may need some fix */
 static int match(const char *group, const char *object){
-    char *ptr,*saved;
-    char *end;
-    ptr=strdup(group);
-    if (ptr == NULL) {
-      return -1;
+  const char *p;
+  const char *z;
+
+  p = z = group;
+  do {
+    p = strchr(z, ',');
+    if (p == NULL) {
+      if (strcmp(z, object) == 0) {
+        return 1;
+      }
+      return 0;
+    } else {
+      if (strncmp(z, object, p - z) == 0) {
+        return 1;
+      }
     }
-    saved=ptr;
-    while(1){
-        end=strchr(ptr,',');
-        if(end)
-            *end=0;
-        if(!strcmp(ptr,object)){
-            free(saved);
-            return 0;
-        }
-        if(end)
-            ptr=end+1;
-        else{
-            free(saved);
-            return -1;
-        }
-    }
-    /* not reached */
-    return 1;
+    z = p + 1;
+  } while(1);
+
+  /* not reached */
+  return 0;
 }
 
 static int sig_verify(SSH_SESSION *session, PUBLIC_KEY *pubkey, SIGNATURE *signature, 
