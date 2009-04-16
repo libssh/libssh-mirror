@@ -967,46 +967,54 @@ static int sig_verify(SSH_SESSION *session, PUBLIC_KEY *pubkey,
   return -1;
 }
 
-int signature_verify(SSH_SESSION *session,STRING *signature){
-    PUBLIC_KEY *pubkey;
-    SIGNATURE *sign;
-    int err;
-    enter_function();
-    if(session->options->dont_verify_hostkey){
-        ssh_log(session, SSH_LOG_FUNCTIONS, "Host key wasn't verified");
-        leave_function();
-        return 0;
-    }
-    pubkey=publickey_from_string(session,session->next_crypto->server_pubkey);
-    if(!pubkey){
-    	leave_function();
-    	return -1;
-    }
+int signature_verify(SSH_SESSION *session, STRING *signature) {
+  PUBLIC_KEY *pubkey = NULL;
+  SIGNATURE *sign = NULL;
+  int err;
 
-    if(session->options->wanted_methods[SSH_HOSTKEYS]){
-         if(match(session->options->wanted_methods[SSH_HOSTKEYS],pubkey->type_c)){
-             ssh_set_error(session,SSH_FATAL,"Public key from server (%s) doesn't match user preference (%s)",
-             pubkey->type_c,session->options->wanted_methods[SSH_HOSTKEYS]);
-             publickey_free(pubkey);
-             leave_function();
-             return -1;
-         }
+  enter_function();
+
+  if (session->options->dont_verify_hostkey) {
+    ssh_log(session, SSH_LOG_FUNCTIONS, "Host key wasn't verified");
+    leave_function();
+    return 0;
+  }
+
+  pubkey = publickey_from_string(session,session->next_crypto->server_pubkey);
+  if(pubkey == NULL) {
+    leave_function();
+    return -1;
+  }
+
+  if (session->options->wanted_methods[SSH_HOSTKEYS]) {
+    if(!match(session->options->wanted_methods[SSH_HOSTKEYS],pubkey->type_c)) {
+      ssh_set_error(session, SSH_FATAL,
+          "Public key from server (%s) doesn't match user preference (%s)",
+          pubkey->type_c, session->options->wanted_methods[SSH_HOSTKEYS]);
+      publickey_free(pubkey);
+      leave_function();
+      return -1;
     }
-    sign=signature_from_string(session, signature,pubkey,pubkey->type);
-    if(!sign){
-        ssh_set_error(session,SSH_FATAL,"Invalid signature blob");
-        publickey_free(pubkey);
-        leave_function();
-        return -1;
-    }
-    ssh_log(session, SSH_LOG_FUNCTIONS,
-        "Going to verify a %s type signature", pubkey->type_c);
-    err=sig_verify(session,pubkey,sign,session->next_crypto->session_id);
-    signature_free(sign);
-    session->next_crypto->server_pubkey_type=pubkey->type_c;
+  }
+
+  sign = signature_from_string(session, signature, pubkey, pubkey->type);
+  if (sign == NULL) {
+    ssh_set_error(session, SSH_FATAL, "Invalid signature blob");
     publickey_free(pubkey);
     leave_function();
-    return err;
+    return -1;
+  }
+
+  ssh_log(session, SSH_LOG_FUNCTIONS,
+      "Going to verify a %s type signature", pubkey->type_c);
+
+  err = sig_verify(session,pubkey,sign,session->next_crypto->session_id);
+  signature_free(sign);
+  session->next_crypto->server_pubkey_type = pubkey->type_c;
+  publickey_free(pubkey);
+
+  leave_function();
+  return err;
 }
 
 /** @} */
