@@ -347,25 +347,62 @@ error:
   return rc;
 }
 
+/**
+ * @internal
+ *
+ * @brief Request a service from the SSH server.
+ *
+ * Service requests are for example: ssh-userauth, ssh-connection, etc.
+ *
+ * @param  session      The session to use to ask for a service request.
+ * @param  service      The service request.
+ *
+ * @return 0 on success, < 0 on error.
+ */
 int ssh_service_request(SSH_SESSION *session, const char *service) {
-    STRING *service_s;
-    enter_function();
-    buffer_add_u8(session->out_buffer,SSH2_MSG_SERVICE_REQUEST);
-    service_s=string_from_char(service);
-    buffer_add_ssh_string(session->out_buffer,service_s);
-    free(service_s);
-    packet_send(session);
-    ssh_log(session, SSH_LOG_PACKET,
-        "Sent SSH_MSG_SERVICE_REQUEST (service %s)\n", service);
-    if (packet_wait(session,SSH2_MSG_SERVICE_ACCEPT,1) != SSH_OK) {
-        ssh_set_error(session,SSH_FATAL,"did not receive SERVICE_ACCEPT");
-        leave_function();
-        return -1;
-    }
-    ssh_log(session, SSH_LOG_PACKET,
-        "Received SSH_MSG_SERVICE_ACCEPT (service %s)\n", service);
+  STRING *service_s = NULL;
+
+  enter_function();
+
+  if (buffer_add_u8(session->out_buffer, SSH2_MSG_SERVICE_REQUEST) < 0) {
     leave_function();
-    return 0;
+    return -1;
+  }
+
+  service_s = string_from_char(service);
+  if (service_s == NULL) {
+    leave_function();
+    return -1;
+  }
+
+  if (buffer_add_ssh_string(session->out_buffer,service_s) < 0) {
+    string_free(service_s);
+    leave_function();
+    return -1;
+  }
+  string_free(service_s);
+
+  if (packet_send(session) != SSH_OK) {
+    ssh_set_error(session, SSH_FATAL,
+        "Sending SSH2_MSG_SERVICE_REQUEST failed.");
+    leave_function();
+    return -1;
+  }
+
+  ssh_log(session, SSH_LOG_PACKET,
+      "Sent SSH_MSG_SERVICE_REQUEST (service %s)", service);
+
+  if (packet_wait(session,SSH2_MSG_SERVICE_ACCEPT,1) != SSH_OK) {
+    ssh_set_error(session, SSH_FATAL, "Did not receive SERVICE_ACCEPT");
+    leave_function();
+    return -1;
+  }
+
+  ssh_log(session, SSH_LOG_PACKET,
+      "Received SSH_MSG_SERVICE_ACCEPT (service %s)", service);
+
+  leave_function();
+  return 0;
 }
 
 /** \addtogroup ssh_session
