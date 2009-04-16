@@ -95,28 +95,48 @@ int ssh_get_random(void *where, int len, int strong){
 }
 
 
-/* it inits the values g and p which are used for DH key agreement */
-void ssh_crypto_init(void){
-    if(ssh_crypto_inited == 0){
+/*
+ * This inits the values g and p which are used for DH key agreement
+ * FIXME: Make the function thread safe by adding a semaphore or mutex.
+ */
+int ssh_crypto_init(void) {
+  if (ssh_crypto_inited == 0) {
 #ifdef HAVE_LIBGCRYPT
-        gcry_check_version(NULL);
-	if (!gcry_control(GCRYCTL_INITIALIZATION_FINISHED_P,0))
-	{
-	  gcry_control(GCRYCTL_INIT_SECMEM, 4096);
-	  gcry_control(GCRYCTL_INITIALIZATION_FINISHED,0);
-	}
-#endif
-        g=bignum_new();
-        bignum_set_word(g,g_int);
-#ifdef HAVE_LIBGCRYPT
-        bignum_bin2bn(p_value,P_LEN,&p);
-#elif defined HAVE_LIBCRYPTO
-        p=bignum_new();
-        bignum_bin2bn(p_value,P_LEN,p);
-        OpenSSL_add_all_algorithms();
-#endif
-        ssh_crypto_inited++;
+    gcry_check_version(NULL);
+
+    if (!gcry_control(GCRYCTL_INITIALIZATION_FINISHED_P,0)) {
+      gcry_control(GCRYCTL_INIT_SECMEM, 4096);
+      gcry_control(GCRYCTL_INITIALIZATION_FINISHED,0);
     }
+#endif
+
+    g = bignum_new();
+    if (g == NULL) {
+      return -1;
+    }
+    bignum_set_word(g,g_int);
+
+#ifdef HAVE_LIBGCRYPT
+    bignum_bin2bn(p_value, P_LEN, &p);
+    if (p == NULL) {
+      bignum_free(g);
+      g = NULL;
+      return -1;
+    }
+#elif defined HAVE_LIBCRYPTO
+    p = bignum_new();
+    if (p == NULL) {
+      bignum_free(g);
+      g = NULL;
+      return -1;
+    }
+    bignum_bin2bn(p_value, P_LEN, p);
+    OpenSSL_add_all_algorithms();
+#endif
+    ssh_crypto_inited++;
+  }
+
+  return 0;
 }
 
 void ssh_crypto_finalize(void){

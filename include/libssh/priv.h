@@ -520,8 +520,7 @@ void dh_generate_x(SSH_SESSION *session);
 void dh_generate_y(SSH_SESSION *session);
 void dh_generate_f(SSH_SESSION *session);
 
-/* FIXME: replace me with a thread safe function */
-void ssh_crypto_init(void);
+int ssh_crypto_init(void);
 void ssh_crypto_finalize(void);
 
 STRING *dh_get_e(SSH_SESSION *session);

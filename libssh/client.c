@@ -449,7 +449,10 @@ int ssh_connect(SSH_SESSION *session) {
   session->alive = 0;
   session->client = 1;
 
-  ssh_crypto_init();
+  if (ssh_crypto_init() < 0) {
+    leave_function();
+    return SSH_ERROR;
+  }
   ssh_socket_init();
 
   if (options->fd == -1 && options->host == NULL) {
