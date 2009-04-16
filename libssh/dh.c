@@ -315,27 +315,38 @@ int dh_generate_f(SSH_SESSION *session) {
   return 0;
 }
 
-STRING *make_bignum_string(bignum num){
-    STRING *ptr;
-    int pad=0;
-    unsigned int len=bignum_num_bytes(num);
-    unsigned int bits=bignum_num_bits(num);
-    /* remember if the fist bit is set, it is considered as a negative number. so 0's must be appended */
-    if(!(bits%8) && bignum_is_bit_set(num,bits-1))
-        pad++;
+STRING *make_bignum_string(bignum num) {
+  STRING *ptr = NULL;
+  int pad = 0;
+  unsigned int len = bignum_num_bytes(num);
+  unsigned int bits = bignum_num_bits(num);
+
+  /* Remember if the fist bit is set, it is considered as a
+   * negative number. So 0's must be appended */
+  if (!(bits % 8) && bignum_is_bit_set(num, bits - 1)) {
+    pad++;
+  }
+
 #ifdef DEBUG_CRYPTO
-    fprintf(stderr, "%d bits, %d bytes, %d padding\n", bits, len, pad);
+  fprintf(stderr, "%d bits, %d bytes, %d padding\n", bits, len, pad);
 #endif /* DEBUG_CRYPTO */
-    ptr=malloc(4 + len + pad);
-    ptr->size=htonl(len+pad);
-    if(pad)
-        ptr->string[0]=0;
+
+  ptr = malloc(4 + len + pad);
+  if (ptr == NULL) {
+    return NULL;
+  }
+  ptr->size = htonl(len + pad);
+  if (pad) {
+    ptr->string[0] = 0;
+  }
+
 #ifdef HAVE_LIBGCRYPT
-    bignum_bn2bin(num,len,ptr->string+pad);
+  bignum_bn2bin(num, len, ptr->string + pad);
 #elif HAVE_LIBCRYPTO
-    bignum_bn2bin(num,ptr->string+pad);
+  bignum_bn2bin(num, ptr->string + pad);
 #endif
-    return ptr;
+
+  return ptr;
 }
 
 bignum make_string_bn(STRING *string){
