@@ -80,34 +80,53 @@ char *ssh_get_banner(SSH_SESSION *session) {
   return NULL;
 }
 
-static int ssh_analyze_banner(SSH_SESSION *session, int *ssh1, int *ssh2){
-    char *banner=session->serverbanner;
-    if(strncmp(banner,"SSH-",4)!=0){
-        ssh_set_error(session,SSH_FATAL,"Protocol mismatch: %s",banner);
-        return -1;
-    }
-    /* a typical banner is :
-     * SSH-1.5-blah
-     * SSH-1.99-blah
-     * SSH-2.0-blah
-     */
-    switch(banner[4]){
-        case '1':
-            *ssh1=1;
-            if(banner[6]=='9')
-                *ssh2=1;
-            else
-                *ssh2=0;
-            break;
-        case '2':
-            *ssh1=0;
-            *ssh2=1;
-            break;
-        default:
-            ssh_set_error(session,SSH_FATAL,"Protocol mismatch: %s",banner);
-            return -1;
-    }
-    return 0;
+/**
+ * @internal
+ *
+ * @brief Analyze the SSH banner to find out if we have a SSHv1 or SSHv2
+ * server.
+ *
+ * @param  session      The session to analyze the banner from.
+ * @param  ssh1         The variable which is set if it is a SSHv1 server.
+ * @param  ssh2         The variable which is set if it is a SSHv2 server.
+ *
+ * @return 0 on success, < 0 on error.
+ *
+ * @see ssh_get_banner()
+ */
+static int ssh_analyze_banner(SSH_SESSION *session, int *ssh1, int *ssh2) {
+  char *banner = session->serverbanner;
+
+  if (strncmp(banner, "SSH-", 4) != 0) {
+    ssh_set_error(session, SSH_FATAL, "Protocol mismatch: %s", banner);
+    return -1;
+  }
+
+  /*
+   * Typical banners e.g. are:
+   * SSH-1.5-blah
+   * SSH-1.99-blah
+   * SSH-2.0-blah
+   */
+  switch(banner[4]) {
+    case '1':
+      *ssh1 = 1;
+      if (banner[6] == '9') {
+        *ssh2 = 1;
+      } else {
+        *ssh2 = 0;
+      }
+      break;
+    case '2':
+      *ssh1 = 0;
+      *ssh2 = 1;
+      break;
+    default:
+      ssh_set_error(session, SSH_FATAL, "Protocol mismatch: %s", banner);
+      return -1;
+  }
+
+  return 0;
 }
 
 /** @internal
