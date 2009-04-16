@@ -367,17 +367,17 @@ bignum make_string_bn(STRING *string){
   return bn;
 }
 
-STRING *dh_get_e(SSH_SESSION *session){
-	return make_bignum_string(session->next_crypto->e);
+STRING *dh_get_e(SSH_SESSION *session) {
+  return make_bignum_string(session->next_crypto->e);
 }
 
 /* used by server */
-
-STRING *dh_get_f(SSH_SESSION *session){
-    return make_bignum_string(session->next_crypto->f);
+STRING *dh_get_f(SSH_SESSION *session) {
+  return make_bignum_string(session->next_crypto->f);
 }
-void dh_import_pubkey(SSH_SESSION *session,STRING *pubkey_string){
-    session->next_crypto->server_pubkey=pubkey_string;
+
+void dh_import_pubkey(SSH_SESSION *session, STRING *pubkey_string) {
+  session->next_crypto->server_pubkey = pubkey_string;
 }
 
 void dh_import_f(SSH_SESSION *session,STRING *f_string){
