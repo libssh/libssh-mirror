@@ -568,16 +568,22 @@ int ssh_connect(SSH_SESSION *session) {
   return 0;
 }
 
-/** this is the banner showing a disclaimer to users who log in,
- * typically their right or the fact that they will be monitored
- * \brief get the issue banner from the server
- * \param session ssh session
- * \return NULL if there is no issue banner, else a string containing it.
+/**
+ * @brief Get the issue banner from the server.
+ *
+ * This is the banner showing a disclaimer to users who log in,
+ * typically their right or the fact that they will be monitored.
+ *
+ * @param session       The SSH session to use.
+ *
+ * @return A newly allocated string with the banner, NULL on error.
  */
-char *ssh_get_issue_banner(SSH_SESSION *session){
-    if(!session->banner)
-        return NULL;
-    return string_to_char(session->banner);
+char *ssh_get_issue_banner(SSH_SESSION *session) {
+  if (session == NULL || session->banner == NULL) {
+    return NULL;
+  }
+
+  return string_to_char(session->banner);
 }
 
 /** \brief disconnect from a session (client or server)
