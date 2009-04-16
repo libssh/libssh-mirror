@@ -350,18 +350,21 @@ STRING *make_bignum_string(bignum num) {
 }
 
 bignum make_string_bn(STRING *string){
-	bignum bn;
-	unsigned int len=string_len(string);
+  bignum bn = NULL;
+  unsigned int len = string_len(string);
+
 #ifdef DEBUG_CRYPTO
-        fprintf(stderr, "Importing a %d bits, %d bytes object ...\n",
-            len * 8, len);
+  fprintf(stderr, "Importing a %d bits, %d bytes object ...\n",
+      len * 8, len);
 #endif /* DEBUG_CRYPTO */
+
 #ifdef HAVE_LIBGCRYPT
-        bignum_bin2bn(string->string,len,&bn);
+  bignum_bin2bn(string->string, len, &bn);
 #elif defined HAVE_LIBCRYPTO
-        bn=bignum_bin2bn(string->string,len,NULL);
+  bn = bignum_bin2bn(string->string, len, NULL);
 #endif
-	return bn;
+
+  return bn;
 }
 
 STRING *dh_get_e(SSH_SESSION *session){
