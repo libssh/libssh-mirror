@@ -139,32 +139,44 @@ static int ssh_analyze_banner(SSH_SESSION *session, int *ssh1, int *ssh2) {
  * @return 0 on success, < 0 on error.
  */
 int ssh_send_banner(SSH_SESSION *session, int server) {
-  const char *banner;
+  const char *banner = NULL;
   char buffer[128] = {0};
 
   enter_function();
+
   banner = session->version == 1 ? CLIENTBANNER1 : CLIENTBANNER2;
 
   if (session->options->banner) {
-    banner=session->options->banner;
+    banner = session->options->banner;
   }
 
   if (server) {
     session->serverbanner = strdup(banner);
     if (session->serverbanner == NULL) {
+      leave_function();
       return -1;
     }
   } else {
     session->clientbanner = strdup(banner);
     if (session->clientbanner == NULL) {
+      leave_function();
       return -1;
     }
   }
-  snprintf(buffer, 128, "%s\r\n", banner);
-  ssh_socket_write(session->socket, buffer, strlen(buffer));
-  ssh_socket_blocking_flush(session->socket);
-  leave_function();
 
+  snprintf(buffer, 128, "%s\r\n", banner);
+
+  if (ssh_socket_write(session->socket, buffer, strlen(buffer)) == SSH_ERROR) {
+    leave_function();
+    return -1;
+  }
+
+  if (ssh_socket_blocking_flush(session->socket) != SSH_OK) {
+    leave_function();
+    return -1;
+  }
+
+  leave_function();
   return 0;
 }
 
