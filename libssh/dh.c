@@ -407,34 +407,54 @@ int dh_import_e(SSH_SESSION *session, STRING *e_string) {
   return 0;
 }
 
-void dh_build_k(SSH_SESSION *session){
+int dh_build_k(SSH_SESSION *session) {
 #ifdef HAVE_LIBCRYPTO
-    bignum_CTX ctx=bignum_ctx_new();
+  bignum_CTX ctx = bignum_ctx_new();
+  if (ctx == NULL) {
+    return -1;
+  }
 #endif
-    session->next_crypto->k=bignum_new();
-    /* the server and clients don't use the same numbers */
-#ifdef HAVE_LIBGCRYPT
-    if(session->client){
-        bignum_mod_exp(session->next_crypto->k,session->next_crypto->f,session->next_crypto->x,p);
-    } else {
-        bignum_mod_exp(session->next_crypto->k,session->next_crypto->e,session->next_crypto->y,p);
-    }
-#elif defined HAVE_LIBCRYPTO
-    if(session->client){
-        bignum_mod_exp(session->next_crypto->k,session->next_crypto->f,session->next_crypto->x,p,ctx);
-    } else {
-        bignum_mod_exp(session->next_crypto->k,session->next_crypto->e,session->next_crypto->y,p,ctx);
-    }
-#endif
-#ifdef DEBUG_CRYPTO
-    ssh_print_hexa("session server cookie",session->server_kex.cookie,16);
-    ssh_print_hexa("session client cookie",session->client_kex.cookie,16);
-    ssh_print_bignum("shared secret key",session->next_crypto->k);
-#endif
+
+  session->next_crypto->k = bignum_new();
+  if (session->next_crypto->k == NULL) {
 #ifdef HAVE_LIBCRYPTO
     bignum_ctx_free(ctx);
 #endif
+    return -1;
+  }
+
+    /* the server and clients don't use the same numbers */
+#ifdef HAVE_LIBGCRYPT
+  if(session->client) {
+    bignum_mod_exp(session->next_crypto->k, session->next_crypto->f,
+        session->next_crypto->x, p);
+  } else {
+    bignum_mod_exp(session->next_crypto->k, session->next_crypto->e,
+        session->next_crypto->y, p);
+  }
+#elif defined HAVE_LIBCRYPTO
+  if (session->client) {
+    bignum_mod_exp(session->next_crypto->k, session->next_crypto->f,
+        session->next_crypto->x, p, ctx);
+  } else {
+    bignum_mod_exp(session->next_crypto->k, session->next_crypto->e,
+        session->next_crypto->y, p, ctx);
+  }
+#endif
+
+#ifdef DEBUG_CRYPTO
+  ssh_print_hexa("Session server cookie", session->server_kex.cookie, 16);
+  ssh_print_hexa("Session client cookie", session->client_kex.cookie, 16);
+  ssh_print_bignum("Shared secret key", session->next_crypto->k);
+#endif
+
+#ifdef HAVE_LIBCRYPTO
+  bignum_ctx_free(ctx);
+#endif
+
+  return 0;
 }
+
 /*
 static void sha_add(STRING *str,SHACTX ctx){
     sha1_update(ctx,str,string_len(str)+4);

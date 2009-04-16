@@ -528,7 +528,7 @@ STRING *dh_get_f(SSH_SESSION *session);
 int dh_import_f(SSH_SESSION *session,STRING *f_string);
 int dh_import_e(SSH_SESSION *session, STRING *e_string);
 void dh_import_pubkey(SSH_SESSION *session,STRING *pubkey_string);
-void dh_build_k(SSH_SESSION *session);
+int dh_build_k(SSH_SESSION *session);
 int make_sessionid(SSH_SESSION *session);
 /* add data for the final cookie */
 int hashbufin_add_cookie(SSH_SESSION *session, unsigned char *cookie);

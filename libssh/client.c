@@ -266,7 +266,11 @@ static int dh_handshake(SSH_SESSION *session) {
         goto error;
       }
       session->dh_server_signature = signature;
-      dh_build_k(session);
+      if (dh_build_k(session) < 0) {
+        ssh_set_error(session, SSH_FATAL, "Cannot build k number");
+        rc = SSH_ERROR;
+        goto error;
+      }
 
       /* Send the MSG_NEWKEYS */
       if (buffer_add_u8(session->out_buffer, SSH2_MSG_NEWKEYS) < 0) {

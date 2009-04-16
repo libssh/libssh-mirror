@@ -300,7 +300,9 @@ static int dh_handshake_server(SSH_SESSION *session){
     pubkey=publickey_to_string(pub);
     publickey_free(pub);
     dh_import_pubkey(session,pubkey);
-    dh_build_k(session);
+    if (dh_build_k(session) < 0) {
+      return -1;
+    }
     if (make_sessionid(session) != SSH_OK) {
       return -1;
     }
