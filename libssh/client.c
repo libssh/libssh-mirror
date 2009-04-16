@@ -33,36 +33,51 @@
         if (opt->connect_status_function) \
             opt->connect_status_function(opt->connect_status_arg, status); \
     } while (0)
-/* simply gets a banner from a socket */
 
-char *ssh_get_banner(SSH_SESSION *session){
-    char buffer[128];
-    int i = 0;
-    char *ret;
-    enter_function();
-    while (i < 127) {
-        if(ssh_socket_read(session->socket, &buffer[i], 1)!= SSH_OK){
-            ssh_set_error(session,SSH_FATAL,"Remote host closed connection");
-            leave_function();
-            return NULL;
-        }
-        if (buffer[i] == '\r')
-            buffer[i] = 0;
-        if (buffer[i] == '\n') {
-            buffer[i] = 0;
-            ret = strdup(buffer);
-            if (ret == NULL) {
-              leave_function();
-              return NULL;
-            }
-            leave_function();
-            return ret;
-        }
-    i++;
+/**
+ * @internal
+ *
+ * @brief Get a banner from a socket.
+ *
+ * The caller has to free memroy.
+ *
+ * @param  session      The session to get the banner from.
+ *
+ * @return A newly allocated string with the banner or NULL on error.
+ */
+char *ssh_get_banner(SSH_SESSION *session) {
+  char buffer[128] = {0};
+  char *str = NULL;
+  int i;
+
+  enter_function();
+
+  for (i = 0; i < 127; i++) {
+    if (ssh_socket_read(session->socket, &buffer[i], 1) != SSH_OK) {
+      ssh_set_error(session, SSH_FATAL, "Remote host closed connection");
+      leave_function();
+      return NULL;
     }
-    ssh_set_error(session,SSH_FATAL,"Too large banner");
-    leave_function();
-    return NULL;
+
+    if (buffer[i] == '\r') {
+      buffer[i] = '\0';
+    }
+    if (buffer[i] == '\n') {
+      buffer[i] = '\0';
+      str = strdup(buffer);
+      if (str == NULL) {
+        leave_function();
+        return NULL;
+      }
+      leave_function();
+      return str;
+    }
+  }
+
+  ssh_set_error(session, SSH_FATAL, "Too large banner");
+
+  leave_function();
+  return NULL;
 }
 
 static int ssh_analyze_banner(SSH_SESSION *session, int *ssh1, int *ssh2){
