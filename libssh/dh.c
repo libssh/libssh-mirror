@@ -234,18 +234,26 @@ int dh_generate_x(SSH_SESSION *session) {
 }
 
 /* used by server */
-void dh_generate_y(SSH_SESSION *session){
-    session->next_crypto->y=bignum_new();
+int dh_generate_y(SSH_SESSION *session) {
+    session->next_crypto->y = bignum_new();
+  if (session->next_crypto->y == NULL) {
+    return -1;
+  }
+
 #ifdef HAVE_LIBGCRYPT
-    bignum_rand(session->next_crypto->y,128);
+  bignum_rand(session->next_crypto->y, 128);
 #elif defined HAVE_LIBCRYPTO
-    bignum_rand(session->next_crypto->y,128,0,-1);
+  bignum_rand(session->next_crypto->y, 128, 0, -1);
 #endif
-    /* not harder than this */
+
+  /* not harder than this */
 #ifdef DEBUG_CRYPTO
-	ssh_print_bignum("y",session->next_crypto->y);
+  ssh_print_bignum("y", session->next_crypto->y);
 #endif
+
+  return 0;
 }
+
 /* used by server */
 void dh_generate_e(SSH_SESSION *session){
 #ifdef HAVE_LIBCRYPTO

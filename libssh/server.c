@@ -274,7 +274,10 @@ static int dh_handshake_server(SSH_SESSION *session){
     }
     dh_import_e(session,e);
     free(e);
-    dh_generate_y(session);
+    if (dh_generate_y(session) < 0) {
+      ssh_set_error(session,SSH_FATAL,"Could not create y number");
+      return -1;
+    }
     dh_generate_f(session);
     f=dh_get_f(session);
     switch(session->hostkeys){
