@@ -278,7 +278,10 @@ static int dh_handshake_server(SSH_SESSION *session){
       ssh_set_error(session,SSH_FATAL,"Could not create y number");
       return -1;
     }
-    dh_generate_f(session);
+    if (dh_generate_f(session) < 0) {
+      ssh_set_error(session,SSH_FATAL,"Could not create f number");
+      return -1;
+    }
     f=dh_get_f(session);
     switch(session->hostkeys){
         case TYPE_DSS:

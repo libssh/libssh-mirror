@@ -285,22 +285,34 @@ int dh_generate_e(SSH_SESSION *session) {
   return 0;
 }
 
-void dh_generate_f(SSH_SESSION *session){
+int dh_generate_f(SSH_SESSION *session) {
 #ifdef HAVE_LIBCRYPTO
-    bignum_CTX ctx=bignum_ctx_new();
+  bignum_CTX ctx = bignum_ctx_new();
+  if (ctx == NULL) {
+    return -1;
+  }
 #endif
-    session->next_crypto->f=bignum_new();
+
+  session->next_crypto->f = bignum_new();
+  if (session->next_crypto->f == NULL) {
+    return -1;
+  }
+
 #ifdef HAVE_LIBGCRYPT
-    bignum_mod_exp(session->next_crypto->f,g,session->next_crypto->y,p);
+  bignum_mod_exp(session->next_crypto->f, g, session->next_crypto->y, p);
 #elif defined HAVE_LIBCRYPTO
-    bignum_mod_exp(session->next_crypto->f,g,session->next_crypto->y,p,ctx);
+  bignum_mod_exp(session->next_crypto->f, g, session->next_crypto->y, p, ctx);
 #endif
+
 #ifdef DEBUG_CRYPTO
-    ssh_print_bignum("f",session->next_crypto->f);
+  ssh_print_bignum("f", session->next_crypto->f);
 #endif
+
 #ifdef HAVE_LIBCRYPTO
-    bignum_ctx_free(ctx);
+  bignum_ctx_free(ctx);
 #endif
+
+  return 0;
 }
 
 STRING *make_bignum_string(bignum num){
