@@ -98,7 +98,7 @@ if (WITH_SSH1)
     auth1.c
     channels1.c
   )
-endif (WITH_SERVER)
+endif (WITH_SSH1)
 
 if (WITH_SERVER)
   set(libssh_SRCS
