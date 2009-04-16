@@ -474,7 +474,7 @@ STRING *agent_sign_data(struct ssh_session *session,
 /* socket.c */
 
 struct socket;
-void ssh_socket_init(void);
+int ssh_socket_init(void);
 struct socket *ssh_socket_new(SSH_SESSION *session);
 void ssh_socket_free(struct socket *s);
 void ssh_socket_set_fd(struct socket *s, socket_t fd);

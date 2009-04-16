@@ -453,7 +453,10 @@ int ssh_connect(SSH_SESSION *session) {
     leave_function();
     return SSH_ERROR;
   }
-  ssh_socket_init();
+  if (ssh_socket_init() < 0) {
+    leave_function();
+    return SSH_ERROR;
+  }
 
   if (options->fd == -1 && options->host == NULL) {
     ssh_set_error(session, SSH_FATAL, "Hostname required");

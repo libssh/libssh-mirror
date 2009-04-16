@@ -75,14 +75,16 @@ struct socket {
  * \internal
  * \brief inits the socket system (windows specific)
  */
-void ssh_socket_init(void) {
+int ssh_socket_init(void) {
 #ifdef _WIN32
   struct WSAData wsaData;
 
-  if (WSAStartup(MAKEWORD(2, 0), &wsaData)) {
-    /* FIXME print error */
+  /* Initiates use of the Winsock DLL by a process. */
+  if (WSAStartup(MAKEWORD(2, 0), &wsaData) != 0) {
+    return -1;
   }
 #endif
+  return 0;
 }
 /*
  * \internal
