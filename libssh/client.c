@@ -406,113 +406,152 @@ int ssh_service_request(SSH_SESSION *session, const char *service) {
 }
 
 /** \addtogroup ssh_session
- *  * @{ */
+ * @{
+ */
 
 /** \brief connect to the ssh server
  * \param session ssh session
- * \return 0 on success, SSH_ERROR on error
+ * \return SSH_OK on success, SSH_ERROR on error
  * \see ssh_new()
  * \see ssh_disconnect()
  */
-int ssh_connect(SSH_SESSION *session){
-  int fd;
-  int ssh1, ssh2;
-  SSH_OPTIONS *options=session->options;
-  if(!session->options){
-      ssh_set_error(session,SSH_FATAL,"Must set options before connect");
-      return SSH_ERROR;
+int ssh_connect(SSH_SESSION *session) {
+  SSH_OPTIONS *options = session->options;
+  int ssh1 = 0;
+  int ssh2 = 0;
+  int fd = -1;
+
+  if (session == NULL) {
+    ssh_set_error(session, SSH_FATAL, "Invalid session pointer");
+    return SSH_ERROR;
   }
+
+  if (session->options == NULL) {
+    ssh_set_error(session, SSH_FATAL, "No options set");
+    return SSH_ERROR;
+  }
+  options = session->options;
+
   enter_function();
-  session->alive=0;
-  session->client=1;
+
+  session->alive = 0;
+  session->client = 1;
+
   ssh_crypto_init();
   ssh_socket_init();
-  if(options->fd==-1 && !options->host){
-      ssh_set_error(session,SSH_FATAL,"Hostname required");
-      leave_function();
-      return SSH_ERROR;
+
+  if (options->fd == -1 && options->host == NULL) {
+    ssh_set_error(session, SSH_FATAL, "Hostname required");
+    leave_function();
+    return SSH_ERROR;
   }
-  if(options->fd != -1)
-      fd=options->fd;
-  else
-      fd=ssh_connect_host(session,options->host,options->bindaddr,options->port,
-          options->timeout,options->timeout_usec);
-  if(fd<0){
-	  leave_function();
-	  return -1;
+  if (options->fd != -1) {
+    fd = options->fd;
+  } else {
+    fd = ssh_connect_host(session, options->host, options->bindaddr,
+        options->port, options->timeout, options->timeout_usec);
   }
-  set_status(options,0.2);
-  ssh_socket_set_fd(session->socket,fd);
-  session->alive=1;
-  if(!(session->serverbanner=ssh_get_banner(session))){
-      ssh_socket_close(session->socket);
-      session->alive=0;
-      leave_function();
-      return -1;
+  if (fd < 0) {
+    leave_function();
+    return SSH_ERROR;
   }
-  set_status(options,0.4);
-  ssh_log(session, SSH_LOG_RARE, "banner: %s\n", session->serverbanner);
-  /* here we analyse the different protocols the server allows */
-  if(ssh_analyze_banner(session,&ssh1,&ssh2)){
-      ssh_socket_close(session->socket);
-      session->alive=0;
-      leave_function();
-      return -1;
+  set_status(options, 0.2);
+
+  ssh_socket_set_fd(session->socket, fd);
+
+  session->alive = 1;
+  session->serverbanner = ssh_get_banner(session);
+  if (session->serverbanner == NULL) {
+    ssh_socket_close(session->socket);
+    session->alive = 0;
+    leave_function();
+    return SSH_ERROR;
   }
-  /* here we decide which version of the protocol to use */
-  if(ssh2 && options->ssh2allowed)
-      session->version=2;
-  else if(ssh1 && options->ssh1allowed)
-      session->version=1;
-  else {
-      ssh_set_error(session,SSH_FATAL,
-        "no version of SSH protocol usable (banner: %s)",
+  set_status(options, 0.4);
+
+  ssh_log(session, SSH_LOG_RARE,
+      "SSH server banner: %s", session->serverbanner);
+
+  /* Here we analyse the different protocols the server allows. */
+  if (ssh_analyze_banner(session, &ssh1, &ssh2) < 0) {
+    ssh_socket_close(session->socket);
+    session->alive = 0;
+    leave_function();
+    return SSH_ERROR;
+  }
+
+  /* Here we decide which version of the protocol to use. */
+  if (ssh2 && options->ssh2allowed) {
+    session->version = 2;
+  } else if(ssh1 && options->ssh1allowed) {
+    session->version = 1;
+  } else {
+    ssh_set_error(session, SSH_FATAL,
+        "No version of SSH protocol usable (banner: %s)",
         session->serverbanner);
+    ssh_socket_close(session->socket);
+    session->alive = 0;
+    leave_function();
+    return SSH_ERROR;
+  }
+
+  if (ssh_send_banner(session, 0) < 0) {
+    ssh_set_error(session, SSH_FATAL, "Sending the banner failed");
+    ssh_socket_close(session->socket);
+    session->alive = 0;
+    leave_function();
+    return SSH_ERROR;
+  }
+  set_status(options, 0.5);
+
+  switch (session->version) {
+    case 2:
+      if (ssh_get_kex(session,0) < 0) {
         ssh_socket_close(session->socket);
-        session->alive=0;
+        session->alive = 0;
         leave_function();
-        return -1;
-  }
-  ssh_send_banner(session,0);
-  set_status(options,0.5);
-  switch(session->version){
-      case 2:
-        if(ssh_get_kex(session,0) < 0) {
-            ssh_socket_close(session->socket);
-            session->alive=0;
-            leave_function();
-            return -1;
-        }
-        set_status(options,0.6);
-        ssh_list_kex(session, &session->server_kex);
-        if(set_kex(session)){
-            ssh_socket_close(session->socket);
-            session->alive=0;
-            leave_function();
-            return -1;
-        }
-        ssh_send_kex(session,0);
-        set_status(options,0.8);
-        if(dh_handshake(session)){
-            ssh_socket_close(session->socket);
-            session->alive=0;
-            leave_function();
-            return -1;
-        }
-        set_status(options,1.0);
-        session->connected=1;
-        break;
+        return SSH_ERROR;
+      }
+      set_status(options,0.6);
+
+      ssh_list_kex(session, &session->server_kex);
+      if (set_kex(session) < 0) {
+        ssh_socket_close(session->socket);
+        session->alive = 0;
+        leave_function();
+        return SSH_ERROR;
+      }
+      if (ssh_send_kex(session, 0) < 0) {
+        ssh_socket_close(session->socket);
+        session->alive = 0;
+        leave_function();
+        return SSH_ERROR;
+      }
+      set_status(options,0.8);
+
+      if (dh_handshake(session) < 0) {
+        ssh_socket_close(session->socket);
+        session->alive = 0;
+        leave_function();
+        return SSH_ERROR;
+      }
+      set_status(options,1.0);
+
+      session->connected = 1;
+      break;
     case 1:
-        if(ssh_get_kex1(session)){
-            ssh_socket_close(session->socket);
-            session->alive=0;
-            leave_function();
-            return -1;
-        }
-        set_status(options,0.6);
-        session->connected=1;
-        break;
+      if (ssh_get_kex1(session) < 0) {
+        ssh_socket_close(session->socket);
+        session->alive = 0;
+        leave_function();
+        return SSH_ERROR;
+      }
+      set_status(options,0.6);
+
+      session->connected = 1;
+      break;
   }
+
   leave_function();
   return 0;
 }
