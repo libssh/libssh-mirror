@@ -449,11 +449,7 @@ int ssh_connect(SSH_SESSION *session) {
   session->alive = 0;
   session->client = 1;
 
-  if (ssh_crypto_init(session) < 0) {
-    ssh_set_error(session, SSH_FATAL, "Initializing crypto functions failed");
-    leave_function();
-    return SSH_ERROR;
-  }
+  ssh_crypto_init();
   ssh_socket_init();
 
   if (options->fd == -1 && options->host == NULL) {
@@ -632,7 +628,6 @@ void ssh_disconnect(SSH_SESSION *session) {
 
 error:
   leave_function();
-  ssh_crypto_finalize(session);
   ssh_cleanup(session);
 }
 
