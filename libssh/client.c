@@ -201,7 +201,9 @@ static int dh_handshake(SSH_SESSION *session) {
         goto error;
       }
 
-      dh_generate_x(session);
+      if (dh_generate_x(session) < 0) {
+        goto error;
+      }
       dh_generate_e(session);
 
       e = dh_get_e(session);

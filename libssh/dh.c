@@ -213,18 +213,26 @@ void ssh_print_hexa(const char *descr, const unsigned char *what, size_t len) {
     printf("%s: %s\n", descr, hexa);
 }
 
-void dh_generate_x(SSH_SESSION *session){
-    session->next_crypto->x=bignum_new();
+int dh_generate_x(SSH_SESSION *session) {
+  session->next_crypto->x = bignum_new();
+  if (session->next_crypto->x == NULL) {
+    return -1;
+  }
+
 #ifdef HAVE_LIBGCRYPT
-    bignum_rand(session->next_crypto->x,128);
+  bignum_rand(session->next_crypto->x, 128);
 #elif defined HAVE_LIBCRYPTO
-    bignum_rand(session->next_crypto->x,128,0,-1);
+  bignum_rand(session->next_crypto->x, 128, 0, -1);
 #endif
-	/* not harder than this */
+
+  /* not harder than this */
 #ifdef DEBUG_CRYPTO
-	ssh_print_bignum("x",session->next_crypto->x);
+  ssh_print_bignum("x", session->next_crypto->x);
 #endif
+
+  return 0;
 }
+
 /* used by server */
 void dh_generate_y(SSH_SESSION *session){
     session->next_crypto->y=bignum_new();

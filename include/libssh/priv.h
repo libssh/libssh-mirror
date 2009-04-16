@@ -516,7 +516,7 @@ void ssh_set_error(void *error, int code, const char *descr, ...) PRINTF_ATTRIBU
 /* DH key generation */
 void dh_generate_e(SSH_SESSION *session);
 void ssh_print_bignum(const char *which,bignum num);
-void dh_generate_x(SSH_SESSION *session);
+int dh_generate_x(SSH_SESSION *session);
 void dh_generate_y(SSH_SESSION *session);
 void dh_generate_f(SSH_SESSION *session);
 
