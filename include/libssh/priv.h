@@ -525,8 +525,8 @@ void ssh_crypto_finalize(void);
 
 STRING *dh_get_e(SSH_SESSION *session);
 STRING *dh_get_f(SSH_SESSION *session);
-void dh_import_f(SSH_SESSION *session,STRING *f_string);
-void dh_import_e(SSH_SESSION *session, STRING *e_string);
+int dh_import_f(SSH_SESSION *session,STRING *f_string);
+int dh_import_e(SSH_SESSION *session, STRING *e_string);
 void dh_import_pubkey(SSH_SESSION *session,STRING *pubkey_string);
 void dh_build_k(SSH_SESSION *session);
 int make_sessionid(SSH_SESSION *session);

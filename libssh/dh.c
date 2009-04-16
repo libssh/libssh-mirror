@@ -380,19 +380,31 @@ void dh_import_pubkey(SSH_SESSION *session, STRING *pubkey_string) {
   session->next_crypto->server_pubkey = pubkey_string;
 }
 
-void dh_import_f(SSH_SESSION *session,STRING *f_string){
-    session->next_crypto->f=make_string_bn(f_string);
+int dh_import_f(SSH_SESSION *session, STRING *f_string) {
+  session->next_crypto->f = make_string_bn(f_string);
+  if (session->next_crypto->f == NULL) {
+    return -1;
+  }
+
 #ifdef DEBUG_CRYPTO
-    ssh_print_bignum("f",session->next_crypto->f);
+  ssh_print_bignum("f",session->next_crypto->f);
 #endif
+
+  return 0;
 }
 
 /* used by the server implementation */
-void dh_import_e(SSH_SESSION *session, STRING *e_string){
-    session->next_crypto->e=make_string_bn(e_string);
+int dh_import_e(SSH_SESSION *session, STRING *e_string) {
+  session->next_crypto->e = make_string_bn(e_string);
+  if (session->next_crypto->e == NULL) {
+    return -1;
+  }
+
 #ifdef DEBUG_CRYPTO
     ssh_print_bignum("e",session->next_crypto->e);
 #endif
+
+  return 0;
 }
 
 void dh_build_k(SSH_SESSION *session){

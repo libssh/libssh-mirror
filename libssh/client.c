@@ -251,7 +251,11 @@ static int dh_handshake(SSH_SESSION *session) {
         rc = SSH_ERROR;
         goto error;
       }
-      dh_import_f(session, f);
+      if (dh_import_f(session, f) < 0) {
+        ssh_set_error(session, SSH_FATAL, "Cannot import f number");
+        rc = SSH_ERROR;
+        goto error;
+      }
       string_burn(f);
       string_free(f);
 

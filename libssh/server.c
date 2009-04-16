@@ -272,7 +272,10 @@ static int dh_handshake_server(SSH_SESSION *session){
         ssh_set_error(session,SSH_FATAL,"No e number in client request");
         return -1;
     }
-    dh_import_e(session,e);
+    if (dh_import_e(session, e) < 0) {
+      ssh_set_error(session,SSH_FATAL,"Cannot import e number");
+      return -1;
+    }
     free(e);
     if (dh_generate_y(session) < 0) {
       ssh_set_error(session,SSH_FATAL,"Could not create y number");
