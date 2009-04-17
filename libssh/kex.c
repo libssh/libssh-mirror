@@ -137,6 +137,7 @@ static char **tokenize(const char *chain){
 }
 
 /* same as tokenize(), but with spaces instead of ',' */
+/* TODO FIXME rewrite me! */
 char **space_tokenize(const char *chain){
     char **tokens;
     int n=1;
