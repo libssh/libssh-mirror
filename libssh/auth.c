@@ -566,6 +566,7 @@ int ssh_userauth_agent_pubkey(SSH_SESSION *session, const char *username,
   string_free(service);
   string_free(method);
   string_free(algo);
+  string_free(key);
   leave_function();
 
   return rc;
@@ -576,6 +577,7 @@ error:
   string_free(service);
   string_free(method);
   string_free(algo);
+  string_free(key);
 
   leave_function();
   return rc;
