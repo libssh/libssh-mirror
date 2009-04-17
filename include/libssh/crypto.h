@@ -27,18 +27,13 @@
  * the filename would cause problems on most systems).
  */
 
-#ifdef set_key
-#undef set_key
-#endif
 #ifdef cbc_encrypt
 #undef cbc_encrypt
 #endif
 #ifdef cbc_decrypt
 #undef cbc_decrypt
 #endif
-#ifdef des_set_key
-#undef des_set_key
-#endif
+
 #ifdef GCRYPT
 #include <gcrypt.h>
 #endif

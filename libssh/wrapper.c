@@ -33,11 +33,12 @@
  * are welcome.
  */
 
-#include "libssh/priv.h"
-#include "libssh/crypto.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
+#include "libssh/priv.h"
+#include "libssh/crypto.h"
 
 static int alloc_key(struct crypto_struct *cipher) {
     cipher->key = malloc(cipher->keylen);
@@ -383,7 +384,9 @@ static struct crypto_struct ssh_ciphertab[] = {
     .cbc_decrypt     = NULL
   }
 };
+
 #elif defined HAVE_LIBCRYPTO
+
 #include <openssl/sha.h>
 #include <openssl/md5.h>
 #include <openssl/dsa.h>
@@ -407,8 +410,15 @@ static struct crypto_struct ssh_ciphertab[] = {
 #define OLD_CRYPTO
 #endif
 
+#ifdef cbc_encrypt
+#undef cbc_encrypt
+#endif
+#ifdef cbc_decrypt
+#undef cbc_decrypt
+#endif
+
 SHACTX sha1_init(void) {
-  SHACTX ctx = malloc(sizeof(*c));
+  SHACTX c = malloc(sizeof(SHACTX));
   if (c == NULL) {
     return NULL;
   }
@@ -494,24 +504,25 @@ void hmac_final(HMACCTX ctx, unsigned char *hashmacbuf, unsigned int *len) {
 
 #ifdef HAS_BLOWFISH
 /* the wrapper functions for blowfish */
-static void blowfish_set_key(struct crypto_struct *cipher, void *key){
-    if(!cipher->key){
-        /* TODO FIXME */
-        if (alloc_key(cipher) < 0) {
-          return;
-        }
-        BF_set_key(cipher->key,16,key);
+static int blowfish_set_key(struct crypto_struct *cipher, void *key){
+  if (cipher->key == NULL) {
+    if (alloc_key(cipher) < 0) {
+      return -1;
     }
+    BF_set_key(cipher->key, 16, key);
+  }
+
+  return 0;
 }
 
 static void blowfish_encrypt(struct crypto_struct *cipher, void *in,
     void *out, unsigned long len, void *IV) {
-  BF_cbc_encrypt(in,out,len,cipher->key,IV,BF_ENCRYPT);
+  BF_cbc_encrypt(in, out, len, cipher->key, IV, BF_ENCRYPT);
 }
 
 static void blowfish_decrypt(struct crypto_struct *cipher, void *in,
     void *out, unsigned long len, void *IV) {
-    BF_cbc_encrypt(in,out,len,cipher->key,IV,BF_DECRYPT);
+  BF_cbc_encrypt(in, out, len, cipher->key, IV, BF_DECRYPT);
 }
 #endif /* HAS_BLOWFISH */
 
@@ -539,6 +550,8 @@ static int aes_set_decrypt_key(struct crypto_struct *cipher, void *key) {
       return -1;
     }
   }
+
+  return 0;
 }
 
 static void aes_encrypt(struct crypto_struct *cipher, void *in, void *out,
@@ -617,6 +630,7 @@ static void des3_1_decrypt(struct crypto_struct *cipher, void *in,
   ssh_print_hexa("Decrypt IV after", IV, 24);
 #endif
 }
+
 #endif /* HAS_DES */
 
 /* the table of supported ciphers */
@@ -633,7 +647,7 @@ static struct crypto_struct ssh_ciphertab[] = {
     .cbc_encrypt     = blowfish_encrypt,
     .cbc_decrypt     = blowfish_decrypt
   },
-#endif
+#endif /* HAS_BLOWFISH */
 #ifdef HAS_AES
   {
     .name            = "aes128-cbc",
@@ -668,7 +682,7 @@ static struct crypto_struct ssh_ciphertab[] = {
     .cbc_encrypt     = aes_encrypt,
     .cbc_decrypt     = aes_decrypt
   },
-#endif
+#endif /* HAS_AES */
 #ifdef HAS_DES
   {
     .name            = "3des-cbc",
@@ -692,7 +706,7 @@ static struct crypto_struct ssh_ciphertab[] = {
     .cbc_encrypt     = des3_1_encrypt,
     .cbc_decrypt     = des3_1_decrypt
   },
-#endif
+#endif /* HAS_DES */
   {
     .name            = NULL,
     .blocksize       = 0,
