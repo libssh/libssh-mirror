@@ -67,10 +67,17 @@ int packet_decrypt(SSH_SESSION *session, void *data,u32 len) {
   ssh_log(session,SSH_LOG_PACKET, "Decrypting %d bytes", len);
 
 #ifdef HAVE_LIBGCRYPT
-  crypto->set_decrypt_key(crypto,session->current_crypto->decryptkey,session->current_crypto->decryptIV);
+  if (crypto->set_decrypt_key(crypto, session->current_crypto->decryptkey,
+        session->current_crypto->decryptIV) < 0) {
+    SAFE_FREE(out);
+    return -1;
+  }
   crypto->cbc_decrypt(crypto,data,out,len);
 #elif defined HAVE_LIBCRYPTO
-  crypto->set_decrypt_key(crypto,session->current_crypto->decryptkey);
+  if (crypto->set_decrypt_key(crypto, session->current_crypto->decryptkey) < 0) {
+    SAFE_FREE(out);
+    return -1;
+  }
   crypto->cbc_decrypt(crypto,data,out,len,session->current_crypto->decryptIV);
 #endif
 
@@ -105,10 +112,16 @@ unsigned char *packet_encrypt(SSH_SESSION *session, void *data, u32 len) {
       session->send_seq,len);
 
 #ifdef HAVE_LIBGCRYPT
-  crypto->set_encrypt_key(crypto, session->current_crypto->encryptkey,
-      session->current_crypto->encryptIV);
+  if (crypto->set_encrypt_key(crypto, session->current_crypto->encryptkey,
+      session->current_crypto->encryptIV) < 0) {
+    SAFE_FREE(out);
+    return NULL;
+  }
 #elif defined HAVE_LIBCRYPTO
-  crypto->set_encrypt_key(crypto, session->current_crypto->encryptkey);
+  if (crypto->set_encrypt_key(crypto, session->current_crypto->encryptkey) < 0) {
+    SAFE_FREE(out);
+    return NULL;
+  }
 #endif
 
   if (session->version == 2) {

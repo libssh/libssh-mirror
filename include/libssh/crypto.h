@@ -54,15 +54,21 @@ struct crypto_struct {
 #endif
     unsigned int keysize; /* bytes of key used. != keylen */
 #ifdef HAVE_LIBGCRYPT
-    void (*set_encrypt_key)(struct crypto_struct *cipher, void *key, void *IV); /* sets the new key for immediate use */
-    void (*set_decrypt_key)(struct crypto_struct *cipher, void *key, void *IV);
-    void (*cbc_encrypt)(struct crypto_struct *cipher, void *in, void *out,unsigned long len);
-    void (*cbc_decrypt)(struct crypto_struct *cipher, void *in, void *out,unsigned long len);
+    /* sets the new key for immediate use */
+    int (*set_encrypt_key)(struct crypto_struct *cipher, void *key, void *IV);
+    int (*set_decrypt_key)(struct crypto_struct *cipher, void *key, void *IV);
+    void (*cbc_encrypt)(struct crypto_struct *cipher, void *in, void *out,
+        unsigned long len);
+    void (*cbc_decrypt)(struct crypto_struct *cipher, void *in, void *out,
+        unsigned long len);
 #elif defined HAVE_LIBCRYPTO
-    void (*set_encrypt_key)(struct crypto_struct *cipher, void *key); /* sets the new key for immediate use */
-    void (*set_decrypt_key)(struct crypto_struct *cipher, void *key);
-    void (*cbc_encrypt)(struct crypto_struct *cipher, void *in, void *out,unsigned long len,void *IV);
-    void (*cbc_decrypt)(struct crypto_struct *cipher, void *in, void *out,unsigned long len,void *IV);
+    /* sets the new key for immediate use */
+    int (*set_encrypt_key)(struct crypto_struct *cipher, void *key);
+    int (*set_decrypt_key)(struct crypto_struct *cipher, void *key);
+    void (*cbc_encrypt)(struct crypto_struct *cipher, void *in, void *out,
+        unsigned long len, void *IV);
+    void (*cbc_decrypt)(struct crypto_struct *cipher, void *in, void *out,
+        unsigned long len, void *IV);
 #endif
 };
 

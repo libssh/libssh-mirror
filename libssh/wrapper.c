@@ -39,7 +39,6 @@
 #include <stdio.h>
 #include <string.h>
 
-/* TODO FIXME */
 static int alloc_key(struct crypto_struct *cipher) {
     cipher->key = malloc(cipher->keylen);
     if (cipher->key == NULL) {
@@ -120,108 +119,188 @@ void hmac_final(HMACCTX c, unsigned char *hashmacbuf, unsigned int *len) {
 }
 
 /* the wrapper functions for blowfish */
-static void blowfish_set_key(struct crypto_struct *cipher, void *key, void *IV){
-    if(cipher->key == NULL) {
-      /* TODO FIXME */
-      if (alloc_key(cipher) < 0) {
-        return;
-      }
-      gcry_cipher_open(&cipher->key[0],GCRY_CIPHER_BLOWFISH,GCRY_CIPHER_MODE_CBC,0);
-      gcry_cipher_setkey(cipher->key[0],key,16);
-      gcry_cipher_setiv(cipher->key[0],IV,8);
+static int blowfish_set_key(struct crypto_struct *cipher, void *key, void *IV){
+  if (cipher->key == NULL) {
+    if (alloc_key(cipher) < 0) {
+      return -1;
     }
-}
 
-static void blowfish_encrypt(struct crypto_struct *cipher, void *in, void *out,unsigned long len){
-    gcry_cipher_encrypt(cipher->key[0],out,len,in,len);
-}
-
-static void blowfish_decrypt(struct crypto_struct *cipher, void *in, void *out, unsigned long len){
-    gcry_cipher_decrypt(cipher->key[0],out,len,in,len);
-}
-
-static void aes_set_key(struct crypto_struct *cipher, void *key, void *IV){
-    if(!cipher->key){
-        /* TODO FIXME */
-        if (alloc_key(cipher) < 0) {
-          return;
-        }
-        switch(cipher->keysize){
-          case 128:
-            gcry_cipher_open(&cipher->key[0],GCRY_CIPHER_AES128,GCRY_CIPHER_MODE_CBC,0);
-            break;
-          case 192:
-            gcry_cipher_open(&cipher->key[0],GCRY_CIPHER_AES192,GCRY_CIPHER_MODE_CBC,0);
-            break;
-          case 256:
-            gcry_cipher_open(&cipher->key[0],GCRY_CIPHER_AES256,GCRY_CIPHER_MODE_CBC,0);
-            break;
-        }
-        gcry_cipher_setkey(cipher->key[0],key,cipher->keysize/8);
-        gcry_cipher_setiv(cipher->key[0], IV, 16);
+    if (gcry_cipher_open(&cipher->key[0], GCRY_CIPHER_BLOWFISH,
+        GCRY_CIPHER_MODE_CBC, 0)) {
+      SAFE_FREE(cipher->key);
+      return -1;
     }
-}
-
-static void aes_encrypt(struct crypto_struct *cipher, void *in, void *out, unsigned long len){
-    gcry_cipher_encrypt(cipher->key[0],out,len,in,len);
-}
-
-static void aes_decrypt(struct crypto_struct *cipher, void *in, void *out,unsigned long len){
-    gcry_cipher_decrypt(cipher->key[0],out,len,in,len);
-}
-
-static void des3_set_key(struct crypto_struct *cipher, void *key, void *IV){
-    if(!cipher->key){
-        /* TODO FIXME */
-        if (alloc_key(cipher) < 0) {
-          return;
-        }
-        gcry_cipher_open(&cipher->key[0],GCRY_CIPHER_3DES,GCRY_CIPHER_MODE_CBC,0);
-        gcry_cipher_setkey(cipher->key[0],key,24);
-        gcry_cipher_setiv(cipher->key[0],IV,8);
+    if (gcry_cipher_setkey(cipher->key[0], key, 16)) {
+      SAFE_FREE(cipher->key);
+      return -1;
     }
-}
-
-static void des3_encrypt(struct crypto_struct *cipher, void *in, void *out, 
-        unsigned long len){
-    gcry_cipher_encrypt(cipher->key[0],out,len,in,len);
-}
-
-static void des3_decrypt(struct crypto_struct *cipher, void *in, void *out, 
-        unsigned long len){
-    gcry_cipher_decrypt(cipher->key[0],out,len,in,len);
-}
-
-static void des3_1_set_key(struct crypto_struct *cipher, void *key, void *IV){
-    if(!cipher->key){
-        /* TODO FIXME */
-        if (alloc_key(cipher) < 0) {
-          return;
-        }
-        gcry_cipher_open(&cipher->key[0],GCRY_CIPHER_DES,GCRY_CIPHER_MODE_CBC,0);
-        gcry_cipher_setkey(cipher->key[0],key,8);
-        gcry_cipher_setiv(cipher->key[0],IV,8);
-        gcry_cipher_open(&cipher->key[1],GCRY_CIPHER_DES,GCRY_CIPHER_MODE_CBC,0);
-        gcry_cipher_setkey(cipher->key[1],key+8,8);
-        gcry_cipher_setiv(cipher->key[1],IV+8,8);
-        gcry_cipher_open(&cipher->key[2],GCRY_CIPHER_DES,GCRY_CIPHER_MODE_CBC,0);
-        gcry_cipher_setkey(cipher->key[2],key+16,8);
-        gcry_cipher_setiv(cipher->key[2],IV+16,8);
+    if (gcry_cipher_setiv(cipher->key[0], IV, 8)) {
+      SAFE_FREE(cipher->key);
+      return -1;
     }
+  }
+
+  return 0;
 }
 
-static void des3_1_encrypt(struct crypto_struct *cipher, void *in, void *out, 
-        unsigned long len){
-    gcry_cipher_encrypt(cipher->key[0],out,len,in,len);
-    gcry_cipher_decrypt(cipher->key[1],in,len,out,len);
-    gcry_cipher_encrypt(cipher->key[2],out,len,in,len);
+static void blowfish_encrypt(struct crypto_struct *cipher, void *in,
+    void *out, unsigned long len) {
+  gcry_cipher_encrypt(cipher->key[0], out, len, in, len);
 }
 
-static void des3_1_decrypt(struct crypto_struct *cipher, void *in, void *out, 
-        unsigned long len){
-    gcry_cipher_decrypt(cipher->key[2],out,len,in,len);
-    gcry_cipher_encrypt(cipher->key[1],in,len,out,len);
-    gcry_cipher_decrypt(cipher->key[0],out,len,in,len);
+static void blowfish_decrypt(struct crypto_struct *cipher, void *in,
+    void *out, unsigned long len) {
+  gcry_cipher_decrypt(cipher->key[0], out, len, in, len);
+}
+
+static int aes_set_key(struct crypto_struct *cipher, void *key, void *IV) {
+  if (cipher->key == NULL) {
+    if (alloc_key(cipher) < 0) {
+      return -1;
+    }
+
+    switch (cipher->keysize) {
+      case 128:
+        if (gcry_cipher_open(&cipher->key[0], GCRY_CIPHER_AES128,
+              GCRY_CIPHER_MODE_CBC, 0)) {
+          SAFE_FREE(cipher->key);
+          return -1;
+        }
+        break;
+      case 192:
+        if (gcry_cipher_open(&cipher->key[0], GCRY_CIPHER_AES192,
+              GCRY_CIPHER_MODE_CBC, 0)) {
+          SAFE_FREE(cipher->key);
+          return -1;
+        }
+        break;
+      case 256:
+        if (gcry_cipher_open(&cipher->key[0], GCRY_CIPHER_AES256,
+              GCRY_CIPHER_MODE_CBC, 0)) {
+          SAFE_FREE(cipher->key);
+          return -1;
+        }
+        break;
+    }
+    if (gcry_cipher_setkey(cipher->key[0], key, cipher->keysize / 8)) {
+      SAFE_FREE(cipher->key);
+      return -1;
+    }
+    if (gcry_cipher_setiv(cipher->key[0], IV, 16)) {
+      SAFE_FREE(cipher->key);
+      return -1;
+    }
+  }
+
+  return 0;
+}
+
+static void aes_encrypt(struct crypto_struct *cipher, void *in, void *out,
+    unsigned long len) {
+  gcry_cipher_encrypt(cipher->key[0], out, len, in, len);
+}
+
+static void aes_decrypt(struct crypto_struct *cipher, void *in, void *out,
+    unsigned long len) {
+  gcry_cipher_decrypt(cipher->key[0], out, len, in, len);
+}
+
+static int des3_set_key(struct crypto_struct *cipher, void *key, void *IV) {
+  if (cipher->key == NULL) {
+    if (alloc_key(cipher) < 0) {
+      return -1;
+    }
+    if (gcry_cipher_open(&cipher->key[0], GCRY_CIPHER_3DES,
+          GCRY_CIPHER_MODE_CBC, 0)) {
+      SAFE_FREE(cipher->key);
+      return -1;
+    }
+    if (gcry_cipher_setkey(cipher->key[0], key, 24)) {
+      SAFE_FREE(cipher->key);
+      return -1;
+    }
+    if (gcry_cipher_setiv(cipher->key[0], IV, 8)) {
+      SAFE_FREE(cipher->key);
+      return -1;
+    }
+  }
+
+  return 0;
+}
+
+static void des3_encrypt(struct crypto_struct *cipher, void *in,
+    void *out, unsigned long len) {
+  gcry_cipher_encrypt(cipher->key[0], out, len, in, len);
+}
+
+static void des3_decrypt(struct crypto_struct *cipher, void *in,
+    void *out, unsigned long len) {
+  gcry_cipher_decrypt(cipher->key[0], out, len, in, len);
+}
+
+static int des3_1_set_key(struct crypto_struct *cipher, void *key, void *IV) {
+  if (cipher->key == NULL) {
+    if (alloc_key(cipher) < 0) {
+      return -1;
+    }
+    if (gcry_cipher_open(&cipher->key[0], GCRY_CIPHER_DES,
+          GCRY_CIPHER_MODE_CBC, 0)) {
+      SAFE_FREE(cipher->key);
+      return -1;
+    }
+    if (gcry_cipher_setkey(cipher->key[0], key, 8)) {
+      SAFE_FREE(cipher->key);
+      return -1;
+    }
+    if (gcry_cipher_setiv(cipher->key[0], IV, 8)) {
+      SAFE_FREE(cipher->key);
+      return -1;
+    }
+
+    if (gcry_cipher_open(&cipher->key[1], GCRY_CIPHER_DES,
+          GCRY_CIPHER_MODE_CBC, 0)) {
+      SAFE_FREE(cipher->key);
+      return -1;
+    }
+    if (gcry_cipher_setkey(cipher->key[1], key + 8, 8)) {
+      SAFE_FREE(cipher->key);
+      return -1;
+    }
+    if (gcry_cipher_setiv(cipher->key[1], IV + 8, 8)) {
+      SAFE_FREE(cipher->key);
+      return -1;
+    }
+
+    if (gcry_cipher_open(&cipher->key[2], GCRY_CIPHER_DES,
+          GCRY_CIPHER_MODE_CBC, 0)) {
+      SAFE_FREE(cipher->key);
+      return -1;
+    }
+    if (gcry_cipher_setkey(cipher->key[2], key + 16, 8)) {
+      SAFE_FREE(cipher->key);
+      return -1;
+    }
+    if (gcry_cipher_setiv(cipher->key[2], IV + 16, 8)) {
+      SAFE_FREE(cipher->key);
+      return -1;
+    }
+  }
+
+  return 0;
+}
+
+static void des3_1_encrypt(struct crypto_struct *cipher, void *in,
+    void *out, unsigned long len) {
+  gcry_cipher_encrypt(cipher->key[0], out, len, in, len);
+  gcry_cipher_decrypt(cipher->key[1], in, len, out, len);
+  gcry_cipher_encrypt(cipher->key[2], out, len, in, len);
+}
+
+static void des3_1_decrypt(struct crypto_struct *cipher, void *in,
+    void *out, unsigned long len) {
+  gcry_cipher_decrypt(cipher->key[2], out, len, in, len);
+  gcry_cipher_encrypt(cipher->key[1], in, len, out, len);
+  gcry_cipher_decrypt(cipher->key[0], out, len, in, len);
 }
 
 /* the table of supported ciphers */
@@ -357,100 +436,123 @@ static void blowfish_set_key(struct crypto_struct *cipher, void *key){
     }
 }
 
-static void blowfish_encrypt(struct crypto_struct *cipher, void *in, void *out,unsigned long len,void *IV){
-    BF_cbc_encrypt(in,out,len,cipher->key,IV,BF_ENCRYPT);
+static void blowfish_encrypt(struct crypto_struct *cipher, void *in,
+    void *out, unsigned long len, void *IV) {
+  BF_cbc_encrypt(in,out,len,cipher->key,IV,BF_ENCRYPT);
 }
 
-static void blowfish_decrypt(struct crypto_struct *cipher, void *in, void *out,unsigned long len,void *IV){
+static void blowfish_decrypt(struct crypto_struct *cipher, void *in,
+    void *out, unsigned long len, void *IV) {
     BF_cbc_encrypt(in,out,len,cipher->key,IV,BF_DECRYPT);
 }
-#endif
+#endif /* HAS_BLOWFISH */
+
 #ifdef HAS_AES
-static void aes_set_encrypt_key(struct crypto_struct *cipher, void *key){
-    if(!cipher->key){
-        /* TODO FIXME */
-        if (alloc_key(cipher) < 0) {
-          return;
-        }
-        AES_set_encrypt_key(key,cipher->keysize,cipher->key);
+static int aes_set_encrypt_key(struct crypto_struct *cipher, void *key) {
+  if (cipher->key == NULL) {
+    if (alloc_key(cipher) < 0) {
+      return -1;
     }
-}
-static void aes_set_decrypt_key(struct crypto_struct *cipher, void *key){
-    if(!cipher->key){
-        /* TODO FIXME */
-        if (alloc_key(cipher) < 0) {
-          return;
-        }
-        AES_set_decrypt_key(key,cipher->keysize,cipher->key);
+    if (AES_set_encrypt_key(key,cipher->keysize,cipher->key) < 0) {
+      SAFE_FREE(cipher->key);
+      return -1;
     }
+  }
+
+  return 0;
 }
-static void aes_encrypt(struct crypto_struct *cipher, void *in, void *out, unsigned long len, void *IV){
-    AES_cbc_encrypt(in,out,len,cipher->key,IV,AES_ENCRYPT);
+static int aes_set_decrypt_key(struct crypto_struct *cipher, void *key) {
+  if (cipher->key == NULL) {
+    if (alloc_key(cipher) < 0) {
+      return -1;
+    }
+    if (AES_set_decrypt_key(key,cipher->keysize,cipher->key) < 0) {
+      SAFE_FREE(cipher->key);
+      return -1;
+    }
+  }
 }
-static void aes_decrypt(struct crypto_struct *cipher, void *in, void *out, unsigned long len, void *IV){
-    AES_cbc_encrypt(in,out,len,cipher->key,IV,AES_DECRYPT);
+
+static void aes_encrypt(struct crypto_struct *cipher, void *in, void *out,
+    unsigned long len, void *IV) {
+  AES_cbc_encrypt(in, out, len, cipher->key, IV, AES_ENCRYPT);
 }
-#endif
+
+static void aes_decrypt(struct crypto_struct *cipher, void *in, void *out,
+    unsigned long len, void *IV) {
+  AES_cbc_encrypt(in, out, len, cipher->key, IV, AES_DECRYPT);
+}
+#endif /* HAS_AES */
+
 #ifdef HAS_DES
-static void des3_set_key(struct crypto_struct *cipher, void *key){
-    if(!cipher->key){
-        /* TODO FIXME */
-        if (alloc_key(cipher) < 0) {
-          return;
-        }
-        DES_set_odd_parity(key);
-        DES_set_odd_parity(key+8);
-        DES_set_odd_parity(key+16);
-        DES_set_key_unchecked(key,cipher->key);
-        DES_set_key_unchecked(key+8,cipher->key+sizeof(DES_key_schedule));
-        DES_set_key_unchecked(key+16,cipher->key+2*sizeof(DES_key_schedule));
+static int des3_set_key(struct crypto_struct *cipher, void *key) {
+  if (cipher->key == NULL) {
+    if (alloc_key(cipher) < 0) {
+      return -1;
     }
+
+    DES_set_odd_parity(key);
+    DES_set_odd_parity(key + 8);
+    DES_set_odd_parity(key + 16);
+    DES_set_key_unchecked(key, cipher->key);
+    DES_set_key_unchecked(key + 8, cipher->key + sizeof(DES_key_schedule));
+    DES_set_key_unchecked(key + 16, cipher->key + 2 * sizeof(DES_key_schedule));
+  }
+
+  return 0;
 }
 
-static void des3_encrypt(struct crypto_struct *cipher, void *in, void *out, 
-        unsigned long len, void *IV){
-    DES_ede3_cbc_encrypt(in,out,len,cipher->key,cipher->key+sizeof(DES_key_schedule),cipher->key+2*sizeof(DES_key_schedule),IV,1);
+static void des3_encrypt(struct crypto_struct *cipher, void *in,
+    void *out, unsigned long len, void *IV) {
+  DES_ede3_cbc_encrypt(in, out, len, cipher->key,
+      cipher->key + sizeof(DES_key_schedule),
+      cipher->key + 2 * sizeof(DES_key_schedule),
+      IV, 1);
 }
 
-static void des3_decrypt(struct crypto_struct *cipher, void *in, void *out, 
-        unsigned long len, void *IV){
-    DES_ede3_cbc_encrypt(in,out,len,cipher->key,cipher->key+sizeof(DES_key_schedule),cipher->key+2*sizeof(DES_key_schedule),IV,0);
+static void des3_decrypt(struct crypto_struct *cipher, void *in,
+    void *out, unsigned long len, void *IV) {
+  DES_ede3_cbc_encrypt(in, out, len, cipher->key,
+      cipher->key + sizeof(DES_key_schedule),
+      cipher->key + 2 * sizeof(DES_key_schedule),
+      IV, 0);
 }
 
-static void des3_1_encrypt(struct crypto_struct *cipher, void *in, void *out, 
-        unsigned long len, void *IV){
+static void des3_1_encrypt(struct crypto_struct *cipher, void *in,
+    void *out, unsigned long len, void *IV) {
 #ifdef DEBUG_CRYPTO
-    ssh_print_hexa("encrypt IV before",IV,24);
+  ssh_print_hexa("Encrypt IV before", IV, 24);
 #endif
-    DES_ncbc_encrypt(in,out,len, cipher->key, IV, 1);
-    DES_ncbc_encrypt(out,in,len, cipher->key + sizeof(DES_key_schedule),
-            IV+8,0);
-    DES_ncbc_encrypt(in,out,len, cipher->key + 2*sizeof(DES_key_schedule),
-            IV+16,1);
+  DES_ncbc_encrypt(in, out, len, cipher->key, IV, 1);
+  DES_ncbc_encrypt(out, in, len, cipher->key + sizeof(DES_key_schedule),
+      IV + 8, 0);
+  DES_ncbc_encrypt(in, out, len, cipher->key + 2 * sizeof(DES_key_schedule),
+      IV + 16, 1);
 #ifdef DEBUG_CRYPTO
-    ssh_print_hexa("encrypt IV after",IV,24);
+  ssh_print_hexa("Encrypt IV after", IV, 24);
 #endif
 }
 
-static void des3_1_decrypt(struct crypto_struct *cipher, void *in, void *out, 
-        unsigned long len, void *IV){
+static void des3_1_decrypt(struct crypto_struct *cipher, void *in,
+    void *out, unsigned long len, void *IV) {
 #ifdef DEBUG_CRYPTO
-    ssh_print_hexa("decrypt IV before",IV,24);
+  ssh_print_hexa("Decrypt IV before", IV, 24);
 #endif
-    DES_ncbc_encrypt(in,out,len, cipher->key + 2*sizeof(DES_key_schedule),
-            IV, 0);
-    DES_ncbc_encrypt(out,in,len, cipher->key + sizeof(DES_key_schedule),
-            IV+8,1);
-    DES_ncbc_encrypt(in,out,len, cipher->key,
-            IV+16,0);
+
+  DES_ncbc_encrypt(in, out, len, cipher->key + 2 * sizeof(DES_key_schedule),
+      IV, 0);
+  DES_ncbc_encrypt(out, in, len, cipher->key + sizeof(DES_key_schedule),
+      IV + 8, 1);
+  DES_ncbc_encrypt(in, out, len, cipher->key, IV + 16, 0);
+
 #ifdef DEBUG_CRYPTO
-    ssh_print_hexa("decrypt IV after",IV,24);
+  ssh_print_hexa("Decrypt IV after", IV, 24);
 #endif
 }
-#endif
+#endif /* HAS_DES */
 
 /* the table of supported ciphers */
-static struct crypto_struct ssh_ciphertab[]={
+static struct crypto_struct ssh_ciphertab[] = {
 #ifdef HAS_BLOWFISH
     { "blowfish-cbc", 8 ,sizeof (BF_KEY),NULL,128,blowfish_set_key,
         blowfish_set_key,blowfish_encrypt, blowfish_decrypt},
