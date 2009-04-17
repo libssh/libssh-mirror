@@ -75,6 +75,7 @@ PUBLIC_KEY *publickey_make_dss(SSH_SESSION *session, BUFFER *buffer) {
 
   key = malloc(sizeof(PUBLIC_KEY));
   if (key == NULL) {
+    buffer_free(buffer);
     return NULL;
   }
 
@@ -148,7 +149,7 @@ error:
   string_free(pubkey);
   publickey_free(key);
 
-  return key;
+  return NULL;
 }
 
 PUBLIC_KEY *publickey_make_rsa(SSH_SESSION *session, BUFFER *buffer,
@@ -159,6 +160,7 @@ PUBLIC_KEY *publickey_make_rsa(SSH_SESSION *session, BUFFER *buffer,
 
   key = malloc(sizeof(PUBLIC_KEY));
   if (key == NULL) {
+    buffer_free(buffer);
     return NULL;
   }
 
@@ -171,6 +173,7 @@ PUBLIC_KEY *publickey_make_rsa(SSH_SESSION *session, BUFFER *buffer,
   key->type_c = type;
   e = buffer_get_ssh_string(buffer);
   n = buffer_get_ssh_string(buffer);
+
   buffer_free(buffer); /* we don't need it anymore */
 
   if(e == NULL || n == NULL) {

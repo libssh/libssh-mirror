@@ -72,7 +72,7 @@ static unsigned char p_value[] = {
 static unsigned long g_int = 2 ;	/* G is defined as 2 by the ssh2 standards */
 static bignum g;
 static bignum p;
-static int ssh_crypto_inited=0;
+static unsigned int ssh_crypto_initialized_ref_count = 0;
 
 int ssh_get_random(void *where, int len, int strong){
 
@@ -101,7 +101,7 @@ int ssh_get_random(void *where, int len, int strong){
  * FIXME: Make the function thread safe by adding a semaphore or mutex.
  */
 int ssh_crypto_init(void) {
-  if (ssh_crypto_inited == 0) {
+  if (ssh_crypto_initialized_ref_count == 0) {
 #ifdef HAVE_LIBGCRYPT
     gcry_check_version(NULL);
 
@@ -134,19 +134,23 @@ int ssh_crypto_init(void) {
     bignum_bin2bn(p_value, P_LEN, p);
     OpenSSL_add_all_algorithms();
 #endif
-    ssh_crypto_inited++;
   }
+
+  ssh_crypto_initialized_ref_count++;
 
   return 0;
 }
 
 void ssh_crypto_finalize(void) {
-  if(ssh_crypto_inited) {
+  if (ssh_crypto_initialized_ref_count) {
+    ssh_crypto_initialized_ref_count--;
+  }
+
+  if (ssh_crypto_initialized_ref_count == 0) {
     bignum_free(g);
     g = NULL;
     bignum_free(p);
     p = NULL;
-    ssh_crypto_inited = 0;
   }
 }
 
