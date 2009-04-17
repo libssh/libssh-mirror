@@ -304,16 +304,84 @@ static void des3_1_decrypt(struct crypto_struct *cipher, void *in,
 }
 
 /* the table of supported ciphers */
-static struct crypto_struct ssh_ciphertab[]={
-    { "blowfish-cbc", 8 ,sizeof (gcry_cipher_hd_t),NULL,128,blowfish_set_key,blowfish_set_key,blowfish_encrypt, blowfish_decrypt},
-    { "aes128-cbc",16,sizeof(gcry_cipher_hd_t),NULL,128,aes_set_key,aes_set_key,aes_encrypt,aes_decrypt},
-    { "aes192-cbc",16,sizeof(gcry_cipher_hd_t),NULL,192,aes_set_key,aes_set_key,aes_encrypt,aes_decrypt},
-    { "aes256-cbc",16,sizeof(gcry_cipher_hd_t),NULL,256,aes_set_key,aes_set_key,aes_encrypt,aes_decrypt},
-    { "3des-cbc",8,sizeof(gcry_cipher_hd_t),NULL,192,des3_set_key, 
-        des3_set_key,des3_encrypt, des3_decrypt},
-    { "3des-cbc-ssh1",8,sizeof(gcry_cipher_hd_t)*3,NULL,192,des3_1_set_key, 
-        des3_1_set_key,des3_1_encrypt, des3_1_decrypt},
-    { NULL,0,0,NULL,0,NULL,NULL,NULL,NULL }
+static struct crypto_struct ssh_ciphertab[] = {
+  {
+    .name            = "blowfish-cbc",
+    .blocksize       = 8,
+    .keylen          = sizeof(gcry_cipher_hd_t),
+    .key             = NULL,
+    .keysize         = 128,
+    .set_encrypt_key = blowfish_set_key,
+    .set_decrypt_key = blowfish_set_key,
+    .cbc_encrypt     = blowfish_encrypt,
+    .cbc_decrypt     = blowfish_decrypt
+  },
+  {
+    .name            = "aes128-cbc",
+    .blocksize       = 16,
+    .keylen          = sizeof(gcry_cipher_hd_t),
+    .key             = NULL,
+    .keysize         = 128,
+    .set_encrypt_key = aes_set_key,
+    .set_decrypt_key = aes_set_key,
+    .cbc_encrypt     = aes_encrypt,
+    .cbc_decrypt     = aes_decrypt
+  },
+  {
+    .name            = "aes192-cbc",
+    .blocksize       = 16,
+    .keylen          = sizeof(gcry_cipher_hd_t),
+    .key             = NULL,
+    .keysize         = 192,
+    .set_encrypt_key = aes_set_key,
+    .set_decrypt_key = aes_set_key,
+    .cbc_encrypt     = aes_encrypt,
+    .cbc_decrypt     = aes_decrypt
+  },
+  {
+    .name            = "aes256-cbc",
+    .blocksize       = 16,
+    .keylen          = sizeof(gcry_cipher_hd_t),
+    .key             = NULL,
+    .keysize         = 256,
+    .set_encrypt_key = aes_set_key,
+    .set_decrypt_key = aes_set_key,
+    .cbc_encrypt     = aes_encrypt,
+    .cbc_decrypt     = aes_decrypt
+  },
+  {
+    .name            = "3des-cbc",
+    .blocksize       = 8,
+    .keylen          = sizeof(gcry_cipher_hd_t),
+    .key             = NULL,
+    .keysize         = 192,
+    .set_encrypt_key = des3_set_key,
+    .set_decrypt_key = des3_set_key,
+    .cbc_encrypt     = des3_encrypt,
+    .cbc_decrypt     = des3_decrypt
+  },
+  {
+    .name            = "3des-cbc-ssh1",
+    .blocksize       = 8,
+    .keylen          = sizeof(gcry_cipher_hd_t) * 3,
+    .key             = NULL,
+    .keysize         = 192,
+    .set_encrypt_key = des3_1_set_key,
+    .set_decrypt_key = des3_1_set_key,
+    .cbc_encrypt     = des3_1_encrypt,
+    .cbc_decrypt     = des3_1_decrypt
+  },
+  {
+    .name            = NULL,
+    .blocksize       = 0,
+    .keylen          = 0,
+    .key             = NULL,
+    .keysize         = 0,
+    .set_encrypt_key = NULL,
+    .set_decrypt_key = NULL,
+    .cbc_encrypt     = NULL,
+    .cbc_decrypt     = NULL
+  }
 };
 #elif defined HAVE_LIBCRYPTO
 #include <openssl/sha.h>
@@ -554,24 +622,88 @@ static void des3_1_decrypt(struct crypto_struct *cipher, void *in,
 /* the table of supported ciphers */
 static struct crypto_struct ssh_ciphertab[] = {
 #ifdef HAS_BLOWFISH
-    { "blowfish-cbc", 8 ,sizeof (BF_KEY),NULL,128,blowfish_set_key,
-        blowfish_set_key,blowfish_encrypt, blowfish_decrypt},
+  {
+    .name            = "blowfish-cbc",
+    .blocksize       = 8,
+    .keylen          = sizeof (BF_KEY),
+    .key             = NULL,
+    .keysize         = 128,
+    .set_encrypt_key = blowfish_set_key,
+    .set_decrypt_key = blowfish_set_key,
+    .cbc_encrypt     = blowfish_encrypt,
+    .cbc_decrypt     = blowfish_decrypt
+  },
 #endif
 #ifdef HAS_AES
-    { "aes128-cbc",16,sizeof(AES_KEY),NULL,128,aes_set_encrypt_key,
-        aes_set_decrypt_key,aes_encrypt,aes_decrypt},
-    { "aes192-cbc",16,sizeof(AES_KEY),NULL,192,aes_set_encrypt_key,
-        aes_set_decrypt_key,aes_encrypt,aes_decrypt},
-    { "aes256-cbc",16,sizeof(AES_KEY),NULL,256,aes_set_encrypt_key,
-        aes_set_decrypt_key,aes_encrypt,aes_decrypt},
+  {
+    .name            = "aes128-cbc",
+    .blocksize       = 16,
+    .keylen          = sizeof(AES_KEY),
+    .key             = NULL,
+    .keysize         = 128,
+    .set_encrypt_key = aes_set_encrypt_key,
+    .set_decrypt_key = aes_set_decrypt_key,
+    .cbc_encrypt     = aes_encrypt,
+    .cbc_decrypt     = aes_decrypt
+  },
+  {
+    .name            = "aes192-cbc",
+    .blocksize       = 16,
+    .keylen          = sizeof(AES_KEY),
+    .key             = NULL,
+    .keysize         = 192,
+    .set_encrypt_key = aes_set_encrypt_key,
+    .set_decrypt_key = aes_set_decrypt_key,
+    .cbc_encrypt     = aes_encrypt,
+    .cbc_decrypt     = aes_decrypt
+  },
+  {
+    .name            = "aes256-cbc",
+    .blocksize       = 16,
+    .keylen          = sizeof(AES_KEY),
+    .key             = NULL,
+    .keysize         = 256,
+    .set_encrypt_key = aes_set_encrypt_key,
+    .set_decrypt_key = aes_set_decrypt_key,
+    .cbc_encrypt     = aes_encrypt,
+    .cbc_decrypt     = aes_decrypt
+  },
 #endif
 #ifdef HAS_DES
-    { "3des-cbc",8,sizeof(DES_key_schedule)*3,NULL,192,des3_set_key, 
-        des3_set_key,des3_encrypt, des3_decrypt},
-    { "3des-cbc-ssh1",8,sizeof(DES_key_schedule)*3,NULL,192,des3_set_key, 
-        des3_set_key,des3_1_encrypt, des3_1_decrypt},
+  {
+    .name            = "3des-cbc",
+    .blocksize       = 8,
+    .keylen          = sizeof(DES_key_schedule) * 3,
+    .key             = NULL,
+    .keysize         = 192,
+    .set_encrypt_key = des3_set_key,
+    .set_decrypt_key = des3_set_key,
+    .cbc_encrypt     = des3_encrypt,
+    .cbc_decrypt     = des3_decrypt
+  },
+  {
+    .name            = "3des-cbc-ssh1",
+    .blocksize       = 8,
+    .keylen          = sizeof(DES_key_schedule) * 3,
+    .key             = NULL,
+    .keysize         = 192,
+    .set_encrypt_key = des3_set_key,
+    .set_decrypt_key = des3_set_key,
+    .cbc_encrypt     = des3_1_encrypt,
+    .cbc_decrypt     = des3_1_decrypt
+  },
 #endif
-     { NULL,0,0,NULL,0,NULL,NULL,NULL,NULL}
+  {
+    .name            = NULL,
+    .blocksize       = 0,
+    .keylen          = 0,
+    .key             = NULL,
+    .keysize         = 0,
+    .set_encrypt_key = NULL,
+    .set_decrypt_key = NULL,
+    .cbc_encrypt     = NULL,
+    .cbc_decrypt     = NULL
+  }
 };
 #endif /* OPENSSL_CRYPTO */
 
