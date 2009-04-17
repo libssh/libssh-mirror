@@ -708,17 +708,18 @@ static struct crypto_struct ssh_ciphertab[] = {
 #endif /* OPENSSL_CRYPTO */
 
 /* it allocates a new cipher structure based on its offset into the global table */
-static struct crypto_struct *cipher_new(int offset){
-    struct crypto_struct *cipher;
+static struct crypto_struct *cipher_new(int offset) {
+  struct crypto_struct *cipher = NULL;
 
-    cipher = malloc(sizeof(struct crypto_struct));
-    if (cipher == NULL) {
-      return NULL;
-    }
+  cipher = malloc(sizeof(struct crypto_struct));
+  if (cipher == NULL) {
+    return NULL;
+  }
 
-    /* note the memcpy will copy the pointers : so, you shouldn't free them */
-    memcpy(cipher,&ssh_ciphertab[offset],sizeof(*cipher));
-    return cipher;
+  /* note the memcpy will copy the pointers : so, you shouldn't free them */
+  memcpy(cipher, &ssh_ciphertab[offset], sizeof(*cipher));
+
+  return cipher;
 }
 
 static void cipher_free(struct crypto_struct *cipher) {
@@ -780,77 +781,94 @@ void crypto_free(CRYPTO *crypto){
 }
 
 static int crypt_set_algorithms2(SSH_SESSION *session){
-    /* we must scan the kex entries to find crypto algorithms and set their appropriate structure */
-    int i=0;
-    /* out */
-    char *wanted=session->client_kex.methods[SSH_CRYPT_C_S];
-    while(ssh_ciphertab[i].name && strcmp(wanted,ssh_ciphertab[i].name))
-        i++;
-    if(!ssh_ciphertab[i].name){
-        ssh_set_error(session,SSH_FATAL,"Crypt_set_algorithms2 : no crypto algorithm function found for %s",wanted);
-        return SSH_ERROR;
-    }
-    ssh_log(session,SSH_LOG_PACKET,"Set output algorithm %s",wanted);
+  const char *wanted;
+  int i = 0;
 
-    session->next_crypto->out_cipher = cipher_new(i);
-    if (session->next_crypto->out_cipher == NULL) {
-      ssh_set_error(session, SSH_FATAL, "No space left");
-      return SSH_ERROR;
-    }
+  /* we must scan the kex entries to find crypto algorithms and set their appropriate structure */
+  /* out */
+  wanted = session->client_kex.methods[SSH_CRYPT_C_S];
+  while (ssh_ciphertab[i].name && strcmp(wanted, ssh_ciphertab[i].name)) {
+    i++;
+  }
 
-    i=0;
-    /* in */
-    wanted=session->client_kex.methods[SSH_CRYPT_S_C];
-    while(ssh_ciphertab[i].name && strcmp(wanted,ssh_ciphertab[i].name))
-        i++;
-    if(!ssh_ciphertab[i].name){
-        ssh_set_error(session,SSH_FATAL,"Crypt_set_algorithms : no crypto algorithm function found for %s",wanted);
-        return SSH_ERROR;
-    }
-    ssh_log(session,SSH_LOG_PACKET,"Set input algorithm %s",wanted);
+  if (ssh_ciphertab[i].name == NULL) {
+    ssh_set_error(session, SSH_FATAL,
+        "Crypt_set_algorithms2: no crypto algorithm function found for %s",
+        wanted);
+    return SSH_ERROR;
+  }
+  ssh_log(session, SSH_LOG_PACKET, "Set output algorithm to %s", wanted);
 
-    session->next_crypto->in_cipher = cipher_new(i);
-    if (session->next_crypto->in_cipher == NULL) {
-      ssh_set_error(session, SSH_FATAL, "No space left");
-      return SSH_ERROR;
-    }
+  session->next_crypto->out_cipher = cipher_new(i);
+  if (session->next_crypto->out_cipher == NULL) {
+    ssh_set_error(session, SSH_FATAL, "No space left");
+    return SSH_ERROR;
+  }
+  i = 0;
 
-    /* compression */
-    if(strstr(session->client_kex.methods[SSH_COMP_C_S],"zlib"))
-        session->next_crypto->do_compress_out=1;
-    if(strstr(session->client_kex.methods[SSH_COMP_S_C],"zlib"))
-        session->next_crypto->do_compress_in=1;
-    return SSH_OK;
+  /* in */
+  wanted = session->client_kex.methods[SSH_CRYPT_S_C];
+  while (ssh_ciphertab[i].name && strcmp(wanted, ssh_ciphertab[i].name)) {
+    i++;
+  }
+
+  if (ssh_ciphertab[i].name == NULL) {
+    ssh_set_error(session, SSH_FATAL,
+        "Crypt_set_algorithms: no crypto algorithm function found for %s",
+        wanted);
+    return SSH_ERROR;
+  }
+  ssh_log(session, SSH_LOG_PACKET, "Set input algorithm to %s", wanted);
+
+  session->next_crypto->in_cipher = cipher_new(i);
+  if (session->next_crypto->in_cipher == NULL) {
+    ssh_set_error(session, SSH_FATAL, "Not enough space");
+    return SSH_ERROR;
+  }
+
+  /* compression */
+  if (strstr(session->client_kex.methods[SSH_COMP_C_S], "zlib")) {
+    session->next_crypto->do_compress_out = 1;
+  }
+  if (strstr(session->client_kex.methods[SSH_COMP_S_C], "zlib")) {
+    session->next_crypto->do_compress_in = 1;
+  }
+
+  return SSH_OK;
 }
 
-static int crypt_set_algorithms1(SSH_SESSION *session){
-    int i=0;
-    /* right now, we force 3des-cbc to be taken */
-    while(ssh_ciphertab[i].name && strcmp(ssh_ciphertab[i].name,"3des-cbc-ssh1"))
-        ++i;
-    if(!ssh_ciphertab[i].name){
-        ssh_set_error(session,SSH_FATAL,"cipher 3des-cbc-ssh1 not found !");
-        return -1;
-    }
+static int crypt_set_algorithms1(SSH_SESSION *session) {
+  int i = 0;
 
-    session->next_crypto->out_cipher = cipher_new(i);
-    if (session->next_crypto->out_cipher == NULL) {
-      ssh_set_error(session, SSH_FATAL, "No space left");
-      return SSH_ERROR;
-    }
+  /* right now, we force 3des-cbc to be taken */
+  while (ssh_ciphertab[i].name && strcmp(ssh_ciphertab[i].name,
+        "3des-cbc-ssh1")) {
+    i++;
+  }
 
-    session->next_crypto->in_cipher = cipher_new(i);
-    if (session->next_crypto->in_cipher == NULL) {
-      ssh_set_error(session, SSH_FATAL, "No space left");
-      return SSH_ERROR;
-    }
+  if (ssh_ciphertab[i].name == NULL) {
+    ssh_set_error(session, SSH_FATAL, "cipher 3des-cbc-ssh1 not found!");
+    return -1;
+  }
 
-    return SSH_OK;
+  session->next_crypto->out_cipher = cipher_new(i);
+  if (session->next_crypto->out_cipher == NULL) {
+    ssh_set_error(session, SSH_FATAL, "No space left");
+    return SSH_ERROR;
+  }
+
+  session->next_crypto->in_cipher = cipher_new(i);
+  if (session->next_crypto->in_cipher == NULL) {
+    ssh_set_error(session, SSH_FATAL, "No space left");
+    return SSH_ERROR;
+  }
+
+  return SSH_OK;
 }
 
-int crypt_set_algorithms(SSH_SESSION *session){
-    return session->version==1?crypt_set_algorithms1(session):
-        crypt_set_algorithms2(session);
+int crypt_set_algorithms(SSH_SESSION *session) {
+  return (session->version == 1) ? crypt_set_algorithms1(session) :
+    crypt_set_algorithms2(session);
 }
 
 // TODO Obviously too much cut and paste here
