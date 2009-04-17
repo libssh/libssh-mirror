@@ -831,6 +831,7 @@ int ssh_get_pubkey_hash(SSH_SESSION *session, unsigned char **hash) {
 
   ctx = md5_init();
   if (ctx == NULL) {
+    SAFE_FREE(h);
     return -1;
   }
 
