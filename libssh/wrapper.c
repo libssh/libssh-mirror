@@ -58,16 +58,19 @@ SHACTX sha1_init(void) {
 
   return ctx;
 }
+
 void sha1_update(SHACTX c, const void *data, unsigned long len){
-    gcry_md_write(c,data,len);
+  gcry_md_write(c, data, len);
 }
-void sha1_final(unsigned char *md,SHACTX c){
-    gcry_md_final(c);
-    memcpy(md, gcry_md_read(c, 0), SHA_DIGEST_LEN);
-    gcry_md_close(c);
+
+void sha1_final(unsigned char *md, SHACTX c) {
+  gcry_md_final(c);
+  memcpy(md, gcry_md_read(c, 0), SHA_DIGEST_LEN);
+  gcry_md_close(c);
 }
-void sha1(unsigned char *digest,int len,unsigned char *hash){
-    gcry_md_hash_buffer(GCRY_MD_SHA1,hash,digest,len);
+
+void sha1(unsigned char *digest, int len, unsigned char *hash){
+  gcry_md_hash_buffer(GCRY_MD_SHA1, hash, digest, len);
 }
 
 MD5CTX md5_init(){
@@ -259,15 +262,18 @@ SHACTX sha1_init(void) {
 
   return c;
 }
-void sha1_update(SHACTX c, const void *data, unsigned long len){
-    SHA1_Update(c,data,len);
+
+void sha1_update(SHACTX c, const void *data, unsigned long len) {
+  SHA1_Update(c,data,len);
 }
-void sha1_final(unsigned char *md,SHACTX c){
-    SHA1_Final(md,c);
-    free(c);
+
+void sha1_final(unsigned char *md, SHACTX c) {
+  SHA1_Final(md, c);
+  SAFE_FREE(c);
 }
-void sha1(unsigned char *digest,int len,unsigned char *hash){
-    SHA1(digest,len,hash);
+
+void sha1(unsigned char *digest, int len, unsigned char *hash) {
+  SHA1(digest, len, hash);
 }
 
 MD5CTX md5_init(){
