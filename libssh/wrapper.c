@@ -52,10 +52,11 @@ static int alloc_key(struct crypto_struct *cipher) {
 #ifdef HAVE_LIBGCRYPT
 #include <gcrypt.h>
 
-SHACTX sha1_init(){
-    SHACTX ret;
-    gcry_md_open(&ret,GCRY_MD_SHA1,0);
-    return ret;
+SHACTX sha1_init(void) {
+  SHACTX ctx = NULL;
+  gcry_md_open(&ctx, GCRY_MD_SHA1, 0);
+
+  return ctx;
 }
 void sha1_update(SHACTX c, const void *data, unsigned long len){
     gcry_md_write(c,data,len);
@@ -249,13 +250,14 @@ static struct crypto_struct ssh_ciphertab[]={
 #define OLD_CRYPTO
 #endif
 
-SHACTX sha1_init(){
-    SHACTX c = malloc(sizeof(*c));
-    if (c == NULL) {
-      return NULL;
-    }
-    SHA1_Init(c);
-    return c;
+SHACTX sha1_init(void) {
+  SHACTX ctx = malloc(sizeof(*c));
+  if (c == NULL) {
+    return NULL;
+  }
+  SHA1_Init(c);
+
+  return c;
 }
 void sha1_update(SHACTX c, const void *data, unsigned long len){
     SHA1_Update(c,data,len);
