@@ -38,6 +38,10 @@
 #include <string.h>
 
 #include "libssh/priv.h"
+
+#ifdef HAVE_LIBGCRYPT
+#include <gcrypt.h>
+
 #include "libssh/crypto.h"
 
 static int alloc_key(struct crypto_struct *cipher) {
@@ -48,9 +52,6 @@ static int alloc_key(struct crypto_struct *cipher) {
 
     return 0;
 }
-
-#ifdef HAVE_LIBGCRYPT
-#include <gcrypt.h>
 
 SHACTX sha1_init(void) {
   SHACTX ctx = NULL;
@@ -410,15 +411,19 @@ static struct crypto_struct ssh_ciphertab[] = {
 #define OLD_CRYPTO
 #endif
 
-#ifdef cbc_encrypt
-#undef cbc_encrypt
-#endif
-#ifdef cbc_decrypt
-#undef cbc_decrypt
-#endif
+#include "libssh/crypto.h"
+
+static int alloc_key(struct crypto_struct *cipher) {
+    cipher->key = malloc(cipher->keylen);
+    if (cipher->key == NULL) {
+      return -1;
+    }
+
+    return 0;
+}
 
 SHACTX sha1_init(void) {
-  SHACTX c = malloc(sizeof(SHACTX));
+  SHACTX c = malloc(sizeof(*c));
   if (c == NULL) {
     return NULL;
   }
@@ -441,10 +446,11 @@ void sha1(unsigned char *digest, int len, unsigned char *hash) {
 }
 
 MD5CTX md5_init(void) {
-  MD5CTX c = malloc(sizeof(MD5CTX));
+  MD5CTX c = malloc(sizeof(*c));
   if (c == NULL) {
     return NULL;
   }
+
   MD5_Init(c);
 
   return c;
@@ -762,7 +768,7 @@ static void cipher_free(struct crypto_struct *cipher) {
 CRYPTO *crypto_new(void) {
   CRYPTO *crypto;
 
-  crypto = malloc(sizeof (CRYPTO));
+  crypto = malloc(sizeof(CRYPTO));
   if (crypto == NULL) {
     return NULL;
   }
