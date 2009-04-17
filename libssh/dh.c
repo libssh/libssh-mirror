@@ -849,23 +849,23 @@ STRING *ssh_get_pubkey(SSH_SESSION *session){
 }
 
 static int match(const char *group, const char *object){
-  const char *p;
+  const char *a;
   const char *z;
 
-  p = z = group;
+  a = z = group;
   do {
-    p = strchr(z, ',');
-    if (p == NULL) {
+    a = strchr(z, ',');
+    if (a == NULL) {
       if (strcmp(z, object) == 0) {
         return 1;
       }
       return 0;
     } else {
-      if (strncmp(z, object, p - z) == 0) {
+      if (strncmp(z, object, a - z) == 0) {
         return 1;
       }
     }
-    z = p + 1;
+    z = a + 1;
   } while(1);
 
   /* not reached */
