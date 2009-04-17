@@ -248,7 +248,6 @@ void publickey_free(PUBLIC_KEY *key) {
 }
 
 PUBLIC_KEY *publickey_from_string(SSH_SESSION *session, STRING *pubkey_s) {
-  PUBLIC_KEY *key = NULL;
   BUFFER *tmpbuf = NULL;
   STRING *type_s = NULL;
   char *type = NULL;
@@ -277,21 +276,15 @@ PUBLIC_KEY *publickey_from_string(SSH_SESSION *session, STRING *pubkey_s) {
 
   if(strcmp(type, "ssh-dss") == 0) {
     SAFE_FREE(type);
-    key = publickey_make_dss(session, tmpbuf);
-    buffer_free(tmpbuf);
-    return key;
+    return publickey_make_dss(session, tmpbuf);
   }
   if(strcmp(type,"ssh-rsa") == 0) {
     SAFE_FREE(type);
-    key = publickey_make_rsa(session, tmpbuf,"ssh-rsa");
-    buffer_free(tmpbuf);
-    return key;
+    return publickey_make_rsa(session, tmpbuf,"ssh-rsa");
   }
   if (strcmp(type,"ssh-rsa1") == 0) {
     SAFE_FREE(type);
-    key = publickey_make_rsa(session, tmpbuf,"ssh-rsa1");
-    buffer_free(tmpbuf);
-    return key;
+    return publickey_make_rsa(session, tmpbuf,"ssh-rsa1");
   }
 
   ssh_set_error(session, SSH_FATAL, "Unknown public key protocol %s", type);
