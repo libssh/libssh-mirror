@@ -90,29 +90,33 @@ void md5_final(unsigned char *md, MD5CTX c) {
   gcry_md_close(c);
 }
 
-HMACCTX hmac_init(const void *key, int len,int type){
-    HMACCTX c;
-    switch(type){
-        case HMAC_SHA1:
-            gcry_md_open(&c,GCRY_MD_SHA1, GCRY_MD_FLAG_HMAC);
-            break;
-        case HMAC_MD5:
-            gcry_md_open(&c,GCRY_MD_MD5, GCRY_MD_FLAG_HMAC);
-            break;
-        default:
-            c=NULL;
-        }
-    gcry_md_setkey(c,key,len);
-    return c;
-}
-void hmac_update(HMACCTX c, const void *data, unsigned long len){
-    gcry_md_write(c,data,len);
+HMACCTX hmac_init(const void *key, int len, int type) {
+  HMACCTX c = NULL;
+
+  switch(type) {
+    case HMAC_SHA1:
+      gcry_md_open(&c, GCRY_MD_SHA1, GCRY_MD_FLAG_HMAC);
+      break;
+    case HMAC_MD5:
+      gcry_md_open(&c, GCRY_MD_MD5, GCRY_MD_FLAG_HMAC);
+      break;
+    default:
+      c = NULL;
+  }
+
+  gcry_md_setkey(c, key, len);
+
+  return c;
 }
 
-void hmac_final(HMACCTX c,unsigned char *hashmacbuf,unsigned int *len){
-    *len = gcry_md_get_algo_dlen(gcry_md_get_algo(c));
-    memcpy(hashmacbuf, gcry_md_read(c, 0), *len);
-    gcry_md_close(c);
+void hmac_update(HMACCTX c, const void *data, unsigned long len) {
+  gcry_md_write(c, data, len);
+}
+
+void hmac_final(HMACCTX c, unsigned char *hashmacbuf, unsigned int *len) {
+  *len = gcry_md_get_algo_dlen(gcry_md_get_algo(c));
+  memcpy(hashmacbuf, gcry_md_read(c, 0), *len);
+  gcry_md_close(c);
 }
 
 /* the wrapper functions for blowfish */
@@ -298,40 +302,47 @@ void md5_final(unsigned char *md, MD5CTX c) {
   SAFE_FREE(c);
 }
 
-HMACCTX hmac_init(const void *key, int len,int type){
-    HMACCTX ctx;
+HMACCTX hmac_init(const void *key, int len, int type) {
+  HMACCTX ctx = NULL;
 
-    ctx = malloc(sizeof(*ctx));
-    if (ctx == NULL) {
-      return NULL;
-    }
+  ctx = malloc(sizeof(*ctx));
+  if (ctx == NULL) {
+    return NULL;
+  }
+
 #ifndef OLD_CRYPTO
-    HMAC_CTX_init(ctx); // openssl 0.9.7 requires it.
+  HMAC_CTX_init(ctx); // openssl 0.9.7 requires it.
 #endif
-    switch(type){
-        case HMAC_SHA1:
-            HMAC_Init(ctx,key,len,EVP_sha1());
-            break;
-        case HMAC_MD5:
-            HMAC_Init(ctx,key,len,EVP_md5());
-            break;
-        default:
-            free(ctx);
-            ctx=NULL;
-        }
-    return ctx;
+
+  switch(type) {
+    case HMAC_SHA1:
+      HMAC_Init(ctx, key, len, EVP_sha1());
+      break;
+    case HMAC_MD5:
+      HMAC_Init(ctx, key, len, EVP_md5());
+      break;
+    default:
+      SAFE_FREE(ctx);
+      ctx = NULL;
+  }
+
+  return ctx;
 }
-void hmac_update(HMACCTX ctx,const void *data, unsigned long len){
-    HMAC_Update(ctx,data,len);
+
+void hmac_update(HMACCTX ctx, const void *data, unsigned long len) {
+  HMAC_Update(ctx, data, len);
 }
-void hmac_final(HMACCTX ctx,unsigned char *hashmacbuf,unsigned int *len){
-   HMAC_Final(ctx,hashmacbuf,len);
+
+void hmac_final(HMACCTX ctx, unsigned char *hashmacbuf, unsigned int *len) {
+  HMAC_Final(ctx,hashmacbuf,len);
+
 #ifndef OLD_CRYPTO
-   HMAC_CTX_cleanup(ctx);
+  HMAC_CTX_cleanup(ctx);
 #else
-   HMAC_cleanup(ctx);
+  HMAC_cleanup(ctx);
 #endif
-   free(ctx);
+
+  SAFE_FREE(ctx);
 }
 
 #ifdef HAS_BLOWFISH
