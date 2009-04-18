@@ -626,7 +626,6 @@ static int rsa_public_to_string(RSA *key, BUFFER *buffer) {
     goto error;
   }
   string_fill(e, (char *) tmp, size);
-  gcry_sexp_release(sexp);
 
 #elif defined HAVE_LIBCRYPTO
   e = make_bignum_string(key->e);
@@ -676,16 +675,20 @@ STRING *publickey_to_string(PUBLIC_KEY *key) {
   if (type == NULL) {
     goto error;
   }
-  buffer_add_ssh_string(buf, type);
+
+  if (buffer_add_ssh_string(buf, type) < 0) {
+    goto error;
+  }
+
   switch(key->type){
     case TYPE_DSS:
-      if (dsa_public_to_string(key->dsa_pub,buf) < 0) {
+      if (dsa_public_to_string(key->dsa_pub, buf) < 0) {
         goto error;
       }
       break;
     case TYPE_RSA:
     case TYPE_RSA1:
-      if (rsa_public_to_string(key->rsa_pub,buf) < 0) {
+      if (rsa_public_to_string(key->rsa_pub, buf) < 0) {
         goto error;
       }
       break;
@@ -1257,7 +1260,7 @@ STRING *ssh_do_sign(SSH_SESSION *session, BUFFER *sigbuf,
 STRING *ssh_encrypt_rsa1(SSH_SESSION *session, STRING *data, PUBLIC_KEY *key) {
   STRING *str = NULL;
   size_t len = string_len(data);
-  int size = 0;
+  size_t size = 0;
 #ifdef HAVE_LIBGCRYPT
   const char *tmp = NULL;
   gcry_sexp_t ret_sexp;
