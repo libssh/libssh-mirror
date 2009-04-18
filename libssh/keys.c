@@ -849,141 +849,207 @@ static STRING *signature_to_string(SIGNATURE *sign) {
 }
 
 /* TODO : split this function in two so it becomes smaller */
-SIGNATURE *signature_from_string(SSH_SESSION *session, STRING *signature,PUBLIC_KEY *pubkey,int needed_type){
+SIGNATURE *signature_from_string(SSH_SESSION *session, STRING *signature,
+    PUBLIC_KEY *pubkey, int needed_type) {
+  SIGNATURE *sign = NULL;
+  BUFFER *tmpbuf = NULL;
+  STRING *rs = NULL;
+  STRING *type_s = NULL;
+  STRING *e = NULL;
+  char *type = NULL;
+  int len;
+  int rsalen;
 #ifdef HAVE_LIBGCRYPT
-    gcry_sexp_t sig;
+  gcry_sexp_t sig;
 #elif defined HAVE_LIBCRYPTO
-    DSA_SIG *sig;
-    STRING *r,*s;
+  DSA_SIG *sig = NULL;
+  STRING *r = NULL;
+  STRING *s = NULL;
 #endif
-    SIGNATURE *sign;
-    BUFFER *tmpbuf;
-    STRING *rs;
-    STRING *type_s,*e;
-    int len,rsalen;
-    char *type;
 
-    sign = malloc(sizeof(SIGNATURE));
-    if (sign == NULL) {
-      ssh_set_error(session, SSH_FATAL, "No space left");
-      return NULL;
-    }
+  sign = malloc(sizeof(SIGNATURE));
+  if (sign == NULL) {
+    ssh_set_error(session, SSH_FATAL, "Not enough space");
+    return NULL;
+  }
 
-    tmpbuf = buffer_new();
-    if (tmpbuf == NULL) {
-      ssh_set_error(session, SSH_FATAL, "No space left");
-      signature_free(sign);
-      return NULL;
-    }
+  tmpbuf = buffer_new();
+  if (tmpbuf == NULL) {
+    ssh_set_error(session, SSH_FATAL, "Not enough space");
+    signature_free(sign);
+    return NULL;
+  }
 
-    buffer_add_data(tmpbuf,signature->string,string_len(signature));
-    type_s=buffer_get_ssh_string(tmpbuf);
-    if(!type_s){
-        ssh_set_error(session,SSH_FATAL,"Invalid signature packet");
+  if (buffer_add_data(tmpbuf, signature->string, string_len(signature)) < 0) {
+    signature_free(sign);
+    buffer_free(tmpbuf);
+    return NULL;
+  }
+
+  type_s = buffer_get_ssh_string(tmpbuf);
+  if (type_s == NULL) {
+    ssh_set_error(session, SSH_FATAL, "Invalid signature packet");
+    signature_free(sign);
+    buffer_free(tmpbuf);
+    return NULL;
+  }
+
+  type = string_to_char(type_s);
+  free(type_s);
+  if (type == NULL) {
+    signature_free(sign);
+    buffer_free(tmpbuf);
+    return NULL;
+  }
+
+  switch(needed_type) {
+    case TYPE_DSS:
+      if (strcmp(type, "ssh-dss") != 0) {
+        ssh_set_error(session, SSH_FATAL, "Invalid signature type: %s", type);
         signature_free(sign);
         buffer_free(tmpbuf);
+        SAFE_FREE(type);
         return NULL;
-    }
-    type=string_to_char(type_s);
-    free(type_s);
-    switch(needed_type){
-        case TYPE_DSS:
-            if(strcmp(type,"ssh-dss")){
-                ssh_set_error(session,SSH_FATAL,"Invalid signature type : %s",type);
-                signature_free(sign);
-                buffer_free(tmpbuf);
-                free(type);
-                return NULL;
-            }
-            break;
-        case TYPE_RSA:
-            if(strcmp(type,"ssh-rsa")){
-                ssh_set_error(session,SSH_FATAL,"Invalid signature type : %s",type);
-                signature_free(sign);
-                buffer_free(tmpbuf);
-                free(type);
-                return NULL;
-            }
-            break;
-        default:
-            ssh_set_error(session,SSH_FATAL,"Invalid signature type : %s",type);
-            free(type);
-            signature_free(sign);
-            buffer_free(tmpbuf);
-            return NULL;
-    }
-    free(type);
-    switch(needed_type){
-        case TYPE_DSS:
-            rs=buffer_get_ssh_string(tmpbuf);
-            buffer_free(tmpbuf);
-            if(!rs || string_len(rs)!=40){ /* 40 is the dual signature blob len. */
-                if(rs)
-                    free(rs);
-                signature_free(sign);
-                return NULL;
-            }
-            /* we make use of strings (because we have all-made functions to convert them to bignums (ou pas ;)*/
+      }
+      break;
+    case TYPE_RSA:
+      if (strcmp(type, "ssh-rsa")) {
+        ssh_set_error(session, SSH_FATAL, "Invalid signature type: %s", type);
+        signature_free(sign);
+        buffer_free(tmpbuf);
+        SAFE_FREE(type);
+        return NULL;
+      }
+      break;
+    default:
+      ssh_set_error(session, SSH_FATAL, "Invalid signature type: %s", type);
+      signature_free(sign);
+      buffer_free(tmpbuf);
+      SAFE_FREE(type);
+      return NULL;
+  }
+  SAFE_FREE(type);
+
+  switch(needed_type) {
+    case TYPE_DSS:
+      rs = buffer_get_ssh_string(tmpbuf);
+      buffer_free(tmpbuf);
+
+      /* 40 is the dual signature blob len. */
+      if (rs == NULL || string_len(rs) != 40) {
+        string_free(rs);
+        signature_free(sign);
+        return NULL;
+      }
+
+      /* we make use of strings (because we have all-made functions to convert
+       * them to bignums (ou pas ;) */
 #ifdef HAVE_LIBGCRYPT
-            gcry_sexp_build(&sig,NULL,"(sig-val(dsa(r %b)(s %b)))",20,rs->string,20,rs->string+20);
+      if (gcry_sexp_build(&sig, NULL, "(sig-val(dsa(r %b)(s %b)))",
+            20 ,rs->string, 20, rs->string + 20)) {
+        string_free(rs);
+        signature_free(sign);
+        return NULL;
+      }
 #elif defined HAVE_LIBCRYPTO
-            r=string_new(20);
-            s=string_new(20);
-            string_fill(r,rs->string,20);
-            string_fill(s,rs->string+20,20);
-            sig=DSA_SIG_new();
-            sig->r=make_string_bn(r); /* is that really portable ? Openssh's hack isn't better */
-            sig->s=make_string_bn(s);
-            free(r);
-            free(s);
+      r = string_new(20);
+      s = string_new(20);
+      if (r == NULL || s == NULL) {
+        string_free(r);
+        string_free(s);
+        string_free(rs);
+        signature_free(sign);
+        return NULL;
+      }
+
+      string_fill(r, rs->string, 20);
+      string_fill(s, rs->string + 20, 20);
+
+      sig = DSA_SIG_new();
+      if (sig == NULL) {
+        string_free(r);
+        string_free(s);
+        string_free(rs);
+        signature_free(sign);
+        return NULL;
+      }
+      sig->r = make_string_bn(r); /* is that really portable ? Openssh's hack isn't better */
+      sig->s = make_string_bn(s);
+      string_free(r);
+      string_free(s);
+
+      if (sig->r == NULL || sig->s == NULL) {
+        string_free(rs);
+        DSA_SIG_free(sig);
+        signature_free(sign);
+        return NULL;
+      }
 #endif
+
 #ifdef DEBUG_CRYPTO
-            ssh_print_hexa("r",rs->string,20);
-            ssh_print_hexa("s",rs->string+20,20);
+      ssh_print_hexa("r", rs->string, 20);
+      ssh_print_hexa("s", rs->string + 20, 20);
 #endif
-            free(rs);
-            sign->type=TYPE_DSS;
-            sign->dsa_sign=sig;
-            return sign;
-        case TYPE_RSA:
-            e=buffer_get_ssh_string(tmpbuf);
-            buffer_free(tmpbuf);
-            if(e == NULL) {
-                signature_free(sign);
-                return NULL;
-            }
-            len=string_len(e);
+      string_free(rs);
+
+      sign->type = TYPE_DSS;
+      sign->dsa_sign = sig;
+
+      return sign;
+    case TYPE_RSA:
+      e = buffer_get_ssh_string(tmpbuf);
+      buffer_free(tmpbuf);
+      if (e == NULL) {
+        signature_free(sign);
+        return NULL;
+      }
+      len = string_len(e);
 #ifdef HAVE_LIBGCRYPT
-            rsalen=(gcry_pk_get_nbits(pubkey->rsa_pub)+7)/8;
+      rsalen = (gcry_pk_get_nbits(pubkey->rsa_pub) + 7) / 8;
 #elif defined HAVE_LIBCRYPTO
-            rsalen=RSA_size(pubkey->rsa_pub);
+      rsalen = RSA_size(pubkey->rsa_pub);
 #endif
-            if(len>rsalen){
-                free(e);
-                signature_free(sign);
-                ssh_set_error(session,SSH_FATAL,"signature too big ! %d instead of %d",len,rsalen);
-                return NULL;
-            }
-            if(len<rsalen)
-                ssh_log(session,SSH_LOG_RARE,"RSA signature len %d < %d",len,rsalen);
-            sign->type=TYPE_RSA;
+      if (len > rsalen) {
+        string_free(e);
+        signature_free(sign);
+        ssh_set_error(session, SSH_FATAL, "Signature too big! %d instead of %d",
+            len, rsalen);
+        return NULL;
+      }
+
+      if (len < rsalen) {
+        ssh_log(session, SSH_LOG_RARE, "RSA signature len %d < %d",
+            len, rsalen);
+      }
+      sign->type = TYPE_RSA;
 #ifdef HAVE_LIBGCRYPT
-            gcry_sexp_build(&sig,NULL,"(sig-val(rsa(s %b)))",string_len(e),e->string);
-            sign->rsa_sign=sig;
+      if (gcry_sexp_build(&sig, NULL, "(sig-val(rsa(s %b)))",
+          string_len(e), e->string)) {
+        signature_free(sign);
+        string_free(e);
+        return NULL;
+      }
+
+      sign->rsa_sign = sig;
 #elif defined HAVE_LIBCRYPTO
-            sign->rsa_sign=e;
+      sign->rsa_sign = e;
 #endif
+
 #ifdef DEBUG_CRYPTO
-            ssh_log(session, SSH_LOG_FUNCTIONS, "len e: %d", len);
-            ssh_print_hexa("rsa signature", e->string, len);
+      ssh_log(session, SSH_LOG_FUNCTIONS, "len e: %d", len);
+      ssh_print_hexa("RSA signature", e->string, len);
 #endif
+
 #ifdef HAVE_LIBGCRYPT
-            free(e);
+      string_free(e);
 #endif
-            return sign;
-        default:
-            return NULL;
-    }
+
+      return sign;
+    default:
+      return NULL;
+  }
+
+  return NULL;
 }
 
 void signature_free(SIGNATURE *sign) {
