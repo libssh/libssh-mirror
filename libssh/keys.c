@@ -79,8 +79,8 @@ PUBLIC_KEY *publickey_make_dss(SSH_SESSION *session, BUFFER *buffer) {
     return NULL;
   }
 
-  key->type=TYPE_DSS;
-  key->type_c="ssh-dss";
+  key->type = TYPE_DSS;
+  key->type_c = ssh_type_from_name(key->type);
 
   p = buffer_get_ssh_string(buffer);
   q = buffer_get_ssh_string(buffer);
@@ -170,7 +170,7 @@ PUBLIC_KEY *publickey_make_rsa(SSH_SESSION *session, BUFFER *buffer,
     key->type = TYPE_RSA1;
   }
 
-  key->type_c = type;
+  key->type_c = ssh_type_to_char(key->type);
   e = buffer_get_ssh_string(buffer);
   n = buffer_get_ssh_string(buffer);
 
