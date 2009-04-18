@@ -62,8 +62,7 @@ static int load_iv(char *header, unsigned char *iv, int iv_len) {
   int k;
 
   memset(iv, 0, iv_len);
-  for (i=0; i < iv_len; i++)
-  {
+  for (i = 0; i < iv_len; i++) {
     if ((header[2*i] >= '0') && (header[2*i] <= '9'))
       j = header[2*i] - '0';
     else if ((header[2*i] >= 'A') && (header[2*i] <= 'F'))
@@ -89,7 +88,7 @@ static u32 char_to_u32(unsigned char *data, u32 size) {
   u32 ret;
   u32 i;
 
-  for (i=0,ret=0;i<size;ret=ret<<8,ret+=data[i++])
+  for (i = 0, ret = 0; i < size; ret = ret << 8, ret += data[i++])
     ;
   return ret;
 }
@@ -98,19 +97,23 @@ static u32 asn1_get_len(BUFFER *buffer) {
   u32 len;
   unsigned char tmp[4];
 
-  if (!buffer_get_data(buffer,tmp,1))
+  if (buffer_get_data(buffer,tmp,1) == 0) {
     return 0;
-  if (tmp[0] > 127)
-  {
-    len=tmp[0] & 127;
-    if (len>4)
-      return 0; /* Length doesn't fit in u32. Can this really happen? */
-    if (!buffer_get_data(buffer,tmp,len))
-      return 0;
-    len=char_to_u32(tmp,len);
   }
-  else
-    len=char_to_u32(tmp,1);
+
+  if (tmp[0] > 127) {
+    len = tmp[0] & 127;
+    if (len > 4) {
+      return 0; /* Length doesn't fit in u32. Can this really happen? */
+    }
+    if (buffer_get_data(buffer,tmp,len) == 0) {
+      return 0;
+    }
+    len = char_to_u32(tmp, len);
+  } else {
+    len = char_to_u32(tmp, 1);
+  }
+
   return len;
 }
 
