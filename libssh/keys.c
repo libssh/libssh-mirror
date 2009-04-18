@@ -1074,7 +1074,10 @@ void signature_free(SIGNATURE *sign) {
 #endif
       break;
     default:
-      ssh_log(NULL, SSH_LOG_RARE, "Freeing a signature with no type!\n");
+      /* FIXME Passing NULL segfaults */
+#if 0
+       ssh_log(NULL, SSH_LOG_RARE, "Freeing a signature with no type!\n"); */
+#endif
     }
   SAFE_FREE(sign);
 }
