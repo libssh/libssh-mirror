@@ -1133,14 +1133,29 @@ STRING *ssh_do_sign_with_agent(struct ssh_session *session,
 
   /* prepend session identifier */
   session_id = string_new(SHA_DIGEST_LEN);
+  if (session_id == NULL) {
+    return NULL;
+  }
   string_fill(session_id, crypto->session_id, SHA_DIGEST_LEN);
 
   sigbuf = buffer_new();
+  if (sigbuf == NULL) {
+    string_free(session_id);
+    return NULL;
+  }
 
-  buffer_add_ssh_string(sigbuf, session_id);
+  if (buffer_add_ssh_string(sigbuf, session_id) < 0) {
+    buffer_free(sigbuf);
+    string_free(session_id);
+    return NULL;
+  }
+  string_free(session_id);
 
   /* append out buffer */
-  buffer_add_buffer(sigbuf, buf);
+  if (buffer_add_buffer(sigbuf, buf) < 0) {
+    buffer_free(sigbuf);
+    return NULL;
+  }
 
   /* create signature */
   signature = agent_sign_data(session, sigbuf, publickey);
