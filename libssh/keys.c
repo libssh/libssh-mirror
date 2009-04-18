@@ -326,6 +326,9 @@ PUBLIC_KEY *publickey_from_privatekey(PRIVATE_KEY *prv) {
     case TYPE_DSS:
 #ifdef HAVE_LIBGCRYPT
       sexp = gcry_sexp_find_token(prv->dsa_priv, "p", 0);
+      if (sexp == NULL) {
+        goto error;
+      }
       tmp = gcry_sexp_nth_data(sexp, 1, &size);
       p = string_new(size);
       if (p == NULL) {
@@ -335,6 +338,9 @@ PUBLIC_KEY *publickey_from_privatekey(PRIVATE_KEY *prv) {
       gcry_sexp_release(sexp);
 
       sexp = gcry_sexp_find_token(prv->dsa_priv,"q",0);
+      if (sexp == NULL) {
+        goto error;
+      }
       tmp = gcry_sexp_nth_data(sexp,1,&size);
       q = string_new(size);
       if (q == NULL) {
@@ -344,6 +350,9 @@ PUBLIC_KEY *publickey_from_privatekey(PRIVATE_KEY *prv) {
       gcry_sexp_release(sexp);
 
       sexp = gcry_sexp_find_token(prv->dsa_priv, "g", 0);
+      if (sexp == NULL) {
+        goto error;
+      }
       tmp = gcry_sexp_nth_data(sexp,1,&size);
       g = string_new(size);
       if (g == NULL) {
@@ -352,8 +361,11 @@ PUBLIC_KEY *publickey_from_privatekey(PRIVATE_KEY *prv) {
       string_fill(g,(char *) tmp,size);
       gcry_sexp_release(sexp);
 
-      sexp=gcry_sexp_find_token(prv->dsa_priv,"y",0);
-      tmp=gcry_sexp_nth_data(sexp,1,&size);
+      sexp = gcry_sexp_find_token(prv->dsa_priv,"y",0);
+      if (sexp == NULL) {
+        goto error;
+      }
+      tmp = gcry_sexp_nth_data(sexp,1,&size);
       y = string_new(size);
       if (y == NULL) {
         goto error;
@@ -397,6 +409,9 @@ PUBLIC_KEY *publickey_from_privatekey(PRIVATE_KEY *prv) {
     case TYPE_RSA1:
 #ifdef HAVE_LIBGCRYPT
       sexp = gcry_sexp_find_token(prv->rsa_priv, "n", 0);
+      if (sexp == NULL) {
+        goto error;
+      }
       tmp = gcry_sexp_nth_data(sexp, 1, &size);
       n = string_new(size);
       if (n == NULL) {
@@ -406,6 +421,9 @@ PUBLIC_KEY *publickey_from_privatekey(PRIVATE_KEY *prv) {
       gcry_sexp_release(sexp);
 
       sexp = gcry_sexp_find_token(prv->rsa_priv, "e", 0);
+      if (sexp == NULL) {
+        goto error;
+      }
       tmp = gcry_sexp_nth_data(sexp, 1, &size);
       e = string_new(size);
       if (e == NULL) {
@@ -445,6 +463,7 @@ PUBLIC_KEY *publickey_from_privatekey(PRIVATE_KEY *prv) {
   return key;
 error:
 #ifdef HAVE_LIBGCRYPT
+  gcry_sexp_release(sexp);
   string_burn(p);
   string_free(p);
   string_burn(q);
@@ -482,6 +501,9 @@ static int dsa_public_to_string(DSA *key, BUFFER *buffer) {
   gcry_sexp_t sexp;
 
   sexp = gcry_sexp_find_token(key, "p", 0);
+  if (sexp == NULL) {
+    goto error;
+  }
   tmp = gcry_sexp_nth_data(sexp, 1, &size);
   p = string_new(size);
   if (p == NULL) {
@@ -491,6 +513,9 @@ static int dsa_public_to_string(DSA *key, BUFFER *buffer) {
   gcry_sexp_release(sexp);
 
   sexp = gcry_sexp_find_token(key, "q", 0);
+  if (sexp == NULL) {
+    goto error;
+  }
   tmp = gcry_sexp_nth_data(sexp, 1, &size);
   q = string_new(size);
   if (q == NULL) {
@@ -500,6 +525,9 @@ static int dsa_public_to_string(DSA *key, BUFFER *buffer) {
   gcry_sexp_release(sexp);
 
   sexp = gcry_sexp_find_token(key, "g", 0);
+  if (sexp == NULL) {
+    goto error;
+  }
   tmp = gcry_sexp_nth_data(sexp, 1, &size);
   g = string_new(size);
   if (g == NULL) {
@@ -509,6 +537,9 @@ static int dsa_public_to_string(DSA *key, BUFFER *buffer) {
   gcry_sexp_release(sexp);
 
   sexp = gcry_sexp_find_token(key, "y", 0);
+  if (sexp == NULL) {
+    goto error;
+  }
   tmp = gcry_sexp_nth_data(sexp, 1, &size);
   n = string_new(size);
   if (n == NULL) {
@@ -541,6 +572,10 @@ static int dsa_public_to_string(DSA *key, BUFFER *buffer) {
 
   rc = 0;
 error:
+#ifdef HAVE_LIBGCRYPT
+  gcry_sexp_release(sexp);
+#endif
+
   string_burn(p);
   string_free(p);
   string_burn(q);
@@ -570,6 +605,9 @@ static int rsa_public_to_string(RSA *key, BUFFER *buffer) {
   gcry_sexp_t sexp;
 
   sexp = gcry_sexp_find_token(key, "n", 0);
+  if (sexp == NULL) {
+    goto error;
+  }
   tmp = gcry_sexp_nth_data(sexp, 1, &size);
   n = string_new(size);
   if (n == NULL) {
@@ -579,6 +617,9 @@ static int rsa_public_to_string(RSA *key, BUFFER *buffer) {
   gcry_sexp_release(sexp);
 
   sexp = gcry_sexp_find_token(key, "e", 0);
+  if (sexp == NULL) {
+    goto error;
+  }
   tmp = gcry_sexp_nth_data(sexp, 1, &size);
   e = string_new(size);
   if (e == NULL) {
@@ -604,6 +645,10 @@ static int rsa_public_to_string(RSA *key, BUFFER *buffer) {
 
   rc = 0;
 error:
+#ifdef HAVE_LIBGCRYPT
+  gcry_sexp_release(sexp);
+#endif
+
   string_burn(e);
   string_free(e);
   string_burn(n);
