@@ -198,7 +198,7 @@ static int passphrase_to_key(char *data, unsigned int datalen,
   for (j = 0, md_not_empty = 0; j < keylen; ) {
     md = md5_init();
     if (md == NULL) {
-      return 0;
+      return -1;
     }
 
     if (md_not_empty) {
@@ -220,7 +220,7 @@ static int passphrase_to_key(char *data, unsigned int datalen,
     }
   }
 
-  return 1;
+  return 0;
 }
 
 static int privatekey_decrypt(int algo, int mode, unsigned int key_len,
@@ -229,39 +229,45 @@ static int privatekey_decrypt(int algo, int mode, unsigned int key_len,
                        void *userdata,
                        char *desc)
 {
-  gcry_cipher_hd_t cipher;
-  int rc = -1;
   char passphrase[MAX_PASSPHRASE_SIZE] = {0};
   unsigned char key[MAX_KEY_SIZE] = {0};
-  unsigned char *tmp;
-  gcry_error_t err;
+  unsigned char *tmp = NULL;
+  gcry_cipher_hd_t cipher;
+  int rc = -1;
 
-  if (!algo)
-    return 1;
+  if (!algo) {
+    return -1;
+  }
 
   if (cb) {
     rc = (*cb)(desc, passphrase, MAX_PASSPHRASE_SIZE, 0, 0, userdata);
     if (rc < 0) {
-      return 0;
+      return -1;
     }
   } else if (cb == NULL && userdata != NULL) {
     snprintf(passphrase, MAX_PASSPHRASE_SIZE, "%s", (char *) userdata);
   }
-  passphrase_to_key(passphrase, strlen(passphrase), iv, key, key_len);
+
+  if (passphrase_to_key(passphrase, strlen(passphrase), iv, key, key_len) < 0) {
+    return -1;
+  }
+
   if (gcry_cipher_open(&cipher, algo, mode, 0)
       || gcry_cipher_setkey(cipher, key, key_len)
       || gcry_cipher_setiv(cipher, iv, iv_len)
-      || !(tmp = malloc(buffer_get_len(data) * sizeof (char)))
-      || (err = gcry_cipher_decrypt(cipher, tmp, buffer_get_len(data),
-                                    buffer_get(data), buffer_get_len(data))))
-  {
+      || (tmp = malloc(buffer_get_len(data) * sizeof (char)) == NULL)
+      || gcry_cipher_decrypt(cipher, tmp, buffer_get_len(data),
+                       buffer_get(data), buffer_get_len(data))) {
     gcry_cipher_close(cipher);
-    return 0;
+    return -1;
   }
+
   memcpy(buffer_get(data), tmp, buffer_get_len(data));
+
   SAFE_FREE(tmp);
   gcry_cipher_close(cipher);
-  return 1;
+
+  return 0;
 }
 
 static int privatekey_dek_header(char *header, unsigned int header_len,
@@ -398,8 +404,8 @@ static BUFFER *privatekey_file_to_buffer(FILE *fp, int type,
   buffer_free(buffer);
   if (algo)
   {
-    if (!privatekey_decrypt(algo, mode, key_len, iv, iv_len, ret, cb, userdata, desc))
-    {
+    if (privatekey_decrypt(algo, mode, key_len, iv, iv_len, ret,
+          cb, userdata, desc) < 0) {
       free(iv);
       return NULL;
     }
