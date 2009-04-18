@@ -1080,28 +1080,37 @@ void signature_free(SIGNATURE *sign) {
 }
 
 #ifdef HAVE_LIBCRYPTO
-/* maybe the missing function from libcrypto */
-/* i think now, maybe it's a bad idea to name it has it should have be named in libcrypto */
-static STRING *RSA_do_sign(void *payload,int len,RSA *privkey){
-    STRING *sign;
-    void *buffer;
-    unsigned int size;
-    int err;
+/*
+ * Maybe the missing function from libcrypto
+ *
+ * I think now, maybe it's a bad idea to name it has it should have be
+ * named in libcrypto
+ */
+static STRING *RSA_do_sign(const unsigned char *payload, int len, RSA *privkey) {
+  STRING *sign = NULL;
+  unsigned char *buffer = NULL;
+  unsigned int size;
 
-    buffer = malloc(RSA_size(privkey));
-    if (buffer == NULL) {
-      return NULL;
-    }
+  buffer = malloc(RSA_size(privkey));
+  if (buffer == NULL) {
+    return NULL;
+  }
 
-    err=RSA_sign(NID_sha1,payload,len,buffer,&size,privkey);
-    if(!err){
-        free(buffer);
-        return NULL;
-    }
-    sign=string_new(size);
-    string_fill(sign,buffer,size);
-    free(buffer);
-    return sign;
+  if (RSA_sign(NID_sha1, payload, len, buffer, &size, privkey) == 0) {
+    SAFE_FREE(buffer);
+    return NULL;
+  }
+
+  sign = string_new(size);
+  if (sign == NULL) {
+    SAFE_FREE(buffer);
+    return NULL;
+  }
+
+  string_fill(sign, buffer, size);
+  SAFE_FREE(buffer);
+
+  return sign;
 }
 #endif
 
