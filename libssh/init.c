@@ -32,12 +32,15 @@
  * \addtogroup ssh_session
  * @{
  */
+
 /**
- * \brief finalize and cleanup all libssh and cryptographic data structures
- * \returns 0
+ * @brief Finalize and cleanup all libssh and cryptographic data structures.
+ *
+ * This function should only be called once, at the end of the program!
+ *
+ * @returns 0
  */
-int ssh_finalize(void)
-{
+int ssh_finalize(void) {
   ssh_crypto_finalize();
 #ifdef HAVE_LIBGCRYPT
   gcry_control(GCRYCTL_TERM_SECMEM);
