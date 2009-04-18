@@ -190,28 +190,36 @@ static int read_line(char *data, unsigned int len, FILE *fp) {
 static int passphrase_to_key(char *data, unsigned int datalen,
     unsigned char *salt, unsigned char *key, unsigned int keylen) {
   MD5CTX md;
-  unsigned char digest[MD5_DIGEST_LEN];
+  unsigned char digest[MD5_DIGEST_LEN] = {0};
   unsigned int i;
   unsigned int j;
   unsigned int md_not_empty;
 
-  for (j=0,md_not_empty=0;j<keylen;)
-  {
+  for (j = 0, md_not_empty = 0; j < keylen; ) {
     md = md5_init();
-    if (!md)
+    if (md == NULL) {
       return 0;
-    if (md_not_empty)
-      md5_update(md,digest,MD5_DIGEST_LEN);
-    else
-      md_not_empty=1;
-    md5_update(md,data,datalen);
-    if (salt)
+    }
+
+    if (md_not_empty) {
+      md5_update(md, digest, MD5_DIGEST_LEN);
+    } else {
+      md_not_empty = 1;
+    }
+
+    md5_update(md, data, datalen);
+    if (salt) {
       md5_update(md, salt, PKCS5_SALT_LEN);
-    md5_final(digest,md);
-    for (i = 0; j < keylen && i < MD5_DIGEST_LEN; j++, i++)
-      if (key)
+    }
+    md5_final(digest, md);
+
+    for (i = 0; j < keylen && i < MD5_DIGEST_LEN; j++, i++) {
+      if (key) {
         key[j] = digest[i];
+      }
+    }
   }
+
   return 1;
 }
 
