@@ -487,11 +487,13 @@ int main(int argc, char **argv){
             
             break;
         case SSH_SERVER_ERROR:
+            free(hash);
             fprintf(stderr,"%s",ssh_get_error(session));
             ssh_disconnect(session);
     	    ssh_finalize();
             exit(-1);
     }
+    free(hash);
 
     ssh_userauth_none(session, NULL);
 
