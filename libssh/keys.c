@@ -855,7 +855,8 @@ SIGNATURE *signature_from_string(SSH_SESSION *session, STRING *signature,
   STRING *rs = NULL;
   STRING *type_s = NULL;
   STRING *e = NULL;
-  char *type = NULL;
+  char *type_c = NULL;
+  int type;
   int len;
   int rsalen;
 #ifdef HAVE_LIBGCRYPT
@@ -893,41 +894,23 @@ SIGNATURE *signature_from_string(SSH_SESSION *session, STRING *signature,
     return NULL;
   }
 
-  type = string_to_char(type_s);
-  free(type_s);
-  if (type == NULL) {
+  type_c = string_to_char(type_s);
+  string_free(type_s);
+  if (type_c == NULL) {
     signature_free(sign);
     buffer_free(tmpbuf);
     return NULL;
   }
+  type = ssh_type_from_name(type_c);
+  SAFE_FREE(type_c);
 
-  switch(needed_type) {
-    case TYPE_DSS:
-      if (strcmp(type, "ssh-dss") != 0) {
-        ssh_set_error(session, SSH_FATAL, "Invalid signature type: %s", type);
-        signature_free(sign);
-        buffer_free(tmpbuf);
-        SAFE_FREE(type);
-        return NULL;
-      }
-      break;
-    case TYPE_RSA:
-      if (strcmp(type, "ssh-rsa")) {
-        ssh_set_error(session, SSH_FATAL, "Invalid signature type: %s", type);
-        signature_free(sign);
-        buffer_free(tmpbuf);
-        SAFE_FREE(type);
-        return NULL;
-      }
-      break;
-    default:
-      ssh_set_error(session, SSH_FATAL, "Invalid signature type: %s", type);
-      signature_free(sign);
-      buffer_free(tmpbuf);
-      SAFE_FREE(type);
-      return NULL;
+  if (needed_type != type) {
+    ssh_set_error(session, SSH_FATAL, "Invalid signature type: %s",
+        ssh_type_to_char(type));
+    signature_free(sign);
+    buffer_free(tmpbuf);
+    return NULL;
   }
-  SAFE_FREE(type);
 
   switch(needed_type) {
     case TYPE_DSS:
