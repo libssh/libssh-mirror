@@ -37,15 +37,16 @@
 /* Public key decoding functions */
 
 const char *ssh_type_to_char(int type) {
-    switch(type){
-        case TYPE_DSS:
-            return "ssh-dss";
-        case TYPE_RSA:
-        case TYPE_RSA1:
-            return "ssh-rsa";
-        default:
-            return NULL;
-    }
+  switch (type) {
+    case TYPE_DSS:
+      return "ssh-dss";
+    case TYPE_RSA:
+      return "ssh-rsa";
+    case TYPE_RSA1:
+      return "ssh-rsa1";
+    default:
+      return NULL;
+  }
 }
 
 int ssh_type_from_name(const char *name) {
@@ -80,7 +81,7 @@ PUBLIC_KEY *publickey_make_dss(SSH_SESSION *session, BUFFER *buffer) {
   }
 
   key->type = TYPE_DSS;
-  key->type_c = ssh_type_from_name(key->type);
+  key->type_c = ssh_type_to_char(key->type);
 
   p = buffer_get_ssh_string(buffer);
   q = buffer_get_ssh_string(buffer);
@@ -153,7 +154,7 @@ error:
 }
 
 PUBLIC_KEY *publickey_make_rsa(SSH_SESSION *session, BUFFER *buffer,
-    const char *type) {
+    int type) {
   STRING *e = NULL;
   STRING *n = NULL;
   PUBLIC_KEY *key = NULL;
@@ -164,13 +165,9 @@ PUBLIC_KEY *publickey_make_rsa(SSH_SESSION *session, BUFFER *buffer,
     return NULL;
   }
 
-  if (strcmp(type, "ssh-rsa") == 0) {
-    key->type = TYPE_RSA;
-  } else {
-    key->type = TYPE_RSA1;
-  }
-
+  key->type = type;
   key->type_c = ssh_type_to_char(key->type);
+
   e = buffer_get_ssh_string(buffer);
   n = buffer_get_ssh_string(buffer);
 
@@ -253,7 +250,8 @@ void publickey_free(PUBLIC_KEY *key) {
 PUBLIC_KEY *publickey_from_string(SSH_SESSION *session, STRING *pubkey_s) {
   BUFFER *tmpbuf = NULL;
   STRING *type_s = NULL;
-  char *type = NULL;
+  char *type_c = NULL;
+  int type;
 
   tmpbuf = buffer_new();
   if (tmpbuf == NULL) {
@@ -270,30 +268,28 @@ PUBLIC_KEY *publickey_from_string(SSH_SESSION *session, STRING *pubkey_s) {
     goto error;
   }
 
-  type = string_to_char(type_s);
+  type_c = string_to_char(type_s);
   string_free(type_s);
-
-  if (type == NULL) {
+  if (type_c == NULL) {
     goto error;
   }
 
-  if(strcmp(type, "ssh-dss") == 0) {
-    SAFE_FREE(type);
-    return publickey_make_dss(session, tmpbuf);
-  }
-  if(strcmp(type,"ssh-rsa") == 0) {
-    SAFE_FREE(type);
-    return publickey_make_rsa(session, tmpbuf,"ssh-rsa");
-  }
-  if (strcmp(type,"ssh-rsa1") == 0) {
-    SAFE_FREE(type);
-    return publickey_make_rsa(session, tmpbuf,"ssh-rsa1");
+  type = ssh_type_from_name(type_c);
+  SAFE_FREE(type_c);
+
+  switch (type) {
+    case TYPE_DSS:
+      return publickey_make_dss(session, tmpbuf);
+    case TYPE_RSA:
+    case TYPE_RSA1:
+      return publickey_make_rsa(session, tmpbuf, type);
   }
 
-  ssh_set_error(session, SSH_FATAL, "Unknown public key protocol %s", type);
+  ssh_set_error(session, SSH_FATAL, "Unknown public key protocol %s",
+      ssh_type_to_char(type));
+
 error:
   buffer_free(tmpbuf);
-  SAFE_FREE(type);
   return NULL;
 }
 

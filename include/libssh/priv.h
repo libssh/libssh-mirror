@@ -586,7 +586,7 @@ PRIVATE_KEY *privatekey_make_rsa(SSH_SESSION *session, BUFFER *buffer,
 PRIVATE_KEY *privatekey_from_string(SSH_SESSION *session, STRING *privkey_s);
 
 PUBLIC_KEY *publickey_make_dss(SSH_SESSION *session, BUFFER *buffer);
-PUBLIC_KEY *publickey_make_rsa(SSH_SESSION *session, BUFFER *buffer, const char *type);
+PUBLIC_KEY *publickey_make_rsa(SSH_SESSION *session, BUFFER *buffer, int type);
 PUBLIC_KEY *publickey_from_string(SSH_SESSION *session, STRING *pubkey_s);
 SIGNATURE *signature_from_string(SSH_SESSION *session, STRING *signature,PUBLIC_KEY *pubkey,int needed_type);
 void signature_free(SIGNATURE *sign);
