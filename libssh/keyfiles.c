@@ -144,22 +144,29 @@ static STRING *asn1_get_int(BUFFER *buffer) {
 }
 
 static int asn1_check_sequence(BUFFER *buffer) {
+  unsigned char *j = NULL;
   unsigned char tmp;
-  unsigned char *j;
   int i;
   u32 size;
   u32 padding;
 
-  if (!buffer_get_data(buffer,&tmp,1) || tmp != ASN1_SEQUENCE)
+  if (buffer_get_data(buffer, &tmp, 1) == 0 || tmp != ASN1_SEQUENCE) {
     return 0;
-  size=asn1_get_len(buffer);
-  if ((padding = buffer_get_len(buffer) - buffer->pos - size) > 0)
+  }
+
+  size = asn1_get_len(buffer);
+  if ((padding = buffer_get_len(buffer) - buffer->pos - size) > 0) {
     for (i = buffer_get_len(buffer) - buffer->pos - size,
-         j = buffer_get(buffer) + size + buffer->pos; i; i--, j++)
+         j = buffer_get(buffer) + size + buffer->pos;
+         i;
+         i--, j++)
     {
-      if (*j != padding)                     /* padding is allowed */
+      if (*j != padding) {                   /* padding is allowed */
         return 0;                            /* but nothing else */
+      }
     }
+  }
+
   return 1;
 }
 
@@ -167,12 +174,16 @@ static int read_line(char *data, unsigned int len, FILE *fp) {
   char tmp;
   unsigned int i;
 
-  for (i=0; fread(&tmp, 1, 1, fp) && tmp!='\n' && i<len; data[i++]=tmp)
+  for (i = 0; fread(&tmp, 1, 1, fp) && tmp != '\n' && i < len; data[i++] = tmp)
     ;
-  if (tmp=='\n')
+  if (tmp == '\n') {
     return i;
-  if (i>=len)
+  }
+
+  if (i >= len) {
     return -1;
+  }
+
   return 0;
 }
 
