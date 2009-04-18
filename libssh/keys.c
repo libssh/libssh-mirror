@@ -671,7 +671,7 @@ STRING *publickey_to_string(PUBLIC_KEY *key) {
     return NULL;
   }
 
-  type = string_from_char(ssh_type_to_char(key->type));
+  type = string_from_char(key->type_c);
   if (type == NULL) {
     goto error;
   }
@@ -680,7 +680,7 @@ STRING *publickey_to_string(PUBLIC_KEY *key) {
     goto error;
   }
 
-  switch(key->type){
+  switch (key->type) {
     case TYPE_DSS:
       if (dsa_public_to_string(key->dsa_pub, buf) < 0) {
         goto error;
