@@ -569,6 +569,7 @@ PRIVATE_KEY  *privatekey_from_file(SSH_SESSION *session, const char *filename,
 #ifdef HAVE_LIBGCRYPT
             valid = read_dsa_privatekey(file,&dsa, auth_cb, auth_ud, "Passphrase for private key:");
           } else {
+            /* FIXME implement simple passphrase function? */
             ssh_log(session, SSH_LOG_RARE,
                 "No passphrase or authtentication callback specified.");
             return NULL;
@@ -605,6 +606,7 @@ PRIVATE_KEY  *privatekey_from_file(SSH_SESSION *session, const char *filename,
 #ifdef HAVE_LIBGCRYPT
               valid = read_rsa_privatekey(file, &rsa, auth_cb, auth_ud, "Passphrase for private key:");
             } else {
+              /* FIXME implement simple passphrase function? */
               ssh_log(session, SSH_LOG_RARE,
                   "No passphrase or authtentication callback specified.");
               return NULL;
