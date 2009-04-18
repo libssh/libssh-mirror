@@ -255,7 +255,7 @@ static int privatekey_decrypt(int algo, int mode, unsigned int key_len,
   if (gcry_cipher_open(&cipher, algo, mode, 0)
       || gcry_cipher_setkey(cipher, key, key_len)
       || gcry_cipher_setiv(cipher, iv, iv_len)
-      || (tmp = malloc(buffer_get_len(data) * sizeof (char)) == NULL)
+      || (tmp = malloc(buffer_get_len(data) * sizeof (char))) == NULL
       || gcry_cipher_decrypt(cipher, tmp, buffer_get_len(data),
                        buffer_get(data), buffer_get_len(data))) {
     gcry_cipher_close(cipher);
@@ -560,14 +560,18 @@ PRIVATE_KEY  *privatekey_from_file(SSH_SESSION *session, const char *filename,
         return NULL;
     }
     if(type==TYPE_DSS){
-        if(!passphrase){
-          if (session && session->options->auth_function) {
+        if (passphrase == NULL) {
+          if (session->options->auth_function) {
             auth_cb = session->options->auth_function;
             if (session->options->auth_userdata) {
               auth_ud = session->options->auth_userdata;
             }
 #ifdef HAVE_LIBGCRYPT
             valid = read_dsa_privatekey(file,&dsa, auth_cb, auth_ud, "Passphrase for private key:");
+          } else {
+            ssh_log(session, SSH_LOG_RARE,
+                "No passphrase or authtentication callback specified.");
+            return NULL;
           }
         } else {
           valid = read_dsa_privatekey(file,&dsa, NULL, (void *) passphrase, NULL);
@@ -592,14 +596,18 @@ PRIVATE_KEY  *privatekey_from_file(SSH_SESSION *session, const char *filename,
         }
     }
     else if (type==TYPE_RSA){
-        if(!passphrase){
-            if(session && session->options->auth_function) {
+        if (passphrase == NULL) {
+            if (session->options->auth_function) {
               auth_cb = session->options->auth_function;
               if (session->options->auth_userdata) {
                 auth_ud = session->options->auth_userdata;
               }
 #ifdef HAVE_LIBGCRYPT
               valid = read_rsa_privatekey(file, &rsa, auth_cb, auth_ud, "Passphrase for private key:");
+            } else {
+              ssh_log(session, SSH_LOG_RARE,
+                  "No passphrase or authtentication callback specified.");
+              return NULL;
             }
         } else {
             valid = read_rsa_privatekey(file, &rsa, NULL, (void *) passphrase, NULL);
