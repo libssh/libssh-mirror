@@ -118,19 +118,29 @@ static u32 asn1_get_len(BUFFER *buffer) {
 }
 
 static STRING *asn1_get_int(BUFFER *buffer) {
-  STRING *ret;
+  STRING *str;
   unsigned char type;
   u32 size;
 
-  if (!buffer_get_data(buffer,&type,1) || type != ASN1_INTEGER)
+  if (buffer_get_data(buffer, &type, 1) == 0 || type != ASN1_INTEGER) {
     return NULL;
-  size=asn1_get_len(buffer);
-  if (!size)
+  }
+  size = asn1_get_len(buffer);
+  if (size == 0) {
     return NULL;
-  ret=string_new(size);
-  if (!buffer_get_data(buffer,ret->string,size))
+  }
+
+  str = string_new(size);
+  if (str == NULL) {
     return NULL;
-  return ret;
+  }
+
+  if (buffer_get_data(buffer, str->string, size) == 0) {
+    string_free(str);
+    return NULL;
+  }
+
+  return str;
 }
 
 static int asn1_check_sequence(BUFFER *buffer) {
