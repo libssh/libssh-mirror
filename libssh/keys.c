@@ -1066,38 +1066,68 @@ STRING *ssh_do_sign(SSH_SESSION *session, BUFFER *sigbuf,
   return signature;
 }
 
-STRING *ssh_encrypt_rsa1(SSH_SESSION *session, STRING *data, PUBLIC_KEY *key){
-    int len=string_len(data);
+STRING *ssh_encrypt_rsa1(SSH_SESSION *session, STRING *data, PUBLIC_KEY *key) {
+  STRING *str = NULL;
+  size_t len = string_len(data);
+  int size = 0;
 #ifdef HAVE_LIBGCRYPT
-    STRING *ret;
-    gcry_sexp_t ret_sexp;
-    gcry_sexp_t data_sexp;
-    const char *tmp;
-    size_t size;
-    gcry_sexp_build(&data_sexp,NULL,"(data(flags pkcs1)(value %b))",len,data->string);
-    gcry_pk_encrypt(&ret_sexp,data_sexp,key->rsa_pub);
+  const char *tmp = NULL;
+  gcry_sexp_t ret_sexp;
+  gcry_sexp_t data_sexp;
+
+  if (gcry_sexp_build(&data_sexp, NULL, "(data(flags pkcs1)(value %b))",
+      len, data->string)) {
+    ssh_set_error(session, SSH_FATAL, "RSA1 encrypt: libgcrypt error");
+    return NULL;
+  }
+  if (gcry_pk_encrypt(&ret_sexp, data_sexp, key->rsa_pub)) {
     gcry_sexp_release(data_sexp);
-    data_sexp=gcry_sexp_find_token(ret_sexp,"a",0);
-    tmp=gcry_sexp_nth_data(data_sexp,1,&size);
-    if (*tmp == 0)
-    {
-      size--;
-      tmp++;
-    }
-    ret=string_new(size);
-    string_fill(ret,(char *)tmp,size);
+    ssh_set_error(session, SSH_FATAL, "RSA1 encrypt: libgcrypt error");
+    return NULL;
+  }
+
+  gcry_sexp_release(data_sexp);
+
+  data_sexp = gcry_sexp_find_token(ret_sexp, "a", 0);
+  if (data_sexp == NULL) {
+    ssh_set_error(session, SSH_FATAL, "RSA1 encrypt: libgcrypt error");
     gcry_sexp_release(ret_sexp);
+    return NULL;
+  }
+  tmp = gcry_sexp_nth_data(data_sexp, 1, &size);
+  if (*tmp == 0) {
+    size--;
+    tmp++;
+  }
+
+  str = string_new(size);
+  if (str == NULL) {
+    ssh_set_error(session, SSH_FATAL, "Not enough space");
+    gcry_sexp_release(data_sexp);
+    gcry_sexp_release(ret_sexp);
+    return NULL;
+  }
+  string_fill(str, tmp, size);
+
+  gcry_sexp_release(data_sexp);
+  gcry_sexp_release(ret_sexp);
 #elif defined HAVE_LIBCRYPTO
-    int flen=RSA_size(key->rsa_pub);
-    STRING *ret=string_new(flen);
-    RSA_public_encrypt(len,data->string,ret->string,key->rsa_pub,
-            RSA_PKCS1_PADDING);
+  size = RSA_size(key->rsa_pub);
+
+  str = string_new(size);
+  if (str == NULL) {
+    ssh_set_error(session, SSH_FATAL, "Not enough space");
+    return NULL;
+  }
+
+  if (RSA_public_encrypt(len, data->string, str->string, key->rsa_pub,
+      RSA_PKCS1_PADDING) < 0) {
+    string_free(str);
+    return NULL;
+  }
 #endif
 
-    /* unused member variable */
-    (void) session;
-
-    return ret;
+  return str;
 }
 
 
