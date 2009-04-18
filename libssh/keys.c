@@ -964,83 +964,106 @@ STRING *ssh_do_sign_with_agent(struct ssh_session *session,
 }
 #endif /* _WIN32 */
 
-/* this function signs the session id (known as H) as a string then the content of sigbuf */
-STRING *ssh_do_sign(SSH_SESSION *session,BUFFER *sigbuf, PRIVATE_KEY *privatekey){
-    SHACTX ctx;
-    STRING *session_str;
-    unsigned char hash[SHA_DIGEST_LEN+1];
+/*
+ * This function signs the session id (known as H) as a string then
+ * the content of sigbuf */
+STRING *ssh_do_sign(SSH_SESSION *session, BUFFER *sigbuf,
+    PRIVATE_KEY *privatekey) {
+  CRYPTO *crypto = session->current_crypto ? session->current_crypto :
+    session->next_crypto;
+  unsigned char hash[SHA_DIGEST_LEN + 1] = {0};
+  STRING *session_str = NULL;
+  STRING *signature = NULL;
+  SIGNATURE *sign = NULL;
+  SHACTX ctx = NULL;
 #ifdef HAVE_LIBGCRYPT
-    gcry_sexp_t gcryhash;
+  gcry_sexp_t gcryhash;
 #endif
-    SIGNATURE *sign;
-    STRING *signature;
-    CRYPTO *crypto = session->current_crypto?session->current_crypto:session->next_crypto;
 
-    session_str = string_new(SHA_DIGEST_LEN);
-    if (session_str == NULL) {
-      return NULL;
-    }
-    string_fill(session_str,crypto->session_id,SHA_DIGEST_LEN);
-    ctx = sha1_init();
-    if (ctx == NULL) {
-      SAFE_FREE(session_str);
-      return NULL;
-    }
-    sha1_update(ctx,session_str,string_len(session_str)+4);
-    SAFE_FREE(session_str);
-    sha1_update(ctx,buffer_get(sigbuf),buffer_get_len(sigbuf));
-    sha1_final(hash+1,ctx);
-    hash[0]=0;
+  session_str = string_new(SHA_DIGEST_LEN);
+  if (session_str == NULL) {
+    return NULL;
+  }
+  string_fill(session_str, crypto->session_id, SHA_DIGEST_LEN);
+
+  ctx = sha1_init();
+  if (ctx == NULL) {
+    string_free(session_str);
+    return NULL;
+  }
+
+  sha1_update(ctx, session_str, string_len(session_str) + 4);
+  string_free(session_str);
+  sha1_update(ctx, buffer_get(sigbuf), buffer_get_len(sigbuf));
+  sha1_final(hash + 1,ctx);
+  hash[0] = 0;
 
 #ifdef DEBUG_CRYPTO
-    ssh_print_hexa("Hash being signed with dsa",hash+1,SHA_DIGEST_LEN);
+  ssh_print_hexa("Hash being signed with dsa", hash + 1, SHA_DIGEST_LEN);
 #endif
 
-    sign = malloc(sizeof(SIGNATURE));
-    if (sign == NULL) {
-      return NULL;
-    }
+  sign = malloc(sizeof(SIGNATURE));
+  if (sign == NULL) {
+    return NULL;
+  }
 
-    switch(privatekey->type){
-        case TYPE_DSS:
+  switch(privatekey->type) {
+    case TYPE_DSS:
 #ifdef HAVE_LIBGCRYPT
-            gcry_sexp_build(&gcryhash,NULL,"%b",SHA_DIGEST_LEN+1,hash);
-            gcry_pk_sign(&sign->dsa_sign,gcryhash,privatekey->dsa_priv);
-#elif defined HAVE_LIBCRYPTO
-            sign->dsa_sign=DSA_do_sign(hash+1,SHA_DIGEST_LEN,privatekey->dsa_priv);
-#ifdef DEBUG_CRYPTO
-            ssh_print_bignum("r",sign->dsa_sign->r);
-            ssh_print_bignum("s",sign->dsa_sign->s);
-#endif
-#endif
-            sign->rsa_sign=NULL;
-            break;
-        case TYPE_RSA:
-#ifdef HAVE_LIBGCRYPT
-            gcry_sexp_build(&gcryhash,NULL,"(data(flags pkcs1)(hash sha1 %b))",SHA_DIGEST_LEN,hash+1);
-            gcry_pk_sign(&sign->rsa_sign,gcryhash,privatekey->rsa_priv);
-#elif defined HAVE_LIBCRYPTO
-            sign->rsa_sign=RSA_do_sign(hash+1,SHA_DIGEST_LEN,privatekey->rsa_priv);
-#endif
-            sign->dsa_sign=NULL;
-            break;
-    }
-#ifdef HAVE_LIBGCRYPT
-    gcry_sexp_release(gcryhash);
-#endif
-    sign->type=privatekey->type;
-    if(!sign->dsa_sign && !sign->rsa_sign){
-#ifdef HAVE_LIBGCRYPT
-        ssh_set_error(session,SSH_FATAL,"Signing : libcrypt error");
-#elif HAVE_LIBCRYPTO
-        ssh_set_error(session,SSH_FATAL,"Signing : openssl error");
-#endif
+      if (gcry_sexp_build(&gcryhash, NULL, "%b", SHA_DIGEST_LEN + 1, hash) ||
+          gcry_pk_sign(&sign->dsa_sign, gcryhash, privatekey->dsa_priv)) {
+        ssh_set_error(session, SSH_FATAL, "Signing: libcrypt error");
+        gcry_sexp_release(gcryhash);
         signature_free(sign);
         return NULL;
-    }
-    signature=signature_to_string(sign);
-    signature_free(sign);
-    return signature;
+      }
+#elif defined HAVE_LIBCRYPTO
+      sign->dsa_sign = DSA_do_sign(hash + 1, SHA_DIGEST_LEN,
+          privatekey->dsa_priv);
+      if (sign->dsa_sign == NULL) {
+        ssh_set_error(session, SSH_FATAL, "Signing: openssl error");
+        signature_free(sign);
+        return NULL;
+      }
+#ifdef DEBUG_CRYPTO
+      ssh_print_bignum("r", sign->dsa_sign->r);
+      ssh_print_bignum("s", sign->dsa_sign->s);
+#endif
+#endif /* HAVE_LIBCRYPTO */
+      sign->rsa_sign = NULL;
+      break;
+    case TYPE_RSA:
+#ifdef HAVE_LIBGCRYPT
+      if (gcry_sexp_build(&gcryhash, NULL, "(data(flags pkcs1)(hash sha1 %b))",
+            SHA_DIGEST_LEN, hash + 1) ||
+          gcry_pk_sign(&sign->rsa_sign, gcryhash, privatekey->rsa_priv)) {
+        ssh_set_error(session, SSH_FATAL, "Signing: libcrypt error");
+        gcry_sexp_release(gcryhash);
+        signature_free(sign);
+        return NULL;
+      }
+#elif defined HAVE_LIBCRYPTO
+      sign->rsa_sign = RSA_do_sign(hash + 1, SHA_DIGEST_LEN,
+          privatekey->rsa_priv);
+      if (sign->rsa_sign == NULL) {
+        ssh_set_error(session, SSH_FATAL, "Signing: openssl error");
+        signature_free(sign);
+        return NULL;
+      }
+#endif
+      sign->dsa_sign = NULL;
+      break;
+  }
+#ifdef HAVE_LIBGCRYPT
+  gcry_sexp_release(gcryhash);
+#endif
+
+  sign->type = privatekey->type;
+
+  signature = signature_to_string(sign);
+  signature_free(sign);
+
+  return signature;
 }
 
 STRING *ssh_encrypt_rsa1(SSH_SESSION *session, STRING *data, PUBLIC_KEY *key){
