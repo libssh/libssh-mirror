@@ -705,83 +705,147 @@ error:
 }
 
 /* Signature decoding functions */
+static STRING *signature_to_string(SIGNATURE *sign) {
+  unsigned char buffer[40] = {0};
+  BUFFER *tmpbuf = NULL;
+  STRING *str = NULL;
+  STRING *tmp = NULL;
+  STRING *rs = NULL;
+  int rc = -1;
+#ifdef HAVE_LIBGCRYPT
+  const char *r = NULL;
+  const char *s = NULL;
+  gcry_sexp_t sexp;
+  size_t size = 0;
+#elif defined HAVE_LIBCRYPTO
+  STRING *r = NULL;
+  STRING *s = NULL;
+#endif
 
-static STRING *signature_to_string(SIGNATURE *sign){
-    STRING *str;
-    STRING *rs;
-#ifdef HAVE_LIBGCRYPT
-    const char *r,*s;
-    gcry_sexp_t sexp;
-    size_t size;
-#elif defined HAVE_LIBCRYPTO
-    STRING *r,*s;
-#endif
-    unsigned char buffer[40];
-    BUFFER *tmpbuf=buffer_new();
-    STRING *tmp;
-    tmp=string_from_char(ssh_type_to_char(sign->type));
-    buffer_add_ssh_string(tmpbuf,tmp);
-    free(tmp);
-    switch(sign->type){
-        case TYPE_DSS:
-            memset(buffer,0,40);
-#ifdef HAVE_LIBGCRYPT
-            sexp=gcry_sexp_find_token(sign->dsa_sign,"r",0);
-            r=gcry_sexp_nth_data(sexp,1,&size);
-            if (*r == 0)      /* libgcrypt put 0 when first bit is set */
-            {
-              size--;
-              r++;
-            }
-            memcpy(buffer,r + size - 20,20);
-            gcry_sexp_release(sexp);
-            sexp=gcry_sexp_find_token(sign->dsa_sign,"s",0);
-            s=gcry_sexp_nth_data(sexp,1,&size);
-            if (*s == 0)
-            {
-              size--;
-              s++;
-            }
-            memcpy(buffer+ 20, s + size - 20, 20);
-            gcry_sexp_release(sexp);
-#elif defined HAVE_LIBCRYPTO
-            r=make_bignum_string(sign->dsa_sign->r);
-            s=make_bignum_string(sign->dsa_sign->s);
-            rs=string_new(40);
-            memcpy(buffer,r->string+string_len(r)-20,20);
-            memcpy(buffer+ 20, s->string + string_len(s) - 20, 20);
-            free(r);
-            free(s);
-#endif
-            rs=string_new(40);
-            string_fill(rs,buffer,40);
-            buffer_add_ssh_string(tmpbuf,rs);
-            free(rs);
-            break;
-        case TYPE_RSA:
-        case TYPE_RSA1:
-#ifdef HAVE_LIBGCRYPT
-            sexp=gcry_sexp_find_token(sign->rsa_sign,"s",0);
-            s=gcry_sexp_nth_data(sexp,1,&size);
-            if (*s == 0)
-            {
-              size--;
-              s++;
-            }
-            rs=string_new(size);
-            string_fill(rs,(char *)s,size);
-            buffer_add_ssh_string(tmpbuf,rs);
-            gcry_sexp_release(sexp);
-            free(rs);
-#elif defined HAVE_LIBCRYPTO
-            buffer_add_ssh_string(tmpbuf,sign->rsa_sign);
-#endif 
-            break;
-    }
-    str=string_new(buffer_get_len(tmpbuf));
-    string_fill(str,buffer_get(tmpbuf),buffer_get_len(tmpbuf));
+  tmpbuf = buffer_new();
+  if (tmpbuf == NULL) {
+    return NULL;
+  }
+
+  tmp = string_from_char(ssh_type_to_char(sign->type));
+  if (tmp == NULL) {
     buffer_free(tmpbuf);
-    return str;
+    return NULL;
+  }
+  if (buffer_add_ssh_string(tmpbuf, tmp) < 0) {
+    buffer_free(tmpbuf);
+    string_free(tmp);
+    return NULL;
+  }
+  string_free(tmp);
+
+  switch(sign->type) {
+    case TYPE_DSS:
+#ifdef HAVE_LIBGCRYPT
+      sexp = gcry_sexp_find_token(sign->dsa_sign, "r", 0);
+      if (sexp == NULL) {
+        buffer_free(tmpbuf);
+        return NULL;
+      }
+      r = gcry_sexp_nth_data(sexp, 1, &size);
+      if (*r == 0) {      /* libgcrypt put 0 when first bit is set */
+        size--;
+        r++;
+      }
+      memcpy(buffer, r + size - 20, 20);
+      gcry_sexp_release(sexp);
+
+      sexp = gcry_sexp_find_token(sign->dsa_sign, "s", 0);
+      if (sexp == NULL) {
+        buffer_free(tmpbuf);
+        return NULL;
+      }
+      s = gcry_sexp_nth_data(sexp,1,&size);
+      if (*s == 0) {
+        size--;
+        s++;
+      }
+      memcpy(buffer+ 20, s + size - 20, 20);
+      gcry_sexp_release(sexp);
+#elif defined HAVE_LIBCRYPTO
+      r = make_bignum_string(sign->dsa_sign->r);
+      if (r == NULL) {
+        buffer_free(tmpbuf);
+        return NULL;
+      }
+      s = make_bignum_string(sign->dsa_sign->s);
+      if (s == NULL) {
+        buffer_free(tmpbuf);
+        string_free(r);
+        return NULL;
+      }
+
+      memcpy(buffer, r->string + string_len(r) - 20, 20);
+      memcpy(buffer + 20, s->string + string_len(s) - 20, 20);
+
+      string_free(r);
+      string_free(s);
+#endif /* HAVE_LIBCRYPTO */
+      rs = string_new(40);
+      if (rs == NULL) {
+        buffer_free(tmpbuf);
+        return NULL;
+      }
+
+      string_fill(rs, buffer, 40);
+      rc = buffer_add_ssh_string(tmpbuf, rs);
+      string_free(rs);
+      if (rc < 0) {
+        buffer_free(tmpbuf);
+        return NULL;
+      }
+
+      break;
+    case TYPE_RSA:
+    case TYPE_RSA1:
+#ifdef HAVE_LIBGCRYPT
+      sexp = gcry_sexp_find_token(sign->rsa_sign, "s", 0);
+      if (sexp == NULL) {
+        buffer_free(tmpbuf);
+        return NULL;
+      }
+      s = gcry_sexp_nth_data(sexp,1,&size);
+      if (*s == 0) {
+        size--;
+        s++;
+      }
+      rs = string_new(size);
+      if (rs == NULL) {
+        buffer_free(tmpbuf);
+        return NULL;
+      }
+
+      string_fill(rs, (char *) s, size);
+      rc = buffer_add_ssh_string(tmpbuf, rs);
+      gcry_sexp_release(sexp);
+      string_free(rs);
+      if (rc < 0) {
+        buffer_free(tmpbuf);
+        return NULL;
+      }
+#elif defined HAVE_LIBCRYPTO
+      if (buffer_add_ssh_string(tmpbuf,sign->rsa_sign) < 0) {
+        buffer_free(tmpbuf);
+        return NULL;
+      }
+#endif
+      break;
+  }
+
+  str = string_new(buffer_get_len(tmpbuf));
+  if (str == NULL) {
+    buffer_free(tmpbuf);
+    return NULL;
+  }
+  string_fill(str, buffer_get(tmpbuf), buffer_get_len(tmpbuf));
+  buffer_free(tmpbuf);
+
+  return str;
 }
 
 /* TODO : split this function in two so it becomes smaller */
