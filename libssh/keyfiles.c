@@ -328,91 +328,114 @@ static int privatekey_dek_header(char *header, unsigned int header_len,
 
 static BUFFER *privatekey_file_to_buffer(FILE *fp, int type,
     ssh_auth_callback cb, void *userdata, char *desc) {
+  BUFFER *buffer = NULL;
+  BUFFER *out = NULL;
   char buf[MAXLINESIZE] = {0};
-  char *header_begin;
+  unsigned char *iv = NULL;
+  const char *header_begin;
+  const char *header_end;
   unsigned int header_begin_size;
-  char *header_end;
   unsigned int header_end_size;
-  BUFFER *buffer=buffer_new();
-  BUFFER *ret;
-  int len;
+  unsigned int key_len = 0;
+  unsigned int iv_len = 0;
   int algo = 0;
   int mode = 0;
-  unsigned int key_len = 0;
-  unsigned char *iv = NULL;
-  unsigned int iv_len = 0;
+  int len;
 
-  switch(type)
-  {
-    case TYPE_DSS:
-      header_begin=DSA_HEADER_BEGIN;
-      header_end=DSA_HEADER_END;
-      break;
-    case TYPE_RSA:
-      header_begin=RSA_HEADER_BEGIN;
-      header_end=RSA_HEADER_END;
-      break;
-    default:
-      return NULL;
-  }
-  header_begin_size=strlen(header_begin);
-  header_end_size=strlen(header_end);
-  while (read_line(buf,MAXLINESIZE,fp) && strncmp(buf,header_begin,header_begin_size))
-    ;
-  len = read_line(buf, MAXLINESIZE, fp);
-  if (len > 11 && !strncmp("Proc-Type: 4,ENCRYPTED", buf, 11))
-  {
-    len = read_line(buf, MAXLINESIZE, fp);
-    if (len > 10 && !strncmp("DEK-Info: ", buf, 10))
-    {
-      if ((privatekey_dek_header(buf + 10, len - 10, &algo, &mode, &key_len,
-                                 &iv, &iv_len) < 0)
-          || read_line(buf, MAXLINESIZE, fp))
-      {
-        buffer_free(buffer);
-        free(iv);
-        return NULL;
-      }
-    }
-    else
-    {
-      buffer_free(buffer);
-      free(iv);
-      return NULL;
-    }
-  }
-  else
-    buffer_add_data(buffer,buf,len);
-  while ((len = read_line(buf,MAXLINESIZE,fp))
-         && strncmp(buf,header_end,header_end_size))
-  {
-    if (len == -1)
-    {
-      buffer_free(buffer);
-      free(iv);
-      return NULL;
-    }
-    buffer_add_data(buffer,buf,len);
-  }
-  if (strncmp(buf,header_end,header_end_size))
-  {
-    buffer_free(buffer);
-    free(iv);
+  buffer = buffer_new();
+  if (buffer == NULL) {
     return NULL;
   }
-  buffer_add_data(buffer,"\0",1);
-  ret=base64_to_bin(buffer_get(buffer));
-  buffer_free(buffer);
-  if (algo)
-  {
-    if (privatekey_decrypt(algo, mode, key_len, iv, iv_len, ret,
-          cb, userdata, desc) < 0) {
-      free(iv);
+
+  switch(type) {
+    case TYPE_DSS:
+      header_begin = DSA_HEADER_BEGIN;
+      header_end = DSA_HEADER_END;
+      break;
+    case TYPE_RSA:
+      header_begin = RSA_HEADER_BEGIN;
+      header_end = RSA_HEADER_END;
+      break;
+    default:
+      buffer_free(buffer);
+      return NULL;
+  }
+
+  header_begin_size = strlen(header_begin);
+  header_end_size = strlen(header_end);
+
+  while (read_line(buf, MAXLINESIZE, fp) &&
+      strncmp(buf, header_begin, header_begin_size))
+    ;
+
+  len = read_line(buf, MAXLINESIZE, fp);
+  if (len > 11 && strncmp("Proc-Type: 4,ENCRYPTED", buf, 11) == 0) {
+    len = read_line(buf, MAXLINESIZE, fp);
+    if (len > 10 && strncmp("DEK-Info: ", buf, 10) == 0) {
+      if ((privatekey_dek_header(buf + 10, len - 10, &algo, &mode, &key_len,
+                                 &iv, &iv_len) < 0)
+          || read_line(buf, MAXLINESIZE, fp)) {
+        buffer_free(buffer);
+        SAFE_FREE(iv);
+        return NULL;
+      }
+    } else {
+      buffer_free(buffer);
+      SAFE_FREE(iv);
+      return NULL;
+    }
+  } else {
+    if (buffer_add_data(buffer, buf, len) < 0) {
+      buffer_free(buffer);
+      SAFE_FREE(iv);
       return NULL;
     }
   }
-  free(iv);
-  return ret;
+
+  while ((len = read_line(buf,MAXLINESIZE,fp)) &&
+      strncmp(buf, header_end, header_end_size) != 0) {
+    if (len == -1) {
+      buffer_free(buffer);
+      SAFE_FREE(iv);
+      return NULL;
+    }
+    if (buffer_add_data(buffer, buf, len) < 0) {
+      buffer_free(buffer);
+      SAFE_FREE(iv);
+      return NULL;
+    }
+  }
+
+  if (strncmp(buf,header_end,header_end_size) != 0) {
+    buffer_free(buffer);
+    SAFE_FREE(iv);
+    return NULL;
+  }
+
+  if (buffer_add_data(buffer, "\0", 1) < 0) {
+    buffer_free(buffer);
+    SAFE_FREE(iv);
+    return NULL;
+  }
+
+  out = base64_to_bin(buffer_get(buffer));
+  buffer_free(buffer);
+  if (out == NULL) {
+    SAFE_FREE(iv);
+    return NULL;
+  }
+
+  if (algo) {
+    if (privatekey_decrypt(algo, mode, key_len, iv, iv_len, out,
+          cb, userdata, desc) < 0) {
+      buffer_free(out);
+      SAFE_FREE(iv);
+      return NULL;
+    }
+  }
+  SAFE_FREE(iv);
+
+  return out;
 }
 
 static int read_rsa_privatekey(FILE *fp, gcry_sexp_t *r,
