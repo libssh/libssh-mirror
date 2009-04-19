@@ -70,7 +70,7 @@ static int load_iv(char *header, unsigned char *iv, int iv_len) {
     else if ((header[2*i] >= 'a') && (header[2*i] <= 'f'))
       j = header[2*i] - 'a' + 10;
     else
-      return 0;
+      return -1;
     if ((header[2*i+1] >= '0') && (header[2*i+1] <= '9'))
       k = header[2*i+1] - '0';
     else if ((header[2*i+1] >= 'A') && (header[2*i+1] <= 'F'))
@@ -78,10 +78,10 @@ static int load_iv(char *header, unsigned char *iv, int iv_len) {
     else if ((header[2*i+1] >= 'a') && (header[2*i+1] <= 'f'))
       k = header[2*i+1] - 'a' + 10;
     else
-      return 0;
+      return -1;
     iv[i] = (j << 4) + k;
   }
-  return 1;
+  return 0;
 }
 
 static u32 char_to_u32(unsigned char *data, u32 size) {
@@ -314,15 +314,16 @@ static int privatekey_dek_header(char *header, unsigned int header_len,
     *mode = GCRY_CIPHER_MODE_CBC;
     *key_len = 32;
     *iv_len = 16;
+  } else {
+    return -1;
   }
-  else
-    return 0;
+
   *iv = malloc(*iv_len);
   if (*iv == NULL) {
-    return 0;
+    return -1;
   }
-  load_iv(header + iv_pos, *iv, *iv_len);
-  return 1;
+
+  return load_iv(header + iv_pos, *iv, *iv_len);
 }
 
 static BUFFER *privatekey_file_to_buffer(FILE *fp, int type,
@@ -364,8 +365,8 @@ static BUFFER *privatekey_file_to_buffer(FILE *fp, int type,
     len = read_line(buf, MAXLINESIZE, fp);
     if (len > 10 && !strncmp("DEK-Info: ", buf, 10))
     {
-      if (!privatekey_dek_header(buf + 10, len - 10, &algo, &mode, &key_len,
-                                 &iv, &iv_len)
+      if ((privatekey_dek_header(buf + 10, len - 10, &algo, &mode, &key_len,
+                                 &iv, &iv_len) < 0)
           || read_line(buf, MAXLINESIZE, fp))
       {
         buffer_free(buffer);
