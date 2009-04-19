@@ -227,7 +227,7 @@ static int privatekey_decrypt(int algo, int mode, unsigned int key_len,
                        unsigned char *iv, unsigned int iv_len,
                        BUFFER *data, ssh_auth_callback cb,
                        void *userdata,
-                       char *desc)
+                       const char *desc)
 {
   char passphrase[MAX_PASSPHRASE_SIZE] = {0};
   unsigned char key[MAX_KEY_SIZE] = {0};
@@ -327,7 +327,7 @@ static int privatekey_dek_header(char *header, unsigned int header_len,
 }
 
 static BUFFER *privatekey_file_to_buffer(FILE *fp, int type,
-    ssh_auth_callback cb, void *userdata, char *desc) {
+    ssh_auth_callback cb, void *userdata, const char *desc) {
   BUFFER *buffer = NULL;
   BUFFER *out = NULL;
   char buf[MAXLINESIZE] = {0};
@@ -439,7 +439,7 @@ static BUFFER *privatekey_file_to_buffer(FILE *fp, int type,
 }
 
 static int read_rsa_privatekey(FILE *fp, gcry_sexp_t *r,
-    ssh_auth_callback cb, void *userdata, char *desc) {
+    ssh_auth_callback cb, void *userdata, const char *desc) {
   STRING *n;
   STRING *e;
   STRING *d;
@@ -489,7 +489,7 @@ static int read_rsa_privatekey(FILE *fp, gcry_sexp_t *r,
 }
 
 static int read_dsa_privatekey(FILE *fp, gcry_sexp_t *r, ssh_auth_callback cb,
-    void *userdata, char *desc) {
+    void *userdata, const char *desc) {
   STRING *p;
   STRING *q;
   STRING *g;
