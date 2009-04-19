@@ -440,52 +440,74 @@ static BUFFER *privatekey_file_to_buffer(FILE *fp, int type,
 
 static int read_rsa_privatekey(FILE *fp, gcry_sexp_t *r,
     ssh_auth_callback cb, void *userdata, const char *desc) {
-  STRING *n;
-  STRING *e;
-  STRING *d;
-  STRING *p;
-  STRING *q;
-  STRING *unused1;
-  STRING *unused2;
-  STRING *u;
-  STRING *v;
-  BUFFER *buffer;
+  STRING *n = NULL;
+  STRING *e = NULL;
+  STRING *d = NULL;
+  STRING *p = NULL;
+  STRING *q = NULL;
+  STRING *unused1 = NULL;
+  STRING *unused2 = NULL;
+  STRING *u = NULL;
+  STRING *v = NULL;
+  BUFFER *buffer = NULL;
+  int rc = 1;
 
-  if (!(buffer=privatekey_file_to_buffer(fp, TYPE_RSA, cb, userdata, desc)))
+  buffer = privatekey_file_to_buffer(fp, TYPE_RSA, cb, userdata, desc);
+  if (buffer == NULL) {
     return 0;
-  if (!asn1_check_sequence(buffer))
-  {
+  }
+
+  if (!asn1_check_sequence(buffer)) {
     buffer_free(buffer);
     return 0;
   }
-  v=asn1_get_int(buffer);
-  if (ntohl(v->size)!=1 || v->string[0]!=0)
-  {
+
+  v = asn1_get_int(buffer);
+  if (ntohl(v->size) != 1 || v->string[0] != 0) {
     buffer_free(buffer);
     return 0;
   }
-  n=asn1_get_int(buffer);
-  e=asn1_get_int(buffer);
-  d=asn1_get_int(buffer);
-  q=asn1_get_int(buffer);
-  p=asn1_get_int(buffer);
-  unused1=asn1_get_int(buffer);
-  unused2=asn1_get_int(buffer);
-  u=asn1_get_int(buffer);
+
+  n = asn1_get_int(buffer);
+  e = asn1_get_int(buffer);
+  d = asn1_get_int(buffer);
+  q = asn1_get_int(buffer);
+  p = asn1_get_int(buffer);
+  unused1 = asn1_get_int(buffer);
+  unused2 = asn1_get_int(buffer);
+  u = asn1_get_int(buffer);
+
   buffer_free(buffer);
-  if (!n || !e || !d || !p || !q || !unused1 || !unused2 || !u)
-    return 0;
-  gcry_sexp_build(r,NULL,"(private-key(rsa(n %b)(e %b)(d %b)(p %b)(q %b)(u %b)))",ntohl(n->size),n->string,ntohl(e->size),e->string,ntohl(d->size),d->string,ntohl(p->size),p->string,ntohl(q->size),q->string,ntohl(u->size),u->string);
-  free(n);
-  free(e);
-  free(d);
-  free(p);
-  free(q);
-  free(unused1);
-  free(unused2);
-  free(u);
-  free(v);
-  return 1;
+
+  if (n == NULL || e == NULL || d == NULL || p == NULL || q == NULL ||
+      unused1 == NULL || unused2 == NULL|| u == NULL) {
+    rc = 0;
+    goto error;
+  }
+
+  if (gcry_sexp_build(r, NULL,
+      "(private-key(rsa(n %b)(e %b)(d %b)(p %b)(q %b)(u %b)))",
+      ntohl(n->size), n->string,
+      ntohl(e->size), e->string,
+      ntohl(d->size), d->string,
+      ntohl(p->size), p->string,
+      ntohl(q->size), q->string,
+      ntohl(u->size), u->string)) {
+    rc = 0;
+  }
+
+error:
+  string_free(n);
+  string_free(e);
+  string_free(d);
+  string_free(p);
+  string_free(q);
+  string_free(unused1);
+  string_free(unused2);
+  string_free(u);
+  string_free(v);
+
+  return rc;
 }
 
 static int read_dsa_privatekey(FILE *fp, gcry_sexp_t *r, ssh_auth_callback cb,
