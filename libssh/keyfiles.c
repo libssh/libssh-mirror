@@ -738,65 +738,89 @@ PRIVATE_KEY *privatekey_from_file(SSH_SESSION *session, const char *filename,
 /* same that privatekey_from_file() but without any passphrase things. */
 PRIVATE_KEY *_privatekey_from_file(void *session, const char *filename,
     int type) {
-    FILE *file=fopen(filename,"r");
-    PRIVATE_KEY *privkey;
+  PRIVATE_KEY *privkey = NULL;
+  FILE *file = NULL;
 #ifdef HAVE_LIBGCRYPT
-    gcry_sexp_t dsa=NULL;
-    gcry_sexp_t rsa=NULL;
-    int valid;
+  gcry_sexp_t dsa = NULL;
+  gcry_sexp_t rsa = NULL;
+  int valid;
 #elif defined HAVE_LIBCRYPTO
-    DSA *dsa=NULL;
-    RSA *rsa=NULL;
+  DSA *dsa = NULL;
+  RSA *rsa = NULL;
 #endif
-    if(!file){
-        ssh_set_error(session,SSH_REQUEST_DENIED,"Error opening %s : %s",filename,strerror(errno));
+
+  file = fopen(filename,"r");
+  if (file == NULL) {
+    ssh_set_error(session, SSH_REQUEST_DENIED,
+        "Error opening %s: %s", filename, strerror(errno));
+    return NULL;
+  }
+
+  switch (type) {
+    case TYPE_DSS:
+#ifdef HAVE_LIBGCRYPT
+      valid = read_dsa_privatekey(file, &dsa, NULL, NULL, NULL);
+
+      fclose(file);
+
+      if (!valid) {
+        ssh_set_error(session, SSH_FATAL, "Parsing private key %s", filename);
+#elif defined HAVE_LIBCRYPTO
+      dsa = PEM_read_DSAPrivateKey(file, NULL, NULL, NULL);
+
+      fclose(file);
+
+      if (dsa == NULL) {
+        ssh_set_error(session, SSH_FATAL,
+            "Parsing private key %s: %s",
+            filename, ERR_error_string(ERR_get_error(), NULL));
+#endif
         return NULL;
-    }
-    if(type==TYPE_DSS){
+      }
+      break;
+    case TYPE_RSA:
 #ifdef HAVE_LIBGCRYPT
-        valid=read_dsa_privatekey(file,&dsa,NULL,NULL,NULL);
-        fclose(file);
-        if(!valid){
-            ssh_set_error(session,SSH_FATAL,"parsing private key %s"
-                    ,filename);
+      valid = read_rsa_privatekey(file, &rsa, NULL, NULL, NULL);
+
+      fclose(file);
+
+      if (!valid) {
+        ssh_set_error(session, SSH_FATAL, "Parsing private key %s", filename);
 #elif defined HAVE_LIBCRYPTO
-        dsa=PEM_read_DSAPrivateKey(file,NULL,NULL,NULL);
-        fclose(file);
-        if(!dsa){
-            ssh_set_error(session,SSH_FATAL,"parsing private key %s"
-                    ": %s",filename,ERR_error_string(ERR_get_error(),NULL));
+      rsa = PEM_read_RSAPrivateKey(file, NULL, NULL, NULL);
+
+      fclose(file);
+
+      if (rsa == NULL) {
+        ssh_set_error(session, SSH_FATAL,
+            "Parsing private key %s: %s",
+            filename, ERR_error_string(ERR_get_error(), NULL));
 #endif
-            return NULL;
-        }
-    }
-    else if (type==TYPE_RSA){
-#ifdef HAVE_LIBGCRYPT
-        valid=read_rsa_privatekey(file,&rsa,NULL,NULL,NULL);
-        fclose(file);
-        if(!valid){
-            ssh_set_error(session,SSH_FATAL,"parsing private key %s"
-                    ,filename);
-#elif defined HAVE_LIBCRYPTO
-        rsa=PEM_read_RSAPrivateKey(file,NULL,NULL,NULL);
-        fclose(file);
-        if(!rsa){
-            ssh_set_error(session,SSH_FATAL,"parsing private key %s"
-                    ": %s",filename,ERR_error_string(ERR_get_error(),NULL));
-#endif
-            return NULL;
-        }
-    } else {
-        ssh_set_error(session,SSH_FATAL,"Invalid private key type %d",type);
         return NULL;
-    }
-    privkey = malloc(sizeof(PRIVATE_KEY));
-    if (privkey == NULL) {
-      return NULL;
-    }
-    privkey->type=type;
-    privkey->dsa_priv=dsa;
-    privkey->rsa_priv=rsa;
-    return privkey;
+      }
+      break;
+    default:
+        ssh_set_error(session, SSH_FATAL, "Invalid private key type %d", type);
+        return NULL;
+  }
+
+  privkey = malloc(sizeof(PRIVATE_KEY));
+  if (privkey == NULL) {
+#ifdef HAVE_LIBGCRYPT
+    gcry_sexp_release(dsa);
+    gcry_sexp_release(rsa);
+#elif defined HAVE_LIBCRYPTO
+    DSA_free(dsa);
+    RSA_free(rsa);
+#endif
+    return NULL;
+  }
+
+  privkey->type = type;
+  privkey->dsa_priv = dsa;
+  privkey->rsa_priv = rsa;
+
+  return privkey;
 }
 
 /** \brief deallocate a private key
