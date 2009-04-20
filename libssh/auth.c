@@ -360,7 +360,7 @@ error:
  * SSH_AUTH_SUCCESS : Authentication success
  * \see publickey_from_file()
  * \see privatekey_from_file()
- * \see private_key_free()
+ * \see privatekey_free()
  * \see ssh_userauth_offer_pubkey()
  */
 
@@ -471,7 +471,7 @@ error:
  * SSH_AUTH_SUCCESS : Authentication success
  * \see publickey_from_file()
  * \see privatekey_from_file()
- * \see private_key_free()
+ * \see privatekey_free()
  * \see ssh_userauth_offer_pubkey()
  */
 
@@ -865,7 +865,7 @@ int ssh_userauth_autopubkey(SSH_SESSION *session, const char *passphrase) {
             }
             free(pubkey);
             free(privkeyfile);
-            private_key_free(privkey);
+            privatekey_free(privkey);
             leave_function();
             return err;
         } else
@@ -877,14 +877,14 @@ int ssh_userauth_autopubkey(SSH_SESSION *session, const char *passphrase) {
             pubkey=NULL;
             free(privkeyfile);
             privkeyfile=NULL;
-            private_key_free(privkey);
+            privatekey_free(privkey);
             continue;
         }
         /* auth success */
         ssh_log(session, SSH_LOG_RARE,
             "Authentication using %s success\n", privkeyfile);
         free(pubkey);
-        private_key_free(privkey);
+        privatekey_free(privkey);
         free(privkeyfile);
         if(id){
             pub_keys_path[0]=NULL;

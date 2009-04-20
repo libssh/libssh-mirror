@@ -125,8 +125,8 @@ void ssh_cleanup(SSH_SESSION *session) {
   SAFE_FREE(session->client_kex.methods);
   SAFE_FREE(session->server_kex.methods);
 
-  private_key_free(session->dsa_key);
-  private_key_free(session->rsa_key);
+  privatekey_free(session->dsa_key);
+  privatekey_free(session->rsa_key);
   ssh_message_free(session->ssh_message);
   ssh_options_free(session->options);
 

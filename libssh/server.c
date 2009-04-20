@@ -159,7 +159,7 @@ SSH_SESSION *ssh_bind_accept(SSH_BIND *ssh_bind){
         rsa=_privatekey_from_file(ssh_bind,ssh_bind->options->rsakey,TYPE_RSA);
         if(!rsa){
             if(dsa)
-                private_key_free(dsa);
+                privatekey_free(dsa);
             return NULL;
         }
     }
@@ -168,9 +168,9 @@ SSH_SESSION *ssh_bind_accept(SSH_BIND *ssh_bind){
         ssh_set_error(ssh_bind,SSH_FATAL,"Accepting a new connection: %s",
                 strerror(errno));
         if(dsa)
-            private_key_free(dsa);
+            privatekey_free(dsa);
         if(rsa)
-            private_key_free(rsa);
+            privatekey_free(rsa);
         return NULL;
     }
     session=ssh_new();
@@ -180,9 +180,9 @@ SSH_SESSION *ssh_bind_accept(SSH_BIND *ssh_bind){
     if (session->options == NULL) {
       ssh_set_error(ssh_bind, SSH_FATAL, "No space left");
       if (dsa)
-        private_key_free(dsa);
+        privatekey_free(dsa);
       if (rsa)
-        private_key_free(rsa);
+        privatekey_free(rsa);
       ssh_cleanup(session);
       return NULL;
     }
@@ -191,9 +191,9 @@ SSH_SESSION *ssh_bind_accept(SSH_BIND *ssh_bind){
     session->socket=ssh_socket_new(session);
     if (session->socket == NULL) {
       if (dsa)
-        private_key_free(dsa);
+        privatekey_free(dsa);
       if (rsa)
-        private_key_free(rsa);
+        privatekey_free(rsa);
       ssh_cleanup(session);
       return NULL;
     }
@@ -310,11 +310,11 @@ static int dh_handshake_server(SSH_SESSION *session){
     buffer_free(buf);
     /* free private keys as they should not be readable past this point */
     if(session->rsa_key){
-        private_key_free(session->rsa_key);
+        privatekey_free(session->rsa_key);
         session->rsa_key=NULL;
     }
     if(session->dsa_key){
-        private_key_free(session->dsa_key);
+        privatekey_free(session->dsa_key);
         session->dsa_key=NULL;
     }
     buffer_add_u8(session->out_buffer,SSH2_MSG_KEXDH_REPLY);

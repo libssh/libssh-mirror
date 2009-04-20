@@ -603,7 +603,7 @@ static int pem_get_password(char *buf, int size, int rwflag, void *userdata) {
  * \param type Type of the private key. One of TYPE_DSS or TYPE_RSA.
  * \param passphrase Passphrase to decrypt the private key. Set to null if none is needed or it is unknown.
  * \returns a PRIVATE_KEY object containing the private key, or NULL if it failed.
- * \see private_key_free()
+ * \see privatekey_free()
  * \see publickey_from_privatekey()
  */
 PRIVATE_KEY  *privatekey_from_file(SSH_SESSION *session, const char *filename,
@@ -779,7 +779,7 @@ PRIVATE_KEY *_privatekey_from_file(void *session, const char *filename,
 /** \brief deallocate a private key
  * \param prv a PRIVATE_KEY object
  */
-void private_key_free(PRIVATE_KEY *prv) {
+void privatekey_free(PRIVATE_KEY *prv) {
   if (prv == NULL) {
     return;
   }
