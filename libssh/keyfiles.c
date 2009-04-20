@@ -639,10 +639,7 @@ PRIVATE_KEY *privatekey_from_file(SSH_SESSION *session, const char *filename,
           valid = read_dsa_privatekey(file, &dsa, auth_cb, auth_ud,
               "Passphrase for private key:");
         } else { /* authcb */
-          /* FIXME implement simple passphrase function? */
-          ssh_log(session, SSH_LOG_RARE,
-              "No passphrase or authtentication callback specified.");
-          return NULL;
+          valid = read_dsa_privatekey(file, &dsa, NULL, NULL, NULL);
         } /* authcb */
       } else { /* passphrase */
         valid = read_dsa_privatekey(file, &dsa, NULL,
@@ -683,10 +680,7 @@ PRIVATE_KEY *privatekey_from_file(SSH_SESSION *session, const char *filename,
           valid = read_rsa_privatekey(file, &rsa, auth_cb, auth_ud,
               "Passphrase for private key:");
         } else { /* authcb */
-          /* FIXME implement simple passphrase function? */
-          ssh_log(session, SSH_LOG_RARE,
-              "No passphrase or authtentication callback specified.");
-          return NULL;
+          valid = read_rsa_privatekey(file, &rsa, NULL, NULL, NULL);
         } /* authcb */
       } else { /* passphrase */
         valid = read_rsa_privatekey(file, &rsa, NULL,
