@@ -851,56 +851,72 @@ void privatekey_free(PRIVATE_KEY *prv) {
  * \see publickey_from_privatekey()
  */
 STRING *publickey_from_file(SSH_SESSION *session, const char *filename,
-    int *_type) {
-    BUFFER *buffer;
-    int type;
-    STRING *str;
-    char buf[4096]; /* noone will have bigger keys that that */
-                        /* where have i head that again ? */
-    int fd=open(filename,O_RDONLY);
-    int r;
-    char *ptr;
-    if(fd<0){
-        ssh_set_error(session,SSH_REQUEST_DENIED,"nonexistent public key file");
-        return NULL;
-    }
-    if(read(fd,buf,8)!=8){
-        close(fd);
-        ssh_set_error(session,SSH_REQUEST_DENIED,"Invalid public key file");
-        return NULL;
-    }
-    buf[7]=0;
-    if(!strcmp(buf,"ssh-dss"))
-        type=TYPE_DSS;
-    else if (!strcmp(buf,"ssh-rsa"))
-        type=TYPE_RSA;
-    else {
-        close(fd);
-        ssh_set_error(session,SSH_REQUEST_DENIED,"Invalid public key file");
-        return NULL;
-    }
-    r=read(fd,buf,sizeof(buf)-1);
+    int *type) {
+  BUFFER *buffer = NULL;
+  char buf[4096] = {0};
+  STRING *str = NULL;
+  char *ptr = NULL;
+  int key_type;
+  int fd = -1;
+  int r;
+
+  fd = open(filename, O_RDONLY);
+  if (fd < 0) {
+    ssh_set_error(session, SSH_REQUEST_DENIED, "Public key file doesn't exist");
+    return NULL;
+  }
+
+  if (read(fd, buf, 8) != 8) {
     close(fd);
-    if(r<=0){
-        ssh_set_error(session,SSH_REQUEST_DENIED,"Invalid public key file");
-        return NULL;
-    }
-    buf[r]=0;
-    ptr=strchr(buf,' ');
-    if(ptr)
-        *ptr=0; /* eliminates the garbage at end of file */
-    buffer=base64_to_bin(buf);
-    if(buffer){
-        str=string_new(buffer_get_len(buffer));
-        string_fill(str,buffer_get(buffer),buffer_get_len(buffer));
-        buffer_free(buffer);
-        if(_type)
-            *_type=type;
-        return str;
-    } else {
-        ssh_set_error(session,SSH_REQUEST_DENIED,"Invalid public key file");
-        return NULL; /* invalid file */
-    }
+    ssh_set_error(session, SSH_REQUEST_DENIED, "Invalid public key file");
+    return NULL;
+  }
+
+  buf[7] = '\0';
+
+  key_type = ssh_type_from_name(buf);
+  if (key_type == -1) {
+    close(fd);
+    ssh_set_error(session, SSH_REQUEST_DENIED, "Invalid public key file");
+    return NULL;
+  }
+
+  r = read(fd, buf, sizeof(buf) - 1);
+  close(fd);
+  if (r <= 0) {
+    ssh_set_error(session, SSH_REQUEST_DENIED, "Invalid public key file");
+    return NULL;
+  }
+
+  buf[r] = 0;
+  ptr = strchr(buf, ' ');
+
+  /* eliminate the garbage at end of file */
+  if (ptr) {
+    *ptr = '\0';
+  }
+
+  buffer = base64_to_bin(buf);
+  if (buffer == NULL) {
+    ssh_set_error(session, SSH_REQUEST_DENIED, "Invalid public key file");
+    return NULL;
+  }
+
+  str = string_new(buffer_get_len(buffer));
+  if (str == NULL) {
+    ssh_set_error(session, SSH_FATAL, "Not enough space");
+    buffer_free(buffer);
+    return NULL;
+  }
+
+  string_fill(str, buffer_get(buffer), buffer_get_len(buffer));
+  buffer_free(buffer);
+
+  if (type) {
+    *type = key_type;
+  }
+
+  return str;
 }
 
 
