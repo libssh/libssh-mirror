@@ -606,110 +606,139 @@ static int pem_get_password(char *buf, int size, int rwflag, void *userdata) {
  * \see privatekey_free()
  * \see publickey_from_privatekey()
  */
-PRIVATE_KEY  *privatekey_from_file(SSH_SESSION *session, const char *filename,
+PRIVATE_KEY *privatekey_from_file(SSH_SESSION *session, const char *filename,
     int type, const char *passphrase) {
-    FILE *file=fopen(filename,"r");
-    PRIVATE_KEY *privkey;
-    ssh_auth_callback auth_cb = NULL;
-    void *auth_ud = NULL;
+  ssh_auth_callback auth_cb = NULL;
+  PRIVATE_KEY *privkey = NULL;
+  void *auth_ud = NULL;
+  FILE *file = NULL;
 #ifdef HAVE_LIBGCRYPT
-    gcry_sexp_t dsa=NULL;
-    gcry_sexp_t rsa=NULL;
-    int valid;
+  gcry_sexp_t dsa = NULL;
+  gcry_sexp_t rsa = NULL;
+  int valid;
 #elif defined HAVE_LIBCRYPTO
-    DSA *dsa=NULL;
-    RSA *rsa=NULL;
+  DSA *dsa = NULL;
+  RSA *rsa = NULL;
 #endif
-    if(!file){
-        ssh_set_error(session,SSH_REQUEST_DENIED,"Error opening %s : %s",filename,strerror(errno));
-        return NULL;
-    }
-    if(type==TYPE_DSS){
-        if (passphrase == NULL) {
-          if (session->options->auth_function) {
-            auth_cb = session->options->auth_function;
-            if (session->options->auth_userdata) {
-              auth_ud = session->options->auth_userdata;
-            }
-#ifdef HAVE_LIBGCRYPT
-            valid = read_dsa_privatekey(file,&dsa, auth_cb, auth_ud, "Passphrase for private key:");
-          } else {
-            /* FIXME implement simple passphrase function? */
-            ssh_log(session, SSH_LOG_RARE,
-                "No passphrase or authtentication callback specified.");
-            return NULL;
-          }
-        } else {
-          valid = read_dsa_privatekey(file,&dsa, NULL, (void *) passphrase, NULL);
-        }
-        fclose(file);
-        if(!valid) {
-          ssh_set_error(session,SSH_FATAL,"parsing private key %s",filename);
-#elif defined HAVE_LIBCRYPTO
-            dsa = PEM_read_DSAPrivateKey(file,NULL, pem_get_password, session);
-          } else {
-            dsa = PEM_read_DSAPrivateKey(file,NULL, NULL, NULL);
-          }
-        } else {
-          dsa = PEM_read_DSAPrivateKey(file, NULL, NULL, (void *) passphrase);
-        }
-        fclose(file);
-        if(!dsa){
-            ssh_set_error(session,SSH_FATAL,"parsing private key %s"
-                ": %s",filename,ERR_error_string(ERR_get_error(),NULL));
-#endif
-        return NULL;
-        }
-    }
-    else if (type==TYPE_RSA){
-        if (passphrase == NULL) {
-            if (session->options->auth_function) {
-              auth_cb = session->options->auth_function;
-              if (session->options->auth_userdata) {
-                auth_ud = session->options->auth_userdata;
-              }
-#ifdef HAVE_LIBGCRYPT
-              valid = read_rsa_privatekey(file, &rsa, auth_cb, auth_ud, "Passphrase for private key:");
-            } else {
-              /* FIXME implement simple passphrase function? */
-              ssh_log(session, SSH_LOG_RARE,
-                  "No passphrase or authtentication callback specified.");
-              return NULL;
-            }
-        } else {
-            valid = read_rsa_privatekey(file, &rsa, NULL, (void *) passphrase, NULL);
-        }
-        fclose(file);
-        if(!valid){
-            ssh_set_error(session,SSH_FATAL,"parsing private key %s",filename);
-#elif defined HAVE_LIBCRYPTO
-              rsa = PEM_read_RSAPrivateKey(file, NULL, pem_get_password, session);
-            } else {
-              rsa = PEM_read_RSAPrivateKey(file, NULL, NULL, NULL);
-            }
-        } else {
-          rsa = PEM_read_RSAPrivateKey(file, NULL, NULL, (void *) passphrase);
-        }
-        fclose(file);
-        if(!rsa){
-            ssh_set_error(session,SSH_FATAL,"parsing private key %s"
-                ": %s",filename,ERR_error_string(ERR_get_error(),NULL));
-#endif
-        return NULL;
-        }
-    } else {
-        ssh_set_error(session,SSH_FATAL,"Invalid private key type %d",type);
-        return NULL;
-    }
+  file = fopen(filename,"r");
+  if (file == NULL) {
+    ssh_set_error(session, SSH_REQUEST_DENIED,
+        "Error opening %s: %s", filename, strerror(errno));
+    return NULL;
+  }
 
-    privkey = malloc(sizeof(PRIVATE_KEY));
-    if (privkey == NULL) {
+  switch (type) {
+    case TYPE_DSS:
+      if (passphrase == NULL) {
+        if (session->options->auth_function) {
+          auth_cb = session->options->auth_function;
+          if (session->options->auth_userdata) {
+            auth_ud = session->options->auth_userdata;
+          }
+#ifdef HAVE_LIBGCRYPT
+          valid = read_dsa_privatekey(file, &dsa, auth_cb, auth_ud,
+              "Passphrase for private key:");
+        } else { /* authcb */
+          /* FIXME implement simple passphrase function? */
+          ssh_log(session, SSH_LOG_RARE,
+              "No passphrase or authtentication callback specified.");
+          return NULL;
+        } /* authcb */
+      } else { /* passphrase */
+        valid = read_dsa_privatekey(file, &dsa, NULL,
+            (void *) passphrase, NULL);
+      }
+
+      fclose(file);
+
+      if (!valid) {
+        ssh_set_error(session, SSH_FATAL, "Parsing private key %s", filename);
+#elif defined HAVE_LIBCRYPTO
+          dsa = PEM_read_DSAPrivateKey(file, NULL, pem_get_password, session);
+        } else { /* authcb */
+          /* openssl uses it's own callback to get the passphrase here */
+          dsa = PEM_read_DSAPrivateKey(file, NULL, NULL, NULL);
+        } /* authcb */
+      } else { /* passphrase */
+        dsa = PEM_read_DSAPrivateKey(file, NULL, NULL, (void *) passphrase);
+      }
+
+      fclose(file);
+      if (dsa == NULL) {
+        ssh_set_error(session, SSH_FATAL,
+            "Parsing private key %s: %s",
+            filename, ERR_error_string(ERR_get_error(), NULL));
+#endif
+        return NULL;
+      }
+      break;
+    case TYPE_RSA:
+      if (passphrase == NULL) {
+        if (session->options->auth_function) {
+          auth_cb = session->options->auth_function;
+          if (session->options->auth_userdata) {
+            auth_ud = session->options->auth_userdata;
+          }
+#ifdef HAVE_LIBGCRYPT
+          valid = read_rsa_privatekey(file, &rsa, auth_cb, auth_ud,
+              "Passphrase for private key:");
+        } else { /* authcb */
+          /* FIXME implement simple passphrase function? */
+          ssh_log(session, SSH_LOG_RARE,
+              "No passphrase or authtentication callback specified.");
+          return NULL;
+        } /* authcb */
+      } else { /* passphrase */
+        valid = read_rsa_privatekey(file, &rsa, NULL,
+            (void *) passphrase, NULL);
+      }
+
+      fclose(file);
+
+      if (!valid) {
+        ssh_set_error(session,SSH_FATAL, "Parsing private key %s", filename);
+#elif defined HAVE_LIBCRYPTO
+          rsa = PEM_read_RSAPrivateKey(file, NULL, pem_get_password, session);
+        } else { /* authcb */
+          /* openssl uses it's own callback to get the passphrase here */
+          rsa = PEM_read_RSAPrivateKey(file, NULL, NULL, NULL);
+        } /* authcb */
+      } else { /* passphrase */
+        rsa = PEM_read_RSAPrivateKey(file, NULL, NULL, (void *) passphrase);
+      }
+
+      fclose(file);
+
+      if (rsa == NULL) {
+        ssh_set_error(session, SSH_FATAL,
+            "Parsing private key %s: %s",
+            filename, ERR_error_string(ERR_get_error(),NULL));
+#endif
+        return NULL;
+      }
+      break;
+    default:
+      ssh_set_error(session, SSH_FATAL, "Invalid private key type %d", type);
       return NULL;
-    }
-    privkey->type=type;
-    privkey->dsa_priv=dsa;
-    privkey->rsa_priv=rsa;
-    return privkey;
+  } /* switch */
+
+  privkey = malloc(sizeof(PRIVATE_KEY));
+  if (privkey == NULL) {
+#ifdef HAVE_LIBGCRYPT
+    gcry_sexp_release(dsa);
+    gcry_sexp_release(rsa);
+#elif defined HAVE_LIBCRYPTO
+    DSA_free(dsa);
+    RSA_free(rsa);
+#endif
+    return NULL;
+  }
+
+  privkey->type = type;
+  privkey->dsa_priv = dsa;
+  privkey->rsa_priv = rsa;
+
+  return privkey;
 }
 
 /* same that privatekey_from_file() but without any passphrase things. */
