@@ -968,16 +968,21 @@ STRING *publickey_from_next_file(SSH_SESSION *session, const char **pub_keys_pat
     return pubkey;
 }
 
-static int alldigits(char *s)
-{
-       while (*s) {
-               if (((*s) < '0') || ((*s) > '9')) return 0;
-               s++;
-       }
-       return 1;
+static int alldigits(const char *s) {
+  while (*s) {
+    if (isdigit(*s)) {
+      s++;
+    } else {
+      return 0;
+    }
+  }
+
+  return 1;
 }
+
 /** @}
  */
+
 /** \addtogroup ssh_session
  * @{ */
 
