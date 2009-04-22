@@ -190,24 +190,29 @@ void sftp_free(SFTP_SESSION *sftp){
 }
 
 int sftp_packet_write(SFTP_SESSION *sftp,u8 type, BUFFER *payload){
-    int size;
-    if (buffer_prepend_data(payload, &type, sizeof(u8)) < 0) {
-      return -1;
-    }
-    size=htonl(buffer_get_len(payload));
-    if (buffer_prepend_data(payload, &size, sizeof(u32)) < 0) {
-      return -1;
-    }
-    size=channel_write(sftp->channel,buffer_get(payload),buffer_get_len(payload));
-    if (size < 0) {
-      return -1;
-    } else if((u32) size != buffer_get_len(payload)){
-        ssh_log(sftp->session, SSH_LOG_PACKET,
-            "Had to write %d bytes, wrote only %d",
-            buffer_get_len(payload),
-            size);
-    }
-    return size;
+  int size;
+
+  if (buffer_prepend_data(payload, &type, sizeof(u8)) < 0) {
+    return -1;
+  }
+
+  size = htonl(buffer_get_len(payload));
+  if (buffer_prepend_data(payload, &size, sizeof(u32)) < 0) {
+    return -1;
+  }
+
+  size = channel_write(sftp->channel, buffer_get(payload),
+      buffer_get_len(payload));
+  if (size < 0) {
+    return -1;
+  } else if((u32) size != buffer_get_len(payload)) {
+    ssh_log(sftp->session, SSH_LOG_PACKET,
+        "Had to write %d bytes, wrote only %d",
+        buffer_get_len(payload),
+        size);
+  }
+
+  return size;
 }
 
 SFTP_PACKET *sftp_packet_read(SFTP_SESSION *sftp){
