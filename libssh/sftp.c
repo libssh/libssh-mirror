@@ -215,42 +215,57 @@ int sftp_packet_write(SFTP_SESSION *sftp,u8 type, BUFFER *payload){
   return size;
 }
 
-SFTP_PACKET *sftp_packet_read(SFTP_SESSION *sftp){
-    SFTP_PACKET *packet;
-    u32 size;
+SFTP_PACKET *sftp_packet_read(SFTP_SESSION *sftp) {
+  SFTP_PACKET *packet = NULL;
+  u32 size;
 
-    sftp_enter_function();
-    packet = malloc(sizeof(SFTP_PACKET));
-    if (packet == NULL) {
+  sftp_enter_function();
+
+  packet = malloc(sizeof(SFTP_PACKET));
+  if (packet == NULL) {
+    return NULL;
+  }
+  packet->sftp = sftp;
+  packet->payload = buffer_new();
+  if (packet->payload == NULL) {
+    SAFE_FREE(packet);
+    return NULL;
+  }
+
+  if (channel_read(sftp->channel, packet->payload, 4, 0) <= 0) {
+    buffer_free(packet->payload);
+    SAFE_FREE(packet);
+    sftp_leave_function();
+    return NULL;
+  }
+
+  if (buffer_get_u32(packet->payload, &size) < 0) {
+    buffer_free(packet->payload);
+    SAFE_FREE(packet);
+    sftp_leave_function();
+    return NULL;
+  }
+
+  size = ntohl(size);
+  if (channel_read(sftp->channel, packet->payload, 1, 0) <= 0) {
+    buffer_free(packet->payload);
+    SAFE_FREE(packet);
+    sftp_leave_function();
+    return NULL;
+  }
+
+  buffer_get_u8(packet->payload, &packet->type);
+  if (size > 1) {
+    if (channel_read(sftp->channel, packet->payload, size - 1, 0) <= 0) {
+      buffer_free(packet->payload);
+      SAFE_FREE(packet);
+      sftp_leave_function();
       return NULL;
     }
+  }
 
-    packet->sftp=sftp;
-    packet->payload=buffer_new();
-    if(channel_read(sftp->channel,packet->payload,4,0)<=0){
-        buffer_free(packet->payload);
-        free(packet);
-        sftp_leave_function();
-        return NULL;
-    }
-    buffer_get_u32(packet->payload,&size);
-    size=ntohl(size);
-    if(channel_read(sftp->channel,packet->payload,1,0)<=0){
-        buffer_free(packet->payload);
-        free(packet);
-        sftp_leave_function();
-        return NULL;
-    }
-    buffer_get_u8(packet->payload,&packet->type);
-    if(size>1)
-        if(channel_read(sftp->channel,packet->payload,size-1,0)<=0){
-            buffer_free(packet->payload);
-            free(packet);
-            sftp_leave_function();
-            return NULL;
-        }
-    sftp_leave_function();
-    return packet;
+  sftp_leave_function();
+  return packet;
 }
 
 static void sftp_set_error(SFTP_SESSION *sftp, int errnum) {
