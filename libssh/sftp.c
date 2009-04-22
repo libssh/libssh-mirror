@@ -370,24 +370,29 @@ static SFTP_MESSAGE *sftp_get_message(SFTP_PACKET *packet) {
   return msg;
 }
 
-static int sftp_read_and_dispatch(SFTP_SESSION *sftp){
-    SFTP_PACKET *packet;
-    SFTP_MESSAGE *message=NULL;
-    sftp_enter_function();
-    packet=sftp_packet_read(sftp);
-    if(!packet){
-        sftp_leave_function();
-    	return -1; /* something nasty happened reading the packet */
-    }
-    message=sftp_get_message(packet);
-    sftp_packet_free(packet);
-    if(!message){
-        sftp_leave_function();
-    	return -1;
-    }
-    sftp_enqueue(sftp,message);
+static int sftp_read_and_dispatch(SFTP_SESSION *sftp) {
+  SFTP_PACKET *packet = NULL;
+  SFTP_MESSAGE *msg = NULL;
+
+  sftp_enter_function();
+
+  packet = sftp_packet_read(sftp);
+  if (packet == NULL) {
     sftp_leave_function();
-    return 0;
+    return -1; /* something nasty happened reading the packet */
+  }
+
+  msg = sftp_get_message(packet);
+  sftp_packet_free(packet);
+  if (message == NULL) {
+    sftp_leave_function();
+    return -1;
+  }
+
+  sftp_enqueue(sftp, msg);
+
+  sftp_leave_function();
+  return 0;
 }
 
 void sftp_packet_free(SFTP_PACKET *packet){
