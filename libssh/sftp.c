@@ -87,60 +87,82 @@ SFTP_SESSION *sftp_new(SSH_SESSION *session){
 
 #ifdef WITH_SERVER
 SFTP_SESSION *sftp_server_new(SSH_SESSION *session, CHANNEL *chan){
-    SFTP_SESSION *sftp;
+  SFTP_SESSION *sftp = NULL;
 
-    sftp = malloc(sizeof(SFTP_SESSION));
-    if (sftp == NULL) {
-      return NULL;
-    }
+  sftp = malloc(sizeof(SFTP_SESSION));
+  if (sftp == NULL) {
+    return NULL;
+  }
+  ZERO_STRUCTP(sftp);
 
-    memset(sftp,0,sizeof(SFTP_SESSION));
-    sftp->session=session;
-    sftp->channel=chan;
-    return sftp;
+  sftp->session = session;
+  sftp->channel = chan;
+
+  return sftp;
 }
 
 int sftp_server_init(SFTP_SESSION *sftp){
-    struct ssh_session *session = sftp->session;
-    SFTP_PACKET *packet;
-    BUFFER *reply;
-    u32 version;
+  struct ssh_session *session = sftp->session;
+  SFTP_PACKET *packet = NULL;
+  BUFFER *reply = NULL;
+  u32 version;
 
-    sftp_enter_function();
-    packet=sftp_packet_read(sftp);
-    if(!packet){
-        sftp_leave_function();
-    	return -1;
-    }
-    if(packet->type != SSH_FXP_INIT){
-        ssh_set_error(session, SSH_FATAL,
-            "Packet read of type %d instead of SSH_FXP_INIT",
-            packet->type);
-        sftp_packet_free(packet);
-        sftp_leave_function();
-        return -1;
-    }
-    ssh_log(session, SSH_LOG_PACKET, "received SSH_FXP_INIT");
-    buffer_get_u32(packet->payload,&version);
-    version=ntohl(version);
-    ssh_log(session, SSH_LOG_PACKET, "Client version: %d", version);
-    sftp->client_version=version;
-    sftp_packet_free(packet);
-    reply=buffer_new();
-    buffer_add_u32(reply,ntohl(LIBSFTP_VERSION));
-    if(sftp_packet_write(sftp,SSH_FXP_VERSION,reply)==-1){
-        buffer_free(reply);
-        sftp_leave_function();
-        return -1;
-    }
-    buffer_free(reply);
-    ssh_log(session, SSH_LOG_RARE, "Server version sent");
-    if(version > LIBSFTP_VERSION)
-        sftp->version=LIBSFTP_VERSION;
-    else
-        sftp->version=version;
+  sftp_enter_function();
+
+  packet = sftp_packet_read(sftp);
+  if (packet == NULL) {
     sftp_leave_function();
-    return 0;
+    return -1;
+  }
+
+  if (packet->type != SSH_FXP_INIT) {
+    ssh_set_error(session, SSH_FATAL,
+        "Packet read of type %d instead of SSH_FXP_INIT",
+        packet->type);
+
+    sftp_packet_free(packet);
+    sftp_leave_function();
+    return -1;
+  }
+
+  ssh_log(session, SSH_LOG_PACKET, "Received SSH_FXP_INIT");
+
+  buffer_get_u32(packet->payload, &version);
+  version = ntohl(version);
+  ssh_log(session, SSH_LOG_PACKET, "Client version: %d", version);
+  sftp->client_version = version;
+
+  sftp_packet_free(packet);
+
+  reply = buffer_new();
+  if (reply == NULL) {
+    sftp_leave_function();
+    return -1;
+  }
+
+  if (buffer_add_u32(reply, ntohl(LIBSFTP_VERSION)) < 0) {
+    buffer_free(reply);
+    sftp_leave_function();
+    return -1;
+  }
+
+  if (sftp_packet_write(sftp, SSH_FXP_VERSION, reply) < 0) {
+    buffer_free(reply);
+    sftp_leave_function();
+    return -1;
+  }
+  buffer_free(reply);
+
+  ssh_log(session, SSH_LOG_RARE, "Server version sent");
+
+  if (version > LIBSFTP_VERSION) {
+    sftp->version = LIBSFTP_VERSION;
+  } else {
+    sftp->version=version;
+  }
+
+  sftp_leave_function();
+  return 0;
 }
 #endif /* WITH_SERVER */
 
