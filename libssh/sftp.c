@@ -395,10 +395,13 @@ static int sftp_read_and_dispatch(SFTP_SESSION *sftp) {
   return 0;
 }
 
-void sftp_packet_free(SFTP_PACKET *packet){
-    if(packet->payload)
-        buffer_free(packet->payload);
-    free(packet);
+void sftp_packet_free(SFTP_PACKET *packet) {
+  if (packet == NULL) {
+    return;
+  }
+
+  buffer_free(packet->payload);
+  free(packet);
 }
 
 /* Initialize the sftp session with the server. */
