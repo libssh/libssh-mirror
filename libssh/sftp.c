@@ -284,20 +284,25 @@ int sftp_get_error(SFTP_SESSION *sftp) {
 }
 
 static SFTP_MESSAGE *sftp_message_new(SFTP_SESSION *sftp){
-    SFTP_MESSAGE *msg;
+  SFTP_MESSAGE *msg = NULL;
 
-    sftp_enter_function();
+  sftp_enter_function();
 
-    msg = malloc(sizeof(SFTP_MESSAGE));
-    if (msg == NULL) {
-      return NULL;
-    }
+  msg = malloc(sizeof(SFTP_MESSAGE));
+  if (msg == NULL) {
+    return NULL;
+  }
+  ZERO_STRUCTP(msg);
 
-    memset(msg,0,sizeof(*msg));
-    msg->payload=buffer_new();
-    msg->sftp=sftp;
-    sftp_leave_function();
-    return msg;
+  msg->payload = buffer_new();
+  if (msg->payload == NULL) {
+    SAFE_FREE(msg);
+    return NULL;
+  }
+  msg->sftp = sftp;
+
+  sftp_leave_function();
+  return msg;
 }
 
 static void sftp_message_free(SFTP_MESSAGE *msg){
