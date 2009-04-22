@@ -44,36 +44,45 @@ static void sftp_message_free(SFTP_MESSAGE *msg);
 static void sftp_set_error(SFTP_SESSION *sftp, int errnum);
 
 SFTP_SESSION *sftp_new(SSH_SESSION *session){
-    SFTP_SESSION *sftp;
+  SFTP_SESSION *sftp;
 
-    enter_function();
+  enter_function();
 
-    sftp = malloc(sizeof(SFTP_SESSION));
-    if (sftp == NULL) {
-      return NULL;
-    }
-
-    memset(sftp,0,sizeof(SFTP_SESSION));
-    sftp->session=session;
-    sftp->channel=channel_new(session);
-    if (sftp->channel == NULL) {
-      SAFE_FREE(sftp);
-      leave_function();
-      return NULL;
-    }
-    if(channel_open_session(sftp->channel)){
-        channel_free(sftp->channel);
-        free(sftp);
-        leave_function();
-        return NULL;
-    }
-    if(channel_request_sftp(sftp->channel)){
-        sftp_free(sftp);
-        leave_function();
-        return NULL;
-    }
+  if (session == NULL) {
     leave_function();
-    return sftp;
+    return NULL;
+  }
+
+  sftp = malloc(sizeof(SFTP_SESSION));
+  if (sftp == NULL) {
+    leave_function();
+    return NULL;
+  }
+  memset(sftp,0,sizeof(SFTP_SESSION));
+
+  sftp->session = session;
+  sftp->channel = channel_new(session);
+  if (sftp->channel == NULL) {
+    SAFE_FREE(sftp);
+    leave_function();
+    return NULL;
+  }
+
+  if (channel_open_session(sftp->channel)) {
+    channel_free(sftp->channel);
+    SAFE_FREE(sftp);
+    leave_function();
+    return NULL;
+  }
+
+  if (channel_request_sftp(sftp->channel)) {
+    sftp_free(sftp);
+    leave_function();
+    return NULL;
+  }
+
+  leave_function();
+  return sftp;
 }
 
 #ifdef WITH_SERVER
@@ -136,19 +145,26 @@ int sftp_server_init(SFTP_SESSION *sftp){
 #endif /* WITH_SERVER */
 
 void sftp_free(SFTP_SESSION *sftp){
-    struct request_queue *ptr;
-    channel_send_eof(sftp->channel);
-    ptr=sftp->queue;
-    while(ptr){
-        struct request_queue *old;
-        sftp_message_free(ptr->message);
-        old=ptr->next;
-        free(ptr);
-        ptr=old;
-    }
-    channel_free(sftp->channel);
-    memset(sftp,0,sizeof(*sftp));
-    free(sftp);
+  struct request_queue *ptr;
+
+  if (sftp == NULL) {
+    return;
+  }
+
+  channel_send_eof(sftp->channel);
+  ptr = sftp->queue;
+  while(ptr) {
+    struct request_queue *old;
+    sftp_message_free(ptr->message);
+    old = ptr->next;
+    SAFE_FREE(ptr);
+    ptr = old;
+  }
+
+  channel_free(sftp->channel);
+  memset(sftp, 0, sizeof(*sftp));
+
+  SAFE_FREE(sftp);
 }
 
 int sftp_packet_write(SFTP_SESSION *sftp,u8 type, BUFFER *payload){
