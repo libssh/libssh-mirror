@@ -384,7 +384,7 @@ static int sftp_read_and_dispatch(SFTP_SESSION *sftp) {
 
   msg = sftp_get_message(packet);
   sftp_packet_free(packet);
-  if (message == NULL) {
+  if (msg == NULL) {
     sftp_leave_function();
     return -1;
   }
