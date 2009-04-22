@@ -184,7 +184,8 @@ int buffer_add_u8(struct buffer_struct *buffer,u8 data){
  * \param len length of data
  * \return 0 on success, -1 on error.
  */
-int buffer_add_data_begin(struct buffer_struct *buffer, const void *data, u32 len) {
+int buffer_prepend_data(struct buffer_struct *buffer, const void *data,
+    u32 len) {
   if (buffer->allocated < (buffer->used + len)) {
     if (realloc_buffer(buffer, buffer->used + len) < 0) {
       return -1;

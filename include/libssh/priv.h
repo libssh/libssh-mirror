@@ -617,7 +617,7 @@ int buffer_add_u8(BUFFER *buffer, u8 data);
 int buffer_add_u32(BUFFER *buffer, u32 data);
 int buffer_add_u64(BUFFER *buffer, u64 data);
 int buffer_add_data(BUFFER *buffer, const void *data, u32 len);
-int buffer_add_data_begin(BUFFER *buffer, const void *data, u32 len);
+int buffer_prepend_data(BUFFER *buffer, const void *data, u32 len);
 int buffer_add_buffer(BUFFER *buffer, BUFFER *source);
 int buffer_reinit(BUFFER *buffer);
 

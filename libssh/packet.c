@@ -471,10 +471,10 @@ static int packet_send2(SSH_SESSION *session) {
       "%d bytes after comp + %d padding bytes = %d bytes packet",
       currentlen, padding, (ntohl(finallen)));
 
-  if (buffer_add_data_begin(session->out_buffer, &padding, sizeof(u8)) < 0) {
+  if (buffer_prepend_data(session->out_buffer, &padding, sizeof(u8)) < 0) {
     goto error;
   }
-  if (buffer_add_data_begin(session->out_buffer, &finallen, sizeof(u32)) < 0) {
+  if (buffer_prepend_data(session->out_buffer, &finallen, sizeof(u32)) < 0) {
     goto error;
   }
   if (buffer_add_data(session->out_buffer, padstring, padding) < 0) {
@@ -536,10 +536,10 @@ static int packet_send1(SSH_SESSION *session) {
       "%d bytes after comp + %d padding bytes = %d bytes packet",
       currentlen, padding, ntohl(finallen));
 
-  if (buffer_add_data_begin(session->out_buffer,i &padstring, padding) < 0) {
+  if (buffer_prepend_data(session->out_buffer,i &padstring, padding) < 0) {
     goto error;
   }
-  if (buffer_add_data_begin(session->out_buffer, &finallen, sizeof(u32)) < 0) {
+  if (buffer_prepend_data(session->out_buffer, &finallen, sizeof(u32)) < 0) {
     goto error;
   }
 

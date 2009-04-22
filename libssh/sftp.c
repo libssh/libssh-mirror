@@ -191,9 +191,13 @@ void sftp_free(SFTP_SESSION *sftp){
 
 int sftp_packet_write(SFTP_SESSION *sftp,u8 type, BUFFER *payload){
     int size;
-    buffer_add_data_begin(payload,&type,sizeof(u8));
+    if (buffer_prepend_data(payload, &type, sizeof(u8)) < 0) {
+      return -1;
+    }
     size=htonl(buffer_get_len(payload));
-    buffer_add_data_begin(payload,&size,sizeof(u32));
+    if (buffer_prepend_data(payload, &size, sizeof(u32)) < 0) {
+      return -1;
+    }
     size=channel_write(sftp->channel,buffer_get(payload),buffer_get_len(payload));
     if (size < 0) {
       return -1;
