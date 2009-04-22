@@ -480,22 +480,27 @@ int sftp_init(SFTP_SESSION *sftp) {
   return 0;
 }
 
-static REQUEST_QUEUE *request_queue_new(SFTP_MESSAGE *msg){
-    REQUEST_QUEUE *queue;
+static REQUEST_QUEUE *request_queue_new(SFTP_MESSAGE *msg) {
+  REQUEST_QUEUE *queue = NULL;
 
-    queue = malloc(sizeof(REQUEST_QUEUE));
-    if (queue == NULL) {
-      return NULL;
-    }
+  queue = malloc(sizeof(REQUEST_QUEUE));
+  if (queue == NULL) {
+    return NULL;
+  }
+  ZERO_STRUCTP(queue);
 
-    memset(queue,0,sizeof(REQUEST_QUEUE));
-    queue->message=msg;
-    return queue;
+  queue->message = msg;
+
+  return queue;
 }
 
-static void request_queue_free(REQUEST_QUEUE *queue){
-    memset(queue,0,sizeof(*queue));
-    free(queue);
+static void request_queue_free(REQUEST_QUEUE *queue) {
+  if (queue == NULL) {
+    return;
+  }
+
+  ZERO_STRUCTP(queue);
+  SAFE_FREE(queue);
 }
 
 void sftp_enqueue(SFTP_SESSION *sftp, SFTP_MESSAGE *msg){
