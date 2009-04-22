@@ -305,13 +305,20 @@ static SFTP_MESSAGE *sftp_message_new(SFTP_SESSION *sftp){
   return msg;
 }
 
-static void sftp_message_free(SFTP_MESSAGE *msg){
-	SFTP_SESSION *sftp=msg->sftp;
-	sftp_enter_function();
-    if(msg->payload)
-        buffer_free(msg->payload);
-    free(msg);
-    sftp_leave_function();
+static void sftp_message_free(SFTP_MESSAGE *msg) {
+  SFTP_SESSION *sftp;
+
+  if (msg == NULL) {
+    return;
+  }
+
+  sftp = msg->sftp;
+  sftp_enter_function();
+
+  buffer_free(msg->payload);
+  SAFE_FREE(msg);
+
+  sftp_leave_function();
 }
 
 static SFTP_MESSAGE *sftp_get_message(SFTP_PACKET *packet){
