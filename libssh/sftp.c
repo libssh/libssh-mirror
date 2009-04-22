@@ -405,49 +405,79 @@ void sftp_packet_free(SFTP_PACKET *packet) {
 }
 
 /* Initialize the sftp session with the server. */
-int sftp_init(SFTP_SESSION *sftp){
-    SFTP_PACKET *packet;
-    BUFFER *buffer=buffer_new();
-    STRING *ext_name_s=NULL, *ext_data_s=NULL;
-    char *ext_name,*ext_data;
-    u32 version=htonl(LIBSFTP_VERSION);
-    sftp_enter_function();
-    buffer_add_u32(buffer,version);
-    sftp_packet_write(sftp,SSH_FXP_INIT,buffer);
-    buffer_free(buffer);
-    packet=sftp_packet_read(sftp);
-    if(!packet){
-        sftp_leave_function();
-    	return -1;
-    }
-    if(packet->type != SSH_FXP_VERSION){
-        ssh_set_error(sftp->session,SSH_FATAL,"Received a %d messages instead of SSH_FXP_VERSION",packet->type);
-        sftp_packet_free(packet);
-        sftp_leave_function();
-        return -1;
-    }
-    buffer_get_u32(packet->payload,&version);
-    version=ntohl(version);
-    if(!(ext_name_s=buffer_get_ssh_string(packet->payload))||!(ext_data_s=buffer_get_ssh_string(packet->payload)))
-        ssh_log(sftp->session, SSH_LOG_RARE,
-            "sftp server version %d", version);
-    else{
-        ext_name=string_to_char(ext_name_s);
-        ext_data=string_to_char(ext_data_s);
-        ssh_log(sftp->session, SSH_LOG_RARE,
-            "sftp server version %d (%s,%s)",
-            version, ext_name, ext_data);
-        free(ext_name);
-        free(ext_data);
-    }
-    if(ext_name_s)
-        free(ext_name_s);
-    if(ext_data_s)
-        free(ext_data_s);
-    sftp_packet_free(packet);
-    sftp->version=sftp->server_version=version;
+int sftp_init(SFTP_SESSION *sftp) {
+  SFTP_PACKET *packet = NULL;
+  BUFFER *buffer = NULL;
+  STRING *ext_name_s = NULL;
+  STRING *ext_data_s = NULL;
+  char *ext_name = NULL;
+  char *ext_data = NULL;
+  u32 version = htonl(LIBSFTP_VERSION);
+
+  sftp_enter_function();
+
+  buffer = buffer_new();
+  if (buffer == NULL) {
     sftp_leave_function();
-    return 0;
+    return -1;
+  }
+
+  if ((buffer_add_u32(buffer, version) < 0) ||
+      sftp_packet_write(sftp, SSH_FXP_INIT, buffer) < 0) {
+    buffer_free(buffer);
+    sftp_leave_function();
+    return -1;
+  }
+  buffer_free(buffer);
+
+  packet = sftp_packet_read(sftp);
+  if (packet == NULL) {
+    sftp_leave_function();
+    return -1;
+  }
+
+  if (packet->type != SSH_FXP_VERSION) {
+    ssh_set_error(sftp->session, SSH_FATAL,
+        "Received a %d messages instead of SSH_FXP_VERSION", packet->type);
+    sftp_packet_free(packet);
+    sftp_leave_function();
+    return -1;
+  }
+
+  buffer_get_u32(packet->payload,&version);
+  version = ntohl(version);
+
+  ext_name_s = buffer_get_ssh_string(packet->payload);
+  ext_data_s = buffer_get_ssh_string(packet->payload);
+  if (ext_name_s == NULL || (ext_data_s == NULL)) {
+    string_free(ext_name_s);
+    string_free(ext_data_s);
+    ssh_log(sftp->session, SSH_LOG_RARE,
+        "SFTP server version %d", version);
+  } else {
+    ext_name = string_to_char(ext_name_s);
+    ext_data = string_to_char(ext_data_s);
+
+    if (ext_name != NULL || ext_data != NULL) {
+      ssh_log(sftp->session, SSH_LOG_RARE,
+          "SFTP server version %d (%s,%s)",
+          version, ext_name, ext_data);
+    } else {
+      ssh_log(sftp->session, SSH_LOG_RARE,
+          "SFTP server version %d", version);
+    }
+    SAFE_FREE(ext_name);
+    SAFE_FREE(ext_data);
+  }
+  string_free(ext_name_s);
+  string_free(ext_data_s);
+
+  sftp_packet_free(packet);
+
+  sftp->version = sftp->server_version = version;
+
+  sftp_leave_function();
+  return 0;
 }
 
 static REQUEST_QUEUE *request_queue_new(SFTP_MESSAGE *msg){
