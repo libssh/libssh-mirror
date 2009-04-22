@@ -39,7 +39,7 @@
 #define sftp_leave_function() _leave_function(sftp->channel->session)
 
 /* functions */
-void sftp_enqueue(SFTP_SESSION *session, SFTP_MESSAGE *msg);
+static int sftp_enqueue(SFTP_SESSION *session, SFTP_MESSAGE *msg);
 static void sftp_message_free(SFTP_MESSAGE *msg);
 static void sftp_set_error(SFTP_SESSION *sftp, int errnum);
 
@@ -389,7 +389,11 @@ static int sftp_read_and_dispatch(SFTP_SESSION *sftp) {
     return -1;
   }
 
-  sftp_enqueue(sftp, msg);
+  if (sftp_enqueue(sftp, msg) < 0) {
+    sftp_message_free(msg);
+    sftp_leave_function();
+    return -1;
+  }
 
   sftp_leave_function();
   return 0;
@@ -503,21 +507,30 @@ static void request_queue_free(REQUEST_QUEUE *queue) {
   SAFE_FREE(queue);
 }
 
-void sftp_enqueue(SFTP_SESSION *sftp, SFTP_MESSAGE *msg){
-    REQUEST_QUEUE *queue=request_queue_new(msg);
-    REQUEST_QUEUE *ptr;
-    ssh_log(sftp->session, SSH_LOG_PACKET,
-        "queued msg type %d id %d",
-        msg->id, msg->packet_type);
-    if(!sftp->queue)
-        sftp->queue=queue;
-    else {
-        ptr=sftp->queue;
-        while(ptr->next){
-            ptr=ptr->next; /* find end of linked list */
-        }
-        ptr->next=queue; /* add it on bottom */
+static int sftp_enqueue(SFTP_SESSION *sftp, SFTP_MESSAGE *msg) {
+  REQUEST_QUEUE *queue = NULL;
+  REQUEST_QUEUE *ptr;
+
+  queue = request_queue_new(msg);
+  if (queue == NULL) {
+    return -1;
+  }
+
+  ssh_log(sftp->session, SSH_LOG_PACKET,
+      "Queued msg type %d id %d",
+      msg->id, msg->packet_type);
+
+  if(sftp->queue == NULL) {
+    sftp->queue = queue;
+  } else {
+    ptr = sftp->queue;
+    while(ptr->next) {
+      ptr=ptr->next; /* find end of linked list */
     }
+    ptr->next = queue; /* add it on bottom */
+  }
+
+  return 0;
 }
 
 /* pulls of a message from the queue based on the ID. returns null if no message has been found */
