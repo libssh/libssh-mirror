@@ -321,33 +321,53 @@ static void sftp_message_free(SFTP_MESSAGE *msg) {
   sftp_leave_function();
 }
 
-static SFTP_MESSAGE *sftp_get_message(SFTP_PACKET *packet){
-	SFTP_SESSION *sftp=packet->sftp;
-	SFTP_MESSAGE *msg=sftp_message_new(sftp);
-	sftp_enter_function();
-    msg->sftp=packet->sftp;
-    msg->packet_type=packet->type;
-    if((packet->type!=SSH_FXP_STATUS)&&(packet->type!=SSH_FXP_HANDLE) &&
-        (packet->type != SSH_FXP_DATA) && (packet->type != SSH_FXP_ATTRS)
-    && (packet->type != SSH_FXP_NAME)){
-        ssh_set_error(packet->sftp->session,SSH_FATAL,"get_message : unknown packet type %d\n",packet->type);
-        sftp_message_free(msg);
-        sftp_leave_function();
-        return NULL;
-    }
-    if(buffer_get_u32(packet->payload,&msg->id)!=sizeof(u32)){
-        ssh_set_error(packet->sftp->session,SSH_FATAL,"invalid packet %d : no ID",packet->type);
-        sftp_message_free(msg);
-        sftp_leave_function();
-        return NULL;
-    }
-    ssh_log(packet->sftp->session, SSH_LOG_PACKET,
-        "Packet with id %d type %d",
-        msg->id,
-        msg->packet_type);
-    buffer_add_data(msg->payload,buffer_get_rest(packet->payload),buffer_get_rest_len(packet->payload));
+static SFTP_MESSAGE *sftp_get_message(SFTP_PACKET *packet) {
+  SFTP_SESSION *sftp = packet->sftp;
+  SFTP_MESSAGE *msg = NULL;
+
+  sftp_enter_function();
+
+  msg = sftp_message_new(sftp);
+  if (msg == NULL) {
     sftp_leave_function();
-    return msg;
+    return NULL;
+  }
+
+  msg->sftp = packet->sftp;
+  msg->packet_type = packet->type;
+
+  if ((packet->type != SSH_FXP_STATUS) && (packet->type!=SSH_FXP_HANDLE) &&
+      (packet->type != SSH_FXP_DATA) && (packet->type != SSH_FXP_ATTRS) &&
+      (packet->type != SSH_FXP_NAME)) {
+    ssh_set_error(packet->sftp->session, SSH_FATAL, 
+        "Unknown packet type %d", packet->type);
+    sftp_message_free(msg);
+    sftp_leave_function();
+    return NULL;
+  }
+
+  if (buffer_get_u32(packet->payload, &msg->id) != sizeof(u32)) {
+    ssh_set_error(packet->sftp->session, SSH_FATAL,
+        "Invalid packet %d: no ID", packet->type);
+    sftp_message_free(msg);
+    sftp_leave_function();
+    return NULL;
+  }
+
+  ssh_log(packet->sftp->session, SSH_LOG_PACKET,
+      "Packet with id %d type %d",
+      msg->id,
+      msg->packet_type);
+
+  if (buffer_add_data(msg->payload, buffer_get_rest(packet->payload),
+        buffer_get_rest_len(packet->payload)) < 0) {
+    sftp_message_free(msg);
+    sftp_leave_function();
+    return NULL;
+  }
+
+  sftp_leave_function();
+  return msg;
 }
 
 static int sftp_read_and_dispatch(SFTP_SESSION *sftp){
