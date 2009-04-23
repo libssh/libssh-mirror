@@ -1254,45 +1254,61 @@ void sftp_attributes_free(SFTP_ATTRIBUTES *file){
   SAFE_FREE(file);
 }
 
-static int sftp_handle_close(SFTP_SESSION *sftp, STRING *handle){
-    SFTP_MESSAGE *msg=NULL;
-    STATUS_MESSAGE *status;
-    int id=sftp_get_new_id(sftp);
-    int err=0;
-    BUFFER *buffer=buffer_new();
-    buffer_add_u32(buffer,id);
-    buffer_add_ssh_string(buffer,handle);
-    sftp_packet_write(sftp,SSH_FXP_CLOSE,buffer);
-    buffer_free(buffer);
-    while(!msg){
-        if(sftp_read_and_dispatch(sftp))
-        /* something nasty has happened */
-            return -1;
-        msg=sftp_dequeue(sftp,id);
-    }
-    switch (msg->packet_type){
-        case SSH_FXP_STATUS:
-            status=parse_status_msg(msg);
-            sftp_message_free(msg);
-            if(!status)
-                return -1;
-            sftp_set_error(sftp, status->status);
-            switch (status->status) {
-              case SSH_FX_OK:
-                status_msg_free(status);
-                return err;
-                break;
-              default:
-                break;
-            }
-            ssh_set_error(sftp->session,SSH_REQUEST_DENIED,"sftp server : %s",status->errormsg);
-            status_msg_free(status);
-            return -1;
-        default:
-            ssh_set_error(sftp->session,SSH_FATAL,"Received message %d during sftp_handle_close!",msg->packet_type);
-            sftp_message_free(msg);
-    }
+static int sftp_handle_close(SFTP_SESSION *sftp, STRING *handle) {
+  STATUS_MESSAGE *status;
+  SFTP_MESSAGE *msg = NULL;
+  BUFFER *buffer = NULL;
+  u32 id;
+
+  buffer = buffer_new();
+  if (buffer == NULL) {
     return -1;
+  }
+
+  id = sftp_get_new_id(sftp);
+  if (buffer_add_u32(buffer, id) < 0 ||
+      buffer_add_ssh_string(buffer, handle) < 0 ||
+      sftp_packet_write(sftp, SSH_FXP_CLOSE ,buffer) < 0) {
+    buffer_free(buffer);
+    return -1;
+  }
+  buffer_free(buffer);
+
+  while (msg == NULL) {
+    if (sftp_read_and_dispatch(sftp) < 0) {
+      /* something nasty has happened */
+      return -1;
+    }
+    msg = sftp_dequeue(sftp,id);
+  }
+
+  switch (msg->packet_type) {
+    case SSH_FXP_STATUS:
+      status = parse_status_msg(msg);
+      sftp_message_free(msg);
+      if(status == NULL) {
+        return -1;
+      }
+      sftp_set_error(sftp, status->status);
+      switch (status->status) {
+        case SSH_FX_OK:
+          status_msg_free(status);
+          return 0;
+          break;
+        default:
+          break;
+      }
+      ssh_set_error(sftp->session, SSH_REQUEST_DENIED,
+          "SFTP server: %s", status->errormsg);
+      status_msg_free(status);
+      return -1;
+    default:
+      ssh_set_error(sftp->session, SSH_FATAL,
+          "Received message %d during sftp_handle_close!", msg->packet_type);
+      sftp_message_free(msg);
+  }
+
+  return -1;
 }
 
 int sftp_file_close(SFTP_FILE *file) {
