@@ -571,11 +571,12 @@ static SFTP_MESSAGE *sftp_dequeue(SFTP_SESSION *sftp, u32 id){
 }
 
 /*
- * Assigns a new sftp ID for new requests and assures there is no collision between them.
+ * Assigns a new SFTP ID for new requests and assures there is no collision
+ * between them.
  * Returns a new ID ready to use in a request
  */
-static inline u32 sftp_get_new_id(SFTP_SESSION *session){
-    return ++session->id_counter;
+static inline u32 sftp_get_new_id(SFTP_SESSION *session) {
+  return ++session->id_counter;
 }
 
 static STATUS_MESSAGE *parse_status_msg(SFTP_MESSAGE *msg){
