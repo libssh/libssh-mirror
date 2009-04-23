@@ -637,7 +637,7 @@ int sftp_server_init(SFTP_SESSION *sftp);
 SFTP_PACKET *sftp_packet_read(SFTP_SESSION *sftp);
 int sftp_packet_write(SFTP_SESSION *sftp,u8 type, BUFFER *payload);
 void sftp_packet_free(SFTP_PACKET *packet);
-void buffer_add_attributes(BUFFER *buffer, SFTP_ATTRIBUTES *attr);
+int buffer_add_attributes(BUFFER *buffer, SFTP_ATTRIBUTES *attr);
 SFTP_ATTRIBUTES *sftp_parse_attr(SFTP_SESSION *session, BUFFER *buf,int expectname);
 /* sftpserver.c */
 

@@ -1065,28 +1065,46 @@ static SFTP_ATTRIBUTES *sftp_parse_attr_3(SFTP_SESSION *sftp, BUFFER *buf,
   return attr;
 }
 
-void buffer_add_attributes(BUFFER *buffer, SFTP_ATTRIBUTES *attr){
-	u32 flags=(attr?attr->flags:0);
-	flags &= (SSH_FILEXFER_ATTR_SIZE | SSH_FILEXFER_ATTR_UIDGID | SSH_FILEXFER_ATTR_PERMISSIONS | SSH_FILEXFER_ATTR_ACMODTIME);
-	buffer_add_u32(buffer,htonl(flags));
-	if(attr){
-		if (flags & SSH_FILEXFER_ATTR_SIZE)
-		{
-			buffer_add_u64(buffer, htonll(attr->size));
-		}
-		if(flags & SSH_FILEXFER_ATTR_UIDGID){
-			buffer_add_u32(buffer,htonl(attr->uid));
-			buffer_add_u32(buffer,htonl(attr->gid));
-		}
-		if(flags & SSH_FILEXFER_ATTR_PERMISSIONS){
-			buffer_add_u32(buffer,htonl(attr->permissions));
-		}
-		if (flags & SSH_FILEXFER_ATTR_ACMODTIME)
-		{
-			buffer_add_u32(buffer, htonl(attr->atime));
-			buffer_add_u32(buffer, htonl(attr->mtime));
-		}
-	}
+/* FIXME is this really needed as a public function? */
+int buffer_add_attributes(BUFFER *buffer, SFTP_ATTRIBUTES *attr) {
+  u32 flags = (attr ? attr->flags : 0);
+
+  flags &= (SSH_FILEXFER_ATTR_SIZE | SSH_FILEXFER_ATTR_UIDGID |
+      SSH_FILEXFER_ATTR_PERMISSIONS | SSH_FILEXFER_ATTR_ACMODTIME);
+
+  if (buffer_add_u32(buffer, htonl(flags)) < 0) {
+    return -1;
+  }
+
+  if (attr) {
+    if (flags & SSH_FILEXFER_ATTR_SIZE) {
+      if (buffer_add_u64(buffer, htonll(attr->size)) < 0) {
+        return -1;
+      }
+    }
+
+    if (flags & SSH_FILEXFER_ATTR_UIDGID) {
+      if (buffer_add_u32(buffer,htonl(attr->uid)) < 0 ||
+          buffer_add_u32(buffer,htonl(attr->gid)) < 0) {
+        return -1;
+      }
+    }
+
+    if (flags & SSH_FILEXFER_ATTR_PERMISSIONS) {
+      if (buffer_add_u32(buffer, htonl(attr->permissions)) < 0) {
+        return -1;
+      }
+    }
+
+    if (flags & SSH_FILEXFER_ATTR_ACMODTIME) {
+      if (buffer_add_u32(buffer, htonl(attr->atime)) < 0 ||
+          buffer_add_u32(buffer, htonl(attr->mtime)) < 0) {
+        return -1;
+      }
+    }
+  }
+
+  return 0;
 }
 
 
@@ -1312,7 +1330,10 @@ SFTP_FILE *sftp_open(SFTP_SESSION *sftp, const char *file, int flags, mode_t mod
     buffer_add_ssh_string(buffer,filename);
     free(filename);
     buffer_add_u32(buffer,htonl(sftp_flags));
-    buffer_add_attributes(buffer,&attr);
+    if (buffer_add_attributes(buffer, &attr) < 0) {
+      buffer_free(buffer);
+      return NULL;
+    }
     sftp_packet_write(sftp,SSH_FXP_OPEN,buffer);
     buffer_free(buffer);
     while(!msg){
@@ -1712,7 +1733,10 @@ int sftp_mkdir(SFTP_SESSION *sftp, const char *directory, mode_t mode) {
     buffer_add_u32(buffer, id);
     buffer_add_ssh_string(buffer, path);
     free(path);
-    buffer_add_attributes(buffer, &attr);
+    if (buffer_add_attributes(buffer, &attr) < 0) {
+      buffer_free(buffer);
+      return -1;
+    }
     sftp_packet_write(sftp, SSH_FXP_MKDIR, buffer);
     buffer_free(buffer);
     while (!msg) {
@@ -1818,7 +1842,9 @@ int sftp_setstat(SFTP_SESSION *sftp, const char *file, SFTP_ATTRIBUTES *attr) {
     buffer_add_u32(buffer, id);
     buffer_add_ssh_string(buffer, path);
     free(path);
-    buffer_add_attributes(buffer, attr);
+    if (buffer_add_attributes(buffer, attr) < 0) {
+      return -1;
+    }
     sftp_packet_write(sftp, SSH_FXP_SETSTAT, buffer);
     buffer_free(buffer);
     while (!msg) {
