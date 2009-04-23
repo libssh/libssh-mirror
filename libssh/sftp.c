@@ -27,9 +27,12 @@
 /* This file contains code written by Nick Zitzmann */
 
 #include <errno.h>
+#include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
-#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
 #include "libssh/priv.h"
 #include "libssh/ssh2.h"
 #include "libssh/sftp.h"
@@ -761,6 +764,27 @@ static SFTP_ATTRIBUTES *sftp_parse_attr_4(SFTP_SESSION *sftp, BUFFER *buf,
             if(buffer_get_u32(buf,&attr->permissions)!=4)
                 break;
             attr->permissions=ntohl(attr->permissions);
+
+            switch (attr->permissions & S_IFMT) {
+              case S_IFSOCK:
+              case S_IFBLK:
+              case S_IFCHR:
+              case S_IFIFO:
+                attr->type = SSH_FILEXFER_TYPE_SPECIAL;
+                break;
+              case S_IFLNK:
+                attr->type = SSH_FILEXFER_TYPE_SYMLINK;
+                break;
+              case S_IFREG:
+                attr->type = SSH_FILEXFER_TYPE_REGULAR;
+                break;
+              case S_IFDIR:
+                attr->type = SSH_FILEXFER_TYPE_DIRECTORY;
+                break;
+              default:
+                attr->type = SSH_FILEXFER_TYPE_UNKNOWN;
+                break;
+            }
         }
         if(flags & SSH_FILEXFER_ATTR_ACCESSTIME){
             if(buffer_get_u64(buf,&attr->atime64)!=8)
@@ -905,6 +929,27 @@ static SFTP_ATTRIBUTES *sftp_parse_attr_3(SFTP_SESSION *sftp, BUFFER *buf,
             if(buffer_get_u32(buf,&attr->permissions)!=sizeof(u32))
                 break;
             attr->permissions=ntohl(attr->permissions);
+
+            switch (attr->permissions & S_IFMT) {
+              case S_IFSOCK:
+              case S_IFBLK:
+              case S_IFCHR:
+              case S_IFIFO:
+                attr->type = SSH_FILEXFER_TYPE_SPECIAL;
+                break;
+              case S_IFLNK:
+                attr->type = SSH_FILEXFER_TYPE_SYMLINK;
+                break;
+              case S_IFREG:
+                attr->type = SSH_FILEXFER_TYPE_REGULAR;
+                break;
+              case S_IFDIR:
+                attr->type = SSH_FILEXFER_TYPE_DIRECTORY;
+                break;
+              default:
+                attr->type = SSH_FILEXFER_TYPE_UNKNOWN;
+                break;
+            }
         }
         if(flags & SSH_FILEXFER_ATTR_ACMODTIME){
             if(buffer_get_u32(buf,&attr->atime)!=sizeof(u32))
