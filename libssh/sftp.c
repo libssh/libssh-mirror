@@ -1130,76 +1130,110 @@ int sftp_server_version(SFTP_SESSION *sftp) {
 }
 
 /* Get a single file attributes structure of a directory. */
-SFTP_ATTRIBUTES *sftp_readdir(SFTP_SESSION *sftp, SFTP_DIR *dir){
-    BUFFER *payload;
-    u32 id;
-    SFTP_MESSAGE *msg=NULL;
-    STATUS_MESSAGE *status;
-    SFTP_ATTRIBUTES *attr;
-    if(!dir->buffer){
-        payload=buffer_new();
-        id=sftp_get_new_id(sftp);
-        buffer_add_u32(payload,id);
-        buffer_add_ssh_string(payload,dir->handle);
-        sftp_packet_write(sftp,SSH_FXP_READDIR,payload);
-        buffer_free(payload);
-        ssh_log(sftp->session, SSH_LOG_PACKET,
-            "Sent a ssh_fxp_readdir with id %d", id);
-        while(!msg){
-            if(sftp_read_and_dispatch(sftp))
-                /* something nasty has happened */
-                return NULL;
-            msg=sftp_dequeue(sftp,id);
-        }
-        switch (msg->packet_type){
-            case SSH_FXP_STATUS:
-                status=parse_status_msg(msg);
-                sftp_message_free(msg);
-                if(!status)
-                    return NULL;
-                sftp_set_error(sftp, status->status);
-                switch (status->status) {
-                  case SSH_FX_EOF:
-                    dir->eof = 1;
-                    status_msg_free(status);
-                    return NULL;
-                  default:
-                    break;
-                }
-                ssh_set_error(sftp->session,SSH_FATAL,"Unknown error status : %d",status->status);
-                status_msg_free(status);
-                return NULL;
-            case SSH_FXP_NAME:
-                buffer_get_u32(msg->payload,&dir->count);
-                dir->count=ntohl(dir->count);
-                dir->buffer=msg->payload;
-                msg->payload=NULL;
-                sftp_message_free(msg);
-                break;
-            default:
-                ssh_set_error(sftp->session,SSH_FATAL,"unsupported message back %d",msg->packet_type);
-                sftp_message_free(msg);
-                return NULL;
-        }
+SFTP_ATTRIBUTES *sftp_readdir(SFTP_SESSION *sftp, SFTP_DIR *dir) {
+  SFTP_MESSAGE *msg = NULL;
+  STATUS_MESSAGE *status;
+  SFTP_ATTRIBUTES *attr;
+  BUFFER *payload;
+  u32 id;
+
+  if (dir->buffer == NULL) {
+    payload = buffer_new();
+    if (payload == NULL) {
+      return NULL;
     }
-    /* now dir->buffer contains a buffer and dir->count != 0 */
-    if(dir->count==0){
-        ssh_set_error(sftp->session,SSH_FATAL,"Count of files sent by the server is zero, which is invalid, or libsftp bug");
+
+    id = sftp_get_new_id(sftp);
+    if (buffer_add_u32(payload, id) < 0 ||
+        buffer_add_ssh_string(payload, dir->handle) < 0) {
+      buffer_free(payload);
+      return NULL;
+    }
+
+    if (sftp_packet_write(sftp, SSH_FXP_READDIR, payload) < 0) {
+      buffer_free(payload);
+      return NULL;
+    }
+    buffer_free(payload);
+
+    ssh_log(sftp->session, SSH_LOG_PACKET,
+        "Sent a ssh_fxp_readdir with id %d", id);
+
+    while (msg == NULL) {
+      if (sftp_read_and_dispatch(sftp) < 0) {
+        /* something nasty has happened */
+        return NULL;
+      }
+      msg = sftp_dequeue(sftp, id);
+    }
+
+    switch (msg->packet_type){
+      case SSH_FXP_STATUS:
+        status = parse_status_msg(msg);
+        sftp_message_free(msg);
+        if (status == NULL) {
+          return NULL;
+        }
+        sftp_set_error(sftp, status->status);
+        switch (status->status) {
+          case SSH_FX_EOF:
+            dir->eof = 1;
+            status_msg_free(status);
+            return NULL;
+          default:
+            break;
+        }
+
+        ssh_set_error(sftp->session, SSH_FATAL,
+            "Unknown error status: %d", status->status);
+        status_msg_free(status);
+
+        return NULL;
+      case SSH_FXP_NAME:
+        buffer_get_u32(msg->payload, &dir->count);
+        dir->count = ntohl(dir->count);
+        dir->buffer = msg->payload;
+        msg->payload = NULL;
+        sftp_message_free(msg);
+        break;
+      default:
+        ssh_set_error(sftp->session, SSH_FATAL,
+            "Unsupported message back %d", msg->packet_type);
+        sftp_message_free(msg);
+
         return NULL;
     }
-    ssh_log(sftp->session, SSH_LOG_RARE, "Count is %d", dir->count);
-    attr=sftp_parse_attr(sftp,dir->buffer,1);
-    dir->count--;
-    if(dir->count==0){
-        buffer_free(dir->buffer);
-        dir->buffer=NULL;
-    }
-    return attr;
+  }
+
+  /* now dir->buffer contains a buffer and dir->count != 0 */
+  if (dir->count == 0) {
+    ssh_set_error(sftp->session, SSH_FATAL,
+        "Count of files sent by the server is zero, which is invalid, or "
+        "libsftp bug");
+    return NULL;
+  }
+
+  ssh_log(sftp->session, SSH_LOG_RARE, "Count is %d", dir->count);
+
+  attr = sftp_parse_attr(sftp, dir->buffer, 1);
+  if (attr == NULL) {
+    ssh_set_error(sftp->session, SSH_FATAL,
+        "Couldn't parse the SFTP attributes");
+    return NULL;
+  }
+
+  dir->count--;
+  if (dir->count == 0) {
+    buffer_free(dir->buffer);
+    dir->buffer = NULL;
+  }
+
+  return attr;
 }
 
 /* Tell if the directory has reached EOF (End Of File). */
-int sftp_dir_eof(SFTP_DIR *dir){
-    return (dir->eof);
+int sftp_dir_eof(SFTP_DIR *dir) {
+  return dir->eof;
 }
 
 /* Free a SFTP_ATTRIBUTE handle */
