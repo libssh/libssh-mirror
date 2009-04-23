@@ -665,60 +665,88 @@ static SFTP_FILE *parse_handle_msg(SFTP_MESSAGE *msg){
 
 /* Open a directory */
 SFTP_DIR *sftp_opendir(SFTP_SESSION *sftp, const char *path){
-    SFTP_DIR *dir=NULL;
-    SFTP_FILE *file;
-    STATUS_MESSAGE *status;
-    SFTP_MESSAGE *msg=NULL;
-    STRING *path_s;
-    BUFFER *payload=buffer_new();
-    u32 id=sftp_get_new_id(sftp);
-    buffer_add_u32(payload,id);
-    path_s=string_from_char(path);
-    buffer_add_ssh_string(payload,path_s);
-    free(path_s);
-    sftp_packet_write(sftp,SSH_FXP_OPENDIR,payload);
-    buffer_free(payload);
-    while(!msg){
-        if(sftp_read_and_dispatch(sftp))
-            /* something nasty has happened */
-            return NULL;
-        msg=sftp_dequeue(sftp,id);
-    }
-    switch (msg->packet_type){
-        case SSH_FXP_STATUS:
-            status=parse_status_msg(msg);
-            sftp_message_free(msg);
-            if(!status)
-                return NULL;
-            sftp_set_error(sftp, status->status);
-            ssh_set_error(sftp->session,SSH_REQUEST_DENIED,"sftp server : %s",status->errormsg);
-            status_msg_free(status);
-            return NULL;
-        case SSH_FXP_HANDLE:
-            file=parse_handle_msg(msg);
-            sftp_message_free(msg);
-            if (file) {
-                dir = malloc(sizeof(SFTP_DIR));
-                if (dir == NULL) {
-                  return NULL;
-                }
-                memset(dir,0,sizeof(*dir));
-                dir->sftp=sftp;
-                dir->name = strdup(path);
-                if (dir->name == NULL) {
-                  SAFE_FREE(dir);
-                  SAFE_FREE(file);
-                  return NULL;
-                }
-                dir->handle=file->handle;
-                free(file);
-            }
-            return dir;
-        default:
-            ssh_set_error(sftp->session,SSH_FATAL,"Received message %d during opendir!",msg->packet_type);
-            sftp_message_free(msg);
-    }
+  SFTP_MESSAGE *msg = NULL;
+  SFTP_FILE *file = NULL;
+  SFTP_DIR *dir = NULL;
+  STATUS_MESSAGE *status;
+  STRING *path_s;
+  BUFFER *payload;
+  u32 id;
+
+  payload = buffer_new();
+  if (payload == NULL) {
     return NULL;
+  }
+
+  path_s = string_from_char(path);
+  if (path_s == NULL) {
+    buffer_free(payload);
+    return NULL;
+  }
+
+  id = sftp_get_new_id(sftp);
+  if (buffer_add_u32(payload, id) < 0 ||
+      buffer_add_ssh_string(payload, path_s) < 0) {
+    buffer_free(payload);
+    string_free(path_s);
+    return NULL;
+  }
+  string_free(path_s);
+
+  if (sftp_packet_write(sftp, SSH_FXP_OPENDIR, payload) < 0) {
+    buffer_free(payload);
+    return NULL;
+  }
+  buffer_free(payload);
+
+  while (msg == NULL) {
+    if (sftp_read_and_dispatch(sftp) < 0) {
+      /* something nasty has happened */
+      return NULL;
+    }
+    msg = sftp_dequeue(sftp, id);
+  }
+
+  switch (msg->packet_type) {
+    case SSH_FXP_STATUS:
+      status = parse_status_msg(msg);
+      sftp_message_free(msg);
+      if (status == NULL) {
+        return NULL;
+      }
+      sftp_set_error(sftp, status->status);
+      ssh_set_error(sftp->session, SSH_REQUEST_DENIED,
+          "SFTP server: %s", status->errormsg);
+      status_msg_free(status);
+      return NULL;
+    case SSH_FXP_HANDLE:
+      file = parse_handle_msg(msg);
+      sftp_message_free(msg);
+      if (file != NULL) {
+        dir = malloc(sizeof(SFTP_DIR));
+        if (dir == NULL) {
+          return NULL;
+        }
+        ZERO_STRUCTP(dir);
+
+        dir->sftp = sftp;
+        dir->name = strdup(path);
+        if (dir->name == NULL) {
+          SAFE_FREE(dir);
+          SAFE_FREE(file);
+          return NULL;
+        }
+        dir->handle = file->handle;
+        SAFE_FREE(file);
+      }
+      return dir;
+    default:
+      ssh_set_error(sftp->session, SSH_FATAL,
+          "Received message %d during opendir!", msg->packet_type);
+      sftp_message_free(msg);
+  }
+
+  return NULL;
 }
 
 /* parse the attributes from a payload from some messages */
