@@ -533,34 +533,41 @@ static int sftp_enqueue(SFTP_SESSION *sftp, SFTP_MESSAGE *msg) {
   return 0;
 }
 
-/* pulls of a message from the queue based on the ID. returns null if no message has been found */
+/*
+ * Pulls of a message from the queue based on the ID.
+ * Returns NULL if no message has been found.
+ */
 static SFTP_MESSAGE *sftp_dequeue(SFTP_SESSION *sftp, u32 id){
-    REQUEST_QUEUE *queue,*prev=NULL;
-    SFTP_MESSAGE *msg;
-    if(sftp->queue==NULL){
-        return NULL;
-    }
-    queue=sftp->queue;
-    while(queue){
-        if(queue->message->id==id){
-            /* remove from queue */
-            if(prev==NULL){
-                sftp->queue=queue->next;
-            } else {
-                prev->next=queue->next;
-            }
-            msg=queue->message;
-            request_queue_free(queue);
-            ssh_log(sftp->session, SSH_LOG_PACKET,
-                "Dequeued msg id %d type %d",
-                msg->id,
-                msg->packet_type);
-            return msg;
-        }
-        prev=queue;
-        queue=queue->next;
-    }
+  REQUEST_QUEUE *prev = NULL;
+  REQUEST_QUEUE *queue;
+  SFTP_MESSAGE *msg;
+
+  if(sftp->queue == NULL) {
     return NULL;
+  }
+
+  queue = sftp->queue;
+  while (queue) {
+    if(queue->message->id == id) {
+      /* remove from queue */
+      if (prev == NULL) {
+        sftp->queue = queue->next;
+      } else {
+        prev->next = queue->next;
+      }
+      msg = queue->message;
+      request_queue_free(queue);
+      ssh_log(sftp->session, SSH_LOG_PACKET,
+          "Dequeued msg id %d type %d",
+          msg->id,
+          msg->packet_type);
+      return msg;
+    }
+    prev = queue;
+    queue = queue->next;
+  }
+
+  return NULL;
 }
 
 /*
