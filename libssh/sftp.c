@@ -580,33 +580,45 @@ static inline u32 sftp_get_new_id(SFTP_SESSION *session) {
 }
 
 static STATUS_MESSAGE *parse_status_msg(SFTP_MESSAGE *msg){
-    STATUS_MESSAGE *status;
-    if(msg->packet_type != SSH_FXP_STATUS){
-        ssh_set_error(msg->sftp->session, SSH_FATAL,"Not a ssh_fxp_status message passed in !");
-        return NULL;
-    }
+  STATUS_MESSAGE *status;
 
-    status = malloc(sizeof(STATUS_MESSAGE));
-    if (status == NULL) {
-      return NULL;
-    }
+  if (msg->packet_type != SSH_FXP_STATUS) {
+    ssh_set_error(msg->sftp->session, SSH_FATAL,
+        "Not a ssh_fxp_status message passed in!");
+    return NULL;
+  }
 
-    memset(status,0,sizeof(*status));
-    status->id=msg->id;
-    if( (buffer_get_u32(msg->payload,&status->status)!= 4)
-     || !(status->error=buffer_get_ssh_string(msg->payload)) ||
-     !(status->lang=buffer_get_ssh_string(msg->payload))){
-         if(status->error)
-             free(status->error);
-         /* status->lang never get allocated if something failed */
-         free(status);
-         ssh_set_error(msg->sftp->session,SSH_FATAL,"invalid SSH_FXP_STATUS message");
-         return NULL;
-    }
-    status->status=ntohl(status->status);
-    status->errormsg=string_to_char(status->error);
-    status->langmsg=string_to_char(status->lang);
-    return status;
+  status = malloc(sizeof(STATUS_MESSAGE));
+  if (status == NULL) {
+    return NULL;
+  }
+  ZERO_STRUCTP(status);
+
+  status->id = msg->id;
+  if ((buffer_get_u32(msg->payload,&status->status) != 4) ||
+      (status->error = buffer_get_ssh_string(msg->payload)) == NULL ||
+      (status->lang = buffer_get_ssh_string(msg->payload)) == NULL) {
+    string_free(status->error);
+    /* status->lang never get allocated if something failed */
+    SAFE_FREE(status);
+    ssh_set_error(msg->sftp->session, SSH_FATAL,
+        "Invalid SSH_FXP_STATUS message");
+    return NULL;
+  }
+
+  status->status = ntohl(status->status);
+  status->errormsg = string_to_char(status->error);
+  status->langmsg = string_to_char(status->lang);
+  if (status->errormsg == NULL || status->langmsg == NULL) {
+    string_free(status->error);
+    string_free(status->lang);
+    SAFE_FREE(status->errormsg);
+    SAFE_FREE(status->langmsg);
+    SAFE_FREE(status);
+    return NULL;
+  }
+
+  return status;
 }
 
 static void status_msg_free(STATUS_MESSAGE *status){
