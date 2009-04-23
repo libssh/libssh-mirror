@@ -42,6 +42,7 @@
 static int sftp_enqueue(SFTP_SESSION *session, SFTP_MESSAGE *msg);
 static void sftp_message_free(SFTP_MESSAGE *msg);
 static void sftp_set_error(SFTP_SESSION *sftp, int errnum);
+static void status_msg_free(STATUS_MESSAGE *status);
 
 SFTP_SESSION *sftp_new(SSH_SESSION *session){
   SFTP_SESSION *sftp;
@@ -622,10 +623,10 @@ static void status_msg_free(STATUS_MESSAGE *status){
     return;
   }
 
-  string_free(status->errormsg);
-  string_free(status->langmsg);
-  SAFE_FREE(status->error);
-  SAFE_FREE(status->lang);
+  string_free(status->error);
+  string_free(status->lang);
+  SAFE_FREE(status->errormsg);
+  SAFE_FREE(status->langmsg);
   SAFE_FREE(status);
 }
 
