@@ -1238,21 +1238,20 @@ int sftp_dir_eof(SFTP_DIR *dir) {
 
 /* Free a SFTP_ATTRIBUTE handle */
 void sftp_attributes_free(SFTP_ATTRIBUTES *file){
-    if(file->name)
-        free(file->name);
-    if(file->longname)
-        free(file->longname);
-    if(file->acl)
-        free(file->acl);
-    if(file->extended_data)
-        free(file->extended_data);
-    if(file->extended_type)
-        free(file->extended_type);
-    if(file->group)
-        free(file->group);
-    if(file->owner)
-        free(file->owner);
-    free(file);
+  if (file == NULL) {
+    return;
+  }
+
+  string_free(file->acl);
+  string_free(file->extended_data);
+  string_free(file->extended_type);
+
+  SAFE_FREE(file->name);
+  SAFE_FREE(file->longname);
+  SAFE_FREE(file->group);
+  SAFE_FREE(file->owner);
+
+  SAFE_FREE(file);
 }
 
 static int sftp_handle_close(SFTP_SESSION *sftp, STRING *handle){
