@@ -1336,18 +1336,18 @@ int sftp_dir_close(SFTP_DIR *dir) {
 
 /* Close an open directory. */
 int sftp_closedir(SFTP_DIR *dir){
-    int err=SSH_NO_ERROR;
-    if(dir->name)
-        free(dir->name);
-    if(dir->handle){
-        err=sftp_handle_close(dir->sftp,dir->handle);
-        free(dir->handle);
-    }
-    /* FIXME: check server response and implement errno */
-    if(dir->buffer)
-        buffer_free(dir->buffer);
-    free(dir);
-    return err;
+  int err = SSH_NO_ERROR;
+
+  SAFE_FREE(dir->name);
+  if (dir->handle) {
+    err = sftp_handle_close(dir->sftp, dir->handle);
+    string_free(dir->handle);
+  }
+  /* FIXME: check server response and implement errno */
+  buffer_free(dir->buffer);
+  SAFE_FREE(dir);
+
+  return err;
 }
 
 /* Open a file on the server. */
