@@ -1125,8 +1125,8 @@ SFTP_ATTRIBUTES *sftp_parse_attr(SFTP_SESSION *session, BUFFER *buf,
 }
 
 /* Get the version of the SFTP protocol supported by the server */
-int sftp_server_version(SFTP_SESSION *sftp){
-    return sftp->server_version;
+int sftp_server_version(SFTP_SESSION *sftp) {
+  return sftp->server_version;
 }
 
 /* Get a single file attributes structure of a directory. */
