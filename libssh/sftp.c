@@ -610,11 +610,7 @@ static STATUS_MESSAGE *parse_status_msg(SFTP_MESSAGE *msg){
   status->errormsg = string_to_char(status->error);
   status->langmsg = string_to_char(status->lang);
   if (status->errormsg == NULL || status->langmsg == NULL) {
-    string_free(status->error);
-    string_free(status->lang);
-    SAFE_FREE(status->errormsg);
-    SAFE_FREE(status->langmsg);
-    SAFE_FREE(status);
+    status_msg_free(status);
     return NULL;
   }
 
@@ -622,15 +618,15 @@ static STATUS_MESSAGE *parse_status_msg(SFTP_MESSAGE *msg){
 }
 
 static void status_msg_free(STATUS_MESSAGE *status){
-    if(status->errormsg)
-        free(status->errormsg);
-    if(status->error)
-        free(status->error);
-    if(status->langmsg)
-        free(status->langmsg);
-    if(status->lang)
-        free(status->lang);
-    free(status);
+  if (status == NULL) {
+    return;
+  }
+
+  string_free(status->errormsg);
+  string_free(status->langmsg);
+  SAFE_FREE(status->error);
+  SAFE_FREE(status->lang);
+  SAFE_FREE(status);
 }
 
 static SFTP_FILE *parse_handle_msg(SFTP_MESSAGE *msg){
