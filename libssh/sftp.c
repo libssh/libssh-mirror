@@ -631,28 +631,33 @@ static void status_msg_free(STATUS_MESSAGE *status){
 }
 
 static SFTP_FILE *parse_handle_msg(SFTP_MESSAGE *msg){
-    SFTP_FILE *file;
-    if(msg->packet_type != SSH_FXP_HANDLE){
-        ssh_set_error(msg->sftp->session,SSH_FATAL,"Not a ssh_fxp_handle message passed in !");
-        return NULL;
-    }
+  SFTP_FILE *file;
 
-    file = malloc(sizeof(SFTP_FILE));
-    if (file == NULL) {
-      return NULL;
-    }
+  if(msg->packet_type != SSH_FXP_HANDLE) {
+    ssh_set_error(msg->sftp->session, SSH_FATAL,
+        "Not a ssh_fxp_handle message passed in!");
+    return NULL;
+  }
 
-    memset(file,0,sizeof(*file));
-    file->sftp=msg->sftp;
-    file->handle=buffer_get_ssh_string(msg->payload);
-    file->offset=0;
-    file->eof=0;
-    if(!file->handle){
-        ssh_set_error(msg->sftp->session,SSH_FATAL,"Invalid SSH_FXP_HANDLE message");
-        free(file);
-        return NULL;
-    }
-    return file;
+  file = malloc(sizeof(SFTP_FILE));
+  if (file == NULL) {
+    return NULL;
+  }
+  ZERO_STRUCTP(file);
+
+  file->handle = buffer_get_ssh_string(msg->payload);
+  if (file->handle == NULL) {
+    ssh_set_error(msg->sftp->session, SSH_FATAL,
+        "Invalid SSH_FXP_HANDLE message");
+    SAFE_FREE(file);
+    return NULL;
+  }
+
+  file->sftp = msg->sftp;
+  file->offset = 0;
+  file->eof = 0;
+
+  return file;
 }
 
 /* Open a directory */
