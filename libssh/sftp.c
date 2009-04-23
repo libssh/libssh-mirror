@@ -749,144 +749,167 @@ SFTP_DIR *sftp_opendir(SFTP_SESSION *sftp, const char *path){
   return NULL;
 }
 
-/* parse the attributes from a payload from some messages */
-/* i coded it on baselines from the protocol version 4. */
-/* please excuse me for the inaccuracy of the code. it isn't my fault, it's sftp draft's one */
-/* this code is dead anyway ... */
-/* version 4 specific code */
+/*
+ * Parse the attributes from a payload from some messages. It is coded on
+ * baselines from the protocol version 4.
+ * This code is more or less dead but maybe we need it in future.
+ */
 static SFTP_ATTRIBUTES *sftp_parse_attr_4(SFTP_SESSION *sftp, BUFFER *buf,
     int expectnames) {
-    u32 flags=0;
-    SFTP_ATTRIBUTES *attr;
-    STRING *owner=NULL;
-    STRING *group=NULL;
-    int ok=0;
+  SFTP_ATTRIBUTES *attr;
+  STRING *owner = NULL;
+  STRING *group = NULL;
+  u32 flags = 0;
+  int ok = 0;
 
-    /* unused member variable */
-    (void) expectnames;
+  /* unused member variable */
+  (void) expectnames;
 
-    attr = malloc(sizeof(SFTP_ATTRIBUTES));
-    if (attr == NULL) {
-      return NULL;
+  attr = malloc(sizeof(SFTP_ATTRIBUTES));
+  if (attr == NULL) {
+    return NULL;
+  }
+  ZERO_STRUCTP(attr);
+
+  /* This isn't really a loop, but it is like a try..catch.. */
+  do {
+    if (buffer_get_u32(buf, &flags) != 4) {
+      break;
     }
 
-    memset(attr,0,sizeof(*attr));
-    /* it isn't really a loop, but i use it because it's like a try..catch.. construction in C */
-    do {
-        if(buffer_get_u32(buf,&flags)!=4)
-            break;
-        flags=ntohl(flags);
-        attr->flags=flags;
-        if(flags & SSH_FILEXFER_ATTR_SIZE){
-            if(buffer_get_u64(buf,&attr->size)!=8)
-                break;
-            attr->size=ntohll(attr->size);
-        }
-        if(flags & SSH_FILEXFER_ATTR_OWNERGROUP){
-            if(!(owner=buffer_get_ssh_string(buf)))
-                break;
-            if(!(group=buffer_get_ssh_string(buf)))
-                break;
-        }
-        if(flags & SSH_FILEXFER_ATTR_PERMISSIONS){
-            if(buffer_get_u32(buf,&attr->permissions)!=4)
-                break;
-            attr->permissions=ntohl(attr->permissions);
+    flags = ntohl(flags);
+    attr->flags = flags;
 
-            switch (attr->permissions & S_IFMT) {
-              case S_IFSOCK:
-              case S_IFBLK:
-              case S_IFCHR:
-              case S_IFIFO:
-                attr->type = SSH_FILEXFER_TYPE_SPECIAL;
-                break;
-              case S_IFLNK:
-                attr->type = SSH_FILEXFER_TYPE_SYMLINK;
-                break;
-              case S_IFREG:
-                attr->type = SSH_FILEXFER_TYPE_REGULAR;
-                break;
-              case S_IFDIR:
-                attr->type = SSH_FILEXFER_TYPE_DIRECTORY;
-                break;
-              default:
-                attr->type = SSH_FILEXFER_TYPE_UNKNOWN;
-                break;
-            }
-        }
-        if(flags & SSH_FILEXFER_ATTR_ACCESSTIME){
-            if(buffer_get_u64(buf,&attr->atime64)!=8)
-                break;
-            attr->atime64=ntohll(attr->atime64);
-        }
-        if(flags & SSH_FILEXFER_ATTR_SUBSECOND_TIMES){
-            if(buffer_get_u32(buf,&attr->atime_nseconds)!=4)
-                break;
-            attr->atime_nseconds=ntohl(attr->atime_nseconds);
-        }
-        if(flags & SSH_FILEXFER_ATTR_CREATETIME){
-            if(buffer_get_u64(buf,&attr->createtime)!=8)
-                break;
-            attr->createtime=ntohll(attr->createtime);
-        }
-        if(flags & SSH_FILEXFER_ATTR_SUBSECOND_TIMES){
-            if(buffer_get_u32(buf,&attr->createtime_nseconds)!=4)
-                break;
-            attr->createtime_nseconds=ntohl(attr->createtime_nseconds);
-        }
-        if(flags & SSH_FILEXFER_ATTR_MODIFYTIME){
-            if(buffer_get_u64(buf,&attr->mtime64)!=8)
-                break;
-            attr->mtime64=ntohll(attr->mtime64);
-        }
-        if(flags & SSH_FILEXFER_ATTR_SUBSECOND_TIMES){
-            if(buffer_get_u32(buf,&attr->mtime_nseconds)!=4)
-                break;
-            attr->mtime_nseconds=ntohl(attr->mtime_nseconds);
-        }
-        if(flags & SSH_FILEXFER_ATTR_ACL){
-            if(!(attr->acl=buffer_get_ssh_string(buf)))
-                break;
-        }
-        if (flags & SSH_FILEXFER_ATTR_EXTENDED){
-            if(buffer_get_u32(buf,&attr->extended_count)!=4)
-                break;
-            attr->extended_count=ntohl(attr->extended_count);
-            while(attr->extended_count && (attr->extended_type=buffer_get_ssh_string(buf))
-                    && (attr->extended_data=buffer_get_ssh_string(buf))){
-                        attr->extended_count--;
-            }
-            if(attr->extended_count)
-                break;
-        }
-        ok=1;
-    } while (0);
-    if(!ok){
-        /* break issued somewhere */
-        if(owner)
-            free(owner);
-        if(group)
-            free(group);
-        if(attr->acl)
-            free(attr->acl);
-        if(attr->extended_type)
-            free(attr->extended_type);
-        if(attr->extended_data)
-            free(attr->extended_data);
-        free(attr);
-        ssh_set_error(sftp->session,SSH_FATAL,"Invalid ATTR structure");
-        return NULL;
+    if (flags & SSH_FILEXFER_ATTR_SIZE) {
+      if (buffer_get_u64(buf, &attr->size) != 8) {
+        break;
+      }
+      attr->size = ntohll(attr->size);
     }
-    /* everything went smoothly */
-    if(owner){
-        attr->owner=string_to_char(owner);
-        free(owner);
+
+    if (flags & SSH_FILEXFER_ATTR_OWNERGROUP) {
+      if((owner = buffer_get_ssh_string(buf)) == NULL ||
+        (attr->owner = string_to_char(owner)) == NULL) {
+        break;
+      }
+      if ((group = buffer_get_ssh_string(buf)) == NULL ||
+        (attr->group = string_to_char(group)) == NULL) {
+        break;
+      }
     }
-    if(group){
-        attr->group=string_to_char(group);
-        free(group);
+
+    if (flags & SSH_FILEXFER_ATTR_PERMISSIONS) {
+      if (buffer_get_u32(buf, &attr->permissions) != 4) {
+        break;
+      }
+      attr->permissions = ntohl(attr->permissions);
+
+      switch (attr->permissions & S_IFMT) {
+        case S_IFSOCK:
+        case S_IFBLK:
+        case S_IFCHR:
+        case S_IFIFO:
+          attr->type = SSH_FILEXFER_TYPE_SPECIAL;
+          break;
+        case S_IFLNK:
+          attr->type = SSH_FILEXFER_TYPE_SYMLINK;
+          break;
+        case S_IFREG:
+          attr->type = SSH_FILEXFER_TYPE_REGULAR;
+          break;
+        case S_IFDIR:
+          attr->type = SSH_FILEXFER_TYPE_DIRECTORY;
+          break;
+        default:
+          attr->type = SSH_FILEXFER_TYPE_UNKNOWN;
+          break;
+      }
     }
-    return attr;
+
+    if (flags & SSH_FILEXFER_ATTR_ACCESSTIME) {
+      if (buffer_get_u64(buf, &attr->atime64) != 8) {
+        break;
+      }
+      attr->atime64 = ntohll(attr->atime64);
+    }
+
+    if (flags & SSH_FILEXFER_ATTR_SUBSECOND_TIMES) {
+      if (buffer_get_u32(buf, &attr->atime_nseconds) != 4) {
+        break;
+      }
+      attr->atime_nseconds = ntohl(attr->atime_nseconds);
+    }
+
+    if (flags & SSH_FILEXFER_ATTR_CREATETIME) {
+      if (buffer_get_u64(buf, &attr->createtime) != 8) {
+        break;
+      }
+      attr->createtime = ntohll(attr->createtime);
+    }
+
+    if (flags & SSH_FILEXFER_ATTR_SUBSECOND_TIMES) {
+      if (buffer_get_u32(buf, &attr->createtime_nseconds) != 4) {
+        break;
+      }
+      attr->createtime_nseconds = ntohl(attr->createtime_nseconds);
+    }
+
+    if (flags & SSH_FILEXFER_ATTR_MODIFYTIME) {
+      if (buffer_get_u64(buf, &attr->mtime64) != 8) {
+        break;
+      }
+      attr->mtime64 = ntohll(attr->mtime64);
+    }
+
+    if (flags & SSH_FILEXFER_ATTR_SUBSECOND_TIMES) {
+      if (buffer_get_u32(buf, &attr->mtime_nseconds) != 4) {
+        break;
+      }
+      attr->mtime_nseconds = ntohl(attr->mtime_nseconds);
+    }
+
+    if (flags & SSH_FILEXFER_ATTR_ACL) {
+      if ((attr->acl = buffer_get_ssh_string(buf)) == NULL) {
+        break;
+      }
+    }
+
+    if (flags & SSH_FILEXFER_ATTR_EXTENDED) {
+      if (buffer_get_u32(buf,&attr->extended_count) != 4) {
+        break;
+      }
+      attr->extended_count = ntohl(attr->extended_count);
+
+      while(attr->extended_count &&
+          (attr->extended_type = buffer_get_ssh_string(buf)) &&
+          (attr->extended_data = buffer_get_ssh_string(buf))){
+        attr->extended_count--;
+      }
+
+      if (attr->extended_count) {
+        break;
+      }
+    }
+    ok = 1;
+  } while (0);
+
+  if (ok == 0) {
+    /* break issued somewhere */
+    string_free(owner);
+    string_free(group);
+    string_free(attr->acl);
+    string_free(attr->extended_type);
+    string_free(attr->extended_data);
+    SAFE_FREE(attr->owner);
+    SAFE_FREE(attr->group);
+    SAFE_FREE(attr);
+
+    ssh_set_error(sftp->session, SSH_FATAL, "Invalid ATTR structure");
+
+    return NULL;
+  }
+
+  return attr;
 }
 
 /* Version 3 code. it is the only one really supported (the draft for the 4 misses clarifications) */
