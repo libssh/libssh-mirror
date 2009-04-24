@@ -1663,59 +1663,84 @@ int sftp_async_read(SFTP_FILE *file, void *data, u32 size, u32 id){
   return SSH_ERROR;
 }
 
-ssize_t sftp_write(SFTP_FILE *file, const void *buf, size_t count){
-    SFTP_MESSAGE *msg=NULL;
-    STATUS_MESSAGE *status;
-    STRING *datastring;
-    SFTP_SESSION *sftp=file->sftp;
-    int id;
-    BUFFER *buffer;
-    buffer=buffer_new();
-    id=sftp_get_new_id(file->sftp);
-    buffer_add_u32(buffer,id);
-    buffer_add_ssh_string(buffer,file->handle);
-    buffer_add_u64(buffer,htonll(file->offset));
-    datastring=string_new(count);
-    string_fill(datastring, buf, count);
-    buffer_add_ssh_string(buffer,datastring);
-    free(datastring);
-    if((u32) sftp_packet_write(file->sftp,SSH_FXP_WRITE,buffer)
-        != buffer_get_len(buffer)) {
-        ssh_log(sftp->session, SSH_LOG_PACKET,
-            "sftp_packet_write did not write as much data as expected");
-    }
+ssize_t sftp_write(SFTP_FILE *file, const void *buf, size_t count) {
+  SFTP_SESSION *sftp = file->sftp;
+  SFTP_MESSAGE *msg = NULL;
+  STATUS_MESSAGE *status;
+  STRING *datastring;
+  BUFFER *buffer;
+  u32 id;
+  int len;
+
+  buffer = buffer_new();
+  if (buffer == NULL) {
+    return -1;
+  }
+
+  datastring = string_new(count);
+  if (datastring == NULL) {
     buffer_free(buffer);
-    while(!msg){
-        if(sftp_read_and_dispatch(file->sftp))
-        /* something nasty has happened */
-            return -1;
-        msg=sftp_dequeue(file->sftp,id);
+    return -1;
+  }
+  string_fill(datastring, buf, count);
+
+  id = sftp_get_new_id(file->sftp);
+  if (buffer_add_u32(buffer, id) < 0 ||
+      buffer_add_ssh_string(buffer, file->handle) < 0 ||
+      buffer_add_u64(buffer, htonll(file->offset)) < 0 ||
+      buffer_add_ssh_string(buffer, datastring) < 0) {
+    buffer_free(buffer);
+    string_free(datastring);
+    return -1;
+  }
+  string_free(datastring);
+
+  len = sftp_packet_write(file->sftp, SSH_FXP_WRITE, buffer);
+  buffer_free(buffer);
+  if (len < 0) {
+    return -1;
+  } else  if ((u32) len != buffer_get_len(buffer)) {
+    ssh_log(sftp->session, SSH_LOG_PACKET,
+        "Could not write as much data as expected");
+  }
+
+  while (msg == NULL) {
+    if (sftp_read_and_dispatch(file->sftp) < 0) {
+      /* something nasty has happened */
+      return -1;
     }
-    switch (msg->packet_type){
-        case SSH_FXP_STATUS:
-            status=parse_status_msg(msg);
-            sftp_message_free(msg);
-            if(!status)
-                return -1;
-            sftp_set_error(sftp, status->status);
-            switch (status->status) {
-              case SSH_FX_OK:
-                file->offset += count;
-                status_msg_free(status);
-                return count;
-              default:
-                break;
-            }
-            ssh_set_error(sftp->session,SSH_REQUEST_DENIED,"sftp server : %s",status->errormsg);
-            file->offset += count;
-            status_msg_free(status);
-            return -1;
+    msg = sftp_dequeue(file->sftp, id);
+  }
+
+  switch (msg->packet_type) {
+    case SSH_FXP_STATUS:
+      status = parse_status_msg(msg);
+      sftp_message_free(msg);
+      if (status == NULL) {
+        return -1;
+      }
+      sftp_set_error(sftp, status->status);
+      switch (status->status) {
+        case SSH_FX_OK:
+          file->offset += count;
+          status_msg_free(status);
+          return count;
         default:
-            ssh_set_error(sftp->session,SSH_FATAL,"Received message %d during write!",msg->packet_type);
-            sftp_message_free(msg);
-            return -1;
-    }
-    return -1; /* not reached */
+          break;
+      }
+      ssh_set_error(sftp->session, SSH_REQUEST_DENIED,
+          "SFTP server: %s", status->errormsg);
+      file->offset += count;
+      status_msg_free(status);
+      return -1;
+    default:
+      ssh_set_error(sftp->session, SSH_FATAL,
+          "Received message %d during write!", msg->packet_type);
+      sftp_message_free(msg);
+      return -1;
+  }
+
+  return -1; /* not reached */
 }
 
 /* Seek to a specific location in a file. */
