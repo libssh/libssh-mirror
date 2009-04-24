@@ -443,8 +443,10 @@ ssize_t sftp_write(SFTP_FILE *file, const void *buf, size_t count);
  * @param file         Open sftp file handle to seek in.
  *
  * @param new_offset   Offset in bytes to seek.
+ *
+ * @return             0 on success, < 0 on error.
  */
-void sftp_seek(SFTP_FILE *file, int new_offset);
+int sftp_seek(SFTP_FILE *file, u32 new_offset);
 
 /**
  * @brief Seek to a specific location in a file. This is the
@@ -453,8 +455,10 @@ void sftp_seek(SFTP_FILE *file, int new_offset);
  * @param file         Open sftp file handle to seek in.
  *
  * @param new_offset   Offset in bytes to seek.
+ *
+ * @return             0 on success, < 0 on error.
  */
-void sftp_seek64(SFTP_FILE *file, u64 new_offset);
+int sftp_seek64(SFTP_FILE *file, u64 new_offset);
 
 /**
  * @brief Report current byte position in file.

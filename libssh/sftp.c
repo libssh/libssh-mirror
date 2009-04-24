@@ -1744,12 +1744,24 @@ ssize_t sftp_write(SFTP_FILE *file, const void *buf, size_t count) {
 }
 
 /* Seek to a specific location in a file. */
-void sftp_seek(SFTP_FILE *file, int new_offset){
-    file->offset=new_offset;
+int sftp_seek(SFTP_FILE *file, u32 new_offset) {
+  if (file == NULL) {
+    return -1;
+  }
+
+  file->offset = new_offset;
+
+  return 0;
 }
 
-void sftp_seek64(SFTP_FILE *file, u64 new_offset){
-	file->offset=new_offset;
+int sftp_seek64(SFTP_FILE *file, u64 new_offset) {
+  if (file == NULL) {
+    return -1;
+  }
+
+  file->offset = new_offset;
+
+  return 0;
 }
 
 /* Report current byte position in file. */
