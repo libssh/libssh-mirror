@@ -377,7 +377,8 @@ ssize_t sftp_read(SFTP_FILE *file, void *buf, size_t count);
  *
  * @param len           Size to read in bytes.
  *
- * @return              A u32 identifier corresponding to the sent request.
+ * @return              An identifier corresponding to the sent request, < 0 on
+ *                      error.
  *
  * @warning             When calling this function, the internal offset is
  *                      updated corresponding to the len parameter.
@@ -391,7 +392,7 @@ ssize_t sftp_read(SFTP_FILE *file, void *buf, size_t count);
  * @see                 sftp_async_read()
  * @see                 sftp_open()
  */
-u32 sftp_async_read_begin(SFTP_FILE *file, u32 len);
+int sftp_async_read_begin(SFTP_FILE *file, u32 len);
 
 /**
  * @brief Wait for an asynchronous read to complete and save the data.
@@ -408,9 +409,8 @@ u32 sftp_async_read_begin(SFTP_FILE *file, u32 len);
  *                      function.
  *
  * @return              Number of bytes read, 0 on EOF, SSH_ERROR if an error
- *                      occured, SSH_AGAIN SSH_AGAIN if the file is opened in
- *                      nonblocking mode and the request hasn't been executed
- *                      yet.
+ *                      occured, SSH_AGAIN if the file is opened in nonblocking
+ *                      mode and the request hasn't been executed yet.
  *
  * @warning             A call to this function with an invalid identifier
  *                      will never return.

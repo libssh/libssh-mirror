@@ -1543,102 +1543,124 @@ ssize_t sftp_read(SFTP_FILE *handle, void *buf, size_t count) {
 }
 
 /* Start an asynchronous read from a file using an opened sftp file handle. */
-u32 sftp_async_read_begin(SFTP_FILE *file, u32 len){
-    SFTP_SESSION *sftp=file->sftp;
-    BUFFER *buffer;
-    u32 id;
-    sftp_enter_function();
-	buffer=buffer_new();
-	id=sftp_get_new_id(sftp);
-	buffer_add_u32(buffer,id);
-	buffer_add_ssh_string(buffer,file->handle);
-	buffer_add_u64(buffer,htonll(file->offset));
-	buffer_add_u32(buffer,htonl(len));
-	sftp_packet_write(sftp,SSH_FXP_READ,buffer);
-	buffer_free(buffer);
-	file->offset += len; // assume we'll read len bytes
-	sftp_leave_function();
-	return id;
+int sftp_async_read_begin(SFTP_FILE *file, u32 len){
+  SFTP_SESSION *sftp = file->sftp;
+  BUFFER *buffer;
+  u32 id;
+
+  sftp_enter_function();
+
+  buffer = buffer_new();
+  if (buffer == NULL) {
+    return -1;
+  }
+
+  id = sftp_get_new_id(sftp);
+  if (buffer_add_u32(buffer, id) < 0 ||
+      buffer_add_ssh_string(buffer, file->handle) < 0 ||
+      buffer_add_u64(buffer, htonll(file->offset)) < 0 ||
+      buffer_add_u32(buffer, htonl(len)) < 0 ||
+      sftp_packet_write(sftp, SSH_FXP_READ, buffer) < 0) {
+    buffer_free(buffer);
+    return -1;
+  }
+  buffer_free(buffer);
+
+  file->offset += len; /* assume we'll read len bytes */
+
+  sftp_leave_function();
+  return id;
 }
 
 /* Wait for an asynchronous read to complete and save the data. */
 int sftp_async_read(SFTP_FILE *file, void *data, u32 size, u32 id){
-    SFTP_MESSAGE *msg=NULL;
-    STATUS_MESSAGE *status;
-    SFTP_SESSION *sftp=file->sftp;
-    STRING *datastring;
-    int err=0;
-    u32 len;
-    sftp_enter_function();
-    if(file->eof){
-    	sftp_leave_function();
-    	return 0;
+  SFTP_SESSION *sftp = file->sftp;
+  SFTP_MESSAGE *msg = NULL;
+  STATUS_MESSAGE *status;
+  STRING *datastring;
+  int err = SSH_OK;
+  u32 len;
+
+  sftp_enter_function();
+
+  if (file->eof) {
+    sftp_leave_function();
+    return 0;
+  }
+
+  /* handle an existing request */
+  while (msg == NULL) {
+    if (file->nonblocking){
+      if (channel_poll(sftp->channel, 0) == 0) {
+        /* we cannot block */
+        return SSH_AGAIN;
+      }
     }
 
-	// handle an existing request
-	while(!msg){
-		if (file->nonblocking){
-			if(channel_poll(sftp->channel,0)==0){
-				/* we cannot block */
-				return SSH_AGAIN;
-			}
-		}
-		if(sftp_read_and_dispatch(sftp)){
-			/* something nasty has happened */
-			sftp_leave_function();
-			return SSH_ERROR;
-		}
-		msg=sftp_dequeue(sftp,id);
-	}
-	switch (msg->packet_type){
-		case SSH_FXP_STATUS:
-			status=parse_status_msg(msg);
-			sftp_message_free(msg);
-			if(!status){
-				sftp_leave_function();
-				return -1;
-			}
-			sftp_set_error(sftp, status->status);
-			if(status->status != SSH_FX_EOF){
-				ssh_set_error(sftp->session,SSH_REQUEST_DENIED,"sftp server : %s",status->errormsg);
-				sftp_leave_function();
-				err=-1;
-			} else
-				file->eof=1;
-			status_msg_free(status);
-			sftp_leave_function();
-			return err?err:0;
-		case SSH_FXP_DATA:
-			datastring=buffer_get_ssh_string(msg->payload);
-			sftp_message_free(msg);
-			if(!datastring){
-				ssh_set_error(sftp->session,SSH_FATAL,"Received invalid DATA packet from sftp server");
-				sftp_leave_function();
-				return -1;
-			}
-			if(string_len(datastring)>size){
-				ssh_set_error(sftp->session, SSH_FATAL,
-                                    "Received a too big DATA packet from sftp server: %zu and asked for %u",
-					string_len(datastring),size);
-				free(datastring);
-				sftp_leave_function();
-				return SSH_ERROR;
-			}
-			len=string_len(datastring);
-			//handle->offset+=len;
-			/* We already have set the offset previously. All we can do is warn that the expected len
-			 * and effective lengths are different */
-			memcpy(data,datastring->string,len);
-			free(datastring);
-			sftp_leave_function();
-			return len;
-		default:
-			ssh_set_error(sftp->session,SSH_FATAL,"Received message %d during read!",msg->packet_type);
-			sftp_message_free(msg);
-			sftp_leave_function();
-			return SSH_ERROR;
-	}
-	sftp_leave_function();
+    if (sftp_read_and_dispatch(sftp) < 0) {
+      /* something nasty has happened */
+      sftp_leave_function();
+      return SSH_ERROR;
+    }
+
+    msg = sftp_dequeue(sftp,id);
+  }
+
+  switch (msg->packet_type) {
+    case SSH_FXP_STATUS:
+      status = parse_status_msg(msg);
+      sftp_message_free(msg);
+      if (status == NULL) {
+        sftp_leave_function();
+        return -1;
+      }
+      sftp_set_error(sftp, status->status);
+      if (status->status != SSH_FX_EOF) {
+        ssh_set_error(sftp->session, SSH_REQUEST_DENIED,
+            "SFTP server : %s", status->errormsg);
+        sftp_leave_function();
+        err = SSH_ERROR;
+      } else {
+        file->eof = 1;
+      }
+      status_msg_free(status);
+      sftp_leave_function();
+      return err;
+    case SSH_FXP_DATA:
+      datastring = buffer_get_ssh_string(msg->payload);
+      sftp_message_free(msg);
+      if (datastring == NULL) {
+        ssh_set_error(sftp->session, SSH_FATAL,
+            "Received invalid DATA packet from sftp server");
+        sftp_leave_function();
+        return SSH_ERROR;
+      }
+      if (string_len(datastring) > size) {
+        ssh_set_error(sftp->session, SSH_FATAL,
+            "Received a too big DATA packet from sftp server: "
+            "%zu and asked for %u",
+            string_len(datastring), size);
+        string_free(datastring);
+        sftp_leave_function();
+        return SSH_ERROR;
+      }
+      len = string_len(datastring);
+      //handle->offset+=len;
+      /* We already have set the offset previously. All we can do is warn that the expected len
+       * and effective lengths are different */
+      memcpy(data, datastring->string, len);
+      string_free(datastring);
+      sftp_leave_function();
+      return len;
+    default:
+      ssh_set_error(sftp->session,SSH_FATAL,"Received message %d during read!",msg->packet_type);
+      sftp_message_free(msg);
+      sftp_leave_function();
+      return SSH_ERROR;
+  }
+
+  sftp_leave_function();
+  return SSH_ERROR;
 }
 
 ssize_t sftp_write(SFTP_FILE *file, const void *buf, size_t count){
