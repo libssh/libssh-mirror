@@ -149,7 +149,7 @@ typedef int socket_t;
 /* error return codes */
 #define SSH_OK 0     /* No error */
 #define SSH_ERROR -1 /* error of some kind */
-#define SSH_AGAIN 1  /* the nonblocking call must be repeated */
+#define SSH_AGAIN -2  /* the nonblocking call must be repeated */
 
 const char *ssh_get_error(void *error); 
 int ssh_get_error_code(void *error);
