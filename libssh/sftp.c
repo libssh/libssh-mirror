@@ -1765,13 +1765,13 @@ int sftp_seek64(SFTP_FILE *file, u64 new_offset) {
 }
 
 /* Report current byte position in file. */
-unsigned long sftp_tell(SFTP_FILE *file){
-    return file->offset;
+unsigned long sftp_tell(SFTP_FILE *file) {
+  return file->offset;
 }
 
 /* Rewinds the position of the file pointer to the beginning of the file.*/
-void sftp_rewind(SFTP_FILE *file){
-    file->offset=0;
+void sftp_rewind(SFTP_FILE *file) {
+  file->offset = 0;
 }
 
 /* deprecated */
