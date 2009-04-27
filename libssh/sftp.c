@@ -1351,7 +1351,8 @@ int sftp_closedir(SFTP_DIR *dir){
 }
 
 /* Open a file on the server. */
-SFTP_FILE *sftp_open(SFTP_SESSION *sftp, const char *file, int flags, mode_t mode){
+SFTP_FILE *sftp_open(SFTP_SESSION *sftp, const char *file, int flags,
+    mode_t mode) {
   SFTP_MESSAGE *msg = NULL;
   STATUS_MESSAGE *status;
   SFTP_ATTRIBUTES attr;
