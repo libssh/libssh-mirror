@@ -360,30 +360,56 @@ int sftp_reply_names(SFTP_CLIENT_MESSAGE *msg) {
   return 0;
 }
 
-int sftp_reply_status(SFTP_CLIENT_MESSAGE *msg, u32 status, char *message){
-    BUFFER *out=buffer_new();
-    int r;
-    STRING *s;
-    buffer_add_u32(out,msg->id);
-    buffer_add_u32(out,htonl(status));
-    s=string_from_char(message?message:"");
-    buffer_add_ssh_string(out,s);
-    free(s);
-    buffer_add_u32(out,0); // language string 
-    r=sftp_packet_write(msg->sftp,SSH_FXP_STATUS,out);
+int sftp_reply_status(SFTP_CLIENT_MESSAGE *msg, u32 status,
+    const char *message) {
+  BUFFER *out;
+  STRING *s;
+
+  out = buffer_new();
+  if (out == NULL) {
+    return -1;
+  }
+
+  s = string_from_char(message ? message : "");
+  if (s == NULL) {
     buffer_free(out);
-    return r<0;
+    return -1;
+  }
+
+  if (buffer_add_u32(out, msg->id) < 0 ||
+      buffer_add_u32(out, htonl(status)) < 0 ||
+      buffer_add_ssh_string(out, s) < 0 ||
+      buffer_add_u32(out, 0) < 0 || /* language string */
+      sftp_packet_write(msg->sftp, SSH_FXP_STATUS, out) < 0) {
+    buffer_free(out);
+    string_free(s);
+    return -1;
+  }
+
+  buffer_free(out);
+  string_free(s);
+
+  return 0;
 }
 
-int sftp_reply_data(SFTP_CLIENT_MESSAGE *msg, void *data, int len){
-    BUFFER *out=buffer_new();
-    int r;
-    buffer_add_u32(out,msg->id);
-    buffer_add_u32(out,ntohl(len));
-    buffer_add_data(out,data,len);
-    r=sftp_packet_write(msg->sftp,SSH_FXP_DATA,out);
+int sftp_reply_data(SFTP_CLIENT_MESSAGE *msg, const void *data, int len) {
+  BUFFER *out;
+
+  out = buffer_new();
+  if (out == NULL) {
+    return -1;
+  }
+
+  if (buffer_add_u32(out, msg->id) < 0 ||
+      buffer_add_u32(out, ntohl(len)) < 0 ||
+      buffer_add_data(out, data, len) < 0 ||
+      sftp_packet_write(msg->sftp, SSH_FXP_DATA, out) < 0) {
     buffer_free(out);
-    return r<0;
+    return -1;
+  }
+  buffer_free(out);
+
+  return 0;
 }
 
 /* this function will return you a new handle to give the client.

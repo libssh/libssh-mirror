@@ -653,11 +653,11 @@ int sftp_reply_handle(SFTP_CLIENT_MESSAGE *msg, STRING *handle);
 STRING *sftp_handle_alloc(SFTP_SESSION *sftp, void *info);
 int sftp_reply_attr(SFTP_CLIENT_MESSAGE *msg, SFTP_ATTRIBUTES *attr);
 void *sftp_handle(SFTP_SESSION *sftp, STRING *handle);
-int sftp_reply_status(SFTP_CLIENT_MESSAGE *msg, u32 status, char *message);
+int sftp_reply_status(SFTP_CLIENT_MESSAGE *msg, u32 status, const char *message);
 int sftp_reply_names_add(SFTP_CLIENT_MESSAGE *msg, const char *file,
     const char *longname, SFTP_ATTRIBUTES *attr);
 int sftp_reply_names(SFTP_CLIENT_MESSAGE *msg);
-int sftp_reply_data(SFTP_CLIENT_MESSAGE *msg, void *data, int len);
+int sftp_reply_data(SFTP_CLIENT_MESSAGE *msg, const void *data, int len);
 void sftp_handle_remove(SFTP_SESSION *sftp, void *handle);
 
 /* SFTP commands and constants */
