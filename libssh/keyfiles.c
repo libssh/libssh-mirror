@@ -1301,79 +1301,110 @@ static int match_hashed_host(SSH_SESSION *session, const char *host,
  *  - there's no match : no change
  */
 
-/** checks the user's known host file for a previous connection to the
+/**
+ * \brief Check if the server is known.
+ * Checks the user's known host file for a previous connection to the
  * current server.
- * \brief test if the server is known
+ *
  * \param session ssh session
- * \return SSH_SERVER_KNOWN_OK : the server is known and has not changed\n
- * SSH_SERVER_KNOWN_CHANGED : The server key has changed. Either you are under
- * attack or the administrator changed the key. you HAVE to warn the user about
- * a possible attack\n
- * SSH_SERVER_FOUND_OTHER : the server gave use a key of a type while we
- * had an other type recorded. It is a possible attack \n
- * SSH_SERVER_NOT_KNOWN : the server is unknown. User should confirm the MD5 is correct\n
- * SSH_SERVER_ERROR : Some error happened
+ *
+ * \return SSH_SERVER_KNOWN_OK:      The server is known and has not changed\n
+ *         SSH_SERVER_KNOWN_CHANGED: The server key has changed. Either you are
+ *                                   under attack or the administrator changed
+ *                                   the key. You HAVE to warn the user about
+ *                                   a possible attack\n
+ *         SSH_SERVER_FOUND_OTHER:   The server gave use a key of a type while
+ *                                   we had an other type recorded. It is a
+ *                                   possible attack \n
+ *         SSH_SERVER_NOT_KNOWN:     The server is unknown. User should confirm
+ *                                   the MD5 is correct\n
+ *         SSH_SERVER_ERROR:         Some error happened
+ *
  * \see ssh_options_set_wanted_algo()
  * \see ssh_get_pubkey_hash()
- * \bug there is no current way to remove or modify an entry into the known host table
+ *
+ * \bug There is no current way to remove or modify an entry into the known
+ * host table.
  */
-int ssh_is_server_known(SSH_SESSION *session){
+int ssh_is_server_known(SSH_SESSION *session) {
+  FILE *file = NULL;
+  char **tokens;
+  char *host;
+  const char *type;
+  int match;
+  int ret = SSH_SERVER_NOT_KNOWN;
 
-    char **tokens;
-    char *host;
-    const char *type;
-    int match;
-    FILE *file=NULL;
-    int ret=SSH_SERVER_NOT_KNOWN;
-    enter_function();
-    ssh_options_default_known_hosts_file(session->options);
-    if(!session->options->host){
-        ssh_set_error(session,SSH_FATAL,"Can't verify host in known hosts if the hostname isn't known");
-        leave_function();
-        return SSH_SERVER_ERROR;
-    }
-    host = lowercase(session->options->host);
-    do {
-    	tokens=ssh_get_knownhost_line(session,&file,session->options->known_hosts_file,&type);
-    	//
-    	/* End of file, return the current state */
-    	if(tokens==NULL)
-    		break;
-    	match=match_hashed_host(session,host,tokens[0]);
-    	if(!match)
-    		match=match_hostname(host,tokens[0],strlen(tokens[0]));
-    	if(match){
-    		// We got a match. Now check the key type
-    		if(strcmp(session->current_crypto->server_pubkey_type,type)!=0){
-    			// different type. We don't override the known_changed error which is more important
-    			if(ret != SSH_SERVER_KNOWN_CHANGED)
-    				ret= SSH_SERVER_FOUND_OTHER;
-    			tokens_free(tokens);
-    			continue;
-    		}
-    		// so we know the key type is good. We may get a good key or a bad key.
-			match=check_public_key(session,tokens);
-			tokens_free(tokens);
-			if(match<0){
-				ret = SSH_SERVER_ERROR;
-                break;
-			}
-			if(match==1){
-				ret=SSH_SERVER_KNOWN_OK;
-                break;
-			}
-			if(match==0){
-				/* We override the status with the wrong key state */
-				ret=SSH_SERVER_KNOWN_CHANGED;
-			}
-    	}
-    } while (1);
-    SAFE_FREE(host);
-	if(file)
-        fclose(file);
-    /* Return the current state at end of file */
+  enter_function();
+
+  if (ssh_options_default_known_hosts_file(session->options) < 0) {
+    ssh_set_error(session, SSH_FATAL,
+        "Can't find a known_hosts file");
     leave_function();
-    return ret;
+    return SSH_SERVER_ERROR;
+  }
+
+  if (session->options->host == NULL) {
+    ssh_set_error(session, SSH_FATAL,
+        "Can't verify host in known hosts if the hostname isn't known");
+    leave_function();
+    return SSH_SERVER_ERROR;
+  }
+
+  host = lowercase(session->options->host);
+  if (host == NULL) {
+    ssh_set_error(session, SSH_FATAL, "Not enough space!");
+    leave_function();
+    return SSH_SERVER_ERROR;
+  }
+
+  do {
+    tokens = ssh_get_knownhost_line(session, &file,
+        session->options->known_hosts_file, &type);
+
+    /* End of file, return the current state */
+    if (tokens == NULL) {
+      break;
+    }
+    match = match_hashed_host(session, host, tokens[0]);
+    if (match == 0) {
+      match = match_hostname(host, tokens[0], strlen(tokens[0]));
+    }
+
+    if (match) {
+      /* We got a match. Now check the key type */
+      if (strcmp(session->current_crypto->server_pubkey_type, type) != 0) {
+        /* Different type. We don't override the known_changed error which is
+         * more important */
+        if (ret != SSH_SERVER_KNOWN_CHANGED)
+          ret = SSH_SERVER_FOUND_OTHER;
+        tokens_free(tokens);
+        continue;
+      }
+      /* so we know the key type is good. We may get a good key or a bad key. */
+      match = check_public_key(session, tokens);
+      tokens_free(tokens);
+
+      if (match < 0) {
+        ret = SSH_SERVER_ERROR;
+        break;
+      } else if (match == 1) {
+        ret = SSH_SERVER_KNOWN_OK;
+        break;
+      } else if(match == 0) {
+        /* We override the status with the wrong key state */
+        ret = SSH_SERVER_KNOWN_CHANGED;
+      }
+    }
+  } while (1);
+
+  SAFE_FREE(host);
+  if (file != NULL) {
+    fclose(file);
+  }
+
+  /* Return the current state at end of file */
+  leave_function();
+  return ret;
 }
 
 /** You generaly use it when ssh_is_server_known() answered SSH_SERVER_NOT_KNOWN
