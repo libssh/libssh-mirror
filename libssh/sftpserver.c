@@ -454,15 +454,23 @@ STRING *sftp_handle_alloc(SFTP_SESSION *sftp, void *info) {
 }
 
 void *sftp_handle(SFTP_SESSION *sftp, STRING *handle){
-    u32 val;
-    if(!sftp->handles)
-        return NULL;
-    if(string_len(handle)!=sizeof(val))
-        return NULL;
-    memcpy(&val,handle->string,sizeof(u32));
-    if(val>SFTP_HANDLES)
-        return NULL;
-    return sftp->handles[val];
+  u32 val;
+
+  if (sftp->handles == NULL) {
+    return NULL;
+  }
+
+  if (string_len(handle) != sizeof(u32)) {
+    return NULL;
+  }
+
+  memcpy(&val, handle->string, sizeof(u32));
+
+  if (val > SFTP_HANDLES) {
+    return NULL;
+  }
+
+  return sftp->handles[val];
 }
 
 void sftp_handle_remove(SFTP_SESSION *sftp, void *handle){
