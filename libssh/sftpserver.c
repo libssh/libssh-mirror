@@ -332,22 +332,34 @@ int sftp_reply_names_add(SFTP_CLIENT_MESSAGE *msg, const char *file,
   return 0;
 }
 
-int sftp_reply_names(SFTP_CLIENT_MESSAGE *msg){
-    BUFFER *out=buffer_new();
-    int r;
-    buffer_add_u32(out,msg->id);
-    buffer_add_u32(out,htonl(msg->attr_num));
-    buffer_add_data(out,buffer_get(msg->attrbuf),
-                    buffer_get_len(msg->attrbuf));
-    r=sftp_packet_write(msg->sftp,SSH_FXP_NAME,out);
+int sftp_reply_names(SFTP_CLIENT_MESSAGE *msg) {
+  BUFFER *out;
+
+  out = buffer_new();
+  if (out == NULL) {
+    buffer_free(msg->attrbuf);
+    return -1;
+  }
+
+  if (buffer_add_u32(out, msg->id) < 0 ||
+      buffer_add_u32(out, htonl(msg->attr_num)) < 0 ||
+      buffer_add_data(out, buffer_get(msg->attrbuf),
+        buffer_get_len(msg->attrbuf)) < 0 ||
+      sftp_packet_write(msg->sftp, SSH_FXP_NAME, out) < 0) {
     buffer_free(out);
     buffer_free(msg->attrbuf);
-    msg->attr_num=0;
-    msg->attrbuf=NULL;
-    return r<0;
+    return -1;
+  }
+
+  buffer_free(out);
+  buffer_free(msg->attrbuf);
+
+  msg->attr_num = 0;
+  msg->attrbuf = NULL;
+
+  return 0;
 }
 
-    
 int sftp_reply_status(SFTP_CLIENT_MESSAGE *msg, u32 status, char *message){
     BUFFER *out=buffer_new();
     int r;
