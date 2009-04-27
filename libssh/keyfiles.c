@@ -1104,74 +1104,104 @@ static char **ssh_get_knownhost_line(SSH_SESSION *session, FILE **file,
   return NULL;
 }
 
-/** \brief Check the public key in the known host line matches the
+/**
+ * \brief Check the public key in the known host line matches the
  * public key of the currently connected server.
  * \param tokens list of tokens in the known_hosts line.
  * \return 1 if the key matches
  * \return 0 if the key doesn't match
  * \return -1 on error
  */
+static int check_public_key(SSH_SESSION *session, char **tokens) {
+  STRING *pubkey = session->current_crypto->server_pubkey;
+  BUFFER *pubkey_buffer;
+  char *pubkey_64;
 
-static int check_public_key(SSH_SESSION *session, char **tokens){
-    char *pubkey_64;
-    BUFFER *pubkey_buffer;
-    STRING *pubkey=session->current_crypto->server_pubkey;
-	/* ok we found some public key in known hosts file. now un-base64it */
-	if (alldigits(tokens[1])) {
-		/* openssh rsa1 format */
-		bignum tmpbn;
-		int i;
-		unsigned int len;
-		STRING *tmpstring;
+  /* ok we found some public key in known hosts file. now un-base64it */
+  if (alldigits(tokens[1])) {
+    /* openssh rsa1 format */
+    bignum tmpbn;
+    STRING *tmpstring;
+    unsigned int len;
+    int i;
 
-		pubkey_buffer = buffer_new();
-		tmpstring = string_from_char("ssh-rsa1");
-		buffer_add_ssh_string(pubkey_buffer, tmpstring);
+    pubkey_buffer = buffer_new();
+    if (pubkey_buffer == NULL) {
+      return -1;
+    }
 
-		for (i = 2; i < 4; i++) { /* e, then n */
-			tmpbn = NULL;
-			bignum_dec2bn(tokens[i], &tmpbn);
-			/* for some reason, make_bignum_string does not work
-              because of the padding which it does --kv */
-			/* tmpstring = make_bignum_string(tmpbn); */
-			/* do it manually instead */
-			len = bignum_num_bytes(tmpbn);
-			tmpstring = malloc(4 + len);
-                        if (tmpstring == NULL) {
-                          return -1;
-                          ssh_set_error(session, SSH_FATAL, "No space left");
-                        }
-			tmpstring->size = htonl(len);
+    tmpstring = string_from_char("ssh-rsa1");
+    if (tmpstring == NULL) {
+      buffer_free(pubkey_buffer);
+      return -1;
+    }
+
+    if (buffer_add_ssh_string(pubkey_buffer, tmpstring) < 0) {
+      buffer_free(pubkey_buffer);
+      string_free(tmpstring);
+      return -1;
+    }
+    string_free(tmpstring);
+
+    for (i = 2; i < 4; i++) { /* e, then n */
+      tmpbn = NULL;
+      bignum_dec2bn(tokens[i], &tmpbn);
+      if (tmpbn == NULL) {
+        buffer_free(pubkey_buffer);
+        return -1;
+      }
+      /* for some reason, make_bignum_string does not work
+         because of the padding which it does --kv */
+      /* tmpstring = make_bignum_string(tmpbn); */
+      /* do it manually instead */
+      len = bignum_num_bytes(tmpbn);
+      tmpstring = malloc(4 + len);
+      if (tmpstring == NULL) {
+        buffer_free(pubkey_buffer);
+        bignum_free(tmpbn);
+        return -1;
+      }
+      tmpstring->size = htonl(len);
 #ifdef HAVE_LIBGCRYPT
-			bignum_bn2bin(tmpbn, len, tmpstring->string);
+      bignum_bn2bin(tmpbn, len, tmpstring->string);
 #elif defined HAVE_LIBCRYPTO
-			bignum_bn2bin(tmpbn, tmpstring->string);
+      bignum_bn2bin(tmpbn, tmpstring->string);
 #endif
-			bignum_free(tmpbn);
-			buffer_add_ssh_string(pubkey_buffer, tmpstring);
-			free(tmpstring);
-		}
-	} else {
-		/* ssh-dss or ssh-rsa */
-		pubkey_64=tokens[2];
-		pubkey_buffer=base64_to_bin(pubkey_64);
-	}
+      bignum_free(tmpbn);
+      if (buffer_add_ssh_string(pubkey_buffer, tmpstring) < 0) {
+        buffer_free(pubkey_buffer);
+        string_free(tmpstring);
+        bignum_free(tmpbn);
+        return -1;
+      }
+      string_free(tmpstring);
+    }
+  } else {
+    /* ssh-dss or ssh-rsa */
+    pubkey_64 = tokens[2];
+    pubkey_buffer = base64_to_bin(pubkey_64);
+  }
 
-	if(!pubkey_buffer){
-		ssh_set_error(session,SSH_FATAL,"verifying that server is a known host : base 64 error");
-		return -1;
-	}
-	if(buffer_get_len(pubkey_buffer)!=string_len(pubkey)){
-		buffer_free(pubkey_buffer);
-		return 0;
-	}
-	/* now test that they are identical */
-	if(memcmp(buffer_get(pubkey_buffer),pubkey->string,buffer_get_len(pubkey_buffer))!=0){
-		buffer_free(pubkey_buffer);
-		return 0;
-	}
-	buffer_free(pubkey_buffer);
-	return 1;
+  if (pubkey_buffer == NULL) {
+    ssh_set_error(session, SSH_FATAL,
+        "Verifying that server is a known host: base64 error");
+    return -1;
+  }
+
+  if (buffer_get_len(pubkey_buffer) != string_len(pubkey)) {
+    buffer_free(pubkey_buffer);
+    return 0;
+  }
+
+  /* now test that they are identical */
+  if (memcmp(buffer_get(pubkey_buffer), pubkey->string,
+        buffer_get_len(pubkey_buffer)) != 0) {
+    buffer_free(pubkey_buffer);
+    return 0;
+  }
+
+  buffer_free(pubkey_buffer);
+  return 1;
 }
 
 /** \brief checks if a hostname matches a openssh-style hashed known host
