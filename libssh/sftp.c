@@ -2331,11 +2331,12 @@ static SFTP_ATTRIBUTES *sftp_xstat(SFTP_SESSION *sftp, const char *path,
   return NULL;
 }
 
-SFTP_ATTRIBUTES *sftp_stat(SFTP_SESSION *session, const char *path){
-    return sftp_xstat(session,path,SSH_FXP_STAT);
+SFTP_ATTRIBUTES *sftp_stat(SFTP_SESSION *session, const char *path) {
+  return sftp_xstat(session, path, SSH_FXP_STAT);
 }
-SFTP_ATTRIBUTES *sftp_lstat(SFTP_SESSION *session, const char *path){
-    return sftp_xstat(session,path,SSH_FXP_LSTAT);
+
+SFTP_ATTRIBUTES *sftp_lstat(SFTP_SESSION *session, const char *path) {
+  return sftp_xstat(session, path, SSH_FXP_LSTAT);
 }
 
 SFTP_ATTRIBUTES *sftp_fstat(SFTP_FILE *file) {
