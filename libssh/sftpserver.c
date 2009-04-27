@@ -211,16 +211,17 @@ SFTP_CLIENT_MESSAGE *sftp_get_client_message(SFTP_SESSION *sftp) {
 }
 
 void sftp_client_message_free(SFTP_CLIENT_MESSAGE *msg) {
-    if(msg->filename)
-        free(msg->filename);
-    if(msg->data)
-        free(msg->data);
-    if(msg->attr)
-        sftp_attributes_free(msg->attr);
-    if(msg->handle)
-        free(msg->handle);
-    memset(msg,'X',sizeof(*msg));
-    free(msg);
+  if (msg == NULL) {
+    return;
+  }
+
+  SAFE_FREE(msg->filename);
+  string_free(msg->data);
+  string_free(msg->handle);
+  sftp_attributes_free(msg->attr);
+
+  ZERO_STRUCTP(msg);
+  SAFE_FREE(msg);
 }
 
 int sftp_reply_name(SFTP_CLIENT_MESSAGE *msg, char *name, SFTP_ATTRIBUTES *attr){
