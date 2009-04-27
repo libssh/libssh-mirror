@@ -224,19 +224,36 @@ void sftp_client_message_free(SFTP_CLIENT_MESSAGE *msg) {
   SAFE_FREE(msg);
 }
 
-int sftp_reply_name(SFTP_CLIENT_MESSAGE *msg, char *name, SFTP_ATTRIBUTES *attr){
-    BUFFER *out=buffer_new();
-    STRING *file=string_from_char(name);
-    int r;
-    buffer_add_u32(out,msg->id);
-    buffer_add_u32(out,htonl(1));
-    buffer_add_ssh_string(out,file);
-    buffer_add_ssh_string(out,file); /* the protocol is broken here between 3 & 4 */
-    free(file);
-    buffer_add_attributes(out,attr);
-    r=sftp_packet_write(msg->sftp,SSH_FXP_NAME,out);
+int sftp_reply_name(SFTP_CLIENT_MESSAGE *msg, const char *name,
+    SFTP_ATTRIBUTES *attr) {
+  BUFFER *out;
+  STRING *file;
+
+  out = buffer_new();
+  if (out == NULL) {
+    return -1;
+  }
+
+  file = string_from_char(name);
+  if (file == NULL) {
     buffer_free(out);
-    return r<0;
+    return -1;
+  }
+
+  if (buffer_add_u32(out, msg->id) < 0 ||
+      buffer_add_u32(out, htonl(1)) < 0 ||
+      buffer_add_ssh_string(out, file) < 0 ||
+      buffer_add_ssh_string(out, file) < 0 || /* The protocol is broken here between 3 & 4 */
+      buffer_add_attributes(out, attr) < 0 ||
+      sftp_packet_write(msg->sftp, SSH_FXP_NAME, out) < 0) {
+    buffer_free(out);
+    string_free(file);
+    return -1;
+  }
+  buffer_free(out);
+  string_free(file);
+
+  return 0;
 }
 
 int sftp_reply_handle(SFTP_CLIENT_MESSAGE *msg, STRING *handle){

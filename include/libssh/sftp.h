@@ -647,7 +647,8 @@ SFTP_ATTRIBUTES *sftp_parse_attr(SFTP_SESSION *session, BUFFER *buf,int expectna
 
 SFTP_CLIENT_MESSAGE *sftp_get_client_message(SFTP_SESSION *sftp);
 void sftp_client_message_free(SFTP_CLIENT_MESSAGE *msg);
-int sftp_reply_name(SFTP_CLIENT_MESSAGE *msg, char *name, SFTP_ATTRIBUTES *attr);
+int sftp_reply_name(SFTP_CLIENT_MESSAGE *msg, const char *name,
+    SFTP_ATTRIBUTES *attr);
 int sftp_reply_handle(SFTP_CLIENT_MESSAGE *msg, STRING *handle);
 STRING *sftp_handle_alloc(SFTP_SESSION *sftp, void *info);
 int sftp_reply_attr(SFTP_CLIENT_MESSAGE *msg, SFTP_ATTRIBUTES *attr);
