@@ -2340,38 +2340,51 @@ SFTP_ATTRIBUTES *sftp_lstat(SFTP_SESSION *session, const char *path) {
 }
 
 SFTP_ATTRIBUTES *sftp_fstat(SFTP_FILE *file) {
-    u32 id=sftp_get_new_id(file->sftp);
-    BUFFER *buffer=buffer_new();
-    SFTP_MESSAGE *msg=NULL;
-    STATUS_MESSAGE *status=NULL;
-    SFTP_ATTRIBUTES *pattr=NULL;
+  STATUS_MESSAGE *status = NULL;
+  SFTP_MESSAGE *msg = NULL;
+  BUFFER *buffer;
+  u32 id;
 
-    buffer_add_u32(buffer,id);
-    buffer_add_ssh_string(buffer,file->handle);
-    sftp_packet_write(file->sftp,SSH_FXP_FSTAT,buffer);
-    buffer_free(buffer);
-    while(!msg){
-        if(sftp_read_and_dispatch(file->sftp))
-            return NULL;
-        msg=sftp_dequeue(file->sftp,id);
-    }
-    if(msg->packet_type==SSH_FXP_ATTRS){
-        pattr=sftp_parse_attr(file->sftp,msg->payload,0);
-        return pattr;
-    }
-    if(msg->packet_type== SSH_FXP_STATUS){
-        status=parse_status_msg(msg);
-        sftp_message_free(msg);
-        if(!status)
-            return NULL;
-        ssh_set_error(file->sftp->session,SSH_REQUEST_DENIED,"sftp server: %s",status->errormsg);
-        status_msg_free(status);
-        return NULL;
-    }
-    ssh_set_error(file->sftp->session, SSH_FATAL,
-        "Received msg %d during fstat()", msg->packet_type);
-    sftp_message_free(msg);
+  buffer = buffer_new();
+  if (buffer == NULL) {
     return NULL;
+  }
+
+  id = sftp_get_new_id(file->sftp);
+  if (buffer_add_u32(buffer, id) < 0 ||
+      buffer_add_ssh_string(buffer, file->handle) < 0 ||
+      sftp_packet_write(file->sftp, SSH_FXP_FSTAT, buffer) < 0) {
+    buffer_free(buffer);
+    return NULL;
+  }
+  buffer_free(buffer);
+
+  while (msg == NULL) {
+    if (sftp_read_and_dispatch(file->sftp) < 0) {
+      return NULL;
+    }
+    msg = sftp_dequeue(file->sftp, id);
+  }
+
+  if (msg->packet_type == SSH_FXP_ATTRS){
+    return sftp_parse_attr(file->sftp, msg->payload, 0);
+  } else if (msg->packet_type == SSH_FXP_STATUS) {
+    status = parse_status_msg(msg);
+    sftp_message_free(msg);
+    if (status == NULL) {
+      return NULL;
+    }
+    ssh_set_error(file->sftp->session, SSH_REQUEST_DENIED,
+        "SFTP server: %s", status->errormsg);
+    status_msg_free(status);
+
+    return NULL;
+  }
+  ssh_set_error(file->sftp->session, SSH_FATAL,
+      "Received msg %d during fstat()", msg->packet_type);
+  sftp_message_free(msg);
+
+  return NULL;
 }
 
 #endif /* NO_SFTP */
