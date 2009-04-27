@@ -275,14 +275,23 @@ int sftp_reply_handle(SFTP_CLIENT_MESSAGE *msg, STRING *handle){
   return 0;
 }
 
-int sftp_reply_attr(SFTP_CLIENT_MESSAGE *msg, SFTP_ATTRIBUTES *attr){
-    BUFFER *out=buffer_new();
-    int r;
-    buffer_add_u32(out,msg->id);
-    buffer_add_attributes(out,attr);
-    r=sftp_packet_write(msg->sftp,SSH_FXP_ATTRS,out);
+int sftp_reply_attr(SFTP_CLIENT_MESSAGE *msg, SFTP_ATTRIBUTES *attr) {
+  BUFFER *out;
+
+  out = buffer_new();
+  if (out == NULL) {
+    return -1;
+  }
+
+  if (buffer_add_u32(out, msg->id) < 0 ||
+      buffer_add_attributes(out, attr) < 0 ||
+      sftp_packet_write(msg->sftp, SSH_FXP_ATTRS, out) < 0) {
     buffer_free(out);
-    return r<0;
+    return -1;
+  }
+  buffer_free(out);
+
+  return 0;
 }
 
 int sftp_reply_names_add(SFTP_CLIENT_MESSAGE *msg, char *file, char *longname,
