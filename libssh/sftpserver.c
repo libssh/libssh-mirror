@@ -294,19 +294,42 @@ int sftp_reply_attr(SFTP_CLIENT_MESSAGE *msg, SFTP_ATTRIBUTES *attr) {
   return 0;
 }
 
-int sftp_reply_names_add(SFTP_CLIENT_MESSAGE *msg, char *file, char *longname,
-        SFTP_ATTRIBUTES *attr){
-    STRING *name=string_from_char(file);
-    if(!msg->attrbuf)
-        msg->attrbuf=buffer_new();
-    buffer_add_ssh_string(msg->attrbuf,name);
-    free(name);
-    name=string_from_char(longname);
-    buffer_add_ssh_string(msg->attrbuf,name);
-    free(name);
-    buffer_add_attributes(msg->attrbuf,attr);
-    msg->attr_num++;
-    return 0;
+int sftp_reply_names_add(SFTP_CLIENT_MESSAGE *msg, const char *file,
+    const char *longname, SFTP_ATTRIBUTES *attr) {
+  STRING *name;
+
+  name = string_from_char(file);
+  if (name == NULL) {
+    return -1;
+  }
+
+  if (msg->attrbuf == NULL) {
+    msg->attrbuf = buffer_new();
+    if (msg->attrbuf == NULL) {
+      string_free(name);
+      return -1;
+    }
+  }
+
+  if (buffer_add_ssh_string(msg->attrbuf, name) < 0) {
+    string_free(name);
+    return -1;
+  }
+
+  string_free(name);
+  name = string_from_char(longname);
+  if (name == NULL) {
+    return -1;
+  }
+  if (buffer_add_ssh_string(msg->attrbuf,name) < 0 ||
+      buffer_add_attributes(msg->attrbuf,attr) < 0) {
+    string_free(name);
+    return -1;
+  }
+  string_free(name);
+  msg->attr_num++;
+
+  return 0;
 }
 
 int sftp_reply_names(SFTP_CLIENT_MESSAGE *msg){
