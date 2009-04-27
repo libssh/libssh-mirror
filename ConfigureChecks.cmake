@@ -50,18 +50,6 @@ if (Z_LIBRARY)
 endif (Z_LIBRARY)
 
 # OPTIONS
-if (WITH_LIBZ)
-  set(WITH_LIBZ 1)
-endif (WITH_LIBZ)
-
-if (WITH_SSH1)
-  set(WITH_SSH1 1)
-endif (WITH_SSH1)
-
-if (WITH_SERVER)
-  set(WITH_SERVER 1)
-endif (WITH_SERVER)
-
 if (WITH_DEBUG_CRYPTO)
   set(DEBUG_CRYPTO 1)
 endif (WITH_DEBUG_CRYPTO)
