@@ -473,12 +473,14 @@ void *sftp_handle(SFTP_SESSION *sftp, STRING *handle){
   return sftp->handles[val];
 }
 
-void sftp_handle_remove(SFTP_SESSION *sftp, void *handle){
-    int i;
-    for(i=0;i<SFTP_HANDLES;++i){
-        if(sftp->handles[i]==handle){
-            sftp->handles[i]=NULL;
-            break;
-        }
+void sftp_handle_remove(SFTP_SESSION *sftp, void *handle) {
+  int i;
+
+  for (i = 0; i < SFTP_HANDLES; i++) {
+    if (sftp->handles[i] == handle) {
+      sftp->handles[i] = NULL;
+      break;
     }
+  }
 }
+
