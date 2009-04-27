@@ -1021,6 +1021,7 @@ static void tokens_free(char **tokens) {
    */
   SAFE_FREE(tokens);
 }
+
 /** \brief returns one line of known host file
  * will return a token array containing (host|ip) keytype key
  * \param file pointer to the known host file. Could be pointing to NULL at start
@@ -1030,63 +1031,77 @@ static void tokens_free(char **tokens) {
  * \returns NULL if no match was found or the file was not found
  * \returns found_type type of key (ie "dsa","ssh-rsa1"). Don't free that value.
  */
-
 static char **ssh_get_knownhost_line(SSH_SESSION *session, FILE **file,
     const char *filename, const char **found_type) {
-    char buffer[4096];
-    char *ptr;
-    char **tokens;
-    enter_function();
-    if(!*file){
-    	*file=fopen(filename,"r");
-    	if(!file){
-    		leave_function();
-    		return NULL;
-    	}
+  char buffer[4096] = {0};
+  char *ptr;
+  char **tokens;
+
+  enter_function();
+
+  if(*file == NULL){
+    *file = fopen(filename,"r");
+    if (*file == NULL) {
+      leave_function();
+      return NULL;
     }
-    while(fgets(buffer,sizeof(buffer),*file)){
-        ptr=strchr(buffer,'\n');
-        if(ptr) *ptr=0;
-        if((ptr=strchr(buffer,'\r'))) *ptr=0;
-        if(!buffer[0] || buffer[0]=='#')
-            continue; /* skip empty lines */
-        tokens=space_tokenize(buffer);
-        if (tokens == NULL) {
-          fclose(*file);
-          *file = NULL;
-          leave_function();
-          return NULL;
-        }
-        if(!tokens[0] || !tokens[1] || !tokens[2]){
-            /* it should have at least 3 tokens */
-            tokens_free(tokens);
-            continue;
-        }
-        *found_type = tokens[1];
-        if(tokens[3]){
-           /* openssh rsa1 format has 4 tokens on the line. Recognize it
-              by the fact that everything is all digits */
-           if (tokens[4]) {
-               /* that's never valid */
-               tokens_free(tokens);
-               continue;
-           }
-           if (alldigits(tokens[1]) && alldigits(tokens[2]) && alldigits(tokens[3])) {
-               *found_type = "ssh-rsa1";
-           } else {
-               /* 3 tokens only, not four */
-               tokens_free(tokens);
-               continue;
-           }
-        }
-        leave_function();
-        return tokens;
+  }
+
+  while (fgets(buffer, sizeof(buffer), *file)) {
+    ptr = strchr(buffer, '\n');
+    if (ptr) {
     }
-    fclose(*file);
-    *file=NULL;
-    /* we did not find anything, end of file*/
+
+    ptr = strchr(buffer,'\r');
+    if (ptr) {
+      *ptr = '\0';
+    }
+
+    if (!buffer[0] || buffer[0] == '#') {
+      continue; /* skip empty lines */
+    }
+
+    tokens = space_tokenize(buffer);
+    if (tokens == NULL) {
+      fclose(*file);
+      *file = NULL;
+      leave_function();
+      return NULL;
+    }
+
+    if(!tokens[0] || !tokens[1] || !tokens[2]) {
+      /* it should have at least 3 tokens */
+      tokens_free(tokens);
+      continue;
+    }
+
+    *found_type = tokens[1];
+    if (tokens[3]) {
+      /* openssh rsa1 format has 4 tokens on the line. Recognize it
+         by the fact that everything is all digits */
+      if (tokens[4]) {
+        /* that's never valid */
+        tokens_free(tokens);
+        continue;
+      }
+      if (alldigits(tokens[1]) && alldigits(tokens[2]) && alldigits(tokens[3])) {
+        *found_type = "ssh-rsa1";
+      } else {
+        /* 3 tokens only, not four */
+        tokens_free(tokens);
+        continue;
+      }
+    }
     leave_function();
-    return NULL;
+    return tokens;
+  }
+
+  fclose(*file);
+  *file = NULL;
+
+  /* we did not find anything, end of file*/
+  leave_function();
+  return NULL;
 }
 
 /** \brief Check the public key in the known host line matches the
