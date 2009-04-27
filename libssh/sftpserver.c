@@ -257,13 +257,22 @@ int sftp_reply_name(SFTP_CLIENT_MESSAGE *msg, const char *name,
 }
 
 int sftp_reply_handle(SFTP_CLIENT_MESSAGE *msg, STRING *handle){
-    BUFFER *out=buffer_new();
-    int r;
-    buffer_add_u32(out,msg->id);
-    buffer_add_ssh_string(out,handle);
-    r=sftp_packet_write(msg->sftp,SSH_FXP_HANDLE,out);
+  BUFFER *out;
+
+  out = buffer_new();
+  if (out == NULL) {
+    return -1;
+  }
+
+  if (buffer_add_u32(out, msg->id) < 0 ||
+      buffer_add_ssh_string(out, handle) < 0 ||
+      sftp_packet_write(msg->sftp, SSH_FXP_HANDLE, out) < 0) {
     buffer_free(out);
-    return r<0;
+    return -1;
+  }
+  buffer_free(out);
+
+  return 0;
 }
 
 int sftp_reply_attr(SFTP_CLIENT_MESSAGE *msg, SFTP_ATTRIBUTES *attr){
