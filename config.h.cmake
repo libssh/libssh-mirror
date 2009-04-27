@@ -63,6 +63,9 @@
 #cmakedefine WITH_LIBZ 1
 
 /* Define to 1 if you want to enable SSH1 */
+#cmakedefine WITH_SFTP 1
+
+/* Define to 1 if you want to enable SSH1 */
 #cmakedefine WITH_SSH1 1
 
 /* Define to 1 if you want to enable server support */

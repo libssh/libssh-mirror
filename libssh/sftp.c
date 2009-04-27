@@ -36,7 +36,8 @@
 #include "libssh/priv.h"
 #include "libssh/ssh2.h"
 #include "libssh/sftp.h"
-#ifndef NO_SFTP
+
+#ifdef WITH_SFTP
 
 #define sftp_enter_function() _enter_function(sftp->channel->session)
 #define sftp_leave_function() _leave_function(sftp->channel->session)
@@ -2387,5 +2388,5 @@ SFTP_ATTRIBUTES *sftp_fstat(SFTP_FILE *file) {
   return NULL;
 }
 
-#endif /* NO_SFTP */
+#endif /* WITH_SFTP */
 

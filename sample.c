@@ -273,7 +273,8 @@ static void batch_shell(SSH_SESSION *session){
     }
     select_loop(session,channel);
 }
-        
+
+#ifdef WITH_SFTP
 /* it's just a proof of concept code for sftp, till i write a real documentation about it */
 void do_sftp(SSH_SESSION *session){
     SFTP_SESSION *sftp_session=sftp_new(session);
@@ -362,6 +363,7 @@ void do_sftp(SSH_SESSION *session){
     sftp_free(sftp_session);
     printf("session sftp termin�\n");
 }
+#endif
 
 static int auth_kbdint(SSH_SESSION *session){
     int err=ssh_userauth_kbdint(session,NULL,NULL);

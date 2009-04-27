@@ -85,12 +85,24 @@ set(libssh_SRCS
   options.c
   packet.c
   session.c
-  sftp.c
-  sftpserver.c
   socket.c
   string.c
   wrapper.c
 )
+
+if (WITH_SFTP)
+  set(libssh_SRCS
+    ${libssh_SRCS}
+    sftp.c
+  )
+
+  if (WITH_SERVER)
+    set(libssh_SRCS
+      ${libssh_SRCS}
+      sftpserver.c
+    )
+  endif (WITH_SERVER)
+endif (WITH_SFTP)
 
 if (WITH_SSH1)
   set(libssh_SRCS
