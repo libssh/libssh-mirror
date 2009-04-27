@@ -27,103 +27,190 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+
 #include "libssh/libssh.h"
 #include "libssh/sftp.h"
 #include "libssh/ssh2.h"
 #include "libssh/priv.h"
 
+SFTP_CLIENT_MESSAGE *sftp_get_client_message(SFTP_SESSION *sftp) {
+  SFTP_PACKET *packet;
+  SFTP_CLIENT_MESSAGE *msg;
+  BUFFER *payload;
+  STRING *tmp;
 
-SFTP_CLIENT_MESSAGE *sftp_get_client_message(SFTP_SESSION *sftp){
-    SFTP_PACKET *packet;
-    SFTP_CLIENT_MESSAGE *msg;
-    BUFFER *payload;
-    STRING *tmp;
+  msg = malloc(sizeof (SFTP_CLIENT_MESSAGE));
+  if (msg == NULL) {
+    return NULL;
+  }
+  ZERO_STRUCTP(msg);
 
-    msg = malloc(sizeof (SFTP_CLIENT_MESSAGE));
-    if (msg == NULL) {
-      return NULL;
-    }
-    memset(msg,0,sizeof(SFTP_CLIENT_MESSAGE));
+  packet = sftp_packet_read(sftp);
+  if (packet == NULL) {
+    sftp_client_message_free(msg);
+    return NULL;
+  }
 
-    packet = sftp_packet_read(sftp);
-    if (packet == NULL) {
-      return NULL;
-    }
-    payload=packet->payload;
-    msg->type=packet->type;
-    msg->sftp=sftp;
-    buffer_get_u32(payload,&msg->id);
-    switch(msg->type){
-        case SSH_FXP_CLOSE:
-        case SSH_FXP_READDIR:
-            msg->handle=buffer_get_ssh_string(payload);
-            break;
-        case SSH_FXP_READ:
-            msg->handle=buffer_get_ssh_string(payload);
-            buffer_get_u64(payload,&msg->offset);
-            buffer_get_u32(payload,&msg->len);
-            break;
-        case SSH_FXP_WRITE:
-            msg->handle=buffer_get_ssh_string(payload);
-            buffer_get_u64(payload,&msg->offset);
-            msg->data=buffer_get_ssh_string(payload);
-            break;
-        case SSH_FXP_REMOVE:
-        case SSH_FXP_RMDIR:
-        case SSH_FXP_OPENDIR:
-        case SSH_FXP_READLINK:
-        case SSH_FXP_REALPATH:
-            tmp=buffer_get_ssh_string(payload);
-            msg->filename=string_to_char(tmp);
-            free(tmp);
-            break;
-        case SSH_FXP_RENAME:
-        case SSH_FXP_SYMLINK:
-            tmp=buffer_get_ssh_string(payload);
-            msg->filename=string_to_char(tmp);
-            free(tmp);
-            msg->data=buffer_get_ssh_string(payload);
-            break;
-        case SSH_FXP_MKDIR:
-        case SSH_FXP_SETSTAT:
-            tmp=buffer_get_ssh_string(payload);
-            msg->filename=string_to_char(tmp);
-            free(tmp);
-            msg->attr=sftp_parse_attr(sftp, payload,0);
-            break;
-        case SSH_FXP_FSETSTAT:
-            msg->handle=buffer_get_ssh_string(payload);
-            msg->attr=sftp_parse_attr(sftp, payload,0);
-            break;
-        case SSH_FXP_LSTAT:
-        case SSH_FXP_STAT:
-            tmp=buffer_get_ssh_string(payload);
-            msg->filename=string_to_char(tmp);
-            free(tmp);
-            if(sftp->version >3)
-                buffer_get_u32(payload,&msg->flags);
-            break;
-        case SSH_FXP_OPEN:
-            tmp=buffer_get_ssh_string(payload);
-            msg->filename=string_to_char(tmp);
-            free(tmp);
-            buffer_get_u32(payload,&msg->flags);
-            msg->attr=sftp_parse_attr(sftp, payload,0);
-        case SSH_FXP_FSTAT:
-            msg->handle=buffer_get_ssh_string(payload);
-            buffer_get_u32(payload,&msg->flags);
-            break;
-        default:
-            printf("Received handled sftp message %d\n",msg->type);
-    }
-    msg->flags=ntohl(msg->flags);
-    msg->offset=ntohll(msg->offset);
-    msg->len=ntohl(msg->len);
-    sftp_packet_free(packet);
-    return msg;
+  payload = packet->payload;
+  msg->type = packet->type;
+  msg->sftp = sftp;
+
+  buffer_get_u32(payload, &msg->id);
+
+  switch(msg->type) {
+    case SSH_FXP_CLOSE:
+    case SSH_FXP_READDIR:
+      msg->handle = buffer_get_ssh_string(payload);
+      if (msg->handle == NULL) {
+        sftp_client_message_free(msg);
+        return NULL;
+      }
+      break;
+    case SSH_FXP_READ:
+      msg->handle = buffer_get_ssh_string(payload);
+      if (msg->handle == NULL) {
+        sftp_client_message_free(msg);
+        return NULL;
+      }
+      buffer_get_u64(payload, &msg->offset);
+      buffer_get_u32(payload, &msg->len);
+      break;
+    case SSH_FXP_WRITE:
+      msg->handle = buffer_get_ssh_string(payload);
+      if (msg->handle == NULL) {
+        sftp_client_message_free(msg);
+        return NULL;
+      }
+      buffer_get_u64(payload, &msg->offset);
+      msg->data = buffer_get_ssh_string(payload);
+      if (msg->data == NULL) {
+        sftp_client_message_free(msg);
+        return NULL;
+      }
+      break;
+    case SSH_FXP_REMOVE:
+    case SSH_FXP_RMDIR:
+    case SSH_FXP_OPENDIR:
+    case SSH_FXP_READLINK:
+    case SSH_FXP_REALPATH:
+      tmp = buffer_get_ssh_string(payload);
+      if (tmp == NULL) {
+        sftp_client_message_free(msg);
+        return NULL;
+      }
+      msg->filename = string_to_char(tmp);
+      string_free(tmp);
+      if (msg->filename == NULL) {
+        sftp_client_message_free(msg);
+        return NULL;
+      }
+      break;
+    case SSH_FXP_RENAME:
+    case SSH_FXP_SYMLINK:
+      tmp = buffer_get_ssh_string(payload);
+      if (tmp == NULL) {
+        sftp_client_message_free(msg);
+        return NULL;
+      }
+      msg->filename = string_to_char(tmp);
+      string_free(tmp);
+      if (msg->filename == NULL) {
+        sftp_client_message_free(msg);
+        return NULL;
+      }
+      msg->data = buffer_get_ssh_string(payload);
+      if (msg->data == NULL) {
+        sftp_client_message_free(msg);
+        return NULL;
+      }
+      break;
+    case SSH_FXP_MKDIR:
+    case SSH_FXP_SETSTAT:
+      tmp = buffer_get_ssh_string(payload);
+      if (tmp == NULL) {
+        sftp_client_message_free(msg);
+        return NULL;
+      }
+      msg->filename=string_to_char(tmp);
+      string_free(tmp);
+      if (msg->filename == NULL) {
+        sftp_client_message_free(msg);
+        return NULL;
+      }
+      msg->attr = sftp_parse_attr(sftp, payload, 0);
+      if (msg->attr == NULL) {
+        sftp_client_message_free(msg);
+        return NULL;
+      }
+      break;
+    case SSH_FXP_FSETSTAT:
+      msg->handle = buffer_get_ssh_string(payload);
+      if (msg->handle == NULL) {
+        sftp_client_message_free(msg);
+        return NULL;
+      }
+      msg->attr = sftp_parse_attr(sftp, payload, 0);
+      if (msg->attr == NULL) {
+        sftp_client_message_free(msg);
+        return NULL;
+      }
+      break;
+    case SSH_FXP_LSTAT:
+    case SSH_FXP_STAT:
+      tmp = buffer_get_ssh_string(payload);
+      if (tmp == NULL) {
+        sftp_client_message_free(msg);
+        return NULL;
+      }
+      msg->filename = string_to_char(tmp);
+      string_free(tmp);
+      if (msg->filename == NULL) {
+        sftp_client_message_free(msg);
+        return NULL;
+      }
+      if(sftp->version > 3) {
+        buffer_get_u32(payload,&msg->flags);
+      }
+      break;
+    case SSH_FXP_OPEN:
+      tmp=buffer_get_ssh_string(payload);
+      if (tmp == NULL) {
+        sftp_client_message_free(msg);
+        return NULL;
+      }
+      msg->filename = string_to_char(tmp);
+      string_free(tmp);
+      if (msg->filename == NULL) {
+        sftp_client_message_free(msg);
+        return NULL;
+      }
+      buffer_get_u32(payload,&msg->flags);
+      msg->attr = sftp_parse_attr(sftp, payload, 0);
+      if (msg->attr == NULL) {
+        sftp_client_message_free(msg);
+        return NULL;
+      }
+    case SSH_FXP_FSTAT:
+      msg->handle = buffer_get_ssh_string(payload);
+      if (msg->handle == NULL) {
+        sftp_client_message_free(msg);
+        return NULL;
+      }
+      buffer_get_u32(payload, &msg->flags);
+      break;
+    default:
+      fprintf(stderr, "Received unhandled sftp message %d\n", msg->type);
+  }
+
+  msg->flags = ntohl(msg->flags);
+  msg->offset = ntohll(msg->offset);
+  msg->len = ntohl(msg->len);
+  sftp_packet_free(packet);
+
+  return msg;
 }
 
-void sftp_client_message_free(SFTP_CLIENT_MESSAGE *msg){
+void sftp_client_message_free(SFTP_CLIENT_MESSAGE *msg) {
     if(msg->filename)
         free(msg->filename);
     if(msg->data)
