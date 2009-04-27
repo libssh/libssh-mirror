@@ -2184,7 +2184,8 @@ int sftp_chmod(SFTP_SESSION *sftp, const char *file, mode_t mode) {
 }
 
 /* Change the last modification and access time of a file. */
-int sftp_utimes(SFTP_SESSION *sftp, const char *file, const struct timeval *times) {
+int sftp_utimes(SFTP_SESSION *sftp, const char *file,
+    const struct timeval *times) {
   SFTP_ATTRIBUTES attr;
 
   ZERO_STRUCT(attr);
