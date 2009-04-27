@@ -2203,51 +2203,74 @@ int sftp_utimes(SFTP_SESSION *sftp, const char *file,
 }
 
 /* another code written by Nick */
-char *sftp_canonicalize_path(SFTP_SESSION *sftp, const char *path)
-{
-	u32 id = sftp_get_new_id(sftp);
-	BUFFER *buffer = buffer_new();
-	STRING *pathstr = string_from_char(path);
-	STRING *name = NULL;
-	SFTP_MESSAGE *msg = NULL;
-	STATUS_MESSAGE *status = NULL;
-	char *cname;
-	u32 ignored;
+char *sftp_canonicalize_path(SFTP_SESSION *sftp, const char *path) {
+  STATUS_MESSAGE *status = NULL;
+  SFTP_MESSAGE *msg = NULL;
+  STRING *name = NULL;
+  STRING *pathstr;
+  BUFFER *buffer;
+  char *cname;
+  u32 ignored;
+  u32 id;
 
-	buffer_add_u32(buffer, id);
-	buffer_add_ssh_string(buffer, pathstr);
-	free(pathstr);
-	sftp_packet_write(sftp, SSH_FXP_REALPATH, buffer);
-	buffer_free(buffer);
-	while (!msg)
-	{
-		if (sftp_read_and_dispatch(sftp))
-			return NULL;
-		msg = sftp_dequeue(sftp, id);
-	}
-	if (msg->packet_type == SSH_FXP_NAME)   /* good response */
-	{
-		buffer_get_u32(msg->payload, &ignored);	/* we don't care about "count" */
-		name = buffer_get_ssh_string(msg->payload); /* we only care about the file name string */
-		cname = string_to_char(name);
-		free(name);
-		return cname;
-	}
-	else if (msg->packet_type == SSH_FXP_STATUS)	/* bad response (error) */
-	{
-		status = parse_status_msg(msg);
-		sftp_message_free(msg);
-		if (!status)
-            return NULL;
-        ssh_set_error(sftp->session,SSH_REQUEST_DENIED, "sftp server: %s", status->errormsg);
-        status_msg_free(status);
-	}
-	else	/* this shouldn't happen */
-	{
-		ssh_set_error(sftp->session,SSH_FATAL, "Received message %d when attempting to set stats", msg->packet_type);
-        sftp_message_free(msg);
-	}
-	return NULL;
+  buffer = buffer_new();
+  if (buffer == NULL) {
+    return NULL;
+  }
+
+  pathstr = string_from_char(path);
+  if (pathstr == NULL) {
+    buffer_free(buffer);
+    return NULL;
+  }
+
+  id = sftp_get_new_id(sftp);
+  if (buffer_add_u32(buffer, id) < 0 ||
+      buffer_add_ssh_string(buffer, pathstr) < 0 ||
+      sftp_packet_write(sftp, SSH_FXP_REALPATH, buffer) < 0) {
+    buffer_free(buffer);
+    string_free(pathstr);
+    return NULL;
+  }
+  buffer_free(buffer);
+  string_free(pathstr);
+
+  while (msg == NULL) {
+    if (sftp_read_and_dispatch(sftp) < 0) {
+      return NULL;
+    }
+    msg = sftp_dequeue(sftp, id);
+  }
+
+  if (msg->packet_type == SSH_FXP_NAME) {
+    /* we don't care about "count" */
+    buffer_get_u32(msg->payload, &ignored);
+    /* we only care about the file name string */
+    name = buffer_get_ssh_string(msg->payload);
+    sftp_message_free(msg);
+    if (name == NULL) {
+      return NULL;
+    }
+    cname = string_to_char(name);
+    string_free(name);
+
+    return cname;
+  } else if (msg->packet_type == SSH_FXP_STATUS) { /* bad response (error) */
+    status = parse_status_msg(msg);
+    sftp_message_free(msg);
+    if (status == NULL) {
+      return NULL;
+    }
+    ssh_set_error(sftp->session, SSH_REQUEST_DENIED,
+        "SFTP server: %s", status->errormsg);
+    status_msg_free(status);
+  } else { /* this shouldn't happen */
+    ssh_set_error(sftp->session, SSH_FATAL,
+        "Received message %d when attempting to set stats", msg->packet_type);
+    sftp_message_free(msg);
+  }
+
+  return NULL;
 }
 
 static SFTP_ATTRIBUTES *sftp_xstat(SFTP_SESSION *sftp, const char *path, int param){
