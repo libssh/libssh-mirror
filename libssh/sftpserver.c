@@ -412,32 +412,45 @@ int sftp_reply_data(SFTP_CLIENT_MESSAGE *msg, const void *data, int len) {
   return 0;
 }
 
-/* this function will return you a new handle to give the client.
+/*
+ * This function will return you a new handle to give the client.
  * the function accepts an info that can be retrieved later with
  * the handle. Care is given that a corrupted handle won't give a
- * valid info (or worse). */
-STRING *sftp_handle_alloc(SFTP_SESSION *sftp, void *info){
-    int i;
-    u32 val;
-    STRING *ret;
+ * valid info (or worse).
+ */
+STRING *sftp_handle_alloc(SFTP_SESSION *sftp, void *info) {
+  STRING *ret;
+  u32 val;
+  int i;
 
+  if (sftp->handles == NULL) {
+    sftp->handles = malloc(sizeof(void *) * SFTP_HANDLES);
     if (sftp->handles == NULL) {
-      sftp->handles = malloc(sizeof(void *) * SFTP_HANDLES);
-      if (sftp->handles == NULL) {
-        return NULL;
-      }
-      memset(sftp->handles,0,sizeof(void *)*SFTP_HANDLES);
+      return NULL;
     }
-    for(i=0; i<SFTP_HANDLES;++i)
-        if(!sftp->handles[i])
-            break;
-    if(i==SFTP_HANDLES)
-        return NULL; // no handle available
-    val=i;
-    ret=string_new(4);
-    memcpy(ret->string,&val,sizeof(u32));
-    sftp->handles[i]=info;
-    return ret;
+    memset(sftp->handles, 0, sizeof(void *) * SFTP_HANDLES);
+  }
+
+  for (i = 0; i < SFTP_HANDLES; i++) {
+    if (sftp->handles[i] == NULL) {
+      break;
+    }
+  }
+
+  if (i == SFTP_HANDLES) {
+    return NULL; /* no handle available */
+  }
+
+  val = i;
+  ret = string_new(4);
+  if (ret == NULL) {
+    return NULL;
+  }
+
+  memcpy(ret->string, &val, sizeof(u32));
+  sftp->handles[i] = info;
+
+  return ret;
 }
 
 void *sftp_handle(SFTP_SESSION *sftp, STRING *handle){
