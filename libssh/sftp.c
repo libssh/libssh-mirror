@@ -1851,50 +1851,69 @@ int sftp_unlink(SFTP_SESSION *sftp, const char *file) {
 
 /* code written by Nick */
 int sftp_rmdir(SFTP_SESSION *sftp, const char *directory) {
-    u32 id = sftp_get_new_id(sftp);
-    BUFFER *buffer = buffer_new();
-    STRING *filename = string_from_char(directory);
-    SFTP_MESSAGE *msg = NULL;
-    STATUS_MESSAGE *status = NULL;
+  STATUS_MESSAGE *status = NULL;
+  SFTP_MESSAGE *msg = NULL;
+  STRING *filename;
+  BUFFER *buffer;
+  u32 id;
 
-    buffer_add_u32(buffer, id);
-    buffer_add_ssh_string(buffer, filename);
-    free(filename);
-    sftp_packet_write(sftp, SSH_FXP_RMDIR, buffer);
-    buffer_free(buffer);
-    while (!msg) {
-        if (sftp_read_and_dispatch(sftp))
-        {
-            return -1;
-        }
-        msg = sftp_dequeue(sftp, id);
-    }
-    if (msg->packet_type == SSH_FXP_STATUS) /* by specification, this command's only supposed to return SSH_FXP_STATUS */
-    {
-        status = parse_status_msg(msg);
-        sftp_message_free(msg);
-        if (!status) {
-            return -1;
-        }
-        sftp_set_error(sftp, status->status);
-        switch (status->status) {
-          case SSH_FX_OK:
-            status_msg_free(status);
-            return 0;
-            break;
-          default:
-            break;
-        }
-        ssh_set_error(sftp->session,SSH_REQUEST_DENIED, "sftp server: %s", status->errormsg);
-        status_msg_free(status);
-        return -1;
-    }
-    else
-    {
-        ssh_set_error(sftp->session,SSH_FATAL, "Received message %d when attempting to remove directory", msg->packet_type);
-        sftp_message_free(msg);
-    }
+  buffer = buffer_new();
+  if (buffer == NULL) {
     return -1;
+  }
+
+  filename = string_from_char(directory);
+  if (filename == NULL) {
+    buffer_free(buffer);
+    return -1;
+  }
+
+  id = sftp_get_new_id(sftp);
+  if (buffer_add_u32(buffer, id) < 0 ||
+      buffer_add_ssh_string(buffer, filename) < 0 ||
+      sftp_packet_write(sftp, SSH_FXP_RMDIR, buffer) < 0) {
+    buffer_free(buffer);
+    string_free(filname);
+    return -1;
+  }
+  buffer_free(buffer);
+  string_free(filname);
+
+  while (msg == NULL) {
+    if (sftp_read_and_dispatch(sftp) < 0) {
+      return -1;
+    }
+    msg = sftp_dequeue(sftp, id);
+  }
+
+  /* By specification, this command returns SSH_FXP_STATUS */
+  if (msg->packet_type == SSH_FXP_STATUS) {
+    status = parse_status_msg(msg);
+    sftp_message_free(msg);
+    if (status == NULL) {
+      return -1;
+    }
+    sftp_set_error(sftp, status->status);
+    switch (status->status) {
+      case SSH_FX_OK:
+        status_msg_free(status);
+        return 0;
+        break;
+      default:
+        break;
+    }
+    ssh_set_error(sftp->session, SSH_REQUEST_DENIED,
+        "SFTP server: %s", status->errormsg);
+    status_msg_free(status);
+    return -1;
+  } else {
+    ssh_set_error(sftp->session, SSH_FATAL,
+        "Received message %d when attempting to remove directory",
+        msg->packet_type);
+    sftp_message_free(msg);
+  }
+
+  return -1;
 }
 
 /* Code written by Nick */
