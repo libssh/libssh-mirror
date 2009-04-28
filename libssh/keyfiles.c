@@ -1412,72 +1412,148 @@ int ssh_is_server_known(SSH_SESSION *session) {
  * \param session ssh session
  * \return 0 on success, -1 on error
  */
-int ssh_write_knownhost(SSH_SESSION *session){
-    unsigned char *pubkey_64;
-    STRING *pubkey=session->current_crypto->server_pubkey;
-    char buffer[4096];
-    size_t len = 0;
-    FILE *file;
-    ssh_options_default_known_hosts_file(session->options);
-    if(!session->options->host){
-        ssh_set_error(session,SSH_FATAL,"Cannot write host in known hosts if the hostname is unknown");
-        return -1;
-    }
-    /* a = append only */
-    file=fopen(session->options->known_hosts_file,"a");
-    if(!file){
-        ssh_set_error(session,SSH_FATAL,"Opening known host file %s for appending : %s",
-        session->options->known_hosts_file,strerror(errno));
-        return -1;
-    }
-    if (!strcmp(session->current_crypto->server_pubkey_type, "ssh-rsa1")) {
-       /* openssh uses a different format for ssh-rsa1 keys.
-          Be compatible --kv */
-       char *e_string, *n_string;
-       bignum e, n;
-       PUBLIC_KEY *key = publickey_from_string(session, pubkey);
-       int rsa_size;
+int ssh_write_knownhost(SSH_SESSION *session) {
+  STRING *pubkey = session->current_crypto->server_pubkey;
+  unsigned char *pubkey_64;
+  char buffer[4096] = {0};
+  FILE *file;
+  size_t len = 0;
+
+  if (ssh_options_default_known_hosts_file(session->options) < 0) {
+    ssh_set_error(session, SSH_FATAL, "Cannot find known_hosts file.");
+    return -1;
+  }
+
+  if (session->options->host == NULL) {
+    ssh_set_error(session, SSH_FATAL,
+        "Cannot write host in known hosts if the hostname is unknown");
+    return -1;
+  }
+
+  file = fopen(session->options->known_hosts_file, "a");
+  if (file == NULL) {
+    ssh_set_error(session, SSH_FATAL,
+        "Couldn't open known_hosts file %s for appending: %s",
+        session->options->known_hosts_file, strerror(errno));
+    return -1;
+  }
+
+  if (strcmp(session->current_crypto->server_pubkey_type, "ssh-rsa1") == 0) {
+    /* openssh uses a different format for ssh-rsa1 keys.
+       Be compatible --kv */
+    PUBLIC_KEY *key;
+    char *e_string = NULL;
+    char *n_string = NULL;
+    bignum e = NULL;
+    bignum n = NULL;
+    int rsa_size;
 #ifdef HAVE_LIBGCRYPT
-       gcry_sexp_t sexp;
-       sexp=gcry_sexp_find_token(key->rsa_pub,"e",0);
-       e=gcry_sexp_nth_mpi(sexp,1,GCRYMPI_FMT_USG);
-       gcry_sexp_release(sexp);
-       sexp=gcry_sexp_find_token(key->rsa_pub,"n",0);
-       n=gcry_sexp_nth_mpi(sexp,1,GCRYMPI_FMT_USG);
-       gcry_sexp_release(sexp);
-       rsa_size=(gcry_pk_get_nbits(key->rsa_pub)+7)/8;
-#elif defined HAVE_LIBCRYPTO
-       e = key->rsa_pub->e;
-       n = key->rsa_pub->n;
-       rsa_size = RSA_size(key->rsa_pub);
+    gcry_sexp_t sexp;
 #endif
-       e_string = bignum_bn2dec(e);
-       n_string = bignum_bn2dec(n);
-       snprintf(buffer, sizeof(buffer), "%s %d %s %s\n",
-               session->options->host, rsa_size << 3,
-               e_string, n_string);
-#ifdef HAVE_LIBGCRYPT
-       free(e_string);
-       gcry_mpi_release(e);
-       free(n_string);
-       gcry_mpi_release(n);
-#elif defined HAVE_LIBCRYPTO
-       OPENSSL_free(e_string);
-       OPENSSL_free(n_string);
-#endif
-       free(key);
-    } else {
-       pubkey_64=bin_to_base64(pubkey->string,string_len(pubkey));
-       snprintf(buffer,sizeof(buffer),"%s %s %s\n",session->options->host,session->current_crypto->server_pubkey_type,pubkey_64);
-       free(pubkey_64);
-    }
-    len = strlen(buffer);
-    if (fwrite(buffer, len, 1, file) != len || ferror(file)) {
+
+    key = publickey_from_string(session, pubkey);
+    if (key == NULL) {
       fclose(file);
       return -1;
     }
+
+#ifdef HAVE_LIBGCRYPT
+    sexp = gcry_sexp_find_token(key->rsa_pub, "e", 0);
+    if (sexp == NULL) {
+      publickey_free(key);
+      fclose(file);
+      return -1;
+    }
+    e = gcry_sexp_nth_mpi(sexp, 1, GCRYMPI_FMT_USG);
+    gcry_sexp_release(sexp);
+    if (e == NULL) {
+      publickey_free(key);
+      fclose(file);
+      return -1;
+    }
+
+    sexp = gcry_sexp_find_token(key->rsa_pub, "n", 0);
+    if (sexp == NULL) {
+      publickey_free(key);
+      bignum_free(e);
+      fclose(file);
+      return -1;
+    }
+    n = gcry_sexp_nth_mpi(sexp, 1, GCRYMPI_FMT_USG);
+    gcry_sexp_release(sexp);
+    if (n == NULL) {
+      publickey_free(key);
+      bignum_free(e);
+      fclose(file);
+      return -1;
+    }
+
+    rsa_size = (gcry_pk_get_nbits(key->rsa_pub) + 7) / 8;
+#elif defined HAVE_LIBCRYPTO
+    e = key->rsa_pub->e;
+    n = key->rsa_pub->n;
+    rsa_size = RSA_size(key->rsa_pub);
+#endif
+
+    e_string = bignum_bn2dec(e);
+    n_string = bignum_bn2dec(n);
+    if (e_string == NULL || n_string == NULL) {
+#ifdef HAVE_LIBGCRYPT
+      bignum_free(e);
+      bignum_free(n);
+      SAFE_FREE(e_string);
+      SAFE_FREE(n_string);
+#elif defined HAVE_LIBCRYPTO
+      OPENSSL_free(e_string);
+      OPENSSL_free(n_string);
+#endif
+      publickey_free(key);
+      fclose(file);
+      return -1;
+    }
+
+    snprintf(buffer, sizeof(buffer),
+        "%s %d %s %s\n",
+        session->options->host,
+        rsa_size << 3,
+        e_string,
+        n_string);
+
+#ifdef HAVE_LIBGCRYPT
+    bignum_free(e);
+    bignum_free(n);
+    SAFE_FREE(e_string);
+    SAFE_FREE(n_string);
+#elif defined HAVE_LIBCRYPTO
+    OPENSSL_free(e_string);
+    OPENSSL_free(n_string);
+#endif
+
+    publickey_free(key);
+  } else {
+    pubkey_64 = bin_to_base64(pubkey->string, string_len(pubkey));
+    if (pubkey_64 == NULL) {
+      fclose(file);
+      return -1;
+    }
+
+    snprintf(buffer, sizeof(buffer),
+        "%s %s %s\n",
+        session->options->host,
+        session->current_crypto->server_pubkey_type,
+        pubkey_64);
+
+    SAFE_FREE(pubkey_64);
+  }
+
+  len = strlen(buffer);
+  if (fwrite(buffer, len, 1, file) != len || ferror(file)) {
     fclose(file);
-    return 0;
+    return -1;
+  }
+
+  fclose(file);
+  return 0;
 }
 
 /** @} */
