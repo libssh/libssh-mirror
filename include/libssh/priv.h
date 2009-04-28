@@ -299,6 +299,11 @@ struct agent_struct {
   unsigned int count;
 };
 
+struct keys_struct {
+  const char *private;
+  const char *public;
+};
+
 struct ssh_session {
     struct error_struct error;
     struct socket *socket;
@@ -718,6 +723,9 @@ int match_hostname(const char *host, const char *pattern, unsigned int len);
 
 /** Zero a structure given a pointer to the structure */
 #define ZERO_STRUCTP(x) do { if ((x) != NULL) memset((char *)(x), 0, sizeof(*(x))); } while(0)
+
+/** Get the size of an array */
+#define ARRAY_SIZE(a) (sizeof(a)/sizeof(a[0]))
 
 #ifdef HAVE_LIBGCRYPT
 /* gcrypt_missing.c */

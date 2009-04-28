@@ -920,52 +920,92 @@ STRING *publickey_from_file(SSH_SESSION *session, const char *filename,
 }
 
 
-/* why recursing ? i'll explain. on top, publickey_from_next_file will be executed until NULL returned */
-/* we can't return null if one of the possible keys is wrong. we must test them before getting over */
-STRING *publickey_from_next_file(SSH_SESSION *session, const char **pub_keys_path,
-    const char **keys_path, char **privkeyfile, int *type, int *count) {
-    static char *home=NULL;
-    char public[256];
-    char private[256];
-    const char *priv;
-    const char *pub;
-    STRING *pubkey;
-    if(!home)
-        home=ssh_get_user_home_dir();
-    if(home==NULL) {
-        ssh_set_error(session,SSH_FATAL,"User home dir impossible to guess");
-        return NULL;
+/*
+ * Why a recursive function?
+ *
+ * publickey_from_next_file() will be executed until NULL is returned
+ * We can't return NULL if one of the possible keys is wrong. We want to
+ * test them before getting over
+ */
+STRING *publickey_from_next_file(SSH_SESSION *session,
+    struct keys_struct *keytab, size_t keytab_size,
+    char **privkeyfile, int *type,
+    unsigned int *count) {
+  static char *home = NULL;
+
+  char public[256] = {0};
+  char private[256] = {0};
+  const char *priv;
+  const char *pub;
+  char *new;
+  STRING *pubkey;
+
+  if (home == NULL) {
+    home = ssh_get_user_home_dir();
+    if (home == NULL) {
+      ssh_set_error(session,SSH_FATAL,"User home dir impossible to guess");
+      return NULL;
     }
-    ssh_set_error(session,SSH_REQUEST_DENIED,"no public key matched");
-    if((pub=pub_keys_path[*count])==NULL)
-        return NULL;
-    if((priv=keys_path[*count])==NULL)
-        return NULL;
-    ++*count;
-    /* are them readable ? */
-    snprintf(public,256,pub,home);
-    ssh_log(session,SSH_LOG_PACKET,"Trying to open public key %s",public);
-    if(!ssh_file_readaccess_ok(public)){
-        ssh_log(session,SSH_LOG_PACKET,"Failed");
-        return publickey_from_next_file(session,pub_keys_path,keys_path,privkeyfile,type,count);
-    }
-    snprintf(private,256,priv,home);
-    ssh_log(session,SSH_LOG_PACKET,"Trying to open private key %s",private);
-    if(!ssh_file_readaccess_ok(private)){
-        ssh_log(session,SSH_LOG_PACKET,"Failed");
-        return publickey_from_next_file(session,pub_keys_path,keys_path,privkeyfile,type,count);
-    }
-    ssh_log(session,SSH_LOG_PACKET,"Success reading public and private key");
-    /* ok, we are sure both the priv8 and public key files are readable : we return the public one as a string,
-        and the private filename in arguments */
-    pubkey=publickey_from_file(session,public,type);
-    if(!pubkey){
-        ssh_log(session,SSH_LOG_PACKET,"Wasn't able to open public key file %s : %s",public,ssh_get_error(session));
-        return publickey_from_next_file(session,pub_keys_path,keys_path,privkeyfile,type,count);
-    }
-    *privkeyfile=realloc(*privkeyfile,strlen(private)+1);
-    strcpy(*privkeyfile,private);
-    return pubkey;
+  }
+
+  if (*count >= keytab_size) {
+    return NULL;
+  }
+
+  pub = keytab[*count].public;
+  if (pub == NULL) {
+    return NULL;
+  }
+  priv = keytab[*count].private;
+  if (priv == NULL) {
+    return NULL;
+  }
+
+  (*count)++;
+
+  /* are them readable ? */
+  snprintf(public, sizeof(public), pub, home);
+  ssh_log(session, SSH_LOG_PACKET, "Trying to open public key %s", public);
+  if (!ssh_file_readaccess_ok(public)) {
+    ssh_log(session, SSH_LOG_PACKET, "Failed");
+    return publickey_from_next_file(session, keytab, keytab_size,
+        privkeyfile, type, count);
+  }
+
+  snprintf(private, sizeof(private), priv, home);
+  ssh_log(session, SSH_LOG_PACKET, "Trying to open private key %s", private);
+  if (!ssh_file_readaccess_ok(private)) {
+    ssh_log(session, SSH_LOG_PACKET, "Failed");
+    return publickey_from_next_file(session, keytab, keytab_size,
+        privkeyfile, type, count);
+  }
+
+  ssh_log(session, SSH_LOG_PACKET, "Success reading public and private key");
+
+  /*
+   * We are sure both the private and public key file is readable. We return
+   * the public as a string, and the private filename as an argument
+   */
+  pubkey = publickey_from_file(session, public, type);
+  if (pubkey == NULL) {
+    ssh_log(session, SSH_LOG_PACKET,
+        "Wasn't able to open public key file %s: %s",
+        public,
+        ssh_get_error(session));
+    return publickey_from_next_file(session, keytab, keytab_size,
+        privkeyfile, type, count);
+  }
+
+  new = realloc(*privkeyfile, strlen(private) + 1);
+  if (new == NULL) {
+    string_free(pubkey);
+    return NULL;
+  }
+
+  strcpy(new, private);
+  *privkeyfile = new;
+
+  return pubkey;
 }
 
 static int alldigits(const char *s) {
