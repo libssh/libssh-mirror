@@ -63,34 +63,53 @@ inline char *hstrerror(int h_errno_val) {
 
 #endif /* _WIN32 */
 
-// TODO: must use getaddrinfo
+/* TODO FIXME: must use getaddrinfo */
 static socket_t bind_socket(SSH_BIND *ssh_bind, const char *hostname,
     int port) {
-    struct sockaddr_in myaddr;
-    int opt = 1;
-    socket_t s = socket(PF_INET, SOCK_STREAM, 0);
-    struct hostent *hp=NULL;
-#ifdef HAVE_GETHOSTBYNAME
-    hp=gethostbyname(hostname);
-#endif
-    if(!hp){
-        ssh_set_error(ssh_bind,SSH_FATAL,"resolving %s: %s",hostname,hstrerror(h_errno));
-        close(s);
-        return -1;
-    }
+  struct sockaddr_in myaddr;
+  struct hostent *hp=NULL;
+  socket_t s;
+  int opt = 1;
 
-    memset(&myaddr, 0, sizeof(myaddr));
-    memcpy(&myaddr.sin_addr,hp->h_addr,hp->h_length);
-    myaddr.sin_family=hp->h_addrtype;
-    myaddr.sin_port = htons(port);
-    setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt));
-    if (bind(s, (struct sockaddr *) &myaddr, sizeof(myaddr)) < 0) {
-        ssh_set_error(ssh_bind,SSH_FATAL,"Binding to %s:%d : %s",hostname,port,
-                strerror(errno));
-	    close(s);
-        return -1;
-    }
-    return s;
+  s = socket(PF_INET, SOCK_STREAM, 0);
+  if (s < 0) {
+    ssh_set_error(ssh_bind, SSH_FATAL, "%s", strerror(errno));
+    return -1;
+  }
+
+#ifdef HAVE_GETHOSTBYNAME
+  hp = gethostbyname(hostname);
+#endif
+
+  if (hp == NULL) {
+    ssh_set_error(ssh_bind, SSH_FATAL,
+        "Resolving %s: %s", hostname, hstrerror(h_errno));
+    close(s);
+    return -1;
+  }
+
+  memset(&myaddr, 0, sizeof(myaddr));
+  memcpy(&myaddr.sin_addr, hp->h_addr, hp->h_length);
+  myaddr.sin_family = hp->h_addrtype;
+  myaddr.sin_port = htons(port);
+
+  if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0) {
+    ssh_set_error(ssh_bind, SSH_FATAL,
+        "Setting socket options failed: %s", hstrerror(h_errno));
+    close(s);
+    return -1;
+  }
+
+  if (bind(s, (struct sockaddr *) &myaddr, sizeof(myaddr)) < 0) {
+    ssh_set_error(ssh_bind, SSH_FATAL, "Binding to %s:%d: %s",
+        hostname,
+        port,
+        strerror(errno));
+    close(s);
+    return -1;
+  }
+
+  return s;
 }
 
 SSH_BIND *ssh_bind_new(void){
