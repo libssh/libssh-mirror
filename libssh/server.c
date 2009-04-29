@@ -129,28 +129,38 @@ void ssh_bind_set_options(SSH_BIND *ssh_bind, SSH_OPTIONS *options) {
   ssh_bind->options = options;
 }
 
-int ssh_bind_listen(SSH_BIND *ssh_bind){
-    const char *host;
-    int fd;
-    if(!ssh_bind->options)
-        return -1;
-    if (ssh_socket_init() < 0) {
-      return -1;
-    }
-    host=ssh_bind->options->bindaddr;
-    if(!host)
-        host="0.0.0.0";
-    fd=bind_socket(ssh_bind,host,ssh_bind->options->bindport);
-    if(fd<0)
-        return -1;
-    ssh_bind->bindfd=fd;
-    if(listen(fd,10)<0){
-        ssh_set_error(ssh_bind,SSH_FATAL,"listening to socket %d: %s",
-                fd,strerror(errno));
-        close(fd);
-        return -1;
-    }
-    return 0;
+int ssh_bind_listen(SSH_BIND *ssh_bind) {
+  const char *host;
+  int fd;
+
+  if (ssh_bind->options == NULL) {
+    return -1;
+  }
+
+  if (ssh_socket_init() < 0) {
+    return -1;
+  }
+
+  host = ssh_bind->options->bindaddr;
+  if (host == NULL) {
+    host = "0.0.0.0";
+  }
+
+  fd = bind_socket(ssh_bind, host, ssh_bind->options->bindport);
+  if (fd < 0) {
+    return -1;
+  }
+  ssh_bind->bindfd = fd;
+
+  if (listen(fd, 10) < 0) {
+    ssh_set_error(ssh_bind, SSH_FATAL,
+        "Listening to socket %d: %s",
+        fd, strerror(errno));
+    close(fd);
+    return -1;
+  }
+
+  return 0;
 }
 
 void ssh_bind_set_blocking(SSH_BIND *ssh_bind, int blocking){
