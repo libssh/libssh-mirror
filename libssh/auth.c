@@ -925,14 +925,16 @@ int ssh_userauth_autopubkey(SSH_SESSION *session, const char *passphrase) {
   return SSH_AUTH_DENIED;
 }
 
-static struct ssh_kbdint *kbdint_new() {
-    struct ssh_kbdint *kbd = malloc(sizeof (struct ssh_kbdint));
+static struct ssh_kbdint *kbdint_new(void) {
+  struct ssh_kbdint *kbd;
 
-    if (kbd == NULL) {
-      return NULL;
-    }
-    memset(kbd,0,sizeof(*kbd));
-    return kbd;
+  kbd = malloc(sizeof (struct ssh_kbdint));
+  if (kbd == NULL) {
+    return NULL;
+  }
+  ZERO_STRUCTP(kbd);
+
+  return kbd;
 }
 
 
