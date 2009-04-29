@@ -1005,10 +1005,10 @@ static void kbdint_clean(struct ssh_kbdint *kbd) {
  * of the draft */
 static int kbdauth_init(SSH_SESSION *session, const char *user,
     const char *submethods) {
-  STRING *usr = NULL;
-  STRING *sub = NULL;
-  STRING *service = NULL;
-  STRING *method = NULL;
+  STRING *usr;
+  STRING *sub;
+  STRING *service;
+  STRING *method;
   int rc = SSH_AUTH_ERROR;
 
   enter_function();
@@ -1030,22 +1030,12 @@ static int kbdauth_init(SSH_SESSION *session, const char *user,
     goto error;
   }
 
-  if (buffer_add_u8(session->out_buffer, SSH2_MSG_USERAUTH_REQUEST) < 0) {
-    goto error;
-  }
-  if (buffer_add_ssh_string(session->out_buffer, usr) < 0) {
-    goto error;
-  }
-  if (buffer_add_ssh_string(session->out_buffer, service) < 0) {
-    goto error;
-  }
-  if (buffer_add_ssh_string(session->out_buffer, method) < 0) {
-    goto error;
-  }
-  if (buffer_add_u32(session->out_buffer, 0) < 0) {
-    goto error;
-  }
-  if (buffer_add_ssh_string(session->out_buffer, sub) < 0) {
+  if (buffer_add_u8(session->out_buffer, SSH2_MSG_USERAUTH_REQUEST) < 0 ||
+      buffer_add_ssh_string(session->out_buffer, usr) < 0 ||
+      buffer_add_ssh_string(session->out_buffer, service) < 0 ||
+      buffer_add_ssh_string(session->out_buffer, method) < 0 ||
+      buffer_add_u32(session->out_buffer, 0) < 0 ||
+      buffer_add_ssh_string(session->out_buffer, sub) < 0) {
     goto error;
   }
 
