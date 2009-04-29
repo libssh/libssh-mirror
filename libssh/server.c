@@ -29,32 +29,39 @@
  * @{
  */
 
-#include <fcntl.h>
-#include <unistd.h>
-#include <stdio.h>
-#ifdef _WIN32
-#include <winsock2.h>
-#define SOCKOPT_TYPE_ARG4 char
-
-/* We need to provide hstrerror. Not we can't call the parameter h_errno because it's #defined */
-inline char* hstrerror(int h_errno_val) {
-    static char text[50];
-    snprintf(text,sizeof(text),"gethostbyname error %d\n", h_errno_val);
-    return text;
-}
-#else
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h>
-#define SOCKOPT_TYPE_ARG4 int
-#endif
 #include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
+
 #include "libssh/priv.h"
 #include "libssh/libssh.h"
 #include "libssh/server.h"
 #include "libssh/ssh2.h"
+
+#ifdef _WIN32
+
+#include <winsock2.h>
+#define SOCKOPT_TYPE_ARG4 char
+
+/* We need to provide hstrerror. Not we can't call the parameter h_errno because it's #defined */
+inline char *hstrerror(int h_errno_val) {
+  static char text[50] = {0};
+
+  snprintf(text, sizeof(text), "gethostbyname error %d\n", h_errno_val);
+
+  return text;
+}
+#else /* _WIN32 */
+
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#define SOCKOPT_TYPE_ARG4 int
+
+#endif /* _WIN32 */
 
 // TODO: must use getaddrinfo
 static socket_t bind_socket(SSH_BIND *ssh_bind, const char *hostname,
