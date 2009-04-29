@@ -125,8 +125,8 @@ SSH_BIND *ssh_bind_new(void) {
   return ptr;
 }
 
-void ssh_bind_set_options(SSH_BIND *ssh_bind, SSH_OPTIONS *options){
-    ssh_bind->options=options;
+void ssh_bind_set_options(SSH_BIND *ssh_bind, SSH_OPTIONS *options) {
+  ssh_bind->options = options;
 }
 
 int ssh_bind_listen(SSH_BIND *ssh_bind){
