@@ -252,12 +252,18 @@ SSH_SESSION *ssh_bind_accept(SSH_BIND *ssh_bind) {
 }
 
 void ssh_bind_free(SSH_BIND *ssh_bind){
-    if(ssh_bind->bindfd>=0)
-        close(ssh_bind->bindfd);
-    ssh_bind->bindfd=-1;
-    if(ssh_bind->options)
-    	ssh_options_free(ssh_bind->options);
-    free(ssh_bind);
+  if (ssh_bind == NULL) {
+    return;
+  }
+
+  if (ssh_bind->bindfd >= 0) {
+    close(ssh_bind->bindfd);
+  }
+  ssh_bind->bindfd = -1;
+  if (ssh_bind->options) {
+    ssh_options_free(ssh_bind->options);
+  }
+  SAFE_FREE(ssh_bind);
 }
 
 extern char *supported_methods[];
