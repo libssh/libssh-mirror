@@ -938,30 +938,35 @@ static struct ssh_kbdint *kbdint_new(void) {
 }
 
 
-static void kbdint_free(struct ssh_kbdint *kbd){
-    int i,n=kbd->nprompts;
-    if(kbd->name)
-        free(kbd->name);
-    if(kbd->instruction)
-        free(kbd->instruction);
-    if(kbd->prompts){
-        for(i=0;i<n;++i){
-            burn(kbd->prompts[i]);
-            free(kbd->prompts[i]);
-        }
-        free(kbd->prompts);
+static void kbdint_free(struct ssh_kbdint *kbd) {
+  int i, n;
+
+  if (kbd == NULL) {
+    return;
+  }
+
+  n = kbd->nprompts;
+
+  SAFE_FREE(kbd->name);
+  SAFE_FREE(kbd->instruction);
+  SAFE_FREE(kbd->echo);
+
+  if (kbd->prompts) {
+    for (i = 0; i < n; i++) {
+      burn(kbd->prompts[i]);
+      SAFE_FREE(kbd->prompts[i]);
     }
-    if(kbd->answers){
-        for(i=0;i<n;++i){
-            burn(kbd->answers[i]);
-            free(kbd->answers[i]);
-        }
-        free(kbd->answers);
+    SAFE_FREE(kbd->prompts);
+  }
+  if (kbd->answers) {
+    for (i = 0; i < n; i++) {
+      burn(kbd->answers[i]);
+      SAFE_FREE(kbd->answers[i]);
     }
-    if(kbd->echo){
-        free(kbd->echo);
-    }
-    free(kbd);
+    SAFE_FREE(kbd->answers);
+  }
+
+  SAFE_FREE(kbd);
 }
 
 static void kbdint_clean(struct ssh_kbdint *kbd){
