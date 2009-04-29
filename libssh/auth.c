@@ -969,37 +969,36 @@ static void kbdint_free(struct ssh_kbdint *kbd) {
   SAFE_FREE(kbd);
 }
 
-static void kbdint_clean(struct ssh_kbdint *kbd){
-    int i,n=kbd->nprompts;
-    if(kbd->name){
-        free(kbd->name);
-        kbd->name=NULL;
+static void kbdint_clean(struct ssh_kbdint *kbd) {
+  int i, n;
+
+  if (kbd == NULL) {
+    return;
+  }
+
+  n = kbd->nprompts;
+
+  SAFE_FREE(kbd->name);
+  SAFE_FREE(kbd->instruction);
+  SAFE_FREE(kbd->echo);
+
+  if (kbd->prompts) {
+    for (i = 0; i < n; i++) {
+      burn(kbd->prompts[i]);
+      SAFE_FREE(kbd->prompts[i]);
     }
-    if(kbd->instruction){
-        free(kbd->instruction);
-        kbd->instruction=NULL;
+    SAFE_FREE(kbd->prompts);
+  }
+
+  if (kbd->answers) {
+    for (i = 0; i < n; i++) {
+      burn(kbd->answers[i]);
+      SAFE_FREE(kbd->answers[i]);
     }
-    if(kbd->prompts){
-        for(i=0;i<n;++i){
-            burn(kbd->prompts[i]);
-            free(kbd->prompts[i]);
-        }
-        free(kbd->prompts);
-        kbd->prompts=NULL;
-    }
-    if(kbd->answers){
-        for(i=0;i<n;++i){
-            burn(kbd->answers[i]);
-            free(kbd->answers[i]);
-        }
-        free(kbd->answers);
-        kbd->answers=NULL;
-    }
-    if(kbd->echo){
-        free(kbd->echo);
-        kbd->echo=NULL;
-    }
-    kbd->nprompts=0;
+      SAFE_FREE(kbd->answers);
+  }
+
+  kbd->nprompts = 0;
 }
 
 /* this function sends the first packet as explained in section 3.1
