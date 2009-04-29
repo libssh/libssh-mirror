@@ -1366,23 +1366,33 @@ char *ssh_userauth_kbdint_getinstruction(SSH_SESSION *session) {
   return session->kbdint->instruction;
 }
 
-/** You have called ssh_userauth_kbdint() and got SSH_AUTH_INFO. this
- * function returns the questions from the server
- * \brief get a prompt from a message block
- * \param session ssh session
- * \param i index number of the ith prompt
- * \param echo when different of NULL, it will obtain a boolean meaning that the
- * resulting user input should be echoed or not (like passwords)
- * \returns pointer to the prompt. Do not free it
+/**
+ * @brief Get a prompt from a message block.
+ *
+ * You have called ssh_userauth_kbdint() and got SSH_AUTH_INFO. This
+ * function returns the questions from the server.
+ *
+ * @param session       The ssh session to use.
+ *
+ * @param i             The inndex number of the i'th prompt.
+ *
+ * @param echo          When different of NULL, it will obtain a boolean meaning
+ *                      that the resulting user input should be echoed or not
+ *                      (like passwords).
+ *
+ * @returns             A pointer to the prompt. Do not free it.
  */
-
 char *ssh_userauth_kbdint_getprompt(SSH_SESSION *session, unsigned int i,
-        char *echo){
-    if(i > session->kbdint->nprompts)
-        return NULL;
-    if(echo)
-        *echo=session->kbdint->echo[i];
-    return session->kbdint->prompts[i];
+    char *echo) {
+  if (i > session->kbdint->nprompts) {
+    return NULL;
+  }
+
+  if (echo) {
+    *echo = session->kbdint->echo[i];
+  }
+
+  return session->kbdint->prompts[i];
 }
 
 /** You have called ssh_userauth_kbdint() and got SSH_AUTH_INFO. this
