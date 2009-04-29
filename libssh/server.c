@@ -112,14 +112,17 @@ static socket_t bind_socket(SSH_BIND *ssh_bind, const char *hostname,
   return s;
 }
 
-SSH_BIND *ssh_bind_new(void){
-    SSH_BIND *ptr = malloc(sizeof(SSH_BIND));
-    if (ptr == NULL) {
-      return NULL;
-    }
-    memset(ptr,0,sizeof(*ptr));
-    ptr->bindfd=-1;
-    return ptr;
+SSH_BIND *ssh_bind_new(void) {
+  SSH_BIND *ptr;
+
+  ptr = malloc(sizeof(SSH_BIND));
+  if (ptr == NULL) {
+    return NULL;
+  }
+  ZERO_STRUCTP(ptr);
+  ptr->bindfd = -1;
+
+  return ptr;
 }
 
 void ssh_bind_set_options(SSH_BIND *ssh_bind, SSH_OPTIONS *options){
