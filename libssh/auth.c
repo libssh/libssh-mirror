@@ -1228,75 +1228,99 @@ error:
   return rc;
 }
 
-/** \brief Try to authenticate through the "keyboard-interactive" method
- * \param session ssh session
- * \param user username to authenticate. You can specify NULL if
- * ssh_option_set_username() has been used. You cannot try two different logins in a row.
- * \param submethods undocumented. Set it to NULL
- * \returns SSH_AUTH_ERROR : a serious error happened\n
- * SSH_AUTH_DENIED : Authentication failed : use another method\n
- * SSH_AUTH_PARTIAL : You've been partially authenticated, you still have to use another method\n
- * SSH_AUTH_SUCCESS : Authentication success\n
- * SSH_AUTH_INFO : The server asked some questions. Use ssh_userauth_kbdint_getnprompts() and such.
- * \see ssh_userauth_kbdint_getnprompts()
- * \see ssh_userauth_kbdint_getname()
- * \see ssh_userauth_kbdint_getinstruction()
- * \see ssh_userauth_kbdint_getprompt()
- * \see ssh_userauth_kbdint_setanswer()
+/**
+ * @brief Try to authenticate through the "keyboard-interactive" method.
+ *
+ * @param session       The ssh session to use.
+ *
+ * @param user          The username to authenticate. You can specify NULL if
+ *                      ssh_option_set_username() has been used. You cannot try
+ *                      two different logins in a row.
+ *
+ * @param submethods    Undocumented. Set it to NULL.
+ *
+ * @returns SSH_AUTH_ERROR:   A serious error happened\n
+ *          SSH_AUTH_DENIED:  Authentication failed : use another method\n
+ *          SSH_AUTH_PARTIAL: You've been partially authenticated, you still
+ *                            have to use another method\n
+ *          SSH_AUTH_SUCCESS: Authentication success\n
+ *          SSH_AUTH_INFO:    The server asked some questions. Use
+ *                            ssh_userauth_kbdint_getnprompts() and such.
+ *
+ * @see ssh_userauth_kbdint_getnprompts()
+ * @see ssh_userauth_kbdint_getname()
+ * @see ssh_userauth_kbdint_getinstruction()
+ * @see ssh_userauth_kbdint_getprompt()
+ * @see ssh_userauth_kbdint_setanswer()
  */
+int ssh_userauth_kbdint(SSH_SESSION *session, const char *user,
+    const char *submethods) {
+  int rc = SSH_AUTH_ERROR;
 
+  if (session->version == 1) {
+    /* No keyb-interactive for ssh1 */
+    return SSH_AUTH_DENIED;
+  }
 
-/* the heart of the whole keyboard interactive login */
-int ssh_userauth_kbdint(SSH_SESSION *session, const char *user, const char *submethods){
-    int err;
-    if(session->version==1)
-        return SSH_AUTH_DENIED; // no keyb-interactive for ssh1
-    enter_function();
-    if( !session->kbdint){
-        /* first time we call. we must ask for a challenge */
-        if(!user)
-            if(!(user=session->options->username)){
-                if(ssh_options_default_username(session->options)){
-                    leave_function();
-                	return SSH_AUTH_ERROR;
-                } else
-                    user=session->options->username;
-            }
-        if(ask_userauth(session)){
-            leave_function();
-        	return SSH_AUTH_ERROR;
+  enter_function();
+
+  if (session->kbdint == NULL) {
+    /* first time we call. we must ask for a challenge */
+    if (user == NULL) {
+      if ((user = session->options->username) == NULL) {
+        if (ssh_options_default_username(session->options) < 0) {
+          leave_function();
+          return SSH_AUTH_ERROR;
+        } else {
+          user = session->options->username;
         }
-        err=kbdauth_init(session,user,submethods);
-        if(err!=SSH_AUTH_INFO){
-            leave_function();
-        	return err; /* error or first try success */
-        }
-        err=kbdauth_info_get(session);
-        if(err==SSH_AUTH_ERROR){
-            kbdint_free(session->kbdint);
-            session->kbdint=NULL;
-        }
-        leave_function();
-        return err;
+      }
     }
-    /* if we are at this point, it's because session->kbdint exists */
-    /* it means the user has set some informations there we need to send *
-     * the server. and then we need to ack the status (new questions or ok *
-     * pass in */
-    err=kbdauth_send(session);
-    kbdint_free(session->kbdint);
-    session->kbdint=NULL;
-    if(err!=SSH_AUTH_INFO){
-        leave_function();
-    	return err;
+
+    if (ask_userauth(session)) {
+      leave_function();
+      return SSH_AUTH_ERROR;
     }
-    err=kbdauth_info_get(session);
-    if(err==SSH_AUTH_ERROR){
-        kbdint_free(session->kbdint);
-        session->kbdint=NULL;
+
+    rc = kbdauth_init(session, user, submethods);
+    if (rc != SSH_AUTH_INFO) {
+      leave_function();
+      return rc; /* error or first try success */
     }
+
+    rc = kbdauth_info_get(session);
+    if (rc == SSH_AUTH_ERROR) {
+      kbdint_free(session->kbdint);
+      session->kbdint = NULL;
+    }
+
     leave_function();
-    return err;
+    return rc;
+  }
+
+  /*
+   * If we are at this point, it ss because session->kbdint exists.
+   * It means the user has set some informations there we need to send
+   * the server and then we need to ack the status (new questions or ok
+   * pass in).
+   */
+  rc = kbdauth_send(session);
+  kbdint_free(session->kbdint);
+  session->kbdint = NULL;
+
+  if(rc != SSH_AUTH_INFO) {
+    leave_function();
+    return rc;
+  }
+
+  rc = kbdauth_info_get(session);
+  if (rc == SSH_AUTH_ERROR) {
+    kbdint_free(session->kbdint);
+    session->kbdint = NULL;
+  }
+
+  leave_function();
+  return rc;
 }
 
 /** You have called ssh_userauth_kbdint() and got SSH_AUTH_INFO. this
