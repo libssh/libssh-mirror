@@ -1323,37 +1323,47 @@ int ssh_userauth_kbdint(SSH_SESSION *session, const char *user,
   return rc;
 }
 
-/** You have called ssh_userauth_kbdint() and got SSH_AUTH_INFO. this
- * function returns the questions from the server
- * \brief get the number of prompts (questions) the server has given
- * \param session ssh session
- * \returns number of prompts
+/**
+ * @brief Get the number of prompts (questions) the server has given.
+ *
+ * You have called ssh_userauth_kbdint() and got SSH_AUTH_INFO. This
+ * function returns the questions from the server.
+ *
+ * @param session       The ssh session to use.
+ *
+ * @returns             The number of prompts.
  */
-
-int ssh_userauth_kbdint_getnprompts(SSH_SESSION *session){
-    return session->kbdint->nprompts;
+int ssh_userauth_kbdint_getnprompts(SSH_SESSION *session) {
+  return session->kbdint->nprompts;
 }
 
-/** You have called ssh_userauth_kbdint() and got SSH_AUTH_INFO. this
- * function returns the questions from the server
- * \brief get the "name" of the message block
- * \param session ssh session
- * \returns name of the message block. Do not free it
+/**
+ * @brief Get the "name" of the message block.
+ *
+ * You have called ssh_userauth_kbdint() and got SSH_AUTH_INFO. This
+ * function returns the questions from the server.
+ *
+ * @param session       The ssh session to use.
+ *
+ * @returns             The name of the message block. Do not free it.
  */
-
-char *ssh_userauth_kbdint_getname(SSH_SESSION *session){
-    return session->kbdint->name;
+char *ssh_userauth_kbdint_getname(SSH_SESSION *session) {
+  return session->kbdint->name;
 }
 
-/** You have called ssh_userauth_kbdint() and got SSH_AUTH_INFO. this
- * function returns the questions from the server
- * \brief get the "instruction" of the message block
- * \param session ssh session
- * \returns instruction of the message block
+/**
+ * @brief Get the "instruction" of the message block.
+ *
+ * You have called ssh_userauth_kbdint() and got SSH_AUTH_INFO. This
+ * function returns the questions from the server.
+ *
+ * @param session       The ssh session to use.
+ *
+ * @returns             The instruction of the message block.
  */
 
-char *ssh_userauth_kbdint_getinstruction(SSH_SESSION *session){
-    return session->kbdint->instruction;
+char *ssh_userauth_kbdint_getinstruction(SSH_SESSION *session) {
+  return session->kbdint->instruction;
 }
 
 /** You have called ssh_userauth_kbdint() and got SSH_AUTH_INFO. this
