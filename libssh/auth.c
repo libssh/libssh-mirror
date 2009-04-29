@@ -1187,10 +1187,9 @@ static int kbdauth_send(SSH_SESSION *session) {
 
   enter_function();
 
-  if (buffer_add_u8(session->out_buffer,SSH2_MSG_USERAUTH_INFO_RESPONSE) < 0) {
-    goto error;
-  }
-  if (buffer_add_u32(session->out_buffer, htonl(session->kbdint->nprompts)) < 0) {
+  if (buffer_add_u8(session->out_buffer, SSH2_MSG_USERAUTH_INFO_RESPONSE) < 0 ||
+      buffer_add_u32(session->out_buffer,
+        htonl(session->kbdint->nprompts)) < 0) {
     goto error;
   }
 
