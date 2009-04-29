@@ -175,71 +175,80 @@ void ssh_bind_fd_toaccept(SSH_BIND *ssh_bind) {
   ssh_bind->toaccept = 1;
 }
 
-SSH_SESSION *ssh_bind_accept(SSH_BIND *ssh_bind){
-    SSH_SESSION *session;
-    PRIVATE_KEY *dsa=NULL, *rsa=NULL;
-    int fd = -1;
+SSH_SESSION *ssh_bind_accept(SSH_BIND *ssh_bind) {
+  SSH_SESSION *session;
+  PRIVATE_KEY *dsa = NULL;
+  PRIVATE_KEY *rsa = NULL;
+  int fd = -1;
 
-    if(ssh_bind->bindfd<0){
-        ssh_set_error(ssh_bind,SSH_FATAL,"Can't accept new clients on a "
-                "not bound socket.");
-        return NULL;
-    }
-    if(!ssh_bind->options->dsakey && !ssh_bind->options->rsakey){
-        ssh_set_error(ssh_bind,SSH_FATAL,"DSA or RSA host key file must be set before accept()");
-        return NULL;
-    }
-    if(ssh_bind->options->dsakey){
-        dsa=_privatekey_from_file(ssh_bind,ssh_bind->options->dsakey,TYPE_DSS);
-        if(!dsa)
-            return NULL;
-    }
-    if(ssh_bind->options->rsakey){
-        rsa=_privatekey_from_file(ssh_bind,ssh_bind->options->rsakey,TYPE_RSA);
-        if(!rsa){
-            if(dsa)
-                privatekey_free(dsa);
-            return NULL;
-        }
-    }
-    fd = accept(ssh_bind->bindfd, NULL, NULL);
-    if(fd<0){
-        ssh_set_error(ssh_bind,SSH_FATAL,"Accepting a new connection: %s",
-                strerror(errno));
-        if(dsa)
-            privatekey_free(dsa);
-        if(rsa)
-            privatekey_free(rsa);
-        return NULL;
-    }
-    session=ssh_new();
-    session->server=1;
-    session->version=2;
-    session->options = ssh_options_copy(ssh_bind->options);
-    if (session->options == NULL) {
-      ssh_set_error(ssh_bind, SSH_FATAL, "No space left");
-      if (dsa)
-        privatekey_free(dsa);
-      if (rsa)
-        privatekey_free(rsa);
-      ssh_cleanup(session);
+  if (ssh_bind->bindfd < 0) {
+    ssh_set_error(ssh_bind, SSH_FATAL,
+        "Can't accept new clients on a not bound socket.");
+    return NULL;
+  }
+
+  if (ssh_bind->options->dsakey == NULL || ssh_bind->options->rsakey == NULL) {
+    ssh_set_error(ssh_bind, SSH_FATAL,
+        "DSA or RSA host key file must be set before accept()");
+    return NULL;
+  }
+
+  if (ssh_bind->options->dsakey) {
+    dsa = _privatekey_from_file(ssh_bind, ssh_bind->options->dsakey, TYPE_DSS);
+    if (dsa == NULL) {
       return NULL;
     }
+  }
 
-    ssh_socket_free(session->socket);
-    session->socket=ssh_socket_new(session);
-    if (session->socket == NULL) {
-      if (dsa)
-        privatekey_free(dsa);
-      if (rsa)
-        privatekey_free(rsa);
-      ssh_cleanup(session);
+  if (ssh_bind->options->rsakey) {
+    rsa = _privatekey_from_file(ssh_bind, ssh_bind->options->rsakey, TYPE_RSA);
+    if (rsa == NULL) {
+      privatekey_free(dsa);
       return NULL;
     }
-    ssh_socket_set_fd(session->socket,fd);
-    session->dsa_key=dsa;
-    session->rsa_key=rsa;
-    return session;
+  }
+
+  fd = accept(ssh_bind->bindfd, NULL, NULL);
+  if (fd < 0) {
+    ssh_set_error(ssh_bind, SSH_FATAL,
+        "Accepting a new connection: %s",
+        strerror(errno));
+    privatekey_free(dsa);
+    privatekey_free(rsa);
+    return NULL;
+  }
+
+  session = ssh_new();
+  if (session == NULL) {
+    ssh_set_error(ssh_bind, SSH_FATAL, "Not enough space");
+    privatekey_free(dsa);
+    privatekey_free(rsa);
+    return NULL;
+  }
+  session->server = 1;
+  session->version = 2;
+  session->options = ssh_options_copy(ssh_bind->options);
+  if (session->options == NULL) {
+    ssh_set_error(ssh_bind, SSH_FATAL, "No space left");
+    privatekey_free(dsa);
+    privatekey_free(rsa);
+    ssh_cleanup(session);
+    return NULL;
+  }
+
+  ssh_socket_free(session->socket);
+  session->socket = ssh_socket_new(session);
+  if (session->socket == NULL) {
+    privatekey_free(dsa);
+    privatekey_free(rsa);
+    ssh_cleanup(session);
+    return NULL;
+  }
+  ssh_socket_set_fd(session->socket,fd);
+  session->dsa_key = dsa;
+  session->rsa_key = rsa;
+
+  return session;
 }
 
 void ssh_bind_free(SSH_BIND *ssh_bind){
