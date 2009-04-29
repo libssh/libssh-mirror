@@ -1063,82 +1063,120 @@ error:
   return rc;
 }
 
-static int kbdauth_info_get(SSH_SESSION *session){
-    STRING *name; /* name of the "asking" window showed to client */
-    STRING *instruction;
-    STRING *tmp;
-    u32 nprompts;
-    u32 i;
-    enter_function();
-    name=buffer_get_ssh_string(session->in_buffer);
-    instruction=buffer_get_ssh_string(session->in_buffer);
-    tmp=buffer_get_ssh_string(session->in_buffer);
-    buffer_get_u32(session->in_buffer,&nprompts);
-    if(!name || !instruction || !tmp){
-        if(name)
-            free(name);
-        if(instruction)
-            free(instruction);
-        // tmp must be empty if we got here
-        ssh_set_error(session,SSH_FATAL,"Invalid USERAUTH_INFO_REQUEST msg");
-        leave_function();
-        return SSH_AUTH_ERROR;
-    }
-    if(tmp)
-        free(tmp); // no use
-    if(!session->kbdint) {
-      session->kbdint = kbdint_new();
-      if (session->kbdint == NULL) {
-        ssh_set_error(session, SSH_FATAL, "Not enough space");
-        leave_function();
-        return SSH_AUTH_ERROR;
-      }
-    }
-    else
-        kbdint_clean(session->kbdint);
-    session->kbdint->name=string_to_char(name);
-    free(name);
-    session->kbdint->instruction=string_to_char(instruction);
-    free(instruction);
-    nprompts=ntohl(nprompts);
-    if(nprompts>KBDINT_MAX_PROMPT){
-        ssh_set_error(session, SSH_FATAL,
-            "Too much prompt asked from server: %u (0x%.4x)",
-            nprompts, nprompts);
-        leave_function();
-        return SSH_AUTH_ERROR;
-    }
-    session->kbdint->nprompts=nprompts;
-    session->kbdint->prompts=malloc(nprompts*sizeof(char *));
-    if (session->kbdint->prompts == NULL) {
-      session->kbdint->nprompts = 0;
-      ssh_set_error(session, SSH_FATAL, "No space left");
-      leave_function();
-      return SSH_AUTH_ERROR;
-    }
-    memset(session->kbdint->prompts,0,nprompts*sizeof(char *));
-    session->kbdint->echo=malloc(nprompts);
-    if (session->kbdint->echo == NULL) {
-      session->kbdint->nprompts = 0;
-      SAFE_FREE(session->kbdint->prompts);
-      ssh_set_error(session, SSH_FATAL, "No space left");
-      leave_function();
-      return SSH_AUTH_ERROR;
-    }
-    memset(session->kbdint->echo,0,nprompts);
-    for(i=0;i<nprompts;++i){
-        tmp=buffer_get_ssh_string(session->in_buffer);
-        buffer_get_u8(session->in_buffer,&session->kbdint->echo[i]);
-        if(!tmp){
-            ssh_set_error(session,SSH_FATAL,"Short INFO_REQUEST packet");
-            leave_function();
-            return SSH_AUTH_ERROR;
-        }
-        session->kbdint->prompts[i]=string_to_char(tmp);
-        free(tmp);
-    }
+static int kbdauth_info_get(SSH_SESSION *session) {
+  STRING *name; /* name of the "asking" window showed to client */
+  STRING *instruction;
+  STRING *tmp;
+  u32 nprompts;
+  u32 i;
+
+  enter_function();
+
+  name = buffer_get_ssh_string(session->in_buffer);
+  instruction = buffer_get_ssh_string(session->in_buffer);
+  tmp = buffer_get_ssh_string(session->in_buffer);
+  buffer_get_u32(session->in_buffer, &nprompts);
+
+  if (name == NULL || instruction == NULL || tmp == NULL) {
+    string_free(name);
+    string_free(instruction);
+    /* tmp if empty if we got here */
+    ssh_set_error(session, SSH_FATAL, "Invalid USERAUTH_INFO_REQUEST msg");
     leave_function();
-    return SSH_AUTH_INFO; /* we are not auth. but we parsed the packet */
+    return SSH_AUTH_ERROR;
+  }
+  string_free(tmp);
+
+  if (session->kbdint == NULL) {
+    session->kbdint = kbdint_new();
+    if (session->kbdint == NULL) {
+      ssh_set_error(session, SSH_FATAL, "Not enough space");
+      string_free(name);
+      string_free(instruction);
+
+      leave_function();
+      return SSH_AUTH_ERROR;
+    }
+  } else {
+    kbdint_clean(session->kbdint);
+  }
+
+  session->kbdint->name = string_to_char(name);
+  string_free(name);
+  if (session->kbdint->name == NULL) {
+    ssh_set_error(session, SSH_FATAL, "Not enough space");
+    kbdint_free(session->kbdint);
+    leave_function();
+    return SSH_AUTH_ERROR;
+  }
+
+  session->kbdint->instruction = string_to_char(instruction);
+  string_free(instruction);
+  if (session->kbdint->instruction == NULL) {
+    ssh_set_error(session, SSH_FATAL, "Not enough space");
+    kbdint_free(session->kbdint);
+    session->kbdint = NULL;
+    leave_function();
+    return SSH_AUTH_ERROR;
+  }
+
+  nprompts = ntohl(nprompts);
+  if (nprompts > KBDINT_MAX_PROMPT) {
+    ssh_set_error(session, SSH_FATAL,
+        "Too much prompt asked from server: %u (0x%.4x)",
+        nprompts, nprompts);
+    kbdint_free(session->kbdint);
+    session->kbdint = NULL;
+    leave_function();
+    return SSH_AUTH_ERROR;
+  }
+
+  session->kbdint->nprompts = nprompts;
+  session->kbdint->prompts = malloc(nprompts * sizeof(char *));
+  if (session->kbdint->prompts == NULL) {
+    session->kbdint->nprompts = 0;
+    ssh_set_error(session, SSH_FATAL, "No space left");
+    kbdint_free(session->kbdint);
+    session->kbdint = NULL;
+    leave_function();
+    return SSH_AUTH_ERROR;
+  }
+  memset(session->kbdint->prompts, 0, nprompts * sizeof(char *));
+
+  session->kbdint->echo = malloc(nprompts);
+  if (session->kbdint->echo == NULL) {
+    session->kbdint->nprompts = 0;
+    ssh_set_error(session, SSH_FATAL, "No space left");
+    kbdint_free(session->kbdint);
+    session->kbdint = NULL;
+    leave_function();
+    return SSH_AUTH_ERROR;
+  }
+  memset(session->kbdint->echo, 0, nprompts);
+
+  for (i = 0; i < nprompts; i++) {
+    tmp = buffer_get_ssh_string(session->in_buffer);
+    buffer_get_u8(session->in_buffer, &session->kbdint->echo[i]);
+    if (tmp == NULL) {
+      ssh_set_error(session, SSH_FATAL, "Short INFO_REQUEST packet");
+      kbdint_free(session->kbdint);
+      session->kbdint = NULL;
+      leave_function();
+      return SSH_AUTH_ERROR;
+    }
+    session->kbdint->prompts[i] = string_to_char(tmp);
+    string_free(tmp);
+    if (session->kbdint->prompts[i] == NULL) {
+      ssh_set_error(session, SSH_FATAL, "Not enough space");
+      kbdint_free(session->kbdint);
+      session->kbdint = NULL;
+      leave_function();
+      return SSH_AUTH_ERROR;
+    }
+  }
+
+  leave_function();
+  return SSH_AUTH_INFO; /* we are not auth. but we parsed the packet */
 }
 
 /* sends challenge back to the server */
