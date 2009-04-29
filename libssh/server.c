@@ -163,16 +163,16 @@ int ssh_bind_listen(SSH_BIND *ssh_bind) {
   return 0;
 }
 
-void ssh_bind_set_blocking(SSH_BIND *ssh_bind, int blocking){
-    ssh_bind->blocking=blocking?1:0;
+void ssh_bind_set_blocking(SSH_BIND *ssh_bind, int blocking) {
+  ssh_bind->blocking = blocking ? 1 : 0;
 }
 
-int ssh_bind_get_fd(SSH_BIND *ssh_bind){
-    return ssh_bind->bindfd;
+int ssh_bind_get_fd(SSH_BIND *ssh_bind) {
+  return ssh_bind->bindfd;
 }
 
-void ssh_bind_fd_toaccept(SSH_BIND *ssh_bind){
-    ssh_bind->toaccept=1;
+void ssh_bind_fd_toaccept(SSH_BIND *ssh_bind) {
+  ssh_bind->toaccept = 1;
 }
 
 SSH_SESSION *ssh_bind_accept(SSH_BIND *ssh_bind){
