@@ -269,49 +269,57 @@ void ssh_bind_free(SSH_BIND *ssh_bind){
 extern char *supported_methods[];
 
 static int server_set_kex(SSH_SESSION * session) {
-    KEX *server = &session->server_kex;
-    SSH_OPTIONS *options = session->options;
-    int i, j;
-    char *wanted;
-    memset(server,0,sizeof(KEX));
-    // the program might ask for a specific cookie to be sent. useful for server
-    //   debugging
-    if (options->wanted_cookie)
-        memcpy(server->cookie, options->wanted_cookie, 16);
-    else
-        ssh_get_random(server->cookie, 16,0);
-    if (session->dsa_key && session->rsa_key) {
-      if (ssh_options_set_wanted_algos(options, SSH_HOSTKEYS, "ssh-dss,ssh-rsa") < 0) {
-        return -1;
-      }
-    } else {
-      if (session->dsa_key) {
-        if (ssh_options_set_wanted_algos(options, SSH_HOSTKEYS, "ssh-dss") < 0) {
-          return -1;
-        }
-      } else {
-        if (ssh_options_set_wanted_algos(options, SSH_HOSTKEYS, "ssh-rsa") < 0) {
-          return -1;
-        }
-      }
-    }
-    server->methods = malloc(10 * sizeof(char **));
-    if (server->methods == NULL) {
+  KEX *server = &session->server_kex;
+  SSH_OPTIONS *options = session->options;
+  int i, j;
+  char *wanted;
+
+  ZERO_STRUCTP(server);
+  /*
+   * The program might ask for a specific cookie to be sent. Useful for server
+   * debugging
+   */
+  if (options->wanted_cookie) {
+    memcpy(server->cookie, options->wanted_cookie, 16);
+  } else {
+    ssh_get_random(server->cookie, 16, 0);
+  }
+
+  if (session->dsa_key != NULL && session->rsa_key != NULL) {
+    if (ssh_options_set_wanted_algos(options, SSH_HOSTKEYS,
+          "ssh-dss,ssh-rsa") < 0) {
       return -1;
     }
-    for (i = 0; i < 10; i++) {
-        if (!(wanted = options->wanted_methods[i]))
-            wanted = supported_methods[i];
-        server->methods[i] = strdup(wanted);
-        if (server->methods[i] == NULL) {
-          for (j = i - 1; j <= 0; j--) {
-            SAFE_FREE(server->methods[j]);
-          }
-          SAFE_FREE(server->methods);
-          return -1;
-        }
+  } else if (session->dsa_key != NULL) {
+    if (ssh_options_set_wanted_algos(options, SSH_HOSTKEYS, "ssh-dss") < 0) {
+      return -1;
     }
-    return 0;
+  } else {
+    if (ssh_options_set_wanted_algos(options, SSH_HOSTKEYS, "ssh-rsa") < 0) {
+      return -1;
+    }
+  }
+
+  server->methods = malloc(10 * sizeof(char **));
+  if (server->methods == NULL) {
+    return -1;
+  }
+
+  for (i = 0; i < 10; i++) {
+    if ((wanted = options->wanted_methods[i]) == NULL) {
+      wanted = supported_methods[i];
+    }
+    server->methods[i] = strdup(wanted);
+    if (server->methods[i] == NULL) {
+      for (j = i - 1; j <= 0; j--) {
+        SAFE_FREE(server->methods[j]);
+      }
+      SAFE_FREE(server->methods);
+      return -1;
+    }
+  }
+
+  return 0;
 }
 
 static int dh_handshake_server(SSH_SESSION *session){
