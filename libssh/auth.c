@@ -182,88 +182,96 @@ int ssh_userauth_list(SSH_SESSION *session, const char *username) {
 
 /* use the "none" authentication question */
 
-/** \brief Try to authenticate through the "none" method
- * \param session ssh session
- * \param username username to authenticate. You can specify NULL if
- * ssh_option_set_username() has been used. You cannot try two different logins in a row.
- * \returns SSH_AUTH_ERROR : a serious error happened\n
- * SSH_AUTH_DENIED : Authentication failed : use another method\n
- * SSH_AUTH_PARTIAL : You've been partially authenticated, you still have to use another method\n
- * SSH_AUTH_SUCCESS : Authentication success
+/**
+ * @brief Try to authenticate through the "none" method.
+ *
+ * @param session       The ssh session to use.
+ *
+ * @param username      The username to authenticate. You can specify NULL if
+ *                      ssh_option_set_username() has been used. You cannot try
+ *                      two different logins in a row.
+ *
+ * @returns SSH_AUTH_ERROR:   A serious error happened.\n
+ *          SSH_AUTH_DENIED:  Authentication failed: use another method\n
+ *          SSH_AUTH_PARTIAL: You've been partially authenticated, you still
+ *                            have to use another method\n
+ *          SSH_AUTH_SUCCESS: Authentication success
  */
+int ssh_userauth_none(SSH_SESSION *session, const char *username) {
+  STRING *user = NULL;
+  STRING *service;
+  STRING *method;
+  int rc = SSH_AUTH_ERROR;
 
-int ssh_userauth_none(SSH_SESSION *session, const char *username){
-    STRING *user = NULL;
-    STRING *service = NULL;
-    STRING *method = NULL;
-    int rc = SSH_AUTH_ERROR;
+  enter_function();
 
-    enter_function();
 #ifdef HAVE_SSH1
-    if(session->version==1){
-        ssh_userauth1_none(session,username);
+  if (session->version == 1) {
+    ssh_userauth1_none(session, username);
+    leave_function();
+    return rc;
+  }
+#endif
+
+  if (username == NULL) {
+    if (session->options->username == NULL) {
+      if (ssh_options_default_username(session->options) < 0) {
         leave_function();
         return rc;
+      }
     }
-#endif
-    if(!username)
-        if(!(username=session->options->username)){
-            if(ssh_options_default_username(session->options)){
-                leave_function();
-                return rc;
-            } else
-                username=session->options->username;
-        }
-    if (ask_userauth(session)) {
-      leave_function();
-      return rc;
-    }
+    user = string_from_char(session->options->username);
+  } else {
     user = string_from_char(username);
-    if (user == NULL) {
-      goto error;
-    }
-    method = string_from_char("none");
-    if (method == NULL) {
-      goto error;
-    }
-    service = string_from_char("ssh-connection");
-    if (service == NULL) {
-      goto error;
-    }
+  }
 
-    if (buffer_add_u8(session->out_buffer, SSH2_MSG_USERAUTH_REQUEST) < 0) {
-      goto error;
-    }
-    if (buffer_add_ssh_string(session->out_buffer, user) < 0) {
-      goto error;
-    }
-    if (buffer_add_ssh_string(session->out_buffer, service) < 0) {
-      goto error;
-    }
-    if (buffer_add_ssh_string(session->out_buffer, method) < 0) {
-      goto error;
-    }
-
-    string_free(service);
-    string_free(method);
-    string_free(user);
-
-    if (packet_send(session) != SSH_OK) {
-      leave_function();
-      return rc;
-    }
-    rc = wait_auth_status(session, 0);
-
+  if (user == NULL) {
     leave_function();
     return rc;
+  }
+
+  if (ask_userauth(session) < 0) {
+    string_free(user);
+    leave_function();
+    return rc;
+  }
+
+  method = string_from_char("none");
+  if (method == NULL) {
+    goto error;
+  }
+  service = string_from_char("ssh-connection");
+  if (service == NULL) {
+    goto error;
+  }
+
+  if (buffer_add_u8(session->out_buffer, SSH2_MSG_USERAUTH_REQUEST) < 0 ||
+      buffer_add_ssh_string(session->out_buffer, user) < 0 ||
+      buffer_add_ssh_string(session->out_buffer, service) < 0 ||
+      buffer_add_ssh_string(session->out_buffer, method) < 0) {
+    goto error;
+  }
+
+  string_free(service);
+  string_free(method);
+  string_free(user);
+
+  if (packet_send(session) != SSH_OK) {
+    leave_function();
+    return rc;
+  }
+  rc = wait_auth_status(session, 0);
+
+  leave_function();
+  return rc;
 error:
-    buffer_free(session->out_buffer);
-    string_free(service);
-    string_free(method);
-    string_free(user);
+  buffer_free(session->out_buffer);
+  string_free(service);
+  string_free(method);
+  string_free(user);
 
-    leave_function();
-    return rc;
+  leave_function();
+  return rc;
 }
 
 /** \brief Try to authenticate through public key
