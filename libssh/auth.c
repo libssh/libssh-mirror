@@ -836,7 +836,7 @@ int ssh_userauth_autopubkey(SSH_SESSION *session, const char *passphrase) {
   for (i = 0, pubkey = try_publickey_from_file(session, keytab[i],
         &privkeyfile, &type);
       i < size;
-      pubkey = try_publickey_from_file(session, keytab[++i],
+      pubkey = try_publickey_from_file(session, keytab[i++],
         &privkeyfile, &type)) {
     if (pubkey == NULL) {
       continue;
