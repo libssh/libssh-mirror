@@ -199,8 +199,8 @@ int ssh_userauth_list(SSH_SESSION *session, const char *username) {
  */
 int ssh_userauth_none(SSH_SESSION *session, const char *username) {
   STRING *user = NULL;
-  STRING *service;
-  STRING *method;
+  STRING *service = NULL;
+  STRING *method = NULL;
   int rc = SSH_AUTH_ERROR;
 
   enter_function();
@@ -303,10 +303,10 @@ error:
  */
 int ssh_userauth_offer_pubkey(SSH_SESSION *session, const char *username,
     int type, STRING *publickey) {
-  STRING *user;
-  STRING *service;
-  STRING *method;
-  STRING *algo;
+  STRING *user = NULL;
+  STRING *service = NULL;
+  STRING *method = NULL;
+  STRING *algo = NULL;
   int rc = SSH_AUTH_ERROR;
 
   enter_function();
@@ -416,11 +416,11 @@ error:
  */
 int ssh_userauth_pubkey(SSH_SESSION *session, const char *username,
     STRING *publickey, PRIVATE_KEY *privatekey) {
-  STRING *user;
-  STRING *service;
-  STRING *method;
-  STRING *algo;
-  STRING *sign;
+  STRING *user = NULL;
+  STRING *service = NULL;
+  STRING *method = NULL;
+  STRING *algo = NULL;
+  STRING *sign = NULL;
   int rc = SSH_AUTH_ERROR;
 
   enter_function();
