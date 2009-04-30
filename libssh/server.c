@@ -322,90 +322,155 @@ static int server_set_kex(SSH_SESSION * session) {
   return 0;
 }
 
-static int dh_handshake_server(SSH_SESSION *session){
-    STRING *e,*f,*pubkey,*sign;
-    PUBLIC_KEY *pub;
-    PRIVATE_KEY *prv;
-    BUFFER *buf=buffer_new();
-    if (packet_wait(session, SSH2_MSG_KEXDH_INIT, 1) != SSH_OK)
-        return -1;
-    e=buffer_get_ssh_string(session->in_buffer);
-    if(!e){
-        ssh_set_error(session,SSH_FATAL,"No e number in client request");
-        return -1;
-    }
-    if (dh_import_e(session, e) < 0) {
-      ssh_set_error(session,SSH_FATAL,"Cannot import e number");
-      return -1;
-    }
-    free(e);
-    if (dh_generate_y(session) < 0) {
-      ssh_set_error(session,SSH_FATAL,"Could not create y number");
-      return -1;
-    }
-    if (dh_generate_f(session) < 0) {
-      ssh_set_error(session,SSH_FATAL,"Could not create f number");
-      return -1;
-    }
-    f=dh_get_f(session);
-    switch(session->hostkeys){
-        case TYPE_DSS:
-            prv=session->dsa_key;
-            break;
-        case TYPE_RSA:
-            prv=session->rsa_key;
-            break;
-        default:
-            prv=NULL;
-    }
-    pub=publickey_from_privatekey(prv);
-    pubkey=publickey_to_string(pub);
-    publickey_free(pub);
-    dh_import_pubkey(session,pubkey);
-    if (dh_build_k(session) < 0) {
-      return -1;
-    }
-    if (make_sessionid(session) != SSH_OK) {
-      return -1;
-    }
-    sign=ssh_sign_session_id(session,prv);
-    buffer_free(buf);
-    /* free private keys as they should not be readable past this point */
-    if(session->rsa_key){
-        privatekey_free(session->rsa_key);
-        session->rsa_key=NULL;
-    }
-    if(session->dsa_key){
-        privatekey_free(session->dsa_key);
-        session->dsa_key=NULL;
-    }
-    buffer_add_u8(session->out_buffer,SSH2_MSG_KEXDH_REPLY);
-    buffer_add_ssh_string(session->out_buffer,pubkey);
-    buffer_add_ssh_string(session->out_buffer,f);
-    buffer_add_ssh_string(session->out_buffer,sign);
-    free(sign);
-    packet_send(session);
-    free(f);
-    buffer_add_u8(session->out_buffer,SSH2_MSG_NEWKEYS);
-    packet_send(session);
-    ssh_log(session, SSH_LOG_PACKET, "SSH_MSG_NEWKEYS sent");
+static int dh_handshake_server(SSH_SESSION *session) {
+  STRING *e;
+  STRING *f;
+  STRING *pubkey;
+  STRING *sign;
+  PUBLIC_KEY *pub;
+  PRIVATE_KEY *prv;
 
-    packet_wait(session,SSH2_MSG_NEWKEYS,1);
-    ssh_log(session, SSH_LOG_PACKET, "Got SSH_MSG_NEWKEYS");
-    if (generate_session_keys(session) < 0) {
-      return -1;
-    }
-    /* once we got SSH2_MSG_NEWKEYS we can switch next_crypto and current_crypto */
-    if(session->current_crypto)
-        crypto_free(session->current_crypto);
-    /* XXX later, include a function to change keys */
-    session->current_crypto=session->next_crypto;
-    session->next_crypto = crypto_new();
-    if (session->next_crypto == NULL) {
-      return -1;
-    }
-    return 0;
+  if (packet_wait(session, SSH2_MSG_KEXDH_INIT, 1) != SSH_OK) {
+    return -1;
+  }
+
+  e = buffer_get_ssh_string(session->in_buffer);
+  if (e == NULL) {
+    ssh_set_error(session, SSH_FATAL, "No e number in client request");
+    return -1;
+  }
+  if (dh_import_e(session, e) < 0) {
+    ssh_set_error(session, SSH_FATAL, "Cannot import e number");
+    string_free(e);
+    return -1;
+  }
+  string_free(e);
+
+  if (dh_generate_y(session) < 0) {
+    ssh_set_error(session, SSH_FATAL, "Could not create y number");
+    return -1;
+  }
+  if (dh_generate_f(session) < 0) {
+    ssh_set_error(session, SSH_FATAL, "Could not create f number");
+    return -1;
+  }
+
+  f = dh_get_f(session);
+  if (f == NULL) {
+    ssh_set_error(session, SSH_FATAL, "Could not get the f number");
+    return -1;
+  }
+
+  switch(session->hostkeys){
+    case TYPE_DSS:
+      prv = session->dsa_key;
+      break;
+    case TYPE_RSA:
+      prv = session->rsa_key;
+      break;
+    default:
+      prv = NULL;
+  }
+
+  pub = publickey_from_privatekey(prv);
+  if (pub == NULL) {
+    ssh_set_error(session, SSH_FATAL,
+        "Could not get the public key from the private key");
+    string_free(f);
+    return -1;
+  }
+  pubkey = publickey_to_string(pub);
+  publickey_free(pub);
+  if (pubkey == NULL) {
+    ssh_set_error(session, SSH_FATAL, "Not enough space");
+    string_free(f);
+    return -1;
+  }
+
+  dh_import_pubkey(session, pubkey);
+  if (dh_build_k(session) < 0) {
+    ssh_set_error(session, SSH_FATAL, "Could not import the public key");
+    string_free(f);
+    return -1;
+  }
+
+  if (make_sessionid(session) != SSH_OK) {
+    ssh_set_error(session, SSH_FATAL, "Could not create a session id");
+    string_free(f);
+    return -1;
+  }
+
+  sign = ssh_sign_session_id(session, prv);
+  if (sign == NULL) {
+    ssh_set_error(session, SSH_FATAL, "Could not sign the session id");
+    string_free(f);
+    return -1;
+  }
+
+  /* Free private keys as they should not be readable after this point */
+  if (session->rsa_key) {
+    privatekey_free(session->rsa_key);
+    session->rsa_key = NULL;
+  }
+  if (session->dsa_key) {
+    privatekey_free(session->dsa_key);
+    session->dsa_key = NULL;
+  }
+
+  if (buffer_add_u8(session->out_buffer, SSH2_MSG_KEXDH_REPLY) < 0 ||
+      buffer_add_ssh_string(session->out_buffer, pubkey) < 0 ||
+      buffer_add_ssh_string(session->out_buffer, f) < 0 ||
+      buffer_add_ssh_string(session->out_buffer, sign) < 0) {
+    ssh_set_error(session, SSH_FATAL, "Not enough space");
+    buffer_free(session->out_buffer);
+    string_free(f);
+    string_free(sign);
+    return -1;
+  }
+  string_free(f);
+  string_free(sign);
+
+  if (packet_send(session) != SSH_OK) {
+    return -1;
+  }
+
+  if (buffer_add_u8(session->out_buffer, SSH2_MSG_NEWKEYS) < 0) {
+    buffer_free(session->out_buffer);
+    return -1;
+  }
+
+  if (packet_send(session) != SSH_OK) {
+    return -1;
+  }
+  ssh_log(session, SSH_LOG_PACKET, "SSH_MSG_NEWKEYS sent");
+
+  if (packet_wait(session, SSH2_MSG_NEWKEYS, 1) != SSH_OK) {
+    return -1;
+  }
+  ssh_log(session, SSH_LOG_PACKET, "Got SSH_MSG_NEWKEYS");
+
+  if (generate_session_keys(session) < 0) {
+    return -1;
+  }
+
+  /*
+   * Once we got SSH2_MSG_NEWKEYS we can switch next_crypto and
+   * current_crypto
+   */
+  if (session->current_crypto) {
+    crypto_free(session->current_crypto);
+  }
+
+  /* FIXME TODO later, include a function to change keys */
+  session->current_crypto = session->next_crypto;
+  session->next_crypto = crypto_new();
+  if (session->next_crypto == NULL) {
+    return -1;
+  }
+
+  return 0;
 }
+
 /* do the banner and key exchange */
 int ssh_accept(SSH_SESSION *session){
     ssh_send_banner(session,1);
