@@ -919,18 +919,8 @@ STRING *publickey_from_file(SSH_SESSION *session, const char *filename,
   return str;
 }
 
-
-/*
- * Why a recursive function?
- *
- * publickey_from_next_file() will be executed until NULL is returned
- * We can't return NULL if one of the possible keys is wrong. We want to
- * test them before getting over
- */
-STRING *publickey_from_next_file(SSH_SESSION *session,
-    struct keys_struct *keytab, size_t keytab_size,
-    char **privkeyfile, int *type,
-    unsigned int *count) {
+STRING *try_publickey_from_file(SSH_SESSION *session, struct keys_struct keytab,
+    char **privkeyfile, int *type) {
   static char *home = NULL;
 
   char public[256] = {0};
@@ -948,36 +938,28 @@ STRING *publickey_from_next_file(SSH_SESSION *session,
     }
   }
 
-  if (*count >= keytab_size) {
-    return NULL;
-  }
-
-  pub = keytab[*count].public;
+  pub = keytab.public;
   if (pub == NULL) {
     return NULL;
   }
-  priv = keytab[*count].private;
+  priv = keytab.private;
   if (priv == NULL) {
     return NULL;
   }
-
-  (*count)++;
 
   /* are them readable ? */
   snprintf(public, sizeof(public), pub, home);
   ssh_log(session, SSH_LOG_PACKET, "Trying to open public key %s", public);
   if (!ssh_file_readaccess_ok(public)) {
     ssh_log(session, SSH_LOG_PACKET, "Failed");
-    return publickey_from_next_file(session, keytab, keytab_size,
-        privkeyfile, type, count);
+    return NULL;
   }
 
   snprintf(private, sizeof(private), priv, home);
   ssh_log(session, SSH_LOG_PACKET, "Trying to open private key %s", private);
   if (!ssh_file_readaccess_ok(private)) {
     ssh_log(session, SSH_LOG_PACKET, "Failed");
-    return publickey_from_next_file(session, keytab, keytab_size,
-        privkeyfile, type, count);
+    return NULL;
   }
 
   ssh_log(session, SSH_LOG_PACKET, "Success reading public and private key");
@@ -992,8 +974,7 @@ STRING *publickey_from_next_file(SSH_SESSION *session,
         "Wasn't able to open public key file %s: %s",
         public,
         ssh_get_error(session));
-    return publickey_from_next_file(session, keytab, keytab_size,
-        privkeyfile, type, count);
+    return NULL;
   }
 
   new = realloc(*privkeyfile, strlen(private) + 1);

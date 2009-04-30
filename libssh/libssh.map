@@ -12,7 +12,7 @@ SSH_0.3 {
     ssh_get_pubkey_hash; ssh_get_pubkey;
     ssh_fd_poll; ssh_select; publickey_free;
     privatekey_from_file; publickey_to_string; publickey_from_privatekey;
-    private_key_free; publickey_from_file; publickey_from_next_file;
+    private_key_free; publickey_from_file; try_publickey_from_file;
     ssh_is_server_known; ssh_write_knownhost;
     channel_new; channel_open_forward; channel_open_session; channel_free;
     channel_request_pty; channel_request_pty_size; channel_change_pty_size;

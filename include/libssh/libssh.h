@@ -256,9 +256,9 @@ PUBLIC_KEY *publickey_from_privatekey(PRIVATE_KEY *prv);
 void privatekey_free(PRIVATE_KEY *prv);
 STRING *publickey_from_file(SSH_SESSION *session, const char *filename,
     int *type);
-STRING *publickey_from_next_file(SSH_SESSION *session,
-    struct keys_struct *keytab, size_t keytab_size,
-    char **privkeyfile, int *type, unsigned int *count);
+STRING *try_publickey_from_file(SSH_SESSION *session,
+    struct keys_struct keytab,
+    char **privkeyfile, int *type);
 int ssh_is_server_known(SSH_SESSION *session);
 int ssh_write_knownhost(SSH_SESSION *session);
 

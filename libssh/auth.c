@@ -738,7 +738,7 @@ int ssh_userauth_autopubkey(SSH_SESSION *session, const char *passphrase) {
   char *privkeyfile = NULL;
   char *id = NULL;
   size_t size;
-  unsigned int count = 0;
+  unsigned int i = 0;
   int type = 0;
   int rc;
 
@@ -834,8 +834,15 @@ int ssh_userauth_autopubkey(SSH_SESSION *session, const char *passphrase) {
     keytab[size - 1].public = id;
   }
 
-  while ((pubkey = publickey_from_next_file(session, keytab, size,
-          &privkeyfile, &type, &count))) {
+  for (i = 0, pubkey = try_publickey_from_file(session, keytab[i],
+        &privkeyfile, &type);
+      i < size;
+      pubkey = try_publickey_from_file(session, keytab[++i],
+        &privkeyfile, &type)) {
+    if (pubkey == NULL) {
+      continue;
+    }
+
     rc = ssh_userauth_offer_pubkey(session, NULL, type, pubkey);
     if (rc == SSH_AUTH_ERROR){
       if (id != NULL) {
