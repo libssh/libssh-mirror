@@ -53,92 +53,111 @@ static int ask_userauth(SSH_SESSION *session) {
   return rc;
 }
 
-static int wait_auth_status(SSH_SESSION *session,int kbdint){
-    int err=SSH_AUTH_ERROR;
-    int cont=1;
-    STRING *auth;
-    u8 partial=0;
-    char *auth_methods = NULL;
-    enter_function();
-    while(cont){
-        if(packet_read(session))
-            break;
-        if(packet_translate(session) != SSH_OK)
-            break;
-        switch(session->in_packet.type){
-            case SSH2_MSG_USERAUTH_FAILURE:
-                auth = buffer_get_ssh_string(session->in_buffer);
-                if(!auth || buffer_get_u8(session->in_buffer,&partial)!=1 ){
-                    ssh_set_error(session,SSH_FATAL,
-                            "invalid SSH_MSG_USERAUTH_FAILURE message");
-                    leave_function();
-                    return SSH_AUTH_ERROR;
-                }
-                auth_methods = string_to_char(auth);
-                if(partial) {
-                    err=SSH_AUTH_PARTIAL;
-                    ssh_set_error(session,SSH_NO_ERROR,"partial success, authentications that can continue : %s", auth_methods);
-                } else {
-                    err=SSH_AUTH_DENIED;
-                    ssh_set_error(session,SSH_REQUEST_DENIED,"Access denied. authentications that can continue : %s", auth_methods);
+static int wait_auth_status(SSH_SESSION *session, int kbdint) {
+  char *auth_methods = NULL;
+  STRING *auth;
+  int rc = SSH_AUTH_ERROR;
+  int cont = 1;
+  u8 partial = 0;
 
-                    session->auth_methods = 0;
-                    if (strstr(auth_methods, "password") != NULL) {
-                        session->auth_methods |= SSH_AUTH_METHOD_PASSWORD;
-                    }
-                    if (strstr(auth_methods, "keyboard-interactive") != NULL) {
-                        session->auth_methods |= SSH_AUTH_METHOD_INTERACTIVE;
-                    }
-                    if (strstr(auth_methods, "publickey") != NULL) {
-                        session->auth_methods |= SSH_AUTH_METHOD_PUBLICKEY;
-                    }
-                    if (strstr(auth_methods, "hostbased") != NULL) {
-                        session->auth_methods |= SSH_AUTH_METHOD_HOSTBASED;
-                    }
-                }
+  enter_function();
 
-
-                free(auth);
-                free(auth_methods);
-                cont=0;
-                break;
-            case SSH2_MSG_USERAUTH_PK_OK:
-                /* SSH monkeys have defined the same number for both */
-                /* SSH_MSG_USERAUTH_PK_OK and SSH_MSG_USERAUTH_INFO_REQUEST */
-                /* which is not really smart; */
-          /*case SSH2_MSG_USERAUTH_INFO_REQUEST: */
-                if(kbdint){
-                    err=SSH_AUTH_INFO;
-                    cont=0;
-                    break;
-                }
-                /* continue through success */
-            case SSH2_MSG_USERAUTH_SUCCESS:
-                err=SSH_AUTH_SUCCESS;
-                cont=0;
-                break;
-            case SSH2_MSG_USERAUTH_BANNER:
-                {
-                    STRING *banner=buffer_get_ssh_string(session->in_buffer);
-                    if(!banner){
-                        ssh_log(session, SSH_LOG_PACKET,
-                            "The banner message was invalid. continuing though\n");
-                        break;
-                    }
-                    ssh_log(session, SSH_LOG_PACKET,
-                        "Received a message banner\n");
-                    if(session->banner)
-                        free(session->banner); /* erase the older one */
-                    session->banner=banner;
-                    break;
-                }
-            default:
-                packet_parse(session);
-                break;
-        }
+  while (cont) {
+    if (packet_read(session) != SSH_OK) {
+      break;
     }
-    leave_function();
-    return err;
+    if (packet_translate(session) != SSH_OK) {
+      break;
+    }
+
+    switch (session->in_packet.type) {
+      case SSH2_MSG_USERAUTH_FAILURE:
+        auth = buffer_get_ssh_string(session->in_buffer);
+        if (auth == NULL || buffer_get_u8(session->in_buffer, &partial) != 1) {
+          ssh_set_error(session, SSH_FATAL,
+              "Invalid SSH_MSG_USERAUTH_FAILURE message");
+          leave_function();
+          return SSH_AUTH_ERROR;
+        }
+
+        auth_methods = string_to_char(auth);
+        if (auth_methods == NULL) {
+          ssh_set_error(session, SSH_FATAL,
+              "Not enough space");
+          string_free(auth);
+          leave_function();
+          return SSH_AUTH_ERROR;
+        }
+
+        if (partial) {
+          rc = SSH_AUTH_PARTIAL;
+          ssh_set_error(session, SSH_NO_ERROR,
+              "Partial success. Authentication that can continue: %s",
+              auth_methods);
+        } else {
+          rc = SSH_AUTH_DENIED;
+          ssh_set_error(session, SSH_REQUEST_DENIED,
+              "Access denied. Authentication that can continue: %s",
+              auth_methods);
+
+          session->auth_methods = 0;
+          if (strstr(auth_methods, "password") != NULL) {
+            session->auth_methods |= SSH_AUTH_METHOD_PASSWORD;
+          }
+          if (strstr(auth_methods, "keyboard-interactive") != NULL) {
+            session->auth_methods |= SSH_AUTH_METHOD_INTERACTIVE;
+          }
+          if (strstr(auth_methods, "publickey") != NULL) {
+            session->auth_methods |= SSH_AUTH_METHOD_PUBLICKEY;
+          }
+          if (strstr(auth_methods, "hostbased") != NULL) {
+            session->auth_methods |= SSH_AUTH_METHOD_HOSTBASED;
+          }
+        }
+
+        string_free(auth);
+        SAFE_FREE(auth_methods);
+        cont = 0;
+        break;
+      case SSH2_MSG_USERAUTH_PK_OK:
+        /* SSH monkeys have defined the same number for both */
+        /* SSH_MSG_USERAUTH_PK_OK and SSH_MSG_USERAUTH_INFO_REQUEST */
+        /* which is not really smart; */
+        /*case SSH2_MSG_USERAUTH_INFO_REQUEST: */
+        if (kbdint) {
+          rc = SSH_AUTH_INFO;
+          cont = 0;
+          break;
+        }
+        /* continue through success */
+      case SSH2_MSG_USERAUTH_SUCCESS:
+        rc = SSH_AUTH_SUCCESS;
+        cont = 0;
+        break;
+      case SSH2_MSG_USERAUTH_BANNER:
+        {
+          STRING *banner;
+
+          banner = buffer_get_ssh_string(session->in_buffer);
+          if (banner == NULL) {
+            ssh_log(session, SSH_LOG_PACKET,
+                "The banner message was invalid. Continuing though\n");
+            break;
+          }
+          ssh_log(session, SSH_LOG_PACKET,
+              "Received a message banner\n");
+          string_free(session->banner); /* erase the older one */
+          session->banner = banner;
+          break;
+        }
+      default:
+        packet_parse(session);
+        break;
+    }
+  }
+
+  leave_function();
+  return rc;
 }
 
 int ssh_auth_list(SSH_SESSION *session) {
