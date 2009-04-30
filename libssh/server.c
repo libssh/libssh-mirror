@@ -471,27 +471,46 @@ static int dh_handshake_server(SSH_SESSION *session) {
   return 0;
 }
 
-/* do the banner and key exchange */
-int ssh_accept(SSH_SESSION *session){
-    ssh_send_banner(session,1);
-    if (ssh_crypto_init() < 0) {
-      return -1;
-    }
-    session->alive=1;
-    session->clientbanner=ssh_get_banner(session);
-    if (server_set_kex(session) < 0) {
-      return -1;
-    }
-    ssh_send_kex(session,1);
-    if(ssh_get_kex(session,1) < 0) {
-        return -1;
-    }
-    ssh_list_kex(session, &session->client_kex);
-    crypt_set_algorithms_server(session);
-    if(dh_handshake_server(session))
-        return -1;
-    session->connected=1;
-    return 0;
+/* Do the banner and key exchange */
+int ssh_accept(SSH_SESSION *session) {
+  if (ssh_send_banner(session, 1) < 0) {
+    return -1;
+  }
+
+  if (ssh_crypto_init() < 0) {
+    return -1;
+  }
+
+  session->alive = 1;
+
+  session->clientbanner = ssh_get_banner(session);
+  if (session->clientbanner == NULL) {
+    return -1;
+  }
+
+  if (server_set_kex(session) < 0) {
+    return -1;
+  }
+
+  if (ssh_send_kex(session, 1) < 0) {
+    return -1;
+  }
+
+  if (ssh_get_kex(session,1) < 0) {
+    return -1;
+  }
+
+  ssh_list_kex(session, &session->client_kex);
+  crypt_set_algorithms_server(session);
+
+  if (dh_handshake_server(session) < 0) {
+    return -1;
+  }
+
+  session->connected = 1;
+
+  return 0;
 }
+
 /** @}
  */
