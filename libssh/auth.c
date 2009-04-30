@@ -390,115 +390,124 @@ error:
 }
 
 
-/** \brief Try to authenticate through public key
- * \param session ssh session
- * \param username username to authenticate. You can specify NULL if
- * ssh_option_set_username() has been used. You cannot try two different logins in a row.
- * \param publickey a public key returned by publickey_from_file()
- * \param privatekey a private key returned by privatekey_from_file()
- * \returns SSH_AUTH_ERROR : a serious error happened\n
- * SSH_AUTH_DENIED : Authentication failed : use another method\n
- * SSH_AUTH_PARTIAL : You've been partially authenticated, you still have to use another method\n
- * SSH_AUTH_SUCCESS : Authentication success
- * \see publickey_from_file()
- * \see privatekey_from_file()
- * \see privatekey_free()
- * \see ssh_userauth_offer_pubkey()
+/**
+ * @brief Try to authenticate through public key.
+ *
+ * @param session       The ssh session to use.
+ *
+ * @param username      The username to authenticate. You can specify NULL if
+ *                      ssh_option_set_username() has been used. You cannot try
+ *                      two different logins in a row.
+ *
+ * @param publickey     A public key returned by publickey_from_file().
+ *
+ * @param privatekey    A private key returned by privatekey_from_file().
+ *
+ * @returns SSH_AUTH_ERROR:   A serious error happened.\n
+ *          SSH_AUTH_DENIED:  Authentication failed: use another method.\n
+ *          SSH_AUTH_PARTIAL: You've been partially authenticated, you still
+ *                            have to use another method.\n
+ *          SSH_AUTH_SUCCESS: Authentication successful.
+ *
+ * @see publickey_from_file()
+ * @see privatekey_from_file()
+ * @see privatekey_free()
+ * @see ssh_userauth_offer_pubkey()
  */
+int ssh_userauth_pubkey(SSH_SESSION *session, const char *username,
+    STRING *publickey, PRIVATE_KEY *privatekey) {
+  STRING *user;
+  STRING *service;
+  STRING *method;
+  STRING *algo;
+  STRING *sign;
+  int rc = SSH_AUTH_ERROR;
 
-int ssh_userauth_pubkey(SSH_SESSION *session, const char *username, STRING *publickey, PRIVATE_KEY *privatekey){
-    STRING *user = NULL;
-    STRING *service = NULL;
-    STRING *method = NULL;
-    STRING *algo = NULL;
-    STRING *sign = NULL;
-    int rc = SSH_AUTH_ERROR;
+  enter_function();
 
-    enter_function();
-//    if(session->version==1)
-//        return ssh_userauth1_pubkey(session,username,publickey,privatekey);
-    if(!username)
-        if(!(username=session->options->username)){
-            if(ssh_options_default_username(session->options)){
-              leave_function();
-              return rc;
-            } else
-                username=session->options->username;
-        }
-    if(ask_userauth(session)){
+#if 0
+  if (session->version == 1) {
+    return ssh_userauth1_pubkey(session, username, publickey, privatekey);
+  }
+#endif
+
+  if (username == NULL) {
+    if (session->options->username == NULL) {
+      if (ssh_options_default_username(session->options) < 0) {
         leave_function();
         return rc;
+      }
     }
-
+    user = string_from_char(session->options->username);
+  } else {
     user = string_from_char(username);
-    if (user == NULL) {
-      goto error;
-    }
-    service = string_from_char("ssh-connection");
-    if (service == NULL) {
-      goto error;
-    }
-    method = string_from_char("publickey");
-    if (method == NULL) {
-      goto error;
-    }
-    algo = string_from_char(ssh_type_to_char(privatekey->type));
-    if (algo == NULL) {
-      goto error;
-    }
+  }
 
-    /* we said previously the public key was accepted */
-    if (buffer_add_u8(session->out_buffer, SSH2_MSG_USERAUTH_REQUEST) < 0) {
-      goto error;
-    }
-    if (buffer_add_ssh_string(session->out_buffer, user) < 0) {
-      goto error;
-    }
-    if (buffer_add_ssh_string(session->out_buffer, service) < 0) {
-      goto error;
-    }
-    if (buffer_add_ssh_string(session->out_buffer, method) < 0) {
-      goto error;
-    }
-    if (buffer_add_u8(session->out_buffer, 1) < 0) {
-      goto error;
-    }
-    if (buffer_add_ssh_string(session->out_buffer, algo) < 0) {
-      goto error;
-    }
-    if (buffer_add_ssh_string(session->out_buffer, publickey) < 0) {
-      goto error;
-    }
-    sign = ssh_do_sign(session,session->out_buffer, privatekey);
-    if (sign) {
-      if (buffer_add_ssh_string(session->out_buffer,sign) < 0) {
-        goto error;
-      }
-      string_free(sign);
-
-      if (packet_send(session) != SSH_OK) {
-        leave_function();
-        return rc;
-      }
-      rc = wait_auth_status(session,0);
-    }
-
-    string_free(user);
-    string_free(service);
-    string_free(method);
-    string_free(algo);
-
+  if (user == NULL) {
     leave_function();
     return rc;
+  }
+
+  if (ask_userauth(session) < 0) {
+    string_free(user);
+    leave_function();
+    return rc;
+  }
+
+  service = string_from_char("ssh-connection");
+  if (service == NULL) {
+    goto error;
+  }
+  method = string_from_char("publickey");
+  if (method == NULL) {
+    goto error;
+  }
+  algo = string_from_char(ssh_type_to_char(privatekey->type));
+  if (algo == NULL) {
+    goto error;
+  }
+
+  /* we said previously the public key was accepted */
+  if (buffer_add_u8(session->out_buffer, SSH2_MSG_USERAUTH_REQUEST) < 0 ||
+      buffer_add_ssh_string(session->out_buffer, user) < 0 ||
+      buffer_add_ssh_string(session->out_buffer, service) < 0 ||
+      buffer_add_ssh_string(session->out_buffer, method) < 0 ||
+      buffer_add_u8(session->out_buffer, 1) < 0 ||
+      buffer_add_ssh_string(session->out_buffer, algo) < 0 ||
+      buffer_add_ssh_string(session->out_buffer, publickey) < 0) {
+    goto error;
+  }
+
+  string_free(user);
+  string_free(service);
+  string_free(method);
+  string_free(algo);
+
+  sign = ssh_do_sign(session,session->out_buffer, privatekey);
+  if (sign) {
+    if (buffer_add_ssh_string(session->out_buffer,sign) < 0) {
+      goto error;
+    }
+    string_free(sign);
+
+    if (packet_send(session) != SSH_OK) {
+      leave_function();
+      return rc;
+    }
+    rc = wait_auth_status(session,0);
+  }
+
+  leave_function();
+  return rc;
 error:
-    buffer_free(session->out_buffer);
-    string_free(user);
-    string_free(service);
-    string_free(method);
-    string_free(algo);
+  buffer_free(session->out_buffer);
+  string_free(user);
+  string_free(service);
+  string_free(method);
+  string_free(algo);
 
-    leave_function();
-    return rc;
+  leave_function();
+  return rc;
 }
 
 #ifndef _WIN32
