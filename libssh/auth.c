@@ -161,10 +161,11 @@ static int wait_auth_status(SSH_SESSION *session, int kbdint) {
 }
 
 int ssh_auth_list(SSH_SESSION *session) {
-    if (session == NULL) {
-        return -1;
-    }
-    return session->auth_methods;
+  if (session == NULL) {
+    return -1;
+  }
+
+  return session->auth_methods;
 }
 
 int ssh_userauth_list(SSH_SESSION *session, const char *username){
