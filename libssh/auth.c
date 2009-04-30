@@ -53,11 +53,6 @@ static int ask_userauth(SSH_SESSION *session) {
   return rc;
 }
 
-static void burn(char *ptr){
-    if(ptr)
-        memset(ptr,'X',strlen(ptr));
-}
-
 static int wait_auth_status(SSH_SESSION *session,int kbdint){
     int err=SSH_AUTH_ERROR;
     int cont=1;
@@ -964,14 +959,14 @@ static void kbdint_free(struct ssh_kbdint *kbd) {
 
   if (kbd->prompts) {
     for (i = 0; i < n; i++) {
-      burn(kbd->prompts[i]);
+      BURN_STRING(kbd->prompts[i]);
       SAFE_FREE(kbd->prompts[i]);
     }
     SAFE_FREE(kbd->prompts);
   }
   if (kbd->answers) {
     for (i = 0; i < n; i++) {
-      burn(kbd->answers[i]);
+      BURN_STRING(kbd->answers[i]);
       SAFE_FREE(kbd->answers[i]);
     }
     SAFE_FREE(kbd->answers);
@@ -995,7 +990,7 @@ static void kbdint_clean(struct ssh_kbdint *kbd) {
 
   if (kbd->prompts) {
     for (i = 0; i < n; i++) {
-      burn(kbd->prompts[i]);
+      BURN_STRING(kbd->prompts[i]);
       SAFE_FREE(kbd->prompts[i]);
     }
     SAFE_FREE(kbd->prompts);
@@ -1003,7 +998,7 @@ static void kbdint_clean(struct ssh_kbdint *kbd) {
 
   if (kbd->answers) {
     for (i = 0; i < n; i++) {
-      burn(kbd->answers[i]);
+      BURN_STRING(kbd->answers[i]);
       SAFE_FREE(kbd->answers[i]);
     }
       SAFE_FREE(kbd->answers);
@@ -1429,7 +1424,7 @@ int ssh_userauth_kbdint_setanswer(SSH_SESSION *session, unsigned int i,
   }
 
   if (session->kbdint->answers[i]) {
-    burn(session->kbdint->answers[i]);
+    BURN_STRING(session->kbdint->answers[i]);
     SAFE_FREE(session->kbdint->answers[i]);
   }
 

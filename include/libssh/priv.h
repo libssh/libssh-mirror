@@ -727,6 +727,9 @@ int match_hostname(const char *host, const char *pattern, unsigned int len);
 /** Get the size of an array */
 #define ARRAY_SIZE(a) (sizeof(a)/sizeof(a[0]))
 
+/** Overwrite the complete string with 'X' */
+#define BURN_STRING(x) do { if ((x) != NULL) memset((x), 'X', strlen((x))); } while(0)
+
 #ifdef HAVE_LIBGCRYPT
 /* gcrypt_missing.c */
 int my_gcry_dec2bn(bignum *bn, const char *data);
