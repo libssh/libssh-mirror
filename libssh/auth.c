@@ -36,17 +36,21 @@
 /** \addtogroup ssh_auth
  * @{ */
 
-static int ask_userauth(SSH_SESSION *session){
-	int ret=0;
-	enter_function();
-    if(session->auth_service_asked)
-        ret = 0;
-    else if(ssh_service_request(session,"ssh-userauth"))
-    	ret = -1;
-    else
-        session->auth_service_asked++;
-    leave_function();
-    return ret;
+static int ask_userauth(SSH_SESSION *session) {
+  int rc = 0;
+
+  enter_function();
+
+  if (session->auth_service_asked) {
+    rc = 0;
+  } else if (ssh_service_request(session,"ssh-userauth")) {
+    rc = -1;
+  } else {
+    session->auth_service_asked++;
+  }
+
+  leave_function();
+  return rc;
 }
 
 static void burn(char *ptr){
