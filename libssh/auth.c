@@ -168,10 +168,16 @@ int ssh_auth_list(SSH_SESSION *session) {
   return session->auth_methods;
 }
 
-int ssh_userauth_list(SSH_SESSION *session, const char *username){
-	if(session->auth_methods==0)
-		ssh_userauth_none(session,username);
-	return ssh_auth_list(session);
+int ssh_userauth_list(SSH_SESSION *session, const char *username) {
+  if (session == NULL || username == NULL) {
+    return SSH_AUTH_ERROR;
+  }
+
+  if (session->auth_methods == 0) {
+    ssh_userauth_none(session, username);
+  }
+
+  return ssh_auth_list(session);
 }
 
 /* use the "none" authentication question */
