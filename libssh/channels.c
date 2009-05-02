@@ -284,17 +284,23 @@ error:
   return -1;
 }
 
-static CHANNEL *channel_from_msg(SSH_SESSION *session){
-    u32 chan;
-    CHANNEL *channel;
-    if (buffer_get_u32(session->in_buffer,&chan)!=sizeof(u32)){
-        ssh_set_error(session,SSH_FATAL,"Getting channel from message : short read");
-        return NULL;
-    }
-    channel=ssh_channel_from_local(session,ntohl(chan));
-    if(!channel)
-        ssh_set_error(session,SSH_FATAL,"Server specified invalid channel %d",ntohl(chan));
-    return channel;
+static CHANNEL *channel_from_msg(SSH_SESSION *session) {
+  CHANNEL *channel;
+  u32 chan;
+
+  if (buffer_get_u32(session->in_buffer, &chan) != sizeof(u32)) {
+    ssh_set_error(session, SSH_FATAL,
+        "Getting channel from message: short read");
+    return NULL;
+  }
+
+  channel = ssh_channel_from_local(session, ntohl(chan));
+  if (channel == NULL) {
+    ssh_set_error(session, SSH_FATAL,
+        "Server specified invalid channel %d", ntohl(chan));
+  }
+
+  return channel;
 }
 
 static void channel_rcv_change_window(SSH_SESSION *session){
