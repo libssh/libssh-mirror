@@ -230,17 +230,24 @@ static int channel_open(CHANNEL *channel, const char *type_c, int window,
   return -1;
 }
 
-CHANNEL *ssh_channel_from_local(SSH_SESSION *session,u32 num){
-    // we assume we are always the local
-    CHANNEL *initchan,*channel;
-    initchan=session->channels;
-    if(!initchan)
-        return NULL;
-    for(channel=initchan;channel->local_channel!=num;channel=channel->next){
-        if(channel->next==initchan)
-            return NULL;
+/* get ssh channel from local session? */
+CHANNEL *ssh_channel_from_local(SSH_SESSION *session, u32 id) {
+  CHANNEL *initchan = session->channels;
+  CHANNEL *channel;
+
+  /* We assume we are always the local */
+  if (initchan == NULL) {
+    return NULL;
+  }
+
+  for (channel = initchan; channel->local_channel != id;
+      channel=channel->next) {
+    if (channel->next == initchan) {
+      return NULL;
     }
-    return channel;
+  }
+
+  return channel;
 }
 
 static int grow_window(SSH_SESSION *session, CHANNEL *channel, int minimumsize) {

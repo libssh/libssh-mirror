@@ -607,7 +607,7 @@ CHANNEL *channel_new(SSH_SESSION *session);
 int channel_default_bufferize(CHANNEL *channel, void *data, int len,
         int is_stderr);
 u32 ssh_channel_new_id(SSH_SESSION *session);
-CHANNEL *ssh_channel_from_local(SSH_SESSION *session,u32 num);
+CHANNEL *ssh_channel_from_local(SSH_SESSION *session, u32 id);
 
 /* options.c */
 
