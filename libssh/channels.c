@@ -255,13 +255,9 @@ static int grow_window(SSH_SESSION *session, CHANNEL *channel, int minimumsize) 
 
   enter_function();
 
-  if (buffer_add_u8(session->out_buffer,SSH2_MSG_CHANNEL_WINDOW_ADJUST) < 0) {
-    goto error;
-  }
-  if (buffer_add_u32(session->out_buffer,htonl(channel->remote_channel)) < 0) {
-    goto error;
-  }
-  if (buffer_add_u32(session->out_buffer,htonl(new_window)) < 0) {
+  if (buffer_add_u8(session->out_buffer, SSH2_MSG_CHANNEL_WINDOW_ADJUST) < 0 ||
+      buffer_add_u32(session->out_buffer, htonl(channel->remote_channel)) < 0 ||
+      buffer_add_u32(session->out_buffer, htonl(new_window)) < 0) {
     goto error;
   }
 
@@ -270,14 +266,16 @@ static int grow_window(SSH_SESSION *session, CHANNEL *channel, int minimumsize) 
     leave_function();
     return 1;
   }
+
   ssh_log(session, SSH_LOG_PROTOCOL,
       "growing window (channel %d:%d) to %d bytes",
       channel->local_channel,
       channel->remote_channel,
       channel->local_window + new_window);
-  channel->local_window+=new_window;
-  leave_function();
 
+  channel->local_window += new_window;
+
+  leave_function();
   return 0;
 error:
   buffer_free(session->out_buffer);
