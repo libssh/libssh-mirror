@@ -303,30 +303,37 @@ static CHANNEL *channel_from_msg(SSH_SESSION *session) {
   return channel;
 }
 
-static void channel_rcv_change_window(SSH_SESSION *session){
-    u32 bytes;
-    CHANNEL *channel;
-    int err;
-    enter_function();
-    channel=channel_from_msg(session);
-    if(!channel)
-        ssh_log(session, SSH_LOG_FUNCTIONS, "%s", ssh_get_error(session));
-    err = buffer_get_u32(session->in_buffer,&bytes);
-    if(!channel || err!= sizeof(u32)){
-        ssh_log(session, SSH_LOG_PACKET,
-            "Error getting a window adjust message : invalid packet");
-        leave_function();
-        return;
-    }
-    bytes=ntohl(bytes);
-    ssh_log(session, SSH_LOG_PROTOCOL,
-        "Adding %d bytes to channel (%d:%d) (from %d bytes)",
-        bytes,
-        channel->local_channel,
-        channel->remote_channel,
-        channel->remote_window);
-    channel->remote_window+=bytes;
+static void channel_rcv_change_window(SSH_SESSION *session) {
+  CHANNEL *channel;
+  u32 bytes;
+  int rc;
+
+  enter_function();
+
+  channel = channel_from_msg(session);
+  if (channel == NULL) {
+    ssh_log(session, SSH_LOG_FUNCTIONS, ssh_get_error(session));
+  }
+
+  rc = buffer_get_u32(session->in_buffer, &bytes);
+  if (channel == NULL || rc != sizeof(u32)) {
+    ssh_log(session, SSH_LOG_PACKET,
+        "Error getting a window adjust message: invalid packet");
     leave_function();
+    return;
+  }
+
+  bytes = ntohl(bytes);
+  ssh_log(session, SSH_LOG_PROTOCOL,
+      "Adding %d bytes to channel (%d:%d) (from %d bytes)",
+      bytes,
+      channel->local_channel,
+      channel->remote_channel,
+      channel->remote_window);
+
+  channel->remote_window += bytes;
+
+  leave_function();
 }
 
 /* is_stderr is set to 1 if the data are extended, ie stderr */
