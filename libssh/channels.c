@@ -91,10 +91,17 @@ CHANNEL *channel_new(SSH_SESSION *session) {
   return channel;
 }
 
-u32 ssh_channel_new_id(SSH_SESSION *session){
-    u32 ret=session->maxchannel;
-    session->maxchannel++;
-    return ret;
+/**
+ * @internal
+ *
+ * @brief Create a new channel identifier.
+ *
+ * @param  session      The SSH session to use.
+ *
+ * @return The new channel identifier.
+ */
+u32 ssh_channel_new_id(SSH_SESSION *session) {
+  return ++(session->maxchannel);
 }
 
 static int channel_open(CHANNEL *channel, const char *type_c, int window,
