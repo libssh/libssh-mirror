@@ -36,16 +36,22 @@
 #define WINDOWBASE 128000
 #define WINDOWLIMIT (WINDOWBASE/2)
 
-/** \defgroup ssh_channel SSH Channels
- * \brief functions that manage a channel
+/**
+ * @defgroup ssh_channel SSH Channels
+ * @brief Functions that manage a channel.
  */
 
-/** \addtogroup ssh_channel
- * @{ */
+/**
+ * @addtogroup ssh_channel
+ * @{
+ */
 
-/** \brief allocate a new channel
- * \param session ssh session
- * \return An allocated channel, NULL on error.
+/**
+ * @brief Allocate a new channel.
+ *
+ * @param session       The ssh session to use.
+ *
+ * @return A pointer to a newly allocated channel, NULL on error.
  */
 CHANNEL *channel_new(SSH_SESSION *session) {
   CHANNEL *channel = NULL;
@@ -1342,8 +1348,10 @@ SSH_SESSION *channel_get_session(CHANNEL *channel){
  * \return other values : exit status
  */
 
-int channel_get_exit_status(CHANNEL *channel){
-    return channel->exit_status;
+int channel_get_exit_status(CHANNEL *channel) {
+  channel_request(channel, "exit-status", NULL, 0);
+
+  return channel->exit_status;
 }
 
 /* This function acts as a meta select. */
