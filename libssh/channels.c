@@ -403,22 +403,26 @@ static void channel_rcv_data(SSH_SESSION *session,int is_stderr) {
   leave_function();
 }
 
-static void channel_rcv_eof(SSH_SESSION *session){
-    CHANNEL *channel;
-    enter_function();
-    channel=channel_from_msg(session);
-    if(!channel){
-        ssh_log(session, SSH_LOG_FUNCTIONS, "%s", ssh_get_error(session));
-        leave_function();
-        return;
-    }
-    ssh_log(session, SSH_LOG_PACKET,
-        "Received eof on channel (%d:%d)",
-        channel->local_channel,
-        channel->remote_channel);
-//    channel->remote_window=0;
-    channel->remote_eof=1;
+static void channel_rcv_eof(SSH_SESSION *session) {
+  CHANNEL *channel;
+
+  enter_function();
+
+  channel = channel_from_msg(session);
+  if (channel == NULL) {
+    ssh_log(session, SSH_LOG_FUNCTIONS, ssh_get_error(session));
     leave_function();
+    return;
+  }
+
+  ssh_log(session, SSH_LOG_PACKET,
+      "Received eof on channel (%d:%d)",
+      channel->local_channel,
+      channel->remote_channel);
+  /* channel->remote_window = 0; */
+  channel->remote_eof = 1;
+
+  leave_function();
 }
 
 static void channel_rcv_close(SSH_SESSION *session){
