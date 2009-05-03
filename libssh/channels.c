@@ -581,18 +581,21 @@ void channel_handle(SSH_SESSION *session, int type){
   leave_function();
 }
 
-/* when data has been received from the ssh server, it can be applied to the known
-    user function, with help of the callback, or inserted here */
-/* XXX is the window changed ? */
+/*
+ * When data has been received from the ssh server, it can be applied to the
+ * known user function, with help of the callback, or inserted here
+ *
+ * FIXME is the window changed?
+ */
 int channel_default_bufferize(CHANNEL *channel, void *data, int len,
     int is_stderr) {
   struct ssh_session *session = channel->session;
 
   ssh_log(session, SSH_LOG_RARE,
       "placing %d bytes into channel buffer (stderr=%d)", len, is_stderr);
-  if (! is_stderr) {
+  if (is_stderr == 0) {
     /* stdout */
-    if(channel->stdout_buffer == NULL) {
+    if (channel->stdout_buffer == NULL) {
       channel->stdout_buffer = buffer_new();
       if (channel->stdout_buffer == NULL) {
         return -1;
