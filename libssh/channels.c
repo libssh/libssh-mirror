@@ -647,15 +647,23 @@ int channel_open_session(CHANNEL *channel) {
   return channel_open(channel,"session",64000,32000,NULL);
 }
 
-/** \brief open a TCP/IP forwarding channel.
- * \param channel an allocated channel (see channel_new())
- * \param remotehost remote host to be connected (host name or IP)
- * \param remoteport remote port
- * \param sourcehost source host (your local computer). It's facultative and for logging purpose
- * \param localport source port (your local computer). It's facultative and for logging purpose
- * \return SSH_ERROR on error\n
- * SSH_OK on success
- * \warning API changed from 0.11
+/**
+ * @brief Open a TCP/IP forwarding channel.
+ *
+ * @param channel       An allocated channel.
+ *
+ * @param remotehost    The remote host to connected (host name or IP).
+ *
+ * @param remoteport    The remote port.
+ *
+ * @param sourcehost    The source host (your local computer). It's facultative
+ *                      and for logging purpose.
+ *
+ * @param localport     The source port (your local computer). It's facultative
+ *                      and for logging purpose.
+ *
+ * @return SSH_OK on success\n
+ *         SSH_ERROR on error
  */
 int channel_open_forward(CHANNEL *channel, const char *remotehost,
     int remoteport, const char *sourcehost, int localport) {
@@ -675,10 +683,8 @@ int channel_open_forward(CHANNEL *channel, const char *remotehost,
     goto error;
   }
 
-  if (buffer_add_ssh_string(payload,str) < 0) {
-    goto error;
-  }
-  if (buffer_add_u32(payload,htonl(remoteport)) < 0) {
+  if (buffer_add_ssh_string(payload, str) < 0 ||
+      buffer_add_u32(payload,htonl(remoteport)) < 0) {
     goto error;
   }
 
@@ -688,10 +694,8 @@ int channel_open_forward(CHANNEL *channel, const char *remotehost,
     goto error;
   }
 
-  if (buffer_add_ssh_string(payload, str) < 0) {
-    goto error;
-  }
-  if (buffer_add_u32(payload,htonl(localport)) < 0) {
+  if (buffer_add_ssh_string(payload, str) < 0 ||
+      buffer_add_u32(payload,htonl(localport)) < 0) {
     goto error;
   }
 
