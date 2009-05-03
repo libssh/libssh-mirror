@@ -794,14 +794,19 @@ error:
   return rc;
 }
 
-/** It sends an end of file and then closes the channel. You won't be able
+/**
+ * @brief Close a channel.
+ *
+ * This sends an end of file and then closes the channel. You won't be able
  * to recover any data the server was going to send or was in buffers.
- * \brief close a channel
- * \param channel channel
- * \return SSH_ERROR on error\n
- * SSH_SUCCESS on success
- * \see channel_free()
- * \see channel_eof()
+ *
+ * @param channel       The channel to close.
+ *
+ * @return SSH_SUCCESS on success\n
+ *         SSH_ERROR on error
+ *
+ * @see channel_free()
+ * @see channel_eof()
  */
 int channel_close(CHANNEL *channel){
   SSH_SESSION *session = channel->session;
@@ -809,19 +814,17 @@ int channel_close(CHANNEL *channel){
 
   enter_function();
 
-  if (!channel->local_eof) {
+  if (channel->local_eof == 0) {
     rc = channel_send_eof(channel);
   }
 
-  if (rc) {
+  if (rc != SSH_OK) {
     leave_function();
     return rc;
   }
 
-  if (buffer_add_u8(session->out_buffer, SSH2_MSG_CHANNEL_CLOSE) < 0) {
-    goto error;
-  }
-  if (buffer_add_u32(session->out_buffer, htonl(channel->remote_channel)) < 0) {
+  if (buffer_add_u8(session->out_buffer, SSH2_MSG_CHANNEL_CLOSE) < 0 ||
+      buffer_add_u32(session->out_buffer, htonl(channel->remote_channel)) < 0) {
     goto error;
   }
 
@@ -830,6 +833,7 @@ int channel_close(CHANNEL *channel){
       "Sent a close on client channel (%d:%d)",
       channel->local_channel,
       channel->remote_channel);
+
   if(rc == SSH_OK) {
     channel->open = 0;
   }
