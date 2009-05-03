@@ -337,56 +337,70 @@ static void channel_rcv_change_window(SSH_SESSION *session) {
 }
 
 /* is_stderr is set to 1 if the data are extended, ie stderr */
-static void channel_rcv_data(SSH_SESSION *session,int is_stderr){
-    STRING *str;
-    CHANNEL *channel;
-    enter_function();
-    channel=channel_from_msg(session);
-    if(!channel){
-        ssh_log(session, SSH_LOG_FUNCTIONS,
-            "%s", ssh_get_error(session));
-        leave_function();
-        return;
-    }
-    if(is_stderr){
-        u32 ignore;
-        /* uint32 data type code. we can ignore it */
-        buffer_get_u32(session->in_buffer,&ignore);
-    }
-    str=buffer_get_ssh_string(session->in_buffer);
+static void channel_rcv_data(SSH_SESSION *session,int is_stderr) {
+  CHANNEL *channel;
+  STRING *str;
+  size_t len;
 
-    if(!str){
-        ssh_log(session, SSH_LOG_PACKET, "Invalid data packet!");
-        leave_function();
-        return;
-    }
-    ssh_log(session, SSH_LOG_PROTOCOL,
-        "Channel receiving %zu bytes data in %d (local win=%d remote win=%d)",
-        string_len(str),
-        is_stderr,
-        channel->local_window,
-        channel->remote_window);
-    /* what shall we do in this case ? let's accept it anyway */
-    if(string_len(str)>channel->local_window)
-        ssh_log(session, SSH_LOG_RARE,
-            "Data packet too big for our window(%zu vs %d)",
-            string_len(str),
-            channel->local_window);
-    if (channel_default_bufferize(channel,str->string,string_len(str), is_stderr) < 0) {
-      string_free(str);
-      leave_function();
-      return;
-    }
-    if(string_len(str)<=channel->local_window)
-        channel->local_window-=string_len(str);
-    else
-        channel->local_window=0; /* buggy remote */
-    ssh_log(session, SSH_LOG_PROTOCOL,
-        "Channel windows are now (local win=%d remote win=%d)",
-        channel->local_window,
-        channel->remote_window);
-    free(str);
+  enter_function();
+
+  channel = channel_from_msg(session);
+  if (channel == NULL) {
+    ssh_log(session, SSH_LOG_FUNCTIONS,
+        "%s", ssh_get_error(session));
     leave_function();
+    return;
+  }
+
+  if (is_stderr) {
+    u32 ignore;
+    /* uint32 data type code. we can ignore it */
+    buffer_get_u32(session->in_buffer, &ignore);
+  }
+
+  str = buffer_get_ssh_string(session->in_buffer);
+  if (str == NULL) {
+    ssh_log(session, SSH_LOG_PACKET, "Invalid data packet!");
+    leave_function();
+    return;
+  }
+  len = string_len(str);
+
+  ssh_log(session, SSH_LOG_PROTOCOL,
+      "Channel receiving %zu bytes data in %d (local win=%d remote win=%d)",
+      len,
+      is_stderr,
+      channel->local_window,
+      channel->remote_window);
+
+  /* What shall we do in this case? Let's accept it anyway */
+  if (len > channel->local_window) {
+    ssh_log(session, SSH_LOG_RARE,
+        "Data packet too big for our window(%zu vs %d)",
+        len,
+        channel->local_window);
+  }
+
+  if (channel_default_bufferize(channel, str->string, len,
+        is_stderr) < 0) {
+    string_free(str);
+    leave_function();
+    return;
+  }
+
+  if (len <= channel->local_window) {
+    channel->local_window -= len;
+  } else {
+    channel->local_window = 0; /* buggy remote */
+  }
+
+  ssh_log(session, SSH_LOG_PROTOCOL,
+      "Channel windows are now (local win=%d remote win=%d)",
+      channel->local_window,
+      channel->remote_window);
+
+  string_free(str);
+  leave_function();
 }
 
 static void channel_rcv_eof(SSH_SESSION *session){
