@@ -464,66 +464,85 @@ static void channel_rcv_close(SSH_SESSION *session) {
   leave_function();
 }
 
-static void channel_rcv_request(SSH_SESSION *session){
-    STRING *request_s;
-    char *request;
-    u32 status;
-    CHANNEL *channel=channel_from_msg(session);
-    enter_function();
-    if(!channel){
-        ssh_log(session, SSH_LOG_FUNCTIONS, "%s", ssh_get_error(session));
-        leave_function();
-        return;
-    }
-    request_s=buffer_get_ssh_string(session->in_buffer);
-    if(!request_s){
-        ssh_log(session, SSH_LOG_PACKET, "Invalid MSG_CHANNEL_REQUEST");
-        leave_function();
-        return;
-    }
-    buffer_get_u8(session->in_buffer,(u8 *)&status);
-    request=string_to_char(request_s);
-    if(!strcmp(request,"exit-status")){
-        ssh_log(session, SSH_LOG_PACKET, "received exit-status");
-        buffer_get_u32(session->in_buffer,&status);
-        status=ntohl(status);
-        channel->exit_status=status;
-/* TODO do something with status, we might need it */
-        free(request_s);
-        free(request);
-        leave_function();
-        return ;
-    }
-    if(!strcmp(request,"exit-signal")){
-        STRING *signal_s;
-        char *signal;
-        const char *core = "(core dumped)";
-        u8 i;
-        signal_s=buffer_get_ssh_string(session->in_buffer);
-        if(!signal_s){
-            ssh_log(session, SSH_LOG_PACKET, "Invalid MSG_CHANNEL_REQUEST");
-            free(request_s);
-            free(request);
-            leave_function();
-            return;
-        }
-        signal=string_to_char(signal_s);
-        buffer_get_u8(session->in_buffer,&i);
-        if(!i)
-            core="";
-        ssh_log(session, SSH_LOG_PACKET,
-            "Remote connection closed by signal SIG %s %s", signal, core);
-        free(signal_s);
-        free(signal);
-        free(request_s);
-        free(request);
-        leave_function();
-        return;
-    }
-    ssh_log(session, SSH_LOG_PACKET, "Unknown request %s", request);
-    free(request_s);
-    free(request);
+static void channel_rcv_request(SSH_SESSION *session) {
+  CHANNEL *channel;
+  STRING *request_s;
+  char *request;
+  u32 status;
+
+  enter_function();
+
+  channel = channel_from_msg(session);
+  if (channel == NULL) {
+    ssh_log(session, SSH_LOG_FUNCTIONS, ssh_get_error(session));
     leave_function();
+    return;
+  }
+
+  request_s = buffer_get_ssh_string(session->in_buffer);
+  if (request_s == NULL) {
+    ssh_log(session, SSH_LOG_PACKET, "Invalid MSG_CHANNEL_REQUEST");
+    leave_function();
+    return;
+  }
+
+  request = string_to_char(request_s);
+  string_free(request_s);
+  if (request == NULL) {
+    leave_function();
+    return;
+  }
+
+  buffer_get_u8(session->in_buffer, (u8 *) &status);
+
+  if (strcmp(request,"exit-status") == 0) {
+    SAFE_FREE(request);
+    ssh_log(session, SSH_LOG_PACKET, "received exit-status");
+    buffer_get_u32(session->in_buffer, &status);
+    channel->exit_status = ntohl(status);
+
+    leave_function();
+    return ;
+  }
+
+  if (strcmp(request, "exit-signal") == 0) {
+    const char *core = "(core dumped)";
+    STRING *signal_s;
+    char *signal;
+    u8 i;
+
+    SAFE_FREE(request);
+
+    signal_s = buffer_get_ssh_string(session->in_buffer);
+    if (signal_s == NULL) {
+      ssh_log(session, SSH_LOG_PACKET, "Invalid MSG_CHANNEL_REQUEST");
+      leave_function();
+      return;
+    }
+
+    signal = string_to_char(signal_s);
+    string_free(signal_s);
+    if (signal == NULL) {
+      leave_function();
+      return;
+    }
+
+    buffer_get_u8(session->in_buffer, &i);
+    if (i == 0) {
+      core = "";
+    }
+
+    ssh_log(session, SSH_LOG_PACKET,
+        "Remote connection closed by signal SIG %s %s", signal, core);
+    SAFE_FREE(signal);
+
+    leave_function();
+    return;
+  }
+  ssh_log(session, SSH_LOG_PACKET, "Unknown request %s", request);
+  SAFE_FREE(request);
+
+  leave_function();
 }
 
 /* channel_handle is called by wait_packet, ie, when there is channel informations to handle . */
