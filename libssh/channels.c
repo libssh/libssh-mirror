@@ -545,34 +545,40 @@ static void channel_rcv_request(SSH_SESSION *session) {
   leave_function();
 }
 
-/* channel_handle is called by wait_packet, ie, when there is channel informations to handle . */
+/*
+ * channel_handle() is called by packet_wait(), for example when there is
+ * channel informations to handle.
+ */
 void channel_handle(SSH_SESSION *session, int type){
-    enter_function();
-    ssh_log(session, SSH_LOG_PROTOCOL, "Channel_handle(%d)", type);
-    switch(type){
-        case SSH2_MSG_CHANNEL_WINDOW_ADJUST:
-            channel_rcv_change_window(session);
-            break;
-        case SSH2_MSG_CHANNEL_DATA:
-            channel_rcv_data(session,0);
-            break;
-        case SSH2_MSG_CHANNEL_EXTENDED_DATA:
-            channel_rcv_data(session,1);
-            break;
-        case SSH2_MSG_CHANNEL_EOF:
-            channel_rcv_eof(session);
-            break;
-        case SSH2_MSG_CHANNEL_CLOSE:
-            channel_rcv_close(session);
-            break;
-        case SSH2_MSG_CHANNEL_REQUEST:
-            channel_rcv_request(session);
-            break;
-        default:
-            ssh_log(session, SSH_LOG_FUNCTIONS,
-                "Unexpected message %d", type);
-        }
-    leave_function();
+  enter_function();
+
+  ssh_log(session, SSH_LOG_PROTOCOL, "Channel_handle(%d)", type);
+
+  switch(type) {
+    case SSH2_MSG_CHANNEL_WINDOW_ADJUST:
+      channel_rcv_change_window(session);
+      break;
+    case SSH2_MSG_CHANNEL_DATA:
+      channel_rcv_data(session,0);
+      break;
+    case SSH2_MSG_CHANNEL_EXTENDED_DATA:
+      channel_rcv_data(session,1);
+      break;
+    case SSH2_MSG_CHANNEL_EOF:
+      channel_rcv_eof(session);
+      break;
+    case SSH2_MSG_CHANNEL_CLOSE:
+      channel_rcv_close(session);
+      break;
+    case SSH2_MSG_CHANNEL_REQUEST:
+      channel_rcv_request(session);
+      break;
+    default:
+      ssh_log(session, SSH_LOG_FUNCTIONS,
+          "Unexpected message %d", type);
+  }
+
+  leave_function();
 }
 
 /* when data has been received from the ssh server, it can be applied to the known
