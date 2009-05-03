@@ -425,31 +425,43 @@ static void channel_rcv_eof(SSH_SESSION *session) {
   leave_function();
 }
 
-static void channel_rcv_close(SSH_SESSION *session){
-    CHANNEL *channel;
-    enter_function();
-    channel=channel_from_msg(session);
-    if(!channel){
-        ssh_log(session, SSH_LOG_FUNCTIONS, "%s", ssh_get_error(session));
-        leave_function();
-        return;
-    }
-    ssh_log(session, SSH_LOG_PACKET,
-        "Received close on channel (%d:%d)",
-        channel->local_channel,
-        channel->remote_channel);
-    if((channel->stdout_buffer && buffer_get_rest_len(channel->stdout_buffer)>0)
-            || (channel->stderr_buffer && buffer_get_rest_len(channel->stderr_buffer)>0))
-        channel->delayed_close=1;
-    else
-        channel->open=0;
-    if(!channel->remote_eof)
-        ssh_log(session, SSH_LOG_PACKET,
-            "Remote host not polite enough to send an eof before close");
-    channel->remote_eof=1;
-    /* the remote eof doesn't break things if there was still data into read
-     * buffer because the eof is ignored until the buffer is empty. */
+static void channel_rcv_close(SSH_SESSION *session) {
+  CHANNEL *channel;
+
+  enter_function();
+
+  channel = channel_from_msg(session);
+  if (channel == NULL) {
+    ssh_log(session, SSH_LOG_FUNCTIONS, ssh_get_error(session));
     leave_function();
+    return;
+  }
+
+  ssh_log(session, SSH_LOG_PACKET,
+      "Received close on channel (%d:%d)",
+      channel->local_channel,
+      channel->remote_channel);
+
+  if ((channel->stdout_buffer &&
+        buffer_get_rest_len(channel->stdout_buffer) > 0) ||
+      (channel->stderr_buffer &&
+       buffer_get_rest_len(channel->stderr_buffer) > 0)) {
+    channel->delayed_close = 1;
+  } else {
+    channel->open = 0;
+  }
+
+  if (channel->remote_eof == 0) {
+    ssh_log(session, SSH_LOG_PACKET,
+        "Remote host not polite enough to send an eof before close");
+  }
+  channel->remote_eof = 1;
+  /*
+   * The remote eof doesn't break things if there was still data into read
+   * buffer because the eof is ignored until the buffer is empty.
+   */
+
+  leave_function();
 }
 
 static void channel_rcv_request(SSH_SESSION *session){
