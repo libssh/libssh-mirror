@@ -624,25 +624,27 @@ int channel_default_bufferize(CHANNEL *channel, void *data, int len,
   return 0;
 }
 
-/** \brief open a session channel (suited for a shell. Not tcp Forwarding)
- * \param channel an allocated channel (see channel_new())
- * \return SSH_OK on success\n
- * SSH_ERROR on error
- * \see channel_open_forward()
- * \see channel_request_env()
- * \see channel_request_shell()
- * \see channel_request_exec()
- * \warning API changed from 0.11
+/**
+ * @brief Open a session channel (suited for a shell, not TCP forwarding).
+ *
+ * @param channel       An allocated channel.
+ *
+ * @return SSH_OK on success\n
+ *         SSH_ERROR on error.
+ *
+ * @see channel_open_forward()
+ * @see channel_request_env()
+ * @see channel_request_shell()
+ * @see channel_request_exec()
  */
-int channel_open_session(CHANNEL *channel){
+int channel_open_session(CHANNEL *channel) {
 #ifdef HAVE_SSH1
-    if(channel->session->version==2)
+  if (channel->session->version == 1) {
+    return channel_open_session1(channel);
+  }
 #endif
-        return channel_open(channel,"session",64000,32000,NULL);
-#ifdef HAVE_SSH1
-    else
-        return channel_open_session1(channel);
-#endif
+
+  return channel_open(channel,"session",64000,32000,NULL);
 }
 
 /** \brief open a TCP/IP forwarding channel.
