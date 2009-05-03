@@ -752,13 +752,18 @@ void channel_free(CHANNEL *channel) {
   leave_function();
 }
 
-/** it doesn't close the channel. You may still read from it but not write.
- * \brief send an end of file on the channel
- * \param channel channel
- * \return SSH_ERROR on error\n
- * SSH_SUCCESS on success
- * \see channel_close()
- * \see channel_free()
+/**
+ * @brief Send an end of file on the channel.
+ *
+ * This doesn't close the channel. You may still read from it but not write.
+ *
+ * @param channel       The channel to send the eof to.
+ *
+ * @return SSH_SUCCESS on success\n
+ *         SSH_ERROR on error\n
+ *
+ * @see channel_close()
+ * @see channel_free()
  */
 int channel_send_eof(CHANNEL *channel){
   SSH_SESSION *session = channel->session;
