@@ -709,9 +709,12 @@ error:
   return rc;
 }
 
-/** \brief close and free a channel
- * \param channel channel to free
- * \warning any data unread on channel will be lost
+/**
+ * @brief Close and free a channel.
+ *
+ * @param channel       The channel to free.
+ *
+ * @warning Any data unread on this channel will be lost.
  */
 void channel_free(CHANNEL *channel) {
   SSH_SESSION *session = channel->session;
@@ -745,6 +748,7 @@ void channel_free(CHANNEL *channel) {
   /* debug trick to catch use after frees */
   memset(channel, 'X', sizeof(CHANNEL));
   SAFE_FREE(channel);
+
   leave_function();
 }
 
