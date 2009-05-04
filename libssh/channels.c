@@ -938,35 +938,48 @@ error:
   return SSH_ERROR;
 }
 
-/** \brief returns if the channel is open or not
- * \param channel channel
- * \return 0 if channel is closed, nonzero otherwise
- * \see channel_is_closed()
+/**
+ * @brief Check if the channel is open or not.
+ *
+ * @param channel       The channel to check.
+ *
+ * @return 0 if channel is closed, nonzero otherwise.
+ *
+ * @see channel_is_closed()
  */
-int channel_is_open(CHANNEL *channel){
-    return (channel->open!=0 && channel->session->alive);
+int channel_is_open(CHANNEL *channel) {
+  return (channel->open != 0 && channel->session->alive != 0);
 }
 
-/** \brief returns if the channel is closed or not
- * \param channel channel
- * \return 0 if channel is opened, nonzero otherwise
- * \see channel_is_open()
+/**
+ * @brief Check if the channel is closed or not.
+ *
+ * @param channel       The channel to check.
+ *
+ * @return 0 if channel is opened, nonzero otherwise.
+ *
+ * @see channel_is_open()
  */
-
-int channel_is_closed(CHANNEL *channel){
-    return (channel->open==0 || !channel->session->alive);
+int channel_is_closed(CHANNEL *channel) {
+  return (channel->open == 0 || channel->session->alive == 0);
 }
 
-/** \brief returns if the remote has sent an EOF
- * \param channel channel
- * \return 0 if there is no EOF, nonzero otherwise
+/**
+ * @brief Check if remote has sent an EOF.
+ *
+ * @param channel       The channel to check.
+ *
+ * @return 0 if there is no EOF, nonzero otherwise.
  */
-int channel_is_eof(CHANNEL *channel){
-    if((channel->stdout_buffer && buffer_get_rest_len(channel->stdout_buffer)
-                >0) || (channel->stderr_buffer && buffer_get_rest_len(
-                    channel->stderr_buffer)>0))
-        return 0;
-    return (channel->remote_eof!=0);
+int channel_is_eof(CHANNEL *channel) {
+  if ((channel->stdout_buffer &&
+        buffer_get_rest_len(channel->stdout_buffer) > 0) ||
+      (channel->stderr_buffer &&
+       buffer_get_rest_len(channel->stderr_buffer) > 0)) {
+    return 0;
+  }
+
+  return (channel->remote_eof != 0);
 }
 
 /** \brief put the channel into nonblocking mode
