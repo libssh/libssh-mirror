@@ -1456,6 +1456,9 @@ int channel_read_buffer(CHANNEL *channel, BUFFER *buffer, u32 count,
  * @param is_stderr     A boolean value to mark reading from the stderr flow.
  *
  * @return The number of bytes read, 0 on end of file or SSH_ERROR on error.
+ *
+ * @warning The read function using a buffer has been renamed to
+ *          channel_read_buffer().
  */
 int channel_read(CHANNEL *channel, void *dest, u32 count, int is_stderr) {
   SSH_SESSION *session = channel->session;
