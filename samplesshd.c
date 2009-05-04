@@ -145,7 +145,7 @@ int main(int argc, char **argv){
     printf("it works !\n");
     buf=buffer_new();
     do{
-        i=channel_read(chan,buf,0,0);
+        i=channel_read_buffer(chan,buf,0,0);
         if(i>0)
             write(1,buffer_get(buf),buffer_get_len(buf));
     } while (i>0);

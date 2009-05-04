@@ -188,7 +188,7 @@ static void select_loop(SSH_SESSION *session,CHANNEL *channel){
         }
         if(channels[0]){
             while(channel && channel_is_open(channel) && channel_poll(channel,0)){
-                lus=channel_read(channel,readbuf,0,0);
+                lus=channel_read_buffer(channel,readbuf,0,0);
                 if(lus==-1){
                     fprintf(stderr, "Error reading channel: %s\n",
                         ssh_get_error(session));
@@ -204,7 +204,7 @@ static void select_loop(SSH_SESSION *session,CHANNEL *channel){
                     write(1,buffer_get(readbuf),lus);
             }
             while(channel && channel_is_open(channel) && channel_poll(channel,1)){ /* stderr */
-                lus=channel_read(channel,readbuf,0,1);
+                lus=channel_read_buffer(channel,readbuf,0,1);
                 if(lus==-1){
                     fprintf(stderr, "Error reading channel: %s\n",
                         ssh_get_error(session));

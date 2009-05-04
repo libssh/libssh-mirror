@@ -1335,90 +1335,248 @@ error:
 
 /* TODO : fix the delayed close thing */
 /* TODO : fix the blocking behaviours */
-/* reads into a channel and put result into buffer */
-/* returns number of bytes read, 0 if eof or such and -1 in case of error */
-/* if bytes != 0, the exact number of bytes are going to be read */
-/** \brief reads data from a channel
- * \param channel channel
- * \param buffer buffer which will get the data
- * \param bytes number of bytes to be read. If it is bigger
- * than 0, the exact size will be read, else (bytes=0) it will return
- * once anything is available
- * \param is_stderr boolean value to mark reading from the stderr flow.
- * \return number of bytes read\n
- * 0 on end of file\n
- * SSH_ERROR on error
+
+/**
+ * @brief Read data from a channel into a buffer.
+ *
+ * @param channel       The channel to read from.
+ *
+ * @param buffer        The buffer which will get the data.
+ *
+ * @param count         The count of bytes to be read. If it is biggerthan 0,
+ *                      the exact size will be read, else (bytes=0) it will
+ *                      return once anything is available.
+ *
+ * @param is_stderr     A boolean value to mark reading from the stderr stream.
+ *
+ * @return The number of bytes read, 0 on end of file or SSH_ERROR on error.
  */
-int channel_read(CHANNEL *channel, BUFFER *buffer, u32 bytes, int is_stderr) {
-    BUFFER *stdbuf=NULL;
-    SSH_SESSION *session=channel->session;
-    u32 maxread=bytes;
-    u32 len;
+int channel_read_buffer(CHANNEL *channel, BUFFER *buffer, u32 count,
+    int is_stderr) {
+  SSH_SESSION *session=channel->session;
+  BUFFER *stdbuf = channel->stdout_buffer;
+  u32 maxread = count;
+  u32 len;
 
-    buffer_reinit(buffer);
-    enter_function();
-    if(bytes==0)
-        maxread=MAX_PACKET_LEN;
-    /* maybe i should always set a buffer to avoid races between channel_default_bufferize and channel_read */
-    if(is_stderr)
-        stdbuf=channel->stderr_buffer;
-    else
-        stdbuf=channel->stdout_buffer;
+  buffer_reinit(buffer);
 
-    /* We may have problem if the window is too small to accept as much data as asked */
-    ssh_log(session, SSH_LOG_PROTOCOL,
-        "Read (%d) buffered : %d bytes. Window: %d",
-        bytes,
-        buffer_get_rest_len(stdbuf),
-        channel->local_window);
-    if(bytes > buffer_get_rest_len(stdbuf) + channel->local_window) {
-      if (grow_window(session, channel, bytes - buffer_get_rest_len(stdbuf)) < 0) {
-        leave_function();
-        return -1;
-      }
+  enter_function();
+
+  if (count == 0) {
+    maxread = MAX_PACKET_LEN;
+  }
+
+  if (is_stderr) {
+    stdbuf = channel->stderr_buffer;
+  }
+
+  /*
+   * We may have problem if the window is too small to accept as much data
+   * as asked
+   */
+  ssh_log(session, SSH_LOG_PROTOCOL,
+      "Read (%d) buffered: %d bytes. Window: %d",
+      count,
+      buffer_get_rest_len(stdbuf),
+      channel->local_window);
+
+  if (count > buffer_get_rest_len(stdbuf) + channel->local_window) {
+    if (grow_window(session, channel,
+          count - buffer_get_rest_len(stdbuf)) < 0) {
+      leave_function();
+      return -1;
     }
-    /* block reading if asked bytes=0 */
-    while((buffer_get_rest_len(stdbuf)==0) || (buffer_get_rest_len(stdbuf) < bytes)){
-        if(channel->remote_eof && buffer_get_rest_len(stdbuf)==0){
-            leave_function();
-        	return 0;
-        }
-        if(channel->remote_eof)
-            break; /* return the resting bytes in buffer */
-        if(buffer_get_rest_len(stdbuf)>=maxread) // stop reading when buffer is full enough
-            break;
-        if ((packet_read(session)) != SSH_OK ||
-            (packet_translate(session) != SSH_OK)) {
-            leave_function();
-        	return -1;
-        }
-        packet_parse(session);
+  }
+  /* block reading if asked bytes=0 */
+  while (buffer_get_rest_len(stdbuf) == 0 ||
+      buffer_get_rest_len(stdbuf) < count) {
+    if (channel->remote_eof && buffer_get_rest_len(stdbuf) == 0) {
+      leave_function();
+      return 0;
     }
-    if(channel->local_window < WINDOWLIMIT) {
-      if (grow_window(session, channel, 0) < 0) {
-        leave_function();
-        return -1;
-      }
+    if (channel->remote_eof) {
+      /* Return the resting bytes in buffer */
+      break;
     }
-    if(bytes==0){
-        /* write the ful buffer informations */
-        if (buffer_add_data(buffer, buffer_get_rest(stdbuf),
-              buffer_get_rest_len(stdbuf)) < 0) {
-          leave_function();
-          return -1;
-        }
-        buffer_reinit(stdbuf);
-    } else {
-        len=buffer_get_rest_len(stdbuf);
-        len= (len>bytes?bytes:len); /* read bytes bytes if len is greater, everything otherwise */
-        if (buffer_add_data(buffer, buffer_get_rest(stdbuf), len) < 0) {
-          leave_function();
-          return -1;
-        }
-        buffer_pass_bytes(stdbuf,len);
+    if (buffer_get_rest_len(stdbuf) >= maxread) {
+      /* Stop reading when buffer is full enough */
+      break;
     }
+
+    if ((packet_read(session)) != SSH_OK ||
+        (packet_translate(session) != SSH_OK)) {
+      leave_function();
+      return -1;
+    }
+    packet_parse(session);
+  }
+
+  if(channel->local_window < WINDOWLIMIT) {
+    if (grow_window(session, channel, 0) < 0) {
+      leave_function();
+      return -1;
+    }
+  }
+
+  if (count == 0) {
+    /* write the ful buffer informations */
+    if (buffer_add_data(buffer, buffer_get_rest(stdbuf),
+          buffer_get_rest_len(stdbuf)) < 0) {
+      leave_function();
+      return -1;
+    }
+    buffer_reinit(stdbuf);
+  } else {
+    /* Read bytes bytes if len is greater, everything otherwise */
+    len = buffer_get_rest_len(stdbuf);
+    len = (len > count ? count : len);
+    if (buffer_add_data(buffer, buffer_get_rest(stdbuf), len) < 0) {
+      leave_function();
+      return -1;
+    }
+    buffer_pass_bytes(stdbuf,len);
+  }
+
+  leave_function();
+  return buffer_get_len(buffer);
+}
+
+/* TODO FIXME Fix the delayed close thing */
+/* TODO FIXME Fix the blocking behaviours */
+
+/**
+ * @brief Reads data from a channel.
+ *
+ * @param channel       The channel to read from.
+ *
+ * @param dest          The destination buffer which will get the data.
+ *
+ * @param count         The count of bytes to be read.
+ *
+ * @param is_stderr     A boolean value to mark reading from the stderr flow.
+ *
+ * @return The number of bytes read, 0 on end of file or SSH_ERROR on error.
+ */
+int channel_read(CHANNEL *channel, void *dest, u32 count, int is_stderr) {
+  SSH_SESSION *session = channel->session;
+  BUFFER *stdbuf = channel->stdout_buffer;
+  u32 len;
+
+  enter_function();
+
+  if (count == 0) {
     leave_function();
-    return buffer_get_len(buffer);
+    return 0;
+  }
+
+  if (is_stderr) {
+    stdbuf=channel->stderr_buffer;
+  }
+
+  /*
+   * We may have problem if the window is too small to accept as much data
+   * as asked
+   */
+  ssh_log(session, SSH_LOG_PROTOCOL,
+      "Read (%d) buffered : %d bytes. Window: %d",
+      count,
+      buffer_get_rest_len(stdbuf),
+      channel->local_window);
+
+  if (count > buffer_get_rest_len(stdbuf) + channel->local_window) {
+    if (grow_window(session, channel,
+          count - buffer_get_rest_len(stdbuf)) < 0) {
+      leave_function();
+      return -1;
+    }
+  }
+
+  /* block reading if asked bytes=0 */
+  while (buffer_get_rest_len(stdbuf) == 0 ||
+      buffer_get_rest_len(stdbuf) < count) {
+    if (channel->remote_eof && buffer_get_rest_len(stdbuf) == 0) {
+      leave_function();
+      return 0;
+    }
+
+    if (channel->remote_eof) {
+      /* Return the resting bytes in buffer */
+      break;
+    }
+
+    if (buffer_get_rest_len(stdbuf) >= count) {
+      /* Stop reading when buffer is full enough */
+      break;
+    }
+
+    if ((packet_read(session)) != SSH_OK ||
+        (packet_translate(session) != SSH_OK)) {
+      leave_function();
+      return -1;
+    }
+    packet_parse(session);
+  }
+
+  if (channel->local_window < WINDOWLIMIT) {
+    if (grow_window(session, channel, 0) < 0) {
+      leave_function();
+      return -1;
+    }
+  }
+
+  len = buffer_get_rest_len(stdbuf);
+  /* Read count bytes if len is greater, everything otherwise */
+  len = (len > count ? count : len);
+  memcpy(dest, buffer_get_rest(stdbuf), len);
+  buffer_pass_bytes(stdbuf,len);
+
+  leave_function();
+  return len;
+}
+
+/**
+ * @brief Do a nonblocking read on the channel.
+ *
+ * A nonblocking read on the specified channel. it will return <= count bytes of
+ * data read atomicly.
+ *
+ * @param channel       The channel to read from.
+ *
+ * @param dest          A pointer to a destination buffer.
+ *
+ * @param count         The count of bytes of data to be read.
+ *
+ * @param is_stderr     A boolean to select the stderr stream.
+ *
+ * @return The number of bytes read, 0 if nothing is available or
+ *         SSH_ERROR on error.
+ *
+ * @warning Don't forget to check for EOF as it would return 0 here.
+ *
+ * @see channel_is_eof()
+ */
+int channel_read_nonblocking(CHANNEL *channel, void *dest, u32 count,
+    int is_stderr) {
+  SSH_SESSION *session = channel->session;
+  u32 to_read;
+  int rc;
+
+  enter_function();
+
+  to_read = channel_poll(channel, is_stderr);
+
+  if (to_read <= 0) {
+    leave_function();
+    return to_read; /* may be an error code */
+  }
+
+  if (to_read > count) {
+    to_read = count;
+  }
+  rc = channel_read(channel, dest, to_read, is_stderr);
+
+  leave_function();
+  return rc;
 }
 
 /** \brief polls the channel for data to read
@@ -1451,45 +1609,6 @@ int channel_poll(CHANNEL *channel, int is_stderr){
     }
     leave_function();
     return buffer_get_rest_len(buffer);
-}
-
-/* nonblocking read on the specified channel. it will return <=len bytes of data read
- atomicly. */
-/** This read will make a nonblocking read (unlike channel_read()) and won't force you
- * to deal with BUFFER's
- * \brief nonblocking read
- * \param channel channel
- * \param dest pointer to destination for data
- * \param len maximum length of data to be read
- * \param is_stderr boolean to select the stderr stream
- * \return number of bytes read\n
- * 0 if nothing is available\n
- * SSH_ERROR on error
- * \warning don't forget to check for EOF as it would
- * return 0 here
- * \see channel_is_eof()
- */
-int channel_read_nonblocking(CHANNEL *channel, char *dest, u32 len, int is_stderr){
-    SSH_SESSION *session = channel->session;
-    BUFFER *buffer;
-    int lu;
-    u32 to_read;
-
-    enter_function();
-    to_read=channel_poll(channel,is_stderr);
-    buffer=buffer_new();
-    if(to_read<=0){
-        buffer_free(buffer);
-        leave_function();
-        return to_read; /* may be an error code */
-    }
-    if(to_read>len)
-        to_read=len;
-    lu=channel_read(channel,buffer,to_read,is_stderr);
-    memcpy(dest,buffer_get(buffer),lu>=0?lu:0);
-    buffer_free(buffer);
-    leave_function();
-    return lu;
 }
 
 /** \brief recover the session in which belong a channel

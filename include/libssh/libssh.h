@@ -281,11 +281,14 @@ int channel_request_sftp(CHANNEL *channel);
 int channel_write(CHANNEL *channel, const void *data, u32 len);
 int channel_send_eof(CHANNEL *channel);
 int channel_is_eof(CHANNEL *channel);
-int channel_read(CHANNEL *channel, BUFFER *buffer, u32 bytes, int is_stderr);
+int channel_read(CHANNEL *channel, void *dest, u32 count, int is_stderr);
+int channel_read_buffer(CHANNEL *channel, BUFFER *buffer, u32 count,
+    int is_stderr);
 int channel_poll(CHANNEL *channel, int is_stderr);
 int channel_close(CHANNEL *channel);
 void channel_set_blocking(CHANNEL *channel, int blocking);
-int channel_read_nonblocking(CHANNEL *channel, char *dest, u32 len, int is_stderr);
+int channel_read_nonblocking(CHANNEL *channel, void *dest, u32 count,
+    int is_stderr);
 int channel_is_open(CHANNEL *channel);
 int channel_is_closed(CHANNEL *channel);
 int channel_select(CHANNEL **readchans, CHANNEL **writechans, CHANNEL **exceptchans, struct 

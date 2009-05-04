@@ -237,7 +237,7 @@ SFTP_PACKET *sftp_packet_read(SFTP_SESSION *sftp) {
     return NULL;
   }
 
-  if (channel_read(sftp->channel, packet->payload, 4, 0) <= 0) {
+  if (channel_read_buffer(sftp->channel, packet->payload, 4, 0) <= 0) {
     buffer_free(packet->payload);
     SAFE_FREE(packet);
     sftp_leave_function();
@@ -252,7 +252,7 @@ SFTP_PACKET *sftp_packet_read(SFTP_SESSION *sftp) {
   }
 
   size = ntohl(size);
-  if (channel_read(sftp->channel, packet->payload, 1, 0) <= 0) {
+  if (channel_read_buffer(sftp->channel, packet->payload, 1, 0) <= 0) {
     buffer_free(packet->payload);
     SAFE_FREE(packet);
     sftp_leave_function();
@@ -261,7 +261,7 @@ SFTP_PACKET *sftp_packet_read(SFTP_SESSION *sftp) {
 
   buffer_get_u8(packet->payload, &packet->type);
   if (size > 1) {
-    if (channel_read(sftp->channel, packet->payload, size - 1, 0) <= 0) {
+    if (channel_read_buffer(sftp->channel, packet->payload, size - 1, 0) <= 0) {
       buffer_free(packet->payload);
       SAFE_FREE(packet);
       sftp_leave_function();
