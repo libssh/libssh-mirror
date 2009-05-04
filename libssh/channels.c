@@ -982,14 +982,18 @@ int channel_is_eof(CHANNEL *channel) {
   return (channel->remote_eof != 0);
 }
 
-/** \brief put the channel into nonblocking mode
- * \param channel channel
- * \param blocking boolean for blocking or nonblocking
- * \bug This functionnality is still under development and
- * doesn't work correctly
+/**
+ * @brief Put the channel into blocking or nonblocking mode.
+ *
+ * @param channel       The channel to use.
+ *
+ * @param blocking      A boolean for blocking or nonblocking.
+ *
+ * @bug This functionnality is still under development and
+ *      doesn't work correctly.
  */
-void channel_set_blocking(CHANNEL *channel, int blocking){
-    channel->blocking=blocking;
+void channel_set_blocking(CHANNEL *channel, int blocking) {
+  channel->blocking = (blocking == 0 ? 0 : 1);
 }
 
 static int channel_request(CHANNEL *channel, const char *request,
