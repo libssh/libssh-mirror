@@ -1633,12 +1633,14 @@ SSH_SESSION *channel_get_session(CHANNEL *channel) {
   return channel->session;
 }
 
-/** \brief get the exit status of the channel (error code from the executed instruction).
- * \param channel channel
- * \return -1 no exit status was returned.
- * \return other values : exit status
+/**
+ * @brief Get the exit status of the channel (error code from the executed
+ *        instruction).
+ *
+ * @param channel       The channel to get the status from.
+ *
+ * @return -1 if no exit status has been returned, the exit status othewise.
  */
-
 int channel_get_exit_status(CHANNEL *channel) {
   channel_request(channel, "exit-status", NULL, 0);
 
