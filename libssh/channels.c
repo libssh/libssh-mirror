@@ -1061,13 +1061,18 @@ error:
   return rc;
 }
 
-/** \brief requests a pty with a specific type and size
- * \param channel channel
- * \param terminal terminal type ("vt100, xterm,...")
- * \param col number of cols
- * \param row number of rows
- * \return SSH_SUCCESS on success\n
- * SSH_ERROR on error
+/**
+ * @brief Request a pty with a specific type and size.
+ *
+ * @param channel       The channel to sent the request.
+ *
+ * @param terminal      The terminal type ("vt100, xterm,...").
+ *
+ * @param col           The number of columns.
+ *
+ * @param row           The number of rows.
+ *
+ * @return SSH_SUCCESS on success, SSH_ERROR on error.
  */
 int channel_request_pty_size(CHANNEL *channel, const char *terminal,
     int col, int row) {
@@ -1094,26 +1099,13 @@ int channel_request_pty_size(CHANNEL *channel, const char *terminal,
     goto error;
   }
 
-  if (buffer_add_ssh_string(buffer, term) < 0) {
-    goto error;
-  }
-  if (buffer_add_u32(buffer, htonl(col)) < 0) {
-    goto error;
-  }
-  if (buffer_add_u32(buffer, htonl(row)) < 0) {
-    goto error;
-  }
-  if (buffer_add_u32(buffer, 0) < 0) {
-    goto error;
-  }
-  if (buffer_add_u32(buffer, 0) < 0) {
-    goto error;
-  }
-  /* a 0byte string */
-  if (buffer_add_u32(buffer, htonl(1)) < 0) {
-    goto error;
-  }
-  if (buffer_add_u8(buffer, 0) < 0) {
+  if (buffer_add_ssh_string(buffer, term) < 0 ||
+      buffer_add_u32(buffer, htonl(col)) < 0 ||
+      buffer_add_u32(buffer, htonl(row)) < 0 ||
+      buffer_add_u32(buffer, 0) < 0 ||
+      buffer_add_u32(buffer, 0) < 0 ||
+      buffer_add_u32(buffer, htonl(1)) < 0 || /* Add a 0byte string */
+      buffer_add_u8(buffer, 0) < 0) {
     goto error;
   }
 
@@ -1121,6 +1113,7 @@ int channel_request_pty_size(CHANNEL *channel, const char *terminal,
 error:
   buffer_free(buffer);
   string_free(term);
+
   leave_function();
   return rc;
 }
