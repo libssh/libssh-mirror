@@ -47,7 +47,7 @@ static int auth_kbdint(SSH_SESSION *session){
 }
 
 int authenticate (SSH_SESSION *session){
-    int auth=ssh_userauth_autopubkey(session);
+    int auth=ssh_userauth_autopubkey(session, NULL);
     char *password;
     if(auth==SSH_AUTH_ERROR){
         fprintf(stderr,"Authenticating with pubkey: %s\n",ssh_get_error(session));

@@ -1,8 +1,11 @@
-all: test_tunnel
+all: test_tunnel test_exec
 CFLAGS=-I../include/ -g -Wall
-LDFLAGS=-lssh -L../libssh/.libs
+LDFLAGS=-lssh -L../build/libssh/
 
 test_tunnel: test_tunnel.o authentication.o connection.o
+	gcc -o $@ $^ $(LDFLAGS)
+
+test_exec: test_exec.o authentication.o connection.o
 	gcc -o $@ $^ $(LDFLAGS)
 
 clean:
