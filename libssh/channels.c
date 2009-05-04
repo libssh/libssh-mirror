@@ -1131,13 +1131,18 @@ int channel_request_pty(CHANNEL *channel) {
   return channel_request_pty_size(channel, "xterm", 80, 24);
 }
 
-/** \brief change the size of the terminal associated to a channel
- * \param channel channel
- * \param cols new number of cols
- * \param rows new number of rows
- * \warning Do not call it from a signal handler if you are not
+/**
+ * @brief Change the size of the terminal associated to a channel.
+ *
+ * @param channel       The channel to change the size.
+ *
+ * @param cols          The new number of columns.
+ *
+ * @param rows          The new number of rows.
+ *
+ * @warning Do not call it from a signal handler if you are not
  * sure any other libssh function using the same channel/session
- * is running at same time (not 100% threadsafe)
+ * is running at same time (not 100% threadsafe).
  */
 int channel_change_pty_size(CHANNEL *channel, int cols, int rows) {
   SSH_SESSION *session = channel->session;
@@ -1159,16 +1164,10 @@ int channel_change_pty_size(CHANNEL *channel, int cols, int rows) {
     goto error;
   }
 
-  if (buffer_add_u32(buffer, htonl(cols)) < 0) {
-    goto error;
-  }
-  if (buffer_add_u32(buffer, htonl(rows)) < 0) {
-    goto error;
-  }
-  if (buffer_add_u32(buffer, 0) < 0) {
-    goto error;
-  }
-  if (buffer_add_u32(buffer, 0) < 0) {
+  if (buffer_add_u32(buffer, htonl(cols)) < 0 ||
+      buffer_add_u32(buffer, htonl(rows)) < 0 ||
+      buffer_add_u32(buffer, 0) < 0 ||
+      buffer_add_u32(buffer, 0) < 0) {
     goto error;
   }
 
