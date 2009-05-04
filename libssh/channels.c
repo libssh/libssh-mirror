@@ -1703,12 +1703,13 @@ static int channel_protocol_select(CHANNEL **rchans, CHANNEL **wchans,
   return 0;
 }
 
-/* just count number of pointers in the array */
-static int count_ptrs(CHANNEL **ptrs){
-    int c;
-    for(c=0;ptrs[c];++c)
-        ;
-    return c;
+/* Just count number of pointers in the array */
+static int count_ptrs(CHANNEL **ptrs) {
+  int c;
+  for (c = 0; ptrs[c] != NULL; c++)
+    ;
+
+  return c;
 }
 
 /** the list of pointers are then actualized and will only contain pointers to
