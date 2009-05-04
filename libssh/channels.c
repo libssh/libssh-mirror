@@ -847,82 +847,95 @@ error:
   return rc;
 }
 
-/** \brief blocking write on channel
- * \param channel channel
- * \param data pointer to data to write
- * \param len length of data
- * \return number of bytes written on success\n
- * SSH_ERROR on error
- * \see channel_read()
+/**
+ * @brief Blocking write on channel.
+ *
+ * @param channel       The channel to write to.
+ *
+ * @param data          A pointer to the data to write.
+ *
+ * @param len           The length of the buffer to write to.
+ *
+ * @return The number of bytes written, SSH_ERROR on error.
+ *
+ * @see channel_read()
  */
 int channel_write(CHANNEL *channel, const void *data, u32 len) {
-    SSH_SESSION *session=channel->session;
-    int effectivelen;
-    int origlen=len;
-    enter_function();
-    if(channel->local_eof){
-        ssh_set_error(session,SSH_REQUEST_DENIED,"Can't write to channel %d:%d"
-            " after EOF was sent",channel->local_channel,channel->remote_channel);
-        leave_function();
-        return -1;
-    }
-    if(!channel->open || channel->delayed_close){
-        ssh_set_error(session,SSH_REQUEST_DENIED,"Remote channel is closed");
-        leave_function();
-        return -1;
-    }
+  SSH_SESSION *session = channel->session;
+  int origlen = len;
+  int effectivelen;
+
+  enter_function();
+
+  if (channel->local_eof) {
+    ssh_set_error(session, SSH_REQUEST_DENIED,
+        "Can't write to channel %d:%d  after EOF was sent",
+        channel->local_channel,
+        channel->remote_channel);
+    leave_function();
+    return -1;
+  }
+
+  if (channel->open == 0 || channel->delayed_close != 0) {
+    ssh_set_error(session, SSH_REQUEST_DENIED, "Remote channel is closed");
+    leave_function();
+    return -1;
+  }
+
 #ifdef HAVE_SSH1
-    if(channel->version==1){
-        int err = channel_write1(channel,data,len);
-        leave_function();
-        return err;
-    }
+  if (channel->version == 1) {
+    int rc = channel_write1(channel, data, len);
+    leave_function();
+    return rc;
+  }
 #endif
-    while(len >0){
-        if(channel->remote_window<len){
-            ssh_log(session, SSH_LOG_PROTOCOL,
-                "Remote window is %d bytes. going to write %d bytes",
-                channel->remote_window,len);
-            ssh_log(session, SSH_LOG_PROTOCOL,
-                "Waiting for a growing window message...");
-            // wonder what happens when the channel window is zero
-            while(channel->remote_window==0){
-                // parse every incoming packet
-                packet_wait(channel->session,0,0);
-            }
-            effectivelen=len>channel->remote_window?channel->remote_window:len;
-        } else
-            effectivelen=len;
-        if (buffer_add_u8(session->out_buffer,SSH2_MSG_CHANNEL_DATA) < 0) {
-          goto error;
-        }
-        if (buffer_add_u32(session->out_buffer,htonl(channel->remote_channel)) < 0) {
-          goto error;
-        }
-        if (buffer_add_u32(session->out_buffer,htonl(effectivelen)) < 0) {
-          goto error;
-        }
-        if (buffer_add_data(session->out_buffer,data,effectivelen) < 0) {
-          goto error;
-        }
 
-        if (packet_send(session) != SSH_OK) {
-          leave_function();
-          return SSH_ERROR;
-        }
-        ssh_log(session, SSH_LOG_RARE,
-            "channel_write wrote %d bytes", effectivelen);
-        channel->remote_window-=effectivelen;
-        len -= effectivelen;
-        data+=effectivelen;
+  while (len > 0) {
+    if (channel->remote_window < len) {
+      ssh_log(session, SSH_LOG_PROTOCOL,
+          "Remote window is %d bytes. going to write %d bytes",
+          channel->remote_window,
+          len);
+      ssh_log(session, SSH_LOG_PROTOCOL,
+          "Waiting for a growing window message...");
+      /* What happens when the channel window is zero? */
+      while(channel->remote_window == 0) {
+        /* parse every incoming packet */
+        packet_wait(channel->session, 0, 0);
+      }
+      effectivelen = len > channel->remote_window ? channel->remote_window : len;
+    } else {
+      effectivelen = len;
     }
-    leave_function();
-    return origlen;
-error:
-    buffer_free(session->out_buffer);
 
-    leave_function();
-    return SSH_ERROR;
+    if (buffer_add_u8(session->out_buffer, SSH2_MSG_CHANNEL_DATA) < 0 ||
+        buffer_add_u32(session->out_buffer,
+          htonl(channel->remote_channel)) < 0 ||
+        buffer_add_u32(session->out_buffer, htonl(effectivelen)) < 0 ||
+        buffer_add_data(session->out_buffer, data, effectivelen) < 0) {
+      goto error;
+    }
+
+    if (packet_send(session) != SSH_OK) {
+      leave_function();
+      return SSH_ERROR;
+    }
+
+    ssh_log(session, SSH_LOG_RARE,
+        "channel_write wrote %d bytes", effectivelen);
+
+    channel->remote_window -= effectivelen;
+    len -= effectivelen;
+    data += effectivelen;
+  }
+
+  leave_function();
+  return origlen;
+error:
+  buffer_free(session->out_buffer);
+
+  leave_function();
+  return SSH_ERROR;
 }
 
 /** \brief returns if the channel is open or not
