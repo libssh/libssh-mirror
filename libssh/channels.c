@@ -1118,14 +1118,17 @@ error:
   return rc;
 }
 
-/** \brief requests a pty
- * \param channel channel
- * \see channel_request_pty_size()
- * \return SSH_SUCCESS on success\n
- * SSH_ERROR on error
+/**
+ * @brief Request a PTY.
+ *
+ * @param channel       The channel to send the request.
+ *
+ * @return SSH_SUCCESS on success, SSH_ERROR on error.
+ *
+ * @see channel_request_pty_size()
  */
-int channel_request_pty(CHANNEL *channel){
-    return channel_request_pty_size(channel,"xterm",80,24);
+int channel_request_pty(CHANNEL *channel) {
+  return channel_request_pty_size(channel, "xterm", 80, 24);
 }
 
 /** \brief change the size of the terminal associated to a channel
