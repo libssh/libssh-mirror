@@ -1179,17 +1179,20 @@ error:
   return rc;
 }
 
-/** \brief requests a shell
- * \param channel
- * \returns SSH_SUCCESS on success\n
- * SSH_ERROR on error
+/**
+ * @brief Request a shell.
+ *
+ * @param channel      The channel to send the request.
+ *
+ * @returns SSH_SUCCESS on success, SSH_ERROR on error.
  */
-int channel_request_shell(CHANNEL *channel){
+int channel_request_shell(CHANNEL *channel) {
 #ifdef HAVE_SSH1
-    if(channel->version==1)
-        return channel_request_shell1(channel);
+  if (channel->version == 1) {
+    return channel_request_shell1(channel);
+  }
 #endif
-    return channel_request(channel,"shell",NULL,1);
+  return channel_request(channel, "shell", NULL, 1);
 }
 
 /** \brief requests a subsystem (for example sftp)
