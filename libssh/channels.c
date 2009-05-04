@@ -1622,12 +1622,15 @@ int channel_poll(CHANNEL *channel, int is_stderr){
   return buffer_get_rest_len(stdbuf);
 }
 
-/** \brief recover the session in which belong a channel
- * \param channel channel
- * \return the session pointer
+/**
+ * @brief Recover the session in which belongs a channel.
+ *
+ * @param channel       The channel to recover the session from.
+ *
+ * @return The session pointer.
  */
-SSH_SESSION *channel_get_session(CHANNEL *channel){
-    return channel->session;
+SSH_SESSION *channel_get_session(CHANNEL *channel) {
+  return channel->session;
 }
 
 /** \brief get the exit status of the channel (error code from the executed instruction).
