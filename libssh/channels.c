@@ -1712,137 +1712,149 @@ static int count_ptrs(CHANNEL **ptrs) {
   return c;
 }
 
-/** the list of pointers are then actualized and will only contain pointers to
- * channels that are respectively readable, writable or have an exception to trap
- * \brief act as the standard select(2) for channels
- * \param readchans a NULL pointer or an array of channel pointers, finished by a NULL
- * \param writechans a NULL pointer or an array of channel pointers, finished by a NULL
- * \param exceptchans a NULL pointer or an array of channel pointers, finished by a NULL
- * \param timeout timeout as defined by select(2)
- * \return SSH_SUCCESS operation successful\n
- * SSH_EINTR select(2) syscall was interrupted, relaunch the function
+/**
+ * @brief Act like the standard select(2) on channels.
+ *
+ * The list of pointers are then actualized and will only contain pointers to
+ * channels that are respectively readable, writable or have an exception to
+ * trap.
+ *
+ * @param readchans     A NULL pointer or an array of channel pointers,
+ *                      terminated by a NULL.
+ *
+ * @param writechans    A NULL pointer or an array of channel pointers,
+ *                      terminated by a NULL.
+ *
+ * @param exceptchans   A NULL pointer or an array of channel pointers,
+ *                      terminated by a NULL.
+ *
+ * @param timeout       Timeout as defined by select(2).
+ *
+ * @return SSH_SUCCESS operation successful\n
+ *         SSH_EINTR select(2) syscall was interrupted, relaunch the function
  */
-int channel_select(CHANNEL **readchans, CHANNEL **writechans, CHANNEL **exceptchans, struct
-        timeval * timeout){
-    fd_set rset;
-    fd_set wset;
-    fd_set eset;
-    CHANNEL *dummy=NULL;
-    CHANNEL **rchans, **wchans, **echans;
-    int fdmax=-1;
-    int i;
-    int r;
-    /* don't allow NULL pointers */
-    if(!readchans)
-        readchans=&dummy;
-    if(!writechans)
-        writechans=&dummy;
-    if(!exceptchans)
-        exceptchans=&dummy;
-    if(!readchans[0] && !writechans[0] && !exceptchans[0]){
-        /* no channel to poll ?? go away ! */
-        return 0;
-    }
-    /* prepare the outgoing temporary arrays */
-    rchans = malloc(sizeof(CHANNEL *) * (count_ptrs(readchans) + 1));
-    if (rchans == NULL) {
-      return SSH_ERROR;
-    }
-    wchans = malloc(sizeof(CHANNEL *) * (count_ptrs(writechans) + 1));
-    if (wchans == NULL) {
-      SAFE_FREE(rchans);
-      return SSH_ERROR;
-    }
-    echans = malloc(sizeof(CHANNEL *) * (count_ptrs(exceptchans) + 1));
-    if (echans == NULL) {
+int channel_select(CHANNEL **readchans, CHANNEL **writechans,
+    CHANNEL **exceptchans, struct timeval * timeout) {
+  CHANNEL **rchans, **wchans, **echans;
+  CHANNEL *dummy = NULL;
+  fd_set rset;
+  fd_set wset;
+  fd_set eset;
+  int fdmax = -1;
+  int rc;
+  int i;
+
+  /* don't allow NULL pointers */
+  if (readchans == NULL) {
+    readchans = &dummy;
+  }
+
+  if (writechans == NULL) {
+    writechans = &dummy;
+  }
+
+  if (exceptchans == NULL) {
+    exceptchans = &dummy;
+  }
+
+  if (readchans[0] == NULL && writechans[0] == NULL && exceptchans[0] == NULL) {
+    /* No channel to poll?? Go away! */
+    return 0;
+  }
+
+  /* Prepare the outgoing temporary arrays */
+  rchans = malloc(sizeof(CHANNEL *) * (count_ptrs(readchans) + 1));
+  if (rchans == NULL) {
+    return SSH_ERROR;
+  }
+
+  wchans = malloc(sizeof(CHANNEL *) * (count_ptrs(writechans) + 1));
+  if (wchans == NULL) {
+    SAFE_FREE(rchans);
+    return SSH_ERROR;
+  }
+
+  echans = malloc(sizeof(CHANNEL *) * (count_ptrs(exceptchans) + 1));
+  if (echans == NULL) {
+    SAFE_FREE(rchans);
+    SAFE_FREE(wchans);
+    return SSH_ERROR;
+  }
+
+  /*
+   * First, try without doing network stuff then, select and redo the
+   * networkless stuff
+   */
+  do {
+    channel_protocol_select(readchans, writechans, exceptchans,
+        rchans, wchans, echans);
+    if (rchans[0] != NULL || wchans[0] != NULL || echans[0] != NULL) {
+      /* We've got one without doing any select overwrite the begining arrays */
+      memcpy(readchans, rchans, (count_ptrs(rchans) + 1) * sizeof(CHANNEL *));
+      memcpy(writechans, wchans, (count_ptrs(wchans) + 1) * sizeof(CHANNEL *));
+      memcpy(exceptchans, echans, (count_ptrs(echans) + 1) * sizeof(CHANNEL *));
       SAFE_FREE(rchans);
       SAFE_FREE(wchans);
-      return SSH_ERROR;
+      SAFE_FREE(echans);
+      return 0;
+    }
+    /*
+     * Since we verified the invalid fd cases into the networkless select,
+     * we can be sure all fd are valid ones
+     */
+    FD_ZERO(&rset);
+    FD_ZERO(&wset);
+    FD_ZERO(&eset);
+
+    for (i = 0; readchans[i] != NULL; i++) {
+      if (!ssh_socket_fd_isset(readchans[i]->session->socket, &rset)) {
+        ssh_socket_fd_set(readchans[i]->session->socket, &rset, &fdmax);
+      }
     }
 
-    /* first, try without doing network stuff */
-    /* then, select and redo the networkless stuff */
-    do {
-        channel_protocol_select(readchans,writechans,exceptchans,rchans,wchans,echans);
-        if(rchans[0]||wchans[0]||echans[0]){
-            /* we've got one without doing any select */
-            /* overwrite the begining arrays */
-            memcpy(readchans,rchans, (count_ptrs(rchans)+1)*sizeof(CHANNEL *));
-            memcpy(writechans,wchans, (count_ptrs(wchans)+1)*sizeof(CHANNEL *));
-            memcpy(exceptchans,echans, (count_ptrs(echans)+1)*sizeof(CHANNEL *));
-            free(rchans);
-            free(wchans);
-            free(echans);
-            return 0;
-        }
-        /* since we verified the invalid fd cases into the networkless select,
-        we can be sure all fd are valid ones */
-        FD_ZERO(&rset);
-        FD_ZERO(&wset);
-        FD_ZERO(&eset);
-        for(i=0;readchans[i];++i){
-        	if(!ssh_socket_fd_isset(readchans[i]->session->socket,&rset))
-        		ssh_socket_fd_set(readchans[i]->session->socket, &rset, &fdmax);
-        }
-        for(i=0;writechans[i];++i){
-        	if(!ssh_socket_fd_isset(writechans[i]->session->socket,&wset))
-        		ssh_socket_fd_set(writechans[i]->session->socket,&wset, &fdmax);
-        }
-        for(i=0;exceptchans[i];++i){
-            if(!ssh_socket_fd_isset(exceptchans[i]->session->socket,&eset))
-            	ssh_socket_fd_set(exceptchans[i]->session->socket,&eset,&fdmax);
-        }
+    for (i = 0; writechans[i] != NULL; i++) {
+      if (!ssh_socket_fd_isset(writechans[i]->session->socket, &wset)) {
+        ssh_socket_fd_set(writechans[i]->session->socket, &wset, &fdmax);
+      }
+    }
 
-/*            fd=readchans[i]->session->fd;
-            if(!FD_ISSET(fd,&rset)){
-                FD_SET(fd,&rset);
-                if(fd>=fdmax)
-                    fdmax=fd+1;
-            }
+    for (i = 0; exceptchans[i] != NULL; i++) {
+      if (!ssh_socket_fd_isset(exceptchans[i]->session->socket, &eset)) {
+        ssh_socket_fd_set(exceptchans[i]->session->socket, &eset, &fdmax);
+      }
+    }
 
-        }
-        for(i=0;writechans[i];++i){
-            fd=writechans[i]->session->fd;
-            if(!FD_ISSET(fd,&wset)){
-                FD_SET(fd,&wset);
-                if(fd>=fdmax)
-                    fdmax=fd+1;
-            }
-        }
+    /* Here we go */
+    rc = select(fdmax, &rset, &wset, &eset, timeout);
+    /* Leave if select was interrupted */
+    if (rc == EINTR) {
+      SAFE_FREE(rchans);
+      SAFE_FREE(wchans);
+      SAFE_FREE(echans);
+      return SSH_EINTR;
+    }
 
-        for(i=0;exceptchans[i];++i){
-            fd=exceptchans[i]->session->fd;
-            if(!FD_ISSET(fd,&eset)){
-                FD_SET(fd,&eset);
-                if(fd>=fdmax)
-                    fdmax=fd+1;
-            }
-        }
-*/
-        /* here we go */
-        r=select(fdmax,&rset,&wset,&eset,timeout);
-        /* leave if select was interrupted */
-        if(r==EINTR){
-            free(rchans);
-            free(wchans);
-            free(echans);
-            return SSH_EINTR;
-        }
-        for(i=0;readchans[i];++i){
-        	if(ssh_socket_fd_isset(readchans[i]->session->socket,&rset))
-                ssh_socket_set_toread(readchans[i]->session->socket);
-        }
-        for(i=0;writechans[i];++i){
-            if(ssh_socket_fd_isset(writechans[i]->session->socket,&wset))
-                ssh_socket_set_towrite(writechans[i]->session->socket);
-        }
-        for(i=0;exceptchans[i];++i){
-            if(ssh_socket_fd_isset(exceptchans[i]->session->socket,&eset))
-                ssh_socket_set_except(exceptchans[i]->session->socket);
-        }
-    } while(1); /* return to do loop */
-    /* not reached */
-    return 0;
+    for (i = 0; readchans[i] != NULL; i++) {
+      if (ssh_socket_fd_isset(readchans[i]->session->socket, &rset)) {
+        ssh_socket_set_toread(readchans[i]->session->socket);
+      }
+    }
+
+    for (i = 0; writechans[i] != NULL; i++) {
+      if (ssh_socket_fd_isset(writechans[i]->session->socket, &wset)) {
+        ssh_socket_set_towrite(writechans[i]->session->socket);
+      }
+    }
+
+    for (i = 0; exceptchans[i] != NULL; i++) {
+      if (ssh_socket_fd_isset(exceptchans[i]->session->socket, &eset)) {
+        ssh_socket_set_except(exceptchans[i]->session->socket);
+      }
+    }
+  } while(1); /* Return to do loop */
+
+  /* not reached */
+  return 0;
 }
 
 /** @} */
