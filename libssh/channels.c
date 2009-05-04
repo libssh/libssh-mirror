@@ -1195,13 +1195,16 @@ int channel_request_shell(CHANNEL *channel) {
   return channel_request(channel, "shell", NULL, 1);
 }
 
-/** \brief requests a subsystem (for example sftp)
- * \param channel channel
- * \param system subsystem to request (for example sftp)
- * \return SSH_SUCCESS on success\n
- * SSH_ERROR on error
- * \warning you normally don't have to call it to have sftp
- * \see sftp_new()
+/**
+ * @brief Request a subsystem (for example "sftp").
+ *
+ * @param channel       The channel to send the request.
+ *
+ * @param system        The subsystem to request (for example "sftp").
+ *
+ * @return SSH_SUCCESS on success, SSH_ERROR on error.
+ *
+ * @warning You normally don't have to call it for sftp, see sftp_new().
  */
 int channel_request_subsystem(CHANNEL *channel, const char *sys) {
   BUFFER *buffer = NULL;
