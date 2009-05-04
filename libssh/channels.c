@@ -1287,13 +1287,19 @@ error:
   return rc;
 }
 
-/** it's similar to sh -c "command"
- * \brief run a shell command without an interactive shell
- * \param channel channel
- * \param cmd command to execute (by ex. "ls ~/ -al | grep -i reports")
- * \return SSH_SUCCESS on success\n
- * SSH_ERROR on error
- * \see channel_request_shell()
+/**
+ * @brief Run a shell command without an interactive shell.
+ *
+ * This is similar to 'sh -c command'.
+ *
+ * @param channel       The channel to execute the command.
+ *
+ * @param cmd           The command to execute
+ *                      (e.g. "ls ~/ -al | grep -i reports").
+ *
+ * @return SSH_SUCCESS on success, SSH_ERROR on error.
+ *
+ * @see channel_request_shell()
  */
 int channel_request_exec(CHANNEL *channel, const char *cmd) {
   BUFFER *buffer = NULL;
