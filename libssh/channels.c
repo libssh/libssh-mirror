@@ -1237,13 +1237,18 @@ int channel_request_sftp( CHANNEL *channel){
     return channel_request_subsystem(channel, "sftp");
 }
 
-/** \brief set the environement variables
- * \param channel channel
- * \param name name of the variable
- * \param value value
- * \return SSH_SUCCESS on success\n
- * SSH_ERROR on error
- * \warning some environement variables may be refused by security
+/**
+ * @brief Set environement variables.
+ *
+ * @param channel       The channel to set the environement variables.
+ *
+ * @param name          The name of the variable.
+ *
+ * @param value         The value to set.
+ *
+ * @return SSH_SUCCESS on success, SSH_ERROR on error.
+ *
+ * @warning Some environement variables may be refused by security reasons.
  * */
 int channel_request_env(CHANNEL *channel, const char *name, const char *value) {
   BUFFER *buffer = NULL;
@@ -1274,7 +1279,7 @@ int channel_request_env(CHANNEL *channel, const char *name, const char *value) {
     goto error;
   }
 
-  rc = channel_request(channel,"env",buffer,1);
+  rc = channel_request(channel, "env", buffer,1);
 error:
   buffer_free(buffer);
   string_free(str);
