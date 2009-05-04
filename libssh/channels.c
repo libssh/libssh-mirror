@@ -1638,9 +1638,24 @@ SSH_SESSION *channel_get_session(CHANNEL *channel) {
  *
  * @param channel       The channel to get the status from.
  *
- * @return -1 if no exit status has been returned, the exit status othewise.
+ * @return -1 if no exit status has been returned or eof not sent,
+ *         the exit status othewise.
  */
 int channel_get_exit_status(CHANNEL *channel) {
+  if (channel->local_eof == 0) {
+    return -1;
+  }
+
+  while (channel->remote_eof == 0 || channel->exit_status == -1) {
+    /* Parse every incoming packet */
+    if (packet_wait(channel->session, 0, 0) != SSH_OK) {
+      return -1;
+    }
+    if (channel->open == 0) {
+      return -1;
+    }
+  }
+
   return channel->exit_status;
 }
 
