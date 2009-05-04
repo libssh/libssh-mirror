@@ -1641,8 +1641,6 @@ SSH_SESSION *channel_get_session(CHANNEL *channel) {
  * @return -1 if no exit status has been returned, the exit status othewise.
  */
 int channel_get_exit_status(CHANNEL *channel) {
-  channel_request(channel, "exit-status", NULL, 0);
-
   return channel->exit_status;
 }
 
