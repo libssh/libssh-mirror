@@ -1008,21 +1008,16 @@ static int channel_request(CHANNEL *channel, const char *request,
   if (req == NULL) {
     goto error;
   }
-  if (buffer_add_u8(session->out_buffer, SSH2_MSG_CHANNEL_REQUEST) < 0) {
-    goto error;
-  }
-  if (buffer_add_u32(session->out_buffer, htonl(channel->remote_channel)) < 0) {
-    goto error;
-  }
-  if (buffer_add_ssh_string(session->out_buffer, req) < 0) {
-    goto error;
-  }
-  if (buffer_add_u8(session->out_buffer, reply ? 1 : 0) < 0) {
+
+  if (buffer_add_u8(session->out_buffer, SSH2_MSG_CHANNEL_REQUEST) < 0 ||
+      buffer_add_u32(session->out_buffer, htonl(channel->remote_channel)) < 0 ||
+      buffer_add_ssh_string(session->out_buffer, req) < 0 ||
+      buffer_add_u8(session->out_buffer, reply == 0 ? 0 : 1) < 0) {
     goto error;
   }
   string_free(req);
 
-  if (buffer) {
+  if (buffer != NULL) {
     if (buffer_add_data(session->out_buffer, buffer_get(buffer),
         buffer_get_len(buffer)) < 0) {
       goto error;
@@ -1036,7 +1031,7 @@ static int channel_request(CHANNEL *channel, const char *request,
 
   ssh_log(session, SSH_LOG_RARE,
       "Sent a SSH_MSG_CHANNEL_REQUEST %s", request);
-  if (! reply) {
+  if (reply == 0) {
     leave_function();
     return SSH_OK;
   }
