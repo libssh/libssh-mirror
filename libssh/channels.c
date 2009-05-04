@@ -1647,51 +1647,61 @@ int channel_get_exit_status(CHANNEL *channel) {
   return channel->exit_status;
 }
 
-/* This function acts as a meta select. */
-/* first, channels are analyzed to seek potential can-write or can-read ones. */
-/* Then, if no channel has been elected, it goes in a loop with the posix select(2) */
-/* this is made in two parts : Protocol select and Network select */
+/*
+ * This function acts as a meta select.
+ *
+ * First, channels are analyzed to seek potential can-write or can-read ones,
+ * then if no channel has been elected, it goes in a loop with the posix
+ * select(2).
+ * This is made in two parts: protocol select and network select. The protocol
+ * select does not use the network functions at all
+ */
+static int channel_protocol_select(CHANNEL **rchans, CHANNEL **wchans,
+    CHANNEL **echans, CHANNEL **rout, CHANNEL **wout, CHANNEL **eout) {
+  CHANNEL *chan;
+  int i;
+  int j = 0;
 
-/* the protocol select does not use the network functions at all */
+  for (i = 0; rchans[i] != NULL; i++) {
+    chan = rchans[i];
 
-static int channel_protocol_select(CHANNEL **rchans, CHANNEL **wchans, CHANNEL **echans,
-                            CHANNEL **rout, CHANNEL **wout, CHANNEL **eout){
-    CHANNEL *chan;
-    int i,j;
-    j=0;
-    for(i=0;rchans[i];++i){
-        chan=rchans[i];
-        while(chan->open && ssh_socket_data_available(chan->session->socket)){
-            ssh_handle_packets(chan->session);
-        }
-        if( (chan->stdout_buffer && buffer_get_len(chan->stdout_buffer)>0) ||
-             (chan->stderr_buffer && buffer_get_len(chan->stderr_buffer)>0) ||
-            chan->remote_eof){
-            rout[j]=chan;
-            ++j;
-        }
+    while (chan->open && ssh_socket_data_available(chan->session->socket)) {
+      ssh_handle_packets(chan->session);
     }
-    rout[j]=NULL;
-    j=0;
-    for(i=0;wchans[i];++i){
-        chan=wchans[i];
-        /* it's not our business to seek if the file descriptor is writable */
-        if(ssh_socket_data_writable(chan->session->socket) && chan->open && (chan->remote_window>0)){
-            wout[j]=chan;
-            ++j;
-        }
+
+    if ((chan->stdout_buffer && buffer_get_len(chan->stdout_buffer) > 0) ||
+        (chan->stderr_buffer && buffer_get_len(chan->stderr_buffer) > 0) ||
+        chan->remote_eof) {
+      rout[j] = chan;
+      j++;
     }
-    wout[j]=NULL;
-    j=0;
-    for(i=0;echans[i];++i){
-        chan=echans[i];
-        if(!ssh_socket_is_open(chan->session->socket) || !chan->open){
-            eout[j]=chan;
-            ++j;
-        }
+  }
+  rout[j] = NULL;
+
+  j = 0;
+  for(i = 0; wchans[i] != NULL; i++) {
+    chan = wchans[i];
+    /* It's not our business to seek if the file descriptor is writable */
+    if (ssh_socket_data_writable(chan->session->socket) &&
+        chan->open && (chan->remote_window > 0)) {
+      wout[j] = chan;
+      j++;
     }
-    eout[j]=NULL;
-    return 0;
+  }
+  wout[j] = NULL;
+
+  j = 0;
+  for (i = 0; echans[i] != NULL; i++) {
+    chan = echans[i];
+
+    if (!ssh_socket_is_open(chan->session->socket) || !chan->open) {
+      eout[j] = chan;
+      j++;
+    }
+  }
+  eout[j] = NULL;
+
+  return 0;
 }
 
 /* just count number of pointers in the array */
