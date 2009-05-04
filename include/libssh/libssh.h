@@ -147,10 +147,11 @@ typedef int socket_t;
 #define SSH_FATAL 2
 #define SSH_EINTR 3
 
-/* error return codes */
+/* Error return codes */
 #define SSH_OK 0     /* No error */
-#define SSH_ERROR -1 /* error of some kind */
-#define SSH_AGAIN -2  /* the nonblocking call must be repeated */
+#define SSH_ERROR -1 /* Error of some kind */
+#define SSH_AGAIN -2 /* The nonblocking call must be repeated */
+#define SSH_EOF -127 /* We have already a eof */
 
 const char *ssh_get_error(void *error); 
 int ssh_get_error_code(void *error);

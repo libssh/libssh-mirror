@@ -1582,36 +1582,44 @@ int channel_read_nonblocking(CHANNEL *channel, void *dest, u32 count,
   return rc;
 }
 
-/** \brief polls the channel for data to read
- * \param channel channel
- * \param is_stderr boolean to select the stderr stream
- * \return number of bytes available for reading\n
- * 0 if nothing is available\n
- * SSH_ERROR on error
- * \warning When the channel is in EOF state, the function returns 1
- * \see channel_is_eof()
+/**
+ * @brief Polls a channel for data to read.
+ *
+ * @param channel       The channel to poll.
+ *
+ * @param is_stderr     A boolean to select the stderr stream.
+ *
+ * @return The number of bytes available for reading, 0 if nothing is available
+ *         or SSH_ERROR on error.
+ *
+ * @warning When the channel is in EOF state, the function returns SSH_EOF.
+ *
+ * @see channel_is_eof()
  */
 int channel_poll(CHANNEL *channel, int is_stderr){
-    BUFFER *buffer;
-    SSH_SESSION *session=channel->session;
-    int r=0;
-    enter_function();
-    if(is_stderr)
-        buffer=channel->stderr_buffer;
-    else
-        buffer=channel->stdout_buffer;
+  SSH_SESSION *session = channel->session;
+  BUFFER *stdbuf = channel->stdout_buffer;
+  int rc;
 
-    while(buffer_get_rest_len(buffer)==0 && !channel->remote_eof){
-        r=ssh_handle_packets(channel->session);
-        if(r<=0)
-            break;
+  enter_function();
+
+  if (is_stderr) {
+    stdbuf = channel->stderr_buffer;
+  }
+
+  while (buffer_get_rest_len(stdbuf) == 0 && channel->remote_eof == 0) {
+    if (ssh_handle_packets(channel->session) < 0) {
+      break;
     }
-    if(channel->remote_eof){
-    	leave_function();
-    	return 1;
-    }
+  }
+
+  if (channel->remote_eof) {
     leave_function();
-    return buffer_get_rest_len(buffer);
+    return SSH_EOF;
+  }
+
+  leave_function();
+  return buffer_get_rest_len(stdbuf);
 }
 
 /** \brief recover the session in which belong a channel
