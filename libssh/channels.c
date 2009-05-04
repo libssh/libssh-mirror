@@ -1599,7 +1599,6 @@ int channel_read_nonblocking(CHANNEL *channel, void *dest, u32 count,
 int channel_poll(CHANNEL *channel, int is_stderr){
   SSH_SESSION *session = channel->session;
   BUFFER *stdbuf = channel->stdout_buffer;
-  int rc;
 
   enter_function();
 
