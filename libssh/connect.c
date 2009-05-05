@@ -168,80 +168,98 @@ static int ssh_connect_ai_timeout(SSH_SESSION *session, const char *host,
   return s;
 }
 
-/** \internal
- * \brief connect_host connects to an IPv4 (or IPv6) host
- * specified by its IP address or hostname.
- * \returns file descriptor
- * \returns less than 0 value
+/**
+ * @internal
+ *
+ * @brief Connect to an IPv4 or IPv6 host specified by its IP address or
+ * hostname.
+ *
+ * @returns A file descriptor, < 0 on error.
  */
+socket_t ssh_connect_host(SSH_SESSION *session, const char *host,
+    const char *bind_addr, int port, long timeout, long usec) {
+  socket_t s = -1;
+  int rc;
+  struct addrinfo *ai;
+  struct addrinfo *itr;
 
-socket_t ssh_connect_host(SSH_SESSION *session, const char *host, const char
-        *bind_addr, int port,long timeout, long usec){
-    socket_t s=-1;
-    int my_errno;
-    struct addrinfo *ai, *ai2;
-    enter_function();
-    my_errno=getai(host, port, &ai);
-    if (my_errno){
-        ssh_set_error(session,SSH_FATAL,"Failed to resolve hostname %s (%s)",host,gai_strerror(my_errno));
+  enter_function();
+
+  rc = getai(host, port, &ai);
+  if (rc != 0) {
+    ssh_set_error(session, SSH_FATAL,
+        "Failed to resolve hostname %s (%s)", host, gai_strerror(rc));
+    leave_function();
+    return -1;
+  }
+
+  for (itr = ai; itr != NULL; itr = itr->ai_next){
+    /* create socket */
+    s = socket(itr->ai_family, itr->ai_socktype, itr->ai_protocol);
+    if (s < 0) {
+      ssh_set_error(session, SSH_FATAL,
+          "Socket create failed: %s", strerror(errno));
+      continue;
+    }
+
+    if (bind_addr) {
+      struct addrinfo *bind_ai;
+      struct addrinfo *bind_itr;
+
+      ssh_log(session, SSH_LOG_PACKET, "Resolving %s\n", bind_addr);
+
+      rc = getai(host, 0, &bind_ai);
+      if (rc != 0) {
+        ssh_set_error(session, SSH_FATAL,
+            "Failed to resolve bind address %s (%s)",
+            bind_addr,
+            gai_strerror(rc));
         leave_function();
         return -1;
+      }
+
+      for (bind_itr = bind_ai; bind_itr != NULL; bind_itr = bind_itr->ai_next) {
+        if (bind(s, bind_itr->ai_addr, bind_itr->ai_addrlen) < 0) {
+          ssh_set_error(session, SSH_FATAL,
+              "Binding local address: %s", strerror(errno));
+          continue;
+        } else {
+          break;
+        }
+      }
+      freeaddrinfo(bind_ai);
+
+      /* Cannot bind to any local addresses */
+      if (bind_itr == NULL) {
+        close(s);
+        s = -1;
+        continue;
+      }
     }
 
-    for(ai2=ai;ai2!=NULL;ai2=ai2->ai_next){
-        /* create socket */
-        s=socket(ai2->ai_family,ai2->ai_socktype,ai2->ai_protocol);
-        if(s<0){
-            ssh_set_error(session,SSH_FATAL,"socket : %s",strerror(errno));
-            continue;
-        }
-
-        if(bind_addr){
-            struct addrinfo *bind_ai, *bind_ai2;
-
-            ssh_log(session,SSH_LOG_PACKET,"resolving %s\n",bind_addr);
-            my_errno=getai(host,0,&bind_ai);
-            if (my_errno){
-                ssh_set_error(session,SSH_FATAL,"Failed to resolve bind address %s (%s)",bind_addr,gai_strerror(my_errno));
-                leave_function();
-                return -1;
-            }
-
-            for(bind_ai2=bind_ai;bind_ai2!=NULL;bind_ai2=bind_ai2->ai_next){
-                if(bind(s,bind_ai2->ai_addr,bind_ai2->ai_addrlen)<0){
-                    ssh_set_error(session,SSH_FATAL,"Binding local address : %s",strerror(errno));
-                    continue;
-                }
-		else{
-                    break;
-		}
-            }
-            freeaddrinfo(bind_ai);
-            if(bind_ai2==NULL){ /*cannot bind to any local addresses*/
-                close(s);
-                s=-1;
-                continue;
-            }
-        }
-        if(timeout||usec){
-            socket_t ret=ssh_connect_ai_timeout(session,host,port,ai2,timeout,usec,s);
-            leave_function();
-            return ret;
-        }
-        if(connect(s,ai2->ai_addr,ai2->ai_addrlen)<0){
-            ssh_set_error(session,SSH_FATAL,"connect: %s",strerror(errno));
-            close(s);
-            s=-1;
-            leave_function();
-            continue;
-        }
-        else{ /*we are connected*/
-            break;
-        }
+    if (timeout || usec) {
+      socket_t ret = ssh_connect_ai_timeout(session, host, port, itr,
+          timeout, usec, s);
+      leave_function();
+      return ret;
     }
-    freeaddrinfo(ai);
-    leave_function();
-    return s;
+
+    if (connect(s, itr->ai_addr, itr->ai_addrlen) < 0) {
+      ssh_set_error(session, SSH_FATAL, "Connect failed: %s", strerror(errno));
+      close(s);
+      s = -1;
+      leave_function();
+      continue;
+    } else {
+      /* We are connected */
+      break;
+    }
+  }
+
+  freeaddrinfo(ai);
+  leave_function();
+
+  return s;
 }
 
 /** \addtogroup ssh_session
