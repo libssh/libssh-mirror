@@ -213,17 +213,18 @@ static int _base64_to_bin(unsigned char dest[3], const char *source, int num) {
   return 0;
 }
 
-/* counts the number of "=" signs, and replace them by zeroes */
-static int get_equals(char *string){
-    char *ptr=string;
-    int num=0;
-    while((ptr=strchr(ptr,'='))){
-        num++;
-        *ptr=0;
-        ptr++;
-    }
+/* Count the number of "=" signs and replace them by zeroes */
+static int get_equals(char *string) {
+  char *ptr = string;
+  int num = 0;
 
-    return num;
+  while ((ptr=strchr(ptr,'=')) != NULL) {
+    num++;
+    *ptr = '\0';
+    ptr++;
+  }
+
+  return num;
 }
 
 /* thanks sysk for debugging my mess :) */
