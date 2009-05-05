@@ -287,10 +287,8 @@ int channel_write1(CHANNEL *channel, const void *data, int len) {
 
     effectivelen = len > 32000 ? 32000 : len;
 
-    if (buffer_add_u32(session->out_buffer, htonl(effectivelen)) < 0) {
-      return -1;
-    }
-    if (buffer_add_data(session->out_buffer, data, effectivelen) < 0) {
+    if (buffer_add_u32(session->out_buffer, htonl(effectivelen)) < 0 ||
+        buffer_add_data(session->out_buffer, data, effectivelen) < 0) {
       return -1;
     }
 
