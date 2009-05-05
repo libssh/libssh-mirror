@@ -112,62 +112,67 @@ static int match_pattern(const char *s, const char *pattern) {
 }
 
 /*
- * Tries to match the string against the
- * comma-separated sequence of subpatterns (each possibly preceded by ! to
- * indicate negation).  Returns -1 if negation matches, 1 if there is
- * a positive match, 0 if there is no match at all.
+ * Tries to match the string against the comma-separated sequence of subpatterns
+ * (each possibly preceded by ! to indicate negation).
+ * Returns -1 if negation matches, 1 if there is a positive match, 0 if there is
+ * no match at all.
  */
-
 static int match_pattern_list(const char *string, const char *pattern,
     unsigned int len, int dolower) {
-	char sub[1024];
-	int negated;
-	int got_positive;
-	unsigned int i, subi;
+  char sub[1024];
+  int negated;
+  int got_positive;
+  unsigned int i, subi;
 
-	got_positive = 0;
-	for (i = 0; i < len;) {
-		/* Check if the subpattern is negated. */
-		if (pattern[i] == '!') {
-			negated = 1;
-			i++;
-		} else
-			negated = 0;
+  got_positive = 0;
+  for (i = 0; i < len;) {
+    /* Check if the subpattern is negated. */
+    if (pattern[i] == '!') {
+      negated = 1;
+      i++;
+    } else {
+      negated = 0;
+    }
 
-		/*
-		 * Extract the subpattern up to a comma or end.  Convert the
-		 * subpattern to lowercase.
-		 */
-		for (subi = 0;
-		    i < len && subi < sizeof(sub) - 1 && pattern[i] != ',';
-		    subi++, i++)
-			sub[subi] = dolower && isupper(pattern[i]) ?
-			    (char)tolower(pattern[i]) : pattern[i];
-		/* If subpattern too long, return failure (no match). */
-		if (subi >= sizeof(sub) - 1)
-			return 0;
+    /*
+     * Extract the subpattern up to a comma or end.  Convert the
+     * subpattern to lowercase.
+     */
+    for (subi = 0;
+        i < len && subi < sizeof(sub) - 1 && pattern[i] != ',';
+        subi++, i++) {
+      sub[subi] = dolower && isupper(pattern[i]) ?
+        (char)tolower(pattern[i]) : pattern[i];
+    }
 
-		/* If the subpattern was terminated by a comma, skip the comma. */
-		if (i < len && pattern[i] == ',')
-			i++;
+    /* If subpattern too long, return failure (no match). */
+    if (subi >= sizeof(sub) - 1) {
+      return 0;
+    }
 
-		/* Null-terminate the subpattern. */
-		sub[subi] = '\0';
+    /* If the subpattern was terminated by a comma, skip the comma. */
+    if (i < len && pattern[i] == ',') {
+      i++;
+    }
 
-		/* Try to match the subpattern against the string. */
-		if (match_pattern(string, sub)) {
-			if (negated)
-				return -1;		/* Negative */
-			else
-				got_positive = 1;	/* Positive */
-		}
-	}
+    /* Null-terminate the subpattern. */
+    sub[subi] = '\0';
 
-	/*
-	 * Return success if got a positive match.  If there was a negative
-	 * match, we have already returned -1 and never get here.
-	 */
-	return got_positive;
+    /* Try to match the subpattern against the string. */
+    if (match_pattern(string, sub)) {
+      if (negated) {
+        return -1;        /* Negative */
+      } else {
+        got_positive = 1; /* Positive */
+      }
+    }
+  }
+
+  /*
+   * Return success if got a positive match.  If there was a negative
+   * match, we have already returned -1 and never get here.
+   */
+  return got_positive;
 }
 
 /*
