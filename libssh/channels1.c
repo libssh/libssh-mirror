@@ -129,21 +129,13 @@ int channel_request_pty_size1(CHANNEL *channel, const char *terminal, int col,
 }
 
 int channel_change_pty_size1(CHANNEL *channel, int cols, int rows) {
-  SSH_SESSION *session=channel->session;
+  SSH_SESSION *session = channel->session;
 
-  if (buffer_add_u8(session->out_buffer, SSH_CMSG_WINDOW_SIZE) < 0) {
-    return -1;
-  }
-  if (buffer_add_u32(session->out_buffer, ntohl(rows)) < 0) {
-    return -1;
-  }
-  if (buffer_add_u32(session->out_buffer, ntohl(cols)) < 0) {
-    return -1;
-  }
-  if (buffer_add_u32(session->out_buffer, 0) < 0) {
-    return -1;
-  }
-  if (buffer_add_u32(session->out_buffer, 0) < 0) {
+  if (buffer_add_u8(session->out_buffer, SSH_CMSG_WINDOW_SIZE) < 0 ||
+      buffer_add_u32(session->out_buffer, ntohl(rows)) < 0 ||
+      buffer_add_u32(session->out_buffer, ntohl(cols)) < 0 ||
+      buffer_add_u32(session->out_buffer, 0) < 0 ||
+      buffer_add_u32(session->out_buffer, 0) < 0) {
     return -1;
   }
 
