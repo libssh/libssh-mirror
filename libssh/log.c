@@ -69,7 +69,7 @@ void ssh_log(SSH_SESSION *session, int verbosity, const char *format, ...) {
       memset(indent, ' ', min);
       indent[min] = '\0';
 
-      fprintf(stderr, "[func] %s%s\n", buf2, buffer);
+      fprintf(stderr, "[func] %s%s\n", indent, buffer);
     } else {
       fprintf(stderr, "[%d] %s\n", verbosity, buffer);
     }
