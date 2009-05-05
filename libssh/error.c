@@ -27,22 +27,35 @@
 #include <stdarg.h>
 #include "libssh/priv.h"
 
-/** \defgroup ssh_error SSH Errors
- * \brief error handling
+/**
+ * @defgroup ssh_error SSH Errors
+ *
+ * @brief Functions for error handling.
  */
 
-/** \addtogroup ssh_error
+/**
+ * @addtogroup ssh_error
  * @{
  */
 
-/* ssh_set_error registers an error with a description. the error code is the class of error, and description is obvious.*/
+/**
+ * @brief Registers an error with a description.
+ *
+ * @param  error       The class of error.
+ *
+ * @param  code        The class of error.
+ *
+ * @param  descr       The description, which can be a format string.
+ *
+ * @param  ...         The arguments for the format string.
+ */
 void ssh_set_error(void *error, int code, const char *descr, ...) {
-    struct error_struct *err= error;
-    va_list va;
-    va_start(va,descr);
-    vsnprintf(err->error_buffer,ERROR_BUFFERLEN,descr,va);
-    va_end(va);
-    err->error_code=code;
+  struct error_struct *err = error;
+  va_list va;
+  va_start(va, descr);
+  vsnprintf(err->error_buffer, ERROR_BUFFERLEN, descr, va);
+  va_end(va);
+  err->error_code = code;
 }
 
 /** \brief retrieve an error text message
