@@ -200,14 +200,17 @@ static int to_block4(unsigned long *block, const char *source, int num) {
 }
 
 /* num = numbers of final bytes to be decoded */
-static int _base64_to_bin(unsigned char dest[3], char *source,int num){
-   unsigned long block;
-   if(to_block4(&block,source,num))
-       return -1;
-   dest[0]=GET_A(block);
-   dest[1]=GET_B(block);
-   dest[2]=GET_C(block);
-   return 0;
+static int _base64_to_bin(unsigned char dest[3], const char *source, int num) {
+  unsigned long block;
+
+  if (to_block4(&block, source, num) < 0) {
+    return -1;
+  }
+  dest[0] = GET_A(block);
+  dest[1] = GET_B(block);
+  dest[2] = GET_C(block);
+
+  return 0;
 }
 
 /* counts the number of "=" signs, and replace them by zeroes */
