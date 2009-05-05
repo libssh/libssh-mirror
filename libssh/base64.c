@@ -231,7 +231,7 @@ static int get_equals(char *string) {
 
 /* thanks sysk for debugging my mess :) */
 #define BITS(n) ((1 << (n)) - 1)
-static void _bin_to_base64(unsigned char *dest, unsigned char source[3],
+static void _bin_to_base64(unsigned char *dest, const unsigned char source[3],
     int len) {
   switch (len) {
     case 1:
@@ -255,22 +255,33 @@ static void _bin_to_base64(unsigned char *dest, unsigned char source[3],
   }
 }
 
-/** \brief Converts binary data to a base64 string
- * \returns the converted string
- * \internal
+/**
+ * @internal
+ *
+ * @brief Converts binary data to a base64 string.
+ *
+ * @returns the converted string
  */
-unsigned char *bin_to_base64(unsigned char *source, int len){
-    int flen=len + (3 - (len %3)); /* round to upper 3 multiple */
-    unsigned char *buffer;
-    unsigned char *ptr;
-    flen=(4 * flen)/3 + 1 ;
-    ptr=buffer=malloc(flen);
-    while(len>0){
-        _bin_to_base64(ptr,source,len>3?3:len);
-        ptr+=4;
-        source +=3;
-        len -=3;
-    }
-    ptr[0]=0;
-    return buffer;
+unsigned char *bin_to_base64(const unsigned char *source, int len) {
+  unsigned char *base64;
+  unsigned char *ptr;
+  int flen = len + (3 - (len % 3)); /* round to upper 3 multiple */
+  flen = (4 * flen) / 3 + 1;
+
+  base64 = malloc(flen);
+  if (base64 == NULL) {
+    return NULL;
+  }
+  ptr = base64;
+
+  while(len > 0){
+    _bin_to_base64(ptr, source, len > 3 ? 3 : len);
+    ptr += 4;
+    source += 3;
+    len -= 3;
+  }
+  ptr[0] = '\0';
+
+  return base64;
 }
+

@@ -647,7 +647,7 @@ u32 buffer_pass_bytes(BUFFER *buffer, u32 len);
 
 /* in base64.c */
 BUFFER *base64_to_bin(const char *source);
-unsigned char *bin_to_base64(unsigned char *source, int len);
+unsigned char *bin_to_base64(const unsigned char *source, int len);
 
 /* gzip.c */
 int compress_buffer(SSH_SESSION *session,BUFFER *buf);
