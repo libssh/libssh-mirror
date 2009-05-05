@@ -60,13 +60,17 @@ void ssh_set_error(void *error, int code, const char *descr, ...) {
   err->error_code = code;
 }
 
-/** \brief retrieve an error text message
- * \param error the ssh session pointer
- * \return a static string describing the error
+/**
+ * @brief Retrieve an error text message.
+ *
+ * @param  error        The ssh session pointer.
+ *
+ * @return A static string describing the error.
  */
-const char *ssh_get_error(void *error){
-    struct error_struct *err=error;
-    return err->error_buffer;
+const char *ssh_get_error(void *error) {
+  struct error_struct *err = error;
+
+  return err->error_buffer;
 }
 
 /** \brief retrieve the error code from the last
