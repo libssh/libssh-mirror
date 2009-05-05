@@ -178,9 +178,11 @@ static int match_pattern_list(const char *string, const char *pattern,
 /*
  * Tries to match the host name (which must be in all lowercase) against the
  * comma-separated sequence of subpatterns (each possibly preceded by ! to
- * indicate negation).  Returns -1 if negation matches, 1 if there is
- * a positive match, 0 if there is no match at all.
+ * indicate negation).
+ * Returns -1 if negation matches, 1 if there is a positive match, 0 if there
+ * is no match at all.
  */
 int match_hostname(const char *host, const char *pattern, unsigned int len) {
-	return match_pattern_list(host, pattern, len, 1);
+  return match_pattern_list(host, pattern, len, 1);
 }
+
