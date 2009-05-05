@@ -244,7 +244,8 @@ STRING *ssh_get_pubkey(SSH_SESSION *session);
 
 /* in connect.c */
 int ssh_fd_poll(SSH_SESSION *session,int *write, int *except);
-int ssh_select(CHANNEL **channels,CHANNEL **outchannels, socket_t maxfd, fd_set *readfds, struct timeval *timeout);
+int ssh_select(CHANNEL **channels, CHANNEL **outchannels, socket_t maxfd,
+    fd_set *readfds, struct timeval *timeout);
 
 void publickey_free(PUBLIC_KEY *key);
 

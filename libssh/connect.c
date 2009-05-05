@@ -262,102 +262,154 @@ socket_t ssh_connect_host(SSH_SESSION *session, const char *host,
   return s;
 }
 
-/** \addtogroup ssh_session
- *  * @{ */
+/**
+ * @addtogroup ssh_session
+ * @{ */
 
-/** This functions acts more or less like the select(2) syscall.\n
+/**
+ * @brief A wrapper for the select syscall
+ *
+ * This functions acts more or less like the select(2) syscall.\n
  * There is no support for writing or exceptions.\n
- * \brief wrapper for the select syscall
- * \param channels arrays of channels pointers finished by an NULL. It is never rewritten/
- * \param outchannels arrays of same size that "channels", it hasn't to be initialized
- * \param maxfd maximum +1 file descriptor from readfds
- * \param readfds an fd_set of file descriptors to be select'ed for reading
- * \param timeout a timeout for the select
- * \see select(2)
- * \return -1 if an error occured. E_INTR if it was interrupted. In that case, just restart it.
- * \warning libssh is not threadsafe. That means that if a signal is caught during the processing
- * of this function, you cannot call ssh functions on sessions that are busy with ssh_select()
+ *
+ * @param  channels     Arrays of channels pointers terminated by a NULL.
+ *                      It is never rewritten.
+ *
+ * @param  outchannels  Arrays of same size that "channels", there is no need
+ *                      to initialize it.
+ *
+ * @param  maxfd        Maximum +1 file descriptor from readfds.
+ *
+ * @param  readfds      A fd_set of file descriptors to be select'ed for
+ *                      reading.
+ *
+ * @param  timeout      A timeout for the select.
+ *
+ * @return -1 if an error occured. E_INTR if it was interrupted. In that case,
+ *          just restart it.
+ *
+ * @warning libssh is not threadsafe here. That means that if a signal is caught
+ * during the processing of this function, you cannot call ssh functions on
+ * sessions that are busy with ssh_select().
+ *
+ * @see select(2)
  */
-int ssh_select(CHANNEL **channels,CHANNEL **outchannels, socket_t maxfd, fd_set *readfds, struct timeval *timeout){
-    struct timeval zerotime;
-    fd_set localset,localset2;
-    int rep;
-    int i,j;
-    int set;
+int ssh_select(CHANNEL **channels, CHANNEL **outchannels, socket_t maxfd,
+    fd_set *readfds, struct timeval *timeout) {
+  struct timeval zerotime;
+  fd_set localset, localset2;
+  int rep;
+  int set;
+  int i;
+  int j;
 
-    zerotime.tv_sec=0;
-    zerotime.tv_usec=0;
-    /* first, poll the maxfd file descriptors from the user with a zero-second timeout. they have the bigger priority */
-    if(maxfd>0){
-        memcpy(&localset,readfds, sizeof(fd_set));
-        rep=select(maxfd,&localset,NULL,NULL,&zerotime);
-        // catch the eventual errors
-        if(rep==-1)
-            return -1;
-    }
-    j=0;
-    // polls every channel.
-    for(i=0;channels[i];i++){
-        if(channels[i]->session->alive){
-            if(channel_poll(channels[i],0)>0){
-                outchannels[j]=channels[i];
-                j++;
-            } else
-            if(channel_poll(channels[i],1)>0){
-                outchannels[j]=channels[i];
-                j++;
-            }
-        }
-    }
-    outchannels[j]=NULL;
-    /* look into the localset for active fd */
-    set=0;
-    for(i=0;(i<maxfd) && !set;i++)
-        if(FD_ISSET(i,&localset))
-            set=1;
-    // j!=0 means a channel has data
-    if( (j!=0) || (set!=0)){
-        if(maxfd>0)
-            memcpy(readfds,&localset,sizeof(fd_set));
-        return 0;
-    }
-    /* at this point, not any channel had any data ready for reading, nor any fd had data for reading */
-    memcpy(&localset,readfds,sizeof(fd_set));
-    for(i=0;channels[i];i++){
-        if(channels[i]->session->alive){
-            ssh_socket_fd_set(channels[i]->session->socket,&localset,&maxfd);
-        }
-    }
-    rep=select(maxfd,&localset,NULL,NULL,timeout);
-    if(rep==-1 && errno==EINTR){
-        return SSH_EINTR; /* interrupted by a signal */
-    }
-    if(rep==-1){
-        /* was the error due to a libssh's Channel or from a closed descriptor from the user ? user closed descriptors have been
-        caught in the first select and not closed since that moment. that case shouldn't occur at all */
-        return -1;
-    }
-    /* set the data_to_read flag on each session */
-    for(i=0;channels[i];i++)
-        if(channels[i]->session->alive && ssh_socket_fd_isset(channels[i]->session->socket,&localset))
-            ssh_socket_set_toread(channels[i]->session->socket);
+  zerotime.tv_sec = 0;
+  zerotime.tv_usec = 0;
 
-    /* now, test each channel */
-    j=0;
-    for(i=0;channels[i];i++){
-        if(channels[i]->session->alive && ssh_socket_fd_isset(channels[i]->session->socket,&localset))
-            if((channel_poll(channels[i],0)>0) || (channel_poll(channels[i],1)>0)){
-                outchannels[j]=channels[i];
-                j++;
-            }
+  /*
+   * First, poll the maxfd file descriptors from the user with a zero-second
+   * timeout. They have the bigger priority.
+   */
+  if (maxfd > 0) {
+    memcpy(&localset, readfds, sizeof(fd_set));
+    rep = select(maxfd, &localset, NULL, NULL, &zerotime);
+    /* catch the eventual errors */
+    if (rep==-1) {
+      return -1;
     }
-    outchannels[j]=NULL;
-    FD_ZERO(&localset2);
-    for(i=0;i<maxfd;i++)
-        if(FD_ISSET(i,readfds) && FD_ISSET(i,&localset))
-            FD_SET(i,&localset2);
-    memcpy(readfds,&localset2,sizeof(fd_set));
+  }
+
+  /* Poll every channel */
+  j = 0;
+  for (i = 0; channels[i]; i++) {
+    if (channels[i]->session->alive) {
+      if(channel_poll(channels[i], 0) > 0) {
+        outchannels[j] = channels[i];
+        j++;
+      } else {
+        if(channel_poll(channels[i], 1) > 0) {
+          outchannels[j] = channels[i];
+          j++;
+        }
+      }
+    }
+  }
+  outchannels[j] = NULL;
+
+  /* Look into the localset for active fd */
+  set = 0;
+  for (i = 0; (i < maxfd) && !set; i++) {
+    if (FD_ISSET(i, &localset)) {
+      set = 1;
+    }
+  }
+
+  /* j != 0 means a channel has data */
+  if( (j != 0) || (set != 0)) {
+    if(maxfd > 0) {
+      memcpy(readfds, &localset, sizeof(fd_set));
+    }
     return 0;
+  }
+
+  /*
+   * At this point, not any channel had any data ready for reading, nor any fd
+   * had data for reading.
+   */
+  memcpy(&localset, readfds, sizeof(fd_set));
+  for (i = 0; channels[i]; i++) {
+    if (channels[i]->session->alive) {
+      ssh_socket_fd_set(channels[i]->session->socket, &localset, &maxfd);
+    }
+  }
+
+  rep = select(maxfd, &localset, NULL, NULL, timeout);
+  if (rep == -1 && errno == EINTR) {
+    /* Interrupted by a signal */
+    return SSH_EINTR;
+  }
+
+  if (rep == -1) {
+    /*
+     * Was the error due to a libssh's channel or from a closed descriptor from
+     * the user? User closed descriptors have been caught in the first select
+     * and not closed since that moment. That case shouldn't occur at all
+     */
+    return -1;
+  }
+
+  /* Set the data_to_read flag on each session */
+  for (i = 0; channels[i]; i++) {
+    if (channels[i]->session->alive &&
+        ssh_socket_fd_isset(channels[i]->session->socket,&localset)) {
+      ssh_socket_set_toread(channels[i]->session->socket);
+    }
+  }
+
+  /* Now, test each channel */
+  j = 0;
+  for (i = 0; channels[i]; i++) {
+    if (channels[i]->session->alive &&
+        ssh_socket_fd_isset(channels[i]->session->socket,&localset)) {
+      if ((channel_poll(channels[i],0) > 0) ||
+          (channel_poll(channels[i], 1) > 0)) {
+        outchannels[j] = channels[i];
+        j++;
+      }
+    }
+  }
+  outchannels[j] = NULL;
+
+  FD_ZERO(&localset2);
+  for (i = 0; i < maxfd; i++) {
+    if (FD_ISSET(i, readfds) && FD_ISSET(i, &localset)) {
+      FD_SET(i, &localset2);
+    }
+  }
+
+  memcpy(readfds, &localset2, sizeof(fd_set));
+
+  return 0;
 }
 
 /** @} */
