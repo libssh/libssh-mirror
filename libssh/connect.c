@@ -23,23 +23,31 @@
  * vim: ts=2 sw=2 et cindent
  */
 
-#include <string.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #ifdef _WIN32
-#define _WIN32_WINNT 0x0501 //getaddrinfo, freeaddrinfo, getnameinfo
+/* getaddrinfo, freeaddrinfo, getnameinfo */
+#define _WIN32_WINNT 0x0501
+
 #include <winsock2.h>
 #include <ws2tcpip.h>
-#include "wspiapi.h" //workaround for w2k systems
-#else
+
+#include "wspiapi.h" /* Workaround for w2k systems */
+
+#else /* _WIN32 */
+
 #include <netdb.h>
 #include <sys/socket.h>
 #include <sys/select.h>
 #include <netinet/in.h>
-#endif
-#include <fcntl.h>
+
+#endif /* _WIN32 */
+
 #include "libssh/priv.h"
 
 #ifndef HAVE_SELECT
