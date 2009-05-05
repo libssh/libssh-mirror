@@ -805,6 +805,8 @@ static SFTP_ATTRIBUTES *sftp_parse_attr_4(SFTP_SESSION *sftp, BUFFER *buf,
       }
       attr->permissions = ntohl(attr->permissions);
 
+#ifndef _WIN32
+      /* FIXME on windows! */
       switch (attr->permissions & S_IFMT) {
         case S_IFSOCK:
         case S_IFBLK:
@@ -825,6 +827,7 @@ static SFTP_ATTRIBUTES *sftp_parse_attr_4(SFTP_SESSION *sftp, BUFFER *buf,
           attr->type = SSH_FILEXFER_TYPE_UNKNOWN;
           break;
       }
+#endif /* _WIN32 */
     }
 
     if (flags & SSH_FILEXFER_ATTR_ACCESSTIME) {
@@ -995,6 +998,8 @@ static SFTP_ATTRIBUTES *sftp_parse_attr_3(SFTP_SESSION *sftp, BUFFER *buf,
       }
       attr->permissions = ntohl(attr->permissions);
 
+#ifndef _WIN32
+      /* FIXME on windows */
       switch (attr->permissions & S_IFMT) {
         case S_IFSOCK:
         case S_IFBLK:
@@ -1015,6 +1020,7 @@ static SFTP_ATTRIBUTES *sftp_parse_attr_3(SFTP_SESSION *sftp, BUFFER *buf,
           attr->type = SSH_FILEXFER_TYPE_UNKNOWN;
           break;
       }
+#endif /* _WIN32 */
     }
 
     if (flags & SSH_FILEXFER_ATTR_ACMODTIME) {
