@@ -165,27 +165,38 @@ error:
   return NULL;
 }
 
-#define BLOCK(letter,n) do { ptr=strchr(alphabet,source[n]);\
-                                        if(!ptr) return -1;\
-                                        i=ptr-alphabet;\
-                                        SET_##letter(*block,i);\
-                                        } while(0)
-/* returns 0 if ok, -1 if not (ie invalid char into the stuff) */
-static int to_block4(unsigned long *block, char *source,int num){
-    char *ptr;
-    unsigned int i;
-    *block=0;
-    if(num<1)
-        return 0;
-    BLOCK(A,0); /* 6 bits */
-    BLOCK(B,1); /* 12 */
-    if(num<2)
-        return 0;
-    BLOCK(C,2); /* 18 */
-    if(num < 3)
-        return 0;
-    BLOCK(D,3); /* 24 */
+#define BLOCK(letter, n) do {ptr = strchr(alphabet, source[n]); \
+                             if(!ptr) return -1; \
+                             i = ptr - alphabet; \
+                             SET_##letter(*block, i); \
+                         } while(0)
+
+/* Returns 0 if ok, -1 if not (ie invalid char into the stuff) */
+static int to_block4(unsigned long *block, const char *source, int num) {
+  char *ptr;
+  unsigned int i;
+
+  *block = 0;
+  if (num < 1) {
     return 0;
+  }
+
+  BLOCK(A, 0); /* 6 bit */
+  BLOCK(B,1); /* 12 bit */
+
+  if (num < 2) {
+    return 0;
+  }
+
+  BLOCK(C, 2); /* 18 bit */
+
+  if (num < 3) {
+    return 0;
+  }
+
+  BLOCK(D, 3); /* 24 bit */
+
+  return 0;
 }
 
 /* num = numbers of final bytes to be decoded */
