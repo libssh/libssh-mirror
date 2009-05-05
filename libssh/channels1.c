@@ -85,40 +85,25 @@ int channel_request_pty_size1(CHANNEL *channel, const char *terminal, int col,
     return -1;
   }
 
-  if (buffer_add_u8(session->out_buffer, SSH_CMSG_REQUEST_PTY) < 0) {
-    string_free(str);
-    return -1;
-  }
-  if (buffer_add_ssh_string(session->out_buffer, str) < 0) {
+  if (buffer_add_u8(session->out_buffer, SSH_CMSG_REQUEST_PTY) < 0 ||
+      buffer_add_ssh_string(session->out_buffer, str) < 0) {
     string_free(str);
     return -1;
   }
   string_free(str);
 
-  if (buffer_add_u32(session->out_buffer, ntohl(row)) < 0) {
-    return -1;
-  }
-  if (buffer_add_u32(session->out_buffer, ntohl(col)) < 0) {
-    return -1;
-  }
-  if (buffer_add_u32(session->out_buffer, 0) < 0) { /* x */
-    return -1;
-  }
-  if (buffer_add_u32(session->out_buffer, 0) < 0) { /* y */
-    return -1;
-  }
-  if (buffer_add_u8(session->out_buffer, 0) < 0) { /* tty things */
+  if (buffer_add_u32(session->out_buffer, ntohl(row)) < 0 ||
+      buffer_add_u32(session->out_buffer, ntohl(col)) < 0 ||
+      buffer_add_u32(session->out_buffer, 0) < 0 || /* x */
+      buffer_add_u32(session->out_buffer, 0) < 0 || /* y */
+      buffer_add_u8(session->out_buffer, 0) < 0) { /* tty things */
     return -1;
   }
 
   ssh_log(session, SSH_LOG_FUNCTIONS, "Opening a ssh1 pty");
-  if (packet_send(session) != SSH_OK) {
-    return -1;
-  }
-  if (packet_read(session) != SSH_OK) {
-    return -1;
-  }
-  if (packet_translate(session) != SSH_OK) {
+  if (packet_send(session) != SSH_OK ||
+      packet_read(session) != SSH_OK ||
+      packet_translate(session) != SSH_OK) {
     return -1;
   }
 
