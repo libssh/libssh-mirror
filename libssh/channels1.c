@@ -33,29 +33,36 @@
 
 #ifdef HAVE_SSH1
 
-/* this is a big hack. In fact, SSH-1 doesn't make a clever use of channels.
- * The whole packets concerning Shells are sent outside of a channel.
+/*
+ * This is a big hack. In fact, SSH1 doesn't make a clever use of channels.
+ * The whole packets concerning shells are sent outside of a channel.
  * Thus, an inside limitation of this behaviour is that you can't only
- * request one Shell.
- * And i don't even know yet how they managed to imbed two "channel"
- * into one protocol.
+ * request one shell.
+ * The question is stil how they managed to imbed two "channel" into one
+ * protocol.
  */
 
-int channel_open_session1(CHANNEL *chan){
-    // we guess we are requesting an *exec* channel. It can only have
-    // only one exec channel. so we abort with an error if we need more than
-    SSH_SESSION *session=chan->session;
-    if(session->exec_channel_opened){
-        ssh_set_error(session,SSH_REQUEST_DENIED,"SSH-1 supports only one execution channel. One has already been opened");
-        return -1;
-    }
-    session->exec_channel_opened=1;
-    chan->open=1;
-    chan->local_maxpacket = 32000;
-    chan->local_window = 64000;
-    ssh_log(session, SSH_LOG_PACKET, "Opened a ssh1 channel session");
-    return 0;
+int channel_open_session1(CHANNEL *chan) {
+  /*
+   * We guess we are requesting an *exec* channel. It can only have one exec
+   * channel. So we abort with an error if we need more than one.
+   */
+  SSH_SESSION *session = chan->session;
+  if (session->exec_channel_opened) {
+    ssh_set_error(session, SSH_REQUEST_DENIED,
+        "SSH1 supports only one execution channel. "
+        "One has already been opened");
+    return -1;
+  }
+  session->exec_channel_opened = 1;
+  chan->open = 1;
+  chan->local_maxpacket = 32000;
+  chan->local_window = 64000;
+  ssh_log(session, SSH_LOG_PACKET, "Opened a SSH1 channel session");
+
+  return 0;
 }
+
 /*  10 SSH_CMSG_REQUEST_PTY
  *
  *  string       TERM environment variable value (e.g. vt100)
