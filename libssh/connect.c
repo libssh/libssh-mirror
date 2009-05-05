@@ -89,23 +89,25 @@ static void sock_set_blocking(socket_t sock) {
 }
 #endif /* _WIN32 */
 
-static int getai(const char *host, int port, struct addrinfo **ai)
-{
-    struct addrinfo hints;
-    char *service=NULL;
-    char s_port[10];
+static int getai(const char *host, int port, struct addrinfo **ai) {
+  const char *service = NULL;
+  struct addrinfo hints;
+  char s_port[10];
 
-    memset(&hints,0,sizeof(hints));
-    hints.ai_protocol=IPPROTO_TCP;
-    hints.ai_family=PF_UNSPEC;
-    hints.ai_socktype=SOCK_STREAM;
-    if(port==0){
-        hints.ai_flags=AI_PASSIVE;
-    } else {
-        snprintf(s_port,sizeof(s_port),"%hu",port);
-	service=s_port;
-    }
-    return getaddrinfo(host,service,&hints,ai);
+  ZERO_STRUCT(hints);
+
+  hints.ai_protocol = IPPROTO_TCP;
+  hints.ai_family = PF_UNSPEC;
+  hints.ai_socktype = SOCK_STREAM;
+
+  if (port == 0) {
+    hints.ai_flags = AI_PASSIVE;
+  } else {
+    snprintf(s_port, sizeof(s_port), "%hu", port);
+    service = s_port;
+  }
+
+  return getaddrinfo(host, service, &hints, ai);
 }
 
 static int ssh_connect_ai_timeout(SSH_SESSION *session, const char *host,
