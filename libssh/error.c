@@ -39,6 +39,8 @@
  */
 
 /**
+ * @internal
+ *
  * @brief Registers an error with a description.
  *
  * @param  error       The class of error.
