@@ -646,7 +646,7 @@ u32 buffer_pass_bytes_end(BUFFER *buffer, u32 len);
 u32 buffer_pass_bytes(BUFFER *buffer, u32 len);
 
 /* in base64.c */
-BUFFER *base64_to_bin(char *source);
+BUFFER *base64_to_bin(const char *source);
 unsigned char *bin_to_base64(unsigned char *source, int len);
 
 /* gzip.c */
