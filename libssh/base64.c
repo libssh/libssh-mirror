@@ -42,7 +42,7 @@ static char alphabet[]="ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 #define GET_B(n) ((n & 0xff00) >> 8)
 #define GET_C(n) (n & 0xff)
 
-static int _base64_to_bin(unsigned char dest[3], char *source,int num);
+static int _base64_to_bin(unsigned char dest[3], const char *source, int num);
 static int get_equals(char *string);
 
 /* First part: base64 to binary */
