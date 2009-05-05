@@ -190,11 +190,8 @@ int channel_request_exec1(CHANNEL *channel, const char *cmd) {
     return -1;
   }
 
-  if (buffer_add_u8(session->out_buffer, SSH_CMSG_EXEC_CMD) < 0) {
-    string_free(command);
-    return -1;
-  }
-  if (buffer_add_ssh_string(session->out_buffer, command) < 0) {
+  if (buffer_add_u8(session->out_buffer, SSH_CMSG_EXEC_CMD) < 0 ||
+      buffer_add_ssh_string(session->out_buffer, command) < 0) {
     string_free(command);
     return -1;
   }
