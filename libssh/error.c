@@ -61,9 +61,9 @@ void ssh_set_error(void *error, int code, const char *descr, ...) {
 }
 
 /**
- * @brief Retrieve an error text message.
+ * @brief Retrieve the error text message from the last error.
  *
- * @param  error        The ssh session pointer.
+ * @param  error        The SSH session pointer.
  *
  * @return A static string describing the error.
  */
@@ -73,18 +73,25 @@ const char *ssh_get_error(void *error) {
   return err->error_buffer;
 }
 
-/** \brief retrieve the error code from the last
- * error
- * \param error the ssh session pointer
- * \return SSH_NO_ERROR no error occured\n
- * SSH_REQUEST_DENIED The last request was denied but situation
- * is recoverable\n
- * SSH_FATAL A fatal error occured. this could be an unexpected disconnection\n
- * Other error codes are internal but can be considered same than SSH_FATAL
+/**
+ * @brief Retrieve the error code from the last error.
+ *
+ * @param  error        The SSH session pointer.
+ *
+ * \return SSH_NO_ERROR       No error occured\n
+ *         SSH_REQUEST_DENIED The last request was denied but situation is
+ *                            recoverable\n
+ *         SSH_FATAL          A fatal error occured. This could be an unexpected
+ *                            disconnection\n
+ *
+ *         \nOther error codes are internal but can be considered same than
+ *         SSH_FATAL.
  */
-int ssh_get_error_code(void *error){
-    struct error_struct *err=error;
-    return err->error_code;
+int ssh_get_error_code(void *error) {
+  struct error_struct *err = error;
+
+  return err->error_code;
 }
 
 /** @} */
+
