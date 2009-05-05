@@ -27,10 +27,12 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+
 #include "libssh/priv.h"
-static char alphabet[]="ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                        "abcdefghijklmnopqrstuvwxyz"
-                        "0123456789+/" ;
+
+static char alphabet[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                         "abcdefghijklmnopqrstuvwxyz"
+                         "0123456789+/";
 
 /* Transformations */
 #define SET_A(n, i) do { (n) |= ((i) & 63) <<18; } while (0)
