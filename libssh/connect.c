@@ -111,48 +111,61 @@ static int getai(const char *host, int port, struct addrinfo **ai) {
 }
 
 static int ssh_connect_ai_timeout(SSH_SESSION *session, const char *host,
-    int port, struct addrinfo *ai, long timeout, long usec,socket_t s)
-{
-    struct timeval to;
-    fd_set set;
-    int ret=0;
-    unsigned int len=sizeof(ret);
-    enter_function();
-    to.tv_sec=timeout;
-    to.tv_usec=usec;
-    sock_set_nonblocking(s);
-    connect(s,ai->ai_addr,ai->ai_addrlen);
-    freeaddrinfo(ai);
-    FD_ZERO(&set);
-    FD_SET(s,&set);
-    ret=select(s+1,NULL,&set,NULL,&to);
-    if(ret==0){
-        /* timeout */
-        ssh_set_error(session,SSH_FATAL,"Timeout while connecting to %s:%d",host,port);
-        close(s);
-        leave_function();
-        return -1;
-    }
-    if(ret<0){
-        ssh_set_error(session,SSH_FATAL,"Select error : %s",strerror(errno));
-        close(s);
-        leave_function();
-        return -1;
-    }
-    ret = 0;
-    /* get connect(2) return code. zero means no error */
-    getsockopt(s,SOL_SOCKET,SO_ERROR,(char *)&ret,&len);
-    if (ret!=0){
-        ssh_set_error(session,SSH_FATAL,"Connecting : %s",strerror(ret));
-        close(s);
-        leave_function();
-        return -1;
-    }
-    /* s is connected ? */
-    ssh_log(session,SSH_LOG_PACKET,"socket connected with timeout\n");
-    sock_set_blocking(s);
+    int port, struct addrinfo *ai, long timeout, long usec, socket_t s) {
+  struct timeval to;
+  fd_set set;
+  int rc = 0;
+  unsigned int len = sizeof(rc);
+
+  enter_function();
+
+  to.tv_sec = timeout;
+  to.tv_usec = usec;
+
+  sock_set_nonblocking(s);
+
+  /* The return value is checked later */
+  connect(s, ai->ai_addr, ai->ai_addrlen);
+  freeaddrinfo(ai);
+
+  FD_ZERO(&set);
+  FD_SET(s, &set);
+
+  rc = select(s + 1, NULL, &set, NULL, &to);
+  if (rc == 0) {
+    /* timeout */
+    ssh_set_error(session, SSH_FATAL,
+        "Timeout while connecting to %s:%d", host, port);
+    close(s);
     leave_function();
-    return s;
+    return -1;
+  }
+
+  if (rc < 0) {
+    ssh_set_error(session, SSH_FATAL,
+        "Select error: %s", strerror(errno));
+    close(s);
+    leave_function();
+    return -1;
+  }
+  rc = 0;
+
+  /* Get connect(2) return code. Zero means no error */
+  getsockopt(s, SOL_SOCKET, SO_ERROR,(char *) &rc, &len);
+  if (rc != 0) {
+    ssh_set_error(session, SSH_FATAL,
+        "Connect to %s:%d failed: %s", host, port, strerror(rc));
+    close(s);
+    leave_function();
+    return -1;
+  }
+
+  /* s is connected ? */
+  ssh_log(session, SSH_LOG_PACKET, "Socket connected with timeout\n");
+  sock_set_blocking(s);
+
+  leave_function();
+  return s;
 }
 
 /** \internal
