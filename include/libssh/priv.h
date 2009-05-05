@@ -660,7 +660,7 @@ CRYPTO *crypto_new(void);
 void crypto_free(CRYPTO *crypto);
 
 /* crc32.c */
-u32 ssh_crc32(char *buffer, int len);
+u32 ssh_crc32(const char *buf, u32 len);
 
 /* auth1.c */
 int ssh_userauth1_none(SSH_SESSION *session, const char *username);
