@@ -7,6 +7,8 @@ version 0.3 (released xxxx-xx-xx)
   * Added error checking to all functions.
   * Added const to arguments where it was needed.
   * Added a channel_get_exit_status() function.
+  * Added a channel_read_buffer() function, channel_read() is now
+    a POSIX like function.
   * Added a more generic auth callback function.
   * Added printf attribute checking to log and error functions.#
   * Added NSIS build support with CPack.
@@ -14,7 +16,7 @@ version 0.3 (released xxxx-xx-xx)
   * Added API documentation for all SFTP functions.
   * Fixed known_hosts parsing.
   * Fixed a lot of build warnings.
-  * Fixed Windows build.
+  * Fixed the Windows build.
   * Fixed a lot of memory leaks.
   * Switched to CMake build system.
   * Improved performance.
