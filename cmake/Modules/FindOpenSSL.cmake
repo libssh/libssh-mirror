@@ -91,16 +91,19 @@ else (OPENSSL_LIBRARIES AND OPENSSL_INCLUDE_DIRS)
   mark_as_advanced(CRYPTO_LIBRARY)
 
   if (SSL_LIBRARY)
-    set(SSL_FOUND TRUE)
+    set(SSL_FOUND TRUE CACHE INTERNAL "Wether the ssl library has been found" FORCE)
   endif (SSL_LIBRARY)
+
   if (SSLEAY32_LIBRARY)
-    set(SSLEAY32_FOUND TRUE)
+    set(SSLEAY32_FOUND TRUE CACHE INTERNAL "Wether the ssleay32 library has been found" FORCE)
   endif (SSLEAY32_LIBRARY)
+
   if (SSLEAY32MD_LIBRARY)
-    set(SSLEAY32MD_FOUND TRUE)
+    set(SSLEAY32MD_FOUND TRUE CACHE INTERNAL "Wether the ssleay32MD library has been found" FORCE)
   endif (SSLEAY32MD_LIBRARY)
+
   if (CRYPTO_LIBRARY)
-    set(CRYPTO_FOUND TRUE)
+    set(CRYPTO_FOUND TRUE CACHE INTERNAL "Wether the crypto library has been found" FORCE)
   endif (CRYPTO_LIBRARY)
 
   set(OPENSSL_INCLUDE_DIRS
@@ -113,18 +116,21 @@ else (OPENSSL_LIBRARIES AND OPENSSL_INCLUDE_DIRS)
       ${SSL_LIBRARY}
     )
   endif (SSL_FOUND)
+
   if (SSLEAY32_FOUND)
     set(OPENSSL_LIBRARIES
       ${OPENSSL_LIBRARIES}
       ${SSLEAY32_LIBRARY}
     )
   endif (SSLEAY32_FOUND)
+
   if (SSLEAY32MD_FOUND)
     set(OPENSSL_LIBRARIES
       ${OPENSSL_LIBRARIES}
       ${SSLEAY32MD_LIBRARY}
     )
   endif (SSLEAY32MD_FOUND)
+
   if (CRYPTO_FOUND)
     set(OPENSSL_LIBRARIES
       ${OPENSSL_LIBRARIES}
