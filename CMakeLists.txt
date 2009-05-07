@@ -42,9 +42,9 @@ find_package(OpenSSL)
 
 if (NOT CRYPTO_LIBRARY)
   find_package(GCrypt)
-  if (NOT GCRYPT_LIBRARY)
+  if (NOT GCRYPT_FOUND)
     message(FATAL_ERROR "Could not find OpenSSL or GCrypt")
-  endif (NOT GCRYPT_LIBRARY)
+  endif (NOT GCRYPT_FOUND)
 endif (NOT CRYPTO_LIBRARY)
 
 # config.h checks

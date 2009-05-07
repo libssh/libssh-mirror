@@ -42,7 +42,7 @@ else (GCRYPT_LIBRARIES AND GCRYPT_INCLUDE_DIRS)
   mark_as_advanced(GCRYPT_LIBRARY)
 
   if (GCRYPT_LIBRARY)
-    set(GCRYPT_FOUND TRUE)
+    set(GCRYPT_FOUND TRUE CACHE INTERNAL "Wether the gcrypt library has been found" FORCE)
   endif (GCRYPT_LIBRARY)
 
   set(GCRYPT_INCLUDE_DIRS
