@@ -10,7 +10,7 @@ version 0.3 (released xxxx-xx-xx)
   * Added a channel_read_buffer() function, channel_read() is now
     a POSIX like function.
   * Added a more generic auth callback function.
-  * Added printf attribute checking to log and error functions.#
+  * Added printf attribute checking for log and error functions.
   * Added NSIS build support with CPack.
   * Added openssh hashed host support.
   * Added API documentation for all SFTP functions.
