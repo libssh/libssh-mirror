@@ -780,8 +780,8 @@ void ssh_message_free(SSH_MESSAGE *msg){
       SAFE_FREE(msg->channel_request.subsystem);
       break;
   }
-  memset(msg, 0, sizeof(*msg));
-  SAFE_FREE(msg);
+  ZERO_STRUCTP(msg);
 }
+
 /** @}
  */
