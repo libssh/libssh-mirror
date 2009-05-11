@@ -63,9 +63,9 @@ int main(int argc, char **argv){
       printf("error accepting a connection : %s\n",ssh_get_error(ssh_bind));
       return 1;
     }
-    printf("Socket connecté : %d\n",ssh_get_fd(session));
+    printf("Socket connected: fd = %d\n", ssh_get_fd(session));
     if(ssh_accept(session)){
-        printf("ssh_accept : %s\n",ssh_get_error(session));
+        printf("ssh_accept: %s\n",ssh_get_error(session));
         return 1;
     }
     do {
@@ -99,7 +99,7 @@ int main(int argc, char **argv){
         ssh_message_free(message);
     } while (!auth);
     if(!auth){
-        printf("error : %s\n",ssh_get_error(session));
+        printf("auth error: %s\n",ssh_get_error(session));
 	ssh_finalize();
         return 1;
     }
