@@ -300,8 +300,8 @@ struct agent_struct {
 };
 
 struct keys_struct {
-  const char *private;
-  const char *public;
+  const char *privatekey;
+  const char *publickey;
 };
 
 struct ssh_session {

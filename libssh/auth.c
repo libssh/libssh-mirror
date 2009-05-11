@@ -749,20 +749,20 @@ error:
 
 static struct keys_struct keytab[] = {
   {
-    .private = "%s/.ssh/identity",
-    .public = "%s/.ssh/identity.pub"
+    .privatekey = "%s/.ssh/identity",
+    .publickey = "%s/.ssh/identity.pub"
   },
   {
-    .private = "%s/.ssh/id_dsa",
-    .public = "%s/.ssh/id_dsa.pub",
+    .privatekey = "%s/.ssh/id_dsa",
+    .publickey = "%s/.ssh/id_dsa.pub",
   },
   {
-    .private = "%s/.ssh/id_rsa",
-    .public = "%s/.ssh/id_rsa.pub",
+    .privatekey = "%s/.ssh/id_rsa",
+    .publickey = "%s/.ssh/id_rsa.pub",
   },
   {
-    .private = NULL,
-    .public = NULL
+    .privatekey = NULL,
+    .publickey = NULL
   }
 };
 
@@ -890,8 +890,8 @@ int ssh_userauth_autopubkey(SSH_SESSION *session, const char *passphrase) {
     }
     sprintf(id, "%s.pub", session->options->identity);
 
-    keytab[size - 1].private = session->options->identity;
-    keytab[size - 1].public = id;
+    keytab[size - 1].privatekey = session->options->identity;
+    keytab[size - 1].publickey = id;
   }
 
   for (i = 0, pubkey = try_publickey_from_file(session, keytab[i],
@@ -906,8 +906,8 @@ int ssh_userauth_autopubkey(SSH_SESSION *session, const char *passphrase) {
     rc = ssh_userauth_offer_pubkey(session, NULL, type, pubkey);
     if (rc == SSH_AUTH_ERROR){
       if (id != NULL) {
-        keytab[size - 1].private = NULL;
-        keytab[size - 1].public  = NULL;
+        keytab[size - 1].privatekey = NULL;
+        keytab[size - 1].publickey  = NULL;
         SAFE_FREE(id);
       }
       string_free(pubkey);
@@ -941,8 +941,8 @@ int ssh_userauth_autopubkey(SSH_SESSION *session, const char *passphrase) {
     rc = ssh_userauth_pubkey(session, NULL, pubkey, privkey);
     if (rc == SSH_AUTH_ERROR) {
       if (id != NULL) {
-        keytab[size - 1].private = NULL;
-        keytab[size - 1].public  = NULL;
+        keytab[size - 1].privatekey = NULL;
+        keytab[size - 1].publickey  = NULL;
         SAFE_FREE(id);
       }
       string_free(pubkey);
@@ -970,8 +970,8 @@ int ssh_userauth_autopubkey(SSH_SESSION *session, const char *passphrase) {
     privatekey_free(privkey);
     SAFE_FREE(privkeyfile);
     if (id != NULL) {
-      keytab[size - 1].private = NULL;
-      keytab[size - 1].public  = NULL;
+      keytab[size - 1].privatekey = NULL;
+      keytab[size - 1].publickey  = NULL;
       SAFE_FREE(id);
     }
 
@@ -983,8 +983,8 @@ int ssh_userauth_autopubkey(SSH_SESSION *session, const char *passphrase) {
       "Tried every public key, none matched");
   ssh_set_error(session,SSH_NO_ERROR,"No public key matched");
   if (id) {
-    keytab[size - 1].private = NULL;
-    keytab[size - 1].public  = NULL;
+    keytab[size - 1].privatekey = NULL;
+    keytab[size - 1].publickey  = NULL;
     SAFE_FREE(id);
   }
 

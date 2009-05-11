@@ -938,11 +938,11 @@ STRING *try_publickey_from_file(SSH_SESSION *session, struct keys_struct keytab,
     }
   }
 
-  pub = keytab.public;
+  pub = keytab.publickey;
   if (pub == NULL) {
     return NULL;
   }
-  priv = keytab.private;
+  priv = keytab.privatekey;
   if (priv == NULL) {
     return NULL;
   }
