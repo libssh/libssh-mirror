@@ -663,10 +663,6 @@ SSH_MESSAGE *ssh_message_get(SSH_SESSION *session) {
 
   enter_function();
 
-  if (msg == NULL) {
-    goto error;
-  }
-
   do {
     if ((packet_read(session) != SSH_OK) ||
         (packet_translate(session) != SSH_OK)) {
