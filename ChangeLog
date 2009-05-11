@@ -14,6 +14,7 @@ version 0.3 (released xxxx-xx-xx)
   * Added NSIS build support with CPack.
   * Added openssh hashed host support.
   * Added API documentation for all SFTP functions.
+  * Added a ssh_bind_set_fd() function.
   * Fixed known_hosts parsing.
   * Fixed a lot of build warnings.
   * Fixed the Windows build.
