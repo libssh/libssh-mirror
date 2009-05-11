@@ -19,6 +19,7 @@ version 0.3 (released xxxx-xx-xx)
   * Fixed a lot of build warnings.
   * Fixed the Windows build.
   * Fixed a lot of memory leaks.
+  * Fixed a double free corruption in the server support.
   * Switched to CMake build system.
   * Improved performance.
 
