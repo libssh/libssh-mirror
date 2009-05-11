@@ -1253,7 +1253,7 @@ int channel_request_sftp( CHANNEL *channel){
 int channel_request_env(CHANNEL *channel, const char *name, const char *value) {
   BUFFER *buffer = NULL;
   STRING *str = NULL;
-  int rc;
+  int rc = SSH_ERROR;
 
   buffer = buffer_new();
   if (buffer == NULL) {
