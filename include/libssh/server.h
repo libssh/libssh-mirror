@@ -21,6 +21,12 @@
  * vim: ts=2 sw=2 et cindent
  */
 
+/**
+ * @defgroup ssh_server SSH Server
+ * @addtogroup ssh_server
+ * @{
+ */
+
 #ifndef SERVER_H
 #define SERVER_H
 
@@ -37,7 +43,8 @@ SSH_BIND *ssh_bind_new(void);
 void ssh_bind_set_options(SSH_BIND *ssh_bind, SSH_OPTIONS *options);
 int ssh_bind_listen(SSH_BIND *ssh_bind);
 void ssh_bind_set_blocking(SSH_BIND *ssh_bind,int blocking);
-int ssh_bind_get_fd(SSH_BIND *ssh_bind);
+socket_t ssh_bind_get_fd(SSH_BIND *ssh_bind);
+void ssh_bind_set_fd(SSH_BIND *ssh_bind, socket_t fd);
 void ssh_bind_fd_toaccept(SSH_BIND *ssh_bind);
 SSH_SESSION *ssh_bind_accept(SSH_BIND *ssh_bind);
 void ssh_bind_free(SSH_BIND *ssh_bind);
@@ -95,3 +102,7 @@ int ssh_message_channel_request_reply_success(SSH_MESSAGE *msg);
 #endif /* __cplusplus */
 
 #endif /* SERVER_H */
+
+/**
+ * @}
+ */

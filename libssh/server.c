@@ -167,8 +167,12 @@ void ssh_bind_set_blocking(SSH_BIND *ssh_bind, int blocking) {
   ssh_bind->blocking = blocking ? 1 : 0;
 }
 
-int ssh_bind_get_fd(SSH_BIND *ssh_bind) {
+socket_t ssh_bind_get_fd(SSH_BIND *ssh_bind) {
   return ssh_bind->bindfd;
+}
+
+void ssh_bind_set_fd(SSH_BIND *ssh_bind, socket_t fd) {
+  ssh_bind->bindfd = fd;
 }
 
 void ssh_bind_fd_toaccept(SSH_BIND *ssh_bind) {
