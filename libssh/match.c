@@ -35,10 +35,6 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- * vim: ts=2 sw=2 et cindent
- */
-
 #include <ctype.h>
 #include <string.h>
 #include <sys/types.h>
@@ -186,3 +182,4 @@ int match_hostname(const char *host, const char *pattern, unsigned int len) {
   return match_pattern_list(host, pattern, len, 1);
 }
 
+/* vim: set ts=2 sw=2 et cindent: */

@@ -19,8 +19,6 @@
  * along with the SSH Library; see the file COPYING.  If not, write to
  * the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
  * MA 02111-1307, USA.
- *
- * vim: ts=2 sw=2 et cindent
  */
 
 /*
@@ -993,3 +991,5 @@ int crypt_set_algorithms_server(SSH_SESSION *session){
     leave_function();
     return SSH_OK;
 }
+
+/* vim: set ts=2 sw=2 et cindent: */

@@ -19,8 +19,6 @@
  * along with the SSH Library; see the file COPYING.  If not, write to
  * the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
  * MA 02111-1307, USA.
- *
- * vim: ts=2 sw=2 et cindent
  */
 
 /* just the dirtiest part of code i ever made */
@@ -285,3 +283,4 @@ unsigned char *bin_to_base64(const unsigned char *source, int len) {
   return base64;
 }
 
+/* vim: set ts=2 sw=2 et cindent: */

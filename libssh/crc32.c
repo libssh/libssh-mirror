@@ -19,8 +19,6 @@
  * along with the SSH Library; see the file COPYING.  If not, write to
  * the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
  * MA 02111-1307, USA.
- *
- * vim: ts=2 sw=2 et cindent
  */
 
 #include "libssh/priv.h"
@@ -91,3 +89,4 @@ u32 ssh_crc32(const char *buf, u32 len) {
   return ret;
 }
 
+/* vim: set ts=2 sw=2 et cindent: */

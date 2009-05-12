@@ -19,8 +19,6 @@
  * along with the SSH Library; see the file COPYING.  If not, write to
  * the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
  * MA 02111-1307, USA.
- *
- * vim: ts=2 sw=2 et cindent
  */
 
 #include <stdlib.h>
@@ -395,4 +393,4 @@ struct string_struct *buffer_get_mpint(struct buffer_struct *buffer) {
   return str;
 }
 /** @} */
-
+/* vim: set ts=2 sw=2 et cindent: */

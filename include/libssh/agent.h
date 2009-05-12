@@ -46,3 +46,4 @@
 #define SSH_AGENT_OLD_SIGNATURE                  0x01
 
 #endif /* __AGENT_H */
+/* vim: set ts=2 sw=2 et cindent: */

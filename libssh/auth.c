@@ -20,8 +20,6 @@
  * along with the SSH Library; see the file COPYING.  If not, write to
  * the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
  * MA 02111-1307, USA.
- *
- * vim: ts=2 sw=2 et cindent
  */
 
 #include "libssh/priv.h"
@@ -1498,4 +1496,3 @@ int ssh_userauth_kbdint_setanswer(SSH_SESSION *session, unsigned int i,
 }
 
 /** @} */
-

@@ -19,8 +19,6 @@
  * along with the SSH Library; see the file COPYING.  If not, write to
  * the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
  * MA 02111-1307, USA.
- *
- * vim: ts=2 sw=2 et cindent
  */
 
 #include <stdlib.h>
@@ -1408,3 +1406,4 @@ STRING *ssh_sign_session_id(SSH_SESSION *session, PRIVATE_KEY *privatekey) {
 }
 
 /** @} */
+/* vim: set ts=2 sw=2 et cindent: */
