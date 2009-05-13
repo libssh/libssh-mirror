@@ -163,8 +163,8 @@ static int channel_open(CHANNEL *channel, const char *type_c, int window,
 
       if (channel->local_channel != ntohl(tmp)) {
         ssh_set_error(session, SSH_FATAL,
-            "Server answered with sender channel number %d instead of given %d",
-            ntohl(tmp),
+            "Server answered with sender channel number %lu instead of given %u",
+            (long unsigned int) ntohl(tmp),
             channel->local_channel);
         leave_function();
         return -1;
@@ -208,9 +208,9 @@ static int channel_open(CHANNEL *channel, const char *type_c, int window,
         }
 
         ssh_set_error(session, SSH_REQUEST_DENIED,
-            "Channel opening failure: channel %d error (%d) %s",
+            "Channel opening failure: channel %u error (%lu) %s",
             channel->local_channel,
-            ntohl(code),
+            (long unsigned int) ntohl(code),
             error);
         SAFE_FREE(error);
 
@@ -295,7 +295,8 @@ static CHANNEL *channel_from_msg(SSH_SESSION *session) {
   channel = ssh_channel_from_local(session, ntohl(chan));
   if (channel == NULL) {
     ssh_set_error(session, SSH_FATAL,
-        "Server specified invalid channel %d", ntohl(chan));
+        "Server specified invalid channel %lu",
+        (long unsigned int) ntohl(chan));
   }
 
   return channel;

@@ -466,8 +466,8 @@ static int packet_send2(SSH_SESSION *session) {
 
   finallen = htonl(currentlen + padding + 1);
   ssh_log(session, SSH_LOG_RARE,
-      "%d bytes after comp + %d padding bytes = %d bytes packet",
-      currentlen, padding, (ntohl(finallen)));
+      "%d bytes after comp + %d padding bytes = %lu bytes packet",
+      currentlen, padding, (long unsigned int) ntohl(finallen));
 
   if (buffer_prepend_data(session->out_buffer, &padding, sizeof(u8)) < 0) {
     goto error;
