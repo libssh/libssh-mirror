@@ -5,7 +5,6 @@ include(InstallRequiredSystemLibraries)
 
 ### general settings
 set(CPACK_PACKAGE_NAME ${APPLICATION_NAME})
-set(CPACK_PACKAGE_VENDOR "${APPLICATION_NAME} developers")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "The SSH library")
 set(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_SOURCE_DIR}/README")
 set(CPACK_PACKAGE_VENDOR "The SSH Library Development Team")
@@ -33,7 +32,7 @@ set(CPACK_PACKAGE_INSTALL_DIRECTORY "libssh")
 
 set(CPACK_NSIS_DISPLAY_NAME "The SSH Library")
 set(CPACK_NSIS_COMPRESSOR "/SOLID zlib")
-set(CPACK_NSIS_MENU_LINKS "http://0xbadc0de.be/wiki/libssh:libssh" "libssh homepage")
+set(CPACK_NSIS_MENU_LINKS "http://www.libssh.org/" "libssh homepage")
 
 set(CPACK_PACKAGE_FILE_NAME ${APPLICATION_NAME}-${CPACK_PACKAGE_VERSION})
 
