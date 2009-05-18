@@ -11,15 +11,20 @@ version 0.3 (released xxxx-xx-xx)
     a POSIX like function.
   * Added a more generic auth callback function.
   * Added printf attribute checking for log and error functions.
+  * Added runtime function tracer support.
   * Added NSIS build support with CPack.
   * Added openssh hashed host support.
-  * Added API documentation for all SFTP functions.
+  * Added API documentation for all public functions.
+  * Added asynchronous SFTP read function.
   * Added a ssh_bind_set_fd() function.
   * Fixed known_hosts parsing.
   * Fixed a lot of build warnings.
   * Fixed the Windows build.
   * Fixed a lot of memory leaks.
   * Fixed a double free corruption in the server support.
+  * Fixed the "ssh_accept:" bug in server support.
+  * Fixed important channel bugs.
+  * Refactored the socket handling.
   * Switched to CMake build system.
   * Improved performance.
 
