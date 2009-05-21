@@ -1,7 +1,7 @@
 ChangeLog
 ==========
 
-version 0.3 (released xxxx-xx-xx)
+version 0.3 (released 2009-05-21)
   * Added support for ssh-agent authentication.
   * Added POSIX like sftp implementation.
   * Added error checking to all functions.
