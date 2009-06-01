@@ -1,2 +1,0 @@
-debian/tmp/usr/include/*
-debian/tmp/usr/lib/libssh.{a,la,so}
