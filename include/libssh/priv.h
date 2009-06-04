@@ -133,6 +133,28 @@ typedef BN_CTX* bignum_CTX;
 #include <sys/time.h>
 #endif
 
+/* poll support */
+#ifdef HAVE_POLL
+#include <poll.h>
+typedef struct pollfd pollfd_t;
+#else /* HAVE_POLL */
+typedef struct pollfd_s {
+  socket_t fd;      /* file descriptor */
+  short events;     /* requested events */
+  short revents;    /* returned events */
+} pollfd_t;
+
+#define POLLIN    0x001  /* There is data to read.  */
+#define POLLPRI   0x002  /* There is urgent data to read.  */
+#define POLLOUT   0x004  /* Writing now will not block.  */
+
+#define POLLERR   0x008  /* Error condition.  */
+#define POLLHUP   0x010  /* Hung up.  */
+#define POLLNVAL  0x020  /* Invalid polling request.  */
+
+typedef unsigned long int nfds_t;
+#endif /* HAVE_POLL */
+
 /* wrapper.c */
 MD5CTX md5_init(void);
 void md5_update(MD5CTX c, const void *data, unsigned long len);
@@ -473,6 +495,9 @@ STRING *agent_sign_data(struct ssh_session *session,
     struct buffer_struct *data,
     struct public_key_struct *pubkey);
 #endif
+
+/* poll.c */
+int ssh_poll(pollfd_t *fds, nfds_t nfds, int timeout);
 
 /* socket.c */
 

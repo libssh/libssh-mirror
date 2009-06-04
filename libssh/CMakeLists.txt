@@ -84,6 +84,7 @@ set(libssh_SRCS
   misc.c
   options.c
   packet.c
+  poll.c
   session.c
   socket.c
   string.c
