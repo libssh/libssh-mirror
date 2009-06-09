@@ -25,6 +25,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#ifndef _WIN32
+#include <arpa/inet.h>
+#endif
+
 #include "config.h"
 #include "libssh/priv.h"
 #include "libssh/ssh2.h"

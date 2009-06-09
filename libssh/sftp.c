@@ -31,6 +31,10 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#ifndef _WIN32
+#include <arpa/inet.h>
+#endif
+
 #include "libssh/priv.h"
 #include "libssh/ssh2.h"
 #include "libssh/sftp.h"

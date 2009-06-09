@@ -23,6 +23,11 @@
 
 #include <stdlib.h>
 #include <string.h>
+
+#ifndef _WIN32
+#include <arpa/inet.h>
+#endif
+
 #include "libssh/priv.h"
 
 /** \defgroup ssh_buffer SSH Buffers

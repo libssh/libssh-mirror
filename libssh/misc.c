@@ -37,6 +37,7 @@
 #include <winsock2.h>
 #else
 #include <pwd.h>
+#include <arpa/inet.h>
 #endif
 
 #include "libssh/priv.h"

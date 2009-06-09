@@ -34,6 +34,11 @@
 
 #include <string.h>
 #include <stdlib.h>
+
+#ifndef _WIN32
+#include <arpa/inet.h>
+#endif
+
 #include "libssh/libssh.h"
 #include "libssh/priv.h"
 #include "libssh/server.h"

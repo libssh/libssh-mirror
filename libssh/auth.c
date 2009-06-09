@@ -22,11 +22,16 @@
  * MA 02111-1307, USA.
  */
 
-#include "libssh/priv.h"
-#include "libssh/ssh2.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
+#ifndef _WIN32
+#include <arpa/inet.h>
+#endif
+
+#include "libssh/priv.h"
+#include "libssh/ssh2.h"
 
 /** \defgroup ssh_auth SSH Authentication functions
  * \brief functions to authenticate to servers

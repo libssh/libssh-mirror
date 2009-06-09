@@ -29,6 +29,11 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <ctype.h>
+
+#ifndef _WIN32
+#include <arpa/inet.h>
+#endif
+
 #include "libssh/priv.h"
 
 #ifdef HAVE_LIBGCRYPT

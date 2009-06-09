@@ -44,6 +44,10 @@
 #include <poll.h>
 #include <unistd.h>
 
+#ifndef _WIN32
+#include <arpa/inet.h>
+#endif
+
 #include "libssh/agent.h"
 #include "libssh/priv.h"
 

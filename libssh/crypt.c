@@ -26,6 +26,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifndef _WIN32
+#include <arpa/inet.h>
+#endif
+
 #ifdef OPENSSL_CRYPTO
 #include <openssl/blowfish.h>
 #include <openssl/evp.h>
