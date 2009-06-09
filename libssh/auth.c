@@ -1075,10 +1075,10 @@ static void kbdint_clean(struct ssh_kbdint *kbd) {
  * of the draft */
 static int kbdauth_init(SSH_SESSION *session, const char *user,
     const char *submethods) {
-  STRING *usr;
-  STRING *sub;
-  STRING *service;
-  STRING *method;
+  STRING *usr = NULL;
+  STRING *sub = NULL;
+  STRING *service = NULL;
+  STRING *method = NULL;
   int rc = SSH_AUTH_ERROR;
 
   enter_function();
