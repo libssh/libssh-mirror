@@ -905,7 +905,8 @@ int channel_write(CHANNEL *channel, const void *data, u32 len) {
       while(channel->remote_window == 0) {
         /* parse every incoming packet */
         if (packet_wait(channel->session, 0, 0) == SSH_ERROR) {
-          goto error;
+          leave_function();
+          return SSH_ERROR;
         }
       }
       effectivelen = len > channel->remote_window ? channel->remote_window : len;
