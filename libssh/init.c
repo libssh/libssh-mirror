@@ -32,11 +32,28 @@
  */
 
 /**
+ * @brief initialize global cryptographic data structures.
+ *
+ * This function should only be called once, at the begining of the program, in the main thread. It may be omitted if your program is not multithreaded.
+ *
+ * @returns 0
+ */
+int ssh_init(void) {
+  if(ssh_crypto_init())
+    return -1;
+  if(ssh_socket_init())
+    return -1;
+  return 0;
+}
+
+
+/**
  * @brief Finalize and cleanup all libssh and cryptographic data structures.
  *
  * This function should only be called once, at the end of the program!
  *
- * @returns 0
+ * @returns -1 in case of error
+   @returns 0 otherwise
  */
 int ssh_finalize(void) {
   ssh_crypto_finalize();

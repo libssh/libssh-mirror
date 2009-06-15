@@ -375,6 +375,7 @@ int ssh_userauth_kbdint_setanswer(SSH_SESSION *session, unsigned int i,
 
 
 /* init.c */
+int ssh_init(void);
 int ssh_finalize(void);
 
 #ifdef __cplusplus
