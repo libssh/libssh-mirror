@@ -467,15 +467,10 @@ int ssh_connect(SSH_SESSION *session) {
   session->alive = 0;
   session->client = 1;
 
-  if (ssh_crypto_init() < 0) {
+  if (ssh_init() < 0) {
     leave_function();
     return SSH_ERROR;
   }
-  if (ssh_socket_init() < 0) {
-    leave_function();
-    return SSH_ERROR;
-  }
-
   if (options->fd == -1 && options->host == NULL) {
     ssh_set_error(session, SSH_FATAL, "Hostname required");
     leave_function();

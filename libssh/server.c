@@ -135,7 +135,7 @@ int ssh_bind_listen(SSH_BIND *ssh_bind) {
     return -1;
   }
 
-  if (ssh_socket_init() < 0) {
+  if (ssh_init() < 0) {
     return -1;
   }
 
@@ -476,10 +476,6 @@ static int dh_handshake_server(SSH_SESSION *session) {
 /* Do the banner and key exchange */
 int ssh_accept(SSH_SESSION *session) {
   if (ssh_send_banner(session, 1) < 0) {
-    return -1;
-  }
-
-  if (ssh_crypto_init() < 0) {
     return -1;
   }
 
