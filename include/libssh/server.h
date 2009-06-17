@@ -126,6 +126,7 @@ int ssh_accept(SSH_SESSION *session);
 #define SSH_AUTH_REQUEST 1
 #define SSH_CHANNEL_REQUEST_OPEN 2
 #define SSH_CHANNEL_REQUEST 3
+#define SSH_SERVICE_REQUEST 4
 
 #define SSH_AUTH_NONE (1<<0)
 #define SSH_AUTH_PASSWORD (1<<1)
@@ -149,6 +150,7 @@ int ssh_accept(SSH_SESSION *session);
 
 typedef struct ssh_message SSH_MESSAGE;
 
+SSH_MESSAGE *ssh_message_retrieve(SSH_SESSION *session, u32 packettype);
 SSH_MESSAGE *ssh_message_get(SSH_SESSION *session);
 int ssh_message_type(SSH_MESSAGE *msg);
 int ssh_message_subtype(SSH_MESSAGE *msg);
@@ -167,6 +169,10 @@ CHANNEL *ssh_message_channel_request_channel(SSH_MESSAGE *msg);
 char *ssh_message_channel_request_pty_term(SSH_MESSAGE *msg);
 char *ssh_message_channel_request_subsystem(SSH_MESSAGE *msg);
 int ssh_message_channel_request_reply_success(SSH_MESSAGE *msg);
+
+int ssh_message_service_reply_success(SSH_MESSAGE *msg);
+char *ssh_message_service_service(SSH_MESSAGE *msg);
+
 
 #ifdef __cplusplus
 }

@@ -427,6 +427,10 @@ struct ssh_channel_request_open {
     u16 destination_port;
 };
 
+struct ssh_service_request {
+    char *service;
+};
+
 struct ssh_channel_request {
     int type;
     CHANNEL *channel;
@@ -454,6 +458,7 @@ struct ssh_message {
     struct ssh_auth_request auth_request;
     struct ssh_channel_request_open channel_request_open;
     struct ssh_channel_request channel_request;
+    struct ssh_service_request service_request;
 };
 
 #ifndef _WIN32

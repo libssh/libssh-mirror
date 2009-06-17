@@ -61,45 +61,66 @@ static SSH_MESSAGE *message_new(SSH_SESSION *session){
   return msg;
 }
 
-static int handle_service_request(SSH_SESSION *session) {
+static SSH_MESSAGE *handle_service_request(SSH_SESSION *session) {
   STRING *service = NULL;
   char *service_c = NULL;
-  int rc = -1;
+  SSH_MESSAGE *msg=NULL;
 
   enter_function();
 
   service = buffer_get_ssh_string(session->in_buffer);
   if (service == NULL) {
     ssh_set_error(session, SSH_FATAL, "Invalid SSH_MSG_SERVICE_REQUEST packet");
-    leave_function();
-    return -1;
+    goto error;
   }
 
   service_c = string_to_char(service);
   if (service_c == NULL) {
     goto error;
   }
-
   ssh_log(session, SSH_LOG_PACKET,
-      "Sending a SERVICE_ACCEPT for service %s", service_c);
-  SAFE_FREE(service_c);
-
-  if (buffer_add_u8(session->out_buffer, SSH2_MSG_SERVICE_ACCEPT) < 0) {
+        "Received a SERVICE_REQUEST for service %s", service_c);
+  msg=message_new(session);
+  if(!msg){
+    SAFE_FREE(service_c);
     goto error;
   }
-  if (buffer_add_ssh_string(session->out_buffer, service) < 0) {
-    goto error;
-  }
-  if (packet_send(session) != SSH_OK) {
-    goto error;
-  }
-
-  rc = 0;
-error:
-  string_free(service);
+  msg->type=SSH_SERVICE_REQUEST;
+  msg->service_request.service=service_c;
+  error:
   leave_function();
+  return msg;
+}
 
-  return rc;
+static int ssh_message_service_request_reply_default(SSH_MESSAGE *msg) {
+  /* The only return code accepted by specifications are success or disconnect */
+  return ssh_message_service_reply_success(msg);
+}
+int ssh_message_service_reply_success(SSH_MESSAGE *msg) {
+  struct string_struct *service;
+  SSH_SESSION *session=msg->session;
+  if (msg == NULL) {
+    return SSH_ERROR;
+  }
+  ssh_log(session, SSH_LOG_PACKET,
+      "Sending a SERVICE_ACCEPT for service %s", msg->service_request.service);
+  if (buffer_add_u8(session->out_buffer, SSH2_MSG_SERVICE_ACCEPT) < 0) {
+    return -1;
+  }
+  service=string_from_char(msg->service_request.service);
+  if (buffer_add_ssh_string(session->out_buffer, service) < 0) {
+    string_free(service);
+    return -1;
+  }
+  string_free(service);
+  return packet_send(msg->session);
+}
+
+char *ssh_message_service_service(SSH_MESSAGE *msg){
+  if (msg == NULL) {
+    return NULL;
+  }
+  return msg->service_request.service;
 }
 
 static int handle_unimplemented(SSH_SESSION *session) {
@@ -661,52 +682,48 @@ static int ssh_message_channel_request_reply_default(SSH_MESSAGE *msg) {
   return SSH_OK;
 }
 
+SSH_MESSAGE *ssh_message_retrieve(SSH_SESSION *session, u32 packettype){
+  SSH_MESSAGE *msg=NULL;
+  enter_function();
+  switch(packettype) {
+    case SSH2_MSG_SERVICE_REQUEST:
+      msg=handle_service_request(session);
+      break;
+    case SSH2_MSG_USERAUTH_REQUEST:
+      msg = handle_userauth_request(session);
+      break;
+    case SSH2_MSG_CHANNEL_OPEN:
+      msg = handle_channel_request_open(session);
+      break;
+    case SSH2_MSG_CHANNEL_REQUEST:
+      msg = handle_channel_request(session);
+      break;
+    default:
+      if (handle_unimplemented(session) == 0) {
+        ssh_set_error(session, SSH_FATAL,
+            "Unhandled message %d\n", session->in_packet.type);
+      }
+  }
+  leave_function();
+  return msg;
+}
+
+/* \brief blocking message retrieval
+ * \bug does anything that is not a message, like a channel read/write
+ */
 SSH_MESSAGE *ssh_message_get(SSH_SESSION *session) {
   SSH_MESSAGE *msg = NULL;
-
   enter_function();
-
   do {
     if ((packet_read(session) != SSH_OK) ||
         (packet_translate(session) != SSH_OK)) {
-      goto error;
+      leave_function();
+      return NULL;
     }
-    switch(session->in_packet.type) {
-      case SSH2_MSG_SERVICE_REQUEST:
-        if (handle_service_request(session) < 0) {
-          goto error;
-        }
-        break;
-      case SSH2_MSG_IGNORE:
-      case SSH2_MSG_DEBUG:
-        break;
-      case SSH2_MSG_USERAUTH_REQUEST:
-        msg = handle_userauth_request(session);
-
-        leave_function();
-        return msg;
-      case SSH2_MSG_CHANNEL_OPEN:
-        msg = handle_channel_request_open(session);
-
-        leave_function();
-        return msg;
-      case SSH2_MSG_CHANNEL_REQUEST:
-        msg = handle_channel_request(session);
-        leave_function();
-
-        return msg;
-      default:
-        if (handle_unimplemented(session) == 0) {
-          ssh_set_error(session, SSH_FATAL,
-              "Unhandled message %d\n", session->in_packet.type);
-        }
-        goto error;
-    }
-  } while(1);
-
-error:
+  } while(session->in_packet.type==SSH2_MSG_IGNORE || session->in_packet.type==SSH2_MSG_DEBUG);
+  msg=ssh_message_retrieve(session,session->in_packet.type);
   leave_function();
-  return NULL;
+  return msg;
 }
 
 int ssh_message_type(SSH_MESSAGE *msg) {
@@ -746,6 +763,8 @@ int ssh_message_reply_default(SSH_MESSAGE *msg) {
       return ssh_message_channel_request_open_reply_default(msg);
     case SSH_CHANNEL_REQUEST:
       return ssh_message_channel_request_reply_default(msg);
+    case SSH_SERVICE_REQUEST:
+      return ssh_message_service_request_reply_default(msg);
     default:
       ssh_log(msg->session, SSH_LOG_PACKET,
           "Don't know what to default reply to %d type",
@@ -784,6 +803,7 @@ void ssh_message_free(SSH_MESSAGE *msg){
       break;
   }
   ZERO_STRUCTP(msg);
+  SAFE_FREE(msg);
 }
 
 /**
