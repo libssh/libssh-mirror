@@ -315,7 +315,7 @@ static void channel_rcv_change_window(SSH_SESSION *session) {
 
   channel = channel_from_msg(session);
   if (channel == NULL) {
-    ssh_log(session, SSH_LOG_FUNCTIONS, ssh_get_error(session));
+    ssh_log(session, SSH_LOG_FUNCTIONS, "%s", ssh_get_error(session));
   }
 
   rc = buffer_get_u32(session->in_buffer, &bytes);
@@ -413,7 +413,7 @@ static void channel_rcv_eof(SSH_SESSION *session) {
 
   channel = channel_from_msg(session);
   if (channel == NULL) {
-    ssh_log(session, SSH_LOG_FUNCTIONS, ssh_get_error(session));
+    ssh_log(session, SSH_LOG_FUNCTIONS, "%s", ssh_get_error(session));
     leave_function();
     return;
   }
@@ -435,7 +435,7 @@ static void channel_rcv_close(SSH_SESSION *session) {
 
   channel = channel_from_msg(session);
   if (channel == NULL) {
-    ssh_log(session, SSH_LOG_FUNCTIONS, ssh_get_error(session));
+    ssh_log(session, SSH_LOG_FUNCTIONS, "%s", ssh_get_error(session));
     leave_function();
     return;
   }
@@ -477,7 +477,7 @@ static void channel_rcv_request(SSH_SESSION *session) {
 
   channel = channel_from_msg(session);
   if (channel == NULL) {
-    ssh_log(session, SSH_LOG_FUNCTIONS, ssh_get_error(session));
+    ssh_log(session, SSH_LOG_FUNCTIONS,"%s", ssh_get_error(session));
     leave_function();
     return;
   }
