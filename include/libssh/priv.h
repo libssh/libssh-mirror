@@ -722,6 +722,10 @@ int ssh_handle_packets(SSH_SESSION *session);
 /* match.c */
 int match_hostname(const char *host, const char *pattern, unsigned int len);
 
+/* messages.c */
+
+void message_handle(SSH_SESSION *session, u32 type);
+
 /* log.c */
 
 #define _enter_function(sess) \

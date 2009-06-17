@@ -806,6 +806,18 @@ void ssh_message_free(SSH_MESSAGE *msg){
   SAFE_FREE(msg);
 }
 
+/** \internal
+ * \brief handle various SSH request messages and stack them for callback
+ * \param session SSH session
+ * \param type packet type
+ * \returns nothing
+ */
+void message_handle(SSH_SESSION *session, u32 type){
+  SSH_MESSAGE *msg=ssh_message_retrieve(session,type);
+  if(msg){
+    /* TODO store msg somewhere */
+  }
+}
 /**
  * @}
  */

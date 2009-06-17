@@ -594,7 +594,7 @@ int packet_send(SSH_SESSION *session) {
 void packet_parse(SSH_SESSION *session) {
   STRING *error_s = NULL;
   char *error = NULL;
-  int type = session->in_packet.type;
+  u32 type = session->in_packet.type;
   u32 tmp;
 
 #ifdef HAVE_SSH1
@@ -652,8 +652,14 @@ void packet_parse(SSH_SESSION *session) {
       case SSH2_MSG_CHANNEL_EOF:
       case SSH2_MSG_CHANNEL_CLOSE:
         channel_handle(session,type);
+        return;
       case SSH2_MSG_IGNORE:
       case SSH2_MSG_DEBUG:
+        return;
+      case SSH2_MSG_SERVICE_REQUEST:
+      case SSH2_MSG_USERAUTH_REQUEST:
+      case SSH2_MSG_CHANNEL_OPEN:
+        message_handle(session,type);
         return;
       default:
         ssh_log(session, SSH_LOG_RARE, "Received unhandled packet %d", type);

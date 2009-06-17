@@ -542,6 +542,8 @@ static void channel_rcv_request(SSH_SESSION *session) {
     leave_function();
     return;
   }
+  /* TODO call message_handle since it handles channel requests as messages */
+  /* *but* reset buffer before !! */
   ssh_log(session, SSH_LOG_PACKET, "Unknown request %s", request);
   SAFE_FREE(request);
 
