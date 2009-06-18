@@ -149,5 +149,85 @@ const char *ssh_version(int req_version) {
   return NULL;
 }
 
+struct ssh_list *ssh_list_new(){
+  struct ssh_list *ret=malloc(sizeof(struct ssh_list));
+  if(!ret)
+    return ret;
+  ret->root=ret->end=NULL;
+  return ret;
+}
+
+void ssh_list_free(struct ssh_list *list){
+  struct ssh_iterator *ptr,*next;
+  ptr=list->root;
+  while(ptr){
+    next=ptr->next;
+    SAFE_FREE(ptr);
+    ptr=next;
+  }
+  SAFE_FREE(list);
+}
+
+struct ssh_iterator *ssh_list_get_iterator(const struct ssh_list *list){
+  return list->root;
+}
+
+static struct ssh_iterator *ssh_iterator_new(const void *data){
+  struct ssh_iterator *iterator=malloc(sizeof(struct ssh_iterator));
+  iterator->next=NULL;
+  iterator->data=data;
+  return iterator;
+}
+
+void ssh_list_add(struct ssh_list *list,const void *data){
+  struct ssh_iterator *iterator=ssh_iterator_new(data);
+  if(!list->end){
+    /* list is empty */
+    list->root=list->end=iterator;
+  } else {
+    /* put it on end of list */
+    list->end->next=iterator;
+    list->end=iterator;
+  }
+}
+
+void ssh_list_remove(struct ssh_list *list, struct ssh_iterator *iterator){
+  struct ssh_iterator *ptr,*prev;
+  prev=NULL;
+  ptr=list->root;
+  while(ptr && ptr != iterator){
+    prev=ptr;
+    ptr=ptr->next;
+  }
+  if(!ptr){
+    /* we did not find the element */
+    return;
+  }
+  /* unlink it */
+  if(prev)
+    prev->next=ptr->next;
+  /* if iterator was the head */
+  if(list->root == iterator)
+    list->root=iterator->next;
+  /* if iterator was the tail */
+  if(list->end == iterator)
+    list->end = prev;
+  SAFE_FREE(iterator);
+}
+
+const void *_ssh_list_get_head(struct ssh_list *list){
+  struct ssh_iterator *iterator=list->root;
+  const void *data;
+  if(!list->root)
+    return NULL;
+  data=iterator->data;
+  list->root=iterator->next;
+  if(list->end==iterator)
+    list->end=NULL;
+  SAFE_FREE(iterator);
+  return data;
+}
+
+
 /** @} */
 /* vim: set ts=2 sw=2 et cindent: */

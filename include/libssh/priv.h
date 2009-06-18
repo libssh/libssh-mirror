@@ -705,6 +705,41 @@ int ssh_file_readaccess_ok(const char *file);
 u64 ntohll(u64);
 #define htonll(x) ntohll(x)
 
+/* list processing */
+
+struct ssh_list {
+  struct ssh_iterator *root;
+  struct ssh_iterator *end;
+};
+
+struct ssh_iterator {
+  struct ssh_iterator *next;
+  const void *data;
+};
+
+struct ssh_list *ssh_list_new(void);
+void ssh_list_free(struct ssh_list *list);
+struct ssh_iterator *ssh_list_get_iterator(const struct ssh_list *list);
+void ssh_list_add(struct ssh_list *list, const void *data);
+void ssh_list_remove(struct ssh_list *list, struct ssh_iterator *iterator);
+
+/** @brief fetch the head element of a list and remove it from list
+ * @param list the ssh_list to use
+ * @return the first element of the list
+ */
+const void *_ssh_list_get_head(struct ssh_list *list);
+
+#define ssh_iterator_value(type, iterator)\
+  ((type)((iterator)->data))
+/** @brief fetch the head element of a list and remove it from list
+ * @param type type of the element to return
+ * @param list the ssh_list to use
+ * @return the first element of the list
+ */
+#define ssh_list_get_head(type, ssh_list)\
+  ((type)_ssh_list_head(ssh_list))
+
+
 /* channels1.c */
 int channel_open_session1(CHANNEL *channel);
 int channel_request_pty_size1(CHANNEL *channel, const char *terminal,
