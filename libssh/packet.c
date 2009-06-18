@@ -753,6 +753,9 @@ static int packet_wait2(SSH_SESSION *session, int type, int blocking) {
       case SSH2_MSG_CHANNEL_REQUEST:
       case SSH2_MSG_CHANNEL_EOF:
       case SSH2_MSG_CHANNEL_CLOSE:
+      case SSH2_MSG_SERVICE_REQUEST:
+      case SSH2_MSG_USERAUTH_REQUEST:
+      case SSH2_MSG_CHANNEL_OPEN:
         packet_parse(session);
         break;
       case SSH2_MSG_IGNORE:

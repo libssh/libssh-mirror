@@ -324,6 +324,8 @@ struct keys_struct {
   const char *publickey;
 };
 
+struct ssh_message;
+
 struct ssh_session {
     struct error_struct error;
     struct socket *socket;
@@ -386,7 +388,8 @@ struct ssh_session {
     /* auths accepted by server */
     int auth_methods;
     int hostkeys; /* contains type of host key wanted by client, in server impl */
-    struct ssh_message *ssh_message; /* ssh message */
+    struct ssh_list *ssh_message_list; /* list of delayed SSH messages */
+    int (*ssh_message_callback)( struct ssh_session *session,struct ssh_message *msg);
     int log_verbosity; /*cached copy of the option structure */
     int log_indent; /* indentation level in enter_function logs */
 };
@@ -737,7 +740,7 @@ const void *_ssh_list_get_head(struct ssh_list *list);
  * @return the first element of the list
  */
 #define ssh_list_get_head(type, ssh_list)\
-  ((type)_ssh_list_head(ssh_list))
+  ((type)_ssh_list_get_head(ssh_list))
 
 
 /* channels1.c */
@@ -760,6 +763,7 @@ int match_hostname(const char *host, const char *pattern, unsigned int len);
 /* messages.c */
 
 void message_handle(SSH_SESSION *session, u32 type);
+int ssh_execute_message_callbacks(SSH_SESSION *session);
 
 /* log.c */
 

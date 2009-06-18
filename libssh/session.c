@@ -125,7 +125,14 @@ void ssh_cleanup(SSH_SESSION *session) {
 
   privatekey_free(session->dsa_key);
   privatekey_free(session->rsa_key);
-  ssh_message_free(session->ssh_message);
+  if(session->ssh_message_list){
+    SSH_MESSAGE *msg;
+    while((msg=ssh_list_get_head(SSH_MESSAGE *,session->ssh_message_list))
+        != NULL){
+      ssh_message_free(msg);
+    }
+    ssh_list_free(session->ssh_message_list);
+  }
   ssh_options_free(session->options);
 
   /* burn connection, it could hang sensitive datas */

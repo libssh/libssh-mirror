@@ -173,7 +173,8 @@ int ssh_message_channel_request_reply_success(SSH_MESSAGE *msg);
 int ssh_message_service_reply_success(SSH_MESSAGE *msg);
 char *ssh_message_service_service(SSH_MESSAGE *msg);
 
-
+void ssh_set_message_callback(SSH_SESSION *session,
+    int(*ssh_message_callback)(struct ssh_session *session, struct ssh_message *msg));
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

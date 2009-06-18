@@ -3,7 +3,7 @@
  *
  * This file is part of the SSH Library
  *
- * Copyright (c) 2003-2005 by Aris Adamantiadis
+ * Copyright (c) 2003-2009 by Aris Adamantiadis
  *
  * The SSH Library is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -46,18 +46,13 @@
 
 
 static SSH_MESSAGE *message_new(SSH_SESSION *session){
-  SSH_MESSAGE *msg = session->ssh_message;
-
+  SSH_MESSAGE *msg = malloc(sizeof(SSH_MESSAGE));
   if (msg == NULL) {
-    msg = malloc(sizeof(SSH_MESSAGE));
-    if (msg == NULL) {
-      return NULL;
-    }
-    session->ssh_message = msg;
+    return NULL;
   }
+
   memset(msg, 0, sizeof(*msg));
   msg->session = session;
-
   return msg;
 }
 
@@ -815,8 +810,47 @@ void ssh_message_free(SSH_MESSAGE *msg){
 void message_handle(SSH_SESSION *session, u32 type){
   SSH_MESSAGE *msg=ssh_message_retrieve(session,type);
   if(msg){
-    /* TODO store msg somewhere */
+    if(!session->ssh_message_list){
+      session->ssh_message_list=ssh_list_new();
+    }
+    ssh_list_add(session->ssh_message_list,msg);
   }
+}
+
+/** @brief defines the SSH_MESSAGE callback
+ * @param session the current ssh session
+ * @param ssh_message_callback a function pointer to a callback taking the
+ * current ssh session and received message as parameters. the function returns
+ * 0 if the message has been parsed and treated sucessfuly, 1 otherwise (libssh
+ * must take care of the response).
+ */
+void ssh_set_message_callback(SSH_SESSION *session,
+    int(*ssh_message_callback)(struct ssh_session *session, struct ssh_message *msg)){
+  session->ssh_message_callback=ssh_message_callback;
+}
+
+int ssh_execute_message_callbacks(SSH_SESSION *session){
+  SSH_MESSAGE *msg=NULL;
+  int ret;
+  if(!session->ssh_message_list)
+    return SSH_OK;
+  if(session->ssh_message_callback){
+    while((msg=ssh_list_get_head(SSH_MESSAGE *, session->ssh_message_list)) != NULL){
+      ret=session->ssh_message_callback(session,msg);
+      if(ret==1){
+        ret = ssh_message_reply_default(msg);
+        if(ret != SSH_OK)
+          return ret;
+      }
+    }
+  } else {
+    while((msg=ssh_list_get_head(SSH_MESSAGE *, session->ssh_message_list)) != NULL){
+      ret = ssh_message_reply_default(msg);
+      if(ret != SSH_OK)
+        return ret;
+    }
+  }
+  return SSH_OK;
 }
 /**
  * @}
