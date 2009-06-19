@@ -152,7 +152,7 @@ const char *ssh_version(int req_version) {
 struct ssh_list *ssh_list_new(){
   struct ssh_list *ret=malloc(sizeof(struct ssh_list));
   if(!ret)
-    return ret;
+    return NULL;
   ret->root=ret->end=NULL;
   return ret;
 }
@@ -174,13 +174,17 @@ struct ssh_iterator *ssh_list_get_iterator(const struct ssh_list *list){
 
 static struct ssh_iterator *ssh_iterator_new(const void *data){
   struct ssh_iterator *iterator=malloc(sizeof(struct ssh_iterator));
+  if(!iterator)
+    return NULL;
   iterator->next=NULL;
   iterator->data=data;
   return iterator;
 }
 
-void ssh_list_add(struct ssh_list *list,const void *data){
+int ssh_list_add(struct ssh_list *list,const void *data){
   struct ssh_iterator *iterator=ssh_iterator_new(data);
+  if(!iterator)
+    return SSH_ERROR;
   if(!list->end){
     /* list is empty */
     list->root=list->end=iterator;
@@ -189,6 +193,7 @@ void ssh_list_add(struct ssh_list *list,const void *data){
     list->end->next=iterator;
     list->end=iterator;
   }
+  return SSH_OK;
 }
 
 void ssh_list_remove(struct ssh_list *list, struct ssh_iterator *iterator){
