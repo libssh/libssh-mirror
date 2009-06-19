@@ -500,7 +500,6 @@ int main(int argc, char **argv){
     ssh_userauth_none(session, NULL);
 
     auth = ssh_auth_list(session);
-    printf("auth: 0x%04x\n", auth);
     printf("supported auth methods: ");
     if (auth & SSH_AUTH_METHOD_PUBLICKEY) {
       printf("publickey");
