@@ -783,7 +783,9 @@ void ssh_message_free(SSH_MESSAGE *msg){
       SAFE_FREE(msg->channel_request.subsystem);
       break;
   }
+
   ZERO_STRUCTP(msg);
+  SAFE_FREE(msg);
 }
 
 /**
