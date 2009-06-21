@@ -221,6 +221,7 @@ static int dh_handshake(SSH_SESSION *session) {
       }
       string_burn(e);
       string_free(e);
+      e=NULL;
 
       rc = packet_send(session);
       if (rc == SSH_ERROR) {
@@ -261,7 +262,7 @@ static int dh_handshake(SSH_SESSION *session) {
       }
       string_burn(f);
       string_free(f);
-
+      f=NULL;
       signature = buffer_get_ssh_string(session->in_buffer);
       if (signature == NULL) {
         ssh_set_error(session, SSH_FATAL, "No signature in packet");
@@ -332,13 +333,14 @@ static int dh_handshake(SSH_SESSION *session) {
       /* forget it for now ... */
       string_burn(signature);
       string_free(signature);
-
+      signature=NULL;
       /*
        * Once we got SSH2_MSG_NEWKEYS we can switch next_crypto and
        * current_crypto
        */
       if (session->current_crypto) {
         crypto_free(session->current_crypto);
+        session->current_crypto=NULL;
       }
 
       /* FIXME later, include a function to change keys */
@@ -364,14 +366,22 @@ static int dh_handshake(SSH_SESSION *session) {
 
   /* not reached */
 error:
-  string_burn(e);
-  string_free(e);
-  string_burn(f);
-  string_free(f);
-  string_burn(pubkey);
-  string_free(pubkey);
-  string_burn(signature);
-  string_free(signature);
+  if(e != NULL){
+    string_burn(e);
+    string_free(e);
+  }
+  if(f != NULL){
+    string_burn(f);
+    string_free(f);
+  }
+  if(pubkey != NULL){
+    string_burn(pubkey);
+    string_free(pubkey);
+  }
+  if(signature != NULL){
+    string_burn(signature);
+    string_free(signature);
+  }
 
   leave_function();
   return rc;
