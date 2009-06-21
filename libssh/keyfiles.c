@@ -1280,9 +1280,9 @@ static int match_hashed_host(SSH_SESSION *session, const char *host,
     leave_function();
     return 0;
   }
-  SAFE_FREE(source);
 
   hash = base64_to_bin(b64hash);
+  SAFE_FREE(source);
   if (hash == NULL) {
     buffer_free(salt);
     leave_function();
