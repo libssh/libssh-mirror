@@ -331,7 +331,7 @@ void do_sftp(SSH_SESSION *session){
         return;
     }
     /* open a file for writing... */
-    to=sftp_open(sftp_session,"ssh-copy",O_WRONLY | O_CREAT, 0);
+    to=sftp_open(sftp_session,"ssh-copy",O_WRONLY | O_CREAT, 0700);
     if(!to){
         fprintf(stderr, "Error opening ssh-copy for writing: %s\n",
             ssh_get_error(session));
