@@ -284,7 +284,7 @@ void do_sftp(SSH_SESSION *session){
     SFTP_FILE *to;
     int len=1;
     int i;
-    char data[8000];
+    char data[8000]={0};
     if(!sftp_session){
         fprintf(stderr, "sftp error initialising channel: %s\n",
             ssh_get_error(session));
