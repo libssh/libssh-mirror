@@ -38,6 +38,35 @@
  * @{
  */
 
+/** \brief checks that preconditions and postconditions are valid
+ * \internal
+ */
+
+#ifdef DEBUG_BUFFER
+static void buffer_verify(struct buffer_struct *buf){
+  int doabort=0;
+  if(buf->data == NULL)
+    return;
+  if(buf->used > buf->allocated){
+    fprintf(stderr,"Buffer error : allocated %u, used %u\n",buf->allocated, buf->used);
+    doabort=1;
+  }
+  if(buf->pos > buf->used){
+    fprintf(stderr,"Buffer error : position %u, used %u\n",buf->pos, buf->used);
+    doabort=1;
+  }
+  if(buf->pos > buf->allocated){
+      fprintf(stderr,"Buffer error : position %u, allocated %u\n",buf->pos, buf->allocated);
+      doabort=1;
+  }
+  if(doabort)
+    abort();
+}
+
+#else
+#define buffer_verify(x)
+#endif
+
 /** \brief creates a new buffer
  * \return a new initialized buffer, NULL on error.
  */
@@ -48,7 +77,7 @@ struct buffer_struct *buffer_new(void) {
     return NULL;
   }
   memset(buf, 0, sizeof(struct buffer_struct));
-
+  buffer_verify(buf);
   return buf;
 }
 
@@ -59,6 +88,7 @@ void buffer_free(struct buffer_struct *buffer) {
   if (buffer == NULL) {
     return;
   }
+  buffer_verify(buffer);
 
   if (buffer->data) {
     /* burn the data */
@@ -72,8 +102,9 @@ void buffer_free(struct buffer_struct *buffer) {
 static int realloc_buffer(struct buffer_struct *buffer, int needed) {
   int smallest = 1;
   char *new = NULL;
+  buffer_verify(buffer);
   /* Find the smallest power of two which is greater or equal to needed */
-  while(smallest <= needed) {
+  while(smallest < needed) {
     smallest <<= 1;
   }
   needed = smallest;
@@ -83,7 +114,7 @@ static int realloc_buffer(struct buffer_struct *buffer, int needed) {
   }
   buffer->data = new;
   buffer->allocated = needed;
-
+  buffer_verify(buffer);
   return 0;
 }
 
@@ -93,6 +124,7 @@ static int realloc_buffer(struct buffer_struct *buffer, int needed) {
  * \return 0 on sucess, < 0 on error
  */
 int buffer_reinit(struct buffer_struct *buffer) {
+  buffer_verify(buffer);
   memset(buffer->data, 0, buffer->used);
   buffer->used = 0;
   buffer->pos = 0;
@@ -101,6 +133,7 @@ int buffer_reinit(struct buffer_struct *buffer) {
       return -1;
     }
   }
+  buffer_verify(buffer);
   return 0;
 }
 
@@ -111,6 +144,7 @@ int buffer_reinit(struct buffer_struct *buffer) {
  * \param len length of data
  */
 int buffer_add_data(struct buffer_struct *buffer, const void *data, u32 len) {
+  buffer_verify(buffer);
   if (buffer->allocated < (buffer->used + len)) {
     if (realloc_buffer(buffer, buffer->used + len) < 0) {
       return -1;
@@ -119,6 +153,7 @@ int buffer_add_data(struct buffer_struct *buffer, const void *data, u32 len) {
 
   memcpy(buffer->data+buffer->used, data, len);
   buffer->used+=len;
+  buffer_verify(buffer);
   return 0;
 }
 
@@ -189,6 +224,7 @@ int buffer_add_u8(struct buffer_struct *buffer,u8 data){
  */
 int buffer_prepend_data(struct buffer_struct *buffer, const void *data,
     u32 len) {
+  buffer_verify(buffer);
   if (buffer->allocated < (buffer->used + len)) {
     if (realloc_buffer(buffer, buffer->used + len) < 0) {
       return -1;
@@ -197,7 +233,7 @@ int buffer_prepend_data(struct buffer_struct *buffer, const void *data,
   memmove(buffer->data + len, buffer->data, buffer->used);
   memcpy(buffer->data, data, len);
   buffer->used += len;
-
+  buffer_verify(buffer);
   return 0;
 }
 
@@ -254,7 +290,8 @@ u32 buffer_get_len(struct buffer_struct *buffer){
  * \see buffer_get_rest()
  */
 u32 buffer_get_rest_len(struct buffer_struct *buffer){
-    return buffer->used - buffer->pos;
+  buffer_verify(buffer);
+  return buffer->used - buffer->pos;
 }
 
 /** \internal
@@ -265,6 +302,7 @@ u32 buffer_get_rest_len(struct buffer_struct *buffer){
  * \return new size of the buffer
  */
 u32 buffer_pass_bytes(struct buffer_struct *buffer, u32 len){
+    buffer_verify(buffer);
     if(buffer->used < buffer->pos+len)
         return 0;
     buffer->pos+=len;
@@ -273,6 +311,7 @@ u32 buffer_pass_bytes(struct buffer_struct *buffer, u32 len){
         buffer->pos=0;
         buffer->used=0;
     }
+    buffer_verify(buffer);
     return len;
 }
 
@@ -283,10 +322,12 @@ u32 buffer_pass_bytes(struct buffer_struct *buffer, u32 len){
  * \return new size of the buffer
  */
 u32 buffer_pass_bytes_end(struct buffer_struct *buffer, u32 len){
-    if(buffer->used < buffer->pos + len)
-        return 0;
-    buffer->used-=len;
-    return len;
+  buffer_verify(buffer);
+  if(buffer->used < buffer->pos + len)
+    return 0;
+  buffer->used-=len;
+  buffer_verify(buffer);
+  return len;
 }
 
 /** \internal
