@@ -1418,6 +1418,8 @@ int ssh_is_server_known(SSH_SESSION *session) {
         /* We override the status with the wrong key state */
         ret = SSH_SERVER_KNOWN_CHANGED;
       }
+    } else {
+      tokens_free(tokens);
     }
   } while (1);
 
