@@ -27,6 +27,30 @@
 
 #include "config.h"
 #include "libssh/priv.h"
+#include "libssh/libssh.h"
+
+#ifndef SSH_POLL_CTX_CHUNK
+#define SSH_POLL_CTX_CHUNK			5
+#endif
+
+struct ssh_poll {
+  SSH_POLL_CTX *ctx;
+  union {
+    socket_t fd;
+    size_t idx;
+  };
+  short events;
+  ssh_poll_callback cb;
+  void *cb_data;
+};
+
+struct ssh_poll_ctx {
+  SSH_POLL **pollptrs;
+  pollfd_t *pollfds;
+  size_t polls_allocated;
+  size_t polls_used;
+  size_t chunk_size;
+};
 
 #ifdef HAVE_POLL
 #include <poll.h>
@@ -202,3 +226,205 @@ int ssh_poll(pollfd_t *fds, nfds_t nfds, int timeout) {
 
 #endif /* HAVE_POLL */
 
+SSH_POLL *ssh_poll_new(socket_t fd, short events, ssh_poll_callback cb,
+    void *userdata) {
+  SSH_POLL *p;
+
+  p = malloc(sizeof(SSH_POLL));
+  if (p != NULL) {
+    p->ctx = NULL;
+    p->fd = fd;
+    p->events = events;
+    p->cb = cb;
+    p->cb_data = userdata;
+  }
+
+  return p;
+}
+
+void ssh_poll_free(SSH_POLL *p) {
+  SAFE_FREE(p);
+}
+
+SSH_POLL_CTX *ssh_poll_get_ctx(SSH_POLL *p) {
+  return p->ctx;
+}
+
+short ssh_poll_get_events(SSH_POLL *p) {
+  return p->events;
+}
+
+void ssh_poll_set_events(SSH_POLL *p, short events) {
+  p->events = events;
+  if (p->ctx != NULL) {
+    p->ctx->pollfds[p->idx].events = events;
+  }
+}
+
+void ssh_poll_add_events(SSH_POLL *p, short events) {
+  ssh_poll_set_events(p, ssh_poll_get_events(p) | events);
+}
+
+void ssh_poll_remove_events(SSH_POLL *p, short events) {
+  ssh_poll_set_events(p, ssh_poll_get_events(p) & ~events);
+}
+
+int ssh_poll_get_fd(SSH_POLL *p) {
+  if (p->ctx != NULL) {
+    return p->ctx->pollfds[p->idx].fd;
+  }
+
+  return p->fd;
+}
+
+void ssh_poll_set_callback(SSH_POLL *p, ssh_poll_callback cb, void *userdata) {
+  if (cb != NULL) {
+    p->cb = cb;
+    p->cb_data = userdata;
+  }
+}
+
+SSH_POLL_CTX *ssh_poll_ctx_new(size_t chunk_size) {
+  SSH_POLL_CTX *ctx;
+
+  ctx = malloc(sizeof(SSH_POLL_CTX));
+  if (ctx != NULL) {
+    if (!chunk_size) {
+      chunk_size = SSH_POLL_CTX_CHUNK;
+    }
+
+    ctx->chunk_size = chunk_size;
+    ctx->pollptrs = NULL;
+    ctx->pollfds = NULL;
+    ctx->polls_allocated = 0;
+    ctx->polls_used = 0;
+  }
+
+  return ctx;
+}
+
+void ssh_poll_ctx_free(SSH_POLL_CTX *ctx) {
+  if (ctx->polls_allocated > 0) {
+    register size_t i, used;
+
+    used = ctx->polls_used;
+    for (i = 0; i < used; ) {
+      SSH_POLL *p = ctx->pollptrs[i];
+      int fd = ctx->pollfds[i].fd;
+
+      /* force poll object removal */
+      if (p->cb(p, fd, POLLERR, p->cb_data) < 0) {
+        used = ctx->polls_used;
+      } else {
+        i++;
+      }
+    }
+
+    SAFE_FREE(ctx->pollptrs);
+    SAFE_FREE(ctx->pollfds);
+  }
+
+  SAFE_FREE(ctx);
+}
+
+static int ssh_poll_ctx_resize(SSH_POLL_CTX *ctx, size_t new_size) {
+  SSH_POLL **pollptrs;
+  pollfd_t *pollfds;
+
+  pollptrs = realloc(ctx->pollptrs, sizeof(SSH_POLL *) * new_size);
+  if (pollptrs == NULL) {
+    return -1;
+  }
+
+  pollfds = realloc(ctx->pollfds, sizeof(pollfd_t) * new_size);
+  if (pollfds == NULL) {
+    ctx->pollptrs = realloc(pollptrs, sizeof(SSH_POLL *) * ctx->polls_allocated);
+    return -1;
+  }
+
+  ctx->pollptrs = pollptrs;
+  ctx->pollfds = pollfds;
+  ctx->polls_allocated = new_size;
+
+  return 0;
+}
+
+int ssh_poll_ctx_add(SSH_POLL_CTX *ctx, SSH_POLL *p) {
+  int fd;
+
+  if (p->ctx != NULL) {
+    /* already attached to a context */
+    return -1;
+  }
+
+  if (ctx->polls_used == ctx->polls_allocated &&
+      ssh_poll_ctx_resize(ctx, ctx->polls_allocated + ctx->chunk_size) < 0) {
+    return -1;
+  }
+
+  fd = p->fd;
+  p->idx = ctx->polls_used++;
+  ctx->pollptrs[p->idx] = p;
+  ctx->pollfds[p->idx].fd = fd;
+  ctx->pollfds[p->idx].events = p->events;
+  ctx->pollfds[p->idx].revents = 0;
+  p->ctx = ctx;
+
+  return 0;
+}
+
+void ssh_poll_ctx_remove(SSH_POLL_CTX *ctx, SSH_POLL *p) {
+  size_t i;
+
+  i = p->idx;
+  p->fd = ctx->pollfds[i].fd;
+  p->ctx = NULL;
+
+  ctx->polls_used--;
+
+  /* fill the empty poll slot with the last one */
+  if (ctx->polls_used > 0 && ctx->polls_used != i) {
+    ctx->pollfds[i] = ctx->pollfds[ctx->polls_used];
+    ctx->pollptrs[i] = ctx->pollptrs[ctx->polls_used];
+  }
+
+  /* this will always leave at least chunk_size polls allocated */
+  if (ctx->polls_allocated - ctx->polls_used > ctx->chunk_size) {
+    ssh_poll_ctx_resize(ctx, ctx->polls_allocated - ctx->chunk_size);
+  }
+}
+
+int ssh_poll_ctx(SSH_POLL_CTX *ctx, int timeout) {
+  int rc;
+
+  if (!ctx->polls_used)
+    return 0;
+
+  rc = ssh_poll(ctx->pollfds, ctx->polls_used, timeout);
+  if (rc > 0) {
+    register size_t i, used;
+
+    used = ctx->polls_used;
+    for (i = 0; i < used && rc > 0; ) {
+      if (!ctx->pollfds[i].revents) {
+        i++;
+      } else {
+        SSH_POLL *p = ctx->pollptrs[i];
+        int fd = ctx->pollfds[i].fd;
+        int revents = ctx->pollfds[i].revents;
+
+        if (p->cb(p, fd, revents, p->cb_data) < 0) {
+          /* the poll was removed, reload the used counter and stall the loop */
+          used = ctx->polls_used;
+        } else {
+          ctx->pollfds[i].revents = 0;
+          i++;
+        }
+
+        rc--;
+      }
+    }
+  }
+
+  return rc;
+}
