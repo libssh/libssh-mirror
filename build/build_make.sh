@@ -116,7 +116,7 @@ while test -n "$1"; do
 	esac
 done
 
-if [ ${DOMAKE} -eq 1 ]; then
+if [ "${DOMAKE}" == "1" ]; then
 	OPTIONS="${OPTIONS} -DCMAKE_BUILD_TYPE=${BUILD_TYPE}"
 fi
 
