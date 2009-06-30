@@ -1399,7 +1399,7 @@ SFTP_FILE *sftp_open(SFTP_SESSION *sftp, const char *file, int flags,
     sftp_flags |= SSH_FXF_TRUNC;
   if (flags & O_EXCL)
     sftp_flags |= SSH_FXF_EXCL;
-
+  ssh_log(sftp->session,SSH_LOG_PACKET,"Opening file %s with sftp flags %x",file,sftp_flags);
   id = sftp_get_new_id(sftp);
   if (buffer_add_u32(buffer, id) < 0 ||
       buffer_add_ssh_string(buffer, filename) < 0) {
