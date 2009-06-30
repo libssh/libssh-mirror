@@ -1705,8 +1705,8 @@ ssize_t sftp_write(SFTP_FILE *file, const void *buf, size_t count) {
     return -1;
   }
   string_free(datastring);
-  packetlen=buffer_get_len(buffer);
   len = sftp_packet_write(file->sftp, SSH_FXP_WRITE, buffer);
+  packetlen=buffer_get_len(buffer);
   buffer_free(buffer);
   if (len < 0) {
     return -1;
