@@ -533,7 +533,7 @@ short ssh_poll_get_events(SSH_POLL *p);
 void ssh_poll_set_events(SSH_POLL *p, short events);
 void ssh_poll_add_events(SSH_POLL *p, short events);
 void ssh_poll_remove_events(SSH_POLL *p, short events);
-int ssh_poll_get_fd(SSH_POLL *p);
+socket_t ssh_poll_get_fd(SSH_POLL *p);
 void ssh_poll_set_callback(SSH_POLL *p, ssh_poll_callback cb, void *userdata);
 SSH_POLL_CTX *ssh_poll_ctx_new(size_t chunk_size);
 void ssh_poll_ctx_free(SSH_POLL_CTX *ctx);

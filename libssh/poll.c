@@ -332,7 +332,7 @@ void ssh_poll_remove_events(SSH_POLL *p, short events) {
  * @return              Raw socket.
  */
 
-int ssh_poll_get_fd(SSH_POLL *p) {
+socket_t ssh_poll_get_fd(SSH_POLL *p) {
   if (p->ctx != NULL) {
     return p->ctx->pollfds[p->idx].fd;
   }
