@@ -375,42 +375,6 @@ char *ssh_userauth_kbdint_getprompt(SSH_SESSION *session, unsigned int i, char *
 int ssh_userauth_kbdint_setanswer(SSH_SESSION *session, unsigned int i,
     const char *answer);
 
-/* poll.c */
-
-typedef struct ssh_poll_ctx SSH_POLL_CTX;
-typedef struct ssh_poll SSH_POLL;
-
-/**
- * @brief SSH poll callback.
- *
- * @param p             Poll object this callback belongs to.
- * @param fd            The raw socket.
- * @param revents       The current poll events on the socket.
- * @param userdata      Userdata to be passed to the callback function.
- *
- * @return              0 on success, < 0 if you removed the poll object from
- *                      it's poll context.
- */
-typedef int (*ssh_poll_callback)(SSH_POLL *p, int fd, int revents,
-    void *userdata);
-
-
-SSH_POLL *ssh_poll_new(socket_t fd, short events, ssh_poll_callback cb,
-    void *userdata);
-void ssh_poll_free(SSH_POLL *p);
-SSH_POLL_CTX *ssh_poll_get_ctx(SSH_POLL *p);
-short ssh_poll_get_events(SSH_POLL *p);
-void ssh_poll_set_events(SSH_POLL *p, short events);
-void ssh_poll_add_events(SSH_POLL *p, short events);
-void ssh_poll_remove_events(SSH_POLL *p, short events);
-int ssh_poll_get_fd(SSH_POLL *p);
-void ssh_poll_set_callback(SSH_POLL *p, ssh_poll_callback cb, void *userdata);
-SSH_POLL_CTX *ssh_poll_ctx_new(size_t chunk_size);
-void ssh_poll_ctx_free(SSH_POLL_CTX *ctx);
-int ssh_poll_ctx_add(SSH_POLL_CTX *ctx, SSH_POLL *p);
-void ssh_poll_ctx_remove(SSH_POLL_CTX *ctx, SSH_POLL *p);
-int ssh_poll_ctx(SSH_POLL_CTX *ctx, int timeout);
-
 /* init.c */
 int ssh_init(void);
 int ssh_finalize(void);
