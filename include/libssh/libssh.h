@@ -394,142 +394,21 @@ typedef struct ssh_poll SSH_POLL;
 typedef int (*ssh_poll_callback)(SSH_POLL *p, int fd, int revents,
     void *userdata);
 
-/**
- * @brief  Allocate a new poll object, which could be used within a poll context.
- *
- * @param  fd           Socket that will be polled.
- * @param  events       Poll events that will be monitored for the socket. i.e.
- *                      POLLIN, POLLPRI, POLLOUT, POLLERR, POLLHUP, POLLNVAL
- * @param  cb           Function to be called if any of the events are set.
- * @param  userdata     Userdata to be passed to the callback function. NULL if
- *                      not needed.
- *
- * @return              A new poll object, NULL on error
- */
+
 SSH_POLL *ssh_poll_new(socket_t fd, short events, ssh_poll_callback cb,
     void *userdata);
-
-/**
- * @brief  Free a poll object.
- *
- * @param  p            Pointer to an already allocated poll object.
- */
 void ssh_poll_free(SSH_POLL *p);
-
-/**
- * @brief  Get the poll context of a poll object.
- *
- * @param  p            Pointer to an already allocated poll object.
- *
- * @return              Poll context or NULL if the poll object isn't attached.
- */
 SSH_POLL_CTX *ssh_poll_get_ctx(SSH_POLL *p);
-
-/**
- * @brief  Get the events of a poll object.
- *
- * @param  p            Pointer to an already allocated poll object.
- *
- * @return              Poll events.
- */
 short ssh_poll_get_events(SSH_POLL *p);
-
-/**
- * @brief  Set the events of a poll object. The events will also be propagated
- *         to an associated poll context.
- *
- * @param  p            Pointer to an already allocated poll object.
- * @param  events       Poll events.
- */
 void ssh_poll_set_events(SSH_POLL *p, short events);
-
-/**
- * @brief  Add extra events to a poll object. Duplicates are ignored.
- *         The events will also be propagated to an associated poll context.
- *
- * @param  p            Pointer to an already allocated poll object.
- * @param  events       Poll events.
- */
 void ssh_poll_add_events(SSH_POLL *p, short events);
-
-/**
- * @brief  Remove events from a poll object. Non-existent are ignored.
- *         The events will also be propagated to an associated poll context.
- *
- * @param  p            Pointer to an already allocated poll object.
- * @param  events       Poll events.
- */
 void ssh_poll_remove_events(SSH_POLL *p, short events);
-
-/**
- * @brief  Get the raw socket of a poll object.
- *
- * @param  p            Pointer to an already allocated poll object.
- *
- * @return              Raw socket.
- */
 int ssh_poll_get_fd(SSH_POLL *p);
-
-/**
- * @brief  Set the callback of a poll object.
- *
- * @param  p            Pointer to an already allocated poll object.
- * @param  cb           Function to be called if any of the events are set.
- * @param  userdata     Userdata to be passed to the callback function. NULL if
- *                      not needed.
- */
 void ssh_poll_set_callback(SSH_POLL *p, ssh_poll_callback cb, void *userdata);
-
-/**
- * @brief  Create a new poll context. It could be associated with many poll object
- *         which are going to be polled at the same time as the poll context. You
- *         would need a single poll context per thread.
- *
- * @param  chunk_size   The size of the memory chunk that will be allocated, when
- *                      more memory is needed. This is for efficiency reasons,
- *                      i.e. don't allocate memory for each new poll object, but
- *                      for the next 5. Set it to 0 if you want to use the
- *                      library's default value.
- */
 SSH_POLL_CTX *ssh_poll_ctx_new(size_t chunk_size);
-
-/**
- * @brief  Free a poll context.
- *
- * @param  ctx          Pointer to an already allocated poll context.
- */
 void ssh_poll_ctx_free(SSH_POLL_CTX *ctx);
-
-/**
- * @brief  Add a poll object to a poll context.
- *
- * @param  ctx          Pointer to an already allocated poll context.
- * @param  p            Pointer to an already allocated poll object.
- *
- * @return              0 on success, < 0 on error
- */
 int ssh_poll_ctx_add(SSH_POLL_CTX *ctx, SSH_POLL *p);
-
-/**
- * @brief  Remove a poll object from a poll context.
- *
- * @param  ctx          Pointer to an already allocated poll context.
- * @param  p            Pointer to an already allocated poll object.
- */
 void ssh_poll_ctx_remove(SSH_POLL_CTX *ctx, SSH_POLL *p);
-
-/**
- * @brief  Poll all the sockets associated through a poll object with a
- *         poll context. If any of the events are set after the poll, the
- *         call back function of the socket will be called.
- *         This function should be called once within the programs main loop.
- *
- * @param  ctx          Pointer to an already allocated poll context.
- * @param  timeout      An upper limit on the time for which ssh_poll_ctx() will
- *                      block, in milliseconds. Specifying a negative value
- *                      means an infinite timeout. This parameter is passed to
- *                      the poll() function.
- */
 int ssh_poll_ctx(SSH_POLL_CTX *ctx, int timeout);
 
 /* init.c */
