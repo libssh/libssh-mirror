@@ -134,6 +134,7 @@ typedef int socket_t;
 #define SSH_SERVER_KNOWN_OK 1
 #define SSH_SERVER_KNOWN_CHANGED 2
 #define SSH_SERVER_FOUND_OTHER 3
+#define SSH_SERVER_FILE_NOT_FOUND 4
 
 #ifndef MD5_DIGEST_LEN
     #define MD5_DIGEST_LEN 16
