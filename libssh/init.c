@@ -43,6 +43,8 @@ int ssh_init(void) {
     return -1;
   if(ssh_socket_init())
     return -1;
+  if(ssh_regex_init())
+    return -1;
   return 0;
 }
 
@@ -56,6 +58,7 @@ int ssh_init(void) {
    @returns 0 otherwise
  */
 int ssh_finalize(void) {
+  ssh_regex_finalize();
   ssh_crypto_finalize();
 #ifdef HAVE_LIBGCRYPT
   gcry_control(GCRYCTL_TERM_SECMEM);

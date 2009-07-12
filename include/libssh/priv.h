@@ -625,7 +625,10 @@ int packet_read(SSH_SESSION *session);
 int packet_translate(SSH_SESSION *session);
 int packet_wait(SSH_SESSION *session,int type,int blocking);
 int packet_flush(SSH_SESSION *session, int enforce_blocking);
+
 /* connect.c */
+int ssh_regex_init(void);
+void ssh_regex_finalize(void);
 SSH_SESSION *ssh_session_new();
 socket_t ssh_connect_host(SSH_SESSION *session, const char *host,const char
         *bind_addr, int port, long timeout, long usec);

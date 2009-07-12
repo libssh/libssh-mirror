@@ -56,6 +56,13 @@
 #error "Your system must have getaddrinfo()"
 #endif
 
+/* don't declare gnu extended regexp's */
+#ifndef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE
+#endif
+#include <regex.h>
+
+
 #ifdef _WIN32
 static void sock_set_nonblocking(socket_t sock) {
   u_long nonblocking = 1;
@@ -87,7 +94,43 @@ static void sock_set_blocking(socket_t sock) {
 }
 #endif /* _WIN32 */
 
-static int getai(const char *host, int port, struct addrinfo **ai) {
+
+static regex_t *ip_regex = NULL;
+
+/** @internal
+ * @brief initializes and compile the regexp to be used for IP matching
+ * @returns -1 on error (and error message is set)
+ * @returns 0 on success
+ */
+int ssh_regex_init(){
+  if(ip_regex==NULL){
+    int err;
+    regex_t *regex=malloc(sizeof (regex_t));
+    ZERO_STRUCTP(regex);
+    err=regcomp(regex,"^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$",REG_EXTENDED | REG_NOSUB);
+    if(err != 0){
+      char buffer[128];
+      regerror(err,regex,buffer,sizeof(buffer));
+      fprintf(stderr,"Error while compiling regular expression : %s\n",buffer);
+      SAFE_FREE(regex);
+      return -1;
+    }
+    ip_regex=regex;
+  }
+  return 0;
+}
+
+/** @internal
+ * @brief clean up the IP regexp
+ */
+void ssh_regex_finalize(){
+  if(ip_regex){
+    regfree(ip_regex);
+    SAFE_FREE(ip_regex);
+  }
+}
+
+static int getai(SSH_SESSION *session, const char *host, int port, struct addrinfo **ai) {
   const char *service = NULL;
   struct addrinfo hints;
   char s_port[10];
@@ -103,8 +146,13 @@ static int getai(const char *host, int port, struct addrinfo **ai) {
   } else {
     snprintf(s_port, sizeof(s_port), "%hu", port);
     service = s_port;
+    hints.ai_flags=AI_NUMERICSERV;
   }
-
+  if(regexec(ip_regex,host,0,NULL,0) == 0){
+    /* this is an IP address */
+    ssh_log(session,SSH_LOG_PACKET,"host %s matches an IP address",host);
+    hints.ai_flags |= AI_NUMERICHOST;
+  }
   return getaddrinfo(host, service, &hints, ai);
 }
 
@@ -183,7 +231,7 @@ socket_t ssh_connect_host(SSH_SESSION *session, const char *host,
 
   enter_function();
 
-  rc = getai(host, port, &ai);
+  rc = getai(session,host, port, &ai);
   if (rc != 0) {
     ssh_set_error(session, SSH_FATAL,
         "Failed to resolve hostname %s (%s)", host, gai_strerror(rc));
@@ -206,7 +254,7 @@ socket_t ssh_connect_host(SSH_SESSION *session, const char *host,
 
       ssh_log(session, SSH_LOG_PACKET, "Resolving %s\n", bind_addr);
 
-      rc = getai(host, 0, &bind_ai);
+      rc = getai(session,host, 0, &bind_ai);
       if (rc != 0) {
         ssh_set_error(session, SSH_FATAL,
             "Failed to resolve bind address %s (%s)",
