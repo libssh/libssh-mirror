@@ -469,6 +469,10 @@ int main(int argc, char **argv){
             ssh_disconnect(session);
 		    ssh_finalize();
             exit(-1);
+        case SSH_SERVER_FILE_NOT_FOUND:
+            fprintf(stderr,"Could not find known host file. If you accept the host key here,\n");
+            fprintf(stderr,"the file will be automatically created.\n");
+            /* fallback to SSH_SERVER_NOT_KNOWN behaviour */
         case SSH_SERVER_NOT_KNOWN:
             hexa = ssh_get_hexa(hash, hlen);
             free(hash);
