@@ -3,7 +3,8 @@
  *
  * This file is part of the SSH Library
  *
- * Copyright (c) 2003-2008 by Aris Adamantiadis
+ * Copyright (c) 2003-2009 by Aris Adamantiadis
+ * Copyright (c) 2009 Aleksandar Kanchev
  *
  * The SSH Library is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by

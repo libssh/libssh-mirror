@@ -3,7 +3,7 @@
  *
  * This file is part of the SSH Library
  *
- * Copyright (c) 2003      by Aris Adamantiadis
+ * Copyright (c) 2003-2009 by Aris Adamantiadis
  * Copyright (c) 2008-2009 by Andreas Schneider <mail@cynapses.org>
  *
  * The SSH Library is free software; you can redistribute it and/or modify

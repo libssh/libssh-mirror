@@ -1,6 +1,6 @@
 /* client.c */
 /*
-Copyright 2003 Aris Adamantiadis
+Copyright 2003-2009 Aris Adamantiadis
 
 This file is part of the SSH Library
 
