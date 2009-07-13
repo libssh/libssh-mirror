@@ -25,6 +25,8 @@
 
 /* This code is based on glib's gpoll */
 
+#include <errno.h>
+
 #include "config.h"
 #include "libssh/priv.h"
 
