@@ -155,7 +155,9 @@ static int getai(SSH_SESSION *session, const char *host, int port, struct addrin
   } else {
     snprintf(s_port, sizeof(s_port), "%hu", port);
     service = s_port;
+#ifdef AI_NUMERICSERV
     hints.ai_flags=AI_NUMERICSERV;
+#endif
   }
 #ifdef HAVE_REGCOMP
   if(regexec(ip_regex,host,0,NULL,0) == 0){
