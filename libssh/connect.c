@@ -56,12 +56,13 @@
 #error "Your system must have getaddrinfo()"
 #endif
 
+#ifdef HAVE_REGCOMP
 /* don't declare gnu extended regexp's */
 #ifndef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE
 #endif
 #include <regex.h>
-
+#endif /* HAVE_REGCOMP */
 
 #ifdef _WIN32
 static void sock_set_nonblocking(socket_t sock) {
@@ -94,7 +95,7 @@ static void sock_set_blocking(socket_t sock) {
 }
 #endif /* _WIN32 */
 
-
+#ifdef HAVE_REGCOMP
 static regex_t *ip_regex = NULL;
 
 /** @internal
@@ -130,6 +131,14 @@ void ssh_regex_finalize(){
   }
 }
 
+#else /* HAVE_REGCOMP */
+int ssh_regex_init(){
+  return 0;
+}
+void ssh_regex_finalize(){
+}
+#endif
+
 static int getai(SSH_SESSION *session, const char *host, int port, struct addrinfo **ai) {
   const char *service = NULL;
   struct addrinfo hints;
@@ -148,11 +157,13 @@ static int getai(SSH_SESSION *session, const char *host, int port, struct addrin
     service = s_port;
     hints.ai_flags=AI_NUMERICSERV;
   }
+#ifdef HAVE_REGCOMP
   if(regexec(ip_regex,host,0,NULL,0) == 0){
     /* this is an IP address */
     ssh_log(session,SSH_LOG_PACKET,"host %s matches an IP address",host);
     hints.ai_flags |= AI_NUMERICHOST;
   }
+#endif
   return getaddrinfo(host, service, &hints, ai);
 }
 

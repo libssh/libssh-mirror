@@ -46,6 +46,9 @@
 /* Define to 1 if you have the `select' function. */
 #cmakedefine HAVE_SELECT 1
 
+/* Define to 1 if you have the `regcomp' function. */
+#cmakedefine HAVE_REGCOMP 1
+
 /*************************** LIBRARIES ***************************/
 
 /* Define to 1 if you have the `crypto' library (-lcrypto). */

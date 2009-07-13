@@ -34,6 +34,7 @@ else (WIN32)
   check_function_exists(gethostbyname HAVE_GETHOSTBYNAME)
   check_function_exists(poll HAVE_POLL)
   check_function_exists(select HAVE_SELECT)
+  check_function_exists(regcomp HAVE_REGCOMP)
 endif (WIN32)
 
 # LIBRARIES
