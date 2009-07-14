@@ -10,9 +10,9 @@ set(APPLICATION_VERSION "0.3.0")
 
 set(APPLICATION_VERSION_MAJOR "0")
 set(APPLICATION_VERSION_MINOR "3")
-set(APPLICATION_VERSION_PATCH "0")
+set(APPLICATION_VERSION_PATCH "1")
 
-set(LIBRARY_VERSION "3.0.0")
+set(LIBRARY_VERSION "3.1.0")
 set(LIBRARY_SOVERSION "3")
 
 # where to look first for cmake modules, before ${CMAKE_ROOT}/Modules/ is checked
