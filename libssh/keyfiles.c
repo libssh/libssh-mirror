@@ -1342,6 +1342,9 @@ static int match_hashed_host(SSH_SESSION *session, const char *host,
  *                                   possible attack \n
  *         SSH_SERVER_NOT_KNOWN:     The server is unknown. User should confirm
  *                                   the MD5 is correct\n
+ *         SSH_SERVER_FILE_NOT_FOUND:The known host file does not exist. The
+ *                                   host is thus unknown. File will be created
+ *                                   if host key is accepted\n
  *         SSH_SERVER_ERROR:         Some error happened
  *
  * \see ssh_options_set_wanted_algo()
@@ -1434,7 +1437,7 @@ int ssh_is_server_known(SSH_SESSION *session) {
 }
 
 /** You generaly use it when ssh_is_server_known() answered SSH_SERVER_NOT_KNOWN
- * \brief write the current server as known in the known hosts file
+ * \brief write the current server as known in the known hosts file. This will create the known hosts file if it does not exist.
  * \param session ssh session
  * \return 0 on success, -1 on error
  */
