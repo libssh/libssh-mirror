@@ -555,8 +555,10 @@ int main(int argc, char **argv){
         else
             batch_shell(session);
     }
+#ifdef WITH_SFTP
     else
-        do_sftp(session);    
+        do_sftp(session);
+#endif
     if(!sftp && !cmds[0])
         do_cleanup(0);
     ssh_disconnect(session);

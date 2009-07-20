@@ -175,7 +175,11 @@ void hmac_final(HMACCTX ctx,unsigned char *hashmacbuf,unsigned int *len);
 struct string_struct {
 	u32 size;
 	unsigned char string[MAX_PACKET_LEN];
-} __attribute__ ((packed));
+}
+#if !defined(__SUNPRO_C)
+__attribute__ ((packed))
+#endif
+;
 
 /** Describes a buffer state at a moment
  */
@@ -804,6 +808,12 @@ int ssh_execute_message_callbacks(SSH_SESSION *session);
 
 /* log.c */
 
+#ifndef __FUNCTION__
+#if defined(__SUNPRO_C)
+#define __FUNCTION__ __func__
+#endif
+#endif
+   
 #define _enter_function(sess) \
 	do {\
 		if((sess)->log_verbosity >= SSH_LOG_FUNCTIONS){ \
