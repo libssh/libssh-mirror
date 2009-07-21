@@ -1576,7 +1576,7 @@ int ssh_write_knownhost(SSH_SESSION *session) {
   }
 
   len = strlen(buffer);
-  if (fwrite(buffer, len, 1, file) != len || ferror(file)) {
+  if (fwrite(buffer, len, 1, file) != 1 || ferror(file)) {
     fclose(file);
     return -1;
   }
