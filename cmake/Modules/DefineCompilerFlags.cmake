@@ -34,7 +34,9 @@ if (UNIX AND NOT WIN32)
     add_definitions(${_lfs_CFLAGS})
   endif (CMAKE_SIZEOF_VOID_P MATCHES "8")
 
-  add_definitions(-Wall -Wextra -Wmissing-prototypes -Wdeclaration-after-statement -Wunused)
+  if (CMAKE_COMPILER_IS_GNUCC)
+    add_definitions(-Wall -Wextra -Wmissing-prototypes -Wdeclaration-after-statement -Wunused)
+  endif (CMAKE_COMPILER_IS_GNUCC)
 
   check_c_compiler_flag("-fstack-protector" WITH_STACK_PROTECTOR)
   if (WITH_STACK_PROTECTOR)
