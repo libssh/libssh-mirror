@@ -367,7 +367,8 @@ void do_sftp(SSH_SESSION *session){
 
 static int auth_kbdint(SSH_SESSION *session){
     int err=ssh_userauth_kbdint(session,NULL,NULL);
-    char *name,*instruction,*prompt,*ptr;
+    const char *name, *instruction, *prompt;
+    char *ptr;
     char buffer[128];
     int i,n;
     char echo;
