@@ -370,9 +370,9 @@ int ssh_userauth_agent_pubkey(SSH_SESSION *session, const char *username,
 int ssh_userauth_autopubkey(SSH_SESSION *session, const char *passphrase);
 int ssh_userauth_kbdint(SSH_SESSION *session, const char *user, const char *submethods);
 int ssh_userauth_kbdint_getnprompts(SSH_SESSION *session);
-char *ssh_userauth_kbdint_getname(SSH_SESSION *session);
-char *ssh_userauth_kbdint_getinstruction(SSH_SESSION *session);
-char *ssh_userauth_kbdint_getprompt(SSH_SESSION *session, unsigned int i, char *echo);
+const char *ssh_userauth_kbdint_getname(SSH_SESSION *session);
+const char *ssh_userauth_kbdint_getinstruction(SSH_SESSION *session);
+const char *ssh_userauth_kbdint_getprompt(SSH_SESSION *session, unsigned int i, char *echo);
 int ssh_userauth_kbdint_setanswer(SSH_SESSION *session, unsigned int i,
     const char *answer);
 

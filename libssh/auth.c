@@ -1417,7 +1417,7 @@ int ssh_userauth_kbdint_getnprompts(SSH_SESSION *session) {
  *
  * @returns             The name of the message block. Do not free it.
  */
-char *ssh_userauth_kbdint_getname(SSH_SESSION *session) {
+const char *ssh_userauth_kbdint_getname(SSH_SESSION *session) {
   return session->kbdint->name;
 }
 
@@ -1432,7 +1432,7 @@ char *ssh_userauth_kbdint_getname(SSH_SESSION *session) {
  * @returns             The instruction of the message block.
  */
 
-char *ssh_userauth_kbdint_getinstruction(SSH_SESSION *session) {
+const char *ssh_userauth_kbdint_getinstruction(SSH_SESSION *session) {
   return session->kbdint->instruction;
 }
 
@@ -1452,7 +1452,7 @@ char *ssh_userauth_kbdint_getinstruction(SSH_SESSION *session) {
  *
  * @returns             A pointer to the prompt. Do not free it.
  */
-char *ssh_userauth_kbdint_getprompt(SSH_SESSION *session, unsigned int i,
+const char *ssh_userauth_kbdint_getprompt(SSH_SESSION *session, unsigned int i,
     char *echo) {
   if (i > session->kbdint->nprompts) {
     return NULL;
