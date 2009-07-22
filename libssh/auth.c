@@ -1475,7 +1475,7 @@ const char *ssh_userauth_kbdint_getprompt(SSH_SESSION *session, unsigned int i,
  */
 int ssh_userauth_kbdint_setanswer(SSH_SESSION *session, unsigned int i,
     const char *answer) {
-  if (i > session->kbdint->nprompts) {
+  if (session == NULL || answer == NULL || i > session->kbdint->nprompts) {
     return -1;
   }
 
