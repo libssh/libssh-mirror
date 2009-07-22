@@ -623,12 +623,11 @@ char *ssh_get_issue_banner(SSH_SESSION *session) {
 void ssh_disconnect(SSH_SESSION *session) {
   STRING *str = NULL;
 
-  enter_function();
-
   if (session == NULL) {
-    leave_function();
     return;
   }
+
+  enter_function();
 
   if (ssh_socket_is_open(session->socket)) {
     if (buffer_add_u8(session->out_buffer, SSH2_MSG_DISCONNECT) < 0) {
