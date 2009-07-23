@@ -20,8 +20,11 @@ set(SOURCEDIR ${CMAKE_SOURCE_DIR})
 check_include_file(pty.h HAVE_PTY_H)
 check_include_file(terminos.h HAVE_TERMIOS_H)
 
+set(CMAKE_REQUIRED_INCLUDES ${OPENSSL_INCLUDE_DIRS})
 check_include_file(openssl/aes.h HAVE_OPENSSL_AES_H)
+set(CMAKE_REQUIRED_INCLUDES ${OPENSSL_INCLUDE_DIRS})
 check_include_file(openssl/blowfish.h HAVE_OPENSSL_BLOWFISH_H)
+set(CMAKE_REQUIRED_INCLUDES ${OPENSSL_INCLUDE_DIRS})
 check_include_file(openssl/des.h HAVE_OPENSSL_DES_H)
 
 # FUNCTIONS
