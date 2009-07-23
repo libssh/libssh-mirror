@@ -2223,6 +2223,10 @@ char *sftp_canonicalize_path(SFTP_SESSION *sftp, const char *path) {
   u32 ignored;
   u32 id;
 
+  if (sftp == NULL || path == NULL) {
+    return NULL;
+  }
+
   buffer = buffer_new();
   if (buffer == NULL) {
     return NULL;
