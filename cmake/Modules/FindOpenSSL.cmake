@@ -37,6 +37,7 @@ else (OPENSSL_LIBRARIES AND OPENSSL_INCLUDE_DIRS)
       ${_OPENSSL_INCLUDEDIR}
       /usr/include
       /usr/local/include
+      /usr/local/ssl/include
       /opt/local/include
       /sw/include
   )
@@ -49,6 +50,7 @@ else (OPENSSL_LIBRARIES AND OPENSSL_INCLUDE_DIRS)
       ${_OPENSSL_LIBDIR}
       /usr/lib
       /usr/local/lib
+      /usr/local/ssl/lib
       /opt/local/lib
       /sw/lib
   )
@@ -61,6 +63,7 @@ else (OPENSSL_LIBRARIES AND OPENSSL_INCLUDE_DIRS)
       ${_OPENSSL_LIBDIR}
       /usr/lib
       /usr/local/lib
+      /usr/local/ssl/lib
       /opt/local/lib
       /sw/lib
   )
@@ -73,6 +76,7 @@ else (OPENSSL_LIBRARIES AND OPENSSL_INCLUDE_DIRS)
       ${_OPENSSL_LIBDIR}
       /usr/lib
       /usr/local/lib
+      /usr/local/ssl/lib
       /opt/local/lib
       /sw/lib
   )
@@ -85,6 +89,7 @@ else (OPENSSL_LIBRARIES AND OPENSSL_INCLUDE_DIRS)
       ${_OPENSSL_LIBDIR}
       /usr/lib
       /usr/local/lib
+      /usr/local/ssl/lib
       /opt/local/lib
       /sw/lib
   )
