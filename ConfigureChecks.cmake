@@ -4,6 +4,7 @@ include(CheckFunctionExists)
 include(CheckLibraryExists)
 include(CheckTypeSize)
 include(CheckCXXSourceCompiles)
+include(TestBigEndian)
 
 set(PACKAGE ${APPLICATION_NAME})
 set(VERSION ${APPLICATION_VERSION})
@@ -55,3 +56,5 @@ if (WITH_DEBUG_CRYPTO)
   set(DEBUG_CRYPTO 1)
 endif (WITH_DEBUG_CRYPTO)
 
+# ENDIAN
+test_big_endian(WORDS_BIGENDIAN)
