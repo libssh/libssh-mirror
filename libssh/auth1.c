@@ -52,7 +52,7 @@ static int wait_auth1_status(SSH_SESSION *session) {
 }
 
 static int send_username(SSH_SESSION *session, const char *username) {
-  STRING *user = NULL;
+  ssh_string user = NULL;
   /* returns SSH_AUTH_SUCCESS or SSH_AUTH_DENIED */
   if(session->auth_service_asked) {
     return session->auth_service_asked;
@@ -96,11 +96,11 @@ int ssh_userauth1_none(SSH_SESSION *session, const char *username){
 }
 
 /*
-int ssh_userauth_offer_pubkey(SSH_SESSION *session, char *username,int type, STRING *publickey){
-    STRING *user;
-    STRING *service;
-    STRING *method;
-    STRING *algo;
+int ssh_userauth_offer_pubkey(SSH_SESSION *session, char *username,int type, ssh_string publickey){
+    ssh_string user;
+    ssh_string service;
+    ssh_string method;
+    ssh_string algo;
     int err=SSH_AUTH_ERROR;
     if(!username)
         if(!(username=session->options->username)){
@@ -137,17 +137,17 @@ int ssh_userauth_offer_pubkey(SSH_SESSION *session, char *username,int type, STR
  * \todo implement ssh1 public key
  */
 int ssh_userauth1_offer_pubkey(SSH_SESSION *session, const char *username,
-    int type, STRING *pubkey) {
+    int type, ssh_string pubkey) {
     return SSH_AUTH_DENIED;
 }
 
 /*
-int ssh_userauth_pubkey(SSH_SESSION *session, char *username, STRING *publickey, PRIVATE_KEY *privatekey){
-    STRING *user;
-    STRING *service;
-    STRING *method;
-    STRING *algo;
-    STRING *sign;
+int ssh_userauth_pubkey(SSH_SESSION *session, char *username, ssh_string publickey, PRIVATE_KEY *privatekey){
+    ssh_string user;
+    ssh_string service;
+    ssh_string method;
+    ssh_string algo;
+    ssh_string sign;
     int err=SSH_AUTH_ERROR;
     if(!username)
         if(!(username=session->options->username)){
@@ -190,7 +190,7 @@ int ssh_userauth_pubkey(SSH_SESSION *session, char *username, STRING *publickey,
 
 int ssh_userauth1_password(SSH_SESSION *session, const char *username,
     const char *password) {
-  STRING *pwd = NULL;
+  ssh_string pwd = NULL;
   int rc;
 
   rc = send_username(session, username);

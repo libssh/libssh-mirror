@@ -76,7 +76,7 @@ int channel_open_session1(CHANNEL *chan) {
 int channel_request_pty_size1(CHANNEL *channel, const char *terminal, int col,
     int row) {
   SSH_SESSION *session = channel->session;
-  STRING *str = NULL;
+  ssh_string str = NULL;
 
   str = string_from_char(terminal);
   if (str == NULL) {
@@ -181,7 +181,7 @@ int channel_request_shell1(CHANNEL *channel) {
 
 int channel_request_exec1(CHANNEL *channel, const char *cmd) {
   SSH_SESSION *session = channel->session;
-  STRING *command = NULL;
+  ssh_string command = NULL;
 
   command = string_from_char(cmd);
   if (command == NULL) {
@@ -206,7 +206,7 @@ int channel_request_exec1(CHANNEL *channel, const char *cmd) {
 
 static int channel_rcv_data1(SSH_SESSION *session, int is_stderr) {
     CHANNEL *channel = session->channels;
-    STRING *str = NULL;
+    ssh_string str = NULL;
 
     str = buffer_get_ssh_string(session->in_buffer);
     if (str == NULL) {
