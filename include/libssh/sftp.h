@@ -65,14 +65,14 @@ typedef struct sftp_session_struct {
     int client_version;
     int version;
     struct request_queue *queue;
-    u32 id_counter;
+    uint32_t id_counter;
     int errnum;
     void **handles;
 } SFTP_SESSION ;
 
 typedef struct {
     SFTP_SESSION *sftp;
-    u8 type;
+    uint8_t type;
     ssh_buffer payload;
 } SFTP_PACKET;
 
@@ -80,7 +80,7 @@ typedef struct {
 typedef struct sftp_file{
     SFTP_SESSION *sftp;
     char *name;
-    u64 offset;
+    uint64_t offset;
     ssh_string handle;
     int eof;
     int nonblocking;
@@ -91,28 +91,28 @@ typedef struct sftp_dir {
     char *name;
     ssh_string handle; /* handle to directory */
     ssh_buffer buffer; /* contains raw attributes from server which haven't been parsed */
-    u32 count; /* counts the number of following attributes structures into buffer */
+    uint32_t count; /* counts the number of following attributes structures into buffer */
     int eof; /* end of directory listing */
 } SFTP_DIR;
 
 typedef struct {
     SFTP_SESSION *sftp;
-    u8 packet_type;
+    uint8_t packet_type;
     ssh_buffer payload;
-    u32 id;
+    uint32_t id;
 } SFTP_MESSAGE;
 
 /* this is a bunch of all data that could be into a message */
 typedef struct sftp_client_message{
     SFTP_SESSION *sftp;
-    u8 type;
-    u32 id;
+    uint8_t type;
+    uint32_t id;
     char *filename; /* can be "path" */
-    u32 flags;
+    uint32_t flags;
     struct sftp_attributes *attr;
     ssh_string handle;
-    u64 offset;
-    u32 len;
+    uint64_t offset;
+    uint32_t len;
     int attr_num;
     ssh_buffer attrbuf; /* used by sftp_reply_attrs */
     ssh_string data; /* can be newpath of rename() */
@@ -125,8 +125,8 @@ typedef struct request_queue{
 
 /* SSH_FXP_MESSAGE described into .7 page 26 */
 typedef struct {
-    u32 id;
-    u32 status;
+  uint32_t id;
+  uint32_t status;
     ssh_string error;
     ssh_string lang;
     char *errormsg;
@@ -137,24 +137,24 @@ typedef struct {
 typedef struct sftp_attributes{
     char *name;
     char *longname; /* some weird stuff */
-    u32 flags;
-    u8 type;
-    u64 size;
-    u32 uid;
-    u32 gid;
+    uint32_t flags;
+    uint8_t type;
+    uint64_t size;
+    uint32_t uid;
+    uint32_t gid;
     char *owner;
     char *group;
-    u32 permissions;
-    u64 atime64;
-    u32 atime;
-    u32 atime_nseconds;
-    u64 createtime;
-    u32 createtime_nseconds;
-    u64 mtime64;
-    u32 mtime;
-    u32 mtime_nseconds;
+    uint32_t permissions;
+    uint64_t atime64;
+    uint32_t atime;
+    uint32_t atime_nseconds;
+    uint64_t createtime;
+    uint32_t createtime_nseconds;
+    uint64_t mtime64;
+    uint32_t mtime;
+    uint32_t mtime_nseconds;
     ssh_string acl;
-    u32 extended_count;
+    uint32_t extended_count;
     ssh_string extended_type;
     ssh_string extended_data;
 } SFTP_ATTRIBUTES;
@@ -390,7 +390,7 @@ ssize_t sftp_read(SFTP_FILE *file, void *buf, size_t count);
  * @see                 sftp_async_read()
  * @see                 sftp_open()
  */
-int sftp_async_read_begin(SFTP_FILE *file, u32 len);
+int sftp_async_read_begin(SFTP_FILE *file, uint32_t len);
 
 /**
  * @brief Wait for an asynchronous read to complete and save the data.
@@ -415,7 +415,7 @@ int sftp_async_read_begin(SFTP_FILE *file, u32 len);
  *
  * @see sftp_async_read_begin()
  */
-int sftp_async_read(SFTP_FILE *file, void *data, u32 len, u32 id);
+int sftp_async_read(SFTP_FILE *file, void *data, uint32_t len, uint32_t id);
 
 /**
  * @brief Write to a file using an opened sftp file handle.
@@ -444,7 +444,7 @@ ssize_t sftp_write(SFTP_FILE *file, const void *buf, size_t count);
  *
  * @return             0 on success, < 0 on error.
  */
-int sftp_seek(SFTP_FILE *file, u32 new_offset);
+int sftp_seek(SFTP_FILE *file, uint32_t new_offset);
 
 /**
  * @brief Seek to a specific location in a file. This is the
@@ -456,7 +456,7 @@ int sftp_seek(SFTP_FILE *file, u32 new_offset);
  *
  * @return             0 on success, < 0 on error.
  */
-int sftp_seek64(SFTP_FILE *file, u64 new_offset);
+int sftp_seek64(SFTP_FILE *file, uint64_t new_offset);
 
 /**
  * @brief Report current byte position in file.
@@ -637,7 +637,7 @@ int sftp_server_init(SFTP_SESSION *sftp);
 /* this is not a public interface */
 #define SFTP_HANDLES 256
 SFTP_PACKET *sftp_packet_read(SFTP_SESSION *sftp);
-int sftp_packet_write(SFTP_SESSION *sftp,u8 type, ssh_buffer payload);
+int sftp_packet_write(SFTP_SESSION *sftp,uint8_t type, ssh_buffer payload);
 void sftp_packet_free(SFTP_PACKET *packet);
 int buffer_add_attributes(ssh_buffer buffer, SFTP_ATTRIBUTES *attr);
 SFTP_ATTRIBUTES *sftp_parse_attr(SFTP_SESSION *session, ssh_buffer buf,int expectname);
@@ -651,7 +651,7 @@ int sftp_reply_handle(SFTP_CLIENT_MESSAGE *msg, ssh_string handle);
 ssh_string sftp_handle_alloc(SFTP_SESSION *sftp, void *info);
 int sftp_reply_attr(SFTP_CLIENT_MESSAGE *msg, SFTP_ATTRIBUTES *attr);
 void *sftp_handle(SFTP_SESSION *sftp, ssh_string handle);
-int sftp_reply_status(SFTP_CLIENT_MESSAGE *msg, u32 status, const char *message);
+int sftp_reply_status(SFTP_CLIENT_MESSAGE *msg, uint32_t status, const char *message);
 int sftp_reply_names_add(SFTP_CLIENT_MESSAGE *msg, const char *file,
     const char *longname, SFTP_ATTRIBUTES *attr);
 int sftp_reply_names(SFTP_CLIENT_MESSAGE *msg);

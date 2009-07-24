@@ -49,6 +49,12 @@
 #define TYPE_RSA 2
 #define TYPE_RSA1 3
 
+/* integer values */
+typedef uint32_t u32;
+typedef uint16_t u16;
+typedef uint64_t u64;
+typedef uint8_t u8;
+
 /* profiling constants. Don't touch them unless you know what you do */
 #ifdef HAVE_LIBCRYPTO
 #define OPENSSL_BIGNUMS

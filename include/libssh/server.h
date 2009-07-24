@@ -150,7 +150,7 @@ int ssh_accept(SSH_SESSION *session);
 
 typedef struct ssh_message SSH_MESSAGE;
 
-SSH_MESSAGE *ssh_message_retrieve(SSH_SESSION *session, u32 packettype);
+SSH_MESSAGE *ssh_message_retrieve(SSH_SESSION *session, uint32_t packettype);
 SSH_MESSAGE *ssh_message_get(SSH_SESSION *session);
 int ssh_message_type(SSH_MESSAGE *msg);
 int ssh_message_subtype(SSH_MESSAGE *msg);

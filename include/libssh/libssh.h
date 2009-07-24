@@ -94,13 +94,6 @@ typedef struct ssh_agent_struct* ssh_agent;
 typedef struct ssh_session* ssh_session;
 typedef struct ssh_kbdint* ssh_kbdint;
 
-
-/* integer values */
-typedef uint32_t u32;
-typedef uint16_t u16;
-typedef uint64_t u64;
-typedef uint8_t u8;
-
 /* Socket type */
 #ifdef _WIN32
 #define socket_t SOCKET
@@ -289,16 +282,16 @@ int channel_request_subsystem(ssh_channel channel, const char *system);
 int channel_request_env(ssh_channel channel, const char *name, const char *value);
 int channel_request_exec(ssh_channel channel, const char *cmd);
 int channel_request_sftp(ssh_channel channel);
-int channel_write(ssh_channel channel, const void *data, u32 len);
+int channel_write(ssh_channel channel, const void *data, uint32_t len);
 int channel_send_eof(ssh_channel channel);
 int channel_is_eof(ssh_channel channel);
-int channel_read(ssh_channel channel, void *dest, u32 count, int is_stderr);
-int channel_read_buffer(ssh_channel channel, ssh_buffer buffer, u32 count,
+int channel_read(ssh_channel channel, void *dest, uint32_t count, int is_stderr);
+int channel_read_buffer(ssh_channel channel, ssh_buffer buffer, uint32_t count,
     int is_stderr);
 int channel_poll(ssh_channel channel, int is_stderr);
 int channel_close(ssh_channel channel);
 void channel_set_blocking(ssh_channel channel, int blocking);
-int channel_read_nonblocking(ssh_channel channel, void *dest, u32 count,
+int channel_read_nonblocking(ssh_channel channel, void *dest, uint32_t count,
     int is_stderr);
 int channel_is_open(ssh_channel channel);
 int channel_is_closed(ssh_channel channel);
@@ -361,7 +354,8 @@ void buffer_free(ssh_buffer buffer);
 /* buffer_get returns a pointer to the begining of the buffer. no position is taken into account */
 void *buffer_get(ssh_buffer buffer);
 /* same here */
-u32 buffer_get_len(ssh_buffer buffer);
+/* FIXME should be size_t */
+uint32_t buffer_get_len(ssh_buffer buffer);
 
 
 /* in auth.c */
