@@ -76,8 +76,8 @@ typedef struct ssh_string_struct STRING;
 typedef struct ssh_buffer_struct BUFFER;
 typedef struct ssh_public_key_struct PUBLIC_KEY;
 typedef struct ssh_private_key_struct PRIVATE_KEY;
-#endif
 typedef struct ssh_channel_struct CHANNEL;
+#endif
 typedef struct ssh_agent_struct AGENT;
 //#endif
 
@@ -257,7 +257,7 @@ ssh_string ssh_get_pubkey(SSH_SESSION *session);
 
 /* in connect.c */
 int ssh_fd_poll(SSH_SESSION *session,int *write, int *except);
-int ssh_select(CHANNEL **channels, CHANNEL **outchannels, socket_t maxfd,
+int ssh_select(ssh_channel *channels, ssh_channel *outchannels, socket_t maxfd,
     fd_set *readfds, struct timeval *timeout);
 
 void publickey_free(ssh_public_key key);
@@ -276,37 +276,37 @@ int ssh_write_knownhost(SSH_SESSION *session);
 
 /* in channels.c */
 
-CHANNEL *channel_new(SSH_SESSION *session);
-int channel_open_forward(CHANNEL *channel, const char *remotehost,
+ssh_channel channel_new(SSH_SESSION *session);
+int channel_open_forward(ssh_channel channel, const char *remotehost,
     int remoteport, const char *sourcehost, int localport);
-int channel_open_session(CHANNEL *channel);
-void channel_free(CHANNEL *channel);
-int channel_request_pty(CHANNEL *channel);
-int channel_request_pty_size(CHANNEL *channel, const char *term,
+int channel_open_session(ssh_channel channel);
+void channel_free(ssh_channel channel);
+int channel_request_pty(ssh_channel channel);
+int channel_request_pty_size(ssh_channel channel, const char *term,
     int cols, int rows);
-int channel_change_pty_size(CHANNEL *channel,int cols,int rows);
-int channel_request_shell(CHANNEL *channel);
-int channel_request_subsystem(CHANNEL *channel, const char *system);
-int channel_request_env(CHANNEL *channel, const char *name, const char *value);
-int channel_request_exec(CHANNEL *channel, const char *cmd);
-int channel_request_sftp(CHANNEL *channel);
-int channel_write(CHANNEL *channel, const void *data, u32 len);
-int channel_send_eof(CHANNEL *channel);
-int channel_is_eof(CHANNEL *channel);
-int channel_read(CHANNEL *channel, void *dest, u32 count, int is_stderr);
-int channel_read_buffer(CHANNEL *channel, ssh_buffer buffer, u32 count,
+int channel_change_pty_size(ssh_channel channel,int cols,int rows);
+int channel_request_shell(ssh_channel channel);
+int channel_request_subsystem(ssh_channel channel, const char *system);
+int channel_request_env(ssh_channel channel, const char *name, const char *value);
+int channel_request_exec(ssh_channel channel, const char *cmd);
+int channel_request_sftp(ssh_channel channel);
+int channel_write(ssh_channel channel, const void *data, u32 len);
+int channel_send_eof(ssh_channel channel);
+int channel_is_eof(ssh_channel channel);
+int channel_read(ssh_channel channel, void *dest, u32 count, int is_stderr);
+int channel_read_buffer(ssh_channel channel, ssh_buffer buffer, u32 count,
     int is_stderr);
-int channel_poll(CHANNEL *channel, int is_stderr);
-int channel_close(CHANNEL *channel);
-void channel_set_blocking(CHANNEL *channel, int blocking);
-int channel_read_nonblocking(CHANNEL *channel, void *dest, u32 count,
+int channel_poll(ssh_channel channel, int is_stderr);
+int channel_close(ssh_channel channel);
+void channel_set_blocking(ssh_channel channel, int blocking);
+int channel_read_nonblocking(ssh_channel channel, void *dest, u32 count,
     int is_stderr);
-int channel_is_open(CHANNEL *channel);
-int channel_is_closed(CHANNEL *channel);
-int channel_select(CHANNEL **readchans, CHANNEL **writechans, CHANNEL **exceptchans, struct 
+int channel_is_open(ssh_channel channel);
+int channel_is_closed(ssh_channel channel);
+int channel_select(ssh_channel *readchans, ssh_channel *writechans, ssh_channel *exceptchans, struct
         timeval * timeout);
-SSH_SESSION *channel_get_session(CHANNEL *channel);
-int channel_get_exit_status(CHANNEL *channel);
+SSH_SESSION *channel_get_session(ssh_channel channel);
+int channel_get_exit_status(ssh_channel channel);
 /* in options.c */
 
 /**

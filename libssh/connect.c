@@ -353,7 +353,7 @@ socket_t ssh_connect_host(SSH_SESSION *session, const char *host,
  *
  * @see select(2)
  */
-int ssh_select(CHANNEL **channels, CHANNEL **outchannels, socket_t maxfd,
+int ssh_select(ssh_channel *channels, ssh_channel *outchannels, socket_t maxfd,
     fd_set *readfds, struct timeval *timeout) {
   struct timeval zerotime;
   fd_set localset, localset2;

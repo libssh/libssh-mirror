@@ -60,7 +60,7 @@ extern "C" {
 
 typedef struct sftp_session_struct {
     SSH_SESSION *session;
-    CHANNEL *channel;
+    ssh_channel channel;
     int server_version;
     int client_version;
     int version;
@@ -622,7 +622,7 @@ int sftp_server_version(SFTP_SESSION *sftp);
  *
  * @return              A new sftp server session.
  */
-SFTP_SESSION *sftp_server_new(SSH_SESSION *session, CHANNEL *chan);
+SFTP_SESSION *sftp_server_new(SSH_SESSION *session, ssh_channel chan);
 
 /**
  * @brief Intialize the sftp server.

@@ -109,7 +109,7 @@ static void do_exit(int i) {
   exit(0);
 }
 
-CHANNEL *chan;
+ssh_channel chan;
 int signal_delayed=0;
 
 static void sigwindowchanged(int i){
@@ -129,12 +129,12 @@ static void sizechanged(void){
 //    printf("Changed pty size\n");
     setsignal();
 }
-static void select_loop(SSH_SESSION *session,CHANNEL *channel){
+static void select_loop(SSH_SESSION *session,ssh_channel channel){
     fd_set fds;
     struct timeval timeout;
     char buffer[10];
     ssh_buffer readbuf=buffer_new();
-    CHANNEL *channels[2];
+    ssh_channel channels[2];
     int lus;
     int eof=0;
     int maxfd;
@@ -229,7 +229,7 @@ static void select_loop(SSH_SESSION *session,CHANNEL *channel){
 
 
 static void shell(SSH_SESSION *session){
-    CHANNEL *channel;
+    ssh_channel channel;
     struct termios terminal_local;
     int interactive=isatty(0);
     channel = channel_new(session);
@@ -260,7 +260,7 @@ static void shell(SSH_SESSION *session){
 }
 
 static void batch_shell(SSH_SESSION *session){
-    CHANNEL *channel;
+    ssh_channel channel;
     char buffer[1024];
     int i,s=0;
     for(i=0;i<MAXCMD && cmds[i];++i)

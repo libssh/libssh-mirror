@@ -378,7 +378,7 @@ struct ssh_session {
     CRYPTO *current_crypto;
     CRYPTO *next_crypto;  /* next_crypto is going to be used after a SSH2_MSG_NEWKEYS */
 
-    CHANNEL *channels; /* linked list of channels */
+    ssh_channel channels; /* linked list of channels */
     int maxchannel;
     int exec_channel_opened; /* version 1 only. more
                                 info in channels1.c */
@@ -441,7 +441,7 @@ struct ssh_service_request {
 
 struct ssh_channel_request {
     int type;
-    CHANNEL *channel;
+    ssh_channel channel;
     u8 want_reply;
     /* pty-req type specifics */
     char *TERM;
@@ -678,11 +678,11 @@ ssh_string ssh_sign_session_id(SSH_SESSION *session, ssh_private_key privatekey)
 ssh_string ssh_encrypt_rsa1(SSH_SESSION *session, ssh_string data, ssh_public_key key);
 /* channel.c */
 void channel_handle(SSH_SESSION *session, int type);
-CHANNEL *channel_new(SSH_SESSION *session);
-int channel_default_bufferize(CHANNEL *channel, void *data, int len,
+ssh_channel channel_new(SSH_SESSION *session);
+int channel_default_bufferize(ssh_channel channel, void *data, int len,
         int is_stderr);
 u32 ssh_channel_new_id(SSH_SESSION *session);
-CHANNEL *ssh_channel_from_local(SSH_SESSION *session, u32 id);
+ssh_channel ssh_channel_from_local(SSH_SESSION *session, u32 id);
 
 /* options.c */
 
@@ -788,14 +788,14 @@ const void *_ssh_list_get_head(struct ssh_list *list);
 
 
 /* channels1.c */
-int channel_open_session1(CHANNEL *channel);
-int channel_request_pty_size1(CHANNEL *channel, const char *terminal,
+int channel_open_session1(ssh_channel channel);
+int channel_request_pty_size1(ssh_channel channel, const char *terminal,
     int cols, int rows);
-int channel_change_pty_size1(CHANNEL *channel, int cols, int rows);
-int channel_request_shell1(CHANNEL *channel);
-int channel_request_exec1(CHANNEL *channel, const char *cmd);
+int channel_change_pty_size1(ssh_channel channel, int cols, int rows);
+int channel_request_shell1(ssh_channel channel);
+int channel_request_exec1(ssh_channel channel, const char *cmd);
 int channel_handle1(SSH_SESSION *session, int type);
-int channel_write1(CHANNEL *channel, const void *data, int len);
+int channel_write1(ssh_channel channel, const void *data, int len);
 
 /* session.c */
 

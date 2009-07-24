@@ -391,9 +391,9 @@ error:
   return NULL;
 }
 
-CHANNEL *ssh_message_channel_request_open_reply_accept(SSH_MESSAGE *msg) {
+ssh_channel ssh_message_channel_request_open_reply_accept(SSH_MESSAGE *msg) {
   SSH_SESSION *session = msg->session;
-  CHANNEL *chan = NULL;
+  ssh_channel chan = NULL;
 
   enter_function();
 

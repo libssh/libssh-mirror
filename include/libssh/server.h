@@ -162,9 +162,9 @@ char *ssh_message_auth_password(SSH_MESSAGE *msg);
 int ssh_message_auth_reply_success(SSH_MESSAGE *msg,int partial);
 int ssh_message_auth_set_methods(SSH_MESSAGE *msg, int methods);
 
-CHANNEL *ssh_message_channel_request_open_reply_accept(SSH_MESSAGE *msg);
+ssh_channel ssh_message_channel_request_open_reply_accept(SSH_MESSAGE *msg);
 
-CHANNEL *ssh_message_channel_request_channel(SSH_MESSAGE *msg);
+ssh_channel ssh_message_channel_request_channel(SSH_MESSAGE *msg);
 // returns the TERM env variable
 char *ssh_message_channel_request_pty_term(SSH_MESSAGE *msg);
 char *ssh_message_channel_request_subsystem(SSH_MESSAGE *msg);

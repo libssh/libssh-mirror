@@ -93,7 +93,7 @@ SFTP_SESSION *sftp_new(SSH_SESSION *session){
 }
 
 #ifdef WITH_SERVER
-SFTP_SESSION *sftp_server_new(SSH_SESSION *session, CHANNEL *chan){
+SFTP_SESSION *sftp_server_new(SSH_SESSION *session, ssh_channel chan){
   SFTP_SESSION *sftp = NULL;
 
   sftp = malloc(sizeof(SFTP_SESSION));
