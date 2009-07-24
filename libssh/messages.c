@@ -92,7 +92,7 @@ static int ssh_message_service_request_reply_default(SSH_MESSAGE *msg) {
   return ssh_message_service_reply_success(msg);
 }
 int ssh_message_service_reply_success(SSH_MESSAGE *msg) {
-  struct string_struct *service;
+  struct ssh_string_struct *service;
   SSH_SESSION *session=msg->session;
   if (msg == NULL) {
     return SSH_ERROR;

@@ -795,7 +795,7 @@ static struct keys_struct keytab[] = {
  * @see ssh_options_set_identity()
  */
 int ssh_userauth_autopubkey(SSH_SESSION *session, const char *passphrase) {
-  struct public_key_struct *publickey;
+  struct ssh_public_key_struct *publickey;
   STRING *pubkey;
   PRIVATE_KEY *privkey;
   char *privkeyfile = NULL;

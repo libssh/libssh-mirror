@@ -42,8 +42,8 @@
  * \param size size of the string
  * \return the newly allocated string
  */
-struct string_struct *string_new(size_t size) {
-  struct string_struct *str = NULL;
+struct ssh_string_struct *string_new(size_t size) {
+  struct ssh_string_struct *str = NULL;
 
   str = malloc(size + 4);
   if (str == NULL) {
@@ -65,7 +65,7 @@ struct string_struct *string_new(size_t size) {
  *
  * @return         0 on success, < 0 on error.
  */
-int string_fill(struct string_struct *s, const void *data, size_t len) {
+int string_fill(struct ssh_string_struct *s, const void *data, size_t len) {
   if ((s == NULL) || (data == NULL) ||
       (len == 0) || (len > s->size)) {
     return -1;
@@ -81,8 +81,8 @@ int string_fill(struct string_struct *s, const void *data, size_t len) {
  * \return the newly allocated string.
  * \warning The nul byte is not copied nor counted in the ouput string.
  */
-struct string_struct *string_from_char(const char *what) {
-  struct string_struct *ptr = NULL;
+struct ssh_string_struct *string_from_char(const char *what) {
+  struct ssh_string_struct *ptr = NULL;
   size_t len = strlen(what);
 
   ptr = malloc(4 + len);
@@ -100,7 +100,7 @@ struct string_struct *string_from_char(const char *what) {
  * \param str the input SSH string
  * \return size of the content of str, 0 on error
  */
-size_t string_len(struct string_struct *s) {
+size_t string_len(struct ssh_string_struct *s) {
   if (s == NULL) {
     return ntohl(0);
   }
@@ -115,7 +115,7 @@ size_t string_len(struct string_struct *s) {
  * \warning If the input SSH string contains zeroes, some parts of
  * the output string may not be readable with regular libc functions.
  */
-char *string_to_char(struct string_struct *s) {
+char *string_to_char(struct ssh_string_struct *s) {
   size_t len = ntohl(s->size) + 1;
   char *new = malloc(len);
 
@@ -135,8 +135,8 @@ char *string_to_char(struct string_struct *s) {
  *
  * @return              Newly allocated copy of the string, NULL on error.
  */
-struct string_struct *string_copy(struct string_struct *s) {
-  struct string_struct *new = malloc(ntohl(s->size) + 4);
+struct ssh_string_struct *string_copy(struct ssh_string_struct *s) {
+  struct ssh_string_struct *new = malloc(ntohl(s->size) + 4);
 
   if (new == NULL) {
     return NULL;
@@ -150,7 +150,7 @@ struct string_struct *string_copy(struct string_struct *s) {
 /** \brief destroy data in a string so it couldn't appear in a core dump
  * \param s string to burn
  */
-void string_burn(struct string_struct *s) {
+void string_burn(struct ssh_string_struct *s) {
   if (s == NULL) {
     return;
   }
@@ -164,7 +164,7 @@ void string_burn(struct string_struct *s) {
  *
  * @return              Return the data of the string or NULL on error.
  */
-void *string_data(struct string_struct *s) {
+void *string_data(struct ssh_string_struct *s) {
   if (s == NULL) {
     return NULL;
   }
@@ -176,7 +176,7 @@ void *string_data(struct string_struct *s) {
  * \brief deallocate a STRING object
  * \param s String to delete
  */
-void string_free(struct string_struct *s) {
+void string_free(struct ssh_string_struct *s) {
   SAFE_FREE(s);
 }
 

@@ -70,13 +70,13 @@ static void buffer_verify(struct buffer_struct *buf){
 /** \brief creates a new buffer
  * \return a new initialized buffer, NULL on error.
  */
-struct buffer_struct *buffer_new(void) {
-  struct buffer_struct *buf = malloc(sizeof(struct buffer_struct));
+struct ssh_buffer_struct *buffer_new(void) {
+  struct ssh_buffer_struct *buf = malloc(sizeof(struct ssh_buffer_struct));
 
   if (buf == NULL) {
     return NULL;
   }
-  memset(buf, 0, sizeof(struct buffer_struct));
+  memset(buf, 0, sizeof(struct ssh_buffer_struct));
   buffer_verify(buf);
   return buf;
 }
@@ -84,7 +84,7 @@ struct buffer_struct *buffer_new(void) {
 /** \brief deallocate a buffer
  * \param buffer buffer to free
  */
-void buffer_free(struct buffer_struct *buffer) {
+void buffer_free(struct ssh_buffer_struct *buffer) {
   if (buffer == NULL) {
     return;
   }
@@ -99,7 +99,7 @@ void buffer_free(struct buffer_struct *buffer) {
   SAFE_FREE(buffer);
 }
 
-static int realloc_buffer(struct buffer_struct *buffer, int needed) {
+static int realloc_buffer(struct ssh_buffer_struct *buffer, int needed) {
   int smallest = 1;
   char *new = NULL;
   buffer_verify(buffer);
@@ -123,7 +123,7 @@ static int realloc_buffer(struct buffer_struct *buffer, int needed) {
  * \param buffer buffer
  * \return 0 on sucess, < 0 on error
  */
-int buffer_reinit(struct buffer_struct *buffer) {
+int buffer_reinit(struct ssh_buffer_struct *buffer) {
   buffer_verify(buffer);
   memset(buffer->data, 0, buffer->used);
   buffer->used = 0;
@@ -143,7 +143,7 @@ int buffer_reinit(struct buffer_struct *buffer) {
  * \param data data pointer
  * \param len length of data
  */
-int buffer_add_data(struct buffer_struct *buffer, const void *data, u32 len) {
+int buffer_add_data(struct ssh_buffer_struct *buffer, const void *data, u32 len) {
   buffer_verify(buffer);
   if (buffer->allocated < (buffer->used + len)) {
     if (realloc_buffer(buffer, buffer->used + len) < 0) {
@@ -163,8 +163,8 @@ int buffer_add_data(struct buffer_struct *buffer, const void *data, u32 len) {
  * \param string SSH String to add
  * \return 0 on success, -1 on error.
  */
-int buffer_add_ssh_string(struct buffer_struct *buffer,
-    struct string_struct *string) {
+int buffer_add_ssh_string(struct ssh_buffer_struct *buffer,
+    struct ssh_string_struct *string) {
   u32 len = 0;
 
   len = ntohl(string->size);
@@ -180,7 +180,7 @@ int buffer_add_ssh_string(struct buffer_struct *buffer,
  * \param data 32 bits integer
  * \return 0 on success, -1 on error.
  */
-int buffer_add_u32(struct buffer_struct *buffer,u32 data){
+int buffer_add_u32(struct ssh_buffer_struct *buffer,u32 data){
   if (buffer_add_data(buffer, &data, sizeof(data)) < 0) {
     return -1;
   }
@@ -194,7 +194,7 @@ int buffer_add_u32(struct buffer_struct *buffer,u32 data){
  * \param data 64 bits integer
  * \return 0 on success, -1 on error.
  */
-int buffer_add_u64(struct buffer_struct *buffer, u64 data){
+int buffer_add_u64(struct ssh_buffer_struct *buffer, u64 data){
   if (buffer_add_data(buffer, &data, sizeof(data)) < 0) {
     return -1;
   }
@@ -207,7 +207,7 @@ int buffer_add_u64(struct buffer_struct *buffer, u64 data){
  * \param data 8 bits integer
  * \return 0 on success, -1 on error.
  */
-int buffer_add_u8(struct buffer_struct *buffer,u8 data){
+int buffer_add_u8(struct ssh_buffer_struct *buffer,u8 data){
   if (buffer_add_data(buffer, &data, sizeof(u8)) < 0) {
     return -1;
   }
@@ -222,7 +222,7 @@ int buffer_add_u8(struct buffer_struct *buffer,u8 data){
  * \param len length of data
  * \return 0 on success, -1 on error.
  */
-int buffer_prepend_data(struct buffer_struct *buffer, const void *data,
+int buffer_prepend_data(struct ssh_buffer_struct *buffer, const void *data,
     u32 len) {
   buffer_verify(buffer);
   if (buffer->allocated < (buffer->used + len)) {
@@ -243,8 +243,8 @@ int buffer_prepend_data(struct buffer_struct *buffer, const void *data,
  * \param source source buffer. Doesn't take position in buffer into account
  * \return 0 on success, -1 on error.
  */
-int buffer_add_buffer(struct buffer_struct *buffer,
-    struct buffer_struct *source) {
+int buffer_add_buffer(struct ssh_buffer_struct *buffer,
+    struct ssh_buffer_struct *source) {
   if (buffer_add_data(buffer, buffer_get(source), buffer_get_len(source)) < 0) {
     return -1;
   }
@@ -259,7 +259,7 @@ int buffer_add_buffer(struct buffer_struct *buffer,
  * \see buffer_get_rest()
  * \see buffer_get_len()
  */
-void *buffer_get(struct buffer_struct *buffer){
+void *buffer_get(struct ssh_buffer_struct *buffer){
   return buffer->data;
 }
 
@@ -270,7 +270,7 @@ void *buffer_get(struct buffer_struct *buffer){
  * \see buffer_get_rest_len()
  * \see buffer_get()
  */
-void *buffer_get_rest(struct buffer_struct *buffer){
+void *buffer_get_rest(struct ssh_buffer_struct *buffer){
     return buffer->data + buffer->pos;
 }
 
@@ -279,7 +279,7 @@ void *buffer_get_rest(struct buffer_struct *buffer){
  * \return length of the buffer
  * \see buffer_get()
  */
-u32 buffer_get_len(struct buffer_struct *buffer){
+u32 buffer_get_len(struct ssh_buffer_struct *buffer){
     return buffer->used;
 }
 
@@ -289,7 +289,7 @@ u32 buffer_get_len(struct buffer_struct *buffer){
  * \return length of the buffer
  * \see buffer_get_rest()
  */
-u32 buffer_get_rest_len(struct buffer_struct *buffer){
+u32 buffer_get_rest_len(struct ssh_buffer_struct *buffer){
   buffer_verify(buffer);
   return buffer->used - buffer->pos;
 }
@@ -301,7 +301,7 @@ u32 buffer_get_rest_len(struct buffer_struct *buffer){
  * \param len number of bytes to eat
  * \return new size of the buffer
  */
-u32 buffer_pass_bytes(struct buffer_struct *buffer, u32 len){
+u32 buffer_pass_bytes(struct ssh_buffer_struct *buffer, u32 len){
     buffer_verify(buffer);
     if(buffer->used < buffer->pos+len)
         return 0;
@@ -321,7 +321,7 @@ u32 buffer_pass_bytes(struct buffer_struct *buffer, u32 len){
  * \param len number of bytes to remove from tail
  * \return new size of the buffer
  */
-u32 buffer_pass_bytes_end(struct buffer_struct *buffer, u32 len){
+u32 buffer_pass_bytes_end(struct ssh_buffer_struct *buffer, u32 len){
   buffer_verify(buffer);
   if(buffer->used < buffer->pos + len)
     return 0;
@@ -338,7 +338,7 @@ u32 buffer_pass_bytes_end(struct buffer_struct *buffer, u32 len){
  * \returns 0 if there is not enough data in buffer
  * \returns len otherwise.
  */
-u32 buffer_get_data(struct buffer_struct *buffer, void *data, u32 len){
+u32 buffer_get_data(struct ssh_buffer_struct *buffer, void *data, u32 len){
     if(buffer->pos+len>buffer->used)
         return 0;  /*no enough data in buffer */
     memcpy(data,buffer->data+buffer->pos,len);
@@ -352,7 +352,7 @@ u32 buffer_get_data(struct buffer_struct *buffer, void *data, u32 len){
  * \returns 0 if there is not enough data in buffer
  * \returns 1 otherwise.
  */
-int buffer_get_u8(struct buffer_struct *buffer, u8 *data){
+int buffer_get_u8(struct ssh_buffer_struct *buffer, u8 *data){
     return buffer_get_data(buffer,data,sizeof(u8));
 }
 
@@ -363,7 +363,7 @@ int buffer_get_u8(struct buffer_struct *buffer, u8 *data){
  * \returns 0 if there is not enough data in buffer
  * \returns 4 otherwise.
  */
-int buffer_get_u32(struct buffer_struct *buffer, u32 *data){
+int buffer_get_u32(struct ssh_buffer_struct *buffer, u32 *data){
     return buffer_get_data(buffer,data,sizeof(u32));
 }
 /** \internal
@@ -373,7 +373,7 @@ int buffer_get_u32(struct buffer_struct *buffer, u32 *data){
  * \returns 0 if there is not enough data in buffer
  * \returns 8 otherwise.
  */
-int buffer_get_u64(struct buffer_struct *buffer, u64 *data){
+int buffer_get_u64(struct ssh_buffer_struct *buffer, u64 *data){
     return buffer_get_data(buffer,data,sizeof(u64));
 }
 /** \internal
@@ -382,10 +382,10 @@ int buffer_get_u64(struct buffer_struct *buffer, u64 *data){
  * \returns The SSH String read
  * \returns NULL otherwise.
  */
-struct string_struct *buffer_get_ssh_string(struct buffer_struct *buffer) {
+struct ssh_string_struct *buffer_get_ssh_string(struct ssh_buffer_struct *buffer) {
   u32 stringlen;
   u32 hostlen;
-  struct string_struct *str = NULL;
+  struct ssh_string_struct *str = NULL;
 
   if (buffer_get_u32(buffer, &stringlen) == 0) {
     return NULL;
@@ -415,10 +415,10 @@ struct string_struct *buffer_get_ssh_string(struct buffer_struct *buffer) {
  * \returns NULL otherwise
  */
 
-struct string_struct *buffer_get_mpint(struct buffer_struct *buffer) {
+struct ssh_string_struct *buffer_get_mpint(struct ssh_buffer_struct *buffer) {
   u16 bits;
   u32 len;
-  struct string_struct *str = NULL;
+  struct ssh_string_struct *str = NULL;
 
   if (buffer_get_data(buffer, &bits, sizeof(u16)) != sizeof(u16)) {
     return NULL;

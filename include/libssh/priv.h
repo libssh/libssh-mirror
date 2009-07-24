@@ -172,7 +172,7 @@ void hmac_final(HMACCTX ctx,unsigned char *hashmacbuf,unsigned int *len);
 
 /* strings and buffers */
 /* must be 32 bits number + immediatly our data */
-struct string_struct {
+struct ssh_string_struct {
 	u32 size;
 	unsigned char string[MAX_PACKET_LEN];
 }
@@ -183,7 +183,7 @@ __attribute__ ((packed))
 
 /** Describes a buffer state at a moment
  */
-struct buffer_struct {
+struct ssh_buffer_struct {
     char *data;
     u32 used;
     u32 allocated;
@@ -202,7 +202,7 @@ typedef struct kex_struct {
 	char **methods;
 } KEX;
 
-struct public_key_struct {
+struct ssh_public_key_struct {
     int type;
     const char *type_c; /* Don't free it ! it is static */
 #ifdef HAVE_LIBGCRYPT
@@ -214,7 +214,7 @@ struct public_key_struct {
 #endif
 };
 
-struct private_key_struct {
+struct ssh_private_key_struct {
     int type;
 #ifdef HAVE_LIBGCRYPT
     gcry_sexp_t dsa_priv;
@@ -295,9 +295,9 @@ typedef struct ssh_crypto_struct {
     void *compress_in_ctx; /* really, don't */
 } CRYPTO;
 
-struct channel_struct {
-    struct channel_struct *prev;
-    struct channel_struct *next;
+struct ssh_channel_struct {
+    struct ssh_channel_struct *prev;
+    struct ssh_channel_struct *next;
     SSH_SESSION *session; /* SSH_SESSION pointer */
     u32 local_channel;
     u32 local_window;
@@ -318,7 +318,7 @@ struct channel_struct {
     int exit_status;
 };
 
-struct agent_struct {
+struct ssh_agent_struct {
   struct socket *sock;
   BUFFER *ident;
   unsigned int count;
@@ -476,16 +476,16 @@ struct ssh_message {
  *
  * @return An allocated ssh agent structure or NULL on error.
  */
-struct agent_struct *agent_new(struct ssh_session *session);
+struct ssh_agent_struct *agent_new(struct ssh_session *session);
 
-void agent_close(struct agent_struct *agent);
+void agent_close(struct ssh_agent_struct *agent);
 
 /**
  * @brief Free an allocated ssh agent structure.
  *
  * @param agent The ssh agent structure to free.
  */
-void agent_free(struct agent_struct *agent);
+void agent_free(struct ssh_agent_struct *agent);
 
 /**
  * @brief Check if the ssh agent is running.
@@ -498,15 +498,15 @@ int agent_is_running(struct ssh_session *session);
 
 int agent_get_ident_count(struct ssh_session *session);
 
-struct public_key_struct *agent_get_next_ident(struct ssh_session *session,
+struct ssh_public_key_struct *agent_get_next_ident(struct ssh_session *session,
     char **comment);
 
-struct public_key_struct *agent_get_first_ident(struct ssh_session *session,
+struct ssh_public_key_struct *agent_get_first_ident(struct ssh_session *session,
     char **comment);
 
 STRING *agent_sign_data(struct ssh_session *session,
-    struct buffer_struct *data,
-    struct public_key_struct *pubkey);
+    struct ssh_buffer_struct *data,
+    struct ssh_public_key_struct *pubkey);
 #endif
 
 /* poll.c */
@@ -668,7 +668,7 @@ PUBLIC_KEY *publickey_from_string(SSH_SESSION *session, STRING *pubkey_s);
 SIGNATURE *signature_from_string(SSH_SESSION *session, STRING *signature,PUBLIC_KEY *pubkey,int needed_type);
 void signature_free(SIGNATURE *sign);
 STRING *ssh_do_sign_with_agent(struct ssh_session *session,
-    struct buffer_struct *buf, struct public_key_struct *publickey);
+    struct ssh_buffer_struct *buf, struct ssh_public_key_struct *publickey);
 STRING *ssh_do_sign(SSH_SESSION *session,BUFFER *sigbuf,
         PRIVATE_KEY *privatekey);
 STRING *ssh_sign_session_id(SSH_SESSION *session, PRIVATE_KEY *privatekey);

@@ -137,7 +137,7 @@ AGENT *agent_new(struct ssh_session *session) {
   return agent;
 }
 
-void agent_close(struct agent_struct *agent) {
+void agent_close(struct ssh_agent_struct *agent) {
   if (agent == NULL) {
     return;
   }
@@ -200,7 +200,7 @@ static int agent_decode_reply(struct ssh_session *session, int type) {
 #endif
 
 static int agent_talk(struct ssh_session *session,
-    struct buffer_struct *request, struct buffer_struct *reply) {
+    struct ssh_buffer_struct *request, struct ssh_buffer_struct *reply) {
   u32 len = 0;
   u8 payload[1024] = {0};
 
@@ -335,7 +335,7 @@ int agent_get_ident_count(struct ssh_session *session) {
 }
 
 /* caller has to free commment */
-struct public_key_struct *agent_get_first_ident(struct ssh_session *session,
+struct ssh_public_key_struct *agent_get_first_ident(struct ssh_session *session,
     char **comment) {
   if (agent_get_ident_count(session) > 0) {
     return agent_get_next_ident(session, comment);
@@ -345,11 +345,11 @@ struct public_key_struct *agent_get_first_ident(struct ssh_session *session,
 }
 
 /* caller has to free commment */
-struct public_key_struct *agent_get_next_ident(struct ssh_session *session,
+struct ssh_public_key_struct *agent_get_next_ident(struct ssh_session *session,
     char **comment) {
-  struct public_key_struct *pubkey = NULL;
-  struct string_struct *blob = NULL;
-  struct string_struct *tmp = NULL;
+  struct ssh_public_key_struct *pubkey = NULL;
+  struct ssh_string_struct *blob = NULL;
+  struct ssh_string_struct *tmp = NULL;
 
   if (session->agent->count == 0) {
     return NULL;
@@ -395,12 +395,12 @@ struct public_key_struct *agent_get_next_ident(struct ssh_session *session,
 }
 
 STRING *agent_sign_data(struct ssh_session *session,
-    struct buffer_struct *data,
-    struct public_key_struct *pubkey) {
-  struct string_struct *blob = NULL;
-  struct string_struct *sig = NULL;
-  struct buffer_struct *request = NULL;
-  struct buffer_struct *reply = NULL;
+    struct ssh_buffer_struct *data,
+    struct ssh_public_key_struct *pubkey) {
+  struct ssh_string_struct *blob = NULL;
+  struct ssh_string_struct *sig = NULL;
+  struct ssh_buffer_struct *request = NULL;
+  struct ssh_buffer_struct *reply = NULL;
   int type = SSH2_AGENT_FAILURE;
   int flags = 0;
   u32 dlen = 0;

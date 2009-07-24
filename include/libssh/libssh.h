@@ -71,13 +71,13 @@ typedef unsigned long long uint64_t;
 extern "C" {
 #endif
 
-typedef struct string_struct STRING;
-typedef struct buffer_struct BUFFER;
-typedef struct public_key_struct PUBLIC_KEY;
-typedef struct private_key_struct PRIVATE_KEY;
+typedef struct ssh_string_struct STRING;
+typedef struct ssh_buffer_struct BUFFER;
+typedef struct ssh_public_key_struct PUBLIC_KEY;
+typedef struct ssh_private_key_struct PRIVATE_KEY;
 typedef struct ssh_options_struct SSH_OPTIONS;
-typedef struct channel_struct CHANNEL;
-typedef struct agent_struct AGENT;
+typedef struct ssh_channel_struct CHANNEL;
+typedef struct ssh_agent_struct AGENT;
 typedef struct ssh_session SSH_SESSION;
 typedef struct ssh_kbdint SSH_KBDINT;
 struct keys_struct;
