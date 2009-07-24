@@ -77,9 +77,8 @@ typedef struct ssh_buffer_struct BUFFER;
 typedef struct ssh_public_key_struct PUBLIC_KEY;
 typedef struct ssh_private_key_struct PRIVATE_KEY;
 typedef struct ssh_channel_struct CHANNEL;
-#endif
 typedef struct ssh_agent_struct AGENT;
-//#endif
+#endif
 
 typedef struct ssh_options_struct SSH_OPTIONS;
 typedef struct ssh_session SSH_SESSION;
@@ -91,7 +90,7 @@ typedef struct ssh_public_key_struct* ssh_public_key;
 typedef struct ssh_private_key_struct* ssh_private_key;
 typedef struct ssh_options_struct* ssh_options;
 typedef struct ssh_channel_struct* ssh_channel;
-typedef struct ssh_agent_struct* ssh_agentT;
+typedef struct ssh_agent_struct* ssh_agent;
 typedef struct ssh_session* ssh_session;
 typedef struct ssh_kbdint* ssh_kbdint;
 

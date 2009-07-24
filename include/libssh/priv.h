@@ -382,7 +382,7 @@ struct ssh_session {
     int maxchannel;
     int exec_channel_opened; /* version 1 only. more
                                 info in channels1.c */
-    AGENT *agent; /* ssh agent */
+    ssh_agent agent; /* ssh agent */
 
 /* keyb interactive data */
     struct ssh_kbdint *kbdint;

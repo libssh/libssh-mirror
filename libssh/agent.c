@@ -118,10 +118,10 @@ static size_t atomicio(struct socket *s, void *buf, size_t n, int do_read) {
   return pos;
 }
 
-AGENT *agent_new(struct ssh_session *session) {
-  AGENT *agent = NULL;
+ssh_agent agent_new(struct ssh_session *session) {
+  ssh_agent agent = NULL;
 
-  agent = malloc(sizeof(AGENT));
+  agent = malloc(sizeof(struct ssh_agent_struct));
   if (agent == NULL) {
     return NULL;
   }
@@ -147,7 +147,7 @@ void agent_close(struct ssh_agent_struct *agent) {
   }
 }
 
-void agent_free(AGENT *agent) {
+void agent_free(ssh_agent agent) {
   if (agent) {
     if (agent->ident) {
       buffer_free(agent->ident);
