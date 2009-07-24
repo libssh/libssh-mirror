@@ -922,7 +922,7 @@ STRING *publickey_from_file(SSH_SESSION *session, const char *filename,
   return str;
 }
 
-STRING *try_publickey_from_file(SSH_SESSION *session, struct keys_struct keytab,
+STRING *try_publickey_from_file(SSH_SESSION *session, struct ssh_keys_struct keytab,
     char **privkeyfile, int *type) {
   static char *home = NULL;
 

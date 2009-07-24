@@ -750,7 +750,7 @@ error:
   return rc;
 }
 
-static struct keys_struct keytab[] = {
+static struct ssh_keys_struct keytab[] = {
   {
     .privatekey = "%s/.ssh/identity",
     .publickey = "%s/.ssh/identity.pub"

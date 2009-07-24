@@ -80,7 +80,7 @@ typedef struct ssh_channel_struct CHANNEL;
 typedef struct ssh_agent_struct AGENT;
 typedef struct ssh_session SSH_SESSION;
 typedef struct ssh_kbdint SSH_KBDINT;
-struct keys_struct;
+struct ssh_keys_struct;
 
 /* integer values */
 typedef uint32_t u32;
@@ -258,7 +258,7 @@ void privatekey_free(PRIVATE_KEY *prv);
 STRING *publickey_from_file(SSH_SESSION *session, const char *filename,
     int *type);
 STRING *try_publickey_from_file(SSH_SESSION *session,
-    struct keys_struct keytab,
+    struct ssh_keys_struct keytab,
     char **privkeyfile, int *type);
 int ssh_is_server_known(SSH_SESSION *session);
 int ssh_write_knownhost(SSH_SESSION *session);

@@ -324,7 +324,7 @@ struct ssh_agent_struct {
   unsigned int count;
 };
 
-struct keys_struct {
+struct ssh_keys_struct {
   const char *privatekey;
   const char *publickey;
 };
