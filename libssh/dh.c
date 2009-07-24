@@ -477,9 +477,9 @@ int make_sessionid(SSH_SESSION *session) {
   SHACTX ctx;
   ssh_string num = NULL;
   ssh_string str = NULL;
-  BUFFER *server_hash = NULL;
-  BUFFER *client_hash = NULL;
-  BUFFER *buf = NULL;
+  ssh_buffer server_hash = NULL;
+  ssh_buffer client_hash = NULL;
+  ssh_buffer buf = NULL;
   u32 len;
   int rc = SSH_ERROR;
 

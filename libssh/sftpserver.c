@@ -38,7 +38,7 @@
 SFTP_CLIENT_MESSAGE *sftp_get_client_message(SFTP_SESSION *sftp) {
   SFTP_PACKET *packet;
   SFTP_CLIENT_MESSAGE *msg;
-  BUFFER *payload;
+  ssh_buffer payload;
   ssh_string tmp;
 
   msg = malloc(sizeof (SFTP_CLIENT_MESSAGE));
@@ -228,7 +228,7 @@ void sftp_client_message_free(SFTP_CLIENT_MESSAGE *msg) {
 
 int sftp_reply_name(SFTP_CLIENT_MESSAGE *msg, const char *name,
     SFTP_ATTRIBUTES *attr) {
-  BUFFER *out;
+  ssh_buffer out;
   ssh_string file;
 
   out = buffer_new();
@@ -259,7 +259,7 @@ int sftp_reply_name(SFTP_CLIENT_MESSAGE *msg, const char *name,
 }
 
 int sftp_reply_handle(SFTP_CLIENT_MESSAGE *msg, ssh_string handle){
-  BUFFER *out;
+  ssh_buffer out;
 
   out = buffer_new();
   if (out == NULL) {
@@ -278,7 +278,7 @@ int sftp_reply_handle(SFTP_CLIENT_MESSAGE *msg, ssh_string handle){
 }
 
 int sftp_reply_attr(SFTP_CLIENT_MESSAGE *msg, SFTP_ATTRIBUTES *attr) {
-  BUFFER *out;
+  ssh_buffer out;
 
   out = buffer_new();
   if (out == NULL) {
@@ -335,7 +335,7 @@ int sftp_reply_names_add(SFTP_CLIENT_MESSAGE *msg, const char *file,
 }
 
 int sftp_reply_names(SFTP_CLIENT_MESSAGE *msg) {
-  BUFFER *out;
+  ssh_buffer out;
 
   out = buffer_new();
   if (out == NULL) {
@@ -364,7 +364,7 @@ int sftp_reply_names(SFTP_CLIENT_MESSAGE *msg) {
 
 int sftp_reply_status(SFTP_CLIENT_MESSAGE *msg, u32 status,
     const char *message) {
-  BUFFER *out;
+  ssh_buffer out;
   ssh_string s;
 
   out = buffer_new();
@@ -395,7 +395,7 @@ int sftp_reply_status(SFTP_CLIENT_MESSAGE *msg, u32 status,
 }
 
 int sftp_reply_data(SFTP_CLIENT_MESSAGE *msg, const void *data, int len) {
-  BUFFER *out;
+  ssh_buffer out;
 
   out = buffer_new();
   if (out == NULL) {

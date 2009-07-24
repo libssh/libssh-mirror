@@ -174,7 +174,7 @@ unsigned char *packet_encrypt(SSH_SESSION *session, void *data, u32 len) {
  * @return              0 if hmac and mac are equal, < 0 if not or an error
  *                      occured.
  */
-int packet_hmac_verify(SSH_SESSION *session, BUFFER *buffer,
+int packet_hmac_verify(SSH_SESSION *session, ssh_buffer buffer,
     unsigned char *mac) {
   unsigned char hmacbuf[EVP_MAX_MD_SIZE] = {0};
   HMACCTX ctx;

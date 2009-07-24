@@ -263,8 +263,8 @@ static int agent_talk(struct ssh_session *session,
 }
 
 int agent_get_ident_count(struct ssh_session *session) {
-  BUFFER *request = NULL;
-  BUFFER *reply = NULL;
+  ssh_buffer request = NULL;
+  ssh_buffer reply = NULL;
   unsigned int type = 0;
   unsigned int c1 = 0, c2 = 0;
   u8 buf[4] = {0};

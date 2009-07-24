@@ -107,7 +107,7 @@ u32 ssh_channel_new_id(SSH_SESSION *session) {
 }
 
 static int channel_open(CHANNEL *channel, const char *type_c, int window,
-    int maxpacket, BUFFER *payload) {
+    int maxpacket, ssh_buffer payload) {
   SSH_SESSION *session = channel->session;
   ssh_string type = NULL;
   u32 tmp = 0;
@@ -673,7 +673,7 @@ int channel_open_session(CHANNEL *channel) {
 int channel_open_forward(CHANNEL *channel, const char *remotehost,
     int remoteport, const char *sourcehost, int localport) {
   SSH_SESSION *session = channel->session;
-  BUFFER *payload = NULL;
+  ssh_buffer payload = NULL;
   ssh_string str = NULL;
   int rc = SSH_ERROR;
 
@@ -1005,7 +1005,7 @@ void channel_set_blocking(CHANNEL *channel, int blocking) {
 }
 
 static int channel_request(CHANNEL *channel, const char *request,
-    BUFFER *buffer, int reply) {
+    ssh_buffer buffer, int reply) {
   SSH_SESSION *session = channel->session;
   ssh_string req = NULL;
   int rc = SSH_ERROR;
@@ -1086,7 +1086,7 @@ int channel_request_pty_size(CHANNEL *channel, const char *terminal,
     int col, int row) {
   SSH_SESSION *session = channel->session;
   ssh_string term = NULL;
-  BUFFER *buffer = NULL;
+  ssh_buffer buffer = NULL;
   int rc = SSH_ERROR;
 
   enter_function();
@@ -1154,7 +1154,7 @@ int channel_request_pty(CHANNEL *channel) {
  */
 int channel_change_pty_size(CHANNEL *channel, int cols, int rows) {
   SSH_SESSION *session = channel->session;
-  BUFFER *buffer = NULL;
+  ssh_buffer buffer = NULL;
   int rc = SSH_ERROR;
 
   enter_function();
@@ -1215,7 +1215,7 @@ int channel_request_shell(CHANNEL *channel) {
  * @warning You normally don't have to call it for sftp, see sftp_new().
  */
 int channel_request_subsystem(CHANNEL *channel, const char *sys) {
-  BUFFER *buffer = NULL;
+  ssh_buffer buffer = NULL;
   ssh_string subsystem = NULL;
   int rc = SSH_ERROR;
 
@@ -1259,7 +1259,7 @@ int channel_request_sftp( CHANNEL *channel){
  * @warning Some environement variables may be refused by security reasons.
  * */
 int channel_request_env(CHANNEL *channel, const char *name, const char *value) {
-  BUFFER *buffer = NULL;
+  ssh_buffer buffer = NULL;
   ssh_string str = NULL;
   int rc = SSH_ERROR;
 
@@ -1310,7 +1310,7 @@ error:
  * @see channel_request_shell()
  */
 int channel_request_exec(CHANNEL *channel, const char *cmd) {
-  BUFFER *buffer = NULL;
+  ssh_buffer buffer = NULL;
   ssh_string command = NULL;
   int rc = SSH_ERROR;
 
@@ -1359,10 +1359,10 @@ error:
  *
  * @return The number of bytes read, 0 on end of file or SSH_ERROR on error.
  */
-int channel_read_buffer(CHANNEL *channel, BUFFER *buffer, u32 count,
+int channel_read_buffer(CHANNEL *channel, ssh_buffer buffer, u32 count,
     int is_stderr) {
   SSH_SESSION *session=channel->session;
-  BUFFER *stdbuf = channel->stdout_buffer;
+  ssh_buffer stdbuf = channel->stdout_buffer;
   u32 maxread = count;
   u32 len;
 
@@ -1470,7 +1470,7 @@ int channel_read_buffer(CHANNEL *channel, BUFFER *buffer, u32 count,
  */
 int channel_read(CHANNEL *channel, void *dest, u32 count, int is_stderr) {
   SSH_SESSION *session = channel->session;
-  BUFFER *stdbuf = channel->stdout_buffer;
+  ssh_buffer stdbuf = channel->stdout_buffer;
   u32 len;
 
   enter_function();
@@ -1606,7 +1606,7 @@ int channel_read_nonblocking(CHANNEL *channel, void *dest, u32 count,
  */
 int channel_poll(CHANNEL *channel, int is_stderr){
   SSH_SESSION *session = channel->session;
-  BUFFER *stdbuf = channel->stdout_buffer;
+  ssh_buffer stdbuf = channel->stdout_buffer;
 
   enter_function();
 

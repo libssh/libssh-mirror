@@ -48,8 +48,8 @@ struct socket {
                        not block */
   int data_to_write;
   int data_except;
-  BUFFER *out_buffer;
-  BUFFER *in_buffer;
+  ssh_buffer out_buffer;
+  ssh_buffer in_buffer;
   SSH_SESSION *session;
 };
 

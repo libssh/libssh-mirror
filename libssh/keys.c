@@ -65,7 +65,7 @@ int ssh_type_from_name(const char *name) {
   return -1;
 }
 
-PUBLIC_KEY *publickey_make_dss(SSH_SESSION *session, BUFFER *buffer) {
+PUBLIC_KEY *publickey_make_dss(SSH_SESSION *session, ssh_buffer buffer) {
   ssh_string p = NULL;
   ssh_string q = NULL;
   ssh_string g = NULL;
@@ -151,7 +151,7 @@ error:
   return NULL;
 }
 
-PUBLIC_KEY *publickey_make_rsa(SSH_SESSION *session, BUFFER *buffer,
+PUBLIC_KEY *publickey_make_rsa(SSH_SESSION *session, ssh_buffer buffer,
     int type) {
   ssh_string e = NULL;
   ssh_string n = NULL;
@@ -246,7 +246,7 @@ void publickey_free(PUBLIC_KEY *key) {
 }
 
 PUBLIC_KEY *publickey_from_string(SSH_SESSION *session, ssh_string pubkey_s) {
-  BUFFER *tmpbuf = NULL;
+  ssh_buffer tmpbuf = NULL;
   ssh_string type_s = NULL;
   char *type_c = NULL;
   int type;
@@ -478,9 +478,9 @@ error:
 }
 
 #ifdef HAVE_LIBGCRYPT
-static int dsa_public_to_string(gcry_sexp_t key, BUFFER *buffer) {
+static int dsa_public_to_string(gcry_sexp_t key, ssh_buffer buffer) {
 #elif defined HAVE_LIBCRYPTO
-static int dsa_public_to_string(DSA *key, BUFFER *buffer) {
+static int dsa_public_to_string(DSA *key, ssh_buffer buffer) {
 #endif
   ssh_string p = NULL;
   ssh_string q = NULL;
@@ -583,9 +583,9 @@ error:
 }
 
 #ifdef HAVE_LIBGCRYPT
-static int rsa_public_to_string(gcry_sexp_t key, BUFFER *buffer) {
+static int rsa_public_to_string(gcry_sexp_t key, ssh_buffer buffer) {
 #elif defined HAVE_LIBCRYPTO
-static int rsa_public_to_string(RSA *key, BUFFER *buffer) {
+static int rsa_public_to_string(RSA *key, ssh_buffer buffer) {
 #endif
 
   ssh_string e = NULL;
@@ -658,7 +658,7 @@ error:
 ssh_string publickey_to_string(PUBLIC_KEY *key) {
   ssh_string type = NULL;
   ssh_string ret = NULL;
-  BUFFER *buf = NULL;
+  ssh_buffer buf = NULL;
 
   buf = buffer_new();
   if (buf == NULL) {
@@ -704,7 +704,7 @@ error:
 /* Signature decoding functions */
 static ssh_string signature_to_string(SIGNATURE *sign) {
   unsigned char buffer[40] = {0};
-  BUFFER *tmpbuf = NULL;
+  ssh_buffer tmpbuf = NULL;
   ssh_string str = NULL;
   ssh_string tmp = NULL;
   ssh_string rs = NULL;
@@ -849,7 +849,7 @@ static ssh_string signature_to_string(SIGNATURE *sign) {
 SIGNATURE *signature_from_string(SSH_SESSION *session, ssh_string signature,
     PUBLIC_KEY *pubkey, int needed_type) {
   SIGNATURE *sign = NULL;
-  BUFFER *tmpbuf = NULL;
+  ssh_buffer tmpbuf = NULL;
   ssh_string rs = NULL;
   ssh_string type_s = NULL;
   ssh_string e = NULL;
@@ -1150,7 +1150,7 @@ ssh_string ssh_do_sign_with_agent(struct ssh_session *session,
 /*
  * This function signs the session id (known as H) as a string then
  * the content of sigbuf */
-ssh_string ssh_do_sign(SSH_SESSION *session, BUFFER *sigbuf,
+ssh_string ssh_do_sign(SSH_SESSION *session, ssh_buffer sigbuf,
     PRIVATE_KEY *privatekey) {
   CRYPTO *crypto = session->current_crypto ? session->current_crypto :
     session->next_crypto;

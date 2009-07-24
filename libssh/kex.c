@@ -445,7 +445,7 @@ int verify_existing_algo(int algo, const char *name){
 /* makes a STRING contating 3 strings : ssh-rsa1,e and n */
 /* this is a public key in openssh's format */
 static ssh_string make_rsa1_string(ssh_string e, ssh_string n){
-  BUFFER *buffer = NULL;
+  ssh_buffer buffer = NULL;
   ssh_string rsa = NULL;
   ssh_string ret = NULL;
 

@@ -96,7 +96,7 @@ static u32 char_to_u32(unsigned char *data, u32 size) {
   return ret;
 }
 
-static u32 asn1_get_len(BUFFER *buffer) {
+static u32 asn1_get_len(ssh_buffer buffer) {
   u32 len;
   unsigned char tmp[4];
 
@@ -120,7 +120,7 @@ static u32 asn1_get_len(BUFFER *buffer) {
   return len;
 }
 
-static ssh_string asn1_get_int(BUFFER *buffer) {
+static ssh_string asn1_get_int(ssh_buffer buffer) {
   ssh_string str;
   unsigned char type;
   u32 size;
@@ -146,7 +146,7 @@ static ssh_string asn1_get_int(BUFFER *buffer) {
   return str;
 }
 
-static int asn1_check_sequence(BUFFER *buffer) {
+static int asn1_check_sequence(ssh_buffer buffer) {
   unsigned char *j = NULL;
   unsigned char tmp;
   int i;
@@ -228,7 +228,7 @@ static int passphrase_to_key(char *data, unsigned int datalen,
 
 static int privatekey_decrypt(int algo, int mode, unsigned int key_len,
                        unsigned char *iv, unsigned int iv_len,
-                       BUFFER *data, ssh_auth_callback cb,
+                       ssh_buffer data, ssh_auth_callback cb,
                        void *userdata,
                        const char *desc)
 {
@@ -329,10 +329,10 @@ static int privatekey_dek_header(char *header, unsigned int header_len,
   return load_iv(header + iv_pos, *iv, *iv_len);
 }
 
-static BUFFER *privatekey_file_to_buffer(FILE *fp, int type,
+static ssh_buffer privatekey_file_to_buffer(FILE *fp, int type,
     ssh_auth_callback cb, void *userdata, const char *desc) {
-  BUFFER *buffer = NULL;
-  BUFFER *out = NULL;
+  ssh_buffer buffer = NULL;
+  ssh_buffer out = NULL;
   char buf[MAXLINESIZE] = {0};
   unsigned char *iv = NULL;
   const char *header_begin;
@@ -452,7 +452,7 @@ static int read_rsa_privatekey(FILE *fp, gcry_sexp_t *r,
   ssh_string unused2 = NULL;
   ssh_string u = NULL;
   ssh_string v = NULL;
-  BUFFER *buffer = NULL;
+  ssh_buffer buffer = NULL;
   int rc = 1;
 
   buffer = privatekey_file_to_buffer(fp, TYPE_RSA, cb, userdata, desc);
@@ -515,7 +515,7 @@ error:
 
 static int read_dsa_privatekey(FILE *fp, gcry_sexp_t *r, ssh_auth_callback cb,
     void *userdata, const char *desc) {
-  BUFFER *buffer = NULL;
+  ssh_buffer buffer = NULL;
   ssh_string p = NULL;
   ssh_string q = NULL;
   ssh_string g = NULL;
@@ -855,7 +855,7 @@ void privatekey_free(PRIVATE_KEY *prv) {
  */
 ssh_string publickey_from_file(SSH_SESSION *session, const char *filename,
     int *type) {
-  BUFFER *buffer = NULL;
+  ssh_buffer buffer = NULL;
   char buf[4096] = {0};
   ssh_string str = NULL;
   char *ptr = NULL;
@@ -1138,7 +1138,7 @@ static char **ssh_get_knownhost_line(SSH_SESSION *session, FILE **file,
  */
 static int check_public_key(SSH_SESSION *session, char **tokens) {
   ssh_string pubkey = session->current_crypto->server_pubkey;
-  BUFFER *pubkey_buffer;
+  ssh_buffer pubkey_buffer;
   char *pubkey_64;
 
   /* ok we found some public key in known hosts file. now un-base64it */
@@ -1243,8 +1243,8 @@ static int match_hashed_host(SSH_SESSION *session, const char *host,
    * hash := HMAC_SHA1(key=salt,data=host)
    */
   unsigned char buffer[256] = {0};
-  BUFFER *salt;
-  BUFFER *hash;
+  ssh_buffer salt;
+  ssh_buffer hash;
   HMACCTX mac;
   char *source;
   char *b64hash;

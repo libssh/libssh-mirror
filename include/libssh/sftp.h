@@ -73,7 +73,7 @@ typedef struct sftp_session_struct {
 typedef struct {
     SFTP_SESSION *sftp;
     u8 type;
-    BUFFER *payload;
+    ssh_buffer payload;
 } SFTP_PACKET;
 
 /* file handler */
@@ -90,7 +90,7 @@ typedef struct sftp_dir {
     SFTP_SESSION *sftp;
     char *name;
     ssh_string handle; /* handle to directory */
-    BUFFER *buffer; /* contains raw attributes from server which haven't been parsed */
+    ssh_buffer buffer; /* contains raw attributes from server which haven't been parsed */
     u32 count; /* counts the number of following attributes structures into buffer */
     int eof; /* end of directory listing */
 } SFTP_DIR;
@@ -98,7 +98,7 @@ typedef struct sftp_dir {
 typedef struct {
     SFTP_SESSION *sftp;
     u8 packet_type;
-    BUFFER *payload;
+    ssh_buffer payload;
     u32 id;
 } SFTP_MESSAGE;
 
@@ -114,7 +114,7 @@ typedef struct sftp_client_message{
     u64 offset;
     u32 len;
     int attr_num;
-    BUFFER *attrbuf; /* used by sftp_reply_attrs */
+    ssh_buffer attrbuf; /* used by sftp_reply_attrs */
     ssh_string data; /* can be newpath of rename() */
 } SFTP_CLIENT_MESSAGE;
 
@@ -637,10 +637,10 @@ int sftp_server_init(SFTP_SESSION *sftp);
 /* this is not a public interface */
 #define SFTP_HANDLES 256
 SFTP_PACKET *sftp_packet_read(SFTP_SESSION *sftp);
-int sftp_packet_write(SFTP_SESSION *sftp,u8 type, BUFFER *payload);
+int sftp_packet_write(SFTP_SESSION *sftp,u8 type, ssh_buffer payload);
 void sftp_packet_free(SFTP_PACKET *packet);
-int buffer_add_attributes(BUFFER *buffer, SFTP_ATTRIBUTES *attr);
-SFTP_ATTRIBUTES *sftp_parse_attr(SFTP_SESSION *session, BUFFER *buf,int expectname);
+int buffer_add_attributes(ssh_buffer buffer, SFTP_ATTRIBUTES *attr);
+SFTP_ATTRIBUTES *sftp_parse_attr(SFTP_SESSION *session, ssh_buffer buf,int expectname);
 /* sftpserver.c */
 
 SFTP_CLIENT_MESSAGE *sftp_get_client_message(SFTP_SESSION *sftp);

@@ -54,11 +54,11 @@ static z_stream *initcompress(SSH_SESSION *session, int level) {
   return stream;
 }
 
-static BUFFER *gzip_compress(SSH_SESSION *session,BUFFER *source,int level){
+static ssh_buffer gzip_compress(SSH_SESSION *session,ssh_buffer source,int level){
   z_stream *zout = session->current_crypto->compress_out_ctx;
   void *in_ptr = buffer_get(source);
   unsigned long in_size = buffer_get_len(source);
-  BUFFER *dest = NULL;
+  ssh_buffer dest = NULL;
   static unsigned char out_buf[BLOCKSIZE] = {0};
   unsigned long len;
   int status;
@@ -98,8 +98,8 @@ static BUFFER *gzip_compress(SSH_SESSION *session,BUFFER *source,int level){
   return dest;
 }
 
-int compress_buffer(SSH_SESSION *session, BUFFER *buf) {
-  BUFFER *dest = NULL;
+int compress_buffer(SSH_SESSION *session, ssh_buffer buf) {
+  ssh_buffer dest = NULL;
 
   dest = gzip_compress(session, buf, 9);
   if (dest == NULL) {
@@ -143,12 +143,12 @@ static z_stream *initdecompress(SSH_SESSION *session) {
   return stream;
 }
 
-static BUFFER *gzip_decompress(SSH_SESSION *session, BUFFER *source) {
+static ssh_buffer gzip_decompress(SSH_SESSION *session, ssh_buffer source) {
   z_stream *zin = session->current_crypto->compress_in_ctx;
   void *in_ptr = buffer_get_rest(source);
   unsigned long in_size = buffer_get_rest_len(source);
   static unsigned char out_buf[BLOCKSIZE] = {0};
-  BUFFER *dest = NULL;
+  ssh_buffer dest = NULL;
   unsigned long len;
   int status;
 
@@ -190,8 +190,8 @@ static BUFFER *gzip_decompress(SSH_SESSION *session, BUFFER *source) {
   return dest;
 }
 
-int decompress_buffer(SSH_SESSION *session,BUFFER *buf){
-  BUFFER *dest = NULL;
+int decompress_buffer(SSH_SESSION *session,ssh_buffer buf){
+  ssh_buffer dest = NULL;
 
   dest = gzip_decompress(session,buf);
   if (dest == NULL) {

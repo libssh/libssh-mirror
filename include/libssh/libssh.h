@@ -73,8 +73,8 @@ extern "C" {
 
 #ifdef SSH_SAFE_NAMESPACE
 typedef struct ssh_string_struct STRING;
-#endif
 typedef struct ssh_buffer_struct BUFFER;
+#endif
 typedef struct ssh_public_key_struct PUBLIC_KEY;
 typedef struct ssh_private_key_struct PRIVATE_KEY;
 typedef struct ssh_channel_struct CHANNEL;
@@ -294,7 +294,7 @@ int channel_write(CHANNEL *channel, const void *data, u32 len);
 int channel_send_eof(CHANNEL *channel);
 int channel_is_eof(CHANNEL *channel);
 int channel_read(CHANNEL *channel, void *dest, u32 count, int is_stderr);
-int channel_read_buffer(CHANNEL *channel, BUFFER *buffer, u32 count,
+int channel_read_buffer(CHANNEL *channel, ssh_buffer buffer, u32 count,
     int is_stderr);
 int channel_poll(CHANNEL *channel, int is_stderr);
 int channel_close(CHANNEL *channel);
@@ -357,12 +357,12 @@ int ssh_options_set_auth_callback(SSH_OPTIONS *opt, ssh_auth_callback cb,
 
 /** creates a new buffer 
  */
-BUFFER *buffer_new(void);
-void buffer_free(BUFFER *buffer);
+ssh_buffer buffer_new(void);
+void buffer_free(ssh_buffer buffer);
 /* buffer_get returns a pointer to the begining of the buffer. no position is taken into account */
-void *buffer_get(BUFFER *buffer);
+void *buffer_get(ssh_buffer buffer);
 /* same here */
-u32 buffer_get_len(BUFFER *buffer);
+u32 buffer_get_len(ssh_buffer buffer);
 
 
 /* in auth.c */

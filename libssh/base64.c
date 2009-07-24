@@ -55,8 +55,8 @@ static int get_equals(char *string);
  * @returns A buffer containing the decoded string, NULL if something went
  *          wrong (e.g. incorrect char).
  */
-BUFFER *base64_to_bin(const char *source) {
-  BUFFER *buffer = NULL;
+ssh_buffer base64_to_bin(const char *source) {
+  ssh_buffer buffer = NULL;
   unsigned char block[3];
   char *base64;
   char *ptr;
