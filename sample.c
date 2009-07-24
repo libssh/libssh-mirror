@@ -133,7 +133,7 @@ static void select_loop(SSH_SESSION *session,CHANNEL *channel){
     fd_set fds;
     struct timeval timeout;
     char buffer[10];
-    BUFFER *readbuf=buffer_new();
+    ssh_buffer readbuf=buffer_new();
     CHANNEL *channels[2];
     int lus;
     int eof=0;

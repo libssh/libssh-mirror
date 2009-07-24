@@ -45,7 +45,7 @@ int main(int argc, char **argv){
     SSH_BIND *ssh_bind;
     SSH_MESSAGE *message;
     CHANNEL *chan=0;
-    BUFFER *buf;
+    ssh_buffer buf;
     int auth=0;
     int sftp=0;
     int i;
