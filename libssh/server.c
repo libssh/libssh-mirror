@@ -179,8 +179,8 @@ void ssh_bind_fd_toaccept(SSH_BIND *ssh_bind) {
 
 SSH_SESSION *ssh_bind_accept(SSH_BIND *ssh_bind) {
   SSH_SESSION *session;
-  PRIVATE_KEY *dsa = NULL;
-  PRIVATE_KEY *rsa = NULL;
+  ssh_private_key dsa = NULL;
+  ssh_private_key rsa = NULL;
   int fd = -1;
 
   if (ssh_bind->bindfd < 0) {
@@ -330,7 +330,7 @@ static int dh_handshake_server(SSH_SESSION *session) {
   ssh_string pubkey;
   ssh_string sign;
   ssh_public_key pub;
-  PRIVATE_KEY *prv;
+  ssh_private_key prv;
 
   if (packet_wait(session, SSH2_MSG_KEXDH_INIT, 1) != SSH_OK) {
     return -1;

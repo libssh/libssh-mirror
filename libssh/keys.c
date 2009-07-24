@@ -296,7 +296,7 @@ error:
  * \returns the public key
  * \see publickey_to_string()
  */
-ssh_public_key publickey_from_privatekey(PRIVATE_KEY *prv) {
+ssh_public_key publickey_from_privatekey(ssh_private_key prv) {
   ssh_public_key key = NULL;
 #ifdef HAVE_LIBGCRYPT
   gcry_sexp_t sexp;
@@ -1151,7 +1151,7 @@ ssh_string ssh_do_sign_with_agent(struct ssh_session *session,
  * This function signs the session id (known as H) as a string then
  * the content of sigbuf */
 ssh_string ssh_do_sign(SSH_SESSION *session, ssh_buffer sigbuf,
-    PRIVATE_KEY *privatekey) {
+    ssh_private_key privatekey) {
   CRYPTO *crypto = session->current_crypto ? session->current_crypto :
     session->next_crypto;
   unsigned char hash[SHA_DIGEST_LEN + 1] = {0};
@@ -1315,7 +1315,7 @@ ssh_string ssh_encrypt_rsa1(SSH_SESSION *session, ssh_string data, ssh_public_ke
 
 
 /* this function signs the session id */
-ssh_string ssh_sign_session_id(SSH_SESSION *session, PRIVATE_KEY *privatekey) {
+ssh_string ssh_sign_session_id(SSH_SESSION *session, ssh_private_key privatekey) {
   CRYPTO *crypto=session->current_crypto ? session->current_crypto :
     session->next_crypto;
   unsigned char hash[SHA_DIGEST_LEN + 1] = {0};

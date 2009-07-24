@@ -142,7 +142,7 @@ int ssh_userauth1_offer_pubkey(SSH_SESSION *session, const char *username,
 }
 
 /*
-int ssh_userauth_pubkey(SSH_SESSION *session, char *username, ssh_string publickey, PRIVATE_KEY *privatekey){
+int ssh_userauth_pubkey(SSH_SESSION *session, char *username, ssh_string publickey, ssh_private_key privatekey){
     ssh_string user;
     ssh_string service;
     ssh_string method;

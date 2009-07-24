@@ -75,8 +75,8 @@ extern "C" {
 typedef struct ssh_string_struct STRING;
 typedef struct ssh_buffer_struct BUFFER;
 typedef struct ssh_public_key_struct PUBLIC_KEY;
-#endif
 typedef struct ssh_private_key_struct PRIVATE_KEY;
+#endif
 typedef struct ssh_channel_struct CHANNEL;
 typedef struct ssh_agent_struct AGENT;
 //#endif
@@ -264,11 +264,11 @@ void publickey_free(ssh_public_key key);
 
 /* in keyfiles.c */
 
-PRIVATE_KEY *privatekey_from_file(SSH_SESSION *session, const char *filename,
+ssh_private_key privatekey_from_file(SSH_SESSION *session, const char *filename,
     int type, const char *passphrase);
 ssh_string publickey_to_string(ssh_public_key key);
-ssh_public_key publickey_from_privatekey(PRIVATE_KEY *prv);
-void privatekey_free(PRIVATE_KEY *prv);
+ssh_public_key publickey_from_privatekey(ssh_private_key prv);
+void privatekey_free(ssh_private_key prv);
 ssh_string publickey_from_file(SSH_SESSION *session, const char *filename,
     int *type);
 int ssh_is_server_known(SSH_SESSION *session);
@@ -375,7 +375,7 @@ int ssh_userauth_list(SSH_SESSION *session, const char *username);
 int ssh_userauth_none(SSH_SESSION *session, const char *username);
 int ssh_userauth_password(SSH_SESSION *session, const char *username, const char *password);
 int ssh_userauth_offer_pubkey(SSH_SESSION *session, const char *username, int type, ssh_string publickey);
-int ssh_userauth_pubkey(SSH_SESSION *session, const char *username, ssh_string publickey, PRIVATE_KEY *privatekey);
+int ssh_userauth_pubkey(SSH_SESSION *session, const char *username, ssh_string publickey, ssh_private_key privatekey);
 int ssh_userauth_agent_pubkey(SSH_SESSION *session, const char *username,
     ssh_public_key publickey);
 int ssh_userauth_autopubkey(SSH_SESSION *session, const char *passphrase);

@@ -388,8 +388,8 @@ struct ssh_session {
     struct ssh_kbdint *kbdint;
     int version; /* 1 or 2 */
     /* server host keys */
-    PRIVATE_KEY *rsa_key;
-    PRIVATE_KEY *dsa_key;
+    ssh_private_key rsa_key;
+    ssh_private_key dsa_key;
     /* auths accepted by server */
     int auth_methods;
     int hostkeys; /* contains type of host key wanted by client, in server impl */
@@ -650,7 +650,7 @@ char *ssh_find_matching(const char *in_d, const char *what_d);
 
 /* in keyfiles.c */
 
-PRIVATE_KEY *_privatekey_from_file(void *session, const char *filename,
+ssh_private_key _privatekey_from_file(void *session, const char *filename,
     int type);
 ssh_string try_publickey_from_file(SSH_SESSION *session,
     struct ssh_keys_struct keytab,
@@ -660,10 +660,10 @@ ssh_string try_publickey_from_file(SSH_SESSION *session,
 const char *ssh_type_to_char(int type);
 int ssh_type_from_name(const char *name);
 
-PRIVATE_KEY *privatekey_make_dss(SSH_SESSION *session, ssh_buffer buffer);
-PRIVATE_KEY *privatekey_make_rsa(SSH_SESSION *session, ssh_buffer buffer,
+ssh_private_key privatekey_make_dss(SSH_SESSION *session, ssh_buffer buffer);
+ssh_private_key privatekey_make_rsa(SSH_SESSION *session, ssh_buffer buffer,
     const char *type);
-PRIVATE_KEY *privatekey_from_string(SSH_SESSION *session, ssh_string privkey_s);
+ssh_private_key privatekey_from_string(SSH_SESSION *session, ssh_string privkey_s);
 
 ssh_public_key publickey_make_dss(SSH_SESSION *session, ssh_buffer buffer);
 ssh_public_key publickey_make_rsa(SSH_SESSION *session, ssh_buffer buffer, int type);
@@ -673,8 +673,8 @@ void signature_free(SIGNATURE *sign);
 ssh_string ssh_do_sign_with_agent(struct ssh_session *session,
     struct ssh_buffer_struct *buf, struct ssh_public_key_struct *publickey);
 ssh_string ssh_do_sign(SSH_SESSION *session,ssh_buffer sigbuf,
-        PRIVATE_KEY *privatekey);
-ssh_string ssh_sign_session_id(SSH_SESSION *session, PRIVATE_KEY *privatekey);
+        ssh_private_key privatekey);
+ssh_string ssh_sign_session_id(SSH_SESSION *session, ssh_private_key privatekey);
 ssh_string ssh_encrypt_rsa1(SSH_SESSION *session, ssh_string data, ssh_public_key key);
 /* channel.c */
 void channel_handle(SSH_SESSION *session, int type);

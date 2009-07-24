@@ -609,10 +609,10 @@ static int pem_get_password(char *buf, int size, int rwflag, void *userdata) {
  * \see privatekey_free()
  * \see publickey_from_privatekey()
  */
-PRIVATE_KEY *privatekey_from_file(SSH_SESSION *session, const char *filename,
+ssh_private_key privatekey_from_file(SSH_SESSION *session, const char *filename,
     int type, const char *passphrase) {
   ssh_auth_callback auth_cb = NULL;
-  PRIVATE_KEY *privkey = NULL;
+  ssh_private_key privkey = NULL;
   void *auth_ud = NULL;
   FILE *file = NULL;
 #ifdef HAVE_LIBGCRYPT
@@ -719,7 +719,7 @@ PRIVATE_KEY *privatekey_from_file(SSH_SESSION *session, const char *filename,
       return NULL;
   } /* switch */
 
-  privkey = malloc(sizeof(PRIVATE_KEY));
+  privkey = malloc(sizeof(struct ssh_private_key_struct));
   if (privkey == NULL) {
 #ifdef HAVE_LIBGCRYPT
     gcry_sexp_release(dsa);
@@ -739,9 +739,9 @@ PRIVATE_KEY *privatekey_from_file(SSH_SESSION *session, const char *filename,
 }
 
 /* same that privatekey_from_file() but without any passphrase things. */
-PRIVATE_KEY *_privatekey_from_file(void *session, const char *filename,
+ssh_private_key _privatekey_from_file(void *session, const char *filename,
     int type) {
-  PRIVATE_KEY *privkey = NULL;
+  ssh_private_key privkey = NULL;
   FILE *file = NULL;
 #ifdef HAVE_LIBGCRYPT
   gcry_sexp_t dsa = NULL;
@@ -807,7 +807,7 @@ PRIVATE_KEY *_privatekey_from_file(void *session, const char *filename,
         return NULL;
   }
 
-  privkey = malloc(sizeof(PRIVATE_KEY));
+  privkey = malloc(sizeof(struct ssh_private_key_struct));
   if (privkey == NULL) {
 #ifdef HAVE_LIBGCRYPT
     gcry_sexp_release(dsa);
@@ -829,7 +829,7 @@ PRIVATE_KEY *_privatekey_from_file(void *session, const char *filename,
 /** \brief deallocate a private key
  * \param prv a PRIVATE_KEY object
  */
-void privatekey_free(PRIVATE_KEY *prv) {
+void privatekey_free(ssh_private_key prv) {
   if (prv == NULL) {
     return;
   }
@@ -841,7 +841,7 @@ void privatekey_free(PRIVATE_KEY *prv) {
   DSA_free(prv->dsa_priv);
   RSA_free(prv->rsa_priv);
 #endif
-  memset(prv, 0, sizeof(PRIVATE_KEY));
+  memset(prv, 0, sizeof(struct ssh_private_key_struct));
   SAFE_FREE(prv);
 }
 

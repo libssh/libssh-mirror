@@ -418,7 +418,7 @@ error:
  * @see ssh_userauth_offer_pubkey()
  */
 int ssh_userauth_pubkey(SSH_SESSION *session, const char *username,
-    ssh_string publickey, PRIVATE_KEY *privatekey) {
+    ssh_string publickey, ssh_private_key privatekey) {
   ssh_string user = NULL;
   ssh_string service = NULL;
   ssh_string method = NULL;
@@ -797,7 +797,7 @@ static struct ssh_keys_struct keytab[] = {
 int ssh_userauth_autopubkey(SSH_SESSION *session, const char *passphrase) {
   struct ssh_public_key_struct *publickey;
   ssh_string pubkey;
-  PRIVATE_KEY *privkey;
+  ssh_private_key privkey;
   char *privkeyfile = NULL;
   char *id = NULL;
   size_t size;
