@@ -39,7 +39,7 @@ SFTP_CLIENT_MESSAGE *sftp_get_client_message(SFTP_SESSION *sftp) {
   SFTP_PACKET *packet;
   SFTP_CLIENT_MESSAGE *msg;
   BUFFER *payload;
-  STRING *tmp;
+  ssh_string tmp;
 
   msg = malloc(sizeof (SFTP_CLIENT_MESSAGE));
   if (msg == NULL) {
@@ -229,7 +229,7 @@ void sftp_client_message_free(SFTP_CLIENT_MESSAGE *msg) {
 int sftp_reply_name(SFTP_CLIENT_MESSAGE *msg, const char *name,
     SFTP_ATTRIBUTES *attr) {
   BUFFER *out;
-  STRING *file;
+  ssh_string file;
 
   out = buffer_new();
   if (out == NULL) {
@@ -258,7 +258,7 @@ int sftp_reply_name(SFTP_CLIENT_MESSAGE *msg, const char *name,
   return 0;
 }
 
-int sftp_reply_handle(SFTP_CLIENT_MESSAGE *msg, STRING *handle){
+int sftp_reply_handle(SFTP_CLIENT_MESSAGE *msg, ssh_string handle){
   BUFFER *out;
 
   out = buffer_new();
@@ -298,7 +298,7 @@ int sftp_reply_attr(SFTP_CLIENT_MESSAGE *msg, SFTP_ATTRIBUTES *attr) {
 
 int sftp_reply_names_add(SFTP_CLIENT_MESSAGE *msg, const char *file,
     const char *longname, SFTP_ATTRIBUTES *attr) {
-  STRING *name;
+  ssh_string name;
 
   name = string_from_char(file);
   if (name == NULL) {
@@ -365,7 +365,7 @@ int sftp_reply_names(SFTP_CLIENT_MESSAGE *msg) {
 int sftp_reply_status(SFTP_CLIENT_MESSAGE *msg, u32 status,
     const char *message) {
   BUFFER *out;
-  STRING *s;
+  ssh_string s;
 
   out = buffer_new();
   if (out == NULL) {
@@ -420,8 +420,8 @@ int sftp_reply_data(SFTP_CLIENT_MESSAGE *msg, const void *data, int len) {
  * the handle. Care is given that a corrupted handle won't give a
  * valid info (or worse).
  */
-STRING *sftp_handle_alloc(SFTP_SESSION *sftp, void *info) {
-  STRING *ret;
+ssh_string sftp_handle_alloc(SFTP_SESSION *sftp, void *info) {
+  ssh_string ret;
   u32 val;
   int i;
 
@@ -455,7 +455,7 @@ STRING *sftp_handle_alloc(SFTP_SESSION *sftp, void *info) {
   return ret;
 }
 
-void *sftp_handle(SFTP_SESSION *sftp, STRING *handle){
+void *sftp_handle(SFTP_SESSION *sftp, ssh_string handle){
   u32 val;
 
   if (sftp->handles == NULL) {

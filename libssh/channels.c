@@ -109,7 +109,7 @@ u32 ssh_channel_new_id(SSH_SESSION *session) {
 static int channel_open(CHANNEL *channel, const char *type_c, int window,
     int maxpacket, BUFFER *payload) {
   SSH_SESSION *session = channel->session;
-  STRING *type = NULL;
+  ssh_string type = NULL;
   u32 tmp = 0;
 
   enter_function();
@@ -196,7 +196,7 @@ static int channel_open(CHANNEL *channel, const char *type_c, int window,
       return 0;
     case SSH2_MSG_CHANNEL_OPEN_FAILURE:
       {
-        STRING *error_s;
+        ssh_string error_s;
         char *error;
         u32 code;
 
@@ -342,7 +342,7 @@ static void channel_rcv_change_window(SSH_SESSION *session) {
 /* is_stderr is set to 1 if the data are extended, ie stderr */
 static void channel_rcv_data(SSH_SESSION *session,int is_stderr) {
   CHANNEL *channel;
-  STRING *str;
+  ssh_string str;
   size_t len;
 
   enter_function();
@@ -469,7 +469,7 @@ static void channel_rcv_close(SSH_SESSION *session) {
 
 static void channel_rcv_request(SSH_SESSION *session) {
   CHANNEL *channel;
-  STRING *request_s;
+  ssh_string request_s;
   char *request;
   u32 status;
 
@@ -510,7 +510,7 @@ static void channel_rcv_request(SSH_SESSION *session) {
 
   if (strcmp(request, "exit-signal") == 0) {
     const char *core = "(core dumped)";
-    STRING *signal_s;
+    ssh_string signal_s;
     char *signal;
     u8 i;
 
@@ -674,7 +674,7 @@ int channel_open_forward(CHANNEL *channel, const char *remotehost,
     int remoteport, const char *sourcehost, int localport) {
   SSH_SESSION *session = channel->session;
   BUFFER *payload = NULL;
-  STRING *str = NULL;
+  ssh_string str = NULL;
   int rc = SSH_ERROR;
 
   enter_function();
@@ -1007,7 +1007,7 @@ void channel_set_blocking(CHANNEL *channel, int blocking) {
 static int channel_request(CHANNEL *channel, const char *request,
     BUFFER *buffer, int reply) {
   SSH_SESSION *session = channel->session;
-  STRING *req = NULL;
+  ssh_string req = NULL;
   int rc = SSH_ERROR;
 
   enter_function();
@@ -1085,7 +1085,7 @@ error:
 int channel_request_pty_size(CHANNEL *channel, const char *terminal,
     int col, int row) {
   SSH_SESSION *session = channel->session;
-  STRING *term = NULL;
+  ssh_string term = NULL;
   BUFFER *buffer = NULL;
   int rc = SSH_ERROR;
 
@@ -1216,7 +1216,7 @@ int channel_request_shell(CHANNEL *channel) {
  */
 int channel_request_subsystem(CHANNEL *channel, const char *sys) {
   BUFFER *buffer = NULL;
-  STRING *subsystem = NULL;
+  ssh_string subsystem = NULL;
   int rc = SSH_ERROR;
 
   buffer = buffer_new();
@@ -1260,7 +1260,7 @@ int channel_request_sftp( CHANNEL *channel){
  * */
 int channel_request_env(CHANNEL *channel, const char *name, const char *value) {
   BUFFER *buffer = NULL;
-  STRING *str = NULL;
+  ssh_string str = NULL;
   int rc = SSH_ERROR;
 
   buffer = buffer_new();
@@ -1311,7 +1311,7 @@ error:
  */
 int channel_request_exec(CHANNEL *channel, const char *cmd) {
   BUFFER *buffer = NULL;
-  STRING *command = NULL;
+  ssh_string command = NULL;
   int rc = SSH_ERROR;
 
 #ifdef HAVE_SSH1

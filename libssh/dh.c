@@ -324,8 +324,8 @@ int dh_generate_f(SSH_SESSION *session) {
   return 0;
 }
 
-STRING *make_bignum_string(bignum num) {
-  STRING *ptr = NULL;
+ssh_string make_bignum_string(bignum num) {
+  ssh_string ptr = NULL;
   int pad = 0;
   unsigned int len = bignum_num_bytes(num);
   unsigned int bits = bignum_num_bits(num);
@@ -358,7 +358,7 @@ STRING *make_bignum_string(bignum num) {
   return ptr;
 }
 
-bignum make_string_bn(STRING *string){
+bignum make_string_bn(ssh_string string){
   bignum bn = NULL;
   unsigned int len = string_len(string);
 
@@ -376,20 +376,20 @@ bignum make_string_bn(STRING *string){
   return bn;
 }
 
-STRING *dh_get_e(SSH_SESSION *session) {
+ssh_string dh_get_e(SSH_SESSION *session) {
   return make_bignum_string(session->next_crypto->e);
 }
 
 /* used by server */
-STRING *dh_get_f(SSH_SESSION *session) {
+ssh_string dh_get_f(SSH_SESSION *session) {
   return make_bignum_string(session->next_crypto->f);
 }
 
-void dh_import_pubkey(SSH_SESSION *session, STRING *pubkey_string) {
+void dh_import_pubkey(SSH_SESSION *session, ssh_string pubkey_string) {
   session->next_crypto->server_pubkey = pubkey_string;
 }
 
-int dh_import_f(SSH_SESSION *session, STRING *f_string) {
+int dh_import_f(SSH_SESSION *session, ssh_string f_string) {
   session->next_crypto->f = make_string_bn(f_string);
   if (session->next_crypto->f == NULL) {
     return -1;
@@ -403,7 +403,7 @@ int dh_import_f(SSH_SESSION *session, STRING *f_string) {
 }
 
 /* used by the server implementation */
-int dh_import_e(SSH_SESSION *session, STRING *e_string) {
+int dh_import_e(SSH_SESSION *session, ssh_string e_string) {
   session->next_crypto->e = make_string_bn(e_string);
   if (session->next_crypto->e == NULL) {
     return -1;
@@ -465,7 +465,7 @@ int dh_build_k(SSH_SESSION *session) {
 }
 
 /*
-static void sha_add(STRING *str,SHACTX ctx){
+static void sha_add(ssh_string str,SHACTX ctx){
     sha1_update(ctx,str,string_len(str)+4);
 #ifdef DEBUG_CRYPTO
     ssh_print_hexa("partial hashed sessionid",str,string_len(str)+4);
@@ -475,8 +475,8 @@ static void sha_add(STRING *str,SHACTX ctx){
 
 int make_sessionid(SSH_SESSION *session) {
   SHACTX ctx;
-  STRING *num = NULL;
-  STRING *str = NULL;
+  ssh_string num = NULL;
+  ssh_string str = NULL;
   BUFFER *server_hash = NULL;
   BUFFER *client_hash = NULL;
   BUFFER *buf = NULL;
@@ -665,7 +665,7 @@ int hashbufin_add_cookie(SSH_SESSION *session, unsigned char *cookie) {
   return 0;
 }
 
-static int generate_one_key(STRING *k,
+static int generate_one_key(ssh_string k,
     unsigned char session_id[SHA_DIGEST_LEN],
     unsigned char output[SHA_DIGEST_LEN],
     char letter) {
@@ -686,7 +686,7 @@ static int generate_one_key(STRING *k,
 }
 
 int generate_session_keys(SSH_SESSION *session) {
-  STRING *k_string = NULL;
+  ssh_string k_string = NULL;
   SHACTX ctx = NULL;
   int rc = -1;
 
@@ -816,7 +816,7 @@ error:
  * @see ssh_print_hexa()
  */
 int ssh_get_pubkey_hash(SSH_SESSION *session, unsigned char **hash) {
-  STRING *pubkey;
+  ssh_string pubkey;
   MD5CTX ctx;
   unsigned char *h;
 
@@ -847,7 +847,7 @@ int ssh_get_pubkey_hash(SSH_SESSION *session, unsigned char **hash) {
   return MD5_DIGEST_LEN;
 }
 
-STRING *ssh_get_pubkey(SSH_SESSION *session){
+ssh_string ssh_get_pubkey(SSH_SESSION *session){
     return string_copy(session->current_crypto->server_pubkey);
 }
 
@@ -970,7 +970,7 @@ static int sig_verify(SSH_SESSION *session, PUBLIC_KEY *pubkey,
   return -1;
 }
 
-int signature_verify(SSH_SESSION *session, STRING *signature) {
+int signature_verify(SSH_SESSION *session, ssh_string signature) {
   PUBLIC_KEY *pubkey = NULL;
   SIGNATURE *sign = NULL;
   int err;

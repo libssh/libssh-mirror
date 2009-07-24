@@ -81,7 +81,7 @@ typedef struct sftp_file{
     SFTP_SESSION *sftp;
     char *name;
     u64 offset;
-    STRING *handle;
+    ssh_string handle;
     int eof;
     int nonblocking;
 }  SFTP_FILE ;
@@ -89,7 +89,7 @@ typedef struct sftp_file{
 typedef struct sftp_dir {
     SFTP_SESSION *sftp;
     char *name;
-    STRING *handle; /* handle to directory */
+    ssh_string handle; /* handle to directory */
     BUFFER *buffer; /* contains raw attributes from server which haven't been parsed */
     u32 count; /* counts the number of following attributes structures into buffer */
     int eof; /* end of directory listing */
@@ -110,12 +110,12 @@ typedef struct sftp_client_message{
     char *filename; /* can be "path" */
     u32 flags;
     struct sftp_attributes *attr;
-    STRING *handle;
+    ssh_string handle;
     u64 offset;
     u32 len;
     int attr_num;
     BUFFER *attrbuf; /* used by sftp_reply_attrs */
-    STRING *data; /* can be newpath of rename() */
+    ssh_string data; /* can be newpath of rename() */
 } SFTP_CLIENT_MESSAGE;
 
 typedef struct request_queue{
@@ -127,8 +127,8 @@ typedef struct request_queue{
 typedef struct {
     u32 id;
     u32 status;
-    STRING *error;
-    STRING *lang;
+    ssh_string error;
+    ssh_string lang;
     char *errormsg;
     char *langmsg;
 } STATUS_MESSAGE;
@@ -153,10 +153,10 @@ typedef struct sftp_attributes{
     u64 mtime64;
     u32 mtime;
     u32 mtime_nseconds;
-    STRING *acl;
+    ssh_string acl;
     u32 extended_count;
-    STRING *extended_type;
-    STRING *extended_data;
+    ssh_string extended_type;
+    ssh_string extended_data;
 } SFTP_ATTRIBUTES;
 
 #define LIBSFTP_VERSION 3
@@ -647,10 +647,10 @@ SFTP_CLIENT_MESSAGE *sftp_get_client_message(SFTP_SESSION *sftp);
 void sftp_client_message_free(SFTP_CLIENT_MESSAGE *msg);
 int sftp_reply_name(SFTP_CLIENT_MESSAGE *msg, const char *name,
     SFTP_ATTRIBUTES *attr);
-int sftp_reply_handle(SFTP_CLIENT_MESSAGE *msg, STRING *handle);
-STRING *sftp_handle_alloc(SFTP_SESSION *sftp, void *info);
+int sftp_reply_handle(SFTP_CLIENT_MESSAGE *msg, ssh_string handle);
+ssh_string sftp_handle_alloc(SFTP_SESSION *sftp, void *info);
 int sftp_reply_attr(SFTP_CLIENT_MESSAGE *msg, SFTP_ATTRIBUTES *attr);
-void *sftp_handle(SFTP_SESSION *sftp, STRING *handle);
+void *sftp_handle(SFTP_SESSION *sftp, ssh_string handle);
 int sftp_reply_status(SFTP_CLIENT_MESSAGE *msg, u32 status, const char *message);
 int sftp_reply_names_add(SFTP_CLIENT_MESSAGE *msg, const char *file,
     const char *longname, SFTP_ATTRIBUTES *attr);

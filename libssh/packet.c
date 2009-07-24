@@ -592,7 +592,7 @@ int packet_send(SSH_SESSION *session) {
 }
 
 void packet_parse(SSH_SESSION *session) {
-  STRING *error_s = NULL;
+  ssh_string error_s = NULL;
   char *error = NULL;
   u32 type = session->in_packet.type;
   u32 tmp;

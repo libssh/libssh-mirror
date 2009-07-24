@@ -57,7 +57,7 @@ static SSH_MESSAGE *message_new(SSH_SESSION *session){
 }
 
 static SSH_MESSAGE *handle_service_request(SSH_SESSION *session) {
-  STRING *service = NULL;
+  ssh_string service = NULL;
   char *service_c = NULL;
   SSH_MESSAGE *msg=NULL;
 
@@ -131,9 +131,9 @@ static int handle_unimplemented(SSH_SESSION *session) {
 }
 
 static SSH_MESSAGE *handle_userauth_request(SSH_SESSION *session){
-  STRING *user = NULL;
-  STRING *service = NULL;
-  STRING *method = NULL;
+  ssh_string user = NULL;
+  ssh_string service = NULL;
+  ssh_string method = NULL;
   SSH_MESSAGE *msg = NULL;
   char *service_c = NULL;
   char *method_c = NULL;
@@ -192,7 +192,7 @@ static SSH_MESSAGE *handle_userauth_request(SSH_SESSION *session){
   }
 
   if (strcmp(method_c, "password") == 0) {
-    STRING *pass = NULL;
+    ssh_string pass = NULL;
     u8 tmp;
 
     msg->auth_request.method = SSH_AUTH_PASSWORD;
@@ -259,7 +259,7 @@ int ssh_message_auth_set_methods(SSH_MESSAGE *msg, int methods) {
 static int ssh_message_auth_reply_default(SSH_MESSAGE *msg,int partial) {
   SSH_SESSION *session = msg->session;
   char methods_c[128] = {0};
-  STRING *methods = NULL;
+  ssh_string methods = NULL;
   int rc = SSH_ERROR;
 
   enter_function();
@@ -335,7 +335,7 @@ int ssh_message_auth_reply_success(SSH_MESSAGE *msg, int partial) {
 
 static SSH_MESSAGE *handle_channel_request_open(SSH_SESSION *session) {
   SSH_MESSAGE *msg = NULL;
-  STRING *type = NULL;
+  ssh_string type = NULL;
   char *type_c = NULL;
   u32 sender, window, packet;
 
@@ -479,7 +479,7 @@ error:
 
 static SSH_MESSAGE *handle_channel_request(SSH_SESSION *session) {
   SSH_MESSAGE *msg = NULL;
-  STRING *type = NULL;
+  ssh_string type = NULL;
   char *type_c = NULL;
   u32 channel;
   u8 want_reply;
@@ -515,7 +515,7 @@ static SSH_MESSAGE *handle_channel_request(SSH_SESSION *session) {
   msg->channel_request.want_reply = want_reply;
 
   if (strcmp(type_c, "pty-req") == 0) {
-    STRING *term = NULL;
+    ssh_string term = NULL;
     char *term_c = NULL;
     SAFE_FREE(type_c);
 
@@ -553,7 +553,7 @@ static SSH_MESSAGE *handle_channel_request(SSH_SESSION *session) {
   }
 
   if (strcmp(type_c, "subsystem") == 0) {
-    STRING *subsys = NULL;
+    ssh_string subsys = NULL;
     char *subsys_c = NULL;
 
     SAFE_FREE(type_c);
@@ -584,7 +584,7 @@ static SSH_MESSAGE *handle_channel_request(SSH_SESSION *session) {
     return msg;
   }
   if (strcmp(type_c, "exec") == 0) {
-    STRING *cmd = NULL;
+    ssh_string cmd = NULL;
 
     SAFE_FREE(type_c);
 

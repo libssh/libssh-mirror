@@ -58,7 +58,7 @@ static int ask_userauth(SSH_SESSION *session) {
 
 static int wait_auth_status(SSH_SESSION *session, int kbdint) {
   char *auth_methods = NULL;
-  STRING *auth;
+  ssh_string auth;
   int rc = SSH_AUTH_ERROR;
   int cont = 1;
   u8 partial = 0;
@@ -139,7 +139,7 @@ static int wait_auth_status(SSH_SESSION *session, int kbdint) {
         break;
       case SSH2_MSG_USERAUTH_BANNER:
         {
-          STRING *banner;
+          ssh_string banner;
 
           banner = buffer_get_ssh_string(session->in_buffer);
           if (banner == NULL) {
@@ -201,9 +201,9 @@ int ssh_userauth_list(SSH_SESSION *session, const char *username) {
  *          SSH_AUTH_SUCCESS: Authentication success
  */
 int ssh_userauth_none(SSH_SESSION *session, const char *username) {
-  STRING *user = NULL;
-  STRING *service = NULL;
-  STRING *method = NULL;
+  ssh_string user = NULL;
+  ssh_string service = NULL;
+  ssh_string method = NULL;
   int rc = SSH_AUTH_ERROR;
 
   enter_function();
@@ -305,11 +305,11 @@ error:
  * @see ssh_userauth_pubkey()
  */
 int ssh_userauth_offer_pubkey(SSH_SESSION *session, const char *username,
-    int type, STRING *publickey) {
-  STRING *user = NULL;
-  STRING *service = NULL;
-  STRING *method = NULL;
-  STRING *algo = NULL;
+    int type, ssh_string publickey) {
+  ssh_string user = NULL;
+  ssh_string service = NULL;
+  ssh_string method = NULL;
+  ssh_string algo = NULL;
   int rc = SSH_AUTH_ERROR;
 
   enter_function();
@@ -418,12 +418,12 @@ error:
  * @see ssh_userauth_offer_pubkey()
  */
 int ssh_userauth_pubkey(SSH_SESSION *session, const char *username,
-    STRING *publickey, PRIVATE_KEY *privatekey) {
-  STRING *user = NULL;
-  STRING *service = NULL;
-  STRING *method = NULL;
-  STRING *algo = NULL;
-  STRING *sign = NULL;
+    ssh_string publickey, PRIVATE_KEY *privatekey) {
+  ssh_string user = NULL;
+  ssh_string service = NULL;
+  ssh_string method = NULL;
+  ssh_string algo = NULL;
+  ssh_string sign = NULL;
   int rc = SSH_AUTH_ERROR;
 
   enter_function();
@@ -538,12 +538,12 @@ error:
  */
 int ssh_userauth_agent_pubkey(SSH_SESSION *session, const char *username,
     PUBLIC_KEY *publickey) {
-  STRING *user = NULL;
-  STRING *service = NULL;
-  STRING *method = NULL;
-  STRING *algo = NULL;
-  STRING *key = NULL;
-  STRING *sign = NULL;
+  ssh_string user = NULL;
+  ssh_string service = NULL;
+  ssh_string method = NULL;
+  ssh_string algo = NULL;
+  ssh_string key = NULL;
+  ssh_string sign = NULL;
   int rc = SSH_AUTH_ERROR;
 
   enter_function();
@@ -663,10 +663,10 @@ error:
  */
 int ssh_userauth_password(SSH_SESSION *session, const char *username,
     const char *password) {
-  STRING *user = NULL;
-  STRING *service = NULL;
-  STRING *method = NULL;
-  STRING *pwd = NULL;
+  ssh_string user = NULL;
+  ssh_string service = NULL;
+  ssh_string method = NULL;
+  ssh_string pwd = NULL;
   int rc = SSH_AUTH_ERROR;
 
   enter_function();
@@ -796,7 +796,7 @@ static struct ssh_keys_struct keytab[] = {
  */
 int ssh_userauth_autopubkey(SSH_SESSION *session, const char *passphrase) {
   struct ssh_public_key_struct *publickey;
-  STRING *pubkey;
+  ssh_string pubkey;
   PRIVATE_KEY *privkey;
   char *privkeyfile = NULL;
   char *id = NULL;
@@ -1075,10 +1075,10 @@ static void kbdint_clean(struct ssh_kbdint *kbd) {
  * of the draft */
 static int kbdauth_init(SSH_SESSION *session, const char *user,
     const char *submethods) {
-  STRING *usr = NULL;
-  STRING *sub = NULL;
-  STRING *service = NULL;
-  STRING *method = NULL;
+  ssh_string usr = NULL;
+  ssh_string sub = NULL;
+  ssh_string service = NULL;
+  ssh_string method = NULL;
   int rc = SSH_AUTH_ERROR;
 
   enter_function();
@@ -1134,9 +1134,9 @@ error:
 }
 
 static int kbdauth_info_get(SSH_SESSION *session) {
-  STRING *name; /* name of the "asking" window showed to client */
-  STRING *instruction;
-  STRING *tmp;
+  ssh_string name; /* name of the "asking" window showed to client */
+  ssh_string instruction;
+  ssh_string tmp;
   u32 nprompts;
   u32 i;
 
@@ -1251,7 +1251,7 @@ static int kbdauth_info_get(SSH_SESSION *session) {
 
 /* sends challenge back to the server */
 static int kbdauth_send(SSH_SESSION *session) {
-  STRING *answer = NULL;
+  ssh_string answer = NULL;
   int rc = SSH_AUTH_ERROR;
   u32 i;
 

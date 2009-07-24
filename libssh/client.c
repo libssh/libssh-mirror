@@ -190,10 +190,10 @@ int ssh_send_banner(SSH_SESSION *session, int server) {
 #define DH_STATE_NEWKEYS_SENT 4
 #define DH_STATE_FINISHED 5
 static int dh_handshake(SSH_SESSION *session) {
-  STRING *e = NULL;
-  STRING *f = NULL;
-  STRING *pubkey = NULL;
-  STRING *signature = NULL;
+  ssh_string e = NULL;
+  ssh_string f = NULL;
+  ssh_string pubkey = NULL;
+  ssh_string signature = NULL;
   int rc = SSH_ERROR;
 
   enter_function();
@@ -400,7 +400,7 @@ error:
  * @return 0 on success, < 0 on error.
  */
 int ssh_service_request(SSH_SESSION *session, const char *service) {
-  STRING *service_s = NULL;
+  ssh_string service_s = NULL;
 
   enter_function();
 
@@ -621,7 +621,7 @@ char *ssh_get_issue_banner(SSH_SESSION *session) {
  * @param session       The SSH session to disconnect.
  */
 void ssh_disconnect(SSH_SESSION *session) {
-  STRING *str = NULL;
+  ssh_string str = NULL;
 
   if (session == NULL) {
     return;

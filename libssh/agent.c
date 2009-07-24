@@ -394,7 +394,7 @@ struct ssh_public_key_struct *agent_get_next_ident(struct ssh_session *session,
   return pubkey;
 }
 
-STRING *agent_sign_data(struct ssh_session *session,
+ssh_string agent_sign_data(struct ssh_session *session,
     struct ssh_buffer_struct *data,
     struct ssh_public_key_struct *pubkey) {
   struct ssh_string_struct *blob = NULL;

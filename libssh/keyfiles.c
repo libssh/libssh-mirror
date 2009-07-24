@@ -120,8 +120,8 @@ static u32 asn1_get_len(BUFFER *buffer) {
   return len;
 }
 
-static STRING *asn1_get_int(BUFFER *buffer) {
-  STRING *str;
+static ssh_string asn1_get_int(BUFFER *buffer) {
+  ssh_string str;
   unsigned char type;
   u32 size;
 
@@ -443,15 +443,15 @@ static BUFFER *privatekey_file_to_buffer(FILE *fp, int type,
 
 static int read_rsa_privatekey(FILE *fp, gcry_sexp_t *r,
     ssh_auth_callback cb, void *userdata, const char *desc) {
-  STRING *n = NULL;
-  STRING *e = NULL;
-  STRING *d = NULL;
-  STRING *p = NULL;
-  STRING *q = NULL;
-  STRING *unused1 = NULL;
-  STRING *unused2 = NULL;
-  STRING *u = NULL;
-  STRING *v = NULL;
+  ssh_string n = NULL;
+  ssh_string e = NULL;
+  ssh_string d = NULL;
+  ssh_string p = NULL;
+  ssh_string q = NULL;
+  ssh_string unused1 = NULL;
+  ssh_string unused2 = NULL;
+  ssh_string u = NULL;
+  ssh_string v = NULL;
   BUFFER *buffer = NULL;
   int rc = 1;
 
@@ -516,12 +516,12 @@ error:
 static int read_dsa_privatekey(FILE *fp, gcry_sexp_t *r, ssh_auth_callback cb,
     void *userdata, const char *desc) {
   BUFFER *buffer = NULL;
-  STRING *p = NULL;
-  STRING *q = NULL;
-  STRING *g = NULL;
-  STRING *y = NULL;
-  STRING *x = NULL;
-  STRING *v = NULL;
+  ssh_string p = NULL;
+  ssh_string q = NULL;
+  ssh_string g = NULL;
+  ssh_string y = NULL;
+  ssh_string x = NULL;
+  ssh_string v = NULL;
   int rc = 1;
 
   buffer = privatekey_file_to_buffer(fp, TYPE_DSS, cb, userdata, desc);
@@ -853,11 +853,11 @@ void privatekey_free(PRIVATE_KEY *prv) {
  * \see string_free()
  * \see publickey_from_privatekey()
  */
-STRING *publickey_from_file(SSH_SESSION *session, const char *filename,
+ssh_string publickey_from_file(SSH_SESSION *session, const char *filename,
     int *type) {
   BUFFER *buffer = NULL;
   char buf[4096] = {0};
-  STRING *str = NULL;
+  ssh_string str = NULL;
   char *ptr = NULL;
   int key_type;
   int fd = -1;
@@ -922,7 +922,7 @@ STRING *publickey_from_file(SSH_SESSION *session, const char *filename,
   return str;
 }
 
-STRING *try_publickey_from_file(SSH_SESSION *session, struct ssh_keys_struct keytab,
+ssh_string try_publickey_from_file(SSH_SESSION *session, struct ssh_keys_struct keytab,
     char **privkeyfile, int *type) {
   static char *home = NULL;
 
@@ -931,7 +931,7 @@ STRING *try_publickey_from_file(SSH_SESSION *session, struct ssh_keys_struct key
   const char *priv;
   const char *pub;
   char *new;
-  STRING *pubkey;
+  ssh_string pubkey;
 
   if (home == NULL) {
     home = ssh_get_user_home_dir();
@@ -1137,7 +1137,7 @@ static char **ssh_get_knownhost_line(SSH_SESSION *session, FILE **file,
  * \return -1 on error
  */
 static int check_public_key(SSH_SESSION *session, char **tokens) {
-  STRING *pubkey = session->current_crypto->server_pubkey;
+  ssh_string pubkey = session->current_crypto->server_pubkey;
   BUFFER *pubkey_buffer;
   char *pubkey_64;
 
@@ -1145,7 +1145,7 @@ static int check_public_key(SSH_SESSION *session, char **tokens) {
   if (alldigits(tokens[1])) {
     /* openssh rsa1 format */
     bignum tmpbn;
-    STRING *tmpstring;
+    ssh_string tmpstring;
     unsigned int len;
     int i;
 
@@ -1442,7 +1442,7 @@ int ssh_is_server_known(SSH_SESSION *session) {
  * \return 0 on success, -1 on error
  */
 int ssh_write_knownhost(SSH_SESSION *session) {
-  STRING *pubkey = session->current_crypto->server_pubkey;
+  ssh_string pubkey = session->current_crypto->server_pubkey;
   unsigned char *pubkey_64;
   char buffer[4096] = {0};
   FILE *file;

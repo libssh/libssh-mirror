@@ -71,15 +71,30 @@ typedef unsigned long long uint64_t;
 extern "C" {
 #endif
 
+#ifdef SSH_SAFE_NAMESPACE
 typedef struct ssh_string_struct STRING;
+#endif
 typedef struct ssh_buffer_struct BUFFER;
 typedef struct ssh_public_key_struct PUBLIC_KEY;
 typedef struct ssh_private_key_struct PRIVATE_KEY;
-typedef struct ssh_options_struct SSH_OPTIONS;
 typedef struct ssh_channel_struct CHANNEL;
 typedef struct ssh_agent_struct AGENT;
+//#endif
+
+typedef struct ssh_options_struct SSH_OPTIONS;
 typedef struct ssh_session SSH_SESSION;
 typedef struct ssh_kbdint SSH_KBDINT;
+
+typedef struct ssh_string_struct* ssh_string;
+typedef struct ssh_buffer_struct* ssh_buffer;
+typedef struct ssh_public_key_struct* ssh_public_key;
+typedef struct ssh_private_key_struct* ssh_private_key;
+typedef struct ssh_options_struct* ssh_options;
+typedef struct ssh_channel_struct* ssh_channel;
+typedef struct ssh_agent_struct* ssh_agentT;
+typedef struct ssh_session* ssh_session;
+typedef struct ssh_kbdint* ssh_kbdint;
+
 
 /* integer values */
 typedef uint32_t u32;
@@ -217,19 +232,19 @@ const char *ssh_copyright(void);
 
 /* You can use these functions, they won't change */
 /* string_from_char returns a newly allocated string from a char *ptr */
-STRING *string_from_char(const char *what);
+ssh_string string_from_char(const char *what);
 /* it returns the string len in host byte orders. str->size is big endian warning ! */
-size_t string_len(STRING *str);
-STRING *string_new(size_t size);
+size_t string_len(ssh_string str);
+ssh_string string_new(size_t size);
 /* string_fill copies the data in the string. */
-int string_fill(STRING *str, const void *data, size_t len);
+int string_fill(ssh_string str, const void *data, size_t len);
 /* returns a newly allocated char array with the str string and a final nul caracter */
-char *string_to_char(STRING *str);
-STRING *string_copy(STRING *str);
+char *string_to_char(ssh_string str);
+ssh_string string_copy(ssh_string str);
 /* burns the data inside a string */
-void string_burn(STRING *str);
-void *string_data(STRING *str);
-void string_free(STRING *str);
+void string_burn(ssh_string str);
+void *string_data(ssh_string str);
+void string_free(ssh_string str);
 
 /* useful for debug */
 char *ssh_get_hexa(const unsigned char *what, size_t len);
@@ -238,7 +253,7 @@ int ssh_get_random(void *where,int len,int strong);
 
 /* this one can be called by the client to see the hash of the public key before accepting it */
 int ssh_get_pubkey_hash(SSH_SESSION *session, unsigned char **hash);
-STRING *ssh_get_pubkey(SSH_SESSION *session);
+ssh_string ssh_get_pubkey(SSH_SESSION *session);
 
 /* in connect.c */
 int ssh_fd_poll(SSH_SESSION *session,int *write, int *except);
@@ -251,10 +266,10 @@ void publickey_free(PUBLIC_KEY *key);
 
 PRIVATE_KEY *privatekey_from_file(SSH_SESSION *session, const char *filename,
     int type, const char *passphrase);
-STRING *publickey_to_string(PUBLIC_KEY *key);
+ssh_string publickey_to_string(PUBLIC_KEY *key);
 PUBLIC_KEY *publickey_from_privatekey(PRIVATE_KEY *prv);
 void privatekey_free(PRIVATE_KEY *prv);
-STRING *publickey_from_file(SSH_SESSION *session, const char *filename,
+ssh_string publickey_from_file(SSH_SESSION *session, const char *filename,
     int *type);
 int ssh_is_server_known(SSH_SESSION *session);
 int ssh_write_knownhost(SSH_SESSION *session);
@@ -359,8 +374,8 @@ int ssh_auth_list(SSH_SESSION *session);
 int ssh_userauth_list(SSH_SESSION *session, const char *username);
 int ssh_userauth_none(SSH_SESSION *session, const char *username);
 int ssh_userauth_password(SSH_SESSION *session, const char *username, const char *password);
-int ssh_userauth_offer_pubkey(SSH_SESSION *session, const char *username, int type, STRING *publickey);
-int ssh_userauth_pubkey(SSH_SESSION *session, const char *username, STRING *publickey, PRIVATE_KEY *privatekey);
+int ssh_userauth_offer_pubkey(SSH_SESSION *session, const char *username, int type, ssh_string publickey);
+int ssh_userauth_pubkey(SSH_SESSION *session, const char *username, ssh_string publickey, PRIVATE_KEY *privatekey);
 int ssh_userauth_agent_pubkey(SSH_SESSION *session, const char *username,
     PUBLIC_KEY *publickey);
 int ssh_userauth_autopubkey(SSH_SESSION *session, const char *passphrase);

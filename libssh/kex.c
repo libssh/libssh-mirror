@@ -233,7 +233,7 @@ char *ssh_find_matching(const char *in_d, const char *what_d){
 }
 
 int ssh_get_kex(SSH_SESSION *session, int server_kex) {
-  STRING *str = NULL;
+  ssh_string str = NULL;
   char *strings[10];
   int i;
 
@@ -373,7 +373,7 @@ int set_kex(SSH_SESSION *session){
 /* this function only sends the predefined set of kex methods */
 int ssh_send_kex(SSH_SESSION *session, int server_kex) {
   KEX *kex = (server_kex ? &session->server_kex : &session->client_kex);
-  STRING *str = NULL;
+  ssh_string str = NULL;
   int i;
 
   enter_function();
@@ -444,10 +444,10 @@ int verify_existing_algo(int algo, const char *name){
 
 /* makes a STRING contating 3 strings : ssh-rsa1,e and n */
 /* this is a public key in openssh's format */
-static STRING *make_rsa1_string(STRING *e, STRING *n){
+static ssh_string make_rsa1_string(ssh_string e, ssh_string n){
   BUFFER *buffer = NULL;
-  STRING *rsa = NULL;
-  STRING *ret = NULL;
+  ssh_string rsa = NULL;
+  ssh_string ret = NULL;
 
   buffer = buffer_new();
   rsa = string_from_char("ssh-rsa1");
@@ -475,8 +475,8 @@ error:
   return ret;
 }
 
-static int build_session_id1(SSH_SESSION *session, STRING *servern,
-    STRING *hostn) {
+static int build_session_id1(SSH_SESSION *session, ssh_string servern,
+    ssh_string hostn) {
   MD5CTX md5 = NULL;
 
   md5 = md5_init();
@@ -529,12 +529,12 @@ static int modulus_smaller(PUBLIC_KEY *k1, PUBLIC_KEY *k2){
 }
 
 #define ABS(A) ( (A)<0 ? -(A):(A) )
-static STRING *encrypt_session_key(SSH_SESSION *session, PUBLIC_KEY *srvkey,
+static ssh_string encrypt_session_key(SSH_SESSION *session, PUBLIC_KEY *srvkey,
     PUBLIC_KEY *hostkey, int slen, int hlen) {
   unsigned char buffer[32] = {0};
   int i;
-  STRING *data1 = NULL;
-  STRING *data2 = NULL;
+  ssh_string data1 = NULL;
+  ssh_string data2 = NULL;
 
   /* first, generate a session key */
   ssh_get_random(session->next_crypto->encryptkey, 32, 1);
@@ -607,13 +607,13 @@ static STRING *encrypt_session_key(SSH_SESSION *session, PUBLIC_KEY *srvkey,
  */
 
 int ssh_get_kex1(SSH_SESSION *session) {
-  STRING *server_exp = NULL;
-  STRING *server_mod = NULL;
-  STRING *host_exp = NULL;
-  STRING *host_mod = NULL;
-  STRING *serverkey = NULL;
-  STRING *hostkey = NULL;
-  STRING *enc_session = NULL;
+  ssh_string server_exp = NULL;
+  ssh_string server_mod = NULL;
+  ssh_string host_exp = NULL;
+  ssh_string host_mod = NULL;
+  ssh_string serverkey = NULL;
+  ssh_string hostkey = NULL;
+  ssh_string enc_session = NULL;
   PUBLIC_KEY *srv = NULL;
   PUBLIC_KEY *host = NULL;
   u32 server_bits;

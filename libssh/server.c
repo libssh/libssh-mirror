@@ -325,10 +325,10 @@ static int server_set_kex(SSH_SESSION * session) {
 }
 
 static int dh_handshake_server(SSH_SESSION *session) {
-  STRING *e;
-  STRING *f;
-  STRING *pubkey;
-  STRING *sign;
+  ssh_string e;
+  ssh_string f;
+  ssh_string pubkey;
+  ssh_string sign;
   PUBLIC_KEY *pub;
   PRIVATE_KEY *prv;
 
