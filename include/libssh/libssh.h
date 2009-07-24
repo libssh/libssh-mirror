@@ -71,7 +71,7 @@ typedef unsigned long long uint64_t;
 extern "C" {
 #endif
 
-#ifdef SSH_SAFE_NAMESPACE
+#ifndef SSH_SAFE_NAMESPACE
 typedef struct ssh_string_struct STRING;
 typedef struct ssh_buffer_struct BUFFER;
 typedef struct ssh_public_key_struct PUBLIC_KEY;
