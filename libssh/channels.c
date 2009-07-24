@@ -1756,7 +1756,7 @@ static int count_ptrs(ssh_channel *ptrs) {
  */
 int channel_select(ssh_channel *readchans, ssh_channel *writechans,
     ssh_channel *exceptchans, struct timeval * timeout) {
-  ssh_channel *rchans, **wchans, **echans;
+  ssh_channel *rchans, *wchans, *echans;
   ssh_channel dummy = NULL;
   fd_set rset;
   fd_set wset;
