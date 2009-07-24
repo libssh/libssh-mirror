@@ -652,6 +652,9 @@ char *ssh_find_matching(const char *in_d, const char *what_d);
 
 PRIVATE_KEY *_privatekey_from_file(void *session, const char *filename,
     int type);
+STRING *try_publickey_from_file(SSH_SESSION *session,
+    struct ssh_keys_struct keytab,
+    char **privkeyfile, int *type);
 
 /* in keys.c */
 const char *ssh_type_to_char(int type);
