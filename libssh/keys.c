@@ -65,14 +65,14 @@ int ssh_type_from_name(const char *name) {
   return -1;
 }
 
-PUBLIC_KEY *publickey_make_dss(SSH_SESSION *session, ssh_buffer buffer) {
+ssh_public_key publickey_make_dss(SSH_SESSION *session, ssh_buffer buffer) {
   ssh_string p = NULL;
   ssh_string q = NULL;
   ssh_string g = NULL;
   ssh_string pubkey = NULL;
-  PUBLIC_KEY *key = NULL;
+  ssh_public_key key = NULL;
 
-  key = malloc(sizeof(PUBLIC_KEY));
+  key = malloc(sizeof(struct ssh_public_key_struct));
   if (key == NULL) {
     buffer_free(buffer);
     return NULL;
@@ -151,13 +151,13 @@ error:
   return NULL;
 }
 
-PUBLIC_KEY *publickey_make_rsa(SSH_SESSION *session, ssh_buffer buffer,
+ssh_public_key publickey_make_rsa(SSH_SESSION *session, ssh_buffer buffer,
     int type) {
   ssh_string e = NULL;
   ssh_string n = NULL;
-  PUBLIC_KEY *key = NULL;
+  ssh_public_key key = NULL;
 
-  key = malloc(sizeof(PUBLIC_KEY));
+  key = malloc(sizeof(struct ssh_public_key_struct));
   if (key == NULL) {
     buffer_free(buffer);
     return NULL;
@@ -218,7 +218,7 @@ error:
   return NULL;
 }
 
-void publickey_free(PUBLIC_KEY *key) {
+void publickey_free(ssh_public_key key) {
   if (key == NULL) {
     return;
   }
@@ -245,7 +245,7 @@ void publickey_free(PUBLIC_KEY *key) {
   SAFE_FREE(key);
 }
 
-PUBLIC_KEY *publickey_from_string(SSH_SESSION *session, ssh_string pubkey_s) {
+ssh_public_key publickey_from_string(SSH_SESSION *session, ssh_string pubkey_s) {
   ssh_buffer tmpbuf = NULL;
   ssh_string type_s = NULL;
   char *type_c = NULL;
@@ -296,8 +296,8 @@ error:
  * \returns the public key
  * \see publickey_to_string()
  */
-PUBLIC_KEY *publickey_from_privatekey(PRIVATE_KEY *prv) {
-  PUBLIC_KEY *key = NULL;
+ssh_public_key publickey_from_privatekey(PRIVATE_KEY *prv) {
+  ssh_public_key key = NULL;
 #ifdef HAVE_LIBGCRYPT
   gcry_sexp_t sexp;
   const char *tmp = NULL;
@@ -310,7 +310,7 @@ PUBLIC_KEY *publickey_from_privatekey(PRIVATE_KEY *prv) {
   ssh_string n = NULL;
 #endif /* HAVE_LIBGCRYPT */
 
-  key = malloc(sizeof(PUBLIC_KEY));
+  key = malloc(sizeof(struct ssh_public_key_struct));
   if (key == NULL) {
     return NULL;
   }
@@ -655,7 +655,7 @@ error:
  * \returns a SSH String containing the public key
  * \see string_free()
  */
-ssh_string publickey_to_string(PUBLIC_KEY *key) {
+ssh_string publickey_to_string(ssh_public_key key) {
   ssh_string type = NULL;
   ssh_string ret = NULL;
   ssh_buffer buf = NULL;
@@ -847,7 +847,7 @@ static ssh_string signature_to_string(SIGNATURE *sign) {
 
 /* TODO : split this function in two so it becomes smaller */
 SIGNATURE *signature_from_string(SSH_SESSION *session, ssh_string signature,
-    PUBLIC_KEY *pubkey, int needed_type) {
+    ssh_public_key pubkey, int needed_type) {
   SIGNATURE *sign = NULL;
   ssh_buffer tmpbuf = NULL;
   ssh_string rs = NULL;
@@ -1249,7 +1249,7 @@ ssh_string ssh_do_sign(SSH_SESSION *session, ssh_buffer sigbuf,
   return signature;
 }
 
-ssh_string ssh_encrypt_rsa1(SSH_SESSION *session, ssh_string data, PUBLIC_KEY *key) {
+ssh_string ssh_encrypt_rsa1(SSH_SESSION *session, ssh_string data, ssh_public_key key) {
   ssh_string str = NULL;
   size_t len = string_len(data);
   size_t size = 0;

@@ -329,7 +329,7 @@ static int dh_handshake_server(SSH_SESSION *session) {
   ssh_string f;
   ssh_string pubkey;
   ssh_string sign;
-  PUBLIC_KEY *pub;
+  ssh_public_key pub;
   PRIVATE_KEY *prv;
 
   if (packet_wait(session, SSH2_MSG_KEXDH_INIT, 1) != SSH_OK) {

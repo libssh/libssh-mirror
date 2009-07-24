@@ -875,7 +875,7 @@ static int match(const char *group, const char *object){
   return 0;
 }
 
-static int sig_verify(SSH_SESSION *session, PUBLIC_KEY *pubkey,
+static int sig_verify(SSH_SESSION *session, ssh_public_key pubkey,
     SIGNATURE *signature, unsigned char *digest) {
 #ifdef HAVE_LIBGCRYPT
   gcry_error_t valid = 0;
@@ -971,7 +971,7 @@ static int sig_verify(SSH_SESSION *session, PUBLIC_KEY *pubkey,
 }
 
 int signature_verify(SSH_SESSION *session, ssh_string signature) {
-  PUBLIC_KEY *pubkey = NULL;
+  ssh_public_key pubkey = NULL;
   SIGNATURE *sign = NULL;
   int err;
 

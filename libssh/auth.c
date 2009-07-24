@@ -537,7 +537,7 @@ error:
  * @see ssh_userauth_offer_pubkey()
  */
 int ssh_userauth_agent_pubkey(SSH_SESSION *session, const char *username,
-    PUBLIC_KEY *publickey) {
+    ssh_public_key publickey) {
   ssh_string user = NULL;
   ssh_string service = NULL;
   ssh_string method = NULL;

@@ -1470,7 +1470,7 @@ int ssh_write_knownhost(SSH_SESSION *session) {
   if (strcmp(session->current_crypto->server_pubkey_type, "ssh-rsa1") == 0) {
     /* openssh uses a different format for ssh-rsa1 keys.
        Be compatible --kv */
-    PUBLIC_KEY *key;
+    ssh_public_key key;
     char *e_string = NULL;
     char *n_string = NULL;
     bignum e = NULL;

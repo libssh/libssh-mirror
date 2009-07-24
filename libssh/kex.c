@@ -500,7 +500,7 @@ static int build_session_id1(SSH_SESSION *session, ssh_string servern,
 }
 
 /* returns 1 if the modulus of k1 is < than the one of k2 */
-static int modulus_smaller(PUBLIC_KEY *k1, PUBLIC_KEY *k2){
+static int modulus_smaller(ssh_public_key k1, ssh_public_key k2){
     bignum n1;
     bignum n2;
     int res;
@@ -529,8 +529,8 @@ static int modulus_smaller(PUBLIC_KEY *k1, PUBLIC_KEY *k2){
 }
 
 #define ABS(A) ( (A)<0 ? -(A):(A) )
-static ssh_string encrypt_session_key(SSH_SESSION *session, PUBLIC_KEY *srvkey,
-    PUBLIC_KEY *hostkey, int slen, int hlen) {
+static ssh_string encrypt_session_key(SSH_SESSION *session, ssh_public_key srvkey,
+    ssh_public_key hostkey, int slen, int hlen) {
   unsigned char buffer[32] = {0};
   int i;
   ssh_string data1 = NULL;
@@ -614,8 +614,8 @@ int ssh_get_kex1(SSH_SESSION *session) {
   ssh_string serverkey = NULL;
   ssh_string hostkey = NULL;
   ssh_string enc_session = NULL;
-  PUBLIC_KEY *srv = NULL;
-  PUBLIC_KEY *host = NULL;
+  ssh_public_key srv = NULL;
+  ssh_public_key host = NULL;
   u32 server_bits;
   u32 host_bits;
   u32 protocol_flags;

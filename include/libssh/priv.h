@@ -665,17 +665,17 @@ PRIVATE_KEY *privatekey_make_rsa(SSH_SESSION *session, ssh_buffer buffer,
     const char *type);
 PRIVATE_KEY *privatekey_from_string(SSH_SESSION *session, ssh_string privkey_s);
 
-PUBLIC_KEY *publickey_make_dss(SSH_SESSION *session, ssh_buffer buffer);
-PUBLIC_KEY *publickey_make_rsa(SSH_SESSION *session, ssh_buffer buffer, int type);
-PUBLIC_KEY *publickey_from_string(SSH_SESSION *session, ssh_string pubkey_s);
-SIGNATURE *signature_from_string(SSH_SESSION *session, ssh_string signature,PUBLIC_KEY *pubkey,int needed_type);
+ssh_public_key publickey_make_dss(SSH_SESSION *session, ssh_buffer buffer);
+ssh_public_key publickey_make_rsa(SSH_SESSION *session, ssh_buffer buffer, int type);
+ssh_public_key publickey_from_string(SSH_SESSION *session, ssh_string pubkey_s);
+SIGNATURE *signature_from_string(SSH_SESSION *session, ssh_string signature,ssh_public_key pubkey,int needed_type);
 void signature_free(SIGNATURE *sign);
 ssh_string ssh_do_sign_with_agent(struct ssh_session *session,
     struct ssh_buffer_struct *buf, struct ssh_public_key_struct *publickey);
 ssh_string ssh_do_sign(SSH_SESSION *session,ssh_buffer sigbuf,
         PRIVATE_KEY *privatekey);
 ssh_string ssh_sign_session_id(SSH_SESSION *session, PRIVATE_KEY *privatekey);
-ssh_string ssh_encrypt_rsa1(SSH_SESSION *session, ssh_string data, PUBLIC_KEY *key);
+ssh_string ssh_encrypt_rsa1(SSH_SESSION *session, ssh_string data, ssh_public_key key);
 /* channel.c */
 void channel_handle(SSH_SESSION *session, int type);
 CHANNEL *channel_new(SSH_SESSION *session);
