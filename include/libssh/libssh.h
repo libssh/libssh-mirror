@@ -245,6 +245,7 @@ int ssh_get_random(void *where,int len,int strong);
 
 /* this one can be called by the client to see the hash of the public key before accepting it */
 int ssh_get_pubkey_hash(SSH_SESSION *session, unsigned char **hash);
+void ssh_clean_pubkey_hash(unsigned char **hash);
 ssh_string ssh_get_pubkey(SSH_SESSION *session);
 
 /* in connect.c */

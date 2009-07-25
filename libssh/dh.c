@@ -847,6 +847,22 @@ int ssh_get_pubkey_hash(SSH_SESSION *session, unsigned char **hash) {
   return MD5_DIGEST_LEN;
 }
 
+/** \addtogroup ssh_session
+ * @{ */
+/**
+ * @brief Deallocate the hash obtained by ssh_get_pubkey_hash.
+ * This is required under Microsoft platform as this library might use a 
+ * different C library than your software, hence a different heap.
+ *
+ * @param  hash         The buffer to deallocate.
+ *
+ * @see ssh_get_pubkey_hash()
+ */
+void ssh_clean_pubkey_hash(unsigned char **hash) {
+  SAFE_FREE(*hash);
+  *hash = NULL;
+}
+
 ssh_string ssh_get_pubkey(SSH_SESSION *session){
     return string_copy(session->current_crypto->server_pubkey);
 }
