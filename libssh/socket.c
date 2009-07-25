@@ -182,7 +182,7 @@ int ssh_socket_is_open(struct socket *s) {
 /* \internal
  * \brief read len bytes from socket into buffer
  */
-static int ssh_socket_unbuffered_read(struct socket *s, void *buffer, u32 len) {
+static int ssh_socket_unbuffered_read(struct socket *s, void *buffer, uint32_t len) {
   int rc = -1;
 
   if (s->data_except) {
@@ -208,7 +208,7 @@ static int ssh_socket_unbuffered_read(struct socket *s, void *buffer, u32 len) {
  * \brief writes len bytes from buffer to socket
  */
 static int ssh_socket_unbuffered_write(struct socket *s, const void *buffer,
-    u32 len) {
+    uint32_t len) {
   int w = -1;
 
   if (s->data_except) {
@@ -256,10 +256,10 @@ void ssh_socket_fd_set(struct socket *s, fd_set *set, int *fd_max) {
 /** \internal
  * \brief reads blocking until len bytes have been read
  */
-int ssh_socket_completeread(struct socket *s, void *buffer, u32 len) {
+int ssh_socket_completeread(struct socket *s, void *buffer, uint32_t len) {
   int r = -1;
-  u32 total = 0;
-  u32 toread = len;
+  uint32_t total = 0;
+  uint32_t toread = len;
   if(! ssh_socket_is_open(s)) {
     return SSH_ERROR;
   }
@@ -285,7 +285,7 @@ int ssh_socket_completeread(struct socket *s, void *buffer, u32 len) {
 /** \internal
  * \brief Blocking write of len bytes
  */
-int ssh_socket_completewrite(struct socket *s, const void *buffer, u32 len) {
+int ssh_socket_completewrite(struct socket *s, const void *buffer, uint32_t len) {
   SSH_SESSION *session = s->session;
   int written = -1;
 
@@ -370,7 +370,7 @@ int ssh_socket_write(struct socket *s, const void *buffer, int len) {
  * \returns SSH_AGAIN need to call later for data
  * \returns SSH_ERROR error happened
  */
-int ssh_socket_wait_for_data(struct socket *s, SSH_SESSION *session, u32 len) {
+int ssh_socket_wait_for_data(struct socket *s, SSH_SESSION *session, uint32_t len) {
   char buffer[4096] = {0};
   char *buf = NULL;
   int except;
@@ -446,7 +446,7 @@ int ssh_socket_wait_for_data(struct socket *s, SSH_SESSION *session, u32 len) {
       return SSH_ERROR;
     }
 
-    if (buffer_add_data(s->in_buffer,buffer, (u32) r) < 0) {
+    if (buffer_add_data(s->in_buffer,buffer, (uint32_t) r) < 0) {
       leave_function();
       return SSH_ERROR;
     }

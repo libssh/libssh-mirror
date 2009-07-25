@@ -230,7 +230,7 @@ static int channel_rcv_data1(SSH_SESSION *session, int is_stderr) {
 
 static int channel_rcv_close1(SSH_SESSION *session) {
   ssh_channel channel = session->channels;
-  u32 status;
+  uint32_t status;
 
   buffer_get_u32(session->in_buffer, &status);
   /*

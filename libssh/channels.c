@@ -102,7 +102,7 @@ ssh_channel channel_new(SSH_SESSION *session) {
  *
  * @return The new channel identifier.
  */
-u32 ssh_channel_new_id(SSH_SESSION *session) {
+uint32_t ssh_channel_new_id(SSH_SESSION *session) {
   return ++(session->maxchannel);
 }
 
@@ -110,7 +110,7 @@ static int channel_open(ssh_channel channel, const char *type_c, int window,
     int maxpacket, ssh_buffer payload) {
   SSH_SESSION *session = channel->session;
   ssh_string type = NULL;
-  u32 tmp = 0;
+  uint32_t tmp = 0;
 
   enter_function();
 
@@ -198,7 +198,7 @@ static int channel_open(ssh_channel channel, const char *type_c, int window,
       {
         ssh_string error_s;
         char *error;
-        u32 code;
+        uint32_t code;
 
         buffer_get_u32(session->in_buffer, &tmp);
         buffer_get_u32(session->in_buffer, &code);
@@ -233,7 +233,7 @@ static int channel_open(ssh_channel channel, const char *type_c, int window,
 }
 
 /* get ssh channel from local session? */
-ssh_channel ssh_channel_from_local(SSH_SESSION *session, u32 id) {
+ssh_channel ssh_channel_from_local(SSH_SESSION *session, uint32_t id) {
   ssh_channel initchan = session->channels;
   ssh_channel channel;
 
@@ -253,7 +253,7 @@ ssh_channel ssh_channel_from_local(SSH_SESSION *session, u32 id) {
 }
 
 static int grow_window(SSH_SESSION *session, ssh_channel channel, int minimumsize) {
-  u32 new_window = minimumsize > WINDOWBASE ? minimumsize : WINDOWBASE;
+  uint32_t new_window = minimumsize > WINDOWBASE ? minimumsize : WINDOWBASE;
 
   enter_function();
 
@@ -288,9 +288,9 @@ error:
 
 static ssh_channel channel_from_msg(SSH_SESSION *session) {
   ssh_channel channel;
-  u32 chan;
+  uint32_t chan;
 
-  if (buffer_get_u32(session->in_buffer, &chan) != sizeof(u32)) {
+  if (buffer_get_u32(session->in_buffer, &chan) != sizeof(uint32_t)) {
     ssh_set_error(session, SSH_FATAL,
         "Getting channel from message: short read");
     return NULL;
@@ -308,7 +308,7 @@ static ssh_channel channel_from_msg(SSH_SESSION *session) {
 
 static void channel_rcv_change_window(SSH_SESSION *session) {
   ssh_channel channel;
-  u32 bytes;
+  uint32_t bytes;
   int rc;
 
   enter_function();
@@ -319,7 +319,7 @@ static void channel_rcv_change_window(SSH_SESSION *session) {
   }
 
   rc = buffer_get_u32(session->in_buffer, &bytes);
-  if (channel == NULL || rc != sizeof(u32)) {
+  if (channel == NULL || rc != sizeof(uint32_t)) {
     ssh_log(session, SSH_LOG_PACKET,
         "Error getting a window adjust message: invalid packet");
     leave_function();
@@ -356,7 +356,7 @@ static void channel_rcv_data(SSH_SESSION *session,int is_stderr) {
   }
 
   if (is_stderr) {
-    u32 ignore;
+    uint32_t ignore;
     /* uint32 data type code. we can ignore it */
     buffer_get_u32(session->in_buffer, &ignore);
   }
@@ -471,7 +471,7 @@ static void channel_rcv_request(SSH_SESSION *session) {
   ssh_channel channel;
   ssh_string request_s;
   char *request;
-  u32 status;
+  uint32_t status;
 
   enter_function();
 
@@ -496,7 +496,7 @@ static void channel_rcv_request(SSH_SESSION *session) {
     return;
   }
 
-  buffer_get_u8(session->in_buffer, (u8 *) &status);
+  buffer_get_u8(session->in_buffer, (uint8_t *) &status);
 
   if (strcmp(request,"exit-status") == 0) {
     SAFE_FREE(request);
@@ -512,7 +512,7 @@ static void channel_rcv_request(SSH_SESSION *session) {
     const char *core = "(core dumped)";
     ssh_string signal_s;
     char *signal;
-    u8 i;
+    uint8_t i;
 
     SAFE_FREE(request);
 
@@ -865,7 +865,7 @@ error:
  *
  * @see channel_read()
  */
-int channel_write(ssh_channel channel, const void *data, u32 len) {
+int channel_write(ssh_channel channel, const void *data, uint32_t len) {
   SSH_SESSION *session = channel->session;
   int origlen = len;
   int effectivelen;
@@ -1359,12 +1359,12 @@ error:
  *
  * @return The number of bytes read, 0 on end of file or SSH_ERROR on error.
  */
-int channel_read_buffer(ssh_channel channel, ssh_buffer buffer, u32 count,
+int channel_read_buffer(ssh_channel channel, ssh_buffer buffer, uint32_t count,
     int is_stderr) {
   SSH_SESSION *session=channel->session;
   ssh_buffer stdbuf = channel->stdout_buffer;
-  u32 maxread = count;
-  u32 len;
+  uint32_t maxread = count;
+  uint32_t len;
 
   buffer_reinit(buffer);
 
@@ -1468,10 +1468,10 @@ int channel_read_buffer(ssh_channel channel, ssh_buffer buffer, u32 count,
  * @warning The read function using a buffer has been renamed to
  *          channel_read_buffer().
  */
-int channel_read(ssh_channel channel, void *dest, u32 count, int is_stderr) {
+int channel_read(ssh_channel channel, void *dest, uint32_t count, int is_stderr) {
   SSH_SESSION *session = channel->session;
   ssh_buffer stdbuf = channel->stdout_buffer;
-  u32 len;
+  uint32_t len;
 
   enter_function();
 
@@ -1566,10 +1566,10 @@ int channel_read(ssh_channel channel, void *dest, u32 count, int is_stderr) {
  *
  * @see channel_is_eof()
  */
-int channel_read_nonblocking(ssh_channel channel, void *dest, u32 count,
+int channel_read_nonblocking(ssh_channel channel, void *dest, uint32_t count,
     int is_stderr) {
   SSH_SESSION *session = channel->session;
-  u32 to_read;
+  uint32_t to_read;
   int rc;
 
   enter_function();

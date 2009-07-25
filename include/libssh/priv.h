@@ -49,12 +49,6 @@
 #define TYPE_RSA 2
 #define TYPE_RSA1 3
 
-/* integer values */
-typedef uint32_t u32;
-typedef uint16_t u16;
-typedef uint64_t u64;
-typedef uint8_t u8;
-
 /* profiling constants. Don't touch them unless you know what you do */
 #ifdef HAVE_LIBCRYPTO
 #define OPENSSL_BIGNUMS
@@ -179,7 +173,7 @@ void hmac_final(HMACCTX ctx,unsigned char *hashmacbuf,unsigned int *len);
 /* strings and buffers */
 /* must be 32 bits number + immediatly our data */
 struct ssh_string_struct {
-	u32 size;
+	uint32_t size;
 	unsigned char string[MAX_PACKET_LEN];
 }
 #if !defined(__SUNPRO_C)
@@ -191,16 +185,16 @@ __attribute__ ((packed))
  */
 struct ssh_buffer_struct {
     char *data;
-    u32 used;
-    u32 allocated;
-    u32 pos;
+    uint32_t used;
+    uint32_t allocated;
+    uint32_t pos;
 };
 
 /* i should remove it one day */
 typedef struct packet_struct {
 	int valid;
-	u32 len;
-	u8 type;
+	uint32_t len;
+	uint8_t type;
 } PACKET;
 
 typedef struct kex_struct {
@@ -305,15 +299,15 @@ struct ssh_channel_struct {
     struct ssh_channel_struct *prev;
     struct ssh_channel_struct *next;
     SSH_SESSION *session; /* SSH_SESSION pointer */
-    u32 local_channel;
-    u32 local_window;
+    uint32_t local_channel;
+    uint32_t local_window;
     int local_eof;
-    u32 local_maxpacket;
+    uint32_t local_maxpacket;
 
-    u32 remote_channel;
-    u32 remote_window;
+    uint32_t remote_channel;
+    uint32_t remote_window;
     int remote_eof; /* end of file received */
-    u32 remote_maxpacket;
+    uint32_t remote_maxpacket;
     int open; /* shows if the channel is still opened */
     int delayed_close;
     ssh_buffer stdout_buffer;
@@ -346,8 +340,8 @@ struct ssh_session_struct {
     int protoversion;
     int server;
     int client;
-    u32 send_seq;
-    u32 recv_seq;
+    uint32_t send_seq;
+    uint32_t recv_seq;
 /* status flags */
     int closed;
     int closed_by_except;
@@ -406,7 +400,7 @@ struct ssh_session_struct {
 };
 
 struct ssh_kbdint_struct {
-    u32 nprompts;
+    uint32_t nprompts;
     char *name;
     char *instruction;
     char **prompts;
@@ -432,13 +426,13 @@ struct ssh_auth_request {
 
 struct ssh_channel_request_open {
     int type;
-    u32 sender;
-    u32 window;
-    u32 packet_size;
+    uint32_t sender;
+    uint32_t window;
+    uint32_t packet_size;
     char *originator;
-    u16 orignator_port;
+    uint16_t orignator_port;
     char *destination;
-    u16 destination_port;
+    uint16_t destination_port;
 };
 
 struct ssh_service_request {
@@ -448,13 +442,13 @@ struct ssh_service_request {
 struct ssh_channel_request {
     int type;
     ssh_channel channel;
-    u8 want_reply;
+    uint8_t want_reply;
     /* pty-req type specifics */
     char *TERM;
-    u32 width;
-    u32 height;
-    u32 pxwidth;
-    u32 pxheight;
+    uint32_t width;
+    uint32_t height;
+    uint32_t pxwidth;
+    uint32_t pxheight;
     ssh_string modes;
 
     /* env type request */
@@ -568,9 +562,9 @@ int ssh_socket_write(struct socket *s,const void *buffer, int len);
 int ssh_socket_is_open(struct socket *s);
 int ssh_socket_fd_isset(struct socket *s, fd_set *set);
 void ssh_socket_fd_set(struct socket *s, fd_set *set, int *fd_max);
-int ssh_socket_completeread(struct socket *s, void *buffer, u32 len);
-int ssh_socket_completewrite(struct socket *s, const void *buffer, u32 len);
-int ssh_socket_wait_for_data(struct socket *s, SSH_SESSION *session, u32 len);
+int ssh_socket_completeread(struct socket *s, void *buffer, uint32_t len);
+int ssh_socket_completewrite(struct socket *s, const void *buffer, uint32_t len);
+int ssh_socket_wait_for_data(struct socket *s, SSH_SESSION *session, uint32_t len);
 int ssh_socket_nonblocking_flush(struct socket *s);
 int ssh_socket_blocking_flush(struct socket *s);
 int ssh_socket_poll(struct socket *s, int *writeable, int *except);
@@ -620,7 +614,7 @@ bignum make_string_bn(ssh_string string);
 ssh_string make_bignum_string(bignum num);
 
 /* in crypt.c */
-u32 packet_decrypt_len(SSH_SESSION *session,char *crypted);
+uint32_t packet_decrypt_len(SSH_SESSION *session,char *crypted);
 int packet_decrypt(SSH_SESSION *session, void *packet,unsigned int len);
 unsigned char *packet_encrypt(SSH_SESSION *session,void *packet,unsigned int len);
  /* it returns the hmac buffer if exists*/
@@ -687,8 +681,8 @@ void channel_handle(SSH_SESSION *session, int type);
 ssh_channel channel_new(SSH_SESSION *session);
 int channel_default_bufferize(ssh_channel channel, void *data, int len,
         int is_stderr);
-u32 ssh_channel_new_id(SSH_SESSION *session);
-ssh_channel ssh_channel_from_local(SSH_SESSION *session, u32 id);
+uint32_t ssh_channel_new_id(SSH_SESSION *session);
+ssh_channel ssh_channel_from_local(SSH_SESSION *session, uint32_t id);
 
 /* options.c */
 
@@ -699,32 +693,32 @@ int ssh_options_default_known_hosts_file(SSH_OPTIONS *opt);
 
 /* buffer.c */
 int buffer_add_ssh_string(ssh_buffer buffer, ssh_string string);
-int buffer_add_u8(ssh_buffer buffer, u8 data);
-int buffer_add_u32(ssh_buffer buffer, u32 data);
-int buffer_add_u64(ssh_buffer buffer, u64 data);
-int buffer_add_data(ssh_buffer buffer, const void *data, u32 len);
-int buffer_prepend_data(ssh_buffer buffer, const void *data, u32 len);
+int buffer_add_u8(ssh_buffer buffer, uint8_t data);
+int buffer_add_u32(ssh_buffer buffer, uint32_t data);
+int buffer_add_u64(ssh_buffer buffer, uint64_t data);
+int buffer_add_data(ssh_buffer buffer, const void *data, uint32_t len);
+int buffer_prepend_data(ssh_buffer buffer, const void *data, uint32_t len);
 int buffer_add_buffer(ssh_buffer buffer, ssh_buffer source);
 int buffer_reinit(ssh_buffer buffer);
 
 /* buffer_get_rest returns a pointer to the current position into the buffer */
 void *buffer_get_rest(ssh_buffer buffer);
 /* buffer_get_rest_len returns the number of bytes which can be read */
-u32 buffer_get_rest_len(ssh_buffer buffer);
+uint32_t buffer_get_rest_len(ssh_buffer buffer);
 
 /* buffer_read_*() returns the number of bytes read, except for ssh strings */
-int buffer_get_u8(ssh_buffer buffer, u8 *data);
-int buffer_get_u32(ssh_buffer buffer, u32 *data);
-int buffer_get_u64(ssh_buffer buffer, u64 *data);
+int buffer_get_u8(ssh_buffer buffer, uint8_t *data);
+int buffer_get_u32(ssh_buffer buffer, uint32_t *data);
+int buffer_get_u64(ssh_buffer buffer, uint64_t *data);
 
-u32 buffer_get_data(ssh_buffer buffer, void *data, u32 requestedlen);
+uint32_t buffer_get_data(ssh_buffer buffer, void *data, uint32_t requestedlen);
 /* buffer_get_ssh_string() is an exception. if the String read is too large or invalid, it will answer NULL. */
 ssh_string buffer_get_ssh_string(ssh_buffer buffer);
 /* gets a string out of a SSH-1 mpint */
 ssh_string buffer_get_mpint(ssh_buffer buffer);
 /* buffer_pass_bytes acts as if len bytes have been read (used for padding) */
-u32 buffer_pass_bytes_end(ssh_buffer buffer, u32 len);
-u32 buffer_pass_bytes(ssh_buffer buffer, u32 len);
+uint32_t buffer_pass_bytes_end(ssh_buffer buffer, uint32_t len);
+uint32_t buffer_pass_bytes(ssh_buffer buffer, uint32_t len);
 
 /* in base64.c */
 ssh_buffer base64_to_bin(const char *source);
@@ -741,7 +735,7 @@ CRYPTO *crypto_new(void);
 void crypto_free(CRYPTO *crypto);
 
 /* crc32.c */
-u32 ssh_crc32(const char *buf, u32 len);
+uint32_t ssh_crc32(const char *buf, uint32_t len);
 
 /* auth1.c */
 int ssh_userauth1_none(SSH_SESSION *session, const char *username);
@@ -755,7 +749,7 @@ char *ssh_get_user_home_dir(void);
 int ssh_file_readaccess_ok(const char *file);
 
 /* macro for byte ordering */
-u64 ntohll(u64);
+uint64_t ntohll(uint64_t);
 #define htonll(x) ntohll(x)
 
 /* list processing */
@@ -812,7 +806,7 @@ int match_hostname(const char *host, const char *pattern, unsigned int len);
 
 /* messages.c */
 
-void message_handle(SSH_SESSION *session, u32 type);
+void message_handle(SSH_SESSION *session, uint32_t type);
 int ssh_execute_message_callbacks(SSH_SESSION *session);
 
 /* log.c */

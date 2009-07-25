@@ -58,8 +58,8 @@ static int packet_read2(SSH_SESSION *session) {
   int to_be_read;
   int rc = SSH_ERROR;
 
-  u32 len;
-  u8 padding;
+  uint32_t len;
+  uint8_t padding;
 
   enter_function();
 
@@ -103,7 +103,7 @@ static int packet_read2(SSH_SESSION *session) {
         goto error;
       }
 
-      to_be_read = len - blocksize + sizeof(u32);
+      to_be_read = len - blocksize + sizeof(uint32_t);
       if (to_be_read < 0) {
         /* remote sshd sends invalid sizes? */
         ssh_set_error(session, SSH_FATAL,
@@ -116,7 +116,7 @@ static int packet_read2(SSH_SESSION *session) {
       session->packet_state = PACKET_STATE_SIZEREAD;
     case PACKET_STATE_SIZEREAD:
       len = session->in_packet.len;
-      to_be_read = len - blocksize + sizeof(u32) + current_macsize;
+      to_be_read = len - blocksize + sizeof(uint32_t) + current_macsize;
       /* if to_be_read is zero, the whole packet was blocksize bytes. */
       if (to_be_read != 0) {
         rc = ssh_socket_wait_for_data(session->socket,session,to_be_read);
@@ -161,7 +161,7 @@ static int packet_read2(SSH_SESSION *session) {
         }
       }
 
-      buffer_pass_bytes(session->in_buffer, sizeof(u32));
+      buffer_pass_bytes(session->in_buffer, sizeof(uint32_t));
 
       /* pass the size which has been processed before */
       if (buffer_get_u8(session->in_buffer, &padding) == 0) {
@@ -220,9 +220,9 @@ static int packet_read1(SSH_SESSION *session) {
   void *packet = NULL;
   int rc = SSH_ERROR;
   int to_be_read;
-  u32 padding;
-  u32 crc;
-  u32 len;
+  uint32_t padding;
+  uint32_t crc;
+  uint32_t len;
 
   enter_function();
 
@@ -436,12 +436,12 @@ static int packet_write(SSH_SESSION *session) {
 static int packet_send2(SSH_SESSION *session) {
   unsigned int blocksize = (session->current_crypto ?
       session->current_crypto->out_cipher->blocksize : 8);
-  u32 currentlen = buffer_get_len(session->out_buffer);
+  uint32_t currentlen = buffer_get_len(session->out_buffer);
   unsigned char *hmac = NULL;
   char padstring[32] = {0};
   int rc = SSH_ERROR;
-  u32 finallen;
-  u8 padding;
+  uint32_t finallen;
+  uint8_t padding;
 
   enter_function();
 
@@ -473,10 +473,10 @@ static int packet_send2(SSH_SESSION *session) {
       "%d bytes after comp + %d padding bytes = %lu bytes packet",
       currentlen, padding, (long unsigned int) ntohl(finallen));
 
-  if (buffer_prepend_data(session->out_buffer, &padding, sizeof(u8)) < 0) {
+  if (buffer_prepend_data(session->out_buffer, &padding, sizeof(uint8_t)) < 0) {
     goto error;
   }
-  if (buffer_prepend_data(session->out_buffer, &finallen, sizeof(u32)) < 0) {
+  if (buffer_prepend_data(session->out_buffer, &finallen, sizeof(uint32_t)) < 0) {
     goto error;
   }
   if (buffer_add_data(session->out_buffer, padstring, padding) < 0) {
@@ -506,12 +506,12 @@ error:
 static int packet_send1(SSH_SESSION *session) {
   unsigned int blocksize = (session->current_crypto ?
       session->current_crypto->out_cipher->blocksize : 8);
-  u32 currentlen = buffer_get_len(session->out_buffer) + sizeof(u32);
+  uint32_t currentlen = buffer_get_len(session->out_buffer) + sizeof(u32);
   char padstring[32] = {0};
   int rc = SSH_ERROR;
-  u32 finallen;
-  u32 crc;
-  u8 padding;
+  uint32_t finallen;
+  uint32_t crc;
+  uint8_t padding;
 
   enter_function();
   ssh_log(session,SSH_LOG_PACKET,"Sending a %d bytes long packet",currentlen);
@@ -541,12 +541,12 @@ static int packet_send1(SSH_SESSION *session) {
   if (buffer_prepend_data(session->out_buffer, &padstring, padding) < 0) {
     goto error;
   }
-  if (buffer_prepend_data(session->out_buffer, &finallen, sizeof(u32)) < 0) {
+  if (buffer_prepend_data(session->out_buffer, &finallen, sizeof(uint32_t)) < 0) {
     goto error;
   }
 
-  crc = ssh_crc32(buffer_get(session->out_buffer) + sizeof(u32),
-      buffer_get_len(session->out_buffer) - sizeof(u32));
+  crc = ssh_crc32(buffer_get(session->out_buffer) + sizeof(uint32_t),
+      buffer_get_len(session->out_buffer) - sizeof(uint32_t));
 
   if (buffer_add_u32(session->out_buffer, ntohl(crc)) < 0) {
     goto error;
@@ -557,8 +557,8 @@ static int packet_send1(SSH_SESSION *session) {
       buffer_get_len(session->out_buffer));
 #endif
 
-  packet_encrypt(session, buffer_get(session->out_buffer) + sizeof(u32),
-      buffer_get_len(session->out_buffer) - sizeof(u32));
+  packet_encrypt(session, buffer_get(session->out_buffer) + sizeof(uint32_t),
+      buffer_get_len(session->out_buffer) - sizeof(uint32_t));
 
 #ifdef DEBUG_CRYPTO
   ssh_print_hexa("encrypted packet",buffer_get(session->out_buffer),
@@ -594,8 +594,8 @@ int packet_send(SSH_SESSION *session) {
 void packet_parse(SSH_SESSION *session) {
   ssh_string error_s = NULL;
   char *error = NULL;
-  u32 type = session->in_packet.type;
-  u32 tmp;
+  uint32_t type = session->in_packet.type;
+  uint32_t tmp;
 
 #ifdef HAVE_SSH1
   if (session->version == 1) {

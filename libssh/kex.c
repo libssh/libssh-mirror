@@ -616,12 +616,12 @@ int ssh_get_kex1(SSH_SESSION *session) {
   ssh_string enc_session = NULL;
   ssh_public_key srv = NULL;
   ssh_public_key host = NULL;
-  u32 server_bits;
-  u32 host_bits;
-  u32 protocol_flags;
-  u32 supported_ciphers_mask;
-  u32 supported_authentications_mask;
-  u16 bits;
+  uint32_t server_bits;
+  uint32_t host_bits;
+  uint32_t protocol_flags;
+  uint32_t supported_ciphers_mask;
+  uint32_t supported_authentications_mask;
+  uint16_t bits;
   int rc = -1;
   int ko;
 
@@ -661,7 +661,7 @@ int ssh_get_kex1(SSH_SESSION *session) {
   buffer_get_u32(session->in_buffer, &supported_ciphers_mask);
   ko = buffer_get_u32(session->in_buffer, &supported_authentications_mask);
 
-  if ((ko != sizeof(u32)) || !host_mod || !host_exp
+  if ((ko != sizeof(uint32_t)) || !host_mod || !host_exp
       || !server_mod || !server_exp) {
     ssh_log(session, SSH_LOG_RARE, "Invalid SSH_SMSG_PUBLIC_KEY packet");
     ssh_set_error(session, SSH_FATAL, "Invalid SSH_SMSG_PUBLIC_KEY packet");
@@ -738,7 +738,7 @@ int ssh_get_kex1(SSH_SESSION *session) {
       bits, string_len(enc_session));
   bits = htons(bits);
   /* the encrypted mpint */
-  if (buffer_add_data(session->out_buffer, &bits, sizeof(u16)) < 0) {
+  if (buffer_add_data(session->out_buffer, &bits, sizeof(uint16_t)) < 0) {
     goto error;
   }
   if (buffer_add_data(session->out_buffer, enc_session->string,

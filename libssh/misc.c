@@ -104,16 +104,16 @@ int ssh_file_readaccess_ok(const char *file) {
   return 1;
 }
 
-u64 ntohll(u64 a) {
+uint64_t ntohll(uint64_t a) {
 #ifdef WORDS_BIGENDIAN
   return a;
 #else
-  u32 low = a & 0xffffffff;
-  u32 high = a >> 32 ;
+  uint32_t low = a & 0xffffffff;
+  uint32_t high = a >> 32 ;
   low = ntohl(low);
   high = ntohl(high);
 
-  return ((((u64) low) << 32) | ( high));
+  return ((((uint64_t) low) << 32) | ( high));
 #endif
 }
 

@@ -193,7 +193,7 @@ static SSH_MESSAGE *handle_userauth_request(SSH_SESSION *session){
 
   if (strcmp(method_c, "password") == 0) {
     ssh_string pass = NULL;
-    u8 tmp;
+    uint8_t tmp;
 
     msg->auth_request.method = SSH_AUTH_PASSWORD;
     SAFE_FREE(method_c);
@@ -337,7 +337,7 @@ static SSH_MESSAGE *handle_channel_request_open(SSH_SESSION *session) {
   SSH_MESSAGE *msg = NULL;
   ssh_string type = NULL;
   char *type_c = NULL;
-  u32 sender, window, packet;
+  uint32_t sender, window, packet;
 
   enter_function();
 
@@ -481,8 +481,8 @@ static SSH_MESSAGE *handle_channel_request(SSH_SESSION *session) {
   SSH_MESSAGE *msg = NULL;
   ssh_string type = NULL;
   char *type_c = NULL;
-  u32 channel;
-  u8 want_reply;
+  uint32_t channel;
+  uint8_t want_reply;
 
   enter_function();
 
@@ -624,7 +624,7 @@ char *ssh_message_channel_request_subsystem(SSH_MESSAGE *msg){
 }
 
 int ssh_message_channel_request_reply_success(SSH_MESSAGE *msg) {
-  u32 channel;
+  uint32_t channel;
 
   if (msg == NULL) {
     return SSH_ERROR;
@@ -653,7 +653,7 @@ int ssh_message_channel_request_reply_success(SSH_MESSAGE *msg) {
 }
 
 static int ssh_message_channel_request_reply_default(SSH_MESSAGE *msg) {
-  u32 channel;
+  uint32_t channel;
 
   if (msg->channel_request.want_reply) {
     channel = msg->channel_request.channel->remote_channel;
@@ -677,7 +677,7 @@ static int ssh_message_channel_request_reply_default(SSH_MESSAGE *msg) {
   return SSH_OK;
 }
 
-SSH_MESSAGE *ssh_message_retrieve(SSH_SESSION *session, u32 packettype){
+SSH_MESSAGE *ssh_message_retrieve(SSH_SESSION *session, uint32_t packettype){
   SSH_MESSAGE *msg=NULL;
   enter_function();
   switch(packettype) {
@@ -807,7 +807,7 @@ void ssh_message_free(SSH_MESSAGE *msg){
  * \param type packet type
  * \returns nothing
  */
-void message_handle(SSH_SESSION *session, u32 type){
+void message_handle(SSH_SESSION *session, uint32_t type){
   SSH_MESSAGE *msg=ssh_message_retrieve(session,type);
   if(msg){
     if(!session->ssh_message_list){

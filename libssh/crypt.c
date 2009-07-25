@@ -39,8 +39,8 @@
 #include "libssh/priv.h"
 #include "libssh/crypto.h"
 
-u32 packet_decrypt_len(SSH_SESSION *session, char *crypted){
-  u32 decrypted;
+uint32_t packet_decrypt_len(SSH_SESSION *session, char *crypted){
+  uint32_t decrypted;
 
   if (session->current_crypto) {
     if (packet_decrypt(session, crypted,
@@ -57,7 +57,7 @@ u32 packet_decrypt_len(SSH_SESSION *session, char *crypted){
   return ntohl(decrypted);
 }
 
-int packet_decrypt(SSH_SESSION *session, void *data,u32 len) {
+int packet_decrypt(SSH_SESSION *session, void *data,uint32_t len) {
   struct crypto_struct *crypto = session->current_crypto->in_cipher;
   char *out = NULL;
 
@@ -90,12 +90,12 @@ int packet_decrypt(SSH_SESSION *session, void *data,u32 len) {
   return 0;
 }
 
-unsigned char *packet_encrypt(SSH_SESSION *session, void *data, u32 len) {
+unsigned char *packet_encrypt(SSH_SESSION *session, void *data, uint32_t len) {
   struct crypto_struct *crypto = NULL;
   HMACCTX ctx = NULL;
   char *out = NULL;
   unsigned int finallen;
-  u32 seq;
+  uint32_t seq;
 
   if (!session->current_crypto) {
     return NULL; /* nothing to do here */
@@ -132,7 +132,7 @@ unsigned char *packet_encrypt(SSH_SESSION *session, void *data, u32 len) {
       SAFE_FREE(out);
       return NULL;
     }
-    hmac_update(ctx,(unsigned char *)&seq,sizeof(u32));
+    hmac_update(ctx,(unsigned char *)&seq,sizeof(uint32_t));
     hmac_update(ctx,data,len);
     hmac_final(ctx,session->current_crypto->hmacbuf,&finallen);
 #ifdef DEBUG_CRYPTO
@@ -179,7 +179,7 @@ int packet_hmac_verify(SSH_SESSION *session, ssh_buffer buffer,
   unsigned char hmacbuf[EVP_MAX_MD_SIZE] = {0};
   HMACCTX ctx;
   unsigned int len;
-  u32 seq;
+  uint32_t seq;
 
   ctx = hmac_init(session->current_crypto->decryptMAC, 20, HMAC_SHA1);
   if (ctx == NULL) {
@@ -188,7 +188,7 @@ int packet_hmac_verify(SSH_SESSION *session, ssh_buffer buffer,
 
   seq = htonl(session->recv_seq);
 
-  hmac_update(ctx, (unsigned char *) &seq, sizeof(u32));
+  hmac_update(ctx, (unsigned char *) &seq, sizeof(uint32_t));
   hmac_update(ctx, buffer_get(buffer), buffer_get_len(buffer));
   hmac_final(ctx, hmacbuf, &len);
 

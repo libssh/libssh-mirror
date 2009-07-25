@@ -61,7 +61,7 @@ static int wait_auth_status(SSH_SESSION *session, int kbdint) {
   ssh_string auth;
   int rc = SSH_AUTH_ERROR;
   int cont = 1;
-  u8 partial = 0;
+  uint8_t partial = 0;
 
   enter_function();
 
@@ -1137,8 +1137,8 @@ static int kbdauth_info_get(SSH_SESSION *session) {
   ssh_string name; /* name of the "asking" window showed to client */
   ssh_string instruction;
   ssh_string tmp;
-  u32 nprompts;
-  u32 i;
+  uint32_t nprompts;
+  uint32_t i;
 
   enter_function();
 
@@ -1253,7 +1253,7 @@ static int kbdauth_info_get(SSH_SESSION *session) {
 static int kbdauth_send(SSH_SESSION *session) {
   ssh_string answer = NULL;
   int rc = SSH_AUTH_ERROR;
-  u32 i;
+  uint32_t i;
 
   enter_function();
 

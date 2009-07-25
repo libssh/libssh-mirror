@@ -23,7 +23,7 @@
 
 #include "libssh/priv.h"
 
-static u32 crc_table[] = {
+static uint32_t crc_table[] = {
   0x00000000UL, 0x77073096UL, 0xee0e612cUL, 0x990951baUL, 0x076dc419UL,
   0x706af48fUL, 0xe963a535UL, 0x9e6495a3UL, 0x0edb8832UL, 0x79dcb8a4UL,
   0xe0d5e91eUL, 0x97d2d988UL, 0x09b64c2bUL, 0x7eb17cbdUL, 0xe7b82d07UL,
@@ -78,8 +78,8 @@ static u32 crc_table[] = {
   0x2d02ef8dUL
 };
 
-u32 ssh_crc32(const char *buf, u32 len) {
-  u32 ret = 0;
+uint32_t ssh_crc32(const char *buf, uint32_t len) {
+  uint32_t ret = 0;
   while(len > 0) {
     ret = crc_table[(ret ^ *buf) & 0xff] ^ (ret >> 8);
     --len;

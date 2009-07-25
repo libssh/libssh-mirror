@@ -56,25 +56,25 @@
   (((x) == SSH_AGENT_FAILURE) || ((x) == SSH_COM_AGENT2_FAILURE) || \
    ((x) == SSH2_AGENT_FAILURE))
 
-static u32 agent_get_u32(const void *vp) {
-  const u8 *p = (const u8 *)vp;
-  u32 v;
+static uint32_t agent_get_u32(const void *vp) {
+  const uint8_t *p = (const uint8_t *)vp;
+  uint32_t v;
 
-  v  = (u32)p[0] << 24;
-  v |= (u32)p[1] << 16;
-  v |= (u32)p[2] << 8;
-  v |= (u32)p[3];
+  v  = (uint32_t)p[0] << 24;
+  v |= (uint32_t)p[1] << 16;
+  v |= (uint32_t)p[2] << 8;
+  v |= (uint32_t)p[3];
 
   return v;
 }
 
-static void agent_put_u32(void *vp, u32 v) {
-  u8 *p = (u8 *)vp;
+static void agent_put_u32(void *vp, uint32_t v) {
+  uint8_t *p = (uint8_t *)vp;
 
-  p[0] = (u8)(v >> 24) & 0xff;
-  p[1] = (u8)(v >> 16) & 0xff;
-  p[2] = (u8)(v >> 8) & 0xff;
-  p[3] = (u8)v & 0xff;
+  p[0] = (uint8_t)(v >> 24) & 0xff;
+  p[1] = (uint8_t)(v >> 16) & 0xff;
+  p[2] = (uint8_t)(v >> 8) & 0xff;
+  p[3] = (uint8_t)v & 0xff;
 }
 
 static size_t atomicio(struct socket *s, void *buf, size_t n, int do_read) {
@@ -201,8 +201,8 @@ static int agent_decode_reply(struct ssh_session_struct *session, int type) {
 
 static int agent_talk(struct ssh_session_struct *session,
     struct ssh_buffer_struct *request, struct ssh_buffer_struct *reply) {
-  u32 len = 0;
-  u8 payload[1024] = {0};
+  uint32_t len = 0;
+  uint8_t payload[1024] = {0};
 
   len = buffer_get_len(request);
   ssh_log(session, SSH_LOG_PACKET, "agent_talk - len of request: %u", len);
@@ -267,7 +267,7 @@ int agent_get_ident_count(struct ssh_session_struct *session) {
   ssh_buffer reply = NULL;
   unsigned int type = 0;
   unsigned int c1 = 0, c2 = 0;
-  u8 buf[4] = {0};
+  uint8_t buf[4] = {0};
 
   switch (session->version) {
     case 1:
@@ -302,7 +302,7 @@ int agent_get_ident_count(struct ssh_session_struct *session) {
   buffer_free(request);
 
   /* get message type and verify the answer */
-  buffer_get_u8(reply, (u8 *) &type);
+  buffer_get_u8(reply, (uint8_t *) &type);
   ssh_log(session, SSH_LOG_PACKET,
       "agent_ident_count - answer type: %d, expected answer: %d",
       type, c2);
@@ -314,7 +314,7 @@ int agent_get_ident_count(struct ssh_session_struct *session) {
     return -1;
   }
 
-  buffer_get_u32(reply, (u32 *) buf);
+  buffer_get_u32(reply, (uint32_t *) buf);
   session->agent->count = agent_get_u32(buf);
   ssh_log(session, SSH_LOG_PACKET, "agent_ident_count - count: %d",
       session->agent->count);
@@ -403,7 +403,7 @@ ssh_string agent_sign_data(struct ssh_session_struct *session,
   struct ssh_buffer_struct *reply = NULL;
   int type = SSH2_AGENT_FAILURE;
   int flags = 0;
-  u32 dlen = 0;
+  uint32_t dlen = 0;
 
   /* create blob from the pubkey */
   blob = publickey_to_string(pubkey);
@@ -451,7 +451,7 @@ ssh_string agent_sign_data(struct ssh_session_struct *session,
   buffer_free(request);
 
   /* check if reply is valid */
-  if (buffer_get_u8(reply, (u8 *) &type) < 0) {
+  if (buffer_get_u8(reply, (uint8_t *) &type) < 0) {
     goto error;
   }
   if (agent_failed(type)) {

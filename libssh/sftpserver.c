@@ -362,7 +362,7 @@ int sftp_reply_names(SFTP_CLIENT_MESSAGE *msg) {
   return 0;
 }
 
-int sftp_reply_status(SFTP_CLIENT_MESSAGE *msg, u32 status,
+int sftp_reply_status(SFTP_CLIENT_MESSAGE *msg, uint32_t status,
     const char *message) {
   ssh_buffer out;
   ssh_string s;
@@ -422,7 +422,7 @@ int sftp_reply_data(SFTP_CLIENT_MESSAGE *msg, const void *data, int len) {
  */
 ssh_string sftp_handle_alloc(SFTP_SESSION *sftp, void *info) {
   ssh_string ret;
-  u32 val;
+  uint32_t val;
   int i;
 
   if (sftp->handles == NULL) {
@@ -449,24 +449,24 @@ ssh_string sftp_handle_alloc(SFTP_SESSION *sftp, void *info) {
     return NULL;
   }
 
-  memcpy(ret->string, &val, sizeof(u32));
+  memcpy(ret->string, &val, sizeof(uint32_t));
   sftp->handles[i] = info;
 
   return ret;
 }
 
 void *sftp_handle(SFTP_SESSION *sftp, ssh_string handle){
-  u32 val;
+  uint32_t val;
 
   if (sftp->handles == NULL) {
     return NULL;
   }
 
-  if (string_len(handle) != sizeof(u32)) {
+  if (string_len(handle) != sizeof(uint32_t)) {
     return NULL;
   }
 
-  memcpy(&val, handle->string, sizeof(u32));
+  memcpy(&val, handle->string, sizeof(uint32_t));
 
   if (val > SFTP_HANDLES) {
     return NULL;

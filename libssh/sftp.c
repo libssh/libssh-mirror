@@ -112,7 +112,7 @@ int sftp_server_init(SFTP_SESSION *sftp){
   ssh_session session = sftp->session;
   SFTP_PACKET *packet = NULL;
   ssh_buffer reply = NULL;
-  u32 version;
+  uint32_t version;
 
   sftp_enter_function();
 
@@ -196,15 +196,15 @@ void sftp_free(SFTP_SESSION *sftp){
   SAFE_FREE(sftp);
 }
 
-int sftp_packet_write(SFTP_SESSION *sftp,u8 type, ssh_buffer payload){
+int sftp_packet_write(SFTP_SESSION *sftp, uint8_t type, ssh_buffer payload){
   int size;
 
-  if (buffer_prepend_data(payload, &type, sizeof(u8)) < 0) {
+  if (buffer_prepend_data(payload, &type, sizeof(uint8_t)) < 0) {
     return -1;
   }
 
   size = htonl(buffer_get_len(payload));
-  if (buffer_prepend_data(payload, &size, sizeof(u32)) < 0) {
+  if (buffer_prepend_data(payload, &size, sizeof(uint32_t)) < 0) {
     return -1;
   }
 
@@ -212,7 +212,7 @@ int sftp_packet_write(SFTP_SESSION *sftp,u8 type, ssh_buffer payload){
       buffer_get_len(payload));
   if (size < 0) {
     return -1;
-  } else if((u32) size != buffer_get_len(payload)) {
+  } else if((uint32_t) size != buffer_get_len(payload)) {
     ssh_log(sftp->session, SSH_LOG_PACKET,
         "Had to write %d bytes, wrote only %d",
         buffer_get_len(payload),
@@ -224,7 +224,7 @@ int sftp_packet_write(SFTP_SESSION *sftp,u8 type, ssh_buffer payload){
 
 SFTP_PACKET *sftp_packet_read(SFTP_SESSION *sftp) {
   SFTP_PACKET *packet = NULL;
-  u32 size;
+  uint32_t size;
 
   sftp_enter_function();
 
@@ -353,7 +353,7 @@ static SFTP_MESSAGE *sftp_get_message(SFTP_PACKET *packet) {
     return NULL;
   }
 
-  if (buffer_get_u32(packet->payload, &msg->id) != sizeof(u32)) {
+  if (buffer_get_u32(packet->payload, &msg->id) != sizeof(uint32_t)) {
     ssh_set_error(packet->sftp->session, SSH_FATAL,
         "Invalid packet %d: no ID", packet->type);
     sftp_message_free(msg);
@@ -423,7 +423,7 @@ int sftp_init(SFTP_SESSION *sftp) {
   ssh_string ext_data_s = NULL;
   char *ext_name = NULL;
   char *ext_data = NULL;
-  u32 version = htonl(LIBSFTP_VERSION);
+  uint32_t version = htonl(LIBSFTP_VERSION);
 
   sftp_enter_function();
 
@@ -544,7 +544,7 @@ static int sftp_enqueue(SFTP_SESSION *sftp, SFTP_MESSAGE *msg) {
  * Pulls of a message from the queue based on the ID.
  * Returns NULL if no message has been found.
  */
-static SFTP_MESSAGE *sftp_dequeue(SFTP_SESSION *sftp, u32 id){
+static SFTP_MESSAGE *sftp_dequeue(SFTP_SESSION *sftp, uint32_t id){
   REQUEST_QUEUE *prev = NULL;
   REQUEST_QUEUE *queue;
   SFTP_MESSAGE *msg;
@@ -582,7 +582,7 @@ static SFTP_MESSAGE *sftp_dequeue(SFTP_SESSION *sftp, u32 id){
  * between them.
  * Returns a new ID ready to use in a request
  */
-static inline u32 sftp_get_new_id(SFTP_SESSION *session) {
+static inline uint32_t sftp_get_new_id(SFTP_SESSION *session) {
   return ++session->id_counter;
 }
 
@@ -674,7 +674,7 @@ SFTP_DIR *sftp_opendir(SFTP_SESSION *sftp, const char *path){
   STATUS_MESSAGE *status;
   ssh_string path_s;
   ssh_buffer payload;
-  u32 id;
+  uint32_t id;
 
   payload = buffer_new();
   if (payload == NULL) {
@@ -762,7 +762,7 @@ static SFTP_ATTRIBUTES *sftp_parse_attr_4(SFTP_SESSION *sftp, ssh_buffer buf,
   SFTP_ATTRIBUTES *attr;
   ssh_string owner = NULL;
   ssh_string group = NULL;
-  u32 flags = 0;
+  uint32_t flags = 0;
   int ok = 0;
 
   /* unused member variable */
@@ -938,7 +938,7 @@ static SFTP_ATTRIBUTES *sftp_parse_attr_3(SFTP_SESSION *sftp, ssh_buffer buf,
   ssh_string longname = NULL;
   ssh_string name = NULL;
   SFTP_ATTRIBUTES *attr;
-  u32 flags = 0;
+  uint32_t flags = 0;
   int ok = 0;
 
   attr = malloc(sizeof(SFTP_ATTRIBUTES));
@@ -965,7 +965,7 @@ static SFTP_ATTRIBUTES *sftp_parse_attr_3(SFTP_SESSION *sftp, ssh_buffer buf,
       string_free(longname);
     }
 
-    if (buffer_get_u32(buf, &flags) != sizeof(u32)) {
+    if (buffer_get_u32(buf, &flags) != sizeof(uint32_t)) {
       break;
     }
     flags = ntohl(flags);
@@ -974,7 +974,7 @@ static SFTP_ATTRIBUTES *sftp_parse_attr_3(SFTP_SESSION *sftp, ssh_buffer buf,
         "Flags: %.8lx\n", (long unsigned int) flags);
 
     if (flags & SSH_FILEXFER_ATTR_SIZE) {
-      if(buffer_get_u64(buf, &attr->size) != sizeof(u64)) {
+      if(buffer_get_u64(buf, &attr->size) != sizeof(uint64_t)) {
         break;
       }
       attr->size = ntohll(attr->size);
@@ -984,10 +984,10 @@ static SFTP_ATTRIBUTES *sftp_parse_attr_3(SFTP_SESSION *sftp, ssh_buffer buf,
     }
 
     if (flags & SSH_FILEXFER_ATTR_UIDGID) {
-      if (buffer_get_u32(buf, &attr->uid) != sizeof(u32)) {
+      if (buffer_get_u32(buf, &attr->uid) != sizeof(uint32_t)) {
         break;
       }
-      if (buffer_get_u32(buf, &attr->gid) != sizeof(u32)) {
+      if (buffer_get_u32(buf, &attr->gid) != sizeof(uint32_t)) {
         break;
       }
       attr->uid = ntohl(attr->uid);
@@ -995,7 +995,7 @@ static SFTP_ATTRIBUTES *sftp_parse_attr_3(SFTP_SESSION *sftp, ssh_buffer buf,
     }
 
     if (flags & SSH_FILEXFER_ATTR_PERMISSIONS) {
-      if (buffer_get_u32(buf, &attr->permissions) != sizeof(u32)) {
+      if (buffer_get_u32(buf, &attr->permissions) != sizeof(uint32_t)) {
         break;
       }
       attr->permissions = ntohl(attr->permissions);
@@ -1026,18 +1026,18 @@ static SFTP_ATTRIBUTES *sftp_parse_attr_3(SFTP_SESSION *sftp, ssh_buffer buf,
     }
 
     if (flags & SSH_FILEXFER_ATTR_ACMODTIME) {
-      if (buffer_get_u32(buf, &attr->atime) != sizeof(u32)) {
+      if (buffer_get_u32(buf, &attr->atime) != sizeof(uint32_t)) {
         break;
       }
       attr->atime = ntohl(attr->atime);
-      if (buffer_get_u32(buf, &attr->mtime) != sizeof(u32)) {
+      if (buffer_get_u32(buf, &attr->mtime) != sizeof(uint32_t)) {
         break;
       }
       attr->mtime = ntohl(attr->mtime);
     }
 
     if (flags & SSH_FILEXFER_ATTR_EXTENDED) {
-      if (buffer_get_u32(buf, &attr->extended_count) != sizeof(u32)) {
+      if (buffer_get_u32(buf, &attr->extended_count) != sizeof(uint32_t)) {
         break;
       }
 
@@ -1076,7 +1076,7 @@ static SFTP_ATTRIBUTES *sftp_parse_attr_3(SFTP_SESSION *sftp, ssh_buffer buf,
 
 /* FIXME is this really needed as a public function? */
 int buffer_add_attributes(ssh_buffer buffer, SFTP_ATTRIBUTES *attr) {
-  u32 flags = (attr ? attr->flags : 0);
+  uint32_t flags = (attr ? attr->flags : 0);
 
   flags &= (SSH_FILEXFER_ATTR_SIZE | SSH_FILEXFER_ATTR_UIDGID |
       SSH_FILEXFER_ATTR_PERMISSIONS | SSH_FILEXFER_ATTR_ACMODTIME);
@@ -1144,7 +1144,7 @@ SFTP_ATTRIBUTES *sftp_readdir(SFTP_SESSION *sftp, SFTP_DIR *dir) {
   STATUS_MESSAGE *status;
   SFTP_ATTRIBUTES *attr;
   ssh_buffer payload;
-  u32 id;
+  uint32_t id;
 
   if (dir->buffer == NULL) {
     payload = buffer_new();
@@ -1267,7 +1267,7 @@ static int sftp_handle_close(SFTP_SESSION *sftp, ssh_string handle) {
   STATUS_MESSAGE *status;
   SFTP_MESSAGE *msg = NULL;
   ssh_buffer buffer = NULL;
-  u32 id;
+  uint32_t id;
 
   buffer = buffer_new();
   if (buffer == NULL) {
@@ -1368,8 +1368,8 @@ SFTP_FILE *sftp_open(SFTP_SESSION *sftp, const char *file, int flags,
   SFTP_FILE *handle;
   ssh_string filename;
   ssh_buffer buffer;
-  u32 sftp_flags = 0;
-  u32 id;
+  uint32_t sftp_flags = 0;
+  uint32_t id;
 
   buffer = buffer_new();
   if (buffer == NULL) {
@@ -1553,10 +1553,10 @@ ssize_t sftp_read(SFTP_FILE *handle, void *buf, size_t count) {
 }
 
 /* Start an asynchronous read from a file using an opened sftp file handle. */
-int sftp_async_read_begin(SFTP_FILE *file, u32 len){
+int sftp_async_read_begin(SFTP_FILE *file, uint32_t len){
   SFTP_SESSION *sftp = file->sftp;
   ssh_buffer buffer;
-  u32 id;
+  uint32_t id;
 
   sftp_enter_function();
 
@@ -1583,13 +1583,13 @@ int sftp_async_read_begin(SFTP_FILE *file, u32 len){
 }
 
 /* Wait for an asynchronous read to complete and save the data. */
-int sftp_async_read(SFTP_FILE *file, void *data, u32 size, u32 id){
+int sftp_async_read(SFTP_FILE *file, void *data, uint32_t size, uint32_t id){
   SFTP_SESSION *sftp = file->sftp;
   SFTP_MESSAGE *msg = NULL;
   STATUS_MESSAGE *status;
   ssh_string datastring;
   int err = SSH_OK;
-  u32 len;
+  uint32_t len;
 
   sftp_enter_function();
 
@@ -1679,7 +1679,7 @@ ssize_t sftp_write(SFTP_FILE *file, const void *buf, size_t count) {
   STATUS_MESSAGE *status;
   ssh_string datastring;
   ssh_buffer buffer;
-  u32 id;
+  uint32_t id;
   int len;
   int packetlen;
 
@@ -1755,7 +1755,7 @@ ssize_t sftp_write(SFTP_FILE *file, const void *buf, size_t count) {
 }
 
 /* Seek to a specific location in a file. */
-int sftp_seek(SFTP_FILE *file, u32 new_offset) {
+int sftp_seek(SFTP_FILE *file, uint32_t new_offset) {
   if (file == NULL) {
     return -1;
   }
@@ -1765,7 +1765,7 @@ int sftp_seek(SFTP_FILE *file, u32 new_offset) {
   return 0;
 }
 
-int sftp_seek64(SFTP_FILE *file, u64 new_offset) {
+int sftp_seek64(SFTP_FILE *file, uint64_t new_offset) {
   if (file == NULL) {
     return -1;
   }
@@ -1781,7 +1781,7 @@ unsigned long sftp_tell(SFTP_FILE *file) {
 }
 /* Report current byte position in file. */
 uint64_t sftp_tell64(SFTP_FILE *file) {
-  return (u64)file->offset;
+  return (uint64_t) file->offset;
 }
 
 /* Rewinds the position of the file pointer to the beginning of the file.*/
@@ -1800,7 +1800,7 @@ int sftp_unlink(SFTP_SESSION *sftp, const char *file) {
   SFTP_MESSAGE *msg = NULL;
   ssh_string filename;
   ssh_buffer buffer;
-  u32 id;
+  uint32_t id;
 
   buffer = buffer_new();
   if (buffer == NULL) {
@@ -1869,7 +1869,7 @@ int sftp_rmdir(SFTP_SESSION *sftp, const char *directory) {
   SFTP_MESSAGE *msg = NULL;
   ssh_string filename;
   ssh_buffer buffer;
-  u32 id;
+  uint32_t id;
 
   buffer = buffer_new();
   if (buffer == NULL) {
@@ -1938,7 +1938,7 @@ int sftp_mkdir(SFTP_SESSION *sftp, const char *directory, mode_t mode) {
   SFTP_ATTRIBUTES attr;
   ssh_buffer buffer;
   ssh_string path;
-  u32 id;
+  uint32_t id;
 
   buffer = buffer_new();
   if (buffer == NULL) {
@@ -2026,7 +2026,7 @@ int sftp_rename(SFTP_SESSION *sftp, const char *original, const char *newname) {
   ssh_buffer buffer;
   ssh_string oldpath;
   ssh_string newpath;
-  u32 id;
+  uint32_t id;
 
   buffer = buffer_new();
   if (buffer == NULL) {
@@ -2105,7 +2105,7 @@ int sftp_rename(SFTP_SESSION *sftp, const char *original, const char *newname) {
 /* Code written by Nick */
 /* Set file attributes on a file, directory or symbolic link. */
 int sftp_setstat(SFTP_SESSION *sftp, const char *file, SFTP_ATTRIBUTES *attr) {
-  u32 id = sftp_get_new_id(sftp);
+  uint32_t id = sftp_get_new_id(sftp);
   ssh_buffer buffer = buffer_new();
   ssh_string path = string_from_char(file);
   SFTP_MESSAGE *msg = NULL;
@@ -2222,7 +2222,7 @@ int sftp_symlink(SFTP_SESSION *sftp, const char *target, const char *dest) {
   ssh_string target_s;
   ssh_string dest_s;
   ssh_buffer buffer;
-  u32 id;
+  uint32_t id;
 
   if (sftp == NULL || target == NULL || dest == NULL) {
     return -1;
@@ -2306,8 +2306,8 @@ char *sftp_readlink(SFTP_SESSION *sftp, const char *path) {
   ssh_string link_s = NULL;
   ssh_buffer buffer;
   char *link;
-  u32 ignored;
-  u32 id;
+  uint32_t ignored;
+  uint32_t id;
 
   if (sftp == NULL || path == NULL) {
     return NULL;
@@ -2381,8 +2381,8 @@ char *sftp_canonicalize_path(SFTP_SESSION *sftp, const char *path) {
   ssh_string pathstr;
   ssh_buffer buffer;
   char *cname;
-  u32 ignored;
-  u32 id;
+  uint32_t ignored;
+  uint32_t id;
 
   if (sftp == NULL || path == NULL) {
     return NULL;
@@ -2454,7 +2454,7 @@ static SFTP_ATTRIBUTES *sftp_xstat(SFTP_SESSION *sftp, const char *path,
   SFTP_MESSAGE *msg = NULL;
   ssh_string pathstr;
   ssh_buffer buffer;
-  u32 id;
+  uint32_t id;
 
   buffer = buffer_new();
   if (buffer == NULL) {
@@ -2518,7 +2518,7 @@ SFTP_ATTRIBUTES *sftp_fstat(SFTP_FILE *file) {
   STATUS_MESSAGE *status = NULL;
   SFTP_MESSAGE *msg = NULL;
   ssh_buffer buffer;
-  u32 id;
+  uint32_t id;
 
   buffer = buffer_new();
   if (buffer == NULL) {

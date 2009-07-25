@@ -480,7 +480,7 @@ int make_sessionid(SSH_SESSION *session) {
   ssh_buffer server_hash = NULL;
   ssh_buffer client_hash = NULL;
   ssh_buffer buf = NULL;
-  u32 len;
+  uint32_t len;
   int rc = SSH_ERROR;
 
   enter_function();
