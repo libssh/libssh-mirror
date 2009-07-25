@@ -39,6 +39,7 @@ SSH_0.3 {
     sftp_stat; sftp_lstat; sftp_fstat; sftp_attributes_free; sftp_dir_close;
     sftp_file_close; sftp_open; sftp_read; sftp_write; sftp_seek; sftp_tell;
     sftp_rewind; sftp_rm; sftp_rmdir; sftp_mkdir; sftp_rename; sftp_setstat;
+    sftp_symlink; sftp_readlink;
     sftp_canonicalize_path; sftp_server_new; sftp_server_init;
     sftp_get_client_message; sftp_client_message_free; sftp_reply_name;
     sftp_reply_handle; sftp_handle_alloc; sftp_reply_attr; sftp_handle;
