@@ -593,6 +593,19 @@ int sftp_chmod(SFTP_SESSION *sftp, const char *file, mode_t mode);
 int sftp_utimes(SFTP_SESSION *sftp, const char *file, const struct timeval *times);
 
 /**
+ * @brief Create a symbolic link.
+ *
+ * @param  sftp         The sftp session handle.
+ *
+ * @param  target       Specifies the target of the symlink.
+ *
+ * @param  dest         Specifies the path name of the symlink to be created.
+ *
+ * @return              0 on success, < 0 on error with ssh and sftp error set.
+ */
+int sftp_symlink(SFTP_SESSION *sftp, const char *target, const char *dest);
+
+/**
  * @brief Canonicalize a sftp path.
  *
  * @param sftp          The sftp session handle.
