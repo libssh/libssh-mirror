@@ -285,6 +285,8 @@ void do_sftp(SSH_SESSION *session){
     int len=1;
     int i;
     char data[8000]={0};
+    char *link;
+
     if(!sftp_session){
         fprintf(stderr, "sftp error initialising channel: %s\n",
             ssh_get_error(session));
@@ -295,6 +297,23 @@ void do_sftp(SSH_SESSION *session){
             ssh_get_error(session));
         return;
     }
+
+    /* test symlink and readlink */
+    if (sftp_symlink(sftp_session, "/tmp/this_is_the_link",
+          "/tmp/sftp_symlink_test") < 0) {
+      fprintf(stderr, "Could not create link (%s)\n", ssh_get_error(session));
+      return;
+    }
+
+    link = sftp_readlink(sftp_session, "/tmp/sftp_symlink_test");
+    if (link == NULL) {
+      fprintf(stderr, "Could not read link (%s)\n", ssh_get_error(session));
+      return;
+    }
+    printf("readlink /tmp/sftp_symlink_test: %s\n", link);
+
+    sftp_unlink(sftp_session, "/tmp/sftp_symlink_test");
+
     /* the connection is made */
     /* opening a directory */
     dir=sftp_opendir(sftp_session,"./");
