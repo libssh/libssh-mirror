@@ -380,7 +380,7 @@ void do_sftp(SSH_SESSION *session){
     sftp_close(to);
     /* close the sftp session */
     sftp_free(sftp_session);
-    printf("session sftp termin�\n");
+    printf("sftp session terminated\n");
 }
 #endif
 
