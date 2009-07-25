@@ -311,7 +311,7 @@ error:
   return -1;
 }
 
-void ssh_list_kex(struct ssh_session *session, KEX *kex) {
+void ssh_list_kex(ssh_session session, KEX *kex) {
   int i = 0;
 
 #ifdef DEBUG_CRYPTO

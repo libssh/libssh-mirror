@@ -825,7 +825,7 @@ void message_handle(SSH_SESSION *session, u32 type){
  * must take care of the response).
  */
 void ssh_set_message_callback(SSH_SESSION *session,
-    int(*ssh_message_callback)(struct ssh_session *session, struct ssh_message *msg)){
+    int(*ssh_message_callback)(ssh_session session, struct ssh_message *msg)){
   session->ssh_message_callback=ssh_message_callback;
 }
 

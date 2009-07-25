@@ -1099,7 +1099,7 @@ static ssh_string RSA_do_sign(const unsigned char *payload, int len, RSA *privke
 #endif
 
 #ifndef _WIN32
-ssh_string ssh_do_sign_with_agent(struct ssh_session *session,
+ssh_string ssh_do_sign_with_agent(ssh_session session,
     struct ssh_buffer_struct *buf, struct ssh_public_key_struct *publickey) {
   struct ssh_buffer_struct *sigbuf = NULL;
   struct ssh_string_struct *signature = NULL;

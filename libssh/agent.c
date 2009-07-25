@@ -118,7 +118,7 @@ static size_t atomicio(struct socket *s, void *buf, size_t n, int do_read) {
   return pos;
 }
 
-ssh_agent agent_new(struct ssh_session *session) {
+ssh_agent agent_new(struct ssh_session_struct *session) {
   ssh_agent agent = NULL;
 
   agent = malloc(sizeof(struct ssh_agent_struct));
@@ -180,7 +180,7 @@ static int agent_connect(SSH_SESSION *session) {
 }
 
 #if 0
-static int agent_decode_reply(struct ssh_session *session, int type) {
+static int agent_decode_reply(struct ssh_session_struct *session, int type) {
   switch (type) {
     case SSH_AGENT_FAILURE:
     case SSH2_AGENT_FAILURE:
@@ -199,7 +199,7 @@ static int agent_decode_reply(struct ssh_session *session, int type) {
 }
 #endif
 
-static int agent_talk(struct ssh_session *session,
+static int agent_talk(struct ssh_session_struct *session,
     struct ssh_buffer_struct *request, struct ssh_buffer_struct *reply) {
   u32 len = 0;
   u8 payload[1024] = {0};
@@ -262,7 +262,7 @@ static int agent_talk(struct ssh_session *session,
   return 0;
 }
 
-int agent_get_ident_count(struct ssh_session *session) {
+int agent_get_ident_count(struct ssh_session_struct *session) {
   ssh_buffer request = NULL;
   ssh_buffer reply = NULL;
   unsigned int type = 0;
@@ -335,7 +335,7 @@ int agent_get_ident_count(struct ssh_session *session) {
 }
 
 /* caller has to free commment */
-struct ssh_public_key_struct *agent_get_first_ident(struct ssh_session *session,
+struct ssh_public_key_struct *agent_get_first_ident(struct ssh_session_struct *session,
     char **comment) {
   if (agent_get_ident_count(session) > 0) {
     return agent_get_next_ident(session, comment);
@@ -345,7 +345,7 @@ struct ssh_public_key_struct *agent_get_first_ident(struct ssh_session *session,
 }
 
 /* caller has to free commment */
-struct ssh_public_key_struct *agent_get_next_ident(struct ssh_session *session,
+struct ssh_public_key_struct *agent_get_next_ident(struct ssh_session_struct *session,
     char **comment) {
   struct ssh_public_key_struct *pubkey = NULL;
   struct ssh_string_struct *blob = NULL;
@@ -394,7 +394,7 @@ struct ssh_public_key_struct *agent_get_next_ident(struct ssh_session *session,
   return pubkey;
 }
 
-ssh_string agent_sign_data(struct ssh_session *session,
+ssh_string agent_sign_data(struct ssh_session_struct *session,
     struct ssh_buffer_struct *data,
     struct ssh_public_key_struct *pubkey) {
   struct ssh_string_struct *blob = NULL;

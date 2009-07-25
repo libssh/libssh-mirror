@@ -594,7 +594,7 @@ void channel_handle(SSH_SESSION *session, int type){
  */
 int channel_default_bufferize(ssh_channel channel, void *data, int len,
     int is_stderr) {
-  struct ssh_session *session = channel->session;
+  ssh_session session = channel->session;
 
   ssh_log(session, SSH_LOG_RARE,
       "placing %d bytes into channel buffer (stderr=%d)", len, is_stderr);

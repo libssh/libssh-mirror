@@ -337,7 +337,7 @@ struct ssh_keys_struct {
 
 struct ssh_message;
 
-struct ssh_session {
+struct ssh_session_struct {
     struct error_struct error;
     struct socket *socket;
     SSH_OPTIONS *options;
@@ -391,7 +391,7 @@ struct ssh_session {
     ssh_agent agent; /* ssh agent */
 
 /* keyb interactive data */
-    struct ssh_kbdint *kbdint;
+    struct ssh_kbdint_struct *kbdint;
     int version; /* 1 or 2 */
     /* server host keys */
     ssh_private_key rsa_key;
@@ -400,12 +400,12 @@ struct ssh_session {
     int auth_methods;
     int hostkeys; /* contains type of host key wanted by client, in server impl */
     struct ssh_list *ssh_message_list; /* list of delayed SSH messages */
-    int (*ssh_message_callback)( struct ssh_session *session,struct ssh_message *msg);
+    int (*ssh_message_callback)( struct ssh_session_struct *session,struct ssh_message *msg);
     int log_verbosity; /*cached copy of the option structure */
     int log_indent; /* indentation level in enter_function logs */
 };
 
-struct ssh_kbdint {
+struct ssh_kbdint_struct {
     u32 nprompts;
     char *name;
     char *instruction;
@@ -482,7 +482,7 @@ struct ssh_message {
  *
  * @return An allocated ssh agent structure or NULL on error.
  */
-struct ssh_agent_struct *agent_new(struct ssh_session *session);
+struct ssh_agent_struct *agent_new(struct ssh_session_struct *session);
 
 void agent_close(struct ssh_agent_struct *agent);
 
@@ -500,17 +500,17 @@ void agent_free(struct ssh_agent_struct *agent);
  *
  * @return 1 if it is running, 0 if not.
  */
-int agent_is_running(struct ssh_session *session);
+int agent_is_running(struct ssh_session_struct *session);
 
-int agent_get_ident_count(struct ssh_session *session);
+int agent_get_ident_count(struct ssh_session_struct *session);
 
-struct ssh_public_key_struct *agent_get_next_ident(struct ssh_session *session,
+struct ssh_public_key_struct *agent_get_next_ident(struct ssh_session_struct *session,
     char **comment);
 
-struct ssh_public_key_struct *agent_get_first_ident(struct ssh_session *session,
+struct ssh_public_key_struct *agent_get_first_ident(struct ssh_session_struct *session,
     char **comment);
 
-ssh_string agent_sign_data(struct ssh_session *session,
+ssh_string agent_sign_data(struct ssh_session_struct *session,
     struct ssh_buffer_struct *data,
     struct ssh_public_key_struct *pubkey);
 #endif
@@ -676,7 +676,7 @@ ssh_public_key publickey_make_rsa(SSH_SESSION *session, ssh_buffer buffer, int t
 ssh_public_key publickey_from_string(SSH_SESSION *session, ssh_string pubkey_s);
 SIGNATURE *signature_from_string(SSH_SESSION *session, ssh_string signature,ssh_public_key pubkey,int needed_type);
 void signature_free(SIGNATURE *sign);
-ssh_string ssh_do_sign_with_agent(struct ssh_session *session,
+ssh_string ssh_do_sign_with_agent(struct ssh_session_struct *session,
     struct ssh_buffer_struct *buf, struct ssh_public_key_struct *publickey);
 ssh_string ssh_do_sign(SSH_SESSION *session,ssh_buffer sigbuf,
         ssh_private_key privatekey);

@@ -995,10 +995,10 @@ int ssh_userauth_autopubkey(SSH_SESSION *session, const char *passphrase) {
   return SSH_AUTH_DENIED;
 }
 
-static struct ssh_kbdint *kbdint_new(void) {
-  struct ssh_kbdint *kbd;
+static ssh_kbdint kbdint_new(void) {
+  ssh_kbdint kbd;
 
-  kbd = malloc(sizeof (struct ssh_kbdint));
+  kbd = malloc(sizeof (struct ssh_kbdint_struct));
   if (kbd == NULL) {
     return NULL;
   }
@@ -1008,7 +1008,7 @@ static struct ssh_kbdint *kbdint_new(void) {
 }
 
 
-static void kbdint_free(struct ssh_kbdint *kbd) {
+static void kbdint_free(ssh_kbdint kbd) {
   int i, n;
 
   if (kbd == NULL) {
@@ -1039,7 +1039,7 @@ static void kbdint_free(struct ssh_kbdint *kbd) {
   SAFE_FREE(kbd);
 }
 
-static void kbdint_clean(struct ssh_kbdint *kbd) {
+static void kbdint_clean(ssh_kbdint kbd) {
   int i, n;
 
   if (kbd == NULL) {

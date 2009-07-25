@@ -109,7 +109,7 @@ SFTP_SESSION *sftp_server_new(SSH_SESSION *session, ssh_channel chan){
 }
 
 int sftp_server_init(SFTP_SESSION *sftp){
-  struct ssh_session *session = sftp->session;
+  ssh_session session = sftp->session;
   SFTP_PACKET *packet = NULL;
   ssh_buffer reply = NULL;
   u32 version;
