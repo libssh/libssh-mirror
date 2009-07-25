@@ -38,6 +38,7 @@ SSH_0.3 {
     sftp_new; sftp_free; sftp_init; sftp_opendir; sftp_readdir; sftp_dir_eof;
     sftp_stat; sftp_lstat; sftp_fstat; sftp_attributes_free; sftp_dir_close;
     sftp_file_close; sftp_open; sftp_read; sftp_write; sftp_seek; sftp_tell;
+    sftp_tell64;
     sftp_rewind; sftp_rm; sftp_rmdir; sftp_mkdir; sftp_rename; sftp_setstat;
     sftp_symlink; sftp_readlink;
     sftp_canonicalize_path; sftp_server_new; sftp_server_init;
