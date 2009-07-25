@@ -1780,7 +1780,7 @@ unsigned long sftp_tell(SFTP_FILE *file) {
   return (unsigned long)file->offset;
 }
 /* Report current byte position in file. */
-u64 sftp_tell64(SFTP_FILE *file) {
+uint64_t sftp_tell64(SFTP_FILE *file) {
   return (u64)file->offset;
 }
 

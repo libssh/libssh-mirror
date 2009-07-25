@@ -478,7 +478,7 @@ unsigned long sftp_tell(SFTP_FILE *file);
  *                      of the file associated with the file descriptor. < 0 on
  *                      error.
  */
-u64 sftp_tell64(SFTP_FILE *file);
+uint64_t sftp_tell64(SFTP_FILE *file);
 
 /**
  * @brief Rewinds the position of the file pointer to the beginning of the
