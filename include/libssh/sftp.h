@@ -606,6 +606,17 @@ int sftp_utimes(SFTP_SESSION *sftp, const char *file, const struct timeval *time
 int sftp_symlink(SFTP_SESSION *sftp, const char *target, const char *dest);
 
 /**
+ * @brief Read the value of a symbolic link.
+ *
+ * @param  sftp         The sftp session handle.
+ *
+ * @param  path         Specifies the path name of the symlink to be read.
+ *
+ * @return              The target of the link, NULL on error.
+ */
+char *sftp_readlink(SFTP_SESSION *sftp, const char *path);
+
+/**
  * @brief Canonicalize a sftp path.
  *
  * @param sftp          The sftp session handle.

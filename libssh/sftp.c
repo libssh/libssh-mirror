@@ -2295,6 +2295,80 @@ int sftp_symlink(SFTP_SESSION *sftp, const char *target, const char *dest) {
   return -1;
 }
 
+char *sftp_readlink(SFTP_SESSION *sftp, const char *path) {
+  STATUS_MESSAGE *status = NULL;
+  SFTP_MESSAGE *msg = NULL;
+  ssh_string path_s = NULL;
+  ssh_string link_s = NULL;
+  ssh_buffer buffer;
+  char *link;
+  u32 ignored;
+  u32 id;
+
+  if (sftp == NULL || path == NULL) {
+    return NULL;
+  }
+
+  buffer = buffer_new();
+  if (buffer == NULL) {
+    return NULL;
+  }
+
+  path_s = string_from_char(path);
+  if (path_s == NULL) {
+    buffer_free(buffer);
+    return NULL;
+  }
+
+  id = sftp_get_new_id(sftp);
+  if (buffer_add_u32(buffer, id) < 0 ||
+      buffer_add_ssh_string(buffer, path_s) < 0 ||
+      sftp_packet_write(sftp, SSH_FXP_READLINK, buffer) < 0) {
+    buffer_free(buffer);
+    string_free(path_s);
+    return NULL;
+  }
+  buffer_free(buffer);
+  string_free(path_s);
+
+  while (msg == NULL) {
+    if (sftp_read_and_dispatch(sftp) < 0) {
+      return NULL;
+    }
+    msg = sftp_dequeue(sftp, id);
+  }
+
+  if (msg->packet_type == SSH_FXP_NAME) {
+    /* we don't care about "count" */
+    buffer_get_u32(msg->payload, &ignored);
+    /* we only care about the file name string */
+    link_s = buffer_get_ssh_string(msg->payload);
+    sftp_message_free(msg);
+    if (link_s == NULL) {
+      return NULL;
+    }
+    link = string_to_char(link_s);
+    string_free(link_s);
+
+    return link;
+  } else if (msg->packet_type == SSH_FXP_STATUS) { /* bad response (error) */
+    status = parse_status_msg(msg);
+    sftp_message_free(msg);
+    if (status == NULL) {
+      return NULL;
+    }
+    ssh_set_error(sftp->session, SSH_REQUEST_DENIED,
+        "SFTP server: %s", status->errormsg);
+    status_msg_free(status);
+  } else { /* this shouldn't happen */
+    ssh_set_error(sftp->session, SSH_FATAL,
+        "Received message %d when attempting to set stats", msg->packet_type);
+    sftp_message_free(msg);
+  }
+
+  return NULL;
+}
+
 /* another code written by Nick */
 char *sftp_canonicalize_path(SFTP_SESSION *sftp, const char *path) {
   STATUS_MESSAGE *status = NULL;
