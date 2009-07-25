@@ -17,22 +17,37 @@ program.
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <sys/stat.h>
 
 #include <libssh/libssh.h>
 #include "examples_common.h"
 
-char *host;
-char *user;
-int sftp;
+char **sources;
+int nsources;
+char *destination;
+int verbosity=0;
+
+struct location {
+  int is_ssh;
+  char *user;
+  char *host;
+  char *path;
+  ssh_session session;
+  ssh_channel channel;
+  FILE *file;
+};
+
+enum {
+  READ,
+  WRITE
+};
 
 static void usage(const char *argv0){
-  fprintf(stderr,"Usage : %s [options] [login@]hostname\n"
-      "sample scp client - libssh-%s\n"
-      "Options :\n"
-      "  -l user : log in as user\n"
-      "  -p port : connect to port\n"
-      "  -d : use DSS to verify host public key\n"
-      "  -r : use RSA to verify host public key\n",
+  fprintf(stderr,"Usage : %s [options] [[user@]host1:]file1 ... \n"
+      "                               [[user@]host2:]destination\n"
+      "sample scp client - libssh-%s\n",
+//      "Options :\n",
+//      "  -r : use RSA to verify host public key\n",
       argv0,
       ssh_version(0));
   exit(0);
@@ -40,181 +55,212 @@ static void usage(const char *argv0){
 
 static int opts(int argc, char **argv){
   int i;
-  if(strstr(argv[0],"sftp"))
-    sftp=1;
-  //    for(i=0;i<argc;i++)
-  //        printf("%d : %s\n",i,argv[i]);
-  /* insert your own arguments here */
-  while((i=getopt(argc,argv,""))!=-1){
+  while((i=getopt(argc,argv,"v"))!=-1){
     switch(i){
+      case 'v':
+        verbosity++;
+        break;
       default:
         fprintf(stderr,"unknown option %c\n",optopt);
         usage(argv[0]);
+        return -1;
     }
   }
-  if(optind < argc)
-    host=argv[optind++];
-  if(host==NULL)
+  nsources=argc-optind-1;
+  if(nsources < 1){
     usage(argv[0]);
+    return -1;
+  }
+  sources=malloc((nsources + 1) * sizeof(char *));
+  if(sources == NULL)
+    return -1;
+  for(i=0;i<nsources;++i){
+    sources[i] = argv[optind];
+    optind++;
+  }
+  sources[i]=NULL;
+  destination=argv[optind];
   return 0;
 }
 
-ssh_channel chan;
-
-static void select_loop(SSH_SESSION *session,ssh_channel channel){
-  fd_set fds;
-  struct timeval timeout;
-  char buffer[10];
-  ssh_buffer readbuf=buffer_new();
-  ssh_channel channels[2];
-  int lus;
-  int eof=0;
-  int maxfd;
-  int ret;
-  while(channel){
-    /* when a signal is caught, ssh_select will return
-     * with SSH_EINTR, which means it should be started
-     * again. It lets you handle the signal the faster you
-     * can, like in this window changed example. Of course, if
-     * your signal handler doesn't call libssh at all, you're
-     * free to handle signals directly in sighandler.
-     */
-    do{
-      FD_ZERO(&fds);
-      if(!eof)
-        FD_SET(0,&fds);
-      timeout.tv_sec=30;
-      timeout.tv_usec=0;
-      FD_SET(ssh_get_fd(session),&fds);
-      maxfd=ssh_get_fd(session)+1;
-      ret=select(maxfd,&fds,NULL,NULL,&timeout);
-      if(ret==EINTR)
-        continue;
-      if(FD_ISSET(0,&fds)){
-        lus=read(0,buffer,10);
-        if(lus)
-          channel_write(channel,buffer,lus);
-        else {
-          eof=1;
-          channel_send_eof(channel);
-        }
-      }
-      if(FD_ISSET(ssh_get_fd(session),&fds)){
-        ssh_set_fd_toread(session);
-      }
-      channels[0]=channel; // set the first channel we want to read from
-      channels[1]=NULL;
-      ret=channel_select(channels,NULL,NULL,NULL); // no specific timeout - just poll
-    } while (ret==EINTR || ret==SSH_EINTR);
-
-    // we already looked for input from stdin. Now, we are looking for input from the channel
-
-    if(channel && channel_is_closed(channel)){
-      ssh_log(session,SSH_LOG_RARE,"exit-status : %d\n",channel_get_exit_status(channel));
-
-      channel_free(channel);
-      channel=NULL;
-      channels[0]=NULL;
-    }
-    if(channels[0]){
-      while(channel && channel_is_open(channel) && channel_poll(channel,0)){
-        lus=channel_read_buffer(channel,readbuf,0,0);
-        if(lus==-1){
-          fprintf(stderr, "Error reading channel: %s\n",
-              ssh_get_error(session));
-          return;
-        }
-        if(lus==0){
-          ssh_log(session,SSH_LOG_RARE,"EOF received\n");
-          ssh_log(session,SSH_LOG_RARE,"exit-status : %d\n",channel_get_exit_status(channel));
-
-          channel_free(channel);
-          channel=channels[0]=NULL;
-        } else
-          write(1,buffer_get(readbuf),lus);
-      }
-      while(channel && channel_is_open(channel) && channel_poll(channel,1)){ /* stderr */
-        lus=channel_read_buffer(channel,readbuf,0,1);
-        if(lus==-1){
-          fprintf(stderr, "Error reading channel: %s\n",
-              ssh_get_error(session));
-          return;
-        }
-        if(lus==0){
-          ssh_log(session,SSH_LOG_RARE,"EOF received\n");
-          ssh_log(session,SSH_LOG_RARE,"exit-status : %d\n",channel_get_exit_status(channel));
-          channel_free(channel);
-          channel=channels[0]=NULL;
-        } else
-          write(2,buffer_get(readbuf),lus);
-      }
-    }
-    if(channel && channel_is_closed(channel)){
-      channel_free(channel);
-      channel=NULL;
-    }
-  }
-  buffer_free(readbuf);
-}
-
-static void batch_shell(ssh_session session){
-  ssh_channel channel;
-  char buffer[1024];
-  channel=channel_new(session);
-  channel_open_session(channel);
-  if(channel_request_exec(channel,buffer)){
-    printf("error executing \"%s\" : %s\n",buffer,ssh_get_error(session));
-    return;
-  }
-  select_loop(session,channel);
-}
-
-int main(int argc, char **argv){
-  SSH_SESSION *session;
-  SSH_OPTIONS *options;
+static ssh_session connect_ssh(char *host, char *user){
+  ssh_session session;
+  ssh_options options;
   int auth=0;
 
-
   options=ssh_options_new();
-  if(ssh_options_getopt(options,&argc, argv)){
-    fprintf(stderr,"error parsing command line :%s\n",ssh_get_error(options));
-    usage(argv[0]);
-  }
-  opts(argc,argv);
-  if (user) {
+  if(user != NULL){
     if (ssh_options_set_username(options,user) < 0) {
       ssh_options_free(options);
-      return 1;
+      return NULL;
     }
   }
 
   if (ssh_options_set_host(options,host) < 0) {
     ssh_options_free(options);
-    return 1;
+    return NULL;
   }
+  ssh_options_set_log_verbosity(options,verbosity);
   session=ssh_new();
   ssh_set_options(session,options);
   if(ssh_connect(session)){
     fprintf(stderr,"Connection failed : %s\n",ssh_get_error(session));
     ssh_disconnect(session);
-    ssh_finalize();
-    return 1;
+    return NULL;
   }
   if(verify_knownhost(session)<0){
     ssh_disconnect(session);
-    ssh_finalize();
-    return 1;
+    return NULL;
   }
   auth=authenticate_console(session);
   if(auth==SSH_AUTH_SUCCESS){
-    batch_shell(session);
+    return session;
   } else if(auth==SSH_AUTH_DENIED){
     fprintf(stderr,"Authentication failed\n");
   } else {
     fprintf(stderr,"Error while authenticating : %s\n",ssh_get_error(session));
   }
   ssh_disconnect(session);
-  ssh_finalize();
+  return NULL;
+}
 
+static struct location *parse_location(char *loc){
+  struct location *location=malloc(sizeof(struct location));
+  char *ptr;
+
+  location->host=location->user=NULL;
+  ptr=strchr(loc,':');
+  if(ptr != NULL){
+    location->is_ssh=1;
+    location->path=strdup(ptr+1);
+    *ptr='\0';
+    ptr=strchr(loc,'@');
+    if(ptr != NULL){
+      location->host=strdup(ptr+1);
+      *ptr='\0';
+      location->user=strdup(loc);
+    } else {
+      location->host=strdup(loc);
+    }
+  } else {
+    location->is_ssh=0;
+    location->path=strdup(loc);
+  }
+  return location;
+}
+
+static int open_location(struct location *loc, int flag){
+  char buffer[1024];
+
+  if(loc->is_ssh && flag==WRITE){
+    loc->session=connect_ssh(loc->host,loc->user);
+    if(!loc->session){
+      fprintf(stderr,"Couldn't connect to %s\n",loc->host);
+      return -1;
+    }
+    loc->channel=channel_new(loc->session);
+    channel_open_session(loc->channel);
+    channel_request_pty(loc->channel);
+    snprintf(buffer,sizeof(buffer),"scp -vt %s",loc->path);
+    fprintf(stderr,"sending \"%s\"\n",buffer);
+    if(channel_request_exec(loc->channel,buffer) < 0){
+      printf("error executing scp: %s\n",ssh_get_error(loc->session));
+      return -1;
+    }
+    return 0;
+  } else {
+    loc->file=fopen(loc->path,flag==READ ? "r":"w");
+    if(!loc->file){
+      fprintf(stderr,"Error opening %s : %s\n",loc->path,strerror(errno));
+      return -1;
+    }
+    return 0;
+  }
+  return -1;
+}
+
+static int do_copy(struct location *src, struct location *dest){
+  int size;
+  socket_t fd;
+  struct stat s;
+  int w,r;
+  char buffer[4196];
+  /*FIXME*/
+  if(dest->is_ssh && !src->is_ssh){
+    fd=fileno(src->file);
+    fstat(fd,&s);
+    size=s.st_size;
+  } else
+    size=0;
+  snprintf(buffer,sizeof(buffer),"C0644 %d %s\n",size,src->path);
+  printf("writing \"%s\"",buffer);
+  if(channel_write(dest->channel,buffer,strlen(buffer))<0){
+    fprintf(stderr,"channel_write : %s\n",ssh_get_error(dest->session));
+    return -1;
+  }
+  r=channel_read(dest->channel,buffer,1,0);
+  write(1,buffer,1);
+  do {
+    r=fread(buffer,1,sizeof(buffer),src->file);
+    if(r==0)
+      break;
+    if(r<0){
+      fprintf(stderr,"Error reading file: %s\n",strerror(errno));
+      return -1;
+    }
+    w=channel_write(dest->channel,buffer,r);
+    if(w<0){
+      fprintf(stderr,"error writing in channel: %s\n",ssh_get_error(dest->session));
+      return -1;
+    }
+    if(w!=r){
+      fprintf(stderr,"coulnd write %d bytes : %d\n",r,w);
+    }
+    if((r=channel_poll(dest->channel,0))>0){
+      r=channel_read(dest->channel,buffer,r,0);
+      write(1,buffer,r);
+    }
+    if((r=channel_poll(dest->channel,1)) > 0){
+      r=channel_read(dest->channel,buffer,r,1);
+      write(1,buffer,r);
+    }
+  } while(1);
+  channel_write(dest->channel,"\0",1);
+  channel_send_eof(dest->channel);
+  do{
+    if((r=channel_poll(dest->channel,0))>0){
+      r=channel_read(dest->channel,buffer,r,0);
+      if(r<=0)
+        break;
+      write(1,buffer,r);
+    }
+    if((r=channel_poll(dest->channel,1)) > 0){
+      r=channel_read(dest->channel,buffer,r,1);
+      if(r<=0)
+        break;
+      write(1,buffer,r);
+    }
+  } while(r>0);
+  return 0;
+}
+
+int main(int argc, char **argv){
+  struct location *dest, *src;
+  int i;
+
+  if(opts(argc,argv)<0)
+    return EXIT_FAILURE;
+  dest=parse_location(destination);
+  if(open_location(dest,WRITE)<0)
+    return EXIT_FAILURE;
+  for(i=0;i<nsources;++i){
+    src=parse_location(sources[i]);
+    if(open_location(src,READ)<0){
+      return EXIT_FAILURE;
+    }
+    if(do_copy(src,dest) < 0)
+      return EXIT_FAILURE;
+  }
+  ssh_finalize();
   return 0;
 }
