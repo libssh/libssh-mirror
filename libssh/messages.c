@@ -164,6 +164,7 @@ static SSH_MESSAGE *handle_userauth_request(SSH_SESSION *session){
     goto error;
   }
   string_free(user);
+  user = NULL;
 
   service_c = string_to_char(service);
   if (service_c == NULL) {
@@ -175,7 +176,9 @@ static SSH_MESSAGE *handle_userauth_request(SSH_SESSION *session){
   }
 
   string_free(service);
+  service = NULL;
   string_free(method);
+  method = NULL;
 
   ssh_log(session, SSH_LOG_PACKET,
       "Auth request for service %s, method %s for user '%s'",
@@ -204,7 +207,9 @@ static SSH_MESSAGE *handle_userauth_request(SSH_SESSION *session){
       goto error;
     }
     msg->auth_request.password = string_to_char(pass);
+    string_burn(pass);
     string_free(pass);
+    pass = NULL;
     if (msg->auth_request.password == NULL) {
       goto error;
     }
