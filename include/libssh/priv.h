@@ -432,7 +432,7 @@ struct ssh_channel_request_open {
     uint32_t window;
     uint32_t packet_size;
     char *originator;
-    uint16_t orignator_port;
+    uint16_t originator_port;
     char *destination;
     uint16_t destination_port;
 };
