@@ -208,7 +208,7 @@ int ssh_userauth_none(SSH_SESSION *session, const char *username) {
 
   enter_function();
 
-#ifdef HAVE_SSH1
+#ifdef WITH_SSH1
   if (session->version == 1) {
     ssh_userauth1_none(session, username);
     leave_function();
@@ -314,7 +314,7 @@ int ssh_userauth_offer_pubkey(SSH_SESSION *session, const char *username,
 
   enter_function();
 
-#ifdef HAVE_SSH1
+#ifdef WITH_SSH1
   if (session->version == 1) {
     ssh_userauth1_offer_pubkey(session, username, type, publickey);
     leave_function();
@@ -671,7 +671,7 @@ int ssh_userauth_password(SSH_SESSION *session, const char *username,
 
   enter_function();
 
-#ifdef HAVE_SSH1
+#ifdef WITH_SSH1
   if (session->version == 1) {
     rc = ssh_userauth1_password(session, username, password);
     leave_function();
