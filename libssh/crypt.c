@@ -195,7 +195,7 @@ int packet_hmac_verify(SSH_SESSION *session, ssh_buffer buffer,
 #ifdef DEBUG_CRYPTO
   ssh_print_hexa("received mac",mac,len);
   ssh_print_hexa("Computed mac",hmacbuf,len);
-  ssh_print_hexa("seq",(unsigned char *)&seq,sizeof(u32));
+  ssh_print_hexa("seq",(unsigned char *)&seq,sizeof(uint32_t));
 #endif
   if (memcmp(mac, hmacbuf, len) == 0) {
     return 0;
