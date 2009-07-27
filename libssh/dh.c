@@ -891,8 +891,8 @@ static int match(const char *group, const char *object){
   return 0;
 }
 
-static int sig_verify(SSH_SESSION *session, ssh_public_key pubkey,
-    SIGNATURE *signature, unsigned char *digest) {
+int sig_verify(SSH_SESSION *session, ssh_public_key pubkey,
+    SIGNATURE *signature, unsigned char *digest, int size) {
 #ifdef HAVE_LIBGCRYPT
   gcry_error_t valid = 0;
   gcry_sexp_t gcryhash;
@@ -901,7 +901,7 @@ static int sig_verify(SSH_SESSION *session, ssh_public_key pubkey,
 #endif
   unsigned char hash[SHA_DIGEST_LEN + 1] = {0};
 
-  sha1(digest,SHA_DIGEST_LEN, hash + 1);
+  sha1(digest, size, hash + 1);
 
 #ifdef DEBUG_CRYPTO
   ssh_print_hexa("Hash to be verified with dsa", hash + 1, SHA_DIGEST_LEN);
@@ -1027,7 +1027,8 @@ int signature_verify(SSH_SESSION *session, ssh_string signature) {
   ssh_log(session, SSH_LOG_FUNCTIONS,
       "Going to verify a %s type signature", pubkey->type_c);
 
-  err = sig_verify(session,pubkey,sign,session->next_crypto->session_id);
+  err = sig_verify(session,pubkey,sign,
+                            session->next_crypto->session_id,SHA_DIGEST_LEN);
   signature_free(sign);
   session->next_crypto->server_pubkey_type = pubkey->type_c;
   publickey_free(pubkey);

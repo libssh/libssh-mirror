@@ -422,6 +422,8 @@ struct ssh_auth_request {
     char *username;
     int method;
     char *password;
+    struct ssh_public_key_struct *public_key;
+    char signature_state;
 };
 
 struct ssh_channel_request_open {
@@ -608,6 +610,8 @@ int make_sessionid(SSH_SESSION *session);
 int hashbufin_add_cookie(SSH_SESSION *session, unsigned char *cookie);
 int hashbufout_add_cookie(SSH_SESSION *session);
 int generate_session_keys(SSH_SESSION *session);
+int sig_verify(SSH_SESSION *session, ssh_public_key pubkey,
+    SIGNATURE *signature, unsigned char *digest, int size);
 /* returns 1 if server signature ok, 0 otherwise. The NEXT crypto is checked, not the current one */
 int signature_verify(SSH_SESSION *session,ssh_string signature);
 bignum make_string_bn(ssh_string string);
@@ -659,6 +663,7 @@ ssh_string try_publickey_from_file(SSH_SESSION *session,
 /* in keys.c */
 const char *ssh_type_to_char(int type);
 int ssh_type_from_name(const char *name);
+ssh_buffer ssh_userauth_build_digest(SSH_SESSION *session, struct ssh_message *msg, char *service);
 
 ssh_private_key privatekey_make_dss(SSH_SESSION *session, ssh_buffer buffer);
 ssh_private_key privatekey_make_rsa(SSH_SESSION *session, ssh_buffer buffer,

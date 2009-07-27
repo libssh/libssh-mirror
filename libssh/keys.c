@@ -28,6 +28,8 @@
 #include <openssl/rsa.h>
 #endif
 #include "libssh/priv.h"
+#include "libssh/ssh2.h"
+#include "libssh/server.h"
 
 /** \addtogroup ssh_auth
  * @{
@@ -1146,6 +1148,70 @@ ssh_string ssh_do_sign_with_agent(ssh_session session,
   return signature;
 }
 #endif /* _WIN32 */
+
+/*
+ * This function concats in a buffer the values needed to do a signature
+ * verification. */
+ssh_buffer ssh_userauth_build_digest(SSH_SESSION *session, struct ssh_message *msg, char *service) {
+/*
+     The value of 'signature' is a signature by the corresponding private
+   key over the following data, in the following order:
+
+      string    session identifier
+      byte      SSH_MSG_USERAUTH_REQUEST
+      string    user name
+      string    service name
+      string    "publickey"
+      boolean   TRUE
+      string    public key algorithm name
+      string    public key to be used for authentication
+*/
+  CRYPTO *crypto = session->current_crypto ? session->current_crypto :
+                                             session->next_crypto;
+  ssh_buffer buffer = NULL;
+  ssh_string session_id = NULL;
+  uint8_t type = SSH2_MSG_USERAUTH_REQUEST;
+  ssh_string username = string_from_char(msg->auth_request.username);
+  ssh_string servicename = string_from_char(service);
+  ssh_string method = string_from_char("publickey");
+  uint8_t has_sign = 1;
+  ssh_string algo = string_from_char(msg->auth_request.public_key->type_c);
+  ssh_string publickey = publickey_to_string(msg->auth_request.public_key);
+
+  buffer = buffer_new();
+  if (buffer == NULL) {
+    goto error;
+  }
+  session_id = string_new(SHA_DIGEST_LEN);
+  if (session_id == NULL) {
+    buffer_free(buffer);
+    buffer = NULL;
+    goto error;
+  }
+  string_fill(session_id, crypto->session_id, SHA_DIGEST_LEN);
+
+  if(buffer_add_ssh_string(buffer, session_id) < 0 ||
+     buffer_add_u8(buffer, type) < 0 ||
+     buffer_add_ssh_string(buffer, username) < 0 ||
+     buffer_add_ssh_string(buffer, servicename) < 0 ||
+     buffer_add_ssh_string(buffer, method) < 0 ||
+     buffer_add_u8(buffer, has_sign) < 0 ||
+     buffer_add_ssh_string(buffer, algo) < 0 ||
+     buffer_add_ssh_string(buffer, publickey) < 0) {
+    buffer_free(buffer);
+    buffer = NULL;
+    goto error;
+  }
+
+error:
+  if(session_id) string_free(session_id);
+  if(username) string_free(username);
+  if(servicename) string_free(servicename);
+  if(method) string_free(method);
+  if(algo) string_free(algo);
+  if(publickey) string_free(publickey);
+  return buffer;
+}
 
 /*
  * This function signs the session id (known as H) as a string then

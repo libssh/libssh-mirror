@@ -182,10 +182,10 @@ static SSH_MESSAGE *handle_userauth_request(SSH_SESSION *session){
       service_c, method_c,
       msg->auth_request.username);
 
-  SAFE_FREE(service_c);
 
   if (strcmp(method_c, "none") == 0) {
     msg->auth_request.method = SSH_AUTH_NONE;
+    SAFE_FREE(service_c);
     SAFE_FREE(method_c);
     leave_function();
     return msg;
@@ -196,6 +196,7 @@ static SSH_MESSAGE *handle_userauth_request(SSH_SESSION *session){
     uint8_t tmp;
 
     msg->auth_request.method = SSH_AUTH_PASSWORD;
+    SAFE_FREE(service_c);
     SAFE_FREE(method_c);
     buffer_get_u8(session->in_buffer, &tmp);
     pass = buffer_get_ssh_string(session->in_buffer);
@@ -207,6 +208,66 @@ static SSH_MESSAGE *handle_userauth_request(SSH_SESSION *session){
     if (msg->auth_request.password == NULL) {
       goto error;
     }
+    leave_function();
+    return msg;
+  }
+
+  if (strcmp(method_c, "publickey") == 0) {
+    ssh_string algo = NULL;
+    ssh_string publickey = NULL;
+    uint8_t has_sign;
+
+    msg->auth_request.method = SSH_AUTH_PUBLICKEY;
+    SAFE_FREE(method_c);
+    buffer_get_u8(session->in_buffer, &has_sign);
+    algo = buffer_get_ssh_string(session->in_buffer);
+    if (algo == NULL) {
+      goto error;
+    }
+    publickey = buffer_get_ssh_string(session->in_buffer);
+    if (publickey == NULL) {
+      string_free(algo);
+      algo = NULL;
+      goto error;
+    }
+    msg->auth_request.public_key = publickey_from_string(session, publickey);
+    string_free(algo);
+    algo = NULL;
+    string_free(publickey);
+    publickey = NULL;
+    if (msg->auth_request.public_key == NULL) {
+       goto error;
+    }
+    msg->auth_request.signature_state = 0;
+    // has a valid signature ?
+    if(has_sign) {
+      SIGNATURE *signature = NULL;
+      ssh_public_key public_key = msg->auth_request.public_key;
+      ssh_string sign = NULL;
+      ssh_buffer digest = NULL;
+
+      sign = buffer_get_ssh_string(session->in_buffer);
+      if(sign == NULL) {
+        ssh_log(session, SSH_LOG_PACKET, "Invalid signature packet from peer");
+        msg->auth_request.signature_state = -2;
+        goto error;
+      }
+      signature = signature_from_string(session, sign, public_key,
+                                                       public_key->type);
+      digest = ssh_userauth_build_digest(session, msg, service_c);
+      if(sig_verify(session, public_key, signature,
+                            buffer_get(digest), buffer_get_len(digest)) < 0) {
+        ssh_log(session, SSH_LOG_PACKET, "Invalid signature from peer");
+        msg->auth_request.signature_state = -1;
+        string_free(sign);
+        sign = NULL;
+        goto error;
+      }
+      else
+        ssh_log(session, SSH_LOG_PACKET, "Valid signature received");
+      msg->auth_request.signature_state = 1;
+    }
+    SAFE_FREE(service_c);
     leave_function();
     return msg;
   }
@@ -244,6 +305,15 @@ char *ssh_message_auth_password(SSH_MESSAGE *msg){
   }
 
   return msg->auth_request.password;
+}
+
+/* Get the publickey of an auth request */
+ssh_public_key ssh_message_auth_publickey(SSH_MESSAGE *msg){
+  if (msg == NULL) {
+    return NULL;
+  }
+
+  return msg->auth_request.public_key;
 }
 
 int ssh_message_auth_set_methods(SSH_MESSAGE *msg, int methods) {
@@ -327,6 +397,21 @@ int ssh_message_auth_reply_success(SSH_MESSAGE *msg, int partial) {
   }
 
   if (buffer_add_u8(msg->session->out_buffer,SSH2_MSG_USERAUTH_SUCCESS) < 0) {
+    return SSH_ERROR;
+  }
+
+  return packet_send(msg->session);
+}
+
+/* Answer OK to a pubkey auth request */
+int ssh_message_auth_reply_pk_ok(SSH_MESSAGE *msg, ssh_string algo, ssh_string pubkey) {
+  if (msg == NULL) {
+    return SSH_ERROR;
+  }
+
+  if (buffer_add_u8(msg->session->out_buffer, SSH2_MSG_USERAUTH_PK_OK) < 0 ||
+      buffer_add_ssh_string(msg->session->out_buffer, algo) < 0 ||
+      buffer_add_ssh_string(msg->session->out_buffer, pubkey) < 0) {
     return SSH_ERROR;
   }
 
