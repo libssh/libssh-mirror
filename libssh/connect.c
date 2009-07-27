@@ -139,6 +139,16 @@ void ssh_regex_finalize(){
 }
 #endif
 
+
+static int ssh_connect_socket_close(socket_t s){
+#ifdef _WIN32
+  return closesocket(s);
+#else
+  return close(s);
+#endif
+}
+
+
 static int getai(SSH_SESSION *session, const char *host, int port, struct addrinfo **ai) {
   const char *service = NULL;
   struct addrinfo hints;
@@ -195,7 +205,7 @@ static int ssh_connect_ai_timeout(SSH_SESSION *session, const char *host,
     /* timeout */
     ssh_set_error(session, SSH_FATAL,
         "Timeout while connecting to %s:%d", host, port);
-    close(s);
+    ssh_connect_socket_close(s);
     leave_function();
     return -1;
   }
@@ -203,7 +213,7 @@ static int ssh_connect_ai_timeout(SSH_SESSION *session, const char *host,
   if (rc < 0) {
     ssh_set_error(session, SSH_FATAL,
         "Select error: %s", strerror(errno));
-    close(s);
+    ssh_connect_socket_close(s);
     leave_function();
     return -1;
   }
@@ -214,7 +224,7 @@ static int ssh_connect_ai_timeout(SSH_SESSION *session, const char *host,
   if (rc != 0) {
     ssh_set_error(session, SSH_FATAL,
         "Connect to %s:%d failed: %s", host, port, strerror(rc));
-    close(s);
+    ssh_connect_socket_close(s);
     leave_function();
     return -1;
   }
@@ -290,7 +300,7 @@ socket_t ssh_connect_host(SSH_SESSION *session, const char *host,
 
       /* Cannot bind to any local addresses */
       if (bind_itr == NULL) {
-        close(s);
+        ssh_connect_socket_close(s);
         s = -1;
         continue;
       }
@@ -305,7 +315,7 @@ socket_t ssh_connect_host(SSH_SESSION *session, const char *host,
 
     if (connect(s, itr->ai_addr, itr->ai_addrlen) < 0) {
       ssh_set_error(session, SSH_FATAL, "Connect failed: %s", strerror(errno));
-      close(s);
+      ssh_connect_socket_close(s);
       s = -1;
       leave_function();
       continue;
