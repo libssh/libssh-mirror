@@ -34,7 +34,8 @@
 /**
  * @brief initialize global cryptographic data structures.
  *
- * This function should only be called once, at the begining of the program, in the main thread. It may be omitted if your program is not multithreaded.
+ * This function should only be called once, at the beginning of the program, in
+ * the main thread. It may be omitted if your program is not multithreaded.
  *
  * @returns 0
  */
