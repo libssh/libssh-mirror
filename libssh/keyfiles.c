@@ -87,17 +87,17 @@ static int load_iv(char *header, unsigned char *iv, int iv_len) {
   return 0;
 }
 
-static u32 char_to_u32(unsigned char *data, u32 size) {
-  u32 ret;
-  u32 i;
+static uint32_t char_to_u32(unsigned char *data, uint32_t size) {
+  uint32_t ret;
+  uint32_t i;
 
   for (i = 0, ret = 0; i < size; ret = ret << 8, ret += data[i++])
     ;
   return ret;
 }
 
-static u32 asn1_get_len(ssh_buffer buffer) {
-  u32 len;
+static uint32_t asn1_get_len(ssh_buffer buffer) {
+  uint32_t len;
   unsigned char tmp[4];
 
   if (buffer_get_data(buffer,tmp,1) == 0) {
@@ -123,7 +123,7 @@ static u32 asn1_get_len(ssh_buffer buffer) {
 static ssh_string asn1_get_int(ssh_buffer buffer) {
   ssh_string str;
   unsigned char type;
-  u32 size;
+  uint32_t size;
 
   if (buffer_get_data(buffer, &type, 1) == 0 || type != ASN1_INTEGER) {
     return NULL;
@@ -150,8 +150,8 @@ static int asn1_check_sequence(ssh_buffer buffer) {
   unsigned char *j = NULL;
   unsigned char tmp;
   int i;
-  u32 size;
-  u32 padding;
+  uint32_t size;
+  uint32_t padding;
 
   if (buffer_get_data(buffer, &tmp, 1) == 0 || tmp != ASN1_SEQUENCE) {
     return 0;
