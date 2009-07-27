@@ -245,7 +245,7 @@ static int packet_read1(SSH_SESSION *session) {
         }
       }
 
-      rc = ssh_socket_read(session->socket, &len, sizeof(u32));
+      rc = ssh_socket_read(session->socket, &len, sizeof(uint32_t));
       if (rc != SSH_OK) {
         goto error;
       }
@@ -312,29 +312,29 @@ static int packet_read1(SSH_SESSION *session) {
 #endif
       ssh_log(session, SSH_LOG_PACKET, "%d bytes padding", padding);
       if(((len + padding) != buffer_get_rest_len(session->in_buffer)) ||
-          ((len + padding) < sizeof(u32))) {
+          ((len + padding) < sizeof(uint32_t))) {
         ssh_log(session, SSH_LOG_RARE, "no crc32 in packet");
         ssh_set_error(session, SSH_FATAL, "no crc32 in packet");
         goto error;
       }
 
       memcpy(&crc,
-          buffer_get_rest(session->in_buffer) + (len+padding) - sizeof(u32),
-          sizeof(u32));
-      buffer_pass_bytes_end(session->in_buffer, sizeof(u32));
+          buffer_get_rest(session->in_buffer) + (len+padding) - sizeof(uint32_t),
+          sizeof(uint32_t));
+      buffer_pass_bytes_end(session->in_buffer, sizeof(uint32_t));
       crc = ntohl(crc);
       if (ssh_crc32(buffer_get_rest(session->in_buffer),
-            (len + padding) - sizeof(u32)) != crc) {
+            (len + padding) - sizeof(uint32_t)) != crc) {
 #ifdef DEBUG_CRYPTO
         ssh_print_hexa("crc32 on",buffer_get_rest(session->in_buffer),
-            len + padding - sizeof(u32));
+            len + padding - sizeof(uint32_t));
 #endif
         ssh_log(session, SSH_LOG_RARE, "Invalid crc32");
         ssh_set_error(session, SSH_FATAL,
             "Invalid crc32: expected %.8x, got %.8x",
             crc,
             ssh_crc32(buffer_get_rest(session->in_buffer),
-              len + padding - sizeof(u32)));
+              len + padding - sizeof(uint32_t)));
         goto error;
       }
       /* pass the padding */
@@ -502,11 +502,11 @@ error:
   return rc; /* SSH_OK, AGAIN or ERROR */
 }
 
-#ifdef HAVE_SSH1
+#ifdef WITH_SSH1
 static int packet_send1(SSH_SESSION *session) {
   unsigned int blocksize = (session->current_crypto ?
       session->current_crypto->out_cipher->blocksize : 8);
-  uint32_t currentlen = buffer_get_len(session->out_buffer) + sizeof(u32);
+  uint32_t currentlen = buffer_get_len(session->out_buffer) + sizeof(uint32_t);
   char padstring[32] = {0};
   int rc = SSH_ERROR;
   uint32_t finallen;
@@ -583,7 +583,7 @@ error:
 #endif /* HAVE_SSH1 */
 
 int packet_send(SSH_SESSION *session) {
-#ifdef HAVE_SSH1
+#ifdef WITH_SSH1
   if (session->version == 1) {
     return packet_send1(session);
   }
