@@ -424,7 +424,7 @@ static int dh_handshake_server(SSH_SESSION *session) {
       buffer_add_ssh_string(session->out_buffer, f) < 0 ||
       buffer_add_ssh_string(session->out_buffer, sign) < 0) {
     ssh_set_error(session, SSH_FATAL, "Not enough space");
-    buffer_free(session->out_buffer);
+    buffer_reinit(session->out_buffer);
     string_free(f);
     string_free(sign);
     return -1;
@@ -437,7 +437,7 @@ static int dh_handshake_server(SSH_SESSION *session) {
   }
 
   if (buffer_add_u8(session->out_buffer, SSH2_MSG_NEWKEYS) < 0) {
-    buffer_free(session->out_buffer);
+    buffer_reinit(session->out_buffer);
     return -1;
   }
 

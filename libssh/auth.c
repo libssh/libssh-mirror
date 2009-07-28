@@ -268,7 +268,7 @@ int ssh_userauth_none(SSH_SESSION *session, const char *username) {
   leave_function();
   return rc;
 error:
-  buffer_free(session->out_buffer);
+  buffer_reinit(session->out_buffer);
   string_free(service);
   string_free(method);
   string_free(user);
@@ -382,7 +382,7 @@ int ssh_userauth_offer_pubkey(SSH_SESSION *session, const char *username,
   leave_function();
   return rc;
 error:
-  buffer_free(session->out_buffer);
+  buffer_reinit(session->out_buffer);
   string_free(user);
   string_free(method);
   string_free(service);
@@ -503,7 +503,7 @@ int ssh_userauth_pubkey(SSH_SESSION *session, const char *username,
   leave_function();
   return rc;
 error:
-  buffer_free(session->out_buffer);
+  buffer_reinit(session->out_buffer);
   string_free(user);
   string_free(service);
   string_free(method);
@@ -627,7 +627,7 @@ int ssh_userauth_agent_pubkey(SSH_SESSION *session, const char *username,
 
   return rc;
 error:
-  buffer_free(session->out_buffer);
+  buffer_reinit(session->out_buffer);
   string_free(sign);
   string_free(user);
   string_free(service);
@@ -739,7 +739,7 @@ int ssh_userauth_password(SSH_SESSION *session, const char *username,
   leave_function();
   return rc;
 error:
-  buffer_free(session->out_buffer);
+  buffer_reinit(session->out_buffer);
   string_free(user);
   string_free(service);
   string_free(method);
@@ -1123,7 +1123,7 @@ static int kbdauth_init(SSH_SESSION *session, const char *user,
   leave_function();
   return rc;
 error:
-  buffer_free(session->out_buffer);
+  buffer_reinit(session->out_buffer);
   string_free(usr);
   string_free(service);
   string_free(method);
@@ -1290,7 +1290,7 @@ static int kbdauth_send(SSH_SESSION *session) {
   leave_function();
   return rc;
 error:
-  buffer_free(session->out_buffer);
+  buffer_reinit(session->out_buffer);
   string_burn(answer);
   string_free(answer);
 
