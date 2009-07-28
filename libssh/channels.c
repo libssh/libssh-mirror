@@ -280,7 +280,7 @@ static int grow_window(SSH_SESSION *session, ssh_channel channel, int minimumsiz
   leave_function();
   return 0;
 error:
-  buffer_free(session->out_buffer);
+  buffer_reinit(session->out_buffer);
 
   leave_function();
   return -1;
@@ -799,7 +799,7 @@ int channel_send_eof(ssh_channel channel){
   leave_function();
   return rc;
 error:
-  buffer_free(session->out_buffer);
+  buffer_reinit(session->out_buffer);
 
   leave_function();
   return rc;
@@ -852,7 +852,7 @@ int channel_close(ssh_channel channel){
   leave_function();
   return rc;
 error:
-  buffer_free(session->out_buffer);
+  buffer_reinit(session->out_buffer);
 
   leave_function();
   return rc;
@@ -935,7 +935,7 @@ int channel_write_common(ssh_channel channel, const void *data,
   leave_function();
   return origlen;
 error:
-  buffer_free(session->out_buffer);
+  buffer_reinit(session->out_buffer);
 
   leave_function();
   return SSH_ERROR;
@@ -1074,7 +1074,7 @@ static int channel_request(ssh_channel channel, const char *request,
   leave_function();
   return rc;
 error:
-  buffer_free(session->out_buffer);
+  buffer_reinit(session->out_buffer);
   string_free(req);
 
   leave_function();

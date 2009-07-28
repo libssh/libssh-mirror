@@ -421,8 +421,8 @@ int ssh_send_kex(SSH_SESSION *session, int server_kex) {
   leave_function();
   return 0;
 error:
-  buffer_free(session->out_buffer);
-  buffer_free(session->out_hashbuf);
+  buffer_reinit(session->out_buffer);
+  buffer_reinit(session->out_hashbuf);
   string_free(str);
 
   leave_function();
