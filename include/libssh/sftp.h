@@ -58,12 +58,15 @@ extern "C" {
 #endif /* gid_t */
 #endif /* _WIN32 */
 
+typedef struct sftp_ext_struct *sftp_ext;
+
 typedef struct sftp_session_struct {
     SSH_SESSION *session;
     ssh_channel channel;
     int server_version;
     int client_version;
     int version;
+    struct sftp_ext_struct *ext;
     struct request_queue *queue;
     uint32_t id_counter;
     int errnum;

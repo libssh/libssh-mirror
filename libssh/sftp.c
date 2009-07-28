@@ -44,11 +44,54 @@
 #define sftp_enter_function() _enter_function(sftp->channel->session)
 #define sftp_leave_function() _leave_function(sftp->channel->session)
 
+struct sftp_ext_struct {
+  int rename_openssh;
+  int rename_openssh_version;
+  int statvfs_openssh;
+  int statvfs_openssh_version;
+  int fstatvfs_openssh;
+  int fstatvfs_openssh_version;
+  unsigned int count;
+  char **name;
+  char **data;
+};
+
 /* functions */
 static int sftp_enqueue(SFTP_SESSION *session, SFTP_MESSAGE *msg);
 static void sftp_message_free(SFTP_MESSAGE *msg);
 static void sftp_set_error(SFTP_SESSION *sftp, int errnum);
 static void status_msg_free(STATUS_MESSAGE *status);
+
+static sftp_ext sftp_ext_new(void) {
+  sftp_ext ext;
+
+  ext = malloc(sizeof(struct sftp_ext_struct));
+  if (ext == NULL) {
+    return NULL;
+  }
+  ZERO_STRUCTP(ext);
+
+  return ext;
+}
+
+static void sftp_ext_free(sftp_ext ext) {
+  unsigned int i;
+
+  if (ext == NULL) {
+    return;
+  }
+
+  if (ext->count) {
+    for (i = 0; i < ext->count; i++) {
+      SAFE_FREE(ext->name[i]);
+      SAFE_FREE(ext->data[i]);
+    }
+    SAFE_FREE(ext->name);
+    SAFE_FREE(ext->data);
+  }
+
+  SAFE_FREE(ext);
+}
 
 SFTP_SESSION *sftp_new(SSH_SESSION *session){
   SFTP_SESSION *sftp;
@@ -65,7 +108,14 @@ SFTP_SESSION *sftp_new(SSH_SESSION *session){
     leave_function();
     return NULL;
   }
-  memset(sftp,0,sizeof(SFTP_SESSION));
+  ZERO_STRUCTP(sftp);
+
+  sftp->ext = sftp_ext_new();
+  if (sftp->ext == NULL) {
+    SAFE_FREE(sftp);
+    sftp_leave_function();
+    return NULL;
+  }
 
   sftp->session = session;
   sftp->channel = channel_new(session);
@@ -191,7 +241,8 @@ void sftp_free(SFTP_SESSION *sftp){
   }
 
   channel_free(sftp->channel);
-  memset(sftp, 0, sizeof(*sftp));
+  sftp_ext_free(sftp->ext);
+  ZERO_STRUCTP(sftp);
 
   SAFE_FREE(sftp);
 }
@@ -455,39 +506,84 @@ int sftp_init(SFTP_SESSION *sftp) {
     return -1;
   }
 
-  buffer_get_u32(packet->payload,&version);
+  buffer_get_u32(packet->payload, &version);
   version = ntohl(version);
+  ssh_log(sftp->session, SSH_LOG_RARE,
+      "SFTP server version %d",
+      version);
 
   ext_name_s = buffer_get_ssh_string(packet->payload);
-  ext_data_s = buffer_get_ssh_string(packet->payload);
-  if (ext_name_s == NULL || (ext_data_s == NULL)) {
-    string_free(ext_name_s);
-    string_free(ext_data_s);
-    ssh_log(sftp->session, SSH_LOG_RARE,
-        "SFTP server version %d", version);
-  } else {
+  while (ext_name_s != NULL) {
+    int count = sftp->ext->count;
+    char **tmp;
+
+    ext_data_s = buffer_get_ssh_string(packet->payload);
+    if (ext_data_s == NULL) {
+      string_free(ext_name_s);
+      break;
+    }
+
     ext_name = string_to_char(ext_name_s);
     ext_data = string_to_char(ext_data_s);
-
-    if (ext_name != NULL || ext_data != NULL) {
-      ssh_log(sftp->session, SSH_LOG_RARE,
-          "SFTP server version %d (%s,%s)",
-          version, ext_name, ext_data);
-    } else {
-      ssh_log(sftp->session, SSH_LOG_RARE,
-          "SFTP server version %d", version);
+    if (ext_name == NULL || ext_data == NULL) {
+      SAFE_FREE(ext_name);
+      SAFE_FREE(ext_data);
+      string_free(ext_name_s);
+      string_free(ext_data_s);
+      return -1;
     }
-    SAFE_FREE(ext_name);
-    SAFE_FREE(ext_data);
+    ssh_log(sftp->session, SSH_LOG_RARE,
+        "SFTP server extension: %s, version: %s",
+        ext_name, ext_data);
+
+    if (strcmp(ext_name, "posix-rename@openssh.com") == 0) {
+      sftp->ext->rename_openssh = 1;
+      sftp->ext->rename_openssh_version = strtol(ext_data, (char **) NULL, 10);
+    } else if (strcmp(ext_name, "statvfs@openssh.com") == 0) {
+      sftp->ext->statvfs_openssh = 1;
+      sftp->ext->statvfs_openssh_version = strtol(ext_data, (char **) NULL, 10);
+    } else if (strcmp(ext_name, "fstatvfs@openssh.com") == 0) {
+      sftp->ext->fstatvfs_openssh = 1;
+      sftp->ext->fstatvfs_openssh_version = strtol(ext_data, (char **) NULL, 10);
+    }
+
+    count++;
+    tmp = realloc(sftp->ext->name, count * sizeof(char *));
+    if (tmp == NULL) {
+      SAFE_FREE(ext_name);
+      SAFE_FREE(ext_data);
+      string_free(ext_name_s);
+      string_free(ext_data_s);
+      return -1;
+    }
+    tmp[count - 1] = ext_name;
+    sftp->ext->name = tmp;
+
+    tmp = realloc(sftp->ext->data, count * sizeof(char *));
+    if (tmp == NULL) {
+      SAFE_FREE(ext_name);
+      SAFE_FREE(ext_data);
+      string_free(ext_name_s);
+      string_free(ext_data_s);
+      return -1;
+    }
+    tmp[count - 1] = ext_data;
+    sftp->ext->data = tmp;
+
+    sftp->ext->count = count;
+
+    string_free(ext_name_s);
+    string_free(ext_data_s);
+
+    ext_name_s = buffer_get_ssh_string(packet->payload);
   }
-  string_free(ext_name_s);
-  string_free(ext_data_s);
 
   sftp_packet_free(packet);
 
   sftp->version = sftp->server_version = version;
 
   sftp_leave_function();
+
   return 0;
 }
 
