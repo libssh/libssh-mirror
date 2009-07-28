@@ -202,6 +202,40 @@ int sftp_init(SFTP_SESSION *sftp);
 int sftp_get_error(SFTP_SESSION *sftp);
 
 /**
+ * @brief Get the count of extensions provided by the server.
+ *
+ * @param  sftp         The sftp session to use.
+ *
+ * @return The count of extensions provided by the server, 0 on error or
+ *         not available.
+ */
+unsigned int sftp_extensions_get_count(SFTP_SESSION *sftp);
+
+/**
+ * @brief Get the name of the extension provided by the server.
+ *
+ * @param  sftp         The sftp session to use.
+ *
+ * @param  index        The index number of the extension name you want.
+ *
+ * @return              The name of the extension.
+ */
+const char *sftp_extensions_get_name(SFTP_SESSION *sftp, unsigned int index);
+
+/**
+ * @brief Get the data of the extension provided by the server.
+ *
+ * This is normally the version number of the extension.
+ *
+ * @param  sftp         The sftp session to use.
+ *
+ * @param  index        The index number of the extension data you want.
+ *
+ * @return              The data of the extension.
+ */
+const char *sftp_extensions_get_data(SFTP_SESSION *sftp, unsigned int index);
+
+/**
  * @brief Open a directory used to obtain directory entries.
  *
  * @param session       The sftp session handle to open the directory.

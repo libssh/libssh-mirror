@@ -587,6 +587,38 @@ int sftp_init(SFTP_SESSION *sftp) {
   return 0;
 }
 
+unsigned int sftp_extensions_get_count(SFTP_SESSION *sftp) {
+  if (sftp == NULL || sftp->ext == NULL) {
+    return 0;
+  }
+
+  return sftp->ext->count;
+}
+
+const char *sftp_extensions_get_name(SFTP_SESSION *sftp, unsigned int index) {
+  if (sftp == NULL || sftp->ext == NULL || sftp->ext->name == NULL) {
+    return NULL;
+  }
+
+  if (index > sftp->ext->count) {
+    return NULL;
+  }
+
+  return sftp->ext->name[index];
+}
+
+const char *sftp_extensions_get_data(SFTP_SESSION *sftp, unsigned int index) {
+  if (sftp == NULL || sftp->ext == NULL || sftp->ext->data == NULL) {
+    return NULL;
+  }
+
+  if (index > sftp->ext->count) {
+    return NULL;
+  }
+
+  return sftp->ext->data[index];
+}
+
 static REQUEST_QUEUE *request_queue_new(SFTP_MESSAGE *msg) {
   REQUEST_QUEUE *queue = NULL;
 

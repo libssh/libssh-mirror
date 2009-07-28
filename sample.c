@@ -283,9 +283,11 @@ void do_sftp(SSH_SESSION *session){
     SFTP_FILE *fichier;
     SFTP_FILE *to;
     int len=1;
-    int i;
+    unsigned int i;
     char data[8000]={0};
     char *link;
+
+    unsigned int count;
 
     if(!sftp_session){
         fprintf(stderr, "sftp error initialising channel: %s\n",
@@ -296,6 +298,14 @@ void do_sftp(SSH_SESSION *session){
         fprintf(stderr, "error initialising sftp: %s\n",
             ssh_get_error(session));
         return;
+    }
+
+    printf("Additional SFTP extensions provided by the server:\n");
+    count = sftp_extensions_get_count(sftp_session);
+    for (i = 0; i < count; i++) {
+      printf("\t%s, version: %s\n",
+          sftp_extensions_get_name(sftp_session, i),
+          sftp_extensions_get_data(sftp_session, i));
     }
 
     /* test symlink and readlink */
