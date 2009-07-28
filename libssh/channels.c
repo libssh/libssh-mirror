@@ -472,6 +472,7 @@ static void channel_rcv_request(SSH_SESSION *session) {
   ssh_string request_s;
   char *request;
   uint32_t status;
+  uint32_t startpos = session->in_buffer->pos;
 
   enter_function();
 
@@ -542,8 +543,13 @@ static void channel_rcv_request(SSH_SESSION *session) {
     leave_function();
     return;
   }
+
   /* TODO call message_handle since it handles channel requests as messages */
   /* *but* reset buffer before !! */
+
+  session->in_buffer->pos = startpos;
+  message_handle(session, SSH2_MSG_CHANNEL_REQUEST);
+
   ssh_log(session, SSH_LOG_PACKET, "Unknown request %s", request);
   SAFE_FREE(request);
 
@@ -852,20 +858,7 @@ error:
   return rc;
 }
 
-/**
- * @brief Blocking write on channel.
- *
- * @param channel       The channel to write to.
- *
- * @param data          A pointer to the data to write.
- *
- * @param len           The length of the buffer to write to.
- *
- * @return The number of bytes written, SSH_ERROR on error.
- *
- * @see channel_read()
- */
-int channel_write(ssh_channel channel, const void *data, uint32_t len) {
+int channel_write_common(ssh_channel channel, const void *data, uint32_t len, int is_stderr) {
   SSH_SESSION *session = channel->session;
   int origlen = len;
   int effectivelen;
@@ -916,7 +909,8 @@ int channel_write(ssh_channel channel, const void *data, uint32_t len) {
       effectivelen = len;
     }
 
-    if (buffer_add_u8(session->out_buffer, SSH2_MSG_CHANNEL_DATA) < 0 ||
+    if (buffer_add_u8(session->out_buffer, is_stderr ?
+				SSH2_MSG_CHANNEL_EXTENDED_DATA : SSH2_MSG_CHANNEL_DATA) < 0 ||
         buffer_add_u32(session->out_buffer,
           htonl(channel->remote_channel)) < 0 ||
         buffer_add_u32(session->out_buffer, htonl(effectivelen)) < 0 ||
@@ -944,6 +938,40 @@ error:
 
   leave_function();
   return SSH_ERROR;
+}
+
+/**
+ * @brief Blocking write on channel.
+ *
+ * @param channel       The channel to write to.
+ *
+ * @param data          A pointer to the data to write.
+ *
+ * @param len           The length of the buffer to write to.
+ *
+ * @return The number of bytes written, SSH_ERROR on error.
+ *
+ * @see channel_read()
+ */
+int channel_write(ssh_channel channel, const void *data, uint32_t len) {
+	return channel_write_common(channel, data, len, 0);
+}
+
+/**
+ * @brief Blocking write on channel for stderr.
+ *
+ * @param channel       The channel to write to.
+ *
+ * @param data          A pointer to the data to write.
+ *
+ * @param len           The length of the buffer to write to.
+ *
+ * @return The number of bytes written, SSH_ERROR on error.
+ *
+ * @see channel_read()
+ */
+int channel_write_stderr(ssh_channel channel, const void *data, uint32_t len) {
+	return channel_write_common(channel, data, len, 1);
 }
 
 /**

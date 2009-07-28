@@ -425,9 +425,9 @@ int ssh_message_auth_reply_pk_ok(SSH_MESSAGE *msg, ssh_string algo, ssh_string p
 
 static SSH_MESSAGE *handle_channel_request_open(SSH_SESSION *session) {
   SSH_MESSAGE *msg = NULL;
-  ssh_string type = NULL;
+  ssh_string type = NULL, *originator = NULL, *destination = NULL;
   char *type_c = NULL;
-  uint32_t sender, window, packet;
+  uint32_t sender, window, packet, originator_port, destination_port;
 
   enter_function();
 
@@ -462,6 +462,97 @@ static SSH_MESSAGE *handle_channel_request_open(SSH_SESSION *session) {
 
   if (strcmp(type_c,"session") == 0) {
     msg->channel_request_open.type = SSH_CHANNEL_SESSION;
+    SAFE_FREE(type_c);
+    leave_function();
+    return msg;
+  }
+
+  if (strcmp(type_c,"direct-tcpip") == 0) {
+    destination = buffer_get_ssh_string(session->in_buffer);
+	if (destination == NULL) {
+		goto error;
+	}
+	msg->channel_request_open.destination = string_to_char(type);
+	if (msg->channel_request_open.destination == NULL) {
+	  string_free(destination);
+	  goto error;
+	}
+    string_free(destination);
+
+    buffer_get_u32(session->in_buffer, &destination_port);
+    msg->channel_request_open.destination_port = ntohl(destination_port);
+
+    originator = buffer_get_ssh_string(session->in_buffer);
+	if (originator == NULL) {
+	  goto error;
+	}
+	msg->channel_request_open.originator = string_to_char(type);
+	if (msg->channel_request_open.originator == NULL) {
+	  string_free(originator);
+	  goto error;
+	}
+    string_free(originator);
+
+    buffer_get_u32(session->in_buffer, &originator_port);
+    msg->channel_request_open.originator_port = ntohl(originator_port);
+
+    msg->channel_request_open.type = SSH_CHANNEL_DIRECT_TCPIP;
+    SAFE_FREE(type_c);
+    leave_function();
+    return msg;
+  }
+
+  if (strcmp(type_c,"forwarded-tcpip") == 0) {
+    destination = buffer_get_ssh_string(session->in_buffer);
+	if (destination == NULL) {
+		goto error;
+	}
+	msg->channel_request_open.destination = string_to_char(type);
+	if (msg->channel_request_open.destination == NULL) {
+	  string_free(destination);
+	  goto error;
+	}
+    string_free(destination);
+
+    buffer_get_u32(session->in_buffer, &destination_port);
+    msg->channel_request_open.destination_port = ntohl(destination_port);
+
+    originator = buffer_get_ssh_string(session->in_buffer);
+	if (originator == NULL) {
+	  goto error;
+	}
+	msg->channel_request_open.originator = string_to_char(type);
+	if (msg->channel_request_open.originator == NULL) {
+	  string_free(originator);
+	  goto error;
+	}
+    string_free(originator);
+
+    buffer_get_u32(session->in_buffer, &originator_port);
+    msg->channel_request_open.originator_port = ntohl(originator_port);
+
+    msg->channel_request_open.type = SSH_CHANNEL_FORWARDED_TCPIP;
+    SAFE_FREE(type_c);
+    leave_function();
+    return msg;
+  }
+
+  if (strcmp(type_c,"x11") == 0) {
+    originator = buffer_get_ssh_string(session->in_buffer);
+	if (originator == NULL) {
+	  goto error;
+	}
+	msg->channel_request_open.originator = string_to_char(type);
+	if (msg->channel_request_open.originator == NULL) {
+	  string_free(originator);
+	  goto error;
+	}
+    string_free(originator);
+
+    buffer_get_u32(session->in_buffer, &originator_port);
+    msg->channel_request_open.originator_port = ntohl(originator_port);
+
+    msg->channel_request_open.type = SSH_CHANNEL_X11;
     SAFE_FREE(type_c);
     leave_function();
     return msg;
@@ -642,6 +733,26 @@ static SSH_MESSAGE *handle_channel_request(SSH_SESSION *session) {
     return msg;
   }
 
+  if (strcmp(type_c, "window-change") == 0) {
+    STRING *term = NULL;
+    SAFE_FREE(type_c);
+
+    msg->channel_request.type = SSH_CHANNEL_REQUEST_WINDOW_CHANGE;
+
+    buffer_get_u32(session->in_buffer, &msg->channel_request.width);
+    buffer_get_u32(session->in_buffer, &msg->channel_request.height);
+    buffer_get_u32(session->in_buffer, &msg->channel_request.pxwidth);
+    buffer_get_u32(session->in_buffer, &msg->channel_request.pxheight);
+
+    msg->channel_request.width = ntohl(msg->channel_request.width);
+    msg->channel_request.height = ntohl(msg->channel_request.height);
+    msg->channel_request.pxwidth = ntohl(msg->channel_request.pxwidth);
+    msg->channel_request.pxheight = ntohl(msg->channel_request.pxheight);
+
+    leave_function();
+    return msg;
+  }
+
   if (strcmp(type_c, "subsystem") == 0) {
     ssh_string subsys = NULL;
     char *subsys_c = NULL;
@@ -673,6 +784,7 @@ static SSH_MESSAGE *handle_channel_request(SSH_SESSION *session) {
     leave_function();
     return msg;
   }
+
   if (strcmp(type_c, "exec") == 0) {
     ssh_string cmd = NULL;
 
@@ -695,6 +807,38 @@ static SSH_MESSAGE *handle_channel_request(SSH_SESSION *session) {
     return msg;
   }
 
+  if (strcmp(type_c, "env") == 0) {
+    STRING *name = NULL;
+    STRING *value = NULL;
+
+    SAFE_FREE(type_c);
+
+    name = buffer_get_ssh_string(session->in_buffer);
+    if (name == NULL) {
+      goto error;
+    }
+    value = buffer_get_ssh_string(session->in_buffer);
+	if (value == NULL) {
+		string_free(name);
+	  goto error;
+	}
+
+    msg->channel_request.type = SSH_CHANNEL_REQUEST_ENV;
+    msg->channel_request.var_name = string_to_char(name);
+    msg->channel_request.var_value = string_to_char(value);
+    if (msg->channel_request.var_name == NULL ||
+		msg->channel_request.var_value == NULL) {
+      string_free(name);
+      string_free(value);
+      goto error;
+    }
+    string_free(name);
+    string_free(value);
+
+    leave_function();
+    return msg;
+  }
+
   msg->channel_request.type = SSH_CHANNEL_UNKNOWN;
   SAFE_FREE(type_c);
 
@@ -707,6 +851,58 @@ error:
 
   leave_function();
   return NULL;
+}
+
+char *ssh_message_channel_request_open_originator(SSH_MESSAGE *msg){
+    return msg->channel_request_open.originator;
+}
+
+int ssh_message_channel_request_open_originator_port(SSH_MESSAGE *msg){
+    return msg->channel_request_open.originator_port;
+}
+
+char *ssh_message_channel_request_open_destination(SSH_MESSAGE *msg){
+    return msg->channel_request_open.destination;
+}
+
+int ssh_message_channel_request_open_destination_port(SSH_MESSAGE *msg){
+    return msg->channel_request_open.destination_port;
+}
+
+CHANNEL *ssh_message_channel_request_channel(SSH_MESSAGE *msg){
+    return msg->channel_request.channel;
+}
+
+char *ssh_message_channel_request_pty_term(SSH_MESSAGE *msg){
+    return msg->channel_request.TERM;
+}
+
+int ssh_message_channel_request_pty_width(SSH_MESSAGE *msg){
+    return msg->channel_request.width;
+}
+
+int ssh_message_channel_request_pty_height(SSH_MESSAGE *msg){
+    return msg->channel_request.height;
+}
+
+int ssh_message_channel_request_pty_pxwidth(SSH_MESSAGE *msg){
+    return msg->channel_request.pxwidth;
+}
+
+int ssh_message_channel_request_pty_pxheight(SSH_MESSAGE *msg){
+    return msg->channel_request.pxheight;
+}
+
+char *ssh_message_channel_request_env_name(SSH_MESSAGE *msg){
+    return msg->channel_request.var_name;
+}
+
+char *ssh_message_channel_request_env_value(SSH_MESSAGE *msg){
+    return msg->channel_request.var_value;
+}
+
+char *ssh_message_channel_request_command(SSH_MESSAGE *msg){
+    return msg->channel_request.command;
 }
 
 char *ssh_message_channel_request_subsystem(SSH_MESSAGE *msg){

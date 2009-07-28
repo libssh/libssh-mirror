@@ -261,6 +261,11 @@ int channel_handle1(SSH_SESSION *session, int type) {
         return -1;
       }
       break;
+    case SSH_SMSG_STDERR_DATA:
+      if (channel_rcv_data1(session,1) < 0) {
+        return -1;
+      }
+      break;
     case SSH_SMSG_EXITSTATUS:
       if (channel_rcv_close1(session) < 0) {
         return -1;

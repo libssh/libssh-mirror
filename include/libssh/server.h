@@ -136,9 +136,10 @@ int ssh_accept(SSH_SESSION *session);
 #define SSH_AUTH_UNKNOWN 0
 
 #define SSH_CHANNEL_SESSION 1
-#define SSH_CHANNEL_TCPIP 2
-#define SSH_CHANNEL_X11 3
-#define SSH_CHANNEL_UNKNOWN 4
+#define SSH_CHANNEL_DIRECT_TCPIP 2
+#define SSH_CHANNEL_FORWARDED_TCPIP 3
+#define SSH_CHANNEL_X11 4
+#define SSH_CHANNEL_UNKNOWN 5
 
 #define SSH_CHANNEL_REQUEST_PTY 1
 #define SSH_CHANNEL_REQUEST_EXEC 2
@@ -165,11 +166,6 @@ int ssh_message_auth_reply_pk_ok(SSH_MESSAGE *msg, ssh_string algo, ssh_string p
 int ssh_message_auth_set_methods(SSH_MESSAGE *msg, int methods);
 
 ssh_channel ssh_message_channel_request_open_reply_accept(SSH_MESSAGE *msg);
-
-ssh_channel ssh_message_channel_request_channel(SSH_MESSAGE *msg);
-// returns the TERM env variable
-char *ssh_message_channel_request_pty_term(SSH_MESSAGE *msg);
-char *ssh_message_channel_request_subsystem(SSH_MESSAGE *msg);
 int ssh_message_channel_request_reply_success(SSH_MESSAGE *msg);
 
 int ssh_message_service_reply_success(SSH_MESSAGE *msg);
@@ -177,6 +173,29 @@ char *ssh_message_service_service(SSH_MESSAGE *msg);
 
 void ssh_set_message_callback(SSH_SESSION *session,
     int(*ssh_message_callback)(ssh_session session, struct ssh_message *msg));
+
+int channel_write_stderr(ssh_channel channel, const void *data, uint32_t len);
+
+char *ssh_message_channel_request_open_originator(SSH_MESSAGE *msg);
+int ssh_message_channel_request_open_originator_port(SSH_MESSAGE *msg);
+char *ssh_message_channel_request_open_destination(SSH_MESSAGE *msg);
+int ssh_message_channel_request_open_destination_port(SSH_MESSAGE *msg);
+
+ssh_channel ssh_message_channel_request_channel(SSH_MESSAGE *msg);
+
+char *ssh_message_channel_request_pty_term(SSH_MESSAGE *msg);
+int ssh_message_channel_request_pty_width(SSH_MESSAGE *msg);
+int ssh_message_channel_request_pty_height(SSH_MESSAGE *msg);
+int ssh_message_channel_request_pty_pxwidth(SSH_MESSAGE *msg);
+int ssh_message_channel_request_pty_pxheight(SSH_MESSAGE *msg);
+
+char *ssh_message_channel_request_env_name(SSH_MESSAGE *msg);
+char *ssh_message_channel_request_env_value(SSH_MESSAGE *msg);
+
+char *ssh_message_channel_request_command(SSH_MESSAGE *msg);
+
+char *ssh_message_channel_request_subsystem(SSH_MESSAGE *msg);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
