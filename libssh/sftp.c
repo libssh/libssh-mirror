@@ -2247,10 +2247,32 @@ int sftp_symlink(SFTP_SESSION *sftp, const char *target, const char *dest) {
   }
 
   id = sftp_get_new_id(sftp);
-  if (buffer_add_u32(buffer, id) < 0 ||
-      buffer_add_ssh_string(buffer, target_s) < 0 ||
-      buffer_add_ssh_string(buffer, dest_s) < 0 ||
-      sftp_packet_write(sftp, SSH_FXP_SYMLINK, buffer) < 0) {
+  if (buffer_add_u32(buffer, id) < 0) {
+    buffer_free(buffer);
+    string_free(dest_s);
+    string_free(target_s);
+    return -1;
+  }
+  if (ssh_get_openssh_version(sftp->session)) {
+    /* TODO check for version number if they ever fix it. */
+    if (buffer_add_ssh_string(buffer, target_s) < 0 ||
+      buffer_add_ssh_string(buffer, dest_s) < 0) {
+      buffer_free(buffer);
+      string_free(dest_s);
+      string_free(target_s);
+      return -1;
+    }
+  } else {
+    if (buffer_add_ssh_string(buffer, dest_s) < 0 ||
+      buffer_add_ssh_string(buffer, target_s) < 0) {
+      buffer_free(buffer);
+      string_free(dest_s);
+      string_free(target_s);
+      return -1;
+    }
+  }
+
+  if (sftp_packet_write(sftp, SSH_FXP_SYMLINK, buffer) < 0) {
     buffer_free(buffer);
     string_free(dest_s);
     string_free(target_s);

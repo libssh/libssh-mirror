@@ -98,7 +98,10 @@ char *ssh_get_banner(SSH_SESSION *session) {
  * @see ssh_get_banner()
  */
 static int ssh_analyze_banner(SSH_SESSION *session, int *ssh1, int *ssh2) {
-  char *banner = session->serverbanner;
+  const char *banner = session->serverbanner;
+  const char *openssh;
+
+  ssh_log(session, SSH_LOG_RARE, "Analyzing banner: %s", banner);
 
   if (strncmp(banner, "SSH-", 4) != 0) {
     ssh_set_error(session, SSH_FATAL, "Protocol mismatch: %s", banner);
@@ -127,6 +130,17 @@ static int ssh_analyze_banner(SSH_SESSION *session, int *ssh1, int *ssh2) {
     default:
       ssh_set_error(session, SSH_FATAL, "Protocol mismatch: %s", banner);
       return -1;
+  }
+
+  openssh = strstr(banner, "OpenSSH");
+  if (openssh != NULL) {
+    int major, minor;
+    major = strtol(openssh + 8, (char **) NULL, 10);
+    minor = strtol(openssh + 10, (char **) NULL, 10);
+    session->openssh = SSH_VERSION_INT(major, minor, 0);
+    ssh_log(session, SSH_LOG_RARE,
+        "We are talking to an OpenSSH server version: %d.%d (%x)",
+        major, minor, session->openssh);
   }
 
   return 0;
@@ -613,6 +627,24 @@ char *ssh_get_issue_banner(SSH_SESSION *session) {
   }
 
   return string_to_char(session->banner);
+}
+
+/**
+ * @brief Get the version of the OpenSSH server, if it is not an OpenSSH server
+ * then 0 will be returned.
+ *
+ * You can use the SSH_VERSION_INT macro to compare version numbers.
+ *
+ * @param  session      The SSH session to use.
+ *
+ * @return The version number if available, 0 otherwise.
+ */
+int ssh_get_openssh_version(ssh_session session) {
+  if (session == NULL) {
+    return 0;
+  }
+
+  return session->openssh;
 }
 
 /**
