@@ -3,7 +3,8 @@ SSH_0.3 {
     ssh_get_error; ssh_get_error_code;
     ssh_new; ssh_set_options; ssh_get_fd; ssh_silent_disconnect;
     ssh_connect; ssh_disconnect; ssh_service_request; ssh_get_issue_banner;
-    ssh_copyright; ssh_get_version; ssh_finalize;
+    ssh_get_openssh_version;
+    ssh_copyright; ssh_get_version; ssh_init; ssh_finalize;
     ssh_set_fd_toread; ssh_set_fd_towrite; ssh_set_fd_except;
     string_from_char; string_len; string_new; string_fill; string_to_char;
     string_copy; string_burn; string_data;
@@ -12,7 +13,7 @@ SSH_0.3 {
     ssh_get_pubkey_hash; ssh_clean_pubkey_hash; ssh_get_pubkey;
     ssh_fd_poll; ssh_select; publickey_free;
     privatekey_from_file; publickey_to_string; publickey_from_privatekey;
-    private_key_free; publickey_from_file; try_publickey_from_file;
+    private_key_free; publickey_from_file;
     ssh_is_server_known; ssh_write_knownhost;
     channel_new; channel_open_forward; channel_open_session; channel_free;
     channel_request_pty; channel_request_pty_size; channel_change_pty_size;
@@ -61,3 +62,23 @@ SSH_0.3 {
   local:
     *;
 };
+
+SSH_0.4 {
+  global:
+    channel_write;
+    sftp_extensions_get_count; sftp_extensions_get_name;
+    sftp_extensions_get_data;
+    ssh_set_message_callback; ssh_message_channel_request_open_originator;
+    ssh_message_channel_request_open_originator_port;
+    ssh_message_channel_request_open_destination;
+    ssh_message_channel_request_open_destination_port;
+    ssh_message_channel_request_channel; ssh_message_channel_request_pty_term;
+    ssh_message_channel_request_pty_width;
+    ssh_message_channel_request_pty_height;
+    ssh_message_channel_request_pty_pxwidth;
+    ssh_message_channel_request_pty_pxheight;
+    ssh_message_channel_request_env_name;
+    ssh_message_channel_request_env_value;
+    ssh_message_channel_request_command;
+    ssh_message_channel_request_subsystem;
+} SSH_0.3;
