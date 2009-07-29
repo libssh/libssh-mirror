@@ -425,7 +425,7 @@ int ssh_message_auth_reply_pk_ok(SSH_MESSAGE *msg, ssh_string algo, ssh_string p
 
 static SSH_MESSAGE *handle_channel_request_open(SSH_SESSION *session) {
   SSH_MESSAGE *msg = NULL;
-  ssh_string type = NULL, *originator = NULL, *destination = NULL;
+  ssh_string type = NULL, originator = NULL, destination = NULL;
   char *type_c = NULL;
   uint32_t sender, window, packet, originator_port, destination_port;
 
@@ -734,7 +734,6 @@ static SSH_MESSAGE *handle_channel_request(SSH_SESSION *session) {
   }
 
   if (strcmp(type_c, "window-change") == 0) {
-    STRING *term = NULL;
     SAFE_FREE(type_c);
 
     msg->channel_request.type = SSH_CHANNEL_REQUEST_WINDOW_CHANGE;
@@ -808,8 +807,8 @@ static SSH_MESSAGE *handle_channel_request(SSH_SESSION *session) {
   }
 
   if (strcmp(type_c, "env") == 0) {
-    STRING *name = NULL;
-    STRING *value = NULL;
+    ssh_string name = NULL;
+    ssh_string value = NULL;
 
     SAFE_FREE(type_c);
 
