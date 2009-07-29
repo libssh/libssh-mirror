@@ -955,7 +955,7 @@ error:
  * @see channel_read()
  */
 int channel_write(ssh_channel channel, const void *data, uint32_t len) {
-	return channel_write_common(channel, data, len, 0);
+  return channel_write_common(channel, data, len, 0);
 }
 
 /**
@@ -972,7 +972,7 @@ int channel_write(ssh_channel channel, const void *data, uint32_t len) {
  * @see channel_read()
  */
 int channel_write_stderr(ssh_channel channel, const void *data, uint32_t len) {
-	return channel_write_common(channel, data, len, 1);
+  return channel_write_common(channel, data, len, 1);
 }
 
 /**
