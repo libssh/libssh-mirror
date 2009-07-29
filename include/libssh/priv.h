@@ -689,6 +689,8 @@ int channel_default_bufferize(ssh_channel channel, void *data, int len,
         int is_stderr);
 uint32_t ssh_channel_new_id(SSH_SESSION *session);
 ssh_channel ssh_channel_from_local(SSH_SESSION *session, uint32_t id);
+int channel_write_common(ssh_channel channel, const void *data,
+    uint32_t len, int is_stderr);
 
 /* options.c */
 

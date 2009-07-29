@@ -858,7 +858,7 @@ error:
   return rc;
 }
 
-static int channel_write_common(ssh_channel channel, const void *data,
+int channel_write_common(ssh_channel channel, const void *data,
     uint32_t len, int is_stderr) {
   SSH_SESSION *session = channel->session;
   int origlen = len;
@@ -956,23 +956,6 @@ error:
  */
 int channel_write(ssh_channel channel, const void *data, uint32_t len) {
   return channel_write_common(channel, data, len, 0);
-}
-
-/**
- * @brief Blocking write on channel for stderr.
- *
- * @param channel       The channel to write to.
- *
- * @param data          A pointer to the data to write.
- *
- * @param len           The length of the buffer to write to.
- *
- * @return The number of bytes written, SSH_ERROR on error.
- *
- * @see channel_read()
- */
-int channel_write_stderr(ssh_channel channel, const void *data, uint32_t len) {
-  return channel_write_common(channel, data, len, 1);
 }
 
 /**

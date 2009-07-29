@@ -121,6 +121,8 @@ void ssh_bind_free(SSH_BIND *ssh_bind);
  */
 int ssh_accept(SSH_SESSION *session);
 
+int channel_write_stderr(ssh_channel channel, const void *data, uint32_t len);
+
 /* messages.c */
 
 #define SSH_AUTH_REQUEST 1

@@ -510,6 +510,23 @@ int ssh_accept(SSH_SESSION *session) {
   return 0;
 }
 
+/**
+ * @brief Blocking write on channel for stderr.
+ *
+ * @param channel       The channel to write to.
+ *
+ * @param data          A pointer to the data to write.
+ *
+ * @param len           The length of the buffer to write to.
+ *
+ * @return The number of bytes written, SSH_ERROR on error.
+ *
+ * @see channel_read()
+ */
+int channel_write_stderr(ssh_channel channel, const void *data, uint32_t len) {
+  return channel_write_common(channel, data, len, 1);
+}
+
 /** @}
  */
 /* vim: set ts=2 sw=2 et cindent: */
