@@ -337,6 +337,7 @@ struct ssh_session {
     int protoversion;
     int server;
     int client;
+    int openssh;
     u32 send_seq;
     u32 recv_seq;
 /* status flags */
