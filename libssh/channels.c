@@ -641,7 +641,7 @@ int channel_default_bufferize(CHANNEL *channel, void *data, int len,
  * @see channel_request_exec()
  */
 int channel_open_session(CHANNEL *channel) {
-#ifdef HAVE_SSH1
+#ifdef WITH_SSH1
   if (channel->session->version == 1) {
     return channel_open_session1(channel);
   }
@@ -885,7 +885,7 @@ int channel_write(CHANNEL *channel, const void *data, u32 len) {
     return -1;
   }
 
-#ifdef HAVE_SSH1
+#ifdef WITH_SSH1
   if (channel->version == 1) {
     int rc = channel_write1(channel, data, len);
     leave_function();
@@ -1088,7 +1088,7 @@ int channel_request_pty_size(CHANNEL *channel, const char *terminal,
   int rc = SSH_ERROR;
 
   enter_function();
-#ifdef HAVE_SSH1
+#ifdef WITH_SSH1
   if (channel->version==1) {
     channel_request_pty_size1(channel,terminal, col, row);
     leave_function();
@@ -1157,7 +1157,7 @@ int channel_change_pty_size(CHANNEL *channel, int cols, int rows) {
 
   enter_function();
 
-#ifdef HAVE_SSH1
+#ifdef WITH_SSH1
   if (channel->version == 1) {
     rc = channel_change_pty_size1(channel,cols,rows);
     leave_function();
@@ -1193,7 +1193,7 @@ error:
  * @returns SSH_SUCCESS on success, SSH_ERROR on error.
  */
 int channel_request_shell(CHANNEL *channel) {
-#ifdef HAVE_SSH1
+#ifdef WITH_SSH1
   if (channel->version == 1) {
     return channel_request_shell1(channel);
   }
@@ -1312,7 +1312,7 @@ int channel_request_exec(CHANNEL *channel, const char *cmd) {
   STRING *command = NULL;
   int rc = SSH_ERROR;
 
-#ifdef HAVE_SSH1
+#ifdef WITH_SSH1
   if (channel->version == 1) {
     return channel_request_exec1(channel, cmd);
   }

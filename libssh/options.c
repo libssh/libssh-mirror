@@ -60,7 +60,7 @@ SSH_OPTIONS *ssh_options_new(void) {
     option->port=22; /* set the default port */
     option->fd=-1;
     option->ssh2allowed=1;
-#ifdef HAVE_SSH1
+#ifdef WITH_SSH1
     option->ssh1allowed=1;
 #else
     option->ssh1allowed=0;
@@ -830,7 +830,7 @@ int ssh_options_getopt(SSH_OPTIONS *options, int *argcptr, char **argv) {
   int compress = 0;
   int cont = 1;
   int current = 0;
-#ifdef HAVE_SSH1
+#ifdef WITH_SSH1
   int ssh1 = 1;
 #else
   int ssh1 = 0;

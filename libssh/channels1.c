@@ -29,7 +29,7 @@
 #include "libssh/priv.h"
 #include "libssh/ssh1.h"
 
-#ifdef HAVE_SSH1
+#ifdef WITH_SSH1
 
 /*
  * This is a big hack. In fact, SSH1 doesn't make a clever use of channels.
@@ -301,5 +301,5 @@ int channel_write1(CHANNEL *channel, const void *data, int len) {
   return origlen;
 }
 
-#endif /* HAVE_SSH1 */
+#endif /* WITH_SSH1 */
 /* vim: set ts=2 sw=2 et cindent: */

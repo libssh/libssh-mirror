@@ -214,7 +214,7 @@ error:
   return rc;
 }
 
-#ifdef HAVE_SSH1
+#ifdef WITH_SSH1
 /* a slighty modified packet_read2() for SSH-1 protocol */
 static int packet_read1(SSH_SESSION *session) {
   void *packet = NULL;
@@ -363,11 +363,11 @@ error:
   return rc;
 }
 
-#endif /* HAVE_SSH1 */
+#endif /* WITH_SSH1 */
 
 /* that's where i'd like C to be object ... */
 int packet_read(SSH_SESSION *session) {
-#ifdef HAVE_SSH1
+#ifdef WITH_SSH1
   if (session->version == 1) {
     return packet_read1(session);
   }
@@ -580,7 +580,7 @@ error:
   return rc;     /* SSH_OK, AGAIN or ERROR */
 }
 
-#endif /* HAVE_SSH1 */
+#endif /* WITH_SSH1 */
 
 int packet_send(SSH_SESSION *session) {
 #ifdef HAVE_SSH1
@@ -597,7 +597,7 @@ void packet_parse(SSH_SESSION *session) {
   int type = session->in_packet.type;
   u32 tmp;
 
-#ifdef HAVE_SSH1
+#ifdef WITH_SSH1
   if (session->version == 1) {
     /* SSH-1 */
     switch(type) {
@@ -622,7 +622,7 @@ void packet_parse(SSH_SESSION *session) {
     }
     return;
   } else {
-#endif /* HAVE_SSH1 */
+#endif /* WITH_SSH1 */
     switch(type) {
       case SSH2_MSG_DISCONNECT:
         buffer_get_u32(session->in_buffer, &tmp);
@@ -658,12 +658,12 @@ void packet_parse(SSH_SESSION *session) {
       default:
         ssh_log(session, SSH_LOG_RARE, "Received unhandled packet %d", type);
     }
-#ifdef HAVE_SSH1
+#ifdef WITH_SSH1
   }
 #endif
 }
 
-#ifdef HAVE_SSH1
+#ifdef WITH_SSH1
 static int packet_wait1(SSH_SESSION *session, int type, int blocking) {
 
   enter_function();
@@ -719,7 +719,7 @@ static int packet_wait1(SSH_SESSION *session, int type, int blocking) {
   leave_function();
   return SSH_OK;
 }
-#endif /* HAVE_SSH1 */
+#endif /* WITH_SSH1 */
 
 static int packet_wait2(SSH_SESSION *session, int type, int blocking) {
   int rc = SSH_ERROR;
@@ -773,7 +773,7 @@ static int packet_wait2(SSH_SESSION *session, int type, int blocking) {
 }
 
 int packet_wait(SSH_SESSION *session, int type, int block) {
-#ifdef HAVE_SSH1
+#ifdef WITH_SSH1
   if (session->version == 1) {
     return packet_wait1(session, type, block);
   }

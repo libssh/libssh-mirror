@@ -27,7 +27,7 @@
 #include "libssh/priv.h"
 #include "libssh/ssh1.h"
 
-#ifdef HAVE_SSH1
+#ifdef WITH_SSH1
 static int wait_auth1_status(SSH_SESSION *session) {
   /* wait for a packet */
   if (packet_read(session) != SSH_OK) {
@@ -138,7 +138,11 @@ int ssh_userauth_offer_pubkey(SSH_SESSION *session, char *username,int type, STR
  */
 int ssh_userauth1_offer_pubkey(SSH_SESSION *session, const char *username,
     int type, STRING *pubkey) {
-    return SSH_AUTH_DENIED;
+  (void) session;
+  (void) username;
+  (void) type;
+  (void) pubkey;
+  return SSH_AUTH_DENIED;
 }
 
 /*
@@ -247,5 +251,5 @@ int ssh_userauth1_password(SSH_SESSION *session, const char *username,
   return wait_auth1_status(session);
 }
 
-#endif /* HAVE_SSH1 */
+#endif /* WITH_SSH1 */
 /* vim: set ts=2 sw=2 et cindent: */
