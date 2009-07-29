@@ -155,6 +155,15 @@ set_target_properties(
         ssh
 )
 
+if (UNIX AND CMAKE_COMPILER_IS_GNUCC)
+  set_target_properties(
+    ${LIBSSH_SHARED_LIBRARY}
+      PROPERTIES
+        LINK_FLAGS
+          -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libssh.map
+)
+endif (UNIX AND CMAKE_COMPILER_IS_GNUCC)
+
 install(
   TARGETS
     ${LIBSSH_SHARED_LIBRARY}
