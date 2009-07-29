@@ -858,7 +858,8 @@ error:
   return rc;
 }
 
-int channel_write_common(ssh_channel channel, const void *data, uint32_t len, int is_stderr) {
+static int channel_write_common(ssh_channel channel, const void *data,
+    uint32_t len, int is_stderr) {
   SSH_SESSION *session = channel->session;
   int origlen = len;
   int effectivelen;
