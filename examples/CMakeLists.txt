@@ -1,4 +1,4 @@
-project(libssh-library C)
+project(libssh-examples C)
 
 set(examples_SRCS
   libssh_scp.c
@@ -12,4 +12,4 @@ include_directories(
 
 add_executable(libssh_scp ${examples_SRCS})
 
-target_link_libraries(libssh_scp ${LIBSSH_SHARED_LIBRARY} )
+target_link_libraries(libssh_scp ${LIBSSH_SHARED_LIBRARY})
