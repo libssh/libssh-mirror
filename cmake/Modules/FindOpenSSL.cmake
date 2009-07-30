@@ -46,6 +46,7 @@ else (OPENSSL_LIBRARIES AND OPENSSL_INCLUDE_DIRS)
   find_library(SSL_LIBRARY
     NAMES
       ssl
+      libssl
     PATHS
       ${_OPENSSL_LIBDIR}
       /usr/lib
@@ -85,6 +86,7 @@ else (OPENSSL_LIBRARIES AND OPENSSL_INCLUDE_DIRS)
   find_library(CRYPTO_LIBRARY
     NAMES
       crypto
+      libcrypto
     PATHS
       ${_OPENSSL_LIBDIR}
       /usr/lib
