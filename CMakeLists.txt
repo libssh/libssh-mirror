@@ -55,13 +55,14 @@ configure_file(config.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/config.h)
 add_subdirectory(doc)
 add_subdirectory(include)
 add_subdirectory(libssh)
-add_subdirectory(examples)
 add_subdirectory(tests)
 
 # build samples
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
 if (UNIX AND NOT WIN32)
+  add_subdirectory(examples)
+
   if (WITH_SFTP AND WITH_SERVER)
     add_executable(samplessh sample.c)
     add_executable(samplesshd samplesshd.c)
