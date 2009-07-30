@@ -187,6 +187,8 @@ SSH_0.3 {
 SSH_0.4 {
   global:
     channel_write_stderr;
+    channel_request_x11;
+    channel_accept_x11;
     sftp_extensions_get_count;
     sftp_extensions_get_data;
     sftp_extensions_get_name;

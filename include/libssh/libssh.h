@@ -284,6 +284,9 @@ int channel_request_subsystem(ssh_channel channel, const char *system);
 int channel_request_env(ssh_channel channel, const char *name, const char *value);
 int channel_request_exec(ssh_channel channel, const char *cmd);
 int channel_request_sftp(ssh_channel channel);
+int channel_request_x11(ssh_channel channel, int single_connection, const char *protocol,
+    const char *cookie, int screen_number);
+ssh_channel channel_accept_x11(ssh_channel channel, int timeout_ms);
 int channel_write(ssh_channel channel, const void *data, uint32_t len);
 int channel_send_eof(ssh_channel channel);
 int channel_is_eof(ssh_channel channel);

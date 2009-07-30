@@ -26,6 +26,8 @@ channel_request_pty_size
 channel_request_sftp
 channel_request_shell
 channel_request_subsystem
+channel_request_x11
+channel_accept_x11
 channel_select
 channel_send_eof
 channel_set_blocking

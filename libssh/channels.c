@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
+#include <time.h>
 
 #ifndef _WIN32
 #include <arpa/inet.h>
@@ -33,6 +34,7 @@
 
 #include "libssh/priv.h"
 #include "libssh/ssh2.h"
+#include "libssh/server.h"
 
 #define WINDOWBASE 128000
 #define WINDOWLIMIT (WINDOWBASE/2)
@@ -1254,6 +1256,122 @@ error:
 
 int channel_request_sftp( ssh_channel channel){
     return channel_request_subsystem(channel, "sftp");
+}
+
+static void generate_cookie(char *s) {
+  static const char *hex = "0123456789abcdef";
+  int i;
+
+  srand ((unsigned int)time(NULL));
+  for (i = 0; i < 32; i++) {
+    s[i] = hex[rand() % 16];
+  }
+  s[32] = '\0';
+}
+
+/**
+ * @brief Sends the "x11-req" channel request over an existing session channel.
+ *
+ * This will enable redirecting the display of the remote X11 applications to
+ * local X server over an secure tunnel.
+ *
+ * @param channel       An existing session channel where the remote X11
+ *                      applications are going to be executed.
+ *
+ * @param single_connection    A boolean to mark only one X11 app will be
+ *                             redirected.
+ *
+ * @param protocol      x11 authentication protocol. Pass NULL to use the
+ *                      default value MIT-MAGIC-COOKIE-1
+ *
+ * @param cookie        x11 authentication cookie. Pass NULL to generate
+ *                      a random cookie.
+ *
+ * @param screen_number        Screen number.
+ *
+ * @return SSH_OK on success\n
+ *         SSH_ERROR on error
+ */
+int channel_request_x11(ssh_channel channel, int single_connection, const char *protocol,
+    const char *cookie, int screen_number) {
+  ssh_buffer buffer = NULL;
+  ssh_string p = NULL;
+  ssh_string c = NULL;
+  char s[32];
+  int rc = SSH_ERROR;
+
+  buffer = buffer_new();
+  if (buffer == NULL) {
+    goto error;
+  }
+
+  p = string_from_char(protocol ? protocol : "MIT-MAGIC-COOKIE-1");
+  if (p == NULL) {
+    goto error;
+  }
+
+  if (cookie) {
+    c = string_from_char(cookie);
+  } else {
+    generate_cookie(s);
+    c = string_from_char(s);
+  }
+  if (c == NULL) {
+    goto error;
+  }
+
+  if (buffer_add_u8(buffer, single_connection == 0 ? 0 : 1) < 0 ||
+      buffer_add_ssh_string(buffer, p) < 0 ||
+      buffer_add_ssh_string(buffer, c) < 0 ||
+      buffer_add_u32(buffer, htonl(screen_number)) < 0) {
+    goto error;
+  }
+
+  rc = channel_request(channel, "x11-req", buffer, 1);
+
+error:
+  buffer_free(buffer);
+  string_free(p);
+  string_free(c);
+  return rc;
+}
+
+/**
+ * @brief Accept an X11 forwarding channel.
+ *
+ * @param channel       An x11-enabled session channel.
+ *
+ * @param timeout_ms    Timeout in milli-seconds.
+ *
+ * @return Newly created channel, or NULL if no X11 request from the server
+ */
+ssh_channel channel_accept_x11(ssh_channel channel, int timeout_ms) {
+  static const struct timespec ts = {0, 50000000}; /* 50ms */
+  SSH_SESSION *session = channel->session;
+  SSH_MESSAGE *msg = NULL;
+  struct ssh_iterator *iterator;
+  int t;
+
+  for (t = timeout_ms; t >= 0; t -= 50)
+  {
+    ssh_handle_packets(session);
+
+    if (session->ssh_message_list) {
+      iterator = ssh_list_get_iterator(session->ssh_message_list);
+      while (iterator) {
+        msg = (SSH_MESSAGE*)iterator->data;
+        if (ssh_message_type(msg) == SSH_CHANNEL_REQUEST_OPEN &&
+            ssh_message_subtype(msg) == SSH_CHANNEL_X11) {
+          ssh_list_remove(session->ssh_message_list, iterator);
+          return ssh_message_channel_request_open_reply_accept(msg);
+        }
+        iterator = iterator->next;
+      }
+    }
+    nanosleep(&ts, NULL);
+  }
+
+  return NULL;
 }
 
 /**
