@@ -135,6 +135,13 @@ if (WITH_SERVER)
   )
 endif (WITH_SERVER)
 
+if (MSVC)
+  set(libssh_SRCS
+    ${libssh_SRCS}
+    libssh.def
+  )
+endif (MSVC)
+
 include_directories(
   ${LIBSSH_PUBLIC_INCLUDE_DIRS}
   ${LIBSSH_PRIVATE_INCLUDE_DIRS}
