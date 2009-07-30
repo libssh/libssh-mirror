@@ -750,6 +750,22 @@ error:
   return rc;
 }
 
+#ifdef _MSC_VER
+static const char privKey_1[] = "%s/.ssh/identity";
+static const char pubKey_1[] = "%s/.ssh/identity.pub";
+static const char privKey_2[] = "%s/.ssh/id_dsa";
+static const char pubKey_2[] = "%s/.ssh/id_dsa.pub";
+static const char privKey_3[] = "%s/.ssh/id_rsa";
+static const char pubKey_3[] = "%s/.ssh/id_rsa.pub";
+/** Used different var to allow const char[] declaration */
+static struct ssh_keys_struct keytab[] = {
+  { privKey_1, pubKey_1},
+  { privKey_2, pubKey_2},
+  { privKey_3, pubKey_3},
+  {0}
+};
+#else
+/* This requires GCC extensions */
 static struct ssh_keys_struct keytab[] = {
   {
     .privatekey = "%s/.ssh/identity",
@@ -768,9 +784,7 @@ static struct ssh_keys_struct keytab[] = {
     .publickey = NULL
   }
 };
-
-/* this function initialy was in the client */
-/* but the fools are the ones who never change mind */
+#endif
 
 /**
  * @brief Tries to automaticaly authenticate with public key and "none"

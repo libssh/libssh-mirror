@@ -38,7 +38,11 @@
 
 #ifndef SFTP_H
 #define SFTP_H
-#include <libssh/libssh.h>
+
+#include <sys/types.h>
+
+#include "libssh.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -51,11 +55,19 @@ extern "C" {
 
 #ifdef _WIN32
 #ifndef uid_t
-  typedef long uid_t;
+  typedef uint32_t uid_t;
 #endif /* uid_t */
 #ifndef gid_t
-  typedef long gid_t;
+  typedef uint32_t gid_t;
 #endif /* gid_t */
+#ifdef _MSC_VER
+#ifndef mode_t
+  typedef uint32_t mode_t;
+#endif /* mode_t */
+#ifndef ssize_t
+  typedef _W64 signed int ssize_t;
+#endif /* ssize_t */
+#endif /* _MSC_VER */
 #endif /* _WIN32 */
 
 typedef struct sftp_ext_struct *sftp_ext;

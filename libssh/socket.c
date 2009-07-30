@@ -21,7 +21,6 @@
  * MA 02111-1307, USA.
  */
 
-#include <unistd.h>
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
@@ -264,7 +263,7 @@ int ssh_socket_completeread(struct socket *s, void *buffer, uint32_t len) {
     return SSH_ERROR;
   }
 
-  while((r = ssh_socket_unbuffered_read(s, buffer + total, toread))) {
+  while((r = ssh_socket_unbuffered_read(s, ((uint8_t*)buffer + total), toread))) {
     if (r < 0) {
       return SSH_ERROR;
     }
@@ -303,7 +302,7 @@ int ssh_socket_completewrite(struct socket *s, const void *buffer, uint32_t len)
       return SSH_ERROR;
     }
     len -= written;
-    buffer += written;
+    buffer = ((uint8_t*)buffer +  written);
   }
 
   leave_function();

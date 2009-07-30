@@ -24,7 +24,6 @@
 
 #include <limits.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -33,8 +32,8 @@
 
 #ifdef _WIN32
 #define _WIN32_IE 0x0400 //SHGetSpecialFolderPath
+#include <winsock2.h> // Must be the first to include
 #include <shlobj.h>
-#include <winsock2.h>
 #else
 #include <pwd.h>
 #include <arpa/inet.h>
@@ -67,7 +66,6 @@
  * @{ */
 
 #ifdef _WIN32
-
 char *ssh_get_user_home_dir(void) {
   static char szPath[MAX_PATH] = {0};
 
@@ -77,7 +75,7 @@ char *ssh_get_user_home_dir(void) {
 
   return NULL;
 }
-   
+
  /* we have read access on file */
  int ssh_file_readaccess_ok(const char *file) {
   if (_access(file, 4) < 0) {
@@ -85,9 +83,8 @@ char *ssh_get_user_home_dir(void) {
   }
 
   return 1;
-}  
+}
 #else /* _WIN32 */
-
 char *ssh_get_user_home_dir(void) {
   static char szPath[PATH_MAX] = {0};
   struct passwd *pwd = NULL;
@@ -102,8 +99,6 @@ char *ssh_get_user_home_dir(void) {
   return szPath;
 }
 
-#endif
-
 /* we have read access on file */
 int ssh_file_readaccess_ok(const char *file) {
   if (access(file, R_OK) < 0) {
@@ -112,13 +107,14 @@ int ssh_file_readaccess_ok(const char *file) {
 
   return 1;
 }
+#endif
 
 uint64_t ntohll(uint64_t a) {
 #ifdef WORDS_BIGENDIAN
   return a;
 #else
-  uint32_t low = a & 0xffffffff;
-  uint32_t high = a >> 32 ;
+  uint32_t low = (uint32_t)(a & 0xffffffff);
+  uint32_t high = (uint32_t)(a >> 32);
   low = ntohl(low);
   high = ntohl(high);
 

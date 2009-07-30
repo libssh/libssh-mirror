@@ -577,11 +577,11 @@ static int des3_set_key(struct crypto_struct *cipher, void *key) {
     }
 
     DES_set_odd_parity(key);
-    DES_set_odd_parity(key + 8);
-    DES_set_odd_parity(key + 16);
+    DES_set_odd_parity((void*)((uint8_t*)key + 8));
+    DES_set_odd_parity((void*)((uint8_t*)key + 16));
     DES_set_key_unchecked(key, cipher->key);
-    DES_set_key_unchecked(key + 8, cipher->key + sizeof(DES_key_schedule));
-    DES_set_key_unchecked(key + 16, cipher->key + 2 * sizeof(DES_key_schedule));
+    DES_set_key_unchecked((void*)((uint8_t*)key + 8), (void*)((uint8_t*)cipher->key + sizeof(DES_key_schedule)));
+    DES_set_key_unchecked((void*)((uint8_t*)key + 16), (void*)((uint8_t*)cipher->key + 2 * sizeof(DES_key_schedule)));
   }
 
   return 0;
@@ -590,16 +590,16 @@ static int des3_set_key(struct crypto_struct *cipher, void *key) {
 static void des3_encrypt(struct crypto_struct *cipher, void *in,
     void *out, unsigned long len, void *IV) {
   DES_ede3_cbc_encrypt(in, out, len, cipher->key,
-      cipher->key + sizeof(DES_key_schedule),
-      cipher->key + 2 * sizeof(DES_key_schedule),
+      (void*)((uint8_t*)cipher->key + sizeof(DES_key_schedule)),
+      (void*)((uint8_t*)cipher->key + 2 * sizeof(DES_key_schedule)),
       IV, 1);
 }
 
 static void des3_decrypt(struct crypto_struct *cipher, void *in,
     void *out, unsigned long len, void *IV) {
   DES_ede3_cbc_encrypt(in, out, len, cipher->key,
-      cipher->key + sizeof(DES_key_schedule),
-      cipher->key + 2 * sizeof(DES_key_schedule),
+      (void*)((uint8_t*)cipher->key + sizeof(DES_key_schedule)),
+      (void*)((uint8_t*)cipher->key + 2 * sizeof(DES_key_schedule)),
       IV, 0);
 }
 
@@ -609,10 +609,10 @@ static void des3_1_encrypt(struct crypto_struct *cipher, void *in,
   ssh_print_hexa("Encrypt IV before", IV, 24);
 #endif
   DES_ncbc_encrypt(in, out, len, cipher->key, IV, 1);
-  DES_ncbc_encrypt(out, in, len, cipher->key + sizeof(DES_key_schedule),
-      IV + 8, 0);
-  DES_ncbc_encrypt(in, out, len, cipher->key + 2 * sizeof(DES_key_schedule),
-      IV + 16, 1);
+  DES_ncbc_encrypt(out, in, len, (void*)((uint8_t*)cipher->key + sizeof(DES_key_schedule)),
+      (void*)((uint8_t*)IV + 8), 0);
+  DES_ncbc_encrypt(in, out, len, (void*)((uint8_t*)cipher->key + 2 * sizeof(DES_key_schedule)),
+      (void*)((uint8_t*)IV + 16), 1);
 #ifdef DEBUG_CRYPTO
   ssh_print_hexa("Encrypt IV after", IV, 24);
 #endif
@@ -624,11 +624,11 @@ static void des3_1_decrypt(struct crypto_struct *cipher, void *in,
   ssh_print_hexa("Decrypt IV before", IV, 24);
 #endif
 
-  DES_ncbc_encrypt(in, out, len, cipher->key + 2 * sizeof(DES_key_schedule),
+  DES_ncbc_encrypt(in, out, len, (void*)((uint8_t*)cipher->key + 2 * sizeof(DES_key_schedule)),
       IV, 0);
-  DES_ncbc_encrypt(out, in, len, cipher->key + sizeof(DES_key_schedule),
-      IV + 8, 1);
-  DES_ncbc_encrypt(in, out, len, cipher->key, IV + 16, 0);
+  DES_ncbc_encrypt(out, in, len, (void*)((uint8_t*)cipher->key + sizeof(DES_key_schedule)),
+      (void*)((uint8_t*)IV + 8), 1);
+  DES_ncbc_encrypt(in, out, len, cipher->key, (void*)((uint8_t*)IV + 16), 0);
 
 #ifdef DEBUG_CRYPTO
   ssh_print_hexa("Decrypt IV after", IV, 24);
@@ -637,90 +637,95 @@ static void des3_1_decrypt(struct crypto_struct *cipher, void *in,
 
 #endif /* HAS_DES */
 
-/* the table of supported ciphers */
+/*
+ * The table of supported ciphers
+ *
+ * WARNING: If you modify crypto_struct, you must make sure the order is
+ * correct!
+ */
 static struct crypto_struct ssh_ciphertab[] = {
 #ifdef HAS_BLOWFISH
   {
-    .name            = "blowfish-cbc",
-    .blocksize       = 8,
-    .keylen          = sizeof (BF_KEY),
-    .key             = NULL,
-    .keysize         = 128,
-    .set_encrypt_key = blowfish_set_key,
-    .set_decrypt_key = blowfish_set_key,
-    .cbc_encrypt     = blowfish_encrypt,
-    .cbc_decrypt     = blowfish_decrypt
+    "blowfish-cbc",
+    8,
+    sizeof (BF_KEY),
+    NULL,
+    128,
+    blowfish_set_key,
+    blowfish_set_key,
+    blowfish_encrypt,
+    blowfish_decrypt
   },
 #endif /* HAS_BLOWFISH */
 #ifdef HAS_AES
   {
-    .name            = "aes128-cbc",
-    .blocksize       = 16,
-    .keylen          = sizeof(AES_KEY),
-    .key             = NULL,
-    .keysize         = 128,
-    .set_encrypt_key = aes_set_encrypt_key,
-    .set_decrypt_key = aes_set_decrypt_key,
-    .cbc_encrypt     = aes_encrypt,
-    .cbc_decrypt     = aes_decrypt
+    "aes128-cbc",
+    16,
+    sizeof(AES_KEY),
+    NULL,
+    128,
+    aes_set_encrypt_key,
+    aes_set_decrypt_key,
+    aes_encrypt,
+    aes_decrypt
   },
   {
-    .name            = "aes192-cbc",
-    .blocksize       = 16,
-    .keylen          = sizeof(AES_KEY),
-    .key             = NULL,
-    .keysize         = 192,
-    .set_encrypt_key = aes_set_encrypt_key,
-    .set_decrypt_key = aes_set_decrypt_key,
-    .cbc_encrypt     = aes_encrypt,
-    .cbc_decrypt     = aes_decrypt
+    "aes192-cbc",
+    16,
+    sizeof(AES_KEY),
+    NULL,
+    192,
+    aes_set_encrypt_key,
+    aes_set_decrypt_key,
+    aes_encrypt,
+    aes_decrypt
   },
   {
-    .name            = "aes256-cbc",
-    .blocksize       = 16,
-    .keylen          = sizeof(AES_KEY),
-    .key             = NULL,
-    .keysize         = 256,
-    .set_encrypt_key = aes_set_encrypt_key,
-    .set_decrypt_key = aes_set_decrypt_key,
-    .cbc_encrypt     = aes_encrypt,
-    .cbc_decrypt     = aes_decrypt
+    "aes256-cbc",
+    16,
+    sizeof(AES_KEY),
+    NULL,
+    256,
+    aes_set_encrypt_key,
+    aes_set_decrypt_key,
+    aes_encrypt,
+    aes_decrypt
   },
 #endif /* HAS_AES */
 #ifdef HAS_DES
   {
-    .name            = "3des-cbc",
-    .blocksize       = 8,
-    .keylen          = sizeof(DES_key_schedule) * 3,
-    .key             = NULL,
-    .keysize         = 192,
-    .set_encrypt_key = des3_set_key,
-    .set_decrypt_key = des3_set_key,
-    .cbc_encrypt     = des3_encrypt,
-    .cbc_decrypt     = des3_decrypt
+    "3des-cbc",
+    8,
+    sizeof(DES_key_schedule) * 3,
+    NULL,
+    192,
+    des3_set_key,
+    des3_set_key,
+    des3_encrypt,
+    des3_decrypt
   },
   {
-    .name            = "3des-cbc-ssh1",
-    .blocksize       = 8,
-    .keylen          = sizeof(DES_key_schedule) * 3,
-    .key             = NULL,
-    .keysize         = 192,
-    .set_encrypt_key = des3_set_key,
-    .set_decrypt_key = des3_set_key,
-    .cbc_encrypt     = des3_1_encrypt,
-    .cbc_decrypt     = des3_1_decrypt
+    "3des-cbc-ssh1",
+    8,
+    sizeof(DES_key_schedule) * 3,
+    NULL,
+    192,
+    des3_set_key,
+    des3_set_key,
+    des3_1_encrypt,
+    des3_1_decrypt
   },
 #endif /* HAS_DES */
   {
-    .name            = NULL,
-    .blocksize       = 0,
-    .keylen          = 0,
-    .key             = NULL,
-    .keysize         = 0,
-    .set_encrypt_key = NULL,
-    .set_decrypt_key = NULL,
-    .cbc_encrypt     = NULL,
-    .cbc_decrypt     = NULL
+    NULL,
+    0,
+    0,
+    NULL,
+    0,
+    NULL,
+    NULL,
+    NULL,
+    NULL
   }
 };
 #endif /* OPENSSL_CRYPTO */

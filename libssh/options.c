@@ -24,10 +24,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
 #ifndef _WIN32
 #include <pwd.h>
+#else
+#include <winsock2.h>
 #endif
 #include <sys/types.h>
 #include "libssh/priv.h"
@@ -589,6 +590,7 @@ int ssh_options_default_username(SSH_OPTIONS *opt) {
     return 0;
   }
 #else
+{
   DWORD Size = 0;
   GetUserName(NULL, &Size); //Get Size
   user = malloc(Size);
@@ -601,6 +603,7 @@ int ssh_options_default_username(SSH_OPTIONS *opt) {
   } else {
     SAFE_FREE(user);
   }
+}
 #endif
   return -1;
 }
@@ -836,7 +839,10 @@ int ssh_options_getopt(SSH_OPTIONS *options, int *argcptr, char **argv) {
   int ssh1 = 0;
 #endif
   int ssh2 = 1;
-
+#ifdef _MSC_VER
+    /* Not supported with a Microsoft compiler */
+    return -1;
+#else
   int saveoptind = optind; /* need to save 'em */
   int saveopterr = opterr;
 
@@ -985,6 +991,7 @@ int ssh_options_getopt(SSH_OPTIONS *options, int *argcptr, char **argv) {
   }
 
   return 0;
+#endif
 }
 
 /**

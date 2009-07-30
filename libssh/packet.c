@@ -23,7 +23,6 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <string.h>
 #include <errno.h>
 
@@ -148,7 +147,7 @@ static int packet_read2(SSH_SESSION *session) {
          * have been decrypted)
          */
         if (packet_decrypt(session,
-              buffer_get(session->in_buffer) + blocksize,
+              ((uint8_t*)buffer_get(session->in_buffer) + blocksize),
               buffer_get_len(session->in_buffer) - blocksize) < 0) {
           ssh_set_error(session, SSH_FATAL, "Decrypt error");
           goto error;

@@ -26,7 +26,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
 #ifdef _WIN32
 /* getaddrinfo, freeaddrinfo, getnameinfo */
@@ -93,6 +92,7 @@ static void sock_set_nonblocking(socket_t sock) {
 static void sock_set_blocking(socket_t sock) {
   fcntl(sock, F_SETFL, 0);
 }
+
 #endif /* _WIN32 */
 
 #ifdef HAVE_REGCOMP

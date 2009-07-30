@@ -29,6 +29,13 @@
 
 #ifndef _LIBSSH_PRIV_H
 #define _LIBSSH_PRIV_H
+
+#ifdef _MSC_VER
+#define snprintf _snprintf
+#else
+#include <unistd.h>
+#endif
+
 #include "config.h"
 #include "libssh/libssh.h"
 
@@ -172,12 +179,18 @@ void hmac_final(HMACCTX ctx,unsigned char *hashmacbuf,unsigned int *len);
 
 /* strings and buffers */
 /* must be 32 bits number + immediatly our data */
+#ifdef _MSC_VER
+#pragma pack(1)
+#endif
 struct ssh_string_struct {
 	uint32_t size;
 	unsigned char string[MAX_PACKET_LEN];
 }
-#if !defined(__SUNPRO_C)
+#if !defined(__SUNPRO_C) && !defined(_MSC_VER)
 __attribute__ ((packed))
+#endif
+#ifdef _MSC_VER
+#pragma pack()
 #endif
 ;
 

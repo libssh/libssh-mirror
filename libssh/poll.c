@@ -81,6 +81,7 @@ int ssh_poll(pollfd_t *fds, nfds_t nfds, int timeout) {
 
 #include <stdio.h>
 #include <windows.h>
+#include <errno.h>
 
 static int poll_rest (HANDLE *handles, int nhandles,
     pollfd_t *fds, nfds_t nfds, int timeout) {

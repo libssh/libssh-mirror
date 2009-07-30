@@ -24,7 +24,6 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <stdio.h>
 #include <errno.h>
 
@@ -929,7 +928,7 @@ int channel_write_common(ssh_channel channel, const void *data,
 
     channel->remote_window -= effectivelen;
     len -= effectivelen;
-    data += effectivelen;
+    data = ((uint8_t*)data + effectivelen);
   }
 
   leave_function();

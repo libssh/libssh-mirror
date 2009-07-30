@@ -32,7 +32,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <unistd.h>
 
 #include "libssh/priv.h"
 #include "libssh/libssh.h"
@@ -45,7 +44,7 @@
 #define SOCKOPT_TYPE_ARG4 char
 
 /* We need to provide hstrerror. Not we can't call the parameter h_errno because it's #defined */
-inline char *hstrerror(int h_errno_val) {
+static char *hstrerror(int h_errno_val) {
   static char text[50] = {0};
 
   snprintf(text, sizeof(text), "gethostbyname error %d\n", h_errno_val);
