@@ -124,13 +124,36 @@ typedef int socket_t;
 #define SSH_AUTH_INFO 3
 #define SSH_AUTH_ERROR -1
 
-#define SSH_AUTH_METHOD_PASSWORD 0x0001
-#define SSH_AUTH_METHOD_PUBLICKEY 0x0002
-#define SSH_AUTH_METHOD_HOSTBASED 0x0004
-#define SSH_AUTH_METHOD_INTERACTIVE 0x0008
+/* auth flags */
+#define SSH_AUTH_METHOD_UNKNOWN 0
+#define SSH_AUTH_METHOD_NONE 0x0001
+#define SSH_AUTH_METHOD_PASSWORD 0x0002
+#define SSH_AUTH_METHOD_PUBLICKEY 0x0004
+#define SSH_AUTH_METHOD_HOSTBASED 0x0008
+#define SSH_AUTH_METHOD_INTERACTIVE 0x0010
+
+/* messages */
+#define SSH_REQUEST_AUTH 1
+#define SSH_REQUEST_CHANNEL_OPEN 2
+#define SSH_REQUEST_CHANNEL 3
+#define SSH_REQUEST_SERVICE 4
+#define SSH_REQUEST_GLOBAL 5
+
+#define SSH_CHANNEL_UNKNOWN 0
+#define SSH_CHANNEL_SESSION 1
+#define SSH_CHANNEL_DIRECT_TCPIP 2
+#define SSH_CHANNEL_FORWARDED_TCPIP 3
+#define SSH_CHANNEL_X11 4
+
+#define SSH_CHANNEL_REQUEST_UNKNOWN 0
+#define SSH_CHANNEL_REQUEST_PTY 1
+#define SSH_CHANNEL_REQUEST_EXEC 2
+#define SSH_CHANNEL_REQUEST_SHELL 3
+#define SSH_CHANNEL_REQUEST_ENV 4
+#define SSH_CHANNEL_REQUEST_SUBSYSTEM 5
+#define SSH_CHANNEL_REQUEST_WINDOW_CHANGE 6
 
 /* status flags */
-
 #define SSH_CLOSED (1<<0)
 #define SSH_READ_PENDING (1<<1)
 #define SSH_CLOSED_ERROR (1<<2)
@@ -388,6 +411,19 @@ int ssh_userauth_kbdint_setanswer(SSH_SESSION *session, unsigned int i,
 /* init.c */
 int ssh_init(void);
 int ssh_finalize(void);
+
+/* messages.c */
+typedef struct ssh_message SSH_MESSAGE;
+
+SSH_MESSAGE *ssh_message_retrieve(SSH_SESSION *session, uint32_t packettype);
+SSH_MESSAGE *ssh_message_get(SSH_SESSION *session);
+int ssh_message_type(SSH_MESSAGE *msg);
+int ssh_message_subtype(SSH_MESSAGE *msg);
+void ssh_message_free(SSH_MESSAGE *msg);
+
+ssh_channel ssh_message_channel_request_open_reply_accept(SSH_MESSAGE *msg);
+int ssh_message_channel_request_reply_success(SSH_MESSAGE *msg);
+
 
 #ifdef __cplusplus
 }

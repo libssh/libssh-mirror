@@ -73,9 +73,9 @@ int main(int argc, char **argv){
         if(!message)
             break;
         switch(ssh_message_type(message)){
-            case SSH_AUTH_REQUEST:
+            case SSH_REQUEST_AUTH:
                 switch(ssh_message_subtype(message)){
-                    case SSH_AUTH_PASSWORD:
+                    case SSH_AUTH_METHOD_PASSWORD:
                         printf("User %s wants to auth with pass %s\n",
                                ssh_message_auth_user(message),
                                ssh_message_auth_password(message));
@@ -86,9 +86,9 @@ int main(int argc, char **argv){
                                break;
                            }
                         // not authenticated, send default message
-                    case SSH_AUTH_NONE:
+                    case SSH_AUTH_METHOD_NONE:
                     default:
-                        ssh_message_auth_set_methods(message,SSH_AUTH_PASSWORD);
+                        ssh_message_auth_set_methods(message,SSH_AUTH_METHOD_PASSWORD);
                         ssh_message_reply_default(message);
                         break;
                 }
@@ -107,7 +107,7 @@ int main(int argc, char **argv){
         message=ssh_message_get(session);
         if(message){
             switch(ssh_message_type(message)){
-                case SSH_CHANNEL_REQUEST_OPEN:
+                case SSH_REQUEST_CHANNEL_OPEN:
                     if(ssh_message_subtype(message)==SSH_CHANNEL_SESSION){
                         chan=ssh_message_channel_request_open_reply_accept(message);
                         break;
@@ -125,7 +125,7 @@ int main(int argc, char **argv){
     }
     do {
         message=ssh_message_get(session);
-        if(message && ssh_message_type(message)==SSH_CHANNEL_REQUEST && 
+        if(message && ssh_message_type(message)==SSH_REQUEST_CHANNEL &&
            ssh_message_subtype(message)==SSH_CHANNEL_REQUEST_SHELL){
 //            if(!strcmp(ssh_message_channel_request_subsystem(message),"sftp")){
                 sftp=1;

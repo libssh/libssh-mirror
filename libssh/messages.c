@@ -41,7 +41,6 @@
 
 #include "libssh/libssh.h"
 #include "libssh/priv.h"
-#include "libssh/server.h"
 #include "libssh/ssh2.h"
 
 
@@ -80,42 +79,11 @@ static SSH_MESSAGE *handle_service_request(SSH_SESSION *session) {
     SAFE_FREE(service_c);
     goto error;
   }
-  msg->type=SSH_SERVICE_REQUEST;
+  msg->type=SSH_REQUEST_SERVICE;
   msg->service_request.service=service_c;
   error:
   leave_function();
   return msg;
-}
-
-static int ssh_message_service_request_reply_default(SSH_MESSAGE *msg) {
-  /* The only return code accepted by specifications are success or disconnect */
-  return ssh_message_service_reply_success(msg);
-}
-int ssh_message_service_reply_success(SSH_MESSAGE *msg) {
-  struct ssh_string_struct *service;
-  SSH_SESSION *session=msg->session;
-  if (msg == NULL) {
-    return SSH_ERROR;
-  }
-  ssh_log(session, SSH_LOG_PACKET,
-      "Sending a SERVICE_ACCEPT for service %s", msg->service_request.service);
-  if (buffer_add_u8(session->out_buffer, SSH2_MSG_SERVICE_ACCEPT) < 0) {
-    return -1;
-  }
-  service=string_from_char(msg->service_request.service);
-  if (buffer_add_ssh_string(session->out_buffer, service) < 0) {
-    string_free(service);
-    return -1;
-  }
-  string_free(service);
-  return packet_send(msg->session);
-}
-
-char *ssh_message_service_service(SSH_MESSAGE *msg){
-  if (msg == NULL) {
-    return NULL;
-  }
-  return msg->service_request.service;
 }
 
 static int handle_unimplemented(SSH_SESSION *session) {
@@ -158,7 +126,7 @@ static SSH_MESSAGE *handle_userauth_request(SSH_SESSION *session){
     goto error;
   }
 
-  msg->type = SSH_AUTH_REQUEST;
+  msg->type = SSH_REQUEST_AUTH;
   msg->auth_request.username = string_to_char(user);
   if (msg->auth_request.username == NULL) {
     goto error;
@@ -187,7 +155,7 @@ static SSH_MESSAGE *handle_userauth_request(SSH_SESSION *session){
 
 
   if (strcmp(method_c, "none") == 0) {
-    msg->auth_request.method = SSH_AUTH_NONE;
+    msg->auth_request.method = SSH_AUTH_METHOD_NONE;
     SAFE_FREE(service_c);
     SAFE_FREE(method_c);
     leave_function();
@@ -198,7 +166,7 @@ static SSH_MESSAGE *handle_userauth_request(SSH_SESSION *session){
     ssh_string pass = NULL;
     uint8_t tmp;
 
-    msg->auth_request.method = SSH_AUTH_PASSWORD;
+    msg->auth_request.method = SSH_AUTH_METHOD_PASSWORD;
     SAFE_FREE(service_c);
     SAFE_FREE(method_c);
     buffer_get_u8(session->in_buffer, &tmp);
@@ -222,7 +190,7 @@ static SSH_MESSAGE *handle_userauth_request(SSH_SESSION *session){
     ssh_string publickey = NULL;
     uint8_t has_sign;
 
-    msg->auth_request.method = SSH_AUTH_PUBLICKEY;
+    msg->auth_request.method = SSH_AUTH_METHOD_PUBLICKEY;
     SAFE_FREE(method_c);
     buffer_get_u8(session->in_buffer, &has_sign);
     algo = buffer_get_ssh_string(session->in_buffer);
@@ -277,7 +245,7 @@ static SSH_MESSAGE *handle_userauth_request(SSH_SESSION *session){
     return msg;
   }
 
-  msg->auth_request.method = SSH_AUTH_UNKNOWN;
+  msg->auth_request.method = SSH_AUTH_METHOD_UNKNOWN;
   SAFE_FREE(method_c);
 
   leave_function();
@@ -296,133 +264,6 @@ error:
   return NULL;
 }
 
-char *ssh_message_auth_user(SSH_MESSAGE *msg) {
-  if (msg == NULL) {
-    return NULL;
-  }
-
-  return msg->auth_request.username;
-}
-
-char *ssh_message_auth_password(SSH_MESSAGE *msg){
-  if (msg == NULL) {
-    return NULL;
-  }
-
-  return msg->auth_request.password;
-}
-
-/* Get the publickey of an auth request */
-ssh_public_key ssh_message_auth_publickey(SSH_MESSAGE *msg){
-  if (msg == NULL) {
-    return NULL;
-  }
-
-  return msg->auth_request.public_key;
-}
-
-int ssh_message_auth_set_methods(SSH_MESSAGE *msg, int methods) {
-  if (msg == NULL || msg->session == NULL) {
-    return -1;
-  }
-
-  msg->session->auth_methods = methods;
-
-  return 0;
-}
-
-static int ssh_message_auth_reply_default(SSH_MESSAGE *msg,int partial) {
-  SSH_SESSION *session = msg->session;
-  char methods_c[128] = {0};
-  ssh_string methods = NULL;
-  int rc = SSH_ERROR;
-
-  enter_function();
-
-  if (buffer_add_u8(session->out_buffer, SSH2_MSG_USERAUTH_FAILURE) < 0) {
-    return rc;
-  }
-
-  if (session->auth_methods == 0) {
-    session->auth_methods = SSH_AUTH_PUBLICKEY | SSH_AUTH_PASSWORD;
-  }
-  if (session->auth_methods & SSH_AUTH_PUBLICKEY) {
-    strcat(methods_c, "publickey,");
-  }
-  if (session->auth_methods & SSH_AUTH_KEYBINT) {
-    strcat(methods_c, "keyboard-interactive,");
-  }
-  if (session->auth_methods & SSH_AUTH_PASSWORD) {
-    strcat(methods_c, "password,");
-  }
-  if (session->auth_methods & SSH_AUTH_HOSTBASED) {
-    strcat(methods_c, "hostbased,");
-  }
-
-  /* Strip the comma. */
-  methods_c[strlen(methods_c) - 1] = '\0'; // strip the comma. We are sure there is at
-
-  ssh_log(session, SSH_LOG_PACKET,
-      "Sending a auth failure. methods that can continue: %s", methods_c);
-
-  methods = string_from_char(methods_c);
-  if (methods == NULL) {
-    goto error;
-  }
-
-  if (buffer_add_ssh_string(msg->session->out_buffer, methods) < 0) {
-    goto error;
-  }
-
-  if (partial) {
-    if (buffer_add_u8(session->out_buffer, 1) < 0) {
-      goto error;
-    }
-  } else {
-    if (buffer_add_u8(session->out_buffer, 0) < 0) {
-      goto error;
-    }
-  }
-
-  rc = packet_send(msg->session);
-error:
-  string_free(methods);
-
-  leave_function();
-  return rc;
-}
-
-int ssh_message_auth_reply_success(SSH_MESSAGE *msg, int partial) {
-  if (msg == NULL) {
-    return SSH_ERROR;
-  }
-
-  if (partial) {
-    return ssh_message_auth_reply_default(msg, partial);
-  }
-
-  if (buffer_add_u8(msg->session->out_buffer,SSH2_MSG_USERAUTH_SUCCESS) < 0) {
-    return SSH_ERROR;
-  }
-
-  return packet_send(msg->session);
-}
-
-/* Answer OK to a pubkey auth request */
-int ssh_message_auth_reply_pk_ok(SSH_MESSAGE *msg, ssh_string algo, ssh_string pubkey) {
-  if (msg == NULL) {
-    return SSH_ERROR;
-  }
-
-  if (buffer_add_u8(msg->session->out_buffer, SSH2_MSG_USERAUTH_PK_OK) < 0 ||
-      buffer_add_ssh_string(msg->session->out_buffer, algo) < 0 ||
-      buffer_add_ssh_string(msg->session->out_buffer, pubkey) < 0) {
-    return SSH_ERROR;
-  }
-
-  return packet_send(msg->session);
-}
-
 static SSH_MESSAGE *handle_channel_request_open(SSH_SESSION *session) {
   SSH_MESSAGE *msg = NULL;
   ssh_string type = NULL, originator = NULL, destination = NULL;
@@ -437,7 +278,7 @@ static SSH_MESSAGE *handle_channel_request_open(SSH_SESSION *session) {
     return NULL;
   }
 
-  msg->type = SSH_CHANNEL_REQUEST_OPEN;
+  msg->type = SSH_REQUEST_CHANNEL_OPEN;
 
   type = buffer_get_ssh_string(session->in_buffer);
   if (type == NULL) {
@@ -629,35 +470,6 @@ error:
   return NULL;
 }
 
-static int ssh_message_channel_request_open_reply_default(SSH_MESSAGE *msg) {
-  ssh_log(msg->session, SSH_LOG_FUNCTIONS, "Refusing a channel");
-
-  if (buffer_add_u8(msg->session->out_buffer
-        , SSH2_MSG_CHANNEL_OPEN_FAILURE) < 0) {
-    goto error;
-  }
-  if (buffer_add_u32(msg->session->out_buffer,
-        htonl(msg->channel_request_open.sender)) < 0) {
-    goto error;
-  }
-  if (buffer_add_u32(msg->session->out_buffer,
-        htonl(SSH2_OPEN_ADMINISTRATIVELY_PROHIBITED)) < 0) {
-    goto error;
-  }
-  /* reason is an empty string */
-  if (buffer_add_u32(msg->session->out_buffer, 0) < 0) {
-    goto error;
-  }
-  /* language too */
-  if (buffer_add_u32(msg->session->out_buffer, 0) < 0) {
-    goto error;
-  }
-
-  return packet_send(msg->session);
-error:
-  return SSH_ERROR;
-}
-
 static SSH_MESSAGE *handle_channel_request(SSH_SESSION *session) {
   SSH_MESSAGE *msg = NULL;
   ssh_string type = NULL;
@@ -691,7 +503,7 @@ static SSH_MESSAGE *handle_channel_request(SSH_SESSION *session) {
       "Received a %s channel_request for channel %d (want_reply=%hhd)",
       type_c, channel, want_reply);
 
-  msg->type = SSH_CHANNEL_REQUEST;
+  msg->type = SSH_REQUEST_CHANNEL;
   msg->channel_request.channel = ssh_channel_from_local(session, channel);
   msg->channel_request.want_reply = want_reply;
 
@@ -852,62 +664,6 @@ error:
   return NULL;
 }
 
-char *ssh_message_channel_request_open_originator(SSH_MESSAGE *msg){
-    return msg->channel_request_open.originator;
-}
-
-int ssh_message_channel_request_open_originator_port(SSH_MESSAGE *msg){
-    return msg->channel_request_open.originator_port;
-}
-
-char *ssh_message_channel_request_open_destination(SSH_MESSAGE *msg){
-    return msg->channel_request_open.destination;
-}
-
-int ssh_message_channel_request_open_destination_port(SSH_MESSAGE *msg){
-    return msg->channel_request_open.destination_port;
-}
-
-CHANNEL *ssh_message_channel_request_channel(SSH_MESSAGE *msg){
-    return msg->channel_request.channel;
-}
-
-char *ssh_message_channel_request_pty_term(SSH_MESSAGE *msg){
-    return msg->channel_request.TERM;
-}
-
-int ssh_message_channel_request_pty_width(SSH_MESSAGE *msg){
-    return msg->channel_request.width;
-}
-
-int ssh_message_channel_request_pty_height(SSH_MESSAGE *msg){
-    return msg->channel_request.height;
-}
-
-int ssh_message_channel_request_pty_pxwidth(SSH_MESSAGE *msg){
-    return msg->channel_request.pxwidth;
-}
-
-int ssh_message_channel_request_pty_pxheight(SSH_MESSAGE *msg){
-    return msg->channel_request.pxheight;
-}
-
-char *ssh_message_channel_request_env_name(SSH_MESSAGE *msg){
-    return msg->channel_request.var_name;
-}
-
-char *ssh_message_channel_request_env_value(SSH_MESSAGE *msg){
-    return msg->channel_request.var_value;
-}
-
-char *ssh_message_channel_request_command(SSH_MESSAGE *msg){
-    return msg->channel_request.command;
-}
-
-char *ssh_message_channel_request_subsystem(SSH_MESSAGE *msg){
-    return msg->channel_request.subsystem;
-}
-
 int ssh_message_channel_request_reply_success(SSH_MESSAGE *msg) {
   uint32_t channel;
 
@@ -933,31 +689,6 @@ int ssh_message_channel_request_reply_success(SSH_MESSAGE *msg) {
 
   ssh_log(msg->session, SSH_LOG_PACKET,
       "The client doesn't want to know the request succeeded");
-
-  return SSH_OK;
-}
-
-static int ssh_message_channel_request_reply_default(SSH_MESSAGE *msg) {
-  uint32_t channel;
-
-  if (msg->channel_request.want_reply) {
-    channel = msg->channel_request.channel->remote_channel;
-
-    ssh_log(msg->session, SSH_LOG_PACKET,
-        "Sending a default channel_request denied to channel %d", channel);
-
-    if (buffer_add_u8(msg->session->out_buffer, SSH2_MSG_CHANNEL_FAILURE) < 0) {
-      return SSH_ERROR;
-    }
-    if (buffer_add_u32(msg->session->out_buffer, htonl(channel)) < 0) {
-      return SSH_ERROR;
-    }
-
-    return packet_send(msg->session);
-  }
-
-  ssh_log(msg->session, SSH_LOG_PACKET,
-      "The client doesn't want to know the request failed!");
 
   return SSH_OK;
 }
@@ -1020,36 +751,12 @@ int ssh_message_subtype(SSH_MESSAGE *msg) {
   }
 
   switch(msg->type) {
-    case SSH_AUTH_REQUEST:
+    case SSH_REQUEST_AUTH:
       return msg->auth_request.method;
-    case SSH_CHANNEL_REQUEST_OPEN:
+    case SSH_REQUEST_CHANNEL_OPEN:
       return msg->channel_request_open.type;
-    case SSH_CHANNEL_REQUEST:
+    case SSH_REQUEST_CHANNEL:
       return msg->channel_request.type;
-  }
-
-  return -1;
-}
-
-int ssh_message_reply_default(SSH_MESSAGE *msg) {
-  if (msg == NULL) {
-    return -1;
-  }
-
-  switch(msg->type) {
-    case SSH_AUTH_REQUEST:
-      return ssh_message_auth_reply_default(msg, 0);
-    case SSH_CHANNEL_REQUEST_OPEN:
-      return ssh_message_channel_request_open_reply_default(msg);
-    case SSH_CHANNEL_REQUEST:
-      return ssh_message_channel_request_reply_default(msg);
-    case SSH_SERVICE_REQUEST:
-      return ssh_message_service_request_reply_default(msg);
-    default:
-      ssh_log(msg->session, SSH_LOG_PACKET,
-          "Don't know what to default reply to %d type",
-          msg->type);
-      break;
   }
 
   return -1;
@@ -1061,7 +768,7 @@ void ssh_message_free(SSH_MESSAGE *msg){
   }
 
   switch(msg->type) {
-    case SSH_AUTH_REQUEST:
+    case SSH_REQUEST_AUTH:
       SAFE_FREE(msg->auth_request.username);
       if (msg->auth_request.password) {
         memset(msg->auth_request.password, 0,
@@ -1069,11 +776,11 @@ void ssh_message_free(SSH_MESSAGE *msg){
         SAFE_FREE(msg->auth_request.password);
       }
       break;
-    case SSH_CHANNEL_REQUEST_OPEN:
+    case SSH_REQUEST_CHANNEL_OPEN:
       SAFE_FREE(msg->channel_request_open.originator);
       SAFE_FREE(msg->channel_request_open.destination);
       break;
-    case SSH_CHANNEL_REQUEST:
+    case SSH_REQUEST_CHANNEL:
       SAFE_FREE(msg->channel_request.TERM);
       SAFE_FREE(msg->channel_request.modes);
       SAFE_FREE(msg->channel_request.var_name);
@@ -1102,41 +809,6 @@ void message_handle(SSH_SESSION *session, uint32_t type){
   }
 }
 
-/** @brief defines the SSH_MESSAGE callback
- * @param session the current ssh session
- * @param ssh_message_callback a function pointer to a callback taking the
- * current ssh session and received message as parameters. the function returns
- * 0 if the message has been parsed and treated sucessfuly, 1 otherwise (libssh
- * must take care of the response).
- */
-void ssh_set_message_callback(SSH_SESSION *session,
-    int(*ssh_message_callback)(ssh_session session, struct ssh_message *msg)){
-  session->ssh_message_callback=ssh_message_callback;
-}
-
-int ssh_execute_message_callbacks(SSH_SESSION *session){
-  SSH_MESSAGE *msg=NULL;
-  int ret;
-  if(!session->ssh_message_list)
-    return SSH_OK;
-  if(session->ssh_message_callback){
-    while((msg=ssh_list_get_head(SSH_MESSAGE *, session->ssh_message_list)) != NULL){
-      ret=session->ssh_message_callback(session,msg);
-      if(ret==1){
-        ret = ssh_message_reply_default(msg);
-        if(ret != SSH_OK)
-          return ret;
-      }
-    }
-  } else {
-    while((msg=ssh_list_get_head(SSH_MESSAGE *, session->ssh_message_list)) != NULL){
-      ret = ssh_message_reply_default(msg);
-      if(ret != SSH_OK)
-        return ret;
-    }
-  }
-  return SSH_OK;
-}
 /**
  * @}
  */

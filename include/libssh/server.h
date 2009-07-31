@@ -124,41 +124,7 @@ int ssh_accept(SSH_SESSION *session);
 int channel_write_stderr(ssh_channel channel, const void *data, uint32_t len);
 
 /* messages.c */
-
-#define SSH_AUTH_REQUEST 1
-#define SSH_CHANNEL_REQUEST_OPEN 2
-#define SSH_CHANNEL_REQUEST 3
-#define SSH_SERVICE_REQUEST 4
-
-#define SSH_AUTH_NONE (1<<0)
-#define SSH_AUTH_PASSWORD (1<<1)
-#define SSH_AUTH_HOSTBASED (1<<2)
-#define SSH_AUTH_PUBLICKEY (1<<3)
-#define SSH_AUTH_KEYBINT (1<<4)
-#define SSH_AUTH_UNKNOWN 0
-
-#define SSH_CHANNEL_SESSION 1
-#define SSH_CHANNEL_DIRECT_TCPIP 2
-#define SSH_CHANNEL_FORWARDED_TCPIP 3
-#define SSH_CHANNEL_X11 4
-#define SSH_CHANNEL_UNKNOWN 5
-
-#define SSH_CHANNEL_REQUEST_PTY 1
-#define SSH_CHANNEL_REQUEST_EXEC 2
-#define SSH_CHANNEL_REQUEST_SHELL 3
-#define SSH_CHANNEL_REQUEST_ENV 4
-#define SSH_CHANNEL_REQUEST_SUBSYSTEM 5
-#define SSH_CHANNEL_REQUEST_WINDOW_CHANGE 6
-#define SSH_CHANNEL_REQUEST_UNKNOWN 7
-
-typedef struct ssh_message SSH_MESSAGE;
-
-SSH_MESSAGE *ssh_message_retrieve(SSH_SESSION *session, uint32_t packettype);
-SSH_MESSAGE *ssh_message_get(SSH_SESSION *session);
-int ssh_message_type(SSH_MESSAGE *msg);
-int ssh_message_subtype(SSH_MESSAGE *msg);
 int ssh_message_reply_default(SSH_MESSAGE *msg);
-void ssh_message_free(SSH_MESSAGE *msg);
 
 char *ssh_message_auth_user(SSH_MESSAGE *msg);
 char *ssh_message_auth_password(SSH_MESSAGE *msg);
@@ -166,9 +132,6 @@ ssh_public_key ssh_message_auth_publickey(SSH_MESSAGE *msg);
 int ssh_message_auth_reply_success(SSH_MESSAGE *msg,int partial);
 int ssh_message_auth_reply_pk_ok(SSH_MESSAGE *msg, ssh_string algo, ssh_string pubkey);
 int ssh_message_auth_set_methods(SSH_MESSAGE *msg, int methods);
-
-ssh_channel ssh_message_channel_request_open_reply_accept(SSH_MESSAGE *msg);
-int ssh_message_channel_request_reply_success(SSH_MESSAGE *msg);
 
 int ssh_message_service_reply_success(SSH_MESSAGE *msg);
 char *ssh_message_service_service(SSH_MESSAGE *msg);

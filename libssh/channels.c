@@ -34,7 +34,6 @@
 
 #include "libssh/priv.h"
 #include "libssh/ssh2.h"
-#include "libssh/server.h"
 
 #define WINDOWBASE 128000
 #define WINDOWLIMIT (WINDOWBASE/2)
@@ -1360,7 +1359,7 @@ ssh_channel channel_accept_x11(ssh_channel channel, int timeout_ms) {
       iterator = ssh_list_get_iterator(session->ssh_message_list);
       while (iterator) {
         msg = (SSH_MESSAGE*)iterator->data;
-        if (ssh_message_type(msg) == SSH_CHANNEL_REQUEST_OPEN &&
+        if (ssh_message_type(msg) == SSH_REQUEST_CHANNEL_OPEN &&
             ssh_message_subtype(msg) == SSH_CHANNEL_X11) {
           ssh_list_remove(session->ssh_message_list, iterator);
           return ssh_message_channel_request_open_reply_accept(msg);
