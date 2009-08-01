@@ -78,11 +78,11 @@ typedef struct sftp_session_struct {
     int server_version;
     int client_version;
     int version;
-    struct sftp_ext_struct *ext;
     struct request_queue *queue;
     uint32_t id_counter;
     int errnum;
     void **handles;
+    struct sftp_ext_struct *ext;
 } SFTP_SESSION ;
 
 typedef struct {
