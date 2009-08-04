@@ -1,6 +1,14 @@
 ChangeLog
 ==========
 
+version 0.3.2 (released 2009-08-05)
+  * Added ssh_init() function.
+  * Added sftp_readlink() function.
+  * Added sftp_symlink() function.
+  * Fixed ssh_write_knownhost().
+  * Fixed compilation on Solaris.
+  * Fixed SSHv1 compilation.
+
 version 0.3.1 (released 2009-07-14)
   * Added return code SSH_SERVER_FILE_NOT_FOUND.
   * Fixed compilation of SSHv1.
