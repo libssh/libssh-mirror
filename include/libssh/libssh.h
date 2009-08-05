@@ -273,7 +273,6 @@ void ssh_clean_pubkey_hash(unsigned char **hash);
 ssh_string ssh_get_pubkey(SSH_SESSION *session);
 
 /* in connect.c */
-int ssh_fd_poll(SSH_SESSION *session,int *write, int *except);
 int ssh_select(ssh_channel *channels, ssh_channel *outchannels, socket_t maxfd,
     fd_set *readfds, struct timeval *timeout);
 
