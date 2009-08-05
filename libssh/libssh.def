@@ -96,7 +96,6 @@ ssh_clean_pubkey_hash
 ssh_connect
 ssh_copyright
 ssh_disconnect
-ssh_fd_poll
 ssh_finalize
 ssh_get_disconnect_message
 ssh_get_error
