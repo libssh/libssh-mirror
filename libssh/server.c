@@ -781,7 +781,7 @@ int ssh_message_channel_request_open_destination_port(SSH_MESSAGE *msg){
     return msg->channel_request_open.destination_port;
 }
 
-CHANNEL *ssh_message_channel_request_channel(SSH_MESSAGE *msg){
+ssh_channel ssh_message_channel_request_channel(SSH_MESSAGE *msg){
     return msg->channel_request.channel;
 }
 
