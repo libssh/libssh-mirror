@@ -1257,8 +1257,9 @@ int channel_request_sftp( ssh_channel channel){
     return channel_request_subsystem(channel, "sftp");
 }
 
-static void generate_cookie(char *s) {
+static ssh_string generate_cookie(void) {
   static const char *hex = "0123456789abcdef";
+  char s[36];
   int i;
 
   srand ((unsigned int)time(NULL));
@@ -1266,6 +1267,7 @@ static void generate_cookie(char *s) {
     s[i] = hex[rand() % 16];
   }
   s[32] = '\0';
+  return string_from_char(s);
 }
 
 /**
@@ -1296,7 +1298,6 @@ int channel_request_x11(ssh_channel channel, int single_connection, const char *
   ssh_buffer buffer = NULL;
   ssh_string p = NULL;
   ssh_string c = NULL;
-  char s[32];
   int rc = SSH_ERROR;
 
   buffer = buffer_new();
@@ -1312,8 +1313,7 @@ int channel_request_x11(ssh_channel channel, int single_connection, const char *
   if (cookie) {
     c = string_from_char(cookie);
   } else {
-    generate_cookie(s);
-    c = string_from_char(s);
+    c = generate_cookie();
   }
   if (c == NULL) {
     goto error;
