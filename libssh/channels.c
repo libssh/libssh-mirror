@@ -1618,6 +1618,9 @@ int channel_poll(CHANNEL *channel, int is_stderr){
     }
   }
 
+  if (buffer_get_rest_len(stdbuf) > 0)
+    return buffer_get_rest_len(stdbuf);
+
   if (channel->remote_eof) {
     leave_function();
     return SSH_EOF;
