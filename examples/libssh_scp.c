@@ -160,9 +160,9 @@ static int open_location(struct location *loc, int flag){
     }
     loc->channel=channel_new(loc->session);
     channel_open_session(loc->channel);
-    channel_request_pty(loc->channel);
+    //channel_request_pty(loc->channel);
     snprintf(buffer,sizeof(buffer),"scp -vt %s",loc->path);
-    fprintf(stderr,"sending \"%s\"\n",buffer);
+    fprintf(stderr,"Execution of \"%s\"\n",buffer);
     if(channel_request_exec(loc->channel,buffer) < 0){
       printf("error executing scp: %s\n",ssh_get_error(loc->session));
       return -1;
@@ -185,6 +185,7 @@ static int do_copy(struct location *src, struct location *dest){
   struct stat s;
   int w,r;
   char buffer[4196];
+  int total=0;
   /*FIXME*/
   if(dest->is_ssh && !src->is_ssh){
     fd=fileno(src->file);
@@ -192,6 +193,9 @@ static int do_copy(struct location *src, struct location *dest){
     size=s.st_size;
   } else
     size=0;
+
+  r=channel_read(dest->channel,buffer,1,0);
+  printf("Received %d\n", buffer[0]);
   snprintf(buffer,sizeof(buffer),"C0644 %d %s\n",size,src->path);
   printf("writing \"%s\"",buffer);
   if(channel_write(dest->channel,buffer,strlen(buffer))<0){
@@ -199,7 +203,7 @@ static int do_copy(struct location *src, struct location *dest){
     return -1;
   }
   r=channel_read(dest->channel,buffer,1,0);
-  write(1,buffer,1);
+  printf("Received %d\n", buffer[0]);
   do {
     r=fread(buffer,1,sizeof(buffer),src->file);
     if(r==0)
@@ -209,30 +213,48 @@ static int do_copy(struct location *src, struct location *dest){
       return -1;
     }
     w=channel_write(dest->channel,buffer,r);
+    //printf(".");
+    fflush(stdout);
+    //usleep(500);
     if(w<0){
       fprintf(stderr,"error writing in channel: %s\n",ssh_get_error(dest->session));
+      r=channel_get_exit_status(dest->channel);
+      if(r!=-1)
+        printf("Exit status : %d\n",r);
       return -1;
     }
+    total+=w;
     if(w!=r){
       fprintf(stderr,"coulnd write %d bytes : %d\n",r,w);
     }
-    if((r=channel_poll(dest->channel,0))>0){
+/*    if((r=channel_poll(dest->channel,0))>0){
+      if((size_t)r>sizeof(buffer))
+        r=sizeof(buffer);
       r=channel_read(dest->channel,buffer,r,0);
-      write(1,buffer,r);
+      buffer[r]=0;
+      printf("received : \"%s\"\n",buffer);
     }
-    if((r=channel_poll(dest->channel,1)) > 0){
+    if((r=channel_poll(dest->channel,1))>0){
+      if((size_t)r>sizeof(buffer))
+        r=sizeof(buffer);
       r=channel_read(dest->channel,buffer,r,1);
-      write(1,buffer,r);
-    }
+      buffer[r]=0;
+      printf("received ext : \"%s\"\n",buffer);
+    }*/
+
   } while(1);
-  channel_write(dest->channel,"\0",1);
+  printf("wrote %d bytes\n",total);
+  channel_write(dest->channel,"",1);
   channel_send_eof(dest->channel);
+  r=channel_read(dest->channel, buffer, 1, 0);
+  if(r>0)
+    printf("Received %d\n", buffer[0]);
+  //channel_close(dest->channel);
   do{
     if((r=channel_poll(dest->channel,0))>0){
       r=channel_read(dest->channel,buffer,r,0);
-      if(r<=0)
-        break;
-      write(1,buffer,r);
+      if(r>0)
+        write(1,buffer,r);
     }
     if((r=channel_poll(dest->channel,1)) > 0){
       r=channel_read(dest->channel,buffer,r,1);
@@ -240,7 +262,10 @@ static int do_copy(struct location *src, struct location *dest){
         break;
       write(1,buffer,r);
     }
-  } while(r>0);
+  } while(!channel_is_eof(dest->channel) && r != SSH_ERROR);
+  r=channel_get_exit_status(dest->channel);
+  if(r!=-1)
+    printf("Exit status : %d\n",r);
   return 0;
 }
 
@@ -261,6 +286,7 @@ int main(int argc, char **argv){
     if(do_copy(src,dest) < 0)
       return EXIT_FAILURE;
   }
+  ssh_disconnect(dest->session);
   ssh_finalize();
   return 0;
 }
