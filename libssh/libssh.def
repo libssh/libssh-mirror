@@ -167,6 +167,10 @@ ssh_options_set_timeout
 ssh_options_set_username
 ssh_options_set_wanted_algos
 ssh_print_hexa
+ssh_scp_close
+ssh_scp_free
+ssh_scp_init
+ssh_scp_new
 ssh_select
 ssh_service_request
 ssh_set_blocking

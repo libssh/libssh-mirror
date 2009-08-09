@@ -93,6 +93,7 @@ typedef struct ssh_channel_struct* ssh_channel;
 typedef struct ssh_agent_struct* ssh_agent;
 typedef struct ssh_session_struct* ssh_session;
 typedef struct ssh_kbdint_struct* ssh_kbdint;
+typedef struct ssh_scp_struct* ssh_scp;
 
 /* Socket type */
 #ifdef _WIN32
@@ -422,6 +423,19 @@ void ssh_message_free(SSH_MESSAGE *msg);
 
 ssh_channel ssh_message_channel_request_open_reply_accept(SSH_MESSAGE *msg);
 int ssh_message_channel_request_reply_success(SSH_MESSAGE *msg);
+
+/* scp.c */
+enum {
+  /** Code is going to write/create remote files */
+  SSH_SCP_WRITE,
+  /** Code is going to read remote files */
+  SSH_SCP_READ
+};
+
+ssh_scp ssh_scp_new(ssh_session session, int mode, const char *location);
+int ssh_scp_init(ssh_scp scp);
+int ssh_scp_close(ssh_scp scp);
+void ssh_scp_free(ssh_scp scp);
 
 
 #ifdef __cplusplus

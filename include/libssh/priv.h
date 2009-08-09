@@ -342,6 +342,13 @@ struct ssh_keys_struct {
   const char *publickey;
 };
 
+struct ssh_scp_struct {
+  ssh_session session;
+  int mode;
+  ssh_channel channel;
+  char *location;
+};
+
 struct ssh_message;
 
 struct ssh_session_struct {

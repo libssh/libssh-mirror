@@ -100,6 +100,7 @@ set(libssh_SRCS
   packet.c
   poll.c
   session.c
+  scp.c
   socket.c
   string.c
   wrapper.c
