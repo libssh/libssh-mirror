@@ -436,7 +436,8 @@ ssh_scp ssh_scp_new(ssh_session session, int mode, const char *location);
 int ssh_scp_init(ssh_scp scp);
 int ssh_scp_close(ssh_scp scp);
 void ssh_scp_free(ssh_scp scp);
-
+int ssh_scp_push_file(ssh_scp scp, const char *filename, size_t size, const char *perms);
+int ssh_scp_write(ssh_scp scp, const void *buffer, size_t len);
 
 #ifdef __cplusplus
 }

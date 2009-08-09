@@ -92,3 +92,55 @@ void ssh_scp_free(ssh_scp scp){
   SAFE_FREE(scp->location);
   SAFE_FREE(scp);
 }
+
+/** @brief initializes the sending of a file to a scp in sink mode
+ * @param filename Name of the file being sent. It should not contain any path indicator
+ * @param size Exact size in bytes of the file being sent.
+ * @param perms Text form of the unix permissions for the new file, e.g. "0644"
+ * @returns SSH_OK if the file is ready to be sent.
+ * @returns SSH_ERROR if an error happened.
+ */
+int ssh_scp_push_file(ssh_scp scp, const char *filename, size_t size, const char *perms){
+  char buffer[1024];
+  int r;
+  u_int8_t code;
+  snprintf(buffer,sizeof(buffer),"C%s %ld %s\n",perms, size, filename);
+  r=channel_write(scp->channel,buffer,strlen(buffer));
+  if(r==SSH_ERROR)
+    return SSH_ERROR;
+  r=channel_read(scp->channel,&code,1,0);
+  if(code != 0){
+    ssh_set_error(scp->session,SSH_FATAL, "scp status code %ud not valid", code);
+    return SSH_ERROR;
+  }
+  scp->filelen = size;
+  scp->processed = 0;
+  return SSH_OK;
+}
+
+/** @brief Write into a remote scp file
+ * @param buffer the buffer to write
+ * @param len the number of bytes to write
+ * @returns SSH_OK the write was successful
+ * @returns SSH_ERROR an error happened while writing
+ */
+int ssh_scp_write(ssh_scp scp, const void *buffer, size_t len){
+  int w,r;
+  u_int8_t code;
+  if(scp->processed + len > scp->filelen)
+    len = scp->filelen - scp->processed;
+  w=channel_write(scp->channel,buffer,len);
+  if(w != SSH_ERROR)
+    scp->processed += w;
+  else
+    return w;
+  if(scp->processed == scp->filelen) {
+    r=channel_read(scp->channel,&code,1,0);
+    if(code != 0){
+      ssh_set_error(scp->session,SSH_FATAL, "scp status code %ud not valid", code);
+      return SSH_ERROR;
+    }
+    scp->processed=scp->filelen=0;
+  }
+  return SSH_OK;
+}

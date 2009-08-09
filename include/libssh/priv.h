@@ -347,6 +347,8 @@ struct ssh_scp_struct {
   int mode;
   ssh_channel channel;
   char *location;
+  size_t filelen;
+  size_t processed;
 };
 
 struct ssh_message;

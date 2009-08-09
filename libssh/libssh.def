@@ -171,6 +171,8 @@ ssh_scp_close
 ssh_scp_free
 ssh_scp_init
 ssh_scp_new
+ssh_scp_push_file
+ssh_scp_write
 ssh_select
 ssh_service_request
 ssh_set_blocking
