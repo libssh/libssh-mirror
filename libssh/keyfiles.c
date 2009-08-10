@@ -1074,6 +1074,7 @@ static char **ssh_get_knownhost_line(SSH_SESSION *session, FILE **file,
   while (fgets(buffer, sizeof(buffer), *file)) {
     ptr = strchr(buffer, '\n');
     if (ptr) {
+      *ptr =  '\0';
     }
 
     ptr = strchr(buffer,'\r');
