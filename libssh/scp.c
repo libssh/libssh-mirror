@@ -47,6 +47,7 @@ ssh_scp ssh_scp_new(ssh_session session, int mode, const char *location){
   scp->mode=mode;
   scp->location=strdup(location);
   scp->channel=NULL;
+  scp->state=SSH_SCP_NEW;
   return scp;
 }
 
@@ -54,11 +55,18 @@ int ssh_scp_init(ssh_scp scp){
   int r;
   char execbuffer[1024];
   u_int8_t code;
-  scp->channel=channel_new(scp->session);
-  if(scp->channel == NULL)
+  if(scp->state != SSH_SCP_NEW){
+    ssh_set_error(scp->session,SSH_FATAL,"ssh_scp_init called under invalid state");
     return SSH_ERROR;
+  }
+  scp->channel=channel_new(scp->session);
+  if(scp->channel == NULL){
+    scp->state=SSH_SCP_ERROR;
+    return SSH_ERROR;
+  }
   r= channel_open_session(scp->channel);
   if(r==SSH_ERROR){
+    scp->state=SSH_SCP_ERROR;
     return SSH_ERROR;
   }
   if(scp->mode == SSH_SCP_WRITE)
@@ -66,27 +74,42 @@ int ssh_scp_init(ssh_scp scp){
   else
     snprintf(execbuffer,sizeof(execbuffer),"scp -f %s",scp->location);
   if(channel_request_exec(scp->channel,execbuffer) == SSH_ERROR){
+    scp->state=SSH_SCP_ERROR;
     return SSH_ERROR;
   }
   r=channel_read(scp->channel,&code,1,0);
   if(code != 0){
     ssh_set_error(scp->session,SSH_FATAL, "scp status code %ud not valid", code);
+    scp->state=SSH_SCP_ERROR;
     return SSH_ERROR;
   }
+  if(scp->mode == SSH_SCP_WRITE)
+    scp->state=SSH_SCP_WRITE_INITED;
+  else
+    scp->state=SSH_SCP_READ_INITED;
   return SSH_OK;
 }
 
 int ssh_scp_close(ssh_scp scp){
-  if(channel_send_eof(scp->channel) == SSH_ERROR)
-    return SSH_ERROR;
-  if(channel_close(scp->channel) == SSH_ERROR)
-    return SSH_ERROR;
-  channel_free(scp->channel);
-  scp->channel=NULL;
+  if(scp->channel != NULL){
+    if(channel_send_eof(scp->channel) == SSH_ERROR){
+      scp->state=SSH_SCP_ERROR;
+      return SSH_ERROR;
+    }
+    if(channel_close(scp->channel) == SSH_ERROR){
+      scp->state=SSH_SCP_ERROR;
+      return SSH_ERROR;
+    }
+    channel_free(scp->channel);
+    scp->channel=NULL;
+  }
+  scp->state=SSH_SCP_NEW;
   return SSH_OK;
 }
 
 void ssh_scp_free(ssh_scp scp){
+  if(scp->state != SSH_SCP_NEW)
+    ssh_scp_close(scp);
   if(scp->channel)
     channel_free(scp->channel);
   SAFE_FREE(scp->location);
@@ -104,17 +127,25 @@ int ssh_scp_push_file(ssh_scp scp, const char *filename, size_t size, const char
   char buffer[1024];
   int r;
   u_int8_t code;
+  if(scp->state != SSH_SCP_WRITE_INITED){
+    ssh_set_error(scp->session,SSH_FATAL,"ssh_scp_push_file called under invalid state");
+    return SSH_ERROR;
+  }
   snprintf(buffer,sizeof(buffer),"C%s %ld %s\n",perms, size, filename);
   r=channel_write(scp->channel,buffer,strlen(buffer));
-  if(r==SSH_ERROR)
+  if(r==SSH_ERROR){
+    scp->state=SSH_SCP_ERROR;
     return SSH_ERROR;
+  }
   r=channel_read(scp->channel,&code,1,0);
   if(code != 0){
     ssh_set_error(scp->session,SSH_FATAL, "scp status code %ud not valid", code);
+    scp->state=SSH_SCP_ERROR;
     return SSH_ERROR;
   }
   scp->filelen = size;
   scp->processed = 0;
+  scp->state=SSH_SCP_WRITE_WRITING;
   return SSH_OK;
 }
 
@@ -125,22 +156,40 @@ int ssh_scp_push_file(ssh_scp scp, const char *filename, size_t size, const char
  * @returns SSH_ERROR an error happened while writing
  */
 int ssh_scp_write(ssh_scp scp, const void *buffer, size_t len){
-  int w,r;
-  u_int8_t code;
+  int w;
+  //int r;
+  //u_int8_t code;
+  if(scp->state != SSH_SCP_WRITE_WRITING){
+    ssh_set_error(scp->session,SSH_FATAL,"ssh_scp_write called under invalid state");
+    return SSH_ERROR;
+  }
   if(scp->processed + len > scp->filelen)
     len = scp->filelen - scp->processed;
+  /* hack to avoid waiting for window change */
+  channel_poll(scp->channel,0);
   w=channel_write(scp->channel,buffer,len);
   if(w != SSH_ERROR)
     scp->processed += w;
-  else
-    return w;
+  else {
+    scp->state=SSH_SCP_ERROR;
+    //return=channel_get_exit_status(scp->channel);
+    return SSH_ERROR;
+  }
+  /* Check if we arrived at end of file */
   if(scp->processed == scp->filelen) {
-    r=channel_read(scp->channel,&code,1,0);
-    if(code != 0){
-      ssh_set_error(scp->session,SSH_FATAL, "scp status code %ud not valid", code);
+/*    r=channel_read(scp->channel,&code,1,0);
+    if(r==SSH_ERROR){
+      scp->state=SSH_SCP_ERROR;
       return SSH_ERROR;
     }
+    if(code != 0){
+      ssh_set_error(scp->session,SSH_FATAL, "scp status code %ud not valid", code);
+      scp->state=SSH_SCP_ERROR;
+      return SSH_ERROR;
+    }
+*/
     scp->processed=scp->filelen=0;
+    scp->state=SSH_SCP_WRITE_INITED;
   }
   return SSH_OK;
 }

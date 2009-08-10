@@ -342,11 +342,20 @@ struct ssh_keys_struct {
   const char *publickey;
 };
 
+enum ssh_scp_states {
+  SSH_SCP_NEW,          //Data structure just created
+  SSH_SCP_WRITE_INITED, //Gave our intention to write
+  SSH_SCP_WRITE_WRITING,//File was opened and currently writing
+  SSH_SCP_READ_INITED,  //Gave our intention to read
+  SSH_SCP_READ_READING, //File is opened and reading
+  SSH_SCP_ERROR         //Something bad happened
+};
 struct ssh_scp_struct {
   ssh_session session;
   int mode;
   ssh_channel channel;
   char *location;
+  enum ssh_scp_states state;
   size_t filelen;
   size_t processed;
 };

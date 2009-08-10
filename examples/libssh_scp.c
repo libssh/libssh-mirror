@@ -33,7 +33,7 @@ struct location {
   char *host;
   char *path;
   ssh_session session;
-  ssh_channel channel;
+  ssh_scp scp;
   FILE *file;
 };
 
@@ -150,21 +150,20 @@ static struct location *parse_location(char *loc){
 }
 
 static int open_location(struct location *loc, int flag){
-  char buffer[1024];
-
   if(loc->is_ssh && flag==WRITE){
     loc->session=connect_ssh(loc->host,loc->user);
     if(!loc->session){
       fprintf(stderr,"Couldn't connect to %s\n",loc->host);
       return -1;
     }
-    loc->channel=channel_new(loc->session);
-    channel_open_session(loc->channel);
-    //channel_request_pty(loc->channel);
-    snprintf(buffer,sizeof(buffer),"scp -vt %s",loc->path);
-    fprintf(stderr,"Execution of \"%s\"\n",buffer);
-    if(channel_request_exec(loc->channel,buffer) < 0){
-      printf("error executing scp: %s\n",ssh_get_error(loc->session));
+    loc->scp=ssh_scp_new(loc->session,SSH_SCP_WRITE,loc->path);
+    if(!loc->scp){
+      fprintf(stderr,"error : %s\n",ssh_get_error(loc->session));
+      return -1;
+    }
+    if(ssh_scp_init(loc->scp)==SSH_ERROR){
+      fprintf(stderr,"error : %s\n",ssh_get_error(loc->session));
+      ssh_scp_free(loc->scp);
       return -1;
     }
     return 0;
@@ -193,17 +192,13 @@ static int do_copy(struct location *src, struct location *dest){
     size=s.st_size;
   } else
     size=0;
-
-  r=channel_read(dest->channel,buffer,1,0);
-  printf("Received %d\n", buffer[0]);
-  snprintf(buffer,sizeof(buffer),"C0644 %d %s\n",size,src->path);
-  printf("writing \"%s\"",buffer);
-  if(channel_write(dest->channel,buffer,strlen(buffer))<0){
-    fprintf(stderr,"channel_write : %s\n",ssh_get_error(dest->session));
+  r=ssh_scp_push_file(dest->scp,src->path,size,"0644");
+//  snprintf(buffer,sizeof(buffer),"C0644 %d %s\n",size,src->path);
+  if(r==SSH_ERROR){
+    fprintf(stderr,"error: %s\n",ssh_get_error(dest->session));
+    ssh_scp_free(dest->scp);
     return -1;
   }
-  r=channel_read(dest->channel,buffer,1,0);
-  printf("Received %d\n", buffer[0]);
   do {
     r=fread(buffer,1,sizeof(buffer),src->file);
     if(r==0)
@@ -212,60 +207,22 @@ static int do_copy(struct location *src, struct location *dest){
       fprintf(stderr,"Error reading file: %s\n",strerror(errno));
       return -1;
     }
-    w=channel_write(dest->channel,buffer,r);
-    //printf(".");
-    fflush(stdout);
-    //usleep(500);
-    if(w<0){
-      fprintf(stderr,"error writing in channel: %s\n",ssh_get_error(dest->session));
-      r=channel_get_exit_status(dest->channel);
-      if(r!=-1)
-        printf("Exit status : %d\n",r);
+    w=ssh_scp_write(dest->scp,buffer,r);
+    if(w == SSH_ERROR){
+      fprintf(stderr,"error writing in scp: %s\n",ssh_get_error(dest->session));
+      ssh_scp_free(dest->scp);
       return -1;
     }
-    total+=w;
-    if(w!=r){
-      fprintf(stderr,"coulnd write %d bytes : %d\n",r,w);
-    }
-/*    if((r=channel_poll(dest->channel,0))>0){
-      if((size_t)r>sizeof(buffer))
-        r=sizeof(buffer);
-      r=channel_read(dest->channel,buffer,r,0);
-      buffer[r]=0;
-      printf("received : \"%s\"\n",buffer);
-    }
-    if((r=channel_poll(dest->channel,1))>0){
-      if((size_t)r>sizeof(buffer))
-        r=sizeof(buffer);
-      r=channel_read(dest->channel,buffer,r,1);
-      buffer[r]=0;
-      printf("received ext : \"%s\"\n",buffer);
-    }*/
+    total+=r;
 
   } while(1);
   printf("wrote %d bytes\n",total);
-  channel_write(dest->channel,"",1);
-  channel_send_eof(dest->channel);
-  r=channel_read(dest->channel, buffer, 1, 0);
-  if(r>0)
-    printf("Received %d\n", buffer[0]);
-  //channel_close(dest->channel);
-  do{
-    if((r=channel_poll(dest->channel,0))>0){
-      r=channel_read(dest->channel,buffer,r,0);
-      if(r>0)
-        write(1,buffer,r);
-    }
-    if((r=channel_poll(dest->channel,1)) > 0){
-      r=channel_read(dest->channel,buffer,r,1);
-      if(r<=0)
-        break;
-      write(1,buffer,r);
-    }
-  } while(!channel_is_eof(dest->channel) && r != SSH_ERROR);
-  r=channel_get_exit_status(dest->channel);
-  if(r!=-1)
-    printf("Exit status : %d\n",r);
+  r=ssh_scp_close(dest->scp);
+  if(r == SSH_ERROR){
+    fprintf(stderr,"Error closing scp: %s\n",ssh_get_error(dest->session));
+    ssh_scp_free(dest->scp);
+    return -1;
+  }
   return 0;
 }
 
