@@ -193,7 +193,7 @@ SSH_0.4 {
     ssh_scp_init;
     ssh_scp_new;
     ssh_scp_push_file
-	ssh_scp_write
+    ssh_scp_write
     sftp_extensions_get_count;
     sftp_extensions_get_data;
     sftp_extensions_get_name;
