@@ -43,9 +43,14 @@ ssh_scp ssh_scp_new(ssh_session session, int mode, const char *location){
     ssh_scp_free(scp);
     return NULL;
   }
+  scp->location=strdup(location);
+  if (scp->location == NULL) {
+    ssh_set_error(session,SSH_FATAL,"Error allocating memory for ssh_scp");
+    ssh_scp_free(scp);
+    return NULL;
+  }
   scp->session=session;
   scp->mode=mode;
-  scp->location=strdup(location);
   scp->channel=NULL;
   scp->state=SSH_SCP_NEW;
   return scp;
