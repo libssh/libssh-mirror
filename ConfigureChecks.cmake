@@ -16,6 +16,8 @@ set(SYSCONFDIR ${SYSCONF_INSTALL_DIR})
 set(BINARYDIR ${CMAKE_BINARY_DIR})
 set(SOURCEDIR ${CMAKE_SOURCE_DIR})
 
+check_c_compiler_flag("-fvisibility=hidden" WITH_VISIBILITY_HIDDEN)
+
 # HEADER FILES
 check_include_file(pty.h HAVE_PTY_H)
 check_include_file(terminos.h HAVE_TERMIOS_H)

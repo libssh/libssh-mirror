@@ -22,30 +22,44 @@
 #ifndef _LIBSSH_H
 #define _LIBSSH_H
 
-#ifndef _MSC_VER
-#include <unistd.h>
-#include <inttypes.h>
+#if defined _WIN32 || defined __CYGWIN__
+  #ifdef SSH_EXPORTS
+    #ifdef __GNUC__
+      #define LIBSSH_API __attribute__((dllexport))
+    #else
+      #define LIBSSH_API __declspec(dllexport)
+    #endif
+  #else
+    #ifdef __GNUC__
+      #define LIBSSH_API __attribute__((dllimport))
+    #else
+      #define LIBSSH_API __declspec(dllimport)
+    #endif
+  #endif
+#else
+  #if __GNUC__ >= 4
+    #define LIBSSH_API __attribute__((visibility("default")))
+  #else
+    #define LIBSSH_API
+  #endif
+#endif
+
+#ifdef _MSC_VER
+  /* Visual Studio hasn't inttypes.h so it doesn't know uint32_t */
+  typedef unsigned int uint32_t;
+  typedef unsigned short uint16_t;
+  typedef unsigned char uint8_t;
+  typedef unsigned long long uint64_t;
 #else /* _MSC_VER */
-//visual studio hasn't inttypes.h so it doesn't know uint32_t
-typedef unsigned int uint32_t;
-typedef unsigned short uint16_t;
-typedef unsigned char uint8_t;
-typedef unsigned long long uint64_t;
+  #include <unistd.h>
+  #include <inttypes.h>
 #endif /* _MSC_VER */
 
 #ifdef _WIN32
-#include <winsock2.h>
-
-/* export functions */
-# ifdef SSH_EXPORTS
-#  define LIBSSH_API __declspec(dllexport)
-# else
-#  define LIBSSH_API __declspec(dllimport)
-# endif
-#else
-# include <sys/select.h> /* for fd_set * */
-# include <netdb.h>
-# define LIBSSH_API
+  #include <winsock2.h>
+#else /* _WIN32 */
+ #include <sys/select.h> /* for fd_set * */
+ #include <netdb.h>
 #endif /* _WIN32 */
 
 #define SSH_STRINGIFY(s) SSH_TOSTRING(s)

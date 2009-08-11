@@ -73,6 +73,9 @@ if (GCRYPT_LIBRARY)
   )
 endif (GCRYPT_LIBRARY)
 
+if (WITH_VISIBILITY_HIDDEN)
+  set(LIBSSH_SHARED_CFLAGS "-fvisibility=hidden")
+endif (WITH_VISIBILITY_HIDDEN)
 
 set(libssh_SRCS
   agent.c
@@ -154,18 +157,13 @@ set_target_properties(
         ${LIBRARY_SOVERSION}
       OUTPUT_NAME
         ssh
+      CLEAN_DIRECT_OUTPUT
+        1
       DEFINE_SYMBOL
         SSH_EXPORTS
+      COMPILE_FLAGS
+        ${LIBSSH_SHARED_CFLAGS}
 )
-
-if (UNIX AND CMAKE_COMPILER_IS_GNUCC AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
-  set_target_properties(
-    ${LIBSSH_SHARED_LIBRARY}
-      PROPERTIES
-        LINK_FLAGS
-          -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libssh.map
-)
-endif (UNIX AND CMAKE_COMPILER_IS_GNUCC AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 install(
   TARGETS
@@ -179,8 +177,6 @@ install(
 if (WITH_STATIC_LIB)
   add_library(${LIBSSH_STATIC_LIBRARY} STATIC ${libssh_SRCS})
 
-  target_link_libraries(${LIBSSH_STATIC_LIBRARY} ${LIBSSH_LINK_LIBRARIES})
-
   set_target_properties(
     ${LIBSSH_STATIC_LIBRARY}
       PROPERTIES
@@ -190,8 +186,8 @@ if (WITH_STATIC_LIB)
           ${LIBRARY_SOVERSION}
         OUTPUT_NAME
           ssh
-        DEFINE_SYMBOL
-          SSH_EXPORTS
+        CLEAN_DIRECT_OUTPUT
+          1
   )
 
   install(
