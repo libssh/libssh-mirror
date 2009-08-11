@@ -1,5 +1,3 @@
-include(InstallRequiredSystemLibraries)
-
 # For help take a look at:
 # http://www.cmake.org/Wiki/CMake:CPackConfiguration
 
