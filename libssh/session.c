@@ -97,8 +97,9 @@ void ssh_cleanup(SSH_SESSION *session) {
   SAFE_FREE(session->serverbanner);
   SAFE_FREE(session->clientbanner);
   SAFE_FREE(session->banner);
-  buffer_reinit(session->in_buffer);
-  buffer_reinit(session->out_buffer);
+  buffer_free(session->in_buffer);
+  buffer_free(session->out_buffer);
+  session->in_buffer=session->out_buffer=NULL;
   crypto_free(session->current_crypto);
   crypto_free(session->next_crypto);
   ssh_socket_free(session->socket);
