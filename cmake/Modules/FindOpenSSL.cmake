@@ -87,6 +87,10 @@ else (OPENSSL_LIBRARIES AND OPENSSL_INCLUDE_DIRS)
     NAMES
       crypto
       libcrypto
+      eay
+      eay32
+      libeay
+      libeay32
     PATHS
       ${_OPENSSL_LIBDIR}
       /usr/lib

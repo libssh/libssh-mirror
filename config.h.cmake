@@ -82,3 +82,17 @@
 /* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
    significant byte first (like Motorola and SPARC, unlike Intel). */
 #cmakedefine WORDS_BIGENDIAN 1
+
+/************************* MS Windows ***************************/
+
+#ifdef _WIN32
+# ifdef _MSC_VER
+/* On Microsoft compilers define inline to __inline on all others use inline */
+#  undef inline
+#  define inline __inline
+
+#  undef strdup
+#  define strdup _strdup
+# endif // _MSC_VER
+#endif /* _WIN32 */
+

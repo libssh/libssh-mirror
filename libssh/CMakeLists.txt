@@ -73,6 +73,9 @@ if (GCRYPT_LIBRARY)
   )
 endif (GCRYPT_LIBRARY)
 
+if (WITH_VISIBILITY_HIDDEN)
+  set(LIBSSH_SHARED_CFLAGS "-fvisibility=hidden")
+endif (WITH_VISIBILITY_HIDDEN)
 
 set(libssh_SRCS
   agent.c
@@ -104,7 +107,6 @@ set(libssh_SRCS
   socket.c
   string.c
   wrapper.c
-  libssh.map
 )
 
 if (WITH_SFTP)
@@ -136,13 +138,6 @@ if (WITH_SERVER)
   )
 endif (WITH_SERVER)
 
-if (MSVC)
-  set(libssh_SRCS
-    ${libssh_SRCS}
-    libssh.def
-  )
-endif (MSVC)
-
 include_directories(
   ${LIBSSH_PUBLIC_INCLUDE_DIRS}
   ${LIBSSH_PRIVATE_INCLUDE_DIRS}
@@ -161,30 +156,23 @@ set_target_properties(
         ${LIBRARY_SOVERSION}
       OUTPUT_NAME
         ssh
+      DEFINE_SYMBOL
+        LIBSSH_EXPORTS
+      COMPILE_FLAGS
+        ${LIBSSH_SHARED_CFLAGS}
 )
-
-if (UNIX AND CMAKE_COMPILER_IS_GNUCC AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
-  set_target_properties(
-    ${LIBSSH_SHARED_LIBRARY}
-      PROPERTIES
-        LINK_FLAGS
-          -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libssh.map
-)
-endif (UNIX AND CMAKE_COMPILER_IS_GNUCC AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 install(
   TARGETS
     ${LIBSSH_SHARED_LIBRARY}
-  DESTINATION
-    ${LIB_INSTALL_DIR}
-  COMPONENT
-    libraries
+  RUNTIME DESTINATION ${BIN_INSTALL_DIR}
+  LIBRARY DESTINATION ${LIB_INSTALL_DIR}
+  ARCHIVE DESTINATION ${LIB_INSTALL_DIR}
+  COMPONENT libraries
 )
 
 if (WITH_STATIC_LIB)
   add_library(${LIBSSH_STATIC_LIBRARY} STATIC ${libssh_SRCS})
-
-  target_link_libraries(${LIBSSH_STATIC_LIBRARY} ${LIBSSH_LINK_LIBRARIES})
 
   set_target_properties(
     ${LIBSSH_STATIC_LIBRARY}
@@ -193,8 +181,8 @@ if (WITH_STATIC_LIB)
           ${LIBRARY_VERSION}
         SOVERSION
           ${LIBRARY_SOVERSION}
-        OUTPUT_NAME
-          ssh
+        COMPILE_FLAGS
+          "-DLIBSSH_STATIC"
   )
 
   install(

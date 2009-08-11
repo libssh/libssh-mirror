@@ -152,13 +152,25 @@ typedef struct pollfd_s {
 } pollfd_t;
 
 /* poll.c */
-#define POLLIN    0x001  /* There is data to read.  */
+#ifndef POLLIN
+# define POLLIN    0x001  /* There is data to read.  */
+#endif
+#ifndef POLLPRI
 #define POLLPRI   0x002  /* There is urgent data to read.  */
+#endif
+#ifndef POLLOUT
 #define POLLOUT   0x004  /* Writing now will not block.  */
+#endif
 
+#ifndef POLLERR
 #define POLLERR   0x008  /* Error condition.  */
+#endif
+#ifndef POLLHUP
 #define POLLHUP   0x010  /* Hung up.  */
+#endif
+#ifndef POLLNVAL
 #define POLLNVAL  0x020  /* Invalid polling request.  */
+#endif
 
 typedef unsigned long int nfds_t;
 #endif /* HAVE_POLL */

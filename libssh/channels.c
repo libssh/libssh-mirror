@@ -1335,6 +1335,7 @@ error:
   return rc;
 }
 
+#ifndef _WIN32
 /**
  * @brief Accept an X11 forwarding channel.
  *
@@ -1372,6 +1373,7 @@ ssh_channel channel_accept_x11(ssh_channel channel, int timeout_ms) {
 
   return NULL;
 }
+#endif
 
 /**
  * @brief Set environement variables.

@@ -94,7 +94,7 @@ endif (UNIX)
 
 if (WIN32)
   # Same same
-  set(BIN_INSTALL_DIR "." CACHE PATH "-")
+  set(BIN_INSTALL_DIR "bin" CACHE PATH "-")
   set(SBIN_INSTALL_DIR "." CACHE PATH "-")
   set(LIB_INSTALL_DIR "lib" CACHE PATH "-")
   set(INCLUDE_INSTALL_DIR "include" CACHE PATH "-")

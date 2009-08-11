@@ -43,9 +43,14 @@ ssh_scp ssh_scp_new(ssh_session session, int mode, const char *location){
     ssh_scp_free(scp);
     return NULL;
   }
+  scp->location=strdup(location);
+  if (scp->location == NULL) {
+    ssh_set_error(session,SSH_FATAL,"Error allocating memory for ssh_scp");
+    ssh_scp_free(scp);
+    return NULL;
+  }
   scp->session=session;
   scp->mode=mode;
-  scp->location=strdup(location);
   scp->channel=NULL;
   scp->state=SSH_SCP_NEW;
   return scp;
@@ -54,7 +59,7 @@ ssh_scp ssh_scp_new(ssh_session session, int mode, const char *location){
 int ssh_scp_init(ssh_scp scp){
   int r;
   char execbuffer[1024];
-  u_int8_t code;
+  uint8_t code;
   if(scp->state != SSH_SCP_NEW){
     ssh_set_error(scp->session,SSH_FATAL,"ssh_scp_init called under invalid state");
     return SSH_ERROR;
@@ -126,7 +131,7 @@ void ssh_scp_free(ssh_scp scp){
 int ssh_scp_push_file(ssh_scp scp, const char *filename, size_t size, const char *perms){
   char buffer[1024];
   int r;
-  u_int8_t code;
+  uint8_t code;
   if(scp->state != SSH_SCP_WRITE_INITED){
     ssh_set_error(scp->session,SSH_FATAL,"ssh_scp_push_file called under invalid state");
     return SSH_ERROR;
@@ -158,7 +163,7 @@ int ssh_scp_push_file(ssh_scp scp, const char *filename, size_t size, const char
 int ssh_scp_write(ssh_scp scp, const void *buffer, size_t len){
   int w;
   //int r;
-  //u_int8_t code;
+  //uint8_t code;
   if(scp->state != SSH_SCP_WRITE_WRITING){
     ssh_set_error(scp->session,SSH_FATAL,"ssh_scp_write called under invalid state");
     return SSH_ERROR;
