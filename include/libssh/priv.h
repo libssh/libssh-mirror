@@ -872,8 +872,13 @@ int ssh_execute_message_callbacks(SSH_SESSION *session);
 		}\
 	} while(0)
 
+#ifdef DEBUG_CALLTRACE
 #define enter_function() _enter_function(session)
 #define leave_function() _leave_function(session)
+#else
+#define enter_function() (void)session
+#define leave_function() (void)session
+#endif
 
 /** Free memory space */
 #define SAFE_FREE(x) do { if ((x) != NULL) {free(x); x=NULL;} } while(0)
