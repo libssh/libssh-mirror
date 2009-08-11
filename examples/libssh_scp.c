@@ -183,7 +183,7 @@ static int do_copy(struct location *src, struct location *dest){
   socket_t fd;
   struct stat s;
   int w,r;
-  char buffer[4196];
+  char buffer[16384];
   int total=0;
   /*FIXME*/
   if(dest->is_ssh && !src->is_ssh){
