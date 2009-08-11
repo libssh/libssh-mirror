@@ -48,3 +48,8 @@ if (UNIX AND NOT WIN32)
     endif (WITH_FORTIFY_SOURCE)
   endif (CMAKE_COMPILER_IS_GNUCC)
 endif (UNIX AND NOT WIN32)
+
+# suppress warning about "deprecated" functions
+if(MSVC)
+add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+endif(MSVC)
