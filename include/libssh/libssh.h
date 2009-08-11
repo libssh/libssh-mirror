@@ -22,25 +22,29 @@
 #ifndef _LIBSSH_H
 #define _LIBSSH_H
 
-#if defined _WIN32 || defined __CYGWIN__
-  #ifdef SSH_EXPORTS
-    #ifdef __GNUC__
-      #define LIBSSH_API __attribute__((dllexport))
-    #else
-      #define LIBSSH_API __declspec(dllexport)
-    #endif
-  #else
-    #ifdef __GNUC__
-      #define LIBSSH_API __attribute__((dllimport))
-    #else
-      #define LIBSSH_API __declspec(dllimport)
-    #endif
-  #endif
+#ifdef LIBSSH_STATIC
+  #define LIBSSH_API
 #else
-  #if __GNUC__ >= 4
-    #define LIBSSH_API __attribute__((visibility("default")))
+  #if defined _WIN32 || defined __CYGWIN__
+    #ifdef LIBSSH_EXPORTS
+      #ifdef __GNUC__
+        #define LIBSSH_API __attribute__((dllexport))
+      #else
+        #define LIBSSH_API __declspec(dllexport)
+      #endif
+    #else
+      #ifdef __GNUC__
+        #define LIBSSH_API __attribute__((dllimport))
+      #else
+        #define LIBSSH_API __declspec(dllimport)
+      #endif
+    #endif
   #else
-    #define LIBSSH_API
+    #if __GNUC__ >= 4
+      #define LIBSSH_API __attribute__((visibility("default")))
+    #else
+      #define LIBSSH_API
+    #endif
   #endif
 #endif
 

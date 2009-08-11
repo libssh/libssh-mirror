@@ -156,10 +156,8 @@ set_target_properties(
         ${LIBRARY_SOVERSION}
       OUTPUT_NAME
         ssh
-      CLEAN_DIRECT_OUTPUT
-        1
       DEFINE_SYMBOL
-        SSH_EXPORTS
+        LIBSSH_EXPORTS
       COMPILE_FLAGS
         ${LIBSSH_SHARED_CFLAGS}
 )
@@ -183,10 +181,8 @@ if (WITH_STATIC_LIB)
           ${LIBRARY_VERSION}
         SOVERSION
           ${LIBRARY_SOVERSION}
-        OUTPUT_NAME
-          ssh
-        CLEAN_DIRECT_OUTPUT
-          1
+        COMPILE_FLAGS
+          "-DLIBSSH_STATIC"
   )
 
   install(
