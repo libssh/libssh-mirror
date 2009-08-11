@@ -190,6 +190,8 @@ if (WITH_STATIC_LIB)
           ${LIBRARY_SOVERSION}
         OUTPUT_NAME
           ssh
+        DEFINE_SYMBOL
+          SSH_EXPORTS
   )
 
   install(
