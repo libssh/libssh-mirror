@@ -107,7 +107,6 @@ set(libssh_SRCS
   socket.c
   string.c
   wrapper.c
-  libssh.map
 )
 
 if (WITH_SFTP)
