@@ -174,6 +174,20 @@ typedef struct sftp_attributes{
     ssh_string extended_data;
 } SFTP_ATTRIBUTES;
 
+typedef struct sftp_statvfs_struct {
+  uint64_t f_bsize; /* file system block size */
+  uint64_t f_frsize; /* fundamental fs block size */
+  uint64_t f_blocks; /* number of blocks (unit f_frsize) */
+  uint64_t f_bfree; /* free blocks in file system */
+  uint64_t f_bavail; /* free blocks for non-root */
+  uint64_t f_files; /* total file inodes */
+  uint64_t f_ffree; /* free file inodes */
+  uint64_t f_favail; /* free file inodes for to non-root */
+  uint64_t f_fsid; /* file system id */
+  uint64_t f_flag; /* bit mask of f_flag values */
+  uint64_t f_namemax; /* maximum filename length */
+} SFTP_STATVFS;
+
 #define LIBSFTP_VERSION 3
 
 /**
@@ -677,6 +691,33 @@ LIBSSH_API int sftp_symlink(SFTP_SESSION *sftp, const char *target, const char *
 LIBSSH_API char *sftp_readlink(SFTP_SESSION *sftp, const char *path);
 
 /**
+ * @brief Get information about a mounted file system.
+ *
+ * @param  sftp         The sftp session handle.
+ *
+ * @param  path         The pathname of any file within the mounted file system.
+ *
+ * @return A statvfs structure or NULL on error.
+ */
+LIBSSH_API SFTP_STATVFS *sftp_statvfs(SFTP_SESSION *sftp, const char *path);
+
+/**
+ * @brief Get information about a mounted file system.
+ *
+ * @param  file         An opened file.
+ *
+ * @return A statvfs structure or NULL on error.
+ */
+LIBSSH_API SFTP_STATVFS *sftp_fstatvfs(SFTP_FILE *file);
+
+/**
+ * @brief Free the memory of an allocated statvfs.
+ *
+ * @param  statvfs      The statvfs to free.
+ */
+LIBSSH_API void sftp_statvfs_free(SFTP_STATVFS *statvfs);
+
+/**
  * @brief Canonicalize a sftp path.
  *
  * @param sftp          The sftp session handle.
@@ -846,7 +887,9 @@ void sftp_handle_remove(SFTP_SESSION *sftp, void *handle);
 #define SFTP_READLINK SSH_FXP_READLINK
 #define SFTP_SYMLINK SSH_FXP_SYMLINK
 
-
+/* openssh flags */
+#define SSH_FXE_STATVFS_ST_RDONLY 0x1 /* read-only */
+#define SSH_FXE_STATVFS_ST_NOSUID 0x2 /* no setuid */
 
 #ifdef __cplusplus
 } ;
