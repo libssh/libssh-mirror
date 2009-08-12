@@ -73,10 +73,6 @@ if (GCRYPT_LIBRARY)
   )
 endif (GCRYPT_LIBRARY)
 
-if (WITH_VISIBILITY_HIDDEN)
-  set(LIBSSH_SHARED_CFLAGS "-fvisibility=hidden")
-endif (WITH_VISIBILITY_HIDDEN)
-
 set(libssh_SRCS
   agent.c
   auth.c
@@ -158,9 +154,12 @@ set_target_properties(
         ssh
       DEFINE_SYMBOL
         LIBSSH_EXPORTS
-      COMPILE_FLAGS
-        ${LIBSSH_SHARED_CFLAGS}
 )
+
+if (WITH_VISIBILITY_HIDDEN)
+  set_target_properties(${LIBSSH_SHARED_LIBRARY} PROPERTIES COMPILE_FLAGS "-fvisibility=hidden")
+endif (WITH_VISIBILITY_HIDDEN)
+
 
 install(
   TARGETS

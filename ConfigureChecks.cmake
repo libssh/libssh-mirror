@@ -16,7 +16,9 @@ set(SYSCONFDIR ${SYSCONF_INSTALL_DIR})
 set(BINARYDIR ${CMAKE_BINARY_DIR})
 set(SOURCEDIR ${CMAKE_SOURCE_DIR})
 
+if(CMAKE_COMPILER_IS_GNUC)
 check_c_compiler_flag("-fvisibility=hidden" WITH_VISIBILITY_HIDDEN)
+endif(CMAKE_COMPILER_IS_GNUC)
 
 # HEADER FILES
 check_include_file(pty.h HAVE_PTY_H)
