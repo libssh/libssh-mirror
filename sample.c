@@ -327,66 +327,68 @@ void do_sftp(SSH_SESSION *session){
 
     sftp_unlink(sftp_session, "/tmp/sftp_symlink_test");
 
-    sftpstatvfs = sftp_statvfs(sftp_session, "/tmp");
-    if (sftpstatvfs == NULL) {
-      fprintf(stderr, "statvfs failed (%s)\n", ssh_get_error(session));
-      return;
+    if (sftp_extension_supported(sftp_session, "statvfs@openssh.com", "2")) {
+      sftpstatvfs = sftp_statvfs(sftp_session, "/tmp");
+      if (sftpstatvfs == NULL) {
+        fprintf(stderr, "statvfs failed (%s)\n", ssh_get_error(session));
+        return;
+      }
+
+      printf("sftp statvfs:\n"
+          "\tfile system block size: %llu\n"
+          "\tfundamental fs block size: %llu\n"
+          "\tnumber of blocks (unit f_frsize): %llu\n"
+          "\tfree blocks in file system: %llu\n"
+          "\tfree blocks for non-root: %llu\n"
+          "\ttotal file inodes: %llu\n"
+          "\tfree file inodes: %llu\n"
+          "\tfree file inodes for to non-root: %llu\n"
+          "\tfile system id: %llu\n"
+          "\tbit mask of f_flag values: %llu\n"
+          "\tmaximum filename length: %llu\n",
+          sftpstatvfs->f_bsize,
+          sftpstatvfs->f_frsize,
+          sftpstatvfs->f_blocks,
+          sftpstatvfs->f_bfree,
+          sftpstatvfs->f_bavail,
+          sftpstatvfs->f_files,
+          sftpstatvfs->f_ffree,
+          sftpstatvfs->f_favail,
+          sftpstatvfs->f_fsid,
+          sftpstatvfs->f_flag,
+          sftpstatvfs->f_namemax);
+
+      sftp_statvfs_free(sftpstatvfs);
+
+      if (statvfs("/tmp", &sysstatvfs) < 0) {
+        fprintf(stderr, "statvfs failed (%s)\n", strerror(errno));
+        return;
+      }
+
+      printf("sys statvfs:\n"
+          "\tfile system block size: %llu\n"
+          "\tfundamental fs block size: %llu\n"
+          "\tnumber of blocks (unit f_frsize): %llu\n"
+          "\tfree blocks in file system: %llu\n"
+          "\tfree blocks for non-root: %llu\n"
+          "\ttotal file inodes: %llu\n"
+          "\tfree file inodes: %llu\n"
+          "\tfree file inodes for to non-root: %llu\n"
+          "\tfile system id: %llu\n"
+          "\tbit mask of f_flag values: %llu\n"
+          "\tmaximum filename length: %llu\n",
+          sysstatvfs.f_bsize,
+          sysstatvfs.f_frsize,
+          sysstatvfs.f_blocks,
+          sysstatvfs.f_bfree,
+          sysstatvfs.f_bavail,
+          sysstatvfs.f_files,
+          sysstatvfs.f_ffree,
+          sysstatvfs.f_favail,
+          sysstatvfs.f_fsid,
+          sysstatvfs.f_flag,
+          sysstatvfs.f_namemax);
     }
-
-    printf("sftp statvfs:\n"
-        "\tfile system block size: %llu\n"
-        "\tfundamental fs block size: %llu\n"
-        "\tnumber of blocks (unit f_frsize): %llu\n"
-        "\tfree blocks in file system: %llu\n"
-        "\tfree blocks for non-root: %llu\n"
-        "\ttotal file inodes: %llu\n"
-        "\tfree file inodes: %llu\n"
-        "\tfree file inodes for to non-root: %llu\n"
-        "\tfile system id: %llu\n"
-        "\tbit mask of f_flag values: %llu\n"
-        "\tmaximum filename length: %llu\n",
-        sftpstatvfs->f_bsize,
-        sftpstatvfs->f_frsize,
-        sftpstatvfs->f_blocks,
-        sftpstatvfs->f_bfree,
-        sftpstatvfs->f_bavail,
-        sftpstatvfs->f_files,
-        sftpstatvfs->f_ffree,
-        sftpstatvfs->f_favail,
-        sftpstatvfs->f_fsid,
-        sftpstatvfs->f_flag,
-        sftpstatvfs->f_namemax);
-
-    sftp_statvfs_free(sftpstatvfs);
-
-    if (statvfs("/tmp", &sysstatvfs) < 0) {
-      fprintf(stderr, "statvfs failed (%s)\n", strerror(errno));
-      return;
-    }
-
-    printf("sys statvfs:\n"
-        "\tfile system block size: %llu\n"
-        "\tfundamental fs block size: %llu\n"
-        "\tnumber of blocks (unit f_frsize): %llu\n"
-        "\tfree blocks in file system: %llu\n"
-        "\tfree blocks for non-root: %llu\n"
-        "\ttotal file inodes: %llu\n"
-        "\tfree file inodes: %llu\n"
-        "\tfree file inodes for to non-root: %llu\n"
-        "\tfile system id: %llu\n"
-        "\tbit mask of f_flag values: %llu\n"
-        "\tmaximum filename length: %llu\n",
-        sysstatvfs.f_bsize,
-        sysstatvfs.f_frsize,
-        sysstatvfs.f_blocks,
-        sysstatvfs.f_bfree,
-        sysstatvfs.f_bavail,
-        sysstatvfs.f_files,
-        sysstatvfs.f_ffree,
-        sysstatvfs.f_favail,
-        sysstatvfs.f_fsid,
-        sysstatvfs.f_flag,
-        sysstatvfs.f_namemax);
 
     /* the connection is made */
     /* opening a directory */

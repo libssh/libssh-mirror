@@ -45,12 +45,6 @@
 #define sftp_leave_function() _leave_function(sftp->channel->session)
 
 struct sftp_ext_struct {
-  int rename_openssh;
-  int rename_openssh_version;
-  int statvfs_openssh;
-  int statvfs_openssh_version;
-  int fstatvfs_openssh;
-  int fstatvfs_openssh_version;
   unsigned int count;
   char **name;
   char **data;
@@ -536,17 +530,6 @@ int sftp_init(SFTP_SESSION *sftp) {
         "SFTP server extension: %s, version: %s",
         ext_name, ext_data);
 
-    if (strcmp(ext_name, "posix-rename@openssh.com") == 0) {
-      sftp->ext->rename_openssh = 1;
-      sftp->ext->rename_openssh_version = strtol(ext_data, (char **) NULL, 10);
-    } else if (strcmp(ext_name, "statvfs@openssh.com") == 0) {
-      sftp->ext->statvfs_openssh = 1;
-      sftp->ext->statvfs_openssh_version = strtol(ext_data, (char **) NULL, 10);
-    } else if (strcmp(ext_name, "fstatvfs@openssh.com") == 0) {
-      sftp->ext->fstatvfs_openssh = 1;
-      sftp->ext->fstatvfs_openssh_version = strtol(ext_data, (char **) NULL, 10);
-    }
-
     count++;
     tmp = realloc(sftp->ext->name, count * sizeof(char *));
     if (tmp == NULL) {
@@ -617,6 +600,21 @@ const char *sftp_extensions_get_data(SFTP_SESSION *sftp, unsigned int index) {
   }
 
   return sftp->ext->data[index];
+}
+
+int sftp_extension_supported(SFTP_SESSION *sftp, const char *name,
+    const char *data) {
+  int i, n;
+
+  n = sftp_extensions_get_count(sftp);
+  for (i = 0; i < n; i++) {
+    if (strcmp(sftp_extensions_get_name(sftp, i), name) == 0 &&
+        strcmp(sftp_extensions_get_data(sftp, i), data) == 0) {
+      return 1;
+    }
+  }
+
+  return 0;
 }
 
 static REQUEST_QUEUE *request_queue_new(SFTP_MESSAGE *msg) {

@@ -262,6 +262,26 @@ LIBSSH_API const char *sftp_extensions_get_name(SFTP_SESSION *sftp, unsigned int
 LIBSSH_API const char *sftp_extensions_get_data(SFTP_SESSION *sftp, unsigned int index);
 
 /**
+ * @brief Check if the given extension is supported.
+ *
+ * @param  sftp         The sftp session to use.
+ *
+ * @param  name         The name of the extension.
+ *
+ * @param  data         The data of the extension.
+ *
+ * @return 1 if supported, 0 if not.
+ *
+ * Example:
+ *
+ * @code
+ * sftp_extension_supported(sftp, "statvfs@openssh.com", "2");
+ * @endcode
+ */
+LIBSSH_API int sftp_extension_supported(SFTP_SESSION *sftp, const char *name,
+    const char *data);
+
+/**
  * @brief Open a directory used to obtain directory entries.
  *
  * @param session       The sftp session handle to open the directory.
