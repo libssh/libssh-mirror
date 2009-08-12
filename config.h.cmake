@@ -77,6 +77,9 @@
 /* Define to 1 if you want to enable debug output for crypto functions */
 #cmakedefine DEBUG_CRYPTO 1
 
+/* Define to 1 if you want to enable calltrace debug output */
+#cmakedefine DEBUG_CALLTRACE 1
+
 /*************************** ENDIAN *****************************/
 
 /* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
