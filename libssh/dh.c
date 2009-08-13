@@ -149,6 +149,7 @@ void ssh_crypto_finalize(void) {
     g = NULL;
     bignum_free(p);
     p = NULL;
+    ssh_crypto_initialized=0;
   }
 }
 
