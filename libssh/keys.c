@@ -542,7 +542,6 @@ static int dsa_public_to_string(DSA *key, ssh_buffer buffer) {
     goto error;
   }
   string_fill(n, (char *) tmp, size);
-  gcry_sexp_release(sexp);
 
 #elif defined HAVE_LIBCRYPTO
   p = make_bignum_string(key->p);
