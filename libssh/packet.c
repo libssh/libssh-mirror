@@ -758,6 +758,7 @@ static int packet_wait2(SSH_SESSION *session, int type, int blocking) {
         packet_parse(session);
         break;
       case SSH2_MSG_IGNORE:
+      case SSH2_MSG_DEBUG:
         break;
       default:
         if (type && (type != session->in_packet.type)) {

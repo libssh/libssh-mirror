@@ -336,6 +336,9 @@ LIBSSH_API int channel_request_sftp(ssh_channel channel);
 LIBSSH_API int channel_request_x11(ssh_channel channel, int single_connection, const char *protocol,
     const char *cookie, int screen_number);
 LIBSSH_API ssh_channel channel_accept_x11(ssh_channel channel, int timeout_ms);
+LIBSSH_API int channel_forward_listen(ssh_session session, const char *address, int port, int *bound_port);
+LIBSSH_API ssh_channel channel_forward_accept(ssh_session session, int timeout_ms);
+LIBSSH_API int channel_forward_cancel(ssh_session session, const char *address, int port);
 LIBSSH_API int channel_write(ssh_channel channel, const void *data, uint32_t len);
 LIBSSH_API int channel_send_eof(ssh_channel channel);
 LIBSSH_API int channel_is_eof(ssh_channel channel);
