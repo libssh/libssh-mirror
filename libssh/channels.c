@@ -1335,9 +1335,14 @@ error:
   return rc;
 }
 
+static ssh_channel channel_accept(ssh_session session, int channeltype,
+    int timeout_ms) {
 #ifndef _WIN32
-static ssh_channel channel_accept(ssh_session session, int channeltype, int timeout_ms) {
-  static const struct timespec ts = {0, 50000000}; /* 50ms */
+  static const struct timespec ts = {
+    .tv_sec = 0,
+    .tv_nsec = 50000000 /* 50ms */
+  };
+#endif
   SSH_MESSAGE *msg = NULL;
   struct ssh_iterator *iterator;
   int t;
@@ -1358,7 +1363,11 @@ static ssh_channel channel_accept(ssh_session session, int channeltype, int time
         iterator = iterator->next;
       }
     }
+#ifdef _WIN32
+    Sleep(50); /* 50ms */
+#else
     nanosleep(&ts, NULL);
+#endif
   }
 
   return NULL;
@@ -1376,7 +1385,6 @@ static ssh_channel channel_accept(ssh_session session, int channeltype, int time
 ssh_channel channel_accept_x11(ssh_channel channel, int timeout_ms) {
   return channel_accept(channel->session, SSH_CHANNEL_X11, timeout_ms);
 }
-#endif
 
 static int global_request(ssh_session session, const char *request,
     ssh_buffer buffer, int reply) {
