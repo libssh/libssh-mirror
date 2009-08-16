@@ -1661,7 +1661,9 @@ int channel_get_exit_status(CHANNEL *channel) {
       return -1;
     }
     if (channel->open == 0) {
-      return -1;
+      /* When a channel is closed, no exit status message can
+       * come anymore */
+      break;
     }
   }
 
