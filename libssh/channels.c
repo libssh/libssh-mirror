@@ -1503,7 +1503,6 @@ error:
   return rc;
 }
 
-#ifndef _WIN32
 /**
  * @brief Accept an incoming TCP/IP forwarding channel.
  *
@@ -1517,7 +1516,6 @@ error:
 ssh_channel channel_forward_accept(ssh_session session, int timeout_ms) {
   return channel_accept(session, SSH_CHANNEL_FORWARDED_TCPIP, timeout_ms);
 }
-#endif
 
 /**
  * @brief Sends the "cancel-tcpip-forward" global request to ask the server to
