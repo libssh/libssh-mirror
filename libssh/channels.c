@@ -1057,7 +1057,7 @@ static int channel_request(ssh_channel channel, const char *request,
   }
 
   rc = packet_wait(session, SSH2_MSG_CHANNEL_SUCCESS, 1);
-  if (rc) {
+  if (rc == SSH_ERROR) {
     if (session->in_packet.type == SSH2_MSG_CHANNEL_FAILURE) {
       ssh_log(session, SSH_LOG_PACKET,
           "%s channel request failed", request);
