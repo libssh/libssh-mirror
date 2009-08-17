@@ -346,17 +346,17 @@ void do_sftp(SSH_SESSION *session){
           "\tfile system id: %llu\n"
           "\tbit mask of f_flag values: %llu\n"
           "\tmaximum filename length: %llu\n",
-          sftpstatvfs->f_bsize,
-          sftpstatvfs->f_frsize,
-          sftpstatvfs->f_blocks,
-          sftpstatvfs->f_bfree,
-          sftpstatvfs->f_bavail,
-          sftpstatvfs->f_files,
-          sftpstatvfs->f_ffree,
-          sftpstatvfs->f_favail,
-          sftpstatvfs->f_fsid,
-          sftpstatvfs->f_flag,
-          sftpstatvfs->f_namemax);
+          (unsigned long long) sftpstatvfs->f_bsize,
+          (unsigned long long) sftpstatvfs->f_frsize,
+          (unsigned long long) sftpstatvfs->f_blocks,
+          (unsigned long long) sftpstatvfs->f_bfree,
+          (unsigned long long) sftpstatvfs->f_bavail,
+          (unsigned long long) sftpstatvfs->f_files,
+          (unsigned long long) sftpstatvfs->f_ffree,
+          (unsigned long long) sftpstatvfs->f_favail,
+          (unsigned long long) sftpstatvfs->f_fsid,
+          (unsigned long long) sftpstatvfs->f_flag,
+          (unsigned long long) sftpstatvfs->f_namemax);
 
       sftp_statvfs_free(sftpstatvfs);
 
@@ -377,17 +377,17 @@ void do_sftp(SSH_SESSION *session){
           "\tfile system id: %llu\n"
           "\tbit mask of f_flag values: %llu\n"
           "\tmaximum filename length: %llu\n",
-          sysstatvfs.f_bsize,
-          sysstatvfs.f_frsize,
-          sysstatvfs.f_blocks,
-          sysstatvfs.f_bfree,
-          sysstatvfs.f_bavail,
-          sysstatvfs.f_files,
-          sysstatvfs.f_ffree,
-          sysstatvfs.f_favail,
-          sysstatvfs.f_fsid,
-          sysstatvfs.f_flag,
-          sysstatvfs.f_namemax);
+          (unsigned long long) sysstatvfs.f_bsize,
+          (unsigned long long) sysstatvfs.f_frsize,
+          (unsigned long long) sysstatvfs.f_blocks,
+          (unsigned long long) sysstatvfs.f_bfree,
+          (unsigned long long) sysstatvfs.f_bavail,
+          (unsigned long long) sysstatvfs.f_files,
+          (unsigned long long) sysstatvfs.f_ffree,
+          (unsigned long long) sysstatvfs.f_favail,
+          (unsigned long long) sysstatvfs.f_fsid,
+          (unsigned long long) sysstatvfs.f_flag,
+          (unsigned long long) sysstatvfs.f_namemax);
     }
 
     /* the connection is made */
