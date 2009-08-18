@@ -1,6 +1,15 @@
 ChangeLog
 ==========
 
+version 0.3.3 (released 2009-08-18)
+  * Fixed double free pointer crash in dsa_public_to_string.
+  * Fixed channel_get_exit_status bug.
+  * Fixed ssh_finalize which didn't clear the flag.
+  * Fixed memory leak introduced by previous bugfix.
+  * Fixed channel_poll broken when delayed EOF recvd.
+  * Fixed stupid "can't parse known host key" bug.
+  * Fixed possible memory corruption (ticket #14).
+
 version 0.3.2 (released 2009-08-05)
   * Added ssh_init() function.
   * Added sftp_readlink() function.
