@@ -23,6 +23,7 @@ endif(CMAKE_COMPILER_IS_GNUC)
 # HEADER FILES
 check_include_file(pty.h HAVE_PTY_H)
 check_include_file(terminos.h HAVE_TERMIOS_H)
+check_include_file(wspiapi.h HAVE_WSPIAPI_H)
 
 set(CMAKE_REQUIRED_INCLUDES ${OPENSSL_INCLUDE_DIRS})
 check_include_file(openssl/aes.h HAVE_OPENSSL_AES_H)
