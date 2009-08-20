@@ -32,8 +32,11 @@
 
 #ifdef _MSC_VER
 #define snprintf _snprintf
+/** Imitate define of inttypes.h */
+#define PRIdS "Id"
 #else
 #include <unistd.h>
+#define PRIdS "zd"
 #endif
 
 #include "config.h"
