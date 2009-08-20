@@ -21,8 +21,10 @@
  * MA 02111-1307, USA.
  */
 
-#include "libssh/priv.h"
+#include <stdio.h>
 #include <string.h>
+
+#include "libssh/priv.h"
 
 /** @brief Creates a new scp session
  * @param session the SSH session to use
@@ -136,7 +138,7 @@ int ssh_scp_push_file(ssh_scp scp, const char *filename, size_t size, const char
     ssh_set_error(scp->session,SSH_FATAL,"ssh_scp_push_file called under invalid state");
     return SSH_ERROR;
   }
-  snprintf(buffer,sizeof(buffer),"C%s %ld %s\n",perms, size, filename);
+  snprintf(buffer, sizeof(buffer), "C%s %" PRIdS " %s\n", perms, size, filename);
   r=channel_write(scp->channel,buffer,strlen(buffer));
   if(r==SSH_ERROR){
     scp->state=SSH_SCP_ERROR;
