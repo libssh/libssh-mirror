@@ -39,12 +39,6 @@
 #include "config.h"
 #include "libssh/libssh.h"
 
-/* Debugging constants */
-
-/* Define this if you want to debug crypto systems */
-/* it's usefull when you are debugging the lib */
-/*#define DEBUG_CRYPTO */
-
 /* some constants */
 #define MAX_PACKET_LEN 262144
 #define ERROR_BUFFERLEN 1024
