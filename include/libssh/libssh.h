@@ -444,8 +444,8 @@ LIBSSH_API int ssh_init(void);
 LIBSSH_API int ssh_finalize(void);
 
 /* misc.c */
-char *ssh_dirname (const char *path);
-char *ssh_basename (const char *path);
+LIBSSH_API char *ssh_dirname (const char *path);
+LIBSSH_API char *ssh_basename (const char *path);
 
 /* messages.c */
 typedef struct ssh_message SSH_MESSAGE;
