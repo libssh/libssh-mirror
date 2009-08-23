@@ -356,6 +356,7 @@ enum ssh_scp_states {
   SSH_SCP_WRITE_INITED, //Gave our intention to write
   SSH_SCP_WRITE_WRITING,//File was opened and currently writing
   SSH_SCP_READ_INITED,  //Gave our intention to read
+  SSH_SCP_READ_REQUESTED, //We got a read request
   SSH_SCP_READ_READING, //File is opened and reading
   SSH_SCP_ERROR         //Something bad happened
 };
@@ -368,16 +369,9 @@ struct ssh_scp_struct {
   enum ssh_scp_states state;
   size_t filelen;
   size_t processed;
-};
-
-
-struct ssh_scp_request_struct {
-  ssh_scp scp;
-  enum ssh_scp_request_types type;
-  char *name;
-  char *mode;
-  size_t size;
-  int acked;
+  enum ssh_scp_request_types request_type;
+  char *request_name;
+  char *request_mode;
 };
 
 struct ssh_message_struct;
@@ -869,8 +863,7 @@ void message_handle(SSH_SESSION *session, uint32_t type);
 int ssh_execute_message_callbacks(SSH_SESSION *session);
 
 /* scp.c */
-
-ssh_scp_request ssh_scp_request_new(void);
+int ssh_scp_read_string(ssh_scp scp, char *buffer, size_t len);
 
 /* log.c */
 

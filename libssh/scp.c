@@ -120,6 +120,8 @@ void ssh_scp_free(ssh_scp scp){
   if(scp->channel)
     channel_free(scp->channel);
   SAFE_FREE(scp->location);
+  SAFE_FREE(scp->request_mode);
+  SAFE_FREE(scp->request_name);
   SAFE_FREE(scp);
 }
 
@@ -267,11 +269,106 @@ int ssh_scp_write(ssh_scp scp, const void *buffer, size_t len){
   return SSH_OK;
 }
 
-ssh_scp_request ssh_scp_request_new(void){
-  ssh_scp_request r=malloc(sizeof(struct ssh_scp_request_struct));
-  if(r==NULL)
-    return NULL;
-  ZERO_STRUCTP(r);
-  return r;
+/**
+ * @brief reads a string on a channel, terminated by '\n'
+ * @param buffer pointer to a buffer to place the string
+ * @param len size of the buffer in bytes. If the string is bigger
+ * than len-1, only len-1 bytes are read and the string
+ * is null-terminated.
+ * @returns SSH_OK The string was read
+ * @returns SSH_ERROR Error happened while reading
+ */
+int ssh_scp_read_string(ssh_scp scp, char *buffer, size_t len){
+  size_t r=0;
+  int err=SSH_OK;
+  while(r<len-1){
+    err=channel_read(scp->channel,&buffer[r],1,0);
+    if(err==SSH_ERROR){
+      break;
+    }
+    if(err==0){
+      ssh_set_error(scp->session,SSH_FATAL,"End of file while reading string");
+      err=SSH_ERROR;
+      break;
+    }
+    r++;
+    if(buffer[r-1] == '\n')
+      break;
+  }
+  buffer[r]=0;
+  return err;
 }
 
+/** @brief waits for a scp request (file, directory)
+ * @returns SSH_ERROR Some error happened
+ * @returns SSH_SCP_REQUEST_FILE The other side is sending a file
+ * @returns SSH_SCP_REQUEST_DIRECTORY The other side is sending a directory
+ * @returns SSH_SCP_REQUEST_END_DIRECTORY The other side has finished with the current directory
+ * @see ssh_scp_read
+ * @see ssh_scp_deny_request
+ * @see ssh_scp_accept_request
+ */
+int ssh_scp_pull_request(ssh_scp scp){
+  char buffer[4096];
+  char *mode=NULL;
+  char *p,*tmp;
+  size_t size;
+  char *name=NULL;
+  int err;
+  if(scp->state != SSH_SCP_READ_INITED){
+    ssh_set_error(scp->session,SSH_FATAL,"ssh_scp_pull_request called under invalid state");
+    return SSH_ERROR;
+  }
+  err=ssh_scp_read_string(scp,buffer,sizeof(buffer));
+  if(err==SSH_ERROR)
+    return err;
+  switch(buffer[0]){
+    case 'C':
+      /* File */
+    case 'D':
+      /* Directory */
+      p=strchr(buffer,' ');
+      if(p==NULL)
+        goto error;
+      *p='\0';
+      p++;
+      mode=strdup(&buffer[1]);
+      tmp=p;
+      p=strchr(p,' ');
+      if(p==NULL)
+        goto error;
+      *p=0;
+      size=strtoull(tmp,NULL,10);
+      p++;
+      tmp=p;
+      p=strchr(p,'\n');
+      if(p==NULL)
+        goto error;
+      *p=0;
+      name=strdup(tmp);
+      scp->request_mode=mode;
+      scp->request_name=name;
+      if(buffer[0]=='C'){
+        scp->filelen=size;
+        scp->request_type=SSH_SCP_REQUEST_NEWFILE;
+      } else {
+        scp->filelen='0';
+        scp->request_type=SSH_SCP_REQUEST_NEWDIR;
+      }
+      scp->state=SSH_SCP_READ_REQUESTED;
+      return scp->request_type;
+      break;
+    case 'T':
+      /* Timestamp */
+    default:
+      ssh_set_error(scp->session,SSH_FATAL,"Unhandled message: %s",buffer);
+      return SSH_ERROR;
+  }
+
+  /* a parsing error occured */
+  error:
+  SAFE_FREE(name);
+  SAFE_FREE(mode);
+  ssh_set_error(scp->session,SSH_FATAL,"Parsing error while parsing message: %s",buffer);
+  return SSH_ERROR;
+}

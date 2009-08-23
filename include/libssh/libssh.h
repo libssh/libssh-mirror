@@ -120,7 +120,6 @@ typedef struct ssh_agent_struct* ssh_agent;
 typedef struct ssh_session_struct* ssh_session;
 typedef struct ssh_kbdint_struct* ssh_kbdint;
 typedef struct ssh_scp_struct* ssh_scp;
-typedef struct ssh_scp_request_struct* ssh_scp_request;
 
 /* Socket type */
 #ifdef _WIN32
@@ -471,10 +470,11 @@ enum {
 
 enum ssh_scp_request_types {
   /** A new directory is going to be pulled */
-  SSH_SCP_REQUEST_NEWDIR,
+  SSH_SCP_REQUEST_NEWDIR=1,
   /** A new file is going to be pulled */
   SSH_SCP_REQUEST_NEWFILE
 };
+
 LIBSSH_API ssh_scp ssh_scp_new(ssh_session session, int mode, const char *location);
 LIBSSH_API int ssh_scp_init(ssh_scp scp);
 LIBSSH_API int ssh_scp_close(ssh_scp scp);
@@ -483,8 +483,9 @@ LIBSSH_API int ssh_scp_push_directory(ssh_scp scp, const char *dirname, const ch
 LIBSSH_API int ssh_scp_leave_directory(ssh_scp scp);
 LIBSSH_API int ssh_scp_push_file(ssh_scp scp, const char *filename, size_t size, const char *perms);
 LIBSSH_API int ssh_scp_write(ssh_scp scp, const void *buffer, size_t len);
-LIBSSH_API ssh_scp_request ssh_scp_pull_request(ssh_scp scp);
-LIBSSH_API int ssh_scp_deny_request(ssh_scp scp, ssh_scp_request request, const char *reason);
+LIBSSH_API int ssh_scp_pull_request(ssh_scp scp);
+LIBSSH_API int ssh_scp_deny_request(ssh_scp scp, const char *reason);
+LIBSSH_API int ssh_scp_accept_request(ssh_scp scp);
 
 #ifdef __cplusplus
 }
