@@ -346,6 +346,8 @@ int ssh_scp_pull_request(ssh_scp scp){
         goto error;
       *p=0;
       name=strdup(tmp);
+      SAFE_FREE(scp->request_name);
+      SAFE_FREE(scp->request_mode);
       scp->request_mode=mode;
       scp->request_name=name;
       if(buffer[0]=='C'){
