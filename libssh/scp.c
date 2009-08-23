@@ -266,3 +266,12 @@ int ssh_scp_write(ssh_scp scp, const void *buffer, size_t len){
   }
   return SSH_OK;
 }
+
+ssh_scp_request ssh_scp_request_new(void){
+  ssh_scp_request r=malloc(sizeof(struct ssh_scp_request_struct));
+  if(r==NULL)
+    return NULL;
+  ZERO_STRUCTP(r);
+  return r;
+}
+

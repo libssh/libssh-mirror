@@ -120,6 +120,7 @@ typedef struct ssh_agent_struct* ssh_agent;
 typedef struct ssh_session_struct* ssh_session;
 typedef struct ssh_kbdint_struct* ssh_kbdint;
 typedef struct ssh_scp_struct* ssh_scp;
+typedef struct ssh_scp_request_struct* ssh_scp_request;
 
 /* Socket type */
 #ifdef _WIN32
@@ -467,6 +468,12 @@ enum {
   SSH_SCP_READ
 };
 
+enum ssh_scp_request_types {
+  /** A new directory is going to be pulled */
+  SSH_SCP_REQUEST_NEWDIR,
+  /** A new file is going to be pulled */
+  SSH_SCP_REQUEST_NEWFILE
+};
 LIBSSH_API ssh_scp ssh_scp_new(ssh_session session, int mode, const char *location);
 LIBSSH_API int ssh_scp_init(ssh_scp scp);
 LIBSSH_API int ssh_scp_close(ssh_scp scp);
