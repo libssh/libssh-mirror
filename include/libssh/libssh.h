@@ -487,6 +487,9 @@ LIBSSH_API int ssh_scp_pull_request(ssh_scp scp);
 LIBSSH_API int ssh_scp_deny_request(ssh_scp scp, const char *reason);
 LIBSSH_API int ssh_scp_accept_request(ssh_scp scp);
 LIBSSH_API int ssh_scp_read(ssh_scp scp, void *buffer, size_t size);
+LIBSSH_API const char *ssh_scp_request_get_filename(ssh_scp scp);
+LIBSSH_API const char *ssh_scp_request_get_permissions(ssh_scp scp);
+LIBSSH_API size_t ssh_scp_request_get_size(ssh_scp scp);
 
 
 #ifdef __cplusplus

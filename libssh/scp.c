@@ -459,3 +459,27 @@ int ssh_scp_read(ssh_scp scp, void *buffer, size_t size){
   }
   return r;
 }
+
+/** Gets the name of the directory or file being
+ * pushed from the other party
+ * @returns file name. Should not be freed.
+ */
+const char *ssh_scp_request_get_filename(ssh_scp scp){
+  return scp->request_name;
+}
+
+/** Gets the permissions of the directory or file being
+ * pushed from the other party
+ * @returns Unix permission string, e.g "0644". Should not be freed.
+ */
+const char *ssh_scp_request_get_permissions(ssh_scp scp){
+  return scp->request_mode;
+}
+
+/** Gets the size of the file being pushed
+ * from the other party
+ * @returns Numeric size of the file being read.
+ */
+size_t ssh_scp_request_get_size(ssh_scp scp){
+  return scp->filelen;
+}
