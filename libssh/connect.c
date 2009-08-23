@@ -28,13 +28,25 @@
 #include <string.h>
 
 #ifdef _WIN32
-/* getaddrinfo, freeaddrinfo, getnameinfo */
-#define _WIN32_WINNT 0x0501
+/*
+ * Only use Windows API functions available on Windows 2000 SP4 or later.
+ * The available constants are in <sdkddkver.h>.
+ *  http://msdn.microsoft.com/en-us/library/aa383745.aspx
+ *  http://blogs.msdn.com/oldnewthing/archive/2007/04/11/2079137.aspx
+ */
+#undef _WIN32_WINNT
+#define _WIN32_WINNT 0x0500 /* _WIN32_WINNT_WIN2K */
+#undef NTDDI_VERSION
+#define NTDDI_VERSION 0x05000400 /* NTDDI_WIN2KSP4 */
 
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
-#include "wspiapi.h" /* Workaround for w2k systems */
+/* <wspiapi.h> is necessary for getaddrinfo before Windows XP, but it isn't
+ * available on some platforms like MinGW. */
+#ifdef HAVE_WSPIAPI_H
+#include <wspiapi.h>
+#endif
 
 #else /* _WIN32 */
 

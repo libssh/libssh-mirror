@@ -1057,7 +1057,7 @@ static int channel_request(ssh_channel channel, const char *request,
   }
 
   rc = packet_wait(session, SSH2_MSG_CHANNEL_SUCCESS, 1);
-  if (rc) {
+  if (rc == SSH_ERROR) {
     if (session->in_packet.type == SSH2_MSG_CHANNEL_FAILURE) {
       ssh_log(session, SSH_LOG_PACKET,
           "%s channel request failed", request);
@@ -1335,19 +1335,14 @@ error:
   return rc;
 }
 
+static ssh_channel channel_accept(ssh_session session, int channeltype,
+    int timeout_ms) {
 #ifndef _WIN32
-/**
- * @brief Accept an X11 forwarding channel.
- *
- * @param channel       An x11-enabled session channel.
- *
- * @param timeout_ms    Timeout in milli-seconds.
- *
- * @return Newly created channel, or NULL if no X11 request from the server
- */
-ssh_channel channel_accept_x11(ssh_channel channel, int timeout_ms) {
-  static const struct timespec ts = {0, 50000000}; /* 50ms */
-  SSH_SESSION *session = channel->session;
+  static const struct timespec ts = {
+    .tv_sec = 0,
+    .tv_nsec = 50000000 /* 50ms */
+  };
+#endif
   SSH_MESSAGE *msg = NULL;
   struct ssh_iterator *iterator;
   int t;
@@ -1361,19 +1356,207 @@ ssh_channel channel_accept_x11(ssh_channel channel, int timeout_ms) {
       while (iterator) {
         msg = (SSH_MESSAGE*)iterator->data;
         if (ssh_message_type(msg) == SSH_REQUEST_CHANNEL_OPEN &&
-            ssh_message_subtype(msg) == SSH_CHANNEL_X11) {
+            ssh_message_subtype(msg) == channeltype) {
           ssh_list_remove(session->ssh_message_list, iterator);
           return ssh_message_channel_request_open_reply_accept(msg);
         }
         iterator = iterator->next;
       }
     }
+#ifdef _WIN32
+    Sleep(50); /* 50ms */
+#else
     nanosleep(&ts, NULL);
+#endif
   }
 
   return NULL;
 }
-#endif
+
+/**
+ * @brief Accept an X11 forwarding channel.
+ *
+ * @param channel       An x11-enabled session channel.
+ *
+ * @param timeout_ms    Timeout in milli-seconds.
+ *
+ * @return Newly created channel, or NULL if no X11 request from the server
+ */
+ssh_channel channel_accept_x11(ssh_channel channel, int timeout_ms) {
+  return channel_accept(channel->session, SSH_CHANNEL_X11, timeout_ms);
+}
+
+static int global_request(ssh_session session, const char *request,
+    ssh_buffer buffer, int reply) {
+  ssh_string req = NULL;
+  int rc = SSH_ERROR;
+
+  enter_function();
+
+  req = string_from_char(request);
+  if (req == NULL) {
+    goto error;
+  }
+
+  if (buffer_add_u8(session->out_buffer, SSH2_MSG_GLOBAL_REQUEST) < 0 ||
+      buffer_add_ssh_string(session->out_buffer, req) < 0 ||
+      buffer_add_u8(session->out_buffer, reply == 0 ? 0 : 1) < 0) {
+    goto error;
+  }
+  string_free(req);
+
+  if (buffer != NULL) {
+    if (buffer_add_data(session->out_buffer, buffer_get(buffer),
+        buffer_get_len(buffer)) < 0) {
+      goto error;
+    }
+  }
+
+  if (packet_send(session) != SSH_OK) {
+    leave_function();
+    return rc;
+  }
+
+  ssh_log(session, SSH_LOG_RARE,
+      "Sent a SSH_MSG_GLOBAL_REQUEST %s", request);
+  if (reply == 0) {
+    leave_function();
+    return SSH_OK;
+  }
+
+  rc = packet_wait(session, SSH2_MSG_REQUEST_SUCCESS, 1);
+  if (rc == SSH_ERROR) {
+    if (session->in_packet.type == SSH2_MSG_REQUEST_FAILURE) {
+      ssh_log(session, SSH_LOG_PACKET,
+          "%s channel request failed", request);
+      ssh_set_error(session, SSH_REQUEST_DENIED,
+          "Channel request %s failed", request);
+    } else {
+      ssh_log(session, SSH_LOG_RARE,
+          "Received an unexpected %d message", session->in_packet.type);
+    }
+  } else {
+    ssh_log(session, SSH_LOG_RARE, "Received a SUCCESS");
+  }
+
+  leave_function();
+  return rc;
+error:
+  buffer_reinit(session->out_buffer);
+  string_free(req);
+
+  leave_function();
+  return rc;
+}
+
+/**
+ * @brief Sends the "tcpip-forward" global request to ask the server to begin
+ *        listening for inbound connections.
+ *
+ * @param session       The ssh session to send the request.
+ *
+ * @param address       The address to bind to on the server. Pass NULL to bind
+ *                      to all available addresses on all protocol families
+ *                      supported by the server.
+ *
+ * @param port          The port to bind to on the server. Pass 0 to ask the
+ *                      server to allocate the next available unprivileged port
+ *                      number
+ *
+ * @param bound_port    The pointer to get actual bound port. Pass NULL to
+ *                      ignore.
+ *
+ * @return SSH_OK on success\n
+ *         SSH_ERROR on error
+ */
+int channel_forward_listen(ssh_session session, const char *address, int port, int *bound_port) {
+  ssh_buffer buffer = NULL;
+  ssh_string addr = NULL;
+  int rc = SSH_ERROR;
+  uint32_t tmp;
+
+  buffer = buffer_new();
+  if (buffer == NULL) {
+    goto error;
+  }
+
+  addr = string_from_char(address ? address : "");
+  if (addr == NULL) {
+    goto error;
+  }
+
+  if (buffer_add_ssh_string(buffer, addr) < 0 ||
+      buffer_add_u32(buffer, htonl(port)) < 0) {
+    goto error;
+  }
+
+  rc = global_request(session, "tcpip-forward", buffer, 1);
+
+  if (rc == SSH_OK && port == 0 && bound_port) {
+    buffer_get_u32(session->in_buffer, &tmp);
+    *bound_port = ntohl(tmp);
+  }
+
+error:
+  buffer_free(buffer);
+  string_free(addr);
+  return rc;
+}
+
+/**
+ * @brief Accept an incoming TCP/IP forwarding channel.
+ *
+ * @param session       The ssh session to use.
+ *
+ * @param timeout_ms    Timeout in milli-seconds.
+ *
+ * @return Newly created channel, or NULL if no incoming channel request from
+ *         the server
+ */
+ssh_channel channel_forward_accept(ssh_session session, int timeout_ms) {
+  return channel_accept(session, SSH_CHANNEL_FORWARDED_TCPIP, timeout_ms);
+}
+
+/**
+ * @brief Sends the "cancel-tcpip-forward" global request to ask the server to
+ *        cancel the tcpip-forward request.
+ *
+ * @param session       The ssh session to send the request.
+ *
+ * @param address       The bound address on the server.
+ *
+ * @param port          The bound port on the server.
+ *
+ * @return SSH_OK on success\n
+ *         SSH_ERROR on error
+ */
+int channel_forward_cancel(ssh_session session, const char *address, int port) {
+  ssh_buffer buffer = NULL;
+  ssh_string addr = NULL;
+  int rc = SSH_ERROR;
+
+  buffer = buffer_new();
+  if (buffer == NULL) {
+    goto error;
+  }
+
+  addr = string_from_char(address ? address : "");
+  if (addr == NULL) {
+    goto error;
+  }
+
+  if (buffer_add_ssh_string(buffer, addr) < 0 ||
+      buffer_add_u32(buffer, htonl(port)) < 0) {
+    goto error;
+  }
+
+  rc = global_request(session, "cancel-tcpip-forward", buffer, 1);
+
+error:
+  buffer_free(buffer);
+  string_free(addr);
+  return rc;
+}
 
 /**
  * @brief Set environement variables.

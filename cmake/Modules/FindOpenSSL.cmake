@@ -40,6 +40,7 @@ else (OPENSSL_LIBRARIES AND OPENSSL_INCLUDE_DIRS)
       /usr/local/ssl/include
       /opt/local/include
       /sw/include
+      /usr/lib/sfw/include
   )
   mark_as_advanced(OPENSSL_INCLUDE_DIR)
 

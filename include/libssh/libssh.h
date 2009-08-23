@@ -120,6 +120,7 @@ typedef struct ssh_agent_struct* ssh_agent;
 typedef struct ssh_session_struct* ssh_session;
 typedef struct ssh_kbdint_struct* ssh_kbdint;
 typedef struct ssh_scp_struct* ssh_scp;
+typedef struct ssh_scp_request_struct* ssh_scp_request;
 
 /* Socket type */
 #ifdef _WIN32
@@ -336,6 +337,9 @@ LIBSSH_API int channel_request_sftp(ssh_channel channel);
 LIBSSH_API int channel_request_x11(ssh_channel channel, int single_connection, const char *protocol,
     const char *cookie, int screen_number);
 LIBSSH_API ssh_channel channel_accept_x11(ssh_channel channel, int timeout_ms);
+LIBSSH_API int channel_forward_listen(ssh_session session, const char *address, int port, int *bound_port);
+LIBSSH_API ssh_channel channel_forward_accept(ssh_session session, int timeout_ms);
+LIBSSH_API int channel_forward_cancel(ssh_session session, const char *address, int port);
 LIBSSH_API int channel_write(ssh_channel channel, const void *data, uint32_t len);
 LIBSSH_API int channel_send_eof(ssh_channel channel);
 LIBSSH_API int channel_is_eof(ssh_channel channel);
@@ -440,6 +444,10 @@ LIBSSH_API int ssh_userauth_kbdint_setanswer(SSH_SESSION *session, unsigned int 
 LIBSSH_API int ssh_init(void);
 LIBSSH_API int ssh_finalize(void);
 
+/* misc.c */
+LIBSSH_API char *ssh_dirname (const char *path);
+LIBSSH_API char *ssh_basename (const char *path);
+
 /* messages.c */
 typedef struct ssh_message_struct SSH_MESSAGE;
 typedef struct ssh_message_struct *ssh_message;
@@ -461,12 +469,22 @@ enum {
   SSH_SCP_READ
 };
 
+enum ssh_scp_request_types {
+  /** A new directory is going to be pulled */
+  SSH_SCP_REQUEST_NEWDIR,
+  /** A new file is going to be pulled */
+  SSH_SCP_REQUEST_NEWFILE
+};
 LIBSSH_API ssh_scp ssh_scp_new(ssh_session session, int mode, const char *location);
 LIBSSH_API int ssh_scp_init(ssh_scp scp);
 LIBSSH_API int ssh_scp_close(ssh_scp scp);
 LIBSSH_API void ssh_scp_free(ssh_scp scp);
+LIBSSH_API int ssh_scp_push_directory(ssh_scp scp, const char *dirname, const char *perms);
+LIBSSH_API int ssh_scp_leave_directory(ssh_scp scp);
 LIBSSH_API int ssh_scp_push_file(ssh_scp scp, const char *filename, size_t size, const char *perms);
 LIBSSH_API int ssh_scp_write(ssh_scp scp, const void *buffer, size_t len);
+LIBSSH_API ssh_scp_request ssh_scp_pull_request(ssh_scp scp);
+LIBSSH_API int ssh_scp_deny_request(ssh_scp scp, ssh_scp_request request, const char *reason);
 
 #ifdef __cplusplus
 }

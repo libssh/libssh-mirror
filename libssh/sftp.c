@@ -578,28 +578,28 @@ unsigned int sftp_extensions_get_count(SFTP_SESSION *sftp) {
   return sftp->ext->count;
 }
 
-const char *sftp_extensions_get_name(SFTP_SESSION *sftp, unsigned int index) {
+const char *sftp_extensions_get_name(SFTP_SESSION *sftp, unsigned int idx) {
   if (sftp == NULL || sftp->ext == NULL || sftp->ext->name == NULL) {
     return NULL;
   }
 
-  if (index > sftp->ext->count) {
+  if (idx > sftp->ext->count) {
     return NULL;
   }
 
-  return sftp->ext->name[index];
+  return sftp->ext->name[idx];
 }
 
-const char *sftp_extensions_get_data(SFTP_SESSION *sftp, unsigned int index) {
+const char *sftp_extensions_get_data(SFTP_SESSION *sftp, unsigned int idx) {
   if (sftp == NULL || sftp->ext == NULL || sftp->ext->data == NULL) {
     return NULL;
   }
 
-  if (index > sftp->ext->count) {
+  if (idx > sftp->ext->count) {
     return NULL;
   }
 
-  return sftp->ext->data[index];
+  return sftp->ext->data[idx];
 }
 
 int sftp_extension_supported(SFTP_SESSION *sftp, const char *name,
@@ -2453,7 +2453,7 @@ char *sftp_readlink(SFTP_SESSION *sftp, const char *path) {
   ssh_string path_s = NULL;
   ssh_string link_s = NULL;
   ssh_buffer buffer;
-  char *link;
+  char *lnk;
   uint32_t ignored;
   uint32_t id;
 
@@ -2499,10 +2499,10 @@ char *sftp_readlink(SFTP_SESSION *sftp, const char *path) {
     if (link_s == NULL) {
       return NULL;
     }
-    link = string_to_char(link_s);
+    lnk = string_to_char(link_s);
     string_free(link_s);
 
-    return link;
+    return lnk;
   } else if (msg->packet_type == SSH_FXP_STATUS) { /* bad response (error) */
     status = parse_status_msg(msg);
     sftp_message_free(msg);
@@ -2616,7 +2616,7 @@ SFTP_STATVFS *sftp_statvfs(SFTP_SESSION *sftp, const char *path) {
   STATUS_MESSAGE *status = NULL;
   SFTP_MESSAGE *msg = NULL;
   ssh_string pathstr;
-  ssh_string statvfs;
+  ssh_string ext;
   ssh_buffer buffer;
   uint32_t id;
 
@@ -2629,8 +2629,8 @@ SFTP_STATVFS *sftp_statvfs(SFTP_SESSION *sftp, const char *path) {
     return NULL;
   }
 
-  statvfs = string_from_char("statvfs@openssh.com");
-  if (statvfs == NULL) {
+  ext = string_from_char("statvfs@openssh.com");
+  if (ext == NULL) {
     buffer_free(buffer);
     return NULL;
   }
@@ -2638,22 +2638,22 @@ SFTP_STATVFS *sftp_statvfs(SFTP_SESSION *sftp, const char *path) {
   pathstr = string_from_char(path);
   if (pathstr == NULL) {
     buffer_free(buffer);
-    string_free(statvfs);
+    string_free(ext);
     return NULL;
   }
 
   id = sftp_get_new_id(sftp);
   if (buffer_add_u32(buffer, id) < 0 ||
-      buffer_add_ssh_string(buffer, statvfs) < 0 ||
+      buffer_add_ssh_string(buffer, ext) < 0 ||
       buffer_add_ssh_string(buffer, pathstr) < 0 ||
       sftp_packet_write(sftp, SSH_FXP_EXTENDED, buffer) < 0) {
     buffer_free(buffer);
-    string_free(statvfs);
+    string_free(ext);
     string_free(pathstr);
     return NULL;
   }
   buffer_free(buffer);
-  string_free(statvfs);
+  string_free(ext);
   string_free(pathstr);
 
   while (msg == NULL) {
@@ -2664,13 +2664,13 @@ SFTP_STATVFS *sftp_statvfs(SFTP_SESSION *sftp, const char *path) {
   }
 
   if (msg->packet_type == SSH_FXP_EXTENDED_REPLY) {
-    SFTP_STATVFS *statvfs = sftp_parse_statvfs(sftp, msg->payload);
+    SFTP_STATVFS *buf = sftp_parse_statvfs(sftp, msg->payload);
     sftp_message_free(msg);
-    if (statvfs == NULL) {
+    if (buf == NULL) {
       return NULL;
     }
 
-    return statvfs;
+    return buf;
   } else if (msg->packet_type == SSH_FXP_STATUS) { /* bad response (error) */
     status = parse_status_msg(msg);
     sftp_message_free(msg);
@@ -2693,7 +2693,7 @@ SFTP_STATVFS *sftp_fstatvfs(SFTP_FILE *file) {
   STATUS_MESSAGE *status = NULL;
   SFTP_MESSAGE *msg = NULL;
   SFTP_SESSION *sftp;
-  ssh_string fstatvfs;
+  ssh_string ext;
   ssh_buffer buffer;
   uint32_t id;
 
@@ -2707,23 +2707,23 @@ SFTP_STATVFS *sftp_fstatvfs(SFTP_FILE *file) {
     return NULL;
   }
 
-  fstatvfs = string_from_char("fstatvfs@openssh.com");
-  if (fstatvfs == NULL) {
+  ext = string_from_char("fstatvfs@openssh.com");
+  if (ext == NULL) {
     buffer_free(buffer);
     return NULL;
   }
 
   id = sftp_get_new_id(sftp);
   if (buffer_add_u32(buffer, id) < 0 ||
-      buffer_add_ssh_string(buffer, fstatvfs) < 0 ||
+      buffer_add_ssh_string(buffer, ext) < 0 ||
       buffer_add_ssh_string(buffer, file->handle) < 0 ||
       sftp_packet_write(sftp, SSH_FXP_EXTENDED, buffer) < 0) {
     buffer_free(buffer);
-    string_free(fstatvfs);
+    string_free(ext);
     return NULL;
   }
   buffer_free(buffer);
-  string_free(fstatvfs);
+  string_free(ext);
 
   while (msg == NULL) {
     if (sftp_read_and_dispatch(sftp) < 0) {
@@ -2733,13 +2733,13 @@ SFTP_STATVFS *sftp_fstatvfs(SFTP_FILE *file) {
   }
 
   if (msg->packet_type == SSH_FXP_EXTENDED_REPLY) {
-    SFTP_STATVFS *statvfs = sftp_parse_statvfs(sftp, msg->payload);
+    SFTP_STATVFS *buf = sftp_parse_statvfs(sftp, msg->payload);
     sftp_message_free(msg);
-    if (statvfs == NULL) {
+    if (buf == NULL) {
       return NULL;
     }
 
-    return statvfs;
+    return buf;
   } else if (msg->packet_type == SSH_FXP_STATUS) { /* bad response (error) */
     status = parse_status_msg(msg);
     sftp_message_free(msg);

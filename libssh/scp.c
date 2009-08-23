@@ -21,8 +21,10 @@
  * MA 02111-1307, USA.
  */
 
-#include "libssh/priv.h"
+#include <stdio.h>
 #include <string.h>
+
+#include "libssh/priv.h"
 
 /** @brief Creates a new scp session
  * @param session the SSH session to use
@@ -121,6 +123,69 @@ void ssh_scp_free(ssh_scp scp){
   SAFE_FREE(scp);
 }
 
+/** @brief creates a directory in a scp in sink mode
+ * @param dirname Name of the directory being created. 
+ * @param perms Text form of the unix permissions for the new directory, e.g. "0755".
+ * @returns SSH_OK if the directory was created.
+ * @returns SSH_ERROR if an error happened.
+ * @see ssh_scp_leave_directory
+ */
+int ssh_scp_push_directory(ssh_scp scp, const char *dirname, const char *perms){
+  char buffer[1024];
+  int r;
+  uint8_t code;
+  char *dir;
+  if(scp->state != SSH_SCP_WRITE_INITED){
+    ssh_set_error(scp->session,SSH_FATAL,"ssh_scp_push_directory called under invalid state");
+    return SSH_ERROR;
+  }
+  dir=ssh_basename(dirname);
+  snprintf(buffer, sizeof(buffer), "D%s 0 %s\n", perms, dir);
+  SAFE_FREE(dir);
+  r=channel_write(scp->channel,buffer,strlen(buffer));
+  if(r==SSH_ERROR){
+    scp->state=SSH_SCP_ERROR;
+    return SSH_ERROR;
+  }
+  r=channel_read(scp->channel,&code,1,0);
+  if(code != 0){
+    ssh_set_error(scp->session,SSH_FATAL, "scp status code %ud not valid", code);
+    scp->state=SSH_SCP_ERROR;
+    return SSH_ERROR;
+  }
+  return SSH_OK;
+}
+
+/** 
+ * @brief Leaves a directory
+ * @returns SSH_OK if the directory was created.
+ * @returns SSH_ERROR if an error happened.
+ * @see ssh_scp_push_directory
+ */
+ int ssh_scp_leave_directory(ssh_scp scp){
+  char buffer[1024];
+  int r;
+  uint8_t code;
+  if(scp->state != SSH_SCP_WRITE_INITED){
+    ssh_set_error(scp->session,SSH_FATAL,"ssh_scp_leave_directory called under invalid state");
+    return SSH_ERROR;
+  }
+  strcpy(buffer, "E\n");
+  r=channel_write(scp->channel,buffer,strlen(buffer));
+  if(r==SSH_ERROR){
+    scp->state=SSH_SCP_ERROR;
+    return SSH_ERROR;
+  }
+  r=channel_read(scp->channel,&code,1,0);
+  if(code != 0){
+    ssh_set_error(scp->session,SSH_FATAL, "scp status code %ud not valid", code);
+    scp->state=SSH_SCP_ERROR;
+    return SSH_ERROR;
+  }
+  return SSH_OK;
+}
+
+
 /** @brief initializes the sending of a file to a scp in sink mode
  * @param filename Name of the file being sent. It should not contain any path indicator
  * @param size Exact size in bytes of the file being sent.
@@ -132,11 +197,14 @@ int ssh_scp_push_file(ssh_scp scp, const char *filename, size_t size, const char
   char buffer[1024];
   int r;
   uint8_t code;
+  char *file;
   if(scp->state != SSH_SCP_WRITE_INITED){
     ssh_set_error(scp->session,SSH_FATAL,"ssh_scp_push_file called under invalid state");
     return SSH_ERROR;
   }
-  snprintf(buffer,sizeof(buffer),"C%s %ld %s\n",perms, size, filename);
+  file=ssh_basename(filename);
+  snprintf(buffer, sizeof(buffer), "C%s %" PRIdS " %s\n", perms, size, file);
+  SAFE_FREE(file);
   r=channel_write(scp->channel,buffer,strlen(buffer));
   if(r==SSH_ERROR){
     scp->state=SSH_SCP_ERROR;
@@ -198,3 +266,12 @@ int ssh_scp_write(ssh_scp scp, const void *buffer, size_t len){
   }
   return SSH_OK;
 }
+
+ssh_scp_request ssh_scp_request_new(void){
+  ssh_scp_request r=malloc(sizeof(struct ssh_scp_request_struct));
+  if(r==NULL)
+    return NULL;
+  ZERO_STRUCTP(r);
+  return r;
+}
+

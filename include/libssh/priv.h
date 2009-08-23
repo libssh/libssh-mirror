@@ -32,18 +32,15 @@
 
 #ifdef _MSC_VER
 #define snprintf _snprintf
+/** Imitate define of inttypes.h */
+#define PRIdS "Id"
 #else
 #include <unistd.h>
+#define PRIdS "zd"
 #endif
 
 #include "config.h"
 #include "libssh/libssh.h"
-
-/* Debugging constants */
-
-/* Define this if you want to debug crypto systems */
-/* it's usefull when you are debugging the lib */
-/*#define DEBUG_CRYPTO */
 
 /* some constants */
 #define MAX_PACKET_LEN 262144
@@ -362,6 +359,7 @@ enum ssh_scp_states {
   SSH_SCP_READ_READING, //File is opened and reading
   SSH_SCP_ERROR         //Something bad happened
 };
+
 struct ssh_scp_struct {
   ssh_session session;
   int mode;
@@ -370,6 +368,16 @@ struct ssh_scp_struct {
   enum ssh_scp_states state;
   size_t filelen;
   size_t processed;
+};
+
+
+struct ssh_scp_request_struct {
+  ssh_scp scp;
+  enum ssh_scp_request_types type;
+  char *name;
+  char *mode;
+  size_t size;
+  int acked;
 };
 
 struct ssh_message_struct;
@@ -859,6 +867,10 @@ int match_hostname(const char *host, const char *pattern, unsigned int len);
 
 void message_handle(SSH_SESSION *session, uint32_t type);
 int ssh_execute_message_callbacks(SSH_SESSION *session);
+
+/* scp.c */
+
+ssh_scp_request ssh_scp_request_new(void);
 
 /* log.c */
 
