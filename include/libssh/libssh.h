@@ -441,7 +441,8 @@ LIBSSH_API int ssh_init(void);
 LIBSSH_API int ssh_finalize(void);
 
 /* messages.c */
-typedef struct ssh_message SSH_MESSAGE;
+typedef struct ssh_message_struct SSH_MESSAGE;
+typedef struct ssh_message_struct *ssh_message;
 
 LIBSSH_API SSH_MESSAGE *ssh_message_retrieve(SSH_SESSION *session, uint32_t packettype);
 LIBSSH_API SSH_MESSAGE *ssh_message_get(SSH_SESSION *session);

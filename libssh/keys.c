@@ -1152,7 +1152,7 @@ ssh_string ssh_do_sign_with_agent(ssh_session session,
 /*
  * This function concats in a buffer the values needed to do a signature
  * verification. */
-ssh_buffer ssh_userauth_build_digest(SSH_SESSION *session, struct ssh_message *msg, char *service) {
+ssh_buffer ssh_userauth_build_digest(SSH_SESSION *session, ssh_message msg, char *service) {
 /*
      The value of 'signature' is a signature by the corresponding private
    key over the following data, in the following order:

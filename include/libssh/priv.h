@@ -372,7 +372,7 @@ struct ssh_scp_struct {
   size_t processed;
 };
 
-struct ssh_message;
+struct ssh_message_struct;
 
 struct ssh_session_struct {
     struct error_struct error;
@@ -438,7 +438,7 @@ struct ssh_session_struct {
     int auth_methods;
     int hostkeys; /* contains type of host key wanted by client, in server impl */
     struct ssh_list *ssh_message_list; /* list of delayed SSH messages */
-    int (*ssh_message_callback)( struct ssh_session_struct *session,struct ssh_message *msg);
+    int (*ssh_message_callback)( struct ssh_session_struct *session, ssh_message msg);
     int log_verbosity; /*cached copy of the option structure */
     int log_indent; /* indentation level in enter_function logs */
 };
@@ -506,7 +506,7 @@ struct ssh_channel_request {
     char *subsystem;
 };
 
-struct ssh_message {
+struct ssh_message_struct {
     SSH_SESSION *session;
     int type;
     struct ssh_auth_request auth_request;
@@ -707,7 +707,7 @@ ssh_string try_publickey_from_file(SSH_SESSION *session,
 /* in keys.c */
 const char *ssh_type_to_char(int type);
 int ssh_type_from_name(const char *name);
-ssh_buffer ssh_userauth_build_digest(SSH_SESSION *session, struct ssh_message *msg, char *service);
+ssh_buffer ssh_userauth_build_digest(SSH_SESSION *session, ssh_message msg, char *service);
 
 ssh_private_key privatekey_make_dss(SSH_SESSION *session, ssh_buffer buffer);
 ssh_private_key privatekey_make_rsa(SSH_SESSION *session, ssh_buffer buffer,
