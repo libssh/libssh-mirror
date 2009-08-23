@@ -134,11 +134,14 @@ int ssh_scp_push_file(ssh_scp scp, const char *filename, size_t size, const char
   char buffer[1024];
   int r;
   uint8_t code;
+  char *file;
   if(scp->state != SSH_SCP_WRITE_INITED){
     ssh_set_error(scp->session,SSH_FATAL,"ssh_scp_push_file called under invalid state");
     return SSH_ERROR;
   }
-  snprintf(buffer, sizeof(buffer), "C%s %" PRIdS " %s\n", perms, size, filename);
+  file=ssh_basename(filename);
+  snprintf(buffer, sizeof(buffer), "C%s %" PRIdS " %s\n", perms, size, file);
+  SAFE_FREE(file);
   r=channel_write(scp->channel,buffer,strlen(buffer));
   if(r==SSH_ERROR){
     scp->state=SSH_SCP_ERROR;
