@@ -423,3 +423,39 @@ int ssh_scp_accept_request(ssh_scp scp){
     scp->state=SSH_SCP_READ_INITED;
   return SSH_OK;
 }
+
+/** @brief Read from a remote scp file
+ * @param buffer Destination buffer
+ * @param size Size of the buffer
+ * @returns Number of bytes read
+ * @returns SSH_ERROR An error happened while reading
+ */
+int ssh_scp_read(ssh_scp scp, void *buffer, size_t size){
+  int r;
+  if(scp->state == SSH_SCP_READ_REQUESTED && scp->request_type == SSH_SCP_REQUEST_NEWFILE){
+    r=ssh_scp_accept_request(scp);
+    if(r==SSH_ERROR)
+      return r;
+  }
+  if(scp->state != SSH_SCP_READ_READING){
+    ssh_set_error(scp->session,SSH_FATAL,"ssh_scp_read called under invalid state");
+    return SSH_ERROR;
+  }
+  if(scp->processed + size > scp->filelen)
+    size = scp->filelen - scp->processed;
+  if(size > 65536)
+    size=65536; /* avoid too large reads */
+  r=channel_read(scp->channel,buffer,size,0);
+  if(r != SSH_ERROR)
+    scp->processed += r;
+  else {
+    scp->state=SSH_SCP_ERROR;
+    return SSH_ERROR;
+  }
+  /* Check if we arrived at end of file */
+  if(scp->processed == scp->filelen) {
+    scp->processed=scp->filelen=0;
+    scp->state=SSH_SCP_READ_INITED;
+  }
+  return r;
+}

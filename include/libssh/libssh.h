@@ -486,6 +486,8 @@ LIBSSH_API int ssh_scp_write(ssh_scp scp, const void *buffer, size_t len);
 LIBSSH_API int ssh_scp_pull_request(ssh_scp scp);
 LIBSSH_API int ssh_scp_deny_request(ssh_scp scp, const char *reason);
 LIBSSH_API int ssh_scp_accept_request(ssh_scp scp);
+LIBSSH_API int ssh_scp_read(ssh_scp scp, void *buffer, size_t size);
+
 
 #ifdef __cplusplus
 }
