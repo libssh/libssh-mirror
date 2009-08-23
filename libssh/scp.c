@@ -356,6 +356,7 @@ int ssh_scp_pull_request(ssh_scp scp){
         scp->request_type=SSH_SCP_REQUEST_NEWDIR;
       }
       scp->state=SSH_SCP_READ_REQUESTED;
+      scp->processed = 0;
       return scp->request_type;
       break;
     case 'T':
@@ -394,7 +395,7 @@ int ssh_scp_deny_request(ssh_scp scp, const char *reason){
     return SSH_ERROR;
   }
   else {
-    scp->state=(scp->request_type==SSH_SCP_REQUEST_NEWFILE)?SSH_SCP_READ_READING:SSH_SCP_READ_INITED;
+    scp->state=SSH_SCP_READ_INITED;
     return SSH_OK;
   }
 }
