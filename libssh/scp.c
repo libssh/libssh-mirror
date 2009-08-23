@@ -390,8 +390,11 @@ int ssh_scp_deny_request(ssh_scp scp, const char *reason){
   }
   snprintf(buffer,sizeof(buffer),"%c%s\n",2,reason);
   err=channel_write(scp->channel,buffer,strlen(buffer));
-  if(err==SSH_ERROR)
+  if(err==SSH_ERROR) {
     return SSH_ERROR;
-  else
+  }
+  else {
+    scp->state=(scp->request_type==SSH_SCP_REQUEST_NEWFILE)?SSH_SCP_READ_READING:SSH_SCP_READ_INITED;
     return SSH_OK;
+  }
 }
