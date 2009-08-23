@@ -399,3 +399,27 @@ int ssh_scp_deny_request(ssh_scp scp, const char *reason){
     return SSH_OK;
   }
 }
+
+/**
+ * @brief accepts transfer of a file or creation of a directory
+ *  coming from the remote party
+ *  @returns SSH_OK the message was sent
+ *  @returns SSH_ERROR Error sending the message, or sending it in a bad state
+ */
+int ssh_scp_accept_request(ssh_scp scp){
+  char buffer[]={0x00};
+  int err;
+  if(scp->state != SSH_SCP_READ_REQUESTED){
+    ssh_set_error(scp->session,SSH_FATAL,"ssh_scp_deny_request called under invalid state");
+    return SSH_ERROR;
+  }
+  err=channel_write(scp->channel,buffer,1);
+  if(err==SSH_ERROR) {
+    return SSH_ERROR;
+  }
+  if(scp->request_type==SSH_SCP_REQUEST_NEWFILE)
+    scp->state=SSH_SCP_READ_READING;
+  else
+    scp->state=SSH_SCP_READ_INITED;
+  return SSH_OK;
+}
