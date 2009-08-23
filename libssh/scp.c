@@ -372,3 +372,26 @@ int ssh_scp_pull_request(ssh_scp scp){
   ssh_set_error(scp->session,SSH_FATAL,"Parsing error while parsing message: %s",buffer);
   return SSH_ERROR;
 }
+
+/**
+ * @brief denies the transfer of a file or creation of a directory
+ *  coming from the remote party
+ *  @param reason nul-terminated string with a human-readable explanation
+ *  of the deny
+ *  @returns SSH_OK the message was sent
+ *  @returns SSH_ERROR Error sending the message, or sending it in a bad state
+ */
+int ssh_scp_deny_request(ssh_scp scp, const char *reason){
+  char buffer[4096];
+  int err;
+  if(scp->state != SSH_SCP_READ_REQUESTED){
+    ssh_set_error(scp->session,SSH_FATAL,"ssh_scp_deny_request called under invalid state");
+    return SSH_ERROR;
+  }
+  snprintf(buffer,sizeof(buffer),"%c%s\n",2,reason);
+  err=channel_write(scp->channel,buffer,strlen(buffer));
+  if(err==SSH_ERROR)
+    return SSH_ERROR;
+  else
+    return SSH_OK;
+}
