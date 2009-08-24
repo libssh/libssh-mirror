@@ -55,6 +55,8 @@ else (OPENSSL_LIBRARIES AND OPENSSL_INCLUDE_DIRS)
       /usr/local/ssl/lib
       /opt/local/lib
       /sw/lib
+      /usr/sfw/lib/64
+      /usr/sfw/lib
   )
   mark_as_advanced(SSL_LIBRARY)
 
@@ -68,6 +70,8 @@ else (OPENSSL_LIBRARIES AND OPENSSL_INCLUDE_DIRS)
       /usr/local/ssl/lib
       /opt/local/lib
       /sw/lib
+      /usr/sfw/lib/64
+      /usr/sfw/lib
   )
   mark_as_advanced(SSLEAY32_LIBRARY)
 
@@ -81,6 +85,8 @@ else (OPENSSL_LIBRARIES AND OPENSSL_INCLUDE_DIRS)
       /usr/local/ssl/lib
       /opt/local/lib
       /sw/lib
+      /usr/sfw/lib/64
+      /usr/sfw/lib
   )
   mark_as_advanced(SSLEAY32MD_LIBRARY)
 
@@ -99,6 +105,8 @@ else (OPENSSL_LIBRARIES AND OPENSSL_INCLUDE_DIRS)
       /usr/local/ssl/lib
       /opt/local/lib
       /sw/lib
+      /usr/sfw/lib/64
+      /usr/sfw/lib
   )
   mark_as_advanced(CRYPTO_LIBRARY)
 
