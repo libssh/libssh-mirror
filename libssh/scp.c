@@ -165,14 +165,13 @@ int ssh_scp_push_directory(ssh_scp scp, const char *dirname, const char *perms){
  * @see ssh_scp_push_directory
  */
  int ssh_scp_leave_directory(ssh_scp scp){
-  char buffer[1024];
+  char buffer[]="E\n";
   int r;
   uint8_t code;
   if(scp->state != SSH_SCP_WRITE_INITED){
     ssh_set_error(scp->session,SSH_FATAL,"ssh_scp_leave_directory called under invalid state");
     return SSH_ERROR;
   }
-  strcpy(buffer, "E\n");
   r=channel_write(scp->channel,buffer,strlen(buffer));
   if(r==SSH_ERROR){
     scp->state=SSH_SCP_ERROR;
