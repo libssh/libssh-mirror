@@ -46,10 +46,13 @@ if (UNIX AND NOT WIN32)
     if (WITH_FORTIFY_SOURCE)
       add_definitions(-D_FORTIFY_SOURCE=2)
     endif (WITH_FORTIFY_SOURCE)
+
+    # Set linker flags
+    set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--as-needed")
   endif (CMAKE_COMPILER_IS_GNUCC)
 endif (UNIX AND NOT WIN32)
 
 # suppress warning about "deprecated" functions
-if(MSVC)
-add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-endif(MSVC)
+if (MSVC)
+  add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+endif (MSVC)
