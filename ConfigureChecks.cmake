@@ -57,6 +57,16 @@ if (UNIX)
   if (HAVE_LIBNSL)
     set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} nsl)
   endif (HAVE_LIBNSL)
+  # libresolv
+  check_library_exists(resolve hstrerror "" HAVE_LIBRESOLV)
+  if (HAVE_LIBRESOLV)
+    set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} resolv)
+  endif (HAVE_LIBRESOLV)
+  check_library_exists(rt nanosleep "" HAVE_LIBRT)
+  # librt
+  if (HAVE_LIBRT)
+    set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} rt)
+  endif (HAVE_LIBRT)
 
   check_function_exists(getaddrinfo HAVE_GETADDRINFO)
   check_function_exists(gethostbyname HAVE_GETHOSTBYNAME)
@@ -65,6 +75,7 @@ if (UNIX)
   check_function_exists(cfmakeraw HAVE_CFMAKERAW)
   check_function_exists(regcomp HAVE_REGCOMP)
 endif (UNIX)
+set(LIBSSH_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} CACHE INTERNAL "libssh required system libraries")
 
 # LIBRARIES
 if (CRYPTO_FOUND)
