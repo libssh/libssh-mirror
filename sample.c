@@ -288,7 +288,7 @@ void do_sftp(SSH_SESSION *session){
     int len=1;
     unsigned int i;
     char data[8000]={0};
-    char *link;
+    char *lnk;
 
     unsigned int count;
 
@@ -318,12 +318,12 @@ void do_sftp(SSH_SESSION *session){
       return;
     }
 
-    link = sftp_readlink(sftp_session, "/tmp/sftp_symlink_test");
-    if (link == NULL) {
+    lnk = sftp_readlink(sftp_session, "/tmp/sftp_symlink_test");
+    if (lnk == NULL) {
       fprintf(stderr, "Could not read link (%s)\n", ssh_get_error(session));
       return;
     }
-    printf("readlink /tmp/sftp_symlink_test: %s\n", link);
+    printf("readlink /tmp/sftp_symlink_test: %s\n", lnk);
 
     sftp_unlink(sftp_session, "/tmp/sftp_symlink_test");
 
