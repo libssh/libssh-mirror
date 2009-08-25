@@ -41,7 +41,7 @@ struct ssh_poll {
   union {
     socket_t fd;
     size_t idx;
-  };
+  } x;
   short events;
   ssh_poll_callback cb;
   void *cb_data;
@@ -250,7 +250,7 @@ SSH_POLL *ssh_poll_new(socket_t fd, short events, ssh_poll_callback cb,
   p = malloc(sizeof(SSH_POLL));
   if (p != NULL) {
     p->ctx = NULL;
-    p->fd = fd;
+    p->x.fd = fd;
     p->events = events;
     p->cb = cb;
     p->cb_data = userdata;
@@ -302,7 +302,7 @@ short ssh_poll_get_events(SSH_POLL *p) {
 void ssh_poll_set_events(SSH_POLL *p, short events) {
   p->events = events;
   if (p->ctx != NULL) {
-    p->ctx->pollfds[p->idx].events = events;
+    p->ctx->pollfds[p->x.idx].events = events;
   }
 }
 
@@ -338,10 +338,10 @@ void ssh_poll_remove_events(SSH_POLL *p, short events) {
 
 socket_t ssh_poll_get_fd(SSH_POLL *p) {
   if (p->ctx != NULL) {
-    return p->ctx->pollfds[p->idx].fd;
+    return p->ctx->pollfds[p->x.idx].fd;
   }
 
-  return p->fd;
+  return p->x.fd;
 }
 /**
  * @brief  Set the callback of a poll object.
@@ -460,12 +460,12 @@ int ssh_poll_ctx_add(SSH_POLL_CTX *ctx, SSH_POLL *p) {
     return -1;
   }
 
-  fd = p->fd;
-  p->idx = ctx->polls_used++;
-  ctx->pollptrs[p->idx] = p;
-  ctx->pollfds[p->idx].fd = fd;
-  ctx->pollfds[p->idx].events = p->events;
-  ctx->pollfds[p->idx].revents = 0;
+  fd = p->x.fd;
+  p->x.idx = ctx->polls_used++;
+  ctx->pollptrs[p->x.idx] = p;
+  ctx->pollfds[p->x.idx].fd = fd;
+  ctx->pollfds[p->x.idx].events = p->events;
+  ctx->pollfds[p->x.idx].revents = 0;
   p->ctx = ctx;
 
   return 0;
@@ -480,8 +480,8 @@ int ssh_poll_ctx_add(SSH_POLL_CTX *ctx, SSH_POLL *p) {
 void ssh_poll_ctx_remove(SSH_POLL_CTX *ctx, SSH_POLL *p) {
   size_t i;
 
-  i = p->idx;
-  p->fd = ctx->pollfds[i].fd;
+  i = p->x.idx;
+  p->x.fd = ctx->pollfds[i].fd;
   p->ctx = NULL;
 
   ctx->polls_used--;
