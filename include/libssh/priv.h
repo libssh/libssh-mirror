@@ -140,13 +140,13 @@ typedef BN_CTX* bignum_CTX;
 /* poll support */
 #ifdef HAVE_POLL
 #include <poll.h>
-typedef struct pollfd pollfd_t;
+typedef struct pollfd ssh_pollfd_t;
 #else /* HAVE_POLL */
-typedef struct pollfd_s {
+typedef struct ssh_pollfd_struct {
   socket_t fd;      /* file descriptor */
   short events;     /* requested events */
   short revents;    /* returned events */
-} pollfd_t;
+} ssh_pollfd_t;
 
 /* poll.c */
 #ifndef POLLIN
@@ -558,7 +558,7 @@ ssh_string agent_sign_data(struct ssh_session_struct *session,
 #endif
 
 /* poll.c */
-int ssh_poll(pollfd_t *fds, nfds_t nfds, int timeout);
+int ssh_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout);
 typedef struct ssh_poll_ctx SSH_POLL_CTX;
 typedef struct ssh_poll SSH_POLL;
 

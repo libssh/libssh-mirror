@@ -458,7 +458,7 @@ int ssh_socket_wait_for_data(struct socket *s, SSH_SESSION *session, uint32_t le
 /* ssh_socket_poll */
 int ssh_socket_poll(struct socket *s, int *writeable, int *except) {
   SSH_SESSION *session = s->session;
-  pollfd_t fd[1];
+  ssh_pollfd_t fd[1];
   int rc = -1;
 
   enter_function();

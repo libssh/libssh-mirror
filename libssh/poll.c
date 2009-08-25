@@ -49,7 +49,7 @@ struct ssh_poll {
 
 struct ssh_poll_ctx {
   SSH_POLL **pollptrs;
-  pollfd_t *pollfds;
+  ssh_pollfd_t *pollfds;
   size_t polls_allocated;
   size_t polls_used;
   size_t chunk_size;
@@ -58,7 +58,7 @@ struct ssh_poll_ctx {
 #ifdef HAVE_POLL
 #include <poll.h>
 
-int ssh_poll(pollfd_t *fds, nfds_t nfds, int timeout) {
+int ssh_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout) {
   return poll((struct pollfd *) fds, nfds, timeout);
 }
 
@@ -69,7 +69,7 @@ int ssh_poll(pollfd_t *fds, nfds_t nfds, int timeout) {
 
 #include <winsock2.h>
 
-int ssh_poll(pollfd_t *fds, nfds_t nfds, int timeout) {
+int ssh_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout) {
   return WSAPoll(fds, nfds, timeout);
 }
 
@@ -84,9 +84,9 @@ int ssh_poll(pollfd_t *fds, nfds_t nfds, int timeout) {
 #include <errno.h>
 
 static int poll_rest (HANDLE *handles, int nhandles,
-    pollfd_t *fds, nfds_t nfds, int timeout) {
+    ssh_pollfd_t *fds, nfds_t nfds, int timeout) {
   DWORD ready;
-  pollfd_t *f;
+  ssh_pollfd_t *f;
   int recursed_result;
 
   if (nhandles == 0) {
@@ -143,9 +143,9 @@ static int poll_rest (HANDLE *handles, int nhandles,
   return 0;
 }
 
-int ssh_poll(pollfd_t *fds, nfds_t nfds, int timeout) {
+int ssh_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout) {
   HANDLE handles[MAXIMUM_WAIT_OBJECTS];
-  pollfd_t *f;
+  ssh_pollfd_t *f;
   int nhandles = 0;
   int rc = -1;
 
@@ -419,14 +419,14 @@ void ssh_poll_ctx_free(SSH_POLL_CTX *ctx) {
 
 static int ssh_poll_ctx_resize(SSH_POLL_CTX *ctx, size_t new_size) {
   SSH_POLL **pollptrs;
-  pollfd_t *pollfds;
+  ssh_pollfd_t *pollfds;
 
   pollptrs = realloc(ctx->pollptrs, sizeof(SSH_POLL *) * new_size);
   if (pollptrs == NULL) {
     return -1;
   }
 
-  pollfds = realloc(ctx->pollfds, sizeof(pollfd_t) * new_size);
+  pollfds = realloc(ctx->pollfds, sizeof(ssh_pollfd_t) * new_size);
   if (pollfds == NULL) {
     ctx->pollptrs = realloc(pollptrs, sizeof(SSH_POLL *) * ctx->polls_allocated);
     return -1;
