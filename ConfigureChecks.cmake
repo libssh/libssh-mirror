@@ -58,7 +58,7 @@ if (UNIX)
     set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} nsl)
   endif (HAVE_LIBNSL)
   # libresolv
-  check_library_exists(resolve hstrerror "" HAVE_LIBRESOLV)
+  check_library_exists(resolv hstrerror "" HAVE_LIBRESOLV)
   if (HAVE_LIBRESOLV)
     set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} resolv)
   endif (HAVE_LIBRESOLV)
