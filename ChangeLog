@@ -1,6 +1,10 @@
 ChangeLog
 ==========
 
+version 0.3.4 (released 2009-xx-xx)
+  * Added ssh_basename and ssh_dirname.
+  * Fixed ssh_write_knownhost if ~/.ssh doesn't exist.
+
 version 0.3.3 (released 2009-08-18)
   * Fixed double free pointer crash in dsa_public_to_string.
   * Fixed channel_get_exit_status bug.
