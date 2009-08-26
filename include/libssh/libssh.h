@@ -373,6 +373,9 @@ const char *ssh_userauth_kbdint_getprompt(SSH_SESSION *session, unsigned int i, 
 int ssh_userauth_kbdint_setanswer(SSH_SESSION *session, unsigned int i,
     const char *answer);
 
+/* misc.c */
+char *ssh_dirname (const char *path);
+char *ssh_basename (const char *path);
 
 /* init.c */
 int ssh_init(void);
