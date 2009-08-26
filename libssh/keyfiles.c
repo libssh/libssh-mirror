@@ -22,12 +22,14 @@
  * MA 02111-1307, USA.
  */
 
+#include <ctype.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <stdio.h>
 #include <string.h>
-#include <errno.h>
 #include <stdlib.h>
-#include <fcntl.h>
-#include <ctype.h>
 
 #ifndef _WIN32
 #include <arpa/inet.h>
@@ -1446,6 +1448,7 @@ int ssh_write_knownhost(SSH_SESSION *session) {
   unsigned char *pubkey_64;
   char buffer[4096] = {0};
   FILE *file;
+  char *dir;
   size_t len = 0;
 
   if (ssh_options_default_known_hosts_file(session->options) < 0) {
@@ -1458,6 +1461,22 @@ int ssh_write_knownhost(SSH_SESSION *session) {
         "Cannot write host in known hosts if the hostname is unknown");
     return -1;
   }
+
+  /* Check if ~/.ssh exists and create it if not */
+  dir = ssh_dirname(session->options->known_hosts_file);
+  if (dir == NULL) {
+    ssh_set_error(session, SSH_FATAL, "%s", strerror(errno));
+    return -1;
+  }
+  if (! ssh_file_readaccess_ok(dir)) {
+    if (mkdir(dir, 0700) < 0) {
+      ssh_set_error(session, SSH_FATAL,
+          "Cannot create %s directory.", dir);
+      SAFE_FREE(dir);
+      return -1;
+    }
+  }
+  SAFE_FREE(dir);
 
   file = fopen(session->options->known_hosts_file, "a");
   if (file == NULL) {
