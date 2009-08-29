@@ -318,7 +318,7 @@ static int packet_read1(SSH_SESSION *session) {
       }
 
       memcpy(&crc,
-          buffer_get_rest(session->in_buffer) + (len+padding) - sizeof(uint32_t),
+          (unsigned char *)buffer_get_rest(session->in_buffer) + (len+padding) - sizeof(uint32_t),
           sizeof(uint32_t));
       buffer_pass_bytes_end(session->in_buffer, sizeof(uint32_t));
       crc = ntohl(crc);
@@ -544,7 +544,7 @@ static int packet_send1(SSH_SESSION *session) {
     goto error;
   }
 
-  crc = ssh_crc32(buffer_get(session->out_buffer) + sizeof(uint32_t),
+  crc = ssh_crc32((char *)buffer_get(session->out_buffer) + sizeof(uint32_t),
       buffer_get_len(session->out_buffer) - sizeof(uint32_t));
 
   if (buffer_add_u32(session->out_buffer, ntohl(crc)) < 0) {
@@ -556,7 +556,7 @@ static int packet_send1(SSH_SESSION *session) {
       buffer_get_len(session->out_buffer));
 #endif
 
-  packet_encrypt(session, buffer_get(session->out_buffer) + sizeof(uint32_t),
+  packet_encrypt(session, (unsigned char *)buffer_get(session->out_buffer) + sizeof(uint32_t),
       buffer_get_len(session->out_buffer) - sizeof(uint32_t));
 
 #ifdef DEBUG_CRYPTO

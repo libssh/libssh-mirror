@@ -282,7 +282,7 @@ int channel_write1(ssh_channel channel, const void *data, int len) {
   SSH_SESSION *session = channel->session;
   int origlen = len;
   int effectivelen;
-
+  const unsigned char *ptr=data;
   while (len > 0) {
     if (buffer_add_u8(session->out_buffer, SSH_CMSG_STDIN_DATA) < 0) {
       return -1;
@@ -291,11 +291,11 @@ int channel_write1(ssh_channel channel, const void *data, int len) {
     effectivelen = len > 32000 ? 32000 : len;
 
     if (buffer_add_u32(session->out_buffer, htonl(effectivelen)) < 0 ||
-        buffer_add_data(session->out_buffer, data, effectivelen) < 0) {
+        buffer_add_data(session->out_buffer, ptr, effectivelen) < 0) {
       return -1;
     }
 
-    data += effectivelen;
+    ptr += effectivelen;
     len -= effectivelen;
 
     if (packet_send(session) != SSH_OK) {
