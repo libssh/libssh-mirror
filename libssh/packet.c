@@ -168,7 +168,7 @@ static int packet_read2(SSH_SESSION *session) {
         goto error;
       }
 
-      ssh_log(session, SSH_LOG_RARE,
+      ssh_log(session, SSH_LOG_PACKET,
           "%hhd bytes padding, %d bytes left in buffer",
           padding, buffer_get_rest_len(session->in_buffer));
 
@@ -186,12 +186,12 @@ static int packet_read2(SSH_SESSION *session) {
       }
       buffer_pass_bytes_end(session->in_buffer, padding);
 
-      ssh_log(session, SSH_LOG_RARE,
+      ssh_log(session, SSH_LOG_PACKET,
           "After padding, %d bytes left in buffer",
           buffer_get_rest_len(session->in_buffer));
 #if defined(HAVE_LIBZ) && defined(WITH_LIBZ)
       if (session->current_crypto && session->current_crypto->do_compress_in) {
-        ssh_log(session, SSH_LOG_RARE, "Decompressing in_buffer ...");
+        ssh_log(session, SSH_LOG_PACKET, "Decompressing in_buffer ...");
         if (decompress_buffer(session, session->in_buffer) < 0) {
           goto error;
         }
@@ -383,7 +383,7 @@ int packet_translate(SSH_SESSION *session) {
     return SSH_ERROR;
   }
 
-  ssh_log(session, SSH_LOG_RARE, "Final size %d",
+  ssh_log(session, SSH_LOG_PACKET, "Final size %d",
       buffer_get_rest_len(session->in_buffer));
 
   if(buffer_get_u8(session->in_buffer, &session->in_packet.type) == 0) {
@@ -392,7 +392,7 @@ int packet_translate(SSH_SESSION *session) {
     return SSH_ERROR;
   }
 
-  ssh_log(session, SSH_LOG_RARE, "Type %hhd", session->in_packet.type);
+  ssh_log(session, SSH_LOG_PACKET, "Type %hhd", session->in_packet.type);
   session->in_packet.valid = 1;
 
   leave_function();
@@ -444,12 +444,12 @@ static int packet_send2(SSH_SESSION *session) {
 
   enter_function();
 
-  ssh_log(session, SSH_LOG_RARE,
+  ssh_log(session, SSH_LOG_PACKET,
       "Writing on the wire a packet having %u bytes before", currentlen);
 
 #if defined(HAVE_LIBZ) && defined(WITH_LIBZ)
   if (session->current_crypto && session->current_crypto->do_compress_out) {
-    ssh_log(session, SSH_LOG_RARE, "Compressing in_buffer ...");
+    ssh_log(session, SSH_LOG_PACKET, "Compressing in_buffer ...");
     if (compress_buffer(session,session->out_buffer) < 0) {
       goto error;
     }
@@ -468,7 +468,7 @@ static int packet_send2(SSH_SESSION *session) {
   }
 
   finallen = htonl(currentlen + padding + 1);
-  ssh_log(session, SSH_LOG_RARE,
+  ssh_log(session, SSH_LOG_PACKET,
       "%d bytes after comp + %d padding bytes = %lu bytes packet",
       currentlen, padding, (long unsigned int) ntohl(finallen));
 
