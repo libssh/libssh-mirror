@@ -4,7 +4,8 @@ include(CheckCCompilerFlag)
 
 if (UNIX AND NOT WIN32)
   if (CMAKE_COMPILER_IS_GNUCC)
-    add_definitions(-std=gnu99 -pedantic -Wall -Wextra -Wshadow -Wmissing-prototypes -Wdeclaration-after-statement -Wunused)
+    # add -Wconversion ?
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -pedantic -Wall -Wextra -Wshadow -Wmissing-prototypes -Wdeclaration-after-statement -Wunused -Wfloat-equal -Wpointer-arith -Wwrite-strings -Wformat-security -Wmissing-format-attribute")
 
     # with -fPIC
     check_c_compiler_flag("-fPIC" WITH_FPIC)
