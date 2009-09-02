@@ -208,7 +208,7 @@ typedef int socket_t;
 #define SSH_AGAIN -2 /* The nonblocking call must be repeated */
 #define SSH_EOF -127 /* We have already a eof */
 
-LIBSSH_API const char *ssh_get_error(void *error); 
+LIBSSH_API const char *ssh_get_error(void *error);
 LIBSSH_API int ssh_get_error_code(void *error);
 
 /* version checks */
@@ -217,7 +217,7 @@ LIBSSH_API const char *ssh_version(int req_version);
 /** \addtogroup ssh_log
  * @{
  */
- /** \brief Verbosity level for logging and help to debugging 
+ /** \brief Verbosity level for logging and help to debugging
   */
 
 enum {
@@ -227,15 +227,15 @@ enum {
 	/** Only rare and noteworthy events
 	 */
 	SSH_LOG_RARE,
-	/** High level protocol informations 
+	/** High level protocol informations
 	 */
 	SSH_LOG_PROTOCOL,
 	/** Lower level protocol infomations, packet level
 	 */
-	SSH_LOG_PACKET, 
+	SSH_LOG_PACKET,
 	/** Every function path
 	 */
-	SSH_LOG_FUNCTIONS 
+	SSH_LOG_FUNCTIONS
 };
 /** @}
  */
@@ -405,7 +405,7 @@ LIBSSH_API int ssh_options_set_auth_callback(SSH_OPTIONS *opt, ssh_auth_callback
 
 /* buffer.c */
 
-/** creates a new buffer 
+/** creates a new buffer
  */
 LIBSSH_API ssh_buffer buffer_new(void);
 LIBSSH_API void buffer_free(ssh_buffer buffer);
@@ -481,16 +481,16 @@ LIBSSH_API ssh_scp ssh_scp_new(ssh_session session, int mode, const char *locati
 LIBSSH_API int ssh_scp_init(ssh_scp scp);
 LIBSSH_API int ssh_scp_close(ssh_scp scp);
 LIBSSH_API void ssh_scp_free(ssh_scp scp);
-LIBSSH_API int ssh_scp_push_directory(ssh_scp scp, const char *dirname, const char *perms);
+LIBSSH_API int ssh_scp_push_directory(ssh_scp scp, const char *dirname, int mode);
 LIBSSH_API int ssh_scp_leave_directory(ssh_scp scp);
-LIBSSH_API int ssh_scp_push_file(ssh_scp scp, const char *filename, size_t size, const char *perms);
+LIBSSH_API int ssh_scp_push_file(ssh_scp scp, const char *filename, size_t size, int perms);
 LIBSSH_API int ssh_scp_write(ssh_scp scp, const void *buffer, size_t len);
 LIBSSH_API int ssh_scp_pull_request(ssh_scp scp);
 LIBSSH_API int ssh_scp_deny_request(ssh_scp scp, const char *reason);
 LIBSSH_API int ssh_scp_accept_request(ssh_scp scp);
 LIBSSH_API int ssh_scp_read(ssh_scp scp, void *buffer, size_t size);
 LIBSSH_API const char *ssh_scp_request_get_filename(ssh_scp scp);
-LIBSSH_API const char *ssh_scp_request_get_permissions(ssh_scp scp);
+LIBSSH_API int ssh_scp_request_get_permissions(ssh_scp scp);
 LIBSSH_API size_t ssh_scp_request_get_size(ssh_scp scp);
 
 

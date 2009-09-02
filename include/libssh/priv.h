@@ -371,7 +371,7 @@ struct ssh_scp_struct {
   size_t processed;
   enum ssh_scp_request_types request_type;
   char *request_name;
-  char *request_mode;
+  int request_mode;
 };
 
 struct ssh_message_struct;
@@ -864,6 +864,8 @@ int ssh_execute_message_callbacks(SSH_SESSION *session);
 
 /* scp.c */
 int ssh_scp_read_string(ssh_scp scp, char *buffer, size_t len);
+int ssh_scp_integer_mode(const char *mode);
+char *ssh_scp_string_mode(int mode);
 
 /* log.c */
 
@@ -872,7 +874,7 @@ int ssh_scp_read_string(ssh_scp scp, char *buffer, size_t len);
 #define __FUNCTION__ __func__
 #endif
 #endif
-   
+
 #define _enter_function(sess) \
 	do {\
 		if((sess)->log_verbosity >= SSH_LOG_FUNCTIONS){ \

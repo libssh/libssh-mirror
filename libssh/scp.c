@@ -120,30 +120,32 @@ void ssh_scp_free(ssh_scp scp){
   if(scp->channel)
     channel_free(scp->channel);
   SAFE_FREE(scp->location);
-  SAFE_FREE(scp->request_mode);
   SAFE_FREE(scp->request_name);
   SAFE_FREE(scp);
 }
 
 /** @brief creates a directory in a scp in sink mode
- * @param dirname Name of the directory being created. 
- * @param perms Text form of the unix permissions for the new directory, e.g. "0755".
+ * @param dirname Name of the directory being created.
+ * @param mode  Unix permissions for the new directory, e.g. 0755.
  * @returns SSH_OK if the directory was created.
  * @returns SSH_ERROR if an error happened.
  * @see ssh_scp_leave_directory
  */
-int ssh_scp_push_directory(ssh_scp scp, const char *dirname, const char *perms){
+int ssh_scp_push_directory(ssh_scp scp, const char *dirname, int mode){
   char buffer[1024];
   int r;
   uint8_t code;
   char *dir;
+  char *perms;
   if(scp->state != SSH_SCP_WRITE_INITED){
     ssh_set_error(scp->session,SSH_FATAL,"ssh_scp_push_directory called under invalid state");
     return SSH_ERROR;
   }
   dir=ssh_basename(dirname);
+  perms=ssh_scp_string_mode(mode);
   snprintf(buffer, sizeof(buffer), "D%s 0 %s\n", perms, dir);
   SAFE_FREE(dir);
+  SAFE_FREE(perms);
   r=channel_write(scp->channel,buffer,strlen(buffer));
   if(r==SSH_ERROR){
     scp->state=SSH_SCP_ERROR;
@@ -158,7 +160,7 @@ int ssh_scp_push_directory(ssh_scp scp, const char *dirname, const char *perms){
   return SSH_OK;
 }
 
-/** 
+/**
  * @brief Leaves a directory
  * @returns SSH_OK if the directory was created.
  * @returns SSH_ERROR if an error happened.
@@ -190,20 +192,22 @@ int ssh_scp_push_directory(ssh_scp scp, const char *dirname, const char *perms){
 /** @brief initializes the sending of a file to a scp in sink mode
  * @param filename Name of the file being sent. It should not contain any path indicator
  * @param size Exact size in bytes of the file being sent.
- * @param perms Text form of the unix permissions for the new file, e.g. "0644"
+ * @param mode Unix permissions for the new file, e.g. 0644
  * @returns SSH_OK if the file is ready to be sent.
  * @returns SSH_ERROR if an error happened.
  */
-int ssh_scp_push_file(ssh_scp scp, const char *filename, size_t size, const char *perms){
+int ssh_scp_push_file(ssh_scp scp, const char *filename, size_t size, int mode){
   char buffer[1024];
   int r;
   uint8_t code;
   char *file;
+  const char *perms;
   if(scp->state != SSH_SCP_WRITE_INITED){
     ssh_set_error(scp->session,SSH_FATAL,"ssh_scp_push_file called under invalid state");
     return SSH_ERROR;
   }
   file=ssh_basename(filename);
+  perms=ssh_scp_string_mode(mode);
   snprintf(buffer, sizeof(buffer), "C%s %" PRIdS " %s\n", perms, size, file);
   SAFE_FREE(file);
   r=channel_write(scp->channel,buffer,strlen(buffer));
@@ -300,8 +304,8 @@ int ssh_scp_read_string(ssh_scp scp, char *buffer, size_t len){
 
 /** @brief waits for a scp request (file, directory)
  * @returns SSH_ERROR Some error happened
- * @returns SSH_SCP_REQUEST_FILE The other side is sending a file
- * @returns SSH_SCP_REQUEST_DIRECTORY The other side is sending a directory
+ * @returns SSH_SCP_REQUEST_NEWFILE The other side is sending a file
+ * @returns SSH_SCP_REQUEST_NEWDIRECTORY The other side is sending a directory
  * @returns SSH_SCP_REQUEST_END_DIRECTORY The other side has finished with the current directory
  * @see ssh_scp_read
  * @see ssh_scp_deny_request
@@ -331,7 +335,8 @@ int ssh_scp_pull_request(ssh_scp scp){
         goto error;
       *p='\0';
       p++;
-      mode=strdup(&buffer[1]);
+      //mode=strdup(&buffer[1]);
+      scp->request_mode=ssh_scp_integer_mode(&buffer[1]);
       tmp=p;
       p=strchr(p,' ');
       if(p==NULL)
@@ -346,8 +351,6 @@ int ssh_scp_pull_request(ssh_scp scp){
       *p=0;
       name=strdup(tmp);
       SAFE_FREE(scp->request_name);
-      SAFE_FREE(scp->request_mode);
-      scp->request_mode=mode;
       scp->request_name=name;
       if(buffer[0]=='C'){
         scp->filelen=size;
@@ -461,7 +464,7 @@ int ssh_scp_read(ssh_scp scp, void *buffer, size_t size){
   return r;
 }
 
-/** Gets the name of the directory or file being
+/** @brief Gets the name of the directory or file being
  * pushed from the other party
  * @returns file name. Should not be freed.
  */
@@ -469,18 +472,38 @@ const char *ssh_scp_request_get_filename(ssh_scp scp){
   return scp->request_name;
 }
 
-/** Gets the permissions of the directory or file being
+/**@brief Gets the permissions of the directory or file being
  * pushed from the other party
- * @returns Unix permission string, e.g "0644". Should not be freed.
+ * @returns Unix permission, e.g 0644.
  */
-const char *ssh_scp_request_get_permissions(ssh_scp scp){
+int ssh_scp_request_get_permissions(ssh_scp scp){
   return scp->request_mode;
 }
 
-/** Gets the size of the file being pushed
+/** @brief Gets the size of the file being pushed
  * from the other party
  * @returns Numeric size of the file being read.
  */
 size_t ssh_scp_request_get_size(ssh_scp scp){
   return scp->filelen;
+}
+
+/** @brief Converts a scp text mode to an integer one
+ * @param mode mode to convert, e.g. "0644"
+ * @returns integer value, e.g. 420 for "0644"
+ */
+int ssh_scp_integer_mode(const char *mode){
+	int value=strtoul(mode,NULL,8) & 0xffff;
+	return value;
+}
+
+/** @brief Converts a unix mode into a scp string one.
+ * @param mode mode to convert, e.g. 420 or 0644
+ * @retuns pointer to a malloc'ed string containing the scp mode,
+ * e.g. "0644".
+ */
+char *ssh_scp_string_mode(int mode){
+	char buffer[16];
+	snprintf(buffer,sizeof(buffer),"%4o",mode);
+	return strdup(buffer);
 }
