@@ -167,6 +167,23 @@ static int open_location(struct location *loc, int flag){
       return -1;
     }
     return 0;
+  } else if(loc->is_ssh && flag==READ){
+    loc->session=connect_ssh(loc->host, loc->user);
+    if(!loc->session){
+      fprintf(stderr,"Couldn't connect to %s\n",loc->host);
+      return -1;
+    }
+    loc->scp=ssh_scp_new(loc->session,SSH_SCP_READ,loc->path);
+    if(!loc->scp){
+      fprintf(stderr,"error : %s\n",ssh_get_error(loc->session));
+      return -1;
+    }
+    if(ssh_scp_init(loc->scp)==SSH_ERROR){
+      fprintf(stderr,"error : %s\n",ssh_get_error(loc->session));
+      ssh_scp_free(loc->scp);
+      return -1;
+    }
+    return 0;
   } else {
     loc->file=fopen(loc->path,flag==READ ? "r":"w");
     if(!loc->file){
