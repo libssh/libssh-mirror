@@ -963,8 +963,8 @@ int crypt_set_algorithms_server(SSH_SESSION *session){
         ssh_log(session,SSH_LOG_PACKET,"enabling C->S compression");
         session->next_crypto->do_compress_in=1;
     }
-    free(match);
-    
+    SAFE_FREE(match);
+
     client=session->client_kex.methods[SSH_CRYPT_S_C];
     server=session->server_kex.methods[SSH_CRYPT_S_C];
     match=ssh_find_matching(client,server);
@@ -972,8 +972,8 @@ int crypt_set_algorithms_server(SSH_SESSION *session){
         ssh_log(session,SSH_LOG_PACKET,"enabling S->C compression\n");
         session->next_crypto->do_compress_out=1;
     }
-    free(match);
-    
+    SAFE_FREE(match);
+
     server=session->server_kex.methods[SSH_HOSTKEYS];
     client=session->client_kex.methods[SSH_HOSTKEYS];
     match=ssh_find_matching(client,server);
@@ -984,11 +984,11 @@ int crypt_set_algorithms_server(SSH_SESSION *session){
     else {
         ssh_set_error(session, SSH_FATAL, "Cannot know what %s is into %s",
             match ? match : NULL, server);
-        free(match);
+        SAFE_FREE(match);
         leave_function();
         return SSH_ERROR;
     }
-    free(match);
+    SAFE_FREE(match);
     leave_function();
     return SSH_OK;
 }
