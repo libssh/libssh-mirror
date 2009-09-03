@@ -906,7 +906,7 @@ int crypt_set_algorithms_server(SSH_SESSION *session){
     /* out */
     server = session->server_kex.methods[SSH_CRYPT_S_C];
     client = session->client_kex.methods[SSH_CRYPT_S_C];
-    match = ssh_find_matching(client,server);
+    match = ssh_find_matching(client, server);
 
     if(!match){
         ssh_set_error(session,SSH_FATAL,"Crypt_set_algorithms_server : no matching algorithm function found for %s",server);
@@ -982,12 +982,13 @@ int crypt_set_algorithms_server(SSH_SESSION *session){
     server=session->server_kex.methods[SSH_HOSTKEYS];
     client=session->client_kex.methods[SSH_HOSTKEYS];
     match=ssh_find_matching(client,server);
-    if(!strcmp(match,"ssh-dss"))
+    if(match && !strcmp(match,"ssh-dss"))
         session->hostkeys=TYPE_DSS;
-    else if(!strcmp(match,"ssh-rsa"))
+    else if(match && !strcmp(match,"ssh-rsa"))
         session->hostkeys=TYPE_RSA;
     else {
-        ssh_set_error(session,SSH_FATAL,"cannot know what %s is into %s",match,server);
+        ssh_set_error(session, SSH_FATAL, "Cannot know what %s is into %s",
+            match ? match : NULL, server);
         free(match);
         leave_function();
         return SSH_ERROR;
