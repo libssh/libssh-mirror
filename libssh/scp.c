@@ -66,6 +66,7 @@ int ssh_scp_init(ssh_scp scp){
     ssh_set_error(scp->session,SSH_FATAL,"ssh_scp_init called under invalid state");
     return SSH_ERROR;
   }
+  ssh_log(scp->session,SSH_LOG_PROTOCOL,"Initializing scp session %s on location '%s'",scp->mode==SSH_SCP_WRITE?"write":"read",scp->location);
   scp->channel=channel_new(scp->session);
   if(scp->channel == NULL){
     scp->state=SSH_SCP_ERROR;
@@ -201,15 +202,17 @@ int ssh_scp_push_file(ssh_scp scp, const char *filename, size_t size, int mode){
   int r;
   uint8_t code;
   char *file;
-  const char *perms;
+  char *perms;
   if(scp->state != SSH_SCP_WRITE_INITED){
     ssh_set_error(scp->session,SSH_FATAL,"ssh_scp_push_file called under invalid state");
     return SSH_ERROR;
   }
   file=ssh_basename(filename);
   perms=ssh_scp_string_mode(mode);
+  ssh_log(scp->session,SSH_LOG_PROTOCOL,"SCP pushing file %s, size %" PRIdS " with permissions '%s'",file,size,perms);
   snprintf(buffer, sizeof(buffer), "C%s %" PRIdS " %s\n", perms, size, file);
   SAFE_FREE(file);
+  SAFE_FREE(perms);
   r=channel_write(scp->channel,buffer,strlen(buffer));
   if(r==SSH_ERROR){
     scp->state=SSH_SCP_ERROR;
@@ -504,6 +507,6 @@ int ssh_scp_integer_mode(const char *mode){
  */
 char *ssh_scp_string_mode(int mode){
 	char buffer[16];
-	snprintf(buffer,sizeof(buffer),"%4o",mode);
+	snprintf(buffer,sizeof(buffer),"%.4o",mode);
 	return strdup(buffer);
 }
