@@ -85,11 +85,15 @@ int ssh_scp_init(ssh_scp scp){
     scp->state=SSH_SCP_ERROR;
     return SSH_ERROR;
   }
-  r=channel_read(scp->channel,&code,1,0);
-  if(code != 0){
-    ssh_set_error(scp->session,SSH_FATAL, "scp status code %ud not valid", code);
-    scp->state=SSH_SCP_ERROR;
-    return SSH_ERROR;
+  if(scp->mode == SSH_SCP_WRITE){
+	  r=channel_read(scp->channel,&code,1,0);
+	  if(code != 0){
+		  ssh_set_error(scp->session,SSH_FATAL, "scp status code %ud not valid", code);
+		  scp->state=SSH_SCP_ERROR;
+		  return SSH_ERROR;
+	  }
+  } else {
+	  channel_write(scp->channel,"",1);
   }
   if(scp->mode == SSH_SCP_WRITE)
     scp->state=SSH_SCP_WRITE_INITED;
@@ -328,6 +332,10 @@ int ssh_scp_pull_request(ssh_scp scp){
   err=ssh_scp_read_string(scp,buffer,sizeof(buffer));
   if(err==SSH_ERROR)
     return err;
+  p=strchr(buffer,'\n');
+  if(p!=NULL)
+	  *p='\0';
+  ssh_log(scp->session,SSH_LOG_PROTOCOL,"Received SCP request: '%s'",buffer);
   switch(buffer[0]){
     case 'C':
       /* File */
@@ -347,12 +355,7 @@ int ssh_scp_pull_request(ssh_scp scp){
       *p=0;
       size=strtoull(tmp,NULL,10);
       p++;
-      tmp=p;
-      p=strchr(p,'\n');
-      if(p==NULL)
-        goto error;
-      *p=0;
-      name=strdup(tmp);
+      name=strdup(p);
       SAFE_FREE(scp->request_name);
       scp->request_name=name;
       if(buffer[0]=='C'){
@@ -368,6 +371,13 @@ int ssh_scp_pull_request(ssh_scp scp){
       break;
     case 'T':
       /* Timestamp */
+    	break;
+    case 0x1:
+    	ssh_set_error(scp->session,SSH_REQUEST_DENIED,"SCP: %s",&buffer[1]);
+    	return SSH_ERROR;
+    case 0x2:
+    	ssh_set_error(scp->session,SSH_FATAL,"SCP: %s",&buffer[1]);
+    	return SSH_ERROR;
     default:
       ssh_set_error(scp->session,SSH_FATAL,"Unhandled message: %s",buffer);
       return SSH_ERROR;
