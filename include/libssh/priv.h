@@ -358,7 +358,8 @@ enum ssh_scp_states {
   SSH_SCP_READ_INITED,  //Gave our intention to read
   SSH_SCP_READ_REQUESTED, //We got a read request
   SSH_SCP_READ_READING, //File is opened and reading
-  SSH_SCP_ERROR         //Something bad happened
+  SSH_SCP_ERROR,         //Something bad happened
+  SSH_SCP_TERMINATED	//Transfer finished
 };
 
 struct ssh_scp_struct {
@@ -866,6 +867,7 @@ int ssh_execute_message_callbacks(SSH_SESSION *session);
 int ssh_scp_read_string(ssh_scp scp, char *buffer, size_t len);
 int ssh_scp_integer_mode(const char *mode);
 char *ssh_scp_string_mode(int mode);
+int ssh_scp_response(ssh_scp scp, char **response);
 
 /* log.c */
 

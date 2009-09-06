@@ -474,7 +474,9 @@ enum ssh_scp_request_types {
   /** A new directory is going to be pulled */
   SSH_SCP_REQUEST_NEWDIR=1,
   /** A new file is going to be pulled */
-  SSH_SCP_REQUEST_NEWFILE
+  SSH_SCP_REQUEST_NEWFILE,
+  /** End of requests */
+  SSH_SCP_REQUEST_EOF
 };
 
 LIBSSH_API ssh_scp ssh_scp_new(ssh_session session, int mode, const char *location);

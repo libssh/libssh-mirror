@@ -234,6 +234,48 @@ int ssh_scp_push_file(ssh_scp scp, const char *filename, size_t size, int mode){
   return SSH_OK;
 }
 
+/** @brief waits for a response of the scp server
+ * @internal
+ * @param response pointer where the response message must be
+ * copied if any. This pointer must then be free'd.
+ * @returns the return code.
+ * @returns SSH_ERROR a error occured
+ */
+int ssh_scp_response(ssh_scp scp, char **response){
+	unsigned char code;
+	int r;
+	char msg[128];
+	r=channel_read(scp->channel,&code,1,0);
+	if(r == SSH_ERROR)
+		return SSH_ERROR;
+	if(code == 0)
+		return 0;
+	if(code > 2){
+		ssh_set_error(scp->session,SSH_FATAL, "SCP: invalid status code %ud received", code);
+		scp->state=SSH_SCP_ERROR;
+		return SSH_ERROR;
+	}
+	r=ssh_scp_read_string(scp,msg,sizeof(msg));
+	if(r==SSH_ERROR)
+		return r;
+	/* Warning */
+	if(code == 1){
+		ssh_set_error(scp->session,SSH_REQUEST_DENIED, "SCP: Warning: status code 1 received: %s", msg);
+		ssh_log(scp->session,SSH_LOG_RARE,"SCP: Warning: status code 1 received: %s", msg);
+		if(response)
+			*response=strdup(msg);
+		return 1;
+	}
+	if(code == 2){
+		ssh_set_error(scp->session,SSH_FATAL, "SCP: Error: status code 2 received: %s", msg);
+		if(response)
+			*response=strdup(msg);
+		return 2;
+	}
+	/* Not reached */
+	return SSH_ERROR;
+}
+
 /** @brief Write into a remote scp file
  * @param buffer the buffer to write
  * @param len the number of bytes to write
@@ -330,8 +372,13 @@ int ssh_scp_pull_request(ssh_scp scp){
     return SSH_ERROR;
   }
   err=ssh_scp_read_string(scp,buffer,sizeof(buffer));
-  if(err==SSH_ERROR)
+  if(err==SSH_ERROR){
+	if(channel_is_eof(scp->channel)){
+		scp->state=SSH_SCP_TERMINATED;
+		return SSH_SCP_REQUEST_EOF;
+	}
     return err;
+  }
   p=strchr(buffer,'\n');
   if(p!=NULL)
 	  *p='\0';
@@ -373,13 +420,13 @@ int ssh_scp_pull_request(ssh_scp scp){
       /* Timestamp */
     	break;
     case 0x1:
-    	ssh_set_error(scp->session,SSH_REQUEST_DENIED,"SCP: %s",&buffer[1]);
+    	ssh_set_error(scp->session,SSH_REQUEST_DENIED,"SCP: Warning: %s",&buffer[1]);
     	return SSH_ERROR;
     case 0x2:
-    	ssh_set_error(scp->session,SSH_FATAL,"SCP: %s",&buffer[1]);
+    	ssh_set_error(scp->session,SSH_FATAL,"SCP: Error: %s",&buffer[1]);
     	return SSH_ERROR;
     default:
-      ssh_set_error(scp->session,SSH_FATAL,"Unhandled message: %s",buffer);
+      ssh_set_error(scp->session,SSH_FATAL,"Unhandled message: (%d)%s",buffer[0],buffer);
       return SSH_ERROR;
   }
 
@@ -449,6 +496,7 @@ int ssh_scp_accept_request(ssh_scp scp){
  */
 int ssh_scp_read(ssh_scp scp, void *buffer, size_t size){
   int r;
+  int code;
   if(scp->state == SSH_SCP_READ_REQUESTED && scp->request_type == SSH_SCP_REQUEST_NEWFILE){
     r=ssh_scp_accept_request(scp);
     if(r==SSH_ERROR)
@@ -472,7 +520,18 @@ int ssh_scp_read(ssh_scp scp, void *buffer, size_t size){
   /* Check if we arrived at end of file */
   if(scp->processed == scp->filelen) {
     scp->processed=scp->filelen=0;
-    scp->state=SSH_SCP_READ_INITED;
+    channel_write(scp->channel,"",1);
+    code=ssh_scp_response(scp,NULL);
+    if(code == 0){
+    	scp->state=SSH_SCP_READ_INITED;
+    	return r;
+    }
+    if(code==1){
+    	scp->state=SSH_SCP_READ_INITED;
+    	return SSH_ERROR;
+    }
+    scp->state=SSH_SCP_ERROR;
+    return SSH_ERROR;
   }
   return r;
 }
