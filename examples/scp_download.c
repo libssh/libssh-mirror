@@ -111,8 +111,9 @@ static int fetch_files(ssh_session session){
 		  break;
 	  case SSH_ERROR:
 		  fprintf(stderr,"Error: %s\n",ssh_get_error(session));
-		  if(ssh_get_error_code(session)!=SSH_REQUEST_DENIED)
-			  return -1;
+		  return -1;
+	  case SSH_SCP_REQUEST_WARNING:
+		  fprintf(stderr,"Warning: %s\n",ssh_scp_request_get_warning(scp));
 		  break;
 	  case SSH_SCP_REQUEST_NEWDIR:
 		  filename=strdup(ssh_scp_request_get_filename(scp));

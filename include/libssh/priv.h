@@ -373,6 +373,7 @@ struct ssh_scp_struct {
   size_t processed;
   enum ssh_scp_request_types request_type;
   char *request_name;
+  char *warning;
   int request_mode;
 };
 

@@ -132,6 +132,7 @@ void ssh_scp_free(ssh_scp scp){
     channel_free(scp->channel);
   SAFE_FREE(scp->location);
   SAFE_FREE(scp->request_name);
+  SAFE_FREE(scp->warning);
   SAFE_FREE(scp);
 }
 
@@ -429,6 +430,8 @@ int ssh_scp_pull_request(ssh_scp scp){
     case 0x1:
     	ssh_set_error(scp->session,SSH_REQUEST_DENIED,"SCP: Warning: %s",&buffer[1]);
     	scp->request_type=SSH_SCP_REQUEST_WARNING;
+    	SAFE_FREE(scp->warning);
+    	scp->warning=strdup(&buffer[1]);
     	return scp->request_type;
     case 0x2:
     	ssh_set_error(scp->session,SSH_FATAL,"SCP: Error: %s",&buffer[1]);
@@ -588,4 +591,12 @@ char *ssh_scp_string_mode(int mode){
 	char buffer[16];
 	snprintf(buffer,sizeof(buffer),"%.4o",mode);
 	return strdup(buffer);
+}
+
+/** @brief Gets the warning string
+ * @returns Warning string. Should not be freed.
+ */
+
+const char *ssh_scp_request_get_warning(ssh_scp scp){
+	return scp->warning;
 }
