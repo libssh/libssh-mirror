@@ -40,7 +40,7 @@ ssh_scp ssh_scp_new(ssh_session session, int mode, const char *location){
     return NULL;
   }
   ZERO_STRUCTP(scp);
-  if(mode != SSH_SCP_WRITE && mode != SSH_SCP_READ){
+  if((mode&~SSH_SCP_RECURSIVE) != SSH_SCP_WRITE && (mode &~SSH_SCP_RECURSIVE) != SSH_SCP_READ){
     ssh_set_error(session,SSH_FATAL,"Invalid mode %d for ssh_scp_new()",mode);
     ssh_scp_free(scp);
     return NULL;
@@ -52,7 +52,8 @@ ssh_scp ssh_scp_new(ssh_session session, int mode, const char *location){
     return NULL;
   }
   scp->session=session;
-  scp->mode=mode;
+  scp->mode=mode & ~SSH_SCP_RECURSIVE;
+  scp->recursive = (mode & SSH_SCP_RECURSIVE) != 0;
   scp->channel=NULL;
   scp->state=SSH_SCP_NEW;
   return scp;
@@ -66,7 +67,10 @@ int ssh_scp_init(ssh_scp scp){
     ssh_set_error(scp->session,SSH_FATAL,"ssh_scp_init called under invalid state");
     return SSH_ERROR;
   }
-  ssh_log(scp->session,SSH_LOG_PROTOCOL,"Initializing scp session %s on location '%s'",scp->mode==SSH_SCP_WRITE?"write":"read",scp->location);
+  ssh_log(scp->session,SSH_LOG_PROTOCOL,"Initializing scp session %s %son location '%s'",
+		  scp->mode==SSH_SCP_WRITE?"write":"read",
+				  scp->recursive?"recursive ":"",
+						  scp->location);
   scp->channel=channel_new(scp->session);
   if(scp->channel == NULL){
     scp->state=SSH_SCP_ERROR;
@@ -78,9 +82,11 @@ int ssh_scp_init(ssh_scp scp){
     return SSH_ERROR;
   }
   if(scp->mode == SSH_SCP_WRITE)
-    snprintf(execbuffer,sizeof(execbuffer),"scp -t %s",scp->location);
+    snprintf(execbuffer,sizeof(execbuffer),"scp -t %s %s",
+    		scp->recursive ? "-r":"", scp->location);
   else
-    snprintf(execbuffer,sizeof(execbuffer),"scp -f %s",scp->location);
+    snprintf(execbuffer,sizeof(execbuffer),"scp -f %s %s",
+    		scp->recursive ? "-r":"", scp->location);
   if(channel_request_exec(scp->channel,execbuffer) == SSH_ERROR){
     scp->state=SSH_SCP_ERROR;
     return SSH_ERROR;
@@ -416,15 +422,19 @@ int ssh_scp_pull_request(ssh_scp scp){
       scp->processed = 0;
       return scp->request_type;
       break;
-    case 'T':
-      /* Timestamp */
-    	break;
+    case 'E':
+    	scp->request_type=SSH_SCP_REQUEST_ENDDIR;
+    	channel_write(scp->channel,"",1);
+    	return scp->request_type;
     case 0x1:
     	ssh_set_error(scp->session,SSH_REQUEST_DENIED,"SCP: Warning: %s",&buffer[1]);
-    	return SSH_ERROR;
+    	scp->request_type=SSH_SCP_REQUEST_WARNING;
+    	return scp->request_type;
     case 0x2:
     	ssh_set_error(scp->session,SSH_FATAL,"SCP: Error: %s",&buffer[1]);
     	return SSH_ERROR;
+    case 'T':
+      /* Timestamp */
     default:
       ssh_set_error(scp->session,SSH_FATAL,"Unhandled message: (%d)%s",buffer[0],buffer);
       return SSH_ERROR;

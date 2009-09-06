@@ -85,7 +85,7 @@ static int fetch_files(ssh_session session){
   int mode;
   char *filename;
   int r;
-  ssh_scp scp=ssh_scp_new(session, SSH_SCP_READ, "/tmp/libssh_tests/*");
+  ssh_scp scp=ssh_scp_new(session, SSH_SCP_READ | SSH_SCP_RECURSIVE, "/tmp/libssh_tests/*");
   if(ssh_scp_init(scp) != SSH_OK){
 	  fprintf(stderr,"error initializing scp: %s\n",ssh_get_error(session));
 	  return -1;
@@ -120,6 +120,9 @@ static int fetch_files(ssh_session session){
 		  printf("downloading directory %s, perms 0%o\n",filename,mode);
 		  free(filename);
 		  ssh_scp_accept_request(scp);
+		  break;
+	  case SSH_SCP_REQUEST_ENDDIR:
+		  printf("End of directory\n");
 		  break;
 	  case SSH_SCP_REQUEST_EOF:
 		  printf("End of requests\n");

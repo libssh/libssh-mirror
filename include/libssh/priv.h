@@ -365,6 +365,7 @@ enum ssh_scp_states {
 struct ssh_scp_struct {
   ssh_session session;
   int mode;
+  int recursive;
   ssh_channel channel;
   char *location;
   enum ssh_scp_states state;

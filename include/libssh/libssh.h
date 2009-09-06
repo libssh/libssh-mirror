@@ -467,7 +467,8 @@ enum {
   /** Code is going to write/create remote files */
   SSH_SCP_WRITE,
   /** Code is going to read remote files */
-  SSH_SCP_READ
+  SSH_SCP_READ,
+  SSH_SCP_RECURSIVE=0x10
 };
 
 enum ssh_scp_request_types {
@@ -476,7 +477,11 @@ enum ssh_scp_request_types {
   /** A new file is going to be pulled */
   SSH_SCP_REQUEST_NEWFILE,
   /** End of requests */
-  SSH_SCP_REQUEST_EOF
+  SSH_SCP_REQUEST_EOF,
+  /** End of directory */
+  SSH_SCP_REQUEST_ENDDIR,
+  /** Warning received */
+  SSH_SCP_REQUEST_WARNING
 };
 
 LIBSSH_API ssh_scp ssh_scp_new(ssh_session session, int mode, const char *location);
