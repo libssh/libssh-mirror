@@ -4,6 +4,7 @@ set(examples_SRCS
   libssh_scp.c
   authentication.c
   knownhosts.c
+  connect_ssh.c
 )
 
 include_directories(
