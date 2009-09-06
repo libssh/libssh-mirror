@@ -83,47 +83,6 @@ static int opts(int argc, char **argv){
   return 0;
 }
 
-static ssh_session connect_ssh(char *host, char *user){
-  ssh_session session;
-  ssh_options options;
-  int auth=0;
-
-  options=ssh_options_new();
-  if(user != NULL){
-    if (ssh_options_set_username(options,user) < 0) {
-      ssh_options_free(options);
-      return NULL;
-    }
-  }
-
-  if (ssh_options_set_host(options,host) < 0) {
-    ssh_options_free(options);
-    return NULL;
-  }
-  ssh_options_set_log_verbosity(options,verbosity);
-  session=ssh_new();
-  ssh_set_options(session,options);
-  if(ssh_connect(session)){
-    fprintf(stderr,"Connection failed : %s\n",ssh_get_error(session));
-    ssh_disconnect(session);
-    return NULL;
-  }
-  if(verify_knownhost(session)<0){
-    ssh_disconnect(session);
-    return NULL;
-  }
-  auth=authenticate_console(session);
-  if(auth==SSH_AUTH_SUCCESS){
-    return session;
-  } else if(auth==SSH_AUTH_DENIED){
-    fprintf(stderr,"Authentication failed\n");
-  } else {
-    fprintf(stderr,"Error while authenticating : %s\n",ssh_get_error(session));
-  }
-  ssh_disconnect(session);
-  return NULL;
-}
-
 static struct location *parse_location(char *loc){
   struct location *location=malloc(sizeof(struct location));
   char *ptr;
@@ -151,7 +110,7 @@ static struct location *parse_location(char *loc){
 
 static int open_location(struct location *loc, int flag){
   if(loc->is_ssh && flag==WRITE){
-    loc->session=connect_ssh(loc->host,loc->user);
+    loc->session=connect_ssh(loc->host,loc->user,verbosity);
     if(!loc->session){
       fprintf(stderr,"Couldn't connect to %s\n",loc->host);
       return -1;
@@ -168,7 +127,7 @@ static int open_location(struct location *loc, int flag){
     }
     return 0;
   } else if(loc->is_ssh && flag==READ){
-    loc->session=connect_ssh(loc->host, loc->user);
+    loc->session=connect_ssh(loc->host, loc->user,verbosity);
     if(!loc->session){
       fprintf(stderr,"Couldn't connect to %s\n",loc->host);
       return -1;
@@ -274,6 +233,8 @@ static int do_copy(struct location *src, struct location *dest, int recursive){
 			  fprintf(stderr,"Error reading scp: %s\n",ssh_get_error(src->session));
 			  return -1;
 		  }
+		  if(r==0)
+			  break;
 	  } else {
 		  r=fread(buffer,1,sizeof(buffer),src->file);
 		  if(r==0)
@@ -331,8 +292,11 @@ int main(int argc, char **argv){
     if(open_location(src,READ)<0){
       return EXIT_FAILURE;
     }
-    if(do_copy(src,dest,0) < 0)
-      return EXIT_FAILURE;
+    while(1){
+    	if(do_copy(src,dest,0) < 0){
+    		break;
+    	}
+    }
   }
   ssh_disconnect(dest->session);
   ssh_finalize();
