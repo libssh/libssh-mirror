@@ -3,7 +3,9 @@ ChangeLog
 
 version 0.3.4 (released 2009-xx-xx)
   * Added ssh_basename and ssh_dirname.
+  * Add missing NULL pointer checks to crypt_set_algorithms_server.
   * Fixed ssh_write_knownhost if ~/.ssh doesn't exist.
+  * Fixed a possible integer overflow in buffer_get_data().
 
 version 0.3.3 (released 2009-08-18)
   * Fixed double free pointer crash in dsa_public_to_string.
