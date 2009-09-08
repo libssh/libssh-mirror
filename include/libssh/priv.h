@@ -634,6 +634,9 @@ void ssh_cleanup(SSH_SESSION *session);
 int ssh_send_banner(SSH_SESSION *session, int is_server);
 char *ssh_get_banner(SSH_SESSION *session);
 
+/* config.c */
+int ssh_config_parse_file(ssh_options opt, const char *filename);
+
 /* errors.c */
 void ssh_set_error(void *error, int code, const char *descr, ...) PRINTF_ATTRIBUTE(3, 4);
 

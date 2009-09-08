@@ -1018,5 +1018,40 @@ int ssh_options_set_auth_callback(SSH_OPTIONS *opt, ssh_auth_callback cb,
   return 0;
 }
 
+/**
+ * @brief Parse the ssh config file.
+ *
+ * This must be the last call of all options, it may overwrite options which
+ * are already set. It requires at least the hostname to be set.
+ *
+ * @param  opt          The options structure to use.
+ *
+ * @param  filename     The options file to use, if NULL the default
+ *                      ~/.ssh/config will be used.
+ *
+ * @return 0 on success, < 0 on error.
+ */
+int ssh_options_parse_config(ssh_options opt, const char *filename) {
+  char buffer[1024] = {0};
+
+  if (opt == NULL || opt->host == NULL) {
+    return -1;
+  }
+
+  if (opt->ssh_dir == NULL) {
+    if (ssh_options_default_ssh_dir(opt) < 0) {
+      return -1;
+    }
+  }
+
+  /* set default filename */
+  if (filename == NULL) {
+    snprintf(buffer, 1024, "%s/config", opt->ssh_dir);
+    filename = buffer;
+  }
+
+  return ssh_config_parse_file(opt, filename);
+}
+
 /** @} */
 /* vim: set ts=2 sw=2 et cindent: */

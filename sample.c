@@ -531,6 +531,9 @@ int main(int argc, char **argv){
       ssh_options_free(options);
       return 1;
     }
+
+    ssh_options_parse_config(options, NULL);
+
     session=ssh_new();
     ssh_set_options(session,options);
     if(ssh_connect(session)){

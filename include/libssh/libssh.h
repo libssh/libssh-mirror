@@ -401,6 +401,7 @@ LIBSSH_API int ssh_options_set_dsa_server_key(SSH_OPTIONS *opt, const char *dsak
 LIBSSH_API int ssh_options_set_rsa_server_key(SSH_OPTIONS *opt, const char *rsakey);
 LIBSSH_API int ssh_options_set_auth_callback(SSH_OPTIONS *opt, ssh_auth_callback cb,
     void *userdata);
+LIBSSH_API int ssh_options_parse_config(SSH_OPTIONS *opt, const char *filename);
 
 
 /* buffer.c */

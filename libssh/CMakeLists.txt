@@ -74,6 +74,7 @@ set(libssh_SRCS
   buffer.c
   channels.c
   client.c
+  config.c
   connect.c
   crc32.c
   crypt.c
