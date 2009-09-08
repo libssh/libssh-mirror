@@ -298,8 +298,13 @@ u32 buffer_pass_bytes_end(struct buffer_struct *buffer, u32 len){
  * \returns len otherwise.
  */
 u32 buffer_get_data(struct buffer_struct *buffer, void *data, u32 len){
-    if(buffer->pos+len>buffer->used)
-        return 0;  /*no enough data in buffer */
+    /*
+     * Check for a integer overflow first, then check if not enough data is in
+     * the buffer.
+     */
+    if (buffer->pos + len < len || buffer->pos + len > buffer->used) {
+      return 0;
+    }
     memcpy(data,buffer->data+buffer->pos,len);
     buffer->pos+=len;
     return len;   /* no yet support for partial reads (is it really needed ?? ) */
