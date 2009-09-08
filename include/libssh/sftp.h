@@ -470,6 +470,17 @@ int sftp_seek64(SFTP_FILE *file, u64 new_offset);
 unsigned long sftp_tell(SFTP_FILE *file);
 
 /**
+ * @brief Report current byte position in file.
+ *
+ * @param file          Open sftp file handle.
+ *
+ * @return              The offset of the current byte relative to the beginning
+ *                      of the file associated with the file descriptor. < 0 on
+ *                      error.
+ */
+u64 sftp_tell64(SFTP_FILE *file);
+
+/**
  * @brief Rewinds the position of the file pointer to the beginning of the
  * file.
  *
