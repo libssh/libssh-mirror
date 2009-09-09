@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 
 #include "config.h"
@@ -34,6 +35,7 @@
 #define _WIN32_IE 0x0400 //SHGetSpecialFolderPath
 #include <winsock2.h> // Must be the first to include
 #include <shlobj.h>
+#include <direct.h>
 #else
 #include <pwd.h>
 #include <arpa/inet.h>
@@ -345,6 +347,29 @@ char *ssh_basename (const char *path) {
   new[len] = '\0';
 
   return new;
+}
+
+/**
+ * @brief Attempts to create a directory with the given pathname.
+ *
+ * This is the portable version of mkdir, mode is ignored on Windows systems.
+ *
+ * @param  pathname     The path name to create the directory.
+ *
+ * @param  mode         The permissions to use.
+ *
+ * @return 0 on success, < 0 on error with errno set.
+ */
+int ssh_mkdir(const char *pathname, mode_t mode) {
+  int r;
+
+#ifdef _WIN32
+  r = _mkdir(pathname);
+#else
+  r = mkdir(pathname, mode);
+#endif
+
+  return r;
 }
 
 /** @} */

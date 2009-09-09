@@ -1469,7 +1469,7 @@ int ssh_write_knownhost(SSH_SESSION *session) {
     return -1;
   }
   if (! ssh_file_readaccess_ok(dir)) {
-    if (mkdir(dir, 0700) < 0) {
+    if (ssh_mkdir(dir, 0700) < 0) {
       ssh_set_error(session, SSH_FATAL,
           "Cannot create %s directory.", dir);
       SAFE_FREE(dir);

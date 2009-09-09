@@ -444,6 +444,7 @@ LIBSSH_API int ssh_init(void);
 LIBSSH_API int ssh_finalize(void);
 
 /* misc.c */
+LIBSSH_API int ssh_mkdir (const char *pathname, mode_t mode);
 LIBSSH_API char *ssh_dirname (const char *path);
 LIBSSH_API char *ssh_basename (const char *path);
 
