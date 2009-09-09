@@ -3,6 +3,7 @@ ChangeLog
 
 version 0.3.4 (released 2009-xx-xx)
   * Added ssh_basename and ssh_dirname.
+  * Added a portable ssh_mkdir function.
   * Add missing NULL pointer checks to crypt_set_algorithms_server.
   * Fixed ssh_write_knownhost if ~/.ssh doesn't exist.
   * Fixed a possible integer overflow in buffer_get_data().
