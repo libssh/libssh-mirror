@@ -104,6 +104,9 @@ SSH_0.3 {
     ssh_get_random;
     ssh_get_status;
     ssh_get_version;
+    ssh_mkdir;
+    ssh_basename;
+    ssh_dirname;
     ssh_init;
     ssh_is_server_known;
     ssh_log;

@@ -374,6 +374,7 @@ int ssh_userauth_kbdint_setanswer(SSH_SESSION *session, unsigned int i,
     const char *answer);
 
 /* misc.c */
+int ssh_mkdir (const char *pathname, mode_t mode);
 char *ssh_dirname (const char *path);
 char *ssh_basename (const char *path);
 
