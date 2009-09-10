@@ -1019,11 +1019,12 @@ static int alldigits(const char *s) {
  */
 static char *lowercase(const char* str) {
   char *p = 0;
-  char *new = strdup(str);
+  char *new = NULL;
 
-  if((str == NULL) || (new == NULL)) {
-    return NULL;
-  }
+  if(str == NULL) return NULL;
+
+  new = strdup(str);
+  if(new == NULL) return NULL;
 
   for (p = new; *p; p++) {
     *p = tolower(*p);
