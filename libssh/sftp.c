@@ -2692,7 +2692,7 @@ SFTP_STATVFS *sftp_statvfs(SFTP_SESSION *sftp, const char *path) {
 SFTP_STATVFS *sftp_fstatvfs(SFTP_FILE *file) {
   STATUS_MESSAGE *status = NULL;
   SFTP_MESSAGE *msg = NULL;
-  SFTP_SESSION *sftp;
+  SFTP_SESSION *sftp = NULL;
   ssh_string ext;
   ssh_buffer buffer;
   uint32_t id;
