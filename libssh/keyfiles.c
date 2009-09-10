@@ -1018,13 +1018,16 @@ static int alldigits(const char *s) {
  * \internal
  */
 static char *lowercase(const char* str) {
-  char *p = 0;
-  char *new = NULL;
+  char *new, *p;
 
-  if(str == NULL) return NULL;
+  if (str == NULL) {
+    return NULL;
+  }
 
   new = strdup(str);
-  if(new == NULL) return NULL;
+  if (new == NULL) {
+    return NULL;
+  }
 
   for (p = new; *p; p++) {
     *p = tolower(*p);
