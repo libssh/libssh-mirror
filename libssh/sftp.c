@@ -2692,12 +2692,12 @@ SFTP_STATVFS *sftp_statvfs(SFTP_SESSION *sftp, const char *path) {
 SFTP_STATVFS *sftp_fstatvfs(SFTP_FILE *file) {
   STATUS_MESSAGE *status = NULL;
   SFTP_MESSAGE *msg = NULL;
-  SFTP_SESSION *sftp = NULL;
+  SFTP_SESSION *sftp;
   ssh_string ext;
   ssh_buffer buffer;
   uint32_t id;
 
-  if (sftp == NULL || file == NULL) {
+  if (file == NULL) {
     return NULL;
   }
   sftp = file->sftp;
