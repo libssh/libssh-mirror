@@ -1654,6 +1654,57 @@ error:
   return rc;
 }
 
+
+/**
+ * @brief Send a signal to remote process (as described in RFC 4254, section 6.9).
+ *
+ * Sends a signal 'signal' to the remote process.
+ * Note, that remote system may not support signals concept.
+ * In such a case this request will be silently ignored.
+ * Only SSH-v2 is supported (I'm not sure about SSH-v1).
+ *
+ * @param channel       The channel to send signal.
+ *
+ * @param signal        The signal to send (without SIG prefix)
+ *                      (e.g. "TERM" or "KILL").
+ *
+ * @return SSH_SUCCESS on success, SSH_ERROR on error (including attempt to send signal via SSH-v1 session).
+ *
+ */
+int channel_request_send_signal(ssh_channel channel, const char *signal) {
+  ssh_buffer buffer = NULL;
+  ssh_string encoded_signal = NULL;
+  int rc = SSH_ERROR;
+
+#ifdef WITH_SSH1
+  if (channel->version == 1) {
+    return SSH_ERROR; // TODO: Add support for SSH-v1 if possible.
+  }
+#endif
+
+  buffer = buffer_new();
+  if (buffer == NULL) {
+    goto error;
+  }
+
+  encoded_signal = string_from_char(signal);
+  if (encoded_signal == NULL) {
+    goto error;
+  }
+
+  if (buffer_add_ssh_string(buffer, encoded_signal) < 0) {
+    goto error;
+  }
+
+  rc = channel_request(channel, "signal", buffer, 0);
+error:
+  buffer_free(buffer);
+  string_free(encoded_signal);
+  return rc;
+}
+
+
+
 /* TODO : fix the delayed close thing */
 /* TODO : fix the blocking behaviours */
 
