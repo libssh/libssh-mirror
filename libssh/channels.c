@@ -672,6 +672,9 @@ int channel_open_session(ssh_channel channel) {
  *
  * @param localport     The source port (your local computer). It's facultative
  *                      and for logging purpose.
+ * @warning This function does not bind the local port and does not automatically
+ *          forward the content of a socket to the channel. You still have to
+ *          use channel_read and channel_write for this.
  *
  * @return SSH_OK on success\n
  *         SSH_ERROR on error
