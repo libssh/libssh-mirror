@@ -210,10 +210,7 @@ static int agent_talk(struct ssh_session *session,
 
   /* send length and then the request packet */
   if (atomicio(session->agent->sock, payload, 4, 0) == 4) {
-    buffer_get_data(request, payload, len);
-    ssh_log(session, SSH_LOG_PACKET,
-        "agent_talk - sending request, payload[0] = %u", payload[0]);
-    if (atomicio(session->agent->sock, payload, len, 0)
+    if (atomicio(session->agent->sock, buffer_get_rest(request), len, 0)
         != len) {
       ssh_log(session, SSH_LOG_PACKET, "atomicio sending request failed: %s",
           strerror(errno));
