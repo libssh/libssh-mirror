@@ -9,6 +9,7 @@ version 0.3.4 (released 2009-09-14)
   * Fixed ssh_write_knownhost if ~/.ssh doesn't exist.
   * Fixed a possible integer overflow in buffer_get_data().
   * Fixed possible security bug in packet_decrypt().
+  * Fixed a possible stack overflow in agent code.
 
 version 0.3.3 (released 2009-08-18)
   * Fixed double free pointer crash in dsa_public_to_string.
