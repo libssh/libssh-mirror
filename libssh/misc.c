@@ -33,7 +33,7 @@
 #include "config.h"
 
 #ifdef _WIN32
-#define _WIN32_IE 0x0400 //SHGetSpecialFolderPath
+#define _WIN32_IE 0x0501 //SHGetSpecialFolderPath
 #include <shlobj.h>
 #include <winsock2.h>
 #include <direct.h>
