@@ -1021,8 +1021,9 @@ int ssh_options_set_auth_callback(SSH_OPTIONS *opt, ssh_auth_callback cb,
 /**
  * @brief Parse the ssh config file.
  *
- * This must be the last call of all options, it may overwrite options which
- * are already set. It requires at least the hostname to be set.
+ * This should be the last call of all options, it may overwrite options which
+ * are already set. It requires that the host name is already set with
+ * ssh_options_set_host().
  *
  * @param  opt          The options structure to use.
  *
@@ -1030,6 +1031,8 @@ int ssh_options_set_auth_callback(SSH_OPTIONS *opt, ssh_auth_callback cb,
  *                      ~/.ssh/config will be used.
  *
  * @return 0 on success, < 0 on error.
+ *
+ * @see ssh_options_set_host()
  */
 int ssh_options_parse_config(ssh_options opt, const char *filename) {
   char buffer[1024] = {0};
