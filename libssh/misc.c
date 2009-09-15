@@ -32,7 +32,7 @@
 #include "config.h"
 
 #ifdef _WIN32
-#define _WIN32_IE 0x0400 //SHGetSpecialFolderPath
+#define _WIN32_IE 0x0501 //SHGetSpecialFolderPath
 #include <winsock2.h> // Must be the first to include
 #include <shlobj.h>
 #include <direct.h>
