@@ -192,7 +192,7 @@ static int packet_read2(SSH_SESSION *session) {
 #if defined(HAVE_LIBZ) && defined(WITH_LIBZ)
       if (session->current_crypto && session->current_crypto->do_compress_in) {
         ssh_log(session, SSH_LOG_PACKET, "Decompressing in_buffer ...");
-        if (decompress_buffer(session, session->in_buffer) < 0) {
+        if (decompress_buffer(session, session->in_buffer, MAX_PACKET_LEN) < 0) {
           goto error;
         }
       }

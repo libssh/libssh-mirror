@@ -785,7 +785,7 @@ unsigned char *bin_to_base64(const unsigned char *source, int len);
 
 /* gzip.c */
 int compress_buffer(SSH_SESSION *session,ssh_buffer buf);
-int decompress_buffer(SSH_SESSION *session,ssh_buffer buf);
+int decompress_buffer(SSH_SESSION *session,ssh_buffer buf, size_t maxlen);
 
 /* wrapper.c */
 int crypt_set_algorithms(SSH_SESSION *);

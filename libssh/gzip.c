@@ -143,7 +143,7 @@ static z_stream *initdecompress(SSH_SESSION *session) {
   return stream;
 }
 
-static ssh_buffer gzip_decompress(SSH_SESSION *session, ssh_buffer source) {
+static ssh_buffer gzip_decompress(SSH_SESSION *session, ssh_buffer source, size_t maxlen) {
   z_stream *zin = session->current_crypto->compress_in_ctx;
   void *in_ptr = buffer_get_rest(source);
   unsigned long in_size = buffer_get_rest_len(source);
@@ -183,17 +183,21 @@ static ssh_buffer gzip_decompress(SSH_SESSION *session, ssh_buffer source) {
       buffer_free(dest);
       return NULL;
     }
-
+    if (buffer_get_len(dest) > maxlen){
+      /* Size of packet exceded, avoid a denial of service attack */
+      buffer_free(dest);
+      return NULL;
+    }
     zin->next_out = out_buf;
   } while (zin->avail_out == 0);
 
   return dest;
 }
 
-int decompress_buffer(SSH_SESSION *session,ssh_buffer buf){
+int decompress_buffer(SSH_SESSION *session,ssh_buffer buf, size_t maxlen){
   ssh_buffer dest = NULL;
 
-  dest = gzip_decompress(session,buf);
+  dest = gzip_decompress(session,buf, maxlen);
   if (dest == NULL) {
     return -1;
   }
