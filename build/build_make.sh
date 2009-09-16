@@ -34,15 +34,26 @@ cleanup_and_exit () {
 }
 
 function configure() {
-	cmake "$@" ${SOURCE_DIR} || cleanup_and_exit $?
+	if [ -n "${CMAKEDIR}" ]; then
+		${CMAKEDIR}/bin/cmake "$@" ${SOURCE_DIR} || cleanup_and_exit $?
+	else
+		cmake "$@" ${SOURCE_DIR} || cleanup_and_exit $?
+	fi
 }
 
 function compile() {
-	CPUCOUNT=$(grep -c processor /proc/cpuinfo)
-	if [ "${CPUCOUNT}" -gt "1" ]; then
-		make -j${CPUCOUNT} $1 || cleanup_and_exit $?
+	if [ -f /proc/cpuinfo ]; then
+		CPUCOUNT=$(grep -c processor /proc/cpuinfo)
+	elif test `uname` = "SunOS" ; then
+		CPUCOUNT=$(psrinfo -p)
 	else
-		make $1 || exit $?
+		CPUCOUNT="1"
+	fi
+
+	if [ "${CPUCOUNT}" -gt "1" ]; then
+		${MAKE} -j${CPUCOUNT} $1 || cleanup_and_exit $?
+	else
+		${MAKE} $1 || exit $?
 	fi
 }
 
@@ -51,13 +62,18 @@ function clean_build_dir() {
 }
 
 function usage () {
-echo "Usage: `basename $0` [--prefix /install_prefix|--build [debug|final]|--clean|--verbose|--libsuffix (32|64)|--help]"
+echo "Usage: `basename $0` [--prefix /install_prefix|--build [debug|final]|--clean|--verbose|--libsuffix (32|64)|--help|--cmakedir /directory|--make
+(gmake|make)|--ccompiler (gcc|cc)|--withstaticlib|--unittesting|--withss1|--withserver]"
     cleanup_and_exit
 }
 
 cd ${BUILDDIR}
 
-OPTIONS="--graphviz=${BUILDDIR}/libssh.dot -DUNIT_TESTING=ON -DWITH_SSH1=ON -DWITH_SERVER=ON"
+# the default CMake options:
+OPTIONS="--graphviz=${BUILDDIR}/libssh.dot"
+
+# the default 'make' utility:
+MAKE="make"
 
 while test -n "$1"; do
 	PARAM="$1"
@@ -100,6 +116,34 @@ while test -n "$1"; do
 		;;
 		*-sysconfdir)
 			OPTIONS="${OPTIONS} -DSYSCONF_INSTALL_DIR=${ARG}"
+			shift
+		;;
+		*-cmakedir)
+			CMAKEDIR="${ARG}"
+			shift
+		;;
+		*-make)
+			MAKE="${ARG}"
+			shift
+		;;
+		*-ccompiler)
+			OPTIONS="${OPTIONS} -DCMAKE_C_COMPILER=${ARG}"
+			shift
+		;;
+		*-withstaticlib)
+			OPTIONS="${OPTIONS} -DWITH_STATIC_LIB=ON"
+			shift
+		;;
+		*-unittesting)
+			OPTIONS="${OPTIONS} -DUNIT_TESTING=ON"
+			shift
+		;;
+		*-withssh1)
+			OPTIONS="${OPTIONS} -DWITH_SSH1=ON"
+			shift
+		;;
+		*-withserver)
+			OPTIONS="${OPTIONS} -DWITH_SERVER=ON"
 			shift
 		;;
 		----noarg)
@@ -149,4 +193,3 @@ exec >&0 2>&0		# so that the logging tee finishes
 sleep 1			# wait till tee terminates
 
 cleanup_and_exit 0
-
