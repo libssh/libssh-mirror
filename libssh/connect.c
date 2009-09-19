@@ -289,7 +289,7 @@ socket_t ssh_connect_host(SSH_SESSION *session, const char *host,
 
       ssh_log(session, SSH_LOG_PACKET, "Resolving %s\n", bind_addr);
 
-      rc = getai(session,host, 0, &bind_ai);
+      rc = getai(session,bind_addr, 0, &bind_ai);
       if (rc != 0) {
         ssh_set_error(session, SSH_FATAL,
             "Failed to resolve bind address %s (%s)",
