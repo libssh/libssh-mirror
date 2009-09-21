@@ -108,8 +108,8 @@ SSH_OPTIONS *ssh_options_copy(SSH_OPTIONS *opt) {
     }
   }
   if (opt->bindaddr) {
-    new->host = strdup(opt->bindaddr);
-    if (new->host == NULL) {
+    new->bindaddr = strdup(opt->bindaddr);
+    if (new->bindaddr == NULL) {
       goto err;
     }
   }
