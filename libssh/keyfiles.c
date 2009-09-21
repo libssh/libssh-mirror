@@ -583,6 +583,8 @@ static int pem_get_password(char *buf, int size, int rwflag, void *userdata) {
   (void) rwflag;
 
   ZERO_STRUCTP(buf);
+  ssh_log(session, SSH_LOG_RARE,
+      "Trying to call external authentication function");
 
   if (session && session->options->auth_function) {
     if ((*session->options->auth_function)("Passphrase for private key:", buf, size, 0, 0,
@@ -624,6 +626,7 @@ ssh_private_key privatekey_from_file(SSH_SESSION *session, const char *filename,
   DSA *dsa = NULL;
   RSA *rsa = NULL;
 #endif
+  ssh_log(session, SSH_LOG_RARE, "Trying to open %s", filename);
   file = fopen(filename,"r");
   if (file == NULL) {
     ssh_set_error(session, SSH_REQUEST_DENIED,
@@ -631,6 +634,9 @@ ssh_private_key privatekey_from_file(SSH_SESSION *session, const char *filename,
     return NULL;
   }
 
+  ssh_log(session, SSH_LOG_RARE, "Trying to read %s, passphase=%s, authcb=%s",
+      filename, passphrase ? "true" : "false",
+      session->options->auth_function ? "true" : "false");
   switch (type) {
     case TYPE_DSS:
       if (passphrase == NULL) {
@@ -953,20 +959,20 @@ ssh_string try_publickey_from_file(SSH_SESSION *session, struct ssh_keys_struct 
 
   /* are them readable ? */
   snprintf(public, sizeof(public), pub, home);
-  ssh_log(session, SSH_LOG_PACKET, "Trying to open public key %s", public);
+  ssh_log(session, SSH_LOG_PACKET, "Trying to open publickey %s", public);
   if (!ssh_file_readaccess_ok(public)) {
-    ssh_log(session, SSH_LOG_PACKET, "Failed");
+    ssh_log(session, SSH_LOG_PACKET, "Failed to open publickey %s", public);
     return NULL;
   }
 
   snprintf(private, sizeof(private), priv, home);
-  ssh_log(session, SSH_LOG_PACKET, "Trying to open private key %s", private);
+  ssh_log(session, SSH_LOG_PACKET, "Trying to open privatekey %s", private);
   if (!ssh_file_readaccess_ok(private)) {
-    ssh_log(session, SSH_LOG_PACKET, "Failed");
+    ssh_log(session, SSH_LOG_PACKET, "Failed to open privatekey %s", private);
     return NULL;
   }
 
-  ssh_log(session, SSH_LOG_PACKET, "Success reading public and private key");
+  ssh_log(session, SSH_LOG_PACKET, "Success opening public and private key");
 
   /*
    * We are sure both the private and public key file is readable. We return

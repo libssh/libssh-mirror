@@ -929,11 +929,12 @@ int ssh_userauth_autopubkey(SSH_SESSION *session, const char *passphrase) {
       }
       string_free(pubkey);
       SAFE_FREE(privkeyfile);
+      ssh_log(session, SSH_LOG_RARE, "Publickey authentication error");
       leave_function();
       return rc;
     } else {
       if (rc != SSH_AUTH_SUCCESS){
-        ssh_log(session, SSH_LOG_RARE, "Public key refused by server");
+        ssh_log(session, SSH_LOG_RARE, "Publickey refused by server");
         string_free(pubkey);
         pubkey = NULL;
         SAFE_FREE(privkeyfile);
@@ -943,6 +944,7 @@ int ssh_userauth_autopubkey(SSH_SESSION *session, const char *passphrase) {
     }
 
     /* Public key accepted by server! */
+    ssh_log(session, SSH_LOG_RARE, "Trying to read privatekey %s", privkeyfile);
     privkey = privatekey_from_file(session, privkeyfile, type, passphrase);
     if (privkey == NULL) {
       ssh_log(session, SSH_LOG_FUNCTIONS,
