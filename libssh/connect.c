@@ -35,9 +35,15 @@
  *  http://blogs.msdn.com/oldnewthing/archive/2007/04/11/2079137.aspx
  */
 #undef _WIN32_WINNT
+#ifdef HAVE_WSPIAPI_H
 #define _WIN32_WINNT 0x0500 /* _WIN32_WINNT_WIN2K */
 #undef NTDDI_VERSION
 #define NTDDI_VERSION 0x05000400 /* NTDDI_WIN2KSP4 */
+#else
+#define _WIN32_WINNT 0x0501 /* _WIN32_WINNT_WINXP */
+#undef NTDDI_VERSION
+#define NTDDI_VERSION 0x05010000 /* NTDDI_WINXP */
+#endif
 
 #include <winsock2.h>
 #include <ws2tcpip.h>

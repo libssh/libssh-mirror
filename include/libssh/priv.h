@@ -34,6 +34,10 @@
 #define snprintf _snprintf
 /** Imitate define of inttypes.h */
 #define PRIdS "Id"
+#define strcasecmp _stricmp
+#define strncasecmp _strnicmp
+#define strtoull _strtoui64
+#define isblank(ch) ((ch) == ' ' || (ch) == '\t' || (ch) == '\n' || (ch) == '\r')
 #else
 #include <unistd.h>
 #define PRIdS "zd"

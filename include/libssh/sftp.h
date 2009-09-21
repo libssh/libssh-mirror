@@ -61,9 +61,6 @@ extern "C" {
   typedef uint32_t gid_t;
 #endif /* gid_t */
 #ifdef _MSC_VER
-#ifndef mode_t
-  typedef uint32_t mode_t;
-#endif /* mode_t */
 #ifndef ssize_t
   typedef _W64 signed int ssize_t;
 #endif /* ssize_t */

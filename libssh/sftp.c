@@ -33,6 +33,14 @@
 
 #ifndef _WIN32
 #include <arpa/inet.h>
+#else
+#define S_IFSOCK 0140000
+#define S_IFLNK  0120000
+
+#ifdef _MSC_VER
+#define S_IFBLK  0060000
+#define S_IFIFO  0010000
+#endif
 #endif
 
 #include "libssh/priv.h"
@@ -933,7 +941,6 @@ static SFTP_ATTRIBUTES *sftp_parse_attr_4(SFTP_SESSION *sftp, ssh_buffer buf,
       }
       attr->permissions = ntohl(attr->permissions);
 
-#ifndef _WIN32
       /* FIXME on windows! */
       switch (attr->permissions & S_IFMT) {
         case S_IFSOCK:
@@ -955,7 +962,6 @@ static SFTP_ATTRIBUTES *sftp_parse_attr_4(SFTP_SESSION *sftp, ssh_buffer buf,
           attr->type = SSH_FILEXFER_TYPE_UNKNOWN;
           break;
       }
-#endif /* _WIN32 */
     }
 
     if (flags & SSH_FILEXFER_ATTR_ACCESSTIME) {
@@ -1126,8 +1132,6 @@ static SFTP_ATTRIBUTES *sftp_parse_attr_3(SFTP_SESSION *sftp, ssh_buffer buf,
       }
       attr->permissions = ntohl(attr->permissions);
 
-#ifndef _WIN32
-      /* FIXME on windows */
       switch (attr->permissions & S_IFMT) {
         case S_IFSOCK:
         case S_IFBLK:
@@ -1148,7 +1152,6 @@ static SFTP_ATTRIBUTES *sftp_parse_attr_3(SFTP_SESSION *sftp, ssh_buffer buf,
           attr->type = SSH_FILEXFER_TYPE_UNKNOWN;
           break;
       }
-#endif /* _WIN32 */
     }
 
     if (flags & SSH_FILEXFER_ATTR_ACMODTIME) {
