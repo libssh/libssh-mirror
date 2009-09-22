@@ -1359,7 +1359,7 @@ static int match_hashed_host(SSH_SESSION *session, const char *host,
  *                                   if host key is accepted\n
  *         SSH_SERVER_ERROR:         Some error happened
  *
- * \see ssh_options_set_wanted_algo()
+ * \see ssh_options_set()
  * \see ssh_get_pubkey_hash()
  *
  * \bug There is no current way to remove or modify an entry into the known
@@ -1375,7 +1375,7 @@ int ssh_is_server_known(SSH_SESSION *session) {
 
   enter_function();
 
-  if (ssh_options_default_known_hosts_file(session->options) < 0) {
+  if (ssh_options_set(session->options, SSH_OPTIONS_KNOWNHOSTS, NULL) < 0) {
     ssh_set_error(session, SSH_REQUEST_DENIED,
         "Can't find a known_hosts file");
     leave_function();
@@ -1461,7 +1461,7 @@ int ssh_write_knownhost(SSH_SESSION *session) {
   char *dir;
   size_t len = 0;
 
-  if (ssh_options_default_known_hosts_file(session->options) < 0) {
+  if (ssh_options_set(session->options, SSH_OPTIONS_KNOWNHOSTS, NULL) < 0) {
     ssh_set_error(session, SSH_FATAL, "Cannot find known_hosts file.");
     return -1;
   }
