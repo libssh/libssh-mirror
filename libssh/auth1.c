@@ -60,7 +60,7 @@ static int send_username(SSH_SESSION *session, const char *username) {
 
   if (!username) {
     if(!(username = session->options->username)) {
-      if(ssh_options_default_username(session->options)) {
+      if (ssh_options_set(session->options, SSH_OPTIONS_USER, NULL) < 0) {
         return session->auth_service_asked = SSH_AUTH_ERROR;
       } else {
         username = session->options->username;

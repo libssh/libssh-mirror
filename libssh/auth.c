@@ -218,7 +218,7 @@ int ssh_userauth_none(SSH_SESSION *session, const char *username) {
 
   if (username == NULL) {
     if (session->options->username == NULL) {
-      if (ssh_options_default_username(session->options) < 0) {
+      if (ssh_options_set(session->options, SSH_OPTIONS_USER, NULL) < 0) {
         leave_function();
         return rc;
       }
@@ -324,7 +324,7 @@ int ssh_userauth_offer_pubkey(SSH_SESSION *session, const char *username,
 
   if (username == NULL) {
     if (session->options->username == NULL) {
-      if (ssh_options_default_username(session->options) < 0) {
+      if (ssh_options_set(session->options, SSH_OPTIONS_USER, NULL) < 0) {
         leave_function();
         return rc;
       }
@@ -436,7 +436,7 @@ int ssh_userauth_pubkey(SSH_SESSION *session, const char *username,
 
   if (username == NULL) {
     if (session->options->username == NULL) {
-      if (ssh_options_default_username(session->options) < 0) {
+      if (ssh_options_set(session->options, SSH_OPTIONS_USER, NULL) < 0) {
         leave_function();
         return rc;
       }
@@ -554,7 +554,7 @@ int ssh_userauth_agent_pubkey(SSH_SESSION *session, const char *username,
 
   if (username == NULL) {
     if (session->options->username == NULL) {
-      if (ssh_options_default_username(session->options) < 0) {
+      if (ssh_options_set(session->options, SSH_OPTIONS_USER, NULL) < 0) {
         leave_function();
         return rc;
       }
@@ -681,7 +681,7 @@ int ssh_userauth_password(SSH_SESSION *session, const char *username,
 
   if (username == NULL) {
     if (session->options->username == NULL) {
-      if (ssh_options_default_username(session->options) < 0) {
+      if (ssh_options_set(session->options, SSH_OPTIONS_USER, NULL) < 0) {
         leave_function();
         return rc;
       }
@@ -806,7 +806,7 @@ static struct ssh_keys_struct keytab[] = {
  *
  * @see ssh_userauth_kbdint()
  * @see ssh_userauth_password()
- * @see ssh_options_set_identity()
+ * @see ssh_options_set()
  */
 int ssh_userauth_autopubkey(SSH_SESSION *session, const char *passphrase) {
   struct ssh_public_key_struct *publickey;
@@ -1354,7 +1354,7 @@ int ssh_userauth_kbdint(SSH_SESSION *session, const char *user,
     /* first time we call. we must ask for a challenge */
     if (user == NULL) {
       if ((user = session->options->username) == NULL) {
-        if (ssh_options_default_username(session->options) < 0) {
+        if (ssh_options_set(session->options, SSH_OPTIONS_USER, NULL) < 0) {
           leave_function();
           return SSH_AUTH_ERROR;
         } else {
