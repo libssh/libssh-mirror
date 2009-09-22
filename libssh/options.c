@@ -716,14 +716,7 @@ int ssh_options_set_host(SSH_OPTIONS *opt, const char *hostname){
  * @return 0 on success, < 0 on error.
  */
 int ssh_options_set_port(SSH_OPTIONS *opt, unsigned int port) {
-  if (opt == NULL) {
-    return -1;
-  }
-
-  opt->port = port & 0xffff;
-  opt->bindport = port & 0xffff;
-
-  return 0;
+  return ssh_options_set(opt, SSH_OPTIONS_PORT, &port);
 }
 
 /**
@@ -738,10 +731,6 @@ int ssh_options_set_port(SSH_OPTIONS *opt, unsigned int port) {
  * @bug this should not be set at options time
  */
 int ssh_options_set_username(SSH_OPTIONS *opt, const char *username) {
-  if (opt == NULL) {
-    return -1;
-  }
-
   return ssh_options_set(opt, SSH_OPTIONS_USER, username);
 }
 
@@ -759,12 +748,7 @@ int ssh_options_set_username(SSH_OPTIONS *opt, const char *username) {
  * @return 0 on success, < 0 on error.
  */
 int ssh_options_set_fd(SSH_OPTIONS *opt, socket_t fd) {
-  if (opt == NULL) {
-    return -1;
-  }
-  opt->fd = fd;
-
-  return 0;
+  return ssh_options_set(opt, SSH_OPTIONS_FD, &fd);
 }
 
 /**
@@ -783,14 +767,15 @@ int ssh_options_set_fd(SSH_OPTIONS *opt, socket_t fd) {
  * @return 0 on success, < 0 on error.
  */
 int ssh_options_set_bind(SSH_OPTIONS *opt, const char *bindaddr, int port) {
-  if (opt == NULL || bindaddr == NULL) {
+  int rc;
+
+  rc = ssh_options_set(opt, SSH_OPTIONS_SERVER_BINDADDR, bindaddr);
+  if (rc < 0) {
     return -1;
   }
+  rc = ssh_options_set(opt, SSH_OPTIONS_SERVER_BINDPORT, &port);
 
-  ssh_options_set(opt, SSH_OPTIONS_SERVER_BINDADDR, bindaddr);
-  ssh_options_set(opt, SSH_OPTIONS_SERVER_BINDPORT, &port);
-
-  return 0;
+  return rc;
 }
 
 /**
@@ -809,20 +794,7 @@ int ssh_options_set_bind(SSH_OPTIONS *opt, const char *bindaddr, int port) {
  * @see ssh_options_set_user_home_dir()
  */
 int ssh_options_set_ssh_dir(SSH_OPTIONS *opt, const char *dir) {
-  char buffer[1024] = {0};
-
-  if (opt == NULL || dir == NULL) {
-    return -1;
-  }
-
-  snprintf(buffer, 1024, dir, ssh_get_user_home_dir());
-  SAFE_FREE(opt->ssh_dir);
-  opt->ssh_dir = strdup(buffer);
-  if (opt->ssh_dir == NULL) {
-    return -1;
-  }
-
-  return 0;
+  return ssh_options_set(opt, SSH_OPTIONS_SSH_DIR, dir);
 }
 
 /**
@@ -840,20 +812,7 @@ int ssh_options_set_ssh_dir(SSH_OPTIONS *opt, const char *dir) {
  * @see ssh_options_set_user_home_dir()
  */
 int ssh_options_set_known_hosts_file(SSH_OPTIONS *opt, const char *dir){
-  char buffer[1024] = {0};
-
-  if (opt == NULL || dir == NULL) {
-    return -1;
-  }
-
-  snprintf(buffer, 1024, dir, ssh_get_user_home_dir());
-  SAFE_FREE(opt->known_hosts_file);
-  opt->known_hosts_file = strdup(buffer);
-  if (opt->known_hosts_file == NULL) {
-    return -1;
-  }
-
-  return 0;
+  return ssh_options_set(opt, SSH_OPTIONS_KNOWNHOSTS, dir);
 }
 
 /**
@@ -871,20 +830,7 @@ int ssh_options_set_known_hosts_file(SSH_OPTIONS *opt, const char *dir){
  * @see ssh_options_set_user_home_dir()
  */
 int ssh_options_set_identity(SSH_OPTIONS *opt, const char *identity){
-  char buffer[1024] = {0};
-
-  if (opt == NULL || identity == NULL) {
-    return -1;
-  }
-
-  snprintf(buffer, 1024, identity, ssh_get_user_home_dir());
-  SAFE_FREE(opt->identity);
-  opt->identity = strdup(buffer);
-  if (opt->identity == NULL) {
-    return -1;
-  }
-
-  return 0;
+  return ssh_options_set(opt, SSH_OPTIONS_IDENTITY, identity);
 }
 
 /**
@@ -897,16 +843,7 @@ int ssh_options_set_identity(SSH_OPTIONS *opt, const char *identity){
  * @return 0 on success, < 0 on error.
  */
 int ssh_options_set_dsa_server_key(SSH_OPTIONS *opt, const char *dsakey) {
-  if (opt == NULL || dsakey == NULL) {
-    return -1;
-  }
-
-  opt->dsakey = strdup(dsakey);
-  if (opt->dsakey == NULL) {
-    return -1;
-  }
-
-  return 0;
+  return ssh_options_set(opt, SSH_OPTIONS_SERVER_DSAKEY, dsakey);
 }
 
 /**
@@ -919,16 +856,7 @@ int ssh_options_set_dsa_server_key(SSH_OPTIONS *opt, const char *dsakey) {
  * @return 0 on success, < 0 on error.
  */
 int ssh_options_set_rsa_server_key(SSH_OPTIONS *opt, const char *rsakey) {
-  if (opt == NULL || rsakey == NULL) {
-    return -1;
-  }
-
-  opt->rsakey = strdup(rsakey);
-  if (opt->rsakey == NULL) {
-    return -1;
-  }
-
-  return 0;
+  return ssh_options_set(opt, SSH_OPTIONS_SERVER_RSAKEY, rsakey);
 }
 
 /**
@@ -941,17 +869,7 @@ int ssh_options_set_rsa_server_key(SSH_OPTIONS *opt, const char *rsakey) {
  * @return 0 on success, < 0 on error.
  */
 int ssh_options_set_banner(SSH_OPTIONS *opt, const char *banner) {
-  if (opt == NULL || banner == NULL) {
-    return -1;
-  }
-
-  SAFE_FREE(opt->banner);
-  opt->banner = strdup(banner);
-  if (opt->banner == NULL) {
-    return -1;
-  }
-
-  return 0;
+  return ssh_options_set(opt, SSH_OPTIONS_SERVER_BANNER, banner);
 }
 
 /**
@@ -1006,71 +924,15 @@ int ssh_options_set_wanted_algos(SSH_OPTIONS *opt, int algo, const char *list) {
 
 /* this function must be called when no specific username has been asked. it has to guess it */
 int ssh_options_default_username(SSH_OPTIONS *opt) {
-  char *user = NULL;
-
-  if (opt->username) {
-    return 0;
-  }
-
-#ifndef _WIN32
-  user = get_username_from_uid(opt,getuid());
-  if (user) {
-    opt->username = user;
-    return 0;
-  }
-#else
-{
-  DWORD Size = 0;
-  GetUserName(NULL, &Size); //Get Size
-  user = malloc(Size);
-  if (user == NULL) {
-    return -1;
-  }
-  if (GetUserName(user, &Size)) {
-    opt->username=user;
-    return 0;
-  } else {
-    SAFE_FREE(user);
-  }
-}
-#endif
-  return -1;
+  return ssh_options_set(opt, SSH_OPTIONS_USER, NULL);
 }
 
 int ssh_options_default_ssh_dir(SSH_OPTIONS *opt) {
-  char buffer[256] = {0};
-
-  if (opt->ssh_dir) {
-    return 0;
-  }
-
-  snprintf(buffer, 256, "%s/.ssh/", ssh_get_user_home_dir());
-  opt->ssh_dir = strdup(buffer);
-  if (opt->ssh_dir == NULL) {
-    return -1;
-  }
-
-  return 0;
+  return ssh_options_set(opt, SSH_OPTIONS_SSH_DIR, NULL);
 }
 
 int ssh_options_default_known_hosts_file(SSH_OPTIONS *opt) {
-  char buffer[1024] = {0};
-
-  if (opt->known_hosts_file) {
-    return 0;
-  }
-
-  if (ssh_options_default_ssh_dir(opt) < 0) {
-    return -1;
-  }
-
-  snprintf(buffer, 1024, "%s/known_hosts", opt->ssh_dir);
-  opt->known_hosts_file = strdup(buffer);
-  if (opt->known_hosts_file == NULL) {
-    return -1;
-  }
-
-  return 0;
+  return ssh_options_set(opt, SSH_OPTIONS_KNOWNHOSTS, NULL);
 }
 
 /**
@@ -1118,14 +980,11 @@ int ssh_options_set_status_callback(SSH_OPTIONS *opt,
  *      complete exchange.
  */
 int ssh_options_set_timeout(SSH_OPTIONS *opt, long seconds, long usec) {
-  if (opt == NULL) {
+  if (ssh_options_set(opt, SSH_OPTIONS_TIMEOUT, &seconds) < 0) {
     return -1;
   }
 
-  opt->timeout = seconds;
-  opt->timeout_usec = usec;
-
-  return 0;
+  return ssh_options_set(opt, SSH_OPTIONS_TIMEOUT_USEC, &usec);
 }
 
 /**
@@ -1140,17 +999,7 @@ int ssh_options_set_timeout(SSH_OPTIONS *opt, long seconds, long usec) {
  * @return 0 on success, < 0 on error.
  */
 int ssh_options_allow_ssh1(SSH_OPTIONS *opt, int allow) {
-  if (opt == NULL) {
-    return -1;
-  }
-
-  if (allow) {
-    opt->ssh1allowed = 1;
-  } else {
-    opt->ssh1allowed = 0;
-  }
-
-  return 0;
+  return ssh_options_set(opt, SSH_OPTIONS_SSH1, &allow);
 }
 
 /**
@@ -1165,17 +1014,7 @@ int ssh_options_allow_ssh1(SSH_OPTIONS *opt, int allow) {
  * @return 0 on success, < 0 on error.
  */
 int ssh_options_allow_ssh2(SSH_OPTIONS *opt, int allow) {
-  if (opt == NULL) {
-    return -1;
-  }
-
-  if (allow) {
-    opt->ssh2allowed = 1;
-  } else {
-    opt->ssh2allowed = 0;
-  }
-
-  return 0;
+  return ssh_options_set(opt, SSH_OPTIONS_SSH2, &allow);
 }
 
 /**
@@ -1219,13 +1058,7 @@ int ssh_options_set_log_function(SSH_OPTIONS *opt, ssh_log_callback cb,
  * @return 0 on success, < 0 on error.
  */
 int ssh_options_set_log_verbosity(SSH_OPTIONS *opt, int verbosity) {
-  if (opt == NULL) {
-    return -1;
-  }
-
-  opt->log_verbosity = verbosity;
-
-  return 0;
+  return ssh_options_set(opt, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
 }
 /**
  * @brief Parse command line arguments.
@@ -1253,10 +1086,10 @@ int ssh_options_getopt(SSH_OPTIONS *options, int *argcptr, char **argv) {
   char *cipher = NULL;
   char *localaddr = NULL;
   char *identity = NULL;
+  char *port = NULL;
   char **save = NULL;
   int i = 0;
   int argc = *argcptr;
-  int port = 22;
   int debuglevel = 0;
   int usersa = 0;
   int usedss = 0;
@@ -1288,7 +1121,7 @@ int ssh_options_getopt(SSH_OPTIONS *options, int *argcptr, char **argv) {
         user = optarg;
         break;
       case 'p':
-        port = atoi(optarg) & 0xffff;
+        port = optarg;
         break;
       case 'v':
         debuglevel++;
@@ -1345,7 +1178,7 @@ int ssh_options_getopt(SSH_OPTIONS *options, int *argcptr, char **argv) {
     cont = 0;
   }
 
-  ssh_options_set_log_verbosity(options, debuglevel);
+  ssh_options_set(options, SSH_OPTIONS_LOG_VERBOSITY, &debuglevel);
 
   optind = saveoptind;
 
@@ -1374,47 +1207,47 @@ int ssh_options_getopt(SSH_OPTIONS *options, int *argcptr, char **argv) {
   }
 
   if (cont && cipher) {
-    if (ssh_options_set_wanted_algos(options, SSH_CRYPT_C_S, cipher) < 0) {
+    if (ssh_options_set(options, SSH_OPTIONS_CIPHERS_C_S, cipher) < 0) {
       cont = 0;
     }
-    if (cont && ssh_options_set_wanted_algos(options, SSH_CRYPT_S_C, cipher) < 0) {
+    if (cont && ssh_options_set(options, SSH_OPTIONS_CIPHERS_S_C, cipher) < 0) {
       cont = 0;
     }
   }
 
   if (cont && usersa) {
-    if (ssh_options_set_wanted_algos(options, SSH_HOSTKEYS, "ssh-rsa") < 0) {
+    if (ssh_options_set(options, SSH_OPTIONS_SERVER_HOSTKEY, "ssh-rsa") < 0) {
       cont = 0;
     }
   }
 
   if (cont && usedss) {
-    if (ssh_options_set_wanted_algos(options, SSH_HOSTKEYS, "ssh-dss") < 0) {
+    if (ssh_options_set(options, SSH_OPTIONS_SERVER_HOSTKEY, "ssh-dss") < 0) {
       cont = 0;
     }
   }
 
   if (cont && user) {
-    if (ssh_options_set_username(options, user) < 0) {
+    if (ssh_options_set(options, SSH_OPTIONS_USER, user) < 0) {
       cont = 0;
     }
   }
 
   if (cont && identity) {
-    if (ssh_options_set_identity(options, identity) < 0) {
+    if (ssh_options_set(options, SSH_OPTIONS_IDENTITY, identity) < 0) {
       cont = 0;
     }
   }
 
   if (cont && localaddr) {
-    if (ssh_options_set_bind(options, localaddr, 0) < 0) {
+    if (ssh_options_set(options, SSH_OPTIONS_SERVER_BINDADDR, localaddr) < 0) {
       cont = 0;
     }
   }
 
-  ssh_options_set_port(options, port);
-  ssh_options_allow_ssh1(options, ssh1);
-  ssh_options_allow_ssh2(options, ssh2);
+  ssh_options_set(options, SSH_OPTIONS_PORT_STR, port);
+  ssh_options_set(options, SSH_OPTIONS_SSH1, &ssh1);
+  ssh_options_set(options, SSH_OPTIONS_SSH2, &ssh2);
 
   if (!cont) {
     return -1;
