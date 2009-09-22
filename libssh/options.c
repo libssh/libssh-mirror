@@ -1087,6 +1087,7 @@ int ssh_options_getopt(SSH_OPTIONS *options, int *argcptr, char **argv) {
   char *localaddr = NULL;
   char *identity = NULL;
   char *port = NULL;
+  char *bindport = NULL;
   char **save = NULL;
   int i = 0;
   int argc = *argcptr;
@@ -1115,13 +1116,16 @@ int ssh_options_getopt(SSH_OPTIONS *options, int *argcptr, char **argv) {
   }
 
   opterr = 0; /* shut up getopt */
-  while(cont && ((i = getopt(argc, argv, "c:i:Cl:p:vb:rd12")) != -1)) {
+  while(cont && ((i = getopt(argc, argv, "c:i:Cl:p:vb:t:rd12")) != -1)) {
     switch(i) {
       case 'l':
         user = optarg;
         break;
       case 'p':
         port = optarg;
+        break;
+      case 't':
+        bindport = optarg;
         break;
       case 'v':
         debuglevel++;
@@ -1246,6 +1250,10 @@ int ssh_options_getopt(SSH_OPTIONS *options, int *argcptr, char **argv) {
   }
 
   ssh_options_set(options, SSH_OPTIONS_PORT_STR, port);
+  if (bindport) {
+    i = atoi(bindport);
+    ssh_options_set(options, SSH_OPTIONS_BINDPORT, &i);
+  }
   ssh_options_set(options, SSH_OPTIONS_SSH1, &ssh1);
   ssh_options_set(options, SSH_OPTIONS_SSH2, &ssh2);
 
