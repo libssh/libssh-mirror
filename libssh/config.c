@@ -193,39 +193,43 @@ static int ssh_config_parse_line(ssh_options opt, const char *line,
     case SOC_HOSTNAME:
       p = ssh_config_get_str(&s, NULL);
       if (p && *parsing) {
-        ssh_options_set_host(opt, p);
+        ssh_options_set(opt, SSH_OPTIONS_HOST, p);
       }
       break;
     case SOC_PORT:
-      i = ssh_config_get_int(&s, -1);
-      if (i > 0 && *parsing) {
-        ssh_options_set_port(opt, (unsigned int) i);
+      p = ssh_config_get_str(&s, NULL);
+      if (p && *parsing) {
+        ssh_options_set(opt, SSH_OPTIONS_PORT_STR, p);
       }
       break;
     case SOC_USERNAME:
       p = ssh_config_get_str(&s, NULL);
       if (p && *parsing) {
-        ssh_options_set_username(opt, p);
+        ssh_options_set(opt, SSH_OPTIONS_USER, p);
       }
       break;
     case SOC_IDENTITY:
       p = ssh_config_get_str(&s, NULL);
       if (p && *parsing) {
-        ssh_options_set_identity(opt, p);
+        ssh_options_set(opt, SSH_OPTIONS_IDENTITY, p);
       }
       break;
     case SOC_CIPHERS:
-      /* TODO */
+      p = ssh_config_get_str(&s, NULL);
+      if (p && *parsing) {
+        ssh_options_set(opt, SSH_OPTIONS_CIPHERS_C_S, p);
+        ssh_options_set(opt, SSH_OPTIONS_CIPHERS_S_C, p);
+      }
       break;
     case SOC_COMPRESSION:
       i = ssh_config_get_yesno(&s, -1);
       if (i >= 0 && *parsing) {
         if (i) {
-          ssh_options_set_wanted_algos(opt, SSH_COMP_C_S, "zlib");
-          ssh_options_set_wanted_algos(opt, SSH_COMP_S_C, "zlib");
+          ssh_options_set(opt, SSH_OPTIONS_COMPRESSION_C_S, "zlib");
+          ssh_options_set(opt, SSH_OPTIONS_COMPRESSION_S_C, "zlib");
         } else {
-          ssh_options_set_wanted_algos(opt, SSH_COMP_C_S, "none");
-          ssh_options_set_wanted_algos(opt, SSH_COMP_S_C, "none");
+          ssh_options_set(opt, SSH_OPTIONS_COMPRESSION_C_S, "none");
+          ssh_options_set(opt, SSH_OPTIONS_COMPRESSION_S_C, "none");
         }
       }
       break;
@@ -238,16 +242,19 @@ static int ssh_config_parse_line(ssh_options opt, const char *line,
           SAFE_FREE(x);
           return -1;
         }
-        ssh_options_allow_ssh1(opt, 0);
-        ssh_options_allow_ssh2(opt, 0);
+        i = 0;
+        ssh_options_set(opt, SSH_OPTIONS_SSH1, &i);
+        ssh_options_set(opt, SSH_OPTIONS_SSH2, &i);
 
         for (a = strtok(b, ","); a; a = strtok(NULL, ",")) {
           switch (atoi(a)) {
             case 1:
-              ssh_options_allow_ssh1(opt, 1);
+              i = 1;
+              ssh_options_set(opt, SSH_OPTIONS_SSH1, &i);
               break;
             case 2:
-              ssh_options_allow_ssh2(opt, 1);
+              i = 1;
+              ssh_options_set(opt, SSH_OPTIONS_SSH2, &i);
               break;
             default:
               break;
@@ -259,7 +266,7 @@ static int ssh_config_parse_line(ssh_options opt, const char *line,
     case SOC_TIMEOUT:
       i = ssh_config_get_int(&s, -1);
       if (i >= 0 && *parsing) {
-        ssh_options_set_timeout(opt, (long) i, 0);
+        ssh_options_set(opt, SSH_OPTIONS_TIMEOUT, &i);
       }
       break;
     case SOC_UNSUPPORTED:
