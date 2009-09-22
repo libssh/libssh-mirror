@@ -49,9 +49,11 @@ int main(int argc, char **argv){
     int auth=0;
     int sftp=0;
     int i;
-    ssh_options_getopt(options,&argc,argv);
-    ssh_options_set_dsa_server_key(options, KEYS_FOLDER "ssh_host_dsa_key");
-    ssh_options_set_rsa_server_key(options, KEYS_FOLDER "ssh_host_rsa_key");
+    ssh_options_getopt(options, &argc, argv);
+
+    ssh_options_set(options, SSH_OPTIONS_SERVER_DSAKEY, KEYS_FOLDER "ssh_host_dsa_key");
+    ssh_options_set(options, SSH_OPTIONS_SERVER_RSAKEY, KEYS_FOLDER "ssh_host_rsa_key");
+
     ssh_bind=ssh_bind_new();
     ssh_bind_set_options(ssh_bind,options);
     if(ssh_bind_listen(ssh_bind)<0){
