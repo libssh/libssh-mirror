@@ -358,7 +358,46 @@ LIBSSH_API int channel_select(ssh_channel *readchans, ssh_channel *writechans, s
         timeval * timeout);
 LIBSSH_API SSH_SESSION *channel_get_session(ssh_channel channel);
 LIBSSH_API int channel_get_exit_status(ssh_channel channel);
+
 /* in options.c */
+
+enum ssh_options_e {
+  SSH_OPTIONS_HOST,
+  SSH_OPTIONS_PORT,
+  SSH_OPTIONS_PORT_STR,
+  SSH_OPTIONS_FD,
+  SSH_OPTIONS_USER,
+  SSH_OPTIONS_SSH_DIR,
+  SSH_OPTIONS_IDENTITY,
+  SSH_OPTIONS_KNOWNHOSTS,
+  SSH_OPTIONS_TIMEOUT,
+  SSH_OPTIONS_TIMEOUT_USEC,
+  SSH_OPTIONS_SSH1,
+  SSH_OPTIONS_SSH2,
+  SSH_OPTIONS_LOG_VERBOSITY,
+
+  SSH_OPTTIONS_AUTH_CALLBACK,
+  SSH_OPTTIONS_AUTH_USERDATA,
+  SSH_OPTTIONS_LOG_CALLBACK,
+  SSH_OPTTIONS_LOG_USERDATA,
+  SSH_OPTTIONS_STATUS_CALLBACK,
+  SSH_OPTTIONS_STATUS_ARG,
+
+  SSH_OPTIONS_CIPHERS_C_S,
+  SSH_OPTIONS_CIPHERS_S_C,
+  SSH_OPTIONS_COMPRESSION_C_S,
+  SSH_OPTIONS_COMPRESSION_S_C,
+
+  SSH_OPTIONS_SERVER_BINDADDR,
+  SSH_OPTIONS_SERVER_BINDPORT,
+  SSH_OPTIONS_SERVER_HOSTKEY,
+  SSH_OPTIONS_SERVER_DSAKEY,
+  SSH_OPTIONS_SERVER_RSAKEY,
+  SSH_OPTIONS_SERVER_BANNER,
+};
+
+LIBSSH_API int ssh_options_set(ssh_options opt, enum ssh_options_e type,
+    const void *value);
 
 /**
  * @brief SSH authentication callback.
