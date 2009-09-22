@@ -521,13 +521,13 @@ int main(int argc, char **argv){
     signal(SIGTERM, do_exit);
 
     if (user) {
-      if (ssh_options_set_username(options,user) < 0) {
+      if (ssh_options_set(options, SSH_OPTIONS_USER, user) < 0) {
         ssh_options_free(options);
         return 1;
       }
     }
 
-    if (ssh_options_set_host(options,host) < 0) {
+    if (ssh_options_set(options, SSH_OPTIONS_HOST ,host) < 0) {
       ssh_options_free(options);
       return 1;
     }
