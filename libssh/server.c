@@ -287,16 +287,16 @@ static int server_set_kex(SSH_SESSION * session) {
   }
 
   if (session->dsa_key != NULL && session->rsa_key != NULL) {
-    if (ssh_options_set_wanted_algos(options, SSH_HOSTKEYS,
+    if (ssh_options_set(options, SSH_OPTIONS_SERVER_HOSTKEY,
           "ssh-dss,ssh-rsa") < 0) {
       return -1;
     }
   } else if (session->dsa_key != NULL) {
-    if (ssh_options_set_wanted_algos(options, SSH_HOSTKEYS, "ssh-dss") < 0) {
+    if (ssh_options_set(options, SSH_OPTIONS_SERVER_HOSTKEY, "ssh-dss") < 0) {
       return -1;
     }
   } else {
-    if (ssh_options_set_wanted_algos(options, SSH_HOSTKEYS, "ssh-rsa") < 0) {
+    if (ssh_options_set(options, SSH_OPTIONS_SERVER_HOSTKEY, "ssh-rsa") < 0) {
       return -1;
     }
   }
