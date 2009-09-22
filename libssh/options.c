@@ -1249,11 +1249,15 @@ int ssh_options_getopt(SSH_OPTIONS *options, int *argcptr, char **argv) {
     }
   }
 
-  ssh_options_set(options, SSH_OPTIONS_PORT_STR, port);
-  if (bindport) {
+  if (cont && bindport) {
     i = atoi(bindport);
-    ssh_options_set(options, SSH_OPTIONS_BINDPORT, &i);
+    if (ssh_options_set(options, SSH_OPTIONS_SERVER_BINDPORT, &i) < 0) {
+      cont = 0;
+    }
   }
+
+  ssh_options_set(options, SSH_OPTIONS_PORT_STR, port);
+
   ssh_options_set(options, SSH_OPTIONS_SSH1, &ssh1);
   ssh_options_set(options, SSH_OPTIONS_SSH2, &ssh2);
 
