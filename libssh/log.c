@@ -56,7 +56,8 @@ void ssh_log(SSH_SESSION *session, int verbosity, const char *format, ...) {
     va_end(va);
 
     if (session->options->log_function) {
-      session->options->log_function(buffer, session, verbosity);
+      session->options->log_function(session, verbosity, buffer,
+          session->options->log_userdata);
     } else if (verbosity == SSH_LOG_FUNCTIONS) {
       if (session->log_indent > 255) {
         min = 255;

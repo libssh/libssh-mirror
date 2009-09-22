@@ -296,7 +296,8 @@ struct ssh_options_struct {
     char *dsakey;
     char *rsakey; /* host key for server implementation */
     int log_verbosity;
-    void (*log_function)(const char *message, SSH_SESSION *session, int verbosity); //log callback
+    ssh_log_callback log_function; //log callback
+    void *log_userdata;
 };
 
 typedef struct ssh_crypto_struct {

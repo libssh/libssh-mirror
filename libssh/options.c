@@ -762,13 +762,14 @@ int ssh_options_allow_ssh2(SSH_OPTIONS *opt, int allow) {
  *
  * @warning The message string may contain format string characters.
  */
-int ssh_options_set_log_function(SSH_OPTIONS *opt,
-    void (*callback)(const char *message, SSH_SESSION *session, int priority)) {
-  if (opt == NULL || callback == NULL) {
+int ssh_options_set_log_function(SSH_OPTIONS *opt, ssh_log_callback cb,
+      void *userdata) {
+  if (opt == NULL || cb == NULL) {
     return -1;
   }
 
-  opt->log_function = callback;
+  opt->log_function = cb;
+  opt->log_userdata = userdata;
 
   return 0;
 }

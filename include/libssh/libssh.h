@@ -376,6 +376,9 @@ LIBSSH_API int channel_get_exit_status(ssh_channel channel);
 typedef int (*ssh_auth_callback) (const char *prompt, char *buf, size_t len,
     int echo, int verify, void *userdata);
 
+typedef void (*ssh_log_callback) (ssh_session session, int priority,
+    const char *message, void *userdata);
+
 LIBSSH_API SSH_OPTIONS *ssh_options_new(void);
 LIBSSH_API SSH_OPTIONS *ssh_options_copy(SSH_OPTIONS *opt);
 LIBSSH_API void ssh_options_free(SSH_OPTIONS *opt);
@@ -396,7 +399,7 @@ LIBSSH_API int ssh_options_set_timeout(SSH_OPTIONS *opt, long seconds, long usec
 LIBSSH_API int ssh_options_allow_ssh1(SSH_OPTIONS *opt, int allow);
 LIBSSH_API int ssh_options_allow_ssh2(SSH_OPTIONS *opt, int allow);
 LIBSSH_API int ssh_options_set_log_function(SSH_OPTIONS *opt,
-    void (*callback)(const char *message, SSH_SESSION *session, int verbosity));
+    ssh_log_callback cb, void *userdata);
 LIBSSH_API int ssh_options_set_log_verbosity(SSH_OPTIONS *opt, int verbosity);
 LIBSSH_API int ssh_options_set_dsa_server_key(SSH_OPTIONS *opt, const char *dsakey);
 LIBSSH_API int ssh_options_set_rsa_server_key(SSH_OPTIONS *opt, const char *rsakey);
