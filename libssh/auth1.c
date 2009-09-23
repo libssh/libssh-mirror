@@ -26,6 +26,10 @@
 
 #include "libssh/priv.h"
 #include "libssh/ssh1.h"
+#include "libssh/buffer.h"
+#include "libssh/packet.h"
+#include "libssh/session.h"
+#include "libssh/string.h"
 
 #ifdef WITH_SSH1
 static int wait_auth1_status(ssh_session session) {

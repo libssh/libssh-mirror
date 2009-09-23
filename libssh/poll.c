@@ -31,6 +31,7 @@
 #include "config.h"
 #include "libssh/priv.h"
 #include "libssh/libssh.h"
+#include "libssh/poll.h"
 
 #ifndef SSH_POLL_CTX_CHUNK
 #define SSH_POLL_CTX_CHUNK			5

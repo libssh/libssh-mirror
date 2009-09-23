@@ -37,6 +37,7 @@
 
 #include "libssh/priv.h"
 #include "libssh/crypto.h"
+#include "libssh/session.h"
 
 uint32_t packet_decrypt_len(ssh_session session, char *crypted){
   uint32_t decrypted;

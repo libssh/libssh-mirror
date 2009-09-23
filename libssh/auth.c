@@ -32,6 +32,11 @@
 
 #include "libssh/priv.h"
 #include "libssh/ssh2.h"
+#include "libssh/buffer.h"
+#include "libssh/agent.h"
+#include "libssh/keyfiles.h"
+#include "libssh/packet.h"
+#include "libssh/session.h"
 
 /** \defgroup ssh_auth SSH Authentication functions
  * \brief functions to authenticate to servers

@@ -30,6 +30,9 @@
 #include "libssh/priv.h"
 #include "libssh/ssh2.h"
 #include "libssh/server.h"
+#include "libssh/buffer.h"
+#include "libssh/agent.h"
+#include "libssh/session.h"
 
 /** \addtogroup ssh_auth
  * @{
@@ -258,7 +261,7 @@ ssh_public_key publickey_from_string(ssh_session session, ssh_string pubkey_s) {
     return NULL;
   }
 
-  if (buffer_add_data(tmpbuf, pubkey_s->string, string_len(pubkey_s)) < 0) {
+  if (buffer_add_data(tmpbuf, string_data(pubkey_s), string_len(pubkey_s)) < 0) {
     goto error;
   }
 
@@ -778,8 +781,8 @@ static ssh_string signature_to_string(SIGNATURE *sign) {
         return NULL;
       }
 
-      memcpy(buffer, r->string + string_len(r) - 20, 20);
-      memcpy(buffer + 20, s->string + string_len(s) - 20, 20);
+      memcpy(buffer, (char *)string_data(r) + string_len(r) - 20, 20);
+      memcpy(buffer + 20, (char *)string_data(s) + string_len(s) - 20, 20);
 
       string_free(r);
       string_free(s);
@@ -879,7 +882,7 @@ SIGNATURE *signature_from_string(ssh_session session, ssh_string signature,
     return NULL;
   }
 
-  if (buffer_add_data(tmpbuf, signature->string, string_len(signature)) < 0) {
+  if (buffer_add_data(tmpbuf, string_data(signature), string_len(signature)) < 0) {
     signature_free(sign);
     buffer_free(tmpbuf);
     return NULL;
@@ -943,8 +946,8 @@ SIGNATURE *signature_from_string(ssh_session session, ssh_string signature,
         return NULL;
       }
 
-      string_fill(r, rs->string, 20);
-      string_fill(s, rs->string + 20, 20);
+      string_fill(r, string_data(rs), 20);
+      string_fill(s, (char *)string_data(rs) + 20, 20);
 
       sig = DSA_SIG_new();
       if (sig == NULL) {
@@ -1368,7 +1371,7 @@ ssh_string ssh_encrypt_rsa1(ssh_session session, ssh_string data, ssh_public_key
     return NULL;
   }
 
-  if (RSA_public_encrypt(len, data->string, str->string, key->rsa_pub,
+  if (RSA_public_encrypt(len, string_data(data), string_data(str), key->rsa_pub,
       RSA_PKCS1_PADDING) < 0) {
     string_free(str);
     return NULL;

@@ -36,6 +36,11 @@
 #endif
 
 #include "libssh/priv.h"
+#include "libssh/buffer.h"
+#include "libssh/keyfiles.h"
+#include "libssh/session.h"
+/*todo: remove this include */
+#include "libssh/string.h"
 
 #ifdef HAVE_LIBGCRYPT
 #include <gcrypt.h>
@@ -1194,6 +1199,7 @@ static int check_public_key(ssh_session session, char **tokens) {
         bignum_free(tmpbn);
         return -1;
       }
+      /* TODO: fix the hardcoding */
       tmpstring->size = htonl(len);
 #ifdef HAVE_LIBGCRYPT
       bignum_bn2bin(tmpbn, len, tmpstring->string);

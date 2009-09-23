@@ -22,6 +22,8 @@
  */
 
 #include "libssh/priv.h"
+#include "libssh/socket.h"
+
 #ifdef _WIN32
 #include <winsock2.h>
 #endif

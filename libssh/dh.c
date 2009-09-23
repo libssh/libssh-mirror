@@ -50,7 +50,10 @@
 
 #include "libssh/priv.h"
 #include "libssh/crypto.h"
-
+#include "libssh/buffer.h"
+#include "libssh/session.h"
+/* todo: remove it */
+#include "libssh/string.h"
 #ifdef HAVE_LIBCRYPTO
 #include <openssl/rand.h>
 #include <openssl/evp.h>
@@ -340,7 +343,7 @@ ssh_string make_bignum_string(bignum num) {
 #ifdef DEBUG_CRYPTO
   fprintf(stderr, "%d bits, %d bytes, %d padding\n", bits, len, pad);
 #endif /* DEBUG_CRYPTO */
-
+/* TODO: fix that crap !! */
   ptr = malloc(4 + len + pad);
   if (ptr == NULL) {
     return NULL;

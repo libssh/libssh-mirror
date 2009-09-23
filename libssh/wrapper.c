@@ -36,6 +36,7 @@
 #include <string.h>
 
 #include "libssh/priv.h"
+#include "libssh/session.h"
 
 #ifdef HAVE_LIBGCRYPT
 #include <gcrypt.h>

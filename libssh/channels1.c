@@ -28,6 +28,10 @@
 #include <stdio.h>
 #include "libssh/priv.h"
 #include "libssh/ssh1.h"
+#include "libssh/buffer.h"
+#include "libssh/packet.h"
+#include "libssh/channels.h"
+#include "libssh/session.h"
 
 #ifdef WITH_SSH1
 
@@ -218,7 +222,7 @@ static int channel_rcv_data1(ssh_session session, int is_stderr) {
         "Adding %zu bytes data in %d",
         string_len(str), is_stderr);
 
-    if (channel_default_bufferize(channel, str->string, string_len(str),
+    if (channel_default_bufferize(channel, string_data(str), string_len(str),
           is_stderr) < 0) {
       string_free(str);
       return -1;

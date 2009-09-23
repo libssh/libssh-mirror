@@ -192,32 +192,6 @@ HMACCTX hmac_init(const void *key,int len,int type);
 void hmac_update(HMACCTX c, const void *data, unsigned long len);
 void hmac_final(HMACCTX ctx,unsigned char *hashmacbuf,unsigned int *len);
 
-/* strings and buffers */
-/* must be 32 bits number + immediatly our data */
-#ifdef _MSC_VER
-#pragma pack(1)
-#endif
-struct ssh_string_struct {
-	uint32_t size;
-	unsigned char string[MAX_PACKET_LEN];
-}
-#if !defined(__SUNPRO_C) && !defined(_MSC_VER)
-__attribute__ ((packed))
-#endif
-#ifdef _MSC_VER
-#pragma pack()
-#endif
-;
-
-/** Describes a buffer state at a moment
- */
-struct ssh_buffer_struct {
-    char *data;
-    uint32_t used;
-    uint32_t allocated;
-    uint32_t pos;
-};
-
 /* i should remove it one day */
 typedef struct packet_struct {
 	int valid;
@@ -320,136 +294,12 @@ typedef struct ssh_crypto_struct {
     void *compress_in_ctx; /* really, don't */
 } CRYPTO;
 
-struct ssh_channel_struct {
-    struct ssh_channel_struct *prev;
-    struct ssh_channel_struct *next;
-    ssh_session session; /* SSH_SESSION pointer */
-    uint32_t local_channel;
-    uint32_t local_window;
-    int local_eof;
-    uint32_t local_maxpacket;
-
-    uint32_t remote_channel;
-    uint32_t remote_window;
-    int remote_eof; /* end of file received */
-    uint32_t remote_maxpacket;
-    int open; /* shows if the channel is still opened */
-    int delayed_close;
-    ssh_buffer stdout_buffer;
-    ssh_buffer stderr_buffer;
-    void *userarg;
-    int version;
-    int blocking;
-    int exit_status;
-};
-
-struct ssh_agent_struct {
-  struct socket *sock;
-  ssh_buffer ident;
-  unsigned int count;
-};
-
 struct ssh_keys_struct {
   const char *privatekey;
   const char *publickey;
 };
 
-enum ssh_scp_states {
-  SSH_SCP_NEW,          //Data structure just created
-  SSH_SCP_WRITE_INITED, //Gave our intention to write
-  SSH_SCP_WRITE_WRITING,//File was opened and currently writing
-  SSH_SCP_READ_INITED,  //Gave our intention to read
-  SSH_SCP_READ_REQUESTED, //We got a read request
-  SSH_SCP_READ_READING, //File is opened and reading
-  SSH_SCP_ERROR,         //Something bad happened
-  SSH_SCP_TERMINATED	//Transfer finished
-};
-
-struct ssh_scp_struct {
-  ssh_session session;
-  int mode;
-  int recursive;
-  ssh_channel channel;
-  char *location;
-  enum ssh_scp_states state;
-  size_t filelen;
-  size_t processed;
-  enum ssh_scp_request_types request_type;
-  char *request_name;
-  char *warning;
-  int request_mode;
-};
-
 struct ssh_message_struct;
-
-struct ssh_session_struct {
-    struct error_struct error;
-    struct socket *socket;
-    ssh_options options;
-    char *serverbanner;
-    char *clientbanner;
-    int protoversion;
-    int server;
-    int client;
-    int openssh;
-    uint32_t send_seq;
-    uint32_t recv_seq;
-/* status flags */
-    int closed;
-    int closed_by_except;
-
-    int connected;
-    /* !=0 when the user got a session handle */
-    int alive;
-    /* two previous are deprecated */
-    int auth_service_asked;
-
-/* socket status */
-    int blocking; // functions should block
-
-    ssh_string banner; /* that's the issue banner from
-                       the server */
-    char *remotebanner; /* that's the SSH- banner from
-                           remote host. */
-    char *discon_msg; /* disconnect message from
-                         the remote host */
-    ssh_buffer in_buffer;
-    PACKET in_packet;
-    ssh_buffer out_buffer;
-
-    /* the states are used by the nonblocking stuff to remember */
-    /* where it was before being interrupted */
-    int packet_state;
-    int dh_handshake_state;
-    ssh_string dh_server_signature; //information used by dh_handshake.
-
-    KEX server_kex;
-    KEX client_kex;
-    ssh_buffer in_hashbuf;
-    ssh_buffer out_hashbuf;
-    CRYPTO *current_crypto;
-    CRYPTO *next_crypto;  /* next_crypto is going to be used after a SSH2_MSG_NEWKEYS */
-
-    ssh_channel channels; /* linked list of channels */
-    int maxchannel;
-    int exec_channel_opened; /* version 1 only. more
-                                info in channels1.c */
-    ssh_agent agent; /* ssh agent */
-
-/* keyb interactive data */
-    struct ssh_kbdint_struct *kbdint;
-    int version; /* 1 or 2 */
-    /* server host keys */
-    ssh_private_key rsa_key;
-    ssh_private_key dsa_key;
-    /* auths accepted by server */
-    int auth_methods;
-    int hostkeys; /* contains type of host key wanted by client, in server impl */
-    struct ssh_list *ssh_message_list; /* list of delayed SSH messages */
-    int (*ssh_message_callback)( struct ssh_session_struct *session, ssh_message msg);
-    int log_verbosity; /*cached copy of the option structure */
-    int log_indent; /* indentation level in enter_function logs */
-};
 
 struct ssh_kbdint_struct {
     uint32_t nprompts;
@@ -523,111 +373,8 @@ struct ssh_message_struct {
     struct ssh_service_request service_request;
 };
 
-#ifndef _WIN32
-/* agent.c */
-/**
- * @brief Create a new ssh agent structure.
- *
- * @return An allocated ssh agent structure or NULL on error.
- */
-struct ssh_agent_struct *agent_new(struct ssh_session_struct *session);
-
-void agent_close(struct ssh_agent_struct *agent);
-
-/**
- * @brief Free an allocated ssh agent structure.
- *
- * @param agent The ssh agent structure to free.
- */
-void agent_free(struct ssh_agent_struct *agent);
-
-/**
- * @brief Check if the ssh agent is running.
- *
- * @param session The ssh session to check for the agent.
- *
- * @return 1 if it is running, 0 if not.
- */
-int agent_is_running(struct ssh_session_struct *session);
-
-int agent_get_ident_count(struct ssh_session_struct *session);
-
-struct ssh_public_key_struct *agent_get_next_ident(struct ssh_session_struct *session,
-    char **comment);
-
-struct ssh_public_key_struct *agent_get_first_ident(struct ssh_session_struct *session,
-    char **comment);
-
-ssh_string agent_sign_data(struct ssh_session_struct *session,
-    struct ssh_buffer_struct *data,
-    struct ssh_public_key_struct *pubkey);
-#endif
-
-/* poll.c */
-int ssh_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout);
-typedef struct ssh_poll_ctx SSH_POLL_CTX;
-typedef struct ssh_poll SSH_POLL;
-
-/**
- * @brief SSH poll callback.
- *
- * @param p             Poll object this callback belongs to.
- * @param fd            The raw socket.
- * @param revents       The current poll events on the socket.
- * @param userdata      Userdata to be passed to the callback function.
- *
- * @return              0 on success, < 0 if you removed the poll object from
- *                      it's poll context.
- */
-typedef int (*ssh_poll_callback)(SSH_POLL *p, int fd, int revents,
-    void *userdata);
 
 
-SSH_POLL *ssh_poll_new(socket_t fd, short events, ssh_poll_callback cb,
-    void *userdata);
-void ssh_poll_free(SSH_POLL *p);
-SSH_POLL_CTX *ssh_poll_get_ctx(SSH_POLL *p);
-short ssh_poll_get_events(SSH_POLL *p);
-void ssh_poll_set_events(SSH_POLL *p, short events);
-void ssh_poll_add_events(SSH_POLL *p, short events);
-void ssh_poll_remove_events(SSH_POLL *p, short events);
-socket_t ssh_poll_get_fd(SSH_POLL *p);
-void ssh_poll_set_callback(SSH_POLL *p, ssh_poll_callback cb, void *userdata);
-SSH_POLL_CTX *ssh_poll_ctx_new(size_t chunk_size);
-void ssh_poll_ctx_free(SSH_POLL_CTX *ctx);
-int ssh_poll_ctx_add(SSH_POLL_CTX *ctx, SSH_POLL *p);
-void ssh_poll_ctx_remove(SSH_POLL_CTX *ctx, SSH_POLL *p);
-int ssh_poll_ctx(SSH_POLL_CTX *ctx, int timeout);
-
-/* socket.c */
-
-struct socket;
-int ssh_socket_init(void);
-struct socket *ssh_socket_new(ssh_session session);
-void ssh_socket_free(struct socket *s);
-void ssh_socket_set_fd(struct socket *s, socket_t fd);
-socket_t ssh_socket_get_fd(struct socket *s);
-#ifndef _WIN32
-int ssh_socket_unix(struct socket *s, const char *path);
-#endif
-void ssh_socket_close(struct socket *s);
-int ssh_socket_read(struct socket *s, void *buffer, int len);
-int ssh_socket_write(struct socket *s,const void *buffer, int len);
-int ssh_socket_is_open(struct socket *s);
-int ssh_socket_fd_isset(struct socket *s, fd_set *set);
-void ssh_socket_fd_set(struct socket *s, fd_set *set, int *fd_max);
-int ssh_socket_completeread(struct socket *s, void *buffer, uint32_t len);
-int ssh_socket_completewrite(struct socket *s, const void *buffer, uint32_t len);
-int ssh_socket_wait_for_data(struct socket *s, ssh_session session, uint32_t len);
-int ssh_socket_nonblocking_flush(struct socket *s);
-int ssh_socket_blocking_flush(struct socket *s);
-int ssh_socket_poll(struct socket *s, int *writeable, int *except);
-void ssh_socket_set_towrite(struct socket *s);
-void ssh_socket_set_toread(struct socket *s);
-void ssh_socket_set_except(struct socket *s);
-int ssh_socket_get_status(struct socket *s);
-int ssh_socket_data_available(struct socket *s);
-int ssh_socket_data_writable(struct socket *s);
 /* session.c */
 
 void ssh_cleanup(ssh_session session);
@@ -679,15 +426,6 @@ unsigned char *packet_encrypt(ssh_session session,void *packet,unsigned int len)
  /* it returns the hmac buffer if exists*/
 int packet_hmac_verify(ssh_session session,ssh_buffer buffer,unsigned char *mac);
 
-/* in packet.c */
-
-void packet_parse(ssh_session session);
-int packet_send(ssh_session session);
-
-int packet_read(ssh_session session);
-int packet_translate(ssh_session session);
-int packet_wait(ssh_session session,int type,int blocking);
-int packet_flush(ssh_session session, int enforce_blocking);
 
 /* connect.c */
 int ssh_regex_init(void);
@@ -706,14 +444,6 @@ int verify_existing_algo(int algo, const char *name);
 char **space_tokenize(const char *chain);
 int ssh_get_kex1(ssh_session session);
 char *ssh_find_matching(const char *in_d, const char *what_d);
-
-/* in keyfiles.c */
-
-ssh_private_key _privatekey_from_file(void *session, const char *filename,
-    int type);
-ssh_string try_publickey_from_file(ssh_session session,
-    struct ssh_keys_struct keytab,
-    char **privkeyfile, int *type);
 
 /* in keys.c */
 const char *ssh_type_to_char(int type);
@@ -736,15 +466,7 @@ ssh_string ssh_do_sign(ssh_session session,ssh_buffer sigbuf,
         ssh_private_key privatekey);
 ssh_string ssh_sign_session_id(ssh_session session, ssh_private_key privatekey);
 ssh_string ssh_encrypt_rsa1(ssh_session session, ssh_string data, ssh_public_key key);
-/* channel.c */
-void channel_handle(ssh_session session, int type);
-ssh_channel channel_new(ssh_session session);
-int channel_default_bufferize(ssh_channel channel, void *data, int len,
-        int is_stderr);
-uint32_t ssh_channel_new_id(ssh_session session);
-ssh_channel ssh_channel_from_local(ssh_session session, uint32_t id);
-int channel_write_common(ssh_channel channel, const void *data,
-    uint32_t len, int is_stderr);
+
 
 /* options.c */
 
@@ -752,35 +474,6 @@ int channel_write_common(ssh_channel channel, const void *data,
 int ssh_options_default_username(ssh_options opt);
 int ssh_options_default_ssh_dir(ssh_options opt);
 int ssh_options_default_known_hosts_file(ssh_options opt);
-
-/* buffer.c */
-int buffer_add_ssh_string(ssh_buffer buffer, ssh_string string);
-int buffer_add_u8(ssh_buffer buffer, uint8_t data);
-int buffer_add_u32(ssh_buffer buffer, uint32_t data);
-int buffer_add_u64(ssh_buffer buffer, uint64_t data);
-int buffer_add_data(ssh_buffer buffer, const void *data, uint32_t len);
-int buffer_prepend_data(ssh_buffer buffer, const void *data, uint32_t len);
-int buffer_add_buffer(ssh_buffer buffer, ssh_buffer source);
-int buffer_reinit(ssh_buffer buffer);
-
-/* buffer_get_rest returns a pointer to the current position into the buffer */
-void *buffer_get_rest(ssh_buffer buffer);
-/* buffer_get_rest_len returns the number of bytes which can be read */
-uint32_t buffer_get_rest_len(ssh_buffer buffer);
-
-/* buffer_read_*() returns the number of bytes read, except for ssh strings */
-int buffer_get_u8(ssh_buffer buffer, uint8_t *data);
-int buffer_get_u32(ssh_buffer buffer, uint32_t *data);
-int buffer_get_u64(ssh_buffer buffer, uint64_t *data);
-
-uint32_t buffer_get_data(ssh_buffer buffer, void *data, uint32_t requestedlen);
-/* buffer_get_ssh_string() is an exception. if the String read is too large or invalid, it will answer NULL. */
-ssh_string buffer_get_ssh_string(ssh_buffer buffer);
-/* gets a string out of a SSH-1 mpint */
-ssh_string buffer_get_mpint(ssh_buffer buffer);
-/* buffer_pass_bytes acts as if len bytes have been read (used for padding) */
-uint32_t buffer_pass_bytes_end(ssh_buffer buffer, uint32_t len);
-uint32_t buffer_pass_bytes(ssh_buffer buffer, uint32_t len);
 
 /* in base64.c */
 ssh_buffer base64_to_bin(const char *source);
@@ -859,10 +552,6 @@ int channel_request_exec1(ssh_channel channel, const char *cmd);
 int channel_handle1(ssh_session session, int type);
 int channel_write1(ssh_channel channel, const void *data, int len);
 
-/* session.c */
-
-int ssh_handle_packets(ssh_session session);
-
 /* match.c */
 int match_hostname(const char *host, const char *pattern, unsigned int len);
 
@@ -870,12 +559,6 @@ int match_hostname(const char *host, const char *pattern, unsigned int len);
 
 void message_handle(ssh_session session, uint32_t type);
 int ssh_execute_message_callbacks(ssh_session session);
-
-/* scp.c */
-int ssh_scp_read_string(ssh_scp scp, char *buffer, size_t len);
-int ssh_scp_integer_mode(const char *mode);
-char *ssh_scp_string_mode(int mode);
-int ssh_scp_response(ssh_scp scp, char **response);
 
 /* log.c */
 

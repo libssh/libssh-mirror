@@ -34,6 +34,11 @@
 
 #include "libssh/priv.h"
 #include "libssh/ssh2.h"
+#include "libssh/buffer.h"
+#include "libssh/packet.h"
+#include "libssh/socket.h"
+#include "libssh/channels.h"
+#include "libssh/session.h"
 
 #define WINDOWBASE 128000
 #define WINDOWLIMIT (WINDOWBASE/2)
@@ -384,7 +389,7 @@ static void channel_rcv_data(ssh_session session,int is_stderr) {
         channel->local_window);
   }
 
-  if (channel_default_bufferize(channel, str->string, len,
+  if (channel_default_bufferize(channel, string_data(str), len,
         is_stderr) < 0) {
     string_free(str);
     leave_function();

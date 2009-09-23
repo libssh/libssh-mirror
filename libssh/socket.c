@@ -34,6 +34,10 @@
 #include <sys/un.h>
 #endif
 #include "libssh/priv.h"
+#include "libssh/socket.h"
+#include "libssh/buffer.h"
+#include "libssh/poll.h"
+#include "libssh/session.h"
 
 /** \defgroup ssh_socket SSH Sockets
  * \addtogroup ssh_socket

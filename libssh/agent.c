@@ -50,6 +50,9 @@
 
 #include "libssh/agent.h"
 #include "libssh/priv.h"
+#include "libssh/socket.h"
+#include "libssh/buffer.h"
+#include "libssh/session.h"
 
 /* macro to check for "agent failure" message */
 #define agent_failed(x) \

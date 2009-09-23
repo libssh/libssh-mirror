@@ -24,6 +24,8 @@
 
 #include "config.h"
 #include "libssh/priv.h"
+#include "libssh/buffer.h"
+#include "libssh/session.h"
 
 #if defined(HAVE_LIBZ) && defined(WITH_LIBZ)
 

@@ -46,6 +46,9 @@
 #include "libssh/priv.h"
 #include "libssh/ssh2.h"
 #include "libssh/sftp.h"
+#include "libssh/buffer.h"
+#include "libssh/channels.h"
+#include "libssh/session.h"
 
 #ifdef WITH_SFTP
 
@@ -1668,7 +1671,7 @@ ssize_t sftp_read(SFTP_FILE *handle, void *buf, size_t count) {
       }
       count = string_len(datastring);
       handle->offset += count;
-      memcpy(buf, datastring->string, count);
+      memcpy(buf, string_data(datastring), count);
       string_free(datastring);
       return count;
     default:
@@ -1787,7 +1790,7 @@ int sftp_async_read(SFTP_FILE *file, void *data, uint32_t size, uint32_t id){
       //handle->offset+=len;
       /* We already have set the offset previously. All we can do is warn that the expected len
        * and effective lengths are different */
-      memcpy(data, datastring->string, len);
+      memcpy(data, string_data(datastring), len);
       string_free(datastring);
       sftp_leave_function();
       return len;

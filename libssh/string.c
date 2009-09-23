@@ -29,7 +29,7 @@
 #endif
 
 #include "libssh/priv.h"
-
+#include "libssh/string.h"
 /** \defgroup ssh_string SSH Strings
  * \brief string manipulations
  */

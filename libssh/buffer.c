@@ -29,7 +29,7 @@
 #endif
 
 #include "libssh/priv.h"
-
+#include "libssh/buffer.h"
 /** \defgroup ssh_buffer SSH Buffers
  * \brief buffer handling
  */
@@ -167,7 +167,7 @@ int buffer_add_ssh_string(struct ssh_buffer_struct *buffer,
     struct ssh_string_struct *string) {
   uint32_t len = 0;
 
-  len = ntohl(string->size);
+  len = string_len(string);
   if (buffer_add_data(buffer, string, len + sizeof(uint32_t)) < 0) {
     return -1;
   }
@@ -404,7 +404,7 @@ struct ssh_string_struct *buffer_get_ssh_string(struct ssh_buffer_struct *buffer
   if (str == NULL) {
     return NULL;
   }
-  if (buffer_get_data(buffer, str->string, hostlen) != hostlen) {
+  if (buffer_get_data(buffer, string_data(str), hostlen) != hostlen) {
     /* should never happen */
     SAFE_FREE(str);
     return NULL;
@@ -437,7 +437,7 @@ struct ssh_string_struct *buffer_get_mpint(struct ssh_buffer_struct *buffer) {
   if (str == NULL) {
     return NULL;
   }
-  if (buffer_get_data(buffer, str->string, len) != len) {
+  if (buffer_get_data(buffer, string_data(str), len) != len) {
     SAFE_FREE(str);
     return NULL;
   }

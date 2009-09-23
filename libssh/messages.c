@@ -42,7 +42,10 @@
 #include "libssh/libssh.h"
 #include "libssh/priv.h"
 #include "libssh/ssh2.h"
-
+#include "libssh/buffer.h"
+#include "libssh/packet.h"
+#include "libssh/channels.h"
+#include "libssh/session.h"
 
 static ssh_message message_new(ssh_session session){
   ssh_message msg = malloc(sizeof(struct ssh_message_struct));

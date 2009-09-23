@@ -64,6 +64,9 @@
 #endif /* _WIN32 */
 
 #include "libssh/priv.h"
+#include "libssh/socket.h"
+#include "libssh/channels.h"
+#include "libssh/session.h"
 
 #ifndef HAVE_SELECT
 #error "Your system must have select()"

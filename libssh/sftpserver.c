@@ -33,6 +33,7 @@
 #include "libssh/sftp.h"
 #include "libssh/ssh2.h"
 #include "libssh/priv.h"
+#include "libssh/buffer.h"
 
 SFTP_CLIENT_MESSAGE *sftp_get_client_message(SFTP_SESSION *sftp) {
   SFTP_PACKET *packet;
@@ -448,7 +449,7 @@ ssh_string sftp_handle_alloc(SFTP_SESSION *sftp, void *info) {
     return NULL;
   }
 
-  memcpy(ret->string, &val, sizeof(uint32_t));
+  memcpy(string_data(ret), &val, sizeof(uint32_t));
   sftp->handles[i] = info;
 
   return ret;
@@ -465,7 +466,7 @@ void *sftp_handle(SFTP_SESSION *sftp, ssh_string handle){
     return NULL;
   }
 
-  memcpy(&val, handle->string, sizeof(uint32_t));
+  memcpy(&val, string_data(handle), sizeof(uint32_t));
 
   if (val > SFTP_HANDLES) {
     return NULL;

@@ -33,6 +33,9 @@
 #include "libssh/priv.h"
 #include "libssh/ssh2.h"
 #include "libssh/ssh1.h"
+#include "libssh/buffer.h"
+#include "libssh/packet.h"
+#include "libssh/session.h"
 
 #ifdef HAVE_LIBGCRYPT
 #define BLOWFISH "blowfish-cbc,"
@@ -488,8 +491,8 @@ static int build_session_id1(ssh_session session, ssh_string servern,
   ssh_print_hexa("host modulus",hostn->string,string_len(hostn));
   ssh_print_hexa("server modulus",servern->string,string_len(servern));
 #endif
-  md5_update(md5,hostn->string,string_len(hostn));
-  md5_update(md5,servern->string,string_len(servern));
+  md5_update(md5,string_data(hostn),string_len(hostn));
+  md5_update(md5,string_data(servern),string_len(servern));
   md5_update(md5,session->server_kex.cookie,8);
   md5_final(session->next_crypto->session_id,md5);
 #ifdef DEBUG_CRYPTO
@@ -741,7 +744,7 @@ int ssh_get_kex1(ssh_session session) {
   if (buffer_add_data(session->out_buffer, &bits, sizeof(uint16_t)) < 0) {
     goto error;
   }
-  if (buffer_add_data(session->out_buffer, enc_session->string,
+  if (buffer_add_data(session->out_buffer, string_data(enc_session),
         string_len(enc_session)) < 0) {
     goto error;
   }

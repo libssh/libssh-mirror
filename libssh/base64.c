@@ -27,6 +27,7 @@
 #include <stdlib.h>
 
 #include "libssh/priv.h"
+#include "libssh/buffer.h"
 
 static char alphabet[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                          "abcdefghijklmnopqrstuvwxyz"

@@ -25,6 +25,7 @@
 #include <string.h>
 
 #include "libssh/priv.h"
+#include "libssh/scp.h"
 
 /** @brief Creates a new scp session
  * @param session the SSH session to use

@@ -27,6 +27,11 @@
 #include "libssh/priv.h"
 #include "libssh/server.h"
 #include "libssh/callback.h"
+#include "libssh/socket.h"
+#include "libssh/agent.h"
+#include "libssh/packet.h"
+#include "libssh/session.h"
+
 #define FIRST_CHANNEL 42 // why not ? it helps to find bugs.
 
 /** \defgroup ssh_session SSH Session
