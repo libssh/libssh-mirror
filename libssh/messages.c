@@ -44,21 +44,20 @@
 #include "libssh/ssh2.h"
 
 
-static SSH_MESSAGE *message_new(ssh_session session){
-  SSH_MESSAGE *msg = malloc(sizeof(SSH_MESSAGE));
+static ssh_message message_new(ssh_session session){
+  ssh_message msg = malloc(sizeof(struct ssh_message_struct));
   if (msg == NULL) {
     return NULL;
   }
-
-  memset(msg, 0, sizeof(*msg));
+  ZERO_STRUCTP(msg);
   msg->session = session;
   return msg;
 }
 
-static SSH_MESSAGE *handle_service_request(ssh_session session) {
+static ssh_message handle_service_request(ssh_session session) {
   ssh_string service = NULL;
   char *service_c = NULL;
-  SSH_MESSAGE *msg=NULL;
+  ssh_message msg=NULL;
 
   enter_function();
 
@@ -98,11 +97,11 @@ static int handle_unimplemented(ssh_session session) {
   return 0;
 }
 
-static SSH_MESSAGE *handle_userauth_request(ssh_session session){
+static ssh_message handle_userauth_request(ssh_session session){
   ssh_string user = NULL;
   ssh_string service = NULL;
   ssh_string method = NULL;
-  SSH_MESSAGE *msg = NULL;
+  ssh_message msg = NULL;
   char *service_c = NULL;
   char *method_c = NULL;
 
@@ -264,8 +263,8 @@ error:
   return NULL;
 }
 
-static SSH_MESSAGE *handle_channel_request_open(ssh_session session) {
-  SSH_MESSAGE *msg = NULL;
+static ssh_message handle_channel_request_open(ssh_session session) {
+  ssh_message msg = NULL;
   ssh_string type = NULL, originator = NULL, destination = NULL;
   char *type_c = NULL;
   uint32_t sender, window, packet, originator_port, destination_port;
@@ -413,7 +412,7 @@ error:
   return NULL;
 }
 
-ssh_channel ssh_message_channel_request_open_reply_accept(SSH_MESSAGE *msg) {
+ssh_channel ssh_message_channel_request_open_reply_accept(ssh_message msg) {
   ssh_session session = msg->session;
   ssh_channel chan = NULL;
 
@@ -470,8 +469,8 @@ error:
   return NULL;
 }
 
-static SSH_MESSAGE *handle_channel_request(ssh_session session) {
-  SSH_MESSAGE *msg = NULL;
+static ssh_message handle_channel_request(ssh_session session) {
+  ssh_message msg = NULL;
   ssh_string type = NULL;
   char *type_c = NULL;
   uint32_t channel;
@@ -664,7 +663,7 @@ error:
   return NULL;
 }
 
-int ssh_message_channel_request_reply_success(SSH_MESSAGE *msg) {
+int ssh_message_channel_request_reply_success(ssh_message msg) {
   uint32_t channel;
 
   if (msg == NULL) {
@@ -693,8 +692,8 @@ int ssh_message_channel_request_reply_success(SSH_MESSAGE *msg) {
   return SSH_OK;
 }
 
-SSH_MESSAGE *ssh_message_retrieve(ssh_session session, uint32_t packettype){
-  SSH_MESSAGE *msg=NULL;
+ssh_message ssh_message_retrieve(ssh_session session, uint32_t packettype){
+  ssh_message msg=NULL;
   enter_function();
   switch(packettype) {
     case SSH2_MSG_SERVICE_REQUEST:
@@ -722,8 +721,8 @@ SSH_MESSAGE *ssh_message_retrieve(ssh_session session, uint32_t packettype){
 /* \brief blocking message retrieval
  * \bug does anything that is not a message, like a channel read/write
  */
-SSH_MESSAGE *ssh_message_get(ssh_session session) {
-  SSH_MESSAGE *msg = NULL;
+ssh_message ssh_message_get(ssh_session session) {
+  ssh_message msg = NULL;
   enter_function();
   do {
     if ((packet_read(session) != SSH_OK) ||
@@ -737,7 +736,7 @@ SSH_MESSAGE *ssh_message_get(ssh_session session) {
   return msg;
 }
 
-int ssh_message_type(SSH_MESSAGE *msg) {
+int ssh_message_type(ssh_message msg) {
   if (msg == NULL) {
     return -1;
   }
@@ -745,7 +744,7 @@ int ssh_message_type(SSH_MESSAGE *msg) {
   return msg->type;
 }
 
-int ssh_message_subtype(SSH_MESSAGE *msg) {
+int ssh_message_subtype(ssh_message msg) {
   if (msg == NULL) {
     return -1;
   }
@@ -762,7 +761,7 @@ int ssh_message_subtype(SSH_MESSAGE *msg) {
   return -1;
 }
 
-void ssh_message_free(SSH_MESSAGE *msg){
+void ssh_message_free(ssh_message msg){
   if (msg == NULL) {
     return;
   }
@@ -800,7 +799,7 @@ void ssh_message_free(SSH_MESSAGE *msg){
  * \returns nothing
  */
 void message_handle(ssh_session session, uint32_t type){
-  SSH_MESSAGE *msg=ssh_message_retrieve(session,type);
+  ssh_message msg=ssh_message_retrieve(session,type);
   if(msg){
     if(!session->ssh_message_list){
       session->ssh_message_list=ssh_list_new();

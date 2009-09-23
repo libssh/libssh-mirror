@@ -43,7 +43,7 @@ int main(int argc, char **argv){
 	ssh_options options=ssh_options_new();
     ssh_session session;
     SSH_BIND *ssh_bind;
-    SSH_MESSAGE *message;
+    ssh_message message;
     ssh_channel chan=0;
     ssh_buffer buf;
     int auth=0;

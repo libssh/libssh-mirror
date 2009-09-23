@@ -1346,7 +1346,7 @@ static ssh_channel channel_accept(ssh_session session, int channeltype,
     .tv_nsec = 50000000 /* 50ms */
   };
 #endif
-  SSH_MESSAGE *msg = NULL;
+  ssh_message msg = NULL;
   struct ssh_iterator *iterator;
   int t;
 
@@ -1357,7 +1357,7 @@ static ssh_channel channel_accept(ssh_session session, int channeltype,
     if (session->ssh_message_list) {
       iterator = ssh_list_get_iterator(session->ssh_message_list);
       while (iterator) {
-        msg = (SSH_MESSAGE*)iterator->data;
+        msg = (ssh_message)iterator->data;
         if (ssh_message_type(msg) == SSH_REQUEST_CHANNEL_OPEN &&
             ssh_message_subtype(msg) == channeltype) {
           ssh_list_remove(session->ssh_message_list, iterator);

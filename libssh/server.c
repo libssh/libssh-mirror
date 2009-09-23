@@ -528,7 +528,7 @@ int channel_write_stderr(ssh_channel channel, const void *data, uint32_t len) {
 
 /* messages */
 
-static int ssh_message_auth_reply_default(SSH_MESSAGE *msg,int partial) {
+static int ssh_message_auth_reply_default(ssh_message msg,int partial) {
   ssh_session session = msg->session;
   char methods_c[128] = {0};
   ssh_string methods = NULL;
@@ -589,7 +589,7 @@ error:
   return rc;
 }
 
-static int ssh_message_channel_request_open_reply_default(SSH_MESSAGE *msg) {
+static int ssh_message_channel_request_open_reply_default(ssh_message msg) {
   ssh_log(msg->session, SSH_LOG_FUNCTIONS, "Refusing a channel");
 
   if (buffer_add_u8(msg->session->out_buffer
@@ -618,7 +618,7 @@ error:
   return SSH_ERROR;
 }
 
-static int ssh_message_channel_request_reply_default(SSH_MESSAGE *msg) {
+static int ssh_message_channel_request_reply_default(ssh_message msg) {
   uint32_t channel;
 
   if (msg->channel_request.want_reply) {
@@ -643,12 +643,12 @@ static int ssh_message_channel_request_reply_default(SSH_MESSAGE *msg) {
   return SSH_OK;
 }
 
-static int ssh_message_service_request_reply_default(SSH_MESSAGE *msg) {
+static int ssh_message_service_request_reply_default(ssh_message msg) {
   /* The only return code accepted by specifications are success or disconnect */
   return ssh_message_service_reply_success(msg);
 }
 
-int ssh_message_service_reply_success(SSH_MESSAGE *msg) {
+int ssh_message_service_reply_success(ssh_message msg) {
   struct ssh_string_struct *service;
   ssh_session session=msg->session;
   if (msg == NULL) {
@@ -668,7 +668,7 @@ int ssh_message_service_reply_success(SSH_MESSAGE *msg) {
   return packet_send(msg->session);
 }
 
-int ssh_message_reply_default(SSH_MESSAGE *msg) {
+int ssh_message_reply_default(ssh_message msg) {
   if (msg == NULL) {
     return -1;
   }
@@ -692,14 +692,14 @@ int ssh_message_reply_default(SSH_MESSAGE *msg) {
   return -1;
 }
 
-char *ssh_message_service_service(SSH_MESSAGE *msg){
+char *ssh_message_service_service(ssh_message msg){
   if (msg == NULL) {
     return NULL;
   }
   return msg->service_request.service;
 }
 
-char *ssh_message_auth_user(SSH_MESSAGE *msg) {
+char *ssh_message_auth_user(ssh_message msg) {
   if (msg == NULL) {
     return NULL;
   }
@@ -707,7 +707,7 @@ char *ssh_message_auth_user(SSH_MESSAGE *msg) {
   return msg->auth_request.username;
 }
 
-char *ssh_message_auth_password(SSH_MESSAGE *msg){
+char *ssh_message_auth_password(ssh_message msg){
   if (msg == NULL) {
     return NULL;
   }
@@ -716,7 +716,7 @@ char *ssh_message_auth_password(SSH_MESSAGE *msg){
 }
 
 /* Get the publickey of an auth request */
-ssh_public_key ssh_message_auth_publickey(SSH_MESSAGE *msg){
+ssh_public_key ssh_message_auth_publickey(ssh_message msg){
   if (msg == NULL) {
     return NULL;
   }
@@ -724,7 +724,7 @@ ssh_public_key ssh_message_auth_publickey(SSH_MESSAGE *msg){
   return msg->auth_request.public_key;
 }
 
-int ssh_message_auth_set_methods(SSH_MESSAGE *msg, int methods) {
+int ssh_message_auth_set_methods(ssh_message msg, int methods) {
   if (msg == NULL || msg->session == NULL) {
     return -1;
   }
@@ -734,7 +734,7 @@ int ssh_message_auth_set_methods(SSH_MESSAGE *msg, int methods) {
   return 0;
 }
 
-int ssh_message_auth_reply_success(SSH_MESSAGE *msg, int partial) {
+int ssh_message_auth_reply_success(ssh_message msg, int partial) {
   if (msg == NULL) {
     return SSH_ERROR;
   }
@@ -751,7 +751,7 @@ int ssh_message_auth_reply_success(SSH_MESSAGE *msg, int partial) {
 }
 
 /* Answer OK to a pubkey auth request */
-int ssh_message_auth_reply_pk_ok(SSH_MESSAGE *msg, ssh_string algo, ssh_string pubkey) {
+int ssh_message_auth_reply_pk_ok(ssh_message msg, ssh_string algo, ssh_string pubkey) {
   if (msg == NULL) {
     return SSH_ERROR;
   }
@@ -765,59 +765,59 @@ int ssh_message_auth_reply_pk_ok(SSH_MESSAGE *msg, ssh_string algo, ssh_string p
   return packet_send(msg->session);
 }
 
-char *ssh_message_channel_request_open_originator(SSH_MESSAGE *msg){
+char *ssh_message_channel_request_open_originator(ssh_message msg){
     return msg->channel_request_open.originator;
 }
 
-int ssh_message_channel_request_open_originator_port(SSH_MESSAGE *msg){
+int ssh_message_channel_request_open_originator_port(ssh_message msg){
     return msg->channel_request_open.originator_port;
 }
 
-char *ssh_message_channel_request_open_destination(SSH_MESSAGE *msg){
+char *ssh_message_channel_request_open_destination(ssh_message msg){
     return msg->channel_request_open.destination;
 }
 
-int ssh_message_channel_request_open_destination_port(SSH_MESSAGE *msg){
+int ssh_message_channel_request_open_destination_port(ssh_message msg){
     return msg->channel_request_open.destination_port;
 }
 
-ssh_channel ssh_message_channel_request_channel(SSH_MESSAGE *msg){
+ssh_channel ssh_message_channel_request_channel(ssh_message msg){
     return msg->channel_request.channel;
 }
 
-char *ssh_message_channel_request_pty_term(SSH_MESSAGE *msg){
+char *ssh_message_channel_request_pty_term(ssh_message msg){
     return msg->channel_request.TERM;
 }
 
-int ssh_message_channel_request_pty_width(SSH_MESSAGE *msg){
+int ssh_message_channel_request_pty_width(ssh_message msg){
     return msg->channel_request.width;
 }
 
-int ssh_message_channel_request_pty_height(SSH_MESSAGE *msg){
+int ssh_message_channel_request_pty_height(ssh_message msg){
     return msg->channel_request.height;
 }
 
-int ssh_message_channel_request_pty_pxwidth(SSH_MESSAGE *msg){
+int ssh_message_channel_request_pty_pxwidth(ssh_message msg){
     return msg->channel_request.pxwidth;
 }
 
-int ssh_message_channel_request_pty_pxheight(SSH_MESSAGE *msg){
+int ssh_message_channel_request_pty_pxheight(ssh_message msg){
     return msg->channel_request.pxheight;
 }
 
-char *ssh_message_channel_request_env_name(SSH_MESSAGE *msg){
+char *ssh_message_channel_request_env_name(ssh_message msg){
     return msg->channel_request.var_name;
 }
 
-char *ssh_message_channel_request_env_value(SSH_MESSAGE *msg){
+char *ssh_message_channel_request_env_value(ssh_message msg){
     return msg->channel_request.var_value;
 }
 
-char *ssh_message_channel_request_command(SSH_MESSAGE *msg){
+char *ssh_message_channel_request_command(ssh_message msg){
     return msg->channel_request.command;
 }
 
-char *ssh_message_channel_request_subsystem(SSH_MESSAGE *msg){
+char *ssh_message_channel_request_subsystem(ssh_message msg){
     return msg->channel_request.subsystem;
 }
 
@@ -834,12 +834,12 @@ void ssh_set_message_callback(ssh_session session,
 }
 
 int ssh_execute_message_callbacks(ssh_session session){
-  SSH_MESSAGE *msg=NULL;
+  ssh_message msg=NULL;
   int ret;
   if(!session->ssh_message_list)
     return SSH_OK;
   if(session->ssh_message_callback){
-    while((msg=ssh_list_get_head(SSH_MESSAGE *, session->ssh_message_list)) != NULL){
+    while((msg=ssh_list_get_head(ssh_message , session->ssh_message_list)) != NULL){
       ret=session->ssh_message_callback(session,msg);
       if(ret==1){
         ret = ssh_message_reply_default(msg);
@@ -848,7 +848,7 @@ int ssh_execute_message_callbacks(ssh_session session){
       }
     }
   } else {
-    while((msg=ssh_list_get_head(SSH_MESSAGE *, session->ssh_message_list)) != NULL){
+    while((msg=ssh_list_get_head(ssh_message , session->ssh_message_list)) != NULL){
       ret = ssh_message_reply_default(msg);
       if(ret != SSH_OK)
         return ret;
