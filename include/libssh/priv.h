@@ -53,9 +53,11 @@
 #define CLIENTBANNER2 "SSH-2.0-libssh-" SSH_STRINGIFY(LIBSSH_VERSION)
 #define KBDINT_MAX_PROMPT 256 /* more than openssh's :) */
 /* some types for public keys */
-#define TYPE_DSS 1
-#define TYPE_RSA 2
-#define TYPE_RSA1 3
+enum public_key_types_e{
+	TYPE_DSS=1,
+	TYPE_RSA,
+	TYPE_RSA1
+};
 
 /* profiling constants. Don't touch them unless you know what you do */
 #ifdef HAVE_LIBCRYPTO

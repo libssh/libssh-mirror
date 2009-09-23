@@ -132,27 +132,31 @@ typedef int socket_t;
 #endif
 
 /* the offsets of methods */
-#define SSH_KEX 0
-#define SSH_HOSTKEYS 1
-#define SSH_CRYPT_C_S 2
-#define SSH_CRYPT_S_C 3
-#define SSH_MAC_C_S 4
-#define SSH_MAC_S_C 5
-#define SSH_COMP_C_S 6
-#define SSH_COMP_S_C 7
-#define SSH_LANG_C_S 8
-#define SSH_LANG_S_C 9
+enum ssh_kex_types_e {
+	SSH_KEX=0,
+	SSH_HOSTKEYS,
+	SSH_CRYPT_C_S,
+	SSH_CRYPT_S_C,
+	SSH_MAC_C_S,
+	SSH_MAC_S_C,
+	SSH_COMP_C_S,
+	SSH_COMP_S_C,
+	SSH_LANG_C_S,
+	SSH_LANG_S_C
+};
 
 #define SSH_CRYPT 2
 #define SSH_MAC 3
 #define SSH_COMP 4
 #define SSH_LANG 5
 
-#define SSH_AUTH_SUCCESS 0
-#define SSH_AUTH_DENIED 1
-#define SSH_AUTH_PARTIAL 2
-#define SSH_AUTH_INFO 3
-#define SSH_AUTH_ERROR -1
+enum ssh_auth_e {
+	SSH_AUTH_SUCCESS=0,
+	SSH_AUTH_DENIED,
+	SSH_AUTH_PARTIAL,
+	SSH_AUTH_INFO,
+	SSH_AUTH_ERROR=-1
+};
 
 /* auth flags */
 #define SSH_AUTH_METHOD_UNKNOWN 0
@@ -163,47 +167,57 @@ typedef int socket_t;
 #define SSH_AUTH_METHOD_INTERACTIVE 0x0010
 
 /* messages */
-#define SSH_REQUEST_AUTH 1
-#define SSH_REQUEST_CHANNEL_OPEN 2
-#define SSH_REQUEST_CHANNEL 3
-#define SSH_REQUEST_SERVICE 4
-#define SSH_REQUEST_GLOBAL 5
+enum ssh_requests_e {
+	SSH_REQUEST_AUTH=1,
+	SSH_REQUEST_CHANNEL_OPEN,
+	SSH_REQUEST_CHANNEL,
+	SSH_REQUEST_SERVICE,
+	SSH_REQUEST_GLOBAL,
+};
 
-#define SSH_CHANNEL_UNKNOWN 0
-#define SSH_CHANNEL_SESSION 1
-#define SSH_CHANNEL_DIRECT_TCPIP 2
-#define SSH_CHANNEL_FORWARDED_TCPIP 3
-#define SSH_CHANNEL_X11 4
+enum ssh_channel_type_e {
+	SSH_CHANNEL_UNKNOWN=0,
+	SSH_CHANNEL_SESSION,
+	SSH_CHANNEL_DIRECT_TCPIP,
+	SSH_CHANNEL_FORWARDED_TCPIP,
+	SSH_CHANNEL_X11
+};
 
-#define SSH_CHANNEL_REQUEST_UNKNOWN 0
-#define SSH_CHANNEL_REQUEST_PTY 1
-#define SSH_CHANNEL_REQUEST_EXEC 2
-#define SSH_CHANNEL_REQUEST_SHELL 3
-#define SSH_CHANNEL_REQUEST_ENV 4
-#define SSH_CHANNEL_REQUEST_SUBSYSTEM 5
-#define SSH_CHANNEL_REQUEST_WINDOW_CHANGE 6
+enum ssh_channel_requests_e {
+	SSH_CHANNEL_REQUEST_UNKNOWN=0,
+	SSH_CHANNEL_REQUEST_PTY,
+	SSH_CHANNEL_REQUEST_EXEC,
+	SSH_CHANNEL_REQUEST_SHELL,
+	SSH_CHANNEL_REQUEST_ENV,
+	SSH_CHANNEL_REQUEST_SUBSYSTEM,
+	SSH_CHANNEL_REQUEST_WINDOW_CHANGE,
+};
 
 /* status flags */
-#define SSH_CLOSED (1<<0)
-#define SSH_READ_PENDING (1<<1)
-#define SSH_CLOSED_ERROR (1<<2)
+#define SSH_CLOSED 0x01
+#define SSH_READ_PENDING 0x02
+#define SSH_CLOSED_ERROR 0x04
 
-#define SSH_SERVER_ERROR -1
-#define SSH_SERVER_NOT_KNOWN 0
-#define SSH_SERVER_KNOWN_OK 1
-#define SSH_SERVER_KNOWN_CHANGED 2
-#define SSH_SERVER_FOUND_OTHER 3
-#define SSH_SERVER_FILE_NOT_FOUND 4
+enum ssh_server_known_e {
+	SSH_SERVER_ERROR=-1,
+	SSH_SERVER_NOT_KNOWN=0,
+	SSH_SERVER_KNOWN_OK,
+	SSH_SERVER_KNOWN_CHANGED,
+	SSH_SERVER_FOUND_OTHER,
+	SSH_SERVER_FILE_NOT_FOUND,
+};
 
 #ifndef MD5_DIGEST_LEN
     #define MD5_DIGEST_LEN 16
 #endif
 /* errors */
 
-#define SSH_NO_ERROR 0
-#define SSH_REQUEST_DENIED 1
-#define SSH_FATAL 2
-#define SSH_EINTR 3
+enum ssh_error_types_e {
+	SSH_NO_ERROR=0,
+	SSH_REQUEST_DENIED,
+	SSH_FATAL,
+	SSH_EINTR
+};
 
 /* Error return codes */
 #define SSH_OK 0     /* No error */
@@ -264,6 +278,7 @@ enum ssh_options_e {
   SSH_OPTIONS_SERVER_RSAKEY,
   SSH_OPTIONS_SERVER_BANNER,
 };
+
 enum {
   /** Code is going to write/create remote files */
   SSH_SCP_WRITE,
