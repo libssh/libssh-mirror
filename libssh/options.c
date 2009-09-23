@@ -42,7 +42,7 @@
 /** This structure is freed automaticaly by ssh_disconnect()
  * when you use it. \n
  * It can be used by only one ssh_connect(), not more.\n
- * also by default, ssh1 support is not allowed 
+ * also by default, ssh1 support is not allowed
  *
  * \brief initializes a new option structure
  * \returns an empty intialized option structure.
@@ -575,30 +575,30 @@ int ssh_options_set(ssh_options opt, enum ssh_options_e type,
 
         opt->log_verbosity = *x;
       }
-    case SSH_OPTTIONS_AUTH_CALLBACK:
+    case SSH_OPTIONS_AUTH_CALLBACK:
       if (value == NULL) {
         return -1;
       } else {
         opt->auth_function = (ssh_auth_callback) value;
       }
       break;
-    case SSH_OPTTIONS_AUTH_USERDATA:
+    case SSH_OPTIONS_AUTH_USERDATA:
       opt->auth_userdata = (void *) value;
       break;
-    case SSH_OPTTIONS_LOG_CALLBACK:
+    case SSH_OPTIONS_LOG_CALLBACK:
       if (value == NULL) {
         return -1;
       } else {
         opt->log_function = (ssh_log_callback) value;
       }
       break;
-    case SSH_OPTTIONS_LOG_USERDATA:
+    case SSH_OPTIONS_LOG_USERDATA:
       opt->auth_userdata = (void *) value;
       break;
-    case SSH_OPTTIONS_STATUS_CALLBACK:
+    case SSH_OPTIONS_STATUS_CALLBACK:
       /* TODO */
       break;
-    case SSH_OPTTIONS_STATUS_ARG:
+    case SSH_OPTIONS_STATUS_ARG:
       /* TODO */
       break;
     case SSH_OPTIONS_CIPHERS_C_S:
