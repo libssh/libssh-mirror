@@ -27,7 +27,7 @@
 #define _SSH_CALLBACK_H
 
 #include "libssh.h"
-
+#include <string.h>
 /**
  * @brief SSH authentication callback.
  *
@@ -55,6 +55,10 @@ struct ssh_callbacks_struct {
 };
 
 typedef struct ssh_callbacks_struct * ssh_callbacks;
+#define ssh_callbacks_init(p) do {\
+	memset(p,'\0',sizeof(*p)); \
+	p->size=sizeof(*p); \
+} while(0);
 
 LIBSSH_API int ssh_options_set_auth_callback(SSH_OPTIONS *opt, ssh_auth_callback cb,
     void *userdata);
