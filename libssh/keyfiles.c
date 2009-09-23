@@ -577,7 +577,7 @@ error:
 
 #ifdef HAVE_LIBCRYPTO
 static int pem_get_password(char *buf, int size, int rwflag, void *userdata) {
-  SSH_SESSION *session = userdata;
+  ssh_session session = userdata;
 
   /* unused flag */
   (void) rwflag;
@@ -612,7 +612,7 @@ static int pem_get_password(char *buf, int size, int rwflag, void *userdata) {
  * \see privatekey_free()
  * \see publickey_from_privatekey()
  */
-ssh_private_key privatekey_from_file(SSH_SESSION *session, const char *filename,
+ssh_private_key privatekey_from_file(ssh_session session, const char *filename,
     int type, const char *passphrase) {
   ssh_auth_callback auth_cb = NULL;
   ssh_private_key privkey = NULL;
@@ -857,7 +857,7 @@ void privatekey_free(ssh_private_key prv) {
  * \see string_free()
  * \see publickey_from_privatekey()
  */
-ssh_string publickey_from_file(SSH_SESSION *session, const char *filename,
+ssh_string publickey_from_file(ssh_session session, const char *filename,
     int *type) {
   ssh_buffer buffer = NULL;
   char buf[4096] = {0};
@@ -926,7 +926,7 @@ ssh_string publickey_from_file(SSH_SESSION *session, const char *filename,
   return str;
 }
 
-ssh_string try_publickey_from_file(SSH_SESSION *session, struct ssh_keys_struct keytab,
+ssh_string try_publickey_from_file(ssh_session session, struct ssh_keys_struct keytab,
     char **privkeyfile, int *type) {
   static char *home = NULL;
 
@@ -1063,7 +1063,7 @@ static void tokens_free(char **tokens) {
  * \returns NULL if no match was found or the file was not found
  * \returns found_type type of key (ie "dsa","ssh-rsa1"). Don't free that value.
  */
-static char **ssh_get_knownhost_line(SSH_SESSION *session, FILE **file,
+static char **ssh_get_knownhost_line(ssh_session session, FILE **file,
     const char *filename, const char **found_type) {
   char buffer[4096] = {0};
   char *ptr;
@@ -1145,7 +1145,7 @@ static char **ssh_get_knownhost_line(SSH_SESSION *session, FILE **file,
  * \return 0 if the key doesn't match
  * \return -1 on error
  */
-static int check_public_key(SSH_SESSION *session, char **tokens) {
+static int check_public_key(ssh_session session, char **tokens) {
   ssh_string pubkey = session->current_crypto->server_pubkey;
   ssh_buffer pubkey_buffer;
   char *pubkey_64;
@@ -1244,7 +1244,7 @@ static int check_public_key(SSH_SESSION *session, char **tokens) {
  * \returns 1 if it matches
  * \returns 0 otherwise
  */
-static int match_hashed_host(SSH_SESSION *session, const char *host,
+static int match_hashed_host(ssh_session session, const char *host,
     const char *sourcehash) {
   /* Openssh hash structure :
    * |1|base64 encoded salt|base64 encoded hash
@@ -1362,7 +1362,7 @@ static int match_hashed_host(SSH_SESSION *session, const char *host,
  * \bug There is no current way to remove or modify an entry into the known
  * host table.
  */
-int ssh_is_server_known(SSH_SESSION *session) {
+int ssh_is_server_known(ssh_session session) {
   FILE *file = NULL;
   char **tokens;
   char *host;
@@ -1450,7 +1450,7 @@ int ssh_is_server_known(SSH_SESSION *session) {
  * \param session ssh session
  * \return 0 on success, -1 on error
  */
-int ssh_write_knownhost(SSH_SESSION *session) {
+int ssh_write_knownhost(ssh_session session) {
   ssh_string pubkey = session->current_crypto->server_pubkey;
   unsigned char *pubkey_64;
   char buffer[4096] = {0};

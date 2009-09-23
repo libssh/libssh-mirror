@@ -321,7 +321,7 @@ typedef struct ssh_crypto_struct {
 struct ssh_channel_struct {
     struct ssh_channel_struct *prev;
     struct ssh_channel_struct *next;
-    SSH_SESSION *session; /* SSH_SESSION pointer */
+    ssh_session session; /* SSH_SESSION pointer */
     uint32_t local_channel;
     uint32_t local_window;
     int local_eof;
@@ -513,7 +513,7 @@ struct ssh_channel_request {
 };
 
 struct ssh_message_struct {
-    SSH_SESSION *session;
+    ssh_session session;
     int type;
     struct ssh_auth_request auth_request;
     struct ssh_channel_request_open channel_request_open;
@@ -601,7 +601,7 @@ int ssh_poll_ctx(SSH_POLL_CTX *ctx, int timeout);
 
 struct socket;
 int ssh_socket_init(void);
-struct socket *ssh_socket_new(SSH_SESSION *session);
+struct socket *ssh_socket_new(ssh_session session);
 void ssh_socket_free(struct socket *s);
 void ssh_socket_set_fd(struct socket *s, socket_t fd);
 socket_t ssh_socket_get_fd(struct socket *s);
@@ -616,7 +616,7 @@ int ssh_socket_fd_isset(struct socket *s, fd_set *set);
 void ssh_socket_fd_set(struct socket *s, fd_set *set, int *fd_max);
 int ssh_socket_completeread(struct socket *s, void *buffer, uint32_t len);
 int ssh_socket_completewrite(struct socket *s, const void *buffer, uint32_t len);
-int ssh_socket_wait_for_data(struct socket *s, SSH_SESSION *session, uint32_t len);
+int ssh_socket_wait_for_data(struct socket *s, ssh_session session, uint32_t len);
 int ssh_socket_nonblocking_flush(struct socket *s);
 int ssh_socket_blocking_flush(struct socket *s);
 int ssh_socket_poll(struct socket *s, int *writeable, int *except);
@@ -628,12 +628,12 @@ int ssh_socket_data_available(struct socket *s);
 int ssh_socket_data_writable(struct socket *s);
 /* session.c */
 
-void ssh_cleanup(SSH_SESSION *session);
+void ssh_cleanup(ssh_session session);
 
 /* client.c */
 
-int ssh_send_banner(SSH_SESSION *session, int is_server);
-char *ssh_get_banner(SSH_SESSION *session);
+int ssh_send_banner(ssh_session session, int is_server);
+char *ssh_get_banner(ssh_session session);
 
 /* config.c */
 int ssh_config_parse_file(ssh_options opt, const char *filename);
@@ -644,103 +644,103 @@ void ssh_set_error(void *error, int code, const char *descr, ...) PRINTF_ATTRIBU
 /* in dh.c */
 /* DH key generation */
 void ssh_print_bignum(const char *which,bignum num);
-int dh_generate_e(SSH_SESSION *session);
-int dh_generate_f(SSH_SESSION *session);
-int dh_generate_x(SSH_SESSION *session);
-int dh_generate_y(SSH_SESSION *session);
+int dh_generate_e(ssh_session session);
+int dh_generate_f(ssh_session session);
+int dh_generate_x(ssh_session session);
+int dh_generate_y(ssh_session session);
 
 int ssh_crypto_init(void);
 void ssh_crypto_finalize(void);
 
-ssh_string dh_get_e(SSH_SESSION *session);
-ssh_string dh_get_f(SSH_SESSION *session);
-int dh_import_f(SSH_SESSION *session,ssh_string f_string);
-int dh_import_e(SSH_SESSION *session, ssh_string e_string);
-void dh_import_pubkey(SSH_SESSION *session,ssh_string pubkey_string);
-int dh_build_k(SSH_SESSION *session);
-int make_sessionid(SSH_SESSION *session);
+ssh_string dh_get_e(ssh_session session);
+ssh_string dh_get_f(ssh_session session);
+int dh_import_f(ssh_session session,ssh_string f_string);
+int dh_import_e(ssh_session session, ssh_string e_string);
+void dh_import_pubkey(ssh_session session,ssh_string pubkey_string);
+int dh_build_k(ssh_session session);
+int make_sessionid(ssh_session session);
 /* add data for the final cookie */
-int hashbufin_add_cookie(SSH_SESSION *session, unsigned char *cookie);
-int hashbufout_add_cookie(SSH_SESSION *session);
-int generate_session_keys(SSH_SESSION *session);
-int sig_verify(SSH_SESSION *session, ssh_public_key pubkey,
+int hashbufin_add_cookie(ssh_session session, unsigned char *cookie);
+int hashbufout_add_cookie(ssh_session session);
+int generate_session_keys(ssh_session session);
+int sig_verify(ssh_session session, ssh_public_key pubkey,
     SIGNATURE *signature, unsigned char *digest, int size);
 /* returns 1 if server signature ok, 0 otherwise. The NEXT crypto is checked, not the current one */
-int signature_verify(SSH_SESSION *session,ssh_string signature);
+int signature_verify(ssh_session session,ssh_string signature);
 bignum make_string_bn(ssh_string string);
 ssh_string make_bignum_string(bignum num);
 
 /* in crypt.c */
-uint32_t packet_decrypt_len(SSH_SESSION *session,char *crypted);
-int packet_decrypt(SSH_SESSION *session, void *packet,unsigned int len);
-unsigned char *packet_encrypt(SSH_SESSION *session,void *packet,unsigned int len);
+uint32_t packet_decrypt_len(ssh_session session,char *crypted);
+int packet_decrypt(ssh_session session, void *packet,unsigned int len);
+unsigned char *packet_encrypt(ssh_session session,void *packet,unsigned int len);
  /* it returns the hmac buffer if exists*/
-int packet_hmac_verify(SSH_SESSION *session,ssh_buffer buffer,unsigned char *mac);
+int packet_hmac_verify(ssh_session session,ssh_buffer buffer,unsigned char *mac);
 
 /* in packet.c */
 
-void packet_parse(SSH_SESSION *session);
-int packet_send(SSH_SESSION *session);
+void packet_parse(ssh_session session);
+int packet_send(ssh_session session);
 
-int packet_read(SSH_SESSION *session);
-int packet_translate(SSH_SESSION *session);
-int packet_wait(SSH_SESSION *session,int type,int blocking);
-int packet_flush(SSH_SESSION *session, int enforce_blocking);
+int packet_read(ssh_session session);
+int packet_translate(ssh_session session);
+int packet_wait(ssh_session session,int type,int blocking);
+int packet_flush(ssh_session session, int enforce_blocking);
 
 /* connect.c */
 int ssh_regex_init(void);
 void ssh_regex_finalize(void);
-SSH_SESSION *ssh_session_new();
-socket_t ssh_connect_host(SSH_SESSION *session, const char *host,const char
+ssh_session ssh_session_new();
+socket_t ssh_connect_host(ssh_session session, const char *host,const char
         *bind_addr, int port, long timeout, long usec);
 
 /* in kex.c */
 extern const char *ssh_kex_nums[];
-int ssh_send_kex(SSH_SESSION *session, int server_kex);
-void ssh_list_kex(SSH_SESSION *session, KEX *kex);
-int set_kex(SSH_SESSION *session);
-int ssh_get_kex(SSH_SESSION *session, int server_kex);
+int ssh_send_kex(ssh_session session, int server_kex);
+void ssh_list_kex(ssh_session session, KEX *kex);
+int set_kex(ssh_session session);
+int ssh_get_kex(ssh_session session, int server_kex);
 int verify_existing_algo(int algo, const char *name);
 char **space_tokenize(const char *chain);
-int ssh_get_kex1(SSH_SESSION *session);
+int ssh_get_kex1(ssh_session session);
 char *ssh_find_matching(const char *in_d, const char *what_d);
 
 /* in keyfiles.c */
 
 ssh_private_key _privatekey_from_file(void *session, const char *filename,
     int type);
-ssh_string try_publickey_from_file(SSH_SESSION *session,
+ssh_string try_publickey_from_file(ssh_session session,
     struct ssh_keys_struct keytab,
     char **privkeyfile, int *type);
 
 /* in keys.c */
 const char *ssh_type_to_char(int type);
 int ssh_type_from_name(const char *name);
-ssh_buffer ssh_userauth_build_digest(SSH_SESSION *session, ssh_message msg, char *service);
+ssh_buffer ssh_userauth_build_digest(ssh_session session, ssh_message msg, char *service);
 
-ssh_private_key privatekey_make_dss(SSH_SESSION *session, ssh_buffer buffer);
-ssh_private_key privatekey_make_rsa(SSH_SESSION *session, ssh_buffer buffer,
+ssh_private_key privatekey_make_dss(ssh_session session, ssh_buffer buffer);
+ssh_private_key privatekey_make_rsa(ssh_session session, ssh_buffer buffer,
     const char *type);
-ssh_private_key privatekey_from_string(SSH_SESSION *session, ssh_string privkey_s);
+ssh_private_key privatekey_from_string(ssh_session session, ssh_string privkey_s);
 
-ssh_public_key publickey_make_dss(SSH_SESSION *session, ssh_buffer buffer);
-ssh_public_key publickey_make_rsa(SSH_SESSION *session, ssh_buffer buffer, int type);
-ssh_public_key publickey_from_string(SSH_SESSION *session, ssh_string pubkey_s);
-SIGNATURE *signature_from_string(SSH_SESSION *session, ssh_string signature,ssh_public_key pubkey,int needed_type);
+ssh_public_key publickey_make_dss(ssh_session session, ssh_buffer buffer);
+ssh_public_key publickey_make_rsa(ssh_session session, ssh_buffer buffer, int type);
+ssh_public_key publickey_from_string(ssh_session session, ssh_string pubkey_s);
+SIGNATURE *signature_from_string(ssh_session session, ssh_string signature,ssh_public_key pubkey,int needed_type);
 void signature_free(SIGNATURE *sign);
 ssh_string ssh_do_sign_with_agent(struct ssh_session_struct *session,
     struct ssh_buffer_struct *buf, struct ssh_public_key_struct *publickey);
-ssh_string ssh_do_sign(SSH_SESSION *session,ssh_buffer sigbuf,
+ssh_string ssh_do_sign(ssh_session session,ssh_buffer sigbuf,
         ssh_private_key privatekey);
-ssh_string ssh_sign_session_id(SSH_SESSION *session, ssh_private_key privatekey);
-ssh_string ssh_encrypt_rsa1(SSH_SESSION *session, ssh_string data, ssh_public_key key);
+ssh_string ssh_sign_session_id(ssh_session session, ssh_private_key privatekey);
+ssh_string ssh_encrypt_rsa1(ssh_session session, ssh_string data, ssh_public_key key);
 /* channel.c */
-void channel_handle(SSH_SESSION *session, int type);
-ssh_channel channel_new(SSH_SESSION *session);
+void channel_handle(ssh_session session, int type);
+ssh_channel channel_new(ssh_session session);
 int channel_default_bufferize(ssh_channel channel, void *data, int len,
         int is_stderr);
-uint32_t ssh_channel_new_id(SSH_SESSION *session);
-ssh_channel ssh_channel_from_local(SSH_SESSION *session, uint32_t id);
+uint32_t ssh_channel_new_id(ssh_session session);
+ssh_channel ssh_channel_from_local(ssh_session session, uint32_t id);
 int channel_write_common(ssh_channel channel, const void *data,
     uint32_t len, int is_stderr);
 
@@ -785,12 +785,12 @@ ssh_buffer base64_to_bin(const char *source);
 unsigned char *bin_to_base64(const unsigned char *source, int len);
 
 /* gzip.c */
-int compress_buffer(SSH_SESSION *session,ssh_buffer buf);
-int decompress_buffer(SSH_SESSION *session,ssh_buffer buf, size_t maxlen);
+int compress_buffer(ssh_session session,ssh_buffer buf);
+int decompress_buffer(ssh_session session,ssh_buffer buf, size_t maxlen);
 
 /* wrapper.c */
-int crypt_set_algorithms(SSH_SESSION *);
-int crypt_set_algorithms_server(SSH_SESSION *session);
+int crypt_set_algorithms(ssh_session );
+int crypt_set_algorithms_server(ssh_session session);
 CRYPTO *crypto_new(void);
 void crypto_free(CRYPTO *crypto);
 
@@ -798,10 +798,10 @@ void crypto_free(CRYPTO *crypto);
 uint32_t ssh_crc32(const char *buf, uint32_t len);
 
 /* auth1.c */
-int ssh_userauth1_none(SSH_SESSION *session, const char *username);
-int ssh_userauth1_offer_pubkey(SSH_SESSION *session, const char *username,
+int ssh_userauth1_none(ssh_session session, const char *username);
+int ssh_userauth1_offer_pubkey(ssh_session session, const char *username,
         int type, ssh_string pubkey);
-int ssh_userauth1_password(SSH_SESSION *session, const char *username,
+int ssh_userauth1_password(ssh_session session, const char *username,
         const char *password);
 /* in misc.c */
 /* gets the user home dir. */
@@ -854,20 +854,20 @@ int channel_request_pty_size1(ssh_channel channel, const char *terminal,
 int channel_change_pty_size1(ssh_channel channel, int cols, int rows);
 int channel_request_shell1(ssh_channel channel);
 int channel_request_exec1(ssh_channel channel, const char *cmd);
-int channel_handle1(SSH_SESSION *session, int type);
+int channel_handle1(ssh_session session, int type);
 int channel_write1(ssh_channel channel, const void *data, int len);
 
 /* session.c */
 
-int ssh_handle_packets(SSH_SESSION *session);
+int ssh_handle_packets(ssh_session session);
 
 /* match.c */
 int match_hostname(const char *host, const char *pattern, unsigned int len);
 
 /* messages.c */
 
-void message_handle(SSH_SESSION *session, uint32_t type);
-int ssh_execute_message_callbacks(SSH_SESSION *session);
+void message_handle(ssh_session session, uint32_t type);
+int ssh_execute_message_callbacks(ssh_session session);
 
 /* scp.c */
 int ssh_scp_read_string(ssh_scp scp, char *buffer, size_t len);

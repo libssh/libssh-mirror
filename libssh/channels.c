@@ -55,7 +55,7 @@
  *
  * @return A pointer to a newly allocated channel, NULL on error.
  */
-ssh_channel channel_new(SSH_SESSION *session) {
+ssh_channel channel_new(ssh_session session) {
   ssh_channel channel = NULL;
 
   channel = malloc(sizeof(struct ssh_channel_struct));
@@ -102,13 +102,13 @@ ssh_channel channel_new(SSH_SESSION *session) {
  *
  * @return The new channel identifier.
  */
-uint32_t ssh_channel_new_id(SSH_SESSION *session) {
+uint32_t ssh_channel_new_id(ssh_session session) {
   return ++(session->maxchannel);
 }
 
 static int channel_open(ssh_channel channel, const char *type_c, int window,
     int maxpacket, ssh_buffer payload) {
-  SSH_SESSION *session = channel->session;
+  ssh_session session = channel->session;
   ssh_string type = NULL;
   uint32_t tmp = 0;
 
@@ -233,7 +233,7 @@ static int channel_open(ssh_channel channel, const char *type_c, int window,
 }
 
 /* get ssh channel from local session? */
-ssh_channel ssh_channel_from_local(SSH_SESSION *session, uint32_t id) {
+ssh_channel ssh_channel_from_local(ssh_session session, uint32_t id) {
   ssh_channel initchan = session->channels;
   ssh_channel channel;
 
@@ -252,7 +252,7 @@ ssh_channel ssh_channel_from_local(SSH_SESSION *session, uint32_t id) {
   return channel;
 }
 
-static int grow_window(SSH_SESSION *session, ssh_channel channel, int minimumsize) {
+static int grow_window(ssh_session session, ssh_channel channel, int minimumsize) {
   uint32_t new_window = minimumsize > WINDOWBASE ? minimumsize : WINDOWBASE;
 
   enter_function();
@@ -286,7 +286,7 @@ error:
   return -1;
 }
 
-static ssh_channel channel_from_msg(SSH_SESSION *session) {
+static ssh_channel channel_from_msg(ssh_session session) {
   ssh_channel channel;
   uint32_t chan;
 
@@ -306,7 +306,7 @@ static ssh_channel channel_from_msg(SSH_SESSION *session) {
   return channel;
 }
 
-static void channel_rcv_change_window(SSH_SESSION *session) {
+static void channel_rcv_change_window(ssh_session session) {
   ssh_channel channel;
   uint32_t bytes;
   int rc;
@@ -340,7 +340,7 @@ static void channel_rcv_change_window(SSH_SESSION *session) {
 }
 
 /* is_stderr is set to 1 if the data are extended, ie stderr */
-static void channel_rcv_data(SSH_SESSION *session,int is_stderr) {
+static void channel_rcv_data(ssh_session session,int is_stderr) {
   ssh_channel channel;
   ssh_string str;
   size_t len;
@@ -406,7 +406,7 @@ static void channel_rcv_data(SSH_SESSION *session,int is_stderr) {
   leave_function();
 }
 
-static void channel_rcv_eof(SSH_SESSION *session) {
+static void channel_rcv_eof(ssh_session session) {
   ssh_channel channel;
 
   enter_function();
@@ -428,7 +428,7 @@ static void channel_rcv_eof(SSH_SESSION *session) {
   leave_function();
 }
 
-static void channel_rcv_close(SSH_SESSION *session) {
+static void channel_rcv_close(ssh_session session) {
   ssh_channel channel;
 
   enter_function();
@@ -467,7 +467,7 @@ static void channel_rcv_close(SSH_SESSION *session) {
   leave_function();
 }
 
-static void channel_rcv_request(SSH_SESSION *session) {
+static void channel_rcv_request(ssh_session session) {
   ssh_channel channel;
   ssh_string request_s;
   char *request;
@@ -560,7 +560,7 @@ static void channel_rcv_request(SSH_SESSION *session) {
  * channel_handle() is called by packet_wait(), for example when there is
  * channel informations to handle.
  */
-void channel_handle(SSH_SESSION *session, int type){
+void channel_handle(ssh_session session, int type){
   enter_function();
 
   ssh_log(session, SSH_LOG_PROTOCOL, "Channel_handle(%d)", type);
@@ -681,7 +681,7 @@ int channel_open_session(ssh_channel channel) {
  */
 int channel_open_forward(ssh_channel channel, const char *remotehost,
     int remoteport, const char *sourcehost, int localport) {
-  SSH_SESSION *session = channel->session;
+  ssh_session session = channel->session;
   ssh_buffer payload = NULL;
   ssh_string str = NULL;
   int rc = SSH_ERROR;
@@ -731,7 +731,7 @@ error:
  * @warning Any data unread on this channel will be lost.
  */
 void channel_free(ssh_channel channel) {
-  SSH_SESSION *session = channel->session;
+  ssh_session session = channel->session;
   enter_function();
 
   if (channel == NULL) {
@@ -780,7 +780,7 @@ void channel_free(ssh_channel channel) {
  * @see channel_free()
  */
 int channel_send_eof(ssh_channel channel){
-  SSH_SESSION *session = channel->session;
+  ssh_session session = channel->session;
   int rc = SSH_ERROR;
 
   enter_function();
@@ -823,7 +823,7 @@ error:
  * @see channel_eof()
  */
 int channel_close(ssh_channel channel){
-  SSH_SESSION *session = channel->session;
+  ssh_session session = channel->session;
   int rc = 0;
 
   enter_function();
@@ -863,7 +863,7 @@ error:
 
 int channel_write_common(ssh_channel channel, const void *data,
     uint32_t len, int is_stderr) {
-  SSH_SESSION *session = channel->session;
+  ssh_session session = channel->session;
   int origlen = len;
   int effectivelen;
 
@@ -1021,7 +1021,7 @@ void channel_set_blocking(ssh_channel channel, int blocking) {
 
 static int channel_request(ssh_channel channel, const char *request,
     ssh_buffer buffer, int reply) {
-  SSH_SESSION *session = channel->session;
+  ssh_session session = channel->session;
   ssh_string req = NULL;
   int rc = SSH_ERROR;
 
@@ -1099,7 +1099,7 @@ error:
  */
 int channel_request_pty_size(ssh_channel channel, const char *terminal,
     int col, int row) {
-  SSH_SESSION *session = channel->session;
+  ssh_session session = channel->session;
   ssh_string term = NULL;
   ssh_buffer buffer = NULL;
   int rc = SSH_ERROR;
@@ -1168,7 +1168,7 @@ int channel_request_pty(ssh_channel channel) {
  * is running at same time (not 100% threadsafe).
  */
 int channel_change_pty_size(ssh_channel channel, int cols, int rows) {
-  SSH_SESSION *session = channel->session;
+  ssh_session session = channel->session;
   ssh_buffer buffer = NULL;
   int rc = SSH_ERROR;
 
@@ -1728,7 +1728,7 @@ error:
  */
 int channel_read_buffer(ssh_channel channel, ssh_buffer buffer, uint32_t count,
     int is_stderr) {
-  SSH_SESSION *session=channel->session;
+  ssh_session session=channel->session;
   ssh_buffer stdbuf = channel->stdout_buffer;
   uint32_t maxread = count;
   uint32_t len;
@@ -1836,7 +1836,7 @@ int channel_read_buffer(ssh_channel channel, ssh_buffer buffer, uint32_t count,
  *          channel_read_buffer().
  */
 int channel_read(ssh_channel channel, void *dest, uint32_t count, int is_stderr) {
-  SSH_SESSION *session = channel->session;
+  ssh_session session = channel->session;
   ssh_buffer stdbuf = channel->stdout_buffer;
   uint32_t len;
 
@@ -1935,7 +1935,7 @@ int channel_read(ssh_channel channel, void *dest, uint32_t count, int is_stderr)
  */
 int channel_read_nonblocking(ssh_channel channel, void *dest, uint32_t count,
     int is_stderr) {
-  SSH_SESSION *session = channel->session;
+  ssh_session session = channel->session;
   uint32_t to_read;
   int rc;
 
@@ -1972,7 +1972,7 @@ int channel_read_nonblocking(ssh_channel channel, void *dest, uint32_t count,
  * @see channel_is_eof()
  */
 int channel_poll(ssh_channel channel, int is_stderr){
-  SSH_SESSION *session = channel->session;
+  ssh_session session = channel->session;
   ssh_buffer stdbuf = channel->stdout_buffer;
 
   enter_function();
@@ -2006,7 +2006,7 @@ int channel_poll(ssh_channel channel, int is_stderr){
  *
  * @return The session pointer.
  */
-SSH_SESSION *channel_get_session(ssh_channel channel) {
+ssh_session channel_get_session(ssh_channel channel) {
   return channel->session;
 }
 

@@ -176,8 +176,8 @@ void ssh_bind_fd_toaccept(SSH_BIND *ssh_bind) {
   ssh_bind->toaccept = 1;
 }
 
-SSH_SESSION *ssh_bind_accept(SSH_BIND *ssh_bind) {
-  SSH_SESSION *session;
+ssh_session ssh_bind_accept(SSH_BIND *ssh_bind) {
+  ssh_session session;
   ssh_private_key dsa = NULL;
   ssh_private_key rsa = NULL;
   int fd = -1;
@@ -269,7 +269,7 @@ void ssh_bind_free(SSH_BIND *ssh_bind){
 
 extern char *supported_methods[];
 
-static int server_set_kex(SSH_SESSION * session) {
+static int server_set_kex(ssh_session  session) {
   KEX *server = &session->server_kex;
   SSH_OPTIONS *options = session->options;
   int i, j;
@@ -323,7 +323,7 @@ static int server_set_kex(SSH_SESSION * session) {
   return 0;
 }
 
-static int dh_handshake_server(SSH_SESSION *session) {
+static int dh_handshake_server(ssh_session session) {
   ssh_string e;
   ssh_string f;
   ssh_string pubkey;
@@ -473,7 +473,7 @@ static int dh_handshake_server(SSH_SESSION *session) {
 }
 
 /* Do the banner and key exchange */
-int ssh_accept(SSH_SESSION *session) {
+int ssh_accept(ssh_session session) {
   if (ssh_send_banner(session, 1) < 0) {
     return -1;
   }
@@ -529,7 +529,7 @@ int channel_write_stderr(ssh_channel channel, const void *data, uint32_t len) {
 /* messages */
 
 static int ssh_message_auth_reply_default(SSH_MESSAGE *msg,int partial) {
-  SSH_SESSION *session = msg->session;
+  ssh_session session = msg->session;
   char methods_c[128] = {0};
   ssh_string methods = NULL;
   int rc = SSH_ERROR;
@@ -650,7 +650,7 @@ static int ssh_message_service_request_reply_default(SSH_MESSAGE *msg) {
 
 int ssh_message_service_reply_success(SSH_MESSAGE *msg) {
   struct ssh_string_struct *service;
-  SSH_SESSION *session=msg->session;
+  ssh_session session=msg->session;
   if (msg == NULL) {
     return SSH_ERROR;
   }
@@ -828,12 +828,12 @@ char *ssh_message_channel_request_subsystem(SSH_MESSAGE *msg){
  * 0 if the message has been parsed and treated sucessfuly, 1 otherwise (libssh
  * must take care of the response).
  */
-void ssh_set_message_callback(SSH_SESSION *session,
+void ssh_set_message_callback(ssh_session session,
     int(*ssh_message_callback)(ssh_session session, ssh_message msg)){
   session->ssh_message_callback=ssh_message_callback;
 }
 
-int ssh_execute_message_callbacks(SSH_SESSION *session){
+int ssh_execute_message_callbacks(ssh_session session){
   SSH_MESSAGE *msg=NULL;
   int ret;
   if(!session->ssh_message_list)

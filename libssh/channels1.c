@@ -45,7 +45,7 @@ int channel_open_session1(ssh_channel chan) {
    * We guess we are requesting an *exec* channel. It can only have one exec
    * channel. So we abort with an error if we need more than one.
    */
-  SSH_SESSION *session = chan->session;
+  ssh_session session = chan->session;
   if (session->exec_channel_opened) {
     ssh_set_error(session, SSH_REQUEST_DENIED,
         "SSH1 supports only one execution channel. "
@@ -75,7 +75,7 @@ int channel_open_session1(ssh_channel chan) {
 
 int channel_request_pty_size1(ssh_channel channel, const char *terminal, int col,
     int row) {
-  SSH_SESSION *session = channel->session;
+  ssh_session session = channel->session;
   ssh_string str = NULL;
 
   str = string_from_char(terminal);
@@ -127,7 +127,7 @@ int channel_request_pty_size1(ssh_channel channel, const char *terminal, int col
 }
 
 int channel_change_pty_size1(ssh_channel channel, int cols, int rows) {
-  SSH_SESSION *session = channel->session;
+  ssh_session session = channel->session;
 
   if (buffer_add_u8(session->out_buffer, SSH_CMSG_WINDOW_SIZE) < 0 ||
       buffer_add_u32(session->out_buffer, ntohl(rows)) < 0 ||
@@ -164,7 +164,7 @@ int channel_change_pty_size1(ssh_channel channel, int cols, int rows) {
 }
 
 int channel_request_shell1(ssh_channel channel) {
-  SSH_SESSION *session = channel->session;
+  ssh_session session = channel->session;
 
   if (buffer_add_u8(session->out_buffer,SSH_CMSG_EXEC_SHELL) < 0) {
     return -1;
@@ -180,7 +180,7 @@ int channel_request_shell1(ssh_channel channel) {
 }
 
 int channel_request_exec1(ssh_channel channel, const char *cmd) {
-  SSH_SESSION *session = channel->session;
+  ssh_session session = channel->session;
   ssh_string command = NULL;
 
   command = string_from_char(cmd);
@@ -204,7 +204,7 @@ int channel_request_exec1(ssh_channel channel, const char *cmd) {
   return 0;
 }
 
-static int channel_rcv_data1(SSH_SESSION *session, int is_stderr) {
+static int channel_rcv_data1(ssh_session session, int is_stderr) {
     ssh_channel channel = session->channels;
     ssh_string str = NULL;
 
@@ -228,7 +228,7 @@ static int channel_rcv_data1(SSH_SESSION *session, int is_stderr) {
     return 0;
 }
 
-static int channel_rcv_close1(SSH_SESSION *session) {
+static int channel_rcv_close1(ssh_session session) {
   ssh_channel channel = session->channels;
   uint32_t status;
 
@@ -253,7 +253,7 @@ static int channel_rcv_close1(SSH_SESSION *session) {
   return 0;
 }
 
-int channel_handle1(SSH_SESSION *session, int type) {
+int channel_handle1(ssh_session session, int type) {
   ssh_log(session, SSH_LOG_RARE, "Channel_handle1(%d)", type);
   switch (type) {
     case SSH_SMSG_STDOUT_DATA:
@@ -279,7 +279,7 @@ int channel_handle1(SSH_SESSION *session, int type) {
 }
 
 int channel_write1(ssh_channel channel, const void *data, int len) {
-  SSH_SESSION *session = channel->session;
+  ssh_session session = channel->session;
   int origlen = len;
   int effectivelen;
   const unsigned char *ptr=data;

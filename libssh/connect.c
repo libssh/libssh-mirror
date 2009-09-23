@@ -167,7 +167,7 @@ static int ssh_connect_socket_close(socket_t s){
 }
 
 
-static int getai(SSH_SESSION *session, const char *host, int port, struct addrinfo **ai) {
+static int getai(ssh_session session, const char *host, int port, struct addrinfo **ai) {
   const char *service = NULL;
   struct addrinfo hints;
   char s_port[10];
@@ -197,7 +197,7 @@ static int getai(SSH_SESSION *session, const char *host, int port, struct addrin
   return getaddrinfo(host, service, &hints, ai);
 }
 
-static int ssh_connect_ai_timeout(SSH_SESSION *session, const char *host,
+static int ssh_connect_ai_timeout(ssh_session session, const char *host,
     int port, struct addrinfo *ai, long timeout, long usec, socket_t s) {
   struct timeval to;
   fd_set set;
@@ -263,7 +263,7 @@ static int ssh_connect_ai_timeout(SSH_SESSION *session, const char *host,
  *
  * @returns A file descriptor, < 0 on error.
  */
-socket_t ssh_connect_host(SSH_SESSION *session, const char *host,
+socket_t ssh_connect_host(ssh_session session, const char *host,
     const char *bind_addr, int port, long timeout, long usec) {
   socket_t s = -1;
   int rc;

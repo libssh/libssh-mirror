@@ -803,7 +803,7 @@ void crypto_free(CRYPTO *crypto){
   SAFE_FREE(crypto);
 }
 
-static int crypt_set_algorithms2(SSH_SESSION *session){
+static int crypt_set_algorithms2(ssh_session session){
   const char *wanted;
   int i = 0;
 
@@ -860,7 +860,7 @@ static int crypt_set_algorithms2(SSH_SESSION *session){
   return SSH_OK;
 }
 
-static int crypt_set_algorithms1(SSH_SESSION *session) {
+static int crypt_set_algorithms1(ssh_session session) {
   int i = 0;
 
   /* right now, we force 3des-cbc to be taken */
@@ -889,13 +889,13 @@ static int crypt_set_algorithms1(SSH_SESSION *session) {
   return SSH_OK;
 }
 
-int crypt_set_algorithms(SSH_SESSION *session) {
+int crypt_set_algorithms(ssh_session session) {
   return (session->version == 1) ? crypt_set_algorithms1(session) :
     crypt_set_algorithms2(session);
 }
 
 // TODO Obviously too much cut and paste here
-int crypt_set_algorithms_server(SSH_SESSION *session){
+int crypt_set_algorithms_server(ssh_session session){
     char *server = NULL;
     char *client = NULL;
     char *match = NULL;

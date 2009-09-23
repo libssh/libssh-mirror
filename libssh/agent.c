@@ -160,7 +160,7 @@ void agent_free(ssh_agent agent) {
   }
 }
 
-static int agent_connect(SSH_SESSION *session) {
+static int agent_connect(ssh_session session) {
   const char *auth_sock = NULL;
 
   if (session == NULL || session->agent == NULL) {
@@ -475,7 +475,7 @@ error:
   return NULL;
 }
 
-int agent_is_running(SSH_SESSION *session) {
+int agent_is_running(ssh_session session) {
   if (session == NULL || session->agent == NULL) {
     return 0;
   }

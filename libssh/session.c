@@ -38,15 +38,14 @@
 /** \brief creates a new ssh session
  * \returns new ssh_session pointer
  */
-SSH_SESSION *ssh_new(void) {
-  SSH_SESSION *session;
+ssh_session ssh_new(void) {
+  ssh_session session;
 
-  session = malloc(sizeof (SSH_SESSION));
+  session = malloc(sizeof (struct ssh_session_struct));
   if (session == NULL) {
     return NULL;
   }
-
-  memset(session, 0, sizeof(SSH_SESSION));
+  ZERO_STRUCTP(session);
 
   session->next_crypto = crypto_new();
   if (session->next_crypto == NULL) {
@@ -87,7 +86,7 @@ err:
     return NULL;
 }
 
-void ssh_cleanup(SSH_SESSION *session) {
+void ssh_cleanup(ssh_session session) {
   int i;
   enter_function();
 
@@ -138,8 +137,7 @@ void ssh_cleanup(SSH_SESSION *session) {
   ssh_options_free(session->options);
 
   /* burn connection, it could hang sensitive datas */
-  memset(session,'X',sizeof(SSH_SESSION));
-
+  ZERO_STRUCTP(session);
   SAFE_FREE(session);
   /* FIXME: leave_function(); ??? */
 }
@@ -147,7 +145,7 @@ void ssh_cleanup(SSH_SESSION *session) {
 /** \brief disconnect impolitely from remote host
  * \param session current ssh session
  */
-void ssh_silent_disconnect(SSH_SESSION *session) {
+void ssh_silent_disconnect(ssh_session session) {
   enter_function();
 
   if (session == NULL) {
@@ -166,7 +164,7 @@ void ssh_silent_disconnect(SSH_SESSION *session) {
  * \see ssh_new()
  * \see ssh_options_new()
  */
-void ssh_set_options(SSH_SESSION *session, SSH_OPTIONS *options) {
+void ssh_set_options(ssh_session session, SSH_OPTIONS *options) {
   if (session == NULL || options == NULL) {
     return;
   }
@@ -180,7 +178,7 @@ void ssh_set_options(SSH_SESSION *session, SSH_OPTIONS *options) {
  * \param blocking zero for nonblocking mode
  * \bug nonblocking code is in development and won't work as expected
  */
-void ssh_set_blocking(SSH_SESSION *session, int blocking) {
+void ssh_set_blocking(ssh_session session, int blocking) {
   if (session == NULL) {
     return;
   }
@@ -195,7 +193,7 @@ void ssh_set_blocking(SSH_SESSION *session, int blocking) {
  * \return file descriptor of the connection, or -1 if it is
  * not connected
  */
-socket_t ssh_get_fd(SSH_SESSION *session) {
+socket_t ssh_get_fd(ssh_session session) {
   if (session == NULL) {
     return -1;
   }
@@ -206,7 +204,7 @@ socket_t ssh_get_fd(SSH_SESSION *session) {
 /** \brief say to the session it has data to read on the file descriptor without blocking
  * \param session ssh session
  */
-void ssh_set_fd_toread(SSH_SESSION *session) {
+void ssh_set_fd_toread(ssh_session session) {
   if (session == NULL) {
     return;
   }
@@ -217,7 +215,7 @@ void ssh_set_fd_toread(SSH_SESSION *session) {
 /** \brief say the session it may write to the file descriptor without blocking
  * \param session ssh session
  */
-void ssh_set_fd_towrite(SSH_SESSION *session) {
+void ssh_set_fd_towrite(ssh_session session) {
   if (session == NULL) {
     return;
   }
@@ -228,7 +226,7 @@ void ssh_set_fd_towrite(SSH_SESSION *session) {
 /** \brief say the session it has an exception to catch on the file descriptor
  * \param session ssh session
  */
-void ssh_set_fd_except(SSH_SESSION *session) {
+void ssh_set_fd_except(ssh_session session) {
   if (session == NULL) {
     return;
   }
@@ -239,7 +237,7 @@ void ssh_set_fd_except(SSH_SESSION *session) {
 /** \warning I don't remember if this should be internal or not
  */
 /* looks if there is data to read on the socket and parse it. */
-int ssh_handle_packets(SSH_SESSION *session) {
+int ssh_handle_packets(ssh_session session) {
   int w = 0;
   int e = 0;
   int rc = -1;
@@ -277,7 +275,7 @@ int ssh_handle_packets(SSH_SESSION *session) {
  *          which respectively means the session is closed, has data to read on
  *          the connection socket and session was closed due to an error.
  */
-int ssh_get_status(SSH_SESSION *session) {
+int ssh_get_status(ssh_session session) {
   int socketstate;
   int r = 0;
 
@@ -305,7 +303,7 @@ int ssh_get_status(SSH_SESSION *session) {
  * \return message sent by the server along with the disconnect, or NULL in which case the reason of the disconnect may be found with ssh_get_error.
  * \see ssh_get_error()
  */
-const char *ssh_get_disconnect_message(SSH_SESSION *session) {
+const char *ssh_get_disconnect_message(ssh_session session) {
   if (session == NULL) {
     return NULL;
   }
@@ -333,7 +331,7 @@ const char *ssh_get_disconnect_message(SSH_SESSION *session) {
  *
  * @return 1 or 2, for ssh1 or ssh2, < 0 on error.
  */
-int ssh_get_version(SSH_SESSION *session) {
+int ssh_get_version(ssh_session session) {
   if (session == NULL) {
     return -1;
   }

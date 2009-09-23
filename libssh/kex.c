@@ -232,7 +232,7 @@ char *ssh_find_matching(const char *in_d, const char *what_d){
     return NULL;
 }
 
-int ssh_get_kex(SSH_SESSION *session, int server_kex) {
+int ssh_get_kex(ssh_session session, int server_kex) {
   ssh_string str = NULL;
   char *strings[10];
   int i;
@@ -328,7 +328,7 @@ void ssh_list_kex(ssh_session session, KEX *kex) {
 /* it must be aware of the server kex message */
 /* it can fail if option is null, not any user specified kex method matches the server one, if not any default kex matches */
 
-int set_kex(SSH_SESSION *session){
+int set_kex(ssh_session session){
     KEX *server = &session->server_kex;
     KEX *client=&session->client_kex;
     SSH_OPTIONS *options=session->options;
@@ -371,7 +371,7 @@ int set_kex(SSH_SESSION *session){
 }
 
 /* this function only sends the predefined set of kex methods */
-int ssh_send_kex(SSH_SESSION *session, int server_kex) {
+int ssh_send_kex(ssh_session session, int server_kex) {
   KEX *kex = (server_kex ? &session->server_kex : &session->client_kex);
   ssh_string str = NULL;
   int i;
@@ -475,7 +475,7 @@ error:
   return ret;
 }
 
-static int build_session_id1(SSH_SESSION *session, ssh_string servern,
+static int build_session_id1(ssh_session session, ssh_string servern,
     ssh_string hostn) {
   MD5CTX md5 = NULL;
 
@@ -529,7 +529,7 @@ static int modulus_smaller(ssh_public_key k1, ssh_public_key k2){
 }
 
 #define ABS(A) ( (A)<0 ? -(A):(A) )
-static ssh_string encrypt_session_key(SSH_SESSION *session, ssh_public_key srvkey,
+static ssh_string encrypt_session_key(ssh_session session, ssh_public_key srvkey,
     ssh_public_key hostkey, int slen, int hlen) {
   unsigned char buffer[32] = {0};
   int i;
@@ -606,7 +606,7 @@ static ssh_string encrypt_session_key(SSH_SESSION *session, ssh_public_key srvke
  *    32-bit int   supported_authentications_mask
  */
 
-int ssh_get_kex1(SSH_SESSION *session) {
+int ssh_get_kex1(ssh_session session) {
   ssh_string server_exp = NULL;
   ssh_string server_mod = NULL;
   ssh_string host_exp = NULL;

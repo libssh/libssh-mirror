@@ -67,7 +67,7 @@ int ssh_type_from_name(const char *name) {
   return -1;
 }
 
-ssh_public_key publickey_make_dss(SSH_SESSION *session, ssh_buffer buffer) {
+ssh_public_key publickey_make_dss(ssh_session session, ssh_buffer buffer) {
   ssh_string p = NULL;
   ssh_string q = NULL;
   ssh_string g = NULL;
@@ -153,7 +153,7 @@ error:
   return NULL;
 }
 
-ssh_public_key publickey_make_rsa(SSH_SESSION *session, ssh_buffer buffer,
+ssh_public_key publickey_make_rsa(ssh_session session, ssh_buffer buffer,
     int type) {
   ssh_string e = NULL;
   ssh_string n = NULL;
@@ -247,7 +247,7 @@ void publickey_free(ssh_public_key key) {
   SAFE_FREE(key);
 }
 
-ssh_public_key publickey_from_string(SSH_SESSION *session, ssh_string pubkey_s) {
+ssh_public_key publickey_from_string(ssh_session session, ssh_string pubkey_s) {
   ssh_buffer tmpbuf = NULL;
   ssh_string type_s = NULL;
   char *type_c = NULL;
@@ -847,7 +847,7 @@ static ssh_string signature_to_string(SIGNATURE *sign) {
 }
 
 /* TODO : split this function in two so it becomes smaller */
-SIGNATURE *signature_from_string(SSH_SESSION *session, ssh_string signature,
+SIGNATURE *signature_from_string(ssh_session session, ssh_string signature,
     ssh_public_key pubkey, int needed_type) {
   SIGNATURE *sign = NULL;
   ssh_buffer tmpbuf = NULL;
@@ -1151,7 +1151,7 @@ ssh_string ssh_do_sign_with_agent(ssh_session session,
 /*
  * This function concats in a buffer the values needed to do a signature
  * verification. */
-ssh_buffer ssh_userauth_build_digest(SSH_SESSION *session, ssh_message msg, char *service) {
+ssh_buffer ssh_userauth_build_digest(ssh_session session, ssh_message msg, char *service) {
 /*
      The value of 'signature' is a signature by the corresponding private
    key over the following data, in the following order:
@@ -1215,7 +1215,7 @@ error:
 /*
  * This function signs the session id (known as H) as a string then
  * the content of sigbuf */
-ssh_string ssh_do_sign(SSH_SESSION *session, ssh_buffer sigbuf,
+ssh_string ssh_do_sign(ssh_session session, ssh_buffer sigbuf,
     ssh_private_key privatekey) {
   CRYPTO *crypto = session->current_crypto ? session->current_crypto :
     session->next_crypto;
@@ -1314,7 +1314,7 @@ ssh_string ssh_do_sign(SSH_SESSION *session, ssh_buffer sigbuf,
   return signature;
 }
 
-ssh_string ssh_encrypt_rsa1(SSH_SESSION *session, ssh_string data, ssh_public_key key) {
+ssh_string ssh_encrypt_rsa1(ssh_session session, ssh_string data, ssh_public_key key) {
   ssh_string str = NULL;
   size_t len = string_len(data);
   size_t size = 0;
@@ -1380,7 +1380,7 @@ ssh_string ssh_encrypt_rsa1(SSH_SESSION *session, ssh_string data, ssh_public_ke
 
 
 /* this function signs the session id */
-ssh_string ssh_sign_session_id(SSH_SESSION *session, ssh_private_key privatekey) {
+ssh_string ssh_sign_session_id(ssh_session session, ssh_private_key privatekey) {
   CRYPTO *crypto=session->current_crypto ? session->current_crypto :
     session->next_crypto;
   unsigned char hash[SHA_DIGEST_LEN + 1] = {0};

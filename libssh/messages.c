@@ -44,7 +44,7 @@
 #include "libssh/ssh2.h"
 
 
-static SSH_MESSAGE *message_new(SSH_SESSION *session){
+static SSH_MESSAGE *message_new(ssh_session session){
   SSH_MESSAGE *msg = malloc(sizeof(SSH_MESSAGE));
   if (msg == NULL) {
     return NULL;
@@ -55,7 +55,7 @@ static SSH_MESSAGE *message_new(SSH_SESSION *session){
   return msg;
 }
 
-static SSH_MESSAGE *handle_service_request(SSH_SESSION *session) {
+static SSH_MESSAGE *handle_service_request(ssh_session session) {
   ssh_string service = NULL;
   char *service_c = NULL;
   SSH_MESSAGE *msg=NULL;
@@ -86,7 +86,7 @@ static SSH_MESSAGE *handle_service_request(SSH_SESSION *session) {
   return msg;
 }
 
-static int handle_unimplemented(SSH_SESSION *session) {
+static int handle_unimplemented(ssh_session session) {
   if (buffer_add_u32(session->out_buffer, htonl(session->recv_seq - 1)) < 0) {
     return -1;
   }
@@ -98,7 +98,7 @@ static int handle_unimplemented(SSH_SESSION *session) {
   return 0;
 }
 
-static SSH_MESSAGE *handle_userauth_request(SSH_SESSION *session){
+static SSH_MESSAGE *handle_userauth_request(ssh_session session){
   ssh_string user = NULL;
   ssh_string service = NULL;
   ssh_string method = NULL;
@@ -264,7 +264,7 @@ error:
   return NULL;
 }
 
-static SSH_MESSAGE *handle_channel_request_open(SSH_SESSION *session) {
+static SSH_MESSAGE *handle_channel_request_open(ssh_session session) {
   SSH_MESSAGE *msg = NULL;
   ssh_string type = NULL, originator = NULL, destination = NULL;
   char *type_c = NULL;
@@ -414,7 +414,7 @@ error:
 }
 
 ssh_channel ssh_message_channel_request_open_reply_accept(SSH_MESSAGE *msg) {
-  SSH_SESSION *session = msg->session;
+  ssh_session session = msg->session;
   ssh_channel chan = NULL;
 
   enter_function();
@@ -470,7 +470,7 @@ error:
   return NULL;
 }
 
-static SSH_MESSAGE *handle_channel_request(SSH_SESSION *session) {
+static SSH_MESSAGE *handle_channel_request(ssh_session session) {
   SSH_MESSAGE *msg = NULL;
   ssh_string type = NULL;
   char *type_c = NULL;
@@ -693,7 +693,7 @@ int ssh_message_channel_request_reply_success(SSH_MESSAGE *msg) {
   return SSH_OK;
 }
 
-SSH_MESSAGE *ssh_message_retrieve(SSH_SESSION *session, uint32_t packettype){
+SSH_MESSAGE *ssh_message_retrieve(ssh_session session, uint32_t packettype){
   SSH_MESSAGE *msg=NULL;
   enter_function();
   switch(packettype) {
@@ -722,7 +722,7 @@ SSH_MESSAGE *ssh_message_retrieve(SSH_SESSION *session, uint32_t packettype){
 /* \brief blocking message retrieval
  * \bug does anything that is not a message, like a channel read/write
  */
-SSH_MESSAGE *ssh_message_get(SSH_SESSION *session) {
+SSH_MESSAGE *ssh_message_get(ssh_session session) {
   SSH_MESSAGE *msg = NULL;
   enter_function();
   do {
@@ -799,7 +799,7 @@ void ssh_message_free(SSH_MESSAGE *msg){
  * \param type packet type
  * \returns nothing
  */
-void message_handle(SSH_SESSION *session, uint32_t type){
+void message_handle(ssh_session session, uint32_t type){
   SSH_MESSAGE *msg=ssh_message_retrieve(session,type);
   if(msg){
     if(!session->ssh_message_list){

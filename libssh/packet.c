@@ -47,7 +47,7 @@ static int macsize=SHA_DIGEST_LEN;
 #define PACKET_STATE_INIT 0
 #define PACKET_STATE_SIZEREAD 1
 
-static int packet_read2(SSH_SESSION *session) {
+static int packet_read2(ssh_session session) {
   unsigned int blocksize = (session->current_crypto ?
       session->current_crypto->in_cipher->blocksize : 8);
   int current_macsize = session->current_crypto ? macsize : 0;
@@ -215,7 +215,7 @@ error:
 
 #ifdef WITH_SSH1
 /* a slighty modified packet_read2() for SSH-1 protocol */
-static int packet_read1(SSH_SESSION *session) {
+static int packet_read1(ssh_session session) {
   void *packet = NULL;
   int rc = SSH_ERROR;
   int to_be_read;
@@ -365,7 +365,7 @@ error:
 #endif /* WITH_SSH1 */
 
 /* that's where i'd like C to be object ... */
-int packet_read(SSH_SESSION *session) {
+int packet_read(ssh_session session) {
 #ifdef WITH_SSH1
   if (session->version == 1) {
     return packet_read1(session);
@@ -374,7 +374,7 @@ int packet_read(SSH_SESSION *session) {
   return packet_read2(session);
 }
 
-int packet_translate(SSH_SESSION *session) {
+int packet_translate(ssh_session session) {
   enter_function();
 
   memset(&session->in_packet, 0, sizeof(PACKET));
@@ -405,7 +405,7 @@ int packet_translate(SSH_SESSION *session) {
  * Return SSH_OK if everything has been sent, SSH_AGAIN if there are still
  * things to send on buffer, SSH_ERROR if there is an error.
  */
-int packet_flush(SSH_SESSION *session, int enforce_blocking) {
+int packet_flush(ssh_session session, int enforce_blocking) {
   if (enforce_blocking || session->blocking) {
     return ssh_socket_blocking_flush(session->socket);
   }
@@ -417,7 +417,7 @@ int packet_flush(SSH_SESSION *session, int enforce_blocking) {
  * This function places the outgoing packet buffer into an outgoing
  * socket buffer
  */
-static int packet_write(SSH_SESSION *session) {
+static int packet_write(ssh_session session) {
   int rc = SSH_ERROR;
 
   enter_function();
@@ -432,7 +432,7 @@ static int packet_write(SSH_SESSION *session) {
   return rc;
 }
 
-static int packet_send2(SSH_SESSION *session) {
+static int packet_send2(ssh_session session) {
   unsigned int blocksize = (session->current_crypto ?
       session->current_crypto->out_cipher->blocksize : 8);
   uint32_t currentlen = buffer_get_len(session->out_buffer);
@@ -502,7 +502,7 @@ error:
 }
 
 #ifdef WITH_SSH1
-static int packet_send1(SSH_SESSION *session) {
+static int packet_send1(ssh_session session) {
   unsigned int blocksize = (session->current_crypto ?
       session->current_crypto->out_cipher->blocksize : 8);
   uint32_t currentlen = buffer_get_len(session->out_buffer) + sizeof(uint32_t);
@@ -581,7 +581,7 @@ error:
 
 #endif /* WITH_SSH1 */
 
-int packet_send(SSH_SESSION *session) {
+int packet_send(ssh_session session) {
 #ifdef WITH_SSH1
   if (session->version == 1) {
     return packet_send1(session);
@@ -590,7 +590,7 @@ int packet_send(SSH_SESSION *session) {
   return packet_send2(session);
 }
 
-void packet_parse(SSH_SESSION *session) {
+void packet_parse(ssh_session session) {
   ssh_string error_s = NULL;
   char *error = NULL;
   uint32_t type = session->in_packet.type;
@@ -669,7 +669,7 @@ void packet_parse(SSH_SESSION *session) {
 }
 
 #ifdef WITH_SSH1
-static int packet_wait1(SSH_SESSION *session, int type, int blocking) {
+static int packet_wait1(ssh_session session, int type, int blocking) {
 
   enter_function();
 
@@ -726,7 +726,7 @@ static int packet_wait1(SSH_SESSION *session, int type, int blocking) {
 }
 #endif /* WITH_SSH1 */
 
-static int packet_wait2(SSH_SESSION *session, int type, int blocking) {
+static int packet_wait2(ssh_session session, int type, int blocking) {
   int rc = SSH_ERROR;
 
   enter_function();
@@ -781,7 +781,7 @@ static int packet_wait2(SSH_SESSION *session, int type, int blocking) {
   return SSH_OK;
 }
 
-int packet_wait(SSH_SESSION *session, int type, int block) {
+int packet_wait(ssh_session session, int type, int block) {
 #ifdef WITH_SSH1
   if (session->version == 1) {
     return packet_wait1(session, type, block);

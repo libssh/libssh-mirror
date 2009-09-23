@@ -48,7 +48,7 @@
  *
  * @return A newly allocated string with the banner or NULL on error.
  */
-char *ssh_get_banner(SSH_SESSION *session) {
+char *ssh_get_banner(ssh_session session) {
   char buffer[128] = {0};
   char *str = NULL;
   int i;
@@ -97,7 +97,7 @@ char *ssh_get_banner(SSH_SESSION *session) {
  *
  * @see ssh_get_banner()
  */
-static int ssh_analyze_banner(SSH_SESSION *session, int *ssh1, int *ssh2) {
+static int ssh_analyze_banner(ssh_session session, int *ssh1, int *ssh2) {
   const char *banner = session->serverbanner;
   const char *openssh;
 
@@ -155,7 +155,7 @@ static int ssh_analyze_banner(SSH_SESSION *session, int *ssh1, int *ssh2) {
  *
  * @return 0 on success, < 0 on error.
  */
-int ssh_send_banner(SSH_SESSION *session, int server) {
+int ssh_send_banner(ssh_session session, int server) {
   const char *banner = NULL;
   char buffer[128] = {0};
 
@@ -203,7 +203,7 @@ int ssh_send_banner(SSH_SESSION *session, int server) {
 #define DH_STATE_NEWKEYS_TO_SEND 3
 #define DH_STATE_NEWKEYS_SENT 4
 #define DH_STATE_FINISHED 5
-static int dh_handshake(SSH_SESSION *session) {
+static int dh_handshake(ssh_session session) {
   ssh_string e = NULL;
   ssh_string f = NULL;
   ssh_string pubkey = NULL;
@@ -413,7 +413,7 @@ error:
  *
  * @return 0 on success, < 0 on error.
  */
-int ssh_service_request(SSH_SESSION *session, const char *service) {
+int ssh_service_request(ssh_session session, const char *service) {
   ssh_string service_s = NULL;
 
   enter_function();
@@ -469,7 +469,7 @@ int ssh_service_request(SSH_SESSION *session, const char *service) {
  * \see ssh_new()
  * \see ssh_disconnect()
  */
-int ssh_connect(SSH_SESSION *session) {
+int ssh_connect(ssh_session session) {
   SSH_OPTIONS *options = session->options;
   int ssh1 = 0;
   int ssh2 = 0;
@@ -621,7 +621,7 @@ int ssh_connect(SSH_SESSION *session) {
  *
  * @return A newly allocated string with the banner, NULL on error.
  */
-char *ssh_get_issue_banner(SSH_SESSION *session) {
+char *ssh_get_issue_banner(ssh_session session) {
   if (session == NULL || session->banner == NULL) {
     return NULL;
   }
@@ -652,7 +652,7 @@ int ssh_get_openssh_version(ssh_session session) {
  *
  * @param session       The SSH session to disconnect.
  */
-void ssh_disconnect(SSH_SESSION *session) {
+void ssh_disconnect(ssh_session session) {
   ssh_string str = NULL;
 
   if (session == NULL) {

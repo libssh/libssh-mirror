@@ -44,7 +44,7 @@
  *
  * @param format        The format string of the log entry.
  */
-void ssh_log(SSH_SESSION *session, int verbosity, const char *format, ...) {
+void ssh_log(ssh_session session, int verbosity, const char *format, ...) {
   char buffer[1024];
   char indent[256];
   int min;

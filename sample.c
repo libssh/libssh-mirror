@@ -39,7 +39,7 @@ char *user;
 int sftp;
 char *cmds[MAXCMD];
 struct termios terminal;
-void do_sftp(SSH_SESSION *session);
+void do_sftp(ssh_session session);
 
 static void add_cmd(char *cmd){
     int n;
@@ -130,7 +130,7 @@ static void sizechanged(void){
 //    printf("Changed pty size\n");
     setsignal();
 }
-static void select_loop(SSH_SESSION *session,ssh_channel channel){
+static void select_loop(ssh_session session,ssh_channel channel){
     fd_set fds;
     struct timeval timeout;
     char buffer[10];
@@ -229,7 +229,7 @@ static void select_loop(SSH_SESSION *session,ssh_channel channel){
 }
 
 
-static void shell(SSH_SESSION *session){
+static void shell(ssh_session session){
     ssh_channel channel;
     struct termios terminal_local;
     int interactive=isatty(0);
@@ -260,7 +260,7 @@ static void shell(SSH_SESSION *session){
     select_loop(session,channel);
 }
 
-static void batch_shell(SSH_SESSION *session){
+static void batch_shell(ssh_session session){
     ssh_channel channel;
     char buffer[1024];
     int i,s=0;
@@ -277,7 +277,7 @@ static void batch_shell(SSH_SESSION *session){
 
 #ifdef WITH_SFTP
 /* it's just a proof of concept code for sftp, till i write a real documentation about it */
-void do_sftp(SSH_SESSION *session){
+void do_sftp(ssh_session session){
     SFTP_SESSION *sftp_session=sftp_new(session);
     SFTP_DIR *dir;
     SFTP_ATTRIBUTES *file;
@@ -461,7 +461,7 @@ void do_sftp(SSH_SESSION *session){
 }
 #endif
 
-static int auth_kbdint(SSH_SESSION *session){
+static int auth_kbdint(ssh_session session){
     int err=ssh_userauth_kbdint(session,NULL,NULL);
     const char *name, *instruction, *prompt;
     char *ptr;
@@ -501,7 +501,7 @@ static int auth_kbdint(SSH_SESSION *session){
 }
 
 int main(int argc, char **argv){
-    SSH_SESSION *session;
+    ssh_session session;
     SSH_OPTIONS *options;
     int auth=0;
     char *password;

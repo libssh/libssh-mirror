@@ -38,7 +38,7 @@
 #include "libssh/priv.h"
 #include "libssh/crypto.h"
 
-uint32_t packet_decrypt_len(SSH_SESSION *session, char *crypted){
+uint32_t packet_decrypt_len(ssh_session session, char *crypted){
   uint32_t decrypted;
 
   if (session->current_crypto) {
@@ -56,7 +56,7 @@ uint32_t packet_decrypt_len(SSH_SESSION *session, char *crypted){
   return ntohl(decrypted);
 }
 
-int packet_decrypt(SSH_SESSION *session, void *data,uint32_t len) {
+int packet_decrypt(ssh_session session, void *data,uint32_t len) {
   struct crypto_struct *crypto = session->current_crypto->in_cipher;
   char *out = NULL;
   if(len % session->current_crypto->in_cipher->blocksize != 0){
@@ -92,7 +92,7 @@ int packet_decrypt(SSH_SESSION *session, void *data,uint32_t len) {
   return 0;
 }
 
-unsigned char *packet_encrypt(SSH_SESSION *session, void *data, uint32_t len) {
+unsigned char *packet_encrypt(ssh_session session, void *data, uint32_t len) {
   struct crypto_struct *crypto = NULL;
   HMACCTX ctx = NULL;
   char *out = NULL;
@@ -179,7 +179,7 @@ unsigned char *packet_encrypt(SSH_SESSION *session, void *data, uint32_t len) {
  * @return              0 if hmac and mac are equal, < 0 if not or an error
  *                      occured.
  */
-int packet_hmac_verify(SSH_SESSION *session, ssh_buffer buffer,
+int packet_hmac_verify(ssh_session session, ssh_buffer buffer,
     unsigned char *mac) {
   unsigned char hmacbuf[EVP_MAX_MD_SIZE] = {0};
   HMACCTX ctx;

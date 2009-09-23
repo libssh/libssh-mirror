@@ -70,7 +70,7 @@ extern "C" {
 typedef struct sftp_ext_struct *sftp_ext;
 
 typedef struct sftp_session_struct {
-    SSH_SESSION *session;
+    ssh_session session;
     ssh_channel channel;
     int server_version;
     int client_version;
@@ -194,7 +194,7 @@ typedef struct sftp_statvfs_struct {
  *
  * @return              A new sftp session or NULL on error.
  */
-LIBSSH_API SFTP_SESSION *sftp_new(SSH_SESSION *session);
+LIBSSH_API SFTP_SESSION *sftp_new(ssh_session session);
 
 /**
  * @brief Close and deallocate a sftp session.
@@ -764,7 +764,7 @@ LIBSSH_API int sftp_server_version(SFTP_SESSION *sftp);
  *
  * @return              A new sftp server session.
  */
-LIBSSH_API SFTP_SESSION *sftp_server_new(SSH_SESSION *session, ssh_channel chan);
+LIBSSH_API SFTP_SESSION *sftp_server_new(ssh_session session, ssh_channel chan);
 
 /**
  * @brief Intialize the sftp server.

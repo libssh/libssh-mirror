@@ -33,7 +33,7 @@
 
 #define BLOCKSIZE 4092
 
-static z_stream *initcompress(SSH_SESSION *session, int level) {
+static z_stream *initcompress(ssh_session session, int level) {
   z_stream *stream = NULL;
   int status;
 
@@ -54,7 +54,7 @@ static z_stream *initcompress(SSH_SESSION *session, int level) {
   return stream;
 }
 
-static ssh_buffer gzip_compress(SSH_SESSION *session,ssh_buffer source,int level){
+static ssh_buffer gzip_compress(ssh_session session,ssh_buffer source,int level){
   z_stream *zout = session->current_crypto->compress_out_ctx;
   void *in_ptr = buffer_get(source);
   unsigned long in_size = buffer_get_len(source);
@@ -98,7 +98,7 @@ static ssh_buffer gzip_compress(SSH_SESSION *session,ssh_buffer source,int level
   return dest;
 }
 
-int compress_buffer(SSH_SESSION *session, ssh_buffer buf) {
+int compress_buffer(ssh_session session, ssh_buffer buf) {
   ssh_buffer dest = NULL;
 
   dest = gzip_compress(session, buf, 9);
@@ -122,7 +122,7 @@ int compress_buffer(SSH_SESSION *session, ssh_buffer buf) {
 
 /* decompression */
 
-static z_stream *initdecompress(SSH_SESSION *session) {
+static z_stream *initdecompress(ssh_session session) {
   z_stream *stream = NULL;
   int status;
 
@@ -143,7 +143,7 @@ static z_stream *initdecompress(SSH_SESSION *session) {
   return stream;
 }
 
-static ssh_buffer gzip_decompress(SSH_SESSION *session, ssh_buffer source, size_t maxlen) {
+static ssh_buffer gzip_decompress(ssh_session session, ssh_buffer source, size_t maxlen) {
   z_stream *zin = session->current_crypto->compress_in_ctx;
   void *in_ptr = buffer_get_rest(source);
   unsigned long in_size = buffer_get_rest_len(source);
@@ -194,7 +194,7 @@ static ssh_buffer gzip_decompress(SSH_SESSION *session, ssh_buffer source, size_
   return dest;
 }
 
-int decompress_buffer(SSH_SESSION *session,ssh_buffer buf, size_t maxlen){
+int decompress_buffer(ssh_session session,ssh_buffer buf, size_t maxlen){
   ssh_buffer dest = NULL;
 
   dest = gzip_decompress(session,buf, maxlen);

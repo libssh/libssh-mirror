@@ -103,7 +103,7 @@ LIBSSH_API void ssh_bind_fd_toaccept(SSH_BIND *ssh_bind);
  *
  * @return A newly allocated ssh session, NULL on error.
  */
-LIBSSH_API SSH_SESSION *ssh_bind_accept(SSH_BIND *ssh_bind);
+LIBSSH_API ssh_session ssh_bind_accept(SSH_BIND *ssh_bind);
 
 /**
  * @brief Free a ssh servers bind.
@@ -119,7 +119,7 @@ LIBSSH_API void ssh_bind_free(SSH_BIND *ssh_bind);
  *
  * @return 0 on success, < 0 on error.
  */
-LIBSSH_API int ssh_accept(SSH_SESSION *session);
+LIBSSH_API int ssh_accept(ssh_session session);
 
 LIBSSH_API int channel_write_stderr(ssh_channel channel, const void *data, uint32_t len);
 
@@ -136,7 +136,7 @@ LIBSSH_API int ssh_message_auth_set_methods(SSH_MESSAGE *msg, int methods);
 LIBSSH_API int ssh_message_service_reply_success(SSH_MESSAGE *msg);
 LIBSSH_API char *ssh_message_service_service(SSH_MESSAGE *msg);
 
-LIBSSH_API void ssh_set_message_callback(SSH_SESSION *session,
+LIBSSH_API void ssh_set_message_callback(ssh_session session,
     int(*ssh_message_callback)(ssh_session session, ssh_message msg));
 
 LIBSSH_API char *ssh_message_channel_request_open_originator(SSH_MESSAGE *msg);

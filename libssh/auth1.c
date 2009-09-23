@@ -28,7 +28,7 @@
 #include "libssh/ssh1.h"
 
 #ifdef WITH_SSH1
-static int wait_auth1_status(SSH_SESSION *session) {
+static int wait_auth1_status(ssh_session session) {
   /* wait for a packet */
   if (packet_read(session) != SSH_OK) {
     return SSH_AUTH_ERROR;
@@ -51,7 +51,7 @@ static int wait_auth1_status(SSH_SESSION *session) {
   return SSH_AUTH_ERROR;
 }
 
-static int send_username(SSH_SESSION *session, const char *username) {
+static int send_username(ssh_session session, const char *username) {
   ssh_string user = NULL;
   /* returns SSH_AUTH_SUCCESS or SSH_AUTH_DENIED */
   if(session->auth_service_asked) {
@@ -91,12 +91,12 @@ static int send_username(SSH_SESSION *session, const char *username) {
 }
 
 /* use the "none" authentication question */
-int ssh_userauth1_none(SSH_SESSION *session, const char *username){
+int ssh_userauth1_none(ssh_session session, const char *username){
     return send_username(session, username);
 }
 
 /*
-int ssh_userauth_offer_pubkey(SSH_SESSION *session, char *username,int type, ssh_string publickey){
+int ssh_userauth_offer_pubkey(ssh_session session, char *username,int type, ssh_string publickey){
     ssh_string user;
     ssh_string service;
     ssh_string method;
@@ -136,7 +136,7 @@ int ssh_userauth_offer_pubkey(SSH_SESSION *session, char *username,int type, ssh
 /** \internal
  * \todo implement ssh1 public key
  */
-int ssh_userauth1_offer_pubkey(SSH_SESSION *session, const char *username,
+int ssh_userauth1_offer_pubkey(ssh_session session, const char *username,
     int type, ssh_string pubkey) {
   (void) session;
   (void) username;
@@ -146,7 +146,7 @@ int ssh_userauth1_offer_pubkey(SSH_SESSION *session, const char *username,
 }
 
 /*
-int ssh_userauth_pubkey(SSH_SESSION *session, char *username, ssh_string publickey, ssh_private_key privatekey){
+int ssh_userauth_pubkey(ssh_session session, char *username, ssh_string publickey, ssh_private_key privatekey){
     ssh_string user;
     ssh_string service;
     ssh_string method;
@@ -192,7 +192,7 @@ int ssh_userauth_pubkey(SSH_SESSION *session, char *username, ssh_string publick
 }
 */
 
-int ssh_userauth1_password(SSH_SESSION *session, const char *username,
+int ssh_userauth1_password(ssh_session session, const char *username,
     const char *password) {
   ssh_string pwd = NULL;
   int rc;

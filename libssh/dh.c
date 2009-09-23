@@ -217,7 +217,7 @@ void ssh_print_hexa(const char *descr, const unsigned char *what, size_t len) {
     printf("%s: %s\n", descr, hexa);
 }
 
-int dh_generate_x(SSH_SESSION *session) {
+int dh_generate_x(ssh_session session) {
   session->next_crypto->x = bignum_new();
   if (session->next_crypto->x == NULL) {
     return -1;
@@ -238,7 +238,7 @@ int dh_generate_x(SSH_SESSION *session) {
 }
 
 /* used by server */
-int dh_generate_y(SSH_SESSION *session) {
+int dh_generate_y(ssh_session session) {
     session->next_crypto->y = bignum_new();
   if (session->next_crypto->y == NULL) {
     return -1;
@@ -259,7 +259,7 @@ int dh_generate_y(SSH_SESSION *session) {
 }
 
 /* used by server */
-int dh_generate_e(SSH_SESSION *session) {
+int dh_generate_e(ssh_session session) {
 #ifdef HAVE_LIBCRYPTO
   bignum_CTX ctx = bignum_ctx_new();
   if (ctx == NULL) {
@@ -292,7 +292,7 @@ int dh_generate_e(SSH_SESSION *session) {
   return 0;
 }
 
-int dh_generate_f(SSH_SESSION *session) {
+int dh_generate_f(ssh_session session) {
 #ifdef HAVE_LIBCRYPTO
   bignum_CTX ctx = bignum_ctx_new();
   if (ctx == NULL) {
@@ -377,20 +377,20 @@ bignum make_string_bn(ssh_string string){
   return bn;
 }
 
-ssh_string dh_get_e(SSH_SESSION *session) {
+ssh_string dh_get_e(ssh_session session) {
   return make_bignum_string(session->next_crypto->e);
 }
 
 /* used by server */
-ssh_string dh_get_f(SSH_SESSION *session) {
+ssh_string dh_get_f(ssh_session session) {
   return make_bignum_string(session->next_crypto->f);
 }
 
-void dh_import_pubkey(SSH_SESSION *session, ssh_string pubkey_string) {
+void dh_import_pubkey(ssh_session session, ssh_string pubkey_string) {
   session->next_crypto->server_pubkey = pubkey_string;
 }
 
-int dh_import_f(SSH_SESSION *session, ssh_string f_string) {
+int dh_import_f(ssh_session session, ssh_string f_string) {
   session->next_crypto->f = make_string_bn(f_string);
   if (session->next_crypto->f == NULL) {
     return -1;
@@ -404,7 +404,7 @@ int dh_import_f(SSH_SESSION *session, ssh_string f_string) {
 }
 
 /* used by the server implementation */
-int dh_import_e(SSH_SESSION *session, ssh_string e_string) {
+int dh_import_e(ssh_session session, ssh_string e_string) {
   session->next_crypto->e = make_string_bn(e_string);
   if (session->next_crypto->e == NULL) {
     return -1;
@@ -417,7 +417,7 @@ int dh_import_e(SSH_SESSION *session, ssh_string e_string) {
   return 0;
 }
 
-int dh_build_k(SSH_SESSION *session) {
+int dh_build_k(ssh_session session) {
 #ifdef HAVE_LIBCRYPTO
   bignum_CTX ctx = bignum_ctx_new();
   if (ctx == NULL) {
@@ -474,7 +474,7 @@ static void sha_add(ssh_string str,SHACTX ctx){
 }
 */
 
-int make_sessionid(SSH_SESSION *session) {
+int make_sessionid(ssh_session session) {
   SHACTX ctx;
   ssh_string num = NULL;
   ssh_string str = NULL;
@@ -620,7 +620,7 @@ error:
   return rc;
 }
 
-int hashbufout_add_cookie(SSH_SESSION *session) {
+int hashbufout_add_cookie(ssh_session session) {
   session->out_hashbuf = buffer_new();
   if (session->out_hashbuf == NULL) {
     return -1;
@@ -648,7 +648,7 @@ int hashbufout_add_cookie(SSH_SESSION *session) {
   return 0;
 }
 
-int hashbufin_add_cookie(SSH_SESSION *session, unsigned char *cookie) {
+int hashbufin_add_cookie(ssh_session session, unsigned char *cookie) {
   session->in_hashbuf = buffer_new();
   if (session->in_hashbuf == NULL) {
     return -1;
@@ -686,7 +686,7 @@ static int generate_one_key(ssh_string k,
   return 0;
 }
 
-int generate_session_keys(SSH_SESSION *session) {
+int generate_session_keys(ssh_session session) {
   ssh_string k_string = NULL;
   SHACTX ctx = NULL;
   int rc = -1;
@@ -816,7 +816,7 @@ error:
  * @see ssh_get_hexa()
  * @see ssh_print_hexa()
  */
-int ssh_get_pubkey_hash(SSH_SESSION *session, unsigned char **hash) {
+int ssh_get_pubkey_hash(ssh_session session, unsigned char **hash) {
   ssh_string pubkey;
   MD5CTX ctx;
   unsigned char *h;
@@ -864,7 +864,7 @@ void ssh_clean_pubkey_hash(unsigned char **hash) {
   *hash = NULL;
 }
 
-ssh_string ssh_get_pubkey(SSH_SESSION *session){
+ssh_string ssh_get_pubkey(ssh_session session){
     return string_copy(session->current_crypto->server_pubkey);
 }
 
@@ -892,7 +892,7 @@ static int match(const char *group, const char *object){
   return 0;
 }
 
-int sig_verify(SSH_SESSION *session, ssh_public_key pubkey,
+int sig_verify(ssh_session session, ssh_public_key pubkey,
     SIGNATURE *signature, unsigned char *digest, int size) {
 #ifdef HAVE_LIBGCRYPT
   gcry_error_t valid = 0;
@@ -987,7 +987,7 @@ int sig_verify(SSH_SESSION *session, ssh_public_key pubkey,
   return -1;
 }
 
-int signature_verify(SSH_SESSION *session, ssh_string signature) {
+int signature_verify(ssh_session session, ssh_string signature) {
   ssh_public_key pubkey = NULL;
   SIGNATURE *sign = NULL;
   int err;

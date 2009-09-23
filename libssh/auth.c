@@ -39,7 +39,7 @@
 /** \addtogroup ssh_auth
  * @{ */
 
-static int ask_userauth(SSH_SESSION *session) {
+static int ask_userauth(ssh_session session) {
   int rc = 0;
 
   enter_function();
@@ -56,7 +56,7 @@ static int ask_userauth(SSH_SESSION *session) {
   return rc;
 }
 
-static int wait_auth_status(SSH_SESSION *session, int kbdint) {
+static int wait_auth_status(ssh_session session, int kbdint) {
   char *auth_methods = NULL;
   ssh_string auth;
   int rc = SSH_AUTH_ERROR;
@@ -163,7 +163,7 @@ static int wait_auth_status(SSH_SESSION *session, int kbdint) {
   return rc;
 }
 
-int ssh_auth_list(SSH_SESSION *session) {
+int ssh_auth_list(ssh_session session) {
   if (session == NULL) {
     return -1;
   }
@@ -171,7 +171,7 @@ int ssh_auth_list(SSH_SESSION *session) {
   return session->auth_methods;
 }
 
-int ssh_userauth_list(SSH_SESSION *session, const char *username) {
+int ssh_userauth_list(ssh_session session, const char *username) {
   if (session == NULL || username == NULL) {
     return SSH_AUTH_ERROR;
   }
@@ -200,7 +200,7 @@ int ssh_userauth_list(SSH_SESSION *session, const char *username) {
  *                            have to use another method\n
  *          SSH_AUTH_SUCCESS: Authentication success
  */
-int ssh_userauth_none(SSH_SESSION *session, const char *username) {
+int ssh_userauth_none(ssh_session session, const char *username) {
   ssh_string user = NULL;
   ssh_string service = NULL;
   ssh_string method = NULL;
@@ -304,7 +304,7 @@ error:
  * @see privatekey_from_file()
  * @see ssh_userauth_pubkey()
  */
-int ssh_userauth_offer_pubkey(SSH_SESSION *session, const char *username,
+int ssh_userauth_offer_pubkey(ssh_session session, const char *username,
     int type, ssh_string publickey) {
   ssh_string user = NULL;
   ssh_string service = NULL;
@@ -417,7 +417,7 @@ error:
  * @see privatekey_free()
  * @see ssh_userauth_offer_pubkey()
  */
-int ssh_userauth_pubkey(SSH_SESSION *session, const char *username,
+int ssh_userauth_pubkey(ssh_session session, const char *username,
     ssh_string publickey, ssh_private_key privatekey) {
   ssh_string user = NULL;
   ssh_string service = NULL;
@@ -536,7 +536,7 @@ error:
  * @see privatekey_free()
  * @see ssh_userauth_offer_pubkey()
  */
-int ssh_userauth_agent_pubkey(SSH_SESSION *session, const char *username,
+int ssh_userauth_agent_pubkey(ssh_session session, const char *username,
     ssh_public_key publickey) {
   ssh_string user = NULL;
   ssh_string service = NULL;
@@ -661,7 +661,7 @@ error:
  * @see ssh_userauth_kbdint()
  * @see BURN_STRING
  */
-int ssh_userauth_password(SSH_SESSION *session, const char *username,
+int ssh_userauth_password(ssh_session session, const char *username,
     const char *password) {
   ssh_string user = NULL;
   ssh_string service = NULL;
@@ -808,7 +808,7 @@ static struct ssh_keys_struct keytab[] = {
  * @see ssh_userauth_password()
  * @see ssh_options_set()
  */
-int ssh_userauth_autopubkey(SSH_SESSION *session, const char *passphrase) {
+int ssh_userauth_autopubkey(ssh_session session, const char *passphrase) {
   struct ssh_public_key_struct *publickey;
   ssh_string pubkey;
   ssh_private_key privkey;
@@ -1089,7 +1089,7 @@ static void kbdint_clean(ssh_kbdint kbd) {
 
 /* this function sends the first packet as explained in section 3.1
  * of the draft */
-static int kbdauth_init(SSH_SESSION *session, const char *user,
+static int kbdauth_init(ssh_session session, const char *user,
     const char *submethods) {
   ssh_string usr = NULL;
   ssh_string sub = NULL;
@@ -1149,7 +1149,7 @@ error:
   return rc;
 }
 
-static int kbdauth_info_get(SSH_SESSION *session) {
+static int kbdauth_info_get(ssh_session session) {
   ssh_string name; /* name of the "asking" window showed to client */
   ssh_string instruction;
   ssh_string tmp;
@@ -1266,7 +1266,7 @@ static int kbdauth_info_get(SSH_SESSION *session) {
 }
 
 /* sends challenge back to the server */
-static int kbdauth_send(SSH_SESSION *session) {
+static int kbdauth_send(ssh_session session) {
   ssh_string answer = NULL;
   int rc = SSH_AUTH_ERROR;
   uint32_t i;
@@ -1339,7 +1339,7 @@ error:
  * @see ssh_userauth_kbdint_getprompt()
  * @see ssh_userauth_kbdint_setanswer()
  */
-int ssh_userauth_kbdint(SSH_SESSION *session, const char *user,
+int ssh_userauth_kbdint(ssh_session session, const char *user,
     const char *submethods) {
   int rc = SSH_AUTH_ERROR;
 
@@ -1419,7 +1419,7 @@ int ssh_userauth_kbdint(SSH_SESSION *session, const char *user,
  *
  * @returns             The number of prompts.
  */
-int ssh_userauth_kbdint_getnprompts(SSH_SESSION *session) {
+int ssh_userauth_kbdint_getnprompts(ssh_session session) {
   return session->kbdint->nprompts;
 }
 
@@ -1433,7 +1433,7 @@ int ssh_userauth_kbdint_getnprompts(SSH_SESSION *session) {
  *
  * @returns             The name of the message block. Do not free it.
  */
-const char *ssh_userauth_kbdint_getname(SSH_SESSION *session) {
+const char *ssh_userauth_kbdint_getname(ssh_session session) {
   return session->kbdint->name;
 }
 
@@ -1448,7 +1448,7 @@ const char *ssh_userauth_kbdint_getname(SSH_SESSION *session) {
  * @returns             The instruction of the message block.
  */
 
-const char *ssh_userauth_kbdint_getinstruction(SSH_SESSION *session) {
+const char *ssh_userauth_kbdint_getinstruction(ssh_session session) {
   return session->kbdint->instruction;
 }
 
@@ -1468,7 +1468,7 @@ const char *ssh_userauth_kbdint_getinstruction(SSH_SESSION *session) {
  *
  * @returns             A pointer to the prompt. Do not free it.
  */
-const char *ssh_userauth_kbdint_getprompt(SSH_SESSION *session, unsigned int i,
+const char *ssh_userauth_kbdint_getprompt(ssh_session session, unsigned int i,
     char *echo) {
   if (i > session->kbdint->nprompts) {
     return NULL;
@@ -1489,7 +1489,7 @@ const char *ssh_userauth_kbdint_getprompt(SSH_SESSION *session, unsigned int i,
  * \param answer answer to give to server
  * \return 0 on success, < 0 on error.
  */
-int ssh_userauth_kbdint_setanswer(SSH_SESSION *session, unsigned int i,
+int ssh_userauth_kbdint_setanswer(ssh_session session, unsigned int i,
     const char *answer) {
   if (session == NULL || answer == NULL || i > session->kbdint->nprompts) {
     return -1;

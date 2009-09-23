@@ -95,7 +95,7 @@ static void sftp_ext_free(sftp_ext ext) {
   SAFE_FREE(ext);
 }
 
-SFTP_SESSION *sftp_new(SSH_SESSION *session){
+SFTP_SESSION *sftp_new(ssh_session session){
   SFTP_SESSION *sftp;
 
   enter_function();
@@ -145,7 +145,7 @@ SFTP_SESSION *sftp_new(SSH_SESSION *session){
 }
 
 #ifdef WITH_SERVER
-SFTP_SESSION *sftp_server_new(SSH_SESSION *session, ssh_channel chan){
+SFTP_SESSION *sftp_server_new(ssh_session session, ssh_channel chan){
   SFTP_SESSION *sftp = NULL;
 
   sftp = malloc(sizeof(SFTP_SESSION));

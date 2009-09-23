@@ -49,7 +49,7 @@ struct socket {
   int data_except;
   ssh_buffer out_buffer;
   ssh_buffer in_buffer;
-  SSH_SESSION *session;
+  ssh_session session;
 };
 
 /*
@@ -71,7 +71,7 @@ int ssh_socket_init(void) {
  * \internal
  * \brief creates a new Socket object
  */
-struct socket *ssh_socket_new(SSH_SESSION *session) {
+struct socket *ssh_socket_new(ssh_session session) {
   struct socket *s;
 
   s = malloc(sizeof(struct socket));
@@ -285,7 +285,7 @@ int ssh_socket_completeread(struct socket *s, void *buffer, uint32_t len) {
  * \brief Blocking write of len bytes
  */
 int ssh_socket_completewrite(struct socket *s, const void *buffer, uint32_t len) {
-  SSH_SESSION *session = s->session;
+  ssh_session session = s->session;
   int written = -1;
 
   enter_function();
@@ -315,7 +315,7 @@ int ssh_socket_completewrite(struct socket *s, const void *buffer, uint32_t len)
  * \returns SSH_AGAIN in nonblocking mode
  */
 int ssh_socket_read(struct socket *s, void *buffer, int len){
-  SSH_SESSION *session = s->session;
+  ssh_session session = s->session;
   int rc = SSH_ERROR;
 
   enter_function();
@@ -340,7 +340,7 @@ int ssh_socket_read(struct socket *s, void *buffer, int len){
  * \warning has no effect on socket before a flush
  */
 int ssh_socket_write(struct socket *s, const void *buffer, int len) {
-  SSH_SESSION *session = s->session;
+  ssh_session session = s->session;
   int rc = SSH_ERROR;
 
   enter_function();
@@ -369,7 +369,7 @@ int ssh_socket_write(struct socket *s, const void *buffer, int len) {
  * \returns SSH_AGAIN need to call later for data
  * \returns SSH_ERROR error happened
  */
-int ssh_socket_wait_for_data(struct socket *s, SSH_SESSION *session, uint32_t len) {
+int ssh_socket_wait_for_data(struct socket *s, ssh_session session, uint32_t len) {
   char buffer[4096] = {0};
   char *buf = NULL;
   int except;
@@ -457,7 +457,7 @@ int ssh_socket_wait_for_data(struct socket *s, SSH_SESSION *session, uint32_t le
 
 /* ssh_socket_poll */
 int ssh_socket_poll(struct socket *s, int *writeable, int *except) {
-  SSH_SESSION *session = s->session;
+  ssh_session session = s->session;
   ssh_pollfd_t fd[1];
   int rc = -1;
 
@@ -508,7 +508,7 @@ int ssh_socket_poll(struct socket *s, int *writeable, int *except) {
  * \brief nonblocking flush of the output buffer
  */
 int ssh_socket_nonblocking_flush(struct socket *s) {
-  SSH_SESSION *session = s->session;
+  ssh_session session = s->session;
   int except;
   int can_write;
   int w;
@@ -577,7 +577,7 @@ int ssh_socket_nonblocking_flush(struct socket *s) {
  * \brief locking flush of the output packet buffer
  */
 int ssh_socket_blocking_flush(struct socket *s) {
-  SSH_SESSION *session = s->session;
+  ssh_session session = s->session;
 
   enter_function();
 
