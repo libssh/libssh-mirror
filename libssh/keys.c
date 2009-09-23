@@ -1168,7 +1168,7 @@ ssh_buffer ssh_userauth_build_digest(ssh_session session, ssh_message msg, char 
       string    public key algorithm name
       string    public key to be used for authentication
 */
-  CRYPTO *crypto = session->current_crypto ? session->current_crypto :
+	struct ssh_crypto_struct *crypto = session->current_crypto ? session->current_crypto :
                                              session->next_crypto;
   ssh_buffer buffer = NULL;
   ssh_string session_id = NULL;
@@ -1220,7 +1220,7 @@ error:
  * the content of sigbuf */
 ssh_string ssh_do_sign(ssh_session session, ssh_buffer sigbuf,
     ssh_private_key privatekey) {
-  CRYPTO *crypto = session->current_crypto ? session->current_crypto :
+  struct ssh_crypto_struct *crypto = session->current_crypto ? session->current_crypto :
     session->next_crypto;
   unsigned char hash[SHA_DIGEST_LEN + 1] = {0};
   ssh_string session_str = NULL;
@@ -1384,7 +1384,7 @@ ssh_string ssh_encrypt_rsa1(ssh_session session, ssh_string data, ssh_public_key
 
 /* this function signs the session id */
 ssh_string ssh_sign_session_id(ssh_session session, ssh_private_key privatekey) {
-  CRYPTO *crypto=session->current_crypto ? session->current_crypto :
+	struct ssh_crypto_struct *crypto=session->current_crypto ? session->current_crypto :
     session->next_crypto;
   unsigned char hash[SHA_DIGEST_LEN + 1] = {0};
   ssh_string signature = NULL;

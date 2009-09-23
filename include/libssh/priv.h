@@ -272,7 +272,7 @@ struct ssh_options_struct {
 
 };
 
-typedef struct ssh_crypto_struct {
+struct ssh_crypto_struct {
     bignum e,f,x,k,y;
     unsigned char session_id[SHA_DIGEST_LEN];
 
@@ -292,7 +292,7 @@ typedef struct ssh_crypto_struct {
     int do_compress_in; /* don't set them, set the option instead */
     void *compress_out_ctx; /* don't touch it */
     void *compress_in_ctx; /* really, don't */
-} CRYPTO;
+};
 
 struct ssh_keys_struct {
   const char *privatekey;
@@ -486,8 +486,8 @@ int decompress_buffer(ssh_session session,ssh_buffer buf, size_t maxlen);
 /* wrapper.c */
 int crypt_set_algorithms(ssh_session );
 int crypt_set_algorithms_server(ssh_session session);
-CRYPTO *crypto_new(void);
-void crypto_free(CRYPTO *crypto);
+struct ssh_crypto_struct *crypto_new(void);
+void crypto_free(struct ssh_crypto_struct *crypto);
 
 /* crc32.c */
 uint32_t ssh_crc32(const char *buf, uint32_t len);

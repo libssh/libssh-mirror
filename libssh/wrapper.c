@@ -769,20 +769,18 @@ static void cipher_free(struct crypto_struct *cipher) {
   SAFE_FREE(cipher);
 }
 
-CRYPTO *crypto_new(void) {
-  CRYPTO *crypto;
+struct ssh_crypto_struct *crypto_new(void) {
+	struct ssh_crypto_struct *crypto;
 
-  crypto = malloc(sizeof(CRYPTO));
+  crypto = malloc(sizeof(struct ssh_crypto_struct));
   if (crypto == NULL) {
     return NULL;
   }
-
-  memset(crypto, 0, sizeof(CRYPTO));
-
+  ZERO_STRUCTP(crypto);
   return crypto;
 }
 
-void crypto_free(CRYPTO *crypto){
+void crypto_free(struct ssh_crypto_struct *crypto){
   if (crypto == NULL) {
     return;
   }
