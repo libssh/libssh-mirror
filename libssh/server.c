@@ -122,7 +122,7 @@ SSH_BIND *ssh_bind_new(void) {
   return ptr;
 }
 
-void ssh_bind_set_options(SSH_BIND *ssh_bind, SSH_OPTIONS *options) {
+void ssh_bind_set_options(SSH_BIND *ssh_bind, ssh_options options) {
   ssh_bind->options = options;
 }
 
@@ -271,7 +271,7 @@ extern char *supported_methods[];
 
 static int server_set_kex(ssh_session  session) {
   KEX *server = &session->server_kex;
-  SSH_OPTIONS *options = session->options;
+  ssh_options options = session->options;
   int i, j;
   char *wanted;
 

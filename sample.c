@@ -502,7 +502,7 @@ static int auth_kbdint(ssh_session session){
 
 int main(int argc, char **argv){
     ssh_session session;
-    SSH_OPTIONS *options;
+    ssh_options options;
     int auth=0;
     char *password;
     char *banner;

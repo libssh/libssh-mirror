@@ -49,15 +49,14 @@
  * \see ssh_options_getopt()
 */
 
-SSH_OPTIONS *ssh_options_new(void) {
-    SSH_OPTIONS *option;
+ssh_options ssh_options_new(void) {
+    ssh_options option;
 
-    option = malloc(sizeof(SSH_OPTIONS));
+    option = malloc(sizeof(struct ssh_options_struct));
     if (option == NULL) {
       return NULL;
     }
-
-    memset(option,0,sizeof(SSH_OPTIONS));
+    ZERO_STRUCTP(option);
     option->port=22; /* set the default port */
     option->fd=-1;
     option->ssh2allowed=1;
@@ -82,8 +81,8 @@ SSH_OPTIONS *ssh_options_new(void) {
  *
  * @see ssh_session_connect()
  */
-SSH_OPTIONS *ssh_options_copy(SSH_OPTIONS *opt) {
-  SSH_OPTIONS *new = NULL;
+ssh_options ssh_options_copy(ssh_options opt) {
+  ssh_options new = NULL;
   int i;
 
   if (opt == NULL) {
@@ -172,7 +171,7 @@ err:
  *
  * @param opt           Option structure to free.
  */
-void ssh_options_free(SSH_OPTIONS *opt) {
+void ssh_options_free(ssh_options opt) {
   int i;
 
   if (opt == NULL) {
@@ -203,7 +202,7 @@ void ssh_options_free(SSH_OPTIONS *opt) {
 }
 
 #ifndef _WIN32
-static char *get_username_from_uid(SSH_OPTIONS *opt, uid_t uid){
+static char *get_username_from_uid(ssh_options opt, uid_t uid){
     struct passwd *pwd = NULL;
 
     pwd = getpwuid(uid);
@@ -672,7 +671,7 @@ int ssh_options_set(ssh_options opt, enum ssh_options_e type,
  *
  * @return 0 on succes, < 0 on error.
  */
-int ssh_options_set_host(SSH_OPTIONS *opt, const char *hostname){
+int ssh_options_set_host(ssh_options opt, const char *hostname){
   return ssh_options_set(opt, SSH_OPTIONS_HOST, hostname);
 }
 
@@ -685,7 +684,7 @@ int ssh_options_set_host(SSH_OPTIONS *opt, const char *hostname){
  *
  * @return 0 on success, < 0 on error.
  */
-int ssh_options_set_port(SSH_OPTIONS *opt, unsigned int port) {
+int ssh_options_set_port(ssh_options opt, unsigned int port) {
   return ssh_options_set(opt, SSH_OPTIONS_PORT, &port);
 }
 
@@ -700,7 +699,7 @@ int ssh_options_set_port(SSH_OPTIONS *opt, unsigned int port) {
  *
  * @bug this should not be set at options time
  */
-int ssh_options_set_username(SSH_OPTIONS *opt, const char *username) {
+int ssh_options_set_username(ssh_options opt, const char *username) {
   return ssh_options_set(opt, SSH_OPTIONS_USER, username);
 }
 
@@ -717,7 +716,7 @@ int ssh_options_set_username(SSH_OPTIONS *opt, const char *username) {
  *
  * @return 0 on success, < 0 on error.
  */
-int ssh_options_set_fd(SSH_OPTIONS *opt, socket_t fd) {
+int ssh_options_set_fd(ssh_options opt, socket_t fd) {
   return ssh_options_set(opt, SSH_OPTIONS_FD, &fd);
 }
 
@@ -736,7 +735,7 @@ int ssh_options_set_fd(SSH_OPTIONS *opt, socket_t fd) {
  *
  * @return 0 on success, < 0 on error.
  */
-int ssh_options_set_bind(SSH_OPTIONS *opt, const char *bindaddr, int port) {
+int ssh_options_set_bind(ssh_options opt, const char *bindaddr, int port) {
   int rc;
 
   rc = ssh_options_set(opt, SSH_OPTIONS_SERVER_BINDADDR, bindaddr);
@@ -763,7 +762,7 @@ int ssh_options_set_bind(SSH_OPTIONS *opt, const char *bindaddr, int port) {
  *
  * @see ssh_options_set_user_home_dir()
  */
-int ssh_options_set_ssh_dir(SSH_OPTIONS *opt, const char *dir) {
+int ssh_options_set_ssh_dir(ssh_options opt, const char *dir) {
   return ssh_options_set(opt, SSH_OPTIONS_SSH_DIR, dir);
 }
 
@@ -781,7 +780,7 @@ int ssh_options_set_ssh_dir(SSH_OPTIONS *opt, const char *dir) {
  *
  * @see ssh_options_set_user_home_dir()
  */
-int ssh_options_set_known_hosts_file(SSH_OPTIONS *opt, const char *dir){
+int ssh_options_set_known_hosts_file(ssh_options opt, const char *dir){
   return ssh_options_set(opt, SSH_OPTIONS_KNOWNHOSTS, dir);
 }
 
@@ -799,7 +798,7 @@ int ssh_options_set_known_hosts_file(SSH_OPTIONS *opt, const char *dir){
  *
  * @see ssh_options_set_user_home_dir()
  */
-int ssh_options_set_identity(SSH_OPTIONS *opt, const char *identity){
+int ssh_options_set_identity(ssh_options opt, const char *identity){
   return ssh_options_set(opt, SSH_OPTIONS_IDENTITY, identity);
 }
 
@@ -812,7 +811,7 @@ int ssh_options_set_identity(SSH_OPTIONS *opt, const char *identity){
  *
  * @return 0 on success, < 0 on error.
  */
-int ssh_options_set_dsa_server_key(SSH_OPTIONS *opt, const char *dsakey) {
+int ssh_options_set_dsa_server_key(ssh_options opt, const char *dsakey) {
   return ssh_options_set(opt, SSH_OPTIONS_SERVER_DSAKEY, dsakey);
 }
 
@@ -825,7 +824,7 @@ int ssh_options_set_dsa_server_key(SSH_OPTIONS *opt, const char *dsakey) {
  *
  * @return 0 on success, < 0 on error.
  */
-int ssh_options_set_rsa_server_key(SSH_OPTIONS *opt, const char *rsakey) {
+int ssh_options_set_rsa_server_key(ssh_options opt, const char *rsakey) {
   return ssh_options_set(opt, SSH_OPTIONS_SERVER_RSAKEY, rsakey);
 }
 
@@ -838,7 +837,7 @@ int ssh_options_set_rsa_server_key(SSH_OPTIONS *opt, const char *rsakey) {
  *
  * @return 0 on success, < 0 on error.
  */
-int ssh_options_set_banner(SSH_OPTIONS *opt, const char *banner) {
+int ssh_options_set_banner(ssh_options opt, const char *banner) {
   return ssh_options_set(opt, SSH_OPTIONS_SERVER_BANNER, banner);
 }
 
@@ -867,7 +866,7 @@ int ssh_options_set_banner(SSH_OPTIONS *opt, const char *banner) {
  *
  * @return 0 on success, < 0 on error
  */
-int ssh_options_set_wanted_algos(SSH_OPTIONS *opt, int algo, const char *list) {
+int ssh_options_set_wanted_algos(ssh_options opt, int algo, const char *list) {
   if (opt == NULL || list == NULL) {
     return -1;
   }
@@ -893,15 +892,15 @@ int ssh_options_set_wanted_algos(SSH_OPTIONS *opt, int algo, const char *list) {
 }
 
 /* this function must be called when no specific username has been asked. it has to guess it */
-int ssh_options_default_username(SSH_OPTIONS *opt) {
+int ssh_options_default_username(ssh_options opt) {
   return ssh_options_set(opt, SSH_OPTIONS_USER, NULL);
 }
 
-int ssh_options_default_ssh_dir(SSH_OPTIONS *opt) {
+int ssh_options_default_ssh_dir(ssh_options opt) {
   return ssh_options_set(opt, SSH_OPTIONS_SSH_DIR, NULL);
 }
 
-int ssh_options_default_known_hosts_file(SSH_OPTIONS *opt) {
+int ssh_options_default_known_hosts_file(ssh_options opt) {
   return ssh_options_set(opt, SSH_OPTIONS_KNOWNHOSTS, NULL);
 }
 
@@ -923,7 +922,7 @@ int ssh_options_default_known_hosts_file(SSH_OPTIONS *opt) {
  *
  * @see ssh_connect()
  */
-int ssh_options_set_status_callback(SSH_OPTIONS *opt,
+int ssh_options_set_status_callback(ssh_options opt,
     void (*callback)(void *arg, float status), void *arg) {
   if (opt == NULL || callback == NULL || opt->callbacks==NULL) {
     return -1;
@@ -950,7 +949,7 @@ int ssh_options_set_status_callback(SSH_OPTIONS *opt,
  * @bug Currently it only timeouts the socket connection, not the
  *      complete exchange.
  */
-int ssh_options_set_timeout(SSH_OPTIONS *opt, long seconds, long usec) {
+int ssh_options_set_timeout(ssh_options opt, long seconds, long usec) {
   if (ssh_options_set(opt, SSH_OPTIONS_TIMEOUT, &seconds) < 0) {
     return -1;
   }
@@ -969,7 +968,7 @@ int ssh_options_set_timeout(SSH_OPTIONS *opt, long seconds, long usec) {
  *
  * @return 0 on success, < 0 on error.
  */
-int ssh_options_allow_ssh1(SSH_OPTIONS *opt, int allow) {
+int ssh_options_allow_ssh1(ssh_options opt, int allow) {
   return ssh_options_set(opt, SSH_OPTIONS_SSH1, &allow);
 }
 
@@ -984,7 +983,7 @@ int ssh_options_allow_ssh1(SSH_OPTIONS *opt, int allow) {
  *
  * @return 0 on success, < 0 on error.
  */
-int ssh_options_allow_ssh2(SSH_OPTIONS *opt, int allow) {
+int ssh_options_allow_ssh2(ssh_options opt, int allow) {
   return ssh_options_set(opt, SSH_OPTIONS_SSH2, &allow);
 }
 
@@ -1001,7 +1000,7 @@ int ssh_options_allow_ssh2(SSH_OPTIONS *opt, int allow) {
  *
  * @warning The message string may contain format string characters.
  */
-int ssh_options_set_log_function(SSH_OPTIONS *opt, ssh_log_callback cb,
+int ssh_options_set_log_function(ssh_options opt, ssh_log_callback cb,
       void *userdata) {
   if (opt == NULL || cb == NULL || opt->callbacks==NULL) {
     return -1;
@@ -1029,7 +1028,7 @@ int ssh_options_set_log_function(SSH_OPTIONS *opt, ssh_log_callback cb,
  *
  * @return 0 on success, < 0 on error.
  */
-int ssh_options_set_log_verbosity(SSH_OPTIONS *opt, int verbosity) {
+int ssh_options_set_log_verbosity(ssh_options opt, int verbosity) {
   return ssh_options_set(opt, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
 }
 /**
@@ -1053,7 +1052,7 @@ int ssh_options_set_log_verbosity(SSH_OPTIONS *opt, int verbosity) {
  *
  * @see ssh_options_new()
  */
-int ssh_options_getopt(SSH_OPTIONS *options, int *argcptr, char **argv) {
+int ssh_options_getopt(ssh_options options, int *argcptr, char **argv) {
   char *user = NULL;
   char *cipher = NULL;
   char *localaddr = NULL;
@@ -1253,7 +1252,7 @@ int ssh_options_getopt(SSH_OPTIONS *options, int *argcptr, char **argv) {
  *
  * @return 0 on success, < 0 on error.
  */
-int ssh_options_set_auth_callback(SSH_OPTIONS *opt, ssh_auth_callback cb,
+int ssh_options_set_auth_callback(ssh_options opt, ssh_auth_callback cb,
     void *userdata) {
   if (opt == NULL || cb == NULL || opt->callbacks==NULL) {
     return -1;

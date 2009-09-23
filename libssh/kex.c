@@ -331,7 +331,7 @@ void ssh_list_kex(ssh_session session, KEX *kex) {
 int set_kex(ssh_session session){
     KEX *server = &session->server_kex;
     KEX *client=&session->client_kex;
-    SSH_OPTIONS *options=session->options;
+    ssh_options options=session->options;
     int i;
     const char *wanted;
     enter_function();

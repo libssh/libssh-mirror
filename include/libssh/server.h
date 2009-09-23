@@ -51,7 +51,7 @@ LIBSSH_API SSH_BIND *ssh_bind_new(void);
  *
  * @param  options      The option structure to set.
  */
-LIBSSH_API void ssh_bind_set_options(SSH_BIND *ssh_bind, SSH_OPTIONS *options);
+LIBSSH_API void ssh_bind_set_options(SSH_BIND *ssh_bind, ssh_options options);
 
 /**
  * @brief Start listening to the socket.

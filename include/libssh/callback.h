@@ -60,10 +60,10 @@ typedef struct ssh_callbacks_struct * ssh_callbacks;
 	p->size=sizeof(*p); \
 } while(0);
 
-LIBSSH_API int ssh_options_set_auth_callback(SSH_OPTIONS *opt, ssh_auth_callback cb,
+LIBSSH_API int ssh_options_set_auth_callback(ssh_options opt, ssh_auth_callback cb,
     void *userdata);
-LIBSSH_API int ssh_options_set_log_function(SSH_OPTIONS *opt,
+LIBSSH_API int ssh_options_set_log_function(ssh_options opt,
     ssh_log_callback cb, void *userdata);
-LIBSSH_API int ssh_options_set_status_callback(SSH_OPTIONS *opt, void (*callback)
+LIBSSH_API int ssh_options_set_status_callback(ssh_options opt, void (*callback)
         (void *arg, float status), void *arg);
 #endif /*_SSH_CALLBACK_H */

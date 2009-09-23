@@ -383,7 +383,7 @@ struct ssh_message_struct;
 struct ssh_session_struct {
     struct error_struct error;
     struct socket *socket;
-    SSH_OPTIONS *options;
+    ssh_options options;
     char *serverbanner;
     char *clientbanner;
     int protoversion;
@@ -463,7 +463,7 @@ struct ssh_kbdint_struct {
 struct ssh_bind_struct {
     struct error_struct error;
     socket_t bindfd;
-    SSH_OPTIONS *options;
+    ssh_options options;
     int blocking;
     int toaccept;
 };
@@ -747,9 +747,9 @@ int channel_write_common(ssh_channel channel, const void *data,
 /* options.c */
 
 /* this function must be called when no specific username has been asked. it has to guess it */
-int ssh_options_default_username(SSH_OPTIONS *opt);
-int ssh_options_default_ssh_dir(SSH_OPTIONS *opt);
-int ssh_options_default_known_hosts_file(SSH_OPTIONS *opt);
+int ssh_options_default_username(ssh_options opt);
+int ssh_options_default_ssh_dir(ssh_options opt);
+int ssh_options_default_known_hosts_file(ssh_options opt);
 
 /* buffer.c */
 int buffer_add_ssh_string(ssh_buffer buffer, ssh_string string);

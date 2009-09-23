@@ -470,7 +470,7 @@ int ssh_service_request(ssh_session session, const char *service) {
  * \see ssh_disconnect()
  */
 int ssh_connect(ssh_session session) {
-  SSH_OPTIONS *options = session->options;
+  ssh_options options = session->options;
   int ssh1 = 0;
   int ssh2 = 0;
   int fd = -1;

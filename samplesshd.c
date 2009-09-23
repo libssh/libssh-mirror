@@ -40,7 +40,7 @@ static int auth_password(char *user, char *password){
 }
 
 int main(int argc, char **argv){
-    SSH_OPTIONS *options=ssh_options_new();
+	ssh_options options=ssh_options_new();
     ssh_session session;
     SSH_BIND *ssh_bind;
     SSH_MESSAGE *message;

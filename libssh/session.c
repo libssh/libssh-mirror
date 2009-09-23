@@ -164,7 +164,7 @@ void ssh_silent_disconnect(ssh_session session) {
  * \see ssh_new()
  * \see ssh_options_new()
  */
-void ssh_set_options(ssh_session session, SSH_OPTIONS *options) {
+void ssh_set_options(ssh_session session, ssh_options options) {
   if (session == NULL || options == NULL) {
     return;
   }
