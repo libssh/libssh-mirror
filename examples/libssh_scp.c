@@ -175,6 +175,7 @@ static int do_copy(struct location *src, struct location *dest, int recursive){
   int total=0;
   int mode;
   char *filename;
+  (void)recursive;
   /* Get the file name and size*/
   if(!src->is_ssh){
     fd=fileno(src->file);
