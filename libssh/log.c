@@ -55,9 +55,9 @@ void ssh_log(SSH_SESSION *session, int verbosity, const char *format, ...) {
     vsnprintf(buffer, sizeof(buffer), format, va);
     va_end(va);
 
-    if (session->options->log_function) {
-      session->options->log_function(session, verbosity, buffer,
-          session->options->log_userdata);
+    if (session->options->callbacks && session->options->callbacks->log_function) {
+      session->options->callbacks->log_function(session, verbosity, buffer,
+          session->options->callbacks->userdata);
     } else if (verbosity == SSH_LOG_FUNCTIONS) {
       if (session->log_indent > 255) {
         min = 255;

@@ -586,9 +586,9 @@ static int pem_get_password(char *buf, int size, int rwflag, void *userdata) {
   ssh_log(session, SSH_LOG_RARE,
       "Trying to call external authentication function");
 
-  if (session && session->options->auth_function) {
-    if ((*session->options->auth_function)("Passphrase for private key:", buf, size, 0, 0,
-        session->options->auth_userdata ? session->options->auth_userdata : NULL) < 0) {
+  if (session && session->options->callbacks->auth_function) {
+    if (session->options->callbacks->auth_function("Passphrase for private key:", buf, size, 0, 0,
+        session->options->callbacks->userdata) < 0) {
       return 0;
     }
 
@@ -636,15 +636,14 @@ ssh_private_key privatekey_from_file(SSH_SESSION *session, const char *filename,
 
   ssh_log(session, SSH_LOG_RARE, "Trying to read %s, passphase=%s, authcb=%s",
       filename, passphrase ? "true" : "false",
-      session->options->auth_function ? "true" : "false");
+      session->options->callbacks->auth_function ? "true" : "false");
   switch (type) {
     case TYPE_DSS:
       if (passphrase == NULL) {
-        if (session->options->auth_function) {
-          auth_cb = session->options->auth_function;
-          if (session->options->auth_userdata) {
-            auth_ud = session->options->auth_userdata;
-          }
+        if (session->options->callbacks->auth_function) {
+          auth_cb = session->options->callbacks->auth_function;
+          auth_ud = session->options->callbacks->userdata;
+
 #ifdef HAVE_LIBGCRYPT
           valid = read_dsa_privatekey(file, &dsa, auth_cb, auth_ud,
               "Passphrase for private key:");
@@ -681,11 +680,9 @@ ssh_private_key privatekey_from_file(SSH_SESSION *session, const char *filename,
       break;
     case TYPE_RSA:
       if (passphrase == NULL) {
-        if (session->options->auth_function) {
-          auth_cb = session->options->auth_function;
-          if (session->options->auth_userdata) {
-            auth_ud = session->options->auth_userdata;
-          }
+      	if (session->options->callbacks->auth_function) {
+      		auth_cb = session->options->callbacks->auth_function;
+      		auth_ud = session->options->callbacks->userdata;
 #ifdef HAVE_LIBGCRYPT
           valid = read_rsa_privatekey(file, &rsa, auth_cb, auth_ud,
               "Passphrase for private key:");

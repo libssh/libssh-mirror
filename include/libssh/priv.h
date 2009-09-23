@@ -45,7 +45,7 @@
 
 #include "config.h"
 #include "libssh/libssh.h"
-
+#include "libssh/callback.h"
 /* some constants */
 #define MAX_PACKET_LEN 262144
 #define ERROR_BUFFERLEN 1024
@@ -285,10 +285,7 @@ struct ssh_options_struct {
     int use_nonexisting_algo; /* if user sets a not supported algorithm for kex, don't complain */
     char *wanted_methods[10]; /* the kex methods can be choosed. better use the kex fonctions to do that */
     void *wanted_cookie; /* wants a specific cookie to be sent ? if null, generate a new one */
-    ssh_auth_callback auth_function; /* this functions will be called if e.g. a keyphrase is needed. */
-    void *auth_userdata;
-    void (*connect_status_function)(void *arg, float status); /* status callback function */
-    void *connect_status_arg; /* arbitrary argument */
+    ssh_callbacks callbacks; /* Callbacks to user functions */
     long timeout; /* seconds */
     long timeout_usec;
     int ssh2allowed;
@@ -296,8 +293,7 @@ struct ssh_options_struct {
     char *dsakey;
     char *rsakey; /* host key for server implementation */
     int log_verbosity;
-    ssh_log_callback log_function; //log callback
-    void *log_userdata;
+
 };
 
 typedef struct ssh_crypto_struct {

@@ -33,8 +33,8 @@
 #include "libssh/ssh2.h"
 
 #define set_status(opt,status) do {\
-        if (opt->connect_status_function) \
-            opt->connect_status_function(opt->connect_status_arg, status); \
+        if (opt->callbacks && opt->callbacks->connect_status_function) \
+            opt->callbacks->connect_status_function(opt->callbacks->userdata, status); \
     } while (0)
 
 /**

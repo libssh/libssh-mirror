@@ -154,15 +154,11 @@ SSH_OPTIONS *ssh_options_copy(SSH_OPTIONS *opt) {
 
   new->fd = opt->fd;
   new->port = opt->port;
-  new->auth_function = opt->auth_function;
-  new->auth_userdata = opt->auth_userdata;
-  new->connect_status_function = opt->connect_status_function;
-  new->connect_status_arg = opt->connect_status_arg;
+  new->callbacks = opt->callbacks;
   new->timeout = opt->timeout;
   new->timeout_usec = opt->timeout_usec;
   new->ssh2allowed = opt->ssh2allowed;
   new->ssh1allowed = opt->ssh1allowed;
-  new->log_function = opt->log_function;
   new->log_verbosity = opt->log_verbosity;
 
   return new;
@@ -575,32 +571,6 @@ int ssh_options_set(ssh_options opt, enum ssh_options_e type,
 
         opt->log_verbosity = *x;
       }
-    case SSH_OPTIONS_AUTH_CALLBACK:
-      if (value == NULL) {
-        return -1;
-      } else {
-        opt->auth_function = (ssh_auth_callback) value;
-      }
-      break;
-    case SSH_OPTIONS_AUTH_USERDATA:
-      opt->auth_userdata = (void *) value;
-      break;
-    case SSH_OPTIONS_LOG_CALLBACK:
-      if (value == NULL) {
-        return -1;
-      } else {
-        opt->log_function = (ssh_log_callback) value;
-      }
-      break;
-    case SSH_OPTIONS_LOG_USERDATA:
-      opt->auth_userdata = (void *) value;
-      break;
-    case SSH_OPTIONS_STATUS_CALLBACK:
-      /* TODO */
-      break;
-    case SSH_OPTIONS_STATUS_ARG:
-      /* TODO */
-      break;
     case SSH_OPTIONS_CIPHERS_C_S:
       if (value == NULL) {
         return -1;
@@ -955,12 +925,13 @@ int ssh_options_default_known_hosts_file(SSH_OPTIONS *opt) {
  */
 int ssh_options_set_status_callback(SSH_OPTIONS *opt,
     void (*callback)(void *arg, float status), void *arg) {
-  if (opt == NULL || callback == NULL) {
+  if (opt == NULL || callback == NULL || opt->callbacks==NULL) {
     return -1;
   }
 
-  opt->connect_status_function = callback;
-  opt->connect_status_arg = arg;
+  opt->callbacks->connect_status_function = callback;
+  if(arg)
+  	opt->callbacks->userdata=arg;
 
   return 0;
 }
@@ -1032,12 +1003,13 @@ int ssh_options_allow_ssh2(SSH_OPTIONS *opt, int allow) {
  */
 int ssh_options_set_log_function(SSH_OPTIONS *opt, ssh_log_callback cb,
       void *userdata) {
-  if (opt == NULL || cb == NULL) {
+  if (opt == NULL || cb == NULL || opt->callbacks==NULL) {
     return -1;
   }
 
-  opt->log_function = cb;
-  opt->log_userdata = userdata;
+  opt->callbacks->log_function = cb;
+  if(userdata)
+  	opt->callbacks->userdata = userdata;
 
   return 0;
 }
@@ -1283,12 +1255,13 @@ int ssh_options_getopt(SSH_OPTIONS *options, int *argcptr, char **argv) {
  */
 int ssh_options_set_auth_callback(SSH_OPTIONS *opt, ssh_auth_callback cb,
     void *userdata) {
-  if (opt == NULL || cb == NULL) {
+  if (opt == NULL || cb == NULL || opt->callbacks==NULL) {
     return -1;
   }
 
-  opt->auth_function = cb;
-  opt->auth_userdata = userdata;
+  opt->callbacks->auth_function = cb;
+  if(userdata != NULL)
+  	opt->callbacks->userdata = userdata;
 
   return 0;
 }

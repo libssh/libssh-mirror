@@ -292,25 +292,6 @@ enum ssh_scp_request_types {
   SSH_SCP_REQUEST_WARNING
 };
 
-/**
- * @brief SSH authentication callback.
- *
- * @param prompt        Prompt to be displayed.
- * @param buf           Buffer to save the password. You should null-terminate it.
- * @param len           Length of the buffer.
- * @param echo          Enable or disable the echo of what you type.
- * @param verify        Should the password be verified?
- * @param userdata      Userdata to be passed to the callback function. Useful
- *                      for GUI applications.
- *
- * @return              0 on success, < 0 on error.
- */
-typedef int (*ssh_auth_callback) (const char *prompt, char *buf, size_t len,
-    int echo, int verify, void *userdata);
-typedef void (*ssh_log_callback) (ssh_session session, int priority,
-    const char *message, void *userdata);
-
-
 LIBSSH_API void buffer_free(ssh_buffer buffer);
 LIBSSH_API void *buffer_get(ssh_buffer buffer);
 LIBSSH_API uint32_t buffer_get_len(ssh_buffer buffer);
@@ -406,23 +387,17 @@ LIBSSH_API int ssh_options_getopt(SSH_OPTIONS *options, int *argcptr, char **arg
 LIBSSH_API int ssh_options_parse_config(SSH_OPTIONS *opt, const char *filename);
 LIBSSH_API int ssh_options_set(ssh_options opt, enum ssh_options_e type,
     const void *value);
-LIBSSH_API int ssh_options_set_auth_callback(SSH_OPTIONS *opt, ssh_auth_callback cb,
-    void *userdata);
 LIBSSH_API int ssh_options_set_banner(SSH_OPTIONS *opt, const char *banner);
 LIBSSH_API int ssh_options_set_bind(SSH_OPTIONS *opt, const char *bindaddr, int port);
 LIBSSH_API int ssh_options_set_dsa_server_key(SSH_OPTIONS *opt, const char *dsakey);
 LIBSSH_API int ssh_options_set_fd(SSH_OPTIONS *opt, socket_t fd);
 LIBSSH_API int ssh_options_set_host(SSH_OPTIONS *opt, const char *host);
 LIBSSH_API int ssh_options_set_identity(SSH_OPTIONS *opt, const char *identity);
-LIBSSH_API int ssh_options_set_log_function(SSH_OPTIONS *opt,
-    ssh_log_callback cb, void *userdata);
 LIBSSH_API int ssh_options_set_log_verbosity(SSH_OPTIONS *opt, int verbosity);
 LIBSSH_API int ssh_options_set_known_hosts_file(SSH_OPTIONS *opt, const char *dir);
 LIBSSH_API int ssh_options_set_port(SSH_OPTIONS *opt, unsigned int port);
 LIBSSH_API int ssh_options_set_rsa_server_key(SSH_OPTIONS *opt, const char *rsakey);
 LIBSSH_API int ssh_options_set_ssh_dir(SSH_OPTIONS *opt, const char *dir);
-LIBSSH_API int ssh_options_set_status_callback(SSH_OPTIONS *opt, void (*callback)
-        (void *arg, float status), void *arg);
 LIBSSH_API int ssh_options_set_timeout(SSH_OPTIONS *opt, long seconds, long usec);
 LIBSSH_API int ssh_options_set_username(SSH_OPTIONS *opt, const char *username);
 LIBSSH_API int ssh_options_set_wanted_algos(SSH_OPTIONS *opt, int algo, const char *list);

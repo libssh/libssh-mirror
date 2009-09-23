@@ -23,21 +23,43 @@
  * This file includes the declarations for the libssh callback mechanism
  */
 
+#ifndef _SSH_CALLBACK_H
+#define _SSH_CALLBACK_H
+
 #include "libssh.h"
 
-typedef int (*ssh_callback_int) (ssh_session session, void *user, int code);
-typedef int (*ssh_message_callback) (ssh_session, void *user, ssh_message message);
-typedef int (*ssh_channel_callback_int) (ssh_channel channel, void *user, int code);
-typedef int (*ssh_channel_callback_data) (ssh_channel channel, void *user, int code, void *data, int len);
+/**
+ * @brief SSH authentication callback.
+ *
+ * @param prompt        Prompt to be displayed.
+ * @param buf           Buffer to save the password. You should null-terminate it.
+ * @param len           Length of the buffer.
+ * @param echo          Enable or disable the echo of what you type.
+ * @param verify        Should the password be verified?
+ * @param userdata      Userdata to be passed to the callback function. Useful
+ *                      for GUI applications.
+ *
+ * @return              0 on success, < 0 on error.
+ */
+typedef int (*ssh_auth_callback) (const char *prompt, char *buf, size_t len,
+    int echo, int verify, void *userdata);
+typedef void (*ssh_log_callback) (ssh_session session, int priority,
+    const char *message, void *userdata);
 
 struct ssh_callbacks_struct {
-  ssh_callback_int connection_progress;
-  void *connection_progress_user;
-  ssh_channel_callback_int channel_write_confirm;
-  void *channel_write_confirm_user;
-  ssh_channel_callback_data channel_read_available;
-  void *channel_read_available_user;
+	size_t size;    /* size of this structure */
+	void *userdata; /* User-provided data */
+	ssh_auth_callback auth_function; /* this functions will be called if e.g. a keyphrase is needed. */
+	ssh_log_callback log_function; //log callback
+  void (*connect_status_function)(void *arg, float status); /* status callback function */
 };
 
 typedef struct ssh_callbacks_struct * ssh_callbacks;
 
+LIBSSH_API int ssh_options_set_auth_callback(SSH_OPTIONS *opt, ssh_auth_callback cb,
+    void *userdata);
+LIBSSH_API int ssh_options_set_log_function(SSH_OPTIONS *opt,
+    ssh_log_callback cb, void *userdata);
+LIBSSH_API int ssh_options_set_status_callback(SSH_OPTIONS *opt, void (*callback)
+        (void *arg, float status), void *arg);
+#endif /*_SSH_CALLBACK_H */
