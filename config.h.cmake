@@ -68,7 +68,7 @@
 /* Define to 1 if you want to enable ZLIB */
 #cmakedefine WITH_LIBZ 1
 
-/* Define to 1 if you want to enable SSH1 */
+/* Define to 1 if you want to enable SFTP */
 #cmakedefine WITH_SFTP 1
 
 /* Define to 1 if you want to enable SSH1 */
