@@ -502,7 +502,7 @@ error:
   return rc; /* SSH_OK, AGAIN or ERROR */
 }
 
-#ifdef HAVE_SSH1
+#ifdef WITH_SSH1
 static int packet_send1(SSH_SESSION *session) {
   unsigned int blocksize = (session->current_crypto ?
       session->current_crypto->out_cipher->blocksize : 8);
@@ -583,7 +583,7 @@ error:
 #endif /* WITH_SSH1 */
 
 int packet_send(SSH_SESSION *session) {
-#ifdef HAVE_SSH1
+#ifdef WITH_SSH1
   if (session->version == 1) {
     return packet_send1(session);
   }
