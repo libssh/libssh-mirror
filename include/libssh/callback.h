@@ -26,8 +26,14 @@
 #ifndef _SSH_CALLBACK_H
 #define _SSH_CALLBACK_H
 
-#include "libssh.h"
 #include <string.h>
+
+#include "libssh.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief SSH authentication callback.
  *
@@ -66,4 +72,9 @@ LIBSSH_API int ssh_options_set_log_function(ssh_options opt,
     ssh_log_callback cb, void *userdata);
 LIBSSH_API int ssh_options_set_status_callback(ssh_options opt, void (*callback)
         (void *arg, float status), void *arg);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /*_SSH_CALLBACK_H */
