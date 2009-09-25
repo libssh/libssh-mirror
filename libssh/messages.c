@@ -84,6 +84,7 @@ static ssh_message handle_service_request(ssh_session session) {
   msg->type=SSH_REQUEST_SERVICE;
   msg->service_request.service=service_c;
   error:
+  string_free(service);
   leave_function();
   return msg;
 }
@@ -107,6 +108,7 @@ static ssh_message handle_userauth_request(ssh_session session){
   ssh_message msg = NULL;
   char *service_c = NULL;
   char *method_c = NULL;
+  uint32_t method_size = 0;
 
   enter_function();
 
@@ -144,6 +146,7 @@ static ssh_message handle_userauth_request(ssh_session session){
   if (method_c == NULL) {
     goto error;
   }
+  method_size = string_len(method);
 
   string_free(service);
   service = NULL;
@@ -156,7 +159,7 @@ static ssh_message handle_userauth_request(ssh_session session){
       msg->auth_request.username);
 
 
-  if (strcmp(method_c, "none") == 0) {
+  if (strncmp(method_c, "none", method_size) == 0) {
     msg->auth_request.method = SSH_AUTH_METHOD_NONE;
     SAFE_FREE(service_c);
     SAFE_FREE(method_c);
@@ -164,7 +167,7 @@ static ssh_message handle_userauth_request(ssh_session session){
     return msg;
   }
 
-  if (strcmp(method_c, "password") == 0) {
+  if (strncmp(method_c, "password", method_size) == 0) {
     ssh_string pass = NULL;
     uint8_t tmp;
 
@@ -187,7 +190,7 @@ static ssh_message handle_userauth_request(ssh_session session){
     return msg;
   }
 
-  if (strcmp(method_c, "publickey") == 0) {
+  if (strncmp(method_c, "publickey", method_size) == 0) {
     ssh_string algo = NULL;
     ssh_string publickey = NULL;
     uint8_t has_sign;
@@ -230,16 +233,32 @@ static ssh_message handle_userauth_request(ssh_session session){
       signature = signature_from_string(session, sign, public_key,
                                                        public_key->type);
       digest = ssh_userauth_build_digest(session, msg, service_c);
-      if(sig_verify(session, public_key, signature,
-                            buffer_get(digest), buffer_get_len(digest)) < 0) {
+      if ((digest == NULL || signature == NULL) ||
+          (digest != NULL && signature != NULL &&
+          sig_verify(session, public_key, signature,
+                     buffer_get(digest), buffer_get_len(digest)) < 0)) {
         ssh_log(session, SSH_LOG_PACKET, "Invalid signature from peer");
-        msg->auth_request.signature_state = -1;
+
         string_free(sign);
         sign = NULL;
+        buffer_free(digest);
+        digest = NULL;
+        signature_free(signature);
+        signature = NULL;
+
+        msg->auth_request.signature_state = -1;
         goto error;
-      }
+      }         
       else
         ssh_log(session, SSH_LOG_PACKET, "Valid signature received");
+
+      buffer_free(digest);
+      digest = NULL;
+      string_free(sign);
+      sign = NULL;
+      signature_free(signature);
+      signature = NULL;
+
       msg->auth_request.signature_state = 1;
     }
     SAFE_FREE(service_c);
@@ -777,6 +796,7 @@ void ssh_message_free(ssh_message msg){
             strlen(msg->auth_request.password));
         SAFE_FREE(msg->auth_request.password);
       }
+      publickey_free(msg->auth_request.public_key);
       break;
     case SSH_REQUEST_CHANNEL_OPEN:
       SAFE_FREE(msg->channel_request_open.originator);
@@ -789,6 +809,9 @@ void ssh_message_free(ssh_message msg){
       SAFE_FREE(msg->channel_request.var_value);
       SAFE_FREE(msg->channel_request.command);
       SAFE_FREE(msg->channel_request.subsystem);
+      break;
+    case SSH_REQUEST_SERVICE:
+      SAFE_FREE(msg->service_request.service);
       break;
   }
   ZERO_STRUCTP(msg);
