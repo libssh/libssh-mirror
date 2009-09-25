@@ -20,7 +20,7 @@
  */
 
 /* callback.h
- * This file includes the declarations for the libssh callback mechanism
+ * This file includes the public declarations for the libssh callback mechanism
  */
 
 #ifndef _SSH_CALLBACK_H
@@ -28,7 +28,7 @@
 
 #include <string.h>
 
-#include "libssh.h"
+#include <libssh/libssh.h>
 
 #ifdef __cplusplus
 extern "C" {
