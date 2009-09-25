@@ -26,9 +26,8 @@
 #ifndef _SSH_CALLBACK_H
 #define _SSH_CALLBACK_H
 
-#include <string.h>
-
 #include <libssh/libssh.h>
+#include <string.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -53,16 +52,29 @@ typedef void (*ssh_log_callback) (ssh_session session, int priority,
     const char *message, void *userdata);
 
 struct ssh_callbacks_struct {
-	size_t size;    /* size of this structure */
-	void *userdata; /* User-provided data */
-	ssh_auth_callback auth_function; /* this functions will be called if e.g. a keyphrase is needed. */
-	ssh_log_callback log_function; //log callback
-  void (*connect_status_function)(void *arg, float status); /* status callback function */
+	/** size of this structure. internal, shoud be set with ssh_callbacks_init()*/
+	size_t size;
+	/** User-provided data. User is free to set anything he wants here */
+	void *userdata;
+	/** this functions will be called if e.g. a keyphrase is needed. */
+	ssh_auth_callback auth_function;
+	/** this function will be called each time a loggable event happens. */
+	ssh_log_callback log_function;
+	/** this function gets called during connection time to indicate the percentage
+	 * of connection steps completed.
+	 */
+  void (*connect_status_function)(void *userdata, float status);
 };
 
 typedef struct ssh_callbacks_struct * ssh_callbacks;
+
+/** Initializes an ssh_callbacks_struct
+ * A call to this macro is mandatory when you have set a new
+ * ssh_callback_struct structure. Its goal is to maintain the binary
+ * compatibility with future versions of libssh as the structure
+ * evolves with time.
+ */
 #define ssh_callbacks_init(p) do {\
-	memset(p,'\0',sizeof(*p)); \
 	p->size=sizeof(*p); \
 } while(0);
 
