@@ -22,6 +22,8 @@
  * MA 02111-1307, USA.
  */
 
+#include "config.h"
+
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
@@ -29,7 +31,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include "config.h"
 
 #ifdef _WIN32
 #define _WIN32_IE 0x0501 //SHGetSpecialFolderPath

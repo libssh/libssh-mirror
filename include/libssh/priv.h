@@ -30,6 +30,8 @@
 #ifndef _LIBSSH_PRIV_H
 #define _LIBSSH_PRIV_H
 
+#include "config.h"
+
 #ifdef _MSC_VER
 #define snprintf _snprintf
 /** Imitate define of inttypes.h */
@@ -43,9 +45,9 @@
 #define PRIdS "zd"
 #endif
 
-#include "config.h"
 #include "libssh/libssh.h"
 #include "libssh/callback.h"
+
 /* some constants */
 #define MAX_PACKET_LEN 262144
 #define ERROR_BUFFERLEN 1024

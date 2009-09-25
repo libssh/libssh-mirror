@@ -26,9 +26,10 @@
 
 /* This code is based on glib's gpoll */
 
+#include "config.h"
+
 #include <errno.h>
 
-#include "config.h"
 #include "libssh/priv.h"
 #include "libssh/libssh.h"
 #include "libssh/poll.h"
