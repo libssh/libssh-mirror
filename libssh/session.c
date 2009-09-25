@@ -21,6 +21,7 @@
  * MA 02111-1307, USA.
  */
 
+#include "config.h"
 #include <string.h>
 #include <stdlib.h>
 #include "libssh/libssh.h"
@@ -31,6 +32,8 @@
 #include "libssh/agent.h"
 #include "libssh/packet.h"
 #include "libssh/session.h"
+#include "libssh/options.h"
+
 
 #define FIRST_CHANNEL 42 // why not ? it helps to find bugs.
 

@@ -21,6 +21,7 @@
  * MA 02111-1307, USA.
  */
 
+#include "config.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -38,6 +39,7 @@
 #include "libssh/priv.h"
 #include "libssh/crypto.h"
 #include "libssh/session.h"
+#include "libssh/wrapper.h"
 
 uint32_t packet_decrypt_len(ssh_session session, char *crypted){
   uint32_t decrypted;

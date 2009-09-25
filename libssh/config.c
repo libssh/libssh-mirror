@@ -26,6 +26,7 @@
 #include <string.h>
 
 #include "libssh/priv.h"
+#include "libssh/options.h"
 
 enum ssh_config_opcode_e {
   SOC_UNSUPPORTED = -1,

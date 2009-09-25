@@ -31,17 +31,19 @@
  * are welcome.
  */
 
+#include "config.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "libssh/priv.h"
 #include "libssh/session.h"
+#include "libssh/crypto.h"
+#include "libssh/wrapper.h"
 
 #ifdef HAVE_LIBGCRYPT
 #include <gcrypt.h>
 
-#include "libssh/crypto.h"
 
 static int alloc_key(struct crypto_struct *cipher) {
     cipher->key = malloc(cipher->keylen);

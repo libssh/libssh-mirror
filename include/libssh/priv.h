@@ -47,7 +47,7 @@
 
 #include "libssh/libssh.h"
 #include "libssh/callback.h"
-
+#include "libssh/crypto.h"
 /* some constants */
 #define MAX_PACKET_LEN 262144
 #define ERROR_BUFFERLEN 1024
@@ -61,85 +61,10 @@ enum public_key_types_e{
 	TYPE_RSA1
 };
 
-/* profiling constants. Don't touch them unless you know what you do */
-#ifdef HAVE_LIBCRYPTO
-#define OPENSSL_BIGNUMS
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* wrapper things */
-#ifdef HAVE_LIBGCRYPT
-#include <gcrypt.h>
-typedef gcry_md_hd_t SHACTX;
-typedef gcry_md_hd_t MD5CTX;
-typedef gcry_md_hd_t HMACCTX;
-#ifdef MD5_DIGEST_LEN
-    #undef MD5_DIGEST_LEN
-#endif
-#define SHA_DIGEST_LEN 20
-#define MD5_DIGEST_LEN 16
-#define EVP_MAX_MD_SIZE 36
-
-typedef gcry_mpi_t bignum;
-
-#define bignum_new() gcry_mpi_new(0)
-#define bignum_free(num) gcry_mpi_release(num)
-#define bignum_set_word(bn,n) gcry_mpi_set_ui(bn,n)
-#define bignum_bin2bn(bn,datalen,data) gcry_mpi_scan(data,GCRYMPI_FMT_USG,bn,datalen,NULL)
-#define bignum_bn2dec(num) my_gcry_bn2dec(num)
-#define bignum_dec2bn(num, data) my_gcry_dec2bn(data, num)
-#define bignum_bn2hex(num,data) gcry_mpi_aprint(GCRYMPI_FMT_HEX,data,NULL,num)
-#define bignum_hex2bn(num,datalen,data) gcry_mpi_scan(num,GCRYMPI_FMT_HEX,data,datalen,NULL)
-#define bignum_rand(num,bits) gcry_mpi_randomize(num,bits,GCRY_STRONG_RANDOM),gcry_mpi_set_bit(num,bits-1),gcry_mpi_set_bit(num,0)
-#define bignum_mod_exp(dest,generator,exp,modulo) gcry_mpi_powm(dest,generator,exp,modulo)
-#define bignum_num_bits(num) gcry_mpi_get_nbits(num)
-#define bignum_num_bytes(num) ((gcry_mpi_get_nbits(num)+7)/8)
-#define bignum_is_bit_set(num,bit) gcry_mpi_test_bit(num,bit)
-#define bignum_bn2bin(num,datalen,data) gcry_mpi_print(GCRYMPI_FMT_USG,data,datalen,NULL,num)
-#define bignum_cmp(num1,num2) gcry_mpi_cmp(num1,num2)
-
-#elif defined HAVE_LIBCRYPTO
-#include <openssl/dsa.h>
-#include <openssl/rsa.h>
-#include <openssl/sha.h>
-#include <openssl/md5.h>
-#include <openssl/hmac.h>
-typedef SHA_CTX* SHACTX;
-typedef MD5_CTX*  MD5CTX;
-typedef HMAC_CTX* HMACCTX;
-#ifdef MD5_DIGEST_LEN
-    #undef MD5_DIGEST_LEN
-#endif
-#define SHA_DIGEST_LEN SHA_DIGEST_LENGTH
-#define MD5_DIGEST_LEN MD5_DIGEST_LENGTH
-
-#endif /* OPENSSL_CRYPTO */
-#ifdef OPENSSL_BIGNUMS
-#include <openssl/bn.h>
-typedef BIGNUM*  bignum;
-typedef BN_CTX* bignum_CTX;
-
-#define bignum_new() BN_new()
-#define bignum_free(num) BN_clear_free(num)
-#define bignum_set_word(bn,n) BN_set_word(bn,n)
-#define bignum_bin2bn(bn,datalen,data) BN_bin2bn(bn,datalen,data)
-#define bignum_bn2dec(num) BN_bn2dec(num)
-#define bignum_dec2bn(bn,data) BN_dec2bn(data,bn)
-#define bignum_bn2hex(num) BN_bn2hex(num)
-#define bignum_rand(rnd, bits, top, bottom) BN_rand(rnd,bits,top,bottom)
-#define bignum_ctx_new() BN_CTX_new()
-#define bignum_ctx_free(num) BN_CTX_free(num)
-#define bignum_mod_exp(dest,generator,exp,modulo,ctx) BN_mod_exp(dest,generator,exp,modulo,ctx)
-#define bignum_num_bytes(num) BN_num_bytes(num)
-#define bignum_num_bits(num) BN_num_bits(num)
-#define bignum_is_bit_set(num,bit) BN_is_bit_set(num,bit)
-#define bignum_bn2bin(num,ptr) BN_bn2bin(num,ptr)
-#define bignum_cmp(num1,num2) BN_cmp(num1,num2)
-
-#endif /* OPENSSL_BIGNUMS */
 
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
@@ -180,19 +105,6 @@ typedef struct ssh_pollfd_struct {
 typedef unsigned long int nfds_t;
 #endif /* HAVE_POLL */
 
-/* wrapper.c */
-MD5CTX md5_init(void);
-void md5_update(MD5CTX c, const void *data, unsigned long len);
-void md5_final(unsigned char *md,MD5CTX c);
-SHACTX sha1_init(void);
-void sha1_update(SHACTX c, const void *data, unsigned long len);
-void sha1_final(unsigned char *md,SHACTX c);
-void sha1(unsigned char *digest,int len,unsigned char *hash);
-#define HMAC_SHA1 1
-#define HMAC_MD5 2
-HMACCTX hmac_init(const void *key,int len,int type);
-void hmac_update(HMACCTX c, const void *data, unsigned long len);
-void hmac_final(HMACCTX ctx,unsigned char *hashmacbuf,unsigned int *len);
 
 /* i should remove it one day */
 typedef struct packet_struct {
@@ -205,6 +117,9 @@ typedef struct kex_struct {
 	unsigned char cookie[16];
 	char **methods;
 } KEX;
+
+/* TODO: remove that include */
+#include "libssh/wrapper.h"
 
 struct ssh_public_key_struct {
     int type;
@@ -245,33 +160,6 @@ struct error_struct {
 /* error handling */
     int error_code;
     char error_buffer[ERROR_BUFFERLEN];
-};
-
-struct ssh_options_struct {
-    struct error_struct error;
-    char *banner; /* explicit banner to send */
-    char *username;
-    char *host;
-    char *bindaddr;
-    int bindport;
-    char *identity;
-    char *ssh_dir;
-    char *known_hosts_file;
-    socket_t fd; /* specificaly wanted file descriptor, don't connect host */
-    int port;
-    int dont_verify_hostkey; /* Don't spare time, don't check host key ! unneeded to say it's dangerous and not safe */
-    int use_nonexisting_algo; /* if user sets a not supported algorithm for kex, don't complain */
-    char *wanted_methods[10]; /* the kex methods can be choosed. better use the kex fonctions to do that */
-    void *wanted_cookie; /* wants a specific cookie to be sent ? if null, generate a new one */
-    ssh_callbacks callbacks; /* Callbacks to user functions */
-    long timeout; /* seconds */
-    long timeout_usec;
-    int ssh2allowed;
-    int ssh1allowed;
-    char *dsakey;
-    char *rsakey; /* host key for server implementation */
-    int log_verbosity;
-
 };
 
 struct ssh_crypto_struct {

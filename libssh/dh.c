@@ -40,6 +40,7 @@
  * if everything went correctly, k and k' are equal
  */
 
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -52,6 +53,8 @@
 #include "libssh/crypto.h"
 #include "libssh/buffer.h"
 #include "libssh/session.h"
+#include "libssh/options.h"
+
 /* todo: remove it */
 #include "libssh/string.h"
 #ifdef HAVE_LIBCRYPTO

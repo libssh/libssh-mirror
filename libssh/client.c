@@ -35,6 +35,7 @@
 #include "libssh/packet.h"
 #include "libssh/socket.h"
 #include "libssh/session.h"
+#include "libssh/options.h"
 
 #define set_status(opt,status) do {\
         if (opt->callbacks && opt->callbacks->connect_status_function) \

@@ -22,6 +22,8 @@
  * MA 02111-1307, USA.
  */
 
+#include "config.h"
+
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -39,8 +41,12 @@
 #include "libssh/buffer.h"
 #include "libssh/keyfiles.h"
 #include "libssh/session.h"
+#include "libssh/wrapper.h"
+#include "libssh/options.h"
+
 /*todo: remove this include */
 #include "libssh/string.h"
+
 
 #ifdef HAVE_LIBGCRYPT
 #include <gcrypt.h>

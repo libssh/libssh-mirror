@@ -1,7 +1,7 @@
 /*
  * This file is part of the SSH Library
  *
- * Copyright (c) 2003      by Aris Adamantiadis
+ * Copyright (c) 2003,2009 by Aris Adamantiadis
  *
  * The SSH Library is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,11 +20,13 @@
  */
 
 /*
- * crypto.h is an include file for internal structures of libssh
- * It hasn't to be into the final development set of files (and btw
- * the filename would cause problems on most systems).
+ * crypto.h is an include file for internal cryptographic structures of libssh
  */
 
+#ifndef _CRYPTO_H_
+#define _CRYPTO_H_
+
+#include "config.h"
 #ifdef cbc_encrypt
 #undef cbc_encrypt
 #endif
@@ -32,7 +34,7 @@
 #undef cbc_decrypt
 #endif
 
-#ifdef GCRYPT
+#ifdef HAVE_LIBGCRYPT
 #include <gcrypt.h>
 #endif
 
@@ -66,3 +68,4 @@ struct crypto_struct {
 };
 
 /* vim: set ts=2 sw=2 et cindent: */
+#endif /* _CRYPTO_H_ */

@@ -27,6 +27,8 @@
  * @{
  */
 
+#include "config.h"
+
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -43,6 +45,7 @@
 #include "libssh/socket.h"
 #include "libssh/channels.h"
 #include "libssh/session.h"
+#include "libssh/options.h"
 
 #ifdef _WIN32
 

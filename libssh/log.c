@@ -27,6 +27,7 @@
 
 #include "libssh/priv.h"
 #include "libssh/session.h"
+#include "libssh/options.h"
 
 /**
  * @defgroup ssh_log SSH Logging

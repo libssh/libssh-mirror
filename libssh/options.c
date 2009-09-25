@@ -22,6 +22,7 @@
  * MA 02111-1307, USA.
  */
 
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -32,6 +33,7 @@
 #endif
 #include <sys/types.h>
 #include "libssh/priv.h"
+#include "libssh/options.h"
 
 /** \defgroup ssh_options SSH Options
  * \brief options settings for a new SSH session
