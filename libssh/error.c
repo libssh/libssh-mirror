@@ -76,13 +76,13 @@ const char *ssh_get_error(void *error) {
  *
  * @param  error        The SSH session pointer.
  *
- * \return SSH_NO_ERROR       No error occured\n
+ * \return SSH_NO_ERROR       No error occurred\n
  *         SSH_REQUEST_DENIED The last request was denied but situation is
  *                            recoverable\n
- *         SSH_FATAL          A fatal error occured. This could be an unexpected
+ *         SSH_FATAL          A fatal error occurred. This could be an unexpected
  *                            disconnection\n
  *
- *         \nOther error codes are internal but can be considered same than
+ *         Other error codes are internal but can be considered same than
  *         SSH_FATAL.
  */
 int ssh_get_error_code(void *error) {

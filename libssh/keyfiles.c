@@ -865,7 +865,7 @@ void privatekey_free(ssh_private_key prv) {
 /** \brief Retrieve a public key from a file
  * \param session the SSH session
  * \param filename Filename of the key
- * \param _type Pointer to a integer. If it is not null, it contains the type of the key after execution.
+ * \param type Pointer to a integer. If it is not null, it contains the type of the key after execution.
  * \return a SSH String containing the public key, or NULL if it failed.
  * \see string_free()
  * \see publickey_from_privatekey()

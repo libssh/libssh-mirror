@@ -997,7 +997,9 @@ int ssh_options_allow_ssh2(ssh_options opt, int allow) {
  *
  * @param opt           The options structure to use.
  *
- * @param callback      A callback function for the printing.
+ * @param cb      			A callback function for the printing.
+ *
+ * @param userdata			Pointer to user-provided data
  *
  * @return 0 on success, < 0 on error.
  *

@@ -96,7 +96,7 @@ struct ssh_string_struct *string_from_char(const char *what) {
 
 /**
  * \brief returns the size of a SSH string
- * \param str the input SSH string
+ * \param s the input SSH string
  * \return size of the content of str, 0 on error
  */
 size_t string_len(struct ssh_string_struct *s) {
@@ -109,7 +109,7 @@ size_t string_len(struct ssh_string_struct *s) {
 
 /**
  * \brief convert a SSH string to a C nul-terminated string
- * \param str the input SSH string
+ * \param s the input SSH string
  * \return a malloc'ed string pointer.
  * \warning If the input SSH string contains zeroes, some parts of
  * the output string may not be readable with regular libc functions.

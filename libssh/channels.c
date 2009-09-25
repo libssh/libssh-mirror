@@ -1229,13 +1229,13 @@ int channel_request_shell(ssh_channel channel) {
  *
  * @param channel       The channel to send the request.
  *
- * @param system        The subsystem to request (for example "sftp").
+ * @param subsys        The subsystem to request (for example "sftp").
  *
  * @return SSH_SUCCESS on success, SSH_ERROR on error.
  *
  * @warning You normally don't have to call it for sftp, see sftp_new().
  */
-int channel_request_subsystem(ssh_channel channel, const char *sys) {
+int channel_request_subsystem(ssh_channel channel, const char *subsys) {
   ssh_buffer buffer = NULL;
   ssh_string subsystem = NULL;
   int rc = SSH_ERROR;
@@ -1245,7 +1245,7 @@ int channel_request_subsystem(ssh_channel channel, const char *sys) {
     goto error;
   }
 
-  subsystem = string_from_char(sys);
+  subsystem = string_from_char(subsys);
   if (subsystem == NULL) {
     goto error;
   }

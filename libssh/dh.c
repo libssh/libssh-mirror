@@ -856,8 +856,6 @@ int ssh_get_pubkey_hash(ssh_session session, unsigned char **hash) {
   return MD5_DIGEST_LEN;
 }
 
-/** \addtogroup ssh_session
- * @{ */
 /**
  * @brief Deallocate the hash obtained by ssh_get_pubkey_hash.
  * This is required under Microsoft platform as this library might use a 
