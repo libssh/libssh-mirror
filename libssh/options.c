@@ -219,7 +219,7 @@ static char *get_username_from_uid(ssh_options opt, uid_t uid){
 #endif
 
 static int ssh_options_set_algo(ssh_options opt, int algo, const char *list) {
-  if ((!opt->use_nonexisting_algo) && !verify_existing_algo(algo, list)) {
+  if (!verify_existing_algo(algo, list)) {
     ssh_set_error(opt, SSH_REQUEST_DENIED,
         "Setting method: no algorithm for method \"%s\" (%s)\n",
         ssh_kex_nums[algo], list);
@@ -878,7 +878,7 @@ int ssh_options_set_wanted_algos(ssh_options opt, int algo, const char *list) {
     return -1;
   }
 
-  if ((!opt->use_nonexisting_algo) && !verify_existing_algo(algo, list)) {
+  if (!verify_existing_algo(algo, list)) {
     ssh_set_error(opt, SSH_REQUEST_DENIED, "Setting method: no algorithm "
         "for method \"%s\" (%s)\n", ssh_kex_nums[algo], list);
     return -1;

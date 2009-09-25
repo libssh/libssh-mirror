@@ -341,11 +341,7 @@ int set_kex(ssh_session session){
     int i;
     const char *wanted;
     enter_function();
-    /* the client might ask for a specific cookie to be sent. useful for server debugging */
-    if(options->wanted_cookie)
-        memcpy(client->cookie,options->wanted_cookie,16);
-    else
-        ssh_get_random(client->cookie,16,0);
+    ssh_get_random(client->cookie,16,0);
     client->methods=malloc(10 * sizeof(char **));
     if (client->methods == NULL) {
       ssh_set_error(session, SSH_FATAL, "No space left");

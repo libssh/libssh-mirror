@@ -24,7 +24,7 @@
 
 struct ssh_options_struct {
     struct error_struct error;
-    char *banner; /* explicit banner to send */
+    char *banner;
     char *username;
     char *host;
     char *bindaddr;
@@ -34,10 +34,7 @@ struct ssh_options_struct {
     char *known_hosts_file;
     socket_t fd; /* specificaly wanted file descriptor, don't connect host */
     int port;
-    int dont_verify_hostkey; /* Don't spare time, don't check host key ! unneeded to say it's dangerous and not safe */
-    int use_nonexisting_algo; /* if user sets a not supported algorithm for kex, don't complain */
     char *wanted_methods[10]; /* the kex methods can be choosed. better use the kex fonctions to do that */
-    void *wanted_cookie; /* wants a specific cookie to be sent ? if null, generate a new one */
     ssh_callbacks callbacks; /* Callbacks to user functions */
     long timeout; /* seconds */
     long timeout_usec;

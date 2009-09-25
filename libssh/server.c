@@ -285,15 +285,7 @@ static int server_set_kex(ssh_session  session) {
   char *wanted;
 
   ZERO_STRUCTP(server);
-  /*
-   * The program might ask for a specific cookie to be sent. Useful for server
-   * debugging
-   */
-  if (options->wanted_cookie) {
-    memcpy(server->cookie, options->wanted_cookie, 16);
-  } else {
-    ssh_get_random(server->cookie, 16, 0);
-  }
+  ssh_get_random(server->cookie, 16, 0);
 
   if (session->dsa_key != NULL && session->rsa_key != NULL) {
     if (ssh_options_set(options, SSH_OPTIONS_SERVER_HOSTKEY,

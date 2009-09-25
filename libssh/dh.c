@@ -1000,12 +1000,6 @@ int signature_verify(ssh_session session, ssh_string signature) {
 
   enter_function();
 
-  if (session->options->dont_verify_hostkey) {
-    ssh_log(session, SSH_LOG_FUNCTIONS, "Host key wasn't verified");
-    leave_function();
-    return 0;
-  }
-
   pubkey = publickey_from_string(session,session->next_crypto->server_pubkey);
   if(pubkey == NULL) {
     leave_function();
