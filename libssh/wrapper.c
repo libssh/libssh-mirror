@@ -406,7 +406,7 @@ static struct crypto_struct ssh_ciphertab[] = {
 #include <openssl/des.h>
 #endif
 
-#if (OPENSSL_VERSION_NUMBER<0x009070000)
+#if (OPENSSL_VERSION_NUMBER<0x00907000L)
 #define OLD_CRYPTO
 #endif
 
