@@ -50,7 +50,10 @@ typedef int (*ssh_auth_callback) (const char *prompt, char *buf, size_t len,
     int echo, int verify, void *userdata);
 typedef void (*ssh_log_callback) (ssh_session session, int priority,
     const char *message, void *userdata);
-
+/** this callback will be called with status going from 0.0 to 1.0 during
+ * connection */
+typedef void (*ssh_status_callback) (ssh_session session, float status,
+		void *userdata);
 struct ssh_callbacks_struct {
 	/** size of this structure. internal, shoud be set with ssh_callbacks_init()*/
 	size_t size;
