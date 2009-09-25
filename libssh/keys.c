@@ -101,10 +101,10 @@ ssh_public_key publickey_make_dss(ssh_session session, ssh_buffer buffer) {
 #ifdef HAVE_LIBGCRYPT
   gcry_sexp_build(&key->dsa_pub, NULL,
       "(public-key(dsa(p %b)(q %b)(g %b)(y %b)))",
-      string_len(p), p->string,
-      string_len(q), q->string,
-      string_len(g), g->string,
-      string_len(pubkey), pubkey->string);
+      string_len(p), string_data(p),
+      string_len(q), string_data(q),
+      string_len(g), string_data(g),
+      string_len(pubkey), string_data(pubkey));
   if (key->dsa_pub == NULL) {
     goto error;
   }
@@ -183,8 +183,8 @@ ssh_public_key publickey_make_rsa(ssh_session session, ssh_buffer buffer,
 #ifdef HAVE_LIBGCRYPT
   gcry_sexp_build(&key->rsa_pub, NULL,
       "(public-key(rsa(n %b)(e %b)))",
-      string_len(n), n->string,
-      string_len(e),e->string);
+      string_len(n), string_data(n),
+      string_len(e),string_data(e));
   if (key->rsa_pub == NULL) {
     goto error;
   }
@@ -374,10 +374,10 @@ ssh_public_key publickey_from_privatekey(ssh_private_key prv) {
 
       gcry_sexp_build(&key->dsa_pub, NULL,
           "(public-key(dsa(p %b)(q %b)(g %b)(y %b)))",
-          string_len(p), p->string,
-          string_len(q), q->string,
-          string_len(g), g->string,
-          string_len(y), y->string);
+          string_len(p), string_data(p),
+          string_len(q), string_data(q),
+          string_len(g), string_data(g),
+          string_len(y), string_data(y));
 
       string_burn(p);
       string_free(p);
@@ -433,8 +433,8 @@ ssh_public_key publickey_from_privatekey(ssh_private_key prv) {
 
       gcry_sexp_build(&key->rsa_pub, NULL,
           "(public-key(rsa(n %b)(e %b)))",
-          string_len(n), n->string,
-          string_len(e), e->string);
+          string_len(n), string_data(n),
+          string_len(e), string_data(e));
       if (key->rsa_pub == NULL) {
         goto error;
       }
@@ -930,7 +930,7 @@ SIGNATURE *signature_from_string(ssh_session session, ssh_string signature,
        * them to bignums (ou pas ;) */
 #ifdef HAVE_LIBGCRYPT
       if (gcry_sexp_build(&sig, NULL, "(sig-val(dsa(r %b)(s %b)))",
-            20 ,rs->string, 20, rs->string + 20)) {
+            20 ,string_data(rs), 20,(unsigned char *)string_data(rs) + 20)) {
         string_free(rs);
         signature_free(sign);
         return NULL;
@@ -1008,7 +1008,7 @@ SIGNATURE *signature_from_string(ssh_session session, ssh_string signature,
       sign->type = TYPE_RSA;
 #ifdef HAVE_LIBGCRYPT
       if (gcry_sexp_build(&sig, NULL, "(sig-val(rsa(s %b)))",
-          string_len(e), e->string)) {
+          string_len(e), string_data(e))) {
         signature_free(sign);
         string_free(e);
         return NULL;
@@ -1327,7 +1327,7 @@ ssh_string ssh_encrypt_rsa1(ssh_session session, ssh_string data, ssh_public_key
   gcry_sexp_t data_sexp;
 
   if (gcry_sexp_build(&data_sexp, NULL, "(data(flags pkcs1)(value %b))",
-      len, data->string)) {
+      len, string_data(data))) {
     ssh_set_error(session, SSH_FATAL, "RSA1 encrypt: libgcrypt error");
     return NULL;
   }

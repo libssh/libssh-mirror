@@ -166,7 +166,7 @@ static int asn1_check_sequence(ssh_buffer buffer) {
   size = asn1_get_len(buffer);
   if ((padding = buffer_get_len(buffer) - buffer->pos - size) > 0) {
     for (i = buffer_get_len(buffer) - buffer->pos - size,
-         j = buffer_get(buffer) + size + buffer->pos;
+         j = (unsigned char*)buffer_get(buffer) + size + buffer->pos;
          i;
          i--, j++)
     {
