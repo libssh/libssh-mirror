@@ -1,7 +1,7 @@
 project(libssh-headers C)
 
 set(libssh_HDRS
-  callbacks.h
+  callback.h
   libssh.h
   crypto.h
   ssh2.h
