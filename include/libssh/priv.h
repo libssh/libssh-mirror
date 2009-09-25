@@ -70,42 +70,6 @@ extern "C" {
 #include <sys/time.h>
 #endif
 
-/* poll support */
-#ifdef HAVE_POLL
-#include <poll.h>
-typedef struct pollfd ssh_pollfd_t;
-#else /* HAVE_POLL */
-typedef struct ssh_pollfd_struct {
-  socket_t fd;      /* file descriptor */
-  short events;     /* requested events */
-  short revents;    /* returned events */
-} ssh_pollfd_t;
-
-/* poll.c */
-#ifndef POLLIN
-# define POLLIN    0x001  /* There is data to read.  */
-#endif
-#ifndef POLLPRI
-#define POLLPRI   0x002  /* There is urgent data to read.  */
-#endif
-#ifndef POLLOUT
-#define POLLOUT   0x004  /* Writing now will not block.  */
-#endif
-
-#ifndef POLLERR
-#define POLLERR   0x008  /* Error condition.  */
-#endif
-#ifndef POLLHUP
-#define POLLHUP   0x010  /* Hung up.  */
-#endif
-#ifndef POLLNVAL
-#define POLLNVAL  0x020  /* Invalid polling request.  */
-#endif
-
-typedef unsigned long int nfds_t;
-#endif /* HAVE_POLL */
-
-
 /* i should remove it one day */
 typedef struct packet_struct {
 	int valid;
@@ -118,49 +82,14 @@ typedef struct kex_struct {
 	char **methods;
 } KEX;
 
-/* TODO: remove that include */
-#include "libssh/wrapper.h"
-
-struct ssh_public_key_struct {
-    int type;
-    const char *type_c; /* Don't free it ! it is static */
-#ifdef HAVE_LIBGCRYPT
-    gcry_sexp_t dsa_pub;
-    gcry_sexp_t rsa_pub;
-#elif HAVE_LIBCRYPTO
-    DSA *dsa_pub;
-    RSA *rsa_pub;
-#endif
-};
-
-struct ssh_private_key_struct {
-    int type;
-#ifdef HAVE_LIBGCRYPT
-    gcry_sexp_t dsa_priv;
-    gcry_sexp_t rsa_priv;
-#elif defined HAVE_LIBCRYPTO
-    DSA *dsa_priv;
-    RSA *rsa_priv;
-#endif
-};
-
-typedef struct signature_struct {
-    int type;
-#ifdef HAVE_LIBGCRYPT
-    gcry_sexp_t dsa_sign;
-    gcry_sexp_t rsa_sign;
-#elif defined HAVE_LIBCRYPTO
-    DSA_SIG *dsa_sign;
-    ssh_string rsa_sign;
-#endif
-} SIGNATURE;
-
-
 struct error_struct {
 /* error handling */
     int error_code;
     char error_buffer[ERROR_BUFFERLEN];
 };
+
+/* TODO: remove that include */
+#include "libssh/wrapper.h"
 
 struct ssh_crypto_struct {
     bignum e,f,x,k,y;
@@ -263,12 +192,6 @@ struct ssh_message_struct {
     struct ssh_service_request service_request;
 };
 
-
-
-/* session.c */
-
-void ssh_cleanup(ssh_session session);
-
 /* client.c */
 
 int ssh_send_banner(ssh_session session, int is_server);
@@ -280,42 +203,12 @@ int ssh_config_parse_file(ssh_options opt, const char *filename);
 /* errors.c */
 void ssh_set_error(void *error, int code, const char *descr, ...) PRINTF_ATTRIBUTE(3, 4);
 
-/* in dh.c */
-/* DH key generation */
-void ssh_print_bignum(const char *which,bignum num);
-int dh_generate_e(ssh_session session);
-int dh_generate_f(ssh_session session);
-int dh_generate_x(ssh_session session);
-int dh_generate_y(ssh_session session);
-
-int ssh_crypto_init(void);
-void ssh_crypto_finalize(void);
-
-ssh_string dh_get_e(ssh_session session);
-ssh_string dh_get_f(ssh_session session);
-int dh_import_f(ssh_session session,ssh_string f_string);
-int dh_import_e(ssh_session session, ssh_string e_string);
-void dh_import_pubkey(ssh_session session,ssh_string pubkey_string);
-int dh_build_k(ssh_session session);
-int make_sessionid(ssh_session session);
-/* add data for the final cookie */
-int hashbufin_add_cookie(ssh_session session, unsigned char *cookie);
-int hashbufout_add_cookie(ssh_session session);
-int generate_session_keys(ssh_session session);
-int sig_verify(ssh_session session, ssh_public_key pubkey,
-    SIGNATURE *signature, unsigned char *digest, int size);
-/* returns 1 if server signature ok, 0 otherwise. The NEXT crypto is checked, not the current one */
-int signature_verify(ssh_session session,ssh_string signature);
-bignum make_string_bn(ssh_string string);
-ssh_string make_bignum_string(bignum num);
-
 /* in crypt.c */
 uint32_t packet_decrypt_len(ssh_session session,char *crypted);
 int packet_decrypt(ssh_session session, void *packet,unsigned int len);
 unsigned char *packet_encrypt(ssh_session session,void *packet,unsigned int len);
  /* it returns the hmac buffer if exists*/
 int packet_hmac_verify(ssh_session session,ssh_buffer buffer,unsigned char *mac);
-
 
 /* connect.c */
 int ssh_regex_init(void);
@@ -335,36 +228,6 @@ char **space_tokenize(const char *chain);
 int ssh_get_kex1(ssh_session session);
 char *ssh_find_matching(const char *in_d, const char *what_d);
 
-/* in keys.c */
-const char *ssh_type_to_char(int type);
-int ssh_type_from_name(const char *name);
-ssh_buffer ssh_userauth_build_digest(ssh_session session, ssh_message msg, char *service);
-
-ssh_private_key privatekey_make_dss(ssh_session session, ssh_buffer buffer);
-ssh_private_key privatekey_make_rsa(ssh_session session, ssh_buffer buffer,
-    const char *type);
-ssh_private_key privatekey_from_string(ssh_session session, ssh_string privkey_s);
-
-ssh_public_key publickey_make_dss(ssh_session session, ssh_buffer buffer);
-ssh_public_key publickey_make_rsa(ssh_session session, ssh_buffer buffer, int type);
-ssh_public_key publickey_from_string(ssh_session session, ssh_string pubkey_s);
-SIGNATURE *signature_from_string(ssh_session session, ssh_string signature,ssh_public_key pubkey,int needed_type);
-void signature_free(SIGNATURE *sign);
-ssh_string ssh_do_sign_with_agent(struct ssh_session_struct *session,
-    struct ssh_buffer_struct *buf, struct ssh_public_key_struct *publickey);
-ssh_string ssh_do_sign(ssh_session session,ssh_buffer sigbuf,
-        ssh_private_key privatekey);
-ssh_string ssh_sign_session_id(ssh_session session, ssh_private_key privatekey);
-ssh_string ssh_encrypt_rsa1(ssh_session session, ssh_string data, ssh_public_key key);
-
-
-/* options.c */
-
-/* this function must be called when no specific username has been asked. it has to guess it */
-int ssh_options_default_username(ssh_options opt);
-int ssh_options_default_ssh_dir(ssh_options opt);
-int ssh_options_default_known_hosts_file(ssh_options opt);
-
 /* in base64.c */
 ssh_buffer base64_to_bin(const char *source);
 unsigned char *bin_to_base64(const unsigned char *source, int len);
@@ -372,12 +235,6 @@ unsigned char *bin_to_base64(const unsigned char *source, int len);
 /* gzip.c */
 int compress_buffer(ssh_session session,ssh_buffer buf);
 int decompress_buffer(ssh_session session,ssh_buffer buf, size_t maxlen);
-
-/* wrapper.c */
-int crypt_set_algorithms(ssh_session );
-int crypt_set_algorithms_server(ssh_session session);
-struct ssh_crypto_struct *crypto_new(void);
-void crypto_free(struct ssh_crypto_struct *crypto);
 
 /* crc32.c */
 uint32_t ssh_crc32(const char *buf, uint32_t len);
@@ -388,49 +245,6 @@ int ssh_userauth1_offer_pubkey(ssh_session session, const char *username,
         int type, ssh_string pubkey);
 int ssh_userauth1_password(ssh_session session, const char *username,
         const char *password);
-/* in misc.c */
-/* gets the user home dir. */
-char *ssh_get_user_home_dir(void);
-int ssh_file_readaccess_ok(const char *file);
-
-/* macro for byte ordering */
-uint64_t ntohll(uint64_t);
-#define htonll(x) ntohll(x)
-
-/* list processing */
-
-struct ssh_list {
-  struct ssh_iterator *root;
-  struct ssh_iterator *end;
-};
-
-struct ssh_iterator {
-  struct ssh_iterator *next;
-  const void *data;
-};
-
-struct ssh_list *ssh_list_new(void);
-void ssh_list_free(struct ssh_list *list);
-struct ssh_iterator *ssh_list_get_iterator(const struct ssh_list *list);
-int ssh_list_add(struct ssh_list *list, const void *data);
-void ssh_list_remove(struct ssh_list *list, struct ssh_iterator *iterator);
-
-/** @brief fetch the head element of a list and remove it from list
- * @param list the ssh_list to use
- * @return the first element of the list
- */
-const void *_ssh_list_get_head(struct ssh_list *list);
-
-#define ssh_iterator_value(type, iterator)\
-  ((type)((iterator)->data))
-/** @brief fetch the head element of a list and remove it from list
- * @param type type of the element to return
- * @param list the ssh_list to use
- * @return the first element of the list
- */
-#define ssh_list_get_head(type, ssh_list)\
-  ((type)_ssh_list_get_head(ssh_list))
-
 
 /* channels1.c */
 int channel_open_session1(ssh_channel channel);

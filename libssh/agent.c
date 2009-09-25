@@ -53,6 +53,7 @@
 #include "libssh/socket.h"
 #include "libssh/buffer.h"
 #include "libssh/session.h"
+#include "libssh/keys.h"
 
 /* macro to check for "agent failure" message */
 #define agent_failed(x) \

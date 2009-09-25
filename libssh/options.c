@@ -34,6 +34,7 @@
 #include <sys/types.h>
 #include "libssh/priv.h"
 #include "libssh/options.h"
+#include "libssh/misc.h"
 
 /** \defgroup ssh_options SSH Options
  * \brief options settings for a new SSH session

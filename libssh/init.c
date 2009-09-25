@@ -21,8 +21,10 @@
  * MA 02111-1307, USA.
  */
 
+#include "config.h"
 #include "libssh/priv.h"
 #include "libssh/socket.h"
+#include "libssh/dh.h"
 
 #ifdef _WIN32
 #include <winsock2.h>

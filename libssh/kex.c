@@ -39,6 +39,8 @@
 #include "libssh/session.h"
 #include "libssh/wrapper.h"
 #include "libssh/options.h"
+#include "libssh/keys.h"
+#include "libssh/dh.h"
 
 #ifdef HAVE_LIBGCRYPT
 #define BLOWFISH "blowfish-cbc,"

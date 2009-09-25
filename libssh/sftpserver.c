@@ -34,6 +34,7 @@
 #include "libssh/ssh2.h"
 #include "libssh/priv.h"
 #include "libssh/buffer.h"
+#include "libssh/misc.h"
 
 SFTP_CLIENT_MESSAGE *sftp_get_client_message(SFTP_SESSION *sftp) {
   SFTP_PACKET *packet;

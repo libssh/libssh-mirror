@@ -49,6 +49,7 @@
 #include "libssh/buffer.h"
 #include "libssh/channels.h"
 #include "libssh/session.h"
+#include "libssh/misc.h"
 
 #ifdef WITH_SFTP
 

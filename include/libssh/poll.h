@@ -21,8 +21,47 @@
 
 #ifndef POLL_H_
 #define POLL_H_
+#include "config.h"
+
+#ifdef HAVE_POLL
+
+#include <poll.h>
+typedef struct pollfd ssh_pollfd_t;
+
+#else /* HAVE_POLL */
+
+/* poll emulation support */
+
+typedef struct ssh_pollfd_struct {
+  socket_t fd;      /* file descriptor */
+  short events;     /* requested events */
+  short revents;    /* returned events */
+} ssh_pollfd_t;
 
 /* poll.c */
+#ifndef POLLIN
+# define POLLIN    0x001  /* There is data to read.  */
+#endif
+#ifndef POLLPRI
+#define POLLPRI   0x002  /* There is urgent data to read.  */
+#endif
+#ifndef POLLOUT
+#define POLLOUT   0x004  /* Writing now will not block.  */
+#endif
+
+#ifndef POLLERR
+#define POLLERR   0x008  /* Error condition.  */
+#endif
+#ifndef POLLHUP
+#define POLLHUP   0x010  /* Hung up.  */
+#endif
+#ifndef POLLNVAL
+#define POLLNVAL  0x020  /* Invalid polling request.  */
+#endif
+
+typedef unsigned long int nfds_t;
+#endif /* HAVE_POLL */
+
 int ssh_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout);
 typedef struct ssh_poll_ctx SSH_POLL_CTX;
 typedef struct ssh_poll SSH_POLL;
@@ -57,5 +96,7 @@ void ssh_poll_ctx_free(SSH_POLL_CTX *ctx);
 int ssh_poll_ctx_add(SSH_POLL_CTX *ctx, SSH_POLL *p);
 void ssh_poll_ctx_remove(SSH_POLL_CTX *ctx, SSH_POLL *p);
 int ssh_poll_ctx(SSH_POLL_CTX *ctx, int timeout);
+
+
 
 #endif /* POLL_H_ */

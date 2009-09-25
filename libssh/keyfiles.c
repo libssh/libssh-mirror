@@ -43,6 +43,8 @@
 #include "libssh/session.h"
 #include "libssh/wrapper.h"
 #include "libssh/options.h"
+#include "libssh/misc.h"
+#include "libssh/keys.h"
 
 /*todo: remove this include */
 #include "libssh/string.h"

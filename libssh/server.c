@@ -46,6 +46,9 @@
 #include "libssh/channels.h"
 #include "libssh/session.h"
 #include "libssh/options.h"
+#include "libssh/misc.h"
+#include "libssh/keys.h"
+#include "libssh/dh.h"
 
 #ifdef _WIN32
 

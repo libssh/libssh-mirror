@@ -54,6 +54,8 @@
 #include "libssh/buffer.h"
 #include "libssh/session.h"
 #include "libssh/options.h"
+#include "libssh/keys.h"
+#include "libssh/dh.h"
 
 /* todo: remove it */
 #include "libssh/string.h"

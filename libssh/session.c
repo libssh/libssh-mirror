@@ -33,7 +33,7 @@
 #include "libssh/packet.h"
 #include "libssh/session.h"
 #include "libssh/options.h"
-
+#include "libssh/misc.h"
 
 #define FIRST_CHANNEL 42 // why not ? it helps to find bugs.
 

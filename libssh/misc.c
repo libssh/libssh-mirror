@@ -43,6 +43,7 @@
 #endif
 
 #include "libssh/priv.h"
+#include "libssh/misc.h"
 
 #ifdef HAVE_LIBGCRYPT
 #define GCRYPT_STRING "/gnutls"

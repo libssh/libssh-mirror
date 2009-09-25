@@ -33,6 +33,8 @@
 #include "libssh/buffer.h"
 #include "libssh/agent.h"
 #include "libssh/session.h"
+#include "libssh/keys.h"
+#include "libssh/dh.h"
 
 /** \addtogroup ssh_auth
  * @{

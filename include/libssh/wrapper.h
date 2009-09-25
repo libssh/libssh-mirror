@@ -92,7 +92,6 @@ typedef BN_CTX* bignum_CTX;
 
 #endif /* OPENSSL_CRYPTO */
 
-/* wrapper.c */
 MD5CTX md5_init(void);
 void md5_update(MD5CTX c, const void *data, unsigned long len);
 void md5_final(unsigned char *md,MD5CTX c);
@@ -105,6 +104,11 @@ void sha1(unsigned char *digest,int len,unsigned char *hash);
 HMACCTX hmac_init(const void *key,int len,int type);
 void hmac_update(HMACCTX c, const void *data, unsigned long len);
 void hmac_final(HMACCTX ctx,unsigned char *hashmacbuf,unsigned int *len);
+
+int crypt_set_algorithms(ssh_session );
+int crypt_set_algorithms_server(ssh_session session);
+struct ssh_crypto_struct *crypto_new(void);
+void crypto_free(struct ssh_crypto_struct *crypto);
 
 
 #endif /* WRAPPER_H_ */
