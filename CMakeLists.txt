@@ -38,14 +38,20 @@ include(MacroCopyFile)
 # search for libraries
 find_package(ZLIB REQUIRED)
 
-find_package(OpenSSL)
-
-if (NOT CRYPTO_FOUND)
-  find_package(GCrypt)
+if (WITH_GCRYPT)
+  find_package(GCrypt REQUIRED)
   if (NOT GCRYPT_FOUND)
-    message(FATAL_ERROR "Could not find OpenSSL or GCrypt")
+    message(FATAL_ERROR "Could not find GCrypt")
   endif (NOT GCRYPT_FOUND)
-endif (NOT CRYPTO_FOUND)
+else (WITH_GCRYPT)
+  find_package(OpenSSL)
+  if (NOT CRYPTO_FOUND)
+    find_package(GCrypt)
+    if (NOT GCRYPT_FOUND)
+      message(FATAL_ERROR "Could not find OpenSSL or GCrypt")
+    endif (NOT GCRYPT_FOUND)
+  endif (NOT CRYPTO_FOUND)
+endif(WITH_GCRYPT)
 
 # config.h checks
 include(ConfigureChecks.cmake)
