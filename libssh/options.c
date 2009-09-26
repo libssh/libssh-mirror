@@ -237,38 +237,38 @@ static int ssh_options_set_algo(ssh_options opt, int algo, const char *list) {
 }
 
 static char *dir_expand_dup(ssh_options opt, const char *value, int allowsshdir) {
-  char *n;
+	char *new;
 
-  if (value[0] == '~' && value[1] == '/') {
-    const char *homedir = ssh_get_user_home_dir();
-    size_t lv = strlen(value + 1), lh = strlen(homedir);
+	if (value[0] == '~' && value[1] == '/') {
+		const char *homedir = ssh_get_user_home_dir();
+		size_t lv = strlen(value + 1), lh = strlen(homedir);
 
-    n = malloc(lv + lh + 1);
-    if (n == NULL)
-      return NULL;
-    memcpy(n, homedir, lh);
-    memcpy(n + lh + 1, value + 1, lv + 1);
-    return n;
-  }
-  if (allowsshdir && strncmp(value, "SSH_DIR/", 8) == 0) {
-    size_t lv, ls;
-    if (opt->ssh_dir == NULL) {
-      if (ssh_options_set(opt, SSH_OPTIONS_SSH_DIR, NULL) < 0)
-	return NULL;
-    }
+		new = malloc(lv + lh + 1);
+		if (new == NULL)
+			return NULL;
+		memcpy(new, homedir, lh);
+		memcpy(new + lh, value + 1, lv + 1);
+		return new;
+	}
+	if (allowsshdir && strncmp(value, "SSH_DIR/", 8) == 0) {
+		size_t lv, ls;
+		if (opt->ssh_dir == NULL) {
+			if (ssh_options_set(opt, SSH_OPTIONS_SSH_DIR, NULL) < 0)
+				return NULL;
+		}
 
-    value += 7;
-    lv = strlen(value);
-    ls = strlen(opt->ssh_dir);
+		value += 7;
+		lv = strlen(value);
+		ls = strlen(opt->ssh_dir);
 
-    n = malloc(lv + ls + 1);
-    if (n == NULL)
-      return NULL;
-    memcpy(n, opt->ssh_dir, ls);
-    memcpy(n + ls + 1, value, lv + 1);
-    return n;
-  }
-  return strdup(value);
+		new = malloc(lv + ls + 1);
+		if (new == NULL)
+			return NULL;
+		memcpy(new, opt->ssh_dir, ls);
+		memcpy(new + ls, value, lv + 1);
+		return new;
+	}
+	return strdup(value);
 }
 
 /**
