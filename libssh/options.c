@@ -1332,7 +1332,7 @@ int ssh_options_parse_config(ssh_options opt, const char *filename) {
   if (expanded_filename == NULL)
     return -1;
 
-  r = ssh_config_parse_file(opt, filename);
+  r = ssh_config_parse_file(opt, expanded_filename);
   free(expanded_filename);
   return r;
 }
