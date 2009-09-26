@@ -41,6 +41,7 @@
 #include "libssh/socket.h"
 #include "libssh/channels.h"
 #include "libssh/session.h"
+#include "libssh/messages.h"
 
 /* XXX include selected mac size */
 static int macsize=SHA_DIGEST_LEN;

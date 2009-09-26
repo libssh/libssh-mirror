@@ -22,6 +22,13 @@
 #ifndef PACKET_H_
 #define PACKET_H_
 
+/* this structure should go someday */
+typedef struct packet_struct {
+	int valid;
+	uint32_t len;
+	uint8_t type;
+} PACKET;
+
 void packet_parse(ssh_session session);
 int packet_send(ssh_session session);
 

@@ -70,13 +70,6 @@ extern "C" {
 #include <sys/time.h>
 #endif
 
-/* i should remove it one day */
-typedef struct packet_struct {
-	int valid;
-	uint32_t len;
-	uint8_t type;
-} PACKET;
-
 typedef struct kex_struct {
 	unsigned char cookie[16];
 	char **methods;
@@ -91,28 +84,6 @@ struct error_struct {
 /* TODO: remove that include */
 #include "libssh/wrapper.h"
 
-struct ssh_crypto_struct {
-    bignum e,f,x,k,y;
-    unsigned char session_id[SHA_DIGEST_LEN];
-
-    unsigned char encryptIV[SHA_DIGEST_LEN*2];
-    unsigned char decryptIV[SHA_DIGEST_LEN*2];
-
-    unsigned char decryptkey[SHA_DIGEST_LEN*2];
-    unsigned char encryptkey[SHA_DIGEST_LEN*2];
-
-    unsigned char encryptMAC[SHA_DIGEST_LEN];
-    unsigned char decryptMAC[SHA_DIGEST_LEN];
-    unsigned char hmacbuf[EVP_MAX_MD_SIZE];
-    struct crypto_struct *in_cipher, *out_cipher; /* the cipher structures/objects */
-    ssh_string server_pubkey;
-    const char *server_pubkey_type;
-    int do_compress_out; /* idem */
-    int do_compress_in; /* don't set them, set the option instead */
-    void *compress_out_ctx; /* don't touch it */
-    void *compress_in_ctx; /* really, don't */
-};
-
 struct ssh_keys_struct {
   const char *privatekey;
   const char *publickey;
@@ -120,14 +91,6 @@ struct ssh_keys_struct {
 
 struct ssh_message_struct;
 
-struct ssh_kbdint_struct {
-    uint32_t nprompts;
-    char *name;
-    char *instruction;
-    char **prompts;
-    unsigned char *echo; /* bool array */
-    char **answers;
-};
 
 /* server data */
 
@@ -139,58 +102,6 @@ struct ssh_bind_struct {
     int toaccept;
 };
 
-struct ssh_auth_request {
-    char *username;
-    int method;
-    char *password;
-    struct ssh_public_key_struct *public_key;
-    char signature_state;
-};
-
-struct ssh_channel_request_open {
-    int type;
-    uint32_t sender;
-    uint32_t window;
-    uint32_t packet_size;
-    char *originator;
-    uint16_t originator_port;
-    char *destination;
-    uint16_t destination_port;
-};
-
-struct ssh_service_request {
-    char *service;
-};
-
-struct ssh_channel_request {
-    int type;
-    ssh_channel channel;
-    uint8_t want_reply;
-    /* pty-req type specifics */
-    char *TERM;
-    uint32_t width;
-    uint32_t height;
-    uint32_t pxwidth;
-    uint32_t pxheight;
-    ssh_string modes;
-
-    /* env type request */
-    char *var_name;
-    char *var_value;
-    /* exec type request */
-    char *command;
-    /* subsystem */
-    char *subsystem;
-};
-
-struct ssh_message_struct {
-    ssh_session session;
-    int type;
-    struct ssh_auth_request auth_request;
-    struct ssh_channel_request_open channel_request_open;
-    struct ssh_channel_request channel_request;
-    struct ssh_service_request service_request;
-};
 
 /* client.c */
 
@@ -258,11 +169,6 @@ int channel_write1(ssh_channel channel, const void *data, int len);
 
 /* match.c */
 int match_hostname(const char *host, const char *pattern, unsigned int len);
-
-/* messages.c */
-
-void message_handle(ssh_session session, uint32_t type);
-int ssh_execute_message_callbacks(ssh_session session);
 
 /* log.c */
 

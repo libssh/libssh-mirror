@@ -40,6 +40,7 @@
 #include "libssh/channels.h"
 #include "libssh/session.h"
 #include "libssh/misc.h"
+#include "libssh/messages.h"
 
 #define WINDOWBASE 128000
 #define WINDOWLIMIT (WINDOWBASE/2)

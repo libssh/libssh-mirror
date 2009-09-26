@@ -37,6 +37,29 @@
 #ifdef HAVE_LIBGCRYPT
 #include <gcrypt.h>
 #endif
+#include "libssh/wrapper.h"
+
+struct ssh_crypto_struct {
+    bignum e,f,x,k,y;
+    unsigned char session_id[SHA_DIGEST_LEN];
+
+    unsigned char encryptIV[SHA_DIGEST_LEN*2];
+    unsigned char decryptIV[SHA_DIGEST_LEN*2];
+
+    unsigned char decryptkey[SHA_DIGEST_LEN*2];
+    unsigned char encryptkey[SHA_DIGEST_LEN*2];
+
+    unsigned char encryptMAC[SHA_DIGEST_LEN];
+    unsigned char decryptMAC[SHA_DIGEST_LEN];
+    unsigned char hmacbuf[EVP_MAX_MD_SIZE];
+    struct crypto_struct *in_cipher, *out_cipher; /* the cipher structures/objects */
+    ssh_string server_pubkey;
+    const char *server_pubkey_type;
+    int do_compress_out; /* idem */
+    int do_compress_in; /* don't set them, set the option instead */
+    void *compress_out_ctx; /* don't touch it */
+    void *compress_in_ctx; /* really, don't */
+};
 
 struct crypto_struct {
     const char *name; /* ssh name of the algorithm */

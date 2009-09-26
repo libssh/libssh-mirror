@@ -49,6 +49,7 @@
 #include "libssh/misc.h"
 #include "libssh/keys.h"
 #include "libssh/dh.h"
+#include "libssh/messages.h"
 
 #ifdef _WIN32
 

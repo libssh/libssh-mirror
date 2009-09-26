@@ -1018,6 +1018,15 @@ int ssh_userauth_autopubkey(ssh_session session, const char *passphrase) {
   return SSH_AUTH_DENIED;
 }
 
+struct ssh_kbdint_struct {
+    uint32_t nprompts;
+    char *name;
+    char *instruction;
+    char **prompts;
+    unsigned char *echo; /* bool array */
+    char **answers;
+};
+
 static ssh_kbdint kbdint_new(void) {
   ssh_kbdint kbd;
 

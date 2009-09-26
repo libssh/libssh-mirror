@@ -35,6 +35,7 @@
 #include "libssh/session.h"
 #include "libssh/keys.h"
 #include "libssh/dh.h"
+#include "libssh/messages.h"
 
 /** \addtogroup ssh_auth
  * @{

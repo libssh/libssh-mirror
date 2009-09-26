@@ -22,6 +22,9 @@
 #ifndef SESSION_H_
 #define SESSION_H_
 #include "libssh/priv.h"
+#include "libssh/packet.h"
+
+typedef struct ssh_kbdint_struct* ssh_kbdint;
 
 struct ssh_session_struct {
     struct error_struct error;
