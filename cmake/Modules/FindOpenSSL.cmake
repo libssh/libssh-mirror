@@ -100,6 +100,7 @@ else (OPENSSL_LIBRARIES AND OPENSSL_INCLUDE_DIRS)
       libeay32
     PATHS
       ${_OPENSSL_LIBDIR}
+      /lib
       /usr/lib
       /usr/local/lib
       /usr/local/ssl/lib
