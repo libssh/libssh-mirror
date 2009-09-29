@@ -333,7 +333,7 @@ LIBSSH_API int channel_request_pty_size(ssh_channel channel, const char *term,
 LIBSSH_API int channel_request_shell(ssh_channel channel);
 LIBSSH_API int channel_request_send_signal(ssh_channel channel, const char *signal);
 LIBSSH_API int channel_request_sftp(ssh_channel channel);
-LIBSSH_API int channel_request_subsystem(ssh_channel channel, const char *system);
+LIBSSH_API int channel_request_subsystem(ssh_channel channel, const char *subsystem);
 LIBSSH_API int channel_request_x11(ssh_channel channel, int single_connection, const char *protocol,
     const char *cookie, int screen_number);
 LIBSSH_API int channel_send_eof(ssh_channel channel);
