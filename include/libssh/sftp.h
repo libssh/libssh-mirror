@@ -399,7 +399,7 @@ LIBSSH_API int sftp_file_close(SFTP_FILE *file) SFTP_DEPRECATED;
  *
  * @param file          The file to be opened.
  *
- * @param access        Is one of O_RDONLY, O_WRONLY or O_RDWR which request
+ * @param accesstype        Is one of O_RDONLY, O_WRONLY or O_RDWR which request
  *                      opening  the  file  read-only,write-only or read/write.
  *                      Acesss may also be bitwise-or'd with one or  more of
  *                      the following:
@@ -418,7 +418,7 @@ LIBSSH_API int sftp_file_close(SFTP_FILE *file) SFTP_DEPRECATED;
  * @return              A sftp file handle, NULL on error with ssh and sftp
  *                      error set.
  */
-LIBSSH_API SFTP_FILE *sftp_open(SFTP_SESSION *session, const char *file, int access,
+LIBSSH_API SFTP_FILE *sftp_open(SFTP_SESSION *session, const char *file, int accesstype,
     mode_t mode);
 
 LIBSSH_API void sftp_file_set_nonblocking(SFTP_FILE *handle);
@@ -730,9 +730,9 @@ LIBSSH_API SFTP_STATVFS *sftp_fstatvfs(SFTP_FILE *file);
 /**
  * @brief Free the memory of an allocated statvfs.
  *
- * @param  statvfs      The statvfs to free.
+ * @param  statvfs_o      The statvfs to free.
  */
-LIBSSH_API void sftp_statvfs_free(SFTP_STATVFS *statvfs);
+LIBSSH_API void sftp_statvfs_free(SFTP_STATVFS *statvfs_o);
 
 /**
  * @brief Canonicalize a sftp path.
