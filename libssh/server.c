@@ -249,7 +249,7 @@ ssh_session ssh_bind_accept(SSH_BIND *ssh_bind) {
     ssh_cleanup(session);
     return NULL;
   }
-
+  session->log_verbosity = session->options->log_verbosity;
   ssh_socket_free(session->socket);
   session->socket = ssh_socket_new(session);
   if (session->socket == NULL) {
