@@ -48,8 +48,6 @@ if (UNIX AND NOT WIN32)
       add_definitions(-D_FORTIFY_SOURCE=2)
     endif (WITH_FORTIFY_SOURCE)
 
-    # Set linker flags
-    set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--as-needed")
   endif (CMAKE_COMPILER_IS_GNUCC)
 endif (UNIX AND NOT WIN32)
 
