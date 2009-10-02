@@ -27,12 +27,10 @@
 #include "libssh/libssh.h"
 #include "libssh/priv.h"
 #include "libssh/server.h"
-#include "libssh/callback.h"
 #include "libssh/socket.h"
 #include "libssh/agent.h"
 #include "libssh/packet.h"
 #include "libssh/session.h"
-#include "libssh/options.h"
 #include "libssh/misc.h"
 
 #define FIRST_CHANNEL 42 // why not ? it helps to find bugs.
@@ -60,16 +58,10 @@ ssh_session ssh_new(void) {
     goto err;
   }
 
-  session->maxchannel = FIRST_CHANNEL;
   session->socket = ssh_socket_new(session);
   if (session->socket == NULL) {
     goto err;
   }
-
-  session->alive = 0;
-  session->auth_methods = 0;
-  session->blocking = 1;
-  session->log_indent = 0;
 
   session->out_buffer = buffer_new();
   if (session->out_buffer == NULL) {
@@ -80,6 +72,22 @@ ssh_session ssh_new(void) {
   if (session->in_buffer == NULL) {
     goto err;
   }
+
+  session->alive = 0;
+  session->auth_methods = 0;
+  session->blocking = 1;
+  session->log_indent = 0;
+  session->maxchannel = FIRST_CHANNEL;
+
+  /* options */
+  session->port = 22;
+  session->fd = -1;
+  session->ssh2 = 1;
+#ifdef WITH_SSH1
+  session->ssh1 = 1;
+#else
+  session->ssh1 = 0;
+#endif
 
 #ifndef _WIN32
     session->agent = agent_new(session);
@@ -142,12 +150,23 @@ void ssh_cleanup(ssh_session session) {
     }
     ssh_list_free(session->ssh_message_list);
   }
-  ssh_options_free(session->options);
+
+  /* options */
+  SAFE_FREE(session->username);
+  SAFE_FREE(session->host);
+  SAFE_FREE(session->identity);
+  SAFE_FREE(session->sshdir);
+  SAFE_FREE(session->knownhosts);
+
+  for (i = 0; i < 10; i++) {
+    if (session->wanted_methods[i]) {
+      SAFE_FREE(session->wanted_methods[i]);
+    }
+  }
 
   /* burn connection, it could hang sensitive datas */
   ZERO_STRUCTP(session);
   SAFE_FREE(session);
-  /* FIXME: leave_function(); ??? */
 }
 
 /** \brief disconnect impolitely from remote host
@@ -177,8 +196,7 @@ void ssh_set_options(ssh_session session, ssh_options options) {
     return;
   }
 
-  session->options = options;
-  session->log_verbosity = options->log_verbosity;
+  return;
 }
 
 /** \brief set the session in blocking/nonblocking mode

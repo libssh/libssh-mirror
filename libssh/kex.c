@@ -38,7 +38,6 @@
 #include "libssh/packet.h"
 #include "libssh/session.h"
 #include "libssh/wrapper.h"
-#include "libssh/options.h"
 #include "libssh/keys.h"
 #include "libssh/dh.h"
 
@@ -339,7 +338,6 @@ void ssh_list_kex(ssh_session session, KEX *kex) {
 int set_kex(ssh_session session){
     KEX *server = &session->server_kex;
     KEX *client=&session->client_kex;
-    ssh_options options=session->options;
     int i;
     const char *wanted;
     enter_function();
@@ -352,7 +350,7 @@ int set_kex(ssh_session session){
     }
     memset(client->methods,0,10*sizeof(char **));
     for (i=0;i<10;i++){
-        if(!(wanted=options->wanted_methods[i]))
+        if(!(wanted=session->wanted_methods[i]))
             wanted=default_methods[i];
         client->methods[i]=ssh_find_matching(server->methods[i],wanted);
         if(!client->methods[i] && i < SSH_LANG_C_S){

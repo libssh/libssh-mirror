@@ -95,11 +95,21 @@ struct ssh_message_struct;
 /* server data */
 
 struct ssh_bind_struct {
-    struct error_struct error;
-    socket_t bindfd;
-    ssh_options options;
-    int blocking;
-    int toaccept;
+  struct error_struct error;
+
+  ssh_callbacks callbacks; /* Callbacks to user functions */
+
+  /* options */
+  char *wanted_methods[10];
+  char *banner;
+  char *dsakey;
+  char *rsakey;
+  char *bindaddr;
+  socket_t bindfd;
+  unsigned int bindport;
+
+  int blocking;
+  int toaccept;
 };
 
 

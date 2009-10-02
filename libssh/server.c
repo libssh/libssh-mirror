@@ -74,7 +74,7 @@ static char *hstrerror(int h_errno_val) {
 #endif /* _WIN32 */
 
 /* TODO FIXME: must use getaddrinfo */
-static socket_t bind_socket(SSH_BIND *ssh_bind, const char *hostname,
+static socket_t bind_socket(SSH_BIND *sshbind, const char *hostname,
     int port) {
   struct sockaddr_in myaddr;
   struct hostent *hp=NULL;
@@ -83,7 +83,7 @@ static socket_t bind_socket(SSH_BIND *ssh_bind, const char *hostname,
 
   s = socket(PF_INET, SOCK_STREAM, 0);
   if (s < 0) {
-    ssh_set_error(ssh_bind, SSH_FATAL, "%s", strerror(errno));
+    ssh_set_error(sshbind, SSH_FATAL, "%s", strerror(errno));
     return -1;
   }
 
@@ -92,7 +92,7 @@ static socket_t bind_socket(SSH_BIND *ssh_bind, const char *hostname,
 #endif
 
   if (hp == NULL) {
-    ssh_set_error(ssh_bind, SSH_FATAL,
+    ssh_set_error(sshbind, SSH_FATAL,
         "Resolving %s: %s", hostname, hstrerror(h_errno));
     close(s);
     return -1;
@@ -104,14 +104,14 @@ static socket_t bind_socket(SSH_BIND *ssh_bind, const char *hostname,
   myaddr.sin_port = htons(port);
 
   if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0) {
-    ssh_set_error(ssh_bind, SSH_FATAL,
+    ssh_set_error(sshbind, SSH_FATAL,
         "Setting socket options failed: %s", hstrerror(h_errno));
     close(s);
     return -1;
   }
 
   if (bind(s, (struct sockaddr *) &myaddr, sizeof(myaddr)) < 0) {
-    ssh_set_error(ssh_bind, SSH_FATAL, "Binding to %s:%d: %s",
+    ssh_set_error(sshbind, SSH_FATAL, "Binding to %s:%d: %s",
         hostname,
         port,
         strerror(errno));
@@ -135,35 +135,27 @@ SSH_BIND *ssh_bind_new(void) {
   return ptr;
 }
 
-void ssh_bind_set_options(SSH_BIND *ssh_bind, ssh_options options) {
-  ssh_bind->options = options;
-}
-
-int ssh_bind_listen(SSH_BIND *ssh_bind) {
+int ssh_bind_listen(SSH_BIND *sshbind) {
   const char *host;
   int fd;
-
-  if (ssh_bind->options == NULL) {
-    return -1;
-  }
 
   if (ssh_init() < 0) {
     return -1;
   }
 
-  host = ssh_bind->options->bindaddr;
+  host = sshbind->bindaddr;
   if (host == NULL) {
     host = "0.0.0.0";
   }
 
-  fd = bind_socket(ssh_bind, host, ssh_bind->options->bindport);
+  fd = bind_socket(sshbind, host, sshbind->bindport);
   if (fd < 0) {
     return -1;
   }
-  ssh_bind->bindfd = fd;
+  sshbind->bindfd = fd;
 
   if (listen(fd, 10) < 0) {
-    ssh_set_error(ssh_bind, SSH_FATAL,
+    ssh_set_error(sshbind, SSH_FATAL,
         "Listening to socket %d: %s",
         fd, strerror(errno));
     close(fd);
@@ -173,58 +165,59 @@ int ssh_bind_listen(SSH_BIND *ssh_bind) {
   return 0;
 }
 
-void ssh_bind_set_blocking(SSH_BIND *ssh_bind, int blocking) {
-  ssh_bind->blocking = blocking ? 1 : 0;
+void ssh_bind_set_blocking(SSH_BIND *sshbind, int blocking) {
+  sshbind->blocking = blocking ? 1 : 0;
 }
 
-socket_t ssh_bind_get_fd(SSH_BIND *ssh_bind) {
-  return ssh_bind->bindfd;
+socket_t ssh_bind_get_fd(SSH_BIND *sshbind) {
+  return sshbind->bindfd;
 }
 
-void ssh_bind_set_fd(SSH_BIND *ssh_bind, socket_t fd) {
-  ssh_bind->bindfd = fd;
+void ssh_bind_set_fd(SSH_BIND *sshbind, socket_t fd) {
+  sshbind->bindfd = fd;
 }
 
-void ssh_bind_fd_toaccept(SSH_BIND *ssh_bind) {
-  ssh_bind->toaccept = 1;
+void ssh_bind_fd_toaccept(SSH_BIND *sshbind) {
+  sshbind->toaccept = 1;
 }
 
-ssh_session ssh_bind_accept(SSH_BIND *ssh_bind) {
+ssh_session ssh_bind_accept(SSH_BIND *sshbind) {
   ssh_session session;
   ssh_private_key dsa = NULL;
   ssh_private_key rsa = NULL;
   int fd = -1;
+  int i;
 
-  if (ssh_bind->bindfd < 0) {
-    ssh_set_error(ssh_bind, SSH_FATAL,
+  if (sshbind->bindfd < 0) {
+    ssh_set_error(sshbind, SSH_FATAL,
         "Can't accept new clients on a not bound socket.");
     return NULL;
   }
 
-  if (ssh_bind->options->dsakey == NULL || ssh_bind->options->rsakey == NULL) {
-    ssh_set_error(ssh_bind, SSH_FATAL,
+  if (sshbind->dsakey == NULL || sshbind->rsakey == NULL) {
+    ssh_set_error(sshbind, SSH_FATAL,
         "DSA or RSA host key file must be set before accept()");
     return NULL;
   }
 
-  if (ssh_bind->options->dsakey) {
-    dsa = _privatekey_from_file(ssh_bind, ssh_bind->options->dsakey, TYPE_DSS);
+  if (sshbind->dsakey) {
+    dsa = _privatekey_from_file(sshbind, sshbind->dsakey, TYPE_DSS);
     if (dsa == NULL) {
       return NULL;
     }
   }
 
-  if (ssh_bind->options->rsakey) {
-    rsa = _privatekey_from_file(ssh_bind, ssh_bind->options->rsakey, TYPE_RSA);
+  if (sshbind->rsakey) {
+    rsa = _privatekey_from_file(sshbind, sshbind->rsakey, TYPE_RSA);
     if (rsa == NULL) {
       privatekey_free(dsa);
       return NULL;
     }
   }
 
-  fd = accept(ssh_bind->bindfd, NULL, NULL);
+  fd = accept(sshbind->bindfd, NULL, NULL);
   if (fd < 0) {
-    ssh_set_error(ssh_bind, SSH_FATAL,
+    ssh_set_error(sshbind, SSH_FATAL,
         "Accepting a new connection: %s",
         strerror(errno));
     privatekey_free(dsa);
@@ -234,16 +227,33 @@ ssh_session ssh_bind_accept(SSH_BIND *ssh_bind) {
 
   session = ssh_new();
   if (session == NULL) {
-    ssh_set_error(ssh_bind, SSH_FATAL, "Not enough space");
+    ssh_set_error(sshbind, SSH_FATAL, "Not enough space");
     privatekey_free(dsa);
     privatekey_free(rsa);
     return NULL;
   }
   session->server = 1;
   session->version = 2;
-  session->options = ssh_options_copy(ssh_bind->options);
-  if (session->options == NULL) {
-    ssh_set_error(ssh_bind, SSH_FATAL, "No space left");
+
+  /* TODO: is wanted methods enough? */
+#if 0
+  session->options = ssh_options_copy(sshbind->options);
+#endif
+  /* copy options */
+  for (i = 0; i < 10; ++i) {
+    if (sshbind->wanted_methods[i]) {
+      session->wanted_methods[i] = strdup(sshbind->wanted_methods[i]);
+      if (session->wanted_methods[i] == NULL) {
+        privatekey_free(dsa);
+        privatekey_free(rsa);
+        ssh_cleanup(session);
+        return NULL;
+      }
+    }
+  }
+
+  session->bindaddr = strdup(sshbind->bindaddr);
+  if (session->bindaddr == NULL) {
     privatekey_free(dsa);
     privatekey_free(rsa);
     ssh_cleanup(session);
@@ -258,33 +268,44 @@ ssh_session ssh_bind_accept(SSH_BIND *ssh_bind) {
     ssh_cleanup(session);
     return NULL;
   }
-  ssh_socket_set_fd(session->socket,fd);
+  ssh_socket_set_fd(session->socket, fd);
   session->dsa_key = dsa;
   session->rsa_key = rsa;
 
   return session;
 }
 
-void ssh_bind_free(SSH_BIND *ssh_bind){
-  if (ssh_bind == NULL) {
+void ssh_bind_free(SSH_BIND *sshbind){
+  int i;
+
+  if (sshbind == NULL) {
     return;
   }
 
-  if (ssh_bind->bindfd >= 0) {
-    close(ssh_bind->bindfd);
+  if (sshbind->bindfd >= 0) {
+    close(sshbind->bindfd);
   }
-  ssh_bind->bindfd = -1;
-  if (ssh_bind->options) {
-    ssh_options_free(ssh_bind->options);
+  sshbind->bindfd = -1;
+
+  /* options */
+  SAFE_FREE(sshbind->banner);
+  SAFE_FREE(sshbind->dsakey);
+  SAFE_FREE(sshbind->rsakey);
+  SAFE_FREE(sshbind->bindaddr);
+
+  for (i = 0; i < 10; i++) {
+    if (sshbind->wanted_methods[i]) {
+      SAFE_FREE(sshbind->wanted_methods[i]);
+    }
   }
-  SAFE_FREE(ssh_bind);
+
+  SAFE_FREE(sshbind);
 }
 
 extern char *supported_methods[];
 
-static int server_set_kex(ssh_session  session) {
+static int server_set_kex(ssh_session session) {
   KEX *server = &session->server_kex;
-  ssh_options options = session->options;
   int i, j;
   char *wanted;
 
@@ -292,16 +313,16 @@ static int server_set_kex(ssh_session  session) {
   ssh_get_random(server->cookie, 16, 0);
 
   if (session->dsa_key != NULL && session->rsa_key != NULL) {
-    if (ssh_options_set(options, SSH_OPTIONS_SERVER_HOSTKEY,
+    if (ssh_bind_options_set(options, SSH_BIND_OPTIONS_HOSTKEY,
           "ssh-dss,ssh-rsa") < 0) {
       return -1;
     }
   } else if (session->dsa_key != NULL) {
-    if (ssh_options_set(options, SSH_OPTIONS_SERVER_HOSTKEY, "ssh-dss") < 0) {
+    if (ssh_bind_options_set(options, SSH_BIND_OPTIONS_HOSTKEY, "ssh-dss") < 0) {
       return -1;
     }
   } else {
-    if (ssh_options_set(options, SSH_OPTIONS_SERVER_HOSTKEY, "ssh-rsa") < 0) {
+    if (ssh_bind_options_set(options, SSH_BIND_OPTIONS_HOSTKEY, "ssh-rsa") < 0) {
       return -1;
     }
   }

@@ -23,24 +23,24 @@ clients must be made or how a client should react.
 
 ssh_session connect_ssh(const char *host, const char *user,int verbosity){
   ssh_session session;
-  ssh_options options;
   int auth=0;
 
-  options=ssh_options_new();
+  session=ssh_new();
+  if (session == NULL) {
+    return NULL;
+  }
+
   if(user != NULL){
-    if (ssh_options_set_username(options,user) < 0) {
-      ssh_options_free(options);
+    if (ssh_options_set(session, SSH_OPTIONS_USER, user) < 0) {
+      ssh_disconnect(session);
       return NULL;
     }
   }
 
-  if (ssh_options_set_host(options,host) < 0) {
-    ssh_options_free(options);
+  if (ssh_options_set(session, SSH_OPTIONS_HOST, host) < 0) {
     return NULL;
   }
-  ssh_options_set_log_verbosity(options,verbosity);
-  session=ssh_new();
-  ssh_set_options(session,options);
+  ssh_options_set(session, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
   if(ssh_connect(session)){
     fprintf(stderr,"Connection failed : %s\n",ssh_get_error(session));
     ssh_disconnect(session);

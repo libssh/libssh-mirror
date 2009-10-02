@@ -35,7 +35,17 @@
 extern "C" {
 #endif
 
+enum ssh_bind_options_e {
+  SSH_BIND_OPTIONS_BINDADDR,
+  SSH_BIND_OPTIONS_BINDPORT,
+  SSH_BIND_OPTIONS_HOSTKEY,
+  SSH_BIND_OPTIONS_DSAKEY,
+  SSH_BIND_OPTIONS_RSAKEY,
+  SSH_BIND_OPTIONS_BANNER
+};
+
 typedef struct ssh_bind_struct SSH_BIND;
+typedef struct ssh_bind_struct *ssh_bind;
 
 /**
  * @brief Creates a new SSH server bind.
@@ -51,7 +61,8 @@ LIBSSH_API SSH_BIND *ssh_bind_new(void);
  *
  * @param  options      The option structure to set.
  */
-LIBSSH_API void ssh_bind_set_options(SSH_BIND *ssh_bind, ssh_options options);
+LIBSSH_API int ssh_bind_options_set(ssh_bind sshbind,
+    enum ssh_bind_options_e type, const void *value);
 
 /**
  * @brief Start listening to the socket.
@@ -69,7 +80,7 @@ LIBSSH_API int ssh_bind_listen(SSH_BIND *ssh_bind);
  *
  * @param  blocking     Zero for nonblocking mode.
  */
-LIBSSH_API void ssh_bind_set_blocking(SSH_BIND *ssh_bind, int blocking);
+LIBSSH_API void ssh_bind_set_blocking(SSH_BIND *sshbind, int blocking);
 
 /**
  * @brief Recover the file descriptor from the session.
@@ -78,7 +89,7 @@ LIBSSH_API void ssh_bind_set_blocking(SSH_BIND *ssh_bind, int blocking);
  *
  * @return The file descriptor.
  */
-LIBSSH_API socket_t ssh_bind_get_fd(SSH_BIND *ssh_bind);
+LIBSSH_API socket_t ssh_bind_get_fd(SSH_BIND *sshbind);
 
 /**
  * @brief Set the file descriptor for a session.
@@ -87,7 +98,7 @@ LIBSSH_API socket_t ssh_bind_get_fd(SSH_BIND *ssh_bind);
  *
  * @param  fd           The file descriptor.
  */
-LIBSSH_API void ssh_bind_set_fd(SSH_BIND *ssh_bind, socket_t fd);
+LIBSSH_API void ssh_bind_set_fd(SSH_BIND *sshbind, socket_t fd);
 
 /**
  * @brief Allow the file descriptor to accept new sessions.

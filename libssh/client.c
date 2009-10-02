@@ -35,12 +35,11 @@
 #include "libssh/packet.h"
 #include "libssh/socket.h"
 #include "libssh/session.h"
-#include "libssh/options.h"
 #include "libssh/dh.h"
 
-#define set_status(opt,status) do {\
-        if (opt->callbacks && opt->callbacks->connect_status_function) \
-            opt->callbacks->connect_status_function(opt->callbacks->userdata, status); \
+#define set_status(session, status) do {\
+        if (session->callbacks && session->callbacks->connect_status_function) \
+            session->callbacks->connect_status_function(session->callbacks->userdata, status); \
     } while (0)
 
 /**
@@ -169,8 +168,8 @@ int ssh_send_banner(ssh_session session, int server) {
 
   banner = session->version == 1 ? CLIENTBANNER1 : CLIENTBANNER2;
 
-  if (session->options->banner) {
-    banner = session->options->banner;
+  if (session->xbanner) {
+    banner = session->xbanner;
   }
 
   if (server) {
@@ -476,7 +475,6 @@ int ssh_service_request(ssh_session session, const char *service) {
  * \see ssh_disconnect()
  */
 int ssh_connect(ssh_session session) {
-  ssh_options options = session->options;
   int ssh1 = 0;
   int ssh2 = 0;
   int fd = -1;
@@ -485,12 +483,6 @@ int ssh_connect(ssh_session session) {
     ssh_set_error(session, SSH_FATAL, "Invalid session pointer");
     return SSH_ERROR;
   }
-
-  if (session->options == NULL) {
-    ssh_set_error(session, SSH_FATAL, "No options set");
-    return SSH_ERROR;
-  }
-  options = session->options;
 
   enter_function();
 
@@ -501,22 +493,22 @@ int ssh_connect(ssh_session session) {
     leave_function();
     return SSH_ERROR;
   }
-  if (options->fd == -1 && options->host == NULL) {
+  if (session->fd == -1 && session->host == NULL) {
     ssh_set_error(session, SSH_FATAL, "Hostname required");
     leave_function();
     return SSH_ERROR;
   }
-  if (options->fd != -1) {
-    fd = options->fd;
+  if (session->fd != -1) {
+    fd = session->fd;
   } else {
-    fd = ssh_connect_host(session, options->host, options->bindaddr,
-        options->port, options->timeout, options->timeout_usec);
+    fd = ssh_connect_host(session, session->host, session->bindaddr,
+        session->port, session->timeout, session->timeout_usec);
   }
   if (fd < 0) {
     leave_function();
     return SSH_ERROR;
   }
-  set_status(options, 0.2);
+  set_status(session, 0.2);
 
   ssh_socket_set_fd(session->socket, fd);
 
@@ -528,7 +520,7 @@ int ssh_connect(ssh_session session) {
     leave_function();
     return SSH_ERROR;
   }
-  set_status(options, 0.4);
+  set_status(session, 0.4);
 
   ssh_log(session, SSH_LOG_RARE,
       "SSH server banner: %s", session->serverbanner);
@@ -542,9 +534,9 @@ int ssh_connect(ssh_session session) {
   }
 
   /* Here we decide which version of the protocol to use. */
-  if (ssh2 && options->ssh2allowed) {
+  if (ssh2 && session->ssh2) {
     session->version = 2;
-  } else if(ssh1 && options->ssh1allowed) {
+  } else if(ssh1 && session->ssh1) {
     session->version = 1;
   } else {
     ssh_set_error(session, SSH_FATAL,
@@ -563,7 +555,7 @@ int ssh_connect(ssh_session session) {
     leave_function();
     return SSH_ERROR;
   }
-  set_status(options, 0.5);
+  set_status(session, 0.5);
 
   switch (session->version) {
     case 2:
@@ -573,7 +565,7 @@ int ssh_connect(ssh_session session) {
         leave_function();
         return SSH_ERROR;
       }
-      set_status(options,0.6);
+      set_status(session,0.6);
 
       ssh_list_kex(session, &session->server_kex);
       if (set_kex(session) < 0) {
@@ -588,7 +580,7 @@ int ssh_connect(ssh_session session) {
         leave_function();
         return SSH_ERROR;
       }
-      set_status(options,0.8);
+      set_status(session,0.8);
 
       if (dh_handshake(session) < 0) {
         ssh_socket_close(session->socket);
@@ -596,7 +588,7 @@ int ssh_connect(ssh_session session) {
         leave_function();
         return SSH_ERROR;
       }
-      set_status(options,1.0);
+      set_status(session,1.0);
 
       session->connected = 1;
       break;
@@ -607,7 +599,7 @@ int ssh_connect(ssh_session session) {
         leave_function();
         return SSH_ERROR;
       }
-      set_status(options,0.6);
+      set_status(session,0.6);
 
       session->connected = 1;
       break;
