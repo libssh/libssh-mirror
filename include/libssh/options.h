@@ -49,10 +49,4 @@ struct ssh_options_struct {
 
 };
 
-
-/* this function must be called when no specific username has been asked. it has to guess it */
-int ssh_options_default_username(ssh_options opt);
-int ssh_options_default_ssh_dir(ssh_options opt);
-int ssh_options_default_known_hosts_file(ssh_options opt);
-
 #endif /* OPTIONS_H_ */

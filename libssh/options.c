@@ -923,19 +923,6 @@ int ssh_options_set_wanted_algos(ssh_options opt, int algo, const char *list) {
   return 0;
 }
 
-/* this function must be called when no specific username has been asked. it has to guess it */
-int ssh_options_default_username(ssh_options opt) {
-  return ssh_options_set(opt, SSH_OPTIONS_USER, NULL);
-}
-
-int ssh_options_default_ssh_dir(ssh_options opt) {
-  return ssh_options_set(opt, SSH_OPTIONS_SSH_DIR, NULL);
-}
-
-int ssh_options_default_known_hosts_file(ssh_options opt) {
-  return ssh_options_set(opt, SSH_OPTIONS_KNOWNHOSTS, NULL);
-}
-
 /**
  * @brief Set a callback to show connection status in realtime.
  *
