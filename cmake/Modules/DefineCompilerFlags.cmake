@@ -46,8 +46,10 @@ if (UNIX AND NOT WIN32)
      OUTPUT_STRIP_TRAILING_WHITESPACE
    )
  endif (CMAKE_SIZEOF_VOID_P MATCHES "8")
- string(REGEX REPLACE "[\r\n]" " " "${_lfs_CFLAGS}" "${${_lfs_CFLAGS}}")
- add_definitions(${_lfs_CFLAGS})
+ if (_lfs_CFLAGS)
+   string(REGEX REPLACE "[\r\n]" " " "${_lfs_CFLAGS}" "${${_lfs_CFLAGS}}")
+   add_definitions(${_lfs_CFLAGS})
+ endif (_lfs_CFLAGS)
 
 endif (UNIX AND NOT WIN32)
 
