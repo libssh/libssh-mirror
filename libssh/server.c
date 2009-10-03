@@ -45,7 +45,6 @@
 #include "libssh/socket.h"
 #include "libssh/channels.h"
 #include "libssh/session.h"
-#include "libssh/options.h"
 #include "libssh/misc.h"
 #include "libssh/keys.h"
 #include "libssh/dh.h"
@@ -303,6 +302,15 @@ void ssh_bind_free(SSH_BIND *sshbind){
 }
 
 extern char *supported_methods[];
+/** @internal
+ * This functions sets the Key Exchange protocols to be accepted
+ * by the server. They depend on
+ * -What the user asked (via options)
+ * -What is available (keys)
+ * It should then accept the intersection of what the user asked
+ * and what is available, and return an error if nothing matches
+ * @bug To rewrite, it's broken !!
+ */
 
 static int server_set_kex(ssh_session session) {
   KEX *server = &session->server_kex;
@@ -311,7 +319,7 @@ static int server_set_kex(ssh_session session) {
 
   ZERO_STRUCTP(server);
   ssh_get_random(server->cookie, 16, 0);
-
+#if 0
   if (session->dsa_key != NULL && session->rsa_key != NULL) {
     if (ssh_bind_options_set(options, SSH_BIND_OPTIONS_HOSTKEY,
           "ssh-dss,ssh-rsa") < 0) {
@@ -326,6 +334,7 @@ static int server_set_kex(ssh_session session) {
       return -1;
     }
   }
+#endif
 
   server->methods = malloc(10 * sizeof(char **));
   if (server->methods == NULL) {
@@ -333,7 +342,7 @@ static int server_set_kex(ssh_session session) {
   }
 
   for (i = 0; i < 10; i++) {
-    if ((wanted = options->wanted_methods[i]) == NULL) {
+    if ((wanted = session->wanted_methods[i]) == NULL) {
       wanted = supported_methods[i];
     }
     server->methods[i] = strdup(wanted);

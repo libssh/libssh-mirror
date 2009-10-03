@@ -40,29 +40,28 @@ static int auth_password(char *user, char *password){
 }
 
 int main(int argc, char **argv){
-	ssh_options options=ssh_options_new();
     ssh_session session;
-    SSH_BIND *ssh_bind;
+    ssh_bind ssh_bind_o;
     ssh_message message;
     ssh_channel chan=0;
     ssh_buffer buf;
     int auth=0;
     int sftp=0;
     int i;
-    ssh_options_getopt(options, &argc, argv);
 
-    ssh_options_set(options, SSH_OPTIONS_SERVER_DSAKEY, KEYS_FOLDER "ssh_host_dsa_key");
-    ssh_options_set(options, SSH_OPTIONS_SERVER_RSAKEY, KEYS_FOLDER "ssh_host_rsa_key");
+    ssh_bind_o=ssh_bind_new();
+//    ssh_options_getopt(options, &argc, argv);
+    ssh_bind_options_set(ssh_bind_o, SSH_BIND_OPTIONS_DSAKEY, KEYS_FOLDER "ssh_host_dsa_key");
+    ssh_bind_options_set(ssh_bind_o, SSH_BIND_OPTIONS_RSAKEY, KEYS_FOLDER "ssh_host_rsa_key");
 
-    ssh_bind=ssh_bind_new();
-    ssh_bind_set_options(ssh_bind,options);
-    if(ssh_bind_listen(ssh_bind)<0){
-        printf("Error listening to socket: %s\n",ssh_get_error(ssh_bind));
+//    ssh_bind_set_options(ssh_bind_o,options);
+    if(ssh_bind_listen(ssh_bind_o)<0){
+        printf("Error listening to socket: %s\n",ssh_get_error(ssh_bind_o));
         return 1;
     }
-    session=ssh_bind_accept(ssh_bind);
+    session=ssh_bind_accept(ssh_bind_o);
     if(!session){
-      printf("error accepting a connection : %s\n",ssh_get_error(ssh_bind));
+      printf("error accepting a connection : %s\n",ssh_get_error(ssh_bind_o));
       return 1;
     }
     printf("Socket connected: fd = %d\n", ssh_get_fd(session));
@@ -153,7 +152,7 @@ int main(int argc, char **argv){
     } while (i>0);
     buffer_free(buf);
     ssh_disconnect(session);
-    ssh_bind_free(ssh_bind);
+    ssh_bind_free(ssh_bind_o);
     ssh_finalize();
     return 0;
 }
