@@ -76,7 +76,7 @@ void ssh_set_error_oom(void *error) {
 /**
  * @internal
  *
- * @brief Registers an out of memory error
+ * @brief Registers an invalid argument error
  *
  * @param  error       The place to store the error.
  *
