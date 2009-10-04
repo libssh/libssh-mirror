@@ -123,6 +123,8 @@ int ssh_config_parse_file(ssh_options opt, const char *filename);
 
 /* errors.c */
 void ssh_set_error(void *error, int code, const char *descr, ...) PRINTF_ATTRIBUTE(3, 4);
+void ssh_set_error_oom(void *);
+void ssh_set_error_invalid(void *, const char *);
 
 /* in crypt.c */
 uint32_t packet_decrypt_len(ssh_session session,char *crypted);
