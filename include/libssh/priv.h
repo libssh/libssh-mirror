@@ -134,7 +134,7 @@ int packet_hmac_verify(ssh_session session,ssh_buffer buffer,unsigned char *mac)
 /* connect.c */
 int ssh_regex_init(void);
 void ssh_regex_finalize(void);
-ssh_session ssh_session_new();
+ssh_session ssh_session_new(void);
 socket_t ssh_connect_host(ssh_session session, const char *host,const char
         *bind_addr, int port, long timeout, long usec);
 
