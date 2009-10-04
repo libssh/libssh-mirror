@@ -25,10 +25,12 @@ MA 02111-1307, USA. */
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
+#ifndef KEYS_FOLDER
 #ifdef _WIN32
 #define KEYS_FOLDER
 #else
 #define KEYS_FOLDER "/etc/ssh/"
+#endif
 #endif
 
 static int auth_password(char *user, char *password){
