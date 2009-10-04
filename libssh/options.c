@@ -40,7 +40,7 @@
 #endif
 
 /**
- * @brief Duplicate an option structure.
+ * @brief Duplicate the options of a session structure.
  *
  * If you make several sessions with the same options this is useful. You
  * cannot use twice the same option structure in ssh_session_connect.
@@ -51,92 +51,71 @@
  *
  * @see ssh_session_connect()
  */
-#if 0
-ssh_session ssh_session_copy(ssh_options opt) {
-  ssh_session new = NULL;
+int ssh_options_copy(ssh_session src, ssh_session *dest) {
+  ssh_session new;
   int i;
 
-  if (session == NULL) {
-    return NULL;
+  if (src == NULL || dest == NULL || *dest == NULL) {
+    return -1;
   }
 
-  new = ssh_session_new();
-  if (new == NULL) {
-    return NULL;
-  }
+  new = *dest;
 
-  if (session->username) {
-    new->username = strdup(session->username);
+  if (src->username) {
+    new->username = strdup(src->username);
     if (new->username == NULL) {
-      goto err;
+      return -1;
     }
   }
-  if (session->host) {
-    new->host = strdup(session->host);
+
+  if (src->host) {
+    new->host = strdup(src->host);
     if (new->host == NULL) {
-      goto err;
+      return -1;
     }
   }
-  if (session->bindaddr) {
-    new->bindaddr = strdup(session->bindaddr);
-    if (new->bindaddr == NULL) {
-      goto err;
-    }
-  }
-  if (session->identity) {
-    new->identity=strdup(session->identity);
+
+  if (src->identity) {
+    new->identity = strdup(src->identity);
     if (new->identity == NULL) {
-      return NULL;
+      return -1;
     }
   }
-  if (session->sshdir) {
-    new->ssh_dir = strdup(session->sshdir);
+
+  if (src->sshdir) {
+    new->sshdir = strdup(src->sshdir);
     if (new->sshdir == NULL) {
-      goto err;
+      return -1;
     }
   }
-  if (session->knownhosts) {
-    new->knownhosts = strdup(session->knownhosts);
+
+  if (src->knownhosts) {
+    new->knownhosts = strdup(src->knownhosts);
     if (new->knownhosts == NULL) {
-      goto err;
+      return -1;
     }
   }
-  if (session->dsakey) {
-    new->dsakey = strdup(session->dsakey);
-    if (new->dsakey == NULL) {
-      goto err;
-    }
-  }
-  if (session->rsakey) {
-    new->rsakey = strdup(session->rsakey);
-    if (new->rsakey == NULL) {
-      goto err;
-    }
-  }
+
   for (i = 0; i < 10; ++i) {
-    if (session->wanted_methods[i]) {
-      new->wanted_methods[i] = strdup(session->wanted_methods[i]);
+    if (src->wanted_methods[i]) {
+      new->wanted_methods[i] = strdup(src->wanted_methods[i]);
       if (new->wanted_methods[i] == NULL) {
-        goto err;
+        return -1;
       }
     }
   }
 
-  new->fd = session->fd;
-  new->port = session->port;
-  new->callbacks = session->callbacks;
-  new->timeout = session->timeout;
-  new->timeout_usec = session->timeout_usec;
-  new->ssh2 = session->ssh2;
-  new->ssh1 = session->ssh1;
-  new->log_verbosity = session->log_verbosity;
+  new->fd = src->fd;
+  new->port = src->port;
+  new->callbacks = src->callbacks;
+  new->timeout = src->timeout;
+  new->timeout_usec = src->timeout_usec;
+  new->ssh2 = src->ssh2;
+  new->ssh1 = src->ssh1;
+  new->log_verbosity = src->log_verbosity;
 
-  return new;
-err:
-  ssh_session_free(new);
-  return NULL;
+  return 0;
 }
-#endif
 
 #ifndef _WIN32
 static char *get_username_from_uid(ssh_session session, uid_t uid){

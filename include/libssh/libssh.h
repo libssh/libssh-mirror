@@ -383,7 +383,7 @@ LIBSSH_API int ssh_message_type(ssh_message msg);
 LIBSSH_API int ssh_mkdir (const char *pathname, mode_t mode);
 LIBSSH_API ssh_session ssh_new(void);
 
-LIBSSH_API ssh_options ssh_options_copy(ssh_options opt);
+LIBSSH_API int ssh_options_copy(ssh_session src, ssh_session *dest);
 LIBSSH_API int ssh_options_getopt(ssh_options options, int *argcptr, char **argv);
 LIBSSH_API int ssh_options_parse_config(ssh_options opt, const char *filename);
 LIBSSH_API int ssh_options_set(ssh_session session, enum ssh_options_e type,
