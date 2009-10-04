@@ -21,6 +21,8 @@
  * MA 02111-1307, USA.
  */
 
+#include "config.h"
+
 #include <string.h>
 #include <stdlib.h>
 
@@ -30,7 +32,6 @@
 #include "libssh/packet.h"
 #include "libssh/session.h"
 #include "libssh/string.h"
-#include "libssh/options.h"
 
 #ifdef WITH_SSH1
 static int wait_auth1_status(ssh_session session) {
@@ -64,11 +65,11 @@ static int send_username(ssh_session session, const char *username) {
   }
 
   if (!username) {
-    if(!(username = session->options->username)) {
-      if (ssh_options_set(session->options, SSH_OPTIONS_USER, NULL) < 0) {
+    if(!(username = session->username)) {
+      if (ssh_options_set(session, SSH_OPTIONS_USER, NULL) < 0) {
         return session->auth_service_asked = SSH_AUTH_ERROR;
       } else {
-        username = session->options->username;
+        username = session->username;
       }
     }
   }
