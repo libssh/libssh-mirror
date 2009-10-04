@@ -251,12 +251,16 @@ ssh_session ssh_bind_accept(SSH_BIND *sshbind) {
     }
   }
 
-  session->bindaddr = strdup(sshbind->bindaddr);
-  if (session->bindaddr == NULL) {
-    privatekey_free(dsa);
-    privatekey_free(rsa);
-    ssh_cleanup(session);
-    return NULL;
+  if (sshbind->bindaddr == NULL)
+    session->bindaddr = NULL;
+  else {
+    session->bindaddr = strdup(sshbind->bindaddr);
+    if (session->bindaddr == NULL) {
+      privatekey_free(dsa);
+      privatekey_free(rsa);
+      ssh_cleanup(session);
+      return NULL;
+    }
   }
 
   ssh_socket_free(session->socket);
