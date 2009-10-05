@@ -648,7 +648,7 @@ ssh_private_key privatekey_from_file(ssh_session session, const char *filename,
 
   ssh_log(session, SSH_LOG_RARE, "Trying to read %s, passphase=%s, authcb=%s",
       filename, passphrase ? "true" : "false",
-      session->callbacks->auth_function ? "true" : "false");
+      session->callbacks && session->callbacks->auth_function ? "true" : "false");
   switch (type) {
     case TYPE_DSS:
       if (passphrase == NULL) {
