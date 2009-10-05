@@ -502,7 +502,6 @@ static int auth_kbdint(ssh_session session){
 
 int main(int argc, char **argv){
     ssh_session session;
-    ssh_options options;
     int auth=0;
     char *password;
     char *banner;
@@ -512,30 +511,30 @@ int main(int argc, char **argv){
     unsigned char *hash = NULL;
     int hlen;
 
-    options=ssh_options_new();
-    if(ssh_options_getopt(options,&argc, argv)){
-    	fprintf(stderr,"error parsing command line :%s\n",ssh_get_error(options));
-    	usage();	
+    session = ssh_new();
+
+    if(ssh_options_getopt(session, &argc, argv)) {
+      fprintf(stderr, "error parsing command line :%s\n",
+          ssh_get_error(session));
+      usage();
     }
     opts(argc,argv);
     signal(SIGTERM, do_exit);
 
     if (user) {
-      if (ssh_options_set(options, SSH_OPTIONS_USER, user) < 0) {
-        ssh_options_free(options);
+      if (ssh_options_set(session, SSH_OPTIONS_USER, user) < 0) {
+        ssh_disconnect(session);
         return 1;
       }
     }
 
-    if (ssh_options_set(options, SSH_OPTIONS_HOST ,host) < 0) {
-      ssh_options_free(options);
+    if (ssh_options_set(session, SSH_OPTIONS_HOST ,host) < 0) {
+      ssh_disconnect(session);
       return 1;
     }
 
-    ssh_options_parse_config(options, NULL);
+    ssh_options_parse_config(session, NULL);
 
-    session=ssh_new();
-    ssh_set_options(session,options);
     if(ssh_connect(session)){
         fprintf(stderr,"Connection failed : %s\n",ssh_get_error(session));
         ssh_disconnect(session);

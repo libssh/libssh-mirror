@@ -42,7 +42,6 @@
 #include "libssh/keyfiles.h"
 #include "libssh/session.h"
 #include "libssh/wrapper.h"
-#include "libssh/options.h"
 #include "libssh/misc.h"
 #include "libssh/keys.h"
 
@@ -599,9 +598,9 @@ static int pem_get_password(char *buf, int size, int rwflag, void *userdata) {
   ssh_log(session, SSH_LOG_RARE,
       "Trying to call external authentication function");
 
-  if (session && session->options->callbacks->auth_function) {
-    if (session->options->callbacks->auth_function("Passphrase for private key:", buf, size, 0, 0,
-        session->options->callbacks->userdata) < 0) {
+  if (session && session->callbacks->auth_function) {
+    if (session->callbacks->auth_function("Passphrase for private key:", buf, size, 0, 0,
+        session->callbacks->userdata) < 0) {
       return 0;
     }
 
@@ -649,13 +648,13 @@ ssh_private_key privatekey_from_file(ssh_session session, const char *filename,
 
   ssh_log(session, SSH_LOG_RARE, "Trying to read %s, passphase=%s, authcb=%s",
       filename, passphrase ? "true" : "false",
-      session->options->callbacks->auth_function ? "true" : "false");
+      session->callbacks->auth_function ? "true" : "false");
   switch (type) {
     case TYPE_DSS:
       if (passphrase == NULL) {
-        if (session->options->callbacks->auth_function) {
-          auth_cb = session->options->callbacks->auth_function;
-          auth_ud = session->options->callbacks->userdata;
+        if (session->callbacks->auth_function) {
+          auth_cb = session->callbacks->auth_function;
+          auth_ud = session->callbacks->userdata;
 
 #ifdef HAVE_LIBGCRYPT
           valid = read_dsa_privatekey(file, &dsa, auth_cb, auth_ud,
@@ -693,9 +692,9 @@ ssh_private_key privatekey_from_file(ssh_session session, const char *filename,
       break;
     case TYPE_RSA:
       if (passphrase == NULL) {
-      	if (session->options->callbacks->auth_function) {
-      		auth_cb = session->options->callbacks->auth_function;
-      		auth_ud = session->options->callbacks->userdata;
+	if (session->callbacks->auth_function) {
+		auth_cb = session->callbacks->auth_function;
+		auth_ud = session->callbacks->userdata;
 #ifdef HAVE_LIBGCRYPT
           valid = read_rsa_privatekey(file, &rsa, auth_cb, auth_ud,
               "Passphrase for private key:");
@@ -1386,21 +1385,21 @@ int ssh_is_server_known(ssh_session session) {
 
   enter_function();
 
-  if (ssh_options_set(session->options, SSH_OPTIONS_KNOWNHOSTS, NULL) < 0) {
+  if (ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, NULL) < 0) {
     ssh_set_error(session, SSH_REQUEST_DENIED,
         "Can't find a known_hosts file");
     leave_function();
     return SSH_SERVER_FILE_NOT_FOUND;
   }
 
-  if (session->options->host == NULL) {
+  if (session->host == NULL) {
     ssh_set_error(session, SSH_FATAL,
         "Can't verify host in known hosts if the hostname isn't known");
     leave_function();
     return SSH_SERVER_ERROR;
   }
 
-  host = lowercase(session->options->host);
+  host = lowercase(session->host);
   if (host == NULL) {
     ssh_set_error(session, SSH_FATAL, "Not enough space!");
     leave_function();
@@ -1409,7 +1408,7 @@ int ssh_is_server_known(ssh_session session) {
 
   do {
     tokens = ssh_get_knownhost_line(session, &file,
-        session->options->known_hosts_file, &type);
+        session->knownhosts, &type);
 
     /* End of file, return the current state */
     if (tokens == NULL) {
@@ -1472,19 +1471,19 @@ int ssh_write_knownhost(ssh_session session) {
   char *dir;
   size_t len = 0;
 
-  if (ssh_options_set(session->options, SSH_OPTIONS_KNOWNHOSTS, NULL) < 0) {
+  if (ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, NULL) < 0) {
     ssh_set_error(session, SSH_FATAL, "Cannot find known_hosts file.");
     return -1;
   }
 
-  if (session->options->host == NULL) {
+  if (session->host == NULL) {
     ssh_set_error(session, SSH_FATAL,
         "Cannot write host in known hosts if the hostname is unknown");
     return -1;
   }
 
   /* Check if ~/.ssh exists and create it if not */
-  dir = ssh_dirname(session->options->known_hosts_file);
+  dir = ssh_dirname(session->knownhosts);
   if (dir == NULL) {
     ssh_set_error(session, SSH_FATAL, "%s", strerror(errno));
     return -1;
@@ -1499,11 +1498,11 @@ int ssh_write_knownhost(ssh_session session) {
   }
   SAFE_FREE(dir);
 
-  file = fopen(session->options->known_hosts_file, "a");
+  file = fopen(session->knownhosts, "a");
   if (file == NULL) {
     ssh_set_error(session, SSH_FATAL,
         "Couldn't open known_hosts file %s for appending: %s",
-        session->options->known_hosts_file, strerror(errno));
+        session->knownhosts, strerror(errno));
     return -1;
   }
 
@@ -1583,7 +1582,7 @@ int ssh_write_knownhost(ssh_session session) {
 
     snprintf(buffer, sizeof(buffer),
         "%s %d %s %s\n",
-        session->options->host,
+        session->host,
         rsa_size << 3,
         e_string,
         n_string);
@@ -1608,7 +1607,7 @@ int ssh_write_knownhost(ssh_session session) {
 
     snprintf(buffer, sizeof(buffer),
         "%s %s %s\n",
-        session->options->host,
+        session->host,
         session->current_crypto->server_pubkey_type,
         pubkey_64);
 

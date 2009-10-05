@@ -27,7 +27,6 @@
 
 #include "libssh/priv.h"
 #include "libssh/session.h"
-#include "libssh/options.h"
 
 /**
  * @defgroup ssh_log SSH Logging
@@ -57,9 +56,9 @@ void ssh_log(ssh_session session, int verbosity, const char *format, ...) {
     vsnprintf(buffer, sizeof(buffer), format, va);
     va_end(va);
 
-    if (session->options->callbacks && session->options->callbacks->log_function) {
-      session->options->callbacks->log_function(session, verbosity, buffer,
-          session->options->callbacks->userdata);
+    if (session->callbacks && session->callbacks->log_function) {
+      session->callbacks->log_function(session, verbosity, buffer,
+          session->callbacks->userdata);
     } else if (verbosity == SSH_LOG_FUNCTIONS) {
       if (session->log_indent > 255) {
         min = 255;

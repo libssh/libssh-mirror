@@ -37,7 +37,6 @@
 #include "libssh/keyfiles.h"
 #include "libssh/packet.h"
 #include "libssh/session.h"
-#include "libssh/options.h"
 #include "libssh/keys.h"
 
 /** \defgroup ssh_auth SSH Authentication functions
@@ -224,13 +223,13 @@ int ssh_userauth_none(ssh_session session, const char *username) {
 #endif
 
   if (username == NULL) {
-    if (session->options->username == NULL) {
-      if (ssh_options_set(session->options, SSH_OPTIONS_USER, NULL) < 0) {
+    if (session->username == NULL) {
+      if (ssh_options_set(session, SSH_OPTIONS_USER, NULL) < 0) {
         leave_function();
         return rc;
       }
     }
-    user = string_from_char(session->options->username);
+    user = string_from_char(session->username);
   } else {
     user = string_from_char(username);
   }
@@ -330,13 +329,13 @@ int ssh_userauth_offer_pubkey(ssh_session session, const char *username,
 #endif
 
   if (username == NULL) {
-    if (session->options->username == NULL) {
-      if (ssh_options_set(session->options, SSH_OPTIONS_USER, NULL) < 0) {
+    if (session->username == NULL) {
+      if (ssh_options_set(session, SSH_OPTIONS_USER, NULL) < 0) {
         leave_function();
         return rc;
       }
     }
-    user = string_from_char(session->options->username);
+    user = string_from_char(session->username);
   } else {
     user = string_from_char(username);
   }
@@ -442,13 +441,13 @@ int ssh_userauth_pubkey(ssh_session session, const char *username,
 #endif
 
   if (username == NULL) {
-    if (session->options->username == NULL) {
-      if (ssh_options_set(session->options, SSH_OPTIONS_USER, NULL) < 0) {
+    if (session->username == NULL) {
+      if (ssh_options_set(session, SSH_OPTIONS_USER, NULL) < 0) {
         leave_function();
         return rc;
       }
     }
-    user = string_from_char(session->options->username);
+    user = string_from_char(session->username);
   } else {
     user = string_from_char(username);
   }
@@ -560,13 +559,13 @@ int ssh_userauth_agent_pubkey(ssh_session session, const char *username,
   }
 
   if (username == NULL) {
-    if (session->options->username == NULL) {
-      if (ssh_options_set(session->options, SSH_OPTIONS_USER, NULL) < 0) {
+    if (session->username == NULL) {
+      if (ssh_options_set(session, SSH_OPTIONS_USER, NULL) < 0) {
         leave_function();
         return rc;
       }
     }
-    user = string_from_char(session->options->username);
+    user = string_from_char(session->username);
   } else {
     user = string_from_char(username);
   }
@@ -687,13 +686,13 @@ int ssh_userauth_password(ssh_session session, const char *username,
 #endif
 
   if (username == NULL) {
-    if (session->options->username == NULL) {
-      if (ssh_options_set(session->options, SSH_OPTIONS_USER, NULL) < 0) {
+    if (session->username == NULL) {
+      if (ssh_options_set(session, SSH_OPTIONS_USER, NULL) < 0) {
         leave_function();
         return rc;
       }
     }
-    user = string_from_char(session->options->username);
+    user = string_from_char(session->username);
   } else {
     user = string_from_char(username);
   }
@@ -903,18 +902,18 @@ int ssh_userauth_autopubkey(ssh_session session, const char *passphrase) {
 #endif
 
   size = ARRAY_SIZE(keytab);
-  if (session->options->identity) {
+  if (session->identity) {
     ssh_log(session, SSH_LOG_RARE,
-        "Trying identity file %s\n", session->options->identity);
+        "Trying identity file %s\n", session->identity);
 
-    id = malloc(strlen(session->options->identity) + 1 + 4);
+    id = malloc(strlen(session->identity) + 1 + 4);
     if (id == NULL) {
       leave_function();
       return SSH_AUTH_ERROR;
     }
-    sprintf(id, "%s.pub", session->options->identity);
+    sprintf(id, "%s.pub", session->identity);
 
-    keytab[size - 1].privatekey = session->options->identity;
+    keytab[size - 1].privatekey = session->identity;
     keytab[size - 1].publickey = id;
   }
 
@@ -1369,12 +1368,12 @@ int ssh_userauth_kbdint(ssh_session session, const char *user,
   if (session->kbdint == NULL) {
     /* first time we call. we must ask for a challenge */
     if (user == NULL) {
-      if ((user = session->options->username) == NULL) {
-        if (ssh_options_set(session->options, SSH_OPTIONS_USER, NULL) < 0) {
+      if ((user = session->username) == NULL) {
+        if (ssh_options_set(session, SSH_OPTIONS_USER, NULL) < 0) {
           leave_function();
           return SSH_AUTH_ERROR;
         } else {
-          user = session->options->username;
+          user = session->username;
         }
       }
     }

@@ -54,6 +54,7 @@ typedef void (*ssh_log_callback) (ssh_session session, int priority,
  * connection */
 typedef void (*ssh_status_callback) (ssh_session session, float status,
 		void *userdata);
+
 struct ssh_callbacks_struct {
 	/** size of this structure. internal, shoud be set with ssh_callbacks_init()*/
 	size_t size;
@@ -81,12 +82,12 @@ typedef struct ssh_callbacks_struct * ssh_callbacks;
 	p->size=sizeof(*p); \
 } while(0);
 
-LIBSSH_API int ssh_options_set_auth_callback(ssh_options opt, ssh_auth_callback cb,
+LIBSSH_API int ssh_set_auth_callback(ssh_session session, ssh_auth_callback cb,
     void *userdata);
-LIBSSH_API int ssh_options_set_log_function(ssh_options opt,
+LIBSSH_API int ssh_set_log_callback(ssh_session session,
     ssh_log_callback cb, void *userdata);
-LIBSSH_API int ssh_options_set_status_callback(ssh_options opt, void (*callback)
-        (void *arg, float status), void *arg);
+LIBSSH_API int ssh_set_status_callback(ssh_session session, void (*callback)
+    (void *arg, float status), void *arg);
 
 #ifdef __cplusplus
 }

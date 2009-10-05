@@ -94,6 +94,12 @@
 #define PRINTF_ATTRIBUTE(a,b)
 #endif /* __GNUC__ */
 
+#ifdef __GNUC__
+#define SSH_DEPRECATED __attribute__ ((deprecated))
+#else
+#define SSH_DEPRECATED
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -108,14 +114,14 @@ typedef struct ssh_agent_struct AGENT;
 #endif
 
 typedef struct ssh_message_struct SSH_MESSAGE;
-typedef struct ssh_options_struct SSH_OPTIONS;
+typedef struct ssh_session_struct SSH_OPTIONS;
 typedef struct ssh_session_struct SSH_SESSION;
 
 typedef struct ssh_agent_struct* ssh_agent;
 typedef struct ssh_buffer_struct* ssh_buffer;
 typedef struct ssh_channel_struct* ssh_channel;
 typedef struct ssh_message_struct *ssh_message;
-typedef struct ssh_options_struct* ssh_options;
+typedef struct ssh_session_struct* ssh_options;
 typedef struct ssh_private_key_struct* ssh_private_key;
 typedef struct ssh_public_key_struct* ssh_public_key;
 typedef struct ssh_scp_struct* ssh_scp;
@@ -267,14 +273,7 @@ enum ssh_options_e {
   SSH_OPTIONS_CIPHERS_C_S,
   SSH_OPTIONS_CIPHERS_S_C,
   SSH_OPTIONS_COMPRESSION_C_S,
-  SSH_OPTIONS_COMPRESSION_S_C,
-
-  SSH_OPTIONS_SERVER_BINDADDR,
-  SSH_OPTIONS_SERVER_BINDPORT,
-  SSH_OPTIONS_SERVER_HOSTKEY,
-  SSH_OPTIONS_SERVER_DSAKEY,
-  SSH_OPTIONS_SERVER_RSAKEY,
-  SSH_OPTIONS_SERVER_BANNER,
+  SSH_OPTIONS_COMPRESSION_S_C
 };
 
 enum {
@@ -383,30 +382,13 @@ LIBSSH_API int ssh_message_subtype(ssh_message msg);
 LIBSSH_API int ssh_message_type(ssh_message msg);
 LIBSSH_API int ssh_mkdir (const char *pathname, mode_t mode);
 LIBSSH_API ssh_session ssh_new(void);
-LIBSSH_API ssh_options ssh_options_copy(ssh_options opt);
-LIBSSH_API void ssh_options_free(ssh_options opt);
-LIBSSH_API ssh_options ssh_options_new(void);
 
-LIBSSH_API int ssh_options_allow_ssh1(ssh_options opt, int allow);
-LIBSSH_API int ssh_options_allow_ssh2(ssh_options opt, int allow);
+LIBSSH_API int ssh_options_copy(ssh_session src, ssh_session *dest);
 LIBSSH_API int ssh_options_getopt(ssh_options options, int *argcptr, char **argv);
 LIBSSH_API int ssh_options_parse_config(ssh_options opt, const char *filename);
-LIBSSH_API int ssh_options_set(ssh_options opt, enum ssh_options_e type,
+LIBSSH_API int ssh_options_set(ssh_session session, enum ssh_options_e type,
     const void *value);
-LIBSSH_API int ssh_options_set_banner(ssh_options opt, const char *banner);
-LIBSSH_API int ssh_options_set_bind(ssh_options opt, const char *bindaddr, int port);
-LIBSSH_API int ssh_options_set_dsa_server_key(ssh_options opt, const char *dsakey);
-LIBSSH_API int ssh_options_set_fd(ssh_options opt, socket_t fd);
-LIBSSH_API int ssh_options_set_host(ssh_options opt, const char *host);
-LIBSSH_API int ssh_options_set_identity(ssh_options opt, const char *identity);
-LIBSSH_API int ssh_options_set_log_verbosity(ssh_options opt, int verbosity);
-LIBSSH_API int ssh_options_set_known_hosts_file(ssh_options opt, const char *dir);
-LIBSSH_API int ssh_options_set_port(ssh_options opt, unsigned int port);
-LIBSSH_API int ssh_options_set_rsa_server_key(ssh_options opt, const char *rsakey);
-LIBSSH_API int ssh_options_set_ssh_dir(ssh_options opt, const char *dir);
-LIBSSH_API int ssh_options_set_timeout(ssh_options opt, long seconds, long usec);
-LIBSSH_API int ssh_options_set_username(ssh_options opt, const char *username);
-LIBSSH_API int ssh_options_set_wanted_algos(ssh_options opt, int algo, const char *list);
+
 LIBSSH_API void ssh_print_hexa(const char *descr, const unsigned char *what, size_t len);
 LIBSSH_API int ssh_scp_accept_request(ssh_scp scp);
 LIBSSH_API int ssh_scp_close(ssh_scp scp);

@@ -26,7 +26,7 @@
 #include <string.h>
 
 #include "libssh/priv.h"
-#include "libssh/options.h"
+#include "libssh/session.h"
 
 enum ssh_config_opcode_e {
   SOC_UNSUPPORTED = -1,
@@ -150,7 +150,7 @@ static int ssh_config_get_yesno(char **str, int notfound) {
   return notfound;
 }
 
-static int ssh_config_parse_line(ssh_options opt, const char *line,
+static int ssh_config_parse_line(ssh_session session, const char *line,
     unsigned int count, int *parsing) {
   enum ssh_config_opcode_e opcode;
   const char *p;
@@ -186,7 +186,7 @@ static int ssh_config_parse_line(ssh_options opt, const char *line,
       *parsing = 0;
       for (p = ssh_config_get_str(&s, NULL); p && *p;
           p = ssh_config_get_str(&s, NULL)) {
-        if (match_hostname(opt->host, p, strlen(p))) {
+        if (match_hostname(session->host, p, strlen(p))) {
           *parsing = 1;
         }
       }
@@ -194,43 +194,43 @@ static int ssh_config_parse_line(ssh_options opt, const char *line,
     case SOC_HOSTNAME:
       p = ssh_config_get_str(&s, NULL);
       if (p && *parsing) {
-        ssh_options_set(opt, SSH_OPTIONS_HOST, p);
+        ssh_options_set(session, SSH_OPTIONS_HOST, p);
       }
       break;
     case SOC_PORT:
       p = ssh_config_get_str(&s, NULL);
       if (p && *parsing) {
-        ssh_options_set(opt, SSH_OPTIONS_PORT_STR, p);
+        ssh_options_set(session, SSH_OPTIONS_PORT_STR, p);
       }
       break;
     case SOC_USERNAME:
       p = ssh_config_get_str(&s, NULL);
       if (p && *parsing) {
-        ssh_options_set(opt, SSH_OPTIONS_USER, p);
+        ssh_options_set(session, SSH_OPTIONS_USER, p);
       }
       break;
     case SOC_IDENTITY:
       p = ssh_config_get_str(&s, NULL);
       if (p && *parsing) {
-        ssh_options_set(opt, SSH_OPTIONS_IDENTITY, p);
+        ssh_options_set(session, SSH_OPTIONS_IDENTITY, p);
       }
       break;
     case SOC_CIPHERS:
       p = ssh_config_get_str(&s, NULL);
       if (p && *parsing) {
-        ssh_options_set(opt, SSH_OPTIONS_CIPHERS_C_S, p);
-        ssh_options_set(opt, SSH_OPTIONS_CIPHERS_S_C, p);
+        ssh_options_set(session, SSH_OPTIONS_CIPHERS_C_S, p);
+        ssh_options_set(session, SSH_OPTIONS_CIPHERS_S_C, p);
       }
       break;
     case SOC_COMPRESSION:
       i = ssh_config_get_yesno(&s, -1);
       if (i >= 0 && *parsing) {
         if (i) {
-          ssh_options_set(opt, SSH_OPTIONS_COMPRESSION_C_S, "zlib");
-          ssh_options_set(opt, SSH_OPTIONS_COMPRESSION_S_C, "zlib");
+          ssh_options_set(session, SSH_OPTIONS_COMPRESSION_C_S, "zlib");
+          ssh_options_set(session, SSH_OPTIONS_COMPRESSION_S_C, "zlib");
         } else {
-          ssh_options_set(opt, SSH_OPTIONS_COMPRESSION_C_S, "none");
-          ssh_options_set(opt, SSH_OPTIONS_COMPRESSION_S_C, "none");
+          ssh_options_set(session, SSH_OPTIONS_COMPRESSION_C_S, "none");
+          ssh_options_set(session, SSH_OPTIONS_COMPRESSION_S_C, "none");
         }
       }
       break;
@@ -244,18 +244,18 @@ static int ssh_config_parse_line(ssh_options opt, const char *line,
           return -1;
         }
         i = 0;
-        ssh_options_set(opt, SSH_OPTIONS_SSH1, &i);
-        ssh_options_set(opt, SSH_OPTIONS_SSH2, &i);
+        ssh_options_set(session, SSH_OPTIONS_SSH1, &i);
+        ssh_options_set(session, SSH_OPTIONS_SSH2, &i);
 
         for (a = strtok(b, ","); a; a = strtok(NULL, ",")) {
           switch (atoi(a)) {
             case 1:
               i = 1;
-              ssh_options_set(opt, SSH_OPTIONS_SSH1, &i);
+              ssh_options_set(session, SSH_OPTIONS_SSH1, &i);
               break;
             case 2:
               i = 1;
-              ssh_options_set(opt, SSH_OPTIONS_SSH2, &i);
+              ssh_options_set(session, SSH_OPTIONS_SSH2, &i);
               break;
             default:
               break;
@@ -267,7 +267,7 @@ static int ssh_config_parse_line(ssh_options opt, const char *line,
     case SOC_TIMEOUT:
       i = ssh_config_get_int(&s, -1);
       if (i >= 0 && *parsing) {
-        ssh_options_set(opt, SSH_OPTIONS_TIMEOUT, &i);
+        ssh_options_set(session, SSH_OPTIONS_TIMEOUT, &i);
       }
       break;
     case SOC_UNSUPPORTED:
@@ -285,7 +285,7 @@ static int ssh_config_parse_line(ssh_options opt, const char *line,
 }
 
 /* ssh_config_parse_file */
-int ssh_config_parse_file(ssh_options opt, const char *filename) {
+int ssh_config_parse_file(ssh_session session, const char *filename) {
   char line[1024] = {0};
   unsigned int count = 0;
   FILE *f;
@@ -295,14 +295,14 @@ int ssh_config_parse_file(ssh_options opt, const char *filename) {
     return -1;
   }
 
-  if (opt->log_verbosity) {
+  if (session->log_verbosity) {
     fprintf(stderr, "Reading configuration data from %s\n", filename);
   }
 
   parsing = 1;
   while (fgets(line, sizeof(line), f)) {
     count++;
-    if (ssh_config_parse_line(opt, line, count, &parsing) < 0) {
+    if (ssh_config_parse_line(session, line, count, &parsing) < 0) {
       fclose(f);
       return -1;
     }

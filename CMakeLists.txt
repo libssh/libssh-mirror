@@ -69,11 +69,13 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 if (UNIX AND NOT WIN32)
   add_subdirectory(examples)
 
-  if (WITH_SFTP AND WITH_SERVER)
+  if (WITH_SFTP)
     add_executable(samplessh sample.c)
-    add_executable(samplesshd samplesshd.c)
-
     target_link_libraries(samplessh ${LIBSSH_SHARED_LIBRARY})
+  endif (WITH_SFTP)
+
+  if (WITH_SERVER)
+    add_executable(samplesshd samplesshd.c)
     target_link_libraries(samplesshd ${LIBSSH_SHARED_LIBRARY})
-  endif (WITH_SFTP AND WITH_SERVER)
+  endif (WITH_SERVER)
 endif (UNIX AND NOT WIN32)

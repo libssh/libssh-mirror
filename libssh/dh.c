@@ -53,7 +53,6 @@
 #include "libssh/crypto.h"
 #include "libssh/buffer.h"
 #include "libssh/session.h"
-#include "libssh/options.h"
 #include "libssh/keys.h"
 #include "libssh/dh.h"
 
@@ -1006,11 +1005,11 @@ int signature_verify(ssh_session session, ssh_string signature) {
     return -1;
   }
 
-  if (session->options->wanted_methods[SSH_HOSTKEYS]) {
-    if(!match(session->options->wanted_methods[SSH_HOSTKEYS],pubkey->type_c)) {
+  if (session->wanted_methods[SSH_HOSTKEYS]) {
+    if(!match(session->wanted_methods[SSH_HOSTKEYS],pubkey->type_c)) {
       ssh_set_error(session, SSH_FATAL,
           "Public key from server (%s) doesn't match user preference (%s)",
-          pubkey->type_c, session->options->wanted_methods[SSH_HOSTKEYS]);
+          pubkey->type_c, session->wanted_methods[SSH_HOSTKEYS]);
       publickey_free(pubkey);
       leave_function();
       return -1;

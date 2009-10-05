@@ -29,7 +29,6 @@ typedef struct ssh_kbdint_struct* ssh_kbdint;
 struct ssh_session_struct {
     struct error_struct error;
     struct socket *socket;
-    ssh_options options;
     char *serverbanner;
     char *clientbanner;
     int protoversion;
@@ -93,6 +92,24 @@ struct ssh_session_struct {
     int (*ssh_message_callback)( struct ssh_session_struct *session, ssh_message msg);
     int log_verbosity; /*cached copy of the option structure */
     int log_indent; /* indentation level in enter_function logs */
+
+    ssh_callbacks callbacks; /* Callbacks to user functions */
+
+    /* options */
+    char *username;
+    char *host;
+    char *bindaddr; /* TODO: check if needed */
+    char *xbanner; /* TODO: looks like it is not needed */
+    char *identity;
+    char *sshdir;
+    char *knownhosts;
+    char *wanted_methods[10];
+    unsigned long timeout; /* seconds */
+    unsigned long timeout_usec;
+    unsigned int port;
+    socket_t fd;
+    int ssh2;
+    int ssh1;
 };
 
 int ssh_handle_packets(ssh_session session);

@@ -95,11 +95,21 @@ struct ssh_message_struct;
 /* server data */
 
 struct ssh_bind_struct {
-    struct error_struct error;
-    socket_t bindfd;
-    ssh_options options;
-    int blocking;
-    int toaccept;
+  struct error_struct error;
+
+  ssh_callbacks callbacks; /* Callbacks to user functions */
+
+  /* options */
+  char *wanted_methods[10];
+  char *banner;
+  char *dsakey;
+  char *rsakey;
+  char *bindaddr;
+  socket_t bindfd;
+  unsigned int bindport;
+
+  int blocking;
+  int toaccept;
 };
 
 
@@ -113,6 +123,8 @@ int ssh_config_parse_file(ssh_options opt, const char *filename);
 
 /* errors.c */
 void ssh_set_error(void *error, int code, const char *descr, ...) PRINTF_ATTRIBUTE(3, 4);
+void ssh_set_error_oom(void *);
+void ssh_set_error_invalid(void *, const char *);
 
 /* in crypt.c */
 uint32_t packet_decrypt_len(ssh_session session,char *crypted);
@@ -124,7 +136,7 @@ int packet_hmac_verify(ssh_session session,ssh_buffer buffer,unsigned char *mac)
 /* connect.c */
 int ssh_regex_init(void);
 void ssh_regex_finalize(void);
-ssh_session ssh_session_new();
+ssh_session ssh_session_new(void);
 socket_t ssh_connect_host(ssh_session session, const char *host,const char
         *bind_addr, int port, long timeout, long usec);
 

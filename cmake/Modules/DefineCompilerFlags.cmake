@@ -13,31 +13,6 @@ if (UNIX AND NOT WIN32)
       add_definitions(-fPIC)
     endif (WITH_FPIC)
 
-    if (CMAKE_SIZEOF_VOID_P MATCHES "8")
-      # with large file support
-      execute_process(
-        COMMAND
-          getconf LFS64_CFLAGS
-        OUTPUT_VARIABLE
-          _lfs_CFLAGS
-        ERROR_QUIET
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    else (CMAKE_SIZEOF_VOID_P MATCHES "8")
-      # with large file support
-      execute_process(
-        COMMAND
-          getconf LFS_CFLAGS
-        OUTPUT_VARIABLE
-          _lfs_CFLAGS
-        ERROR_QUIET
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-      )
-      string(REGEX REPLACE "[\r\n]" " " "${_lfs_CFLAGS}" "${${_lfs_CFLAGS}}")
-
-      add_definitions(${_lfs_CFLAGS})
-    endif (CMAKE_SIZEOF_VOID_P MATCHES "8")
-
     check_c_compiler_flag("-fstack-protector" WITH_STACK_PROTECTOR)
     if (WITH_STACK_PROTECTOR)
       add_definitions(-fstack-protector)
@@ -48,9 +23,34 @@ if (UNIX AND NOT WIN32)
       add_definitions(-D_FORTIFY_SOURCE=2)
     endif (WITH_FORTIFY_SOURCE)
 
-    # Set linker flags
-    set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--as-needed")
   endif (CMAKE_COMPILER_IS_GNUCC)
+
+  if (CMAKE_SIZEOF_VOID_P MATCHES "8")
+   # with large file support
+   execute_process(
+     COMMAND
+       getconf LFS64_CFLAGS
+     OUTPUT_VARIABLE
+       _lfs_CFLAGS
+     ERROR_QUIET
+     OUTPUT_STRIP_TRAILING_WHITESPACE
+   )
+ else (CMAKE_SIZEOF_VOID_P MATCHES "8")
+   # with large file support
+   execute_process(
+     COMMAND
+       getconf LFS_CFLAGS
+     OUTPUT_VARIABLE
+       _lfs_CFLAGS
+     ERROR_QUIET
+     OUTPUT_STRIP_TRAILING_WHITESPACE
+   )
+ endif (CMAKE_SIZEOF_VOID_P MATCHES "8")
+ if (_lfs_CFLAGS)
+   string(REGEX REPLACE "[\r\n]" " " "${_lfs_CFLAGS}" "${${_lfs_CFLAGS}}")
+   add_definitions(${_lfs_CFLAGS})
+ endif (_lfs_CFLAGS)
+
 endif (UNIX AND NOT WIN32)
 
 # suppress warning about "deprecated" functions

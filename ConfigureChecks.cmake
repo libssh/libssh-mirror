@@ -39,8 +39,10 @@ endif (WIN32)
 
 set(CMAKE_REQUIRED_INCLUDES ${OPENSSL_INCLUDE_DIRS})
 check_include_file(openssl/aes.h HAVE_OPENSSL_AES_H)
+
 set(CMAKE_REQUIRED_INCLUDES ${OPENSSL_INCLUDE_DIRS})
 check_include_file(openssl/blowfish.h HAVE_OPENSSL_BLOWFISH_H)
+
 set(CMAKE_REQUIRED_INCLUDES ${OPENSSL_INCLUDE_DIRS})
 check_include_file(openssl/des.h HAVE_OPENSSL_DES_H)
 
@@ -75,6 +77,7 @@ if (UNIX)
   check_function_exists(cfmakeraw HAVE_CFMAKERAW)
   check_function_exists(regcomp HAVE_REGCOMP)
 endif (UNIX)
+
 set(LIBSSH_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} CACHE INTERNAL "libssh required system libraries")
 
 # LIBRARIES

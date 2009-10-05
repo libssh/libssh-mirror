@@ -41,7 +41,7 @@
  *
  * @brief Registers an error with a description.
  *
- * @param  error       The class of error.
+ * @param  error       The place to store the error.
  *
  * @param  code        The class of error.
  *
@@ -56,6 +56,35 @@ void ssh_set_error(void *error, int code, const char *descr, ...) {
   vsnprintf(err->error_buffer, ERROR_BUFFERLEN, descr, va);
   va_end(va);
   err->error_code = code;
+}
+
+/**
+ * @internal
+ *
+ * @brief Registers an out of memory error
+ *
+ * @param  error       The place to store the error.
+ *
+ */
+void ssh_set_error_oom(void *error) {
+  struct error_struct *err = error;
+
+  strcpy(err->error_buffer, "Out of memory");
+  err->error_code = SSH_FATAL;
+}
+
+/**
+ * @internal
+ *
+ * @brief Registers an invalid argument error
+ *
+ * @param  error       The place to store the error.
+ *
+ * @param  function    The function the error happened in.
+ *
+ */
+void ssh_set_error_invalid(void *error, const char *function) {
+  ssh_set_error(error, SSH_FATAL, "Invalid argument in %s", function);
 }
 
 /**
