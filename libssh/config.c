@@ -161,6 +161,7 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
 
   x = s = strdup(line);
   if (s == NULL) {
+    ssh_set_error_oom(session);
     return -1;
   }
 
@@ -241,6 +242,7 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
         b = strdup(p);
         if (b == NULL) {
           SAFE_FREE(x);
+          ssh_set_error_oom(session);
           return -1;
         }
         i = 0;
@@ -292,7 +294,7 @@ int ssh_config_parse_file(ssh_session session, const char *filename) {
   int parsing;
 
   if ((f = fopen(filename, "r")) == NULL) {
-    return -1;
+    return 0;
   }
 
   if (session->log_verbosity) {
