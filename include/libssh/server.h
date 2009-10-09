@@ -111,7 +111,8 @@ LIBSSH_API void ssh_bind_fd_toaccept(SSH_BIND *ssh_bind);
  * @brief Accept an incoming ssh connection and initialize the session.
  *
  * @param  ssh_bind     The ssh server bind to accept a connection.
- *
+ * @param  session			A preallocated ssh session
+ * @see ssh_new
  * @return A newly allocated ssh session, NULL on error.
  */
 LIBSSH_API int ssh_bind_accept(SSH_BIND *ssh_bind, ssh_session session);

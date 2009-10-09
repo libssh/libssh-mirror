@@ -5,7 +5,7 @@ Copyright 2003-2009 Aris Adamantiadis
 This file is part of the SSH Library
 
 You are free to copy this file, modify it in any way, consider it being public
-domain. This does not apply to the rest of the library though, but it is 
+domain. This does not apply to the rest of the library though, but it is
 allowed to cut-and-paste working code from this file to any license of
 program.
 The goal is to show the API in action. It's not a reference on how terminal
@@ -142,7 +142,7 @@ static void select_loop(ssh_session session,ssh_channel channel){
     int ret;
     while(channel){
        /* when a signal is caught, ssh_select will return
-         * with SSH_EINTR, which means it should be started 
+         * with SSH_EINTR, which means it should be started
          * again. It lets you handle the signal the faster you
          * can, like in this window changed example. Of course, if
          * your signal handler doesn't call libssh at all, you're
@@ -179,7 +179,7 @@ static void select_loop(ssh_session session,ssh_channel channel){
         } while (ret==EINTR || ret==SSH_EINTR);
 
         // we already looked for input from stdin. Now, we are looking for input from the channel
-        
+
         if(channel && channel_is_closed(channel)){
             ssh_log(session,SSH_LOG_RARE,"exit-status : %d\n",channel_get_exit_status(channel));
 
@@ -591,7 +591,7 @@ int main(int argc, char **argv){
                   exit(-1);
                 }
             }
-            
+
             break;
         case SSH_SERVER_ERROR:
             free(hash);
