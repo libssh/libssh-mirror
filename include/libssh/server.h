@@ -114,7 +114,7 @@ LIBSSH_API void ssh_bind_fd_toaccept(SSH_BIND *ssh_bind);
  *
  * @return A newly allocated ssh session, NULL on error.
  */
-LIBSSH_API ssh_session ssh_bind_accept(SSH_BIND *ssh_bind);
+LIBSSH_API int ssh_bind_accept(SSH_BIND *ssh_bind, ssh_session session);
 
 /**
  * @brief Free a ssh servers bind.

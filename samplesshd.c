@@ -1,24 +1,16 @@
-/* sshd.c */
-/* yet another ssh daemon (Yawn!) */
+/* This is a sample implementation of a libssh based SSH server */
 /*
-Copyright 2004 Aris Adamantiadis
+Copyright 2003-2009 Aris Adamantiadis
 
 This file is part of the SSH Library
 
-The SSH Library is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or (at your
-option) any later version.
-
-The SSH Library is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
-License for more details.
-
-You should have received a copy of the GNU Lesser General Public License
-along with the SSH Library; see the file COPYING.  If not, write to
-the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
-MA 02111-1307, USA. */
+You are free to copy this file, modify it in any way, consider it being public
+domain. This does not apply to the rest of the library though, but it is
+allowed to cut-and-paste working code from this file to any license of
+program.
+The goal is to show the API in action. It's not a reference on how terminal
+clients must be made or how a client should react.
+*/
 
 #include <libssh/libssh.h>
 #include <libssh/server.h>
@@ -38,35 +30,34 @@ static int auth_password(char *user, char *password){
         return 0;
     if(strcmp(password,"lala"))
         return 0;
-    return 1; // authenticated 
+    return 1; // authenticated
 }
 
 int main(int argc, char **argv){
     ssh_session session;
-    ssh_bind ssh_bind_o;
+    ssh_bind sshbind;
     ssh_message message;
     ssh_channel chan=0;
     ssh_buffer buf;
     int auth=0;
     int sftp=0;
     int i;
+    int r;
 
-    ssh_bind_o=ssh_bind_new();
-//    ssh_options_getopt(options, &argc, argv);
-    ssh_bind_options_set(ssh_bind_o, SSH_BIND_OPTIONS_DSAKEY, KEYS_FOLDER "ssh_host_dsa_key");
-    ssh_bind_options_set(ssh_bind_o, SSH_BIND_OPTIONS_RSAKEY, KEYS_FOLDER "ssh_host_rsa_key");
+    sshbind=ssh_bind_new();
+    session=ssh_new();
+    ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_DSAKEY, KEYS_FOLDER "ssh_host_dsa_key");
+    ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_RSAKEY, KEYS_FOLDER "ssh_host_rsa_key");
 
-//    ssh_bind_set_options(ssh_bind_o,options);
-    if(ssh_bind_listen(ssh_bind_o)<0){
-        printf("Error listening to socket: %s\n",ssh_get_error(ssh_bind_o));
+    if(ssh_bind_listen(sshbind)<0){
+        printf("Error listening to socket: %s\n",ssh_get_error(sshbind));
         return 1;
     }
-    session=ssh_bind_accept(ssh_bind_o);
-    if(!session){
-      printf("error accepting a connection : %s\n",ssh_get_error(ssh_bind_o));
+    r=ssh_bind_accept(sshbind,session);
+    if(r==SSH_ERROR){
+      printf("error accepting a connection : %s\n",ssh_get_error(sshbind));
       return 1;
     }
-    printf("Socket connected: fd = %d\n", ssh_get_fd(session));
     if(ssh_accept(session)){
         printf("ssh_accept: %s\n",ssh_get_error(session));
         return 1;
@@ -103,7 +94,7 @@ int main(int argc, char **argv){
     } while (!auth);
     if(!auth){
         printf("auth error: %s\n",ssh_get_error(session));
-	ssh_finalize();
+        ssh_disconnect(session);
         return 1;
     }
     do {
@@ -154,7 +145,7 @@ int main(int argc, char **argv){
     } while (i>0);
     buffer_free(buf);
     ssh_disconnect(session);
-    ssh_bind_free(ssh_bind_o);
+    ssh_bind_free(sshbind);
     ssh_finalize();
     return 0;
 }

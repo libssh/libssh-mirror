@@ -180,8 +180,7 @@ void ssh_bind_fd_toaccept(SSH_BIND *sshbind) {
   sshbind->toaccept = 1;
 }
 
-ssh_session ssh_bind_accept(SSH_BIND *sshbind) {
-  ssh_session session;
+int ssh_bind_accept(SSH_BIND *sshbind, ssh_session session) {
   ssh_private_key dsa = NULL;
   ssh_private_key rsa = NULL;
   int fd = -1;
@@ -190,19 +189,22 @@ ssh_session ssh_bind_accept(SSH_BIND *sshbind) {
   if (sshbind->bindfd < 0) {
     ssh_set_error(sshbind, SSH_FATAL,
         "Can't accept new clients on a not bound socket.");
-    return NULL;
+    return SSH_ERROR;
   }
-
+  if(session == NULL){
+  	ssh_set_error(sshbind, SSH_FATAL,"session is null");
+  	return SSH_ERROR;
+  }
   if (sshbind->dsakey == NULL || sshbind->rsakey == NULL) {
     ssh_set_error(sshbind, SSH_FATAL,
         "DSA or RSA host key file must be set before accept()");
-    return NULL;
+    return SSH_ERROR;
   }
 
   if (sshbind->dsakey) {
     dsa = _privatekey_from_file(sshbind, sshbind->dsakey, TYPE_DSS);
     if (dsa == NULL) {
-      return NULL;
+      return SSH_ERROR;
     }
   }
 
@@ -210,7 +212,7 @@ ssh_session ssh_bind_accept(SSH_BIND *sshbind) {
     rsa = _privatekey_from_file(sshbind, sshbind->rsakey, TYPE_RSA);
     if (rsa == NULL) {
       privatekey_free(dsa);
-      return NULL;
+      return SSH_ERROR;
     }
   }
 
@@ -221,16 +223,9 @@ ssh_session ssh_bind_accept(SSH_BIND *sshbind) {
         strerror(errno));
     privatekey_free(dsa);
     privatekey_free(rsa);
-    return NULL;
+    return SSH_ERROR;
   }
 
-  session = ssh_new();
-  if (session == NULL) {
-    ssh_set_error(sshbind, SSH_FATAL, "Not enough space");
-    privatekey_free(dsa);
-    privatekey_free(rsa);
-    return NULL;
-  }
   session->server = 1;
   session->version = 2;
 
@@ -246,7 +241,7 @@ ssh_session ssh_bind_accept(SSH_BIND *sshbind) {
         privatekey_free(dsa);
         privatekey_free(rsa);
         ssh_cleanup(session);
-        return NULL;
+        return SSH_ERROR;
       }
     }
   }
@@ -259,7 +254,7 @@ ssh_session ssh_bind_accept(SSH_BIND *sshbind) {
       privatekey_free(dsa);
       privatekey_free(rsa);
       ssh_cleanup(session);
-      return NULL;
+      return SSH_ERROR;
     }
   }
 /* TODO FIXME this doesn't work
@@ -271,13 +266,13 @@ ssh_session ssh_bind_accept(SSH_BIND *sshbind) {
     privatekey_free(dsa);
     privatekey_free(rsa);
     ssh_cleanup(session);
-    return NULL;
+    return SSH_ERROR;
   }
   ssh_socket_set_fd(session->socket, fd);
   session->dsa_key = dsa;
   session->rsa_key = rsa;
 
-  return session;
+  return SSH_OK;
 }
 
 void ssh_bind_free(SSH_BIND *sshbind){
