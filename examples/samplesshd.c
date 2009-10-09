@@ -46,6 +46,7 @@ int main(int argc, char **argv){
 
     sshbind=ssh_bind_new();
     session=ssh_new();
+    ssh_options_getopt(session,&argc,argv);
     ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_DSAKEY, KEYS_FOLDER "ssh_host_dsa_key");
     ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_RSAKEY, KEYS_FOLDER "ssh_host_rsa_key");
 
