@@ -240,7 +240,6 @@ int ssh_bind_accept(ssh_bind sshbind, ssh_session session) {
       if (session->wanted_methods[i] == NULL) {
         privatekey_free(dsa);
         privatekey_free(rsa);
-        ssh_cleanup(session);
         return SSH_ERROR;
       }
     }
@@ -253,7 +252,6 @@ int ssh_bind_accept(ssh_bind sshbind, ssh_session session) {
     if (session->bindaddr == NULL) {
       privatekey_free(dsa);
       privatekey_free(rsa);
-      ssh_cleanup(session);
       return SSH_ERROR;
     }
   }
@@ -265,7 +263,6 @@ int ssh_bind_accept(ssh_bind sshbind, ssh_session session) {
   if (session->socket == NULL) {
     privatekey_free(dsa);
     privatekey_free(rsa);
-    ssh_cleanup(session);
     return SSH_ERROR;
   }
   ssh_socket_set_fd(session->socket, fd);

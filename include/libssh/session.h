@@ -113,6 +113,5 @@ struct ssh_session_struct {
 };
 
 int ssh_handle_packets(ssh_session session);
-void ssh_cleanup(ssh_session session);
 
 #endif /* SESSION_H_ */

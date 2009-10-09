@@ -98,11 +98,16 @@ ssh_session ssh_new(void) {
     return session;
 
 err:
-    ssh_cleanup(session);
+    ssh_free(session);
     return NULL;
 }
 
-void ssh_cleanup(ssh_session session) {
+/**
+ * @brief deallocate a session handle
+ * @see ssh_disconnect()
+ * @see ssh_new()
+ */
+void ssh_free(ssh_session session) {
   int i;
   enter_function();
 
@@ -182,7 +187,7 @@ void ssh_silent_disconnect(ssh_session session) {
   ssh_socket_close(session->socket);
   session->alive = 0;
   ssh_disconnect(session);
-  /* FIXME: leave_function(); ??? */
+  leave_function();
 }
 
 /** \brief set the session in blocking/nonblocking mode

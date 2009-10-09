@@ -345,6 +345,7 @@ LIBSSH_API const char *ssh_copyright(void);
 LIBSSH_API void ssh_disconnect(ssh_session session);
 LIBSSH_API char *ssh_dirname (const char *path);
 LIBSSH_API int ssh_finalize(void);
+LIBSSH_API void ssh_free(ssh_session session);
 LIBSSH_API const char *ssh_get_disconnect_message(ssh_session session);
 LIBSSH_API const char *ssh_get_error(void *error);
 LIBSSH_API int ssh_get_error_code(void *error);

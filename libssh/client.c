@@ -647,6 +647,7 @@ int ssh_get_openssh_version(ssh_session session) {
 
 /**
  * @brief Disconnect from a session (client or server).
+ * The session can then be reused to open a new session.
  *
  * @param session       The SSH session to disconnect.
  */
@@ -686,7 +687,6 @@ void ssh_disconnect(ssh_session session) {
 
 error:
   leave_function();
-  ssh_cleanup(session);
 }
 
 const char *ssh_copyright(void) {
