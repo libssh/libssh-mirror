@@ -119,7 +119,7 @@ int ssh_send_banner(ssh_session session, int is_server);
 char *ssh_get_banner(ssh_session session);
 
 /* config.c */
-int ssh_config_parse_file(ssh_options opt, const char *filename);
+int ssh_config_parse_file(ssh_session session, const char *filename);
 
 /* errors.c */
 void ssh_set_error(void *error, int code, const char *descr, ...) PRINTF_ATTRIBUTE(3, 4);

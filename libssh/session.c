@@ -185,20 +185,6 @@ void ssh_silent_disconnect(ssh_session session) {
   /* FIXME: leave_function(); ??? */
 }
 
-/** \brief set the options for the current session
- * \param session ssh session
- * \param options options structure
- * \see ssh_new()
- * \see ssh_options_new()
- */
-void ssh_set_options(ssh_session session, ssh_options options) {
-  if (session == NULL || options == NULL) {
-    return;
-  }
-
-  return;
-}
-
 /** \brief set the session in blocking/nonblocking mode
  * \param session ssh session
  * \param blocking zero for nonblocking mode

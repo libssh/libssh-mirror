@@ -114,14 +114,14 @@ typedef struct ssh_agent_struct AGENT;
 #endif
 
 typedef struct ssh_message_struct SSH_MESSAGE;
-typedef struct ssh_session_struct SSH_OPTIONS;
+//typedef struct ssh_session_struct SSH_OPTIONS;
 typedef struct ssh_session_struct SSH_SESSION;
 
 typedef struct ssh_agent_struct* ssh_agent;
 typedef struct ssh_buffer_struct* ssh_buffer;
 typedef struct ssh_channel_struct* ssh_channel;
 typedef struct ssh_message_struct *ssh_message;
-typedef struct ssh_session_struct* ssh_options;
+//typedef struct ssh_session_struct* ssh_options;
 typedef struct ssh_private_key_struct* ssh_private_key;
 typedef struct ssh_public_key_struct* ssh_public_key;
 typedef struct ssh_scp_struct* ssh_scp;
@@ -384,8 +384,8 @@ LIBSSH_API int ssh_mkdir (const char *pathname, mode_t mode);
 LIBSSH_API ssh_session ssh_new(void);
 
 LIBSSH_API int ssh_options_copy(ssh_session src, ssh_session *dest);
-LIBSSH_API int ssh_options_getopt(ssh_options options, int *argcptr, char **argv);
-LIBSSH_API int ssh_options_parse_config(ssh_options opt, const char *filename);
+LIBSSH_API int ssh_options_getopt(ssh_session session, int *argcptr, char **argv);
+LIBSSH_API int ssh_options_parse_config(ssh_session session, const char *filename);
 LIBSSH_API int ssh_options_set(ssh_session session, enum ssh_options_e type,
     const void *value);
 
@@ -413,7 +413,6 @@ LIBSSH_API void ssh_set_blocking(ssh_session session, int blocking);
 LIBSSH_API void ssh_set_fd_except(ssh_session session);
 LIBSSH_API void ssh_set_fd_toread(ssh_session session);
 LIBSSH_API void ssh_set_fd_towrite(ssh_session session);
-LIBSSH_API void ssh_set_options(ssh_session session, ssh_options options);
 LIBSSH_API void ssh_silent_disconnect(ssh_session session);
 #ifndef _WIN32
 LIBSSH_API int ssh_userauth_agent_pubkey(ssh_session session, const char *username,

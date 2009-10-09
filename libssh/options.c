@@ -710,7 +710,7 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
  * myssh -l user localhost\n
  * The command wont set the hostname value of options to localhost.
  *
- * @param options       An empty option structure pointer.
+ * @param session       The session to configure.
  *
  * @param argcptr       The pointer to the argument count.
  *
@@ -720,7 +720,7 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
  *
  * @see ssh_session_new()
  */
-int ssh_options_getopt(ssh_options options, int *argcptr, char **argv) {
+int ssh_options_getopt(ssh_session session, int *argcptr, char **argv) {
   char *user = NULL;
   char *cipher = NULL;
   char *localaddr = NULL;
@@ -751,7 +751,7 @@ int ssh_options_getopt(ssh_options options, int *argcptr, char **argv) {
 
   save = malloc(argc * sizeof(char *));
   if (save == NULL) {
-    ssh_set_error_oom(options);
+    ssh_set_error_oom(session);
     return -1;
   }
 
@@ -803,7 +803,7 @@ int ssh_options_getopt(ssh_options options, int *argcptr, char **argv) {
           save[current] = strdup(opt);
           if (save[current] == NULL) {
             SAFE_FREE(save);
-            ssh_set_error_oom(options);
+            ssh_set_error_oom(session);
             return -1;
           }
           current++;
@@ -819,11 +819,11 @@ int ssh_options_getopt(ssh_options options, int *argcptr, char **argv) {
   }
 
   if (usersa && usedss) {
-    ssh_set_error(options, SSH_FATAL, "Either RSA or DSS must be chosen");
+    ssh_set_error(session, SSH_FATAL, "Either RSA or DSS must be chosen");
     cont = 0;
   }
 
-  ssh_options_set(options, SSH_OPTIONS_LOG_VERBOSITY, &debuglevel);
+  ssh_options_set(session, SSH_OPTIONS_LOG_VERBOSITY, &debuglevel);
 
   optind = saveoptind;
 
@@ -843,45 +843,45 @@ int ssh_options_getopt(ssh_options options, int *argcptr, char **argv) {
 
   /* set a new option struct */
   if (compress) {
-    if (ssh_options_set(options, SSH_OPTIONS_COMPRESSION_C_S, "zlib") < 0) {
+    if (ssh_options_set(session, SSH_OPTIONS_COMPRESSION_C_S, "zlib") < 0) {
       cont = 0;
     }
-    if (ssh_options_set(options, SSH_OPTIONS_COMPRESSION_S_C, "zlib") < 0) {
+    if (ssh_options_set(session, SSH_OPTIONS_COMPRESSION_S_C, "zlib") < 0) {
       cont = 0;
     }
   }
 
   if (cont && cipher) {
-    if (ssh_options_set(options, SSH_OPTIONS_CIPHERS_C_S, cipher) < 0) {
+    if (ssh_options_set(session, SSH_OPTIONS_CIPHERS_C_S, cipher) < 0) {
       cont = 0;
     }
-    if (cont && ssh_options_set(options, SSH_OPTIONS_CIPHERS_S_C, cipher) < 0) {
+    if (cont && ssh_options_set(session, SSH_OPTIONS_CIPHERS_S_C, cipher) < 0) {
       cont = 0;
     }
   }
 
   if (cont && user) {
-    if (ssh_options_set(options, SSH_OPTIONS_USER, user) < 0) {
+    if (ssh_options_set(session, SSH_OPTIONS_USER, user) < 0) {
       cont = 0;
     }
   }
 
   if (cont && identity) {
-    if (ssh_options_set(options, SSH_OPTIONS_IDENTITY, identity) < 0) {
+    if (ssh_options_set(session, SSH_OPTIONS_IDENTITY, identity) < 0) {
       cont = 0;
     }
   }
 
-  ssh_options_set(options, SSH_OPTIONS_PORT_STR, port);
+  ssh_options_set(session, SSH_OPTIONS_PORT_STR, port);
 
-  ssh_options_set(options, SSH_OPTIONS_SSH1, &ssh1);
-  ssh_options_set(options, SSH_OPTIONS_SSH2, &ssh2);
+  ssh_options_set(session, SSH_OPTIONS_SSH1, &ssh1);
+  ssh_options_set(session, SSH_OPTIONS_SSH2, &ssh2);
 
   if (!cont) {
-    return -1;
+    return SSH_ERROR;
   }
 
-  return 0;
+  return SSH_OK;
 #endif
 }
 
@@ -892,7 +892,7 @@ int ssh_options_getopt(ssh_options options, int *argcptr, char **argv) {
  * are already set. It requires that the host name is already set with
  * ssh_options_set_host().
  *
- * @param  opt          The options structure to use.
+ * @param  session      SSH session handle
  *
  * @param  filename     The options file to use, if NULL the default
  *                      ~/.ssh/config will be used.
@@ -901,28 +901,28 @@ int ssh_options_getopt(ssh_options options, int *argcptr, char **argv) {
  *
  * @see ssh_options_set_host()
  */
-int ssh_options_parse_config(ssh_options opt, const char *filename) {
+int ssh_options_parse_config(ssh_session session, const char *filename) {
   char *expanded_filename;
   int r;
 
-  if (opt == NULL) {
+  if (session == NULL) {
     return -1;
   }
-  if (opt->host == NULL) {
-    ssh_set_error_invalid(opt, __FUNCTION__);
+  if (session->host == NULL) {
+    ssh_set_error_invalid(session, __FUNCTION__);
     return -1;
   }
 
   /* set default filename */
   if (filename == NULL) {
-    expanded_filename = dir_expand_dup(opt, "SSH_DIR/config", 1);
+    expanded_filename = dir_expand_dup(session, "SSH_DIR/config", 1);
   } else {
-    expanded_filename = dir_expand_dup(opt, filename, 1);
+    expanded_filename = dir_expand_dup(session, filename, 1);
   }
   if (expanded_filename == NULL)
     return -1;
 
-  r = ssh_config_parse_file(opt, expanded_filename);
+  r = ssh_config_parse_file(session, expanded_filename);
   free(expanded_filename);
   return r;
 }
