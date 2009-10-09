@@ -73,7 +73,7 @@ static char *hstrerror(int h_errno_val) {
 #endif /* _WIN32 */
 
 /* TODO FIXME: must use getaddrinfo */
-static socket_t bind_socket(SSH_BIND *sshbind, const char *hostname,
+static socket_t bind_socket(ssh_bind sshbind, const char *hostname,
     int port) {
   struct sockaddr_in myaddr;
   struct hostent *hp=NULL;
@@ -121,10 +121,10 @@ static socket_t bind_socket(SSH_BIND *sshbind, const char *hostname,
   return s;
 }
 
-SSH_BIND *ssh_bind_new(void) {
-  SSH_BIND *ptr;
+ssh_bind ssh_bind_new(void) {
+  ssh_bind ptr;
 
-  ptr = malloc(sizeof(SSH_BIND));
+  ptr = malloc(sizeof(struct ssh_bind_struct));
   if (ptr == NULL) {
     return NULL;
   }
@@ -134,7 +134,7 @@ SSH_BIND *ssh_bind_new(void) {
   return ptr;
 }
 
-int ssh_bind_listen(SSH_BIND *sshbind) {
+int ssh_bind_listen(ssh_bind sshbind) {
   const char *host;
   int fd;
 
@@ -164,23 +164,23 @@ int ssh_bind_listen(SSH_BIND *sshbind) {
   return 0;
 }
 
-void ssh_bind_set_blocking(SSH_BIND *sshbind, int blocking) {
+void ssh_bind_set_blocking(ssh_bind sshbind, int blocking) {
   sshbind->blocking = blocking ? 1 : 0;
 }
 
-socket_t ssh_bind_get_fd(SSH_BIND *sshbind) {
+socket_t ssh_bind_get_fd(ssh_bind sshbind) {
   return sshbind->bindfd;
 }
 
-void ssh_bind_set_fd(SSH_BIND *sshbind, socket_t fd) {
+void ssh_bind_set_fd(ssh_bind sshbind, socket_t fd) {
   sshbind->bindfd = fd;
 }
 
-void ssh_bind_fd_toaccept(SSH_BIND *sshbind) {
+void ssh_bind_fd_toaccept(ssh_bind sshbind) {
   sshbind->toaccept = 1;
 }
 
-int ssh_bind_accept(SSH_BIND *sshbind, ssh_session session) {
+int ssh_bind_accept(ssh_bind sshbind, ssh_session session) {
   ssh_private_key dsa = NULL;
   ssh_private_key rsa = NULL;
   int fd = -1;
@@ -275,7 +275,7 @@ int ssh_bind_accept(SSH_BIND *sshbind, ssh_session session) {
   return SSH_OK;
 }
 
-void ssh_bind_free(SSH_BIND *sshbind){
+void ssh_bind_free(ssh_bind sshbind){
   int i;
 
   if (sshbind == NULL) {
