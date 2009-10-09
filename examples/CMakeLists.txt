@@ -19,7 +19,7 @@ target_link_libraries(scp_download ${LIBSSH_SHARED_LIBRARY})
 
 include_directories(
   ${LIBSSH_PUBLIC_INCLUDE_DIRS}
-  ${LIBSSH_PRIVATE_INCLUDE_DIRS}
+  ${CMAKE_BINARY_DIR}
 )
 
 if (WITH_SFTP)
