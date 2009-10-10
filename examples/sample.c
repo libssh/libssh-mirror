@@ -699,6 +699,7 @@ int main(int argc, char **argv){
     if(!sftp && !cmds[0])
         do_cleanup(0);
     ssh_disconnect(session);
+    ssh_free(session);
     ssh_finalize();
 
     return 0;
