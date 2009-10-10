@@ -130,7 +130,7 @@ ssh_bind ssh_bind_new(void) {
   }
   ZERO_STRUCTP(ptr);
   ptr->bindfd = -1;
-
+  ptr->bindport= 22;
   return ptr;
 }
 
