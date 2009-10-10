@@ -830,6 +830,7 @@ void ssh_message_free(ssh_message msg){
  */
 void message_handle(ssh_session session, uint32_t type){
   ssh_message msg=ssh_message_retrieve(session,type);
+  ssh_log(session,SSH_LOG_PROTOCOL,"Stacking message from packet type %d",type);
   if(msg){
     if(!session->ssh_message_list){
       session->ssh_message_list=ssh_list_new();
