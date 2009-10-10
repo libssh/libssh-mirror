@@ -46,7 +46,7 @@
 #endif
 
 #include "libssh/libssh.h"
-#include "libssh/callback.h"
+#include "libssh/callbacks.h"
 #include "libssh/crypto.h"
 /* some constants */
 #define MAX_PACKET_LEN 262144
