@@ -36,13 +36,13 @@
 #include "libssh/buffer.h"
 #include "libssh/misc.h"
 
-SFTP_CLIENT_MESSAGE *sftp_get_client_message(SFTP_SESSION *sftp) {
-  SFTP_PACKET *packet;
-  SFTP_CLIENT_MESSAGE *msg;
+sftp_client_message sftp_get_client_message(sftp_session sftp) {
+  sftp_packet packet;
+  sftp_client_message msg;
   ssh_buffer payload;
   ssh_string tmp;
 
-  msg = malloc(sizeof (SFTP_CLIENT_MESSAGE));
+  msg = malloc(sizeof (struct sftp_client_message_struct));
   if (msg == NULL) {
     return NULL;
   }
@@ -213,7 +213,7 @@ SFTP_CLIENT_MESSAGE *sftp_get_client_message(SFTP_SESSION *sftp) {
   return msg;
 }
 
-void sftp_client_message_free(SFTP_CLIENT_MESSAGE *msg) {
+void sftp_client_message_free(sftp_client_message msg) {
   if (msg == NULL) {
     return;
   }
@@ -227,8 +227,8 @@ void sftp_client_message_free(SFTP_CLIENT_MESSAGE *msg) {
   SAFE_FREE(msg);
 }
 
-int sftp_reply_name(SFTP_CLIENT_MESSAGE *msg, const char *name,
-    SFTP_ATTRIBUTES *attr) {
+int sftp_reply_name(sftp_client_message msg, const char *name,
+    sftp_attributes attr) {
   ssh_buffer out;
   ssh_string file;
 
@@ -259,7 +259,7 @@ int sftp_reply_name(SFTP_CLIENT_MESSAGE *msg, const char *name,
   return 0;
 }
 
-int sftp_reply_handle(SFTP_CLIENT_MESSAGE *msg, ssh_string handle){
+int sftp_reply_handle(sftp_client_message msg, ssh_string handle){
   ssh_buffer out;
 
   out = buffer_new();
@@ -278,7 +278,7 @@ int sftp_reply_handle(SFTP_CLIENT_MESSAGE *msg, ssh_string handle){
   return 0;
 }
 
-int sftp_reply_attr(SFTP_CLIENT_MESSAGE *msg, SFTP_ATTRIBUTES *attr) {
+int sftp_reply_attr(sftp_client_message msg, sftp_attributes attr) {
   ssh_buffer out;
 
   out = buffer_new();
@@ -297,8 +297,8 @@ int sftp_reply_attr(SFTP_CLIENT_MESSAGE *msg, SFTP_ATTRIBUTES *attr) {
   return 0;
 }
 
-int sftp_reply_names_add(SFTP_CLIENT_MESSAGE *msg, const char *file,
-    const char *longname, SFTP_ATTRIBUTES *attr) {
+int sftp_reply_names_add(sftp_client_message msg, const char *file,
+    const char *longname, sftp_attributes attr) {
   ssh_string name;
 
   name = string_from_char(file);
@@ -335,7 +335,7 @@ int sftp_reply_names_add(SFTP_CLIENT_MESSAGE *msg, const char *file,
   return 0;
 }
 
-int sftp_reply_names(SFTP_CLIENT_MESSAGE *msg) {
+int sftp_reply_names(sftp_client_message msg) {
   ssh_buffer out;
 
   out = buffer_new();
@@ -363,7 +363,7 @@ int sftp_reply_names(SFTP_CLIENT_MESSAGE *msg) {
   return 0;
 }
 
-int sftp_reply_status(SFTP_CLIENT_MESSAGE *msg, uint32_t status,
+int sftp_reply_status(sftp_client_message msg, uint32_t status,
     const char *message) {
   ssh_buffer out;
   ssh_string s;
@@ -395,7 +395,7 @@ int sftp_reply_status(SFTP_CLIENT_MESSAGE *msg, uint32_t status,
   return 0;
 }
 
-int sftp_reply_data(SFTP_CLIENT_MESSAGE *msg, const void *data, int len) {
+int sftp_reply_data(sftp_client_message msg, const void *data, int len) {
   ssh_buffer out;
 
   out = buffer_new();
@@ -421,7 +421,7 @@ int sftp_reply_data(SFTP_CLIENT_MESSAGE *msg, const void *data, int len) {
  * the handle. Care is given that a corrupted handle won't give a
  * valid info (or worse).
  */
-ssh_string sftp_handle_alloc(SFTP_SESSION *sftp, void *info) {
+ssh_string sftp_handle_alloc(sftp_session sftp, void *info) {
   ssh_string ret;
   uint32_t val;
   int i;
@@ -456,7 +456,7 @@ ssh_string sftp_handle_alloc(SFTP_SESSION *sftp, void *info) {
   return ret;
 }
 
-void *sftp_handle(SFTP_SESSION *sftp, ssh_string handle){
+void *sftp_handle(sftp_session sftp, ssh_string handle){
   uint32_t val;
 
   if (sftp->handles == NULL) {
@@ -476,7 +476,7 @@ void *sftp_handle(SFTP_SESSION *sftp, ssh_string handle){
   return sftp->handles[val];
 }
 
-void sftp_handle_remove(SFTP_SESSION *sftp, void *handle) {
+void sftp_handle_remove(sftp_session sftp, void *handle) {
   int i;
 
   for (i = 0; i < SFTP_HANDLES; i++) {

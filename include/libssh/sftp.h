@@ -25,12 +25,12 @@
  * @brief SFTP handling functions
  *
  * SFTP commands are channeled by the ssh sftp subsystem. Every packet is
- * sent/read using a SFTP_PACKET type structure. Related to these packets,
+ * sent/read using a sftp_packet type structure. Related to these packets,
  * most of the server answers are messages having an ID and a message
- * specific part. It is described by SFTP_MESSAGE when reading a message,
+ * specific part. It is described by sftp_message when reading a message,
  * the sftp system puts it into the queue, so the process having asked for
  * it can fetch it, while continuing to read for other messages (it is
- * inspecified in which order messages may be sent back to the client
+ * unspecified in which order messages may be sent back to the client
  *
  * @defgroup ssh_sftp SFTP Functions
  * @{
@@ -67,86 +67,96 @@ extern "C" {
 #endif /* _MSC_VER */
 #endif /* _WIN32 */
 
+typedef struct sftp_attributes_struct* sftp_attributes;
+typedef struct sftp_client_message_struct* sftp_client_message;
+typedef struct sftp_dir_struct* sftp_dir;
 typedef struct sftp_ext_struct *sftp_ext;
+typedef struct sftp_file_struct* sftp_file;
+typedef struct sftp_message_struct* sftp_message;
+typedef struct sftp_packet_struct* sftp_packet;
+typedef struct sftp_request_queue_struct* sftp_request_queue;
+typedef struct sftp_session_struct* sftp_session;
+typedef struct sftp_status_message_struct* sftp_status_message;
+typedef struct sftp_statvfs_struct* sftp_statvfs_t;
 
-typedef struct sftp_session_struct {
+struct sftp_session_struct {
     ssh_session session;
     ssh_channel channel;
     int server_version;
     int client_version;
     int version;
-    struct request_queue *queue;
+    sftp_request_queue queue;
     uint32_t id_counter;
     int errnum;
     void **handles;
-    struct sftp_ext_struct *ext;
-} SFTP_SESSION ;
+    sftp_ext ext;
+};
 
-typedef struct {
-    SFTP_SESSION *sftp;
+struct sftp_packet_struct {
+    sftp_session sftp;
     uint8_t type;
     ssh_buffer payload;
-} SFTP_PACKET;
+};
 
 /* file handler */
-typedef struct sftp_file{
-    SFTP_SESSION *sftp;
+struct sftp_file_struct {
+    sftp_session sftp;
     char *name;
     uint64_t offset;
     ssh_string handle;
     int eof;
     int nonblocking;
-}  SFTP_FILE ;
+};
 
-typedef struct sftp_dir {
-    SFTP_SESSION *sftp;
+struct sftp_dir_struct {
+    sftp_session sftp;
     char *name;
     ssh_string handle; /* handle to directory */
     ssh_buffer buffer; /* contains raw attributes from server which haven't been parsed */
     uint32_t count; /* counts the number of following attributes structures into buffer */
     int eof; /* end of directory listing */
-} SFTP_DIR;
+};
 
-typedef struct {
-    SFTP_SESSION *sftp;
+struct sftp_message_struct {
+    sftp_session sftp;
     uint8_t packet_type;
     ssh_buffer payload;
     uint32_t id;
-} SFTP_MESSAGE;
+};
 
 /* this is a bunch of all data that could be into a message */
-typedef struct sftp_client_message{
-    SFTP_SESSION *sftp;
+struct sftp_client_message_struct {
+    sftp_session sftp;
     uint8_t type;
     uint32_t id;
     char *filename; /* can be "path" */
     uint32_t flags;
-    struct sftp_attributes *attr;
+    sftp_attributes attr;
     ssh_string handle;
     uint64_t offset;
     uint32_t len;
     int attr_num;
     ssh_buffer attrbuf; /* used by sftp_reply_attrs */
     ssh_string data; /* can be newpath of rename() */
-} SFTP_CLIENT_MESSAGE;
+};
 
-typedef struct request_queue{
-    struct request_queue *next;
-    SFTP_MESSAGE *message;
-} REQUEST_QUEUE;
+struct sftp_request_queue_struct {
+    sftp_request_queue next;
+    sftp_message message;
+};
 
 /* SSH_FXP_MESSAGE described into .7 page 26 */
-typedef struct {
-  uint32_t id;
-  uint32_t status;
+struct sftp_status_message_struct {
+		uint32_t id;
+		uint32_t status;
     ssh_string error;
     ssh_string lang;
     char *errormsg;
     char *langmsg;
-} STATUS_MESSAGE;
+};
 
 /* don't worry much of these aren't really used */
-typedef struct sftp_attributes{
+struct sftp_attributes_struct {
     char *name;
     char *longname; /* some weird stuff */
     uint32_t flags;
@@ -169,9 +179,9 @@ typedef struct sftp_attributes{
     uint32_t extended_count;
     ssh_string extended_type;
     ssh_string extended_data;
-} SFTP_ATTRIBUTES;
+};
 
-typedef struct sftp_statvfs_struct {
+struct sftp_statvfs_struct {
   uint64_t f_bsize; /* file system block size */
   uint64_t f_frsize; /* fundamental fs block size */
   uint64_t f_blocks; /* number of blocks (unit f_frsize) */
@@ -183,7 +193,7 @@ typedef struct sftp_statvfs_struct {
   uint64_t f_fsid; /* file system id */
   uint64_t f_flag; /* bit mask of f_flag values */
   uint64_t f_namemax; /* maximum filename length */
-} SFTP_STATVFS;
+};
 
 #define LIBSFTP_VERSION 3
 
@@ -194,14 +204,14 @@ typedef struct sftp_statvfs_struct {
  *
  * @return              A new sftp session or NULL on error.
  */
-LIBSSH_API SFTP_SESSION *sftp_new(ssh_session session);
+LIBSSH_API sftp_session sftp_new(ssh_session session);
 
 /**
  * @brief Close and deallocate a sftp session.
  *
  * @param sftp          The sftp session handle to free.
  */
-LIBSSH_API void sftp_free(SFTP_SESSION *sftp);
+LIBSSH_API void sftp_free(sftp_session sftp);
 
 /**
  * @brief Initialize the sftp session with the server.
@@ -210,7 +220,7 @@ LIBSSH_API void sftp_free(SFTP_SESSION *sftp);
  *
  * @return              0 on success, < 0 on error with ssh error set.
  */
-LIBSSH_API int sftp_init(SFTP_SESSION *sftp);
+LIBSSH_API int sftp_init(sftp_session sftp);
 
 /**
  * @brief Get the last sftp error.
@@ -222,7 +232,7 @@ LIBSSH_API int sftp_init(SFTP_SESSION *sftp);
  * @return              The saved error (see server responses), < 0 if an error
  *                      in the function occured.
  */
-LIBSSH_API int sftp_get_error(SFTP_SESSION *sftp);
+LIBSSH_API int sftp_get_error(sftp_session sftp);
 
 /**
  * @brief Get the count of extensions provided by the server.
@@ -232,7 +242,7 @@ LIBSSH_API int sftp_get_error(SFTP_SESSION *sftp);
  * @return The count of extensions provided by the server, 0 on error or
  *         not available.
  */
-LIBSSH_API unsigned int sftp_extensions_get_count(SFTP_SESSION *sftp);
+LIBSSH_API unsigned int sftp_extensions_get_count(sftp_session sftp);
 
 /**
  * @brief Get the name of the extension provided by the server.
@@ -243,7 +253,7 @@ LIBSSH_API unsigned int sftp_extensions_get_count(SFTP_SESSION *sftp);
  *
  * @return              The name of the extension.
  */
-LIBSSH_API const char *sftp_extensions_get_name(SFTP_SESSION *sftp, unsigned int index);
+LIBSSH_API const char *sftp_extensions_get_name(sftp_session sftp, unsigned int index);
 
 /**
  * @brief Get the data of the extension provided by the server.
@@ -256,7 +266,7 @@ LIBSSH_API const char *sftp_extensions_get_name(SFTP_SESSION *sftp, unsigned int
  *
  * @return              The data of the extension.
  */
-LIBSSH_API const char *sftp_extensions_get_data(SFTP_SESSION *sftp, unsigned int index);
+LIBSSH_API const char *sftp_extensions_get_data(sftp_session sftp, unsigned int index);
 
 /**
  * @brief Check if the given extension is supported.
@@ -275,7 +285,7 @@ LIBSSH_API const char *sftp_extensions_get_data(SFTP_SESSION *sftp, unsigned int
  * sftp_extension_supported(sftp, "statvfs@openssh.com", "2");
  * @endcode
  */
-LIBSSH_API int sftp_extension_supported(SFTP_SESSION *sftp, const char *name,
+LIBSSH_API int sftp_extension_supported(sftp_session sftp, const char *name,
     const char *data);
 
 /**
@@ -290,7 +300,7 @@ LIBSSH_API int sftp_extension_supported(SFTP_SESSION *sftp, const char *name,
  * @see                 sftp_readdir
  * @see                 sftp_closedir
  */
-LIBSSH_API SFTP_DIR *sftp_opendir(SFTP_SESSION *session, const char *path);
+LIBSSH_API sftp_dir sftp_opendir(sftp_session session, const char *path);
 
 /**
  * @brief Get a single file attributes structure of a directory.
@@ -305,7 +315,7 @@ LIBSSH_API SFTP_DIR *sftp_opendir(SFTP_SESSION *session, const char *path);
  * @see                sftp_attribute_free()
  * @see                sftp_closedir()
  */
-LIBSSH_API SFTP_ATTRIBUTES *sftp_readdir(SFTP_SESSION *session, SFTP_DIR *dir);
+LIBSSH_API sftp_attributes sftp_readdir(sftp_session session, sftp_dir dir);
 
 /**
  * @brief Tell if the directory has reached EOF (End Of File).
@@ -316,7 +326,7 @@ LIBSSH_API SFTP_ATTRIBUTES *sftp_readdir(SFTP_SESSION *session, SFTP_DIR *dir);
  *
  * @see                 sftp_readdir()
  */
-LIBSSH_API int sftp_dir_eof(SFTP_DIR *dir);
+LIBSSH_API int sftp_dir_eof(sftp_dir dir);
 
 /**
  * @brief Get information about a file or directory.
@@ -328,7 +338,7 @@ LIBSSH_API int sftp_dir_eof(SFTP_DIR *dir);
  * @return              The sftp attributes structure of the file or directory,
  *                      NULL on error with ssh and sftp error set.
  */
-LIBSSH_API SFTP_ATTRIBUTES *sftp_stat(SFTP_SESSION *session, const char *path);
+LIBSSH_API sftp_attributes sftp_stat(sftp_session session, const char *path);
 
 /**
  * @brief Get information about a file or directory.
@@ -343,7 +353,7 @@ LIBSSH_API SFTP_ATTRIBUTES *sftp_stat(SFTP_SESSION *session, const char *path);
  * @return              The sftp attributes structure of the file or directory,
  *                      NULL on error with ssh and sftp error set.
  */
-LIBSSH_API SFTP_ATTRIBUTES *sftp_lstat(SFTP_SESSION *session, const char *path);
+LIBSSH_API sftp_attributes sftp_lstat(sftp_session session, const char *path);
 
 /**
  * @brief Get information about a file or directory from a file handle.
@@ -353,14 +363,14 @@ LIBSSH_API SFTP_ATTRIBUTES *sftp_lstat(SFTP_SESSION *session, const char *path);
  * @return              The sftp attributes structure of the file or directory,
  *                      NULL on error with ssh and sftp error set.
  */
-LIBSSH_API SFTP_ATTRIBUTES *sftp_fstat(SFTP_FILE *file);
+LIBSSH_API sftp_attributes sftp_fstat(sftp_file file);
 
 /**
  * @brief Free a sftp attribute structure.
  *
  * @param file          The sftp attribute structure to free.
  */
-LIBSSH_API void sftp_attributes_free(SFTP_ATTRIBUTES *file);
+LIBSSH_API void sftp_attributes_free(sftp_attributes file);
 
 /**
  * @brief Close a directory handle opened by sftp_opendir().
@@ -369,12 +379,12 @@ LIBSSH_API void sftp_attributes_free(SFTP_ATTRIBUTES *file);
  *
  * @return              Returns SSH_NO_ERROR or SSH_ERROR if an error occured.
  */
-LIBSSH_API int sftp_closedir(SFTP_DIR *dir);
+LIBSSH_API int sftp_closedir(sftp_dir dir);
 
 /**
  * @deprecated          Use sftp_closedir() instead.
  */
-LIBSSH_API int sftp_dir_close(SFTP_DIR *dir) SFTP_DEPRECATED;
+LIBSSH_API int sftp_dir_close(sftp_dir dir) SFTP_DEPRECATED;
 
 /**
  * @brief Close an open file handle.
@@ -385,12 +395,12 @@ LIBSSH_API int sftp_dir_close(SFTP_DIR *dir) SFTP_DEPRECATED;
  *
  * @see                 sftp_open()
  */
-LIBSSH_API int sftp_close(SFTP_FILE *file);
+LIBSSH_API int sftp_close(sftp_file file);
 
 /**
  * @deprecated          Use sftp_close() instead.
  */
-LIBSSH_API int sftp_file_close(SFTP_FILE *file) SFTP_DEPRECATED;
+LIBSSH_API int sftp_file_close(sftp_file file) SFTP_DEPRECATED;
 
 /**
  * @brief Open a file on the server.
@@ -418,12 +428,12 @@ LIBSSH_API int sftp_file_close(SFTP_FILE *file) SFTP_DEPRECATED;
  * @return              A sftp file handle, NULL on error with ssh and sftp
  *                      error set.
  */
-LIBSSH_API SFTP_FILE *sftp_open(SFTP_SESSION *session, const char *file, int accesstype,
+LIBSSH_API sftp_file sftp_open(sftp_session session, const char *file, int accesstype,
     mode_t mode);
 
-LIBSSH_API void sftp_file_set_nonblocking(SFTP_FILE *handle);
+LIBSSH_API void sftp_file_set_nonblocking(sftp_file handle);
 
-LIBSSH_API void sftp_file_set_blocking(SFTP_FILE *handle);
+LIBSSH_API void sftp_file_set_blocking(sftp_file handle);
 
 /**
  * @brief Read from a file using an opened sftp file handle.
@@ -437,7 +447,7 @@ LIBSSH_API void sftp_file_set_blocking(SFTP_FILE *handle);
  * @return              Number of bytes written, < 0 on error with ssh and sftp
  *                      error set.
  */
-LIBSSH_API ssize_t sftp_read(SFTP_FILE *file, void *buf, size_t count);
+LIBSSH_API ssize_t sftp_read(sftp_file file, void *buf, size_t count);
 
 /**
  * @brief Start an asynchronous read from a file using an opened sftp file handle.
@@ -470,7 +480,7 @@ LIBSSH_API ssize_t sftp_read(SFTP_FILE *file, void *buf, size_t count);
  * @see                 sftp_async_read()
  * @see                 sftp_open()
  */
-LIBSSH_API int sftp_async_read_begin(SFTP_FILE *file, uint32_t len);
+LIBSSH_API int sftp_async_read_begin(sftp_file file, uint32_t len);
 
 /**
  * @brief Wait for an asynchronous read to complete and save the data.
@@ -495,7 +505,7 @@ LIBSSH_API int sftp_async_read_begin(SFTP_FILE *file, uint32_t len);
  *
  * @see sftp_async_read_begin()
  */
-LIBSSH_API int sftp_async_read(SFTP_FILE *file, void *data, uint32_t len, uint32_t id);
+LIBSSH_API int sftp_async_read(sftp_file file, void *data, uint32_t len, uint32_t id);
 
 /**
  * @brief Write to a file using an opened sftp file handle.
@@ -513,7 +523,7 @@ LIBSSH_API int sftp_async_read(SFTP_FILE *file, void *data, uint32_t len, uint32
  * @see                 sftp_read()
  * @see                 sftp_close()
  */
-LIBSSH_API ssize_t sftp_write(SFTP_FILE *file, const void *buf, size_t count);
+LIBSSH_API ssize_t sftp_write(sftp_file file, const void *buf, size_t count);
 
 /**
  * @brief Seek to a specific location in a file.
@@ -524,7 +534,7 @@ LIBSSH_API ssize_t sftp_write(SFTP_FILE *file, const void *buf, size_t count);
  *
  * @return             0 on success, < 0 on error.
  */
-LIBSSH_API int sftp_seek(SFTP_FILE *file, uint32_t new_offset);
+LIBSSH_API int sftp_seek(sftp_file file, uint32_t new_offset);
 
 /**
  * @brief Seek to a specific location in a file. This is the
@@ -536,7 +546,7 @@ LIBSSH_API int sftp_seek(SFTP_FILE *file, uint32_t new_offset);
  *
  * @return             0 on success, < 0 on error.
  */
-LIBSSH_API int sftp_seek64(SFTP_FILE *file, uint64_t new_offset);
+LIBSSH_API int sftp_seek64(sftp_file file, uint64_t new_offset);
 
 /**
  * @brief Report current byte position in file.
@@ -547,7 +557,7 @@ LIBSSH_API int sftp_seek64(SFTP_FILE *file, uint64_t new_offset);
  *                      of the file associated with the file descriptor. < 0 on
  *                      error.
  */
-LIBSSH_API unsigned long sftp_tell(SFTP_FILE *file);
+LIBSSH_API unsigned long sftp_tell(sftp_file file);
 
 /**
  * @brief Report current byte position in file.
@@ -558,7 +568,7 @@ LIBSSH_API unsigned long sftp_tell(SFTP_FILE *file);
  *                      of the file associated with the file descriptor. < 0 on
  *                      error.
  */
-LIBSSH_API uint64_t sftp_tell64(SFTP_FILE *file);
+LIBSSH_API uint64_t sftp_tell64(sftp_file file);
 
 /**
  * @brief Rewinds the position of the file pointer to the beginning of the
@@ -566,12 +576,12 @@ LIBSSH_API uint64_t sftp_tell64(SFTP_FILE *file);
  *
  * @param file          Open sftp file handle.
  */
-LIBSSH_API void sftp_rewind(SFTP_FILE *file);
+LIBSSH_API void sftp_rewind(sftp_file file);
 
 /**
  * @deprecated          Use sftp_unlink() instead.
  */
-LIBSSH_API int sftp_rm(SFTP_SESSION *sftp, const char *file) SFTP_DEPRECATED;
+LIBSSH_API int sftp_rm(sftp_session sftp, const char *file) SFTP_DEPRECATED;
 
 /**
  * @brief Unlink (delete) a file.
@@ -582,7 +592,7 @@ LIBSSH_API int sftp_rm(SFTP_SESSION *sftp, const char *file) SFTP_DEPRECATED;
  *
  * @return              0 on success, < 0 on error with ssh and sftp error set.
  */
-LIBSSH_API int sftp_unlink(SFTP_SESSION *sftp, const char *file);
+LIBSSH_API int sftp_unlink(sftp_session sftp, const char *file);
 
 /**
  * @brief Remove a directoy.
@@ -593,7 +603,7 @@ LIBSSH_API int sftp_unlink(SFTP_SESSION *sftp, const char *file);
  *
  * @return              0 on success, < 0 on error with ssh and sftp error set.
  */
-LIBSSH_API int sftp_rmdir(SFTP_SESSION *sftp, const char *directory);
+LIBSSH_API int sftp_rmdir(sftp_session sftp, const char *directory);
 
 /**
  * @brief Create a directory.
@@ -608,7 +618,7 @@ LIBSSH_API int sftp_rmdir(SFTP_SESSION *sftp, const char *directory);
  *
  * @return              0 on success, < 0 on error with ssh and sftp error set.
  */
-LIBSSH_API int sftp_mkdir(SFTP_SESSION *sftp, const char *directory, mode_t mode);
+LIBSSH_API int sftp_mkdir(sftp_session sftp, const char *directory, mode_t mode);
 
 /**
  * @brief Rename or move a file or directory.
@@ -623,7 +633,7 @@ LIBSSH_API int sftp_mkdir(SFTP_SESSION *sftp, const char *directory, mode_t mode
  *
  * @return              0 on success, < 0 on error with ssh and sftp error set.
  */
-LIBSSH_API int sftp_rename(SFTP_SESSION *sftp, const char *original, const  char *newname);
+LIBSSH_API int sftp_rename(sftp_session sftp, const char *original, const  char *newname);
 
 /**
  * @brief Set file attributes on a file, directory or symbolic link.
@@ -637,7 +647,7 @@ LIBSSH_API int sftp_rename(SFTP_SESSION *sftp, const char *original, const  char
  *
  * @return              0 on success, < 0 on error with ssh and sftp error set.
  */
-LIBSSH_API int sftp_setstat(SFTP_SESSION *sftp, const char *file, SFTP_ATTRIBUTES *attr);
+LIBSSH_API int sftp_setstat(sftp_session sftp, const char *file, sftp_attributes attr);
 
 /**
  * @brief Change the file owner and group
@@ -652,7 +662,7 @@ LIBSSH_API int sftp_setstat(SFTP_SESSION *sftp, const char *file, SFTP_ATTRIBUTE
  *
  * @return              0 on success, < 0 on error with ssh and sftp error set.
  */
-LIBSSH_API int sftp_chown(SFTP_SESSION *sftp, const char *file, uid_t owner, gid_t group);
+LIBSSH_API int sftp_chown(sftp_session sftp, const char *file, uid_t owner, gid_t group);
 
 /**
  * @brief Change permissions of a file
@@ -667,7 +677,7 @@ LIBSSH_API int sftp_chown(SFTP_SESSION *sftp, const char *file, uid_t owner, gid
  *
  * @return              0 on success, < 0 on error with ssh and sftp error set.
  */
-LIBSSH_API int sftp_chmod(SFTP_SESSION *sftp, const char *file, mode_t mode);
+LIBSSH_API int sftp_chmod(sftp_session sftp, const char *file, mode_t mode);
 
 /**
  * @brief Change the last modification and access time of a file.
@@ -681,7 +691,7 @@ LIBSSH_API int sftp_chmod(SFTP_SESSION *sftp, const char *file, mode_t mode);
  *
  * @return              0 on success, < 0 on error with ssh and sftp error set.
  */
-LIBSSH_API int sftp_utimes(SFTP_SESSION *sftp, const char *file, const struct timeval *times);
+LIBSSH_API int sftp_utimes(sftp_session sftp, const char *file, const struct timeval *times);
 
 /**
  * @brief Create a symbolic link.
@@ -694,7 +704,7 @@ LIBSSH_API int sftp_utimes(SFTP_SESSION *sftp, const char *file, const struct ti
  *
  * @return              0 on success, < 0 on error with ssh and sftp error set.
  */
-LIBSSH_API int sftp_symlink(SFTP_SESSION *sftp, const char *target, const char *dest);
+LIBSSH_API int sftp_symlink(sftp_session sftp, const char *target, const char *dest);
 
 /**
  * @brief Read the value of a symbolic link.
@@ -705,7 +715,7 @@ LIBSSH_API int sftp_symlink(SFTP_SESSION *sftp, const char *target, const char *
  *
  * @return              The target of the link, NULL on error.
  */
-LIBSSH_API char *sftp_readlink(SFTP_SESSION *sftp, const char *path);
+LIBSSH_API char *sftp_readlink(sftp_session sftp, const char *path);
 
 /**
  * @brief Get information about a mounted file system.
@@ -716,7 +726,7 @@ LIBSSH_API char *sftp_readlink(SFTP_SESSION *sftp, const char *path);
  *
  * @return A statvfs structure or NULL on error.
  */
-LIBSSH_API SFTP_STATVFS *sftp_statvfs(SFTP_SESSION *sftp, const char *path);
+LIBSSH_API sftp_statvfs_t sftp_statvfs(sftp_session sftp, const char *path);
 
 /**
  * @brief Get information about a mounted file system.
@@ -725,14 +735,14 @@ LIBSSH_API SFTP_STATVFS *sftp_statvfs(SFTP_SESSION *sftp, const char *path);
  *
  * @return A statvfs structure or NULL on error.
  */
-LIBSSH_API SFTP_STATVFS *sftp_fstatvfs(SFTP_FILE *file);
+LIBSSH_API sftp_statvfs_t sftp_fstatvfs(sftp_file file);
 
 /**
  * @brief Free the memory of an allocated statvfs.
  *
  * @param  statvfs_o      The statvfs to free.
  */
-LIBSSH_API void sftp_statvfs_free(SFTP_STATVFS *statvfs_o);
+LIBSSH_API void sftp_statvfs_free(sftp_statvfs_t statvfs_o);
 
 /**
  * @brief Canonicalize a sftp path.
@@ -743,7 +753,7 @@ LIBSSH_API void sftp_statvfs_free(SFTP_STATVFS *statvfs_o);
  *
  * @return              The canonicalize path, NULL on error.
  */
-LIBSSH_API char *sftp_canonicalize_path(SFTP_SESSION *sftp, const char *path);
+LIBSSH_API char *sftp_canonicalize_path(sftp_session sftp, const char *path);
 
 /**
  * @brief Get the version of the SFTP protocol supported by the server
@@ -752,7 +762,7 @@ LIBSSH_API char *sftp_canonicalize_path(SFTP_SESSION *sftp, const char *path);
  *
  * @return              The server version.
  */
-LIBSSH_API int sftp_server_version(SFTP_SESSION *sftp);
+LIBSSH_API int sftp_server_version(sftp_session sftp);
 
 #ifdef WITH_SERVER
 /**
@@ -764,7 +774,7 @@ LIBSSH_API int sftp_server_version(SFTP_SESSION *sftp);
  *
  * @return              A new sftp server session.
  */
-LIBSSH_API SFTP_SESSION *sftp_server_new(ssh_session session, ssh_channel chan);
+LIBSSH_API sftp_session sftp_server_new(ssh_session session, ssh_channel chan);
 
 /**
  * @brief Intialize the sftp server.
@@ -773,32 +783,32 @@ LIBSSH_API SFTP_SESSION *sftp_server_new(ssh_session session, ssh_channel chan);
  *
  * @return             0 on success, < 0 on error.
  */
-LIBSSH_API int sftp_server_init(SFTP_SESSION *sftp);
+LIBSSH_API int sftp_server_init(sftp_session sftp);
 #endif  /* WITH_SERVER */
 
 /* this is not a public interface */
 #define SFTP_HANDLES 256
-SFTP_PACKET *sftp_packet_read(SFTP_SESSION *sftp);
-int sftp_packet_write(SFTP_SESSION *sftp,uint8_t type, ssh_buffer payload);
-void sftp_packet_free(SFTP_PACKET *packet);
-int buffer_add_attributes(ssh_buffer buffer, SFTP_ATTRIBUTES *attr);
-SFTP_ATTRIBUTES *sftp_parse_attr(SFTP_SESSION *session, ssh_buffer buf,int expectname);
+sftp_packet sftp_packet_read(sftp_session sftp);
+int sftp_packet_write(sftp_session sftp,uint8_t type, ssh_buffer payload);
+void sftp_packet_free(sftp_packet packet);
+int buffer_add_attributes(ssh_buffer buffer, sftp_attributes attr);
+sftp_attributes sftp_parse_attr(sftp_session session, ssh_buffer buf,int expectname);
 /* sftpserver.c */
 
-SFTP_CLIENT_MESSAGE *sftp_get_client_message(SFTP_SESSION *sftp);
-void sftp_client_message_free(SFTP_CLIENT_MESSAGE *msg);
-int sftp_reply_name(SFTP_CLIENT_MESSAGE *msg, const char *name,
-    SFTP_ATTRIBUTES *attr);
-int sftp_reply_handle(SFTP_CLIENT_MESSAGE *msg, ssh_string handle);
-ssh_string sftp_handle_alloc(SFTP_SESSION *sftp, void *info);
-int sftp_reply_attr(SFTP_CLIENT_MESSAGE *msg, SFTP_ATTRIBUTES *attr);
-void *sftp_handle(SFTP_SESSION *sftp, ssh_string handle);
-int sftp_reply_status(SFTP_CLIENT_MESSAGE *msg, uint32_t status, const char *message);
-int sftp_reply_names_add(SFTP_CLIENT_MESSAGE *msg, const char *file,
-    const char *longname, SFTP_ATTRIBUTES *attr);
-int sftp_reply_names(SFTP_CLIENT_MESSAGE *msg);
-int sftp_reply_data(SFTP_CLIENT_MESSAGE *msg, const void *data, int len);
-void sftp_handle_remove(SFTP_SESSION *sftp, void *handle);
+sftp_client_message sftp_get_client_message(sftp_session sftp);
+void sftp_client_message_free(sftp_client_message msg);
+int sftp_reply_name(sftp_client_message msg, const char *name,
+    sftp_attributes attr);
+int sftp_reply_handle(sftp_client_message msg, ssh_string handle);
+ssh_string sftp_handle_alloc(sftp_session sftp, void *info);
+int sftp_reply_attr(sftp_client_message msg, sftp_attributes attr);
+void *sftp_handle(sftp_session sftp, ssh_string handle);
+int sftp_reply_status(sftp_client_message msg, uint32_t status, const char *message);
+int sftp_reply_names_add(sftp_client_message msg, const char *file,
+    const char *longname, sftp_attributes attr);
+int sftp_reply_names(sftp_client_message msg);
+int sftp_reply_data(sftp_client_message msg, const void *data, int len);
+void sftp_handle_remove(sftp_session sftp, void *handle);
 
 /* SFTP commands and constants */
 #define SSH_FXP_INIT 1
