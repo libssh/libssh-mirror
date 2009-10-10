@@ -79,7 +79,7 @@ typedef struct ssh_callbacks_struct * ssh_callbacks;
  * evolves with time.
  */
 #define ssh_callbacks_init(p) do {\
-	p->size=sizeof(*p); \
+	(p)->size=sizeof(*(p)); \
 } while(0);
 
 LIBSSH_API int ssh_set_callbacks(ssh_session session, ssh_callbacks cb);
