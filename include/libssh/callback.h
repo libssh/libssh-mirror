@@ -82,12 +82,7 @@ typedef struct ssh_callbacks_struct * ssh_callbacks;
 	p->size=sizeof(*p); \
 } while(0);
 
-LIBSSH_API int ssh_set_auth_callback(ssh_session session, ssh_auth_callback cb,
-    void *userdata);
-LIBSSH_API int ssh_set_log_callback(ssh_session session,
-    ssh_log_callback cb, void *userdata);
-LIBSSH_API int ssh_set_status_callback(ssh_session session, void (*callback)
-    (void *arg, float status), void *arg);
+LIBSSH_API int ssh_set_callbacks(ssh_session session, ssh_callbacks cb);
 
 #ifdef __cplusplus
 }

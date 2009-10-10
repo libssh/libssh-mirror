@@ -72,6 +72,7 @@ set(libssh_SRCS
   auth.c
   base64.c
   buffer.c
+  callbacks.c
   channels.c
   client.c
   config.c
