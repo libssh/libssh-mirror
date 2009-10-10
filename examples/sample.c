@@ -28,6 +28,7 @@ clients must be made or how a client should react.
 #include <sys/ioctl.h>
 #include <signal.h>
 #include <errno.h>
+#include <libssh/callbacks.h>
 #include <libssh/libssh.h>
 #include <libssh/sftp.h>
 
@@ -40,6 +41,32 @@ int sftp;
 char *cmds[MAXCMD];
 struct termios terminal;
 void do_sftp(ssh_session session);
+
+static int auth_callback(const char *prompt, char *buf, size_t len,
+    int echo, int verify, void *userdata) {
+  char *answer = NULL;
+  char *ptr;
+
+  (void) verify;
+  (void) userdata;
+
+  if (echo) {
+    while ((answer = fgets(buf, len, stdin)) == NULL);
+    if ((ptr = strchr(buf, '\n'))) {
+      ptr = '\0';
+    }
+  } else {
+    answer = getpass(prompt);
+  }
+
+  if (answer == NULL) {
+    return -1;
+  }
+
+  strncpy(buf, answer, len);
+
+  return 0;
+}
 
 static void add_cmd(char *cmd){
     int n;
@@ -510,8 +537,17 @@ int main(int argc, char **argv){
     char buf[10];
     unsigned char *hash = NULL;
     int hlen;
+    ssh_callbacks cb;
 
     session = ssh_new();
+
+    cb = malloc(sizeof(ssh_callbacks));
+
+    cb->auth_function = auth_callback;
+    cb->userdata = NULL;
+
+    ssh_callbacks_init(cb);
+    ssh_set_callbacks(session, cb);
 
     if(ssh_options_getopt(session, &argc, argv)) {
       fprintf(stderr, "error parsing command line :%s\n",
