@@ -82,6 +82,28 @@ typedef struct ssh_callbacks_struct * ssh_callbacks;
 	(p)->size=sizeof(*(p)); \
 } while(0);
 
+/**
+ * @brief Set the callback functions.
+ *
+ * This functions sets the callback structure to use your own callback
+ * functions for auth, logging and status.
+ *
+ * @code
+ * struct ssh_callbacks_struct cb;
+ *
+ * cb.userdata = data;
+ * cb.auth_function = my_auth_function;
+ *
+ * ssh_callbacks_init(&cb);
+ * ssh_set_callbacks(session, &cb);
+ * @endcode
+ *
+ * @param  session      The session to set the callback structure.
+ *
+ * @param  cb           The callback itself.
+ *
+ * @return 0 on success, < 0 on error.
+ */
 LIBSSH_API int ssh_set_callbacks(ssh_session session, ssh_callbacks cb);
 
 #ifdef __cplusplus
