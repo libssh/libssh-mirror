@@ -90,7 +90,7 @@ typedef struct ssh_callbacks_struct * ssh_callbacks;
  *
  * @code
  * struct ssh_callbacks_struct cb;
- *
+ * memset(&cb, 0, sizeof(struct ssh_callbacks_struct));
  * cb.userdata = data;
  * cb.auth_function = my_auth_function;
  *
