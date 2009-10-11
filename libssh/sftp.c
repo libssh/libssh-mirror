@@ -733,7 +733,7 @@ static sftp_status_message parse_status_msg(sftp_message msg){
     return NULL;
   }
 
-  status = malloc(sizeof(struct sftp_message_struct));
+  status = malloc(sizeof(struct sftp_status_message_struct));
   if (status == NULL) {
     return NULL;
   }
