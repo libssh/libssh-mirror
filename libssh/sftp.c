@@ -1453,10 +1453,6 @@ static int sftp_handle_close(sftp_session sftp, ssh_string handle) {
   return -1;
 }
 
-int sftp_file_close(sftp_file file) {
-  return sftp_close(file);
-}
-
 /* Close an open file handle. */
 int sftp_close(sftp_file file){
   int err = SSH_NO_ERROR;
@@ -1470,10 +1466,6 @@ int sftp_close(sftp_file file){
   SAFE_FREE(file);
 
   return err;
-}
-
-int sftp_dir_close(sftp_dir dir) {
-  return sftp_closedir(dir);
 }
 
 /* Close an open directory. */
@@ -1920,11 +1912,6 @@ uint64_t sftp_tell64(sftp_file file) {
 /* Rewinds the position of the file pointer to the beginning of the file.*/
 void sftp_rewind(sftp_file file) {
   file->offset = 0;
-}
-
-/* deprecated */
-int sftp_rm(sftp_session sftp, const char *file) {
-  return sftp_unlink(sftp, file);
 }
 
 /* code written by Nick */

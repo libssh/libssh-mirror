@@ -47,12 +47,6 @@
 extern "C" {
 #endif
 
-#ifdef __GNUC__
-#define SFTP_DEPRECATED __attribute__ ((deprecated))
-#else
-#define SFTP_DEPRECATED
-#endif
-
 #ifdef _WIN32
 #ifndef uid_t
   typedef uint32_t uid_t;
@@ -382,11 +376,6 @@ LIBSSH_API void sftp_attributes_free(sftp_attributes file);
 LIBSSH_API int sftp_closedir(sftp_dir dir);
 
 /**
- * @deprecated          Use sftp_closedir() instead.
- */
-LIBSSH_API int sftp_dir_close(sftp_dir dir) SFTP_DEPRECATED;
-
-/**
  * @brief Close an open file handle.
  *
  * @param file          The open sftp file handle to close.
@@ -396,11 +385,6 @@ LIBSSH_API int sftp_dir_close(sftp_dir dir) SFTP_DEPRECATED;
  * @see                 sftp_open()
  */
 LIBSSH_API int sftp_close(sftp_file file);
-
-/**
- * @deprecated          Use sftp_close() instead.
- */
-LIBSSH_API int sftp_file_close(sftp_file file) SFTP_DEPRECATED;
 
 /**
  * @brief Open a file on the server.
@@ -577,11 +561,6 @@ LIBSSH_API uint64_t sftp_tell64(sftp_file file);
  * @param file          Open sftp file handle.
  */
 LIBSSH_API void sftp_rewind(sftp_file file);
-
-/**
- * @deprecated          Use sftp_unlink() instead.
- */
-LIBSSH_API int sftp_rm(sftp_session sftp, const char *file) SFTP_DEPRECATED;
 
 /**
  * @brief Unlink (delete) a file.
