@@ -1,7 +1,6 @@
 libssh: the SSH library
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-
 1* Why ?
 -_-_-_-_-_
 
@@ -26,3 +25,24 @@ If you ask yourself how to compile libssh, please read INSTALL before anything.
 -_-_-_-_-_-_
 
 http://www.libssh.org
+
+4* API Changes !
+-_-_-_-_-_-_-_-_-_
+
+Changes between 0.3 and 0.4
+---------------------------
+
+We changed libssh to be typesafe now:
+
+SSH_SESSION *session -> ssh_session session
+SFTP_SESSION *sftp -> sftp_session sftp
+CHANNEL *channel -> ssh_channel channel
+STRING *string -> ssh_string string
+...
+
+The options structure has been removed and there is a new function. This
+function can set all available options now. You can find the enum in the
+header file and it is documented. Example:
+
+ssh_options_set(session, SSH_OPTIONS_HOST, "localhost");
+
