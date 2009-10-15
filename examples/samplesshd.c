@@ -79,12 +79,19 @@ static struct argp_option options[] = {
     .doc   = "Set the rsa key.",
     .group = 0
   },
+  {
+    .name  = "verbose",
+    .key   = 'v',
+    .arg   = NULL,
+    .flags = 0,
+    .doc   = "Get verbose output.",
+    .group = 0
+  },
   {NULL, 0, 0, 0, NULL, 0}
 };
 
 /* Parse a single option. */
 static error_t parse_opt (int key, char *arg, struct argp_state *state) {
-  int i;
   /* Get the input argument from argp_parse, which we
    * know is a pointer to our arguments structure.
    */
@@ -92,8 +99,7 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
 
   switch (key) {
     case 'p':
-      i = atoi(arg);
-      ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_BINDPORT, &i);
+      ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_BINDPORT_STR, arg);
       break;
     case 'd':
       ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_DSAKEY, arg);
@@ -103,6 +109,9 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
       break;
     case 'r':
       ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_RSAKEY, arg);
+      break;
+    case 'v':
+      ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_LOG_VERBOSITY_STR, "3");
       break;
     case ARGP_KEY_ARG:
       if (state->arg_num >= 1) {
