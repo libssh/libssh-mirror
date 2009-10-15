@@ -677,6 +677,33 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
         sshbind->bindport = i & 0xffff;
       }
       break;
+    case SSH_BIND_OPTIONS_LOG_VERBOSITY:
+      if (value == NULL) {
+        ssh_set_error_invalid(sshbind, __FUNCTION__);
+        return -1;
+      } else {
+        int *x = (int *) value;
+        sshbind->log_verbosity = *x & 0xffff;
+      }
+      break;
+    case SSH_BIND_OPTIONS_LOG_VERBOSITY_STR:
+      if (value == NULL) {
+        sshbind->log_verbosity = 0;
+      } else {
+        q = strdup(value);
+        if (q == NULL) {
+          ssh_set_error_oom(sshbind);
+          return -1;
+        }
+        i = strtol(q, &p, 10);
+        if (q == p) {
+          SAFE_FREE(q);
+        }
+        SAFE_FREE(q);
+
+        sshbind->log_verbosity = i & 0xffff;
+      }
+      break;
     case SSH_BIND_OPTIONS_DSAKEY:
       if (value == NULL) {
         ssh_set_error_invalid(sshbind, __FUNCTION__);

@@ -107,6 +107,7 @@ struct ssh_bind_struct {
   char *bindaddr;
   socket_t bindfd;
   unsigned int bindport;
+  unsigned int log_verbosity;
 
   int blocking;
   int toaccept;

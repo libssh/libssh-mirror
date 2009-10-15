@@ -131,6 +131,8 @@ ssh_bind ssh_bind_new(void) {
   ZERO_STRUCTP(ptr);
   ptr->bindfd = -1;
   ptr->bindport= 22;
+  ptr->log_verbosity = 0;
+
   return ptr;
 }
 
@@ -229,10 +231,6 @@ int ssh_bind_accept(ssh_bind sshbind, ssh_session session) {
   session->server = 1;
   session->version = 2;
 
-  /* TODO: is wanted methods enough? */
-#if 0
-  session->options = ssh_options_copy(sshbind->options);
-#endif
   /* copy options */
   for (i = 0; i < 10; ++i) {
     if (sshbind->wanted_methods[i]) {
@@ -255,9 +253,9 @@ int ssh_bind_accept(ssh_bind sshbind, ssh_session session) {
       return SSH_ERROR;
     }
   }
-/* TODO FIXME this doesn't work
-  session->log_verbosity = session->options->log_verbosity;
-*/
+
+  session->log_verbosity = sshbind->log_verbosity;
+
   ssh_socket_free(session->socket);
   session->socket = ssh_socket_new(session);
   if (session->socket == NULL) {
