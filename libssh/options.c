@@ -163,15 +163,23 @@ static char *dir_expand_dup(ssh_session session, const char *value, int allowssh
 	char *new;
 
 	if (value[0] == '~' && value[1] == '/') {
-		const char *homedir = ssh_get_user_home_dir();
-		size_t lv = strlen(value + 1), lh = strlen(homedir);
+		char *homedir = ssh_get_user_home_dir();
+    size_t lv, lh;
+
+    if (homedir == NULL) {
+      return NULL;
+    }
+    lv = strlen(value + 1);
+    lh = strlen(homedir);
 
 		new = malloc(lv + lh + 1);
 		if (new == NULL) {
       ssh_set_error_oom(session);
+      SAFE_FREE(homedir);
 			return NULL;
     }
 		memcpy(new, homedir, lh);
+    SAFE_FREE(homedir);
 		memcpy(new + lh, value + 1, lv + 1);
 		return new;
 	}

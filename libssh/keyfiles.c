@@ -940,22 +940,12 @@ ssh_string publickey_from_file(ssh_session session, const char *filename,
 
 ssh_string try_publickey_from_file(ssh_session session, struct ssh_keys_struct keytab,
     char **privkeyfile, int *type) {
-  static char *home = NULL;
-
   char public[256] = {0};
   char private[256] = {0};
   const char *priv;
   const char *pub;
   char *new;
   ssh_string pubkey;
-
-  if (home == NULL) {
-    home = ssh_get_user_home_dir();
-    if (home == NULL) {
-      ssh_set_error(session,SSH_FATAL,"User home dir impossible to guess");
-      return NULL;
-    }
-  }
 
   pub = keytab.publickey;
   if (pub == NULL) {
@@ -966,15 +956,22 @@ ssh_string try_publickey_from_file(ssh_session session, struct ssh_keys_struct k
     return NULL;
   }
 
+  if (session->sshdir == NULL) {
+    if (ssh_options_set(session, SSH_OPTIONS_SSH_DIR, NULL) < 0) {
+      return NULL;
+    }
+  }
+
   /* are them readable ? */
-  snprintf(public, sizeof(public), pub, home);
+  snprintf(public, sizeof(public), "%s/%s", session->sshdir, pub);
+  snprintf(private, sizeof(private), "%s/%s", session->sshdir, priv);
+
   ssh_log(session, SSH_LOG_PACKET, "Trying to open publickey %s", public);
   if (!ssh_file_readaccess_ok(public)) {
     ssh_log(session, SSH_LOG_PACKET, "Failed to open publickey %s", public);
     return NULL;
   }
 
-  snprintf(private, sizeof(private), priv, home);
   ssh_log(session, SSH_LOG_PACKET, "Trying to open privatekey %s", private);
   if (!ssh_file_readaccess_ok(private)) {
     ssh_log(session, SSH_LOG_PACKET, "Failed to open privatekey %s", private);

@@ -71,9 +71,16 @@
 
 #ifdef _WIN32
 char *ssh_get_user_home_dir(void) {
-  static char szPath[MAX_PATH] = {0};
+  char tmp[MAX_PATH] = {0};
+  char szPath = NULL;
 
-  if (SHGetSpecialFolderPathA(NULL, szPath, CSIDL_PROFILE, TRUE)) {
+  if (SHGetSpecialFolderPathA(NULL, tmp, CSIDL_PROFILE, TRUE)) {
+    szPath = malloc(strlen(szPath) + 1);
+    if (home == NULL) {
+      return NULL;
+    }
+
+    strcpy(szPath, tmp);
     return szPath;
   }
 
@@ -90,7 +97,7 @@ char *ssh_get_user_home_dir(void) {
 }
 #else /* _WIN32 */
 char *ssh_get_user_home_dir(void) {
-  static char szPath[PATH_MAX] = {0};
+  char *szPath = NULL;
   struct passwd *pwd = NULL;
 
   pwd = getpwuid(getuid());
@@ -98,7 +105,7 @@ char *ssh_get_user_home_dir(void) {
     return NULL;
   }
 
-  snprintf(szPath, PATH_MAX - 1, "%s", pwd->pw_dir);
+  szPath = strdup(pwd->pw_dir);
 
   return szPath;
 }

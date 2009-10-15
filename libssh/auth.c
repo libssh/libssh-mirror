@@ -774,16 +774,16 @@ static struct ssh_keys_struct keytab[] = {
 /* This requires GCC extensions */
 static struct ssh_keys_struct keytab[] = {
   {
-    .privatekey = "%s/.ssh/identity",
-    .publickey = "%s/.ssh/identity.pub"
+    .privatekey = "identity",
+    .publickey = "identity.pub"
   },
   {
-    .privatekey = "%s/.ssh/id_dsa",
-    .publickey = "%s/.ssh/id_dsa.pub",
+    .privatekey = "id_dsa",
+    .publickey = "id_dsa.pub",
   },
   {
-    .privatekey = "%s/.ssh/id_rsa",
-    .publickey = "%s/.ssh/id_rsa.pub",
+    .privatekey = "id_rsa",
+    .publickey = "id_rsa.pub",
   },
   {
     .privatekey = NULL,
