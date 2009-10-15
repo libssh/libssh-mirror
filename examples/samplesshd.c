@@ -14,9 +14,11 @@ clients must be made or how a client should react.
 
 #include <libssh/libssh.h>
 #include <libssh/server.h>
-#include <unistd.h>
+#include <argp.h>
+#include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <unistd.h>
 #ifndef KEYS_FOLDER
 #ifdef _WIN32
 #define KEYS_FOLDER
@@ -33,6 +35,98 @@ static int auth_password(char *user, char *password){
     return 1; // authenticated
 }
 
+const char *argp_program_version = "libssh server example "
+  SSH_STRINGIFY(LIBSSH_VERSION);
+const char *argp_program_bug_address = "<libssh@libssh.org>";
+
+/* Program documentation. */
+static char doc[] = "libssh -- a Secure Shell protocol implementation";
+
+/* A description of the arguments we accept. */
+static char args_doc[] = "BINDADDR";
+
+/* The options we understand. */
+static struct argp_option options[] = {
+  {
+    .name  = "port",
+    .key   = 'p',
+    .arg   = "PORT",
+    .flags = 0,
+    .doc   = "Set the port to bind.",
+    .group = 0
+  },
+  {
+    .name  = "hostkey",
+    .key   = 'k',
+    .arg   = "FILE",
+    .flags = 0,
+    .doc   = "Set the host key.",
+    .group = 0
+  },
+  {
+    .name  = "dsakey",
+    .key   = 'd',
+    .arg   = "FILE",
+    .flags = 0,
+    .doc   = "Set the dsa key.",
+    .group = 0
+  },
+  {
+    .name  = "rsakey",
+    .key   = 'r',
+    .arg   = "FILE",
+    .flags = 0,
+    .doc   = "Set the rsa key.",
+    .group = 0
+  },
+  {NULL, 0, 0, 0, NULL, 0}
+};
+
+/* Parse a single option. */
+static error_t parse_opt (int key, char *arg, struct argp_state *state) {
+  int i;
+  /* Get the input argument from argp_parse, which we
+   * know is a pointer to our arguments structure.
+   */
+  ssh_bind sshbind = state->input;
+
+  switch (key) {
+    case 'p':
+      i = atoi(arg);
+      ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_BINDPORT, &i);
+      break;
+    case 'd':
+      ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_DSAKEY, arg);
+      break;
+    case 'k':
+      ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HOSTKEY, arg);
+      break;
+    case 'r':
+      ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_RSAKEY, arg);
+      break;
+    case ARGP_KEY_ARG:
+      if (state->arg_num >= 1) {
+        /* Too many arguments. */
+        argp_usage (state);
+      }
+      ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_BINDADDR, arg);
+      break;
+    case ARGP_KEY_END:
+      if (state->arg_num < 1) {
+        /* Not enough arguments. */
+        argp_usage (state);
+      }
+      break;
+    default:
+      return ARGP_ERR_UNKNOWN;
+  }
+
+  return 0;
+}
+
+/* Our argp parser. */
+static struct argp argp = {options, parse_opt, args_doc, doc, NULL, NULL, NULL};
+
 int main(int argc, char **argv){
     ssh_session session;
     ssh_bind sshbind;
@@ -46,9 +140,15 @@ int main(int argc, char **argv){
 
     sshbind=ssh_bind_new();
     session=ssh_new();
-    ssh_options_getopt(session,&argc,argv);
+
     ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_DSAKEY, KEYS_FOLDER "ssh_host_dsa_key");
     ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_RSAKEY, KEYS_FOLDER "ssh_host_rsa_key");
+
+    /*
+     * Parse our arguments; every option seen by parse_opt will
+     * be reflected in arguments.
+     */
+    argp_parse (&argp, argc, argv, 0, 0, sshbind);
 
     if(ssh_bind_listen(sshbind)<0){
         printf("Error listening to socket: %s\n",ssh_get_error(sshbind));

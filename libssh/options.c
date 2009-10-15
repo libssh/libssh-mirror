@@ -621,10 +621,8 @@ static int ssh_bind_options_set_algo(ssh_bind sshbind, int algo,
 
 int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
     const void *value) {
-#if 0
   char *p, *q;
   int i;
-#endif
 
   if (sshbind == NULL) {
     return -1;
@@ -659,6 +657,24 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
       } else {
         int *x = (int *) value;
         sshbind->bindport = *x & 0xffff;
+      }
+      break;
+    case SSH_BIND_OPTIONS_BINDPORT_STR:
+      if (value == NULL) {
+        sshbind->bindport = 22 & 0xffff;
+      } else {
+        q = strdup(value);
+        if (q == NULL) {
+          ssh_set_error_oom(sshbind);
+          return -1;
+        }
+        i = strtol(q, &p, 10);
+        if (q == p) {
+          SAFE_FREE(q);
+        }
+        SAFE_FREE(q);
+
+        sshbind->bindport = i & 0xffff;
       }
       break;
     case SSH_BIND_OPTIONS_DSAKEY:
