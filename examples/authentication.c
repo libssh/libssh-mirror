@@ -65,50 +65,61 @@ int authenticate_kbdint(ssh_session session){
 }
 
 int authenticate_console(ssh_session session){
-  int auth;
-  int methods;
+  int rc;
+  int method;
   char *password;
   char *banner;
 
-  ssh_userauth_none(session, NULL);
-  methods = ssh_auth_list(session);
-  printf("supported auth methods: ");
-  if (methods & SSH_AUTH_METHOD_PUBLICKEY) {
-    printf("publickey");
+  // Try to authenticate
+  rc = ssh_userauth_none(session, NULL);
+  if (rc == SSH_AUTH_ERROR) {
+    perror("Authentication failed.");
+    return rc;
   }
-  if (methods & SSH_AUTH_METHOD_INTERACTIVE) {
-    printf(", keyboard-interactive");
-  }
-  if (methods & SSH_AUTH_METHOD_PASSWORD) {
-    printf(", password");
-  }
-  printf("\n");
 
-  auth=ssh_userauth_autopubkey(session, NULL);
-  if(auth==SSH_AUTH_ERROR){
-    return auth;
+  method = ssh_auth_list(session);
+  while (rc != SSH_AUTH_SUCCESS) {
+
+    // Try to authenticate with public key first
+    if (method & SSH_AUTH_METHOD_PUBLICKEY) {
+      rc = ssh_userauth_autopubkey(session, NULL);
+      if (rc == SSH_AUTH_ERROR) {
+        perror("Authentication failed.");
+        return rc;
+      } else if (rc == SSH_AUTH_SUCCESS) {
+        break;
+      }
+    }
+
+    // Try to authenticate with keyboard interactive";
+    if (method & SSH_AUTH_METHOD_INTERACTIVE) {
+      rc = authenticate_kbdint(session);
+      if (rc == SSH_AUTH_ERROR) {
+        perror("Authentication failed.");
+        return rc;
+      } else if (rc == SSH_AUTH_SUCCESS) {
+        break;
+      }
+    }
+
+    password=getpass("Password: ");
+    // Try to authenticate with password
+    if (method & SSH_AUTH_METHOD_PASSWORD) {
+      rc = ssh_userauth_password(session, NULL, password);
+      if (rc == SSH_AUTH_ERROR) {
+        perror("Authentication failed.");
+        return rc;
+      } else if (rc == SSH_AUTH_SUCCESS) {
+        break;
+      }
+    }
   }
-  banner=ssh_get_issue_banner(session);
-  if(banner){
+
+  banner = ssh_get_issue_banner(session);
+  if (banner) {
     printf("%s\n",banner);
     free(banner);
   }
-  if(auth!=SSH_AUTH_SUCCESS && (methods & SSH_AUTH_METHOD_INTERACTIVE)){
-    auth=authenticate_kbdint(session);
-    if(auth==SSH_AUTH_ERROR){
-      return auth;
-    }
-  }
-  if(auth!=SSH_AUTH_SUCCESS && (methods & SSH_AUTH_METHOD_PASSWORD)){
-    password=getpass("Password: ");
-    if(ssh_userauth_password(session,NULL,password) != SSH_AUTH_SUCCESS){
-      return auth;
-    }
-    memset(password,0,strlen(password));
-  }
-  if(auth==SSH_AUTH_SUCCESS)
-    ssh_log(session, SSH_LOG_FUNCTIONS, "Authentication success");
-  if(auth==SSH_AUTH_PARTIAL)
-    return SSH_AUTH_DENIED;
-  return auth;
+
+  return rc;
 }
