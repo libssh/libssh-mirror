@@ -75,8 +75,8 @@ char *ssh_get_user_home_dir(void) {
   char szPath = NULL;
 
   if (SHGetSpecialFolderPathA(NULL, tmp, CSIDL_PROFILE, TRUE)) {
-    szPath = malloc(strlen(szPath) + 1);
-    if (home == NULL) {
+    szPath = malloc(strlen(tmp) + 1);
+    if (szPath == NULL) {
       return NULL;
     }
 
