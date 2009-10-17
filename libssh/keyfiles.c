@@ -692,7 +692,7 @@ ssh_private_key privatekey_from_file(ssh_session session, const char *filename,
       break;
     case TYPE_RSA:
       if (passphrase == NULL) {
-	if (session->callbacks->auth_function) {
+	if (session->callbacks && session->callbacks->auth_function) {
 		auth_cb = session->callbacks->auth_function;
 		auth_ud = session->callbacks->userdata;
 #ifdef HAVE_LIBGCRYPT
