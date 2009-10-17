@@ -757,12 +757,12 @@ error:
 }
 
 #ifdef _MSC_VER
-static const char privKey_1[] = "%s/.ssh/identity";
-static const char pubKey_1[] = "%s/.ssh/identity.pub";
-static const char privKey_2[] = "%s/.ssh/id_dsa";
-static const char pubKey_2[] = "%s/.ssh/id_dsa.pub";
-static const char privKey_3[] = "%s/.ssh/id_rsa";
-static const char pubKey_3[] = "%s/.ssh/id_rsa.pub";
+static const char privKey_1[] = "SSH_DIR/identity";
+static const char pubKey_1[] = "SSH_DIR/identity.pub";
+static const char privKey_2[] = "SSH_DIR/id_dsa";
+static const char pubKey_2[] = "SSH_DIR/id_dsa.pub";
+static const char privKey_3[] = "SSH_DIR/id_rsa";
+static const char pubKey_3[] = "SSH_DIR/id_rsa.pub";
 /** Used different var to allow const char[] declaration */
 static struct ssh_keys_struct keytab[] = {
   { privKey_1, pubKey_1},
@@ -774,16 +774,16 @@ static struct ssh_keys_struct keytab[] = {
 /* This requires GCC extensions */
 static struct ssh_keys_struct keytab[] = {
   {
-    .privatekey = "identity",
-    .publickey = "identity.pub"
+    .privatekey = "SSH_DIR/identity",
+    .publickey = "SSH_DIR/identity.pub"
   },
   {
-    .privatekey = "id_dsa",
-    .publickey = "id_dsa.pub",
+    .privatekey = "SSH_DIR/id_dsa",
+    .publickey = "SSH_DIR/id_dsa.pub",
   },
   {
-    .privatekey = "id_rsa",
-    .publickey = "id_rsa.pub",
+    .privatekey = "SSH_DIR/id_rsa",
+    .publickey = "SSH_DIR/id_rsa.pub",
   },
   {
     .privatekey = NULL,

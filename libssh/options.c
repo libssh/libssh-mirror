@@ -159,7 +159,7 @@ static int ssh_options_set_algo(ssh_session session, int algo,
   return 0;
 }
 
-static char *dir_expand_dup(ssh_session session, const char *value, int allowsshdir) {
+char *dir_expand_dup(ssh_session session, const char *value, int allowsshdir) {
 	char *new;
 
 	if (value[0] == '~' && value[1] == '/') {

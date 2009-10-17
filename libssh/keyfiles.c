@@ -940,12 +940,12 @@ ssh_string publickey_from_file(ssh_session session, const char *filename,
 
 ssh_string try_publickey_from_file(ssh_session session, struct ssh_keys_struct keytab,
     char **privkeyfile, int *type) {
-  char public[256] = {0};
-  char private[256] = {0};
+  char *public;
+  char *private;
   const char *priv;
   const char *pub;
   char *new;
-  ssh_string pubkey;
+  ssh_string pubkey=NULL;
 
   pub = keytab.publickey;
   if (pub == NULL) {
@@ -963,19 +963,21 @@ ssh_string try_publickey_from_file(ssh_session session, struct ssh_keys_struct k
   }
 
   /* are them readable ? */
-  snprintf(public, sizeof(public), "%s/%s", session->sshdir, pub);
-  snprintf(private, sizeof(private), "%s/%s", session->sshdir, priv);
+  public=dir_expand_dup(session,pub,1);
+  private=dir_expand_dup(session,priv,1);
+  //snprintf(public, sizeof(public), "%s/%s", session->sshdir, pub);
+  //snprintf(private, sizeof(private), "%s/%s", session->sshdir, priv);
 
   ssh_log(session, SSH_LOG_PACKET, "Trying to open publickey %s", public);
   if (!ssh_file_readaccess_ok(public)) {
     ssh_log(session, SSH_LOG_PACKET, "Failed to open publickey %s", public);
-    return NULL;
+    goto error;
   }
 
   ssh_log(session, SSH_LOG_PACKET, "Trying to open privatekey %s", private);
   if (!ssh_file_readaccess_ok(private)) {
     ssh_log(session, SSH_LOG_PACKET, "Failed to open privatekey %s", private);
-    return NULL;
+    goto error;
   }
 
   ssh_log(session, SSH_LOG_PACKET, "Success opening public and private key");
@@ -990,18 +992,20 @@ ssh_string try_publickey_from_file(ssh_session session, struct ssh_keys_struct k
         "Wasn't able to open public key file %s: %s",
         public,
         ssh_get_error(session));
-    return NULL;
+    goto error;
   }
 
   new = realloc(*privkeyfile, strlen(private) + 1);
   if (new == NULL) {
     string_free(pubkey);
-    return NULL;
+    goto error;
   }
 
   strcpy(new, private);
   *privkeyfile = new;
-
+error:
+  SAFE_FREE(public);
+  SAFE_FREE(private);
   return pubkey;
 }
 
