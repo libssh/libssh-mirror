@@ -684,6 +684,7 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
         ssh_set_error_invalid(sshbind, __FUNCTION__);
         return -1;
       } else {
+        SAFE_FREE(sshbind->bindaddr);
         sshbind->bindaddr = strdup(value);
         if (sshbind->bindaddr == NULL) {
           ssh_set_error_oom(sshbind);
@@ -762,6 +763,7 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
         ssh_set_error_invalid(sshbind, __FUNCTION__);
         return -1;
       } else {
+        SAFE_FREE(sshbind->rsakey);
         sshbind->rsakey = strdup(value);
         if (sshbind->rsakey == NULL) {
           ssh_set_error_oom(sshbind);
@@ -774,6 +776,7 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
         ssh_set_error_invalid(sshbind, __FUNCTION__);
         return -1;
       } else {
+        SAFE_FREE(sshbind->banner);
         sshbind->banner = strdup(value);
         if (sshbind->banner == NULL) {
           ssh_set_error_oom(sshbind);
