@@ -740,20 +740,35 @@ static sftp_status_message parse_status_msg(sftp_message msg){
   ZERO_STRUCTP(status);
 
   status->id = msg->id;
-  if ((buffer_get_u32(msg->payload,&status->status) != 4) ||
-      (status->error = buffer_get_ssh_string(msg->payload)) == NULL ||
-      (status->lang = buffer_get_ssh_string(msg->payload)) == NULL) {
-    string_free(status->error);
-    /* status->lang never get allocated if something failed */
+  if (buffer_get_u32(msg->payload,&status->status) != 4){
     SAFE_FREE(status);
     ssh_set_error(msg->sftp->session, SSH_FATAL,
         "Invalid SSH_FXP_STATUS message");
     return NULL;
   }
+  status->error = buffer_get_ssh_string(msg->payload);
+  status->lang = buffer_get_ssh_string(msg->payload);
+  if(status->error != NULL || status->lang != NULL){
+    if(msg->sftp->version >=3){
+      /* These are mandatory from version 3 */
+      string_free(status->error);
+    /* status->lang never get allocated if something failed */
+      SAFE_FREE(status);
+      ssh_set_error(msg->sftp->session, SSH_FATAL,
+        "Invalid SSH_FXP_STATUS message");
+      return NULL;
+    }
+  }
 
   status->status = ntohl(status->status);
-  status->errormsg = string_to_char(status->error);
-  status->langmsg = string_to_char(status->lang);
+  if(status->error)
+    status->errormsg = string_to_char(status->error);
+  else
+    status->errormsg = strdup("No error message in packet");
+  if(status->lang)
+    status->langmsg = string_to_char(status->lang);
+  else
+    status->langmsg = strdup("");
   if (status->errormsg == NULL || status->langmsg == NULL) {
     status_msg_free(status);
     return NULL;
@@ -1054,7 +1069,7 @@ static sftp_attributes sftp_parse_attr_4(sftp_session sftp, ssh_buffer buf,
   return attr;
 }
 
-/* Version 3 code. it is the only one really supported (the draft for the 4 misses clarifications) */
+/* sftp version 0-3 code. It is different from the v4 */
 /* maybe a paste of the draft is better than the code */
 /*
         uint32   flags
@@ -1256,6 +1271,9 @@ sftp_attributes sftp_parse_attr(sftp_session session, ssh_buffer buf,
     case 4:
       return sftp_parse_attr_4(session, buf, expectname);
     case 3:
+    case 2:
+    case 1:
+    case 0:
       return sftp_parse_attr_3(session, buf, expectname);
     default:
       ssh_set_error(session->session, SSH_FATAL,
@@ -2451,7 +2469,10 @@ char *sftp_readlink(sftp_session sftp, const char *path) {
   if (sftp == NULL || path == NULL) {
     return NULL;
   }
-
+  if (sftp->version < 3){
+    ssh_set_error(sftp,SSH_REQUEST_DENIED,"sftp version %d does not support sftp_readlink",sftp->version);
+    return NULL;
+  }
   buffer = buffer_new();
   if (buffer == NULL) {
     return NULL;
@@ -2614,7 +2635,11 @@ sftp_statvfs_t sftp_statvfs(sftp_session sftp, const char *path) {
   if (sftp == NULL || path == NULL) {
     return NULL;
   }
-
+  if (sftp->version < 3){
+    ssh_set_error(sftp,SSH_REQUEST_DENIED,"sftp version %d does not support sftp_statvfs",sftp->version);
+    return NULL;
+  }
+ 
   buffer = buffer_new();
   if (buffer == NULL) {
     return NULL;
