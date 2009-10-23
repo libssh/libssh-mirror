@@ -303,7 +303,7 @@ sftp_packet sftp_packet_read(sftp_session sftp) {
     return NULL;
   }
 
-  if (buffer_get_u32(packet->payload, &size) < 0) {
+  if (buffer_get_u32(packet->payload, &size) != sizeof(uint32_t)) {
     buffer_free(packet->payload);
     SAFE_FREE(packet);
     sftp_leave_function();

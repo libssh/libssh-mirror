@@ -452,7 +452,7 @@ ssh_string agent_sign_data(struct ssh_session_struct *session,
   buffer_free(request);
 
   /* check if reply is valid */
-  if (buffer_get_u8(reply, (uint8_t *) &type) < 0) {
+  if (buffer_get_u8(reply, (uint8_t *) &type) != sizeof(uint8_t)) {
     goto error;
   }
   if (agent_failed(type)) {
