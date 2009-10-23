@@ -751,6 +751,7 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
         ssh_set_error_invalid(sshbind, __FUNCTION__);
         return -1;
       } else {
+        SAFE_FREE(sshbind->dsakey);
         sshbind->dsakey = strdup(value);
         if (sshbind->dsakey == NULL) {
           ssh_set_error_oom(sshbind);
