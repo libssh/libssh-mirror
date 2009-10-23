@@ -748,7 +748,7 @@ static sftp_status_message parse_status_msg(sftp_message msg){
   }
   status->error = buffer_get_ssh_string(msg->payload);
   status->lang = buffer_get_ssh_string(msg->payload);
-  if(status->error != NULL || status->lang != NULL){
+  if(status->error == NULL || status->lang == NULL){
     if(msg->sftp->version >=3){
       /* These are mandatory from version 3 */
       string_free(status->error);
