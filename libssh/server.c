@@ -197,7 +197,7 @@ int ssh_bind_accept(ssh_bind sshbind, ssh_session session) {
   	ssh_set_error(sshbind, SSH_FATAL,"session is null");
   	return SSH_ERROR;
   }
-  if (sshbind->dsakey == NULL || sshbind->rsakey == NULL) {
+  if (sshbind->dsakey == NULL && sshbind->rsakey == NULL) {
     ssh_set_error(sshbind, SSH_FATAL,
         "DSA or RSA host key file must be set before accept()");
     return SSH_ERROR;
@@ -315,16 +315,16 @@ static int server_set_kex(ssh_session session) {
   ZERO_STRUCTP(server);
   ssh_get_random(server->cookie, 16, 0);
   if (session->dsa_key != NULL && session->rsa_key != NULL) {
-    if (ssh_options_set(session, SSH_BIND_OPTIONS_HOSTKEY,
+    if (ssh_options_set_algo(session, SSH_HOSTKEYS,
           "ssh-dss,ssh-rsa") < 0) {
       return -1;
     }
   } else if (session->dsa_key != NULL) {
-    if (ssh_options_set(session, SSH_BIND_OPTIONS_HOSTKEY, "ssh-dss") < 0) {
+    if (ssh_options_set_algo(session, SSH_HOSTKEYS, "ssh-dss") < 0) {
       return -1;
     }
   } else {
-    if (ssh_options_set(session, SSH_BIND_OPTIONS_HOSTKEY, "ssh-rsa") < 0) {
+    if (ssh_options_set_algo(session, SSH_HOSTKEYS, "ssh-rsa") < 0) {
       return -1;
     }
   }

@@ -218,6 +218,7 @@ int match_hostname(const char *host, const char *pattern, unsigned int len);
 /* options.c  */
 
 char *dir_expand_dup(ssh_session session, const char *value, int allowsshdir);
+int ssh_options_set_algo(ssh_session session, int algo, const char *list);
 
 /** Free memory space */
 #define SAFE_FREE(x) do { if ((x) != NULL) {free(x); x=NULL;} } while(0)

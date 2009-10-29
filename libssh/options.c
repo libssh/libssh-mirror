@@ -140,7 +140,7 @@ static char *get_username_from_uid(ssh_session session, uid_t uid){
 }
 #endif
 
-static int ssh_options_set_algo(ssh_session session, int algo,
+int ssh_options_set_algo(ssh_session session, int algo,
     const char *list) {
   if (!verify_existing_algo(algo, list)) {
     ssh_set_error(session, SSH_REQUEST_DENIED,
