@@ -175,6 +175,7 @@ static int do_copy(struct location *src, struct location *dest, int recursive){
   int total=0;
   int mode;
   char *filename;
+  /* recursive mode doesn't work yet */
   (void)recursive;
   /* Get the file name and size*/
   if(!src->is_ssh){
@@ -263,7 +264,28 @@ static int do_copy(struct location *src, struct location *dest, int recursive){
 	  total+=r;
 
   } while(total < size);
-  printf("wrote %d bytes\n",total);
+ printf("wrote %d bytes\n",total);
+ return 0;
+}
+
+int main(int argc, char **argv){
+  struct location *dest, *src;
+  int i;
+  int r;
+  if(opts(argc,argv)<0)
+    return EXIT_FAILURE;
+  dest=parse_location(destination);
+  if(open_location(dest,WRITE)<0)
+    return EXIT_FAILURE;
+  for(i=0;i<nsources;++i){
+    src=parse_location(sources[i]);
+    if(open_location(src,READ)<0){
+      return EXIT_FAILURE;
+    }
+    if(do_copy(src,dest,0) < 0){
+    	break;
+    }
+  }
   if(dest->is_ssh){
 	  r=ssh_scp_close(dest->scp);
 	  if(r == SSH_ERROR){
@@ -275,29 +297,6 @@ static int do_copy(struct location *src, struct location *dest, int recursive){
   } else {
 	  fclose(dest->file);
 	  dest->file=NULL;
-  }
-  return 0;
-}
-
-int main(int argc, char **argv){
-  struct location *dest, *src;
-  int i;
-
-  if(opts(argc,argv)<0)
-    return EXIT_FAILURE;
-  dest=parse_location(destination);
-  if(open_location(dest,WRITE)<0)
-    return EXIT_FAILURE;
-  for(i=0;i<nsources;++i){
-    src=parse_location(sources[i]);
-    if(open_location(src,READ)<0){
-      return EXIT_FAILURE;
-    }
-    while(1){
-    	if(do_copy(src,dest,0) < 0){
-    		break;
-    	}
-    }
   }
   ssh_disconnect(dest->session);
   ssh_finalize();
