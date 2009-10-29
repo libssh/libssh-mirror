@@ -305,7 +305,6 @@ extern char *supported_methods[];
  * -What is available (keys)
  * It should then accept the intersection of what the user asked
  * and what is available, and return an error if nothing matches
- * @bug To rewrite, it's broken !!
  */
 
 static int server_set_kex(ssh_session session) {
@@ -315,22 +314,20 @@ static int server_set_kex(ssh_session session) {
 
   ZERO_STRUCTP(server);
   ssh_get_random(server->cookie, 16, 0);
-#if 0
   if (session->dsa_key != NULL && session->rsa_key != NULL) {
-    if (ssh_bind_options_set(options, SSH_BIND_OPTIONS_HOSTKEY,
+    if (ssh_options_set(session, SSH_BIND_OPTIONS_HOSTKEY,
           "ssh-dss,ssh-rsa") < 0) {
       return -1;
     }
   } else if (session->dsa_key != NULL) {
-    if (ssh_bind_options_set(options, SSH_BIND_OPTIONS_HOSTKEY, "ssh-dss") < 0) {
+    if (ssh_options_set(session, SSH_BIND_OPTIONS_HOSTKEY, "ssh-dss") < 0) {
       return -1;
     }
   } else {
-    if (ssh_bind_options_set(options, SSH_BIND_OPTIONS_HOSTKEY, "ssh-rsa") < 0) {
+    if (ssh_options_set(session, SSH_BIND_OPTIONS_HOSTKEY, "ssh-rsa") < 0) {
       return -1;
     }
   }
-#endif
 
   server->methods = malloc(10 * sizeof(char **));
   if (server->methods == NULL) {
