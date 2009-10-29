@@ -1386,11 +1386,13 @@ int ssh_is_server_known(ssh_session session) {
 
   enter_function();
 
-  if (ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, NULL) < 0) {
-    ssh_set_error(session, SSH_REQUEST_DENIED,
-        "Can't find a known_hosts file");
-    leave_function();
-    return SSH_SERVER_FILE_NOT_FOUND;
+  if (session->knownhosts == NULL) {
+    if (ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, NULL) < 0) {
+      ssh_set_error(session, SSH_REQUEST_DENIED,
+          "Can't find a known_hosts file");
+      leave_function();
+      return SSH_SERVER_FILE_NOT_FOUND;
+    }
   }
 
   if (session->host == NULL) {
