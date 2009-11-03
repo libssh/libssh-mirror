@@ -71,62 +71,62 @@ LIBSSH_API int ssh_bind_options_set(ssh_bind sshbind,
 /**
  * @brief Start listening to the socket.
  *
- * @param  ssh_bind     The ssh server bind to use.
+ * @param  ssh_bind_o     The ssh server bind to use.
  *
  * @return 0 on success, < 0 on error.
  */
-LIBSSH_API int ssh_bind_listen(ssh_bind ssh_bind);
+LIBSSH_API int ssh_bind_listen(ssh_bind ssh_bind_o);
 
 /**
  * @brief  Set the session to blocking/nonblocking mode.
  *
- * @param  ssh_bind     The ssh server bind to use.
+ * @param  ssh_bind_o     The ssh server bind to use.
  *
  * @param  blocking     Zero for nonblocking mode.
  */
-LIBSSH_API void ssh_bind_set_blocking(ssh_bind sshbind, int blocking);
+LIBSSH_API void ssh_bind_set_blocking(ssh_bind ssh_bind_o, int blocking);
 
 /**
  * @brief Recover the file descriptor from the session.
  *
- * @param  ssh_bind     The ssh server bind to get the fd from.
+ * @param  ssh_bind_o     The ssh server bind to get the fd from.
  *
  * @return The file descriptor.
  */
-LIBSSH_API socket_t ssh_bind_get_fd(ssh_bind ssh_bind);
+LIBSSH_API socket_t ssh_bind_get_fd(ssh_bind ssh_bind_o);
 
 /**
  * @brief Set the file descriptor for a session.
  *
- * @param  ssh_bind     The ssh server bind to set the fd.
+ * @param  ssh_bind_o     The ssh server bind to set the fd.
  *
  * @param  fd           The file descriptssh_bind B
  */
-LIBSSH_API void ssh_bind_set_fd(ssh_bind sshbind, socket_t fd);
+LIBSSH_API void ssh_bind_set_fd(ssh_bind ssh_bind_o, socket_t fd);
 
 /**
  * @brief Allow the file descriptor to accept new sessions.
  *
- * @param  ssh_bind     The ssh server bind to use.
+ * @param  ssh_bind_o     The ssh server bind to use.
  */
-LIBSSH_API void ssh_bind_fd_toaccept(ssh_bind ssh_bind);
+LIBSSH_API void ssh_bind_fd_toaccept(ssh_bind ssh_bind_o);
 
 /**
  * @brief Accept an incoming ssh connection and initialize the session.
  *
- * @param  ssh_bind     The ssh server bind to accept a connection.
+ * @param  ssh_bind_o     The ssh server bind to accept a connection.
  * @param  session			A preallocated ssh session
  * @see ssh_new
  * @return A newly allocated ssh session, NULL on error.
  */
-LIBSSH_API int ssh_bind_accept(ssh_bind ssh_bind, ssh_session session);
+LIBSSH_API int ssh_bind_accept(ssh_bind ssh_bind_o, ssh_session session);
 
 /**
  * @brief Free a ssh servers bind.
  *
- * @param  ssh_bind     The ssh server bind to free.
+ * @param  ssh_bind_o     The ssh server bind to free.
  */
-LIBSSH_API void ssh_bind_free(ssh_bind ssh_bind);
+LIBSSH_API void ssh_bind_free(ssh_bind ssh_bind_o);
 
 /**
  * @brief Exchange the banner and cryptographic keys.

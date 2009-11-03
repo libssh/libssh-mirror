@@ -243,11 +243,11 @@ LIBSSH_API unsigned int sftp_extensions_get_count(sftp_session sftp);
  *
  * @param  sftp         The sftp session to use.
  *
- * @param  index        The index number of the extension name you want.
+ * @param  indexn        The index number of the extension name you want.
  *
  * @return              The name of the extension.
  */
-LIBSSH_API const char *sftp_extensions_get_name(sftp_session sftp, unsigned int index);
+LIBSSH_API const char *sftp_extensions_get_name(sftp_session sftp, unsigned int indexn);
 
 /**
  * @brief Get the data of the extension provided by the server.
@@ -256,11 +256,11 @@ LIBSSH_API const char *sftp_extensions_get_name(sftp_session sftp, unsigned int 
  *
  * @param  sftp         The sftp session to use.
  *
- * @param  index        The index number of the extension data you want.
+ * @param  indexn        The index number of the extension data you want.
  *
  * @return              The data of the extension.
  */
-LIBSSH_API const char *sftp_extensions_get_data(sftp_session sftp, unsigned int index);
+LIBSSH_API const char *sftp_extensions_get_data(sftp_session sftp, unsigned int indexn);
 
 /**
  * @brief Check if the given extension is supported.
@@ -284,7 +284,7 @@ LIBSSH_API int sftp_extension_supported(sftp_session sftp, const char *name,
 
 /**
  * @brief Open a directory used to obtain directory entries.
- *
+ 
  * @param session       The sftp session handle to open the directory.
  * @param path          The path of the directory to open.
  *
