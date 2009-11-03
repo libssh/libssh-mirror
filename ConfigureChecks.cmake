@@ -21,6 +21,7 @@ check_c_compiler_flag("-fvisibility=hidden" WITH_VISIBILITY_HIDDEN)
 endif(CMAKE_COMPILER_IS_GNUC)
 
 # HEADER FILES
+check_include_file(argp.h HAVE_ARGP_H)
 check_include_file(pty.h HAVE_PTY_H)
 check_include_file(terminos.h HAVE_TERMIOS_H)
 if (WIN32)

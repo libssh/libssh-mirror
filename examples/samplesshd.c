@@ -14,7 +14,10 @@ clients must be made or how a client should react.
 
 #include <libssh/libssh.h>
 #include <libssh/server.h>
+
+#ifdef HAVE_ARGP_H
 #include <argp.h>
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -34,7 +37,7 @@ static int auth_password(char *user, char *password){
         return 0;
     return 1; // authenticated
 }
-
+#ifdef HAVE_ARGP_H
 const char *argp_program_version = "libssh server example "
   SSH_STRINGIFY(LIBSSH_VERSION);
 const char *argp_program_bug_address = "<libssh@libssh.org>";
@@ -135,6 +138,7 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
 
 /* Our argp parser. */
 static struct argp argp = {options, parse_opt, args_doc, doc, NULL, NULL, NULL};
+#endif /* HAVE_ARGP_H */
 
 int main(int argc, char **argv){
     ssh_session session;
@@ -153,12 +157,13 @@ int main(int argc, char **argv){
     ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_DSAKEY, KEYS_FOLDER "ssh_host_dsa_key");
     ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_RSAKEY, KEYS_FOLDER "ssh_host_rsa_key");
 
+#ifdef HAVE_ARGP_H
     /*
      * Parse our arguments; every option seen by parse_opt will
      * be reflected in arguments.
      */
     argp_parse (&argp, argc, argv, 0, 0, sshbind);
-
+#endif
     if(ssh_bind_listen(sshbind)<0){
         printf("Error listening to socket: %s\n",ssh_get_error(sshbind));
         return 1;
