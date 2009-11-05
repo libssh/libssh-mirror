@@ -14,6 +14,9 @@
 
 /************************** HEADER FILES *************************/
 
+/* Define to 1 if you have the <argp.h> header file. */
+#cmakedefine HAVE_ARGP_H 1
+
 /* Define to 1 if you have the <pty.h> header file. */
 #cmakedefine HAVE_PTY_H 1
 
