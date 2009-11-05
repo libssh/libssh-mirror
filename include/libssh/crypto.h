@@ -27,17 +27,18 @@
 #define _CRYPTO_H_
 
 #include "config.h"
+
+#ifdef HAVE_LIBGCRYPT
+#include <gcrypt.h>
+#endif
+#include "libssh/wrapper.h"
+
 #ifdef cbc_encrypt
 #undef cbc_encrypt
 #endif
 #ifdef cbc_decrypt
 #undef cbc_decrypt
 #endif
-
-#ifdef HAVE_LIBGCRYPT
-#include <gcrypt.h>
-#endif
-#include "libssh/wrapper.h"
 
 struct ssh_crypto_struct {
     bignum e,f,x,k,y;
