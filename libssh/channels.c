@@ -1838,7 +1838,8 @@ int channel_read_buffer(ssh_channel channel, ssh_buffer buffer, uint32_t count,
  * @param is_stderr     A boolean value to mark reading from the stderr flow.
  *
  * @return The number of bytes read, 0 on end of file or SSH_ERROR on error.
- *
+ * @warning This function may return less than count bytes of data, and won't
+ *          block until count bytes have been read.
  * @warning The read function using a buffer has been renamed to
  *          channel_read_buffer().
  */
@@ -1876,9 +1877,10 @@ int channel_read(ssh_channel channel, void *dest, uint32_t count, int is_stderr)
     }
   }
 
-  /* block reading if asked bytes=0 */
-  while (buffer_get_rest_len(stdbuf) == 0 ||
-      buffer_get_rest_len(stdbuf) < count) {
+  /* block reading until at least one byte is read 
+  *  and ignore the trivial case count=0
+  */
+  while (buffer_get_rest_len(stdbuf) == 0 && count > 0) {
     if (channel->remote_eof && buffer_get_rest_len(stdbuf) == 0) {
       leave_function();
       return 0;
