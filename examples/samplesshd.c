@@ -12,6 +12,8 @@ The goal is to show the API in action. It's not a reference on how terminal
 clients must be made or how a client should react.
 */
 
+#include "config.h"
+
 #include <libssh/libssh.h>
 #include <libssh/server.h>
 
