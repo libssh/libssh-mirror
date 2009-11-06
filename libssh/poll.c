@@ -38,8 +38,8 @@
 #define SSH_POLL_CTX_CHUNK			5
 #endif
 
-struct ssh_poll {
-  SSH_POLL_CTX *ctx;
+struct ssh_poll_handle_struct {
+  ssh_poll_ctx ctx;
   union {
     socket_t fd;
     size_t idx;
@@ -49,8 +49,8 @@ struct ssh_poll {
   void *cb_data;
 };
 
-struct ssh_poll_ctx {
-  SSH_POLL **pollptrs;
+struct ssh_poll_ctx_struct {
+  ssh_poll_handle *pollptrs;
   ssh_pollfd_t *pollfds;
   size_t polls_allocated;
   size_t polls_used;
@@ -245,11 +245,11 @@ int ssh_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout) {
  * @return              A new poll object, NULL on error
  */
 
-SSH_POLL *ssh_poll_new(socket_t fd, short events, ssh_poll_callback cb,
+ssh_poll_handle ssh_poll_new(socket_t fd, short events, ssh_poll_callback cb,
     void *userdata) {
-  SSH_POLL *p;
+  ssh_poll_handle p;
 
-  p = malloc(sizeof(SSH_POLL));
+  p = malloc(sizeof(struct ssh_poll_handle_struct));
   if (p != NULL) {
     p->ctx = NULL;
     p->x.fd = fd;
@@ -268,7 +268,7 @@ SSH_POLL *ssh_poll_new(socket_t fd, short events, ssh_poll_callback cb,
  * @param  p            Pointer to an already allocated poll object.
  */
 
-void ssh_poll_free(SSH_POLL *p) {
+void ssh_poll_free(ssh_poll_handle p) {
   SAFE_FREE(p);
 }
 
@@ -279,7 +279,7 @@ void ssh_poll_free(SSH_POLL *p) {
  *
  * @return              Poll context or NULL if the poll object isn't attached.
  */
-SSH_POLL_CTX *ssh_poll_get_ctx(SSH_POLL *p) {
+ssh_poll_ctx ssh_poll_get_ctx(ssh_poll_handle p) {
   return p->ctx;
 }
 
@@ -290,7 +290,7 @@ SSH_POLL_CTX *ssh_poll_get_ctx(SSH_POLL *p) {
  *
  * @return              Poll events.
  */
-short ssh_poll_get_events(SSH_POLL *p) {
+short ssh_poll_get_events(ssh_poll_handle p) {
   return p->events;
 }
 
@@ -301,7 +301,7 @@ short ssh_poll_get_events(SSH_POLL *p) {
  * @param  p            Pointer to an already allocated poll object.
  * @param  events       Poll events.
  */
-void ssh_poll_set_events(SSH_POLL *p, short events) {
+void ssh_poll_set_events(ssh_poll_handle p, short events) {
   p->events = events;
   if (p->ctx != NULL) {
     p->ctx->pollfds[p->x.idx].events = events;
@@ -315,7 +315,7 @@ void ssh_poll_set_events(SSH_POLL *p, short events) {
  * @param  p            Pointer to an already allocated poll object.
  * @param  events       Poll events.
  */
-void ssh_poll_add_events(SSH_POLL *p, short events) {
+void ssh_poll_add_events(ssh_poll_handle p, short events) {
   ssh_poll_set_events(p, ssh_poll_get_events(p) | events);
 }
 
@@ -326,7 +326,7 @@ void ssh_poll_add_events(SSH_POLL *p, short events) {
  * @param  p            Pointer to an already allocated poll object.
  * @param  events       Poll events.
  */
-void ssh_poll_remove_events(SSH_POLL *p, short events) {
+void ssh_poll_remove_events(ssh_poll_handle p, short events) {
   ssh_poll_set_events(p, ssh_poll_get_events(p) & ~events);
 }
 
@@ -338,7 +338,7 @@ void ssh_poll_remove_events(SSH_POLL *p, short events) {
  * @return              Raw socket.
  */
 
-socket_t ssh_poll_get_fd(SSH_POLL *p) {
+socket_t ssh_poll_get_fd(ssh_poll_handle p) {
   if (p->ctx != NULL) {
     return p->ctx->pollfds[p->x.idx].fd;
   }
@@ -353,7 +353,7 @@ socket_t ssh_poll_get_fd(SSH_POLL *p) {
  * @param  userdata     Userdata to be passed to the callback function. NULL if
  *                      not needed.
  */
-void ssh_poll_set_callback(SSH_POLL *p, ssh_poll_callback cb, void *userdata) {
+void ssh_poll_set_callback(ssh_poll_handle p, ssh_poll_callback cb, void *userdata) {
   if (cb != NULL) {
     p->cb = cb;
     p->cb_data = userdata;
@@ -371,10 +371,10 @@ void ssh_poll_set_callback(SSH_POLL *p, ssh_poll_callback cb, void *userdata) {
  *                      for the next 5. Set it to 0 if you want to use the
  *                      library's default value.
  */
-SSH_POLL_CTX *ssh_poll_ctx_new(size_t chunk_size) {
-  SSH_POLL_CTX *ctx;
+ssh_poll_ctx ssh_poll_ctx_new(size_t chunk_size) {
+  ssh_poll_ctx ctx;
 
-  ctx = malloc(sizeof(SSH_POLL_CTX));
+  ctx = malloc(sizeof(struct ssh_poll_ctx_struct));
   if (ctx != NULL) {
     if (!chunk_size) {
       chunk_size = SSH_POLL_CTX_CHUNK;
@@ -395,13 +395,13 @@ SSH_POLL_CTX *ssh_poll_ctx_new(size_t chunk_size) {
  *
  * @param  ctx          Pointer to an already allocated poll context.
  */
-void ssh_poll_ctx_free(SSH_POLL_CTX *ctx) {
+void ssh_poll_ctx_free(ssh_poll_ctx ctx) {
   if (ctx->polls_allocated > 0) {
     register size_t i, used;
 
     used = ctx->polls_used;
     for (i = 0; i < used; ) {
-      SSH_POLL *p = ctx->pollptrs[i];
+      ssh_poll_handle p = ctx->pollptrs[i];
       int fd = ctx->pollfds[i].fd;
 
       /* force poll object removal */
@@ -419,18 +419,18 @@ void ssh_poll_ctx_free(SSH_POLL_CTX *ctx) {
   SAFE_FREE(ctx);
 }
 
-static int ssh_poll_ctx_resize(SSH_POLL_CTX *ctx, size_t new_size) {
-  SSH_POLL **pollptrs;
+static int ssh_poll_ctx_resize(ssh_poll_ctx ctx, size_t new_size) {
+  ssh_poll_handle *pollptrs;
   ssh_pollfd_t *pollfds;
 
-  pollptrs = realloc(ctx->pollptrs, sizeof(SSH_POLL *) * new_size);
+  pollptrs = realloc(ctx->pollptrs, sizeof(ssh_poll_handle *) * new_size);
   if (pollptrs == NULL) {
     return -1;
   }
 
   pollfds = realloc(ctx->pollfds, sizeof(ssh_pollfd_t) * new_size);
   if (pollfds == NULL) {
-    ctx->pollptrs = realloc(pollptrs, sizeof(SSH_POLL *) * ctx->polls_allocated);
+    ctx->pollptrs = realloc(pollptrs, sizeof(ssh_poll_handle *) * ctx->polls_allocated);
     return -1;
   }
 
@@ -449,7 +449,7 @@ static int ssh_poll_ctx_resize(SSH_POLL_CTX *ctx, size_t new_size) {
  *
  * @return              0 on success, < 0 on error
  */
-int ssh_poll_ctx_add(SSH_POLL_CTX *ctx, SSH_POLL *p) {
+int ssh_poll_ctx_add(ssh_poll_ctx ctx, ssh_poll_handle p) {
   int fd;
 
   if (p->ctx != NULL) {
@@ -479,7 +479,7 @@ int ssh_poll_ctx_add(SSH_POLL_CTX *ctx, SSH_POLL *p) {
  * @param  ctx          Pointer to an already allocated poll context.
  * @param  p            Pointer to an already allocated poll object.
  */
-void ssh_poll_ctx_remove(SSH_POLL_CTX *ctx, SSH_POLL *p) {
+void ssh_poll_ctx_remove(ssh_poll_ctx ctx, ssh_poll_handle p) {
   size_t i;
 
   i = p->x.idx;
@@ -513,7 +513,7 @@ void ssh_poll_ctx_remove(SSH_POLL_CTX *ctx, SSH_POLL *p) {
  *                      the poll() function.
  */
 
-int ssh_poll_ctx(SSH_POLL_CTX *ctx, int timeout) {
+int ssh_poll_ctx_dopoll(ssh_poll_ctx ctx, int timeout) {
   int rc;
 
   if (!ctx->polls_used)
@@ -528,7 +528,7 @@ int ssh_poll_ctx(SSH_POLL_CTX *ctx, int timeout) {
       if (!ctx->pollfds[i].revents) {
         i++;
       } else {
-        SSH_POLL *p = ctx->pollptrs[i];
+        ssh_poll_handle p = ctx->pollptrs[i];
         int fd = ctx->pollfds[i].fd;
         int revents = ctx->pollfds[i].revents;
 

@@ -63,8 +63,8 @@ typedef unsigned long int nfds_t;
 #endif /* HAVE_POLL */
 
 int ssh_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout);
-typedef struct ssh_poll_ctx SSH_POLL_CTX;
-typedef struct ssh_poll SSH_POLL;
+typedef struct ssh_poll_ctx_struct *ssh_poll_ctx;
+typedef struct ssh_poll_handle_struct *ssh_poll_handle;
 
 /**
  * @brief SSH poll callback.
@@ -77,25 +77,25 @@ typedef struct ssh_poll SSH_POLL;
  * @return              0 on success, < 0 if you removed the poll object from
  *                      it's poll context.
  */
-typedef int (*ssh_poll_callback)(SSH_POLL *p, int fd, int revents,
+typedef int (*ssh_poll_callback)(ssh_poll_handle p, int fd, int revents,
     void *userdata);
 
 
-SSH_POLL *ssh_poll_new(socket_t fd, short events, ssh_poll_callback cb,
+ssh_poll_handle ssh_poll_new(socket_t fd, short events, ssh_poll_callback cb,
     void *userdata);
-void ssh_poll_free(SSH_POLL *p);
-SSH_POLL_CTX *ssh_poll_get_ctx(SSH_POLL *p);
-short ssh_poll_get_events(SSH_POLL *p);
-void ssh_poll_set_events(SSH_POLL *p, short events);
-void ssh_poll_add_events(SSH_POLL *p, short events);
-void ssh_poll_remove_events(SSH_POLL *p, short events);
-socket_t ssh_poll_get_fd(SSH_POLL *p);
-void ssh_poll_set_callback(SSH_POLL *p, ssh_poll_callback cb, void *userdata);
-SSH_POLL_CTX *ssh_poll_ctx_new(size_t chunk_size);
-void ssh_poll_ctx_free(SSH_POLL_CTX *ctx);
-int ssh_poll_ctx_add(SSH_POLL_CTX *ctx, SSH_POLL *p);
-void ssh_poll_ctx_remove(SSH_POLL_CTX *ctx, SSH_POLL *p);
-int ssh_poll_ctx(SSH_POLL_CTX *ctx, int timeout);
+void ssh_poll_free(ssh_poll_handle p);
+ssh_poll_ctx ssh_poll_get_ctx(ssh_poll_handle p);
+short ssh_poll_get_events(ssh_poll_handle p);
+void ssh_poll_set_events(ssh_poll_handle p, short events);
+void ssh_poll_add_events(ssh_poll_handle p, short events);
+void ssh_poll_remove_events(ssh_poll_handle p, short events);
+socket_t ssh_poll_get_fd(ssh_poll_handle p);
+void ssh_poll_set_callback(ssh_poll_handle p, ssh_poll_callback cb, void *userdata);
+ssh_poll_ctx ssh_poll_ctx_new(size_t chunk_size);
+void ssh_poll_ctx_free(ssh_poll_ctx ctx);
+int ssh_poll_ctx_add(ssh_poll_ctx ctx, ssh_poll_handle p);
+void ssh_poll_ctx_remove(ssh_poll_ctx ctx, ssh_poll_handle p);
+int ssh_poll_ctx_dopoll(ssh_poll_ctx ctx, int timeout);
 
 
 
