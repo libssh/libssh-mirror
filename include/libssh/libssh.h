@@ -54,7 +54,7 @@
   typedef unsigned short uint16_t;
   typedef unsigned char uint8_t;
   typedef unsigned long long uint64_t;
-  typedef uint32_t mode_t;
+  typedef int mode_t;
 #else /* _MSC_VER */
   #include <unistd.h>
   #include <inttypes.h>
