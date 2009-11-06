@@ -21,7 +21,6 @@ clients must be made or how a client should react.
 
 #include <sys/select.h>
 #include <sys/time.h>
-#include <sys/statvfs.h>
 #ifdef HAVE_PTY_H
 #include <pty.h>
 #endif
@@ -37,11 +36,8 @@ clients must be made or how a client should react.
 #define MAXCMD 10
 char *host;
 char *user;
-int is_sftp;
 char *cmds[MAXCMD];
 struct termios terminal;
-
-void do_sftp(ssh_session session);
 
 static int auth_callback(const char *prompt, char *buf, size_t len,
     int echo, int verify, void *userdata) {
@@ -96,8 +92,7 @@ static void usage(){
 
 static int opts(int argc, char **argv){
     int i;
-    if(strstr(argv[0],"sftp"))
-        is_sftp=1;
+
 //    for(i=0;i<argc;i++)
 //        printf("%d : %s\n",i,argv[i]);
     /* insert your own arguments here */
@@ -291,6 +286,8 @@ static void shell(ssh_session session){
     }
     signal(SIGTERM,do_cleanup);
     select_loop(session,channel);
+    if(interactive)
+    	do_cleanup(0);
 }
 
 static void batch_shell(ssh_session session){
@@ -307,192 +304,6 @@ static void batch_shell(ssh_session session){
     }
     select_loop(session,channel);
 }
-
-#ifdef WITH_SFTP
-/* it's just a proof of concept code for sftp, till i write a real documentation about it */
-void do_sftp(ssh_session session){
-    sftp_session sftp=sftp_new(session);
-    sftp_dir dir;
-    sftp_attributes file;
-    sftp_statvfs_t sftpstatvfs;
-    struct statvfs sysstatvfs;
-    sftp_file fichier;
-    sftp_file to;
-    int len=1;
-    unsigned int i;
-    char data[8000]={0};
-    char *lnk;
-
-    unsigned int count;
-
-    if(!sftp){
-        fprintf(stderr, "sftp error initialising channel: %s\n",
-            ssh_get_error(session));
-        return;
-    }
-    if(sftp_init(sftp)){
-        fprintf(stderr, "error initialising sftp: %s\n",
-            ssh_get_error(session));
-        return;
-    }
-
-    printf("Additional SFTP extensions provided by the server:\n");
-    count = sftp_extensions_get_count(sftp);
-    for (i = 0; i < count; i++) {
-      printf("\t%s, version: %s\n",
-          sftp_extensions_get_name(sftp, i),
-          sftp_extensions_get_data(sftp, i));
-    }
-
-    /* test symlink and readlink */
-    if (sftp_symlink(sftp, "/tmp/this_is_the_link",
-          "/tmp/sftp_symlink_test") < 0) {
-      fprintf(stderr, "Could not create link (%s)\n", ssh_get_error(session));
-      return;
-    }
-
-    lnk = sftp_readlink(sftp, "/tmp/sftp_symlink_test");
-    if (lnk == NULL) {
-      fprintf(stderr, "Could not read link (%s)\n", ssh_get_error(session));
-      return;
-    }
-    printf("readlink /tmp/sftp_symlink_test: %s\n", lnk);
-
-    sftp_unlink(sftp, "/tmp/sftp_symlink_test");
-
-    if (sftp_extension_supported(sftp, "statvfs@openssh.com", "2")) {
-      sftpstatvfs = sftp_statvfs(sftp, "/tmp");
-      if (sftpstatvfs == NULL) {
-        fprintf(stderr, "statvfs failed (%s)\n", ssh_get_error(session));
-        return;
-      }
-
-      printf("sftp statvfs:\n"
-          "\tfile system block size: %llu\n"
-          "\tfundamental fs block size: %llu\n"
-          "\tnumber of blocks (unit f_frsize): %llu\n"
-          "\tfree blocks in file system: %llu\n"
-          "\tfree blocks for non-root: %llu\n"
-          "\ttotal file inodes: %llu\n"
-          "\tfree file inodes: %llu\n"
-          "\tfree file inodes for to non-root: %llu\n"
-          "\tfile system id: %llu\n"
-          "\tbit mask of f_flag values: %llu\n"
-          "\tmaximum filename length: %llu\n",
-          (unsigned long long) sftpstatvfs->f_bsize,
-          (unsigned long long) sftpstatvfs->f_frsize,
-          (unsigned long long) sftpstatvfs->f_blocks,
-          (unsigned long long) sftpstatvfs->f_bfree,
-          (unsigned long long) sftpstatvfs->f_bavail,
-          (unsigned long long) sftpstatvfs->f_files,
-          (unsigned long long) sftpstatvfs->f_ffree,
-          (unsigned long long) sftpstatvfs->f_favail,
-          (unsigned long long) sftpstatvfs->f_fsid,
-          (unsigned long long) sftpstatvfs->f_flag,
-          (unsigned long long) sftpstatvfs->f_namemax);
-
-      sftp_statvfs_free(sftpstatvfs);
-
-      if (statvfs("/tmp", &sysstatvfs) < 0) {
-        fprintf(stderr, "statvfs failed (%s)\n", strerror(errno));
-        return;
-      }
-
-      printf("sys statvfs:\n"
-          "\tfile system block size: %llu\n"
-          "\tfundamental fs block size: %llu\n"
-          "\tnumber of blocks (unit f_frsize): %llu\n"
-          "\tfree blocks in file system: %llu\n"
-          "\tfree blocks for non-root: %llu\n"
-          "\ttotal file inodes: %llu\n"
-          "\tfree file inodes: %llu\n"
-          "\tfree file inodes for to non-root: %llu\n"
-          "\tfile system id: %llu\n"
-          "\tbit mask of f_flag values: %llu\n"
-          "\tmaximum filename length: %llu\n",
-          (unsigned long long) sysstatvfs.f_bsize,
-          (unsigned long long) sysstatvfs.f_frsize,
-          (unsigned long long) sysstatvfs.f_blocks,
-          (unsigned long long) sysstatvfs.f_bfree,
-          (unsigned long long) sysstatvfs.f_bavail,
-          (unsigned long long) sysstatvfs.f_files,
-          (unsigned long long) sysstatvfs.f_ffree,
-          (unsigned long long) sysstatvfs.f_favail,
-          (unsigned long long) sysstatvfs.f_fsid,
-          (unsigned long long) sysstatvfs.f_flag,
-          (unsigned long long) sysstatvfs.f_namemax);
-    }
-
-    /* the connection is made */
-    /* opening a directory */
-    dir=sftp_opendir(sftp,"./");
-    if(!dir) {
-        fprintf(stderr, "Directory not opened(%s)\n", ssh_get_error(session));
-        return ;
-    }
-    /* reading the whole directory, file by file */
-    while((file=sftp_readdir(sftp,dir))){
-        fprintf(stderr, "%30s(%.8o) : %.5d.%.5d : %.10llu bytes\n",
-            file->name,
-            file->permissions,
-            file->uid,
-            file->gid,
-            (long long unsigned int) file->size);
-        sftp_attributes_free(file);
-    }
-    /* when file=NULL, an error has occured OR the directory listing is end of file */
-    if(!sftp_dir_eof(dir)){
-        fprintf(stderr, "Error: %s\n", ssh_get_error(session));
-        return;
-    }
-    if(sftp_closedir(dir)){
-        fprintf(stderr, "Error: %s\n", ssh_get_error(session));
-        return;
-    }
-    /* this will open a file and copy it into your /home directory */
-    /* the small buffer size was intended to stress the library. of course, you can use a buffer till 20kbytes without problem */
-
-    fichier=sftp_open(sftp,"/usr/bin/ssh",O_RDONLY, 0);
-    if(!fichier){
-        fprintf(stderr, "Error opening /usr/bin/ssh: %s\n",
-            ssh_get_error(session));
-        return;
-    }
-    /* open a file for writing... */
-    to=sftp_open(sftp,"ssh-copy",O_WRONLY | O_CREAT, 0700);
-    if(!to){
-        fprintf(stderr, "Error opening ssh-copy for writing: %s\n",
-            ssh_get_error(session));
-        return;
-    }
-    while((len=sftp_read(fichier,data,4096)) > 0){
-        if(sftp_write(to,data,len)!=len){
-            fprintf(stderr, "Error writing %d bytes: %s\n",
-                len, ssh_get_error(session));
-            return;
-        }
-    }
-    printf("finished\n");
-    if(len<0)
-        fprintf(stderr, "Error reading file: %s\n", ssh_get_error(session));
-    sftp_close(fichier);
-    sftp_close(to);
-    printf("fichiers ferm\n");
-    to=sftp_open(sftp,"/tmp/grosfichier",O_WRONLY|O_CREAT, 0644);
-    for(i=0;i<1000;++i){
-        len=sftp_write(to,data,8000);
-        printf("wrote %d bytes\n",len);
-        if(len != 8000){
-            printf("chunk %d : %d (%s)\n",i,len,ssh_get_error(session));
-        }
-    }
-    sftp_close(to);
-
-    /* close the sftp session */
-    sftp_free(sftp);
-    printf("sftp session terminated\n");
-}
-#endif
 
 static int auth_kbdint(ssh_session session){
     int err=ssh_userauth_kbdint(session,NULL,NULL);
@@ -681,22 +492,11 @@ int main(int argc, char **argv){
         memset(password,0,strlen(password));
     }
     ssh_log(session, SSH_LOG_FUNCTIONS, "Authentication success");
-    if(strstr(argv[0],"sftp")){
-        is_sftp=1;
-        ssh_log(session, SSH_LOG_FUNCTIONS, "Doing sftp instead");
-    }
-    if(!is_sftp){
-        if(!cmds[0])
-            shell(session);
-        else
-            batch_shell(session);
-    }
-#ifdef WITH_SFTP
+    if(!cmds[0])
+    	shell(session);
     else
-        do_sftp(session);
-#endif
-    if(!is_sftp && !cmds[0])
-        do_cleanup(0);
+    	batch_shell(session);
+
     ssh_disconnect(session);
     ssh_free(session);
     ssh_finalize();
