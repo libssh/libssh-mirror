@@ -37,9 +37,7 @@ int verify_knownhost(ssh_session session){
 
   hlen = ssh_get_pubkey_hash(session, &hash);
   if (hlen < 0) {
-    ssh_disconnect(session);
-    ssh_finalize();
-    return 1;
+    return -1;
   }
   switch(state){
     case SSH_SERVER_KNOWN_OK:
@@ -49,17 +47,13 @@ int verify_knownhost(ssh_session session){
       ssh_print_hexa("Public key hash",hash, hlen);
       free(hash);
       fprintf(stderr,"For security reason, connection will be stopped\n");
-      ssh_disconnect(session);
-      ssh_finalize();
-      exit(-1);
+      return -1;
     case SSH_SERVER_FOUND_OTHER:
       fprintf(stderr,"The host key for this server was not found but an other type of key exists.\n");
       fprintf(stderr,"An attacker might change the default server key to confuse your client"
           "into thinking the key does not exist\n"
           "We advise you to rerun the client with -d or -r for more safety.\n");
-      ssh_disconnect(session);
-      ssh_finalize();
-      exit(-1);
+      return -1;
     case SSH_SERVER_FILE_NOT_FOUND:
       fprintf(stderr,"Could not find known host file. If you accept the host key here,\n");
       fprintf(stderr,"the file will be automatically created.\n");
@@ -71,8 +65,7 @@ int verify_knownhost(ssh_session session){
       free(hexa);
       fgets(buf,sizeof(buf),stdin);
       if(strncasecmp(buf,"yes",3)!=0){
-        ssh_disconnect(session);
-        exit(-1);
+        return -1;
       }
       fprintf(stderr,"This new key will be written on disk for further usage. do you agree ?\n");
       fgets(buf,sizeof(buf),stdin);
@@ -80,7 +73,7 @@ int verify_knownhost(ssh_session session){
         if (ssh_write_knownhost(session) < 0) {
           free(hash);
           fprintf(stderr, "error %s\n", strerror(errno));
-          exit(-1);
+          return -1;
         }
       }
 
@@ -88,9 +81,7 @@ int verify_knownhost(ssh_session session){
     case SSH_SERVER_ERROR:
       free(hash);
       fprintf(stderr,"%s",ssh_get_error(session));
-      ssh_disconnect(session);
-      ssh_finalize();
-      exit(-1);
+      return -1;
   }
   free(hash);
   return 0;

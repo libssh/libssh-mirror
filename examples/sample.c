@@ -306,15 +306,46 @@ static void batch_shell(ssh_session session){
     select_loop(session,channel);
 }
 
+static int client(ssh_session session){
+  int auth=0;
+  char *banner;
+  int state;
+  if (user)
+    if (ssh_options_set(session, SSH_OPTIONS_USER, user) < 0)
+      return -1;
+  if (ssh_options_set(session, SSH_OPTIONS_HOST ,host) < 0)
+    return -1;
+
+  ssh_options_parse_config(session, NULL);
+
+  if(ssh_connect(session)){
+      fprintf(stderr,"Connection failed : %s\n",ssh_get_error(session));
+      return -1;
+  }
+  state=verify_knownhost(session);
+  if (state != 0)
+  	return -1;
+  ssh_userauth_none(session, NULL);
+  banner=ssh_get_issue_banner(session);
+  if(banner){
+      printf("%s\n",banner);
+      free(banner);
+  }
+  auth=authenticate_console(session);
+  if(auth != SSH_AUTH_SUCCESS){
+  	return -1;
+  }
+  ssh_log(session, SSH_LOG_FUNCTIONS, "Authentication success");
+  if(!cmds[0])
+  	shell(session);
+  else
+  	batch_shell(session);
+  return 0;
+}
+
 int main(int argc, char **argv){
     ssh_session session;
-    int auth=0;
-    char *banner;
-    char *hexa;
-    int state;
-    char buf[10];
-    unsigned char *hash = NULL;
-    int hlen;
+
     session = ssh_new();
 
     ssh_callbacks_init(&cb);
@@ -328,105 +359,7 @@ int main(int argc, char **argv){
     opts(argc,argv);
     signal(SIGTERM, do_exit);
 
-    if (user) {
-      if (ssh_options_set(session, SSH_OPTIONS_USER, user) < 0) {
-        ssh_disconnect(session);
-        return 1;
-      }
-    }
-
-    if (ssh_options_set(session, SSH_OPTIONS_HOST ,host) < 0) {
-      ssh_disconnect(session);
-      return 1;
-    }
-
-    ssh_options_parse_config(session, NULL);
-
-    if(ssh_connect(session)){
-        fprintf(stderr,"Connection failed : %s\n",ssh_get_error(session));
-        ssh_disconnect(session);
-	    ssh_finalize();
-        return 1;
-    }
-    state=ssh_is_server_known(session);
-
-    hlen = ssh_get_pubkey_hash(session, &hash);
-    if (hlen < 0) {
-      ssh_disconnect(session);
-      ssh_finalize();
-      return 1;
-    }
-    switch(state){
-        case SSH_SERVER_KNOWN_OK:
-            break; /* ok */
-        case SSH_SERVER_KNOWN_CHANGED:
-            fprintf(stderr,"Host key for server changed : server's one is now :\n");
-            ssh_print_hexa("Public key hash",hash, hlen);
-            free(hash);
-            fprintf(stderr,"For security reason, connection will be stopped\n");
-            ssh_disconnect(session);
-	        ssh_finalize();
-            exit(-1);
-        case SSH_SERVER_FOUND_OTHER:
-            fprintf(stderr,"The host key for this server was not found but an other type of key exists.\n");
-            fprintf(stderr,"An attacker might change the default server key to confuse your client"
-                "into thinking the key does not exist\n"
-                "We advise you to rerun the client with -d or -r for more safety.\n");
-            ssh_disconnect(session);
-		    ssh_finalize();
-            exit(-1);
-        case SSH_SERVER_FILE_NOT_FOUND:
-            fprintf(stderr,"Could not find known host file. If you accept the host key here,\n");
-            fprintf(stderr,"the file will be automatically created.\n");
-            /* fallback to SSH_SERVER_NOT_KNOWN behavior */
-        case SSH_SERVER_NOT_KNOWN:
-            hexa = ssh_get_hexa(hash, hlen);
-            fprintf(stderr,"The server is unknown. Do you trust the host key ?\n");
-            fprintf(stderr, "Public key hash: %s\n", hexa);
-            free(hexa);
-            fgets(buf,sizeof(buf),stdin);
-            if(strncasecmp(buf,"yes",3)!=0){
-                ssh_disconnect(session);
-                exit(-1);
-            }
-            fprintf(stderr,"This new key will be written on disk for further usage. do you agree ?\n");
-            fgets(buf,sizeof(buf),stdin);
-            if(strncasecmp(buf,"yes",3)==0){
-                if (ssh_write_knownhost(session) < 0) {
-                  free(hash);
-                  fprintf(stderr, "error %s\n", strerror(errno));
-                  exit(-1);
-                }
-            }
-
-            break;
-        case SSH_SERVER_ERROR:
-            free(hash);
-            fprintf(stderr,"%s",ssh_get_error(session));
-            ssh_disconnect(session);
-    	    ssh_finalize();
-            exit(-1);
-    }
-    free(hash);
-
-    ssh_userauth_none(session, NULL);
-    banner=ssh_get_issue_banner(session);
-    if(banner){
-        printf("%s\n",banner);
-        free(banner);
-    }
-    auth=authenticate_console(session);
-    if(auth != SSH_AUTH_SUCCESS){
-    	ssh_disconnect(session);
-    	ssh_free(session);
-    	return EXIT_FAILURE;
-    }
-    ssh_log(session, SSH_LOG_FUNCTIONS, "Authentication success");
-    if(!cmds[0])
-    	shell(session);
-    else
-    	batch_shell(session);
-
+    client(session);
     ssh_disconnect(session);
     ssh_free(session);
     ssh_finalize();
