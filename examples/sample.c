@@ -162,7 +162,7 @@ static void sizechanged(void){
 static void select_loop(ssh_session session,ssh_channel channel){
     fd_set fds;
     struct timeval timeout;
-    char buffer[10];
+    char buffer[4096];
     ssh_buffer readbuf=buffer_new();
     ssh_channel channels[2];
     int lus;
@@ -189,7 +189,7 @@ static void select_loop(ssh_session session,ssh_channel channel){
             if(ret==EINTR)
                 continue;
             if(FD_ISSET(0,&fds)){
-                lus=read(0,buffer,10);
+                lus=read(0,buffer,sizeof(buffer));
                 if(lus)
                     channel_write(channel,buffer,lus);
                 else {
