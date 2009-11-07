@@ -33,6 +33,7 @@ clients must be made or how a client should react.
 
 #include <fcntl.h>
 
+#include "examples_common.h"
 #define MAXCMD 10
 char *host;
 char *user;
@@ -305,49 +306,9 @@ static void batch_shell(ssh_session session){
     select_loop(session,channel);
 }
 
-static int auth_kbdint(ssh_session session){
-    int err=ssh_userauth_kbdint(session,NULL,NULL);
-    const char *name, *instruction, *prompt;
-    char *ptr;
-    char buffer[128];
-    int i,n;
-    char echo;
-    while (err==SSH_AUTH_INFO){
-        name=ssh_userauth_kbdint_getname(session);
-        instruction=ssh_userauth_kbdint_getinstruction(session);
-        n=ssh_userauth_kbdint_getnprompts(session);
-        if(strlen(name)>0)
-            printf("%s\n",name);
-        if(strlen(instruction)>0)
-            printf("%s\n",instruction);
-        for(i=0;i<n;++i){
-            prompt=ssh_userauth_kbdint_getprompt(session,i,&echo);
-            if(echo){
-                printf("%s",prompt);
-                fgets(buffer,sizeof(buffer),stdin);
-                buffer[sizeof(buffer)-1]=0;
-                if((ptr=strchr(buffer,'\n')))
-                    *ptr=0;
-                if (ssh_userauth_kbdint_setanswer(session,i,buffer) < 0) {
-                  return SSH_AUTH_ERROR;
-                }
-                memset(buffer,0,strlen(buffer));
-            } else {
-                ptr=getpass(prompt);
-                if (ssh_userauth_kbdint_setanswer(session,i,ptr) < 0) {
-                  return SSH_AUTH_ERROR;
-                }
-            }
-        }
-        err=ssh_userauth_kbdint(session,NULL,NULL);
-    }
-    return err;
-}
-
 int main(int argc, char **argv){
     ssh_session session;
     int auth=0;
-    char *password;
     char *banner;
     char *hexa;
     int state;
@@ -449,47 +410,16 @@ int main(int argc, char **argv){
     free(hash);
 
     ssh_userauth_none(session, NULL);
-
-    auth = ssh_auth_list(session);
-    printf("supported auth methods: ");
-    if (auth & SSH_AUTH_METHOD_PUBLICKEY) {
-      printf("publickey");
-    }
-    if (auth & SSH_AUTH_METHOD_INTERACTIVE) {
-      printf(", keyboard-interactive");
-    }
-    printf("\n");
-
-    /* no ? you should :) */
-    auth=ssh_userauth_autopubkey(session, NULL);
-    if(auth==SSH_AUTH_ERROR){
-        fprintf(stderr,"Authenticating with pubkey: %s\n",ssh_get_error(session));
-	    ssh_finalize();
-        return -1;
-    }
     banner=ssh_get_issue_banner(session);
     if(banner){
         printf("%s\n",banner);
         free(banner);
     }
-    if(auth!=SSH_AUTH_SUCCESS){
-        auth=auth_kbdint(session);
-        if(auth==SSH_AUTH_ERROR){
-            fprintf(stderr,"authenticating with keyb-interactive: %s\n",
-                    ssh_get_error(session));
-	        ssh_finalize();
-            return -1;
-        }
-    }
-    if(auth!=SSH_AUTH_SUCCESS){
-        password=getpass("Password: ");
-        if(ssh_userauth_password(session,NULL,password) != SSH_AUTH_SUCCESS){
-            fprintf(stderr,"Authentication failed: %s\n",ssh_get_error(session));
-            ssh_disconnect(session);
-	        ssh_finalize();
-            return -1;
-        }
-        memset(password,0,strlen(password));
+    auth=authenticate_console(session);
+    if(auth != SSH_AUTH_SUCCESS){
+    	ssh_disconnect(session);
+    	ssh_free(session);
+    	return EXIT_FAILURE;
     }
     ssh_log(session, SSH_LOG_FUNCTIONS, "Authentication success");
     if(!cmds[0])
