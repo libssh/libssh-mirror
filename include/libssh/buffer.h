@@ -33,6 +33,7 @@ struct ssh_buffer_struct {
 
 int buffer_add_ssh_string(ssh_buffer buffer, ssh_string string);
 int buffer_add_u8(ssh_buffer buffer, uint8_t data);
+int buffer_add_u16(ssh_buffer buffer, uint16_t data);
 int buffer_add_u32(ssh_buffer buffer, uint32_t data);
 int buffer_add_u64(ssh_buffer buffer, uint64_t data);
 int buffer_add_data(ssh_buffer buffer, const void *data, uint32_t len);

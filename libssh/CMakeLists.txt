@@ -93,6 +93,7 @@ set(libssh_SRCS
   misc.c
   options.c
   packet.c
+  pcap.c
   poll.c
   session.c
   scp.c

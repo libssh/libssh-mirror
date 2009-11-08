@@ -174,6 +174,7 @@ int buffer_add_ssh_string(struct ssh_buffer_struct *buffer,
 
   return 0;
 }
+
 /** \internal
  * \brief add a 32 bits unsigned integer to the tail of buffer
  * \param buffer buffer
@@ -181,6 +182,20 @@ int buffer_add_ssh_string(struct ssh_buffer_struct *buffer,
  * \return 0 on success, -1 on error.
  */
 int buffer_add_u32(struct ssh_buffer_struct *buffer,uint32_t data){
+  if (buffer_add_data(buffer, &data, sizeof(data)) < 0) {
+    return -1;
+  }
+
+  return 0;
+}
+
+/** \internal
+ * \brief add a 16 bits unsigned integer to the tail of buffer
+ * \param buffer buffer
+ * \param data 16 bits integer
+ * \return 0 on success, -1 on error.
+ */
+int buffer_add_u16(struct ssh_buffer_struct *buffer,uint16_t data){
   if (buffer_add_data(buffer, &data, sizeof(data)) < 0) {
     return -1;
   }
