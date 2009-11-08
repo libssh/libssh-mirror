@@ -159,6 +159,21 @@ static void sizechanged(void){
 //    printf("Changed pty size\n");
     setsignal();
 }
+
+/* There are two flavors of select loop: the one based on
+ * ssh_select and the one based on channel_select.
+ * The ssh_select one permits you to give your own file descriptors to
+ * follow. It is thus a complete select loop.
+ * The second one only selects on channels. It is simplier to use
+ * but doesn't permit you to fill in your own file descriptor. It is
+ * more adapted if you can't use ssh_select as a main loop (because
+ * you already have another main loop system).
+ */
+
+#ifdef USE_CHANNEL_SELECT
+
+/* channel_select base main loop, with a standard select(2)
+ */
 static void select_loop(ssh_session session,ssh_channel channel){
     fd_set fds;
     struct timeval timeout;
@@ -256,7 +271,95 @@ static void select_loop(ssh_session session,ssh_channel channel){
     }
     buffer_free(readbuf);
 }
+#else /* CHANNEL_SELECT */
 
+static void select_loop(ssh_session session,ssh_channel channel){
+	fd_set fds;
+	struct timeval timeout;
+	char buffer[4096];
+	/* channels will be set to the channels to poll.
+	 * outchannels will contain the result of the poll
+	 */
+	ssh_channel channels[2], outchannels[2];
+	int lus;
+	int eof=0;
+	int maxfd;
+	int ret;
+	while(channel){
+		do{
+			FD_ZERO(&fds);
+			if(!eof)
+				FD_SET(0,&fds);
+			timeout.tv_sec=30;
+			timeout.tv_usec=0;
+			FD_SET(ssh_get_fd(session),&fds);
+			maxfd=ssh_get_fd(session)+1;
+			channels[0]=channel; // set the first channel we want to read from
+			channels[1]=NULL;
+			ret=ssh_select(channels,outchannels,maxfd,&fds,&timeout);
+			if(signal_delayed)
+				sizechanged();
+			if(ret==EINTR)
+				continue;
+			if(FD_ISSET(0,&fds)){
+				lus=read(0,buffer,sizeof(buffer));
+				if(lus)
+					channel_write(channel,buffer,lus);
+				else {
+					eof=1;
+					channel_send_eof(channel);
+				}
+			}
+			if(channel && channel_is_closed(channel)){
+				ssh_log(session,SSH_LOG_RARE,"exit-status : %d\n",channel_get_exit_status(channel));
+
+				channel_free(channel);
+				channel=NULL;
+				channels[0]=NULL;
+			}
+			if(outchannels[0]){
+				while(channel && channel_is_open(channel) && channel_poll(channel,0)){
+					lus=channel_read(channel,buffer,sizeof(buffer),0);
+					if(lus==-1){
+						fprintf(stderr, "Error reading channel: %s\n",
+								ssh_get_error(session));
+						return;
+					}
+					if(lus==0){
+						ssh_log(session,SSH_LOG_RARE,"EOF received\n");
+						ssh_log(session,SSH_LOG_RARE,"exit-status : %d\n",channel_get_exit_status(channel));
+
+						channel_free(channel);
+						channel=channels[0]=NULL;
+					} else
+						write(1,buffer,lus);
+				}
+				while(channel && channel_is_open(channel) && channel_poll(channel,1)){ /* stderr */
+					lus=channel_read(channel,buffer,sizeof(buffer),1);
+					if(lus==-1){
+						fprintf(stderr, "Error reading channel: %s\n",
+								ssh_get_error(session));
+						return;
+					}
+					if(lus==0){
+						ssh_log(session,SSH_LOG_RARE,"EOF received\n");
+						ssh_log(session,SSH_LOG_RARE,"exit-status : %d\n",channel_get_exit_status(channel));
+						channel_free(channel);
+						channel=channels[0]=NULL;
+					} else
+						write(2,buffer,lus);
+				}
+			}
+			if(channel && channel_is_closed(channel)){
+				channel_free(channel);
+				channel=NULL;
+			}
+		} while (ret==EINTR || ret==SSH_EINTR);
+
+	}
+}
+
+#endif
 
 static void shell(ssh_session session){
     ssh_channel channel;
