@@ -67,7 +67,8 @@ int ssh_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout) {
 #else /* HAVE_POLL */
 #ifdef _WIN32
 
-#if defined(_WIN32_WINNT) && (_WIN32_WINNT >= 0x0600)
+#if 0
+/* defined(_WIN32_WINNT) && (_WIN32_WINNT >= 0x0600) */
 
 #include <winsock2.h>
 
