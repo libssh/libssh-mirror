@@ -174,7 +174,8 @@ void ssh_free(ssh_session session) {
   SAFE_FREE(session);
 }
 
-/** \brief disconnect impolitely from remote host
+/** \brief disconnect impolitely from remote host by closing the socket.
+ * Suitable if you forked and want to destroy this session.
  * \param session current ssh session
  */
 void ssh_silent_disconnect(ssh_session session) {
