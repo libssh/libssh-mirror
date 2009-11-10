@@ -298,6 +298,19 @@ char *dir_expand_dup(ssh_session session, const char *value, int allowsshdir) {
  *                          SSH_LOG_PACKET: Packet id and size
  *                          SSH_LOG_FUNCTIONS: Function entering and leaving
  *
+ *                      SSH_OPTIONS_LOG_VERBOSITY_STR:
+ *                        Set the session logging verbosity (string).
+ *
+ *                        The verbosity of the messages. Every log smaller or
+ *                        equal to verbosity will be shown.
+ *                          SSH_LOG_NOLOG: No logging
+ *                          SSH_LOG_RARE: Rare conditions or warnings
+ *                          SSH_LOG_ENTRY: API-accessible entrypoints
+ *                          SSH_LOG_PACKET: Packet id and size
+ *                          SSH_LOG_FUNCTIONS: Function entering and leaving
+ *
+ *                          See the corresponding numbers in libssh.h.
+ *
  *                      SSH_OPTTIONS_AUTH_CALLBACK:
  *                        Set a callback to use your own authentication function
  *                        (function pointer).
@@ -540,6 +553,24 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
 
         session->log_verbosity = *x;
       }
+    case SSH_OPTIONS_LOG_VERBOSITY_STR:
+      if (value == NULL) {
+        session->port = 0 & 0xffff;
+      } else {
+        q = strdup(value);
+        if (q == NULL) {
+          ssh_set_error_oom(session);
+          return -1;
+        }
+        i = strtol(q, &p, 10);
+        if (q == p) {
+          SAFE_FREE(q);
+        }
+        SAFE_FREE(q);
+
+        session->port = i & 0xffff;
+      }
+      break;
     case SSH_OPTIONS_CIPHERS_C_S:
       if (value == NULL) {
         ssh_set_error_invalid(session, __FUNCTION__);
