@@ -214,6 +214,9 @@ static int ssh_connect_ai_timeout(ssh_session session, const char *host,
 
   sock_set_nonblocking(s);
 
+  ssh_log(session, SSH_LOG_RARE, "Trying to connect to host: %s:%d with "
+      "timeout %ld.%ld", host, port, timeout, usec);
+
   /* The return value is checked later */
   connect(s, ai->ai_addr, ai->ai_addrlen);
   freeaddrinfo(ai);

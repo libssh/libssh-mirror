@@ -838,7 +838,8 @@ int ssh_userauth_autopubkey(ssh_session session, const char *passphrase) {
 #ifndef _WIN32
   if (agent_is_running(session)) {
     ssh_log(session, SSH_LOG_RARE,
-        "Trying to authenticate with SSH agent keys");
+        "Trying to authenticate with SSH agent keys as user: %s",
+        session->username);
 
     for (publickey = agent_get_first_ident(session, &privkeyfile);
         publickey != NULL;
