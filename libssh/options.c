@@ -555,7 +555,7 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
       }
     case SSH_OPTIONS_LOG_VERBOSITY_STR:
       if (value == NULL) {
-        session->port = 0 & 0xffff;
+        session->log_verbosity = 0 & 0xffff;
       } else {
         q = strdup(value);
         if (q == NULL) {
@@ -568,7 +568,7 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
         }
         SAFE_FREE(q);
 
-        session->port = i & 0xffff;
+        session->log_verbosity = i & 0xffff;
       }
       break;
     case SSH_OPTIONS_CIPHERS_C_S:
