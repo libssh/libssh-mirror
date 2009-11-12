@@ -513,7 +513,7 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
       } else {
         long *x = (long *) value;
 
-        session->timeout = *x;
+        session->timeout = *x & 0xffffffff;
       }
       break;
     case SSH_OPTIONS_TIMEOUT_USEC:
@@ -523,7 +523,7 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
       } else {
         long *x = (long *) value;
 
-        session->timeout_usec = *x;
+        session->timeout_usec = *x & 0xffffffff;
       }
       break;
     case SSH_OPTIONS_SSH1:
@@ -541,7 +541,7 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
         return -1;
       } else {
         int *x = (int *) value;
-        session->ssh2 = *x;
+        session->ssh2 = *x & 0xffff;
       }
       break;
     case SSH_OPTIONS_LOG_VERBOSITY:
@@ -551,7 +551,7 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
       } else {
         int *x = (int *) value;
 
-        session->log_verbosity = *x;
+        session->log_verbosity = *x & 0xffff;
       }
     case SSH_OPTIONS_LOG_VERBOSITY_STR:
       if (value == NULL) {
