@@ -40,6 +40,12 @@ char *user;
 char *cmds[MAXCMD];
 struct termios terminal;
 
+#ifdef WITH_PCAP
+/* this header file won't be necessary in the future */
+#include <libssh/pcap.h>
+char *pcap_file=NULL;
+#endif
+
 static int auth_callback(const char *prompt, char *buf, size_t len,
     int echo, int verify, void *userdata) {
   char *answer = NULL;
@@ -86,19 +92,27 @@ static void usage(){
     "  -l user : log in as user\n"
     "  -p port : connect to port\n"
     "  -d : use DSS to verify host public key\n"
-    "  -r : use RSA to verify host public key\n",
+    "  -r : use RSA to verify host public key\n"
+#ifdef WITH_PCAP
+    "  -P file : create a pcap debugging file\n"
+#endif
+    		,
     ssh_version(0));
     exit(0);
 }
 
 static int opts(int argc, char **argv){
     int i;
-
 //    for(i=0;i<argc;i++)
 //        printf("%d : %s\n",i,argv[i]);
     /* insert your own arguments here */
-    while((i=getopt(argc,argv,""))!=-1){
+    while((i=getopt(argc,argv,"P:"))!=-1){
         switch(i){
+#ifdef WITH_PCAP
+        	case 'P':
+        		pcap_file=optarg;
+        		break;
+#endif
             default:
                 fprintf(stderr,"unknown option %c\n",optopt);
                 usage();
@@ -446,6 +460,31 @@ static int client(ssh_session session){
   return 0;
 }
 
+#ifdef WITH_PCAP
+ssh_pcap_file pcap;
+void set_pcap(ssh_session session);
+void set_pcap(ssh_session session){
+	ssh_pcap_context ctx;
+	if(!pcap_file)
+		return;
+	pcap=ssh_pcap_file_new();
+	if(ssh_pcap_file_open(pcap,pcap_file) == SSH_ERROR){
+		printf("Error opening pcap file\n");
+		ssh_pcap_file_free(pcap);
+		pcap=NULL;
+		return;
+	}
+	ctx=ssh_pcap_context_new(session);
+	ssh_pcap_context_set_file(ctx,pcap);
+	ssh_set_pcap_context(session,ctx);
+}
+void cleanup_pcap(void);
+void cleanup_pcap(){
+	ssh_pcap_file_free(pcap);
+	pcap=NULL;
+}
+#endif
+
 int main(int argc, char **argv){
     ssh_session session;
 
@@ -461,10 +500,17 @@ int main(int argc, char **argv){
     }
     opts(argc,argv);
     signal(SIGTERM, do_exit);
-
+#ifdef WITH_PCAP
+    set_pcap(session);
+#endif
     client(session);
+
     ssh_disconnect(session);
     ssh_free(session);
+#ifdef WITH_PCAP
+    cleanup_pcap();
+#endif
+
     ssh_finalize();
 
     return 0;

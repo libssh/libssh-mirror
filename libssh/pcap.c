@@ -26,16 +26,21 @@
  * \addtogroup ssh_pcap
  * @{ */
 
+#include "config.h"
+#ifdef WITH_PCAP
+
 #include <stdio.h>
 #include <sys/time.h>
+#include <sys/socket.h>
+#include <errno.h>
 
-#include "config.h"
+
 #include "libssh/libssh.h"
 #include "libssh/pcap.h"
 #include "libssh/session.h"
 #include "libssh/buffer.h"
+#include "libssh/socket.h"
 
-#ifdef WITH_PCAP
 /* The header of a pcap file is the following. We are not going to make it
  * very complicated.
  * Just for information.
@@ -83,6 +88,7 @@ struct pcaprec_hdr_s {
 struct ssh_pcap_context_struct {
 	ssh_session session;
 	ssh_pcap_file file;
+	int connected;
 	/* All of these informations are useful to generate
 	 * the dummy IP and TCP packets
 	 */
@@ -100,6 +106,7 @@ struct ssh_pcap_context_struct {
  */
 struct ssh_pcap_file_struct {
 	FILE *output;
+	u_int16_t ipsequence;
 };
 
 /**
@@ -192,7 +199,7 @@ int ssh_pcap_file_close(ssh_pcap_file pcap){
 		return SSH_OK;
 }
 
-void ssh_pcap_free(ssh_pcap_file pcap){
+void ssh_pcap_file_free(ssh_pcap_file pcap){
 	ssh_pcap_file_close(pcap);
 	SAFE_FREE(pcap);
 }
@@ -217,10 +224,69 @@ void ssh_pcap_context_set_file(ssh_pcap_context ctx, ssh_pcap_file pcap){
 	ctx->file=pcap;
 }
 
+/** @internal
+ * @brief sets the IP and port parameters in the connection
+ */
+static int ssh_pcap_context_connect(ssh_pcap_context ctx){
+	ssh_session session=ctx->session;
+	struct sockaddr_in local, remote;
+	socket_t fd;
+	socklen_t len;
+	if(session==NULL)
+		return SSH_ERROR;
+	if(session->socket==NULL)
+		return SSH_ERROR;
+	fd=ssh_socket_get_fd(session->socket);
+	/* TODO: adapt for windows */
+	if(fd<0)
+		return SSH_ERROR;
+	len=sizeof(local);
+	if(getsockname(fd,(struct sockaddr *)&local,&len)<0){
+		ssh_set_error(session,SSH_REQUEST_DENIED,"Getting local IP address: %s",strerror(errno));
+		return SSH_ERROR;
+	}
+	len=sizeof(remote);
+	if(getpeername(fd,(struct sockaddr *)&remote,&len)<0){
+		ssh_set_error(session,SSH_REQUEST_DENIED,"Getting remote IP address: %s",strerror(errno));
+		return SSH_ERROR;
+	}
+	if(local.sin_family != AF_INET){
+		ssh_set_error(session,SSH_REQUEST_DENIED,"Only IPv4 supported for pcap logging");
+		return SSH_ERROR;
+	}
+	memcpy(&ctx->ipsource,&local.sin_addr,sizeof(ctx->ipsource));
+	memcpy(&ctx->ipdest,&remote.sin_addr,sizeof(ctx->ipdest));
+	memcpy(&ctx->portsource,&local.sin_port,sizeof(ctx->portsource));
+	memcpy(&ctx->portdest,&remote.sin_port,sizeof(ctx->portdest));
+
+	ctx->connected=1;
+	return SSH_OK;
+}
+
+#define IPHDR_LEN 20
+#define TCPHDR_LEN 20
+#define TCPIPHDR_LEN (IPHDR_LEN + TCPHDR_LEN)
+/** @internal
+ * @brief write a SSH packet as a TCP over IP in a pcap file
+ * @param ctx open pcap context
+ * @param direction SSH_PCAP_DIRECTION_IN if the packet has been received
+ * @param direction SSH_PCAP_DIRECTION_OUT if the packet has been emitted
+ * @param data pointer to the data to write
+ * @param len data to write in the pcap file. May be smaller than origlen.
+ * @param origlen number of bytes of complete data.
+ * @returns SSH_OK write is successful
+ * @returns SSH_ERROR an error happened.
+ */
 int ssh_pcap_context_write(ssh_pcap_context ctx,enum ssh_pcap_direction direction
 		, void *data, u_int32_t len, u_int32_t origlen){
-	ssh_buffer ip=buffer_new();
+	ssh_buffer ip;
 	int err;
+	if(ctx==NULL || ctx->file ==NULL)
+		return SSH_ERROR;
+	if(ctx->connected==0)
+		if(ssh_pcap_context_connect(ctx)==SSH_ERROR)
+			return SSH_ERROR;
+	ip=buffer_new();
 	if(ip==NULL){
 		ssh_set_error_oom(ctx->session);
 		return SSH_ERROR;
@@ -231,9 +297,10 @@ int ssh_pcap_context_write(ssh_pcap_context ctx,enum ssh_pcap_direction directio
 	/* tos */
 	buffer_add_u8(ip,0);
 	/* total len */
-	buffer_add_u16(ip,htons(origlen + 40));
-	/* id */
-	buffer_add_u16(ip,htons(1));
+	buffer_add_u16(ip,htons(origlen + TCPIPHDR_LEN));
+	/* IP id number */
+	buffer_add_u16(ip,htons(ctx->file->ipsequence));
+	ctx->file->ipsequence++;
 	/* fragment offset */
 	buffer_add_u16(ip,htons(0));
 	/* TTL */
@@ -251,17 +318,19 @@ int ssh_pcap_context_write(ssh_pcap_context ctx,enum ssh_pcap_direction directio
 	}
 	/* TCP */
 	if(direction==SSH_PCAP_DIR_OUT){
-		buffer_add_u16(ip,ntohs(ctx->portsource));
-		buffer_add_u16(ip,ntohs(ctx->portdest));
+		buffer_add_u16(ip,ctx->portsource);
+		buffer_add_u16(ip,ctx->portdest);
 	} else {
-		buffer_add_u16(ip,ntohs(ctx->portdest));
-		buffer_add_u16(ip,ntohs(ctx->portsource));
+		buffer_add_u16(ip,ctx->portdest);
+		buffer_add_u16(ip,ctx->portsource);
 	}
 	/* sequence number */
 	if(direction==SSH_PCAP_DIR_OUT){
 		buffer_add_u32(ip,ntohl(ctx->outsequence));
+		ctx->outsequence+=origlen;
 	} else {
 		buffer_add_u32(ip,ntohl(ctx->insequence));
+		ctx->insequence+=origlen;
 	}
 	/* ack number */
 	if(direction==SSH_PCAP_DIR_OUT){
@@ -269,7 +338,7 @@ int ssh_pcap_context_write(ssh_pcap_context ctx,enum ssh_pcap_direction directio
 	} else {
 		buffer_add_u32(ip,ntohl(ctx->outsequence));
 	}
-	/* header len */
+	/* header len = 20 = 5 * 32 bits, at offset 4*/
 	buffer_add_u8(ip,5 << 4);
 	/* flags */
 	buffer_add_u8(ip,TH_PUSH | TH_ACK);
@@ -281,10 +350,15 @@ int ssh_pcap_context_write(ssh_pcap_context ctx,enum ssh_pcap_direction directio
 	buffer_add_u16(ip,0);
 	/* actual data */
 	buffer_add_data(ip,data,len);
-	err=ssh_pcap_file_write_packet(ctx->file,ip,origlen + 40);
+	err=ssh_pcap_file_write_packet(ctx->file,ip,origlen + TCPIPHDR_LEN);
 	buffer_free(ip);
 	return err;
 }
+
+void ssh_set_pcap_context(ssh_session session, ssh_pcap_context pcap){
+	session->pcap_ctx=pcap;
+}
+
 
 #endif /* WITH_PCAP */
 /** @} */

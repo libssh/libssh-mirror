@@ -42,6 +42,7 @@
 #include "libssh/channels.h"
 #include "libssh/session.h"
 #include "libssh/messages.h"
+#include "libssh/pcap.h"
 
 /* XXX include selected mac size */
 static int macsize=SHA_DIGEST_LEN;
@@ -159,6 +160,14 @@ static int packet_read2(ssh_session session) {
           ssh_set_error(session, SSH_FATAL, "Decrypt error");
           goto error;
         }
+#ifdef WITH_PCAP
+        if(session->pcap_ctx){
+        	ssh_pcap_context_write(session->pcap_ctx,
+        			SSH_PCAP_DIR_IN, buffer_get(session->in_buffer),
+        			buffer_get_len(session->in_buffer),
+        			buffer_get_len(session->in_buffer));
+        }
+#endif
         ssh_socket_read(session->socket, mac, macsize);
 
         if (packet_hmac_verify(session, session->in_buffer, mac) < 0) {
@@ -488,7 +497,13 @@ static int packet_send2(ssh_session session) {
   if (buffer_add_data(session->out_buffer, padstring, padding) < 0) {
     goto error;
   }
-
+#ifdef WITH_PCAP
+  if(session->pcap_ctx){
+  	ssh_pcap_context_write(session->pcap_ctx,SSH_PCAP_DIR_OUT,
+  			buffer_get(session->out_buffer),buffer_get_len(session->out_buffer)
+  			,buffer_get_len(session->out_buffer));
+  }
+#endif
   hmac = packet_encrypt(session, buffer_get(session->out_buffer),
       buffer_get_len(session->out_buffer));
   if (hmac) {

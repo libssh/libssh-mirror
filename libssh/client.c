@@ -66,7 +66,11 @@ char *ssh_get_banner(ssh_session session) {
       leave_function();
       return NULL;
     }
-
+#ifdef WITH_PCAP
+    if(session->pcap_ctx && buffer[i] == '\n'){
+    	ssh_pcap_context_write(session->pcap_ctx,SSH_PCAP_DIR_IN,buffer,i+1,i+1);
+    }
+#endif
     if (buffer[i] == '\r') {
       buffer[i] = '\0';
     }
@@ -197,7 +201,10 @@ int ssh_send_banner(ssh_session session, int server) {
     leave_function();
     return -1;
   }
-
+#ifdef WITH_PCAP
+  if(session->pcap_ctx)
+  	ssh_pcap_context_write(session->pcap_ctx,SSH_PCAP_DIR_OUT,buffer,strlen(buffer),strlen(buffer));
+#endif
   leave_function();
   return 0;
 }

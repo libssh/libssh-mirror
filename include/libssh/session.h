@@ -23,6 +23,7 @@
 #define SESSION_H_
 #include "libssh/priv.h"
 #include "libssh/packet.h"
+#include "libssh/pcap.h"
 
 typedef struct ssh_kbdint_struct* ssh_kbdint;
 
@@ -96,6 +97,9 @@ struct ssh_session_struct {
     ssh_callbacks callbacks; /* Callbacks to user functions */
 
     /* options */
+#ifdef WITH_PCAP
+    ssh_pcap_context pcap_ctx; /* pcap debugging context */
+#endif
     char *username;
     char *host;
     char *bindaddr; /* TODO: check if needed */
