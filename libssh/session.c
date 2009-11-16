@@ -118,6 +118,12 @@ void ssh_free(ssh_session session) {
   SAFE_FREE(session->serverbanner);
   SAFE_FREE(session->clientbanner);
   SAFE_FREE(session->banner);
+#ifdef WITH_PCAP
+  if(session->pcap_ctx){
+  	ssh_pcap_context_free(session->pcap_ctx);
+  	session->pcap_ctx=NULL;
+  }
+#endif
   buffer_free(session->in_buffer);
   buffer_free(session->out_buffer);
   session->in_buffer=session->out_buffer=NULL;

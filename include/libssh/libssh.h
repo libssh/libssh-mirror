@@ -109,6 +109,7 @@ typedef struct ssh_agent_struct* ssh_agent;
 typedef struct ssh_buffer_struct* ssh_buffer;
 typedef struct ssh_channel_struct* ssh_channel;
 typedef struct ssh_message_struct* ssh_message;
+typedef struct ssh_pcap_file_struct* ssh_pcap_file;
 typedef struct ssh_private_key_struct* ssh_private_key;
 typedef struct ssh_public_key_struct* ssh_public_key;
 typedef struct ssh_scp_struct* ssh_scp;
@@ -377,7 +378,10 @@ LIBSSH_API int ssh_options_getopt(ssh_session session, int *argcptr, char **argv
 LIBSSH_API int ssh_options_parse_config(ssh_session session, const char *filename);
 LIBSSH_API int ssh_options_set(ssh_session session, enum ssh_options_e type,
     const void *value);
-
+LIBSSH_API int ssh_pcap_file_close(ssh_pcap_file pcap);
+LIBSSH_API void ssh_pcap_file_free(ssh_pcap_file pcap);
+LIBSSH_API ssh_pcap_file ssh_pcap_file_new(void);
+LIBSSH_API int ssh_pcap_file_open(ssh_pcap_file pcap, const char *filename);
 LIBSSH_API void ssh_print_hexa(const char *descr, const unsigned char *what, size_t len);
 LIBSSH_API int ssh_scp_accept_request(ssh_scp scp);
 LIBSSH_API int ssh_scp_close(ssh_scp scp);
@@ -403,6 +407,7 @@ LIBSSH_API void ssh_set_fd_except(ssh_session session);
 LIBSSH_API void ssh_set_fd_toread(ssh_session session);
 LIBSSH_API void ssh_set_fd_towrite(ssh_session session);
 LIBSSH_API void ssh_silent_disconnect(ssh_session session);
+LIBSSH_API int ssh_set_pcap_file(ssh_session session, ssh_pcap_file pcapfile);
 #ifndef _WIN32
 LIBSSH_API int ssh_userauth_agent_pubkey(ssh_session session, const char *username,
     ssh_public_key publickey);

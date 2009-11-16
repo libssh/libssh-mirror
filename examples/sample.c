@@ -464,7 +464,6 @@ static int client(ssh_session session){
 ssh_pcap_file pcap;
 void set_pcap(ssh_session session);
 void set_pcap(ssh_session session){
-	ssh_pcap_context ctx;
 	if(!pcap_file)
 		return;
 	pcap=ssh_pcap_file_new();
@@ -474,10 +473,9 @@ void set_pcap(ssh_session session){
 		pcap=NULL;
 		return;
 	}
-	ctx=ssh_pcap_context_new(session);
-	ssh_pcap_context_set_file(ctx,pcap);
-	ssh_set_pcap_context(session,ctx);
+	ssh_set_pcap_file(session,pcap);
 }
+
 void cleanup_pcap(void);
 void cleanup_pcap(){
 	ssh_pcap_file_free(pcap);

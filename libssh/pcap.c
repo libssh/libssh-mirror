@@ -220,6 +220,10 @@ ssh_pcap_context ssh_pcap_context_new(ssh_session session){
 	return ctx;
 }
 
+void ssh_pcap_context_free(ssh_pcap_context ctx){
+	SAFE_FREE(ctx);
+}
+
 void ssh_pcap_context_set_file(ssh_pcap_context ctx, ssh_pcap_file pcap){
 	ctx->file=pcap;
 }
@@ -355,8 +359,23 @@ int ssh_pcap_context_write(ssh_pcap_context ctx,enum ssh_pcap_direction directio
 	return err;
 }
 
-void ssh_set_pcap_context(ssh_session session, ssh_pcap_context pcap){
-	session->pcap_ctx=pcap;
+/** @brief sets the pcap file used to trace the session
+ * @param current session
+ * @param pcap an handler to a pcap file. A pcap file may be used in several
+ * sessions.
+ * @returns SSH_ERROR in case of error, SSH_OK otherwise.
+ */
+int ssh_set_pcap_file(ssh_session session, ssh_pcap_file pcap){
+	ssh_pcap_context ctx=ssh_pcap_context_new(session);
+	if(ctx==NULL){
+		ssh_set_error_oom(session);
+		return SSH_ERROR;
+	}
+	ctx->file=pcap;
+	if(session->pcap_ctx)
+		ssh_pcap_context_free(session->pcap_ctx);
+	session->pcap_ctx=ctx;
+	return SSH_OK;
 }
 
 
