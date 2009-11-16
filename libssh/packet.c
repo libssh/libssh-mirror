@@ -175,6 +175,17 @@ static int packet_read2(ssh_session session) {
           goto error;
         }
       }
+#ifdef WITH_PCAP
+      else {
+      	/* No crypto */
+        if(session->pcap_ctx){
+        	ssh_pcap_context_write(session->pcap_ctx,
+        			SSH_PCAP_DIR_IN, buffer_get(session->in_buffer),
+        			buffer_get_len(session->in_buffer),
+        			buffer_get_len(session->in_buffer));
+        }
+      }
+#endif
 
       buffer_pass_bytes(session->in_buffer, sizeof(uint32_t));
 
