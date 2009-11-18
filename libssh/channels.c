@@ -617,12 +617,14 @@ int channel_default_bufferize(ssh_channel channel, void *data, int len,
     if (channel->stdout_buffer == NULL) {
       channel->stdout_buffer = buffer_new();
       if (channel->stdout_buffer == NULL) {
+        ssh_set_error_oom(session);
         return -1;
       }
     }
 
     if (buffer_add_data(channel->stdout_buffer, data, len) < 0) {
       buffer_free(channel->stdout_buffer);
+      channel->stdout_buffer = NULL;
       return -1;
     }
   } else {
@@ -630,12 +632,14 @@ int channel_default_bufferize(ssh_channel channel, void *data, int len,
     if (channel->stderr_buffer == NULL) {
       channel->stderr_buffer = buffer_new();
       if (channel->stderr_buffer == NULL) {
+        ssh_set_error_oom(session);
         return -1;
       }
     }
 
     if (buffer_add_data(channel->stderr_buffer, data, len) < 0) {
       buffer_free(channel->stderr_buffer);
+      channel->stderr_buffer = NULL;
       return -1;
     }
   }
