@@ -548,7 +548,7 @@ static ssh_message handle_channel_request(ssh_session session) {
   msg->channel_request.channel = ssh_channel_from_local(session, channel);
   if (msg->channel_request.channel == NULL) {
     ssh_set_error(session, SSH_FATAL, "There are no channels with the id %u.",
-        channels);
+        channel);
     goto error;
   }
   msg->channel_request.want_reply = want_reply;
