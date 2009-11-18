@@ -79,6 +79,7 @@ ssh_channel channel_new(ssh_session session) {
 
   channel->stderr_buffer = buffer_new();
   if (channel->stderr_buffer == NULL) {
+    SAFE_FREE(channel->stdout_buffer);
     SAFE_FREE(channel);
     return NULL;
   }
