@@ -299,6 +299,7 @@ static ssh_message handle_channel_request_open(ssh_session session) {
 
   msg = message_new(session);
   if (msg == NULL) {
+    ssh_set_error_oom(session);
     leave_function();
     return NULL;
   }
@@ -307,10 +308,12 @@ static ssh_message handle_channel_request_open(ssh_session session) {
 
   type = buffer_get_ssh_string(session->in_buffer);
   if (type == NULL) {
+    ssh_set_error_oom(session);
     goto error;
   }
   type_c = string_to_char(type);
   if (type_c == NULL) {
+    ssh_set_error_oom(session);
     goto error;
   }
 
@@ -336,10 +339,12 @@ static ssh_message handle_channel_request_open(ssh_session session) {
   if (strcmp(type_c,"direct-tcpip") == 0) {
     destination = buffer_get_ssh_string(session->in_buffer);
 	if (destination == NULL) {
+    ssh_set_error_oom(session);
 		goto error;
 	}
 	msg->channel_request_open.destination = string_to_char(type);
 	if (msg->channel_request_open.destination == NULL) {
+    ssh_set_error_oom(session);
 	  string_free(destination);
 	  goto error;
 	}
@@ -350,10 +355,12 @@ static ssh_message handle_channel_request_open(ssh_session session) {
 
     originator = buffer_get_ssh_string(session->in_buffer);
 	if (originator == NULL) {
+    ssh_set_error_oom(session);
 	  goto error;
 	}
 	msg->channel_request_open.originator = string_to_char(type);
 	if (msg->channel_request_open.originator == NULL) {
+    ssh_set_error_oom(session);
 	  string_free(originator);
 	  goto error;
 	}
@@ -371,10 +378,12 @@ static ssh_message handle_channel_request_open(ssh_session session) {
   if (strcmp(type_c,"forwarded-tcpip") == 0) {
     destination = buffer_get_ssh_string(session->in_buffer);
 	if (destination == NULL) {
+    ssh_set_error_oom(session);
 		goto error;
 	}
 	msg->channel_request_open.destination = string_to_char(type);
 	if (msg->channel_request_open.destination == NULL) {
+    ssh_set_error_oom(session);
 	  string_free(destination);
 	  goto error;
 	}
@@ -385,10 +394,12 @@ static ssh_message handle_channel_request_open(ssh_session session) {
 
     originator = buffer_get_ssh_string(session->in_buffer);
 	if (originator == NULL) {
+    ssh_set_error_oom(session);
 	  goto error;
 	}
 	msg->channel_request_open.originator = string_to_char(type);
 	if (msg->channel_request_open.originator == NULL) {
+    ssh_set_error_oom(session);
 	  string_free(originator);
 	  goto error;
 	}
@@ -406,10 +417,12 @@ static ssh_message handle_channel_request_open(ssh_session session) {
   if (strcmp(type_c,"x11") == 0) {
     originator = buffer_get_ssh_string(session->in_buffer);
 	if (originator == NULL) {
+    ssh_set_error_oom(session);
 	  goto error;
 	}
 	msg->channel_request_open.originator = string_to_char(type);
 	if (msg->channel_request_open.originator == NULL) {
+    ssh_set_error_oom(session);
 	  string_free(originator);
 	  goto error;
 	}
@@ -506,6 +519,7 @@ static ssh_message handle_channel_request(ssh_session session) {
 
   msg = message_new(session);
   if (msg == NULL) {
+    ssh_set_error_oom(session);
     return NULL;
   }
 
@@ -514,10 +528,12 @@ static ssh_message handle_channel_request(ssh_session session) {
 
   type = buffer_get_ssh_string(session->in_buffer);
   if (type == NULL) {
+    ssh_set_error_oom(session);
     goto error;
   }
   type_c = string_to_char(type);
   if (type_c == NULL) {
+    ssh_set_error_oom(session);
     goto error;
   }
   string_free(type);
@@ -530,6 +546,11 @@ static ssh_message handle_channel_request(ssh_session session) {
 
   msg->type = SSH_REQUEST_CHANNEL;
   msg->channel_request.channel = ssh_channel_from_local(session, channel);
+  if (msg->channel_request.channel == NULL) {
+    ssh_set_error(session, SSH_FATAL, "There are no channels with the id %u.",
+        channels);
+    goto error;
+  }
   msg->channel_request.want_reply = want_reply;
 
   if (strcmp(type_c, "pty-req") == 0) {
@@ -539,10 +560,12 @@ static ssh_message handle_channel_request(ssh_session session) {
 
     term = buffer_get_ssh_string(session->in_buffer);
     if (term == NULL) {
+      ssh_set_error_oom(session);
       goto error;
     }
     term_c = string_to_char(term);
     if (term_c == NULL) {
+      ssh_set_error_oom(session);
       string_free(term);
       goto error;
     }
@@ -597,10 +620,12 @@ static ssh_message handle_channel_request(ssh_session session) {
 
     subsys = buffer_get_ssh_string(session->in_buffer);
     if (subsys == NULL) {
+      ssh_set_error_oom(session);
       goto error;
     }
     subsys_c = string_to_char(subsys);
     if (subsys_c == NULL) {
+      ssh_set_error_oom(session);
       string_free(subsys);
       goto error;
     }
@@ -628,6 +653,7 @@ static ssh_message handle_channel_request(ssh_session session) {
 
     cmd = buffer_get_ssh_string(session->in_buffer);
     if (cmd == NULL) {
+      ssh_set_error_oom(session);
       goto error;
     }
 
@@ -651,10 +677,12 @@ static ssh_message handle_channel_request(ssh_session session) {
 
     name = buffer_get_ssh_string(session->in_buffer);
     if (name == NULL) {
+      ssh_set_error_oom(session);
       goto error;
     }
     value = buffer_get_ssh_string(session->in_buffer);
 	if (value == NULL) {
+    ssh_set_error_oom(session);
 		string_free(name);
 	  goto error;
 	}
