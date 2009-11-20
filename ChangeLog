@@ -2,6 +2,7 @@ ChangeLog
 ==========
 
 version 0.4 (released xxxx-xx-xx)
+  * Added pcap dumping support.
   * Added scp support.
   * Added support for sending signals (RFC 4254, section 6.9).
   * Added MSVC support.
@@ -16,6 +17,7 @@ version 0.4 (released xxxx-xx-xx)
   * Added full poll() support and poll-emulation for win32.
   * Added missing 64bit functions in sftp.
   * Added support for ~/ and SSH_DIR/ in filenames instead of %s/.
+  * Added more examples.
   * Fixed Fix channel_get_exit_status bug.
   * Fixed calltrace logging to make it optional.
   * Fixed compilation on Solaris.
