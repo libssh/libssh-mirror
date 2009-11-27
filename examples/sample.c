@@ -40,11 +40,7 @@ char *user;
 char *cmds[MAXCMD];
 struct termios terminal;
 
-#ifdef WITH_PCAP
-/* this header file won't be necessary in the future */
-#include <libssh/pcap.h>
 char *pcap_file=NULL;
-#endif
 
 static int auth_callback(const char *prompt, char *buf, size_t len,
     int echo, int verify, void *userdata) {
@@ -108,12 +104,10 @@ static int opts(int argc, char **argv){
     /* insert your own arguments here */
     while((i=getopt(argc,argv,"P:"))!=-1){
         switch(i){
-#ifdef WITH_PCAP
         	case 'P':
         		pcap_file=optarg;
         		break;
-#endif
-            default:
+          default:
                 fprintf(stderr,"unknown option %c\n",optopt);
                 usage();
         }
@@ -460,13 +454,14 @@ static int client(ssh_session session){
   return 0;
 }
 
-#ifdef WITH_PCAP
 ssh_pcap_file pcap;
 void set_pcap(ssh_session session);
 void set_pcap(ssh_session session){
 	if(!pcap_file)
 		return;
 	pcap=ssh_pcap_file_new();
+	if(!pcap)
+		return;
 	if(ssh_pcap_file_open(pcap,pcap_file) == SSH_ERROR){
 		printf("Error opening pcap file\n");
 		ssh_pcap_file_free(pcap);
@@ -478,10 +473,10 @@ void set_pcap(ssh_session session){
 
 void cleanup_pcap(void);
 void cleanup_pcap(){
-	ssh_pcap_file_free(pcap);
+	if(pcap)
+		ssh_pcap_file_free(pcap);
 	pcap=NULL;
 }
-#endif
 
 int main(int argc, char **argv){
     ssh_session session;
@@ -498,16 +493,13 @@ int main(int argc, char **argv){
     }
     opts(argc,argv);
     signal(SIGTERM, do_exit);
-#ifdef WITH_PCAP
+
     set_pcap(session);
-#endif
     client(session);
 
     ssh_disconnect(session);
     ssh_free(session);
-#ifdef WITH_PCAP
     cleanup_pcap();
-#endif
 
     ssh_finalize();
 
