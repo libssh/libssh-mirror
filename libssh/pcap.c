@@ -379,6 +379,37 @@ int ssh_set_pcap_file(ssh_session session, ssh_pcap_file pcap){
 }
 
 
-#endif /* WITH_PCAP */
+#else /* WITH_PCAP */
+
+/* Simple stub returning errors when no pcap compiled in */
+
+#include "libssh/libssh.h"
+#include "libssh/priv.h"
+
+int ssh_pcap_file_close(ssh_pcap_file pcap){
+	(void) pcap;
+	return SSH_ERROR;
+}
+
+void ssh_pcap_file_free(ssh_pcap_file pcap){
+	(void) pcap;
+}
+
+ssh_pcap_file ssh_pcap_file_new(void){
+	return NULL;
+}
+int ssh_pcap_file_open(ssh_pcap_file pcap, const char *filename){
+	(void) pcap;
+	(void) filename;
+	return SSH_ERROR;
+}
+
+int ssh_set_pcap_file(ssh_session session, ssh_pcap_file pcapfile){
+	(void) pcapfile;
+	ssh_set_error(session,SSH_REQUEST_DENIED,"Pcap support not compiled in");
+	return SSH_ERROR;
+}
+
+#endif
 /** @} */
 /* vim: set ts=2 sw=2 et cindent: */

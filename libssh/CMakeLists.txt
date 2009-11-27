@@ -93,6 +93,7 @@ set(libssh_SRCS
   misc.c
   options.c
   packet.c
+  pcap.c
   poll.c
   session.c
   scp.c
@@ -100,14 +101,6 @@ set(libssh_SRCS
   string.c
   wrapper.c
 )
-
-if (WITH_PCAP)
-  set(libssh_SRCS
-    ${libssh_SRCS}
-    pcap.c
-  )
-
-endif (WITH_PCAP)
 
 if (WITH_SFTP)
   set(libssh_SRCS
