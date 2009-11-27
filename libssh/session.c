@@ -28,10 +28,12 @@
 #include "libssh/priv.h"
 #include "libssh/server.h"
 #include "libssh/socket.h"
+#include "libssh/ssh2.h"
 #include "libssh/agent.h"
 #include "libssh/packet.h"
 #include "libssh/session.h"
 #include "libssh/misc.h"
+#include "libssh/buffer.h"
 
 #define FIRST_CHANNEL 42 // why not ? it helps to find bugs.
 
@@ -363,5 +365,44 @@ int ssh_get_version(ssh_session session) {
   return session->version;
 }
 
+/**
+ * @internal
+ * @brief handles a SSH_DISCONNECT packet
+ */
+int ssh_packet_disconnect_callback(ssh_session session, void *user, u_int8_t type, ssh_buffer packet){
+	u_int32_t code;
+	char *error;
+	ssh_string error_s;
+	(void)user;
+	(void)type;
+    buffer_get_u32(packet, &code);
+    error_s = buffer_get_ssh_string(packet);
+    if (error_s != NULL) {
+    	error = string_to_char(error_s);
+    	string_free(error_s);
+    }
+    ssh_log(session, SSH_LOG_PACKET, "Received SSH_MSG_DISCONNECT %d:%s",code,error);
+    ssh_set_error(session, SSH_FATAL,
+        "Received SSH_MSG_DISCONNECT: %d:%s",code,error);
+    SAFE_FREE(error);
+
+    ssh_socket_close(session->socket);
+    session->alive = 0;
+	/* TODO: handle a graceful disconnect */
+	return SSH_PACKET_USED;
+}
+
+/**
+ * @internal
+ * @brief handles a SSH_IGNORE and SSH_DEBUG packet
+ */
+int ssh_packet_ignore_callback(ssh_session session, void *user, u_int8_t type, ssh_buffer packet){
+	(void)user;
+	(void)type;
+	(void)packet;
+	ssh_log(session,SSH_LOG_PROTOCOL,"Received %s packet",type==SSH2_MSG_IGNORE ? "SSH_MSG_IGNORE" : "SSH_MSG_DEBUG");
+	/* TODO: handle a graceful disconnect */
+	return SSH_PACKET_USED;
+}
 /** @} */
 /* vim: set ts=2 sw=2 et cindent: */

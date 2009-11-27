@@ -856,15 +856,20 @@ void ssh_message_free(ssh_message msg){
  * \param type packet type
  * \returns nothing
  */
-void message_handle(ssh_session session, uint32_t type){
+int message_handle(ssh_session session, void *user, uint8_t type, ssh_buffer packet){
   ssh_message msg=ssh_message_retrieve(session,type);
   ssh_log(session,SSH_LOG_PROTOCOL,"Stacking message from packet type %d",type);
-  if(msg){
-    if(!session->ssh_message_list){
-      session->ssh_message_list=ssh_list_new();
-    }
-    ssh_list_add(session->ssh_message_list,msg);
-  }
+	(void)user;
+	(void)packet;
+	if(msg){
+		if(!session->ssh_message_list){
+			session->ssh_message_list=ssh_list_new();
+		}
+		ssh_list_add(session->ssh_message_list,msg);
+		return SSH_PACKET_USED;
+	} else {
+		return SSH_PACKET_NOT_USED;
+	}
 }
 
 /**

@@ -95,7 +95,9 @@ struct ssh_session_struct {
     int log_indent; /* indentation level in enter_function logs */
 
     ssh_callbacks callbacks; /* Callbacks to user functions */
-
+    struct ssh_packet_callbacks_struct default_packet_callbacks;
+    struct ssh_list *packet_callbacks;
+    struct ssh_socket_callbacks_struct socket_callbacks;
     /* options */
 #ifdef WITH_PCAP
     ssh_pcap_context pcap_ctx; /* pcap debugging context */
@@ -114,6 +116,7 @@ struct ssh_session_struct {
     socket_t fd;
     int ssh2;
     int ssh1;
+
 };
 
 int ssh_handle_packets(ssh_session session);

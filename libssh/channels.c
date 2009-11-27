@@ -314,11 +314,13 @@ static ssh_channel channel_from_msg(ssh_session session) {
   return channel;
 }
 
-static void channel_rcv_change_window(ssh_session session) {
+int channel_rcv_change_window(ssh_session session, void *user, u_int8_t type, ssh_buffer packet) {
   ssh_channel channel;
   uint32_t bytes;
   int rc;
-
+  (void)user;
+  (void)type;
+  (void)packet;
   enter_function();
 
   channel = channel_from_msg(session);
@@ -331,7 +333,7 @@ static void channel_rcv_change_window(ssh_session session) {
     ssh_log(session, SSH_LOG_PACKET,
         "Error getting a window adjust message: invalid packet");
     leave_function();
-    return;
+    return SSH_PACKET_USED;
   }
 
   bytes = ntohl(bytes);
@@ -345,22 +347,29 @@ static void channel_rcv_change_window(ssh_session session) {
   channel->remote_window += bytes;
 
   leave_function();
+  return SSH_PACKET_USED;
 }
 
 /* is_stderr is set to 1 if the data are extended, ie stderr */
-static void channel_rcv_data(ssh_session session,int is_stderr) {
+int channel_rcv_data(ssh_session session, void *user, u_int8_t type, ssh_buffer packet) {
   ssh_channel channel;
   ssh_string str;
   size_t len;
-
+  int is_stderr;
+  (void)user;
+  (void)packet;
   enter_function();
+  if(type==SSH2_MSG_CHANNEL_DATA)
+	  is_stderr=0;
+  else
+	  is_stderr=1;
 
   channel = channel_from_msg(session);
   if (channel == NULL) {
     ssh_log(session, SSH_LOG_FUNCTIONS,
         "%s", ssh_get_error(session));
     leave_function();
-    return;
+    return SSH_PACKET_USED;
   }
 
   if (is_stderr) {
@@ -373,7 +382,7 @@ static void channel_rcv_data(ssh_session session,int is_stderr) {
   if (str == NULL) {
     ssh_log(session, SSH_LOG_PACKET, "Invalid data packet!");
     leave_function();
-    return;
+    return SSH_PACKET_USED;
   }
   len = string_len(str);
 
@@ -396,7 +405,7 @@ static void channel_rcv_data(ssh_session session,int is_stderr) {
         is_stderr) < 0) {
     string_free(str);
     leave_function();
-    return;
+    return SSH_PACKET_USED;
   }
 
   if (len <= channel->local_window) {
@@ -412,18 +421,21 @@ static void channel_rcv_data(ssh_session session,int is_stderr) {
 
   string_free(str);
   leave_function();
+  return SSH_PACKET_USED;
 }
 
-static void channel_rcv_eof(ssh_session session) {
+int channel_rcv_eof(ssh_session session, void *user, u_int8_t type, ssh_buffer packet) {
   ssh_channel channel;
-
+  (void)user;
+  (void)type;
+  (void)packet;
   enter_function();
 
   channel = channel_from_msg(session);
   if (channel == NULL) {
     ssh_log(session, SSH_LOG_FUNCTIONS, "%s", ssh_get_error(session));
     leave_function();
-    return;
+    return SSH_PACKET_USED;
   }
 
   ssh_log(session, SSH_LOG_PACKET,
@@ -434,134 +446,142 @@ static void channel_rcv_eof(ssh_session session) {
   channel->remote_eof = 1;
 
   leave_function();
+  return SSH_PACKET_USED;
 }
 
-static void channel_rcv_close(ssh_session session) {
-  ssh_channel channel;
+int channel_rcv_close(ssh_session session, void *user, u_int8_t type, ssh_buffer packet) {
+	ssh_channel channel;
+	(void)user;
+	(void)type;
+	(void)packet;
+	enter_function();
 
-  enter_function();
+	channel = channel_from_msg(session);
+	if (channel == NULL) {
+		ssh_log(session, SSH_LOG_FUNCTIONS, "%s", ssh_get_error(session));
+		leave_function();
+		return SSH_PACKET_USED;
+	}
 
-  channel = channel_from_msg(session);
-  if (channel == NULL) {
-    ssh_log(session, SSH_LOG_FUNCTIONS, "%s", ssh_get_error(session));
-    leave_function();
-    return;
-  }
+	ssh_log(session, SSH_LOG_PACKET,
+			"Received close on channel (%d:%d)",
+			channel->local_channel,
+			channel->remote_channel);
 
-  ssh_log(session, SSH_LOG_PACKET,
-      "Received close on channel (%d:%d)",
-      channel->local_channel,
-      channel->remote_channel);
+	if ((channel->stdout_buffer &&
+			buffer_get_rest_len(channel->stdout_buffer) > 0) ||
+			(channel->stderr_buffer &&
+					buffer_get_rest_len(channel->stderr_buffer) > 0)) {
+		channel->delayed_close = 1;
+	} else {
+		channel->open = 0;
+	}
 
-  if ((channel->stdout_buffer &&
-        buffer_get_rest_len(channel->stdout_buffer) > 0) ||
-      (channel->stderr_buffer &&
-       buffer_get_rest_len(channel->stderr_buffer) > 0)) {
-    channel->delayed_close = 1;
-  } else {
-    channel->open = 0;
-  }
+	if (channel->remote_eof == 0) {
+		ssh_log(session, SSH_LOG_PACKET,
+				"Remote host not polite enough to send an eof before close");
+	}
+	channel->remote_eof = 1;
+	/*
+	 * The remote eof doesn't break things if there was still data into read
+	 * buffer because the eof is ignored until the buffer is empty.
+	 */
 
-  if (channel->remote_eof == 0) {
-    ssh_log(session, SSH_LOG_PACKET,
-        "Remote host not polite enough to send an eof before close");
-  }
-  channel->remote_eof = 1;
-  /*
-   * The remote eof doesn't break things if there was still data into read
-   * buffer because the eof is ignored until the buffer is empty.
-   */
-
-  leave_function();
+	leave_function();
+	return SSH_PACKET_USED;
 }
 
-static void channel_rcv_request(ssh_session session) {
-  ssh_channel channel;
-  ssh_string request_s;
-  char *request;
-  uint32_t status;
-  uint32_t startpos = session->in_buffer->pos;
+int channel_rcv_request(ssh_session session, void *user, u_int8_t type, ssh_buffer packet) {
+	ssh_channel channel;
+	ssh_string request_s;
+	char *request;
+	uint32_t status;
+	uint32_t startpos = session->in_buffer->pos;
+	(void)user;
+	(void)type;
+	(void)packet;
 
-  enter_function();
+	enter_function();
 
-  channel = channel_from_msg(session);
-  if (channel == NULL) {
-    ssh_log(session, SSH_LOG_FUNCTIONS,"%s", ssh_get_error(session));
-    leave_function();
-    return;
-  }
+	channel = channel_from_msg(session);
+	if (channel == NULL) {
+		ssh_log(session, SSH_LOG_FUNCTIONS,"%s", ssh_get_error(session));
+		leave_function();
+		return SSH_PACKET_USED;
+	}
 
-  request_s = buffer_get_ssh_string(session->in_buffer);
-  if (request_s == NULL) {
-    ssh_log(session, SSH_LOG_PACKET, "Invalid MSG_CHANNEL_REQUEST");
-    leave_function();
-    return;
-  }
+	request_s = buffer_get_ssh_string(session->in_buffer);
+	if (request_s == NULL) {
+		ssh_log(session, SSH_LOG_PACKET, "Invalid MSG_CHANNEL_REQUEST");
+		leave_function();
+		return SSH_PACKET_USED;
+	}
 
-  request = string_to_char(request_s);
-  string_free(request_s);
-  if (request == NULL) {
-    leave_function();
-    return;
-  }
+	request = string_to_char(request_s);
+	string_free(request_s);
+	if (request == NULL) {
+		leave_function();
+		return SSH_PACKET_USED;
+	}
 
-  buffer_get_u8(session->in_buffer, (uint8_t *) &status);
+	buffer_get_u8(session->in_buffer, (uint8_t *) &status);
 
-  if (strcmp(request,"exit-status") == 0) {
-    SAFE_FREE(request);
-    ssh_log(session, SSH_LOG_PACKET, "received exit-status");
-    buffer_get_u32(session->in_buffer, &status);
-    channel->exit_status = ntohl(status);
+	if (strcmp(request,"exit-status") == 0) {
+		SAFE_FREE(request);
+		ssh_log(session, SSH_LOG_PACKET, "received exit-status");
+		buffer_get_u32(session->in_buffer, &status);
+		channel->exit_status = ntohl(status);
 
-    leave_function();
-    return ;
-  }
+		leave_function();
+		return SSH_PACKET_USED;
+	}
 
-  if (strcmp(request, "exit-signal") == 0) {
-    const char *core = "(core dumped)";
-    ssh_string signal_s;
-    char *signal;
-    uint8_t i;
+	if (strcmp(request, "exit-signal") == 0) {
+		const char *core = "(core dumped)";
+		ssh_string signal_s;
+		char *signal;
+		uint8_t i;
 
-    SAFE_FREE(request);
+		SAFE_FREE(request);
 
-    signal_s = buffer_get_ssh_string(session->in_buffer);
-    if (signal_s == NULL) {
-      ssh_log(session, SSH_LOG_PACKET, "Invalid MSG_CHANNEL_REQUEST");
-      leave_function();
-      return;
-    }
+		signal_s = buffer_get_ssh_string(session->in_buffer);
+		if (signal_s == NULL) {
+			ssh_log(session, SSH_LOG_PACKET, "Invalid MSG_CHANNEL_REQUEST");
+			leave_function();
+			return SSH_PACKET_USED;
+		}
 
-    signal = string_to_char(signal_s);
-    string_free(signal_s);
-    if (signal == NULL) {
-      leave_function();
-      return;
-    }
+		signal = string_to_char(signal_s);
+		string_free(signal_s);
+		if (signal == NULL) {
+			leave_function();
+			return SSH_PACKET_USED;
+		}
 
-    buffer_get_u8(session->in_buffer, &i);
-    if (i == 0) {
-      core = "";
-    }
+		buffer_get_u8(session->in_buffer, &i);
+		if (i == 0) {
+			core = "";
+		}
 
-    ssh_log(session, SSH_LOG_PACKET,
-        "Remote connection closed by signal SIG %s %s", signal, core);
-    SAFE_FREE(signal);
+		ssh_log(session, SSH_LOG_PACKET,
+				"Remote connection closed by signal SIG %s %s", signal, core);
+		SAFE_FREE(signal);
 
-    leave_function();
-    return;
-  }
+		leave_function();
+		return SSH_PACKET_USED;
+	}
 
-  /* TODO call message_handle since it handles channel requests as messages */
-  /* *but* reset buffer before !! */
+	/* TODO call message_handle since it handles channel requests as messages */
+	/* *but* reset buffer before !! */
 
-  session->in_buffer->pos = startpos;
-  message_handle(session, SSH2_MSG_CHANNEL_REQUEST);
+	session->in_buffer->pos = startpos;
+	message_handle(session, NULL, SSH2_MSG_CHANNEL_REQUEST, session->in_buffer);
 
-  ssh_log(session, SSH_LOG_PACKET, "Unknown request %s", request);
-  SAFE_FREE(request);
+	ssh_log(session, SSH_LOG_PACKET, "Unknown request %s", request);
+	SAFE_FREE(request);
 
-  leave_function();
+	leave_function();
+	return SSH_PACKET_USED;
 }
 
 /*
@@ -575,22 +595,12 @@ void channel_handle(ssh_session session, int type){
 
   switch(type) {
     case SSH2_MSG_CHANNEL_WINDOW_ADJUST:
-      channel_rcv_change_window(session);
-      break;
-    case SSH2_MSG_CHANNEL_DATA:
-      channel_rcv_data(session,0);
-      break;
-    case SSH2_MSG_CHANNEL_EXTENDED_DATA:
-      channel_rcv_data(session,1);
-      break;
-    case SSH2_MSG_CHANNEL_EOF:
-      channel_rcv_eof(session);
-      break;
-    case SSH2_MSG_CHANNEL_CLOSE:
-      channel_rcv_close(session);
-      break;
     case SSH2_MSG_CHANNEL_REQUEST:
-      channel_rcv_request(session);
+    case SSH2_MSG_CHANNEL_CLOSE:
+    case SSH2_MSG_CHANNEL_EOF:
+    case SSH2_MSG_CHANNEL_DATA:
+    case SSH2_MSG_CHANNEL_EXTENDED_DATA:
+      ssh_packet_process(session, type);
       break;
     default:
       ssh_log(session, SSH_LOG_FUNCTIONS,

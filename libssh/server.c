@@ -857,8 +857,8 @@ char *ssh_message_channel_request_subsystem(ssh_message msg){
  * must take care of the response).
  */
 void ssh_set_message_callback(ssh_session session,
-    int(*ssh_message_callback)(ssh_session session, ssh_message msg)){
-  session->ssh_message_callback=ssh_message_callback;
+    int(*ssh_message_callback_)(ssh_session session, ssh_message msg)){
+  session->ssh_message_callback=ssh_message_callback_;
 }
 
 int ssh_execute_message_callbacks(ssh_session session){

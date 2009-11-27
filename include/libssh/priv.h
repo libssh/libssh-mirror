@@ -48,6 +48,7 @@
 #include "libssh/libssh.h"
 #include "libssh/callbacks.h"
 #include "libssh/crypto.h"
+
 /* some constants */
 #define MAX_PACKET_LEN 262144
 #define ERROR_BUFFERLEN 1024
@@ -90,7 +91,7 @@ struct ssh_keys_struct {
 };
 
 struct ssh_message_struct;
-
+struct ssh_poll_handle_struct;
 
 /* server data */
 
@@ -113,6 +114,14 @@ struct ssh_bind_struct {
   int toaccept;
 };
 
+struct socket;
+struct ssh_poll;
+void ssh_socket_set_callbacks(struct socket *s, ssh_socket_callbacks callbacks);
+int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p, int fd, int revents, void *s);
+void ssh_socket_register_pollcallback(struct socket *s, struct ssh_poll_handle_struct *p);
+
+int ssh_packet_disconnect_callback(ssh_session session, void *user, u_int8_t type, ssh_buffer packet);
+int ssh_packet_ignore_callback(ssh_session session, void *user, u_int8_t type, ssh_buffer packet);
 
 /* client.c */
 
@@ -134,6 +143,11 @@ unsigned char *packet_encrypt(ssh_session session,void *packet,unsigned int len)
  /* it returns the hmac buffer if exists*/
 int packet_hmac_verify(ssh_session session,ssh_buffer buffer,unsigned char *mac);
 
+int ssh_packet_socket_callback(void *user, const void *data, size_t len);
+void ssh_packet_register_socket_callback(ssh_session session, struct socket *s);
+void ssh_packet_set_callbacks(ssh_session session, ssh_packet_callbacks callbacks);
+void ssh_packet_set_default_callbacks(ssh_session session);
+void ssh_packet_process(ssh_session session, u_int8_t type);
 /* connect.c */
 int ssh_regex_init(void);
 void ssh_regex_finalize(void);
@@ -152,6 +166,11 @@ char **space_tokenize(const char *chain);
 int ssh_get_kex1(ssh_session session);
 char *ssh_find_matching(const char *in_d, const char *what_d);
 
+int channel_rcv_change_window(ssh_session session, void *user, uint8_t type, ssh_buffer packet);
+int channel_rcv_eof(ssh_session session, void *user, uint8_t type, ssh_buffer packet);
+int channel_rcv_close(ssh_session session, void *user, uint8_t type, ssh_buffer packet);
+int channel_rcv_request(ssh_session session, void *user, uint8_t type, ssh_buffer packet);
+int channel_rcv_data(ssh_session session, void *user, uint8_t type, ssh_buffer packet);
 /* in base64.c */
 ssh_buffer base64_to_bin(const char *source);
 unsigned char *bin_to_base64(const unsigned char *source, int len);
@@ -183,6 +202,7 @@ int channel_write1(ssh_channel channel, const void *data, int len);
 /* match.c */
 int match_hostname(const char *host, const char *pattern, unsigned int len);
 
+int message_handle(ssh_session session, void *user, uint8_t type, ssh_buffer packet);
 /* log.c */
 
 #ifndef __FUNCTION__
