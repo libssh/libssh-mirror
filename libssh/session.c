@@ -369,7 +369,7 @@ int ssh_get_version(ssh_session session) {
  * @internal
  * @brief handles a SSH_DISCONNECT packet
  */
-int ssh_packet_disconnect_callback(ssh_session session, void *user, u_int8_t type, ssh_buffer packet){
+SSH_PACKET_CALLBACK(ssh_packet_disconnect_callback){
 	u_int32_t code;
 	char *error;
 	ssh_string error_s;
@@ -396,7 +396,7 @@ int ssh_packet_disconnect_callback(ssh_session session, void *user, u_int8_t typ
  * @internal
  * @brief handles a SSH_IGNORE and SSH_DEBUG packet
  */
-int ssh_packet_ignore_callback(ssh_session session, void *user, u_int8_t type, ssh_buffer packet){
+SSH_PACKET_CALLBACK(ssh_packet_ignore_callback){
 	(void)user;
 	(void)type;
 	(void)packet;

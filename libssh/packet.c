@@ -111,7 +111,7 @@ static int macsize=SHA_DIGEST_LEN;
  * @len length of data received. It might not be enough for a complete packet
  * @returns number of bytes read and processed.
  */
-int ssh_packet_socket_callback(void *user, const void *data, size_t receivedlen){
+int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user){
   ssh_session session=(ssh_session) user;
   unsigned int blocksize = (session->current_crypto ?
       session->current_crypto->in_cipher->blocksize : 8);
@@ -331,7 +331,7 @@ void ssh_packet_process(ssh_session session, u_int8_t type){
 			continue;
 		if(cb->callbacks[type - cb->start]==NULL)
 			continue;
-		r=cb->callbacks[type - cb->start](session,cb->user,type,session->in_buffer);
+		r=cb->callbacks[type - cb->start](session,type,session->in_buffer,cb->user);
 		if(r==SSH_PACKET_USED)
 			break;
 	}

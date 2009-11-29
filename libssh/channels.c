@@ -314,7 +314,7 @@ static ssh_channel channel_from_msg(ssh_session session) {
   return channel;
 }
 
-int channel_rcv_change_window(ssh_session session, void *user, u_int8_t type, ssh_buffer packet) {
+SSH_PACKET_CALLBACK(channel_rcv_change_window) {
   ssh_channel channel;
   uint32_t bytes;
   int rc;
@@ -351,7 +351,7 @@ int channel_rcv_change_window(ssh_session session, void *user, u_int8_t type, ss
 }
 
 /* is_stderr is set to 1 if the data are extended, ie stderr */
-int channel_rcv_data(ssh_session session, void *user, u_int8_t type, ssh_buffer packet) {
+SSH_PACKET_CALLBACK(channel_rcv_data){
   ssh_channel channel;
   ssh_string str;
   size_t len;
@@ -424,7 +424,7 @@ int channel_rcv_data(ssh_session session, void *user, u_int8_t type, ssh_buffer 
   return SSH_PACKET_USED;
 }
 
-int channel_rcv_eof(ssh_session session, void *user, u_int8_t type, ssh_buffer packet) {
+SSH_PACKET_CALLBACK(channel_rcv_eof) {
   ssh_channel channel;
   (void)user;
   (void)type;
@@ -449,7 +449,7 @@ int channel_rcv_eof(ssh_session session, void *user, u_int8_t type, ssh_buffer p
   return SSH_PACKET_USED;
 }
 
-int channel_rcv_close(ssh_session session, void *user, u_int8_t type, ssh_buffer packet) {
+SSH_PACKET_CALLBACK(channel_rcv_close) {
 	ssh_channel channel;
 	(void)user;
 	(void)type;
@@ -491,7 +491,7 @@ int channel_rcv_close(ssh_session session, void *user, u_int8_t type, ssh_buffer
 	return SSH_PACKET_USED;
 }
 
-int channel_rcv_request(ssh_session session, void *user, u_int8_t type, ssh_buffer packet) {
+SSH_PACKET_CALLBACK(channel_rcv_request) {
 	ssh_channel channel;
 	ssh_string request_s;
 	char *request;

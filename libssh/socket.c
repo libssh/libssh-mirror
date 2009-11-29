@@ -153,8 +153,9 @@ int ssh_socket_pollcallback(ssh_poll_handle p, int fd, int revents, void *v_s){
 			/* Bufferize the data and then call the callback */
 			buffer_add_data(s->in_buffer,buffer,r);
 			if(s->callbacks){
-				r= s->callbacks->data(s->callbacks->user,
-						buffer_get_rest(s->in_buffer), buffer_get_rest_len(s->in_buffer));
+				r= s->callbacks->data(buffer_get_rest(s->in_buffer),
+						buffer_get_rest_len(s->in_buffer),
+						s->callbacks->user);
 				buffer_pass_bytes(s->in_buffer,r);
 			}
 		}
@@ -167,7 +168,7 @@ int ssh_socket_pollcallback(ssh_poll_handle p, int fd, int revents, void *v_s){
 		          buffer_get_rest_len(s->out_buffer));
 		} else if(s->callbacks){
 			/* Otherwise advertise the upper level that write can be done */
-			s->callbacks->controlflow(s->callbacks->user,SSH_SOCKET_FLOW_WRITEWONTBLOCK);
+			s->callbacks->controlflow(SSH_SOCKET_FLOW_WRITEWONTBLOCK,s->callbacks->user);
 			ssh_poll_set_events(p,ssh_poll_get_events(p) & ~POLLOUT);
 			/* TODO: Find a way to put back POLLOUT when buffering occurs */
 		}

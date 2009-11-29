@@ -32,21 +32,29 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-typedef void (*ssh_callback_int) (void *user, int code);
+
+/** @internal
+ * @brief callback to process simple codes
+ * @param code value to transmit
+ * @param user Userdata to pass in callback
+ */
+typedef void (*ssh_callback_int) (int code, void *user);
+
 /** @internal
  * @brief callback for data received messages.
- * @param user user-supplied pointer sent along with all callback messages
  * @param data data retrieved from the socket or stream
  * @param len number of bytes available from this stream
+ * @param user user-supplied pointer sent along with all callback messages
  * @returns number of bytes processed by the callee. The remaining bytes will
  * be sent in the next callback message, when more data is available.
  */
-typedef int (*ssh_callback_data) (void *user, const void *data, size_t len);
+typedef int (*ssh_callback_data) (const void *data, size_t len, void *user);
+
 typedef void (*ssh_callback_int_int) (void *user, int code, int errno_code);
 
-typedef int (*ssh_message_callback) (ssh_session, void *user, ssh_message message);
-typedef int (*ssh_channel_callback_int) (ssh_channel channel, void *user, int code);
-typedef int (*ssh_channel_callback_data) (ssh_channel channel, void *user, int code, void *data, size_t len);
+typedef int (*ssh_message_callback) (ssh_session, ssh_message message, void *user);
+typedef int (*ssh_channel_callback_int) (ssh_channel channel, int code, void *user);
+typedef int (*ssh_channel_callback_data) (ssh_channel channel, int code, void *data, size_t len, void *user);
 /**
  * @brief SSH authentication callback.
  *
@@ -60,12 +68,26 @@ typedef int (*ssh_channel_callback_data) (ssh_channel channel, void *user, int c
  *
  * @return              0 on success, < 0 on error.
  */
+
 typedef int (*ssh_auth_callback) (const char *prompt, char *buf, size_t len,
     int echo, int verify, void *userdata);
+/**
+ * @brief SSH log callback. All logging messages will go through this callback
+ * @param session Current session handler
+ * @param priority Priority of the log, the smaller being the more important
+ * @param message the actual message
+ * @param userdata Userdata to be passed to the callback function.
+ */
 typedef void (*ssh_log_callback) (ssh_session session, int priority,
     const char *message, void *userdata);
-/** this callback will be called with status going from 0.0 to 1.0 during
- * connection */
+
+/**
+ * @brief SSH Connection status callback.
+ * @param session Current session handler
+ * @param status Percentage of connection status, going from 0.0 to 1.0
+ * once connection is done.
+ * @param userdata Userdata to be passed to the callback function.
+ */
 typedef void (*ssh_status_callback) (ssh_session session, float status,
 		void *userdata);
 
@@ -82,17 +104,10 @@ struct ssh_callbacks_struct {
 	 * of connection steps completed.
 	 */
   void (*connect_status_function)(void *userdata, float status);
-/* To be cleaned up */
-  ssh_callback_int connection_progress;
-  void *connection_progress_user;
-  ssh_channel_callback_int channel_write_confirm;
-  void *channel_write_confirm_user;
-  ssh_channel_callback_data channel_read_available;
-  void *channel_read_available_user;
 };
 typedef struct ssh_callbacks_struct *ssh_callbacks;
 
-/* This are the callbacks exported by the socket structure
+/** These are the callbacks exported by the socket structure
  * They are called by the socket module when a socket event appears
  */
 struct ssh_socket_callbacks_struct {
@@ -123,10 +138,34 @@ typedef struct ssh_socket_callbacks_struct *ssh_socket_callbacks;
 	(p)->size=sizeof(*(p)); \
 } while(0);
 
-/* These are the callback exported by the packet layer
+/** @brief Prototype for a packet callback, to be called when a new packet arrives
+ * @param session The current session of the packet
+ * @param type packet type (see ssh2.h)
+ * @param packet buffer containing the packet, excluding size, type and padding fields
+ * @param user user argument to the callback
  * and are called each time a packet shows up
- * */
-typedef int (*ssh_packet_callback) (ssh_session, void *user, uint8_t code, ssh_buffer packet);
+ * @returns SSH_PACKET_USED Packet was parsed and used
+ * @returns SSH_PACKET_NOT_USED Packet was not used or understood, processing must continue
+ */
+typedef int (*ssh_packet_callback) (ssh_session session, uint8_t type, ssh_buffer packet, void *user);
+
+/** return values for a ssh_packet_callback */
+/** Packet was used and should not be parsed by another callback */
+#define SSH_PACKET_USED 1
+/** Packet was not used and should be passed to any other callback
+ * available */
+#define SSH_PACKET_NOT_USED 2
+
+
+/** @brief This macro declares a packet callback handler
+ * @code
+ * SSH_PACKET_CALLBACK(mycallback){
+ * ...
+ * }
+ * @endcode
+ */
+#define SSH_PACKET_CALLBACK(name) \
+	int name (ssh_session session, uint8_t type, ssh_buffer packet, void *user)
 
 struct ssh_packet_callbacks_struct {
 	/** Index of the first packet type being handled */
@@ -138,6 +177,7 @@ struct ssh_packet_callbacks_struct {
 	void *user;
 };
 typedef struct ssh_packet_callbacks_struct *ssh_packet_callbacks;
+
 /**
  * @brief Set the callback functions.
  *
@@ -162,12 +202,6 @@ typedef struct ssh_packet_callbacks_struct *ssh_packet_callbacks;
  */
 LIBSSH_API int ssh_set_callbacks(ssh_session session, ssh_callbacks cb);
 
-/** return values for a ssh_packet_callback */
-/** Packet was used and should not be parsed by another callback */
-#define SSH_PACKET_USED 1
-/** Packet was not used and should be passed to any other callback
- * available */
-#define SSH_PACKET_NOT_USED 2
 #ifdef __cplusplus
 }
 #endif

@@ -120,8 +120,8 @@ void ssh_socket_set_callbacks(struct socket *s, ssh_socket_callbacks callbacks);
 int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p, int fd, int revents, void *s);
 void ssh_socket_register_pollcallback(struct socket *s, struct ssh_poll_handle_struct *p);
 
-int ssh_packet_disconnect_callback(ssh_session session, void *user, u_int8_t type, ssh_buffer packet);
-int ssh_packet_ignore_callback(ssh_session session, void *user, u_int8_t type, ssh_buffer packet);
+SSH_PACKET_CALLBACK(ssh_packet_disconnect_callback);
+SSH_PACKET_CALLBACK(ssh_packet_ignore_callback);
 
 /* client.c */
 
@@ -143,7 +143,7 @@ unsigned char *packet_encrypt(ssh_session session,void *packet,unsigned int len)
  /* it returns the hmac buffer if exists*/
 int packet_hmac_verify(ssh_session session,ssh_buffer buffer,unsigned char *mac);
 
-int ssh_packet_socket_callback(void *user, const void *data, size_t len);
+int ssh_packet_socket_callback(const void *data, size_t len, void *user);
 void ssh_packet_register_socket_callback(ssh_session session, struct socket *s);
 void ssh_packet_set_callbacks(ssh_session session, ssh_packet_callbacks callbacks);
 void ssh_packet_set_default_callbacks(ssh_session session);
@@ -166,11 +166,12 @@ char **space_tokenize(const char *chain);
 int ssh_get_kex1(ssh_session session);
 char *ssh_find_matching(const char *in_d, const char *what_d);
 
-int channel_rcv_change_window(ssh_session session, void *user, uint8_t type, ssh_buffer packet);
-int channel_rcv_eof(ssh_session session, void *user, uint8_t type, ssh_buffer packet);
-int channel_rcv_close(ssh_session session, void *user, uint8_t type, ssh_buffer packet);
-int channel_rcv_request(ssh_session session, void *user, uint8_t type, ssh_buffer packet);
-int channel_rcv_data(ssh_session session, void *user, uint8_t type, ssh_buffer packet);
+SSH_PACKET_CALLBACK(channel_rcv_change_window);
+SSH_PACKET_CALLBACK(channel_rcv_eof);
+SSH_PACKET_CALLBACK(channel_rcv_close);
+SSH_PACKET_CALLBACK(channel_rcv_request);
+SSH_PACKET_CALLBACK(channel_rcv_data);
+
 /* in base64.c */
 ssh_buffer base64_to_bin(const char *source);
 unsigned char *bin_to_base64(const unsigned char *source, int len);
