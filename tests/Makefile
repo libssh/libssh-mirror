@@ -1,5 +1,5 @@
 all: test_socket test_tunnel test_exec test_pcap
-CFLAGS=-I../include/ -g -Wall
+CFLAGS=-I../include/ -g -Wall -I../build/
 LDFLAGS=-lssh -L../build/libssh/
 
 test_tunnel: test_tunnel.o authentication.o connection.o

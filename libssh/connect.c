@@ -356,6 +356,88 @@ socket_t ssh_connect_host(ssh_session session, const char *host,
 }
 
 /**
+ * @internal
+ *
+ * @brief Launches a nonblocking connect to an IPv4 or IPv6 host
+ * specified by its IP address or hostname.
+ *
+ * @returns A file descriptor, < 0 on error.
+ * @warning very ugly !!!
+ */
+socket_t ssh_connect_host_nonblocking(ssh_session session, const char *host,
+    const char *bind_addr, int port) {
+  socket_t s = -1;
+  int rc;
+  struct addrinfo *ai;
+  struct addrinfo *itr;
+
+  enter_function();
+
+  rc = getai(session,host, port, &ai);
+  if (rc != 0) {
+    ssh_set_error(session, SSH_FATAL,
+        "Failed to resolve hostname %s (%s)", host, gai_strerror(rc));
+    leave_function();
+    return -1;
+  }
+
+  for (itr = ai; itr != NULL; itr = itr->ai_next){
+    /* create socket */
+    s = socket(itr->ai_family, itr->ai_socktype, itr->ai_protocol);
+    if (s < 0) {
+      ssh_set_error(session, SSH_FATAL,
+          "Socket create failed: %s", strerror(errno));
+      continue;
+    }
+
+    if (bind_addr) {
+      struct addrinfo *bind_ai;
+      struct addrinfo *bind_itr;
+
+      ssh_log(session, SSH_LOG_PACKET, "Resolving %s\n", bind_addr);
+
+      rc = getai(session,bind_addr, 0, &bind_ai);
+      if (rc != 0) {
+        ssh_set_error(session, SSH_FATAL,
+            "Failed to resolve bind address %s (%s)",
+            bind_addr,
+            gai_strerror(rc));
+        close(s);
+        s=-1;
+        break;
+      }
+
+      for (bind_itr = bind_ai; bind_itr != NULL; bind_itr = bind_itr->ai_next) {
+        if (bind(s, bind_itr->ai_addr, bind_itr->ai_addrlen) < 0) {
+          ssh_set_error(session, SSH_FATAL,
+              "Binding local address: %s", strerror(errno));
+          continue;
+        } else {
+          break;
+        }
+      }
+      freeaddrinfo(bind_ai);
+
+      /* Cannot bind to any local addresses */
+      if (bind_itr == NULL) {
+        ssh_connect_socket_close(s);
+        s = -1;
+        continue;
+      }
+    }
+    sock_set_nonblocking(s);
+
+    connect(s, itr->ai_addr, itr->ai_addrlen);
+    break;
+  }
+
+  freeaddrinfo(ai);
+  leave_function();
+
+  return s;
+}
+
+/**
  * @addtogroup ssh_session
  * @{ */
 

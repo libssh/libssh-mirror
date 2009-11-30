@@ -44,6 +44,15 @@
  * @{
  */
 
+enum ssh_socket_states_e {
+	SSH_SOCKET_NONE,
+	SSH_SOCKET_CONNECTING,
+	SSH_SOCKET_CONNECTED,
+	SSH_SOCKET_EOF,
+	SSH_SOCKET_ERROR,
+	SSH_SOCKET_CLOSED
+};
+
 struct socket {
   socket_t fd;
   int last_errno;
@@ -51,6 +60,7 @@ struct socket {
                        not block */
   int data_to_write;
   int data_except;
+  enum ssh_socket_states_e state;
   ssh_buffer out_buffer;
   ssh_buffer in_buffer;
   ssh_session session;
@@ -105,7 +115,8 @@ struct socket *ssh_socket_new(ssh_session session) {
   s->data_to_read = 0;
   s->data_to_write = 0;
   s->data_except = 0;
-
+  s->poll=NULL;
+  s->state=SSH_SOCKET_NONE;
   return s;
 }
 
@@ -136,17 +147,17 @@ int ssh_socket_pollcallback(ssh_poll_handle p, int fd, int revents, void *v_s){
 		if(r<0){
 			ssh_poll_set_events(p,ssh_poll_get_events(p) & ~POLLIN);
 			if(s->callbacks){
-				s->callbacks->exception(s->callbacks->user,
+				s->callbacks->exception(
 						SSH_SOCKET_EXCEPTION_ERROR,
-						s->last_errno);
+						s->last_errno,s->callbacks->user);
 			}
 		}
 		if(r==0){
 			ssh_poll_set_events(p,ssh_poll_get_events(p) & ~POLLIN);
 			if(s->callbacks){
-				s->callbacks->exception(s->callbacks->user,
+				s->callbacks->exception(
 						SSH_SOCKET_EXCEPTION_EOF,
-						0);
+						0,s->callbacks->user);
 			}
 		}
 		if(r>0){
@@ -161,6 +172,16 @@ int ssh_socket_pollcallback(ssh_poll_handle p, int fd, int revents, void *v_s){
 		}
 	}
 	if(revents & POLLOUT){
+		/* First, POLLOUT is a sign we may be connected */
+		if(s->state == SSH_SOCKET_CONNECTING){
+			ssh_log(s->session,SSH_LOG_PACKET,"Received POLLOUT in connecting state");
+			s->state = SSH_SOCKET_CONNECTED;
+			ssh_poll_set_events(p,POLLOUT | POLLIN | POLLERR);
+			if(s->callbacks && s->callbacks->connected)
+				s->callbacks->connected(SSH_SOCKET_CONNECTED_OK,0,s->callbacks->user);
+			return 0;
+		}
+		/* So, we can write data */
 		s->data_to_write=1;
 		/* If buffered data is pending, write it */
 		if(buffer_get_rest_len(s->out_buffer) > 0){
@@ -258,6 +279,8 @@ void ssh_socket_close(struct socket *s){
  */
 void ssh_socket_set_fd(struct socket *s, socket_t fd) {
   s->fd = fd;
+  if(s->poll)
+  	ssh_poll_set_fd(s->poll,fd);
 }
 
 /* \internal
@@ -724,6 +747,50 @@ int ssh_socket_get_status(struct socket *s) {
   return r;
 }
 
+/**
+ * @internal
+ * @brief Launches a socket connection
+ * If a the socket connected callback has been defined and
+ * a poll object exists, this call will be non blocking
+ * @param
+ */
+
+int ssh_socket_connect(struct socket *s, const char *host, int port, const char *bind_addr){
+	socket_t fd;
+	ssh_session session=s->session;
+	ssh_poll_ctx ctx;
+	enter_function();
+	if(s->state != SSH_SOCKET_NONE)
+		return SSH_ERROR;
+	fd=ssh_connect_host_nonblocking(s->session,host,bind_addr,port);
+	ssh_socket_set_fd(s,fd);
+	s->state=SSH_SOCKET_CONNECTING;
+	if(s->callbacks && s->callbacks->connected && s->poll){
+		/* POLLOUT is the event to wait for in a nonblocking connect */
+		ssh_poll_set_events(s->poll,POLLOUT);
+		leave_function();
+		return SSH_OK;
+	} else {
+		/* we have to do the connect ourselves */
+		ssh_poll_set_events(ssh_socket_get_poll_handle(s),POLLOUT);
+		ctx=ssh_poll_ctx_new(1);
+		ssh_poll_ctx_add(ctx,s->poll);
+		while(s->state == SSH_SOCKET_CONNECTING){
+			ssh_poll_ctx_dopoll(ctx,-1);
+		}
+		ssh_poll_ctx_free(ctx);
+		if(s->state == SSH_SOCKET_CONNECTED){
+			ssh_log(session,SSH_LOG_PACKET,"ssh_socket_connect blocking: connected");
+			leave_function();
+			return SSH_OK;
+		} else {
+			ssh_log(session,SSH_LOG_PACKET,"ssh_socket_connect blocking: not connected");
+			ssh_set_error(session,SSH_FATAL,"Error during blocking connect: %d",s->last_errno);
+			leave_function();
+			return SSH_ERROR;
+		}
+	}
+}
 /** @}
  */
 /* vim: set ts=2 sw=2 et cindent: */

@@ -50,7 +50,7 @@ typedef void (*ssh_callback_int) (int code, void *user);
  */
 typedef int (*ssh_callback_data) (const void *data, size_t len, void *user);
 
-typedef void (*ssh_callback_int_int) (void *user, int code, int errno_code);
+typedef void (*ssh_callback_int_int) (int code, int errno_code, void *user);
 
 typedef int (*ssh_message_callback) (ssh_session, ssh_message message, void *user);
 typedef int (*ssh_channel_callback_int) (ssh_channel channel, int code, void *user);

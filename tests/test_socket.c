@@ -28,6 +28,7 @@
 
 #include <libssh/callbacks.h>
 #include <libssh/socket.h>
+#include <libssh/poll.h>
 
 static int data_rcv(const void *data, size_t len, void *user){
 	printf("Received data: '");
@@ -36,15 +37,15 @@ static int data_rcv(const void *data, size_t len, void *user){
 	return len;
 }
 
-static void controlflow(void *user, int code){
+static void controlflow(int code,void *user){
 	printf("Control flow: %x\n",code);
 }
 
-static void exception(void *user, int code, int errno_code){
+static void exception(int code, int errno_code,void *user){
 	printf("Exception: %d (%d)\n",code,errno_code);
 }
 
-static void connected(void *user, int code, int errno_code){
+static void connected(int code, int errno_code,void *user){
 	printf("Connected: %d (%d)\n",code, errno_code);
 }
 
@@ -64,10 +65,15 @@ int main(int argc, char **argv){
 		return EXIT_FAILURE;
 	}
 	session=ssh_new();
+	ssh_init();
 	s=ssh_socket_new(session);
 	ctx=ssh_poll_ctx_new(2);
 	ssh_socket_set_callbacks(s, &callbacks);
 	ssh_poll_ctx_add_socket(ctx,s);
-
+	if(ssh_socket_connect(s,argv[1],atoi(argv[2]),NULL)){
+		printf("ssh_socket_connect: %s\n",ssh_get_error(session));
+		return EXIT_FAILURE;
+	}
+	ssh_poll_ctx_dopoll(ctx,-1);
 	return EXIT_SUCCESS;
 }

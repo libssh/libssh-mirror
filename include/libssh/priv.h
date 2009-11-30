@@ -150,7 +150,8 @@ void ssh_regex_finalize(void);
 ssh_session ssh_session_new(void);
 socket_t ssh_connect_host(ssh_session session, const char *host,const char
         *bind_addr, int port, long timeout, long usec);
-
+socket_t ssh_connect_host_nonblocking(ssh_session session, const char *host,
+		const char *bind_addr, int port);
 /* in kex.c */
 extern const char *ssh_kex_nums[];
 int ssh_send_kex(ssh_session session, int server_kex);
