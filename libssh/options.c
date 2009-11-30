@@ -553,6 +553,7 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
 
         session->log_verbosity = *x & 0xffff;
       }
+      break;
     case SSH_OPTIONS_LOG_VERBOSITY_STR:
       if (value == NULL) {
         session->log_verbosity = 0 & 0xffff;
