@@ -181,6 +181,18 @@ void ssh_socket_register_pollcallback(struct socket *s, ssh_poll_handle p){
 	s->poll=p;
 }
 
+/** @internal
+ * @brief returns the poll handle corresponding to the socket,
+ * creates it if it does not exist.
+ * @returns allocated and initialized ssh_poll_handle object
+ */
+ssh_poll_handle ssh_socket_get_poll_handle(struct socket *s){
+	if(s->poll)
+		return s->poll;
+	s->poll=ssh_poll_new(s->fd,0,ssh_socket_pollcallback,s);
+	return s->poll;
+}
+
 /** \internal
  * \brief Deletes a socket object
  */
@@ -191,6 +203,8 @@ void ssh_socket_free(struct socket *s){
   ssh_socket_close(s);
   buffer_free(s->in_buffer);
   buffer_free(s->out_buffer);
+  if(s->poll)
+  	ssh_poll_free(s->poll);
   SAFE_FREE(s);
 }
 

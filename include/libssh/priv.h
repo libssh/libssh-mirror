@@ -114,12 +114,6 @@ struct ssh_bind_struct {
   int toaccept;
 };
 
-struct socket;
-struct ssh_poll;
-void ssh_socket_set_callbacks(struct socket *s, ssh_socket_callbacks callbacks);
-int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p, int fd, int revents, void *s);
-void ssh_socket_register_pollcallback(struct socket *s, struct ssh_poll_handle_struct *p);
-
 SSH_PACKET_CALLBACK(ssh_packet_disconnect_callback);
 SSH_PACKET_CALLBACK(ssh_packet_ignore_callback);
 
@@ -142,6 +136,8 @@ int packet_decrypt(ssh_session session, void *packet,unsigned int len);
 unsigned char *packet_encrypt(ssh_session session,void *packet,unsigned int len);
  /* it returns the hmac buffer if exists*/
 int packet_hmac_verify(ssh_session session,ssh_buffer buffer,unsigned char *mac);
+
+struct socket;
 
 int ssh_packet_socket_callback(const void *data, size_t len, void *user);
 void ssh_packet_register_socket_callback(ssh_session session, struct socket *s);

@@ -33,6 +33,7 @@
 #include "libssh/priv.h"
 #include "libssh/libssh.h"
 #include "libssh/poll.h"
+#include "libssh/socket.h"
 
 #ifndef SSH_POLL_CTX_CHUNK
 #define SSH_POLL_CTX_CHUNK			5
@@ -310,6 +311,21 @@ void ssh_poll_set_events(ssh_poll_handle p, short events) {
 }
 
 /**
+ * @brief  Set the file descriptor of a poll object. The FD will also be propagated
+ *         to an associated poll context.
+ *
+ * @param  p            Pointer to an already allocated poll object.
+ * @param  fd       New file descriptor.
+ */
+void ssh_poll_set_fd(ssh_poll_handle p, socket_t fd) {
+  if (p->ctx != NULL) {
+    p->ctx->pollfds[p->x.idx].fd = fd;
+  } else {
+  	p->x.fd = fd;
+  }
+}
+
+/**
  * @brief  Add extra events to a poll object. Duplicates are ignored.
  *         The events will also be propagated to an associated poll context.
  *
@@ -473,6 +489,22 @@ int ssh_poll_ctx_add(ssh_poll_ctx ctx, ssh_poll_handle p) {
 
   return 0;
 }
+
+/**
+ * @brief  Add a socket object to a poll context.
+ *
+ * @param  ctx          Pointer to an already allocated poll context.
+ * @param  s            A SSH socket handle
+ *
+ * @return              0 on success, < 0 on error
+ */
+int ssh_poll_ctx_add_socket (ssh_poll_ctx ctx, struct socket *s) {
+  ssh_poll_handle p=ssh_socket_get_poll_handle(s);
+  if(p==NULL)
+  	return -1;
+  return ssh_poll_ctx_add(ctx,p);
+}
+
 
 /**
  * @brief  Remove a poll object from a poll context.

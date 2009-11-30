@@ -22,6 +22,8 @@
 #ifndef SOCKET_H_
 #define SOCKET_H_
 
+#include "libssh/callbacks.h"
+struct ssh_poll_handle_struct;
 /* socket.c */
 
 struct socket;
@@ -51,5 +53,10 @@ void ssh_socket_set_except(struct socket *s);
 int ssh_socket_get_status(struct socket *s);
 int ssh_socket_data_available(struct socket *s);
 int ssh_socket_data_writable(struct socket *s);
+
+void ssh_socket_set_callbacks(struct socket *s, ssh_socket_callbacks callbacks);
+int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p, int fd, int revents, void *s);
+void ssh_socket_register_pollcallback(struct socket *s, struct ssh_poll_handle_struct *p);
+struct ssh_poll_handle_struct * ssh_socket_get_poll_handle(struct socket *s);
 
 #endif /* SOCKET_H_ */

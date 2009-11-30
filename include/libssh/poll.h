@@ -90,10 +90,12 @@ void ssh_poll_set_events(ssh_poll_handle p, short events);
 void ssh_poll_add_events(ssh_poll_handle p, short events);
 void ssh_poll_remove_events(ssh_poll_handle p, short events);
 socket_t ssh_poll_get_fd(ssh_poll_handle p);
+void ssh_poll_set_fd(ssh_poll_handle p, socket_t fd);
 void ssh_poll_set_callback(ssh_poll_handle p, ssh_poll_callback cb, void *userdata);
 ssh_poll_ctx ssh_poll_ctx_new(size_t chunk_size);
 void ssh_poll_ctx_free(ssh_poll_ctx ctx);
 int ssh_poll_ctx_add(ssh_poll_ctx ctx, ssh_poll_handle p);
+int ssh_poll_ctx_add_socket (ssh_poll_ctx ctx, struct socket *s);
 void ssh_poll_ctx_remove(ssh_poll_ctx ctx, ssh_poll_handle p);
 int ssh_poll_ctx_dopoll(ssh_poll_ctx ctx, int timeout);
 
