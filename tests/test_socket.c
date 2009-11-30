@@ -60,11 +60,13 @@ int main(int argc, char **argv){
 	struct socket *s;
 	ssh_session session;
 	ssh_poll_ctx ctx;
+	int verbosity=SSH_LOG_FUNCTIONS;
 	if(argc < 3){
 		printf("Usage : %s host port\n", argv[0]);
 		return EXIT_FAILURE;
 	}
 	session=ssh_new();
+	ssh_options_set(session,SSH_OPTIONS_LOG_VERBOSITY,&verbosity);
 	ssh_init();
 	s=ssh_socket_new(session);
 	ctx=ssh_poll_ctx_new(2);

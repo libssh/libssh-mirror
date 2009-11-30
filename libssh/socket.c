@@ -763,6 +763,7 @@ int ssh_socket_connect(struct socket *s, const char *host, int port, const char 
 	if(s->state != SSH_SOCKET_NONE)
 		return SSH_ERROR;
 	fd=ssh_connect_host_nonblocking(s->session,host,bind_addr,port);
+	ssh_log(session,SSH_LOG_PROTOCOL,"Nonblocking connection socket: %d",fd);
 	ssh_socket_set_fd(s,fd);
 	s->state=SSH_SOCKET_CONNECTING;
 	if(s->callbacks && s->callbacks->connected && s->poll){
