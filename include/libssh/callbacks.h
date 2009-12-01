@@ -169,9 +169,9 @@ typedef int (*ssh_packet_callback) (ssh_session session, uint8_t type, ssh_buffe
 
 struct ssh_packet_callbacks_struct {
 	/** Index of the first packet type being handled */
-	u_int8_t start;
+	uint8_t start;
 	/** Number of packets being handled by this callback struct */
-	u_int8_t n_callbacks;
+	uint8_t n_callbacks;
 	/** A pointer to n_callbacks packet callbacks */
 	ssh_packet_callback *callbacks;
 	void *user;

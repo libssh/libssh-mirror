@@ -370,7 +370,7 @@ int ssh_get_version(ssh_session session) {
  * @brief handles a SSH_DISCONNECT packet
  */
 SSH_PACKET_CALLBACK(ssh_packet_disconnect_callback){
-	u_int32_t code;
+	uint32_t code;
 	char *error;
 	ssh_string error_s;
 	(void)user;

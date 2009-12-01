@@ -143,7 +143,7 @@ int ssh_packet_socket_callback(const void *data, size_t len, void *user);
 void ssh_packet_register_socket_callback(ssh_session session, struct socket *s);
 void ssh_packet_set_callbacks(ssh_session session, ssh_packet_callbacks callbacks);
 void ssh_packet_set_default_callbacks(ssh_session session);
-void ssh_packet_process(ssh_session session, u_int8_t type);
+void ssh_packet_process(ssh_session session, uint8_t type);
 /* connect.c */
 int ssh_regex_init(void);
 void ssh_regex_finalize(void);

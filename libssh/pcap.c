@@ -46,13 +46,13 @@
  * Just for information.
  */
 struct pcap_hdr_s {
-	u_int32_t magic_number;   /* magic number */
-	u_int16_t version_major;  /* major version number */
-	u_int16_t version_minor;  /* minor version number */
+	uint32_t magic_number;   /* magic number */
+	uint16_t version_major;  /* major version number */
+	uint16_t version_minor;  /* minor version number */
 	int32_t   thiszone;       /* GMT to local correction */
-	u_int32_t sigfigs;        /* accuracy of timestamps */
-	u_int32_t snaplen;        /* max length of captured packets, in octets */
-	u_int32_t network;        /* data link type */
+	uint32_t sigfigs;        /* accuracy of timestamps */
+	uint32_t snaplen;        /* max length of captured packets, in octets */
+	uint32_t network;        /* data link type */
 };
 
 #define PCAP_MAGIC 0xa1b2c3d4
@@ -73,10 +73,10 @@ struct pcap_hdr_s {
  * Just for information.
  */
 struct pcaprec_hdr_s {
-	u_int32_t ts_sec;         /* timestamp seconds */
-	u_int32_t ts_usec;        /* timestamp microseconds */
-	u_int32_t incl_len;       /* number of octets of packet saved in file */
-	u_int32_t orig_len;       /* actual length of packet */
+	uint32_t ts_sec;         /* timestamp seconds */
+	uint32_t ts_usec;        /* timestamp microseconds */
+	uint32_t incl_len;       /* number of octets of packet saved in file */
+	uint32_t orig_len;       /* actual length of packet */
 };
 
 /** @private
@@ -92,12 +92,12 @@ struct ssh_pcap_context_struct {
 	/* All of these informations are useful to generate
 	 * the dummy IP and TCP packets
 	 */
-	u_int32_t ipsource;
-	u_int32_t ipdest;
-	u_int16_t portsource;
-	u_int16_t portdest;
-	u_int32_t outsequence;
-	u_int32_t insequence;
+	uint32_t ipsource;
+	uint32_t ipdest;
+	uint16_t portsource;
+	uint16_t portdest;
+	uint32_t outsequence;
+	uint32_t insequence;
 };
 
 /** @private
@@ -106,7 +106,7 @@ struct ssh_pcap_context_struct {
  */
 struct ssh_pcap_file_struct {
 	FILE *output;
-	u_int16_t ipsequence;
+	uint16_t ipsequence;
 };
 
 /**
@@ -136,7 +136,7 @@ static int ssh_pcap_file_write(ssh_pcap_file pcap, ssh_buffer packet){
  * @brief prepends a packet with the pcap header and writes packet
  * on file
  */
-int ssh_pcap_file_write_packet(ssh_pcap_file pcap, ssh_buffer packet, u_int32_t original_len){
+int ssh_pcap_file_write_packet(ssh_pcap_file pcap, ssh_buffer packet, uint32_t original_len){
 	ssh_buffer header=buffer_new();
 	struct timeval now;
 	int err;
@@ -282,7 +282,7 @@ static int ssh_pcap_context_connect(ssh_pcap_context ctx){
  * @returns SSH_ERROR an error happened.
  */
 int ssh_pcap_context_write(ssh_pcap_context ctx,enum ssh_pcap_direction direction
-		, void *data, u_int32_t len, u_int32_t origlen){
+		, void *data, uint32_t len, uint32_t origlen){
 	ssh_buffer ip;
 	int err;
 	if(ctx==NULL || ctx->file ==NULL)

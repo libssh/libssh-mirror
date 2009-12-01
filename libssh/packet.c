@@ -309,7 +309,7 @@ void ssh_packet_set_default_callbacks(ssh_session session){
  * @brief dispatch the call of packet handlers callbacks for a received packet
  * @param type type of packet
  */
-void ssh_packet_process(ssh_session session, u_int8_t type){
+void ssh_packet_process(ssh_session session, uint8_t type){
 	struct ssh_iterator *i;
 	int r;
 	ssh_packet_callbacks cb;

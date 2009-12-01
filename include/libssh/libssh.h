@@ -50,6 +50,7 @@
 
 #ifdef _MSC_VER
   /* Visual Studio hasn't inttypes.h so it doesn't know uint32_t */
+  typedef int int32_t;
   typedef unsigned int uint32_t;
   typedef unsigned short uint16_t;
   typedef unsigned char uint8_t;
@@ -62,6 +63,9 @@
 
 #ifdef _WIN32
   #include <winsock2.h>
+  #ifndef socklen_t
+  #define socklen_t int
+  #endif
 #else /* _WIN32 */
  #include <sys/select.h> /* for fd_set * */
  #include <netdb.h>
