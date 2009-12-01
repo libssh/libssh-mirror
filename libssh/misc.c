@@ -95,6 +95,22 @@ char *ssh_get_user_home_dir(void) {
 
   return 1;
 }
+
+#define SSH_USEC_IN_SEC         1000000LL
+#define SSH_SECONDS_SINCE_1601  11644473600LL
+
+int gettimeofday(struct timeval *__p, void *__t) {
+  union {
+    unsigned long long ns100; /* time since 1 Jan 1601 in 100ns units */
+    FILETIME ft;
+  } now;
+
+  GetSystemTimeAsFileTime (&now.ft);
+  __p->tv_usec = (long) ((now.ns100 / 10LL) % SSH_USEC_IN_SEC);
+  __p->tv_sec  = (long)(((now.ns100 / 10LL ) / SSH_USEC_IN_SEC) - SSH_SECONDS_SINCE_1601);
+
+  return (0);
+}
 #else /* _WIN32 */
 char *ssh_get_user_home_dir(void) {
   char *szPath = NULL;
