@@ -7,7 +7,7 @@
 #ifdef WITH_PCAP
 typedef struct ssh_pcap_context_struct* ssh_pcap_context;
 
-int ssh_pcap_file_write_packet(ssh_pcap_file pcap, ssh_buffer packet, u_int32_t original_len);
+int ssh_pcap_file_write_packet(ssh_pcap_file pcap, ssh_buffer packet, uint32_t original_len);
 
 ssh_pcap_context ssh_pcap_context_new(ssh_session session);
 void ssh_pcap_context_free(ssh_pcap_context ctx);
@@ -18,7 +18,7 @@ enum ssh_pcap_direction{
 };
 void ssh_pcap_context_set_file(ssh_pcap_context, ssh_pcap_file);
 int ssh_pcap_context_write(ssh_pcap_context,enum ssh_pcap_direction direction, void *data,
-		u_int32_t len, u_int32_t origlen);
+		uint32_t len, uint32_t origlen);
 
 
 #endif /* WITH_PCAP */
