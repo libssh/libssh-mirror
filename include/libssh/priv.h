@@ -185,6 +185,11 @@ int match_hostname(const char *host, const char *pattern, unsigned int len);
 
 /* log.c */
 
+/* misc.c */
+#ifdef _WIN32
+int gettimeofday(struct timeval *__p, void *__t);
+#endif /* _WIN32 */
+
 #ifndef __FUNCTION__
 #if defined(__SUNPRO_C)
 #define __FUNCTION__ __func__
