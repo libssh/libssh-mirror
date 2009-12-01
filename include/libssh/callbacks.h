@@ -119,14 +119,15 @@ struct ssh_socket_callbacks_struct {
 };
 typedef struct ssh_socket_callbacks_struct *ssh_socket_callbacks;
 
-#define SSH_SOCKET_FLOW_WRITEWILLBLOCK (1<<0)
-#define SSH_SOCKET_FLOW_WRITEWONTBLOCK (1<<1)
-#define SSH_SOCKET_EXCEPTION_EOF (1<<0)
-#define SSH_SOCKET_EXCEPTION_ERROR (1<<1)
+#define SSH_SOCKET_FLOW_WRITEWILLBLOCK 1
+#define SSH_SOCKET_FLOW_WRITEWONTBLOCK 2
 
-#define SSH_SOCKET_CONNECTED_OK (1<<0)
-#define SSH_SOCKET_CONNECTED_ERROR (1<<1)
-#define SSH_SOCKET_CONNECTED_TIMEOUT (1<<2)
+#define SSH_SOCKET_EXCEPTION_EOF 	     1
+#define SSH_SOCKET_EXCEPTION_ERROR     2
+
+#define SSH_SOCKET_CONNECTED_OK 			1
+#define SSH_SOCKET_CONNECTED_ERROR 		2
+#define SSH_SOCKET_CONNECTED_TIMEOUT 	3
 
 /** Initializes an ssh_callbacks_struct
  * A call to this macro is mandatory when you have set a new

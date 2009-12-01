@@ -30,10 +30,15 @@
 #include <libssh/socket.h>
 #include <libssh/poll.h>
 
+int stop=0;
+struct socket *s;
+
 static int data_rcv(const void *data, size_t len, void *user){
 	printf("Received data: '");
 	fwrite(data,1,len,stdout);
 	printf("'\n");
+	ssh_socket_write(s,"Hello you !\n",12);
+	ssh_socket_nonblocking_flush(s);
 	return len;
 }
 
@@ -43,10 +48,16 @@ static void controlflow(int code,void *user){
 
 static void exception(int code, int errno_code,void *user){
 	printf("Exception: %d (%d)\n",code,errno_code);
+	stop=1;
 }
 
 static void connected(int code, int errno_code,void *user){
-	printf("Connected: %d (%d)\n",code, errno_code);
+	if(code == SSH_SOCKET_CONNECTED_OK)
+		printf("Connected: %d (%d)\n",code, errno_code);
+	else {
+		printf("Error while connecting:(%d, %d:%s)\n",code,errno_code,strerror(errno_code));
+		stop=1;
+	}
 }
 
 struct ssh_socket_callbacks_struct callbacks={
@@ -57,7 +68,6 @@ struct ssh_socket_callbacks_struct callbacks={
 		NULL
 };
 int main(int argc, char **argv){
-	struct socket *s;
 	ssh_session session;
 	ssh_poll_ctx ctx;
 	int verbosity=SSH_LOG_FUNCTIONS;
@@ -72,10 +82,12 @@ int main(int argc, char **argv){
 	ctx=ssh_poll_ctx_new(2);
 	ssh_socket_set_callbacks(s, &callbacks);
 	ssh_poll_ctx_add_socket(ctx,s);
-	if(ssh_socket_connect(s,argv[1],atoi(argv[2]),NULL)){
+	if(ssh_socket_connect(s,argv[1],atoi(argv[2]),NULL) != SSH_OK){
 		printf("ssh_socket_connect: %s\n",ssh_get_error(session));
 		return EXIT_FAILURE;
 	}
-	ssh_poll_ctx_dopoll(ctx,-1);
+	while(!stop)
+			ssh_poll_ctx_dopoll(ctx,-1);
+	printf("finished\n");
 	return EXIT_SUCCESS;
 }

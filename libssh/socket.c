@@ -135,9 +135,24 @@ int ssh_socket_pollcallback(ssh_poll_handle p, int fd, int revents, void *v_s){
 	struct socket *s=(struct socket *)v_s;
 	char buffer[4096];
 	int r,w;
-	(void)fd;
+	int err=0;
+	socklen_t errlen=sizeof(err);
 	if(revents & POLLERR){
-		s->data_except=1;
+		/* Check if we are in a connecting state */
+		if(s->state==SSH_SOCKET_CONNECTING){
+			s->state=SSH_SOCKET_ERROR;
+			ssh_poll_free(p);
+			s->poll=p=NULL;
+			getsockopt(fd,SOL_SOCKET,SO_ERROR,(void *)&err,&errlen);
+			s->last_errno=err;
+			close(fd);
+			s->fd=-1;
+			if(s->callbacks && s->callbacks->connected)
+				s->callbacks->connected(SSH_SOCKET_CONNECTED_ERROR,err,
+						s->callbacks->user);
+			return 0;
+		}
+		/* Then we are in a more standard kind of error */
 		/* force a read to get an explanation */
 		revents |= POLLIN;
 	}
@@ -145,7 +160,8 @@ int ssh_socket_pollcallback(ssh_poll_handle p, int fd, int revents, void *v_s){
 		s->data_to_read=1;
 		r=ssh_socket_unbuffered_read(s,buffer,sizeof(buffer));
 		if(r<0){
-			ssh_poll_set_events(p,ssh_poll_get_events(p) & ~POLLIN);
+			if(p != NULL)
+				ssh_poll_set_events(p,ssh_poll_get_events(p) & ~POLLIN);
 			if(s->callbacks){
 				s->callbacks->exception(
 						SSH_SOCKET_EXCEPTION_ERROR,
@@ -187,6 +203,8 @@ int ssh_socket_pollcallback(ssh_poll_handle p, int fd, int revents, void *v_s){
 		if(buffer_get_rest_len(s->out_buffer) > 0){
 			w=ssh_socket_unbuffered_write(s, buffer_get_rest(s->out_buffer),
 		          buffer_get_rest_len(s->out_buffer));
+			if(w>0)
+				buffer_pass_bytes(s->out_buffer,w);
 		} else if(s->callbacks){
 			/* Otherwise advertise the upper level that write can be done */
 			s->callbacks->controlflow(SSH_SOCKET_FLOW_WRITEWONTBLOCK,s->callbacks->user);
@@ -643,6 +661,7 @@ int ssh_socket_nonblocking_flush(struct socket *s) {
       session->alive = 0;
       ssh_socket_close(s);
       /* FIXME use ssh_socket_get_errno() */
+      /* FIXME use callback for errors */
       ssh_set_error(session, SSH_FATAL,
           "Writing packet: error on socket (or connection closed): %s",
           strerror(s->last_errno));
@@ -752,7 +771,13 @@ int ssh_socket_get_status(struct socket *s) {
  * @brief Launches a socket connection
  * If a the socket connected callback has been defined and
  * a poll object exists, this call will be non blocking
- * @param
+ * @param host hostname or ip address to connect to
+ * @param port port number to connect to
+ * @param bind_addr address to bind to, or NULL for default
+ * @returns SSH_OK socket is being connected
+ * @returns SSH_ERROR error while connecting to remote host
+ * @bug It only tries connecting to one of the available AI's
+ * which is problematic for hosts having DNS fail-over
  */
 
 int ssh_socket_connect(struct socket *s, const char *host, int port, const char *bind_addr){
@@ -764,6 +789,8 @@ int ssh_socket_connect(struct socket *s, const char *host, int port, const char 
 		return SSH_ERROR;
 	fd=ssh_connect_host_nonblocking(s->session,host,bind_addr,port);
 	ssh_log(session,SSH_LOG_PROTOCOL,"Nonblocking connection socket: %d",fd);
+	if(fd < 0)
+		return SSH_ERROR;
 	ssh_socket_set_fd(s,fd);
 	s->state=SSH_SOCKET_CONNECTING;
 	if(s->callbacks && s->callbacks->connected && s->poll){
