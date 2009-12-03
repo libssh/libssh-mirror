@@ -27,6 +27,17 @@
 
 typedef struct ssh_kbdint_struct* ssh_kbdint;
 
+/* These are the different states a SSH session can be into its life */
+enum ssh_session_state_e {
+	SSH_SESSION_STATE_NONE,
+	SSH_SESSION_STATE_CONNECTING,
+	SSH_SESSION_STATE_SOCKET_CONNECTED,
+	SSH_SESSION_STATE_BANNER_RECEIVED,
+	SSH_SESSION_STATE_INITIAL_KEX,
+	SSH_SESSION_STATE_AUTHENTICATED,
+	SSH_SESSION_STATE_ERROR
+};
+
 struct ssh_session_struct {
     struct error_struct error;
     struct socket *socket;
@@ -63,6 +74,7 @@ struct ssh_session_struct {
 
     /* the states are used by the nonblocking stuff to remember */
     /* where it was before being interrupted */
+    enum ssh_session_state_e session_state;
     int packet_state;
     int dh_handshake_state;
     ssh_string dh_server_signature; //information used by dh_handshake.

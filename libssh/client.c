@@ -44,52 +44,71 @@
 
 /**
  * @internal
- *
- * @brief Get a banner from a socket.
- *
- * The caller has to free memroy.
- *
- * @param  session      The session to get the banner from.
- *
- * @return A newly allocated string with the banner or NULL on error.
+ * @brief Callback to be called when the socket is connected or had a
+ * connection error. Changes the state of the session and updates the error
+ * message.
+ * @param code one of SSH_SOCKET_CONNECTED_OK or SSH_SOCKET_CONNECTED_ERROR
+ * @param user is a pointer to session
  */
-char *ssh_get_banner(ssh_session session) {
-  char buffer[128] = {0};
+static void socket_callback_connected(int code, int errno, void *user){
+	ssh_session session=(ssh_session)user;
+	enter_function();
+	ssh_log(session,SSH_LOG_RARE,"Socket connection callback: %d (%d)",code, errno);
+	if(code == SSH_SOCKET_CONNECTED_OK)
+		session->session_state=SSH_SESSION_STATE_SOCKET_CONNECTED;
+	else {
+		session->session_state=SSH_SESSION_STATE_ERROR;
+		ssh_set_error(session,SSH_FATAL,"Connection failed: %s",strerror(errno));
+	}
+	leave_function();
+}
+
+/**
+ * @internal
+ *
+ * @brief Gets the banner from socket and saves it in session.
+ * Updates the session state
+ *
+ * @param  data pointer to the begining of header
+ * @param  len size of the banner
+ * @param  user is a pointer to session
+ * @returns Number of bytes processed, or zero if the banner is not complete.
+ */
+static int callback_receive_banner(const void *data, size_t len, void *user) {
+  char *buffer = (char *)data;
+  ssh_session session=(ssh_session) user;
   char *str = NULL;
-  int i;
-
+  size_t i;
+  int ret=0;
   enter_function();
-
-  for (i = 0; i < 127; i++) {
-    if (ssh_socket_read(session->socket, &buffer[i], 1) != SSH_OK) {
-      ssh_set_error(session, SSH_FATAL, "Remote host closed connection");
-      leave_function();
-      return NULL;
-    }
+  for(i=0;i<len;++i){
 #ifdef WITH_PCAP
-    if(session->pcap_ctx && buffer[i] == '\n'){
-    	ssh_pcap_context_write(session->pcap_ctx,SSH_PCAP_DIR_IN,buffer,i+1,i+1);
-    }
+  	if(session->pcap_ctx && buffer[i] == '\n'){
+  		ssh_pcap_context_write(session->pcap_ctx,SSH_PCAP_DIR_IN,buffer,i+1,i+1);
+  	}
 #endif
-    if (buffer[i] == '\r') {
-      buffer[i] = '\0';
-    }
-    if (buffer[i] == '\n') {
-      buffer[i] = '\0';
-      str = strdup(buffer);
-      if (str == NULL) {
-        leave_function();
-        return NULL;
-      }
-      leave_function();
-      return str;
-    }
+  	if(buffer[i]=='\r')
+  		buffer[i]='\0';
+  	if(buffer[i]=='\n'){
+  		buffer[i]='\0';
+  		str=strdup(buffer);
+  		/* number of bytes read */
+  		ret=i+1;
+  		session->remotebanner=str;
+  		session->session_state=SSH_SESSION_STATE_BANNER_RECEIVED;
+  		leave_function();
+  		return ret;
+  	}
+  	if(i>127){
+  		/* Too big banner */
+  		session->session_state=SSH_SESSION_STATE_ERROR;
+  		ssh_set_error(session,SSH_FATAL,"Receiving banner: too large banner");
+  		leave_function();
+  		return 0;
+  	}
   }
-
-  ssh_set_error(session, SSH_FATAL, "Too large banner");
-
   leave_function();
-  return NULL;
+  return ret;
 }
 
 /**
@@ -484,7 +503,7 @@ int ssh_service_request(ssh_session session, const char *service) {
 int ssh_connect(ssh_session session) {
   int ssh1 = 0;
   int ssh2 = 0;
-  int fd = -1;
+  int ret;
 
   if (session == NULL) {
     ssh_set_error(session, SSH_FATAL, "Invalid session pointer");
@@ -505,19 +524,25 @@ int ssh_connect(ssh_session session) {
     leave_function();
     return SSH_ERROR;
   }
+  session->session_state=SSH_SESSION_STATE_CONNECTING;
+  ssh_socket_set_callbacks(session->socket,&session->socket_callbacks);
+  session->socket_callbacks.connected=socket_callback_connected;
+  session->socket_callbacks.data=callback_receive_banner;
+  session->socket_callbacks.user=session;
   if (session->fd != -1) {
-    fd = session->fd;
+    ssh_socket_set_fd(session->socket, session->fd);
+    ret=SSH_OK;
   } else {
-    fd = ssh_connect_host(session, session->host, session->bindaddr,
-        session->port, session->timeout, session->timeout_usec);
+    ret=ssh_socket_connect(session->socket, session->host, session->port,
+    		session->bindaddr);
+
+    //, session->timeout * 1000 + session->timeout_usec);
   }
-  if (fd < 0) {
+  if (ret != SSH_OK) {
     leave_function();
     return SSH_ERROR;
   }
   set_status(session, 0.2);
-
-  ssh_socket_set_fd(session->socket, fd);
 
   session->alive = 1;
   session->serverbanner = ssh_get_banner(session);
@@ -697,7 +722,7 @@ error:
 }
 
 const char *ssh_copyright(void) {
-    return SSH_STRINGIFY(LIBSSH_VERSION) " (c) 2003-2008 Aris Adamantiadis "
+    return SSH_STRINGIFY(LIBSSH_VERSION) " (c) 2003-2010 Aris Adamantiadis "
     "(aris@0xbadc0de.be) Distributed under the LGPL, please refer to COPYING"
     "file for informations about your rights";
 }
