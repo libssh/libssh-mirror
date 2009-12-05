@@ -500,6 +500,13 @@ static int dh_handshake_server(ssh_session session) {
   return 0;
 }
 
+/* FIXME TODO BUG
+ * Makes linker happy until I work on server code
+ */
+static char *ssh_get_banner(ssh_session session){
+	(void)session;
+	return strdup("BUG");
+}
 /* Do the banner and key exchange */
 int ssh_accept(ssh_session session) {
   if (ssh_send_banner(session, 1) < 0) {

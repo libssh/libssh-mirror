@@ -120,7 +120,6 @@ SSH_PACKET_CALLBACK(ssh_packet_ignore_callback);
 /* client.c */
 
 int ssh_send_banner(ssh_session session, int is_server);
-char *ssh_get_banner(ssh_session session);
 
 /* config.c */
 int ssh_config_parse_file(ssh_session session, const char *filename);
