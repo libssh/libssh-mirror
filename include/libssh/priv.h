@@ -136,10 +136,10 @@ unsigned char *packet_encrypt(ssh_session session,void *packet,unsigned int len)
  /* it returns the hmac buffer if exists*/
 int packet_hmac_verify(ssh_session session,ssh_buffer buffer,unsigned char *mac);
 
-struct socket;
+struct ssh_socket_struct;
 
 int ssh_packet_socket_callback(const void *data, size_t len, void *user);
-void ssh_packet_register_socket_callback(ssh_session session, struct socket *s);
+void ssh_packet_register_socket_callback(ssh_session session, struct ssh_socket_struct *s);
 void ssh_packet_set_callbacks(ssh_session session, ssh_packet_callbacks callbacks);
 void ssh_packet_set_default_callbacks(ssh_session session);
 void ssh_packet_process(ssh_session session, uint8_t type);

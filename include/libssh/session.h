@@ -41,7 +41,7 @@ enum ssh_session_state_e {
 
 struct ssh_session_struct {
     struct error_struct error;
-    struct socket *socket;
+    struct ssh_socket_struct *socket;
     char *serverbanner;
     char *clientbanner;
     int protoversion;

@@ -53,7 +53,7 @@ enum ssh_socket_states_e {
 	SSH_SOCKET_CLOSED
 };
 
-struct socket {
+struct ssh_socket_struct {
   socket_t fd;
   int last_errno;
   int data_to_read; /* reading now on socket will
@@ -68,8 +68,8 @@ struct socket {
   ssh_poll_handle poll;
 };
 
-static int ssh_socket_unbuffered_read(struct socket *s, void *buffer, uint32_t len);
-static int ssh_socket_unbuffered_write(struct socket *s, const void *buffer,
+static int ssh_socket_unbuffered_read(ssh_socket s, void *buffer, uint32_t len);
+static int ssh_socket_unbuffered_write(ssh_socket s, const void *buffer,
 		uint32_t len);
 
 /*
@@ -91,10 +91,10 @@ int ssh_socket_init(void) {
  * \internal
  * \brief creates a new Socket object
  */
-struct socket *ssh_socket_new(ssh_session session) {
-  struct socket *s;
+ssh_socket ssh_socket_new(ssh_session session) {
+  ssh_socket s;
 
-  s = malloc(sizeof(struct socket));
+  s = malloc(sizeof(struct ssh_socket_struct));
   if (s == NULL) {
     return NULL;
   }
@@ -127,12 +127,12 @@ struct socket *ssh_socket_new(ssh_session session) {
  * @param callbacks a ssh_socket_callback object reference
  */
 
-void ssh_socket_set_callbacks(struct socket *s, ssh_socket_callbacks callbacks){
+void ssh_socket_set_callbacks(ssh_socket s, ssh_socket_callbacks callbacks){
 	s->callbacks=callbacks;
 }
 
 int ssh_socket_pollcallback(ssh_poll_handle p, int fd, int revents, void *v_s){
-	struct socket *s=(struct socket *)v_s;
+	ssh_socket s=(ssh_socket )v_s;
 	char buffer[4096];
 	int r,w;
 	int err=0;
@@ -215,7 +215,7 @@ int ssh_socket_pollcallback(ssh_poll_handle p, int fd, int revents, void *v_s){
 	return 0;
 }
 
-void ssh_socket_register_pollcallback(struct socket *s, ssh_poll_handle p){
+void ssh_socket_register_pollcallback(ssh_socket s, ssh_poll_handle p){
 	ssh_poll_set_callback(p,ssh_socket_pollcallback,s);
 	s->poll=p;
 }
@@ -225,7 +225,7 @@ void ssh_socket_register_pollcallback(struct socket *s, ssh_poll_handle p){
  * creates it if it does not exist.
  * @returns allocated and initialized ssh_poll_handle object
  */
-ssh_poll_handle ssh_socket_get_poll_handle(struct socket *s){
+ssh_poll_handle ssh_socket_get_poll_handle(ssh_socket s){
 	if(s->poll)
 		return s->poll;
 	s->poll=ssh_poll_new(s->fd,0,ssh_socket_pollcallback,s);
@@ -235,7 +235,7 @@ ssh_poll_handle ssh_socket_get_poll_handle(struct socket *s){
 /** \internal
  * \brief Deletes a socket object
  */
-void ssh_socket_free(struct socket *s){
+void ssh_socket_free(ssh_socket s){
   if (s == NULL) {
     return;
   }
@@ -248,7 +248,7 @@ void ssh_socket_free(struct socket *s){
 }
 
 #ifndef _WIN32
-int ssh_socket_unix(struct socket *s, const char *path) {
+int ssh_socket_unix(ssh_socket s, const char *path) {
   struct sockaddr_un sunaddr;
 
   sunaddr.sun_family = AF_UNIX;
@@ -279,7 +279,7 @@ int ssh_socket_unix(struct socket *s, const char *path) {
 /* \internal
  * \brief closes a socket
  */
-void ssh_socket_close(struct socket *s){
+void ssh_socket_close(ssh_socket s){
   if (ssh_socket_is_open(s)) {
 #ifdef _WIN32
     closesocket(s->fd);
@@ -295,7 +295,7 @@ void ssh_socket_close(struct socket *s){
 /* \internal
  * \brief sets the file descriptor of the socket
  */
-void ssh_socket_set_fd(struct socket *s, socket_t fd) {
+void ssh_socket_set_fd(ssh_socket s, socket_t fd) {
   s->fd = fd;
   if(s->poll)
   	ssh_poll_set_fd(s->poll,fd);
@@ -304,21 +304,21 @@ void ssh_socket_set_fd(struct socket *s, socket_t fd) {
 /* \internal
  * \brief returns the file descriptor of the socket
  */
-socket_t ssh_socket_get_fd(struct socket *s) {
+socket_t ssh_socket_get_fd(ssh_socket s) {
   return s->fd;
 }
 
 /* \internal
  * \brief returns nonzero if the socket is open
  */
-int ssh_socket_is_open(struct socket *s) {
+int ssh_socket_is_open(ssh_socket s) {
   return s->fd != -1;
 }
 
 /* \internal
  * \brief read len bytes from socket into buffer
  */
-static int ssh_socket_unbuffered_read(struct socket *s, void *buffer, uint32_t len) {
+static int ssh_socket_unbuffered_read(ssh_socket s, void *buffer, uint32_t len) {
   int rc = -1;
 
   if (s->data_except) {
@@ -343,7 +343,7 @@ static int ssh_socket_unbuffered_read(struct socket *s, void *buffer, uint32_t l
 /* \internal
  * \brief writes len bytes from buffer to socket
  */
-static int ssh_socket_unbuffered_write(struct socket *s, const void *buffer,
+static int ssh_socket_unbuffered_write(ssh_socket s, const void *buffer,
     uint32_t len) {
   int w = -1;
 
@@ -372,7 +372,7 @@ static int ssh_socket_unbuffered_write(struct socket *s, const void *buffer,
 /* \internal
  * \brief returns nonzero if the current socket is in the fd_set
  */
-int ssh_socket_fd_isset(struct socket *s, fd_set *set) {
+int ssh_socket_fd_isset(ssh_socket s, fd_set *set) {
   if(s->fd == -1) {
     return 0;
   }
@@ -383,7 +383,7 @@ int ssh_socket_fd_isset(struct socket *s, fd_set *set) {
  * \brief sets the current fd in a fd_set and updates the fd_max
  */
 
-void ssh_socket_fd_set(struct socket *s, fd_set *set, int *fd_max) {
+void ssh_socket_fd_set(ssh_socket s, fd_set *set, int *fd_max) {
   if (s->fd == -1)
     return;
   FD_SET(s->fd,set);
@@ -395,7 +395,7 @@ void ssh_socket_fd_set(struct socket *s, fd_set *set, int *fd_max) {
 /** \internal
  * \brief reads blocking until len bytes have been read
  */
-int ssh_socket_completeread(struct socket *s, void *buffer, uint32_t len) {
+int ssh_socket_completeread(ssh_socket s, void *buffer, uint32_t len) {
   int r = -1;
   uint32_t total = 0;
   uint32_t toread = len;
@@ -424,7 +424,7 @@ int ssh_socket_completeread(struct socket *s, void *buffer, uint32_t len) {
 /** \internal
  * \brief Blocking write of len bytes
  */
-int ssh_socket_completewrite(struct socket *s, const void *buffer, uint32_t len) {
+int ssh_socket_completewrite(ssh_socket s, const void *buffer, uint32_t len) {
   ssh_session session = s->session;
   int written = -1;
 
@@ -454,7 +454,7 @@ int ssh_socket_completewrite(struct socket *s, const void *buffer, uint32_t len)
  * \returns SSH_OK or SSH_ERROR.
  * \returns SSH_AGAIN in nonblocking mode
  */
-int ssh_socket_read(struct socket *s, void *buffer, int len){
+int ssh_socket_read(ssh_socket s, void *buffer, int len){
   ssh_session session = s->session;
   int rc = SSH_ERROR;
 
@@ -478,7 +478,7 @@ int ssh_socket_read(struct socket *s, void *buffer, int len){
  * \returns SSH_OK, or SSH_ERROR
  * \warning has no effect on socket before a flush
  */
-int ssh_socket_write(struct socket *s, const void *buffer, int len) {
+int ssh_socket_write(ssh_socket s, const void *buffer, int len) {
   ssh_session session = s->session;
   enter_function();
   if (buffer_add_data(s->out_buffer, buffer, len) < 0) {
@@ -498,7 +498,7 @@ int ssh_socket_write(struct socket *s, const void *buffer, int len) {
  * \returns SSH_AGAIN need to call later for data
  * \returns SSH_ERROR error happened
  */
-int ssh_socket_wait_for_data(struct socket *s, ssh_session session, uint32_t len) {
+int ssh_socket_wait_for_data(ssh_socket s, ssh_session session, uint32_t len) {
   char buffer[4096] = {0};
   char *buf = NULL;
   int except;
@@ -585,7 +585,7 @@ int ssh_socket_wait_for_data(struct socket *s, ssh_session session, uint32_t len
 }
 
 /* ssh_socket_poll */
-int ssh_socket_poll(struct socket *s, int *writeable, int *except) {
+int ssh_socket_poll(ssh_socket s, int *writeable, int *except) {
   ssh_session session = s->session;
   ssh_pollfd_t fd[1];
   int rc = -1;
@@ -637,7 +637,7 @@ int ssh_socket_poll(struct socket *s, int *writeable, int *except) {
  * \brief starts a nonblocking flush of the output buffer
  *
  */
-int ssh_socket_nonblocking_flush(struct socket *s) {
+int ssh_socket_nonblocking_flush(ssh_socket s) {
   ssh_session session = s->session;
   int w;
 
@@ -688,7 +688,7 @@ int ssh_socket_nonblocking_flush(struct socket *s) {
 /** \internal
  * \brief locking flush of the output packet buffer
  */
-int ssh_socket_blocking_flush(struct socket *s) {
+int ssh_socket_blocking_flush(ssh_socket s) {
   ssh_session session = s->session;
 
   enter_function();
@@ -732,27 +732,27 @@ int ssh_socket_blocking_flush(struct socket *s) {
   return SSH_OK; // no data pending
 }
 
-void ssh_socket_set_towrite(struct socket *s) {
+void ssh_socket_set_towrite(ssh_socket s) {
   s->data_to_write = 1;
 }
 
-void ssh_socket_set_toread(struct socket *s) {
+void ssh_socket_set_toread(ssh_socket s) {
   s->data_to_read = 1;
 }
 
-void ssh_socket_set_except(struct socket *s) {
+void ssh_socket_set_except(ssh_socket s) {
   s->data_except = 1;
 }
 
-int ssh_socket_data_available(struct socket *s) {
+int ssh_socket_data_available(ssh_socket s) {
   return s->data_to_read;
 }
 
-int ssh_socket_data_writable(struct socket *s) {
+int ssh_socket_data_writable(ssh_socket s) {
   return s->data_to_write;
 }
 
-int ssh_socket_get_status(struct socket *s) {
+int ssh_socket_get_status(ssh_socket s) {
   int r = 0;
 
   if (s->data_to_read) {
@@ -780,7 +780,7 @@ int ssh_socket_get_status(struct socket *s) {
  * which is problematic for hosts having DNS fail-over
  */
 
-int ssh_socket_connect(struct socket *s, const char *host, int port, const char *bind_addr){
+int ssh_socket_connect(ssh_socket s, const char *host, int port, const char *bind_addr){
 	socket_t fd;
 	ssh_session session=s->session;
 	ssh_poll_ctx ctx;

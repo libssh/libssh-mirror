@@ -31,7 +31,7 @@
 #include <libssh/poll.h>
 
 int stop=0;
-struct socket *s;
+ssh_socket s;
 
 static int data_rcv(const void *data, size_t len, void *user){
 	printf("Received data: '");

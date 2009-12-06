@@ -275,7 +275,7 @@ error:
   return processed;
 }
 
-void ssh_packet_register_socket_callback(ssh_session session, struct socket *s){
+void ssh_packet_register_socket_callback(ssh_session session, ssh_socket s){
 	session->socket_callbacks.data=ssh_packet_socket_callback;
 	session->socket_callbacks.connected=NULL;
 	session->socket_callbacks.controlflow=NULL;
@@ -555,7 +555,7 @@ static int packet_read1(ssh_session session) {
         }
       }
 
-      rc = ssh_socket_read(session->socket, &len, sizeof(uint32_t));
+      rc = ssh_socket_read(session->ssh_socket_struct, &len, sizeof(uint32_t));
       if (rc != SSH_OK) {
         goto error;
       }
@@ -587,7 +587,7 @@ static int packet_read1(ssh_session session) {
         goto error;
       }
 
-      rc = ssh_socket_read(session->socket, packet, to_be_read);
+      rc = ssh_socket_read(session->ssh_socket_struct, packet, to_be_read);
       if(rc != SSH_OK) {
         SAFE_FREE(packet);
         goto error;
@@ -880,7 +880,7 @@ static int packet_send1(ssh_session session) {
   ssh_print_hexa("encrypted packet",buffer_get(session->out_buffer),
       buffer_get_len(session->out_buffer));
 #endif
-  if (ssh_socket_write(session->socket, buffer_get(session->out_buffer),
+  if (ssh_socket_write(session->ssh_socket_struct, buffer_get(session->out_buffer),
       buffer_get_len(session->out_buffer)) == SSH_ERROR) {
     goto error;
   }
@@ -918,7 +918,7 @@ void packet_parse(ssh_session session) {
         ssh_log(session, SSH_LOG_PACKET, "Received SSH_MSG_DISCONNECT");
         ssh_set_error(session, SSH_FATAL, "Received SSH_MSG_DISCONNECT");
 
-        ssh_socket_close(session->socket);
+        ssh_socket_close(session->ssh_socket_struct);
         session->alive = 0;
         return;
       case SSH_SMSG_STDOUT_DATA:

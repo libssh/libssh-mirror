@@ -95,7 +95,7 @@ void ssh_poll_set_callback(ssh_poll_handle p, ssh_poll_callback cb, void *userda
 ssh_poll_ctx ssh_poll_ctx_new(size_t chunk_size);
 void ssh_poll_ctx_free(ssh_poll_ctx ctx);
 int ssh_poll_ctx_add(ssh_poll_ctx ctx, ssh_poll_handle p);
-int ssh_poll_ctx_add_socket (ssh_poll_ctx ctx, struct socket *s);
+int ssh_poll_ctx_add_socket (ssh_poll_ctx ctx, struct ssh_socket_struct *s);
 void ssh_poll_ctx_remove(ssh_poll_ctx ctx, ssh_poll_handle p);
 int ssh_poll_ctx_dopoll(ssh_poll_ctx ctx, int timeout);
 

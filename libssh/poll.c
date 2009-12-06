@@ -498,7 +498,7 @@ int ssh_poll_ctx_add(ssh_poll_ctx ctx, ssh_poll_handle p) {
  *
  * @return              0 on success, < 0 on error
  */
-int ssh_poll_ctx_add_socket (ssh_poll_ctx ctx, struct socket *s) {
+int ssh_poll_ctx_add_socket (ssh_poll_ctx ctx, ssh_socket s) {
   ssh_poll_handle p=ssh_socket_get_poll_handle(s);
   if(p==NULL)
   	return -1;

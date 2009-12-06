@@ -81,7 +81,7 @@ static void agent_put_u32(void *vp, uint32_t v) {
   p[3] = (uint8_t)v & 0xff;
 }
 
-static size_t atomicio(struct socket *s, void *buf, size_t n, int do_read) {
+static size_t atomicio(ssh_socket s, void *buf, size_t n, int do_read) {
   char *b = buf;
   size_t pos = 0;
   ssize_t res;
