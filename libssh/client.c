@@ -231,12 +231,15 @@ int ssh_send_banner(ssh_session session, int server) {
   return 0;
 }
 
-#define DH_STATE_INIT 0
-#define DH_STATE_INIT_TO_SEND 1
-#define DH_STATE_INIT_SENT 2
-#define DH_STATE_NEWKEYS_TO_SEND 3
-#define DH_STATE_NEWKEYS_SENT 4
-#define DH_STATE_FINISHED 5
+enum ssh_dh_state_e {
+	DH_STATE_INIT,
+	DH_STATE_INIT_TO_SEND,
+	DH_STATE_INIT_SENT,
+	DH_STATE_NEWKEYS_TO_SEND,
+	DH_STATE_NEWKEYS_SENT,
+	DH_STATE_FINISHED
+};
+
 static int dh_handshake(ssh_session session) {
   ssh_string e = NULL;
   ssh_string f = NULL;
