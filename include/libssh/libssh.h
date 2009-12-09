@@ -63,9 +63,6 @@
 
 #ifdef _WIN32
   #include <winsock2.h>
-  #ifndef socklen_t
-  #define socklen_t int
-  #endif
 #else /* _WIN32 */
  #include <sys/select.h> /* for fd_set * */
  #include <netdb.h>
