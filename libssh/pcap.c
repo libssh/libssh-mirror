@@ -23,6 +23,7 @@
 /** \defgroup ssh_pcap SSH-pcap
  * \brief libssh pcap file generation
  *
+ *
  * \addtogroup ssh_pcap
  * @{ */
 

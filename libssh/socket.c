@@ -72,7 +72,7 @@ static int ssh_socket_unbuffered_read(ssh_socket s, void *buffer, uint32_t len);
 static int ssh_socket_unbuffered_write(ssh_socket s, const void *buffer,
 		uint32_t len);
 
-/*
+/**
  * \internal
  * \brief inits the socket system (windows specific)
  */
@@ -87,7 +87,7 @@ int ssh_socket_init(void) {
 #endif
   return 0;
 }
-/*
+/**
  * \internal
  * \brief creates a new Socket object
  */
@@ -277,7 +277,7 @@ int ssh_socket_unix(ssh_socket s, const char *path) {
 }
 #endif
 
-/* \internal
+/** \internal
  * \brief closes a socket
  */
 void ssh_socket_close(ssh_socket s){
@@ -293,7 +293,7 @@ void ssh_socket_close(ssh_socket s){
   }
 }
 
-/* \internal
+/** \internal
  * \brief sets the file descriptor of the socket
  */
 void ssh_socket_set_fd(ssh_socket s, socket_t fd) {
@@ -302,21 +302,21 @@ void ssh_socket_set_fd(ssh_socket s, socket_t fd) {
   	ssh_poll_set_fd(s->poll,fd);
 }
 
-/* \internal
+/** \internal
  * \brief returns the file descriptor of the socket
  */
 socket_t ssh_socket_get_fd(ssh_socket s) {
   return s->fd;
 }
 
-/* \internal
+/** \internal
  * \brief returns nonzero if the socket is open
  */
 int ssh_socket_is_open(ssh_socket s) {
   return s->fd != -1;
 }
 
-/* \internal
+/** \internal
  * \brief read len bytes from socket into buffer
  */
 static int ssh_socket_unbuffered_read(ssh_socket s, void *buffer, uint32_t len) {
@@ -341,7 +341,7 @@ static int ssh_socket_unbuffered_read(ssh_socket s, void *buffer, uint32_t len) 
   return rc;
 }
 
-/* \internal
+/** \internal
  * \brief writes len bytes from buffer to socket
  */
 static int ssh_socket_unbuffered_write(ssh_socket s, const void *buffer,
@@ -370,7 +370,7 @@ static int ssh_socket_unbuffered_write(ssh_socket s, const void *buffer,
   return w;
 }
 
-/* \internal
+/** \internal
  * \brief returns nonzero if the current socket is in the fd_set
  */
 int ssh_socket_fd_isset(ssh_socket s, fd_set *set) {
@@ -380,7 +380,7 @@ int ssh_socket_fd_isset(ssh_socket s, fd_set *set) {
   return FD_ISSET(s->fd,set);
 }
 
-/* \internal
+/** \internal
  * \brief sets the current fd in a fd_set and updates the fd_max
  */
 
