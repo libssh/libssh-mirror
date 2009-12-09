@@ -850,11 +850,15 @@ void ssh_message_free(ssh_message msg){
   SAFE_FREE(msg);
 }
 
-/** \internal
- * \brief handle various SSH request messages and stack them for callback
- * \param session SSH session
- * \param type packet type
- * \returns nothing
+/** @internal
+ * @brief handle various SSH request messages and stack them for callback.
+ * @param session SSH session.
+ * @param user user provided value.
+ * @param type packet type.
+ * @param packet buffer.
+ * @return SSH_PACKET_USED if a message has been created.
+ * @return SSH_PACKET_NOT_USED if the packet could not be used to create a
+ * message.
  */
 int message_handle(ssh_session session, void *user, uint8_t type, ssh_buffer packet){
   ssh_message msg=ssh_message_retrieve(session,type);

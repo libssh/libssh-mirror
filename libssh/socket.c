@@ -123,8 +123,9 @@ ssh_socket ssh_socket_new(ssh_session session) {
 /**
  * @internal
  * @brief the socket callbacks, i.e. callbacks to be called
- * upon a socket event
- * @param callbacks a ssh_socket_callback object reference
+ * upon a socket event.
+ * @param s socket to set callbacks on.
+ * @param callbacks a ssh_socket_callback object reference.
  */
 
 void ssh_socket_set_callbacks(ssh_socket s, ssh_socket_callbacks callbacks){
@@ -770,14 +771,15 @@ int ssh_socket_get_status(ssh_socket s) {
  * @internal
  * @brief Launches a socket connection
  * If a the socket connected callback has been defined and
- * a poll object exists, this call will be non blocking
- * @param host hostname or ip address to connect to
- * @param port port number to connect to
- * @param bind_addr address to bind to, or NULL for default
- * @returns SSH_OK socket is being connected
- * @returns SSH_ERROR error while connecting to remote host
+ * a poll object exists, this call will be non blocking.
+ * @param s    socket to connect.
+ * @param host hostname or ip address to connect to.
+ * @param port port number to connect to.
+ * @param bind_addr address to bind to, or NULL for default.
+ * @returns SSH_OK socket is being connected.
+ * @returns SSH_ERROR error while connecting to remote host.
  * @bug It only tries connecting to one of the available AI's
- * which is problematic for hosts having DNS fail-over
+ * which is problematic for hosts having DNS fail-over.
  */
 
 int ssh_socket_connect(ssh_socket s, const char *host, int port, const char *bind_addr){
