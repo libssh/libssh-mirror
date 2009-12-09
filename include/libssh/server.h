@@ -59,11 +59,14 @@ typedef struct ssh_bind_struct* ssh_bind;
 LIBSSH_API ssh_bind ssh_bind_new(void);
 
 /**
- * @brief Set the opitons for the current SSH server bind.
+ * @brief Set the options for the current SSH server bind.
  *
- * @param  ssh_bind     The ssh server bind to use.
+ * @param  sshbind     The ssh server bind to configure.
  *
- * @param  options      The option structure to set.
+ * @param  type         Option to set up.
+ * @param  value        Value to set.
+ * @returns SSH_OK	    No error.
+ * @returns SSH_ERROR   Invalid option or parameter.
  */
 LIBSSH_API int ssh_bind_options_set(ssh_bind sshbind,
     enum ssh_bind_options_e type, const void *value);

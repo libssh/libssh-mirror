@@ -858,7 +858,7 @@ char *ssh_message_channel_request_subsystem(ssh_message msg){
 
 /** @brief defines the SSH_MESSAGE callback
  * @param session the current ssh session
- * @param ssh_message_callback a function pointer to a callback taking the
+ * @param ssh_message_callback_ a function pointer to a callback taking the
  * current ssh session and received message as parameters. the function returns
  * 0 if the message has been parsed and treated sucessfuly, 1 otherwise (libssh
  * must take care of the response).
