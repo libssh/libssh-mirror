@@ -1,7 +1,7 @@
 ChangeLog
 ==========
 
-version 0.4 (released xxxx-xx-xx)
+version 0.4.0 (released 2009-12-10)
   * Added scp support.
   * Added support for sending signals (RFC 4254, section 6.9).
   * Added MSVC support.
