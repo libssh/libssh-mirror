@@ -42,7 +42,6 @@
             session->callbacks->connect_status_function(session->callbacks->userdata, status); \
     } while (0)
 
-static void connection_callback(ssh_session session);
 /**
  * @internal
  * @brief Callback to be called when the socket is connected or had a
@@ -61,7 +60,7 @@ static void socket_callback_connected(int code, int errno, void *user){
 		session->session_state=SSH_SESSION_STATE_ERROR;
 		ssh_set_error(session,SSH_FATAL,"Connection failed: %s",strerror(errno));
 	}
-	connection_callback(session);
+	ssh_connection_callback(session);
 	leave_function();
 }
 
@@ -76,7 +75,7 @@ static void socket_callback_exception(int code, int errno, void *user){
 	ssh_log(session,SSH_LOG_RARE,"Socket exception callback: %d (%d)",code, errno);
 	session->session_state=SSH_SESSION_STATE_ERROR;
 	ssh_set_error(session,SSH_FATAL,"Socket error: %s",strerror(errno));
-	connection_callback(session);
+	ssh_connection_callback(session);
 	leave_function();
 }
 
@@ -114,7 +113,7 @@ static int callback_receive_banner(const void *data, size_t len, void *user) {
   		session->serverbanner=str;
   		session->session_state=SSH_SESSION_STATE_BANNER_RECEIVED;
   		ssh_log(session,SSH_LOG_PACKET,"Received banner: %s",str);
-  		connection_callback(session);
+  		ssh_connection_callback(session);
   		leave_function();
   		return ret;
   	}
@@ -519,7 +518,7 @@ int ssh_service_request(ssh_session session, const char *service) {
 /** @internal
  * @function to be called each time a step has been done in the connection
  */
-static void connection_callback(ssh_session session){
+void ssh_connection_callback(ssh_session session){
 	int ssh1,ssh2;
 	enter_function();
 	switch(session->session_state){
@@ -558,35 +557,37 @@ static void connection_callback(ssh_session session){
 		  session->session_state=SSH_SESSION_STATE_INITIAL_KEX;
 		  break;
 		case SSH_SESSION_STATE_INITIAL_KEX:
-			switch (session->version) {
-				case 2:
-					ssh_get_kex(session,0);
-					set_status(session,0.6);
-
-					ssh_list_kex(session, &session->server_kex);
-					if (set_kex(session) < 0) {
-						goto error;
-					}
-					if (ssh_send_kex(session, 0) < 0) {
-						goto error;
-					}
-					set_status(session,0.8);
-
-					if (dh_handshake(session) < 0) {
-						goto error;
-					}
-					set_status(session,1.0);
-					session->connected = 1;
-					break;
-				case 1:
-					if (ssh_get_kex1(session) < 0)
-						goto error;
-					set_status(session,0.6);
-
-					session->connected = 1;
-					break;
+			if(session->version==1){
+				if (ssh_get_kex1(session) < 0)
+					goto error;
+				set_status(session,0.6);
+				session->connected = 1;
+				session->session_state=SSH_SESSION_STATE_AUTHENTICATING;
+				break;
 			}
-			session->session_state=SSH_SESSION_STATE_AUTHENTICATING;
+		case SSH_SESSION_STATE_KEXINIT_RECEIVED:
+			set_status(session,0.6);
+			ssh_list_kex(session, &session->server_kex);
+			if (set_kex(session) < 0) {
+				goto error;
+			}
+			if (ssh_send_kex(session, 0) < 0) {
+				goto error;
+			}
+			set_status(session,0.8);
+			session->session_state=SSH_SESSION_STATE_DH;
+			break;
+		case SSH_SESSION_STATE_DH:
+			if (dh_handshake(session) < 0) {
+				goto error;
+			}
+			if(session->dh_handshake_state==DH_STATE_FINISHED){
+				set_status(session,1.0);
+				session->connected = 1;
+				break;
+				session->session_state=SSH_SESSION_STATE_AUTHENTICATING;
+			}
+			break;
 		case SSH_SESSION_STATE_AUTHENTICATING:
 					break;
 		default:

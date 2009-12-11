@@ -40,6 +40,7 @@
 #include "libssh/wrapper.h"
 #include "libssh/keys.h"
 #include "libssh/dh.h"
+#include "libssh/kex.h"
 
 #ifdef HAVE_LIBGCRYPT
 #define BLOWFISH "blowfish-cbc,"
@@ -239,34 +240,33 @@ char *ssh_find_matching(const char *in_d, const char *what_d){
     return NULL;
 }
 
-int ssh_get_kex(ssh_session session, int server_kex) {
+SSH_PACKET_CALLBACK(ssh_packet_kexinit){
+	int server_kex=session->server;
   ssh_string str = NULL;
   char *strings[10];
   int i;
 
   enter_function();
-
-  if (packet_wait(session, SSH2_MSG_KEXINIT, 1) != SSH_OK) {
-    leave_function();
-    return -1;
+  (void)type;
+  (void)user;
+  if(session->session_state != SSH_SESSION_STATE_INITIAL_KEX){
+  	ssh_set_error(session,SSH_FATAL,"SSH_KEXINIT received in wrong state");
+  	goto error;
   }
-
-  if (buffer_get_data(session->in_buffer,session->server_kex.cookie,16) != 16) {
-    ssh_set_error(session, SSH_FATAL, "get_kex(): no cookie in packet");
-    leave_function();
-    return -1;
+  if (buffer_get_data(packet,session->server_kex.cookie,16) != 16) {
+    ssh_set_error(session, SSH_FATAL, "ssh_packet_kexinit: no cookie in packet");
+    goto error;
   }
 
   if (hashbufin_add_cookie(session, session->server_kex.cookie) < 0) {
-    ssh_set_error(session, SSH_FATAL, "get_kex(): adding cookie failed");
-    leave_function();
-    return -1;
+    ssh_set_error(session, SSH_FATAL, "ssh_packet_kexinit: adding cookie failed");
+    goto error;
   }
 
   memset(strings, 0, sizeof(char *) * 10);
 
   for (i = 0; i < 10; i++) {
-    str = buffer_get_ssh_string(session->in_buffer);
+    str = buffer_get_ssh_string(packet);
     if (str == NULL) {
       break;
     }
@@ -307,15 +307,18 @@ int ssh_get_kex(ssh_session session, int server_kex) {
   }
 
   leave_function();
-  return 0;
+  session->session_state=SSH_SESSION_STATE_KEXINIT_RECEIVED;
+  ssh_connection_callback(session);
+  return SSH_PACKET_USED;
 error:
   string_free(str);
   for (i = 0; i < 10; i++) {
     SAFE_FREE(strings[i]);
   }
 
+  session->session_state = SSH_SESSION_STATE_ERROR;
   leave_function();
-  return -1;
+  return SSH_PACKET_USED;
 }
 
 void ssh_list_kex(ssh_session session, KEX *kex) {

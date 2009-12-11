@@ -120,6 +120,7 @@ SSH_PACKET_CALLBACK(ssh_packet_ignore_callback);
 /* client.c */
 
 int ssh_send_banner(ssh_session session, int is_server);
+void ssh_connection_callback(ssh_session session);
 
 /* config.c */
 int ssh_config_parse_file(ssh_session session, const char *filename);
@@ -156,7 +157,6 @@ extern const char *ssh_kex_nums[];
 int ssh_send_kex(ssh_session session, int server_kex);
 void ssh_list_kex(ssh_session session, KEX *kex);
 int set_kex(ssh_session session);
-int ssh_get_kex(ssh_session session, int server_kex);
 int verify_existing_algo(int algo, const char *name);
 char **space_tokenize(const char *chain);
 int ssh_get_kex1(ssh_session session);

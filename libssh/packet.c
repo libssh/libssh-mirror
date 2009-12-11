@@ -44,6 +44,7 @@
 #include "libssh/session.h"
 #include "libssh/messages.h"
 #include "libssh/pcap.h"
+#include "libssh/kex.h"
 
 ssh_packet_callback default_packet_handlers[]= {
 
@@ -55,7 +56,7 @@ ssh_packet_callback default_packet_handlers[]= {
 	NULL, //#define SSH2_MSG_SERVICE_ACCEPT 6
 	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
 	NULL, NULL, NULL, // 7-19
-	NULL, //#define SSH2_MSG_KEXINIT	 20
+	ssh_packet_kexinit, //#define SSH2_MSG_KEXINIT	 20
 	NULL, //#define SSH2_MSG_NEWKEYS 21
 	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, //22-29
 	NULL, //#define SSH2_MSG_KEXDH_INIT 30 SSH2_MSG_KEX_DH_GEX_REQUEST_OLD 30
@@ -298,7 +299,7 @@ void ssh_packet_set_callbacks(ssh_session session, ssh_packet_callbacks callback
  * @brief sets the default packet handlers
  */
 void ssh_packet_set_default_callbacks(ssh_session session){
-	session->default_packet_callbacks.start=0;
+	session->default_packet_callbacks.start=1;
 	session->default_packet_callbacks.n_callbacks=sizeof(default_packet_handlers)/sizeof(ssh_packet_callback);
 	session->default_packet_callbacks.user=session;
 	session->default_packet_callbacks.callbacks=default_packet_handlers;
@@ -327,7 +328,7 @@ void ssh_packet_process(ssh_session session, uint8_t type){
 			continue;
 		if(cb->start > type)
 			continue;
-		if(cb->start + cb->n_callbacks > type)
+		if(cb->start + cb->n_callbacks <= type)
 			continue;
 		if(cb->callbacks[type - cb->start]==NULL)
 			continue;

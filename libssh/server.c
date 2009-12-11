@@ -528,9 +528,10 @@ int ssh_accept(ssh_session session) {
     return -1;
   }
 
-  if (ssh_get_kex(session,1) < 0) {
-    return -1;
-  }
+  /* TODO here things won't work anymore */
+//  if (ssh_get_kex(session,1) < 0) {
+//    return -1;
+//  }
 
   ssh_list_kex(session, &session->client_kex);
   crypt_set_algorithms_server(session);
