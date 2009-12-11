@@ -25,7 +25,7 @@
 #include "libssh/priv.h"
 #include "libssh/socket.h"
 #include "libssh/dh.h"
-
+#include "libssh/poll.h"
 #ifdef _WIN32
 #include <winsock2.h>
 #endif
@@ -63,6 +63,7 @@ int ssh_init(void) {
    @returns 0 otherwise
  */
 int ssh_finalize(void) {
+	ssh_free_global_poll_ctx();
   ssh_regex_finalize();
   ssh_crypto_finalize();
 #ifdef HAVE_LIBGCRYPT

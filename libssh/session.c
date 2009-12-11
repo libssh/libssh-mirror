@@ -34,6 +34,7 @@
 #include "libssh/session.h"
 #include "libssh/misc.h"
 #include "libssh/buffer.h"
+#include "libssh/poll.h"
 
 #define FIRST_CHANNEL 42 // why not ? it helps to find bugs.
 
@@ -260,36 +261,30 @@ void ssh_set_fd_except(ssh_session session) {
   ssh_socket_set_except(session->socket);
 }
 
-/** \warning I don't remember if this should be internal or not
+/** @internal
+ * @brief polls the current session for an event and call the
+ * appropriate callbacks. Will block until one event happens.
+ * @param session session handle.
+ * @return SSH_OK if there are no error, SSH_ERROR otherwise.
  */
-/* looks if there is data to read on the socket and parse it. */
 int ssh_handle_packets(ssh_session session) {
-  int w = 0;
-  int e = 0;
-  int rc = -1;
-
+	ssh_poll_handle spoll;
+	ssh_poll_ctx ctx;
+  if(session==NULL || session->socket==NULL)
+  	return SSH_ERROR;
   enter_function();
-
-  do {
-    rc = ssh_socket_poll(session->socket, &w, &e);
-    if (rc <= 0) {
-      /* error or no data available */
-      leave_function();
-      return rc;
-    }
-
-    /* if an exception happened, it will be trapped by packet_read() */
-    if ((packet_read(session) != SSH_OK) ||
-        (packet_translate(session) != SSH_OK)) {
-      leave_function();
-      return -1;
-    }
-
-    packet_parse(session);
-  } while(rc > 0);
-
+  spoll=ssh_socket_get_poll_handle(session->socket);
+  ctx=ssh_poll_get_ctx(spoll);
+  if(ctx==NULL){
+  	ctx=ssh_get_global_poll_ctx(session);
+  	ssh_poll_ctx_add(ctx,spoll);
+  }
+  ssh_poll_ctx_dopoll(ctx,-1);
   leave_function();
-  return rc;
+  if (session->session_state != SSH_SESSION_STATE_ERROR)
+  	return SSH_OK;
+  else
+  	return SSH_ERROR;
 }
 
 /**

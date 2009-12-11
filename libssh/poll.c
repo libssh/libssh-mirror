@@ -39,6 +39,9 @@
 #define SSH_POLL_CTX_CHUNK			5
 #endif
 
+/** global poll context used for blocking operations */
+static ssh_poll_ctx global_poll_ctx;
+
 struct ssh_poll_handle_struct {
   ssh_poll_ctx ctx;
   union {
@@ -579,4 +582,32 @@ int ssh_poll_ctx_dopoll(ssh_poll_ctx ctx, int timeout) {
   }
 
   return rc;
+}
+
+/** @internal
+ * @brief returns a pointer to the global poll context.
+ * Allocates it if it does not exist.
+ * @param session an optional session handler, used to store the error
+ * message if needed.
+ * @returns pointer to the global poll context.
+ */
+ssh_poll_ctx ssh_get_global_poll_ctx(ssh_session session){
+	if(global_poll_ctx != NULL)
+		return global_poll_ctx;
+	global_poll_ctx=ssh_poll_ctx_new(5);
+	if(global_poll_ctx == NULL && session != NULL){
+		ssh_set_error_oom(session);
+		return NULL;
+	}
+	return global_poll_ctx;
+}
+
+/** @internal
+ * @brief Deallocate the global poll context
+ */
+void ssh_free_global_poll_ctx(){
+	if(global_poll_ctx != NULL){
+		ssh_poll_ctx_free(global_poll_ctx);
+		global_poll_ctx=NULL;
+	}
 }
