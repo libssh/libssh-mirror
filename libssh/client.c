@@ -67,6 +67,21 @@ static void socket_callback_connected(int code, int errno, void *user){
 
 /**
  * @internal
+ * @brief Callback to be called when the socket received an exception code.
+ * @param user is a pointer to session
+ */
+static void socket_callback_exception(int code, int errno, void *user){
+	ssh_session session=(ssh_session)user;
+	enter_function();
+	ssh_log(session,SSH_LOG_RARE,"Socket exception callback: %d (%d)",code, errno);
+	session->session_state=SSH_SESSION_STATE_ERROR;
+	ssh_set_error(session,SSH_FATAL,"Socket error: %s",strerror(errno));
+	connection_callback(session);
+	leave_function();
+}
+
+/**
+ * @internal
  *
  * @brief Gets the banner from socket and saves it in session.
  * Updates the session state
@@ -96,8 +111,9 @@ static int callback_receive_banner(const void *data, size_t len, void *user) {
   		str=strdup(buffer);
   		/* number of bytes read */
   		ret=i+1;
-  		session->remotebanner=str;
+  		session->serverbanner=str;
   		session->session_state=SSH_SESSION_STATE_BANNER_RECEIVED;
+  		ssh_log(session,SSH_LOG_PACKET,"Received banner: %s",str);
   		connection_callback(session);
   		leave_function();
   		return ret;
@@ -510,6 +526,7 @@ static void connection_callback(ssh_session session){
 		case SSH_SESSION_STATE_NONE:
 		case SSH_SESSION_STATE_CONNECTING:
 		case SSH_SESSION_STATE_SOCKET_CONNECTED:
+			break;
 		case SSH_SESSION_STATE_BANNER_RECEIVED:
 		  if (session->serverbanner == NULL) {
 		    goto error;
@@ -535,9 +552,11 @@ static void connection_callback(ssh_session session){
 		  }
 		  /* from now, the packet layer is handling incoming packets */
 		  session->socket_callbacks.data=ssh_packet_socket_callback;
+		  ssh_packet_set_default_callbacks(session);
 		  ssh_send_banner(session, 0);
 		  set_status(session, 0.5);
 		  session->session_state=SSH_SESSION_STATE_INITIAL_KEX;
+		  break;
 		case SSH_SESSION_STATE_INITIAL_KEX:
 			switch (session->version) {
 				case 2:
@@ -614,6 +633,7 @@ int ssh_connect(ssh_session session) {
   ssh_socket_set_callbacks(session->socket,&session->socket_callbacks);
   session->socket_callbacks.connected=socket_callback_connected;
   session->socket_callbacks.data=callback_receive_banner;
+  session->socket_callbacks.exception=socket_callback_exception;
   session->socket_callbacks.user=session;
   if (session->fd != -1) {
     ssh_socket_set_fd(session->socket, session->fd);
@@ -631,11 +651,13 @@ int ssh_connect(ssh_session session) {
   set_status(session, 0.2);
 
   session->alive = 1;
+  ssh_log(session,SSH_LOG_PROTOCOL,"Socket connecting, now waiting for the callbacks to work");
   while(session->session_state != SSH_SESSION_STATE_ERROR &&
   		session->session_state != SSH_SESSION_STATE_AUTHENTICATING){
   	/* loop until SSH_SESSION_STATE_BANNER_RECEIVED or
   	 * SSH_SESSION_STATE_ERROR */
-
+  	ssh_handle_packets(session);
+  	ssh_log(session,SSH_LOG_PACKET,"ssh_connect: Actual state : %d",session->session_state);
   }
   leave_function();
   return 0;

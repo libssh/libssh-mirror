@@ -163,7 +163,7 @@ int ssh_socket_pollcallback(ssh_poll_handle p, int fd, int revents, void *v_s){
 		if(r<0){
 			if(p != NULL)
 				ssh_poll_set_events(p,ssh_poll_get_events(p) & ~POLLIN);
-			if(s->callbacks){
+			if(s->callbacks && s->callbacks->exception){
 				s->callbacks->exception(
 						SSH_SOCKET_EXCEPTION_ERROR,
 						s->last_errno,s->callbacks->user);
@@ -171,7 +171,7 @@ int ssh_socket_pollcallback(ssh_poll_handle p, int fd, int revents, void *v_s){
 		}
 		if(r==0){
 			ssh_poll_set_events(p,ssh_poll_get_events(p) & ~POLLIN);
-			if(s->callbacks){
+			if(s->callbacks && s->callbacks->exception){
 				s->callbacks->exception(
 						SSH_SOCKET_EXCEPTION_EOF,
 						0,s->callbacks->user);
@@ -180,7 +180,7 @@ int ssh_socket_pollcallback(ssh_poll_handle p, int fd, int revents, void *v_s){
 		if(r>0){
 			/* Bufferize the data and then call the callback */
 			buffer_add_data(s->in_buffer,buffer,r);
-			if(s->callbacks){
+			if(s->callbacks && s->callbacks->data){
 				r= s->callbacks->data(buffer_get_rest(s->in_buffer),
 						buffer_get_rest_len(s->in_buffer),
 						s->callbacks->user);
@@ -206,12 +206,12 @@ int ssh_socket_pollcallback(ssh_poll_handle p, int fd, int revents, void *v_s){
 		          buffer_get_rest_len(s->out_buffer));
 			if(w>0)
 				buffer_pass_bytes(s->out_buffer,w);
-		} else if(s->callbacks){
+		} else if(s->callbacks && s->callbacks->controlflow){
 			/* Otherwise advertise the upper level that write can be done */
 			s->callbacks->controlflow(SSH_SOCKET_FLOW_WRITEWONTBLOCK,s->callbacks->user);
-			ssh_poll_set_events(p,ssh_poll_get_events(p) & ~POLLOUT);
-			/* TODO: Find a way to put back POLLOUT when buffering occurs */
 		}
+		ssh_poll_remove_events(p,POLLOUT);
+			/* TODO: Find a way to put back POLLOUT when buffering occurs */
 	}
 	return 0;
 }
@@ -785,7 +785,6 @@ int ssh_socket_get_status(ssh_socket s) {
 int ssh_socket_connect(ssh_socket s, const char *host, int port, const char *bind_addr){
 	socket_t fd;
 	ssh_session session=s->session;
-	ssh_poll_ctx ctx;
 	enter_function();
 	if(s->state != SSH_SOCKET_NONE)
 		return SSH_ERROR;
@@ -795,31 +794,10 @@ int ssh_socket_connect(ssh_socket s, const char *host, int port, const char *bin
 		return SSH_ERROR;
 	ssh_socket_set_fd(s,fd);
 	s->state=SSH_SOCKET_CONNECTING;
-	if(s->callbacks && s->callbacks->connected && s->poll){
-		/* POLLOUT is the event to wait for in a nonblocking connect */
-		ssh_poll_set_events(s->poll,POLLOUT);
-		leave_function();
-		return SSH_OK;
-	} else {
-		/* we have to do the connect ourselves */
-		ssh_poll_set_events(ssh_socket_get_poll_handle(s),POLLOUT);
-		ctx=ssh_poll_ctx_new(1);
-		ssh_poll_ctx_add(ctx,s->poll);
-		while(s->state == SSH_SOCKET_CONNECTING){
-			ssh_poll_ctx_dopoll(ctx,-1);
-		}
-		ssh_poll_ctx_free(ctx);
-		if(s->state == SSH_SOCKET_CONNECTED){
-			ssh_log(session,SSH_LOG_PACKET,"ssh_socket_connect blocking: connected");
-			leave_function();
-			return SSH_OK;
-		} else {
-			ssh_log(session,SSH_LOG_PACKET,"ssh_socket_connect blocking: not connected");
-			ssh_set_error(session,SSH_FATAL,"Error during blocking connect: %d",s->last_errno);
-			leave_function();
-			return SSH_ERROR;
-		}
-	}
+	/* POLLOUT is the event to wait for in a nonblocking connect */
+	ssh_poll_set_events(ssh_socket_get_poll_handle(s),POLLOUT);
+	leave_function();
+	return SSH_OK;
 }
 /** @}
  */

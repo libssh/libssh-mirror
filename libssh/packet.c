@@ -311,7 +311,7 @@ void ssh_packet_set_default_callbacks(ssh_session session){
  */
 void ssh_packet_process(ssh_session session, uint8_t type){
 	struct ssh_iterator *i;
-	int r;
+	int r=SSH_PACKET_NOT_USED;
 	ssh_packet_callbacks cb;
 	enter_function();
 	ssh_log(session,SSH_LOG_PACKET, "Dispatching handler for packet type %d",type);
@@ -335,6 +335,8 @@ void ssh_packet_process(ssh_session session, uint8_t type){
 		if(r==SSH_PACKET_USED)
 			break;
 	}
+	if(r==SSH_PACKET_NOT_USED)
+		ssh_log(session,SSH_LOG_RARE,"Couldn't do anything with packet type %d",type);
 error:
 	leave_function();
 }

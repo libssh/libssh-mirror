@@ -65,8 +65,6 @@ struct ssh_session_struct {
 
     ssh_string banner; /* that's the issue banner from
                        the server */
-    char *remotebanner; /* that's the SSH- banner from
-                           remote host. */
     char *discon_msg; /* disconnect message from
                          the remote host */
     ssh_buffer in_buffer;
