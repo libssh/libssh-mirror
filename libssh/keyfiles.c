@@ -1277,6 +1277,7 @@ static int match_hashed_host(ssh_session session, const char *host,
   enter_function();
 
   if (strncmp(sourcehash, "|1|", 3) != 0) {
+  	leave_function();
     return 0;
   }
 
