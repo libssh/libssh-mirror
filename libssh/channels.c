@@ -1799,13 +1799,7 @@ int channel_read_buffer(ssh_channel channel, ssh_buffer buffer, uint32_t count,
       /* Stop reading when buffer is full enough */
       break;
     }
-
-    if ((packet_read(session)) != SSH_OK ||
-        (packet_translate(session) != SSH_OK)) {
-      leave_function();
-      return -1;
-    }
-    packet_parse(session);
+    ssh_handle_packets(session);
   }
 
   if(channel->local_window < WINDOWLIMIT) {
@@ -1911,12 +1905,7 @@ int channel_read(ssh_channel channel, void *dest, uint32_t count, int is_stderr)
       break;
     }
 
-    if ((packet_read(session)) != SSH_OK ||
-        (packet_translate(session) != SSH_OK)) {
-      leave_function();
-      return -1;
-    }
-    packet_parse(session);
+    ssh_handle_packets(session);
   }
 
   if (channel->local_window < WINDOWLIMIT) {

@@ -29,7 +29,6 @@ typedef struct packet_struct {
 	uint8_t type;
 } PACKET;
 
-void packet_parse(ssh_session session);
 int packet_send(ssh_session session);
 
 int packet_read(ssh_session session);

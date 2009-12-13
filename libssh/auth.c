@@ -160,7 +160,8 @@ static int wait_auth_status(ssh_session session, int kbdint) {
           break;
         }
       default:
-        packet_parse(session);
+        //packet_parse(session);
+      	//FIXME: broken
         break;
     }
   }
