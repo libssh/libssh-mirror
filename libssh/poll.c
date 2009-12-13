@@ -274,6 +274,10 @@ ssh_poll_handle ssh_poll_new(socket_t fd, short events, ssh_poll_callback cb,
  */
 
 void ssh_poll_free(ssh_poll_handle p) {
+	if(p->ctx != NULL){
+		ssh_poll_ctx_remove(p->ctx,p);
+		p->ctx=NULL;
+	}
   SAFE_FREE(p);
 }
 
