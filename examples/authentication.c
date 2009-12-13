@@ -64,6 +64,10 @@ int authenticate_kbdint(ssh_session session){
   return err;
 }
 
+static void error(ssh_session session){
+	fprintf(stderr,"Authentication failed: %s\n",ssh_get_error(session));
+}
+
 int authenticate_console(ssh_session session){
   int rc;
   int method;
@@ -73,7 +77,7 @@ int authenticate_console(ssh_session session){
   // Try to authenticate
   rc = ssh_userauth_none(session, NULL);
   if (rc == SSH_AUTH_ERROR) {
-    perror("Authentication failed.");
+    error(session);
     return rc;
   }
 
@@ -84,7 +88,7 @@ int authenticate_console(ssh_session session){
     if (method & SSH_AUTH_METHOD_PUBLICKEY) {
       rc = ssh_userauth_autopubkey(session, NULL);
       if (rc == SSH_AUTH_ERROR) {
-        perror("Authentication failed.");
+      	error(session);
         return rc;
       } else if (rc == SSH_AUTH_SUCCESS) {
         break;
@@ -95,7 +99,7 @@ int authenticate_console(ssh_session session){
     if (method & SSH_AUTH_METHOD_INTERACTIVE) {
       rc = authenticate_kbdint(session);
       if (rc == SSH_AUTH_ERROR) {
-        perror("Authentication failed.");
+      	error(session);
         return rc;
       } else if (rc == SSH_AUTH_SUCCESS) {
         break;
@@ -107,7 +111,7 @@ int authenticate_console(ssh_session session){
     if (method & SSH_AUTH_METHOD_PASSWORD) {
       rc = ssh_userauth_password(session, NULL, password);
       if (rc == SSH_AUTH_ERROR) {
-        perror("Authentication failed.");
+      	error(session);
         return rc;
       } else if (rc == SSH_AUTH_SUCCESS) {
         break;
