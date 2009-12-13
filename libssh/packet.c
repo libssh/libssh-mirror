@@ -57,10 +57,10 @@ ssh_packet_callback default_packet_handlers[]= {
 	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
 	NULL, NULL, NULL, // 7-19
 	ssh_packet_kexinit, //#define SSH2_MSG_KEXINIT	 20
-	NULL, //#define SSH2_MSG_NEWKEYS 21
+	ssh_packet_newkeys, //#define SSH2_MSG_NEWKEYS 21
 	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, //22-29
 	NULL, //#define SSH2_MSG_KEXDH_INIT 30 SSH2_MSG_KEX_DH_GEX_REQUEST_OLD 30
-	NULL, // #define SSH2_MSG_KEXDH_REPLY 31 SSH2_MSG_KEX_DH_GEX_GROUP 31
+	ssh_packet_dh_reply, // #define SSH2_MSG_KEXDH_REPLY 31 SSH2_MSG_KEX_DH_GEX_GROUP 31
 	NULL, //#define SSH2_MSG_KEX_DH_GEX_INIT 32
 	NULL, //#define SSH2_MSG_KEX_DH_GEX_REPLY 33
 	NULL, //#define SSH2_MSG_KEX_DH_GEX_REQUEST 34
@@ -260,10 +260,18 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
       /* execute callbacks */
       ssh_packet_process(session, session->in_packet.type);
       session->packet_state = PACKET_STATE_INIT;
+      if(processed < receivedlen){
+      	/* Handle a potential packet left in socket buffer */
+      	ssh_log(session,SSH_LOG_PACKET,"Processing %" PRIdS " bytes left in socket buffer",
+      			receivedlen-processed);
+      	rc = ssh_packet_socket_callback((char *)data + processed,
+      			receivedlen - processed,user);
+      	processed += rc;
+      }
       leave_function();
       return processed;
     case PACKET_STATE_PROCESSING:
-    	ssh_log(session, SSH_LOG_PACKET, "Nested packet processing. Delaying.");
+    	ssh_log(session, SSH_LOG_RARE, "Nested packet processing. Delaying.");
     	return 0;
   }
 
