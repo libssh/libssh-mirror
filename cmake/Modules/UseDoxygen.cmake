@@ -30,6 +30,13 @@ IF (DOXYGEN_FOUND)
     SET(DOXY_WARN_FORMAT "\"$file:$line: $text \"")
   ENDIF (CMAKE_BUILD_TOOL MATCHES "(msdev|devenv)")
 
+  #Build the documentation for libssh developpers if asked
+  IF (WITH_INTERNAL_DOC)
+    SET(CMAKE_INTERNAL_DOC "Yes")
+  ELSE (WITH_INTERNAL_DOC)
+    SET(CMAKE_INTERNAL_DOC "No")
+  ENDIF (WITH_INTERNAL_DOC)
+
   # we need latex for doxygen because of the formulas
   FIND_PACKAGE(LATEX)
   IF    (NOT LATEX_COMPILER)
