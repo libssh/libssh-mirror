@@ -50,9 +50,11 @@
  * If you make several sessions with the same options this is useful. You
  * cannot use twice the same option structure in ssh_session_connect.
  *
- * @param opt           Option structure to copy.
+ * @param src           The session to use to copy the options.
  *
- * @returns New copied option structure, NULL on error.
+ * @param dest          The session to copy the options to.
+ *
+ * @returns             0 on sucess, -1 on error with errno set.
  *
  * @see ssh_session_connect()
  */
