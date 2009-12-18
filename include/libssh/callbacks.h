@@ -91,23 +91,34 @@ typedef void (*ssh_log_callback) (ssh_session session, int priority,
 typedef void (*ssh_status_callback) (ssh_session session, float status,
 		void *userdata);
 
+/**
+ * The structure to replace libssh functions with appropriate callbacks.
+ */
 struct ssh_callbacks_struct {
-	/** size of this structure. internal, shoud be set with ssh_callbacks_init()*/
-	size_t size;
-	/** User-provided data. User is free to set anything he wants here */
-	void *userdata;
-	/** this functions will be called if e.g. a keyphrase is needed. */
-	ssh_auth_callback auth_function;
-	/** this function will be called each time a loggable event happens. */
-	ssh_log_callback log_function;
-	/** this function gets called during connection time to indicate the percentage
-	 * of connection steps completed.
-	 */
+  /** DON'T SET THIS use ssh_callbacks_init() instead. */
+  size_t size;
+  /**
+   * User-provided data. User is free to set anything he wants here
+   */
+  void *userdata;
+  /**
+   * This functions will be called if e.g. a keyphrase is needed.
+   */
+  ssh_auth_callback auth_function;
+  /**
+   * This function will be called each time a loggable event happens.
+   */
+  ssh_log_callback log_function;
+  /**
+   * This function gets called during connection time to indicate the
+   * percentage of connection steps completed.
+   */
   void (*connect_status_function)(void *userdata, float status);
 };
 typedef struct ssh_callbacks_struct *ssh_callbacks;
 
-/** These are the callbacks exported by the socket structure
+/**
+ * These are the callbacks exported by the socket structure
  * They are called by the socket module when a socket event appears
  */
 struct ssh_socket_callbacks_struct {
