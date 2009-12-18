@@ -30,18 +30,6 @@
 #ifndef _LIBSSH_PRIV_H
 #define _LIBSSH_PRIV_H
 
-/**
- * @mainpage
- * This manual documents the libssh C API.
- *
- * There are several other places to look for libssh information, such as the
- * <a href="http://dev.libssh.org/wiki/Tutorial" target="_blank">tutorial</a>
- * and the specification; those can be found at the <a
- * href="http://www.libssh.org/" target="_blank">libssh website</a>.
- *
- * To be continued...
- */
-
 #include "config.h"
 
 #ifdef _MSC_VER
