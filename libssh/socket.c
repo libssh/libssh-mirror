@@ -150,7 +150,7 @@ int ssh_socket_pollcallback(ssh_poll_handle p, int fd, int revents, void *v_s){
 			s->fd=-1;
 			if(s->callbacks && s->callbacks->connected)
 				s->callbacks->connected(SSH_SOCKET_CONNECTED_ERROR,err,
-						s->callbacks->user);
+						s->callbacks->userdata);
 			return 0;
 		}
 		/* Then we are in a more standard kind of error */
@@ -166,7 +166,7 @@ int ssh_socket_pollcallback(ssh_poll_handle p, int fd, int revents, void *v_s){
 			if(s->callbacks && s->callbacks->exception){
 				s->callbacks->exception(
 						SSH_SOCKET_EXCEPTION_ERROR,
-						s->last_errno,s->callbacks->user);
+						s->last_errno,s->callbacks->userdata);
 			}
 		}
 		if(r==0){
@@ -174,7 +174,7 @@ int ssh_socket_pollcallback(ssh_poll_handle p, int fd, int revents, void *v_s){
 			if(s->callbacks && s->callbacks->exception){
 				s->callbacks->exception(
 						SSH_SOCKET_EXCEPTION_EOF,
-						0,s->callbacks->user);
+						0,s->callbacks->userdata);
 			}
 		}
 		if(r>0){
@@ -183,7 +183,7 @@ int ssh_socket_pollcallback(ssh_poll_handle p, int fd, int revents, void *v_s){
 			if(s->callbacks && s->callbacks->data){
 				r= s->callbacks->data(buffer_get_rest(s->in_buffer),
 						buffer_get_rest_len(s->in_buffer),
-						s->callbacks->user);
+						s->callbacks->userdata);
 				buffer_pass_bytes(s->in_buffer,r);
 			}
 		}
@@ -195,7 +195,7 @@ int ssh_socket_pollcallback(ssh_poll_handle p, int fd, int revents, void *v_s){
 			s->state = SSH_SOCKET_CONNECTED;
 			ssh_poll_set_events(p,POLLOUT | POLLIN | POLLERR);
 			if(s->callbacks && s->callbacks->connected)
-				s->callbacks->connected(SSH_SOCKET_CONNECTED_OK,0,s->callbacks->user);
+				s->callbacks->connected(SSH_SOCKET_CONNECTED_OK,0,s->callbacks->userdata);
 			return 0;
 		}
 		/* So, we can write data */
@@ -208,7 +208,7 @@ int ssh_socket_pollcallback(ssh_poll_handle p, int fd, int revents, void *v_s){
 				buffer_pass_bytes(s->out_buffer,w);
 		} else if(s->callbacks && s->callbacks->controlflow){
 			/* Otherwise advertise the upper level that write can be done */
-			s->callbacks->controlflow(SSH_SOCKET_FLOW_WRITEWONTBLOCK,s->callbacks->user);
+			s->callbacks->controlflow(SSH_SOCKET_FLOW_WRITEWONTBLOCK,s->callbacks->userdata);
 		}
 		ssh_poll_remove_events(p,POLLOUT);
 			/* TODO: Find a way to put back POLLOUT when buffering occurs */

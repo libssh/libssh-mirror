@@ -647,7 +647,7 @@ int ssh_connect(ssh_session session) {
   session->socket_callbacks.connected=socket_callback_connected;
   session->socket_callbacks.data=callback_receive_banner;
   session->socket_callbacks.exception=socket_callback_exception;
-  session->socket_callbacks.user=session;
+  session->socket_callbacks.userdata=session;
   if (session->fd != -1) {
     ssh_socket_set_fd(session->socket, session->fd);
     ret=SSH_OK;

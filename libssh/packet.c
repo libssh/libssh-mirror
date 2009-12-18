@@ -289,7 +289,7 @@ void ssh_packet_register_socket_callback(ssh_session session, ssh_socket s){
 	session->socket_callbacks.connected=NULL;
 	session->socket_callbacks.controlflow=NULL;
 	session->socket_callbacks.exception=NULL;
-	session->socket_callbacks.user=session;
+	session->socket_callbacks.userdata=session;
 	ssh_socket_set_callbacks(s,&session->socket_callbacks);
 }
 

@@ -122,11 +122,27 @@ typedef struct ssh_callbacks_struct *ssh_callbacks;
  * They are called by the socket module when a socket event appears
  */
 struct ssh_socket_callbacks_struct {
+  /**
+   * User-provided data. User is free to set anything he wants here
+   */
+  void *userdata;
+	/**
+	 * This function will be called each time data appears on socket. The data
+	 * not consumed will appear on the next data event.
+	 */
   ssh_callback_data data;
+  /** This function will be called each time a controlflow state changes, i.e.
+   * the socket is available for reading or writing.
+   */
   ssh_callback_int controlflow;
+  /** This function will be called each time an exception appears on socket. An
+   * exception can be a socket problem (timeout, ...) or an end-of-file.
+   */
   ssh_callback_int_int exception;
+  /** This function is called when the ssh_socket_connect was used on the socket
+   * on nonblocking state, and the connection successed.
+   */
   ssh_callback_int_int connected;
-  void *user;
 };
 typedef struct ssh_socket_callbacks_struct *ssh_socket_callbacks;
 
@@ -186,8 +202,12 @@ struct ssh_packet_callbacks_struct {
 	uint8_t n_callbacks;
 	/** A pointer to n_callbacks packet callbacks */
 	ssh_packet_callback *callbacks;
+  /**
+   * User-provided data. User is free to set anything he wants here
+   */
 	void *user;
 };
+
 typedef struct ssh_packet_callbacks_struct *ssh_packet_callbacks;
 
 /**
