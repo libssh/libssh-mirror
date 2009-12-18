@@ -40,6 +40,11 @@
 #endif
 
 /**
+ * @addtogroup ssh_session
+ * @{
+ */
+
+/**
  * @brief Duplicate the options of a session structure.
  *
  * If you make several sessions with the same options this is useful. You
@@ -616,8 +621,13 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
 
   return 0;
 }
+/** @} */
 
 #ifdef WITH_SERVER
+/**
+ * @addtogroup ssh_server
+ * @{
+ */
 static int ssh_bind_options_set_algo(ssh_bind sshbind, int algo,
     const char *list) {
   if (!verify_existing_algo(algo, list)) {
