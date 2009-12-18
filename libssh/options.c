@@ -226,140 +226,143 @@ char *dir_expand_dup(ssh_session session, const char *value, int allowsshdir) {
  * @param  type         The option type to set. This could be one of the
  *                      following:
  *
- *                      SSH_OPTIONS_HOST:
+ *                      - SSH_OPTIONS_HOST:
  *                        The hostname or ip address to connect to (string).
  *
- *                      SSH_OPTIONS_PORT:
+ *                      - SSH_OPTIONS_PORT:
  *                        The port to connect to (integer).
  *
- *                      SSH_OPTIONS_PORT_STR:
+ *                      - SSH_OPTIONS_PORT_STR:
  *                        The port to connect to (string).
  *
- *                      SSH_OPTIONS_FD:
- *                        The file descriptor to use (socket_t).
- *
+ *                      - SSH_OPTIONS_FD:
+ *                        The file descriptor to use (socket_t).\n
+ *                        \n
  *                        If you wish to open the socket yourself for a reason
  *                        or another, set the file descriptor. Don't forget to
  *                        set the hostname as the hostname is used as a key in
  *                        the known_host mechanism.
  *
- *                      SSH_OPTIONS_USER:
- *                        The username for authentication (string).
- *
+ *                      - SSH_OPTIONS_USER:
+ *                        The username for authentication (string).\n
+ *                        \n
  *                        If the value is NULL, the username is set to the
  *                        default username.
  *
- *                      SSH_OPTIONS_SSH_DIR:
- *                        Set the ssh directory (format string).
- *
+ *                      - SSH_OPTIONS_SSH_DIR:
+ *                        Set the ssh directory (format string).\n
+ *                        \n
  *                        If the value is NULL, the directory is set to the
- *                        default ssh directory.
- *
+ *                        default ssh directory.\n
+ *                        \n
  *                        The ssh directory is used for files like known_hosts
  *                        and identity (private and public key). It may include
  *                        "%s" which will be replaced by the user home
  *                        directory.
  *
- *                      SSH_OPTIONS_KNOWNHOSTS:
- *                        Set the known hosts file name (format string).
- *
+ *                      - SSH_OPTIONS_KNOWNHOSTS:
+ *                        Set the known hosts file name (format string).\n
+ *                        \n
  *                        If the value is NULL, the directory is set to the
- *                        default known hosts file, normally ~/.ssh/known_hosts.
- *
+ *                        default known hosts file, normally
+ *                        ~/.ssh/known_hosts.\n
+ *                        \n
  *                        The known hosts file is used to certify remote hosts
  *                        are genuine. It may include "%s" which will be
  *                        replaced by the user home directory.
  *
- *                      SSH_OPTIONS_IDENTITY:
- *                        Set the identity file name (format string).
- *
- *                        By default identity, id_dsa and id_rsa are checked.
- *
+ *                      - SSH_OPTIONS_IDENTITY:
+ *                        Set the identity file name (format string).\n
+ *                        \n
+ *                        By default identity, id_dsa and id_rsa are checked.\n
+ *                        \n
  *                        The identity file used authenticate with public key.
  *                        It may include "%s" which will be replaced by the
  *                        user home directory.
  *
- *                      SSH_OPTIONS_TIMEOUT:
+ *                      - SSH_OPTIONS_TIMEOUT:
  *                        Set a timeout for the connection in seconds (integer).
  *
- *                      SSH_OPTIONS_TIMEOUT_USEC:
+ *                      - SSH_OPTIONS_TIMEOUT_USEC:
  *                        Set a timeout for the connection in micro seconds
  *                        (integer).
  *
- *                      SSH_OPTIONS_SSH1:
+ *                      - SSH_OPTIONS_SSH1:
  *                        Allow or deny the connection to SSH1 servers
  *                        (integer).
  *
- *                      SSH_OPTIONS_SSH2:
+ *                      - SSH_OPTIONS_SSH2:
  *                        Allow or deny the connection to SSH2 servers
  *                        (integer).
  *
- *                      SSH_OPTIONS_LOG_VERBOSITY:
- *                        Set the session logging verbosity (integer).
- *
+ *                      - SSH_OPTIONS_LOG_VERBOSITY:
+ *                        Set the session logging verbosity (integer).\n
+ *                        \n
  *                        The verbosity of the messages. Every log smaller or
  *                        equal to verbosity will be shown.
- *                          SSH_LOG_NOLOG: No logging
- *                          SSH_LOG_RARE: Rare conditions or warnings
- *                          SSH_LOG_ENTRY: API-accessible entrypoints
- *                          SSH_LOG_PACKET: Packet id and size
- *                          SSH_LOG_FUNCTIONS: Function entering and leaving
+ *                          - SSH_LOG_NOLOG: No logging
+ *                          - SSH_LOG_RARE: Rare conditions or warnings
+ *                          - SSH_LOG_ENTRY: API-accessible entrypoints
+ *                          - SSH_LOG_PACKET: Packet id and size
+ *                          - SSH_LOG_FUNCTIONS: Function entering and leaving
  *
- *                      SSH_OPTIONS_LOG_VERBOSITY_STR:
- *                        Set the session logging verbosity (string).
- *
+ *                      - SSH_OPTIONS_LOG_VERBOSITY_STR:
+ *                        Set the session logging verbosity (string).\n
+ *                        \n
  *                        The verbosity of the messages. Every log smaller or
  *                        equal to verbosity will be shown.
- *                          SSH_LOG_NOLOG: No logging
- *                          SSH_LOG_RARE: Rare conditions or warnings
- *                          SSH_LOG_ENTRY: API-accessible entrypoints
- *                          SSH_LOG_PACKET: Packet id and size
- *                          SSH_LOG_FUNCTIONS: Function entering and leaving
- *
+ *                          - SSH_LOG_NOLOG: No logging
+ *                          - SSH_LOG_RARE: Rare conditions or warnings
+ *                          - SSH_LOG_ENTRY: API-accessible entrypoints
+ *                          - SSH_LOG_PACKET: Packet id and size
+ *                          - SSH_LOG_FUNCTIONS: Function entering and leaving
+ *                          \n
  *                          See the corresponding numbers in libssh.h.
  *
- *                      SSH_OPTTIONS_AUTH_CALLBACK:
+ *                      - SSH_OPTTIONS_AUTH_CALLBACK:
  *                        Set a callback to use your own authentication function
  *                        (function pointer).
  *
- *                      SSH_OPTTIONS_AUTH_USERDATA:
- *                        Set the user data passed to the authentication function
- *                        (generic pointer).
+ *                      - SSH_OPTTIONS_AUTH_USERDATA:
+ *                        Set the user data passed to the authentication
+ *                        function (generic pointer).
  *
- *                      SSH_OPTTIONS_LOG_CALLBACK:
+ *                      - SSH_OPTTIONS_LOG_CALLBACK:
  *                        Set a callback to use your own logging function
  *                        (function pointer).
  *
- *                      SSH_OPTTIONS_LOG_USERDATA:
+ *                      - SSH_OPTTIONS_LOG_USERDATA:
  *                        Set the user data passed to the logging function
  *                        (generic pointer).
  *
- *                      SSH_OPTTIONS_STATUS_CALLBACK:
+ *                      - SSH_OPTTIONS_STATUS_CALLBACK:
  *                        Set a callback to show connection status in realtime
- *                        (function pointer).
- *
+ *                        (function pointer).\n
+ *                        \n
+ *                        @code
  *                        fn(void *arg, float status)
- *
+ *                        @endcode
+ *                        \n
  *                        During ssh_connect(), libssh will call the callback
  *                        with status from 0.0 to 1.0.
  *
- *                      SSH_OPTTIONS_STATUS_ARG:
+ *                      - SSH_OPTTIONS_STATUS_ARG:
  *                        Set the status argument which should be passed to the
  *                        status callback (generic pointer).
  *
- *                      SSH_OPTIONS_CIPHERS_C_S:
+ *                      - SSH_OPTIONS_CIPHERS_C_S:
  *                        Set the symmetric cipher client to server (string,
  *                        comma-separated list).
  *
- *                      SSH_OPTIONS_CIPHERS_S_C:
+ *                      - SSH_OPTIONS_CIPHERS_S_C:
  *                        Set the symmetric cipher server to client (string,
  *                        comma-separated list).
  *
- *                      SSH_OPTIONS_COMPRESSION_C_S:
+ *                      - SSH_OPTIONS_COMPRESSION_C_S:
  *                        Set the compression to use for client to server
  *                        communication (string, "none" or "zlib").
  *
- *                      SSH_OPTIONS_COMPRESSION_S_C:
+ *                      - SSH_OPTIONS_COMPRESSION_S_C:
  *                        Set the compression to use for server to client
  *                        communication (string, "none" or "zlib").
  *
