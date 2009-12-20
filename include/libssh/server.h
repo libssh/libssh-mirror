@@ -151,6 +151,8 @@ LIBSSH_API ssh_public_key ssh_message_auth_publickey(ssh_message msg);
 LIBSSH_API enum ssh_publickey_state_e ssh_message_auth_publickey_state(ssh_message msg);
 LIBSSH_API int ssh_message_auth_reply_success(ssh_message msg,int partial);
 LIBSSH_API int ssh_message_auth_reply_pk_ok(ssh_message msg, ssh_string algo, ssh_string pubkey);
+LIBSSH_API int ssh_message_auth_reply_pk_ok_simple(ssh_message msg);
+
 LIBSSH_API int ssh_message_auth_set_methods(ssh_message msg, int methods);
 
 LIBSSH_API int ssh_message_service_reply_success(ssh_message msg);

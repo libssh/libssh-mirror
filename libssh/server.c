@@ -808,6 +808,19 @@ int ssh_message_auth_reply_pk_ok(ssh_message msg, ssh_string algo, ssh_string pu
   return packet_send(msg->session);
 }
 
+int ssh_message_auth_reply_pk_ok_simple(ssh_message msg) {
+	ssh_string algo;
+	ssh_string pubkey;
+	int ret;
+	algo=string_from_char(msg->auth_request.public_key->type_c);
+	pubkey=publickey_to_string(msg->auth_request.public_key);
+	ret=ssh_message_auth_reply_pk_ok(msg,algo,pubkey);
+	string_free(algo);
+	string_free(pubkey);
+	return ret;
+}
+
+
 char *ssh_message_channel_request_open_originator(ssh_message msg){
     return msg->channel_request_open.originator;
 }
