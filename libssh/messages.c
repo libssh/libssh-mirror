@@ -220,7 +220,7 @@ static ssh_message handle_userauth_request(ssh_session session){
     if (msg->auth_request.public_key == NULL) {
        goto error;
     }
-    msg->auth_request.signature_state = 0;
+    msg->auth_request.signature_state = SSH_PUBLICKEY_STATE_NONE;
     // has a valid signature ?
     if(has_sign) {
       SIGNATURE *signature = NULL;
@@ -231,7 +231,7 @@ static ssh_message handle_userauth_request(ssh_session session){
       sign = buffer_get_ssh_string(session->in_buffer);
       if(sign == NULL) {
         ssh_log(session, SSH_LOG_PACKET, "Invalid signature packet from peer");
-        msg->auth_request.signature_state = -2;
+        msg->auth_request.signature_state = SSH_PUBLICKEY_STATE_ERROR;
         goto error;
       }
       signature = signature_from_string(session, sign, public_key,
@@ -241,7 +241,7 @@ static ssh_message handle_userauth_request(ssh_session session){
           (digest != NULL && signature != NULL &&
           sig_verify(session, public_key, signature,
                      buffer_get(digest), buffer_get_len(digest)) < 0)) {
-        ssh_log(session, SSH_LOG_PACKET, "Invalid signature from peer");
+        ssh_log(session, SSH_LOG_PACKET, "Wrong signature from peer");
 
         string_free(sign);
         sign = NULL;
@@ -250,7 +250,7 @@ static ssh_message handle_userauth_request(ssh_session session){
         signature_free(signature);
         signature = NULL;
 
-        msg->auth_request.signature_state = -1;
+        msg->auth_request.signature_state = SSH_PUBLICKEY_STATE_WRONG;
         goto error;
       }         
       else
@@ -263,7 +263,7 @@ static ssh_message handle_userauth_request(ssh_session session){
       signature_free(signature);
       signature = NULL;
 
-      msg->auth_request.signature_state = 1;
+      msg->auth_request.signature_state = SSH_PUBLICKEY_STATE_VALID;
     }
     SAFE_FREE(service_c);
     leave_function();

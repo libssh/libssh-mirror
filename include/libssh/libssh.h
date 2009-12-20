@@ -186,6 +186,13 @@ enum ssh_channel_requests_e {
 	SSH_CHANNEL_REQUEST_WINDOW_CHANGE,
 };
 
+enum ssh_publickey_state_e {
+	SSH_PUBLICKEY_STATE_ERROR=-1,
+	SSH_PUBLICKEY_STATE_NONE=0,
+	SSH_PUBLICKEY_STATE_VALID=1,
+	SSH_PUBLICKEY_STATE_WRONG=2
+};
+
 /* status flags */
 #define SSH_CLOSED 0x01
 #define SSH_READ_PENDING 0x02
