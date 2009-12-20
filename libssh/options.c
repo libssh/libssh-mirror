@@ -626,221 +626,7 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
 
   return 0;
 }
-/** @} */
 
-#ifdef WITH_SERVER
-/**
- * @addtogroup ssh_server
- * @{
- */
-static int ssh_bind_options_set_algo(ssh_bind sshbind, int algo,
-    const char *list) {
-  if (!verify_existing_algo(algo, list)) {
-    ssh_set_error(sshbind, SSH_REQUEST_DENIED,
-        "Setting method: no algorithm for method \"%s\" (%s)\n",
-        ssh_kex_nums[algo], list);
-    return -1;
-  }
-
-  SAFE_FREE(sshbind->wanted_methods[algo]);
-  sshbind->wanted_methods[algo] = strdup(list);
-  if (sshbind->wanted_methods[algo] == NULL) {
-    ssh_set_error_oom(sshbind);
-    return -1;
-  }
-
-  return 0;
-}
-
-/**
- * @brief This function can set all possible ssh bind options.
- *
- * @param  session      An allocated ssh option structure.
- *
- * @param  type         The option type to set. This could be one of the
- *                      following:
- *
- *                      SSH_BIND_OPTIONS_LOG_VERBOSITY:
- *                        Set the session logging verbosity (integer).
- *
- *                        The verbosity of the messages. Every log smaller or
- *                        equal to verbosity will be shown.
- *                          SSH_LOG_NOLOG: No logging
- *                          SSH_LOG_RARE: Rare conditions or warnings
- *                          SSH_LOG_ENTRY: API-accessible entrypoints
- *                          SSH_LOG_PACKET: Packet id and size
- *                          SSH_LOG_FUNCTIONS: Function entering and leaving
- *
- *                      SSH_BIND_OPTIONS_LOG_VERBOSITY_STR:
- *                        Set the session logging verbosity (integer).
- *
- *                        The verbosity of the messages. Every log smaller or
- *                        equal to verbosity will be shown.
- *                          SSH_LOG_NOLOG: No logging
- *                          SSH_LOG_RARE: Rare conditions or warnings
- *                          SSH_LOG_ENTRY: API-accessible entrypoints
- *                          SSH_LOG_PACKET: Packet id and size
- *                          SSH_LOG_FUNCTIONS: Function entering and leaving
- *
- *                      SSH_BIND_OPTIONS_BINDADDR:
- *                        Set the bind address.
- *
- *                      SSH_BIND_OPTIONS_BINDPORT:
- *                        Set the bind port, default is 22.
- *
- *                      SSH_BIND_OPTIONS_HOSTKEY:
- *                        Set the server public key type: ssh-rsa or ssh-dss
- *                        (string).
- *
- *                      SSH_BIND_OPTIONS_DSAKEY:
- *                        Set the path to the dsa ssh host key (string).
- *
- *                      SSH_BIND_OPTIONS_RSAKEY:
- *                        Set the path to the ssh host rsa key (string).
- *
- *                      SSH_BIND_OPTIONS_BANNER:
- *                        Set the server banner sent to clients (string).
- *
- * @param  value        The value to set. This is a generic pointer and the
- *                      datatype which is used should be set according to the
- *                      type set.
- *
- * @return              0 on success, < 0 on error.
- */
-int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
-    const void *value) {
-  char *p, *q;
-  int i;
-
-  if (sshbind == NULL) {
-    return -1;
-  }
-
-  switch (type) {
-    case SSH_BIND_OPTIONS_HOSTKEY:
-      if (value == NULL) {
-        ssh_set_error_invalid(sshbind, __FUNCTION__);
-        return -1;
-      } else {
-        if (ssh_bind_options_set_algo(sshbind, SSH_HOSTKEYS, value) < 0)
-          return -1;
-      }
-      break;
-    case SSH_BIND_OPTIONS_BINDADDR:
-      if (value == NULL) {
-        ssh_set_error_invalid(sshbind, __FUNCTION__);
-        return -1;
-      } else {
-        SAFE_FREE(sshbind->bindaddr);
-        sshbind->bindaddr = strdup(value);
-        if (sshbind->bindaddr == NULL) {
-          ssh_set_error_oom(sshbind);
-          return -1;
-        }
-      }
-      break;
-    case SSH_BIND_OPTIONS_BINDPORT:
-      if (value == NULL) {
-        ssh_set_error_invalid(sshbind, __FUNCTION__);
-        return -1;
-      } else {
-        int *x = (int *) value;
-        sshbind->bindport = *x & 0xffff;
-      }
-      break;
-    case SSH_BIND_OPTIONS_BINDPORT_STR:
-      if (value == NULL) {
-        sshbind->bindport = 22 & 0xffff;
-      } else {
-        q = strdup(value);
-        if (q == NULL) {
-          ssh_set_error_oom(sshbind);
-          return -1;
-        }
-        i = strtol(q, &p, 10);
-        if (q == p) {
-          SAFE_FREE(q);
-        }
-        SAFE_FREE(q);
-
-        sshbind->bindport = i & 0xffff;
-      }
-      break;
-    case SSH_BIND_OPTIONS_LOG_VERBOSITY:
-      if (value == NULL) {
-        ssh_set_error_invalid(sshbind, __FUNCTION__);
-        return -1;
-      } else {
-        int *x = (int *) value;
-        sshbind->log_verbosity = *x & 0xffff;
-      }
-      break;
-    case SSH_BIND_OPTIONS_LOG_VERBOSITY_STR:
-      if (value == NULL) {
-        sshbind->log_verbosity = 0;
-      } else {
-        q = strdup(value);
-        if (q == NULL) {
-          ssh_set_error_oom(sshbind);
-          return -1;
-        }
-        i = strtol(q, &p, 10);
-        if (q == p) {
-          SAFE_FREE(q);
-        }
-        SAFE_FREE(q);
-
-        sshbind->log_verbosity = i & 0xffff;
-      }
-      break;
-    case SSH_BIND_OPTIONS_DSAKEY:
-      if (value == NULL) {
-        ssh_set_error_invalid(sshbind, __FUNCTION__);
-        return -1;
-      } else {
-        SAFE_FREE(sshbind->dsakey);
-        sshbind->dsakey = strdup(value);
-        if (sshbind->dsakey == NULL) {
-          ssh_set_error_oom(sshbind);
-          return -1;
-        }
-      }
-      break;
-    case SSH_BIND_OPTIONS_RSAKEY:
-      if (value == NULL) {
-        ssh_set_error_invalid(sshbind, __FUNCTION__);
-        return -1;
-      } else {
-        SAFE_FREE(sshbind->rsakey);
-        sshbind->rsakey = strdup(value);
-        if (sshbind->rsakey == NULL) {
-          ssh_set_error_oom(sshbind);
-          return -1;
-        }
-      }
-      break;
-    case SSH_BIND_OPTIONS_BANNER:
-      if (value == NULL) {
-        ssh_set_error_invalid(sshbind, __FUNCTION__);
-        return -1;
-      } else {
-        SAFE_FREE(sshbind->banner);
-        sshbind->banner = strdup(value);
-        if (sshbind->banner == NULL) {
-          ssh_set_error_oom(sshbind);
-          return -1;
-        }
-      }
-      break;
-    default:
-      ssh_set_error(sshbind, SSH_REQUEST_DENIED, "Unkown ssh option %d", type);
-      return -1;
-    break;
-  }
-
-  return 0;
-}
-#endif
 
 /**
  * @brief Parse command line arguments.
@@ -1069,6 +855,222 @@ int ssh_options_parse_config(ssh_session session, const char *filename) {
   free(expanded_filename);
   return r;
 }
+
+/** @} */
+
+#ifdef WITH_SERVER
+/**
+ * @addtogroup ssh_server
+ * @{
+ */
+static int ssh_bind_options_set_algo(ssh_bind sshbind, int algo,
+    const char *list) {
+  if (!verify_existing_algo(algo, list)) {
+    ssh_set_error(sshbind, SSH_REQUEST_DENIED,
+        "Setting method: no algorithm for method \"%s\" (%s)\n",
+        ssh_kex_nums[algo], list);
+    return -1;
+  }
+
+  SAFE_FREE(sshbind->wanted_methods[algo]);
+  sshbind->wanted_methods[algo] = strdup(list);
+  if (sshbind->wanted_methods[algo] == NULL) {
+    ssh_set_error_oom(sshbind);
+    return -1;
+  }
+
+  return 0;
+}
+
+/**
+ * @brief This function can set all possible ssh bind options.
+ *
+ * @param  session      An allocated ssh option structure.
+ *
+ * @param  type         The option type to set. This could be one of the
+ *                      following:
+ *
+ *                      SSH_BIND_OPTIONS_LOG_VERBOSITY:
+ *                        Set the session logging verbosity (integer).
+ *
+ *                        The verbosity of the messages. Every log smaller or
+ *                        equal to verbosity will be shown.
+ *                          SSH_LOG_NOLOG: No logging
+ *                          SSH_LOG_RARE: Rare conditions or warnings
+ *                          SSH_LOG_ENTRY: API-accessible entrypoints
+ *                          SSH_LOG_PACKET: Packet id and size
+ *                          SSH_LOG_FUNCTIONS: Function entering and leaving
+ *
+ *                      SSH_BIND_OPTIONS_LOG_VERBOSITY_STR:
+ *                        Set the session logging verbosity (integer).
+ *
+ *                        The verbosity of the messages. Every log smaller or
+ *                        equal to verbosity will be shown.
+ *                          SSH_LOG_NOLOG: No logging
+ *                          SSH_LOG_RARE: Rare conditions or warnings
+ *                          SSH_LOG_ENTRY: API-accessible entrypoints
+ *                          SSH_LOG_PACKET: Packet id and size
+ *                          SSH_LOG_FUNCTIONS: Function entering and leaving
+ *
+ *                      SSH_BIND_OPTIONS_BINDADDR:
+ *                        Set the bind address.
+ *
+ *                      SSH_BIND_OPTIONS_BINDPORT:
+ *                        Set the bind port, default is 22.
+ *
+ *                      SSH_BIND_OPTIONS_HOSTKEY:
+ *                        Set the server public key type: ssh-rsa or ssh-dss
+ *                        (string).
+ *
+ *                      SSH_BIND_OPTIONS_DSAKEY:
+ *                        Set the path to the dsa ssh host key (string).
+ *
+ *                      SSH_BIND_OPTIONS_RSAKEY:
+ *                        Set the path to the ssh host rsa key (string).
+ *
+ *                      SSH_BIND_OPTIONS_BANNER:
+ *                        Set the server banner sent to clients (string).
+ *
+ * @param  value        The value to set. This is a generic pointer and the
+ *                      datatype which is used should be set according to the
+ *                      type set.
+ *
+ * @return              0 on success, < 0 on error.
+ */
+int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
+    const void *value) {
+  char *p, *q;
+  int i;
+
+  if (sshbind == NULL) {
+    return -1;
+  }
+
+  switch (type) {
+    case SSH_BIND_OPTIONS_HOSTKEY:
+      if (value == NULL) {
+        ssh_set_error_invalid(sshbind, __FUNCTION__);
+        return -1;
+      } else {
+        if (ssh_bind_options_set_algo(sshbind, SSH_HOSTKEYS, value) < 0)
+          return -1;
+      }
+      break;
+    case SSH_BIND_OPTIONS_BINDADDR:
+      if (value == NULL) {
+        ssh_set_error_invalid(sshbind, __FUNCTION__);
+        return -1;
+      } else {
+        SAFE_FREE(sshbind->bindaddr);
+        sshbind->bindaddr = strdup(value);
+        if (sshbind->bindaddr == NULL) {
+          ssh_set_error_oom(sshbind);
+          return -1;
+        }
+      }
+      break;
+    case SSH_BIND_OPTIONS_BINDPORT:
+      if (value == NULL) {
+        ssh_set_error_invalid(sshbind, __FUNCTION__);
+        return -1;
+      } else {
+        int *x = (int *) value;
+        sshbind->bindport = *x & 0xffff;
+      }
+      break;
+    case SSH_BIND_OPTIONS_BINDPORT_STR:
+      if (value == NULL) {
+        sshbind->bindport = 22 & 0xffff;
+      } else {
+        q = strdup(value);
+        if (q == NULL) {
+          ssh_set_error_oom(sshbind);
+          return -1;
+        }
+        i = strtol(q, &p, 10);
+        if (q == p) {
+          SAFE_FREE(q);
+        }
+        SAFE_FREE(q);
+
+        sshbind->bindport = i & 0xffff;
+      }
+      break;
+    case SSH_BIND_OPTIONS_LOG_VERBOSITY:
+      if (value == NULL) {
+        ssh_set_error_invalid(sshbind, __FUNCTION__);
+        return -1;
+      } else {
+        int *x = (int *) value;
+        sshbind->log_verbosity = *x & 0xffff;
+      }
+      break;
+    case SSH_BIND_OPTIONS_LOG_VERBOSITY_STR:
+      if (value == NULL) {
+        sshbind->log_verbosity = 0;
+      } else {
+        q = strdup(value);
+        if (q == NULL) {
+          ssh_set_error_oom(sshbind);
+          return -1;
+        }
+        i = strtol(q, &p, 10);
+        if (q == p) {
+          SAFE_FREE(q);
+        }
+        SAFE_FREE(q);
+
+        sshbind->log_verbosity = i & 0xffff;
+      }
+      break;
+    case SSH_BIND_OPTIONS_DSAKEY:
+      if (value == NULL) {
+        ssh_set_error_invalid(sshbind, __FUNCTION__);
+        return -1;
+      } else {
+        SAFE_FREE(sshbind->dsakey);
+        sshbind->dsakey = strdup(value);
+        if (sshbind->dsakey == NULL) {
+          ssh_set_error_oom(sshbind);
+          return -1;
+        }
+      }
+      break;
+    case SSH_BIND_OPTIONS_RSAKEY:
+      if (value == NULL) {
+        ssh_set_error_invalid(sshbind, __FUNCTION__);
+        return -1;
+      } else {
+        SAFE_FREE(sshbind->rsakey);
+        sshbind->rsakey = strdup(value);
+        if (sshbind->rsakey == NULL) {
+          ssh_set_error_oom(sshbind);
+          return -1;
+        }
+      }
+      break;
+    case SSH_BIND_OPTIONS_BANNER:
+      if (value == NULL) {
+        ssh_set_error_invalid(sshbind, __FUNCTION__);
+        return -1;
+      } else {
+        SAFE_FREE(sshbind->banner);
+        sshbind->banner = strdup(value);
+        if (sshbind->banner == NULL) {
+          ssh_set_error_oom(sshbind);
+          return -1;
+        }
+      }
+      break;
+    default:
+      ssh_set_error(sshbind, SSH_REQUEST_DENIED, "Unkown ssh option %d", type);
+      return -1;
+    break;
+  }
+
+  return 0;
+}
+#endif
 
 /** @} */
 /* vim: set ts=2 sw=2 et cindent: */
