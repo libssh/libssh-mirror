@@ -112,16 +112,23 @@ int gettimeofday(struct timeval *__p, void *__t) {
   return (0);
 }
 #else /* _WIN32 */
+#ifndef NSS_BUFLEN_PASSWD
+#define NSS_BUFLEN_PASSWD 4096
+#endif
+
 char *ssh_get_user_home_dir(void) {
   char *szPath = NULL;
-  struct passwd *pwd = NULL;
+  struct passwd pwd;
+  struct passwd *pwdbuf;
+  char buf[NSS_BUFLEN_PASSWD];
+  int rc;
 
-  pwd = getpwuid(getuid());
-  if (pwd == NULL) {
+  rc = getpwuid_r(getuid(), &pwd, buf, NSS_BUFLEN_PASSWD, &pwdbuf);
+  if (rc != 0) {
     return NULL;
   }
 
-  szPath = strdup(pwd->pw_dir);
+  szPath = strdup(pwd.pw_dir);
 
   return szPath;
 }
