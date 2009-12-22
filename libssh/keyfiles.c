@@ -59,15 +59,15 @@
 #endif /* HAVE_LIBCRYPTO */
 
 #define MAXLINESIZE 80
+#define RSA_HEADER_BEGIN "-----BEGIN RSA PRIVATE KEY-----"
+#define RSA_HEADER_END "-----END RSA PRIVATE KEY-----"
+#define DSA_HEADER_BEGIN "-----BEGIN DSA PRIVATE KEY-----"
+#define DSA_HEADER_END "-----END DSA PRIVATE KEY-----"
 
 #ifdef HAVE_LIBGCRYPT
 
 #define MAX_KEY_SIZE 32
 #define MAX_PASSPHRASE_SIZE 1024
-#define RSA_HEADER_BEGIN "-----BEGIN RSA PRIVATE KEY-----"
-#define RSA_HEADER_END "-----END RSA PRIVATE KEY-----"
-#define DSA_HEADER_BEGIN "-----BEGIN DSA PRIVATE KEY-----"
-#define DSA_HEADER_END "-----END DSA PRIVATE KEY-----"
 #define ASN1_INTEGER 2
 #define ASN1_SEQUENCE 48
 #define PKCS5_SALT_LEN 8
@@ -611,6 +611,22 @@ static int pem_get_password(char *buf, int size, int rwflag, void *userdata) {
 }
 #endif /* HAVE_LIBCRYPTO */
 
+static int privatekey_type_from_file(FILE *fp) {
+  char buffer[MAXLINESIZE] = {0};
+
+  if (!fgets(buffer, MAXLINESIZE, fp)) {
+    return 0;
+  }
+  fseek(fp, 0, SEEK_SET);
+  if (strncmp(buffer, DSA_HEADER_BEGIN, strlen(DSA_HEADER_BEGIN)) == 0) {
+    return TYPE_DSS;
+  }
+  if (strncmp(buffer, RSA_HEADER_BEGIN, strlen(RSA_HEADER_BEGIN)) == 0) {
+    return TYPE_RSA;
+  }
+  return 0;
+}
+
 /** \addtogroup ssh_auth
  * @{
  */
@@ -618,7 +634,7 @@ static int pem_get_password(char *buf, int size, int rwflag, void *userdata) {
 /** \brief Reads a SSH private key from a file
  * \param session SSH Session
  * \param filename Filename containing the private key
- * \param type Type of the private key. One of TYPE_DSS or TYPE_RSA.
+ * \param type Type of the private key. One of TYPE_DSS or TYPE_RSA. Pass 0 to automatically detect the type.
  * \param passphrase Passphrase to decrypt the private key. Set to null if none is needed or it is unknown.
  * \returns a PRIVATE_KEY object containing the private key, or NULL if it failed.
  * \see privatekey_free()
@@ -649,6 +665,14 @@ ssh_private_key privatekey_from_file(ssh_session session, const char *filename,
   ssh_log(session, SSH_LOG_RARE, "Trying to read %s, passphase=%s, authcb=%s",
       filename, passphrase ? "true" : "false",
       session->callbacks && session->callbacks->auth_function ? "true" : "false");
+
+  if (type == 0) {
+    type = privatekey_type_from_file(file);
+    if (type == 0) {
+      ssh_set_error(session, SSH_FATAL, "Invalid private key file.");
+      return NULL;
+    }
+  }
   switch (type) {
     case TYPE_DSS:
       if (passphrase == NULL) {
