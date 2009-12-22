@@ -669,6 +669,7 @@ ssh_private_key privatekey_from_file(ssh_session session, const char *filename,
   if (type == 0) {
     type = privatekey_type_from_file(file);
     if (type == 0) {
+      fclose(file);
       ssh_set_error(session, SSH_FATAL, "Invalid private key file.");
       return NULL;
     }
@@ -755,6 +756,7 @@ ssh_private_key privatekey_from_file(ssh_session session, const char *filename,
       }
       break;
     default:
+      fclose(file);
       ssh_set_error(session, SSH_FATAL, "Invalid private key type %d", type);
       return NULL;
   } /* switch */
