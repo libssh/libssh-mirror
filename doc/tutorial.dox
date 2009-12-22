@@ -180,7 +180,7 @@
  *    correctly.
  *    This makes possible the authentication via a codebook for instance (give code at 23:R at page 3).
  *  - public key method. The host knows the public key of the user, and the user must prove he knows the
- *    associated private key. This can be done manually, or delegated by the SSH user agent as we'll see
+ *    associated private key. This can be done manually, or delegated by the SSH agent as we'll see
  *    later.
  * 
  * And last but not least, all of this methods can be combined. You can for instance force the user to
@@ -209,7 +209,7 @@
  *  - SSH_AUTH_PARTIAL : some key matched but you still have to give an other mean of authentication 
       (like password). 
  * 
- * The ssh_userauth_autopubkey function also tries to authenticate using the user agent, if you have one
+ * The ssh_userauth_autopubkey function also tries to authenticate using the SSH agent, if you have one
  * running, or the "none" method.
  *
  * If you wish to authenticate by public key by your own, follow these steps :
