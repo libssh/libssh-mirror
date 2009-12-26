@@ -214,6 +214,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
           ssh_set_error(session, SSH_FATAL, "HMAC error");
           goto error;
         }
+        processed += current_macsize;
       }
 
       /* skip the size field which has been processed before */
