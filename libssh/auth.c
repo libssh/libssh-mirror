@@ -45,19 +45,23 @@
 /** \addtogroup ssh_auth
  * @{ */
 
+/**
+ * @internal
+ * @brief ask access to the ssh-userauth service
+ * @param session SSH session handle
+ * @returns SSH_OK on success
+ * @returns SSH_ERROR on error
+ * @bug current implementation is blocking
+ */
 static int ask_userauth(ssh_session session) {
   int rc = 0;
 
   enter_function();
-
-  if (session->auth_service_asked) {
-    rc = 0;
-  } else if (ssh_service_request(session,"ssh-userauth")) {
-    rc = -1;
-  } else {
-    session->auth_service_asked++;
-  }
-
+  do {
+  	rc=ssh_service_request(session,"ssh-userauth");
+  	if(rc==SSH_AGAIN)
+  		ssh_handle_packets(session);
+  } while(rc==SSH_AGAIN);
   leave_function();
   return rc;
 }

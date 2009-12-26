@@ -53,7 +53,7 @@ ssh_packet_callback default_packet_handlers[]= {
 	NULL, //#define SSH2_MSG_UNIMPLEMENTED 3
 	ssh_packet_ignore_callback, //#define SSH2_MSG_DEBUG	4
 	NULL, //#define SSH2_MSG_SERVICE_REQUEST	5
-	NULL, //#define SSH2_MSG_SERVICE_ACCEPT 6
+	ssh_packet_service_accept, //#define SSH2_MSG_SERVICE_ACCEPT 6
 	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
 	NULL, NULL, NULL, // 7-19
 	ssh_packet_kexinit, //#define SSH2_MSG_KEXINIT	 20

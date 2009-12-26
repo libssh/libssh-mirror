@@ -41,6 +41,20 @@ enum ssh_session_state_e {
 	SSH_SESSION_STATE_ERROR
 };
 
+/** @internal
+ * @brief states of the authentication service request
+ */
+enum ssh_auth_service_state_e {
+	/** initial state */
+	SSH_AUTH_SERVICE_NONE=0,
+	/** Authentication service request packet sent */
+	SSH_AUTH_SERVICE_SENT,
+	/** Service accepted */
+	SSH_AUTH_SERVICE_ACCEPTED,
+	/** Access to service denied (fatal) */
+	SSH_AUTH_SERVICE_DENIED
+};
+
 struct ssh_session_struct {
     struct error_struct error;
     struct ssh_socket_struct *socket;
@@ -60,7 +74,7 @@ struct ssh_session_struct {
     /* !=0 when the user got a session handle */
     int alive;
     /* two previous are deprecated */
-    int auth_service_asked;
+//    int auth_service_asked;
 
 /* socket status */
     int blocking; // functions should block
@@ -78,6 +92,7 @@ struct ssh_session_struct {
     enum ssh_session_state_e session_state;
     int packet_state;
     int dh_handshake_state;
+    enum ssh_auth_service_state_e auth_service_state;
     ssh_string dh_server_signature; //information used by dh_handshake.
 
     KEX server_kex;

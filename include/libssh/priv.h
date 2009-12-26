@@ -123,6 +123,7 @@ int ssh_send_banner(ssh_session session, int is_server);
 void ssh_connection_callback(ssh_session session);
 SSH_PACKET_CALLBACK(ssh_packet_dh_reply);
 SSH_PACKET_CALLBACK(ssh_packet_newkeys);
+SSH_PACKET_CALLBACK(ssh_packet_service_accept);
 
 /* config.c */
 int ssh_config_parse_file(ssh_session session, const char *filename);

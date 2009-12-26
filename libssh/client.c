@@ -468,6 +468,23 @@ error:
 
 /**
  * @internal
+ * @brief handles a SSH_SERVICE_ACCEPT packet
+ *
+ */
+SSH_PACKET_CALLBACK(ssh_packet_service_accept){
+	(void)packet;
+	(void)type;
+	(void)user;
+	enter_function();
+	session->auth_service_state=SSH_AUTH_SERVICE_ACCEPTED;
+	ssh_log(session, SSH_LOG_PACKET,
+	      "Received SSH_MSG_SERVICE_ACCEPT");
+	leave_function();
+	return SSH_PACKET_USED;
+}
+
+/**
+ * @internal
  *
  * @brief Request a service from the SSH server.
  *
@@ -476,52 +493,55 @@ error:
  * @param  session      The session to use to ask for a service request.
  * @param  service      The service request.
  *
- * @return 0 on success, < 0 on error.
+ * @return SSH_OK on success
+ * @return SSH_ERROR on error
+ * @return SSH_AGAIN No response received yet
+ * @bug actually only works with ssh-userauth
  */
 int ssh_service_request(ssh_session session, const char *service) {
   ssh_string service_s = NULL;
-
+  int rc=SSH_ERROR;
   enter_function();
+  switch(session->auth_service_state){
+  	case SSH_AUTH_SERVICE_NONE:
+  		if (buffer_add_u8(session->out_buffer, SSH2_MSG_SERVICE_REQUEST) < 0) {
+  			break;
+  		}
+  		service_s = string_from_char(service);
+  		if (service_s == NULL) {
+  			break;
+  		}
 
-  if (buffer_add_u8(session->out_buffer, SSH2_MSG_SERVICE_REQUEST) < 0) {
-    leave_function();
-    return -1;
+  		if (buffer_add_ssh_string(session->out_buffer,service_s) < 0) {
+  			string_free(service_s);
+  			break;
+  		}
+  		string_free(service_s);
+
+  		if (packet_send(session) != SSH_OK) {
+  			ssh_set_error(session, SSH_FATAL,
+  					"Sending SSH2_MSG_SERVICE_REQUEST failed.");
+  			break;
+  		}
+
+  		ssh_log(session, SSH_LOG_PACKET,
+  				"Sent SSH_MSG_SERVICE_REQUEST (service %s)", service);
+  		session->auth_service_state=SSH_AUTH_SERVICE_SENT;
+  		rc=SSH_AGAIN;
+  		break;
+  	case SSH_AUTH_SERVICE_DENIED:
+  		ssh_set_error(session,SSH_FATAL,"ssh_auth_service request denied");
+  		break;
+  	case SSH_AUTH_SERVICE_ACCEPTED:
+  		rc=SSH_OK;
+  		break;
+  	case SSH_AUTH_SERVICE_SENT:
+  		rc=SSH_AGAIN;
+  		break;
   }
-
-  service_s = string_from_char(service);
-  if (service_s == NULL) {
-    leave_function();
-    return -1;
-  }
-
-  if (buffer_add_ssh_string(session->out_buffer,service_s) < 0) {
-    string_free(service_s);
-    leave_function();
-    return -1;
-  }
-  string_free(service_s);
-
-  if (packet_send(session) != SSH_OK) {
-    ssh_set_error(session, SSH_FATAL,
-        "Sending SSH2_MSG_SERVICE_REQUEST failed.");
-    leave_function();
-    return -1;
-  }
-
-  ssh_log(session, SSH_LOG_PACKET,
-      "Sent SSH_MSG_SERVICE_REQUEST (service %s)", service);
-
-  if (packet_wait(session,SSH2_MSG_SERVICE_ACCEPT,1) != SSH_OK) {
-    ssh_set_error(session, SSH_FATAL, "Did not receive SERVICE_ACCEPT");
-    leave_function();
-    return -1;
-  }
-
-  ssh_log(session, SSH_LOG_PACKET,
-      "Received SSH_MSG_SERVICE_ACCEPT (service %s)", service);
 
   leave_function();
-  return 0;
+  return rc;
 }
 
 /** \addtogroup ssh_session
