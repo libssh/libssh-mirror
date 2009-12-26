@@ -82,8 +82,8 @@ ssh_packet_callback default_packet_handlers[]= {
 	NULL, //#define SSH2_MSG_REQUEST_FAILURE 82
 	NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 83-89
 	NULL, //#define SSH2_MSG_CHANNEL_OPEN 90
-	NULL, //#define SSH2_MSG_CHANNEL_OPEN_CONFIRMATION 91
-	NULL, //#define SSH2_MSG_CHANNEL_OPEN_FAILURE 92
+	ssh_packet_channel_open_conf, //#define SSH2_MSG_CHANNEL_OPEN_CONFIRMATION 91
+	ssh_packet_channel_open_fail, //#define SSH2_MSG_CHANNEL_OPEN_FAILURE 92
 	channel_rcv_change_window, //#define SSH2_MSG_CHANNEL_WINDOW_ADJUST 93
 	channel_rcv_data, //#define SSH2_MSG_CHANNEL_DATA 94
 	channel_rcv_data, //#define SSH2_MSG_CHANNEL_EXTENDED_DATA 95

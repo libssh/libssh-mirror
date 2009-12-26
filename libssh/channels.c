@@ -114,6 +114,64 @@ uint32_t ssh_channel_new_id(ssh_session session) {
   return ++(session->maxchannel);
 }
 
+/**
+ * @internal
+ * @brief handle a SSH_PACKET_CHANNEL_OPEN_CONFIRMATION packet
+ * Constructs the channel object.
+ */
+SSH_PACKET_CALLBACK(ssh_packet_channel_open_conf){
+  uint32_t channelid=0;
+  uint32_t tmp;
+  ssh_channel channel;
+  (void)type;
+  (void)user;
+  enter_function();
+  ssh_log(session,SSH_LOG_PACKET,"Received SSH2_MSG_CHANNEL_OPEN_CONFIRMATION");
+
+  buffer_get_u32(packet, &channelid);
+  channelid=ntohl(channelid);
+  channel=ssh_channel_from_local(session,channelid);
+  if(channel==NULL){
+    ssh_set_error(session, SSH_FATAL,
+        "Unknown channel id %lu",
+        (long unsigned int) channelid);
+    /* TODO: Set error marking in channel object */
+    leave_function();
+    return SSH_PACKET_USED;
+  }
+
+  buffer_get_u32(packet, &tmp);
+  channel->remote_channel = ntohl(tmp);
+
+  buffer_get_u32(packet, &tmp);
+  channel->remote_window = ntohl(tmp);
+
+  buffer_get_u32(packet,&tmp);
+  channel->remote_maxpacket=ntohl(tmp);
+
+  ssh_log(session, SSH_LOG_PROTOCOL,
+      "Received a CHANNEL_OPEN_CONFIRMATION for channel %d:%d",
+      channel->local_channel,
+      channel->remote_channel);
+  ssh_log(session, SSH_LOG_PROTOCOL,
+      "Remote window : %lu, maxpacket : %lu",
+      (long unsigned int) channel->remote_window,
+      (long unsigned int) channel->remote_maxpacket);
+
+  channel->open = 1;
+  leave_function();
+  return SSH_PACKET_USED;
+}
+
+/* TODO: implement and comment */
+SSH_PACKET_CALLBACK(ssh_packet_channel_open_fail){
+  (void)packet;
+  (void)user;
+  (void)type;
+  (void)session;
+  return 0;
+}
+
 static int channel_open(ssh_channel channel, const char *type_c, int window,
     int maxpacket, ssh_buffer payload) {
   ssh_session session = channel->session;
@@ -164,44 +222,16 @@ static int channel_open(ssh_channel channel, const char *type_c, int window,
       "Sent a SSH_MSG_CHANNEL_OPEN type %s for channel %d",
       type_c, channel->local_channel);
 
-  if (packet_wait(session, SSH2_MSG_CHANNEL_OPEN_CONFIRMATION, 1) != SSH_OK) {
-    leave_function();
-    return -1;
+  /* Todo: fix this into a correct loop */
+  /* wait until channel is opened by server */
+  while(!channel->open){
+    ssh_handle_packets(session);
   }
+  leave_function();
+  return SSH_OK;
 
+  /* TODO: put this into the correct packet handler */
   switch(session->in_packet.type) {
-    case SSH2_MSG_CHANNEL_OPEN_CONFIRMATION:
-      buffer_get_u32(session->in_buffer, &tmp);
-
-      if (channel->local_channel != ntohl(tmp)) {
-        ssh_set_error(session, SSH_FATAL,
-            "Server answered with sender channel number %lu instead of given %u",
-            (long unsigned int) ntohl(tmp),
-            channel->local_channel);
-        leave_function();
-        return -1;
-      }
-      buffer_get_u32(session->in_buffer, &tmp);
-      channel->remote_channel = ntohl(tmp);
-
-      buffer_get_u32(session->in_buffer, &tmp);
-      channel->remote_window = ntohl(tmp);
-
-      buffer_get_u32(session->in_buffer,&tmp);
-      channel->remote_maxpacket=ntohl(tmp);
-
-      ssh_log(session, SSH_LOG_PROTOCOL,
-          "Received a CHANNEL_OPEN_CONFIRMATION for channel %d:%d",
-          channel->local_channel,
-          channel->remote_channel);
-      ssh_log(session, SSH_LOG_PROTOCOL,
-          "Remote window : %lu, maxpacket : %lu",
-          (long unsigned int) channel->remote_window,
-          (long unsigned int) channel->remote_maxpacket);
-
-      channel->open = 1;
-      leave_function();
-      return 0;
     case SSH2_MSG_CHANNEL_OPEN_FAILURE:
       {
         ssh_string error_s;
@@ -229,11 +259,6 @@ static int channel_open(ssh_channel channel, const char *type_c, int window,
         leave_function();
         return -1;
       }
-    default:
-      ssh_set_error(session, SSH_FATAL,
-          "Received unknown packet %d\n", session->in_packet.type);
-      leave_function();
-      return -1;
   }
 
   leave_function();

@@ -46,6 +46,9 @@ struct ssh_channel_struct {
     int exit_status;
 };
 
+SSH_PACKET_CALLBACK(ssh_packet_channel_open_conf);
+SSH_PACKET_CALLBACK(ssh_packet_channel_open_fail);
+
 void channel_handle(ssh_session session, int type);
 ssh_channel channel_new(ssh_session session);
 int channel_default_bufferize(ssh_channel channel, void *data, int len,
