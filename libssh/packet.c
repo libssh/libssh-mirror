@@ -45,6 +45,7 @@
 #include "libssh/messages.h"
 #include "libssh/pcap.h"
 #include "libssh/kex.h"
+#include "libssh/auth.h"
 
 ssh_packet_callback default_packet_handlers[]= {
 
@@ -69,7 +70,7 @@ ssh_packet_callback default_packet_handlers[]= {
 	NULL, //#define SSH2_MSG_USERAUTH_REQUEST 50
 	NULL, //#define SSH2_MSG_USERAUTH_FAILURE 51
 	NULL, //#define SSH2_MSG_USERAUTH_SUCCESS 52
-	NULL, //#define SSH2_MSG_USERAUTH_BANNER 53
+	ssh_packet_userauth_banner, //#define SSH2_MSG_USERAUTH_BANNER 53
 	NULL, //#define SSH2_MSG_USERAUTH_PK_OK 60 SSH2_MSG_USERAUTH_PASSWD_CHANGEREQ 60
 			//SSH2_MSG_USERAUTH_INFO_REQUEST	 60
 	NULL, //#define SSH2_MSG_USERAUTH_INFO_RESPONSE 61

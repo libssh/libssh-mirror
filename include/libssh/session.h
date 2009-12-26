@@ -29,7 +29,7 @@ typedef struct ssh_kbdint_struct* ssh_kbdint;
 
 /* These are the different states a SSH session can be into its life */
 enum ssh_session_state_e {
-	SSH_SESSION_STATE_NONE,
+	SSH_SESSION_STATE_NONE=0,
 	SSH_SESSION_STATE_CONNECTING,
 	SSH_SESSION_STATE_SOCKET_CONNECTED,
 	SSH_SESSION_STATE_BANNER_RECEIVED,

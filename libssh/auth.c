@@ -38,6 +38,7 @@
 #include "libssh/packet.h"
 #include "libssh/session.h"
 #include "libssh/keys.h"
+#include "libssh/auth.h"
 
 /** \defgroup ssh_auth SSH Authentication functions
  * \brief functions to authenticate to servers
@@ -65,6 +66,31 @@ static int ask_userauth(ssh_session session) {
   leave_function();
   return rc;
 }
+
+/** @internal
+ * @handles a SSH_USERAUTH_BANNER packet
+ * This banner should be shown to user prior to authentication
+ */
+SSH_PACKET_CALLBACK(ssh_packet_userauth_banner){
+  ssh_string banner;
+  (void)type;
+  (void)user;
+  enter_function();
+  banner = buffer_get_ssh_string(packet);
+  if (banner == NULL) {
+    ssh_log(session, SSH_LOG_RARE,
+        "Invalid SSH_USERAUTH_BANNER packet");
+  } else {
+    ssh_log(session, SSH_LOG_PACKET,
+        "Received SSH_USERAUTH_BANNER packet");
+    if(session->banner != NULL)
+      string_free(session->banner);
+    session->banner = banner;
+  }
+  leave_function();
+  return SSH_PACKET_USED;
+}
+
 
 static int wait_auth_status(ssh_session session, int kbdint) {
   char *auth_methods = NULL;
@@ -147,22 +173,7 @@ static int wait_auth_status(ssh_session session, int kbdint) {
         rc = SSH_AUTH_SUCCESS;
         cont = 0;
         break;
-      case SSH2_MSG_USERAUTH_BANNER:
-        {
-          ssh_string banner;
 
-          banner = buffer_get_ssh_string(session->in_buffer);
-          if (banner == NULL) {
-            ssh_log(session, SSH_LOG_PACKET,
-                "The banner message was invalid. Continuing though\n");
-            break;
-          }
-          ssh_log(session, SSH_LOG_PACKET,
-              "Received a message banner\n");
-          string_free(session->banner); /* erase the older one */
-          session->banner = banner;
-          break;
-        }
       default:
         //packet_parse(session);
       	//FIXME: broken
@@ -270,7 +281,7 @@ int ssh_userauth_none(ssh_session session, const char *username) {
   string_free(method);
   string_free(user);
 
-  if (packet_send(session) != SSH_OK) {
+  if (packet_send(session) == SSH_ERROR) {
     leave_function();
     return rc;
   }
