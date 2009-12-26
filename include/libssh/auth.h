@@ -22,7 +22,47 @@
 #ifndef AUTH_H_
 #define AUTH_H_
 #include "libssh/callbacks.h"
-SSH_PACKET_CALLBACK(ssh_packet_userauth_banner);
 
+SSH_PACKET_CALLBACK(ssh_packet_userauth_banner);
+SSH_PACKET_CALLBACK(ssh_packet_userauth_failure);
+SSH_PACKET_CALLBACK(ssh_packet_userauth_success);
+SSH_PACKET_CALLBACK(ssh_packet_userauth_pk_ok);
+
+
+/** @internal
+ * States of authentication in the client-side. They describe
+ * what was the last response from the server
+ */
+enum ssh_auth_state_e {
+  /** No authentication asked */
+  SSH_AUTH_STATE_NONE=0,
+  /** Last authentication response was a partial success */
+  SSH_AUTH_STATE_PARTIAL,
+  /** Last authentication response was a success */
+  SSH_AUTH_STATE_SUCCESS,
+  /** Last authentication response was failed */
+  SSH_AUTH_STATE_FAILED,
+  /** Last authentication was erroneous */
+  SSH_AUTH_STATE_ERROR,
+  /** Last state was a keyboard-interactive ask for info */
+  SSH_AUTH_STATE_INFO,
+  /** Last state was a public key accepted for authentication */
+  SSH_AUTH_STATE_PK_OK
+
+};
+
+/** @internal
+ * @brief states of the authentication service request
+ */
+enum ssh_auth_service_state_e {
+  /** initial state */
+  SSH_AUTH_SERVICE_NONE=0,
+  /** Authentication service request packet sent */
+  SSH_AUTH_SERVICE_SENT,
+  /** Service accepted */
+  SSH_AUTH_SERVICE_ACCEPTED,
+  /** Access to service denied (fatal) */
+  SSH_AUTH_SERVICE_DENIED
+};
 
 #endif /* AUTH_H_ */

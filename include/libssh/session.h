@@ -24,6 +24,7 @@
 #include "libssh/priv.h"
 #include "libssh/packet.h"
 #include "libssh/pcap.h"
+#include "libssh/auth.h"
 
 typedef struct ssh_kbdint_struct* ssh_kbdint;
 
@@ -41,19 +42,6 @@ enum ssh_session_state_e {
 	SSH_SESSION_STATE_ERROR
 };
 
-/** @internal
- * @brief states of the authentication service request
- */
-enum ssh_auth_service_state_e {
-	/** initial state */
-	SSH_AUTH_SERVICE_NONE=0,
-	/** Authentication service request packet sent */
-	SSH_AUTH_SERVICE_SENT,
-	/** Service accepted */
-	SSH_AUTH_SERVICE_ACCEPTED,
-	/** Access to service denied (fatal) */
-	SSH_AUTH_SERVICE_DENIED
-};
 
 struct ssh_session_struct {
     struct error_struct error;
@@ -93,8 +81,9 @@ struct ssh_session_struct {
     int packet_state;
     int dh_handshake_state;
     enum ssh_auth_service_state_e auth_service_state;
-    ssh_string dh_server_signature; //information used by dh_handshake.
+    enum ssh_auth_state_e auth_state;
 
+    ssh_string dh_server_signature; //information used by dh_handshake.
     KEX server_kex;
     KEX client_kex;
     ssh_buffer in_hashbuf;
