@@ -919,13 +919,13 @@ int ssh_userauth_autopubkey(ssh_session session, const char *passphrase) {
 
           return rc;
         } else if (rc != SSH_AUTH_SUCCESS) {
-          ssh_log(session, SSH_LOG_PACKET, "Public key refused by server\n");
+          ssh_log(session, SSH_LOG_PROTOCOL, "Public key refused by server");
           SAFE_FREE(id);
           SAFE_FREE(privkeyfile);
           publickey_free(publickey);
           continue;
         }
-        ssh_log(session, SSH_LOG_RARE, "Public key accepted");
+        ssh_log(session, SSH_LOG_PROTOCOL, "Public key accepted");
         /* pubkey accepted by server ! */
         rc = ssh_userauth_agent_pubkey(session, NULL, publickey);
         if (rc == SSH_AUTH_ERROR) {
@@ -937,15 +937,15 @@ int ssh_userauth_autopubkey(ssh_session session, const char *passphrase) {
           return rc;
         } else if (rc != SSH_AUTH_SUCCESS) {
           ssh_log(session, SSH_LOG_RARE,
-              "Server accepted public key but refused the signature\n"
-              "It might be a bug of libssh\n");
+              "Server accepted public key but refused the signature ;"
+              " It might be a bug of libssh");
           SAFE_FREE(id);
           SAFE_FREE(privkeyfile);
           publickey_free(publickey);
           continue;
         }
         /* auth success */
-        ssh_log(session, SSH_LOG_RARE, "Authentication using %s success\n",
+        ssh_log(session, SSH_LOG_PROTOCOL, "Authentication using %s success",
             privkeyfile);
         SAFE_FREE(id);
         SAFE_FREE(privkeyfile);
@@ -964,8 +964,8 @@ int ssh_userauth_autopubkey(ssh_session session, const char *passphrase) {
 
   size = ARRAY_SIZE(keytab);
   if (session->identity) {
-    ssh_log(session, SSH_LOG_RARE,
-        "Trying identity file %s\n", session->identity);
+    ssh_log(session, SSH_LOG_PROTOCOL,
+        "Trying identity file %s", session->identity);
 
     id = malloc(strlen(session->identity) + 1 + 4);
     if (id == NULL) {
@@ -1001,7 +1001,7 @@ int ssh_userauth_autopubkey(ssh_session session, const char *passphrase) {
       return rc;
     } else {
       if (rc != SSH_AUTH_SUCCESS){
-        ssh_log(session, SSH_LOG_RARE, "Publickey refused by server");
+        ssh_log(session, SSH_LOG_PROTOCOL, "Publickey refused by server");
         string_free(pubkey);
         pubkey = NULL;
         SAFE_FREE(privkeyfile);
@@ -1011,10 +1011,10 @@ int ssh_userauth_autopubkey(ssh_session session, const char *passphrase) {
     }
 
     /* Public key accepted by server! */
-    ssh_log(session, SSH_LOG_RARE, "Trying to read privatekey %s", privkeyfile);
+    ssh_log(session, SSH_LOG_PROTOCOL, "Trying to read privatekey %s", privkeyfile);
     privkey = privatekey_from_file(session, privkeyfile, type, passphrase);
     if (privkey == NULL) {
-      ssh_log(session, SSH_LOG_FUNCTIONS,
+      ssh_log(session, SSH_LOG_RARE,
           "Reading private key %s failed (bad passphrase ?)",
           privkeyfile);
       string_free(pubkey);
@@ -1038,7 +1038,7 @@ int ssh_userauth_autopubkey(ssh_session session, const char *passphrase) {
       return rc;
     } else {
       if (rc != SSH_AUTH_SUCCESS){
-        ssh_log(session, SSH_LOG_FUNCTIONS,
+        ssh_log(session, SSH_LOG_RARE,
             "The server accepted the public key but refused the signature");
         string_free(pubkey);
         pubkey = NULL;
@@ -1050,7 +1050,7 @@ int ssh_userauth_autopubkey(ssh_session session, const char *passphrase) {
     }
 
     /* auth success */
-    ssh_log(session, SSH_LOG_RARE,
+    ssh_log(session, SSH_LOG_PROTOCOL,
         "Successfully authenticated using %s", privkeyfile);
     string_free(pubkey);
     privatekey_free(privkey);
@@ -1065,7 +1065,7 @@ int ssh_userauth_autopubkey(ssh_session session, const char *passphrase) {
     return SSH_AUTH_SUCCESS;
   }
   /* at this point, pubkey is NULL and so is privkeyfile */
-  ssh_log(session, SSH_LOG_FUNCTIONS,
+  ssh_log(session, SSH_LOG_PROTOCOL,
       "Tried every public key, none matched");
   ssh_set_error(session,SSH_NO_ERROR,"No public key matched");
   if (id) {
