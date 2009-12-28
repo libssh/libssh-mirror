@@ -366,23 +366,25 @@ int ssh_get_version(ssh_session session) {
  */
 SSH_PACKET_CALLBACK(ssh_packet_disconnect_callback){
 	uint32_t code;
-	char *error;
+	char *error=NULL;
 	ssh_string error_s;
 	(void)user;
 	(void)type;
-    buffer_get_u32(packet, &code);
-    error_s = buffer_get_ssh_string(packet);
-    if (error_s != NULL) {
-    	error = string_to_char(error_s);
-    	string_free(error_s);
-    }
-    ssh_log(session, SSH_LOG_PACKET, "Received SSH_MSG_DISCONNECT %d:%s",code,error);
-    ssh_set_error(session, SSH_FATAL,
-        "Received SSH_MSG_DISCONNECT: %d:%s",code,error);
-    SAFE_FREE(error);
+  buffer_get_u32(packet, &code);
+  error_s = buffer_get_ssh_string(packet);
+  if (error_s != NULL) {
+    error = string_to_char(error_s);
+    string_free(error_s);
+  }
+  ssh_log(session, SSH_LOG_PACKET, "Received SSH_MSG_DISCONNECT %d:%s",code,
+      error != NULL ? error : "no error");
+  ssh_set_error(session, SSH_FATAL,
+      "Received SSH_MSG_DISCONNECT: %d:%s",code,
+      error != NULL ? error : "no error");
+  SAFE_FREE(error);
 
-    ssh_socket_close(session->socket);
-    session->alive = 0;
+  ssh_socket_close(session->socket);
+  session->alive = 0;
 	/* TODO: handle a graceful disconnect */
 	return SSH_PACKET_USED;
 }
