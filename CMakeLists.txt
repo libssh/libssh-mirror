@@ -66,6 +66,17 @@ add_subdirectory(tests)
 # build samples
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
+# pkg-config file
+configure_file(libssh.pc.cmake ${CMAKE_CURRENT_BINARY_DIR}/libssh.pc)
+install(
+  FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/libssh.pc
+  DESTINATION
+    ${LIB_INSTALL_DIR}/pkgconfig
+  COMPONENT
+    pkgconfig
+)
+
 if (UNIX AND NOT WIN32)
   add_subdirectory(examples)
 
