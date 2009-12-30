@@ -433,6 +433,8 @@ LIBSSH_API int ssh_userauth_none(ssh_session session, const char *username);
 LIBSSH_API int ssh_userauth_offer_pubkey(ssh_session session, const char *username, int type, ssh_string publickey);
 LIBSSH_API int ssh_userauth_password(ssh_session session, const char *username, const char *password);
 LIBSSH_API int ssh_userauth_pubkey(ssh_session session, const char *username, ssh_string publickey, ssh_private_key privatekey);
+LIBSSH_API int ssh_userauth_privatekey_file(ssh_session session, const char *username,
+    const char *filename, const char *passphrase);
 LIBSSH_API const char *ssh_version(int req_version);
 LIBSSH_API int ssh_write_knownhost(ssh_session session);
 
