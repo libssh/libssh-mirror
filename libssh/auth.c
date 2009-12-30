@@ -467,7 +467,8 @@ error:
  *                      ssh_option_set_username() has been used. You cannot try
  *                      two different logins in a row.
  *
- * @param publickey     A public key returned by publickey_from_file().
+ * @param publickey     A public key returned by publickey_from_file(), or NULL
+ *                      to generate automatically from privatekey.
  *
  * @param privatekey    A private key returned by privatekey_from_file().
  *
@@ -489,6 +490,8 @@ int ssh_userauth_pubkey(ssh_session session, const char *username,
   ssh_string method = NULL;
   ssh_string algo = NULL;
   ssh_string sign = NULL;
+  ssh_public_key pk = NULL;
+  ssh_string pkstr = NULL;
   int rc = SSH_AUTH_ERROR;
 
   enter_function();
@@ -534,6 +537,17 @@ int ssh_userauth_pubkey(ssh_session session, const char *username,
   if (algo == NULL) {
     goto error;
   }
+  if (publickey == NULL) {
+    pk = publickey_from_privatekey(privatekey);
+    if (pk == NULL) {
+      goto error;
+    }
+    pkstr = publickey_to_string(pk);
+    publickey_free(pk);
+    if (pkstr == NULL) {
+      goto error;
+    }
+  }
 
   /* we said previously the public key was accepted */
   if (buffer_add_u8(session->out_buffer, SSH2_MSG_USERAUTH_REQUEST) < 0 ||
@@ -542,7 +556,7 @@ int ssh_userauth_pubkey(ssh_session session, const char *username,
       buffer_add_ssh_string(session->out_buffer, method) < 0 ||
       buffer_add_u8(session->out_buffer, 1) < 0 ||
       buffer_add_ssh_string(session->out_buffer, algo) < 0 ||
-      buffer_add_ssh_string(session->out_buffer, publickey) < 0) {
+      buffer_add_ssh_string(session->out_buffer, (publickey == NULL ? pkstr : publickey)) < 0) {
     goto error;
   }
 
@@ -550,6 +564,7 @@ int ssh_userauth_pubkey(ssh_session session, const char *username,
   string_free(service);
   string_free(method);
   string_free(algo);
+  string_free(pkstr);
 
   sign = ssh_do_sign(session,session->out_buffer, privatekey);
   if (sign) {
@@ -573,6 +588,7 @@ error:
   string_free(service);
   string_free(method);
   string_free(algo);
+  string_free(pkstr);
 
   leave_function();
   return rc;
