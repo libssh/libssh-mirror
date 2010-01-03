@@ -936,7 +936,7 @@ int channel_write_common(ssh_channel channel, const void *data,
       /* What happens when the channel window is zero? */
       while(channel->remote_window == 0) {
         /* parse every incoming packet */
-        if (packet_wait(channel->session, 0, 0) == SSH_ERROR) {
+        if (ssh_handle_packets(session) == SSH_ERROR) {
           leave_function();
           return SSH_ERROR;
         }
@@ -2127,7 +2127,7 @@ int channel_get_exit_status(ssh_channel channel) {
 
   while (channel->remote_eof == 0 || channel->exit_status == -1) {
     /* Parse every incoming packet */
-    if (packet_wait(channel->session, 0, 0) != SSH_OK) {
+    if (ssh_handle_packets(channel->session) != SSH_OK) {
       return -1;
     }
     if (channel->open == 0) {
