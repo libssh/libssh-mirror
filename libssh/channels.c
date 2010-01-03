@@ -622,32 +622,6 @@ SSH_PACKET_CALLBACK(channel_rcv_request) {
 }
 
 /*
- * channel_handle() is called by packet_wait(), for example when there is
- * channel informations to handle.
- */
-void channel_handle(ssh_session session, int type){
-  enter_function();
-
-  ssh_log(session, SSH_LOG_PROTOCOL, "Channel_handle(%d)", type);
-
-  switch(type) {
-    case SSH2_MSG_CHANNEL_WINDOW_ADJUST:
-    case SSH2_MSG_CHANNEL_REQUEST:
-    case SSH2_MSG_CHANNEL_CLOSE:
-    case SSH2_MSG_CHANNEL_EOF:
-    case SSH2_MSG_CHANNEL_DATA:
-    case SSH2_MSG_CHANNEL_EXTENDED_DATA:
-      ssh_packet_process(session, type);
-      break;
-    default:
-      ssh_log(session, SSH_LOG_FUNCTIONS,
-          "Unexpected message %d", type);
-  }
-
-  leave_function();
-}
-
-/*
  * When data has been received from the ssh server, it can be applied to the
  * known user function, with help of the callback, or inserted here
  *
