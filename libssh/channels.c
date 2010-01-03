@@ -172,6 +172,16 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_open_fail){
   return 0;
 }
 
+/** @internal
+ * @brief open a channel by sending a SSH_OPEN_CHANNEL message and
+ *        waiting reply.
+ * @param channel the current channel.
+ * @param type_c C string describing kind of channel (e.g. "exec").
+ * @param window receiving window of the channel. The window is the
+ *        maximum size of data that can stay in buffers and network.
+ * @param maxpacket maximum packet size allowed (like MTU).
+ * @param payload buffer containing additionnal payload for the query.
+ */
 static int channel_open(ssh_channel channel, const char *type_c, int window,
     int maxpacket, ssh_buffer payload) {
   ssh_session session = channel->session;
@@ -179,12 +189,11 @@ static int channel_open(ssh_channel channel, const char *type_c, int window,
   uint32_t tmp = 0;
 
   enter_function();
-
   channel->local_channel = ssh_channel_new_id(session);
   channel->local_maxpacket = maxpacket;
   channel->local_window = window;
 
-  ssh_log(session, SSH_LOG_RARE,
+  ssh_log(session, SSH_LOG_PROTOCOL,
       "Creating a channel %d with %d window and %d max packet",
       channel->local_channel, window, maxpacket);
 
@@ -218,7 +227,7 @@ static int channel_open(ssh_channel channel, const char *type_c, int window,
     return -1;
   }
 
-  ssh_log(session, SSH_LOG_RARE,
+  ssh_log(session, SSH_LOG_PACKET,
       "Sent a SSH_MSG_CHANNEL_OPEN type %s for channel %d",
       type_c, channel->local_channel);
 
@@ -1066,6 +1075,14 @@ void channel_set_blocking(ssh_channel channel, int blocking) {
   channel->blocking = (blocking == 0 ? 0 : 1);
 }
 
+SSH_PACKET_CALLBACK(ssh_packet_channel_success){
+  return SSH_PACKET_USED;
+}
+
+SSH_PACKET_CALLBACK(ssh_packet_channel_failure){
+  return SSH_PACKET_USED;
+}
+
 static int channel_request(ssh_channel channel, const char *request,
     ssh_buffer buffer, int reply) {
   ssh_session session = channel->session;
@@ -1073,6 +1090,11 @@ static int channel_request(ssh_channel channel, const char *request,
   int rc = SSH_ERROR;
 
   enter_function();
+  if(channel->request_state != SSH_CHANNEL_REQ_STATE_NONE){
+  	ssh_set_error(session,SSH_REQUEST_DENIED,"channel_request_* used in incorrect state");
+  	leave_function();
+  	return SSH_ERROR;
+  }
 
   req = string_from_char(request);
   if (req == NULL) {
@@ -1093,13 +1115,13 @@ static int channel_request(ssh_channel channel, const char *request,
       goto error;
     }
   }
-
+  channel->request_state = SSH_CHANNEL_REQ_STATE_PENDING;
   if (packet_send(session) != SSH_OK) {
     leave_function();
     return rc;
   }
 
-  ssh_log(session, SSH_LOG_RARE,
+  ssh_log(session, SSH_LOG_PACKET,
       "Sent a SSH_MSG_CHANNEL_REQUEST %s", request);
   if (reply == 0) {
     leave_function();

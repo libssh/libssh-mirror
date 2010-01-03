@@ -90,8 +90,8 @@ ssh_packet_callback default_packet_handlers[]= {
 	channel_rcv_eof, //#define SSH2_MSG_CHANNEL_EOF	96
 	channel_rcv_close, //#define SSH2_MSG_CHANNEL_CLOSE 97
 	channel_rcv_request, //#define SSH2_MSG_CHANNEL_REQUEST 98
-	NULL, //#define SSH2_MSG_CHANNEL_SUCCESS 99
-	NULL, //#define SSH2_MSG_CHANNEL_FAILURE 100
+	ssh_packet_channel_success, //#define SSH2_MSG_CHANNEL_SUCCESS 99
+	ssh_packet_channel_failure, //#define SSH2_MSG_CHANNEL_FAILURE 100
 };
 
 /* XXX include selected mac size */
