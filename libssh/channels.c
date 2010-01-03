@@ -1078,11 +1078,64 @@ void channel_set_blocking(ssh_channel channel, int blocking) {
   channel->blocking = (blocking == 0 ? 0 : 1);
 }
 
+/** @internal
+ * @brief handle a SSH_CHANNEL_SUCCESS packet and set the channel
+ * state.
+ */
 SSH_PACKET_CALLBACK(ssh_packet_channel_success){
+  ssh_channel channel;
+  (void)type;
+  (void)user;
+  enter_function();
+  channel=channel_from_msg(session,packet);
+  if (channel == NULL) {
+    ssh_log(session, SSH_LOG_FUNCTIONS, "%s", ssh_get_error(session));
+    leave_function();
+    return SSH_PACKET_USED;
+  }
+
+  ssh_log(session, SSH_LOG_PACKET,
+      "Received SSH_CHANNEL_SUCCESS on channel (%d:%d)",
+      channel->local_channel,
+      channel->remote_channel);
+  if(channel->request_state != SSH_CHANNEL_REQ_STATE_PENDING){
+    ssh_log(session, SSH_LOG_RARE, "SSH_CHANNEL_SUCCESS received in incorrect state %d",
+        channel->request_state);
+  } else {
+    channel->request_state=SSH_CHANNEL_REQ_STATE_ACCEPTED;
+  }
+
+  leave_function();
   return SSH_PACKET_USED;
 }
 
+/** @internal
+ * @brief handle a SSH_CHANNEL_FAILURE packet and set the channel
+ * state.
+ */
 SSH_PACKET_CALLBACK(ssh_packet_channel_failure){
+  ssh_channel channel;
+  (void)type;
+  (void)user;
+  enter_function();
+  channel=channel_from_msg(session,packet);
+  if (channel == NULL) {
+    ssh_log(session, SSH_LOG_FUNCTIONS, "%s", ssh_get_error(session));
+    leave_function();
+    return SSH_PACKET_USED;
+  }
+
+  ssh_log(session, SSH_LOG_PACKET,
+      "Received SSH_CHANNEL_FAILURE on channel (%d:%d)",
+      channel->local_channel,
+      channel->remote_channel);
+  if(channel->request_state != SSH_CHANNEL_REQ_STATE_PENDING){
+    ssh_log(session, SSH_LOG_RARE, "SSH_CHANNEL_FAILURE received in incorrect state %d",
+        channel->request_state);
+  } else {
+    channel->request_state=SSH_CHANNEL_REQ_STATE_DENIED;
+  }
+  leave_function();
   return SSH_PACKET_USED;
 }
 
@@ -1127,25 +1180,36 @@ static int channel_request(ssh_channel channel, const char *request,
   ssh_log(session, SSH_LOG_PACKET,
       "Sent a SSH_MSG_CHANNEL_REQUEST %s", request);
   if (reply == 0) {
+    channel->request_state = SSH_CHANNEL_REQ_STATE_NONE;
     leave_function();
     return SSH_OK;
   }
-
-  rc = packet_wait(session, SSH2_MSG_CHANNEL_SUCCESS, 1);
-  if (rc == SSH_ERROR) {
-    if (session->in_packet.type == SSH2_MSG_CHANNEL_FAILURE) {
-      ssh_log(session, SSH_LOG_PACKET,
-          "%s channel request failed", request);
+  while(channel->request_state == SSH_CHANNEL_REQ_STATE_PENDING){
+    ssh_handle_packets(session);
+  }
+  /* we received something */
+  switch (channel->request_state){
+    case SSH_CHANNEL_REQ_STATE_ERROR:
+      rc=SSH_ERROR;
+      break;
+    case SSH_CHANNEL_REQ_STATE_DENIED:
       ssh_set_error(session, SSH_REQUEST_DENIED,
           "Channel request %s failed", request);
-    } else {
-      ssh_log(session, SSH_LOG_RARE,
-          "Received an unexpected %d message", session->in_packet.type);
-    }
-  } else {
-    ssh_log(session, SSH_LOG_RARE, "Received a SUCCESS");
+      rc=SSH_ERROR;
+      break;
+    case SSH_CHANNEL_REQ_STATE_ACCEPTED:
+      ssh_log(session, SSH_LOG_PROTOCOL,
+          "Channel request %s success",request);
+      rc=SSH_OK;
+      break;
+    case SSH_CHANNEL_REQ_STATE_NONE:
+    case SSH_CHANNEL_REQ_STATE_PENDING:
+      /* Never reached */
+      ssh_set_error(session, SSH_FATAL, "Invalid state in channel_request()");
+      rc=SSH_ERROR;
+      break;
   }
-
+  channel->request_state=SSH_CHANNEL_REQ_STATE_NONE;
   leave_function();
   return rc;
 error:
