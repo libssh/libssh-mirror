@@ -36,7 +36,7 @@ int main(void) {
   }
 
 
-  while ((rc = channel_read(channel, buffer, sizeof(buffer), 0)) >= 0) {
+  while ((rc = channel_read(channel, buffer, sizeof(buffer), 0)) > 0) {
     fwrite(buffer, 1, rc, stdout);
   }
     
