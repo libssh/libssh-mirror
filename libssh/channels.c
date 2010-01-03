@@ -328,11 +328,19 @@ error:
   return -1;
 }
 
-static ssh_channel channel_from_msg(ssh_session session) {
+/** @internal
+ * @brief parse a channel-related packet to resolve it to a ssh_channel.
+ * @param session current SSH session.
+ * @param packet buffer to parse packet from. The read pointer will be moved after
+ * the call.
+ * @returns The related ssh_channel, or NULL if the channel is unknown or the packet
+ * is invalid.
+ */
+static ssh_channel channel_from_msg(ssh_session session, ssh_buffer packet) {
   ssh_channel channel;
   uint32_t chan;
 
-  if (buffer_get_u32(session->in_buffer, &chan) != sizeof(uint32_t)) {
+  if (buffer_get_u32(packet, &chan) != sizeof(uint32_t)) {
     ssh_set_error(session, SSH_FATAL,
         "Getting channel from message: short read");
     return NULL;
@@ -354,15 +362,14 @@ SSH_PACKET_CALLBACK(channel_rcv_change_window) {
   int rc;
   (void)user;
   (void)type;
-  (void)packet;
   enter_function();
 
-  channel = channel_from_msg(session);
+  channel = channel_from_msg(session,packet);
   if (channel == NULL) {
     ssh_log(session, SSH_LOG_FUNCTIONS, "%s", ssh_get_error(session));
   }
 
-  rc = buffer_get_u32(session->in_buffer, &bytes);
+  rc = buffer_get_u32(packet, &bytes);
   if (channel == NULL || rc != sizeof(uint32_t)) {
     ssh_log(session, SSH_LOG_PACKET,
         "Error getting a window adjust message: invalid packet");
@@ -391,14 +398,13 @@ SSH_PACKET_CALLBACK(channel_rcv_data){
   size_t len;
   int is_stderr;
   (void)user;
-  (void)packet;
   enter_function();
   if(type==SSH2_MSG_CHANNEL_DATA)
 	  is_stderr=0;
   else
 	  is_stderr=1;
 
-  channel = channel_from_msg(session);
+  channel = channel_from_msg(session,packet);
   if (channel == NULL) {
     ssh_log(session, SSH_LOG_FUNCTIONS,
         "%s", ssh_get_error(session));
@@ -409,10 +415,10 @@ SSH_PACKET_CALLBACK(channel_rcv_data){
   if (is_stderr) {
     uint32_t ignore;
     /* uint32 data type code. we can ignore it */
-    buffer_get_u32(session->in_buffer, &ignore);
+    buffer_get_u32(packet, &ignore);
   }
 
-  str = buffer_get_ssh_string(session->in_buffer);
+  str = buffer_get_ssh_string(packet);
   if (str == NULL) {
     ssh_log(session, SSH_LOG_PACKET, "Invalid data packet!");
     leave_function();
@@ -462,10 +468,9 @@ SSH_PACKET_CALLBACK(channel_rcv_eof) {
   ssh_channel channel;
   (void)user;
   (void)type;
-  (void)packet;
   enter_function();
 
-  channel = channel_from_msg(session);
+  channel = channel_from_msg(session,packet);
   if (channel == NULL) {
     ssh_log(session, SSH_LOG_FUNCTIONS, "%s", ssh_get_error(session));
     leave_function();
@@ -487,10 +492,9 @@ SSH_PACKET_CALLBACK(channel_rcv_close) {
 	ssh_channel channel;
 	(void)user;
 	(void)type;
-	(void)packet;
 	enter_function();
 
-	channel = channel_from_msg(session);
+	channel = channel_from_msg(session,packet);
 	if (channel == NULL) {
 		ssh_log(session, SSH_LOG_FUNCTIONS, "%s", ssh_get_error(session));
 		leave_function();
@@ -533,18 +537,17 @@ SSH_PACKET_CALLBACK(channel_rcv_request) {
 	uint32_t startpos = session->in_buffer->pos;
 	(void)user;
 	(void)type;
-	(void)packet;
 
 	enter_function();
 
-	channel = channel_from_msg(session);
+	channel = channel_from_msg(session,packet);
 	if (channel == NULL) {
 		ssh_log(session, SSH_LOG_FUNCTIONS,"%s", ssh_get_error(session));
 		leave_function();
 		return SSH_PACKET_USED;
 	}
 
-	request_s = buffer_get_ssh_string(session->in_buffer);
+	request_s = buffer_get_ssh_string(packet);
 	if (request_s == NULL) {
 		ssh_log(session, SSH_LOG_PACKET, "Invalid MSG_CHANNEL_REQUEST");
 		leave_function();
@@ -558,12 +561,12 @@ SSH_PACKET_CALLBACK(channel_rcv_request) {
 		return SSH_PACKET_USED;
 	}
 
-	buffer_get_u8(session->in_buffer, (uint8_t *) &status);
+	buffer_get_u8(packet, (uint8_t *) &status);
 
 	if (strcmp(request,"exit-status") == 0) {
 		SAFE_FREE(request);
 		ssh_log(session, SSH_LOG_PACKET, "received exit-status");
-		buffer_get_u32(session->in_buffer, &status);
+		buffer_get_u32(packet, &status);
 		channel->exit_status = ntohl(status);
 
 		leave_function();
@@ -578,7 +581,7 @@ SSH_PACKET_CALLBACK(channel_rcv_request) {
 
 		SAFE_FREE(request);
 
-		signal_s = buffer_get_ssh_string(session->in_buffer);
+		signal_s = buffer_get_ssh_string(packet);
 		if (signal_s == NULL) {
 			ssh_log(session, SSH_LOG_PACKET, "Invalid MSG_CHANNEL_REQUEST");
 			leave_function();
@@ -592,7 +595,7 @@ SSH_PACKET_CALLBACK(channel_rcv_request) {
 			return SSH_PACKET_USED;
 		}
 
-		buffer_get_u8(session->in_buffer, &i);
+		buffer_get_u8(packet, &i);
 		if (i == 0) {
 			core = "";
 		}
