@@ -121,7 +121,7 @@ static int realloc_buffer(struct ssh_buffer_struct *buffer, int needed) {
 /* \internal
  * \brief reinitialize a buffer
  * \param buffer buffer
- * \return 0 on sucess, < 0 on error
+ * \return 0 on success, < 0 on error
  */
 int buffer_reinit(struct ssh_buffer_struct *buffer) {
   buffer_verify(buffer);

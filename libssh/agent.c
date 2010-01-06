@@ -27,7 +27,7 @@
  * How does the ssh-agent work?
  *
  * a) client sends a request to get a list of all keys
- *    the agent returns the cound and all public keys
+ *    the agent returns the count and all public keys
  * b) iterate over them to check if the server likes one
  * c) the client sends a sign request to the agent
  *    type, pubkey as blob, data to sign, flags

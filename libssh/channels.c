@@ -180,7 +180,7 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_open_fail){
  * @param window receiving window of the channel. The window is the
  *        maximum size of data that can stay in buffers and network.
  * @param maxpacket maximum packet size allowed (like MTU).
- * @param payload buffer containing additionnal payload for the query.
+ * @param payload buffer containing additional payload for the query.
  */
 static int channel_open(ssh_channel channel, const char *type_c, int window,
     int maxpacket, ssh_buffer payload) {
@@ -700,10 +700,10 @@ int channel_open_session(ssh_channel channel) {
  *
  * @param remoteport    The remote port.
  *
- * @param sourcehost    The source host (your local computer). It's facultative
+ * @param sourcehost    The source host (your local computer). It's optional
  *                      and for logging purpose.
  *
- * @param localport     The source port (your local computer). It's facultative
+ * @param localport     The source port (your local computer). It's optional
  *                      and for logging purpose.
  * @warning This function does not bind the local port and does not automatically
  *          forward the content of a socket to the channel. You still have to
@@ -1045,7 +1045,7 @@ int channel_is_eof(ssh_channel channel) {
  *
  * @param blocking      A boolean for blocking or nonblocking.
  *
- * @bug This functionnality is still under development and
+ * @bug This functionality is still under development and
  *      doesn't work correctly.
  */
 void channel_set_blocking(ssh_channel channel, int blocking) {
@@ -1491,7 +1491,7 @@ static ssh_channel channel_accept(ssh_session session, int channeltype,
  *
  * @param channel       An x11-enabled session channel.
  *
- * @param timeout_ms    Timeout in milli-seconds.
+ * @param timeout_ms    Timeout in milliseconds.
  *
  * @return Newly created channel, or NULL if no X11 request from the server
  */
@@ -1621,7 +1621,7 @@ error:
  *
  * @param session       The ssh session to use.
  *
- * @param timeout_ms    Timeout in milli-seconds.
+ * @param timeout_ms    Timeout in milliseconds.
  *
  * @return Newly created channel, or NULL if no incoming channel request from
  *         the server
@@ -1672,9 +1672,9 @@ error:
 }
 
 /**
- * @brief Set environement variables.
+ * @brief Set environment variables.
  *
- * @param channel       The channel to set the environement variables.
+ * @param channel       The channel to set the environment variables.
  *
  * @param name          The name of the variable.
  *
@@ -1682,7 +1682,7 @@ error:
  *
  * @return SSH_SUCCESS on success, SSH_ERROR on error.
  *
- * @warning Some environement variables may be refused by security reasons.
+ * @warning Some environment variables may be refused by security reasons.
  * */
 int channel_request_env(ssh_channel channel, const char *name, const char *value) {
   ssh_buffer buffer = NULL;
@@ -1828,7 +1828,7 @@ error:
  *
  * @param buffer        The buffer which will get the data.
  *
- * @param count         The count of bytes to be read. If it is biggerthan 0,
+ * @param count         The count of bytes to be read. If it is bigger than 0,
  *                      the exact size will be read, else (bytes=0) it will
  *                      return once anything is available.
  *
@@ -2017,7 +2017,7 @@ int channel_read(ssh_channel channel, void *dest, uint32_t count, int is_stderr)
  * @brief Do a nonblocking read on the channel.
  *
  * A nonblocking read on the specified channel. it will return <= count bytes of
- * data read atomicly.
+ * data read atomically.
  *
  * @param channel       The channel to read from.
  *
@@ -2118,7 +2118,7 @@ ssh_session channel_get_session(ssh_channel channel) {
  * @param channel       The channel to get the status from.
  *
  * @return -1 if no exit status has been returned or eof not sent,
- *         the exit status othewise.
+ *         the exit status otherwise.
  */
 int channel_get_exit_status(ssh_channel channel) {
   if (channel->local_eof == 0) {
@@ -2283,7 +2283,7 @@ int channel_select(ssh_channel *readchans, ssh_channel *writechans,
     channel_protocol_select(readchans, writechans, exceptchans,
         rchans, wchans, echans);
     if (rchans[0] != NULL || wchans[0] != NULL || echans[0] != NULL) {
-      /* We've got one without doing any select overwrite the begining arrays */
+      /* We've got one without doing any select overwrite the beginning arrays */
       memcpy(readchans, rchans, (count_ptrs(rchans) + 1) * sizeof(ssh_channel ));
       memcpy(writechans, wchans, (count_ptrs(wchans) + 1) * sizeof(ssh_channel ));
       memcpy(exceptchans, echans, (count_ptrs(echans) + 1) * sizeof(ssh_channel ));

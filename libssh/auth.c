@@ -935,7 +935,7 @@ static struct ssh_keys_struct keytab[] = {
 #endif
 
 /**
- * @brief Tries to automaticaly authenticate with public key and "none"
+ * @brief Tries to automatically authenticate with public key and "none"
  *
  * It may fail, for instance it doesn't ask for a password and uses a default
  * asker for passphrases (in case the private key is encrypted).
@@ -1543,7 +1543,7 @@ int ssh_userauth_kbdint(ssh_session session, const char *user,
   }
 
   /*
-   * If we are at this point, it ss because session->kbdint exists.
+   * If we are at this point, it is because session->kbdint exists.
    * It means the user has set some informations there we need to send
    * the server and then we need to ack the status (new questions or ok
    * pass in).
@@ -1618,7 +1618,7 @@ const char *ssh_userauth_kbdint_getinstruction(ssh_session session) {
  *
  * @param session       The ssh session to use.
  *
- * @param i             The inndex number of the i'th prompt.
+ * @param i             The index number of the i'th prompt.
  *
  * @param echo          When different of NULL, it will obtain a boolean meaning
  *                      that the resulting user input should be echoed or not

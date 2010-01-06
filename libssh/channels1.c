@@ -38,9 +38,9 @@
 /*
  * This is a big hack. In fact, SSH1 doesn't make a clever use of channels.
  * The whole packets concerning shells are sent outside of a channel.
- * Thus, an inside limitation of this behaviour is that you can't only
+ * Thus, an inside limitation of this behavior is that you can't only
  * request one shell.
- * The question is stil how they managed to imbed two "channel" into one
+ * The question is still how they managed to embed two "channel" into one
  * protocol.
  */
 
@@ -276,7 +276,7 @@ int channel_handle1(ssh_session session, int type) {
       }
       break;
     default:
-      ssh_log(session, SSH_LOG_FUNCTIONS, "Unexepected message %d", type);
+      ssh_log(session, SSH_LOG_FUNCTIONS, "Unexpected message %d", type);
   }
 
   return 0;

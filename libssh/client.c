@@ -85,7 +85,7 @@ static void socket_callback_exception(int code, int errno, void *user){
  * @brief Gets the banner from socket and saves it in session.
  * Updates the session state
  *
- * @param  data pointer to the begining of header
+ * @param  data pointer to the beginning of header
  * @param  len size of the banner
  * @param  user is a pointer to session
  * @returns Number of bytes processed, or zero if the banner is not complete.
@@ -332,7 +332,7 @@ SSH_PACKET_CALLBACK(ssh_packet_newkeys){
 
   /*
    * Set the cryptographic functions for the next crypto
-   * (it is needed for generate_session_keys for key lenghts)
+   * (it is needed for generate_session_keys for key lengths)
    */
   if (crypt_set_algorithms(session)) {
     goto error;
@@ -430,7 +430,7 @@ static int dh_handshake(ssh_session session) {
     	/* wait until ssh_packet_dh_reply is called */
     	break;
     case DH_STATE_NEWKEYS_SENT:
-    	/* wait until ssh_packet_newkeys is calles */
+    	/* wait until ssh_packet_newkeys is called */
     	break;
     case DH_STATE_FINISHED:
     	leave_function();
@@ -567,7 +567,7 @@ void ssh_connection_callback(ssh_session session){
 		  ssh_log(session, SSH_LOG_RARE,
 		      "SSH server banner: %s", session->serverbanner);
 
-		  /* Here we analyse the different protocols the server allows. */
+		  /* Here we analyze the different protocols the server allows. */
 		  if (ssh_analyze_banner(session, &ssh1, &ssh2) < 0) {
 		    goto error;
 		  }

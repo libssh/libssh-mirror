@@ -29,10 +29,10 @@
  * g and n are two numbers common to every ssh software.
  * client's public key (e) is calculated by doing:
  * e = g^x mod p
- * client sents e to the server.
+ * client sends e to the server.
  * the server computes his own public key, f
  * f = g^y mod p
- * it sents it to the client
+ * it sends it to the client
  * the common key K is calculated by the client by doing
  * k = f^x mod p
  * the server does the same with the client public key e
@@ -209,7 +209,7 @@ char *ssh_get_hexa(const unsigned char *what, size_t len) {
 /**
  * @brief Print a buffer as colon separated hex string.
  *
- * @param  descr        Description printed infront of the hex string.
+ * @param  descr        Description printed in front of the hex string.
  *
  * @param  what         What should be converted to a hex string.
  *

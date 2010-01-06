@@ -179,7 +179,7 @@ unsigned char *packet_encrypt(ssh_session session, void *data, uint32_t len) {
  * @param  mac          The mac to compare with the hmac.
  *
  * @return              0 if hmac and mac are equal, < 0 if not or an error
- *                      occured.
+ *                      occurred.
  */
 int packet_hmac_verify(ssh_session session, ssh_buffer buffer,
     unsigned char *mac) {
