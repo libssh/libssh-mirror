@@ -246,12 +246,7 @@ int ssh_send_banner(ssh_session session, int server) {
   return 0;
 }
 
-enum ssh_dh_state_e {
-	DH_STATE_INIT,
-	DH_STATE_INIT_SENT,
-	DH_STATE_NEWKEYS_SENT,
-	DH_STATE_FINISHED
-};
+
 
 SSH_PACKET_CALLBACK(ssh_packet_dh_reply){
   ssh_string f = NULL;
@@ -325,52 +320,57 @@ SSH_PACKET_CALLBACK(ssh_packet_newkeys){
   			session->session_state,session->dh_handshake_state);
   	goto error;
   }
-  rc = make_sessionid(session);
-  if (rc != SSH_OK) {
-    goto error;
+  if(session->server){
+    /* server things are done in server.c */
+    session->dh_handshake_state=DH_STATE_FINISHED;
+  } else {
+    /* client */
+    rc = make_sessionid(session);
+    if (rc != SSH_OK) {
+      goto error;
+    }
+
+    /*
+     * Set the cryptographic functions for the next crypto
+     * (it is needed for generate_session_keys for key lengths)
+     */
+    if (crypt_set_algorithms(session)) {
+      goto error;
+    }
+
+    if (generate_session_keys(session) < 0) {
+      goto error;
+    }
+
+    /* Verify the host's signature. FIXME do it sooner */
+    signature = session->dh_server_signature;
+    session->dh_server_signature = NULL;
+    if (signature_verify(session, signature)) {
+      goto error;
+    }
+
+    /* forget it for now ... */
+    string_burn(signature);
+    string_free(signature);
+    signature=NULL;
+    /*
+     * Once we got SSH2_MSG_NEWKEYS we can switch next_crypto and
+     * current_crypto
+     */
+    if (session->current_crypto) {
+      crypto_free(session->current_crypto);
+      session->current_crypto=NULL;
+    }
+
+    /* FIXME later, include a function to change keys */
+    session->current_crypto = session->next_crypto;
+
+    session->next_crypto = crypto_new();
+    if (session->next_crypto == NULL) {
+      ssh_set_error_oom(session);
+      goto error;
+    }
   }
-
-  /*
-   * Set the cryptographic functions for the next crypto
-   * (it is needed for generate_session_keys for key lengths)
-   */
-  if (crypt_set_algorithms(session)) {
-    goto error;
-  }
-
-  if (generate_session_keys(session) < 0) {
-    goto error;
-  }
-
-  /* Verify the host's signature. FIXME do it sooner */
-  signature = session->dh_server_signature;
-  session->dh_server_signature = NULL;
-  if (signature_verify(session, signature)) {
-    goto error;
-  }
-
-  /* forget it for now ... */
-  string_burn(signature);
-  string_free(signature);
-  signature=NULL;
-  /*
-   * Once we got SSH2_MSG_NEWKEYS we can switch next_crypto and
-   * current_crypto
-   */
-  if (session->current_crypto) {
-    crypto_free(session->current_crypto);
-    session->current_crypto=NULL;
-  }
-
-  /* FIXME later, include a function to change keys */
-  session->current_crypto = session->next_crypto;
-
-  session->next_crypto = crypto_new();
-  if (session->next_crypto == NULL) {
-  	ssh_set_error_oom(session);
-    goto error;
-  }
-
   session->dh_handshake_state = DH_STATE_FINISHED;
   ssh_connection_callback(session);
 	return SSH_PACKET_USED;

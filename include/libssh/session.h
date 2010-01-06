@@ -43,6 +43,12 @@ enum ssh_session_state_e {
 	SSH_SESSION_STATE_ERROR
 };
 
+enum ssh_dh_state_e {
+  DH_STATE_INIT,
+  DH_STATE_INIT_SENT,
+  DH_STATE_NEWKEYS_SENT,
+  DH_STATE_FINISHED
+};
 
 struct ssh_session_struct {
     struct error_struct error;

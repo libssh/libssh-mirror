@@ -351,29 +351,44 @@ static int server_set_kex(ssh_session session) {
   return 0;
 }
 
-static int dh_handshake_server(ssh_session session) {
+SSH_PACKET_CALLBACK(ssh_packet_kexdh_init){
   ssh_string e;
-  ssh_string f;
-  ssh_string pubkey;
-  ssh_string sign;
-  ssh_public_key pub;
-  ssh_private_key prv;
-
-  if (packet_wait(session, SSH2_MSG_KEXDH_INIT, 1) != SSH_OK) {
-    return -1;
+  (void)type;
+  (void)user;enter_function();
+  ssh_log(session,SSH_LOG_PACKET,"Received SSH_MSG_KEXDH_INIT");
+  if(session->dh_handshake_state != DH_STATE_INIT){
+    ssh_log(session,SSH_LOG_RARE,"Invalid state for SSH_MSG_KEXDH_INIT");
+    goto error;
   }
-
-  e = buffer_get_ssh_string(session->in_buffer);
+  e = buffer_get_ssh_string(packet);
   if (e == NULL) {
     ssh_set_error(session, SSH_FATAL, "No e number in client request");
     return -1;
   }
   if (dh_import_e(session, e) < 0) {
     ssh_set_error(session, SSH_FATAL, "Cannot import e number");
-    string_free(e);
-    return -1;
+    session->session_state=SSH_SESSION_STATE_ERROR;
+  } else {
+    session->dh_handshake_state=DH_STATE_INIT_SENT;
   }
   string_free(e);
+
+  error:
+  leave_function();
+  return SSH_PACKET_USED;
+}
+
+static int dh_handshake_server(ssh_session session) {
+  ssh_string f;
+  ssh_string pubkey;
+  ssh_string sign;
+  ssh_public_key pub;
+  ssh_private_key prv;
+  /* waiting for SSH_MSG_KEXDH_INIT */
+  while(session->dh_handshake_state != DH_STATE_INIT_SENT){
+    ssh_handle_packets(session);
+  }
+  /* received SSH_MSG_KEXDH_INIT */
 
   if (dh_generate_y(session) < 0) {
     ssh_set_error(session, SSH_FATAL, "Could not create y number");
@@ -458,7 +473,7 @@ static int dh_handshake_server(ssh_session session) {
   }
   string_free(f);
   string_free(sign);
-
+  session->dh_handshake_state=DH_STATE_NEWKEYS_SENT;
   if (packet_send(session) != SSH_OK) {
     return -1;
   }
@@ -473,10 +488,8 @@ static int dh_handshake_server(ssh_session session) {
   }
   ssh_log(session, SSH_LOG_PACKET, "SSH_MSG_NEWKEYS sent");
 
-  if (packet_wait(session, SSH2_MSG_NEWKEYS, 1) != SSH_OK) {
-    return -1;
-  }
-  ssh_log(session, SSH_LOG_PACKET, "Got SSH_MSG_NEWKEYS");
+  while(session->dh_handshake_state != DH_STATE_FINISHED)
+    ssh_handle_packets(session);
 
   if (generate_session_keys(session) < 0) {
     return -1;
