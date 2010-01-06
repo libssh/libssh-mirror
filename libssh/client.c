@@ -590,6 +590,8 @@ void ssh_connection_callback(ssh_session session){
 		  session->session_state=SSH_SESSION_STATE_INITIAL_KEX;
 		  break;
 		case SSH_SESSION_STATE_INITIAL_KEX:
+		/* TODO: This state should disappear in favor of get_key handle */
+#ifdef WITH_SSH1
 			if(session->version==1){
 				if (ssh_get_kex1(session) < 0)
 					goto error;
@@ -598,6 +600,7 @@ void ssh_connection_callback(ssh_session session){
 				session->session_state=SSH_SESSION_STATE_AUTHENTICATING;
 				break;
 			}
+#endif
 			break;
 		case SSH_SESSION_STATE_KEXINIT_RECEIVED:
 			set_status(session,0.6);
