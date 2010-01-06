@@ -34,7 +34,9 @@ int packet_send(ssh_session session);
 int packet_read(ssh_session session);
 int packet_translate(ssh_session session);
 /* TODO: remove it when packet_wait is stripped out from libssh */
+#ifdef WITH_SSH1
 int packet_wait(ssh_session session,int type,int blocking);
+#endif
 int packet_flush(ssh_session session, int enforce_blocking);
 
 

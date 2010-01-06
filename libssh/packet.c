@@ -954,7 +954,7 @@ void packet_parse(ssh_session session) {
 #endif
 
 #ifdef WITH_SSH1
-static int packet_wait1(ssh_session session, int type, int blocking) {
+int packet_wait(ssh_session session, int type, int blocking) {
 
   enter_function();
 
@@ -1010,25 +1010,5 @@ static int packet_wait1(ssh_session session, int type, int blocking) {
   return SSH_OK;
 }
 #endif /* WITH_SSH1 */
-
-static int packet_wait2(ssh_session session, int type, int blocking) {
-  int rc = SSH_ERROR;
-  (void) type;
-  (void) blocking;
-  enter_function();
-  ssh_log(session,SSH_LOG_RARE,"packet_wait called. BAD!");
-  rc=ssh_handle_packets(session);
-  leave_function();
-  return rc;
-}
-
-int packet_wait(ssh_session session, int type, int block) {
-#ifdef WITH_SSH1
-  if (session->version == 1) {
-    return packet_wait1(session, type, block);
-  }
-#endif
-  return packet_wait2(session, type, block);
-}
 
 /* vim: set ts=2 sw=2 et cindent: */
