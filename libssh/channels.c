@@ -1499,13 +1499,70 @@ ssh_channel channel_accept_x11(ssh_channel channel, int timeout_ms) {
   return channel_accept(channel->session, SSH_CHANNEL_X11, timeout_ms);
 }
 
+/** @internal
+ * @brief handle a SSH_REQUEST_SUCCESS packet normally sent after a global request.
+ */
+SSH_PACKET_CALLBACK(ssh_request_success){
+  (void)type;
+  (void)user;
+  (void)packet;
+  enter_function();
+
+  ssh_log(session, SSH_LOG_PACKET,
+      "Received SSH_REQUEST_SUCCESS");
+  if(session->global_req_state != SSH_CHANNEL_REQ_STATE_PENDING){
+    ssh_log(session, SSH_LOG_RARE, "SSH_REQUEST_SUCCESS received in incorrect state %d",
+        session->global_req_state);
+  } else {
+    session->global_req_state=SSH_CHANNEL_REQ_STATE_ACCEPTED;
+  }
+
+  leave_function();
+  return SSH_PACKET_USED;
+}
+
+/** @internal
+ * @brief handle a SSH_REQUEST_DENIED packet normally sent after a global request.
+ */
+SSH_PACKET_CALLBACK(ssh_request_denied){
+  (void)type;
+  (void)user;
+  (void)packet;
+  enter_function();
+
+  ssh_log(session, SSH_LOG_PACKET,
+      "Received SSH_REQUEST_FAILURE");
+  if(session->global_req_state != SSH_CHANNEL_REQ_STATE_PENDING){
+    ssh_log(session, SSH_LOG_RARE, "SSH_REQUEST_DENIED received in incorrect state %d",
+        session->global_req_state);
+  } else {
+    session->global_req_state=SSH_CHANNEL_REQ_STATE_DENIED;
+  }
+
+  leave_function();
+  return SSH_PACKET_USED;
+
+}
+
+/** @brief sends a global request (needed for forward listening) and wait
+ * for the result.
+ * @param session ssh session handle
+ * @param request the type of request (defined in RFC)
+ * @param buffer additional data to put in packet
+ * @param reply expect a reply from server
+ * @return SSH_OK or SSH_ERROR
+ */
 static int global_request(ssh_session session, const char *request,
     ssh_buffer buffer, int reply) {
   ssh_string req = NULL;
   int rc = SSH_ERROR;
 
   enter_function();
-
+  if(session->global_req_state != SSH_CHANNEL_REQ_STATE_NONE){
+    ssh_set_error(session,SSH_FATAL,"Invalid state in start of global_request()");
+    leave_function();
+    return rc;
+  }
   req = string_from_char(request);
   if (req == NULL) {
     goto error;
@@ -1517,6 +1574,7 @@ static int global_request(ssh_session session, const char *request,
     goto error;
   }
   string_free(req);
+  req=NULL;
 
   if (buffer != NULL) {
     if (buffer_add_data(session->out_buffer, buffer_get(buffer),
@@ -1524,40 +1582,50 @@ static int global_request(ssh_session session, const char *request,
       goto error;
     }
   }
-
+  session->global_req_state = SSH_CHANNEL_REQ_STATE_PENDING;
   if (packet_send(session) != SSH_OK) {
     leave_function();
     return rc;
   }
 
-  ssh_log(session, SSH_LOG_RARE,
+  ssh_log(session, SSH_LOG_PACKET,
       "Sent a SSH_MSG_GLOBAL_REQUEST %s", request);
   if (reply == 0) {
+    session->global_req_state=SSH_CHANNEL_REQ_STATE_NONE;
     leave_function();
     return SSH_OK;
   }
-
-  rc = packet_wait(session, SSH2_MSG_REQUEST_SUCCESS, 1);
-  if (rc == SSH_ERROR) {
-    if (session->in_packet.type == SSH2_MSG_REQUEST_FAILURE) {
-      ssh_log(session, SSH_LOG_PACKET,
-          "%s channel request failed", request);
-      ssh_set_error(session, SSH_REQUEST_DENIED,
-          "Channel request %s failed", request);
-    } else {
-      ssh_log(session, SSH_LOG_RARE,
-          "Received an unexpected %d message", session->in_packet.type);
+  while(session->global_req_state == SSH_CHANNEL_REQ_STATE_PENDING){
+    rc=ssh_handle_packets(session);
+    if(rc==SSH_ERROR){
+      session->global_req_state = SSH_CHANNEL_REQ_STATE_ERROR;
+      break;
     }
-  } else {
-    ssh_log(session, SSH_LOG_RARE, "Received a SUCCESS");
+  }
+  switch(session->global_req_state){
+    case SSH_CHANNEL_REQ_STATE_ACCEPTED:
+      ssh_log(session, SSH_LOG_PROTOCOL, "Global request %s success",request);
+      rc=SSH_OK;
+      break;
+    case SSH_CHANNEL_REQ_STATE_DENIED:
+      ssh_log(session, SSH_LOG_PACKET,
+          "Global request %s failed", request);
+      ssh_set_error(session, SSH_REQUEST_DENIED,
+          "Global request %s failed", request);
+      rc=SSH_ERROR;
+      break;
+    case SSH_CHANNEL_REQ_STATE_ERROR:
+    case SSH_CHANNEL_REQ_STATE_NONE:
+    case SSH_CHANNEL_REQ_STATE_PENDING:
+      rc=SSH_ERROR;
+      break;
+
   }
 
   leave_function();
   return rc;
 error:
-  buffer_reinit(session->out_buffer);
   string_free(req);
-
   leave_function();
   return rc;
 }

@@ -25,6 +25,7 @@
 #include "libssh/packet.h"
 #include "libssh/pcap.h"
 #include "libssh/auth.h"
+#include "libssh/channels.h"
 
 typedef struct ssh_kbdint_struct* ssh_kbdint;
 
@@ -82,7 +83,7 @@ struct ssh_session_struct {
     int dh_handshake_state;
     enum ssh_auth_service_state_e auth_service_state;
     enum ssh_auth_state_e auth_state;
-
+    enum ssh_channel_request_state_e global_req_state;
     ssh_string dh_server_signature; //information used by dh_handshake.
     KEX server_kex;
     KEX client_kex;
