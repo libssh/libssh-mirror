@@ -772,20 +772,22 @@ ssh_message ssh_message_retrieve(ssh_session session, uint32_t packettype){
   return msg;
 }
 
-/* \brief blocking message retrieval
- * \bug does anything that is not a message, like a channel read/write
+/** @brief Retrieves a SSH message from SSH session
+ * @param session SSH session
+ * @return The SSH message received, NULL in case of error.
+ * @warning This function blocks until a message has been received. Better
+ * set up a callback if this behavior is unwanted.
  */
 ssh_message ssh_message_get(ssh_session session) {
   ssh_message msg = NULL;
   enter_function();
   do {
-    if ((packet_read(session) != SSH_OK) ||
-        (packet_translate(session) != SSH_OK)) {
+    if (ssh_handle_packets(session) == SSH_ERROR) {
       leave_function();
       return NULL;
     }
-  } while(session->in_packet.type==SSH2_MSG_IGNORE || session->in_packet.type==SSH2_MSG_DEBUG);
-  msg=ssh_message_retrieve(session,session->in_packet.type);
+    msg=ssh_list_get_head(ssh_message, session->ssh_message_list);
+  } while(msg==NULL);
   leave_function();
   return msg;
 }
@@ -866,14 +868,25 @@ int message_handle(ssh_session session, void *user, uint8_t type, ssh_buffer pac
 	(void)user;
 	(void)packet;
 	if(msg){
-		if(!session->ssh_message_list){
-			session->ssh_message_list=ssh_list_new();
-		}
-		ssh_list_add(session->ssh_message_list,msg);
+	  message_queue(session,msg);
 		return SSH_PACKET_USED;
 	} else {
 		return SSH_PACKET_NOT_USED;
 	}
+}
+
+/** @internal
+ * @brief adds the message to the current queue of messages to be parsed
+ * @param session SSH session
+ * @param message message to add to the queue
+ */
+void message_queue(ssh_session session, ssh_message message){
+  if(message){
+    if(session->ssh_message_list == NULL){
+      session->ssh_message_list=ssh_list_new();
+    }
+    ssh_list_add(session->ssh_message_list,message);
+  }
 }
 
 /**

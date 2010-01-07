@@ -80,5 +80,6 @@ struct ssh_message_struct {
 
 //void message_handle(ssh_session session, uint32_t type);
 int ssh_execute_message_callbacks(ssh_session session);
+void message_queue(ssh_session session, ssh_message message);
 
 #endif /* MESSAGES_H_ */
