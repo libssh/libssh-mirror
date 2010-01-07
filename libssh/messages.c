@@ -61,14 +61,15 @@ static ssh_message message_new(ssh_session session){
   return msg;
 }
 
-static ssh_message handle_service_request(ssh_session session) {
+SSH_PACKET_CALLBACK(ssh_packet_service_request){
   ssh_string service = NULL;
   char *service_c = NULL;
   ssh_message msg=NULL;
 
   enter_function();
-
-  service = buffer_get_ssh_string(session->in_buffer);
+  (void)type;
+  (void)user;
+  service = buffer_get_ssh_string(packet);
   if (service == NULL) {
     ssh_set_error(session, SSH_FATAL, "Invalid SSH_MSG_SERVICE_REQUEST packet");
     goto error;
@@ -87,10 +88,12 @@ static ssh_message handle_service_request(ssh_session session) {
   }
   msg->type=SSH_REQUEST_SERVICE;
   msg->service_request.service=service_c;
-  error:
+error:
   string_free(service);
+  if(msg != NULL)
+    message_queue(session,msg);
   leave_function();
-  return msg;
+  return SSH_PACKET_USED;
 }
 
 static int handle_unimplemented(ssh_session session) {
@@ -289,29 +292,29 @@ error:
   return NULL;
 }
 
-static ssh_message handle_channel_request_open(ssh_session session) {
+SSH_PACKET_CALLBACK(ssh_packet_channel_open){
   ssh_message msg = NULL;
-  ssh_string type = NULL, originator = NULL, destination = NULL;
+  ssh_string type_s = NULL, originator = NULL, destination = NULL;
   char *type_c = NULL;
-  uint32_t sender, window, packet, originator_port, destination_port;
+  uint32_t sender, window, packet_size, originator_port, destination_port;
 
   enter_function();
-
+  (void)type;
+  (void)user;
   msg = message_new(session);
   if (msg == NULL) {
     ssh_set_error_oom(session);
-    leave_function();
-    return NULL;
+    goto error;
   }
 
   msg->type = SSH_REQUEST_CHANNEL_OPEN;
 
-  type = buffer_get_ssh_string(session->in_buffer);
-  if (type == NULL) {
+  type_s = buffer_get_ssh_string(packet);
+  if (type_s == NULL) {
     ssh_set_error_oom(session);
     goto error;
   }
-  type_c = string_to_char(type);
+  type_c = string_to_char(type_s);
   if (type_c == NULL) {
     ssh_set_error_oom(session);
     goto error;
@@ -319,21 +322,21 @@ static ssh_message handle_channel_request_open(ssh_session session) {
 
   ssh_log(session, SSH_LOG_PACKET,
       "Clients wants to open a %s channel", type_c);
-  string_free(type);
+  string_free(type_s);
+  type_s=NULL;
 
-  buffer_get_u32(session->in_buffer, &sender);
-  buffer_get_u32(session->in_buffer, &window);
-  buffer_get_u32(session->in_buffer, &packet);
+  buffer_get_u32(packet, &sender);
+  buffer_get_u32(packet, &window);
+  buffer_get_u32(packet, &packet_size);
 
   msg->channel_request_open.sender = ntohl(sender);
   msg->channel_request_open.window = ntohl(window);
-  msg->channel_request_open.packet_size = ntohl(packet);
+  msg->channel_request_open.packet_size = ntohl(packet_size);
 
   if (strcmp(type_c,"session") == 0) {
     msg->channel_request_open.type = SSH_CHANNEL_SESSION;
     SAFE_FREE(type_c);
-    leave_function();
-    return msg;
+    goto end;
   }
 
   if (strcmp(type_c,"direct-tcpip") == 0) {
@@ -342,7 +345,7 @@ static ssh_message handle_channel_request_open(ssh_session session) {
     ssh_set_error_oom(session);
 		goto error;
 	}
-	msg->channel_request_open.destination = string_to_char(type);
+	msg->channel_request_open.destination = string_to_char(type_s);
 	if (msg->channel_request_open.destination == NULL) {
     ssh_set_error_oom(session);
 	  string_free(destination);
@@ -358,7 +361,7 @@ static ssh_message handle_channel_request_open(ssh_session session) {
     ssh_set_error_oom(session);
 	  goto error;
 	}
-	msg->channel_request_open.originator = string_to_char(type);
+	msg->channel_request_open.originator = string_to_char(type_s);
 	if (msg->channel_request_open.originator == NULL) {
     ssh_set_error_oom(session);
 	  string_free(originator);
@@ -366,22 +369,20 @@ static ssh_message handle_channel_request_open(ssh_session session) {
 	}
     string_free(originator);
 
-    buffer_get_u32(session->in_buffer, &originator_port);
+    buffer_get_u32(packet, &originator_port);
     msg->channel_request_open.originator_port = ntohl(originator_port);
 
     msg->channel_request_open.type = SSH_CHANNEL_DIRECT_TCPIP;
-    SAFE_FREE(type_c);
-    leave_function();
-    return msg;
+    goto end;
   }
 
   if (strcmp(type_c,"forwarded-tcpip") == 0) {
-    destination = buffer_get_ssh_string(session->in_buffer);
+    destination = buffer_get_ssh_string(packet);
 	if (destination == NULL) {
     ssh_set_error_oom(session);
 		goto error;
 	}
-	msg->channel_request_open.destination = string_to_char(type);
+	msg->channel_request_open.destination = string_to_char(type_s);
 	if (msg->channel_request_open.destination == NULL) {
     ssh_set_error_oom(session);
 	  string_free(destination);
@@ -389,15 +390,15 @@ static ssh_message handle_channel_request_open(ssh_session session) {
 	}
     string_free(destination);
 
-    buffer_get_u32(session->in_buffer, &destination_port);
+    buffer_get_u32(packet, &destination_port);
     msg->channel_request_open.destination_port = ntohl(destination_port);
 
-    originator = buffer_get_ssh_string(session->in_buffer);
+    originator = buffer_get_ssh_string(packet);
 	if (originator == NULL) {
     ssh_set_error_oom(session);
 	  goto error;
 	}
-	msg->channel_request_open.originator = string_to_char(type);
+	msg->channel_request_open.originator = string_to_char(type_s);
 	if (msg->channel_request_open.originator == NULL) {
     ssh_set_error_oom(session);
 	  string_free(originator);
@@ -405,22 +406,20 @@ static ssh_message handle_channel_request_open(ssh_session session) {
 	}
     string_free(originator);
 
-    buffer_get_u32(session->in_buffer, &originator_port);
+    buffer_get_u32(packet, &originator_port);
     msg->channel_request_open.originator_port = ntohl(originator_port);
 
     msg->channel_request_open.type = SSH_CHANNEL_FORWARDED_TCPIP;
-    SAFE_FREE(type_c);
-    leave_function();
-    return msg;
+    goto end;
   }
 
   if (strcmp(type_c,"x11") == 0) {
-    originator = buffer_get_ssh_string(session->in_buffer);
+    originator = buffer_get_ssh_string(packet);
 	if (originator == NULL) {
     ssh_set_error_oom(session);
 	  goto error;
 	}
-	msg->channel_request_open.originator = string_to_char(type);
+	msg->channel_request_open.originator = string_to_char(type_s);
 	if (msg->channel_request_open.originator == NULL) {
     ssh_set_error_oom(session);
 	  string_free(originator);
@@ -428,27 +427,27 @@ static ssh_message handle_channel_request_open(ssh_session session) {
 	}
     string_free(originator);
 
-    buffer_get_u32(session->in_buffer, &originator_port);
+    buffer_get_u32(packet, &originator_port);
     msg->channel_request_open.originator_port = ntohl(originator_port);
 
     msg->channel_request_open.type = SSH_CHANNEL_X11;
-    SAFE_FREE(type_c);
-    leave_function();
-    return msg;
+    goto end;
   }
 
   msg->channel_request_open.type = SSH_CHANNEL_UNKNOWN;
-  SAFE_FREE(type_c);
+  goto end;
 
-  leave_function();
-  return msg;
 error:
-  string_free(type);
-  SAFE_FREE(type_c);
   ssh_message_free(msg);
-
+  msg=NULL;
+end:
+  if(type_s != NULL)
+    string_free(type_s);
+  SAFE_FREE(type_c);
+  if(msg != NULL)
+    message_queue(session,msg);
   leave_function();
-  return NULL;
+  return SSH_PACKET_USED;
 }
 
 ssh_channel ssh_message_channel_request_open_reply_accept(ssh_message msg) {
@@ -746,18 +745,19 @@ int ssh_message_channel_request_reply_success(ssh_message msg) {
   return SSH_OK;
 }
 
+/* TODO this function should disapear in favor of SSH_PACKET handlers */
 ssh_message ssh_message_retrieve(ssh_session session, uint32_t packettype){
   ssh_message msg=NULL;
   enter_function();
   switch(packettype) {
     case SSH2_MSG_SERVICE_REQUEST:
-      msg=handle_service_request(session);
+//      msg=handle_service_request(session);
       break;
     case SSH2_MSG_USERAUTH_REQUEST:
       msg = handle_userauth_request(session);
       break;
     case SSH2_MSG_CHANNEL_OPEN:
-      msg = handle_channel_request_open(session);
+//      msg = handle_channel_request_open(session);
       break;
     case SSH2_MSG_CHANNEL_REQUEST:
       msg = handle_channel_request(session);

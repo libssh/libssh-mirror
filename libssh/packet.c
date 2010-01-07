@@ -53,7 +53,7 @@ ssh_packet_callback default_packet_handlers[]= {
 	ssh_packet_ignore_callback, //#define SSH2_MSG_IGNORE	 2
 	NULL, //#define SSH2_MSG_UNIMPLEMENTED 3
 	ssh_packet_ignore_callback, //#define SSH2_MSG_DEBUG	4
-	NULL, //#define SSH2_MSG_SERVICE_REQUEST	5
+	ssh_packet_service_request, //#define SSH2_MSG_SERVICE_REQUEST	5
 	ssh_packet_service_accept, //#define SSH2_MSG_SERVICE_ACCEPT 6
 	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
 	NULL, NULL, NULL, // 7-19
@@ -81,7 +81,7 @@ ssh_packet_callback default_packet_handlers[]= {
 	ssh_request_success, //#define SSH2_MSG_REQUEST_SUCCESS 81
 	ssh_request_denied, //#define SSH2_MSG_REQUEST_FAILURE 82
 	NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 83-89
-	NULL, //#define SSH2_MSG_CHANNEL_OPEN 90
+	ssh_packet_channel_open, //#define SSH2_MSG_CHANNEL_OPEN 90
 	ssh_packet_channel_open_conf, //#define SSH2_MSG_CHANNEL_OPEN_CONFIRMATION 91
 	ssh_packet_channel_open_fail, //#define SSH2_MSG_CHANNEL_OPEN_FAILURE 92
 	channel_rcv_change_window, //#define SSH2_MSG_CHANNEL_WINDOW_ADJUST 93
