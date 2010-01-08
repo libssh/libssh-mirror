@@ -375,7 +375,6 @@ LIBSSH_API ssh_channel ssh_message_channel_request_open_reply_accept(ssh_message
 LIBSSH_API int ssh_message_channel_request_reply_success(ssh_message msg);
 LIBSSH_API void ssh_message_free(ssh_message msg);
 LIBSSH_API ssh_message ssh_message_get(ssh_session session);
-LIBSSH_API ssh_message ssh_message_retrieve(ssh_session session, uint32_t packettype);
 LIBSSH_API int ssh_message_subtype(ssh_message msg);
 LIBSSH_API int ssh_message_type(ssh_message msg);
 LIBSSH_API int ssh_mkdir (const char *pathname, mode_t mode);

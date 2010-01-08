@@ -96,18 +96,6 @@ error:
   return SSH_PACKET_USED;
 }
 
-static int handle_unimplemented(ssh_session session) {
-  if (buffer_add_u32(session->out_buffer, htonl(session->recv_seq - 1)) < 0) {
-    return -1;
-  }
-
-  if (packet_send(session) != SSH_OK) {
-    return -1;
-  }
-
-  return 0;
-}
-
 /** @internal
  * @brief Handle a SSH_MSG_MSG_USERAUTH_REQUEST packet and queue a
  * SSH Message
@@ -513,57 +501,38 @@ error:
   return NULL;
 }
 
-static ssh_message handle_channel_request(ssh_session session) {
+/** @internal
+ * @brief This function parses the last end of a channel request packet,
+ * which is normally converted to a SSH message and placed on the queue.
+ * @param session SSH session.
+ * @param channel Channel the request is made on.
+ * @param packet rest of the packet to be parsed.
+ * @param request type of request.
+ * @param want_reply want_reply field from the request
+ * @returns SSH_OK or SSH_ERROR.
+ */
+int message_handle_channel_request(ssh_session session, ssh_channel channel, ssh_buffer packet,
+    const char *request, uint8_t want_reply) {
   ssh_message msg = NULL;
-  ssh_string type = NULL;
-  char *type_c = NULL;
-  uint32_t channel;
-  uint8_t want_reply;
-
   enter_function();
-
   msg = message_new(session);
   if (msg == NULL) {
     ssh_set_error_oom(session);
-    return NULL;
-  }
-
-  buffer_get_u32(session->in_buffer, &channel);
-  channel = ntohl(channel);
-
-  type = buffer_get_ssh_string(session->in_buffer);
-  if (type == NULL) {
-    ssh_set_error_oom(session);
     goto error;
   }
-  type_c = string_to_char(type);
-  if (type_c == NULL) {
-    ssh_set_error_oom(session);
-    goto error;
-  }
-  string_free(type);
-
-  buffer_get_u8(session->in_buffer,&want_reply);
 
   ssh_log(session, SSH_LOG_PACKET,
-      "Received a %s channel_request for channel %d (want_reply=%hhd)",
-      type_c, channel, want_reply);
+      "Received a %s channel_request for channel (%d:%d) (want_reply=%hhd)",
+      request, channel->local_channel, channel->remote_channel, want_reply);
 
   msg->type = SSH_REQUEST_CHANNEL;
-  msg->channel_request.channel = ssh_channel_from_local(session, channel);
-  if (msg->channel_request.channel == NULL) {
-    ssh_set_error(session, SSH_FATAL, "There are no channels with the id %u.",
-        channel);
-    goto error;
-  }
+  msg->channel_request.channel = channel;
   msg->channel_request.want_reply = want_reply;
 
-  if (strcmp(type_c, "pty-req") == 0) {
+  if (strcmp(request, "pty-req") == 0) {
     ssh_string term = NULL;
     char *term_c = NULL;
-    SAFE_FREE(type_c);
-
-    term = buffer_get_ssh_string(session->in_buffer);
+    term = buffer_get_ssh_string(packet);
     if (term == NULL) {
       ssh_set_error_oom(session);
       goto error;
@@ -579,51 +548,43 @@ static ssh_message handle_channel_request(ssh_session session) {
     msg->channel_request.type = SSH_CHANNEL_REQUEST_PTY;
     msg->channel_request.TERM = term_c;
 
-    buffer_get_u32(session->in_buffer, &msg->channel_request.width);
-    buffer_get_u32(session->in_buffer, &msg->channel_request.height);
-    buffer_get_u32(session->in_buffer, &msg->channel_request.pxwidth);
-    buffer_get_u32(session->in_buffer, &msg->channel_request.pxheight);
+    buffer_get_u32(packet, &msg->channel_request.width);
+    buffer_get_u32(packet, &msg->channel_request.height);
+    buffer_get_u32(packet, &msg->channel_request.pxwidth);
+    buffer_get_u32(packet, &msg->channel_request.pxheight);
 
     msg->channel_request.width = ntohl(msg->channel_request.width);
     msg->channel_request.height = ntohl(msg->channel_request.height);
     msg->channel_request.pxwidth = ntohl(msg->channel_request.pxwidth);
     msg->channel_request.pxheight = ntohl(msg->channel_request.pxheight);
-    msg->channel_request.modes = buffer_get_ssh_string(session->in_buffer);
+    msg->channel_request.modes = buffer_get_ssh_string(packet);
     if (msg->channel_request.modes == NULL) {
       SAFE_FREE(term_c);
       goto error;
     }
-
-    leave_function();
-    return msg;
+    goto end;
   }
 
-  if (strcmp(type_c, "window-change") == 0) {
-    SAFE_FREE(type_c);
-
+  if (strcmp(request, "window-change") == 0) {
     msg->channel_request.type = SSH_CHANNEL_REQUEST_WINDOW_CHANGE;
 
-    buffer_get_u32(session->in_buffer, &msg->channel_request.width);
-    buffer_get_u32(session->in_buffer, &msg->channel_request.height);
-    buffer_get_u32(session->in_buffer, &msg->channel_request.pxwidth);
-    buffer_get_u32(session->in_buffer, &msg->channel_request.pxheight);
+    buffer_get_u32(packet, &msg->channel_request.width);
+    buffer_get_u32(packet, &msg->channel_request.height);
+    buffer_get_u32(packet, &msg->channel_request.pxwidth);
+    buffer_get_u32(packet, &msg->channel_request.pxheight);
 
     msg->channel_request.width = ntohl(msg->channel_request.width);
     msg->channel_request.height = ntohl(msg->channel_request.height);
     msg->channel_request.pxwidth = ntohl(msg->channel_request.pxwidth);
     msg->channel_request.pxheight = ntohl(msg->channel_request.pxheight);
 
-    leave_function();
-    return msg;
+    goto end;
   }
 
-  if (strcmp(type_c, "subsystem") == 0) {
+  if (strcmp(request, "subsystem") == 0) {
     ssh_string subsys = NULL;
     char *subsys_c = NULL;
-
-    SAFE_FREE(type_c);
-
-    subsys = buffer_get_ssh_string(session->in_buffer);
+    subsys = buffer_get_ssh_string(packet);
     if (subsys == NULL) {
       ssh_set_error_oom(session);
       goto error;
@@ -639,64 +600,50 @@ static ssh_message handle_channel_request(ssh_session session) {
     msg->channel_request.type = SSH_CHANNEL_REQUEST_SUBSYSTEM;
     msg->channel_request.subsystem = subsys_c;
 
-    leave_function();
-    return msg;
+    goto end;
   }
 
-  if (strcmp(type_c, "shell") == 0) {
-    SAFE_FREE(type_c);
+  if (strcmp(request, "shell") == 0) {
     msg->channel_request.type = SSH_CHANNEL_REQUEST_SHELL;
-
-    leave_function();
-    return msg;
+    goto end;
   }
 
-  if (strcmp(type_c, "exec") == 0) {
+  if (strcmp(request, "exec") == 0) {
     ssh_string cmd = NULL;
-
-    SAFE_FREE(type_c);
-
-    cmd = buffer_get_ssh_string(session->in_buffer);
+    cmd = buffer_get_ssh_string(packet);
     if (cmd == NULL) {
       ssh_set_error_oom(session);
       goto error;
     }
-
     msg->channel_request.type = SSH_CHANNEL_REQUEST_EXEC;
     msg->channel_request.command = string_to_char(cmd);
+    string_free(cmd);
     if (msg->channel_request.command == NULL) {
-      string_free(cmd);
       goto error;
     }
-    string_free(cmd);
-
-    leave_function();
-    return msg;
+    goto end;
   }
 
-  if (strcmp(type_c, "env") == 0) {
+  if (strcmp(request, "env") == 0) {
     ssh_string name = NULL;
     ssh_string value = NULL;
-
-    SAFE_FREE(type_c);
-
-    name = buffer_get_ssh_string(session->in_buffer);
+    name = buffer_get_ssh_string(packet);
     if (name == NULL) {
       ssh_set_error_oom(session);
       goto error;
     }
-    value = buffer_get_ssh_string(session->in_buffer);
-	if (value == NULL) {
-    ssh_set_error_oom(session);
-		string_free(name);
-	  goto error;
-	}
+    value = buffer_get_ssh_string(packet);
+    if (value == NULL) {
+      ssh_set_error_oom(session);
+      string_free(name);
+      goto error;
+    }
 
     msg->channel_request.type = SSH_CHANNEL_REQUEST_ENV;
     msg->channel_request.var_name = string_to_char(name);
     msg->channel_request.var_value = string_to_char(value);
     if (msg->channel_request.var_name == NULL ||
-		msg->channel_request.var_value == NULL) {
+        msg->channel_request.var_value == NULL) {
       string_free(name);
       string_free(value);
       goto error;
@@ -704,22 +651,19 @@ static ssh_message handle_channel_request(ssh_session session) {
     string_free(name);
     string_free(value);
 
-    leave_function();
-    return msg;
+    goto end;
   }
 
   msg->channel_request.type = SSH_CHANNEL_UNKNOWN;
-  SAFE_FREE(type_c);
-
+end:
+  message_queue(session,msg);
   leave_function();
-  return msg;
+  return SSH_OK;
 error:
-  string_free(type);
-  SAFE_FREE(type_c);
   ssh_message_free(msg);
 
   leave_function();
-  return NULL;
+  return SSH_ERROR;
 }
 
 int ssh_message_channel_request_reply_success(ssh_message msg) {
@@ -751,33 +695,6 @@ int ssh_message_channel_request_reply_success(ssh_message msg) {
   return SSH_OK;
 }
 
-/* TODO this function should disapear in favor of SSH_PACKET handlers */
-ssh_message ssh_message_retrieve(ssh_session session, uint32_t packettype){
-  ssh_message msg=NULL;
-  enter_function();
-  switch(packettype) {
-    case SSH2_MSG_SERVICE_REQUEST:
-//      msg=handle_service_request(session);
-      break;
-    case SSH2_MSG_USERAUTH_REQUEST:
-//      msg = handle_userauth_request(session);
-      break;
-    case SSH2_MSG_CHANNEL_OPEN:
-//      msg = handle_channel_request_open(session);
-      break;
-    case SSH2_MSG_CHANNEL_REQUEST:
-      msg = handle_channel_request(session);
-      break;
-    default:
-      if (handle_unimplemented(session) == 0) {
-        ssh_set_error(session, SSH_FATAL,
-            "Unhandled message %d\n", session->in_packet.type);
-      }
-  }
-  leave_function();
-  return msg;
-}
-
 /** @brief Retrieves a SSH message from SSH session
  * @param session SSH session
  * @return The SSH message received, NULL in case of error.
@@ -794,6 +711,7 @@ ssh_message ssh_message_get(ssh_session session) {
     }
     msg=ssh_list_get_head(ssh_message, session->ssh_message_list);
   } while(msg==NULL);
+
   leave_function();
   return msg;
 }
@@ -856,29 +774,6 @@ void ssh_message_free(ssh_message msg){
   }
   ZERO_STRUCTP(msg);
   SAFE_FREE(msg);
-}
-
-/** @internal
- * @brief handle various SSH request messages and stack them for callback.
- * @param session SSH session.
- * @param user user provided value.
- * @param type packet type.
- * @param packet buffer.
- * @return SSH_PACKET_USED if a message has been created.
- * @return SSH_PACKET_NOT_USED if the packet could not be used to create a
- * message.
- */
-int message_handle(ssh_session session, void *user, uint8_t type, ssh_buffer packet){
-  ssh_message msg=ssh_message_retrieve(session,type);
-  ssh_log(session,SSH_LOG_PROTOCOL,"Stacking message from packet type %d",type);
-	(void)user;
-	(void)packet;
-	if(msg){
-	  message_queue(session,msg);
-		return SSH_PACKET_USED;
-	} else {
-		return SSH_PACKET_NOT_USED;
-	}
 }
 
 /** @internal

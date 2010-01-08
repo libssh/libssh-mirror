@@ -534,7 +534,6 @@ SSH_PACKET_CALLBACK(channel_rcv_request) {
 	ssh_string request_s;
 	char *request;
 	uint32_t status;
-	uint32_t startpos = session->in_buffer->pos;
 	(void)user;
 	(void)type;
 
@@ -608,13 +607,12 @@ SSH_PACKET_CALLBACK(channel_rcv_request) {
 		return SSH_PACKET_USED;
 	}
 
-	/* TODO call message_handle since it handles channel requests as messages */
-	/* *but* reset buffer before !! */
+	/* If we are here, that means we have a request that is not in the understood
+	 * client requests. That means we need to create a ssh message to be passed
+	 * to the user code handling ssh messages
+	 */
+	message_handle_channel_request(session,channel,packet,request,status);
 
-	session->in_buffer->pos = startpos;
-	message_handle(session, NULL, SSH2_MSG_CHANNEL_REQUEST, session->in_buffer);
-
-	ssh_log(session, SSH_LOG_PACKET, "Unknown request %s", request);
 	SAFE_FREE(request);
 
 	leave_function();
