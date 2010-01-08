@@ -64,6 +64,8 @@ int ssh_scp_init(ssh_scp scp){
   int r;
   char execbuffer[1024];
   uint8_t code;
+  if(scp==NULL)
+      return SSH_ERROR;
   if(scp->state != SSH_SCP_NEW){
     ssh_set_error(scp->session,SSH_FATAL,"ssh_scp_init called under invalid state");
     return SSH_ERROR;
@@ -110,6 +112,8 @@ int ssh_scp_init(ssh_scp scp){
 }
 
 int ssh_scp_close(ssh_scp scp){
+  if(scp==NULL)
+    return SSH_ERROR;
   if(scp->channel != NULL){
     if(channel_send_eof(scp->channel) == SSH_ERROR){
       scp->state=SSH_SCP_ERROR;
@@ -127,6 +131,8 @@ int ssh_scp_close(ssh_scp scp){
 }
 
 void ssh_scp_free(ssh_scp scp){
+  if(scp==NULL)
+      return;
   if(scp->state != SSH_SCP_NEW)
     ssh_scp_close(scp);
   if(scp->channel)
@@ -150,6 +156,8 @@ int ssh_scp_push_directory(ssh_scp scp, const char *dirname, int mode){
   uint8_t code;
   char *dir;
   char *perms;
+  if(scp==NULL)
+      return SSH_ERROR;
   if(scp->state != SSH_SCP_WRITE_INITED){
     ssh_set_error(scp->session,SSH_FATAL,"ssh_scp_push_directory called under invalid state");
     return SSH_ERROR;
@@ -183,6 +191,8 @@ int ssh_scp_push_directory(ssh_scp scp, const char *dirname, int mode){
   char buffer[]="E\n";
   int r;
   uint8_t code;
+  if(scp==NULL)
+      return SSH_ERROR;
   if(scp->state != SSH_SCP_WRITE_INITED){
     ssh_set_error(scp->session,SSH_FATAL,"ssh_scp_leave_directory called under invalid state");
     return SSH_ERROR;
@@ -215,6 +225,8 @@ int ssh_scp_push_file(ssh_scp scp, const char *filename, size_t size, int mode){
   uint8_t code;
   char *file;
   char *perms;
+  if(scp==NULL)
+      return SSH_ERROR;
   if(scp->state != SSH_SCP_WRITE_INITED){
     ssh_set_error(scp->session,SSH_FATAL,"ssh_scp_push_file called under invalid state");
     return SSH_ERROR;
@@ -253,6 +265,8 @@ int ssh_scp_response(ssh_scp scp, char **response){
 	unsigned char code;
 	int r;
 	char msg[128];
+	if(scp==NULL)
+	    return SSH_ERROR;
 	r=channel_read(scp->channel,&code,1,0);
 	if(r == SSH_ERROR)
 		return SSH_ERROR;
@@ -294,6 +308,8 @@ int ssh_scp_write(ssh_scp scp, const void *buffer, size_t len){
   int w;
   //int r;
   //uint8_t code;
+  if(scp==NULL)
+      return SSH_ERROR;
   if(scp->state != SSH_SCP_WRITE_WRITING){
     ssh_set_error(scp->session,SSH_FATAL,"ssh_scp_write called under invalid state");
     return SSH_ERROR;
@@ -341,6 +357,8 @@ int ssh_scp_write(ssh_scp scp, const void *buffer, size_t len){
 int ssh_scp_read_string(ssh_scp scp, char *buffer, size_t len){
   size_t r=0;
   int err=SSH_OK;
+  if(scp==NULL)
+      return SSH_ERROR;
   while(r<len-1){
     err=channel_read(scp->channel,&buffer[r],1,0);
     if(err==SSH_ERROR){
@@ -375,6 +393,8 @@ int ssh_scp_pull_request(ssh_scp scp){
   size_t size;
   char *name=NULL;
   int err;
+  if(scp==NULL)
+      return SSH_ERROR;
   if(scp->state != SSH_SCP_READ_INITED){
     ssh_set_error(scp->session,SSH_FATAL,"ssh_scp_pull_request called under invalid state");
     return SSH_ERROR;
@@ -463,6 +483,8 @@ int ssh_scp_pull_request(ssh_scp scp){
 int ssh_scp_deny_request(ssh_scp scp, const char *reason){
   char buffer[4096];
   int err;
+  if(scp==NULL)
+      return SSH_ERROR;
   if(scp->state != SSH_SCP_READ_REQUESTED){
     ssh_set_error(scp->session,SSH_FATAL,"ssh_scp_deny_request called under invalid state");
     return SSH_ERROR;
@@ -487,6 +509,8 @@ int ssh_scp_deny_request(ssh_scp scp, const char *reason){
 int ssh_scp_accept_request(ssh_scp scp){
   char buffer[]={0x00};
   int err;
+  if(scp==NULL)
+      return SSH_ERROR;
   if(scp->state != SSH_SCP_READ_REQUESTED){
     ssh_set_error(scp->session,SSH_FATAL,"ssh_scp_deny_request called under invalid state");
     return SSH_ERROR;
@@ -511,6 +535,8 @@ int ssh_scp_accept_request(ssh_scp scp){
 int ssh_scp_read(ssh_scp scp, void *buffer, size_t size){
   int r;
   int code;
+  if(scp==NULL)
+      return SSH_ERROR;
   if(scp->state == SSH_SCP_READ_REQUESTED && scp->request_type == SSH_SCP_REQUEST_NEWFILE){
     r=ssh_scp_accept_request(scp);
     if(r==SSH_ERROR)
@@ -555,6 +581,8 @@ int ssh_scp_read(ssh_scp scp, void *buffer, size_t size){
  * @returns file name. Should not be freed.
  */
 const char *ssh_scp_request_get_filename(ssh_scp scp){
+  if(scp==NULL)
+      return NULL;
   return scp->request_name;
 }
 
@@ -563,6 +591,8 @@ const char *ssh_scp_request_get_filename(ssh_scp scp){
  * @returns Unix permission, e.g 0644.
  */
 int ssh_scp_request_get_permissions(ssh_scp scp){
+  if(scp==NULL)
+      return -1;
   return scp->request_mode;
 }
 
@@ -571,6 +601,8 @@ int ssh_scp_request_get_permissions(ssh_scp scp){
  * @returns Numeric size of the file being read.
  */
 size_t ssh_scp_request_get_size(ssh_scp scp){
+  if(scp==NULL)
+      return 0;
   return scp->filelen;
 }
 
@@ -599,5 +631,7 @@ char *ssh_scp_string_mode(int mode){
  */
 
 const char *ssh_scp_request_get_warning(ssh_scp scp){
+  if(scp==NULL)
+      return NULL;
 	return scp->warning;
 }
