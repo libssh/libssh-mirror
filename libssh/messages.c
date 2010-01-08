@@ -51,7 +51,7 @@
 #include "libssh/dh.h"
 #include "libssh/messages.h"
 
-static ssh_message message_new(ssh_session session){
+static ssh_message ssh_message_new(ssh_session session){
   ssh_message msg = malloc(sizeof(struct ssh_message_struct));
   if (msg == NULL) {
     return NULL;
@@ -81,7 +81,7 @@ SSH_PACKET_CALLBACK(ssh_packet_service_request){
   }
   ssh_log(session, SSH_LOG_PACKET,
         "Received a SERVICE_REQUEST for service %s", service_c);
-  msg=message_new(session);
+  msg=ssh_message_new(session);
   if(!msg){
     SAFE_FREE(service_c);
     goto error;
@@ -113,7 +113,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
 
   (void)user;
   (void)type;
-  msg = message_new(session);
+  msg = ssh_message_new(session);
   if (msg == NULL) {
     ssh_set_error_oom(session);
     goto error;
@@ -295,7 +295,7 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_open){
   enter_function();
   (void)type;
   (void)user;
-  msg = message_new(session);
+  msg = ssh_message_new(session);
   if (msg == NULL) {
     ssh_set_error_oom(session);
     goto error;
@@ -515,7 +515,7 @@ int ssh_message_handle_channel_request(ssh_session session, ssh_channel channel,
     const char *request, uint8_t want_reply) {
   ssh_message msg = NULL;
   enter_function();
-  msg = message_new(session);
+  msg = ssh_message_new(session);
   if (msg == NULL) {
     ssh_set_error_oom(session);
     goto error;
