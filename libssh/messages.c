@@ -511,7 +511,7 @@ error:
  * @param want_reply want_reply field from the request
  * @returns SSH_OK or SSH_ERROR.
  */
-int message_handle_channel_request(ssh_session session, ssh_channel channel, ssh_buffer packet,
+int ssh_message_handle_channel_request(ssh_session session, ssh_channel channel, ssh_buffer packet,
     const char *request, uint8_t want_reply) {
   ssh_message msg = NULL;
   enter_function();

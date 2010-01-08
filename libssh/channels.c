@@ -611,7 +611,7 @@ SSH_PACKET_CALLBACK(channel_rcv_request) {
 	 * client requests. That means we need to create a ssh message to be passed
 	 * to the user code handling ssh messages
 	 */
-	message_handle_channel_request(session,channel,packet,request,status);
+	ssh_message_handle_channel_request(session,channel,packet,request,status);
 
 	SAFE_FREE(request);
 

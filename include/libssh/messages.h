@@ -81,7 +81,7 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_open);
 SSH_PACKET_CALLBACK(ssh_packet_service_request);
 SSH_PACKET_CALLBACK(ssh_packet_userauth_request);
 
-int message_handle_channel_request(ssh_session session, ssh_channel channel, ssh_buffer packet,
+int ssh_message_handle_channel_request(ssh_session session, ssh_channel channel, ssh_buffer packet,
     const char *request, uint8_t want_reply);
 int ssh_execute_message_callbacks(ssh_session session);
 void ssh_message_queue(ssh_session session, ssh_message message);
