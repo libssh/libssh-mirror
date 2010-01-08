@@ -60,7 +60,7 @@ ssh_packet_callback default_packet_handlers[]= {
 	ssh_packet_kexinit, //#define SSH2_MSG_KEXINIT	 20
 	ssh_packet_newkeys, //#define SSH2_MSG_NEWKEYS 21
 	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, //22-29
-	NULL, //#define SSH2_MSG_KEXDH_INIT 30 SSH2_MSG_KEX_DH_GEX_REQUEST_OLD 30
+	ssh_packet_kexdh_init, //#define SSH2_MSG_KEXDH_INIT 30 SSH2_MSG_KEX_DH_GEX_REQUEST_OLD 30
 	ssh_packet_dh_reply, // #define SSH2_MSG_KEXDH_REPLY 31 SSH2_MSG_KEX_DH_GEX_GROUP 31
 	NULL, //#define SSH2_MSG_KEX_DH_GEX_INIT 32
 	NULL, //#define SSH2_MSG_KEX_DH_GEX_REPLY 33
