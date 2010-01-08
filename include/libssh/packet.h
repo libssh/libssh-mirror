@@ -31,7 +31,10 @@ typedef struct packet_struct {
 
 int packet_send(ssh_session session);
 
+#ifdef WITH_SSH1
 int packet_read(ssh_session session);
+#endif
+
 int packet_translate(ssh_session session);
 /* TODO: remove it when packet_wait is stripped out from libssh */
 #ifdef WITH_SSH1
