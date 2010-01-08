@@ -48,50 +48,55 @@
 #include "libssh/auth.h"
 
 ssh_packet_callback default_packet_handlers[]= {
-
-	ssh_packet_disconnect_callback, //#define SSH2_MSG_DISCONNECT 1
-	ssh_packet_ignore_callback, //#define SSH2_MSG_IGNORE	 2
-	NULL, //#define SSH2_MSG_UNIMPLEMENTED 3
-	ssh_packet_ignore_callback, //#define SSH2_MSG_DEBUG	4
-	ssh_packet_service_request, //#define SSH2_MSG_SERVICE_REQUEST	5
-	ssh_packet_service_accept, //#define SSH2_MSG_SERVICE_ACCEPT 6
-	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-	NULL, NULL, NULL, // 7-19
-	ssh_packet_kexinit, //#define SSH2_MSG_KEXINIT	 20
-	ssh_packet_newkeys, //#define SSH2_MSG_NEWKEYS 21
-	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, //22-29
-	ssh_packet_kexdh_init, //#define SSH2_MSG_KEXDH_INIT 30 SSH2_MSG_KEX_DH_GEX_REQUEST_OLD 30
-	ssh_packet_dh_reply, // #define SSH2_MSG_KEXDH_REPLY 31 SSH2_MSG_KEX_DH_GEX_GROUP 31
-	NULL, //#define SSH2_MSG_KEX_DH_GEX_INIT 32
-	NULL, //#define SSH2_MSG_KEX_DH_GEX_REPLY 33
-	NULL, //#define SSH2_MSG_KEX_DH_GEX_REQUEST 34
-	NULL, NULL, NULL, NULL, NULL, // 35-49
-	NULL,	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-	ssh_packet_userauth_request, //#define SSH2_MSG_USERAUTH_REQUEST 50
-	ssh_packet_userauth_failure, //#define SSH2_MSG_USERAUTH_FAILURE 51
-	ssh_packet_userauth_success, //#define SSH2_MSG_USERAUTH_SUCCESS 52
-	ssh_packet_userauth_banner, //#define SSH2_MSG_USERAUTH_BANNER 53
-	NULL,NULL,NULL,NULL,NULL,NULL, // 54-59
-	ssh_packet_userauth_pk_ok, //#define SSH2_MSG_USERAUTH_PK_OK 60 SSH2_MSG_USERAUTH_PASSWD_CHANGEREQ 60
-			//SSH2_MSG_USERAUTH_INFO_REQUEST	 60
-	NULL, //#define SSH2_MSG_USERAUTH_INFO_RESPONSE 61
-	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, //62-79
-	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-	NULL, //#define SSH2_MSG_GLOBAL_REQUEST 80
-	ssh_request_success, //#define SSH2_MSG_REQUEST_SUCCESS 81
-	ssh_request_denied, //#define SSH2_MSG_REQUEST_FAILURE 82
-	NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 83-89
-	ssh_packet_channel_open, //#define SSH2_MSG_CHANNEL_OPEN 90
-	ssh_packet_channel_open_conf, //#define SSH2_MSG_CHANNEL_OPEN_CONFIRMATION 91
-	ssh_packet_channel_open_fail, //#define SSH2_MSG_CHANNEL_OPEN_FAILURE 92
-	channel_rcv_change_window, //#define SSH2_MSG_CHANNEL_WINDOW_ADJUST 93
-	channel_rcv_data, //#define SSH2_MSG_CHANNEL_DATA 94
-	channel_rcv_data, //#define SSH2_MSG_CHANNEL_EXTENDED_DATA 95
-	channel_rcv_eof, //#define SSH2_MSG_CHANNEL_EOF	96
-	channel_rcv_close, //#define SSH2_MSG_CHANNEL_CLOSE 97
-	channel_rcv_request, //#define SSH2_MSG_CHANNEL_REQUEST 98
-	ssh_packet_channel_success, //#define SSH2_MSG_CHANNEL_SUCCESS 99
-	ssh_packet_channel_failure, //#define SSH2_MSG_CHANNEL_FAILURE 100
+  ssh_packet_disconnect_callback,          // SSH2_MSG_DISCONNECT                 1
+  ssh_packet_ignore_callback,              // SSH2_MSG_IGNORE	                    2
+  NULL,                                    // SSH2_MSG_UNIMPLEMENTED              3
+  ssh_packet_ignore_callback,              // SSH2_MSG_DEBUG	                    4
+  ssh_packet_service_request,              // SSH2_MSG_SERVICE_REQUEST	          5
+  ssh_packet_service_accept,               // SSH2_MSG_SERVICE_ACCEPT             6
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+  NULL, NULL, NULL,	NULL, NULL, NULL,      //                                     7-19
+  ssh_packet_kexinit,                      // SSH2_MSG_KEXINIT	                  20
+  ssh_packet_newkeys,                      // SSH2_MSG_NEWKEYS                    21
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+  NULL,                                    //                                     22-29
+  ssh_packet_kexdh_init,                   // SSH2_MSG_KEXDH_INIT                 30
+                                           // SSH2_MSG_KEX_DH_GEX_REQUEST_OLD     30
+  ssh_packet_dh_reply,                     // SSH2_MSG_KEXDH_REPLY                31
+                                           // SSH2_MSG_KEX_DH_GEX_GROUP           31
+  NULL,                                    // SSH2_MSG_KEX_DH_GEX_INIT            32
+  NULL,                                    // SSH2_MSG_KEX_DH_GEX_REPLY           33
+  NULL,                                    // SSH2_MSG_KEX_DH_GEX_REQUEST         34
+  NULL, NULL, NULL, NULL, NULL, NULL,	NULL,
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+  NULL,                                    //                                     35-49
+  ssh_packet_userauth_request,             // SSH2_MSG_USERAUTH_REQUEST           50
+  ssh_packet_userauth_failure,             // SSH2_MSG_USERAUTH_FAILURE           51
+  ssh_packet_userauth_success,             // SSH2_MSG_USERAUTH_SUCCESS           52
+  ssh_packet_userauth_banner,              // SSH2_MSG_USERAUTH_BANNER            53
+  NULL,NULL,NULL,NULL,NULL,NULL,           //                                     54-59
+  ssh_packet_userauth_pk_ok,               // SSH2_MSG_USERAUTH_PK_OK             60
+                                           // SSH2_MSG_USERAUTH_PASSWD_CHANGEREQ  60
+                                           // SSH2_MSG_USERAUTH_INFO_REQUEST	    60
+  NULL,                                    // SSH2_MSG_USERAUTH_INFO_RESPONSE     61
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+  NULL, NULL, NULL, NULL,                  //                                     62-79
+  NULL,                                    // SSH2_MSG_GLOBAL_REQUEST             80
+  ssh_request_success,                     // SSH2_MSG_REQUEST_SUCCESS            81
+  ssh_request_denied,                      // SSH2_MSG_REQUEST_FAILURE            82
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL,//                                     83-89
+  ssh_packet_channel_open,                 // SSH2_MSG_CHANNEL_OPEN               90
+  ssh_packet_channel_open_conf,            // SSH2_MSG_CHANNEL_OPEN_CONFIRMATION  91
+  ssh_packet_channel_open_fail,            // SSH2_MSG_CHANNEL_OPEN_FAILURE       92
+  channel_rcv_change_window,               // SSH2_MSG_CHANNEL_WINDOW_ADJUST      93
+  channel_rcv_data,                        // SSH2_MSG_CHANNEL_DATA               94
+  channel_rcv_data,                        // SSH2_MSG_CHANNEL_EXTENDED_DATA      95
+  channel_rcv_eof,                         // SSH2_MSG_CHANNEL_EOF	              96
+  channel_rcv_close,                       // SSH2_MSG_CHANNEL_CLOSE              97
+  channel_rcv_request,                     // SSH2_MSG_CHANNEL_REQUEST            98
+  ssh_packet_channel_success,              // SSH2_MSG_CHANNEL_SUCCESS            99
+  ssh_packet_channel_failure,              // SSH2_MSG_CHANNEL_FAILURE            100
 };
 
 /* XXX include selected mac size */
