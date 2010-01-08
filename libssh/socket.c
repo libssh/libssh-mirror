@@ -194,6 +194,7 @@ int ssh_socket_pollcallback(ssh_poll_handle p, int fd, int revents, void *v_s){
 			ssh_log(s->session,SSH_LOG_PACKET,"Received POLLOUT in connecting state");
 			s->state = SSH_SOCKET_CONNECTED;
 			ssh_poll_set_events(p,POLLOUT | POLLIN | POLLERR);
+			ssh_sock_set_blocking(ssh_socket_get_fd(s));
 			if(s->callbacks && s->callbacks->connected)
 				s->callbacks->connected(SSH_SOCKET_CONNECTED_OK,0,s->callbacks->userdata);
 			return 0;

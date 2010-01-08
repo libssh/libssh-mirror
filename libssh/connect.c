@@ -85,12 +85,12 @@
 #endif /* HAVE_REGCOMP */
 
 #ifdef _WIN32
-static void sock_set_nonblocking(socket_t sock) {
+static void ssh_sock_set_nonblocking(socket_t sock) {
   u_long nonblocking = 1;
   ioctlsocket(sock, FIONBIO, &nonblocking);
 }
 
-static void sock_set_blocking(socket_t sock) {
+static void ssh_sock_set_blocking(socket_t sock) {
   u_long nonblocking = 0;
   ioctlsocket(sock, FIONBIO, &nonblocking);
 }
@@ -106,11 +106,11 @@ char WSAAPI *gai_strerrorA(int code) {
 #endif /* gai_strerror */
 
 #else /* _WIN32 */
-static void sock_set_nonblocking(socket_t sock) {
+void ssh_sock_set_nonblocking(socket_t sock) {
   fcntl(sock, F_SETFL, O_NONBLOCK);
 }
 
-static void sock_set_blocking(socket_t sock) {
+void ssh_sock_set_blocking(socket_t sock) {
   fcntl(sock, F_SETFL, 0);
 }
 
@@ -212,7 +212,7 @@ static int ssh_connect_ai_timeout(ssh_session session, const char *host,
   to.tv_sec = timeout;
   to.tv_usec = usec;
 
-  sock_set_nonblocking(s);
+  ssh_sock_set_nonblocking(s);
 
   ssh_log(session, SSH_LOG_RARE, "Trying to connect to host: %s:%d with "
       "timeout %ld.%ld", host, port, timeout, usec);
@@ -255,7 +255,7 @@ static int ssh_connect_ai_timeout(ssh_session session, const char *host,
 
   /* s is connected ? */
   ssh_log(session, SSH_LOG_PACKET, "Socket connected with timeout\n");
-  sock_set_blocking(s);
+  ssh_sock_set_blocking(s);
 
   leave_function();
   return s;
@@ -425,7 +425,7 @@ socket_t ssh_connect_host_nonblocking(ssh_session session, const char *host,
         continue;
       }
     }
-    sock_set_nonblocking(s);
+    ssh_sock_set_nonblocking(s);
 
     connect(s, itr->ai_addr, itr->ai_addrlen);
     break;
