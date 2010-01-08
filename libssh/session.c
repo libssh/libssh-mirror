@@ -265,9 +265,13 @@ void ssh_set_fd_except(ssh_session session) {
  * @brief polls the current session for an event and call the
  * appropriate callbacks. Will block until one event happens.
  * @param session session handle.
+ * @param timeout An upper limit on the time for which
+ * ssh_handle_packets() will block, in milliseconds.
+ * Specifying a negative value means an infinite timeout.
+ * This parameter is passed to the poll() function.
  * @return SSH_OK if there are no error, SSH_ERROR otherwise.
  */
-int ssh_handle_packets(ssh_session session) {
+int ssh_handle_packets(ssh_session session, int timeout) {
 	ssh_poll_handle spoll;
 	ssh_poll_ctx ctx;
   if(session==NULL || session->socket==NULL)
@@ -279,7 +283,7 @@ int ssh_handle_packets(ssh_session session) {
   	ctx=ssh_get_global_poll_ctx(session);
   	ssh_poll_ctx_add(ctx,spoll);
   }
-  ssh_poll_ctx_dopoll(ctx,-1);
+  ssh_poll_ctx_dopoll(ctx,timeout);
   leave_function();
   if (session->session_state != SSH_SESSION_STATE_ERROR)
   	return SSH_OK;

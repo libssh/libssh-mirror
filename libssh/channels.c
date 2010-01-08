@@ -234,7 +234,7 @@ static int channel_open(ssh_channel channel, const char *type_c, int window,
   /* Todo: fix this into a correct loop */
   /* wait until channel is opened by server */
   while(!channel->open){
-    ssh_handle_packets(session);
+    ssh_handle_packets(session,-1);
   }
   leave_function();
   return SSH_OK;
@@ -934,7 +934,7 @@ int channel_write_common(ssh_channel channel, const void *data,
       /* What happens when the channel window is zero? */
       while(channel->remote_window == 0) {
         /* parse every incoming packet */
-        if (ssh_handle_packets(session) == SSH_ERROR) {
+        if (ssh_handle_packets(session,-1) == SSH_ERROR) {
           leave_function();
           return SSH_ERROR;
         }
@@ -1157,7 +1157,7 @@ static int channel_request(ssh_channel channel, const char *request,
     return SSH_OK;
   }
   while(channel->request_state == SSH_CHANNEL_REQ_STATE_PENDING){
-    ssh_handle_packets(session);
+    ssh_handle_packets(session,-1);
   }
   /* we received something */
   switch (channel->request_state){
@@ -1460,7 +1460,7 @@ static ssh_channel channel_accept(ssh_session session, int channeltype,
 
   for (t = timeout_ms; t >= 0; t -= 50)
   {
-    ssh_handle_packets(session);
+    ssh_handle_packets(session,-1);
 
     if (session->ssh_message_list) {
       iterator = ssh_list_get_iterator(session->ssh_message_list);
@@ -1594,7 +1594,7 @@ static int global_request(ssh_session session, const char *request,
     return SSH_OK;
   }
   while(session->global_req_state == SSH_CHANNEL_REQ_STATE_PENDING){
-    rc=ssh_handle_packets(session);
+    rc=ssh_handle_packets(session,-1);
     if(rc==SSH_ERROR){
       session->global_req_state = SSH_CHANNEL_REQ_STATE_ERROR;
       break;
@@ -1953,7 +1953,7 @@ int channel_read_buffer(ssh_channel channel, ssh_buffer buffer, uint32_t count,
       /* Stop reading when buffer is full enough */
       break;
     }
-    ssh_handle_packets(session);
+    ssh_handle_packets(session,-1);
   }
 
   if(channel->local_window < WINDOWLIMIT) {
@@ -2059,7 +2059,7 @@ int channel_read(ssh_channel channel, void *dest, uint32_t count, int is_stderr)
       break;
     }
 
-    ssh_handle_packets(session);
+    ssh_handle_packets(session,-1);
   }
 
   if (channel->local_window < WINDOWLIMIT) {
@@ -2148,9 +2148,10 @@ int channel_poll(ssh_channel channel, int is_stderr){
     stdbuf = channel->stderr_buffer;
   }
 
-  while (buffer_get_rest_len(stdbuf) == 0 && channel->remote_eof == 0) {
-    if (ssh_handle_packets(channel->session) <= 0) {
-      break;
+  if (buffer_get_rest_len(stdbuf) == 0 && channel->remote_eof == 0) {
+    if (ssh_handle_packets(channel->session,0)==SSH_ERROR) {
+      leave_function();
+      return SSH_ERROR;
     }
   }
 
@@ -2193,7 +2194,7 @@ int channel_get_exit_status(ssh_channel channel) {
 
   while (channel->remote_eof == 0 || channel->exit_status == -1) {
     /* Parse every incoming packet */
-    if (ssh_handle_packets(channel->session) != SSH_OK) {
+    if (ssh_handle_packets(channel->session,-1) != SSH_OK) {
       return -1;
     }
     if (channel->open == 0) {
@@ -2225,7 +2226,7 @@ static int channel_protocol_select(ssh_channel *rchans, ssh_channel *wchans,
     chan = rchans[i];
 
     while (chan->open && ssh_socket_data_available(chan->session->socket)) {
-      ssh_handle_packets(chan->session);
+      ssh_handle_packets(chan->session,-1);
     }
 
     if ((chan->stdout_buffer && buffer_get_len(chan->stdout_buffer) > 0) ||

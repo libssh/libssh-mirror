@@ -692,7 +692,7 @@ int ssh_connect(ssh_session session) {
   		session->session_state != SSH_SESSION_STATE_AUTHENTICATING){
   	/* loop until SSH_SESSION_STATE_BANNER_RECEIVED or
   	 * SSH_SESSION_STATE_ERROR */
-  	ssh_handle_packets(session);
+  	ssh_handle_packets(session,-1);
   	ssh_log(session,SSH_LOG_PACKET,"ssh_connect: Actual state : %d",session->session_state);
   }
   leave_function();

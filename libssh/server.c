@@ -386,7 +386,7 @@ static int dh_handshake_server(ssh_session session) {
   ssh_private_key prv;
   /* waiting for SSH_MSG_KEXDH_INIT */
   while(session->dh_handshake_state != DH_STATE_INIT_SENT){
-    ssh_handle_packets(session);
+    ssh_handle_packets(session,-1);
   }
   /* received SSH_MSG_KEXDH_INIT */
 
@@ -489,7 +489,7 @@ static int dh_handshake_server(ssh_session session) {
   ssh_log(session, SSH_LOG_PACKET, "SSH_MSG_NEWKEYS sent");
 
   while(session->dh_handshake_state != DH_STATE_FINISHED)
-    ssh_handle_packets(session);
+    ssh_handle_packets(session,-1);
 
   if (generate_session_keys(session) < 0) {
     return -1;

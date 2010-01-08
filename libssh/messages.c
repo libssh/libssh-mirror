@@ -705,7 +705,7 @@ ssh_message ssh_message_get(ssh_session session) {
   ssh_message msg = NULL;
   enter_function();
   do {
-    if (ssh_handle_packets(session) == SSH_ERROR) {
+    if (ssh_handle_packets(session,-1) == SSH_ERROR) {
       leave_function();
       return NULL;
     }

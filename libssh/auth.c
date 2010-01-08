@@ -61,7 +61,7 @@ static int ask_userauth(ssh_session session) {
   do {
   	rc=ssh_service_request(session,"ssh-userauth");
   	if(rc==SSH_AGAIN)
-  		ssh_handle_packets(session);
+  		ssh_handle_packets(session,-1);
   } while(rc==SSH_AGAIN);
   leave_function();
   return rc;
@@ -202,7 +202,7 @@ static int wait_auth_status(ssh_session session) {
   enter_function();
 
   while (session->auth_state == SSH_AUTH_STATE_NONE) {
-    ssh_handle_packets(session);
+    ssh_handle_packets(session,-1);
   }
   switch(session->auth_state){
     case SSH_AUTH_STATE_ERROR:
