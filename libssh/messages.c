@@ -108,8 +108,12 @@ static int handle_unimplemented(ssh_session session) {
   return 0;
 }
 
-static ssh_message handle_userauth_request(ssh_session session){
-  ssh_string user = NULL;
+/** @internal
+ * @brief Handle a SSH_MSG_MSG_USERAUTH_REQUEST packet and queue a
+ * SSH Message
+ */
+SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
+  ssh_string user_s = NULL;
   ssh_string service = NULL;
   ssh_string method = NULL;
   ssh_message msg = NULL;
@@ -119,31 +123,34 @@ static ssh_message handle_userauth_request(ssh_session session){
 
   enter_function();
 
+  (void)user;
+  (void)type;
   msg = message_new(session);
   if (msg == NULL) {
-    return NULL;
-  }
-
-  user = buffer_get_ssh_string(session->in_buffer);
-  if (user == NULL) {
+    ssh_set_error_oom(session);
     goto error;
   }
-  service = buffer_get_ssh_string(session->in_buffer);
+
+  user_s = buffer_get_ssh_string(packet);
+  if (user_s == NULL) {
+    goto error;
+  }
+  service = buffer_get_ssh_string(packet);
   if (service == NULL) {
     goto error;
   }
-  method = buffer_get_ssh_string(session->in_buffer);
+  method = buffer_get_ssh_string(packet);
   if (method == NULL) {
     goto error;
   }
 
   msg->type = SSH_REQUEST_AUTH;
-  msg->auth_request.username = string_to_char(user);
+  msg->auth_request.username = string_to_char(user_s);
   if (msg->auth_request.username == NULL) {
     goto error;
   }
-  string_free(user);
-  user = NULL;
+  string_free(user_s);
+  user_s = NULL;
 
   service_c = string_to_char(service);
   if (service_c == NULL) {
@@ -170,8 +177,7 @@ static ssh_message handle_userauth_request(ssh_session session){
     msg->auth_request.method = SSH_AUTH_METHOD_NONE;
     SAFE_FREE(service_c);
     SAFE_FREE(method_c);
-    leave_function();
-    return msg;
+    goto end;
   }
 
   if (strncmp(method_c, "password", method_size) == 0) {
@@ -193,8 +199,7 @@ static ssh_message handle_userauth_request(ssh_session session){
     if (msg->auth_request.password == NULL) {
       goto error;
     }
-    leave_function();
-    return msg;
+    goto end;
   }
 
   if (strncmp(method_c, "publickey", method_size) == 0) {
@@ -269,17 +274,14 @@ static ssh_message handle_userauth_request(ssh_session session){
       msg->auth_request.signature_state = SSH_PUBLICKEY_STATE_VALID;
     }
     SAFE_FREE(service_c);
-    leave_function();
-    return msg;
+    goto end;
   }
 
   msg->auth_request.method = SSH_AUTH_METHOD_UNKNOWN;
   SAFE_FREE(method_c);
-
-  leave_function();
-  return msg;
+  goto end;
 error:
-  string_free(user);
+  string_free(user_s);
   string_free(service);
   string_free(method);
 
@@ -289,7 +291,11 @@ error:
   ssh_message_free(msg);
 
   leave_function();
-  return NULL;
+  return SSH_PACKET_USED;
+end:
+  message_queue(session,msg);
+  leave_function();
+  return SSH_PACKET_USED;
 }
 
 SSH_PACKET_CALLBACK(ssh_packet_channel_open){
@@ -754,7 +760,7 @@ ssh_message ssh_message_retrieve(ssh_session session, uint32_t packettype){
 //      msg=handle_service_request(session);
       break;
     case SSH2_MSG_USERAUTH_REQUEST:
-      msg = handle_userauth_request(session);
+//      msg = handle_userauth_request(session);
       break;
     case SSH2_MSG_CHANNEL_OPEN:
 //      msg = handle_channel_request_open(session);

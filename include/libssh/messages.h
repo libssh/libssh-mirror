@@ -79,6 +79,7 @@ struct ssh_message_struct {
 
 SSH_PACKET_CALLBACK(ssh_packet_channel_open);
 SSH_PACKET_CALLBACK(ssh_packet_service_request);
+SSH_PACKET_CALLBACK(ssh_packet_userauth_request);
 
 //void message_handle(ssh_session session, uint32_t type);
 int ssh_execute_message_callbacks(ssh_session session);

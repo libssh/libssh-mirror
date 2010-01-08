@@ -67,7 +67,7 @@ ssh_packet_callback default_packet_handlers[]= {
 	NULL, //#define SSH2_MSG_KEX_DH_GEX_REQUEST 34
 	NULL, NULL, NULL, NULL, NULL, // 35-49
 	NULL,	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-	NULL, //#define SSH2_MSG_USERAUTH_REQUEST 50
+	ssh_packet_userauth_request, //#define SSH2_MSG_USERAUTH_REQUEST 50
 	ssh_packet_userauth_failure, //#define SSH2_MSG_USERAUTH_FAILURE 51
 	ssh_packet_userauth_success, //#define SSH2_MSG_USERAUTH_SUCCESS 52
 	ssh_packet_userauth_banner, //#define SSH2_MSG_USERAUTH_BANNER 53
