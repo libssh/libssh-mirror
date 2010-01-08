@@ -908,17 +908,23 @@ int ssh_execute_message_callbacks(ssh_session session){
   if(!session->ssh_message_list)
     return SSH_OK;
   if(session->ssh_message_callback){
-    while((msg=ssh_list_get_head(ssh_message , session->ssh_message_list)) != NULL){
+    while(ssh_list_get_head(ssh_message , session->ssh_message_list) != NULL){
+      msg=ssh_message_pop_head(session);
       ret=session->ssh_message_callback(session,msg);
       if(ret==1){
         ret = ssh_message_reply_default(msg);
+        ssh_message_free(msg);
         if(ret != SSH_OK)
           return ret;
+      } else {
+        ssh_message_free(msg);
       }
     }
   } else {
-    while((msg=ssh_list_get_head(ssh_message , session->ssh_message_list)) != NULL){
+    while(ssh_list_get_head(ssh_message , session->ssh_message_list) != NULL){
+      msg=ssh_message_pop_head(session);
       ret = ssh_message_reply_default(msg);
+      ssh_message_free(msg);
       if(ret != SSH_OK)
         return ret;
     }

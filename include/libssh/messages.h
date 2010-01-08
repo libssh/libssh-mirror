@@ -85,5 +85,6 @@ int message_handle_channel_request(ssh_session session, ssh_channel channel, ssh
     const char *request, uint8_t want_reply);
 int ssh_execute_message_callbacks(ssh_session session);
 void ssh_message_queue(ssh_session session, ssh_message message);
+ssh_message ssh_message_pop_head(ssh_session session);
 
 #endif /* MESSAGES_H_ */

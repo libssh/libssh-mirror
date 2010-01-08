@@ -711,7 +711,7 @@ ssh_message ssh_message_get(ssh_session session) {
     }
     msg=ssh_list_get_head(ssh_message, session->ssh_message_list);
   } while(msg==NULL);
-
+  msg=ssh_message_pop_head(session);
   leave_function();
   return msg;
 }
@@ -788,6 +788,24 @@ void ssh_message_queue(ssh_session session, ssh_message message){
     }
     ssh_list_add(session->ssh_message_list,message);
   }
+}
+
+/** @internal
+ * @brief Pops one message from the message list and dequeue it.
+ * @param session SSH session.
+ * @returns The head message, or NULL if it doesn't exist
+ */
+ssh_message ssh_message_pop_head(ssh_session session){
+  ssh_message msg=NULL;
+  struct ssh_iterator *i;
+  if(session->ssh_message_list == NULL)
+    return NULL;
+  i=ssh_list_get_iterator(session->ssh_message_list);
+  if(i != NULL){
+    msg=ssh_iterator_value(ssh_message,i);
+    ssh_list_remove(session->ssh_message_list,i);
+  }
+  return msg;
 }
 
 /**
