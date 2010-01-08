@@ -91,7 +91,7 @@ SSH_PACKET_CALLBACK(ssh_packet_service_request){
 error:
   string_free(service);
   if(msg != NULL)
-    message_queue(session,msg);
+    ssh_message_queue(session,msg);
   leave_function();
   return SSH_PACKET_USED;
 }
@@ -281,7 +281,7 @@ error:
   leave_function();
   return SSH_PACKET_USED;
 end:
-  message_queue(session,msg);
+  ssh_message_queue(session,msg);
   leave_function();
   return SSH_PACKET_USED;
 }
@@ -439,7 +439,7 @@ end:
     string_free(type_s);
   SAFE_FREE(type_c);
   if(msg != NULL)
-    message_queue(session,msg);
+    ssh_message_queue(session,msg);
   leave_function();
   return SSH_PACKET_USED;
 }
@@ -656,7 +656,7 @@ int message_handle_channel_request(ssh_session session, ssh_channel channel, ssh
 
   msg->channel_request.type = SSH_CHANNEL_UNKNOWN;
 end:
-  message_queue(session,msg);
+  ssh_message_queue(session,msg);
   leave_function();
   return SSH_OK;
 error:
@@ -781,7 +781,7 @@ void ssh_message_free(ssh_message msg){
  * @param session SSH session
  * @param message message to add to the queue
  */
-void message_queue(ssh_session session, ssh_message message){
+void ssh_message_queue(ssh_session session, ssh_message message){
   if(message){
     if(session->ssh_message_list == NULL){
       session->ssh_message_list=ssh_list_new();
