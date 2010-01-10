@@ -60,14 +60,18 @@ static int wait_auth1_status(ssh_session session) {
 static int send_username(ssh_session session, const char *username) {
   ssh_string user = NULL;
   /* returns SSH_AUTH_SUCCESS or SSH_AUTH_DENIED */
-  if(session->auth_service_asked) {
-    return session->auth_service_asked;
+  if(session->auth_service_state == SSH_AUTH_SERVICE_USER_SENT) {
+    return SSH_OK;
+  }
+  if(session->auth_service_state == SSH_AUTH_SERVICE_DENIED) {
+      return SSH_ERROR;
   }
 
   if (!username) {
     if(!(username = session->username)) {
       if (ssh_options_set(session, SSH_OPTIONS_USER, NULL) < 0) {
-        return session->auth_service_asked = SSH_AUTH_ERROR;
+        session->auth_service_state = SSH_AUTH_SERVICE_DENIED;
+        return SSH_ERROR;
       } else {
         username = session->username;
       }
@@ -91,9 +95,14 @@ static int send_username(ssh_session session, const char *username) {
     return SSH_AUTH_ERROR;
   }
 
-  session->auth_service_asked = wait_auth1_status(session);
+  if(wait_auth1_status(session) == SSH_AUTH_SUCCESS){
+    session->auth_state=SSH_AUTH_SERVICE_USER_SENT;
+    return SSH_AUTH_SUCCESS;
+  } else {
+    session->auth_state=SSH_AUTH_SERVICE_DENIED;
+    return SSH_AUTH_ERROR;
+  }
 
-  return session->auth_service_asked;
 }
 
 /* use the "none" authentication question */
@@ -101,44 +110,6 @@ int ssh_userauth1_none(ssh_session session, const char *username){
     return send_username(session, username);
 }
 
-/*
-int ssh_userauth_offer_pubkey(ssh_session session, char *username,int type, ssh_string publickey){
-    ssh_string user;
-    ssh_string service;
-    ssh_string method;
-    ssh_string algo;
-    int err=SSH_AUTH_ERROR;
-    if(!username)
-        if(!(username=session->options->username)){
-            if(options_default_username(session->options))
-                return SSH_AUTH_ERROR;
-            else
-                username=session->options->username;
-        }
-    if(ask_userauth(session))
-        return SSH_AUTH_ERROR;
-    user=string_from_char(username);
-    service=string_from_char("ssh-connection");
-    method=string_from_char("publickey");
-    algo=string_from_char(ssh_type_to_char(type));
-
-    packet_clear_out(session);
-    buffer_add_u8(session->out_buffer,SSH2_MSG_USERAUTH_REQUEST);
-    buffer_add_ssh_string(session->out_buffer,user);
-    buffer_add_ssh_string(session->out_buffer,service);
-    buffer_add_ssh_string(session->out_buffer,method);
-    buffer_add_u8(session->out_buffer,0);
-    buffer_add_ssh_string(session->out_buffer,algo);
-    buffer_add_ssh_string(session->out_buffer,publickey);
-    packet_send(session);
-    err=wait_auth_status(session,0);
-    free(user);
-    free(method);
-    free(service);
-    free(algo);
-    return err;
-}
-*/
 /** \internal
  * \todo implement ssh1 public key
  */
@@ -150,53 +121,6 @@ int ssh_userauth1_offer_pubkey(ssh_session session, const char *username,
   (void) pubkey;
   return SSH_AUTH_DENIED;
 }
-
-/*
-int ssh_userauth_pubkey(ssh_session session, char *username, ssh_string publickey, ssh_private_key privatekey){
-    ssh_string user;
-    ssh_string service;
-    ssh_string method;
-    ssh_string algo;
-    ssh_string sign;
-    int err=SSH_AUTH_ERROR;
-    if(!username)
-        if(!(username=session->options->username)){
-            if(options_default_username(session->options))
-                return err;
-            else
-                username=session->options->username;
-        }
-    if(ask_userauth(session))
-        return err;
-    user=string_from_char(username);
-    service=string_from_char("ssh-connection");
-    method=string_from_char("publickey");
-    algo=string_from_char(ssh_type_to_char(privatekey->type));
-
-
-*/    /* we said previously the public key was accepted */
-/*    packet_clear_out(session);
-    buffer_add_u8(session->out_buffer,SSH2_MSG_USERAUTH_REQUEST);
-    buffer_add_ssh_string(session->out_buffer,user);
-    buffer_add_ssh_string(session->out_buffer,service);
-    buffer_add_ssh_string(session->out_buffer,method);
-    buffer_add_u8(session->out_buffer,1);
-    buffer_add_ssh_string(session->out_buffer,algo);
-    buffer_add_ssh_string(session->out_buffer,publickey);
-    sign=ssh_do_sign(session,session->out_buffer,privatekey);
-    if(sign){
-        buffer_add_ssh_string(session->out_buffer,sign);
-        free(sign);
-        packet_send(session);
-        err=wait_auth_status(session,0);
-    }
-    free(user);
-    free(service);
-    free(method);
-    free(algo);
-    return err;
-}
-*/
 
 int ssh_userauth1_password(ssh_session session, const char *username,
     const char *password) {

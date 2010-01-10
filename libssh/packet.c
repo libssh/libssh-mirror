@@ -391,7 +391,7 @@ int packet_read(ssh_session session) {
         }
       }
 
-      rc = ssh_socket_read(session->ssh_socket_struct, &len, sizeof(uint32_t));
+      rc = ssh_socket_read(session->socket, &len, sizeof(uint32_t));
       if (rc != SSH_OK) {
         goto error;
       }
@@ -423,7 +423,7 @@ int packet_read(ssh_session session) {
         goto error;
       }
 
-      rc = ssh_socket_read(session->ssh_socket_struct, packet, to_be_read);
+      rc = ssh_socket_read(session->socket, packet, to_be_read);
       if(rc != SSH_OK) {
         SAFE_FREE(packet);
         goto error;
@@ -706,7 +706,7 @@ static int packet_send1(ssh_session session) {
   ssh_print_hexa("encrypted packet",buffer_get(session->out_buffer),
       buffer_get_len(session->out_buffer));
 #endif
-  if (ssh_socket_write(session->ssh_socket_struct, buffer_get(session->out_buffer),
+  if (ssh_socket_write(session->socket, buffer_get(session->out_buffer),
       buffer_get_len(session->out_buffer)) == SSH_ERROR) {
     goto error;
   }
@@ -734,7 +734,7 @@ int packet_send(ssh_session session) {
 }
 
 #ifdef WITH_SSH1
-void packet_parse(ssh_session session) {
+static void packet_parse(ssh_session session) {
   uint8_t type = session->in_packet.type;
 
   if (session->version == 1) {
@@ -744,7 +744,7 @@ void packet_parse(ssh_session session) {
         ssh_log(session, SSH_LOG_PACKET, "Received SSH_MSG_DISCONNECT");
         ssh_set_error(session, SSH_FATAL, "Received SSH_MSG_DISCONNECT");
 
-        ssh_socket_close(session->ssh_socket_struct);
+        ssh_socket_close(session->socket);
         session->alive = 0;
         return;
       case SSH_SMSG_STDOUT_DATA:
@@ -763,9 +763,7 @@ void packet_parse(ssh_session session) {
   } else {
   }
 }
-#endif
 
-#ifdef WITH_SSH1
 int packet_wait(ssh_session session, int type, int blocking) {
 
   enter_function();
@@ -773,7 +771,7 @@ int packet_wait(ssh_session session, int type, int blocking) {
   ssh_log(session, SSH_LOG_PROTOCOL, "packet_wait1 waiting for %d", type);
 
   do {
-    if ((packet_read1(session) != SSH_OK) ||
+    if ((packet_read(session) != SSH_OK) ||
         (packet_translate(session) != SSH_OK)) {
       leave_function();
       return SSH_ERROR;

@@ -62,7 +62,9 @@ enum ssh_auth_service_state_e {
   /** Service accepted */
   SSH_AUTH_SERVICE_ACCEPTED,
   /** Access to service denied (fatal) */
-  SSH_AUTH_SERVICE_DENIED
+  SSH_AUTH_SERVICE_DENIED,
+  /** Specific to SSH1 */
+  SSH_AUTH_SERVICE_USER_SENT
 };
 
 #endif /* AUTH_H_ */
