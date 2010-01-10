@@ -63,7 +63,7 @@ function clean_build_dir() {
 
 function usage () {
 echo "Usage: `basename $0` [--prefix /install_prefix|--build [debug|final]|--clean|--verbose|--libsuffix (32|64)|--help|--cmakedir /directory|--make
-(gmake|make)|--ccompiler (gcc|cc)|--withstaticlib|--unittesting|--withss1|--withserver]"
+(gmake|make)|--ccompiler (gcc|cc)|--withstaticlib|--unittesting|--withssh1|--withserver]"
     cleanup_and_exit
 }
 
