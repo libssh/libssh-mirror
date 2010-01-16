@@ -538,6 +538,10 @@ int ssh_service_request(ssh_session session, const char *service) {
   	case SSH_AUTH_SERVICE_SENT:
   		rc=SSH_AGAIN;
   		break;
+  	case SSH_AUTH_SERVICE_USER_SENT:
+  	  /* Invalid state, SSH1 specific */
+  	  rc=SSH_ERROR;
+  	  break;
   }
 
   leave_function();
