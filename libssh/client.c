@@ -58,7 +58,7 @@ static void socket_callback_connected(int code, int errno, void *user){
 		session->session_state=SSH_SESSION_STATE_SOCKET_CONNECTED;
 	else {
 		session->session_state=SSH_SESSION_STATE_ERROR;
-		ssh_set_error(session,SSH_FATAL,"Connection failed: %s",strerror(errno));
+		ssh_set_error(session,SSH_FATAL,"%s",strerror(errno));
 	}
 	ssh_connection_callback(session);
 	leave_function();
@@ -628,7 +628,9 @@ void ssh_connection_callback(ssh_session session){
 			}
 			break;
 		case SSH_SESSION_STATE_AUTHENTICATING:
-					break;
+			break;
+		case SSH_SESSION_STATE_ERROR:
+		  break;
 		default:
 			ssh_set_error(session,SSH_FATAL,"Invalid state %d",session->session_state);
 	}
