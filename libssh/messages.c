@@ -319,7 +319,6 @@ static ssh_message handle_channel_request_open(ssh_session session) {
 
   ssh_log(session, SSH_LOG_PACKET,
       "Clients wants to open a %s channel", type_c);
-  string_free(type);
 
   buffer_get_u32(session->in_buffer, &sender);
   buffer_get_u32(session->in_buffer, &window);
@@ -331,6 +330,7 @@ static ssh_message handle_channel_request_open(ssh_session session) {
 
   if (strcmp(type_c,"session") == 0) {
     msg->channel_request_open.type = SSH_CHANNEL_SESSION;
+    string_free(type);
     SAFE_FREE(type_c);
     leave_function();
     return msg;
@@ -370,6 +370,7 @@ static ssh_message handle_channel_request_open(ssh_session session) {
     msg->channel_request_open.originator_port = ntohl(originator_port);
 
     msg->channel_request_open.type = SSH_CHANNEL_DIRECT_TCPIP;
+    string_free(type);
     SAFE_FREE(type_c);
     leave_function();
     return msg;
@@ -409,6 +410,7 @@ static ssh_message handle_channel_request_open(ssh_session session) {
     msg->channel_request_open.originator_port = ntohl(originator_port);
 
     msg->channel_request_open.type = SSH_CHANNEL_FORWARDED_TCPIP;
+    string_free(type);
     SAFE_FREE(type_c);
     leave_function();
     return msg;
@@ -432,12 +434,14 @@ static ssh_message handle_channel_request_open(ssh_session session) {
     msg->channel_request_open.originator_port = ntohl(originator_port);
 
     msg->channel_request_open.type = SSH_CHANNEL_X11;
+    string_free(type);
     SAFE_FREE(type_c);
     leave_function();
     return msg;
   }
 
   msg->channel_request_open.type = SSH_CHANNEL_UNKNOWN;
+  string_free(type);
   SAFE_FREE(type_c);
 
   leave_function();
