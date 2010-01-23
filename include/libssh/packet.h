@@ -29,10 +29,22 @@ typedef struct packet_struct {
 	uint8_t type;
 } PACKET;
 
+/** different state of packet reading. */
+enum ssh_packet_state_e {
+  /** Packet not initialized, must read the size of packet */
+  PACKET_STATE_INIT,
+  /** Size was read, waiting for the rest of data */
+  PACKET_STATE_SIZEREAD,
+  /** Full packet was read and callbacks are being called. Future packets
+   * should wait for the end of the callback. */
+  PACKET_STATE_PROCESSING
+};
+
 int packet_send(ssh_session session);
 
 #ifdef WITH_SSH1
 int packet_read(ssh_session session);
+int packet_send1(ssh_session session) ;
 #endif
 
 int packet_translate(ssh_session session);

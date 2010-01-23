@@ -121,6 +121,7 @@ if (WITH_SSH1)
     ${libssh_SRCS}
     auth1.c
     channels1.c
+    packet1.c
   )
 endif (WITH_SSH1)
 
