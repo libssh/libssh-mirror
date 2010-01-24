@@ -467,7 +467,7 @@ ssh_channel ssh_message_channel_request_open_reply_accept(ssh_message msg) {
   chan->remote_channel = msg->channel_request_open.sender;
   chan->remote_maxpacket = msg->channel_request_open.packet_size;
   chan->remote_window = msg->channel_request_open.window;
-  chan->open = 1;
+  chan->state = SSH_CHANNEL_STATE_OPEN;
 
   if (buffer_add_u8(session->out_buffer, SSH2_MSG_CHANNEL_OPEN_CONFIRMATION) < 0) {
     goto error;

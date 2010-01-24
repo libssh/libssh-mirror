@@ -40,6 +40,13 @@ enum ssh_channel_request_state_e {
 	SSH_CHANNEL_REQ_STATE_ERROR
 };
 
+enum ssh_channel_state_e {
+  SSH_CHANNEL_STATE_NOT_OPEN = 0,
+  SSH_CHANNEL_STATE_OPEN_DENIED,
+  SSH_CHANNEL_STATE_OPEN,
+  SSH_CHANNEL_STATE_CLOSED
+};
+
 struct ssh_channel_struct {
     struct ssh_channel_struct *prev;
     struct ssh_channel_struct *next;
@@ -53,7 +60,7 @@ struct ssh_channel_struct {
     uint32_t remote_window;
     int remote_eof; /* end of file received */
     uint32_t remote_maxpacket;
-    int open; /* shows if the channel is still opened */
+    enum ssh_channel_state_e state;
     int delayed_close;
     ssh_buffer stdout_buffer;
     ssh_buffer stderr_buffer;

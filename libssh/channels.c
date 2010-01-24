@@ -55,6 +55,8 @@
  * @{
  */
 
+static ssh_channel channel_from_msg(ssh_session session, ssh_buffer packet);
+
 /**
  * @brief Allocate a new channel.
  *
@@ -158,18 +160,46 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_open_conf){
       (long unsigned int) channel->remote_window,
       (long unsigned int) channel->remote_maxpacket);
 
-  channel->open = 1;
+  channel->state = SSH_CHANNEL_STATE_OPEN;
   leave_function();
   return SSH_PACKET_USED;
 }
 
-/* TODO: implement and comment */
+/** @internal
+ * @brief handles a SSH_CHANNEL_OPEN_FAILURE and set the state of the channel.
+ */
 SSH_PACKET_CALLBACK(ssh_packet_channel_open_fail){
-  (void)packet;
+
+  ssh_channel channel;
+  ssh_string error_s;
+  char *error;
+  uint32_t code;
   (void)user;
   (void)type;
-  (void)session;
-  return 0;
+  channel=channel_from_msg(session,packet);
+  if(channel==NULL){
+    ssh_log(session,SSH_LOG_RARE,"Invalid channel in packet");
+    return SSH_PACKET_USED;
+  }
+  buffer_get_u32(packet, &code);
+
+  error_s = buffer_get_ssh_string(packet);
+  if(error_s != NULL)
+    error = string_to_char(error_s);
+  string_free(error_s);
+  if (error == NULL) {
+    ssh_set_error_oom(session);
+    return SSH_PACKET_USED;
+  }
+
+  ssh_set_error(session, SSH_REQUEST_DENIED,
+      "Channel opening failure: channel %u error (%lu) %s",
+      channel->local_channel,
+      (long unsigned int) ntohl(code),
+      error);
+  SAFE_FREE(error);
+
+  return SSH_PACKET_USED;
 }
 
 /** @internal
@@ -186,7 +216,7 @@ static int channel_open(ssh_channel channel, const char *type_c, int window,
     int maxpacket, ssh_buffer payload) {
   ssh_session session = channel->session;
   ssh_string type = NULL;
-  uint32_t tmp = 0;
+  int err=SSH_ERROR;
 
   enter_function();
   channel->local_channel = ssh_channel_new_id(session);
@@ -200,7 +230,7 @@ static int channel_open(ssh_channel channel, const char *type_c, int window,
   type = string_from_char(type_c);
   if (type == NULL) {
     leave_function();
-    return -1;
+    return err;
   }
 
   if (buffer_add_u8(session->out_buffer, SSH2_MSG_CHANNEL_OPEN) < 0 ||
@@ -210,7 +240,7 @@ static int channel_open(ssh_channel channel, const char *type_c, int window,
       buffer_add_u32(session->out_buffer, htonl(channel->local_maxpacket)) < 0) {
     string_free(type);
     leave_function();
-    return -1;
+    return err;
   }
 
   string_free(type);
@@ -218,13 +248,13 @@ static int channel_open(ssh_channel channel, const char *type_c, int window,
   if (payload != NULL) {
     if (buffer_add_buffer(session->out_buffer, payload) < 0) {
       leave_function();
-      return -1;
+      return err;
     }
   }
 
   if (packet_send(session) != SSH_OK) {
     leave_function();
-    return -1;
+    return err;
   }
 
   ssh_log(session, SSH_LOG_PACKET,
@@ -233,45 +263,13 @@ static int channel_open(ssh_channel channel, const char *type_c, int window,
 
   /* Todo: fix this into a correct loop */
   /* wait until channel is opened by server */
-  while(!channel->open){
+  while(channel->state == SSH_CHANNEL_STATE_NOT_OPEN){
     ssh_handle_packets(session,-1);
   }
+  if(channel->state == SSH_CHANNEL_STATE_OPEN)
+    err=SSH_OK;
   leave_function();
-  return SSH_OK;
-
-  /* TODO: put this into the correct packet handler */
-  switch(session->in_packet.type) {
-    case SSH2_MSG_CHANNEL_OPEN_FAILURE:
-      {
-        ssh_string error_s;
-        char *error;
-        uint32_t code;
-
-        buffer_get_u32(session->in_buffer, &tmp);
-        buffer_get_u32(session->in_buffer, &code);
-
-        error_s = buffer_get_ssh_string(session->in_buffer);
-        error = string_to_char(error_s);
-        string_free(error_s);
-        if (error == NULL) {
-          leave_function();
-          return -1;
-        }
-
-        ssh_set_error(session, SSH_REQUEST_DENIED,
-            "Channel opening failure: channel %u error (%lu) %s",
-            channel->local_channel,
-            (long unsigned int) ntohl(code),
-            error);
-        SAFE_FREE(error);
-
-        leave_function();
-        return -1;
-      }
-  }
-
-  leave_function();
-  return -1;
+  return err;
 }
 
 /* get ssh channel from local session? */
@@ -517,7 +515,7 @@ SSH_PACKET_CALLBACK(channel_rcv_close) {
 					buffer_get_rest_len(channel->stderr_buffer) > 0)) {
 		channel->delayed_close = 1;
 	} else {
-		channel->open = 0;
+		channel->state = SSH_CHANNEL_STATE_CLOSED;
 	}
 
 	if (channel->remote_eof == 0) {
@@ -775,7 +773,7 @@ void channel_free(ssh_channel channel) {
     return;
   }
 
-  if (session->alive && channel->open) {
+  if (session->alive && channel->state == SSH_CHANNEL_STATE_OPEN) {
     channel_close(channel);
   }
 
@@ -885,7 +883,7 @@ int channel_close(ssh_channel channel){
       channel->remote_channel);
 
   if(rc == SSH_OK) {
-    channel->open = 0;
+    channel->state=SSH_CHANNEL_STATE_CLOSED;
   }
 
   leave_function();
@@ -914,7 +912,7 @@ int channel_write_common(ssh_channel channel, const void *data,
     return -1;
   }
 
-  if (channel->open == 0 || channel->delayed_close != 0) {
+  if (channel->state != SSH_CHANNEL_STATE_OPEN || channel->delayed_close != 0) {
     ssh_set_error(session, SSH_REQUEST_DENIED, "Remote channel is closed");
     leave_function();
     return -1;
@@ -1007,7 +1005,7 @@ int channel_write(ssh_channel channel, const void *data, uint32_t len) {
  * @see channel_is_closed()
  */
 int channel_is_open(ssh_channel channel) {
-  return (channel->open != 0 && channel->session->alive != 0);
+  return (channel->state == SSH_CHANNEL_STATE_OPEN && channel->session->alive != 0);
 }
 
 /**
@@ -1020,7 +1018,7 @@ int channel_is_open(ssh_channel channel) {
  * @see channel_is_open()
  */
 int channel_is_closed(ssh_channel channel) {
-  return (channel->open == 0 || channel->session->alive == 0);
+  return (channel->state != SSH_CHANNEL_STATE_OPEN || channel->session->alive == 0);
 }
 
 /**
@@ -2202,7 +2200,10 @@ int channel_get_exit_status(ssh_channel channel) {
     if (ssh_handle_packets(channel->session,-1) != SSH_OK) {
       return -1;
     }
-    if (channel->open == 0) {
+    /* XXX We should actually wait for a close packet and not a close
+     * we issued ourselves
+     */
+    if (channel->state != SSH_CHANNEL_STATE_OPEN) {
       /* When a channel is closed, no exit status message can
        * come anymore */
       break;
@@ -2230,7 +2231,7 @@ static int channel_protocol_select(ssh_channel *rchans, ssh_channel *wchans,
   for (i = 0; rchans[i] != NULL; i++) {
     chan = rchans[i];
 
-    while (chan->open && ssh_socket_data_available(chan->session->socket)) {
+    while (channel_is_open(chan) && ssh_socket_data_available(chan->session->socket)) {
       ssh_handle_packets(chan->session,-1);
     }
 
@@ -2248,7 +2249,7 @@ static int channel_protocol_select(ssh_channel *rchans, ssh_channel *wchans,
     chan = wchans[i];
     /* It's not our business to seek if the file descriptor is writable */
     if (ssh_socket_data_writable(chan->session->socket) &&
-        chan->open && (chan->remote_window > 0)) {
+        channel_is_open(chan) && (chan->remote_window > 0)) {
       wout[j] = chan;
       j++;
     }
@@ -2259,7 +2260,7 @@ static int channel_protocol_select(ssh_channel *rchans, ssh_channel *wchans,
   for (i = 0; echans[i] != NULL; i++) {
     chan = echans[i];
 
-    if (!ssh_socket_is_open(chan->session->socket) || !chan->open) {
+    if (!ssh_socket_is_open(chan->session->socket) || channel_is_closed(chan)) {
       eout[j] = chan;
       j++;
     }

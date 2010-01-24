@@ -57,7 +57,7 @@ int channel_open_session1(ssh_channel chan) {
     return -1;
   }
   session->exec_channel_opened = 1;
-  chan->open = 1;
+  chan->state = SSH_CHANNEL_STATE_OPEN;
   chan->local_maxpacket = 32000;
   chan->local_window = 64000;
   ssh_log(session, SSH_LOG_PACKET, "Opened a SSH1 channel session");
@@ -253,7 +253,7 @@ SSH_PACKET_CALLBACK(ssh_packet_close1){
    */
 
   /* actually status is lost somewhere */
-  channel->open = 0;
+  channel->state = SSH_CHANNEL_STATE_CLOSED;
   channel->remote_eof = 1;
 
   buffer_add_u8(session->out_buffer, SSH_CMSG_EXIT_CONFIRMATION);
