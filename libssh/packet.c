@@ -258,7 +258,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
       session->recv_seq++;
       /* We don't want to rewrite a new packet while still executing the packet callbacks */
       session->packet_state = PACKET_STATE_PROCESSING;
-      packet_translate(session);
+      ssh_packet_parse_type(session);
       /* execute callbacks */
       ssh_packet_process(session, session->in_packet.type);
       session->packet_state = PACKET_STATE_INIT;
@@ -361,7 +361,7 @@ error:
 /** @internal
  * @parse the "Type" header field of a packet and updates the session
  */
-int packet_translate(ssh_session session) {
+int ssh_packet_parse_type(ssh_session session) {
   enter_function();
 
   memset(&session->in_packet, 0, sizeof(PACKET));
@@ -404,7 +404,7 @@ int packet_flush(ssh_session session, int enforce_blocking) {
  * This function places the outgoing packet buffer into an outgoing
  * socket buffer
  */
-static int packet_write(ssh_session session) {
+static int ssh_packet_write(ssh_session session) {
   int rc = SSH_ERROR;
 
   enter_function();
@@ -483,7 +483,7 @@ static int packet_send2(ssh_session session) {
     }
   }
 
-  rc = packet_write(session);
+  rc = ssh_packet_write(session);
   session->send_seq++;
 
   if (buffer_reinit(session->out_buffer) < 0) {

@@ -216,7 +216,7 @@ int ssh_packet_socket_callback1(const void *data, size_t receivedlen, void *user
       session->recv_seq++;
       /* We don't want to rewrite a new packet while still executing the packet callbacks */
       session->packet_state = PACKET_STATE_PROCESSING;
-      packet_translate(session);
+      ssh_packet_parse_type(session);
       /* execute callbacks */
       ssh_packet_process(session, session->in_packet.type);
       session->packet_state = PACKET_STATE_INIT;
