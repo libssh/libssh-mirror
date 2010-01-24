@@ -175,8 +175,8 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
     msg->auth_request.method = SSH_AUTH_METHOD_PASSWORD;
     SAFE_FREE(service_c);
     SAFE_FREE(method_c);
-    buffer_get_u8(session->in_buffer, &tmp);
-    pass = buffer_get_ssh_string(session->in_buffer);
+    buffer_get_u8(packet, &tmp);
+    pass = buffer_get_ssh_string(packet);
     if (pass == NULL) {
       goto error;
     }
@@ -197,12 +197,12 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
 
     msg->auth_request.method = SSH_AUTH_METHOD_PUBLICKEY;
     SAFE_FREE(method_c);
-    buffer_get_u8(session->in_buffer, &has_sign);
-    algo = buffer_get_ssh_string(session->in_buffer);
+    buffer_get_u8(packet, &has_sign);
+    algo = buffer_get_ssh_string(packet);
     if (algo == NULL) {
       goto error;
     }
-    publickey = buffer_get_ssh_string(session->in_buffer);
+    publickey = buffer_get_ssh_string(packet);
     if (publickey == NULL) {
       string_free(algo);
       algo = NULL;
@@ -224,7 +224,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
       ssh_string sign = NULL;
       ssh_buffer digest = NULL;
 
-      sign = buffer_get_ssh_string(session->in_buffer);
+      sign = buffer_get_ssh_string(packet);
       if(sign == NULL) {
         ssh_log(session, SSH_LOG_PACKET, "Invalid signature packet from peer");
         msg->auth_request.signature_state = SSH_PUBLICKEY_STATE_ERROR;
@@ -334,7 +334,7 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_open){
   }
 
   if (strcmp(type_c,"direct-tcpip") == 0) {
-    destination = buffer_get_ssh_string(session->in_buffer);
+    destination = buffer_get_ssh_string(packet);
 	if (destination == NULL) {
     ssh_set_error_oom(session);
 		goto error;
@@ -347,10 +347,10 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_open){
 	}
     string_free(destination);
 
-    buffer_get_u32(session->in_buffer, &destination_port);
+    buffer_get_u32(packet, &destination_port);
     msg->channel_request_open.destination_port = ntohl(destination_port);
 
-    originator = buffer_get_ssh_string(session->in_buffer);
+    originator = buffer_get_ssh_string(packet);
 	if (originator == NULL) {
     ssh_set_error_oom(session);
 	  goto error;
