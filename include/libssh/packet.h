@@ -47,12 +47,16 @@ int packet_read(ssh_session session);
 int packet_send1(ssh_session session) ;
 void ssh_packet_set_default_callbacks1(ssh_session session);
 
+SSH_PACKET_CALLBACK(ssh_packet_disconnect1);
+SSH_PACKET_CALLBACK(ssh_packet_smsg_success1);
+SSH_PACKET_CALLBACK(ssh_packet_smsg_failure1);
+
 #endif
 
 int packet_translate(ssh_session session);
 /* TODO: remove it when packet_wait is stripped out from libssh */
 #ifdef WITH_SSH1
-int packet_wait(ssh_session session,int type,int blocking);
+//int packet_wait(ssh_session session,int type,int blocking);
 #endif
 int packet_flush(ssh_session session, int enforce_blocking);
 

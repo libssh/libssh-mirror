@@ -26,5 +26,8 @@
 #include "libssh/callbacks.h"
 
 SSH_PACKET_CALLBACK(ssh_packet_kexinit);
+#ifdef WITH_SSH1
+SSH_PACKET_CALLBACK(ssh_packet_publickey1);
+#endif
 
 #endif /* KEX_H_ */

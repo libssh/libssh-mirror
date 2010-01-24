@@ -597,7 +597,6 @@ static ssh_string encrypt_session_key(ssh_session session, ssh_public_key srvkey
   return data1;
 }
 
-
 /* SSH-1 functions */
 /*    2 SSH_SMSG_PUBLIC_KEY
  *
@@ -612,15 +611,16 @@ static ssh_string encrypt_session_key(ssh_session session, ssh_public_key srvkey
  *    32-bit int   supported_ciphers_mask
  *    32-bit int   supported_authentications_mask
  */
-
-int ssh_get_kex1(ssh_session session) {
+/**
+ * @brief Wait for a SSH_SMSG_PUBLIC_KEY and does the key exchange
+ */
+SSH_PACKET_CALLBACK(ssh_packet_publickey1){
   ssh_string server_exp = NULL;
   ssh_string server_mod = NULL;
   ssh_string host_exp = NULL;
   ssh_string host_mod = NULL;
   ssh_string serverkey = NULL;
   ssh_string hostkey = NULL;
-  ssh_string enc_session = NULL;
   ssh_public_key srv = NULL;
   ssh_public_key host = NULL;
   uint32_t server_bits;
@@ -628,45 +628,43 @@ int ssh_get_kex1(ssh_session session) {
   uint32_t protocol_flags;
   uint32_t supported_ciphers_mask;
   uint32_t supported_authentications_mask;
+  ssh_string enc_session = NULL;
   uint16_t bits;
-  int rc = -1;
   int ko;
-
   enter_function();
-  ssh_log(session, SSH_LOG_PROTOCOL, "Waiting for a SSH_SMSG_PUBLIC_KEY");
-  if (packet_wait(session, SSH_SMSG_PUBLIC_KEY, 1) != SSH_OK) {
-    leave_function();
-    return -1;
-  }
-
+  (void)type;
+  (void)user;
   ssh_log(session, SSH_LOG_PROTOCOL, "Got a SSH_SMSG_PUBLIC_KEY");
-  if (buffer_get_data(session->in_buffer, session->server_kex.cookie, 8) != 8) {
+  if(session->session_state != SSH_SESSION_STATE_INITIAL_KEX){
+    ssh_set_error(session,SSH_FATAL,"SSH_KEXINIT received in wrong state");
+    goto error;
+  }
+  if (buffer_get_data(packet, session->server_kex.cookie, 8) != 8) {
     ssh_set_error(session, SSH_FATAL, "Can't get cookie in buffer");
-    leave_function();
-    return -1;
+    goto error;
   }
 
-  buffer_get_u32(session->in_buffer, &server_bits);
-  server_exp = buffer_get_mpint(session->in_buffer);
+  buffer_get_u32(packet, &server_bits);
+  server_exp = buffer_get_mpint(packet);
   if (server_exp == NULL) {
     goto error;
   }
-  server_mod = buffer_get_mpint(session->in_buffer);
+  server_mod = buffer_get_mpint(packet);
   if (server_mod == NULL) {
     goto error;
   }
-  buffer_get_u32(session->in_buffer, &host_bits);
-  host_exp = buffer_get_mpint(session->in_buffer);
+  buffer_get_u32(packet, &host_bits);
+  host_exp = buffer_get_mpint(packet);
   if (host_exp == NULL) {
     goto error;
   }
-  host_mod = buffer_get_mpint(session->in_buffer);
+  host_mod = buffer_get_mpint(packet);
   if (host_mod == NULL) {
     goto error;
   }
-  buffer_get_u32(session->in_buffer, &protocol_flags);
-  buffer_get_u32(session->in_buffer, &supported_ciphers_mask);
-  ko = buffer_get_u32(session->in_buffer, &supported_authentications_mask);
+  buffer_get_u32(packet, &protocol_flags);
+  buffer_get_u32(packet, &supported_ciphers_mask);
+  ko = buffer_get_u32(packet, &supported_authentications_mask);
 
   if ((ko != sizeof(uint32_t)) || !host_mod || !host_exp
       || !server_mod || !server_exp) {
@@ -722,77 +720,92 @@ int ssh_get_kex1(ssh_session session) {
     ssh_set_error(session, SSH_FATAL, "Remote server doesn't accept 3DES");
     goto error;
   }
-
   ssh_log(session, SSH_LOG_PROTOCOL, "Sending SSH_CMSG_SESSION_KEY");
 
-  if (buffer_add_u8(session->out_buffer, SSH_CMSG_SESSION_KEY) < 0) {
-    goto error;
-  }
-  if (buffer_add_u8(session->out_buffer, SSH_CIPHER_3DES) < 0) {
-    goto error;
-  }
-  if (buffer_add_data(session->out_buffer, session->server_kex.cookie, 8) < 0) {
-    goto error;
-  }
+   if (buffer_add_u8(session->out_buffer, SSH_CMSG_SESSION_KEY) < 0) {
+     goto error;
+   }
+   if (buffer_add_u8(session->out_buffer, SSH_CIPHER_3DES) < 0) {
+     goto error;
+   }
+   if (buffer_add_data(session->out_buffer, session->server_kex.cookie, 8) < 0) {
+     goto error;
+   }
 
-  enc_session = encrypt_session_key(session, srv, host, server_bits, host_bits);
-  if (enc_session == NULL) {
-    goto error;
-  }
+   enc_session = encrypt_session_key(session, srv, host, server_bits, host_bits);
+   if (enc_session == NULL) {
+     goto error;
+   }
 
-  bits = string_len(enc_session) * 8 - 7;
-  ssh_log(session, SSH_LOG_PROTOCOL, "%d bits, %zu bytes encrypted session",
-      bits, string_len(enc_session));
-  bits = htons(bits);
-  /* the encrypted mpint */
-  if (buffer_add_data(session->out_buffer, &bits, sizeof(uint16_t)) < 0) {
-    goto error;
-  }
-  if (buffer_add_data(session->out_buffer, string_data(enc_session),
-        string_len(enc_session)) < 0) {
-    goto error;
-  }
-  /* the protocol flags */
-  if (buffer_add_u32(session->out_buffer, 0) < 0) {
-    goto error;
-  }
+   bits = string_len(enc_session) * 8 - 7;
+   ssh_log(session, SSH_LOG_PROTOCOL, "%d bits, %zu bytes encrypted session",
+       bits, string_len(enc_session));
+   bits = htons(bits);
+   /* the encrypted mpint */
+   if (buffer_add_data(session->out_buffer, &bits, sizeof(uint16_t)) < 0) {
+     goto error;
+   }
+   if (buffer_add_data(session->out_buffer, string_data(enc_session),
+         string_len(enc_session)) < 0) {
+     goto error;
+   }
+   /* the protocol flags */
+   if (buffer_add_u32(session->out_buffer, 0) < 0) {
+     goto error;
+   }
+   session->session_state=SSH_SESSION_STATE_KEXINIT_RECEIVED;
+   if (packet_send(session) != SSH_OK) {
+     goto error;
+   }
 
-  if (packet_send(session) != SSH_OK) {
-    goto error;
-  }
+   /* we can set encryption */
+   if (crypt_set_algorithms(session)) {
+     goto error;
+   }
 
-  /* we can set encryption */
-  if (crypt_set_algorithms(session)) {
-    goto error;
-  }
-
-  session->current_crypto = session->next_crypto;
-  session->next_crypto = NULL;
-
-  ssh_log(session, SSH_LOG_PROTOCOL, "Waiting for a SSH_SMSG_SUCCESS");
-  if (packet_wait(session,SSH_SMSG_SUCCESS,1) != SSH_OK) {
-    char buffer[1024] = {0};
-    snprintf(buffer, sizeof(buffer),
-        "Key exchange failed: %s", ssh_get_error(session));
-    ssh_set_error(session, SSH_FATAL, "%s",buffer);
-    goto error;
-  }
-  ssh_log(session, SSH_LOG_PROTOCOL, "received SSH_SMSG_SUCCESS\n");
-
-  rc = 0;
+   session->current_crypto = session->next_crypto;
+   session->next_crypto = NULL;
+   goto end;
 error:
-  string_free(host_mod);
-  string_free(host_exp);
-  string_free(server_mod);
-  string_free(server_exp);
-  string_free(serverkey);
-  string_free(hostkey);
+  session->session_state=SSH_SESSION_STATE_ERROR;
+end:
 
-  publickey_free(srv);
-  publickey_free(host);
+   string_free(host_mod);
+   string_free(host_exp);
+   string_free(server_mod);
+   string_free(server_exp);
+   string_free(serverkey);
+   string_free(hostkey);
 
+   publickey_free(srv);
+   publickey_free(host);
+
+   leave_function();
+   return SSH_PACKET_USED;
+}
+
+int ssh_get_kex1(ssh_session session) {
+  int ret=SSH_ERROR;
+  enter_function();
+  ssh_log(session, SSH_LOG_PROTOCOL, "Waiting for a SSH_SMSG_PUBLIC_KEY");
+  /* Here the callback is called */
+  while(session->session_state==SSH_SESSION_STATE_INITIAL_KEX){
+    ssh_handle_packets(session,-1);
+  }
+  if(session->session_state==SSH_SESSION_STATE_ERROR)
+    goto error;
+  ssh_log(session, SSH_LOG_PROTOCOL, "Waiting for a SSH_SMSG_SUCCESS");
+  /* Waiting for SSH_SMSG_SUCCESS */
+  while(session->session_state==SSH_SESSION_STATE_KEXINIT_RECEIVED){
+    ssh_handle_packets(session,-1);
+  }
+  if(session->session_state==SSH_SESSION_STATE_ERROR)
+      goto error;
+  ssh_log(session, SSH_LOG_PROTOCOL, "received SSH_SMSG_SUCCESS\n");
+  ret=SSH_OK;
+error:
   leave_function();
-  return rc;
+  return ret;
 }
 
 #endif /* WITH_SSH1 */

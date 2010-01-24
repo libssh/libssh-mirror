@@ -601,7 +601,6 @@ void ssh_connection_callback(ssh_session session){
 					goto error;
 				set_status(session,0.6);
 				session->connected = 1;
-				session->session_state=SSH_SESSION_STATE_AUTHENTICATING;
 				break;
 			}
 #endif

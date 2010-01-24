@@ -329,7 +329,8 @@ error:
 }
 
 /** @internal
- * @brief parse a channel-related packet to resolve it to a ssh_channel.
+ * @brief parse a channel-related packet to resolve it to a ssh_channel. Works on SSH1
+ * sessions too.
  * @param session current SSH session.
  * @param packet buffer to parse packet from. The read pointer will be moved after
  * the call.
@@ -339,7 +340,11 @@ error:
 static ssh_channel channel_from_msg(ssh_session session, ssh_buffer packet) {
   ssh_channel channel;
   uint32_t chan;
-
+#ifdef WITH_SSH1
+  /* With SSH1, the channel is always the first one */
+  if(session->version==1)
+    return session->channels;
+#endif
   if (buffer_get_u32(packet, &chan) != sizeof(uint32_t)) {
     ssh_set_error(session, SSH_FATAL,
         "Getting channel from message: short read");
@@ -1052,7 +1057,7 @@ void channel_set_blocking(ssh_channel channel, int blocking) {
 
 /** @internal
  * @brief handle a SSH_CHANNEL_SUCCESS packet and set the channel
- * state.
+ * state. Also works on SSH1 sessions.
  */
 SSH_PACKET_CALLBACK(ssh_packet_channel_success){
   ssh_channel channel;
@@ -1083,7 +1088,7 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_success){
 
 /** @internal
  * @brief handle a SSH_CHANNEL_FAILURE packet and set the channel
- * state.
+ * state. Also works on SSH1 sessions.
  */
 SSH_PACKET_CALLBACK(ssh_packet_channel_failure){
   ssh_channel channel;

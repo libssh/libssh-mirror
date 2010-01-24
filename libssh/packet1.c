@@ -26,13 +26,13 @@
 #include "libssh/session.h"
 #include "libssh/buffer.h"
 #include "libssh/socket.h"
-
+#include "libssh/kex.h"
 #ifdef WITH_SSH1
 
 ssh_packet_callback default_packet_handlers1[]= {
   NULL,                           //SSH_MSG_NONE                        0
-  NULL,                           //SSH_MSG_DISCONNECT                  1
-  NULL,                           //SSH_SMSG_PUBLIC_KEY                 2
+  ssh_packet_disconnect1,         //SSH_MSG_DISCONNECT                  1
+  ssh_packet_publickey1,          //SSH_SMSG_PUBLIC_KEY                 2
   NULL,                           //SSH_CMSG_SESSION_KEY                3
   NULL,                           //SSH_CMSG_USER                       4
   NULL,                           //SSH_CMSG_AUTH_RHOSTS                5
@@ -44,17 +44,17 @@ ssh_packet_callback default_packet_handlers1[]= {
   NULL,                           //SSH_CMSG_WINDOW_SIZE                11
   NULL,                           //SSH_CMSG_EXEC_SHELL                 12
   NULL,                           //SSH_CMSG_EXEC_CMD                   13
-  NULL,                           //SSH_SMSG_SUCCESS                    14
-  NULL,                           //SSH_SMSG_FAILURE                    15
+  ssh_packet_smsg_success1,       //SSH_SMSG_SUCCESS                    14
+  ssh_packet_smsg_failure1,       //SSH_SMSG_FAILURE                    15
   NULL,                           //SSH_CMSG_STDIN_DATA                 16
-  NULL,                           //SSH_SMSG_STDOUT_DATA                17
-  NULL,                           //SSH_SMSG_STDERR_DATA                18
+  ssh_packet_data1,               //SSH_SMSG_STDOUT_DATA                17
+  ssh_packet_data1,               //SSH_SMSG_STDERR_DATA                18
   NULL,                           //SSH_CMSG_EOF                        19
   NULL,                           //SSH_SMSG_EXITSTATUS                 20
   NULL,                           //SSH_MSG_CHANNEL_OPEN_CONFIRMATION   21
   NULL,                           //SSH_MSG_CHANNEL_OPEN_FAILURE        22
   NULL,                           //SSH_MSG_CHANNEL_DATA                23
-  NULL,                           //SSH_MSG_CHANNEL_CLOSE               24
+  ssh_packet_close1,              //SSH_MSG_CHANNEL_CLOSE               24
   NULL,                           //SSH_MSG_CHANNEL_CLOSE_CONFIRMATION  25
   NULL,                           //SSH_CMSG_X11_REQUEST_FORWARDING     26
   NULL,                           //SSH_SMSG_X11_OPEN                   27
@@ -62,19 +62,11 @@ ssh_packet_callback default_packet_handlers1[]= {
   NULL,                           //SSH_MSG_PORT_OPEN                   29
   NULL,                           //SSH_CMSG_AGENT_REQUEST_FORWARDING   30
   NULL,                           //SSH_SMSG_AGENT_OPEN                 31
-  NULL,                           //SSH_MSG_IGNORE                      32
+  ssh_packet_ignore_callback,     //SSH_MSG_IGNORE                      32
   NULL,                           //SSH_CMSG_EXIT_CONFIRMATION          33
   NULL,                           //SSH_CMSG_X11_REQUEST_FORWARDING     34
   NULL,                           //SSH_CMSG_AUTH_RHOSTS_RSA            35
-  NULL,                           //SSH_MSG_DEBUG                       36
-  NULL,                           //SSH_CMSG_REQUEST_COMPRESSION        37
-  NULL,                           //SSH_CMSG_MAX_PACKET_SIZE            38
-  NULL,                           //SSH_CMSG_AUTH_TIS                   39
-  NULL,                           //SSH_SMSG_AUTH_TIS_CHALLENGE         40
-  NULL,                           //SSH_CMSG_AUTH_TIS_RESPONSE          41
-  NULL,                           //SSH_CMSG_AUTH_KERBEROS              42
-  NULL,                           //SSH_SMSG_AUTH_KERBEROS_RESPONSE     43
-  NULL,                           //SSH_CMSG_HAVE_KERBEROS_TGT          44
+  ssh_packet_ignore_callback,     //SSH_MSG_DEBUG                       36
 };
 
 /** @internal
@@ -316,36 +308,36 @@ error:
   return rc;     /* SSH_OK, AGAIN or ERROR */
 }
 
+SSH_PACKET_CALLBACK(ssh_packet_disconnect1){
+  (void)packet;
+  (void)user;
+  (void)type;
+  ssh_log(session, SSH_LOG_PACKET, "Received SSH_MSG_DISCONNECT");
+  ssh_set_error(session, SSH_FATAL, "Received SSH_MSG_DISCONNECT");
+  ssh_socket_close(session->socket);
+  session->alive = 0;
+  return SSH_PACKET_USED;
+}
 
-static void packet_parse(ssh_session session) {
-  uint8_t type = session->in_packet.type;
-
-  if (session->version == 1) {
-    /* SSH-1 */
-    switch(type) {
-      case SSH_MSG_DISCONNECT:
-        ssh_log(session, SSH_LOG_PACKET, "Received SSH_MSG_DISCONNECT");
-        ssh_set_error(session, SSH_FATAL, "Received SSH_MSG_DISCONNECT");
-
-        ssh_socket_close(session->socket);
-        session->alive = 0;
-        return;
-      case SSH_SMSG_STDOUT_DATA:
-      case SSH_SMSG_STDERR_DATA:
-      case SSH_SMSG_EXITSTATUS:
-        channel_handle1(session,type);
-        return;
-      case SSH_MSG_DEBUG:
-      case SSH_MSG_IGNORE:
-        break;
-      default:
-        ssh_log(session, SSH_LOG_PACKET,
-            "Unexpected message code %d", type);
-    }
-    return;
+SSH_PACKET_CALLBACK(ssh_packet_smsg_success1){
+  if(session->session_state==SSH_SESSION_STATE_KEXINIT_RECEIVED){
+    session->session_state=SSH_SESSION_STATE_AUTHENTICATING;
+    return SSH_PACKET_USED;
   } else {
+    return ssh_packet_channel_success(session,type,packet,user);
   }
 }
+
+SSH_PACKET_CALLBACK(ssh_packet_smsg_failure1){
+  if(session->session_state==SSH_SESSION_STATE_KEXINIT_RECEIVED){
+    session->session_state=SSH_SESSION_STATE_ERROR;
+    ssh_set_error(session,SSH_FATAL,"Key exchange failed: received SSH_SMSG_FAILURE");
+    return SSH_PACKET_USED;
+  } else {
+    return ssh_packet_channel_failure(session,type,packet,user);
+  }
+}
+
 
 int packet_wait(ssh_session session, int type, int blocking) {
 
@@ -363,24 +355,15 @@ int packet_wait(ssh_session session, int type, int blocking) {
         session->in_packet.type);
     switch (session->in_packet.type) {
       case SSH_MSG_DISCONNECT:
-        packet_parse(session);
-        leave_function();
-        return SSH_ERROR;
       case SSH_SMSG_STDOUT_DATA:
       case SSH_SMSG_STDERR_DATA:
-      case SSH_SMSG_EXITSTATUS:
-        if (channel_handle1(session,type) < 0) {
-          leave_function();
-          return SSH_ERROR;
-        }
-        break;
       case SSH_MSG_DEBUG:
       case SSH_MSG_IGNORE:
+        ssh_packet_process(session,type);
         break;
-        /*          case SSH2_MSG_CHANNEL_CLOSE:
-                    packet_parse(session);
-                    break;;
-                    */
+      case SSH_SMSG_EXITSTATUS:
+        //This packet must be parsed too
+        break;
       default:
         if (type && (type != session->in_packet.type)) {
           ssh_set_error(session, SSH_FATAL,
