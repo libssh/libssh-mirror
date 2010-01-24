@@ -28,6 +28,66 @@
 #include "libssh/socket.h"
 
 #ifdef WITH_SSH1
+
+ssh_packet_callback default_packet_handlers1[]= {
+  NULL,                           //SSH_MSG_NONE                        0
+  NULL,                           //SSH_MSG_DISCONNECT                  1
+  NULL,                           //SSH_SMSG_PUBLIC_KEY                 2
+  NULL,                           //SSH_CMSG_SESSION_KEY                3
+  NULL,                           //SSH_CMSG_USER                       4
+  NULL,                           //SSH_CMSG_AUTH_RHOSTS                5
+  NULL,                           //SSH_CMSG_AUTH_RSA                   6
+  NULL,                           //SSH_SMSG_AUTH_RSA_CHALLENGE         7
+  NULL,                           //SSH_CMSG_AUTH_RSA_RESPONSE          8
+  NULL,                           //SSH_CMSG_AUTH_PASSWORD              9
+  NULL,                           //SSH_CMSG_REQUEST_PTY                10
+  NULL,                           //SSH_CMSG_WINDOW_SIZE                11
+  NULL,                           //SSH_CMSG_EXEC_SHELL                 12
+  NULL,                           //SSH_CMSG_EXEC_CMD                   13
+  NULL,                           //SSH_SMSG_SUCCESS                    14
+  NULL,                           //SSH_SMSG_FAILURE                    15
+  NULL,                           //SSH_CMSG_STDIN_DATA                 16
+  NULL,                           //SSH_SMSG_STDOUT_DATA                17
+  NULL,                           //SSH_SMSG_STDERR_DATA                18
+  NULL,                           //SSH_CMSG_EOF                        19
+  NULL,                           //SSH_SMSG_EXITSTATUS                 20
+  NULL,                           //SSH_MSG_CHANNEL_OPEN_CONFIRMATION   21
+  NULL,                           //SSH_MSG_CHANNEL_OPEN_FAILURE        22
+  NULL,                           //SSH_MSG_CHANNEL_DATA                23
+  NULL,                           //SSH_MSG_CHANNEL_CLOSE               24
+  NULL,                           //SSH_MSG_CHANNEL_CLOSE_CONFIRMATION  25
+  NULL,                           //SSH_CMSG_X11_REQUEST_FORWARDING     26
+  NULL,                           //SSH_SMSG_X11_OPEN                   27
+  NULL,                           //SSH_CMSG_PORT_FORWARD_REQUEST       28
+  NULL,                           //SSH_MSG_PORT_OPEN                   29
+  NULL,                           //SSH_CMSG_AGENT_REQUEST_FORWARDING   30
+  NULL,                           //SSH_SMSG_AGENT_OPEN                 31
+  NULL,                           //SSH_MSG_IGNORE                      32
+  NULL,                           //SSH_CMSG_EXIT_CONFIRMATION          33
+  NULL,                           //SSH_CMSG_X11_REQUEST_FORWARDING     34
+  NULL,                           //SSH_CMSG_AUTH_RHOSTS_RSA            35
+  NULL,                           //SSH_MSG_DEBUG                       36
+  NULL,                           //SSH_CMSG_REQUEST_COMPRESSION        37
+  NULL,                           //SSH_CMSG_MAX_PACKET_SIZE            38
+  NULL,                           //SSH_CMSG_AUTH_TIS                   39
+  NULL,                           //SSH_SMSG_AUTH_TIS_CHALLENGE         40
+  NULL,                           //SSH_CMSG_AUTH_TIS_RESPONSE          41
+  NULL,                           //SSH_CMSG_AUTH_KERBEROS              42
+  NULL,                           //SSH_SMSG_AUTH_KERBEROS_RESPONSE     43
+  NULL,                           //SSH_CMSG_HAVE_KERBEROS_TGT          44
+};
+
+/** @internal
+ * @brief sets the default packet handlers
+ */
+void ssh_packet_set_default_callbacks1(ssh_session session){
+  session->default_packet_callbacks.start=1;
+  session->default_packet_callbacks.n_callbacks=sizeof(default_packet_handlers1)/sizeof(ssh_packet_callback);
+  session->default_packet_callbacks.user=session;
+  session->default_packet_callbacks.callbacks=default_packet_handlers1;
+  ssh_packet_set_callbacks(session, &session->default_packet_callbacks);
+}
+
 /* a slightly modified packet_read2() for SSH-1 protocol
  * TODO: should be transformed in an asynchronous socket callback
  */
@@ -178,8 +238,7 @@ error:
   return rc;
 }
 
-#endif /* WITH_SSH1 */
-#ifdef WITH_SSH1
+
 int packet_send1(ssh_session session) {
   unsigned int blocksize = (session->current_crypto ?
       session->current_crypto->out_cipher->blocksize : 8);
@@ -257,8 +316,7 @@ error:
   return rc;     /* SSH_OK, AGAIN or ERROR */
 }
 
-#endif /* WITH_SSH1 */
-#ifdef WITH_SSH1
+
 static void packet_parse(ssh_session session) {
   uint8_t type = session->in_packet.type;
 
@@ -344,6 +402,8 @@ int packet_wait(ssh_session session, int type, int blocking) {
   leave_function();
   return SSH_OK;
 }
+
+
 #endif /* WITH_SSH1 */
 
 /* vim: set ts=2 sw=2 et cindent: */

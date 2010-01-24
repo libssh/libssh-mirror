@@ -309,6 +309,12 @@ void ssh_packet_set_callbacks(ssh_session session, ssh_packet_callbacks callback
  * @brief sets the default packet handlers
  */
 void ssh_packet_set_default_callbacks(ssh_session session){
+#ifdef WITH_SSH1
+  if(session->version==1){
+    ssh_packet_set_default_callbacks1(session);
+    return;
+  }
+#endif
 	session->default_packet_callbacks.start=1;
 	session->default_packet_callbacks.n_callbacks=sizeof(default_packet_handlers)/sizeof(ssh_packet_callback);
 	session->default_packet_callbacks.user=session;

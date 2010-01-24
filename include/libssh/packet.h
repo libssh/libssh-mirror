@@ -45,6 +45,8 @@ int packet_send(ssh_session session);
 #ifdef WITH_SSH1
 int packet_read(ssh_session session);
 int packet_send1(ssh_session session) ;
+void ssh_packet_set_default_callbacks1(ssh_session session);
+
 #endif
 
 int packet_translate(ssh_session session);
