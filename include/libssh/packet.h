@@ -43,21 +43,17 @@ enum ssh_packet_state_e {
 int packet_send(ssh_session session);
 
 #ifdef WITH_SSH1
-int packet_read(ssh_session session);
 int packet_send1(ssh_session session) ;
 void ssh_packet_set_default_callbacks1(ssh_session session);
 
 SSH_PACKET_CALLBACK(ssh_packet_disconnect1);
 SSH_PACKET_CALLBACK(ssh_packet_smsg_success1);
 SSH_PACKET_CALLBACK(ssh_packet_smsg_failure1);
+int ssh_packet_socket_callback1(const void *data, size_t receivedlen, void *user);
 
 #endif
 
 int packet_translate(ssh_session session);
-/* TODO: remove it when packet_wait is stripped out from libssh */
-#ifdef WITH_SSH1
-//int packet_wait(ssh_session session,int type,int blocking);
-#endif
 int packet_flush(ssh_session session, int enforce_blocking);
 
 

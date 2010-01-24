@@ -80,22 +80,26 @@ void ssh_packet_set_default_callbacks1(ssh_session session){
   ssh_packet_set_callbacks(session, &session->default_packet_callbacks);
 }
 
-/* a slightly modified packet_read2() for SSH-1 protocol
- * TODO: should be transformed in an asynchronous socket callback
+
+/** @internal
+ * @handles a data received event. It then calls the handlers for the different packet types
+ * or and exception handler callback. Adapted for SSH-1 packets.
+ * @param user pointer to current ssh_session
+ * @param data pointer to the data received
+ * @len length of data received. It might not be enough for a complete packet
+ * @returns number of bytes read and processed.
  */
-int packet_read(ssh_session session) {
+
+int ssh_packet_socket_callback1(const void *data, size_t receivedlen, void *user) {
   void *packet = NULL;
   int rc = SSH_ERROR;
   int to_be_read;
+  size_t processed=0;
   uint32_t padding;
   uint32_t crc;
   uint32_t len;
-
+  ssh_session session=(ssh_session)user;
   enter_function();
-
-  if(!session->alive) {
-    goto error;
-  }
 
   switch (session->packet_state){
     case PACKET_STATE_INIT:
@@ -111,12 +115,13 @@ int packet_read(ssh_session session) {
           goto error;
         }
       }
-
-      rc = ssh_socket_read(session->socket, &len, sizeof(uint32_t));
-      if (rc != SSH_OK) {
-        goto error;
+      /* must have at least enough bytes for size */
+      if(receivedlen < sizeof(uint32_t)){
+        leave_function();
+        return 0;
       }
-
+      memcpy(&len,data,sizeof(uint32_t));
+      processed += sizeof(uint32_t);
       rc = SSH_ERROR;
 
       /* len is not encrypted */
@@ -136,27 +141,20 @@ int packet_read(ssh_session session) {
       /* SSH-1 has a fixed padding lenght */
       padding = 8 - (len % 8);
       to_be_read = len + padding;
-
+      if(to_be_read + processed > receivedlen){
+        /* wait for rest of packet */
+        leave_function();
+        return processed;
+      }
       /* it is _not_ possible that to_be_read be < 8. */
-      packet = malloc(to_be_read);
-      if (packet == NULL) {
-        ssh_set_error(session, SSH_FATAL, "Not enough space");
-        goto error;
-      }
-
-      rc = ssh_socket_read(session->socket, packet, to_be_read);
-      if(rc != SSH_OK) {
-        SAFE_FREE(packet);
-        goto error;
-      }
+      packet = (char *)data + processed;
       rc = SSH_ERROR;
 
       if (buffer_add_data(session->in_buffer,packet,to_be_read) < 0) {
         SAFE_FREE(packet);
         goto error;
       }
-      SAFE_FREE(packet);
-
+      processed += to_be_read;
 #ifdef DEBUG_CRYPTO
       ssh_print_hexa("read packet:", buffer_get(session->in_buffer),
           buffer_get_len(session->in_buffer));
@@ -216,18 +214,31 @@ int packet_read(ssh_session session) {
 #endif
 */
       session->recv_seq++;
-      session->packet_state=PACKET_STATE_INIT;
-
+      /* We don't want to rewrite a new packet while still executing the packet callbacks */
+      session->packet_state = PACKET_STATE_PROCESSING;
+      packet_translate(session);
+      /* execute callbacks */
+      ssh_packet_process(session, session->in_packet.type);
+      session->packet_state = PACKET_STATE_INIT;
+      if(processed < receivedlen){
+        /* Handle a potential packet left in socket buffer */
+        ssh_log(session,SSH_LOG_PACKET,"Processing %" PRIdS " bytes left in socket buffer",
+            receivedlen-processed);
+        rc = ssh_packet_socket_callback1((char *)data + processed,
+            receivedlen - processed,user);
+        processed += rc;
+      }
       leave_function();
-      return SSH_OK;
-  } /* switch */
+      return processed;
+    case PACKET_STATE_PROCESSING:
+      ssh_log(session, SSH_LOG_RARE, "Nested packet processing. Delaying.");
+      return 0;
+  }
 
-  ssh_set_error(session, SSH_FATAL,
-      "Invalid state into packet_read1(): %d",
-      session->packet_state);
 error:
+  session->session_state=SSH_SESSION_STATE_ERROR;
   leave_function();
-  return rc;
+  return processed;
 }
 
 

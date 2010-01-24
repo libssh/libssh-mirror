@@ -358,7 +358,9 @@ error:
 	leave_function();
 }
 
-
+/** @internal
+ * @parse the "Type" header field of a packet and updates the session
+ */
 int packet_translate(ssh_session session) {
   enter_function();
 

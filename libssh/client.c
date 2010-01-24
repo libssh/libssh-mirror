@@ -587,7 +587,10 @@ void ssh_connection_callback(ssh_session session){
 		    goto error;
 		  }
 		  /* from now, the packet layer is handling incoming packets */
-		  session->socket_callbacks.data=ssh_packet_socket_callback;
+		  if(session->version==2)
+		    session->socket_callbacks.data=ssh_packet_socket_callback;
+		  else
+		    session->socket_callbacks.data=ssh_packet_socket_callback1;
 		  ssh_packet_set_default_callbacks(session);
 		  ssh_send_banner(session, 0);
 		  set_status(session, 0.5);
