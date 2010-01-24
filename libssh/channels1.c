@@ -81,9 +81,13 @@ int channel_request_pty_size1(ssh_channel channel, const char *terminal, int col
     int row) {
   ssh_session session = channel->session;
   ssh_string str = NULL;
-
+  if(channel->request_state != SSH_CHANNEL_REQ_STATE_NONE){
+    ssh_set_error(session,SSH_REQUEST_DENIED,"Wrong request state");
+    return SSH_ERROR;
+  }
   str = string_from_char(terminal);
   if (str == NULL) {
+    ssh_set_error_oom(session);
     return -1;
   }
 
@@ -103,31 +107,29 @@ int channel_request_pty_size1(ssh_channel channel, const char *terminal, int col
   }
 
   ssh_log(session, SSH_LOG_FUNCTIONS, "Opening a ssh1 pty");
-  if (packet_send(session) != SSH_OK ||
-      packet_read(session) != SSH_OK ||
-      packet_translate(session) != SSH_OK) {
+
+  if (packet_send(session) != SSH_OK) {
     return -1;
   }
-
-  switch (session->in_packet.type) {
-    case SSH_SMSG_SUCCESS:
+  switch(channel->request_state){
+    case SSH_CHANNEL_REQ_STATE_ERROR:
+    case SSH_CHANNEL_REQ_STATE_PENDING:
+    case SSH_CHANNEL_REQ_STATE_NONE:
+      channel->request_state=SSH_CHANNEL_REQ_STATE_NONE;
+      return SSH_ERROR;
+    case SSH_CHANNEL_REQ_STATE_ACCEPTED:
+      channel->request_state=SSH_CHANNEL_REQ_STATE_NONE;
       ssh_log(session, SSH_LOG_RARE, "PTY: Success");
-      return 0;
-      break;
-    case SSH_SMSG_FAILURE:
+      return SSH_OK;
+    case SSH_CHANNEL_REQ_STATE_DENIED:
+      channel->request_state=SSH_CHANNEL_REQ_STATE_NONE;
       ssh_set_error(session, SSH_REQUEST_DENIED,
           "Server denied PTY allocation");
       ssh_log(session, SSH_LOG_RARE, "PTY: denied\n");
-      break;
-    default:
-      ssh_log(session, SSH_LOG_RARE, "PTY: error\n");
-      ssh_set_error(session, SSH_FATAL,
-          "Received unexpected packet type %d",
-          session->in_packet.type);
-      return -1;
+      return SSH_ERROR;
   }
-
-  return -1;
+  // Not reached
+  return SSH_ERROR;
 }
 
 int channel_change_pty_size1(ssh_channel channel, int cols, int rows) {

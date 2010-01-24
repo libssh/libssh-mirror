@@ -36,25 +36,28 @@
 #ifdef WITH_SSH1
 static int wait_auth1_status(ssh_session session) {
   /* wait for a packet */
-  if (packet_read(session) != SSH_OK) {
-    return SSH_AUTH_ERROR;
-  }
-
-  if(packet_translate(session) != SSH_OK) {
-    return SSH_AUTH_ERROR;
-  }
-
-  switch(session->in_packet.type) {
-    case SSH_SMSG_SUCCESS:
+  while(session->auth_state == SSH_AUTH_STATE_NONE)
+    ssh_handle_packets(session,-1);
+  switch(session->auth_state) {
+    case SSH_AUTH_STATE_SUCCESS:
       return SSH_AUTH_SUCCESS;
-    case SSH_SMSG_FAILURE:
+    case SSH_AUTH_STATE_FAILED:
       return SSH_AUTH_DENIED;
+    default:
+      return SSH_AUTH_ERROR;
   }
-
-  ssh_set_error(session, SSH_FATAL, "Was waiting for a SUCCESS or "
-      "FAILURE, got %d", session->in_packet.type);
-
   return SSH_AUTH_ERROR;
+}
+
+void ssh_auth1_handler(ssh_session session, uint8_t type){
+  if(session->session_state != SSH_SESSION_STATE_AUTHENTICATING){
+    ssh_set_error(session,SSH_FATAL,"SSH_SMSG_SUCCESS or FAILED received in wrong state");
+    return;
+  }
+  if(type==SSH_SMSG_SUCCESS)
+    session->auth_state=SSH_AUTH_STATE_SUCCESS;
+  if(type==SSH_SMSG_FAILURE)
+    session->auth_state=SSH_AUTH_STATE_FAILED;
 }
 
 static int send_username(ssh_session session, const char *username) {
@@ -173,7 +176,7 @@ int ssh_userauth1_password(ssh_session session, const char *username,
 
   string_burn(pwd);
   string_free(pwd);
-
+  session->auth_state=SSH_AUTH_STATE_NONE;
   if (packet_send(session) != SSH_OK) {
     return SSH_AUTH_ERROR;
   }

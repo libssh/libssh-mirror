@@ -323,6 +323,9 @@ SSH_PACKET_CALLBACK(ssh_packet_smsg_success1){
   if(session->session_state==SSH_SESSION_STATE_KEXINIT_RECEIVED){
     session->session_state=SSH_SESSION_STATE_AUTHENTICATING;
     return SSH_PACKET_USED;
+  } else if(session->session_state==SSH_SESSION_STATE_AUTHENTICATING){
+    ssh_auth1_handler(session,type);
+    return SSH_PACKET_USED;
   } else {
     return ssh_packet_channel_success(session,type,packet,user);
   }
@@ -333,57 +336,12 @@ SSH_PACKET_CALLBACK(ssh_packet_smsg_failure1){
     session->session_state=SSH_SESSION_STATE_ERROR;
     ssh_set_error(session,SSH_FATAL,"Key exchange failed: received SSH_SMSG_FAILURE");
     return SSH_PACKET_USED;
+  } else if(session->session_state==SSH_SESSION_STATE_AUTHENTICATING){
+    ssh_auth1_handler(session,type);
+    return SSH_PACKET_USED;
   } else {
     return ssh_packet_channel_failure(session,type,packet,user);
   }
-}
-
-
-int packet_wait(ssh_session session, int type, int blocking) {
-
-  enter_function();
-
-  ssh_log(session, SSH_LOG_PROTOCOL, "packet_wait1 waiting for %d", type);
-
-  do {
-    if ((packet_read(session) != SSH_OK) ||
-        (packet_translate(session) != SSH_OK)) {
-      leave_function();
-      return SSH_ERROR;
-    }
-    ssh_log(session, SSH_LOG_PACKET, "packet_wait1() received a type %d packet",
-        session->in_packet.type);
-    switch (session->in_packet.type) {
-      case SSH_MSG_DISCONNECT:
-      case SSH_SMSG_STDOUT_DATA:
-      case SSH_SMSG_STDERR_DATA:
-      case SSH_MSG_DEBUG:
-      case SSH_MSG_IGNORE:
-        ssh_packet_process(session,type);
-        break;
-      case SSH_SMSG_EXITSTATUS:
-        //This packet must be parsed too
-        break;
-      default:
-        if (type && (type != session->in_packet.type)) {
-          ssh_set_error(session, SSH_FATAL,
-              "packet_wait1(): Received a %d type packet, but expected %d\n",
-              session->in_packet.type, type);
-          leave_function();
-          return SSH_ERROR;
-        }
-        leave_function();
-        return SSH_OK;
-    }
-
-    if (blocking == 0) {
-      leave_function();
-      return SSH_OK;
-    }
-  } while(1);
-
-  leave_function();
-  return SSH_OK;
 }
 
 

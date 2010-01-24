@@ -21,6 +21,7 @@
 
 #ifndef AUTH_H_
 #define AUTH_H_
+#include "config.h"
 #include "libssh/callbacks.h"
 
 SSH_PACKET_CALLBACK(ssh_packet_userauth_banner);
@@ -28,6 +29,9 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_failure);
 SSH_PACKET_CALLBACK(ssh_packet_userauth_success);
 SSH_PACKET_CALLBACK(ssh_packet_userauth_pk_ok);
 
+#ifdef WITH_SSH1
+void ssh_auth1_handler(ssh_session session, uint8_t type);
+#endif
 
 /** @internal
  * States of authentication in the client-side. They describe
