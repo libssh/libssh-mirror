@@ -188,7 +188,11 @@ int ssh_socket_pollcallback(ssh_poll_handle p, int fd, int revents, void *v_s){
 			}
 		}
 	}
+#ifdef _WIN32
+	if(revents & POLLOUT || revents & POLLWRNORM){
+#else
 	if(revents & POLLOUT){
+#endif
 		/* First, POLLOUT is a sign we may be connected */
 		if(s->state == SSH_SOCKET_CONNECTING){
 			ssh_log(s->session,SSH_LOG_PACKET,"Received POLLOUT in connecting state");
@@ -797,6 +801,9 @@ int ssh_socket_connect(ssh_socket s, const char *host, int port, const char *bin
 	s->state=SSH_SOCKET_CONNECTING;
 	/* POLLOUT is the event to wait for in a nonblocking connect */
 	ssh_poll_set_events(ssh_socket_get_poll_handle(s),POLLOUT);
+#ifdef _WIN32
+	ssh_poll_add_events(ssh_socket_get_poll_handle(s),POLLWRNORM);
+#endif
 	leave_function();
 	return SSH_OK;
 }
