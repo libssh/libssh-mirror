@@ -234,7 +234,11 @@ int ssh_auth_list(ssh_session session) {
   if (session == NULL) {
     return -1;
   }
-
+#ifdef WITH_SSH1
+  if(session->version==1){
+    return SSH_AUTH_METHOD_PASSWORD;
+  }
+#endif
   return session->auth_methods;
 }
 
@@ -275,7 +279,7 @@ int ssh_userauth_none(ssh_session session, const char *username) {
 
 #ifdef WITH_SSH1
   if (session->version == 1) {
-    ssh_userauth1_none(session, username);
+    rc = ssh_userauth1_none(session, username);
     leave_function();
     return rc;
   }

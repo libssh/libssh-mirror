@@ -73,7 +73,7 @@ ssh_packet_callback default_packet_handlers1[]= {
  * @brief sets the default packet handlers
  */
 void ssh_packet_set_default_callbacks1(ssh_session session){
-  session->default_packet_callbacks.start=1;
+  session->default_packet_callbacks.start=0;
   session->default_packet_callbacks.n_callbacks=sizeof(default_packet_handlers1)/sizeof(ssh_packet_callback);
   session->default_packet_callbacks.user=session;
   session->default_packet_callbacks.callbacks=default_packet_handlers1;
@@ -327,6 +327,7 @@ SSH_PACKET_CALLBACK(ssh_packet_disconnect1){
   ssh_set_error(session, SSH_FATAL, "Received SSH_MSG_DISCONNECT");
   ssh_socket_close(session->socket);
   session->alive = 0;
+  session->session_state=SSH_SESSION_STATE_DISCONNECTED;
   return SSH_PACKET_USED;
 }
 

@@ -697,14 +697,15 @@ int ssh_connect(ssh_session session) {
   session->alive = 1;
   ssh_log(session,SSH_LOG_PROTOCOL,"Socket connecting, now waiting for the callbacks to work");
   while(session->session_state != SSH_SESSION_STATE_ERROR &&
-  		session->session_state != SSH_SESSION_STATE_AUTHENTICATING){
+  		session->session_state != SSH_SESSION_STATE_AUTHENTICATING &&
+  		session->session_state != SSH_SESSION_STATE_DISCONNECTED){
   	/* loop until SSH_SESSION_STATE_BANNER_RECEIVED or
   	 * SSH_SESSION_STATE_ERROR */
   	ssh_handle_packets(session,-1);
   	ssh_log(session,SSH_LOG_PACKET,"ssh_connect: Actual state : %d",session->session_state);
   }
   leave_function();
-  if(session->session_state == SSH_SESSION_STATE_ERROR)
+  if(session->session_state == SSH_SESSION_STATE_ERROR || session->session_state == SSH_SESSION_STATE_DISCONNECTED)
   	return SSH_ERROR;
   return SSH_OK;
 }

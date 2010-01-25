@@ -35,9 +35,12 @@
 
 #ifdef WITH_SSH1
 static int wait_auth1_status(ssh_session session) {
+  enter_function();
   /* wait for a packet */
   while(session->auth_state == SSH_AUTH_STATE_NONE)
     ssh_handle_packets(session,-1);
+  ssh_log(session,SSH_LOG_PROTOCOL,"Auth state : %d",session->auth_state);
+  leave_function();
   switch(session->auth_state) {
     case SSH_AUTH_STATE_SUCCESS:
       return SSH_AUTH_SUCCESS;
@@ -64,10 +67,11 @@ static int send_username(ssh_session session, const char *username) {
   ssh_string user = NULL;
   /* returns SSH_AUTH_SUCCESS or SSH_AUTH_DENIED */
   if(session->auth_service_state == SSH_AUTH_SERVICE_USER_SENT) {
-    return SSH_OK;
-  }
-  if(session->auth_service_state == SSH_AUTH_SERVICE_DENIED) {
-      return SSH_ERROR;
+    if(session->auth_state == SSH_AUTH_STATE_FAILED)
+      return SSH_AUTH_DENIED;
+    if(session->auth_state == SSH_AUTH_STATE_SUCCESS)
+      return SSH_AUTH_SUCCESS;
+    return SSH_AUTH_ERROR;
   }
 
   if (!username) {
@@ -94,16 +98,19 @@ static int send_username(ssh_session session, const char *username) {
     return SSH_AUTH_ERROR;
   }
   string_free(user);
+  session->auth_state=SSH_AUTH_STATE_NONE;
   if (packet_send(session) != SSH_OK) {
     return SSH_AUTH_ERROR;
   }
 
   if(wait_auth1_status(session) == SSH_AUTH_SUCCESS){
-    session->auth_state=SSH_AUTH_SERVICE_USER_SENT;
+    session->auth_service_state=SSH_AUTH_SERVICE_USER_SENT;
+    session->auth_state=SSH_AUTH_STATE_SUCCESS;
     return SSH_AUTH_SUCCESS;
   } else {
-    session->auth_state=SSH_AUTH_SERVICE_DENIED;
-    return SSH_AUTH_ERROR;
+    session->auth_service_state=SSH_AUTH_SERVICE_USER_SENT;
+    ssh_set_error(session,SSH_REQUEST_DENIED,"Password authentication necessary for user %s",username);
+    return SSH_AUTH_DENIED;
   }
 
 }
@@ -122,6 +129,8 @@ int ssh_userauth1_offer_pubkey(ssh_session session, const char *username,
   (void) username;
   (void) type;
   (void) pubkey;
+  enter_function();
+  leave_function();
   return SSH_AUTH_DENIED;
 }
 
@@ -129,9 +138,10 @@ int ssh_userauth1_password(ssh_session session, const char *username,
     const char *password) {
   ssh_string pwd = NULL;
   int rc;
-
+  enter_function();
   rc = send_username(session, username);
   if (rc != SSH_AUTH_DENIED) {
+    leave_function();
     return rc;
   }
 
@@ -146,6 +156,7 @@ int ssh_userauth1_password(ssh_session session, const char *username,
     /* not risky to disclose the size of such a big password .. */
     pwd = string_from_char(password);
     if (pwd == NULL) {
+      leave_function();
       return SSH_AUTH_ERROR;
     }
   } else {
@@ -157,6 +168,7 @@ int ssh_userauth1_password(ssh_session session, const char *username,
      */
     pwd = string_new(128);
     if (pwd == NULL) {
+      leave_function();
       return SSH_AUTH_ERROR;
     }
     ssh_get_random( pwd->string, 128, 0);
@@ -166,11 +178,13 @@ int ssh_userauth1_password(ssh_session session, const char *username,
   if (buffer_add_u8(session->out_buffer, SSH_CMSG_AUTH_PASSWORD) < 0) {
     string_burn(pwd);
     string_free(pwd);
+    leave_function();
     return SSH_AUTH_ERROR;
   }
   if (buffer_add_ssh_string(session->out_buffer, pwd) < 0) {
     string_burn(pwd);
     string_free(pwd);
+    leave_function();
     return SSH_AUTH_ERROR;
   }
 
@@ -178,10 +192,12 @@ int ssh_userauth1_password(ssh_session session, const char *username,
   string_free(pwd);
   session->auth_state=SSH_AUTH_STATE_NONE;
   if (packet_send(session) != SSH_OK) {
+    leave_function();
     return SSH_AUTH_ERROR;
   }
-
-  return wait_auth1_status(session);
+  rc = wait_auth1_status(session);
+  leave_function();
+  return rc;
 }
 
 #endif /* WITH_SSH1 */
