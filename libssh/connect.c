@@ -246,7 +246,6 @@ socket_t ssh_connect_host(SSH_SESSION *session, const char *host,
       ssh_set_error(session, SSH_FATAL, "Connect failed: %s", strerror(errno));
       close(s);
       s = -1;
-      leave_function();
       continue;
     } else {
       /* We are connected */

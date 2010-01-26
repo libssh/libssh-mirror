@@ -238,7 +238,7 @@ typedef struct signature_struct {
 
 struct error_struct {
 /* error handling */
-    int error_code;
+    unsigned int error_code;
     char error_buffer[ERROR_BUFFERLEN];
 };
 
