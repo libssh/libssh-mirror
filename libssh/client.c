@@ -589,8 +589,10 @@ void ssh_connection_callback(ssh_session session){
 		  /* from now, the packet layer is handling incoming packets */
 		  if(session->version==2)
 		    session->socket_callbacks.data=ssh_packet_socket_callback;
+#ifdef WITH_SSH1
 		  else
 		    session->socket_callbacks.data=ssh_packet_socket_callback1;
+#endif
 		  ssh_packet_set_default_callbacks(session);
 		  ssh_send_banner(session, 0);
 		  set_status(session, 0.5);
