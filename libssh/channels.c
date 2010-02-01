@@ -1359,6 +1359,7 @@ static ssh_channel channel_accept(ssh_session session, int channeltype,
   };
 #endif
   ssh_message msg = NULL;
+  ssh_channel channel = NULL;
   struct ssh_iterator *iterator;
   int t;
 
@@ -1373,7 +1374,9 @@ static ssh_channel channel_accept(ssh_session session, int channeltype,
         if (ssh_message_type(msg) == SSH_REQUEST_CHANNEL_OPEN &&
             ssh_message_subtype(msg) == channeltype) {
           ssh_list_remove(session->ssh_message_list, iterator);
-          return ssh_message_channel_request_open_reply_accept(msg);
+          channel = ssh_message_channel_request_open_reply_accept(msg);
+          ssh_message_free(msg);
+          return channel;
         }
         iterator = iterator->next;
       }
