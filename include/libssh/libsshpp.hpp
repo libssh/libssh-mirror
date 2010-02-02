@@ -54,6 +54,17 @@ public:
   int userauthAutopubkey(){
     return ssh_userauth_autopubkey(session,NULL);
   }
+  int getAuthList();
+  int disconnect();
+  const char *getDisconnectMessage();
+  const char *getError();
+  int getErrorCode();
+  socket_t getSocket();
+  const char *getIssueBanner();
+  int getOpensshVersion();
+  int getVersion();
+  int isServerKnown();
+
 private:
   ssh_session session;
 };
