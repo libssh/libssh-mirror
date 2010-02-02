@@ -1464,7 +1464,7 @@ static ssh_channel channel_accept(ssh_session session, int channeltype,
 
   for (t = timeout_ms; t >= 0; t -= 50)
   {
-    ssh_handle_packets(session,-1);
+    ssh_handle_packets(session,50);
 
     if (session->ssh_message_list) {
       iterator = ssh_list_get_iterator(session->ssh_message_list);
