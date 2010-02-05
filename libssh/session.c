@@ -38,14 +38,19 @@
 
 #define FIRST_CHANNEL 42 // why not ? it helps to find bugs.
 
-/** \defgroup ssh_session SSH Session
- * \brief functions that manage a session
+/**
+ * @defgroup libssh_session The SSH session functions.
+ * @ingroup libssh
+ *
+ * Functions that manage a session.
+ *
+ * @{
  */
-/** \addtogroup ssh_session
- * @{ */
 
-/** \brief creates a new ssh session
- * \returns new ssh_session pointer
+/**
+ * @brief Create a new ssh session.
+ *
+ * @returns             A new ssh_session pointer, NULL on error.
  */
 ssh_session ssh_new(void) {
   ssh_session session;
@@ -106,7 +111,10 @@ err:
 }
 
 /**
- * @brief deallocate a session handle
+ * @brief Deallocate a SSH session handle.
+ *
+ * @param[in] session   The SSH session to free.
+ *
  * @see ssh_disconnect()
  * @see ssh_new()
  */
@@ -183,9 +191,12 @@ void ssh_free(ssh_session session) {
   SAFE_FREE(session);
 }
 
-/** \brief disconnect impolitely from remote host by closing the socket.
+/**
+ * @brief Disconnect impolitely from a remote host by closing the socket.
+ *
  * Suitable if you forked and want to destroy this session.
- * \param session current ssh session
+ *
+ * @param[in]  session  The SSH session to disconnect.
  */
 void ssh_silent_disconnect(ssh_session session) {
   enter_function();
@@ -200,9 +211,13 @@ void ssh_silent_disconnect(ssh_session session) {
   leave_function();
 }
 
-/** \brief set the session in blocking/nonblocking mode
- * \param session ssh session
- * \param blocking zero for nonblocking mode
+/**
+ * @brief Set the session in blocking/nonblocking mode.
+ *
+ * @param[in]  session  The ssh session to change.
+ *
+ * @param[in]  blocking Zero for nonblocking mode.
+ *
  * \bug nonblocking code is in development and won't work as expected
  */
 void ssh_set_blocking(ssh_session session, int blocking) {
@@ -213,12 +228,15 @@ void ssh_set_blocking(ssh_session session, int blocking) {
   session->blocking = blocking ? 1 : 0;
 }
 
-/** In case you'd need the file descriptor of the connection
- * to the server/client
- * \brief recover the fd of connection
- * \param session ssh session
- * \return file descriptor of the connection, or -1 if it is
- * not connected
+/**
+ * @brief Get the fd of a connection.
+ *
+ * In case you'd need the file descriptor of the connection to the server/client.
+ *
+ * @param[in] session   The ssh session to use.
+ *
+ * @return              The file descriptor of the connection, or -1 if it is
+ *                      not connected
  */
 socket_t ssh_get_fd(ssh_session session) {
   if (session == NULL) {
@@ -228,8 +246,11 @@ socket_t ssh_get_fd(ssh_session session) {
   return ssh_socket_get_fd(session->socket);
 }
 
-/** \brief say to the session it has data to read on the file descriptor without blocking
- * \param session ssh session
+/**
+ * @brief Tell the session it has data to read on the file descriptor without
+ * blocking.
+ *
+ * @param[in] session   The ssh session to use.
  */
 void ssh_set_fd_toread(ssh_session session) {
   if (session == NULL) {
@@ -239,8 +260,10 @@ void ssh_set_fd_toread(ssh_session session) {
   ssh_socket_set_toread(session->socket);
 }
 
-/** \brief say the session it may write to the file descriptor without blocking
- * \param session ssh session
+/**
+ * @brief Tell the session it may write to the file descriptor without blocking.
+ *
+ * @param[in] session   The ssh session to use.
  */
 void ssh_set_fd_towrite(ssh_session session) {
   if (session == NULL) {
@@ -250,8 +273,10 @@ void ssh_set_fd_towrite(ssh_session session) {
   ssh_socket_set_towrite(session->socket);
 }
 
-/** \brief say the session it has an exception to catch on the file descriptor
- * \param session ssh session
+/**
+ * @brief Tell the session it has an exception to catch on the file descriptor.
+ *
+ * \param[in] session   The ssh session to use.
  */
 void ssh_set_fd_except(ssh_session session) {
   if (session == NULL) {
@@ -261,15 +286,22 @@ void ssh_set_fd_except(ssh_session session) {
   ssh_socket_set_except(session->socket);
 }
 
-/** @internal
- * @brief polls the current session for an event and call the
- * appropriate callbacks. Will block until one event happens.
- * @param session session handle.
- * @param timeout An upper limit on the time for which
- * ssh_handle_packets() will block, in milliseconds.
- * Specifying a negative value means an infinite timeout.
- * This parameter is passed to the poll() function.
- * @return SSH_OK if there are no error, SSH_ERROR otherwise.
+/**
+ * @internal
+ *
+ * @brief Poll the current session for an event and call the appropriate
+ * callbacks.
+ *
+ * This will block until one event happens.
+ *
+ * @param[in] session   The session handle to use.
+ *
+ * @param[in] timeout   Set an upper limit on the time for which this function
+ *                      will block, in milliseconds. Specifying a negative value
+ *                      means an infinite timeout. This parameter is passed to
+ *                      the poll() function.
+ *
+ * @return              SSH_OK on success, SSH_ERROR otherwise.
  */
 int ssh_handle_packets(ssh_session session, int timeout) {
 	ssh_poll_handle spoll;
@@ -323,10 +355,16 @@ int ssh_get_status(ssh_session session) {
   return r;
 }
 
-/** \brief get the disconnect message from the server
- * \param session ssh session
- * \return message sent by the server along with the disconnect, or NULL in which case the reason of the disconnect may be found with ssh_get_error.
- * \see ssh_get_error()
+/**
+ * @brief Get the disconnect message from the server.
+ *
+ * @param[in] session   The ssh session to use.
+ *
+ * @return              The message sent by the server along with the
+ *                      disconnect, or NULL in which case the reason of the
+ *                      disconnect may be found with ssh_get_error.
+ *
+ * @see ssh_get_error()
  */
 const char *ssh_get_disconnect_message(ssh_session session) {
   if (session == NULL) {
@@ -366,7 +404,8 @@ int ssh_get_version(ssh_session session) {
 
 /**
  * @internal
- * @brief handles a SSH_DISCONNECT packet
+ *
+ * @brief Handle a SSH_DISCONNECT packet.
  */
 SSH_PACKET_CALLBACK(ssh_packet_disconnect_callback){
 	uint32_t code;
@@ -395,7 +434,8 @@ SSH_PACKET_CALLBACK(ssh_packet_disconnect_callback){
 
 /**
  * @internal
- * @brief handles a SSH_IGNORE and SSH_DEBUG packet
+ *
+ * @brief Handle a SSH_IGNORE and SSH_DEBUG packet.
  */
 SSH_PACKET_CALLBACK(ssh_packet_ignore_callback){
 	(void)user;
@@ -405,5 +445,7 @@ SSH_PACKET_CALLBACK(ssh_packet_ignore_callback){
 	/* TODO: handle a graceful disconnect */
 	return SSH_PACKET_USED;
 }
-/** @} */
+
+/* @} */
+
 /* vim: set ts=2 sw=2 et cindent: */

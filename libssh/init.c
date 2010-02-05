@@ -31,17 +31,20 @@
 #endif
 
 /**
- * \addtogroup ssh_session
+ * @defgroup libssh The libssh API
+ *
+ * This is a library implementing the SSH protocols.
+ *
  * @{
  */
 
 /**
- * @brief initialize global cryptographic data structures.
+ * @brief Initialize global cryptographic data structures.
  *
  * This function should only be called once, at the beginning of the program, in
  * the main thread. It may be omitted if your program is not multithreaded.
  *
- * @returns 0
+ * @returns             0 on success, -1 if an error occured.
  */
 int ssh_init(void) {
   if(ssh_crypto_init())
@@ -59,7 +62,8 @@ int ssh_init(void) {
  *
  * This function should only be called once, at the end of the program!
  *
- * @returns -1 in case of error
+ * @returns             0 on succes, -1 if an error occured.
+ *
    @returns 0 otherwise
  */
 int ssh_finalize(void) {
@@ -77,7 +81,6 @@ int ssh_finalize(void) {
   return 0;
 }
 
-/**
- * @}
- */
-/* vim: set ts=2 sw=2 et cindent: */
+/* @} */
+
+/* vim: set ts=4 sw=4 et cindent: */
