@@ -33,7 +33,9 @@
 /**
  * @defgroup libssh The libssh API
  *
- * This is a library implementing the SSH protocols.
+ * The libssh library is implementing the SSH protocols and some of its
+ * extensions. This group of functions is mostly used to implment a SSH client.
+ * Some function are needed to implement a SSH server too.
  *
  * @{
  */
