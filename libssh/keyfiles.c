@@ -1500,9 +1500,11 @@ int ssh_write_knownhost(ssh_session session) {
   char *dir;
   size_t len = 0;
 
-  if (ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, NULL) < 0) {
-    ssh_set_error(session, SSH_FATAL, "Cannot find known_hosts file.");
-    return -1;
+  if (session->knownhosts == NULL) {
+    if (ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, NULL) < 0) {
+      ssh_set_error(session, SSH_FATAL, "Can't find a known_hosts file");
+      return -1;
+    }
   }
 
   if (session->host == NULL) {
