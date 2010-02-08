@@ -77,3 +77,51 @@ if (UNIX AND NOT WIN32)
   add_subdirectory(examples)
 
 endif (UNIX AND NOT WIN32)
+MESSAGE(STATUS "********************************************")
+MESSAGE(STATUS "********** ${PROJECT_NAME} build options : **********")
+if (WITH_LIBZ)
+MESSAGE(STATUS "zlib support : ON")
+else (WITH_LIBZ)
+MESSAGE(STATUS "zlib support : OFF")
+endif (WITH_LIBZ)
+
+if (WITH_GCRYPT)
+MESSAGE(STATUS "libgcrypt support : ON")
+else (WITH_GCRYPT)
+MESSAGE(STATUS "libgcrypt support : OFF")
+endif (WITH_GCRYPT)
+
+if (WITH_SSH1)
+MESSAGE(STATUS "SSH-1 support : ON")
+else (WITH_SSH1)
+MESSAGE(STATUS "SSH-1 support : OFF")
+endif (WITH_SSH1)
+
+if (WITH_SFTP)
+MESSAGE(STATUS "SFTP support : ON")
+else (WITH_SFTP)
+MESSAGE(STATUS "SFTP support : OFF")
+endif (WITH_SFTP)
+
+if (WITH_SERVER)
+MESSAGE(STATUS "Server support : ON")
+else (WITH_SERVER)
+MESSAGE(STATUS "Server support : OFF")
+endif (WITH_SERVER)
+
+if (WITH_PCAP)
+MESSAGE(STATUS "Pcap debugging support : ON")
+else (WITH_PCAP)
+MESSAGE(STATUS "Pcap debugging support : OFF")
+endif (WITH_PCAP)
+
+if (WITH_INTERNAL_DOC)
+MESSAGE(STATUS "Internal documentation generation")
+else (WITH_INTERNAL_DOC)
+MESSAGE(STATUS "Public API documentation generation")
+endif (WITH_INTERNAL_DOC)
+
+MESSAGE(STATUS "********************************************")
+
+
+
