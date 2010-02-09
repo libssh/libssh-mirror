@@ -43,7 +43,7 @@
 
 #ifdef HAVE_LIBGCRYPT
 #define BLOWFISH "blowfish-cbc,"
-#define AES "aes256-cbc,aes192-cbc,aes128-cbc,"
+#define AES "aes256-ctr,aes192-ctr,aes128-ctr,aes256-cbc,aes192-cbc,aes128-cbc,"
 #define DES "3des-cbc"
 #elif defined HAVE_LIBCRYPTO
 #ifdef HAVE_OPENSSL_BLOWFISH_H

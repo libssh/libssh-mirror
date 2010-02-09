@@ -157,29 +157,31 @@ static void blowfish_decrypt(struct crypto_struct *cipher, void *in,
 }
 
 static int aes_set_key(struct crypto_struct *cipher, void *key, void *IV) {
+  int mode=GCRY_CIPHER_MODE_CBC;
   if (cipher->key == NULL) {
     if (alloc_key(cipher) < 0) {
       return -1;
     }
-
+    if(strstr(cipher->name,"-ctr"))
+      mode=GCRY_CIPHER_MODE_CTR;
     switch (cipher->keysize) {
       case 128:
         if (gcry_cipher_open(&cipher->key[0], GCRY_CIPHER_AES128,
-              GCRY_CIPHER_MODE_CBC, 0)) {
+              mode, 0)) {
           SAFE_FREE(cipher->key);
           return -1;
         }
         break;
       case 192:
         if (gcry_cipher_open(&cipher->key[0], GCRY_CIPHER_AES192,
-              GCRY_CIPHER_MODE_CBC, 0)) {
+              mode, 0)) {
           SAFE_FREE(cipher->key);
           return -1;
         }
         break;
       case 256:
         if (gcry_cipher_open(&cipher->key[0], GCRY_CIPHER_AES256,
-              GCRY_CIPHER_MODE_CBC, 0)) {
+              mode, 0)) {
           SAFE_FREE(cipher->key);
           return -1;
         }
@@ -189,9 +191,17 @@ static int aes_set_key(struct crypto_struct *cipher, void *key, void *IV) {
       SAFE_FREE(cipher->key);
       return -1;
     }
-    if (gcry_cipher_setiv(cipher->key[0], IV, 16)) {
-      SAFE_FREE(cipher->key);
-      return -1;
+    if(mode == GCRY_CIPHER_MODE_CBC){
+      if (gcry_cipher_setiv(cipher->key[0], IV, 16)) {
+
+        SAFE_FREE(cipher->key);
+        return -1;
+      }
+    } else {
+      if(gcry_cipher_setctr(cipher->key[0],IV,16)){
+        SAFE_FREE(cipher->key);
+        return -1;
+      }
     }
   }
 
@@ -318,6 +328,39 @@ static struct crypto_struct ssh_ciphertab[] = {
     .set_decrypt_key = blowfish_set_key,
     .cbc_encrypt     = blowfish_encrypt,
     .cbc_decrypt     = blowfish_decrypt
+  },
+  {
+    .name            = "aes128-ctr",
+    .blocksize       = 16,
+    .keylen          = sizeof(gcry_cipher_hd_t),
+    .key             = NULL,
+    .keysize         = 128,
+    .set_encrypt_key = aes_set_key,
+    .set_decrypt_key = aes_set_key,
+    .cbc_encrypt     = aes_encrypt,
+    .cbc_decrypt     = aes_encrypt
+  },
+  {
+      .name            = "aes192-ctr",
+      .blocksize       = 16,
+      .keylen          = sizeof(gcry_cipher_hd_t),
+      .key             = NULL,
+      .keysize         = 192,
+      .set_encrypt_key = aes_set_key,
+      .set_decrypt_key = aes_set_key,
+      .cbc_encrypt     = aes_encrypt,
+      .cbc_decrypt     = aes_encrypt
+  },
+  {
+      .name            = "aes256-ctr",
+      .blocksize       = 16,
+      .keylen          = sizeof(gcry_cipher_hd_t),
+      .key             = NULL,
+      .keysize         = 256,
+      .set_encrypt_key = aes_set_key,
+      .set_decrypt_key = aes_set_key,
+      .cbc_encrypt     = aes_encrypt,
+      .cbc_decrypt     = aes_encrypt
   },
   {
     .name            = "aes128-cbc",
