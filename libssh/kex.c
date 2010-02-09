@@ -52,7 +52,7 @@
 #define BLOWFISH ""
 #endif
 #ifdef HAVE_OPENSSL_AES_H
-#define AES "aes128-ctr,aes256-cbc,aes192-cbc,aes128-cbc,"
+#define AES "aes256-ctr,aes192-ctr,aes128-ctr,aes256-cbc,aes192-cbc,aes128-cbc,"
 #else
 #define AES ""
 #endif
