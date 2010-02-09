@@ -615,7 +615,8 @@ static void aes_decrypt(struct crypto_struct *cipher, void *in, void *out,
 }
 
 /** @internal
- * @brief encrypts/decrypts data with stream cipher AES128_ctr
+ * @brief encrypts/decrypts data with stream cipher AES_ctr128. 128 bits is actually
+ * the size of the CTR counter and incidentally the blocksize, but not the keysize.
  * @param len[in] must be a multiple of AES128 block size.
  */
 static void aes_ctr128_encrypt(struct crypto_struct *cipher, void *in, void *out,
@@ -727,6 +728,28 @@ static struct crypto_struct ssh_ciphertab[] = {
     sizeof(AES_KEY),
     NULL,
     128,
+    aes_set_encrypt_key,
+    aes_set_encrypt_key,
+    aes_ctr128_encrypt,
+    aes_ctr128_encrypt
+  },
+  {
+    "aes192-ctr",
+    16,
+    sizeof(AES_KEY),
+    NULL,
+    192,
+    aes_set_encrypt_key,
+    aes_set_encrypt_key,
+    aes_ctr128_encrypt,
+    aes_ctr128_encrypt
+  },
+  {
+    "aes256-ctr",
+    16,
+    sizeof(AES_KEY),
+    NULL,
+    256,
     aes_set_encrypt_key,
     aes_set_encrypt_key,
     aes_ctr128_encrypt,
