@@ -53,7 +53,7 @@
 #define BLOWFISH ""
 #endif
 #ifdef HAVE_OPENSSL_AES_H
-#define AES "aes256-cbc,aes192-cbc,aes128-cbc,"
+#define AES "aes128-ctr,aes256-cbc,aes192-cbc,aes128-cbc,"
 #else
 #define AES ""
 #endif
@@ -68,7 +68,7 @@
 
 const char *default_methods[] = {
   "diffie-hellman-group1-sha1",
-  "ssh-dss,ssh-rsa",
+  "ssh-rsa,ssh-dss",
   AES BLOWFISH DES,
   AES BLOWFISH DES,
   "hmac-sha1",
@@ -82,7 +82,7 @@ const char *default_methods[] = {
 
 const char *supported_methods[] = {
   "diffie-hellman-group1-sha1",
-  "ssh-dss,ssh-rsa",
+  "ssh-rsa,ssh-dss",
   AES BLOWFISH DES,
   AES BLOWFISH DES,
   "hmac-sha1",
@@ -219,19 +219,19 @@ char *ssh_find_matching(const char *in_d, const char *what_d){
       SAFE_FREE(tok_in);
     }
 
-    for(i_in=0; tok_in[i_in]; ++i_in){
-        for(i_what=0; tok_what[i_what] ; ++i_what){
-            if(!strcmp(tok_in[i_in],tok_what[i_what])){
-                /* match */            
-                ret=strdup(tok_in[i_in]);
-                /* free the tokens */
-                free(tok_in[0]);
-                free(tok_what[0]);
-                free(tok_in);
-                free(tok_what);
-                return ret;
-            }
+    for(i_what=0; tok_what[i_what] ; ++i_what){
+      for(i_in=0; tok_in[i_in]; ++i_in){
+        if(!strcmp(tok_in[i_in],tok_what[i_what])){
+          /* match */
+          ret=strdup(tok_in[i_in]);
+          /* free the tokens */
+          free(tok_in[0]);
+          free(tok_what[0]);
+          free(tok_in);
+          free(tok_what);
+          return ret;
         }
+      }
     }
     free(tok_in[0]);
     free(tok_what[0]);
