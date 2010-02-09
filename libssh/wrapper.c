@@ -570,6 +570,23 @@ static void aes_decrypt(struct crypto_struct *cipher, void *in, void *out,
     unsigned long len, void *IV) {
   AES_cbc_encrypt(in, out, len, cipher->key, IV, AES_DECRYPT);
 }
+
+/** @internal
+ * @brief encrypts/decrypts data with stream cipher AES128_ctr
+ * @param len[in] must be a multiple of AES128 block size.
+ */
+static void aes_ctr128_encrypt(struct crypto_struct *cipher, void *in, void *out,
+    unsigned long len, void *IV) {
+  unsigned char tmp_buffer[128/8];
+  unsigned int num=0;
+  /* Some things are special with ctr128 :
+   * In this case, tmp_buffer is not being used, because it is used to store temporary data
+   * when an encryption is made on lengths that are not multiple of blocksize.
+   * Same for num, which is being used to store the current offset in blocksize in CTR
+   * function.
+   */
+  AES_ctr128_encrypt(in, out, len, cipher->key, IV, tmp_buffer, &num);
+}
 #endif /* HAS_AES */
 
 #ifdef HAS_DES
@@ -661,6 +678,17 @@ static struct crypto_struct ssh_ciphertab[] = {
   },
 #endif /* HAS_BLOWFISH */
 #ifdef HAS_AES
+  {
+    "aes128-ctr",
+    16,
+    sizeof(AES_KEY),
+    NULL,
+    128,
+    aes_set_encrypt_key,
+    aes_set_encrypt_key,
+    aes_ctr128_encrypt,
+    aes_ctr128_encrypt
+  },
   {
     "aes128-cbc",
     16,
