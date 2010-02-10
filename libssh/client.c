@@ -580,6 +580,16 @@ void ssh_connection_callback(ssh_session session){
 		    session->version = 2;
 		  } else if(ssh1 && session->ssh1) {
 		    session->version = 1;
+		  } else if(ssh1 && !session->ssh1){
+#ifdef WITH_SSH1
+		    ssh_set_error(session, SSH_FATAL,
+		        "SSH-1 protocol not available (configure session to allow SSH-1)");
+		    goto error;
+#else
+		    ssh_set_error(session, SSH_FATAL,
+		        "SSH-1 protocol not available (libssh compiled without SSH-1 support)");
+		    goto error;
+#endif
 		  } else {
 		    ssh_set_error(session, SSH_FATAL,
 		        "No version of SSH protocol usable (banner: %s)",
