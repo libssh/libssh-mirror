@@ -444,6 +444,7 @@ end:
   return SSH_PACKET_USED;
 }
 
+/* TODO: make this function accept a ssh_channel */
 ssh_channel ssh_message_channel_request_open_reply_accept(ssh_message msg) {
   ssh_session session = msg->session;
   ssh_channel chan = NULL;
