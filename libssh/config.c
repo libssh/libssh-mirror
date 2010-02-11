@@ -227,8 +227,8 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
       i = ssh_config_get_yesno(&s, -1);
       if (i >= 0 && *parsing) {
         if (i) {
-          ssh_options_set(session, SSH_OPTIONS_COMPRESSION_C_S, "zlib");
-          ssh_options_set(session, SSH_OPTIONS_COMPRESSION_S_C, "zlib");
+          ssh_options_set(session, SSH_OPTIONS_COMPRESSION_C_S, "zlib,none");
+          ssh_options_set(session, SSH_OPTIONS_COMPRESSION_S_C, "zlib,none");
         } else {
           ssh_options_set(session, SSH_OPTIONS_COMPRESSION_C_S, "none");
           ssh_options_set(session, SSH_OPTIONS_COMPRESSION_S_C, "none");
