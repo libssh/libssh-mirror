@@ -278,7 +278,11 @@ void ssh_bind_free(ssh_bind sshbind){
   }
 
   if (sshbind->bindfd >= 0) {
+#ifdef _WIN32
+    closesocket(sshbind->bindfd);
+#else
     close(sshbind->bindfd);
+#endif
   }
   sshbind->bindfd = -1;
 
