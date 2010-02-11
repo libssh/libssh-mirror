@@ -132,7 +132,7 @@ void ssh_socket_set_callbacks(ssh_socket s, ssh_socket_callbacks callbacks){
 	s->callbacks=callbacks;
 }
 
-int ssh_socket_pollcallback(ssh_poll_handle p, int fd, int revents, void *v_s){
+int ssh_socket_pollcallback(ssh_poll_handle p, socket_t fd, int revents, void *v_s){
 	ssh_socket s=(ssh_socket )v_s;
 	char buffer[4096];
 	int r,w;
@@ -146,7 +146,11 @@ int ssh_socket_pollcallback(ssh_poll_handle p, int fd, int revents, void *v_s){
 			s->poll=p=NULL;
 			getsockopt(fd,SOL_SOCKET,SO_ERROR,(void *)&err,&errlen);
 			s->last_errno=err;
+#ifdef _WIN32
+			closesocket(fd);
+#else
 			close(fd);
+#endif
 			s->fd=-1;
 			if(s->callbacks && s->callbacks->connected)
 				s->callbacks->connected(SSH_SOCKET_CONNECTED_ERROR,err,
