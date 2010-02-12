@@ -38,6 +38,8 @@
 #include <shlobj.h>
 #include <direct.h>
 #else
+/* This is needed for a standard getpwuid_r on opensolaris */
+#define _POSIX_PTHREAD_SEMANTICS
 #include <pwd.h>
 #include <arpa/inet.h>
 #endif
