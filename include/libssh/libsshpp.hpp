@@ -38,6 +38,7 @@
  */
 
 #include <libssh/libssh.h>
+#include <libssh/server.h>
 namespace ssh {
 
 /** @brief This class describes a SSH Exception object. This object can be throwed
@@ -74,6 +75,8 @@ private:
   const char *description;
 };
 
+#define ssh_throw(x) if(x!=SSH_OK) throw SshException(getCSession());
+
 /**
  * The ssh::Session class contains the state of a SSH connection.
  */
@@ -87,14 +90,32 @@ public:
     ssh_free(c_session);
     c_session=NULL;
   }
+  /** @brief sets an SSH session options
+   * @param type Type of option
+   * @param option cstring containing the value of option
+   * @throws SshException on error
+   * @see ssh_options_set
+   */
   void setOption(enum ssh_options_e type, const char *option){
-    ssh_options_set(c_session,type,option);
+    ssh_throw(ssh_options_set(c_session,type,option));
   }
+  /** @brief sets an SSH session options
+   * @param type Type of option
+   * @param option long integer containing the value of option
+   * @throws SshException on error
+   * @see ssh_options_set
+   */
   void setOption(enum ssh_options_e type, long int option){
-    ssh_options_set(c_session,type,&option);
+    ssh_throw(ssh_options_set(c_session,type,&option));
   }
+  /** @brief sets an SSH session options
+   * @param type Type of option
+   * @param option void pointer containing the value of option
+   * @throws SshException on error
+   * @see ssh_options_set
+   */
   void setOption(enum ssh_options_e type, void *option){
-    ssh_options_set(c_session,type,option);
+    ssh_throw(ssh_options_set(c_session,type,option));
   }
   /** @brief connects to the remote host
    * @throws SshException on error
@@ -102,12 +123,16 @@ public:
    */
   void connect(){
     int ret=ssh_connect(c_session);
-    if(ret != SSH_OK){
-      throw SshException(getCSession());
-    }
+    ssh_throw(ret);
   }
+  /** @brief Authenticates automatically using public key
+   * @throws SshException on error
+   * @see ssh_userauth_autopubkey
+   */
   int userauthAutopubkey(){
-    return ssh_userauth_autopubkey(c_session,NULL);
+    int ret=ssh_userauth_autopubkey(c_session,NULL);
+    if(ret==SSH_ERROR)
+      ssh_throw(ret);
   }
   int userauthNone();
   int userauthPassword(const char *password);
@@ -135,6 +160,9 @@ private:
   ssh_session getCSession(){
     return c_session;
   }
+  /* No copy constructor, no = operator */
+  Session(const Session &);
+  Session& operator=(const Session &);
 };
 
 class Channel {
@@ -175,10 +203,35 @@ public:
   int requestX11(bool single_connection, const char *protocol, const char *cookie,
       int screen_number);
   int sendEof();
-  int write(const void *data, size_t len, bool is_stderr=false);
+  /** @brief Writes on a channel
+   * @param data data to write.
+   * @param len number of bytes to write.
+   * @param is_stderr write should be done on the stderr channel (server only)
+   * @returns number of bytes written
+   * @throws SshException in case of error
+   * @see channel_write
+   * @see channel_write_stderr
+   */
+  int write(const void *data, size_t len, bool is_stderr=false){
+    int ret;
+    if(is_stderr){
+      ret=channel_write_stderr(channel,data,len);
+    } else {
+      ret=channel_write(channel,data,len);
+    }
+    if(ret==SSH_ERROR)
+      ssh_throw(ret);
+    return ret;
+  }
 private:
+  ssh_session getCSession(){
+    return session->getCSession();
+  }
   Session *session;
   ssh_channel channel;
+  /* No copy and no = operator */
+  Channel(const Channel &);
+  Channel &operator=(const Channel &);
 };
 
 } // namespace ssh
