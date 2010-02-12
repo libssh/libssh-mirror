@@ -165,6 +165,10 @@ private:
   Session& operator=(const Session &);
 };
 
+/** @brief the ssh::Channel class describes the state of an SSH
+ * channel.
+ * @see ssh_channel
+ */
 class Channel {
 public:
   Channel(Session &session){
