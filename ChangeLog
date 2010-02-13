@@ -1,6 +1,20 @@
 ChangeLog
 ==========
 
+version 0.4.1 (released 2010-02-13)
+  * Added support for aes128-ctr, aes192-ctr and aes256-ctr encryption.
+  * Added an example for exec.
+  * Added private key type detection feature in privatekey_from_file().
+  * Fixed zlib compression fallback.
+  * Fixed kex bug that client preference should be prioritary
+  * Fixed known_hosts file set by the user.
+  * Fixed a memleak in channel_accept().
+  * Fixed underflow when leave_function() are unbalanced
+  * Fixed memory corruption in handle_channel_request_open().
+  * Fixed closing of a file handle case of errors in privatekey_from_file().
+  * Fixed ssh_get_user_home_dir() to be thread safe.
+  * Fixed the doxygen documentation.
+
 version 0.4.0 (released 2009-12-10)
   * Added scp support.
   * Added support for sending signals (RFC 4254, section 6.9).
