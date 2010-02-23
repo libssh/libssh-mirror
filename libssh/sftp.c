@@ -1196,6 +1196,19 @@ static sftp_attributes sftp_parse_attr_3(sftp_session sftp, ssh_buffer buf,
         break;
       }
       string_free(longname);
+
+      /* Set owner and group if we talk to openssh and have the longname */
+      if (ssh_get_openssh_version(sftp->session)) {
+        attr->owner = sftp_parse_longname(attr->longname, SFTP_LONGNAME_OWNER);
+        if (attr->owner == NULL) {
+          break;
+        }
+
+        attr->group = sftp_parse_longname(attr->longname, SFTP_LONGNAME_GROUP);
+        if (attr->group == NULL) {
+          break;
+        }
+      }
     }
 
     if (buffer_get_u32(buf, &flags) != sizeof(uint32_t)) {
@@ -1225,18 +1238,6 @@ static sftp_attributes sftp_parse_attr_3(sftp_session sftp, ssh_buffer buf,
       }
       attr->uid = ntohl(attr->uid);
       attr->gid = ntohl(attr->gid);
-
-      if (ssh_get_openssh_version(sftp->session)) {
-        attr->owner = sftp_parse_longname(attr->longname, SFTP_LONGNAME_OWNER);
-        if (attr->owner == NULL) {
-          break;
-        }
-
-        attr->group = sftp_parse_longname(attr->longname, SFTP_LONGNAME_GROUP);
-        if (attr->group == NULL) {
-          break;
-        }
-      }
     }
 
     if (flags & SSH_FILEXFER_ATTR_PERMISSIONS) {
