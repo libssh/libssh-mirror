@@ -104,7 +104,7 @@ struct ssh_session_struct {
     char *host;
     char *bindaddr; /* TODO: check if needed */
     char *xbanner; /* TODO: looks like it is not needed */
-    char *identity;
+    struct ssh_list *identity;
     char *sshdir;
     char *knownhosts;
     char *wanted_methods[10];

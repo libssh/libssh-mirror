@@ -83,9 +83,28 @@ int ssh_options_copy(ssh_session src, ssh_session *dest) {
   }
 
   if (src->identity) {
-    new->identity = strdup(src->identity);
+    struct ssh_iterator *it;
+
+    new->identity = ssh_list_new();
     if (new->identity == NULL) {
       return -1;
+    }
+
+    it = ssh_list_get_iterator(src->identity);
+    while (it) {
+      char *id;
+      int rc;
+
+      id = strdup((char *) it->data);
+      if (id == NULL) {
+        return -1;
+      }
+
+      rc = ssh_list_append(new->identity, id);
+      if (rc < 0) {
+        return -1;
+      }
+      it = it->next;
     }
   }
 
@@ -123,29 +142,6 @@ int ssh_options_copy(ssh_session src, ssh_session *dest) {
 
   return 0;
 }
-
-#ifndef _WIN32
-static char *get_username_from_uid(ssh_session session, uid_t uid){
-    struct passwd *pwd = NULL;
-    char *name;
-
-    pwd = getpwuid(uid);
-
-    if (pwd == NULL) {
-      ssh_set_error(session, SSH_FATAL, "uid %d doesn't exist !", uid);
-      return NULL;
-    }
-
-    name = strdup(pwd->pw_name);
-
-    if (name == NULL) {
-      ssh_set_error_oom(session);
-      return NULL;
-    }
-
-    return name;
-}
-#endif
 
 int ssh_options_set_algo(ssh_session session, int algo,
     const char *list) {
@@ -376,6 +372,7 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
     const void *value) {
   char *p, *q;
   long int i;
+  int rc;
 
   if (session == NULL) {
     return -1;
@@ -442,27 +439,11 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
     case SSH_OPTIONS_USER:
       SAFE_FREE(session->username);
       if (value == NULL) { /* set default username */
-#ifdef _WIN32
-        DWORD size = 0;
-        GetUserName(NULL, &size); //Get Size
-        q = malloc(size);
-        if (q == NULL) {
-          ssh_set_error_oom(session);
-          return -1;
-        }
-        if (GetUserName(q, &size)) {
-          session->username = q;
-        } else {
-          SAFE_FREE(q);
-          return -1;
-        }
-#else /* _WIN32 */
-        q = get_username_from_uid(session, getuid());
+        q = ssh_get_local_username(session);
         if (q == NULL) {
           return -1;
         }
         session->username = q;
-#endif /* _WIN32 */
       } else { /* username provided */
         session->username = strdup(value);
         if (session->username == NULL) {
@@ -489,14 +470,18 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
       }
       break;
     case SSH_OPTIONS_IDENTITY:
-
+    case SSH_OPTIONS_ADD_IDENTITY:
       if (value == NULL) {
         ssh_set_error_invalid(session, __FUNCTION__);
         return -1;
       }
-      SAFE_FREE(session->identity);
-      session->identity = dir_expand_dup(session, value, 1);
-      if (session->identity == NULL) {
+      q = dir_expand_dup(session, value, 1);
+      if (q == NULL) {
+        return -1;
+      }
+      rc = ssh_list_prepend(session->identity, q);
+      if (rc < 0) {
+        SAFE_FREE(q);
         return -1;
       }
       break;

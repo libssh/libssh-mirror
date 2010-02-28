@@ -46,6 +46,8 @@
  */
 ssh_session ssh_new(void) {
   ssh_session session;
+  char *id;
+  int rc;
 
   session = malloc(sizeof (struct ssh_session_struct));
   if (session == NULL) {
@@ -95,6 +97,39 @@ ssh_session ssh_new(void) {
       goto err;
     }
 #endif /* _WIN32 */
+
+    session->identity = ssh_list_new();
+    if (session->identity == NULL) {
+      goto err;
+    }
+
+    id = strdup("SSH_DIR/id_rsa");
+    if (id == NULL) {
+      goto err;
+    }
+    rc = ssh_list_append(session->identity, id);
+    if (rc == SSH_ERROR) {
+      goto err;
+    }
+
+    id = strdup("SSH_DIR/id_dsa");
+    if (id == NULL) {
+      goto err;
+    }
+    rc = ssh_list_append(session->identity, id);
+    if (rc == SSH_ERROR) {
+      goto err;
+    }
+
+    id = strdup("SSH_DIR/identity");
+    if (id == NULL) {
+      goto err;
+    }
+    rc = ssh_list_append(session->identity, id);
+    if (rc == SSH_ERROR) {
+      goto err;
+    }
+
     return session;
 
 err:
@@ -162,10 +197,20 @@ void ssh_free(ssh_session session) {
     ssh_list_free(session->ssh_message_list);
   }
 
+  if (session->identity) {
+    char *id;
+
+    for (id = ssh_list_pop_head(char *, session->identity);
+         id != NULL;
+         id = ssh_list_pop_head(char *, session->identity)) {
+      SAFE_FREE(id);
+    }
+    ssh_list_free(session->identity);
+  }
+
   /* options */
   SAFE_FREE(session->username);
   SAFE_FREE(session->host);
-  SAFE_FREE(session->identity);
   SAFE_FREE(session->sshdir);
   SAFE_FREE(session->knownhosts);
 
