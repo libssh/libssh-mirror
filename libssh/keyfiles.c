@@ -887,6 +887,79 @@ void privatekey_free(ssh_private_key prv) {
   SAFE_FREE(prv);
 }
 
+/**
+ * @brief Write a public key to a file.
+ *
+ * @param[in]  session  The ssh session to use.
+ *
+ * @param[in]  file     The filename to write the key into.
+ *
+ * @param[in]  pubkey   The public key to write.
+ *
+ * @param[in]  type     The type of the public key.
+ *
+ * @return              0 on success, -1 on error.
+ */
+int ssh_publickey_to_file(ssh_session session, const char *file,
+    ssh_string pubkey, int type) {
+  FILE *fp;
+  char *user;
+  char buffer[1024];
+  char host[256];
+  unsigned char *pubkey_64;
+  size_t len;
+  int rc;
+
+  pubkey_64 = bin_to_base64(pubkey->string, string_len(pubkey));
+  if (pubkey_64 == NULL) {
+    return -1;
+  }
+
+  user = ssh_get_local_username(session);
+  if (user == NULL) {
+    SAFE_FREE(pubkey_64);
+    return -1;
+  }
+
+  rc = gethostname(host, sizeof(host));
+  if (rc < 0) {
+    SAFE_FREE(user);
+    SAFE_FREE(pubkey_64);
+    return -1;
+  }
+
+  snprintf(buffer, sizeof(buffer), "%s %s %s@%s\n",
+      ssh_type_to_char(type),
+      pubkey_64,
+      user,
+      host);
+
+  SAFE_FREE(pubkey_64);
+  SAFE_FREE(user);
+
+  ssh_log(session, SSH_LOG_RARE, "Trying to write public key file: %s", file);
+  ssh_log(session, SSH_LOG_PACKET, "public key file content: %s", buffer);
+
+  fp = fopen(file, "w+");
+  if (fp == NULL) {
+    ssh_set_error(session, SSH_REQUEST_DENIED,
+        "Error opening %s: %s", file, strerror(errno));
+    return -1;
+  }
+
+  len = strlen(buffer);
+  if (fwrite(buffer, len, 1, fp) != 1 || ferror(fp)) {
+    ssh_set_error(session, SSH_REQUEST_DENIED,
+        "Unable to write to %s", file);
+    fclose(fp);
+    unlink(file);
+    return -1;
+  }
+
+  fclose(fp);
+  return 0;
+}
+
 /** \brief Retrieve a public key from a file
  * \param session the SSH session
  * \param filename Filename of the key
@@ -962,6 +1035,79 @@ ssh_string publickey_from_file(ssh_session session, const char *filename,
   }
 
   return str;
+}
+
+/**
+ * @brief Try to read the public key from a given file.
+ *
+ * @param[in]  session  The ssh session to use.
+ *
+ * @param[in]  keyfile  The name of the private keyfile.
+ *
+ * @param[out] publickey A ssh_string to store the public key.
+ *
+ * @param[out] type     A pointer to an integer to store the type.
+ *
+ * @return              0 on success, -1 on error or the private key doesn't
+ *                      exist, 1 if the public key doesn't exist.
+ */
+int ssh_try_publickey_from_file(ssh_session session, const char *keyfile,
+    ssh_string *publickey, int *type) {
+  char *pubkey_file;
+  size_t len;
+  ssh_string pubkey_string;
+  int pubkey_type;
+
+  if (session == NULL || keyfile == NULL || publickey == NULL || type == NULL) {
+    return -1;
+  }
+
+  if (session->sshdir == NULL) {
+    if (ssh_options_set(session, SSH_OPTIONS_SSH_DIR, NULL) < 0) {
+      return -1;
+    }
+  }
+
+  ssh_log(session, SSH_LOG_PACKET, "Trying to open privatekey %s", keyfile);
+  if (!ssh_file_readaccess_ok(keyfile)) {
+    ssh_log(session, SSH_LOG_PACKET, "Failed to open privatekey %s", keyfile);
+    return -1;
+  }
+
+  len = strlen(keyfile) + 5;
+  pubkey_file = malloc(len);
+  if (pubkey_file == NULL) {
+    return -1;
+  }
+  snprintf(pubkey_file, len, "%s.pub", keyfile);
+
+  ssh_log(session, SSH_LOG_PACKET, "Trying to open publickey %s",
+                                   pubkey_file);
+  if (!ssh_file_readaccess_ok(pubkey_file)) {
+    ssh_log(session, SSH_LOG_PACKET, "Failed to open publickey %s",
+                                     pubkey_file);
+    return 1;
+  }
+
+  ssh_log(session, SSH_LOG_PACKET, "Success opening public and private key");
+
+  /*
+   * We are sure both the private and public key file is readable. We return
+   * the public as a string, and the private filename as an argument
+   */
+  pubkey_string = publickey_from_file(session, pubkey_file, &pubkey_type);
+  if (pubkey_string == NULL) {
+    ssh_log(session, SSH_LOG_PACKET,
+        "Wasn't able to open public key file %s: %s",
+        pubkey_file,
+        ssh_get_error(session));
+    return -1;
+  }
+
+  *publickey = pubkey_string;
+  *type = pubkey_type;
+
+  return 0;
 }
 
 ssh_string try_publickey_from_file(ssh_session session, struct ssh_keys_struct keytab,

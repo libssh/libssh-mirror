@@ -25,6 +25,7 @@
 /* in misc.c */
 /* gets the user home dir. */
 char *ssh_get_user_home_dir(void);
+char *ssh_get_local_username(ssh_session session);
 int ssh_file_readaccess_ok(const char *file);
 
 /* macro for byte ordering */
