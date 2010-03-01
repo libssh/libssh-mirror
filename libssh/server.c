@@ -912,7 +912,7 @@ int ssh_execute_message_callbacks(ssh_session session){
   if(!session->ssh_message_list)
     return SSH_OK;
   if(session->ssh_message_callback){
-    while(ssh_list_get_head(ssh_message , session->ssh_message_list) != NULL){
+    while(ssh_list_pop_head(ssh_message , session->ssh_message_list) != NULL){
       msg=ssh_message_pop_head(session);
       ret=session->ssh_message_callback(session,msg);
       if(ret==1){
@@ -925,7 +925,7 @@ int ssh_execute_message_callbacks(ssh_session session){
       }
     }
   } else {
-    while(ssh_list_get_head(ssh_message , session->ssh_message_list) != NULL){
+    while(ssh_list_pop_head(ssh_message , session->ssh_message_list) != NULL){
       msg=ssh_message_pop_head(session);
       ret = ssh_message_reply_default(msg);
       ssh_message_free(msg);

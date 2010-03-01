@@ -166,7 +166,7 @@ void ssh_free(ssh_session session) {
   privatekey_free(session->rsa_key);
   if(session->ssh_message_list){
     ssh_message msg;
-    while((msg=ssh_list_get_head(ssh_message ,session->ssh_message_list))
+    while((msg=ssh_list_pop_head(ssh_message ,session->ssh_message_list))
         != NULL){
       ssh_message_free(msg);
     }

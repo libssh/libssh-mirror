@@ -261,7 +261,14 @@ void ssh_list_remove(struct ssh_list *list, struct ssh_iterator *iterator){
   SAFE_FREE(iterator);
 }
 
-const void *_ssh_list_get_head(struct ssh_list *list){
+/** @internal
+ * @brief Removes the top element of the list and returns the data value attached
+ * to it
+ * @param list the ssh_list
+ * @returns pointer to the element being stored in head, or
+ * NULL if the list is empty.
+ */
+const void *_ssh_list_pop_head(struct ssh_list *list){
   struct ssh_iterator *iterator=list->root;
   const void *data;
   if(!list->root)

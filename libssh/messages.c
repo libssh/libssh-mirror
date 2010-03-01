@@ -710,7 +710,7 @@ ssh_message ssh_message_get(ssh_session session) {
       leave_function();
       return NULL;
     }
-    msg=ssh_list_get_head(ssh_message, session->ssh_message_list);
+    msg=ssh_list_pop_head(ssh_message, session->ssh_message_list);
   } while(msg==NULL);
   msg=ssh_message_pop_head(session);
   leave_function();
