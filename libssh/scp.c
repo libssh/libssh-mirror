@@ -26,7 +26,6 @@
 
 #include "libssh/priv.h"
 #include "libssh/scp.h"
-
 /** @defgroup ssh_scp SSH-scp
  * @brief SCP protocol over SSH functions
  * @addtogroup ssh_scp
@@ -118,10 +117,21 @@ int ssh_scp_init(ssh_scp scp){
 }
 
 int ssh_scp_close(ssh_scp scp){
+  char buffer[128];
+  int err;
   if(scp->channel != NULL){
     if(channel_send_eof(scp->channel) == SSH_ERROR){
       scp->state=SSH_SCP_ERROR;
       return SSH_ERROR;
+    }
+    /* avoid situations where data are buffered and
+     * not yet stored on disk. This can happen if the close is sent
+     * before we got the EOF back
+     */
+    while(!channel_is_eof(scp->channel)){
+      err=channel_read(scp->channel,buffer,sizeof(buffer),0);
+      if(err==SSH_ERROR)
+        break;
     }
     if(channel_close(scp->channel) == SSH_ERROR){
       scp->state=SSH_SCP_ERROR;
