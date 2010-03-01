@@ -609,6 +609,15 @@ SSH_PACKET_CALLBACK(channel_rcv_request) {
 		leave_function();
 		return SSH_PACKET_USED;
 	}
+	if(strcmp(request,"keepalive@openssh.com")==0){
+	  SAFE_FREE(request);
+	  ssh_log(session, SSH_LOG_PROTOCOL,"Responding to Openssh's keepalive");
+	  buffer_add_u8(session->out_buffer, SSH2_MSG_CHANNEL_SUCCESS);
+	  buffer_add_u32(session->out_buffer, htonl(channel->remote_channel));
+	  packet_send(session);
+	  leave_function();
+	  return SSH_PACKET_USED;
+	}
 
 	/* If we are here, that means we have a request that is not in the understood
 	 * client requests. That means we need to create a ssh message to be passed
