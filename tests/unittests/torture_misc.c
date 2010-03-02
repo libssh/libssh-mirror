@@ -1,5 +1,7 @@
 #include <sys/types.h>
 #include <pwd.h>
+
+#define LIBSSH_STATIC
 #include <libssh/priv.h>
 
 #include "torture.h"
