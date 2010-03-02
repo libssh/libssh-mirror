@@ -37,6 +37,7 @@ include(MacroCopyFile)
 
 # search for libraries
 find_package(ZLIB REQUIRED)
+find_package(Check)
 
 if (WITH_GCRYPT)
   find_package(GCrypt REQUIRED)
@@ -75,8 +76,13 @@ install(
 
 if (UNIX AND NOT WIN32)
   add_subdirectory(examples)
-
 endif (UNIX AND NOT WIN32)
+
+if (CHECK_FOUND AND WITH_TESTING)
+  include(AddCheckTest)
+  add_subdirectory(tests)
+endif (CHECK_FOUND AND WITH_TESTING)
+
 MESSAGE(STATUS "********************************************")
 MESSAGE(STATUS "********** ${PROJECT_NAME} build options : **********")
 if (WITH_LIBZ)

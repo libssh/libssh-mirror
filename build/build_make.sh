@@ -135,7 +135,7 @@ while test -n "$1"; do
 			shift
 		;;
 		*-unittesting)
-			OPTIONS="${OPTIONS} -DUNIT_TESTING=ON"
+			OPTIONS="${OPTIONS} -DWITH_TESTING=ON"
 			shift
 		;;
 		*-withssh1)
