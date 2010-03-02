@@ -12,8 +12,8 @@ include_directories(
 
 # create test library
 add_library(${TORTURE_LIBRARY} SHARED torture.c cmdline.c)
-target_link_libraries(${TORTURE_LIBRARY} ${CHECK_LIBRARIES} ${LIBSSH_STATIC_LIBRARY})
+target_link_libraries(${TORTURE_LIBRARY} ${CHECK_LIBRARIES} ${LIBSSH_STATIC_LIBRARY} ${LIBSSH_LINK_LIBRARIES})
 
-set(TEST_TARGET_LIBRARIES ${SUPPORT_LIBRARY})
+set(TEST_TARGET_LIBRARIES ${SUPPORT_LIBRARY} ${LIBSSH_LINK_LIBRARIES})
 
 add_subdirectory(unittests)

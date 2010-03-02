@@ -67,6 +67,11 @@ if (GCRYPT_LIBRARY)
   )
 endif (GCRYPT_LIBRARY)
 
+set(LIBSSH_LINK_LIBRARIES
+  ${LIBSSH_LINK_LIBRARIES}
+  CACHE INTERNAL "libssh link libraries"
+)
+
 set(libssh_SRCS
   agent.c
   auth.c
