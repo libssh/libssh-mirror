@@ -237,6 +237,25 @@ int ssh_list_add(struct ssh_list *list,const void *data){
   return SSH_OK;
 }
 
+int ssh_list_prepend(struct ssh_list *list, const void *data){
+  struct ssh_iterator *it = ssh_iterator_new(data);
+
+  if (it == NULL) {
+    return SSH_ERROR;
+  }
+
+  if (list->end == NULL) {
+    /* list is empty */
+    list->root = list->end = it;
+  } else {
+    /* set as new root */
+    it->next = list->root;
+    list->root = it;
+  }
+
+  return SSH_OK;
+}
+
 void ssh_list_remove(struct ssh_list *list, struct ssh_iterator *iterator){
   struct ssh_iterator *ptr,*prev;
   prev=NULL;
