@@ -302,7 +302,7 @@ void ssh_packet_set_callbacks(ssh_session session, ssh_packet_callbacks callback
 	if(session->packet_callbacks == NULL){
 		session->packet_callbacks = ssh_list_new();
 	}
-	ssh_list_add(session->packet_callbacks,callbacks);
+  ssh_list_append(session->packet_callbacks, callbacks);
 }
 
 /** @internal

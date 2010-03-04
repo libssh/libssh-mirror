@@ -222,7 +222,7 @@ static struct ssh_iterator *ssh_iterator_new(const void *data){
   return iterator;
 }
 
-int ssh_list_add(struct ssh_list *list,const void *data){
+int ssh_list_append(struct ssh_list *list,const void *data){
   struct ssh_iterator *iterator=ssh_iterator_new(data);
   if(!iterator)
     return SSH_ERROR;

@@ -787,7 +787,7 @@ void ssh_message_queue(ssh_session session, ssh_message message){
     if(session->ssh_message_list == NULL){
       session->ssh_message_list=ssh_list_new();
     }
-    ssh_list_add(session->ssh_message_list,message);
+    ssh_list_append(session->ssh_message_list, message);
   }
 }
 
