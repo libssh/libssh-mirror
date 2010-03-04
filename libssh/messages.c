@@ -867,7 +867,7 @@ void message_handle(ssh_session session, uint32_t type){
     if(!session->ssh_message_list){
       session->ssh_message_list=ssh_list_new();
     }
-    ssh_list_add(session->ssh_message_list,msg);
+    ssh_list_append(session->ssh_message_list,msg);
   }
 }
 

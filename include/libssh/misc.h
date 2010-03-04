@@ -46,7 +46,7 @@ struct ssh_iterator {
 struct ssh_list *ssh_list_new(void);
 void ssh_list_free(struct ssh_list *list);
 struct ssh_iterator *ssh_list_get_iterator(const struct ssh_list *list);
-int ssh_list_add(struct ssh_list *list, const void *data);
+int ssh_list_append(struct ssh_list *list, const void *data);
 int ssh_list_prepend(struct ssh_list *list, const void *data);
 void ssh_list_remove(struct ssh_list *list, struct ssh_iterator *iterator);
 
