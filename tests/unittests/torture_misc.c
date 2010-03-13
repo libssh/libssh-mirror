@@ -15,8 +15,9 @@ START_TEST (torture_get_user_home_dir)
     pwd = getpwuid(getuid());
 
     user = ssh_get_user_home_dir();
-
     ck_assert_str_eq(user, pwd->pw_dir);
+
+    SAFE_FREE(user);
 }
 END_TEST
 
