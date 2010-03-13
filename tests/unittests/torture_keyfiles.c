@@ -87,10 +87,10 @@ static int torture_read_one_line(const char *filename, char *buffer, size_t len)
 
 START_TEST (torture_pubkey_generate_from_privkey)
 {
-    ssh_private_key privkey;
-    ssh_public_key pubkey;
-    ssh_string pubkey_orig;
-    ssh_string pubkey_new;
+    ssh_private_key privkey = NULL;
+    ssh_public_key pubkey = NULL;
+    ssh_string pubkey_orig = NULL;
+    ssh_string pubkey_new = NULL;
     char pubkey_line_orig[512] = {0};
     char pubkey_line_new[512] = {0};
     int type_orig = 0;
@@ -101,6 +101,7 @@ START_TEST (torture_pubkey_generate_from_privkey)
     rc = ssh_try_publickey_from_file(session, LIBSSH_RSA_TESTKEY, &pubkey_orig,
         &type_orig);
     ck_assert(rc == 0);
+    ck_assert(pubkey_orig != NULL);
 
     rc = torture_read_one_line(LIBSSH_RSA_TESTKEY ".pub", pubkey_line_orig,
         sizeof(pubkey_line_orig));
@@ -111,6 +112,7 @@ START_TEST (torture_pubkey_generate_from_privkey)
 
     privkey = privatekey_from_file(session, LIBSSH_RSA_TESTKEY, 0, NULL);
     ck_assert(privkey != NULL);
+
     pubkey = publickey_from_privatekey(privkey);
     type_new = privkey->type;
     privatekey_free(privkey);
@@ -118,6 +120,8 @@ START_TEST (torture_pubkey_generate_from_privkey)
 
     pubkey_new = publickey_to_string(pubkey);
     publickey_free(pubkey);
+
+    ck_assert(pubkey_new != NULL);
     ck_assert(memcmp(pubkey_orig->string, pubkey_new->string, pubkey_orig->size));
 
     rc = ssh_publickey_to_file(session, LIBSSH_RSA_TESTKEY ".pub", pubkey_new, type_new);
