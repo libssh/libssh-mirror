@@ -436,6 +436,15 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
         session->port = i & 0xffff;
       }
       break;
+    case SSH_OPTIONS_FD:
+      if (value == NULL) {
+        session->fd = -1;
+      } else {
+        socket_t *x = (socket_t *) value;
+
+        session->fd = *x & 0xffff;
+      }
+      break;
     case SSH_OPTIONS_USER:
       SAFE_FREE(session->username);
       if (value == NULL) { /* set default username */
