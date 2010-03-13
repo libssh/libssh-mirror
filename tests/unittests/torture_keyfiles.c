@@ -117,6 +117,7 @@ START_TEST (torture_pubkey_generate_from_privkey)
     ck_assert(pubkey != NULL);
 
     pubkey_new = publickey_to_string(pubkey);
+    publickey_free(pubkey);
     ck_assert(memcmp(pubkey_orig->string, pubkey_new->string, pubkey_orig->size));
 
     rc = ssh_publickey_to_file(session, LIBSSH_RSA_TESTKEY ".pub", pubkey_new, type_new);
