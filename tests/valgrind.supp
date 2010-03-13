@@ -1,0 +1,24 @@
+### CHECK
+{
+   check emalloc
+   Memcheck:Leak
+   fun:malloc
+   fun:emalloc
+}
+
+{
+   check setup_pipe
+   Memcheck:Leak
+   fun:malloc
+   fun:fdopen@@GLIBC_2.2.5
+   fun:tmpfile@@GLIBC_2.2.5
+   fun:setup_pipe
+}
+
+{
+   check erealloc
+   Memcheck:Leak
+   fun:realloc
+   fun:erealloc
+}
+
