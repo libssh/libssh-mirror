@@ -1086,6 +1086,7 @@ int ssh_try_publickey_from_file(ssh_session session, const char *keyfile,
   if (!ssh_file_readaccess_ok(pubkey_file)) {
     ssh_log(session, SSH_LOG_PACKET, "Failed to open publickey %s",
                                      pubkey_file);
+    SAFE_FREE(pubkey_file);
     return 1;
   }
 
@@ -1101,8 +1102,11 @@ int ssh_try_publickey_from_file(ssh_session session, const char *keyfile,
         "Wasn't able to open public key file %s: %s",
         pubkey_file,
         ssh_get_error(session));
+    SAFE_FREE(pubkey_file);
     return -1;
   }
+
+  SAFE_FREE(pubkey_file);
 
   *publickey = pubkey_string;
   *type = pubkey_type;
