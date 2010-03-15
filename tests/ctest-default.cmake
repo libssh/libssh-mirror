@@ -1,12 +1,15 @@
 set(CTEST_SOURCE_DIRECTORY "$ENV{HOME}/workspace/tmp/dashboards/libssh/source")
 set(CTEST_BINARY_DIRECTORY "$ENV{HOME}/workspace/tmp/dashboards/libssh/build")
 
-set(CTEST_SITE "magrathea.cynapses.org")
+set(CTEST_SITE "host.libssh.org")
 set(CTEST_BUILD_NAME "linux-gcc-default")
 
 set(CTEST_CMAKE_GENERATOR "Unix Makefiles")
 set(CTEST_BUILD_CONFIGURATION "Profiling")
 set(CTEST_BUILD_OPTIONS "-DWITH_SSH1=ON -WITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON -DWITH_GCRYPT=OFF")
+
+set(WITH_MEMCHECK FALSE)
+set(WITH_COVERAGE FALSE)
 
 #######################################################################
 
@@ -34,6 +37,10 @@ ctest_update()
 ctest_configure()
 ctest_build()
 ctest_test()
-ctest_coverage()
-ctest_memcheck()
+if (WITH_MEMCHECK AND CTEST_COVERAGE_COMMAND)
+  ctest_coverage()
+endif (WITH_MEMCHECK AND CTEST_COVERAGE_COMMAND)
+if (WITH_MEMCHECK AND CTEST_MEMORYCHECK_COMMAND)
+  ctest_memcheck()
+endif (WITH_MEMCHECK AND CTEST_MEMORYCHECK_COMMAND)
 ctest_submit()
