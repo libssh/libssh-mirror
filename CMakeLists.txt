@@ -73,9 +73,9 @@ install(
     pkgconfig
 )
 
-if (UNIX AND NOT WIN32)
+if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
   add_subdirectory(examples)
-endif (UNIX AND NOT WIN32)
+endif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
 
 if (WITH_TESTING)
   find_package(Check REQUIRED)
