@@ -65,7 +65,7 @@ add_subdirectory(libssh)
 # build samples
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
-if (UNIX AND NOT WIN32)
+if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
   add_subdirectory(examples)
+endif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
 
-endif (UNIX AND NOT WIN32)
