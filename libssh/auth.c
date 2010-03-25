@@ -1006,11 +1006,14 @@ int ssh_userauth_autopubkey(ssh_session session, const char *passphrase) {
   } /* if agent is running */
 #endif
 
+
   for (it = ssh_list_get_iterator(session->identity);
        it != NULL;
        it = it->next) {
     char *privkey_file = NULL;
     int privkey_open = 0;
+
+    privkey = NULL;
 
     privkey_file = dir_expand_dup(session, it->data, 1);
     if (privkey_file == NULL) {
