@@ -12,6 +12,13 @@ set(APPLICATION_VERSION_PATCH "0")
 
 set(APPLICATION_VERSION "${APPLICATION_VERSION_MAJOR}.${APPLICATION_VERSION_MINOR}.${APPLICATION_VERSION_PATCH}")
 
+# Set the lib CURRENT.AGE.REVISION version info
+#   If the source code was changed, but there were no interface changes:
+#     Increment REVISION.
+#   If there was a compatible interface change:
+#     Increment CURRENT and AGE. Set REVISION to 0
+#   If there was an incompatible interface change:
+#     Increment CURRENT. Set AGE and REVISION to 0
 set(LIBRARY_VERSION "4.1.0")
 set(LIBRARY_SOVERSION "4")
 
