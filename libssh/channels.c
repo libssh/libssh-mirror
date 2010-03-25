@@ -172,7 +172,7 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_open_fail){
 
   ssh_channel channel;
   ssh_string error_s;
-  char *error;
+  char *error = NULL;
   uint32_t code;
   (void)user;
   (void)type;
