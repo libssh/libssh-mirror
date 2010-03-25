@@ -231,7 +231,7 @@ enum {
 	/** Only rare and noteworthy events
 	 */
 	SSH_LOG_RARE,
-	/** High level protocol informations
+	/** High level protocol information
 	 */
 	SSH_LOG_PROTOCOL,
 	/** Lower level protocol infomations, packet level

@@ -613,7 +613,7 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
       }
       break;
     default:
-      ssh_set_error(session, SSH_REQUEST_DENIED, "Unkown ssh option %d", type);
+      ssh_set_error(session, SSH_REQUEST_DENIED, "Unknown ssh option %d", type);
       return -1;
     break;
   }
@@ -827,7 +827,7 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
       }
       break;
     default:
-      ssh_set_error(sshbind, SSH_REQUEST_DENIED, "Unkown ssh option %d", type);
+      ssh_set_error(sshbind, SSH_REQUEST_DENIED, "Unknown ssh option %d", type);
       return -1;
     break;
   }

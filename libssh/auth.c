@@ -1381,7 +1381,7 @@ int ssh_userauth_kbdint(ssh_session session, const char *user,
 
   /*
    * If we are at this point, it ss because session->kbdint exists.
-   * It means the user has set some informations there we need to send
+   * It means the user has set some information there we need to send
    * the server and then we need to ack the status (new questions or ok
    * pass in).
    */
