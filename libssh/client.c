@@ -805,7 +805,7 @@ error:
 const char *ssh_copyright(void) {
     return SSH_STRINGIFY(LIBSSH_VERSION) " (c) 2003-2010 Aris Adamantiadis "
     "(aris@0xbadc0de.be) Distributed under the LGPL, please refer to COPYING"
-    "file for informations about your rights";
+    "file for information about your rights";
 }
 /** @} */
 /* vim: set ts=2 sw=2 et cindent: */

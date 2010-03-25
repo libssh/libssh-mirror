@@ -269,7 +269,7 @@
  *    message from the server saying hello or such things. Just call ssh_userauth_kbdint() until needed. 
  *  - The meaning of "name", "prompt", "instruction" may be a little confusing. And explanation is given
  *    in the following documentation.
- * A little note about how to use the informations from keyboard-interactive authentication, coming from
+ * A little note about how to use the information from keyboard-interactive authentication, coming from
  * The RFC itself (rfc4256) :
  * 
  * @verbatim
