@@ -42,9 +42,12 @@ else (CHECK_LIBRARIES AND CHECK_INCLUDE_DIRS)
   )
   mark_as_advanced(CHECK_INCLUDE_DIR)
 
+  # check_pic is a workaround for ubuntu's check bug which does not compile
+  # check as a shared library with -fPIC.
+  # see https://bugs.launchpad.net/ubuntu/+source/check/+bug/125781
   find_library(CHECK_LIBRARY
     NAMES
-      check
+      check_pic check
     PATHS
       ${_CHECK_LIBDIR}
       /usr/lib
