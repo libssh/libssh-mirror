@@ -194,48 +194,48 @@ char **space_tokenize(const char *chain){
     return tokens;
 }
 
-/* find_matching gets 2 parameters : a list of available objects (in_d), separated by colons,*/
-/* and a list of prefered objects (what_d) */
+/* find_matching gets 2 parameters : a list of available objects (available_d), separated by colons,*/
+/* and a list of preferred objects (preferred_d) */
 /* it will return a strduped pointer on the first prefered object found in the available objects list */
 
-char *ssh_find_matching(const char *in_d, const char *what_d){
-    char ** tok_in, **tok_what;
-    int i_in, i_what;
+char *ssh_find_matching(const char *available_d, const char *preferred_d){
+    char ** tok_available, **tok_preferred;
+    int i_avail, i_pref;
     char *ret;
 
-    if ((in_d == NULL) || (what_d == NULL)) {
+    if ((available_d == NULL) || (preferred_d == NULL)) {
       return NULL; /* don't deal with null args */
     }
 
-    tok_in = tokenize(in_d);
-    if (tok_in == NULL) {
+    tok_available = tokenize(available_d);
+    if (tok_available == NULL) {
       return NULL;
     }
 
-    tok_what = tokenize(what_d);
-    if (tok_what == NULL) {
-      SAFE_FREE(tok_in[0]);
-      SAFE_FREE(tok_in);
+    tok_preferred = tokenize(preferred_d);
+    if (tok_preferred == NULL) {
+      SAFE_FREE(tok_available[0]);
+      SAFE_FREE(tok_available);
     }
 
-    for(i_what=0; tok_what[i_what] ; ++i_what){
-      for(i_in=0; tok_in[i_in]; ++i_in){
-        if(!strcmp(tok_in[i_in],tok_what[i_what])){
+    for(i_pref=0; tok_preferred[i_pref] ; ++i_pref){
+      for(i_avail=0; tok_available[i_avail]; ++i_avail){
+        if(!strcmp(tok_available[i_avail],tok_preferred[i_pref])){
           /* match */
-          ret=strdup(tok_in[i_in]);
+          ret=strdup(tok_available[i_avail]);
           /* free the tokens */
-          free(tok_in[0]);
-          free(tok_what[0]);
-          free(tok_in);
-          free(tok_what);
+          free(tok_available[0]);
+          free(tok_preferred[0]);
+          free(tok_available);
+          free(tok_preferred);
           return ret;
         }
       }
     }
-    free(tok_in[0]);
-    free(tok_what[0]);
-    free(tok_in);
-    free(tok_what);
+    free(tok_available[0]);
+    free(tok_preferred[0]);
+    free(tok_available);
+    free(tok_preferred);
     return NULL;
 }
 
