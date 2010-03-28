@@ -7,7 +7,7 @@
 int main(void) {
   ssh_session session;
   ssh_channel channel;
-  ssh_buffer buf;
+  char buf[4096];
   int rc;
 
   session = connect_ssh("localhost", NULL, 0);
@@ -38,24 +38,14 @@ int main(void) {
     return 1;
   }
 
-
-  if (channel_is_open(channel)) {
-    while (channel_poll(channel, 0) >= 0) {
-      buf = buffer_new();
-      rc = channel_read_buffer(channel, buf, 0, 0);
-      if (rc < 0) {
-        buffer_free(buf);
-        channel_close(channel);
-        ssh_disconnect(session);
-        ssh_finalize();
-        return 1;
+  do {
+    if (channel_is_open(channel)) {
+      rc = channel_read(channel, buf, sizeof(buf), 0);
+      if(rc > 0){
+        fwrite(buf,1,rc,stdout);
       }
-
-      printf("%s\n", (char *) buffer_get(buf));
-
-      buffer_free(buf);
     }
-  }
+  } while(rc > 0);
 
   channel_send_eof(channel);
   channel_close(channel);
