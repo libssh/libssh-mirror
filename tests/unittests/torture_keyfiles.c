@@ -8,19 +8,24 @@
 
 ssh_session session;
 
+#if 0
 static void setup(void) {
     session = ssh_new();
 }
+#endif
 
 static void setup_rsa_key(void) {
+    int rc;
+
     unlink(LIBSSH_RSA_TESTKEY);
     unlink(LIBSSH_RSA_TESTKEY ".pub");
 
-    system("ssh-keygen -t rsa -N \"\" -f " LIBSSH_RSA_TESTKEY);
+    rc = system("ssh-keygen -t rsa -N \"\" -f " LIBSSH_RSA_TESTKEY);
 
     session = ssh_new();
 }
 
+#if 0
 static void setup_dsa_key(void) {
     unlink(LIBSSH_DSA_TESTKEY);
     unlink(LIBSSH_DSA_TESTKEY ".pub");
@@ -29,6 +34,7 @@ static void setup_dsa_key(void) {
 
     session = ssh_new();
 }
+#endif
 
 static void teardown(void) {
     unlink(LIBSSH_DSA_TESTKEY);
@@ -122,7 +128,10 @@ START_TEST (torture_pubkey_generate_from_privkey)
     publickey_free(pubkey);
 
     ck_assert(pubkey_new != NULL);
-    ck_assert(memcmp(pubkey_orig->string, pubkey_new->string, pubkey_orig->size));
+
+    ck_assert(string_len(pubkey_orig) == string_len(pubkey_new));
+    ck_assert(memcmp(string_data(pubkey_orig), string_data(pubkey_new),
+                string_len(pubkey_orig)) == 0);
 
     rc = ssh_publickey_to_file(session, LIBSSH_RSA_TESTKEY ".pub", pubkey_new, type_new);
     ck_assert(rc == 0);
