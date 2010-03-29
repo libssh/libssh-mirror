@@ -63,12 +63,16 @@ int verify_knownhost(ssh_session session){
       fprintf(stderr,"The server is unknown. Do you trust the host key ?\n");
       fprintf(stderr, "Public key hash: %s\n", hexa);
       free(hexa);
-      fgets(buf,sizeof(buf),stdin);
+      if (fgets(buf, sizeof(buf), stdin) == NULL) {
+        return -1;
+      }
       if(strncasecmp(buf,"yes",3)!=0){
         return -1;
       }
       fprintf(stderr,"This new key will be written on disk for further usage. do you agree ?\n");
-      fgets(buf,sizeof(buf),stdin);
+      if (fgets(buf, sizeof(buf), stdin) == NULL) {
+        return -1;
+      }
       if(strncasecmp(buf,"yes",3)==0){
         if (ssh_write_knownhost(session) < 0) {
           free(hash);
