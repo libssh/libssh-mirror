@@ -72,7 +72,10 @@ static void create_files(ssh_session session){
 	}
 	while(!channel_is_eof(channel)){
 		channel_read(channel,buffer,1,1);
-		write(1,buffer,1);
+		if (write(1,buffer,1) < 0) {
+                    fprintf(stderr, "Error writing to buffer\n");
+                    return;
+                }
 	}
 	channel_close(channel);
 	channel_free(channel);
