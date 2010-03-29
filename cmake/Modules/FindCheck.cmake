@@ -18,17 +18,10 @@ if (CHECK_LIBRARIES AND CHECK_INCLUDE_DIRS)
   # in cache already
   set(CHECK_FOUND TRUE)
 else (CHECK_LIBRARIES AND CHECK_INCLUDE_DIRS)
-  # use pkg-config to get the directories and then use these values
-  # in the FIND_PATH() and FIND_LIBRARY() calls
-  if (${CMAKE_MAJOR_VERSION} EQUAL 2 AND ${CMAKE_MINOR_VERSION} EQUAL 4)
-    include(UsePkgConfig)
-    pkgconfig(check _CHECK_INCLUDEDIR _CHECK_LIBDIR _CHECK_LDFLAGS _CHECK_CFLAGS)
-  else (${CMAKE_MAJOR_VERSION} EQUAL 2 AND ${CMAKE_MINOR_VERSION} EQUAL 4)
-    find_package(PkgConfig)
-    if (PKG_CONFIG_FOUND)
-      pkg_check_modules(_CHECK check)
-    endif (PKG_CONFIG_FOUND)
-  endif (${CMAKE_MAJOR_VERSION} EQUAL 2 AND ${CMAKE_MINOR_VERSION} EQUAL 4)
+  find_package(PkgConfig)
+  if (PKG_CONFIG_FOUND)
+    pkg_check_modules(_CHECK check)
+  endif (PKG_CONFIG_FOUND)
 
   find_path(CHECK_INCLUDE_DIR
     NAMES
@@ -39,8 +32,8 @@ else (CHECK_LIBRARIES AND CHECK_INCLUDE_DIRS)
       /usr/local/include
       /opt/local/include
       /sw/include
+      /usr/lib/sfw/include
   )
-  mark_as_advanced(CHECK_INCLUDE_DIR)
 
   # check_pic is a workaround for ubuntu's check bug which does not compile
   # check as a shared library with -fPIC.
@@ -54,37 +47,23 @@ else (CHECK_LIBRARIES AND CHECK_INCLUDE_DIRS)
       /usr/local/lib
       /opt/local/lib
       /sw/lib
+      /usr/sfw/lib/64
+      /usr/sfw/lib
   )
-  mark_as_advanced(CHECK_LIBRARY)
-
-  if (CHECK_LIBRARY)
-    set(CHECK_FOUND TRUE CACHE INTERNAL "Wether the check library has been found" FORCE)
-  endif (CHECK_LIBRARY)
 
   set(CHECK_INCLUDE_DIRS
     ${CHECK_INCLUDE_DIR}
   )
 
-  if (CHECK_FOUND)
+  if (CHECK_LIBRARY)
     set(CHECK_LIBRARIES
-      ${CHECK_LIBRARIES}
-      ${CHECK_LIBRARY}
+        ${CHECK_LIBRARIES}
+        ${CHECK_LIBRARY}
     )
-  endif (CHECK_FOUND)
+  endif (CHECK_LIBRARY)
 
-  if (CHECK_INCLUDE_DIRS AND CHECK_LIBRARIES)
-     set(CHECK_FOUND TRUE)
-  endif (CHECK_INCLUDE_DIRS AND CHECK_LIBRARIES)
-
-  if (CHECK_FOUND)
-    if (NOT Check_FIND_QUIETLY)
-      message(STATUS "Found Check: ${CHECK_LIBRARIES}")
-    endif (NOT Check_FIND_QUIETLY)
-  else (CHECK_FOUND)
-    if (Check_FIND_REQUIRED)
-      message(FATAL_ERROR "Could not find Check")
-    endif (Check_FIND_REQUIRED)
-  endif (CHECK_FOUND)
+  include(FindPackageHandleStandardArgs)
+  find_package_handle_standard_args(Check DEFAULT_MSG CHECK_LIBRARIES CHECK_INCLUDE_DIRS)
 
   # show the CHECK_INCLUDE_DIRS and CHECK_LIBRARIES variables only in the advanced view
   mark_as_advanced(CHECK_INCLUDE_DIRS CHECK_LIBRARIES)
