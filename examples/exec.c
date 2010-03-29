@@ -37,7 +37,9 @@ int main(void) {
 
 
   while ((rc = channel_read(channel, buffer, sizeof(buffer), 0)) > 0) {
-    fwrite(buffer, 1, rc, stdout);
+    if (fwrite(buffer, 1, rc, stdout) != (unsigned int) rc) {
+      return 1;
+    }
   }
     
   if (rc < 0) {
