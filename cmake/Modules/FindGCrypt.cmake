@@ -6,7 +6,7 @@
 #  GCRYPT_LIBRARIES - Link these to use GCrypt
 #  GCRYPT_DEFINITIONS - Compiler switches required for using GCrypt
 #
-#  Copyright (c) 2009 Andreas Schneider <mail@cynapses.org>
+#  Copyright (c) 2009-2010 Andreas Schneider <mail@cynapses.org>
 #
 #  Redistribution and use is allowed according to the terms of the New
 #  BSD license.
@@ -27,8 +27,8 @@ else (GCRYPT_LIBRARIES AND GCRYPT_INCLUDE_DIRS)
       /usr/local/include
       /opt/local/include
       /sw/include
+      /usr/lib/sfw/include
   )
-  mark_as_advanced(GCRYPT_INCLUDE_DIR)
 
   find_library(GCRYPT_LIBRARY
     NAMES
@@ -38,37 +38,23 @@ else (GCRYPT_LIBRARIES AND GCRYPT_INCLUDE_DIRS)
       /usr/local/lib
       /opt/local/lib
       /sw/lib
+      /usr/sfw/lib/64
+      /usr/sfw/lib
   )
-  mark_as_advanced(GCRYPT_LIBRARY)
-
-  if (GCRYPT_LIBRARY)
-    set(GCRYPT_FOUND TRUE CACHE INTERNAL "Wether the gcrypt library has been found" FORCE)
-  endif (GCRYPT_LIBRARY)
 
   set(GCRYPT_INCLUDE_DIRS
     ${GCRYPT_INCLUDE_DIR}
   )
 
-  if (GCRYPT_FOUND)
+  if (GCRYPT_LIBRARY)
     set(GCRYPT_LIBRARIES
-      ${GCRYPT_LIBRARIES}
-      ${GCRYPT_LIBRARY}
+        ${GCRYPT_LIBRARIES}
+        ${GCRYPT_LIBRARY}
     )
-  endif (GCRYPT_FOUND)
+  endif (GCRYPT_LIBRARY)
 
-  if (GCRYPT_INCLUDE_DIRS AND GCRYPT_LIBRARIES)
-     set(GCRYPT_FOUND TRUE)
-  endif (GCRYPT_INCLUDE_DIRS AND GCRYPT_LIBRARIES)
-
-  if (GCRYPT_FOUND)
-    if (NOT GCrypt_FIND_QUIETLY)
-      message(STATUS "Found GCrypt: ${GCRYPT_LIBRARIES}")
-    endif (NOT GCrypt_FIND_QUIETLY)
-  else (GCRYPT_FOUND)
-    if (GCrypt_FIND_REQUIRED)
-      message(FATAL_ERROR "Could not find GCrypt")
-    endif (GCrypt_FIND_REQUIRED)
-  endif (GCRYPT_FOUND)
+  include(FindPackageHandleStandardArgs)
+  find_package_handle_standard_args(GCrypt DEFAULT_MSG GCRYPT_LIBRARIES GCRYPT_INCLUDE_DIRS)
 
   # show the GCRYPT_INCLUDE_DIRS and GCRYPT_LIBRARIES variables only in the advanced view
   mark_as_advanced(GCRYPT_INCLUDE_DIRS GCRYPT_LIBRARIES)
