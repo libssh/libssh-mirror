@@ -258,7 +258,10 @@ int main(int argc, char **argv){
     do{
         i=channel_read_buffer(chan,buf,0,0);
         if(i>0)
-            write(1,buffer_get(buf),buffer_get_len(buf));
+            if (write(1,buffer_get(buf),buffer_get_len(buf)) < 0) {
+                printf("error writint to buffer\n");
+                return 1;
+            }
     } while (i>0);
     buffer_free(buf);
     ssh_disconnect(session);
