@@ -44,7 +44,9 @@ int authenticate_kbdint(ssh_session session){
       prompt=ssh_userauth_kbdint_getprompt(session,i,&echo);
       if(echo){
         printf("%s",prompt);
-        fgets(buffer,sizeof(buffer),stdin);
+        if (fgets(buffer,sizeof(buffer),stdin) == NULL) {
+          return SSH_AUTH_ERROR;
+        }
         buffer[sizeof(buffer)-1]=0;
         if((ptr=strchr(buffer,'\n')))
           *ptr=0;

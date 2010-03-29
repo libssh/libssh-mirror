@@ -254,7 +254,10 @@ static void select_loop(ssh_session session,ssh_channel channel){
                     channel_free(channel);
                     channel=channels[0]=NULL;
                 } else
-                    write(1,buffer_get(readbuf),lus);
+                    if (write(1,buffer_get(readbuf),lus) < 0) {
+                      fprintf(stderr, "Error writing to buffer\n");
+                      return;
+                    }
             }
             while(channel && channel_is_open(channel) && channel_poll(channel,1)){ /* stderr */
                 lus=channel_read_buffer(channel,readbuf,0,1);
@@ -269,7 +272,10 @@ static void select_loop(ssh_session session,ssh_channel channel){
                     channel_free(channel);
                     channel=channels[0]=NULL;
                 } else
-                    write(2,buffer_get(readbuf),lus);
+                    if (write(2,buffer_get(readbuf),lus) < 0) {
+                      fprintf(stderr, "Error writing to buffer\n");
+                      return;
+                    }
             }
         }
         if(channel && channel_is_closed(channel)){
@@ -340,7 +346,10 @@ static void select_loop(ssh_session session,ssh_channel channel){
 						channel_free(channel);
 						channel=channels[0]=NULL;
 					} else
-						write(1,buffer,lus);
+						if (write(1,buffer,lus) < 0) {
+                                                    fprintf(stderr, "Error writing to buffer\n");
+                                                    return;
+                                                }
 				}
 				while(channel && channel_is_open(channel) && channel_poll(channel,1)){ /* stderr */
 					lus=channel_read(channel,buffer,sizeof(buffer),1);
@@ -355,7 +364,10 @@ static void select_loop(ssh_session session,ssh_channel channel){
 						channel_free(channel);
 						channel=channels[0]=NULL;
 					} else
-						write(2,buffer,lus);
+						if (write(2,buffer,lus) < 0) {
+                                                    fprintf(stderr, "Error writing to buffer\n");
+                                                    return;
+                                                }
 				}
 			}
 			if(channel && channel_is_closed(channel)){
