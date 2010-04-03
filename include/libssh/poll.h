@@ -40,7 +40,7 @@ typedef struct ssh_pollfd_struct {
 
 /* poll.c */
 #ifndef POLLIN
-# define POLLIN    0x001  /* There is data to read.  */
+#define POLLIN    0x001  /* There is data to read.  */
 #endif
 #ifndef POLLPRI
 #define POLLPRI   0x002  /* There is urgent data to read.  */
@@ -58,6 +58,20 @@ typedef struct ssh_pollfd_struct {
 #ifndef POLLNVAL
 #define POLLNVAL  0x020  /* Invalid polling request.  */
 #endif
+
+#ifndef POLLRDNORM
+#define POLLRDNORM  0x040 /* mapped to read fds_set */
+#endif
+#ifndef POLLRDBAND
+#define POLLRDBAND  0x080 /* mapped to exception fds_set */
+#endif
+#ifndef POLLWRNORM
+#define POLLWRNORM  0x100 /* mapped to write fds_set */
+#endif
+#ifndef POLLWRBAND
+#define POLLWRBAND  0x200 /* mapped to write fds_set */
+#endif
+
 
 typedef unsigned long int nfds_t;
 #endif /* HAVE_POLL */
