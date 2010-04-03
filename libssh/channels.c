@@ -2007,9 +2007,10 @@ int channel_poll(ssh_channel channel, int is_stderr){
     stdbuf = channel->stderr_buffer;
   }
 
-  while (buffer_get_rest_len(stdbuf) == 0 && channel->remote_eof == 0) {
-    if (ssh_handle_packets(channel->session) <= 0) {
-      break;
+  if (buffer_get_rest_len(stdbuf) == 0 && channel->remote_eof == 0) {
+    if (ssh_handle_packets(channel->session) == SSH_ERROR) {
+      leave_function();
+      return SSH_ERROR;
     }
   }
 
