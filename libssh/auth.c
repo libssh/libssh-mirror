@@ -41,18 +41,24 @@
 #include "libssh/keys.h"
 #include "libssh/auth.h"
 
-/** \defgroup ssh_auth SSH Authentication functions
- * \brief functions to authenticate to servers
+/**
+ * @defgroup libssh_auth The SSH authentication functions.
+ * @ingroup libssh
+ *
+ * Functions to authenticate with a server.
+ *
+ * @{
  */
-/** \addtogroup ssh_auth
- * @{ */
 
 /**
  * @internal
- * @brief ask access to the ssh-userauth service
- * @param session SSH session handle
- * @returns SSH_OK on success
- * @returns SSH_ERROR on error
+ *
+ * @brief Ask access to the ssh-userauth service.
+ *
+ * @param[in] session   The SSH session handle.
+ *
+ * @returns SSH_OK on success, SSH_ERROR on error.
+ *
  * @bug current implementation is blocking
  */
 static int ask_userauth(ssh_session session) {
@@ -68,8 +74,11 @@ static int ask_userauth(ssh_session session) {
   return rc;
 }
 
-/** @internal
- * @brief handles a SSH_USERAUTH_BANNER packet
+/**
+ * @internal
+ *
+ * @brief Handles a SSH_USERAUTH_BANNER packet.
+ *
  * This banner should be shown to user prior to authentication
  */
 SSH_PACKET_CALLBACK(ssh_packet_userauth_banner){
@@ -92,10 +101,12 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_banner){
   return SSH_PACKET_USED;
 }
 
-/** @internal
- * @brief handles a SSH_USERAUTH_FAILURE packet
- * This handles the complete or partial authentication
- * failure.
+/**
+ * @internal
+ *
+ * @brief Handles a SSH_USERAUTH_FAILURE packet.
+ *
+ * This handles the complete or partial authentication failure.
  */
 SSH_PACKET_CALLBACK(ssh_packet_userauth_failure){
   char *auth_methods = NULL;
@@ -155,10 +166,12 @@ end:
   return SSH_PACKET_USED;
 }
 
-/** @internal
- * @brief handles a SSH_USERAUTH_SUCCESS packet
- * It is also used to communicate the new to the
- * upper levels.
+/**
+ * @internal
+ *
+ * @brief Handles a SSH_USERAUTH_SUCCESS packet.
+ *
+ * It is also used to communicate the new to the upper levels.
  */
 SSH_PACKET_CALLBACK(ssh_packet_userauth_success){
   enter_function();
@@ -173,11 +186,13 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_success){
   return SSH_PACKET_USED;
 }
 
-/** @internal
- * @brief handles a SSH_USERAUTH_PK_OK or SSH_USERAUTH_INFO_REQUEST packet
- * Since the two types of packets share the same code, additional
- * work is done to understand if we are in a public key or
- * keyboard-interactive context.
+/**
+ * @internal
+ *
+ * @brief Handles a SSH_USERAUTH_PK_OK or SSH_USERAUTH_INFO_REQUEST packet.
+ *
+ * Since the two types of packets share the same code, additional work is done
+ * to understand if we are in a public key or keyboard-interactive context.
  */
 SSH_PACKET_CALLBACK(ssh_packet_userauth_pk_ok){
   enter_function();
@@ -260,9 +275,9 @@ int ssh_userauth_list(ssh_session session, const char *username) {
 /**
  * @brief Try to authenticate through the "none" method.
  *
- * @param session       The ssh session to use.
+ * @param[in] session   The ssh session to use.
  *
- * @param username      Deprecated, set to NULL.
+ * @param[in] username  Deprecated, set to NULL.
  *
  * @returns SSH_AUTH_ERROR:   A serious error happened.\n
  *          SSH_AUTH_DENIED:  Authentication failed: use another method\n
@@ -350,16 +365,16 @@ error:
 /**
  * @brief Try to authenticate through public key.
  *
- * @param session       The ssh session to use.
+ * @param[in]  session  The ssh session to use.
  *
- * @param username      The username to authenticate. You can specify NULL if
+ * @param[in]  username The username to authenticate. You can specify NULL if
  *                      ssh_option_set_username() has been used. You cannot try
  *                      two different logins in a row.
  *
- * @param type          The type of the public key. This value is given by
+ * @param[in]  type     The type of the public key. This value is given by
  *                      publickey_from_file().
  *
- * @param publickey     A public key returned by publickey_from_file().
+ * @param[in]  publickey A public key returned by publickey_from_file().
  *
  * @returns SSH_AUTH_ERROR:   A serious error happened.\n
  *          SSH_AUTH_DENIED:  The server doesn't accept that public key as an
@@ -466,16 +481,16 @@ error:
 /**
  * @brief Try to authenticate through public key.
  *
- * @param session       The ssh session to use.
+ * @param[in]  session  The ssh session to use.
  *
- * @param username      The username to authenticate. You can specify NULL if
+ * @param[in]  username The username to authenticate. You can specify NULL if
  *                      ssh_option_set_username() has been used. You cannot try
  *                      two different logins in a row.
  *
- * @param publickey     A public key returned by publickey_from_file(), or NULL
- *                      to generate automatically from privatekey.
+ * @param[in]  publickey A public key returned by publickey_from_file(), or NULL
+ *                       to generate automatically from privatekey.
  *
- * @param privatekey    A private key returned by privatekey_from_file().
+ * @param[in]  privatekey A private key returned by privatekey_from_file().
  *
  * @returns SSH_AUTH_ERROR:   A serious error happened.\n
  *          SSH_AUTH_DENIED:  Authentication failed: use another method.\n
@@ -602,16 +617,16 @@ error:
 /**
  * @brief Try to authenticate through a private key file.
  *
- * @param session       The ssh session to use.
+ * @param[in]  session  The ssh session to use.
  *
- * @param username      The username to authenticate. You can specify NULL if
+ * @param[in]  username The username to authenticate. You can specify NULL if
  *                      ssh_option_set_username() has been used. You cannot try
  *                      two different logins in a row.
  *
- * @param filename      Filename containing the private key.
+ * @param[in] filename  Filename containing the private key.
  *
- * @param passphrase    Passphrase to decrypt the private key. Set to null if
- *                      none is needed or it is unknown.
+ * @param[in] passphrase Passphrase to decrypt the private key. Set to null if
+ *                       none is needed or it is unknown.
  *
  * @returns SSH_AUTH_ERROR:   A serious error happened.\n
  *          SSH_AUTH_DENIED:  Authentication failed: use another method.\n
@@ -669,13 +684,13 @@ error:
 /**
  * @brief Try to authenticate through public key with an ssh agent.
  *
- * @param session       The ssh session to use.
+ * @param[in]  session  The ssh session to use.
  *
- * @param username      The username to authenticate. You can specify NULL if
+ * @param[in]  username The username to authenticate. You can specify NULL if
  *                      ssh_option_set_username() has been used. You cannot try
  *                      two different logins in a row.
  *
- * @param publickey     The public key provided by the agent.
+ * @param[in]  publickey The public key provided by the agent.
  *
  * @returns SSH_AUTH_ERROR:   A serious error happened.\n
  *          SSH_AUTH_DENIED:  Authentication failed: use another method.\n
@@ -796,13 +811,13 @@ error:
 /**
  * @brief Try to authenticate by password.
  *
- * @param session       The ssh session to use.
+ * @param[in]  session  The ssh session to use.
  *
- * @param username      The username to authenticate. You can specify NULL if
+ * @param[in]  username The username to authenticate. You can specify NULL if
  *                      ssh_option_set_username() has been used. You cannot try
  *                      two different logins in a row.
  *
- * @param password      The password to use. Take care to clean it after
+ * @param[in]  password The password to use. Take care to clean it after
  *                      the authentication.
  *
  * @returns SSH_AUTH_ERROR:   A serious error happened.\n
@@ -909,11 +924,11 @@ error:
  * It may fail, for instance it doesn't ask for a password and uses a default
  * asker for passphrases (in case the private key is encrypted).
  *
- * @param session       The ssh session to authenticate with.
+ * @param[in]  session  The ssh session to authenticate with.
  *
- * @param passphrase    Use this passphrase to unlock the privatekey. Use NULL
- *                      if you don't want to use a passphrase or the user
- *                      should be asked.
+ * @param[in]  passphrase Use this passphrase to unlock the privatekey. Use NULL
+ *                        if you don't want to use a passphrase or the user
+ *                        should be asked.
  *
  * @returns SSH_AUTH_ERROR:   A serious error happened\n
  *          SSH_AUTH_DENIED:  Authentication failed: use another method\n
@@ -1461,13 +1476,13 @@ error:
 /**
  * @brief Try to authenticate through the "keyboard-interactive" method.
  *
- * @param session       The ssh session to use.
+ * @param[in]  session  The ssh session to use.
  *
- * @param user          The username to authenticate. You can specify NULL if
+ * @param[in]  user     The username to authenticate. You can specify NULL if
  *                      ssh_option_set_username() has been used. You cannot try
  *                      two different logins in a row.
  *
- * @param submethods    Undocumented. Set it to NULL.
+ * @param[in]  submethods Undocumented. Set it to NULL.
  *
  * @returns SSH_AUTH_ERROR:   A serious error happened\n
  *          SSH_AUTH_DENIED:  Authentication failed : use another method\n
@@ -1559,7 +1574,7 @@ int ssh_userauth_kbdint(ssh_session session, const char *user,
  * You have called ssh_userauth_kbdint() and got SSH_AUTH_INFO. This
  * function returns the questions from the server.
  *
- * @param session       The ssh session to use.
+ * @param[in]  session  The ssh session to use.
  *
  * @returns             The number of prompts.
  */
@@ -1573,7 +1588,7 @@ int ssh_userauth_kbdint_getnprompts(ssh_session session) {
  * You have called ssh_userauth_kbdint() and got SSH_AUTH_INFO. This
  * function returns the questions from the server.
  *
- * @param session       The ssh session to use.
+ * @param[in]  session  The ssh session to use.
  *
  * @returns             The name of the message block. Do not free it.
  */
@@ -1587,7 +1602,7 @@ const char *ssh_userauth_kbdint_getname(ssh_session session) {
  * You have called ssh_userauth_kbdint() and got SSH_AUTH_INFO. This
  * function returns the questions from the server.
  *
- * @param session       The ssh session to use.
+ * @param[in]  session  The ssh session to use.
  *
  * @returns             The instruction of the message block.
  */
@@ -1602,11 +1617,11 @@ const char *ssh_userauth_kbdint_getinstruction(ssh_session session) {
  * You have called ssh_userauth_kbdint() and got SSH_AUTH_INFO. This
  * function returns the questions from the server.
  *
- * @param session       The ssh session to use.
+ * @param[in]  session  The ssh session to use.
  *
- * @param i             The index number of the i'th prompt.
+ * @param[in]  i        The index number of the i'th prompt.
  *
- * @param echo          When different of NULL, it will obtain a boolean meaning
+ * @param[in]  echo     When different of NULL, it will obtain a boolean meaning
  *                      that the resulting user input should be echoed or not
  *                      (like passwords).
  *
@@ -1625,13 +1640,19 @@ const char *ssh_userauth_kbdint_getprompt(ssh_session session, unsigned int i,
   return session->kbdint->prompts[i];
 }
 
-/** You have called ssh_userauth_kbdint() and got SSH_AUTH_INFO. this
- * function returns the questions from the server
- * \brief set the answer for a question from a message block.
- * \param session ssh session
- * \param i index number of the ith prompt
- * \param answer answer to give to server
- * \return 0 on success, < 0 on error.
+/**
+ * @brief Set the answer for a question from a message block.
+ *
+ * If you have called ssh_userauth_kbdint() and got SSH_AUTH_INFO, this
+ * function returns the questions from the server.
+ *
+ * @param[in]  session  The ssh session to use.
+ *
+ * @param[in]  i index  The number of the ith prompt.
+ *
+ * @param[in]  answer   The answer to give to the server.
+ *
+ * @return              0 on success, < 0 on error.
  */
 int ssh_userauth_kbdint_setanswer(ssh_session session, unsigned int i,
     const char *answer) {
@@ -1660,5 +1681,6 @@ int ssh_userauth_kbdint_setanswer(ssh_session session, unsigned int i,
   return 0;
 }
 
-/** @} */
-/* vim: set ts=2 sw=2 et cindent: */
+/* @} */
+
+/* vim: set ts=4 sw=4 et cindent: */
