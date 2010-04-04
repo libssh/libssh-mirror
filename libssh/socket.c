@@ -39,8 +39,15 @@
 #include "libssh/buffer.h"
 #include "libssh/poll.h"
 #include "libssh/session.h"
-/** \defgroup ssh_socket SSH Sockets
- * \addtogroup ssh_socket
+
+/**
+ * @internal
+ *
+ * @defgroup libssh_socket The SSH socket functions.
+ * @ingroup libssh
+ *
+ * Functions for handling sockets.
+ *
  * @{
  */
 
@@ -811,6 +818,7 @@ int ssh_socket_connect(ssh_socket s, const char *host, int port, const char *bin
 	leave_function();
 	return SSH_OK;
 }
-/** @}
- */
-/* vim: set ts=2 sw=2 et cindent: */
+
+/* @} */
+
+/* vim: set ts=4 sw=4 et cindent: */
