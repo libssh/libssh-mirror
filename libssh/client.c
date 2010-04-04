@@ -548,12 +548,17 @@ int ssh_service_request(ssh_session session, const char *service) {
   return rc;
 }
 
-/** \addtogroup ssh_session
+/**
+ * @addtogroup libssh_session
+ *
  * @{
  */
 
-/** @internal
- * @function to be called each time a step has been done in the connection
+/**
+ * @internal
+ *
+ * @brief A function to be called each time a step has been done in the
+ * connection.
  */
 void ssh_connection_callback(ssh_session session){
 	int ssh1,ssh2;
@@ -657,11 +662,15 @@ void ssh_connection_callback(ssh_session session){
 	leave_function();
 }
 
-/** \brief connect to the ssh server
- * \param session ssh session
- * \return SSH_OK on success, SSH_ERROR on error
- * \see ssh_new()
- * \see ssh_disconnect()
+/**
+ * @brief Connect to the ssh server.
+ *
+ * @param[in]  session  The ssh session to connect.
+ *
+ * @returns             SSH_OK on success, SSH_ERROR on error.
+ *
+ * @see ssh_new()
+ * @see ssh_disconnect()
  */
 int ssh_connect(ssh_session session) {
   int ret;
@@ -728,7 +737,7 @@ int ssh_connect(ssh_session session) {
  * This is the banner showing a disclaimer to users who log in,
  * typically their right or the fact that they will be monitored.
  *
- * @param session       The SSH session to use.
+ * @param[in]  session  The SSH session to use.
  *
  * @return A newly allocated string with the banner, NULL on error.
  */
@@ -746,7 +755,7 @@ char *ssh_get_issue_banner(ssh_session session) {
  *
  * You can use the SSH_VERSION_INT macro to compare version numbers.
  *
- * @param  session      The SSH session to use.
+ * @param[in]  session  The SSH session to use.
  *
  * @return The version number if available, 0 otherwise.
  */
@@ -762,7 +771,7 @@ int ssh_get_openssh_version(ssh_session session) {
  * @brief Disconnect from a session (client or server).
  * The session can then be reused to open a new session.
  *
- * @param session       The SSH session to disconnect.
+ * @param[in]  session  The SSH session to use.
  */
 void ssh_disconnect(ssh_session session) {
   ssh_string str = NULL;
@@ -807,5 +816,6 @@ const char *ssh_copyright(void) {
     "(aris@0xbadc0de.be) Distributed under the LGPL, please refer to COPYING"
     "file for information about your rights";
 }
-/** @} */
-/* vim: set ts=2 sw=2 et cindent: */
+/* @} */
+
+/* vim: set ts=4 sw=4 et cindent: */
