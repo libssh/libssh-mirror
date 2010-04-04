@@ -438,8 +438,10 @@ socket_t ssh_connect_host_nonblocking(ssh_session session, const char *host,
 }
 
 /**
- * @addtogroup ssh_session
- * @{ */
+ * @addtogroup libssh_session
+ *
+ * @{
+ */
 
 /**
  * @brief A wrapper for the select syscall
@@ -447,25 +449,25 @@ socket_t ssh_connect_host_nonblocking(ssh_session session, const char *host,
  * This functions acts more or less like the select(2) syscall.\n
  * There is no support for writing or exceptions.\n
  *
- * @param  channels     Arrays of channels pointers terminated by a NULL.
+ * @param[in]  channels Arrays of channels pointers terminated by a NULL.
  *                      It is never rewritten.
  *
- * @param  outchannels  Arrays of same size that "channels", there is no need
- *                      to initialize it.
+ * @param[out] outchannels Arrays of same size that "channels", there is no need
+ *                         to initialize it.
  *
- * @param  maxfd        Maximum +1 file descriptor from readfds.
+ * @param[in]  maxfd    Maximum +1 file descriptor from readfds.
  *
- * @param  readfds      A fd_set of file descriptors to be select'ed for
+ * @param[in]  readfds  A fd_set of file descriptors to be select'ed for
  *                      reading.
  *
- * @param  timeout      A timeout for the select.
+ * @param[in]  timeout  A timeout for the select.
  *
- * @return -1 if an error occured. E_INTR if it was interrupted. In that case,
- *          just restart it.
+ * @return              -1 if an error occured. E_INTR if it was interrupted, in
+ *                      that case, just restart it.
  *
  * @warning libssh is not threadsafe here. That means that if a signal is caught
- * during the processing of this function, you cannot call ssh functions on
- * sessions that are busy with ssh_select().
+ *          during the processing of this function, you cannot call ssh
+ *          functions on sessions that are busy with ssh_select().
  *
  * @see select(2)
  */
@@ -587,5 +589,6 @@ int ssh_select(ssh_channel *channels, ssh_channel *outchannels, socket_t maxfd,
   return 0;
 }
 
-/** @} */
-/* vim: set ts=2 sw=2 et cindent: */
+/* @} */
+
+/* vim: set ts=4 sw=4 et cindent: */
