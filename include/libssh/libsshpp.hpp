@@ -22,9 +22,9 @@
 #ifndef LIBSSHPP_HPP_
 #define LIBSSHPP_HPP_
 
-/** @defgroup ssh_cpp libssh C++ wrapper
- * @addtogroup ssh_cpp
- * @{
+/**
+ * @defgroup ssh_cpp The libssh C++ wrapper
+ *
  * The C++ bindings for libssh are completely embedded in a single .hpp file, and
  * this for two reasons:
  * - C++ is hard to keep binary compatible, C is easy. We try to keep libssh C version
@@ -35,6 +35,8 @@
  * - Most of the functions in this file are really short and are probably worth the "inline"
  *   linking mode, which the compiler can decide to do in some case. There would be nearly no
  *   performance penalty of using the wrapper rather than native calls.
+ *
+ * @{
  */
 
 #include <libssh/libssh.h>
@@ -239,6 +241,6 @@ private:
 };
 
 } // namespace ssh
-/** @}
- */
+
+/* @} */
 #endif /* LIBSSHPP_HPP_ */
