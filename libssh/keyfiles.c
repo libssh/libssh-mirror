@@ -627,18 +627,32 @@ static int privatekey_type_from_file(FILE *fp) {
   return 0;
 }
 
-/** \addtogroup ssh_auth
+/**
+ * @addtogroup libssh_auth
+ *
  * @{
  */
-/* TODO : implement it to read both DSA and RSA at once */
-/** \brief Reads a SSH private key from a file
- * \param session SSH Session
- * \param filename Filename containing the private key
- * \param type Type of the private key. One of TYPE_DSS or TYPE_RSA. Pass 0 to automatically detect the type.
- * \param passphrase Passphrase to decrypt the private key. Set to null if none is needed or it is unknown.
- * \returns a PRIVATE_KEY object containing the private key, or NULL if it failed.
- * \see privatekey_free()
- * \see publickey_from_privatekey()
+
+/**
+ * @brief Reads a SSH private key from a file.
+ *
+ * @param[in]  session  The SSH Session to use.
+ *
+ * @param[in]  filename The filename of the the private key.
+ *
+ * @param[in]  type     The type of the private key. This could be TYPE_DSS or
+ *                      TYPE_RSA. Pass 0 to automatically detect the type.
+ *
+ * @param[in]  passphrase The passphrase to decrypt the private key. Set to null
+ *                        if none is needed or it is unknown.
+ *
+ * @returns               A private_key object containing the private key, or
+ *                        NULL on error.
+ *
+ * @todo Implement to read both DSA and RSA at once.
+ *
+ * @see privatekey_free()
+ * @see publickey_from_privatekey()
  */
 ssh_private_key privatekey_from_file(ssh_session session, const char *filename,
     int type, const char *passphrase) {
@@ -868,8 +882,10 @@ ssh_private_key _privatekey_from_file(void *session, const char *filename,
   return privkey;
 }
 
-/** \brief deallocate a private key
- * \param prv a PRIVATE_KEY object
+/**
+ * @brief Deallocate a private key object.
+ *
+ * @param[in]  prv      The private_key object to free.
  */
 void privatekey_free(ssh_private_key prv) {
   if (prv == NULL) {
@@ -960,13 +976,21 @@ int ssh_publickey_to_file(ssh_session session, const char *file,
   return 0;
 }
 
-/** \brief Retrieve a public key from a file
- * \param session the SSH session
- * \param filename Filename of the key
- * \param type Pointer to a integer. If it is not null, it contains the type of the key after execution.
- * \return a SSH String containing the public key, or NULL if it failed.
- * \see string_free()
- * \see publickey_from_privatekey()
+/**
+ * @brief Retrieve a public key from a file.
+ *
+ * @param[in]  session  The SSH session to use.
+ *
+ * @param[in]  filename The filename of the public key.
+ *
+ * @param[out] type     The Pointer to a integer. If it is not NULL, it will
+ *                      contain the type of the key after execution.
+ *
+ * @return              A SSH String containing the public key, or NULL if it
+ *                      failed.
+ *
+ * @see string_free()
+ * @see publickey_from_privatekey()
  */
 ssh_string publickey_from_file(ssh_session session, const char *filename,
     int *type) {
@@ -1197,17 +1221,23 @@ static int alldigits(const char *s) {
   return 1;
 }
 
-/** @}
- */
+/* @} */
 
-/** \addtogroup ssh_session
- * @{ */
 
 /**
- * \brief Lowercase a string.
- * \param  str          String to lowercase.
- * \return              The malloced lowered string or NULL on error.
- * \internal
+ * @addtogroup libssh_session
+ *
+ * @{
+ */
+
+/**
+ * @internal
+ *
+ * @brief Lowercase a string.
+ *
+ * @param[in]  str      The string to lowercase.
+ *
+ * @return              The malloced lowered string or NULL on error.
  */
 static char *lowercase(const char* str) {
   char *new, *p;
@@ -1228,8 +1258,10 @@ static char *lowercase(const char* str) {
   return new;
 }
 
-/** \brief frees a token array
- * \internal
+/**
+ * @internal
+ *
+ * @brief Free a token array.
  */
 static void tokens_free(char **tokens) {
   if (tokens == NULL) {
@@ -1243,14 +1275,24 @@ static void tokens_free(char **tokens) {
   SAFE_FREE(tokens);
 }
 
-/** \brief returns one line of known host file
- * will return a token array containing (host|ip) keytype key
- * \param file pointer to the known host file. Could be pointing to NULL at start
- * \param filename file name of the known host file
- * \param found_type pointer to a string to be set with the found key type
- * \internal
- * \returns NULL if no match was found or the file was not found
- * \returns found_type type of key (ie "dsa","ssh-rsa1"). Don't free that value.
+/**
+ * @internal
+ *
+ * @brief Return one line of known host file.
+ *
+ * This will return a token array containing (host|ip), keytype and key.
+ *
+ * @param[out] file     A pointer to the known host file. Could be pointing to
+ *                      NULL at start.
+ *
+ * @param[in]  filename The file name of the known host file.
+ *
+ * @param[out] found_type A pointer to a string to be set with the found key
+ *                        type.
+ *
+ * @returns             The found_type type of key (ie "dsa","ssh-rsa1"). Don't
+ *                      free that value. NULL if no match was found or the file
+ *                      was not found.
  */
 static char **ssh_get_knownhost_line(ssh_session session, FILE **file,
     const char *filename, const char **found_type) {
@@ -1327,12 +1369,15 @@ static char **ssh_get_knownhost_line(ssh_session session, FILE **file,
 }
 
 /**
- * \brief Check the public key in the known host line matches the
- * public key of the currently connected server.
- * \param tokens list of tokens in the known_hosts line.
- * \return 1 if the key matches
- * \return 0 if the key doesn't match
- * \return -1 on error
+ * @brief Check the public key in the known host line matches the public key of
+ * the currently connected server.
+ *
+ * @param[in] session   The SSH session to use.
+ *
+ * @param[in] tokens    A list of tokens in the known_hosts line.
+ *
+ * @returns             1 if the key matches, 0 if the key doesn't match and -1
+ *                      on error.
  */
 static int check_public_key(ssh_session session, char **tokens) {
   ssh_string pubkey = session->current_crypto->server_pubkey;
@@ -1428,11 +1473,13 @@ static int check_public_key(ssh_session session, char **tokens) {
 }
 
 /**
- * \brief checks if a hostname matches a openssh-style hashed known host
- * \param host host to check
- * \param hashed hashed value
- * \returns 1 if it matches
- * \returns 0 otherwise
+ * @brief Check if a hostname matches a openssh-style hashed known host.
+ *
+ * @param[in]  host     The host to check.
+ *
+ * @param[in]  hashed   The hashed value.
+ *
+ * @returns             1 if it matches, 0 otherwise.
  */
 static int match_hashed_host(ssh_session session, const char *host,
     const char *sourcehash) {
@@ -1526,32 +1573,33 @@ static int match_hashed_host(ssh_session session, const char *host,
  */
 
 /**
- * \brief Check if the server is known.
+ * @brief Check if the server is known.
+ *
  * Checks the user's known host file for a previous connection to the
  * current server.
  *
- * \param session ssh session
+ * @param[in]  session  The SSH session to use.
  *
- * \return SSH_SERVER_KNOWN_OK:      The server is known and has not changed\n
- *         SSH_SERVER_KNOWN_CHANGED: The server key has changed. Either you are
- *                                   under attack or the administrator changed
- *                                   the key. You HAVE to warn the user about
- *                                   a possible attack\n
- *         SSH_SERVER_FOUND_OTHER:   The server gave use a key of a type while
- *                                   we had an other type recorded. It is a
- *                                   possible attack \n
- *         SSH_SERVER_NOT_KNOWN:     The server is unknown. User should confirm
- *                                   the MD5 is correct\n
- *         SSH_SERVER_FILE_NOT_FOUND:The known host file does not exist. The
- *                                   host is thus unknown. File will be created
- *                                   if host key is accepted\n
- *         SSH_SERVER_ERROR:         Some error happened
+ * @returns SSH_SERVER_KNOWN_OK:       The server is known and has not changed.\n
+ *          SSH_SERVER_KNOWN_CHANGED:  The server key has changed. Either you
+ *                                     are under attack or the administrator
+ *                                     changed the key. You HAVE to warn the
+ *                                     user about a possible attack.\n
+ *          SSH_SERVER_FOUND_OTHER:    The server gave use a key of a type while
+ *                                     we had an other type recorded. It is a
+ *                                     possible attack.\n
+ *          SSH_SERVER_NOT_KNOWN:      The server is unknown. User should
+ *                                     confirm the MD5 is correct.\n
+ *          SSH_SERVER_FILE_NOT_FOUND: The known host file does not exist. The
+ *                                     host is thus unknown. File will be
+ *                                     created if host key is accepted.\n
+ *          SSH_SERVER_ERROR:          Some error happened.
  *
- * \see ssh_options_set()
- * \see ssh_get_pubkey_hash()
+ * @see ssh_options_set()
+ * @see ssh_get_pubkey_hash()
  *
- * \bug There is no current way to remove or modify an entry into the known
- * host table.
+ * @bug There is no current way to remove or modify an entry into the known
+ *      host table.
  */
 int ssh_is_server_known(ssh_session session) {
   FILE *file = NULL;
@@ -1638,10 +1686,15 @@ int ssh_is_server_known(ssh_session session) {
   return ret;
 }
 
-/** You generaly use it when ssh_is_server_known() answered SSH_SERVER_NOT_KNOWN
- * \brief write the current server as known in the known hosts file. This will create the known hosts file if it does not exist.
- * \param session ssh session
- * \return 0 on success, -1 on error
+/**
+ * @brief Write the current server as known in the known hosts file.
+ *
+ * This will create the known hosts file if it does not exist. You generaly use
+ * it when ssh_is_server_known() answered SSH_SERVER_NOT_KNOWN.
+ *
+ * @param[in]  session  The ssh session to use.
+ *
+ * @return              0 on success, -1 on error.
  */
 int ssh_write_knownhost(ssh_session session) {
   ssh_string pubkey = session->current_crypto->server_pubkey;
@@ -1806,5 +1859,6 @@ int ssh_write_knownhost(ssh_session session) {
   return 0;
 }
 
-/** @} */
-/* vim: set ts=2 sw=2 et cindent: */
+/* @} */
+
+/* vim: set ts=4 sw=4 et cindent: */

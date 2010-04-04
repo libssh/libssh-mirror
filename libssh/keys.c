@@ -37,11 +37,13 @@
 #include "libssh/dh.h"
 #include "libssh/messages.h"
 
-/** \addtogroup ssh_auth
+/**
+ * @addtogroup libssh_auth
+ *
  * @{
  */
-/* Public key decoding functions */
 
+/* Public key decoding functions */
 const char *ssh_type_to_char(int type) {
   switch (type) {
     case TYPE_DSS:
@@ -299,10 +301,14 @@ error:
   return NULL;
 }
 
-/** \brief Makes a PUBLIC_KEY object out of a PRIVATE_KEY object
- * \param prv the Private key
- * \returns the public key
- * \see publickey_to_string()
+/**
+ * @brief Make a public_key object out of a private_key object.
+ *
+ * @param[in]  prv      The private key to generate the public key.
+ *
+ * @returns             The generated public key, NULL on error.
+ *
+ * @see publickey_to_string()
  */
 ssh_public_key publickey_from_privatekey(ssh_private_key prv) {
   ssh_public_key key = NULL;
@@ -657,10 +663,15 @@ error:
   return rc;
 }
 
-/** \brief makes a SSH String out of a PUBLIC_KEY object
- * \param key the public key
- * \returns a SSH String containing the public key
- * \see string_free()
+/**
+ * @brief Convert a public_key object into a a SSH string.
+ *
+ * @param[in]  key      The public key to convert.
+ *
+ * @returns             An allocated SSH String containing the public key, NULL
+ *                      on error.
+ *
+ * @see string_free()
  */
 ssh_string publickey_to_string(ssh_public_key key) {
   ssh_string type = NULL;
@@ -1476,5 +1487,6 @@ ssh_string ssh_sign_session_id(ssh_session session, ssh_private_key privatekey) 
   return signature;
 }
 
-/** @} */
-/* vim: set ts=2 sw=2 et cindent: */
+/* @} */
+
+/* vim: set ts=4 sw=4 et cindent: */
