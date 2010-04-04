@@ -804,14 +804,18 @@ error:
   return rc;
 }
 
-/** \addtogroup ssh_session
- * @{ */
+/**
+ * @addtogroup libssh_session
+ *
+ * @{
+ */
+
 /**
  * @brief Allocates a buffer with the MD5 hash of the server public key.
  *
- * @param  session      The SSH session to use.
+ * @param[in] session   The SSH session to use.
  *
- * @param  hash         The buffer to allocate.
+ * @param[in] hash      The buffer to allocate.
  *
  * @return The bytes allocated or < 0 on error.
  *
@@ -857,10 +861,11 @@ int ssh_get_pubkey_hash(ssh_session session, unsigned char **hash) {
 
 /**
  * @brief Deallocate the hash obtained by ssh_get_pubkey_hash.
+ *
  * This is required under Microsoft platform as this library might use a 
  * different C library than your software, hence a different heap.
  *
- * @param  hash         The buffer to deallocate.
+ * @param[in] hash      The buffer to deallocate.
  *
  * @see ssh_get_pubkey_hash()
  */
@@ -1037,5 +1042,6 @@ int signature_verify(ssh_session session, ssh_string signature) {
   return err;
 }
 
-/** @} */
-/* vim: set ts=2 sw=2 et cindent: */
+/* @} */
+
+/* vim: set ts=4 sw=4 et cindent: */
