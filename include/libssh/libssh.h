@@ -225,12 +225,15 @@ enum ssh_error_types_e {
 #define SSH_AGAIN -2 /* The nonblocking call must be repeated */
 #define SSH_EOF -127 /* We have already a eof */
 
-/** \addtogroup ssh_log
+/**
+ * @addtogroup libssh_log
+ *
  * @{
  */
- /** \brief Verbosity level for logging and help to debugging
-  */
 
+/**
+ * @brief Verbosity level for logging and help to debugging
+ */
 enum {
 	/** No logging at all
 	 */
@@ -248,8 +251,7 @@ enum {
 	 */
 	SSH_LOG_FUNCTIONS
 };
-/** @}
- */
+/* @} */
 
 enum ssh_options_e {
   SSH_OPTIONS_HOST,

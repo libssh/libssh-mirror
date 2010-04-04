@@ -29,12 +29,13 @@
 #include "libssh/session.h"
 
 /**
- * @defgroup ssh_log SSH Logging
+ * @defgroup libssh_log The SSH logging functions.
+ * @ingroup libssh
  *
- * @brief Logging functions for debugging and problem resolving
+ * Logging functions for debugging and problem resolving.
+ *
+ * @{
  */
-/** \addtogroup ssh_log
- * @{ */
 
 /**
  * @brief Log a SSH event.
@@ -76,5 +77,6 @@ void ssh_log(ssh_session session, int verbosity, const char *format, ...) {
   }
 }
 
-/** @} */
-/* vim: set ts=2 sw=2 et cindent: */
+/* @} */
+
+/* vim: set ts=4 sw=4 et cindent: */
