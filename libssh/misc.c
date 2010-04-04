@@ -65,11 +65,14 @@
 #define LIBZ_STRING ""
 #endif
 
-/** \defgroup ssh_misc SSH Misc
- * \brief Misc functions
+/**
+ * @defgroup libssh_misc The SSH helper functions.
+ * @ingroup libssh
+ *
+ * Different helper functions used in the SSH Library.
+ *
+ * @{
  */
-/** \addtogroup ssh_misc
- * @{ */
 
 #ifdef _WIN32
 char *ssh_get_user_home_dir(void) {
@@ -208,7 +211,7 @@ char *ssh_get_local_username(ssh_session session) {
  * @brief Check if libssh is the required version or get the version
  * string.
  *
- * @param req_version   The version required.
+ * @param[in]  req_version The version required.
  *
  * @return              If the version of libssh is newer than the version
  *                      required it will return a version string.
@@ -326,12 +329,16 @@ void ssh_list_remove(struct ssh_list *list, struct ssh_iterator *iterator){
   SAFE_FREE(iterator);
 }
 
-/** @internal
- * @brief Removes the top element of the list and returns the data value attached
- * to it
- * @param list the ssh_list
- * @returns pointer to the element being stored in head, or
- * NULL if the list is empty.
+/**
+ * @internal
+ *
+ * @brief Removes the top element of the list and returns the data value
+ * attached to it.
+ *
+ * @param[in[  list     The ssh_list to remove the element.
+ *
+ * @returns             A pointer to the element being stored in head, or NULL
+ *                      if the list is empty.
  */
 const void *_ssh_list_pop_head(struct ssh_list *list){
   struct ssh_iterator *iterator=list->root;
@@ -354,12 +361,13 @@ const void *_ssh_list_pop_head(struct ssh_list *list){
  * the final '/'. Trailing '/' characters are  not  counted as part of the
  * pathname. The caller must free the memory.
  *
- * @param path  The path to parse.
+ * @param[in]  path     The path to parse.
  *
- * @return  The dirname of path or NULL if we can't allocate memory. If path
- *          does not contain a slash, c_dirname() returns the string ".".  If
- *          path is the string "/", it returns the string "/". If path is
- *          NULL or an empty string, "." is returned.
+ * @return              The dirname of path or NULL if we can't allocate memory.
+ *                      If path does not contain a slash, c_dirname() returns
+ *                      the string ".".  If path is the string "/", it returns
+ *                      the string "/". If path is NULL or an empty string,
+ *                      "." is returned.
  */
 char *ssh_dirname (const char *path) {
   char *new = NULL;
@@ -409,11 +417,12 @@ char *ssh_dirname (const char *path) {
  * ssh_basename() returns the component following the final '/'.  Trailing '/'
  * characters are not counted as part of the pathname.
  *
- * @param path The path to parse.
+ * @param[in]  path     The path to parse.
  *
- * @return  The filename of path or NULL if we can't allocate memory. If path
- *          is a the string "/", basename returns the string "/". If path is
- *          NULL or an empty string, "." is returned.
+ * @return              The filename of path or NULL if we can't allocate
+ *                      memory. If path is a the string "/", basename returns
+ *                      the string "/". If path is NULL or an empty string,
+ *                      "." is returned.
  */
 char *ssh_basename (const char *path) {
   char *new = NULL;
@@ -460,11 +469,11 @@ char *ssh_basename (const char *path) {
  *
  * This is the portable version of mkdir, mode is ignored on Windows systems.
  *
- * @param  pathname     The path name to create the directory.
+ * @param[in]  pathname The path name to create the directory.
  *
- * @param  mode         The permissions to use.
+ * @param[in]  mode     The permissions to use.
  *
- * @return 0 on success, < 0 on error with errno set.
+ * @return              0 on success, < 0 on error with errno set.
  */
 int ssh_mkdir(const char *pathname, mode_t mode) {
   int r;
@@ -478,5 +487,6 @@ int ssh_mkdir(const char *pathname, mode_t mode) {
   return r;
 }
 
-/** @} */
-/* vim: set ts=2 sw=2 et cindent: */
+/* @} */
+
+/* vim: set ts=4 sw=4 et cindent: */
