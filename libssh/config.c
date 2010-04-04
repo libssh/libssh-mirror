@@ -197,21 +197,25 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
       }
       break;
     case SOC_PORT:
-      p = ssh_config_get_str(&s, NULL);
-      if (p && *parsing) {
-        ssh_options_set(session, SSH_OPTIONS_PORT_STR, p);
+      if (session->port == 22) {
+          p = ssh_config_get_str(&s, NULL);
+          if (p && *parsing) {
+              ssh_options_set(session, SSH_OPTIONS_PORT_STR, p);
+          }
       }
       break;
     case SOC_USERNAME:
-      p = ssh_config_get_str(&s, NULL);
-      if (p && *parsing) {
-        ssh_options_set(session, SSH_OPTIONS_USER, p);
+      if (session->username == NULL) {
+          p = ssh_config_get_str(&s, NULL);
+          if (p && *parsing) {
+            ssh_options_set(session, SSH_OPTIONS_USER, p);
+         }
       }
       break;
     case SOC_IDENTITY:
       p = ssh_config_get_str(&s, NULL);
       if (p && *parsing) {
-        ssh_options_set(session, SSH_OPTIONS_IDENTITY, p);
+        ssh_options_set(session, SSH_OPTIONS_ADD_IDENTITY, p);
       }
       break;
     case SOC_CIPHERS:
