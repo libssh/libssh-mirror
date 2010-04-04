@@ -85,7 +85,6 @@ if(DOXYGEN_FOUND AND DOXYFILE_IN_FOUND)
     if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/doxy.trac.in)
         configure_file(${CMAKE_CURRENT_SOURCE_DIR}/doxy.trac.in doxy.trac ESCAPE_QUOTES IMMEDIATE @ONLY)
         add_custom_target(doxygen-trac ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/doxy.trac)
-        add_dependencies(doxygen doxygen-trac)
     endif()
 
     get_target_property(DOC_TARGET doc TYPE)
