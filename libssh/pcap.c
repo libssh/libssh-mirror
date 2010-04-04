@@ -20,13 +20,6 @@
  */
 
 /* pcap.c */
-/** \defgroup ssh_pcap SSH-pcap
- * \brief libssh pcap file generation
- *
- *
- * \addtogroup ssh_pcap
- * @{ */
-
 #include "config.h"
 #ifdef WITH_PCAP
 
@@ -37,12 +30,23 @@
 #endif
 #include <errno.h>
 
-
 #include "libssh/libssh.h"
 #include "libssh/pcap.h"
 #include "libssh/session.h"
 #include "libssh/buffer.h"
 #include "libssh/socket.h"
+
+/**
+ * @internal
+ *
+ * @defgroup libssh_pcap The libssh pcap functions
+ * @ingroup libssh
+ *
+ * The pcap file generation
+ *
+ *
+ * @{
+ */
 
 /* The header of a pcap file is the following. We are not going to make it
  * very complicated.
@@ -414,5 +418,7 @@ int ssh_set_pcap_file(ssh_session session, ssh_pcap_file pcapfile){
 }
 
 #endif
-/** @} */
-/* vim: set ts=2 sw=2 et cindent: */
+
+/* @} */
+
+/* vim: set ts=4 sw=4 et cindent: */
