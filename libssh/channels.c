@@ -46,12 +46,11 @@
 #define WINDOWLIMIT (WINDOWBASE/2)
 
 /**
- * @defgroup ssh_channel SSH Channels
- * @brief Functions that manage a channel.
- */
-
-/**
- * @addtogroup ssh_channel
+ * @defgroup libssh_channel The SSH channel functions
+ * @ingroup libssh
+ *
+ * Functions that manage a SSH channel.
+ *
  * @{
  */
 
@@ -60,9 +59,9 @@ static ssh_channel channel_from_msg(ssh_session session, ssh_buffer packet);
 /**
  * @brief Allocate a new channel.
  *
- * @param session       The ssh session to use.
+ * @param[in]  session  The ssh session to use.
  *
- * @return A pointer to a newly allocated channel, NULL on error.
+ * @return              A pointer to a newly allocated channel, NULL on error.
  */
 ssh_channel channel_new(ssh_session session) {
   ssh_channel channel = NULL;
@@ -108,9 +107,9 @@ ssh_channel channel_new(ssh_session session) {
  *
  * @brief Create a new channel identifier.
  *
- * @param  session      The SSH session to use.
+ * @param[in]  session  The SSH session to use.
  *
- * @return The new channel identifier.
+ * @return              The new channel identifier.
  */
 uint32_t ssh_channel_new_id(ssh_session session) {
   return ++(session->maxchannel);
@@ -118,7 +117,9 @@ uint32_t ssh_channel_new_id(ssh_session session) {
 
 /**
  * @internal
- * @brief handle a SSH_PACKET_CHANNEL_OPEN_CONFIRMATION packet
+ *
+ * @brief Handle a SSH_PACKET_CHANNEL_OPEN_CONFIRMATION packet.
+ *
  * Constructs the channel object.
  */
 SSH_PACKET_CALLBACK(ssh_packet_channel_open_conf){
@@ -165,8 +166,10 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_open_conf){
   return SSH_PACKET_USED;
 }
 
-/** @internal
- * @brief handles a SSH_CHANNEL_OPEN_FAILURE and set the state of the channel.
+/**
+ * @internal
+ *
+ * @brief Handle a SSH_CHANNEL_OPEN_FAILURE and set the state of the channel.
  */
 SSH_PACKET_CALLBACK(ssh_packet_channel_open_fail){
 
@@ -202,15 +205,23 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_open_fail){
   return SSH_PACKET_USED;
 }
 
-/** @internal
- * @brief open a channel by sending a SSH_OPEN_CHANNEL message and
- *        waiting reply.
- * @param channel the current channel.
- * @param type_c C string describing kind of channel (e.g. "exec").
- * @param window receiving window of the channel. The window is the
- *        maximum size of data that can stay in buffers and network.
- * @param maxpacket maximum packet size allowed (like MTU).
- * @param payload buffer containing additional payload for the query.
+/**
+ * @internal
+ *
+ * @brief Open a channel by sending a SSH_OPEN_CHANNEL message and
+ *        wait for the reply.
+ *
+ * @param[in]  channel  The current channel.
+ *
+ * @param[in]  type_c   A C string describing the kind of channel (e.g. "exec").
+ *
+ * @param[in]  window   The receiving window of the channel. The window is the
+ *                      maximum size of data that can stay in buffers and
+ *                      network.
+ *
+ * @param[in]  maxpacket The maximum packet size allowed (like MTU).
+ *
+ * @param[in]  payload   The buffer containing additional payload for the query.
  */
 static int channel_open(ssh_channel channel, const char *type_c, int window,
     int maxpacket, ssh_buffer payload) {
@@ -326,14 +337,20 @@ error:
   return -1;
 }
 
-/** @internal
- * @brief parse a channel-related packet to resolve it to a ssh_channel. Works on SSH1
- * sessions too.
- * @param session current SSH session.
- * @param packet buffer to parse packet from. The read pointer will be moved after
- * the call.
- * @returns The related ssh_channel, or NULL if the channel is unknown or the packet
- * is invalid.
+/**
+ * @internal
+ *
+ * @brief Parse a channel-related packet to resolve it to a ssh_channel.
+ *
+ * This works on SSH1 sessions too.
+ *
+ * @param[in]  session  The current SSH session.
+ *
+ * @param[in]  packet   The buffer to parse packet from. The read pointer will
+ *                      be moved after the call.
+ *
+ * @returns             The related ssh_channel, or NULL if the channel is
+ *                      unknown or the packet is invalid.
  */
 static ssh_channel channel_from_msg(ssh_session session, ssh_buffer packet) {
   ssh_channel channel;
@@ -681,10 +698,9 @@ int channel_default_bufferize(ssh_channel channel, void *data, int len,
 /**
  * @brief Open a session channel (suited for a shell, not TCP forwarding).
  *
- * @param channel       An allocated channel.
+ * @param[in]  channel  An allocated channel.
  *
- * @return SSH_OK on success\n
- *         SSH_ERROR on error.
+ * @return              SSH_SUCCESS on success, SSH_ERROR if an error occured.
  *
  * @see channel_open_forward()
  * @see channel_request_env()
@@ -704,23 +720,23 @@ int channel_open_session(ssh_channel channel) {
 /**
  * @brief Open a TCP/IP forwarding channel.
  *
- * @param channel       An allocated channel.
+ * @param[in]  channel  An allocated channel.
  *
- * @param remotehost    The remote host to connected (host name or IP).
+ * @param[in]  remotehost The remote host to connected (host name or IP).
  *
- * @param remoteport    The remote port.
+ * @param[in]  remoteport The remote port.
  *
- * @param sourcehost    The source host (your local computer). It's optional
- *                      and for logging purpose.
+ * @param[in]  sourcehost The source host (your local computer). It's optional
+ *                        and for logging purpose.
  *
- * @param localport     The source port (your local computer). It's optional
- *                      and for logging purpose.
+ * @param[in]  localport  The source port (your local computer). It's optional
+ *                        and for logging purpose.
+ *
+ * @return              SSH_SUCCESS on success, SSH_ERROR if an error occured.
+ *
  * @warning This function does not bind the local port and does not automatically
  *          forward the content of a socket to the channel. You still have to
  *          use channel_read and channel_write for this.
- *
- * @return SSH_OK on success\n
- *         SSH_ERROR on error
  */
 int channel_open_forward(ssh_channel channel, const char *remotehost,
     int remoteport, const char *sourcehost, int localport) {
@@ -769,7 +785,7 @@ error:
 /**
  * @brief Close and free a channel.
  *
- * @param channel       The channel to free.
+ * @param[in]  channel  The channel to free.
  *
  * @warning Any data unread on this channel will be lost.
  */
@@ -814,10 +830,9 @@ void channel_free(ssh_channel channel) {
  *
  * This doesn't close the channel. You may still read from it but not write.
  *
- * @param channel       The channel to send the eof to.
+ * @param[in]  channel  The channel to send the eof to.
  *
- * @return SSH_SUCCESS on success\n
- *         SSH_ERROR on error\n
+ * @return              SSH_SUCCESS on success, SSH_ERROR if an error occured.
  *
  * @see channel_close()
  * @see channel_free()
@@ -857,10 +872,9 @@ error:
  * This sends an end of file and then closes the channel. You won't be able
  * to recover any data the server was going to send or was in buffers.
  *
- * @param channel       The channel to close.
+ * @param[in]  channel  The channel to close.
  *
- * @return SSH_SUCCESS on success\n
- *         SSH_ERROR on error
+ * @return              SSH_SUCCESS on success, SSH_ERROR if an error occured.
  *
  * @see channel_free()
  * @see channel_eof()
@@ -988,15 +1002,15 @@ error:
 }
 
 /**
- * @brief Blocking write on channel.
+ * @brief Blocking write on a channel.
  *
- * @param channel       The channel to write to.
+ * @param[in]  channel  The channel to write to.
  *
- * @param data          A pointer to the data to write.
+ * @param[in]  data     A pointer to the data to write.
  *
- * @param len           The length of the buffer to write to.
+ * @param[in]  len      The length of the buffer to write to.
  *
- * @return The number of bytes written, SSH_ERROR on error.
+ * @return              The number of bytes written, SSH_ERROR on error.
  *
  * @see channel_read()
  */
@@ -1007,9 +1021,9 @@ int channel_write(ssh_channel channel, const void *data, uint32_t len) {
 /**
  * @brief Check if the channel is open or not.
  *
- * @param channel       The channel to check.
+ * @param[in]  channel  The channel to check.
  *
- * @return 0 if channel is closed, nonzero otherwise.
+ * @return              0 if channel is closed, nonzero otherwise.
  *
  * @see channel_is_closed()
  */
@@ -1020,9 +1034,9 @@ int channel_is_open(ssh_channel channel) {
 /**
  * @brief Check if the channel is closed or not.
  *
- * @param channel       The channel to check.
+ * @param[in]  channel  The channel to check.
  *
- * @return 0 if channel is opened, nonzero otherwise.
+ * @return              0 if channel is opened, nonzero otherwise.
  *
  * @see channel_is_open()
  */
@@ -1033,9 +1047,9 @@ int channel_is_closed(ssh_channel channel) {
 /**
  * @brief Check if remote has sent an EOF.
  *
- * @param channel       The channel to check.
+ * @param[in]  channel  The channel to check.
  *
- * @return 0 if there is no EOF, nonzero otherwise.
+ * @return              0 if there is no EOF, nonzero otherwise.
  */
 int channel_is_eof(ssh_channel channel) {
   if ((channel->stdout_buffer &&
@@ -1051,9 +1065,9 @@ int channel_is_eof(ssh_channel channel) {
 /**
  * @brief Put the channel into blocking or nonblocking mode.
  *
- * @param channel       The channel to use.
+ * @param[in]  channel  The channel to use.
  *
- * @param blocking      A boolean for blocking or nonblocking.
+ * @param[in]  blocking A boolean for blocking or nonblocking.
  *
  * @bug This functionality is still under development and
  *      doesn't work correctly.
@@ -1062,9 +1076,12 @@ void channel_set_blocking(ssh_channel channel, int blocking) {
   channel->blocking = (blocking == 0 ? 0 : 1);
 }
 
-/** @internal
- * @brief handle a SSH_CHANNEL_SUCCESS packet and set the channel
- * state. Also works on SSH1 sessions.
+/**
+ * @internal
+ *
+ * @brief handle a SSH_CHANNEL_SUCCESS packet and set the channel state.
+ *
+ * This works on SSH1 sessions too.
  */
 SSH_PACKET_CALLBACK(ssh_packet_channel_success){
   ssh_channel channel;
@@ -1093,9 +1110,12 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_success){
   return SSH_PACKET_USED;
 }
 
-/** @internal
- * @brief handle a SSH_CHANNEL_FAILURE packet and set the channel
- * state. Also works on SSH1 sessions.
+/**
+ * @internal
+ *
+ * @brief Handle a SSH_CHANNEL_FAILURE packet and set the channel state.
+ *
+ * This works on SSH1 sessions too.
  */
 SSH_PACKET_CALLBACK(ssh_packet_channel_failure){
   ssh_channel channel;
@@ -1207,15 +1227,15 @@ error:
 /**
  * @brief Request a pty with a specific type and size.
  *
- * @param channel       The channel to sent the request.
+ * @param[in]  channel  The channel to sent the request.
  *
- * @param terminal      The terminal type ("vt100, xterm,...").
+ * @param[in]  terminal The terminal type ("vt100, xterm,...").
  *
- * @param col           The number of columns.
+ * @param[in]  col      The number of columns.
  *
- * @param row           The number of rows.
+ * @param[in]  row      The number of rows.
  *
- * @return SSH_SUCCESS on success, SSH_ERROR on error.
+ * @return              SSH_SUCCESS on success, SSH_ERROR if an error occured.
  */
 int channel_request_pty_size(ssh_channel channel, const char *terminal,
     int col, int row) {
@@ -1264,9 +1284,9 @@ error:
 /**
  * @brief Request a PTY.
  *
- * @param channel       The channel to send the request.
+ * @param[in]  channel  The channel to send the request.
  *
- * @return SSH_SUCCESS on success, SSH_ERROR on error.
+ * @return              SSH_SUCCESS on success, SSH_ERROR if an error occured.
  *
  * @see channel_request_pty_size()
  */
@@ -1277,15 +1297,17 @@ int channel_request_pty(ssh_channel channel) {
 /**
  * @brief Change the size of the terminal associated to a channel.
  *
- * @param channel       The channel to change the size.
+ * @param[in]  channel  The channel to change the size.
  *
- * @param cols          The new number of columns.
+ * @param[in]  cols     The new number of columns.
  *
- * @param rows          The new number of rows.
+ * @param[in]  rows     The new number of rows.
  *
- * @warning Do not call it from a signal handler if you are not
- * sure any other libssh function using the same channel/session
- * is running at same time (not 100% threadsafe).
+ * @return              SSH_SUCCESS on success, SSH_ERROR if an error occured.
+ *
+ * @warning Do not call it from a signal handler if you are not sure any other
+ *          libssh function using the same channel/session is running at same
+ *          time (not 100% threadsafe).
  */
 int channel_change_pty_size(ssh_channel channel, int cols, int rows) {
   ssh_session session = channel->session;
@@ -1325,9 +1347,9 @@ error:
 /**
  * @brief Request a shell.
  *
- * @param channel      The channel to send the request.
+ * @param[in]  channel  The channel to send the request.
  *
- * @returns SSH_SUCCESS on success, SSH_ERROR on error.
+ * @return              SSH_SUCCESS on success, SSH_ERROR if an error occured.
  */
 int channel_request_shell(ssh_channel channel) {
 #ifdef WITH_SSH1
@@ -1341,11 +1363,11 @@ int channel_request_shell(ssh_channel channel) {
 /**
  * @brief Request a subsystem (for example "sftp").
  *
- * @param channel       The channel to send the request.
+ * @param[in]  channel  The channel to send the request.
  *
- * @param subsys        The subsystem to request (for example "sftp").
+ * @param[in]  subsys   The subsystem to request (for example "sftp").
  *
- * @return SSH_SUCCESS on success, SSH_ERROR on error.
+ * @return              SSH_SUCCESS on success, SSH_ERROR if an error occured.
  *
  * @warning You normally don't have to call it for sftp, see sftp_new().
  */
@@ -1399,22 +1421,21 @@ static ssh_string generate_cookie(void) {
  * This will enable redirecting the display of the remote X11 applications to
  * local X server over an secure tunnel.
  *
- * @param channel       An existing session channel where the remote X11
+ * @param[in]  channel  An existing session channel where the remote X11
  *                      applications are going to be executed.
  *
- * @param single_connection    A boolean to mark only one X11 app will be
- *                             redirected.
+ * @param[in]  single_connection A boolean to mark only one X11 app will be
+ *                               redirected.
  *
- * @param protocol      x11 authentication protocol. Pass NULL to use the
- *                      default value MIT-MAGIC-COOKIE-1
+ * @param[in]  protocol A x11 authentication protocol. Pass NULL to use the
+ *                      default value MIT-MAGIC-COOKIE-1.
  *
- * @param cookie        x11 authentication cookie. Pass NULL to generate
+ * @param[in]  cookie   A x11 authentication cookie. Pass NULL to generate
  *                      a random cookie.
  *
- * @param screen_number        Screen number.
+ * @param[in] screen_number The screen number.
  *
- * @return SSH_OK on success\n
- *         SSH_ERROR on error
+ * @return              SSH_SUCCESS on success, SSH_ERROR if an error occured.
  */
 int channel_request_x11(ssh_channel channel, int single_connection, const char *protocol,
     const char *cookie, int screen_number) {
@@ -1502,18 +1523,22 @@ static ssh_channel channel_accept(ssh_session session, int channeltype,
 /**
  * @brief Accept an X11 forwarding channel.
  *
- * @param channel       An x11-enabled session channel.
+ * @param[in]  channel  An x11-enabled session channel.
  *
- * @param timeout_ms    Timeout in milliseconds.
+ * @param[in]  timeout_ms Timeout in milliseconds.
  *
- * @return Newly created channel, or NULL if no X11 request from the server
+ * @return              A newly created channel, or NULL if no X11 request from
+ *                      the server.
  */
 ssh_channel channel_accept_x11(ssh_channel channel, int timeout_ms) {
   return channel_accept(channel->session, SSH_CHANNEL_X11, timeout_ms);
 }
 
-/** @internal
- * @brief handle a SSH_REQUEST_SUCCESS packet normally sent after a global request.
+/**
+ * @internal
+ *
+ * @brief Handle a SSH_REQUEST_SUCCESS packet normally sent after a global
+ * request.
  */
 SSH_PACKET_CALLBACK(ssh_request_success){
   (void)type;
@@ -1534,8 +1559,11 @@ SSH_PACKET_CALLBACK(ssh_request_success){
   return SSH_PACKET_USED;
 }
 
-/** @internal
- * @brief handle a SSH_REQUEST_DENIED packet normally sent after a global request.
+/**
+ * @internal
+ *
+ * @brief Handle a SSH_REQUEST_DENIED packet normally sent after a global
+ * request.
  */
 SSH_PACKET_CALLBACK(ssh_request_denied){
   (void)type;
@@ -1557,13 +1585,21 @@ SSH_PACKET_CALLBACK(ssh_request_denied){
 
 }
 
-/** @brief sends a global request (needed for forward listening) and wait
- * for the result.
- * @param session ssh session handle
- * @param request the type of request (defined in RFC)
- * @param buffer additional data to put in packet
- * @param reply expect a reply from server
- * @return SSH_OK or SSH_ERROR
+/**
+ * @internal
+ *
+ * @brief Send a global request (needed for forward listening) and wait for the
+ * result.
+ *
+ * @param[in]  session  The SSH session handle.
+ *
+ * @param[in]  request  The type of request (defined in RFC).
+ *
+ * @param[in]  buffer   Additional data to put in packet.
+ *
+ * @param[in]  reply    Set if you expect a reply from server.
+ *
+ * @return              SSH_SUCCESS on success, SSH_ERROR if an error occured.
  */
 static int global_request(ssh_session session, const char *request,
     ssh_buffer buffer, int reply) {
@@ -1647,21 +1683,20 @@ error:
  * @brief Sends the "tcpip-forward" global request to ask the server to begin
  *        listening for inbound connections.
  *
- * @param session       The ssh session to send the request.
+ * @param[in]  session  The ssh session to send the request.
  *
- * @param address       The address to bind to on the server. Pass NULL to bind
+ * @param[in]  address  The address to bind to on the server. Pass NULL to bind
  *                      to all available addresses on all protocol families
  *                      supported by the server.
  *
- * @param port          The port to bind to on the server. Pass 0 to ask the
+ * @param[in]  port     The port to bind to on the server. Pass 0 to ask the
  *                      server to allocate the next available unprivileged port
  *                      number
  *
- * @param bound_port    The pointer to get actual bound port. Pass NULL to
- *                      ignore.
+ * @param[in]  bound_port The pointer to get actual bound port. Pass NULL to
+ *                        ignore.
  *
- * @return SSH_OK on success\n
- *         SSH_ERROR on error
+ * @return              SSH_SUCCESS on success, SSH_ERROR if an error occured.
  */
 int channel_forward_listen(ssh_session session, const char *address, int port, int *bound_port) {
   ssh_buffer buffer = NULL;
@@ -1700,9 +1735,9 @@ error:
 /**
  * @brief Accept an incoming TCP/IP forwarding channel.
  *
- * @param session       The ssh session to use.
+ * @param[in]  session    The ssh session to use.
  *
- * @param timeout_ms    Timeout in milliseconds.
+ * @param[in]  timeout_ms A timeout in milliseconds.
  *
  * @return Newly created channel, or NULL if no incoming channel request from
  *         the server
@@ -1715,14 +1750,13 @@ ssh_channel channel_forward_accept(ssh_session session, int timeout_ms) {
  * @brief Sends the "cancel-tcpip-forward" global request to ask the server to
  *        cancel the tcpip-forward request.
  *
- * @param session       The ssh session to send the request.
+ * @param[in]  session  The ssh session to send the request.
  *
- * @param address       The bound address on the server.
+ * @param[in]  address  The bound address on the server.
  *
- * @param port          The bound port on the server.
+ * @param[in]  port     The bound port on the server.
  *
- * @return SSH_OK on success\n
- *         SSH_ERROR on error
+ * @return              SSH_SUCCESS on success, SSH_ERROR if an error occured.
  */
 int channel_forward_cancel(ssh_session session, const char *address, int port) {
   ssh_buffer buffer = NULL;
@@ -1755,16 +1789,16 @@ error:
 /**
  * @brief Set environment variables.
  *
- * @param channel       The channel to set the environment variables.
+ * @param[in]  channel  The channel to set the environment variables.
  *
- * @param name          The name of the variable.
+ * @param[in]  name     The name of the variable.
  *
- * @param value         The value to set.
+ * @param[in]  value    The value to set.
  *
- * @return SSH_SUCCESS on success, SSH_ERROR on error.
+ * @return              SSH_SUCCESS on success, SSH_ERROR if an error occured.
  *
  * @warning Some environment variables may be refused by security reasons.
- * */
+ */
 int channel_request_env(ssh_channel channel, const char *name, const char *value) {
   ssh_buffer buffer = NULL;
   ssh_string str = NULL;
@@ -1807,12 +1841,25 @@ error:
  *
  * This is similar to 'sh -c command'.
  *
- * @param channel       The channel to execute the command.
+ * @param[in]  channel  The channel to execute the command.
  *
- * @param cmd           The command to execute
+ * @param[in]  cmd      The command to execute
  *                      (e.g. "ls ~/ -al | grep -i reports").
  *
- * @return SSH_SUCCESS on success, SSH_ERROR on error.
+ * @return              SSH_SUCCESS on success, SSH_ERROR if an error occured.
+ *
+ * @code
+ *   rc = channel_request_exec(channel, "ps aux");
+ *   if (rc > 0) {
+ *     return -1;
+ *   }
+ *
+ *   while ((rc = channel_read(channel, buffer, sizeof(buffer), 0)) > 0) {
+ *     if (fwrite(buffer, 1, rc, stdout) != (unsigned int) rc) {
+ *       return -1;
+ *     }
+ *   }
+ * @endcode
  *
  * @see channel_request_shell()
  */
@@ -1857,13 +1904,13 @@ error:
  * In such a case this request will be silently ignored.
  * Only SSH-v2 is supported (I'm not sure about SSH-v1).
  *
- * @param channel       The channel to send signal.
+ * @param[in]  channel  The channel to send signal.
  *
- * @param signal        The signal to send (without SIG prefix)
+ * @param[in]  signal   The signal to send (without SIG prefix)
  *                      (e.g. "TERM" or "KILL").
  *
- * @return SSH_SUCCESS on success, SSH_ERROR on error (including attempt to send signal via SSH-v1 session).
- *
+ * @return              SSH_SUCCESS on success, SSH_ERROR if an error occured
+ *                      (including attempts to send signal via SSH-v1 session).
  */
 int channel_request_send_signal(ssh_channel channel, const char *signal) {
   ssh_buffer buffer = NULL;
@@ -1905,17 +1952,18 @@ error:
 /**
  * @brief Read data from a channel into a buffer.
  *
- * @param channel       The channel to read from.
+ * @param[in]  channel  The channel to read from.
  *
- * @param buffer        The buffer which will get the data.
+ * @param[in]  buffer   The buffer which will get the data.
  *
- * @param count         The count of bytes to be read. If it is bigger than 0,
+ * @param[in]  count    The count of bytes to be read. If it is bigger than 0,
  *                      the exact size will be read, else (bytes=0) it will
  *                      return once anything is available.
  *
  * @param is_stderr     A boolean value to mark reading from the stderr stream.
  *
- * @return The number of bytes read, 0 on end of file or SSH_ERROR on error.
+ * @return              The number of bytes read, 0 on end of file or SSH_ERROR
+ *                      on error.
  */
 int channel_read_buffer(ssh_channel channel, ssh_buffer buffer, uint32_t count,
     int is_stderr) {
@@ -2007,15 +2055,17 @@ int channel_read_buffer(ssh_channel channel, ssh_buffer buffer, uint32_t count,
 /**
  * @brief Reads data from a channel.
  *
- * @param channel       The channel to read from.
+ * @param[in]  channel  The channel to read from.
  *
- * @param dest          The destination buffer which will get the data.
+ * @param[in]  dest     The destination buffer which will get the data.
  *
- * @param count         The count of bytes to be read.
+ * @param[in]  count    The count of bytes to be read.
  *
- * @param is_stderr     A boolean value to mark reading from the stderr flow.
+ * @param[in]  is_stderr A boolean value to mark reading from the stderr flow.
  *
- * @return The number of bytes read, 0 on end of file or SSH_ERROR on error.
+ * @return              The number of bytes read, 0 on end of file or SSH_ERROR
+ *                      on error.
+ *
  * @warning This function may return less than count bytes of data, and won't
  *          block until count bytes have been read.
  * @warning The read function using a buffer has been renamed to
@@ -2100,16 +2150,16 @@ int channel_read(ssh_channel channel, void *dest, uint32_t count, int is_stderr)
  * A nonblocking read on the specified channel. it will return <= count bytes of
  * data read atomically.
  *
- * @param channel       The channel to read from.
+ * @param[in]  channel  The channel to read from.
  *
- * @param dest          A pointer to a destination buffer.
+ * @param[in]  dest     A pointer to a destination buffer.
  *
- * @param count         The count of bytes of data to be read.
+ * @param[in]  count    The count of bytes of data to be read.
  *
- * @param is_stderr     A boolean to select the stderr stream.
+ * @param[in]  is_stderr A boolean to select the stderr stream.
  *
- * @return The number of bytes read, 0 if nothing is available or
- *         SSH_ERROR on error.
+ * @return              The number of bytes read, 0 if nothing is available or
+ *                      SSH_ERROR on error.
  *
  * @warning Don't forget to check for EOF as it would return 0 here.
  *
@@ -2142,12 +2192,12 @@ int channel_read_nonblocking(ssh_channel channel, void *dest, uint32_t count,
 /**
  * @brief Polls a channel for data to read.
  *
- * @param channel       The channel to poll.
+ * @param[in]  channel  The channel to poll.
  *
- * @param is_stderr     A boolean to select the stderr stream.
+ * @param[in]  is_stderr A boolean to select the stderr stream.
  *
- * @return The number of bytes available for reading, 0 if nothing is available
- *         or SSH_ERROR on error.
+ * @return              The number of bytes available for reading, 0 if nothing
+ *                      is available or SSH_ERROR on error.
  *
  * @warning When the channel is in EOF state, the function returns SSH_EOF.
  *
@@ -2187,9 +2237,9 @@ int channel_poll(ssh_channel channel, int is_stderr){
 /**
  * @brief Recover the session in which belongs a channel.
  *
- * @param channel       The channel to recover the session from.
+ * @param[in]  channel  The channel to recover the session from.
  *
- * @return The session pointer.
+ * @return              The session pointer.
  */
 ssh_session channel_get_session(ssh_channel channel) {
   return channel->session;
@@ -2199,10 +2249,10 @@ ssh_session channel_get_session(ssh_channel channel) {
  * @brief Get the exit status of the channel (error code from the executed
  *        instruction).
  *
- * @param channel       The channel to get the status from.
+ * @param[in]  channel  The channel to get the status from.
  *
- * @return -1 if no exit status has been returned or eof not sent,
- *         the exit status otherwise.
+ * @returns             The exit status, -1 if no exit status has been returned
+ *                      or eof not sent.
  */
 int channel_get_exit_status(ssh_channel channel) {
   if (channel->local_eof == 0) {
@@ -2300,19 +2350,20 @@ static int count_ptrs(ssh_channel *ptrs) {
  * channels that are respectively readable, writable or have an exception to
  * trap.
  *
- * @param readchans     A NULL pointer or an array of channel pointers,
- *                      terminated by a NULL.
+ * @param[in]  readchans A NULL pointer or an array of channel pointers,
+ *                       terminated by a NULL.
  *
- * @param writechans    A NULL pointer or an array of channel pointers,
- *                      terminated by a NULL.
+ * @param[in]  writechans A NULL pointer or an array of channel pointers,
+ *                        terminated by a NULL.
  *
- * @param exceptchans   A NULL pointer or an array of channel pointers,
- *                      terminated by a NULL.
+ * @param[in]  exceptchans A NULL pointer or an array of channel pointers,
+ *                         terminated by a NULL.
  *
- * @param timeout       Timeout as defined by select(2).
+ * @param[in]  timeout  Timeout as defined by select(2).
  *
- * @return SSH_SUCCESS operation successful\n
- *         SSH_EINTR select(2) syscall was interrupted, relaunch the function
+ * @return             SSH_SUCCESS on a successful operation, SSH_EINTR if the
+ *                     select(2) syscall was interrupted, then relaunch the
+ *                     function.
  */
 int channel_select(ssh_channel *readchans, ssh_channel *writechans,
     ssh_channel *exceptchans, struct timeval * timeout) {
@@ -2438,5 +2489,6 @@ int channel_select(ssh_channel *readchans, ssh_channel *writechans,
   return 0;
 }
 
-/** @} */
-/* vim: set ts=2 sw=2 et cindent: */
+/* @} */
+
+/* vim: set ts=4 sw=4 et cindent: */
