@@ -21,8 +21,8 @@
  */
 
 /**
- * @defgroup ssh_server SSH Server
- * @addtogroup ssh_server
+ * @defgroup libssh_server The libssh server API
+ *
  * @{
  */
 

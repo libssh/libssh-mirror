@@ -21,12 +21,6 @@
  * MA 02111-1307, USA.
  */
 
-/**
- * \defgroup ssh_server SSH Server
- * \addtogroup ssh_server
- * @{
- */
-
 #include "config.h"
 
 #include <errno.h>
@@ -49,6 +43,12 @@
 #include "libssh/keys.h"
 #include "libssh/dh.h"
 #include "libssh/messages.h"
+
+/**
+ * @addtogroup libssh_server
+ *
+ * @{
+ */
 
 #ifdef _WIN32
 
@@ -935,6 +935,7 @@ int ssh_execute_message_callbacks(ssh_session session){
   }
   return SSH_OK;
 }
-/** @}
- */
-/* vim: set ts=2 sw=2 et cindent: */
+
+/* @} */
+
+/* vim: set ts=4 sw=4 et cindent: */
