@@ -21,17 +21,6 @@
  * MA 02111-1307, USA.
  */
 
-/** \defgroup ssh_messages SSH Messages
- * this file contains the Message parsing utilities for server programs using
- * libssh. The main loop of the program will call ssh_message_get(session) to
- * get messages as they come. they are not 1-1 with the protocol messages.
- * then, the user will know what kind of a message it is and use the appropriate
- * functions to handle it (or use the default handlers if she doesn't know what to
- * do
- * \addtogroup ssh_messages
- * @{
- */
-
 #include <string.h>
 #include <stdlib.h>
 
@@ -50,6 +39,20 @@
 #include "libssh/keys.h"
 #include "libssh/dh.h"
 #include "libssh/messages.h"
+
+/**
+ * @defgroup libssh_messages The SSH message functions
+ * @ingroup libssh
+ *
+ * This file contains the Message parsing utilities for server programs using
+ * libssh. The main loop of the program will call ssh_message_get(session) to
+ * get messages as they come. they are not 1-1 with the protocol messages.
+ * then, the user will know what kind of a message it is and use the appropriate
+ * functions to handle it (or use the default handlers if she doesn't know what to
+ * do
+ *
+ * @{
+ */
 
 static ssh_message ssh_message_new(ssh_session session){
   ssh_message msg = malloc(sizeof(struct ssh_message_struct));
@@ -96,7 +99,9 @@ error:
   return SSH_PACKET_USED;
 }
 
-/** @internal
+/**
+ * @internal
+ *
  * @brief Handle a SSH_MSG_MSG_USERAUTH_REQUEST packet and queue a
  * SSH Message
  */
@@ -502,15 +507,24 @@ error:
   return NULL;
 }
 
-/** @internal
- * @brief This function parses the last end of a channel request packet,
- * which is normally converted to a SSH message and placed on the queue.
- * @param session SSH session.
- * @param channel Channel the request is made on.
- * @param packet rest of the packet to be parsed.
- * @param request type of request.
- * @param want_reply want_reply field from the request
- * @returns SSH_OK or SSH_ERROR.
+/**
+ * @internal
+ *
+ * @brief This function parses the last end of a channel request packet.
+ *
+ * This is normally converted to a SSH message and placed in the queue.
+ *
+ * @param[in]  session  The SSH session.
+ *
+ * @param[in]  channel  The channel the request is made on.
+ *
+ * @param[in]  packet   The rest of the packet to be parsed.
+ *
+ * @param[in]  request  The type of request.
+ *
+ * @param[in]  want_reply The want_reply field from the request.
+ *
+ * @returns             SSH_OK on success, SSH_ERROR if an error occured.
  */
 int ssh_message_handle_channel_request(ssh_session session, ssh_channel channel, ssh_buffer packet,
     const char *request, uint8_t want_reply) {
@@ -696,11 +710,15 @@ int ssh_message_channel_request_reply_success(ssh_message msg) {
   return SSH_OK;
 }
 
-/** @brief Retrieves a SSH message from SSH session
- * @param session SSH session
- * @return The SSH message received, NULL in case of error.
- * @warning This function blocks until a message has been received. Better
- * set up a callback if this behavior is unwanted.
+/**
+ * @brief Retrieve a SSH message from a SSH session.
+ *
+ * @param[in]  session  The SSH session to get the message.
+ *
+ * @returns             The SSH message received, NULL in case of error.
+ *
+ * @warning This function blocks until a message has been received. Betterset up
+ *          a callback if this behavior is unwanted.
  */
 ssh_message ssh_message_get(ssh_session session) {
   ssh_message msg = NULL;
@@ -777,10 +795,14 @@ void ssh_message_free(ssh_message msg){
   SAFE_FREE(msg);
 }
 
-/** @internal
- * @brief adds the message to the current queue of messages to be parsed
- * @param session SSH session
- * @param message message to add to the queue
+/**
+ * @internal
+ *
+ * @brief Add a message to the current queue of messages to be parsed.
+ *
+ * @param[in]  session  The SSH session to add the message.
+ *
+ * @param[in]  message  The message to add to the queue.
  */
 void ssh_message_queue(ssh_session session, ssh_message message){
   if(message){
@@ -791,10 +813,14 @@ void ssh_message_queue(ssh_session session, ssh_message message){
   }
 }
 
-/** @internal
- * @brief Pops one message from the message list and dequeue it.
- * @param session SSH session.
- * @returns The head message, or NULL if it doesn't exist
+/**
+ * @internal
+ *
+ * @brief Pop a message from the message list and dequeue it.
+ *
+ * @param[in]  session  The SSH session to pop the message.
+ *
+ * @returns             The head message or NULL if it doesn't exist.
  */
 ssh_message ssh_message_pop_head(ssh_session session){
   ssh_message msg=NULL;
@@ -809,7 +835,6 @@ ssh_message ssh_message_pop_head(ssh_session session){
   return msg;
 }
 
-/**
- * @}
- */
-/* vim: set ts=2 sw=2 et cindent: */
+/* @} */
+
+/* vim: set ts=4 sw=4 et cindent: */
