@@ -26,20 +26,29 @@
 
 #include "libssh/priv.h"
 #include "libssh/scp.h"
-/** @defgroup ssh_scp SSH-scp
- * @brief SCP protocol over SSH functions
- * @addtogroup ssh_scp
- * @{
-*/
 
-/** @brief Creates a new scp session
- * @param session the SSH session to use
- * @param mode one of SSH_SCP_WRITE or SSH_SCP_READ, depending if you need to drop files remotely or read them.
- * It is not possible to combine read and write.
- * @param location The directory in which write or read will be done. Any push or pull will be relative 
- * to this place
- * @returns NULL if the creation was impossible.
- * @returns a ssh_scp handle if it worked.
+/**
+ * @defgroup libssh_scp The SSH scp functions
+ * @ingroup libssh
+ *
+ * SCP protocol over SSH functions
+ *
+ * @{
+ */
+
+/**
+ * @brief Create a new scp session.
+ *
+ * @param[in]  session  The SSH session to use.
+ *
+ * @param[in]  mode     One of SSH_SCP_WRITE or SSH_SCP_READ, depending if you
+ *                      need to drop files remotely or read them.
+ *                      It is not possible to combine read and write.
+ *
+ * @param[in]  location The directory in which write or read will be done. Any
+ *                      push or pull will be relative to this place.
+ *
+ * @returns             A ssh_scp handle, NULL if the creation was impossible.
  */
 ssh_scp ssh_scp_new(ssh_session session, int mode, const char *location){
   ssh_scp scp=malloc(sizeof(struct ssh_scp_struct));
@@ -161,13 +170,19 @@ void ssh_scp_free(ssh_scp scp){
   SAFE_FREE(scp);
 }
 
-/** @brief creates a directory in a scp in sink mode
- * @param scp the scp handle.
- * @param dirname Name of the directory being created.
- * @param mode  Unix permissions for the new directory, e.g. 0755.
- * @returns SSH_OK if the directory was created.
- * @returns SSH_ERROR if an error happened.
- * @see ssh_scp_leave_directory
+/**
+ * @brief Create a directory in a scp in sink mode.
+ *
+ * @param[in]  scp      The scp handle.
+ *
+ * @param[in]  dirname  The name of the directory being created.
+ *
+ * @param[in]  mode     The UNIX permissions for the new directory, e.g. 0755.
+ *
+ * @returns             SSH_OK if the directory has been created, SSH_ERROR if
+ *                      an error occured.
+ *
+ * @see ssh_scp_leave_directory()
  */
 int ssh_scp_push_directory(ssh_scp scp, const char *dirname, int mode){
   char buffer[1024];
@@ -201,10 +216,12 @@ int ssh_scp_push_directory(ssh_scp scp, const char *dirname, int mode){
 }
 
 /**
- * @brief Leaves a directory
- * @returns SSH_OK if the directory was created.
- * @returns SSH_ERROR if an error happened.
- * @see ssh_scp_push_directory
+ * @brief Leave a directory.
+ *
+ * @returns             SSH_OK if the directory has been left,SSH_ERROR if an
+ *                      error occured.
+ *
+ * @see ssh_scp_push_directory()
  */
  int ssh_scp_leave_directory(ssh_scp scp){
   char buffer[]="E\n";
@@ -230,14 +247,20 @@ int ssh_scp_push_directory(ssh_scp scp, const char *dirname, int mode){
   return SSH_OK;
 }
 
-
-/** @brief initializes the sending of a file to a scp in sink mode
- * @param scp the scp handle.
- * @param filename Name of the file being sent. It should not contain any path indicator
- * @param size Exact size in bytes of the file being sent.
- * @param mode Unix permissions for the new file, e.g. 0644
- * @returns SSH_OK if the file is ready to be sent.
- * @returns SSH_ERROR if an error happened.
+/**
+ * @brief Initialize the sending of a file to a scp in sink mode.
+ *
+ * @param[in]  scp      The scp handle.
+ *
+ * @param[in]  filename The name of the file being sent. It should not contain
+ *                      any path indicator
+ *
+ * @param[in]  size     Exact size in bytes of the file being sent.
+ *
+ * @param[in]  mode     The UNIX permissions for the new file, e.g. 0644.
+ *
+ * @returns             SSH_OK if the file is ready to be sent, SSH_ERROR if an
+ *                      error occured.
  */
 int ssh_scp_push_file(ssh_scp scp, const char *filename, size_t size, int mode){
   char buffer[1024];
@@ -274,12 +297,17 @@ int ssh_scp_push_file(ssh_scp scp, const char *filename, size_t size, int mode){
   return SSH_OK;
 }
 
-/** @brief waits for a response of the scp server
+/**
  * @internal
- * @param response pointer where the response message must be
- * copied if any. This pointer must then be free'd.
- * @returns the return code.
- * @returns SSH_ERROR a error occured
+ *
+ * @brief Wait for a response of the scp server.
+ *
+ * @param[in]  scp      The scp handle.
+ *
+ * @param[out] response A pointer where the response message must be copied if
+ *                      any. This pointer must then be free'd.
+ *
+ * @returns             The return code, SSH_ERROR a error occured.
  */
 int ssh_scp_response(ssh_scp scp, char **response){
 	unsigned char code;
@@ -318,12 +346,17 @@ int ssh_scp_response(ssh_scp scp, char **response){
 	return SSH_ERROR;
 }
 
-/** @brief Write into a remote scp file
- * @param scp the scp handle.
- * @param buffer the buffer to write
- * @param len the number of bytes to write
- * @returns SSH_OK the write was successful
- * @returns SSH_ERROR an error happened while writing
+/**
+ * @brief Write into a remote scp file.
+ *
+ * @param[in]  scp      The scp handle.
+ *
+ * @param[in]  buffer   The buffer to write.
+ *
+ * @param[in]  len      The number of bytes to write.
+ *
+ * @returns             SSH_OK if the write was successful, SSH_ERROR an error
+ *                      occured while writing.
  */
 int ssh_scp_write(ssh_scp scp, const void *buffer, size_t len){
   int w;
@@ -367,14 +400,18 @@ int ssh_scp_write(ssh_scp scp, const void *buffer, size_t len){
 }
 
 /**
- * @brief reads a string on a channel, terminated by '\n'
- * @param scp the scp handle.
- * @param buffer pointer to a buffer to place the string
- * @param len size of the buffer in bytes. If the string is bigger
- * than len-1, only len-1 bytes are read and the string
- * is null-terminated.
- * @returns SSH_OK The string was read
- * @returns SSH_ERROR Error happened while reading
+ * @brief Read a string on a channel, terminated by '\n'
+ *
+ * @param[in]  scp      The scp handle.
+ *
+ * @param[out] buffer   A pointer to a buffer to place the string.
+ *
+ * @param[in]  len      The size of the buffer in bytes. If the string is bigger
+ *                      than len-1, only len-1 bytes are read and the string is
+ *                      null-terminated.
+ *
+ * @returns             SSH_OK if the string was read, SSH_ERROR if an error
+ *                      occured while reading.
  */
 int ssh_scp_read_string(ssh_scp scp, char *buffer, size_t len){
   size_t r=0;
@@ -399,14 +436,21 @@ int ssh_scp_read_string(ssh_scp scp, char *buffer, size_t len){
   return err;
 }
 
-/** @brief waits for a scp request (file, directory)
- * @returns SSH_ERROR Some error happened
- * @returns SSH_SCP_REQUEST_NEWFILE The other side is sending a file
- * @returns SSH_SCP_REQUEST_NEWDIRECTORY The other side is sending a directory
- * @returns SSH_SCP_REQUEST_END_DIRECTORY The other side has finished with the current directory
- * @see ssh_scp_read
- * @see ssh_scp_deny_request
- * @see ssh_scp_accept_request
+/**
+ * @brief Wait for a scp request (file, directory).
+ *
+ * @returns             SSH_SCP_REQUEST_NEWFILE:       The other side is sending
+ *                                                     a file
+ *                      SSH_SCP_REQUEST_NEWDIRECTORY:  The other side is sending
+ *                                                     a directory
+ *                      SSH_SCP_REQUEST_END_DIRECTORY: The other side has
+ *                                                     finished with the current
+ *                                                     directory
+ *                      SSH_ERROR:                     Some error happened
+ *
+ * @see ssh_scp_read()
+ * @see ssh_scp_deny_request()
+ * @see ssh_scp_accept_request()
  */
 int ssh_scp_pull_request(ssh_scp scp){
   char buffer[4096];
@@ -495,13 +539,15 @@ int ssh_scp_pull_request(ssh_scp scp){
 }
 
 /**
- * @brief denies the transfer of a file or creation of a directory
- *  coming from the remote party
- *  @param scp the scp handle.
- *  @param reason nul-terminated string with a human-readable explanation
- *  of the deny
- *  @returns SSH_OK the message was sent
- *  @returns SSH_ERROR Error sending the message, or sending it in a bad state
+ * @brief Deny the transfer of a file or creation of a directory coming from the
+ * remote party.
+ *
+ * @param[in]  scp      The scp handle.
+ * @param[in]  reason   A nul-terminated string with a human-readable
+ *                      explanation of the deny.
+ *
+ * @returns             SSH_OK if the message was sent, SSH_ERROR if the sending
+ *                      the message failed, or sending it in a bad state.
  */
 int ssh_scp_deny_request(ssh_scp scp, const char *reason){
   char buffer[4096];
@@ -524,11 +570,13 @@ int ssh_scp_deny_request(ssh_scp scp, const char *reason){
 }
 
 /**
- * @brief accepts transfer of a file or creation of a directory
- *  coming from the remote party
- *  @param scp the scp handle.
- *  @returns SSH_OK the message was sent
- *  @returns SSH_ERROR Error sending the message, or sending it in a bad state
+ * @brief Accepts transfer of a file or creation of a directory coming from the
+ * remote party.
+ *
+ * @param[in]  scp      The scp handle.
+ *
+ * @returns             SSH_OK if the message was sent, SSH_ERROR if sending the
+ *                      message failed, or sending it in a bad state.
  */
 int ssh_scp_accept_request(ssh_scp scp){
   char buffer[]={0x00};
@@ -551,11 +599,14 @@ int ssh_scp_accept_request(ssh_scp scp){
 }
 
 /** @brief Read from a remote scp file
- * @param scp the scp handle.
- * @param buffer Destination buffer
- * @param size Size of the buffer
- * @returns Number of bytes read
- * @returns SSH_ERROR An error happened while reading
+ * @param[in]  scp      The scp handle.
+ *
+ * @param[in]  buffer   The destination buffer.
+ *
+ * @param[in]  size     The size of the buffer.
+ *
+ * @returns             The nNumber of bytes read, SSH_ERROR if an error occured
+ *                      while reading.
  */
 int ssh_scp_read(ssh_scp scp, void *buffer, size_t size){
   int r;
@@ -601,9 +652,12 @@ int ssh_scp_read(ssh_scp scp, void *buffer, size_t size){
   return r;
 }
 
-/** @brief Gets the name of the directory or file being
- * pushed from the other party
- * @returns file name. Should not be freed.
+/**
+ * @brief Get the name of the directory or file being pushed from the other
+ * party.
+ *
+ * @returns             The file name, NULL on error. The string should not be
+ *                      freed.
  */
 const char *ssh_scp_request_get_filename(ssh_scp scp){
   if(scp==NULL)
@@ -611,9 +665,11 @@ const char *ssh_scp_request_get_filename(ssh_scp scp){
   return scp->request_name;
 }
 
-/**@brief Gets the permissions of the directory or file being
- * pushed from the other party
- * @returns Unix permission, e.g 0644.
+/**
+ * @brief Get the permissions of the directory or file being pushed from the
+ * other party.
+ *
+ * @returns             The UNIX permission, e.g 0644, -1 on error.
  */
 int ssh_scp_request_get_permissions(ssh_scp scp){
   if(scp==NULL)
@@ -621,9 +677,9 @@ int ssh_scp_request_get_permissions(ssh_scp scp){
   return scp->request_mode;
 }
 
-/** @brief Gets the size of the file being pushed
- * from the other party
- * @returns Numeric size of the file being read.
+/** @brief Get the size of the file being pushed from the other party.
+ *
+ * @returns             The numeric size of the file being read.
  */
 size_t ssh_scp_request_get_size(ssh_scp scp){
   if(scp==NULL)
@@ -631,19 +687,25 @@ size_t ssh_scp_request_get_size(ssh_scp scp){
   return scp->filelen;
 }
 
-/** @brief Converts a scp text mode to an integer one
- * @param mode mode to convert, e.g. "0644"
- * @returns integer value, e.g. 420 for "0644"
+/**
+ * @brief Convert a scp text mode to an integer.
+ *
+ * @param[in]  mode     The mode to convert, e.g. "0644".
+ *
+ * @returns             An integer value, e.g. 420 for "0644".
  */
 int ssh_scp_integer_mode(const char *mode){
 	int value=strtoul(mode,NULL,8) & 0xffff;
 	return value;
 }
 
-/** @brief Converts a unix mode into a scp string one.
- * @param mode mode to convert, e.g. 420 or 0644
- * @returns pointer to a malloc'ed string containing the scp mode,
- * e.g. "0644".
+/**
+ * @brief Convert a unix mode into a scp string.
+ *
+ * @param[in]  mode     The mode to convert, e.g. 420 or 0644.
+ *
+ * @returns             A pointer to a malloc'ed string containing the scp mode,
+ *                      e.g. "0644".
  */
 char *ssh_scp_string_mode(int mode){
 	char buffer[16];
@@ -651,10 +713,14 @@ char *ssh_scp_string_mode(int mode){
 	return strdup(buffer);
 }
 
-/** @brief Gets the warning string
- * @returns Warning string. Should not be freed.
+/**
+ * @brief Get the warning string from a scp handle.
+ *
+ * @param[in]  scp      The scp handle.
+ *
+ * @returns             A warning string, or NULL on error. The string should
+ *                      not be freed.
  */
-
 const char *ssh_scp_request_get_warning(ssh_scp scp){
   if(scp==NULL)
       return NULL;
@@ -663,3 +729,4 @@ const char *ssh_scp_request_get_warning(ssh_scp scp){
 
 /** @} */
 
+/* vim: set ts=4 sw=4 et cindent: */
