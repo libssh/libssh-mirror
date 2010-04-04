@@ -40,7 +40,7 @@
 #endif
 
 /**
- * @addtogroup ssh_session
+ * @addtogroup libssh_session
  * @{
  */
 
@@ -850,11 +850,11 @@ int ssh_options_parse_config(ssh_session session, const char *filename) {
   return r;
 }
 
-/** @} */
+/* @} */
 
 #ifdef WITH_SERVER
 /**
- * @addtogroup ssh_server
+ * @addtogroup libssh_server
  * @{
  */
 static int ssh_bind_options_set_algo(ssh_bind sshbind, int algo,
@@ -1066,5 +1066,6 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
 }
 #endif
 
-/** @} */
-/* vim: set ts=2 sw=2 et cindent: */
+/* @} */
+
+/* vim: set ts=4 sw=4 et cindent: */
