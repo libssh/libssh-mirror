@@ -39,6 +39,11 @@ if (WIN32)
     set(HAVE_GETHOSTBYNAME TRUE)
   endif (HAVE_WSPIAPI_H OR HAVE_WS2TCPIP_H)
 
+  check_function_exists(vsnprintf HAVE_VSNPRINTF)
+  if(NOT HAVE_VSNPRINTF)
+    check_function_exists(_vsnprintf HAVE__VSNPRINTF)
+  endif(NOT HAVE_VSNPRINTF)
+  
   set(HAVE_SELECT TRUE)
 endif (WIN32)
 

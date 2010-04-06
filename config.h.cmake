@@ -37,6 +37,12 @@
 
 /*************************** FUNCTIONS ***************************/
 
+/* Define to 1 if you have the `vsnprintf' function. */
+#cmakedefine HAVE_VSNPRINTF
+
+/* Define to 1 if you have the `_vsnprintf' function. */
+#cmakedefine HAVE__VSNPRINTF
+
 /* Define to 1 if you have the `cfmakeraw' function. */
 #cmakedefine HAVE_CFMAKERAW 1
 

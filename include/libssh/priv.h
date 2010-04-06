@@ -34,6 +34,15 @@
 
 #ifdef _MSC_VER
 #define snprintf _snprintf
+
+#ifndef HAVE_VSNPRINTF
+#ifdef HAVE__VSNPRINTF
+#define vsnprintf _vsnprintf
+#else
+#error "neither vsnprintf or vnsprintf available, this may fail"
+#endif /* HAVE__VSNPRINTF */
+#endif /* HAVE_VSNPRINTF */
+
 /** Imitate define of inttypes.h */
 #define PRIdS "Id"
 #define strcasecmp _stricmp
