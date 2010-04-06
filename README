@@ -46,3 +46,20 @@ header file and it is documented. Example:
 
 ssh_options_set(session, SSH_OPTIONS_HOST, "localhost");
 
+5* Copyright policy
+-_-_-_-_-_-_-_-_-_-_
+
+The developers of libssh have a policy of asking for contributions to be made
+under the personal copyright of the contributor, instead of a corporate
+copyright.
+
+There are some reasons for the establishment of this policy:
+
+    * Individual copyrights make copyright registration in the US a simpler
+      process.
+    * If libssh is copyrighted by individuals rather than corporations,
+      decisions regarding enforcement and protection of copyright will, more
+      likely, be made in the interests of the project, and not in the interests
+      of any corporation’s shareholders.
+    * If we ever need to relicense a portion of the code contacting individuals
+      for permission to do so is much easier than contacting a company.
