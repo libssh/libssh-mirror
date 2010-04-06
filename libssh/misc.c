@@ -121,6 +121,25 @@ int gettimeofday(struct timeval *__p, void *__t) {
 #define NSS_BUFLEN_PASSWD 4096
 #endif
 
+char *ssh_lowercase(const char* str) {
+  char *new, *p;
+
+  if (str == NULL) {
+    return NULL;
+  }
+
+  new = strdup(str);
+  if (new == NULL) {
+    return NULL;
+  }
+
+  for (p = new; *p; p++) {
+    *p = tolower(*p);
+  }
+
+  return new;
+}
+
 char *ssh_get_user_home_dir(void) {
   char *szPath = NULL;
   struct passwd pwd;

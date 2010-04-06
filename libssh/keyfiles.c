@@ -1233,34 +1233,6 @@ static int alldigits(const char *s) {
 /**
  * @internal
  *
- * @brief Lowercase a string.
- *
- * @param[in]  str      The string to lowercase.
- *
- * @return              The malloced lowered string or NULL on error.
- */
-static char *lowercase(const char* str) {
-  char *new, *p;
-
-  if (str == NULL) {
-    return NULL;
-  }
-
-  new = strdup(str);
-  if (new == NULL) {
-    return NULL;
-  }
-
-  for (p = new; *p; p++) {
-    *p = tolower(*p);
-  }
-
-  return new;
-}
-
-/**
- * @internal
- *
  * @brief Free a token array.
  */
 static void tokens_free(char **tokens) {
@@ -1627,7 +1599,7 @@ int ssh_is_server_known(ssh_session session) {
     return SSH_SERVER_ERROR;
   }
 
-  host = lowercase(session->host);
+  host = ssh_lowercase(session->host);
   if (host == NULL) {
     ssh_set_error(session, SSH_FATAL, "Not enough space!");
     leave_function();
