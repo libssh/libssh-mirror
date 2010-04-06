@@ -90,6 +90,7 @@ ssh_session ssh_new(void) {
   session->maxchannel = FIRST_CHANNEL;
 
   /* options */
+  session->StrictHostKeyChecking = 1;
   session->port = 22;
   session->fd = -1;
   session->ssh2 = 1;

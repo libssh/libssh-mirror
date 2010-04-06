@@ -1648,6 +1648,11 @@ int ssh_is_server_known(ssh_session session) {
     }
   } while (1);
 
+  if ( (ret == SSH_SERVER_NOT_KNOWN) && (session->StrictHostKeyChecking == 0) ) {
+    ssh_write_knownhost(session);
+    ret = SSH_SERVER_KNOWN_OK;
+  }
+
   SAFE_FREE(host);
   if (file != NULL) {
     fclose(file);

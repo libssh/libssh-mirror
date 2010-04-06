@@ -141,7 +141,7 @@ struct ssh_session_struct {
     socket_t fd;
     int ssh2;
     int ssh1;
-
+    int StrictHostKeyChecking;
 };
 
 int ssh_handle_packets(ssh_session session, int timeout);

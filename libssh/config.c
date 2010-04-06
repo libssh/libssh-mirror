@@ -38,7 +38,9 @@ enum ssh_config_opcode_e {
   SOC_CIPHERS,
   SOC_COMPRESSION,
   SOC_TIMEOUT,
-  SOC_PROTOCOL
+  SOC_PROTOCOL,
+  SOC_HOSTKEYCHECK,
+  SOC_KNOWNHOSTS
 };
 
 struct ssh_config_keyword_table_s {
@@ -56,6 +58,8 @@ static struct ssh_config_keyword_table_s ssh_config_keyword_table[] = {
   { "compression", SOC_COMPRESSION },
   { "connecttimeout", SOC_TIMEOUT },
   { "protocol", SOC_PROTOCOL },
+  { "stricthostkeychecking", SOC_HOSTKEYCHECK },
+  { "userknownhostsfile", SOC_KNOWNHOSTS },
   { NULL, SOC_UNSUPPORTED }
 };
 
@@ -274,6 +278,18 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
       i = ssh_config_get_int(&s, -1);
       if (i >= 0 && *parsing) {
         ssh_options_set(session, SSH_OPTIONS_TIMEOUT, &i);
+      }
+      break;
+    case SOC_HOSTKEYCHECK:
+      i = ssh_config_get_yesno(&s, -1);
+      if (i >= 0 && *parsing) {
+        ssh_options_set(session, SSH_OPTIONS_HOSTKEYCHECK, &i);
+      }
+      break;
+    case SOC_KNOWNHOSTS:
+      p = ssh_config_get_str(&s, NULL);
+      if (p && *parsing) {
+        ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, p);
       }
       break;
     case SOC_UNSUPPORTED:
