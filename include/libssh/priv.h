@@ -33,15 +33,8 @@
 #include "config.h"
 
 #ifdef _MSC_VER
-#define snprintf _snprintf
-
-#ifndef HAVE_VSNPRINTF
-#ifdef HAVE__VSNPRINTF
-#define vsnprintf _vsnprintf
-#else
-#error "neither vsnprintf or vnsprintf available, this may fail"
-#endif /* HAVE__VSNPRINTF */
-#endif /* HAVE_VSNPRINTF */
+#undef snprintf
+#undef strtok_r
 
 /** Imitate define of inttypes.h */
 #define PRIdS "Id"
@@ -49,6 +42,13 @@
 #define strncasecmp _strnicmp
 #define strtoull _strtoui64
 #define isblank(ch) ((ch) == ' ' || (ch) == '\t' || (ch) == '\n' || (ch) == '\r')
+
+#define snprintf(d, n, ...) _snprintf_s((d), (n), _TRUNCATE, __VA_ARGS__)
+#define strdup _strdup
+#define strncpy(d, s, n) strncpy_s((d), (n), (s), _TRUNCATE)
+#define strtok_r strtok_s
+#define usleep(X) Sleep(((X)+1000)/1000)
+#define vsnprintf(s, n, f, v) _vsnprintf_s((s), (n), _TRUNCATE, (f), (v))
 #else
 #include <unistd.h>
 #define PRIdS "zd"
