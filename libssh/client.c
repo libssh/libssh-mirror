@@ -707,7 +707,7 @@ int ssh_connect(ssh_session session) {
     ret=ssh_socket_connect(session->socket, session->host, session->port,
     		session->bindaddr);
 
-    //, session->timeout * 1000 + session->timeout_usec);
+    /*, session->timeout * 1000 + session->timeout_usec); */
   }
   if (ret != SSH_OK) {
     leave_function();

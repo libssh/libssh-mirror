@@ -70,10 +70,10 @@ struct ssh_session_struct {
     /* !=0 when the user got a session handle */
     int alive;
     /* two previous are deprecated */
-//    int auth_service_asked;
+    /* int auth_service_asked; */
 
 /* socket status */
-    int blocking; // functions should block
+    int blocking; /* functions should block */
 
     ssh_string banner; /* that's the issue banner from
                        the server */
@@ -91,7 +91,7 @@ struct ssh_session_struct {
     enum ssh_auth_service_state_e auth_service_state;
     enum ssh_auth_state_e auth_state;
     enum ssh_channel_request_state_e global_req_state;
-    ssh_string dh_server_signature; //information used by dh_handshake.
+    ssh_string dh_server_signature; /* information used by dh_handshake. */
     KEX server_kex;
     KEX client_kex;
     ssh_buffer in_hashbuf;
