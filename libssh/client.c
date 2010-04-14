@@ -296,6 +296,7 @@ static int dh_handshake(ssh_session session) {
         goto error;
       }
       session->dh_server_signature = signature;
+      signature=NULL; /* ownership changed */
       if (dh_build_k(session) < 0) {
         ssh_set_error(session, SSH_FATAL, "Cannot build k number");
         rc = SSH_ERROR;
@@ -399,10 +400,6 @@ error:
   if(f != NULL){
     string_burn(f);
     string_free(f);
-  }
-  if(pubkey != NULL){
-    string_burn(pubkey);
-    string_free(pubkey);
   }
   if(signature != NULL){
     string_burn(signature);
