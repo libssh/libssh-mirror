@@ -614,6 +614,11 @@ static void aes_decrypt(struct crypto_struct *cipher, void *in, void *out,
   AES_cbc_encrypt(in, out, len, cipher->key, IV, AES_DECRYPT);
 }
 
+#ifndef BROKEN_AES_CTR
+/* OpenSSL until 0.9.7c has a broken AES_ctr128_encrypt implementation which
+ * increments the counter from 2^64 instead of 1. It's better not to use it
+ */
+
 /** @internal
  * @brief encrypts/decrypts data with stream cipher AES_ctr128. 128 bits is actually
  * the size of the CTR counter and incidentally the blocksize, but not the keysize.
@@ -631,6 +636,7 @@ static void aes_ctr128_encrypt(struct crypto_struct *cipher, void *in, void *out
    */
   AES_ctr128_encrypt(in, out, len, cipher->key, IV, tmp_buffer, &num);
 }
+#endif /* BROKEN_AES_CTR */
 #endif /* HAS_AES */
 
 #ifdef HAS_DES
@@ -722,6 +728,7 @@ static struct crypto_struct ssh_ciphertab[] = {
   },
 #endif /* HAS_BLOWFISH */
 #ifdef HAS_AES
+#ifndef BROKEN_AES_CTR
   {
     "aes128-ctr",
     16,
@@ -755,6 +762,7 @@ static struct crypto_struct ssh_ciphertab[] = {
     aes_ctr128_encrypt,
     aes_ctr128_encrypt
   },
+#endif /* BROKEN_AES_CTR */
   {
     "aes128-cbc",
     16,

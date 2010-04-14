@@ -52,10 +52,15 @@
 #define BLOWFISH ""
 #endif
 #ifdef HAVE_OPENSSL_AES_H
+#ifdef BROKEN_AES_CTR
+#define AES "aes256-cbc,aes192-cbc,aes128-cbc,"
+#else
 #define AES "aes256-ctr,aes192-ctr,aes128-ctr,aes256-cbc,aes192-cbc,aes128-cbc,"
+#endif /* BROKEN_AES_CTR */
 #else
 #define AES ""
 #endif
+
 #define DES "3des-cbc"
 #endif
 
