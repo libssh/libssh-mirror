@@ -492,8 +492,8 @@ static int build_session_id1(ssh_session session, ssh_string servern,
   }
 
 #ifdef DEBUG_CRYPTO
-  ssh_print_hexa("host modulus",hostn->string,string_len(hostn));
-  ssh_print_hexa("server modulus",servern->string,string_len(servern));
+  ssh_print_hexa("host modulus",string_data(hostn),string_len(hostn));
+  ssh_print_hexa("server modulus",string_data(servern),string_len(servern));
 #endif
   md5_update(md5,string_data(hostn),string_len(hostn));
   md5_update(md5,string_data(servern),string_len(servern));
