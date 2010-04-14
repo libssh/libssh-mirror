@@ -27,6 +27,7 @@
 
 #include "libssh/priv.h"
 #include "libssh/session.h"
+#include "libssh/misc.h"
 
 enum ssh_config_opcode_e {
   SOC_UNSUPPORTED = -1,
@@ -158,6 +159,7 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
   const char *p;
   char *s, *x;
   char *keyword;
+  char *lowerhost;
   size_t len;
   int i;
 
@@ -187,7 +189,7 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
   switch (opcode) {
     case SOC_HOST:
       *parsing = 0;
-      char* lowerhost = (session->host) ? ssh_lowercase(session->host) : NULL;
+      lowerhost = (session->host) ? ssh_lowercase(session->host) : NULL;
       for (p = ssh_config_get_str(&s, NULL); p && *p;
           p = ssh_config_get_str(&s, NULL)) {
         if (match_hostname(lowerhost, p, strlen(p))) {

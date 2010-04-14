@@ -30,7 +30,7 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-
+#include <ctype.h>
 
 #ifdef _WIN32
 #define _WIN32_IE 0x0501 //SHGetSpecialFolderPath

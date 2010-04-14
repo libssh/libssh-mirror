@@ -390,7 +390,6 @@ error:
 static int dh_handshake(ssh_session session) {
   ssh_string e = NULL;
   ssh_string f = NULL;
-  ssh_string pubkey = NULL;
   ssh_string signature = NULL;
   int rc = SSH_ERROR;
 
