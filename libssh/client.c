@@ -287,6 +287,7 @@ SSH_PACKET_CALLBACK(ssh_packet_dh_reply){
     goto error;
   }
   session->dh_server_signature = signature;
+  signature=NULL; /* ownership changed */
   if (dh_build_k(session) < 0) {
     ssh_set_error(session, SSH_FATAL, "Cannot build k number");
     goto error;
@@ -452,10 +453,6 @@ error:
   if(f != NULL){
     string_burn(f);
     string_free(f);
-  }
-  if(pubkey != NULL){
-    string_burn(pubkey);
-    string_free(pubkey);
   }
   if(signature != NULL){
     string_burn(signature);
