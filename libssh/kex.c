@@ -781,6 +781,7 @@ end:
    string_free(server_exp);
    string_free(serverkey);
    string_free(hostkey);
+   string_free(enc_session);
 
    publickey_free(srv);
    publickey_free(host);
