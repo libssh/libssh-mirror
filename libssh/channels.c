@@ -595,7 +595,7 @@ SSH_PACKET_CALLBACK(channel_rcv_request) {
 	if (strcmp(request, "exit-signal") == 0) {
 		const char *core = "(core dumped)";
 		ssh_string signal_s;
-		char *signal;
+		char *sig;
 		uint8_t i;
 
 		SAFE_FREE(request);
@@ -607,9 +607,9 @@ SSH_PACKET_CALLBACK(channel_rcv_request) {
 			return SSH_PACKET_USED;
 		}
 
-		signal = string_to_char(signal_s);
+		sig = string_to_char(signal_s);
 		string_free(signal_s);
-		if (signal == NULL) {
+		if (sig == NULL) {
 			leave_function();
 			return SSH_PACKET_USED;
 		}
@@ -620,8 +620,8 @@ SSH_PACKET_CALLBACK(channel_rcv_request) {
 		}
 
 		ssh_log(session, SSH_LOG_PACKET,
-				"Remote connection closed by signal SIG %s %s", signal, core);
-		SAFE_FREE(signal);
+				"Remote connection closed by signal SIG %s %s", sig, core);
+		SAFE_FREE(sig);
 
 		leave_function();
 		return SSH_PACKET_USED;
@@ -1899,20 +1899,20 @@ error:
 /**
  * @brief Send a signal to remote process (as described in RFC 4254, section 6.9).
  *
- * Sends a signal 'signal' to the remote process.
+ * Sends a signal 'sig' to the remote process.
  * Note, that remote system may not support signals concept.
  * In such a case this request will be silently ignored.
  * Only SSH-v2 is supported (I'm not sure about SSH-v1).
  *
  * @param[in]  channel  The channel to send signal.
  *
- * @param[in]  signal   The signal to send (without SIG prefix)
+ * @param[in]  sig      The signal to send (without SIG prefix)
  *                      (e.g. "TERM" or "KILL").
  *
  * @return              SSH_SUCCESS on success, SSH_ERROR if an error occured
  *                      (including attempts to send signal via SSH-v1 session).
  */
-int channel_request_send_signal(ssh_channel channel, const char *signal) {
+int channel_request_send_signal(ssh_channel channel, const char *sig) {
   ssh_buffer buffer = NULL;
   ssh_string encoded_signal = NULL;
   int rc = SSH_ERROR;
@@ -1928,7 +1928,7 @@ int channel_request_send_signal(ssh_channel channel, const char *signal) {
     goto error;
   }
 
-  encoded_signal = string_from_char(signal);
+  encoded_signal = string_from_char(sig);
   if (encoded_signal == NULL) {
     goto error;
   }
