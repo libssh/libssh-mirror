@@ -59,8 +59,12 @@ ssh_packet_callback default_packet_handlers[]= {
   ssh_packet_newkeys,                      // SSH2_MSG_NEWKEYS                    21
   NULL, NULL, NULL, NULL, NULL, NULL, NULL,
   NULL,                                    //                                     22-29
+#if WITH_SERVER
   ssh_packet_kexdh_init,                   // SSH2_MSG_KEXDH_INIT                 30
                                            // SSH2_MSG_KEX_DH_GEX_REQUEST_OLD     30
+#else
+  NULL,
+#endif
   ssh_packet_dh_reply,                     // SSH2_MSG_KEXDH_REPLY                31
                                            // SSH2_MSG_KEX_DH_GEX_GROUP           31
   NULL,                                    // SSH2_MSG_KEX_DH_GEX_INIT            32
