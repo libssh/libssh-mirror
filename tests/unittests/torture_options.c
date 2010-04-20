@@ -70,6 +70,9 @@ START_TEST (torture_options_set_user)
 {
     int rc;
 #ifndef _WIN32
+#ifndef NSS_BUFLEN_PASSWD
+#define NSS_BUFLEN_PASSWD 4096
+#endif
     struct passwd pwd;
     struct passwd *pwdbuf;
     char buf[NSS_BUFLEN_PASSWD];
