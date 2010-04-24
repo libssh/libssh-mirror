@@ -301,7 +301,12 @@ int ssh_userauth_none(ssh_session session, const char *username) {
     return rc;
   }
 #endif
-
+  if(session->auth_methods != 0){
+    /* userauth_none or other method was already tried before */
+    ssh_set_error(session,SSH_REQUEST_DENIED,"None method rejected by server");
+    leave_function();
+    return SSH_AUTH_DENIED;
+  }
   if (username == NULL) {
     if (session->username == NULL) {
       if (ssh_options_set(session, SSH_OPTIONS_USER, NULL) < 0) {
