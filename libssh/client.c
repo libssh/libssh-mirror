@@ -227,7 +227,7 @@ int ssh_send_banner(ssh_session session, int server) {
     }
   }
 
-  snprintf(buffer, 128, "%s\r\n", banner);
+  snprintf(buffer, 128, "%s\n", banner);
 
   if (ssh_socket_write(session->socket, buffer, strlen(buffer)) == SSH_ERROR) {
     leave_function();
@@ -645,7 +645,7 @@ void ssh_connection_callback(ssh_session session){
 		case SSH_SESSION_STATE_AUTHENTICATING:
 			break;
 		case SSH_SESSION_STATE_ERROR:
-		  break;
+			goto error;
 		default:
 			ssh_set_error(session,SSH_FATAL,"Invalid state %d",session->session_state);
 	}
