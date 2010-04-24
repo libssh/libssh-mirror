@@ -218,7 +218,8 @@ static int wait_auth_status(ssh_session session) {
   enter_function();
 
   while (session->auth_state == SSH_AUTH_STATE_NONE) {
-    ssh_handle_packets(session,-1);
+    if (ssh_handle_packets(session,-1) != SSH_OK)
+      break;
   }
   switch(session->auth_state){
     case SSH_AUTH_STATE_ERROR:

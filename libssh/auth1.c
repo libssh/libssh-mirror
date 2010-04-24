@@ -38,7 +38,8 @@ static int wait_auth1_status(ssh_session session) {
   enter_function();
   /* wait for a packet */
   while(session->auth_state == SSH_AUTH_STATE_NONE)
-    ssh_handle_packets(session,-1);
+    if (ssh_handle_packets(session,-1) != SSH_OK)
+      break;
   ssh_log(session,SSH_LOG_PROTOCOL,"Auth state : %d",session->auth_state);
   leave_function();
   switch(session->auth_state) {
@@ -57,9 +58,10 @@ void ssh_auth1_handler(ssh_session session, uint8_t type){
     ssh_set_error(session,SSH_FATAL,"SSH_SMSG_SUCCESS or FAILED received in wrong state");
     return;
   }
-  if(type==SSH_SMSG_SUCCESS)
+  if(type==SSH_SMSG_SUCCESS){
     session->auth_state=SSH_AUTH_STATE_SUCCESS;
-  if(type==SSH_SMSG_FAILURE)
+    session->session_state=SSH_SESSION_STATE_AUTHENTICATED;
+  } else if(type==SSH_SMSG_FAILURE)
     session->auth_state=SSH_AUTH_STATE_FAILED;
 }
 
