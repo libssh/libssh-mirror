@@ -332,7 +332,7 @@ static void select_loop(ssh_session session,ssh_channel channel){
 				channels[0]=NULL;
 			}
 			if(outchannels[0]){
-				while(channel && channel_is_open(channel) && channel_poll(channel,0)>0){
+				while(channel && channel_is_open(channel) && channel_poll(channel,0)!=0){
 					lus=channel_read(channel,buffer,sizeof(buffer),0);
 					if(lus==-1){
 						fprintf(stderr, "Error reading channel: %s\n",
@@ -346,12 +346,12 @@ static void select_loop(ssh_session session,ssh_channel channel){
 						channel_free(channel);
 						channel=channels[0]=NULL;
 					} else
-						if (write(1,buffer,lus) < 0) {
-                                                    fprintf(stderr, "Error writing to buffer\n");
-                                                    return;
-                                                }
+					  if (write(1,buffer,lus) < 0) {
+					    fprintf(stderr, "Error writing to buffer\n");
+					    return;
+					  }
 				}
-				while(channel && channel_is_open(channel) && channel_poll(channel,1)>0){ /* stderr */
+				while(channel && channel_is_open(channel) && channel_poll(channel,1)!=0){ /* stderr */
 					lus=channel_read(channel,buffer,sizeof(buffer),1);
 					if(lus==-1){
 						fprintf(stderr, "Error reading channel: %s\n",
@@ -364,10 +364,10 @@ static void select_loop(ssh_session session,ssh_channel channel){
 						channel_free(channel);
 						channel=channels[0]=NULL;
 					} else
-						if (write(2,buffer,lus) < 0) {
-                                                    fprintf(stderr, "Error writing to buffer\n");
-                                                    return;
-                                                }
+					  if (write(2,buffer,lus) < 0) {
+					    fprintf(stderr, "Error writing to buffer\n");
+					    return;
+					  }
 				}
 			}
 			if(channel && channel_is_closed(channel)){
