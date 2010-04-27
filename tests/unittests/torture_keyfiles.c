@@ -25,16 +25,20 @@ static void setup_rsa_key(void) {
     session = ssh_new();
 }
 
-#if 0
 static void setup_dsa_key(void) {
     unlink(LIBSSH_DSA_TESTKEY);
     unlink(LIBSSH_DSA_TESTKEY ".pub");
 
-    system("ssh-keygen -t dsa -N \"\" -f " LIBSSH_RSA_TESTKEY);
+    system("ssh-keygen -t dsa -N \"\" -f " LIBSSH_DSA_TESTKEY);
 
     session = ssh_new();
 }
-#endif
+
+static void setup_both_keys(void) {
+  setup_rsa_key();
+  ssh_free(session);
+  setup_dsa_key();
+}
 
 static void teardown(void) {
     unlink(LIBSSH_DSA_TESTKEY);
@@ -146,6 +150,40 @@ START_TEST (torture_pubkey_generate_from_privkey)
 }
 END_TEST
 
+/**
+ * @brief tests the privatekey_from_file function without passphrase
+ */
+START_TEST(torture_privatekey_from_file){
+  ssh_private_key key=NULL;
+  key=privatekey_from_file(session, LIBSSH_RSA_TESTKEY, TYPE_RSA, NULL);
+  ck_assert(key != NULL);
+  if(key != NULL){
+    privatekey_free(key);
+    key=NULL;
+  }
+  key=privatekey_from_file(session, LIBSSH_DSA_TESTKEY, TYPE_DSS, NULL);
+  ck_assert(key != NULL);
+  if(key != NULL){
+    privatekey_free(key);
+    key=NULL;
+  }
+  /* test the automatic type discovery */
+  key=privatekey_from_file(session, LIBSSH_RSA_TESTKEY, 0, NULL);
+  ck_assert(key != NULL);
+  if(key != NULL){
+    privatekey_free(key);
+    key=NULL;
+  }
+  key=privatekey_from_file(session, LIBSSH_DSA_TESTKEY, 0, NULL);
+  ck_assert(key != NULL);
+  if(key != NULL){
+    privatekey_free(key);
+    key=NULL;
+  }
+
+}
+END_TEST
+
 static Suite *torture_make_suite(void) {
   Suite *s = suite_create("libssh_keyfiles");
 
@@ -153,6 +191,8 @@ static Suite *torture_make_suite(void) {
           torture_pubkey_from_file, setup_rsa_key, teardown);
   torture_create_case_fixture(s, "torture_pubkey_generate_from_privkey",
           torture_pubkey_generate_from_privkey, setup_rsa_key, teardown);
+  torture_create_case_fixture(s, "torture_privkey_from_file",
+          torture_privatekey_from_file, setup_both_keys, teardown);
 
   return s;
 }
