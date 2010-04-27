@@ -20,7 +20,7 @@ static void setup_rsa_key(void) {
     unlink(LIBSSH_RSA_TESTKEY);
     unlink(LIBSSH_RSA_TESTKEY ".pub");
 
-    rc = system("ssh-keygen -t rsa -N \"\" -f " LIBSSH_RSA_TESTKEY);
+    rc = system("ssh-keygen -t rsa -q -N \"\" -f " LIBSSH_RSA_TESTKEY);
 
     session = ssh_new();
 }
@@ -29,7 +29,7 @@ static void setup_dsa_key(void) {
     unlink(LIBSSH_DSA_TESTKEY);
     unlink(LIBSSH_DSA_TESTKEY ".pub");
 
-    system("ssh-keygen -t dsa -N \"\" -f " LIBSSH_DSA_TESTKEY);
+    system("ssh-keygen -t dsa -q -N \"\" -f " LIBSSH_DSA_TESTKEY);
 
     session = ssh_new();
 }
