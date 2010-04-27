@@ -5,7 +5,7 @@
 
 #define LIBSSH_RSA_TESTKEY "libssh_testkey.id_rsa"
 #define LIBSSH_DSA_TESTKEY "libssh_testkey.id_dsa"
-
+#define LIBSSH_PASSPHRASE "libssh-rocks"
 ssh_session session;
 
 #if 0
@@ -40,6 +40,11 @@ static void setup_both_keys(void) {
   setup_dsa_key();
 }
 
+static void setup_both_keys_passphrase(void) {
+  system("ssh-keygen -t rsa -N " LIBSSH_PASSPHRASE " -f " LIBSSH_RSA_TESTKEY);
+  system("ssh-keygen -t dsa -N " LIBSSH_PASSPHRASE " -f " LIBSSH_DSA_TESTKEY);
+  session = ssh_new();
+}
 static void teardown(void) {
     unlink(LIBSSH_DSA_TESTKEY);
     unlink(LIBSSH_DSA_TESTKEY ".pub");
@@ -184,6 +189,40 @@ START_TEST(torture_privatekey_from_file){
 }
 END_TEST
 
+/**
+ * @brief tests the privatekey_from_file function with passphrase
+ */
+START_TEST(torture_privatekey_from_file_passphrase){
+  ssh_private_key key=NULL;
+  key=privatekey_from_file(session, LIBSSH_RSA_TESTKEY, TYPE_RSA, LIBSSH_PASSPHRASE);
+  ck_assert(key != NULL);
+  if(key != NULL){
+    privatekey_free(key);
+    key=NULL;
+  }
+  key=privatekey_from_file(session, LIBSSH_DSA_TESTKEY, TYPE_DSS, LIBSSH_PASSPHRASE);
+  ck_assert(key != NULL);
+  if(key != NULL){
+    privatekey_free(key);
+    key=NULL;
+  }
+  /* test the automatic type discovery */
+  key=privatekey_from_file(session, LIBSSH_RSA_TESTKEY, 0, LIBSSH_PASSPHRASE);
+  ck_assert(key != NULL);
+  if(key != NULL){
+    privatekey_free(key);
+    key=NULL;
+  }
+  key=privatekey_from_file(session, LIBSSH_DSA_TESTKEY, 0, LIBSSH_PASSPHRASE);
+  ck_assert(key != NULL);
+  if(key != NULL){
+    privatekey_free(key);
+    key=NULL;
+  }
+
+}
+END_TEST
+
 static Suite *torture_make_suite(void) {
   Suite *s = suite_create("libssh_keyfiles");
 
@@ -193,6 +232,8 @@ static Suite *torture_make_suite(void) {
           torture_pubkey_generate_from_privkey, setup_rsa_key, teardown);
   torture_create_case_fixture(s, "torture_privkey_from_file",
           torture_privatekey_from_file, setup_both_keys, teardown);
+  torture_create_case_fixture(s, "torture_privkey_from_file_passphrase",
+            torture_privatekey_from_file_passphrase, setup_both_keys_passphrase, teardown);
 
   return s;
 }
