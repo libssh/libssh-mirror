@@ -668,6 +668,8 @@ ssh_private_key privatekey_from_file(ssh_session session, const char *filename,
   DSA *dsa = NULL;
   RSA *rsa = NULL;
 #endif
+  /* needed for openssl initialization */
+  ssh_init();
   ssh_log(session, SSH_LOG_RARE, "Trying to open %s", filename);
   file = fopen(filename,"r");
   if (file == NULL) {
