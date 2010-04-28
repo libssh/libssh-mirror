@@ -780,6 +780,20 @@ ssh_private_key privatekey_from_file(ssh_session session, const char *filename,
   return privkey;
 }
 
+/**
+ * @brief returns the type of a private key
+ * @param privatekey[in] the private key handle
+ * @returns one of TYPE_RSA,TYPE_DSS,TYPE_RSA1
+ * @returns 0 if the type is unknown
+ * @see privatekey_from_file
+ * @see ssh_userauth_offer_pubkey
+ */
+int ssh_privatekey_type(ssh_private_key privatekey){
+  if (privatekey==NULL)
+    return 0;
+  return privatekey->type;
+}
+
 /* same that privatekey_from_file() but without any passphrase things. */
 ssh_private_key _privatekey_from_file(void *session, const char *filename,
     int type) {
