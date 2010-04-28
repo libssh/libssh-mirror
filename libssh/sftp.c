@@ -104,12 +104,10 @@ static void sftp_ext_free(sftp_ext ext) {
 sftp_session sftp_new(ssh_session session){
   sftp_session sftp;
 
-  enter_function();
-
   if (session == NULL) {
-    leave_function();
     return NULL;
   }
+  enter_function();
 
   sftp = malloc(sizeof(struct sftp_session_struct));
   if (sftp == NULL) {
@@ -123,7 +121,7 @@ sftp_session sftp_new(ssh_session session){
   if (sftp->ext == NULL) {
     ssh_set_error_oom(session);
     SAFE_FREE(sftp);
-    sftp_leave_function();
+    leave_function();
     return NULL;
   }
 

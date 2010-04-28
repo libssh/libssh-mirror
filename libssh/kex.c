@@ -202,7 +202,7 @@ char **space_tokenize(const char *chain){
 
 /* find_matching gets 2 parameters : a list of available objects (available_d), separated by colons,*/
 /* and a list of preferred objects (preferred_d) */
-/* it will return a strduped pointer on the first prefered object found in the available objects list */
+/* it will return a strduped pointer on the first preferred object found in the available objects list */
 
 char *ssh_find_matching(const char *available_d, const char *preferred_d){
     char ** tok_available, **tok_preferred;
@@ -222,6 +222,7 @@ char *ssh_find_matching(const char *available_d, const char *preferred_d){
     if (tok_preferred == NULL) {
       SAFE_FREE(tok_available[0]);
       SAFE_FREE(tok_available);
+      return NULL;
     }
 
     for(i_pref=0; tok_preferred[i_pref] ; ++i_pref){
@@ -230,18 +231,18 @@ char *ssh_find_matching(const char *available_d, const char *preferred_d){
           /* match */
           ret=strdup(tok_available[i_avail]);
           /* free the tokens */
-          free(tok_available[0]);
-          free(tok_preferred[0]);
-          free(tok_available);
-          free(tok_preferred);
+          SAFE_FREE(tok_available[0]);
+          SAFE_FREE(tok_preferred[0]);
+          SAFE_FREE(tok_available);
+          SAFE_FREE(tok_preferred);
           return ret;
         }
       }
     }
-    free(tok_available[0]);
-    free(tok_preferred[0]);
-    free(tok_available);
-    free(tok_preferred);
+    SAFE_FREE(tok_available[0]);
+    SAFE_FREE(tok_preferred[0]);
+    SAFE_FREE(tok_available);
+    SAFE_FREE(tok_preferred);
     return NULL;
 }
 

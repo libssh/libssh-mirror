@@ -593,12 +593,13 @@ static int pem_get_password(char *buf, int size, int rwflag, void *userdata) {
 
   /* unused flag */
   (void) rwflag;
-
-  ZERO_STRUCTP(buf);
+  if(buf==NULL)
+    return 0;
+  memset(buf,'\0',size);
   ssh_log(session, SSH_LOG_RARE,
       "Trying to call external authentication function");
 
-  if (session && session->callbacks->auth_function) {
+  if (session && session->callbacks && session->callbacks->auth_function) {
     if (session->callbacks->auth_function("Passphrase for private key:", buf, size, 0, 0,
         session->callbacks->userdata) < 0) {
       return 0;
