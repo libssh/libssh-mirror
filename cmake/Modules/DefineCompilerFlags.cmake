@@ -1,6 +1,7 @@
 # define system dependent compiler flags
 
 include(CheckCCompilerFlag)
+include(MacroCheckCCompilerFlagSSP)
 
 if (UNIX AND NOT WIN32)
   if (${CMAKE_C_COMPILER_ID} MATCHES GNU)
@@ -13,7 +14,7 @@ if (UNIX AND NOT WIN32)
       set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
     endif (WITH_FPIC)
 
-    check_c_compiler_flag("-fstack-protector" WITH_STACK_PROTECTOR)
+    check_c_compiler_flag_ssp("-fstack-protector" WITH_STACK_PROTECTOR)
     if (WITH_STACK_PROTECTOR)
       set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fstack-protector")
     endif (WITH_STACK_PROTECTOR)
