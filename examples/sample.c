@@ -53,7 +53,7 @@ static int auth_callback(const char *prompt, char *buf, size_t len,
   if (echo) {
     while ((answer = fgets(buf, len, stdin)) == NULL);
     if ((ptr = strchr(buf, '\n'))) {
-      ptr = '\0';
+      *ptr = '\0';
     }
   } else {
     answer = getpass(prompt);

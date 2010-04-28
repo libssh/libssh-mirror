@@ -112,6 +112,11 @@ int ssh_scp_init(ssh_scp scp){
   }
   if(scp->mode == SSH_SCP_WRITE){
 	  r=channel_read(scp->channel,&code,1,0);
+	  if(r<=0){
+	    ssh_set_error(scp->session,SSH_FATAL, "Error reading status code: %s",ssh_get_error(scp->session));
+	    scp->state=SSH_SCP_ERROR;
+	    return SSH_ERROR;
+	  }
 	  if(code != 0){
 		  ssh_set_error(scp->session,SSH_FATAL, "scp status code %ud not valid", code);
 		  scp->state=SSH_SCP_ERROR;
@@ -207,6 +212,11 @@ int ssh_scp_push_directory(ssh_scp scp, const char *dirname, int mode){
     return SSH_ERROR;
   }
   r=channel_read(scp->channel,&code,1,0);
+  if(r<=0){
+    ssh_set_error(scp->session,SSH_FATAL, "Error reading status code: %s",ssh_get_error(scp->session));
+    scp->state=SSH_SCP_ERROR;
+    return SSH_ERROR;
+  }
   if(code != 0){
     ssh_set_error(scp->session,SSH_FATAL, "scp status code %ud not valid", code);
     scp->state=SSH_SCP_ERROR;
@@ -239,6 +249,11 @@ int ssh_scp_push_directory(ssh_scp scp, const char *dirname, int mode){
     return SSH_ERROR;
   }
   r=channel_read(scp->channel,&code,1,0);
+  if(r<=0){
+    ssh_set_error(scp->session,SSH_FATAL, "Error reading status code: %s",ssh_get_error(scp->session));
+    scp->state=SSH_SCP_ERROR;
+    return SSH_ERROR;
+  }
   if(code != 0){
     ssh_set_error(scp->session,SSH_FATAL, "scp status code %ud not valid", code);
     scp->state=SSH_SCP_ERROR;
@@ -286,6 +301,11 @@ int ssh_scp_push_file(ssh_scp scp, const char *filename, size_t size, int mode){
     return SSH_ERROR;
   }
   r=channel_read(scp->channel,&code,1,0);
+  if(r<=0){
+    ssh_set_error(scp->session,SSH_FATAL, "Error reading status code: %s",ssh_get_error(scp->session));
+    scp->state=SSH_SCP_ERROR;
+    return SSH_ERROR;
+  }
   if(code != 0){
     ssh_set_error(scp->session,SSH_FATAL, "scp status code %ud not valid", code);
     scp->state=SSH_SCP_ERROR;

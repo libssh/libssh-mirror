@@ -2400,9 +2400,9 @@ int sftp_rename(sftp_session sftp, const char *original, const char *newname) {
 /* Code written by Nick */
 /* Set file attributes on a file, directory or symbolic link. */
 int sftp_setstat(sftp_session sftp, const char *file, sftp_attributes attr) {
-  uint32_t id = sftp_get_new_id(sftp);
-  ssh_buffer buffer = buffer_new();
-  ssh_string path = string_from_char(file);
+  uint32_t id;
+  ssh_buffer buffer;
+  ssh_string path;
   sftp_message msg = NULL;
   sftp_status_message status = NULL;
 

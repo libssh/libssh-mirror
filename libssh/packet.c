@@ -126,7 +126,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
   char buffer[16] = {0};
   void *packet=NULL;
   int to_be_read;
-  int rc = SSH_ERROR;
+  int rc;
   uint32_t len;
   uint8_t padding;
   size_t processed=0; /* number of byte processed from the callback */
@@ -187,7 +187,6 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
         	/* give up, not enough data in buffer */
         	return processed;
         }
-        rc = SSH_ERROR;
 
         packet = (unsigned char *)data + processed;
 //        ssh_socket_read(session->socket,packet,to_be_read-current_macsize);

@@ -882,7 +882,7 @@ static int match(const char *group, const char *object){
   const char *a;
   const char *z;
 
-  a = z = group;
+  z = group;
   do {
     a = strchr(z, ',');
     if (a == NULL) {
