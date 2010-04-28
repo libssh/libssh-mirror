@@ -184,7 +184,7 @@ static int getai(ssh_session session, const char *host, int port, struct addrinf
   if (port == 0) {
     hints.ai_flags = AI_PASSIVE;
   } else {
-    snprintf(s_port, sizeof(s_port), "%hu", port);
+    snprintf(s_port, sizeof(s_port), "%hu", (unsigned short)port);
     service = s_port;
 #ifdef AI_NUMERICSERV
     hints.ai_flags=AI_NUMERICSERV;

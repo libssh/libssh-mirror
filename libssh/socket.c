@@ -577,7 +577,7 @@ int ssh_socket_wait_for_data(ssh_socket s, ssh_session session, uint32_t len) {
     if (ssh_socket_is_open(session->socket)) {
       r = ssh_socket_unbuffered_read(session->socket, buffer, sizeof(buffer));
     } else {
-      r =- 1;
+      r = -1;
     }
 
     if (r <= 0) {
