@@ -1087,9 +1087,9 @@ int crypt_set_algorithms_server(ssh_session session){
     client=session->client_kex.methods[SSH_HOSTKEYS];
     match=ssh_find_matching(server,client);
     if(match && !strcmp(match,"ssh-dss"))
-        session->hostkeys=TYPE_DSS;
+        session->hostkeys=SSH_KEYTYPE_DSS;
     else if(match && !strcmp(match,"ssh-rsa"))
-        session->hostkeys=TYPE_RSA;
+        session->hostkeys=SSH_KEYTYPE_RSA;
     else {
         ssh_set_error(session, SSH_FATAL, "Cannot know what %s is into %s",
             match ? match : NULL, server);

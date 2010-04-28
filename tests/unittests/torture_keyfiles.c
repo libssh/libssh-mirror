@@ -160,13 +160,13 @@ END_TEST
  */
 START_TEST(torture_privatekey_from_file){
   ssh_private_key key=NULL;
-  key=privatekey_from_file(session, LIBSSH_RSA_TESTKEY, TYPE_RSA, NULL);
+  key=privatekey_from_file(session, LIBSSH_RSA_TESTKEY, SSH_KEYTYPE_RSA, NULL);
   ck_assert(key != NULL);
   if(key != NULL){
     privatekey_free(key);
     key=NULL;
   }
-  key=privatekey_from_file(session, LIBSSH_DSA_TESTKEY, TYPE_DSS, NULL);
+  key=privatekey_from_file(session, LIBSSH_DSA_TESTKEY, SSH_KEYTYPE_DSS, NULL);
   ck_assert(key != NULL);
   if(key != NULL){
     privatekey_free(key);
@@ -194,13 +194,13 @@ END_TEST
  */
 START_TEST(torture_privatekey_from_file_passphrase){
   ssh_private_key key=NULL;
-  key=privatekey_from_file(session, LIBSSH_RSA_TESTKEY, TYPE_RSA, LIBSSH_PASSPHRASE);
+  key=privatekey_from_file(session, LIBSSH_RSA_TESTKEY, SSH_KEYTYPE_RSA, LIBSSH_PASSPHRASE);
   ck_assert(key != NULL);
   if(key != NULL){
     privatekey_free(key);
     key=NULL;
   }
-  key=privatekey_from_file(session, LIBSSH_DSA_TESTKEY, TYPE_DSS, LIBSSH_PASSPHRASE);
+  key=privatekey_from_file(session, LIBSSH_DSA_TESTKEY, SSH_KEYTYPE_DSS, LIBSSH_PASSPHRASE);
   ck_assert(key != NULL);
   if(key != NULL){
     privatekey_free(key);

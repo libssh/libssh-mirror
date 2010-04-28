@@ -46,11 +46,11 @@
 /* Public key decoding functions */
 const char *ssh_type_to_char(int type) {
   switch (type) {
-    case TYPE_DSS:
+    case SSH_KEYTYPE_DSS:
       return "ssh-dss";
-    case TYPE_RSA:
+    case SSH_KEYTYPE_RSA:
       return "ssh-rsa";
-    case TYPE_RSA1:
+    case SSH_KEYTYPE_RSA1:
       return "ssh-rsa1";
     default:
       return NULL;
@@ -59,17 +59,17 @@ const char *ssh_type_to_char(int type) {
 
 int ssh_type_from_name(const char *name) {
   if (strcmp(name, "rsa1") == 0) {
-    return TYPE_RSA1;
+    return SSH_KEYTYPE_RSA1;
   } else if (strcmp(name, "rsa") == 0) {
-    return TYPE_RSA;
+    return SSH_KEYTYPE_RSA;
   } else if (strcmp(name, "dsa") == 0) {
-    return TYPE_DSS;
+    return SSH_KEYTYPE_DSS;
   } else if (strcmp(name, "ssh-rsa1") == 0) {
-    return TYPE_RSA1;
+    return SSH_KEYTYPE_RSA1;
   } else if (strcmp(name, "ssh-rsa") == 0) {
-    return TYPE_RSA;
+    return SSH_KEYTYPE_RSA;
   } else if (strcmp(name, "ssh-dss") == 0) {
-    return TYPE_DSS;
+    return SSH_KEYTYPE_DSS;
   }
 
   return -1;
@@ -88,7 +88,7 @@ ssh_public_key publickey_make_dss(ssh_session session, ssh_buffer buffer) {
     return NULL;
   }
 
-  key->type = TYPE_DSS;
+  key->type = SSH_KEYTYPE_DSS;
   key->type_c = ssh_type_to_char(key->type);
 
   p = buffer_get_ssh_string(buffer);
@@ -234,15 +234,15 @@ void publickey_free(ssh_public_key key) {
   }
 
   switch(key->type) {
-    case TYPE_DSS:
+    case SSH_KEYTYPE_DSS:
 #ifdef HAVE_LIBGCRYPT
       gcry_sexp_release(key->dsa_pub);
 #elif HAVE_LIBCRYPTO
       DSA_free(key->dsa_pub);
 #endif
       break;
-    case TYPE_RSA:
-    case TYPE_RSA1:
+    case SSH_KEYTYPE_RSA:
+    case SSH_KEYTYPE_RSA1:
 #ifdef HAVE_LIBGCRYPT
       gcry_sexp_release(key->rsa_pub);
 #elif defined HAVE_LIBCRYPTO
@@ -286,10 +286,10 @@ ssh_public_key publickey_from_string(ssh_session session, ssh_string pubkey_s) {
   SAFE_FREE(type_c);
 
   switch (type) {
-    case TYPE_DSS:
+    case SSH_KEYTYPE_DSS:
       return publickey_make_dss(session, tmpbuf);
-    case TYPE_RSA:
-    case TYPE_RSA1:
+    case SSH_KEYTYPE_RSA:
+    case SSH_KEYTYPE_RSA1:
       return publickey_make_rsa(session, tmpbuf, type);
   }
 
@@ -331,7 +331,7 @@ ssh_public_key publickey_from_privatekey(ssh_private_key prv) {
 
   key->type = prv->type;
   switch(key->type) {
-    case TYPE_DSS:
+    case SSH_KEYTYPE_DSS:
 #ifdef HAVE_LIBGCRYPT
       sexp = gcry_sexp_find_token(prv->dsa_priv, "p", 0);
       if (sexp == NULL) {
@@ -413,8 +413,8 @@ ssh_public_key publickey_from_privatekey(ssh_private_key prv) {
       }
 #endif /* HAVE_LIBCRYPTO */
       break;
-    case TYPE_RSA:
-    case TYPE_RSA1:
+    case SSH_KEYTYPE_RSA:
+    case SSH_KEYTYPE_RSA1:
 #ifdef HAVE_LIBGCRYPT
       sexp = gcry_sexp_find_token(prv->rsa_priv, "n", 0);
       if (sexp == NULL) {
@@ -693,13 +693,13 @@ ssh_string publickey_to_string(ssh_public_key key) {
   }
 
   switch (key->type) {
-    case TYPE_DSS:
+    case SSH_KEYTYPE_DSS:
       if (dsa_public_to_string(key->dsa_pub, buf) < 0) {
         goto error;
       }
       break;
-    case TYPE_RSA:
-    case TYPE_RSA1:
+    case SSH_KEYTYPE_RSA:
+    case SSH_KEYTYPE_RSA1:
       if (rsa_public_to_string(key->rsa_pub, buf) < 0) {
         goto error;
       }
@@ -755,7 +755,7 @@ static ssh_string signature_to_string(SIGNATURE *sign) {
   string_free(tmp);
 
   switch(sign->type) {
-    case TYPE_DSS:
+    case SSH_KEYTYPE_DSS:
 #ifdef HAVE_LIBGCRYPT
       sexp = gcry_sexp_find_token(sign->dsa_sign, "r", 0);
       if (sexp == NULL) {
@@ -816,8 +816,8 @@ static ssh_string signature_to_string(SIGNATURE *sign) {
       }
 
       break;
-    case TYPE_RSA:
-    case TYPE_RSA1:
+    case SSH_KEYTYPE_RSA:
+    case SSH_KEYTYPE_RSA1:
 #ifdef HAVE_LIBGCRYPT
       sexp = gcry_sexp_find_token(sign->rsa_sign, "s", 0);
       if (sexp == NULL) {
@@ -929,7 +929,7 @@ SIGNATURE *signature_from_string(ssh_session session, ssh_string signature,
   }
 
   switch(needed_type) {
-    case TYPE_DSS:
+    case SSH_KEYTYPE_DSS:
       rs = buffer_get_ssh_string(tmpbuf);
       buffer_free(tmpbuf);
 
@@ -990,11 +990,11 @@ SIGNATURE *signature_from_string(ssh_session session, ssh_string signature,
 #endif
       string_free(rs);
 
-      sign->type = TYPE_DSS;
+      sign->type = SSH_KEYTYPE_DSS;
       sign->dsa_sign = sig;
 
       return sign;
-    case TYPE_RSA:
+    case SSH_KEYTYPE_RSA:
       e = buffer_get_ssh_string(tmpbuf);
       buffer_free(tmpbuf);
       if (e == NULL) {
@@ -1019,7 +1019,7 @@ SIGNATURE *signature_from_string(ssh_session session, ssh_string signature,
         ssh_log(session, SSH_LOG_RARE, "RSA signature len %d < %d",
             len, rsalen);
       }
-      sign->type = TYPE_RSA;
+      sign->type = SSH_KEYTYPE_RSA;
 #ifdef HAVE_LIBGCRYPT
       if (gcry_sexp_build(&sig, NULL, "(sig-val(rsa(s %b)))",
           string_len(e), string_data(e))) {
@@ -1056,15 +1056,15 @@ void signature_free(SIGNATURE *sign) {
   }
 
   switch(sign->type) {
-    case TYPE_DSS:
+    case SSH_KEYTYPE_DSS:
 #ifdef HAVE_LIBGCRYPT
       gcry_sexp_release(sign->dsa_sign);
 #elif defined HAVE_LIBCRYPTO
       DSA_SIG_free(sign->dsa_sign);
 #endif
       break;
-    case TYPE_RSA:
-    case TYPE_RSA1:
+    case SSH_KEYTYPE_RSA:
+    case SSH_KEYTYPE_RSA1:
 #ifdef HAVE_LIBGCRYPT
       gcry_sexp_release(sign->rsa_sign);
 #elif defined HAVE_LIBCRYPTO
@@ -1273,7 +1273,7 @@ ssh_string ssh_do_sign(ssh_session session, ssh_buffer sigbuf,
   }
 
   switch(privatekey->type) {
-    case TYPE_DSS:
+    case SSH_KEYTYPE_DSS:
 #ifdef HAVE_LIBGCRYPT
       if (gcry_sexp_build(&gcryhash, NULL, "%b", SHA_DIGEST_LEN + 1, hash) ||
           gcry_pk_sign(&sign->dsa_sign, gcryhash, privatekey->dsa_priv)) {
@@ -1297,7 +1297,7 @@ ssh_string ssh_do_sign(ssh_session session, ssh_buffer sigbuf,
 #endif /* HAVE_LIBCRYPTO */
       sign->rsa_sign = NULL;
       break;
-    case TYPE_RSA:
+    case SSH_KEYTYPE_RSA:
 #ifdef HAVE_LIBGCRYPT
       if (gcry_sexp_build(&gcryhash, NULL, "(data(flags pkcs1)(hash sha1 %b))",
             SHA_DIGEST_LEN, hash + 1) ||
@@ -1426,7 +1426,7 @@ ssh_string ssh_sign_session_id(ssh_session session, ssh_private_key privatekey) 
   }
 
   switch(privatekey->type) {
-    case TYPE_DSS:
+    case SSH_KEYTYPE_DSS:
 #ifdef HAVE_LIBGCRYPT
       if (gcry_sexp_build(&data_sexp, NULL, "%b", SHA_DIGEST_LEN + 1, hash) ||
           gcry_pk_sign(&sign->dsa_sign, data_sexp, privatekey->dsa_priv)) {
@@ -1452,7 +1452,7 @@ ssh_string ssh_sign_session_id(ssh_session session, ssh_private_key privatekey) 
 #endif /* HAVE_LIBCRYPTO */
       sign->rsa_sign = NULL;
       break;
-    case TYPE_RSA:
+    case SSH_KEYTYPE_RSA:
 #ifdef HAVE_LIBGCRYPT
       if (gcry_sexp_build(&data_sexp, NULL, "(data(flags pkcs1)(hash sha1 %b))",
             SHA_DIGEST_LEN, hash + 1) ||

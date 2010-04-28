@@ -204,14 +204,14 @@ int ssh_bind_accept(ssh_bind sshbind, ssh_session session) {
   }
 
   if (sshbind->dsakey) {
-    dsa = _privatekey_from_file(sshbind, sshbind->dsakey, TYPE_DSS);
+    dsa = _privatekey_from_file(sshbind, sshbind->dsakey, SSH_KEYTYPE_DSS);
     if (dsa == NULL) {
       return SSH_ERROR;
     }
   }
 
   if (sshbind->rsakey) {
-    rsa = _privatekey_from_file(sshbind, sshbind->rsakey, TYPE_RSA);
+    rsa = _privatekey_from_file(sshbind, sshbind->rsakey, SSH_KEYTYPE_RSA);
     if (rsa == NULL) {
       privatekey_free(dsa);
       return SSH_ERROR;
@@ -410,10 +410,10 @@ static int dh_handshake_server(ssh_session session) {
   }
 
   switch(session->hostkeys){
-    case TYPE_DSS:
+    case SSH_KEYTYPE_DSS:
       prv = session->dsa_key;
       break;
-    case TYPE_RSA:
+    case SSH_KEYTYPE_RSA:
       prv = session->rsa_key;
       break;
     default:

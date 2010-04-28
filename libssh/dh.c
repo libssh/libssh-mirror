@@ -919,7 +919,7 @@ int sig_verify(ssh_session session, ssh_public_key pubkey,
 #endif
 
   switch(pubkey->type) {
-    case TYPE_DSS:
+    case SSH_KEYTYPE_DSS:
 #ifdef HAVE_LIBGCRYPT
       valid = gcry_sexp_build(&gcryhash, NULL, "%b", SHA_DIGEST_LEN + 1, hash);
       if (valid != 0) {
@@ -954,8 +954,8 @@ int sig_verify(ssh_session session, ssh_public_key pubkey,
       ssh_set_error(session, SSH_FATAL, "Invalid DSA signature");
       return -1;
 
-    case TYPE_RSA:
-    case TYPE_RSA1:
+    case SSH_KEYTYPE_RSA:
+    case SSH_KEYTYPE_RSA1:
 #ifdef HAVE_LIBGCRYPT
       valid = gcry_sexp_build(&gcryhash, NULL,
           "(data(flags pkcs1)(hash sha1 %b))", SHA_DIGEST_LEN, hash + 1);

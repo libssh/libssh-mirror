@@ -55,12 +55,6 @@
 #define CLIENTBANNER1 "SSH-1.5-libssh-" SSH_STRINGIFY(LIBSSH_VERSION)
 #define CLIENTBANNER2 "SSH-2.0-libssh-" SSH_STRINGIFY(LIBSSH_VERSION)
 #define KBDINT_MAX_PROMPT 256 /* more than openssh's :) */
-/* some types for public keys */
-enum public_key_types_e{
-	TYPE_DSS=1,
-	TYPE_RSA,
-	TYPE_RSA1
-};
 
 #ifdef __cplusplus
 extern "C" {
