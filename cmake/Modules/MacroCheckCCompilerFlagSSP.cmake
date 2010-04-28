@@ -1,5 +1,6 @@
-# - Check whether the C compiler supports a given flag.
-# CHECK_C_COMPILER_FLAG(FLAG VARIABLE)
+# - Check whether the C compiler supports a given flag in the
+# context of a stack checking compiler option.
+# CHECK_C_COMPILER_FLAG_SSP(FLAG VARIABLE)
 #
 #  FLAG - the compiler flag
 #  VARIABLE - variable to store the result
