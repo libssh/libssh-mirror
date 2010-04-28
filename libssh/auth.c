@@ -378,7 +378,7 @@ error:
  *                      two different logins in a row.
  *
  * @param[in]  type     The type of the public key. This value is given by
- *                      publickey_from_file().
+ *                      publickey_from_file() or ssh_privatekey_type().
  *
  * @param[in]  publickey A public key returned by publickey_from_file().
  *
@@ -393,6 +393,7 @@ error:
  *
  * @see publickey_from_file()
  * @see privatekey_from_file()
+ * @see ssh_privatekey_type()
  * @see ssh_userauth_pubkey()
  */
 int ssh_userauth_offer_pubkey(ssh_session session, const char *username,

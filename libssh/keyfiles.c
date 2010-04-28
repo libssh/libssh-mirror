@@ -364,11 +364,11 @@ static ssh_buffer privatekey_file_to_buffer(FILE *fp, int type,
   }
 
   switch(type) {
-    case TYPE_DSS:
+    case SSH_KEYTYPE_DSS:
       header_begin = DSA_HEADER_BEGIN;
       header_end = DSA_HEADER_END;
       break;
-    case TYPE_RSA:
+    case SSH_KEYTYPE_RSA:
       header_begin = RSA_HEADER_BEGIN;
       header_end = RSA_HEADER_END;
       break;
@@ -468,7 +468,7 @@ static int read_rsa_privatekey(FILE *fp, gcry_sexp_t *r,
   ssh_buffer buffer = NULL;
   int rc = 1;
 
-  buffer = privatekey_file_to_buffer(fp, TYPE_RSA, cb, userdata, desc);
+  buffer = privatekey_file_to_buffer(fp, SSH_KEYTYPE_RSA, cb, userdata, desc);
   if (buffer == NULL) {
     return 0;
   }
@@ -537,7 +537,7 @@ static int read_dsa_privatekey(FILE *fp, gcry_sexp_t *r, ssh_auth_callback cb,
   ssh_string v = NULL;
   int rc = 1;
 
-  buffer = privatekey_file_to_buffer(fp, TYPE_DSS, cb, userdata, desc);
+  buffer = privatekey_file_to_buffer(fp, SSH_KEYTYPE_DSS, cb, userdata, desc);
   if (buffer == NULL) {
     return 0;
   }
