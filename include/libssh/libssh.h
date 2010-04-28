@@ -396,6 +396,9 @@ LIBSSH_API int ssh_pcap_file_close(ssh_pcap_file pcap);
 LIBSSH_API void ssh_pcap_file_free(ssh_pcap_file pcap);
 LIBSSH_API ssh_pcap_file ssh_pcap_file_new(void);
 LIBSSH_API int ssh_pcap_file_open(ssh_pcap_file pcap, const char *filename);
+
+LIBSSH_API int ssh_privatekey_type(ssh_private_key privatekey);
+
 LIBSSH_API void ssh_print_hexa(const char *descr, const unsigned char *what, size_t len);
 LIBSSH_API int ssh_scp_accept_request(ssh_scp scp);
 LIBSSH_API int ssh_scp_close(ssh_scp scp);
