@@ -140,6 +140,20 @@ char *ssh_lowercase(const char* str) {
   return new;
 }
 
+char *ssh_hostport(const char *host, int port){
+	char *dest;
+	size_t len;
+	if(host==NULL)
+		return NULL;
+	/* 3 for []:, 5 for 65536 and 1 for nul */
+	len=strlen(host) + 3 + 5 + 1;
+	dest=malloc(len);
+	if(dest==NULL)
+		return NULL;
+	snprintf(dest,len,"[%s]:%d",host,port);
+	return dest;
+}
+
 char *ssh_get_user_home_dir(void) {
   char *szPath = NULL;
   struct passwd pwd;
