@@ -1642,6 +1642,9 @@ int ssh_is_server_known(ssh_session session) {
     if (match == 0) {
       match = match_hostname(host, tokens[0], strlen(tokens[0]));
     }
+    if (match == 0) {
+      match = match_hashed_host(session, hostport, tokens[0]);
+    }
     if (match) {
       /* We got a match. Now check the key type */
       if (strcmp(session->current_crypto->server_pubkey_type, type) != 0) {
