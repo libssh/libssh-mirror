@@ -113,6 +113,7 @@ typedef struct ssh_message_struct* ssh_message;
 typedef struct ssh_pcap_file_struct* ssh_pcap_file;
 typedef struct ssh_private_key_struct* ssh_private_key;
 typedef struct ssh_public_key_struct* ssh_public_key;
+typedef struct ssh_key_struct* ssh_key;
 typedef struct ssh_scp_struct* ssh_scp;
 typedef struct ssh_session_struct* ssh_session;
 typedef struct ssh_string_struct* ssh_string;
@@ -405,7 +406,7 @@ LIBSSH_API void ssh_pcap_file_free(ssh_pcap_file pcap);
 LIBSSH_API ssh_pcap_file ssh_pcap_file_new(void);
 LIBSSH_API int ssh_pcap_file_open(ssh_pcap_file pcap, const char *filename);
 
-LIBSSH_API int ssh_privatekey_type(ssh_private_key privatekey);
+LIBSSH_API enum ssh_keytypes_e ssh_privatekey_type(ssh_private_key privatekey);
 
 LIBSSH_API void ssh_print_hexa(const char *descr, const unsigned char *what, size_t len);
 LIBSSH_API int ssh_scp_accept_request(ssh_scp scp);

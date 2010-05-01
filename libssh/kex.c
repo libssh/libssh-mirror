@@ -333,7 +333,10 @@ void ssh_list_kex(ssh_session session, KEX *kex) {
 #ifdef DEBUG_CRYPTO
   ssh_print_hexa("session cookie", kex->cookie, 16);
 #endif
-
+  if(kex->methods==NULL){
+    ssh_log(session, SSH_LOG_RARE,"kex->methods is NULL");
+    return;
+  }
   for(i = 0; i < 10; i++) {
     ssh_log(session, SSH_LOG_FUNCTIONS, "%s: %s",
         ssh_kex_nums[i], kex->methods[i]);

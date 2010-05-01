@@ -641,8 +641,8 @@ static int privatekey_type_from_file(FILE *fp) {
  *
  * @param[in]  filename The filename of the the private key.
  *
- * @param[in]  type     The type of the private key. This could be TYPE_DSS or
- *                      TYPE_RSA. Pass 0 to automatically detect the type.
+ * @param[in]  type     The type of the private key. This could be SSH_KEYTYPE_DSS or
+ *                      SSH_KEYTYPE_RSA. Pass 0 to automatically detect the type.
  *
  * @param[in]  passphrase The passphrase to decrypt the private key. Set to null
  *                        if none is needed or it is unknown.
@@ -799,15 +799,15 @@ ssh_private_key privatekey_from_file(ssh_session session, const char *filename,
 
 /**
  * @brief returns the type of a private key
- * @param privatekey[in] the private key handle
- * @returns one of TYPE_RSA,TYPE_DSS,TYPE_RSA1
- * @returns 0 if the type is unknown
+ * @param[in] privatekey the private key handle
+ * @returns one of SSH_KEYTYPE_RSA,SSH_KEYTYPE_DSS,SSH_KEYTYPE_RSA1
+ * @returns SSH_KEYTYPE_UNKNOWN if the type is unknown
  * @see privatekey_from_file
  * @see ssh_userauth_offer_pubkey
  */
-int ssh_privatekey_type(ssh_private_key privatekey){
+enum ssh_keytypes_e ssh_privatekey_type(ssh_private_key privatekey){
   if (privatekey==NULL)
-    return 0;
+    return SSH_KEYTYPE_UNKNOWN;
   return privatekey->type;
 }
 
