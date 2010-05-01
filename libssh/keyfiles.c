@@ -1695,7 +1695,7 @@ int ssh_is_server_known(ssh_session session) {
  *
  * @param[in]  session  The ssh session to use.
  *
- * @return              0 on success, -1 on error.
+ * @return              SSH_OK on success, SSH_ERROR on error.
  */
 int ssh_write_knownhost(ssh_session session) {
   ssh_string pubkey = session->current_crypto->server_pubkey;
@@ -1703,19 +1703,30 @@ int ssh_write_knownhost(ssh_session session) {
   char buffer[4096] = {0};
   FILE *file;
   char *dir;
+  char *host;
+  char *hostport;
   size_t len = 0;
+
+  if (session->host == NULL) {
+    ssh_set_error(session, SSH_FATAL,
+        "Can't write host in known hosts if the hostname isn't known");
+    return SSH_ERROR;
+  }
+
+  host = ssh_lowercase(session->host);
+  /* If using a nonstandard port, save the host in the [host]:port format */
+  if(session->port != 22){
+    hostport = ssh_hostport(host,session->port);
+    SAFE_FREE(host);
+    host=hostport;
+    hostport=NULL;
+  }
 
   if (session->knownhosts == NULL) {
     if (ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, NULL) < 0) {
       ssh_set_error(session, SSH_FATAL, "Can't find a known_hosts file");
       return -1;
     }
-  }
-
-  if (session->host == NULL) {
-    ssh_set_error(session, SSH_FATAL,
-        "Cannot write host in known hosts if the hostname is unknown");
-    return -1;
   }
 
   /* Check if ~/.ssh exists and create it if not */
@@ -1739,6 +1750,7 @@ int ssh_write_knownhost(ssh_session session) {
     ssh_set_error(session, SSH_FATAL,
         "Couldn't open known_hosts file %s for appending: %s",
         session->knownhosts, strerror(errno));
+    SAFE_FREE(host);
     return -1;
   }
 
@@ -1758,6 +1770,7 @@ int ssh_write_knownhost(ssh_session session) {
     key = publickey_from_string(session, pubkey);
     if (key == NULL) {
       fclose(file);
+      SAFE_FREE(host);
       return -1;
     }
 
@@ -1766,6 +1779,7 @@ int ssh_write_knownhost(ssh_session session) {
     if (sexp == NULL) {
       publickey_free(key);
       fclose(file);
+      SAFE_FREE(host);
       return -1;
     }
     e = gcry_sexp_nth_mpi(sexp, 1, GCRYMPI_FMT_USG);
@@ -1773,6 +1787,7 @@ int ssh_write_knownhost(ssh_session session) {
     if (e == NULL) {
       publickey_free(key);
       fclose(file);
+      SAFE_FREE(host);
       return -1;
     }
 
@@ -1781,6 +1796,7 @@ int ssh_write_knownhost(ssh_session session) {
       publickey_free(key);
       bignum_free(e);
       fclose(file);
+      SAFE_FREE(host);
       return -1;
     }
     n = gcry_sexp_nth_mpi(sexp, 1, GCRYMPI_FMT_USG);
@@ -1789,6 +1805,7 @@ int ssh_write_knownhost(ssh_session session) {
       publickey_free(key);
       bignum_free(e);
       fclose(file);
+      SAFE_FREE(host);
       return -1;
     }
 
@@ -1813,12 +1830,13 @@ int ssh_write_knownhost(ssh_session session) {
 #endif
       publickey_free(key);
       fclose(file);
+      SAFE_FREE(host);
       return -1;
     }
 
     snprintf(buffer, sizeof(buffer),
         "%s %d %s %s\n",
-        session->host,
+        host,
         rsa_size << 3,
         e_string,
         n_string);
@@ -1838,18 +1856,19 @@ int ssh_write_knownhost(ssh_session session) {
     pubkey_64 = bin_to_base64(pubkey->string, string_len(pubkey));
     if (pubkey_64 == NULL) {
       fclose(file);
+      SAFE_FREE(host);
       return -1;
     }
 
     snprintf(buffer, sizeof(buffer),
         "%s %s %s\n",
-        session->host,
+        host,
         session->current_crypto->server_pubkey_type,
         pubkey_64);
 
     SAFE_FREE(pubkey_64);
   }
-
+  SAFE_FREE(host);
   len = strlen(buffer);
   if (fwrite(buffer, len, 1, file) != 1 || ferror(file)) {
     fclose(file);
