@@ -99,7 +99,7 @@
  *     exit(-1);
  *   ssh_options_set(my_ssh_session, SSH_OPTIONS_HOST, "localhost");
  *   ssh_options_set(my_ssh_session, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
- *   ssh_options_set(my_ssh_session, SSH_OPTIONS_LOG_PORT, &port);
+ *   ssh_options_set(my_ssh_session, SSH_OPTIONS_PORT, &port);
  *   ...
  *   ssh_free(my_ssh_session);
  * @endcode
