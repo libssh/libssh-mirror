@@ -62,7 +62,7 @@ START_TEST (torture_pubkey_from_file)
 
     rc = ssh_try_publickey_from_file(session, LIBSSH_RSA_TESTKEY, &pubkey, &type);
 
-    ck_assert(rc == 0);
+    ck_assert_msg(rc == 0,ssh_get_error(session));
 
     string_free(pubkey);
 
@@ -70,13 +70,13 @@ START_TEST (torture_pubkey_from_file)
     unlink(LIBSSH_RSA_TESTKEY ".pub");
 
     rc = ssh_try_publickey_from_file(session, LIBSSH_RSA_TESTKEY, &pubkey, &type);
-    ck_assert(rc == 1);
+    ck_assert_msg(rc == 1,ssh_get_error(session));
 
     /* test if it returns -1 if privkey doesn't exist */
     unlink(LIBSSH_RSA_TESTKEY);
 
     rc = ssh_try_publickey_from_file(session, LIBSSH_RSA_TESTKEY, &pubkey, &type);
-    ck_assert(rc == -1);
+    ck_assert_msg(rc == -1,ssh_get_error(session));
 }
 END_TEST
 
@@ -115,7 +115,7 @@ START_TEST (torture_pubkey_generate_from_privkey)
     /* read the publickey */
     rc = ssh_try_publickey_from_file(session, LIBSSH_RSA_TESTKEY, &pubkey_orig,
         &type_orig);
-    ck_assert(rc == 0);
+    ck_assert_msg(rc == 0,ssh_get_error(session));
     ck_assert(pubkey_orig != NULL);
 
     rc = torture_read_one_line(LIBSSH_RSA_TESTKEY ".pub", pubkey_line_orig,
@@ -126,24 +126,24 @@ START_TEST (torture_pubkey_generate_from_privkey)
     unlink(LIBSSH_RSA_TESTKEY ".pub");
 
     privkey = privatekey_from_file(session, LIBSSH_RSA_TESTKEY, 0, NULL);
-    ck_assert(privkey != NULL);
+    ck_assert_msg(privkey != NULL,ssh_get_error(session));
 
     pubkey = publickey_from_privatekey(privkey);
     type_new = privkey->type;
     privatekey_free(privkey);
-    ck_assert(pubkey != NULL);
+    ck_assert_msg(pubkey != NULL,ssh_get_error(session));
 
     pubkey_new = publickey_to_string(pubkey);
     publickey_free(pubkey);
 
-    ck_assert(pubkey_new != NULL);
+    ck_assert_msg(pubkey_new != NULL,ssh_get_error(session));
 
     ck_assert(string_len(pubkey_orig) == string_len(pubkey_new));
     ck_assert(memcmp(string_data(pubkey_orig), string_data(pubkey_new),
                 string_len(pubkey_orig)) == 0);
 
     rc = ssh_publickey_to_file(session, LIBSSH_RSA_TESTKEY ".pub", pubkey_new, type_new);
-    ck_assert(rc == 0);
+    ck_assert_msg(rc == 0,ssh_get_error(session));
 
     rc = torture_read_one_line(LIBSSH_RSA_TESTKEY ".pub", pubkey_line_new,
         sizeof(pubkey_line_new));
@@ -161,26 +161,26 @@ END_TEST
 START_TEST(torture_privatekey_from_file){
   ssh_private_key key=NULL;
   key=privatekey_from_file(session, LIBSSH_RSA_TESTKEY, SSH_KEYTYPE_RSA, NULL);
-  ck_assert(key != NULL);
+  ck_assert_msg(key != NULL,ssh_get_error(session));
   if(key != NULL){
     privatekey_free(key);
     key=NULL;
   }
   key=privatekey_from_file(session, LIBSSH_DSA_TESTKEY, SSH_KEYTYPE_DSS, NULL);
-  ck_assert(key != NULL);
+  ck_assert_msg(key != NULL,ssh_get_error(session));
   if(key != NULL){
     privatekey_free(key);
     key=NULL;
   }
   /* test the automatic type discovery */
   key=privatekey_from_file(session, LIBSSH_RSA_TESTKEY, 0, NULL);
-  ck_assert(key != NULL);
+  ck_assert_msg(key != NULL,ssh_get_error(session));
   if(key != NULL){
     privatekey_free(key);
     key=NULL;
   }
   key=privatekey_from_file(session, LIBSSH_DSA_TESTKEY, 0, NULL);
-  ck_assert(key != NULL);
+  ck_assert_msg(key != NULL,ssh_get_error(session));
   if(key != NULL){
     privatekey_free(key);
     key=NULL;
@@ -195,26 +195,26 @@ END_TEST
 START_TEST(torture_privatekey_from_file_passphrase){
   ssh_private_key key=NULL;
   key=privatekey_from_file(session, LIBSSH_RSA_TESTKEY, SSH_KEYTYPE_RSA, LIBSSH_PASSPHRASE);
-  ck_assert(key != NULL);
+  ck_assert_msg(key != NULL,ssh_get_error(session));
   if(key != NULL){
     privatekey_free(key);
     key=NULL;
   }
   key=privatekey_from_file(session, LIBSSH_DSA_TESTKEY, SSH_KEYTYPE_DSS, LIBSSH_PASSPHRASE);
-  ck_assert(key != NULL);
+  ck_assert_msg(key != NULL,ssh_get_error(session));
   if(key != NULL){
     privatekey_free(key);
     key=NULL;
   }
   /* test the automatic type discovery */
   key=privatekey_from_file(session, LIBSSH_RSA_TESTKEY, 0, LIBSSH_PASSPHRASE);
-  ck_assert(key != NULL);
+  ck_assert_msg(key != NULL,ssh_get_error(session));
   if(key != NULL){
     privatekey_free(key);
     key=NULL;
   }
   key=privatekey_from_file(session, LIBSSH_DSA_TESTKEY, 0, LIBSSH_PASSPHRASE);
-  ck_assert(key != NULL);
+  ck_assert_msg(key != NULL,ssh_get_error(session));
   if(key != NULL){
     privatekey_free(key);
     key=NULL;
