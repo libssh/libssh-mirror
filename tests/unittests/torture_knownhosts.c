@@ -50,10 +50,10 @@ START_TEST (torture_knownhosts_port)
   ssh_options_set(session,SSH_OPTIONS_HOST,"localhost");
   ssh_options_set(session,SSH_OPTIONS_KNOWNHOSTS,KNOWNHOSTFILES);
   rc=ssh_connect(session);
-  ck_assert_int_eq(rc,SSH_OK);
+  ck_assert_msg(rc==SSH_OK,ssh_get_error(session));
   session->port=1234;
   rc=ssh_write_knownhost(session);
-  ck_assert_int_eq(rc,SSH_OK);
+  ck_assert_msg(rc==SSH_OK,ssh_get_error(session));
   ssh_disconnect(session);
   ssh_free(session);
   file=fopen(KNOWNHOSTFILES,"r");
@@ -68,10 +68,10 @@ START_TEST (torture_knownhosts_port)
   ssh_options_set(session,SSH_OPTIONS_HOST,"localhost");
   ssh_options_set(session,SSH_OPTIONS_KNOWNHOSTS,KNOWNHOSTFILES);
   rc=ssh_connect(session);
-  ck_assert_int_eq(rc,SSH_OK);
+  ck_assert_msg(rc==SSH_OK,ssh_get_error(session));
   session->port=1234;
   rc=ssh_is_server_known(session);
-  ck_assert_int_eq(rc,SSH_SERVER_KNOWN_OK);
+  ck_assert_msg(rc==SSH_SERVER_KNOWN_OK,ssh_get_error(session));
   ssh_disconnect(session);
 }
 END_TEST
