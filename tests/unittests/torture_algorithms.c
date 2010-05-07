@@ -100,6 +100,25 @@ START_TEST (torture_algorithms_blowfish_cbc)
 }
 END_TEST
 
+START_TEST (torture_algorithms_zlib)
+{
+  int rc;
+  ssh_options_set(session,SSH_OPTIONS_HOST,"localhost");
+  rc=ssh_options_set(session,SSH_OPTIONS_COMPRESSION_C_S,"zlib");
+  ck_assert_msg(rc==SSH_OK,ssh_get_error(session));
+  rc=ssh_options_set(session,SSH_OPTIONS_COMPRESSION_S_C,"zlib");
+  ck_assert_msg(rc==SSH_OK,ssh_get_error(session));
+  rc=ssh_connect(session);
+  ck_assert_msg(rc==SSH_OK,ssh_get_error(session));
+  rc=ssh_userauth_none(session,NULL);
+  if(rc != SSH_OK){
+    rc=ssh_get_error_code(session);
+    ck_assert_msg(rc==SSH_REQUEST_DENIED,ssh_get_error(session));
+  }
+  ssh_disconnect(session);
+}
+END_TEST
+
 static Suite *torture_make_suite(void) {
   Suite *s = suite_create("libssh_algorithms");
 
@@ -119,7 +138,9 @@ static Suite *torture_make_suite(void) {
           torture_algorithms_3des_cbc, setup, teardown);
     torture_create_case_fixture(s, "torture_algorithms_blowfish-cbc",
           torture_algorithms_blowfish_cbc, setup, teardown);
-    return s;
+    torture_create_case_fixture(s, "torture_algorithms_zlib",
+          torture_algorithms_zlib, setup, teardown);
+     return s;
 }
 
 int main(int argc, char **argv) {
