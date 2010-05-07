@@ -1570,6 +1570,7 @@ int ssh_is_server_known(ssh_session session) {
   FILE *file = NULL;
   char **tokens;
   char *host;
+  char *hostport;
   const char *type;
   int match;
   int ret = SSH_SERVER_NOT_KNOWN;
@@ -1593,8 +1594,11 @@ int ssh_is_server_known(ssh_session session) {
   }
 
   host = lowercase(session->host);
-  if (host == NULL) {
-    ssh_set_error(session, SSH_FATAL, "Not enough space!");
+  hostport = ssh_hostport(host,session->port);
+  if (host == NULL || hostport == NULL) {
+    ssh_set_error_oom(session);
+    SAFE_FREE(host);
+    SAFE_FREE(hostport);
     leave_function();
     return SSH_SERVER_ERROR;
   }
@@ -1608,10 +1612,12 @@ int ssh_is_server_known(ssh_session session) {
       break;
     }
     match = match_hashed_host(session, host, tokens[0]);
+    if (match == 0){
+    	match = match_hostname(hostport, tokens[0], strlen(tokens[0]));
+    }
     if (match == 0) {
       match = match_hostname(host, tokens[0], strlen(tokens[0]));
     }
-
     if (match) {
       /* We got a match. Now check the key type */
       if (strcmp(session->current_crypto->server_pubkey_type, type) != 0) {
@@ -1642,6 +1648,7 @@ int ssh_is_server_known(ssh_session session) {
   } while (1);
 
   SAFE_FREE(host);
+  SAFE_FREE(hostport);
   if (file != NULL) {
     fclose(file);
   }
