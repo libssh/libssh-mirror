@@ -40,6 +40,9 @@
 #include "libssh/poll.h"
 #include "libssh/session.h"
 
+#ifndef _WIN32
+extern const char **environ;
+#endif
 /**
  * @internal
  *
@@ -61,7 +64,8 @@ enum ssh_socket_states_e {
 };
 
 struct ssh_socket_struct {
-  socket_t fd;
+  socket_t fd_in;
+  socket_t fd_out;
   int last_errno;
   int data_to_read; /* reading now on socket will
                        not block */
@@ -72,7 +76,8 @@ struct ssh_socket_struct {
   ssh_buffer in_buffer;
   ssh_session session;
   ssh_socket_callbacks callbacks;
-  ssh_poll_handle poll;
+  ssh_poll_handle poll_in;
+  ssh_poll_handle poll_out;
 };
 
 static int ssh_socket_unbuffered_read(ssh_socket s, void *buffer, uint32_t len);
@@ -105,7 +110,8 @@ ssh_socket ssh_socket_new(ssh_session session) {
   if (s == NULL) {
     return NULL;
   }
-  s->fd = -1;
+  s->fd_in = -1;
+  s->fd_out= -1;
   s->last_errno = -1;
   s->session = session;
   s->in_buffer = buffer_new();
@@ -122,7 +128,7 @@ ssh_socket ssh_socket_new(ssh_session session) {
   s->data_to_read = 0;
   s->data_to_write = 0;
   s->data_except = 0;
-  s->poll=NULL;
+  s->poll_in=s->poll_out=NULL;
   s->state=SSH_SOCKET_NONE;
   return s;
 }
@@ -149,16 +155,9 @@ int ssh_socket_pollcallback(ssh_poll_handle p, socket_t fd, int revents, void *v
 		/* Check if we are in a connecting state */
 		if(s->state==SSH_SOCKET_CONNECTING){
 			s->state=SSH_SOCKET_ERROR;
-			ssh_poll_free(p);
-			s->poll=p=NULL;
 			getsockopt(fd,SOL_SOCKET,SO_ERROR,(void *)&err,&errlen);
 			s->last_errno=err;
-#ifdef _WIN32
-			closesocket(fd);
-#else
-			close(fd);
-#endif
-			s->fd=-1;
+			ssh_socket_close(s);
 			if(s->callbacks && s->callbacks->connected)
 				s->callbacks->connected(SSH_SOCKET_CONNECTED_ERROR,err,
 						s->callbacks->userdata);
@@ -209,7 +208,7 @@ int ssh_socket_pollcallback(ssh_poll_handle p, socket_t fd, int revents, void *v
 			ssh_log(s->session,SSH_LOG_PACKET,"Received POLLOUT in connecting state");
 			s->state = SSH_SOCKET_CONNECTED;
 			ssh_poll_set_events(p,POLLOUT | POLLIN | POLLERR);
-			ssh_sock_set_blocking(ssh_socket_get_fd(s));
+			ssh_sock_set_blocking(ssh_socket_get_fd_in(s));
 			if(s->callbacks && s->callbacks->connected)
 				s->callbacks->connected(SSH_SOCKET_CONNECTED_OK,0,s->callbacks->userdata);
 			return 0;
@@ -232,21 +231,32 @@ int ssh_socket_pollcallback(ssh_poll_handle p, socket_t fd, int revents, void *v
 	return 0;
 }
 
-void ssh_socket_register_pollcallback(ssh_socket s, ssh_poll_handle p){
-	ssh_poll_set_callback(p,ssh_socket_pollcallback,s);
-	s->poll=p;
-}
-
 /** @internal
- * @brief returns the poll handle corresponding to the socket,
+ * @brief returns the input poll handle corresponding to the socket,
  * creates it if it does not exist.
  * @returns allocated and initialized ssh_poll_handle object
  */
-ssh_poll_handle ssh_socket_get_poll_handle(ssh_socket s){
-	if(s->poll)
-		return s->poll;
-	s->poll=ssh_poll_new(s->fd,0,ssh_socket_pollcallback,s);
-	return s->poll;
+ssh_poll_handle ssh_socket_get_poll_handle_in(ssh_socket s){
+	if(s->poll_in)
+		return s->poll_in;
+	s->poll_in=ssh_poll_new(s->fd_in,0,ssh_socket_pollcallback,s);
+	if(s->fd_in == s->fd_out && s->poll_out == NULL)
+    s->poll_out=s->poll_in;
+	return s->poll_in;
+}
+
+/** @internal
+ * @brief returns the output poll handle corresponding to the socket,
+ * creates it if it does not exist.
+ * @returns allocated and initialized ssh_poll_handle object
+ */
+ssh_poll_handle ssh_socket_get_poll_handle_out(ssh_socket s){
+  if(s->poll_out)
+    return s->poll_out;
+  s->poll_out=ssh_poll_new(s->fd_out,0,ssh_socket_pollcallback,s);
+  if(s->fd_in == s->fd_out && s->poll_in == NULL)
+    s->poll_in=s->poll_out;
+  return s->poll_out;
 }
 
 /** \internal
@@ -259,36 +269,32 @@ void ssh_socket_free(ssh_socket s){
   ssh_socket_close(s);
   buffer_free(s->in_buffer);
   buffer_free(s->out_buffer);
-  if(s->poll)
-  	ssh_poll_free(s->poll);
   SAFE_FREE(s);
 }
 
 #ifndef _WIN32
 int ssh_socket_unix(ssh_socket s, const char *path) {
   struct sockaddr_un sunaddr;
-
+  socket_t fd;
   sunaddr.sun_family = AF_UNIX;
   snprintf(sunaddr.sun_path, sizeof(sunaddr.sun_path), "%s", path);
 
-  s->fd = socket(AF_UNIX, SOCK_STREAM, 0);
-  if (s->fd < 0) {
+  fd = socket(AF_UNIX, SOCK_STREAM, 0);
+  if (fd < 0) {
     return -1;
   }
 
-  if (fcntl(s->fd, F_SETFD, 1) == -1) {
-    close(s->fd);
-    s->fd = -1;
+  if (fcntl(fd, F_SETFD, 1) == -1) {
+    close(fd);
     return -1;
   }
 
-  if (connect(s->fd, (struct sockaddr *) &sunaddr,
+  if (connect(fd, (struct sockaddr *) &sunaddr,
         sizeof(sunaddr)) < 0) {
-    close(s->fd);
-    s->fd = -1;
+    close(fd);
     return -1;
   }
-
+  ssh_socket_set_fd(s,fd);
   return 0;
 }
 #endif
@@ -299,37 +305,81 @@ int ssh_socket_unix(ssh_socket s, const char *path) {
 void ssh_socket_close(ssh_socket s){
   if (ssh_socket_is_open(s)) {
 #ifdef _WIN32
-    closesocket(s->fd);
+    closesocket(s->fd_in);
+    /* fd_in = fd_out under win32 */
     s->last_errno = WSAGetLastError();
 #else
-    close(s->fd);
+    close(s->fd_in);
+    if(s->fd_out != s->fd_in && s->fd_out != -1)
+      close(s->fd_out);
     s->last_errno = errno;
 #endif
-    s->fd=-1;
+    s->fd_in = s->fd_out = -1;
+  }
+  if(s->poll_in != NULL){
+    if(s->poll_out == s->poll_in)
+      s->poll_out = NULL;
+    ssh_poll_free(s->poll_in);
+    s->poll_in=NULL;
+  }
+  if(s->poll_out != NULL){
+    ssh_poll_free(s->poll_out);
+    s->poll_out=NULL;
   }
 }
 
-/** \internal
- * \brief sets the file descriptor of the socket
+/**
+ * @internal
+ * @brief sets the file descriptor of the socket.
+ * @param[out] s ssh_socket to update
+ * @param[in] fd file descriptor to set
+ * @warning this function updates boths the input and output
+ * file descriptors
  */
 void ssh_socket_set_fd(ssh_socket s, socket_t fd) {
-  s->fd = fd;
-  if(s->poll)
-  	ssh_poll_set_fd(s->poll,fd);
+  s->fd_in = s->fd_out = fd;
+  if(s->poll_in)
+  	ssh_poll_set_fd(s->poll_in,fd);
 }
 
-/** \internal
- * \brief returns the file descriptor of the socket
+/**
+ * @internal
+ * @brief sets the input file descriptor of the socket.
+ * @param[out] s ssh_socket to update
+ * @param[in] fd file descriptor to set
  */
-socket_t ssh_socket_get_fd(ssh_socket s) {
-  return s->fd;
+void ssh_socket_set_fd_in(ssh_socket s, socket_t fd) {
+  s->fd_in = fd;
+  if(s->poll_in)
+    ssh_poll_set_fd(s->poll_in,fd);
+}
+
+/**
+ * @internal
+ * @brief sets the output file descriptor of the socket.
+ * @param[out] s ssh_socket to update
+ * @param[in] fd file descriptor to set
+ */
+void ssh_socket_set_fd_out(ssh_socket s, socket_t fd) {
+  s->fd_out = fd;
+  if(s->poll_out)
+    ssh_poll_set_fd(s->poll_out,fd);
+}
+
+
+
+/** \internal
+ * \brief returns the input file descriptor of the socket
+ */
+socket_t ssh_socket_get_fd_in(ssh_socket s) {
+  return s->fd_in;
 }
 
 /** \internal
  * \brief returns nonzero if the socket is open
  */
 int ssh_socket_is_open(ssh_socket s) {
-  return s->fd != -1;
+  return s->fd_in != -1;
 }
 
 /** \internal
@@ -342,7 +392,7 @@ static int ssh_socket_unbuffered_read(ssh_socket s, void *buffer, uint32_t len) 
     return -1;
   }
 
-  rc = recv(s->fd,buffer, len, 0);
+  rc = recv(s->fd_in,buffer, len, 0);
 #ifdef _WIN32
   s->last_errno = WSAGetLastError();
 #else
@@ -368,7 +418,7 @@ static int ssh_socket_unbuffered_write(ssh_socket s, const void *buffer,
     return -1;
   }
 
-  w = send(s->fd,buffer, len, 0);
+  w = send(s->fd_out,buffer, len, 0);
 #ifdef _WIN32
   s->last_errno = WSAGetLastError();
 #else
@@ -376,8 +426,8 @@ static int ssh_socket_unbuffered_write(ssh_socket s, const void *buffer,
 #endif
   s->data_to_write = 0;
   /* Reactive the POLLOUT detector in the poll multiplexer system */
-  if(s->poll){
-  	ssh_poll_set_events(s->poll,ssh_poll_get_events(s->poll) | POLLOUT);
+  if(s->poll_out){
+  	ssh_poll_set_events(s->poll_out,ssh_poll_get_events(s->poll_out) | POLLOUT);
   }
   if (w < 0) {
     s->data_except = 1;
@@ -390,10 +440,10 @@ static int ssh_socket_unbuffered_write(ssh_socket s, const void *buffer,
  * \brief returns nonzero if the current socket is in the fd_set
  */
 int ssh_socket_fd_isset(ssh_socket s, fd_set *set) {
-  if(s->fd == -1) {
+  if(s->fd_in == -1) {
     return 0;
   }
-  return FD_ISSET(s->fd,set);
+  return FD_ISSET(s->fd_in,set) || FD_ISSET(s->fd_out,set);
 }
 
 /** \internal
@@ -401,11 +451,15 @@ int ssh_socket_fd_isset(ssh_socket s, fd_set *set) {
  */
 
 void ssh_socket_fd_set(ssh_socket s, fd_set *set, int *fd_max) {
-  if (s->fd == -1)
+  if (s->fd_in == -1)
     return;
-  FD_SET(s->fd,set);
-  if (s->fd >= *fd_max) {
-    *fd_max = s->fd + 1;
+  FD_SET(s->fd_in,set);
+  FD_SET(s->fd_out,set);
+  if (s->fd_in >= *fd_max) {
+    *fd_max = s->fd_in + 1;
+  }
+  if (s->fd_out >= *fd_max) {
+      *fd_max = s->fd_out + 1;
   }
 }
 
@@ -602,11 +656,14 @@ int ssh_socket_wait_for_data(ssh_socket s, ssh_session session, uint32_t len) {
 }
 
 /* ssh_socket_poll */
+/** @brief polls the socket for activity
+ * @bug this function should disappear in favor of the new polling mechanism
+ */
 int ssh_socket_poll(ssh_socket s, int *writeable, int *except) {
   ssh_session session = s->session;
-  ssh_pollfd_t fd[1];
+  ssh_pollfd_t fd[2];
   int rc = -1;
-
+  int n_fd;
   enter_function();
 
   if (!ssh_socket_is_open(s)) {
@@ -614,19 +671,29 @@ int ssh_socket_poll(ssh_socket s, int *writeable, int *except) {
     *writeable = 0;
     return 0;
   }
-
-  fd->fd = s->fd;
-  fd->events = 0;
+  if(s->fd_in == s->fd_out){
+    n_fd=1;
+  } else {
+    n_fd=2;
+  }
+  fd[0].fd = s->fd_in;
+  fd[0].events = 0;
 
   if (!s->data_to_read) {
-    fd->events |= POLLIN;
+    fd[0].events |= POLLIN;
   }
+
+  if(n_fd == 2){
+    fd[1].fd=s->fd_out;
+    fd[1].events = 0;
+  }
+
   if (!s->data_to_write) {
-    fd->events |= POLLOUT;
+    fd[n_fd - 1].events |= POLLOUT;
   }
 
   /* Make the call, and listen for errors */
-  rc = ssh_poll(fd, 1, 0);
+  rc = ssh_poll(fd, n_fd, 0);
   if (rc < 0) {
     ssh_set_error(session, SSH_FATAL, "poll(): %s", strerror(errno));
     leave_function();
@@ -634,13 +701,13 @@ int ssh_socket_poll(ssh_socket s, int *writeable, int *except) {
   }
 
   if (!s->data_to_read) {
-    s->data_to_read = fd->revents & POLLIN;
+    s->data_to_read = fd[0].revents & POLLIN;
   }
   if (!s->data_to_write) {
-    s->data_to_write = fd->revents & POLLOUT;
+    s->data_to_write = fd[n_fd - 1].revents & POLLOUT;
   }
   if (!s->data_except) {
-    s->data_except = fd->revents & POLLERR;
+    s->data_except = fd[0].revents & POLLERR;
   }
 
   *except = s->data_except;
@@ -689,9 +756,9 @@ int ssh_socket_nonblocking_flush(ssh_socket s) {
   }
 
   /* Is there some data pending? */
-  if (buffer_get_rest_len(s->out_buffer) > 0 && s->poll) {
+  if (buffer_get_rest_len(s->out_buffer) > 0 && s->poll_out) {
   	/* force the poll system to catch pollout events */
-  	ssh_poll_set_events(s->poll, ssh_poll_get_events(s->poll) |POLLOUT);
+  	ssh_poll_set_events(s->poll_out, ssh_poll_get_events(s->poll_out) |POLLOUT);
     leave_function();
     return SSH_AGAIN;
   }
@@ -811,14 +878,74 @@ int ssh_socket_connect(ssh_socket s, const char *host, int port, const char *bin
 	ssh_socket_set_fd(s,fd);
 	s->state=SSH_SOCKET_CONNECTING;
 	/* POLLOUT is the event to wait for in a nonblocking connect */
-	ssh_poll_set_events(ssh_socket_get_poll_handle(s),POLLOUT);
+	ssh_poll_set_events(ssh_socket_get_poll_handle_in(s),POLLOUT);
 #ifdef _WIN32
-	ssh_poll_add_events(ssh_socket_get_poll_handle(s),POLLWRNORM);
+	ssh_poll_add_events(ssh_socket_get_poll_handle_in(s),POLLWRNORM);
 #endif
 	leave_function();
 	return SSH_OK;
 }
 
+#ifndef _WIN32
+/**
+ * @internal
+ * @brief executes a command and redirect input and outputs
+ * @param command command to execute
+ * @param in input file descriptor
+ * @param out output file descriptor
+ */
+void ssh_execute_command(const char *command, socket_t in, socket_t out){
+  const char *args[]={"/bin/sh","-c",command,NULL};
+  /* redirect in and out to stdin, stdout and stderr */
+  dup2(in, 0);
+  dup2(out,1);
+  dup2(out,2);
+  close(in);
+  close(out);
+  execve(args[0],(char * const *)args,(char * const *)environ);
+  exit(1);
+}
+
+/**
+ * @internal
+ * @brief Open a socket on a ProxyCommand
+ * This call will always be nonblocking.
+ * @param s    socket to connect.
+ * @param command Command to execute.
+ * @returns SSH_OK socket is being connected.
+ * @returns SSH_ERROR error while executing the command.
+ */
+
+int ssh_socket_connect_proxycommand(ssh_socket s, const char *command){
+  socket_t in_pipe[2];
+  socket_t out_pipe[2];
+  int pid;
+  ssh_session session=s->session;
+  enter_function();
+  if(s->state != SSH_SOCKET_NONE)
+    return SSH_ERROR;
+  pipe(in_pipe);
+  pipe(out_pipe);
+  pid = fork();
+  if(pid == 0){
+    ssh_execute_command(command,out_pipe[0],in_pipe[1]);
+  }
+  close(in_pipe[1]);
+  close(out_pipe[0]);
+  ssh_log(session,SSH_LOG_PROTOCOL,"ProxyCommand connection pipe: [%d,%d]",in_pipe[0],out_pipe[1]);
+  ssh_socket_set_fd_in(s,in_pipe[0]);
+  ssh_socket_set_fd_out(s,out_pipe[1]);
+  s->state=SSH_SOCKET_CONNECTED;
+  /* POLLOUT is the event to wait for in a nonblocking connect */
+  ssh_poll_set_events(ssh_socket_get_poll_handle_in(s),POLLIN | POLLERR);
+  ssh_poll_set_events(ssh_socket_get_poll_handle_out(s),POLLOUT);
+  if(s->callbacks && s->callbacks->connected)
+    s->callbacks->connected(SSH_SOCKET_CONNECTED_OK,0,s->callbacks->userdata);
+  leave_function();
+  return SSH_OK;
+}
+
+#endif /* _WIN32 */
 /* @} */
 
 /* vim: set ts=4 sw=4 et cindent: */

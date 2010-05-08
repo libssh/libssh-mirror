@@ -624,6 +624,14 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
         session->StrictHostKeyChecking = *(int*)value;
       }
       break;
+    case SSH_OPTIONS_PROXYCOMMAND:
+      if (value == NULL) {
+        ssh_set_error_invalid(session, __FUNCTION__);
+        return -1;
+      } else {
+        session->ProxyCommand = strdup(value);
+      }
+      break;
     default:
       ssh_set_error(session, SSH_REQUEST_DENIED, "Unknown ssh option %d", type);
       return -1;

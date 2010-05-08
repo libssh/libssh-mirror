@@ -228,6 +228,7 @@ void ssh_free(ssh_session session) {
   SAFE_FREE(session->host);
   SAFE_FREE(session->sshdir);
   SAFE_FREE(session->knownhosts);
+  SAFE_FREE(session->ProxyCommand);
 
   for (i = 0; i < 10; i++) {
     if (session->wanted_methods[i]) {
@@ -292,7 +293,7 @@ socket_t ssh_get_fd(ssh_session session) {
     return -1;
   }
 
-  return ssh_socket_get_fd(session->socket);
+  return ssh_socket_get_fd_in(session->socket);
 }
 
 /**
@@ -353,16 +354,19 @@ void ssh_set_fd_except(ssh_session session) {
  * @return              SSH_OK on success, SSH_ERROR otherwise.
  */
 int ssh_handle_packets(ssh_session session, int timeout) {
-	ssh_poll_handle spoll;
+	ssh_poll_handle spoll_in,spoll_out;
 	ssh_poll_ctx ctx;
   if(session==NULL || session->socket==NULL)
   	return SSH_ERROR;
   enter_function();
-  spoll=ssh_socket_get_poll_handle(session->socket);
-  ctx=ssh_poll_get_ctx(spoll);
+  spoll_in=ssh_socket_get_poll_handle_in(session->socket);
+  spoll_out=ssh_socket_get_poll_handle_out(session->socket);
+  ctx=ssh_poll_get_ctx(spoll_in);
   if(ctx==NULL){
   	ctx=ssh_get_global_poll_ctx(session);
-  	ssh_poll_ctx_add(ctx,spoll);
+  	ssh_poll_ctx_add(ctx,spoll_in);
+  	if(spoll_in != spoll_out)
+  	  ssh_poll_ctx_add(ctx,spoll_out);
   }
   ssh_poll_ctx_dopoll(ctx,timeout);
   leave_function();

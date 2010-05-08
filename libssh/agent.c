@@ -86,7 +86,7 @@ static size_t atomicio(ssh_socket s, void *buf, size_t n, int do_read) {
   size_t pos = 0;
   ssize_t res;
   struct pollfd pfd;
-  int fd = ssh_socket_get_fd(s);
+  int fd = ssh_socket_get_fd_in(s);
 
   pfd.fd = fd;
   pfd.events = do_read ? POLLIN : POLLOUT;
