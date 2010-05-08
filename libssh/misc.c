@@ -118,20 +118,6 @@ int gettimeofday(struct timeval *__p, void *__t) {
 #define NSS_BUFLEN_PASSWD 4096
 #endif
 
-char *ssh_hostport(const char *host, int port){
-	char *dest;
-	size_t len;
-	if(host==NULL)
-		return NULL;
-	/* 3 for []:, 5 for 65536 and 1 for nul */
-	len=strlen(host) + 3 + 5 + 1;
-	dest=malloc(len);
-	if(dest==NULL)
-		return NULL;
-	snprintf(dest,len,"[%s]:%d",host,port);
-	return dest;
-}
-
 char *ssh_get_user_home_dir(void) {
   char *szPath = NULL;
   struct passwd pwd;
@@ -158,6 +144,20 @@ int ssh_file_readaccess_ok(const char *file) {
   return 1;
 }
 #endif
+
+char *ssh_hostport(const char *host, int port){
+	char *dest;
+	size_t len;
+	if(host==NULL)
+		return NULL;
+	/* 3 for []:, 5 for 65536 and 1 for nul */
+	len=strlen(host) + 3 + 5 + 1;
+	dest=malloc(len);
+	if(dest==NULL)
+		return NULL;
+	snprintf(dest,len,"[%s]:%d",host,port);
+	return dest;
+}
 
 uint64_t ntohll(uint64_t a) {
 #ifdef WORDS_BIGENDIAN
