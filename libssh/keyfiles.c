@@ -1687,7 +1687,7 @@ int ssh_write_knownhost(ssh_session session) {
     return SSH_ERROR;
   }
 
-  host = ssh_lowercase(session->host);
+  host = lowercase(session->host);
   /* If using a nonstandard port, save the host in the [host]:port format */
   if(session->port != 22){
     hostport = ssh_hostport(host,session->port);
