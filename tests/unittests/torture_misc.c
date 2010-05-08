@@ -50,12 +50,31 @@ START_TEST (torture_dirname)
 }
 END_TEST
 
+START_TEST (torture_ntohll)
+{
+    u_int32_t sample = 1;
+    unsigned char *ptr=(unsigned char *) &sample;
+    u_int64_t value = 0x0123456789abcdef;
+    u_int64_t check;
+    if(ptr[0]==1){
+      /* we're in little endian */
+      check = 0xefcdab8967452301;
+    } else {
+      /* big endian */
+      check = value;
+    }
+    value=ntohll(value);
+    ck_assert(value == check);
+}
+END_TEST
+
 static Suite *torture_make_suite(void) {
   Suite *s = suite_create("libssh_misc");
 
   torture_create_case(s, "torture_get_user_home_dir", torture_get_user_home_dir);
   torture_create_case(s, "torture_basename", torture_basename);
   torture_create_case(s, "torture_dirname", torture_dirname);
+  torture_create_case(s, "torture_ntohll", torture_ntohll);
 
   return s;
 }
