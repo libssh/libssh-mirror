@@ -6,6 +6,7 @@
 
 #include "torture.h"
 #include "misc.c"
+#define DIR "/usr/local/bin/truc/much/.."
 
 START_TEST (torture_get_user_home_dir)
 {
@@ -21,10 +22,40 @@ START_TEST (torture_get_user_home_dir)
 }
 END_TEST
 
+START_TEST (torture_basename)
+{
+    char *path;
+    path=ssh_basename(DIR "/test");
+    ck_assert(path != NULL);
+    ck_assert_str_eq(path, "test");
+    SAFE_FREE(path);
+    path=ssh_basename(DIR "/test/");
+    ck_assert(path != NULL);
+    ck_assert_str_eq(path, "test");
+    SAFE_FREE(path);
+}
+END_TEST
+
+START_TEST (torture_dirname)
+{
+    char *path;
+    path=ssh_dirname(DIR "/test");
+    ck_assert(path != NULL);
+    ck_assert_str_eq(path, DIR );
+    SAFE_FREE(path);
+    path=ssh_dirname(DIR "/test/");
+    ck_assert(path != NULL);
+    ck_assert_str_eq(path, DIR);
+    SAFE_FREE(path);
+}
+END_TEST
+
 static Suite *torture_make_suite(void) {
   Suite *s = suite_create("libssh_misc");
 
   torture_create_case(s, "torture_get_user_home_dir", torture_get_user_home_dir);
+  torture_create_case(s, "torture_basename", torture_basename);
+  torture_create_case(s, "torture_dirname", torture_dirname);
 
   return s;
 }
