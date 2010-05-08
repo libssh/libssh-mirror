@@ -685,7 +685,7 @@ int ssh_connect(ssh_session session) {
     leave_function();
     return SSH_ERROR;
   }
-  if (session->fd == -1 && session->host == NULL) {
+  if (session->fd == -1 && session->host == NULL && session->ProxyCommand == NULL) {
     ssh_set_error(session, SSH_FATAL, "Hostname required");
     leave_function();
     return SSH_ERROR;
@@ -699,6 +699,8 @@ int ssh_connect(ssh_session session) {
   if (session->fd != -1) {
     ssh_socket_set_fd(session->socket, session->fd);
     ret=SSH_OK;
+  } else if (session->ProxyCommand != NULL){
+    ret=ssh_socket_connect_proxycommand(session->socket, session->ProxyCommand);
   } else {
     ret=ssh_socket_connect(session->socket, session->host, session->port,
     		session->bindaddr);

@@ -66,6 +66,7 @@ enum ssh_socket_states_e {
 struct ssh_socket_struct {
   socket_t fd_in;
   socket_t fd_out;
+  int fd_is_socket;
   int last_errno;
   int data_to_read; /* reading now on socket will
                        not block */
@@ -113,6 +114,7 @@ ssh_socket ssh_socket_new(ssh_session session) {
   s->fd_in = -1;
   s->fd_out= -1;
   s->last_errno = -1;
+  s->fd_is_socket = 1;
   s->session = session;
   s->in_buffer = buffer_new();
   if (s->in_buffer == NULL) {
@@ -391,8 +393,10 @@ static int ssh_socket_unbuffered_read(ssh_socket s, void *buffer, uint32_t len) 
   if (s->data_except) {
     return -1;
   }
-
-  rc = recv(s->fd_in,buffer, len, 0);
+  if(s->fd_is_socket)
+    rc = recv(s->fd_in,buffer, len, 0);
+  else
+    rc = read(s->fd_in,buffer, len);
 #ifdef _WIN32
   s->last_errno = WSAGetLastError();
 #else
@@ -417,8 +421,10 @@ static int ssh_socket_unbuffered_write(ssh_socket s, const void *buffer,
   if (s->data_except) {
     return -1;
   }
-
-  w = send(s->fd_out,buffer, len, 0);
+  if (s->fd_is_socket)
+    w = send(s->fd_out,buffer, len, 0);
+  else
+    w = write(s->fd_out, buffer, len);
 #ifdef _WIN32
   s->last_errno = WSAGetLastError();
 #else
@@ -936,6 +942,7 @@ int ssh_socket_connect_proxycommand(ssh_socket s, const char *command){
   ssh_socket_set_fd_in(s,in_pipe[0]);
   ssh_socket_set_fd_out(s,out_pipe[1]);
   s->state=SSH_SOCKET_CONNECTED;
+  s->fd_is_socket=0;
   /* POLLOUT is the event to wait for in a nonblocking connect */
   ssh_poll_set_events(ssh_socket_get_poll_handle_in(s),POLLIN | POLLERR);
   ssh_poll_set_events(ssh_socket_get_poll_handle_out(s),POLLOUT);

@@ -365,6 +365,9 @@ char *dir_expand_dup(ssh_session session, const char *value, int allowsshdir) {
  *                      - SSH_OPTIONS_HOSTKEYCHECK:
  *                        Set the parameter StrictHostKeyChecking to avoid
  *                        asking about a fingerprint
+ *                      - SSH_OPTIONS_PROXYCOMMAND:
+ *                        Set the command to be executed in order to connect to
+ *                        server.
  *
  * @param  value        The value to set. This is a generic pointer and the
  *                      datatype which is used should be set according to the
