@@ -52,10 +52,10 @@ END_TEST
 
 START_TEST (torture_ntohll)
 {
-    u_int32_t sample = 1;
+    uint32_t sample = 1;
     unsigned char *ptr=(unsigned char *) &sample;
-    u_int64_t value = 0x0123456789abcdef;
-    u_int64_t check;
+    uint64_t value = 0x0123456789abcdef;
+    uint64_t check;
     if(ptr[0]==1){
       /* we're in little endian */
       check = 0xefcdab8967452301;
