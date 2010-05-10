@@ -516,37 +516,44 @@ void ssh_poll_ctx_remove(ssh_poll_ctx ctx, ssh_poll_handle p) {
  *                      block, in milliseconds. Specifying a negative value
  *                      means an infinite timeout. This parameter is passed to
  *                      the poll() function.
+ * @returns SSH_OK      No error.
+ *          SSH_ERROR   Error happened during the poll.
  */
 
 int ssh_poll_ctx_dopoll(ssh_poll_ctx ctx, int timeout) {
   int rc;
+  int i, used;
+  ssh_poll_handle p;
+  socket_t fd;
+  int revents;
 
   if (!ctx->polls_used)
     return 0;
 
   rc = ssh_poll(ctx->pollfds, ctx->polls_used, timeout);
-  if (rc > 0) {
-    register size_t i, used;
+  if(rc < 0)
+    rc=SSH_ERROR;
+  if(rc <= 0)
+    return rc;
+  used = ctx->polls_used;
+  for (i = 0; i < used && rc > 0; ) {
+    if (!ctx->pollfds[i].revents) {
+      i++;
+    } else {
+      p = ctx->pollptrs[i];
+      fd = ctx->pollfds[i].fd;
+      revents = ctx->pollfds[i].revents;
 
-    used = ctx->polls_used;
-    for (i = 0; i < used && rc > 0; ) {
-      if (!ctx->pollfds[i].revents) {
-        i++;
+      if (p->cb(p, fd, revents, p->cb_data) < 0) {
+        /* the poll was removed, reload the used counter and start again */
+        used = ctx->polls_used;
+        i=0;
       } else {
-        ssh_poll_handle p = ctx->pollptrs[i];
-        int fd = ctx->pollfds[i].fd;
-        int revents = ctx->pollfds[i].revents;
-
-        if (p->cb(p, fd, revents, p->cb_data) < 0) {
-          /* the poll was removed, reload the used counter and stall the loop */
-          used = ctx->polls_used;
-        } else {
-          ctx->pollfds[i].revents = 0;
-          i++;
-        }
-
-        rc--;
+        ctx->pollfds[i].revents = 0;
+        i++;
       }
+
+      rc--;
     }
   }
 
