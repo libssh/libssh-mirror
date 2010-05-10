@@ -153,6 +153,10 @@ int ssh_socket_pollcallback(ssh_poll_handle p, socket_t fd, int revents, void *v
 	int r,w;
 	int err=0;
 	socklen_t errlen=sizeof(err);
+	/* Do not do anything if this socket was already closed */
+	if(!ssh_socket_is_open(s)){
+	  return -1;
+	}
 	if(revents & POLLERR){
 		/* Check if we are in a connecting state */
 		if(s->state==SSH_SOCKET_CONNECTING){
@@ -163,7 +167,7 @@ int ssh_socket_pollcallback(ssh_poll_handle p, socket_t fd, int revents, void *v
 			if(s->callbacks && s->callbacks->connected)
 				s->callbacks->connected(SSH_SOCKET_CONNECTED_ERROR,err,
 						s->callbacks->userdata);
-			return 0;
+			return -1;
 		}
 		/* Then we are in a more standard kind of error */
 		/* force a read to get an explanation */
@@ -173,7 +177,8 @@ int ssh_socket_pollcallback(ssh_poll_handle p, socket_t fd, int revents, void *v
 		s->data_to_read=1;
 		r=ssh_socket_unbuffered_read(s,buffer,sizeof(buffer));
 		if(r<0){
-			if(p != NULL)
+			err=-1;
+		  if(p != NULL)
 				ssh_poll_set_events(p,ssh_poll_get_events(p) & ~POLLIN);
 			if(s->callbacks && s->callbacks->exception){
 				s->callbacks->exception(
@@ -230,7 +235,7 @@ int ssh_socket_pollcallback(ssh_poll_handle p, socket_t fd, int revents, void *v
 		ssh_poll_remove_events(p,POLLOUT);
 			/* TODO: Find a way to put back POLLOUT when buffering occurs */
 	}
-	return 0;
+	return err;
 }
 
 /** @internal
