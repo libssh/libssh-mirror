@@ -213,6 +213,7 @@ void ssh_free(ssh_session session) {
   SAFE_FREE(session->host);
   SAFE_FREE(session->sshdir);
   SAFE_FREE(session->knownhosts);
+  SAFE_FREE(session->ProxyCommand);
 
   for (i = 0; i < 10; i++) {
     if (session->wanted_methods[i]) {

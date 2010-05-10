@@ -497,13 +497,18 @@ int ssh_connect(ssh_session session) {
     leave_function();
     return SSH_ERROR;
   }
-  if (session->fd == -1 && session->host == NULL) {
+  if (session->fd == -1 && session->host == NULL &&
+      session->ProxyCommand == NULL) {
     ssh_set_error(session, SSH_FATAL, "Hostname required");
     leave_function();
     return SSH_ERROR;
   }
   if (session->fd != -1) {
     fd = session->fd;
+#ifndef _WIN32
+  } else if (session->ProxyCommand != NULL) {
+    fd=ssh_socket_connect_proxycommand(session, session->ProxyCommand);
+#endif
   } else {
     fd = ssh_connect_host(session, session->host, session->bindaddr,
         session->port, session->timeout, session->timeout_usec);

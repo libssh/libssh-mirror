@@ -362,6 +362,10 @@ char *dir_expand_dup(ssh_session session, const char *value, int allowsshdir) {
  *                        Set the compression to use for server to client
  *                        communication (string, "none" or "zlib").
  *
+ *                      - SSH_OPTIONS_PROXYCOMMAND:
+ *                        Set the command to be executed in order to connect to
+ *                        server.
+ *
  * @param  value        The value to set. This is a generic pointer and the
  *                      datatype which is used should be set according to the
  *                      type set.
@@ -610,6 +614,14 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
       } else {
         if (ssh_options_set_algo(session, SSH_COMP_S_C, value) < 0)
           return -1;
+      }
+      break;
+    case SSH_OPTIONS_PROXYCOMMAND:
+      if (value == NULL) {
+        ssh_set_error_invalid(session, __FUNCTION__);
+        return -1;
+      } else {
+        session->ProxyCommand = strdup(value);
       }
       break;
     default:
