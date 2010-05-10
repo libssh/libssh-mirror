@@ -34,6 +34,7 @@
 
 #ifdef _MSC_VER
 #undef snprintf
+#undef vsnprintf
 #undef strtok_r
 
 /** Imitate define of inttypes.h */
