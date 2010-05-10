@@ -52,11 +52,19 @@
 #undef snprintf
 #define snprintf(d, n, ...) _snprintf_s((d), (n), _TRUNCATE, __VA_ARGS__)
 
-#if _MSC_VER < 1500
+#ifndef HAVE_VSNPRINTF
+#ifdef HAVE__VSNPRINTF_S
 #define vsnprintf(s, n, f, v) _vsnprintf_s((s), (n), _TRUNCATE, (f), (v))
+#elif HAVE__VSNPRINTF
+#define vsnprintf _vsnprintf
+#else /* HAVE_VSNPRINTF */
+#error "No vsnprintf compatibel function found"
+#endif
+#endif /* HAVE_VSNPRINTF */
 
+#ifndef HAVE_STRNCPY
 #define strncpy(d, s, n) strncpy_s((d), (n), (s), _TRUNCATE)
-#endif /* _MSC_VER < 1500 */
+#endif
 #else /* _MSC_VER */
 
 #include <unistd.h>
