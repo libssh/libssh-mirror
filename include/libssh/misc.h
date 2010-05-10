@@ -28,6 +28,8 @@ char *ssh_get_user_home_dir(void);
 char *ssh_get_local_username(ssh_session session);
 int ssh_file_readaccess_ok(const char *file);
 
+char *ssh_path_expand_tilde(const char *d);
+
 /* macro for byte ordering */
 uint64_t ntohll(uint64_t);
 #define htonll(x) ntohll(x)

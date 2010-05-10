@@ -492,5 +492,66 @@ int ssh_mkdir(const char *pathname, mode_t mode) {
   return r;
 }
 
-/** @} */
-/* vim: set ts=2 sw=2 et cindent: */
+/**
+ * @brief Expand a directory starting with a tilde '~'
+ *
+ * @param[in]  session  The ssh session to use.
+ *
+ * @param[in]  d        The directory to expand.
+ *
+ * @return              The expanded directory, NULL on error.
+ */
+char *ssh_path_expand_tilde(const char *d) {
+    char *h, *r, *p;
+    size_t ld;
+    size_t lh = 0;
+
+    if (d[0] != '~') {
+        return strdup(d);
+    }
+    d++;
+
+    /* handle ~user/path */
+    p = strchr(d, '/');
+    if (p != NULL && p > d) {
+        struct passwd *pw;
+        size_t s = p - d;
+        char u[128];
+
+        if (s > sizeof(u)) {
+            return NULL;
+        }
+        memcpy(u, d, s);
+        u[s] = '\0';
+        pw = getpwnam(u);
+        if (pw == NULL) {
+            return NULL;
+        }
+        ld = strlen(p);
+        h = strdup(pw->pw_dir);
+    } else {
+        ld = strlen(d);
+        p = (char *) d;
+        h = ssh_get_user_home_dir();
+    }
+    if (h == NULL) {
+        return NULL;
+    }
+    lh = strlen(h);
+
+    r = malloc(ld + lh + 1);
+    if (r == NULL) {
+        return NULL;
+    }
+
+    if (lh > 0) {
+        memcpy(r, h, lh);
+    }
+    memcpy(r + lh, p, ld);
+
+    return r;
+}
+
+/* @} */
+
+/* vim: set ts=4 sw=4 et cindent: */
