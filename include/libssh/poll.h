@@ -81,7 +81,8 @@ typedef struct ssh_poll_ctx_struct *ssh_poll_ctx;
 typedef struct ssh_poll_handle_struct *ssh_poll_handle;
 
 /**
- * @brief SSH poll callback.
+ * @brief SSH poll callback. This callback will be used when an event
+ *                      caught on the socket.
  *
  * @param p             Poll object this callback belongs to.
  * @param fd            The raw socket.
@@ -89,9 +90,9 @@ typedef struct ssh_poll_handle_struct *ssh_poll_handle;
  * @param userdata      Userdata to be passed to the callback function.
  *
  * @return              0 on success, < 0 if you removed the poll object from
- *                      it's poll context.
+ *                      its poll context.
  */
-typedef int (*ssh_poll_callback)(ssh_poll_handle p, int fd, int revents,
+typedef int (*ssh_poll_callback)(ssh_poll_handle p, socket_t fd, int revents,
     void *userdata);
 
 

@@ -716,7 +716,7 @@ ssh_private_key privatekey_from_file(ssh_session session, const char *filename,
 #elif defined HAVE_LIBCRYPTO
           dsa = PEM_read_DSAPrivateKey(file, NULL, pem_get_password, session);
         } else { /* authcb */
-          /* openssl uses it's own callback to get the passphrase here */
+          /* openssl uses its own callback to get the passphrase here */
           dsa = PEM_read_DSAPrivateKey(file, NULL, NULL, NULL);
         } /* authcb */
       } else { /* passphrase */
@@ -755,7 +755,7 @@ ssh_private_key privatekey_from_file(ssh_session session, const char *filename,
 #elif defined HAVE_LIBCRYPTO
           rsa = PEM_read_RSAPrivateKey(file, NULL, pem_get_password, session);
         } else { /* authcb */
-          /* openssl uses it's own callback to get the passphrase here */
+          /* openssl uses its own callback to get the passphrase here */
           rsa = PEM_read_RSAPrivateKey(file, NULL, NULL, NULL);
         } /* authcb */
       } else { /* passphrase */
