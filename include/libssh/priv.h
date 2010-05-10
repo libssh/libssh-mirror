@@ -33,9 +33,8 @@
 #include "config.h"
 
 #ifdef _MSC_VER
-#undef snprintf
-#undef vsnprintf
-#undef strtok_r
+
+#include <varargs.h>
 
 /** Imitate define of inttypes.h */
 #define PRIdS "Id"
@@ -44,16 +43,26 @@
 #define strtoull _strtoui64
 #define isblank(ch) ((ch) == ' ' || (ch) == '\t' || (ch) == '\n' || (ch) == '\r')
 
-#define snprintf(d, n, ...) _snprintf_s((d), (n), _TRUNCATE, __VA_ARGS__)
 #define strdup _strdup
-#define strncpy(d, s, n) strncpy_s((d), (n), (s), _TRUNCATE)
-#define strtok_r strtok_s
 #define usleep(X) Sleep(((X)+1000)/1000)
+
+#undef strtok_r
+#define strtok_r strtok_s
+
+#undef snprintf
+#define snprintf(d, n, ...) _snprintf_s((d), (n), _TRUNCATE, __VA_ARGS__)
+
+#if _MSC_VER < 1500
 #define vsnprintf(s, n, f, v) _vsnprintf_s((s), (n), _TRUNCATE, (f), (v))
-#else
+
+#define strncpy(d, s, n) strncpy_s((d), (n), (s), _TRUNCATE)
+#endif /* _MSC_VER < 1500 */
+#else /* _MSC_VER */
+
 #include <unistd.h>
 #define PRIdS "zd"
-#endif
+
+#endif /* _MSC_VER */
 
 #include "libssh/libssh.h"
 #include "libssh/callbacks.h"
