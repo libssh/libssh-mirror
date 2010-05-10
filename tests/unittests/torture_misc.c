@@ -8,6 +8,16 @@
 #include "misc.c"
 #define DIR "/usr/local/bin/truc/much/.."
 
+ssh_session session;
+
+static void setup(void) {
+    session = ssh_new();
+}
+
+static void teardown(void) {
+    ssh_free(session);
+}
+
 START_TEST (torture_get_user_home_dir)
 {
     struct passwd *pwd;
@@ -92,6 +102,21 @@ START_TEST (torture_path_expand_tilde)
 }
 END_TEST
 
+START_TEST (torture_path_expand_escape)
+{
+    const char *s = "%d/%h/by/%r";
+    char *e;
+
+    ssh_options_set(session, SSH_OPTIONS_SSH_DIR, "guru");
+    ssh_options_set(session, SSH_OPTIONS_HOST, "meditation");
+    ssh_options_set(session, SSH_OPTIONS_USER, "root");
+
+    e = ssh_path_expand_escape(session, s);
+    ck_assert_str_eq(e, "guru/meditation/by/root");
+    free(e);
+}
+END_TEST
+
 static Suite *torture_make_suite(void) {
   Suite *s = suite_create("libssh_misc");
 
@@ -100,6 +125,8 @@ static Suite *torture_make_suite(void) {
   torture_create_case(s, "torture_dirname", torture_dirname);
   torture_create_case(s, "torture_ntohll", torture_ntohll);
   torture_create_case(s, "torture_path_expand_tilde", torture_path_expand_tilde);
+  torture_create_case_fixture(s, "torture_path_expand_escape",
+          torture_path_expand_escape, setup, teardown);
 
   return s;
 }
