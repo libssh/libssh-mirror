@@ -789,10 +789,10 @@ int ssh_options_getopt(ssh_session session, int *argcptr, char **argv) {
 
   /* set a new option struct */
   if (compress) {
-    if (ssh_options_set(session, SSH_OPTIONS_COMPRESSION_C_S, "zlib") < 0) {
+    if (ssh_options_set(session, SSH_OPTIONS_COMPRESSION_C_S, "zlib,none") < 0) {
       cont = 0;
     }
-    if (ssh_options_set(session, SSH_OPTIONS_COMPRESSION_S_C, "zlib") < 0) {
+    if (ssh_options_set(session, SSH_OPTIONS_COMPRESSION_S_C, "zlib,none") < 0) {
       cont = 0;
     }
   }
