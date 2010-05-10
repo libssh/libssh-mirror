@@ -68,6 +68,30 @@ START_TEST (torture_ntohll)
 }
 END_TEST
 
+START_TEST (torture_path_expand_tilde)
+{
+    char h[256];
+    char *d;
+
+    snprintf(h, 256 - 1, "%s/.ssh", getenv("HOME"));
+
+    d = ssh_path_expand_tilde("~/.ssh");
+    ck_assert_str_eq(d, h);
+    free(d);
+
+    d = ssh_path_expand_tilde("/guru/meditation");
+    ck_assert_str_eq(d, "/guru/meditation");
+    free(d);
+
+    snprintf(h, 256 - 1, "~%s/.ssh", getenv("USER"));
+    d = ssh_path_expand_tilde(h);
+
+    snprintf(h, 256 - 1, "%s/.ssh", getenv("HOME"));
+    ck_assert_str_eq(d, h);
+    free(d);
+}
+END_TEST
+
 static Suite *torture_make_suite(void) {
   Suite *s = suite_create("libssh_misc");
 
@@ -75,6 +99,7 @@ static Suite *torture_make_suite(void) {
   torture_create_case(s, "torture_basename", torture_basename);
   torture_create_case(s, "torture_dirname", torture_dirname);
   torture_create_case(s, "torture_ntohll", torture_ntohll);
+  torture_create_case(s, "torture_path_expand_tilde", torture_path_expand_tilde);
 
   return s;
 }
