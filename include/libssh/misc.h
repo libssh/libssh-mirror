@@ -29,6 +29,7 @@ char *ssh_get_local_username(ssh_session session);
 int ssh_file_readaccess_ok(const char *file);
 
 char *ssh_path_expand_tilde(const char *d);
+char *ssh_path_expand_escape(ssh_session session, const char *s);
 
 /* macro for byte ordering */
 uint64_t ntohll(uint64_t);
