@@ -46,6 +46,7 @@
 
 #include "libssh/priv.h"
 #include "libssh/misc.h"
+#include "libssh/session.h"
 
 #ifdef HAVE_LIBGCRYPT
 #define GCRYPT_STRING "/gnutls"
@@ -578,6 +579,89 @@ char *ssh_path_expand_tilde(const char *d) {
     memcpy(r + lh, p, ld);
 
     return r;
+}
+
+char *ssh_path_expand_escape(ssh_session session, const char *s) {
+#define MAX_BUF_SIZE 4096
+    char host[NI_MAXHOST];
+    char buf[MAX_BUF_SIZE];
+    char *r, *x = NULL;
+    const char *p;
+    size_t i, l;
+
+    if (strlen(s) > MAX_BUF_SIZE) {
+        ssh_set_error(session, SSH_FATAL, "string to expand too long");
+        return NULL;
+    }
+
+    r = ssh_path_expand_tilde(s);
+    if (r == NULL) {
+        ssh_set_error_oom(session);
+        return NULL;
+    }
+
+    p = r;
+    buf[0] = '\0';
+
+    for (i = 0; *p != '\0'; p++) {
+        if (*p != '%') {
+            buf[i] = *p;
+            i++;
+            if (i > MAX_BUF_SIZE) {
+                return NULL;
+            }
+            buf[i] = '\0';
+            continue;
+        }
+
+        p++;
+        if (*p == '\0') {
+            break;
+        }
+
+        switch (*p) {
+            case 'd':
+                x = strdup(session->sshdir);
+                break;
+            case 'u':
+                x = ssh_get_local_username(session);
+                break;
+            case 'l':
+                if (gethostname(host, sizeof(host) == 0)) {
+                    x = strdup(host);
+                }
+                break;
+            case 'h':
+                x = strdup(session->host);
+                break;
+            case 'r':
+                x = strdup(session->username);
+                break;
+            default:
+                ssh_set_error(session, SSH_FATAL,
+                        "Wrong escape sequence detected");
+                return NULL;
+        }
+
+        if (x == NULL) {
+            ssh_set_error_oom(session);
+            return NULL;
+        }
+
+        i += strlen(x);
+        if (i > MAX_BUF_SIZE) {
+            ssh_set_error(session, SSH_FATAL,
+                    "String too long");
+            return NULL;
+        }
+        l = strlen(buf);
+        strcat(buf + l, x);
+        SAFE_FREE(x);
+    }
+
+    free(r);
+    return strdup(buf);
+#undef MAX_BUF_SIZE
 }
 
 /* @} */
