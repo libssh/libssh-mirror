@@ -46,6 +46,8 @@ struct termios terminal;
 char *pcap_file=NULL;
 #endif
 
+char *proxycommand;
+
 static int auth_callback(const char *prompt, char *buf, size_t len,
     int echo, int verify, void *userdata) {
   char *answer = NULL;
@@ -96,6 +98,9 @@ static void usage(){
 #ifdef WITH_PCAP
     "  -P file : create a pcap debugging file\n"
 #endif
+#ifndef _WIN32
+    "  -T proxycommand : command to execute as a socket proxy\n"
+#endif
     		,
     ssh_version(0));
     exit(0);
@@ -106,12 +111,17 @@ static int opts(int argc, char **argv){
 //    for(i=0;i<argc;i++)
 //        printf("%d : %s\n",i,argv[i]);
     /* insert your own arguments here */
-    while((i=getopt(argc,argv,"P:"))!=-1){
+    while((i=getopt(argc,argv,"T:P:"))!=-1){
         switch(i){
 #ifdef WITH_PCAP
         	case 'P':
         		pcap_file=optarg;
         		break;
+#endif
+#ifndef _WIN32
+          case 'T':
+            proxycommand=optarg;
+            break;
 #endif
             default:
                 fprintf(stderr,"unknown option %c\n",optopt);
@@ -432,7 +442,10 @@ static int client(ssh_session session){
       return -1;
   if (ssh_options_set(session, SSH_OPTIONS_HOST ,host) < 0)
     return -1;
-
+  if (proxycommand != NULL){
+    if(ssh_options_set(session, SSH_OPTIONS_PROXYCOMMAND, proxycommand))
+      return -1;
+  }
   ssh_options_parse_config(session, NULL);
 
   if(ssh_connect(session)){
