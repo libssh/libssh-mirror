@@ -266,8 +266,8 @@ int gettimeofday(struct timeval *__p, void *__t);
 
 /* options.c  */
 
-char *dir_expand_dup(ssh_session session, const char *value, int allowsshdir);
 int ssh_options_set_algo(ssh_session session, int algo, const char *list);
+int ssh_options_apply(ssh_session session);
 
 /* server.c */
 SSH_PACKET_CALLBACK(ssh_packet_kexdh_init);

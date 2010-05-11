@@ -167,58 +167,6 @@ int ssh_options_set_algo(ssh_session session, int algo,
   return 0;
 }
 
-char *dir_expand_dup(ssh_session session, const char *value, int allowsshdir) {
-	char *new;
-
-	if (value[0] == '~' && value[1] == '/') {
-		char *homedir = ssh_get_user_home_dir();
-    size_t lv, lh;
-
-    if (homedir == NULL) {
-      return NULL;
-    }
-    lv = strlen(value + 1);
-    lh = strlen(homedir);
-
-		new = malloc(lv + lh + 1);
-		if (new == NULL) {
-      ssh_set_error_oom(session);
-      SAFE_FREE(homedir);
-			return NULL;
-    }
-		memcpy(new, homedir, lh);
-    SAFE_FREE(homedir);
-		memcpy(new + lh, value + 1, lv + 1);
-		return new;
-	}
-	if (allowsshdir && strncmp(value, "SSH_DIR/", 8) == 0) {
-		size_t lv, ls;
-		if (session->sshdir == NULL) {
-			if (ssh_options_set(session, SSH_OPTIONS_SSH_DIR, NULL) < 0)
-				return NULL;
-		}
-
-		value += 7;
-		lv = strlen(value);
-		ls = strlen(session->sshdir);
-
-		new = malloc(lv + ls + 1);
-		if (new == NULL) {
-      ssh_set_error_oom(session);
-			return NULL;
-    }
-		memcpy(new, session->sshdir, ls);
-		memcpy(new + ls, value, lv + 1);
-		return new;
-	}
-  new = strdup(value);
-  if (new == NULL) {
-    ssh_set_error_oom(session);
-    return NULL;
-  }
-  return new;
-}
-
 /**
  * @brief This function can set all possible ssh options.
  *
@@ -476,15 +424,14 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
     case SSH_OPTIONS_SSH_DIR:
       if (value == NULL) {
         SAFE_FREE(session->sshdir);
-	/* TODO: why ~/.ssh/ instead of ~/.ssh ? */
 
-        session->sshdir = dir_expand_dup(session, "~/.ssh/", 0);
+        session->sshdir = ssh_path_expand_tilde("~/.ssh/");
         if (session->sshdir == NULL) {
           return -1;
         }
       } else {
         SAFE_FREE(session->sshdir);
-        session->sshdir = dir_expand_dup(session, value, 0);
+        session->sshdir = ssh_path_expand_tilde(value);
         if (session->sshdir == NULL) {
           return -1;
         }
@@ -496,27 +443,28 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
         ssh_set_error_invalid(session, __FUNCTION__);
         return -1;
       }
-      q = dir_expand_dup(session, value, 1);
+      q = strdup(value);
       if (q == NULL) {
-        return -1;
+          return -1;
       }
       rc = ssh_list_prepend(session->identity, q);
       if (rc < 0) {
-        SAFE_FREE(q);
         return -1;
       }
       break;
     case SSH_OPTIONS_KNOWNHOSTS:
       if (value == NULL) {
         SAFE_FREE(session->knownhosts);
-        session->knownhosts = dir_expand_dup(session,
-            "SSH_DIR/known_hosts", 1);
+        if (session->sshdir == NULL) {
+            return -1;
+        }
+        session->knownhosts = ssh_path_expand_escape(session, "%d/known_hosts");
         if (session->knownhosts == NULL) {
           return -1;
         }
       } else {
         SAFE_FREE(session->knownhosts);
-        session->knownhosts = dir_expand_dup(session, value, 1);
+        session->knownhosts = strdup(value);
         if (session->knownhosts == NULL) {
           return -1;
         }
@@ -637,7 +585,12 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
         ssh_set_error_invalid(session, __FUNCTION__);
         return -1;
       } else {
-        session->ProxyCommand = strdup(value);
+        SAFE_FREE(session->ProxyCommand);
+        q = strdup(value);
+        if (q == NULL) {
+            return -1;
+        }
+        session->ProxyCommand = q;
       }
       break;
     default:
@@ -864,18 +817,82 @@ int ssh_options_parse_config(ssh_session session, const char *filename) {
     return -1;
   }
 
+  if (session->sshdir == NULL) {
+      r = ssh_options_set(session, SSH_OPTIONS_SSH_DIR, NULL);
+      if (r < 0) {
+          ssh_set_error_oom(session);
+          return -1;
+      }
+  }
+
   /* set default filename */
   if (filename == NULL) {
-    expanded_filename = dir_expand_dup(session, "SSH_DIR/config", 1);
+    expanded_filename = ssh_path_expand_escape(session, "%d/config");
   } else {
-    expanded_filename = dir_expand_dup(session, filename, 1);
+    expanded_filename = ssh_path_expand_escape(session, filename);
   }
-  if (expanded_filename == NULL)
+  if (expanded_filename == NULL) {
     return -1;
+  }
 
   r = ssh_config_parse_file(session, expanded_filename);
+  if (r < 0) {
+      goto out;
+  }
+  if (filename == NULL) {
+      r = ssh_config_parse_file(session, "/etc/ssh/ssh_config");
+  }
+
+out:
   free(expanded_filename);
   return r;
+}
+
+int ssh_options_apply(ssh_session session) {
+    struct ssh_iterator *it;
+    char *tmp;
+    int rc;
+
+    if (session->sshdir == NULL) {
+        rc = ssh_options_set(session, SSH_OPTIONS_SSH_DIR, NULL);
+        if (rc < 0) {
+            return -1;
+        }
+    }
+
+    if (session->knownhosts == NULL) {
+        tmp = ssh_path_expand_escape(session, "%d/known_hosts");
+    } else {
+        tmp = ssh_path_expand_escape(session, session->knownhosts);
+    }
+    if (tmp == NULL) {
+        return -1;
+    }
+    free(session->knownhosts);
+    session->knownhosts = tmp;
+
+    if (session->ProxyCommand != NULL) {
+        tmp = ssh_path_expand_escape(session, session->ProxyCommand);
+        if (tmp == NULL) {
+            return -1;
+        }
+        free(session->ProxyCommand);
+        session->ProxyCommand = tmp;
+    }
+
+    for (it = ssh_list_get_iterator(session->identity);
+         it != NULL;
+         it = it->next) {
+        char *id = (char *) it->data;
+        tmp = ssh_path_expand_escape(session, id);
+        if (tmp == NULL) {
+            return -1;
+        }
+        free(id);
+        it->data = tmp;
+    }
+
+    return 0;
 }
 
 /* @} */

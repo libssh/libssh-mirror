@@ -690,6 +690,14 @@ int ssh_connect(ssh_session session) {
     leave_function();
     return SSH_ERROR;
   }
+
+  ret = ssh_options_apply(session);
+  if (ret < 0) {
+      ssh_set_error(session, SSH_FATAL, "Couldn't apply options");
+      leave_function();
+      return SSH_ERROR;
+  }
+
   session->session_state=SSH_SESSION_STATE_CONNECTING;
   ssh_socket_set_callbacks(session->socket,&session->socket_callbacks);
   session->socket_callbacks.connected=socket_callback_connected;
