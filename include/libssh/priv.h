@@ -249,8 +249,8 @@ int gettimeofday(struct timeval *__p, void *__t);
 
 /* options.c  */
 
-char *dir_expand_dup(ssh_session session, const char *value, int allowsshdir);
 int ssh_options_set_algo(ssh_session session, int algo, const char *list);
+int ssh_options_apply(ssh_session session);
 
 /** Free memory space */
 #define SAFE_FREE(x) do { if ((x) != NULL) {free(x); x=NULL;} } while(0)

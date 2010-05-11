@@ -1130,8 +1130,6 @@ int ssh_try_publickey_from_file(ssh_session session, const char *keyfile,
 
 ssh_string try_publickey_from_file(ssh_session session, struct ssh_keys_struct keytab,
     char **privkeyfile, int *type) {
-  char *public;
-  char *private;
   const char *priv;
   const char *pub;
   char *new;
@@ -1152,21 +1150,15 @@ ssh_string try_publickey_from_file(ssh_session session, struct ssh_keys_struct k
     }
   }
 
-  /* are them readable ? */
-  public=dir_expand_dup(session,pub,1);
-  private=dir_expand_dup(session,priv,1);
-  //snprintf(public, sizeof(public), "%s/%s", session->sshdir, pub);
-  //snprintf(private, sizeof(private), "%s/%s", session->sshdir, priv);
-
-  ssh_log(session, SSH_LOG_PACKET, "Trying to open publickey %s", public);
-  if (!ssh_file_readaccess_ok(public)) {
-    ssh_log(session, SSH_LOG_PACKET, "Failed to open publickey %s", public);
+  ssh_log(session, SSH_LOG_PACKET, "Trying to open publickey %s", pub);
+  if (!ssh_file_readaccess_ok(pub)) {
+    ssh_log(session, SSH_LOG_PACKET, "Failed to open publickey %s", pub);
     goto error;
   }
 
-  ssh_log(session, SSH_LOG_PACKET, "Trying to open privatekey %s", private);
-  if (!ssh_file_readaccess_ok(private)) {
-    ssh_log(session, SSH_LOG_PACKET, "Failed to open privatekey %s", private);
+  ssh_log(session, SSH_LOG_PACKET, "Trying to open privatekey %s", priv);
+  if (!ssh_file_readaccess_ok(priv)) {
+    ssh_log(session, SSH_LOG_PACKET, "Failed to open privatekey %s", priv);
     goto error;
   }
 
@@ -1176,26 +1168,24 @@ ssh_string try_publickey_from_file(ssh_session session, struct ssh_keys_struct k
    * We are sure both the private and public key file is readable. We return
    * the public as a string, and the private filename as an argument
    */
-  pubkey = publickey_from_file(session, public, type);
+  pubkey = publickey_from_file(session, pub, type);
   if (pubkey == NULL) {
     ssh_log(session, SSH_LOG_PACKET,
         "Wasn't able to open public key file %s: %s",
-        public,
+        pub,
         ssh_get_error(session));
     goto error;
   }
 
-  new = realloc(*privkeyfile, strlen(private) + 1);
+  new = realloc(*privkeyfile, strlen(priv) + 1);
   if (new == NULL) {
     string_free(pubkey);
     goto error;
   }
 
-  strcpy(new, private);
+  strcpy(new, priv);
   *privkeyfile = new;
 error:
-  SAFE_FREE(public);
-  SAFE_FREE(private);
   return pubkey;
 }
 

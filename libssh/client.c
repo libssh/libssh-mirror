@@ -482,6 +482,7 @@ int ssh_connect(ssh_session session) {
   int ssh1 = 0;
   int ssh2 = 0;
   int fd = -1;
+  int ret;
 
   if (session == NULL) {
     ssh_set_error(session, SSH_FATAL, "Invalid session pointer");
@@ -503,6 +504,14 @@ int ssh_connect(ssh_session session) {
     leave_function();
     return SSH_ERROR;
   }
+
+  ret = ssh_options_apply(session);
+  if (ret < 0) {
+      ssh_set_error(session, SSH_FATAL, "Couldn't apply options");
+      leave_function();
+      return SSH_ERROR;
+  }
+
   if (session->fd != -1) {
     fd = session->fd;
 #ifndef _WIN32
