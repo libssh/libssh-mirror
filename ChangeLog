@@ -1,6 +1,27 @@
 ChangeLog
 ==========
 
+version 0.4.3 (released 2010-05-15)
+  * Added runtime detection of WSAPoll().
+  * Added a select(2) based poll-emulation if poll(2) is not available.
+  * Added a function to expand an escaped string.
+  * Added a function to expand the tilde from a path.
+  * Added a proxycommand support.
+  * Added ssh_privatekey_type public function
+  * Added the possibility to define _OPENSSL_DIR and _ZLIB_DIR.
+  * Fixed a blocking bug in channel_poll.
+  * Fixed config parsing wich has overwritten user specified values.
+  * Fixed hashed [host]:port format in knownhosts
+  * Fixed Windows build.
+  * Fixed doublefree happening after a negociation error.
+  * Fixed aes*-ctr with <= OpenSSL 0.9.7b.
+  * Fixed some documentation.
+  * Fixed exec example which has broken read usage.
+  * Fixed broken algorithm choice for server.
+  * Fixed a typo that we don't export all symbols.
+  * Removed the unneeded dependency to doxygen.
+  * Build examples only on the Linux plattform.
+
 version 0.4.2 (released 2010-03-15)
   * Added owner and group information in sftp attributes.
   * Added missing SSH_OPTIONS_FD option.
