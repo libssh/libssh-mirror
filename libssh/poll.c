@@ -63,6 +63,10 @@ struct ssh_poll_ctx_struct {
 #ifdef HAVE_POLL
 #include <poll.h>
 
+void ssh_poll_init(void) {
+    return;
+}
+
 int ssh_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout) {
   return poll((struct pollfd *) fds, nfds, timeout);
 }
@@ -77,7 +81,15 @@ int ssh_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout) {
 #endif
 
 #include <time.h>
+#include <windows.h>
 #include <winsock2.h>
+
+#define WS2_LIBRARY "ws2_32.dll"
+typedef int (*poll_fn)(ssh_pollfd_t *, nfds_t, int);
+
+static poll_fn win_poll;
+static HINSTANCE hlib;
+
 #else
 #include <sys/select.h>
 #include <sys/socket.h>
@@ -88,7 +100,8 @@ int ssh_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout) {
 static int bsd_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout) {
   fd_set readfds, writefds, exceptfds;
   struct timeval tv, *ptv;
-  int max_fd, rc;
+  socket_t max_fd;
+  int rc;
   nfds_t i;
 
   if (fds == NULL) {
@@ -189,14 +202,23 @@ static int bsd_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout) {
   return rc;
 }
 
-/* TODO Detect if WSAPoll() is available and load it dynamically */
+void ssh_poll_init(void) {
+    poll_fn wsa_poll = NULL;
+
+    hlib = LoadLibrary(WS2_LIBRARY);
+    if (hlib != NULL) {
+        wsa_poll = (poll_fn) GetProcAddress(hlib, "WSAPoll");
+    }
+
+    if (wsa_poll == NULL) {
+        win_poll = bsd_poll;
+    } else {
+        win_poll = wsa_poll;
+    }
+}
+
 int ssh_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout) {
-#if 0
-#if defined(_WIN32_WINNT) && (_WIN32_WINNT >= 0x0600) */
-    return WSAPoll(fds, nfds, timeout);
-#endif
-#endif
-    return bsd_poll(fds, nfds, timeout);
+    return win_poll(fds, nfds, timeout);
 }
 
 #endif /* HAVE_POLL */
