@@ -568,7 +568,7 @@ void ssh_connection_callback(ssh_session session){
 		  if (session->serverbanner == NULL) {
 		    goto error;
 		  }
-		  set_status(session, 0.4);
+		  set_status(session, 0.4f);
 		  ssh_log(session, SSH_LOG_RARE,
 		      "SSH server banner: %s", session->serverbanner);
 
@@ -606,7 +606,7 @@ void ssh_connection_callback(ssh_session session){
 #endif
 		  ssh_packet_set_default_callbacks(session);
 		  ssh_send_banner(session, 0);
-		  set_status(session, 0.5);
+		  set_status(session, 0.5f);
 		  session->session_state=SSH_SESSION_STATE_INITIAL_KEX;
 		  break;
 		case SSH_SESSION_STATE_INITIAL_KEX:
@@ -615,14 +615,14 @@ void ssh_connection_callback(ssh_session session){
 			if(session->version==1){
 				if (ssh_get_kex1(session) < 0)
 					goto error;
-				set_status(session,0.6);
+				set_status(session,0.6f);
 				session->connected = 1;
 				break;
 			}
 #endif
 			break;
 		case SSH_SESSION_STATE_KEXINIT_RECEIVED:
-			set_status(session,0.6);
+			set_status(session,0.6f);
 			ssh_list_kex(session, &session->server_kex);
 			if (set_kex(session) < 0) {
 				goto error;
@@ -630,14 +630,14 @@ void ssh_connection_callback(ssh_session session){
 			if (ssh_send_kex(session, 0) < 0) {
 				goto error;
 			}
-			set_status(session,0.8);
+			set_status(session,0.8f);
 			session->session_state=SSH_SESSION_STATE_DH;
 			if (dh_handshake(session) == SSH_ERROR) {
 				goto error;
 			}
 		case SSH_SESSION_STATE_DH:
 			if(session->dh_handshake_state==DH_STATE_FINISHED){
-				set_status(session,1.0);
+				set_status(session,1.0f);
 				session->connected = 1;
 				session->session_state=SSH_SESSION_STATE_AUTHENTICATING;
 			}
@@ -721,7 +721,7 @@ int ssh_connect(ssh_session session) {
     leave_function();
     return SSH_ERROR;
   }
-  set_status(session, 0.2);
+  set_status(session, 0.2f);
 
   session->alive = 1;
   ssh_log(session,SSH_LOG_PROTOCOL,"Socket connecting, now waiting for the callbacks to work");
