@@ -76,6 +76,7 @@ typedef struct ssh_pollfd_struct {
 typedef unsigned long int nfds_t;
 #endif /* HAVE_POLL */
 
+void ssh_poll_init(void);
 int ssh_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout);
 typedef struct ssh_poll_ctx_struct *ssh_poll_ctx;
 typedef struct ssh_poll_handle_struct *ssh_poll_handle;

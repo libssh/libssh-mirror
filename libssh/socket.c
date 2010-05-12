@@ -71,6 +71,8 @@ int ssh_socket_init(void) {
   if (WSAStartup(MAKEWORD(2, 0), &wsaData) != 0) {
     return -1;
   }
+
+  ssh_poll_init();
 #endif
   return 0;
 }
