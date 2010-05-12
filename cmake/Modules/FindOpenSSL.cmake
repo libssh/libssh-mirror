@@ -27,6 +27,7 @@ else (OPENSSL_LIBRARIES AND OPENSSL_INCLUDE_DIRS)
     NAMES
       openssl/ssl.h
     PATHS
+      ${_OPENSSL_DIR}/include
       ${_OPENSSL_INCLUDEDIR}
       /usr/include
       /usr/local/include
@@ -40,6 +41,7 @@ else (OPENSSL_LIBRARIES AND OPENSSL_INCLUDE_DIRS)
       ssl
       libssl
     PATHS
+      ${_OPENSSL_DIR}/lib
       ${_OPENSSL_LIBDIR}
       /usr/lib
       /usr/local/lib
@@ -53,6 +55,7 @@ else (OPENSSL_LIBRARIES AND OPENSSL_INCLUDE_DIRS)
     NAMES
       ssleay32
     PATHS
+      ${_OPENSSL_DIR}/lib
       ${_OPENSSL_LIBDIR}
       /usr/lib
       /usr/local/lib
@@ -66,6 +69,7 @@ else (OPENSSL_LIBRARIES AND OPENSSL_INCLUDE_DIRS)
     NAMES
       ssleay32MD
     PATHS
+      ${_OPENSSL_DIR}/lib
       ${_OPENSSL_LIBDIR}
       /usr/lib
       /usr/local/lib
@@ -84,6 +88,7 @@ else (OPENSSL_LIBRARIES AND OPENSSL_INCLUDE_DIRS)
       libeay
       libeay32
     PATHS
+      ${_OPENSSL_DIR}/lib
       ${_OPENSSL_LIBDIR}
       /usr/lib
       /usr/local/lib
