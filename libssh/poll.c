@@ -69,7 +69,6 @@ int ssh_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout) {
 
 #else /* HAVE_POLL */
 
-#include <sys/time.h>
 #include <sys/types.h>
 
 #ifdef _WIN32
@@ -77,11 +76,13 @@ int ssh_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout) {
 #define STRICT
 #endif
 
+#include <time.h>
 #include <winsock2.h>
 #else
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <sys/time.h>
 #endif
 
 static int bsd_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout) {
@@ -154,9 +155,15 @@ static int bsd_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout) {
             char data[64] = {0};
 
             /* support for POLLHUP */
+#ifdef _WIN32
+            if ((recv(fds[i].fd, data, 64, MSG_PEEK) == -1) &&
+                (errno == WSAESHUTDOWN || errno == WSAECONNRESET ||
+                 errno == WSAECONNABORTED || errno == WSAENETRESET)) {
+#else
             if ((recv(fds[i].fd, data, 64, MSG_PEEK) == -1) &&
                 (errno == ESHUTDOWN || errno == ECONNRESET ||
                  errno == ECONNABORTED || errno == ENETRESET)) {
+#endif
                 fds[i].revents |= POLLHUP;
             } else {
                 fds[i].revents |= fds[i].events & (POLLIN | POLLRDNORM);
