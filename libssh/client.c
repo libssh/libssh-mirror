@@ -707,8 +707,10 @@ int ssh_connect(ssh_session session) {
   if (session->fd != -1) {
     ssh_socket_set_fd(session->socket, session->fd);
     ret=SSH_OK;
+#ifndef _WIN32
   } else if (session->ProxyCommand != NULL){
     ret=ssh_socket_connect_proxycommand(session->socket, session->ProxyCommand);
+#endif
   } else {
     ret=ssh_socket_connect(session->socket, session->host, session->port,
     		session->bindaddr);

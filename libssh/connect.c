@@ -85,12 +85,12 @@
 #endif /* HAVE_REGCOMP */
 
 #ifdef _WIN32
-static void ssh_sock_set_nonblocking(socket_t sock) {
+void ssh_sock_set_nonblocking(socket_t sock) {
   u_long nonblocking = 1;
   ioctlsocket(sock, FIONBIO, &nonblocking);
 }
 
-static void ssh_sock_set_blocking(socket_t sock) {
+void ssh_sock_set_blocking(socket_t sock) {
   u_long nonblocking = 0;
   ioctlsocket(sock, FIONBIO, &nonblocking);
 }
