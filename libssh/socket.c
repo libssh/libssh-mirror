@@ -934,12 +934,21 @@ int ssh_socket_connect_proxycommand(ssh_socket s, const char *command){
   socket_t in_pipe[2];
   socket_t out_pipe[2];
   int pid;
+  int rc;
   ssh_session session=s->session;
   enter_function();
   if(s->state != SSH_SOCKET_NONE)
     return SSH_ERROR;
-  pipe(in_pipe);
-  pipe(out_pipe);
+
+  rc = pipe(in_pipe);
+  if (rc < 0) {
+      return SSH_ERROR;
+  }
+  rc = pipe(out_pipe);
+  if (rc < 0) {
+      return SSH_ERROR;
+  }
+
   pid = fork();
   if(pid == 0){
     ssh_execute_command(command,out_pipe[0],in_pipe[1]);
