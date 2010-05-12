@@ -50,15 +50,15 @@
  * @param code one of SSH_SOCKET_CONNECTED_OK or SSH_SOCKET_CONNECTED_ERROR
  * @param user is a pointer to session
  */
-static void socket_callback_connected(int code, int errno, void *user){
+static void socket_callback_connected(int code, int errno_code, void *user){
 	ssh_session session=(ssh_session)user;
 	enter_function();
-	ssh_log(session,SSH_LOG_RARE,"Socket connection callback: %d (%d)",code, errno);
+	ssh_log(session,SSH_LOG_RARE,"Socket connection callback: %d (%d)",code, errno_code);
 	if(code == SSH_SOCKET_CONNECTED_OK)
 		session->session_state=SSH_SESSION_STATE_SOCKET_CONNECTED;
 	else {
 		session->session_state=SSH_SESSION_STATE_ERROR;
-		ssh_set_error(session,SSH_FATAL,"%s",strerror(errno));
+		ssh_set_error(session,SSH_FATAL,"%s",strerror(errno_code));
 	}
 	ssh_connection_callback(session);
 	leave_function();
@@ -69,12 +69,12 @@ static void socket_callback_connected(int code, int errno, void *user){
  * @brief Callback to be called when the socket received an exception code.
  * @param user is a pointer to session
  */
-static void socket_callback_exception(int code, int errno, void *user){
+static void socket_callback_exception(int code, int errno_code, void *user){
 	ssh_session session=(ssh_session)user;
 	enter_function();
-	ssh_log(session,SSH_LOG_RARE,"Socket exception callback: %d (%d)",code, errno);
+	ssh_log(session,SSH_LOG_RARE,"Socket exception callback: %d (%d)",code, errno_code);
 	session->session_state=SSH_SESSION_STATE_ERROR;
-	ssh_set_error(session,SSH_FATAL,"Socket error: %s",strerror(errno));
+	ssh_set_error(session,SSH_FATAL,"Socket error: %s",strerror(errno_code));
 	ssh_connection_callback(session);
 	leave_function();
 }
