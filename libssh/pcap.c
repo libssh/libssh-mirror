@@ -24,7 +24,9 @@
 #ifdef WITH_PCAP
 
 #include <stdio.h>
-#ifndef _WIN32
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#else
 #include <sys/time.h>
 #include <sys/socket.h>
 #endif
