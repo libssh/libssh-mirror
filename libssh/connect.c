@@ -45,6 +45,11 @@
 #define NTDDI_VERSION 0x05010000 /* NTDDI_WINXP */
 #endif
 
+#if _MSC_VER >= 1400
+#include <io.h>
+#undef close
+#define close _close
+#endif /* _MSC_VER */
 #include <winsock2.h>
 #include <ws2tcpip.h>
 

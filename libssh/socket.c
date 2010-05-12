@@ -28,12 +28,24 @@
 #ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
-#else
+#if _MSC_VER >= 1400
+#include <io.h>
+#undef open
+#define open _open
+#undef close
+#define close _close
+#undef read
+#define read _read
+#undef write
+#define write _write
+#endif /* _MSC_VER */
+#else /* _WIN32 */
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
-#endif
+#endif /* _WIN32 */
+
 #include "libssh/priv.h"
 #include "libssh/callbacks.h"
 #include "libssh/socket.h"
