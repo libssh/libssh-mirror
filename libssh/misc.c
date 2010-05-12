@@ -35,6 +35,7 @@
 #ifdef _WIN32
 #define _WIN32_IE 0x0501 //SHGetSpecialFolderPath
 #include <winsock2.h> // Must be the first to include
+#include <ws2tcpip.h>
 #include <shlobj.h>
 #include <direct.h>
 #else
@@ -503,7 +504,8 @@ int ssh_mkdir(const char *pathname, mode_t mode) {
  * @return              The expanded directory, NULL on error.
  */
 char *ssh_path_expand_tilde(const char *d) {
-    char *h, *r, *p;
+    char *h, *r;
+    const char *p;
     size_t ld;
     size_t lh = 0;
 
@@ -515,6 +517,9 @@ char *ssh_path_expand_tilde(const char *d) {
     /* handle ~user/path */
     p = strchr(d, '/');
     if (p != NULL && p > d) {
+#ifdef _WIN32
+        return strdup(d);
+#else
         struct passwd *pw;
         size_t s = p - d;
         char u[128];
@@ -530,6 +535,7 @@ char *ssh_path_expand_tilde(const char *d) {
         }
         ld = strlen(p);
         h = strdup(pw->pw_dir);
+#endif
     } else {
         ld = strlen(d);
         p = (char *) d;
