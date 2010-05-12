@@ -23,6 +23,7 @@ else (ZLIB_LIBRARIES AND ZLIB_INCLUDE_DIRS)
     NAMES
       zlib.h
     PATHS
+      ${_ZLIB_DIR}/include
       /usr/include
       /usr/local/include
       /opt/local/include
@@ -36,6 +37,7 @@ else (ZLIB_LIBRARIES AND ZLIB_INCLUDE_DIRS)
       zlib
       zlib1
     PATHS
+      ${_ZLIB_DIR}/lib
       /usr/lib
       /usr/local/lib
       /opt/local/lib
