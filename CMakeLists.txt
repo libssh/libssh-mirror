@@ -12,15 +12,15 @@ set(APPLICATION_VERSION_PATCH "0")
 
 set(APPLICATION_VERSION "${APPLICATION_VERSION_MAJOR}.${APPLICATION_VERSION_MINOR}.${APPLICATION_VERSION_PATCH}")
 
-# Set the lib CURRENT.REVISION.AGE version info
-#   If the source code was changed, but there were no interface changes:
-#     Increment REVISION.
-#   If there was a compatible interface change:
-#     Increment CURRENT and AGE. Set REVISION to 0
+# SOVERSION scheme: CURRENT.AGE.REVISION
 #   If there was an incompatible interface change:
 #     Increment CURRENT. Set AGE and REVISION to 0
-set(LIBRARY_VERSION "4.1.0")
-set(LIBRARY_SOVERSION "4")
+#   If there was a compatible interface change:
+#     Increment AGE. Set REVISION to 0
+#   If the source code was changed, but there were no interface changes:
+#     Increment REVISION.
+set(LIBRARY_VERSION "5.0.0")
+set(LIBRARY_SOVERSION "5")
 
 # where to look first for cmake modules, before ${CMAKE_ROOT}/Modules/ is checked
 set(CMAKE_MODULE_PATH
