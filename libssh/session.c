@@ -32,7 +32,8 @@
 #include "libssh/packet.h"
 #include "libssh/session.h"
 #include "libssh/misc.h"
-
+#include "libssh/ssh2.h"
+#include "libssh/buffer.h"
 #define FIRST_CHANNEL 42 // why not ? it helps to find bugs.
 
 /** \defgroup ssh_session SSH Session
@@ -407,6 +408,33 @@ int ssh_get_version(ssh_session session) {
   }
 
   return session->version;
+}
+
+
+/**
+ * @internal
+ * @handle a SSH_MSG_GLOBAL_REQUEST packet
+ * @param session the SSH session
+ */
+void ssh_global_request_handle(ssh_session session){
+  ssh_string type;
+  char *type_c;
+  uint32_t needreply;
+  type=buffer_get_ssh_string(session->in_buffer);
+  buffer_get_u32(session->in_buffer,&needreply);
+  if(type==NULL)
+    return;
+  type_c=string_to_char(type);
+  if(!type_c)
+    return;
+  ssh_log(session, SSH_LOG_PROTOCOL,
+      "Received SSH_GLOBAL_REQUEST %s (wantreply=%d)",type_c,needreply);
+  SAFE_FREE(type_c);
+  string_free(type);
+  if(needreply != 0){
+    buffer_add_u8(session->out_buffer,SSH2_MSG_REQUEST_FAILURE);
+    packet_send(session);
+  }
 }
 
 /** @} */
