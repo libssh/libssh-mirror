@@ -41,6 +41,7 @@
 #include "libssh/keys.h"
 #include "libssh/dh.h"
 #include "libssh/kex.h"
+#include "libssh/string.h"
 
 #ifdef HAVE_LIBGCRYPT
 #define BLOWFISH "blowfish-cbc,"
