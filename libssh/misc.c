@@ -38,12 +38,12 @@
 #include <ws2tcpip.h>
 #include <shlobj.h>
 #include <direct.h>
-#else
+#else /* _WIN32 */
 /* This is needed for a standard getpwuid_r on opensolaris */
 #define _POSIX_PTHREAD_SEMANTICS
 #include <pwd.h>
 #include <arpa/inet.h>
-#endif
+#endif /* _WIN32 */
 
 #include "libssh/priv.h"
 #include "libssh/misc.h"
@@ -118,43 +118,31 @@ int gettimeofday(struct timeval *__p, void *__t) {
 
   return (0);
 }
+
+char *ssh_get_local_username(ssh_session session) {
+  DWORD size = 0;
+  char *user;
+
+  /* get the size */
+  GetUserName(NULL, &size);
+
+  user = malloc(size);
+  if (user == NULL) {
+    ssh_set_error_oom(session);
+    return NULL;
+  }
+
+  if (GetUserName(user, &size)) {
+    return user;
+  }
+
+  return NULL;
+}
 #else /* _WIN32 */
+
 #ifndef NSS_BUFLEN_PASSWD
 #define NSS_BUFLEN_PASSWD 4096
-#endif
-
-char *ssh_lowercase(const char* str) {
-  char *new, *p;
-
-  if (str == NULL) {
-    return NULL;
-  }
-
-  new = strdup(str);
-  if (new == NULL) {
-    return NULL;
-  }
-
-  for (p = new; *p; p++) {
-    *p = tolower(*p);
-  }
-
-  return new;
-}
-
-char *ssh_hostport(const char *host, int port){
-	char *dest;
-	size_t len;
-	if(host==NULL)
-		return NULL;
-	/* 3 for []:, 5 for 65536 and 1 for nul */
-	len=strlen(host) + 3 + 5 + 1;
-	dest=malloc(len);
-	if(dest==NULL)
-		return NULL;
-	snprintf(dest,len,"[%s]:%d",host,port);
-	return dest;
-}
+#endif /* NSS_BUFLEN_PASSWD */
 
 char *ssh_get_user_home_dir(void) {
   char *szPath = NULL;
@@ -181,42 +169,7 @@ int ssh_file_readaccess_ok(const char *file) {
 
   return 1;
 }
-#endif
 
-uint64_t ntohll(uint64_t a) {
-#ifdef WORDS_BIGENDIAN
-  return a;
-#else
-  uint32_t low = (uint32_t)(a & 0xffffffff);
-  uint32_t high = (uint32_t)(a >> 32);
-  low = ntohl(low);
-  high = ntohl(high);
-
-  return ((((uint64_t) low) << 32) | ( high));
-#endif
-}
-
-#ifdef _WIN32
-char *ssh_get_local_username(ssh_session session) {
-  DWORD size = 0;
-  char *user;
-
-  /* get the size */
-  GetUserName(NULL, &size);
-
-  user = malloc(size);
-  if (user == NULL) {
-    ssh_set_error_oom(session);
-    return NULL;
-  }
-
-  if (GetUserName(user, &size)) {
-    return user;
-  }
-
-  return NULL;
-}
-#else
 char *ssh_get_local_username(ssh_session session) {
     struct passwd pwd;
     struct passwd *pwdbuf;
@@ -240,7 +193,53 @@ char *ssh_get_local_username(ssh_session session) {
 
     return name;
 }
+#endif /* _WIN32 */
+
+uint64_t ntohll(uint64_t a) {
+#ifdef WORDS_BIGENDIAN
+  return a;
+#else
+  uint32_t low = (uint32_t)(a & 0xffffffff);
+  uint32_t high = (uint32_t)(a >> 32);
+  low = ntohl(low);
+  high = ntohl(high);
+
+  return ((((uint64_t) low) << 32) | ( high));
 #endif
+}
+
+char *ssh_lowercase(const char* str) {
+  char *new, *p;
+
+  if (str == NULL) {
+    return NULL;
+  }
+
+  new = strdup(str);
+  if (new == NULL) {
+    return NULL;
+  }
+
+  for (p = new; *p; p++) {
+    *p = tolower(*p);
+  }
+
+  return new;
+}
+
+char *ssh_hostport(const char *host, int port){
+    char *dest;
+    size_t len;
+    if(host==NULL)
+        return NULL;
+    /* 3 for []:, 5 for 65536 and 1 for nul */
+    len=strlen(host) + 3 + 5 + 1;
+    dest=malloc(len);
+    if(dest==NULL)
+        return NULL;
+    snprintf(dest,len,"[%s]:%d",host,port);
+    return dest;
+}
 
 /**
  * @brief Check if libssh is the required version or get the version
