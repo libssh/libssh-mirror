@@ -34,16 +34,17 @@
 
 #ifdef _MSC_VER
 
-#include <varargs.h>
-
 /** Imitate define of inttypes.h */
 #define PRIdS "Id"
+
 #define strcasecmp _stricmp
 #define strncasecmp _strnicmp
 #define strtoull _strtoui64
 #define isblank(ch) ((ch) == ' ' || (ch) == '\t' || (ch) == '\n' || (ch) == '\r')
 
+#if _MSC_VER >= 1400
 #define strdup _strdup
+#endif
 #define usleep(X) Sleep(((X)+1000)/1000)
 
 #undef strtok_r
