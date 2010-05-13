@@ -93,6 +93,8 @@ set(libssh_SRCS
   keyfiles.c
   keys.c
   legacy.c
+  libcrypto.c
+  libgcrypt.c
   log.c
   match.c
   messages.c
