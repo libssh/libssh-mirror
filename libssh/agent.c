@@ -154,7 +154,7 @@ void agent_close(struct ssh_agent_struct *agent) {
 void agent_free(ssh_agent agent) {
   if (agent) {
     if (agent->ident) {
-      buffer_free(agent->ident);
+      ssh_buffer_free(agent->ident);
     }
     if (agent->sock) {
       agent_close(agent);
@@ -208,7 +208,7 @@ static int agent_talk(struct ssh_session_struct *session,
   uint32_t len = 0;
   uint8_t payload[1024] = {0};
 
-  len = buffer_get_len(request);
+  len = ssh_buffer_get_len(request);
   ssh_log(session, SSH_LOG_PACKET, "agent_talk - len of request: %u", len);
   agent_put_u32(payload, len);
 
@@ -284,23 +284,23 @@ int agent_get_ident_count(struct ssh_session_struct *session) {
   }
 
   /* send message to the agent requesting the list of identities */
-  request = buffer_new();
+  request = ssh_buffer_new();
   if (buffer_add_u8(request, c1) < 0) {
     ssh_set_error(session, SSH_FATAL, "Not enough space");
     return -1;
   }
 
-  reply = buffer_new();
+  reply = ssh_buffer_new();
   if (reply == NULL) {
     ssh_set_error(session, SSH_FATAL, "Not enough space");
     return -1;
   }
 
   if (agent_talk(session, request, reply) < 0) {
-    buffer_free(request);
+    ssh_buffer_free(request);
     return 0;
   }
-  buffer_free(request);
+  ssh_buffer_free(request);
 
   /* get message type and verify the answer */
   buffer_get_u8(reply, (uint8_t *) &type);
@@ -323,7 +323,7 @@ int agent_get_ident_count(struct ssh_session_struct *session) {
     ssh_set_error(session, SSH_FATAL,
         "Too many identities in authentication reply: %d",
         session->agent->count);
-    buffer_free(reply);
+    ssh_buffer_free(reply);
     return -1;
   }
 
@@ -369,24 +369,24 @@ struct ssh_public_key_struct *agent_get_next_ident(struct ssh_session_struct *se
       /* get the comment */
       tmp = buffer_get_ssh_string(session->agent->ident);
       if (tmp == NULL) {
-        string_free(blob);
+        ssh_string_free(blob);
 
         return NULL;
       }
 
       if (comment) {
-        *comment = string_to_char(tmp);
+        *comment = ssh_string_to_char(tmp);
       } else {
-        string_free(blob);
-        string_free(tmp);
+        ssh_string_free(blob);
+        ssh_string_free(tmp);
 
         return NULL;
       }
-      string_free(tmp);
+      ssh_string_free(tmp);
 
       /* get key from blob */
       pubkey = publickey_from_string(session, blob);
-      string_free(blob);
+      ssh_string_free(blob);
       break;
     default:
       return NULL;
@@ -409,7 +409,7 @@ ssh_string agent_sign_data(struct ssh_session_struct *session,
   /* create blob from the pubkey */
   blob = publickey_to_string(pubkey);
 
-  request = buffer_new();
+  request = ssh_buffer_new();
   if (request == NULL) {
     goto error;
   }
@@ -425,11 +425,11 @@ ssh_string agent_sign_data(struct ssh_session_struct *session,
   }
 
   /* Add data */
-  dlen = buffer_get_len(data);
+  dlen = ssh_buffer_get_len(data);
   if (buffer_add_u32(request, htonl(dlen)) < 0) {
     goto error;
   }
-  if (buffer_add_data(request, buffer_get(data), dlen) < 0) {
+  if (buffer_add_data(request, ssh_buffer_get_begin(data), dlen) < 0) {
     goto error;
   }
 
@@ -437,19 +437,19 @@ ssh_string agent_sign_data(struct ssh_session_struct *session,
     goto error;
   }
 
-  string_free(blob);
+  ssh_string_free(blob);
 
-  reply = buffer_new();
+  reply = ssh_buffer_new();
   if (reply == NULL) {
     goto error;
   }
 
   /* send the request */
   if (agent_talk(session, request, reply) < 0) {
-    buffer_free(request);
+    ssh_buffer_free(request);
     return NULL;
   }
-  buffer_free(request);
+  ssh_buffer_free(request);
 
   /* check if reply is valid */
   if (buffer_get_u8(reply, (uint8_t *) &type) != sizeof(uint8_t)) {
@@ -457,24 +457,24 @@ ssh_string agent_sign_data(struct ssh_session_struct *session,
   }
   if (agent_failed(type)) {
     ssh_log(session, SSH_LOG_RARE, "Agent reports failure in signing the key");
-    buffer_free(reply);
+    ssh_buffer_free(reply);
     return NULL;
   } else if (type != SSH2_AGENT_SIGN_RESPONSE) {
     ssh_set_error(session, SSH_FATAL, "Bad authentication response: %d", type);
-    buffer_free(reply);
+    ssh_buffer_free(reply);
     return NULL;
   }
 
   sig = buffer_get_ssh_string(reply);
 
-  buffer_free(reply);
+  ssh_buffer_free(reply);
 
   return sig;
 error:
   ssh_set_error(session, SSH_FATAL, "Not enough memory");
-  string_free(blob);
-  buffer_free(request);
-  buffer_free(reply);
+  ssh_string_free(blob);
+  ssh_buffer_free(request);
+  ssh_buffer_free(reply);
 
   return NULL;
 }

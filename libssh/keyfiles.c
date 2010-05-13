@@ -155,13 +155,13 @@ static ssh_string asn1_get_int(ssh_buffer buffer) {
     return NULL;
   }
 
-  str = string_new(size);
+  str = ssh_string_new(size);
   if (str == NULL) {
     return NULL;
   }
 
   if (buffer_get_data(buffer, str->string, size) == 0) {
-    string_free(str);
+    ssh_string_free(str);
     return NULL;
   }
 
@@ -180,9 +180,9 @@ static int asn1_check_sequence(ssh_buffer buffer) {
   }
 
   size = asn1_get_len(buffer);
-  if ((padding = buffer_get_len(buffer) - buffer->pos - size) > 0) {
-    for (i = buffer_get_len(buffer) - buffer->pos - size,
-         j = (unsigned char*)buffer_get(buffer) + size + buffer->pos;
+  if ((padding = ssh_buffer_get_len(buffer) - buffer->pos - size) > 0) {
+    for (i = ssh_buffer_get_len(buffer) - buffer->pos - size,
+         j = (unsigned char*)ssh_buffer_get_begin(buffer) + size + buffer->pos;
          i;
          i--, j++)
     {
@@ -280,14 +280,14 @@ static int privatekey_decrypt(int algo, int mode, unsigned int key_len,
   if (gcry_cipher_open(&cipher, algo, mode, 0)
       || gcry_cipher_setkey(cipher, key, key_len)
       || gcry_cipher_setiv(cipher, iv, iv_len)
-      || (tmp = malloc(buffer_get_len(data) * sizeof (char))) == NULL
-      || gcry_cipher_decrypt(cipher, tmp, buffer_get_len(data),
-                       buffer_get(data), buffer_get_len(data))) {
+      || (tmp = malloc(ssh_buffer_get_len(data) * sizeof (char))) == NULL
+      || gcry_cipher_decrypt(cipher, tmp, ssh_buffer_get_len(data),
+                       ssh_buffer_get_begin(data), ssh_buffer_get_len(data))) {
     gcry_cipher_close(cipher);
     return -1;
   }
 
-  memcpy(buffer_get(data), tmp, buffer_get_len(data));
+  memcpy(ssh_buffer_get_begin(data), tmp, ssh_buffer_get_len(data));
 
   SAFE_FREE(tmp);
   gcry_cipher_close(cipher);
@@ -367,7 +367,7 @@ static ssh_buffer privatekey_file_to_buffer(FILE *fp, int type,
   int mode = 0;
   int len;
 
-  buffer = buffer_new();
+  buffer = ssh_buffer_new();
   if (buffer == NULL) {
     return NULL;
   }
@@ -382,7 +382,7 @@ static ssh_buffer privatekey_file_to_buffer(FILE *fp, int type,
       header_end = RSA_HEADER_END;
       break;
     default:
-      buffer_free(buffer);
+      ssh_buffer_free(buffer);
       return NULL;
   }
 
@@ -400,18 +400,18 @@ static ssh_buffer privatekey_file_to_buffer(FILE *fp, int type,
       if ((privatekey_dek_header(buf + 10, len - 10, &algo, &mode, &key_len,
                                  &iv, &iv_len) < 0)
           || read_line(buf, MAXLINESIZE, fp)) {
-        buffer_free(buffer);
+        ssh_buffer_free(buffer);
         SAFE_FREE(iv);
         return NULL;
       }
     } else {
-      buffer_free(buffer);
+      ssh_buffer_free(buffer);
       SAFE_FREE(iv);
       return NULL;
     }
   } else {
     if (buffer_add_data(buffer, buf, len) < 0) {
-      buffer_free(buffer);
+      ssh_buffer_free(buffer);
       SAFE_FREE(iv);
       return NULL;
     }
@@ -420,31 +420,31 @@ static ssh_buffer privatekey_file_to_buffer(FILE *fp, int type,
   while ((len = read_line(buf,MAXLINESIZE,fp)) &&
       strncmp(buf, header_end, header_end_size) != 0) {
     if (len == -1) {
-      buffer_free(buffer);
+      ssh_buffer_free(buffer);
       SAFE_FREE(iv);
       return NULL;
     }
     if (buffer_add_data(buffer, buf, len) < 0) {
-      buffer_free(buffer);
+      ssh_buffer_free(buffer);
       SAFE_FREE(iv);
       return NULL;
     }
   }
 
   if (strncmp(buf,header_end,header_end_size) != 0) {
-    buffer_free(buffer);
+    ssh_buffer_free(buffer);
     SAFE_FREE(iv);
     return NULL;
   }
 
   if (buffer_add_data(buffer, "\0", 1) < 0) {
-    buffer_free(buffer);
+    ssh_buffer_free(buffer);
     SAFE_FREE(iv);
     return NULL;
   }
 
-  out = base64_to_bin(buffer_get(buffer));
-  buffer_free(buffer);
+  out = base64_to_bin(ssh_buffer_get_begin(buffer));
+  ssh_buffer_free(buffer);
   if (out == NULL) {
     SAFE_FREE(iv);
     return NULL;
@@ -453,7 +453,7 @@ static ssh_buffer privatekey_file_to_buffer(FILE *fp, int type,
   if (algo) {
     if (privatekey_decrypt(algo, mode, key_len, iv, iv_len, out,
           cb, userdata, desc) < 0) {
-      buffer_free(out);
+      ssh_buffer_free(out);
       SAFE_FREE(iv);
       return NULL;
     }
@@ -483,13 +483,13 @@ static int read_rsa_privatekey(FILE *fp, gcry_sexp_t *r,
   }
 
   if (!asn1_check_sequence(buffer)) {
-    buffer_free(buffer);
+    ssh_buffer_free(buffer);
     return 0;
   }
 
   v = asn1_get_int(buffer);
   if (ntohl(v->size) != 1 || v->string[0] != 0) {
-    buffer_free(buffer);
+    ssh_buffer_free(buffer);
     return 0;
   }
 
@@ -502,7 +502,7 @@ static int read_rsa_privatekey(FILE *fp, gcry_sexp_t *r,
   unused2 = asn1_get_int(buffer);
   u = asn1_get_int(buffer);
 
-  buffer_free(buffer);
+  ssh_buffer_free(buffer);
 
   if (n == NULL || e == NULL || d == NULL || p == NULL || q == NULL ||
       unused1 == NULL || unused2 == NULL|| u == NULL) {
@@ -522,15 +522,15 @@ static int read_rsa_privatekey(FILE *fp, gcry_sexp_t *r,
   }
 
 error:
-  string_free(n);
-  string_free(e);
-  string_free(d);
-  string_free(p);
-  string_free(q);
-  string_free(unused1);
-  string_free(unused2);
-  string_free(u);
-  string_free(v);
+  ssh_string_free(n);
+  ssh_string_free(e);
+  ssh_string_free(d);
+  ssh_string_free(p);
+  ssh_string_free(q);
+  ssh_string_free(unused1);
+  ssh_string_free(unused2);
+  ssh_string_free(u);
+  ssh_string_free(v);
 
   return rc;
 }
@@ -552,13 +552,13 @@ static int read_dsa_privatekey(FILE *fp, gcry_sexp_t *r, ssh_auth_callback cb,
   }
 
   if (!asn1_check_sequence(buffer)) {
-    buffer_free(buffer);
+    ssh_buffer_free(buffer);
     return 0;
   }
 
   v = asn1_get_int(buffer);
   if (ntohl(v->size) != 1 || v->string[0] != 0) {
-    buffer_free(buffer);
+    ssh_buffer_free(buffer);
     return 0;
   }
 
@@ -567,7 +567,7 @@ static int read_dsa_privatekey(FILE *fp, gcry_sexp_t *r, ssh_auth_callback cb,
   g = asn1_get_int(buffer);
   y = asn1_get_int(buffer);
   x = asn1_get_int(buffer);
-  buffer_free(buffer);
+  ssh_buffer_free(buffer);
 
   if (p == NULL || q == NULL || g == NULL || y == NULL || x == NULL) {
     rc = 0;
@@ -585,12 +585,12 @@ static int read_dsa_privatekey(FILE *fp, gcry_sexp_t *r, ssh_auth_callback cb,
   }
 
 error:
-  string_free(p);
-  string_free(q);
-  string_free(g);
-  string_free(y);
-  string_free(x);
-  string_free(v);
+  ssh_string_free(p);
+  ssh_string_free(q);
+  ssh_string_free(g);
+  ssh_string_free(y);
+  ssh_string_free(x);
+  ssh_string_free(v);
 
   return rc;
 }
@@ -952,7 +952,7 @@ int ssh_publickey_to_file(ssh_session session, const char *file,
   size_t len;
   int rc;
 
-  pubkey_64 = bin_to_base64(pubkey->string, string_len(pubkey));
+  pubkey_64 = bin_to_base64(pubkey->string, ssh_string_len(pubkey));
   if (pubkey_64 == NULL) {
     return -1;
   }
@@ -1070,15 +1070,15 @@ ssh_string publickey_from_file(ssh_session session, const char *filename,
     return NULL;
   }
 
-  str = string_new(buffer_get_len(buffer));
+  str = ssh_string_new(ssh_buffer_get_len(buffer));
   if (str == NULL) {
     ssh_set_error(session, SSH_FATAL, "Not enough space");
-    buffer_free(buffer);
+    ssh_buffer_free(buffer);
     return NULL;
   }
 
-  string_fill(str, buffer_get(buffer), buffer_get_len(buffer));
-  buffer_free(buffer);
+  ssh_string_fill(str, ssh_buffer_get_begin(buffer), ssh_buffer_get_len(buffer));
+  ssh_buffer_free(buffer);
 
   if (type) {
     *type = key_type;
@@ -1215,7 +1215,7 @@ ssh_string try_publickey_from_file(ssh_session session, struct ssh_keys_struct k
 
   new = realloc(*privkeyfile, strlen(priv) + 1);
   if (new == NULL) {
-    string_free(pubkey);
+    ssh_string_free(pubkey);
     goto error;
   }
 
@@ -1380,29 +1380,29 @@ static int check_public_key(ssh_session session, char **tokens) {
     unsigned int len;
     int i;
 
-    pubkey_buffer = buffer_new();
+    pubkey_buffer = ssh_buffer_new();
     if (pubkey_buffer == NULL) {
       return -1;
     }
 
-    tmpstring = string_from_char("ssh-rsa1");
+    tmpstring = ssh_string_from_char("ssh-rsa1");
     if (tmpstring == NULL) {
-      buffer_free(pubkey_buffer);
+      ssh_buffer_free(pubkey_buffer);
       return -1;
     }
 
     if (buffer_add_ssh_string(pubkey_buffer, tmpstring) < 0) {
-      buffer_free(pubkey_buffer);
-      string_free(tmpstring);
+      ssh_buffer_free(pubkey_buffer);
+      ssh_string_free(tmpstring);
       return -1;
     }
-    string_free(tmpstring);
+    ssh_string_free(tmpstring);
 
     for (i = 2; i < 4; i++) { /* e, then n */
       tmpbn = NULL;
       bignum_dec2bn(tokens[i], &tmpbn);
       if (tmpbn == NULL) {
-        buffer_free(pubkey_buffer);
+        ssh_buffer_free(pubkey_buffer);
         return -1;
       }
       /* for some reason, make_bignum_string does not work
@@ -1412,7 +1412,7 @@ static int check_public_key(ssh_session session, char **tokens) {
       len = bignum_num_bytes(tmpbn);
       tmpstring = malloc(4 + len);
       if (tmpstring == NULL) {
-        buffer_free(pubkey_buffer);
+        ssh_buffer_free(pubkey_buffer);
         bignum_free(tmpbn);
         return -1;
       }
@@ -1425,12 +1425,12 @@ static int check_public_key(ssh_session session, char **tokens) {
 #endif
       bignum_free(tmpbn);
       if (buffer_add_ssh_string(pubkey_buffer, tmpstring) < 0) {
-        buffer_free(pubkey_buffer);
-        string_free(tmpstring);
+        ssh_buffer_free(pubkey_buffer);
+        ssh_string_free(tmpstring);
         bignum_free(tmpbn);
         return -1;
       }
-      string_free(tmpstring);
+      ssh_string_free(tmpstring);
     }
   } else {
     /* ssh-dss or ssh-rsa */
@@ -1444,19 +1444,19 @@ static int check_public_key(ssh_session session, char **tokens) {
     return -1;
   }
 
-  if (buffer_get_len(pubkey_buffer) != string_len(pubkey)) {
-    buffer_free(pubkey_buffer);
+  if (ssh_buffer_get_len(pubkey_buffer) != ssh_string_len(pubkey)) {
+    ssh_buffer_free(pubkey_buffer);
     return 0;
   }
 
   /* now test that they are identical */
-  if (memcmp(buffer_get(pubkey_buffer), pubkey->string,
-        buffer_get_len(pubkey_buffer)) != 0) {
-    buffer_free(pubkey_buffer);
+  if (memcmp(ssh_buffer_get_begin(pubkey_buffer), pubkey->string,
+        ssh_buffer_get_len(pubkey_buffer)) != 0) {
+    ssh_buffer_free(pubkey_buffer);
     return 0;
   }
 
-  buffer_free(pubkey_buffer);
+  ssh_buffer_free(pubkey_buffer);
   return 1;
 }
 
@@ -1519,15 +1519,15 @@ static int match_hashed_host(ssh_session session, const char *host,
   hash = base64_to_bin(b64hash);
   SAFE_FREE(source);
   if (hash == NULL) {
-    buffer_free(salt);
+    ssh_buffer_free(salt);
     leave_function();
     return 0;
   }
 
-  mac = hmac_init(buffer_get(salt), buffer_get_len(salt), HMAC_SHA1);
+  mac = hmac_init(ssh_buffer_get_begin(salt), ssh_buffer_get_len(salt), HMAC_SHA1);
   if (mac == NULL) {
-    buffer_free(salt);
-    buffer_free(hash);
+    ssh_buffer_free(salt);
+    ssh_buffer_free(hash);
     leave_function();
     return 0;
   }
@@ -1535,15 +1535,15 @@ static int match_hashed_host(ssh_session session, const char *host,
   hmac_update(mac, host, strlen(host));
   hmac_final(mac, buffer, &size);
 
-  if (size == buffer_get_len(hash) &&
-      memcmp(buffer, buffer_get(hash), size) == 0) {
+  if (size == ssh_buffer_get_len(hash) &&
+      memcmp(buffer, ssh_buffer_get_begin(hash), size) == 0) {
     match = 1;
   } else {
     match = 0;
   }
 
-  buffer_free(salt);
-  buffer_free(hash);
+  ssh_buffer_free(salt);
+  ssh_buffer_free(hash);
 
   ssh_log(session, SSH_LOG_PACKET,
       "Matching a hashed host: %s match=%d", host, match);
@@ -1855,7 +1855,7 @@ int ssh_write_knownhost(ssh_session session) {
 
     publickey_free(key);
   } else {
-    pubkey_64 = bin_to_base64(pubkey->string, string_len(pubkey));
+    pubkey_64 = bin_to_base64(pubkey->string, ssh_string_len(pubkey));
     if (pubkey_64 == NULL) {
       fclose(file);
       SAFE_FREE(host);

@@ -133,8 +133,8 @@ static int ssh_pcap_file_write(ssh_pcap_file pcap, ssh_buffer packet){
 	uint32_t len;
 	if(pcap == NULL || pcap->output==NULL)
 		return SSH_ERROR;
-	len=buffer_get_len(packet);
-	err=fwrite(buffer_get(packet),len,1,pcap->output);
+	len=ssh_buffer_get_len(packet);
+	err=fwrite(ssh_buffer_get_begin(packet),len,1,pcap->output);
 	if(err<0)
 		return SSH_ERROR;
 	else
@@ -146,7 +146,7 @@ static int ssh_pcap_file_write(ssh_pcap_file pcap, ssh_buffer packet){
  * on file
  */
 int ssh_pcap_file_write_packet(ssh_pcap_file pcap, ssh_buffer packet, uint32_t original_len){
-	ssh_buffer header=buffer_new();
+	ssh_buffer header=ssh_buffer_new();
 	struct timeval now;
 	int err;
 	if(header == NULL)
@@ -154,11 +154,11 @@ int ssh_pcap_file_write_packet(ssh_pcap_file pcap, ssh_buffer packet, uint32_t o
 	gettimeofday(&now,NULL);
 	buffer_add_u32(header,htonl(now.tv_sec));
 	buffer_add_u32(header,htonl(now.tv_usec));
-	buffer_add_u32(header,htonl(buffer_get_len(packet)));
+	buffer_add_u32(header,htonl(ssh_buffer_get_len(packet)));
 	buffer_add_u32(header,htonl(original_len));
 	buffer_add_buffer(header,packet);
 	err=ssh_pcap_file_write(pcap,header);
-	buffer_free(header);
+	ssh_buffer_free(header);
 	return err;
 }
 
@@ -177,7 +177,7 @@ int ssh_pcap_file_open(ssh_pcap_file pcap, const char *filename){
 	pcap->output=fopen(filename,"wb");
 	if(pcap->output==NULL)
 		return SSH_ERROR;
-	header=buffer_new();
+	header=ssh_buffer_new();
 	if(header==NULL)
 		return SSH_ERROR;
 	buffer_add_u32(header,htonl(PCAP_MAGIC));
@@ -192,7 +192,7 @@ int ssh_pcap_file_open(ssh_pcap_file pcap, const char *filename){
 	/* we will write sort-of IP */
 	buffer_add_u32(header,htonl(DLT_RAW));
 	err=ssh_pcap_file_write(pcap,header);
-	buffer_free(header);
+	ssh_buffer_free(header);
 	return err;
 }
 
@@ -299,7 +299,7 @@ int ssh_pcap_context_write(ssh_pcap_context ctx,enum ssh_pcap_direction directio
 	if(ctx->connected==0)
 		if(ssh_pcap_context_connect(ctx)==SSH_ERROR)
 			return SSH_ERROR;
-	ip=buffer_new();
+	ip=ssh_buffer_new();
 	if(ip==NULL){
 		ssh_set_error_oom(ctx->session);
 		return SSH_ERROR;
@@ -364,7 +364,7 @@ int ssh_pcap_context_write(ssh_pcap_context ctx,enum ssh_pcap_direction directio
 	/* actual data */
 	buffer_add_data(ip,data,len);
 	err=ssh_pcap_file_write_packet(ctx->file,ip,origlen + TCPIPHDR_LEN);
-	buffer_free(ip);
+	ssh_buffer_free(ip);
 	return err;
 }
 

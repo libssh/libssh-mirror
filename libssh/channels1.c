@@ -88,7 +88,7 @@ int channel_request_pty_size1(ssh_channel channel, const char *terminal, int col
     ssh_set_error(session,SSH_REQUEST_DENIED,"Wrong request state");
     return SSH_ERROR;
   }
-  str = string_from_char(terminal);
+  str = ssh_string_from_char(terminal);
   if (str == NULL) {
     ssh_set_error_oom(session);
     return -1;
@@ -96,10 +96,10 @@ int channel_request_pty_size1(ssh_channel channel, const char *terminal, int col
 
   if (buffer_add_u8(session->out_buffer, SSH_CMSG_REQUEST_PTY) < 0 ||
       buffer_add_ssh_string(session->out_buffer, str) < 0) {
-    string_free(str);
+    ssh_string_free(str);
     return -1;
   }
-  string_free(str);
+  ssh_string_free(str);
 
   if (buffer_add_u32(session->out_buffer, ntohl(row)) < 0 ||
       buffer_add_u32(session->out_buffer, ntohl(col)) < 0 ||
@@ -198,17 +198,17 @@ int channel_request_exec1(ssh_channel channel, const char *cmd) {
   ssh_session session = channel->session;
   ssh_string command = NULL;
 
-  command = string_from_char(cmd);
+  command = ssh_string_from_char(cmd);
   if (command == NULL) {
     return -1;
   }
 
   if (buffer_add_u8(session->out_buffer, SSH_CMSG_EXEC_CMD) < 0 ||
       buffer_add_ssh_string(session->out_buffer, command) < 0) {
-    string_free(command);
+    ssh_string_free(command);
     return -1;
   }
-  string_free(command);
+  ssh_string_free(command);
 
   if(packet_send(session) != SSH_OK) {
     return -1;
@@ -232,14 +232,14 @@ SSH_PACKET_CALLBACK(ssh_packet_data1){
 
     ssh_log(session, SSH_LOG_PROTOCOL,
         "Adding %zu bytes data in %d",
-        string_len(str), is_stderr);
+        ssh_string_len(str), is_stderr);
 
-    if (channel_default_bufferize(channel, string_data(str), string_len(str),
+    if (channel_default_bufferize(channel, ssh_string_data(str), ssh_string_len(str),
           is_stderr) < 0) {
-      string_free(str);
+      ssh_string_free(str);
       return SSH_PACKET_USED;
     }
-    string_free(str);
+    ssh_string_free(str);
 
     return SSH_PACKET_USED;
 }

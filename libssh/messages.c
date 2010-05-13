@@ -78,7 +78,7 @@ SSH_PACKET_CALLBACK(ssh_packet_service_request){
     goto error;
   }
 
-  service_c = string_to_char(service);
+  service_c = ssh_string_to_char(service);
   if (service_c == NULL) {
     goto error;
   }
@@ -92,7 +92,7 @@ SSH_PACKET_CALLBACK(ssh_packet_service_request){
   msg->type=SSH_REQUEST_SERVICE;
   msg->service_request.service=service_c;
 error:
-  string_free(service);
+  ssh_string_free(service);
   if(msg != NULL)
     ssh_message_queue(session,msg);
   leave_function();
@@ -138,26 +138,26 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
   }
 
   msg->type = SSH_REQUEST_AUTH;
-  msg->auth_request.username = string_to_char(user_s);
+  msg->auth_request.username = ssh_string_to_char(user_s);
   if (msg->auth_request.username == NULL) {
     goto error;
   }
-  string_free(user_s);
+  ssh_string_free(user_s);
   user_s = NULL;
 
-  service_c = string_to_char(service);
+  service_c = ssh_string_to_char(service);
   if (service_c == NULL) {
     goto error;
   }
-  method_c = string_to_char(method);
+  method_c = ssh_string_to_char(method);
   if (method_c == NULL) {
     goto error;
   }
-  method_size = string_len(method);
+  method_size = ssh_string_len(method);
 
-  string_free(service);
+  ssh_string_free(service);
   service = NULL;
-  string_free(method);
+  ssh_string_free(method);
   method = NULL;
 
   ssh_log(session, SSH_LOG_PACKET,
@@ -185,9 +185,9 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
     if (pass == NULL) {
       goto error;
     }
-    msg->auth_request.password = string_to_char(pass);
-    string_burn(pass);
-    string_free(pass);
+    msg->auth_request.password = ssh_string_to_char(pass);
+    ssh_string_burn(pass);
+    ssh_string_free(pass);
     pass = NULL;
     if (msg->auth_request.password == NULL) {
       goto error;
@@ -209,14 +209,14 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
     }
     publickey = buffer_get_ssh_string(packet);
     if (publickey == NULL) {
-      string_free(algo);
+      ssh_string_free(algo);
       algo = NULL;
       goto error;
     }
     msg->auth_request.public_key = publickey_from_string(session, publickey);
-    string_free(algo);
+    ssh_string_free(algo);
     algo = NULL;
-    string_free(publickey);
+    ssh_string_free(publickey);
     publickey = NULL;
     if (msg->auth_request.public_key == NULL) {
        goto error;
@@ -241,12 +241,12 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
       if ((digest == NULL || signature == NULL) ||
           (digest != NULL && signature != NULL &&
           sig_verify(session, public_key, signature,
-                     buffer_get(digest), buffer_get_len(digest)) < 0)) {
+                     ssh_buffer_get_begin(digest), ssh_buffer_get_len(digest)) < 0)) {
         ssh_log(session, SSH_LOG_PACKET, "Wrong signature from peer");
 
-        string_free(sign);
+        ssh_string_free(sign);
         sign = NULL;
-        buffer_free(digest);
+        ssh_buffer_free(digest);
         digest = NULL;
         signature_free(signature);
         signature = NULL;
@@ -257,9 +257,9 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
       else
         ssh_log(session, SSH_LOG_PACKET, "Valid signature received");
 
-      buffer_free(digest);
+      ssh_buffer_free(digest);
       digest = NULL;
-      string_free(sign);
+      ssh_string_free(sign);
       sign = NULL;
       signature_free(signature);
       signature = NULL;
@@ -274,9 +274,9 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
   SAFE_FREE(method_c);
   goto end;
 error:
-  string_free(user_s);
-  string_free(service);
-  string_free(method);
+  ssh_string_free(user_s);
+  ssh_string_free(service);
+  ssh_string_free(method);
 
   SAFE_FREE(method_c);
   SAFE_FREE(service_c);
@@ -313,7 +313,7 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_open){
     ssh_set_error_oom(session);
     goto error;
   }
-  type_c = string_to_char(type_s);
+  type_c = ssh_string_to_char(type_s);
   if (type_c == NULL) {
     ssh_set_error_oom(session);
     goto error;
@@ -321,7 +321,7 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_open){
 
   ssh_log(session, SSH_LOG_PACKET,
       "Clients wants to open a %s channel", type_c);
-  string_free(type_s);
+  ssh_string_free(type_s);
   type_s=NULL;
 
   buffer_get_u32(packet, &sender);
@@ -344,13 +344,13 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_open){
     ssh_set_error_oom(session);
 		goto error;
 	}
-	msg->channel_request_open.destination = string_to_char(type_s);
+	msg->channel_request_open.destination = ssh_string_to_char(type_s);
 	if (msg->channel_request_open.destination == NULL) {
     ssh_set_error_oom(session);
-	  string_free(destination);
+	  ssh_string_free(destination);
 	  goto error;
 	}
-    string_free(destination);
+    ssh_string_free(destination);
 
     buffer_get_u32(packet, &destination_port);
     msg->channel_request_open.destination_port = ntohl(destination_port);
@@ -360,13 +360,13 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_open){
     ssh_set_error_oom(session);
 	  goto error;
 	}
-	msg->channel_request_open.originator = string_to_char(type_s);
+	msg->channel_request_open.originator = ssh_string_to_char(type_s);
 	if (msg->channel_request_open.originator == NULL) {
     ssh_set_error_oom(session);
-	  string_free(originator);
+	  ssh_string_free(originator);
 	  goto error;
 	}
-    string_free(originator);
+    ssh_string_free(originator);
 
     buffer_get_u32(packet, &originator_port);
     msg->channel_request_open.originator_port = ntohl(originator_port);
@@ -381,13 +381,13 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_open){
     ssh_set_error_oom(session);
 		goto error;
 	}
-	msg->channel_request_open.destination = string_to_char(type_s);
+	msg->channel_request_open.destination = ssh_string_to_char(type_s);
 	if (msg->channel_request_open.destination == NULL) {
     ssh_set_error_oom(session);
-	  string_free(destination);
+	  ssh_string_free(destination);
 	  goto error;
 	}
-    string_free(destination);
+    ssh_string_free(destination);
 
     buffer_get_u32(packet, &destination_port);
     msg->channel_request_open.destination_port = ntohl(destination_port);
@@ -397,13 +397,13 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_open){
     ssh_set_error_oom(session);
 	  goto error;
 	}
-	msg->channel_request_open.originator = string_to_char(type_s);
+	msg->channel_request_open.originator = ssh_string_to_char(type_s);
 	if (msg->channel_request_open.originator == NULL) {
     ssh_set_error_oom(session);
-	  string_free(originator);
+	  ssh_string_free(originator);
 	  goto error;
 	}
-    string_free(originator);
+    ssh_string_free(originator);
 
     buffer_get_u32(packet, &originator_port);
     msg->channel_request_open.originator_port = ntohl(originator_port);
@@ -418,13 +418,13 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_open){
     ssh_set_error_oom(session);
 	  goto error;
 	}
-	msg->channel_request_open.originator = string_to_char(type_s);
+	msg->channel_request_open.originator = ssh_string_to_char(type_s);
 	if (msg->channel_request_open.originator == NULL) {
     ssh_set_error_oom(session);
-	  string_free(originator);
+	  ssh_string_free(originator);
 	  goto error;
 	}
-    string_free(originator);
+    ssh_string_free(originator);
 
     buffer_get_u32(packet, &originator_port);
     msg->channel_request_open.originator_port = ntohl(originator_port);
@@ -441,7 +441,7 @@ error:
   msg=NULL;
 end:
   if(type_s != NULL)
-    string_free(type_s);
+    ssh_string_free(type_s);
   SAFE_FREE(type_c);
   if(msg != NULL)
     ssh_message_queue(session,msg);
@@ -461,7 +461,7 @@ ssh_channel ssh_message_channel_request_open_reply_accept(ssh_message msg) {
     return NULL;
   }
 
-  chan = channel_new(session);
+  chan = ssh_channel_new(session);
   if (chan == NULL) {
     leave_function();
     return NULL;
@@ -501,7 +501,7 @@ ssh_channel ssh_message_channel_request_open_reply_accept(ssh_message msg) {
   leave_function();
   return chan;
 error:
-  channel_free(chan);
+  ssh_channel_free(chan);
 
   leave_function();
   return NULL;
@@ -552,13 +552,13 @@ int ssh_message_handle_channel_request(ssh_session session, ssh_channel channel,
       ssh_set_error_oom(session);
       goto error;
     }
-    term_c = string_to_char(term);
+    term_c = ssh_string_to_char(term);
     if (term_c == NULL) {
       ssh_set_error_oom(session);
-      string_free(term);
+      ssh_string_free(term);
       goto error;
     }
-    string_free(term);
+    ssh_string_free(term);
 
     msg->channel_request.type = SSH_CHANNEL_REQUEST_PTY;
     msg->channel_request.TERM = term_c;
@@ -604,13 +604,13 @@ int ssh_message_handle_channel_request(ssh_session session, ssh_channel channel,
       ssh_set_error_oom(session);
       goto error;
     }
-    subsys_c = string_to_char(subsys);
+    subsys_c = ssh_string_to_char(subsys);
     if (subsys_c == NULL) {
       ssh_set_error_oom(session);
-      string_free(subsys);
+      ssh_string_free(subsys);
       goto error;
     }
-    string_free(subsys);
+    ssh_string_free(subsys);
 
     msg->channel_request.type = SSH_CHANNEL_REQUEST_SUBSYSTEM;
     msg->channel_request.subsystem = subsys_c;
@@ -631,8 +631,8 @@ int ssh_message_handle_channel_request(ssh_session session, ssh_channel channel,
       goto error;
     }
     msg->channel_request.type = SSH_CHANNEL_REQUEST_EXEC;
-    msg->channel_request.command = string_to_char(cmd);
-    string_free(cmd);
+    msg->channel_request.command = ssh_string_to_char(cmd);
+    ssh_string_free(cmd);
     if (msg->channel_request.command == NULL) {
       goto error;
     }
@@ -650,21 +650,21 @@ int ssh_message_handle_channel_request(ssh_session session, ssh_channel channel,
     value = buffer_get_ssh_string(packet);
     if (value == NULL) {
       ssh_set_error_oom(session);
-      string_free(name);
+      ssh_string_free(name);
       goto error;
     }
 
     msg->channel_request.type = SSH_CHANNEL_REQUEST_ENV;
-    msg->channel_request.var_name = string_to_char(name);
-    msg->channel_request.var_value = string_to_char(value);
+    msg->channel_request.var_name = ssh_string_to_char(name);
+    msg->channel_request.var_value = ssh_string_to_char(value);
     if (msg->channel_request.var_name == NULL ||
         msg->channel_request.var_value == NULL) {
-      string_free(name);
-      string_free(value);
+      ssh_string_free(name);
+      ssh_string_free(value);
       goto error;
     }
-    string_free(name);
-    string_free(value);
+    ssh_string_free(name);
+    ssh_string_free(value);
 
     goto end;
   }

@@ -73,12 +73,12 @@ ssh_session ssh_new(void) {
     goto err;
   }
 
-  session->out_buffer = buffer_new();
+  session->out_buffer = ssh_buffer_new();
   if (session->out_buffer == NULL) {
     goto err;
   }
 
-  session->in_buffer=buffer_new();
+  session->in_buffer=ssh_buffer_new();
   if (session->in_buffer == NULL) {
     goto err;
   }
@@ -171,15 +171,15 @@ void ssh_free(ssh_session session) {
   	session->pcap_ctx=NULL;
   }
 #endif
-  buffer_free(session->in_buffer);
-  buffer_free(session->out_buffer);
+  ssh_buffer_free(session->in_buffer);
+  ssh_buffer_free(session->out_buffer);
   session->in_buffer=session->out_buffer=NULL;
   crypto_free(session->current_crypto);
   crypto_free(session->next_crypto);
   ssh_socket_free(session->socket);
   /* delete all channels */
   while (session->channels) {
-    channel_free(session->channels);
+    ssh_channel_free(session->channels);
   }
 #ifndef _WIN32
   agent_free(session->agent);
@@ -469,8 +469,8 @@ SSH_PACKET_CALLBACK(ssh_packet_disconnect_callback){
   buffer_get_u32(packet, &code);
   error_s = buffer_get_ssh_string(packet);
   if (error_s != NULL) {
-    error = string_to_char(error_s);
-    string_free(error_s);
+    error = ssh_string_to_char(error_s);
+    ssh_string_free(error_s);
   }
   ssh_log(session, SSH_LOG_PACKET, "Received SSH_MSG_DISCONNECT %d:%s",code,
       error != NULL ? error : "no error");

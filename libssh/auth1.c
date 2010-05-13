@@ -86,20 +86,20 @@ static int send_username(ssh_session session, const char *username) {
       }
     }
   }
-  user = string_from_char(username);
+  user = ssh_string_from_char(username);
   if (user == NULL) {
     return SSH_AUTH_ERROR;
   }
 
   if (buffer_add_u8(session->out_buffer, SSH_CMSG_USER) < 0) {
-    string_free(user);
+    ssh_string_free(user);
     return SSH_AUTH_ERROR;
   }
   if (buffer_add_ssh_string(session->out_buffer, user) < 0) {
-    string_free(user);
+    ssh_string_free(user);
     return SSH_AUTH_ERROR;
   }
-  string_free(user);
+  ssh_string_free(user);
   session->auth_state=SSH_AUTH_STATE_NONE;
   if (packet_send(session) != SSH_OK) {
     return SSH_AUTH_ERROR;
@@ -156,7 +156,7 @@ int ssh_userauth1_password(ssh_session session, const char *username,
   /* cisco IOS doesn't like when a password is followed by zeroes and random pad. */
   if(1 || strlen(password) >= 128) {
     /* not risky to disclose the size of such a big password .. */
-    pwd = string_from_char(password);
+    pwd = ssh_string_from_char(password);
     if (pwd == NULL) {
       leave_function();
       return SSH_AUTH_ERROR;
@@ -168,7 +168,7 @@ int ssh_userauth1_password(ssh_session session, const char *username,
      * why garbage ? because nul bytes will be compressed by
      * gzip and disclose password len.
      */
-    pwd = string_new(128);
+    pwd = ssh_string_new(128);
     if (pwd == NULL) {
       leave_function();
       return SSH_AUTH_ERROR;
@@ -178,20 +178,20 @@ int ssh_userauth1_password(ssh_session session, const char *username,
   }
 
   if (buffer_add_u8(session->out_buffer, SSH_CMSG_AUTH_PASSWORD) < 0) {
-    string_burn(pwd);
-    string_free(pwd);
+    ssh_string_burn(pwd);
+    ssh_string_free(pwd);
     leave_function();
     return SSH_AUTH_ERROR;
   }
   if (buffer_add_ssh_string(session->out_buffer, pwd) < 0) {
-    string_burn(pwd);
-    string_free(pwd);
+    ssh_string_burn(pwd);
+    ssh_string_free(pwd);
     leave_function();
     return SSH_AUTH_ERROR;
   }
 
-  string_burn(pwd);
-  string_free(pwd);
+  ssh_string_burn(pwd);
+  ssh_string_free(pwd);
   session->auth_state=SSH_AUTH_STATE_NONE;
   if (packet_send(session) != SSH_OK) {
     leave_function();

@@ -174,11 +174,11 @@ private:
 class Channel {
 public:
   Channel(Session &session){
-    channel=channel_new(session.getCSession());
+    channel=ssh_channel_new(session.getCSession());
     this->session=&session;
   }
   ~Channel(){
-    channel_free(channel);
+    ssh_channel_free(channel);
     channel=NULL;
   }
   int acceptX11(int timeout_ms);
@@ -223,7 +223,7 @@ public:
     if(is_stderr){
       ret=channel_write_stderr(channel,data,len);
     } else {
-      ret=channel_write(channel,data,len);
+      ret=ssh_channel_write(channel,data,len);
     }
     if(ret==SSH_ERROR)
       ssh_throw(ret);

@@ -92,6 +92,7 @@ set(libssh_SRCS
   kex.c
   keyfiles.c
   keys.c
+  legacy.c
   log.c
   match.c
   messages.c

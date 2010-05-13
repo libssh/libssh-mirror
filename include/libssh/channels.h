@@ -78,7 +78,7 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_failure);
 SSH_PACKET_CALLBACK(ssh_request_success);
 SSH_PACKET_CALLBACK(ssh_request_denied);
 
-ssh_channel channel_new(ssh_session session);
+ssh_channel ssh_channel_new(ssh_session session);
 int channel_default_bufferize(ssh_channel channel, void *data, int len,
         int is_stderr);
 uint32_t ssh_channel_new_id(ssh_session session);

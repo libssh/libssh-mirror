@@ -94,7 +94,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_banner){
     ssh_log(session, SSH_LOG_PACKET,
         "Received SSH_USERAUTH_BANNER packet");
     if(session->banner != NULL)
-      string_free(session->banner);
+      ssh_string_free(session->banner);
     session->banner = banner;
   }
   leave_function();
@@ -124,7 +124,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_failure){
     goto end;
   }
 
-  auth_methods = string_to_char(auth);
+  auth_methods = ssh_string_to_char(auth);
   if (auth_methods == NULL) {
     ssh_set_error_oom(session);
     goto end;
@@ -160,7 +160,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_failure){
   }
 
 end:
-  string_free(auth);
+  ssh_string_free(auth);
   SAFE_FREE(auth_methods);
   leave_function();
   return SSH_PACKET_USED;
@@ -314,9 +314,9 @@ int ssh_userauth_none(ssh_session session, const char *username) {
         return rc;
       }
     }
-    user = string_from_char(session->username);
+    user = ssh_string_from_char(session->username);
   } else {
-    user = string_from_char(username);
+    user = ssh_string_from_char(username);
   }
 
   if (user == NULL) {
@@ -325,16 +325,16 @@ int ssh_userauth_none(ssh_session session, const char *username) {
   }
 
   if (ask_userauth(session) < 0) {
-    string_free(user);
+    ssh_string_free(user);
     leave_function();
     return rc;
   }
 
-  method = string_from_char("none");
+  method = ssh_string_from_char("none");
   if (method == NULL) {
     goto error;
   }
-  service = string_from_char("ssh-connection");
+  service = ssh_string_from_char("ssh-connection");
   if (service == NULL) {
     goto error;
   }
@@ -346,9 +346,9 @@ int ssh_userauth_none(ssh_session session, const char *username) {
     goto error;
   }
 
-  string_free(service);
-  string_free(method);
-  string_free(user);
+  ssh_string_free(service);
+  ssh_string_free(method);
+  ssh_string_free(user);
   session->auth_state=SSH_AUTH_STATE_NONE;
   if (packet_send(session) == SSH_ERROR) {
     leave_function();
@@ -360,9 +360,9 @@ int ssh_userauth_none(ssh_session session, const char *username) {
   return rc;
 error:
   buffer_reinit(session->out_buffer);
-  string_free(service);
-  string_free(method);
-  string_free(user);
+  ssh_string_free(service);
+  ssh_string_free(method);
+  ssh_string_free(user);
 
   leave_function();
   return rc;
@@ -421,9 +421,9 @@ int ssh_userauth_offer_pubkey(ssh_session session, const char *username,
         return rc;
       }
     }
-    user = string_from_char(session->username);
+    user = ssh_string_from_char(session->username);
   } else {
-    user = string_from_char(username);
+    user = ssh_string_from_char(username);
   }
 
   if (user == NULL) {
@@ -432,20 +432,20 @@ int ssh_userauth_offer_pubkey(ssh_session session, const char *username,
   }
 
   if (ask_userauth(session) < 0) {
-    string_free(user);
+    ssh_string_free(user);
     leave_function();
     return rc;
   }
 
-  service = string_from_char("ssh-connection");
+  service = ssh_string_from_char("ssh-connection");
   if (service == NULL) {
     goto error;
   }
-  method = string_from_char("publickey");
+  method = ssh_string_from_char("publickey");
   if (method == NULL) {
     goto error;
   }
-  algo = string_from_char(ssh_type_to_char(type));
+  algo = ssh_string_from_char(ssh_type_to_char(type));
   if (algo == NULL) {
     goto error;
   }
@@ -460,10 +460,10 @@ int ssh_userauth_offer_pubkey(ssh_session session, const char *username,
     goto error;
   }
 
-  string_free(user);
-  string_free(method);
-  string_free(service);
-  string_free(algo);
+  ssh_string_free(user);
+  ssh_string_free(method);
+  ssh_string_free(service);
+  ssh_string_free(algo);
   session->auth_state=SSH_AUTH_STATE_NONE;
   if (packet_send(session) != SSH_OK) {
     leave_function();
@@ -475,10 +475,10 @@ int ssh_userauth_offer_pubkey(ssh_session session, const char *username,
   return rc;
 error:
   buffer_reinit(session->out_buffer);
-  string_free(user);
-  string_free(method);
-  string_free(service);
-  string_free(algo);
+  ssh_string_free(user);
+  ssh_string_free(method);
+  ssh_string_free(service);
+  ssh_string_free(algo);
 
   leave_function();
   return rc;
@@ -536,9 +536,9 @@ int ssh_userauth_pubkey(ssh_session session, const char *username,
         return rc;
       }
     }
-    user = string_from_char(session->username);
+    user = ssh_string_from_char(session->username);
   } else {
-    user = string_from_char(username);
+    user = ssh_string_from_char(username);
   }
 
   if (user == NULL) {
@@ -547,20 +547,20 @@ int ssh_userauth_pubkey(ssh_session session, const char *username,
   }
 
   if (ask_userauth(session) < 0) {
-    string_free(user);
+    ssh_string_free(user);
     leave_function();
     return rc;
   }
 
-  service = string_from_char("ssh-connection");
+  service = ssh_string_from_char("ssh-connection");
   if (service == NULL) {
     goto error;
   }
-  method = string_from_char("publickey");
+  method = ssh_string_from_char("publickey");
   if (method == NULL) {
     goto error;
   }
-  algo = string_from_char(ssh_type_to_char(privatekey->type));
+  algo = ssh_string_from_char(ssh_type_to_char(privatekey->type));
   if (algo == NULL) {
     goto error;
   }
@@ -587,18 +587,18 @@ int ssh_userauth_pubkey(ssh_session session, const char *username,
     goto error;
   }
 
-  string_free(user);
-  string_free(service);
-  string_free(method);
-  string_free(algo);
-  string_free(pkstr);
+  ssh_string_free(user);
+  ssh_string_free(service);
+  ssh_string_free(method);
+  ssh_string_free(algo);
+  ssh_string_free(pkstr);
 
   sign = ssh_do_sign(session,session->out_buffer, privatekey);
   if (sign) {
     if (buffer_add_ssh_string(session->out_buffer,sign) < 0) {
       goto error;
     }
-    string_free(sign);
+    ssh_string_free(sign);
     session->auth_state=SSH_AUTH_STATE_NONE;
     if (packet_send(session) != SSH_OK) {
       leave_function();
@@ -611,11 +611,11 @@ int ssh_userauth_pubkey(ssh_session session, const char *username,
   return rc;
 error:
   buffer_reinit(session->out_buffer);
-  string_free(user);
-  string_free(service);
-  string_free(method);
-  string_free(algo);
-  string_free(pkstr);
+  ssh_string_free(user);
+  ssh_string_free(service);
+  ssh_string_free(method);
+  ssh_string_free(algo);
+  ssh_string_free(pkstr);
 
   leave_function();
   return rc;
@@ -681,7 +681,7 @@ int ssh_userauth_privatekey_file(ssh_session session, const char *username,
 
 error:
   SAFE_FREE(pubkeyfile);
-  string_free(pubkey);
+  ssh_string_free(pubkey);
 
   leave_function();
   return rc;
@@ -733,9 +733,9 @@ int ssh_userauth_agent_pubkey(ssh_session session, const char *username,
         return rc;
       }
     }
-    user = string_from_char(session->username);
+    user = ssh_string_from_char(session->username);
   } else {
-    user = string_from_char(username);
+    user = ssh_string_from_char(username);
   }
 
   if (user == NULL) {
@@ -744,20 +744,20 @@ int ssh_userauth_agent_pubkey(ssh_session session, const char *username,
   }
 
   if (ask_userauth(session) < 0) {
-    string_free(user);
+    ssh_string_free(user);
     leave_function();
     return rc;
   }
 
-  service = string_from_char("ssh-connection");
+  service = ssh_string_from_char("ssh-connection");
   if (service == NULL) {
     goto error;
   }
-  method = string_from_char("publickey");
+  method = ssh_string_from_char("publickey");
   if (method == NULL) {
     goto error;
   }
-  algo = string_from_char(ssh_type_to_char(publickey->type));
+  algo = ssh_string_from_char(ssh_type_to_char(publickey->type));
   if (algo == NULL) {
     goto error;
   }
@@ -783,7 +783,7 @@ int ssh_userauth_agent_pubkey(ssh_session session, const char *username,
     if (buffer_add_ssh_string(session->out_buffer, sign) < 0) {
       goto error;
     }
-    string_free(sign);
+    ssh_string_free(sign);
     session->auth_state=SSH_AUTH_STATE_NONE;
     if (packet_send(session) != SSH_OK) {
       leave_function();
@@ -792,23 +792,23 @@ int ssh_userauth_agent_pubkey(ssh_session session, const char *username,
     rc = wait_auth_status(session);
   }
 
-  string_free(user);
-  string_free(service);
-  string_free(method);
-  string_free(algo);
-  string_free(key);
+  ssh_string_free(user);
+  ssh_string_free(service);
+  ssh_string_free(method);
+  ssh_string_free(algo);
+  ssh_string_free(key);
 
   leave_function();
 
   return rc;
 error:
   buffer_reinit(session->out_buffer);
-  string_free(sign);
-  string_free(user);
-  string_free(service);
-  string_free(method);
-  string_free(algo);
-  string_free(key);
+  ssh_string_free(sign);
+  ssh_string_free(user);
+  ssh_string_free(service);
+  ssh_string_free(method);
+  ssh_string_free(algo);
+  ssh_string_free(key);
 
   leave_function();
   return rc;
@@ -861,9 +861,9 @@ int ssh_userauth_password(ssh_session session, const char *username,
         return rc;
       }
     }
-    user = string_from_char(session->username);
+    user = ssh_string_from_char(session->username);
   } else {
-    user = string_from_char(username);
+    user = ssh_string_from_char(username);
   }
 
   if (user == NULL) {
@@ -872,20 +872,20 @@ int ssh_userauth_password(ssh_session session, const char *username,
   }
 
   if (ask_userauth(session) < 0) {
-    string_free(user);
+    ssh_string_free(user);
     leave_function();
     return rc;
   }
 
-  service = string_from_char("ssh-connection");
+  service = ssh_string_from_char("ssh-connection");
   if (service == NULL) {
     goto error;
   }
-  method = string_from_char("password");
+  method = ssh_string_from_char("password");
   if (method == NULL) {
     goto error;
   }
-  pwd = string_from_char(password);
+  pwd = ssh_string_from_char(password);
   if (pwd == NULL) {
     goto error;
   }
@@ -899,11 +899,11 @@ int ssh_userauth_password(ssh_session session, const char *username,
     goto error;
   }
 
-  string_free(user);
-  string_free(service);
-  string_free(method);
-  string_burn(pwd);
-  string_free(pwd);
+  ssh_string_free(user);
+  ssh_string_free(service);
+  ssh_string_free(method);
+  ssh_string_burn(pwd);
+  ssh_string_free(pwd);
   session->auth_state=SSH_AUTH_STATE_NONE;
   if (packet_send(session) != SSH_OK) {
     leave_function();
@@ -915,11 +915,11 @@ int ssh_userauth_password(ssh_session session, const char *username,
   return rc;
 error:
   buffer_reinit(session->out_buffer);
-  string_free(user);
-  string_free(service);
-  string_free(method);
-  string_burn(pwd);
-  string_free(pwd);
+  ssh_string_free(user);
+  ssh_string_free(service);
+  ssh_string_free(method);
+  ssh_string_burn(pwd);
+  ssh_string_free(pwd);
 
   leave_function();
   return rc;
@@ -982,7 +982,7 @@ int ssh_userauth_autopubkey(ssh_session session, const char *passphrase) {
       pubkey_string = publickey_to_string(pubkey);
       if (pubkey_string) {
         rc = ssh_userauth_offer_pubkey(session, NULL, pubkey->type, pubkey_string);
-        string_free(pubkey_string);
+        ssh_string_free(pubkey_string);
         if (rc == SSH_AUTH_ERROR) {
           SAFE_FREE(privkey_file);
           publickey_free(pubkey);
@@ -1091,14 +1091,14 @@ int ssh_userauth_autopubkey(ssh_session session, const char *passphrase) {
 
     rc = ssh_userauth_offer_pubkey(session, NULL, type, pubkey_string);
     if (rc == SSH_AUTH_ERROR){
-      string_free(pubkey_string);
+      ssh_string_free(pubkey_string);
       ssh_log(session, SSH_LOG_RARE, "Publickey authentication error");
       leave_function();
       return rc;
     } else {
       if (rc != SSH_AUTH_SUCCESS){
         ssh_log(session, SSH_LOG_PROTOCOL, "Publickey refused by server");
-        string_free(pubkey_string);
+        ssh_string_free(pubkey_string);
         continue;
       }
     }
@@ -1112,14 +1112,14 @@ int ssh_userauth_autopubkey(ssh_session session, const char *passphrase) {
         ssh_log(session, SSH_LOG_RARE,
             "Reading private key %s failed (bad passphrase ?)",
             privkey_file);
-        string_free(pubkey_string);
+        ssh_string_free(pubkey_string);
         continue; /* continue the loop with other pubkey */
       }
     }
 
     rc = ssh_userauth_pubkey(session, NULL, pubkey_string, privkey);
     if (rc == SSH_AUTH_ERROR) {
-      string_free(pubkey_string);
+      ssh_string_free(pubkey_string);
       privatekey_free(privkey);
       leave_function();
       return rc;
@@ -1127,7 +1127,7 @@ int ssh_userauth_autopubkey(ssh_session session, const char *passphrase) {
       if (rc != SSH_AUTH_SUCCESS){
         ssh_log(session, SSH_LOG_RARE,
             "The server accepted the public key but refused the signature");
-        string_free(pubkey_string);
+        ssh_string_free(pubkey_string);
         privatekey_free(privkey);
         continue;
       }
@@ -1136,7 +1136,7 @@ int ssh_userauth_autopubkey(ssh_session session, const char *passphrase) {
     /* auth success */
     ssh_log(session, SSH_LOG_PROTOCOL,
         "Successfully authenticated using %s", privkey_file);
-    string_free(pubkey_string);
+    ssh_string_free(pubkey_string);
     privatekey_free(privkey);
 
     leave_function();
@@ -1249,19 +1249,19 @@ static int kbdauth_init(ssh_session session, const char *user,
 
   enter_function();
 
-  usr = string_from_char(user);
+  usr = ssh_string_from_char(user);
   if (usr == NULL) {
     goto error;
   }
-  sub = (submethods ? string_from_char(submethods) : string_from_char(""));
+  sub = (submethods ? ssh_string_from_char(submethods) : ssh_string_from_char(""));
   if (sub == NULL) {
     goto error;
   }
-  service = string_from_char("ssh-connection");
+  service = ssh_string_from_char("ssh-connection");
   if (service == NULL) {
     goto error;
   }
-  method = string_from_char("keyboard-interactive");
+  method = ssh_string_from_char("keyboard-interactive");
   if (method == NULL) {
     goto error;
   }
@@ -1275,10 +1275,10 @@ static int kbdauth_init(ssh_session session, const char *user,
     goto error;
   }
 
-  string_free(usr);
-  string_free(service);
-  string_free(method);
-  string_free(sub);
+  ssh_string_free(usr);
+  ssh_string_free(service);
+  ssh_string_free(method);
+  ssh_string_free(sub);
   session->auth_state=SSH_AUTH_STATE_NONE;
   if (packet_send(session) != SSH_OK) {
     leave_function();
@@ -1290,10 +1290,10 @@ static int kbdauth_init(ssh_session session, const char *user,
   return rc;
 error:
   buffer_reinit(session->out_buffer);
-  string_free(usr);
-  string_free(service);
-  string_free(method);
-  string_free(sub);
+  ssh_string_free(usr);
+  ssh_string_free(service);
+  ssh_string_free(method);
+  ssh_string_free(sub);
 
   leave_function();
   return rc;
@@ -1314,21 +1314,21 @@ static int kbdauth_info_get(ssh_session session) {
   buffer_get_u32(session->in_buffer, &nprompts);
 
   if (name == NULL || instruction == NULL || tmp == NULL) {
-    string_free(name);
-    string_free(instruction);
+    ssh_string_free(name);
+    ssh_string_free(instruction);
     /* tmp if empty if we got here */
     ssh_set_error(session, SSH_FATAL, "Invalid USERAUTH_INFO_REQUEST msg");
     leave_function();
     return SSH_AUTH_ERROR;
   }
-  string_free(tmp);
+  ssh_string_free(tmp);
 
   if (session->kbdint == NULL) {
     session->kbdint = kbdint_new();
     if (session->kbdint == NULL) {
       ssh_set_error(session, SSH_FATAL, "Not enough space");
-      string_free(name);
-      string_free(instruction);
+      ssh_string_free(name);
+      ssh_string_free(instruction);
 
       leave_function();
       return SSH_AUTH_ERROR;
@@ -1337,8 +1337,8 @@ static int kbdauth_info_get(ssh_session session) {
     kbdint_clean(session->kbdint);
   }
 
-  session->kbdint->name = string_to_char(name);
-  string_free(name);
+  session->kbdint->name = ssh_string_to_char(name);
+  ssh_string_free(name);
   if (session->kbdint->name == NULL) {
     ssh_set_error(session, SSH_FATAL, "Not enough space");
     kbdint_free(session->kbdint);
@@ -1346,8 +1346,8 @@ static int kbdauth_info_get(ssh_session session) {
     return SSH_AUTH_ERROR;
   }
 
-  session->kbdint->instruction = string_to_char(instruction);
-  string_free(instruction);
+  session->kbdint->instruction = ssh_string_to_char(instruction);
+  ssh_string_free(instruction);
   if (session->kbdint->instruction == NULL) {
     ssh_set_error(session, SSH_FATAL, "Not enough space");
     kbdint_free(session->kbdint);
@@ -1400,8 +1400,8 @@ static int kbdauth_info_get(ssh_session session) {
       leave_function();
       return SSH_AUTH_ERROR;
     }
-    session->kbdint->prompts[i] = string_to_char(tmp);
-    string_free(tmp);
+    session->kbdint->prompts[i] = ssh_string_to_char(tmp);
+    ssh_string_free(tmp);
     if (session->kbdint->prompts[i] == NULL) {
       ssh_set_error(session, SSH_FATAL, "Not enough space");
       kbdint_free(session->kbdint);
@@ -1431,9 +1431,9 @@ static int kbdauth_send(ssh_session session) {
 
   for (i = 0; i < session->kbdint->nprompts; i++) {
     if (session->kbdint->answers[i]) {
-      answer = string_from_char(session->kbdint->answers[i]);
+      answer = ssh_string_from_char(session->kbdint->answers[i]);
     } else {
-      answer = string_from_char("");
+      answer = ssh_string_from_char("");
     }
     if (answer == NULL) {
       goto error;
@@ -1443,8 +1443,8 @@ static int kbdauth_send(ssh_session session) {
       goto error;
     }
 
-    string_burn(answer);
-    string_free(answer);
+    ssh_string_burn(answer);
+    ssh_string_free(answer);
   }
   session->auth_state=SSH_AUTH_STATE_NONE;
   if (packet_send(session) != SSH_OK) {
@@ -1457,8 +1457,8 @@ static int kbdauth_send(ssh_session session) {
   return rc;
 error:
   buffer_reinit(session->out_buffer);
-  string_burn(answer);
-  string_free(answer);
+  ssh_string_burn(answer);
+  ssh_string_free(answer);
 
   leave_function();
   return rc;

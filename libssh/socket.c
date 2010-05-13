@@ -131,14 +131,14 @@ ssh_socket ssh_socket_new(ssh_session session) {
   s->last_errno = -1;
   s->fd_is_socket = 1;
   s->session = session;
-  s->in_buffer = buffer_new();
+  s->in_buffer = ssh_buffer_new();
   if (s->in_buffer == NULL) {
     SAFE_FREE(s);
     return NULL;
   }
-  s->out_buffer=buffer_new();
+  s->out_buffer=ssh_buffer_new();
   if (s->out_buffer == NULL) {
-    buffer_free(s->in_buffer);
+    ssh_buffer_free(s->in_buffer);
     SAFE_FREE(s);
     return NULL;
   }
@@ -289,8 +289,8 @@ void ssh_socket_free(ssh_socket s){
     return;
   }
   ssh_socket_close(s);
-  buffer_free(s->in_buffer);
-  buffer_free(s->out_buffer);
+  ssh_buffer_free(s->in_buffer);
+  ssh_buffer_free(s->out_buffer);
   SAFE_FREE(s);
 }
 

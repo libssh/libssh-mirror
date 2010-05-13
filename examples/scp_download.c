@@ -56,29 +56,29 @@ static int opts(int argc, char **argv){
 }
 
 static void create_files(ssh_session session){
-	ssh_channel channel=channel_new(session);
+	ssh_channel channel=ssh_channel_new(session);
 	char buffer[1];
 	if(channel == NULL){
 		fprintf(stderr,"Error creating channel: %s\n",ssh_get_error(session));
 		exit(EXIT_FAILURE);
 	}
-	if(channel_open_session(channel) != SSH_OK){
+	if(ssh_channel_open_session(channel) != SSH_OK){
 		fprintf(stderr,"Error creating channel: %s\n",ssh_get_error(session));
 		exit(EXIT_FAILURE);
 	}
-	if(channel_request_exec(channel,createcommand) != SSH_OK){
+	if(ssh_channel_request_exec(channel,createcommand) != SSH_OK){
 		fprintf(stderr,"Error executing command: %s\n",ssh_get_error(session));
 		exit(EXIT_FAILURE);
 	}
-	while(!channel_is_eof(channel)){
-		channel_read(channel,buffer,1,1);
+	while(!ssh_channel_is_eof(channel)){
+		ssh_channel_read(channel,buffer,1,1);
 		if (write(1,buffer,1) < 0) {
                     fprintf(stderr, "Error writing to buffer\n");
                     return;
                 }
 	}
-	channel_close(channel);
-	channel_free(channel);
+	ssh_channel_close(channel);
+	ssh_channel_free(channel);
 }
 
 

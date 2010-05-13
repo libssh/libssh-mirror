@@ -147,7 +147,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
           goto error;
         }
       } else {
-        session->in_buffer = buffer_new();
+        session->in_buffer = ssh_buffer_new();
         if (session->in_buffer == NULL) {
           goto error;
         }
@@ -206,8 +206,8 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
          * have been decrypted)
          */
         if (packet_decrypt(session,
-              ((uint8_t*)buffer_get(session->in_buffer) + blocksize),
-              buffer_get_len(session->in_buffer) - blocksize) < 0) {
+              ((uint8_t*)ssh_buffer_get_begin(session->in_buffer) + blocksize),
+              ssh_buffer_get_len(session->in_buffer) - blocksize) < 0) {
           ssh_set_error(session, SSH_FATAL, "Decrypt error");
           goto error;
         }
@@ -240,8 +240,8 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
             buffer_get_rest_len(session->in_buffer));
 #ifdef DEBUG_CRYPTO
         ssh_print_hexa("incrimined packet",
-            buffer_get(session->in_buffer),
-            buffer_get_len(session->in_buffer));
+            ssh_buffer_get_begin(session->in_buffer),
+            ssh_buffer_get_len(session->in_buffer));
 #endif
         goto error;
       }
@@ -413,8 +413,8 @@ static int ssh_packet_write(ssh_session session) {
   enter_function();
 
   ssh_socket_write(session->socket,
-      buffer_get(session->out_buffer),
-      buffer_get_len(session->out_buffer));
+      ssh_buffer_get_begin(session->out_buffer),
+      ssh_buffer_get_len(session->out_buffer));
 
   rc = packet_flush(session, 0);
 
@@ -425,7 +425,7 @@ static int ssh_packet_write(ssh_session session) {
 static int packet_send2(ssh_session session) {
   unsigned int blocksize = (session->current_crypto ?
       session->current_crypto->out_cipher->blocksize : 8);
-  uint32_t currentlen = buffer_get_len(session->out_buffer);
+  uint32_t currentlen = ssh_buffer_get_len(session->out_buffer);
   unsigned char *hmac = NULL;
   char padstring[32] = {0};
   int rc = SSH_ERROR;
@@ -443,7 +443,7 @@ static int packet_send2(ssh_session session) {
     if (compress_buffer(session,session->out_buffer) < 0) {
       goto error;
     }
-    currentlen = buffer_get_len(session->out_buffer);
+    currentlen = ssh_buffer_get_len(session->out_buffer);
   }
 #endif
   padding = (blocksize - ((currentlen +5) % blocksize));
@@ -474,12 +474,12 @@ static int packet_send2(ssh_session session) {
 #ifdef WITH_PCAP
   if(session->pcap_ctx){
   	ssh_pcap_context_write(session->pcap_ctx,SSH_PCAP_DIR_OUT,
-  			buffer_get(session->out_buffer),buffer_get_len(session->out_buffer)
-  			,buffer_get_len(session->out_buffer));
+  			ssh_buffer_get_begin(session->out_buffer),ssh_buffer_get_len(session->out_buffer)
+  			,ssh_buffer_get_len(session->out_buffer));
   }
 #endif
-  hmac = packet_encrypt(session, buffer_get(session->out_buffer),
-      buffer_get_len(session->out_buffer));
+  hmac = packet_encrypt(session, ssh_buffer_get_begin(session->out_buffer),
+      ssh_buffer_get_len(session->out_buffer));
   if (hmac) {
     if (buffer_add_data(session->out_buffer, hmac, 20) < 0) {
       goto error;

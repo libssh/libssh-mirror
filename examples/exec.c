@@ -15,41 +15,41 @@ int main(void) {
     return 1;
   }
 
-  channel = channel_new(session);;
+  channel = ssh_channel_new(session);;
   if (channel == NULL) {
     ssh_disconnect(session);
     return 1;
   }
 
-  rc = channel_open_session(channel);
+  rc = ssh_channel_open_session(channel);
   if (rc < 0) {
-    channel_close(channel);
+    ssh_channel_close(channel);
     ssh_disconnect(session);
     return 1;
   }
 
-  rc = channel_request_exec(channel, "ps aux");
+  rc = ssh_channel_request_exec(channel, "ps aux");
   if (rc < 0) {
-    channel_close(channel);
+    ssh_channel_close(channel);
     ssh_disconnect(session);
     return 1;
   }
 
 
-  while ((rc = channel_read(channel, buffer, sizeof(buffer), 0)) > 0) {
+  while ((rc = ssh_channel_read(channel, buffer, sizeof(buffer), 0)) > 0) {
     if (fwrite(buffer, 1, rc, stdout) != (unsigned int) rc) {
       return 1;
     }
   }
     
   if (rc < 0) {
-    channel_close(channel);
+    ssh_channel_close(channel);
     ssh_disconnect(session);
     return 1;
   }
 
-  channel_send_eof(channel);
-  channel_close(channel);
+  ssh_channel_send_eof(channel);
+  ssh_channel_close(channel);
 
   ssh_disconnect(session);
 

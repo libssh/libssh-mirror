@@ -22,8 +22,8 @@ void do_connect(SSH_SESSION *session){
 		return;
 	}
 	printf("Authenticated\n");
-	CHANNEL *channel=channel_new(session);
-	error=channel_open_forward(channel,"localhost",ECHO_PORT,"localhost",42);
+	CHANNEL *channel=ssh_channel_new(session);
+	error=ssh_channel_open_forward(channel,"localhost",ECHO_PORT,"localhost",42);
 	if(error!=SSH_OK){
 		fprintf(stderr,"Error when opening forward:%s\n",ssh_get_error(session));
 		return;
@@ -34,14 +34,14 @@ void do_connect(SSH_SESSION *session){
 	char buffer[20];
 	for(i=0;i<2000;++i){
 		sprintf(string,"%d\n",i);
-		channel_write(channel,string,strlen(string));
+		ssh_channel_write(channel,string,strlen(string));
 		do {
-			error=channel_poll(channel,0);
+			error=ssh_channel_poll(channel,0);
 			//if(error < strlen(string))
 				//usleep(10);
 		} while(error < strlen(string) && error >= 0);
 		if(error>0){
-			error=channel_read_nonblocking(channel,buffer,strlen(string),0);
+			error=ssh_channel_read_nonblocking(channel,buffer,strlen(string),0);
 			if(error>=0){
 				if(memcmp(buffer,string,strlen(string))!=0){
 					fprintf(stderr,"Problem with answer: wanted %s got %s\n",string,buffer);
@@ -58,8 +58,8 @@ void do_connect(SSH_SESSION *session){
 		}
 	}
 	printf("\nChannel test finished\n");
-	channel_close(channel);
-	channel_free(channel);
+	ssh_channel_close(channel);
+	ssh_channel_free(channel);
 }
 
 int main(int argc, char **argv){

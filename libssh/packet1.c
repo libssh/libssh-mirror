@@ -110,7 +110,7 @@ int ssh_packet_socket_callback1(const void *data, size_t receivedlen, void *user
           goto error;
         }
       } else {
-        session->in_buffer = buffer_new();
+        session->in_buffer = ssh_buffer_new();
         if (session->in_buffer == NULL) {
           goto error;
         }
@@ -156,8 +156,8 @@ int ssh_packet_socket_callback1(const void *data, size_t receivedlen, void *user
       }
       processed += to_be_read;
 #ifdef DEBUG_CRYPTO
-      ssh_print_hexa("read packet:", buffer_get(session->in_buffer),
-          buffer_get_len(session->in_buffer));
+      ssh_print_hexa("read packet:", ssh_buffer_get_begin(session->in_buffer),
+          ssh_buffer_get_len(session->in_buffer));
 #endif
       if (session->current_crypto) {
         /*
@@ -165,15 +165,15 @@ int ssh_packet_socket_callback1(const void *data, size_t receivedlen, void *user
          * previously read, unencrypted, and is not part of the buffer
          */
         if (packet_decrypt(session,
-              buffer_get(session->in_buffer),
-              buffer_get_len(session->in_buffer)) < 0) {
+              ssh_buffer_get_begin(session->in_buffer),
+              ssh_buffer_get_len(session->in_buffer)) < 0) {
           ssh_set_error(session, SSH_FATAL, "Packet decrypt error");
           goto error;
         }
       }
 #ifdef DEBUG_CRYPTO
-      ssh_print_hexa("read packet decrypted:", buffer_get(session->in_buffer),
-          buffer_get_len(session->in_buffer));
+      ssh_print_hexa("read packet decrypted:", ssh_buffer_get_begin(session->in_buffer),
+          ssh_buffer_get_len(session->in_buffer));
 #endif
       ssh_log(session, SSH_LOG_PACKET, "%d bytes padding", padding);
       if(((len + padding) != buffer_get_rest_len(session->in_buffer)) ||
@@ -245,7 +245,7 @@ error:
 int packet_send1(ssh_session session) {
   unsigned int blocksize = (session->current_crypto ?
       session->current_crypto->out_cipher->blocksize : 8);
-  uint32_t currentlen = buffer_get_len(session->out_buffer) + sizeof(uint32_t);
+  uint32_t currentlen = ssh_buffer_get_len(session->out_buffer) + sizeof(uint32_t);
   char padstring[32] = {0};
   int rc = SSH_ERROR;
   uint32_t finallen;
@@ -284,27 +284,27 @@ int packet_send1(ssh_session session) {
     goto error;
   }
 
-  crc = ssh_crc32((char *)buffer_get(session->out_buffer) + sizeof(uint32_t),
-      buffer_get_len(session->out_buffer) - sizeof(uint32_t));
+  crc = ssh_crc32((char *)ssh_buffer_get_begin(session->out_buffer) + sizeof(uint32_t),
+      ssh_buffer_get_len(session->out_buffer) - sizeof(uint32_t));
 
   if (buffer_add_u32(session->out_buffer, ntohl(crc)) < 0) {
     goto error;
   }
 
 #ifdef DEBUG_CRYPTO
-  ssh_print_hexa("Clear packet", buffer_get(session->out_buffer),
-      buffer_get_len(session->out_buffer));
+  ssh_print_hexa("Clear packet", ssh_buffer_get_begin(session->out_buffer),
+      ssh_buffer_get_len(session->out_buffer));
 #endif
 
-  packet_encrypt(session, (unsigned char *)buffer_get(session->out_buffer) + sizeof(uint32_t),
-      buffer_get_len(session->out_buffer) - sizeof(uint32_t));
+  packet_encrypt(session, (unsigned char *)ssh_buffer_get_begin(session->out_buffer) + sizeof(uint32_t),
+      ssh_buffer_get_len(session->out_buffer) - sizeof(uint32_t));
 
 #ifdef DEBUG_CRYPTO
-  ssh_print_hexa("encrypted packet",buffer_get(session->out_buffer),
-      buffer_get_len(session->out_buffer));
+  ssh_print_hexa("encrypted packet",ssh_buffer_get_begin(session->out_buffer),
+      ssh_buffer_get_len(session->out_buffer));
 #endif
-  if (ssh_socket_write(session->socket, buffer_get(session->out_buffer),
-      buffer_get_len(session->out_buffer)) == SSH_ERROR) {
+  if (ssh_socket_write(session->socket, ssh_buffer_get_begin(session->out_buffer),
+      ssh_buffer_get_len(session->out_buffer)) == SSH_ERROR) {
     goto error;
   }
 

@@ -58,8 +58,8 @@ static z_stream *initcompress(ssh_session session, int level) {
 
 static ssh_buffer gzip_compress(ssh_session session,ssh_buffer source,int level){
   z_stream *zout = session->current_crypto->compress_out_ctx;
-  void *in_ptr = buffer_get(source);
-  unsigned long in_size = buffer_get_len(source);
+  void *in_ptr = ssh_buffer_get_begin(source);
+  unsigned long in_size = ssh_buffer_get_len(source);
   ssh_buffer dest = NULL;
   static unsigned char out_buf[BLOCKSIZE] = {0};
   unsigned long len;
@@ -72,7 +72,7 @@ static ssh_buffer gzip_compress(ssh_session session,ssh_buffer source,int level)
     }
   }
 
-  dest = buffer_new();
+  dest = ssh_buffer_new();
   if (dest == NULL) {
     return NULL;
   }
@@ -84,14 +84,14 @@ static ssh_buffer gzip_compress(ssh_session session,ssh_buffer source,int level)
     zout->avail_out = BLOCKSIZE;
     status = deflate(zout, Z_PARTIAL_FLUSH);
     if (status != Z_OK) {
-      buffer_free(dest);
+      ssh_buffer_free(dest);
       ssh_set_error(session, SSH_FATAL,
           "status %d deflating zlib packet", status);
       return NULL;
     }
     len = BLOCKSIZE - zout->avail_out;
     if (buffer_add_data(dest, out_buf, len) < 0) {
-      buffer_free(dest);
+      ssh_buffer_free(dest);
       return NULL;
     }
     zout->next_out = out_buf;
@@ -109,16 +109,16 @@ int compress_buffer(ssh_session session, ssh_buffer buf) {
   }
 
   if (buffer_reinit(buf) < 0) {
-    buffer_free(dest);
+    ssh_buffer_free(dest);
     return -1;
   }
 
-  if (buffer_add_data(buf, buffer_get(dest), buffer_get_len(dest)) < 0) {
-    buffer_free(dest);
+  if (buffer_add_data(buf, ssh_buffer_get_begin(dest), ssh_buffer_get_len(dest)) < 0) {
+    ssh_buffer_free(dest);
     return -1;
   }
 
-  buffer_free(dest);
+  ssh_buffer_free(dest);
   return 0;
 }
 
@@ -161,7 +161,7 @@ static ssh_buffer gzip_decompress(ssh_session session, ssh_buffer source, size_t
     }
   }
 
-  dest = buffer_new();
+  dest = ssh_buffer_new();
   if (dest == NULL) {
     return NULL;
   }
@@ -176,18 +176,18 @@ static ssh_buffer gzip_decompress(ssh_session session, ssh_buffer source, size_t
     if (status != Z_OK) {
       ssh_set_error(session, SSH_FATAL,
           "status %d inflating zlib packet", status);
-      buffer_free(dest);
+      ssh_buffer_free(dest);
       return NULL;
     }
 
     len = BLOCKSIZE - zin->avail_out;
     if (buffer_add_data(dest,out_buf,len) < 0) {
-      buffer_free(dest);
+      ssh_buffer_free(dest);
       return NULL;
     }
-    if (buffer_get_len(dest) > maxlen){
+    if (ssh_buffer_get_len(dest) > maxlen){
       /* Size of packet exceded, avoid a denial of service attack */
-      buffer_free(dest);
+      ssh_buffer_free(dest);
       return NULL;
     }
     zin->next_out = out_buf;
@@ -205,16 +205,16 @@ int decompress_buffer(ssh_session session,ssh_buffer buf, size_t maxlen){
   }
 
   if (buffer_reinit(buf) < 0) {
-    buffer_free(dest);
+    ssh_buffer_free(dest);
     return -1;
   }
 
-  if (buffer_add_data(buf, buffer_get(dest), buffer_get_len(dest)) < 0) {
-    buffer_free(dest);
+  if (buffer_add_data(buf, ssh_buffer_get_begin(dest), ssh_buffer_get_len(dest)) < 0) {
+    ssh_buffer_free(dest);
     return -1;
   }
 
-  buffer_free(dest);
+  ssh_buffer_free(dest);
   return 0;
 }
 

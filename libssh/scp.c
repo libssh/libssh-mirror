@@ -90,12 +90,12 @@ int ssh_scp_init(ssh_scp scp){
 		  scp->mode==SSH_SCP_WRITE?"write":"read",
 				  scp->recursive?"recursive ":"",
 						  scp->location);
-  scp->channel=channel_new(scp->session);
+  scp->channel=ssh_channel_new(scp->session);
   if(scp->channel == NULL){
     scp->state=SSH_SCP_ERROR;
     return SSH_ERROR;
   }
-  r= channel_open_session(scp->channel);
+  r= ssh_channel_open_session(scp->channel);
   if(r==SSH_ERROR){
     scp->state=SSH_SCP_ERROR;
     return SSH_ERROR;
@@ -106,12 +106,12 @@ int ssh_scp_init(ssh_scp scp){
   else
     snprintf(execbuffer,sizeof(execbuffer),"scp -f %s %s",
     		scp->recursive ? "-r":"", scp->location);
-  if(channel_request_exec(scp->channel,execbuffer) == SSH_ERROR){
+  if(ssh_channel_request_exec(scp->channel,execbuffer) == SSH_ERROR){
     scp->state=SSH_SCP_ERROR;
     return SSH_ERROR;
   }
   if(scp->mode == SSH_SCP_WRITE){
-	  r=channel_read(scp->channel,&code,1,0);
+	  r=ssh_channel_read(scp->channel,&code,1,0);
 	  if(r<=0){
 	    ssh_set_error(scp->session,SSH_FATAL, "Error reading status code: %s",ssh_get_error(scp->session));
 	    scp->state=SSH_SCP_ERROR;
@@ -123,7 +123,7 @@ int ssh_scp_init(ssh_scp scp){
 		  return SSH_ERROR;
 	  }
   } else {
-	  channel_write(scp->channel,"",1);
+	  ssh_channel_write(scp->channel,"",1);
   }
   if(scp->mode == SSH_SCP_WRITE)
     scp->state=SSH_SCP_WRITE_INITED;
@@ -138,7 +138,7 @@ int ssh_scp_close(ssh_scp scp){
   if(scp==NULL)
     return SSH_ERROR;
   if(scp->channel != NULL){
-    if(channel_send_eof(scp->channel) == SSH_ERROR){
+    if(ssh_channel_send_eof(scp->channel) == SSH_ERROR){
       scp->state=SSH_SCP_ERROR;
       return SSH_ERROR;
     }
@@ -146,16 +146,16 @@ int ssh_scp_close(ssh_scp scp){
      * not yet stored on disk. This can happen if the close is sent
      * before we got the EOF back
      */
-    while(!channel_is_eof(scp->channel)){
-      err=channel_read(scp->channel,buffer,sizeof(buffer),0);
+    while(!ssh_channel_is_eof(scp->channel)){
+      err=ssh_channel_read(scp->channel,buffer,sizeof(buffer),0);
       if(err==SSH_ERROR)
         break;
     }
-    if(channel_close(scp->channel) == SSH_ERROR){
+    if(ssh_channel_close(scp->channel) == SSH_ERROR){
       scp->state=SSH_SCP_ERROR;
       return SSH_ERROR;
     }
-    channel_free(scp->channel);
+    ssh_channel_free(scp->channel);
     scp->channel=NULL;
   }
   scp->state=SSH_SCP_NEW;
@@ -168,7 +168,7 @@ void ssh_scp_free(ssh_scp scp){
   if(scp->state != SSH_SCP_NEW)
     ssh_scp_close(scp);
   if(scp->channel)
-    channel_free(scp->channel);
+    ssh_channel_free(scp->channel);
   SAFE_FREE(scp->location);
   SAFE_FREE(scp->request_name);
   SAFE_FREE(scp->warning);
@@ -206,12 +206,12 @@ int ssh_scp_push_directory(ssh_scp scp, const char *dirname, int mode){
   snprintf(buffer, sizeof(buffer), "D%s 0 %s\n", perms, dir);
   SAFE_FREE(dir);
   SAFE_FREE(perms);
-  r=channel_write(scp->channel,buffer,strlen(buffer));
+  r=ssh_channel_write(scp->channel,buffer,strlen(buffer));
   if(r==SSH_ERROR){
     scp->state=SSH_SCP_ERROR;
     return SSH_ERROR;
   }
-  r=channel_read(scp->channel,&code,1,0);
+  r=ssh_channel_read(scp->channel,&code,1,0);
   if(r<=0){
     ssh_set_error(scp->session,SSH_FATAL, "Error reading status code: %s",ssh_get_error(scp->session));
     scp->state=SSH_SCP_ERROR;
@@ -243,12 +243,12 @@ int ssh_scp_push_directory(ssh_scp scp, const char *dirname, int mode){
     ssh_set_error(scp->session,SSH_FATAL,"ssh_scp_leave_directory called under invalid state");
     return SSH_ERROR;
   }
-  r=channel_write(scp->channel,buffer,strlen(buffer));
+  r=ssh_channel_write(scp->channel,buffer,strlen(buffer));
   if(r==SSH_ERROR){
     scp->state=SSH_SCP_ERROR;
     return SSH_ERROR;
   }
-  r=channel_read(scp->channel,&code,1,0);
+  r=ssh_channel_read(scp->channel,&code,1,0);
   if(r<=0){
     ssh_set_error(scp->session,SSH_FATAL, "Error reading status code: %s",ssh_get_error(scp->session));
     scp->state=SSH_SCP_ERROR;
@@ -295,12 +295,12 @@ int ssh_scp_push_file(ssh_scp scp, const char *filename, size_t size, int mode){
   snprintf(buffer, sizeof(buffer), "C%s %" PRIdS " %s\n", perms, size, file);
   SAFE_FREE(file);
   SAFE_FREE(perms);
-  r=channel_write(scp->channel,buffer,strlen(buffer));
+  r=ssh_channel_write(scp->channel,buffer,strlen(buffer));
   if(r==SSH_ERROR){
     scp->state=SSH_SCP_ERROR;
     return SSH_ERROR;
   }
-  r=channel_read(scp->channel,&code,1,0);
+  r=ssh_channel_read(scp->channel,&code,1,0);
   if(r<=0){
     ssh_set_error(scp->session,SSH_FATAL, "Error reading status code: %s",ssh_get_error(scp->session));
     scp->state=SSH_SCP_ERROR;
@@ -335,7 +335,7 @@ int ssh_scp_response(ssh_scp scp, char **response){
 	char msg[128];
 	if(scp==NULL)
 	    return SSH_ERROR;
-	r=channel_read(scp->channel,&code,1,0);
+	r=ssh_channel_read(scp->channel,&code,1,0);
 	if(r == SSH_ERROR)
 		return SSH_ERROR;
 	if(code == 0)
@@ -391,8 +391,8 @@ int ssh_scp_write(ssh_scp scp, const void *buffer, size_t len){
   if(scp->processed + len > scp->filelen)
     len = scp->filelen - scp->processed;
   /* hack to avoid waiting for window change */
-  channel_poll(scp->channel,0);
-  w=channel_write(scp->channel,buffer,len);
+  ssh_channel_poll(scp->channel,0);
+  w=ssh_channel_write(scp->channel,buffer,len);
   if(w != SSH_ERROR)
     scp->processed += w;
   else {
@@ -439,7 +439,7 @@ int ssh_scp_read_string(ssh_scp scp, char *buffer, size_t len){
   if(scp==NULL)
       return SSH_ERROR;
   while(r<len-1){
-    err=channel_read(scp->channel,&buffer[r],1,0);
+    err=ssh_channel_read(scp->channel,&buffer[r],1,0);
     if(err==SSH_ERROR){
       break;
     }
@@ -487,7 +487,7 @@ int ssh_scp_pull_request(ssh_scp scp){
   }
   err=ssh_scp_read_string(scp,buffer,sizeof(buffer));
   if(err==SSH_ERROR){
-	if(channel_is_eof(scp->channel)){
+	if(ssh_channel_is_eof(scp->channel)){
 		scp->state=SSH_SCP_TERMINATED;
 		return SSH_SCP_REQUEST_EOF;
 	}
@@ -532,7 +532,7 @@ int ssh_scp_pull_request(ssh_scp scp){
       break;
     case 'E':
     	scp->request_type=SSH_SCP_REQUEST_ENDDIR;
-    	channel_write(scp->channel,"",1);
+    	ssh_channel_write(scp->channel,"",1);
     	return scp->request_type;
     case 0x1:
     	ssh_set_error(scp->session,SSH_REQUEST_DENIED,"SCP: Warning: %s",&buffer[1]);
@@ -579,7 +579,7 @@ int ssh_scp_deny_request(ssh_scp scp, const char *reason){
     return SSH_ERROR;
   }
   snprintf(buffer,sizeof(buffer),"%c%s\n",2,reason);
-  err=channel_write(scp->channel,buffer,strlen(buffer));
+  err=ssh_channel_write(scp->channel,buffer,strlen(buffer));
   if(err==SSH_ERROR) {
     return SSH_ERROR;
   }
@@ -607,7 +607,7 @@ int ssh_scp_accept_request(ssh_scp scp){
     ssh_set_error(scp->session,SSH_FATAL,"ssh_scp_deny_request called under invalid state");
     return SSH_ERROR;
   }
-  err=channel_write(scp->channel,buffer,1);
+  err=ssh_channel_write(scp->channel,buffer,1);
   if(err==SSH_ERROR) {
     return SSH_ERROR;
   }
@@ -646,7 +646,7 @@ int ssh_scp_read(ssh_scp scp, void *buffer, size_t size){
     size = scp->filelen - scp->processed;
   if(size > 65536)
     size=65536; /* avoid too large reads */
-  r=channel_read(scp->channel,buffer,size,0);
+  r=ssh_channel_read(scp->channel,buffer,size,0);
   if(r != SSH_ERROR)
     scp->processed += r;
   else {
@@ -656,7 +656,7 @@ int ssh_scp_read(ssh_scp scp, void *buffer, size_t size){
   /* Check if we arrived at end of file */
   if(scp->processed == scp->filelen) {
     scp->processed=scp->filelen=0;
-    channel_write(scp->channel,"",1);
+    ssh_channel_write(scp->channel,"",1);
     code=ssh_scp_response(scp,NULL);
     if(code == 0){
     	scp->state=SSH_SCP_READ_INITED;

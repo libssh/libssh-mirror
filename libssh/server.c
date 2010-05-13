@@ -375,7 +375,7 @@ SSH_PACKET_CALLBACK(ssh_packet_kexdh_init){
   } else {
     session->dh_handshake_state=DH_STATE_INIT_SENT;
   }
-  string_free(e);
+  ssh_string_free(e);
 
   error:
   leave_function();
@@ -424,34 +424,34 @@ static int dh_handshake_server(ssh_session session) {
   if (pub == NULL) {
     ssh_set_error(session, SSH_FATAL,
         "Could not get the public key from the private key");
-    string_free(f);
+    ssh_string_free(f);
     return -1;
   }
   pubkey = publickey_to_string(pub);
   publickey_free(pub);
   if (pubkey == NULL) {
     ssh_set_error(session, SSH_FATAL, "Not enough space");
-    string_free(f);
+    ssh_string_free(f);
     return -1;
   }
 
   dh_import_pubkey(session, pubkey);
   if (dh_build_k(session) < 0) {
     ssh_set_error(session, SSH_FATAL, "Could not import the public key");
-    string_free(f);
+    ssh_string_free(f);
     return -1;
   }
 
   if (make_sessionid(session) != SSH_OK) {
     ssh_set_error(session, SSH_FATAL, "Could not create a session id");
-    string_free(f);
+    ssh_string_free(f);
     return -1;
   }
 
   sign = ssh_sign_session_id(session, prv);
   if (sign == NULL) {
     ssh_set_error(session, SSH_FATAL, "Could not sign the session id");
-    string_free(f);
+    ssh_string_free(f);
     return -1;
   }
 
@@ -471,12 +471,12 @@ static int dh_handshake_server(ssh_session session) {
       buffer_add_ssh_string(session->out_buffer, sign) < 0) {
     ssh_set_error(session, SSH_FATAL, "Not enough space");
     buffer_reinit(session->out_buffer);
-    string_free(f);
-    string_free(sign);
+    ssh_string_free(f);
+    ssh_string_free(sign);
     return -1;
   }
-  string_free(f);
-  string_free(sign);
+  ssh_string_free(f);
+  ssh_string_free(sign);
   session->dh_handshake_state=DH_STATE_NEWKEYS_SENT;
   if (packet_send(session) != SSH_OK) {
     return -1;
@@ -615,7 +615,7 @@ static int ssh_message_auth_reply_default(ssh_message msg,int partial) {
   ssh_log(session, SSH_LOG_PACKET,
       "Sending a auth failure. methods that can continue: %s", methods_c);
 
-  methods = string_from_char(methods_c);
+  methods = ssh_string_from_char(methods_c);
   if (methods == NULL) {
     goto error;
   }
@@ -636,7 +636,7 @@ static int ssh_message_auth_reply_default(ssh_message msg,int partial) {
 
   rc = packet_send(msg->session);
 error:
-  string_free(methods);
+  ssh_string_free(methods);
 
   leave_function();
   return rc;
@@ -712,12 +712,12 @@ int ssh_message_service_reply_success(ssh_message msg) {
   if (buffer_add_u8(session->out_buffer, SSH2_MSG_SERVICE_ACCEPT) < 0) {
     return -1;
   }
-  service=string_from_char(msg->service_request.service);
+  service=ssh_string_from_char(msg->service_request.service);
   if (buffer_add_ssh_string(session->out_buffer, service) < 0) {
-    string_free(service);
+    ssh_string_free(service);
     return -1;
   }
-  string_free(service);
+  ssh_string_free(service);
   return packet_send(msg->session);
 }
 
@@ -829,11 +829,11 @@ int ssh_message_auth_reply_pk_ok_simple(ssh_message msg) {
 	ssh_string algo;
 	ssh_string pubkey;
 	int ret;
-	algo=string_from_char(msg->auth_request.public_key->type_c);
+	algo=ssh_string_from_char(msg->auth_request.public_key->type_c);
 	pubkey=publickey_to_string(msg->auth_request.public_key);
 	ret=ssh_message_auth_reply_pk_ok(msg,algo,pubkey);
-	string_free(algo);
-	string_free(pubkey);
+	ssh_string_free(algo);
+	ssh_string_free(pubkey);
 	return ret;
 }
 

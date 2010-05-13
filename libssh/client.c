@@ -278,8 +278,8 @@ SSH_PACKET_CALLBACK(ssh_packet_dh_reply){
     ssh_set_error(session, SSH_FATAL, "Cannot import f number");
     goto error;
   }
-  string_burn(f);
-  string_free(f);
+  ssh_string_burn(f);
+  ssh_string_free(f);
   f=NULL;
   signature = buffer_get_ssh_string(packet);
   if (signature == NULL) {
@@ -351,8 +351,8 @@ SSH_PACKET_CALLBACK(ssh_packet_newkeys){
     }
 
     /* forget it for now ... */
-    string_burn(signature);
-    string_free(signature);
+    ssh_string_burn(signature);
+    ssh_string_free(signature);
     signature=NULL;
     /*
      * Once we got SSH2_MSG_NEWKEYS we can switch next_crypto and
@@ -416,8 +416,8 @@ static int dh_handshake(ssh_session session) {
       if (buffer_add_ssh_string(session->out_buffer, e) < 0) {
         goto error;
       }
-      string_burn(e);
-      string_free(e);
+      ssh_string_burn(e);
+      ssh_string_free(e);
       e=NULL;
 
       rc = packet_send(session);
@@ -446,16 +446,16 @@ static int dh_handshake(ssh_session session) {
   return SSH_AGAIN;
 error:
   if(e != NULL){
-    string_burn(e);
-    string_free(e);
+    ssh_string_burn(e);
+    ssh_string_free(e);
   }
   if(f != NULL){
-    string_burn(f);
-    string_free(f);
+    ssh_string_burn(f);
+    ssh_string_free(f);
   }
   if(signature != NULL){
-    string_burn(signature);
-    string_free(signature);
+    ssh_string_burn(signature);
+    ssh_string_free(signature);
   }
 
   leave_function();
@@ -503,16 +503,16 @@ int ssh_service_request(ssh_session session, const char *service) {
   		if (buffer_add_u8(session->out_buffer, SSH2_MSG_SERVICE_REQUEST) < 0) {
   			break;
   		}
-  		service_s = string_from_char(service);
+  		service_s = ssh_string_from_char(service);
   		if (service_s == NULL) {
   			break;
   		}
 
   		if (buffer_add_ssh_string(session->out_buffer,service_s) < 0) {
-  			string_free(service_s);
+  			ssh_string_free(service_s);
   			break;
   		}
-  		string_free(service_s);
+  		ssh_string_free(service_s);
 
   		if (packet_send(session) != SSH_OK) {
   			ssh_set_error(session, SSH_FATAL,
@@ -754,7 +754,7 @@ char *ssh_get_issue_banner(ssh_session session) {
     return NULL;
   }
 
-  return string_to_char(session->banner);
+  return ssh_string_to_char(session->banner);
 }
 
 /**
@@ -799,16 +799,16 @@ void ssh_disconnect(ssh_session session) {
       goto error;
     }
 
-    str = string_from_char("Bye Bye");
+    str = ssh_string_from_char("Bye Bye");
     if (str == NULL) {
       goto error;
     }
 
     if (buffer_add_ssh_string(session->out_buffer,str) < 0) {
-      string_free(str);
+      ssh_string_free(str);
       goto error;
     }
-    string_free(str);
+    ssh_string_free(str);
 
     packet_send(session);
     ssh_socket_close(session->socket);

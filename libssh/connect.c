@@ -506,11 +506,11 @@ int ssh_select(ssh_channel *channels, ssh_channel *outchannels, socket_t maxfd,
   j = 0;
   for (i = 0; channels[i]; i++) {
     if (channels[i]->session->alive) {
-      if(channel_poll(channels[i], 0) > 0) {
+      if(ssh_channel_poll(channels[i], 0) > 0) {
         outchannels[j] = channels[i];
         j++;
       } else {
-        if(channel_poll(channels[i], 1) > 0) {
+        if(ssh_channel_poll(channels[i], 1) > 0) {
           outchannels[j] = channels[i];
           j++;
         }
@@ -574,8 +574,8 @@ int ssh_select(ssh_channel *channels, ssh_channel *outchannels, socket_t maxfd,
   for (i = 0; channels[i]; i++) {
     if (channels[i]->session->alive &&
         ssh_socket_fd_isset(channels[i]->session->socket,&localset)) {
-      if ((channel_poll(channels[i],0) > 0) ||
-          (channel_poll(channels[i], 1) > 0)) {
+      if ((ssh_channel_poll(channels[i],0) > 0) ||
+          (ssh_channel_poll(channels[i], 1) > 0)) {
         outchannels[j] = channels[i];
         j++;
       }

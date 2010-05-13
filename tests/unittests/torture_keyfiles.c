@@ -64,7 +64,7 @@ START_TEST (torture_pubkey_from_file)
 
     ck_assert_msg(rc == 0,ssh_get_error(session));
 
-    string_free(pubkey);
+    ssh_string_free(pubkey);
 
     /* test if it returns 1 if pubkey doesn't exist */
     unlink(LIBSSH_RSA_TESTKEY ".pub");
@@ -138,9 +138,9 @@ START_TEST (torture_pubkey_generate_from_privkey)
 
     ck_assert_msg(pubkey_new != NULL,ssh_get_error(session));
 
-    ck_assert(string_len(pubkey_orig) == string_len(pubkey_new));
-    ck_assert(memcmp(string_data(pubkey_orig), string_data(pubkey_new),
-                string_len(pubkey_orig)) == 0);
+    ck_assert(ssh_string_len(pubkey_orig) == ssh_string_len(pubkey_new));
+    ck_assert(memcmp(ssh_string_data(pubkey_orig), ssh_string_data(pubkey_new),
+                ssh_string_len(pubkey_orig)) == 0);
 
     rc = ssh_publickey_to_file(session, LIBSSH_RSA_TESTKEY ".pub", pubkey_new, type_new);
     ck_assert_msg(rc == 0,ssh_get_error(session));
@@ -150,8 +150,8 @@ START_TEST (torture_pubkey_generate_from_privkey)
 
     ck_assert_str_eq(pubkey_line_orig, pubkey_line_new);
 
-    string_free(pubkey_orig);
-    string_free(pubkey_new);
+    ssh_string_free(pubkey_orig);
+    ssh_string_free(pubkey_new);
 }
 END_TEST
 

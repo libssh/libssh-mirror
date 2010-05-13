@@ -26,26 +26,26 @@ void do_connect(SSH_SESSION *session) {
     return;
   }
   printf("Authenticated\n");
-  channel = channel_new(session);
-  channel_open_session(channel);
+  channel = ssh_channel_new(session);
+  ssh_channel_open_session(channel);
   printf("Execute 'ls' on the channel\n");
-  error = channel_request_exec(channel, "ls");
+  error = ssh_channel_request_exec(channel, "ls");
   if(error != SSH_OK){
     fprintf(stderr, "Error executing command: %s\n", ssh_get_error(session));
     return;
   }
   printf("--------------------output----------------------\n");
-  while (channel_read(channel, buf, sizeof(buf), 0)) {
+  while (ssh_channel_read(channel, buf, sizeof(buf), 0)) {
     printf("%s", buf);
   }
   printf("\n");
   printf("---------------------end------------------------\n");
-  channel_send_eof(channel);
-  fprintf(stderr, "Exit status: %d\n", channel_get_exit_status(channel));
+  ssh_channel_send_eof(channel);
+  fprintf(stderr, "Exit status: %d\n", ssh_channel_get_exit_status(channel));
 
   printf("\nChannel test finished\n");
-  channel_close(channel);
-  channel_free(channel);
+  ssh_channel_close(channel);
+  ssh_channel_free(channel);
 }
 
 int main(int argc, char **argv){

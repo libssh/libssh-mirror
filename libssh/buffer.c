@@ -78,7 +78,7 @@ static void buffer_verify(struct buffer_struct *buf){
  *
  * @return A newly initialized SSH buffer, NULL on error.
  */
-struct ssh_buffer_struct *buffer_new(void) {
+struct ssh_buffer_struct *ssh_buffer_new(void) {
   struct ssh_buffer_struct *buf = malloc(sizeof(struct ssh_buffer_struct));
 
   if (buf == NULL) {
@@ -94,7 +94,7 @@ struct ssh_buffer_struct *buffer_new(void) {
  *
  * \param[in]  buffer   The buffer to free.
  */
-void buffer_free(struct ssh_buffer_struct *buffer) {
+void ssh_buffer_free(struct ssh_buffer_struct *buffer) {
   if (buffer == NULL) {
     return;
   }
@@ -193,7 +193,7 @@ int buffer_add_ssh_string(struct ssh_buffer_struct *buffer,
     struct ssh_string_struct *string) {
   uint32_t len = 0;
 
-  len = string_len(string);
+  len = ssh_string_len(string);
   if (buffer_add_data(buffer, string, len + sizeof(uint32_t)) < 0) {
     return -1;
   }
@@ -319,7 +319,7 @@ int buffer_prepend_data(struct ssh_buffer_struct *buffer, const void *data,
  */
 int buffer_add_buffer(struct ssh_buffer_struct *buffer,
     struct ssh_buffer_struct *source) {
-  if (buffer_add_data(buffer, buffer_get(source), buffer_get_len(source)) < 0) {
+  if (buffer_add_data(buffer, ssh_buffer_get_begin(source), ssh_buffer_get_len(source)) < 0) {
     return -1;
   }
 
@@ -339,7 +339,7 @@ int buffer_add_buffer(struct ssh_buffer_struct *buffer,
  * @see buffer_get_rest()
  * @see buffer_get_len()
  */
-void *buffer_get(struct ssh_buffer_struct *buffer){
+void *ssh_buffer_get_begin(struct ssh_buffer_struct *buffer){
   return buffer->data;
 }
 
@@ -368,7 +368,7 @@ void *buffer_get_rest(struct ssh_buffer_struct *buffer){
  *
  * @see buffer_get()
  */
-uint32_t buffer_get_len(struct ssh_buffer_struct *buffer){
+uint32_t ssh_buffer_get_len(struct ssh_buffer_struct *buffer){
     return buffer->used;
 }
 
@@ -525,11 +525,11 @@ struct ssh_string_struct *buffer_get_ssh_string(struct ssh_buffer_struct *buffer
   if ((buffer->pos + hostlen) > buffer->used) {
     return NULL; /* it is indeed */
   }
-  str = string_new(hostlen);
+  str = ssh_string_new(hostlen);
   if (str == NULL) {
     return NULL;
   }
-  if (buffer_get_data(buffer, string_data(str), hostlen) != hostlen) {
+  if (buffer_get_data(buffer, ssh_string_data(str), hostlen) != hostlen) {
     /* should never happen */
     SAFE_FREE(str);
     return NULL;
@@ -562,11 +562,11 @@ struct ssh_string_struct *buffer_get_mpint(struct ssh_buffer_struct *buffer) {
   if ((buffer->pos + len) > buffer->used) {
     return NULL;
   }
-  str = string_new(len);
+  str = ssh_string_new(len);
   if (str == NULL) {
     return NULL;
   }
-  if (buffer_get_data(buffer, string_data(str), len) != len) {
+  if (buffer_get_data(buffer, ssh_string_data(str), len) != len) {
     SAFE_FREE(str);
     return NULL;
   }

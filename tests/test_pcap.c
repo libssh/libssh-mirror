@@ -32,7 +32,7 @@
 int main(int argc, char **argv){
 	ssh_pcap_file pcap;
 	ssh_pcap_context ctx;
-	ssh_buffer buffer=buffer_new();
+	ssh_buffer buffer=ssh_buffer_new();
 	char *str="Hello, this is a test string to test the capabilities of the"
 			"pcap file writer.";
 	printf("Simple pcap tester\n");

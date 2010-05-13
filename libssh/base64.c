@@ -77,7 +77,7 @@ ssh_buffer base64_to_bin(const char *source) {
     return NULL;
   }
 
-  buffer = buffer_new();
+  buffer = ssh_buffer_new();
   if (buffer == NULL) {
     SAFE_FREE(base64);
     return NULL;
@@ -162,7 +162,7 @@ ssh_buffer base64_to_bin(const char *source) {
 
 error:
   SAFE_FREE(base64);
-  buffer_free(buffer);
+  ssh_buffer_free(buffer);
   return NULL;
 }
 
