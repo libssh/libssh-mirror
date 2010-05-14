@@ -65,11 +65,13 @@
 #ifndef HAVE_VSNPRINTF
 #ifdef HAVE__VSNPRINTF_S
 #define vsnprintf(s, n, f, v) _vsnprintf_s((s), (n), _TRUNCATE, (f), (v))
-#elif HAVE__VSNPRINTF
+#else
+#ifdef HAVE__VSNPRINTF
 #define vsnprintf _vsnprintf
 #else /* HAVE_VSNPRINTF */
 #error "No vsnprintf compatible function found"
-#endif
+#endif /* HAVE__VSNPRINTF */
+#endif /* HAVE__VSNPRINTF_S */
 #endif /* HAVE_VSNPRINTF */
 
 #ifndef HAVE_STRNCPY

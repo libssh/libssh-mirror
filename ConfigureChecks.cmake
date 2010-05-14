@@ -48,7 +48,7 @@ if (WIN32)
   if(NOT HAVE_SNPRINTF)
       check_function_exists(_snprintf HAVE__SNPRINTF)
       check_function_exists(_snprintf_s HAVE__SNPRINTF_S)
-  endif(NOT HAVE_HAVE_SNPRINTF)
+  endif(NOT HAVE_SNPRINTF)
   check_function_exists(strncpy HAVE_STRNCPY)
 
   set(HAVE_SELECT TRUE)
