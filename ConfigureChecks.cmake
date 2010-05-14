@@ -44,7 +44,11 @@ if (WIN32)
       check_function_exists(_vsnprintf_s HAVE__VSNPRINTF_S)
       check_function_exists(_vsnprintf HAVE__VSNPRINTF)
   endif(NOT HAVE_VSNPRINTF)
-
+  check_function_exists(snprintf HAVE_SNPRINTF)
+  if(NOT HAVE_SNPRINTF)
+      check_function_exists(_snprintf HAVE__SNPRINTF)
+      check_function_exists(_snprintf_s HAVE__SNPRINTF_S)
+  endif(NOT HAVE_HAVE_SNPRINTF)
   check_function_exists(strncpy HAVE_STRNCPY)
 
   set(HAVE_SELECT TRUE)

@@ -50,8 +50,17 @@
 #undef strtok_r
 #define strtok_r strtok_s
 
-#undef snprintf
+#ifndef HAVE_SNPRINTF
+#ifdef HAVE__SNPRINTF_S
 #define snprintf(d, n, ...) _snprintf_s((d), (n), _TRUNCATE, __VA_ARGS__)
+#else
+#ifdef HAVE__SNPRINTF
+#define snprintf _snprintf
+#else 
+#error "no snprintf compatible function found"
+#endif /* HAVE__SNPRINTF */
+#endif /* HAVE__SNPRINTF_S */
+#endif /* HAVE_SNPRINTF */
 
 #ifndef HAVE_VSNPRINTF
 #ifdef HAVE__VSNPRINTF_S
@@ -59,7 +68,7 @@
 #elif HAVE__VSNPRINTF
 #define vsnprintf _vsnprintf
 #else /* HAVE_VSNPRINTF */
-#error "No vsnprintf compatibel function found"
+#error "No vsnprintf compatible function found"
 #endif
 #endif /* HAVE_VSNPRINTF */
 
