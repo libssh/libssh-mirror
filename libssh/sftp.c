@@ -2339,8 +2339,9 @@ int sftp_rename(sftp_session sftp, const char *original, const char *newname) {
   if (buffer_add_u32(buffer, id) < 0 ||
       buffer_add_ssh_string(buffer, oldpath) < 0 ||
       buffer_add_ssh_string(buffer, newpath) < 0 ||
-      /* POSIX rename atomically replaces newpath, we should do the same */
-      buffer_add_u32(buffer, SSH_FXF_RENAME_OVERWRITE) < 0) {
+      /* POSIX rename atomically replaces newpath, we should do the same
+       * only available on >=v4 */
+      sftp->version>=4 ? (buffer_add_u32(buffer, SSH_FXF_RENAME_OVERWRITE) < 0):0) {
     ssh_set_error_oom(sftp->session);
     ssh_buffer_free(buffer);
     ssh_string_free(oldpath);
