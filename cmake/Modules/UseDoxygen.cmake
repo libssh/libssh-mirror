@@ -49,7 +49,7 @@ endif()
 if(DOXYGEN_FOUND AND DOXYFILE_IN_FOUND)
     add_custom_target(doxygen ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/doxy.config)
 
-    usedoxygen_set_default(DOXYFILE_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/doc")
+    usedoxygen_set_default(DOXYFILE_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}")
     usedoxygen_set_default(DOXYFILE_HTML_DIR "html")
 
     set_property(DIRECTORY APPEND PROPERTY
