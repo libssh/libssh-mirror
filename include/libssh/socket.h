@@ -30,6 +30,7 @@ struct ssh_socket_struct;
 typedef struct ssh_socket_struct* ssh_socket;
 
 int ssh_socket_init(void);
+void ssh_socket_cleanup(void);
 ssh_socket ssh_socket_new(ssh_session session);
 void ssh_socket_free(ssh_socket s);
 void ssh_socket_set_fd(ssh_socket s, socket_t fd);

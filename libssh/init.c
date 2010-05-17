@@ -72,6 +72,7 @@ int ssh_finalize(void) {
 	ssh_free_global_poll_ctx();
   ssh_regex_finalize();
   ssh_crypto_finalize();
+  ssh_socket_cleanup();
 #ifdef HAVE_LIBGCRYPT
   gcry_control(GCRYCTL_TERM_SECMEM);
 #elif defined HAVE_LIBCRYPTO

@@ -111,10 +111,20 @@ int ssh_socket_init(void) {
     return -1;
   }
 
-  ssh_poll_init();
 #endif
+  ssh_poll_init();
+
   return 0;
 }
+
+/**
+ * @brief Cleanup the socket system.
+ */
+void ssh_socket_cleanup(void) {
+    ssh_poll_cleanup();
+}
+
+
 /**
  * \internal
  * \brief creates a new Socket object
