@@ -39,9 +39,13 @@ endmacro()
 find_package(Doxygen)
 
 if(DOXYGEN_FOUND)
-    find_file(DOXYFILE_IN "doxy.config.in"
-            PATHS "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_ROOT}/Modules/"
-            NO_DEFAULT_PATH)
+    find_file(DOXYFILE_IN
+        NAMES
+            doxy.config.in
+        PATHS
+            ${CMAKE_CURRENT_SOURCE_DIR}
+            ${CMAKE_ROOT}/Modules/
+        NO_DEFAULT_PATH)
     include(FindPackageHandleStandardArgs)
     find_package_handle_standard_args(DOXYFILE_IN DEFAULT_MSG "DOXYFILE_IN")
 endif()
@@ -81,9 +85,9 @@ if(DOXYGEN_FOUND AND DOXYFILE_IN_FOUND)
             WORKING_DIRECTORY "${DOXYFILE_OUTPUT_DIR}/${DOXYFILE_LATEX_DIR}")
     endif()
 
-    configure_file(${DOXYFILE_IN} doxy.config ESCAPE_QUOTES IMMEDIATE @ONLY)
+    configure_file(${DOXYFILE_IN} ${CMAKE_CURRENT_BINARY_DIR}/doxy.config ESCAPE_QUOTES IMMEDIATE @ONLY)
     if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/doxy.trac.in)
-        configure_file(${CMAKE_CURRENT_SOURCE_DIR}/doxy.trac.in doxy.trac ESCAPE_QUOTES IMMEDIATE @ONLY)
+        configure_file(${CMAKE_CURRENT_SOURCE_DIR}/doxy.trac.in ${CMAKE_CURRENT_BINARY_DIR}/doxy.trac ESCAPE_QUOTES IMMEDIATE @ONLY)
         add_custom_target(doxygen-trac ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/doxy.trac)
     endif()
 
