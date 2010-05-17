@@ -2484,7 +2484,8 @@ int sftp_chown(sftp_session sftp, const char *file, uid_t owner, gid_t group) {
 
   attr.uid = owner;
   attr.gid = group;
-  attr.flags = SSH_FILEXFER_ATTR_OWNERGROUP;
+
+  attr.flags = SSH_FILEXFER_ATTR_UIDGID;
 
   return sftp_setstat(sftp, file, &attr);
 }
