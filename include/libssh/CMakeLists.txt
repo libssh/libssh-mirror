@@ -4,6 +4,7 @@ set(libssh_HDRS
   callbacks.h
   libssh.h
   ssh2.h
+  legacy.h
 )
 
 if (WITH_SFTP)
