@@ -1,7 +1,8 @@
 ChangeLog
 ==========
 
-version 0.4.3 (released 2010-05-15)
+version 0.4.3 (released 2010-05-18)
+  * Added global/keepalive responses.
   * Added runtime detection of WSAPoll().
   * Added a select(2) based poll-emulation if poll(2) is not available.
   * Added a function to expand an escaped string.
@@ -9,6 +10,8 @@ version 0.4.3 (released 2010-05-15)
   * Added a proxycommand support.
   * Added ssh_privatekey_type public function
   * Added the possibility to define _OPENSSL_DIR and _ZLIB_DIR.
+  * Fixed sftp_chown.
+  * Fixed sftp_rename on protocol version 3.
   * Fixed a blocking bug in channel_poll.
   * Fixed config parsing wich has overwritten user specified values.
   * Fixed hashed [host]:port format in knownhosts
