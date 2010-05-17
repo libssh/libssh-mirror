@@ -29,7 +29,7 @@ clients must be made or how a client should react.
 
 int verbosity;
 char *destination;
-
+#define DATALEN 65536
 static void do_sftp(ssh_session session){
     sftp_session sftp=sftp_new(session);
     sftp_dir dir;
@@ -40,7 +40,7 @@ static void do_sftp(ssh_session session){
     sftp_file to;
     int len=1;
     unsigned int i;
-    char data[8000]={0};
+    char data[DATALEN]={0};
     char *lnk;
 
     unsigned int count;
@@ -202,9 +202,9 @@ static void do_sftp(ssh_session session){
     printf("fichiers ferm\n");
     to=sftp_open(sftp,"/tmp/grosfichier",O_WRONLY|O_CREAT, 0644);
     for(i=0;i<1000;++i){
-        len=sftp_write(to,data,8000);
+        len=sftp_write(to,data,DATALEN);
         printf("wrote %d bytes\n",len);
-        if(len != 8000){
+        if(len != DATALEN){
             printf("chunk %d : %d (%s)\n",i,len,ssh_get_error(session));
         }
     }

@@ -15,12 +15,15 @@ add_executable(libssh_scp libssh_scp.c ${examples_SRCS})
 add_executable(scp_download scp_download.c ${examples_SRCS})
 add_executable(samplessh sample.c ${examples_SRCS})
 add_executable(exec exec.c ${examples_SRCS})
+add_executable(senddata senddata.c ${examples_SRCS})
+
 add_executable(libsshpp libsshpp.cpp)
 
 target_link_libraries(libssh_scp ${LIBSSH_SHARED_LIBRARY})
 target_link_libraries(scp_download ${LIBSSH_SHARED_LIBRARY})
 target_link_libraries(samplessh ${LIBSSH_SHARED_LIBRARY})
 target_link_libraries(exec ${LIBSSH_SHARED_LIBRARY})
+target_link_libraries(senddata ${LIBSSH_SHARED_LIBRARY})
 target_link_libraries(libsshpp ${LIBSSH_SHARED_LIBRARY})
 
 include_directories(
