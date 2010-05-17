@@ -63,6 +63,10 @@ void ssh_poll_init(void) {
     return;
 }
 
+void ssh_poll_cleanup(void) {
+    return;
+}
+
 int ssh_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout) {
   return poll((struct pollfd *) fds, nfds, timeout);
 }
@@ -232,6 +236,14 @@ void ssh_poll_init(void) {
     } else {
         win_poll = wsa_poll;
     }
+}
+
+void ssh_poll_cleanup(void) {
+    win_poll = bsd_poll;
+
+    FreeLibrary(hlib);
+
+    hlib = NULL;
 }
 
 int ssh_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout) {
