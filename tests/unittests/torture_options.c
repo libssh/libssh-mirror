@@ -120,7 +120,7 @@ START_TEST (torture_options_set_identity)
 END_TEST
 
 static Suite *torture_make_suite(void) {
-  Suite *s = suite_create("libssh_keyfiles");
+  Suite *s = suite_create("libssh_options");
 
   torture_create_case_fixture(s, "torture_options_set_host",
           torture_options_set_host, setup, teardown);
