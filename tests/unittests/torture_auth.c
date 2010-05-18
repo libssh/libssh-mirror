@@ -28,8 +28,10 @@
 ssh_session session;
 
 static void setup(void) {
+  int verbosity=torture_libssh_verbosity();
   session = ssh_new();
   ssh_options_set(session,SSH_OPTIONS_HOST,"localhost");
+  ssh_options_set(session,SSH_OPTIONS_LOG_VERBOSITY,&verbosity);
 }
 
 static void teardown(void) {

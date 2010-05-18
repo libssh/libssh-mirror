@@ -24,6 +24,11 @@ void torture_create_case_timeout(Suite *s, const char *name, TFun function, int 
   tcase_add_test(tc_new, function);
 }
 
+static int verbosity=0;
+int torture_libssh_verbosity(void){
+  return verbosity;
+}
+
 int main(int argc, char **argv) {
   Suite *s = NULL;
   SRunner *sr = NULL;
@@ -33,7 +38,7 @@ int main(int argc, char **argv) {
   memset(&arguments,0,sizeof(struct argument_s));
 
   torture_cmdline_parse(argc, argv, &arguments);
-
+  verbosity=arguments.verbose;
   s = torture_make_suite();
 
   sr = srunner_create(s);

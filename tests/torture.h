@@ -13,6 +13,7 @@
 struct argument_s {
   char *args[2];
   int nofork;
+  int verbose;
 };
 
 void torture_cmdline_parse(int argc, char **argv, struct argument_s *arguments);
@@ -30,6 +31,12 @@ void torture_create_case_fixture(Suite *s, const char *name, TFun function,
  */
 void torture_create_case_timeout(Suite *s, const char *name, TFun function,
     int timeout);
+
+/*
+ * returns the verbosity level asked by user
+ */
+int torture_libssh_verbosity(void);
+
 
 /*
  * This function must be defined in every unit test file.

@@ -20,6 +20,14 @@ static struct argp_option options[] = {
     .doc   = "Don't fork the testcases",
     .group = 0
   },
+  {
+    .name  = "verbose",
+    .key   = 'v',
+    .arg   = NULL,
+    .flags = 0,
+    .doc   = "Make libssh test more verbose",
+    .group = 0
+  },
   {NULL, 0, NULL, 0, NULL, 0}
 };
 
@@ -36,6 +44,9 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
   switch (key) {
     case 'n':
       arguments->nofork = 1;
+      break;
+    case 'v':
+      arguments->verbose++;
       break;
     case ARGP_KEY_ARG:
       /* End processing here. */
