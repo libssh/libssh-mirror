@@ -76,7 +76,7 @@ START_TEST(torture_ssh_list_prepend)
 }
 END_TEST
 
-static Suite *torture_make_suite(void) {
+Suite *torture_make_suite(void) {
   Suite *s = suite_create("libssh_list");
 
   torture_create_case(s, "torture_ssh_list_new", torture_ssh_list_new);
@@ -85,27 +85,3 @@ static Suite *torture_make_suite(void) {
 
   return s;
 }
-
-int main(int argc, char **argv) {
-  Suite *s = NULL;
-  SRunner *sr = NULL;
-  struct argument_s arguments;
-  int nf;
-
-  ZERO_STRUCT(arguments);
-
-  torture_cmdline_parse(argc, argv, &arguments);
-
-  s = torture_make_suite();
-
-  sr = srunner_create(s);
-  if (arguments.nofork) {
-    srunner_set_fork_status(sr, CK_NOFORK);
-  }
-  srunner_run_all(sr, CK_VERBOSE);
-  nf = srunner_ntests_failed(sr);
-  srunner_free(sr);
-
-  return (nf == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
-}
-

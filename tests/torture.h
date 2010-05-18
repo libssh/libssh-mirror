@@ -31,4 +31,10 @@ void torture_create_case_fixture(Suite *s, const char *name, TFun function,
 void torture_create_case_timeout(Suite *s, const char *name, TFun function,
     int timeout);
 
+/*
+ * This function must be defined in every unit test file.
+ */
+Suite *torture_make_suite(void);
+
+
 #endif /* _TORTURE_H */

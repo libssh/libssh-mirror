@@ -24,3 +24,25 @@ void torture_create_case_timeout(Suite *s, const char *name, TFun function, int 
   tcase_add_test(tc_new, function);
 }
 
+int main(int argc, char **argv) {
+  Suite *s = NULL;
+  SRunner *sr = NULL;
+  struct argument_s arguments;
+  int nf;
+
+  memset(&arguments,0,sizeof(struct argument_s));
+
+  torture_cmdline_parse(argc, argv, &arguments);
+
+  s = torture_make_suite();
+
+  sr = srunner_create(s);
+  if (arguments.nofork) {
+    srunner_set_fork_status(sr, CK_NOFORK);
+  }
+  srunner_run_all(sr, CK_VERBOSE);
+  nf = srunner_ntests_failed(sr);
+  srunner_free(sr);
+
+  return (nf == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
+}

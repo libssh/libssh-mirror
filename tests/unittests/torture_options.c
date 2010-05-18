@@ -119,7 +119,7 @@ START_TEST (torture_options_set_identity)
 }
 END_TEST
 
-static Suite *torture_make_suite(void) {
+Suite *torture_make_suite(void) {
   Suite *s = suite_create("libssh_options");
 
   torture_create_case_fixture(s, "torture_options_set_host",
@@ -134,28 +134,5 @@ static Suite *torture_make_suite(void) {
           torture_options_set_identity, setup, teardown);
 
   return s;
-}
-
-int main(int argc, char **argv) {
-  Suite *s = NULL;
-  SRunner *sr = NULL;
-  struct argument_s arguments;
-  int nf;
-
-  ZERO_STRUCT(arguments);
-
-  torture_cmdline_parse(argc, argv, &arguments);
-
-  s = torture_make_suite();
-
-  sr = srunner_create(s);
-  if (arguments.nofork) {
-    srunner_set_fork_status(sr, CK_NOFORK);
-  }
-  srunner_run_all(sr, CK_VERBOSE);
-  nf = srunner_ntests_failed(sr);
-  srunner_free(sr);
-
-  return (nf == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
