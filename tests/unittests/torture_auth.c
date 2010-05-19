@@ -89,8 +89,8 @@ START_TEST (torture_auth_password)
     ck_assert_msg(ssh_get_error_code(session)==SSH_REQUEST_DENIED,
         ssh_get_error(session));
   }
-  ck_assert_msg(ssh_auth_list(session) & SSH_AUTH_METHOD_INTERACTIVE,
-      "SSH server doesn't allow keyboard-interactive");
+  ck_assert_msg(ssh_auth_list(session) & SSH_AUTH_METHOD_PASSWORD,
+      "SSH server doesn't allow password authentication");
   rc=ssh_userauth_password(session,NULL,password);
   ck_assert_msg(rc==SSH_AUTH_SUCCESS,ssh_get_error(session));
 }
