@@ -195,21 +195,20 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_success){
  * to understand if we are in a public key or keyboard-interactive context.
  */
 SSH_PACKET_CALLBACK(ssh_packet_userauth_pk_ok){
-  enter_function();
-  (void)packet;
-  (void)type;
-  (void)user;
+	int rc;
+	enter_function();
   ssh_log(session,SSH_LOG_PACKET,"Received SSH_USERAUTH_PK_OK/INFO_REQUEST");
-  if(session->kbdint){
+  if(session->auth_state==SSH_AUTH_STATE_KBDINT_SENT){
     /* Assuming we are in keyboard-interactive context */
-    ssh_log(session,SSH_LOG_PACKET,"keyboard-interactive context exists, assuming SSH_USERAUTH_INFO_REQUEST");
-    session->auth_state=SSH_AUTH_STATE_INFO;
+    ssh_log(session,SSH_LOG_PACKET,"keyboard-interactive context, assuming SSH_USERAUTH_INFO_REQUEST");
+    rc=ssh_packet_userauth_info_request(session,type,packet,user);
   } else {
     session->auth_state=SSH_AUTH_STATE_PK_OK;
     ssh_log(session,SSH_LOG_PACKET,"assuming SSH_USERAUTH_PK_OK");
+    rc=SSH_PACKET_USED;
   }
   leave_function();
-  return SSH_PACKET_USED;
+  return rc;
 }
 
 static int wait_auth_status(ssh_session session) {
@@ -217,7 +216,8 @@ static int wait_auth_status(ssh_session session) {
 
   enter_function();
 
-  while (session->auth_state == SSH_AUTH_STATE_NONE) {
+  while (session->auth_state == SSH_AUTH_STATE_NONE ||
+  		session->auth_state == SSH_AUTH_STATE_KBDINT_SENT) {
     if (ssh_handle_packets(session,-1) != SSH_OK)
       break;
   }
@@ -238,6 +238,7 @@ static int wait_auth_status(ssh_session session) {
     case SSH_AUTH_STATE_SUCCESS:
       rc=SSH_AUTH_SUCCESS;
       break;
+    case SSH_AUTH_STATE_KBDINT_SENT:
     case SSH_AUTH_STATE_NONE:
       /* not reached */
       rc=SSH_AUTH_ERROR;
@@ -1279,7 +1280,7 @@ static int kbdauth_init(ssh_session session, const char *user,
   ssh_string_free(service);
   ssh_string_free(method);
   ssh_string_free(sub);
-  session->auth_state=SSH_AUTH_STATE_NONE;
+  session->auth_state=SSH_AUTH_STATE_KBDINT_SENT;
   if (packet_send(session) != SSH_OK) {
     leave_function();
     return rc;
@@ -1299,19 +1300,26 @@ error:
   return rc;
 }
 
-static int kbdauth_info_get(ssh_session session) {
+/**
+ * @internal
+ * @brief handles a SSH_USERAUTH_INFO_REQUEST packet, as used in
+ *        keyboard-interactive authentication, and changes the
+ *        authentication state.
+ */
+SSH_PACKET_CALLBACK(ssh_packet_userauth_info_request) {
   ssh_string name; /* name of the "asking" window showed to client */
   ssh_string instruction;
   ssh_string tmp;
   uint32_t nprompts;
   uint32_t i;
-
+  (void)user;
+  (void)type;
   enter_function();
 
-  name = buffer_get_ssh_string(session->in_buffer);
-  instruction = buffer_get_ssh_string(session->in_buffer);
-  tmp = buffer_get_ssh_string(session->in_buffer);
-  buffer_get_u32(session->in_buffer, &nprompts);
+  name = buffer_get_ssh_string(packet);
+  instruction = buffer_get_ssh_string(packet);
+  tmp = buffer_get_ssh_string(packet);
+  buffer_get_u32(packet, &nprompts);
 
   if (name == NULL || instruction == NULL || tmp == NULL) {
     ssh_string_free(name);
@@ -1319,19 +1327,19 @@ static int kbdauth_info_get(ssh_session session) {
     /* tmp if empty if we got here */
     ssh_set_error(session, SSH_FATAL, "Invalid USERAUTH_INFO_REQUEST msg");
     leave_function();
-    return SSH_AUTH_ERROR;
+    return SSH_PACKET_USED;
   }
   ssh_string_free(tmp);
 
   if (session->kbdint == NULL) {
     session->kbdint = kbdint_new();
     if (session->kbdint == NULL) {
-      ssh_set_error(session, SSH_FATAL, "Not enough space");
+      ssh_set_error_oom(session);
       ssh_string_free(name);
       ssh_string_free(instruction);
 
       leave_function();
-      return SSH_AUTH_ERROR;
+      return SSH_PACKET_USED;
     }
   } else {
     kbdint_clean(session->kbdint);
@@ -1340,23 +1348,24 @@ static int kbdauth_info_get(ssh_session session) {
   session->kbdint->name = ssh_string_to_char(name);
   ssh_string_free(name);
   if (session->kbdint->name == NULL) {
-    ssh_set_error(session, SSH_FATAL, "Not enough space");
+    ssh_set_error_oom(session);
     kbdint_free(session->kbdint);
     leave_function();
-    return SSH_AUTH_ERROR;
+    return SSH_PACKET_USED;
   }
 
   session->kbdint->instruction = ssh_string_to_char(instruction);
   ssh_string_free(instruction);
   if (session->kbdint->instruction == NULL) {
-    ssh_set_error(session, SSH_FATAL, "Not enough space");
+    ssh_set_error_oom(session);
     kbdint_free(session->kbdint);
     session->kbdint = NULL;
     leave_function();
-    return SSH_AUTH_ERROR;
+    return SSH_PACKET_USED;
   }
 
   nprompts = ntohl(nprompts);
+  ssh_log(session,SSH_LOG_PACKET,"kbdint: %d prompts",nprompts);
   if (nprompts > KBDINT_MAX_PROMPT) {
     ssh_set_error(session, SSH_FATAL,
         "Too much prompt asked from server: %u (0x%.4x)",
@@ -1364,58 +1373,66 @@ static int kbdauth_info_get(ssh_session session) {
     kbdint_free(session->kbdint);
     session->kbdint = NULL;
     leave_function();
-    return SSH_AUTH_ERROR;
+    return SSH_PACKET_USED;
   }
 
   session->kbdint->nprompts = nprompts;
   session->kbdint->prompts = malloc(nprompts * sizeof(char *));
   if (session->kbdint->prompts == NULL) {
     session->kbdint->nprompts = 0;
-    ssh_set_error(session, SSH_FATAL, "No space left");
+    ssh_set_error_oom(session);
     kbdint_free(session->kbdint);
     session->kbdint = NULL;
     leave_function();
-    return SSH_AUTH_ERROR;
+    return SSH_PACKET_USED;
   }
   memset(session->kbdint->prompts, 0, nprompts * sizeof(char *));
 
   session->kbdint->echo = malloc(nprompts);
   if (session->kbdint->echo == NULL) {
     session->kbdint->nprompts = 0;
-    ssh_set_error(session, SSH_FATAL, "No space left");
+    ssh_set_error_oom(session);
     kbdint_free(session->kbdint);
     session->kbdint = NULL;
     leave_function();
-    return SSH_AUTH_ERROR;
+    return SSH_PACKET_USED;
   }
   memset(session->kbdint->echo, 0, nprompts);
 
   for (i = 0; i < nprompts; i++) {
-    tmp = buffer_get_ssh_string(session->in_buffer);
-    buffer_get_u8(session->in_buffer, &session->kbdint->echo[i]);
+    tmp = buffer_get_ssh_string(packet);
+    buffer_get_u8(packet, &session->kbdint->echo[i]);
     if (tmp == NULL) {
       ssh_set_error(session, SSH_FATAL, "Short INFO_REQUEST packet");
       kbdint_free(session->kbdint);
       session->kbdint = NULL;
       leave_function();
-      return SSH_AUTH_ERROR;
+      return SSH_PACKET_USED;
     }
     session->kbdint->prompts[i] = ssh_string_to_char(tmp);
     ssh_string_free(tmp);
     if (session->kbdint->prompts[i] == NULL) {
-      ssh_set_error(session, SSH_FATAL, "Not enough space");
+      ssh_set_error_oom(session);
       kbdint_free(session->kbdint);
       session->kbdint = NULL;
       leave_function();
-      return SSH_AUTH_ERROR;
+      return SSH_PACKET_USED;
     }
   }
-
+  session->auth_state=SSH_AUTH_STATE_INFO;
   leave_function();
-  return SSH_AUTH_INFO; /* we are not auth. but we parsed the packet */
+  return SSH_PACKET_USED;
 }
 
-/* sends challenge back to the server */
+/**
+ * @internal
+ * @brief Sends the current challenge response and wait for a
+ * reply from the server
+ * @returns SSH_AUTH_INFO if more info is needed
+ * @returns SSH_AUTH_SUCCESS
+ * @returns SSH_AUTH_FAILURE
+ * @returns SSH_AUTH_PARTIAL
+ */
 static int kbdauth_send(ssh_session session) {
   ssh_string answer = NULL;
   int rc = SSH_AUTH_ERROR;
@@ -1446,7 +1463,9 @@ static int kbdauth_send(ssh_session session) {
     ssh_string_burn(answer);
     ssh_string_free(answer);
   }
-  session->auth_state=SSH_AUTH_STATE_NONE;
+  session->auth_state=SSH_AUTH_STATE_KBDINT_SENT;
+  kbdint_free(session->kbdint);
+  session->kbdint = NULL;
   if (packet_send(session) != SSH_OK) {
     leave_function();
     return rc;
@@ -1519,16 +1538,6 @@ int ssh_userauth_kbdint(ssh_session session, const char *user,
     }
 
     rc = kbdauth_init(session, user, submethods);
-    if (rc != SSH_AUTH_INFO) {
-      leave_function();
-      return rc; /* error or first try success */
-    }
-    /* TODO: put this in packet handler */
-    rc = kbdauth_info_get(session);
-    if (rc == SSH_AUTH_ERROR) {
-      kbdint_free(session->kbdint);
-      session->kbdint = NULL;
-    }
 
     leave_function();
     return rc;
@@ -1541,19 +1550,6 @@ int ssh_userauth_kbdint(ssh_session session, const char *user,
    * pass in).
    */
   rc = kbdauth_send(session);
-  kbdint_free(session->kbdint);
-  session->kbdint = NULL;
-
-  if(rc != SSH_AUTH_INFO) {
-    leave_function();
-    return rc;
-  }
-
-  rc = kbdauth_info_get(session);
-  if (rc == SSH_AUTH_ERROR) {
-    kbdint_free(session->kbdint);
-    session->kbdint = NULL;
-  }
 
   leave_function();
   return rc;

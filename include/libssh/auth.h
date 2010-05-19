@@ -28,6 +28,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_banner);
 SSH_PACKET_CALLBACK(ssh_packet_userauth_failure);
 SSH_PACKET_CALLBACK(ssh_packet_userauth_success);
 SSH_PACKET_CALLBACK(ssh_packet_userauth_pk_ok);
+SSH_PACKET_CALLBACK(ssh_packet_userauth_info_request);
 
 #ifdef WITH_SSH1
 void ssh_auth1_handler(ssh_session session, uint8_t type);
@@ -51,7 +52,9 @@ enum ssh_auth_state_e {
   /** Last state was a keyboard-interactive ask for info */
   SSH_AUTH_STATE_INFO,
   /** Last state was a public key accepted for authentication */
-  SSH_AUTH_STATE_PK_OK
+  SSH_AUTH_STATE_PK_OK,
+  /** We asked for a keyboard-interactive authentication */
+  SSH_AUTH_STATE_KBDINT_SENT
 
 };
 

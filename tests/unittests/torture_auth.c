@@ -65,6 +65,11 @@ START_TEST (torture_auth_kbdint)
   ck_assert_int_eq(ssh_userauth_kbdint_getnprompts(session),1);
   ssh_userauth_kbdint_setanswer(session,0,password);
   rc=ssh_userauth_kbdint(session,NULL,NULL);
+  /* Sometimes, SSH server send an empty query at the end of exchange */
+  if(rc==SSH_AUTH_INFO){
+  	ck_assert_int_eq(ssh_userauth_kbdint_getnprompts(session),0);
+  	rc=ssh_userauth_kbdint(session,NULL,NULL);
+  }
   ck_assert_msg(rc==SSH_AUTH_SUCCESS,ssh_get_error(session));
 
 }
