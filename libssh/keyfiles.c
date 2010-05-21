@@ -1077,7 +1077,7 @@ int ssh_try_publickey_from_file(ssh_session session, const char *keyfile,
   }
 
   if (session->sshdir == NULL) {
-    if (ssh_options_set(session, SSH_OPTIONS_SSH_DIR, NULL) < 0) {
+    if (ssh_options_apply(session) < 0) {
       return -1;
     }
   }
@@ -1145,7 +1145,7 @@ ssh_string try_publickey_from_file(ssh_session session, struct ssh_keys_struct k
   }
 
   if (session->sshdir == NULL) {
-    if (ssh_options_set(session, SSH_OPTIONS_SSH_DIR, NULL) < 0) {
+    if (ssh_options_apply(session) < 0) {
       return NULL;
     }
   }
@@ -1550,7 +1550,6 @@ static int match_hashed_host(ssh_session session, const char *host,
  *                                   if host key is accepted\n
  *         SSH_SERVER_ERROR:         Some error happened
  *
- * \see ssh_options_set()
  * \see ssh_get_pubkey_hash()
  *
  * \bug There is no current way to remove or modify an entry into the known
@@ -1568,7 +1567,7 @@ int ssh_is_server_known(ssh_session session) {
   enter_function();
 
   if (session->knownhosts == NULL) {
-    if (ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, NULL) < 0) {
+    if (ssh_options_apply(session) < 0) {
       ssh_set_error(session, SSH_REQUEST_DENIED,
           "Can't find a known_hosts file");
       leave_function();
