@@ -1058,6 +1058,13 @@ int ssh_options_apply(ssh_session session) {
         }
     }
 
+    if (session->username == NULL) {
+        rc = ssh_options_set(session, SSH_OPTIONS_USER, NULL);
+        if (rc < 0) {
+            return -1;
+        }
+    }
+
     if (session->knownhosts == NULL) {
         tmp = ssh_path_expand_escape(session, "%d/known_hosts");
     } else {
