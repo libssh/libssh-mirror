@@ -310,7 +310,7 @@ int ssh_userauth_none(ssh_session session, const char *username) {
   }
   if (username == NULL) {
     if (session->username == NULL) {
-      if (ssh_options_set(session, SSH_OPTIONS_USER, NULL) < 0) {
+      if (ssh_options_apply(session) < 0) {
         leave_function();
         return rc;
       }
@@ -417,7 +417,7 @@ int ssh_userauth_offer_pubkey(ssh_session session, const char *username,
 
   if (username == NULL) {
     if (session->username == NULL) {
-      if (ssh_options_set(session, SSH_OPTIONS_USER, NULL) < 0) {
+      if (ssh_options_apply(session) < 0) {
         leave_function();
         return rc;
       }
@@ -532,7 +532,7 @@ int ssh_userauth_pubkey(ssh_session session, const char *username,
 
   if (username == NULL) {
     if (session->username == NULL) {
-      if (ssh_options_set(session, SSH_OPTIONS_USER, NULL) < 0) {
+      if (ssh_options_apply(session) < 0) {
         leave_function();
         return rc;
       }
@@ -729,7 +729,7 @@ int ssh_userauth_agent_pubkey(ssh_session session, const char *username,
 
   if (username == NULL) {
     if (session->username == NULL) {
-      if (ssh_options_set(session, SSH_OPTIONS_USER, NULL) < 0) {
+      if (ssh_options_apply(session) < 0) {
         leave_function();
         return rc;
       }
@@ -857,7 +857,7 @@ int ssh_userauth_password(ssh_session session, const char *username,
 
   if (username == NULL) {
     if (session->username == NULL) {
-      if (ssh_options_set(session, SSH_OPTIONS_USER, NULL) < 0) {
+      if (ssh_options_apply(session) < 0) {
         leave_function();
         return rc;
       }
@@ -946,7 +946,6 @@ error:
  *
  * @see ssh_userauth_kbdint()
  * @see ssh_userauth_password()
- * @see ssh_options_set()
  */
 int ssh_userauth_autopubkey(ssh_session session, const char *passphrase) {
   struct ssh_iterator *it;
@@ -1523,7 +1522,7 @@ int ssh_userauth_kbdint(ssh_session session, const char *user,
     /* first time we call. we must ask for a challenge */
     if (user == NULL) {
       if ((user = session->username) == NULL) {
-        if (ssh_options_set(session, SSH_OPTIONS_USER, NULL) < 0) {
+        if (ssh_options_apply(session) < 0) {
           leave_function();
           return SSH_AUTH_ERROR;
         } else {
