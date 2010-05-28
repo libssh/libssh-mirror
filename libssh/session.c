@@ -104,7 +104,7 @@ ssh_session ssh_new(void) {
       goto err;
     }
 
-    id = strdup("SSH_DIR/id_rsa");
+    id = strdup("%d/id_rsa");
     if (id == NULL) {
       goto err;
     }
@@ -113,7 +113,7 @@ ssh_session ssh_new(void) {
       goto err;
     }
 
-    id = strdup("SSH_DIR/id_dsa");
+    id = strdup("%d/id_dsa");
     if (id == NULL) {
       goto err;
     }
@@ -122,7 +122,7 @@ ssh_session ssh_new(void) {
       goto err;
     }
 
-    id = strdup("SSH_DIR/identity");
+    id = strdup("%d/identity");
     if (id == NULL) {
       goto err;
     }
