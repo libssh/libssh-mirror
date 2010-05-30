@@ -664,6 +664,7 @@ char *ssh_path_expand_escape(ssh_session session, const char *s) {
         }
         l = strlen(buf);
         strcat(buf + l, x);
+        buf[i] = '\0';
         SAFE_FREE(x);
     }
 
