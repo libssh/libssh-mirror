@@ -3,6 +3,7 @@ ChangeLog
 
 version 0.4.4 (released 2010-06-01)
   * Fixed a bug in the expand function for escape sequences.
+  * Fixed a bug in the tilde expand function.
   * Fixed a bug in setting the options.
 
 version 0.4.3 (released 2010-05-18)
