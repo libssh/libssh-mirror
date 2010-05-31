@@ -554,7 +554,7 @@ char *ssh_path_expand_tilde(const char *d) {
     if (lh > 0) {
         memcpy(r, h, lh);
     }
-    memcpy(r + lh, p, ld);
+    memcpy(r + lh, p, ld + 1);
 
     return r;
 }
