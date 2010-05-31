@@ -425,7 +425,7 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
       if (value == NULL) {
         SAFE_FREE(session->sshdir);
 
-        session->sshdir = ssh_path_expand_tilde("~/.ssh/");
+        session->sshdir = ssh_path_expand_tilde("~/.ssh");
         if (session->sshdir == NULL) {
           return -1;
         }

@@ -117,6 +117,18 @@ START_TEST (torture_path_expand_escape)
 }
 END_TEST
 
+START_TEST (torture_path_expand_known_hosts)
+{
+    char *tmp;
+
+    ssh_options_set(session, SSH_OPTIONS_SSH_DIR, "/home/guru/.ssh");
+
+    tmp = ssh_path_expand_escape(session, "%d/known_hosts");
+    ck_assert_str_eq(tmp, "/home/guru/.ssh/known_hosts");
+    free(tmp);
+}
+END_TEST
+
 Suite *torture_make_suite(void) {
   Suite *s = suite_create("libssh_misc");
 
@@ -127,6 +139,8 @@ Suite *torture_make_suite(void) {
   torture_create_case(s, "torture_path_expand_tilde", torture_path_expand_tilde);
   torture_create_case_fixture(s, "torture_path_expand_escape",
           torture_path_expand_escape, setup, teardown);
+  torture_create_case_fixture(s, "torture_path_expand_known_hosts",
+          torture_path_expand_known_hosts, setup, teardown);
 
   return s;
 }

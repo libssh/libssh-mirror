@@ -597,14 +597,15 @@ char *ssh_path_expand_escape(ssh_session session, const char *s) {
     const char *p;
     size_t i, l;
 
-    if (strlen(s) > MAX_BUF_SIZE) {
-        ssh_set_error(session, SSH_FATAL, "string to expand too long");
-        return NULL;
-    }
-
     r = ssh_path_expand_tilde(s);
     if (r == NULL) {
         ssh_set_error_oom(session);
+        return NULL;
+    }
+
+    if (strlen(r) > MAX_BUF_SIZE) {
+        ssh_set_error(session, SSH_FATAL, "string to expand too long");
+        free(r);
         return NULL;
     }
 
