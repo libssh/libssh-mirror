@@ -527,8 +527,6 @@ int ssh_mkdir(const char *pathname, mode_t mode) {
 /**
  * @brief Expand a directory starting with a tilde '~'
  *
- * @param[in]  session  The ssh session to use.
- *
  * @param[in]  d        The directory to expand.
  *
  * @return              The expanded directory, NULL on error.
