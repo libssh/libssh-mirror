@@ -33,7 +33,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
-extern const char **environ;
+extern char **environ;
 #endif
 #include "libssh/priv.h"
 #include "libssh/socket.h"
