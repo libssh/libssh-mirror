@@ -38,6 +38,23 @@
 #define SSH_POLL_CTX_CHUNK			5
 #endif
 
+/**
+ * @defgroup libssh_poll The SSH poll functions.
+ * @ingroup libssh
+ *
+ * Add a generic way to handle sockets asynchronously.
+ *
+ * It's based on poll objects, each of which store a socket, it's events and a
+ * callback, which gets called whenever an event is set. The poll objects are
+ * attached to a poll context, which should be allocated on per thread basis.
+ *
+ * Polling the poll context will poll all the attached poll objects and call
+ * their callbacks (handlers) if any of the socket events are set. This should
+ * be done within the main loop of an application.
+ *
+ * @{
+ */
+
 /** global poll context used for blocking operations */
 static ssh_poll_ctx global_poll_ctx;
 
@@ -628,3 +645,7 @@ void ssh_free_global_poll_ctx(){
 		global_poll_ctx=NULL;
 	}
 }
+
+/* @} */
+
+/* vim: set ts=4 sw=4 et cindent: */
