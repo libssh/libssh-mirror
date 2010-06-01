@@ -54,7 +54,7 @@
 #include "libssh/session.h"
 
 #ifndef _WIN32
-extern const char **environ;
+extern char **environ;
 #endif
 /**
  * @internal
