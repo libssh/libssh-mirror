@@ -131,7 +131,7 @@ public:
    * @throws SshException on error
    * @see ssh_userauth_autopubkey
    */
-  int userauthAutopubkey(){
+  void userauthAutopubkey(void){
     int ret=ssh_userauth_autopubkey(c_session,NULL);
     if(ret==SSH_ERROR)
       ssh_throw(ret);
