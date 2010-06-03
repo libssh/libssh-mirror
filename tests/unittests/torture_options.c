@@ -4,12 +4,32 @@
 #include "options.c"
 
 ssh_session session;
+#ifndef _WIN32
+struct passwd pwd;
+#endif /* _WIN32 */
 
 static void setup(void) {
     session = ssh_new();
 }
 
+static void setup_passwd(void) {
+    int rc;
+#ifndef _WIN32
+#ifndef NSS_BUFLEN_PASSWD
+#define NSS_BUFLEN_PASSWD 4096
+#endif /* NSS_BUFLEN_PASSWD */
+    struct passwd *pwdbuf;
+    char buf[NSS_BUFLEN_PASSWD];
+
+    /* get local username */
+    rc = getpwuid_r(getuid(), &pwd, buf, NSS_BUFLEN_PASSWD, &pwdbuf);
+    ck_assert(rc == 0);
+#endif /* _WIN32 */
+    session = ssh_new();
+}
+
 static void teardown(void) {
+    ZERO_STRUCT(pwd);
     ssh_free(session);
 }
 
@@ -69,14 +89,6 @@ END_TEST
 START_TEST (torture_options_set_user)
 {
     int rc;
-#ifndef _WIN32
-#ifndef NSS_BUFLEN_PASSWD
-#define NSS_BUFLEN_PASSWD 4096
-#endif
-    struct passwd pwd;
-    struct passwd *pwdbuf;
-    char buf[NSS_BUFLEN_PASSWD];
-#endif
 
     rc = ssh_options_set(session, SSH_OPTIONS_USER, "guru");
     ck_assert(rc == 0);
@@ -87,10 +99,6 @@ START_TEST (torture_options_set_user)
     ck_assert(rc == 0);
 
 #ifndef _WIN32
-    /* get local username */
-    rc = getpwuid_r(getuid(), &pwd, buf, NSS_BUFLEN_PASSWD, &pwdbuf);
-    ck_assert(rc == 0);
-
     ck_assert_str_eq(session->username, pwd.pw_name);
 #endif
 }
@@ -129,7 +137,7 @@ Suite *torture_make_suite(void) {
   torture_create_case_fixture(s, "torture_options_set_fd",
           torture_options_set_fd, setup, teardown);
   torture_create_case_fixture(s, "torture_options_set_user",
-          torture_options_set_user, setup, teardown);
+          torture_options_set_user, setup_passwd, teardown);
   torture_create_case_fixture(s, "torture_options_set_identity",
           torture_options_set_identity, setup, teardown);
 
