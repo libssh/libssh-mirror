@@ -9,7 +9,7 @@ option(WITH_GCRYPT "Compile against libgcrypt" OFF)
 option(WITH_PCAP "Compile with Pcap generation support" ON)
 option(WITH_INTERNAL_DOC "Compile doxygen internal documentation" OFF)
 option(WITH_TESTING "Build with unit tests" OFF)
+option(WITH_CLIENT_TESTING "Build with client tests; requires a running sshd" OFF)
 if (WITH_TESTING)
   set(WITH_STATIC_LIB ON)
 endif (WITH_TESTING)
-

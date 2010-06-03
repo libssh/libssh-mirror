@@ -17,3 +17,6 @@ target_link_libraries(${TORTURE_LIBRARY} ${CHECK_LIBRARIES} ${LIBSSH_STATIC_LIBR
 set(TEST_TARGET_LIBRARIES ${SUPPORT_LIBRARY} ${LIBSSH_LINK_LIBRARIES})
 
 add_subdirectory(unittests)
+if (WITH_CLIENT_TESTING)
+    add_subdirectory(client)
+endif (WITH_CLIENT_TESTING)
