@@ -107,9 +107,9 @@ START_TEST (torture_path_expand_escape)
     const char *s = "%d/%h/by/%r";
     char *e;
 
-    ssh_options_set(session, SSH_OPTIONS_SSH_DIR, "guru");
-    ssh_options_set(session, SSH_OPTIONS_HOST, "meditation");
-    ssh_options_set(session, SSH_OPTIONS_USER, "root");
+    session->sshdir = strdup("guru");
+    session->host = strdup("meditation");
+    session->username = strdup("root");
 
     e = ssh_path_expand_escape(session, s);
     ck_assert_str_eq(e, "guru/meditation/by/root");
@@ -121,7 +121,7 @@ START_TEST (torture_path_expand_known_hosts)
 {
     char *tmp;
 
-    ssh_options_set(session, SSH_OPTIONS_SSH_DIR, "/home/guru/.ssh");
+    session->sshdir = strdup("/home/guru/.ssh");
 
     tmp = ssh_path_expand_escape(session, "%d/known_hosts");
     ck_assert_str_eq(tmp, "/home/guru/.ssh/known_hosts");
