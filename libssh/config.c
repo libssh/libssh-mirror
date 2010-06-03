@@ -283,10 +283,12 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
       }
       break;
     case SOC_UNSUPPORTED:
-      fprintf(stderr, "Unsupported option: %s, line: %d\n", keyword, count);
+      ssh_log(session, SSH_LOG_RARE, "Unsupported option: %s, line: %d\n",
+              keyword, count);
       break;
     default:
-      fprintf(stderr, "ERROR - unimplemented opcode: %d\n", opcode);
+      ssh_set_error(session, SSH_FATAL, "ERROR - unimplemented opcode: %d\n",
+              opcode);
       SAFE_FREE(x);
       return -1;
       break;
