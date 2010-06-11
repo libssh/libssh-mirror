@@ -43,7 +43,9 @@ include(MacroAddPlugin)
 include(MacroCopyFile)
 
 # search for libraries
-find_package(ZLIB REQUIRED)
+if (WITH_LIBZ)
+    find_package(ZLIB REQUIRED)
+endif (WITH_LIBZ)
 
 if (WITH_GCRYPT)
   find_package(GCrypt REQUIRED)
