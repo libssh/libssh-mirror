@@ -449,6 +449,7 @@ LIBSSH_API ssh_string ssh_string_from_char(const char *what);
 LIBSSH_API size_t ssh_string_len(ssh_string str);
 LIBSSH_API ssh_string ssh_string_new(size_t size);
 LIBSSH_API char *ssh_string_to_char(ssh_string str);
+LIBSSH_API void ssh_string_free_char(char *s);
 
 #ifndef LIBSSH_LEGACY_0_4
 #include "libssh/legacy.h"

@@ -143,6 +143,15 @@ char *ssh_string_to_char(struct ssh_string_struct *s) {
 }
 
 /**
+ * @brief Deallocate a char string object.
+ *
+ * @param[in] s         The string to delete.
+ */
+void ssh_string_free_char(char *s) {
+    SAFE_FREE(s);
+}
+
+/**
  * @brief Copy a string, return a newly allocated string. The caller has to
  *        free the string.
  *
