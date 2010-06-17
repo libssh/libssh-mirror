@@ -150,7 +150,7 @@ int ssh_bind_listen(ssh_bind sshbind) {
   }
 
   fd = bind_socket(sshbind, host, sshbind->bindport);
-  if (fd < 0) {
+  if (fd == SSH_INVALID_SOCKET) {
     return -1;
   }
   sshbind->bindfd = fd;

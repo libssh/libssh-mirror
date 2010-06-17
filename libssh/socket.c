@@ -312,7 +312,7 @@ int ssh_socket_unix(ssh_socket s, const char *path) {
   snprintf(sunaddr.sun_path, sizeof(sunaddr.sun_path), "%s", path);
 
   fd = socket(AF_UNIX, SOCK_STREAM, 0);
-  if (fd < 0) {
+  if (fd == SSH_INVALID_SOCKET) {
     return -1;
   }
 
@@ -912,7 +912,7 @@ int ssh_socket_connect(ssh_socket s, const char *host, int port, const char *bin
 		return SSH_ERROR;
 	fd=ssh_connect_host_nonblocking(s->session,host,bind_addr,port);
 	ssh_log(session,SSH_LOG_PROTOCOL,"Nonblocking connection socket: %d",fd);
-	if(fd < 0)
+	if(fd == SSH_INVALID_SOCKET)
 		return SSH_ERROR;
 	ssh_socket_set_fd(s,fd);
 	s->state=SSH_SOCKET_CONNECTING;

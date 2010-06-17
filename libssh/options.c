@@ -398,7 +398,7 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
       break;
     case SSH_OPTIONS_FD:
       if (value == NULL) {
-        session->fd = -1;
+        session->fd = SSH_INVALID_SOCKET;
       } else {
         socket_t *x = (socket_t *) value;
 
