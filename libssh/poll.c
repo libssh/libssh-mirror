@@ -187,14 +187,16 @@ static int bsd_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout) {
         if (FD_ISSET(fds[i].fd, &readfds)) {
             int save_errno = errno;
             char data[64] = {0};
+            int ret;
 
             /* support for POLLHUP */
+            ret = recv(fds[i].fd, data, 64, MSG_PEEK);
 #ifdef _WIN32
-            if ((recv(fds[i].fd, data, 64, MSG_PEEK) == -1) &&
+            if (ret == -1) &&
                 (errno == WSAESHUTDOWN || errno == WSAECONNRESET ||
                  errno == WSAECONNABORTED || errno == WSAENETRESET)) {
 #else
-            if ((recv(fds[i].fd, data, 64, MSG_PEEK) == -1) &&
+            if (ret == -1) &&
                 (errno == ESHUTDOWN || errno == ECONNRESET ||
                  errno == ECONNABORTED || errno == ENETRESET)) {
 #endif
