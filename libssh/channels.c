@@ -2160,7 +2160,7 @@ int channel_select(ssh_channel *readchans, ssh_channel *writechans,
   fd_set rset;
   fd_set wset;
   fd_set eset;
-  int fdmax = -1;
+  socket_t max_fd = SSH_INVALID_SOCKET;
   int rc;
   int i;
 
@@ -2228,24 +2228,24 @@ int channel_select(ssh_channel *readchans, ssh_channel *writechans,
 
     for (i = 0; readchans[i] != NULL; i++) {
       if (!ssh_socket_fd_isset(readchans[i]->session->socket, &rset)) {
-        ssh_socket_fd_set(readchans[i]->session->socket, &rset, &fdmax);
+        ssh_socket_fd_set(readchans[i]->session->socket, &rset, &max_fd);
       }
     }
 
     for (i = 0; writechans[i] != NULL; i++) {
       if (!ssh_socket_fd_isset(writechans[i]->session->socket, &wset)) {
-        ssh_socket_fd_set(writechans[i]->session->socket, &wset, &fdmax);
+        ssh_socket_fd_set(writechans[i]->session->socket, &wset, &max_fd);
       }
     }
 
     for (i = 0; exceptchans[i] != NULL; i++) {
       if (!ssh_socket_fd_isset(exceptchans[i]->session->socket, &eset)) {
-        ssh_socket_fd_set(exceptchans[i]->session->socket, &eset, &fdmax);
+        ssh_socket_fd_set(exceptchans[i]->session->socket, &eset, &max_fd);
       }
     }
 
     /* Here we go */
-    rc = select(fdmax, &rset, &wset, &eset, timeout);
+    rc = select(max_fd, &rset, &wset, &eset, timeout);
     /* Leave if select was interrupted */
     if (rc == EINTR) {
       SAFE_FREE(rchans);
