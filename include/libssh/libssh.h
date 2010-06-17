@@ -128,6 +128,8 @@ typedef int socket_t;
 #endif
 #endif /* _WIN32 */
 
+#define SSH_INVALID_SOCKET ((socket_t) -1)
+
 /* the offsets of methods */
 enum ssh_kex_types_e {
 	SSH_KEX=0,

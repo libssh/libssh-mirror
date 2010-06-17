@@ -87,7 +87,7 @@ struct socket *ssh_socket_new(ssh_session session) {
   if (s == NULL) {
     return NULL;
   }
-  s->fd = -1;
+  s->fd = SSH_INVALID_SOCKET;
   s->last_errno = -1;
   s->session = session;
   s->in_buffer = buffer_new();
@@ -129,20 +129,20 @@ int ssh_socket_unix(struct socket *s, const char *path) {
   snprintf(sunaddr.sun_path, sizeof(sunaddr.sun_path), "%s", path);
 
   s->fd = socket(AF_UNIX, SOCK_STREAM, 0);
-  if (s->fd < 0) {
+  if (s->fd == SSH_INVALID_SOCKET) {
     return -1;
   }
 
   if (fcntl(s->fd, F_SETFD, 1) == -1) {
     close(s->fd);
-    s->fd = -1;
+    s->fd = SSH_INVALID_SOCKET;
     return -1;
   }
 
   if (connect(s->fd, (struct sockaddr *) &sunaddr,
         sizeof(sunaddr)) < 0) {
     close(s->fd);
-    s->fd = -1;
+    s->fd = SSH_INVALID_SOCKET;
     return -1;
   }
 
@@ -162,7 +162,7 @@ void ssh_socket_close(struct socket *s){
     close(s->fd);
     s->last_errno = errno;
 #endif
-    s->fd=-1;
+    s->fd = SSH_INVALID_SOCKET;
   }
 }
 
@@ -184,7 +184,7 @@ socket_t ssh_socket_get_fd(struct socket *s) {
  * \brief returns nonzero if the socket is open
  */
 int ssh_socket_is_open(struct socket *s) {
-  return s->fd != -1;
+  return s->fd != SSH_INVALID_SOCKET;
 }
 
 /* \internal
@@ -242,22 +242,22 @@ static int ssh_socket_unbuffered_write(struct socket *s, const void *buffer,
  * \brief returns nonzero if the current socket is in the fd_set
  */
 int ssh_socket_fd_isset(struct socket *s, fd_set *set) {
-  if(s->fd == -1) {
+  if(s->fd == SSH_INVALID_SOCKET) {
     return 0;
   }
   return FD_ISSET(s->fd,set);
 }
 
 /* \internal
- * \brief sets the current fd in a fd_set and updates the fd_max
+ * \brief sets the current fd in a fd_set and updates the max_fd
  */
 
-void ssh_socket_fd_set(struct socket *s, fd_set *set, int *fd_max) {
-  if (s->fd == -1)
+void ssh_socket_fd_set(struct socket *s, fd_set *set, socket_t *max_fd) {
+  if (s->fd == SSH_INVALID_SOCKET)
     return;
   FD_SET(s->fd,set);
-  if (s->fd >= *fd_max) {
-    *fd_max = s->fd + 1;
+  if (s->fd >= 0 && s->fd != SSH_INVALID_SOCKET) {
+    *max_fd = s->fd + 1;
   }
 }
 
