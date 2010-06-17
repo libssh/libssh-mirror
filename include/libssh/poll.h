@@ -92,7 +92,7 @@ typedef struct ssh_poll_handle_struct *ssh_poll_handle;
  * @return              0 on success, < 0 if you removed the poll object from
  *                      it's poll context.
  */
-typedef int (*ssh_poll_callback)(ssh_poll_handle p, int fd, int revents,
+typedef int (*ssh_poll_callback)(ssh_poll_handle p, socket_t fd, int revents,
     void *userdata);
 
 

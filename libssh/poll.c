@@ -111,7 +111,7 @@ static int bsd_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout) {
 
   /* compute fd_sets and find largest descriptor */
   for (max_fd = 0, i = 0; i < nfds; i++) {
-      if (fds[i].fd == (socket_t) -1) {
+      if (fds[i].fd == SSH_INVALID_SOCKET) {
           continue;
       }
 
@@ -132,7 +132,7 @@ static int bsd_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout) {
       }
   }
 
-  if (max_fd == (socket_t) -1) {
+  if (max_fd == SSH_INVALID_SOCKET) {
       errno = EINVAL;
       return -1;
   }
@@ -391,7 +391,7 @@ void ssh_poll_ctx_free(ssh_poll_ctx ctx) {
     used = ctx->polls_used;
     for (i = 0; i < used; ) {
       ssh_poll_handle p = ctx->pollptrs[i];
-      int fd = ctx->pollfds[i].fd;
+      socket_t fd = ctx->pollfds[i].fd;
 
       /* force poll object removal */
       if (p->cb(p, fd, POLLERR, p->cb_data) < 0) {
@@ -439,7 +439,7 @@ static int ssh_poll_ctx_resize(ssh_poll_ctx ctx, size_t new_size) {
  * @return              0 on success, < 0 on error
  */
 int ssh_poll_ctx_add(ssh_poll_ctx ctx, ssh_poll_handle p) {
-  int fd;
+  socket_t fd;
 
   if (p->ctx != NULL) {
     /* already attached to a context */
@@ -518,7 +518,7 @@ int ssh_poll_ctx_dopoll(ssh_poll_ctx ctx, int timeout) {
         i++;
       } else {
         ssh_poll_handle p = ctx->pollptrs[i];
-        int fd = ctx->pollfds[i].fd;
+        socket_t fd = ctx->pollfds[i].fd;
         int revents = ctx->pollfds[i].revents;
 
         if (p->cb(p, fd, revents, p->cb_data) < 0) {
