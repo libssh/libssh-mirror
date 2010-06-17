@@ -111,7 +111,7 @@ static int bsd_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout) {
 
   /* compute fd_sets and find largest descriptor */
   for (max_fd = 0, i = 0; i < nfds; i++) {
-      if (fds[i].fd < 0) {
+      if (fds[i].fd == (socket_t) -1) {
           continue;
       }
 
