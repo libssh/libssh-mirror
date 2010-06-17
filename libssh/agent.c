@@ -41,7 +41,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#include <poll.h>
 #include <unistd.h>
 
 #ifndef _WIN32
@@ -54,6 +53,7 @@
 #include "libssh/buffer.h"
 #include "libssh/session.h"
 #include "libssh/keys.h"
+#include "libssh/poll.h"
 
 /* macro to check for "agent failure" message */
 #define agent_failed(x) \
@@ -86,7 +86,7 @@ static size_t atomicio(struct socket *s, void *buf, size_t n, int do_read) {
   size_t pos = 0;
   ssize_t res;
   struct pollfd pfd;
-  int fd = ssh_socket_get_fd(s);
+  socket_t fd = ssh_socket_get_fd(s);
 
   pfd.fd = fd;
   pfd.events = do_read ? POLLIN : POLLOUT;
@@ -107,7 +107,7 @@ static size_t atomicio(struct socket *s, void *buf, size_t n, int do_read) {
 #else
         if (errno == EAGAIN) {
 #endif
-          (void) poll(&pfd, 1, -1);
+          (void) ssh_poll(&pfd, 1, -1);
           continue;
         }
         return 0;
