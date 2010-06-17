@@ -119,10 +119,14 @@ typedef struct ssh_string_struct* ssh_string;
 
 /* Socket type */
 #ifdef _WIN32
-#define socket_t SOCKET
-#else
+#ifndef socket_t
+typedef SOCKET socket_t;
+#endif /* socket_t */
+#else /* _WIN32 */
+#ifndef socket_t
 typedef int socket_t;
 #endif
+#endif /* _WIN32 */
 
 /* the offsets of methods */
 enum ssh_kex_types_e {
