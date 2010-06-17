@@ -136,8 +136,8 @@ ssh_socket ssh_socket_new(ssh_session session) {
   if (s == NULL) {
     return NULL;
   }
-  s->fd_in = INVALID_SOCKET_T;
-  s->fd_out= INVALID_SOCKET_T;
+  s->fd_in = SSH_INVALID_SOCKET;
+  s->fd_out= SSH_INVALID_SOCKET;
   s->last_errno = -1;
   s->fd_is_socket = 1;
   s->session = session;
@@ -346,7 +346,7 @@ void ssh_socket_close(ssh_socket s){
       close(s->fd_out);
     s->last_errno = errno;
 #endif
-    s->fd_in = s->fd_out = INVALID_SOCKET_T;
+    s->fd_in = s->fd_out = SSH_INVALID_SOCKET;
   }
   if(s->poll_in != NULL){
     if(s->poll_out == s->poll_in)
@@ -411,7 +411,7 @@ socket_t ssh_socket_get_fd_in(ssh_socket s) {
  * \brief returns nonzero if the socket is open
  */
 int ssh_socket_is_open(ssh_socket s) {
-  return s->fd_in != INVALID_SOCKET_T;
+  return s->fd_in != SSH_INVALID_SOCKET;
 }
 
 /** \internal
@@ -476,7 +476,7 @@ static int ssh_socket_unbuffered_write(ssh_socket s, const void *buffer,
  * \brief returns nonzero if the current socket is in the fd_set
  */
 int ssh_socket_fd_isset(ssh_socket s, fd_set *set) {
-  if(s->fd_in == INVALID_SOCKET_T) {
+  if(s->fd_in == SSH_INVALID_SOCKET) {
     return 0;
   }
   return FD_ISSET(s->fd_in,set) || FD_ISSET(s->fd_out,set);
@@ -487,17 +487,17 @@ int ssh_socket_fd_isset(ssh_socket s, fd_set *set) {
  */
 
 void ssh_socket_fd_set(ssh_socket s, fd_set *set, socket_t *max_fd) {
-  if (s->fd_in == INVALID_SOCKET_T) {
+  if (s->fd_in == SSH_INVALID_SOCKET) {
     return;
   }
 
   FD_SET(s->fd_in,set);
   FD_SET(s->fd_out,set);
 
-  if (s->fd_in >= 0 && s->fd_in != INVALID_SOCKET_T) {
+  if (s->fd_in >= 0 && s->fd_in != SSH_INVALID_SOCKET) {
       *max_fd = s->fd_in + 1;
   }
-  if (s->fd_out >= 0 && s->fd_in != INVALID_SOCKET_T) {
+  if (s->fd_out >= 0 && s->fd_in != SSH_INVALID_SOCKET) {
       *max_fd = s->fd_out + 1;
   }
 }
