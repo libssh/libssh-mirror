@@ -481,7 +481,7 @@ int ssh_service_request(ssh_session session, const char *service) {
 int ssh_connect(ssh_session session) {
   int ssh1 = 0;
   int ssh2 = 0;
-  int fd = -1;
+  socket_t fd = SSH_INVALID_SOCKET;
   int ret;
 
   if (session == NULL) {
@@ -498,7 +498,7 @@ int ssh_connect(ssh_session session) {
     leave_function();
     return SSH_ERROR;
   }
-  if (session->fd == -1 && session->host == NULL &&
+  if (session->fd == SSH_INVALID_SOCKET && session->host == NULL &&
       session->ProxyCommand == NULL) {
     ssh_set_error(session, SSH_FATAL, "Hostname required");
     leave_function();
@@ -512,7 +512,7 @@ int ssh_connect(ssh_session session) {
       return SSH_ERROR;
   }
 
-  if (session->fd != -1) {
+  if (session->fd != SSH_INVALID_SOCKET) {
     fd = session->fd;
 #ifndef _WIN32
   } else if (session->ProxyCommand != NULL) {
@@ -522,7 +522,7 @@ int ssh_connect(ssh_session session) {
     fd = ssh_connect_host(session, session->host, session->bindaddr,
         session->port, session->timeout, session->timeout_usec);
   }
-  if (fd < 0) {
+  if (fd == SSH_INVALID_SOCKET) {
     leave_function();
     return SSH_ERROR;
   }
