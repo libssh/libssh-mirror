@@ -685,7 +685,7 @@ int ssh_connect(ssh_session session) {
     leave_function();
     return SSH_ERROR;
   }
-  if (session->fd == -1 && session->host == NULL && session->ProxyCommand == NULL) {
+  if (session->fd == SSH_INVALID_SOCKET && session->host == NULL && session->ProxyCommand == NULL) {
     ssh_set_error(session, SSH_FATAL, "Hostname required");
     leave_function();
     return SSH_ERROR;
@@ -704,7 +704,7 @@ int ssh_connect(ssh_session session) {
   session->socket_callbacks.data=callback_receive_banner;
   session->socket_callbacks.exception=socket_callback_exception;
   session->socket_callbacks.userdata=session;
-  if (session->fd != -1) {
+  if (session->fd != SSH_INVALID_SOCKET) {
     ssh_socket_set_fd(session->socket, session->fd);
     ret=SSH_OK;
 #ifndef _WIN32
