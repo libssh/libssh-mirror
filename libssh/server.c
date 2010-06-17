@@ -129,7 +129,7 @@ ssh_bind ssh_bind_new(void) {
     return NULL;
   }
   ZERO_STRUCTP(ptr);
-  ptr->bindfd = -1;
+  ptr->bindfd = SSH_INVALID_SOCKET;
   ptr->bindport= 22;
   ptr->log_verbosity = 0;
 
@@ -138,7 +138,7 @@ ssh_bind ssh_bind_new(void) {
 
 int ssh_bind_listen(ssh_bind sshbind) {
   const char *host;
-  int fd;
+  socket_t fd;
 
   if (ssh_init() < 0) {
     return -1;
@@ -185,10 +185,10 @@ void ssh_bind_fd_toaccept(ssh_bind sshbind) {
 int ssh_bind_accept(ssh_bind sshbind, ssh_session session) {
   ssh_private_key dsa = NULL;
   ssh_private_key rsa = NULL;
-  int fd = -1;
+  socket_t fd = SSH_INVALID_SOCKET;
   int i;
 
-  if (sshbind->bindfd < 0) {
+  if (sshbind->bindfd == SSH_INVALID_SOCKET) {
     ssh_set_error(sshbind, SSH_FATAL,
         "Can't accept new clients on a not bound socket.");
     return SSH_ERROR;
@@ -219,7 +219,7 @@ int ssh_bind_accept(ssh_bind sshbind, ssh_session session) {
   }
 
   fd = accept(sshbind->bindfd, NULL, NULL);
-  if (fd < 0) {
+  if (fd == SSH_INVALID_SOCKET) {
     ssh_set_error(sshbind, SSH_FATAL,
         "Accepting a new connection: %s",
         strerror(errno));
@@ -284,7 +284,7 @@ void ssh_bind_free(ssh_bind sshbind){
     close(sshbind->bindfd);
 #endif
   }
-  sshbind->bindfd = -1;
+  sshbind->bindfd = SSH_INVALID_SOCKET;
 
   /* options */
   SAFE_FREE(sshbind->banner);
