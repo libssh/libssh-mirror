@@ -136,8 +136,8 @@ ssh_socket ssh_socket_new(ssh_session session) {
   if (s == NULL) {
     return NULL;
   }
-  s->fd_in = -1;
-  s->fd_out= -1;
+  s->fd_in = INVALID_SOCKET_T;
+  s->fd_out= INVALID_SOCKET_T;
   s->last_errno = -1;
   s->fd_is_socket = 1;
   s->session = session;
@@ -172,7 +172,7 @@ void ssh_socket_set_callbacks(ssh_socket s, ssh_socket_callbacks callbacks){
 	s->callbacks=callbacks;
 }
 
-int ssh_socket_pollcallback(ssh_poll_handle p, socket_t fd, int revents, void *v_s){
+int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p, socket_t fd, int revents, void *v_s){
 	ssh_socket s=(ssh_socket )v_s;
 	char buffer[4096];
 	int r,w;
@@ -346,7 +346,7 @@ void ssh_socket_close(ssh_socket s){
       close(s->fd_out);
     s->last_errno = errno;
 #endif
-    s->fd_in = s->fd_out = -1;
+    s->fd_in = s->fd_out = INVALID_SOCKET_T;
   }
   if(s->poll_in != NULL){
     if(s->poll_out == s->poll_in)
@@ -411,7 +411,7 @@ socket_t ssh_socket_get_fd_in(ssh_socket s) {
  * \brief returns nonzero if the socket is open
  */
 int ssh_socket_is_open(ssh_socket s) {
-  return s->fd_in != -1;
+  return s->fd_in != INVALID_SOCKET_T;
 }
 
 /** \internal
@@ -476,26 +476,29 @@ static int ssh_socket_unbuffered_write(ssh_socket s, const void *buffer,
  * \brief returns nonzero if the current socket is in the fd_set
  */
 int ssh_socket_fd_isset(ssh_socket s, fd_set *set) {
-  if(s->fd_in == -1) {
+  if(s->fd_in == INVALID_SOCKET_T) {
     return 0;
   }
   return FD_ISSET(s->fd_in,set) || FD_ISSET(s->fd_out,set);
 }
 
 /** \internal
- * \brief sets the current fd in a fd_set and updates the fd_max
+ * \brief sets the current fd in a fd_set and updates the max_fd
  */
 
-void ssh_socket_fd_set(ssh_socket s, fd_set *set, int *fd_max) {
-  if (s->fd_in == -1)
+void ssh_socket_fd_set(ssh_socket s, fd_set *set, socket_t *max_fd) {
+  if (s->fd_in == INVALID_SOCKET_T) {
     return;
+  }
+
   FD_SET(s->fd_in,set);
   FD_SET(s->fd_out,set);
-  if (s->fd_in >= *fd_max) {
-    *fd_max = s->fd_in + 1;
+
+  if (s->fd_in >= 0 && s->fd_in != INVALID_SOCKET_T) {
+      *max_fd = s->fd_in + 1;
   }
-  if (s->fd_out >= *fd_max) {
-      *fd_max = s->fd_out + 1;
+  if (s->fd_out >= 0 && s->fd_in != INVALID_SOCKET_T) {
+      *max_fd = s->fd_out + 1;
   }
 }
 
