@@ -62,7 +62,7 @@ int ssh_socket_data_available(ssh_socket s);
 int ssh_socket_data_writable(ssh_socket s);
 
 void ssh_socket_set_callbacks(ssh_socket s, ssh_socket_callbacks callbacks);
-int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p, int fd, int revents, void *s);
+int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p, socket_t fd, int revents, void *v_s);
 struct ssh_poll_handle_struct * ssh_socket_get_poll_handle_in(ssh_socket s);
 struct ssh_poll_handle_struct * ssh_socket_get_poll_handle_out(ssh_socket s);
 
