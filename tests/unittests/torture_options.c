@@ -82,7 +82,7 @@ START_TEST (torture_options_set_fd)
 
     rc = ssh_options_set(session, SSH_OPTIONS_FD, NULL);
     ck_assert(rc == 0);
-    ck_assert(session->fd == -1);
+    ck_assert(session->fd == SSH_INVALID_SOCKET);
 }
 END_TEST
 
