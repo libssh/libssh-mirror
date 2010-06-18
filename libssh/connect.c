@@ -390,6 +390,7 @@ int ssh_select(ssh_channel *channels, ssh_channel *outchannels, socket_t maxfd,
     fd_set *readfds, struct timeval *timeout) {
   struct timeval zerotime;
   fd_set localset, localset2;
+  socket_t f;
   int rep;
   int set;
   int i;
@@ -430,8 +431,8 @@ int ssh_select(ssh_channel *channels, ssh_channel *outchannels, socket_t maxfd,
 
   /* Look into the localset for active fd */
   set = 0;
-  for (i = 0; (i < maxfd) && !set; i++) {
-    if (FD_ISSET(i, &localset)) {
+  for (f = 0; (f < maxfd) && !set; f++) {
+    if (FD_ISSET(f, &localset)) {
       set = 1;
     }
   }
@@ -493,9 +494,9 @@ int ssh_select(ssh_channel *channels, ssh_channel *outchannels, socket_t maxfd,
   outchannels[j] = NULL;
 
   FD_ZERO(&localset2);
-  for (i = 0; i < maxfd; i++) {
-    if (FD_ISSET(i, readfds) && FD_ISSET(i, &localset)) {
-      FD_SET(i, &localset2);
+  for (f = 0; f < maxfd; f++) {
+    if (FD_ISSET(f, readfds) && FD_ISSET(i, &localset)) {
+      FD_SET(f, &localset2);
     }
   }
 
