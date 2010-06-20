@@ -110,7 +110,7 @@ static int bsd_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout) {
   FD_ZERO (&exceptfds);
 
   /* compute fd_sets and find largest descriptor */
-  for (max_fd = 0, i = 0; i < nfds; i++) {
+  for (rc = -1; max_fd = 0, i = 0; i < nfds; i++) {
       if (fds[i].fd == SSH_INVALID_SOCKET) {
           continue;
       }
@@ -129,10 +129,11 @@ static int bsd_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout) {
                             POLLRDNORM | POLLRDBAND |
                             POLLWRNORM | POLLWRBAND))) {
           max_fd = fds[i].fd;
+          rc = 0;
       }
   }
 
-  if (max_fd == SSH_INVALID_SOCKET) {
+  if (max_fd == SSH_INVALID_SOCKET || rc = -1) {
       errno = EINVAL;
       return -1;
   }
