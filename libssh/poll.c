@@ -135,7 +135,7 @@ static int bsd_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout) {
   FD_ZERO (&exceptfds);
 
   /* compute fd_sets and find largest descriptor */
-  for (rc = -1; max_fd = 0, i = 0; i < nfds; i++) {
+  for (rc = -1, max_fd = 0, i = 0; i < nfds; i++) {
       if (fds[i].fd == SSH_INVALID_SOCKET) {
           continue;
       }
