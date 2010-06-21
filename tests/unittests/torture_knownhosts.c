@@ -36,6 +36,7 @@ static void setup(void) {
 static void teardown(void) {
     ssh_free(session);
     unlink(KNOWNHOSTFILES);
+    ssh_finalize();
 }
 
 START_TEST (torture_knownhosts_port)
