@@ -93,6 +93,16 @@ static HINSTANCE hlib;
 #include <sys/time.h>
 #endif
 
+
+/*
+ * This is a poll(2)-emulation using select for systems not providing a native
+ * poll implementation.
+ *
+ * Keep in mind that select is terribly inefficient. The interface is simply not
+ * meant to be used with maximum descriptor value greater, say, 32 or so.  With
+ * a value as high as 1024 on Linux you'll pay dearly in every single call.
+ * poll() will be orders of magnitude faster.
+ */
 static int bsd_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout) {
   fd_set readfds, writefds, exceptfds;
   struct timeval tv, *ptv;
