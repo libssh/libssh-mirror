@@ -158,7 +158,7 @@ static int bsd_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout) {
       }
   }
 
-  if (max_fd == SSH_INVALID_SOCKET || rc = -1) {
+  if (max_fd == SSH_INVALID_SOCKET || rc == -1) {
       errno = EINVAL;
       return -1;
   }
