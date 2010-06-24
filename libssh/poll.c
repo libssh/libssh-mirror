@@ -96,27 +96,27 @@ int ssh_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout) {
 
 #include <sys/types.h>
 
+typedef int (*poll_fn)(ssh_pollfd_t *, nfds_t, int);
+static poll_fn win_poll;
+
 #ifdef _WIN32
 #ifndef STRICT
 #define STRICT
-#endif
+#endif /* STRICT */
 
 #include <time.h>
 #include <windows.h>
 #include <winsock2.h>
 
 #define WS2_LIBRARY "ws2_32.dll"
-typedef int (*poll_fn)(ssh_pollfd_t *, nfds_t, int);
-
-static poll_fn win_poll;
 static HINSTANCE hlib;
 
-#else
+#else /* _WIN32 */
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <sys/time.h>
-#endif
+#endif /* _WIN32 */
 
 
 /*
@@ -239,10 +239,12 @@ static int bsd_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout) {
 void ssh_poll_init(void) {
     poll_fn wsa_poll = NULL;
 
+#ifdef _WIN32
     hlib = LoadLibrary(WS2_LIBRARY);
     if (hlib != NULL) {
         wsa_poll = (poll_fn) GetProcAddress(hlib, "WSAPoll");
     }
+#endif /* _WIN32 */
 
     if (wsa_poll == NULL) {
         win_poll = bsd_poll;
