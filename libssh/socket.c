@@ -72,8 +72,9 @@ int ssh_socket_init(void) {
     return -1;
   }
 
-  ssh_poll_init();
 #endif
+  ssh_poll_init();
+
   return 0;
 }
 /*
