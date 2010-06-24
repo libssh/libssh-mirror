@@ -85,7 +85,7 @@ static size_t atomicio(struct socket *s, void *buf, size_t n, int do_read) {
   char *b = buf;
   size_t pos = 0;
   ssize_t res;
-  struct pollfd pfd;
+  ssh_pollfd_t pfd;
   socket_t fd = ssh_socket_get_fd(s);
 
   pfd.fd = fd;
