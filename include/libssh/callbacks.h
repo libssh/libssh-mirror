@@ -156,7 +156,8 @@ typedef struct ssh_socket_callbacks_struct *ssh_socket_callbacks;
 #define SSH_SOCKET_CONNECTED_ERROR 		2
 #define SSH_SOCKET_CONNECTED_TIMEOUT 	3
 
-/** Initializes an ssh_callbacks_struct
+/**
+ * @brief Initializes an ssh_callbacks_struct
  * A call to this macro is mandatory when you have set a new
  * ssh_callback_struct structure. Its goal is to maintain the binary
  * compatibility with future versions of libssh as the structure
@@ -165,6 +166,20 @@ typedef struct ssh_socket_callbacks_struct *ssh_socket_callbacks;
 #define ssh_callbacks_init(p) do {\
 	(p)->size=sizeof(*(p)); \
 } while(0);
+
+/**
+ * @internal
+ * @brief tests if a callback can be called without crash
+ *  verifies that the struct size if big enough
+ *  verifies that the callback pointer exists
+ * @param p callback pointer
+ * @param c callback name
+ * @returns nonzero if callback can be called
+ */
+#define ssh_callbacks_exists(p,c) (\
+  ( (char *)&((p)-> c) < (char *)(p) + (p)->size ) && \
+  ((p)-> c != NULL) \
+  )
 
 /** @brief Prototype for a packet callback, to be called when a new packet arrives
  * @param session The current session of the packet
@@ -217,11 +232,10 @@ typedef struct ssh_packet_callbacks_struct *ssh_packet_callbacks;
  * functions for auth, logging and status.
  *
  * @code
- * struct ssh_callbacks_struct cb;
- * memset(&cb, 0, sizeof(struct ssh_callbacks_struct));
- * cb.userdata = data;
- * cb.auth_function = my_auth_function;
- *
+ * struct ssh_callbacks_struct cb = {
+ *   .userdata = data,
+ *   .auth_function = my_auth_function
+ * };
  * ssh_callbacks_init(&cb);
  * ssh_set_callbacks(session, &cb);
  * @endcode
