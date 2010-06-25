@@ -38,7 +38,7 @@ int ssh_socket_read(struct socket *s, void *buffer, int len);
 int ssh_socket_write(struct socket *s,const void *buffer, int len);
 int ssh_socket_is_open(struct socket *s);
 int ssh_socket_fd_isset(struct socket *s, fd_set *set);
-void ssh_socket_fd_set(struct socket *s, fd_set *set, socket_t *max_fd) {
+void ssh_socket_fd_set(struct socket *s, fd_set *set, socket_t *max_fd);
 int ssh_socket_completeread(struct socket *s, void *buffer, uint32_t len);
 int ssh_socket_completewrite(struct socket *s, const void *buffer, uint32_t len);
 int ssh_socket_wait_for_data(struct socket *s, ssh_session session, uint32_t len);
