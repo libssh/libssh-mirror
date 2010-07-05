@@ -149,10 +149,12 @@ static int bsd_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout) {
       if (fds[i].fd == SSH_INVALID_SOCKET) {
           continue;
       }
+#ifndef _WIN32
       if (fds[i].fd >= FD_SETSIZE) {
           rc = -1;
           break;
       }
+#endif
 
       if (fds[i].events & (POLLIN | POLLRDNORM)) {
           FD_SET (fds[i].fd, &readfds);
