@@ -484,9 +484,14 @@ int ssh_socket_poll(struct socket *s, int *writeable, int *except) {
 
   if (!s->data_to_read) {
     fd->events |= POLLIN;
-  }
-  if (!s->data_to_write) {
+  } else if (!s->data_to_write) {
     fd->events |= POLLOUT;
+  } else {
+    *except = 1;
+    *writeable = 0;
+
+    leave_function();
+    return 1;
   }
 
   /* Make the call, and listen for errors */
