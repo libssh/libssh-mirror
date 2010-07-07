@@ -102,7 +102,7 @@ struct ssh_session_struct {
 #endif
     char *username;
     char *host;
-    char *bindaddr; /* TODO: check if needed */
+    char *bindaddr; /* bind the client to an ip addr */
     char *xbanner; /* TODO: looks like it is not needed */
     struct ssh_list *identity;
     char *sshdir;
