@@ -192,6 +192,9 @@ int ssh_options_set_algo(ssh_session session, int algo,
  *                        set the hostname as the hostname is used as a key in
  *                        the known_host mechanism.
  *
+ *                      - SSH_OPTIONS_BINDADDR:
+ *                        The address to bind the client to (string).
+ *
  *                      - SSH_OPTIONS_USER:
  *                        The username for authentication (string).\n
  *                        \n
@@ -404,6 +407,18 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
 
         session->fd = *x & 0xffff;
       }
+      break;
+    case SSH_OPTIONS_BINDADDR:
+      if (value == NULL) {
+        ssh_set_error_invalid(session, __FUNCTION__);
+        return -1;
+      }
+      q = strdup(value);
+      if (q == NULL) {
+          return -1;
+      }
+      SAFE_FREE(session->bindaddr);
+      session->bindaddr = q;
       break;
     case SSH_OPTIONS_USER:
       SAFE_FREE(session->username);
