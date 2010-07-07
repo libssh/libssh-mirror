@@ -484,22 +484,19 @@ int ssh_socket_poll(struct socket *s, int *writeable, int *except) {
 
   if (!s->data_to_read) {
     fd->events |= POLLIN;
-  } else if (!s->data_to_write) {
-    fd->events |= POLLOUT;
-  } else {
-    *except = 1;
-    *writeable = 0;
-
-    leave_function();
-    return 1;
   }
-
-  /* Make the call, and listen for errors */
-  rc = ssh_poll(fd, 1, 0);
-  if (rc < 0) {
-    ssh_set_error(session, SSH_FATAL, "poll(): %s", strerror(errno));
-    leave_function();
-    return -1;
+  if (!s->data_to_write) {
+    fd->events |= POLLOUT;
+  }
+  /* do not do poll if fd->events is empty, we already know the response */
+  if(fd->events != 0){
+  	/* Make the call, and listen for errors */
+  	rc = ssh_poll(fd, 1, 0);
+  	if (rc < 0) {
+  		ssh_set_error(session, SSH_FATAL, "poll(): %s", strerror(errno));
+  		leave_function();
+  		return -1;
+  	}
   }
 
   if (!s->data_to_read) {
