@@ -38,6 +38,45 @@ typedef struct ssh_pollfd_struct {
   short revents;    /* returned events */
 } ssh_pollfd_t;
 
+typedef unsigned long int nfds_t;
+
+#ifdef _WIN32
+
+#ifndef POLLRDNORM
+#define POLLRDNORM  0x0100
+#endif
+#ifndef POLLRDBAND
+#define POLLRDBAND  0x0200
+#endif
+#ifndef POLLIN
+#define POLLIN      (POLLRDNORM | POLLRDBAND)
+#endif
+#ifndef POLLPRI
+#define POLLPRI     0x0400
+#endif
+
+#ifndef POLLWRNORM
+#define POLLWRNORM  0x0010
+#endif
+#ifndef POLLOUT
+#define POLLOUT     (POLLWRNORM)
+#endif
+#ifndef POLLWRBAND
+#define POLLWRBAND  0x0020
+#endif
+
+#ifndef POLLERR
+#define POLLERR     0x0001
+#endif
+#ifndef POLLHUP
+#define POLLHUP     0x0002
+#endif
+#ifndef POLLNVAL
+#define POLLNVAL    0x0004
+#endif
+
+#else /* _WIN32 */
+
 /* poll.c */
 #ifndef POLLIN
 #define POLLIN    0x001  /* There is data to read.  */
@@ -72,8 +111,7 @@ typedef struct ssh_pollfd_struct {
 #define POLLWRBAND  0x200 /* mapped to write fds_set */
 #endif
 
-
-typedef unsigned long int nfds_t;
+#endif /* WIN32 */
 #endif /* HAVE_POLL */
 
 void ssh_poll_init(void);
