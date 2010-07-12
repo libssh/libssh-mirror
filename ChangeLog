@@ -1,6 +1,12 @@
 ChangeLog
 ==========
 
+version 0.4.5 (released 2010-07-13)
+  * Added option to bind a client to an ip address.
+  * Fixed the ssh socket polling function.
+  * Fixed Windows related bugs in bsd_poll().
+  * Fixed serveral build warnings.
+
 version 0.4.4 (released 2010-06-01)
   * Fixed a bug in the expand function for escape sequences.
   * Fixed a bug in the tilde expand function.
