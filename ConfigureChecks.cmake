@@ -119,4 +119,6 @@ if (WITH_DEBUG_CALLTRACE)
 endif (WITH_DEBUG_CALLTRACE)
 
 # ENDIAN
-test_big_endian(WORDS_BIGENDIAN)
+if (NOT WIN32)
+    test_big_endian(WORDS_BIGENDIAN)
+endif (NOT WIN32)
