@@ -18,6 +18,10 @@ if (OPENSSL_LIBRARIES AND OPENSSL_INCLUDE_DIRS)
   # in cache already
   set(OPENSSL_FOUND TRUE)
 else (OPENSSL_LIBRARIES AND OPENSSL_INCLUDE_DIRS)
+  if (WIN32)
+    set(_OPENSSL_DIR $ENV{PROGRAMFILES}/OpenSSL)
+  endif (WIN32)
+
   # use pkg-config to get the directories and then use these values
   # in the FIND_PATH() and FIND_LIBRARY() calls
   if (${CMAKE_MAJOR_VERSION} EQUAL 2 AND ${CMAKE_MINOR_VERSION} EQUAL 4)
