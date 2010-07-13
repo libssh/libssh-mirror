@@ -18,6 +18,9 @@ if (ZLIB_LIBRARIES AND ZLIB_INCLUDE_DIRS)
   # in cache already
   set(ZLIB_FOUND TRUE)
 else (ZLIB_LIBRARIES AND ZLIB_INCLUDE_DIRS)
+  if (WIN32)
+    set(_ZLIB_DIR $ENV{PROGRAMFILES}/GnuWin32)
+  endif (WIN32)
 
   find_path(ZLIB_INCLUDE_DIR
     NAMES
