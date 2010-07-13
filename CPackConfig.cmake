@@ -24,13 +24,17 @@ set(CPACK_SOURCE_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSIO
 
 
 ### nsis generator
-set(CPACK_GENERATOR "NSIS")
+set(CPACK_GENERATOR "ZIP")
+
+find_package(NSIS)
+if (HAVE_NSIS)
+    set(CPACK_GENERATOR "${CPACK_GENERATOR};NSIS")
+    set(CPACK_NSIS_DISPLAY_NAME "The SSH Library")
+    set(CPACK_NSIS_COMPRESSOR "/SOLID zlib")
+    set(CPACK_NSIS_MENU_LINKS "http://www.libssh.org/" "libssh homepage")
+if (HAVE_NSIS)
 
 set(CPACK_PACKAGE_INSTALL_DIRECTORY "libssh")
-
-set(CPACK_NSIS_DISPLAY_NAME "The SSH Library")
-set(CPACK_NSIS_COMPRESSOR "/SOLID zlib")
-set(CPACK_NSIS_MENU_LINKS "http://www.libssh.org/" "libssh homepage")
 
 set(CPACK_PACKAGE_FILE_NAME ${APPLICATION_NAME}-${CPACK_PACKAGE_VERSION})
 
