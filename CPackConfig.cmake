@@ -32,7 +32,7 @@ if (HAVE_NSIS)
     set(CPACK_NSIS_DISPLAY_NAME "The SSH Library")
     set(CPACK_NSIS_COMPRESSOR "/SOLID zlib")
     set(CPACK_NSIS_MENU_LINKS "http://www.libssh.org/" "libssh homepage")
-if (HAVE_NSIS)
+endif (HAVE_NSIS)
 
 set(CPACK_PACKAGE_INSTALL_DIRECTORY "libssh")
 
