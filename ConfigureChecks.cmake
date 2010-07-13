@@ -16,9 +16,9 @@ set(SYSCONFDIR ${SYSCONF_INSTALL_DIR})
 set(BINARYDIR ${CMAKE_BINARY_DIR})
 set(SOURCEDIR ${CMAKE_SOURCE_DIR})
 
-if(CMAKE_COMPILER_IS_GNUCC)
+if(CMAKE_COMPILER_IS_GNUCC AND NOT MINGW)
 check_c_compiler_flag("-fvisibility=hidden" WITH_VISIBILITY_HIDDEN)
-endif(CMAKE_COMPILER_IS_GNUCC)
+endif(CMAKE_COMPILER_IS_GNUCC AND NOT MINGW)
 
 # HEADER FILES
 check_include_file(argp.h HAVE_ARGP_H)
@@ -36,11 +36,14 @@ if (WIN32)
   endif (HAVE_WSPIAPI_H OR HAVE_WS2TCPIP_H)
 
   check_function_exists(vsnprintf HAVE_VSNPRINTF)
-  if(NOT HAVE_VSNPRINTF)
+  check_function_exists(snprintf HAVE_SNPRINTF)
+
+  if (WIN32)
       check_function_exists(_vsnprintf_s HAVE__VSNPRINTF_S)
       check_function_exists(_vsnprintf HAVE__VSNPRINTF)
-  endif(NOT HAVE_VSNPRINTF)
-
+      check_function_exists(_snprintf HAVE__SNPRINTF)
+      check_function_exists(_snprintf_s HAVE__SNPRINTF_S)
+  endif (WIN32)
   check_function_exists(strncpy HAVE_STRNCPY)
 
   set(HAVE_SELECT TRUE)
