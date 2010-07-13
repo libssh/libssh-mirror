@@ -18,6 +18,10 @@ if (OPENSSL_LIBRARIES AND OPENSSL_INCLUDE_DIRS)
   # in cache already
   set(OPENSSL_FOUND TRUE)
 else (OPENSSL_LIBRARIES AND OPENSSL_INCLUDE_DIRS)
+  if (WIN32)
+    set(_OPENSSL_DIR $ENV{PROGRAMFILES}/OpenSSL)
+  endif (WIN32)
+
   find_package(PkgConfig)
   if (PKG_CONFIG_FOUND)
     pkg_check_modules(_OPENSSL openssl)
