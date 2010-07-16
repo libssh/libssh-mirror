@@ -23,9 +23,6 @@ set(CPACK_SOURCE_IGNORE_FILES "~$;[.]swp$;/[.]svn/;/[.]git/;.gitignore;/build/;t
 set(CPACK_SOURCE_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}")
 
 if (WIN32)
-    set (CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS TRUE)
-    include(InstallRequiredSystemLibraries)
-
     set(CPACK_GENERATOR "ZIP")
 
     ### nsis generator
