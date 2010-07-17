@@ -49,7 +49,7 @@
 ssh_packet_callback default_packet_handlers[]= {
   ssh_packet_disconnect_callback,          // SSH2_MSG_DISCONNECT                 1
   ssh_packet_ignore_callback,              // SSH2_MSG_IGNORE	                    2
-  NULL,                                    // SSH2_MSG_UNIMPLEMENTED              3
+  ssh_packet_unimplemented,                // SSH2_MSG_UNIMPLEMENTED              3
   ssh_packet_ignore_callback,              // SSH2_MSG_DEBUG	                    4
   ssh_packet_service_request,              // SSH2_MSG_SERVICE_REQUEST	          5
   ssh_packet_service_accept,               // SSH2_MSG_SERVICE_ACCEPT             6
@@ -355,10 +355,42 @@ void ssh_packet_process(ssh_session session, uint8_t type){
 		if(r==SSH_PACKET_USED)
 			break;
 	}
-	if(r==SSH_PACKET_NOT_USED)
+	if(r==SSH_PACKET_NOT_USED){
 		ssh_log(session,SSH_LOG_RARE,"Couldn't do anything with packet type %d",type);
+		ssh_packet_send_unimplemented(session, session->recv_seq-1);
+	}
 error:
 	leave_function();
+}
+
+/** @internal
+ * @brief sends a SSH_MSG_UNIMPLEMENTED answer to an unhandled packet
+ * @param session the SSH session
+ * @param seqnum the sequence number of the unknown packet
+ * @return SSH_ERROR on error, else SSH_OK
+ */
+int ssh_packet_send_unimplemented(ssh_session session, uint32_t seqnum){
+  int r;
+  enter_function();
+  buffer_add_u8(session->out_buffer, SSH2_MSG_UNIMPLEMENTED);
+  buffer_add_u32(session->out_buffer, htonl(seqnum));
+  r = packet_send(session);
+  leave_function();
+  return r;
+}
+
+/** @internal
+ * @brief handles a SSH_MSG_UNIMPLEMENTED packet
+ */
+SSH_PACKET_CALLBACK(ssh_packet_unimplemented){
+  uint32_t seq;
+  (void)type;
+  (void)user;
+  buffer_get_u32(packet,&seq);
+  seq=ntohl(seq);
+  ssh_log(session,SSH_LOG_RARE,
+      "Received SSH_MSG_UNIMPLEMENTED (sequence number %d)",seq);
+  return SSH_PACKET_USED;
 }
 
 /** @internal

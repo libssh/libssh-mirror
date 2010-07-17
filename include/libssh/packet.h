@@ -53,6 +53,8 @@ int ssh_packet_socket_callback1(const void *data, size_t receivedlen, void *user
 
 #endif
 
+SSH_PACKET_CALLBACK(ssh_packet_unimplemented);
+int ssh_packet_send_unimplemented(ssh_session session, uint32_t seqnum);
 int ssh_packet_parse_type(ssh_session session);
 int packet_flush(ssh_session session, int enforce_blocking);
 
