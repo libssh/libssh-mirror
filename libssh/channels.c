@@ -201,7 +201,7 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_open_fail){
       (long unsigned int) ntohl(code),
       error);
   SAFE_FREE(error);
-
+  channel->state=SSH_CHANNEL_STATE_OPEN_DENIED;
   return SSH_PACKET_USED;
 }
 
