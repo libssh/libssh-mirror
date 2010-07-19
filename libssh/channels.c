@@ -165,8 +165,10 @@ static int channel_open(ssh_channel channel, const char *type_c, int window,
       type_c, channel->local_channel);
 
   if (packet_wait(session, SSH2_MSG_CHANNEL_OPEN_CONFIRMATION, 1) != SSH_OK) {
-    leave_function();
-    return -1;
+  	if(session->in_packet.type != SSH2_MSG_CHANNEL_OPEN_FAILURE) {
+  		leave_function();
+  		return -1;
+  	}
   }
 
   switch(session->in_packet.type) {
