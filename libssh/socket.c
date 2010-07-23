@@ -3,7 +3,7 @@
  *
  * This file is part of the SSH Library
  *
- * Copyright (c) 2008,2009      by Aris Adamantiadis
+ * Copyright (c) 2008-2010      by Aris Adamantiadis
  *
  * The SSH Library is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -505,59 +505,59 @@ void ssh_socket_fd_set(ssh_socket s, fd_set *set, socket_t *max_fd) {
 /** \internal
  * \brief reads blocking until len bytes have been read
  */
-int ssh_socket_completeread(ssh_socket s, void *buffer, uint32_t len) {
-  int r = -1;
-  uint32_t total = 0;
-  uint32_t toread = len;
-  if(! ssh_socket_is_open(s)) {
-    return SSH_ERROR;
-  }
-
-  while((r = ssh_socket_unbuffered_read(s, ((uint8_t*)buffer + total), toread))) {
-    if (r < 0) {
-      return SSH_ERROR;
-    }
-    total += r;
-    toread -= r;
-    if (total == len) {
-      return len;
-    }
-    if (r == 0) {
-      return 0;
-    }
-  }
-
-  /* connection closed */
-  return total;
-}
-
-/** \internal
- * \brief Blocking write of len bytes
- */
-int ssh_socket_completewrite(ssh_socket s, const void *buffer, uint32_t len) {
-  ssh_session session = s->session;
-  int written = -1;
-
-  enter_function();
-
-  if(! ssh_socket_is_open(s)) {
-    leave_function();
-    return SSH_ERROR;
-  }
-
-  while (len >0) {
-    written = ssh_socket_unbuffered_write(s, buffer, len);
-    if (written == 0 || written == -1) {
-      leave_function();
-      return SSH_ERROR;
-    }
-    len -= written;
-    buffer = ((uint8_t*)buffer +  written);
-  }
-
-  leave_function();
-  return SSH_OK;
-}
+//int ssh_socket_completeread(ssh_socket s, void *buffer, uint32_t len) {
+//  int r = -1;
+//  uint32_t total = 0;
+//  uint32_t toread = len;
+//  if(! ssh_socket_is_open(s)) {
+//    return SSH_ERROR;
+//  }
+//
+//  while((r = ssh_socket_unbuffered_read(s, ((uint8_t*)buffer + total), toread))) {
+//    if (r < 0) {
+//      return SSH_ERROR;
+//    }
+//    total += r;
+//    toread -= r;
+//    if (total == len) {
+//      return len;
+//    }
+//    if (r == 0) {
+//      return 0;
+//    }
+//  }
+//
+//  /* connection closed */
+//  return total;
+//}
+//
+///** \internal
+// * \brief Blocking write of len bytes
+// */
+//int ssh_socket_completewrite(ssh_socket s, const void *buffer, uint32_t len) {
+//  ssh_session session = s->session;
+//  int written = -1;
+//
+//  enter_function();
+//
+//  if(! ssh_socket_is_open(s)) {
+//    leave_function();
+//    return SSH_ERROR;
+//  }
+//
+//  while (len >0) {
+//    written = ssh_socket_unbuffered_write(s, buffer, len);
+//    if (written == 0 || written == -1) {
+//      leave_function();
+//      return SSH_ERROR;
+//    }
+//    len -= written;
+//    buffer = ((uint8_t*)buffer +  written);
+//  }
+//
+//  leave_function();
+//  return SSH_OK;
+//}
 
 /** \internal
  * \brief buffered write of data

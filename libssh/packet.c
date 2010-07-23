@@ -444,11 +444,9 @@ static int ssh_packet_write(ssh_session session) {
 
   enter_function();
 
-  ssh_socket_write(session->socket,
+  rc=ssh_socket_write(session->socket,
       ssh_buffer_get_begin(session->out_buffer),
       ssh_buffer_get_len(session->out_buffer));
-
-  rc = packet_flush(session, 0);
 
   leave_function();
   return rc;

@@ -303,12 +303,12 @@ int packet_send1(ssh_session session) {
   ssh_print_hexa("encrypted packet",ssh_buffer_get_begin(session->out_buffer),
       ssh_buffer_get_len(session->out_buffer));
 #endif
-  if (ssh_socket_write(session->socket, ssh_buffer_get_begin(session->out_buffer),
-      ssh_buffer_get_len(session->out_buffer)) == SSH_ERROR) {
+  rc=ssh_socket_write(session->socket, ssh_buffer_get_begin(session->out_buffer),
+      ssh_buffer_get_len(session->out_buffer));
+  if(rc== SSH_ERROR) {
     goto error;
   }
 
-  rc = packet_flush(session, 0);
   session->send_seq++;
 
   if (buffer_reinit(session->out_buffer) < 0) {

@@ -234,10 +234,6 @@ int ssh_send_banner(ssh_session session, int server) {
     return -1;
   }
 
-  if (ssh_socket_blocking_flush(session->socket) != SSH_OK) {
-    leave_function();
-    return -1;
-  }
 #ifdef WITH_PCAP
   if(session->pcap_ctx)
   	ssh_pcap_context_write(session->pcap_ctx,SSH_PCAP_DIR_OUT,buffer,strlen(buffer),strlen(buffer));
