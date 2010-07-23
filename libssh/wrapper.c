@@ -161,13 +161,18 @@ static int crypt_set_algorithms2(ssh_session session){
   }
 
   /* compression */
-  if (strstr(session->client_kex.methods[SSH_COMP_C_S], "zlib")) {
+  if (strcmp(session->client_kex.methods[SSH_COMP_C_S], "zlib") == 0) {
     session->next_crypto->do_compress_out = 1;
   }
-  if (strstr(session->client_kex.methods[SSH_COMP_S_C], "zlib")) {
+  if (strcmp(session->client_kex.methods[SSH_COMP_S_C], "zlib") == 0) {
     session->next_crypto->do_compress_in = 1;
   }
-
+  if (strcmp(session->client_kex.methods[SSH_COMP_C_S], "zlib@openssh.org") == 0) {
+    session->next_crypto->delayed_compress_out = 1;
+  }
+  if (strcmp(session->client_kex.methods[SSH_COMP_S_C], "zlib@openssh.org") == 0) {
+    session->next_crypto->delayed_compress_in = 1;
+  }
   return SSH_OK;
 }
 
