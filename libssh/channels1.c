@@ -111,7 +111,7 @@ int channel_request_pty_size1(ssh_channel channel, const char *terminal, int col
 
   ssh_log(session, SSH_LOG_FUNCTIONS, "Opening a ssh1 pty");
 
-  if (packet_send(session) != SSH_OK) {
+  if (packet_send(session) == SSH_ERROR) {
     return -1;
   }
   switch(channel->request_state){
@@ -149,7 +149,7 @@ int channel_change_pty_size1(ssh_channel channel, int cols, int rows) {
     return SSH_ERROR;
   }
   channel->request_state=SSH_CHANNEL_REQ_STATE_PENDING;
-  if (packet_send(session)) {
+  if (packet_send(session) == SSH_ERROR) {
     return SSH_ERROR;
   }
 
@@ -185,7 +185,7 @@ int channel_request_shell1(ssh_channel channel) {
     return -1;
   }
 
-  if (packet_send(session) != SSH_OK) {
+  if (packet_send(session) == SSH_ERROR) {
     return -1;
   }
 
@@ -210,7 +210,7 @@ int channel_request_exec1(ssh_channel channel, const char *cmd) {
   }
   ssh_string_free(command);
 
-  if(packet_send(session) != SSH_OK) {
+  if(packet_send(session) == SSH_ERROR) {
     return -1;
   }
 
@@ -286,7 +286,7 @@ int channel_write1(ssh_channel channel, const void *data, int len) {
     ptr += effectivelen;
     len -= effectivelen;
 
-    if (packet_send(session) != SSH_OK) {
+    if (packet_send(session) == SSH_ERROR) {
       return -1;
     }
   }

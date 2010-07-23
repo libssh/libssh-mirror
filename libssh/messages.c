@@ -494,7 +494,7 @@ ssh_channel ssh_message_channel_request_open_reply_accept(ssh_message msg) {
   ssh_log(session, SSH_LOG_PACKET,
       "Accepting a channel request_open for chan %d", chan->remote_channel);
 
-  if (packet_send(session) != SSH_OK) {
+  if (packet_send(session) == SSH_ERROR) {
     goto error;
   }
 

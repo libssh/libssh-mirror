@@ -1700,7 +1700,7 @@ int ssh_is_server_known(ssh_session session) {
  * @return              SSH_OK on success, SSH_ERROR on error.
  */
 int ssh_write_knownhost(ssh_session session) {
-  ssh_string pubkey = session->current_crypto->server_pubkey;
+  ssh_string pubkey;
   unsigned char *pubkey_64;
   char buffer[4096] = {0};
   FILE *file;
@@ -1727,8 +1727,19 @@ int ssh_write_knownhost(ssh_session session) {
   if (session->knownhosts == NULL) {
     if (ssh_options_apply(session) < 0) {
       ssh_set_error(session, SSH_FATAL, "Can't find a known_hosts file");
-      return -1;
+      return SSH_ERROR;
     }
+  }
+
+  if(session->current_crypto==NULL) {
+  	ssh_set_error(session, SSH_FATAL, "No current crypto context");
+  	return SSH_ERROR;
+  }
+
+  pubkey = session->current_crypto->server_pubkey;
+  if(pubkey == NULL){
+  	ssh_set_error(session, SSH_FATAL, "No public key present");
+  	return SSH_ERROR;
   }
 
   /* Check if ~/.ssh exists and create it if not */

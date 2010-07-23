@@ -477,7 +477,7 @@ static int dh_handshake_server(ssh_session session) {
   }
   ssh_string_free(f);
   ssh_string_free(sign);
-  if (packet_send(session) != SSH_OK) {
+  if (packet_send(session) == SSH_ERROR) {
     return -1;
   }
 
@@ -486,7 +486,7 @@ static int dh_handshake_server(ssh_session session) {
     return -1;
   }
 
-  if (packet_send(session) != SSH_OK) {
+  if (packet_send(session) == SSH_ERROR) {
     return -1;
   }
   ssh_log(session, SSH_LOG_PACKET, "SSH_MSG_NEWKEYS sent");

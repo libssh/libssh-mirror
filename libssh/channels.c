@@ -263,7 +263,7 @@ static int channel_open(ssh_channel channel, const char *type_c, int window,
     }
   }
 
-  if (packet_send(session) != SSH_OK) {
+  if (packet_send(session) == SSH_ERROR) {
     leave_function();
     return err;
   }
@@ -314,7 +314,7 @@ static int grow_window(ssh_session session, ssh_channel channel, int minimumsize
     goto error;
   }
 
-  if (packet_send(session) != SSH_OK) {
+  if (packet_send(session) == SSH_ERROR) {
     /* FIXME should we fail here or not? */
     leave_function();
     return 1;
@@ -979,7 +979,7 @@ int channel_write_common(ssh_channel channel, const void *data,
       goto error;
     }
 
-    if (packet_send(session) != SSH_OK) {
+    if (packet_send(session) == SSH_ERROR) {
       leave_function();
       return SSH_ERROR;
     }
@@ -1176,7 +1176,7 @@ static int channel_request(ssh_channel channel, const char *request,
     }
   }
   channel->request_state = SSH_CHANNEL_REQ_STATE_PENDING;
-  if (packet_send(session) != SSH_OK) {
+  if (packet_send(session) == SSH_ERROR) {
     leave_function();
     return rc;
   }
@@ -1632,7 +1632,7 @@ static int global_request(ssh_session session, const char *request,
     }
   }
   session->global_req_state = SSH_CHANNEL_REQ_STATE_PENDING;
-  if (packet_send(session) != SSH_OK) {
+  if (packet_send(session) == SSH_ERROR) {
     leave_function();
     return rc;
   }

@@ -422,20 +422,6 @@ int ssh_packet_parse_type(ssh_session session) {
 }
 
 /*
- * Write the the bufferized output. If the session is blocking, or
- * enforce_blocking is set, the call may block. Otherwise, it won't block.
- * Return SSH_OK if everything has been sent, SSH_AGAIN if there are still
- * things to send on buffer, SSH_ERROR if there is an error.
- */
-int packet_flush(ssh_session session, int enforce_blocking) {
-  if (enforce_blocking || session->blocking) {
-    return ssh_socket_blocking_flush(session->socket);
-  }
-
-  return ssh_socket_nonblocking_flush(session->socket);
-}
-
-/*
  * This function places the outgoing packet buffer into an outgoing
  * socket buffer
  */
@@ -447,7 +433,9 @@ static int ssh_packet_write(ssh_session session) {
   rc=ssh_socket_write(session->socket,
       ssh_buffer_get_begin(session->out_buffer),
       ssh_buffer_get_len(session->out_buffer));
-
+  if(rc == SSH_OK){
+  	rc=ssh_socket_nonblocking_flush(session->socket);
+  }
   leave_function();
   return rc;
 }

@@ -204,6 +204,7 @@ static int ssh_analyze_banner(ssh_session session, int *ssh1, int *ssh2) {
 int ssh_send_banner(ssh_session session, int server) {
   const char *banner = NULL;
   char buffer[128] = {0};
+  int err=SSH_ERROR;
 
   enter_function();
 
@@ -216,30 +217,31 @@ int ssh_send_banner(ssh_session session, int server) {
   if (server) {
     session->serverbanner = strdup(banner);
     if (session->serverbanner == NULL) {
-      leave_function();
-      return -1;
+      goto end;
     }
   } else {
     session->clientbanner = strdup(banner);
     if (session->clientbanner == NULL) {
-      leave_function();
-      return -1;
+      goto end;
     }
   }
 
   snprintf(buffer, 128, "%s\n", banner);
 
   if (ssh_socket_write(session->socket, buffer, strlen(buffer)) == SSH_ERROR) {
-    leave_function();
-    return -1;
+    goto end;
   }
-
+  if (ssh_socket_nonblocking_flush(session->socket) == SSH_ERROR){
+  	goto end;
+  }
 #ifdef WITH_PCAP
   if(session->pcap_ctx)
   	ssh_pcap_context_write(session->pcap_ctx,SSH_PCAP_DIR_OUT,buffer,strlen(buffer),strlen(buffer));
 #endif
+  err=SSH_OK;
+end:
   leave_function();
-  return 0;
+  return err;
 }
 
 
@@ -510,7 +512,7 @@ int ssh_service_request(ssh_session session, const char *service) {
   		}
   		ssh_string_free(service_s);
 
-  		if (packet_send(session) != SSH_OK) {
+  		if (packet_send(session) == SSH_ERROR) {
   			ssh_set_error(session, SSH_FATAL,
   					"Sending SSH2_MSG_SERVICE_REQUEST failed.");
   			break;

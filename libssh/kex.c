@@ -428,7 +428,7 @@ int ssh_send_kex(ssh_session session, int server_kex) {
     goto error;
   }
 
-  if (packet_send(session) != SSH_OK) {
+  if (packet_send(session) == SSH_ERROR) {
     leave_function();
     return -1;
   }
@@ -764,7 +764,7 @@ SSH_PACKET_CALLBACK(ssh_packet_publickey1){
      goto error;
    }
    session->session_state=SSH_SESSION_STATE_KEXINIT_RECEIVED;
-   if (packet_send(session) != SSH_OK) {
+   if (packet_send(session) == SSH_ERROR) {
      goto error;
    }
 

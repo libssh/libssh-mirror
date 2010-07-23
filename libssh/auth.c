@@ -466,7 +466,7 @@ int ssh_userauth_offer_pubkey(ssh_session session, const char *username,
   ssh_string_free(service);
   ssh_string_free(algo);
   session->auth_state=SSH_AUTH_STATE_NONE;
-  if (packet_send(session) != SSH_OK) {
+  if (packet_send(session) == SSH_ERROR) {
     leave_function();
     return rc;
   }
@@ -601,7 +601,7 @@ int ssh_userauth_pubkey(ssh_session session, const char *username,
     }
     ssh_string_free(sign);
     session->auth_state=SSH_AUTH_STATE_NONE;
-    if (packet_send(session) != SSH_OK) {
+    if (packet_send(session) == SSH_ERROR) {
       leave_function();
       return rc;
     }
@@ -786,7 +786,7 @@ int ssh_userauth_agent_pubkey(ssh_session session, const char *username,
     }
     ssh_string_free(sign);
     session->auth_state=SSH_AUTH_STATE_NONE;
-    if (packet_send(session) != SSH_OK) {
+    if (packet_send(session) == SSH_ERROR) {
       leave_function();
       return rc;
     }
@@ -906,7 +906,7 @@ int ssh_userauth_password(ssh_session session, const char *username,
   ssh_string_burn(pwd);
   ssh_string_free(pwd);
   session->auth_state=SSH_AUTH_STATE_NONE;
-  if (packet_send(session) != SSH_OK) {
+  if (packet_send(session) == SSH_ERROR) {
     leave_function();
     return rc;
   }
@@ -1280,7 +1280,7 @@ static int kbdauth_init(ssh_session session, const char *user,
   ssh_string_free(method);
   ssh_string_free(sub);
   session->auth_state=SSH_AUTH_STATE_KBDINT_SENT;
-  if (packet_send(session) != SSH_OK) {
+  if (packet_send(session) == SSH_ERROR) {
     leave_function();
     return rc;
   }
@@ -1465,7 +1465,7 @@ static int kbdauth_send(ssh_session session) {
   session->auth_state=SSH_AUTH_STATE_KBDINT_SENT;
   kbdint_free(session->kbdint);
   session->kbdint = NULL;
-  if (packet_send(session) != SSH_OK) {
+  if (packet_send(session) == SSH_ERROR) {
     leave_function();
     return rc;
   }

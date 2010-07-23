@@ -463,6 +463,7 @@ static int ssh_socket_unbuffered_write(ssh_socket s, const void *buffer,
   s->data_to_write = 0;
   /* Reactive the POLLOUT detector in the poll multiplexer system */
   if(s->poll_out){
+  	ssh_log(s->session, SSH_LOG_PACKET, "Enabling POLLOUT for socket");
   	ssh_poll_set_events(s->poll_out,ssh_poll_get_events(s->poll_out) | POLLOUT);
   }
   if (w < 0) {
@@ -503,63 +504,6 @@ void ssh_socket_fd_set(ssh_socket s, fd_set *set, socket_t *max_fd) {
 }
 
 /** \internal
- * \brief reads blocking until len bytes have been read
- */
-//int ssh_socket_completeread(ssh_socket s, void *buffer, uint32_t len) {
-//  int r = -1;
-//  uint32_t total = 0;
-//  uint32_t toread = len;
-//  if(! ssh_socket_is_open(s)) {
-//    return SSH_ERROR;
-//  }
-//
-//  while((r = ssh_socket_unbuffered_read(s, ((uint8_t*)buffer + total), toread))) {
-//    if (r < 0) {
-//      return SSH_ERROR;
-//    }
-//    total += r;
-//    toread -= r;
-//    if (total == len) {
-//      return len;
-//    }
-//    if (r == 0) {
-//      return 0;
-//    }
-//  }
-//
-//  /* connection closed */
-//  return total;
-//}
-//
-///** \internal
-// * \brief Blocking write of len bytes
-// */
-//int ssh_socket_completewrite(ssh_socket s, const void *buffer, uint32_t len) {
-//  ssh_session session = s->session;
-//  int written = -1;
-//
-//  enter_function();
-//
-//  if(! ssh_socket_is_open(s)) {
-//    leave_function();
-//    return SSH_ERROR;
-//  }
-//
-//  while (len >0) {
-//    written = ssh_socket_unbuffered_write(s, buffer, len);
-//    if (written == 0 || written == -1) {
-//      leave_function();
-//      return SSH_ERROR;
-//    }
-//    len -= written;
-//    buffer = ((uint8_t*)buffer +  written);
-//  }
-//
-//  leave_function();
-//  return SSH_OK;
-//}
-
-/** \internal
  * \brief buffered write of data
  * \returns SSH_OK, or SSH_ERROR
  * \warning has no effect on socket before a flush
@@ -571,7 +515,7 @@ int ssh_socket_write(ssh_socket s, const void *buffer, int len) {
     return SSH_ERROR;
   }
   leave_function();
-  return len;
+  return SSH_OK;
 }
 
 
@@ -624,54 +568,6 @@ int ssh_socket_nonblocking_flush(ssh_socket s) {
   /* all data written */
   leave_function();
   return SSH_OK;
-}
-
-
-/** \internal
- * \brief locking flush of the output packet buffer
- */
-int ssh_socket_blocking_flush(ssh_socket s) {
-  ssh_session session = s->session;
-
-  enter_function();
-
-  if (!ssh_socket_is_open(s)) {
-    session->alive = 0;
-
-    leave_function();
-    return SSH_ERROR;
-  }
-
-  if (s->data_except) {
-    leave_function();
-    return SSH_ERROR;
-  }
-
-  if (buffer_get_rest_len(s->out_buffer) == 0) {
-    leave_function();
-    return SSH_OK;
-  }
-
-  if (ssh_socket_completewrite(s, buffer_get_rest(s->out_buffer),
-        buffer_get_rest_len(s->out_buffer)) != SSH_OK) {
-    session->alive = 0;
-    ssh_socket_close(s);
-    /* FIXME use the proper errno */
-    ssh_set_error(session, SSH_FATAL,
-        "Writing packet: error on socket (or connection closed): %s",
-        strerror(errno));
-
-    leave_function();
-    return SSH_ERROR;
-  }
-
-  if (buffer_reinit(s->out_buffer) < 0) {
-    leave_function();
-    return SSH_ERROR;
-  }
-
-  leave_function();
-  return SSH_OK; // no data pending
 }
 
 void ssh_socket_set_towrite(ssh_socket s) {

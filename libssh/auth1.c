@@ -101,7 +101,7 @@ static int send_username(ssh_session session, const char *username) {
   }
   ssh_string_free(user);
   session->auth_state=SSH_AUTH_STATE_NONE;
-  if (packet_send(session) != SSH_OK) {
+  if (packet_send(session) == SSH_ERROR) {
     return SSH_AUTH_ERROR;
   }
 
@@ -193,7 +193,7 @@ int ssh_userauth1_password(ssh_session session, const char *username,
   ssh_string_burn(pwd);
   ssh_string_free(pwd);
   session->auth_state=SSH_AUTH_STATE_NONE;
-  if (packet_send(session) != SSH_OK) {
+  if (packet_send(session) == SSH_ERROR) {
     leave_function();
     return SSH_AUTH_ERROR;
   }
