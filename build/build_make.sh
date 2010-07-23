@@ -63,7 +63,7 @@ function clean_build_dir() {
 
 function usage () {
 echo "Usage: `basename $0` [--prefix /install_prefix|--build [debug|final]|--clean|--verbose|--libsuffix (32|64)|--help|--cmakedir /directory|--make
-(gmake|make)|--ccompiler (gcc|cc)|--withstaticlib|--unittesting|--withssh1|--withserver]"
+(gmake|make)|--ccompiler (gcc|cc)|--withstaticlib|--unittesting|--clientunittesting|--withssh1|--withserver]"
     cleanup_and_exit
 }
 
@@ -136,6 +136,10 @@ while test -n "$1"; do
 		;;
 		*-unittesting)
 			OPTIONS="${OPTIONS} -DWITH_TESTING=ON"
+			shift
+		;;
+		*-clientunittesting)
+			OPTIONS="${OPTIONS} -DWITH_CLIENT_TESTING=ON"
 			shift
 		;;
 		*-withssh1)

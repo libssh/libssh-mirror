@@ -102,7 +102,7 @@ message(STATUS "SFTP support: ${WITH_SFTP}")
 message(STATUS "Server support : ${WITH_SERVER}")
 message(STATUS "Pcap debugging support : ${WITH_PCAP}")
 message(STATUS "Unit testing: ${WITH_TESTING}")
-
+message(STATUS "Client code Unit testing: ${WITH_CLIENT_TESTING}")
 if (WITH_INTERNAL_DOC)
     message(STATUS "Internal documentation generation")
 else (WITH_INTERNAL_DOC)
