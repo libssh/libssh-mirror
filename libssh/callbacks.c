@@ -28,10 +28,16 @@
 
 int ssh_set_callbacks(ssh_session session, ssh_callbacks cb) {
   if (session == NULL || cb == NULL) {
-    return -1;
+    return SSH_ERROR;
   }
-
+  enter_function();
+  if(cb->size <= 0 || cb->size > 1024 * sizeof(void *)){
+  	ssh_set_error(session,SSH_FATAL,
+  			"Invalid callback passed in (badly initialized)");
+  	leave_function();
+  	return SSH_ERROR;
+  }
   session->callbacks = cb;
-
+  leave_function();
   return 0;
 }

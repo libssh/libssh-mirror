@@ -22,6 +22,8 @@
 /* Since libssh.h includes legacy.h, it's important that libssh.h is included
  * first. we don't define LEGACY_H now because we want it to be defined when
  * included from libssh.h
+ * All function calls declared in this header are deprecated and meant to be
+ * removed in future.
  */
 
 #include "libssh/libssh.h"

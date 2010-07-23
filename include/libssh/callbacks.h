@@ -244,7 +244,7 @@ typedef struct ssh_packet_callbacks_struct *ssh_packet_callbacks;
  *
  * @param  cb           The callback itself.
  *
- * @return 0 on success, < 0 on error.
+ * @return SSH_OK on success, SSH_ERROR on error.
  */
 LIBSSH_API int ssh_set_callbacks(ssh_session session, ssh_callbacks cb);
 
