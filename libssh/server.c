@@ -477,7 +477,6 @@ static int dh_handshake_server(ssh_session session) {
   }
   ssh_string_free(f);
   ssh_string_free(sign);
-  session->dh_handshake_state=DH_STATE_NEWKEYS_SENT;
   if (packet_send(session) != SSH_OK) {
     return -1;
   }
@@ -491,6 +490,7 @@ static int dh_handshake_server(ssh_session session) {
     return -1;
   }
   ssh_log(session, SSH_LOG_PACKET, "SSH_MSG_NEWKEYS sent");
+  session->dh_handshake_state=DH_STATE_NEWKEYS_SENT;
 
   while(session->dh_handshake_state != DH_STATE_FINISHED)
     ssh_handle_packets(session,-1);
