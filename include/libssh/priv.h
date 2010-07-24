@@ -35,7 +35,9 @@
 #ifdef _WIN32
 
 /* Imitate define of inttypes.h */
-#define PRIdS "Id"
+# ifndef PRIdS
+#  define PRIdS "Id"
+# endif
 
 # ifdef _MSC_VER
 #  include <stdio.h>
