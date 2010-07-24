@@ -34,6 +34,9 @@
 
 #ifdef _WIN32
 
+/* Imitate define of inttypes.h */
+#define PRIdS "Id"
+
 # ifdef _MSC_VER
 #  include <stdio.h>
 
@@ -43,9 +46,6 @@
 
 #  undef strdup
 #  define strdup _strdup
-
-/* Imitate define of inttypes.h */
-#  define PRIdS "Id"
 
 #  define strcasecmp _stricmp
 #  define strncasecmp _strnicmp
