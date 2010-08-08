@@ -361,6 +361,7 @@ int ssh_handle_packets(ssh_session session, int timeout) {
   enter_function();
   spoll_in=ssh_socket_get_poll_handle_in(session->socket);
   spoll_out=ssh_socket_get_poll_handle_out(session->socket);
+  ssh_poll_set_events(spoll_in, POLLIN | POLLERR);
   ctx=ssh_poll_get_ctx(spoll_in);
   if(ctx==NULL){
   	ctx=ssh_get_global_poll_ctx(session);
