@@ -723,6 +723,15 @@ int ssh_message_channel_request_reply_success(ssh_message msg) {
 ssh_message ssh_message_get(ssh_session session) {
   ssh_message msg = NULL;
   enter_function();
+
+  msg=ssh_message_pop_head(session);
+  if(msg) {
+      leave_function();
+      return msg;
+  }
+  if(session->ssh_message_list == NULL) {
+      session->ssh_message_list = ssh_list_new();
+  }
   do {
     if (ssh_handle_packets(session,-1) == SSH_ERROR) {
       leave_function();
@@ -730,7 +739,6 @@ ssh_message ssh_message_get(ssh_session session) {
     }
     msg=ssh_list_pop_head(ssh_message, session->ssh_message_list);
   } while(msg==NULL);
-  msg=ssh_message_pop_head(session);
   leave_function();
   return msg;
 }
