@@ -44,6 +44,11 @@
 #include "libssh/dh.h"
 #include "libssh/messages.h"
 
+#define set_status(session, status) do {\
+        if (session->callbacks && session->callbacks->connect_status_function) \
+            session->callbacks->connect_status_function(session->callbacks->userdata, status); \
+    } while (0)
+
 /**
  * @addtogroup libssh_server
  *
