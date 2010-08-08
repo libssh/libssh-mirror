@@ -115,7 +115,8 @@ struct ssh_session_struct {
     int auth_methods;
     int hostkeys; /* contains type of host key wanted by client, in server impl */
     struct ssh_list *ssh_message_list; /* list of delayed SSH messages */
-    int (*ssh_message_callback)( struct ssh_session_struct *session, ssh_message msg);
+    int (*ssh_message_callback)( struct ssh_session_struct *session, ssh_message msg, void *userdata);
+    void *ssh_message_callback_data;
     int log_verbosity; /*cached copy of the option structure */
     int log_indent; /* indentation level in enter_function logs */
 

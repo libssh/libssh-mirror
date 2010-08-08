@@ -1132,19 +1132,21 @@ char *ssh_message_channel_request_subsystem(ssh_message msg){
  * must take care of the response).
  */
 void ssh_set_message_callback(ssh_session session,
-    int(*ssh_message_callback_)(ssh_session session, ssh_message msg)){
+    int(*ssh_message_callback_)(ssh_session session, ssh_message msg, void *data), void *data){
   session->ssh_message_callback=ssh_message_callback_;
+  session->ssh_message_callback_data=data;
 }
 
 int ssh_execute_message_callbacks(ssh_session session){
   ssh_message msg=NULL;
   int ret;
+  ssh_handle_packets(session, 0);
   if(!session->ssh_message_list)
     return SSH_OK;
   if(session->ssh_message_callback){
-    while(ssh_list_pop_head(ssh_message , session->ssh_message_list) != NULL){
-      msg=ssh_message_pop_head(session);
-      ret=session->ssh_message_callback(session,msg);
+    while((msg=ssh_message_pop_head(session)) != NULL) {
+      ret=session->ssh_message_callback(session,msg,
+                                        session->ssh_message_callback_data);
       if(ret==1){
         ret = ssh_message_reply_default(msg);
         ssh_message_free(msg);
@@ -1155,8 +1157,7 @@ int ssh_execute_message_callbacks(ssh_session session){
       }
     }
   } else {
-    while(ssh_list_pop_head(ssh_message , session->ssh_message_list) != NULL){
-      msg=ssh_message_pop_head(session);
+    while((msg=ssh_message_pop_head(session)) != NULL) {
       ret = ssh_message_reply_default(msg);
       ssh_message_free(msg);
       if(ret != SSH_OK)

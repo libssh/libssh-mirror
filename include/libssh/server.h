@@ -159,7 +159,9 @@ LIBSSH_API int ssh_message_service_reply_success(ssh_message msg);
 LIBSSH_API char *ssh_message_service_service(ssh_message msg);
 
 LIBSSH_API void ssh_set_message_callback(ssh_session session,
-    int(*ssh_message_callback)(ssh_session session, ssh_message msg));
+    int(*ssh_message_callback)(ssh_session session, ssh_message msg, void *data),
+    void *data);
+LIBSSH_API int ssh_execute_message_callbacks(ssh_session session);
 
 LIBSSH_API char *ssh_message_channel_request_open_originator(ssh_message msg);
 LIBSSH_API int ssh_message_channel_request_open_originator_port(ssh_message msg);
