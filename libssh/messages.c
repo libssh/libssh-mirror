@@ -344,7 +344,7 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_open){
     ssh_set_error_oom(session);
 		goto error;
 	}
-	msg->channel_request_open.destination = ssh_string_to_char(type_s);
+	msg->channel_request_open.destination = ssh_string_to_char(destination);
 	if (msg->channel_request_open.destination == NULL) {
     ssh_set_error_oom(session);
 	  ssh_string_free(destination);
@@ -360,7 +360,7 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_open){
     ssh_set_error_oom(session);
 	  goto error;
 	}
-	msg->channel_request_open.originator = ssh_string_to_char(type_s);
+	msg->channel_request_open.originator = ssh_string_to_char(originator);
 	if (msg->channel_request_open.originator == NULL) {
     ssh_set_error_oom(session);
 	  ssh_string_free(originator);
@@ -381,7 +381,7 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_open){
     ssh_set_error_oom(session);
 		goto error;
 	}
-	msg->channel_request_open.destination = ssh_string_to_char(type_s);
+	msg->channel_request_open.destination = ssh_string_to_char(destination);
 	if (msg->channel_request_open.destination == NULL) {
     ssh_set_error_oom(session);
 	  ssh_string_free(destination);
@@ -397,7 +397,7 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_open){
     ssh_set_error_oom(session);
 	  goto error;
 	}
-	msg->channel_request_open.originator = ssh_string_to_char(type_s);
+	msg->channel_request_open.originator = ssh_string_to_char(originator);
 	if (msg->channel_request_open.originator == NULL) {
     ssh_set_error_oom(session);
 	  ssh_string_free(originator);
@@ -418,7 +418,7 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_open){
     ssh_set_error_oom(session);
 	  goto error;
 	}
-	msg->channel_request_open.originator = ssh_string_to_char(type_s);
+	msg->channel_request_open.originator = ssh_string_to_char(originator);
 	if (msg->channel_request_open.originator == NULL) {
     ssh_set_error_oom(session);
 	  ssh_string_free(originator);
