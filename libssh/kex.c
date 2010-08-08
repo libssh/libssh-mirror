@@ -260,14 +260,26 @@ SSH_PACKET_CALLBACK(ssh_packet_kexinit){
   	ssh_set_error(session,SSH_FATAL,"SSH_KEXINIT received in wrong state");
   	goto error;
   }
-  if (buffer_get_data(packet,session->server_kex.cookie,16) != 16) {
-    ssh_set_error(session, SSH_FATAL, "ssh_packet_kexinit: no cookie in packet");
-    goto error;
-  }
+  if (server_kex) {
+      if (buffer_get_data(packet,session->client_kex.cookie,16) != 16) {
+        ssh_set_error(session, SSH_FATAL, "ssh_packet_kexinit: no cookie in packet");
+        goto error;
+      }
 
-  if (hashbufin_add_cookie(session, session->server_kex.cookie) < 0) {
-    ssh_set_error(session, SSH_FATAL, "ssh_packet_kexinit: adding cookie failed");
-    goto error;
+      if (hashbufin_add_cookie(session, session->client_kex.cookie) < 0) {
+        ssh_set_error(session, SSH_FATAL, "ssh_packet_kexinit: adding cookie failed");
+        goto error;
+      }
+  } else {
+      if (buffer_get_data(packet,session->server_kex.cookie,16) != 16) {
+        ssh_set_error(session, SSH_FATAL, "ssh_packet_kexinit: no cookie in packet");
+        goto error;
+      }
+
+      if (hashbufin_add_cookie(session, session->server_kex.cookie) < 0) {
+        ssh_set_error(session, SSH_FATAL, "ssh_packet_kexinit: adding cookie failed");
+        goto error;
+      }
   }
 
   memset(strings, 0, sizeof(char *) * 10);
