@@ -223,9 +223,14 @@ int crypt_set_algorithms_server(ssh_session session){
     enter_function();
     /* out */
     server = session->server_kex.methods[SSH_CRYPT_S_C];
-    client = session->client_kex.methods[SSH_CRYPT_S_C];
+    if(session && session->client_kex.methods) {
+        client = session->client_kex.methods[SSH_CRYPT_S_C];
+    } else {
+        ssh_log(session,SSH_LOG_PROTOCOL, "Client KEX empty");
+    }
     /* That's the client algorithms that are more important */
     match = ssh_find_matching(server,client);
+
 
     if(!match){
         ssh_set_error(session,SSH_FATAL,"Crypt_set_algorithms_server : no matching algorithm function found for %s",server);
