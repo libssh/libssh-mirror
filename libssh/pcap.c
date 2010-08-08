@@ -122,7 +122,15 @@ struct ssh_pcap_file_struct {
  * @brief create a new ssh_pcap_file object
  */
 ssh_pcap_file ssh_pcap_file_new(){
-	return malloc(sizeof(struct ssh_pcap_file_struct));
+    struct ssh_pcap_file_struct *pcap;
+
+    pcap = malloc(sizeof(struct ssh_pcap_file_struct));
+    if (pcap == NULL) {
+        return NULL;
+    }
+    ZERO_STRUCTP(pcap);
+
+    return pcap;
 }
 
 /** @internal
