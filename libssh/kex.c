@@ -315,7 +315,7 @@ SSH_PACKET_CALLBACK(ssh_packet_kexinit){
 
   leave_function();
   session->session_state=SSH_SESSION_STATE_KEXINIT_RECEIVED;
-  ssh_connection_callback(session);
+  session->ssh_connection_callback(session);
   return SSH_PACKET_USED;
 error:
   ssh_string_free(str);

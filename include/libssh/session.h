@@ -119,6 +119,7 @@ struct ssh_session_struct {
     int log_verbosity; /*cached copy of the option structure */
     int log_indent; /* indentation level in enter_function logs */
 
+    void (*ssh_connection_callback)( struct ssh_session_struct *session);
     ssh_callbacks callbacks; /* Callbacks to user functions */
     struct ssh_packet_callbacks_struct default_packet_callbacks;
     struct ssh_list *packet_callbacks;

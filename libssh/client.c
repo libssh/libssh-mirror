@@ -60,7 +60,7 @@ static void socket_callback_connected(int code, int errno_code, void *user){
 		session->session_state=SSH_SESSION_STATE_ERROR;
 		ssh_set_error(session,SSH_FATAL,"%s",strerror(errno_code));
 	}
-	ssh_connection_callback(session);
+	session->ssh_connection_callback(session);
 	leave_function();
 }
 
@@ -75,7 +75,7 @@ static void socket_callback_exception(int code, int errno_code, void *user){
 	ssh_log(session,SSH_LOG_RARE,"Socket exception callback: %d (%d)",code, errno_code);
 	session->session_state=SSH_SESSION_STATE_ERROR;
 	ssh_set_error(session,SSH_FATAL,"Socket error: %s",strerror(errno_code));
-	ssh_connection_callback(session);
+	session->ssh_connection_callback(session);
 	leave_function();
 }
 
@@ -113,7 +113,7 @@ static int callback_receive_banner(const void *data, size_t len, void *user) {
   		session->serverbanner=str;
   		session->session_state=SSH_SESSION_STATE_BANNER_RECEIVED;
   		ssh_log(session,SSH_LOG_PACKET,"Received banner: %s",str);
-  		ssh_connection_callback(session);
+		session->ssh_connection_callback(session);
   		leave_function();
   		return ret;
   	}
@@ -371,7 +371,7 @@ SSH_PACKET_CALLBACK(ssh_packet_newkeys){
     }
   }
   session->dh_handshake_state = DH_STATE_FINISHED;
-  ssh_connection_callback(session);
+  session->ssh_connection_callback(session);
 	return SSH_PACKET_USED;
 error:
 	session->session_state=SSH_SESSION_STATE_ERROR;
@@ -554,7 +554,7 @@ int ssh_service_request(ssh_session session, const char *service) {
  * @brief A function to be called each time a step has been done in the
  * connection.
  */
-void ssh_connection_callback(ssh_session session){
+static void ssh_client_connection_callback(ssh_session session){
 	int ssh1,ssh2;
 	enter_function();
 	switch(session->session_state){
@@ -696,6 +696,7 @@ int ssh_connect(ssh_session session) {
       return SSH_ERROR;
   }
 
+  session->ssh_connection_callback = ssh_client_connection_callback;
   session->session_state=SSH_SESSION_STATE_CONNECTING;
   ssh_socket_set_callbacks(session->socket,&session->socket_callbacks);
   session->socket_callbacks.connected=socket_callback_connected;
