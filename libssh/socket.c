@@ -511,8 +511,11 @@ void ssh_socket_fd_set(ssh_socket s, fd_set *set, socket_t *max_fd) {
 int ssh_socket_write(ssh_socket s, const void *buffer, int len) {
   ssh_session session = s->session;
   enter_function();
-  if (buffer_add_data(s->out_buffer, buffer, len) < 0) {
-    return SSH_ERROR;
+  if(len > 0) {
+    if (buffer_add_data(s->out_buffer, buffer, len) < 0) {
+      return SSH_ERROR;
+    }
+    ssh_socket_set_towrite(s);
   }
   leave_function();
   return SSH_OK;
