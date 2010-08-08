@@ -45,7 +45,7 @@ enum ssh_session_state_e {
 };
 
 enum ssh_dh_state_e {
-  DH_STATE_INIT,
+  DH_STATE_INIT=0,
   DH_STATE_INIT_SENT,
   DH_STATE_NEWKEYS_SENT,
   DH_STATE_FINISHED
@@ -87,7 +87,7 @@ struct ssh_session_struct {
     /* where it was before being interrupted */
     enum ssh_session_state_e session_state;
     int packet_state;
-    int dh_handshake_state;
+    enum ssh_dh_state_e dh_handshake_state;
     enum ssh_auth_service_state_e auth_service_state;
     enum ssh_auth_state_e auth_state;
     enum ssh_channel_request_state_e global_req_state;
