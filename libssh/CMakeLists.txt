@@ -109,7 +109,6 @@ set(libssh_SRCS
   socket.c
   string.c
   wrapper.c
-  deprecated.c
 )
 
 if (WITH_SFTP)

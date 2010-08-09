@@ -25,6 +25,7 @@
  */
 
 #include <libssh/libssh.h>
+#include <libssh/server.h>
 #include <libssh/buffer.h>
 
 void buffer_free(ssh_buffer buffer){
@@ -231,3 +232,8 @@ char *string_to_char(ssh_string str){
   return ssh_string_to_char(str);
 }
 
+int ssh_accept(ssh_session session) {
+    (void) session;
+
+    return SSH_OK;
+}
