@@ -16,7 +16,6 @@ clients must be made or how a client should react.
 
 #include <libssh/libssh.h>
 #include <libssh/server.h>
-#include <libssh/buffer.h>
 
 #ifdef HAVE_ARGP_H
 #include <argp.h>
@@ -34,13 +33,9 @@ clients must be made or how a client should react.
 #endif
 
 #ifdef WITH_PCAP
-#include <libssh/pcap.h>
 const char *pcap_file="debug.server.pcap";
-#endif
-
-
-#ifdef WITH_PCAP
 ssh_pcap_file pcap;
+
 void set_pcap(ssh_session session);
 void set_pcap(ssh_session session){
 	if(!pcap_file)
