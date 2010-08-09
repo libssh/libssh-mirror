@@ -190,94 +190,6 @@ void ssh_bind_fd_toaccept(ssh_bind sshbind) {
   sshbind->toaccept = 1;
 }
 
-int ssh_bind_accept(ssh_bind sshbind, ssh_session session) {
-  ssh_private_key dsa = NULL;
-  ssh_private_key rsa = NULL;
-  socket_t fd = SSH_INVALID_SOCKET;
-  int i;
-
-  if (sshbind->bindfd == SSH_INVALID_SOCKET) {
-    ssh_set_error(sshbind, SSH_FATAL,
-        "Can't accept new clients on a not bound socket.");
-    return SSH_ERROR;
-  }
-  if(session == NULL){
-  	ssh_set_error(sshbind, SSH_FATAL,"session is null");
-  	return SSH_ERROR;
-  }
-  if (sshbind->dsakey == NULL && sshbind->rsakey == NULL) {
-    ssh_set_error(sshbind, SSH_FATAL,
-        "DSA or RSA host key file must be set before accept()");
-    return SSH_ERROR;
-  }
-
-  if (sshbind->dsakey) {
-    dsa = _privatekey_from_file(sshbind, sshbind->dsakey, SSH_KEYTYPE_DSS);
-    if (dsa == NULL) {
-      return SSH_ERROR;
-    }
-  }
-
-  if (sshbind->rsakey) {
-    rsa = _privatekey_from_file(sshbind, sshbind->rsakey, SSH_KEYTYPE_RSA);
-    if (rsa == NULL) {
-      privatekey_free(dsa);
-      return SSH_ERROR;
-    }
-  }
-
-  fd = accept(sshbind->bindfd, NULL, NULL);
-  if (fd == SSH_INVALID_SOCKET) {
-    ssh_set_error(sshbind, SSH_FATAL,
-        "Accepting a new connection: %s",
-        strerror(errno));
-    privatekey_free(dsa);
-    privatekey_free(rsa);
-    return SSH_ERROR;
-  }
-
-  session->server = 1;
-  session->version = 2;
-
-  /* copy options */
-  for (i = 0; i < 10; ++i) {
-    if (sshbind->wanted_methods[i]) {
-      session->wanted_methods[i] = strdup(sshbind->wanted_methods[i]);
-      if (session->wanted_methods[i] == NULL) {
-        privatekey_free(dsa);
-        privatekey_free(rsa);
-        return SSH_ERROR;
-      }
-    }
-  }
-
-  if (sshbind->bindaddr == NULL)
-    session->bindaddr = NULL;
-  else {
-    session->bindaddr = strdup(sshbind->bindaddr);
-    if (session->bindaddr == NULL) {
-      privatekey_free(dsa);
-      privatekey_free(rsa);
-      return SSH_ERROR;
-    }
-  }
-
-  session->log_verbosity = sshbind->log_verbosity;
-
-  ssh_socket_free(session->socket);
-  session->socket = ssh_socket_new(session);
-  if (session->socket == NULL) {
-    privatekey_free(dsa);
-    privatekey_free(rsa);
-    return SSH_ERROR;
-  }
-  ssh_socket_set_fd(session->socket, fd);
-  session->dsa_key = dsa;
-  session->rsa_key = rsa;
-
-  return SSH_OK;
-}
-
 void ssh_bind_free(ssh_bind sshbind){
   int i;
 
@@ -750,13 +662,94 @@ static int callback_receive_banner(const void *data, size_t len, void *user) {
     return ret;
 }
 
-/* Do the banner and key exchange */
-int ssh_bind_accept(ssh_session session) {
-    int rc;
+int ssh_bind_accept(ssh_bind sshbind, ssh_session session) {
+  ssh_private_key dsa = NULL;
+  ssh_private_key rsa = NULL;
+  socket_t fd = SSH_INVALID_SOCKET;
+  int i, rc;
+
+  if (sshbind->bindfd == SSH_INVALID_SOCKET) {
+    ssh_set_error(sshbind, SSH_FATAL,
+        "Can't accept new clients on a not bound socket.");
+    return SSH_ERROR;
+  }
+  if(session == NULL){
+  	ssh_set_error(sshbind, SSH_FATAL,"session is null");
+  	return SSH_ERROR;
+  }
+  if (sshbind->dsakey == NULL && sshbind->rsakey == NULL) {
+    ssh_set_error(sshbind, SSH_FATAL,
+        "DSA or RSA host key file must be set before accept()");
+    return SSH_ERROR;
+  }
+
+  if (sshbind->dsakey) {
+    dsa = _privatekey_from_file(sshbind, sshbind->dsakey, SSH_KEYTYPE_DSS);
+    if (dsa == NULL) {
+      return SSH_ERROR;
+    }
+  }
+
+  if (sshbind->rsakey) {
+    rsa = _privatekey_from_file(sshbind, sshbind->rsakey, SSH_KEYTYPE_RSA);
+    if (rsa == NULL) {
+      privatekey_free(dsa);
+      return SSH_ERROR;
+    }
+  }
+
+  fd = accept(sshbind->bindfd, NULL, NULL);
+  if (fd == SSH_INVALID_SOCKET) {
+    ssh_set_error(sshbind, SSH_FATAL,
+        "Accepting a new connection: %s",
+        strerror(errno));
+    privatekey_free(dsa);
+    privatekey_free(rsa);
+    return SSH_ERROR;
+  }
+
+  session->server = 1;
+  session->version = 2;
+
+  /* copy options */
+  for (i = 0; i < 10; ++i) {
+    if (sshbind->wanted_methods[i]) {
+      session->wanted_methods[i] = strdup(sshbind->wanted_methods[i]);
+      if (session->wanted_methods[i] == NULL) {
+        privatekey_free(dsa);
+        privatekey_free(rsa);
+        return SSH_ERROR;
+      }
+    }
+  }
+
+  if (sshbind->bindaddr == NULL)
+    session->bindaddr = NULL;
+  else {
+    session->bindaddr = strdup(sshbind->bindaddr);
+    if (session->bindaddr == NULL) {
+      privatekey_free(dsa);
+      privatekey_free(rsa);
+      return SSH_ERROR;
+    }
+  }
+
+  session->log_verbosity = sshbind->log_verbosity;
+
+  ssh_socket_free(session->socket);
+  session->socket = ssh_socket_new(session);
+  if (session->socket == NULL) {
+    privatekey_free(dsa);
+    privatekey_free(rsa);
+    return SSH_ERROR;
+  }
+  ssh_socket_set_fd(session->socket, fd);
+  session->dsa_key = dsa;
+  session->rsa_key = rsa;
 
     rc = ssh_send_banner(session, 1);
     if (rc < 0) {
-        return -1;
+        return SSH_ERROR;
     }
 
     session->alive = 1;
@@ -772,7 +765,7 @@ int ssh_bind_accept(ssh_session session) {
 
     rc = server_set_kex(session);
     if (rc < 0) {
-        return -1;
+        return SSH_ERROR;
     }
 
     while (session->session_state != SSH_SESSION_STATE_ERROR &&
@@ -787,13 +780,12 @@ int ssh_bind_accept(ssh_session session) {
                 session->session_state);
     }
 
-    leave_function();
     if (session->session_state == SSH_SESSION_STATE_ERROR ||
         session->session_state == SSH_SESSION_STATE_DISCONNECTED) {
         return SSH_ERROR;
     }
 
-    return SSH_OK;
+  return SSH_OK;
 }
 
 /**

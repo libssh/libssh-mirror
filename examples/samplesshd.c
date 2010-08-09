@@ -210,10 +210,6 @@ int main(int argc, char **argv){
       printf("error accepting a connection : %s\n",ssh_get_error(sshbind));
       return 1;
     }
-    if (ssh_bind_accept(session)) {
-        printf("ssh_bind_accept: %s\n", ssh_get_error(session));
-        return 1;
-    }
     do {
         message=ssh_message_get(session);
         if(!message)
