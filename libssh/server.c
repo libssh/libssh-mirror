@@ -49,6 +49,9 @@
             session->callbacks->connect_status_function(session->callbacks->userdata, status); \
     } while (0)
 
+static int dh_handshake_server(ssh_session session);
+
+
 /**
  * @addtogroup libssh_server
  *
@@ -379,6 +382,7 @@ SSH_PACKET_CALLBACK(ssh_packet_kexdh_init){
     session->session_state=SSH_SESSION_STATE_ERROR;
   } else {
     session->dh_handshake_state=DH_STATE_INIT_SENT;
+    dh_handshake_server(session);
   }
   ssh_string_free(e);
 
@@ -393,11 +397,6 @@ static int dh_handshake_server(ssh_session session) {
   ssh_string sign;
   ssh_public_key pub;
   ssh_private_key prv;
-  /* waiting for SSH_MSG_KEXDH_INIT */
-  while(session->dh_handshake_state != DH_STATE_INIT_SENT){
-    ssh_handle_packets(session,-1);
-  }
-  /* received SSH_MSG_KEXDH_INIT */
 
   if (dh_generate_y(session) < 0) {
     ssh_set_error(session, SSH_FATAL, "Could not create y number");
@@ -497,74 +496,304 @@ static int dh_handshake_server(ssh_session session) {
   ssh_log(session, SSH_LOG_PACKET, "SSH_MSG_NEWKEYS sent");
   session->dh_handshake_state=DH_STATE_NEWKEYS_SENT;
 
-  while(session->dh_handshake_state != DH_STATE_FINISHED)
-    ssh_handle_packets(session,-1);
+  return 0;
+}
 
-  if (generate_session_keys(session) < 0) {
+/**
+ * @internal
+ *
+ * @brief Analyze the SSH banner to find out if we have a SSHv1 or SSHv2
+ * server.
+ *
+ * @param  session      The session to analyze the banner from.
+ * @param  ssh1         The variable which is set if it is a SSHv1 server.
+ * @param  ssh2         The variable which is set if it is a SSHv2 server.
+ *
+ * @return 0 on success, < 0 on error.
+ *
+ * @see ssh_get_banner()
+ */
+static int ssh_analyze_banner(ssh_session session, int *ssh1, int *ssh2) {
+  const char *banner = session->clientbanner;
+  const char *openssh;
+
+  ssh_log(session, SSH_LOG_RARE, "Analyzing banner: %s", banner);
+
+  if (strncmp(banner, "SSH-", 4) != 0) {
+    ssh_set_error(session, SSH_FATAL, "Protocol mismatch: %s", banner);
     return -1;
   }
 
   /*
-   * Once we got SSH2_MSG_NEWKEYS we can switch next_crypto and
-   * current_crypto
+   * Typical banners e.g. are:
+   * SSH-1.5-blah
+   * SSH-1.99-blah
+   * SSH-2.0-blah
    */
-  if (session->current_crypto) {
-    crypto_free(session->current_crypto);
+  switch(banner[4]) {
+    case '1':
+      *ssh1 = 1;
+      if (banner[6] == '9') {
+        *ssh2 = 1;
+      } else {
+        *ssh2 = 0;
+      }
+      break;
+    case '2':
+      *ssh1 = 0;
+      *ssh2 = 1;
+      break;
+    default:
+      ssh_set_error(session, SSH_FATAL, "Protocol mismatch: %s", banner);
+      return -1;
   }
 
-  /* FIXME TODO later, include a function to change keys */
-  session->current_crypto = session->next_crypto;
-  session->next_crypto = crypto_new();
-  if (session->next_crypto == NULL) {
-    return -1;
+  openssh = strstr(banner, "OpenSSH");
+  if (openssh != NULL) {
+    int major, minor;
+    major = strtol(openssh + 8, (char **) NULL, 10);
+    minor = strtol(openssh + 10, (char **) NULL, 10);
+    session->openssh = SSH_VERSION_INT(major, minor, 0);
+    ssh_log(session, SSH_LOG_RARE,
+        "We are talking to an OpenSSH client version: %d.%d (%x)",
+        major, minor, session->openssh);
   }
 
   return 0;
 }
 
-/* FIXME TODO BUG
- * Makes linker happy until I work on server code
+/**
+ * @internal
+ *
+ * @brief A function to be called each time a step has been done in the
+ * connection.
  */
-static char *ssh_get_banner(ssh_session session){
-	(void)session;
-	return strdup("BUG");
+static void ssh_server_connection_callback(ssh_session session){
+	int ssh1,ssh2;
+	enter_function();
+	switch(session->session_state){
+		case SSH_SESSION_STATE_NONE:
+		case SSH_SESSION_STATE_CONNECTING:
+		case SSH_SESSION_STATE_SOCKET_CONNECTED:
+			break;
+		case SSH_SESSION_STATE_BANNER_RECEIVED:
+		  if (session->clientbanner == NULL) {
+		    goto error;
+		  }
+		  set_status(session, 0.4f);
+		  ssh_log(session, SSH_LOG_RARE,
+		      "SSH client banner: %s", session->clientbanner);
+
+		  /* Here we analyze the different protocols the server allows. */
+		  if (ssh_analyze_banner(session, &ssh1, &ssh2) < 0) {
+		    goto error;
+		  }
+		  /* Here we decide which version of the protocol to use. */
+		  if (ssh2 && session->ssh2) {
+		    session->version = 2;
+		  } else if(ssh1 && session->ssh1) {
+		    session->version = 1;
+		  } else if(ssh1 && !session->ssh1){
+#ifdef WITH_SSH1
+		    ssh_set_error(session, SSH_FATAL,
+		        "SSH-1 protocol not available (configure session to allow SSH-1)");
+		    goto error;
+#else
+		    ssh_set_error(session, SSH_FATAL,
+		        "SSH-1 protocol not available (libssh compiled without SSH-1 support)");
+		    goto error;
+#endif
+		  } else {
+		    ssh_set_error(session, SSH_FATAL,
+		        "No version of SSH protocol usable (banner: %s)",
+		        session->clientbanner);
+		    goto error;
+		  }
+		  /* from now, the packet layer is handling incoming packets */
+		  if(session->version==2)
+		    session->socket_callbacks.data=ssh_packet_socket_callback;
+#ifdef WITH_SSH1
+		  else
+		    session->socket_callbacks.data=ssh_packet_socket_callback1;
+#endif
+		  ssh_packet_set_default_callbacks(session);
+		  set_status(session, 0.5f);
+		  session->session_state=SSH_SESSION_STATE_INITIAL_KEX;
+          if (ssh_send_kex(session, 1) < 0) {
+			goto error;
+		  }
+		  break;
+		case SSH_SESSION_STATE_INITIAL_KEX:
+		/* TODO: This state should disappear in favor of get_key handle */
+#ifdef WITH_SSH1
+			if(session->version==1){
+				if (ssh_get_kex1(session) < 0)
+					goto error;
+				set_status(session,0.6f);
+				session->connected = 1;
+				break;
+			}
+#endif
+			break;
+		case SSH_SESSION_STATE_KEXINIT_RECEIVED:
+			set_status(session,0.6f);
+			ssh_list_kex(session, &session->client_kex); // log client kex
+            crypt_set_algorithms_server(session);
+			if (set_kex(session) < 0) {
+				goto error;
+			}
+			set_status(session,0.8f);
+			session->session_state=SSH_SESSION_STATE_DH;
+            break;
+		case SSH_SESSION_STATE_DH:
+			if(session->dh_handshake_state==DH_STATE_FINISHED){
+                if (generate_session_keys(session) < 0) {
+                  goto error;
+                }
+
+                /*
+                 * Once we got SSH2_MSG_NEWKEYS we can switch next_crypto and
+                 * current_crypto
+                 */
+                if (session->current_crypto) {
+                  crypto_free(session->current_crypto);
+                }
+
+                /* FIXME TODO later, include a function to change keys */
+                session->current_crypto = session->next_crypto;
+                session->next_crypto = crypto_new();
+                if (session->next_crypto == NULL) {
+                  goto error;
+                }
+				set_status(session,1.0f);
+				session->connected = 1;
+				session->session_state=SSH_SESSION_STATE_AUTHENTICATING;
+            }
+			break;
+		case SSH_SESSION_STATE_AUTHENTICATING:
+			break;
+		case SSH_SESSION_STATE_ERROR:
+			goto error;
+		default:
+			ssh_set_error(session,SSH_FATAL,"Invalid state %d",session->session_state);
+	}
+	leave_function();
+	return;
+	error:
+	ssh_socket_close(session->socket);
+	session->alive = 0;
+	session->session_state=SSH_SESSION_STATE_ERROR;
+	leave_function();
 }
+
+
+/**
+ * @internal
+ *
+ * @brief Gets the banner from socket and saves it in session.
+ * Updates the session state
+ *
+ * @param  data pointer to the beginning of header
+ * @param  len size of the banner
+ * @param  user is a pointer to session
+ * @returns Number of bytes processed, or zero if the banner is not complete.
+ */
+static int callback_receive_banner(const void *data, size_t len, void *user) {
+    char *buffer = (char *) data;
+    ssh_session session = (ssh_session) user;
+    char *str = NULL;
+    size_t i;
+    int ret=0;
+
+    enter_function();
+
+    for (i = 0; i < len; i++) {
+#ifdef WITH_PCAP
+        if(session->pcap_ctx && buffer[i] == '\n') {
+            ssh_pcap_context_write(session->pcap_ctx,
+                                   SSH_PCAP_DIR_IN,
+                                   buffer,
+                                   i + 1,
+                                   i + 1);
+        }
+#endif
+        if (buffer[i] == '\r') {
+            buffer[i]='\0';
+        }
+
+        if (buffer[i] == '\n') {
+            buffer[i]='\0';
+
+            str = strdup(buffer);
+            /* number of bytes read */
+            ret = i + 1;
+            session->clientbanner = str;
+            session->session_state = SSH_SESSION_STATE_BANNER_RECEIVED;
+            ssh_log(session, SSH_LOG_PACKET, "Received banner: %s", str);
+            session->ssh_connection_callback(session);
+
+            leave_function();
+            return ret;
+        }
+
+        if(i > 127) {
+            /* Too big banner */
+            session->session_state = SSH_SESSION_STATE_ERROR;
+            ssh_set_error(session, SSH_FATAL, "Receiving banner: too large banner");
+
+            leave_function();
+            return 0;
+        }
+    }
+
+    leave_function();
+    return ret;
+}
+
 /* Do the banner and key exchange */
 int ssh_accept(ssh_session session) {
-  if (ssh_send_banner(session, 1) < 0) {
-    return -1;
-  }
+    int rc;
 
-  session->alive = 1;
+    rc = ssh_send_banner(session, 1);
+    if (rc < 0) {
+        return -1;
+    }
 
-  session->clientbanner = ssh_get_banner(session);
-  if (session->clientbanner == NULL) {
-    return -1;
-  }
+    session->alive = 1;
 
-  if (server_set_kex(session) < 0) {
-    return -1;
-  }
+    session->ssh_connection_callback = ssh_server_connection_callback;
+    session->session_state = SSH_SESSION_STATE_SOCKET_CONNECTED;
+    ssh_socket_set_callbacks(session->socket,&session->socket_callbacks);
+    session->socket_callbacks.data=callback_receive_banner;
+#if 0
+    session->socket_callbacks.exception=socket_callback_exception;
+#endif
+    session->socket_callbacks.userdata=session;
 
-  if (ssh_send_kex(session, 1) < 0) {
-    return -1;
-  }
+    rc = server_set_kex(session);
+    if (rc < 0) {
+        return -1;
+    }
 
-  /* TODO here things won't work anymore */
-//  if (ssh_get_kex(session,1) < 0) {
-//    return -1;
-//  }
+    while (session->session_state != SSH_SESSION_STATE_ERROR &&
+           session->session_state != SSH_SESSION_STATE_AUTHENTICATING &&
+           session->session_state != SSH_SESSION_STATE_DISCONNECTED) {
+        /*
+         * loop until SSH_SESSION_STATE_BANNER_RECEIVED or
+         * SSH_SESSION_STATE_ERROR
+         */
+        ssh_handle_packets(session,-1);
+        ssh_log(session,SSH_LOG_PACKET, "ssh_accept: Actual state : %d",
+                session->session_state);
+    }
 
-  ssh_list_kex(session, &session->client_kex);
-  crypt_set_algorithms_server(session);
+    leave_function();
+    if (session->session_state == SSH_SESSION_STATE_ERROR ||
+        session->session_state == SSH_SESSION_STATE_DISCONNECTED) {
+        return SSH_ERROR;
+    }
 
-  if (dh_handshake_server(session) < 0) {
-    return -1;
-  }
-
-  session->connected = 1;
-
-  return 0;
+    return SSH_OK;
 }
 
 /**
