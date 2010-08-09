@@ -132,13 +132,15 @@ LIBSSH_API int ssh_bind_accept(ssh_bind ssh_bind_o, ssh_session session);
 LIBSSH_API void ssh_bind_free(ssh_bind ssh_bind_o);
 
 /**
- * @brief Exchange the banner and cryptographic keys.
+ * @brief Accept the incoming connections.
+ *
+ * This exchanges the banner and cryptographic keys.
  *
  * @param  session      The ssh session to accept a connection.
  *
  * @return 0 on success, < 0 on error.
  */
-LIBSSH_API int ssh_accept(ssh_session session);
+LIBSSH_API int ssh_bind_accept(ssh_session session);
 
 LIBSSH_API int channel_write_stderr(ssh_channel channel, const void *data, uint32_t len);
 

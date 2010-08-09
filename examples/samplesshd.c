@@ -210,8 +210,8 @@ int main(int argc, char **argv){
       printf("error accepting a connection : %s\n",ssh_get_error(sshbind));
       return 1;
     }
-    if(ssh_accept(session)){
-        printf("ssh_accept: %s\n",ssh_get_error(session));
+    if (ssh_bind_accept(session)) {
+        printf("ssh_bind_accept: %s\n", ssh_get_error(session));
         return 1;
     }
     do {

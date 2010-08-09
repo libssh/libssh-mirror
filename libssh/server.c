@@ -751,7 +751,7 @@ static int callback_receive_banner(const void *data, size_t len, void *user) {
 }
 
 /* Do the banner and key exchange */
-int ssh_accept(ssh_session session) {
+int ssh_bind_accept(ssh_session session) {
     int rc;
 
     rc = ssh_send_banner(session, 1);
