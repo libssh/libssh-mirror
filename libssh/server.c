@@ -666,7 +666,7 @@ int ssh_bind_accept(ssh_bind sshbind, ssh_session session) {
   ssh_private_key dsa = NULL;
   ssh_private_key rsa = NULL;
   socket_t fd = SSH_INVALID_SOCKET;
-  int i, rc;
+  int i;
 
   if (sshbind->bindfd == SSH_INVALID_SOCKET) {
     ssh_set_error(sshbind, SSH_FATAL,
@@ -746,6 +746,13 @@ int ssh_bind_accept(ssh_bind sshbind, ssh_session session) {
   ssh_socket_set_fd(session->socket, fd);
   session->dsa_key = dsa;
   session->rsa_key = rsa;
+
+return SSH_OK;
+}
+
+/* Do the banner and key exchange */
+int ssh_handle_key_exchange(ssh_session session) {
+    int rc;
 
     rc = ssh_send_banner(session, 1);
     if (rc < 0) {

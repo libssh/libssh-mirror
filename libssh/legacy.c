@@ -233,7 +233,5 @@ char *string_to_char(ssh_string str){
 }
 
 int ssh_accept(ssh_session session) {
-    (void) session;
-
-    return SSH_OK;
+    return ssh_handle_key_exchange(session);
 }

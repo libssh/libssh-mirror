@@ -120,9 +120,18 @@ LIBSSH_API void ssh_bind_fd_toaccept(ssh_bind ssh_bind_o);
  * @param  ssh_bind_o     The ssh server bind to accept a connection.
  * @param  session			A preallocated ssh session
  * @see ssh_new
- * @return A newly allocated ssh session, NULL on error.
+ * @return SSH_OK when a connection is established
  */
 LIBSSH_API int ssh_bind_accept(ssh_bind ssh_bind_o, ssh_session session);
+
+/**
+ * @brief Handles the key exchange and set up encryption
+ *
+ * @param  session			A connected ssh session
+ * @see ssh_bind_accept
+ * @return SSH_OK if the key exchange was successful
+ */
+LIBSSH_API int ssh_handle_key_exchange(ssh_session session);
 
 /**
  * @brief Free a ssh servers bind.
