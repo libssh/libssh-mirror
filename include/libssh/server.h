@@ -172,6 +172,9 @@ LIBSSH_API char *ssh_message_channel_request_command(ssh_message msg);
 
 LIBSSH_API char *ssh_message_channel_request_subsystem(ssh_message msg);
 
+/* deprecated functions */
+SSH_DEPRECATED LIBSSH_API int ssh_accept(ssh_session session);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
