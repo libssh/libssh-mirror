@@ -644,6 +644,14 @@ char *ssh_path_expand_escape(ssh_session session, const char *s) {
             case 'r':
                 x = strdup(session->username);
                 break;
+            case 'p':
+                if (session->port < 65536) {
+                    char tmp[6];
+
+                    snprintf(tmp, sizeof(tmp), "%u", session->port);
+                    x = strdup(tmp);
+                }
+                break;
             default:
                 ssh_set_error(session, SSH_FATAL,
                         "Wrong escape sequence detected");
