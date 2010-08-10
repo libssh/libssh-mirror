@@ -692,6 +692,7 @@ int ssh_socket_connect_proxycommand(ssh_socket s, const char *command){
       return SSH_ERROR;
   }
 
+  ssh_log(session,SSH_LOG_PROTOCOL,"Executing proxycommand '%s'",command);
   pid = fork();
   if(pid == 0){
     ssh_execute_command(command,out_pipe[0],in_pipe[1]);
