@@ -66,21 +66,6 @@ static void socket_callback_connected(int code, int errno_code, void *user){
 
 /**
  * @internal
- * @brief Callback to be called when the socket received an exception code.
- * @param user is a pointer to session
- */
-static void socket_callback_exception(int code, int errno_code, void *user){
-	ssh_session session=(ssh_session)user;
-	enter_function();
-	ssh_log(session,SSH_LOG_RARE,"Socket exception callback: %d (%d)",code, errno_code);
-	session->session_state=SSH_SESSION_STATE_ERROR;
-	ssh_set_error(session,SSH_FATAL,"Socket error: %s",strerror(errno_code));
-	session->ssh_connection_callback(session);
-	leave_function();
-}
-
-/**
- * @internal
  *
  * @brief Gets the banner from socket and saves it in session.
  * Updates the session state
@@ -701,7 +686,7 @@ int ssh_connect(ssh_session session) {
   ssh_socket_set_callbacks(session->socket,&session->socket_callbacks);
   session->socket_callbacks.connected=socket_callback_connected;
   session->socket_callbacks.data=callback_receive_banner;
-  session->socket_callbacks.exception=socket_callback_exception;
+  session->socket_callbacks.exception=ssh_socket_exception_callback;
   session->socket_callbacks.userdata=session;
   if (session->fd != SSH_INVALID_SOCKET) {
     ssh_socket_set_fd(session->socket, session->fd);

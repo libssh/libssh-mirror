@@ -500,6 +500,21 @@ SSH_PACKET_CALLBACK(ssh_packet_ignore_callback){
 	return SSH_PACKET_USED;
 }
 
+/**
+ * @internal
+ * @brief Callback to be called when the socket received an exception code.
+ * @param user is a pointer to session
+ */
+void ssh_socket_exception_callback(int code, int errno_code, void *user){
+    ssh_session session=(ssh_session)user;
+    enter_function();
+    ssh_log(session,SSH_LOG_RARE,"Socket exception callback: %d (%d)",code, errno_code);
+    session->session_state=SSH_SESSION_STATE_ERROR;
+    ssh_set_error(session,SSH_FATAL,"Socket error: %s",strerror(errno_code));
+    session->ssh_connection_callback(session);
+    leave_function();
+}
+
 /* @} */
 
-/* vim: set ts=2 sw=2 et cindent: */
+/* vim: set ts=4 sw=4 et cindent: */

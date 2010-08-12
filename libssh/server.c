@@ -598,7 +598,6 @@ static void ssh_server_connection_callback(ssh_session session){
 	leave_function();
 }
 
-
 /**
  * @internal
  *
@@ -765,9 +764,7 @@ int ssh_handle_key_exchange(ssh_session session) {
     session->session_state = SSH_SESSION_STATE_SOCKET_CONNECTED;
     ssh_socket_set_callbacks(session->socket,&session->socket_callbacks);
     session->socket_callbacks.data=callback_receive_banner;
-#if 0
-    session->socket_callbacks.exception=socket_callback_exception;
-#endif
+    session->socket_callbacks.exception=ssh_socket_exception_callback;
     session->socket_callbacks.userdata=session;
 
     rc = server_set_kex(session);

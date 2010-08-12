@@ -148,4 +148,6 @@ struct ssh_session_struct {
 
 int ssh_handle_packets(ssh_session session, int timeout);
 
+void ssh_socket_exception_callback(int code, int errno_code, void *user);
+
 #endif /* SESSION_H_ */
