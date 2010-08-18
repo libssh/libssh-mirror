@@ -241,6 +241,8 @@ static int bsd_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout) {
 }
 
 void ssh_poll_init(void) {
+    ssh_poll_emu = bsd_poll;
+
 #ifdef _WIN32
     hlib = LoadLibrary(WS2_LIBRARY);
     if (hlib != NULL) {
@@ -248,20 +250,20 @@ void ssh_poll_init(void) {
     }
 #endif /* _WIN32 */
 
-    if (wsa_poll == NULL) {
+    if (wsa_poll != NULL) {
         ssh_poll_emu = bsd_poll;
-    } else {
-        ssh_poll_emu = win_poll;
     }
 }
 
 void ssh_poll_cleanup(void) {
     ssh_poll_emu = bsd_poll;
+#ifdef _WIN32
     wsa_poll = NULL;
 
     FreeLibrary(hlib);
 
     hlib = NULL;
+#endif /* _WIN32 */
 }
 
 int ssh_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout) {
