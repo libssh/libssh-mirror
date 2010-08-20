@@ -172,7 +172,7 @@ static int wait_auth_status(ssh_session session, int kbdint) {
 
 /**
  * @brief retrieves available authentication methods for this session
- * @obsolete
+ * @deprecated
  * @see ssh_userauth_list
  */
 int ssh_auth_list(ssh_session session) {
