@@ -700,7 +700,7 @@ int channel_default_bufferize(ssh_channel channel, void *data, int len,
  *
  * @param[in]  channel  An allocated channel.
  *
- * @return              SSH_SUCCESS on success, SSH_ERROR if an error occured.
+ * @return              SSH_OK on success, SSH_ERROR if an error occured.
  *
  * @see channel_open_forward()
  * @see channel_request_env()
@@ -732,7 +732,7 @@ int ssh_channel_open_session(ssh_channel channel) {
  * @param[in]  localport  The source port (your local computer). It's optional
  *                        and for logging purpose.
  *
- * @return              SSH_SUCCESS on success, SSH_ERROR if an error occured.
+ * @return              SSH_OK on success, SSH_ERROR if an error occured.
  *
  * @warning This function does not bind the local port and does not automatically
  *          forward the content of a socket to the channel. You still have to
@@ -832,7 +832,7 @@ void ssh_channel_free(ssh_channel channel) {
  *
  * @param[in]  channel  The channel to send the eof to.
  *
- * @return              SSH_SUCCESS on success, SSH_ERROR if an error occured.
+ * @return              SSH_OK on success, SSH_ERROR if an error occured.
  *
  * @see channel_close()
  * @see channel_free()
@@ -874,7 +874,7 @@ error:
  *
  * @param[in]  channel  The channel to close.
  *
- * @return              SSH_SUCCESS on success, SSH_ERROR if an error occured.
+ * @return              SSH_OK on success, SSH_ERROR if an error occured.
  *
  * @see channel_free()
  * @see channel_eof()
@@ -1235,7 +1235,7 @@ error:
  *
  * @param[in]  row      The number of rows.
  *
- * @return              SSH_SUCCESS on success, SSH_ERROR if an error occured.
+ * @return              SSH_OK on success, SSH_ERROR if an error occured.
  */
 int ssh_channel_request_pty_size(ssh_channel channel, const char *terminal,
     int col, int row) {
@@ -1286,7 +1286,7 @@ error:
  *
  * @param[in]  channel  The channel to send the request.
  *
- * @return              SSH_SUCCESS on success, SSH_ERROR if an error occured.
+ * @return              SSH_OK on success, SSH_ERROR if an error occured.
  *
  * @see channel_request_pty_size()
  */
@@ -1303,7 +1303,7 @@ int ssh_channel_request_pty(ssh_channel channel) {
  *
  * @param[in]  rows     The new number of rows.
  *
- * @return              SSH_SUCCESS on success, SSH_ERROR if an error occured.
+ * @return              SSH_OK on success, SSH_ERROR if an error occured.
  *
  * @warning Do not call it from a signal handler if you are not sure any other
  *          libssh function using the same channel/session is running at same
@@ -1349,7 +1349,7 @@ error:
  *
  * @param[in]  channel  The channel to send the request.
  *
- * @return              SSH_SUCCESS on success, SSH_ERROR if an error occured.
+ * @return              SSH_OK on success, SSH_ERROR if an error occured.
  */
 int ssh_channel_request_shell(ssh_channel channel) {
 #ifdef WITH_SSH1
@@ -1367,7 +1367,7 @@ int ssh_channel_request_shell(ssh_channel channel) {
  *
  * @param[in]  subsys   The subsystem to request (for example "sftp").
  *
- * @return              SSH_SUCCESS on success, SSH_ERROR if an error occured.
+ * @return              SSH_OK on success, SSH_ERROR if an error occured.
  *
  * @warning You normally don't have to call it for sftp, see sftp_new().
  */
@@ -1435,7 +1435,7 @@ static ssh_string generate_cookie(void) {
  *
  * @param[in] screen_number The screen number.
  *
- * @return              SSH_SUCCESS on success, SSH_ERROR if an error occured.
+ * @return              SSH_OK on success, SSH_ERROR if an error occured.
  */
 int ssh_channel_request_x11(ssh_channel channel, int single_connection, const char *protocol,
     const char *cookie, int screen_number) {
@@ -1599,7 +1599,7 @@ SSH_PACKET_CALLBACK(ssh_request_denied){
  *
  * @param[in]  reply    Set if you expect a reply from server.
  *
- * @return              SSH_SUCCESS on success, SSH_ERROR if an error occured.
+ * @return              SSH_OK on success, SSH_ERROR if an error occured.
  */
 static int global_request(ssh_session session, const char *request,
     ssh_buffer buffer, int reply) {
@@ -1696,7 +1696,7 @@ error:
  * @param[in]  bound_port The pointer to get actual bound port. Pass NULL to
  *                        ignore.
  *
- * @return              SSH_SUCCESS on success, SSH_ERROR if an error occured.
+ * @return              SSH_OK on success, SSH_ERROR if an error occured.
  */
 int ssh_channel_forward_listen(ssh_session session, const char *address, int port, int *bound_port) {
   ssh_buffer buffer = NULL;
@@ -1756,7 +1756,7 @@ ssh_channel ssh_channel_forward_accept(ssh_session session, int timeout_ms) {
  *
  * @param[in]  port     The bound port on the server.
  *
- * @return              SSH_SUCCESS on success, SSH_ERROR if an error occured.
+ * @return              SSH_OK on success, SSH_ERROR if an error occured.
  */
 int ssh_channel_forward_cancel(ssh_session session, const char *address, int port) {
   ssh_buffer buffer = NULL;
@@ -1795,7 +1795,7 @@ error:
  *
  * @param[in]  value    The value to set.
  *
- * @return              SSH_SUCCESS on success, SSH_ERROR if an error occured.
+ * @return              SSH_OK on success, SSH_ERROR if an error occured.
  *
  * @warning Some environment variables may be refused by security reasons.
  */
@@ -1846,7 +1846,7 @@ error:
  * @param[in]  cmd      The command to execute
  *                      (e.g. "ls ~/ -al | grep -i reports").
  *
- * @return              SSH_SUCCESS on success, SSH_ERROR if an error occured.
+ * @return              SSH_OK on success, SSH_ERROR if an error occured.
  *
  * @code
  *   rc = channel_request_exec(channel, "ps aux");
@@ -1909,7 +1909,7 @@ error:
  * @param[in]  sig      The signal to send (without SIG prefix)
  *                      (e.g. "TERM" or "KILL").
  *
- * @return              SSH_SUCCESS on success, SSH_ERROR if an error occured
+ * @return              SSH_OK on success, SSH_ERROR if an error occured
  *                      (including attempts to send signal via SSH-v1 session).
  */
 int ssh_channel_request_send_signal(ssh_channel channel, const char *sig) {
@@ -2361,7 +2361,7 @@ static int count_ptrs(ssh_channel *ptrs) {
  *
  * @param[in]  timeout  Timeout as defined by select(2).
  *
- * @return             SSH_SUCCESS on a successful operation, SSH_EINTR if the
+ * @return             SSH_OK on a successful operation, SSH_EINTR if the
  *                     select(2) syscall was interrupted, then relaunch the
  *                     function.
  */
