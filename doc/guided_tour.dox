@@ -1,3 +1,4 @@
+/**
 @page guided_tour Chapter 1: A typical SSH session
 @section ssh_session A typical SSH session
 
@@ -425,4 +426,4 @@ The next chapter describes more in depth the authentication mechanisms.
 @see @ref sftp_subsystem
 @see @ref scp_subsystem
 
-
+*/

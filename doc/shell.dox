@@ -1,3 +1,4 @@
+/**
 @page shell Chapter 3: Opening a remote shell
 @section opening_shell Opening a remote shell
 
@@ -357,4 +358,4 @@ $ export DISPLAY=:0
 $ xclock &
 @endcode
 
-
+*/

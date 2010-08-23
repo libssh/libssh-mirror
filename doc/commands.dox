@@ -1,3 +1,4 @@
+/**
 @page commands Chapter 4: Passing remote commands
 @section remote_commands Passing remote commands
 
@@ -82,4 +83,4 @@ end-of-file to the channel, close it, and free the memory it used:
 }
 @endcode
 
-
+*/

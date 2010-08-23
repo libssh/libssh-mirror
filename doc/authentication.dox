@@ -1,3 +1,4 @@
+/**
 @page authentication Chapter 2: A deeper insight on authentication
 @section authentication_details A deeper insight on authentication
 
@@ -369,4 +370,4 @@ int display_banner(ssh_session session)
 }
 @endcode
 
-
+*/
