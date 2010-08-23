@@ -41,6 +41,7 @@
 
 #include <libssh/libssh.h>
 #include <libssh/server.h>
+#include <stdlib.h>
 namespace ssh {
 
 /** @brief This class describes a SSH Exception object. This object can be throwed
@@ -51,7 +52,7 @@ class SshException{
 public:
   SshException(ssh_session csession){
     code=ssh_get_error_code(csession);
-    description=ssh_get_error(csession);
+    description=std::string(ssh_get_error(csession));
   }
   SshException(const SshException &e){
     code=e.code;
@@ -69,15 +70,18 @@ public:
    * @returns pointer to a c string containing the description of error
    * @see ssh_get_error
    */
-  const char *getError(){
+  std::string getError(){
     return description;
   }
 private:
   int code;
-  const char *description;
+  std::string description;
 };
 
-#define ssh_throw(x) if(x!=SSH_OK) throw SshException(getCSession());
+/** @internal
+ * @brief Macro to throw exception if there was an error
+ */
+#define ssh_throw(x) if(x==SSH_ERROR) throw SshException(getCSession());
 
 /**
  * The ssh::Session class contains the state of a SSH connection.
@@ -129,34 +133,174 @@ public:
   }
   /** @brief Authenticates automatically using public key
    * @throws SshException on error
+   * @returns SSH_AUTH_SUCCESS, SSH_AUTH_PARTIAL, SSH_AUTH_DENIED
    * @see ssh_userauth_autopubkey
    */
-  void userauthAutopubkey(void){
+  int userauthAutopubkey(void){
     int ret=ssh_userauth_autopubkey(c_session,NULL);
-    if(ret==SSH_ERROR)
-      ssh_throw(ret);
+    ssh_throw(ret);
+    return ret;
   }
-  int userauthNone();
-  int userauthPassword(const char *password);
-  int userauthOfferPubkey(ssh_string pubkey);
-  int userauthPubkey(ssh_string pubkey, ssh_private_key privkey);
+  /** @brief Authenticates using the "none" method. Prefer using autopubkey if
+   * possible.
+   * @throws SshException on error
+   * @returns SSH_AUTH_SUCCESS, SSH_AUTH_PARTIAL, SSH_AUTH_DENIED
+   * @see ssh_userauth_none
+   * @see Session::userauthAutoPubkey
+   */
+  int userauthNone(){
+    int ret=ssh_userauth_none(c_session,NULL);
+    ssh_throw(ret);
+    return ret;
+  }
+  /** @brief Authenticates using the password method.
+   * @param[in] password password to use for authentication
+   * @throws SshException on error
+   * @returns SSH_AUTH_SUCCESS, SSH_AUTH_PARTIAL, SSH_AUTH_DENIED
+   * @see ssh_userauth_password
+   */
+  int userauthPassword(const char *password){
+    int ret=ssh_userauth_password(c_session,NULL,password);
+    ssh_throw(ret);
+    return ret;
+  }
+  /** @brief Try to authenticate using the publickey method.
+   * @param[in] type public key type
+   * @param[in] pubkey public key to use for authentication
+   * @throws SshException on error
+   * @returns SSH_AUTH_SUCCESS if the pubkey is accepted,
+   * @returns SSH_AUTH_DENIED if the pubkey is denied
+   * @see ssh_userauth_offer_pubkey
+   */
+  int userauthOfferPubkey(int type, ssh_string pubkey){
+    int ret=ssh_userauth_offer_pubkey(c_session,NULL,type,pubkey);
+    ssh_throw(ret);
+    return ret;
+  }
+  /** @brief Authenticates using the publickey method.
+   * @param[in] pubkey public key to use for authentication
+   * @param[in] privkey private key to use for authentication
+   * @throws SshException on error
+   * @returns SSH_AUTH_SUCCESS, SSH_AUTH_PARTIAL, SSH_AUTH_DENIED
+   * @see ssh_userauth_pubkey
+   */
+  int userauthPubkey(ssh_string pubkey, ssh_private_key privkey){
+    int ret=ssh_userauth_pubkey(c_session,NULL,pubkey,privkey);
+    ssh_throw(ret);
+    return ret;
+  }
   int userauthPubkey(ssh_private_key privkey);
   int userauthPrivatekeyFile(const char *filename, const char *passphrase);
-  int getAuthList();
-  int disconnect();
-  const char *getDisconnectMessage();
-  const char *getError();
-  int getErrorCode();
-  socket_t getSocket();
-  const char *getIssueBanner();
-  int getOpensshVersion();
-  int getVersion();
-  int isServerKnown();
+  /** @brief Returns the available authentication methods from the server
+   * @throws SshException on error
+   * @returns Bitfield of available methods.
+   * @see ssh_userauth_list
+   */
+  int getAuthList(){
+    int ret=ssh_userauth_list(c_session, NULL);
+    ssh_throw(ret);
+    return ret;
+  }
+  /** @brief Disconnects from the SSH server and closes connection
+   * @see ssh_disconnect
+   */
+  void disconnect(){
+    ssh_disconnect(c_session);
+  }
+  /** @brief Returns the disconnect message from the server, if any
+   * @returns pointer to the message, or NULL. Do not attempt to free
+   * the pointer.
+   */
+  const char *getDisconnectMessage(){
+    const char *msg=ssh_get_disconnect_message(c_session);
+    return msg;
+  }
+  /** @internal
+   * @brief gets error message
+   */
+  const char *getError(){
+    return ssh_get_error(c_session);
+  }
+  /** @internal
+   * @brief returns error code
+   */
+  int getErrorCode(){
+    return ssh_get_error_code(c_session);
+  }
+  /** @brief returns the file descriptor used for the communication
+   * @returns the file descriptor
+   * @warning if a proxycommand is used, this function will only return
+   * one of the two file descriptors being used
+   * @see ssh_get_fd
+   */
+  socket_t getSocket(){
+    return ssh_get_fd(c_session);
+  }
+  /** @brief gets the Issue banner from the ssh server
+   * @returns the issue banner. This is generally a MOTD from server
+   * @see ssh_get_issue_banner
+   */
+  std::string getIssueBanner(){
+    char *banner=ssh_get_issue_banner(c_session);
+    std::string ret= std::string(banner);
+    ::free(banner);
+    return ret;
+  }
+  /** @brief returns the OpenSSH version (server) if possible
+   * @returns openssh version code
+   * @see ssh_get_openssh_version
+   */
+  int getOpensshVersion(){
+    return ssh_get_openssh_version(c_session);
+  }
+  /** @brief returns the version of the SSH protocol being used
+   * @returns the SSH protocol version
+   * @see ssh_get_version
+   */
+  int getVersion(){
+    return ssh_get_version(c_session);
+  }
+  /** @brief verifies that the server is known
+   * @throws SshException on error
+   * @returns Integer value depending on the knowledge of the
+   * server key
+   * @see ssh_is_server_known
+   */
+  int isServerKnown(){
+    int ret=ssh_is_server_known(c_session);
+    ssh_throw(ret);
+    return ret;
+  }
   void log(int priority, const char *format, ...);
-  void optionsCopy(const Session &source);
-  void optionsParseConfig(const char *file);
-  void silentDisconnect();
-  int writeKnownhost();
+  /** @brief copies options from a session to another
+   * @throws SshException on error
+   * @see ssh_options_copy
+   */
+  void optionsCopy(const Session &source){
+    ssh_throw(ssh_options_copy(source.c_session,&c_session));
+  }
+  /** @brief parses a configuration file for options
+   * @throws SshException on error
+   * @param[in] file configuration file name
+   * @see ssh_options_parse_config
+   */
+  void optionsParseConfig(const char *file){
+    ssh_throw(ssh_options_parse_config(c_session,file));
+  }
+  /** @brief silently disconnect from remote host
+   * @see ssh_silent_disconnect
+   */
+  void silentDisconnect(){
+    ssh_silent_disconnect(c_session);
+  }
+  /** @brief Writes the known host file with current
+   * host key
+   * @throws SshException on error
+   * @see ssh_write_knownhost
+   */
+  int writeKnownhost(){
+    ssh_throw(ssh_write_knownhost(c_session));
+  }
 private:
   ssh_session c_session;
   ssh_session getCSession(){
@@ -184,16 +328,37 @@ public:
   int acceptX11(int timeout_ms);
   int changePtySize(int cols, int rows);
   int acceptForward(int timeout_ms);
-  int close();
+  /** @brief closes a channel
+   * @throws SshException on error
+   * @see ssh_channel_close
+   */
+  void close(){
+    ssh_throw(ssh_channel_close(channel));
+  }
   int cancelForward(const char *address, int port);
   int listenForward(const char *address, int port, int &boundport);
   int getExitStatus();
   Session &getSession(){
     return *session;
   }
-  int isClosed();
-  int isEof();
-  int isOpen();
+  /** @brief returns true if channel is in closed state
+   * @see ssh_channel_is_closed
+   */
+  bool isClosed(){
+    return ssh_channel_is_closed(channel) != 0;
+  }
+  /** @brief returns true if channel is in EOF state
+   * @see ssh_channel_is_eof
+   */
+  bool isEof(){
+    return ssh_channel_is_eof(channel) != 0;
+  }
+  /** @brief returns true if channel is in open state
+   * @see ssh_channel_is_open
+   */
+  bool isOpen(){
+    return ssh_channel_is_open(channel) != 0;
+  }
   int openForward(const char *remotehost, int remoteport,
       const char *sourcehost=NULL, int localport=0);
   int openSession();
