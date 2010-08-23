@@ -1,0 +1,87 @@
+@page sftp Chapter 5: The SFTP subsystem
+@section sftp_subsystem The SFTP subsystem
+
+SFTP stands for "Secure File Transfer Protocol". It enables you to safely
+transfer files between the local and the remote computer. It reminds a lot
+of the old FTP protocol.
+
+SFTP is a rich protocol. It lets you do over the network almost everything
+that you can do with local files:
+  - send files
+  - modify only a portion of a file
+  - receive files
+  - receive only a portion of a file
+  - get file owner and group
+  - get file permissions
+  - set file owner and group
+  - set file permissions
+  - remove files
+  - rename files
+  - create a directory
+  - remove a directory
+  - retrieve the list of files in a directory
+  - get the target of a symbolic link
+  - create symbolic links
+  - get information about mounted filesystems.
+
+
+@subsection sftp_section Opening and closing a SFTP session
+
+Unlike with remote shells and remote commands, when you use the SFTP subsystem,
+you don't handle directly the SSH channels. Instead, you open a "SFTP session".
+
+The function sftp_new() creates a new SFTP session. The function sftp_init()
+initializes it. The function sftp_free() deletes it.
+
+As you see, all the SFTP-related functions start with the "sftp_" prefix
+instead of the usual "ssh_" prefix. In case of a problem, you use
+sftp_get_error() instead of ssh_get_error() to get the English error message.
+
+The example below shows how to use these functions:
+
+@code
+#include <libssh/sftp.h>
+
+int sftp_helloworld(ssh_session session)
+{
+  sftp_session sftp;
+  int rc;
+
+  sftp = sftp_new(session);
+  if (sftp == NULL)
+  {
+    fprintf(stderr, "Error allocating SFTP session: %s\n", ssh_get_error(session));
+    return SSH_ERROR;
+  }
+
+  rc = sftp_init(sftp);
+  if (rc != SSH_OK)
+  {
+    fprintf(stderr, "Error initializing SFTP session: %s.\n", sftp_get_error(sftp));
+    sftp_free(sftp);
+    return rc;
+  }
+
+  ...
+
+  sftp_free(sftp);
+  return SSH_OK;
+}
+@endcode
+
+
+@subsection sftp_mkdir Creating a directory
+
+*** To be written ***
+
+
+@subsection sftp_write Copying a file to the remote computer
+
+*** To be written ***
+
+
+@subsection sftp_read Reading a file from the remote computer
+
+*** To be written ***
+
+
