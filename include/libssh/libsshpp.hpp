@@ -36,6 +36,9 @@
  *   linking mode, which the compiler can decide to do in some case. There would be nearly no
  *   performance penalty of using the wrapper rather than native calls.
  *
+ * Please visit the documentation of ssh::Session and ssh::Channel
+ * @see ssh::Session
+ * @see ssh::Channel
  * @{
  */
 
@@ -407,5 +410,5 @@ private:
 
 } // namespace ssh
 
-/* @} */
+/** @} */
 #endif /* LIBSSHPP_HPP_ */
