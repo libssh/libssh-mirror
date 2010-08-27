@@ -1,37 +1,6 @@
 /**
 @page tbd To be done
-@section errors Handling the errors
-
-When some function returns an error code, it's always possible to get an
-english message describing the problem.
-
-The function ssh_get_error() returns a pointer to the static error buffer.
-
-ssh_error_code() returns the error code number : SSH_NO_ERROR,
-SSH_REQUEST_DENIED, SSH_INVALID_REQUEST, SSH_CONNECTION_LOST, SSH_FATAL,
-or SSH_INVALID_DATA. SSH_REQUEST_DENIED means the ssh server refused your
-request, but the situation is recoverable. The others mean something happened
-to the connection (some encryption problems, server problems, ...).
-SSH_INVALID_REQUEST means the library got some garbage from server, but
-might be recoverable. SSH_FATAL means the connection has an important
-problem and isn't probably recoverable.
-
-Most of time, the error returned are SSH_FATAL, but some functions
-(generaly the ssh_request_xxx ones) may fail because of server denying request.
-In these cases, SSH_REQUEST_DENIED is returned.
-
-ssh_get_error() and ssh_get_error_code() take a ssh_session as a parameter.
-That's for thread safety, error messages that can be attached to a session
-aren't static anymore. Any error that happens during ssh_options_xxx()
-or ssh_connect() (i.e., outside of any session) can be retrieved by
-giving NULL as argument.
-
-
 @section threads Working with threads
-
-*** To be written ***
-
-@section forwarding_connections Forwarding connections
 
 *** To be written ***
 

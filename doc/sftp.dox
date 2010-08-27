@@ -29,7 +29,7 @@ The current implemented version of the SFTP protocol is version 3. All functions
 aren't implemented yet, but the most important are.
 
 
-@subsection sftp_section Opening and closing a SFTP session
+@subsection sftp_session Opening and closing a SFTP session
 
 Unlike with remote shells and remote commands, when you use the SFTP subsystem,
 you don't handle directly the SSH channels. Instead, you open a "SFTP session".

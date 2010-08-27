@@ -36,9 +36,6 @@ A SSH session goes through the following steps:
 The sftp and scp subsystems use channels, but libssh hides them to
 the programmer. If you want to use those subsystems, instead of a channel,
 you'll usually open a "sftp session" or a "scp session".
-
-All the libssh functions which return an error code also set an error message.
-Error codes are typically SSH_ERROR for integer values, or NULL for pointers.
  
 
 @subsection setup Creating the session and setting options
@@ -418,12 +415,41 @@ int show_remote_processes(ssh_session session)
 }
 @endcode
 
-That's the end of our step-by-step discovery of a SSH connection.
-The next chapter describes more in depth the authentication mechanisms.
-
 @see @ref opening_shell
 @see @ref remote_commands
 @see @ref sftp_subsystem
 @see @ref scp_subsystem
+
+
+@subsection errors Handling the errors
+
+All the libssh functions which return an error value also set an English error message
+describing the problem.
+
+Error values are typically SSH_ERROR for integer values, or NULL for pointers.
+
+The function ssh_get_error() returns a pointer to the static error message.
+
+ssh_error_code() returns the error code number : SSH_NO_ERROR,
+SSH_REQUEST_DENIED, SSH_INVALID_REQUEST, SSH_CONNECTION_LOST, SSH_FATAL,
+or SSH_INVALID_DATA. SSH_REQUEST_DENIED means the ssh server refused your
+request, but the situation is recoverable. The others mean something happened
+to the connection (some encryption problems, server problems, ...).
+SSH_INVALID_REQUEST means the library got some garbage from server, but
+might be recoverable. SSH_FATAL means the connection has an important
+problem and isn't probably recoverable.
+
+Most of time, the error returned are SSH_FATAL, but some functions
+(generaly the ssh_request_xxx ones) may fail because of server denying request.
+In these cases, SSH_REQUEST_DENIED is returned.
+
+ssh_get_error() and ssh_get_error_code() take a ssh_session as a parameter.
+That's for thread safety, error messages that can be attached to a session
+aren't static anymore. Any error that happens during ssh_options_xxx()
+or ssh_connect() (i.e., outside of any session) can be retrieved by
+giving NULL as argument.
+
+The SFTP subsystem has its own error codes, in addition to libssh ones.
+
 
 */
