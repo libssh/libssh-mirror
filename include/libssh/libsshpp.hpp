@@ -39,6 +39,13 @@
  * Please visit the documentation of ssh::Session and ssh::Channel
  * @see ssh::Session
  * @see ssh::Channel
+ *
+ * If you wish not to use C++ exceptions, please define SSH_NO_CPP_EXCEPTIONS:
+ * @code
+ * #define SSH_NO_CPP_EXCEPTIONS
+ * #include <libssh/libsshpp.hpp>
+ * @endcode
+ * All functions will then return SSH_ERROR in case of error.
  * @{
  */
 
