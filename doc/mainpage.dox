@@ -1,6 +1,7 @@
 /**
  * @mainpage
  * This manual documents the libssh C API.
+ *
  * You should start by reading @subpage tutorial, then reading the documentation of
  * the interesting functions as you go.
  *
