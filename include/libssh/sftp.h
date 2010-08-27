@@ -843,21 +843,43 @@ void sftp_handle_remove(sftp_session sftp, void *handle);
 #define SSH_FILEXFER_TYPE_SPECIAL 4
 #define SSH_FILEXFER_TYPE_UNKNOWN 5
 
-/* server responses */
+/**
+ * @name Server responses
+ *
+ * @brief Responses returned by the sftp server.
+ * @{
+ */
+
+/** No error */
 #define SSH_FX_OK 0
+/** End-of-file encountered */
 #define SSH_FX_EOF 1
+/** File doesn't exist */
 #define SSH_FX_NO_SUCH_FILE 2
+/** Permission denied */
 #define SSH_FX_PERMISSION_DENIED 3
+/** Generic failure */
 #define SSH_FX_FAILURE 4
+/** Garbage received from server */
 #define SSH_FX_BAD_MESSAGE 5
+/** No connection has been set up */
 #define SSH_FX_NO_CONNECTION 6
+/** There was a connection, but we lost it */
 #define SSH_FX_CONNECTION_LOST 7
+/** Operation not supported by the server */
 #define SSH_FX_OP_UNSUPPORTED 8
+/** Invalid file handle */
 #define SSH_FX_INVALID_HANDLE 9
+/** No such file or directory path exists */
 #define SSH_FX_NO_SUCH_PATH 10
+/** An attempt to create an already existing file or directory has been made */
 #define SSH_FX_FILE_ALREADY_EXISTS 11
+/** We are trying to write on a write-protected filesystem */
 #define SSH_FX_WRITE_PROTECT 12
+/** No media in remote drive */
 #define SSH_FX_NO_MEDIA 13
+
+/* @} */
 
 /* file flags */
 #define SSH_FXF_READ 0x01
