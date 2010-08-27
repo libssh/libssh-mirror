@@ -1,9 +1,36 @@
 /**
- * @mainpage
- * This manual documents the libssh C API.
- *
- * You should start by reading @subpage tutorial, then reading the documentation of
- * the interesting functions as you go.
- *
- */
 
+@mainpage
+
+This is the online reference for developing with the libssh library. It
+documents the libssh C API and the C++ wrapper.
+
+@section tutorial Tutorial
+
+You should start by reading @subpage tutorial, then reading the documentation of
+the interesting functions as you go.
+
+@section features Features
+
+The libssh library provides:
+
+ - Full C library functions for manipulating a client-side SSH connection
+ - SSH2 and SSH1 protocol compliant
+ - Fully configurable sessions
+ - Server support
+ - SSH agent authentication support
+ - Support for AES-128, AES-192, AES-256, Blowfish, 3DES in CBC mode, and AES in CTR mode
+ - Supports OpenSSL and GCrypt
+ - Use multiple SSH connections in a same process, at same time
+ - Use multiple channels in the same connection
+ - Thread safety when using different sessions at same time
+ - POSIX-like SFTP (Secure File Transfer) implementation with openssh extension support
+ - SCP implementation
+ - Large file system support (files bigger than 4GB)
+ - RSA and DSS server public key supported
+ - Compression support (with zlib)
+ - Public key (RSA and DSS), password and keyboard-interactive authentication
+ - Full poll()/WSAPoll() support and a poll-emulation for Win32.
+ - Runs and tested under x86_64, x86, ARM, Sparc32, PPC under Linux, BSD, MacOSX, Solaris and Windows
+
+*/
