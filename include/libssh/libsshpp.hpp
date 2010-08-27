@@ -47,7 +47,13 @@
 #include <stdlib.h>
 namespace ssh {
 
-/** @brief This class describes a SSH Exception object. This object can be throwed
+/** Some people do not like C++ exceptions. With this define, we give
+ * the choice to use or not exceptions.
+ * @brief if defined, disable C++ exceptions for libssh c++ wrapper
+ */
+#ifndef SSH_NO_CPP_EXCEPTIONS
+
+/** @brief This class describes a SSH Exception object. This object can be thrown
  * by several SSH functions that interact with the network, and may fail because of
  * socket, protocol or memory errors.
  */
@@ -84,7 +90,18 @@ private:
 /** @internal
  * @brief Macro to throw exception if there was an error
  */
-#define ssh_throw(x) if(x==SSH_ERROR) throw SshException(getCSession());
+#define ssh_throw(x) if((x)==SSH_ERROR) throw SshException(getCSession())
+#define void_throwable void
+
+#else
+
+/* No exception at all. All functions will return an error code instead
+ * of an exception
+ */
+#define ssh_throw(x) if((x)==SSH_ERROR) return SSH_ERROR
+#define void_throwable int
+
+#endif
 
 /**
  * The ssh::Session class contains the state of a SSH connection.
@@ -105,7 +122,7 @@ public:
    * @throws SshException on error
    * @see ssh_options_set
    */
-  void setOption(enum ssh_options_e type, const char *option){
+  void_throwable setOption(enum ssh_options_e type, const char *option){
     ssh_throw(ssh_options_set(c_session,type,option));
   }
   /** @brief sets an SSH session options
@@ -114,7 +131,7 @@ public:
    * @throws SshException on error
    * @see ssh_options_set
    */
-  void setOption(enum ssh_options_e type, long int option){
+  void_throwable setOption(enum ssh_options_e type, long int option){
     ssh_throw(ssh_options_set(c_session,type,&option));
   }
   /** @brief sets an SSH session options
@@ -123,14 +140,14 @@ public:
    * @throws SshException on error
    * @see ssh_options_set
    */
-  void setOption(enum ssh_options_e type, void *option){
+  void_throwable setOption(enum ssh_options_e type, void *option){
     ssh_throw(ssh_options_set(c_session,type,option));
   }
   /** @brief connects to the remote host
    * @throws SshException on error
    * @see ssh_connect
    */
-  void connect(){
+  void_throwable connect(){
     int ret=ssh_connect(c_session);
     ssh_throw(ret);
   }
@@ -279,7 +296,7 @@ public:
    * @throws SshException on error
    * @see ssh_options_copy
    */
-  void optionsCopy(const Session &source){
+  void_throwable optionsCopy(const Session &source){
     ssh_throw(ssh_options_copy(source.c_session,&c_session));
   }
   /** @brief parses a configuration file for options
@@ -287,7 +304,7 @@ public:
    * @param[in] file configuration file name
    * @see ssh_options_parse_config
    */
-  void optionsParseConfig(const char *file){
+  void_throwable optionsParseConfig(const char *file){
     ssh_throw(ssh_options_parse_config(c_session,file));
   }
   /** @brief silently disconnect from remote host
@@ -335,7 +352,7 @@ public:
    * @throws SshException on error
    * @see ssh_channel_close
    */
-  void close(){
+  void_throwable close(){
     ssh_throw(ssh_channel_close(channel));
   }
   int cancelForward(const char *address, int port);

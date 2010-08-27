@@ -19,6 +19,7 @@ add_executable(senddata senddata.c ${examples_SRCS})
 add_executable(sshnetcat sshnetcat.c ${examples_SRCS})
 
 add_executable(libsshpp libsshpp.cpp)
+add_executable(libsshpp_noexcept libsshpp_noexcept.cpp)
 
 target_link_libraries(libssh_scp ${LIBSSH_SHARED_LIBRARY})
 target_link_libraries(scp_download ${LIBSSH_SHARED_LIBRARY})
@@ -26,6 +27,7 @@ target_link_libraries(samplessh ${LIBSSH_SHARED_LIBRARY})
 target_link_libraries(exec ${LIBSSH_SHARED_LIBRARY})
 target_link_libraries(senddata ${LIBSSH_SHARED_LIBRARY})
 target_link_libraries(libsshpp ${LIBSSH_SHARED_LIBRARY})
+target_link_libraries(libsshpp_noexcept ${LIBSSH_SHARED_LIBRARY})
 target_link_libraries(sshnetcat ${LIBSSH_SHARED_LIBRARY})
 
 
