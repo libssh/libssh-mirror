@@ -5,12 +5,12 @@
 This is the online reference for developing with the libssh library. It
 documents the libssh C API and the C++ wrapper.
 
-@section tutorial Tutorial
+@section main-tutorial Tutorial
 
 You should start by reading @subpage tutorial, then reading the documentation of
 the interesting functions as you go.
 
-@section features Features
+@section main-features Features
 
 The libssh library provides:
 
