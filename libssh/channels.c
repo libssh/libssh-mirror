@@ -1948,10 +1948,6 @@ error:
 }
 
 
-
-/* TODO : fix the delayed close thing */
-/* TODO : fix the blocking behaviours */
-
 /**
  * @brief Read data from a channel into a buffer.
  *
@@ -1967,6 +1963,8 @@ error:
  *
  * @return              The number of bytes read, 0 on end of file or SSH_ERROR
  *                      on error.
+ * @deprecated          Please use ssh_channel_read instead
+ * @see ssh_channel_read
  */
 int channel_read_buffer(ssh_channel channel, ssh_buffer buffer, uint32_t count,
     int is_stderr) {
