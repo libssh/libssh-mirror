@@ -646,21 +646,18 @@ static int privatekey_type_from_file(FILE *fp) {
 /**
  * @brief Reads a SSH private key from a file.
  *
- * @param[in]  session  The SSH Session to use.
+ * @param[in] session  The SSH Session to use.
  *
- * @param[in]  filename The filename of the the private key.
+ * @param[in] filename The filename of the the private key.
  *
- * @param[in]  type     The type of the private key. This could be SSH_KEYTYPE_DSS or
- *                      SSH_KEYTYPE_RSA. Pass 0 to automatically detect the type.
+ * @param[in] type     The type of the private key. This could be SSH_KEYTYPE_DSS or
+ *                     SSH_KEYTYPE_RSA. Pass 0 to automatically detect the type.
  *
- * @param[in]  passphrase The passphrase to decrypt the private key. Set to null
- *                        if none is needed or it is unknown.
+ * @param[in] passphrase The passphrase to decrypt the private key. Set to null
+ *                       if none is needed or it is unknown.
  *
- * @returns               A private_key object containing the private key, or
- *                        NULL on error.
- *
- * @todo Implement to read both DSA and RSA at once.
- *
+ * @return              A private_key object containing the private key, or
+ *                       NULL on error.
  * @see privatekey_free()
  * @see publickey_from_privatekey()
  */
@@ -679,6 +676,8 @@ ssh_private_key privatekey_from_file(ssh_session session, const char *filename,
   DSA *dsa = NULL;
   RSA *rsa = NULL;
 #endif
+  /* TODO Implement to read both DSA and RSA at once. */
+
   /* needed for openssl initialization */
   ssh_init();
   ssh_log(session, SSH_LOG_RARE, "Trying to open %s", filename);

@@ -369,7 +369,7 @@ public:
     Channel *newchan = new Channel(getSession(),x11chan);
     return newchan;
   }
-  /** @change the size of a pseudoterminal
+  /** @brief change the size of a pseudoterminal
    * @param[in] cols number of columns
    * @param[in] rows number of rows
    * @throws SshException on error

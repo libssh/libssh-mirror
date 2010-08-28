@@ -1126,10 +1126,11 @@ char *ssh_message_channel_request_subsystem(ssh_message msg){
 
 /** @brief defines the SSH_MESSAGE callback
  * @param session the current ssh session
- * @param ssh_message_callback_ a function pointer to a callback taking the
+ * @param[in] ssh_message_callback_ a function pointer to a callback taking the
  * current ssh session and received message as parameters. the function returns
  * 0 if the message has been parsed and treated sucessfuly, 1 otherwise (libssh
  * must take care of the response).
+ * @param[in] data void pointer to be passed to callback functions
  */
 void ssh_set_message_callback(ssh_session session,
     int(*ssh_message_callback_)(ssh_session session, ssh_message msg, void *data), void *data){
