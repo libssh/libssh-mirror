@@ -49,6 +49,9 @@
  * @{
  */
 
+/* do not use deprecated functions */
+#define LIBSSH_LEGACY_0_4
+
 #include <libssh/libssh.h>
 #include <libssh/server.h>
 #include <stdlib.h>
