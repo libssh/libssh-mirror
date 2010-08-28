@@ -1237,7 +1237,7 @@ static int alldigits(const char *s) {
   return 1;
 }
 
-/* @} */
+/** @} */
 
 
 /**
@@ -1891,6 +1891,6 @@ int ssh_write_knownhost(ssh_session session) {
   return 0;
 }
 
-/* @} */
+/** @} */
 
 /* vim: set ts=4 sw=4 et cindent: */

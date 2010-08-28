@@ -1492,6 +1492,6 @@ ssh_string ssh_sign_session_id(ssh_session session, ssh_private_key privatekey) 
   return signature;
 }
 
-/* @} */
+/** @} */
 
 /* vim: set ts=4 sw=4 et cindent: */

@@ -2489,6 +2489,6 @@ int ssh_channel_select(ssh_channel *readchans, ssh_channel *writechans,
   return 0;
 }
 
-/* @} */
+/** @} */
 
 /* vim: set ts=4 sw=4 et cindent: */

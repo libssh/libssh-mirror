@@ -595,6 +595,6 @@ int ssh_select(ssh_channel *channels, ssh_channel *outchannels, socket_t maxfd,
   return 0;
 }
 
-/* @} */
+/** @} */
 
 /* vim: set ts=4 sw=4 et cindent: */

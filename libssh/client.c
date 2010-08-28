@@ -808,6 +808,6 @@ const char *ssh_copyright(void) {
     "(aris@0xbadc0de.be) Distributed under the LGPL, please refer to COPYING"
     "file for information about your rights";
 }
-/* @} */
+/** @} */
 
 /* vim: set ts=4 sw=4 et cindent: */

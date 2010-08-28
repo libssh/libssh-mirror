@@ -917,7 +917,7 @@ int ssh_options_apply(ssh_session session) {
     return 0;
 }
 
-/* @} */
+/** @} */
 
 #ifdef WITH_SERVER
 /**
@@ -1133,6 +1133,6 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
 }
 #endif
 
-/* @} */
+/** @} */
 
 /* vim: set ts=4 sw=4 et cindent: */

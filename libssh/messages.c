@@ -843,6 +843,6 @@ ssh_message ssh_message_pop_head(ssh_session session){
   return msg;
 }
 
-/* @} */
+/** @} */
 
 /* vim: set ts=4 sw=4 et cindent: */

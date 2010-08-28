@@ -515,6 +515,6 @@ void ssh_socket_exception_callback(int code, int errno_code, void *user){
     leave_function();
 }
 
-/* @} */
+/** @} */
 
 /* vim: set ts=4 sw=4 et cindent: */

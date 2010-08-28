@@ -207,6 +207,6 @@ void ssh_string_free(struct ssh_string_struct *s) {
   SAFE_FREE(s);
 }
 
-/* @} */
+/** @} */
 
 /* vim: set ts=4 sw=4 et cindent: */

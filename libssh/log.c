@@ -77,6 +77,6 @@ void ssh_log(ssh_session session, int verbosity, const char *format, ...) {
   }
 }
 
-/* @} */
+/** @} */
 
 /* vim: set ts=4 sw=4 et cindent: */

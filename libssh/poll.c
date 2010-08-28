@@ -687,6 +687,6 @@ void ssh_free_global_poll_ctx(){
 	}
 }
 
-/* @} */
+/** @} */
 
 /* vim: set ts=4 sw=4 et cindent: */

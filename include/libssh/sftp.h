@@ -879,7 +879,7 @@ void sftp_handle_remove(sftp_session sftp, void *handle);
 /** No media in remote drive */
 #define SSH_FX_NO_MEDIA 13
 
-/* @} */
+/** @} */
 
 /* file flags */
 #define SSH_FXF_READ 0x01

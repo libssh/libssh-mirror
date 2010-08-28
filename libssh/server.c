@@ -1168,6 +1168,6 @@ int ssh_execute_message_callbacks(ssh_session session){
   return SSH_OK;
 }
 
-/* @} */
+/** @} */
 
 /* vim: set ts=4 sw=4 et cindent: */

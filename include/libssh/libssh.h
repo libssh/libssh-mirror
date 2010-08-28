@@ -266,7 +266,7 @@ enum {
 	 */
 	SSH_LOG_FUNCTIONS
 };
-/* @} */
+/** @} */
 
 enum ssh_options_e {
   SSH_OPTIONS_HOST,

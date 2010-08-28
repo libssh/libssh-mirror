@@ -1042,6 +1042,6 @@ int signature_verify(ssh_session session, ssh_string signature) {
   return err;
 }
 
-/* @} */
+/** @} */
 
 /* vim: set ts=4 sw=4 et cindent: */

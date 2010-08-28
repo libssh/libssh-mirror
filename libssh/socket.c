@@ -714,6 +714,6 @@ int ssh_socket_connect_proxycommand(ssh_socket s, const char *command){
 }
 
 #endif /* _WIN32 */
-/* @} */
+/** @} */
 
 /* vim: set ts=4 sw=4 et cindent: */

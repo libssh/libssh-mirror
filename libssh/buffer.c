@@ -573,6 +573,6 @@ struct ssh_string_struct *buffer_get_mpint(struct ssh_buffer_struct *buffer) {
   return str;
 }
 
-/* @} */
+/** @} */
 
 /* vim: set ts=4 sw=4 et cindent: */

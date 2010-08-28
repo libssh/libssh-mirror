@@ -680,6 +680,6 @@ char *ssh_path_expand_escape(ssh_session session, const char *s) {
 #undef MAX_BUF_SIZE
 }
 
-/* @} */
+/** @} */
 
 /* vim: set ts=4 sw=4 et cindent: */

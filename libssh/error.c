@@ -118,6 +118,6 @@ int ssh_get_error_code(void *error) {
   return err->error_code;
 }
 
-/* @} */
+/** @} */
 
 /* vim: set ts=4 sw=4 et cindent: */

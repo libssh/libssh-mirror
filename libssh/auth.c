@@ -1677,6 +1677,6 @@ int ssh_userauth_kbdint_setanswer(ssh_session session, unsigned int i,
   return 0;
 }
 
-/* @} */
+/** @} */
 
 /* vim: set ts=4 sw=4 et cindent: */
