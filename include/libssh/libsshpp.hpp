@@ -98,6 +98,7 @@ private:
  * @brief Macro to throw exception if there was an error
  */
 #define ssh_throw(x) if((x)==SSH_ERROR) throw SshException(getCSession())
+#define ssh_throw_null(CSession,x) if((x)==NULL) throw SshException(CSession)
 #define void_throwable void
 
 #else
@@ -106,6 +107,7 @@ private:
  * of an exception
  */
 #define ssh_throw(x) if((x)==SSH_ERROR) return SSH_ERROR
+#define ssh_throw_null(CSession,x) if((x)==NULL) return NULL
 #define void_throwable int
 
 #endif
@@ -352,9 +354,49 @@ public:
     ssh_channel_free(channel);
     channel=NULL;
   }
-  int acceptX11(int timeout_ms);
-  int changePtySize(int cols, int rows);
-  int acceptForward(int timeout_ms);
+
+  /** @brief accept an incoming X11 connection
+   * @param[in] timeout_ms timeout for waiting, in ms
+   * @returns new Channel pointer on the X11 connection
+   * @returns NULL in case of error
+   * @warning you have to delete this pointer after use
+   * @see ssh_channel_accept_x11
+   * @see Channel::requestX11
+   */
+  Channel *acceptX11(int timeout_ms){
+    ssh_channel x11chan = ssh_channel_accept_x11(channel,timeout_ms);
+    ssh_throw_null(getCSession(),x11chan);
+    Channel *newchan = new Channel(getSession(),x11chan);
+    return newchan;
+  }
+  /** @change the size of a pseudoterminal
+   * @param[in] cols number of columns
+   * @param[in] rows number of rows
+   * @throws SshException on error
+   * @see ssh_channel_change_pty_size
+   */
+  void_throwable changePtySize(int cols, int rows){
+    int err=ssh_channel_change_pty_size(channel,cols,rows);
+    ssh_throw(err);
+  }
+
+  /** @brief accept an incoming forward connection
+   * @param[in] session the SSH session to listen to
+   * @param[in] timeout_ms timeout for waiting, in ms
+   * @returns new Channel pointer on the forward connection
+   * @returns NULL in case of error
+   * @warning you have to delete this pointer after use
+   * @see ssh_channel_forward_accept
+   * @see Channel::listenForward
+   */
+  static Channel *acceptForward(Session &session, int timeout_ms){
+    ssh_channel forward = ssh_channel_forward_accept(session.getCSession(),
+        timeout_ms);
+    ssh_throw_null(session.getCSession(),forward);
+    Channel *newchan = new Channel(session,forward);
+    return newchan;
+  }
+
   /** @brief closes a channel
    * @throws SshException on error
    * @see ssh_channel_close
@@ -387,20 +429,80 @@ public:
     return ssh_channel_is_open(channel) != 0;
   }
   int openForward(const char *remotehost, int remoteport,
-      const char *sourcehost=NULL, int localport=0);
-  int openSession();
-  int poll(bool is_stderr=false);
-  int read(void *dest, size_t count, bool is_stderr=false);
-  int readNonblocking(void *dest, size_t count, bool is_stderr=false);
-  int requestEnv(const char *name, const char *value);
-  int requestExec(const char *cmd);
-  int requestPty(const char *term=NULL, int cols=0, int rows=0);
-  int requestShell();
-  int requestSendSignal(const char *signum);
-  int requestSubsystem(const char *subsystem);
-  int requestX11(bool single_connection, const char *protocol, const char *cookie,
-      int screen_number);
-  int sendEof();
+      const char *sourcehost=NULL, int localport=0){
+    int err=ssh_channel_open_forward(channel,remotehost,remoteport,
+        sourcehost, localport);
+    ssh_throw(err);
+    return err;
+  }
+  /* TODO: completely remove this ? */
+  void_throwable openSession(){
+    int err=ssh_channel_open_session(channel);
+    ssh_throw(err);
+  }
+  int poll(bool is_stderr=false){
+    int err=ssh_channel_poll(channel,is_stderr);
+    ssh_throw(err);
+    return err;
+  }
+  int read(void *dest, size_t count, bool is_stderr=false){
+    int err;
+    /* handle int overflow */
+    if(count > 0x7fffffff)
+      count = 0x7fffffff;
+    err=ssh_channel_read(channel,dest,count,is_stderr);
+    ssh_throw(err);
+    return err;
+  }
+  int readNonblocking(void *dest, size_t count, bool is_stderr=false){
+    int err;
+    /* handle int overflow */
+    if(count > 0x7fffffff)
+      count = 0x7fffffff;
+    err=ssh_channel_read_nonblocking(channel,dest,count,is_stderr);
+    ssh_throw(err);
+    return err;
+  }
+  void_throwable requestEnv(const char *name, const char *value){
+    int err=ssh_channel_request_env(channel,name,value);
+    ssh_throw(err);
+  }
+
+  void_throwable requestExec(const char *cmd){
+    int err=ssh_channel_request_exec(channel,cmd);
+    ssh_throw(err);
+  }
+  void_throwable requestPty(const char *term=NULL, int cols=0, int rows=0){
+    int err;
+    if(term != NULL && cols != 0 && rows != 0)
+      err=ssh_channel_request_pty_size(channel,term,cols,rows);
+    else
+      err=ssh_channel_request_pty(channel);
+    ssh_throw(err);
+  }
+
+  void_throwable requestShell(){
+    int err=ssh_channel_request_shell(channel);
+    ssh_throw(err);
+  }
+  void_throwable requestSendSignal(const char *signum){
+    int err=ssh_channel_request_send_signal(channel, signum);
+    ssh_throw(err);
+  }
+  void_throwable requestSubsystem(const char *subsystem){
+    int err=ssh_channel_request_subsystem(channel,subsystem);
+    ssh_throw(err);
+  }
+  int requestX11(bool single_connection,
+      const char *protocol, const char *cookie, int screen_number){
+    int err=ssh_channel_request_x11(channel,single_connection,
+        protocol, cookie, screen_number);
+    ssh_throw(err);
+  }
+  void_throwable sendEof(){
+    int err=ssh_channel_send_eof(channel);
+    ssh_throw(err);
+  }
   /** @brief Writes on a channel
    * @param data data to write.
    * @param len number of bytes to write.
@@ -417,13 +519,16 @@ public:
     } else {
       ret=ssh_channel_write(channel,data,len);
     }
-    if(ret==SSH_ERROR)
-      ssh_throw(ret);
+    ssh_throw(ret);
     return ret;
   }
 private:
   ssh_session getCSession(){
     return session->getCSession();
+  }
+  Channel (Session &session, ssh_channel c_channel){
+    this->channel=c_channel;
+    this->session=&session;
   }
   Session *session;
   ssh_channel channel;
