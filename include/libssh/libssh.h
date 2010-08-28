@@ -316,10 +316,7 @@ enum ssh_scp_request_types {
 
 LIBSSH_API ssh_channel ssh_channel_accept_x11(ssh_channel channel, int timeout_ms);
 LIBSSH_API int ssh_channel_change_pty_size(ssh_channel channel,int cols,int rows);
-LIBSSH_API ssh_channel ssh_channel_forward_accept(ssh_session session, int timeout_ms);
 LIBSSH_API int ssh_channel_close(ssh_channel channel);
-LIBSSH_API int ssh_channel_forward_cancel(ssh_session session, const char *address, int port);
-LIBSSH_API int ssh_channel_forward_listen(ssh_session session, const char *address, int port, int *bound_port);
 LIBSSH_API void ssh_channel_free(ssh_channel channel);
 LIBSSH_API int ssh_channel_get_exit_status(ssh_channel channel);
 LIBSSH_API ssh_session ssh_channel_get_session(ssh_channel channel);
@@ -362,6 +359,9 @@ LIBSSH_API const char *ssh_copyright(void);
 LIBSSH_API void ssh_disconnect(ssh_session session);
 LIBSSH_API char *ssh_dirname (const char *path);
 LIBSSH_API int ssh_finalize(void);
+LIBSSH_API ssh_channel ssh_forward_accept(ssh_session session, int timeout_ms);
+LIBSSH_API int ssh_forward_cancel(ssh_session session, const char *address, int port);
+LIBSSH_API int ssh_forward_listen(ssh_session session, const char *address, int port, int *bound_port);
 LIBSSH_API void ssh_free(ssh_session session);
 LIBSSH_API const char *ssh_get_disconnect_message(ssh_session session);
 LIBSSH_API const char *ssh_get_error(void *error);

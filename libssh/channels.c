@@ -1479,7 +1479,7 @@ error:
   return rc;
 }
 
-static ssh_channel channel_accept(ssh_session session, int channeltype,
+static ssh_channel ssh_channel_accept(ssh_session session, int channeltype,
     int timeout_ms) {
 #ifndef _WIN32
   static const struct timespec ts = {
@@ -1531,7 +1531,7 @@ static ssh_channel channel_accept(ssh_session session, int channeltype,
  *                      the server.
  */
 ssh_channel ssh_channel_accept_x11(ssh_channel channel, int timeout_ms) {
-  return channel_accept(channel->session, SSH_CHANNEL_X11, timeout_ms);
+  return ssh_channel_accept(channel->session, SSH_CHANNEL_X11, timeout_ms);
 }
 
 /**
@@ -1698,7 +1698,7 @@ error:
  *
  * @return              SSH_OK on success, SSH_ERROR if an error occured.
  */
-int ssh_channel_forward_listen(ssh_session session, const char *address, int port, int *bound_port) {
+int ssh_forward_listen(ssh_session session, const char *address, int port, int *bound_port) {
   ssh_buffer buffer = NULL;
   ssh_string addr = NULL;
   int rc = SSH_ERROR;
@@ -1742,8 +1742,8 @@ error:
  * @return Newly created channel, or NULL if no incoming channel request from
  *         the server
  */
-ssh_channel ssh_channel_forward_accept(ssh_session session, int timeout_ms) {
-  return channel_accept(session, SSH_CHANNEL_FORWARDED_TCPIP, timeout_ms);
+ssh_channel ssh_forward_accept(ssh_session session, int timeout_ms) {
+  return ssh_channel_accept(session, SSH_CHANNEL_FORWARDED_TCPIP, timeout_ms);
 }
 
 /**
@@ -1758,7 +1758,7 @@ ssh_channel ssh_channel_forward_accept(ssh_session session, int timeout_ms) {
  *
  * @return              SSH_OK on success, SSH_ERROR if an error occured.
  */
-int ssh_channel_forward_cancel(ssh_session session, const char *address, int port) {
+int ssh_forward_cancel(ssh_session session, const char *address, int port) {
   ssh_buffer buffer = NULL;
   ssh_string addr = NULL;
   int rc = SSH_ERROR;

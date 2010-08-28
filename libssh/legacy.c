@@ -50,7 +50,7 @@ int channel_change_pty_size(ssh_channel channel,int cols,int rows){
 }
 
 ssh_channel channel_forward_accept(ssh_session session, int timeout_ms){
-  return ssh_channel_forward_accept(session,timeout_ms);
+  return ssh_forward_accept(session,timeout_ms);
 }
 
 int channel_close(ssh_channel channel){
@@ -58,12 +58,12 @@ int channel_close(ssh_channel channel){
 }
 
 int channel_forward_cancel(ssh_session session, const char *address, int port){
-  return ssh_channel_forward_cancel(session, address, port);
+  return ssh_forward_cancel(session, address, port);
 }
 
 int channel_forward_listen(ssh_session session, const char *address,
     int port, int *bound_port){
-  return ssh_channel_forward_listen(session, address, port, bound_port);
+  return ssh_forward_listen(session, address, port, bound_port);
 }
 
 void channel_free(ssh_channel channel){
