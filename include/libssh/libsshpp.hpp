@@ -52,8 +52,12 @@
 #include <libssh/libssh.h>
 #include <libssh/server.h>
 #include <stdlib.h>
+#include <stdarg.h>
+#include <stdio.h>
+
 namespace ssh {
 
+class Channel;
 /** Some people do not like C++ exceptions. With this define, we give
  * the choice to use or not exceptions.
  * @brief if defined, disable C++ exceptions for libssh c++ wrapper
@@ -218,8 +222,13 @@ public:
     ssh_throw(ret);
     return ret;
   }
-  int userauthPubkey(ssh_private_key privkey);
-  int userauthPrivatekeyFile(const char *filename, const char *passphrase);
+  int userauthPubkey(ssh_private_key privkey){
+    int ret=ssh_userauth_pubkey(c_session,NULL,NULL,privkey);
+    ssh_throw(ret);
+    return ret;
+  }
+  int userauthPrivatekeyFile(const char *filename,
+      const char *passphrase);
   /** @brief Returns the available authentication methods from the server
    * @throws SshException on error
    * @returns Bitfield of available methods.
@@ -300,7 +309,17 @@ public:
     ssh_throw(ret);
     return ret;
   }
-  void log(int priority, const char *format, ...);
+  void log(int priority, const char *format, ...){
+    char buffer[1024];
+    int min;
+    va_list va;
+
+    va_start(va, format);
+    vsnprintf(buffer, sizeof(buffer), format, va);
+    va_end(va);
+    ssh_log(c_session,priority, "%s", buffer);
+  }
+
   /** @brief copies options from a session to another
    * @throws SshException on error
    * @see ssh_options_copy
@@ -330,6 +349,29 @@ public:
   int writeKnownhost(){
     ssh_throw(ssh_write_knownhost(c_session));
   }
+
+  /** @brief accept an incoming forward connection
+   * @param[in] timeout_ms timeout for waiting, in ms
+   * @returns new Channel pointer on the forward connection
+   * @returns NULL in case of error
+   * @warning you have to delete this pointer after use
+   * @see ssh_channel_forward_accept
+   * @see Session::listenForward
+   */
+  Channel *acceptForward(int timeout_ms);
+  /* acceptForward is implemented later in this file */
+
+  void_throwable cancelForward(const char *address, int port){
+    int err=ssh_channel_forward_cancel(c_session, address, port);
+    ssh_throw(err);
+  }
+
+  void_throwable listenForward(const char *address, int port,
+      int &boundport){
+    int err=ssh_channel_forward_listen(c_session, address, port, &boundport);
+    ssh_throw(err);
+  }
+
 private:
   ssh_session c_session;
   ssh_session getCSession(){
@@ -345,6 +387,7 @@ private:
  * @see ssh_channel
  */
 class Channel {
+  friend class Session;
 public:
   Channel(Session &session){
     channel=ssh_channel_new(session.getCSession());
@@ -380,23 +423,6 @@ public:
     ssh_throw(err);
   }
 
-  /** @brief accept an incoming forward connection
-   * @param[in] session the SSH session to listen to
-   * @param[in] timeout_ms timeout for waiting, in ms
-   * @returns new Channel pointer on the forward connection
-   * @returns NULL in case of error
-   * @warning you have to delete this pointer after use
-   * @see ssh_channel_forward_accept
-   * @see Channel::listenForward
-   */
-  static Channel *acceptForward(Session &session, int timeout_ms){
-    ssh_channel forward = ssh_channel_forward_accept(session.getCSession(),
-        timeout_ms);
-    ssh_throw_null(session.getCSession(),forward);
-    Channel *newchan = new Channel(session,forward);
-    return newchan;
-  }
-
   /** @brief closes a channel
    * @throws SshException on error
    * @see ssh_channel_close
@@ -404,9 +430,10 @@ public:
   void_throwable close(){
     ssh_throw(ssh_channel_close(channel));
   }
-  int cancelForward(const char *address, int port);
-  int listenForward(const char *address, int port, int &boundport);
-  int getExitStatus();
+
+  int getExitStatus(){
+    return ssh_channel_get_exit_status(channel);
+  }
   Session &getSession(){
     return *session;
   }
@@ -536,6 +563,16 @@ private:
   Channel(const Channel &);
   Channel &operator=(const Channel &);
 };
+
+
+/* This code cannot be put inline due to references to Channel */
+Channel *Session::acceptForward(int timeout_ms){
+    ssh_channel forward = ssh_channel_forward_accept(c_session,
+        timeout_ms);
+    ssh_throw_null(c_session,forward);
+    Channel *newchan = new Channel(*this,forward);
+    return newchan;
+  }
 
 } // namespace ssh
 
