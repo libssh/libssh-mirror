@@ -922,7 +922,10 @@ int channel_write_common(ssh_channel channel, const void *data,
     uint32_t len, int is_stderr) {
   ssh_session session = channel->session;
   int origlen = len;
-  int effectivelen;
+  size_t effectivelen;
+  /* handle the max packet len from remote side, be nice */
+  /* 10 bytes for the headers */
+  size_t maxpacketlen = channel->remote_maxpacket - 10;
 
   enter_function();
 
@@ -969,7 +972,7 @@ int channel_write_common(ssh_channel channel, const void *data,
     } else {
       effectivelen = len;
     }
-
+    effectivelen = effectivelen > maxpacketlen ? maxpacketlen : effectivelen;
     if (buffer_add_u8(session->out_buffer, is_stderr ?
 				SSH2_MSG_CHANNEL_EXTENDED_DATA : SSH2_MSG_CHANNEL_DATA) < 0 ||
         buffer_add_u32(session->out_buffer,
@@ -985,7 +988,7 @@ int channel_write_common(ssh_channel channel, const void *data,
     }
 
     ssh_log(session, SSH_LOG_RARE,
-        "channel_write wrote %d bytes", effectivelen);
+        "channel_write wrote %ld bytes", effectivelen);
 
     channel->remote_window -= effectivelen;
     len -= effectivelen;
