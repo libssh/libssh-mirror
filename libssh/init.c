@@ -26,6 +26,8 @@
 #include "libssh/socket.h"
 #include "libssh/dh.h"
 #include "libssh/poll.h"
+#include "libssh/threads.h"
+
 #ifdef _WIN32
 #include <winsock2.h>
 #endif
@@ -49,6 +51,8 @@
  * @returns             0 on success, -1 if an error occured.
  */
 int ssh_init(void) {
+  if(ssh_threads_init())
+    return -1;
   if(ssh_crypto_init())
     return -1;
   if(ssh_socket_init())

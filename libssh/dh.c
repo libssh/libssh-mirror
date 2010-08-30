@@ -104,13 +104,6 @@ int ssh_get_random(void *where, int len, int strong){
   return 1;
 }
 
-#ifdef HAVE_LIBGCRYPT
-#include <errno.h>
-#include <pthread.h>
-GCRY_THREAD_OPTION_PTHREAD_IMPL;
-#endif
-
-
 /*
  * This inits the values g and p which are used for DH key agreement
  * FIXME: Make the function thread safe by adding a semaphore or mutex.
@@ -119,8 +112,6 @@ int ssh_crypto_init(void) {
   if (ssh_crypto_initialized == 0) {
 #ifdef HAVE_LIBGCRYPT
     gcry_check_version(NULL);
-  	gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
-
     if (!gcry_control(GCRYCTL_INITIALIZATION_FINISHED_P,0)) {
       gcry_control(GCRYCTL_INIT_SECMEM, 4096);
       gcry_control(GCRYCTL_INITIALIZATION_FINISHED,0);

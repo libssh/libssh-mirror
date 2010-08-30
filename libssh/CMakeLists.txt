@@ -108,6 +108,7 @@ set(libssh_SRCS
   scp.c
   socket.c
   string.c
+  threads.c
   wrapper.c
 )
 
