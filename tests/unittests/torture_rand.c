@@ -3,8 +3,8 @@
 #include <pthread.h>
 #include "torture.h"
 
-#define NUM_LOOPS 50000
-#define NUM_THREADS 200
+#define NUM_LOOPS 1000
+#define NUM_THREADS 100
 
 static void setup(){
 	ssh_init();
