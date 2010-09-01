@@ -3,7 +3,12 @@
 #include <pthread.h>
 #include "torture.h"
 
+#ifdef HAVE_LIBGCRYPT
 #define NUM_LOOPS 1000
+#else
+/* openssl is much faster */
+#define NUM_LOOPS 20000
+#endif
 #define NUM_THREADS 100
 
 static void setup(){

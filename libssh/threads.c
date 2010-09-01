@@ -30,10 +30,13 @@
 #include "libssh/priv.h"
 #include "libssh/threads.h"
 
+#ifndef HAVE_PTHREAD
+#warning "You do not have any threading library installed. If the linked"
+#warning "application doesn't provide the threading callbacks, you're screwed"
+#endif
 
-#ifdef HAVE_LIBGCRYPT
-#define HAVE_PTHREADS
-#ifdef HAVE_PTHREADS
+//#define HAVE_PTHREAD
+#ifdef HAVE_PTHREAD
 #include <errno.h>
 #include <pthread.h>
 
@@ -66,31 +69,83 @@ static int ssh_pthread_mutex_unlock (void **lock){
   return pthread_mutex_unlock (*lock);
 }
 
+static unsigned long ssh_pthread_thread_id (void){
+	return (unsigned long) pthread_self();
+}
 
-static struct ssh_threads_callbacks_struct ssh_gcrypt_user_callbacks=
+static struct ssh_threads_callbacks_struct ssh_pthread_user_callbacks=
 {
     .mutex_init=ssh_pthread_mutex_init,
     .mutex_destroy=ssh_pthread_mutex_destroy,
     .mutex_lock=ssh_pthread_mutex_lock,
-    .mutex_unlock=ssh_pthread_mutex_unlock
+    .mutex_unlock=ssh_pthread_mutex_unlock,
+    .thread_id=ssh_pthread_thread_id
 };
-
-#endif
-
-static struct gcry_thread_cbs gcrypt_threads_callbacks;
 
 #endif
 
 static struct ssh_threads_callbacks_struct *user_callbacks;
 
 #ifdef HAVE_LIBGCRYPT
-static void copy_callback(struct ssh_threads_callbacks_struct *cb){
+
+/* Libgcrypt specific way of handling thread callbacks */
+
+static struct gcry_thread_cbs gcrypt_threads_callbacks;
+
+static int libgcrypt_thread_init(void){
+	if(user_callbacks == NULL)
+		return SSH_ERROR;
 	gcrypt_threads_callbacks.option= GCRY_THREAD_OPTION_VERSION << 8 || GCRY_THREAD_OPTION_USER;
-	gcrypt_threads_callbacks.mutex_init=cb->mutex_init;
-	gcrypt_threads_callbacks.mutex_destroy=cb->mutex_destroy;
-	gcrypt_threads_callbacks.mutex_lock=cb->mutex_lock;
-	gcrypt_threads_callbacks.mutex_unlock=cb->mutex_unlock;
+	gcrypt_threads_callbacks.mutex_init=user_callbacks->mutex_init;
+	gcrypt_threads_callbacks.mutex_destroy=user_callbacks->mutex_destroy;
+	gcrypt_threads_callbacks.mutex_lock=user_callbacks->mutex_lock;
+	gcrypt_threads_callbacks.mutex_unlock=user_callbacks->mutex_unlock;
+	gcry_control(GCRYCTL_SET_THREAD_CBS, &gcrypt_threads_callbacks);
+	return SSH_OK;
 }
+#else
+
+/* Libcrypto specific stuff */
+
+void **libcrypto_mutexes;
+
+static void libcrypto_lock_callback(int mode, int i, const char *file, int line){
+	(void)file;
+	(void)line;
+	if(mode & CRYPTO_LOCK){
+		user_callbacks->mutex_lock(&libcrypto_mutexes[i]);
+	} else {
+		user_callbacks->mutex_unlock(&libcrypto_mutexes[i]);
+	}
+}
+
+static int libcrypto_thread_init(){
+	int n=CRYPTO_num_locks();
+	int i;
+	libcrypto_mutexes=malloc(sizeof(void *) * n);
+	if (libcrypto_mutexes == NULL)
+		return SSH_ERROR;
+	for (i=0;i<n;++i){
+		user_callbacks->mutex_init(&libcrypto_mutexes[i]);
+	}
+  CRYPTO_set_id_callback(user_callbacks->thread_id);
+	CRYPTO_set_locking_callback(libcrypto_lock_callback);
+
+	return SSH_OK;
+}
+
+static void libcrypto_thread_finalize(){
+	int n=CRYPTO_num_locks();
+	int i;
+	if (libcrypto_mutexes==NULL)
+		return;
+	for (i=0;i<n;++i){
+			user_callbacks->mutex_destroy(&libcrypto_mutexes[i]);
+	}
+	SAFE_FREE(libcrypto_mutexes);
+
+}
+
 #endif
 
 /** @internal
@@ -98,24 +153,31 @@ static void copy_callback(struct ssh_threads_callbacks_struct *cb){
  */
 
 int ssh_threads_init(void){
-#ifdef HAVE_LIBGCRYPT
-	if(user_callbacks != NULL){
-		copy_callback(user_callbacks);
-		gcry_control(GCRYCTL_SET_THREAD_CBS, &gcrypt_threads_callbacks);
-		return SSH_OK;
-	}
-#ifdef HAVE_PTHREADS
-	else {
-		copy_callback(&ssh_gcrypt_user_callbacks);
-		gcry_control(GCRYCTL_SET_THREAD_CBS, &gcrypt_threads_callbacks);
-		return SSH_OK;
-	}
+	/* first initialize the user_callbacks with our default handlers if not
+	 * already the case
+	 */
+	if(user_callbacks == NULL){
+#ifdef HAVE_PTHREAD
+		user_callbacks=&ssh_pthread_user_callbacks;
+	} else {
 #endif
-#else
+		return SSH_ERROR; // Can't do anything to initialize threading
+	}
 
-
+	/* Then initialize the crypto libraries threading callbacks */
+#ifdef HAVE_LIBGCRYPT
+	return libgcrypt_thread_init();
+#else /* Libcrypto */
+	return libcrypto_thread_init();
 #endif
   return SSH_ERROR;
+}
+
+void ssh_threads_finalize(void){
+#ifdef HAVE_LIBGCRYPT
+#else
+	libcrypto_thread_finalize();
+#endif
 }
 
 int ssh_init_set_threads_callbacks(struct ssh_threads_callbacks_struct *cb){
@@ -123,9 +185,6 @@ int ssh_init_set_threads_callbacks(struct ssh_threads_callbacks_struct *cb){
   return SSH_OK;
 }
 
-int ssh_init_set_threads_pthreads(void){
-  return SSH_OK;
-}
 /**
  * @}
  */

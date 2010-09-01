@@ -248,6 +248,21 @@ typedef struct ssh_packet_callbacks_struct *ssh_packet_callbacks;
  */
 LIBSSH_API int ssh_set_callbacks(ssh_session session, ssh_callbacks cb);
 
+/** @} */
+
+typedef int (*ssh_thread_callback) (void **lock);
+typedef unsigned long (*ssh_thread_id_callback) (void);
+struct ssh_threads_callbacks_struct {
+  ssh_thread_callback mutex_init;
+  ssh_thread_callback mutex_destroy;
+  ssh_thread_callback mutex_lock;
+  ssh_thread_callback mutex_unlock;
+  ssh_thread_id_callback thread_id;
+};
+
+LIBSSH_API int ssh_init_set_threads_callbacks(struct ssh_threads_callbacks_struct
+    *cb);
+
 #ifdef __cplusplus
 }
 #endif

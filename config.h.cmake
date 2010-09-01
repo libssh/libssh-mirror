@@ -35,6 +35,10 @@
 /* Define to 1 if you have the <openssl/des.h> header file. */
 #cmakedefine HAVE_OPENSSL_DES_H 1
 
+/* Define to 1 if you have the <pthread.h> header file. */
+#cmakedefine HAVE_PTHREAD_H 1
+
+
 /*************************** FUNCTIONS ***************************/
 
 /* Define to 1 if you have the `vsnprintf' function. */
@@ -77,6 +81,10 @@
 
 /* Define to 1 if you have the `z' library (-lz). */
 #cmakedefine HAVE_LIBZ 1
+
+/* Define to 1 if you have the `pthread' library (-lpthread). */
+#cmakedefine HAVE_PTHREAD 1
+
 
 /**************************** OPTIONS ****************************/
 

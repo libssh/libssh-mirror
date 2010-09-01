@@ -22,17 +22,10 @@
 #ifndef THREADS_H_
 #define THREADS_H_
 
-typedef int (*ssh_thread_callback) (void **lock);
-struct ssh_threads_callbacks_struct {
-  ssh_thread_callback mutex_init;
-  ssh_thread_callback mutex_destroy;
-  ssh_thread_callback mutex_lock;
-  ssh_thread_callback mutex_unlock;
-};
+#include <libssh/callbacks.h>
 
 int ssh_threads_init(void);
-int ssh_init_set_threads_callbacks(struct ssh_threads_callbacks_struct
-    *cb);
-int ssh_init_set_threads_pthreads(void);
+void ssh_threads_finalize(void);
+
 
 #endif /* THREADS_H_ */

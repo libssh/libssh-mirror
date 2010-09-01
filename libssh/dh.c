@@ -55,6 +55,7 @@
 #include "libssh/session.h"
 #include "libssh/keys.h"
 #include "libssh/dh.h"
+#include "libssh/threads.h"
 
 /* todo: remove it */
 #include "libssh/string.h"
@@ -155,6 +156,7 @@ void ssh_crypto_finalize(void) {
     bignum_free(p);
     p = NULL;
     ssh_crypto_initialized=0;
+    ssh_threads_finalize();
   }
 }
 
