@@ -87,8 +87,8 @@ static poll_fn ssh_poll_emu;
 #include <windows.h>
 #include <winsock2.h>
 
-#ifndef WSAPOLLFD
-typedef ssh_pollfd_t WSAPOLLFD;
+#if (_WIN32_WINNT < 0x0600)
+typedef struct ssh_pollfd_struct WSAPOLLFD;
 #endif
 
 typedef int (WSAAPI* WSAPoll_FunctionType)(WSAPOLLFD fdarray[],
