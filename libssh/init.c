@@ -73,6 +73,7 @@ int ssh_init(void) {
    @returns 0 otherwise
  */
 int ssh_finalize(void) {
+  ssh_threads_finalize();
 	ssh_free_global_poll_ctx();
   ssh_regex_finalize();
   ssh_crypto_finalize();

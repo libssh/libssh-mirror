@@ -1615,6 +1615,12 @@ int ssh_is_server_known(ssh_session session) {
     return SSH_SERVER_ERROR;
   }
 
+  if (session->current_crypto == NULL){
+  	ssh_set_error(session, SSH_FATAL,
+  			"ssh_is_host_known called without cryptographic context");
+  	leave_function();
+  	return SSH_SERVER_ERROR;
+  }
   host = ssh_lowercase(session->host);
   hostport = ssh_hostport(host,session->port);
   if (host == NULL || hostport == NULL) {

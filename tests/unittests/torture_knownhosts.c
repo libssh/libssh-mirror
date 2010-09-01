@@ -44,6 +44,7 @@ START_TEST (torture_knownhosts_port)
   int rc;
   char buffer[200];
   FILE *file;
+  //int verbosity=SSH_LOG_FUNCTIONS;
   /* Connect to localhost:22, force the port to 1234 and then write
    * the known hosts file. Then check that the entry written is
    * [localhost]:1234
@@ -68,6 +69,7 @@ START_TEST (torture_knownhosts_port)
   session=ssh_new();
   ssh_options_set(session,SSH_OPTIONS_HOST,"localhost");
   ssh_options_set(session,SSH_OPTIONS_KNOWNHOSTS,KNOWNHOSTFILES);
+  //ssh_options_set(session,SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
   rc=ssh_connect(session);
   ck_assert_msg(rc==SSH_OK,ssh_get_error(session));
   session->port=1234;

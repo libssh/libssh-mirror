@@ -153,6 +153,10 @@ static void libcrypto_thread_finalize(){
  */
 
 int ssh_threads_init(void){
+	static int threads_initialized=0;
+	int ret;
+	if(threads_initialized)
+		return SSH_OK;
 	/* first initialize the user_callbacks with our default handlers if not
 	 * already the case
 	 */
@@ -166,11 +170,13 @@ int ssh_threads_init(void){
 
 	/* Then initialize the crypto libraries threading callbacks */
 #ifdef HAVE_LIBGCRYPT
-	return libgcrypt_thread_init();
+	ret = libgcrypt_thread_init();
 #else /* Libcrypto */
-	return libcrypto_thread_init();
+	ret = libcrypto_thread_init();
 #endif
-  return SSH_ERROR;
+	if(ret == SSH_OK)
+		threads_initialized=1;
+  return ret;
 }
 
 void ssh_threads_finalize(void){

@@ -701,10 +701,11 @@ int ssh_connect(ssh_session session) {
 
     /*, session->timeout * 1000 + session->timeout_usec); */
   }
-  if (ret != SSH_OK) {
+  if (ret == SSH_ERROR) {
     leave_function();
     return SSH_ERROR;
   }
+
   set_status(session, 0.2f);
 
   session->alive = 1;
