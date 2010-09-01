@@ -62,8 +62,10 @@ else (WITH_GCRYPT)
   endif (NOT OPENSSL_FOUND)
 endif(WITH_GCRYPT)
 
-#find out if we have threading available
-include(FindThreads)
+# Find out if we have threading available
+set(CMAKE_THREAD_PREFER_PTHREADS ON)
+find_package(Threads)
+
 # config.h checks
 include(ConfigureChecks.cmake)
 configure_file(config.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/config.h)
