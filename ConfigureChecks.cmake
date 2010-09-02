@@ -39,17 +39,6 @@ if (WIN32)
     set(HAVE_GETHOSTBYNAME TRUE)
   endif (HAVE_WSPIAPI_H OR HAVE_WS2TCPIP_H)
 
-  check_function_exists(vsnprintf HAVE_VSNPRINTF)
-  check_function_exists(snprintf HAVE_SNPRINTF)
-
-  if (WIN32)
-      check_function_exists(_vsnprintf_s HAVE__VSNPRINTF_S)
-      check_function_exists(_vsnprintf HAVE__VSNPRINTF)
-      check_function_exists(_snprintf HAVE__SNPRINTF)
-      check_function_exists(_snprintf_s HAVE__SNPRINTF_S)
-  endif (WIN32)
-  check_function_exists(strncpy HAVE_STRNCPY)
-
   set(HAVE_SELECT TRUE)
 endif (WIN32)
 
@@ -63,6 +52,17 @@ set(CMAKE_REQUIRED_INCLUDES ${OPENSSL_INCLUDE_DIRS})
 check_include_file(openssl/des.h HAVE_OPENSSL_DES_H)
 
 # FUNCTIONS
+
+check_function_exists(strncpy HAVE_STRNCPY)
+check_function_exists(vsnprintf HAVE_VSNPRINTF)
+check_function_exists(snprintf HAVE_SNPRINTF)
+
+if (WIN32)
+    check_function_exists(_vsnprintf_s HAVE__VSNPRINTF_S)
+    check_function_exists(_vsnprintf HAVE__VSNPRINTF)
+    check_function_exists(_snprintf HAVE__SNPRINTF)
+    check_function_exists(_snprintf_s HAVE__SNPRINTF_S)
+endif (WIN32)
 
 if (UNIX)
   # libsocket (Solaris)
