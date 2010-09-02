@@ -30,12 +30,13 @@
 #include "libssh/priv.h"
 #include "libssh/threads.h"
 
+#ifndef _WIN32
+
 #ifndef HAVE_PTHREAD
 #warning "You do not have any threading library installed. If the linked"
 #warning "application doesn't provide the threading callbacks, you're screwed"
 #endif
 
-//#define HAVE_PTHREAD
 #ifdef HAVE_PTHREAD
 #include <errno.h>
 #include <pthread.h>
@@ -82,7 +83,8 @@ static struct ssh_threads_callbacks_struct ssh_pthread_user_callbacks=
     .thread_id=ssh_pthread_thread_id
 };
 
-#endif
+#endif /* HAVE_PTHREAD */
+#endif /* _WIN32 */
 
 static struct ssh_threads_callbacks_struct *user_callbacks;
 
