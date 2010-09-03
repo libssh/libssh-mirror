@@ -1,6 +1,8 @@
 #define LIBSSH_STATIC
 #include <libssh/priv.h>
+#include <libssh/callbacks.h>
 #include <pthread.h>
+#include <errno.h>
 #include "torture.h"
 
 #ifdef HAVE_LIBGCRYPT
@@ -10,8 +12,11 @@
 #define NUM_LOOPS 20000
 #endif
 #define NUM_THREADS 100
+SSH_THREADS_PTHREAD(ssh_pthread_callbacks);
 
 static void setup(){
+	printf("setup\n");
+	ssh_threads_set_callbacks(&ssh_pthread_callbacks);
 	ssh_init();
 }
 

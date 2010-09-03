@@ -37,52 +37,12 @@
 #warning "application doesn't provide the threading callbacks, you're screwed"
 #endif
 
+
 #ifdef HAVE_PTHREAD
+
 #include <errno.h>
 #include <pthread.h>
-
-static int ssh_pthread_mutex_init (void **priv){
-  int err = 0;
-  *priv = malloc (sizeof (pthread_mutex_t));
-
-  if (*priv==NULL)
-    return ENOMEM;
-  err = pthread_mutex_init (*priv, NULL);
-  if (err != 0){
-    free (*priv);
-    *priv=NULL;
-  }
-  return err;
-}
-
-static int ssh_pthread_mutex_destroy (void **lock) {
-  int err = pthread_mutex_destroy (*lock);
-  free (*lock);
-  *lock=NULL;
-  return err;
-}
-
-static int ssh_pthread_mutex_lock (void **lock) {
-  return pthread_mutex_lock (*lock);
-}
-
-static int ssh_pthread_mutex_unlock (void **lock){
-  return pthread_mutex_unlock (*lock);
-}
-
-static unsigned long ssh_pthread_thread_id (void){
-	return (unsigned long) pthread_self();
-}
-
-static struct ssh_threads_callbacks_struct ssh_pthread_user_callbacks=
-{
-    .mutex_init=ssh_pthread_mutex_init,
-    .mutex_destroy=ssh_pthread_mutex_destroy,
-    .mutex_lock=ssh_pthread_mutex_lock,
-    .mutex_unlock=ssh_pthread_mutex_unlock,
-    .thread_id=ssh_pthread_thread_id
-};
-
+SSH_THREADS_PTHREAD(ssh_pthread_user_callbacks);
 #endif /* HAVE_PTHREAD */
 #endif /* _WIN32 */
 
@@ -165,10 +125,11 @@ int ssh_threads_init(void){
 	if(user_callbacks == NULL){
 #ifdef HAVE_PTHREAD
 		user_callbacks=&ssh_pthread_user_callbacks;
-	} else {
-#endif
+	}
+#else
 		return SSH_ERROR; // Can't do anything to initialize threading
 	}
+#endif
 
 	/* Then initialize the crypto libraries threading callbacks */
 #ifdef HAVE_LIBGCRYPT
@@ -188,7 +149,7 @@ void ssh_threads_finalize(void){
 #endif
 }
 
-int ssh_init_set_threads_callbacks(struct ssh_threads_callbacks_struct *cb){
+int ssh_threads_set_callbacks(struct ssh_threads_callbacks_struct *cb){
   user_callbacks=cb;
   return SSH_OK;
 }

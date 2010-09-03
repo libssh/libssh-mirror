@@ -250,6 +250,10 @@ LIBSSH_API int ssh_set_callbacks(ssh_session session, ssh_callbacks cb);
 
 /** @} */
 
+/** @group libssh_threads
+ * @{
+ */
+
 typedef int (*ssh_thread_callback) (void **lock);
 typedef unsigned long (*ssh_thread_id_callback) (void);
 struct ssh_threads_callbacks_struct {
@@ -260,9 +264,74 @@ struct ssh_threads_callbacks_struct {
   ssh_thread_id_callback thread_id;
 };
 
-LIBSSH_API int ssh_init_set_threads_callbacks(struct ssh_threads_callbacks_struct
+/**
+ * @brief sets the thread callbacks necessary if your program is using
+ * libssh in a multithreaded fashion. This function must be called first,
+ * outside of any threading context (in your main() for instance), before
+ * ssh_init().
+ * @param cb pointer to a ssh_threads_callbacks_struct structure, which contains
+ * the different callbacks to be set.
+ * @see ssh_threads_callbacks_struct
+ * @see SSH_THREADS_PTHREAD
+ */
+LIBSSH_API int ssh_threads_set_callbacks(struct ssh_threads_callbacks_struct
     *cb);
 
+/** @brief Defines the needed callbacks for pthread. Use this if your
+ * OS supports libpthread and want to use it for threading.
+ * @code
+ * #include <libssh/callbacks.h>
+ * #include <errno.h>
+ * #include <pthread.h>
+ * SSH_THREADS_PTHREAD(ssh_pthread_callbacks);
+ * int main(){
+ *   ssh_init_set_threads_callbacks(&ssh_pthread_callbacks);
+ *   ssh_init();
+ *   ...
+ * }
+ * @endcode
+ * @param name name of the structure to be declared, containing the
+ * callbacks for threading
+ *
+ */
+#define SSH_THREADS_PTHREAD(name) \
+static int ssh_pthread_mutex_init (void **priv){ \
+  int err = 0; \
+  *priv = malloc (sizeof (pthread_mutex_t)); \
+  if (*priv==NULL) \
+    return ENOMEM; \
+  err = pthread_mutex_init (*priv, NULL); \
+  if (err != 0){ \
+    free (*priv); \
+    *priv=NULL; \
+  } \
+  return err; \
+} \
+static int ssh_pthread_mutex_destroy (void **lock) { \
+  int err = pthread_mutex_destroy (*lock); \
+  free (*lock); \
+  *lock=NULL; \
+  return err; \
+} \
+static int ssh_pthread_mutex_lock (void **lock) { \
+  return pthread_mutex_lock (*lock); \
+} \
+static int ssh_pthread_mutex_unlock (void **lock){ \
+  return pthread_mutex_unlock (*lock); \
+} \
+static unsigned long ssh_pthread_thread_id (void){ \
+	return (unsigned long) pthread_self(); \
+} \
+static struct ssh_threads_callbacks_struct name= \
+{ \
+    .mutex_init=ssh_pthread_mutex_init, \
+    .mutex_destroy=ssh_pthread_mutex_destroy, \
+    .mutex_lock=ssh_pthread_mutex_lock, \
+    .mutex_unlock=ssh_pthread_mutex_unlock, \
+    .thread_id=ssh_pthread_thread_id \
+}
+
+/** @} */
 #ifdef __cplusplus
 }
 #endif
