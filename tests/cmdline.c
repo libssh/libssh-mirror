@@ -1,6 +1,8 @@
+#include "torture.h"
+
+#ifdef HAVE_ARGP_H
 #include <argp.h>
 
-#include "torture.h"
 
 const char *argp_program_version = "check test 0.1";
 const char *argp_program_bug_address = "<csync-devel@csync.org>";
@@ -63,12 +65,15 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
 /* Our argp parser. */
 /* static struct argp argp = {options, parse_opt, args_doc, doc, NULL, NULL, NULL}; */
 static struct argp argp = {options, parse_opt, NULL, doc, NULL, NULL, NULL};
+#endif /* HAVE_ARGP_H */
 
 void torture_cmdline_parse(int argc, char **argv, struct argument_s *arguments) {
   /*
    * Parse our arguments; every option seen by parse_opt will
    * be reflected in arguments.
    */
+#ifdef HAVE_ARGP_H
   argp_parse(&argp, argc, argv, 0, 0, arguments);
+#endif /* HAVE_ARGP_H */
 }
 
