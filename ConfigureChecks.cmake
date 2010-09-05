@@ -17,8 +17,24 @@ set(SYSCONFDIR ${SYSCONF_INSTALL_DIR})
 set(BINARYDIR ${CMAKE_BINARY_DIR})
 set(SOURCEDIR ${CMAKE_SOURCE_DIR})
 
+function(COMPILER_DUMPVERSION _OUTPUT_VERSION)
+    execute_process(
+        COMMAND
+            ${CMAKE_C_COMPILER} ${CMAKE_C_COMPILER_ARG1} -dumpversion
+        OUTPUT_VARIABLE _COMPILER_VERSION
+    )
+
+    string(REGEX REPLACE "([0-9])\\.([0-9])(\\.[0-9])?" "\\1\\2"
+        _COMPILER_VERSION ${_COMPILER_VERSION})
+
+    set(${_OUTPUT_VERSION} ${_COMPILER_VERSION} PARENT_SCOPE)
+endfunction()
+
 if(CMAKE_COMPILER_IS_GNUCC AND NOT MINGW)
-check_c_compiler_flag("-fvisibility=hidden" WITH_VISIBILITY_HIDDEN)
+    compiler_dumpversion(GNUCC_VERSION)
+    if (GNUCC_VERSION EQUAL 34)
+        check_c_compiler_flag("-fvisibility=hidden" WITH_VISIBILITY_HIDDEN)
+    endif (GNUCC_VERSION EQUAL 34)
 endif(CMAKE_COMPILER_IS_GNUCC AND NOT MINGW)
 
 # HEADER FILES
