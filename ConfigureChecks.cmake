@@ -31,9 +31,9 @@ endfunction()
 
 if(CMAKE_COMPILER_IS_GNUCC AND NOT MINGW)
     compiler_dumpversion(GNUCC_VERSION)
-    if (GNUCC_VERSION EQUAL 34)
+    if (NOT GNUCC_VERSION EQUAL 34)
         check_c_compiler_flag("-fvisibility=hidden" WITH_VISIBILITY_HIDDEN)
-    endif (GNUCC_VERSION EQUAL 34)
+    endif (NOT GNUCC_VERSION EQUAL 34)
 endif(CMAKE_COMPILER_IS_GNUCC AND NOT MINGW)
 
 # HEADER FILES
