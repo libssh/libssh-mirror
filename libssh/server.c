@@ -1133,9 +1133,10 @@ char *ssh_message_channel_request_subsystem(ssh_message msg){
  * @param[in] data void pointer to be passed to callback functions
  */
 void ssh_set_message_callback(ssh_session session,
-    int(*ssh_message_callback_)(ssh_session session, ssh_message msg, void *data), void *data){
-  session->ssh_message_callback=ssh_message_callback_;
-  session->ssh_message_callback_data=data;
+        int(*ssh_bind_message_callback)(ssh_session session, ssh_message msg, void *data),
+        void *data) {
+  session->ssh_message_callback = ssh_bind_message_callback;
+  session->ssh_message_callback_data = data;
 }
 
 int ssh_execute_message_callbacks(ssh_session session){
