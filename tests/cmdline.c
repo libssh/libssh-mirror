@@ -1,3 +1,4 @@
+#include "config.h"
 #include "torture.h"
 
 #ifdef HAVE_ARGP_H
