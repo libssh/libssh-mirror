@@ -73,7 +73,7 @@ configure_file(config.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/config.h)
 # check subdirectories
 add_subdirectory(doc)
 add_subdirectory(include)
-add_subdirectory(libssh)
+add_subdirectory(src)
 
 # pkg-config file
 configure_file(libssh.pc.cmake ${CMAKE_CURRENT_BINARY_DIR}/libssh.pc)
