@@ -30,22 +30,6 @@
 #include "libssh/priv.h"
 #include "libssh/threads.h"
 
-#ifndef _WIN32
-
-#ifndef HAVE_PTHREAD
-#warning "You do not have any threading library installed. If the linked"
-#warning "application doesn't provide the threading callbacks, you're screwed"
-#endif
-
-
-#ifdef HAVE_PTHREAD
-
-#include <errno.h>
-#include <pthread.h>
-SSH_THREADS_PTHREAD(ssh_pthread_user_callbacks);
-#endif /* HAVE_PTHREAD */
-#endif /* _WIN32 */
-
 static struct ssh_threads_callbacks_struct *user_callbacks;
 
 #ifdef HAVE_LIBGCRYPT
@@ -123,13 +107,8 @@ int ssh_threads_init(void){
 	 * already the case
 	 */
 	if(user_callbacks == NULL){
-#ifdef HAVE_PTHREAD
-		user_callbacks=&ssh_pthread_user_callbacks;
-	}
-#else
 		return SSH_ERROR; // Can't do anything to initialize threading
 	}
-#endif
 
 	/* Then initialize the crypto libraries threading callbacks */
 #ifdef HAVE_LIBGCRYPT

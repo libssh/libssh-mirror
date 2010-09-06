@@ -12,7 +12,6 @@
 #define NUM_LOOPS 20000
 #endif
 #define NUM_THREADS 100
-SSH_THREADS_PTHREAD(ssh_pthread_callbacks);
 
 static void setup(){
 	printf("setup\n");
