@@ -6,6 +6,13 @@ Previous chapter has shown how to open a full shell session, with an attached
 terminal or not. If you only need to execute commands on the remote end,
 you don't need all that complexity.
 
+The method described here is suited for executing only one remote command.
+If you need to issue several commands in a row, you should consider using
+a non-interactive remote shell, as explained in previous chapter.
+
+@see shell
+
+
 @subsection exec_remote Executing remote commands
 
 The first steps for executing remote commands are identical to those
@@ -71,8 +78,9 @@ If an error has been encountered, it returns a negative value:
   }
 @endcode
 
-Once there are no more remote commands to execute, you can send an
-end-of-file to the channel, close it, and free the memory it used:
+Once you read the result of the remote command, you send an
+end-of-file to the channel, close it, and free the memory
+that it used:
 
 @code
   ssh_channel_send_eof(channel);
