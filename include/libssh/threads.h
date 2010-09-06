@@ -22,10 +22,10 @@
 #ifndef THREADS_H_
 #define THREADS_H_
 
+#include <libssh/libssh.h>
 #include <libssh/callbacks.h>
 
-int ssh_threads_init(void);
-void ssh_threads_finalize(void);
-
+LIBSSH_API int ssh_threads_init(void);
+LIBSSH_API void ssh_threads_finalize(void);
 
 #endif /* THREADS_H_ */

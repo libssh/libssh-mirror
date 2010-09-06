@@ -20,10 +20,12 @@
  */
 
 #include "config.h"
+#include <libssh/callbacks.h>
 
 #ifdef HAVE_PTHREAD
 
 #include <errno.h>
+#include <stdlib.h>
 #include <pthread.h>
 
 /** @brief Defines the needed callbacks for pthread. Use this if your
@@ -81,4 +83,5 @@ static struct ssh_threads_callbacks_struct name= \
 }
 
 SSH_THREADS_PTHREAD(ssh_pthread_user_callbacks);
+
 #endif /* HAVE_PTHREAD */

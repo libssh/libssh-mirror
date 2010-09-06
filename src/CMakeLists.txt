@@ -202,3 +202,6 @@ if (WITH_STATIC_LIB)
   )
 endif (WITH_STATIC_LIB)
 
+if (CMAKE_HAVE_THREADS_LIBRARY)
+    add_subdirectory(threads)
+endif (CMAKE_HAVE_THREADS_LIBRARY)
