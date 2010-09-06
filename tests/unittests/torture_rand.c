@@ -15,7 +15,7 @@
 
 static void setup(){
 	printf("setup\n");
-	ssh_threads_set_callbacks(&ssh_pthread_callbacks);
+	ssh_threads_set_callbacks(&ssh_threads_pthread);
 	ssh_init();
 }
 

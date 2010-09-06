@@ -30,6 +30,25 @@
 #include "libssh/priv.h"
 #include "libssh/threads.h"
 
+static int threads_noop (void **lock){
+	(void)lock;
+  return 0;
+}
+
+static unsigned long threads_id_noop (void){
+	return 1;
+}
+
+struct ssh_threads_callbacks_struct ssh_threads_noop =
+{
+		.type=ssh_threads_type_noop,
+    .mutex_init=threads_noop,
+    .mutex_destroy=threads_noop,
+    .mutex_lock=threads_noop,
+    .mutex_unlock=threads_noop,
+    .thread_id=threads_id_noop
+};
+
 static struct ssh_threads_callbacks_struct *user_callbacks;
 
 #ifdef HAVE_LIBGCRYPT
@@ -107,7 +126,7 @@ int ssh_threads_init(void){
 	 * already the case
 	 */
 	if(user_callbacks == NULL){
-		return SSH_ERROR; // Can't do anything to initialize threading
+		user_callbacks=&ssh_threads_noop;
 	}
 
 	/* Then initialize the crypto libraries threading callbacks */

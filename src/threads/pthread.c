@@ -45,43 +45,59 @@
  * callbacks for threading
  *
  */
-#define SSH_THREADS_PTHREAD(name) \
-static int ssh_pthread_mutex_init (void **priv){ \
-  int err = 0; \
-  *priv = malloc (sizeof (pthread_mutex_t)); \
-  if (*priv==NULL) \
-    return ENOMEM; \
-  err = pthread_mutex_init (*priv, NULL); \
-  if (err != 0){ \
-    free (*priv); \
-    *priv=NULL; \
-  } \
-  return err; \
-} \
-static int ssh_pthread_mutex_destroy (void **lock) { \
-  int err = pthread_mutex_destroy (*lock); \
-  free (*lock); \
-  *lock=NULL; \
-  return err; \
-} \
-static int ssh_pthread_mutex_lock (void **lock) { \
-  return pthread_mutex_lock (*lock); \
-} \
-static int ssh_pthread_mutex_unlock (void **lock){ \
-  return pthread_mutex_unlock (*lock); \
-} \
-static unsigned long ssh_pthread_thread_id (void){ \
-	return (unsigned long) pthread_self(); \
-} \
-static struct ssh_threads_callbacks_struct name= \
-{ \
-    .mutex_init=ssh_pthread_mutex_init, \
-    .mutex_destroy=ssh_pthread_mutex_destroy, \
-    .mutex_lock=ssh_pthread_mutex_lock, \
-    .mutex_unlock=ssh_pthread_mutex_unlock, \
-    .thread_id=ssh_pthread_thread_id \
+
+static int ssh_pthread_mutex_init (void **priv){
+  int err = 0;
+  *priv = malloc (sizeof (pthread_mutex_t));
+  if (*priv==NULL)
+    return ENOMEM;
+  err = pthread_mutex_init (*priv, NULL);
+  if (err != 0){
+    free (*priv);
+    *priv=NULL;
+  }
+  return err;
 }
 
-SSH_THREADS_PTHREAD(ssh_pthread_user_callbacks);
+static int ssh_pthread_mutex_destroy (void **lock) {
+  int err = pthread_mutex_destroy (*lock);
+  free (*lock);
+  *lock=NULL;
+  return err;
+}
+
+static int ssh_pthread_mutex_lock (void **lock) {
+  return pthread_mutex_lock (*lock);
+}
+
+static int ssh_pthread_mutex_unlock (void **lock){
+  return pthread_mutex_unlock (*lock);
+}
+
+static unsigned long ssh_pthread_thread_id (void){
+	return (unsigned long) pthread_self();
+}
+
+struct ssh_threads_callbacks_struct ssh_threads_pthread =
+{
+		.type=ssh_threads_type_pthread,
+    .mutex_init=ssh_pthread_mutex_init,
+    .mutex_destroy=ssh_pthread_mutex_destroy,
+    .mutex_lock=ssh_pthread_mutex_lock,
+    .mutex_unlock=ssh_pthread_mutex_unlock,
+    .thread_id=ssh_pthread_thread_id
+};
+
+#ifdef THREAD_NATIVE_PTHREAD
+struct ssh_threads_callbacks_struct ssh_threads_native =
+{
+		.type=ssh_threads_type_pthread,
+		.mutex_init=ssh_pthread_mutex_init,
+		.mutex_destroy=ssh_pthread_mutex_destroy,
+		.mutex_lock=ssh_pthread_mutex_lock,
+		.mutex_unlock=ssh_pthread_mutex_unlock,
+		.thread_id=ssh_pthread_thread_id
+};
+#endif
 
 #endif /* HAVE_PTHREAD */

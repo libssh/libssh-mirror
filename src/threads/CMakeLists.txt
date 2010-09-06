@@ -33,7 +33,6 @@ set(LIBSSH_THREADS_LINK_LIBRARIES
 )
 
 set(libssh_threads_SRCS
-    native.c
 )
 
 # build and link pthread
