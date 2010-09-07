@@ -528,6 +528,7 @@ int ssh_socket_write(ssh_socket s, const void *buffer, int len) {
  */
 int ssh_socket_nonblocking_flush(ssh_socket s) {
   ssh_session session = s->session;
+  uint32_t len;
   int w;
 
   enter_function();
@@ -543,9 +544,9 @@ int ssh_socket_nonblocking_flush(ssh_socket s) {
     return SSH_ERROR;
   }
 
-  if (s->data_to_write && buffer_get_rest_len(s->out_buffer) > 0) {
-    w = ssh_socket_unbuffered_write(s, buffer_get_rest(s->out_buffer),
-    		buffer_get_rest_len(s->out_buffer));
+  len = buffer_get_rest_len(s->out_buffer);
+  if (s->data_to_write && len > 0) {
+    w = ssh_socket_unbuffered_write(s, buffer_get_rest(s->out_buffer), len);
     if (w < 0) {
       session->alive = 0;
       ssh_socket_close(s);
@@ -561,11 +562,12 @@ int ssh_socket_nonblocking_flush(ssh_socket s) {
   }
 
   /* Is there some data pending? */
-  if (buffer_get_rest_len(s->out_buffer) > 0 && s->poll_out) {
-  	/* force the poll system to catch pollout events */
-  	ssh_poll_set_events(s->poll_out, ssh_poll_get_events(s->poll_out) |POLLOUT);
-    leave_function();
-    return SSH_AGAIN;
+  len = buffer_get_rest_len(s->out_buffer);
+  if (s->poll_out && len > 0) {
+      /* force the poll system to catch pollout events */
+      ssh_poll_set_events(s->poll_out, ssh_poll_get_events(s->poll_out) | POLLOUT);
+      leave_function();
+      return SSH_AGAIN;
   }
 
   /* all data written */
