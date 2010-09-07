@@ -356,7 +356,7 @@ int main()
 
 At this point, the authenticity of both server and client is established.
 Time has come to take advantage of the many possibilities offered by the SSH
-protocol: execute remote commands, open remote shells, transfer files,
+protocol: execute a remote command, open remote shells, transfer files,
 forward ports, etc.
 
 The example below shows how to execute a remote command:
@@ -416,7 +416,7 @@ int show_remote_processes(ssh_session session)
 @endcode
 
 @see @ref opening_shell
-@see @ref remote_commands
+@see @ref remote_command
 @see @ref sftp_subsystem
 @see @ref scp_subsystem
 

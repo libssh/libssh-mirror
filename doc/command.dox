@@ -1,9 +1,9 @@
 /**
-@page commands Chapter 4: Passing remote commands
-@section remote_commands Passing remote commands
+@page command Chapter 4: Passing a remote command
+@section remote_command Passing a remote command
 
 Previous chapter has shown how to open a full shell session, with an attached
-terminal or not. If you only need to execute commands on the remote end,
+terminal or not. If you only need to execute a command on the remote end,
 you don't need all that complexity.
 
 The method described here is suited for executing only one remote command.
@@ -13,9 +13,9 @@ a non-interactive remote shell, as explained in previous chapter.
 @see shell
 
 
-@subsection exec_remote Executing remote commands
+@subsection exec_remote Executing a remote command
 
-The first steps for executing remote commands are identical to those
+The first steps for executing a remote command are identical to those
 for opening remote shells. You first need a SSH channel, and then
 a SSH session that uses this channel:
 
