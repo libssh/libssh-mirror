@@ -33,4 +33,67 @@ The libssh library provides:
  - Full poll()/WSAPoll() support and a poll-emulation for Win32.
  - Runs and tested under x86_64, x86, ARM, Sparc32, PPC under Linux, BSD, MacOSX, Solaris and Windows
 
+@section main-rfc Internet standard
+
+@subsection main-rfc-secsh Secure Shell (SSH)
+
+The following RFC documents described SSH-2 protcol as an Internet standard.
+
+ - <a href="http://tools.ietf.org/html/rfc4250" target="_blank">RFC 4250</a>,
+    The Secure Shell (SSH) Protocol Assigned Numbers
+ - <a href="http://tools.ietf.org/html/rfc4251" target="_blank">RFC 4251</a>,
+    The Secure Shell (SSH) Protocol Architecture
+ - <a href="http://tools.ietf.org/html/rfc4252" target="_blank">RFC 4252</a>,
+    The Secure Shell (SSH) Authentication Protocol
+ - <a href="http://tools.ietf.org/html/rfc4253" target="_blank">RFC 4253</a>,
+    The Secure Shell (SSH) Transport Layer Protocol
+ - <a href="http://tools.ietf.org/html/rfc4254" target="_blank">RFC 4254</a>,
+    The Secure Shell (SSH) Connection Protocol
+ - <a href="http://tools.ietf.org/html/rfc4255" target="_blank">RFC 4255</a>,
+    Using DNS to Securely Publish Secure Shell (SSH) Key Fingerprints
+ - <a href="http://tools.ietf.org/html/rfc4256" target="_blank">RFC 4256</a>,
+    Generic Message Exchange Authentication for the Secure Shell Protocol (SSH)
+ - <a href="http://tools.ietf.org/html/rfc4335" target="_blank">RFC 4335</a>,
+    The Secure Shell (SSH) Session Channel Break Extension
+ - <a href="http://tools.ietf.org/html/rfc4344" target="_blank">RFC 4344</a>,
+    The Secure Shell (SSH) Transport Layer Encryption Modes
+ - <a href="http://tools.ietf.org/html/rfc4345" target="_blank">RFC 4345</a>,
+    Improved Arcfour Modes for the Secure Shell (SSH) Transport Layer Protocol
+
+It was later modified and expanded by the following RFCs.
+
+ - <a href="http://tools.ietf.org/html/rfc4419" target="_blank">RFC 4419</a>,
+    Diffie-Hellman Group Exchange for the Secure Shell (SSH) Transport Layer
+    Protocol
+ - <a href="http://tools.ietf.org/html/rfc4432" target="_blank">RFC 4432</a>,
+    RSA Key Exchange for the Secure Shell (SSH) Transport Layer Protocol
+ - <a href="http://tools.ietf.org/html/rfc4462" target="_blank">RFC 4462</a>,
+    Generic Security Service Application Program Interface (GSS-API)
+    Authentication and Key Exchange for the Secure Shell (SSH) Protocol
+ - <a href="http://tools.ietf.org/html/rfc4716" target="_blank">RFC 4716</a>,
+    The Secure Shell (SSH) Public Key File Format
+ - <a href="http://tools.ietf.org/html/rfc5656" target="_blank">RFC 5656</a>,
+    Elliptic Curve Algorithm Integration in the Secure Shell Transport Layer
+
+
+@subsection main-rfc-sftp Secure Shell File Transfer Protocol (SFTP)
+
+The protocol is not an Internet standard but it is still widely implemented.
+OpenSSH and most other implementation implement Version 3 of the protocol. We
+do the same in libssh.
+
+ - <a href="http://tools.ietf.org/html/draft-ietf-secsh-filexfer-02" target="_blank">
+   draft-ietf-secsh-filexfer-02.txt</a>,
+   SSH File Transfer Protocol
+
+@subsection main-rfc-extensions Secure Shell Extensions
+
+The OpenSSH project has defined some extensions to the protocol. We support some of
+them like the statvfs calls in SFTP or the ssh-agent.
+
+ - <a href="http://api.libssh.org/rfc/PROTOCOL" target="_blank">
+    OpenSSH's deviations and extensions</a>
+ - <a href="http://api.libssh.org/rfc/PROTOCOL.agent" target="_blank">
+    OpenSSH's ssh-agent</a>
+
 */
