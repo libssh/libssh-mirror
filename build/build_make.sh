@@ -132,23 +132,18 @@ while test -n "$1"; do
 		;;
 		*-withstaticlib)
 			OPTIONS="${OPTIONS} -DWITH_STATIC_LIB=ON"
-			shift
 		;;
 		*-unittesting)
 			OPTIONS="${OPTIONS} -DWITH_TESTING=ON"
-			shift
 		;;
 		*-clientunittesting)
 			OPTIONS="${OPTIONS} -DWITH_CLIENT_TESTING=ON"
-			shift
 		;;
 		*-withssh1)
 			OPTIONS="${OPTIONS} -DWITH_SSH1=ON"
-			shift
 		;;
 		*-withserver)
 			OPTIONS="${OPTIONS} -DWITH_SERVER=ON"
-			shift
 		;;
 		----noarg)
 			echo "$ARG does not take an argument"
