@@ -1,8 +1,8 @@
 project(tests C)
 
-if (${CMAKE_SYSTEM_NAME} MATCHES "(OpenBSD|FreeBSD)")
+if (UNIX AND NOT LINUX)
     find_package(Argp)
-endif (${CMAKE_SYSTEM_NAME} MATCHES "(OpenBSD|FreeBSD)")
+endif (UNIX AND NOT LINUX)
 
 set(TORTURE_LIBRARY torture)
 
