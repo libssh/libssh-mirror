@@ -49,7 +49,7 @@
  *
  * @param[in]  buf      The buffer to check.
  */
-static void buffer_verify(struct buffer_struct *buf){
+static void buffer_verify(ssh_buffer buf){
   int doabort=0;
   if(buf->data == NULL)
     return;
