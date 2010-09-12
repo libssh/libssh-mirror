@@ -26,6 +26,7 @@
 #include <libssh/callbacks.h>
 
 LIBSSH_API int ssh_threads_init(void);
-LIBSSH_API void ssh_threads_finalize(void);
+void ssh_threads_finalize(void);
+const char *ssh_threads_get_type(void);
 
 #endif /* THREADS_H_ */

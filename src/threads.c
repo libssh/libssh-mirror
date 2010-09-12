@@ -49,7 +49,7 @@ struct ssh_threads_callbacks_struct ssh_threads_noop =
     .thread_id=threads_id_noop
 };
 
-static struct ssh_threads_callbacks_struct *user_callbacks;
+static struct ssh_threads_callbacks_struct *user_callbacks =&ssh_threads_noop;
 
 #ifdef HAVE_LIBGCRYPT
 
@@ -156,6 +156,12 @@ void ssh_threads_finalize(void){
 int ssh_threads_set_callbacks(struct ssh_threads_callbacks_struct *cb){
   user_callbacks=cb;
   return SSH_OK;
+}
+
+const char *ssh_threads_get_type(){
+	if(user_callbacks != NULL)
+		return user_callbacks->type;
+	return NULL;
 }
 
 /**

@@ -36,7 +36,7 @@
 #include "libssh/socket.h"
 #include "libssh/session.h"
 #include "libssh/dh.h"
-
+#include "libssh/threads.h"
 #define set_status(session, status) do {\
         if (session->callbacks && session->callbacks->connect_status_function) \
             session->callbacks->connect_status_function(session->callbacks->userdata, status); \
@@ -680,7 +680,7 @@ int ssh_connect(ssh_session session) {
       leave_function();
       return SSH_ERROR;
   }
-
+  ssh_log(session,SSH_LOG_RARE,"libssh %s, using threading %s", ssh_copyright(), ssh_threads_get_type());
   session->ssh_connection_callback = ssh_client_connection_callback;
   session->session_state=SSH_SESSION_STATE_CONNECTING;
   ssh_socket_set_callbacks(session->socket,&session->socket_callbacks);
@@ -806,7 +806,7 @@ error:
 
 const char *ssh_copyright(void) {
     return SSH_STRINGIFY(LIBSSH_VERSION) " (c) 2003-2010 Aris Adamantiadis "
-    "(aris@0xbadc0de.be) Distributed under the LGPL, please refer to COPYING"
+    "(aris@0xbadc0de.be) Distributed under the LGPL, please refer to COPYING "
     "file for information about your rights";
 }
 /** @} */
