@@ -41,7 +41,7 @@ static unsigned long threads_id_noop (void){
 
 struct ssh_threads_callbacks_struct ssh_threads_noop =
 {
-		.type=ssh_threads_type_noop,
+		.type="threads_noop",
     .mutex_init=threads_noop,
     .mutex_destroy=threads_noop,
     .mutex_lock=threads_noop,
@@ -60,7 +60,11 @@ static struct gcry_thread_cbs gcrypt_threads_callbacks;
 static int libgcrypt_thread_init(void){
 	if(user_callbacks == NULL)
 		return SSH_ERROR;
-	gcrypt_threads_callbacks.option= GCRY_THREAD_OPTION_VERSION << 8 || GCRY_THREAD_OPTION_USER;
+	if(user_callbacks == &ssh_threads_noop){
+		gcrypt_threads_callbacks.option= GCRY_THREAD_OPTION_VERSION << 8 || GCRY_THREAD_OPTION_DEFAULT;
+	} else {
+		gcrypt_threads_callbacks.option= GCRY_THREAD_OPTION_VERSION << 8 || GCRY_THREAD_OPTION_USER;
+	}
 	gcrypt_threads_callbacks.mutex_init=user_callbacks->mutex_init;
 	gcrypt_threads_callbacks.mutex_destroy=user_callbacks->mutex_destroy;
 	gcrypt_threads_callbacks.mutex_lock=user_callbacks->mutex_lock;
@@ -87,6 +91,8 @@ static void libcrypto_lock_callback(int mode, int i, const char *file, int line)
 static int libcrypto_thread_init(){
 	int n=CRYPTO_num_locks();
 	int i;
+	if(user_callbacks == &ssh_threads_noop)
+		return SSH_OK;
 	libcrypto_mutexes=malloc(sizeof(void *) * n);
 	if (libcrypto_mutexes == NULL)
 		return SSH_ERROR;

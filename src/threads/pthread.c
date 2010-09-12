@@ -80,24 +80,12 @@ static unsigned long ssh_pthread_thread_id (void){
 
 struct ssh_threads_callbacks_struct ssh_threads_pthread =
 {
-		.type=ssh_threads_type_pthread,
+		.type="threads_pthread",
     .mutex_init=ssh_pthread_mutex_init,
     .mutex_destroy=ssh_pthread_mutex_destroy,
     .mutex_lock=ssh_pthread_mutex_lock,
     .mutex_unlock=ssh_pthread_mutex_unlock,
     .thread_id=ssh_pthread_thread_id
 };
-
-#ifdef THREAD_NATIVE_PTHREAD
-struct ssh_threads_callbacks_struct ssh_threads_native =
-{
-		.type=ssh_threads_type_pthread,
-		.mutex_init=ssh_pthread_mutex_init,
-		.mutex_destroy=ssh_pthread_mutex_destroy,
-		.mutex_lock=ssh_pthread_mutex_lock,
-		.mutex_unlock=ssh_pthread_mutex_unlock,
-		.thread_id=ssh_pthread_thread_id
-};
-#endif
 
 #endif /* HAVE_PTHREAD */

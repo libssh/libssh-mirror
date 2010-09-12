@@ -256,26 +256,9 @@ LIBSSH_API int ssh_set_callbacks(ssh_session session, ssh_callbacks cb);
 
 typedef int (*ssh_thread_callback) (void **lock);
 
-/**
- * @brief Type of the threading solution implemented behind
- * these callbacks
- */
-enum ssh_threads_type_e {
-	/** The thread callbacks do nothing */
-	ssh_threads_type_noop,
-	/** The thread callbacks use pthread */
-	ssh_threads_type_pthread,
-	/** The thread callbacks use win32 threads */
-	ssh_threads_type_win32,
-	/** The thread callbacks use pth */
-	ssh_threads_type_pth,
-	/** The thread callbacks are unknown or different */
-	ssh_threads_type_other
-};
-
 typedef unsigned long (*ssh_thread_id_callback) (void);
 struct ssh_threads_callbacks_struct {
-	enum ssh_threads_type_e type;
+	const char *type;
   ssh_thread_callback mutex_init;
   ssh_thread_callback mutex_destroy;
   ssh_thread_callback mutex_lock;
@@ -298,7 +281,6 @@ LIBSSH_API int ssh_threads_set_callbacks(struct ssh_threads_callbacks_struct
 
 extern struct ssh_threads_callbacks_struct ssh_threads_pthread;
 extern struct ssh_threads_callbacks_struct ssh_threads_noop;
-extern struct ssh_threads_callbacks_struct ssh_threads_native;
 
 /** @} */
 #ifdef __cplusplus
