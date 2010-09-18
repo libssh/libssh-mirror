@@ -34,10 +34,13 @@
 
 /**
  * @brief creates a new empty SSH key
- * @returns an empty ssh_key handle
+ * @returns an empty ssh_key handle, or NULL on error.
  */
-ssh_key ssh_key_new (void){
-  ssh_key ptr=malloc (sizeof (struct ssh_key_struct));
+ssh_key ssh_key_new (void) {
+  ssh_key ptr = malloc (sizeof (struct ssh_key_struct));
+  if (ptr == NULL) {
+      return NULL;
+  }
   ZERO_STRUCTP(ptr);
   return ptr;
 }
