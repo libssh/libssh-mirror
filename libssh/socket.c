@@ -265,7 +265,10 @@ void ssh_socket_fd_set(struct socket *s, fd_set *set, socket_t *max_fd) {
   if (s->fd == SSH_INVALID_SOCKET)
     return;
   FD_SET(s->fd,set);
-  if (s->fd >= 0 && s->fd != SSH_INVALID_SOCKET) {
+
+  if (s->fd >= 0 &&
+      s->fd >= *max_fd &&
+      s->fd != SSH_INVALID_SOCKET) {
     *max_fd = s->fd + 1;
   }
 }
