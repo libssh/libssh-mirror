@@ -495,10 +495,14 @@ void ssh_socket_fd_set(ssh_socket s, fd_set *set, socket_t *max_fd) {
   FD_SET(s->fd_in,set);
   FD_SET(s->fd_out,set);
 
-  if (s->fd_in >= 0 && s->fd_in != SSH_INVALID_SOCKET) {
+  if (s->fd_in >= 0 &&
+      s->fd_in >= *max_fd &&
+      s->fd_in != SSH_INVALID_SOCKET) {
       *max_fd = s->fd_in + 1;
   }
-  if (s->fd_out >= 0 && s->fd_in != SSH_INVALID_SOCKET) {
+  if (s->fd_out >= 0 &&
+      s->fd_out >= *max_fd &&
+      s->fd_out != SSH_INVALID_SOCKET) {
       *max_fd = s->fd_out + 1;
   }
 }
