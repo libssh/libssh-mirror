@@ -2469,13 +2469,13 @@ int ssh_channel_select(ssh_channel *readchans, ssh_channel *writechans,
 
     for (i = 0; readchans[i] != NULL; i++) {
       if (ssh_socket_fd_isset(readchans[i]->session->socket, &rset)) {
-        ssh_socket_set_toread(readchans[i]->session->socket);
+        ssh_socket_set_read_wontblock(readchans[i]->session->socket);
       }
     }
 
     for (i = 0; writechans[i] != NULL; i++) {
       if (ssh_socket_fd_isset(writechans[i]->session->socket, &wset)) {
-        ssh_socket_set_towrite(writechans[i]->session->socket);
+        ssh_socket_set_write_wontblock(writechans[i]->session->socket);
       }
     }
 

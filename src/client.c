@@ -216,9 +216,6 @@ int ssh_send_banner(ssh_session session, int server) {
   if (ssh_socket_write(session->socket, buffer, strlen(buffer)) == SSH_ERROR) {
     goto end;
   }
-  if (ssh_socket_nonblocking_flush(session->socket) == SSH_ERROR){
-  	goto end;
-  }
 #ifdef WITH_PCAP
   if(session->pcap_ctx)
   	ssh_pcap_context_write(session->pcap_ctx,SSH_PCAP_DIR_OUT,buffer,strlen(buffer),strlen(buffer));

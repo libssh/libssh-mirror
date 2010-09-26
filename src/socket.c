@@ -81,9 +81,9 @@ struct ssh_socket_struct {
   socket_t fd_out;
   int fd_is_socket;
   int last_errno;
-  int data_to_read; /* reading now on socket will
+  int read_wontblock; /* reading now on socket will
                        not block */
-  int data_to_write;
+  int write_wontblock;
   int data_except;
   enum ssh_socket_states_e state;
   ssh_buffer out_buffer;
@@ -152,8 +152,8 @@ ssh_socket ssh_socket_new(ssh_session session) {
     SAFE_FREE(s);
     return NULL;
   }
-  s->data_to_read = 0;
-  s->data_to_write = 0;
+  s->read_wontblock = 0;
+  s->write_wontblock = 0;
   s->data_except = 0;
   s->poll_in=s->poll_out=NULL;
   s->state=SSH_SOCKET_NONE;
@@ -175,7 +175,7 @@ void ssh_socket_set_callbacks(ssh_socket s, ssh_socket_callbacks callbacks){
 int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p, socket_t fd, int revents, void *v_s){
 	ssh_socket s=(ssh_socket )v_s;
 	char buffer[4096];
-	int r,w;
+	int r;
 	int err=0;
 	socklen_t errlen=sizeof(err);
 	/* Do not do anything if this socket was already closed */
@@ -199,7 +199,7 @@ int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p, socket_t fd, int r
 		revents |= POLLIN;
 	}
 	if(revents & POLLIN){
-		s->data_to_read=1;
+		s->read_wontblock=1;
 		r=ssh_socket_unbuffered_read(s,buffer,sizeof(buffer));
 		if(r<0){
 			err=-1;
@@ -246,18 +246,16 @@ int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p, socket_t fd, int r
 			return 0;
 		}
 		/* So, we can write data */
-		s->data_to_write=1;
+		s->write_wontblock=1;
+    ssh_poll_remove_events(p,POLLOUT);
+
 		/* If buffered data is pending, write it */
 		if(buffer_get_rest_len(s->out_buffer) > 0){
-			w=ssh_socket_unbuffered_write(s, buffer_get_rest(s->out_buffer),
-		          buffer_get_rest_len(s->out_buffer));
-			if(w>0)
-				buffer_pass_bytes(s->out_buffer,w);
+		  ssh_socket_nonblocking_flush(s);
 		} else if(s->callbacks && s->callbacks->controlflow){
 			/* Otherwise advertise the upper level that write can be done */
 			s->callbacks->controlflow(SSH_SOCKET_FLOW_WRITEWONTBLOCK,s->callbacks->userdata);
 		}
-		ssh_poll_remove_events(p,POLLOUT);
 			/* TODO: Find a way to put back POLLOUT when buffering occurs */
 	}
 	return err;
@@ -432,7 +430,7 @@ static int ssh_socket_unbuffered_read(ssh_socket s, void *buffer, uint32_t len) 
 #else
   s->last_errno = errno;
 #endif
-  s->data_to_read = 0;
+  s->read_wontblock = 0;
 
   if (rc < 0) {
     s->data_except = 1;
@@ -460,7 +458,7 @@ static int ssh_socket_unbuffered_write(ssh_socket s, const void *buffer,
 #else
   s->last_errno = errno;
 #endif
-  s->data_to_write = 0;
+  s->write_wontblock = 0;
   /* Reactive the POLLOUT detector in the poll multiplexer system */
   if(s->poll_out){
   	ssh_log(s->session, SSH_LOG_PACKET, "Enabling POLLOUT for socket");
@@ -519,7 +517,7 @@ int ssh_socket_write(ssh_socket s, const void *buffer, int len) {
     if (buffer_add_data(s->out_buffer, buffer, len) < 0) {
       return SSH_ERROR;
     }
-    ssh_socket_set_towrite(s);
+    ssh_socket_nonblocking_flush(s);
   }
   leave_function();
   return SSH_OK;
@@ -549,7 +547,13 @@ int ssh_socket_nonblocking_flush(ssh_socket s) {
   }
 
   len = buffer_get_rest_len(s->out_buffer);
-  if (s->data_to_write && len > 0) {
+  if (!s->write_wontblock && s->poll_out && len > 0) {
+      /* force the poll system to catch pollout events */
+      ssh_poll_add_events(s->poll_out, POLLOUT);
+      leave_function();
+      return SSH_AGAIN;
+  }
+  if (s->write_wontblock && len > 0) {
     w = ssh_socket_unbuffered_write(s, buffer_get_rest(s->out_buffer), len);
     if (w < 0) {
       session->alive = 0;
@@ -569,7 +573,7 @@ int ssh_socket_nonblocking_flush(ssh_socket s) {
   len = buffer_get_rest_len(s->out_buffer);
   if (s->poll_out && len > 0) {
       /* force the poll system to catch pollout events */
-      ssh_poll_set_events(s->poll_out, ssh_poll_get_events(s->poll_out) | POLLOUT);
+      ssh_poll_add_events(s->poll_out, POLLOUT);
       leave_function();
       return SSH_AGAIN;
   }
@@ -579,12 +583,12 @@ int ssh_socket_nonblocking_flush(ssh_socket s) {
   return SSH_OK;
 }
 
-void ssh_socket_set_towrite(ssh_socket s) {
-  s->data_to_write = 1;
+void ssh_socket_set_write_wontblock(ssh_socket s) {
+  s->write_wontblock = 1;
 }
 
-void ssh_socket_set_toread(ssh_socket s) {
-  s->data_to_read = 1;
+void ssh_socket_set_read_wontblock(ssh_socket s) {
+  s->read_wontblock = 1;
 }
 
 void ssh_socket_set_except(ssh_socket s) {
@@ -592,17 +596,17 @@ void ssh_socket_set_except(ssh_socket s) {
 }
 
 int ssh_socket_data_available(ssh_socket s) {
-  return s->data_to_read;
+  return s->read_wontblock;
 }
 
 int ssh_socket_data_writable(ssh_socket s) {
-  return s->data_to_write;
+  return s->write_wontblock;
 }
 
 int ssh_socket_get_status(ssh_socket s) {
   int r = 0;
 
-  if (s->data_to_read) {
+  if (s->read_wontblock) {
     r |= SSH_READ_PENDING;
   }
 

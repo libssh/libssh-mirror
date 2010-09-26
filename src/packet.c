@@ -433,9 +433,6 @@ static int ssh_packet_write(ssh_session session) {
   rc=ssh_socket_write(session->socket,
       ssh_buffer_get_begin(session->out_buffer),
       ssh_buffer_get_len(session->out_buffer));
-  if(rc == SSH_OK){
-  	rc=ssh_socket_nonblocking_flush(session->socket);
-  }
   leave_function();
   return rc;
 }

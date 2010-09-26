@@ -565,7 +565,7 @@ int ssh_select(ssh_channel *channels, ssh_channel *outchannels, socket_t maxfd,
   for (i = 0; channels[i]; i++) {
     if (channels[i]->session->alive &&
         ssh_socket_fd_isset(channels[i]->session->socket,&localset)) {
-      ssh_socket_set_toread(channels[i]->session->socket);
+      ssh_socket_set_read_wontblock(channels[i]->session->socket);
     }
   }
 
