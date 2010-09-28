@@ -41,12 +41,12 @@ static unsigned long threads_id_noop (void){
 
 struct ssh_threads_callbacks_struct ssh_threads_noop =
 {
-		.type="threads_noop",
-    .mutex_init=threads_noop,
-    .mutex_destroy=threads_noop,
-    .mutex_lock=threads_noop,
-    .mutex_unlock=threads_noop,
-    .thread_id=threads_id_noop
+    "threads_noop",
+    threads_noop,
+    threads_noop,
+    threads_noop,
+    threads_noop,
+    threads_id_noop
 };
 
 static struct ssh_threads_callbacks_struct *user_callbacks =&ssh_threads_noop;
