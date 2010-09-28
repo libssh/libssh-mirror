@@ -2,8 +2,6 @@ project(libssh-library C)
 
 set(LIBSSH_PUBLIC_INCLUDE_DIRS
   ${CMAKE_SOURCE_DIR}/include
-  ${CMAKE_CURRENT_SOURCE_DIR}
-  ${CMAKE_SOURCE_DIR}
   CACHE INTERNAL "libssh public include directories"
 )
 
