@@ -90,6 +90,7 @@ set(libssh_SRCS
   kex.c
   keyfiles.c
   keys.c
+  known_hosts.c
   legacy.c
   libcrypto.c
   libgcrypt.c
