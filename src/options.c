@@ -320,7 +320,8 @@ int ssh_options_set_algo(ssh_session session, int algo,
  *
  *                      - SSH_OPTIONS_HOSTKEYCHECK:
  *                        Set the parameter StrictHostKeyChecking to avoid
- *                        asking about a fingerprint
+ *                        asking about a fingerprint (integer, 0 = false).
+ *
  *                      - SSH_OPTIONS_PROXYCOMMAND:
  *                        Set the command to be executed in order to connect to
  *                        server.
