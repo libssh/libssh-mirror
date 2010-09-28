@@ -41,6 +41,8 @@
 #  define close _close
 #  undef read
 #  define read _read
+#  undef unlink
+#  define unlink _unlink
 # endif /* _MSC_VER */
 #else
 # include <arpa/inet.h>
