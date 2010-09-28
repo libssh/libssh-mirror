@@ -33,17 +33,18 @@
 #include <string.h>
 #include <stdlib.h>
 
-#ifndef _WIN32
-#if _MSC_VER >= 1400
-#include <io.h>
-#undef open
-#define open _open
-#undef close
-#define close _close
-#undef read
-#define read _read
-#endif /* _MSC_VER */
-#include <arpa/inet.h>
+#ifdef _WIN32
+# if _MSC_VER >= 1400
+#  include <io.h>
+#  undef open
+#  define open _open
+#  undef close
+#  define close _close
+#  undef read
+#  define read _read
+# endif /* _MSC_VER */
+#else
+# include <arpa/inet.h>
 #endif
 
 #include "libssh/priv.h"
