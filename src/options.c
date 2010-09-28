@@ -318,7 +318,7 @@ int ssh_options_set_algo(ssh_session session, int algo,
  *                        Set the compression to use for server to client
  *                        communication (string, "none" or "zlib").
  *
- *                      - SSH_OPTIONS_HOSTKEYCHECK:
+ *                      - SSH_OPTIONS_STRICTHOSTKEYCHECK:
  *                        Set the parameter StrictHostKeyChecking to avoid
  *                        asking about a fingerprint (integer, 0 = false).
  *
@@ -588,7 +588,7 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
           return -1;
       }
       break;
-    case SSH_OPTIONS_HOSTKEYCHECK:
+    case SSH_OPTIONS_STRICTHOSTKEYCHECK:
       if (value == NULL) {
         ssh_set_error_invalid(session, __FUNCTION__);
         return -1;
