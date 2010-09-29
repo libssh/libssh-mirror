@@ -11,6 +11,7 @@ include_directories(
   ${CHECK_INCLUDE_DIRS}
   ${ARGP_INCLUDE_DIRS}
   ${CMAKE_BINARY_DIR}
+  ${CMAKE_SOURCE_DIR}/src
   ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
