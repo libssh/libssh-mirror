@@ -2596,6 +2596,23 @@ int ssh_channel_select(ssh_channel *readchans, ssh_channel *writechans,
 
 #if WITH_SERVER
 /**
+ * @brief Blocking write on a channel stderr.
+ *
+ * @param[in]  channel  The channel to write to.
+ *
+ * @param[in]  data     A pointer to the data to write.
+ *
+ * @param[in]  len      The length of the buffer to write to.
+ *
+ * @return              The number of bytes written, SSH_ERROR on error.
+ *
+ * @see channel_read()
+ */
+int ssh_channel_write_stderr(ssh_channel channel, const void *data, uint32_t len) {
+  return channel_write_common(channel, data, len, 1);
+}
+
+/**
  * @brief Open a TCP/IP reverse forwarding channel.
  *
  * @param[in]  channel  An allocated channel.

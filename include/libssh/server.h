@@ -199,6 +199,9 @@ LIBSSH_API int ssh_channel_request_send_exit_signal(ssh_channel channel,
                                                 int core,
                                                 const char *errmsg,
                                                 const char *lang);
+LIBSSH_API int ssh_channel_write_stderr(ssh_channel channel,
+                                                const void *data,
+                                                uint32_t len);
 
 /* deprecated functions */
 SSH_DEPRECATED LIBSSH_API int ssh_accept(ssh_session session);
