@@ -635,9 +635,51 @@ SSH_PACKET_CALLBACK(channel_rcv_request) {
 
 	if (strcmp(request,"exit-status") == 0) {
 		SAFE_FREE(request);
-		ssh_log(session, SSH_LOG_PACKET, "received exit-status");
 		buffer_get_u32(packet, &status);
 		channel->exit_status = ntohl(status);
+		ssh_log(session, SSH_LOG_PACKET, "received exit-status %d", channel->exit_status);
+
+        if(ssh_callbacks_exists(channel->callbacks, channel_exit_status_function)) {
+            channel->callbacks->channel_exit_status_function(channel->session,
+                                                     channel,
+                                                     channel->exit_status,
+                                                     channel->callbacks->userdata);
+        }
+
+		leave_function();
+		return SSH_PACKET_USED;
+	}
+
+	if (strcmp(request,"signal") == 0) {
+		ssh_string signal;
+        char *sig;
+
+		SAFE_FREE(request);
+		ssh_log(session, SSH_LOG_PACKET, "received signal");
+
+		signal = buffer_get_ssh_string(packet);
+		if (signal == NULL) {
+			ssh_log(session, SSH_LOG_PACKET, "Invalid MSG_CHANNEL_REQUEST");
+			leave_function();
+			return SSH_PACKET_USED;
+		}
+
+		sig = ssh_string_to_char(signal);
+		ssh_string_free(signal);
+		if (sig == NULL) {
+			leave_function();
+			return SSH_PACKET_USED;
+		}
+
+
+		ssh_log(session, SSH_LOG_PACKET,
+				"Remote connection sent a signal SIG %s", sig);
+        if(ssh_callbacks_exists(channel->callbacks, channel_signal_function)) {
+            channel->callbacks->channel_signal_function(channel->session,
+                                                     channel,
+                                                     sig,
+                                                     channel->callbacks->userdata);
+        }
 
 		leave_function();
 		return SSH_PACKET_USED;
@@ -645,21 +687,23 @@ SSH_PACKET_CALLBACK(channel_rcv_request) {
 
 	if (strcmp(request, "exit-signal") == 0) {
 		const char *core = "(core dumped)";
-		ssh_string signal_s;
+		ssh_string tmp;
 		char *sig;
+		char *errmsg = NULL;
+		char *lang = NULL;
 		uint8_t i;
 
 		SAFE_FREE(request);
 
-		signal_s = buffer_get_ssh_string(packet);
-		if (signal_s == NULL) {
+		tmp = buffer_get_ssh_string(packet);
+		if (tmp == NULL) {
 			ssh_log(session, SSH_LOG_PACKET, "Invalid MSG_CHANNEL_REQUEST");
 			leave_function();
 			return SSH_PACKET_USED;
 		}
 
-		sig = ssh_string_to_char(signal_s);
-		ssh_string_free(signal_s);
+		sig = ssh_string_to_char(tmp);
+		ssh_string_free(tmp);
 		if (sig == NULL) {
 			leave_function();
 			return SSH_PACKET_USED;
@@ -670,8 +714,51 @@ SSH_PACKET_CALLBACK(channel_rcv_request) {
 			core = "";
 		}
 
+		tmp = buffer_get_ssh_string(packet);
+		if (tmp == NULL) {
+			ssh_log(session, SSH_LOG_PACKET, "Invalid MSG_CHANNEL_REQUEST");
+            SAFE_FREE(sig);
+			leave_function();
+			return SSH_PACKET_USED;
+		}
+
+		errmsg = ssh_string_to_char(tmp);
+		ssh_string_free(tmp);
+		if (errmsg == NULL) {
+            SAFE_FREE(sig);
+			leave_function();
+			return SSH_PACKET_USED;
+		}
+
+		tmp = buffer_get_ssh_string(packet);
+		if (tmp == NULL) {
+			ssh_log(session, SSH_LOG_PACKET, "Invalid MSG_CHANNEL_REQUEST");
+            SAFE_FREE(errmsg);
+            SAFE_FREE(sig);
+			leave_function();
+			return SSH_PACKET_USED;
+		}
+
+		lang = ssh_string_to_char(tmp);
+		ssh_string_free(tmp);
+		if (lang == NULL) {
+            SAFE_FREE(errmsg);
+            SAFE_FREE(sig);
+			leave_function();
+			return SSH_PACKET_USED;
+		}
+
 		ssh_log(session, SSH_LOG_PACKET,
 				"Remote connection closed by signal SIG %s %s", sig, core);
+        if(ssh_callbacks_exists(channel->callbacks, channel_exit_signal_function)) {
+            channel->callbacks->channel_exit_signal_function(channel->session,
+                                                     channel,
+                                                     sig, i, errmsg, lang,
+                                                     channel->callbacks->userdata);
+        }
+
+        SAFE_FREE(lang);
+        SAFE_FREE(errmsg);
 		SAFE_FREE(sig);
 
 		leave_function();
@@ -832,6 +919,7 @@ error:
   leave_function();
   return rc;
 }
+
 
 /**
  * @brief Close and free a channel.
@@ -2569,6 +2657,117 @@ error:
   ssh_string_free(str);
 
   leave_function();
+  return rc;
+}
+
+/**
+ * @brief Send the exit status to the remote process (as described in RFC 4254, section 6.10).
+ *
+ * Sends the exit status to the remote process.
+ * Only SSH-v2 is supported (I'm not sure about SSH-v1).
+ *
+ * @param[in]  channel  The channel to send exit status.
+ *
+ * @param[in]  sig      The exit status to send
+ *
+ * @return              SSH_OK on success, SSH_ERROR if an error occured
+ *                      (including attempts to send exit status via SSH-v1 session).
+ */
+int ssh_channel_request_send_exit_status(ssh_channel channel, int exit_status) {
+  ssh_buffer buffer = NULL;
+  int rc = SSH_ERROR;
+
+#ifdef WITH_SSH1
+  if (channel->version == 1) {
+    return SSH_ERROR; // TODO: Add support for SSH-v1 if possible.
+  }
+#endif
+
+  buffer = ssh_buffer_new();
+  if (buffer == NULL) {
+    goto error;
+  }
+
+  if (buffer_add_u32(buffer, ntohl(exit_status)) < 0) {
+    goto error;
+  }
+
+  rc = channel_request(channel, "exit-status", buffer, 0);
+error:
+  ssh_buffer_free(buffer);
+  return rc;
+}
+
+/**
+ * @brief Send an exit signal to remote process (as described in RFC 4254, section 6.10).
+ *
+ * Sends a signal 'sig' to the remote process.
+ * Note, that remote system may not support signals concept.
+ * In such a case this request will be silently ignored.
+ * Only SSH-v2 is supported (I'm not sure about SSH-v1).
+ *
+ * @param[in]  channel  The channel to send signal.
+ *
+ * @param[in]  sig      The signal to send (without SIG prefix)
+ *                      (e.g. "TERM" or "KILL").
+ * @param[in]  core     A boolean to tell if a core was dumped
+ * @param[in]  errmsg   A CRLF explanation text about the error condition
+ * @param[in]  lang     The language used in the message (format: RFC 3066)
+ *
+ * @return              SSH_OK on success, SSH_ERROR if an error occured
+ *                      (including attempts to send signal via SSH-v1 session).
+ */
+int ssh_channel_request_send_exit_signal(ssh_channel channel, const char *sig, int core, const char *errmsg, const char *lang) {
+  ssh_buffer buffer = NULL;
+  ssh_string tmp = NULL;
+  int rc = SSH_ERROR;
+
+#ifdef WITH_SSH1
+  if (channel->version == 1) {
+    return SSH_ERROR; // TODO: Add support for SSH-v1 if possible.
+  }
+#endif
+
+  buffer = ssh_buffer_new();
+  if (buffer == NULL) {
+    goto error;
+  }
+
+  tmp = ssh_string_from_char(sig);
+  if (tmp == NULL) {
+    goto error;
+  }
+  if (buffer_add_ssh_string(buffer, tmp) < 0) {
+    goto error;
+  }
+
+  if (buffer_add_u8(buffer, core?1:0) < 0) {
+    goto error;
+  }
+
+  ssh_string_free(tmp);
+  tmp = ssh_string_from_char(errmsg);
+  if (tmp == NULL) {
+    goto error;
+  }
+  if (buffer_add_ssh_string(buffer, tmp) < 0) {
+    goto error;
+  }
+
+  ssh_string_free(tmp);
+  tmp = ssh_string_from_char(lang);
+  if (tmp == NULL) {
+    goto error;
+  }
+  if (buffer_add_ssh_string(buffer, tmp) < 0) {
+    goto error;
+  }
+
+  rc = channel_request(channel, "signal", buffer, 0);
+error:
+  ssh_buffer_free(buffer);
+  if(tmp)
+    ssh_string_free(tmp);
   return rc;
 }
 
