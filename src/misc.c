@@ -699,12 +699,15 @@ int ssh_analyze_banner(ssh_session session, int *ssh1, int *ssh2) {
   const char *banner = session->clientbanner;
   const char *openssh;
 
-  ssh_log(session, SSH_LOG_RARE, "Analyzing banner: %s", banner);
 
-  if (strncmp(banner, "SSH-", 4) != 0) {
+  if (banner == NULL ||
+      strlen(banner) <= 4 ||
+      strncmp(banner, "SSH-", 4) != 0) {
     ssh_set_error(session, SSH_FATAL, "Protocol mismatch: %s", banner);
     return -1;
   }
+
+  ssh_log(session, SSH_LOG_RARE, "Analyzing banner: %s", banner);
 
   /*
    * Typical banners e.g. are:
