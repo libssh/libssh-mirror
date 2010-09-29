@@ -688,6 +688,7 @@ char *ssh_path_expand_escape(ssh_session session, const char *s) {
  * server.
  *
  * @param  session      The session to analyze the banner from.
+ * @param  server       0 means we are a client, 1 a server.
  * @param  ssh1         The variable which is set if it is a SSHv1 server.
  * @param  ssh2         The variable which is set if it is a SSHv2 server.
  *
@@ -695,10 +696,15 @@ char *ssh_path_expand_escape(ssh_session session, const char *s) {
  *
  * @see ssh_get_banner()
  */
-int ssh_analyze_banner(ssh_session session, int *ssh1, int *ssh2) {
-  const char *banner = session->clientbanner;
+int ssh_analyze_banner(ssh_session session, int server, int *ssh1, int *ssh2) {
+  const char *banner;
   const char *openssh;
 
+  if (server) {
+      banner = session->clientbanner;
+  } else {
+      banner = session->serverbanner;
+  }
 
   if (banner == NULL ||
       strlen(banner) <= 4 ||

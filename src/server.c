@@ -435,7 +435,7 @@ static void ssh_server_connection_callback(ssh_session session){
 		      "SSH client banner: %s", session->clientbanner);
 
 		  /* Here we analyze the different protocols the server allows. */
-		  if (ssh_analyze_banner(session, &ssh1, &ssh2) < 0) {
+		  if (ssh_analyze_banner(session, 1, &ssh1, &ssh2) < 0) {
 		    goto error;
 		  }
 		  /* Here we decide which version of the protocol to use. */
