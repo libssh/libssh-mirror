@@ -37,6 +37,8 @@
 #include "libssh/session.h"
 #include "libssh/dh.h"
 #include "libssh/threads.h"
+#include "libssh/misc.h"
+
 #define set_status(session, status) do {\
         if (session->callbacks && session->callbacks->connect_status_function) \
             session->callbacks->connect_status_function(session->callbacks->userdata, status); \
@@ -112,69 +114,6 @@ static int callback_receive_banner(const void *data, size_t len, void *user) {
   }
   leave_function();
   return ret;
-}
-
-/**
- * @internal
- *
- * @brief Analyze the SSH banner to find out if we have a SSHv1 or SSHv2
- * server.
- *
- * @param  session      The session to analyze the banner from.
- * @param  ssh1         The variable which is set if it is a SSHv1 server.
- * @param  ssh2         The variable which is set if it is a SSHv2 server.
- *
- * @return 0 on success, < 0 on error.
- *
- * @see ssh_get_banner()
- */
-static int ssh_analyze_banner(ssh_session session, int *ssh1, int *ssh2) {
-  const char *banner = session->serverbanner;
-  const char *openssh;
-
-  ssh_log(session, SSH_LOG_RARE, "Analyzing banner: %s", banner);
-
-  if (strncmp(banner, "SSH-", 4) != 0) {
-    ssh_set_error(session, SSH_FATAL, "Protocol mismatch: %s", banner);
-    return -1;
-  }
-
-  /*
-   * Typical banners e.g. are:
-   * SSH-1.5-blah
-   * SSH-1.99-blah
-   * SSH-2.0-blah
-   */
-  switch(banner[4]) {
-    case '1':
-      *ssh1 = 1;
-      if (banner[6] == '9') {
-        *ssh2 = 1;
-      } else {
-        *ssh2 = 0;
-      }
-      break;
-    case '2':
-      *ssh1 = 0;
-      *ssh2 = 1;
-      break;
-    default:
-      ssh_set_error(session, SSH_FATAL, "Protocol mismatch: %s", banner);
-      return -1;
-  }
-
-  openssh = strstr(banner, "OpenSSH");
-  if (openssh != NULL) {
-    int major, minor;
-    major = strtol(openssh + 8, (char **) NULL, 10);
-    minor = strtol(openssh + 10, (char **) NULL, 10);
-    session->openssh = SSH_VERSION_INT(major, minor, 0);
-    ssh_log(session, SSH_LOG_RARE,
-        "We are talking to an OpenSSH server version: %d.%d (%x)",
-        major, minor, session->openssh);
-  }
-
-  return 0;
 }
 
 /** @internal
