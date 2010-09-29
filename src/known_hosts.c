@@ -26,6 +26,7 @@
 
 #include <ctype.h>
 #include <errno.h>
+#include <stdio.h>
 
 #include "libssh/priv.h"
 #include "libssh/session.h"
