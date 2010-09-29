@@ -757,7 +757,7 @@ int ssh_analyze_banner(ssh_session session, int server, int *ssh1, int *ssh2) {
        * OpenSSH_5.4
        * 012345678901234567890
        */
-      if (strlen(openss) > 9) {
+      if (strlen(openssh) > 9) {
           major = strtol(openssh + 8, (char **) NULL, 10);
           minor = strtol(openssh + 10, (char **) NULL, 10);
           session->openssh = SSH_VERSION_INT(major, minor, 0);
