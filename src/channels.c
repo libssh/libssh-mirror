@@ -41,6 +41,9 @@
 #include "libssh/session.h"
 #include "libssh/misc.h"
 #include "libssh/messages.h"
+#if WITH_SERVER
+#include "libssh/server.h"
+#endif
 
 #define WINDOWBASE 128000
 #define WINDOWLIMIT (WINDOWBASE/2)
@@ -2503,6 +2506,74 @@ int ssh_channel_select(ssh_channel *readchans, ssh_channel *writechans,
   return 0;
 }
 
-/** @} */
+#if WITH_SERVER
+/**
+ * @brief Open a TCP/IP reverse forwarding channel.
+ *
+ * @param[in]  channel  An allocated channel.
+ *
+ * @param[in]  remotehost The remote host to connected (host name or IP).
+ *
+ * @param[in]  remoteport The remote port.
+ *
+ * @param[in]  sourcehost The source host (your local computer). It's optional
+ *                        and for logging purpose.
+ *
+ * @param[in]  localport  The source port (your local computer). It's optional
+ *                        and for logging purpose.
+ *
+ * @return              SSH_OK on success, SSH_ERROR if an error occured.
+ *
+ * @warning This function does not bind the local port and does not automatically
+ *          forward the content of a socket to the channel. You still have to
+ *          use channel_read and channel_write for this.
+ */
+int ssh_channel_open_reverse_forward(ssh_channel channel, const char *remotehost,
+    int remoteport, const char *sourcehost, int localport) {
+  ssh_session session = channel->session;
+  ssh_buffer payload = NULL;
+  ssh_string str = NULL;
+  int rc = SSH_ERROR;
+
+  enter_function();
+
+  payload = ssh_buffer_new();
+  if (payload == NULL) {
+    goto error;
+  }
+  str = ssh_string_from_char(remotehost);
+  if (str == NULL) {
+    goto error;
+  }
+
+  if (buffer_add_ssh_string(payload, str) < 0 ||
+      buffer_add_u32(payload,htonl(remoteport)) < 0) {
+    goto error;
+  }
+
+  ssh_string_free(str);
+  str = ssh_string_from_char(sourcehost);
+  if (str == NULL) {
+    goto error;
+  }
+
+  if (buffer_add_ssh_string(payload, str) < 0 ||
+      buffer_add_u32(payload,htonl(localport)) < 0) {
+    goto error;
+  }
+
+  rc = channel_open(channel, "forwarded-tcpip", 64000, 32000, payload);
+
+error:
+  ssh_buffer_free(payload);
+  ssh_string_free(str);
+
+  leave_function();
+  return rc;
+}
+
+#endif
+
+/* @} */
 
 /* vim: set ts=4 sw=4 et cindent: */

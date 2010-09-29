@@ -39,6 +39,9 @@
 #include "libssh/keys.h"
 #include "libssh/dh.h"
 #include "libssh/messages.h"
+#if WITH_SERVER
+#include "libssh/server.h"
+#endif
 
 /**
  * @defgroup libssh_messages The SSH message functions
@@ -62,6 +65,85 @@ static ssh_message ssh_message_new(ssh_session session){
   ZERO_STRUCTP(msg);
   msg->session = session;
   return msg;
+}
+
+SSH_PACKET_CALLBACK(ssh_packet_global_request){
+    ssh_message msg = NULL;
+    ssh_string request_s=NULL;
+    char *request=NULL;
+    ssh_string bind_addr_s=NULL;
+    char *bind_addr=NULL;
+    uint32_t bind_port;
+    uint8_t want_reply;
+    (void)user;
+    (void)type;
+    (void)packet;
+
+    request_s = buffer_get_ssh_string(packet);
+    if (request_s != NULL) {
+        request = ssh_string_to_char(request_s);
+        ssh_string_free(request_s);
+    }
+
+    buffer_get_u8(packet, &want_reply);
+
+    ssh_log(session,SSH_LOG_PROTOCOL,"Received SSH_MSG_GLOBAL_REQUEST packet");
+
+    msg = ssh_message_new(session);
+    msg->type = SSH_REQUEST_GLOBAL;
+
+    if(!strcmp(request, "tcpip-forward")) {
+        bind_addr_s = buffer_get_ssh_string(packet);
+        if (bind_addr_s != NULL) {
+            bind_addr = ssh_string_to_char(bind_addr_s);
+            ssh_string_free(bind_addr_s);
+        }
+
+        buffer_get_u32(packet, &bind_port);
+        bind_port = ntohl(bind_port);
+
+        msg->global_request.type = SSH_GLOBAL_REQUEST_TCPIP_FORWARD;
+        msg->global_request.want_reply = want_reply;
+        msg->global_request.bind_address = bind_addr;
+        msg->global_request.bind_port = bind_port;
+
+        ssh_log(session, SSH_LOG_PROTOCOL, "Received SSH_MSG_GLOBAL_REQUEST %s %d %s:%d", request, want_reply, bind_addr, bind_port);
+
+        if(ssh_callbacks_exists(session->callbacks, global_request_function)) {
+            ssh_log(session, SSH_LOG_PROTOCOL, "Calling callback for SSH_MSG_GLOBAL_REQUEST %s %d %s:%d", request, want_reply, bind_addr, bind_port);
+            session->callbacks->global_request_function(session, msg, session->callbacks->userdata);
+        } else {
+            ssh_message_reply_default(msg);
+        }
+    } else if(!strcmp(request, "cancel-tcpip-forward")) {
+        bind_addr_s = buffer_get_ssh_string(packet);
+        if (bind_addr_s != NULL) {
+            bind_addr = ssh_string_to_char(bind_addr_s);
+            ssh_string_free(bind_addr_s);
+        }
+        buffer_get_u32(packet, &bind_port);
+        bind_port = ntohl(bind_port);
+
+        msg->global_request.type = SSH_GLOBAL_REQUEST_CANCEL_TCPIP_FORWARD;
+        msg->global_request.want_reply = want_reply;
+        msg->global_request.bind_address = bind_addr;
+        msg->global_request.bind_port = bind_port;
+
+        ssh_log(session, SSH_LOG_PROTOCOL, "Received SSH_MSG_GLOBAL_REQUEST %s %d %s:%d", request, want_reply, bind_addr, bind_port);
+
+        if(ssh_callbacks_exists(session->callbacks, global_request_function)) {
+            session->callbacks->global_request_function(session, msg, session->callbacks->userdata);
+        } else {
+            ssh_message_reply_default(msg);
+        }
+    } else {
+        ssh_log(session, SSH_LOG_PROTOCOL, "UNKNOWN SSH_MSG_GLOBAL_REQUEST %s %d", request, want_reply);
+    }
+
+    SAFE_FREE(msg);
+    SAFE_FREE(request);
+    SAFE_FREE(bind_addr);
+    return SSH_PACKET_USED;
 }
 
 SSH_PACKET_CALLBACK(ssh_packet_service_request){
@@ -763,6 +845,8 @@ int ssh_message_subtype(ssh_message msg) {
       return msg->channel_request_open.type;
     case SSH_REQUEST_CHANNEL:
       return msg->channel_request.type;
+    case SSH_REQUEST_GLOBAL:
+      return msg->global_request.type;
   }
 
   return -1;
@@ -797,6 +881,9 @@ void ssh_message_free(ssh_message msg){
       break;
     case SSH_REQUEST_SERVICE:
       SAFE_FREE(msg->service_request.service);
+      break;
+    case SSH_REQUEST_GLOBAL:
+      SAFE_FREE(msg->global_request.bind_address);
       break;
   }
   ZERO_STRUCTP(msg);

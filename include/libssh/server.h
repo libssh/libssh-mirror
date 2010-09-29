@@ -158,6 +158,9 @@ LIBSSH_API int ssh_message_auth_set_methods(ssh_message msg, int methods);
 LIBSSH_API int ssh_message_service_reply_success(ssh_message msg);
 LIBSSH_API char *ssh_message_service_service(ssh_message msg);
 
+LIBSSH_API int ssh_message_global_request_reply_success(ssh_message msg,
+                                                        uint16_t bound_port);
+
 LIBSSH_API void ssh_set_message_callback(ssh_session session,
     int(*ssh_bind_message_callback)(ssh_session session, ssh_message msg, void *data),
     void *data);
@@ -182,6 +185,12 @@ LIBSSH_API char *ssh_message_channel_request_env_value(ssh_message msg);
 LIBSSH_API char *ssh_message_channel_request_command(ssh_message msg);
 
 LIBSSH_API char *ssh_message_channel_request_subsystem(ssh_message msg);
+
+LIBSSH_API char *ssh_message_global_request_address(ssh_message msg);
+LIBSSH_API int ssh_message_global_request_port(ssh_message msg);
+
+LIBSSH_API int ssh_channel_open_reverse_forward(ssh_channel channel, const char *remotehost,
+    int remoteport, const char *sourcehost, int localport);
 
 /* deprecated functions */
 SSH_DEPRECATED LIBSSH_API int ssh_accept(ssh_session session);

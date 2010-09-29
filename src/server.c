@@ -890,6 +890,54 @@ int ssh_message_service_reply_success(ssh_message msg) {
   return packet_send(msg->session);
 }
 
+int ssh_message_global_request_reply_success(ssh_message msg, uint16_t bound_port) {
+    ssh_log(msg->session, SSH_LOG_FUNCTIONS, "Accepting a global request");
+
+    if (msg->global_request.want_reply) {
+        if (buffer_add_u8(msg->session->out_buffer
+                    , SSH2_MSG_REQUEST_SUCCESS) < 0) {
+            goto error;
+        }
+
+        if(msg->global_request.type == SSH_GLOBAL_REQUEST_TCPIP_FORWARD 
+                                && msg->global_request.bind_port == 0) {
+            if (buffer_add_u32(msg->session->out_buffer, htonl(bound_port)) < 0) {
+                goto error;
+            }
+        }
+
+        return packet_send(msg->session);
+    }
+
+    if(msg->global_request.type == SSH_GLOBAL_REQUEST_TCPIP_FORWARD 
+                                && msg->global_request.bind_port == 0) {
+        ssh_log(msg->session, SSH_LOG_PACKET,
+                "The client doesn't want to know the remote port!");
+    }
+
+    return SSH_OK;
+error:
+    return SSH_ERROR;
+}
+
+static int ssh_message_global_request_reply_default(ssh_message msg) {
+    ssh_log(msg->session, SSH_LOG_FUNCTIONS, "Refusing a global request");
+
+    if (msg->global_request.want_reply) {
+        if (buffer_add_u8(msg->session->out_buffer
+                    , SSH2_MSG_REQUEST_FAILURE) < 0) {
+            goto error;
+        }
+        return packet_send(msg->session);
+    }
+    ssh_log(msg->session, SSH_LOG_PACKET,
+            "The client doesn't want to know the request failed!");
+
+    return SSH_OK;
+error:
+    return SSH_ERROR;
+}
+
 int ssh_message_reply_default(ssh_message msg) {
   if (msg == NULL) {
     return -1;
@@ -904,6 +952,8 @@ int ssh_message_reply_default(ssh_message msg) {
       return ssh_message_channel_request_reply_default(msg);
     case SSH_REQUEST_SERVICE:
       return ssh_message_service_request_reply_default(msg);
+    case SSH_REQUEST_GLOBAL:
+      return ssh_message_global_request_reply_default(msg);
     default:
       ssh_log(msg->session, SSH_LOG_PACKET,
           "Don't know what to default reply to %d type",
@@ -1061,6 +1111,14 @@ char *ssh_message_channel_request_command(ssh_message msg){
 
 char *ssh_message_channel_request_subsystem(ssh_message msg){
     return msg->channel_request.subsystem;
+}
+
+char *ssh_message_global_request_address(ssh_message msg){
+    return msg->global_request.bind_address;
+}
+
+int ssh_message_global_request_port(ssh_message msg){
+    return msg->global_request.bind_port;
 }
 
 /** @brief defines the SSH_MESSAGE callback

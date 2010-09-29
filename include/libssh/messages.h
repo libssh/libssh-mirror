@@ -47,6 +47,13 @@ struct ssh_service_request {
     char *service;
 };
 
+struct ssh_global_request {
+    int type;
+    uint8_t want_reply;
+    char *bind_address;
+    uint16_t bind_port;
+};
+
 struct ssh_channel_request {
     int type;
     ssh_channel channel;
@@ -75,11 +82,13 @@ struct ssh_message_struct {
     struct ssh_channel_request_open channel_request_open;
     struct ssh_channel_request channel_request;
     struct ssh_service_request service_request;
+    struct ssh_global_request global_request;
 };
 
 SSH_PACKET_CALLBACK(ssh_packet_channel_open);
 SSH_PACKET_CALLBACK(ssh_packet_service_request);
 SSH_PACKET_CALLBACK(ssh_packet_userauth_request);
+SSH_PACKET_CALLBACK(ssh_packet_global_request);
 
 int ssh_message_handle_channel_request(ssh_session session, ssh_channel channel, ssh_buffer packet,
     const char *request, uint8_t want_reply);
