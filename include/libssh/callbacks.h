@@ -92,6 +92,16 @@ typedef void (*ssh_status_callback) (ssh_session session, float status,
 		void *userdata);
 
 /**
+ * @brief SSH global request callback. All global request will go through this
+ * callback.
+ * @param session Current session handler
+ * @param message the actual message
+ * @param userdata Userdata to be passed to the callback function.
+ */
+typedef void (*ssh_global_request_callback) (ssh_session session,
+                                        ssh_message message, void *userdata);
+
+/**
  * The structure to replace libssh functions with appropriate callbacks.
  */
 struct ssh_callbacks_struct {
@@ -114,6 +124,10 @@ struct ssh_callbacks_struct {
    * percentage of connection steps completed.
    */
   void (*connect_status_function)(void *userdata, float status);
+  /**
+   * This function will be called each time a global request is received.
+   */
+  ssh_global_request_callback global_request_function;
 };
 typedef struct ssh_callbacks_struct *ssh_callbacks;
 
@@ -177,7 +191,7 @@ typedef struct ssh_socket_callbacks_struct *ssh_socket_callbacks;
  * @returns nonzero if callback can be called
  */
 #define ssh_callbacks_exists(p,c) (\
-  ( (char *)&((p)-> c) < (char *)(p) + (p)->size ) && \
+  (p) && ( (char *)&((p)-> c) < (char *)(p) + (p)->size ) && \
   ((p)-> c != NULL) \
   )
 
@@ -226,7 +240,7 @@ struct ssh_packet_callbacks_struct {
 typedef struct ssh_packet_callbacks_struct *ssh_packet_callbacks;
 
 /**
- * @brief Set the callback functions.
+ * @brief Set the session callback functions.
  *
  * This functions sets the callback structure to use your own callback
  * functions for auth, logging and status.
@@ -242,11 +256,146 @@ typedef struct ssh_packet_callbacks_struct *ssh_packet_callbacks;
  *
  * @param  session      The session to set the callback structure.
  *
- * @param  cb           The callback itself.
+ * @param  cb           The callback structure itself.
  *
  * @return SSH_OK on success, SSH_ERROR on error.
  */
 LIBSSH_API int ssh_set_callbacks(ssh_session session, ssh_callbacks cb);
+
+/**
+ * @brief SSH channel data callback. Called when data is available on a channel
+ * @param session Current session handler
+ * @param channel the actual channel
+ * @param data the data that has been read on the channel
+ * @param len the length of the data
+ * @param is_stderr is 0 for stdout or 1 for stderr
+ * @param userdata Userdata to be passed to the callback function.
+ */
+typedef int (*ssh_channel_data_callback) (ssh_session session,
+                                           ssh_channel channel,
+                                           void *data,
+                                           uint32_t len,
+                                           int is_stderr,
+                                           void *userdata);
+
+/**
+ * @brief SSH channel eof callback. Called when a channel receives EOF
+ * @param session Current session handler
+ * @param channel the actual channel
+ * @param userdata Userdata to be passed to the callback function.
+ */
+typedef void (*ssh_channel_eof_callback) (ssh_session session,
+                                           ssh_channel channel,
+                                           void *userdata);
+
+/**
+ * @brief SSH channel close callback. Called when a channel is closed by remote peer
+ * @param session Current session handler
+ * @param channel the actual channel
+ * @param userdata Userdata to be passed to the callback function.
+ */
+typedef void (*ssh_channel_close_callback) (ssh_session session,
+                                            ssh_channel channel,
+                                            void *userdata);
+
+/**
+ * @brief SSH channel signal callback. Called when a channel has received a signal
+ * @param session Current session handler
+ * @param channel the actual channel
+ * @param signal the signal name (without the SIG prefix)
+ * @param userdata Userdata to be passed to the callback function.
+ */
+typedef void (*ssh_channel_signal_callback) (ssh_session session,
+                                            ssh_channel channel,
+                                            const char *signal,
+                                            void *userdata);
+
+/**
+ * @brief SSH channel exit status callback. Called when a channel has received an exit status
+ * @param session Current session handler
+ * @param channel the actual channel
+ * @param userdata Userdata to be passed to the callback function.
+ */
+typedef void (*ssh_channel_exit_status_callback) (ssh_session session,
+                                            ssh_channel channel,
+                                            int exit_status,
+                                            void *userdata);
+
+/**
+ * @brief SSH channel exit signal callback. Called when a channel has received an exit signal
+ * @param session Current session handler
+ * @param channel the actual channel
+ * @param signal the signal name (without the SIG prefix)
+ * @param core a boolean telling wether a core has been dumped or not
+ * @param errmsg the description of the exception
+ * @param lang the language of the description (format: RFC 3066)
+ * @param userdata Userdata to be passed to the callback function.
+ */
+typedef void (*ssh_channel_exit_signal_callback) (ssh_session session,
+                                            ssh_channel channel,
+                                            const char *signal,
+                                            int core,
+                                            const char *errmsg,
+                                            const char *lang,
+                                            void *userdata);
+
+struct ssh_channel_callbacks_struct {
+  /** DON'T SET THIS use ssh_callbacks_init() instead. */
+  size_t size;
+  /**
+   * User-provided data. User is free to set anything he wants here
+   */
+  void *userdata;
+  /**
+   * This functions will be called when there is data available.
+   */
+  ssh_channel_data_callback channel_data_function;
+  /**
+   * This functions will be called when the channel has received an EOF.
+   */
+  ssh_channel_eof_callback channel_eof_function;
+  /**
+   * This functions will be called when the channel has been closed by remote
+   */
+  ssh_channel_close_callback channel_close_function;
+  /**
+   * This functions will be called when a signal has been received
+   */
+  ssh_channel_signal_callback channel_signal_function;
+  /**
+   * This functions will be called when an exit status has been received
+   */
+  ssh_channel_exit_status_callback channel_exit_status_function;
+  /**
+   * This functions will be called when an exit signal has been received
+   */
+  ssh_channel_exit_signal_callback channel_exit_signal_function;
+};
+typedef struct ssh_channel_callbacks_struct *ssh_channel_callbacks;
+
+/**
+ * @brief Set the channel callback functions.
+ *
+ * This functions sets the callback structure to use your own callback
+ * functions for channel data and exceptions
+ *
+ * @code
+ * struct ssh_channel_callbacks_struct cb = {
+ *   .userdata = data,
+ *   .channel_data = my_channel_data_function
+ * };
+ * ssh_callbacks_init(&cb);
+ * ssh_set_channel_callbacks(channel, &cb);
+ * @endcode
+ *
+ * @param  channel      The channel to set the callback structure.
+ *
+ * @param  cb           The callback structure itself.
+ *
+ * @return SSH_OK on success, SSH_ERROR on error.
+ */
+LIBSSH_API int ssh_set_channel_callbacks(ssh_channel channel,
+                                         ssh_channel_callbacks cb);
 
 /** @} */
 

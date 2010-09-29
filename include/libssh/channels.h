@@ -69,6 +69,7 @@ struct ssh_channel_struct {
     int blocking;
     int exit_status;
     enum ssh_channel_request_state_e request_state;
+    ssh_channel_callbacks callbacks;
 };
 
 SSH_PACKET_CALLBACK(ssh_packet_channel_open_conf);

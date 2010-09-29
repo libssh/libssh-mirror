@@ -430,8 +430,10 @@ SSH_PACKET_CALLBACK(channel_rcv_change_window) {
 SSH_PACKET_CALLBACK(channel_rcv_data){
   ssh_channel channel;
   ssh_string str;
+  ssh_buffer buf;
   size_t len;
   int is_stderr;
+  int rest;
   (void)user;
   enter_function();
   if(type==SSH2_MSG_CHANNEL_DATA)
@@ -495,6 +497,25 @@ SSH_PACKET_CALLBACK(channel_rcv_data){
       channel->remote_window);
 
   ssh_string_free(str);
+
+  if(ssh_callbacks_exists(channel->callbacks, channel_data_function)) {
+      if(is_stderr) {
+        buf = channel->stderr_buffer;
+      } else {
+        buf = channel->stdout_buffer;
+      }
+      rest = channel->callbacks->channel_data_function(channel->session,
+                                                channel,
+                                                buffer_get_rest(buf),
+                                                buffer_get_rest_len(buf),
+                                                is_stderr,
+                                                channel->callbacks->userdata);
+      if(rest > 0) {
+        buffer_pass_bytes(buf, rest);
+        channel->local_window += rest;
+      }
+  }
+
   leave_function();
   return SSH_PACKET_USED;
 }
@@ -518,6 +539,12 @@ SSH_PACKET_CALLBACK(channel_rcv_eof) {
       channel->remote_channel);
   /* channel->remote_window = 0; */
   channel->remote_eof = 1;
+
+  if(ssh_callbacks_exists(channel->callbacks, channel_eof_function)) {
+      channel->callbacks->channel_eof_function(channel->session,
+                                               channel,
+                                               channel->callbacks->userdata);
+  }
 
   leave_function();
   return SSH_PACKET_USED;
@@ -559,6 +586,12 @@ SSH_PACKET_CALLBACK(channel_rcv_close) {
 	 * The remote eof doesn't break things if there was still data into read
 	 * buffer because the eof is ignored until the buffer is empty.
 	 */
+
+    if(ssh_callbacks_exists(channel->callbacks, channel_close_function)) {
+        channel->callbacks->channel_close_function(channel->session,
+                                                 channel,
+                                                 channel->callbacks->userdata);
+    }
 
 	leave_function();
 	return SSH_PACKET_USED;
