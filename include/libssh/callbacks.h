@@ -279,8 +279,21 @@ struct ssh_threads_callbacks_struct {
 LIBSSH_API int ssh_threads_set_callbacks(struct ssh_threads_callbacks_struct
     *cb);
 
-extern struct ssh_threads_callbacks_struct ssh_threads_pthread;
-extern struct ssh_threads_callbacks_struct ssh_threads_noop;
+/**
+ * @brief returns a pointer on the pthread threads callbacks, to be used with
+ * ssh_threads_set_callbacks.
+ * @warning you have to link with the library ssh_threads.
+ * @see ssh_threads_set_callbacks
+ */
+LIBSSH_API struct ssh_threads_callbacks_struct *ssh_threads_get_pthread(void);
+
+/**
+ * @brief returns a pointer on the noop threads callbacks, to be used with
+ * ssh_threads_set_callbacks. These callbacks do nothing and are being used by
+ * default.
+ * @see ssh_threads_set_callbacks
+ */
+LIBSSH_API struct ssh_threads_callbacks_struct *ssh_threads_get_noop(void);
 
 /** @} */
 #ifdef __cplusplus

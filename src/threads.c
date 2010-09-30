@@ -39,7 +39,7 @@ static unsigned long threads_id_noop (void){
 	return 1;
 }
 
-struct ssh_threads_callbacks_struct ssh_threads_noop =
+static struct ssh_threads_callbacks_struct ssh_threads_noop =
 {
     "threads_noop",
     threads_noop,
@@ -48,6 +48,10 @@ struct ssh_threads_callbacks_struct ssh_threads_noop =
     threads_noop,
     threads_id_noop
 };
+
+struct ssh_threads_callbacks_struct *ssh_threads_get_noop(){
+	return &ssh_threads_noop;
+}
 
 static struct ssh_threads_callbacks_struct *user_callbacks =&ssh_threads_noop;
 

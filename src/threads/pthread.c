@@ -78,7 +78,7 @@ static unsigned long ssh_pthread_thread_id (void){
 	return (unsigned long) pthread_self();
 }
 
-struct ssh_threads_callbacks_struct ssh_threads_pthread =
+static struct ssh_threads_callbacks_struct ssh_threads_pthread =
 {
 		.type="threads_pthread",
     .mutex_init=ssh_pthread_mutex_init,
@@ -87,5 +87,9 @@ struct ssh_threads_callbacks_struct ssh_threads_pthread =
     .mutex_unlock=ssh_pthread_mutex_unlock,
     .thread_id=ssh_pthread_thread_id
 };
+
+struct ssh_threads_callbacks_struct *ssh_threads_get_pthread(){
+	return &ssh_threads_pthread;
+}
 
 #endif /* HAVE_PTHREAD */
