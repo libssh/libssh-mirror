@@ -53,9 +53,6 @@
 #include "libssh/poll.h"
 #include "libssh/session.h"
 
-#ifndef _WIN32
-extern char **environ;
-#endif
 /**
  * @internal
  *
