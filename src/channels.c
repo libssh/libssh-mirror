@@ -2142,6 +2142,12 @@ int ssh_channel_read(ssh_channel channel, void *dest, uint32_t count, int is_std
 
     ssh_handle_packets(session,-1);
   }
+
+  len = buffer_get_rest_len(stdbuf);
+  /* Read count bytes if len is greater, everything otherwise */
+  len = (len > count ? count : len);
+  memcpy(dest, buffer_get_rest(stdbuf), len);
+  buffer_pass_bytes(stdbuf,len);
   /* Authorize some buffering while userapp is busy */
   if (channel->local_window < WINDOWLIMIT) {
     if (grow_window(session, channel, 0) < 0) {
@@ -2149,12 +2155,6 @@ int ssh_channel_read(ssh_channel channel, void *dest, uint32_t count, int is_std
       return -1;
     }
   }
-
-  len = buffer_get_rest_len(stdbuf);
-  /* Read count bytes if len is greater, everything otherwise */
-  len = (len > count ? count : len);
-  memcpy(dest, buffer_get_rest(stdbuf), len);
-  buffer_pass_bytes(stdbuf,len);
 
   leave_function();
   return len;
