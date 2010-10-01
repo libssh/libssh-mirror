@@ -303,38 +303,53 @@ ssh_channel ssh_channel_from_local(ssh_session session, uint32_t id) {
   return channel;
 }
 
+/**
+ * @internal
+ * @brief grows the local window and send a packet to the other party
+ * @param session SSH session
+ * @param channel SSH channel
+ * @param minimumsize The minimum acceptable size for the new window.
+ */
 static int grow_window(ssh_session session, ssh_channel channel, int minimumsize) {
   uint32_t new_window = minimumsize > WINDOWBASE ? minimumsize : WINDOWBASE;
 
   enter_function();
-
+  if(new_window <= channel->local_window){
+    ssh_log(session,SSH_LOG_PROTOCOL,
+        "growing window (channel %d:%d) to %d bytes : not needed (%d bytes)",
+        channel->local_channel, channel->remote_channel, new_window,
+        channel->local_window);
+    leave_function();
+    return SSH_OK;
+  }
+  /* WINDOW_ADJUST packet needs a relative increment rather than an absolute
+   * value, so we give here the missing bytes needed to reach new_window
+   */
   if (buffer_add_u8(session->out_buffer, SSH2_MSG_CHANNEL_WINDOW_ADJUST) < 0 ||
       buffer_add_u32(session->out_buffer, htonl(channel->remote_channel)) < 0 ||
-      buffer_add_u32(session->out_buffer, htonl(new_window)) < 0) {
+      buffer_add_u32(session->out_buffer, htonl(new_window - channel->local_window)) < 0) {
     goto error;
   }
 
   if (packet_send(session) == SSH_ERROR) {
-    /* FIXME should we fail here or not? */
-    leave_function();
-    return 1;
+    goto error;
   }
 
   ssh_log(session, SSH_LOG_PROTOCOL,
       "growing window (channel %d:%d) to %d bytes",
       channel->local_channel,
       channel->remote_channel,
-      channel->local_window + new_window);
+      new_window);
 
-  channel->local_window += new_window;
+  channel->local_window = new_window;
 
   leave_function();
-  return 0;
+  return SSH_OK;
 error:
   buffer_reinit(session->out_buffer);
 
   leave_function();
-  return -1;
+  return SSH_ERROR;
 }
 
 /**
@@ -1996,8 +2011,7 @@ int channel_read_buffer(ssh_channel channel, ssh_buffer buffer, uint32_t count,
       channel->local_window);
 
   if (count > buffer_get_rest_len(stdbuf) + channel->local_window) {
-    if (grow_window(session, channel,
-          count - buffer_get_rest_len(stdbuf)) < 0) {
+    if (grow_window(session, channel, count) < 0) {
       leave_function();
       return -1;
     }
@@ -2019,7 +2033,9 @@ int channel_read_buffer(ssh_channel channel, ssh_buffer buffer, uint32_t count,
     }
     ssh_handle_packets(session,-1);
   }
-
+  /* XXX This is probably not the good moment to increase the window,
+   * but since the function is deprecated I won't fix it
+   */
   if(channel->local_window < WINDOWLIMIT) {
     if (grow_window(session, channel, 0) < 0) {
       leave_function();
@@ -2099,8 +2115,7 @@ int ssh_channel_read(ssh_channel channel, void *dest, uint32_t count, int is_std
       channel->local_window);
 
   if (count > buffer_get_rest_len(stdbuf) + channel->local_window) {
-    if (grow_window(session, channel,
-          count - buffer_get_rest_len(stdbuf)) < 0) {
+    if (grow_window(session, channel, count - buffer_get_rest_len(stdbuf)) < 0) {
       leave_function();
       return -1;
     }
@@ -2127,7 +2142,7 @@ int ssh_channel_read(ssh_channel channel, void *dest, uint32_t count, int is_std
 
     ssh_handle_packets(session,-1);
   }
-
+  /* Authorize some buffering while userapp is busy */
   if (channel->local_window < WINDOWLIMIT) {
     if (grow_window(session, channel, 0) < 0) {
       leave_function();
