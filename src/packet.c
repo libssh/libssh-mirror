@@ -206,8 +206,8 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
          * have been decrypted)
          */
         if (packet_decrypt(session,
-              ((uint8_t*)ssh_buffer_get_begin(session->in_buffer) + blocksize),
-              ssh_buffer_get_len(session->in_buffer) - blocksize) < 0) {
+              ((uint8_t*)buffer_get_rest(session->in_buffer) + blocksize),
+              buffer_get_rest_len(session->in_buffer) - blocksize) < 0) {
           ssh_set_error(session, SSH_FATAL, "Decrypt error");
           goto error;
         }

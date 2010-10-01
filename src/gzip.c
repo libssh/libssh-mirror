@@ -185,8 +185,8 @@ static ssh_buffer gzip_decompress(ssh_session session, ssh_buffer source, size_t
       ssh_buffer_free(dest);
       return NULL;
     }
-    if (ssh_buffer_get_len(dest) > maxlen){
-      /* Size of packet exceded, avoid a denial of service attack */
+    if (buffer_get_rest_len(dest) > maxlen){
+      /* Size of packet exceeded, avoid a denial of service attack */
       ssh_buffer_free(dest);
       return NULL;
     }
@@ -209,7 +209,7 @@ int decompress_buffer(ssh_session session,ssh_buffer buf, size_t maxlen){
     return -1;
   }
 
-  if (buffer_add_data(buf, ssh_buffer_get_begin(dest), ssh_buffer_get_len(dest)) < 0) {
+  if (buffer_add_data(buf, buffer_get_rest(dest), buffer_get_rest_len(dest)) < 0) {
     ssh_buffer_free(dest);
     return -1;
   }
