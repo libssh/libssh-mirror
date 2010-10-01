@@ -1984,86 +1984,51 @@ error:
 int channel_read_buffer(ssh_channel channel, ssh_buffer buffer, uint32_t count,
     int is_stderr) {
   ssh_session session=channel->session;
-  ssh_buffer stdbuf = channel->stdout_buffer;
-  uint32_t maxread = count;
-  uint32_t len;
-
-  buffer_reinit(buffer);
+  char buffer_tmp[8192];
+  int r;
+  uint32_t total=0;
 
   enter_function();
-
-  if (count == 0) {
-    maxread = MAX_PACKET_LEN;
+  buffer_reinit(buffer);
+  if(count==0){
+    do {
+      r=ssh_channel_poll(channel, is_stderr);
+      if(r < 0){
+        leave_function();
+        return r;
+      }
+      if(r > 0){
+        r=ssh_channel_read(channel, buffer_tmp, r, is_stderr);
+        if(r < 0){
+          leave_function();
+          return r;
+        }
+        buffer_add_data(buffer,buffer_tmp,r);
+        leave_function();
+        return r;
+      }
+      if(ssh_channel_is_eof(channel)){
+        leave_function();
+        return 0;
+      }
+      ssh_handle_packets(channel->session, -1);
+    } while (r == 0);
   }
-
-  if (is_stderr) {
-    stdbuf = channel->stderr_buffer;
-  }
-
-  /*
-   * We may have problem if the window is too small to accept as much data
-   * as asked
-   */
-  ssh_log(session, SSH_LOG_PROTOCOL,
-      "Read (%d) buffered: %d bytes. Window: %d",
-      count,
-      buffer_get_rest_len(stdbuf),
-      channel->local_window);
-
-  if (count > buffer_get_rest_len(stdbuf) + channel->local_window) {
-    if (grow_window(session, channel, count) < 0) {
+  while(total < count){
+    r=ssh_channel_read(channel, buffer_tmp, sizeof(buffer_tmp), is_stderr);
+    if(r<0){
       leave_function();
-      return -1;
+      return r;
     }
-  }
-  /* block reading if asked bytes=0 */
-  while (buffer_get_rest_len(stdbuf) == 0 ||
-      buffer_get_rest_len(stdbuf) < count) {
-    if (channel->remote_eof && buffer_get_rest_len(stdbuf) == 0) {
+    if(r==0){
       leave_function();
-      return 0;
+      return total;
     }
-    if (channel->remote_eof) {
-      /* Return the resting bytes in buffer */
-      break;
-    }
-    if (buffer_get_rest_len(stdbuf) >= maxread) {
-      /* Stop reading when buffer is full enough */
-      break;
-    }
-    ssh_handle_packets(session,-1);
+    buffer_add_data(buffer,buffer_tmp,r);
+    total += r;
   }
-  /* XXX This is probably not the good moment to increase the window,
-   * but since the function is deprecated I won't fix it
-   */
-  if(channel->local_window < WINDOWLIMIT) {
-    if (grow_window(session, channel, 0) < 0) {
-      leave_function();
-      return -1;
-    }
-  }
-
-  if (count == 0) {
-    /* write the ful buffer information */
-    if (buffer_add_data(buffer, buffer_get_rest(stdbuf),
-          buffer_get_rest_len(stdbuf)) < 0) {
-      leave_function();
-      return -1;
-    }
-    buffer_reinit(stdbuf);
-  } else {
-    /* Read bytes bytes if len is greater, everything otherwise */
-    len = buffer_get_rest_len(stdbuf);
-    len = (len > count ? count : len);
-    if (buffer_add_data(buffer, buffer_get_rest(stdbuf), len) < 0) {
-      leave_function();
-      return -1;
-    }
-    buffer_pass_bytes(stdbuf,len);
-  }
-
   leave_function();
-  return ssh_buffer_get_len(buffer);
+  return total;
 }
 
 /* TODO FIXME Fix the delayed close thing */
