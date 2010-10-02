@@ -191,7 +191,7 @@ typedef struct ssh_socket_callbacks_struct *ssh_socket_callbacks;
  * @returns nonzero if callback can be called
  */
 #define ssh_callbacks_exists(p,c) (\
-  (p) && ( (char *)&((p)-> c) < (char *)(p) + (p)->size ) && \
+  (p != NULL) && ( (char *)&((p)-> c) < (char *)(p) + (p)->size ) && \
   ((p)-> c != NULL) \
   )
 
