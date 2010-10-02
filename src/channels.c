@@ -515,7 +515,12 @@ SSH_PACKET_CALLBACK(channel_rcv_data){
                                                 channel->callbacks->userdata);
       if(rest > 0) {
         buffer_pass_bytes(buf, rest);
-        channel->local_window += rest;
+      }
+      if (channel->local_window < WINDOWLIMIT) {
+        if (grow_window(session, channel, 0) < 0) {
+          leave_function();
+          return -1;
+        }
       }
   }
 
