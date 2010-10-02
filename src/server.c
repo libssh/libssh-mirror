@@ -1123,9 +1123,9 @@ int ssh_message_global_request_port(ssh_message msg){
 
 /** @brief defines the SSH_MESSAGE callback
  * @param session the current ssh session
- * @param[in] ssh_message_callback_ a function pointer to a callback taking the
+ * @param[in] ssh_bind_message_callback a function pointer to a callback taking the
  * current ssh session and received message as parameters. the function returns
- * 0 if the message has been parsed and treated sucessfuly, 1 otherwise (libssh
+ * 0 if the message has been parsed and treated successfully, 1 otherwise (libssh
  * must take care of the response).
  * @param[in] data void pointer to be passed to callback functions
  */
