@@ -114,7 +114,7 @@ static int realloc_buffer(struct ssh_buffer_struct *buffer, int needed) {
   char *new = NULL;
   buffer_verify(buffer);
   /* Find the smallest power of two which is greater or equal to needed */
-  while(smallest < needed) {
+  while(smallest <= needed) {
     smallest <<= 1;
   }
   needed = smallest;
@@ -126,6 +126,20 @@ static int realloc_buffer(struct ssh_buffer_struct *buffer, int needed) {
   buffer->allocated = needed;
   buffer_verify(buffer);
   return 0;
+}
+
+/** @internal
+ * @brief shifts a buffer to remove unused data in the beginning
+ * @param buffer SSH buffer
+ */
+static void buffer_shift(ssh_buffer buffer){
+  buffer_verify(buffer);
+  if(buffer->pos==0)
+    return;
+  memmove(buffer->data, buffer->data + buffer->pos, buffer->used - buffer->pos);
+  buffer->used -= buffer->pos;
+  buffer->pos=0;
+  buffer_verify(buffer);
 }
 
 /**
@@ -167,6 +181,8 @@ int buffer_reinit(struct ssh_buffer_struct *buffer) {
 int buffer_add_data(struct ssh_buffer_struct *buffer, const void *data, uint32_t len) {
   buffer_verify(buffer);
   if (buffer->allocated < (buffer->used + len)) {
+    if(buffer->pos > 0)
+      buffer_shift(buffer);
     if (realloc_buffer(buffer, buffer->used + len) < 0) {
       return -1;
     }

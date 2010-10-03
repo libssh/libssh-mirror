@@ -1,7 +1,8 @@
 #define LIBSSH_STATIC
 
 #include "torture.h"
-#include "libssh/buffer.h"
+#define DEBUG_BUFFER
+#include "buffer.c"
 
 ssh_buffer buffer;
 #define LIMIT (8*1024*1024)
