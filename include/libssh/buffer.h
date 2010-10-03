@@ -23,7 +23,13 @@
 #define BUFFER_H_
 
 #include "libssh/libssh.h"
-/* Describes a buffer state */
+/*
+ * Describes a buffer state
+ * [XXXXXXXXXXXXDATA PAYLOAD       XXXXXXXXXXXXXXXXXXXXXXXX]
+ * ^            ^                  ^                       ^]
+ * \_data points\_pos points here  \_used points here |    /
+ *   here                                          Allocated
+ */
 struct ssh_buffer_struct {
     char *data;
     uint32_t used;

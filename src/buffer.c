@@ -293,14 +293,24 @@ int buffer_add_u8(struct ssh_buffer_struct *buffer,uint8_t data){
 int buffer_prepend_data(struct ssh_buffer_struct *buffer, const void *data,
     uint32_t len) {
   buffer_verify(buffer);
-  if (buffer->allocated < (buffer->used + len)) {
-    if (realloc_buffer(buffer, buffer->used + len) < 0) {
+
+  if(len <= buffer->pos){
+    /* It's possible to insert data between begin and pos */
+    memcpy(buffer->data + (buffer->pos - len), data, len);
+    buffer->pos -= len;
+    buffer_verify(buffer);
+    return 0;
+  }
+  /* pos isn't high enough */
+  if (buffer->allocated < (buffer->used - buffer->pos + len)) {
+    if (realloc_buffer(buffer, buffer->used - buffer->pos + len) < 0) {
       return -1;
     }
   }
-  memmove(buffer->data + len, buffer->data, buffer->used);
+  memmove(buffer->data + len, buffer->data + buffer->pos, buffer->used - buffer->pos);
   memcpy(buffer->data, data, len);
-  buffer->used += len;
+  buffer->used += len - buffer->pos;
+  buffer->pos = 0;
   buffer_verify(buffer);
   return 0;
 }

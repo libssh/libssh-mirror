@@ -70,6 +70,14 @@ START_TEST (torture_buffer_prepend)
   buffer_prepend_data(buffer,"aris",4);
   ck_assert_int_eq(buffer_get_rest_len(buffer),9);
   ck_assert_int_eq(memcmp(buffer_get_rest(buffer), "arisbcdef", 9), 0);
+  /* same thing but we add 5 bytes now */
+  buffer_get_u32(buffer,&v);
+  ck_assert_int_eq(buffer_get_rest_len(buffer),5);
+  ck_assert_int_eq(memcmp(buffer_get_rest(buffer), "bcdef", 5), 0);
+  buffer_prepend_data(buffer,"12345",5);
+  ck_assert_int_eq(buffer_get_rest_len(buffer),10);
+  ck_assert_int_eq(memcmp(buffer_get_rest(buffer), "12345bcdef", 10), 0);
+
 }
 END_TEST
 
