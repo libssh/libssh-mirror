@@ -54,6 +54,26 @@ START_TEST (torture_growing_buffer_shifting)
 }
 END_TEST
 
+/* test the behavior of buffer_prepend_data
+ */
+START_TEST (torture_buffer_prepend)
+{
+  uint32_t v;
+  buffer_add_data(buffer,"abcdef",6);
+  buffer_prepend_data(buffer,"xyz",3);
+  ck_assert_int_eq(buffer_get_rest_len(buffer),9);
+  ck_assert_int_eq(memcmp(buffer_get_rest(buffer), "xyzabcdef", 9), 0);
+// Now remove 4 bytes and see if we can replace them
+  buffer_get_u32(buffer,&v);
+  ck_assert_int_eq(buffer_get_rest_len(buffer),5);
+  ck_assert_int_eq(memcmp(buffer_get_rest(buffer), "bcdef", 5), 0);
+  buffer_prepend_data(buffer,"aris",4);
+  ck_assert_int_eq(buffer_get_rest_len(buffer),9);
+  ck_assert_int_eq(memcmp(buffer_get_rest(buffer), "arisbcdef", 9), 0);
+}
+END_TEST
+
+
 Suite *torture_make_suite(void) {
   Suite *s = suite_create("libssh_buffer");
 
@@ -61,7 +81,8 @@ Suite *torture_make_suite(void) {
             torture_growing_buffer, setup, teardown);
   torture_create_case_fixture(s, "torture_growing_buffer_shifting",
             torture_growing_buffer_shifting, setup, teardown);
-
+  torture_create_case_fixture(s, "torture_buffer_prepend",
+            torture_buffer_prepend, setup, teardown);
   return s;
 }
 
