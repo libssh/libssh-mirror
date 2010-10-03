@@ -705,8 +705,8 @@ ssh_private_key privatekey_from_file(ssh_session session, const char *filename,
   switch (type) {
     case SSH_KEYTYPE_DSS:
       if (passphrase == NULL) {
-        if (session->callbacks && session->callbacks->auth_function) {
 #ifdef HAVE_LIBGCRYPT
+        if (session->callbacks && session->callbacks->auth_function) {
           auth_cb = session->callbacks->auth_function;
           auth_ud = session->callbacks->userdata;
 
@@ -725,6 +725,7 @@ ssh_private_key privatekey_from_file(ssh_session session, const char *filename,
       if (!valid) {
         ssh_set_error(session, SSH_FATAL, "Parsing private key %s", filename);
 #elif defined HAVE_LIBCRYPTO
+        if (session->callbacks && session->callbacks->auth_function) {
           dsa = PEM_read_DSAPrivateKey(file, NULL, pem_get_password, session);
         } else { /* authcb */
           /* openssl uses its own callback to get the passphrase here */
@@ -745,8 +746,8 @@ ssh_private_key privatekey_from_file(ssh_session session, const char *filename,
       break;
     case SSH_KEYTYPE_RSA:
       if (passphrase == NULL) {
-        if (session->callbacks && session->callbacks->auth_function) {
 #ifdef HAVE_LIBGCRYPT
+        if (session->callbacks && session->callbacks->auth_function) {
           auth_cb = session->callbacks->auth_function;
           auth_ud = session->callbacks->userdata;
           valid = read_rsa_privatekey(file, &rsa, auth_cb, auth_ud,
@@ -764,6 +765,7 @@ ssh_private_key privatekey_from_file(ssh_session session, const char *filename,
       if (!valid) {
         ssh_set_error(session,SSH_FATAL, "Parsing private key %s", filename);
 #elif defined HAVE_LIBCRYPTO
+        if (session->callbacks && session->callbacks->auth_function) {
           rsa = PEM_read_RSAPrivateKey(file, NULL, pem_get_password, session);
         } else { /* authcb */
           /* openssl uses its own callback to get the passphrase here */
