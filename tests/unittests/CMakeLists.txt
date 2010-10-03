@@ -1,5 +1,6 @@
 project(unittests C)
 
+add_check_test(torture_buffer torture_buffer.c ${TORTURE_LIBRARY})
 add_check_test(torture_callbacks torture_callbacks.c ${TORTURE_LIBRARY})
 add_check_test(torture_init torture_init.c ${TORTURE_LIBRARY})
 add_check_test(torture_keyfiles torture_keyfiles.c ${TORTURE_LIBRARY})
