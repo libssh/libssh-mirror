@@ -682,6 +682,7 @@ int ssh_bind_accept(ssh_bind sshbind, ssh_session session) {
     return SSH_ERROR;
   }
   ssh_socket_set_fd(session->socket, fd);
+  ssh_socket_get_poll_handle_out(session->socket);
   session->dsa_key = dsa;
   session->rsa_key = rsa;
 
