@@ -346,8 +346,8 @@ int sftp_reply_names(sftp_client_message msg) {
 
   if (buffer_add_u32(out, msg->id) < 0 ||
       buffer_add_u32(out, htonl(msg->attr_num)) < 0 ||
-      buffer_add_data(out, ssh_buffer_get_begin(msg->attrbuf),
-        ssh_buffer_get_len(msg->attrbuf)) < 0 ||
+      buffer_add_data(out, buffer_get_rest(msg->attrbuf),
+        buffer_get_rest_len(msg->attrbuf)) < 0 ||
       sftp_packet_write(msg->sftp, SSH_FXP_NAME, out) < 0) {
     ssh_buffer_free(out);
     ssh_buffer_free(msg->attrbuf);

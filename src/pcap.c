@@ -141,8 +141,8 @@ static int ssh_pcap_file_write(ssh_pcap_file pcap, ssh_buffer packet){
 	uint32_t len;
 	if(pcap == NULL || pcap->output==NULL)
 		return SSH_ERROR;
-	len=ssh_buffer_get_len(packet);
-	err=fwrite(ssh_buffer_get_begin(packet),len,1,pcap->output);
+	len=buffer_get_rest_len(packet);
+	err=fwrite(buffer_get_rest(packet),len,1,pcap->output);
 	if(err<0)
 		return SSH_ERROR;
 	else
@@ -162,7 +162,7 @@ int ssh_pcap_file_write_packet(ssh_pcap_file pcap, ssh_buffer packet, uint32_t o
 	gettimeofday(&now,NULL);
 	buffer_add_u32(header,htonl(now.tv_sec));
 	buffer_add_u32(header,htonl(now.tv_usec));
-	buffer_add_u32(header,htonl(ssh_buffer_get_len(packet)));
+	buffer_add_u32(header,htonl(buffer_get_rest_len(packet)));
 	buffer_add_u32(header,htonl(original_len));
 	buffer_add_buffer(header,packet);
 	err=ssh_pcap_file_write(pcap,header);

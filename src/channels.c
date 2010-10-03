@@ -1317,8 +1317,8 @@ static int channel_request(ssh_channel channel, const char *request,
   ssh_string_free(req);
 
   if (buffer != NULL) {
-    if (buffer_add_data(session->out_buffer, ssh_buffer_get_begin(buffer),
-        ssh_buffer_get_len(buffer)) < 0) {
+    if (buffer_add_data(session->out_buffer, buffer_get_rest(buffer),
+        buffer_get_rest_len(buffer)) < 0) {
       goto error;
     }
   }
@@ -1773,8 +1773,8 @@ static int global_request(ssh_session session, const char *request,
   req=NULL;
 
   if (buffer != NULL) {
-    if (buffer_add_data(session->out_buffer, ssh_buffer_get_begin(buffer),
-        ssh_buffer_get_len(buffer)) < 0) {
+    if (buffer_add_data(session->out_buffer, buffer_get_rest(buffer),
+        buffer_get_rest_len(buffer)) < 0) {
       goto error;
     }
   }
@@ -2409,8 +2409,8 @@ static int channel_protocol_select(ssh_channel *rchans, ssh_channel *wchans,
       ssh_handle_packets(chan->session,-1);
     }
 
-    if ((chan->stdout_buffer && ssh_buffer_get_len(chan->stdout_buffer) > 0) ||
-        (chan->stderr_buffer && ssh_buffer_get_len(chan->stderr_buffer) > 0) ||
+    if ((chan->stdout_buffer && buffer_get_rest_len(chan->stdout_buffer) > 0) ||
+        (chan->stderr_buffer && buffer_get_rest_len(chan->stderr_buffer) > 0) ||
         chan->remote_eof) {
       rout[j] = chan;
       j++;

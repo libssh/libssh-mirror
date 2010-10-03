@@ -198,7 +198,7 @@ int packet_hmac_verify(ssh_session session, ssh_buffer buffer,
   seq = htonl(session->recv_seq);
 
   hmac_update(ctx, (unsigned char *) &seq, sizeof(uint32_t));
-  hmac_update(ctx, ssh_buffer_get_begin(buffer), ssh_buffer_get_len(buffer));
+  hmac_update(ctx, buffer_get_rest(buffer), buffer_get_rest_len(buffer));
   hmac_final(ctx, hmacbuf, &len);
 
 #ifdef DEBUG_CRYPTO

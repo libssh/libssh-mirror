@@ -323,7 +323,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
       if ((digest == NULL || signature == NULL) ||
           (digest != NULL && signature != NULL &&
           sig_verify(session, public_key, signature,
-                     ssh_buffer_get_begin(digest), ssh_buffer_get_len(digest)) < 0)) {
+                     buffer_get_rest(digest), buffer_get_rest_len(digest)) < 0)) {
         ssh_log(session, SSH_LOG_PACKET, "Wrong signature from peer");
 
         ssh_string_free(sign);

@@ -58,8 +58,8 @@ static z_stream *initcompress(ssh_session session, int level) {
 
 static ssh_buffer gzip_compress(ssh_session session,ssh_buffer source,int level){
   z_stream *zout = session->current_crypto->compress_out_ctx;
-  void *in_ptr = ssh_buffer_get_begin(source);
-  unsigned long in_size = ssh_buffer_get_len(source);
+  void *in_ptr = buffer_get_rest(source);
+  unsigned long in_size = buffer_get_rest_len(source);
   ssh_buffer dest = NULL;
   unsigned char out_buf[BLOCKSIZE] = {0};
   unsigned long len;
@@ -113,7 +113,7 @@ int compress_buffer(ssh_session session, ssh_buffer buf) {
     return -1;
   }
 
-  if (buffer_add_data(buf, ssh_buffer_get_begin(dest), ssh_buffer_get_len(dest)) < 0) {
+  if (buffer_add_data(buf, buffer_get_rest(dest), buffer_get_rest_len(dest)) < 0) {
     ssh_buffer_free(dest);
     return -1;
   }

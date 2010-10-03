@@ -431,8 +431,8 @@ static int ssh_packet_write(ssh_session session) {
   enter_function();
 
   rc=ssh_socket_write(session->socket,
-      ssh_buffer_get_begin(session->out_buffer),
-      ssh_buffer_get_len(session->out_buffer));
+      buffer_get_rest(session->out_buffer),
+      buffer_get_rest_len(session->out_buffer));
   leave_function();
   return rc;
 }
@@ -440,7 +440,7 @@ static int ssh_packet_write(ssh_session session) {
 static int packet_send2(ssh_session session) {
   unsigned int blocksize = (session->current_crypto ?
       session->current_crypto->out_cipher->blocksize : 8);
-  uint32_t currentlen = ssh_buffer_get_len(session->out_buffer);
+  uint32_t currentlen = buffer_get_rest_len(session->out_buffer);
   unsigned char *hmac = NULL;
   char padstring[32] = {0};
   int rc = SSH_ERROR;
@@ -454,11 +454,11 @@ static int packet_send2(ssh_session session) {
 
 #if defined(HAVE_LIBZ) && defined(WITH_LIBZ)
   if (session->current_crypto && session->current_crypto->do_compress_out) {
-    ssh_log(session, SSH_LOG_PACKET, "Compressing in_buffer ...");
+    ssh_log(session, SSH_LOG_PACKET, "Compressing out_buffer ...");
     if (compress_buffer(session,session->out_buffer) < 0) {
       goto error;
     }
-    currentlen = ssh_buffer_get_len(session->out_buffer);
+    currentlen = buffer_get_rest_len(session->out_buffer);
   }
 #endif
   padding = (blocksize - ((currentlen +5) % blocksize));
@@ -489,12 +489,12 @@ static int packet_send2(ssh_session session) {
 #ifdef WITH_PCAP
   if(session->pcap_ctx){
   	ssh_pcap_context_write(session->pcap_ctx,SSH_PCAP_DIR_OUT,
-  			ssh_buffer_get_begin(session->out_buffer),ssh_buffer_get_len(session->out_buffer)
-  			,ssh_buffer_get_len(session->out_buffer));
+  			buffer_get_rest(session->out_buffer),buffer_get_rest_len(session->out_buffer)
+  			,buffer_get_rest_len(session->out_buffer));
   }
 #endif
-  hmac = packet_encrypt(session, ssh_buffer_get_begin(session->out_buffer),
-      ssh_buffer_get_len(session->out_buffer));
+  hmac = packet_encrypt(session, buffer_get_rest(session->out_buffer),
+      buffer_get_rest_len(session->out_buffer));
   if (hmac) {
     if (buffer_add_data(session->out_buffer, hmac, 20) < 0) {
       goto error;

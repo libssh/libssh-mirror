@@ -707,12 +707,12 @@ ssh_string publickey_to_string(ssh_public_key key) {
       break;
   }
 
-  ret = ssh_string_new(ssh_buffer_get_len(buf));
+  ret = ssh_string_new(buffer_get_rest_len(buf));
   if (ret == NULL) {
     goto error;
   }
 
-  ssh_string_fill(ret, ssh_buffer_get_begin(buf), ssh_buffer_get_len(buf));
+  ssh_string_fill(ret, buffer_get_rest(buf), buffer_get_rest_len(buf));
 error:
   ssh_buffer_free(buf);
   ssh_string_free(type);
@@ -853,12 +853,12 @@ static ssh_string signature_to_string(SIGNATURE *sign) {
       break;
   }
 
-  str = ssh_string_new(ssh_buffer_get_len(tmpbuf));
+  str = ssh_string_new(buffer_get_rest_len(tmpbuf));
   if (str == NULL) {
     ssh_buffer_free(tmpbuf);
     return NULL;
   }
-  ssh_string_fill(str, ssh_buffer_get_begin(tmpbuf), ssh_buffer_get_len(tmpbuf));
+  ssh_string_fill(str, buffer_get_rest(tmpbuf), buffer_get_rest_len(tmpbuf));
   ssh_buffer_free(tmpbuf);
 
   return str;
@@ -1260,7 +1260,7 @@ ssh_string ssh_do_sign(ssh_session session, ssh_buffer sigbuf,
 
   sha1_update(ctx, session_str, ssh_string_len(session_str) + 4);
   ssh_string_free(session_str);
-  sha1_update(ctx, ssh_buffer_get_begin(sigbuf), ssh_buffer_get_len(sigbuf));
+  sha1_update(ctx, buffer_get_rest(sigbuf), buffer_get_rest_len(sigbuf));
   sha1_final(hash + 1,ctx);
   hash[0] = 0;
 

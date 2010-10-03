@@ -208,7 +208,7 @@ static int agent_talk(struct ssh_session_struct *session,
   uint32_t len = 0;
   uint8_t payload[1024] = {0};
 
-  len = ssh_buffer_get_len(request);
+  len = buffer_get_rest_len(request);
   ssh_log(session, SSH_LOG_PACKET, "agent_talk - len of request: %u", len);
   agent_put_u32(payload, len);
 
@@ -425,11 +425,11 @@ ssh_string agent_sign_data(struct ssh_session_struct *session,
   }
 
   /* Add data */
-  dlen = ssh_buffer_get_len(data);
+  dlen = buffer_get_rest_len(data);
   if (buffer_add_u32(request, htonl(dlen)) < 0) {
     goto error;
   }
-  if (buffer_add_data(request, ssh_buffer_get_begin(data), dlen) < 0) {
+  if (buffer_add_data(request, buffer_get_rest(data), dlen) < 0) {
     goto error;
   }
 

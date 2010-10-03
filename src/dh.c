@@ -542,21 +542,21 @@ int make_sessionid(ssh_session session) {
     goto error;
   }
 
-  len = ntohl(ssh_buffer_get_len(client_hash));
+  len = ntohl(buffer_get_rest_len(client_hash));
   if (buffer_add_u32(buf,len) < 0) {
     goto error;
   }
-  if (buffer_add_data(buf, ssh_buffer_get_begin(client_hash),
-        ssh_buffer_get_len(client_hash)) < 0) {
+  if (buffer_add_data(buf, buffer_get_rest(client_hash),
+        buffer_get_rest_len(client_hash)) < 0) {
     goto error;
   }
 
-  len = ntohl(ssh_buffer_get_len(server_hash));
+  len = ntohl(buffer_get_rest_len(server_hash));
   if (buffer_add_u32(buf, len) < 0) {
     goto error;
   }
-  if (buffer_add_data(buf, ssh_buffer_get_begin(server_hash),
-        ssh_buffer_get_len(server_hash)) < 0) {
+  if (buffer_add_data(buf, buffer_get_rest(server_hash),
+        buffer_get_rest_len(server_hash)) < 0) {
     goto error;
   }
 
@@ -601,7 +601,7 @@ int make_sessionid(ssh_session session) {
   ssh_print_hexa("hash buffer", ssh_buffer_get_begin(buf), ssh_buffer_get_len(buf));
 #endif
 
-  sha1_update(ctx, ssh_buffer_get_begin(buf), ssh_buffer_get_len(buf));
+  sha1_update(ctx, buffer_get_rest(buf), buffer_get_rest_len(buf));
   sha1_final(session->next_crypto->session_id, ctx);
 
 #ifdef DEBUG_CRYPTO

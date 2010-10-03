@@ -1072,14 +1072,14 @@ ssh_string publickey_from_file(ssh_session session, const char *filename,
     return NULL;
   }
 
-  str = ssh_string_new(ssh_buffer_get_len(buffer));
+  str = ssh_string_new(buffer_get_rest_len(buffer));
   if (str == NULL) {
     ssh_set_error(session, SSH_FATAL, "Not enough space");
     ssh_buffer_free(buffer);
     return NULL;
   }
 
-  ssh_string_fill(str, ssh_buffer_get_begin(buffer), ssh_buffer_get_len(buffer));
+  ssh_string_fill(str, buffer_get_rest(buffer), buffer_get_rest_len(buffer));
   ssh_buffer_free(buffer);
 
   if (type) {

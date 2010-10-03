@@ -1121,7 +1121,7 @@ int ssh_message_global_request_port(ssh_message msg){
     return msg->global_request.bind_port;
 }
 
-/** @brief defines the SSH_MESSAGE callback
+/** @brief defines the ssh_message callback
  * @param session the current ssh session
  * @param[in] ssh_bind_message_callback a function pointer to a callback taking the
  * current ssh session and received message as parameters. the function returns
