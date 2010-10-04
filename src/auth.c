@@ -182,6 +182,14 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_success){
   ssh_log(session,SSH_LOG_PROTOCOL,"Authentication successful");
   session->auth_state=SSH_AUTH_STATE_SUCCESS;
   session->session_state=SSH_SESSION_STATE_AUTHENTICATED;
+  if(session->current_crypto && session->current_crypto->delayed_compress_out){
+  	ssh_log(session,SSH_LOG_PROTOCOL,"Enabling delayed compression OUT");
+  	session->current_crypto->do_compress_out=1;
+  }
+  if(session->current_crypto && session->current_crypto->delayed_compress_in){
+  	ssh_log(session,SSH_LOG_PROTOCOL,"Enabling delayed compression IN");
+  	session->current_crypto->do_compress_in=1;
+  }
   leave_function();
   return SSH_PACKET_USED;
 }

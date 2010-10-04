@@ -119,6 +119,25 @@ START_TEST (torture_algorithms_zlib)
 }
 END_TEST
 
+START_TEST (torture_algorithms_zlib_openssh)
+{
+  int rc;
+  ssh_options_set(session,SSH_OPTIONS_HOST,"localhost");
+  rc=ssh_options_set(session,SSH_OPTIONS_COMPRESSION_C_S,"zlib@openssh.com");
+  ck_assert_msg(rc==SSH_OK,ssh_get_error(session));
+  rc=ssh_options_set(session,SSH_OPTIONS_COMPRESSION_S_C,"zlib@openssh.com");
+  ck_assert_msg(rc==SSH_OK,ssh_get_error(session));
+  rc=ssh_connect(session);
+  ck_assert_msg(rc==SSH_OK,ssh_get_error(session));
+  rc=ssh_userauth_none(session,NULL);
+  if(rc != SSH_OK){
+    rc=ssh_get_error_code(session);
+    ck_assert_msg(rc==SSH_REQUEST_DENIED,ssh_get_error(session));
+  }
+  ssh_disconnect(session);
+}
+END_TEST
+
 Suite *torture_make_suite(void) {
   Suite *s = suite_create("libssh_algorithms");
 
@@ -140,5 +159,7 @@ Suite *torture_make_suite(void) {
           torture_algorithms_blowfish_cbc, setup, teardown);
     torture_create_case_fixture(s, "torture_algorithms_zlib",
           torture_algorithms_zlib, setup, teardown);
-     return s;
+    torture_create_case_fixture(s, "torture_algorithms_zlib_openssh",
+              torture_algorithms_zlib_openssh, setup, teardown);
+    return s;
 }

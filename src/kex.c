@@ -67,7 +67,7 @@
 #endif
 
 #if defined(HAVE_LIBZ) && defined(WITH_LIBZ)
-#define ZLIB "none,zlib,zlib@openssh.org"
+#define ZLIB "none,zlib,zlib@openssh.com"
 #else
 #define ZLIB "none"
 #endif

@@ -1015,7 +1015,9 @@ int ssh_message_auth_set_methods(ssh_message msg, int methods) {
 }
 
 int ssh_message_auth_reply_success(ssh_message msg, int partial) {
-  if (msg == NULL) {
+  int r;
+
+	if (msg == NULL) {
     return SSH_ERROR;
   }
 
@@ -1027,7 +1029,16 @@ int ssh_message_auth_reply_success(ssh_message msg, int partial) {
     return SSH_ERROR;
   }
 
-  return packet_send(msg->session);
+  r = packet_send(msg->session);
+  if(msg->session->current_crypto && msg->session->current_crypto->delayed_compress_out){
+  	ssh_log(msg->session,SSH_LOG_PROTOCOL,"Enabling delayed compression OUT");
+  	msg->session->current_crypto->do_compress_out=1;
+  }
+  if(msg->session->current_crypto && msg->session->current_crypto->delayed_compress_in){
+  	ssh_log(msg->session,SSH_LOG_PROTOCOL,"Enabling delayed compression IN");
+  	msg->session->current_crypto->do_compress_in=1;
+  }
+  return r;
 }
 
 /* Answer OK to a pubkey auth request */
