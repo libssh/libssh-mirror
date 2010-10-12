@@ -26,7 +26,7 @@
 #include "libssh/pcap.h"
 #include "libssh/auth.h"
 #include "libssh/channels.h"
-
+#include "libssh/poll.h"
 typedef struct ssh_kbdint_struct* ssh_kbdint;
 
 /* These are the different states a SSH session can be into its life */
@@ -125,6 +125,7 @@ struct ssh_session_struct {
     struct ssh_packet_callbacks_struct default_packet_callbacks;
     struct ssh_list *packet_callbacks;
     struct ssh_socket_callbacks_struct socket_callbacks;
+    ssh_poll_ctx default_poll_ctx;
     /* options */
 #ifdef WITH_PCAP
     ssh_pcap_context pcap_ctx; /* pcap debugging context */

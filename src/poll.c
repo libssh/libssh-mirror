@@ -33,6 +33,7 @@
 #include "libssh/libssh.h"
 #include "libssh/poll.h"
 #include "libssh/socket.h"
+#include "libssh/session.h"
 
 #ifndef SSH_POLL_CTX_CHUNK
 #define SSH_POLL_CTX_CHUNK			5
@@ -44,7 +45,7 @@
  *
  * Add a generic way to handle sockets asynchronously.
  *
- * It's based on poll objects, each of which store a socket, it's events and a
+ * It's based on poll objects, each of which store a socket, its events and a
  * callback, which gets called whenever an event is set. The poll objects are
  * attached to a poll context, which should be allocated on per thread basis.
  *
@@ -54,9 +55,6 @@
  *
  * @{
  */
-
-/** global poll context used for blocking operations */
-static ssh_poll_ctx global_poll_ctx;
 
 struct ssh_poll_handle_struct {
   ssh_poll_ctx ctx;
@@ -659,32 +657,19 @@ int ssh_poll_ctx_dopoll(ssh_poll_ctx ctx, int timeout) {
   return rc;
 }
 
-/** @internal
- * @brief returns a pointer to the global poll context.
- * Allocates it if it does not exist.
- * @param session an optional session handler, used to store the error
- * message if needed.
- * @returns pointer to the global poll context.
+/**
+ * @internal
+ * @brief gets the default poll structure for the current session,
+ * when used in blocking mode.
+ * @param session SSH session
+ * @returns the default ssh_poll_ctx
  */
-ssh_poll_ctx ssh_get_global_poll_ctx(ssh_session session){
-	if(global_poll_ctx != NULL)
-		return global_poll_ctx;
-	global_poll_ctx=ssh_poll_ctx_new(5);
-	if(global_poll_ctx == NULL && session != NULL){
-		ssh_set_error_oom(session);
-		return NULL;
-	}
-	return global_poll_ctx;
-}
-
-/** @internal
- * @brief Deallocate the global poll context
- */
-void ssh_free_global_poll_ctx(){
-	if(global_poll_ctx != NULL){
-		ssh_poll_ctx_free(global_poll_ctx);
-		global_poll_ctx=NULL;
-	}
+ssh_poll_ctx ssh_poll_get_default_ctx(ssh_session session){
+	if(session->default_poll_ctx != NULL)
+		return session->default_poll_ctx;
+	/* 2 is enough for the default one */
+	session->default_poll_ctx = ssh_poll_ctx_new(2);
+	return session->default_poll_ctx;
 }
 
 /** @} */

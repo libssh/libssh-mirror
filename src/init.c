@@ -74,7 +74,6 @@ int ssh_init(void) {
  */
 int ssh_finalize(void) {
   ssh_threads_finalize();
-	ssh_free_global_poll_ctx();
   ssh_regex_finalize();
   ssh_crypto_finalize();
   ssh_socket_cleanup();
