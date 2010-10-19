@@ -44,6 +44,7 @@
 #include "libssh/dh.h"
 #include "libssh/messages.h"
 #include "libssh/misc.h"
+#include "libssh/poll.h"
 
 #define set_status(session, status) do {\
         if (session->callbacks && session->callbacks->connect_status_function) \
@@ -173,6 +174,73 @@ int ssh_bind_listen(ssh_bind sshbind) {
   }
 
   return 0;
+}
+
+/**
+ * @brief set the bind callbacks for ssh_bind
+ * @code
+ * struct ssh_callbacks_struct cb = {
+ *   .userdata = data,
+ *   .auth_function = my_auth_function
+ * };
+ * ssh_callbacks_init(&cb);
+ * ssh_set_callbacks(session, &cb);
+ * @endcode
+ * @param sshbind   the ssh_bind structure to set
+ * @param callbacks a ssh_bind_callbacks instance already set up. Do
+ *                  use ssh_callbacks_init() to initialize it.
+ * @param userdata  userdata to be used with each callback called
+ *                  within callbacks.
+ * @returns SSH_OK on success,
+ *          SSH_ERROR on error.
+  */
+
+int ssh_bind_set_callbacks(ssh_bind sshbind, ssh_bind_callbacks callbacks,
+    void *userdata){
+  if (sshbind == NULL || callbacks == NULL) {
+    return SSH_ERROR;
+  }
+  if(callbacks->size <= 0 || callbacks->size > 1024 * sizeof(void *)){
+    ssh_set_error(sshbind,SSH_FATAL,
+        "Invalid callback passed in (badly initialized)");
+    return SSH_ERROR;
+  }
+  sshbind->bind_callbacks = callbacks;
+  sshbind->bind_callbacks_userdata=userdata;
+  return 0;
+}
+
+/** @internal
+ * @brief callback being called by poll when an event happens
+ *
+ */
+static int ssh_bind_poll_callback(ssh_poll_handle sshpoll,
+    socket_t fd, int revents, void *user){
+  ssh_bind sshbind=(ssh_bind)user;
+  (void)sshpoll;
+  (void)fd;
+
+  if(revents & POLLIN){
+    /* new incoming connection */
+    if(ssh_callbacks_exists(sshbind->bind_callbacks,incoming_connection)){
+      sshbind->bind_callbacks->incoming_connection(sshbind,
+          sshbind->bind_callbacks_userdata);
+    }
+  }
+  return 0;
+}
+
+/** @internal
+ * @brief returns the current poll handle, or create it
+ * @param sshbind the ssh_bind object
+ * @returns a ssh_poll handle suitable for operation
+ */
+ssh_poll_handle ssh_bind_get_poll(ssh_bind sshbind){
+  if(sshbind->poll)
+    return sshbind->poll;
+  sshbind->poll=ssh_poll_new(sshbind->bindfd,POLLIN,
+      ssh_bind_poll_callback,sshbind);
+  return sshbind->poll;
 }
 
 void ssh_bind_set_blocking(ssh_bind sshbind, int blocking) {

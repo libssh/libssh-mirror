@@ -290,41 +290,41 @@ int ssh_options_set_algo(ssh_session session, int algo,
  *              - SSH_OPTTIONS_STATUS_CALLBACK:
  *                Set a callback to show connection status in realtime
  *                (function pointer).\n
- *                 \n
- *                 @code
- *                 fn(void *arg, float status)
- *                 @endcode
- *                 \n
- *                 During ssh_connect(), libssh will call the callback
- *                 with status from 0.0 to 1.0.
+ *                \n
+ *                @code
+ *                fn(void *arg, float status)
+ *                @endcode
+ *                \n
+ *                During ssh_connect(), libssh will call the callback
+ *                with status from 0.0 to 1.0.
  *
- *               - SSH_OPTTIONS_STATUS_ARG:
- *                 Set the status argument which should be passed to the
- *                 status callback (generic pointer).
+ *              - SSH_OPTTIONS_STATUS_ARG:
+ *                Set the status argument which should be passed to the
+ *                status callback (generic pointer).
  *
- *               - SSH_OPTIONS_CIPHERS_C_S:
- *                 Set the symmetric cipher client to server (const char *,
- *                 comma-separated list).
+ *              - SSH_OPTIONS_CIPHERS_C_S:
+ *                Set the symmetric cipher client to server (const char *,
+ *                comma-separated list).
  *
- *               - SSH_OPTIONS_CIPHERS_S_C:
- *                 Set the symmetric cipher server to client (const char *,
- *                 comma-separated list).
+ *              - SSH_OPTIONS_CIPHERS_S_C:
+ *                Set the symmetric cipher server to client (const char *,
+ *                comma-separated list).
  *
- *               - SSH_OPTIONS_COMPRESSION_C_S:
- *                 Set the compression to use for client to server
- *                 communication (const char *, "none" or "zlib").
+ *              - SSH_OPTIONS_COMPRESSION_C_S:
+ *                Set the compression to use for client to server
+ *                communication (const char *, "none" or "zlib").
  *
- *               - SSH_OPTIONS_COMPRESSION_S_C:
- *                 Set the compression to use for server to client
- *                 communication (const char *, "none" or "zlib").
+ *              - SSH_OPTIONS_COMPRESSION_S_C:
+ *                Set the compression to use for server to client
+ *                communication (const char *, "none" or "zlib").
  *
- *               - SSH_OPTIONS_STRICTHOSTKEYCHECK:
- *                 Set the parameter StrictHostKeyChecking to avoid
- *                 asking about a fingerprint (int, 0 = false).
+ *              - SSH_OPTIONS_STRICTHOSTKEYCHECK:
+ *                Set the parameter StrictHostKeyChecking to avoid
+ *                asking about a fingerprint (int, 0 = false).
  *
- *               - SSH_OPTIONS_PROXYCOMMAND:
- *                 Set the command to be executed in order to connect to
- *                 server (const char *).
+ *              - SSH_OPTIONS_PROXYCOMMAND:
+ *                Set the command to be executed in order to connect to
+ *                server (const char *).
  *
  * @param  value The value to set. This is a generic pointer and the
  *               datatype which is used should be set according to the

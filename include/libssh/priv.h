@@ -147,7 +147,10 @@ struct ssh_bind_struct {
   struct error_struct error;
 
   ssh_callbacks callbacks; /* Callbacks to user functions */
+  struct ssh_bind_callbacks_struct *bind_callbacks;
+  void *bind_callbacks_userdata;
 
+  struct ssh_poll_handle_struct *poll;
   /* options */
   char *wanted_methods[10];
   char *banner;
@@ -161,6 +164,9 @@ struct ssh_bind_struct {
   int blocking;
   int toaccept;
 };
+
+struct ssh_poll_handle_struct *ssh_bind_get_poll(struct ssh_bind_struct
+    *sshbind);
 
 SSH_PACKET_CALLBACK(ssh_packet_disconnect_callback);
 SSH_PACKET_CALLBACK(ssh_packet_ignore_callback);

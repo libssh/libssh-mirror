@@ -48,8 +48,34 @@ enum ssh_bind_options_e {
   SSH_BIND_OPTIONS_LOG_VERBOSITY_STR
 };
 
-//typedef struct ssh_bind_struct SSH_BIND;
+
+
 typedef struct ssh_bind_struct* ssh_bind;
+
+/* callback functions */
+
+/**
+ * @brief Incoming connection callback. This callback is called when a ssh_bind
+ *        has a new incoming connection.
+ * @param sshbind Current sshbind session handler
+ * @param message the actual message
+ * @param userdata Userdata to be passed to the callback function.
+ */
+typedef void (*ssh_bind_incoming_connection_callback) (ssh_bind sshbind,
+    void *userdata);
+
+/**
+ * These are the callbacks exported by the ssh_bind structure
+ * They are called by the server module when events appear on the network
+ */
+
+struct ssh_bind_callbacks_struct {
+  /** DON'T SET THIS use ssh_callbacks_init() instead. */
+  size_t size;
+  /** A new connection is available */
+  ssh_bind_incoming_connection_callback incoming_connection;
+};
+typedef struct ssh_bind_callbacks_struct *ssh_bind_callbacks;
 
 /**
  * @brief Creates a new SSH server bind.
@@ -79,6 +105,9 @@ LIBSSH_API int ssh_bind_options_set(ssh_bind sshbind,
  * @return 0 on success, < 0 on error.
  */
 LIBSSH_API int ssh_bind_listen(ssh_bind ssh_bind_o);
+
+LIBSSH_API int ssh_bind_set_callbacks(ssh_bind sshbind, ssh_bind_callbacks callbacks,
+    void *userdata);
 
 /**
  * @brief  Set the session to blocking/nonblocking mode.
