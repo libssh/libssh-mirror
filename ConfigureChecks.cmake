@@ -17,9 +17,13 @@ set(BINARYDIR ${CMAKE_BINARY_DIR})
 set(SOURCEDIR ${CMAKE_SOURCE_DIR})
 
 function(COMPILER_DUMPVERSION _OUTPUT_VERSION)
+    # Remove whitespaces from the argument.
+    # This is needed for CC="ccache gcc" cmake ..
+    string(REPLACE " " "" _C_COMPILER_ARG "${CMAKE_C_COMPILER_ARG1}")
+
     execute_process(
         COMMAND
-            ${CMAKE_C_COMPILER} ${CMAKE_C_COMPILER_ARG1} -dumpversion
+            ${CMAKE_C_COMPILER} ${_C_COMPILER_ARG} -dumpversion
         OUTPUT_VARIABLE _COMPILER_VERSION
     )
 
