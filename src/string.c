@@ -131,8 +131,12 @@ size_t ssh_string_len(struct ssh_string_struct *s) {
  * string may not be readable with regular libc functions.
  */
 char *ssh_string_to_char(struct ssh_string_struct *s) {
-  size_t len = ntohl(s->size) + 1;
-  char *new = malloc(len);
+	size_t len;
+	char *new;
+	if(s==NULL)
+		return NULL;
+  len = ntohl(s->size) + 1;
+  new = malloc(len);
 
   if (new == NULL) {
     return NULL;

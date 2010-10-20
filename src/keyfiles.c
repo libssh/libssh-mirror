@@ -802,7 +802,7 @@ ssh_private_key privatekey_from_file(ssh_session session, const char *filename,
 #endif
     return NULL;
   }
-
+  ZERO_STRUCTP(privkey);
   privkey->type = type;
   privkey->dsa_priv = dsa;
   privkey->rsa_priv = rsa;
@@ -955,23 +955,28 @@ int ssh_publickey_to_file(ssh_session session, const char *file,
   unsigned char *pubkey_64;
   size_t len;
   int rc;
-
+  if(session==NULL)
+  	return SSH_ERROR;
+  if(file==NULL || pubkey==NULL){
+  	ssh_set_error(session, SSH_FATAL, "Invalid parameters");
+  	return SSH_ERROR;
+  }
   pubkey_64 = bin_to_base64(pubkey->string, ssh_string_len(pubkey));
   if (pubkey_64 == NULL) {
-    return -1;
+    return SSH_ERROR;
   }
 
   user = ssh_get_local_username(session);
   if (user == NULL) {
     SAFE_FREE(pubkey_64);
-    return -1;
+    return SSH_ERROR;
   }
 
   rc = gethostname(host, sizeof(host));
   if (rc < 0) {
     SAFE_FREE(user);
     SAFE_FREE(pubkey_64);
-    return -1;
+    return SSH_ERROR;
   }
 
   snprintf(buffer, sizeof(buffer), "%s %s %s@%s\n",
@@ -990,7 +995,7 @@ int ssh_publickey_to_file(ssh_session session, const char *file,
   if (fp == NULL) {
     ssh_set_error(session, SSH_REQUEST_DENIED,
         "Error opening %s: %s", file, strerror(errno));
-    return -1;
+    return SSH_ERROR;
   }
 
   len = strlen(buffer);
@@ -999,11 +1004,11 @@ int ssh_publickey_to_file(ssh_session session, const char *file,
         "Unable to write to %s", file);
     fclose(fp);
     unlink(file);
-    return -1;
+    return SSH_ERROR;
   }
 
   fclose(fp);
-  return 0;
+  return SSH_OK;
 }
 
 /**

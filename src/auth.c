@@ -423,6 +423,12 @@ int ssh_userauth_offer_pubkey(ssh_session session, const char *username,
   ssh_string algo = NULL;
   int rc = SSH_AUTH_ERROR;
 
+  if(session==NULL)
+    return SSH_AUTH_ERROR;
+  if(publickey==NULL){
+    ssh_set_error(session,SSH_FATAL,"invalid arguments");
+    return SSH_AUTH_ERROR;
+  }
   enter_function();
 
 #ifdef WITH_SSH1
@@ -540,6 +546,12 @@ int ssh_userauth_pubkey(ssh_session session, const char *username,
   ssh_string pkstr = NULL;
   int rc = SSH_AUTH_ERROR;
 
+  if(session==NULL)
+    return SSH_AUTH_ERROR;
+  if(privatekey==NULL){
+    ssh_set_error(session,SSH_FATAL,"invalid arguments");
+    return SSH_AUTH_ERROR;
+  }
   enter_function();
 
 #if 0
@@ -1583,6 +1595,8 @@ int ssh_userauth_kbdint(ssh_session session, const char *user,
  * @returns             The number of prompts.
  */
 int ssh_userauth_kbdint_getnprompts(ssh_session session) {
+  if(session==NULL || session->kbdint == NULL)
+	  return SSH_ERROR;
   return session->kbdint->nprompts;
 }
 
@@ -1597,6 +1611,8 @@ int ssh_userauth_kbdint_getnprompts(ssh_session session) {
  * @returns             The name of the message block. Do not free it.
  */
 const char *ssh_userauth_kbdint_getname(ssh_session session) {
+  if(session==NULL || session->kbdint == NULL)
+    return NULL;
   return session->kbdint->name;
 }
 
@@ -1612,6 +1628,8 @@ const char *ssh_userauth_kbdint_getname(ssh_session session) {
  */
 
 const char *ssh_userauth_kbdint_getinstruction(ssh_session session) {
+	if(session==NULL || session->kbdint == NULL)
+		return NULL;
   return session->kbdint->instruction;
 }
 
@@ -1633,7 +1651,9 @@ const char *ssh_userauth_kbdint_getinstruction(ssh_session session) {
  */
 const char *ssh_userauth_kbdint_getprompt(ssh_session session, unsigned int i,
     char *echo) {
-  if (i > session->kbdint->nprompts) {
+  if(session==NULL || session->kbdint == NULL)
+    return NULL;
+	if (i > session->kbdint->nprompts) {
     return NULL;
   }
 
@@ -1660,7 +1680,8 @@ const char *ssh_userauth_kbdint_getprompt(ssh_session session, unsigned int i,
  */
 int ssh_userauth_kbdint_setanswer(ssh_session session, unsigned int i,
     const char *answer) {
-  if (session == NULL || answer == NULL || i > session->kbdint->nprompts) {
+  if (session == NULL || answer == NULL || session->kbdint == NULL ||
+      i > session->kbdint->nprompts) {
     return -1;
   }
 

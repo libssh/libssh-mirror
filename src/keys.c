@@ -329,7 +329,7 @@ ssh_public_key publickey_from_privatekey(ssh_private_key prv) {
   if (key == NULL) {
     return NULL;
   }
-
+  ZERO_STRUCTP(key);
   key->type = prv->type;
   switch(key->type) {
     case SSH_KEYTYPE_DSS:
@@ -466,6 +466,9 @@ ssh_public_key publickey_from_privatekey(ssh_private_key prv) {
       }
 #endif
       break;
+    default:
+    	publickey_free(key);
+    	return NULL;
   }
   key->type_c = ssh_type_to_char(prv->type);
 
@@ -715,7 +718,8 @@ ssh_string publickey_to_string(ssh_public_key key) {
   ssh_string_fill(ret, buffer_get_rest(buf), buffer_get_rest_len(buf));
 error:
   ssh_buffer_free(buf);
-  ssh_string_free(type);
+  if(type != NULL)
+  	ssh_string_free(type);
 
   return ret;
 }

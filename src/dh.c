@@ -832,23 +832,24 @@ int ssh_get_pubkey_hash(ssh_session session, unsigned char **hash) {
   unsigned char *h;
 
   if (session == NULL || hash == NULL) {
-    return -1;
+    return SSH_ERROR;
   }
   *hash = NULL;
   if (session->current_crypto == NULL ||
       session->current_crypto->server_pubkey == NULL){
     ssh_set_error(session,SSH_FATAL,"No current cryptographic context");
+    return SSH_ERROR;
   }
 
   h = malloc(sizeof(unsigned char *) * MD5_DIGEST_LEN);
   if (h == NULL) {
-    return -1;
+    return SSH_ERROR;
   }
 
   ctx = md5_init();
   if (ctx == NULL) {
     SAFE_FREE(h);
-    return -1;
+    return SSH_ERROR;
   }
 
   pubkey = session->current_crypto->server_pubkey;
@@ -877,6 +878,10 @@ void ssh_clean_pubkey_hash(unsigned char **hash) {
 }
 
 ssh_string ssh_get_pubkey(ssh_session session){
+	if(session==NULL || session->current_crypto ==NULL ||
+      session->current_crypto->server_pubkey==NULL)
+    return NULL;
+	else
     return ssh_string_copy(session->current_crypto->server_pubkey);
 }
 
