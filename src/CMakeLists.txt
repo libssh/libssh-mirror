@@ -138,6 +138,7 @@ if (WITH_SERVER)
   set(libssh_SRCS
     ${libssh_SRCS}
     server.c
+    bind.c
   )
 endif (WITH_SERVER)
 
