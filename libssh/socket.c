@@ -492,6 +492,7 @@ int ssh_socket_poll(struct socket *s, int *writeable, int *except) {
 
   fd->fd = s->fd;
   fd->events = 0;
+  fd->revents = 0;
 
   if (!s->data_to_read) {
     fd->events |= POLLIN;
