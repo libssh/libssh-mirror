@@ -10,8 +10,8 @@ int main(void) {
   ssh_channel channel;
   char buffer[1024*1024];
   int rc;
-  long total=0;
-  long lastshown=4096;
+  uint64_t total=0;
+  uint64_t lastshown=4096;
   session = connect_ssh("localhost", NULL, 0);
   if (session == NULL) {
     return 1;
@@ -41,7 +41,7 @@ int main(void) {
   while ((rc = ssh_channel_write(channel, buffer, sizeof(buffer))) > 0) {
     total += rc;
     if(total/2 >= lastshown){
-      printf("written %lx\n",total);
+      printf("written %llx\n",total);
       lastshown=total;
     }
     if(total > LIMIT)
