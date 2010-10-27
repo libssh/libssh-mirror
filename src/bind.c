@@ -31,6 +31,7 @@
 #include <stdlib.h>
 
 #include "libssh/priv.h"
+#include "libssh/bind.h"
 #include "libssh/libssh.h"
 #include "libssh/server.h"
 #include "libssh/keyfiles.h"

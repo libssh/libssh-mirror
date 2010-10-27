@@ -139,34 +139,9 @@ struct ssh_keys_struct {
 };
 
 struct ssh_message_struct;
-struct ssh_poll_handle_struct;
 
 /* server data */
 
-struct ssh_bind_struct {
-  struct error_struct error;
-
-  ssh_callbacks callbacks; /* Callbacks to user functions */
-  struct ssh_bind_callbacks_struct *bind_callbacks;
-  void *bind_callbacks_userdata;
-
-  struct ssh_poll_handle_struct *poll;
-  /* options */
-  char *wanted_methods[10];
-  char *banner;
-  char *dsakey;
-  char *rsakey;
-  char *bindaddr;
-  socket_t bindfd;
-  unsigned int bindport;
-  unsigned int log_verbosity;
-
-  int blocking;
-  int toaccept;
-};
-
-struct ssh_poll_handle_struct *ssh_bind_get_poll(struct ssh_bind_struct
-    *sshbind);
 
 SSH_PACKET_CALLBACK(ssh_packet_disconnect_callback);
 SSH_PACKET_CALLBACK(ssh_packet_ignore_callback);
@@ -191,6 +166,8 @@ uint32_t packet_decrypt_len(ssh_session session,char *crypted);
 int packet_decrypt(ssh_session session, void *packet,unsigned int len);
 unsigned char *packet_encrypt(ssh_session session,void *packet,unsigned int len);
  /* it returns the hmac buffer if exists*/
+struct ssh_poll_handle_struct;
+
 int packet_hmac_verify(ssh_session session,ssh_buffer buffer,unsigned char *mac);
 
 struct ssh_socket_struct;
