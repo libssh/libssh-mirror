@@ -79,6 +79,12 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_failure);
 SSH_PACKET_CALLBACK(ssh_request_success);
 SSH_PACKET_CALLBACK(ssh_request_denied);
 
+SSH_PACKET_CALLBACK(channel_rcv_change_window);
+SSH_PACKET_CALLBACK(channel_rcv_eof);
+SSH_PACKET_CALLBACK(channel_rcv_close);
+SSH_PACKET_CALLBACK(channel_rcv_request);
+SSH_PACKET_CALLBACK(channel_rcv_data);
+
 ssh_channel ssh_channel_new(ssh_session session);
 int channel_default_bufferize(ssh_channel channel, void *data, int len,
         int is_stderr);
@@ -89,6 +95,16 @@ int channel_write_common(ssh_channel channel, const void *data,
 #ifdef WITH_SSH1
 SSH_PACKET_CALLBACK(ssh_packet_data1);
 SSH_PACKET_CALLBACK(ssh_packet_close1);
+
+/* channels1.c */
+int channel_open_session1(ssh_channel channel);
+int channel_request_pty_size1(ssh_channel channel, const char *terminal,
+    int cols, int rows);
+int channel_change_pty_size1(ssh_channel channel, int cols, int rows);
+int channel_request_shell1(ssh_channel channel);
+int channel_request_exec1(ssh_channel channel, const char *cmd);
+int channel_write1(ssh_channel channel, const void *data, int len);
+
 #endif
 
 #endif /* CHANNELS_H_ */

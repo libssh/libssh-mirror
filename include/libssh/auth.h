@@ -32,6 +32,15 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_request);
 
 #ifdef WITH_SSH1
 void ssh_auth1_handler(ssh_session session, uint8_t type);
+
+/* auth1.c */
+int ssh_userauth1_none(ssh_session session, const char *username);
+int ssh_userauth1_offer_pubkey(ssh_session session, const char *username,
+        int type, ssh_string pubkey);
+int ssh_userauth1_password(ssh_session session, const char *username,
+        const char *password);
+
+
 #endif
 
 /** @internal

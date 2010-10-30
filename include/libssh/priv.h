@@ -197,11 +197,6 @@ char **space_tokenize(const char *chain);
 int ssh_get_kex1(ssh_session session);
 char *ssh_find_matching(const char *in_d, const char *what_d);
 
-SSH_PACKET_CALLBACK(channel_rcv_change_window);
-SSH_PACKET_CALLBACK(channel_rcv_eof);
-SSH_PACKET_CALLBACK(channel_rcv_close);
-SSH_PACKET_CALLBACK(channel_rcv_request);
-SSH_PACKET_CALLBACK(channel_rcv_data);
 
 /* in base64.c */
 ssh_buffer base64_to_bin(const char *source);
@@ -214,24 +209,7 @@ int decompress_buffer(ssh_session session,ssh_buffer buf, size_t maxlen);
 /* crc32.c */
 uint32_t ssh_crc32(const char *buf, uint32_t len);
 
-/* auth1.c */
-int ssh_userauth1_none(ssh_session session, const char *username);
-int ssh_userauth1_offer_pubkey(ssh_session session, const char *username,
-        int type, ssh_string pubkey);
-int ssh_userauth1_password(ssh_session session, const char *username,
-        const char *password);
 
-#ifdef WITH_SSH1
-/* channels1.c */
-int channel_open_session1(ssh_channel channel);
-int channel_request_pty_size1(ssh_channel channel, const char *terminal,
-    int cols, int rows);
-int channel_change_pty_size1(ssh_channel channel, int cols, int rows);
-int channel_request_shell1(ssh_channel channel);
-int channel_request_exec1(ssh_channel channel, const char *cmd);
-int channel_write1(ssh_channel channel, const void *data, int len);
-
-#endif
 /* match.c */
 int match_hostname(const char *host, const char *pattern, unsigned int len);
 
