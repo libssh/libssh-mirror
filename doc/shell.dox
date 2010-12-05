@@ -1,5 +1,5 @@
 /**
-@page shell Chapter 3: Opening a remote shell
+@page libssh_tutor_shell Chapter 3: Opening a remote shell
 @section opening_shell Opening a remote shell
 
 We already mentioned that a single SSH connection can be shared

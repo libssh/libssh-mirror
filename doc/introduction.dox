@@ -1,5 +1,5 @@
 /**
-@page tutorial The Tutorial
+@page libssh_tutorial The Tutorial
 @section introduction Introduction
 
 libssh is a C library that enables you to write a program that uses the
@@ -29,22 +29,22 @@ little changes on versions like 0.4.2 and later.
 
 Table of contents:
 
-@subpage guided_tour
+@subpage libssh_tutor_guided_tour
 
-@subpage authentication
+@subpage libssh_tutor_authentication
 
-@subpage shell
+@subpage libssh_tutor_shell
 
-@subpage command
+@subpage libssh_tutor_command
 
-@subpage sftp
+@subpage libssh_tutor_sftp
 
-@subpage scp
+@subpage libssh_tutor_scp
 
-@subpage forwarding
+@subpage libssh_tutor_forwarding
 
-@subpage threads
+@subpage libssh_tutor_threads
 
-@subpage tbd
+@subpage libssh_tutor_todo
 
 */

@@ -1,5 +1,5 @@
 /**
-@page authentication Chapter 2: A deeper insight on authentication
+@page libssh_tutor_authentication Chapter 2: A deeper insight on authentication
 @section authentication_details A deeper insight on authentication
 
 In our guided tour, we merely mentioned that the user needed to authenticate.

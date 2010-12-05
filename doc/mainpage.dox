@@ -7,7 +7,7 @@ documents the libssh C API and the C++ wrapper.
 
 @section main-tutorial Tutorial
 
-You should start by reading @subpage tutorial, then reading the documentation of
+You should start by reading @subpage libssh_tutorial, then reading the documentation of
 the interesting functions as you go.
 
 @section main-features Features

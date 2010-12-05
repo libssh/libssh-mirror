@@ -1,5 +1,5 @@
 /**
-@page scp Chapter 6: The SCP subsystem
+@page libssh_tutor_scp Chapter 6: The SCP subsystem
 @section scp_subsystem The SCP subsystem
 
 The SCP subsystem has far less functionnality than the SFTP subsystem.

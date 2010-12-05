@@ -1,5 +1,5 @@
 /**
-@page command Chapter 4: Passing a remote command
+@page libssh_tutor_command Chapter 4: Passing a remote command
 @section remote_command Passing a remote command
 
 Previous chapter has shown how to open a full shell session, with an attached

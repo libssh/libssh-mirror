@@ -1,5 +1,5 @@
 /**
-@page threads Chapter 8: Threads with libssh
+@page libssh_tutor_threads Chapter 8: Threads with libssh
 @section threads_with_libssh How to use libssh with threads
 
 libssh may be used in multithreaded applications, but under several conditions :

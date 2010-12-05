@@ -1,5 +1,5 @@
 /**
-@page sftp Chapter 5: The SFTP subsystem
+@page libssh_tutor_sftp Chapter 5: The SFTP subsystem
 @section sftp_subsystem The SFTP subsystem
 
 SFTP stands for "Secure File Transfer Protocol". It enables you to safely

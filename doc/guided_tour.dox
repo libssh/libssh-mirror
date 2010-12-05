@@ -1,5 +1,5 @@
 /**
-@page guided_tour Chapter 1: A typical SSH session
+@page libssh_tutor_guided_tour Chapter 1: A typical SSH session
 @section ssh_session A typical SSH session
 
 A SSH session goes through the following steps:
