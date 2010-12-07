@@ -48,11 +48,9 @@ enum ssh_bind_options_e {
   SSH_BIND_OPTIONS_LOG_VERBOSITY_STR
 };
 
-
-
 typedef struct ssh_bind_struct* ssh_bind;
 
-/* callback functions */
+/* Callback functions */
 
 /**
  * @brief Incoming connection callback. This callback is called when a ssh_bind
@@ -65,14 +63,14 @@ typedef void (*ssh_bind_incoming_connection_callback) (ssh_bind sshbind,
     void *userdata);
 
 /**
- * These are the callbacks exported by the ssh_bind structure
- * They are called by the server module when events appear on the network
+ * @brief These are the callbacks exported by the ssh_bind structure.
+ *
+ * They are called by the server module when events appear on the network.
  */
-
 struct ssh_bind_callbacks_struct {
   /** DON'T SET THIS use ssh_callbacks_init() instead. */
   size_t size;
-  /** A new connection is available */
+  /** A new connection is available. */
   ssh_bind_incoming_connection_callback incoming_connection;
 };
 typedef struct ssh_bind_callbacks_struct *ssh_bind_callbacks;
@@ -241,7 +239,4 @@ SSH_DEPRECATED LIBSSH_API int ssh_accept(ssh_session session);
 
 #endif /* SERVER_H */
 
-/**
- * @}
- */
-/* vim: set ts=2 sw=2 et cindent: */
+/** @} */
