@@ -1,5 +1,5 @@
 /**
-@page libssh_tutor_forwarding Chapter 7: Forwarding connections
+@page libssh_tutor_forwarding Chapter 7: Forwarding connections (tunnel)
 @section forwarding_connections Forwarding connections
 
 Port forwarding comes in SSH protocol in two different flavours:
