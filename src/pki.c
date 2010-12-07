@@ -20,7 +20,8 @@
  * MA 02111-1307, USA.
  */
 
-/** @defgroup ssh_pki SSH Public Key Infrastructure
+/**
+ * @defgroup libssh_pki SSH Public Key Infrastructure
  * @ingroup libssh
  *
  * Functions for the creation, importation and manipulation of public and
