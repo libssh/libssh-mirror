@@ -33,6 +33,15 @@
 extern "C" {
 #endif
 
+/**
+ * @defgroup libssh_callbacks The libssh callbacks
+ * @ingroup libssh
+ *
+ * Callback which can be replaced in libssh.
+ *
+ * @{
+ */
+
 /** @internal
  * @brief callback to process simple codes
  * @param code value to transmit
@@ -450,3 +459,5 @@ LIBSSH_API struct ssh_threads_callbacks_struct *ssh_threads_get_noop(void);
 #endif
 
 #endif /*_SSH_CALLBACK_H */
+
+/* @} */
