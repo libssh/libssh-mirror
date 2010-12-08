@@ -167,8 +167,6 @@ LIBSSH_API int ssh_handle_key_exchange(ssh_session session);
  */
 LIBSSH_API void ssh_bind_free(ssh_bind ssh_bind_o);
 
-LIBSSH_API int channel_write_stderr(ssh_channel channel, const void *data, uint32_t len);
-
 /* messages.c */
 LIBSSH_API int ssh_message_reply_default(ssh_message msg);
 

@@ -545,7 +545,7 @@ public:
   int write(const void *data, size_t len, bool is_stderr=false){
     int ret;
     if(is_stderr){
-      ret=channel_write_stderr(channel,data,len);
+      ret=ssh_channel_write_stderr(channel,data,len);
     } else {
       ret=ssh_channel_write(channel,data,len);
     }

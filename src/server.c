@@ -37,7 +37,6 @@
 #include "libssh/buffer.h"
 #include "libssh/packet.h"
 #include "libssh/socket.h"
-#include "libssh/channels.h"
 #include "libssh/session.h"
 #include "libssh/misc.h"
 #include "libssh/keys.h"
@@ -476,23 +475,6 @@ int ssh_handle_key_exchange(ssh_session session) {
     }
 
   return SSH_OK;
-}
-
-/**
- * @brief Blocking write on channel for stderr.
- *
- * @param channel       The channel to write to.
- *
- * @param data          A pointer to the data to write.
- *
- * @param len           The length of the buffer to write to.
- *
- * @return The number of bytes written, SSH_ERROR on error.
- *
- * @see channel_read()
- */
-int channel_write_stderr(ssh_channel channel, const void *data, uint32_t len) {
-  return channel_write_common(channel, data, len, 1);
 }
 
 /* messages */
