@@ -188,6 +188,8 @@ if (WITH_STATIC_LIB)
           ${LIBRARY_VERSION}
         SOVERSION
           ${LIBRARY_SOVERSION}
+        OUTPUT_NAME
+          ssh
         COMPILE_FLAGS
           "-DLIBSSH_STATIC"
   )
