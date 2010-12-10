@@ -20,7 +20,7 @@
  */
 
 /**
- * @defgroup libssh_threads Threading with libssh
+ * @defgroup libssh_threads The SSH threading functions.
  * @ingroup libssh
  *
  * Threading with libssh
