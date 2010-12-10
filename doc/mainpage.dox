@@ -5,6 +5,11 @@
 This is the online reference for developing with the libssh library. It
 documents the libssh C API and the C++ wrapper.
 
+@section main-linking Linking
+
+We created a small howto how to link libssh against your application, read
+@subpage libssh_linking.
+
 @section main-tutorial Tutorial
 
 You should start by reading @subpage libssh_tutorial, then reading the documentation of
