@@ -190,9 +190,16 @@ if (WITH_STATIC_LIB)
           ${LIBRARY_SOVERSION}
         OUTPUT_NAME
           ssh
-        COMPILE_FLAGS
-          "-DLIBSSH_STATIC"
   )
+
+  if (WIN32)
+    set_target_properties(
+      ${LIBSSH_STATIC_LIBRARY}
+        PROPERTIES
+          COMPILE_FLAGS
+            "-DLIBSSH_STATIC"
+    )
+  endif (WIN32)
 
   install(
     TARGETS
