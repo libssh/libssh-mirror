@@ -41,7 +41,7 @@ int main(void) {
   while ((rc = ssh_channel_write(channel, buffer, sizeof(buffer))) > 0) {
     total += rc;
     if(total/2 >= lastshown){
-      printf("written %llx\n",total);
+      printf("written %llx\n", (long long unsigned int) total);
       lastshown=total;
     }
     if(total > LIMIT)
