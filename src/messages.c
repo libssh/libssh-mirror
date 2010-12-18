@@ -67,83 +67,142 @@ static ssh_message ssh_message_new(ssh_session session){
   return msg;
 }
 
-SSH_PACKET_CALLBACK(ssh_packet_global_request){
-    ssh_message msg = NULL;
-    ssh_string request_s=NULL;
-    char *request=NULL;
-    ssh_string bind_addr_s=NULL;
-    char *bind_addr=NULL;
-    uint32_t bind_port;
-    uint8_t want_reply;
-    (void)user;
-    (void)type;
-    (void)packet;
-
-    request_s = buffer_get_ssh_string(packet);
-    if (request_s != NULL) {
-        request = ssh_string_to_char(request_s);
-        ssh_string_free(request_s);
+/**
+ * @internal
+ *
+ * @brief Add a message to the current queue of messages to be parsed.
+ *
+ * @param[in]  session  The SSH session to add the message.
+ *
+ * @param[in]  message  The message to add to the queue.
+ */
+void ssh_message_queue(ssh_session session, ssh_message message){
+  if(message){
+    if(session->ssh_message_list == NULL){
+      session->ssh_message_list=ssh_list_new();
     }
+    ssh_list_append(session->ssh_message_list, message);
+  }
+}
 
-    buffer_get_u8(packet, &want_reply);
+/**
+ * @internal
+ *
+ * @brief Pop a message from the message list and dequeue it.
+ *
+ * @param[in]  session  The SSH session to pop the message.
+ *
+ * @returns             The head message or NULL if it doesn't exist.
+ */
+ssh_message ssh_message_pop_head(ssh_session session){
+  ssh_message msg=NULL;
+  struct ssh_iterator *i;
+  if(session->ssh_message_list == NULL)
+    return NULL;
+  i=ssh_list_get_iterator(session->ssh_message_list);
+  if(i != NULL){
+    msg=ssh_iterator_value(ssh_message,i);
+    ssh_list_remove(session->ssh_message_list,i);
+  }
+  return msg;
+}
 
-    ssh_log(session,SSH_LOG_PROTOCOL,"Received SSH_MSG_GLOBAL_REQUEST packet");
+/**
+ * @brief Retrieve a SSH message from a SSH session.
+ *
+ * @param[in]  session  The SSH session to get the message.
+ *
+ * @returns             The SSH message received, NULL in case of error.
+ *
+ * @warning This function blocks until a message has been received. Betterset up
+ *          a callback if this behavior is unwanted.
+ */
+ssh_message ssh_message_get(ssh_session session) {
+  ssh_message msg = NULL;
+  enter_function();
 
-    msg = ssh_message_new(session);
-    msg->type = SSH_REQUEST_GLOBAL;
-
-    if(!strcmp(request, "tcpip-forward")) {
-        bind_addr_s = buffer_get_ssh_string(packet);
-        if (bind_addr_s != NULL) {
-            bind_addr = ssh_string_to_char(bind_addr_s);
-            ssh_string_free(bind_addr_s);
-        }
-
-        buffer_get_u32(packet, &bind_port);
-        bind_port = ntohl(bind_port);
-
-        msg->global_request.type = SSH_GLOBAL_REQUEST_TCPIP_FORWARD;
-        msg->global_request.want_reply = want_reply;
-        msg->global_request.bind_address = bind_addr;
-        msg->global_request.bind_port = bind_port;
-
-        ssh_log(session, SSH_LOG_PROTOCOL, "Received SSH_MSG_GLOBAL_REQUEST %s %d %s:%d", request, want_reply, bind_addr, bind_port);
-
-        if(ssh_callbacks_exists(session->callbacks, global_request_function)) {
-            ssh_log(session, SSH_LOG_PROTOCOL, "Calling callback for SSH_MSG_GLOBAL_REQUEST %s %d %s:%d", request, want_reply, bind_addr, bind_port);
-            session->callbacks->global_request_function(session, msg, session->callbacks->userdata);
-        } else {
-            ssh_message_reply_default(msg);
-        }
-    } else if(!strcmp(request, "cancel-tcpip-forward")) {
-        bind_addr_s = buffer_get_ssh_string(packet);
-        if (bind_addr_s != NULL) {
-            bind_addr = ssh_string_to_char(bind_addr_s);
-            ssh_string_free(bind_addr_s);
-        }
-        buffer_get_u32(packet, &bind_port);
-        bind_port = ntohl(bind_port);
-
-        msg->global_request.type = SSH_GLOBAL_REQUEST_CANCEL_TCPIP_FORWARD;
-        msg->global_request.want_reply = want_reply;
-        msg->global_request.bind_address = bind_addr;
-        msg->global_request.bind_port = bind_port;
-
-        ssh_log(session, SSH_LOG_PROTOCOL, "Received SSH_MSG_GLOBAL_REQUEST %s %d %s:%d", request, want_reply, bind_addr, bind_port);
-
-        if(ssh_callbacks_exists(session->callbacks, global_request_function)) {
-            session->callbacks->global_request_function(session, msg, session->callbacks->userdata);
-        } else {
-            ssh_message_reply_default(msg);
-        }
-    } else {
-        ssh_log(session, SSH_LOG_PROTOCOL, "UNKNOWN SSH_MSG_GLOBAL_REQUEST %s %d", request, want_reply);
+  msg=ssh_message_pop_head(session);
+  if(msg) {
+      leave_function();
+      return msg;
+  }
+  if(session->ssh_message_list == NULL) {
+      session->ssh_message_list = ssh_list_new();
+  }
+  do {
+    if (ssh_handle_packets(session,-1) == SSH_ERROR) {
+      leave_function();
+      return NULL;
     }
+    msg=ssh_list_pop_head(ssh_message, session->ssh_message_list);
+  } while(msg==NULL);
+  leave_function();
+  return msg;
+}
 
-    SAFE_FREE(msg);
-    SAFE_FREE(request);
-    SAFE_FREE(bind_addr);
-    return SSH_PACKET_USED;
+int ssh_message_type(ssh_message msg) {
+  if (msg == NULL) {
+    return -1;
+  }
+
+  return msg->type;
+}
+
+int ssh_message_subtype(ssh_message msg) {
+  if (msg == NULL) {
+    return -1;
+  }
+
+  switch(msg->type) {
+    case SSH_REQUEST_AUTH:
+      return msg->auth_request.method;
+    case SSH_REQUEST_CHANNEL_OPEN:
+      return msg->channel_request_open.type;
+    case SSH_REQUEST_CHANNEL:
+      return msg->channel_request.type;
+    case SSH_REQUEST_GLOBAL:
+      return msg->global_request.type;
+  }
+
+  return -1;
+}
+
+void ssh_message_free(ssh_message msg){
+  if (msg == NULL) {
+    return;
+  }
+
+  switch(msg->type) {
+    case SSH_REQUEST_AUTH:
+      SAFE_FREE(msg->auth_request.username);
+      if (msg->auth_request.password) {
+        memset(msg->auth_request.password, 0,
+            strlen(msg->auth_request.password));
+        SAFE_FREE(msg->auth_request.password);
+      }
+      publickey_free(msg->auth_request.public_key);
+      break;
+    case SSH_REQUEST_CHANNEL_OPEN:
+      SAFE_FREE(msg->channel_request_open.originator);
+      SAFE_FREE(msg->channel_request_open.destination);
+      break;
+    case SSH_REQUEST_CHANNEL:
+      SAFE_FREE(msg->channel_request.TERM);
+      SAFE_FREE(msg->channel_request.modes);
+      SAFE_FREE(msg->channel_request.var_name);
+      SAFE_FREE(msg->channel_request.var_value);
+      SAFE_FREE(msg->channel_request.command);
+      SAFE_FREE(msg->channel_request.subsystem);
+      break;
+    case SSH_REQUEST_SERVICE:
+      SAFE_FREE(msg->service_request.service);
+      break;
+    case SSH_REQUEST_GLOBAL:
+      SAFE_FREE(msg->global_request.bind_address);
+      break;
+  }
+  ZERO_STRUCTP(msg);
+  SAFE_FREE(msg);
 }
 
 SSH_PACKET_CALLBACK(ssh_packet_service_request){
@@ -792,143 +851,87 @@ int ssh_message_channel_request_reply_success(ssh_message msg) {
   return SSH_OK;
 }
 
-/**
- * @brief Retrieve a SSH message from a SSH session.
- *
- * @param[in]  session  The SSH session to get the message.
- *
- * @returns             The SSH message received, NULL in case of error.
- *
- * @warning This function blocks until a message has been received. Betterset up
- *          a callback if this behavior is unwanted.
- */
-ssh_message ssh_message_get(ssh_session session) {
-  ssh_message msg = NULL;
-  enter_function();
+#ifdef WITH_SERVER
+SSH_PACKET_CALLBACK(ssh_packet_global_request){
+    ssh_message msg = NULL;
+    ssh_string request_s=NULL;
+    char *request=NULL;
+    ssh_string bind_addr_s=NULL;
+    char *bind_addr=NULL;
+    uint32_t bind_port;
+    uint8_t want_reply;
+    (void)user;
+    (void)type;
+    (void)packet;
 
-  msg=ssh_message_pop_head(session);
-  if(msg) {
-      leave_function();
-      return msg;
-  }
-  if(session->ssh_message_list == NULL) {
-      session->ssh_message_list = ssh_list_new();
-  }
-  do {
-    if (ssh_handle_packets(session,-1) == SSH_ERROR) {
-      leave_function();
-      return NULL;
+    request_s = buffer_get_ssh_string(packet);
+    if (request_s != NULL) {
+        request = ssh_string_to_char(request_s);
+        ssh_string_free(request_s);
     }
-    msg=ssh_list_pop_head(ssh_message, session->ssh_message_list);
-  } while(msg==NULL);
-  leave_function();
-  return msg;
-}
 
-int ssh_message_type(ssh_message msg) {
-  if (msg == NULL) {
-    return -1;
-  }
+    buffer_get_u8(packet, &want_reply);
 
-  return msg->type;
-}
+    ssh_log(session,SSH_LOG_PROTOCOL,"Received SSH_MSG_GLOBAL_REQUEST packet");
 
-int ssh_message_subtype(ssh_message msg) {
-  if (msg == NULL) {
-    return -1;
-  }
+    msg = ssh_message_new(session);
+    msg->type = SSH_REQUEST_GLOBAL;
 
-  switch(msg->type) {
-    case SSH_REQUEST_AUTH:
-      return msg->auth_request.method;
-    case SSH_REQUEST_CHANNEL_OPEN:
-      return msg->channel_request_open.type;
-    case SSH_REQUEST_CHANNEL:
-      return msg->channel_request.type;
-    case SSH_REQUEST_GLOBAL:
-      return msg->global_request.type;
-  }
+    if(!strcmp(request, "tcpip-forward")) {
+        bind_addr_s = buffer_get_ssh_string(packet);
+        if (bind_addr_s != NULL) {
+            bind_addr = ssh_string_to_char(bind_addr_s);
+            ssh_string_free(bind_addr_s);
+        }
 
-  return -1;
-}
+        buffer_get_u32(packet, &bind_port);
+        bind_port = ntohl(bind_port);
 
-void ssh_message_free(ssh_message msg){
-  if (msg == NULL) {
-    return;
-  }
+        msg->global_request.type = SSH_GLOBAL_REQUEST_TCPIP_FORWARD;
+        msg->global_request.want_reply = want_reply;
+        msg->global_request.bind_address = bind_addr;
+        msg->global_request.bind_port = bind_port;
 
-  switch(msg->type) {
-    case SSH_REQUEST_AUTH:
-      SAFE_FREE(msg->auth_request.username);
-      if (msg->auth_request.password) {
-        memset(msg->auth_request.password, 0,
-            strlen(msg->auth_request.password));
-        SAFE_FREE(msg->auth_request.password);
-      }
-      publickey_free(msg->auth_request.public_key);
-      break;
-    case SSH_REQUEST_CHANNEL_OPEN:
-      SAFE_FREE(msg->channel_request_open.originator);
-      SAFE_FREE(msg->channel_request_open.destination);
-      break;
-    case SSH_REQUEST_CHANNEL:
-      SAFE_FREE(msg->channel_request.TERM);
-      SAFE_FREE(msg->channel_request.modes);
-      SAFE_FREE(msg->channel_request.var_name);
-      SAFE_FREE(msg->channel_request.var_value);
-      SAFE_FREE(msg->channel_request.command);
-      SAFE_FREE(msg->channel_request.subsystem);
-      break;
-    case SSH_REQUEST_SERVICE:
-      SAFE_FREE(msg->service_request.service);
-      break;
-    case SSH_REQUEST_GLOBAL:
-      SAFE_FREE(msg->global_request.bind_address);
-      break;
-  }
-  ZERO_STRUCTP(msg);
-  SAFE_FREE(msg);
-}
+        ssh_log(session, SSH_LOG_PROTOCOL, "Received SSH_MSG_GLOBAL_REQUEST %s %d %s:%d", request, want_reply, bind_addr, bind_port);
 
-/**
- * @internal
- *
- * @brief Add a message to the current queue of messages to be parsed.
- *
- * @param[in]  session  The SSH session to add the message.
- *
- * @param[in]  message  The message to add to the queue.
- */
-void ssh_message_queue(ssh_session session, ssh_message message){
-  if(message){
-    if(session->ssh_message_list == NULL){
-      session->ssh_message_list=ssh_list_new();
+        if(ssh_callbacks_exists(session->callbacks, global_request_function)) {
+            ssh_log(session, SSH_LOG_PROTOCOL, "Calling callback for SSH_MSG_GLOBAL_REQUEST %s %d %s:%d", request, want_reply, bind_addr, bind_port);
+            session->callbacks->global_request_function(session, msg, session->callbacks->userdata);
+        } else {
+            ssh_message_reply_default(msg);
+        }
+    } else if(!strcmp(request, "cancel-tcpip-forward")) {
+        bind_addr_s = buffer_get_ssh_string(packet);
+        if (bind_addr_s != NULL) {
+            bind_addr = ssh_string_to_char(bind_addr_s);
+            ssh_string_free(bind_addr_s);
+        }
+        buffer_get_u32(packet, &bind_port);
+        bind_port = ntohl(bind_port);
+
+        msg->global_request.type = SSH_GLOBAL_REQUEST_CANCEL_TCPIP_FORWARD;
+        msg->global_request.want_reply = want_reply;
+        msg->global_request.bind_address = bind_addr;
+        msg->global_request.bind_port = bind_port;
+
+        ssh_log(session, SSH_LOG_PROTOCOL, "Received SSH_MSG_GLOBAL_REQUEST %s %d %s:%d", request, want_reply, bind_addr, bind_port);
+
+        if(ssh_callbacks_exists(session->callbacks, global_request_function)) {
+            session->callbacks->global_request_function(session, msg, session->callbacks->userdata);
+        } else {
+            ssh_message_reply_default(msg);
+        }
+    } else {
+        ssh_log(session, SSH_LOG_PROTOCOL, "UNKNOWN SSH_MSG_GLOBAL_REQUEST %s %d", request, want_reply);
     }
-    ssh_list_append(session->ssh_message_list, message);
-  }
+
+    SAFE_FREE(msg);
+    SAFE_FREE(request);
+    SAFE_FREE(bind_addr);
+    return SSH_PACKET_USED;
 }
 
-/**
- * @internal
- *
- * @brief Pop a message from the message list and dequeue it.
- *
- * @param[in]  session  The SSH session to pop the message.
- *
- * @returns             The head message or NULL if it doesn't exist.
- */
-ssh_message ssh_message_pop_head(ssh_session session){
-  ssh_message msg=NULL;
-  struct ssh_iterator *i;
-  if(session->ssh_message_list == NULL)
-    return NULL;
-  i=ssh_list_get_iterator(session->ssh_message_list);
-  if(i != NULL){
-    msg=ssh_iterator_value(ssh_message,i);
-    ssh_list_remove(session->ssh_message_list,i);
-  }
-  return msg;
-}
+#endif /* WITH_SERVER */
 
 /** @} */
 

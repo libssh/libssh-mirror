@@ -232,6 +232,12 @@ char *string_to_char(ssh_string str){
   return ssh_string_to_char(str);
 }
 
+/****************************************************************************
+ * SERVER SUPPORT
+ ****************************************************************************/
+
+#ifdef WITH_SERVER
 int ssh_accept(ssh_session session) {
     return ssh_handle_key_exchange(session);
 }
+#endif /* WITH_SERVER */
