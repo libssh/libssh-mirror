@@ -256,6 +256,7 @@ SSH_PACKET_CALLBACK(ssh_packet_kexinit){
   enter_function();
   (void)type;
   (void)user;
+  memset(strings, 0, sizeof(strings));
   if(session->session_state != SSH_SESSION_STATE_INITIAL_KEX){
   	ssh_set_error(session,SSH_FATAL,"SSH_KEXINIT received in wrong state");
   	goto error;
@@ -281,8 +282,6 @@ SSH_PACKET_CALLBACK(ssh_packet_kexinit){
         goto error;
       }
   }
-
-  memset(strings, 0, sizeof(char *) * 10);
 
   for (i = 0; i < 10; i++) {
     str = buffer_get_ssh_string(packet);
