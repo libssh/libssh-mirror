@@ -97,6 +97,10 @@ if (WITH_TESTING)
   add_subdirectory(tests)
 endif (WITH_TESTING)
 
+if (WITH_BENCHMARKS)
+    add_subdirectory(benchmarks)
+endif (WITH_BENCHMARKS)	
+
 message(STATUS "********************************************")
 message(STATUS "********** ${PROJECT_NAME} build options : **********")
 
@@ -113,6 +117,6 @@ if (WITH_INTERNAL_DOC)
 else (WITH_INTERNAL_DOC)
     message(STATUS "Public API documentation generation")
 endif (WITH_INTERNAL_DOC)
-
+message(STATUS "Benchmarks: ${WITH_BENCHMARKS}")
 message(STATUS "********************************************")
 
