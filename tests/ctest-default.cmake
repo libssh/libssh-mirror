@@ -1,5 +1,4 @@
-set(CTEST_SOURCE_DIRECTORY "$ENV{HOME}/workspace/tmp/dashboards/libssh/source")
-set(CTEST_BINARY_DIRECTORY "$ENV{HOME}/workspace/tmp/dashboards/libssh/build")
+set(CTEST_DIRECTORY "$ENV{HOME}/workspace/tmp/dashboards/libssh")
 
 set(CTEST_SITE "host.libssh.org")
 set(CTEST_BUILD_NAME "linux-gcc-default")
@@ -12,6 +11,9 @@ set(WITH_MEMCHECK FALSE)
 set(WITH_COVERAGE FALSE)
 
 #######################################################################
+
+set(CTEST_SOURCE_DIRECTORY "${CTEST_DIRECTORY}/${CTEST_BUILD_NAME}/source")
+set(CTEST_BINARY_DIRECTORY "${CTEST_DIRECTORY}/${CTEST_BUILD_NAME}/build")
 
 ctest_empty_binary_directory(${CTEST_BINARY_DIRECTORY})
 
