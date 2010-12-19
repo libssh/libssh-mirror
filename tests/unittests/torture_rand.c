@@ -14,9 +14,12 @@
 #define NUM_THREADS 100
 
 static void setup(){
-	printf("setup\n");
 	ssh_threads_set_callbacks(ssh_threads_get_pthread());
 	ssh_init();
+}
+
+static void teardown(){
+  ssh_finalize();
 }
 
 static void *torture_rand_thread(void *threadid){
@@ -52,7 +55,7 @@ END_TEST
 Suite *torture_make_suite(void) {
   Suite *s = suite_create("torture_rand");
 
-  torture_create_case_fixture(s, "torture_rand_threading", torture_rand_threading,setup,NULL);
+  torture_create_case_fixture(s, "torture_rand_threading", torture_rand_threading,setup,teardown);
 
   return s;
 }
