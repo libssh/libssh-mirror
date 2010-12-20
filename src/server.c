@@ -28,6 +28,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#ifndef _WIN32
+#include <netinet/in.h>
+#endif
 
 #include "libssh/priv.h"
 #include "libssh/libssh.h"
