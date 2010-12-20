@@ -19,6 +19,10 @@
  * MA 02111-1307, USA.
  */
 
+#ifndef _WIN32
+#include <netinet/in.h>
+#endif /* _WIN32 */
+
 #include "config.h"
 #include "libssh/priv.h"
 #include "libssh/ssh1.h"
@@ -27,6 +31,7 @@
 #include "libssh/buffer.h"
 #include "libssh/socket.h"
 #include "libssh/kex.h"
+
 #ifdef WITH_SSH1
 
 ssh_packet_callback default_packet_handlers1[]= {
