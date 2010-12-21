@@ -68,6 +68,8 @@ If you want to install libssh after compilation run:
 ## Running
 
 The libssh binary can be found in the `build/libssh` directory.
+You can use `build/examples/samplessh` which is a sample client to
+test libssh on UNIX.
 
 ## About this document
 
