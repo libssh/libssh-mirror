@@ -29,6 +29,12 @@ http://www.libssh.org
 4* API Changes !
 -_-_-_-_-_-_-_-_-_
 
+Changes between 0.4 and 0.5
+---------------------------
+
+We use the ssh_ prefix as namespace for every function now. There is a legacy.h
+which could be used to get the old function names.
+
 Changes between 0.3 and 0.4
 ---------------------------
 
