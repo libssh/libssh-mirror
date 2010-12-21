@@ -9,9 +9,9 @@ header file and the libssh shared library.
 
 @section static Static Linking
 
-@warning The libssh library is licensed under the LGPL! Make sure you
+@warning <b>The libssh library is licensed under the LGPL! Make sure you
 understand what this means to your codebase if you want to distribute
-binaries and link statically against LGPL code!
+binaries and link statically against LGPL code!</b>
 
 On UNIX systems linking against the static version of the library is the
 same as linking against the shared library. Both have the same name. Some
