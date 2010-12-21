@@ -1,8 +1,87 @@
 ChangeLog
 ==========
 
-version 0.4 (released xxxx-xx-xx)
-  * Added pcap dumping support.
+version 0.5.0 (released xxxx-xx-xx)
+  * Added ssh_ prefix to all functions
+  * Improved server support.
+
+version 0.4.6 (released 2010-09-03)
+  * Added a cleanup function to free the ws2_32 library.
+  * Fixed build with gcc 3.4.
+  * Fixed the Windows build on Vista and newer.
+  * Fixed the usage of WSAPoll() on Windows.
+  * Fixed "@deprecated" in doxygen
+  * Fixed some mingw warnings.
+  * Fixed handling of opened channels.
+  * Fixed keepalive problem on older openssh servers.
+  * Fixed testing for big endian on Windows.
+  * Fixed the Windows preprocessor macros and defines.
+
+version 0.4.5 (released 2010-07-13)
+  * Added option to bind a client to an ip address.
+  * Fixed the ssh socket polling function.
+  * Fixed Windows related bugs in bsd_poll().
+  * Fixed serveral build warnings.
+
+version 0.4.4 (released 2010-06-01)
+  * Fixed a bug in the expand function for escape sequences.
+  * Fixed a bug in the tilde expand function.
+  * Fixed a bug in setting the options.
+
+version 0.4.3 (released 2010-05-18)
+  * Added global/keepalive responses.
+  * Added runtime detection of WSAPoll().
+  * Added a select(2) based poll-emulation if poll(2) is not available.
+  * Added a function to expand an escaped string.
+  * Added a function to expand the tilde from a path.
+  * Added a proxycommand support.
+  * Added ssh_privatekey_type public function
+  * Added the possibility to define _OPENSSL_DIR and _ZLIB_DIR.
+  * Fixed sftp_chown.
+  * Fixed sftp_rename on protocol version 3.
+  * Fixed a blocking bug in channel_poll.
+  * Fixed config parsing wich has overwritten user specified values.
+  * Fixed hashed [host]:port format in knownhosts
+  * Fixed Windows build.
+  * Fixed doublefree happening after a negociation error.
+  * Fixed aes*-ctr with <= OpenSSL 0.9.7b.
+  * Fixed some documentation.
+  * Fixed exec example which has broken read usage.
+  * Fixed broken algorithm choice for server.
+  * Fixed a typo that we don't export all symbols.
+  * Removed the unneeded dependency to doxygen.
+  * Build examples only on the Linux plattform.
+
+version 0.4.2 (released 2010-03-15)
+  * Added owner and group information in sftp attributes.
+  * Added missing SSH_OPTIONS_FD option.
+  * Added printout of owner and group in the sftp example.
+  * Added a prepend function for ssh_list.
+  * Added send back replies to openssh's keepalives.
+  * Fixed documentation in scp code
+  * Fixed longname parsing, this only workings with readdir.
+  * Fixed and added support for several identity files.
+  * Fixed sftp_parse_longname() on Windows.
+  * Fixed a race condition bug in ssh_scp_close()
+  * Remove config support for SSHv1 Cipher variable.
+  * Rename ssh_list_add to ssh_list_append.
+  * Rename ssh_list_get_head to ssh_list_pop_head
+
+version 0.4.1 (released 2010-02-13)
+  * Added support for aes128-ctr, aes192-ctr and aes256-ctr encryption.
+  * Added an example for exec.
+  * Added private key type detection feature in privatekey_from_file().
+  * Fixed zlib compression fallback.
+  * Fixed kex bug that client preference should be prioritary
+  * Fixed known_hosts file set by the user.
+  * Fixed a memleak in channel_accept().
+  * Fixed underflow when leave_function() are unbalanced
+  * Fixed memory corruption in handle_channel_request_open().
+  * Fixed closing of a file handle case of errors in privatekey_from_file().
+  * Fixed ssh_get_user_home_dir() to be thread safe.
+  * Fixed the doxygen documentation.
+
+version 0.4.0 (released 2009-12-10)
   * Added scp support.
   * Added support for sending signals (RFC 4254, section 6.9).
   * Added MSVC support.
@@ -17,7 +96,6 @@ version 0.4 (released xxxx-xx-xx)
   * Added full poll() support and poll-emulation for win32.
   * Added missing 64bit functions in sftp.
   * Added support for ~/ and SSH_DIR/ in filenames instead of %s/.
-  * Added more examples.
   * Fixed Fix channel_get_exit_status bug.
   * Fixed calltrace logging to make it optional.
   * Fixed compilation on Solaris.
