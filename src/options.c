@@ -644,7 +644,6 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
 int ssh_options_getopt(ssh_session session, int *argcptr, char **argv) {
   char *user = NULL;
   char *cipher = NULL;
-  char *localaddr = NULL;
   char *identity = NULL;
   char *port = NULL;
   char *bindport = NULL;
@@ -702,9 +701,6 @@ int ssh_options_getopt(ssh_session session, int *argcptr, char **argv) {
         break;
       case 'i':
         identity = optarg;
-        break;
-      case 'b':
-        localaddr = optarg;
         break;
       case 'C':
         compress++;
