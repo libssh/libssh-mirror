@@ -30,7 +30,9 @@ ssh_session session;
 #define KNOWNHOSTFILES "libssh_torture_knownhosts"
 
 static void setup(void) {
+    int verbosity=torture_libssh_verbosity();
     session = ssh_new();
+    ssh_options_set(session,SSH_OPTIONS_LOG_VERBOSITY,&verbosity);
 }
 
 static void teardown(void) {
