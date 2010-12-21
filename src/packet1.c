@@ -97,7 +97,6 @@ void ssh_packet_set_default_callbacks1(ssh_session session){
 
 int ssh_packet_socket_callback1(const void *data, size_t receivedlen, void *user) {
   void *packet = NULL;
-  int rc = SSH_ERROR;
   int to_be_read;
   size_t processed=0;
   uint32_t padding;
@@ -127,7 +126,6 @@ int ssh_packet_socket_callback1(const void *data, size_t receivedlen, void *user
       }
       memcpy(&len,data,sizeof(uint32_t));
       processed += sizeof(uint32_t);
-      rc = SSH_ERROR;
 
       /* len is not encrypted */
       len = ntohl(len);
@@ -153,7 +151,6 @@ int ssh_packet_socket_callback1(const void *data, size_t receivedlen, void *user
       }
       /* it is _not_ possible that to_be_read be < 8. */
       packet = (char *)data + processed;
-      rc = SSH_ERROR;
 
       if (buffer_add_data(session->in_buffer,packet,to_be_read) < 0) {
         SAFE_FREE(packet);
@@ -226,6 +223,7 @@ int ssh_packet_socket_callback1(const void *data, size_t receivedlen, void *user
       ssh_packet_process(session, session->in_packet.type);
       session->packet_state = PACKET_STATE_INIT;
       if(processed < receivedlen){
+        int rc;
         /* Handle a potential packet left in socket buffer */
         ssh_log(session,SSH_LOG_PACKET,"Processing %" PRIdS " bytes left in socket buffer",
             receivedlen-processed);
