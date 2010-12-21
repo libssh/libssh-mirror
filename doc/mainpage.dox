@@ -38,6 +38,23 @@ The libssh library provides:
  - Full poll()/WSAPoll() support and a poll-emulation for Win32.
  - Runs and tested under x86_64, x86, ARM, Sparc32, PPC under Linux, BSD, MacOSX, Solaris and Windows
 
+@section main-copyright Copyright Policy
+
+The developers of libssh have a policy of asking for contributions to be made
+under the personal copyright of the contributor, instead of a corporate
+copyright.
+
+There are some reasons for the establishment of this policy:
+
+    @li Individual copyrights make copyright registration in the US a simpler
+        process.
+    @li If libssh is copyrighted by individuals rather than corporations,
+        decisions regarding enforcement and protection of copyright will, more
+        likely, be made in the interests of the project, and not in the interests
+        of any corporation’s shareholders.
+    @li If we ever need to relicense a portion of the code contacting individuals
+        for permission to do so is much easier than contacting a company.
+
 @section main-rfc Internet standard
 
 @subsection main-rfc-secsh Secure Shell (SSH)
