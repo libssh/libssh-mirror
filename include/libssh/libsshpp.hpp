@@ -350,7 +350,9 @@ public:
    * @see ssh_write_knownhost
    */
   int writeKnownhost(){
-    ssh_throw(ssh_write_knownhost(c_session));
+    int ret = ssh_write_knownhost(c_session);
+    ssh_throw(ret);
+    return ret;
   }
 
   /** @brief accept an incoming forward connection
@@ -528,6 +530,7 @@ public:
     int err=ssh_channel_request_x11(channel,single_connection,
         protocol, cookie, screen_number);
     ssh_throw(err);
+    return err;
   }
   void_throwable sendEof(){
     int err=ssh_channel_send_eof(channel);
