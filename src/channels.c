@@ -1132,7 +1132,7 @@ int channel_write_common(ssh_channel channel, const void *data,
     }
 
     ssh_log(session, SSH_LOG_RARE,
-        "channel_write wrote %ld bytes", effectivelen);
+        "channel_write wrote %ld bytes", (long int) effectivelen);
 
     channel->remote_window -= effectivelen;
     len -= effectivelen;
