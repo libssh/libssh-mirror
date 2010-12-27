@@ -122,6 +122,8 @@ void ssh_sock_set_blocking(socket_t sock) {
 #endif /* _WIN32 */
 
 #ifdef HAVE_REGCOMP
+#define IPEXPR    "^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}"
+
 static regex_t *ip_regex = NULL;
 
 /** @internal
@@ -134,7 +136,7 @@ int ssh_regex_init(){
     int err;
     regex_t *regex=malloc(sizeof (regex_t));
     ZERO_STRUCTP(regex);
-    err=regcomp(regex,"^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$",REG_EXTENDED | REG_NOSUB);
+    err = regcomp(regex, IPEXPR, REG_EXTENDED | REG_NOSUB);
     if(err != 0){
       char buffer[128];
       regerror(err,regex,buffer,sizeof(buffer));
