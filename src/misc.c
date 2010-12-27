@@ -576,13 +576,14 @@ char *ssh_path_expand_tilde(const char *d) {
 
     r = malloc(ld + lh + 1);
     if (r == NULL) {
+        SAFE_FREE(h);
         return NULL;
     }
 
     if (lh > 0) {
         memcpy(r, h, lh);
-        SAFE_FREE(h);
     }
+    SAFE_FREE(h);
     memcpy(r + lh, p, ld + 1);
 
     return r;
