@@ -109,11 +109,14 @@ START_TEST (torture_algorithms_zlib)
   rc=ssh_options_set(session,SSH_OPTIONS_COMPRESSION_S_C,"zlib");
   ck_assert_msg(rc==SSH_OK,ssh_get_error(session));
   rc=ssh_connect(session);
-  ck_assert_msg(rc==SSH_OK,ssh_get_error(session));
-  rc=ssh_userauth_none(session,NULL);
-  if(rc != SSH_OK){
-    rc=ssh_get_error_code(session);
-    ck_assert_msg(rc==SSH_REQUEST_DENIED,ssh_get_error(session));
+  /* Don't run the test against openssh */
+  if (!ssh_get_openssh_version(session)) {
+      ck_assert_msg(rc==SSH_OK,ssh_get_error(session));
+      rc=ssh_userauth_none(session,NULL);
+      if(rc != SSH_OK){
+        rc=ssh_get_error_code(session);
+        ck_assert_msg(rc==SSH_REQUEST_DENIED,ssh_get_error(session));
+      }
   }
   ssh_disconnect(session);
 }
@@ -128,11 +131,14 @@ START_TEST (torture_algorithms_zlib_openssh)
   rc=ssh_options_set(session,SSH_OPTIONS_COMPRESSION_S_C,"zlib@openssh.com");
   ck_assert_msg(rc==SSH_OK,ssh_get_error(session));
   rc=ssh_connect(session);
-  ck_assert_msg(rc==SSH_OK,ssh_get_error(session));
-  rc=ssh_userauth_none(session,NULL);
-  if(rc != SSH_OK){
-    rc=ssh_get_error_code(session);
-    ck_assert_msg(rc==SSH_REQUEST_DENIED,ssh_get_error(session));
+  /* Only run the test against openssh */
+  if (ssh_get_openssh_version(session)) {
+      ck_assert_msg(rc==SSH_OK,ssh_get_error(session));
+      rc=ssh_userauth_none(session,NULL);
+      if(rc != SSH_OK){
+        rc=ssh_get_error_code(session);
+        ck_assert_msg(rc==SSH_REQUEST_DENIED,ssh_get_error(session));
+      }
   }
   ssh_disconnect(session);
 }
