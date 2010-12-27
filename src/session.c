@@ -94,6 +94,7 @@ ssh_session ssh_new(void) {
   session->port = 22;
   session->fd = -1;
   session->ssh2 = 1;
+  session->compressionlevel=7;
 #ifdef WITH_SSH1
   session->ssh1 = 1;
 #else

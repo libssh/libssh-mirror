@@ -138,6 +138,7 @@ struct ssh_session_struct {
     char *sshdir;
     char *knownhosts;
     char *wanted_methods[10];
+    char compressionlevel;
     unsigned long timeout; /* seconds */
     unsigned long timeout_usec;
     unsigned int port;

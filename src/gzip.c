@@ -103,7 +103,7 @@ static ssh_buffer gzip_compress(ssh_session session,ssh_buffer source,int level)
 int compress_buffer(ssh_session session, ssh_buffer buf) {
   ssh_buffer dest = NULL;
 
-  dest = gzip_compress(session, buf, 9);
+  dest = gzip_compress(session, buf, session->compressionlevel);
   if (dest == NULL) {
     return -1;
   }

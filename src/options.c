@@ -145,6 +145,7 @@ int ssh_options_copy(ssh_session src, ssh_session *dest) {
   new->ssh2 = src->ssh2;
   new->ssh1 = src->ssh1;
   new->log_verbosity = src->log_verbosity;
+  new->compressionlevel = src->compressionlevel;
 
   return 0;
 }
@@ -272,23 +273,23 @@ int ssh_options_set_algo(ssh_session session, int algo,
  *                \n
  *                See the corresponding numbers in libssh.h.
  *
- *              - SSH_OPTTIONS_AUTH_CALLBACK:
+ *              - SSH_OPTIONS_AUTH_CALLBACK:
  *                Set a callback to use your own authentication function
  *                (function pointer).
  *
- *              - SSH_OPTTIONS_AUTH_USERDATA:
+ *              - SSH_OPTIONS_AUTH_USERDATA:
  *                Set the user data passed to the authentication
  *                function (generic pointer).
  *
- *              - SSH_OPTTIONS_LOG_CALLBACK:
+ *              - SSH_OPTIONS_LOG_CALLBACK:
  *                Set a callback to use your own logging function
  *                (function pointer).
  *
- *              - SSH_OPTTIONS_LOG_USERDATA:
+ *              - SSH_OPTIONS_LOG_USERDATA:
  *                Set the user data passed to the logging function
  *                (generic pointer).
  *
- *              - SSH_OPTTIONS_STATUS_CALLBACK:
+ *              - SSH_OPTIONS_STATUS_CALLBACK:
  *                Set a callback to show connection status in realtime
  *                (function pointer).\n
  *                \n
@@ -299,7 +300,7 @@ int ssh_options_set_algo(ssh_session session, int algo,
  *                During ssh_connect(), libssh will call the callback
  *                with status from 0.0 to 1.0.
  *
- *              - SSH_OPTTIONS_STATUS_ARG:
+ *              - SSH_OPTIONS_STATUS_ARG:
  *                Set the status argument which should be passed to the
  *                status callback (generic pointer).
  *
@@ -313,11 +314,22 @@ int ssh_options_set_algo(ssh_session session, int algo,
  *
  *              - SSH_OPTIONS_COMPRESSION_C_S:
  *                Set the compression to use for client to server
- *                communication (const char *, "none" or "zlib").
+ *                communication (const char *, "yes", "no" or a specific
+ *                algorithm name if needed ("zlib","zlib@openssh.com","none").
  *
  *              - SSH_OPTIONS_COMPRESSION_S_C:
  *                Set the compression to use for server to client
- *                communication (const char *, "none" or "zlib").
+ *                communication (const char *, "yes", "no" or a specific
+ *                algorithm name if needed ("zlib","zlib@openssh.com","none").
+ *
+ *              - SSH_OPTIONS_COMPRESSION:
+ *                Set the compression to use for both directions
+ *                communication (const char *, "yes", "no" or a specific
+ *                algorithm name if needed ("zlib","zlib@openssh.com","none").
+ *
+ *              - SSH_OPTIONS_COMPRESSION_LEVEL:
+ *                Set the compression level to use for zlib functions. (int,
+ *                value from 1 to 9, 9 being the most efficient but slower).
  *
  *              - SSH_OPTIONS_STRICTHOSTKEYCHECK:
  *                Set the parameter StrictHostKeyChecking to avoid
@@ -576,8 +588,16 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
         ssh_set_error_invalid(session, __FUNCTION__);
         return -1;
       } else {
-        if (ssh_options_set_algo(session, SSH_COMP_C_S, value) < 0)
-          return -1;
+        if (strcasecmp(value,"yes")==0){
+          if(ssh_options_set_algo(session,SSH_COMP_C_S,"zlib@openssh.com,zlib") < 0)
+            return -1;
+        } else if (strcasecmp(value,"no")==0){
+          if(ssh_options_set_algo(session,SSH_COMP_C_S,"none") < 0)
+            return -1;
+        } else {
+          if (ssh_options_set_algo(session, SSH_COMP_C_S, value) < 0)
+            return -1;
+        }
       }
       break;
     case SSH_OPTIONS_COMPRESSION_S_C:
@@ -585,8 +605,40 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
         ssh_set_error_invalid(session, __FUNCTION__);
         return -1;
       } else {
-        if (ssh_options_set_algo(session, SSH_COMP_S_C, value) < 0)
+        if (strcasecmp(value,"yes")==0){
+          if(ssh_options_set_algo(session,SSH_COMP_S_C,"zlib@openssh.com,zlib") < 0)
+            return -1;
+        } else if (strcasecmp(value,"no")==0){
+          if(ssh_options_set_algo(session,SSH_COMP_S_C,"none") < 0)
+            return -1;
+        } else {
+          if (ssh_options_set_algo(session, SSH_COMP_S_C, value) < 0)
+            return -1;
+        }
+      }
+      break;
+    case SSH_OPTIONS_COMPRESSION:
+      if (value==NULL) {
+        ssh_set_error_invalid(session, __FUNCTION__);
+        return -1;
+      }
+      if(ssh_options_set(session,SSH_OPTIONS_COMPRESSION_C_S,value) < 0)
+        return -1;
+      if(ssh_options_set(session,SSH_OPTIONS_COMPRESSION_S_C,value) < 0)
+        return -1;
+      break;
+    case SSH_OPTIONS_COMPRESSION_LEVEL:
+      if (value==NULL) {
+        ssh_set_error_invalid(session, __FUNCTION__);
+        return -1;
+      }
+      else {
+        int *x=(int *)value;
+        if(*x < 1 || *x > 9){
+          ssh_set_error_invalid(session, __FUNCTION__);
           return -1;
+        }
+        session->compressionlevel=*x & 0xff;
       }
       break;
     case SSH_OPTIONS_STRICTHOSTKEYCHECK:
@@ -760,10 +812,7 @@ int ssh_options_getopt(ssh_session session, int *argcptr, char **argv) {
 
   /* set a new option struct */
   if (compress) {
-    if (ssh_options_set(session, SSH_OPTIONS_COMPRESSION_C_S, "zlib,zlib@openssh.com,none") < 0) {
-      cont = 0;
-    }
-    if (ssh_options_set(session, SSH_OPTIONS_COMPRESSION_S_C, "zlib,zlib@openssh.com,none") < 0) {
+    if (ssh_options_set(session, SSH_OPTIONS_COMPRESSION, "yes") < 0) {
       cont = 0;
     }
   }
