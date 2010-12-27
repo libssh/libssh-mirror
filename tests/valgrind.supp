@@ -22,3 +22,28 @@
    fun:erealloc
 }
 
+### GLIBC
+{
+   glibc regcomp
+   Memcheck:Leak
+   fun:*alloc
+   ...
+   fun:regcomp
+}
+
+### OPENSSL
+{
+   openssl lib64
+   Memcheck:Leak
+   fun:*alloc
+   ...
+   obj:/lib64/libcrypto.so.*
+}
+
+{
+   openssl lib
+   Memcheck:Leak
+   fun:*alloc
+   ...
+   obj:/lib/libcrypto.so.*
+}
