@@ -1,6 +1,17 @@
 ChangeLog
 ==========
 
+version 0.4.7 (released 2010-12-28)
+  * Fixed a possible memory leak in ssh_get_user_home().
+  * Fixed a memory leak in sftp_xstat.
+  * Fixed uninitialized fd->revents member.
+  * Fixed timout value in ssh_channel_accept().
+  * Fixed length checks in ssh_analyze_banner().
+  * Fixed a possible data overread and crash bug.
+  * Fixed setting max_fd which breaks ssh_select().
+  * Fixed some pedantic build warnings.
+  * Fixed a memory leak with session->bindaddr.
+
 version 0.4.6 (released 2010-09-03)
   * Added a cleanup function to free the ws2_32 library.
   * Fixed build with gcc 3.4.
