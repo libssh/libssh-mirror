@@ -51,11 +51,14 @@
 #include <winsock2.h>
 #define SOCKOPT_TYPE_ARG4 char
 
-/* We need to provide hstrerror. Not we can't call the parameter h_errno because it's #defined */
+/*
+ * We need to provide hstrerror. Not we can't call the parameter h_errno
+ * because it's #defined
+ */
 static char *hstrerror(int h_errno_val) {
   static char text[50] = {0};
 
-  snprintf(text, sizeof(text), "gethostbyname error %d\n", h_errno_val);
+  snprintf(text, sizeof(text), "getaddrino error %d\n", h_errno_val);
 
   return text;
 }
@@ -68,53 +71,63 @@ static char *hstrerror(int h_errno_val) {
 
 #endif /* _WIN32 */
 
-/* TODO FIXME: must use getaddrinfo */
 static socket_t bind_socket(ssh_bind sshbind, const char *hostname,
     int port) {
-  struct sockaddr_in myaddr;
-  struct hostent *hp=NULL;
-  socket_t s;
-  int opt = 1;
+    char port_c[6];
+    struct addrinfo *ai;
+    struct addrinfo hints;
+    int opt = 1;
+    socket_t s;
+    int rc;
 
-  s = socket(PF_INET, SOCK_STREAM, 0);
-  if (s < 0) {
-    ssh_set_error(sshbind, SSH_FATAL, "%s", strerror(errno));
-    return -1;
-  }
+    ZERO_STRUCT(hints);
 
-#ifdef HAVE_GETHOSTBYNAME
-  hp = gethostbyname(hostname);
-#endif
+    hints.ai_flags = AI_PASSIVE;
+    hints.ai_socktype = SOCK_STREAM;
 
-  if (hp == NULL) {
-    ssh_set_error(sshbind, SSH_FATAL,
-        "Resolving %s: %s", hostname, hstrerror(h_errno));
-    close(s);
-    return -1;
-  }
+    snprintf(port_c, 6, "%d", port);
+    rc = getaddrinfo(hostname, port_c, &hints, &ai);
+    if (rc != 0) {
+        ssh_set_error(sshbind,
+                      SSH_FATAL,
+                      "Resolving %s: %s", hostname, gai_strerror(rc));
+        return -1;
+    }
 
-  memset(&myaddr, 0, sizeof(myaddr));
-  memcpy(&myaddr.sin_addr, hp->h_addr, hp->h_length);
-  myaddr.sin_family = hp->h_addrtype;
-  myaddr.sin_port = htons(port);
+    s = socket (ai->ai_family,
+                           ai->ai_socktype,
+                           ai->ai_protocol);
+    if (s == SSH_INVALID_SOCKET) {
+        ssh_set_error(sshbind, SSH_FATAL, "%s", strerror(errno));
+        freeaddrinfo (ai);
+        return -1;
+    }
 
-  if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0) {
-    ssh_set_error(sshbind, SSH_FATAL,
-        "Setting socket options failed: %s", hstrerror(h_errno));
-    close(s);
-    return -1;
-  }
+    if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR,
+                   (char *)&opt, sizeof(opt)) < 0) {
+        ssh_set_error(sshbind,
+                      SSH_FATAL,
+                      "Setting socket options failed: %s",
+                      hstrerror(h_errno));
+        freeaddrinfo (ai);
+        close(s);
+        return -1;
+    }
 
-  if (bind(s, (struct sockaddr *) &myaddr, sizeof(myaddr)) < 0) {
-    ssh_set_error(sshbind, SSH_FATAL, "Binding to %s:%d: %s",
-        hostname,
-        port,
-        strerror(errno));
-    close(s);
-    return -1;
-  }
+    if (bind(s, ai->ai_addr, ai->ai_addrlen) != 0) {
+        ssh_set_error(sshbind,
+                      SSH_FATAL,
+                      "Binding to %s:%d: %s",
+                      hostname,
+                      port,
+                      strerror(errno));
+        freeaddrinfo (ai);
+        close(s);
+        return -1;
+    }
 
-  return s;
+    freeaddrinfo (ai);
+    return s;
 }
 
 ssh_bind ssh_bind_new(void) {

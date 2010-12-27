@@ -68,9 +68,6 @@
 /* Define to 1 if you have the `getaddrinfo' function. */
 #cmakedefine HAVE_GETADDRINFO 1
 
-/* Define to 1 if you have the `gethostbyname' function. */
-#cmakedefine HAVE_GETHOSTBYNAME 1
-
 /* Define to 1 if you have the `poll' function. */
 #cmakedefine HAVE_POLL 1
 
