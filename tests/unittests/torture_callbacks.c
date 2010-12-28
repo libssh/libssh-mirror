@@ -5,57 +5,62 @@
 #include <libssh/callbacks.h>
 
 static int myauthcallback (const char *prompt, char *buf, size_t len,
-    int echo, int verify, void *userdata){
-	(void) prompt;
-	(void) buf;
-	(void) len;
-	(void) echo;
-	(void) verify;
-	(void) userdata;
-	return 0;
+    int echo, int verify, void *userdata) {
+    (void) prompt;
+    (void) buf;
+    (void) len;
+    (void) echo;
+    (void) verify;
+    (void) userdata;
+    return 0;
 }
 
-struct ssh_callbacks_struct callbacks =
-{
-		.userdata=(void *)0x0badc0de,
-		.auth_function=myauthcallback
-};
+static void setup(void **state) {
+    struct ssh_callbacks_struct *cb;
 
-static void setup(void) {
-	ssh_callbacks_init(&callbacks);
+    cb = malloc(sizeof(struct ssh_callbacks_struct));
+    assert_false(cb == NULL);
+
+    cb->userdata = (void *) 0x0badc0de;
+    cb->auth_function = myauthcallback;
+
+    ssh_callbacks_init(cb);
+    *state = cb;
 }
 
-static void teardown(void) {
-
+static void teardown(void **state) {
+    free(*state);
 }
 
-START_TEST (torture_callbacks_size)
-{
-	ck_assert_int_ne(callbacks.size,0);
-}
-END_TEST
+static void torture_callbacks_size(void **state) {
+    struct ssh_callbacks_struct *cb = *state;;
 
-START_TEST (torture_callbacks_exists)
-{
-	ck_assert_int_ne(ssh_callbacks_exists(&callbacks,auth_function),0);
-	ck_assert_int_eq(ssh_callbacks_exists(&callbacks,log_function),0);
-	/* we redefine size so auth_function is outside the range of callbacks->size */
-  callbacks.size=(unsigned char *)&(callbacks.auth_function) - (unsigned char *)&callbacks;
-  ck_assert_int_eq(ssh_callbacks_exists(&callbacks,auth_function),0);
-  /* now make it one pointer bigger so we spill over the auth_function slot */
-  callbacks.size += sizeof(void *);
-  ck_assert_int_ne(ssh_callbacks_exists(&callbacks,auth_function),0);
-}
-END_TEST
-
-Suite *torture_make_suite(void) {
-  Suite *s = suite_create("libssh_options");
-
-  torture_create_case_fixture(s, "torture_callbacks_size",
-          torture_callbacks_size, setup, teardown);
-  torture_create_case_fixture(s, "torture_callbacks_exists",
-          torture_callbacks_exists, setup, teardown);
-
-  return s;
+    assert_int_not_equal(cb->size, 0);
 }
 
+static void torture_callbacks_exists(void **state) {
+    struct ssh_callbacks_struct *cb = *state;
+
+    assert_int_not_equal(ssh_callbacks_exists(cb, auth_function), 0);
+    assert_int_equal(ssh_callbacks_exists(cb, log_function), 0);
+
+    /*
+     * We redefine size so auth_function is outside the range of
+     * callbacks->size.
+     */
+    cb->size = (unsigned char *) &cb->auth_function - (unsigned char *) cb;
+    assert_int_equal(ssh_callbacks_exists(cb, auth_function), 0);
+
+    /* Now make it one pointer bigger so we spill over the auth_function slot */
+    cb->size += sizeof(void *);
+    assert_int_not_equal(ssh_callbacks_exists(cb, auth_function), 0);
+}
+
+int torture_run_tests(void) {
+    const UnitTest tests[] = {
+        unit_test_setup_teardown(torture_callbacks_size, setup, teardown),
+        unit_test_setup_teardown(torture_callbacks_exists, setup, teardown),
+    };
+
+    return run_tests(tests);
+}
