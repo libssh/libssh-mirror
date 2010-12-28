@@ -92,8 +92,8 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
 endif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
 
 if (WITH_TESTING)
-  find_package(Check REQUIRED)
-  include(AddCheckTest)
+  find_package(CMockery REQUIRED)
+  include(AddCMockeryTest)
   add_subdirectory(tests)
 endif (WITH_TESTING)
 

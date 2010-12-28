@@ -1,9 +1,5 @@
 project(tests C)
 
-if (UNIX AND NOT LINUX)
-    find_package(Argp)
-endif (UNIX AND NOT LINUX)
-
 set(TORTURE_LIBRARY torture)
 
 include_directories(
@@ -16,14 +12,13 @@ include_directories(
 )
 
 # create test library
-add_library(${TORTURE_LIBRARY} SHARED torture.c cmdline.c)
+add_library(${TORTURE_LIBRARY} SHARED torture.c)
 target_link_libraries(${TORTURE_LIBRARY}
-    ${CHECK_LIBRARIES}
+    ${CMOCKERY_LIBRARY}
     ${LIBSSH_STATIC_LIBRARY}
     ${LIBSSH_LINK_LIBRARIES}
     ${LIBSSH_THREADS_STATIC_LIBRARY}
     ${LIBSSH_THREADS_LINK_LIBRARIES}
-    ${ARGP_LIBRARIES}
 )
 
 set(TEST_TARGET_LIBRARIES ${SUPPORT_LIBRARY} ${LIBSSH_LINK_LIBRARIES})
