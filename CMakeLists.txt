@@ -97,9 +97,6 @@ if (WITH_TESTING)
   add_subdirectory(tests)
 endif (WITH_TESTING)
 
-if (WITH_BENCHMARKS)
-    add_subdirectory(benchmarks)
-endif (WITH_BENCHMARKS)	
 
 message(STATUS "********************************************")
 message(STATUS "********** ${PROJECT_NAME} build options : **********")

@@ -32,3 +32,8 @@ add_subdirectory(unittests)
 if (WITH_CLIENT_TESTING)
     add_subdirectory(client)
 endif (WITH_CLIENT_TESTING)
+
+if (WITH_BENCHMARKS)
+    add_subdirectory(benchmarks)
+endif (WITH_BENCHMARKS)	
+
