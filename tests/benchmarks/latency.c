@@ -34,7 +34,7 @@
  * @brief Calculates the RTT of the host with ICMP ping, and returns the
  * average of the calculated RTT.
  * @param[in] host hostname to ping.
- * @param[out] average average RTT in ms.
+ * @param[out] average average RTT in milliseconds.
  * @returns 0 on success, -1 if there is an error.
  * @warning relies on an external ping program which may not exist on
  * certain OS.
@@ -84,15 +84,20 @@ parseerror:
   return -1;
 }
 
-struct timestamp_struct {
-  struct timeval timestamp;
-};
-
-static void timestamp_init(struct timestamp_struct *ts){
+/** @internal
+ * @brief initialize a timestamp to the current time.
+ * @param[out] ts A timestamp_struct pointer.
+ */
+void timestamp_init(struct timestamp_struct *ts){
   gettimeofday(&ts->timestamp,NULL);
 }
 
-static float elapsed_time(struct timestamp_struct *ts){
+/** @internal
+ * @brief return the elapsed time since now and the moment ts was initialized.
+ * @param[in] ts An initialized timestamp_struct pointer.
+ * @return Elapsed time in milliseconds.
+ */
+float elapsed_time(struct timestamp_struct *ts){
   struct timeval now;
   time_t secdiff;
   long usecdiff; /* may be negative */
@@ -104,6 +109,13 @@ static float elapsed_time(struct timestamp_struct *ts){
   return (float) (secdiff*1000) + ((float)usecdiff)/1000;
 }
 
+/** @internal
+ * @brief Calculates the RTT of the host with SSH channel operations, and
+ * returns the average of the calculated RTT.
+ * @param[in] session active SSH session to test.
+ * @param[out] average average RTT in milliseconds.
+ * @returns 0 on success, -1 if there is an error.
+ */
 int benchmarks_ssh_latency(ssh_session session, float *average){
   float times[3];
   struct timestamp_struct ts;

@@ -25,7 +25,15 @@
 #include <libssh/libssh.h>
 
 /* latency.c */
+
+struct timestamp_struct {
+  struct timeval timestamp;
+};
+
 int benchmarks_ping_latency (const char *host, float *average);
 int benchmarks_ssh_latency (ssh_session session, float *average);
+
+void timestamp_init(struct timestamp_struct *ts);
+float elapsed_time(struct timestamp_struct *ts);
 
 #endif /* BENCHMARKS_H_ */
