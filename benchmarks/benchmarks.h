@@ -1,5 +1,4 @@
-/* bench_scp.c
- *
+/*
  * This file is part of the SSH Library
  *
  * Copyright (c) 2010 by Aris Adamantiadis
@@ -20,6 +19,13 @@
  * MA 02111-1307, USA.
  */
 
-#include "benchmarks.h"
+#ifndef BENCHMARKS_H_
+#define BENCHMARKS_H_
+
 #include <libssh/libssh.h>
 
+/* latency.c */
+int benchmarks_ping_latency (const char *host, float *average);
+int benchmarks_ssh_latency (ssh_session session, float *average);
+
+#endif /* BENCHMARKS_H_ */
