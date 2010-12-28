@@ -25,147 +25,142 @@
 #include "libssh/libssh.h"
 #include "libssh/priv.h"
 
-ssh_session session;
 
-static void setup(void) {
-    session = ssh_new();
+static void setup(void **state) {
+    ssh_session session = ssh_new();
+    *state = session;
 }
 
-static void teardown(void) {
-    ssh_free(session);
+static void teardown(void **state) {
+    ssh_free(*state);
 }
 
-static void test_algorithm(const char *algo) {
-  int rc;
-  ssh_options_set(session,SSH_OPTIONS_HOST,"localhost");
-  rc=ssh_options_set(session,SSH_OPTIONS_CIPHERS_C_S,algo);
-  ck_assert_msg(rc==SSH_OK,ssh_get_error(session));
-  rc=ssh_options_set(session,SSH_OPTIONS_CIPHERS_S_C,algo);
-  ck_assert_msg(rc==SSH_OK,ssh_get_error(session));
-  rc=ssh_connect(session);
-  ck_assert_msg(rc==SSH_OK,ssh_get_error(session));
-  rc=ssh_userauth_none(session,NULL);
-  if(rc != SSH_OK){
-    rc=ssh_get_error_code(session);
-    ck_assert_msg(rc==SSH_REQUEST_DENIED,ssh_get_error(session));
-  }
-  ssh_disconnect(session);
+static void test_algorithm(ssh_session session, const char *algo) {
+    int rc;
+
+    rc = ssh_options_set(session, SSH_OPTIONS_HOST, "localhost");
+    assert_true(rc == SSH_OK);
+
+    rc = ssh_options_set(session, SSH_OPTIONS_CIPHERS_C_S, algo);
+    assert_true(rc == SSH_OK);
+
+    rc = ssh_options_set(session, SSH_OPTIONS_CIPHERS_S_C, algo);
+    assert_true(rc == SSH_OK);
+
+    rc = ssh_connect(session);
+    assert_true(rc == SSH_OK);
+
+    rc = ssh_userauth_none(session, NULL);
+    if (rc != SSH_OK) {
+        rc = ssh_get_error_code(session);
+        assert_true(rc == SSH_REQUEST_DENIED);
+    }
+
+    ssh_disconnect(session);
 }
 
-START_TEST (torture_algorithms_aes128_cbc)
-{
-  test_algorithm("aes128-cbc");
+static void torture_algorithms_aes128_cbc(void **state) {
+    test_algorithm(*state, "aes128-cbc");
 }
-END_TEST
 
-START_TEST (torture_algorithms_aes192_cbc)
-{
-  test_algorithm("aes192-cbc");
+static void torture_algorithms_aes192_cbc(void **state) {
+    test_algorithm(*state, "aes192-cbc");
 }
-END_TEST
 
-START_TEST (torture_algorithms_aes256_cbc)
-{
-  test_algorithm("aes256-cbc");
+static void torture_algorithms_aes256_cbc(void **state) {
+    test_algorithm(*state, "aes256-cbc");
 }
-END_TEST
 
-START_TEST (torture_algorithms_aes128_ctr)
-{
-  test_algorithm("aes128-ctr");
+static void torture_algorithms_aes128_ctr(void **state) {
+    test_algorithm(*state, "aes128-ctr");
 }
-END_TEST
 
-START_TEST (torture_algorithms_aes192_ctr)
-{
-  test_algorithm("aes192-ctr");
+static void torture_algorithms_aes192_ctr(void **state) {
+    test_algorithm(*state, "aes192-ctr");
 }
-END_TEST
 
-START_TEST (torture_algorithms_aes256_ctr)
-{
-  test_algorithm("aes256-ctr");
+static void torture_algorithms_aes256_ctr(void **state) {
+    test_algorithm(*state, "aes256-ctr");
 }
-END_TEST
 
-START_TEST (torture_algorithms_3des_cbc)
-{
-  test_algorithm("3des-cbc");
+static void torture_algorithms_3des_cbc(void **state) {
+    test_algorithm(*state, "3des-cbc");
 }
-END_TEST
 
-START_TEST (torture_algorithms_blowfish_cbc)
-{
-  test_algorithm("blowfish-cbc");
+static void torture_algorithms_blowfish_cbc(void **state) {
+    test_algorithm(*state, "blowfish-cbc");
 }
-END_TEST
 
-START_TEST (torture_algorithms_zlib)
-{
-  int rc;
-  ssh_options_set(session,SSH_OPTIONS_HOST,"localhost");
-  rc=ssh_options_set(session,SSH_OPTIONS_COMPRESSION_C_S,"zlib");
-  ck_assert_msg(rc==SSH_OK,ssh_get_error(session));
-  rc=ssh_options_set(session,SSH_OPTIONS_COMPRESSION_S_C,"zlib");
-  ck_assert_msg(rc==SSH_OK,ssh_get_error(session));
-  rc=ssh_connect(session);
-  /* Don't run the test against openssh */
-  if (!ssh_get_openssh_version(session)) {
-      ck_assert_msg(rc==SSH_OK,ssh_get_error(session));
-      rc=ssh_userauth_none(session,NULL);
-      if(rc != SSH_OK){
-        rc=ssh_get_error_code(session);
-        ck_assert_msg(rc==SSH_REQUEST_DENIED,ssh_get_error(session));
-      }
-  }
-  ssh_disconnect(session);
+static void torture_algorithms_zlib(void **state) {
+    ssh_session session = *state;
+    int rc;
+
+    rc = ssh_options_set(session,SSH_OPTIONS_HOST,"localhost");
+    assert_true(rc == SSH_OK);
+
+    rc = ssh_options_set(session, SSH_OPTIONS_COMPRESSION_C_S, "zlib");
+    assert_true(rc == SSH_OK);
+
+    rc = ssh_options_set(session, SSH_OPTIONS_COMPRESSION_S_C, "zlib");
+    assert_true(rc == SSH_OK);
+
+    rc = ssh_connect(session);
+    if (ssh_get_openssh_version(session)) {
+        assert_false(rc == SSH_OK);
+    } else {
+        assert_true(rc == SSH_OK);
+
+        rc = ssh_userauth_none(session, NULL);
+        if (rc != SSH_OK) {
+            rc = ssh_get_error_code(session);
+            assert_true(rc == SSH_REQUEST_DENIED);
+        }
+    }
+
+    ssh_disconnect(session);
 }
-END_TEST
 
-START_TEST (torture_algorithms_zlib_openssh)
-{
-  int rc;
-  ssh_options_set(session,SSH_OPTIONS_HOST,"localhost");
-  rc=ssh_options_set(session,SSH_OPTIONS_COMPRESSION_C_S,"zlib@openssh.com");
-  ck_assert_msg(rc==SSH_OK,ssh_get_error(session));
-  rc=ssh_options_set(session,SSH_OPTIONS_COMPRESSION_S_C,"zlib@openssh.com");
-  ck_assert_msg(rc==SSH_OK,ssh_get_error(session));
-  rc=ssh_connect(session);
-  /* Only run the test against openssh */
-  if (ssh_get_openssh_version(session)) {
-      ck_assert_msg(rc==SSH_OK,ssh_get_error(session));
-      rc=ssh_userauth_none(session,NULL);
-      if(rc != SSH_OK){
-        rc=ssh_get_error_code(session);
-        ck_assert_msg(rc==SSH_REQUEST_DENIED,ssh_get_error(session));
-      }
-  }
-  ssh_disconnect(session);
+static void torture_algorithms_zlib_openssh(void **state) {
+    ssh_session session = *state;
+    int rc;
+
+    rc = ssh_options_set(session,SSH_OPTIONS_HOST,"localhost");
+    assert_true(rc == SSH_OK);
+
+    rc = ssh_options_set(session, SSH_OPTIONS_COMPRESSION_C_S, "zlib@openssh.com");
+    assert_true(rc == SSH_OK);
+
+    rc = ssh_options_set(session, SSH_OPTIONS_COMPRESSION_S_C, "zlib@openssh.com");
+    assert_true(rc == SSH_OK);
+
+    rc = ssh_connect(session);
+    if (ssh_get_openssh_version(session)) {
+        assert_true(rc==SSH_OK);
+        rc = ssh_userauth_none(session, NULL);
+        if (rc != SSH_OK) {
+            rc = ssh_get_error_code(session);
+            assert_true(rc == SSH_REQUEST_DENIED);
+        }
+    } else {
+      assert_false(rc == SSH_OK);
+    }
+
+    ssh_disconnect(session);
 }
-END_TEST
 
-Suite *torture_make_suite(void) {
-  Suite *s = suite_create("libssh_algorithms");
+int torture_run_tests(void) {
+    const UnitTest tests[] = {
+        unit_test_setup_teardown(torture_algorithms_aes128_cbc, setup, teardown),
+        unit_test_setup_teardown(torture_algorithms_aes192_cbc, setup, teardown),
+        unit_test_setup_teardown(torture_algorithms_aes256_cbc, setup, teardown),
+        unit_test_setup_teardown(torture_algorithms_aes128_ctr, setup, teardown),
+        unit_test_setup_teardown(torture_algorithms_aes192_ctr, setup, teardown),
+        unit_test_setup_teardown(torture_algorithms_aes256_ctr, setup, teardown),
+        unit_test_setup_teardown(torture_algorithms_3des_cbc, setup, teardown),
+        unit_test_setup_teardown(torture_algorithms_blowfish_cbc, setup, teardown),
+        unit_test_setup_teardown(torture_algorithms_zlib, setup, teardown),
+        unit_test_setup_teardown(torture_algorithms_zlib_openssh, setup, teardown),
+    };
 
-  torture_create_case_fixture(s, "torture_algorithms_aes128-cbc",
-          torture_algorithms_aes128_cbc, setup, teardown);
-  torture_create_case_fixture(s, "torture_algorithms_aes192-cbc",
-          torture_algorithms_aes192_cbc, setup, teardown);
-   torture_create_case_fixture(s, "torture_algorithms_aes256-cbc",
-          torture_algorithms_aes256_cbc, setup, teardown);
-   torture_create_case_fixture(s, "torture_algorithms_aes128-ctr",
-          torture_algorithms_aes128_ctr, setup, teardown);
-   torture_create_case_fixture(s, "torture_algorithms_aes192-ctr",
-          torture_algorithms_aes192_ctr, setup, teardown);
-    torture_create_case_fixture(s, "torture_algorithms_aes256-ctr",
-          torture_algorithms_aes256_ctr, setup, teardown);
-    torture_create_case_fixture(s, "torture_algorithms_3des-cbc",
-          torture_algorithms_3des_cbc, setup, teardown);
-    torture_create_case_fixture(s, "torture_algorithms_blowfish-cbc",
-          torture_algorithms_blowfish_cbc, setup, teardown);
-    torture_create_case_fixture(s, "torture_algorithms_zlib",
-          torture_algorithms_zlib, setup, teardown);
-    torture_create_case_fixture(s, "torture_algorithms_zlib_openssh",
-              torture_algorithms_zlib_openssh, setup, teardown);
-    return s;
+    return run_tests(tests);
 }
