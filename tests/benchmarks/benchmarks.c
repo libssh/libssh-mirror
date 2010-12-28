@@ -35,26 +35,12 @@ const char *argp_program_bug_address = "Aris Adamantiadis <aris@0xbadc0de.be>";
 
 static char **cmdline;
 
-#define MAX_HOSTS_CONNECT 20
-
 /* Program documentation. */
 static char doc[] = "libssh benchmarks";
-enum libssh_benchmarks {
-    BENCHMARK_RAW_UPLOAD=1,
-    BENCHMARK_NUMBER
-};
 
 const char *libssh_benchmarks_names[]={
     "null",
     "benchmark_raw_upload"
-};
-
-struct argument_s {
-  const char *hosts[MAX_HOSTS_CONNECT];
-  char benchmarks[BENCHMARK_NUMBER -1];
-  int verbose;
-  int nhosts;
-  int ntests;
 };
 
 /* The options we understand. */
@@ -161,10 +147,27 @@ error:
   return NULL;
 }
 
+static char *network_speed(float bps){
+  static char buffer[128];
+  if(bps > 1000*1000*1000){
+    /* Gbps */
+    snprintf(buffer,sizeof(buffer),"%f Gbps",bps/(1000*1000*1000));
+  } else if(bps > 1000*1000){
+    /* Mbps */
+    snprintf(buffer,sizeof(buffer),"%f Mbps",bps/(1000*1000));
+  } else if(bps > 1000){
+    snprintf(buffer,sizeof(buffer),"%f Kbps",bps/1000);
+  } else {
+    snprintf(buffer,sizeof(buffer),"%f bps",bps);
+  }
+  return buffer;
+}
+
 static void do_benchmarks(ssh_session session, struct argument_s *arguments,
     const char *hostname){
   float ping_rtt=0.0;
   float ssh_rtt=0.0;
+  float bps=0.0;
   int err;
 
   if(arguments->verbose>0)
@@ -177,6 +180,13 @@ static void do_benchmarks(ssh_session session, struct argument_s *arguments,
   if(err==0){
     fprintf(stdout, "SSH RTT : %f ms\n",ssh_rtt);
   }
+  if(arguments->benchmarks[BENCHMARK_RAW_UPLOAD-1]){
+    err=benchmarks_raw_up(session,arguments,&bps);
+    if(err==0){
+      fprintf(stdout, "%s : %s : %s\n",hostname,
+          libssh_benchmarks_names[BENCHMARK_RAW_UPLOAD], network_speed(bps));
+    }
+  }
 }
 
 int main(int argc, char **argv){
@@ -187,7 +197,7 @@ int main(int argc, char **argv){
   arguments_init(&arguments);
   cmdline_parse(argc, argv, &arguments);
   if (arguments.nhosts==0){
-    fprintf(stderr,"At least one host must be specified");
+    fprintf(stderr,"At least one host (-h) must be specified\n");
     return EXIT_FAILURE;
   }
   if (arguments.ntests==0){

@@ -24,6 +24,24 @@
 
 #include <libssh/libssh.h>
 
+/* benchmarks.c */
+
+/* maximum number of parallel hosts that may be checked */
+#define MAX_HOSTS_CONNECT 20
+
+enum libssh_benchmarks {
+    BENCHMARK_RAW_UPLOAD=1,
+    BENCHMARK_NUMBER
+};
+
+struct argument_s {
+  const char *hosts[MAX_HOSTS_CONNECT];
+  char benchmarks[BENCHMARK_NUMBER -1];
+  int verbose;
+  int nhosts;
+  int ntests;
+};
+
 /* latency.c */
 
 struct timestamp_struct {
@@ -35,5 +53,10 @@ int benchmarks_ssh_latency (ssh_session session, float *average);
 
 void timestamp_init(struct timestamp_struct *ts);
 float elapsed_time(struct timestamp_struct *ts);
+
+/* bench_raw.c */
+
+int benchmarks_raw_up (ssh_session session, struct argument_s *args,
+    float *bps);
 
 #endif /* BENCHMARKS_H_ */
