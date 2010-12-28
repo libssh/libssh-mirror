@@ -1,87 +1,86 @@
 #define LIBSSH_STATIC
-#include <libssh/priv.h>
 
 #include "torture.h"
 #include "misc.c"
 
-START_TEST(torture_ssh_list_new)
-{
+static void torture_ssh_list_new(void **state) {
     struct ssh_list *xlist;
+
+    (void) state;
 
     xlist = ssh_list_new();
 
-    ck_assert(xlist != NULL);
-    ck_assert(xlist->root == NULL);
-    ck_assert(xlist->end == NULL);
+    assert_true(xlist != NULL);
+    assert_true(xlist->root == NULL);
+    assert_true(xlist->end == NULL);
 
     ssh_list_free(xlist);
 }
-END_TEST
 
-START_TEST(torture_ssh_list_append)
-{
+static void torture_ssh_list_append(void **state) {
     struct ssh_list *xlist;
     int rc;
 
+    (void) state;
+
     xlist = ssh_list_new();
-    ck_assert(xlist != NULL);
+    assert_true(xlist != NULL);
 
     rc = ssh_list_append(xlist, "item1");
-    ck_assert(rc == 0);
-    ck_assert_str_eq((const char *) xlist->root->data, "item1");
-    ck_assert_str_eq((const char *) xlist->end->data, "item1");
+    assert_true(rc == 0);
+    assert_string_equal((const char *) xlist->root->data, "item1");
+    assert_string_equal((const char *) xlist->end->data, "item1");
 
     rc = ssh_list_append(xlist, "item2");
-    ck_assert(rc == 0);
-    ck_assert_str_eq((const char *) xlist->root->data, "item1");
-    ck_assert_str_eq((const char *) xlist->end->data, "item2");
+    assert_true(rc == 0);
+    assert_string_equal((const char *) xlist->root->data, "item1");
+    assert_string_equal((const char *) xlist->end->data, "item2");
 
     rc = ssh_list_append(xlist, "item3");
-    ck_assert(rc == 0);
-    ck_assert_str_eq((const char *) xlist->root->data, "item1");
-    ck_assert_str_eq((const char *) xlist->root->next->data, "item2");
-    ck_assert_str_eq((const char *) xlist->root->next->next->data, "item3");
-    ck_assert_str_eq((const char *) xlist->end->data, "item3");
+    assert_true(rc == 0);
+    assert_string_equal((const char *) xlist->root->data, "item1");
+    assert_string_equal((const char *) xlist->root->next->data, "item2");
+    assert_string_equal((const char *) xlist->root->next->next->data, "item3");
+    assert_string_equal((const char *) xlist->end->data, "item3");
 
     ssh_list_free(xlist);
 }
-END_TEST
 
-START_TEST(torture_ssh_list_prepend)
-{
+static void torture_ssh_list_prepend(void **state) {
     struct ssh_list *xlist;
     int rc;
 
+    (void) state;
+
     xlist = ssh_list_new();
-    ck_assert(xlist != NULL);
+    assert_true(xlist != NULL);
 
     rc = ssh_list_prepend(xlist, "item1");
-    ck_assert(rc == 0);
-    ck_assert_str_eq((const char *) xlist->root->data, "item1");
-    ck_assert_str_eq((const char *) xlist->end->data, "item1");
+    assert_true(rc == 0);
+    assert_string_equal((const char *) xlist->root->data, "item1");
+    assert_string_equal((const char *) xlist->end->data, "item1");
 
     rc = ssh_list_append(xlist, "item2");
-    ck_assert(rc == 0);
-    ck_assert_str_eq((const char *) xlist->root->data, "item1");
-    ck_assert_str_eq((const char *) xlist->end->data, "item2");
+    assert_true(rc == 0);
+    assert_string_equal((const char *) xlist->root->data, "item1");
+    assert_string_equal((const char *) xlist->end->data, "item2");
 
     rc = ssh_list_prepend(xlist, "item3");
-    ck_assert(rc == 0);
-    ck_assert_str_eq((const char *) xlist->root->data, "item3");
-    ck_assert_str_eq((const char *) xlist->root->next->data, "item1");
-    ck_assert_str_eq((const char *) xlist->root->next->next->data, "item2");
-    ck_assert_str_eq((const char *) xlist->end->data, "item2");
+    assert_true(rc == 0);
+    assert_string_equal((const char *) xlist->root->data, "item3");
+    assert_string_equal((const char *) xlist->root->next->data, "item1");
+    assert_string_equal((const char *) xlist->root->next->next->data, "item2");
+    assert_string_equal((const char *) xlist->end->data, "item2");
 
     ssh_list_free(xlist);
 }
-END_TEST
 
-Suite *torture_make_suite(void) {
-  Suite *s = suite_create("libssh_list");
+int torture_run_tests(void) {
+    const UnitTest tests[] = {
+        unit_test(torture_ssh_list_new),
+        unit_test(torture_ssh_list_append),
+        unit_test(torture_ssh_list_prepend),
+    };
 
-  torture_create_case(s, "torture_ssh_list_new", torture_ssh_list_new);
-  torture_create_case(s, "torture_ssh_list_append", torture_ssh_list_append);
-  torture_create_case(s, "torture_ssh_list_prepend", torture_ssh_list_prepend);
-
-  return s;
+    return run_tests(tests);
 }
