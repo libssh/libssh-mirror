@@ -22,69 +22,79 @@
 #define LIBSSH_STATIC
 
 #include "torture.h"
-#include "libssh/libssh.h"
-#include "libssh/priv.h"
-#include "libssh/session.h"
-ssh_session session;
+#include "session.c"
 
 #define KNOWNHOSTFILES "libssh_torture_knownhosts"
 
-static void setup(void) {
+static void setup(void **state) {
     int verbosity=torture_libssh_verbosity();
-    session = ssh_new();
-    ssh_options_set(session,SSH_OPTIONS_LOG_VERBOSITY,&verbosity);
+    ssh_session session = ssh_new();
+
+    ssh_options_set(session, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
+
+    *state = session;
 }
 
-static void teardown(void) {
-    ssh_free(session);
+static void teardown(void **state) {
+    ssh_free(*state);
     unlink(KNOWNHOSTFILES);
     ssh_finalize();
 }
 
-START_TEST (torture_knownhosts_port)
-{
-  int rc;
-  char buffer[200];
-  FILE *file;
-  //int verbosity=SSH_LOG_FUNCTIONS;
-  /* Connect to localhost:22, force the port to 1234 and then write
-   * the known hosts file. Then check that the entry written is
-   * [localhost]:1234
-   */
-  ssh_options_set(session,SSH_OPTIONS_HOST,"localhost");
-  ssh_options_set(session,SSH_OPTIONS_KNOWNHOSTS,KNOWNHOSTFILES);
-  rc=ssh_connect(session);
-  ck_assert_msg(rc==SSH_OK,ssh_get_error(session));
-  session->port=1234;
-  rc=ssh_write_knownhost(session);
-  ck_assert_msg(rc==SSH_OK,ssh_get_error(session));
-  ssh_disconnect(session);
-  ssh_free(session);
-  file=fopen(KNOWNHOSTFILES,"r");
-  ck_assert(file != NULL);
-  fgets(buffer,sizeof(buffer),file);
-  buffer[sizeof(buffer)-1]='\0';
-  ck_assert(strstr(buffer,"[localhost]:1234 ") != NULL);
-  fclose(file);
+static void torture_knownhosts_port(void **state) {
+    ssh_session session = *state;
+    char buffer[200];
+    FILE *file;
+    int rc;
 
-  /* now, connect back to the ssh server and verify the known host line */
-  session=ssh_new();
-  ssh_options_set(session,SSH_OPTIONS_HOST,"localhost");
-  ssh_options_set(session,SSH_OPTIONS_KNOWNHOSTS,KNOWNHOSTFILES);
-  //ssh_options_set(session,SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
-  rc=ssh_connect(session);
-  ck_assert_msg(rc==SSH_OK,ssh_get_error(session));
-  session->port=1234;
-  rc=ssh_is_server_known(session);
-  ck_assert_msg(rc==SSH_SERVER_KNOWN_OK,ssh_get_error(session));
-  ssh_disconnect(session);
+    /* Connect to localhost:22, force the port to 1234 and then write
+     * the known hosts file. Then check that the entry written is
+     * [localhost]:1234
+     */
+    rc = ssh_options_set(session, SSH_OPTIONS_HOST, "localhost");
+    assert_true(rc == SSH_OK);
+
+    rc = ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, KNOWNHOSTFILES);
+    assert_true(rc == SSH_OK);
+
+    rc = ssh_connect(session);
+    assert_true(rc==SSH_OK);
+
+    session->port = 1234;
+    rc = ssh_write_knownhost(session);
+    assert_true(rc == SSH_OK);
+
+    ssh_disconnect(session);
+    ssh_free(session);
+
+    file = fopen(KNOWNHOSTFILES, "r");
+    assert_true(file != NULL);
+    fgets(buffer, sizeof(buffer), file);
+    fclose(file);
+    buffer[sizeof(buffer) - 1] = '\0';
+    assert_true(strstr(buffer,"[localhost]:1234 ") != NULL);
+
+    /* Now, connect back to the ssh server and verify the known host line */
+    session = ssh_new();
+    ssh_options_set(session, SSH_OPTIONS_HOST, "localhost");
+    ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, KNOWNHOSTFILES);
+#if 0
+    ssh_options_set(session,SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
+#endif
+    rc = ssh_connect(session);
+    assert_true(rc == SSH_OK);
+
+    session->port = 1234;
+    rc = ssh_is_server_known(session);
+    assert_true(rc == SSH_SERVER_KNOWN_OK);
+
+    ssh_disconnect(session);
 }
-END_TEST
 
-Suite *torture_make_suite(void) {
-  Suite *s = suite_create("libssh_knownhosts");
+int torture_run_tests(void) {
+    const UnitTest tests[] = {
+        unit_test_setup_teardown(torture_knownhosts_port, setup, teardown),
+    };
 
-  torture_create_case_fixture(s, "torture_knownhosts_port",
-          torture_knownhosts_port, setup, teardown);
-  return s;
+    return run_tests(tests);
 }
