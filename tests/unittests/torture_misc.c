@@ -6,104 +6,107 @@
 
 #include "torture.h"
 #include "misc.c"
-#define DIR "/usr/local/bin/truc/much/.."
+#define TORTURE_TEST_DIR "/usr/local/bin/truc/much/.."
 
-ssh_session session;
 
-static void setup(void) {
-    session = ssh_new();
+static void setup(void **state) {
+    ssh_session session = ssh_new();
+    *state = session;
 }
 
-static void teardown(void) {
-    ssh_free(session);
+static void teardown(void **state) {
+    ssh_free(*state);
 }
 
-START_TEST (torture_get_user_home_dir)
-{
+static void torture_get_user_home_dir(void **state) {
     struct passwd *pwd;
     char *user;
+
+    (void) state;
 
     pwd = getpwuid(getuid());
 
     user = ssh_get_user_home_dir();
-    ck_assert_str_eq(user, pwd->pw_dir);
+    assert_string_equal(user, pwd->pw_dir);
 
     SAFE_FREE(user);
 }
-END_TEST
 
-START_TEST (torture_basename)
-{
+static void torture_basename(void **state) {
     char *path;
-    path=ssh_basename(DIR "/test");
-    ck_assert(path != NULL);
-    ck_assert_str_eq(path, "test");
+
+    (void) state;
+
+    path=ssh_basename(TORTURE_TEST_DIR "/test");
+    assert_true(path != NULL);
+    assert_string_equal(path, "test");
     SAFE_FREE(path);
-    path=ssh_basename(DIR "/test/");
-    ck_assert(path != NULL);
-    ck_assert_str_eq(path, "test");
+    path=ssh_basename(TORTURE_TEST_DIR "/test/");
+    assert_true(path != NULL);
+    assert_string_equal(path, "test");
     SAFE_FREE(path);
 }
-END_TEST
 
-START_TEST (torture_dirname)
-{
+static void torture_dirname(void **state) {
     char *path;
-    path=ssh_dirname(DIR "/test");
-    ck_assert(path != NULL);
-    ck_assert_str_eq(path, DIR );
+
+    (void) state;
+
+    path=ssh_dirname(TORTURE_TEST_DIR "/test");
+    assert_true(path != NULL);
+    assert_string_equal(path, TORTURE_TEST_DIR );
     SAFE_FREE(path);
-    path=ssh_dirname(DIR "/test/");
-    ck_assert(path != NULL);
-    ck_assert_str_eq(path, DIR);
+    path=ssh_dirname(TORTURE_TEST_DIR "/test/");
+    assert_true(path != NULL);
+    assert_string_equal(path, TORTURE_TEST_DIR);
     SAFE_FREE(path);
 }
-END_TEST
 
-START_TEST (torture_ntohll)
-{
-    uint32_t sample = 1;
-    unsigned char *ptr=(unsigned char *) &sample;
+static void torture_ntohll(void **state) {
     uint64_t value = 0x0123456789abcdef;
+    uint32_t sample = 1;
+    unsigned char *ptr = (unsigned char *) &sample;
     uint64_t check;
-    if(ptr[0]==1){
+
+    (void) state;
+
+    if (ptr[0] == 1){
       /* we're in little endian */
       check = 0xefcdab8967452301;
     } else {
       /* big endian */
       check = value;
     }
-    value=ntohll(value);
-    ck_assert(value == check);
+    value = ntohll(value);
+    assert_true(value == check);
 }
-END_TEST
 
-START_TEST (torture_path_expand_tilde)
-{
+static void torture_path_expand_tilde(void **state) {
     char h[256];
     char *d;
+
+    (void) state;
 
     snprintf(h, 256 - 1, "%s/.ssh", getenv("HOME"));
 
     d = ssh_path_expand_tilde("~/.ssh");
-    ck_assert_str_eq(d, h);
+    assert_string_equal(d, h);
     free(d);
 
     d = ssh_path_expand_tilde("/guru/meditation");
-    ck_assert_str_eq(d, "/guru/meditation");
+    assert_string_equal(d, "/guru/meditation");
     free(d);
 
     snprintf(h, 256 - 1, "~%s/.ssh", getenv("USER"));
     d = ssh_path_expand_tilde(h);
 
     snprintf(h, 256 - 1, "%s/.ssh", getenv("HOME"));
-    ck_assert_str_eq(d, h);
+    assert_string_equal(d, h);
     free(d);
 }
-END_TEST
 
-START_TEST (torture_path_expand_escape)
-{
+static void torture_path_expand_escape(void **state) {
+    ssh_session session = *state;
     const char *s = "%d/%h/by/%r";
     char *e;
 
@@ -112,36 +115,31 @@ START_TEST (torture_path_expand_escape)
     session->username = strdup("root");
 
     e = ssh_path_expand_escape(session, s);
-    ck_assert_str_eq(e, "guru/meditation/by/root");
+    assert_string_equal(e, "guru/meditation/by/root");
     free(e);
 }
-END_TEST
 
-START_TEST (torture_path_expand_known_hosts)
-{
+static void torture_path_expand_known_hosts(void **state) {
+    ssh_session session = *state;
     char *tmp;
 
     session->sshdir = strdup("/home/guru/.ssh");
 
     tmp = ssh_path_expand_escape(session, "%d/known_hosts");
-    ck_assert_str_eq(tmp, "/home/guru/.ssh/known_hosts");
+    assert_string_equal(tmp, "/home/guru/.ssh/known_hosts");
     free(tmp);
 }
-END_TEST
 
-Suite *torture_make_suite(void) {
-  Suite *s = suite_create("libssh_misc");
+int torture_run_tests(void) {
+    const UnitTest tests[] = {
+        unit_test(torture_get_user_home_dir),
+        unit_test(torture_basename),
+        unit_test(torture_dirname),
+        unit_test(torture_ntohll),
+        unit_test(torture_path_expand_tilde),
+        unit_test_setup_teardown(torture_path_expand_escape, setup, teardown),
+        unit_test_setup_teardown(torture_path_expand_known_hosts, setup, teardown),
+    };
 
-  torture_create_case(s, "torture_get_user_home_dir", torture_get_user_home_dir);
-  torture_create_case(s, "torture_basename", torture_basename);
-  torture_create_case(s, "torture_dirname", torture_dirname);
-  torture_create_case(s, "torture_ntohll", torture_ntohll);
-  torture_create_case(s, "torture_path_expand_tilde", torture_path_expand_tilde);
-  torture_create_case_fixture(s, "torture_path_expand_escape",
-          torture_path_expand_escape, setup, teardown);
-  torture_create_case_fixture(s, "torture_path_expand_known_hosts",
-          torture_path_expand_known_hosts, setup, teardown);
-
-  return s;
+    return run_tests(tests);
 }
-
