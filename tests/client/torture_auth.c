@@ -25,89 +25,109 @@
 #include "libssh/libssh.h"
 #include "libssh/priv.h"
 #include "libssh/session.h"
-ssh_session session;
 
-static void setup(void) {
-  int verbosity=torture_libssh_verbosity();
-  session = ssh_new();
-  ssh_options_set(session,SSH_OPTIONS_HOST,"localhost");
-  ssh_options_set(session,SSH_OPTIONS_LOG_VERBOSITY,&verbosity);
+static void setup(void **state) {
+    int verbosity = torture_libssh_verbosity();
+    ssh_session session = ssh_new();
+
+    ssh_options_set(session, SSH_OPTIONS_HOST, "localhost");
+    ssh_options_set(session, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
+
+    *state = session;
 }
 
-static void teardown(void) {
-  ssh_disconnect(session);
-  ssh_free(session);
+static void teardown(void **state) {
+    ssh_disconnect(*state);
+    ssh_free(*state);
 }
 
-START_TEST (torture_auth_kbdint)
-{
-  int rc;
-  char *user=getenv("TORTURE_USER");
-  char *password=getenv("TORTURE_PASSWORD");
-  ck_assert_msg(user != NULL, "Please set the environment variable TORTURE_USER"
-      " to enable this test");
-  ck_assert_msg(password != NULL, "Please set the environment variable "
-      "TORTURE_PASSWORD to enable this test");
-  ssh_options_set(session,SSH_OPTIONS_USER,user);
-  rc=ssh_connect(session);
-  ck_assert_msg(rc==SSH_OK,ssh_get_error(session));
+static void torture_auth_kbdint(void **state) {
+    ssh_session session = *state;
+    char *user = getenv("TORTURE_USER");
+    char *password = getenv("TORTURE_PASSWORD");
+    int rc;
 
-  rc=ssh_userauth_none(session,NULL);
-  /* This request should return a SSH_REQUEST_DENIED error */
-  if(rc == SSH_ERROR){
-    ck_assert_msg(ssh_get_error_code(session)==SSH_REQUEST_DENIED,
-        ssh_get_error(session));
-  }
-  ck_assert_msg(ssh_auth_list(session) & SSH_AUTH_METHOD_INTERACTIVE,
-      "SSH server doesn't allow keyboard-interactive");
-  rc=ssh_userauth_kbdint(session,NULL,NULL);
-  ck_assert_msg(rc==SSH_AUTH_INFO,ssh_get_error(session));
-  ck_assert_int_eq(ssh_userauth_kbdint_getnprompts(session),1);
-  ssh_userauth_kbdint_setanswer(session,0,password);
-  rc=ssh_userauth_kbdint(session,NULL,NULL);
-  /* Sometimes, SSH server send an empty query at the end of exchange */
-  if(rc==SSH_AUTH_INFO){
-  	ck_assert_int_eq(ssh_userauth_kbdint_getnprompts(session),0);
-  	rc=ssh_userauth_kbdint(session,NULL,NULL);
-  }
-  ck_assert_msg(rc==SSH_AUTH_SUCCESS,ssh_get_error(session));
+    if (user == NULL) {
+        print_message("*** Please set the environment variable TORTURE_USER"
+                      " to enable this test!!\n");
+        return;
+    }
 
-}
-END_TEST
+    if (password == NULL) {
+        print_message("*** Please set the environment variable "
+                      "TORTURE_PASSWORD to enable this test!!\n");
+        return;
+    }
 
-START_TEST (torture_auth_password)
-{
-  int rc;
-  char *user=getenv("TORTURE_USER");
-  char *password=getenv("TORTURE_PASSWORD");
-  ck_assert_msg(user != NULL, "Please set the environment variable TORTURE_USER"
-      " to enable this test");
-  ck_assert_msg(password != NULL, "Please set the environment variable "
-      "TORTURE_PASSWORD to enable this test");
-  ssh_options_set(session,SSH_OPTIONS_USER,user);
-  rc=ssh_connect(session);
-  ck_assert_msg(rc==SSH_OK,ssh_get_error(session));
+    rc = ssh_options_set(session, SSH_OPTIONS_USER, user);
+    assert_true(rc == SSH_OK);
 
-  rc=ssh_userauth_none(session,NULL);
-  /* This request should return a SSH_REQUEST_DENIED error */
-  if(rc == SSH_ERROR){
-    ck_assert_msg(ssh_get_error_code(session)==SSH_REQUEST_DENIED,
-        ssh_get_error(session));
-  }
-  ck_assert_msg(ssh_auth_list(session) & SSH_AUTH_METHOD_PASSWORD,
-      "SSH server doesn't allow password authentication");
-  rc=ssh_userauth_password(session,NULL,password);
-  ck_assert_msg(rc==SSH_AUTH_SUCCESS,ssh_get_error(session));
-}
-END_TEST
+    rc = ssh_connect(session);
+    assert_true(rc == SSH_OK);
 
-Suite *torture_make_suite(void) {
-  Suite *s = suite_create("libssh_auth");
+    rc = ssh_userauth_none(session,NULL);
+    /* This request should return a SSH_REQUEST_DENIED error */
+    if (rc == SSH_ERROR) {
+        assert_true(ssh_get_error_code(session) == SSH_REQUEST_DENIED);
+    }
+    assert_true(ssh_auth_list(session) & SSH_AUTH_METHOD_INTERACTIVE);
 
-  torture_create_case_fixture(s, "torture_auth_kbint",
-      torture_auth_kbdint, setup, teardown);
-  torture_create_case_fixture(s, "torture_auth_password",
-        torture_auth_password, setup, teardown);
-  return s;
+    rc = ssh_userauth_kbdint(session, NULL, NULL);
+    assert_true(rc == SSH_AUTH_INFO);
+    assert_int_equal(ssh_userauth_kbdint_getnprompts(session), 1);
+
+    rc = ssh_userauth_kbdint_setanswer(session, 0, password);
+    assert_true(rc < 0);
+
+    rc = ssh_userauth_kbdint(session, NULL, NULL);
+    /* Sometimes, SSH server send an empty query at the end of exchange */
+    if(rc == SSH_AUTH_INFO) {
+        assert_int_equal(ssh_userauth_kbdint_getnprompts(session), 0);
+        rc = ssh_userauth_kbdint(session, NULL, NULL);
+    }
+    assert_true(rc == SSH_AUTH_SUCCESS);
 }
 
+static void torture_auth_password(void **state) {
+    ssh_session session = *state;
+    char *user = getenv("TORTURE_USER");
+    char *password = getenv("TORTURE_PASSWORD");
+    int rc;
+
+    if (user == NULL) {
+        print_message("*** Please set the environment variable TORTURE_USER"
+                      " to enable this test!!\n");
+        return;
+    }
+
+    if (password == NULL) {
+        print_message("*** Please set the environment variable "
+                      "TORTURE_PASSWORD to enable this test!!\n");
+        return;
+    }
+
+    rc = ssh_options_set(session, SSH_OPTIONS_USER, user);
+    assert_true(rc == SSH_OK);
+
+    rc = ssh_connect(session);
+    assert_true(rc == SSH_OK);
+
+    rc = ssh_userauth_none(session, NULL);
+    /* This request should return a SSH_REQUEST_DENIED error */
+    if (rc == SSH_ERROR) {
+        assert_true(ssh_get_error_code(session) == SSH_REQUEST_DENIED);
+    }
+    assert_true(ssh_auth_list(session) & SSH_AUTH_METHOD_PASSWORD);
+
+    rc = ssh_userauth_password(session, NULL, password);
+    assert_true(rc == SSH_AUTH_SUCCESS);
+}
+
+int torture_run_tests(void) {
+    const UnitTest tests[] = {
+        unit_test_setup_teardown(torture_auth_kbdint, setup, teardown),
+        unit_test_setup_teardown(torture_auth_password, setup, teardown),
+    };
+
+    return run_tests(tests);
+}
