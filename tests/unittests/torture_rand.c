@@ -13,49 +13,55 @@
 #endif
 #define NUM_THREADS 100
 
-static void setup(){
-	ssh_threads_set_callbacks(ssh_threads_get_pthread());
-	ssh_init();
+static void setup(void **state) {
+    (void) state;
+
+    ssh_threads_set_callbacks(ssh_threads_get_pthread());
+    ssh_init();
 }
 
-static void teardown(){
-  ssh_finalize();
+static void teardown(void **state) {
+    (void) state;
+
+    ssh_finalize();
 }
 
-static void *torture_rand_thread(void *threadid){
-	char buffer[12];
-	int i;
-	int r;
-	(void)threadid;
-	buffer[0]=buffer[1]=buffer[10]=buffer[11]='X';
-	for(i=0;i<NUM_LOOPS;++i){
-		r=ssh_get_random(&buffer[2], i%8+1 ,0);
-	}
-	pthread_exit(NULL);
+static void *torture_rand_thread(void *threadid) {
+    char buffer[12];
+    int i;
+    int r;
+
+    (void) threadid;
+
+    buffer[0] = buffer[1] = buffer[10] = buffer[11] = 'X';
+    for(i = 0; i < NUM_LOOPS; ++i) {
+        r = ssh_get_random(&buffer[2], i % 8 + 1, 0);
+    }
+
+    pthread_exit(NULL);
 }
 
-START_TEST(torture_rand_threading)
-{
-	pthread_t threads[NUM_THREADS];
-	int i;
-	int err;
-	for(i=0;i<NUM_THREADS;++i){
-		err=pthread_create(&threads[i],NULL,torture_rand_thread,NULL);
-		ck_assert_int_eq(err,0);
-	}
-	for(i=0;i<NUM_THREADS;++i){
-		err=pthread_join(threads[i], NULL);
-		ck_assert_int_eq(err,0);
-	}
+static void torture_rand_threading(void **state) {
+    pthread_t threads[NUM_THREADS];
+    int i;
+    int err;
+
+    (void) state;
+
+    for(i = 0; i < NUM_THREADS; ++i) {
+        err = pthread_create(&threads[i], NULL, torture_rand_thread, NULL);
+        assert_int_equal(err, 0);
+    }
+    for(i = 0; i < NUM_THREADS; ++i) {
+        err=pthread_join(threads[i], NULL);
+        assert_int_equal(err, 0);
+    }
 }
-END_TEST
 
+int torture_run_tests(void) {
+    const UnitTest tests[] = {
+        unit_test_setup_teardown(torture_rand_threading, setup, teardown),
+    };
 
-
-Suite *torture_make_suite(void) {
-  Suite *s = suite_create("torture_rand");
-
-  torture_create_case_fixture(s, "torture_rand_threading", torture_rand_threading,setup,teardown);
-
-  return s;
+    return run_tests(tests);
 }
