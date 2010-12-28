@@ -88,4 +88,3 @@ Suite *torture_make_suite(void) {
           torture_knownhosts_port, setup, teardown);
   return s;
 }
-
