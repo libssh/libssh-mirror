@@ -1,25 +1,23 @@
 #define LIBSSH_STATIC
-#include <libssh/libssh.h>
-#include "libssh/priv.h"
+
 #include "torture.h"
+#include "init.c"
 
-START_TEST (torture_ssh_init)
-{
+static void torture_ssh_init(void **state) {
     int rc;
-    rc=ssh_init();
-    ck_assert_int_eq(rc,SSH_OK);
-    rc=ssh_finalize();
-    ck_assert_int_eq(rc,SSH_OK);
-}
-END_TEST
 
-Suite *torture_make_suite(void) {
-  Suite *s = suite_create("libssh_init");
+    (void) state;
 
-  torture_create_case(s, "torture_ssh_init", torture_ssh_init);
-
-  return s;
+    rc = ssh_init();
+    assert_int_equal(rc, SSH_OK);
+    rc = ssh_finalize();
+    assert_int_equal(rc, SSH_OK);
 }
 
+int torture_run_tests(void) {
+    const UnitTest tests[] = {
+        unit_test(torture_ssh_init),
+    };
 
-
+    return run_tests(tests);
+}
