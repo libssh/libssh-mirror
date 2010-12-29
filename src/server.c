@@ -28,8 +28,20 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#ifndef _WIN32
-#include <netinet/in.h>
+
+#ifdef _WIN32
+# include <winsock2.h>
+# include <ws2tcpip.h>
+
+  /*
+   * <wspiapi.h> is necessary for getaddrinfo before Windows XP, but it isn't
+   * available on some platforms like MinGW.
+   */
+# ifdef HAVE_WSPIAPI_H
+#  include <wspiapi.h>
+# endif
+#else
+# include <netinet/in.h>
 #endif
 
 #include "libssh/priv.h"
