@@ -13,14 +13,10 @@
 #  For details see the accompanying COPYING-CMAKE-SCRIPTS file.
 #
 
-
 if (OPENSSL_LIBRARIES AND OPENSSL_INCLUDE_DIRS)
   # in cache already
   set(OPENSSL_FOUND TRUE)
 else (OPENSSL_LIBRARIES AND OPENSSL_INCLUDE_DIRS)
-  if (WIN32)
-    set(_OPENSSL_DIR $ENV{PROGRAMFILES}/OpenSSL)
-  endif (WIN32)
 
   find_package(PkgConfig)
   if (PKG_CONFIG_FOUND)
@@ -38,6 +34,8 @@ else (OPENSSL_LIBRARIES AND OPENSSL_INCLUDE_DIRS)
       /opt/local/include
       /sw/include
       /usr/lib/sfw/include
+      $ENV{PROGRAMFILES}/OpenSSL/include
+      $ENV{PROGRAMFILES}/OpenSSL-Win32/include
   )
 
   find_library(SSL_LIBRARY
@@ -53,6 +51,8 @@ else (OPENSSL_LIBRARIES AND OPENSSL_INCLUDE_DIRS)
       /sw/lib
       /usr/sfw/lib/64
       /usr/sfw/lib
+      $ENV{PROGRAMFILES}/OpenSSL/lib
+      $ENV{PROGRAMFILES}/OpenSSL-Win32/lib
   )
 
   find_library(SSLEAY32_LIBRARY

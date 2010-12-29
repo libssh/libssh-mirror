@@ -18,9 +18,6 @@ if (CMOCKERY_LIBRARIES AND CMOCKERY_INCLUDE_DIRS)
   # in cache already
   set(CMOCKERY_FOUND TRUE)
 else (CMOCKERY_LIBRARIES AND CMOCKERY_INCLUDE_DIRS)
-  if (WIN32)
-    set(_CMOCKERY_DIR $ENV{PROGRAMFILES}/cmockery)
-  endif (WIN32)
 
   find_path(CMOCKERY_INCLUDE_DIR
     NAMES
@@ -31,6 +28,7 @@ else (CMOCKERY_LIBRARIES AND CMOCKERY_INCLUDE_DIRS)
       /usr/local/include
       /opt/local/include
       /sw/include
+      $ENV{PROGRAMFILES}/cmockery/include
   )
 
   find_library(CMOCKERY_LIBRARY
@@ -42,6 +40,7 @@ else (CMOCKERY_LIBRARIES AND CMOCKERY_INCLUDE_DIRS)
       /usr/local/lib
       /opt/local/lib
       /sw/lib
+      $ENV{PROGRAMFILES}/cmockery/lib
   )
 
   set(CMOCKERY_INCLUDE_DIRS

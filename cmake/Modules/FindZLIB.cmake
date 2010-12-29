@@ -18,9 +18,6 @@ if (ZLIB_LIBRARIES AND ZLIB_INCLUDE_DIRS)
   # in cache already
   set(ZLIB_FOUND TRUE)
 else (ZLIB_LIBRARIES AND ZLIB_INCLUDE_DIRS)
-  if (WIN32)
-    set(_ZLIB_DIR $ENV{PROGRAMFILES}/GnuWin32)
-  endif (WIN32)
 
   find_path(ZLIB_INCLUDE_DIR
     NAMES
@@ -32,6 +29,8 @@ else (ZLIB_LIBRARIES AND ZLIB_INCLUDE_DIRS)
       /opt/local/include
       /sw/include
       /usr/lib/sfw/include
+      $ENV{PROGRAMFILES}/GnuWin32/include
+      $ENV{PROGRAMFILES}/zlib/include
   )
 
   find_library(Z_LIBRARY
@@ -47,6 +46,8 @@ else (ZLIB_LIBRARIES AND ZLIB_INCLUDE_DIRS)
       /sw/lib
       /usr/sfw/lib/64
       /usr/sfw/lib
+      $ENV{PROGRAMFILES}/GnuWin32/lib
+      $ENV{PROGRAMFILES}/zlib/lib
   )
 
   set(ZLIB_INCLUDE_DIRS

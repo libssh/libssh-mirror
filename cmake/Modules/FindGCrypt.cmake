@@ -23,23 +23,27 @@ else (GCRYPT_LIBRARIES AND GCRYPT_INCLUDE_DIRS)
     NAMES
       gcrypt.h
     PATHS
+      ${_GCRYPT_DIR}/include
       /usr/include
       /usr/local/include
       /opt/local/include
       /sw/include
       /usr/lib/sfw/include
+      $ENV{PROGRAMFILES}/GnuWin32/include
   )
 
   find_library(GCRYPT_LIBRARY
     NAMES
       gcrypt
     PATHS
+      ${_GCRYPT_DIR}/lib
       /usr/lib
       /usr/local/lib
       /opt/local/lib
       /sw/lib
       /usr/sfw/lib/64
       /usr/sfw/lib
+      $ENV{PROGRAMFILES}/GnuWin32/lib
   )
 
   set(GCRYPT_INCLUDE_DIRS
