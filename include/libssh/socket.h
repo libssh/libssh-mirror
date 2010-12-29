@@ -44,7 +44,7 @@ void ssh_socket_close(ssh_socket s);
 int ssh_socket_write(ssh_socket s,const void *buffer, int len);
 int ssh_socket_is_open(ssh_socket s);
 int ssh_socket_fd_isset(ssh_socket s, fd_set *set);
-void ssh_socket_fd_set(ssh_socket s, fd_set *set, int *fd_max);
+void ssh_socket_fd_set(ssh_socket s, fd_set *set, socket_t *max_fd);
 void ssh_socket_set_fd_in(ssh_socket s, socket_t fd);
 void ssh_socket_set_fd_out(ssh_socket s, socket_t fd);
 int ssh_socket_nonblocking_flush(ssh_socket s);
