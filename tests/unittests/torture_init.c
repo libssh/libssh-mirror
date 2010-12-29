@@ -1,7 +1,7 @@
 #define LIBSSH_STATIC
 
 #include "torture.h"
-#include "init.c"
+#include "libssh/libssh.h"
 
 static void torture_ssh_init(void **state) {
     int rc;
