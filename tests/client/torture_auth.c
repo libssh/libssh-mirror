@@ -77,7 +77,7 @@ static void torture_auth_kbdint(void **state) {
     assert_int_equal(ssh_userauth_kbdint_getnprompts(session), 1);
 
     rc = ssh_userauth_kbdint_setanswer(session, 0, password);
-    assert_true(rc < 0);
+    assert_false(rc < 0);
 
     rc = ssh_userauth_kbdint(session, NULL, NULL);
     /* Sometimes, SSH server send an empty query at the end of exchange */
