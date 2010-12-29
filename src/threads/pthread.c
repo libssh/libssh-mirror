@@ -75,7 +75,11 @@ static int ssh_pthread_mutex_unlock (void **lock){
 }
 
 static unsigned long ssh_pthread_thread_id (void){
-	return (unsigned long) pthread_self();
+#if _WIN32
+    return (unsigned long) pthread_self().p;
+#else
+    return (unsigned long) pthread_self();
+#endif
 }
 
 static struct ssh_threads_callbacks_struct ssh_threads_pthread =
