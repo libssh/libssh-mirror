@@ -122,7 +122,7 @@ void ssh_sock_set_blocking(socket_t sock) {
 #endif /* _WIN32 */
 
 #ifdef HAVE_REGCOMP
-#define IPEXPR    "^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$"
+#define IPEXPR    "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
 
 static regex_t *ip_regex = NULL;
 
