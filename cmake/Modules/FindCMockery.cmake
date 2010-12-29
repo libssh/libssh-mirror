@@ -18,11 +18,15 @@ if (CMOCKERY_LIBRARIES AND CMOCKERY_INCLUDE_DIRS)
   # in cache already
   set(CMOCKERY_FOUND TRUE)
 else (CMOCKERY_LIBRARIES AND CMOCKERY_INCLUDE_DIRS)
+  if (WIN32)
+    set(_CMOCKERY_DIR $ENV{PROGRAMFILES}/cmockery)
+  endif (WIN32)
 
   find_path(CMOCKERY_INCLUDE_DIR
     NAMES
       google/cmockery.h
     PATHS
+      ${_CMOCKERY_DIR}/include
       /usr/include
       /usr/local/include
       /opt/local/include
@@ -33,6 +37,7 @@ else (CMOCKERY_LIBRARIES AND CMOCKERY_INCLUDE_DIRS)
     NAMES
       cmockery
     PATHS
+      ${_CMOCKERY_DIR}/lib
       /usr/lib
       /usr/local/lib
       /opt/local/lib
