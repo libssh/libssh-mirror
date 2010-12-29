@@ -1,5 +1,7 @@
 #include <sys/types.h>
+#ifndef _WIN32
 #include <pwd.h>
+#endif
 
 #define LIBSSH_STATIC
 #include <libssh/priv.h>
@@ -19,15 +21,18 @@ static void teardown(void **state) {
 }
 
 static void torture_get_user_home_dir(void **state) {
-    struct passwd *pwd;
+#ifndef _WIN32
+    struct passwd *pwd = getpwuid(getuid());
+#endif /* _WIN32 */
     char *user;
 
     (void) state;
 
-    pwd = getpwuid(getuid());
-
     user = ssh_get_user_home_dir();
+    assert_false(user == NULL);
+#ifndef _WIN32
     assert_string_equal(user, pwd->pw_dir);
+#endif /* _WIN32 */
 
     SAFE_FREE(user);
 }
