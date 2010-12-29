@@ -47,8 +47,17 @@
 
 
 #ifdef _WIN32
-
 #include <winsock2.h>
+#include <ws2tcpip.h>
+
+/*
+ * <wspiapi.h> is necessary for getaddrinfo before Windows XP, but it isn't
+ * available on some platforms like MinGW.
+ */
+#ifdef HAVE_WSPIAPI_H
+# include <wspiapi.h>
+#endif
+
 #define SOCKOPT_TYPE_ARG4 char
 
 /*
