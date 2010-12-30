@@ -27,12 +27,12 @@ if (WIN32)
 
     ### nsis generator
     find_package(NSIS)
-    if (HAVE_NSIS)
+    if (NSIS_MAKE)
         set(CPACK_GENERATOR "${CPACK_GENERATOR};NSIS")
         set(CPACK_NSIS_DISPLAY_NAME "The SSH Library")
         set(CPACK_NSIS_COMPRESSOR "/SOLID zlib")
         set(CPACK_NSIS_MENU_LINKS "http://www.libssh.org/" "libssh homepage")
-    endif (HAVE_NSIS)
+    endif (NSIS_MAKE)
 endif (WIN32)
 
 set(CPACK_PACKAGE_INSTALL_DIRECTORY "libssh")
