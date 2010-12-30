@@ -4,7 +4,8 @@ set(CTEST_SITE "host.libssh.org")
 set(CTEST_BUILD_NAME "linux-gcc-default")
 
 set(CTEST_CMAKE_GENERATOR "Unix Makefiles")
-set(CTEST_BUILD_CONFIGURATION "Profiling")
+set(CTEST_BUILD_CONFIGURATION "Debug")
+
 set(CTEST_BUILD_OPTIONS "-DWITH_TESTING=ON -DWITH_SSH1=ON -WITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON -DWITH_GCRYPT=OFF")
 
 set(CTEST_SOURCE_DIRECTORY "${CTEST_DIRECTORY}/${CTEST_BUILD_NAME}/source")
@@ -17,6 +18,10 @@ set(WITH_MEMCHECK FALSE)
 set(WITH_COVERAGE FALSE)
 
 #######################################################################
+
+if (WITH_COVERAGE AND NOT WIN32)
+    set(CTEST_BUILD_CONFIGURATION "Profiling")
+endif (WITH_COVERAGE AND NOT WIN32)
 
 ctest_empty_binary_directory(${CTEST_BINARY_DIRECTORY})
 
