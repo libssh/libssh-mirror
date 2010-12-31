@@ -41,7 +41,7 @@
     #endif
   #endif
 #else
-  #if __GNUC__ >= 4
+  #if __GNUC__ >= 4 && !defined(__OS2__)
     #define LIBSSH_API __attribute__((visibility("default")))
   #else
     #define LIBSSH_API
