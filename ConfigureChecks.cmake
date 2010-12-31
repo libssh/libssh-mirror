@@ -25,7 +25,7 @@ function(COMPILER_DUMPVERSION _OUTPUT_VERSION)
     )
 
     string(REGEX REPLACE "([0-9])\\.([0-9])(\\.[0-9])?" "\\1\\2"
-        _COMPILER_VERSION ${_COMPILER_VERSION})
+           _COMPILER_VERSION "${_COMPILER_VERSION}")
 
     set(${_OUTPUT_VERSION} ${_COMPILER_VERSION} PARENT_SCOPE)
 endfunction()
