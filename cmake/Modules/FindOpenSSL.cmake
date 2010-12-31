@@ -41,6 +41,7 @@ else (OPENSSL_LIBRARIES AND OPENSSL_INCLUDE_DIRS)
   find_library(SSL_LIBRARY
     NAMES
       ssl
+      ssl_dl
       libssl
     PATHS
       ${_OPENSSL_DIR}/lib
@@ -86,6 +87,7 @@ else (OPENSSL_LIBRARIES AND OPENSSL_INCLUDE_DIRS)
   find_library(CRYPTO_LIBRARY
     NAMES
       crypto
+      crypto_dl
       libcrypto
       eay
       eay32
