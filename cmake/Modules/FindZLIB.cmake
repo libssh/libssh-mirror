@@ -36,6 +36,7 @@ else (ZLIB_LIBRARIES AND ZLIB_INCLUDE_DIRS)
   find_library(Z_LIBRARY
     NAMES
       z
+      zdll
       zlib
       zlib1
     PATHS
