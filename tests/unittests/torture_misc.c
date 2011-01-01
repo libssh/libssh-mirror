@@ -86,7 +86,26 @@ static void torture_ntohll(void **state) {
     assert_true(value == check);
 }
 
-static void torture_path_expand_tilde(void **state) {
+#ifdef _WIN32
+
+static void torture_path_expand_tilde_win(void **state) {
+    char *d;
+
+    (void) state;
+
+    d = ssh_path_expand_tilde("~\\.ssh");
+    assert_false(d == NULL);
+    print_message("Expanded path: %s\n", d);
+    free(d);
+
+    d = ssh_path_expand_tilde("/guru/meditation");
+    assert_string_equal(d, "/guru/meditation");
+    free(d);
+}
+
+#else /* _WIN32 */
+
+static void torture_path_expand_tilde_unix(void **state) {
     char h[256];
     char *d;
 
@@ -109,6 +128,8 @@ static void torture_path_expand_tilde(void **state) {
     assert_string_equal(d, h);
     free(d);
 }
+
+#endif /* _WIN32 */
 
 static void torture_path_expand_escape(void **state) {
     ssh_session session = *state;
@@ -141,7 +162,11 @@ int torture_run_tests(void) {
         unit_test(torture_basename),
         unit_test(torture_dirname),
         unit_test(torture_ntohll),
-        unit_test(torture_path_expand_tilde),
+#ifdef _WIN32
+        unit_test(torture_path_expand_tilde_win),
+#else
+        unit_test(torture_path_expand_tilde_unix),
+#endif
         unit_test_setup_teardown(torture_path_expand_escape, setup, teardown),
         unit_test_setup_teardown(torture_path_expand_known_hosts, setup, teardown),
     };
