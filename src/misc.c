@@ -33,15 +33,22 @@
 #include <ctype.h>
 
 #ifdef _WIN32
-#define _WIN32_IE 0x0501 //SHGetSpecialFolderPath
+
+#ifndef _WIN32_IE
+# define _WIN32_IE 0x0501 // SHGetSpecialFolderPath
+#endif
+
 #include <winsock2.h> // Must be the first to include
 #include <ws2tcpip.h>
 #include <shlobj.h>
 #include <direct.h>
+
 #if _MSC_VER >= 1400
-#include <io.h>
+# include <io.h>
 #endif /* _MSC_VER */
+
 #else /* _WIN32 */
+
 /* This is needed for a standard getpwuid_r on opensolaris */
 #define _POSIX_PTHREAD_SEMANTICS
 #include <pwd.h>
