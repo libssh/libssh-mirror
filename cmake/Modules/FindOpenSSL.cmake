@@ -34,6 +34,7 @@ else (OPENSSL_LIBRARIES AND OPENSSL_INCLUDE_DIRS)
       /opt/local/include
       /sw/include
       /usr/lib/sfw/include
+      C:/OpenSSL/include
       $ENV{PROGRAMFILES}/OpenSSL/include
       $ENV{PROGRAMFILES}/OpenSSL-Win32/include
   )
@@ -52,6 +53,7 @@ else (OPENSSL_LIBRARIES AND OPENSSL_INCLUDE_DIRS)
       /sw/lib
       /usr/sfw/lib/64
       /usr/sfw/lib
+      C:/OpenSSL/lib
       $ENV{PROGRAMFILES}/OpenSSL/lib
       $ENV{PROGRAMFILES}/OpenSSL-Win32/lib
   )
@@ -68,6 +70,9 @@ else (OPENSSL_LIBRARIES AND OPENSSL_INCLUDE_DIRS)
       /sw/lib
       /usr/sfw/lib/64
       /usr/sfw/lib
+      C:/OpenSSL/lib
+      $ENV{PROGRAMFILES}/OpenSSL/lib
+      $ENV{PROGRAMFILES}/OpenSSL-Win32/lib
   )
 
   find_library(SSLEAY32MD_LIBRARY
@@ -82,6 +87,9 @@ else (OPENSSL_LIBRARIES AND OPENSSL_INCLUDE_DIRS)
       /sw/lib
       /usr/sfw/lib/64
       /usr/sfw/lib
+      C:/OpenSSL/lib
+      $ENV{PROGRAMFILES}/OpenSSL/lib
+      $ENV{PROGRAMFILES}/OpenSSL-Win32/lib
   )
 
   find_library(CRYPTO_LIBRARY
@@ -102,6 +110,9 @@ else (OPENSSL_LIBRARIES AND OPENSSL_INCLUDE_DIRS)
       /sw/lib
       /usr/sfw/lib/64
       /usr/sfw/lib
+      C:/OpenSSL/lib
+      $ENV{PROGRAMFILES}/OpenSSL/lib
+      $ENV{PROGRAMFILES}/OpenSSL-Win32/lib
   )
 
   set(OPENSSL_INCLUDE_DIRS
