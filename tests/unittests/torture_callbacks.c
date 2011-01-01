@@ -20,6 +20,7 @@ static void setup(void **state) {
 
     cb = malloc(sizeof(struct ssh_callbacks_struct));
     assert_false(cb == NULL);
+    ZERO_STRUCTP(cb);
 
     cb->userdata = (void *) 0x0badc0de;
     cb->auth_function = myauthcallback;
