@@ -41,6 +41,34 @@ static void teardown(void **state) {
     ssh_free(*state);
 }
 
+static void torture_auth_autopubkey(void **state) {
+    ssh_session session = *state;
+    char *user = getenv("TORTURE_USER");
+    int rc;
+
+    if (user == NULL) {
+        print_message("*** Please set the environment variable TORTURE_USER"
+                      " to enable this test!!\n");
+        return;
+    }
+
+    rc = ssh_options_set(session, SSH_OPTIONS_USER, user);
+    assert_true(rc == SSH_OK);
+
+    rc = ssh_connect(session);
+    assert_true(rc == SSH_OK);
+
+    rc = ssh_userauth_none(session,NULL);
+    /* This request should return a SSH_REQUEST_DENIED error */
+    if (rc == SSH_ERROR) {
+        assert_true(ssh_get_error_code(session) == SSH_REQUEST_DENIED);
+    }
+    assert_true(ssh_auth_list(session) & SSH_AUTH_METHOD_PUBLICKEY);
+
+    rc = ssh_userauth_autopubkey(session, NULL);
+    assert_true(rc == SSH_AUTH_SUCCESS);
+}
+
 static void torture_auth_kbdint(void **state) {
     ssh_session session = *state;
     char *user = getenv("TORTURE_USER");
@@ -127,6 +155,7 @@ int torture_run_tests(void) {
     const UnitTest tests[] = {
         unit_test_setup_teardown(torture_auth_kbdint, setup, teardown),
         unit_test_setup_teardown(torture_auth_password, setup, teardown),
+        unit_test_setup_teardown(torture_auth_autopubkey, setup, teardown),
     };
 
     return run_tests(tests);
