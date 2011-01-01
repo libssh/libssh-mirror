@@ -1,8 +1,12 @@
 #define LIBSSH_STATIC
 
+#ifndef _WIN32
+# include <pwd.h>
+#endif
+
 #include "torture.h"
-#include "options.c"
-#include "misc.c"
+#include <libssh/session.h>
+#include <libssh/misc.h>
 
 static void setup(void **state) {
     ssh_session session = ssh_new();
