@@ -1,6 +1,7 @@
 #define LIBSSH_STATIC
 
 #include "torture.h"
+#include "error.c"
 #include "misc.c"
 
 static void torture_ssh_list_new(void **state) {
