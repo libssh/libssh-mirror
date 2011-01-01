@@ -2,6 +2,7 @@
 
 #include "torture.h"
 #include "options.c"
+#include "misc.c"
 
 static void setup(void **state) {
     ssh_session session = ssh_new();
