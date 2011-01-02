@@ -70,3 +70,10 @@
    Memcheck:Cond
    fun:SHA1_*
 }
+
+{
+   openssl_CRYPTO_leak
+   Memcheck:Leak
+   fun:malloc
+   fun:CRYPTO_*
+}
