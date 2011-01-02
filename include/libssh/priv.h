@@ -46,9 +46,6 @@
 #  undef inline
 #  define inline __inline
 
-#  undef strdup
-#  define strdup _strdup
-
 #  define strcasecmp _stricmp
 #  define strncasecmp _strnicmp
 #  define strtoull _strtoui64
@@ -87,9 +84,6 @@
 #   endif /* HAVE__VSNPRINTF */
 #  endif /* HAVE__VSNPRINTF_S */
 
-#  ifndef HAVE_STRNCPY
-#  define strncpy(d, s, n) strncpy_s((d), (n), (s), _TRUNCATE)
-#  endif
 # endif /* _MSC_VER */
 
 #else /* _WIN32 */
