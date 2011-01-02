@@ -514,7 +514,7 @@ int ssh_scp_pull_request(ssh_scp scp){
       if(p==NULL)
         goto error;
       *p=0;
-      size=strtoull(tmp,NULL,10);
+      size = (size_t) strtoull(tmp,NULL,10);
       p++;
       name=strdup(p);
       SAFE_FREE(scp->request_name);
