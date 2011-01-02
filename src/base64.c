@@ -39,9 +39,9 @@ static char alphabet[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 #define SET_C(n, i) do { (n) |= ((i) & 63) << 6; } while (0)
 #define SET_D(n, i) do { (n) |= ((i) & 63); } while (0)
 
-#define GET_A(n) (((n) & 0xff0000) >> 16)
-#define GET_B(n) (((n) & 0xff00) >> 8)
-#define GET_C(n) ((n) & 0xff)
+#define GET_A(n) (unsigned char) (((n) & 0xff0000) >> 16)
+#define GET_B(n) (unsigned char) (((n) & 0xff00) >> 8)
+#define GET_C(n) (unsigned char) ((n) & 0xff)
 
 static int _base64_to_bin(unsigned char dest[3], const char *source, int num);
 static int get_equals(char *string);
