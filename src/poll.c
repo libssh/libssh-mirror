@@ -119,7 +119,7 @@ static WSAPoll_FunctionType wsa_poll;
 
 int win_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout) {
     if (wsa_poll) {
-        return (wsa_poll)(fds, nfds, timeout);
+        return (wsa_poll)((WSAPOLLFD *) fds, nfds, timeout);
     }
 
     return SOCKET_ERROR;
