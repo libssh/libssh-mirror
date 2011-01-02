@@ -157,6 +157,7 @@ static void torture_path_expand_known_hosts(void **state) {
 }
 
 int torture_run_tests(void) {
+    int rc;
     const UnitTest tests[] = {
         unit_test(torture_get_user_home_dir),
         unit_test(torture_basename),
@@ -171,5 +172,8 @@ int torture_run_tests(void) {
         unit_test_setup_teardown(torture_path_expand_known_hosts, setup, teardown),
     };
 
-    return run_tests(tests);
+    ssh_init();
+    rc=run_tests(tests);
+    ssh_finalize();
+    return rc;
 }

@@ -85,11 +85,15 @@ static void torture_buffer_prepend(void **state) {
 }
 
 int torture_run_tests(void) {
+    int rc;
     const UnitTest tests[] = {
         unit_test_setup_teardown(torture_growing_buffer, setup, teardown),
         unit_test_setup_teardown(torture_growing_buffer_shifting, setup, teardown),
         unit_test_setup_teardown(torture_buffer_prepend, setup, teardown),
     };
 
-    return run_tests(tests);
+    ssh_init();
+    rc=run_tests(tests);
+    ssh_finalize();
+    return rc;
 }

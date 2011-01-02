@@ -58,10 +58,14 @@ static void torture_callbacks_exists(void **state) {
 }
 
 int torture_run_tests(void) {
+    int rc;
     const UnitTest tests[] = {
         unit_test_setup_teardown(torture_callbacks_size, setup, teardown),
         unit_test_setup_teardown(torture_callbacks_exists, setup, teardown),
     };
 
-    return run_tests(tests);
+    ssh_init();
+    rc=run_tests(tests);
+    ssh_finalize();
+    return rc;
 }
