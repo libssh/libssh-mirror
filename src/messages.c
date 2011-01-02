@@ -494,7 +494,7 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_open){
     ssh_string_free(destination);
 
     buffer_get_u32(packet, &destination_port);
-    msg->channel_request_open.destination_port = ntohl(destination_port);
+    msg->channel_request_open.destination_port = (uint16_t) ntohl(destination_port);
 
     originator = buffer_get_ssh_string(packet);
 	if (originator == NULL) {
@@ -510,7 +510,7 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_open){
     ssh_string_free(originator);
 
     buffer_get_u32(packet, &originator_port);
-    msg->channel_request_open.originator_port = ntohl(originator_port);
+    msg->channel_request_open.originator_port = (uint16_t) ntohl(originator_port);
 
     msg->channel_request_open.type = SSH_CHANNEL_DIRECT_TCPIP;
     goto end;
@@ -531,7 +531,7 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_open){
     ssh_string_free(destination);
 
     buffer_get_u32(packet, &destination_port);
-    msg->channel_request_open.destination_port = ntohl(destination_port);
+    msg->channel_request_open.destination_port = (uint16_t) ntohl(destination_port);
 
     originator = buffer_get_ssh_string(packet);
 	if (originator == NULL) {
@@ -547,7 +547,7 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_open){
     ssh_string_free(originator);
 
     buffer_get_u32(packet, &originator_port);
-    msg->channel_request_open.originator_port = ntohl(originator_port);
+    msg->channel_request_open.originator_port = (uint16_t) ntohl(originator_port);
 
     msg->channel_request_open.type = SSH_CHANNEL_FORWARDED_TCPIP;
     goto end;
@@ -568,7 +568,7 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_open){
     ssh_string_free(originator);
 
     buffer_get_u32(packet, &originator_port);
-    msg->channel_request_open.originator_port = ntohl(originator_port);
+    msg->channel_request_open.originator_port = (uint16_t) ntohl(originator_port);
 
     msg->channel_request_open.type = SSH_CHANNEL_X11;
     goto end;
