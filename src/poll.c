@@ -306,18 +306,24 @@ int ssh_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout) {
 
 ssh_poll_handle ssh_poll_new(socket_t fd, short events, ssh_poll_callback cb,
     void *userdata) {
-  ssh_poll_handle p;
+    ssh_poll_handle p;
 
-  p = malloc(sizeof(struct ssh_poll_handle_struct));
-  if (p != NULL) {
-    p->ctx = NULL;
+    p = malloc(sizeof(struct ssh_poll_handle_struct));
+    if (p == NULL) {
+        return NULL;
+    }
+    ZERO_STRUCTP(p);
+
     p->x.fd = fd;
     p->events = events;
-    p->cb = cb;
-    p->cb_data = userdata;
-  }
+    if (cb != NULL) {
+        p->cb = cb;
+    }
+    if (userdata != NULL) {
+        p->cb_data = userdata;
+    }
 
-  return p;
+    return p;
 }
 
 
@@ -450,22 +456,21 @@ void ssh_poll_set_callback(ssh_poll_handle p, ssh_poll_callback cb, void *userda
  *                      library's default value.
  */
 ssh_poll_ctx ssh_poll_ctx_new(size_t chunk_size) {
-  ssh_poll_ctx ctx;
+    ssh_poll_ctx ctx;
 
-  ctx = malloc(sizeof(struct ssh_poll_ctx_struct));
-  if (ctx != NULL) {
-    if (!chunk_size) {
-      chunk_size = SSH_POLL_CTX_CHUNK;
+    ctx = malloc(sizeof(struct ssh_poll_ctx_struct));
+    if (ctx == NULL) {
+        return NULL;
+    }
+    ZERO_STRUCTP(ctx);
+
+    if (chunk_size == 0) {
+        chunk_size = SSH_POLL_CTX_CHUNK;
     }
 
     ctx->chunk_size = chunk_size;
-    ctx->pollptrs = NULL;
-    ctx->pollfds = NULL;
-    ctx->polls_allocated = 0;
-    ctx->polls_used = 0;
-  }
 
-  return ctx;
+    return ctx;
 }
 
 /**
