@@ -93,12 +93,11 @@ static void torture_knownhosts_port(void **state) {
 
 int torture_run_tests(void) {
     int rc;
-
-    ssh_init();
-
     const UnitTest tests[] = {
         unit_test_setup_teardown(torture_knownhosts_port, setup, teardown),
     };
+
+    ssh_init();
 
     rc = run_tests(tests);
     ssh_finalize();

@@ -19,12 +19,11 @@ static void torture_sftp_ext_new(void **state) {
 
 int torture_run_tests(void) {
     int rc;
-
-    ssh_init();
-
     const UnitTest tests[] = {
         unit_test(torture_sftp_ext_new),
     };
+
+    ssh_init();
 
     rc = run_tests(tests);
     ssh_finalize();
