@@ -36,6 +36,18 @@
 }
 
 {
+   openssl_bn_value8
+   Memcheck:Value8
+   fun:bn_*
+}
+
+{
+   openssl_bn_value4
+   Memcheck:Value4
+   fun:bn_*
+}
+
+{
    openssl_AES_cond
    Memcheck:Cond
    fun:AES_*
@@ -74,6 +86,6 @@
 {
    openssl_CRYPTO_leak
    Memcheck:Leak
-   fun:malloc
+   fun:*alloc
    fun:CRYPTO_*
 }
