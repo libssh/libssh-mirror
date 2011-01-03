@@ -41,10 +41,17 @@ static void torture_options_set_proxycommand_notexist(void **state) {
 }
 
 int torture_run_tests(void) {
+    int rc;
+
+    ssh_init();
+
     const UnitTest tests[] = {
         unit_test_setup_teardown(torture_options_set_proxycommand, setup, teardown),
         unit_test_setup_teardown(torture_options_set_proxycommand_notexist, setup, teardown),
     };
 
-    return run_tests(tests);
+    rc = run_tests(tests);
+    ssh_finalize();
+
+    return rc;
 }

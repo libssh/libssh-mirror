@@ -149,6 +149,10 @@ static void torture_algorithms_zlib_openssh(void **state) {
 }
 
 int torture_run_tests(void) {
+    int rc;
+
+    ssh_init();
+
     const UnitTest tests[] = {
         unit_test_setup_teardown(torture_algorithms_aes128_cbc, setup, teardown),
         unit_test_setup_teardown(torture_algorithms_aes192_cbc, setup, teardown),
@@ -162,5 +166,8 @@ int torture_run_tests(void) {
         unit_test_setup_teardown(torture_algorithms_zlib_openssh, setup, teardown),
     };
 
-    return run_tests(tests);
+    rc = run_tests(tests);
+    ssh_finalize();
+
+    return rc;
 }

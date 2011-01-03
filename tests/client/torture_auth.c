@@ -152,11 +152,18 @@ static void torture_auth_password(void **state) {
 }
 
 int torture_run_tests(void) {
+    int rc;
+
+    ssh_init();
+
     const UnitTest tests[] = {
         unit_test_setup_teardown(torture_auth_kbdint, setup, teardown),
         unit_test_setup_teardown(torture_auth_password, setup, teardown),
         unit_test_setup_teardown(torture_auth_autopubkey, setup, teardown),
     };
 
-    return run_tests(tests);
+    rc = run_tests(tests);
+    ssh_finalize();
+
+    return rc;
 }
