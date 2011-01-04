@@ -524,9 +524,9 @@ static void ssh_client_connection_callback(ssh_session session){
 		    session->socket_callbacks.data=ssh_packet_socket_callback1;
 #endif
 		  ssh_packet_set_default_callbacks(session);
+		  session->session_state=SSH_SESSION_STATE_INITIAL_KEX;
 		  ssh_send_banner(session, 0);
 		  set_status(session, 0.5f);
-		  session->session_state=SSH_SESSION_STATE_INITIAL_KEX;
 		  break;
 		case SSH_SESSION_STATE_INITIAL_KEX:
 		/* TODO: This state should disappear in favor of get_key handle */
