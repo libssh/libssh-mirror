@@ -36,9 +36,12 @@ static void setup(void **state) {
 }
 
 static void teardown(void **state) {
-    ssh_free(*state);
+    ssh_session session = *state;
+
+    ssh_disconnect(session);
+    ssh_free(session);
+
     unlink(KNOWNHOSTFILES);
-    ssh_finalize();
 }
 
 static void torture_knownhosts_port(void **state) {
@@ -64,9 +67,6 @@ static void torture_knownhosts_port(void **state) {
     rc = ssh_write_knownhost(session);
     assert_true(rc == SSH_OK);
 
-    ssh_disconnect(session);
-    ssh_free(session);
-
     file = fopen(KNOWNHOSTFILES, "r");
     assert_true(file != NULL);
     fgets(buffer, sizeof(buffer), file);
@@ -74,21 +74,21 @@ static void torture_knownhosts_port(void **state) {
     buffer[sizeof(buffer) - 1] = '\0';
     assert_true(strstr(buffer,"[localhost]:1234 ") != NULL);
 
+    ssh_disconnect(session);
+    ssh_free(session);
+
     /* Now, connect back to the ssh server and verify the known host line */
-    session = ssh_new();
+    *state = session = ssh_new();
+
     ssh_options_set(session, SSH_OPTIONS_HOST, "localhost");
     ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, KNOWNHOSTFILES);
-#if 0
-    ssh_options_set(session,SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
-#endif
+
     rc = ssh_connect(session);
     assert_true(rc == SSH_OK);
 
     session->port = 1234;
     rc = ssh_is_server_known(session);
     assert_true(rc == SSH_SERVER_KNOWN_OK);
-
-    ssh_disconnect(session);
 }
 
 int torture_run_tests(void) {
@@ -100,7 +100,7 @@ int torture_run_tests(void) {
     ssh_init();
 
     rc = run_tests(tests);
-    ssh_finalize();
 
+    ssh_finalize();
     return rc;
 }
