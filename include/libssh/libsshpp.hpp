@@ -107,6 +107,7 @@ private:
 #define ssh_throw(x) if((x)==SSH_ERROR) throw SshException(getCSession())
 #define ssh_throw_null(CSession,x) if((x)==NULL) throw SshException(CSession)
 #define void_throwable void
+#define return_throwable return
 
 #else
 
@@ -116,7 +117,7 @@ private:
 #define ssh_throw(x) if((x)==SSH_ERROR) return SSH_ERROR
 #define ssh_throw_null(CSession,x) if((x)==NULL) return NULL
 #define void_throwable int
-
+#define return_throwable return SSH_OK
 #endif
 
 /**
@@ -140,6 +141,7 @@ public:
    */
   void_throwable setOption(enum ssh_options_e type, const char *option){
     ssh_throw(ssh_options_set(c_session,type,option));
+    return_throwable;
   }
   /** @brief sets an SSH session options
    * @param type Type of option
@@ -149,6 +151,7 @@ public:
    */
   void_throwable setOption(enum ssh_options_e type, long int option){
     ssh_throw(ssh_options_set(c_session,type,&option));
+    return_throwable;
   }
   /** @brief sets an SSH session options
    * @param type Type of option
@@ -158,6 +161,7 @@ public:
    */
   void_throwable setOption(enum ssh_options_e type, void *option){
     ssh_throw(ssh_options_set(c_session,type,option));
+    return_throwable;
   }
   /** @brief connects to the remote host
    * @throws SshException on error
@@ -166,6 +170,7 @@ public:
   void_throwable connect(){
     int ret=ssh_connect(c_session);
     ssh_throw(ret);
+    return_throwable;
   }
   /** @brief Authenticates automatically using public key
    * @throws SshException on error
@@ -329,6 +334,7 @@ public:
    */
   void_throwable optionsCopy(const Session &source){
     ssh_throw(ssh_options_copy(source.c_session,&c_session));
+    return_throwable;
   }
   /** @brief parses a configuration file for options
    * @throws SshException on error
@@ -337,6 +343,7 @@ public:
    */
   void_throwable optionsParseConfig(const char *file){
     ssh_throw(ssh_options_parse_config(c_session,file));
+    return_throwable;
   }
   /** @brief silently disconnect from remote host
    * @see ssh_silent_disconnect
@@ -369,12 +376,14 @@ public:
   void_throwable cancelForward(const char *address, int port){
     int err=ssh_forward_cancel(c_session, address, port);
     ssh_throw(err);
+    return_throwable;
   }
 
   void_throwable listenForward(const char *address, int port,
       int &boundport){
     int err=ssh_forward_listen(c_session, address, port, &boundport);
     ssh_throw(err);
+    return_throwable;
   }
 
 private:
@@ -426,6 +435,7 @@ public:
   void_throwable changePtySize(int cols, int rows){
     int err=ssh_channel_change_pty_size(channel,cols,rows);
     ssh_throw(err);
+    return_throwable;
   }
 
   /** @brief closes a channel
@@ -434,6 +444,7 @@ public:
    */
   void_throwable close(){
     ssh_throw(ssh_channel_close(channel));
+    return_throwable;
   }
 
   int getExitStatus(){
@@ -471,6 +482,7 @@ public:
   void_throwable openSession(){
     int err=ssh_channel_open_session(channel);
     ssh_throw(err);
+    return_throwable;
   }
   int poll(bool is_stderr=false){
     int err=ssh_channel_poll(channel,is_stderr);
@@ -498,11 +510,13 @@ public:
   void_throwable requestEnv(const char *name, const char *value){
     int err=ssh_channel_request_env(channel,name,value);
     ssh_throw(err);
+    return_throwable;
   }
 
   void_throwable requestExec(const char *cmd){
     int err=ssh_channel_request_exec(channel,cmd);
     ssh_throw(err);
+    return_throwable;
   }
   void_throwable requestPty(const char *term=NULL, int cols=0, int rows=0){
     int err;
@@ -511,19 +525,23 @@ public:
     else
       err=ssh_channel_request_pty(channel);
     ssh_throw(err);
+    return_throwable;
   }
 
   void_throwable requestShell(){
     int err=ssh_channel_request_shell(channel);
     ssh_throw(err);
+    return_throwable;
   }
   void_throwable requestSendSignal(const char *signum){
     int err=ssh_channel_request_send_signal(channel, signum);
     ssh_throw(err);
+    return_throwable;
   }
   void_throwable requestSubsystem(const char *subsystem){
     int err=ssh_channel_request_subsystem(channel,subsystem);
     ssh_throw(err);
+    return_throwable;
   }
   int requestX11(bool single_connection,
       const char *protocol, const char *cookie, int screen_number){
@@ -535,6 +553,7 @@ public:
   void_throwable sendEof(){
     int err=ssh_channel_send_eof(channel);
     ssh_throw(err);
+    return_throwable;
   }
   /** @brief Writes on a channel
    * @param data data to write.
