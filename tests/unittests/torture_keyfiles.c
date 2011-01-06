@@ -133,9 +133,9 @@ static void torture_pubkey_generate_from_privkey(void **state) {
     assert_true(privkey != NULL);
 
     pubkey = publickey_from_privatekey(privkey);
+    assert_true(pubkey != NULL);
     type_new = privkey->type;
     privatekey_free(privkey);
-    assert_true(pubkey != NULL);
 
     pubkey_new = publickey_to_string(pubkey);
     publickey_free(pubkey);
