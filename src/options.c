@@ -698,7 +698,6 @@ int ssh_options_getopt(ssh_session session, int *argcptr, char **argv) {
   char *cipher = NULL;
   char *identity = NULL;
   char *port = NULL;
-  char *bindport = NULL;
   char **save = NULL;
   int i = 0;
   int argc = *argcptr;
@@ -728,16 +727,13 @@ int ssh_options_getopt(ssh_session session, int *argcptr, char **argv) {
   }
 
   opterr = 0; /* shut up getopt */
-  while(cont && ((i = getopt(argc, argv, "c:i:Cl:p:vb:t:rd12")) != -1)) {
+  while(cont && ((i = getopt(argc, argv, "c:i:Cl:p:vb:rd12")) != -1)) {
     switch(i) {
       case 'l':
         user = optarg;
         break;
       case 'p':
         port = optarg;
-        break;
-      case 't':
-        bindport = optarg;
         break;
       case 'v':
         debuglevel++;
