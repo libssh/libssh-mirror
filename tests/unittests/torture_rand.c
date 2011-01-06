@@ -36,6 +36,7 @@ static void *torture_rand_thread(void *threadid) {
     buffer[0] = buffer[1] = buffer[10] = buffer[11] = 'X';
     for(i = 0; i < NUM_LOOPS; ++i) {
         r = ssh_get_random(&buffer[2], i % 8 + 1, 0);
+        assert_true(r == 1);
     }
 
     pthread_exit(NULL);
