@@ -1324,6 +1324,7 @@ ssh_string ssh_do_sign(ssh_session session, ssh_buffer sigbuf,
       sign->dsa_sign = NULL;
       break;
     default:
+      signature_free(sign);
       return NULL;
   }
 #ifdef HAVE_LIBGCRYPT
@@ -1481,6 +1482,7 @@ ssh_string ssh_sign_session_id(ssh_session session, ssh_private_key privatekey) 
       sign->dsa_sign = NULL;
       break;
     default:
+      signature_free(sign);
       return NULL;
   }
 
