@@ -15,6 +15,7 @@ static void setup_rsa_key(void **state) {
     unlink(LIBSSH_RSA_TESTKEY ".pub");
 
     rc = system("ssh-keygen -t rsa -q -N \"\" -f " LIBSSH_RSA_TESTKEY);
+    assert_true(rc == 0);
 
     session = ssh_new();
     *state = session;
@@ -28,6 +29,7 @@ static void setup_dsa_key(void **state) {
     unlink(LIBSSH_DSA_TESTKEY ".pub");
 
     rc = system("ssh-keygen -t dsa -q -N \"\" -f " LIBSSH_DSA_TESTKEY);
+    assert_true(rc == 0);
 
     session = ssh_new();
     *state = session;
@@ -150,6 +152,7 @@ static void torture_pubkey_generate_from_privkey(void **state) {
 
     rc = torture_read_one_line(LIBSSH_RSA_TESTKEY ".pub", pubkey_line_new,
         sizeof(pubkey_line_new));
+    assert_true(rc == 0);
 
     assert_string_equal(pubkey_line_orig, pubkey_line_new);
 
