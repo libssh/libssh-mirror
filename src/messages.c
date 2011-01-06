@@ -877,7 +877,7 @@ SSH_PACKET_CALLBACK(ssh_packet_global_request){
     msg = ssh_message_new(session);
     msg->type = SSH_REQUEST_GLOBAL;
 
-    if(!strcmp(request, "tcpip-forward")) {
+    if (request && strcmp(request, "tcpip-forward") == 0) {
         bind_addr_s = buffer_get_ssh_string(packet);
         if (bind_addr_s != NULL) {
             bind_addr = ssh_string_to_char(bind_addr_s);
@@ -900,7 +900,7 @@ SSH_PACKET_CALLBACK(ssh_packet_global_request){
         } else {
             ssh_message_reply_default(msg);
         }
-    } else if(!strcmp(request, "cancel-tcpip-forward")) {
+    } else if (request && strcmp(request, "cancel-tcpip-forward") == 0) {
         bind_addr_s = buffer_get_ssh_string(packet);
         if (bind_addr_s != NULL) {
             bind_addr = ssh_string_to_char(bind_addr_s);
