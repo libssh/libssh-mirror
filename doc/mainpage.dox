@@ -97,6 +97,9 @@ It was later modified and expanded by the following RFCs.
  - <a href="http://tools.ietf.org/html/rfc5656" target="_blank">RFC 5656</a>,
     Elliptic Curve Algorithm Integration in the Secure Shell Transport Layer
 
+Interesting cryptography documents:
+
+ - <a href="http://www.cryptsoft.com/pkcs11doc/" target="_blank">PKCS #11</a>, PKCS #11 reference documents, describing interface with smartcards.
 
 @subsection main-rfc-sftp Secure Shell File Transfer Protocol (SFTP)
 
