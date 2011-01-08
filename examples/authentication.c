@@ -25,45 +25,72 @@ clients must be made or how a client should react.
 #include <libssh/libssh.h>
 #include "examples_common.h"
 
-int authenticate_kbdint(ssh_session session){
-  int err=ssh_userauth_kbdint(session,NULL,NULL);
-  const char *name, *instruction, *prompt;
-  char *ptr;
-  char buffer[128];
-  int i,n;
-  char echo;
-  while (err==SSH_AUTH_INFO){
-    name=ssh_userauth_kbdint_getname(session);
-    instruction=ssh_userauth_kbdint_getinstruction(session);
-    n=ssh_userauth_kbdint_getnprompts(session);
-    if(strlen(name)>0)
-      printf("%s\n",name);
-    if(strlen(instruction)>0)
-      printf("%s\n",instruction);
-    for(i=0;i<n;++i){
-      prompt=ssh_userauth_kbdint_getprompt(session,i,&echo);
-      if(echo){
-        printf("%s",prompt);
-        if (fgets(buffer,sizeof(buffer),stdin) == NULL) {
-          return SSH_AUTH_ERROR;
+int authenticate_kbdint(ssh_session session, const char *password) {
+    int err;
+
+    err = ssh_userauth_kbdint(session, NULL, NULL);
+    while (err == SSH_AUTH_INFO) {
+        const char *instruction;
+        const char *name;
+        char buffer[128];
+        int i, n;
+
+        name = ssh_userauth_kbdint_getname(session);
+        instruction = ssh_userauth_kbdint_getinstruction(session);
+        n = ssh_userauth_kbdint_getnprompts(session);
+
+        if (name && strlen(name) > 0) {
+            printf("%s\n", name);
         }
-        buffer[sizeof(buffer)-1]=0;
-        if((ptr=strchr(buffer,'\n')))
-          *ptr=0;
-        if (ssh_userauth_kbdint_setanswer(session,i,buffer) < 0) {
-          return SSH_AUTH_ERROR;
+
+        if (instruction && strlen(instruction) > 0) {
+            printf("%s\n", instruction);
         }
-        memset(buffer,0,strlen(buffer));
-      } else {
-        ptr=getpass(prompt);
-        if (ssh_userauth_kbdint_setanswer(session,i,ptr) < 0) {
-          return SSH_AUTH_ERROR;
+
+        for (i = 0; i < n; i++) {
+            const char *answer;
+            const char *prompt;
+            char echo;
+
+            prompt = ssh_userauth_kbdint_getprompt(session, i, &echo);
+            if (prompt == NULL) {
+                break;
+            }
+
+            if (echo) {
+                char *p;
+
+                printf("%s", prompt);
+
+                if (fgets(buffer, sizeof(buffer), stdin) == NULL) {
+                    return SSH_AUTH_ERROR;
+                }
+
+                buffer[sizeof(buffer) - 1] = '\0';
+                if ((p = strchr(buffer, '\n'))) {
+                    *p = '\0';
+                }
+
+                if (ssh_userauth_kbdint_setanswer(session, i, buffer) < 0) {
+                    return SSH_AUTH_ERROR;
+                }
+
+                memset(buffer, 0, strlen(buffer));
+            } else {
+                if (password && strstr(prompt, "Password:")) {
+                    answer = password;
+                } else {
+                    answer = getpass(prompt);
+                }
+                if (ssh_userauth_kbdint_setanswer(session, i, answer) < 0) {
+                    return SSH_AUTH_ERROR;
+                }
+            }
         }
-      }
+        err=ssh_userauth_kbdint(session,NULL,NULL);
     }
-    err=ssh_userauth_kbdint(session,NULL,NULL);
-  }
-  return err;
+
+    return err;
 }
 
 static void error(ssh_session session){
@@ -99,7 +126,7 @@ int authenticate_console(ssh_session session){
 
     // Try to authenticate with keyboard interactive";
     if (method & SSH_AUTH_METHOD_INTERACTIVE) {
-      rc = authenticate_kbdint(session);
+      rc = authenticate_kbdint(session, NULL);
       if (rc == SSH_AUTH_ERROR) {
       	error(session);
         return rc;
