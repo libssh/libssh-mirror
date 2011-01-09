@@ -175,6 +175,10 @@ void ssh_free(ssh_session session) {
 #endif
   ssh_buffer_free(session->in_buffer);
   ssh_buffer_free(session->out_buffer);
+  if(session->in_hashbuf != NULL)
+    ssh_buffer_free(session->in_hashbuf);
+  if(session->out_hashbuf != NULL)
+    ssh_buffer_free(session->out_hashbuf);
   session->in_buffer=session->out_buffer=NULL;
   crypto_free(session->current_crypto);
   crypto_free(session->next_crypto);
