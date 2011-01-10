@@ -290,11 +290,13 @@ SSH_PACKET_CALLBACK(ssh_packet_kexinit){
     }
 
     if (buffer_add_ssh_string(session->in_hashbuf, str) < 0) {
+    	ssh_set_error(session, SSH_FATAL, "Error adding string in hash buffer");
       goto error;
     }
 
     strings[i] = ssh_string_to_char(str);
     if (strings[i] == NULL) {
+    	ssh_set_error_oom(session);
       goto error;
     }
     ssh_string_free(str);
@@ -305,8 +307,8 @@ SSH_PACKET_CALLBACK(ssh_packet_kexinit){
   if (server_kex) {
     session->client_kex.methods = malloc(10 * sizeof(char **));
     if (session->client_kex.methods == NULL) {
-      leave_function();
-      return -1;
+      ssh_set_error_oom(session);
+      goto error;
     }
 
     for (i = 0; i < 10; i++) {
@@ -315,8 +317,8 @@ SSH_PACKET_CALLBACK(ssh_packet_kexinit){
   } else { /* client */
     session->server_kex.methods = malloc(10 * sizeof(char **));
     if (session->server_kex.methods == NULL) {
-      leave_function();
-      return -1;
+      ssh_set_error_oom(session);
+      goto error;
     }
 
     for (i = 0; i < 10; i++) {
