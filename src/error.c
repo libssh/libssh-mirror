@@ -54,6 +54,7 @@ void ssh_set_error(void *error, int code, const char *descr, ...) {
   vsnprintf(err->error_buffer, ERROR_BUFFERLEN, descr, va);
   va_end(va);
   err->error_code = code;
+  ssh_log(error,SSH_LOG_RARE,"Error : %s",err->error_buffer);
 }
 
 /**
