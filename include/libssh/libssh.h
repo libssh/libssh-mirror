@@ -384,6 +384,7 @@ LIBSSH_API int ssh_get_random(void *where,int len,int strong);
 LIBSSH_API int ssh_get_version(ssh_session session);
 LIBSSH_API int ssh_get_status(ssh_session session);
 LIBSSH_API int ssh_init(void);
+LIBSSH_API int ssh_is_blocking(ssh_session session);
 LIBSSH_API int ssh_is_server_known(ssh_session session);
 LIBSSH_API void ssh_log(ssh_session session, int prioriry, const char *format, ...) PRINTF_ATTRIBUTE(3, 4);
 LIBSSH_API ssh_channel ssh_message_channel_request_open_reply_accept(ssh_message msg);

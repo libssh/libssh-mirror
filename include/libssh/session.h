@@ -51,6 +51,10 @@ enum ssh_dh_state_e {
   DH_STATE_FINISHED
 };
 
+
+/* libssh calls may block an undefined amount of time */
+#define SSH_SESSION_FLAG_BLOCKING 1
+
 struct ssh_session_struct {
     struct error_struct error;
     struct ssh_socket_struct *socket;
@@ -72,8 +76,8 @@ struct ssh_session_struct {
     /* two previous are deprecated */
     /* int auth_service_asked; */
 
-/* socket status */
-    int blocking; /* functions should block */
+    /* session flags (SSH_SESSION_FLAG_*) */
+    int flags;
 
     ssh_string banner; /* that's the issue banner from
                        the server */

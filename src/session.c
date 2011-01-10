@@ -85,7 +85,7 @@ ssh_session ssh_new(void) {
 
   session->alive = 0;
   session->auth_methods = 0;
-  session->blocking = 1;
+  ssh_set_blocking(session, 1);
   session->log_indent = 0;
   session->maxchannel = FIRST_CHANNEL;
 
@@ -280,11 +280,21 @@ void ssh_silent_disconnect(ssh_session session) {
  * \bug nonblocking code is in development and won't work as expected
  */
 void ssh_set_blocking(ssh_session session, int blocking) {
-  if (session == NULL) {
+	if (session == NULL) {
     return;
   }
+  session->flags &= ~SSH_SESSION_FLAG_BLOCKING;
+  session->flags |= blocking ? SSH_SESSION_FLAG_BLOCKING : 0;
+}
 
-  session->blocking = blocking ? 1 : 0;
+/**
+ * @brief Return the blocking mode of libssh
+ * @param[in] session The SSH session
+ * @returns 0 if the session is nonblocking,
+ * @returns 1 if the functions may block.
+ */
+int ssh_is_blocking(ssh_session session){
+	return (session->flags&SSH_SESSION_FLAG_BLOCKING) ? 1 : 0;
 }
 
 /**
