@@ -51,6 +51,10 @@ enum ssh_dh_state_e {
   DH_STATE_FINISHED
 };
 
+enum ssh_pending_call_e {
+	SSH_PENDING_CALL_NONE = 0,
+	SSH_PENDING_CALL_CONNECT
+};
 
 /* libssh calls may block an undefined amount of time */
 #define SSH_SESSION_FLAG_BLOCKING 1
@@ -89,6 +93,7 @@ struct ssh_session_struct {
 
     /* the states are used by the nonblocking stuff to remember */
     /* where it was before being interrupted */
+    enum ssh_pending_call_e pending_call_state;
     enum ssh_session_state_e session_state;
     int packet_state;
     enum ssh_dh_state_e dh_handshake_state;

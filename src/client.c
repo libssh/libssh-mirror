@@ -594,6 +594,8 @@ static void ssh_client_connection_callback(ssh_session session){
  * @param[in]  session  The ssh session to connect.
  *
  * @returns             SSH_OK on success, SSH_ERROR on error.
+ * @returns 						SSH_AGAIN, if the session is in nonblocking mode,
+ * 											and call must be done again.
  *
  * @see ssh_new()
  * @see ssh_disconnect()
@@ -607,7 +609,16 @@ int ssh_connect(ssh_session session) {
   }
 
   enter_function();
-
+  switch(session->pending_call_state){
+  case SSH_PENDING_CALL_NONE:
+  	break;
+  case SSH_PENDING_CALL_CONNECT:
+  	goto pending;
+  default:
+  	ssh_set_error(session,SSH_FATAL,"Bad call during pending SSH call in ssh_connect");
+  	leave_function();
+  	return SSH_ERROR;
+  }
   session->alive = 0;
   session->client = 1;
 
@@ -657,15 +668,25 @@ int ssh_connect(ssh_session session) {
 
   session->alive = 1;
   ssh_log(session,SSH_LOG_PROTOCOL,"Socket connecting, now waiting for the callbacks to work");
+pending:
+	session->pending_call_state=SSH_PENDING_CALL_CONNECT;
   while(session->session_state != SSH_SESSION_STATE_ERROR &&
   		session->session_state != SSH_SESSION_STATE_AUTHENTICATING &&
   		session->session_state != SSH_SESSION_STATE_DISCONNECTED){
   	/* loop until SSH_SESSION_STATE_BANNER_RECEIVED or
   	 * SSH_SESSION_STATE_ERROR */
-  	ssh_handle_packets(session,-1);
+  	if(ssh_is_blocking(session))
+  		ssh_handle_packets(session,-1);
+  	else
+  		ssh_handle_packets(session,0);
   	ssh_log(session,SSH_LOG_PACKET,"ssh_connect: Actual state : %d",session->session_state);
+  	if(!ssh_is_blocking(session)){
+  		leave_function();
+  		return SSH_AGAIN;
+  	}
   }
   leave_function();
+  session->pending_call_state=SSH_PENDING_CALL_NONE;
   if(session->session_state == SSH_SESSION_STATE_ERROR || session->session_state == SSH_SESSION_STATE_DISCONNECTED)
   	return SSH_ERROR;
   return SSH_OK;
