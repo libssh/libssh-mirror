@@ -55,6 +55,12 @@
 static void socket_callback_connected(int code, int errno_code, void *user){
 	ssh_session session=(ssh_session)user;
 	enter_function();
+	if(session->session_state != SSH_SESSION_STATE_CONNECTING){
+		ssh_set_error(session,SSH_FATAL, "Wrong state in socket_callback_connected : %d",
+				session->session_state);
+		leave_function();
+		return;
+	}
 	ssh_log(session,SSH_LOG_RARE,"Socket connection callback: %d (%d)",code, errno_code);
 	if(code == SSH_SOCKET_CONNECTED_OK)
 		session->session_state=SSH_SESSION_STATE_SOCKET_CONNECTED;
@@ -84,6 +90,11 @@ static int callback_receive_banner(const void *data, size_t len, void *user) {
   size_t i;
   int ret=0;
   enter_function();
+  if(session->session_state != SSH_SESSION_STATE_SOCKET_CONNECTED){
+  	ssh_set_error(session,SSH_FATAL,"Wrong state in callback_receive_banner : %d",session->session_state);
+  	leave_function();
+  	return SSH_ERROR;
+  }
   for(i=0;i<len;++i){
 #ifdef WITH_PCAP
   	if(session->pcap_ctx && buffer[i] == '\n'){
