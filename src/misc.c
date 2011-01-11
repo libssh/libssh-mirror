@@ -22,8 +22,14 @@
  * MA 02111-1307, USA.
  */
 
-#include "config.h"
+#ifndef _WIN32
+/* This is needed for a standard getpwuid_r on opensolaris */
+#define _POSIX_PTHREAD_SEMANTICS
+#include <pwd.h>
+#include <arpa/inet.h>
+#endif
 
+#include "config.h"
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
@@ -47,12 +53,6 @@
 # include <io.h>
 #endif /* _MSC_VER */
 
-#else /* _WIN32 */
-
-/* This is needed for a standard getpwuid_r on opensolaris */
-#define _POSIX_PTHREAD_SEMANTICS
-#include <pwd.h>
-#include <arpa/inet.h>
 #endif /* _WIN32 */
 
 #include "libssh/priv.h"
