@@ -1,6 +1,7 @@
 #define LIBSSH_STATIC
 
 #ifndef _WIN32
+#define _POSIX_PTHREAD_SEMANTICS
 # include <pwd.h>
 #endif
 
