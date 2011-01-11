@@ -1,6 +1,13 @@
 ChangeLog
 ==========
 
+version 0.4.8 (released 2011-01-15)
+  * Fixed memory leaks in session signing.
+  * Fixed memory leak in ssh_print_hexa.
+  * Fixed problem with ssh_connect w/ timeout and fd > 1024.
+  * Fixed some warnings on OS/2.
+  * Fixed installation path for OS/2.
+
 version 0.4.7 (released 2010-12-28)
   * Fixed a possible memory leak in ssh_get_user_home().
   * Fixed a memory leak in sftp_xstat.
