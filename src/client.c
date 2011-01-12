@@ -588,6 +588,21 @@ static void ssh_client_connection_callback(ssh_session session){
 	leave_function();
 }
 
+/** @internal
+ * @brief describe under which conditions the ssh_connect function may stop
+ */
+static int ssh_connect_termination(void *user){
+  ssh_session session = (ssh_session)user;
+  switch(session->session_state){
+    case SSH_SESSION_STATE_ERROR:
+    case SSH_SESSION_STATE_AUTHENTICATING:
+    case SSH_SESSION_STATE_DISCONNECTED:
+      return 1;
+    default:
+      return 0;
+  }
+}
+
 /**
  * @brief Connect to the ssh server.
  *
@@ -670,20 +685,14 @@ int ssh_connect(ssh_session session) {
   ssh_log(session,SSH_LOG_PROTOCOL,"Socket connecting, now waiting for the callbacks to work");
 pending:
 	session->pending_call_state=SSH_PENDING_CALL_CONNECT;
-  while(session->session_state != SSH_SESSION_STATE_ERROR &&
-  		session->session_state != SSH_SESSION_STATE_AUTHENTICATING &&
-  		session->session_state != SSH_SESSION_STATE_DISCONNECTED){
-  	/* loop until SSH_SESSION_STATE_BANNER_RECEIVED or
-  	 * SSH_SESSION_STATE_ERROR */
-  	if(ssh_is_blocking(session))
-  		ssh_handle_packets(session,-1);
-  	else
-  		ssh_handle_packets(session,0);
-  	ssh_log(session,SSH_LOG_PACKET,"ssh_connect: Actual state : %d",session->session_state);
-  	if(!ssh_is_blocking(session)){
-  		leave_function();
-  		return SSH_AGAIN;
-  	}
+  if(ssh_is_blocking(session))
+    ssh_handle_packets_termination(session,-1,ssh_connect_termination,session);
+  else
+    ssh_handle_packets_termination(session,0,ssh_connect_termination, session);
+  ssh_log(session,SSH_LOG_PACKET,"ssh_connect: Actual state : %d",session->session_state);
+  if(!ssh_is_blocking(session) && !ssh_connect_termination(session)){
+    leave_function();
+    return SSH_AGAIN;
   }
   leave_function();
   session->pending_call_state=SSH_PENDING_CALL_NONE;

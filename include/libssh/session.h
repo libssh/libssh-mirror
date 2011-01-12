@@ -158,8 +158,15 @@ struct ssh_session_struct {
     char *ProxyCommand;
 };
 
+/** @internal
+ * @brief a termination function evaluates the status of an object
+ * @param user[in] object to evaluate
+ * @returns 1 if the polling routine should terminate, 0 instead
+ */
+typedef int (*ssh_termination_function)(void *user);
 int ssh_handle_packets(ssh_session session, int timeout);
-
+int ssh_handle_packets_termination(ssh_session session, int timeout,
+    ssh_termination_function fct, void *user);
 void ssh_socket_exception_callback(int code, int errno_code, void *user);
 
 #endif /* SESSION_H_ */

@@ -396,6 +396,43 @@ int ssh_handle_packets(ssh_session session, int timeout) {
 }
 
 /**
+ * @internal
+ *
+ * @brief Poll the current session for an event and call the appropriate
+ * callbacks.
+ *
+ * This will block until termination fuction returns true, or timeout expired.
+ *
+ * @param[in] session   The session handle to use.
+ *
+ * @param[in] timeout   Set an upper limit on the time for which this function
+ *                      will block, in milliseconds. Specifying a negative value
+ *                      means an infinite timeout. This parameter is passed to
+ *                      the poll() function.
+ * @param[in] fct       Termination function to be used to determine if it is
+ *                      possible to stop polling.
+ * @param[in] user      User parameter to be passed to fct termination function.
+ * @return              SSH_OK on success, SSH_ERROR otherwise.
+ */
+int ssh_handle_packets_termination(ssh_session session, int timeout,
+    ssh_termination_function fct, void *user){
+  int ret;
+  while(!fct(user)){
+    ret = ssh_handle_packets(session, timeout);
+    if(ret == SSH_ERROR)
+      return SSH_ERROR;
+    if(timeout == 0){
+      if(fct(user))
+        return SSH_OK;
+      else
+        return SSH_AGAIN;
+    }
+    /* TODO: verify that total timeout has not expired and then return SSH_AGAIN */
+  }
+  return ret;
+}
+
+/**
  * @brief Get session status
  *
  * @param session       The ssh session to use.
