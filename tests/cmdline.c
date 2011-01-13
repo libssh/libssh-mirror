@@ -63,5 +63,9 @@ void torture_cmdline_parse(int argc, char **argv, struct argument_s *arguments) 
    */
 #ifdef HAVE_ARGP_H
   argp_parse(&argp, argc, argv, 0, 0, arguments);
+#else
+  (void) argc;
+  (void) argv;
+  (void) arguments;
 #endif /* HAVE_ARGP_H */
 }

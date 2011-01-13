@@ -191,6 +191,9 @@ int main(int argc, char **argv){
      * be reflected in arguments.
      */
     argp_parse (&argp, argc, argv, 0, 0, sshbind);
+#else
+    (void) argc;
+    (void) argv;
 #endif
 #ifdef WITH_PCAP
     set_pcap(session);

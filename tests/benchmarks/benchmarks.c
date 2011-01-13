@@ -27,6 +27,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+const char *libssh_benchmarks_names[]={
+    "null",
+    "benchmark_raw_upload"
+};
+
 #ifdef HAVE_ARGP_H
 #include <argp.h>
 
@@ -38,10 +43,6 @@ static char **cmdline;
 /* Program documentation. */
 static char doc[] = "libssh benchmarks";
 
-const char *libssh_benchmarks_names[]={
-    "null",
-    "benchmark_raw_upload"
-};
 
 /* The options we understand. */
 static struct argp_option options[] = {
@@ -122,6 +123,10 @@ static void cmdline_parse(int argc, char **argv, struct argument_s *arguments) {
    */
 #ifdef HAVE_ARGP_H
   argp_parse(&argp, argc, argv, 0, 0, arguments);
+#else /* HAVE_ARGP_H */
+  (void) argc;
+  (void) argv;
+  (void) arguments;
 #endif /* HAVE_ARGP_H */
 }
 
