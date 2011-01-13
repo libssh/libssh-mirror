@@ -1,5 +1,7 @@
 project(tests C)
 
+find_package(Argp)
+
 set(TORTURE_LIBRARY torture)
 
 include_directories(
@@ -14,13 +16,14 @@ include_directories(
 )
 
 # create test library
-add_library(${TORTURE_LIBRARY} STATIC torture.c)
+add_library(${TORTURE_LIBRARY} STATIC cmdline.c torture.c)
 target_link_libraries(${TORTURE_LIBRARY}
     ${CMOCKERY_LIBRARY}
     ${LIBSSH_STATIC_LIBRARY}
     ${LIBSSH_LINK_LIBRARIES}
     ${LIBSSH_THREADS_STATIC_LIBRARY}
     ${LIBSSH_THREADS_LINK_LIBRARIES}
+    ${ARGP_LIBRARIES}
 )
 
 set(TEST_TARGET_LIBRARIES

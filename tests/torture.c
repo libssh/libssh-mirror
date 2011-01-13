@@ -9,8 +9,11 @@ int torture_libssh_verbosity(void){
 }
 
 int main(int argc, char **argv) {
-    (void) argc;
-    (void) argv;
+  struct argument_s arguments;
 
-    return torture_run_tests();
+  arguments.verbose=0;
+  torture_cmdline_parse(argc, argv, &arguments);
+  verbosity=arguments.verbose;
+
+  return torture_run_tests();
 }
