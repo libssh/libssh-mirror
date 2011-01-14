@@ -65,11 +65,11 @@ static void torture_connect_double(void **state) {
     rc = ssh_options_set(session, SSH_OPTIONS_HOST, "localhost");
     assert_true(rc == SSH_OK);
     rc = ssh_connect(session);
-    assert_true(rc != SSH_OK);
+    assert_true(rc == SSH_OK);
     ssh_disconnect(session);
 
     rc = ssh_connect(session);
-    assert_true(rc != SSH_OK);
+    assert_true(rc == SSH_OK);
 
 }
 
