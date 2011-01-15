@@ -73,11 +73,21 @@ static void torture_connect_double(void **state) {
 
 }
 
+static void torture_connect_failure(void **state){
+    /*
+     * The intent of this test is to check that a fresh
+     * ssh_new/ssh_disconnect/ssh_free sequence doesn't crash/leak
+     * and the behavior of a double ssh_disconnect
+     */
+    ssh_session session = *state;
+    ssh_disconnect(session);
+}
 int torture_run_tests(void) {
     int rc;
     const UnitTest tests[] = {
         unit_test_setup_teardown(torture_connect_nonblocking, setup, teardown),
         unit_test_setup_teardown(torture_connect_double, setup, teardown),
+        unit_test_setup_teardown(torture_connect_failure, setup, teardown),
     };
 
     ssh_init();
