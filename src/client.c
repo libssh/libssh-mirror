@@ -745,6 +745,7 @@ int ssh_get_openssh_version(ssh_session session) {
  */
 void ssh_disconnect(ssh_session session) {
   ssh_string str = NULL;
+  int i;
 
   if (session == NULL) {
     return;
@@ -775,9 +776,59 @@ void ssh_disconnect(ssh_session session) {
     packet_send(session);
     ssh_socket_close(session->socket);
   }
-  session->alive = 0;
-
 error:
+  session->alive = 0;
+  if(session->socket){
+    ssh_socket_reset(session->socket);
+  }
+  session->fd = SSH_INVALID_SOCKET;
+  session->session_state=SSH_SESSION_STATE_DISCONNECTED;
+  while (session->channels) {
+    ssh_channel_free(session->channels);
+  }
+  if(session->current_crypto){
+    crypto_free(session->current_crypto);
+    session->current_crypto=NULL;
+  }
+  if(session->in_buffer)
+    buffer_reinit(session->in_buffer);
+  if(session->out_buffer)
+    buffer_reinit(session->out_buffer);
+  if(session->in_hashbuf)
+    buffer_reinit(session->in_hashbuf);
+  if(session->out_hashbuf)
+    buffer_reinit(session->out_hashbuf);
+  session->auth_methods = 0;
+  SAFE_FREE(session->serverbanner);
+  SAFE_FREE(session->clientbanner);
+  if (session->client_kex.methods) {
+    for (i = 0; i < 10; i++) {
+      SAFE_FREE(session->client_kex.methods[i]);
+    }
+  }
+
+  if (session->server_kex.methods) {
+    for (i = 0; i < 10; i++) {
+      SAFE_FREE(session->server_kex.methods[i]);
+    }
+  }
+  SAFE_FREE(session->client_kex.methods);
+  SAFE_FREE(session->server_kex.methods);
+  if(session->ssh_message_list){
+    ssh_message msg;
+    while((msg=ssh_list_pop_head(ssh_message ,session->ssh_message_list))
+        != NULL){
+      ssh_message_free(msg);
+    }
+    ssh_list_free(session->ssh_message_list);
+    session->ssh_message_list=NULL;
+  }
+
+  if (session->packet_callbacks){
+    ssh_list_free(session->packet_callbacks);
+    session->packet_callbacks=NULL;
+  }
+
   leave_function();
 }
 

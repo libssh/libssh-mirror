@@ -159,6 +159,25 @@ ssh_socket ssh_socket_new(ssh_session session) {
 
 /**
  * @internal
+ * @brief Reset the state of a socket so it looks brand-new
+ * @param[in] s socket to rest
+ */
+void ssh_socket_reset(ssh_socket s){
+  s->fd_in = SSH_INVALID_SOCKET;
+  s->fd_out= SSH_INVALID_SOCKET;
+  s->last_errno = -1;
+  s->fd_is_socket = 1;
+  buffer_reinit(s->in_buffer);
+  buffer_reinit(s->out_buffer);
+  s->read_wontblock = 0;
+  s->write_wontblock = 0;
+  s->data_except = 0;
+  s->poll_in=s->poll_out=NULL;
+  s->state=SSH_SOCKET_NONE;
+}
+
+/**
+ * @internal
  * @brief the socket callbacks, i.e. callbacks to be called
  * upon a socket event.
  * @param s socket to set callbacks on.
