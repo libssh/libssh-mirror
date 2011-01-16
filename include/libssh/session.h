@@ -54,7 +54,8 @@ enum ssh_dh_state_e {
 enum ssh_pending_call_e {
 	SSH_PENDING_CALL_NONE = 0,
 	SSH_PENDING_CALL_CONNECT,
-	SSH_PENDING_CALL_AUTH_NONE
+	SSH_PENDING_CALL_AUTH_NONE,
+	SSH_PENDING_CALL_AUTH_PASSWORD
 };
 
 /* libssh calls may block an undefined amount of time */

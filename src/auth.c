@@ -344,12 +344,15 @@ int ssh_userauth_list(ssh_session session, const char *username) {
  *          SSH_AUTH_PARTIAL: You've been partially authenticated, you still
  *                            have to use another method\n
  *          SSH_AUTH_SUCCESS: Authentication success
+ *          SSH_AUTH_AGAIN:   In nonblocking mode, you've got to call this again
+ *                            later.
  */
 int ssh_userauth_none(ssh_session session, const char *username) {
   ssh_string user = NULL;
   ssh_string service = NULL;
   ssh_string method = NULL;
   int rc = SSH_AUTH_ERROR;
+  int err;
 
   enter_function();
 
@@ -386,6 +389,8 @@ int ssh_userauth_none(ssh_session session, const char *username) {
   case SSH_PENDING_CALL_NONE:
     break;
   case SSH_PENDING_CALL_AUTH_NONE:
+    ssh_string_free(user);
+    user=NULL;
     goto pending;
   default:
     ssh_set_error(session,SSH_FATAL,"Bad call during pending SSH call in ssh_userauth_none");
@@ -393,7 +398,14 @@ int ssh_userauth_none(ssh_session session, const char *username) {
     rc=SSH_ERROR;
   }
 
-  if (ask_userauth(session) < 0) {
+  err = ask_userauth(session);
+  if(err == SSH_AGAIN){
+    rc=SSH_AUTH_AGAIN;
+    ssh_string_free(user);
+    leave_function();
+    return rc;
+  } else if(err == SSH_ERROR){
+    rc=SSH_AUTH_ERROR;
     ssh_string_free(user);
     leave_function();
     return rc;
@@ -916,6 +928,8 @@ error:
  *          SSH_AUTH_PARTIAL: You've been partially authenticated, you still
  *                            have to use another method.\n
  *          SSH_AUTH_SUCCESS: Authentication successful.
+ *          SSH_AUTH_AGAIN:   In nonblocking mode, you've got to call this again
+ *                            later.
  *
  * @see ssh_userauth_kbdint()
  * @see BURN_STRING
@@ -927,6 +941,7 @@ int ssh_userauth_password(ssh_session session, const char *username,
   ssh_string method = NULL;
   ssh_string pwd = NULL;
   int rc = SSH_AUTH_ERROR;
+  int err;
 
   enter_function();
 
@@ -955,7 +970,27 @@ int ssh_userauth_password(ssh_session session, const char *username,
     return rc;
   }
 
-  if (ask_userauth(session) < 0) {
+  switch(session->pending_call_state){
+  case SSH_PENDING_CALL_NONE:
+    break;
+  case SSH_PENDING_CALL_AUTH_PASSWORD:
+    ssh_string_free(user);
+    user=NULL;
+    goto pending;
+  default:
+    ssh_set_error(session,SSH_FATAL,"Bad call during pending SSH call in ssh_userauth_password");
+    goto error;
+    rc=SSH_ERROR;
+  }
+
+  err = ask_userauth(session);
+  if(err == SSH_AGAIN){
+    rc=SSH_AUTH_AGAIN;
+    ssh_string_free(user);
+    leave_function();
+    return rc;
+  } else if(err == SSH_ERROR){
+    rc=SSH_AUTH_ERROR;
     ssh_string_free(user);
     leave_function();
     return rc;
@@ -989,12 +1024,15 @@ int ssh_userauth_password(ssh_session session, const char *username,
   ssh_string_burn(pwd);
   ssh_string_free(pwd);
   session->auth_state=SSH_AUTH_STATE_NONE;
+  session->pending_call_state=SSH_PENDING_CALL_AUTH_PASSWORD;
   if (packet_send(session) == SSH_ERROR) {
     leave_function();
     return rc;
   }
+pending:
   rc = wait_auth_status(session);
-
+  if(rc!=SSH_AUTH_AGAIN)
+    session->pending_call_state=SSH_PENDING_CALL_NONE;
   leave_function();
   return rc;
 error:
