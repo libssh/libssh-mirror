@@ -65,6 +65,7 @@ else (ZLIB_LIBRARIES AND ZLIB_INCLUDE_DIRS)
             /opt/local/include
             /sw/include
             /usr/lib/sfw/include
+            ${ZLIB_ROOT_DIR}/include
     )
     mark_as_advanced(ZLIB_INCLUDE_DIR)
 
@@ -97,13 +98,12 @@ else (ZLIB_LIBRARIES AND ZLIB_INCLUDE_DIRS)
             zlib
             zlib1
         PATHS
-            ${_ZLIB_DIR}/lib
-            /usr/lib
             /usr/local/lib
             /opt/local/lib
             /sw/lib
             /usr/sfw/lib/64
             /usr/sfw/lib
+            ${ZLIB_ROOT_DIR}/lib
     )
     mark_as_advanced(ZLIB_LIBRARY)
 
