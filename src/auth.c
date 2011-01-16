@@ -58,8 +58,8 @@
  * @param[in] session   The SSH session handle.
  *
  * @returns SSH_OK on success, SSH_ERROR on error.
- *
- * @bug current implementation is blocking
+ * @returns SSH_AGAIN on nonblocking mode, if calling that function
+ * again is necessary
  */
 static int ask_userauth(ssh_session session) {
   int rc = 0;
@@ -67,8 +67,15 @@ static int ask_userauth(ssh_session session) {
   enter_function();
   do {
   	rc=ssh_service_request(session,"ssh-userauth");
-  	if(rc==SSH_AGAIN)
-  		ssh_handle_packets(session,-1);
+  	if(ssh_is_blocking(session)){
+  	  if(rc==SSH_AGAIN)
+  	    ssh_handle_packets(session,-1);
+  	} else {
+  	  /* nonblocking */
+  	  ssh_handle_packets(session,0);
+  	  rc=ssh_service_request(session,"ssh-userauth");
+  	  break;
+  	}
   } while(rc==SSH_AGAIN);
   leave_function();
   return rc;
