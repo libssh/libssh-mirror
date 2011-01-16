@@ -9,14 +9,19 @@
 #  OPENSSL_LIBRARIES - Link these to use OpenSSL
 #  OPENSSL_DEFINITIONS - Compiler switches required for using OpenSSL
 #
+#=============================================================================
 #  Copyright (c) 2006-2009 Kitware, Inc.
 #  Copyright (c) 2006      Alexander Neundorf <neundorf@kde.org>
 #  Copyright (c) 2009-2010 Mathieu Malaterre <mathieu.malaterre@gmail.com>
 #  Copyright (c) 2011      Andreas Schneider <asn@cryptomilk.org>
 #
-#  Redistribution and use is allowed according to the terms of the New
-#  BSD license.
-#  For details see the accompanying COPYING-CMAKE-SCRIPTS file.
+#  Distributed under the OSI-approved BSD License (the "License");
+#  see accompanying file Copyright.txt for details.
+#
+#  This software is distributed WITHOUT ANY WARRANTY; without even the
+#  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#  See the License for more information.
+#=============================================================================
 #
 
 if (OPENSSL_LIBRARIES AND OPENSSL_INCLUDE_DIRS)
