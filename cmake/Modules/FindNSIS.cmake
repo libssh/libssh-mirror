@@ -24,19 +24,13 @@ set(_NSIS_ROOT_PATHS
     "$ENV{PROGRAMFILES}/NSIS"
 )
 
-find_path(NSIS_ROOT_PATHS
-    NAMES
-        NSIS.exe
-    PATHS
-        ${_NSIS_ROOT_PATHS}
-)
-
 find_program(NSIS_MAKE
     NAMES
         makensis
     PATHS
         ${NSIS_ROOT_PATH}
         ${NSIS_ROOT_PATH}/Bin
+        ${_NSIS_ROOT_PATHS}
 )
 
 include(FindPackageHandleStandardArgs)
