@@ -313,6 +313,8 @@ int ssh_auth_list(ssh_session session) {
             SSH_AUTH_METHOD_PUBLICKEY, SSH_AUTH_METHOD_HOSTBASED,
             SSH_AUTH_METHOD_INTERACTIVE.
    @warning Other reserved flags may appear in future versions.
+   @warning This call will block, even in nonblocking mode, if run for the first
+            time before a (complete) call to ssh_userauth_none.
  */
 int ssh_userauth_list(ssh_session session, const char *username) {
   if (session == NULL) {
