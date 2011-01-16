@@ -226,15 +226,48 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_pk_ok){
   return rc;
 }
 
+static int auth_status_termination(void *user){
+  ssh_session session=(ssh_session)user;
+  switch(session->auth_state){
+    case SSH_AUTH_STATE_NONE:
+    case SSH_AUTH_STATE_KBDINT_SENT:
+      return 0;
+    default:
+      return 1;
+  }
+}
+
+/**
+ * @internal
+ * @brief waits for a response of an authentication function
+ * @param[in] session SSH session
+ * @returns SSH_AUTH_SUCCESS Authentication success, or pubkey accepted
+ *          SSH_AUTH_PARTIAL Authentication succeeded but another mean
+ *                           of authentication is needed.
+ *          SSH_AUTH_INFO    Data for keyboard-interactive
+ *          SSH_AUTH_AGAIN   In nonblocking mode, call has to be made again
+ *          SSH_AUTH_ERROR   Error during the process.
+ */
 static int wait_auth_status(ssh_session session) {
   int rc = SSH_AUTH_ERROR;
 
   enter_function();
 
-  while (session->auth_state == SSH_AUTH_STATE_NONE ||
-  		session->auth_state == SSH_AUTH_STATE_KBDINT_SENT) {
-    if (ssh_handle_packets(session,-1) != SSH_OK)
-      break;
+  if(ssh_is_blocking(session)){
+    if(ssh_handle_packets_termination(session,-1,auth_status_termination,
+        session) == SSH_ERROR){
+      leave_function();
+      return SSH_AUTH_ERROR;
+    }
+  } else {
+    if(ssh_handle_packets(session, 0) == SSH_ERROR){
+      leave_function();
+      return SSH_AUTH_ERROR;
+    }
+    if(!auth_status_termination(session)){
+      leave_function();
+      return SSH_AUTH_AGAIN;
+    }
   }
   switch(session->auth_state){
     case SSH_AUTH_STATE_ERROR:
@@ -349,6 +382,16 @@ int ssh_userauth_none(ssh_session session, const char *username) {
     leave_function();
     return rc;
   }
+  switch(session->pending_call_state){
+  case SSH_PENDING_CALL_NONE:
+    break;
+  case SSH_PENDING_CALL_AUTH_NONE:
+    goto pending;
+  default:
+    ssh_set_error(session,SSH_FATAL,"Bad call during pending SSH call in ssh_userauth_none");
+    goto error;
+    rc=SSH_ERROR;
+  }
 
   if (ask_userauth(session) < 0) {
     ssh_string_free(user);
@@ -376,12 +419,15 @@ int ssh_userauth_none(ssh_session session, const char *username) {
   ssh_string_free(method);
   ssh_string_free(user);
   session->auth_state=SSH_AUTH_STATE_NONE;
+  session->pending_call_state=SSH_PENDING_CALL_AUTH_NONE;
   if (packet_send(session) == SSH_ERROR) {
     leave_function();
     return rc;
   }
+pending:
   rc = wait_auth_status(session);
-
+  if (rc != SSH_AUTH_AGAIN)
+    session->pending_call_state=SSH_PENDING_CALL_NONE;
   leave_function();
   return rc;
 error:
