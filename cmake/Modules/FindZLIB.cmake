@@ -108,8 +108,9 @@ else (ZLIB_LIBRARIES AND ZLIB_INCLUDE_DIRS)
     mark_as_advanced(ZLIB_LIBRARY)
 
     include(FindPackageHandleStandardArgs)
-    find_package_handle_standard_args(ZLIB REQUIRED_VARS ZLIB_INCLUDE_DIR ZLIB_LIBRARY
-                                           VERSION_VAR ZLIB_VERSION_STRING)
+    find_package_handle_standard_args(ZLIB DEFAULT_MSG ZLIB_INCLUDE_DIR ZLIB_LIBRARY)
+    #find_package_handle_standard_args(ZLIB REQUIRED_VARS ZLIB_INCLUDE_DIR ZLIB_LIBRARY
+    #                                       VERSION_VAR ZLIB_VERSION_STRING)
 
     if (ZLIB_FOUND)
         set(ZLIB_INCLUDE_DIRS ${ZLIB_INCLUDE_DIR})
