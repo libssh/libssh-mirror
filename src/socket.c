@@ -188,6 +188,19 @@ void ssh_socket_set_callbacks(ssh_socket s, ssh_socket_callbacks callbacks){
 	s->callbacks=callbacks;
 }
 
+/**
+ * @brief 							SSH poll callback. This callback will be used when an event
+ *                      caught on the socket.
+ *
+ * @param p             Poll object this callback belongs to.
+ * @param fd            The raw socket.
+ * @param revents       The current poll events on the socket.
+ * @param userdata      Userdata to be passed to the callback function,
+ *                      in this case the socket object.
+ *
+ * @return              0 on success, < 0 when the poll object has been removed
+ *                      from its poll context.
+ */
 int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p, socket_t fd, int revents, void *v_s){
 	ssh_socket s=(ssh_socket )v_s;
 	char buffer[4096];
@@ -218,7 +231,6 @@ int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p, socket_t fd, int r
 		s->read_wontblock=1;
 		r=ssh_socket_unbuffered_read(s,buffer,sizeof(buffer));
 		if(r<0){
-			err=-1;
 		  if(p != NULL)
 				ssh_poll_set_events(p,ssh_poll_get_events(p) & ~POLLIN);
 			if(s->callbacks && s->callbacks->exception){
@@ -274,7 +286,8 @@ int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p, socket_t fd, int r
 		}
 			/* TODO: Find a way to put back POLLOUT when buffering occurs */
 	}
-	return err;
+	/* Return -1 if one of the poll handlers disappeared */
+	return (s->poll_in == NULL || s->poll_out == NULL) ? -1 : 0;
 }
 
 /** @internal
