@@ -468,6 +468,9 @@ LIBSSH_API ssh_string ssh_string_new(size_t size);
 LIBSSH_API char *ssh_string_to_char(ssh_string str);
 LIBSSH_API void ssh_string_free_char(char *s);
 
+LIBSSH_API int ssh_getpass(const char *prompt, char *buf, size_t len, int echo,
+    int verify);
+
 #ifndef LIBSSH_LEGACY_0_4
 #include "libssh/legacy.h"
 #endif
