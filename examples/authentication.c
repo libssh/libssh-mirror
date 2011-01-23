@@ -80,7 +80,12 @@ int authenticate_kbdint(ssh_session session, const char *password) {
                 if (password && strstr(prompt, "Password:")) {
                     answer = password;
                 } else {
-                    answer = getpass(prompt);
+                    buffer[0] = '\0';
+
+                    if (ssh_getpass(prompt, buffer, sizeof(buffer), 0, 0) < 0) {
+                        return SSH_AUTH_ERROR;
+                    }
+                    answer = buffer;
                 }
                 if (ssh_userauth_kbdint_setanswer(session, i, answer) < 0) {
                     return SSH_AUTH_ERROR;
@@ -100,7 +105,7 @@ static void error(ssh_session session){
 int authenticate_console(ssh_session session){
   int rc;
   int method;
-  char *password;
+  char password[128] = {0};
   char *banner;
 
   // Try to authenticate
@@ -112,7 +117,6 @@ int authenticate_console(ssh_session session){
 
   method = ssh_auth_list(session);
   while (rc != SSH_AUTH_SUCCESS) {
-
     // Try to authenticate with public key first
     if (method & SSH_AUTH_METHOD_PUBLICKEY) {
       rc = ssh_userauth_autopubkey(session, NULL);
@@ -135,7 +139,10 @@ int authenticate_console(ssh_session session){
       }
     }
 
-    password=getpass("Password: ");
+    if (ssh_getpass("Password: ", password, sizeof(password), 0, 0) < 0) {
+        return SSH_AUTH_ERROR;
+    }
+
     // Try to authenticate with password
     if (method & SSH_AUTH_METHOD_PASSWORD) {
       rc = ssh_userauth_password(session, NULL, password);

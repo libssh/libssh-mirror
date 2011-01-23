@@ -58,7 +58,10 @@ static int auth_callback(const char *prompt, char *buf, size_t len,
       *ptr = '\0';
     }
   } else {
-    answer = getpass(prompt);
+    if (ssh_getpass(prompt, buf, len, 0, 0) < 0) {
+        return -1;
+    }
+    return 0;
   }
 
   if (answer == NULL) {
