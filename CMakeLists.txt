@@ -87,9 +87,7 @@ install(
     pkgconfig
 )
 
-if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
-  add_subdirectory(examples)
-endif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+add_subdirectory(examples)
 
 if (WITH_TESTING)
   find_package(CMockery REQUIRED)
