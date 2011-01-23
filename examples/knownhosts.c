@@ -25,6 +25,10 @@ clients must be made or how a client should react.
 #include <libssh/libssh.h>
 #include "examples_common.h"
 
+#ifdef _WIN32
+#define strncasecmp _strnicmp
+#endif
+
 int verify_knownhost(ssh_session session){
   char *hexa;
   int state;
