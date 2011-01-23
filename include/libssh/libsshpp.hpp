@@ -319,7 +319,6 @@ public:
   }
   void log(int priority, const char *format, ...){
     char buffer[1024];
-    int min;
     va_list va;
 
     va_start(va, format);
