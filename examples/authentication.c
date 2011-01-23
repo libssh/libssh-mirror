@@ -18,7 +18,6 @@ clients must be made or how a client should react.
  */
 
 #include <stdio.h>
-#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 

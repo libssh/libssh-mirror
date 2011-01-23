@@ -20,7 +20,6 @@ clients must be made or how a client should react.
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
 
 #include <libssh/libssh.h>

@@ -23,7 +23,7 @@ clients must be made or how a client should react.
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <unistd.h>
+
 #ifndef KEYS_FOLDER
 #ifdef _WIN32
 #define KEYS_FOLDER
