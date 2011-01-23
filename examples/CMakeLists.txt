@@ -21,12 +21,6 @@ if (LINUX)
     add_executable(samplessh sample.c ${examples_SRCS})
     target_link_libraries(samplessh ${LIBSSH_SHARED_LIBRARY})
 
-    add_executable(exec exec.c ${examples_SRCS})
-    target_link_libraries(exec ${LIBSSH_SHARED_LIBRARY})
-
-    add_executable(senddata senddata.c ${examples_SRCS})
-    target_link_libraries(senddata ${LIBSSH_SHARED_LIBRARY})
-
     add_executable(sshnetcat sshnetcat.c ${examples_SRCS})
     target_link_libraries(sshnetcat ${LIBSSH_SHARED_LIBRARY})
 
@@ -40,6 +34,12 @@ if (LINUX)
         target_link_libraries(samplesshd ${LIBSSH_SHARED_LIBRARY})
     endif (WITH_SERVER)
 endif (LINUX)
+
+add_executable(exec exec.c ${examples_SRCS})
+target_link_libraries(exec ${LIBSSH_SHARED_LIBRARY})
+
+add_executable(senddata senddata.c ${examples_SRCS})
+target_link_libraries(senddata ${LIBSSH_SHARED_LIBRARY})
 
 add_executable(libsshpp libsshpp.cpp)
 target_link_libraries(libsshpp ${LIBSSH_SHARED_LIBRARY})
