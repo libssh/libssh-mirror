@@ -123,6 +123,11 @@ int ssh_getpass(const char *prompt,
     DWORD mode = 0;
     int ok;
 
+    /* fgets needs at least len - 1 */
+    if (prompt == NULL || buf == NULL || len < 2) {
+        return -1;
+    }
+
     /* get stdin and mode */
     h = GetStdHandle(STD_INPUT_HANDLE);
     if (!GetConsoleMode(h, &mode)) {
@@ -206,6 +211,11 @@ int ssh_getpass(const char *prompt,
     struct termios old_attr;
     int ok = 0;
     int fd = -1;
+
+    /* fgets needs at least len - 1 */
+    if (prompt == NULL || buf == NULL || len < 2) {
+        return -1;
+    }
 
     ZERO_STRUCT(attr);
     ZERO_STRUCT(old_attr);
