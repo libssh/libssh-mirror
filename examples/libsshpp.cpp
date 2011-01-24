@@ -12,6 +12,7 @@ program.
 /* This file demonstrates the use of the C++ wrapper to libssh */
 
 #include <iostream>
+#include <string>
 #include <libssh/libsshpp.hpp>
 
 int main(int argc, const char **argv){
