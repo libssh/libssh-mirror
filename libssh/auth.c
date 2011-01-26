@@ -226,7 +226,7 @@ int ssh_userauth_none(ssh_session session, const char *username) {
 
 #ifdef WITH_SSH1
   if (session->version == 1) {
-    ssh_userauth1_none(session, username);
+    rc = ssh_userauth1_none(session, username);
     leave_function();
     return rc;
   }
@@ -332,7 +332,7 @@ int ssh_userauth_offer_pubkey(ssh_session session, const char *username,
 
 #ifdef WITH_SSH1
   if (session->version == 1) {
-    ssh_userauth1_offer_pubkey(session, username, type, publickey);
+    rc = ssh_userauth1_offer_pubkey(session, username, type, publickey);
     leave_function();
     return rc;
   }

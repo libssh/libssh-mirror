@@ -35,38 +35,46 @@
 
 #ifdef WITH_SSH1
 static int wait_auth1_status(ssh_session session) {
+  enter_function();
   /* wait for a packet */
   if (packet_read(session) != SSH_OK) {
+    leave_function();
     return SSH_AUTH_ERROR;
   }
 
   if(packet_translate(session) != SSH_OK) {
+    leave_function();
     return SSH_AUTH_ERROR;
   }
 
   switch(session->in_packet.type) {
     case SSH_SMSG_SUCCESS:
+      leave_function();
       return SSH_AUTH_SUCCESS;
     case SSH_SMSG_FAILURE:
+      leave_function();
       return SSH_AUTH_DENIED;
   }
 
   ssh_set_error(session, SSH_FATAL, "Was waiting for a SUCCESS or "
       "FAILURE, got %d", session->in_packet.type);
-
+  leave_function();
   return SSH_AUTH_ERROR;
 }
 
 static int send_username(ssh_session session, const char *username) {
   ssh_string user = NULL;
   /* returns SSH_AUTH_SUCCESS or SSH_AUTH_DENIED */
+  enter_function();
   if(session->auth_service_asked) {
+    leave_function();
     return session->auth_service_asked;
   }
 
   if (!username) {
     if(!(username = session->username)) {
       if (ssh_options_set(session, SSH_OPTIONS_USER, NULL) < 0) {
+        leave_function();
         return session->auth_service_asked = SSH_AUTH_ERROR;
       } else {
         username = session->username;
@@ -75,24 +83,30 @@ static int send_username(ssh_session session, const char *username) {
   }
   user = string_from_char(username);
   if (user == NULL) {
+    leave_function();
     return SSH_AUTH_ERROR;
   }
 
   if (buffer_add_u8(session->out_buffer, SSH_CMSG_USER) < 0) {
     string_free(user);
+    leave_function();
     return SSH_AUTH_ERROR;
   }
   if (buffer_add_ssh_string(session->out_buffer, user) < 0) {
     string_free(user);
+    leave_function();
     return SSH_AUTH_ERROR;
   }
   string_free(user);
   if (packet_send(session) != SSH_OK) {
+    leave_function();
     return SSH_AUTH_ERROR;
   }
 
   session->auth_service_asked = wait_auth1_status(session);
-
+  if(session->auth_service_asked != SSH_AUTH_ERROR)
+    session->auth_methods=SSH_AUTH_METHOD_PASSWORD;
+  leave_function();
   return session->auth_service_asked;
 }
 
