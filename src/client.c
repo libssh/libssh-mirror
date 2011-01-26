@@ -509,9 +509,11 @@ static void ssh_client_connection_callback(ssh_session session){
 		  /* Here we decide which version of the protocol to use. */
 		  if (ssh2 && session->ssh2) {
 		    session->version = 2;
-		  } else if(ssh1 && session->ssh1) {
+#ifdef WITH_SSH1
+		    } else if(ssh1 && session->ssh1) {
 		    session->version = 1;
-		  } else if(ssh1 && !session->ssh1){
+#endif
+		    } else if(ssh1 && !session->ssh1){
 #ifdef WITH_SSH1
 		    ssh_set_error(session, SSH_FATAL,
 		        "SSH-1 protocol not available (configure session to allow SSH-1)");
