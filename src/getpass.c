@@ -50,7 +50,7 @@ static int ssh_gets(const char *prompt, char *buf, size_t len, int verify) {
     if (tmp == NULL) {
         return 0;
     }
-    ZERO_STRUCT(tmp);
+    memset(tmp,'\0',len);
 
     /* read the password */
     while (!ok) {
@@ -74,16 +74,16 @@ static int ssh_gets(const char *prompt, char *buf, size_t len, int verify) {
         if (verify) {
             char *key_string;
 
-            key_string = (char *) malloc(len);
+            key_string = malloc(len);
             if (key_string == NULL) {
                 break;
             }
-            ZERO_STRUCT(key_string);
+	    memset(key_string, '\0', len);
 
             fprintf(stdout, "\nVerifying, please re-enter. %s", prompt);
             fflush(stdout);
             if (! fgets(key_string, len, stdin)) {
-                ZERO_STRUCT(key_string);
+                memset(key_string, '\0', len);
                 SAFE_FREE(key_string);
                 clearerr(stdin);
                 continue;
@@ -94,18 +94,17 @@ static int ssh_gets(const char *prompt, char *buf, size_t len, int verify) {
             fprintf(stdout, "\n");
             if (strcmp(buf, key_string)) {
                 printf("\n\07\07Mismatch - try again\n");
-                ZERO_STRUCT(key_string);
+                memset(key_string, '\0', len);
                 SAFE_FREE(key_string);
                 fflush(stdout);
                 continue;
             }
-            ZERO_STRUCT(key_string);
+            memset(key_string, '\0', len);
             SAFE_FREE(key_string);
         }
         ok = 1;
     }
-
-    ZERO_STRUCT(tmp);
+    memset(tmp, '\0', len);
     free(tmp);
 
     return ok;
@@ -147,7 +146,7 @@ int ssh_getpass(const char *prompt,
     SetConsoleMode(h, mode);
 
     if (!ok) {
-        ZERO_STRUCT(buf);
+        memset (buf, '\0', len);
         return -1;
     }
 
@@ -260,8 +259,8 @@ int ssh_getpass(const char *prompt,
     }
 
     if (!ok) {
-        ZERO_STRUCT(buf);
-        return -1;
+        memset (buf, '\0', len);
+	return -1;
     }
 
     /* force termination */
