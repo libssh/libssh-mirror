@@ -450,6 +450,8 @@ int verify_existing_algo(int algo, const char *name){
     return 0;
 }
 
+#ifdef WITH_SSH1
+
 /* makes a STRING contating 3 strings : ssh-rsa1,e and n */
 /* this is a public key in openssh's format */
 static ssh_string make_rsa1_string(ssh_string e, ssh_string n){
@@ -506,6 +508,7 @@ static int build_session_id1(ssh_session session, ssh_string servern,
 
   return 0;
 }
+
 
 /* returns 1 if the modulus of k1 is < than the one of k2 */
 static int modulus_smaller(ssh_public_key k1, ssh_public_key k2){
@@ -795,5 +798,7 @@ error:
   leave_function();
   return rc;
 }
+
+#endif /* WITH_SSH1 */
 
 /* vim: set ts=2 sw=2 et cindent: */

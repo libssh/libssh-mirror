@@ -573,8 +573,10 @@ int ssh_connect(ssh_session session) {
   /* Here we decide which version of the protocol to use. */
   if (ssh2 && session->ssh2) {
     session->version = 2;
+#ifdef WITH_SSH1
   } else if(ssh1 && session->ssh1) {
     session->version = 1;
+#endif
   } else {
     ssh_set_error(session, SSH_FATAL,
         "No version of SSH protocol usable (banner: %s)",
@@ -629,6 +631,7 @@ int ssh_connect(ssh_session session) {
 
       session->connected = 1;
       break;
+#ifdef WITH_SSH1
     case 1:
       if (ssh_get_kex1(session) < 0) {
         ssh_socket_close(session->socket);
@@ -640,6 +643,7 @@ int ssh_connect(ssh_session session) {
 
       session->connected = 1;
       break;
+#endif
   }
 
   leave_function();
