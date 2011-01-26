@@ -60,7 +60,7 @@ static int ssh_gets(const char *prompt, char *buf, size_t len, int verify) {
             fprintf(stdout, "%s", prompt);
         }
         fflush(stdout);
-        while (fgets(tmp, len, stdin) != NULL);
+        fgets(tmp, len, stdin);
 
         if ((ptr = strchr(tmp, '\n'))) {
             *ptr = '\0';
@@ -78,7 +78,7 @@ static int ssh_gets(const char *prompt, char *buf, size_t len, int verify) {
             if (key_string == NULL) {
                 break;
             }
-	    memset(key_string, '\0', len);
+	          memset(key_string, '\0', len);
 
             fprintf(stdout, "\nVerifying, please re-enter. %s", prompt);
             fflush(stdout);
@@ -260,7 +260,7 @@ int ssh_getpass(const char *prompt,
 
     if (!ok) {
         memset (buf, '\0', len);
-	return -1;
+        return -1;
     }
 
     /* force termination */
