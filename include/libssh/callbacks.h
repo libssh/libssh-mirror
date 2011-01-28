@@ -34,6 +34,11 @@ extern "C" {
 #endif
 
 /**
+ * @addtogroup ssh_session
+ * @{
+ */
+
+/**
  * @brief SSH authentication callback.
  *
  * @param prompt        Prompt to be displayed.
@@ -109,5 +114,7 @@ LIBSSH_API int ssh_set_callbacks(ssh_session session, ssh_callbacks cb);
 #ifdef __cplusplus
 }
 #endif
+
+/** @} */
 
 #endif /*_SSH_CALLBACK_H */
