@@ -1120,8 +1120,16 @@ int channel_write_common(ssh_channel channel, const void *data,
     if (buffer_add_u8(session->out_buffer, is_stderr ?
 				SSH2_MSG_CHANNEL_EXTENDED_DATA : SSH2_MSG_CHANNEL_DATA) < 0 ||
         buffer_add_u32(session->out_buffer,
-          htonl(channel->remote_channel)) < 0 ||
-        buffer_add_u32(session->out_buffer, htonl(effectivelen)) < 0 ||
+          htonl(channel->remote_channel)) < 0) {
+        goto error;
+    }
+    /* stderr message has an extra field */
+    if (is_stderr && 
+        buffer_add_u32(session->out_buffer, htonl(SSH2_EXTENDED_DATA_STDERR)) < 0) {
+        goto error;
+    }
+    /* append payload data */
+    if (buffer_add_u32(session->out_buffer, htonl(effectivelen)) < 0 ||
         buffer_add_data(session->out_buffer, data, effectivelen) < 0) {
       goto error;
     }
