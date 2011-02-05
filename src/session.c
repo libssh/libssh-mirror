@@ -416,7 +416,7 @@ int ssh_handle_packets(ssh_session session, int timeout) {
  */
 int ssh_handle_packets_termination(ssh_session session, int timeout,
     ssh_termination_function fct, void *user){
-  int ret;
+  int ret = SSH_ERROR;
   while(!fct(user)){
     ret = ssh_handle_packets(session, timeout);
     if(ret == SSH_ERROR)
