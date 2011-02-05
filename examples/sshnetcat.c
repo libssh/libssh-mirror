@@ -125,8 +125,14 @@ static void select_loop(ssh_session session,ssh_channel channel){
 
 						channel_free(channel);
 						channel=channels[0]=NULL;
-					} else
-						write(1,buffer,lus);
+					} else {
+						ret = write(1, buffer, lus);
+						if (ret < 0) {
+							fprintf(stderr, "Error writing to stdin: %s",
+								strerror(errno));
+							return;
+						}
+					}
 				}
 				while(channel && channel_is_open(channel) && channel_poll(channel,1)){ /* stderr */
 					lus=channel_read(channel,buffer,sizeof(buffer),1);
@@ -141,7 +147,12 @@ static void select_loop(ssh_session session,ssh_channel channel){
 						channel_free(channel);
 						channel=channels[0]=NULL;
 					} else
-						write(2,buffer,lus);
+						ret = write(2, buffer, lus);
+						if (ret < 0) {
+							fprintf(stderr, "Error writing to stderr: %s",
+								strerror(errno));
+							return;
+						}
 				}
 			}
 			if(channel && channel_is_closed(channel)){
