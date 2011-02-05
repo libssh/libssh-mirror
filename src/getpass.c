@@ -60,7 +60,9 @@ static int ssh_gets(const char *prompt, char *buf, size_t len, int verify) {
             fprintf(stdout, "%s", prompt);
         }
         fflush(stdout);
-        fgets(tmp, len, stdin);
+        if (fgets(tmp, len, stdin) == NULL) {
+            return 0;
+        }
 
         if ((ptr = strchr(tmp, '\n'))) {
             *ptr = '\0';
