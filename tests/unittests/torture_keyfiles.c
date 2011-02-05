@@ -43,9 +43,13 @@ static void setup_both_keys(void **state) {
 
 static void setup_both_keys_passphrase(void **state) {
     ssh_session session;
+    int rc;
 
-    system("ssh-keygen -t rsa -N " LIBSSH_PASSPHRASE " -f " LIBSSH_RSA_TESTKEY);
-    system("ssh-keygen -t dsa -N " LIBSSH_PASSPHRASE " -f " LIBSSH_DSA_TESTKEY);
+    rc = system("ssh-keygen -t rsa -N " LIBSSH_PASSPHRASE " -f " LIBSSH_RSA_TESTKEY);
+    assert_true(rc == 0);
+
+    rc = system("ssh-keygen -t dsa -N " LIBSSH_PASSPHRASE " -f " LIBSSH_DSA_TESTKEY);
+    assert_true(rc == 0);
 
     session = ssh_new();
     *state = session;
