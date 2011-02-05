@@ -47,6 +47,7 @@ static void teardown(void **state) {
 static void torture_knownhosts_port(void **state) {
     ssh_session session = *state;
     char buffer[200];
+    char *p;
     FILE *file;
     int rc;
 
@@ -69,7 +70,8 @@ static void torture_knownhosts_port(void **state) {
 
     file = fopen(KNOWNHOSTFILES, "r");
     assert_true(file != NULL);
-    fgets(buffer, sizeof(buffer), file);
+    p = fgets(buffer, sizeof(buffer), file);
+    assert_false(p == NULL)
     fclose(file);
     buffer[sizeof(buffer) - 1] = '\0';
     assert_true(strstr(buffer,"[localhost]:1234 ") != NULL);
