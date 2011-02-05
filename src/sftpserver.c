@@ -62,7 +62,6 @@ sftp_client_message sftp_get_client_message(sftp_session sftp) {
 
   switch(msg->type) {
     case SSH_FXP_CLOSE:
-        break;
     case SSH_FXP_READDIR:
       msg->handle = buffer_get_ssh_string(payload);
       if (msg->handle == NULL) {
@@ -93,13 +92,9 @@ sftp_client_message sftp_get_client_message(sftp_session sftp) {
       }
       break;
     case SSH_FXP_REMOVE:
-        break;
     case SSH_FXP_RMDIR:
-        break;
     case SSH_FXP_OPENDIR:
-        break;
     case SSH_FXP_READLINK:
-        break;
     case SSH_FXP_REALPATH:
       tmp = buffer_get_ssh_string(payload);
       if (tmp == NULL) {
@@ -114,7 +109,6 @@ sftp_client_message sftp_get_client_message(sftp_session sftp) {
       }
       break;
     case SSH_FXP_RENAME:
-        break;
     case SSH_FXP_SYMLINK:
       tmp = buffer_get_ssh_string(payload);
       if (tmp == NULL) {
@@ -134,7 +128,6 @@ sftp_client_message sftp_get_client_message(sftp_session sftp) {
       }
       break;
     case SSH_FXP_MKDIR:
-        break;
     case SSH_FXP_SETSTAT:
       tmp = buffer_get_ssh_string(payload);
       if (tmp == NULL) {
@@ -166,7 +159,6 @@ sftp_client_message sftp_get_client_message(sftp_session sftp) {
       }
       break;
     case SSH_FXP_LSTAT:
-        break;
     case SSH_FXP_STAT:
       tmp = buffer_get_ssh_string(payload);
       if (tmp == NULL) {
@@ -495,4 +487,4 @@ void sftp_handle_remove(sftp_session sftp, void *handle) {
   }
 }
 
-/* vim: set ts=4 sw=4 et cindent syntax=c.doxygen: */
+/* vim: set ts=2 sw=2 et cindent: */
