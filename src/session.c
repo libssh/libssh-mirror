@@ -298,6 +298,21 @@ int ssh_is_blocking(ssh_session session){
 }
 
 /**
+ * @brief Check if we are connected.
+ *
+ * @param[in]  session  The session to check if it is connected.
+ *
+ * @return              1 if we are connected, 0 if not.
+ */
+int ssh_is_connected(ssh_session session) {
+    if (session == NULL) {
+        return 0;
+    }
+
+    return session->alive;
+}
+
+/**
  * @brief Get the fd of a connection.
  *
  * In case you'd need the file descriptor of the connection to the server/client.
