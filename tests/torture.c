@@ -202,6 +202,7 @@ struct torture_sftp *torture_sftp_session(ssh_session session) {
     struct torture_sftp *t;
     char template[] = "/tmp/ssh_torture_XXXXXX";
     char *p;
+    int rc;
 
     if (session == NULL) {
         return NULL;
@@ -218,6 +219,10 @@ struct torture_sftp *torture_sftp_session(ssh_session session) {
         goto failed;
     }
 
+    rc = sftp_init(t->sftp);
+    if (rc < 0) {
+        goto failed;
+    }
 
     p = mkdtemp(template);
     if (p == NULL) {
