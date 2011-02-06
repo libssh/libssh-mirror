@@ -128,6 +128,16 @@ int torture_rmdirs(const char *path) {
     return 0;
 }
 
+int torture_isdir(const char *path) {
+    struct stat sb;
+
+    if (lstat (path, &sb) == 0 && S_ISDIR(sb.st_mode)) {
+        return 1;
+    }
+
+    return 0;
+}
+
 int torture_libssh_verbosity(void){
   return verbosity;
 }
