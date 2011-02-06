@@ -12,6 +12,7 @@
 #include <setjmp.h>
 #include <google/cmockery.h>
 
+#include "libssh/priv.h"
 
 /* Used by main to communicate with parse_opt. */
 struct argument_s {
@@ -26,6 +27,9 @@ void torture_cmdline_parse(int argc, char **argv, struct argument_s *arguments);
  */
 int torture_libssh_verbosity(void);
 
+ssh_session torture_ssh_session(const char *host,
+                                const char *user,
+                                const char *password);
 
 /*
  * This function must be defined in every unit test file.
