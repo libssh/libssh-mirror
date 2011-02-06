@@ -198,6 +198,66 @@ failed:
     return NULL;
 }
 
+struct torture_sftp *torture_sftp_session(ssh_session session) {
+    struct torture_sftp *t;
+    char template[] = "/tmp/ssh_torture_XXXXXX";
+    char *p;
+
+    if (session == NULL) {
+        return NULL;
+    }
+
+    t = malloc(sizeof(struct torture_sftp *));
+    if (t == NULL) {
+        return NULL;
+    }
+
+    t->ssh = session;
+    t->sftp = sftp_new(session);
+    if (t->sftp == NULL) {
+        goto failed;
+    }
+
+
+    p = mkdtemp(template);
+    if (p == NULL) {
+        goto failed;
+    }
+    t->testdir = strdup(p);
+    if (t->testdir == NULL) {
+        goto failed;
+    }
+
+    return t;
+failed:
+    if (t->sftp != NULL) {
+        sftp_free(t->sftp);
+    }
+    ssh_disconnect(t->ssh);
+    ssh_free(t->ssh);
+
+    return NULL;
+}
+
+void torture_sftp_close(struct torture_sftp *t) {
+    if (t == NULL) {
+        return;
+    }
+
+    if (t->sftp != NULL) {
+        sftp_free(t->sftp);
+    }
+
+    if (t->ssh != NULL) {
+        if (ssh_is_connected(t->ssh)) {
+            ssh_disconnect(t->ssh);
+        }
+    }
+
+    free(t->testdir);
+    free(t);
+}
+
 int main(int argc, char **argv) {
   struct argument_s arguments;
 

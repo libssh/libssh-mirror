@@ -44,6 +44,12 @@ struct argument_s {
   int verbose;
 };
 
+struct torture_sftp {
+    ssh_session ssh;
+    sftp_session sftp;
+    char *testdir;
+};
+
 void torture_cmdline_parse(int argc, char **argv, struct argument_s *arguments);
 
 int torture_rmdirs(const char *path);
@@ -57,6 +63,9 @@ int torture_libssh_verbosity(void);
 ssh_session torture_ssh_session(const char *host,
                                 const char *user,
                                 const char *password);
+
+struct torture_sftp *torture_sftp_session(ssh_session session);
+void torture_sftp_close(struct torture_sftp *t);
 
 /*
  * This function must be defined in every unit test file.
