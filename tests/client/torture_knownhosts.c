@@ -71,7 +71,7 @@ static void torture_knownhosts_port(void **state) {
     file = fopen(KNOWNHOSTFILES, "r");
     assert_true(file != NULL);
     p = fgets(buffer, sizeof(buffer), file);
-    assert_false(p == NULL)
+    assert_false(p == NULL);
     fclose(file);
     buffer[sizeof(buffer) - 1] = '\0';
     assert_true(strstr(buffer,"[localhost]:1234 ") != NULL);
