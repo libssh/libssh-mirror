@@ -46,6 +46,8 @@ struct argument_s {
 
 void torture_cmdline_parse(int argc, char **argv, struct argument_s *arguments);
 
+int torture_rmdirs(const char *path);
+
 /*
  * Returns the verbosity level asked by user
  */
