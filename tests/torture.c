@@ -154,6 +154,7 @@ ssh_session torture_ssh_session(const char *host,
                                 const char *user,
                                 const char *password) {
     ssh_session session;
+    int rc;
 
     if (host == NULL) {
         return NULL;
@@ -183,6 +184,15 @@ ssh_session torture_ssh_session(const char *host,
     }
 
     /* We are in testing mode, so consinder the hostkey as verified ;) */
+
+    /* This request should return a SSH_REQUEST_DENIED error */
+    rc = ssh_userauth_none(session, NULL);
+    if (rc == SSH_ERROR) {
+        goto failed;
+    }
+    if (!(ssh_auth_list(session) & SSH_AUTH_METHOD_INTERACTIVE)) {
+        goto failed;
+    }
 
     if (password != NULL) {
         rc = _torture_auth_kbdint(session, password);
