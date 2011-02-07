@@ -47,17 +47,25 @@ static int _torture_auth_kbdint(ssh_session session,
 
     err = ssh_userauth_kbdint(session, NULL, NULL);
 
+    if (ssh_userauth_kbdint_getnprompts(session) != 1) {
+        return SSH_AUTH_ERROR;
+    }
+
     prompt = ssh_userauth_kbdint_getprompt(session, 0, &echo);
     if (prompt == NULL) {
         return SSH_AUTH_ERROR;
     }
 
-    if (password && strstr(prompt, "Password:")) {
-        if (ssh_userauth_kbdint_setanswer(session, 0, password) < 0) {
-            return SSH_AUTH_ERROR;
-        }
+    if (ssh_userauth_kbdint_setanswer(session, 0, password) < 0) {
+        return SSH_AUTH_ERROR;
     }
     err = ssh_userauth_kbdint(session, NULL, NULL);
+    if (err == SSH_AUTH_INFO) {
+        if (ssh_userauth_kbdint_getnprompts(session) != 0) {
+            return SSH_AUTH_ERROR;
+        }
+        err = ssh_userauth_kbdint(session, NULL, NULL);
+    }
 
     return err;
 }
