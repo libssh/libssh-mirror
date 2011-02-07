@@ -2,8 +2,32 @@ ChangeLog
 ==========
 
 version 0.5.0 (released xxxx-xx-xx)
-  * Added ssh_ prefix to all functions
-  * Improved server support.
+  * Added ssh_ prefix to all functions.
+  * Added complete Windows support.
+  * Added improved server support.
+  * Added unit tests for a lot of functions.
+  * Added asynchronous service request.
+  * Added a multiplatform ssh_getpass() function.
+  * Added a tutorial.
+  * Added a lot of documentation.
+
+version 0.4.8 (released 2011-01-15)
+  * Fixed memory leaks in session signing.
+  * Fixed memory leak in ssh_print_hexa.
+  * Fixed problem with ssh_connect w/ timeout and fd > 1024.
+  * Fixed some warnings on OS/2.
+  * Fixed installation path for OS/2.
+
+version 0.4.7 (released 2010-12-28)
+  * Fixed a possible memory leak in ssh_get_user_home().
+  * Fixed a memory leak in sftp_xstat.
+  * Fixed uninitialized fd->revents member.
+  * Fixed timout value in ssh_channel_accept().
+  * Fixed length checks in ssh_analyze_banner().
+  * Fixed a possible data overread and crash bug.
+  * Fixed setting max_fd which breaks ssh_select().
+  * Fixed some pedantic build warnings.
+  * Fixed a memory leak with session->bindaddr.
 
 version 0.4.6 (released 2010-09-03)
   * Added a cleanup function to free the ws2_32 library.
