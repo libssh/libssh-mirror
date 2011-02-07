@@ -35,7 +35,7 @@
 
 static int verbosity = 0;
 
-static int torture_auth_kbdint(ssh_session session,
+static int _torture_auth_kbdint(ssh_session session,
                                const char *password) {
     const char *prompt;
     char echo;
@@ -177,15 +177,15 @@ ssh_session torture_ssh_session(const char *host,
     /* We are in testing mode, so consinder the hostkey as verified ;) */
 
     if (password != NULL) {
-        int err = torture_auth_kbdint(session, password);
-        if (err == SSH_AUTH_ERROR) {
-            goto failed;
-        }
+        rc = _torture_auth_kbdint(session, password);
     } else {
-        int err = ssh_userauth_autopubkey(session, NULL);
-        if (err == SSH_AUTH_ERROR) {
+        rc = ssh_userauth_autopubkey(session, NULL);
+        if (rc == SSH_AUTH_ERROR) {
             goto failed;
         }
+    }
+    if (rc != SSH_AUTH_SUCCESS) {
+        goto failed;
     }
 
     return session;
