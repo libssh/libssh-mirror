@@ -81,7 +81,7 @@ ssh_packet_callback default_packet_handlers[]= {
   ssh_packet_userauth_pk_ok,               // SSH2_MSG_USERAUTH_PK_OK             60
                                            // SSH2_MSG_USERAUTH_PASSWD_CHANGEREQ  60
                                            // SSH2_MSG_USERAUTH_INFO_REQUEST	    60
-  NULL,                                    // SSH2_MSG_USERAUTH_INFO_RESPONSE     61
+  ssh_packet_userauth_info_response,       // SSH2_MSG_USERAUTH_INFO_RESPONSE     61
   NULL, NULL, NULL, NULL, NULL, NULL, NULL,
   NULL, NULL, NULL, NULL, NULL, NULL, NULL,
   NULL, NULL, NULL, NULL,                  //                                     62-79

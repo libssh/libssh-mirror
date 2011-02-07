@@ -446,6 +446,8 @@ LIBSSH_API const char *ssh_userauth_kbdint_getinstruction(ssh_session session);
 LIBSSH_API const char *ssh_userauth_kbdint_getname(ssh_session session);
 LIBSSH_API int ssh_userauth_kbdint_getnprompts(ssh_session session);
 LIBSSH_API const char *ssh_userauth_kbdint_getprompt(ssh_session session, unsigned int i, char *echo);
+LIBSSH_API int ssh_userauth_kbdint_getnanswers(ssh_session session);
+LIBSSH_API const char *ssh_userauth_kbdint_getanswer(ssh_session session, unsigned int i);
 LIBSSH_API int ssh_userauth_kbdint_setanswer(ssh_session session, unsigned int i,
     const char *answer);
 LIBSSH_API int ssh_userauth_list(ssh_session session, const char *username);

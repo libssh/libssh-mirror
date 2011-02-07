@@ -29,6 +29,27 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_failure);
 SSH_PACKET_CALLBACK(ssh_packet_userauth_success);
 SSH_PACKET_CALLBACK(ssh_packet_userauth_pk_ok);
 SSH_PACKET_CALLBACK(ssh_packet_userauth_info_request);
+SSH_PACKET_CALLBACK(ssh_packet_userauth_info_response);
+
+/** @internal
+ * kdbint structure must be shared with message.c
+ * and server.c
+ */
+struct ssh_kbdint_struct {
+    uint32_t nprompts;
+    uint32_t nanswers;
+    char *name;
+    char *instruction;
+    char **prompts;
+    unsigned char *echo; /* bool array */
+    char **answers;
+};
+typedef struct ssh_kbdint_struct* ssh_kbdint;
+
+ssh_kbdint kbdint_new(void);
+void kbdint_clean(ssh_kbdint kbd);
+void kbdint_free(ssh_kbdint kbd);
+
 
 #ifdef WITH_SSH1
 void ssh_auth1_handler(ssh_session session, uint8_t type);

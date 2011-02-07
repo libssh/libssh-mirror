@@ -173,12 +173,17 @@ LIBSSH_API int ssh_message_reply_default(ssh_message msg);
 LIBSSH_API char *ssh_message_auth_user(ssh_message msg);
 LIBSSH_API char *ssh_message_auth_password(ssh_message msg);
 LIBSSH_API ssh_public_key ssh_message_auth_publickey(ssh_message msg);
+LIBSSH_API int ssh_message_auth_kbdint_is_response(ssh_message msg);
 LIBSSH_API enum ssh_publickey_state_e ssh_message_auth_publickey_state(ssh_message msg);
 LIBSSH_API int ssh_message_auth_reply_success(ssh_message msg,int partial);
 LIBSSH_API int ssh_message_auth_reply_pk_ok(ssh_message msg, ssh_string algo, ssh_string pubkey);
 LIBSSH_API int ssh_message_auth_reply_pk_ok_simple(ssh_message msg);
 
 LIBSSH_API int ssh_message_auth_set_methods(ssh_message msg, int methods);
+
+LIBSSH_API int ssh_message_auth_interactive_request(ssh_message msg,
+                    const char *name, const char *instruction,
+                    unsigned int num_prompts, const char **prompts, char *echo);
 
 LIBSSH_API int ssh_message_service_reply_success(ssh_message msg);
 LIBSSH_API char *ssh_message_service_service(ssh_message msg);

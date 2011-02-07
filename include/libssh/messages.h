@@ -30,6 +30,7 @@ struct ssh_auth_request {
     char *password;
     struct ssh_public_key_struct *public_key;
     char signature_state;
+    char kbdint_response;
 };
 
 struct ssh_channel_request_open {

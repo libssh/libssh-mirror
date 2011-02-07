@@ -747,6 +747,14 @@ enum ssh_publickey_state_e ssh_message_auth_publickey_state(ssh_message msg){
 	  return msg->auth_request.signature_state;
 }
 
+int ssh_message_auth_kbdint_is_response(ssh_message msg) {
+  if (msg == NULL) {
+    return -1;
+  }
+
+  return msg->auth_request.kbdint_response != 0;
+}
+
 int ssh_message_auth_set_methods(ssh_message msg, int methods) {
   if (msg == NULL || msg->session == NULL) {
     return -1;
@@ -755,6 +763,131 @@ int ssh_message_auth_set_methods(ssh_message msg, int methods) {
   msg->session->auth_methods = methods;
 
   return 0;
+}
+
+int ssh_message_auth_interactive_request(ssh_message msg, const char *name,
+                            const char *instruction, unsigned int num_prompts,
+                            const char **prompts, char *echo) {
+  int r;
+  unsigned int i = 0;
+  ssh_string tmp = NULL;
+
+  if(name == NULL || instruction == NULL) {
+    return SSH_ERROR;
+  }
+  if(num_prompts > 0 && (prompts == NULL || echo == NULL)) {
+    return SSH_ERROR;
+  }
+
+  if (buffer_add_u8(msg->session->out_buffer, SSH2_MSG_USERAUTH_INFO_REQUEST) < 0) {
+    return SSH_ERROR;
+  }
+
+  /* name */
+  tmp = ssh_string_from_char(name);
+  if (buffer_add_ssh_string(msg->session->out_buffer, tmp) < 0) {
+    return SSH_ERROR;
+  }
+  ssh_string_free(tmp); tmp = NULL;
+
+  /* instruction */
+  tmp = ssh_string_from_char(instruction);
+  if (buffer_add_ssh_string(msg->session->out_buffer, tmp) < 0) {
+    return SSH_ERROR;
+  }
+  ssh_string_free(tmp); tmp = NULL;
+
+  /* language tag */
+  tmp = ssh_string_from_char("");
+  if (buffer_add_ssh_string(msg->session->out_buffer, tmp) < 0) {
+    return SSH_ERROR;
+  }
+  ssh_string_free(tmp); tmp = NULL;
+
+  /* num prompts */
+  if (buffer_add_u32(msg->session->out_buffer, ntohl(num_prompts)) < 0) {
+    return SSH_ERROR;
+  }
+
+  for(i = 0; i < num_prompts; i++) {
+    /* prompt[i] */
+    tmp = ssh_string_from_char(prompts[i]);
+    if (buffer_add_ssh_string(msg->session->out_buffer, tmp) < 0) {
+        goto error;
+    }
+    ssh_string_free(tmp); tmp = NULL;
+
+    /* echo[i] */
+    if (buffer_add_u8(msg->session->out_buffer, echo[i]) < 0) {
+        return SSH_ERROR;
+    }
+  }
+
+  r = packet_send(msg->session);
+
+  /* fill in the kbdint structure */
+  if (msg->session->kbdint == NULL) {
+    ssh_log(msg->session, SSH_LOG_PROTOCOL, "Warning: Got a "
+                                        "keyboard-interactive response but it "
+                                        "seems we didn't send the request.");
+
+    msg->session->kbdint = kbdint_new();
+    if (msg->session->kbdint == NULL) {
+      ssh_set_error_oom(msg->session);
+
+      return SSH_ERROR;
+    }
+  } else {
+    kbdint_clean(msg->session->kbdint);
+  }
+
+  msg->session->kbdint->name = strdup(name);
+  if(msg->session->kbdint->name == NULL) {
+      ssh_set_error_oom(msg->session);
+      kbdint_free(msg->session->kbdint);
+      msg->session->kbdint = NULL;
+      return SSH_PACKET_USED;
+  }
+  msg->session->kbdint->instruction = strdup(instruction);
+  if(msg->session->kbdint->instruction == NULL) {
+      ssh_set_error_oom(msg->session);
+      kbdint_free(msg->session->kbdint);
+      msg->session->kbdint = NULL;
+      return SSH_PACKET_USED;
+  }
+
+  msg->session->kbdint->nprompts = num_prompts;
+  msg->session->kbdint->prompts = malloc(num_prompts * sizeof(char *));
+  if (msg->session->kbdint->prompts == NULL) {
+    msg->session->kbdint->nprompts = 0;
+    ssh_set_error_oom(msg->session);
+    kbdint_free(msg->session->kbdint);
+    msg->session->kbdint = NULL;
+    return SSH_ERROR;
+  }
+  msg->session->kbdint->echo = malloc(num_prompts * sizeof(char));
+  if (msg->session->kbdint->echo == NULL) {
+    ssh_set_error_oom(msg->session);
+    kbdint_free(msg->session->kbdint);
+    msg->session->kbdint = NULL;
+    return SSH_ERROR;
+  }
+  for (i = 0; i < num_prompts; i++) {
+    msg->session->kbdint->echo[i] = echo[i];
+    msg->session->kbdint->prompts[i] = strdup(prompts[i]);
+    if (msg->session->kbdint->prompts[i] == NULL) {
+      ssh_set_error_oom(msg->session);
+      msg->session->kbdint->nprompts = i;
+      kbdint_free(msg->session->kbdint);
+      msg->session->kbdint = NULL;
+      return SSH_PACKET_USED;
+    }
+  }
+
+  return r;
+error:
+  if(tmp) ssh_string_free(tmp);
+  return SSH_ERROR;
 }
 
 int ssh_message_auth_reply_success(ssh_message msg, int partial) {

@@ -1275,16 +1275,7 @@ int ssh_userauth_autopubkey(ssh_session session, const char *passphrase) {
   return SSH_AUTH_DENIED;
 }
 
-struct ssh_kbdint_struct {
-    uint32_t nprompts;
-    char *name;
-    char *instruction;
-    char **prompts;
-    unsigned char *echo; /* bool array */
-    char **answers;
-};
-
-static ssh_kbdint kbdint_new(void) {
+ssh_kbdint kbdint_new(void) {
   ssh_kbdint kbd;
 
   kbd = malloc(sizeof (struct ssh_kbdint_struct));
@@ -1297,19 +1288,19 @@ static ssh_kbdint kbdint_new(void) {
 }
 
 
-static void kbdint_free(ssh_kbdint kbd) {
+void kbdint_free(ssh_kbdint kbd) {
   int i, n;
 
   if (kbd == NULL) {
     return;
   }
 
-  n = kbd->nprompts;
 
   SAFE_FREE(kbd->name);
   SAFE_FREE(kbd->instruction);
   SAFE_FREE(kbd->echo);
 
+  n = kbd->nprompts;
   if (kbd->prompts) {
     for (i = 0; i < n; i++) {
       BURN_STRING(kbd->prompts[i]);
@@ -1317,6 +1308,8 @@ static void kbdint_free(ssh_kbdint kbd) {
     }
     SAFE_FREE(kbd->prompts);
   }
+
+  n = kbd->nanswers;
   if (kbd->answers) {
     for (i = 0; i < n; i++) {
       BURN_STRING(kbd->answers[i]);
@@ -1328,19 +1321,18 @@ static void kbdint_free(ssh_kbdint kbd) {
   SAFE_FREE(kbd);
 }
 
-static void kbdint_clean(ssh_kbdint kbd) {
+void kbdint_clean(ssh_kbdint kbd) {
   int i, n;
 
   if (kbd == NULL) {
     return;
   }
 
-  n = kbd->nprompts;
-
   SAFE_FREE(kbd->name);
   SAFE_FREE(kbd->instruction);
   SAFE_FREE(kbd->echo);
 
+  n = kbd->nprompts;
   if (kbd->prompts) {
     for (i = 0; i < n; i++) {
       BURN_STRING(kbd->prompts[i]);
@@ -1348,6 +1340,8 @@ static void kbdint_clean(ssh_kbdint kbd) {
     }
     SAFE_FREE(kbd->prompts);
   }
+
+  n = kbd->nanswers;
 
   if (kbd->answers) {
     for (i = 0; i < n; i++) {
@@ -1358,6 +1352,7 @@ static void kbdint_clean(ssh_kbdint kbd) {
   }
 
   kbd->nprompts = 0;
+  kbd->nanswers = 0;
 }
 
 /* this function sends the first packet as explained in section 3.1
@@ -1535,6 +1530,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_request) {
     ssh_string_free(tmp);
     if (session->kbdint->prompts[i] == NULL) {
       ssh_set_error_oom(session);
+      session->kbdint->nprompts = i;
       kbdint_free(session->kbdint);
       session->kbdint = NULL;
       leave_function();
@@ -1756,6 +1752,40 @@ const char *ssh_userauth_kbdint_getprompt(ssh_session session, unsigned int i,
 
   return session->kbdint->prompts[i];
 }
+
+#ifdef WITH_SERVER
+/**
+ * @brief Get the number of answers the client has given.
+ *
+ * @param[in]  session  The ssh session to use.
+ *
+ * @returns             The number of answers.
+ */
+int ssh_userauth_kbdint_getnanswers(ssh_session session) {
+  if(session==NULL || session->kbdint == NULL)
+	  return SSH_ERROR;
+  return session->kbdint->nanswers;
+}
+
+/**
+ * @brief Get the answer for a question from a message block.
+ *
+ * @param[in]  session  The ssh session to use.
+ *
+ * @param[in]  i index  The number of the ith answer.
+ *
+ * @return              0 on success, < 0 on error.
+ */
+const char *ssh_userauth_kbdint_getanswer(ssh_session session, unsigned int i) {
+  if(session==NULL || session->kbdint == NULL)
+    return NULL;
+  if (i > session->kbdint->nanswers) {
+    return NULL;
+  }
+
+  return session->kbdint->answers[i];
+}
+#endif
 
 /**
  * @brief Set the answer for a question from a message block.

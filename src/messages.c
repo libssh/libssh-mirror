@@ -336,6 +336,38 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
     goto end;
   }
 
+  if (strncmp(method_c, "keyboard-interactive", method_size) == 0) {
+    ssh_string lang = NULL;
+    ssh_string submethods = NULL;
+
+    msg->auth_request.method = SSH_AUTH_METHOD_INTERACTIVE;
+    SAFE_FREE(service_c);
+    SAFE_FREE(method_c);
+    lang = buffer_get_ssh_string(packet);
+    if (lang == NULL) {
+      goto error;
+    }
+    /* from the RFC 4256
+     * 3.1.  Initial Exchange
+     * "The language tag is deprecated and SHOULD be the empty string."
+     */
+    ssh_string_free(lang);
+
+    submethods = buffer_get_ssh_string(packet);
+    if (submethods == NULL) {
+      goto error;
+    }
+    /* from the RFC 4256
+     * 3.1.  Initial Exchange
+     * "One possible implementation strategy of the submethods field on the
+     *  server is that, unless the user may use multiple different
+     *  submethods, the server ignores this field."
+     */
+    ssh_string_free(submethods);
+
+    goto end;
+  }
+
   if (strncmp(method_c, "publickey", method_size) == 0) {
     ssh_string algo = NULL;
     ssh_string publickey = NULL;
@@ -431,6 +463,129 @@ end:
   leave_function();
   return SSH_PACKET_USED;
 }
+
+/**
+ * @internal
+ *
+ * @brief Handle a SSH_MSG_MSG_USERAUTH_INFO_RESPONSE packet and queue a
+ * SSH Message
+ */
+#ifndef WITH_SERVER
+SSH_PACKET_CALLBACK(ssh_packet_userauth_info_response){
+    (void)session;
+    (void)type;
+    (void)packet;
+    (void)user;
+    return SSH_PACKET_USED;
+}
+#else
+SSH_PACKET_CALLBACK(ssh_packet_userauth_info_response){
+  uint32_t nanswers;
+  uint32_t i;
+  ssh_string tmp;
+
+  ssh_message msg = NULL;
+
+  enter_function();
+
+  (void)user;
+  (void)type;
+
+  msg = ssh_message_new(session);
+  if (msg == NULL) {
+    ssh_set_error_oom(session);
+    goto error;
+  }
+
+  /* HACK: we forge a message to be able to handle it in the
+   * same switch() as other auth methods */
+  msg->type = SSH_REQUEST_AUTH;
+  msg->auth_request.method = SSH_AUTH_METHOD_INTERACTIVE;
+  msg->auth_request.kbdint_response = 1;
+#if 0 // should we wipe the username ?
+  msg->auth_request.username = NULL;
+#endif
+
+  buffer_get_u32(packet, &nanswers);
+
+  if (session->kbdint == NULL) {
+    ssh_log(session, SSH_LOG_PROTOCOL, "Warning: Got a keyboard-interactive "
+                        "response but it seems we didn't send the request.");
+
+    session->kbdint = kbdint_new();
+    if (session->kbdint == NULL) {
+      ssh_set_error_oom(session);
+
+      leave_function();
+      return SSH_PACKET_USED;
+    }
+  }
+
+  nanswers = ntohl(nanswers);
+  ssh_log(session,SSH_LOG_PACKET,"kbdint: %d answers",nanswers);
+  if (nanswers > KBDINT_MAX_PROMPT) {
+    ssh_set_error(session, SSH_FATAL,
+        "Too much answers received from client: %u (0x%.4x)",
+        nanswers, nanswers);
+    kbdint_free(session->kbdint);
+    session->kbdint = NULL;
+    leave_function();
+    return SSH_PACKET_USED;
+  }
+
+  if(nanswers != session->kbdint->nprompts) {
+    /* warn but let the application handle this case */
+    ssh_log(session, SSH_LOG_PROTOCOL, "Warning: Number of prompts and answers"
+                " mismatch: p=%u a=%u", session->kbdint->nprompts, nanswers);
+  }
+  session->kbdint->nanswers = nanswers;
+  session->kbdint->answers = malloc(nanswers * sizeof(char *));
+  if (session->kbdint->answers == NULL) {
+    session->kbdint->nanswers = 0;
+    ssh_set_error_oom(session);
+    kbdint_free(session->kbdint);
+    session->kbdint = NULL;
+    leave_function();
+    return SSH_PACKET_USED;
+  }
+  memset(session->kbdint->answers, 0, nanswers * sizeof(char *));
+
+  for (i = 0; i < nanswers; i++) {
+    tmp = buffer_get_ssh_string(packet);
+    if (tmp == NULL) {
+      ssh_set_error(session, SSH_FATAL, "Short INFO_RESPONSE packet");
+      session->kbdint->nanswers = i;
+      kbdint_free(session->kbdint);
+      session->kbdint = NULL;
+      leave_function();
+      return SSH_PACKET_USED;
+    }
+    session->kbdint->answers[i] = ssh_string_to_char(tmp);
+    ssh_string_free(tmp);
+    if (session->kbdint->answers[i] == NULL) {
+      ssh_set_error_oom(session);
+      session->kbdint->nanswers = i;
+      kbdint_free(session->kbdint);
+      session->kbdint = NULL;
+      leave_function();
+      return SSH_PACKET_USED;
+    }
+  }
+
+  goto end;
+
+error:
+  ssh_message_free(msg);
+
+  leave_function();
+  return SSH_PACKET_USED;
+
+end:
+  ssh_message_queue(session,msg);
+  leave_function();
+  return SSH_PACKET_USED;
+}
+#endif
 
 SSH_PACKET_CALLBACK(ssh_packet_channel_open){
   ssh_message msg = NULL;
