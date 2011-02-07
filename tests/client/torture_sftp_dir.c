@@ -6,19 +6,20 @@
 static void setup(void **state) {
     ssh_session session;
     struct torture_sftp *t;
-    char *host;
-    char *user;
-    char *password;
+    const char *host;
+    const char *user;
+    const char *password;
 
     host = getenv("TORTURE_HOST");
     if (host == NULL) {
-        host = (char *) "localhost";
+        host = "localhost";
     }
 
     user = getenv("TORTURE_USER");
     password = getenv("TORTURE_PASSWORD");
 
     session = torture_ssh_session(host, user, password);
+    assert_false(session == NULL);
     t = torture_sftp_session(session);
     assert_false(t == NULL);
 
