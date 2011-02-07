@@ -62,7 +62,7 @@ function clean_build_dir() {
 }
 
 function usage () {
-echo "Usage: `basename $0` [--prefix /install_prefix|--build [debug|final]|--clean|--verbose|--libsuffix (32|64)|--help|--cmakedir /directory|--make
+echo "Usage: `basename $0` [--prefix /install_prefix|--build [debug|final]|--clean|--verbose|--libsuffix (32|64)|--help|--clang|--cmakedir /directory|--make
 (gmake|make)|--ccompiler (gcc|cc)|--withstaticlib|--unittesting|--clientunittesting|--withssh1|--withserver]"
     cleanup_and_exit
 }
@@ -99,6 +99,9 @@ while test -n "$1"; do
 		*-clean)
 			clean_build_dir
 			cleanup_and_exit
+		;;
+		*-clang)
+			OPTIONS="${OPTIONS} -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++"
 		;;
 		*-verbose)
 			DOVERBOSE="1"
