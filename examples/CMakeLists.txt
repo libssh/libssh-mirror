@@ -32,6 +32,9 @@ if (LINUX)
     if (WITH_SERVER)
         add_executable(samplesshd samplesshd.c)
         target_link_libraries(samplesshd ${LIBSSH_SHARED_LIBRARY})
+
+        add_executable(samplesshd-kbdint samplesshd-kbdint.c)
+        target_link_libraries(samplesshd-kbdint ${LIBSSH_SHARED_LIBRARY})
     endif (WITH_SERVER)
 endif (LINUX)
 
