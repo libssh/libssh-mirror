@@ -61,7 +61,7 @@ If an error has been encountered, it returns a negative value:
   nbytes = ssh_channel_read(channel, buffer, sizeof(buffer), 0);
   while (nbytes > 0)
   {
-    if (write(1, buffer, nbytes) != nbytes)
+    if (fwrite(buffer, 1, nbytes, stdout) != nbytes)
     {
       ssh_channel_close(channel);
       ssh_channel_free(channel);
@@ -69,7 +69,7 @@ If an error has been encountered, it returns a negative value:
     }
     nbytes = ssh_channel_read(channel, buffer, sizeof(buffer), 0);
   }
-    
+
   if (nbytes < 0)
   {
     ssh_channel_close(channel);
