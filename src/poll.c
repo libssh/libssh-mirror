@@ -269,8 +269,10 @@ void ssh_poll_init(void) {
     }
 #endif /* _WIN32 */
 
-    if (wsa_poll != NULL) {
+    if (wsa_poll == NULL) {
         ssh_poll_emu = bsd_poll;
+    } else {
+        ssh_poll_emu = win_poll;
     }
 }
 
