@@ -8,7 +8,7 @@ int main(void) {
     ssh_session session;
     ssh_channel channel;
     char buffer[256];
-    uint32_t nbytes;
+    int nbytes;
     int rc;
 
     session = connect_ssh("localhost", NULL, 0);
@@ -35,7 +35,7 @@ int main(void) {
 
     nbytes = ssh_channel_read(channel, buffer, sizeof(buffer), 0);
     while (nbytes > 0) {
-        if (fwrite(buffer, 1, nbytes, stdout) != nbytes) {
+        if (fwrite(buffer, 1, nbytes, stdout) != (unsigned int) nbytes) {
             goto failed;
         }
         nbytes = ssh_channel_read(channel, buffer, sizeof(buffer), 0);
