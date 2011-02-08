@@ -117,14 +117,6 @@ typedef int (WSAAPI* WSAPoll_FunctionType)(WSAPOLLFD fdarray[],
 
 static WSAPoll_FunctionType wsa_poll;
 
-int win_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout) {
-    if (wsa_poll) {
-        return (wsa_poll)((WSAPOLLFD *) fds, nfds, timeout);
-    }
-
-    return SOCKET_ERROR;
-}
-
 #define WS2_LIBRARY "ws2_32.dll"
 static HINSTANCE hlib;
 
