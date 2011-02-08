@@ -5,53 +5,57 @@
 #include "examples_common.h"
 
 int main(void) {
-  ssh_session session;
-  ssh_channel channel;
-  char buffer[256];
-  int rc;
+    ssh_session session;
+    ssh_channel channel;
+    char buffer[256];
+    uint32_t nbytes;
+    int rc;
 
-  session = connect_ssh("localhost", NULL, 0);
-  if (session == NULL) {
-    return 1;
-  }
-
-  channel = ssh_channel_new(session);;
-  if (channel == NULL) {
-    ssh_disconnect(session);
-    return 1;
-  }
-
-  rc = ssh_channel_open_session(channel);
-  if (rc < 0) {
-    ssh_channel_close(channel);
-    ssh_disconnect(session);
-    return 1;
-  }
-
-  rc = ssh_channel_request_exec(channel, "ps aux");
-  if (rc < 0) {
-    ssh_channel_close(channel);
-    ssh_disconnect(session);
-    return 1;
-  }
-
-
-  while ((rc = ssh_channel_read(channel, buffer, sizeof(buffer), 0)) > 0) {
-    if (fwrite(buffer, 1, rc, stdout) != (unsigned int) rc) {
-      return 1;
+    session = connect_ssh("localhost", NULL, 0);
+    if (session == NULL) {
+        return 1;
     }
-  }
-    
-  if (rc < 0) {
+
+    channel = ssh_channel_new(session);;
+    if (channel == NULL) {
+        ssh_disconnect(session);
+        ssh_free(session);
+        return 1;
+    }
+
+    rc = ssh_channel_open_session(channel);
+    if (rc < 0) {
+        goto failed;
+    }
+
+    rc = ssh_channel_request_exec(channel, "lsof");
+    if (rc < 0) {
+        goto failed;
+    }
+
+    nbytes = ssh_channel_read(channel, buffer, sizeof(buffer), 0);
+    while (nbytes > 0) {
+        if (fwrite(buffer, 1, nbytes, stdout) != nbytes) {
+            goto failed;
+        }
+        nbytes = ssh_channel_read(channel, buffer, sizeof(buffer), 0);
+    }
+
+    if (nbytes < 0) {
+        goto failed;
+    }
+
+    ssh_channel_send_eof(channel);
     ssh_channel_close(channel);
+    ssh_channel_free(channel);
+    ssh_free(session);
+
+    return 0;
+failed:
+    ssh_channel_close(channel);
+    ssh_channel_free(channel);
     ssh_disconnect(session);
+    ssh_free(session);
+
     return 1;
-  }
-
-  ssh_channel_send_eof(channel);
-  ssh_channel_close(channel);
-
-  ssh_disconnect(session);
-
-  return 0;
 }
