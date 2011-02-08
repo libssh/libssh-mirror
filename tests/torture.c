@@ -226,7 +226,7 @@ struct torture_sftp *torture_sftp_session(ssh_session session) {
         return NULL;
     }
 
-    t = malloc(sizeof(struct torture_sftp *));
+    t = malloc(sizeof(struct torture_sftp));
     if (t == NULL) {
         return NULL;
     }
@@ -275,6 +275,7 @@ void torture_sftp_close(struct torture_sftp *t) {
         if (ssh_is_connected(t->ssh)) {
             ssh_disconnect(t->ssh);
         }
+        ssh_free(t->ssh);
     }
 
     free(t->testdir);
