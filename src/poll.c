@@ -300,6 +300,9 @@ int ssh_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout) {
  * @param  events       Poll events that will be monitored for the socket. i.e.
  *                      POLLIN, POLLPRI, POLLOUT, POLLERR, POLLHUP, POLLNVAL
  * @param  cb           Function to be called if any of the events are set.
+ *                      The prototype of cb is:
+ *                      int (*ssh_poll_callback)(ssh_poll_handle p, socket_t fd,
+ *                                                 int revents, void *userdata);
  * @param  userdata     Userdata to be passed to the callback function. NULL if
  *                      not needed.
  *
@@ -318,12 +321,8 @@ ssh_poll_handle ssh_poll_new(socket_t fd, short events, ssh_poll_callback cb,
 
     p->x.fd = fd;
     p->events = events;
-    if (cb != NULL) {
-        p->cb = cb;
-    }
-    if (userdata != NULL) {
-        p->cb_data = userdata;
-    }
+    p->cb = cb;
+    p->cb_data = userdata;
 
     return p;
 }
@@ -490,7 +489,7 @@ void ssh_poll_ctx_free(ssh_poll_ctx ctx) {
       socket_t fd = ctx->pollfds[i].fd;
 
       /* force poll object removal */
-      if (p->cb(p, fd, POLLERR, p->cb_data) < 0) {
+      if (p->cb && p->cb(p, fd, POLLERR, p->cb_data) < 0) {
         used = ctx->polls_used;
       } else {
         i++;
@@ -648,7 +647,7 @@ int ssh_poll_ctx_dopoll(ssh_poll_ctx ctx, int timeout) {
       fd = ctx->pollfds[i].fd;
       revents = ctx->pollfds[i].revents;
 
-      if (p->cb(p, fd, revents, p->cb_data) < 0) {
+      if (p->cb && p->cb(p, fd, revents, p->cb_data) < 0) {
         /* the poll was removed, reload the used counter and start again */
         used = ctx->polls_used;
         i=0;
