@@ -472,7 +472,7 @@ socket_t ssh_connect_host_nonblocking(ssh_session session, const char *host,
  *
  * @param[in]  timeout  A timeout for the select.
  *
- * @return              -1 if an error occured. E_INTR if it was interrupted, in
+ * @return              -1 if an error occured. SSH_EINTR if it was interrupted, in
  *                      that case, just restart it.
  *
  * @warning libssh is not threadsafe here. That means that if a signal is caught
