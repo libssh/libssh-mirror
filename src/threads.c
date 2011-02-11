@@ -92,7 +92,7 @@ static void libcrypto_lock_callback(int mode, int i, const char *file, int line)
 	}
 }
 
-static int libcrypto_thread_init(){
+static int libcrypto_thread_init(void){
 	int n=CRYPTO_num_locks();
 	int i;
 	if(user_callbacks == &ssh_threads_noop)
@@ -109,7 +109,7 @@ static int libcrypto_thread_init(){
 	return SSH_OK;
 }
 
-static void libcrypto_thread_finalize(){
+static void libcrypto_thread_finalize(void){
 	int n=CRYPTO_num_locks();
 	int i;
 	if (libcrypto_mutexes==NULL)
