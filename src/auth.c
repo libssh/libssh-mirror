@@ -476,6 +476,8 @@ error:
  *                            have to use another method.\n
  *          SSH_AUTH_SUCCESS: The public key is accepted, you want now to use
  *                            ssh_userauth_pubkey().
+ *          SSH_AUTH_AGAIN:   In nonblocking mode, you've got to call this again
+ *                            later.
  *
  * @see publickey_from_file()
  * @see privatekey_from_file()
@@ -522,8 +524,27 @@ int ssh_userauth_offer_pubkey(ssh_session session, const char *username,
     leave_function();
     return rc;
   }
+  switch(session->pending_call_state){
+  case SSH_PENDING_CALL_NONE:
+    break;
+  case SSH_PENDING_CALL_AUTH_OFFER_PUBKEY:
+    ssh_string_free(user);
+    user=NULL;
+    goto pending;
+  default:
+    ssh_set_error(session,SSH_FATAL,"Bad call during pending SSH call in ssh_userauth_offer_pubkey");
+    goto error;
+    rc=SSH_ERROR;
+  }
 
-  if (ask_userauth(session) < 0) {
+  rc = ask_userauth(session);
+  if(rc == SSH_AGAIN){
+    rc=SSH_AUTH_AGAIN;
+    ssh_string_free(user);
+    leave_function();
+    return rc;
+  } else if(rc == SSH_ERROR){
+    rc=SSH_AUTH_ERROR;
     ssh_string_free(user);
     leave_function();
     return rc;
@@ -557,12 +578,15 @@ int ssh_userauth_offer_pubkey(ssh_session session, const char *username,
   ssh_string_free(service);
   ssh_string_free(algo);
   session->auth_state=SSH_AUTH_STATE_NONE;
+  session->pending_call_state=SSH_PENDING_CALL_AUTH_OFFER_PUBKEY;
   if (packet_send(session) == SSH_ERROR) {
     leave_function();
     return rc;
   }
+pending:
   rc = wait_auth_status(session);
-
+  if (rc != SSH_AUTH_AGAIN)
+    session->pending_call_state=SSH_PENDING_CALL_NONE;
   leave_function();
   return rc;
 error:
@@ -596,7 +620,8 @@ error:
  *          SSH_AUTH_PARTIAL: You've been partially authenticated, you still
  *                            have to use another method.\n
  *          SSH_AUTH_SUCCESS: Authentication successful.
- *
+ *          SSH_AUTH_AGAIN:   In nonblocking mode, you've got to call this again
+ *                            later.
  * @see publickey_from_file()
  * @see privatekey_from_file()
  * @see privatekey_free()
@@ -642,6 +667,19 @@ int ssh_userauth_pubkey(ssh_session session, const char *username,
   if (user == NULL) {
     leave_function();
     return rc;
+  }
+
+  switch(session->pending_call_state){
+  case SSH_PENDING_CALL_NONE:
+    break;
+  case SSH_PENDING_CALL_AUTH_PUBKEY:
+    ssh_string_free(user);
+    user=NULL;
+    goto pending;
+  default:
+    ssh_set_error(session,SSH_FATAL,"Bad call during pending SSH call in ssh_userauth_pubkey");
+    goto error;
+    rc=SSH_ERROR;
   }
 
   if (ask_userauth(session) < 0) {
@@ -692,19 +730,22 @@ int ssh_userauth_pubkey(ssh_session session, const char *username,
   ssh_string_free(pkstr);
 
   sign = ssh_do_sign(session,session->out_buffer, privatekey);
-  if (sign) {
-    if (buffer_add_ssh_string(session->out_buffer,sign) < 0) {
-      goto error;
-    }
-    ssh_string_free(sign);
-    session->auth_state=SSH_AUTH_STATE_NONE;
-    if (packet_send(session) == SSH_ERROR) {
-      leave_function();
-      return rc;
-    }
-    rc = wait_auth_status(session);
+  if(sign == NULL)
+    goto error;
+  if (buffer_add_ssh_string(session->out_buffer,sign) < 0) {
+    goto error;
   }
-
+  ssh_string_free(sign);
+  session->auth_state=SSH_AUTH_STATE_NONE;
+  session->pending_call_state=SSH_PENDING_CALL_AUTH_PUBKEY;
+  if (packet_send(session) == SSH_ERROR) {
+    leave_function();
+    return rc;
+  }
+pending:
+  rc = wait_auth_status(session);
+  if (rc != SSH_AUTH_AGAIN)
+    session->pending_call_state=SSH_PENDING_CALL_NONE;
   leave_function();
   return rc;
 error:
