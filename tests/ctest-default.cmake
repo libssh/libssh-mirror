@@ -20,6 +20,9 @@ set(CTEST_BUILD_OPTIONS "-DWITH_TESTING=ON -DWITH_SSH1=ON -WITH_SFTP=ON -DWITH_S
 ## The Model to set: Nightly, Continous, Experimental
 set(CTEST_MODEL "Experimental")
 
+## The branch
+#set(CTEST_GIT_BRANCH "--branch v0-5")
+
 ## Wether to enable memory checking.
 set(WITH_MEMCHECK FALSE)
 
@@ -42,7 +45,7 @@ find_program(CTEST_COVERAGE_COMMAND NAMES gcov)
 find_program(CTEST_MEMORYCHECK_COMMAND NAMES valgrind)
 
 if(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}")
-  set(CTEST_CHECKOUT_COMMAND "${CTEST_GIT_COMMAND} clone git://git.libssh.org/projects/libssh.git ${CTEST_SOURCE_DIRECTORY}")
+    set(CTEST_CHECKOUT_COMMAND "${CTEST_GIT_COMMAND} clone ${CTEST_GIT_BRANCH} git://git.libssh.org/projects/libssh.git ${CTEST_SOURCE_DIRECTORY}")
 endif()
 
 set(CTEST_UPDATE_COMMAND "${CTEST_GIT_COMMAND}")
