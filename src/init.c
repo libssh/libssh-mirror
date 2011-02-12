@@ -57,8 +57,6 @@ int ssh_init(void) {
     return -1;
   if(ssh_socket_init())
     return -1;
-  if(ssh_regex_init())
-    return -1;
   return 0;
 }
 
@@ -74,7 +72,6 @@ int ssh_init(void) {
  */
 int ssh_finalize(void) {
   ssh_threads_finalize();
-  ssh_regex_finalize();
   ssh_crypto_finalize();
   ssh_socket_cleanup();
 #ifdef HAVE_LIBGCRYPT
