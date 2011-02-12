@@ -327,9 +327,7 @@ int ssh_config_parse_file(ssh_session session, const char *filename) {
     return 0;
   }
 
-  if (session->log_verbosity) {
-    fprintf(stderr, "Reading configuration data from %s\n", filename);
-  }
+  ssh_log(session, SSH_LOG_RARE, "Reading configuration data from %s", filename);
 
   parsing = 1;
   while (fgets(line, sizeof(line), f)) {
