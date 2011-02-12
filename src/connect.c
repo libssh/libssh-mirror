@@ -21,11 +21,16 @@
  * MA 02111-1307, USA.
  */
 
+#include "config.h"
+
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "libssh/libssh.h"
+#include "libssh/misc.h"
 
 #ifdef _WIN32
 /*
@@ -78,14 +83,6 @@
 #error "Your system must have getaddrinfo()"
 #endif
 
-#ifdef HAVE_REGCOMP
-/* don't declare gnu extended regexp's */
-#ifndef _POSIX_C_SOURCE
-#define _POSIX_C_SOURCE
-#endif
-#include <regex.h>
-#endif /* HAVE_REGCOMP */
-
 #ifdef _WIN32
 void ssh_sock_set_nonblocking(socket_t sock) {
   u_long nonblocking = 1;
@@ -118,53 +115,6 @@ void ssh_sock_set_blocking(socket_t sock) {
 
 #endif /* _WIN32 */
 
-#ifdef HAVE_REGCOMP
-#define IPEXPR    "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
-
-static regex_t *ip_regex = NULL;
-
-/** @internal
- * @brief initializes and compile the regexp to be used for IP matching
- * @returns -1 on error (and error message is set)
- * @returns 0 on success
- */
-int ssh_regex_init(){
-  if(ip_regex==NULL){
-    int err;
-    regex_t *regex=malloc(sizeof (regex_t));
-    ZERO_STRUCTP(regex);
-    err = regcomp(regex, IPEXPR, REG_EXTENDED | REG_NOSUB);
-    if(err != 0){
-      char buffer[128];
-      regerror(err,regex,buffer,sizeof(buffer));
-      fprintf(stderr,"Error while compiling regular expression : %s\n",buffer);
-      SAFE_FREE(regex);
-      return -1;
-    }
-    ip_regex=regex;
-  }
-  return 0;
-}
-
-/** @internal
- * @brief clean up the IP regexp
- */
-void ssh_regex_finalize(){
-  if(ip_regex){
-    regfree(ip_regex);
-    SAFE_FREE(ip_regex);
-  }
-}
-
-#else /* HAVE_REGCOMP */
-int ssh_regex_init(){
-  return 0;
-}
-void ssh_regex_finalize(){
-}
-#endif
-
-
 static int ssh_connect_socket_close(socket_t s){
 #ifdef _WIN32
   return closesocket(s);
@@ -194,13 +144,13 @@ static int getai(ssh_session session, const char *host, int port, struct addrinf
     hints.ai_flags=AI_NUMERICSERV;
 #endif
   }
-#ifdef HAVE_REGCOMP
-  if(regexec(ip_regex,host,0,NULL,0) == 0){
+
+  if (ssh_is_ipaddr(host)) {
     /* this is an IP address */
     ssh_log(session,SSH_LOG_PACKET,"host %s matches an IP address",host);
     hints.ai_flags |= AI_NUMERICHOST;
   }
-#endif
+
   return getaddrinfo(host, service, &hints, ai);
 }
 

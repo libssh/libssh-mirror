@@ -172,8 +172,6 @@ void ssh_packet_set_callbacks(ssh_session session, ssh_packet_callbacks callback
 void ssh_packet_set_default_callbacks(ssh_session session);
 void ssh_packet_process(ssh_session session, uint8_t type);
 /* connect.c */
-int ssh_regex_init(void);
-void ssh_regex_finalize(void);
 socket_t ssh_connect_host(ssh_session session, const char *host,const char
         *bind_addr, int port, long timeout, long usec);
 socket_t ssh_connect_host_nonblocking(ssh_session session, const char *host,
