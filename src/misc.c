@@ -779,6 +779,38 @@ int ssh_analyze_banner(ssh_session session, int server, int *ssh1, int *ssh2) {
   return 0;
 }
 
+/* TODO for Windows, inet_pton is only available on Vista and newer */
+int ssh_is_ipaddr_v4(const char *str) {
+#ifndef _WIN32
+    int rc = -1;
+    struct in_addr dest;
+
+    rc = inet_pton(AF_INET, str, &dest);
+    if (rc > 0) {
+        return 1;
+    }
+#endif
+    return 0;
+}
+
+/* TODO for Windows, inet_pton is only available on Vista and newer */
+int ssh_is_ipaddr(const char *str) {
+#ifndef _WIN32
+    int rc = -1;
+
+    if (strchr(str, ':')) {
+        struct in6_addr dest6;
+
+        /* TODO link-local (IP:v6:addr%ifname). */
+        rc = inet_pton(AF_INET6, str, &dest6);
+        if (rc > 0) {
+            return 1;
+        }
+    }
+#endif
+    return ssh_is_ipaddr_v4(str);
+}
+
 /** @} */
 
 /* vim: set ts=4 sw=4 et cindent: */
