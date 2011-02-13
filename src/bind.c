@@ -160,6 +160,7 @@ int ssh_bind_listen(ssh_bind sshbind) {
   socket_t fd;
 
   if (ssh_init() < 0) {
+    ssh_set_error(sshbind, SSH_FATAL, "ssh_init() failed");
     return -1;
   }
 
@@ -206,7 +207,11 @@ int ssh_bind_listen(ssh_bind sshbind) {
 
 int ssh_bind_set_callbacks(ssh_bind sshbind, ssh_bind_callbacks callbacks,
     void *userdata){
-  if (sshbind == NULL || callbacks == NULL) {
+  if (sshbind == NULL) {
+    return SSH_ERROR;
+  }
+  if (callbacks == NULL) {
+    ssh_set_error_invalid(sshbind, __FUNCTION__);
     return SSH_ERROR;
   }
   if(callbacks->size <= 0 || callbacks->size > 1024 * sizeof(void *)){
@@ -378,6 +383,8 @@ int ssh_bind_accept(ssh_bind sshbind, ssh_session session) {
   ssh_socket_free(session->socket);
   session->socket = ssh_socket_new(session);
   if (session->socket == NULL) {
+    /* perhaps it may be better to copy the error from session to sshbind */
+    ssh_set_error_oom(sshbind);
     privatekey_free(dsa);
     privatekey_free(rsa);
     return SSH_ERROR;
