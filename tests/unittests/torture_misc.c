@@ -11,6 +11,8 @@
 
 #include "torture.h"
 #include "misc.c"
+#include "error.c"
+
 #define TORTURE_TEST_DIR "/usr/local/bin/truc/much/.."
 
 
