@@ -3,6 +3,7 @@
 #include "torture.h"
 
 #include "misc.c"
+#include "error.c"
 
 /*
  * Test the behavior of ssh_is_ipaddr()
