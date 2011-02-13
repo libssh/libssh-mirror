@@ -158,6 +158,11 @@ int ssh_is_ipaddr_v4(const char *str) {
     int sslen = sizeof(ss);
     int rc = SOCKET_ERROR;
 
+    /* WSAStringToAddressA thinks that 0.0.0 is a valid IP */
+    if (strlen < 7) {
+        return 0;
+    }
+
     rc = WSAStringToAddressA((LPSTR) str,
                              AF_INET,
                              NULL,
