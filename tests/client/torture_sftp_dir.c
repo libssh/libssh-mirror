@@ -29,6 +29,8 @@ static void setup(void **state) {
 static void teardown(void **state) {
     struct torture_sftp *t = *state;
 
+    assert_false(t == NULL);
+
     torture_rmdirs(t->testdir);
     torture_sftp_close(t);
 }
@@ -37,6 +39,8 @@ static void torture_sftp_mkdir(void **state) {
     struct torture_sftp *t = *state;
     char tmpdir[128];
     int rc;
+
+    assert_false(t == NULL);
 
     snprintf(tmpdir, sizeof(tmpdir), "%s/mkdir_test", t->testdir);
 
