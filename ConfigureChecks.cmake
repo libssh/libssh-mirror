@@ -91,13 +91,21 @@ if (UNIX)
         if (HAVE_LIBSOCKET)
           set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} socket)
         endif (HAVE_LIBSOCKET)
+
         # libresolv
         check_library_exists(resolv hstrerror "" HAVE_LIBRESOLV)
         if (HAVE_LIBRESOLV)
           set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} resolv)
         endif (HAVE_LIBRESOLV)
-        check_library_exists(rt nanosleep "" HAVE_LIBRT)
+
+        # libnsl/inet_pton (Solaris)
+        check_library_exists(nsl inet_pton "" HAVE_LIBNSL)
+        if (HAVE_LIBNSL)
+            set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} nsl)
+        endif (HAVE_LIBNSL)
+
         # librt
+        check_library_exists(rt nanosleep "" HAVE_LIBRT)
         if (HAVE_LIBRT)
           set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} rt)
         endif (HAVE_LIBRT)
