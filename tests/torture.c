@@ -21,13 +21,15 @@
  * MA 02111-1307, USA.
  */
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <dirent.h>
-#include <errno.h>
+#include "config.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #ifndef _WIN32
+# include <sys/types.h>
+# include <sys/stat.h>
+# include <dirent.h>
+# include <errno.h>
 # include <unistd.h>
 #endif
 
@@ -35,6 +37,7 @@
 
 static int verbosity = 0;
 
+#ifndef _WIN32
 static int _torture_auth_kbdint(ssh_session session,
                                const char *password) {
     const char *prompt;
@@ -144,10 +147,6 @@ int torture_isdir(const char *path) {
     }
 
     return 0;
-}
-
-int torture_libssh_verbosity(void){
-  return verbosity;
 }
 
 ssh_session torture_ssh_session(const char *host,
@@ -280,6 +279,11 @@ void torture_sftp_close(struct torture_sftp *t) {
 
     free(t->testdir);
     free(t);
+}
+#endif
+
+int torture_libssh_verbosity(void){
+  return verbosity;
 }
 
 int main(int argc, char **argv) {
