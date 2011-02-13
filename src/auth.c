@@ -748,13 +748,19 @@ int ssh_userauth_pubkey(ssh_session session, const char *username,
   ssh_string_free(pkstr);
 
   sign = ssh_do_sign(session,session->out_buffer, privatekey);
-  if(sign == NULL)
+  if(sign == NULL) {
     ssh_set_error_oom(session);
-    goto error;
+    leave_function();
+    return rc;
+  }
+
   if (buffer_add_ssh_string(session->out_buffer,sign) < 0) {
     ssh_set_error_oom(session);
-    goto error;
+    ssh_string_free(sign);
+    leave_function();
+    return rc;
   }
+
   ssh_string_free(sign);
   session->auth_state=SSH_AUTH_STATE_NONE;
   session->pending_call_state=SSH_PENDING_CALL_AUTH_PUBKEY;
