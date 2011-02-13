@@ -22,6 +22,8 @@
  * MA 02111-1307, USA.
  */
 
+#include "config.h"
+
 #ifndef _WIN32
 /* This is needed for a standard getpwuid_r on opensolaris */
 #define _POSIX_PTHREAD_SEMANTICS
@@ -32,7 +34,6 @@
 #include <arpa/inet.h>
 #endif
 
-#include "config.h"
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
@@ -151,6 +152,44 @@ char *ssh_get_local_username(ssh_session session) {
 
   return NULL;
 }
+
+int ssh_is_ipaddr_v4(const char *str) {
+    struct sockaddr_storage ss;
+    int sslen = sizeof(ss);
+    int rc = SOCKET_ERROR;
+
+    rc = WSAStringToAddressA((LPSTR) str,
+                             AF_INET,
+                             NULL,
+                             (struct sockaddr*)&ss,
+                             &sslen);
+    if (rc == 0) {
+        return 1;
+    }
+
+    return 0;
+}
+
+int ssh_is_ipaddr(const char *str) {
+    int rc = SOCKET_ERROR;
+
+    if (strchr(str, ':')) {
+        struct sockaddr_storage ss;
+        int sslen = sizeof(ss);
+
+        /* TODO link-local (IP:v6:addr%ifname). */
+        rc = WSAStringToAddressA((LPSTR) str,
+                                 AF_INET6,
+                                 NULL,
+                                 (struct sockaddr*)&ss,
+                                 &sslen);
+        if (rc == 0) {
+            return 1;
+        }
+    }
+
+    return ssh_is_ipaddr_v4(str);
+}
 #else /* _WIN32 */
 
 #ifndef NSS_BUFLEN_PASSWD
@@ -206,6 +245,35 @@ char *ssh_get_local_username(ssh_session session) {
 
     return name;
 }
+
+int ssh_is_ipaddr_v4(const char *str) {
+    int rc = -1;
+    struct in_addr dest;
+
+    rc = inet_pton(AF_INET, str, &dest);
+    if (rc > 0) {
+        return 1;
+    }
+
+    return 0;
+}
+
+int ssh_is_ipaddr(const char *str) {
+    int rc = -1;
+
+    if (strchr(str, ':')) {
+        struct in6_addr dest6;
+
+        /* TODO link-local (IP:v6:addr%ifname). */
+        rc = inet_pton(AF_INET6, str, &dest6);
+        if (rc > 0) {
+            return 1;
+        }
+    }
+
+    return ssh_is_ipaddr_v4(str);
+}
+
 #endif /* _WIN32 */
 
 uint64_t ntohll(uint64_t a) {
@@ -780,38 +848,6 @@ int ssh_analyze_banner(ssh_session session, int server, int *ssh1, int *ssh2) {
 
 
   return 0;
-}
-
-/* TODO for Windows, inet_pton is only available on Vista and newer */
-int ssh_is_ipaddr_v4(const char *str) {
-#ifndef _WIN32
-    int rc = -1;
-    struct in_addr dest;
-
-    rc = inet_pton(AF_INET, str, &dest);
-    if (rc > 0) {
-        return 1;
-    }
-#endif
-    return 0;
-}
-
-/* TODO for Windows, inet_pton is only available on Vista and newer */
-int ssh_is_ipaddr(const char *str) {
-#ifndef _WIN32
-    int rc = -1;
-
-    if (strchr(str, ':')) {
-        struct in6_addr dest6;
-
-        /* TODO link-local (IP:v6:addr%ifname). */
-        rc = inet_pton(AF_INET6, str, &dest6);
-        if (rc > 0) {
-            return 1;
-        }
-    }
-#endif
-    return ssh_is_ipaddr_v4(str);
 }
 
 /** @} */
