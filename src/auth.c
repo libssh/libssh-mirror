@@ -1579,6 +1579,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_request) {
   }
 
   session->kbdint->nprompts = nprompts;
+  session->kbdint->nanswers = nprompts;
   session->kbdint->prompts = malloc(nprompts * sizeof(char *));
   if (session->kbdint->prompts == NULL) {
     session->kbdint->nprompts = 0;
