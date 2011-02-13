@@ -131,6 +131,7 @@ ssh_socket ssh_socket_new(ssh_session session) {
 
   s = malloc(sizeof(struct ssh_socket_struct));
   if (s == NULL) {
+    ssh_set_error_oom(session);
     return NULL;
   }
   s->fd_in = SSH_INVALID_SOCKET;
@@ -140,11 +141,13 @@ ssh_socket ssh_socket_new(ssh_session session) {
   s->session = session;
   s->in_buffer = ssh_buffer_new();
   if (s->in_buffer == NULL) {
+    ssh_set_error_oom(session);
     SAFE_FREE(s);
     return NULL;
   }
   s->out_buffer=ssh_buffer_new();
   if (s->out_buffer == NULL) {
+    ssh_set_error_oom(session);
     ssh_buffer_free(s->in_buffer);
     SAFE_FREE(s);
     return NULL;
@@ -340,16 +343,24 @@ int ssh_socket_unix(ssh_socket s, const char *path) {
 
   fd = socket(AF_UNIX, SOCK_STREAM, 0);
   if (fd == SSH_INVALID_SOCKET) {
+    ssh_set_error(s->session, SSH_FATAL,
+		    "Error from socket(AF_UNIX, SOCK_STREAM, 0): %s",
+		    strerror(errno));
     return -1;
   }
 
   if (fcntl(fd, F_SETFD, 1) == -1) {
+    ssh_set_error(s->session, SSH_FATAL,
+		    "Error from fcntl(fd, F_SETFD, 1): %s",
+		    strerror(errno));
     close(fd);
     return -1;
   }
 
   if (connect(fd, (struct sockaddr *) &sunaddr,
         sizeof(sunaddr)) < 0) {
+    ssh_set_error(s->session, SSH_FATAL, "Error from connect(): %s",
+		    strerror(errno));
     close(fd);
     return -1;
   }
@@ -544,6 +555,7 @@ int ssh_socket_write(ssh_socket s, const void *buffer, int len) {
   enter_function();
   if(len > 0) {
     if (buffer_add_data(s->out_buffer, buffer, len) < 0) {
+      ssh_set_error_oom(s->session);
       return SSH_ERROR;
     }
     ssh_socket_nonblocking_flush(s);
@@ -665,8 +677,11 @@ int ssh_socket_connect(ssh_socket s, const char *host, int port, const char *bin
 	socket_t fd;
 	ssh_session session=s->session;
 	enter_function();
-	if(s->state != SSH_SOCKET_NONE)
+	if(s->state != SSH_SOCKET_NONE) {
+		ssh_set_error(s->session, SSH_FATAL,
+				"ssh_socket_connect called on socket not unconnected");
 		return SSH_ERROR;
+	}
 	fd=ssh_connect_host_nonblocking(s->session,host,bind_addr,port);
 	ssh_log(session,SSH_LOG_PROTOCOL,"Nonblocking connection socket: %d",fd);
 	if(fd == SSH_INVALID_SOCKET)
