@@ -69,6 +69,10 @@ static ssh_channel channel_from_msg(ssh_session session, ssh_buffer packet);
 ssh_channel ssh_channel_new(ssh_session session) {
   ssh_channel channel = NULL;
 
+  if(session == NULL) {
+      return NULL;
+  }
+
   channel = malloc(sizeof(struct ssh_channel_struct));
   if (channel == NULL) {
     return NULL;
@@ -799,7 +803,13 @@ SSH_PACKET_CALLBACK(channel_rcv_request) {
  */
 int channel_default_bufferize(ssh_channel channel, void *data, int len,
     int is_stderr) {
-  ssh_session session = channel->session;
+  ssh_session session;
+  
+  if(channel == NULL || data == NULL) {
+      return -1;
+  }
+
+  session = channel->session;
 
   ssh_log(session, SSH_LOG_RARE,
       "placing %d bytes into channel buffer (stderr=%d)", len, is_stderr);
@@ -851,6 +861,10 @@ int channel_default_bufferize(ssh_channel channel, void *data, int len,
  * @see channel_request_exec()
  */
 int ssh_channel_open_session(ssh_channel channel) {
+  if(channel == NULL) {
+      return SSH_ERROR;
+  }
+
 #ifdef WITH_SSH1
   if (channel->session->version == 1) {
     return channel_open_session1(channel);
@@ -883,11 +897,16 @@ int ssh_channel_open_session(ssh_channel channel) {
  */
 int ssh_channel_open_forward(ssh_channel channel, const char *remotehost,
     int remoteport, const char *sourcehost, int localport) {
-  ssh_session session = channel->session;
+  ssh_session session;
   ssh_buffer payload = NULL;
   ssh_string str = NULL;
   int rc = SSH_ERROR;
 
+  if(channel == NULL || remotehost == NULL || sourcehost == NULL) {
+      return rc;
+  }
+
+  session = channel->session;
   enter_function();
 
   payload = ssh_buffer_new();
@@ -934,13 +953,14 @@ error:
  * @warning Any data unread on this channel will be lost.
  */
 void ssh_channel_free(ssh_channel channel) {
-  ssh_session session = channel->session;
-  enter_function();
+  ssh_session session;
 
   if (channel == NULL) {
-    leave_function();
     return;
   }
+
+  session = channel->session;
+  enter_function();
 
   if (session->alive && channel->state == SSH_CHANNEL_STATE_OPEN) {
     ssh_channel_close(channel);
@@ -982,9 +1002,14 @@ void ssh_channel_free(ssh_channel channel) {
  * @see channel_free()
  */
 int ssh_channel_send_eof(ssh_channel channel){
-  ssh_session session = channel->session;
+  ssh_session session;
   int rc = SSH_ERROR;
 
+  if(channel == NULL) {
+      return rc;
+  }
+
+  session = channel->session;
   enter_function();
 
   if (buffer_add_u8(session->out_buffer, SSH2_MSG_CHANNEL_EOF) < 0) {
@@ -1024,9 +1049,14 @@ error:
  * @see channel_eof()
  */
 int ssh_channel_close(ssh_channel channel){
-  ssh_session session = channel->session;
+  ssh_session session;
   int rc = 0;
 
+  if(channel == NULL) {
+    return SSH_ERROR;
+  }
+
+  session = channel->session;
   enter_function();
 
   if (channel->local_eof == 0) {
@@ -1064,13 +1094,17 @@ error:
 
 int channel_write_common(ssh_channel channel, const void *data,
     uint32_t len, int is_stderr) {
-  ssh_session session = channel->session;
+  ssh_session session;
   int origlen = len;
   size_t effectivelen;
   /* handle the max packet len from remote side, be nice */
   /* 10 bytes for the headers */
   size_t maxpacketlen = channel->remote_maxpacket - 10;
 
+  if(channel == NULL || data == NULL) {
+      return -1;
+  }
+  session = channel->session;
   enter_function();
 
   if (channel->local_eof) {
@@ -2650,10 +2684,16 @@ int ssh_channel_write_stderr(ssh_channel channel, const void *data, uint32_t len
  */
 int ssh_channel_open_reverse_forward(ssh_channel channel, const char *remotehost,
     int remoteport, const char *sourcehost, int localport) {
-  ssh_session session = channel->session;
+  ssh_session session;
   ssh_buffer payload = NULL;
   ssh_string str = NULL;
   int rc = SSH_ERROR;
+
+  if(channel == NULL) {
+      return rc;
+  }
+
+  session = channel->session;
 
   enter_function();
 
@@ -2709,6 +2749,10 @@ int ssh_channel_request_send_exit_status(ssh_channel channel, int exit_status) {
   ssh_buffer buffer = NULL;
   int rc = SSH_ERROR;
 
+  if(channel == NULL) {
+      return SSH_ERROR;
+  }
+
 #ifdef WITH_SSH1
   if (channel->version == 1) {
     return SSH_ERROR; // TODO: Add support for SSH-v1 if possible.
@@ -2749,11 +2793,15 @@ error:
  * @return              SSH_OK on success, SSH_ERROR if an error occured
  *                      (including attempts to send signal via SSH-v1 session).
  */
-int ssh_channel_request_send_exit_signal(ssh_channel channel, const char *sig, int core, const char *errmsg, const char *lang) {
+int ssh_channel_request_send_exit_signal(ssh_channel channel, const char *sig,
+                            int core, const char *errmsg, const char *lang) {
   ssh_buffer buffer = NULL;
   ssh_string tmp = NULL;
   int rc = SSH_ERROR;
 
+  if(channel == NULL || sig == NULL || errmsg == NULL || lang == NULL) {
+      return rc;
+  }
 #ifdef WITH_SSH1
   if (channel->version == 1) {
     return SSH_ERROR; // TODO: Add support for SSH-v1 if possible.
