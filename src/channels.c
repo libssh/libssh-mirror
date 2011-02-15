@@ -811,12 +811,17 @@ SSH_PACKET_CALLBACK(channel_rcv_request) {
 int channel_default_bufferize(ssh_channel channel, void *data, int len,
     int is_stderr) {
   ssh_session session;
-  
-  if(channel == NULL || data == NULL) {
+
+  if(channel == NULL) {
       return -1;
   }
 
   session = channel->session;
+
+  if(data == NULL) {
+      ssh_set_error_invalid(session, __FUNCTION__);
+      return -1;
+  }
 
   ssh_log(session, SSH_LOG_RARE,
       "placing %d bytes into channel buffer (stderr=%d)", len, is_stderr);
@@ -911,11 +916,17 @@ int ssh_channel_open_forward(ssh_channel channel, const char *remotehost,
   ssh_string str = NULL;
   int rc = SSH_ERROR;
 
-  if(channel == NULL || remotehost == NULL || sourcehost == NULL) {
+  if(channel == NULL) {
       return rc;
   }
 
   session = channel->session;
+
+  if(remotehost == NULL || sourcehost == NULL) {
+      ssh_set_error_invalid(session, __FUNCTION__);
+      return rc;
+  }
+
   enter_function();
 
   payload = ssh_buffer_new();
@@ -1122,6 +1133,10 @@ int channel_write_common(ssh_channel channel, const void *data,
       return -1;
   }
   session = channel->session;
+  if(data == NULL) {
+      ssh_set_error_invalid(session, __FUNCTION__);
+      return -1;
+  }
   enter_function();
 
   if (channel->local_eof) {
@@ -2869,7 +2884,11 @@ int ssh_channel_request_send_exit_signal(ssh_channel channel, const char *sig,
   ssh_string tmp = NULL;
   int rc = SSH_ERROR;
 
-  if(channel == NULL || sig == NULL || errmsg == NULL || lang == NULL) {
+  if(channel == NULL) {
+      return rc;
+  }
+  if(sig == NULL || errmsg == NULL || lang == NULL) {
+      ssh_set_error_invalid(channel->session, __FUNCTION__);
       return rc;
   }
 #ifdef WITH_SSH1
