@@ -806,7 +806,18 @@ SSH_PACKET_CALLBACK(channel_rcv_request) {
  */
 int channel_default_bufferize(ssh_channel channel, void *data, int len,
     int is_stderr) {
-  ssh_session session = channel->session;
+  ssh_session session;
+
+  if(channel == NULL) {
+      return -1;
+  }
+
+  session = channel->session;
+
+  if(data == NULL) {
+      ssh_set_error_invalid(session, __FUNCTION__);
+      return -1;
+  }
 
   ssh_log(session, SSH_LOG_RARE,
       "placing %d bytes into channel buffer (stderr=%d)", len, is_stderr);
@@ -892,12 +903,23 @@ int ssh_channel_open_session(ssh_channel channel) {
  */
 int ssh_channel_open_forward(ssh_channel channel, const char *remotehost,
     int remoteport, const char *sourcehost, int localport) {
-  ssh_session session = channel->session;
+  ssh_session session;
   ssh_buffer payload = NULL;
   ssh_string str = NULL;
   int rc = SSH_ERROR;
 
   enter_function();
+
+  if (channel == NULL) {
+      return rc;
+  }
+
+  session = channel->session;
+
+  if(remotehost == NULL || sourcehost == NULL) {
+      ssh_set_error_invalid(session, __FUNCTION__);
+      return rc;
+  }
 
   payload = ssh_buffer_new();
   if (payload == NULL) {
@@ -1081,14 +1103,27 @@ error:
 
 int channel_write_common(ssh_channel channel, const void *data,
     uint32_t len, int is_stderr) {
-  ssh_session session = channel->session;
+  ssh_session session;
   int origlen = len;
   size_t effectivelen;
-  /* handle the max packet len from remote side, be nice */
-  /* 10 bytes for the headers */
-  size_t maxpacketlen = channel->remote_maxpacket - 10;
+  size_t maxpacketlen;
+
+  if(channel == NULL || data == NULL) {
+      return -1;
+  }
+  session = channel->session;
+  if(data == NULL) {
+      ssh_set_error_invalid(session, __FUNCTION__);
+      return -1;
+  }
 
   enter_function();
+
+  /*
+   * Handle the max packet len from remote side, be nice
+   * 10 bytes for the headers
+   */
+  maxpacketlen = channel->remote_maxpacket - 10;
 
   if (channel->local_eof) {
     ssh_set_error(session, SSH_REQUEST_DENIED,
@@ -2823,6 +2858,15 @@ int ssh_channel_request_send_exit_signal(ssh_channel channel, const char *sig, i
   ssh_buffer buffer = NULL;
   ssh_string tmp = NULL;
   int rc = SSH_ERROR;
+
+  if(channel == NULL) {
+      return rc;
+  }
+
+  if(sig == NULL || errmsg == NULL || lang == NULL) {
+      ssh_set_error_invalid(channel->session, __FUNCTION__);
+      return rc;
+  }
 
 #ifdef WITH_SSH1
   if (channel->version == 1) {
