@@ -1126,9 +1126,7 @@ int channel_write_common(ssh_channel channel, const void *data,
   ssh_session session;
   int origlen = len;
   size_t effectivelen;
-  /* handle the max packet len from remote side, be nice */
-  /* 10 bytes for the headers */
-  size_t maxpacketlen = channel->remote_maxpacket - 10;
+  size_t maxpacketlen;
 
   if(channel == NULL || data == NULL) {
       return -1;
@@ -1139,6 +1137,12 @@ int channel_write_common(ssh_channel channel, const void *data,
       return -1;
   }
   enter_function();
+
+  /*
+   * Handle the max packet len from remote side, be nice
+   * 10 bytes for the headers
+   */
+  maxpacketlen = channel->remote_maxpacket - 10;
 
   if (channel->local_eof) {
     ssh_set_error(session, SSH_REQUEST_DENIED,
