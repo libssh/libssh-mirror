@@ -897,11 +897,12 @@ int ssh_channel_open_session(ssh_channel channel) {
  *
  * @param[in]  remoteport The remote port.
  *
- * @param[in]  sourcehost The source host (your local computer). It's optional
- *                        and for logging purpose.
+ * @param[in]  sourcehost The numeric IP address of the machine from where the
+ *                        connection request originates. This is mostly for
+ *                        logging purposes.
  *
- * @param[in]  localport  The source port (your local computer). It's optional
- *                        and for logging purpose.
+ * @param[in]  localport  The port on the host from where the connection
+ *                        originated. This is mostly for logging purposes.
  *
  * @return              SSH_OK on success, SSH_ERROR if an error occured.
  *
