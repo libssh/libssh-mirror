@@ -909,13 +909,13 @@ int ssh_channel_open_forward(ssh_channel channel, const char *remotehost,
   ssh_string str = NULL;
   int rc = SSH_ERROR;
 
-  enter_function();
-
   if (channel == NULL) {
       return rc;
   }
 
   session = channel->session;
+
+  enter_function();
 
   if(remotehost == NULL || sourcehost == NULL) {
       ssh_set_error_invalid(session, __FUNCTION__);
