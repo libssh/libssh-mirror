@@ -482,6 +482,7 @@ LIBSSH_API ssh_event ssh_event_new(void);
 LIBSSH_API int ssh_event_add_fd(ssh_event event, socket_t fd, short events,
                                     ssh_event_callback cb, void *userdata);
 LIBSSH_API int ssh_event_add_session(ssh_event event, ssh_session session);
+LIBSSH_API int ssh_event_remove_fd(ssh_event event, socket_t fd);
 LIBSSH_API int ssh_event_remove_session(ssh_event event, ssh_session session);
 LIBSSH_API void ssh_event_free(ssh_event event);
 

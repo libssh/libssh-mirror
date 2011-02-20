@@ -836,6 +836,36 @@ int ssh_event_add_session(ssh_event event, ssh_session session) {
 }
 
 /**
+ * @brief  Remove a socket fd from an event context.
+ *
+ * @param  event        The ssh_event object.
+ * @param  fd           The fd to remove.
+ *
+ * @returns SSH_OK      on success
+ *          SSH_ERROR   on failure
+ */
+int ssh_event_remove_fd(ssh_event event, socket_t fd) {
+    ssh_poll_handle p;
+    register size_t i, used;
+    int rc = SSH_ERROR;
+
+    if(event == NULL || event->ctx == NULL) {
+        return SSH_ERROR;
+    }
+
+    used = event->ctx->polls_used;
+    for (i = 0; i < used; i++) {
+        if(fd == event->ctx->pollfds[i].fd) {
+            p = event->ctx->pollptrs[i];
+            ssh_poll_ctx_remove(event->ctx, p);
+            rc = SSH_OK;
+        }
+    }
+
+    return rc;
+}
+
+/**
  * @brief  Remove a session object from an event context.
  *
  * @param  event        The ssh_event object.
