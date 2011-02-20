@@ -111,6 +111,7 @@ if (UNIX)
         endif (HAVE_LIBRT)
     endif (NOT LINUX)
 
+    check_library_exists(util forkpty "" HAVE_LIBUTIL)
     check_function_exists(getaddrinfo HAVE_GETADDRINFO)
     check_function_exists(poll HAVE_POLL)
     check_function_exists(select HAVE_SELECT)
