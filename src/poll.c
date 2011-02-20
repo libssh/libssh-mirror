@@ -728,6 +728,50 @@ ssh_event ssh_event_new(void) {
 }
 
 /**
+ * @brief remove the poll handle from session and assign them to a event,
+ * when used in blocking mode.
+ *
+ * @param event     The ssh_event object
+ * @param session   The session to add to the event.
+ *
+ * @returns SSH_OK      on success
+ *          SSH_ERROR   on failure
+ */
+int ssh_event_add_session(ssh_event event, ssh_session session) {
+    unsigned int i;
+    ssh_poll_handle p;
+#ifdef WITH_SERVER
+    struct ssh_iterator *iterator;
+#endif
+    
+    if(event == NULL || event->ctx == NULL || session == NULL) {
+        return SSH_ERROR;
+    }
+    if(session->default_poll_ctx == NULL) {
+        return SSH_ERROR;
+    }
+    for(i = 0; i < session->default_poll_ctx->polls_used; i++) {
+        p = session->default_poll_ctx->pollptrs[i];
+        ssh_poll_ctx_remove(session->default_poll_ctx, p);
+        ssh_poll_ctx_add(event->ctx, p);
+    }
+#ifdef WITH_SERVER
+    iterator = ssh_list_get_iterator(event->sessions);
+    while(iterator != NULL) {
+        if((ssh_session)iterator->data == session) {
+            /* allow only one instance of this session */
+            return SSH_OK;
+        }
+        iterator = iterator->next;
+    }
+    if(ssh_list_append(event->sessions, session) == SSH_ERROR) {
+        return SSH_ERROR;
+    }
+#endif
+    return SSH_OK;
+}
+
+/**
  * @brief  Free an event context.
  *
  * @param  event        The ssh_event object to free.
