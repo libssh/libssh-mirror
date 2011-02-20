@@ -117,6 +117,7 @@ typedef struct ssh_key_struct* ssh_key;
 typedef struct ssh_scp_struct* ssh_scp;
 typedef struct ssh_session_struct* ssh_session;
 typedef struct ssh_string_struct* ssh_string;
+typedef struct ssh_event_struct* ssh_event;
 
 /* Socket type */
 #ifdef _WIN32
@@ -473,6 +474,8 @@ LIBSSH_API void ssh_string_free_char(char *s);
 
 LIBSSH_API int ssh_getpass(const char *prompt, char *buf, size_t len, int echo,
     int verify);
+
+LIBSSH_API ssh_event ssh_event_new(void);
 
 #ifndef LIBSSH_LEGACY_0_4
 #include "libssh/legacy.h"

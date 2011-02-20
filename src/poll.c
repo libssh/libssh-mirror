@@ -34,6 +34,11 @@
 #include "libssh/poll.h"
 #include "libssh/socket.h"
 #include "libssh/session.h"
+#ifdef WITH_SERVER
+#include "libssh/server.h"
+#include "libssh/misc.h"
+#endif
+
 
 #ifndef SSH_POLL_CTX_CHUNK
 #define SSH_POLL_CTX_CHUNK			5
@@ -676,6 +681,50 @@ ssh_poll_ctx ssh_poll_get_default_ctx(ssh_session session){
 	/* 2 is enough for the default one */
 	session->default_poll_ctx = ssh_poll_ctx_new(2);
 	return session->default_poll_ctx;
+}
+
+/* public event API */
+
+struct ssh_event_struct {
+    ssh_poll_ctx ctx;
+#ifdef WITH_SERVER
+    struct ssh_list *sessions;
+#endif
+};
+
+/**
+ * @brief  Create a new event context. It could be associated with many
+ *         ssh_session objects and socket fd which are going to be polled at the
+ *         same time as the event context. You would need a single event context
+ *         per thread.
+ * 
+ * @return  The ssh_event object on success, NULL on failure.
+ */
+ssh_event ssh_event_new(void) {
+    ssh_event event;
+
+    event = malloc(sizeof(struct ssh_event_struct));
+    if (event == NULL) {
+        return NULL;
+    }
+    ZERO_STRUCTP(event);
+
+    event->ctx = ssh_poll_ctx_new(2);
+    if(event->ctx == NULL) {
+        free(event);
+        return NULL;
+    }
+
+#ifdef WITH_SERVER
+    event->sessions = ssh_list_new();
+    if(event->sessions == NULL) {
+        ssh_poll_ctx_free(event->ctx);
+        free(event);
+        return NULL;
+    }
+#endif
+
+    return event;
 }
 
 /** @} */
