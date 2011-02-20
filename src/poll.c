@@ -727,6 +727,29 @@ ssh_event ssh_event_new(void) {
     return event;
 }
 
+/**
+ * @brief  Free an event context.
+ *
+ * @param  event        The ssh_event object to free.
+ *                      Note: you have to manually remove sessions and socket
+ *                      fds before freeing the event object.
+ *
+ */
+void ssh_event_free(ssh_event event) {
+    if(event == NULL) {
+        return;
+    }
+    if(event->ctx != NULL) {
+        ssh_poll_ctx_free(event->ctx);
+    }
+#ifdef WITH_SERVER
+    if(event->sessions != NULL) {
+        ssh_list_free(event->sessions);
+    }
+#endif
+    free(event);
+}
+
 /** @} */
 
 /* vim: set ts=4 sw=4 et cindent: */

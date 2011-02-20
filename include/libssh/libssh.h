@@ -476,6 +476,7 @@ LIBSSH_API int ssh_getpass(const char *prompt, char *buf, size_t len, int echo,
     int verify);
 
 LIBSSH_API ssh_event ssh_event_new(void);
+LIBSSH_API void ssh_event_free(ssh_event event);
 
 #ifndef LIBSSH_LEGACY_0_4
 #include "libssh/legacy.h"
