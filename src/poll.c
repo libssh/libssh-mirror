@@ -685,6 +685,11 @@ ssh_poll_ctx ssh_poll_get_default_ctx(ssh_session session){
 
 /* public event API */
 
+struct ssh_event_fd_wrapper {
+    ssh_event_callback cb;
+    void * userdata;
+};
+
 struct ssh_event_struct {
     ssh_poll_ctx ctx;
 #ifdef WITH_SERVER
@@ -725,6 +730,65 @@ ssh_event ssh_event_new(void) {
 #endif
 
     return event;
+}
+
+static int ssh_event_fd_wrapper_callback(ssh_poll_handle p, socket_t fd, int revents,
+                                                            void *userdata) {
+    struct ssh_event_fd_wrapper *pw = (struct ssh_event_fd_wrapper *)userdata;
+
+    (void)p;
+    if(pw->cb != NULL) {
+        return pw->cb(fd, revents, pw->userdata);
+    }
+    return 0;
+}
+
+/**
+ * @brief Add a fd to the event and assign it a callback,
+ * when used in blocking mode.
+ * @param event         The ssh_event
+ * @param  fd           Socket that will be polled.
+ * @param  events       Poll events that will be monitored for the socket. i.e.
+ *                      POLLIN, POLLPRI, POLLOUT, POLLERR, POLLHUP, POLLNVAL
+ * @param  cb           Function to be called if any of the events are set.
+ *                      The prototype of cb is:
+ *                      int (*ssh_event_callback)(socket_t fd, int revents,
+ *                                                          void *userdata);
+ * @param  userdata     Userdata to be passed to the callback function. NULL if
+ *                      not needed.
+ *
+ * @returns SSH_OK      on success
+ *          SSH_ERROR   on failure
+ */
+int ssh_event_add_fd(ssh_event event, socket_t fd, short events,
+                                    ssh_event_callback cb, void *userdata) {
+    ssh_poll_handle p;
+    struct ssh_event_fd_wrapper *pw;
+    
+    if(event == NULL || event->ctx == NULL || cb == NULL
+                                           || fd == SSH_INVALID_SOCKET) {
+        return SSH_ERROR;
+    }
+    pw = malloc(sizeof(struct ssh_event_fd_wrapper));
+    if(pw == NULL) {
+        return SSH_ERROR;
+    }
+
+    pw->cb = cb;
+    pw->userdata = userdata;
+    
+    p = ssh_poll_new(fd, events, ssh_event_fd_wrapper_callback, pw);
+    if(p == NULL) {
+        free(pw);
+        return SSH_ERROR;
+    }
+
+    if(ssh_poll_ctx_add(event->ctx, p) < 0) {
+        free(pw);
+        ssh_poll_free(p);
+        return SSH_ERROR;
+    }
+    return SSH_OK;
 }
 
 /**
