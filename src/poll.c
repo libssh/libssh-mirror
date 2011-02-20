@@ -836,6 +836,44 @@ int ssh_event_add_session(ssh_event event, ssh_session session) {
 }
 
 /**
+ * @brief  Poll all the sockets and sessions associated through an event object.
+ *         If any of the events are set after the poll, the
+ *         call back functions of the sessions or sockets will be called.
+ *         This function should be called once within the programs main loop.
+ *
+ * @param  event        The ssh_event object to poll.
+ * @param  timeout      An upper limit on the time for which the poll will
+ *                      block, in milliseconds. Specifying a negative value
+ *                      means an infinite timeout. This parameter is passed to
+ *                      the poll() function.
+ * @returns SSH_OK      No error.
+ *          SSH_ERROR   Error happened during the poll.
+ */
+int ssh_event_dopoll(ssh_event event, int timeout) {
+    int rc;
+#ifdef WITH_SERVER
+    ssh_session session;
+    struct ssh_iterator *iterator;
+#endif
+
+    if(event == NULL || event->ctx == NULL) {
+        return SSH_ERROR;
+    }
+    rc = ssh_poll_ctx_dopoll(event->ctx, timeout);
+#ifdef WITH_SERVER
+    if(rc == SSH_OK) {
+        iterator = ssh_list_get_iterator(event->sessions);
+        while(iterator != NULL) {
+            session = (ssh_session)iterator->data;
+            ssh_execute_message_callbacks(session);
+            iterator = iterator->next;
+        }
+    }
+#endif
+    return rc;
+}
+
+/**
  * @brief  Remove a socket fd from an event context.
  *
  * @param  event        The ssh_event object.
