@@ -772,6 +772,53 @@ int ssh_event_add_session(ssh_event event, ssh_session session) {
 }
 
 /**
+ * @brief  Remove a session object from an event context.
+ *
+ * @param  event        The ssh_event object.
+ * @param  session      The session to remove.
+ *
+ * @returns SSH_OK      on success
+ *          SSH_ERROR   on failure
+ */
+int ssh_event_remove_session(ssh_event event, ssh_session session) {
+    ssh_poll_handle p;
+    register size_t i, used;
+    int rc = SSH_ERROR;
+    socket_t session_fd;
+#ifdef WITH_SERVER
+    struct ssh_iterator *iterator;
+#endif
+
+    if(event == NULL || event->ctx == NULL || session == NULL) {
+        return SSH_ERROR;
+    }
+
+    session_fd = ssh_get_fd(session);
+    used = event->ctx->polls_used;
+    for(i = 0; i < used; i++) {
+        if(session_fd == event->ctx->pollfds[i].fd) {
+            p = event->ctx->pollptrs[i];
+            ssh_poll_ctx_remove(event->ctx, p);
+            ssh_poll_ctx_add(session->default_poll_ctx, p);
+            rc = SSH_OK;
+        }
+    }
+#ifdef WITH_SERVER
+    iterator = ssh_list_get_iterator(event->sessions);
+    while(iterator != NULL) {
+        if((ssh_session)iterator->data == session) {
+            ssh_list_remove(event->sessions, iterator);
+            /* there should be only one instance of this session */
+            break;
+        }
+        iterator = iterator->next;
+    }
+#endif
+
+    return rc;
+}
+
+/**
  * @brief  Free an event context.
  *
  * @param  event        The ssh_event object to free.
