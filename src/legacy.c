@@ -242,4 +242,9 @@ char *string_to_char(ssh_string str){
 int ssh_accept(ssh_session session) {
     return ssh_handle_key_exchange(session);
 }
+
+int channel_write_stderr(ssh_channel channel, const void *data, uint32_t len) {
+    return ssh_channel_write(channel, data, len);
+}
+
 #endif /* WITH_SERVER */
