@@ -24,7 +24,9 @@
  * compatibility
  */
 
-#include <libssh/libssh.h>
+#include "config.h"
+
+#include <libssh/priv.h>
 #include <libssh/server.h>
 #include <libssh/buffer.h>
 
