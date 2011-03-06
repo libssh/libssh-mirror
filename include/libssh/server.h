@@ -87,10 +87,63 @@ LIBSSH_API ssh_bind ssh_bind_new(void);
  *
  * @param  sshbind     The ssh server bind to configure.
  *
- * @param  type         Option to set up.
- * @param  value        Value to set.
- * @returns SSH_OK	    No error.
- * @returns SSH_ERROR   Invalid option or parameter.
+ * @param  type The option type to set. This could be one of the
+ *              following:
+ *
+ *              - SSH_BIND_OPTIONS_BINDADDR
+ *                The ip address to bind (const char *).
+ *
+ *              - SSH_BIND_OPTIONS_BINDPORT
+ *                The port to bind (unsigned int).
+ *
+ *              - SSH_BIND_OPTIONS_BINDPORT_STR
+ *                The port to bind (const char *).
+ *
+ *              - SSH_BIND_OPTIONS_HOSTKEY
+ *                This specifies the file containing the private host key used
+ *                by SSHv1. (const char *).
+ *
+ *              - SSH_BIND_OPTIONS_DSAKEY
+ *                This specifies the file containing the private host dsa key
+ *                used by SSHv2. (const char *).
+ *
+ *              - SSH_BIND_OPTIONS_RSAKEY
+ *                This specifies the file containing the private host dsa key
+ *                used by SSHv2. (const char *).
+ *
+ *              - SSH_BIND_OPTIONS_BANNER
+ *                That the server banner (version string) for SSH.
+ *                (const char *).
+ *
+ *              - SSH_BIND_OPTIONS_LOG_VERBOSITY
+ *                Set the session logging verbosity (int).\n
+ *                \n
+ *                The verbosity of the messages. Every log smaller or
+ *                equal to verbosity will be shown.
+ *                - SSH_LOG_NOLOG: No logging
+ *                - SSH_LOG_RARE: Rare conditions or warnings
+ *                - SSH_LOG_ENTRY: API-accessible entrypoints
+ *                - SSH_LOG_PACKET: Packet id and size
+ *                - SSH_LOG_FUNCTIONS: Function entering and leaving
+ *
+ *              - SSH_BIND_OPTIONS_LOG_VERBOSITY_STR
+ *                Set the session logging verbosity (const char *).\n
+ *                \n
+ *                The verbosity of the messages. Every log smaller or
+ *                equal to verbosity will be shown.
+ *                - SSH_LOG_NOLOG: No logging
+ *                - SSH_LOG_RARE: Rare conditions or warnings
+ *                - SSH_LOG_ENTRY: API-accessible entrypoints
+ *                - SSH_LOG_PACKET: Packet id and size
+ *                - SSH_LOG_FUNCTIONS: Function entering and leaving
+ *                \n
+ *                See the corresponding numbers in libssh.h.
+ *
+ * @param  value The value to set. This is a generic pointer and the
+ *               datatype which is used should be set according to the
+ *               type set.
+ *
+ * @returns     SSH_OK on success, SSH_ERROR on invalid option or parameter.
  */
 LIBSSH_API int ssh_bind_options_set(ssh_bind sshbind,
     enum ssh_bind_options_e type, const void *value);
