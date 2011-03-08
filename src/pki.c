@@ -30,6 +30,7 @@
  * @{
  */
 
+#include "libssh/libssh.h"
 #include "libssh/priv.h"
 #include "libssh/pki.h"
 #include "libssh/keys.h"

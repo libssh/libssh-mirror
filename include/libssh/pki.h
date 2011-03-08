@@ -39,11 +39,9 @@ struct ssh_key_struct {
 #endif
 };
 
-ssh_key ssh_key_new (void);
 void ssh_key_clean (ssh_key key);
 enum ssh_keytypes_e ssh_key_type(ssh_key key);
 int ssh_key_import_private(ssh_key key, ssh_session session,
     const char *filename, const char *passphrase);
-void ssh_key_free (ssh_key key);
 
 #endif /* PKI_H_ */
