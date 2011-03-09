@@ -801,6 +801,66 @@ error:
 
   return rc;
 }
+
+static int b64decode_dsa_privatekey(const char *pkey, gcry_sexp_t *r, ssh_auth_callback cb,
+    void *userdata, const char *desc) {
+  ssh_buffer buffer = NULL;
+  ssh_string p = NULL;
+  ssh_string q = NULL;
+  ssh_string g = NULL;
+  ssh_string y = NULL;
+  ssh_string x = NULL;
+  ssh_string v = NULL;
+  int rc = 1;
+
+  buffer = privatekey_string_to_buffer(pkey, SSH_KEYTYPE_DSS, cb, userdata, desc);
+  if (buffer == NULL) {
+    return 0;
+  }
+
+  if (!asn1_check_sequence(buffer)) {
+    ssh_buffer_free(buffer);
+    return 0;
+  }
+
+  v = asn1_get_int(buffer);
+  if (ntohl(v->size) != 1 || v->string[0] != 0) {
+    ssh_buffer_free(buffer);
+    return 0;
+  }
+
+  p = asn1_get_int(buffer);
+  q = asn1_get_int(buffer);
+  g = asn1_get_int(buffer);
+  y = asn1_get_int(buffer);
+  x = asn1_get_int(buffer);
+  ssh_buffer_free(buffer);
+
+  if (p == NULL || q == NULL || g == NULL || y == NULL || x == NULL) {
+    rc = 0;
+    goto error;
+  }
+
+  if (gcry_sexp_build(r, NULL,
+        "(private-key(dsa(p %b)(q %b)(g %b)(y %b)(x %b)))",
+        ntohl(p->size), p->string,
+        ntohl(q->size), q->string,
+        ntohl(g->size), g->string,
+        ntohl(y->size), y->string,
+        ntohl(x->size), x->string)) {
+    rc = 0;
+  }
+
+error:
+  ssh_string_free(p);
+  ssh_string_free(q);
+  ssh_string_free(g);
+  ssh_string_free(y);
+  ssh_string_free(x);
+  ssh_string_free(v);
+
+  return rc;
+}
 #endif /* HAVE_LIBGCRYPT */
 
 #ifdef HAVE_LIBCRYPTO
