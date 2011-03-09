@@ -30,4 +30,7 @@ ssh_string try_publickey_from_file(ssh_session session,
     struct ssh_keys_struct keytab,
     char **privkeyfile, int *type);
 
+ssh_private_key privatekey_from_base64(ssh_session session, const char *b64_pkey,
+    int type, const char *passphrase);
+
 #endif /* KEYFILES_H_ */
