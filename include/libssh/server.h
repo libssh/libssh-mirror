@@ -240,10 +240,46 @@ LIBSSH_API int ssh_handle_key_exchange(ssh_session session);
  */
 LIBSSH_API void ssh_bind_free(ssh_bind ssh_bind_o);
 
-/* messages.c */
+/**********************************************************
+ * SERVER MESSAGING
+ **********************************************************/
+
+/**
+ * @brief Reply with a standard reject message.
+ *
+ * Use this function if you don't know what to respond or if you want to reject
+ * a request.
+ *
+ * @param[in] msg       The message to use for the reply.
+ *
+ * @return              0 on success, -1 on error.
+ *
+ * @see ssh_message_get()
+ */
 LIBSSH_API int ssh_message_reply_default(ssh_message msg);
 
+/**
+ * @brief Get the name of the authenticated user.
+ *
+ * @param[in] msg       The message to get the username from.
+ *
+ * @return              The username or NULL if an error occured.
+ *
+ * @see ssh_message_get()
+ * @see ssh_message_type()
+ */
 LIBSSH_API char *ssh_message_auth_user(ssh_message msg);
+
+/**
+ * @brief Get the password of the authenticated user.
+ *
+ * @param[in] msg       The message to get the password from.
+ *
+ * @return              The username or NULL if an error occured.
+ *
+ * @see ssh_message_get()
+ * @see ssh_message_type()
+ */
 LIBSSH_API char *ssh_message_auth_password(ssh_message msg);
 LIBSSH_API ssh_public_key ssh_message_auth_publickey(ssh_message msg);
 LIBSSH_API int ssh_message_auth_kbdint_is_response(ssh_message msg);
