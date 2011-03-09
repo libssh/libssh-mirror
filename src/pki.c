@@ -53,18 +53,18 @@ ssh_key ssh_key_new (void) {
  * @param[in] key ssh_key to clean
  */
 void ssh_key_clean (ssh_key key){
-  if(key==NULL)
-    return;
+    if(key == NULL)
+        return;
 #ifdef HAVE_LIBGCRYPT
-  gcry_sexp_release(key->dsa);
-  gcry_sexp_release(key->rsa);
+    if(key->dsa) gcry_sexp_release(key->dsa);
+    if(key->rsa) gcry_sexp_release(key->rsa);
 #elif defined HAVE_LIBCRYPTO
-  DSA_free(key->dsa);
-  RSA_free(key->rsa);
+    if(key->dsa) DSA_free(key->dsa);
+    if(key->rsa) RSA_free(key->rsa);
 #endif
-  key->flags=SSH_KEY_FLAG_EMPTY;
-  key->type=SSH_KEYTYPE_UNKNOWN;
-  key->type_c=NULL;
+    key->flags=SSH_KEY_FLAG_EMPTY;
+    key->type=SSH_KEYTYPE_UNKNOWN;
+    key->type_c=NULL;
 }
 
 /**
@@ -72,10 +72,10 @@ void ssh_key_clean (ssh_key key){
  * @param[in] key ssh_key handle to free
  */
 void ssh_key_free (ssh_key key){
-  if(key){
-    ssh_key_clean(key);
-    SAFE_FREE(key);
-  }
+    if(key){
+        ssh_key_clean(key);
+        SAFE_FREE(key);
+    }
 }
 
 /**
@@ -85,9 +85,10 @@ void ssh_key_free (ssh_key key){
  * @returns SSH_KEYTYPE_UNKNOWN if the type is unknown
  */
 enum ssh_keytypes_e ssh_key_type(ssh_key key){
-  if (key==NULL)
-    return SSH_KEYTYPE_UNKNOWN;
-  return key->type;
+    if (key == NULL) {
+        return SSH_KEYTYPE_UNKNOWN;
+    }
+    return key->type;
 }
 
 /**
