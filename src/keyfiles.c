@@ -83,7 +83,7 @@
 #define ASN1_SEQUENCE 48
 #define PKCS5_SALT_LEN 8
 
-static int load_iv(char *header, unsigned char *iv, int iv_len) {
+static int load_iv(const char *header, unsigned char *iv, int iv_len) {
   int i;
   int j;
   int k;
@@ -297,7 +297,7 @@ static int privatekey_decrypt(int algo, int mode, unsigned int key_len,
   return 0;
 }
 
-static int privatekey_dek_header(char *header, unsigned int header_len,
+static int privatekey_dek_header(const char *header, unsigned int header_len,
     int *algo, int *mode, unsigned int *key_len, unsigned char **iv,
     unsigned int *iv_len) {
   unsigned int iv_pos;
@@ -351,6 +351,139 @@ static int privatekey_dek_header(char *header, unsigned int header_len,
   }
 
   return load_iv(header + iv_pos, *iv, *iv_len);
+}
+
+#define get_next_line(p, len) {                                         \
+        while(p[len] == '\n') /* skip empty lines */                    \
+            len++;                                                      \
+        if(p[len] == '\0')    /* EOL */                                 \
+            len = -1;                                                   \
+        else                  /* calculate length */                    \
+            for(p += len, len = 0; p[len] && p[len] != '\n'; len++);    \
+    } 
+
+static ssh_buffer privatekey_string_to_buffer(const char *pkey, int type,
+                ssh_auth_callback cb, void *userdata, const char *desc) {
+    ssh_buffer buffer = NULL;
+    ssh_buffer out = NULL;
+    const char *p;
+    unsigned char *iv = NULL;
+    const char *header_begin;
+    const char *header_end;
+    unsigned int header_begin_size;
+    unsigned int header_end_size;
+    unsigned int key_len = 0;
+    unsigned int iv_len = 0;
+    int algo = 0;
+    int mode = 0;
+    int len;
+
+    buffer = ssh_buffer_new();
+    if (buffer == NULL) {
+        return NULL;
+    }
+
+    switch(type) {
+        case SSH_KEYTYPE_DSS:
+            header_begin = DSA_HEADER_BEGIN;
+            header_end = DSA_HEADER_END;
+            break;
+        case SSH_KEYTYPE_RSA:
+            header_begin = RSA_HEADER_BEGIN;
+            header_end = RSA_HEADER_END;
+            break;
+        default:
+            ssh_buffer_free(buffer);
+            return NULL;
+    }
+
+    header_begin_size = strlen(header_begin);
+    header_end_size = strlen(header_end);
+
+    p = pkey;
+    len = 0;
+    get_next_line(p, len);
+
+    while(len > 0 && strncmp(p, header_begin, header_begin_size)) {
+        /* skip line */
+        get_next_line(p, len);
+    }
+    if(len < 0) {
+        /* no header found */
+        return NULL;
+    }
+    /* skip header line */
+    get_next_line(p, len);
+
+    if (len > 11 && strncmp("Proc-Type: 4,ENCRYPTED", p, 11) == 0) {
+        /* skip line */
+        get_next_line(p, len);
+
+        if (len > 10 && strncmp("DEK-Info: ", p, 10) == 0) {
+            p += 10;
+            len = 0;
+            get_next_line(p, len);
+            if (privatekey_dek_header(p, len, &algo, &mode, &key_len,
+                        &iv, &iv_len) < 0) {
+                ssh_buffer_free(buffer);
+                SAFE_FREE(iv);
+                return NULL;
+            }
+        } else {
+            ssh_buffer_free(buffer);
+            SAFE_FREE(iv);
+            return NULL;
+        }
+    } else {
+        if(len > 0) {
+            if (buffer_add_data(buffer, p, len) < 0) {
+                ssh_buffer_free(buffer);
+                SAFE_FREE(iv);
+                return NULL;
+            }
+        }
+    }
+
+    get_next_line(p, len);
+    while(len > 0 && strncmp(p, header_end, header_end_size) != 0) {
+        if (buffer_add_data(buffer, p, len) < 0) {
+            ssh_buffer_free(buffer);
+            SAFE_FREE(iv);
+            return NULL;
+        }
+        get_next_line(p, len);
+    }
+
+    if (len == -1 || strncmp(p, header_end, header_end_size) != 0) {
+        ssh_buffer_free(buffer);
+        SAFE_FREE(iv);
+        return NULL;
+    }
+
+    if (buffer_add_data(buffer, "\0", 1) < 0) {
+        ssh_buffer_free(buffer);
+        SAFE_FREE(iv);
+        return NULL;
+    }
+
+    out = base64_to_bin(ssh_buffer_get_begin(buffer));
+    ssh_buffer_free(buffer);
+    if (out == NULL) {
+        SAFE_FREE(iv);
+        return NULL;
+    }
+
+    if (algo) {
+        if (privatekey_decrypt(algo, mode, key_len, iv, iv_len, out,
+                    cb, userdata, desc) < 0) {
+            ssh_buffer_free(out);
+            SAFE_FREE(iv);
+            return NULL;
+        }
+    }
+    SAFE_FREE(iv);
+
+    return out;
 }
 
 static ssh_buffer privatekey_file_to_buffer(FILE *fp, int type,
