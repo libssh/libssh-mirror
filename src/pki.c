@@ -114,6 +114,31 @@ int ssh_key_import_private(ssh_key key, ssh_session session, const char *filenam
   return SSH_OK;
 }
 
+int ssh_pki_import_privkey_base64(ssh_key key, ssh_session session,
+                    const char *b64_key, const char *passphrase) {
+    ssh_private_key priv;
+
+    if(b64_key == NULL || !*b64_key) {
+        return SSH_ERROR;
+    }
+
+    priv = privatekey_from_base64(session, b64_key, 0, passphrase);
+    if(priv == NULL) {
+        return SSH_ERROR;
+    }
+
+    ssh_key_clean(key);
+
+    key->dsa = priv->dsa_priv;
+    key->rsa = priv->rsa_priv;
+    key->type = priv->type;
+    key->flags = SSH_KEY_FLAG_PRIVATE | SSH_KEY_FLAG_PUBLIC;
+    key->type_c = ssh_type_to_char(key->type);
+
+    SAFE_FREE(priv);
+    return SSH_OK;
+}
+
 /**
  * @}
  */

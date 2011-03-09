@@ -414,6 +414,8 @@ LIBSSH_API enum ssh_keytypes_e ssh_privatekey_type(ssh_private_key privatekey);
 
 LIBSSH_API ssh_key ssh_key_new(void);
 LIBSSH_API void ssh_key_free (ssh_key key);
+LIBSSH_API int ssh_pki_import_privkey_base64(ssh_key key, ssh_session session,
+                                const char *b64_key, const char *passphrase);
 LIBSSH_API void ssh_print_hexa(const char *descr, const unsigned char *what, size_t len);
 LIBSSH_API int ssh_scp_accept_request(ssh_scp scp);
 LIBSSH_API int ssh_scp_close(ssh_scp scp);
