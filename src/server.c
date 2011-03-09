@@ -708,14 +708,14 @@ int ssh_message_reply_default(ssh_message msg) {
   return -1;
 }
 
-char *ssh_message_service_service(ssh_message msg){
+const char *ssh_message_service_service(ssh_message msg){
   if (msg == NULL) {
     return NULL;
   }
   return msg->service_request.service;
 }
 
-char *ssh_message_auth_user(ssh_message msg) {
+const char *ssh_message_auth_user(ssh_message msg) {
   if (msg == NULL) {
     return NULL;
   }
@@ -723,7 +723,7 @@ char *ssh_message_auth_user(ssh_message msg) {
   return msg->auth_request.username;
 }
 
-char *ssh_message_auth_password(ssh_message msg){
+const char *ssh_message_auth_password(ssh_message msg){
   if (msg == NULL) {
     return NULL;
   }
@@ -945,7 +945,7 @@ int ssh_message_auth_reply_pk_ok_simple(ssh_message msg) {
 }
 
 
-char *ssh_message_channel_request_open_originator(ssh_message msg){
+const char *ssh_message_channel_request_open_originator(ssh_message msg){
     return msg->channel_request_open.originator;
 }
 
@@ -953,7 +953,7 @@ int ssh_message_channel_request_open_originator_port(ssh_message msg){
     return msg->channel_request_open.originator_port;
 }
 
-char *ssh_message_channel_request_open_destination(ssh_message msg){
+const char *ssh_message_channel_request_open_destination(ssh_message msg){
     return msg->channel_request_open.destination;
 }
 
@@ -965,7 +965,7 @@ ssh_channel ssh_message_channel_request_channel(ssh_message msg){
     return msg->channel_request.channel;
 }
 
-char *ssh_message_channel_request_pty_term(ssh_message msg){
+const char *ssh_message_channel_request_pty_term(ssh_message msg){
     return msg->channel_request.TERM;
 }
 
@@ -985,23 +985,23 @@ int ssh_message_channel_request_pty_pxheight(ssh_message msg){
     return msg->channel_request.pxheight;
 }
 
-char *ssh_message_channel_request_env_name(ssh_message msg){
+const char *ssh_message_channel_request_env_name(ssh_message msg){
     return msg->channel_request.var_name;
 }
 
-char *ssh_message_channel_request_env_value(ssh_message msg){
+const char *ssh_message_channel_request_env_value(ssh_message msg){
     return msg->channel_request.var_value;
 }
 
-char *ssh_message_channel_request_command(ssh_message msg){
+const char *ssh_message_channel_request_command(ssh_message msg){
     return msg->channel_request.command;
 }
 
-char *ssh_message_channel_request_subsystem(ssh_message msg){
+const char *ssh_message_channel_request_subsystem(ssh_message msg){
     return msg->channel_request.subsystem;
 }
 
-char *ssh_message_global_request_address(ssh_message msg){
+const char *ssh_message_global_request_address(ssh_message msg){
     return msg->global_request.bind_address;
 }
 

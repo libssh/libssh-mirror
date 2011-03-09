@@ -268,7 +268,7 @@ LIBSSH_API int ssh_message_reply_default(ssh_message msg);
  * @see ssh_message_get()
  * @see ssh_message_type()
  */
-LIBSSH_API char *ssh_message_auth_user(ssh_message msg);
+LIBSSH_API const char *ssh_message_auth_user(ssh_message msg);
 
 /**
  * @brief Get the password of the authenticated user.
@@ -280,7 +280,7 @@ LIBSSH_API char *ssh_message_auth_user(ssh_message msg);
  * @see ssh_message_get()
  * @see ssh_message_type()
  */
-LIBSSH_API char *ssh_message_auth_password(ssh_message msg);
+LIBSSH_API const char *ssh_message_auth_password(ssh_message msg);
 LIBSSH_API ssh_public_key ssh_message_auth_publickey(ssh_message msg);
 LIBSSH_API int ssh_message_auth_kbdint_is_response(ssh_message msg);
 LIBSSH_API enum ssh_publickey_state_e ssh_message_auth_publickey_state(ssh_message msg);
@@ -295,7 +295,7 @@ LIBSSH_API int ssh_message_auth_interactive_request(ssh_message msg,
                     unsigned int num_prompts, const char **prompts, char *echo);
 
 LIBSSH_API int ssh_message_service_reply_success(ssh_message msg);
-LIBSSH_API char *ssh_message_service_service(ssh_message msg);
+LIBSSH_API const char *ssh_message_service_service(ssh_message msg);
 
 LIBSSH_API int ssh_message_global_request_reply_success(ssh_message msg,
                                                         uint16_t bound_port);
@@ -305,27 +305,27 @@ LIBSSH_API void ssh_set_message_callback(ssh_session session,
     void *data);
 LIBSSH_API int ssh_execute_message_callbacks(ssh_session session);
 
-LIBSSH_API char *ssh_message_channel_request_open_originator(ssh_message msg);
+LIBSSH_API const char *ssh_message_channel_request_open_originator(ssh_message msg);
 LIBSSH_API int ssh_message_channel_request_open_originator_port(ssh_message msg);
-LIBSSH_API char *ssh_message_channel_request_open_destination(ssh_message msg);
+LIBSSH_API const char *ssh_message_channel_request_open_destination(ssh_message msg);
 LIBSSH_API int ssh_message_channel_request_open_destination_port(ssh_message msg);
 
 LIBSSH_API ssh_channel ssh_message_channel_request_channel(ssh_message msg);
 
-LIBSSH_API char *ssh_message_channel_request_pty_term(ssh_message msg);
+LIBSSH_API const char *ssh_message_channel_request_pty_term(ssh_message msg);
 LIBSSH_API int ssh_message_channel_request_pty_width(ssh_message msg);
 LIBSSH_API int ssh_message_channel_request_pty_height(ssh_message msg);
 LIBSSH_API int ssh_message_channel_request_pty_pxwidth(ssh_message msg);
 LIBSSH_API int ssh_message_channel_request_pty_pxheight(ssh_message msg);
 
-LIBSSH_API char *ssh_message_channel_request_env_name(ssh_message msg);
-LIBSSH_API char *ssh_message_channel_request_env_value(ssh_message msg);
+LIBSSH_API const char *ssh_message_channel_request_env_name(ssh_message msg);
+LIBSSH_API const char *ssh_message_channel_request_env_value(ssh_message msg);
 
-LIBSSH_API char *ssh_message_channel_request_command(ssh_message msg);
+LIBSSH_API const char *ssh_message_channel_request_command(ssh_message msg);
 
-LIBSSH_API char *ssh_message_channel_request_subsystem(ssh_message msg);
+LIBSSH_API const char *ssh_message_channel_request_subsystem(ssh_message msg);
 
-LIBSSH_API char *ssh_message_global_request_address(ssh_message msg);
+LIBSSH_API const char *ssh_message_global_request_address(ssh_message msg);
 LIBSSH_API int ssh_message_global_request_port(ssh_message msg);
 
 LIBSSH_API int ssh_channel_open_reverse_forward(ssh_channel channel, const char *remotehost,
