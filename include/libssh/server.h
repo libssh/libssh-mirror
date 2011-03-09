@@ -157,6 +157,26 @@ LIBSSH_API int ssh_bind_options_set(ssh_bind sshbind,
  */
 LIBSSH_API int ssh_bind_listen(ssh_bind ssh_bind_o);
 
+/**
+ * @brief Set the callback for this bind.
+ *
+ * @param[in] sshbind   The bind to set the callback on.
+ *
+ * @param[in] callbacks An already set up ssh_bind_callbacks instance.
+ *
+ * @param[in] userdata  A pointer to private data to pass to the callbacks.
+ *
+ * @return              SSH_OK on success, SSH_ERROR if an error occured.
+ *
+ * @code
+ *     struct ssh_callbacks_struct cb = {
+ *         .userdata = data,
+ *         .auth_function = my_auth_function
+ *     };
+ *     ssh_callbacks_init(&cb);
+ *     ssh_bind_set_callbacks(session, &cb);
+ * @endcode
+ */
 LIBSSH_API int ssh_bind_set_callbacks(ssh_bind sshbind, ssh_bind_callbacks callbacks,
     void *userdata);
 
