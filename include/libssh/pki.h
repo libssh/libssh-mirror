@@ -49,5 +49,11 @@ int ssh_key_import_private(ssh_key key, ssh_session session,
 
 ssh_key ssh_pki_publickey_from_privatekey(ssh_key privkey);
 
+/* temporary functions, to be removed after migration to ssh_key */
+ssh_key ssh_pki_convert_privatekey_to_key(ssh_private_key priv);
+ssh_key ssh_pki_convert_publickey_to_key(ssh_public_key pub);
+ssh_private_key ssh_pki_convert_key_to_privatekey(ssh_key key);
+ssh_public_key ssh_pki_convert_key_to_publickey(ssh_key key);
+
 
 #endif /* PKI_H_ */

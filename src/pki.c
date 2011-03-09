@@ -115,6 +115,87 @@ int ssh_key_import_private(ssh_key key, ssh_session session, const char *filenam
   return SSH_OK;
 }
 
+/* temporary function to migrate seemlessly to ssh_key */
+ssh_key ssh_pki_convert_privatekey_to_key(ssh_private_key priv) {
+    ssh_key key;
+
+    if(priv == NULL) {
+        return NULL;
+    }
+
+    key = ssh_key_new();
+
+    key->dsa = priv->dsa_priv;
+    key->rsa = priv->rsa_priv;
+    key->type = priv->type;
+    key->flags = SSH_KEY_FLAG_PRIVATE;
+    key->type_c = ssh_type_to_char(key->type);
+
+    return SSH_OK;
+}
+
+/* temporary function to migrate seemlessly to ssh_key */
+ssh_key ssh_pki_convert_publickey_to_key(ssh_public_key pub) {
+    ssh_key key;
+
+    if(pub == NULL) {
+        return NULL;
+    }
+
+    key = ssh_key_new();
+
+    key->dsa = pub->dsa_pub;
+    key->rsa = pub->rsa_pub;
+    key->type = pub->type;
+    key->flags = SSH_KEY_FLAG_PUBLIC;
+    key->type_c = ssh_type_to_char(key->type);
+
+    return SSH_OK;
+}
+
+/* temporary function to migrate seemlessly to ssh_key */
+ssh_private_key ssh_pki_convert_key_to_privatekey(ssh_key key) {
+    ssh_private_key priv;
+
+    if(key == NULL) {
+        return NULL;
+    }
+
+    priv = malloc(sizeof(struct ssh_private_key_struct));
+    if (priv == NULL) {
+        return NULL;
+    }
+    ZERO_STRUCTP(priv);
+
+    priv->dsa_priv = key->dsa;
+    priv->rsa_priv = key->rsa;
+    priv->type     = key->type;
+
+    return priv;
+}
+
+/* temporary function to migrate seemlessly to ssh_key */
+ssh_public_key ssh_pki_convert_key_to_publickey(ssh_key key) {
+    ssh_public_key pub;
+
+    if(key == NULL) {
+        return NULL;
+    }
+
+    pub = malloc(sizeof(struct ssh_public_key_struct));
+    if (pub == NULL) {
+        return NULL;
+    }
+    ZERO_STRUCTP(pub);
+
+    pub->dsa_pub = key->dsa;
+    pub->rsa_pub = key->rsa;
+    pub->type     = key->type;
+    pub->type_c   = key->type_c;
+
+    return pub;
+}
+
 int ssh_pki_import_privkey_base64(ssh_key key, ssh_session session,
                     const char *b64_key, const char *passphrase) {
     ssh_private_key priv;
