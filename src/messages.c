@@ -1,5 +1,5 @@
 /*
- * messages.c - message parsion for the server
+ * messages.c - message parsing for client and server
  *
  * This file is part of the SSH Library
  *
@@ -49,12 +49,14 @@
  * @defgroup libssh_messages The SSH message functions
  * @ingroup libssh
  *
- * This file contains the Message parsing utilities for server programs using
- * libssh. The main loop of the program will call ssh_message_get(session) to
- * get messages as they come. they are not 1-1 with the protocol messages.
- * then, the user will know what kind of a message it is and use the appropriate
- * functions to handle it (or use the default handlers if she doesn't know what to
- * do
+ * This file contains the message parsing utilities for client and server
+ * programs using libssh.
+ *
+ * On the server the the main loop of the program will call
+ * ssh_message_get(session) to get messages as they come. They are not 1-1 with
+ * the protocol messages. Then, the user will know what kind of a message it is
+ * and use the appropriate functions to handle it (or use the default handlers
+ * if you don't know what to do).
  *
  * @{
  */
