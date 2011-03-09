@@ -532,9 +532,8 @@ static ssh_buffer privatekey_file_to_buffer(FILE *fp, int type,
   if (len > 11 && strncmp("Proc-Type: 4,ENCRYPTED", buf, 11) == 0) {
     len = read_line(buf, MAXLINESIZE, fp);
     if (len > 10 && strncmp("DEK-Info: ", buf, 10) == 0) {
-      if ((privatekey_dek_header(buf + 10, len - 10, &algo, &mode, &key_len,
-                                 &iv, &iv_len) < 0)
-          || read_line(buf, MAXLINESIZE, fp)) {
+      if (privatekey_dek_header(buf + 10, len - 10, &algo, &mode, &key_len,
+                                 &iv, &iv_len) < 0) {
         ssh_buffer_free(buffer);
         SAFE_FREE(iv);
         return NULL;
