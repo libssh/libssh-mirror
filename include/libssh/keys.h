@@ -67,7 +67,6 @@ ssh_buffer ssh_userauth_build_digest(ssh_session session, ssh_message msg, char 
 ssh_private_key privatekey_make_dss(ssh_session session, ssh_buffer buffer);
 ssh_private_key privatekey_make_rsa(ssh_session session, ssh_buffer buffer,
     const char *type);
-ssh_private_key privatekey_from_string(ssh_session session, ssh_string privkey_s);
 
 ssh_public_key publickey_make_dss(ssh_session session, ssh_buffer buffer);
 ssh_public_key publickey_make_rsa(ssh_session session, ssh_buffer buffer, int type);
