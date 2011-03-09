@@ -144,6 +144,13 @@ ssh_message ssh_message_get(ssh_session session) {
   return msg;
 }
 
+/**
+ * @brief Get the type of the message.
+ *
+ * @param[in] msg       The message to get the type from.
+ *
+ * @return              The message type or -1 on error.
+ */
 int ssh_message_type(ssh_message msg) {
   if (msg == NULL) {
     return -1;
@@ -152,6 +159,13 @@ int ssh_message_type(ssh_message msg) {
   return msg->type;
 }
 
+/**
+ * @brief Get the subtype of the message.
+ *
+ * @param[in] msg       The message to get the subtype from.
+ *
+ * @return              The message type or -1 on error.
+ */
 int ssh_message_subtype(ssh_message msg) {
   if (msg == NULL) {
     return -1;
@@ -171,6 +185,11 @@ int ssh_message_subtype(ssh_message msg) {
   return -1;
 }
 
+/**
+ * @brief Free a SSH message.
+ *
+ * @param[in] msg       The message to release the memory.
+ */
 void ssh_message_free(ssh_message msg){
   if (msg == NULL) {
     return;
