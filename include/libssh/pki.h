@@ -47,4 +47,7 @@ enum ssh_keytypes_e ssh_key_type(ssh_key key);
 int ssh_key_import_private(ssh_key key, ssh_session session,
     const char *filename, const char *passphrase);
 
+ssh_key ssh_pki_publickey_from_privatekey(ssh_key privkey);
+
+
 #endif /* PKI_H_ */

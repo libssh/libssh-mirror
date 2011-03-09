@@ -139,6 +139,194 @@ int ssh_pki_import_privkey_base64(ssh_key key, ssh_session session,
     return SSH_OK;
 }
 
+ssh_key ssh_pki_publickey_from_privatekey(ssh_key privkey) {
+    ssh_key pubkey = NULL;
+#ifdef HAVE_LIBGCRYPT
+    gcry_sexp_t sexp;
+    const char *tmp = NULL;
+    size_t size;
+    ssh_string p = NULL;
+    ssh_string q = NULL;
+    ssh_string g = NULL;
+    ssh_string y = NULL;
+    ssh_string e = NULL;
+    ssh_string n = NULL;
+#endif /* HAVE_LIBGCRYPT */
+
+    if(privkey == NULL || !ssh_key_is_private(privkey)) {
+        return NULL;
+    }
+
+    pubkey = malloc(sizeof(struct ssh_public_key_struct));
+    if (pubkey == NULL) {
+        return NULL;
+    }
+    ZERO_STRUCTP(pubkey);
+    pubkey->type = privkey->type;
+    switch(pubkey->type) {
+        case SSH_KEYTYPE_DSS:
+#ifdef HAVE_LIBGCRYPT
+            sexp = gcry_sexp_find_token(privkey->dsa, "p", 0);
+            if (sexp == NULL) {
+                goto error;
+            }
+            tmp = gcry_sexp_nth_data(sexp, 1, &size);
+            p = ssh_string_new(size);
+            if (p == NULL) {
+                goto error;
+            }
+            ssh_string_fill(p,(char *) tmp, size);
+            gcry_sexp_release(sexp);
+
+            sexp = gcry_sexp_find_token(privkey->dsa,"q",0);
+            if (sexp == NULL) {
+                goto error;
+            }
+            tmp = gcry_sexp_nth_data(sexp,1,&size);
+            q = ssh_string_new(size);
+            if (q == NULL) {
+                goto error;
+            }
+            ssh_string_fill(q,(char *) tmp,size);
+            gcry_sexp_release(sexp);
+
+            sexp = gcry_sexp_find_token(privkey->dsa, "g", 0);
+            if (sexp == NULL) {
+                goto error;
+            }
+            tmp = gcry_sexp_nth_data(sexp,1,&size);
+            g = ssh_string_new(size);
+            if (g == NULL) {
+                goto error;
+            }
+            ssh_string_fill(g,(char *) tmp,size);
+            gcry_sexp_release(sexp);
+
+            sexp = gcry_sexp_find_token(privkey->dsa,"y",0);
+            if (sexp == NULL) {
+                goto error;
+            }
+            tmp = gcry_sexp_nth_data(sexp,1,&size);
+            y = ssh_string_new(size);
+            if (y == NULL) {
+                goto error;
+            }
+            ssh_string_fill(y,(char *) tmp,size);
+            gcry_sexp_release(sexp);
+
+            gcry_sexp_build(&pubkey->dsa, NULL,
+                    "(public-key(dsa(p %b)(q %b)(g %b)(y %b)))",
+                    ssh_string_len(p), ssh_string_data(p),
+                    ssh_string_len(q), ssh_string_data(q),
+                    ssh_string_len(g), ssh_string_data(g),
+                    ssh_string_len(y), ssh_string_data(y));
+
+            ssh_string_burn(p);
+            ssh_string_free(p);
+            ssh_string_burn(q);
+            ssh_string_free(q);
+            ssh_string_burn(g);
+            ssh_string_free(g);
+            ssh_string_burn(y);
+            ssh_string_free(y);
+#elif defined HAVE_LIBCRYPTO
+            pubkey->dsa = DSA_new();
+            if (pubkey->dsa == NULL) {
+                goto error;
+            }
+            pubkey->dsa->p = BN_dup(privkey->dsa->p);
+            pubkey->dsa->q = BN_dup(privkey->dsa->q);
+            pubkey->dsa->g = BN_dup(privkey->dsa->g);
+            pubkey->dsa->pub_key = BN_dup(privkey->dsa->pub_key);
+            if (pubkey->dsa->p == NULL ||
+                    pubkey->dsa->q == NULL ||
+                    pubkey->dsa->g == NULL ||
+                    pubkey->dsa->pub_key == NULL) {
+                goto error;
+            }
+#endif /* HAVE_LIBCRYPTO */
+            break;
+        case SSH_KEYTYPE_RSA:
+        case SSH_KEYTYPE_RSA1:
+#ifdef HAVE_LIBGCRYPT
+            sexp = gcry_sexp_find_token(privkey->rsa, "n", 0);
+            if (sexp == NULL) {
+                goto error;
+            }
+            tmp = gcry_sexp_nth_data(sexp, 1, &size);
+            n = ssh_string_new(size);
+            if (n == NULL) {
+                goto error;
+            }
+            ssh_string_fill(n, (char *) tmp, size);
+            gcry_sexp_release(sexp);
+
+            sexp = gcry_sexp_find_token(privkey->rsa, "e", 0);
+            if (sexp == NULL) {
+                goto error;
+            }
+            tmp = gcry_sexp_nth_data(sexp, 1, &size);
+            e = ssh_string_new(size);
+            if (e == NULL) {
+                goto error;
+            }
+            ssh_string_fill(e, (char *) tmp, size);
+            gcry_sexp_release(sexp);
+
+            gcry_sexp_build(&pubkey->rsa, NULL,
+                    "(public-key(rsa(n %b)(e %b)))",
+                    ssh_string_len(n), ssh_string_data(n),
+                    ssh_string_len(e), ssh_string_data(e));
+            if (pubkey->rsa == NULL) {
+                goto error;
+            }
+
+            ssh_string_burn(e);
+            ssh_string_free(e);
+            ssh_string_burn(n);
+            ssh_string_free(n);
+#elif defined HAVE_LIBCRYPTO
+            pubkey->rsa = RSA_new();
+            if (pubkey->rsa == NULL) {
+                goto error;
+            }
+            pubkey->rsa->e = BN_dup(privkey->rsa->e);
+            pubkey->rsa->n = BN_dup(privkey->rsa->n);
+            if (pubkey->rsa->e == NULL ||
+                    pubkey->rsa->n == NULL) {
+                goto error;
+            }
+#endif
+            break;
+        default:
+            ssh_key_free(pubkey);
+            return NULL;
+    }
+    pubkey->type_c = ssh_type_to_char(privkey->type);
+
+    return pubkey;
+error:
+#ifdef HAVE_LIBGCRYPT
+    gcry_sexp_release(sexp);
+    ssh_string_burn(p);
+    ssh_string_free(p);
+    ssh_string_burn(q);
+    ssh_string_free(q);
+    ssh_string_burn(g);
+    ssh_string_free(g);
+    ssh_string_burn(y);
+    ssh_string_free(y);
+
+    ssh_string_burn(e);
+    ssh_string_free(e);
+    ssh_string_burn(n);
+    ssh_string_free(n);
+#endif
+    ssh_key_free(pubkey);
+
+    return NULL;
+}
+
 /**
  * @}
  */
