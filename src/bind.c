@@ -186,25 +186,6 @@ int ssh_bind_listen(ssh_bind sshbind) {
   return 0;
 }
 
-/**
- * @brief set the bind callbacks for ssh_bind
- * @code
- * struct ssh_callbacks_struct cb = {
- *   .userdata = data,
- *   .auth_function = my_auth_function
- * };
- * ssh_callbacks_init(&cb);
- * ssh_set_callbacks(session, &cb);
- * @endcode
- * @param sshbind   the ssh_bind structure to set
- * @param callbacks a ssh_bind_callbacks instance already set up. Do
- *                  use ssh_callbacks_init() to initialize it.
- * @param userdata  userdata to be used with each callback called
- *                  within callbacks.
- * @returns SSH_OK on success,
- *          SSH_ERROR on error.
-  */
-
 int ssh_bind_set_callbacks(ssh_bind sshbind, ssh_bind_callbacks callbacks,
     void *userdata){
   if (sshbind == NULL) {
