@@ -598,6 +598,78 @@ static ssh_buffer privatekey_file_to_buffer(FILE *fp, int type,
   return out;
 }
 
+static int b64decode_rsa_privatekey(const char *pkey, gcry_sexp_t *r,
+    ssh_auth_callback cb, void *userdata, const char *desc) {
+  ssh_string n = NULL;
+  ssh_string e = NULL;
+  ssh_string d = NULL;
+  ssh_string p = NULL;
+  ssh_string q = NULL;
+  ssh_string unused1 = NULL;
+  ssh_string unused2 = NULL;
+  ssh_string u = NULL;
+  ssh_string v = NULL;
+  ssh_buffer buffer = NULL;
+  int rc = 1;
+
+  buffer = privatekey_string_to_buffer(pkey, SSH_KEYTYPE_RSA, cb, userdata, desc);
+  if (buffer == NULL) {
+    return 0;
+  }
+
+  if (!asn1_check_sequence(buffer)) {
+    ssh_buffer_free(buffer);
+    return 0;
+  }
+
+  v = asn1_get_int(buffer);
+  if (ntohl(v->size) != 1 || v->string[0] != 0) {
+    ssh_buffer_free(buffer);
+    return 0;
+  }
+
+  n = asn1_get_int(buffer);
+  e = asn1_get_int(buffer);
+  d = asn1_get_int(buffer);
+  q = asn1_get_int(buffer);
+  p = asn1_get_int(buffer);
+  unused1 = asn1_get_int(buffer);
+  unused2 = asn1_get_int(buffer);
+  u = asn1_get_int(buffer);
+
+  ssh_buffer_free(buffer);
+
+  if (n == NULL || e == NULL || d == NULL || p == NULL || q == NULL ||
+      unused1 == NULL || unused2 == NULL|| u == NULL) {
+    rc = 0;
+    goto error;
+  }
+
+  if (gcry_sexp_build(r, NULL,
+      "(private-key(rsa(n %b)(e %b)(d %b)(p %b)(q %b)(u %b)))",
+      ntohl(n->size), n->string,
+      ntohl(e->size), e->string,
+      ntohl(d->size), d->string,
+      ntohl(p->size), p->string,
+      ntohl(q->size), q->string,
+      ntohl(u->size), u->string)) {
+    rc = 0;
+  }
+
+error:
+  ssh_string_free(n);
+  ssh_string_free(e);
+  ssh_string_free(d);
+  ssh_string_free(p);
+  ssh_string_free(q);
+  ssh_string_free(unused1);
+  ssh_string_free(unused2);
+  ssh_string_free(u);
+  ssh_string_free(v);
+
+  return rc;
+}
+
 static int read_rsa_privatekey(FILE *fp, gcry_sexp_t *r,
     ssh_auth_callback cb, void *userdata, const char *desc) {
   ssh_string n = NULL;
