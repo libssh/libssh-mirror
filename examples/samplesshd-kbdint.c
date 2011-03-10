@@ -59,7 +59,7 @@ static void cleanup_pcap(){
 #endif
 
 
-static int auth_password(char *user, char *password){
+static int auth_password(const char *user, const char *password){
     if(strcmp(user, SSHD_USER))
         return 0;
     if(strcmp(password, SSHD_PASSWORD))
