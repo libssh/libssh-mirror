@@ -74,6 +74,12 @@ struct ssh_channel_request {
     char *command;
     /* subsystem */
     char *subsystem;
+
+    /* X11 */
+    uint8_t x11_single_connection;
+    char *x11_auth_protocol;
+    char *x11_auth_cookie;
+    uint32_t x11_screen_number;
 };
 
 struct ssh_message_struct {

@@ -2929,6 +2929,69 @@ error:
 }
 
 /**
+ * @brief Open a X11 channel.
+ *
+ * @param[in]  channel      An allocated channel.
+ *
+ * @param[in]  orig_addr    The source host (the local server).
+ *
+ * @param[in]  orig_port    The source port (the local server).
+ *
+ * @return              SSH_OK on success, SSH_ERROR if an error occured.
+ *
+ * @warning This function does not bind the local port and does not automatically
+ *          forward the content of a socket to the channel. You still have to
+ *          use channel_read and channel_write for this.
+ */
+int ssh_channel_open_x11(ssh_channel channel, 
+                                        const char *orig_addr, int orig_port) {
+  ssh_session session;
+  ssh_buffer payload = NULL;
+  ssh_string str = NULL;
+  int rc = SSH_ERROR;
+
+  if(channel == NULL) {
+      return rc;
+  }
+  if(orig_addr == NULL) {
+      ssh_set_error_invalid(channel->session, __FUNCTION__);
+      return rc;
+  }
+
+
+  session = channel->session;
+
+  enter_function();
+
+  payload = ssh_buffer_new();
+  if (payload == NULL) {
+    ssh_set_error_oom(session);
+    goto error;
+  }
+
+  str = ssh_string_from_char(orig_addr);
+  if (str == NULL) {
+    ssh_set_error_oom(session);
+    goto error;
+  }
+
+  if (buffer_add_ssh_string(payload, str) < 0 ||
+      buffer_add_u32(payload,htonl(orig_port)) < 0) {
+    ssh_set_error_oom(session);
+    goto error;
+  }
+
+  rc = channel_open(channel, "x11", 64000, 32000, payload);
+
+error:
+  ssh_buffer_free(payload);
+  ssh_string_free(str);
+
+  leave_function();
+  return rc;
+}
+
+/**
  * @brief Send the exit status to the remote process (as described in RFC 4254, section 6.10).
  *
  * Sends the exit status to the remote process.

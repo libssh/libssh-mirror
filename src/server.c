@@ -1009,6 +1009,22 @@ const char *ssh_message_channel_request_subsystem(ssh_message msg){
     return msg->channel_request.subsystem;
 }
 
+int ssh_message_channel_request_x11_single_connection(ssh_message msg){
+    return msg->channel_request.x11_single_connection ? 1 : 0;
+}
+
+const char *ssh_message_channel_request_x11_auth_protocol(ssh_message msg){
+    return msg->channel_request.x11_auth_protocol;
+}
+
+const char *ssh_message_channel_request_x11_auth_cookie(ssh_message msg){
+    return msg->channel_request.x11_auth_cookie;
+}
+
+int ssh_message_channel_request_x11_screen_number(ssh_message msg){
+    return msg->channel_request.x11_screen_number;
+}
+
 const char *ssh_message_global_request_address(ssh_message msg){
     return msg->global_request.bind_address;
 }

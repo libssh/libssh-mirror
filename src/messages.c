@@ -988,6 +988,41 @@ int ssh_message_handle_channel_request(ssh_session session, ssh_channel channel,
     goto end;
   }
 
+  if (strcmp(request, "x11-req") == 0) {
+    ssh_string auth_protocol = NULL;
+    ssh_string auth_cookie = NULL;
+
+    buffer_get_u8(packet, &msg->channel_request.x11_single_connection);
+
+    auth_protocol = buffer_get_ssh_string(packet);
+    if (auth_protocol == NULL) {
+      ssh_set_error_oom(session);
+      goto error;
+    }
+    auth_cookie = buffer_get_ssh_string(packet);
+    if (auth_cookie == NULL) {
+      ssh_set_error_oom(session);
+      ssh_string_free(auth_protocol);
+      goto error;
+    }
+
+    msg->channel_request.type = SSH_CHANNEL_REQUEST_X11;
+    msg->channel_request.x11_auth_protocol = ssh_string_to_char(auth_protocol);
+    msg->channel_request.x11_auth_cookie = ssh_string_to_char(auth_cookie);
+    if (msg->channel_request.x11_auth_protocol == NULL ||
+        msg->channel_request.x11_auth_cookie == NULL) {
+      ssh_string_free(auth_protocol);
+      ssh_string_free(auth_cookie);
+      goto error;
+    }
+    ssh_string_free(auth_protocol);
+    ssh_string_free(auth_cookie);
+
+    buffer_get_u32(packet, &msg->channel_request.x11_screen_number);
+
+    goto end;
+  }
+
   msg->channel_request.type = SSH_CHANNEL_UNKNOWN;
 end:
   ssh_message_queue(session,msg);
