@@ -40,6 +40,7 @@
 #include "libssh/session.h"
 #include "libssh/keys.h"
 #include "libssh/auth.h"
+#include "libssh/pki.h"
 
 /**
  * @defgroup libssh_auth The SSH authentication functions.
@@ -610,7 +611,7 @@ error:
 
 
 /**
- * @brief Try to authenticate through public key.
+ * @brief Try to authenticate through public key (deprecated).
  *
  * @param[in]  session  The ssh session to use.
  *
@@ -784,6 +785,189 @@ error:
 
   leave_function();
   return rc;
+}
+
+/**
+ * @brief Try to authenticate through public key.
+ *
+ * @param[in]  session  The ssh session to use.
+ *
+ * @param[in]  username The username to authenticate. You can specify NULL if
+ *                      ssh_option_set_username() has been used. You cannot try
+ *                      two different logins in a row.
+ *
+ * @param[in]  publickey A public key returned by publickey_from_file(), or NULL
+ *                       to generate automatically from privatekey.
+ *
+ * @param[in]  privatekey A private key returned by privatekey_from_file().
+ *
+ * @returns SSH_AUTH_ERROR:   A serious error happened.\n
+ *          SSH_AUTH_DENIED:  Authentication failed: use another method.\n
+ *          SSH_AUTH_PARTIAL: You've been partially authenticated, you still
+ *                            have to use another method.\n
+ *          SSH_AUTH_SUCCESS: Authentication successful.
+ *          SSH_AUTH_AGAIN:   In nonblocking mode, you've got to call this again
+ *                            later.
+ * @see publickey_from_file()
+ * @see privatekey_from_file()
+ * @see privatekey_free()
+ * @see ssh_userauth_offer_pubkey()
+ */
+
+int ssh_userauth_pki_pubkey(ssh_session session, const char *username,
+                            ssh_string publickey, ssh_key privatekey) {
+    ssh_string user = NULL;
+    ssh_string service = NULL;
+    ssh_string method = NULL;
+    ssh_string algo = NULL;
+    ssh_string sign = NULL;
+    ssh_key pubkey = NULL;
+    ssh_string pkstr = NULL;
+    int rc = SSH_AUTH_ERROR;
+
+    if(session == NULL) {
+        return SSH_AUTH_ERROR;
+    }
+
+    if(privatekey == NULL) {
+        ssh_set_error(session, SSH_FATAL, "invalid arguments");
+        return SSH_AUTH_ERROR;
+    }
+    enter_function();
+
+#if 0
+    if (session->version == 1) {
+        return ssh_userauth1_pubkey(session, username, publickey, privatekey);
+    }
+#endif
+
+    if (username == NULL) {
+        if (session->username == NULL) {
+            if (ssh_options_apply(session) < 0) {
+                leave_function();
+                return rc;
+            }
+        }
+        user = ssh_string_from_char(session->username);
+    } else {
+        user = ssh_string_from_char(username);
+    }
+
+    if (user == NULL) {
+        ssh_set_error_oom(session);
+        leave_function();
+        return rc;
+    }
+
+    switch(session->pending_call_state) {
+        case SSH_PENDING_CALL_NONE:
+            break;
+        case SSH_PENDING_CALL_AUTH_PUBKEY:
+            ssh_string_free(user);
+            user = NULL;
+            goto pending;
+        default:
+            ssh_set_error(session, SSH_FATAL,
+                    "Bad call during pending SSH call in ssh_userauth_pubkey");
+            goto error;
+            rc = SSH_ERROR;
+    }
+
+    if (ask_userauth(session) < 0) {
+        ssh_string_free(user);
+        leave_function();
+        return rc;
+    }
+
+    service = ssh_string_from_char("ssh-connection");
+    if (service == NULL) {
+        ssh_set_error_oom(session);
+        goto error;
+    }
+    method = ssh_string_from_char("publickey");
+    if (method == NULL) {
+        ssh_set_error_oom(session);
+        goto error;
+    }
+    algo = ssh_string_from_char(ssh_type_to_char(privatekey->type));
+    if (algo == NULL) {
+        ssh_set_error_oom(session);
+        goto error;
+    }
+    if (publickey == NULL) {
+        pubkey = ssh_pki_publickey_from_privatekey(privatekey);
+        if (pubkey == NULL) {
+            /* most likely oom, and publickey_from_privatekey does not
+             * return any more information */
+            ssh_set_error_oom(session);
+            goto error;
+        }
+        pkstr = publickey_to_string(ssh_pki_convert_key_to_publickey(pubkey));
+        free(pubkey);
+        if (pkstr == NULL) {
+            /* same as above */
+            ssh_set_error_oom(session);
+            goto error;
+        }
+    }
+
+    /* we said previously the public key was accepted */
+    if (buffer_add_u8(session->out_buffer, SSH2_MSG_USERAUTH_REQUEST) < 0 ||
+            buffer_add_ssh_string(session->out_buffer, user) < 0 ||
+            buffer_add_ssh_string(session->out_buffer, service) < 0 ||
+            buffer_add_ssh_string(session->out_buffer, method) < 0 ||
+            buffer_add_u8(session->out_buffer, 1) < 0 ||
+            buffer_add_ssh_string(session->out_buffer, algo) < 0 ||
+            buffer_add_ssh_string(session->out_buffer, (publickey == NULL ? pkstr : publickey)) < 0) {
+        ssh_set_error_oom(session);
+        goto error;
+    }
+
+    ssh_string_free(user);
+    ssh_string_free(service);
+    ssh_string_free(method);
+    ssh_string_free(algo);
+    ssh_string_free(pkstr);
+
+    sign = ssh_pki_do_sign(session,session->out_buffer, privatekey);
+    if(sign == NULL) {
+        ssh_set_error_oom(session);
+        leave_function();
+        return rc;
+    }
+
+    if (buffer_add_ssh_string(session->out_buffer, sign) < 0) {
+        ssh_set_error_oom(session);
+        ssh_string_free(sign);
+        leave_function();
+        return rc;
+    }
+
+    ssh_string_free(sign);
+    session->auth_state = SSH_AUTH_STATE_NONE;
+    session->pending_call_state = SSH_PENDING_CALL_AUTH_PUBKEY;
+    if (packet_send(session) == SSH_ERROR) {
+        leave_function();
+        return rc;
+    }
+
+pending:
+    rc = wait_auth_status(session);
+    if (rc != SSH_AUTH_AGAIN)
+        session->pending_call_state = SSH_PENDING_CALL_NONE;
+    leave_function();
+    return rc;
+
+error:
+    buffer_reinit(session->out_buffer);
+    ssh_string_free(user);
+    ssh_string_free(service);
+    ssh_string_free(method);
+    ssh_string_free(algo);
+    ssh_string_free(pkstr);
+
+    leave_function();
+    return rc;
 }
 
 /**
