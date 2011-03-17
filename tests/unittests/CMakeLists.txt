@@ -10,6 +10,7 @@ add_cmockery_test(torture_isipaddr torture_isipaddr.c ${TORTURE_LIBRARY})
 if (UNIX AND NOT WIN32)
     # requires ssh-keygen
     add_cmockery_test(torture_keyfiles torture_keyfiles.c ${TORTURE_LIBRARY})
+    add_cmockery_test(torture_pki torture_pki.c ${TORTURE_LIBRARY})
     # requires pthread
     add_cmockery_test(torture_rand torture_rand.c ${TORTURE_LIBRARY})
 endif (UNIX AND NOT WIN32)
