@@ -200,9 +200,22 @@ ssh_public_key ssh_pki_convert_key_to_publickey(ssh_key key) {
     return pub;
 }
 
+/** @brief import a base64 formated key from a memory c-string
+ *
+ * @param   key     The key to fill, created with ssh_key_new()
+ * @param   session The ssh session
+ * @param   b64_key The c-string holding the base64 encoded key
+ * @param   passphrase  The passphrase to decrypt the key, or NULL
+ *
+ * @return  SSH_ERROR in case of error, SSH_OK otherwise
+ */
 int ssh_pki_import_privkey_base64(ssh_key key, ssh_session session,
                     const char *b64_key, const char *passphrase) {
     ssh_private_key priv;
+
+    if(key == NULL || session == NULL) {
+        return SSH_ERROR;
+    }
 
     if(b64_key == NULL || !*b64_key) {
         return SSH_ERROR;
