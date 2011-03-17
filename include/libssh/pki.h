@@ -48,6 +48,8 @@ int ssh_key_import_private(ssh_key key, ssh_session session,
     const char *filename, const char *passphrase);
 
 ssh_key ssh_pki_publickey_from_privatekey(ssh_key privkey);
+ssh_string ssh_pki_do_sign(ssh_session session, ssh_buffer sigbuf,
+    ssh_key privatekey);
 
 /* temporary functions, to be removed after migration to ssh_key */
 ssh_key ssh_pki_convert_privatekey_to_key(ssh_private_key priv);

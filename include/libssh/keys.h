@@ -71,6 +71,10 @@ ssh_private_key privatekey_make_rsa(ssh_session session, ssh_buffer buffer,
 ssh_public_key publickey_make_dss(ssh_session session, ssh_buffer buffer);
 ssh_public_key publickey_make_rsa(ssh_session session, ssh_buffer buffer, int type);
 ssh_public_key publickey_from_string(ssh_session session, ssh_string pubkey_s);
+ssh_string signature_to_string(SIGNATURE *sign);
+#if defined HAVE_LIBCRYPTO
+ssh_string RSA_do_sign(const unsigned char *payload, int len, RSA *privkey);
+#endif
 SIGNATURE *signature_from_string(ssh_session session, ssh_string signature,ssh_public_key pubkey,int needed_type);
 void signature_free(SIGNATURE *sign);
 ssh_string ssh_do_sign_with_agent(struct ssh_session_struct *session,

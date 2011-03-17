@@ -729,7 +729,7 @@ error:
 }
 
 /* Signature decoding functions */
-static ssh_string signature_to_string(SIGNATURE *sign) {
+ssh_string signature_to_string(SIGNATURE *sign) {
   unsigned char buffer[40] = {0};
   ssh_buffer tmpbuf = NULL;
   ssh_string str = NULL;
@@ -1097,7 +1097,7 @@ void signature_free(SIGNATURE *sign) {
  * I think now, maybe it's a bad idea to name it has it should have be
  * named in libcrypto
  */
-static ssh_string RSA_do_sign(const unsigned char *payload, int len, RSA *privkey) {
+ssh_string RSA_do_sign(const unsigned char *payload, int len, RSA *privkey) {
   ssh_string sign = NULL;
   unsigned char *buffer = NULL;
   unsigned int size;
