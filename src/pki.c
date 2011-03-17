@@ -67,6 +67,8 @@ void ssh_key_clean (ssh_key key){
     key->flags=SSH_KEY_FLAG_EMPTY;
     key->type=SSH_KEYTYPE_UNKNOWN;
     key->type_c=NULL;
+    key->dsa = NULL;
+    key->rsa = NULL;
 }
 
 /**
