@@ -996,7 +996,7 @@ ssh_private_key privatekey_from_base64(ssh_session session, const char *b64_pkey
   if (type == 0) {
     type = privatekey_type_from_string(b64_pkey);
     if (type == 0) {
-      ssh_set_error(session, SSH_FATAL, "Invalid private key file.");
+      ssh_set_error(session, SSH_FATAL, "Invalid private key.");
       return NULL;
     }
   }
