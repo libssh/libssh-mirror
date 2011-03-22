@@ -247,4 +247,13 @@ int channel_write_stderr(ssh_channel channel, const void *data, uint32_t len) {
     return ssh_channel_write(channel, data, len);
 }
 
+/** @deprecated
+ * @brief Interface previously exported by error.
+ */
+ssh_message ssh_message_retrieve(ssh_session session, uint32_t packettype){
+	(void) packettype;
+	ssh_set_error(session, SSH_FATAL, "ssh_message_retrieve: obsolete libssh call");
+	return NULL;
+}
+
 #endif /* WITH_SERVER */
