@@ -298,6 +298,31 @@ int ssh_is_blocking(ssh_session session){
 }
 
 /**
+ * @brief Blocking flush of the outgoing buffer
+ * @param[in] session The SSH session
+ * @param[in] timeout Set an upper limit on the time for which this function
+ *                    will block, in milliseconds. Specifying a negative value
+ *                    means an infinite timeout. This parameter is passed to
+ *                    the poll() function.
+ * @returns           SSH_OK on success, SSH_ERROR otherwise.
+ */
+
+int ssh_blocking_flush(ssh_session session, int timeout){
+	ssh_socket s;
+	if(session==NULL)
+		return SSH_ERROR;
+
+	enter_function();
+	s=session->socket;
+	while (ssh_socket_buffered_write_bytes(s) > 0 && session->alive) {
+		ssh_handle_packets(session, timeout);
+	}
+
+	leave_function();
+	return SSH_OK;
+}
+
+/**
  * @brief Check if we are connected.
  *
  * @param[in]  session  The session to check if it is connected.

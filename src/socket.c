@@ -644,6 +644,18 @@ int ssh_socket_data_writable(ssh_socket s) {
   return s->write_wontblock;
 }
 
+/** @internal
+ * @brief returns the number of outgoing bytes currently buffered
+ * @param s the socket
+ * @returns numbers of bytes buffered, or 0 if the socket isn't connected
+ */
+int ssh_socket_buffered_write_bytes(ssh_socket s){
+	if(s==NULL || s->out_buffer == NULL)
+		return 0;
+	return buffer_get_rest_len(s->out_buffer);
+}
+
+
 int ssh_socket_get_status(ssh_socket s) {
   int r = 0;
 
