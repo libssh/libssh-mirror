@@ -308,7 +308,7 @@ int ssh_auth_list(ssh_session session) {
 /**
  * @brief retrieves available authentication methods for this session
  * @param[in] session the SSH session
- * @param[in] username set to NULL
+ * @param[in] username Deprecated, set to NULL.
  * @returns A bitfield of values SSH_AUTH_METHOD_NONE, SSH_AUTH_METHOD_PASSWORD,
             SSH_AUTH_METHOD_PUBLICKEY, SSH_AUTH_METHOD_HOSTBASED,
             SSH_AUTH_METHOD_INTERACTIVE.
