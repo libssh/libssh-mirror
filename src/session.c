@@ -579,6 +579,7 @@ SSH_PACKET_CALLBACK(ssh_packet_disconnect_callback){
 
   ssh_socket_close(session->socket);
   session->alive = 0;
+  session->session_state= SSH_SESSION_STATE_ERROR;
 	/* TODO: handle a graceful disconnect */
 	return SSH_PACKET_USED;
 }
