@@ -354,12 +354,13 @@ static int privatekey_dek_header(const char *header, unsigned int header_len,
 }
 
 #define get_next_line(p, len) {                                         \
-        while(p[len] == '\n') /* skip empty lines */                    \
+        while(p[len] == '\n' || p[len] == '\r') /* skip empty lines */  \
             len++;                                                      \
         if(p[len] == '\0')    /* EOL */                                 \
             len = -1;                                                   \
         else                  /* calculate length */                    \
-            for(p += len, len = 0; p[len] && p[len] != '\n'; len++);    \
+            for(p += len, len = 0; p[len] && p[len] != '\n'             \
+                                          && p[len] != '\r'; len++);    \
     } 
 
 static ssh_buffer privatekey_string_to_buffer(const char *pkey, int type,
