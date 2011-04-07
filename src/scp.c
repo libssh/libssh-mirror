@@ -263,7 +263,7 @@ int ssh_scp_push_directory(ssh_scp scp, const char *dirname, int mode){
 }
 
 /**
- * @brief Initialize the sending of a file to a scp in sink mode.
+ * @brief Initialize the sending of a file to a scp in sink mode, using a 64-bit size.
  *
  * @param[in]  scp      The scp handle.
  *
@@ -276,8 +276,10 @@ int ssh_scp_push_directory(ssh_scp scp, const char *dirname, int mode){
  *
  * @returns             SSH_OK if the file is ready to be sent, SSH_ERROR if an
  *                      error occured.
+ *
+ * @see ssh_scp_push_file()
  */
-int ssh_scp_push_file(ssh_scp scp, const char *filename, size_t size, int mode){
+int ssh_scp_push_file64(ssh_scp scp, const char *filename, uint64_t size, int mode){
   char buffer[1024];
   int r;
   uint8_t code;
@@ -315,6 +317,25 @@ int ssh_scp_push_file(ssh_scp scp, const char *filename, size_t size, int mode){
   scp->processed = 0;
   scp->state=SSH_SCP_WRITE_WRITING;
   return SSH_OK;
+}
+
+/**
+ * @brief Initialize the sending of a file to a scp in sink mode.
+ *
+ * @param[in]  scp      The scp handle.
+ *
+ * @param[in]  filename The name of the file being sent. It should not contain
+ *                      any path indicator
+ *
+ * @param[in]  size     Exact size in bytes of the file being sent.
+ *
+ * @param[in]  mode     The UNIX permissions for the new file, e.g. 0644.
+ *
+ * @returns             SSH_OK if the file is ready to be sent, SSH_ERROR if an
+ *                      error occured.
+ */
+int ssh_scp_push_file(ssh_scp scp, const char *filename, size_t size, int mode){
+	return ssh_scp_push_file64(scp, filename, (uint64_t) size, mode);
 }
 
 /**
@@ -389,7 +410,7 @@ int ssh_scp_write(ssh_scp scp, const void *buffer, size_t len){
     return SSH_ERROR;
   }
   if(scp->processed + len > scp->filelen)
-    len = scp->filelen - scp->processed;
+    len = (size_t) (scp->filelen - scp->processed);
   /* hack to avoid waiting for window change */
   ssh_channel_poll(scp->channel,0);
   w=ssh_channel_write(scp->channel,buffer,len);
@@ -476,7 +497,7 @@ int ssh_scp_pull_request(ssh_scp scp){
   char buffer[4096];
   char *mode=NULL;
   char *p,*tmp;
-  size_t size;
+  uint64_t size;
   char *name=NULL;
   int err;
   if(scp==NULL)
@@ -514,7 +535,7 @@ int ssh_scp_pull_request(ssh_scp scp){
       if(p==NULL)
         goto error;
       *p=0;
-      size = (size_t) strtoull(tmp,NULL,10);
+      size = strtoull(tmp,NULL,10);
       p++;
       name=strdup(p);
       SAFE_FREE(scp->request_name);
@@ -643,7 +664,7 @@ int ssh_scp_read(ssh_scp scp, void *buffer, size_t size){
     return SSH_ERROR;
   }
   if(scp->processed + size > scp->filelen)
-    size = scp->filelen - scp->processed;
+    size = (size_t) (scp->filelen - scp->processed);
   if(size > 65536)
     size=65536; /* avoid too large reads */
   r=ssh_channel_read(scp->channel,buffer,size,0);
@@ -701,7 +722,7 @@ int ssh_scp_request_get_permissions(ssh_scp scp){
  *
  * @returns             The numeric size of the file being read.
  */
-size_t ssh_scp_request_get_size(ssh_scp scp){
+uint64_t ssh_scp_request_get_size(ssh_scp scp){
   if(scp==NULL)
       return 0;
   return scp->filelen;

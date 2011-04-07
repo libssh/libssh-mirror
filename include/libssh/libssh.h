@@ -430,10 +430,11 @@ LIBSSH_API ssh_scp ssh_scp_new(ssh_session session, int mode, const char *locati
 LIBSSH_API int ssh_scp_pull_request(ssh_scp scp);
 LIBSSH_API int ssh_scp_push_directory(ssh_scp scp, const char *dirname, int mode);
 LIBSSH_API int ssh_scp_push_file(ssh_scp scp, const char *filename, size_t size, int perms);
+LIBSSH_API int ssh_scp_push_file64(ssh_scp scp, const char *filename, uint64_t size, int perms);
 LIBSSH_API int ssh_scp_read(ssh_scp scp, void *buffer, size_t size);
 LIBSSH_API const char *ssh_scp_request_get_filename(ssh_scp scp);
 LIBSSH_API int ssh_scp_request_get_permissions(ssh_scp scp);
-LIBSSH_API size_t ssh_scp_request_get_size(ssh_scp scp);
+LIBSSH_API uint64_t ssh_scp_request_get_size(ssh_scp scp);
 LIBSSH_API const char *ssh_scp_request_get_warning(ssh_scp scp);
 LIBSSH_API int ssh_scp_write(ssh_scp scp, const void *buffer, size_t len);
 LIBSSH_API int ssh_select(ssh_channel *channels, ssh_channel *outchannels, socket_t maxfd,

@@ -40,8 +40,8 @@ struct ssh_scp_struct {
   ssh_channel channel;
   char *location;
   enum ssh_scp_states state;
-  size_t filelen;
-  size_t processed;
+  uint64_t filelen;
+  uint64_t processed;
   enum ssh_scp_request_types request_type;
   char *request_name;
   char *warning;
