@@ -43,7 +43,8 @@ endif(CMAKE_COMPILER_IS_GNUCC AND NOT MINGW AND NOT OS2)
 # HEADER FILES
 check_include_file(argp.h HAVE_ARGP_H)
 check_include_file(pty.h HAVE_PTY_H)
-check_include_file(terminos.h HAVE_TERMIOS_H)
+check_include_file(termios.h HAVE_TERMIOS_H)
+
 if (WIN32)
   check_include_file(wspiapi.h HAVE_WSPIAPI_H)
   if (NOT HAVE_WSPIAPI_H)
