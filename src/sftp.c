@@ -2109,10 +2109,12 @@ int sftp_unlink(sftp_session sftp, const char *file) {
     ssh_set_error_oom(sftp->session);
     ssh_buffer_free(buffer);
     ssh_string_free(filename);
+    return -1;
   }
   if (sftp_packet_write(sftp, SSH_FXP_REMOVE, buffer) < 0) {
     ssh_buffer_free(buffer);
     ssh_string_free(filename);
+    return -1;
   }
   ssh_string_free(filename);
   ssh_buffer_free(buffer);
@@ -2846,7 +2848,7 @@ sftp_statvfs_t sftp_statvfs(sftp_session sftp, const char *path) {
     ssh_set_error(sftp,SSH_REQUEST_DENIED,"sftp version %d does not support sftp_statvfs",sftp->version);
     return NULL;
   }
- 
+
   buffer = ssh_buffer_new();
   if (buffer == NULL) {
     ssh_set_error_oom(sftp->session);
