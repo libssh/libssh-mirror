@@ -148,7 +148,7 @@ int ssh_scp_close(ssh_scp scp){
      */
     while(!ssh_channel_is_eof(scp->channel)){
       err=ssh_channel_read(scp->channel,buffer,sizeof(buffer),0);
-      if(err==SSH_ERROR)
+      if(err==SSH_ERROR || err==0)
         break;
     }
     if(ssh_channel_close(scp->channel) == SSH_ERROR){
