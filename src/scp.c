@@ -293,8 +293,8 @@ int ssh_scp_push_file64(ssh_scp scp, const char *filename, uint64_t size, int mo
   }
   file=ssh_basename(filename);
   perms=ssh_scp_string_mode(mode);
-  ssh_log(scp->session,SSH_LOG_PROTOCOL,"SCP pushing file %s, size %" PRIdS " with permissions '%s'",file,size,perms);
-  snprintf(buffer, sizeof(buffer), "C%s %" PRIdS " %s\n", perms, size, file);
+  ssh_log(scp->session,SSH_LOG_PROTOCOL,"SCP pushing file %s, size %llu with permissions '%s'",file,size,perms);
+  snprintf(buffer, sizeof(buffer), "C%s %llu %s\n", perms, size, file);
   SAFE_FREE(file);
   SAFE_FREE(perms);
   r=ssh_channel_write(scp->channel,buffer,strlen(buffer));
