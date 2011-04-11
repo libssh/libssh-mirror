@@ -597,7 +597,9 @@ error:
   ssh_string_free(n);
 
   return rc;
+#if defined(HAVE_LIBGCRYPT) || defined(HAVE_LIBCRYPTO)
 }
+#endif
 
 #ifdef HAVE_LIBGCRYPT
 static int rsa_public_to_string(gcry_sexp_t key, ssh_buffer buffer) {
@@ -665,7 +667,9 @@ error:
   ssh_string_free(n);
 
   return rc;
+#if defined(HAVE_LIBGCRYPT) || defined(HAVE_LIBCRYPTO)
 }
+#endif
 
 /**
  * @brief Convert a public_key object into a a SSH string.
