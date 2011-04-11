@@ -140,7 +140,7 @@ char *ssh_get_local_username(ssh_session session) {
   /* get the size */
   GetUserName(NULL, &size);
 
-  user = malloc(size);
+  user = (char *) malloc(size);
   if (user == NULL) {
     ssh_set_error_oom(session);
     return NULL;
@@ -159,7 +159,7 @@ int ssh_is_ipaddr_v4(const char *str) {
     int rc = SOCKET_ERROR;
 
     /* WSAStringToAddressA thinks that 0.0.0 is a valid IP */
-    if (strlen < 7) {
+    if (strlen(str) < 7) {
         return 0;
     }
 

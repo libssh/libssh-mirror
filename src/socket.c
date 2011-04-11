@@ -218,7 +218,7 @@ int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p, socket_t fd, int r
 		/* Check if we are in a connecting state */
 		if(s->state==SSH_SOCKET_CONNECTING){
 			s->state=SSH_SOCKET_ERROR;
-			getsockopt(fd,SOL_SOCKET,SO_ERROR,(void *)&err,&errlen);
+			getsockopt(fd,SOL_SOCKET,SO_ERROR,(char *)&err,&errlen);
 			s->last_errno=err;
 			ssh_socket_close(s);
 			if(s->callbacks && s->callbacks->connected)
