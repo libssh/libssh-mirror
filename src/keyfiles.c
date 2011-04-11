@@ -720,8 +720,6 @@ ssh_private_key privatekey_from_file(ssh_session session, const char *filename,
             (void *) passphrase, NULL);
       }
 
-      fclose(file);
-
       if (!valid) {
         ssh_set_error(session, SSH_FATAL, "Parsing private key %s", filename);
 #elif defined HAVE_LIBCRYPTO
@@ -735,12 +733,12 @@ ssh_private_key privatekey_from_file(ssh_session session, const char *filename,
         dsa = PEM_read_DSAPrivateKey(file, NULL, NULL, (void *) passphrase);
       }
 
-      fclose(file);
       if (dsa == NULL) {
         ssh_set_error(session, SSH_FATAL,
             "Parsing private key %s: %s",
             filename, ERR_error_string(ERR_get_error(), NULL));
 #endif
+        fclose(file);
         return NULL;
       }
       break;
@@ -760,8 +758,6 @@ ssh_private_key privatekey_from_file(ssh_session session, const char *filename,
             (void *) passphrase, NULL);
       }
 
-      fclose(file);
-
       if (!valid) {
         ssh_set_error(session,SSH_FATAL, "Parsing private key %s", filename);
 #elif defined HAVE_LIBCRYPTO
@@ -775,13 +771,12 @@ ssh_private_key privatekey_from_file(ssh_session session, const char *filename,
         rsa = PEM_read_RSAPrivateKey(file, NULL, NULL, (void *) passphrase);
       }
 
-      fclose(file);
-
       if (rsa == NULL) {
         ssh_set_error(session, SSH_FATAL,
             "Parsing private key %s: %s",
             filename, ERR_error_string(ERR_get_error(),NULL));
 #endif
+        fclose(file);
         return NULL;
       }
       break;
@@ -790,6 +785,8 @@ ssh_private_key privatekey_from_file(ssh_session session, const char *filename,
       ssh_set_error(session, SSH_FATAL, "Invalid private key type %d", type);
       return NULL;
   } /* switch */
+
+  fclose(file);
 
   privkey = malloc(sizeof(struct ssh_private_key_struct));
   if (privkey == NULL) {
@@ -850,20 +847,19 @@ ssh_private_key _privatekey_from_file(void *session, const char *filename,
 #ifdef HAVE_LIBGCRYPT
       valid = read_dsa_privatekey(file, &dsa, NULL, NULL, NULL);
 
-      fclose(file);
-
       if (!valid) {
         ssh_set_error(session, SSH_FATAL, "Parsing private key %s", filename);
 #elif defined HAVE_LIBCRYPTO
       dsa = PEM_read_DSAPrivateKey(file, NULL, NULL, NULL);
 
-      fclose(file);
-
       if (dsa == NULL) {
         ssh_set_error(session, SSH_FATAL,
             "Parsing private key %s: %s",
             filename, ERR_error_string(ERR_get_error(), NULL));
+#else
+      {
 #endif
+        fclose(file);
         return NULL;
       }
       break;
@@ -871,27 +867,29 @@ ssh_private_key _privatekey_from_file(void *session, const char *filename,
 #ifdef HAVE_LIBGCRYPT
       valid = read_rsa_privatekey(file, &rsa, NULL, NULL, NULL);
 
-      fclose(file);
-
       if (!valid) {
         ssh_set_error(session, SSH_FATAL, "Parsing private key %s", filename);
 #elif defined HAVE_LIBCRYPTO
       rsa = PEM_read_RSAPrivateKey(file, NULL, NULL, NULL);
 
-      fclose(file);
-
       if (rsa == NULL) {
         ssh_set_error(session, SSH_FATAL,
             "Parsing private key %s: %s",
             filename, ERR_error_string(ERR_get_error(), NULL));
+#else
+      {
 #endif
+        fclose(file);
         return NULL;
       }
       break;
     default:
+        fclose(file);
         ssh_set_error(session, SSH_FATAL, "Invalid private key type %d", type);
         return NULL;
   }
+
+  fclose(file);
 
   privkey = malloc(sizeof(struct ssh_private_key_struct));
   if (privkey == NULL) {
