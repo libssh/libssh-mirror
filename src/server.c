@@ -104,7 +104,7 @@ static int server_set_kex(ssh_session session) {
     }
   }
 
-  server->methods = malloc(10 * sizeof(char **));
+  server->methods = (char **) malloc(10 * sizeof(char **));
   if (server->methods == NULL) {
     return -1;
   }
