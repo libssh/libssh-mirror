@@ -605,6 +605,7 @@ void ssh_poll_ctx_remove(ssh_poll_ctx ctx, ssh_poll_handle p) {
   if (ctx->polls_used > 0 && ctx->polls_used != i) {
     ctx->pollfds[i] = ctx->pollfds[ctx->polls_used];
     ctx->pollptrs[i] = ctx->pollptrs[ctx->polls_used];
+    ctx->pollptrs[i]->x.idx = i;
   }
 
   /* this will always leave at least chunk_size polls allocated */
@@ -897,6 +898,9 @@ int ssh_event_remove_fd(ssh_event event, socket_t fd) {
             p = event->ctx->pollptrs[i];
             ssh_poll_ctx_remove(event->ctx, p);
             rc = SSH_OK;
+            /* restart the loop */
+            used = event->ctx->polls_used;
+            i = 0;
         }
     }
 
