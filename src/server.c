@@ -860,31 +860,36 @@ int ssh_message_auth_interactive_request(ssh_message msg, const char *name,
   }
 
   msg->session->kbdint->nprompts = num_prompts;
-  msg->session->kbdint->prompts = malloc(num_prompts * sizeof(char *));
-  if (msg->session->kbdint->prompts == NULL) {
-    msg->session->kbdint->nprompts = 0;
-    ssh_set_error_oom(msg->session);
-    kbdint_free(msg->session->kbdint);
-    msg->session->kbdint = NULL;
-    return SSH_ERROR;
-  }
-  msg->session->kbdint->echo = malloc(num_prompts * sizeof(char));
-  if (msg->session->kbdint->echo == NULL) {
-    ssh_set_error_oom(msg->session);
-    kbdint_free(msg->session->kbdint);
-    msg->session->kbdint = NULL;
-    return SSH_ERROR;
-  }
-  for (i = 0; i < num_prompts; i++) {
-    msg->session->kbdint->echo[i] = echo[i];
-    msg->session->kbdint->prompts[i] = strdup(prompts[i]);
-    if (msg->session->kbdint->prompts[i] == NULL) {
+  if(num_prompts > 0) {
+    msg->session->kbdint->prompts = malloc(num_prompts * sizeof(char *));
+    if (msg->session->kbdint->prompts == NULL) {
+      msg->session->kbdint->nprompts = 0;
       ssh_set_error_oom(msg->session);
-      msg->session->kbdint->nprompts = i;
       kbdint_free(msg->session->kbdint);
       msg->session->kbdint = NULL;
-      return SSH_PACKET_USED;
+      return SSH_ERROR;
     }
+    msg->session->kbdint->echo = malloc(num_prompts * sizeof(char));
+    if (msg->session->kbdint->echo == NULL) {
+      ssh_set_error_oom(msg->session);
+      kbdint_free(msg->session->kbdint);
+      msg->session->kbdint = NULL;
+      return SSH_ERROR;
+    }
+    for (i = 0; i < num_prompts; i++) {
+      msg->session->kbdint->echo[i] = echo[i];
+      msg->session->kbdint->prompts[i] = strdup(prompts[i]);
+      if (msg->session->kbdint->prompts[i] == NULL) {
+        ssh_set_error_oom(msg->session);
+        msg->session->kbdint->nprompts = i;
+        kbdint_free(msg->session->kbdint);
+        msg->session->kbdint = NULL;
+        return SSH_PACKET_USED;
+      }
+    }
+  } else {
+    msg->session->kbdint->prompts = NULL;
+    msg->session->kbdint->echo = NULL;
   }
 
   return r;
