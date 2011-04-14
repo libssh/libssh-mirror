@@ -616,10 +616,13 @@ static int ssh_message_service_request_reply_default(ssh_message msg) {
 
 int ssh_message_service_reply_success(ssh_message msg) {
   struct ssh_string_struct *service;
-  ssh_session session=msg->session;
+  ssh_session session;
+
   if (msg == NULL) {
     return SSH_ERROR;
   }
+  session = msg->session;
+
   ssh_log(session, SSH_LOG_PACKET,
       "Sending a SERVICE_ACCEPT for service %s", msg->service_request.service);
   if (buffer_add_u8(session->out_buffer, SSH2_MSG_SERVICE_ACCEPT) < 0) {
