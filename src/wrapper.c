@@ -219,11 +219,15 @@ int crypt_set_algorithms_server(ssh_session session){
     int i = 0;
     struct crypto_struct *ssh_ciphertab=ssh_get_ciphertab();
 
+    if (session == NULL) {
+        return SSH_ERROR;
+    }
+
     /* we must scan the kex entries to find crypto algorithms and set their appropriate structure */
     enter_function();
     /* out */
     server = session->server_kex.methods[SSH_CRYPT_S_C];
-    if(session && session->client_kex.methods) {
+    if(session->client_kex.methods) {
         client = session->client_kex.methods[SSH_CRYPT_S_C];
     } else {
         ssh_log(session,SSH_LOG_PROTOCOL, "Client KEX empty");
