@@ -897,6 +897,8 @@ int ssh_event_remove_fd(ssh_event event, socket_t fd) {
         if(fd == event->ctx->pollfds[i].fd) {
             p = event->ctx->pollptrs[i];
             ssh_poll_ctx_remove(event->ctx, p);
+            free(p->cb_data);
+            ssh_poll_free(p);
             rc = SSH_OK;
             /* restart the loop */
             used = event->ctx->polls_used;
