@@ -13,6 +13,7 @@ int main(void) {
 
     session = connect_ssh("localhost", NULL, 0);
     if (session == NULL) {
+        ssh_finalize();
         return 1;
     }
 
@@ -20,6 +21,7 @@ int main(void) {
     if (channel == NULL) {
         ssh_disconnect(session);
         ssh_free(session);
+        ssh_finalize();
         return 1;
     }
 
@@ -49,6 +51,7 @@ int main(void) {
     ssh_channel_close(channel);
     ssh_channel_free(channel);
     ssh_free(session);
+    ssh_finalize();
 
     return 0;
 failed:
@@ -56,6 +59,7 @@ failed:
     ssh_channel_free(channel);
     ssh_disconnect(session);
     ssh_free(session);
+    ssh_finalize();
 
     return 1;
 }

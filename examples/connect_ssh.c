@@ -32,22 +32,25 @@ ssh_session connect_ssh(const char *host, const char *user,int verbosity){
 
   if(user != NULL){
     if (ssh_options_set(session, SSH_OPTIONS_USER, user) < 0) {
-      ssh_disconnect(session);
+      ssh_free(session);
       return NULL;
     }
   }
 
   if (ssh_options_set(session, SSH_OPTIONS_HOST, host) < 0) {
+    ssh_free(session);
     return NULL;
   }
   ssh_options_set(session, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
   if(ssh_connect(session)){
     fprintf(stderr,"Connection failed : %s\n",ssh_get_error(session));
     ssh_disconnect(session);
+    ssh_free(session);
     return NULL;
   }
   if(verify_knownhost(session)<0){
     ssh_disconnect(session);
+    ssh_free(session);
     return NULL;
   }
   auth=authenticate_console(session);
@@ -59,5 +62,6 @@ ssh_session connect_ssh(const char *host, const char *user,int verbosity){
     fprintf(stderr,"Error while authenticating : %s\n",ssh_get_error(session));
   }
   ssh_disconnect(session);
+  ssh_free(session);
   return NULL;
 }
