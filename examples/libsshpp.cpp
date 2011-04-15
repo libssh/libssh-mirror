@@ -16,7 +16,7 @@ program.
 #include <libssh/libsshpp.hpp>
 
 int main(int argc, const char **argv){
-  ssh::Session session,s2;
+  ssh::Session session;
   try {
     if(argc>1)
       session.setOption(SSH_OPTIONS_HOST,argv[1]);
@@ -24,10 +24,10 @@ int main(int argc, const char **argv){
       session.setOption(SSH_OPTIONS_HOST,"localhost");
     session.connect();
     session.userauthAutopubkey();
+    session.disconnect();
   } catch (ssh::SshException e){
     std::cout << "Error during connection : ";
     std::cout << e.getError() << std::endl;
   }
-  //s2=session;
   return 0;
 }

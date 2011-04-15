@@ -64,16 +64,21 @@ static void create_files(ssh_session session){
 	}
 	if(ssh_channel_open_session(channel) != SSH_OK){
 		fprintf(stderr,"Error creating channel: %s\n",ssh_get_error(session));
+		ssh_channel_free(channel);
 		exit(EXIT_FAILURE);
 	}
 	if(ssh_channel_request_exec(channel,createcommand) != SSH_OK){
 		fprintf(stderr,"Error executing command: %s\n",ssh_get_error(session));
+		ssh_channel_close(channel);
+		ssh_channel_free(channel);
 		exit(EXIT_FAILURE);
 	}
 	while(!ssh_channel_is_eof(channel)){
 		ssh_channel_read(channel,buffer,1,1);
 		if (write(1,buffer,1) < 0) {
                     fprintf(stderr, "Error writing to buffer\n");
+                    ssh_channel_close(channel);
+                    ssh_channel_free(channel);
                     return;
                 }
 	}
@@ -91,6 +96,7 @@ static int fetch_files(ssh_session session){
   ssh_scp scp=ssh_scp_new(session, SSH_SCP_READ | SSH_SCP_RECURSIVE, "/tmp/libssh_tests/*");
   if(ssh_scp_init(scp) != SSH_OK){
 	  fprintf(stderr,"error initializing scp: %s\n",ssh_get_error(session));
+	  ssh_scp_free(scp);
 	  return -1;
   }
   printf("Trying to download 3 files (a,b,d) and 1 directory (c)\n");
@@ -108,12 +114,16 @@ static int fetch_files(ssh_session session){
 		  r=ssh_scp_read(scp,buffer,sizeof(buffer));
 		  if(r==SSH_ERROR){
 			  fprintf(stderr,"Error reading scp: %s\n",ssh_get_error(session));
+			  ssh_scp_close(scp);
+			  ssh_scp_free(scp);
 			  return -1;
 		  }
 		  printf("done\n");
 		  break;
 	  case SSH_ERROR:
 		  fprintf(stderr,"Error: %s\n",ssh_get_error(session));
+		  ssh_scp_close(scp);
+		  ssh_scp_free(scp);
 		  return -1;
 	  case SSH_SCP_REQUEST_WARNING:
 		  fprintf(stderr,"Warning: %s\n",ssh_scp_request_get_warning(scp));
@@ -134,6 +144,8 @@ static int fetch_files(ssh_session session){
 	  }
   } while (1);
   end:
+  ssh_scp_close(scp);
+  ssh_scp_free(scp);
   return 0;
 }
 
@@ -147,6 +159,7 @@ int main(int argc, char **argv){
   create_files(session);
   fetch_files(session);
   ssh_disconnect(session);
+  ssh_free(session);
   ssh_finalize();
   return 0;
 }
