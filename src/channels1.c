@@ -232,7 +232,7 @@ SSH_PACKET_CALLBACK(ssh_packet_data1){
     }
 
     ssh_log(session, SSH_LOG_PROTOCOL,
-        "Adding %zu bytes data in %d",
+        "Adding %" PRIdS " bytes data in %d",
         ssh_string_len(str), is_stderr);
 
     if (channel_default_bufferize(channel, ssh_string_data(str), ssh_string_len(str),
