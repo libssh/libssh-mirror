@@ -39,6 +39,14 @@
 #  define PRIdS "Id"
 # endif
 
+# ifndef PRIu64
+#  if __WORDSIZE == 64
+#   define PRIu64 "lu"
+#  else
+#   define PRIu64 "llu"
+#  endif /* __WORDSIZE */
+# endif /* PRIu64 */
+
 # ifdef _MSC_VER
 #  include <stdio.h>
 
