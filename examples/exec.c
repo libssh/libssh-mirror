@@ -50,6 +50,7 @@ int main(void) {
     ssh_channel_send_eof(channel);
     ssh_channel_close(channel);
     ssh_channel_free(channel);
+    ssh_disconnect(session);
     ssh_free(session);
     ssh_finalize();
 
