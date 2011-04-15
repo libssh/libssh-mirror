@@ -761,7 +761,7 @@ SSH_PACKET_CALLBACK(ssh_packet_publickey1){
    }
 
    bits = ssh_string_len(enc_session) * 8 - 7;
-   ssh_log(session, SSH_LOG_PROTOCOL, "%d bits, %zu bytes encrypted session",
+   ssh_log(session, SSH_LOG_PROTOCOL, "%d bits, %" PRIdS " bytes encrypted session",
        bits, ssh_string_len(enc_session));
    bits = htons(bits);
    /* the encrypted mpint */
