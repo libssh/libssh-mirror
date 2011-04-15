@@ -298,8 +298,9 @@ int ssh_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout) {
  *
  * @param  fd           Socket that will be polled.
  * @param  events       Poll events that will be monitored for the socket. i.e.
- *                      POLLIN, POLLPRI, POLLOUT, POLLERR, POLLHUP, POLLNVAL
+ *                      POLLIN, POLLPRI, POLLOUT
  * @param  cb           Function to be called if any of the events are set.
+ *
  * @param  userdata     Userdata to be passed to the callback function. NULL if
  *                      not needed.
  *

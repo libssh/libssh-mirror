@@ -270,7 +270,7 @@ int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p, socket_t fd, int r
 		if(s->state == SSH_SOCKET_CONNECTING){
 			ssh_log(s->session,SSH_LOG_PACKET,"Received POLLOUT in connecting state");
 			s->state = SSH_SOCKET_CONNECTED;
-			ssh_poll_set_events(p,POLLOUT | POLLIN | POLLERR);
+			ssh_poll_set_events(p,POLLOUT | POLLIN);
 			ssh_sock_set_blocking(ssh_socket_get_fd_in(s));
 			if(s->callbacks && s->callbacks->connected)
 				s->callbacks->connected(SSH_SOCKET_CONNECTED_OK,0,s->callbacks->userdata);
