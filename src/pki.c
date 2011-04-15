@@ -256,7 +256,7 @@ ssh_key ssh_pki_publickey_from_privatekey(ssh_key privkey) {
         return NULL;
     }
 
-    pubkey = malloc(sizeof(struct ssh_public_key_struct));
+    pubkey = malloc(sizeof(struct ssh_key_struct));
     if (pubkey == NULL) {
         return NULL;
     }
