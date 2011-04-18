@@ -71,6 +71,31 @@ static ssh_message ssh_message_new(ssh_session session){
   return msg;
 }
 
+static int ssh_execute_message_callback(ssh_session session, ssh_message msg) {
+    int ret;
+    if(session->ssh_message_callback != NULL) {
+        ret = session->ssh_message_callback(session, msg,
+                session->ssh_message_callback_data);
+        if(ret == 1) {
+            ret = ssh_message_reply_default(msg);
+            ssh_message_free(msg);
+            if(ret != SSH_OK) {
+                return ret;
+            }
+        } else {
+            ssh_message_free(msg);
+        }
+    } else {
+        ret = ssh_message_reply_default(msg);
+        ssh_message_free(msg);
+        if(ret != SSH_OK) {
+            return ret;
+        }
+    }
+    return SSH_OK;
+}
+
+
 /**
  * @internal
  *
@@ -81,12 +106,16 @@ static ssh_message ssh_message_new(ssh_session session){
  * @param[in]  message  The message to add to the queue.
  */
 void ssh_message_queue(ssh_session session, ssh_message message){
-  if(message){
-    if(session->ssh_message_list == NULL){
-      session->ssh_message_list=ssh_list_new();
+    if(message) {
+        if(session->ssh_message_list == NULL) {
+            if(session->ssh_message_callback != NULL) {
+                ssh_execute_message_callback(session, message);
+                return;
+            }
+            session->ssh_message_list = ssh_list_new();
+        }
+        ssh_list_append(session->ssh_message_list, message);
     }
-    ssh_list_append(session->ssh_message_list, message);
-  }
 }
 
 /**
