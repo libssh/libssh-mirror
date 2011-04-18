@@ -946,10 +946,12 @@ ssh_private_key privatekey_from_file(ssh_session session, const char *filename,
   if (file == NULL) {
     ssh_set_error(session, SSH_REQUEST_DENIED,
         "Error opening %s: %s", filename, strerror(errno));
+    SAFE_FREE(key_buf);
     return NULL;
   }
 
   size = fread(key_buf, 1, buf.st_size, file);
+  fclose(file);
   if(size != buf.st_size) {
     SAFE_FREE(key_buf);
     ssh_set_error(session, SSH_FATAL,
@@ -957,7 +959,6 @@ ssh_private_key privatekey_from_file(ssh_session session, const char *filename,
     return NULL;
   }
 
-  fclose(file);
 
   privkey = privatekey_from_base64(session, key_buf, type, passphrase);
 
