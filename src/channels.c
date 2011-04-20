@@ -1173,15 +1173,12 @@ int channel_write_common(ssh_channel channel, const void *data,
           "Remote window is %d bytes. going to write %d bytes",
           channel->remote_window,
           len);
-      ssh_log(session, SSH_LOG_PROTOCOL,
-          "Waiting for a growing window message...");
       /* What happens when the channel window is zero? */
-      while(channel->remote_window == 0) {
-        /* parse every incoming packet */
-        if (ssh_handle_packets(session,-1) == SSH_ERROR) {
-          leave_function();
-          return SSH_ERROR;
-        }
+      if(channel->remote_window == 0) {
+          /* nothing can be written */
+          ssh_log(session, SSH_LOG_PROTOCOL,
+                "Wait for a growing window message...");
+          return 0;
       }
       effectivelen = len > channel->remote_window ? channel->remote_window : len;
     } else {
@@ -1228,6 +1225,10 @@ error:
 
   leave_function();
   return SSH_ERROR;
+}
+
+uint32_t ssh_channel_window_size(ssh_channel channel) {
+    return channel->remote_window;
 }
 
 /**
