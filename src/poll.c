@@ -857,25 +857,11 @@ int ssh_event_add_session(ssh_event event, ssh_session session) {
  */
 int ssh_event_dopoll(ssh_event event, int timeout) {
     int rc;
-#ifdef WITH_SERVER
-    ssh_session session;
-    struct ssh_iterator *iterator;
-#endif
 
     if(event == NULL || event->ctx == NULL) {
         return SSH_ERROR;
     }
     rc = ssh_poll_ctx_dopoll(event->ctx, timeout);
-#ifdef WITH_SERVER
-    if(rc == SSH_OK) {
-        iterator = ssh_list_get_iterator(event->sessions);
-        while(iterator != NULL) {
-            session = (ssh_session)iterator->data;
-            ssh_execute_message_callbacks(session);
-            iterator = iterator->next;
-        }
-    }
-#endif
     return rc;
 }
 
