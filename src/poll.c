@@ -491,8 +491,13 @@ void ssh_poll_ctx_free(ssh_poll_ctx ctx) {
       socket_t fd = ctx->pollfds[i].fd;
 
       /* force poll object removal */
-      if (p->cb(p, fd, POLLERR, p->cb_data) < 0) {
-        used = ctx->polls_used;
+      if (p->cb && p->cb(p, fd, POLLERR, p->cb_data) < 0) {
+        if(ctx->polls_used < used) {
+            used = ctx->polls_used;
+        } else {
+            /* nothing to do */
+            i++;
+        }
       } else {
         i++;
       }
