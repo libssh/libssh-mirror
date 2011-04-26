@@ -431,8 +431,11 @@ static void batch_shell(ssh_session session){
     ssh_channel channel;
     char buffer[1024];
     int i,s=0;
-    for(i=0;i<MAXCMD && cmds[i];++i)
+    for(i=0;i<MAXCMD && cmds[i];++i) {
         s+=snprintf(buffer+s,sizeof(buffer)-s,"%s ",cmds[i]);
+		free(cmds[i]);
+		cmds[i] = NULL;
+	}
     channel=ssh_channel_new(session);
     ssh_channel_open_session(channel);
     if(ssh_channel_request_exec(channel,buffer)){
