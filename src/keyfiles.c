@@ -681,14 +681,15 @@ ssh_private_key privatekey_from_file(ssh_session session, const char *filename,
   /* TODO Implement to read both DSA and RSA at once. */
 
   /* needed for openssl initialization */
-  ssh_init();
+  if (ssh_init() < 0) {
+    return NULL;
+  }
+
   ssh_log(session, SSH_LOG_RARE, "Trying to open %s", filename);
   file = fopen(filename,"r");
   if (file == NULL) {
     ssh_set_error(session, SSH_REQUEST_DENIED,
         "Error opening %s: %s", filename, strerror(errno));
-    return NULL;
-  }
 
   ssh_log(session, SSH_LOG_RARE, "Trying to read %s, passphase=%s, authcb=%s",
       filename, passphrase ? "true" : "false",

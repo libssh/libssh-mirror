@@ -73,15 +73,6 @@ int ssh_init(void) {
 int ssh_finalize(void) {
   ssh_crypto_finalize();
   ssh_socket_cleanup();
-#ifdef HAVE_LIBGCRYPT
-  gcry_control(GCRYCTL_TERM_SECMEM);
-#elif defined HAVE_LIBCRYPTO
-  EVP_cleanup();
-  CRYPTO_cleanup_all_ex_data();
-#endif
-#ifdef _WIN32
-  WSACleanup();
-#endif
   /* It is important to finalize threading after CRYPTO because
    * it still depends on it */
   ssh_threads_finalize();

@@ -91,6 +91,8 @@ struct ssh_socket_struct {
   ssh_poll_handle poll_out;
 };
 
+static int sockets_initialized = 0;
+
 static int ssh_socket_unbuffered_read(ssh_socket s, void *buffer, uint32_t len);
 static int ssh_socket_unbuffered_write(ssh_socket s, const void *buffer,
 		uint32_t len);
@@ -100,16 +102,20 @@ static int ssh_socket_unbuffered_write(ssh_socket s, const void *buffer,
  * \brief inits the socket system (windows specific)
  */
 int ssh_socket_init(void) {
+  if (sockets_initialized == 0) {
 #ifdef _WIN32
-  struct WSAData wsaData;
+    struct WSAData wsaData;
 
-  /* Initiates use of the Winsock DLL by a process. */
-  if (WSAStartup(MAKEWORD(2, 0), &wsaData) != 0) {
-    return -1;
-  }
+    /* Initiates use of the Winsock DLL by a process. */
+    if (WSAStartup(MAKEWORD(2, 0), &wsaData) != 0) {
+      return -1;
+    }
 
 #endif
-  ssh_poll_init();
+    ssh_poll_init();
+
+    sockets_initialized = 1;
+  }
 
   return 0;
 }
@@ -118,7 +124,13 @@ int ssh_socket_init(void) {
  * @brief Cleanup the socket system.
  */
 void ssh_socket_cleanup(void) {
+  if (sockets_initialized == 1) {
     ssh_poll_cleanup();
+#ifdef _WIN32
+    WSACleanup();
+#endif
+    sockets_initialized = 0;
+  }
 }
 
 
