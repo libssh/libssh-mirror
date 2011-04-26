@@ -988,7 +988,9 @@ ssh_private_key privatekey_from_base64(ssh_session session, const char *b64_pkey
   }
 
   /* needed for openssl initialization */
-  ssh_init();
+  if (ssh_init() < 0) {
+    return NULL;
+  }
 
   ssh_log(session, SSH_LOG_RARE, "Trying to read privkey type=%s, passphase=%s, authcb=%s",
       type ? type == SSH_KEYTYPE_DSS ? "ssh-dss" : "ssh-rsa": "unknown",

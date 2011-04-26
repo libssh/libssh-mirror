@@ -140,6 +140,7 @@ int ssh_crypto_init(void) {
     }
     bignum_bin2bn(p_value, P_LEN, p);
     OpenSSL_add_all_algorithms();
+
 #endif
 
     ssh_crypto_initialized = 1;
@@ -154,8 +155,13 @@ void ssh_crypto_finalize(void) {
     g = NULL;
     bignum_free(p);
     p = NULL;
+#ifdef HAVE_LIBGCRYPT
+    gcry_control(GCRYCTL_TERM_SECMEM);
+#elif defined HAVE_LIBCRYPTO
+    EVP_cleanup();
+    CRYPTO_cleanup_all_ex_data();
+#endif
     ssh_crypto_initialized=0;
-
   }
 }
 
