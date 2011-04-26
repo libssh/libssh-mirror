@@ -771,7 +771,7 @@ int ssh_socket_connect_proxycommand(ssh_socket s, const char *command){
   s->state=SSH_SOCKET_CONNECTED;
   s->fd_is_socket=0;
   /* POLLOUT is the event to wait for in a nonblocking connect */
-  ssh_poll_set_events(ssh_socket_get_poll_handle_in(s),POLLIN | POLLERR);
+  ssh_poll_set_events(ssh_socket_get_poll_handle_in(s),POLLIN);
   ssh_poll_set_events(ssh_socket_get_poll_handle_out(s),POLLOUT);
   if(s->callbacks && s->callbacks->connected)
     s->callbacks->connected(SSH_SOCKET_CONNECTED_OK,0,s->callbacks->userdata);
