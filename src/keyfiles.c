@@ -690,6 +690,8 @@ ssh_private_key privatekey_from_file(ssh_session session, const char *filename,
   if (file == NULL) {
     ssh_set_error(session, SSH_REQUEST_DENIED,
         "Error opening %s: %s", filename, strerror(errno));
+    return NULL;
+  }
 
   ssh_log(session, SSH_LOG_RARE, "Trying to read %s, passphase=%s, authcb=%s",
       filename, passphrase ? "true" : "false",
