@@ -1828,6 +1828,11 @@ static int kbdauth_send(ssh_session session) {
 
   enter_function();
 
+  if(session==NULL || session->kbdint == NULL
+                   || session->kbdint->answers == NULL) {
+    return rc;
+  }
+
   if (buffer_add_u8(session->out_buffer, SSH2_MSG_USERAUTH_INFO_RESPONSE) < 0 ||
       buffer_add_u32(session->out_buffer,
         htonl(session->kbdint->nprompts)) < 0) {
@@ -2067,8 +2072,10 @@ int ssh_userauth_kbdint_getnanswers(ssh_session session) {
  * @return              0 on success, < 0 on error.
  */
 const char *ssh_userauth_kbdint_getanswer(ssh_session session, unsigned int i) {
-  if(session==NULL || session->kbdint == NULL)
+  if(session==NULL || session->kbdint == NULL
+                   || session->kbdint->answers == NULL) {
     return NULL;
+  }
   if (i > session->kbdint->nanswers) {
     return NULL;
   }
