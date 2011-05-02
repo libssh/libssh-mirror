@@ -872,15 +872,6 @@ ssh_private_key _privatekey_from_file(void *session, const char *filename,
   }
 #endif
 
-#ifdef HAVE_LIBCRYPTO
-  bio = BIO_new_file(filename,"r");
-  if (bio == NULL) {
-	  fclose(file);
-      ssh_set_error(session, SSH_FATAL, "Could not create BIO.");
-      return NULL;
-  }
-#endif
-
   switch (type) {
     case SSH_KEYTYPE_DSS:
 #ifdef HAVE_LIBGCRYPT
