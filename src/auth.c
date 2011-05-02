@@ -1828,8 +1828,7 @@ static int kbdauth_send(ssh_session session) {
 
   enter_function();
 
-  if(session==NULL || session->kbdint == NULL
-                   || session->kbdint->answers == NULL) {
+  if(session==NULL || session->kbdint == NULL) {
     return rc;
   }
 
@@ -1841,7 +1840,7 @@ static int kbdauth_send(ssh_session session) {
   }
 
   for (i = 0; i < session->kbdint->nprompts; i++) {
-    if (session->kbdint->answers[i]) {
+    if (session->kbdint->answers && session->kbdint->answers[i]) {
       answer = ssh_string_from_char(session->kbdint->answers[i]);
     } else {
       answer = ssh_string_from_char("");
