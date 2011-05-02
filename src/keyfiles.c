@@ -872,6 +872,15 @@ ssh_private_key _privatekey_from_file(void *session, const char *filename,
   }
 #endif
 
+#ifdef HAVE_LIBCRYPTO
+  bio = BIO_new_file(filename,"r");
+  if (bio == NULL) {
+	  fclose(file);
+      ssh_set_error(session, SSH_FATAL, "Could not create BIO.");
+      return NULL;
+  }
+#endif
+
   switch (type) {
     case SSH_KEYTYPE_DSS:
 #ifdef HAVE_LIBGCRYPT
@@ -884,7 +893,7 @@ ssh_private_key _privatekey_from_file(void *session, const char *filename,
 #elif defined HAVE_LIBCRYPTO
       dsa = PEM_read_bio_DSAPrivateKey(bio, NULL, NULL, NULL);
 
-	  BIO_free(bio);
+      BIO_free(bio);
 
       if (dsa == NULL) {
         ssh_set_error(session, SSH_FATAL,
@@ -905,7 +914,7 @@ ssh_private_key _privatekey_from_file(void *session, const char *filename,
 #elif defined HAVE_LIBCRYPTO
       rsa = PEM_read_bio_RSAPrivateKey(bio, NULL, NULL, NULL);
 
-	  BIO_free(bio);
+      BIO_free(bio);
 
       if (rsa == NULL) {
         ssh_set_error(session, SSH_FATAL,
@@ -917,9 +926,9 @@ ssh_private_key _privatekey_from_file(void *session, const char *filename,
       break;
     default:
 #ifdef HAVE_LIBGCRYPT
-		fclose(file);
+        fclose(file);
 #elif defined HAVE_LIBCRYPTO
-		BIO_free(bio);
+        BIO_free(bio);
 #endif
         ssh_set_error(session, SSH_FATAL, "Invalid private key type %d", type);
         return NULL;
