@@ -41,7 +41,7 @@
 #include "libssh/keys.h"
 #include "libssh/dh.h"
 #include "libssh/messages.h"
-#if WITH_SERVER
+#ifdef WITH_SERVER
 #include "libssh/server.h"
 #endif
 
