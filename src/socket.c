@@ -253,6 +253,9 @@ int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p, socket_t fd, int r
 				s->callbacks->exception(
 						SSH_SOCKET_EXCEPTION_ERROR,
 						s->last_errno,s->callbacks->userdata);
+                /* p may have been freed, so don't use it
+                 * anymore in this function */
+                p = NULL;
 			}
 		}
 		if(r==0){
@@ -266,6 +269,9 @@ int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p, socket_t fd, int r
 				s->callbacks->exception(
 						SSH_SOCKET_EXCEPTION_EOF,
 						0,s->callbacks->userdata);
+                /* p may have been freed, so don't use it
+                 * anymore in this function */
+                p = NULL;
 			}
 		}
 		if(r>0){
