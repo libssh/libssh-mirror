@@ -75,12 +75,12 @@ int benchmarks_ping_latency (const char *host, float *average){
   }
   if(!found)
     goto parseerror;
-  fclose(fd);
+  pclose(fd);
   return 0;
 
 parseerror:
   fprintf(stderr,"Parse error : couldn't locate average in %s",line);
-  fclose(fd);
+  pclose(fd);
   return -1;
 }
 

@@ -132,6 +132,7 @@ int torture_rmdirs(const char *path) {
             rewinddir(d);
         }
     } else {
+        closedir(d);
         return -1;
     }
 
@@ -257,6 +258,7 @@ failed:
     }
     ssh_disconnect(t->ssh);
     ssh_free(t->ssh);
+	free(t);
 
     return NULL;
 }
