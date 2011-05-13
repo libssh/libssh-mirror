@@ -48,7 +48,7 @@ int verify_knownhost(ssh_session session){
     case SSH_SERVER_KNOWN_CHANGED:
       fprintf(stderr,"Host key for server changed : server's one is now :\n");
       ssh_print_hexa("Public key hash",hash, hlen);
-      free(hash);
+      ssh_clean_pubkey_hash(&hash);
       fprintf(stderr,"For security reason, connection will be stopped\n");
       return -1;
     case SSH_SERVER_FOUND_OTHER:
@@ -65,20 +65,23 @@ int verify_knownhost(ssh_session session){
       hexa = ssh_get_hexa(hash, hlen);
       fprintf(stderr,"The server is unknown. Do you trust the host key ?\n");
       fprintf(stderr, "Public key hash: %s\n", hexa);
-      free(hexa);
+      ssh_string_free_char(hexa);
       if (fgets(buf, sizeof(buf), stdin) == NULL) {
+	    ssh_clean_pubkey_hash(&hash);
         return -1;
       }
       if(strncasecmp(buf,"yes",3)!=0){
+	    ssh_clean_pubkey_hash(&hash);
         return -1;
       }
       fprintf(stderr,"This new key will be written on disk for further usage. do you agree ?\n");
       if (fgets(buf, sizeof(buf), stdin) == NULL) {
+	    ssh_clean_pubkey_hash(&hash);
         return -1;
       }
       if(strncasecmp(buf,"yes",3)==0){
         if (ssh_write_knownhost(session) < 0) {
-          free(hash);
+          ssh_clean_pubkey_hash(&hash);
           fprintf(stderr, "error %s\n", strerror(errno));
           return -1;
         }
@@ -86,10 +89,10 @@ int verify_knownhost(ssh_session session){
 
       break;
     case SSH_SERVER_ERROR:
-      free(hash);
+      ssh_clean_pubkey_hash(&hash);
       fprintf(stderr,"%s",ssh_get_error(session));
       return -1;
   }
-  free(hash);
+  ssh_clean_pubkey_hash(&hash);
   return 0;
 }
