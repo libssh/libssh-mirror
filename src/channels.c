@@ -2223,10 +2223,26 @@ error:
  * In such a case this request will be silently ignored.
  * Only SSH-v2 is supported (I'm not sure about SSH-v1).
  *
+ * OpenSSH doesn't support signals yet, see:
+ * https://bugzilla.mindrot.org/show_bug.cgi?id=1424
+ *
  * @param[in]  channel  The channel to send signal.
  *
  * @param[in]  sig      The signal to send (without SIG prefix)
- *                      (e.g. "TERM" or "KILL").
+ *                      \n\n
+ *                      SIGABRT  -> ABRT \n
+ *                      SIGALRM  -> ALRM \n
+ *                      SIGFPE   -> FPE  \n
+ *                      SIGHUP   -> HUP  \n
+ *                      SIGILL   -> ILL  \n
+ *                      SIGINT   -> INT  \n
+ *                      SIGKILL  -> KILL \n
+ *                      SIGPIPE  -> PIPE \n
+ *                      SIGQUIT  -> QUIT \n
+ *                      SIGSEGV  -> SEGV \n
+ *                      SIGTERM  -> TERM \n
+ *                      SIGUSR1  -> USR1 \n
+ *                      SIGUSR2  -> USR2 \n
  *
  * @return              SSH_OK on success, SSH_ERROR if an error occured
  *                      (including attempts to send signal via SSH-v1 session).
