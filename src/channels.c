@@ -2616,7 +2616,7 @@ int ssh_channel_get_exit_status(ssh_channel channel) {
     return -1;
   }
 
-  while (channel->remote_eof == 0 || channel->exit_status == -1) {
+  while ((channel->remote_eof == 0 || channel->exit_status == -1) && channel->session->alive) {
     /* Parse every incoming packet */
     if (ssh_handle_packets(channel->session,-1) != SSH_OK) {
       return -1;
