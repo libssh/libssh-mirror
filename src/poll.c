@@ -105,29 +105,6 @@ static poll_fn ssh_poll_emu;
 #include <time.h>
 #include <windows.h>
 #include <winsock2.h>
-
-#if (_WIN32_WINNT < 0x0600)
-typedef struct ssh_pollfd_struct WSAPOLLFD;
-#endif
-
-typedef int (WSAAPI* WSAPoll_FunctionType)(WSAPOLLFD fdarray[],
-                                           ULONG nfds,
-                                           INT timeout
-);
-
-static WSAPoll_FunctionType wsa_poll;
-
-int win_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout) {
-    if (wsa_poll) {
-        return (wsa_poll)((WSAPOLLFD *) fds, nfds, timeout);
-    }
-
-    return SOCKET_ERROR;
-}
-
-#define WS2_LIBRARY "ws2_32.dll"
-static HINSTANCE hlib;
-
 #else /* _WIN32 */
 #include <sys/select.h>
 #include <sys/socket.h>
@@ -261,30 +238,10 @@ static int bsd_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout) {
 
 void ssh_poll_init(void) {
     ssh_poll_emu = bsd_poll;
-
-#ifdef _WIN32
-    hlib = LoadLibrary(WS2_LIBRARY);
-    if (hlib != NULL) {
-        wsa_poll = (WSAPoll_FunctionType) (void *) GetProcAddress(hlib, "WSAPoll");
-    }
-#endif /* _WIN32 */
-
-    if (wsa_poll == NULL) {
-        ssh_poll_emu = bsd_poll;
-    } else {
-        ssh_poll_emu = win_poll;
-    }
 }
 
 void ssh_poll_cleanup(void) {
     ssh_poll_emu = bsd_poll;
-#ifdef _WIN32
-    wsa_poll = NULL;
-
-    FreeLibrary(hlib);
-
-    hlib = NULL;
-#endif /* _WIN32 */
 }
 
 int ssh_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout) {
