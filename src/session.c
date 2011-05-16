@@ -429,7 +429,8 @@ int ssh_handle_packets(ssh_session session, int timeout) {
   	if(spoll_in != spoll_out)
   	  ssh_poll_ctx_add(ctx,spoll_out);
   }
-  ssh_poll_ctx_dopoll(ctx,timeout);
+  if( ssh_poll_ctx_dopoll(ctx,timeout) )
+    session->session_state = SSH_SESSION_STATE_ERROR;
   leave_function();
   if (session->session_state != SSH_SESSION_STATE_ERROR)
   	return SSH_OK;
