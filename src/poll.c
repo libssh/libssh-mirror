@@ -598,10 +598,8 @@ int ssh_poll_ctx_dopoll(ssh_poll_ctx ctx, int timeout) {
     return 0;
 
   rc = ssh_poll(ctx->pollfds, ctx->polls_used, timeout);
-  if(rc < 0)
-    rc=SSH_ERROR;
   if(rc <= 0)
-    return rc;
+    return SSH_ERROR;
   used = ctx->polls_used;
   for (i = 0; i < used && rc > 0; ) {
     if (!ctx->pollfds[i].revents) {

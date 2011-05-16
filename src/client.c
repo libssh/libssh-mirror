@@ -673,8 +673,6 @@ int ssh_connect(ssh_session session) {
   } else {
     ret=ssh_socket_connect(session->socket, session->host, session->port,
     		session->bindaddr);
-
-    /*, session->timeout * 1000 + session->timeout_usec); */
   }
   if (ret == SSH_ERROR) {
     leave_function();
@@ -687,8 +685,12 @@ int ssh_connect(ssh_session session) {
   ssh_log(session,SSH_LOG_PROTOCOL,"Socket connecting, now waiting for the callbacks to work");
 pending:
 	session->pending_call_state=SSH_PENDING_CALL_CONNECT;
-  if(ssh_is_blocking(session))
-    ssh_handle_packets_termination(session,-1,ssh_connect_termination,session);
+  if(ssh_is_blocking(session)) {
+    int timeout = session->timeout * 1000 + session->timeout_usec;
+	if (timeout <= 0)
+	  timeout = -1;
+    ssh_handle_packets_termination(session,timeout,ssh_connect_termination,session);
+  }
   else
     ssh_handle_packets_termination(session,0,ssh_connect_termination, session);
   ssh_log(session,SSH_LOG_PACKET,"ssh_connect: Actual state : %d",session->session_state);
