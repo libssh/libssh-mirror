@@ -345,7 +345,7 @@ int ssh_userauth_list(ssh_session session, const char *username) {
  *          SSH_AUTH_DENIED:  Authentication failed: use another method\n
  *          SSH_AUTH_PARTIAL: You've been partially authenticated, you still
  *                            have to use another method\n
- *          SSH_AUTH_SUCCESS: Authentication success
+ *          SSH_AUTH_SUCCESS: Authentication success\n
  *          SSH_AUTH_AGAIN:   In nonblocking mode, you've got to call this again
  *                            later.
  */
@@ -756,7 +756,9 @@ error:
  *          SSH_AUTH_DENIED:  Authentication failed: use another method.\n
  *          SSH_AUTH_PARTIAL: You've been partially authenticated, you still
  *                            have to use another method.\n
- *          SSH_AUTH_SUCCESS: Authentication successful.
+ *          SSH_AUTH_SUCCESS: Authentication successful.\n
+ *          SSH_AUTH_AGAIN:   In nonblocking mode, you've got to call this again
+ *                            later.
  *
  * @see publickey_from_file()
  * @see privatekey_from_file()
@@ -956,7 +958,7 @@ error:
  *          SSH_AUTH_DENIED:  Authentication failed: use another method.\n
  *          SSH_AUTH_PARTIAL: You've been partially authenticated, you still
  *                            have to use another method.\n
- *          SSH_AUTH_SUCCESS: Authentication successful.
+ *          SSH_AUTH_SUCCESS: Authentication successful.\n
  *          SSH_AUTH_AGAIN:   In nonblocking mode, you've got to call this again
  *                            later.
  *
@@ -1666,7 +1668,9 @@ error:
  *                            have to use another method\n
  *          SSH_AUTH_SUCCESS: Authentication success\n
  *          SSH_AUTH_INFO:    The server asked some questions. Use
- *                            ssh_userauth_kbdint_getnprompts() and such.
+ *                            ssh_userauth_kbdint_getnprompts() and such.\n
+ *          SSH_AUTH_AGAIN:   In nonblocking mode, you've got to call this again
+ *                            later.
  *
  * @see ssh_userauth_kbdint_getnprompts()
  * @see ssh_userauth_kbdint_getname()
