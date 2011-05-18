@@ -38,6 +38,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifdef WITH_LIBZ
+#include <zlib.h>
+#endif
+
 #include "libssh/priv.h"
 #include "libssh/session.h"
 #include "libssh/crypto.h"
@@ -82,7 +86,7 @@ static void cipher_free(struct crypto_struct *cipher) {
 }
 
 struct ssh_crypto_struct *crypto_new(void) {
-	struct ssh_crypto_struct *crypto;
+   struct ssh_crypto_struct *crypto;
 
   crypto = malloc(sizeof(struct ssh_crypto_struct));
   if (crypto == NULL) {
@@ -108,6 +112,18 @@ void crypto_free(struct ssh_crypto_struct *crypto){
   bignum_free(crypto->y);
   bignum_free(crypto->k);
   /* lot of other things */
+
+#ifdef WITH_LIBZ
+  if (crypto->compress_out_ctx &&
+      (deflateEnd(crypto->compress_out_ctx) != 0)) {
+    inflateEnd(crypto->compress_out_ctx);
+  }
+  if (crypto->compress_in_ctx &&
+      (deflateEnd(crypto->compress_in_ctx) != 0)) {
+    inflateEnd(crypto->compress_in_ctx);
+  }
+#endif
+
   /* i'm lost in my own code. good work */
   memset(crypto,0,sizeof(*crypto));
 
