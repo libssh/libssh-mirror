@@ -890,6 +890,8 @@ ssh_private_key _privatekey_from_file(void *session, const char *filename,
         ssh_set_error(session, SSH_FATAL,
             "Parsing private key %s: %s",
             filename, ERR_error_string(ERR_get_error(), NULL));
+#else
+      {
 #endif
         return NULL;
       }
@@ -911,6 +913,8 @@ ssh_private_key _privatekey_from_file(void *session, const char *filename,
         ssh_set_error(session, SSH_FATAL,
             "Parsing private key %s: %s",
             filename, ERR_error_string(ERR_get_error(), NULL));
+#else
+      {
 #endif
         return NULL;
       }
