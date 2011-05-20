@@ -44,9 +44,13 @@
  * @param[in]  mode     One of SSH_SCP_WRITE or SSH_SCP_READ, depending if you
  *                      need to drop files remotely or read them.
  *                      It is not possible to combine read and write.
+ *                      SSH_SCP_RECURSIVE Flag can be or'ed to this to indicate
+ *                      that you're going to use recursion. Browsing through
+ *                      directories is not possible without this.
  *
  * @param[in]  location The directory in which write or read will be done. Any
  *                      push or pull will be relative to this place.
+ *                      This can also be a pattern of files to download (read).
  *
  * @returns             A ssh_scp handle, NULL if the creation was impossible.
  */
