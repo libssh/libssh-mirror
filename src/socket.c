@@ -226,7 +226,7 @@ int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p, socket_t fd, int r
 	if(!ssh_socket_is_open(s)){
 	  return -1;
 	}
-	if(revents & POLLERR){
+	if(revents & POLLERR || revents & POLLHUP){
 		/* Check if we are in a connecting state */
 		if(s->state==SSH_SOCKET_CONNECTING){
 			s->state=SSH_SOCKET_ERROR;
