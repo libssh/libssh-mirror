@@ -87,7 +87,6 @@ set(libssh_SRCS
   dh.c
   error.c
   getpass.c
-  gcrypt_missing.c
   gzip.c
   init.c
   kex.c
@@ -96,7 +95,6 @@ set(libssh_SRCS
   known_hosts.c
   legacy.c
   libcrypto.c
-  libgcrypt.c
   log.c
   match.c
   messages.c
@@ -113,6 +111,14 @@ set(libssh_SRCS
   threads.c
   wrapper.c
 )
+
+if (WITH_GCRYPT)
+  set(libssh_SRCS
+    ${libssh_SRCS}
+    libgcrypt.c
+    gcrypt_missing.c  
+  )
+endif (WITH_GCRYPT)
 
 if (WITH_SFTP)
   set(libssh_SRCS

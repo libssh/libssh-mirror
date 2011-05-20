@@ -667,21 +667,21 @@ SSH_PACKET_CALLBACK(channel_rcv_request) {
 	}
 
 	if (strcmp(request,"signal") == 0) {
-		ssh_string signal;
+		ssh_string signal_str;
         char *sig;
 
 		SAFE_FREE(request);
 		ssh_log(session, SSH_LOG_PACKET, "received signal");
 
-		signal = buffer_get_ssh_string(packet);
-		if (signal == NULL) {
+		signal_str = buffer_get_ssh_string(packet);
+		if (signal_str == NULL) {
 			ssh_log(session, SSH_LOG_PACKET, "Invalid MSG_CHANNEL_REQUEST");
 			leave_function();
 			return SSH_PACKET_USED;
 		}
 
-		sig = ssh_string_to_char(signal);
-		ssh_string_free(signal);
+		sig = ssh_string_to_char(signal_str);
+		ssh_string_free(signal_str);
 		if (sig == NULL) {
 			leave_function();
 			return SSH_PACKET_USED;
