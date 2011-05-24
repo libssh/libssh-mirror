@@ -161,6 +161,30 @@ static void torture_path_expand_known_hosts(void **state) {
     free(tmp);
 }
 
+static void torture_timeout_elapsed(void **state){
+    struct ssh_timestamp ts;
+    (void) state;
+    ssh_timestamp_init(&ts);
+    usleep(50000);
+    assert_true(ssh_timeout_elapsed(&ts,25));
+    assert_false(ssh_timeout_elapsed(&ts,30000));
+    assert_false(ssh_timeout_elapsed(&ts,75));
+    assert_true(ssh_timeout_elapsed(&ts,0));
+    assert_false(ssh_timeout_elapsed(&ts,-1));
+}
+
+static void torture_timeout_update(void **state){
+    struct ssh_timestamp ts;
+    (void) state;
+    ssh_timestamp_init(&ts);
+    usleep(50000);
+    assert_int_equal(ssh_timeout_update(&ts,25), 0);
+    assert_in_range(ssh_timeout_update(&ts,30000),29000,29960);
+    assert_in_range(ssh_timeout_update(&ts,75),1,40);
+    assert_int_equal(ssh_timeout_update(&ts,0),0);
+    assert_int_equal(ssh_timeout_update(&ts,-1),-1);
+}
+
 int torture_run_tests(void) {
     int rc;
     const UnitTest tests[] = {
@@ -175,6 +199,8 @@ int torture_run_tests(void) {
 #endif
         unit_test_setup_teardown(torture_path_expand_escape, setup, teardown),
         unit_test_setup_teardown(torture_path_expand_known_hosts, setup, teardown),
+        unit_test(torture_timeout_elapsed),
+        unit_test(torture_timeout_update),
     };
 
     ssh_init();
