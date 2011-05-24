@@ -23,6 +23,11 @@
 
 #include "torture.h"
 #include <libssh/libssh.h>
+#include <sys/time.h>
+
+#define HOST "localhost"
+/* Should work until Apnic decides to assign it :) */
+#define BLACKHOLE "1.1.1.1"
 
 static void setup(void **state) {
     int verbosity=torture_libssh_verbosity();
@@ -44,7 +49,7 @@ static void torture_connect_nonblocking(void **state) {
 
     int rc;
 
-    rc = ssh_options_set(session, SSH_OPTIONS_HOST, "localhost");
+    rc = ssh_options_set(session, SSH_OPTIONS_HOST, HOST);
     assert_true(rc == SSH_OK);
     ssh_set_blocking(session,0);
 
@@ -57,12 +62,39 @@ static void torture_connect_nonblocking(void **state) {
 
 }
 
+static void torture_connect_timeout(void **state) {
+    ssh_session session = *state;
+    struct timeval before, after;
+    int rc;
+    long timeout = 2;
+    time_t sec;
+    suseconds_t usec;
+
+    rc = ssh_options_set(session, SSH_OPTIONS_HOST, BLACKHOLE);
+    assert_true(rc == SSH_OK);
+    rc = ssh_options_set(session, SSH_OPTIONS_TIMEOUT, &timeout);
+    assert_true(rc == SSH_OK);
+
+    rc = gettimeofday(&before, NULL);
+    assert_true(rc == 0);
+    rc = ssh_connect(session);
+    assert_true(rc == SSH_ERROR);
+    rc = gettimeofday(&after, NULL);
+    assert_true(rc == 0);
+    sec = after.tv_sec - before.tv_sec;
+    usec = after.tv_usec - before.tv_usec;
+    /* Borrow a second for the missing usecs, but don't bother calculating */
+    if(usec < 0)
+      sec--;
+    assert_in_range(sec,1,3);
+}
+
 static void torture_connect_double(void **state) {
     ssh_session session = *state;
 
     int rc;
 
-    rc = ssh_options_set(session, SSH_OPTIONS_HOST, "localhost");
+    rc = ssh_options_set(session, SSH_OPTIONS_HOST, HOST);
     assert_true(rc == SSH_OK);
     rc = ssh_connect(session);
     assert_true(rc == SSH_OK);
@@ -88,6 +120,7 @@ int torture_run_tests(void) {
         unit_test_setup_teardown(torture_connect_nonblocking, setup, teardown),
         unit_test_setup_teardown(torture_connect_double, setup, teardown),
         unit_test_setup_teardown(torture_connect_failure, setup, teardown),
+        unit_test_setup_teardown(torture_connect_timeout, setup, teardown),
     };
 
     ssh_init();
