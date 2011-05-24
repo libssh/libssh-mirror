@@ -41,6 +41,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <ctype.h>
+#include <time.h>
 
 #ifdef _WIN32
 
@@ -855,6 +856,91 @@ int ssh_analyze_banner(ssh_session session, int server, int *ssh1, int *ssh2) {
   return 0;
 }
 
+/* try the Monotonic clock if possible for perfs reasons */
+#ifdef _POSIX_MONOTONIC_CLOCK
+#define CLOCK CLOCK_MONOTONIC
+#else
+#define CLOCK CLOCK_REALTIME
+#endif
+
+/**
+ * @internal
+ * @brief initializes a timestamp to the current time
+ * @param[out] ts pointer to an allocated ssh_timestamp structure
+ */
+void ssh_timestamp_init(struct ssh_timestamp *ts){
+  struct timespec tp;
+  clock_gettime(CLOCK, &tp);
+  ts->seconds = tp.tv_sec;
+  ts->useconds = tp.tv_nsec / 1000;
+}
+
+/**
+ * @internal
+ * @brief gets the time difference between two timestamps in ms
+ * @param[in] old older value
+ * @param[in] new newer value
+ * @returns difference in milliseconds
+ */
+
+static int ssh_timestamp_difference(struct ssh_timestamp *old,
+    struct ssh_timestamp *new){
+  long seconds, usecs, msecs;
+  seconds = new->seconds - old->seconds;
+  usecs = new->useconds - old->useconds;
+  if (usecs < 0){
+    seconds--;
+    usecs += 1000000;
+  }
+  msecs = seconds * 1000 + usecs/1000;
+  return msecs;
+}
+
+/**
+ * @internal
+ * @brief Checks if a timeout is elapsed, in function of a previous
+ * timestamp and an assigned timeout
+ * @param[in] ts pointer to an existing timestamp
+ * @param[in] timeout timeout in milliseconds. Negative values mean infinite
+ *                   timeout
+ * @returns 1 if timeout is elapsed
+ *          0 otherwise
+ */
+int ssh_timeout_elapsed(struct ssh_timestamp *ts, int timeout) {
+  struct ssh_timestamp now;
+  if(timeout < 0)
+    return 0; // -1 means infinite timeout
+  if(timeout == 0)
+    return 1; // 0 means no timeout
+  ssh_timestamp_init(&now);
+
+  if(ssh_timestamp_difference(ts,&now) >= timeout)
+    return 1;
+  else
+    return 0;
+}
+
+/**
+ * @brief updates a timeout value so it reflects the remaining time
+ * @param[in] ts pointer to an existing timestamp
+ * @param[in] timeout timeout in milliseconds. Negative values mean infinite
+ *             timeout
+ * @returns   remaining time in milliseconds, 0 if elapsed, -1 if never.
+ */
+int ssh_timeout_update(struct ssh_timestamp *ts, int timeout){
+  struct ssh_timestamp now;
+  int ms, ret;
+  if(timeout == 0)
+    return 0;
+  if(timeout==-1)
+    return -1;
+  ssh_timestamp_init(&now);
+  ms = ssh_timestamp_difference(ts,&now);
+  if(ms < 0)
+    ms = 0;
+  ret = timeout - ms;
+  return ret >= 0 ? ret: 0;
+}
 /** @} */
 
 /* vim: set ts=4 sw=4 et cindent: */

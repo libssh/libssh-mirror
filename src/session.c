@@ -304,18 +304,27 @@ int ssh_is_blocking(ssh_session session){
  *                    will block, in milliseconds. Specifying a negative value
  *                    means an infinite timeout. This parameter is passed to
  *                    the poll() function.
- * @returns           SSH_OK on success, SSH_ERROR otherwise.
+ * @returns           SSH_OK on success, SSH_AGAIN if timeout occurred,
+ *                    SSH_ERROR otherwise.
  */
 
 int ssh_blocking_flush(ssh_session session, int timeout){
 	ssh_socket s;
+	struct ssh_timestamp ts;
+	int rc;
 	if(session==NULL)
 		return SSH_ERROR;
 
 	enter_function();
 	s=session->socket;
+	ssh_timestamp_init(&ts);
 	while (ssh_socket_buffered_write_bytes(s) > 0 && session->alive) {
-		ssh_handle_packets(session, timeout);
+		rc=ssh_handle_packets(session, timeout);
+		if(ssh_timeout_elapsed(&ts,timeout)){
+		  rc=SSH_AGAIN;
+		  break;
+		}
+		timeout = ssh_timeout_update(&ts, timeout);
 	}
 
 	leave_function();
@@ -415,6 +424,7 @@ void ssh_set_fd_except(ssh_session session) {
 int ssh_handle_packets(ssh_session session, int timeout) {
 	ssh_poll_handle spoll_in,spoll_out;
 	ssh_poll_ctx ctx;
+	int rc;
   if(session==NULL || session->socket==NULL)
   	return SSH_ERROR;
   enter_function();
@@ -429,7 +439,8 @@ int ssh_handle_packets(ssh_session session, int timeout) {
   	if(spoll_in != spoll_out)
   	  ssh_poll_ctx_add(ctx,spoll_out);
   }
-  if( ssh_poll_ctx_dopoll(ctx,timeout) )
+  rc = ssh_poll_ctx_dopoll(ctx,timeout);
+  if(rc == SSH_ERROR)
     session->session_state = SSH_SESSION_STATE_ERROR;
   leave_function();
   if (session->session_state != SSH_SESSION_STATE_ERROR)
@@ -460,17 +471,19 @@ int ssh_handle_packets(ssh_session session, int timeout) {
 int ssh_handle_packets_termination(ssh_session session, int timeout,
     ssh_termination_function fct, void *user){
   int ret = SSH_ERROR;
+  struct ssh_timestamp ts;
+  ssh_timestamp_init(&ts);
+
   while(!fct(user)){
     ret = ssh_handle_packets(session, timeout);
     if(ret == SSH_ERROR)
       return SSH_ERROR;
-    if(timeout == 0){
-      if(fct(user))
-        return SSH_OK;
-      else
-        return SSH_AGAIN;
+    if(fct(user)) {
+      return SSH_OK;
+    } else if (ssh_timeout_elapsed(&ts, timeout)) {
+      return SSH_AGAIN;
     }
-    /* TODO: verify that total timeout has not expired and then return SSH_AGAIN */
+    timeout = ssh_timeout_update(&ts,timeout);
   }
   return ret;
 }

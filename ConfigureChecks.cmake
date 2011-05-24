@@ -120,6 +120,11 @@ if (UNIX)
     check_function_exists(regcomp HAVE_REGCOMP)
 endif (UNIX)
 
+check_library_exists(rt clock_gettime "" HAVE_LIBRT)
+if (HAVE_LIBRT)
+    set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} rt)
+endif (HAVE_LIBRT)
+
 set(LIBSSH_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} CACHE INTERNAL "libssh required system libraries")
 
 # LIBRARIES

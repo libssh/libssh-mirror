@@ -589,6 +589,7 @@ void ssh_poll_ctx_remove(ssh_poll_ctx ctx, ssh_poll_handle p) {
  *                      the poll() function.
  * @returns SSH_OK      No error.
  *          SSH_ERROR   Error happened during the poll.
+ *          SSH_AGAIN   Timeout occured
  */
 
 int ssh_poll_ctx_dopoll(ssh_poll_ctx ctx, int timeout) {
@@ -602,8 +603,10 @@ int ssh_poll_ctx_dopoll(ssh_poll_ctx ctx, int timeout) {
     return 0;
 
   rc = ssh_poll(ctx->pollfds, ctx->polls_used, timeout);
-  if(rc <= 0)
+  if(rc < 0)
     return SSH_ERROR;
+  if (rc == 0)
+    return SSH_AGAIN;
   used = ctx->polls_used;
   for (i = 0; i < used && rc > 0; ) {
     if (!ctx->pollfds[i].revents) {
