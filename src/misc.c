@@ -42,7 +42,7 @@
 #include <sys/types.h>
 #include <ctype.h>
 #include <time.h>
-#ifndef HAVE_RT
+#ifndef HAVE_CLOCK_GETTIME
 #include <sys/time.h>
 #endif
 
@@ -872,17 +872,19 @@ int ssh_analyze_banner(ssh_session session, int server, int *ssh1, int *ssh2) {
  * @param[out] ts pointer to an allocated ssh_timestamp structure
  */
 void ssh_timestamp_init(struct ssh_timestamp *ts){
-#ifndef HAVE_RT
-  struct timeval tp;
-  gettimeofday(&tp, NULL);
-  ts->useconds = tp.tv_usec;
-#else
+#ifdef HAVE_CLOCK_GETTIME
   struct timespec tp;
   clock_gettime(CLOCK, &tp);
   ts->useconds = tp.tv_nsec / 1000;
+#else
+  struct timeval tp;
+  gettimeofday(&tp, NULL);
+  ts->useconds = tp.tv_usec;
 #endif
   ts->seconds = tp.tv_sec;
 }
+
+#undef CLOCK
 
 /**
  * @internal

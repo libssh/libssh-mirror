@@ -107,10 +107,12 @@ if (UNIX)
 
         # librt
         check_library_exists(rt nanosleep "" HAVE_LIBRT)
-        if (HAVE_LIBRT)
-          set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} rt)
-        endif (HAVE_LIBRT)
     endif (NOT LINUX)
+
+    check_library_exists(rt clock_gettime "" HAVE_CLOCK_GETTIME)
+    if (HAVE_LIBRT OR HAVE_CLOCK_GETTIME)
+        set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} rt)
+    endif (HAVE_LIBRT OR HAVE_CLOCK_GETTIME)
 
     check_function_exists(getaddrinfo HAVE_GETADDRINFO)
     check_function_exists(poll HAVE_POLL)
@@ -118,11 +120,6 @@ if (UNIX)
     check_function_exists(cfmakeraw HAVE_CFMAKERAW)
     check_function_exists(regcomp HAVE_REGCOMP)
 endif (UNIX)
-
-check_library_exists(rt clock_gettime "" HAVE_LIBRT)
-if (HAVE_LIBRT)
-    set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} rt)
-endif (HAVE_LIBRT)
 
 set(LIBSSH_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} CACHE INTERNAL "libssh required system libraries")
 
