@@ -276,6 +276,7 @@ static void torture_pki_pki_publickey_from_privatekey_RSA(void **state) {
 
     free(key_str);
     ssh_key_free(key);
+    ssh_key_free(pubkey);
 }
 
 static void torture_pki_pki_publickey_from_privatekey_DSA(void **state) {
@@ -300,6 +301,7 @@ static void torture_pki_pki_publickey_from_privatekey_DSA(void **state) {
 
     free(key_str);
     ssh_key_free(key);
+    ssh_key_free(pubkey);
 }
 
 int torture_run_tests(void) {

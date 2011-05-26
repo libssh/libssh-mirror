@@ -1039,7 +1039,6 @@ ssh_private_key privatekey_from_base64(ssh_session session, const char *b64_pkey
         dsa = PEM_read_bio_DSAPrivateKey(mem, NULL, NULL, (void *) passphrase);
       }
 
-      (void)BIO_set_close(mem, BIO_NOCLOSE);
       BIO_free(mem);
 
       if (dsa == NULL) {
@@ -1083,7 +1082,6 @@ ssh_private_key privatekey_from_base64(ssh_session session, const char *b64_pkey
         rsa = PEM_read_bio_RSAPrivateKey(mem, NULL, NULL, (void *) passphrase);
       }
 
-      (void)BIO_set_close(mem, BIO_NOCLOSE);
       BIO_free(mem);
 
       if (rsa == NULL) {
