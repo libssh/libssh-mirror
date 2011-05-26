@@ -32,7 +32,11 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#endif
+
+#ifndef HAVE_CLOCK_GETTIME
+#include <sys/time.h>
+#endif /* HAVE_CLOCK_GETTIME */
+#endif /* _WIN32 */
 
 #include <limits.h>
 #include <stdio.h>
@@ -42,9 +46,6 @@
 #include <sys/types.h>
 #include <ctype.h>
 #include <time.h>
-#ifndef HAVE_CLOCK_GETTIME
-#include <sys/time.h>
-#endif
 
 #ifdef _WIN32
 
