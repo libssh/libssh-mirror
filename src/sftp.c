@@ -2054,6 +2054,7 @@ int sftp_seek(sftp_file file, uint32_t new_offset) {
   }
 
   file->offset = new_offset;
+  file->eof = 0;
 
   return 0;
 }
@@ -2064,6 +2065,7 @@ int sftp_seek64(sftp_file file, uint64_t new_offset) {
   }
 
   file->offset = new_offset;
+  file->eof = 0;
 
   return 0;
 }
@@ -2080,6 +2082,7 @@ uint64_t sftp_tell64(sftp_file file) {
 /* Rewinds the position of the file pointer to the beginning of the file.*/
 void sftp_rewind(sftp_file file) {
   file->offset = 0;
+  file->eof = 0;
 }
 
 /* code written by Nick */
