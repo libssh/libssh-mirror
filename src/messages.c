@@ -69,6 +69,26 @@ static ssh_message ssh_message_new(ssh_session session){
   return msg;
 }
 
+#ifndef WITH_SERVER
+
+/* Reduced version of the reply default that only reply with
+ * SSH_MSG_UNIMPLEMENTED
+ */
+static int ssh_message_reply_default(ssh_message msg) {
+  ssh_log(msg->session, SSH_LOG_FUNCTIONS, "Reporting unknown packet");
+
+  if (buffer_add_u8(msg->session->out_buffer, SSH2_MSG_UNIMPLEMENTED) < 0)
+    goto error;
+  if (buffer_add_u32(msg->session->out_buffer,
+      htonl(msg->session->recv_seq-1)) < 0)
+    goto error;
+  return packet_send(msg->session);
+  error:
+  return SSH_ERROR;
+}
+
+#endif
+
 static int ssh_execute_message_callback(ssh_session session, ssh_message msg) {
     int ret;
     if(session->ssh_message_callback != NULL) {

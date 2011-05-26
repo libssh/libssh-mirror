@@ -216,6 +216,8 @@ failed:
     return NULL;
 }
 
+#ifdef WITH_SFTP
+
 struct torture_sftp *torture_sftp_session(ssh_session session) {
     struct torture_sftp *t;
     char template[] = "/tmp/ssh_torture_XXXXXX";
@@ -282,7 +284,10 @@ void torture_sftp_close(struct torture_sftp *t) {
     free(t->testdir);
     free(t);
 }
-#endif
+#endif /* WITH_SFTP */
+
+#endif /* _WIN32 */
+
 
 int torture_libssh_verbosity(void){
   return verbosity;
