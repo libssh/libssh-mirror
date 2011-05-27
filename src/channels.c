@@ -2523,8 +2523,8 @@ int ssh_channel_read_nonblocking(ssh_channel channel, void *dest, uint32_t count
     return to_read; /* may be an error code */
   }
 
-  if (to_read > count) {
-    to_read = count;
+  if (to_read > (int)count) {
+    to_read = (int)count;
   }
   rc = ssh_channel_read(channel, dest, to_read, is_stderr);
 
