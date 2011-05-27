@@ -22,8 +22,8 @@ This tutorial concentrates for its main part on the "client" side of libssh.
 To learn how to accept incoming SSH connexions (how to write a SSH server),
 you'll have to jump to the end of this document.
 
-This tutorial describes libssh version 0.5.0. This version is the development
-version and is *not* published yet. However, the examples should work with
+This tutorial describes libssh version 0.5.0. This version is a little different
+from the 0.4.X series. However, the examples should work with
 little changes on versions like 0.4.2 and later.
 
 
