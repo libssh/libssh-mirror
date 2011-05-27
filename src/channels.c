@@ -2502,7 +2502,7 @@ int ssh_channel_read(ssh_channel channel, void *dest, uint32_t count, int is_std
 int ssh_channel_read_nonblocking(ssh_channel channel, void *dest, uint32_t count,
     int is_stderr) {
   ssh_session session;
-  uint32_t to_read;
+  int to_read;
   int rc;
 
   if(channel == NULL) {
