@@ -49,6 +49,9 @@ static int _torture_auth_kbdint(ssh_session session,
     }
 
     err = ssh_userauth_kbdint(session, NULL, NULL);
+    if (err == SSH_AUTH_ERROR) {
+        return err;
+    }
 
     if (ssh_userauth_kbdint_getnprompts(session) != 1) {
         return SSH_AUTH_ERROR;
