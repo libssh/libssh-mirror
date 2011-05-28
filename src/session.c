@@ -311,7 +311,7 @@ int ssh_is_blocking(ssh_session session){
 int ssh_blocking_flush(ssh_session session, int timeout){
 	ssh_socket s;
 	struct ssh_timestamp ts;
-	int rc;
+	int rc = SSH_OK;
 	if(session==NULL)
 		return SSH_ERROR;
 
@@ -328,7 +328,7 @@ int ssh_blocking_flush(ssh_session session, int timeout){
 	}
 
 	leave_function();
-	return SSH_OK;
+	return rc;
 }
 
 /**
