@@ -86,6 +86,12 @@ install(
 if (WITH_STATIC_LIB)
   add_library(${LIBSSH_THREADS_STATIC_LIBRARY} STATIC ${libssh_threads_SRCS})
 
+  if (MSVC)
+    set(OUTPUT_SUFFIX static)
+  else (MSVC)
+    set(OUTPUT_SUFFIX )
+  endif (MSVC)
+
   set_target_properties(
     ${LIBSSH_THREADS_STATIC_LIBRARY}
       PROPERTIES
@@ -93,15 +99,26 @@ if (WITH_STATIC_LIB)
           ${LIBRARY_VERSION}
         SOVERSION
           ${LIBRARY_SOVERSION}
-        COMPILE_FLAGS
-          "-DLIBSSH_STATIC"
+        OUTPUT_NAME
+          ssh_threads
+        ARCHIVE_OUTPUT_DIRECTORY
+          ${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT_SUFFIX}
   )
+
+  if (WIN32)
+    set_target_properties(
+        ${LIBSSH_THREADS_STATIC_LIBRARY}
+            PROPERTIES
+                COMPILE_FLAGS
+                    "-DLIBSSH_STATIC"
+  )
+  endif (WIN32)
 
   install(
     TARGETS
       ${LIBSSH_THREADS_STATIC_LIBRARY}
     DESTINATION
-      ${LIB_INSTALL_DIR}
+      ${LIB_INSTALL_DIR}/${OUTPUT_SUFFIX}
     COMPONENT
       libraries
   )
