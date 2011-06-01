@@ -1,7 +1,7 @@
 ChangeLog
 ==========
 
-version 0.5.0 (released xxxx-xx-xx)
+version 0.5.0 (released 2011-06-01)
   * Added ssh_ prefix to all functions.
   * Added complete Windows support.
   * Added improved server support.
@@ -10,6 +10,8 @@ version 0.5.0 (released xxxx-xx-xx)
   * Added a multiplatform ssh_getpass() function.
   * Added a tutorial.
   * Added a lot of documentation.
+  * Fixed a lot of bugs.
+  * Fixed several memory leaks.
 
 version 0.4.8 (released 2011-01-15)
   * Fixed memory leaks in session signing.
