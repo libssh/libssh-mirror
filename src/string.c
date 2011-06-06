@@ -21,6 +21,7 @@
  * MA 02111-1307, USA.
  */
 
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 
