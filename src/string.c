@@ -91,10 +91,11 @@ int ssh_string_fill(struct ssh_string_struct *s, const void *data, size_t len) {
  * @note The nul byte is not copied nor counted in the ouput string.
  */
 struct ssh_string_struct *ssh_string_from_char(const char *what) {
-  struct ssh_string_struct *ptr = NULL;
+  struct ssh_string_struct *ptr;
   size_t len;
-  
+
   if(what == NULL) {
+      errno = EINVAL;
       return NULL;
   }
 
