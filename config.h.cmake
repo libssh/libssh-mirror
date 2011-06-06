@@ -80,6 +80,9 @@
 /* Define to 1 if you have the `clock_gettime' function. */
 #cmakedefine HAVE_CLOCK_GETTIME 1
 
+/* Define to 1 if you have the `ntohll' function. */
+#cmakedefine HAVE_NTOHLL 1
+
 /*************************** LIBRARIES ***************************/
 
 /* Define to 1 if you have the `crypto' library (-lcrypto). */
