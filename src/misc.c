@@ -286,18 +286,20 @@ int ssh_is_ipaddr(const char *str) {
 
 #endif /* _WIN32 */
 
+#ifndef HAVE_NTOHLL
 uint64_t ntohll(uint64_t a) {
 #ifdef WORDS_BIGENDIAN
   return a;
-#else
+#else /* WORDS_BIGENDIAN */
   uint32_t low = (uint32_t)(a & 0xffffffff);
   uint32_t high = (uint32_t)(a >> 32);
   low = ntohl(low);
   high = ntohl(high);
 
   return ((((uint64_t) low) << 32) | ( high));
-#endif
+#endif /* WORDS_BIGENDIAN */
 }
+#endif /* HAVE_NTOHLL */
 
 char *ssh_lowercase(const char* str) {
   char *new, *p;
