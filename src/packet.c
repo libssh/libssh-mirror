@@ -136,7 +136,8 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
   size_t processed=0; /* number of byte processed from the callback */
 
   enter_function();
-
+  if (session->session_state == SSH_SESSION_STATE_ERROR)
+	  goto error;
   switch(session->packet_state) {
     case PACKET_STATE_INIT:
     	if(receivedlen < blocksize){
@@ -289,6 +290,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
       session->packet_state);
 
 error:
+  session->session_state= SSH_SESSION_STATE_ERROR;
   leave_function();
   return processed;
 }
