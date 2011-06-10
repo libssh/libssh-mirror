@@ -173,7 +173,7 @@ static ssh_buffer gzip_decompress(ssh_session session, ssh_buffer source, size_t
   do {
     zin->avail_out = BLOCKSIZE;
     status = inflate(zin, Z_PARTIAL_FLUSH);
-    if (status != Z_OK) {
+    if (status != Z_OK && status != Z_BUF_ERROR) {
       ssh_set_error(session, SSH_FATAL,
           "status %d inflating zlib packet", status);
       ssh_buffer_free(dest);
