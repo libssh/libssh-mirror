@@ -240,7 +240,8 @@ enum ssh_keytypes_e{
   SSH_KEYTYPE_UNKNOWN=0,
   SSH_KEYTYPE_DSS=1,
   SSH_KEYTYPE_RSA,
-  SSH_KEYTYPE_RSA1
+  SSH_KEYTYPE_RSA1,
+  SSH_KEYTYPE_ECDSA
 };
 
 /* Error return codes */
