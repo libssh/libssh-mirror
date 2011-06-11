@@ -43,7 +43,6 @@ struct ssh_key_struct {
 #define ssh_key_is_private(k) (k && k->flags & SSH_KEY_FLAG_PRIVATE)
 
 void ssh_key_clean (ssh_key key);
-enum ssh_keytypes_e ssh_key_type(ssh_key key);
 int ssh_key_import_private(ssh_key key, ssh_session session,
     const char *filename, const char *passphrase);
 
