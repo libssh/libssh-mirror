@@ -263,9 +263,9 @@ enum {
 	/** No logging at all
 	 */
 	SSH_LOG_NOLOG=0,
-	/** Only rare and noteworthy events
+	/** Only warnings
 	 */
-	SSH_LOG_RARE,
+	SSH_LOG_WARNING,
 	/** High level protocol information
 	 */
 	SSH_LOG_PROTOCOL,
@@ -277,6 +277,7 @@ enum {
 	SSH_LOG_FUNCTIONS
 };
 /** @} */
+#define SSH_LOG_RARE SSH_LOG_WARNING
 
 enum ssh_options_e {
   SSH_OPTIONS_HOST,
