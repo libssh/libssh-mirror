@@ -255,7 +255,9 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
           "After padding, %d bytes left in buffer",
           buffer_get_rest_len(session->in_buffer));
 #if defined(HAVE_LIBZ) && defined(WITH_LIBZ)
-      if (session->current_crypto && session->current_crypto->do_compress_in) {
+      if (session->current_crypto
+          && session->current_crypto->do_compress_in
+          && buffer_get_rest_len(session->in_buffer)) {
         ssh_log(session, SSH_LOG_PACKET, "Decompressing in_buffer ...");
         if (decompress_buffer(session, session->in_buffer,MAX_PACKET_LEN) < 0) {
           goto error;
@@ -457,7 +459,9 @@ static int packet_send2(ssh_session session) {
       "Writing on the wire a packet having %u bytes before", currentlen);
 
 #if defined(HAVE_LIBZ) && defined(WITH_LIBZ)
-  if (session->current_crypto && session->current_crypto->do_compress_out) {
+  if (session->current_crypto
+      && session->current_crypto->do_compress_out
+      && buffer_get_rest_len(session->out_buffer)) {
     ssh_log(session, SSH_LOG_PACKET, "Compressing out_buffer ...");
     if (compress_buffer(session,session->out_buffer) < 0) {
       goto error;
