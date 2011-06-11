@@ -96,6 +96,61 @@ enum ssh_keytypes_e ssh_key_type(ssh_key key){
 }
 
 /**
+ * @brief Convert a key type to a string.
+ *
+ * @param[in]  type     The type to convert.
+ *
+ * @return              A string for the keytype or NULL if unknown.
+ */
+const char *ssh_key_type_to_char(enum ssh_keytypes_e type) {
+  switch (type) {
+    case SSH_KEYTYPE_DSS:
+      return "ssh-dss";
+    case SSH_KEYTYPE_RSA:
+      return "ssh-rsa";
+    case SSH_KEYTYPE_RSA1:
+      return "ssh-rsa1";
+    case SSH_KEYTYPE_ECDSA:
+      return "ssh-ecdsa";
+    case SSH_KEYTYPE_UNKNOWN:
+      return NULL;
+  }
+
+  /* We should never reach this */
+  return NULL;
+}
+
+/**
+ * @brief Convert a ssh key name to a ssh key type.
+ *
+ * @param[in] name      The name to convert.
+ *
+ * @return              The enum ssh key type.
+ */
+enum ssh_keytypes_e ssh_key_type_from_name(const char *name) {
+  if (strcmp(name, "rsa1") == 0) {
+    return SSH_KEYTYPE_RSA1;
+  } else if (strcmp(name, "rsa") == 0) {
+    return SSH_KEYTYPE_RSA;
+  } else if (strcmp(name, "dsa") == 0) {
+    return SSH_KEYTYPE_DSS;
+  } else if (strcmp(name, "ssh-rsa1") == 0) {
+    return SSH_KEYTYPE_RSA1;
+  } else if (strcmp(name, "ssh-rsa") == 0) {
+    return SSH_KEYTYPE_RSA;
+  } else if (strcmp(name, "ssh-dss") == 0) {
+    return SSH_KEYTYPE_DSS;
+  } else if (strcmp(name, "ssh-ecdsa") == 0
+             || strcmp(name, "ecdsa") == 0
+             || strcmp(name, "ecdsa-sha2-nistp256") == 0
+             || strcmp(name, "ecdsa-sha2-nistp384") == 0
+             || strcmp(name, "ecdsa-sha2-nistp521") == 0) {
+  }
+
+  return SSH_KEYTYPE_UNKNOWN;
+}
+
+/**
  * @brief import a key from a file
  * @param[out]  key      the ssh_key to update
  * @param[in]  session  The SSH Session to use. If a key decryption callback is set, it will
