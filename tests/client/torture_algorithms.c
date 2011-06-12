@@ -148,6 +148,47 @@ static void torture_algorithms_zlib_openssh(void **state) {
     ssh_disconnect(session);
 }
 
+static void torture_algorithms_ecdh_sha2_nistp256(void **state) {
+    ssh_session session = *state;
+    int rc;
+
+    rc = ssh_options_set(session,SSH_OPTIONS_HOST,"localhost");
+    assert_true(rc == SSH_OK);
+
+    rc = ssh_options_set(session, SSH_OPTIONS_KEY_EXCHANGE, "ecdh-sha2-nistp256");
+    assert_true(rc == SSH_OK);
+
+    rc = ssh_connect(session);
+    assert_true(rc == SSH_OK);
+    rc = ssh_userauth_none(session, NULL);
+    if (rc != SSH_OK) {
+      rc = ssh_get_error_code(session);
+      assert_true(rc == SSH_REQUEST_DENIED);
+    }
+
+    ssh_disconnect(session);
+}
+
+static void torture_algorithms_dh_group1(void **state) {
+    ssh_session session = *state;
+    int rc;
+
+    rc = ssh_options_set(session,SSH_OPTIONS_HOST,"localhost");
+    assert_true(rc == SSH_OK);
+
+    rc = ssh_options_set(session, SSH_OPTIONS_KEY_EXCHANGE, "diffie-hellman-group1-sha1");
+    assert_true(rc == SSH_OK);
+
+    rc = ssh_connect(session);
+    assert_true(rc == SSH_OK);
+    rc = ssh_userauth_none(session, NULL);
+    if (rc != SSH_OK) {
+      rc = ssh_get_error_code(session);
+      assert_true(rc == SSH_REQUEST_DENIED);
+    }
+
+    ssh_disconnect(session);
+}
 int torture_run_tests(void) {
     int rc;
     const UnitTest tests[] = {
@@ -161,6 +202,8 @@ int torture_run_tests(void) {
         unit_test_setup_teardown(torture_algorithms_blowfish_cbc, setup, teardown),
         unit_test_setup_teardown(torture_algorithms_zlib, setup, teardown),
         unit_test_setup_teardown(torture_algorithms_zlib_openssh, setup, teardown),
+        unit_test_setup_teardown(torture_algorithms_dh_group1,setup,teardown),
+        unit_test_setup_teardown(torture_algorithms_ecdh_sha2_nistp256,setup,teardown)
     };
 
     ssh_init();
