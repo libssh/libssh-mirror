@@ -55,6 +55,7 @@
 #include "libssh/session.h"
 #include "libssh/keys.h"
 #include "libssh/dh.h"
+#include "libssh/ssh2.h"
 
 /* todo: remove it */
 #include "libssh/string.h"
@@ -479,6 +480,47 @@ int dh_build_k(ssh_session session) {
   return 0;
 }
 
+/** @internal
+ * @brief Starts diffie-hellman-group1 key exchange
+ */
+int ssh_client_dh_init(ssh_session session){
+  ssh_string e = NULL;
+  int rc;
+  enter_function();
+  if (buffer_add_u8(session->out_buffer, SSH2_MSG_KEXDH_INIT) < 0) {
+    goto error;
+  }
+
+  if (dh_generate_x(session) < 0) {
+    goto error;
+  }
+  if (dh_generate_e(session) < 0) {
+    goto error;
+  }
+
+  e = dh_get_e(session);
+  if (e == NULL) {
+    goto error;
+  }
+
+  if (buffer_add_ssh_string(session->out_buffer, e) < 0) {
+    goto error;
+  }
+  ssh_string_burn(e);
+  ssh_string_free(e);
+  e=NULL;
+
+  rc = packet_send(session);
+  return rc;
+  error:
+  if(e != NULL){
+    ssh_string_burn(e);
+    ssh_string_free(e);
+  }
+
+  leave_function();
+  return SSH_ERROR;
+}
 /*
 static void sha_add(ssh_string str,SHACTX ctx){
     sha1_update(ctx,str,string_len(str)+4);
@@ -849,7 +891,7 @@ int ssh_get_pubkey_hash(ssh_session session, unsigned char **hash) {
     return SSH_ERROR;
   }
 
-  h = malloc(sizeof(unsigned char *) * MD5_DIGEST_LEN);
+  h = malloc(sizeof(unsigned char) * MD5_DIGEST_LEN);
   if (h == NULL) {
     return SSH_ERROR;
   }

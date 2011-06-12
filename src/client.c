@@ -318,39 +318,14 @@ error:
  * completed
  */
 static int dh_handshake(ssh_session session) {
-  ssh_string e = NULL;
-  ssh_string f = NULL;
-  ssh_string signature = NULL;
-  int rc = SSH_ERROR;
+
+  int rc = SSH_AGAIN;
 
   enter_function();
 
   switch (session->dh_handshake_state) {
     case DH_STATE_INIT:
-      if (buffer_add_u8(session->out_buffer, SSH2_MSG_KEXDH_INIT) < 0) {
-        goto error;
-      }
-
-      if (dh_generate_x(session) < 0) {
-        goto error;
-      }
-      if (dh_generate_e(session) < 0) {
-        goto error;
-      }
-
-      e = dh_get_e(session);
-      if (e == NULL) {
-        goto error;
-      }
-
-      if (buffer_add_ssh_string(session->out_buffer, e) < 0) {
-        goto error;
-      }
-      ssh_string_burn(e);
-      ssh_string_free(e);
-      e=NULL;
-
-      rc = packet_send(session);
+      rc = ssh_client_dh_init(session);
       if (rc == SSH_ERROR) {
         goto error;
       }
@@ -371,23 +346,7 @@ static int dh_handshake(ssh_session session) {
       leave_function();
       return SSH_ERROR;
   }
-
-  leave_function();
-  return SSH_AGAIN;
 error:
-  if(e != NULL){
-    ssh_string_burn(e);
-    ssh_string_free(e);
-  }
-  if(f != NULL){
-    ssh_string_burn(f);
-    ssh_string_free(f);
-  }
-  if(signature != NULL){
-    ssh_string_burn(signature);
-    ssh_string_free(signature);
-  }
-
   leave_function();
   return rc;
 }
