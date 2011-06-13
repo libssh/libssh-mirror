@@ -234,30 +234,31 @@ void hmac_final(HMACCTX ctx, unsigned char *hashmacbuf, unsigned int *len) {
 
 #ifdef HAS_BLOWFISH
 /* the wrapper functions for blowfish */
-static int blowfish_set_key(struct crypto_struct *cipher, void *key){
+static int blowfish_set_key(struct crypto_struct *cipher, void *key, void *IV){
   if (cipher->key == NULL) {
     if (alloc_key(cipher) < 0) {
       return -1;
     }
     BF_set_key(cipher->key, 16, key);
   }
-
+  cipher->IV = IV;
   return 0;
 }
 
 static void blowfish_encrypt(struct crypto_struct *cipher, void *in,
-    void *out, unsigned long len, void *IV) {
-  BF_cbc_encrypt(in, out, len, cipher->key, IV, BF_ENCRYPT);
+    void *out, unsigned long len) {
+  BF_cbc_encrypt(in, out, len, cipher->key, cipher->IV, BF_ENCRYPT);
 }
 
 static void blowfish_decrypt(struct crypto_struct *cipher, void *in,
-    void *out, unsigned long len, void *IV) {
-  BF_cbc_encrypt(in, out, len, cipher->key, IV, BF_DECRYPT);
+    void *out, unsigned long len) {
+  BF_cbc_encrypt(in, out, len, cipher->key, cipher->IV, BF_DECRYPT);
 }
 #endif /* HAS_BLOWFISH */
 
 #ifdef HAS_AES
-static int aes_set_encrypt_key(struct crypto_struct *cipher, void *key) {
+static int aes_set_encrypt_key(struct crypto_struct *cipher, void *key,
+    void *IV) {
   if (cipher->key == NULL) {
     if (alloc_key(cipher) < 0) {
       return -1;
@@ -267,10 +268,11 @@ static int aes_set_encrypt_key(struct crypto_struct *cipher, void *key) {
       return -1;
     }
   }
-
+  cipher->IV=IV;
   return 0;
 }
-static int aes_set_decrypt_key(struct crypto_struct *cipher, void *key) {
+static int aes_set_decrypt_key(struct crypto_struct *cipher, void *key,
+    void *IV) {
   if (cipher->key == NULL) {
     if (alloc_key(cipher) < 0) {
       return -1;
@@ -280,18 +282,18 @@ static int aes_set_decrypt_key(struct crypto_struct *cipher, void *key) {
       return -1;
     }
   }
-
+  cipher->IV=IV;
   return 0;
 }
 
 static void aes_encrypt(struct crypto_struct *cipher, void *in, void *out,
-    unsigned long len, void *IV) {
-  AES_cbc_encrypt(in, out, len, cipher->key, IV, AES_ENCRYPT);
+    unsigned long len) {
+  AES_cbc_encrypt(in, out, len, cipher->key, cipher->IV, AES_ENCRYPT);
 }
 
 static void aes_decrypt(struct crypto_struct *cipher, void *in, void *out,
-    unsigned long len, void *IV) {
-  AES_cbc_encrypt(in, out, len, cipher->key, IV, AES_DECRYPT);
+    unsigned long len) {
+  AES_cbc_encrypt(in, out, len, cipher->key, cipher->IV, AES_DECRYPT);
 }
 
 #ifndef BROKEN_AES_CTR
@@ -305,7 +307,7 @@ static void aes_decrypt(struct crypto_struct *cipher, void *in, void *out,
  * @param len[in] must be a multiple of AES128 block size.
  */
 static void aes_ctr128_encrypt(struct crypto_struct *cipher, void *in, void *out,
-    unsigned long len, void *IV) {
+    unsigned long len) {
   unsigned char tmp_buffer[128/8];
   unsigned int num=0;
   /* Some things are special with ctr128 :
@@ -314,13 +316,13 @@ static void aes_ctr128_encrypt(struct crypto_struct *cipher, void *in, void *out
    * Same for num, which is being used to store the current offset in blocksize in CTR
    * function.
    */
-  AES_ctr128_encrypt(in, out, len, cipher->key, IV, tmp_buffer, &num);
+  AES_ctr128_encrypt(in, out, len, cipher->key, cipher->IV, tmp_buffer, &num);
 }
 #endif /* BROKEN_AES_CTR */
 #endif /* HAS_AES */
 
 #ifdef HAS_DES
-static int des3_set_key(struct crypto_struct *cipher, void *key) {
+static int des3_set_key(struct crypto_struct *cipher, void *key,void *IV) {
   if (cipher->key == NULL) {
     if (alloc_key(cipher) < 0) {
       return -1;
@@ -333,55 +335,55 @@ static int des3_set_key(struct crypto_struct *cipher, void *key) {
     DES_set_key_unchecked((void*)((uint8_t*)key + 8), (void*)((uint8_t*)cipher->key + sizeof(DES_key_schedule)));
     DES_set_key_unchecked((void*)((uint8_t*)key + 16), (void*)((uint8_t*)cipher->key + 2 * sizeof(DES_key_schedule)));
   }
-
+  cipher->IV=IV;
   return 0;
 }
 
 static void des3_encrypt(struct crypto_struct *cipher, void *in,
-    void *out, unsigned long len, void *IV) {
+    void *out, unsigned long len) {
   DES_ede3_cbc_encrypt(in, out, len, cipher->key,
       (void*)((uint8_t*)cipher->key + sizeof(DES_key_schedule)),
       (void*)((uint8_t*)cipher->key + 2 * sizeof(DES_key_schedule)),
-      IV, 1);
+      cipher->IV, 1);
 }
 
 static void des3_decrypt(struct crypto_struct *cipher, void *in,
-    void *out, unsigned long len, void *IV) {
+    void *out, unsigned long len) {
   DES_ede3_cbc_encrypt(in, out, len, cipher->key,
       (void*)((uint8_t*)cipher->key + sizeof(DES_key_schedule)),
       (void*)((uint8_t*)cipher->key + 2 * sizeof(DES_key_schedule)),
-      IV, 0);
+      cipher->IV, 0);
 }
 
 static void des3_1_encrypt(struct crypto_struct *cipher, void *in,
-    void *out, unsigned long len, void *IV) {
+    void *out, unsigned long len) {
 #ifdef DEBUG_CRYPTO
-  ssh_print_hexa("Encrypt IV before", IV, 24);
+  ssh_print_hexa("Encrypt IV before", cipher->IV, 24);
 #endif
-  DES_ncbc_encrypt(in, out, len, cipher->key, IV, 1);
+  DES_ncbc_encrypt(in, out, len, cipher->key, cipher->IV, 1);
   DES_ncbc_encrypt(out, in, len, (void*)((uint8_t*)cipher->key + sizeof(DES_key_schedule)),
-      (void*)((uint8_t*)IV + 8), 0);
+      (void*)((uint8_t*)cipher->IV + 8), 0);
   DES_ncbc_encrypt(in, out, len, (void*)((uint8_t*)cipher->key + 2 * sizeof(DES_key_schedule)),
-      (void*)((uint8_t*)IV + 16), 1);
+      (void*)((uint8_t*)cipher->IV + 16), 1);
 #ifdef DEBUG_CRYPTO
-  ssh_print_hexa("Encrypt IV after", IV, 24);
+  ssh_print_hexa("Encrypt IV after", cipher->IV, 24);
 #endif
 }
 
 static void des3_1_decrypt(struct crypto_struct *cipher, void *in,
-    void *out, unsigned long len, void *IV) {
+    void *out, unsigned long len) {
 #ifdef DEBUG_CRYPTO
-  ssh_print_hexa("Decrypt IV before", IV, 24);
+  ssh_print_hexa("Decrypt IV before", cipher->IV, 24);
 #endif
 
   DES_ncbc_encrypt(in, out, len, (void*)((uint8_t*)cipher->key + 2 * sizeof(DES_key_schedule)),
-      IV, 0);
+      cipher->IV, 0);
   DES_ncbc_encrypt(out, in, len, (void*)((uint8_t*)cipher->key + sizeof(DES_key_schedule)),
-      (void*)((uint8_t*)IV + 8), 1);
-  DES_ncbc_encrypt(in, out, len, cipher->key, (void*)((uint8_t*)IV + 16), 0);
+      (void*)((uint8_t*)cipher->IV + 8), 1);
+  DES_ncbc_encrypt(in, out, len, cipher->key, (void*)((uint8_t*)cipher->IV + 16), 0);
 
 #ifdef DEBUG_CRYPTO
-  ssh_print_hexa("Decrypt IV after", IV, 24);
+  ssh_print_hexa("Decrypt IV after", cipher->IV, 24);
 #endif
 }
 
@@ -400,6 +402,7 @@ static struct crypto_struct ssh_ciphertab[] = {
     8,
     sizeof (BF_KEY),
     NULL,
+    NULL,
     128,
     blowfish_set_key,
     blowfish_set_key,
@@ -414,6 +417,7 @@ static struct crypto_struct ssh_ciphertab[] = {
     16,
     sizeof(AES_KEY),
     NULL,
+    NULL,
     128,
     aes_set_encrypt_key,
     aes_set_encrypt_key,
@@ -425,6 +429,7 @@ static struct crypto_struct ssh_ciphertab[] = {
     16,
     sizeof(AES_KEY),
     NULL,
+    NULL,
     192,
     aes_set_encrypt_key,
     aes_set_encrypt_key,
@@ -435,6 +440,7 @@ static struct crypto_struct ssh_ciphertab[] = {
     "aes256-ctr",
     16,
     sizeof(AES_KEY),
+    NULL,
     NULL,
     256,
     aes_set_encrypt_key,
@@ -448,6 +454,7 @@ static struct crypto_struct ssh_ciphertab[] = {
     16,
     sizeof(AES_KEY),
     NULL,
+    NULL,
     128,
     aes_set_encrypt_key,
     aes_set_decrypt_key,
@@ -459,6 +466,7 @@ static struct crypto_struct ssh_ciphertab[] = {
     16,
     sizeof(AES_KEY),
     NULL,
+    NULL,
     192,
     aes_set_encrypt_key,
     aes_set_decrypt_key,
@@ -469,6 +477,7 @@ static struct crypto_struct ssh_ciphertab[] = {
     "aes256-cbc",
     16,
     sizeof(AES_KEY),
+    NULL,
     NULL,
     256,
     aes_set_encrypt_key,
@@ -483,6 +492,7 @@ static struct crypto_struct ssh_ciphertab[] = {
     8,
     sizeof(DES_key_schedule) * 3,
     NULL,
+    NULL,
     192,
     des3_set_key,
     des3_set_key,
@@ -493,6 +503,7 @@ static struct crypto_struct ssh_ciphertab[] = {
     "3des-cbc-ssh1",
     8,
     sizeof(DES_key_schedule) * 3,
+    NULL,
     NULL,
     192,
     des3_set_key,
@@ -505,6 +516,7 @@ static struct crypto_struct ssh_ciphertab[] = {
     NULL,
     0,
     0,
+    NULL,
     NULL,
     0,
     NULL,

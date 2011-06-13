@@ -87,9 +87,9 @@ struct crypto_struct {
     gcry_cipher_hd_t *key;
 #elif defined HAVE_LIBCRYPTO
     void *key; /* a key buffer allocated for the algo */
+    void *IV;
 #endif
     unsigned int keysize; /* bytes of key used. != keylen */
-#ifdef HAVE_LIBGCRYPT
     /* sets the new key for immediate use */
     int (*set_encrypt_key)(struct crypto_struct *cipher, void *key, void *IV);
     int (*set_decrypt_key)(struct crypto_struct *cipher, void *key, void *IV);
@@ -97,15 +97,6 @@ struct crypto_struct {
         unsigned long len);
     void (*cbc_decrypt)(struct crypto_struct *cipher, void *in, void *out,
         unsigned long len);
-#elif defined HAVE_LIBCRYPTO
-    /* sets the new key for immediate use */
-    int (*set_encrypt_key)(struct crypto_struct *cipher, void *key);
-    int (*set_decrypt_key)(struct crypto_struct *cipher, void *key);
-    void (*cbc_encrypt)(struct crypto_struct *cipher, void *in, void *out,
-        unsigned long len, void *IV);
-    void (*cbc_decrypt)(struct crypto_struct *cipher, void *in, void *out,
-        unsigned long len, void *IV);
-#endif
 };
 
 /* vim: set ts=2 sw=2 et cindent: */

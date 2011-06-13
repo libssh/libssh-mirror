@@ -74,20 +74,13 @@ int packet_decrypt(ssh_session session, void *data,uint32_t len) {
 
   ssh_log(session,SSH_LOG_PACKET, "Decrypting %d bytes", len);
 
-#ifdef HAVE_LIBGCRYPT
+
   if (crypto->set_decrypt_key(crypto, session->current_crypto->decryptkey,
         session->current_crypto->decryptIV) < 0) {
     SAFE_FREE(out);
     return -1;
   }
   crypto->cbc_decrypt(crypto,data,out,len);
-#elif defined HAVE_LIBCRYPTO
-  if (crypto->set_decrypt_key(crypto, session->current_crypto->decryptkey) < 0) {
-    SAFE_FREE(out);
-    return -1;
-  }
-  crypto->cbc_decrypt(crypto,data,out,len,session->current_crypto->decryptIV);
-#endif
 
   memcpy(data,out,len);
   memset(out,0,len);
@@ -122,18 +115,11 @@ unsigned char *packet_encrypt(ssh_session session, void *data, uint32_t len) {
       "Encrypting packet with seq num: %d, len: %d",
       session->send_seq,len);
 
-#ifdef HAVE_LIBGCRYPT
   if (crypto->set_encrypt_key(crypto, session->current_crypto->encryptkey,
       session->current_crypto->encryptIV) < 0) {
     SAFE_FREE(out);
     return NULL;
   }
-#elif defined HAVE_LIBCRYPTO
-  if (crypto->set_encrypt_key(crypto, session->current_crypto->encryptkey) < 0) {
-    SAFE_FREE(out);
-    return NULL;
-  }
-#endif
 
   if (session->version == 2) {
     ctx = hmac_init(session->current_crypto->encryptMAC,20,SSH_HMAC_SHA1);
@@ -153,12 +139,7 @@ unsigned char *packet_encrypt(ssh_session session, void *data, uint32_t len) {
 #endif
   }
 
-#ifdef HAVE_LIBGCRYPT
   crypto->cbc_encrypt(crypto, data, out, len);
-#elif defined HAVE_LIBCRYPTO
-  crypto->cbc_encrypt(crypto, data, out, len,
-      session->current_crypto->encryptIV);
-#endif
 
   memcpy(data, out, len);
   memset(out, 0, len);
