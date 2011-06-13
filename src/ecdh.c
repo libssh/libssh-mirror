@@ -104,7 +104,8 @@ static int ecdh_build_k(ssh_session session) {
   ECDH_compute_key(buffer,len,pubkey,session->next_crypto->ecdh_privkey,NULL);
   BN_bin2bn(buffer,len,session->next_crypto->k);
   free(buffer);
-
+  EC_KEY_free(session->next_crypto->ecdh_privkey);
+  session->next_crypto->ecdh_privkey=NULL;
 #ifdef DEBUG_CRYPTO
   ssh_print_hexa("Session server cookie", session->server_kex.cookie, 16);
   ssh_print_hexa("Session client cookie", session->client_kex.cookie, 16);

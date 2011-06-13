@@ -111,7 +111,8 @@ void crypto_free(struct ssh_crypto_struct *crypto){
   bignum_free(crypto->x);
   bignum_free(crypto->y);
   bignum_free(crypto->k);
-  /* lot of other things */
+  SAFE_FREE(crypto->ecdh_client_pubkey);
+  SAFE_FREE(crypto->ecdh_server_pubkey);
 
 #ifdef WITH_LIBZ
   if (crypto->compress_out_ctx &&
@@ -123,8 +124,23 @@ void crypto_free(struct ssh_crypto_struct *crypto){
     inflateEnd(crypto->compress_in_ctx);
   }
 #endif
+  if(crypto->encryptIV)
+    SAFE_FREE(crypto->encryptIV);
+  if(crypto->decryptIV)
+    SAFE_FREE(crypto->decryptIV);
+  if(crypto->encryptMAC)
+    SAFE_FREE(crypto->encryptMAC);
+  if(crypto->decryptMAC)
+    SAFE_FREE(crypto->decryptMAC);
+  if(crypto->encryptkey){
+    memset(crypto->encryptkey, 0, crypto->digest_len);
+    SAFE_FREE(crypto->encryptkey);
+  }
+  if(crypto->decryptkey){
+    memset(crypto->decryptkey, 0, crypto->digest_len);
+    SAFE_FREE(crypto->decryptkey);
+  }
 
-  /* i'm lost in my own code. good work */
   memset(crypto,0,sizeof(*crypto));
 
   SAFE_FREE(crypto);
