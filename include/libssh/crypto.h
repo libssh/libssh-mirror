@@ -40,18 +40,31 @@
 #undef cbc_decrypt
 #endif
 
+#ifdef HAVE_OPENSSL_ECDH_H
+#include <openssl/ecdh.h>
+#endif
+
+enum ssh_key_exchange_e {
+  /* diffie-hellman-group1-sha1 */
+  SSH_KEX_DH_GROUP1_SHA1=1,
+  /* ecdh-sha2-nistp256 */
+  SSH_KEX_ECDH_SHA2_NISTP256
+};
+
 struct ssh_crypto_struct {
     bignum e,f,x,k,y;
-    unsigned char session_id[SHA_DIGEST_LEN];
-
-    unsigned char encryptIV[SHA_DIGEST_LEN*2];
-    unsigned char decryptIV[SHA_DIGEST_LEN*2];
-
-    unsigned char decryptkey[SHA_DIGEST_LEN*2];
-    unsigned char encryptkey[SHA_DIGEST_LEN*2];
-
-    unsigned char encryptMAC[SHA_DIGEST_LEN];
-    unsigned char decryptMAC[SHA_DIGEST_LEN];
+    EC_KEY *ecdh_privkey;
+    ssh_string ecdh_client_pubkey;
+    ssh_string ecdh_server_pubkey;
+    ssh_string dh_server_signature; /* information used by dh_handshake. */
+    size_t digest_len; /* len of all the fields below */
+    unsigned char *session_id;
+    unsigned char *encryptIV;
+    unsigned char *decryptIV;
+    unsigned char *decryptkey;
+    unsigned char *encryptkey;
+    unsigned char *encryptMAC;
+    unsigned char *decryptMAC;
     unsigned char hmacbuf[EVP_MAX_MD_SIZE];
     struct crypto_struct *in_cipher, *out_cipher; /* the cipher structures/objects */
     ssh_string server_pubkey;
@@ -62,6 +75,8 @@ struct ssh_crypto_struct {
     int delayed_compress_out;
     void *compress_out_ctx; /* don't touch it */
     void *compress_in_ctx; /* really, don't */
+    enum ssh_key_exchange_e kex_type;
+    enum ssh_mac_e mac_type; /* Mac operations to use for key gen */
 };
 
 struct crypto_struct {

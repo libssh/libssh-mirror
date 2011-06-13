@@ -521,6 +521,56 @@ int ssh_client_dh_init(ssh_session session){
   leave_function();
   return SSH_ERROR;
 }
+
+int ssh_client_dh_reply(ssh_session session, ssh_buffer packet){
+  ssh_string f = NULL;
+  ssh_string pubkey = NULL;
+  ssh_string signature = NULL;
+  int rc;
+  pubkey = buffer_get_ssh_string(packet);
+  if (pubkey == NULL){
+    ssh_set_error(session,SSH_FATAL, "No public key in packet");
+    goto error;
+  }
+  dh_import_pubkey(session, pubkey);
+
+  f = buffer_get_ssh_string(packet);
+  if (f == NULL) {
+    ssh_set_error(session,SSH_FATAL, "No F number in packet");
+    goto error;
+  }
+  if (dh_import_f(session, f) < 0) {
+    ssh_set_error(session, SSH_FATAL, "Cannot import f number");
+    goto error;
+  }
+  ssh_string_burn(f);
+  ssh_string_free(f);
+  f=NULL;
+  signature = buffer_get_ssh_string(packet);
+  if (signature == NULL) {
+    ssh_set_error(session, SSH_FATAL, "No signature in packet");
+    goto error;
+  }
+  session->next_crypto->dh_server_signature = signature;
+  signature=NULL; /* ownership changed */
+  if (dh_build_k(session) < 0) {
+    ssh_set_error(session, SSH_FATAL, "Cannot build k number");
+    goto error;
+  }
+
+  /* Send the MSG_NEWKEYS */
+  if (buffer_add_u8(session->out_buffer, SSH2_MSG_NEWKEYS) < 0) {
+    goto error;
+  }
+
+  rc=packet_send(session);
+  ssh_log(session, SSH_LOG_PROTOCOL, "SSH_MSG_NEWKEYS sent");
+  return rc;
+error:
+  return SSH_ERROR;
+}
+
+
 /*
 static void sha_add(ssh_string str,SHACTX ctx){
     sha1_update(ctx,str,string_len(str)+4);
@@ -531,7 +581,6 @@ static void sha_add(ssh_string str,SHACTX ctx){
 */
 
 int make_sessionid(ssh_session session) {
-  SHACTX ctx;
   ssh_string num = NULL;
   ssh_string str = NULL;
   ssh_buffer server_hash = NULL;
@@ -541,11 +590,6 @@ int make_sessionid(ssh_session session) {
   int rc = SSH_ERROR;
 
   enter_function();
-
-  ctx = sha1_init();
-  if (ctx == NULL) {
-    return rc;
-  }
 
   buf = ssh_buffer_new();
   if (buf == NULL) {
@@ -614,29 +658,33 @@ int make_sessionid(ssh_session session) {
   if (buffer_add_data(buf, session->next_crypto->server_pubkey, len) < 0) {
     goto error;
   }
+  if(session->next_crypto->kex_type == SSH_KEX_DH_GROUP1_SHA1){
+    num = make_bignum_string(session->next_crypto->e);
+    if (num == NULL) {
+      goto error;
+    }
 
-  num = make_bignum_string(session->next_crypto->e);
-  if (num == NULL) {
-    goto error;
+    len = ssh_string_len(num) + 4;
+    if (buffer_add_data(buf, num, len) < 0) {
+      goto error;
+    }
+
+    ssh_string_free(num);
+    num = make_bignum_string(session->next_crypto->f);
+    if (num == NULL) {
+      goto error;
+    }
+
+    len = ssh_string_len(num) + 4;
+    if (buffer_add_data(buf, num, len) < 0) {
+      goto error;
+    }
+
+    ssh_string_free(num);
+  } else if (session->next_crypto->kex_type == SSH_KEX_ECDH_SHA2_NISTP256){
+    buffer_add_ssh_string(buf,session->next_crypto->ecdh_client_pubkey);
+    buffer_add_ssh_string(buf,session->next_crypto->ecdh_server_pubkey);
   }
-
-  len = ssh_string_len(num) + 4;
-  if (buffer_add_data(buf, num, len) < 0) {
-    goto error;
-  }
-
-  ssh_string_free(num);
-  num = make_bignum_string(session->next_crypto->f);
-  if (num == NULL) {
-    goto error;
-  }
-
-  len = ssh_string_len(num) + 4;
-  if (buffer_add_data(buf, num, len) < 0) {
-    goto error;
-  }
-
-  ssh_string_free(num);
   num = make_bignum_string(session->next_crypto->k);
   if (num == NULL) {
     goto error;
@@ -651,8 +699,31 @@ int make_sessionid(ssh_session session) {
   ssh_print_hexa("hash buffer", ssh_buffer_get_begin(buf), ssh_buffer_get_len(buf));
 #endif
 
-  sha1_update(ctx, buffer_get_rest(buf), buffer_get_rest_len(buf));
-  sha1_final(session->next_crypto->session_id, ctx);
+  switch(session->next_crypto->kex_type){
+    case SSH_KEX_DH_GROUP1_SHA1:
+      session->next_crypto->digest_len = SHA_DIGEST_LENGTH;
+      session->next_crypto->mac_type = SSH_MAC_SHA1;
+      session->next_crypto->session_id = malloc(session->next_crypto->digest_len);
+      if(session->next_crypto->session_id == NULL){
+        ssh_set_error_oom(session);
+        goto error;
+      }
+      sha1(buffer_get_rest(buf), buffer_get_rest_len(buf),
+                session->next_crypto->session_id);
+      break;
+    case SSH_KEX_ECDH_SHA2_NISTP256:
+      session->next_crypto->digest_len = SHA256_DIGEST_LENGTH;
+      session->next_crypto->mac_type = SSH_MAC_SHA256;
+      session->next_crypto->session_id = malloc(session->next_crypto->digest_len);
+      if(session->next_crypto->session_id == NULL){
+        ssh_set_error_oom(session);
+        goto error;
+      }
+      sha256(buffer_get_rest(buf), buffer_get_rest_len(buf),
+          session->next_crypto->session_id);
+      break;
+  }
+
 
 #ifdef DEBUG_CRYPTO
   printf("Session hash: ");
@@ -723,126 +794,134 @@ int hashbufin_add_cookie(ssh_session session, unsigned char *cookie) {
 }
 
 static int generate_one_key(ssh_string k,
-    unsigned char session_id[SHA_DIGEST_LEN],
-    unsigned char output[SHA_DIGEST_LEN],
-    char letter) {
-  SHACTX ctx = NULL;
+    struct ssh_crypto_struct *crypto, unsigned char *output, char letter) {
+  ssh_mac_ctx ctx;
+  ctx=ssh_mac_ctx_init(crypto->mac_type);
 
-  ctx = sha1_init();
   if (ctx == NULL) {
     return -1;
   }
 
-  sha1_update(ctx, k, ssh_string_len(k) + 4);
-  sha1_update(ctx, session_id, SHA_DIGEST_LEN);
-  sha1_update(ctx, &letter, 1);
-  sha1_update(ctx, session_id, SHA_DIGEST_LEN);
-  sha1_final(output, ctx);
+  ssh_mac_update(ctx, k, ssh_string_len(k) + 4);
+  ssh_mac_update(ctx, crypto->session_id, crypto->digest_len);
+  ssh_mac_update(ctx, &letter, 1);
+  ssh_mac_update(ctx, crypto->session_id, crypto->digest_len);
+  ssh_mac_final(output, ctx);
 
   return 0;
 }
 
 int generate_session_keys(ssh_session session) {
   ssh_string k_string = NULL;
-  SHACTX ctx = NULL;
+  ssh_mac_ctx ctx = NULL;
+  struct ssh_crypto_struct *crypto = session->next_crypto;
   int rc = -1;
 
   enter_function();
 
-  k_string = make_bignum_string(session->next_crypto->k);
+  k_string = make_bignum_string(crypto->k);
   if (k_string == NULL) {
+    ssh_set_error_oom(session);
+    goto error;
+  }
+
+  crypto->encryptIV = malloc(crypto->digest_len);
+  crypto->decryptIV = malloc(crypto->digest_len);
+  crypto->encryptkey = malloc(crypto->digest_len);
+  crypto->decryptkey = malloc(crypto->digest_len);
+  crypto->encryptMAC = malloc(crypto->digest_len);
+  crypto->decryptMAC = malloc(crypto->digest_len);
+  if(crypto->encryptIV == NULL || crypto->decryptIV == NULL ||
+      crypto->encryptkey == NULL || crypto->decryptkey == NULL ||
+      crypto->encryptMAC == NULL || crypto->decryptMAC == NULL){
+    ssh_set_error_oom(session);
     goto error;
   }
 
   /* IV */
   if (session->client) {
-    if (generate_one_key(k_string, session->next_crypto->session_id,
-          session->next_crypto->encryptIV, 'A') < 0) {
+    if (generate_one_key(k_string, crypto, crypto->encryptIV, 'A') < 0) {
       goto error;
     }
-    if (generate_one_key(k_string, session->next_crypto->session_id,
-          session->next_crypto->decryptIV, 'B') < 0) {
+    if (generate_one_key(k_string, crypto, crypto->decryptIV, 'B') < 0) {
       goto error;
     }
   } else {
-    if (generate_one_key(k_string, session->next_crypto->session_id,
-          session->next_crypto->decryptIV, 'A') < 0) {
+    if (generate_one_key(k_string, crypto, crypto->decryptIV, 'A') < 0) {
       goto error;
     }
-    if (generate_one_key(k_string, session->next_crypto->session_id,
-          session->next_crypto->encryptIV, 'B') < 0) {
+    if (generate_one_key(k_string, crypto, crypto->encryptIV, 'B') < 0) {
       goto error;
     }
   }
   if (session->client) {
-    if (generate_one_key(k_string, session->next_crypto->session_id,
-          session->next_crypto->encryptkey, 'C') < 0) {
+    if (generate_one_key(k_string, crypto, crypto->encryptkey, 'C') < 0) {
       goto error;
     }
-    if (generate_one_key(k_string, session->next_crypto->session_id,
-          session->next_crypto->decryptkey, 'D') < 0) {
+    if (generate_one_key(k_string, crypto, crypto->decryptkey, 'D') < 0) {
       goto error;
     }
   } else {
-    if (generate_one_key(k_string, session->next_crypto->session_id,
-          session->next_crypto->decryptkey, 'C') < 0) {
+    if (generate_one_key(k_string, crypto, crypto->decryptkey, 'C') < 0) {
       goto error;
     }
-    if (generate_one_key(k_string, session->next_crypto->session_id,
-          session->next_crypto->encryptkey, 'D') < 0) {
+    if (generate_one_key(k_string, crypto, crypto->encryptkey, 'D') < 0) {
       goto error;
     }
   }
 
-  /* some ciphers need more than 20 bytes of input key */
-  /* XXX verify it's ok for server implementation */
-  if (session->next_crypto->out_cipher->keysize > SHA_DIGEST_LEN * 8) {
-    ctx = sha1_init();
+  /* some ciphers need more than DIGEST_LEN bytes of input key */
+  if (crypto->out_cipher->keysize > crypto->digest_len * 8) {
+    crypto->encryptkey = realloc(crypto->encryptkey, crypto->digest_len * 2);
+    if(crypto->encryptkey == NULL)
+      goto error;
+    ctx = ssh_mac_ctx_init(crypto->mac_type);
     if (ctx == NULL) {
       goto error;
     }
-    sha1_update(ctx, k_string, ssh_string_len(k_string) + 4);
-    sha1_update(ctx, session->next_crypto->session_id, SHA_DIGEST_LEN);
-    sha1_update(ctx, session->next_crypto->encryptkey, SHA_DIGEST_LEN);
-    sha1_final(session->next_crypto->encryptkey + SHA_DIGEST_LEN, ctx);
+    ssh_mac_update(ctx, k_string, ssh_string_len(k_string) + 4);
+    ssh_mac_update(ctx, crypto->session_id,
+        crypto->digest_len);
+    ssh_mac_update(ctx, crypto->encryptkey, crypto->digest_len);
+    ssh_mac_final(crypto->encryptkey + crypto->digest_len, ctx);
   }
 
-  if (session->next_crypto->in_cipher->keysize > SHA_DIGEST_LEN * 8) {
-    ctx = sha1_init();
-    sha1_update(ctx, k_string, ssh_string_len(k_string) + 4);
-    sha1_update(ctx, session->next_crypto->session_id, SHA_DIGEST_LEN);
-    sha1_update(ctx, session->next_crypto->decryptkey, SHA_DIGEST_LEN);
-    sha1_final(session->next_crypto->decryptkey + SHA_DIGEST_LEN, ctx);
+  if (crypto->in_cipher->keysize > crypto->digest_len * 8) {
+    crypto->decryptkey = realloc(crypto->decryptkey, crypto->digest_len *2);
+    if(crypto->decryptkey == NULL)
+      goto error;
+    ctx = ssh_mac_ctx_init(crypto->mac_type);
+    ssh_mac_update(ctx, k_string, ssh_string_len(k_string) + 4);
+    ssh_mac_update(ctx, crypto->session_id,
+        crypto->digest_len);
+    ssh_mac_update(ctx, crypto->decryptkey, crypto->digest_len);
+    ssh_mac_final(crypto->decryptkey + crypto->digest_len, ctx);
   }
   if(session->client) {
-    if (generate_one_key(k_string, session->next_crypto->session_id,
-          session->next_crypto->encryptMAC, 'E') < 0) {
+    if (generate_one_key(k_string, crypto, crypto->encryptMAC, 'E') < 0) {
       goto error;
     }
-    if (generate_one_key(k_string, session->next_crypto->session_id,
-          session->next_crypto->decryptMAC, 'F') < 0) {
+    if (generate_one_key(k_string, crypto, crypto->decryptMAC, 'F') < 0) {
       goto error;
     }
   } else {
-    if (generate_one_key(k_string, session->next_crypto->session_id,
-          session->next_crypto->decryptMAC, 'E') < 0) {
+    if (generate_one_key(k_string, crypto, crypto->decryptMAC, 'E') < 0) {
       goto error;
     }
-    if (generate_one_key(k_string, session->next_crypto->session_id,
-          session->next_crypto->encryptMAC, 'F') < 0) {
+    if (generate_one_key(k_string, crypto, crypto->encryptMAC, 'F') < 0) {
       goto error;
     }
   }
 
 #ifdef DEBUG_CRYPTO
-  ssh_print_hexa("Encrypt IV", session->next_crypto->encryptIV, SHA_DIGEST_LEN);
-  ssh_print_hexa("Decrypt IV", session->next_crypto->decryptIV, SHA_DIGEST_LEN);
-  ssh_print_hexa("Encryption key", session->next_crypto->encryptkey,
-      session->next_crypto->out_cipher->keysize);
-  ssh_print_hexa("Decryption key", session->next_crypto->decryptkey,
-      session->next_crypto->in_cipher->keysize);
-  ssh_print_hexa("Encryption MAC", session->next_crypto->encryptMAC, SHA_DIGEST_LEN);
-  ssh_print_hexa("Decryption MAC", session->next_crypto->decryptMAC, 20);
+  ssh_print_hexa("Encrypt IV", crypto->encryptIV, SHA_DIGEST_LEN);
+  ssh_print_hexa("Decrypt IV", crypto->decryptIV, SHA_DIGEST_LEN);
+  ssh_print_hexa("Encryption key", crypto->encryptkey,
+      crypto->out_cipher->keysize);
+  ssh_print_hexa("Decryption key", crypto->decryptkey,
+      crypto->in_cipher->keysize);
+  ssh_print_hexa("Encryption MAC", crypto->encryptMAC, SHA_DIGEST_LEN);
+  ssh_print_hexa("Decryption MAC", crypto->decryptMAC, 20);
 #endif
 
   rc = 0;
@@ -1090,7 +1169,7 @@ int signature_verify(ssh_session session, ssh_string signature) {
       "Going to verify a %s type signature", pubkey->type_c);
 
   err = sig_verify(session,pubkey,sign,
-                            session->next_crypto->session_id,SHA_DIGEST_LEN);
+      session->next_crypto->session_id, session->next_crypto->digest_len);
   signature_free(sign);
   session->next_crypto->server_pubkey_type = pubkey->type_c;
   publickey_free(pubkey);

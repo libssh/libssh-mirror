@@ -136,7 +136,7 @@ unsigned char *packet_encrypt(ssh_session session, void *data, uint32_t len) {
 #endif
 
   if (session->version == 2) {
-    ctx = hmac_init(session->current_crypto->encryptMAC,20,HMAC_SHA1);
+    ctx = hmac_init(session->current_crypto->encryptMAC,20,SSH_HMAC_SHA1);
     if (ctx == NULL) {
       SAFE_FREE(out);
       return NULL;
@@ -190,7 +190,7 @@ int packet_hmac_verify(ssh_session session, ssh_buffer buffer,
   unsigned int len;
   uint32_t seq;
 
-  ctx = hmac_init(session->current_crypto->decryptMAC, 20, HMAC_SHA1);
+  ctx = hmac_init(session->current_crypto->decryptMAC, 20, SSH_HMAC_SHA1);
   if (ctx == NULL) {
     return -1;
   }

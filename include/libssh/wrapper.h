@@ -25,7 +25,21 @@
 #include "config.h"
 #include "libssh/libcrypto.h"
 #include "libssh/libgcrypt.h"
+#include "libssh/crypto.h"
 
+enum ssh_mac_e {
+  SSH_MAC_SHA1=1,
+  SSH_MAC_SHA256,
+  SSH_MAC_SHA384,
+  SSH_MAC_SHA512
+};
+
+enum ssh_hmac_e {
+  SSH_HMAC_SHA1 = 1,
+  SSH_HMAC_MD5
+};
+
+typedef struct ssh_mac_ctx_struct *ssh_mac_ctx;
 MD5CTX md5_init(void);
 void md5_update(MD5CTX c, const void *data, unsigned long len);
 void md5_final(unsigned char *md,MD5CTX c);
@@ -33,9 +47,13 @@ SHACTX sha1_init(void);
 void sha1_update(SHACTX c, const void *data, unsigned long len);
 void sha1_final(unsigned char *md,SHACTX c);
 void sha1(unsigned char *digest,int len,unsigned char *hash);
-#define HMAC_SHA1 1
-#define HMAC_MD5 2
-HMACCTX hmac_init(const void *key,int len,int type);
+void sha256(unsigned char *digest, int len, unsigned char *hash);
+
+ssh_mac_ctx ssh_mac_ctx_init(enum ssh_mac_e type);
+void ssh_mac_update(ssh_mac_ctx ctx, const void *data, unsigned long len);
+void ssh_mac_final(unsigned char *md, ssh_mac_ctx ctx);
+
+HMACCTX hmac_init(const void *key,int len, enum ssh_hmac_e type);
 void hmac_update(HMACCTX c, const void *data, unsigned long len);
 void hmac_final(HMACCTX ctx,unsigned char *hashmacbuf,unsigned int *len);
 

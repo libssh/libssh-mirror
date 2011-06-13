@@ -346,7 +346,7 @@ static int match_hashed_host(ssh_session session, const char *host,
     return 0;
   }
 
-  mac = hmac_init(buffer_get_rest(salt), buffer_get_rest_len(salt), HMAC_SHA1);
+  mac = hmac_init(buffer_get_rest(salt), buffer_get_rest_len(salt), SSH_HMAC_SHA1);
   if (mac == NULL) {
     ssh_buffer_free(salt);
     ssh_buffer_free(hash);

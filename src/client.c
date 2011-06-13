@@ -36,6 +36,7 @@
 #include "libssh/socket.h"
 #include "libssh/session.h"
 #include "libssh/dh.h"
+#include "libssh/ecdh.h"
 #include "libssh/threads.h"
 #include "libssh/misc.h"
 
@@ -176,12 +177,8 @@ end:
   return err;
 }
 
-
-
 SSH_PACKET_CALLBACK(ssh_packet_dh_reply){
-  ssh_string f = NULL;
-  ssh_string pubkey = NULL;
-  ssh_string signature = NULL;
+  int rc;
   (void)type;
   (void)user;
   ssh_log(session,SSH_LOG_PROTOCOL,"Received SSH_KEXDH_REPLY");
@@ -191,48 +188,23 @@ SSH_PACKET_CALLBACK(ssh_packet_dh_reply){
     			session->session_state,session->dh_handshake_state);
     	goto error;
   }
-
-  pubkey = buffer_get_ssh_string(packet);
-  if (pubkey == NULL){
-    ssh_set_error(session,SSH_FATAL, "No public key in packet");
-    goto error;
+  switch(session->next_crypto->kex_type){
+    case SSH_KEX_DH_GROUP1_SHA1:
+      rc=ssh_client_dh_reply(session, packet);
+      break;
+#ifdef HAVE_ECDH
+    case SSH_KEX_ECDH_SHA2_NISTP256:
+      rc = ssh_client_ecdh_reply(session, packet);
+      break;
+#endif
+    default:
+      ssh_set_error(session,SSH_FATAL,"Wrong kex type in ssh_packet_dh_reply");
+      goto error;
   }
-  dh_import_pubkey(session, pubkey);
-
-  f = buffer_get_ssh_string(packet);
-  if (f == NULL) {
-    ssh_set_error(session,SSH_FATAL, "No F number in packet");
-    goto error;
+  if(rc==SSH_OK) {
+    session->dh_handshake_state = DH_STATE_NEWKEYS_SENT;
+    return SSH_PACKET_USED;
   }
-  if (dh_import_f(session, f) < 0) {
-    ssh_set_error(session, SSH_FATAL, "Cannot import f number");
-    goto error;
-  }
-  ssh_string_burn(f);
-  ssh_string_free(f);
-  f=NULL;
-  signature = buffer_get_ssh_string(packet);
-  if (signature == NULL) {
-    ssh_set_error(session, SSH_FATAL, "No signature in packet");
-    goto error;
-  }
-  session->dh_server_signature = signature;
-  signature=NULL; /* ownership changed */
-  if (dh_build_k(session) < 0) {
-    ssh_set_error(session, SSH_FATAL, "Cannot build k number");
-    goto error;
-  }
-
-  /* Send the MSG_NEWKEYS */
-  if (buffer_add_u8(session->out_buffer, SSH2_MSG_NEWKEYS) < 0) {
-    goto error;
-  }
-
-  packet_send(session);
-  ssh_log(session, SSH_LOG_PROTOCOL, "SSH_MSG_NEWKEYS sent");
-
-  session->dh_handshake_state = DH_STATE_NEWKEYS_SENT;
-  return SSH_PACKET_USED;
 error:
   session->session_state=SSH_SESSION_STATE_ERROR;
   return SSH_PACKET_USED;
@@ -274,12 +246,12 @@ SSH_PACKET_CALLBACK(ssh_packet_newkeys){
     }
 
     /* Verify the host's signature. FIXME do it sooner */
-    signature = session->dh_server_signature;
-    session->dh_server_signature = NULL;
+    signature = session->next_crypto->dh_server_signature;
+    session->next_crypto->dh_server_signature = NULL;
     if (signature_verify(session, signature)) {
       goto error;
     }
-
+    ssh_log(session,SSH_LOG_PROTOCOL,"Signature verified and valid");
     /* forget it for now ... */
     ssh_string_burn(signature);
     ssh_string_free(signature);
@@ -325,7 +297,20 @@ static int dh_handshake(ssh_session session) {
 
   switch (session->dh_handshake_state) {
     case DH_STATE_INIT:
-      rc = ssh_client_dh_init(session);
+      switch(session->next_crypto->kex_type){
+        case SSH_KEX_DH_GROUP1_SHA1:
+          rc = ssh_client_dh_init(session);
+          break;
+#ifdef HAVE_ECDH
+        case SSH_KEX_ECDH_SHA2_NISTP256:
+          rc = ssh_client_ecdh_init(session);
+          break;
+#endif
+        default:
+          rc=SSH_ERROR;
+          goto error;
+      }
+
       if (rc == SSH_ERROR) {
         goto error;
       }

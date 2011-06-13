@@ -35,6 +35,10 @@
 /* Define to 1 if you have the <openssl/des.h> header file. */
 #cmakedefine HAVE_OPENSSL_DES_H 1
 
+/* Define to 1 if you have the <openssl/ecdh.h> header file. */
+#cmakedefine HAVE_OPENSSL_ECDH_H 1
+
+
 /* Define to 1 if you have the <pthread.h> header file. */
 #cmakedefine HAVE_PTHREAD_H 1
 

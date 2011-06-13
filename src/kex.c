@@ -42,6 +42,7 @@
 #include "libssh/dh.h"
 #include "libssh/kex.h"
 #include "libssh/string.h"
+#include "libssh/ecdh.h"
 
 #ifdef HAVE_LIBGCRYPT
 #define BLOWFISH "blowfish-cbc,"
@@ -72,8 +73,14 @@
 #define ZLIB "none"
 #endif
 
+#ifdef HAVE_ECDH
+#define KEY_EXCHANGE "ecdh-sha2-nistp256,diffie-hellman-group1-sha1"
+#else
+#define KEY_EXCHANGE "diffie-hellman-group1-sha1"
+#endif
+
 const char *default_methods[] = {
-  "diffie-hellman-group1-sha1",
+  KEY_EXCHANGE,
   "ssh-rsa,ssh-dss",
   AES BLOWFISH DES,
   AES BLOWFISH DES,
@@ -87,7 +94,7 @@ const char *default_methods[] = {
 };
 
 const char *supported_methods[] = {
-  "diffie-hellman-group1-sha1",
+  KEY_EXCHANGE,
   "ssh-rsa,ssh-dss",
   AES BLOWFISH DES,
   AES BLOWFISH DES,
@@ -370,7 +377,7 @@ int set_kex(ssh_session session){
     ssh_get_random(client->cookie,16,0);
     client->methods=malloc(10 * sizeof(char **));
     if (client->methods == NULL) {
-      ssh_set_error(session, SSH_FATAL, "No space left");
+      ssh_set_error_oom(session);
       leave_function();
       return -1;
     }
@@ -393,6 +400,11 @@ int set_kex(ssh_session session){
             }
           }
         }
+    }
+    if(strcmp(client->methods[SSH_KEX], "diffie-hellman-group1-sha1") == 0){
+      session->next_crypto->kex_type=SSH_KEX_DH_GROUP1_SHA1;
+    } else if(strcmp(client->methods[SSH_KEX], "ecdh-sha2-nistp256") == 0){
+      session->next_crypto->kex_type=SSH_KEX_ECDH_SHA2_NISTP256;
     }
     leave_function();
     return 0;

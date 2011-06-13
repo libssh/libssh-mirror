@@ -41,6 +41,9 @@ int dh_import_f(ssh_session session,ssh_string f_string);
 int dh_import_e(ssh_session session, ssh_string e_string);
 void dh_import_pubkey(ssh_session session,ssh_string pubkey_string);
 int dh_build_k(ssh_session session);
+int ssh_client_dh_init(ssh_session session);
+int ssh_client_dh_reply(ssh_session session, ssh_buffer packet);
+
 int make_sessionid(ssh_session session);
 /* add data for the final cookie */
 int hashbufin_add_cookie(ssh_session session, unsigned char *cookie);

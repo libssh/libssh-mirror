@@ -85,6 +85,7 @@ set(libssh_SRCS
   crc32.c
   crypt.c
   dh.c
+  ecdh.c
   error.c
   getpass.c
   gzip.c

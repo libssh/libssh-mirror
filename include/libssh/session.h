@@ -103,7 +103,7 @@ struct ssh_session_struct {
     enum ssh_auth_service_state_e auth_service_state;
     enum ssh_auth_state_e auth_state;
     enum ssh_channel_request_state_e global_req_state;
-    ssh_string dh_server_signature; /* information used by dh_handshake. */
+
     KEX server_kex;
     KEX client_kex;
     ssh_buffer in_hashbuf;

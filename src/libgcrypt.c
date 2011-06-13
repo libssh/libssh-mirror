@@ -31,6 +31,10 @@
 #ifdef HAVE_LIBGCRYPT
 #include <gcrypt.h>
 
+struct ssh_mac_ctx_struct {
+  enum ssh_mac_e mac_type;
+  gcry_md_hd_t ctx;
+};
 
 static int alloc_key(struct crypto_struct *cipher) {
     cipher->key = malloc(cipher->keylen);
@@ -62,6 +66,10 @@ void sha1(unsigned char *digest, int len, unsigned char *hash) {
   gcry_md_hash_buffer(GCRY_MD_SHA1, hash, digest, len);
 }
 
+void sha256(unsigned char *digest, int len, unsigned char *hash){
+  gcry_md_hash_buffer(GCRY_MD_SHA256, hash, digest, len);
+}
+
 MD5CTX md5_init(void) {
   MD5CTX c = NULL;
   gcry_md_open(&c, GCRY_MD_MD5, 0);
@@ -79,14 +87,63 @@ void md5_final(unsigned char *md, MD5CTX c) {
   gcry_md_close(c);
 }
 
-HMACCTX hmac_init(const void *key, int len, int type) {
+ssh_mac_ctx ssh_mac_ctx_init(enum ssh_mac_e type){
+  ssh_mac_ctx ctx=malloc(sizeof(struct ssh_mac_ctx_struct));
+  ctx->mac_type=type;
+  switch(type){
+    case SSH_MAC_SHA1:
+      gcry_md_open(&ctx->ctx, GCRY_MD_SHA1, 0);
+      break;
+    case SSH_MAC_SHA256:
+      gcry_md_open(&ctx->ctx, GCRY_MD_SHA256, 0);
+      break;
+    case SSH_MAC_SHA384:
+      gcry_md_open(&ctx->ctx, GCRY_MD_SHA384, 0);
+      break;
+    case SSH_MAC_SHA512:
+      gcry_md_open(&ctx->ctx, GCRY_MD_SHA512, 0);
+      break;
+    default:
+      SAFE_FREE(ctx);
+      return NULL;
+  }
+  return ctx;
+}
+
+void ssh_mac_update(ssh_mac_ctx ctx, const void *data, unsigned long len) {
+  gcry_md_write(ctx->ctx,data,len);
+}
+
+void ssh_mac_final(unsigned char *md, ssh_mac_ctx ctx) {
+  size_t len;
+  switch(ctx->mac_type){
+    case SSH_MAC_SHA1:
+      len=SHA_DIGEST_LEN;
+      break;
+    case SSH_MAC_SHA256:
+      len=SHA256_DIGEST_LENGTH;
+      break;
+    case SSH_MAC_SHA384:
+      len=SHA384_DIGEST_LENGTH;
+      break;
+    case SSH_MAC_SHA512:
+      len=SHA512_DIGEST_LENGTH;
+      break;
+  }
+  gcry_md_final(ctx->ctx);
+  memcpy(md, gcry_md_read(ctx->ctx, 0), len);
+  gcry_md_close(ctx->ctx);
+  SAFE_FREE(ctx);
+}
+
+HMACCTX hmac_init(const void *key, int len, enum ssh_hmac_e type) {
   HMACCTX c = NULL;
 
   switch(type) {
-    case HMAC_SHA1:
+    case SSH_HMAC_SHA1:
       gcry_md_open(&c, GCRY_MD_SHA1, GCRY_MD_FLAG_HMAC);
       break;
-    case HMAC_MD5:
+    case SSH_HMAC_MD5:
       gcry_md_open(&c, GCRY_MD_MD5, GCRY_MD_FLAG_HMAC);
       break;
     default:

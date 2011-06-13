@@ -32,6 +32,7 @@
 #include <openssl/md5.h>
 #include <openssl/hmac.h>
 typedef SHA_CTX* SHACTX;
+typedef SHA256_CTX* SHA256CTX;
 typedef MD5_CTX*  MD5CTX;
 typedef HMAC_CTX* HMACCTX;
 
@@ -66,6 +67,10 @@ typedef BN_CTX* bignum_CTX;
 #define bignum_is_bit_set(num,bit) BN_is_bit_set(num,bit)
 #define bignum_bn2bin(num,ptr) BN_bn2bin(num,ptr)
 #define bignum_cmp(num1,num2) BN_cmp(num1,num2)
+
+SHA256CTX sha256_init(void);
+void sha256_update(SHA256CTX c, const void *data, unsigned long len);
+void sha256_final(unsigned char *md, SHA256CTX c);
 
 struct crypto_struct *ssh_get_ciphertab(void);
 
