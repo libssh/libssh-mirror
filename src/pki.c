@@ -151,6 +151,21 @@ enum ssh_keytypes_e ssh_key_type_from_name(const char *name) {
 }
 
 /**
+ * @brief Check if the key has/is a public key.
+ *
+ * @param[in] k         The key to check.
+ *
+ * @return              1 if it is a public key, 0 if not.
+ */
+int ssh_key_is_public(ssh_key k) {
+    if (k == NULL) {
+        return 0;
+    }
+
+    return (k->flags & SSH_KEY_FLAG_PUBLIC);
+}
+
+/**
  * @brief import a key from a file
  * @param[out]  key      the ssh_key to update
  * @param[in]  session  The SSH Session to use. If a key decryption callback is set, it will

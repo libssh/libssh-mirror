@@ -39,7 +39,6 @@ struct ssh_key_struct {
 #endif
 };
 
-#define ssh_key_is_public(k) (k && k->flags & SSH_KEY_FLAG_PUBLIC)
 #define ssh_key_is_private(k) (k && k->flags & SSH_KEY_FLAG_PRIVATE)
 
 void ssh_key_clean (ssh_key key);
