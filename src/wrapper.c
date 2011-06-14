@@ -115,6 +115,10 @@ void crypto_free(struct ssh_crypto_struct *crypto){
   SAFE_FREE(crypto->ecdh_client_pubkey);
   SAFE_FREE(crypto->ecdh_server_pubkey);
 #endif
+  if(crypto->session_id != NULL){
+    memset(crypto->session_id, '\0', crypto->digest_len);
+    SAFE_FREE(crypto->session_id);
+  }
 
 #ifdef WITH_LIBZ
   if (crypto->compress_out_ctx &&
