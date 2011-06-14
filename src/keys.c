@@ -1140,11 +1140,11 @@ ssh_string ssh_do_sign_with_agent(ssh_session session,
   }
 
   /* prepend session identifier */
-  session_id = ssh_string_new(SHA_DIGEST_LEN);
+  session_id = ssh_string_new(crypto->digest_len);
   if (session_id == NULL) {
     return NULL;
   }
-  ssh_string_fill(session_id, crypto->session_id, SHA_DIGEST_LEN);
+  ssh_string_fill(session_id, crypto->session_id, crypto->digest_len);
 
   sigbuf = ssh_buffer_new();
   if (sigbuf == NULL) {
@@ -1254,11 +1254,11 @@ ssh_string ssh_do_sign(ssh_session session, ssh_buffer sigbuf,
   gcry_sexp_t gcryhash;
 #endif
 
-  session_str = ssh_string_new(SHA_DIGEST_LEN);
+  session_str = ssh_string_new(crypto->digest_len);
   if (session_str == NULL) {
     return NULL;
   }
-  ssh_string_fill(session_str, crypto->session_id, SHA_DIGEST_LEN);
+  ssh_string_fill(session_str, crypto->session_id, crypto->digest_len);
 
   ctx = sha1_init();
   if (ctx == NULL) {
