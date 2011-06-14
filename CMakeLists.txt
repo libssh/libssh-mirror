@@ -78,9 +78,11 @@ add_subdirectory(src)
 
 # pkg-config file
 configure_file(libssh.pc.cmake ${CMAKE_CURRENT_BINARY_DIR}/libssh.pc)
+configure_file(libssh_threads.pc.cmake ${CMAKE_CURRENT_BINARY_DIR}/libssh_threads.pc)
 install(
   FILES
     ${CMAKE_CURRENT_BINARY_DIR}/libssh.pc
+    ${CMAKE_CURRENT_BINARY_DIR}/libssh_threads.pc
   DESTINATION
     ${LIB_INSTALL_DIR}/pkgconfig
   COMPONENT
