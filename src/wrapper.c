@@ -111,8 +111,10 @@ void crypto_free(struct ssh_crypto_struct *crypto){
   bignum_free(crypto->x);
   bignum_free(crypto->y);
   bignum_free(crypto->k);
+#ifdef HAVE_ECDH
   SAFE_FREE(crypto->ecdh_client_pubkey);
   SAFE_FREE(crypto->ecdh_server_pubkey);
+#endif
 
 #ifdef WITH_LIBZ
   if (crypto->compress_out_ctx &&

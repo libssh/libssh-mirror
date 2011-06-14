@@ -681,10 +681,12 @@ int make_sessionid(ssh_session session) {
     }
 
     ssh_string_free(num);
-  } else if (session->next_crypto->kex_type == SSH_KEX_ECDH_SHA2_NISTP256){
+#ifdef HAVE_ECDH
+    } else if (session->next_crypto->kex_type == SSH_KEX_ECDH_SHA2_NISTP256){
     buffer_add_ssh_string(buf,session->next_crypto->ecdh_client_pubkey);
     buffer_add_ssh_string(buf,session->next_crypto->ecdh_server_pubkey);
-  }
+#endif
+    }
   num = make_bignum_string(session->next_crypto->k);
   if (num == NULL) {
     goto error;

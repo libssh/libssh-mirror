@@ -43,6 +43,7 @@
 #ifdef HAVE_OPENSSL_ECDH_H
 #include <openssl/ecdh.h>
 #endif
+#include "libssh/ecdh.h"
 
 enum ssh_key_exchange_e {
   /* diffie-hellman-group1-sha1 */
@@ -53,9 +54,11 @@ enum ssh_key_exchange_e {
 
 struct ssh_crypto_struct {
     bignum e,f,x,k,y;
+#ifdef HAVE_ECDH
     EC_KEY *ecdh_privkey;
     ssh_string ecdh_client_pubkey;
     ssh_string ecdh_server_pubkey;
+#endif
     ssh_string dh_server_signature; /* information used by dh_handshake. */
     size_t digest_len; /* len of all the fields below */
     unsigned char *session_id;
