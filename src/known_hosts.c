@@ -474,6 +474,12 @@ int ssh_is_server_known(ssh_session session) {
     if (match) {
       /* We got a match. Now check the key type */
       if (strcmp(session->current_crypto->server_pubkey_type, type) != 0) {
+          ssh_log(session,
+                  SSH_LOG_PACKET,
+                  "ssh_is_server_known: server type [%s] doesn't match the "
+                  "type [%s] in known_hosts file",
+                  session->current_crypto->server_pubkey_type,
+                  type);
         /* Different type. We don't override the known_changed error which is
          * more important */
         if (ret != SSH_SERVER_KNOWN_CHANGED)
