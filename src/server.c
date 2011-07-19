@@ -59,8 +59,8 @@
 #include "libssh/messages.h"
 
 #define set_status(session, status) do {\
-        if (session->callbacks && session->callbacks->connect_status_function) \
-            session->callbacks->connect_status_function(session->callbacks->userdata, status); \
+        if (session->common.callbacks && session->common.callbacks->connect_status_function) \
+            session->common.callbacks->connect_status_function(session->common.callbacks->userdata, status); \
     } while (0)
 
 static int dh_handshake_server(ssh_session session);

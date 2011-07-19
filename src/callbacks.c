@@ -37,7 +37,7 @@ int ssh_set_callbacks(ssh_session session, ssh_callbacks cb) {
   	leave_function();
   	return SSH_ERROR;
   }
-  session->callbacks = cb;
+  session->common.callbacks = cb;
   leave_function();
   return 0;
 }

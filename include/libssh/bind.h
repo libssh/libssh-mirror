@@ -23,11 +23,10 @@
 #define BIND_H_
 
 #include "libssh/priv.h"
+#include "libssh/session.h"
 
 struct ssh_bind_struct {
-  struct error_struct error;
-
-  ssh_callbacks callbacks; /* Callbacks to user functions */
+  struct ssh_common_struct common; /* stuff common to ssh_bind and ssh_session */
   struct ssh_bind_callbacks_struct *bind_callbacks;
   void *bind_callbacks_userdata;
 
@@ -40,8 +39,6 @@ struct ssh_bind_struct {
   char *bindaddr;
   socket_t bindfd;
   unsigned int bindport;
-  unsigned int log_verbosity;
-
   int blocking;
   int toaccept;
 };

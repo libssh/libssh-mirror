@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include "libssh/priv.h"
+#include "libssh/session.h"
 
 /**
  * @defgroup libssh_error The SSH error functions.
@@ -48,13 +49,13 @@
  * @param  ...         The arguments for the format string.
  */
 void ssh_set_error(void *error, int code, const char *descr, ...) {
-  struct error_struct *err = error;
+  struct ssh_common_struct *err = error;
   va_list va;
   va_start(va, descr);
-  vsnprintf(err->error_buffer, ERROR_BUFFERLEN, descr, va);
+  vsnprintf(err->error.error_buffer, ERROR_BUFFERLEN, descr, va);
   va_end(va);
-  err->error_code = code;
-  ssh_log(error,SSH_LOG_RARE,"Error : %s",err->error_buffer);
+  err->error.error_code = code;
+  ssh_log_common(err,SSH_LOG_RARE,"Error : %s",err->error.error_buffer);
 }
 
 /**

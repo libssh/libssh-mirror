@@ -995,7 +995,7 @@ ssh_private_key privatekey_from_base64(ssh_session session, const char *b64_pkey
   ssh_log(session, SSH_LOG_RARE, "Trying to read privkey type=%s, passphase=%s, authcb=%s",
       type ? type == SSH_KEYTYPE_DSS ? "ssh-dss" : "ssh-rsa": "unknown",
       passphrase ? "true" : "false",
-      session->callbacks && session->callbacks->auth_function ? "true" : "false");
+      session->common.callbacks && session->common.callbacks->auth_function ? "true" : "false");
 
   if (type == 0) {
     type = privatekey_type_from_string(b64_pkey);
@@ -1008,9 +1008,9 @@ ssh_private_key privatekey_from_base64(ssh_session session, const char *b64_pkey
     case SSH_KEYTYPE_DSS:
 #ifdef HAVE_LIBGCRYPT
       if (passphrase == NULL) {
-        if (session->callbacks && session->callbacks->auth_function) {
-          auth_cb = session->callbacks->auth_function;
-          auth_ud = session->callbacks->userdata;
+        if (session->common.callbacks && session->common.callbacks->auth_function) {
+          auth_cb = session->common.callbacks->auth_function;
+          auth_ud = session->common.callbacks->userdata;
 
           valid = b64decode_dsa_privatekey(b64_pkey, &dsa, auth_cb, auth_ud,
               "Passphrase for private key:");
@@ -1052,9 +1052,9 @@ ssh_private_key privatekey_from_base64(ssh_session session, const char *b64_pkey
     case SSH_KEYTYPE_RSA:
 #ifdef HAVE_LIBGCRYPT
       if (passphrase == NULL) {
-        if (session->callbacks && session->callbacks->auth_function) {
-          auth_cb = session->callbacks->auth_function;
-          auth_ud = session->callbacks->userdata;
+        if (session->common.callbacks && session->common.callbacks->auth_function) {
+          auth_cb = session->common.callbacks->auth_function;
+          auth_ud = session->common.callbacks->userdata;
           valid = b64decode_rsa_privatekey(b64_pkey, &rsa, auth_cb, auth_ud,
               "Passphrase for private key:");
         } else { /* authcb */
