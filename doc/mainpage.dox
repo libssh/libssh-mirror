@@ -120,5 +120,7 @@ them like the statvfs calls in SFTP or the ssh-agent.
     OpenSSH's deviations and extensions</a>
  - <a href="http://api.libssh.org/rfc/PROTOCOL.agent" target="_blank">
     OpenSSH's ssh-agent</a>
+ - <a href="http://api.libssh.org/rfc/PROTOCOL.certkeys" target="_blank">
+    OpenSSH's pubkey certificate authentication</a>
 
 */
