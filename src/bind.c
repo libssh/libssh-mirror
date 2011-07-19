@@ -150,7 +150,7 @@ ssh_bind ssh_bind_new(void) {
   ZERO_STRUCTP(ptr);
   ptr->bindfd = SSH_INVALID_SOCKET;
   ptr->bindport= 22;
-  ptr->log_verbosity = 0;
+  ptr->common.log_verbosity = 0;
 
   return ptr;
 }
@@ -359,7 +359,7 @@ int ssh_bind_accept(ssh_bind sshbind, ssh_session session) {
     }
   }
 
-  session->log_verbosity = sshbind->log_verbosity;
+  session->common.log_verbosity = sshbind->common.log_verbosity;
 
   ssh_socket_free(session->socket);
   session->socket = ssh_socket_new(session);
@@ -375,7 +375,7 @@ int ssh_bind_accept(ssh_bind sshbind, ssh_session session) {
   session->dsa_key = dsa;
   session->rsa_key = rsa;
 
-return SSH_OK;
+  return SSH_OK;
 }
 
 

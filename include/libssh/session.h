@@ -61,8 +61,16 @@ enum ssh_pending_call_e {
 /* libssh calls may block an undefined amount of time */
 #define SSH_SESSION_FLAG_BLOCKING 1
 
-struct ssh_session_struct {
+/* members that are common to ssh_session and ssh_bind */
+struct ssh_common_struct {
     struct error_struct error;
+    ssh_callbacks callbacks; /* Callbacks to user functions */
+    int log_verbosity; /* verbosity of the log functions */
+    int log_indent; /* indentation level in enter_function logs */
+};
+
+struct ssh_session_struct {
+    struct ssh_common_struct common;
     struct ssh_socket_struct *socket;
     char *serverbanner;
     char *clientbanner;
@@ -128,11 +136,8 @@ struct ssh_session_struct {
     struct ssh_list *ssh_message_list; /* list of delayed SSH messages */
     int (*ssh_message_callback)( struct ssh_session_struct *session, ssh_message msg, void *userdata);
     void *ssh_message_callback_data;
-    int log_verbosity; /*cached copy of the option structure */
-    int log_indent; /* indentation level in enter_function logs */
 
     void (*ssh_connection_callback)( struct ssh_session_struct *session);
-    ssh_callbacks callbacks; /* Callbacks to user functions */
     struct ssh_packet_callbacks_struct default_packet_callbacks;
     struct ssh_list *packet_callbacks;
     struct ssh_socket_callbacks_struct socket_callbacks;

@@ -945,9 +945,9 @@ SSH_PACKET_CALLBACK(ssh_packet_global_request){
 
         ssh_log(session, SSH_LOG_PROTOCOL, "Received SSH_MSG_GLOBAL_REQUEST %s %d %s:%d", request, want_reply, bind_addr, bind_port);
 
-        if(ssh_callbacks_exists(session->callbacks, global_request_function)) {
+        if(ssh_callbacks_exists(session->common.callbacks, global_request_function)) {
             ssh_log(session, SSH_LOG_PROTOCOL, "Calling callback for SSH_MSG_GLOBAL_REQUEST %s %d %s:%d", request, want_reply, bind_addr, bind_port);
-            session->callbacks->global_request_function(session, msg, session->callbacks->userdata);
+            session->common.callbacks->global_request_function(session, msg, session->common.callbacks->userdata);
         } else {
             ssh_message_reply_default(msg);
         }
@@ -967,8 +967,8 @@ SSH_PACKET_CALLBACK(ssh_packet_global_request){
 
         ssh_log(session, SSH_LOG_PROTOCOL, "Received SSH_MSG_GLOBAL_REQUEST %s %d %s:%d", request, want_reply, bind_addr, bind_port);
 
-        if(ssh_callbacks_exists(session->callbacks, global_request_function)) {
-            session->callbacks->global_request_function(session, msg, session->callbacks->userdata);
+        if(ssh_callbacks_exists(session->common.callbacks, global_request_function)) {
+            session->common.callbacks->global_request_function(session, msg, session->common.callbacks->userdata);
         } else {
             ssh_message_reply_default(msg);
         }

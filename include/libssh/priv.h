@@ -133,6 +133,7 @@ struct ssh_keys_struct {
 };
 
 struct ssh_message_struct;
+struct ssh_common_struct;
 
 /* server data */
 
@@ -208,6 +209,9 @@ int match_hostname(const char *host, const char *pattern, unsigned int len);
 int message_handle(ssh_session session, void *user, uint8_t type, ssh_buffer packet);
 /* log.c */
 
+void ssh_log_common(struct ssh_common_struct *common, int verbosity,
+    const char *format, ...) PRINTF_ATTRIBUTE(3, 4);
+
 /* misc.c */
 #ifdef _WIN32
 int gettimeofday(struct timeval *__p, void *__t);
@@ -221,16 +225,16 @@ int gettimeofday(struct timeval *__p, void *__t);
 
 #define _enter_function(sess) \
 	do {\
-		if((sess)->log_verbosity >= SSH_LOG_FUNCTIONS){ \
+		if((sess)->common.log_verbosity >= SSH_LOG_FUNCTIONS){ \
 			ssh_log((sess),SSH_LOG_FUNCTIONS,"entering function %s line %d in " __FILE__ , __FUNCTION__,__LINE__);\
-			(sess)->log_indent++; \
+			(sess)->common.log_indent++; \
 		} \
 	} while(0)
 
 #define _leave_function(sess) \
 	do { \
-		if((sess)->log_verbosity >= SSH_LOG_FUNCTIONS){ \
-			(sess)->log_indent--; \
+		if((sess)->common.log_verbosity >= SSH_LOG_FUNCTIONS){ \
+			(sess)->common.log_indent--; \
 			ssh_log((sess),SSH_LOG_FUNCTIONS,"leaving function %s line %d in " __FILE__ , __FUNCTION__,__LINE__);\
 		}\
 	} while(0)

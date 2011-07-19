@@ -86,7 +86,7 @@ ssh_session ssh_new(void) {
   session->alive = 0;
   session->auth_methods = 0;
   ssh_set_blocking(session, 1);
-  session->log_indent = 0;
+  session->common.log_indent = 0;
   session->maxchannel = FIRST_CHANNEL;
 
   /* options */

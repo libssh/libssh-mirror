@@ -705,7 +705,7 @@ ssh_private_key privatekey_from_file(ssh_session session, const char *filename,
 
   ssh_log(session, SSH_LOG_RARE, "Trying to read %s, passphase=%s, authcb=%s",
       filename, passphrase ? "true" : "false",
-      session->callbacks && session->callbacks->auth_function ? "true" : "false");
+      session->common.callbacks && session->common.callbacks->auth_function ? "true" : "false");
 
   if (type == 0) {
     type = privatekey_type_from_file(file);
@@ -719,9 +719,9 @@ ssh_private_key privatekey_from_file(ssh_session session, const char *filename,
     case SSH_KEYTYPE_DSS:
       if (passphrase == NULL) {
 #ifdef HAVE_LIBGCRYPT
-        if (session->callbacks && session->callbacks->auth_function) {
-          auth_cb = session->callbacks->auth_function;
-          auth_ud = session->callbacks->userdata;
+        if (session->common.callbacks && session->common.callbacks->auth_function) {
+          auth_cb = session->common.callbacks->auth_function;
+          auth_ud = session->common.callbacks->userdata;
 
           valid = read_dsa_privatekey(file, &dsa, auth_cb, auth_ud,
               "Passphrase for private key:");
@@ -761,9 +761,9 @@ ssh_private_key privatekey_from_file(ssh_session session, const char *filename,
     case SSH_KEYTYPE_RSA:
       if (passphrase == NULL) {
 #ifdef HAVE_LIBGCRYPT
-        if (session->callbacks && session->callbacks->auth_function) {
-          auth_cb = session->callbacks->auth_function;
-          auth_ud = session->callbacks->userdata;
+        if (session->common.callbacks && session->common.callbacks->auth_function) {
+          auth_cb = session->common.callbacks->auth_function;
+          auth_ud = session->common.callbacks->userdata;
           valid = read_rsa_privatekey(file, &rsa, auth_cb, auth_ud,
               "Passphrase for private key:");
         } else { /* authcb */

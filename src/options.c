@@ -139,12 +139,12 @@ int ssh_options_copy(ssh_session src, ssh_session *dest) {
   }
   new->fd = src->fd;
   new->port = src->port;
-  new->callbacks = src->callbacks;
+  new->common.callbacks = src->common.callbacks;
   new->timeout = src->timeout;
   new->timeout_usec = src->timeout_usec;
   new->ssh2 = src->ssh2;
   new->ssh1 = src->ssh1;
-  new->log_verbosity = src->log_verbosity;
+  new->common.log_verbosity = src->common.log_verbosity;
   new->compressionlevel = src->compressionlevel;
 
   return 0;
@@ -544,12 +544,12 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
       } else {
         int *x = (int *) value;
 
-        session->log_verbosity = *x & 0xffff;
+        session->common.log_verbosity = *x & 0xffff;
       }
       break;
     case SSH_OPTIONS_LOG_VERBOSITY_STR:
       if (value == NULL) {
-        session->log_verbosity = 0 & 0xffff;
+        session->common.log_verbosity = 0 & 0xffff;
       } else {
         q = strdup(value);
         if (q == NULL) {
@@ -562,7 +562,7 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
         }
         SAFE_FREE(q);
 
-        session->log_verbosity = i & 0xffff;
+        session->common.log_verbosity = i & 0xffff;
       }
       break;
     case SSH_OPTIONS_CIPHERS_C_S:
@@ -1106,12 +1106,12 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
         return -1;
       } else {
         int *x = (int *) value;
-        sshbind->log_verbosity = *x & 0xffff;
+        sshbind->common.log_verbosity = *x & 0xffff;
       }
       break;
     case SSH_BIND_OPTIONS_LOG_VERBOSITY_STR:
       if (value == NULL) {
-        sshbind->log_verbosity = 0;
+        sshbind->common.log_verbosity = 0;
       } else {
         q = strdup(value);
         if (q == NULL) {
@@ -1124,7 +1124,7 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
         }
         SAFE_FREE(q);
 
-        sshbind->log_verbosity = i & 0xffff;
+        sshbind->common.log_verbosity = i & 0xffff;
       }
       break;
     case SSH_BIND_OPTIONS_DSAKEY:
