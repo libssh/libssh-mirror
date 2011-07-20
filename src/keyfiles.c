@@ -875,9 +875,9 @@ static int pem_get_password(char *buf, int size, int rwflag, void *userdata) {
   ssh_log(session, SSH_LOG_RARE,
       "Trying to call external authentication function");
 
-  if (session && session->callbacks && session->callbacks->auth_function) {
-    if (session->callbacks->auth_function("Passphrase for private key:", buf, size, 0, 0,
-        session->callbacks->userdata) < 0) {
+  if (session && session->common.callbacks && session->common.callbacks->auth_function) {
+    if (session->common.callbacks->auth_function("Passphrase for private key:", buf, size, 0, 0,
+        session->common.callbacks->userdata) < 0) {
       return 0;
     }
 
@@ -1029,7 +1029,7 @@ ssh_private_key privatekey_from_base64(ssh_session session, const char *b64_pkey
 #elif defined HAVE_LIBCRYPTO
       mem = BIO_new_mem_buf((void*)b64_pkey, -1);
       if (passphrase == NULL) {
-        if (session->callbacks && session->callbacks->auth_function) {
+        if (session->common.callbacks && session->common.callbacks->auth_function) {
           dsa = PEM_read_bio_DSAPrivateKey(mem, NULL, pem_get_password, session);
         } else { /* authcb */
           /* openssl uses its own callback to get the passphrase here */
@@ -1072,7 +1072,7 @@ ssh_private_key privatekey_from_base64(ssh_session session, const char *b64_pkey
 #elif defined HAVE_LIBCRYPTO
       mem = BIO_new_mem_buf((void*)b64_pkey, -1);
       if (passphrase == NULL) {
-        if (session->callbacks && session->callbacks->auth_function) {
+        if (session->common.callbacks && session->common.callbacks->auth_function) {
           rsa = PEM_read_bio_RSAPrivateKey(mem, NULL, pem_get_password, session);
         } else { /* authcb */
           /* openssl uses its own callback to get the passphrase here */
