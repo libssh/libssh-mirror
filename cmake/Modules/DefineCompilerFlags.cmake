@@ -1,7 +1,7 @@
 # define system dependent compiler flags
 
 include(CheckCCompilerFlag)
-include(MacroCheckCCompilerFlagSSP)
+include(CheckCCompilerFlagSSP)
 
 if (UNIX AND NOT WIN32)
     #
