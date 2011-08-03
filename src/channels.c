@@ -48,6 +48,14 @@
 #define WINDOWBASE 128000
 #define WINDOWLIMIT (WINDOWBASE/2)
 
+/*
+ * All implementations MUST be able to process packets with an
+ * uncompressed payload length of 32768 bytes or less and a total packet
+ * size of 35000 bytes or less.
+ */
+#define CHANNEL_MAX_PACKET 32768
+#define CHANNEL_INITIAL_WINDOW 64000
+
 /**
  * @defgroup libssh_channel The SSH channel functions
  * @ingroup libssh
@@ -885,7 +893,11 @@ int ssh_channel_open_session(ssh_channel channel) {
   }
 #endif
 
-  return channel_open(channel,"session",64000,32000,NULL);
+  return channel_open(channel,
+                      "session",
+                      CHANNEL_INITIAL_WINDOW,
+                      CHANNEL_MAX_PACKET,
+                      NULL);
 }
 
 /**
@@ -960,7 +972,11 @@ int ssh_channel_open_forward(ssh_channel channel, const char *remotehost,
     goto error;
   }
 
-  rc = channel_open(channel, "direct-tcpip", 64000, 32000, payload);
+  rc = channel_open(channel,
+                    "direct-tcpip",
+                    CHANNEL_INITIAL_WINDOW,
+                    CHANNEL_MAX_PACKET,
+                    payload);
 
 error:
   ssh_buffer_free(payload);
@@ -2935,7 +2951,11 @@ int ssh_channel_open_reverse_forward(ssh_channel channel, const char *remotehost
     goto error;
   }
 
-  rc = channel_open(channel, "forwarded-tcpip", 64000, 32000, payload);
+  rc = channel_open(channel,
+                    "forwarded-tcpip",
+                    CHANNEL_INITIAL_WINDOW,
+                    CHANNEL_MAX_PACKET,
+                    payload);
 
 error:
   ssh_buffer_free(payload);
@@ -2998,7 +3018,11 @@ int ssh_channel_open_x11(ssh_channel channel,
     goto error;
   }
 
-  rc = channel_open(channel, "x11", 64000, 32000, payload);
+  rc = channel_open(channel,
+                    "x11",
+                    CHANNEL_INITIAL_WINDOW,
+                    CHANNEL_MAX_PACKET,
+                    payload);
 
 error:
   ssh_buffer_free(payload);
