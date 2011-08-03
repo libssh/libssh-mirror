@@ -182,7 +182,7 @@ static int do_copy(struct location *src, struct location *dest, int recursive){
     fd=fileno(src->file);
     fstat(fd,&s);
     size=s.st_size;
-    mode = s.st_mode & S_IFMT;
+    mode = s.st_mode & ~S_IFMT;
     filename=ssh_basename(src->path);
   } else {
     size=0;
