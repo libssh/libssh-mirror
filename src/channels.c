@@ -293,6 +293,10 @@ static int channel_open(ssh_channel channel, const char *type_c, int window,
   /* wait until channel is opened by server */
   while(channel->state == SSH_CHANNEL_STATE_NOT_OPEN){
     ssh_handle_packets(session, -2);
+    if (session->session_state == SSH_SESSION_STATE_ERROR) {
+        err = SSH_ERROR;
+        break;
+    }
   }
   if(channel->state == SSH_CHANNEL_STATE_OPEN)
     err=SSH_OK;
