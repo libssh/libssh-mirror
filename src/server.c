@@ -479,7 +479,7 @@ int ssh_handle_key_exchange(ssh_session session) {
          * loop until SSH_SESSION_STATE_BANNER_RECEIVED or
          * SSH_SESSION_STATE_ERROR
          */
-        ssh_handle_packets(session,-1);
+        ssh_handle_packets(session, -2);
         ssh_log(session,SSH_LOG_PACKET, "ssh_handle_key_exchange: Actual state : %d",
                 session->session_state);
     }

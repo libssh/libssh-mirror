@@ -814,14 +814,14 @@ int ssh_get_kex1(ssh_session session) {
   ssh_log(session, SSH_LOG_PROTOCOL, "Waiting for a SSH_SMSG_PUBLIC_KEY");
   /* Here the callback is called */
   while(session->session_state==SSH_SESSION_STATE_INITIAL_KEX){
-    ssh_handle_packets(session,-1);
+    ssh_handle_packets(session, -2);
   }
   if(session->session_state==SSH_SESSION_STATE_ERROR)
     goto error;
   ssh_log(session, SSH_LOG_PROTOCOL, "Waiting for a SSH_SMSG_SUCCESS");
   /* Waiting for SSH_SMSG_SUCCESS */
   while(session->session_state==SSH_SESSION_STATE_KEXINIT_RECEIVED){
-    ssh_handle_packets(session,-1);
+    ssh_handle_packets(session, -2);
   }
   if(session->session_state==SSH_SESSION_STATE_ERROR)
       goto error;
