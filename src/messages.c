@@ -183,7 +183,7 @@ ssh_message ssh_message_get(ssh_session session) {
       session->ssh_message_list = ssh_list_new();
   }
   do {
-    if (ssh_handle_packets(session,-1) == SSH_ERROR) {
+    if (ssh_handle_packets(session, -2) == SSH_ERROR) {
       leave_function();
       return NULL;
     }

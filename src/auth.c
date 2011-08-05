@@ -63,23 +63,23 @@
  * again is necessary
  */
 static int ask_userauth(ssh_session session) {
-  int rc = 0;
+    int rc = 0;
 
-  enter_function();
-  do {
-  	rc=ssh_service_request(session,"ssh-userauth");
-  	if(ssh_is_blocking(session)){
-  	  if(rc==SSH_AGAIN)
-  	    ssh_handle_packets(session,-1);
-  	} else {
-  	  /* nonblocking */
-  	  ssh_handle_packets(session,0);
-  	  rc=ssh_service_request(session,"ssh-userauth");
-  	  break;
-  	}
-  } while(rc==SSH_AGAIN);
-  leave_function();
-  return rc;
+    enter_function();
+    do {
+        rc = ssh_service_request(session,"ssh-userauth");
+        if (ssh_is_blocking(session)) {
+            if(rc == SSH_AGAIN)
+                ssh_handle_packets(session, -2);
+        } else {
+            /* nonblocking */
+            ssh_handle_packets(session, 0);
+            rc = ssh_service_request(session, "ssh-userauth");
+            break;
+        }
+    } while (rc == SSH_AGAIN);
+    leave_function();
+    return rc;
 }
 
 /**

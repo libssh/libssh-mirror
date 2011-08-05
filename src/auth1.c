@@ -38,7 +38,7 @@ static int wait_auth1_status(ssh_session session) {
   enter_function();
   /* wait for a packet */
   while(session->auth_state == SSH_AUTH_STATE_NONE)
-    if (ssh_handle_packets(session,-1) != SSH_OK)
+    if (ssh_handle_packets(session, -2) != SSH_OK)
       break;
   ssh_log(session,SSH_LOG_PROTOCOL,"Auth state : %d",session->auth_state);
   leave_function();

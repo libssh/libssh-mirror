@@ -404,6 +404,17 @@ void ssh_set_fd_except(ssh_session session) {
   ssh_socket_set_except(session->socket);
 }
 
+static int ssh_make_milliseconds(long sec, long usec) {
+    int res = usec ? (usec / 1000) : 0;
+    res += (sec * 1000);
+    if (res == 0) {
+        res = 10 * 1000; /* use a reasonable default value in case
+                          * SSH_OPTIONS_TIMEOUT is not set in options. */
+    }
+
+    return res;
+}
+
 /**
  * @internal
  *
@@ -415,38 +426,56 @@ void ssh_set_fd_except(ssh_session session) {
  * @param[in] session   The session handle to use.
  *
  * @param[in] timeout   Set an upper limit on the time for which this function
- *                      will block, in milliseconds. Specifying a negative value
- *                      means an infinite timeout. This parameter is passed to
- *                      the poll() function.
+ *                      will block, in milliseconds. Specifying -1
+ *                      means an infinite timeout.
+ *                      Specifying -2 means to use the timeout specified in
+ *                      options. 0 means poll will return immediately. This
+ *                      parameter is passed to the poll() function.
  *
  * @return              SSH_OK on success, SSH_ERROR otherwise.
  */
 int ssh_handle_packets(ssh_session session, int timeout) {
-	ssh_poll_handle spoll_in,spoll_out;
-	ssh_poll_ctx ctx;
-	int rc;
-  if(session==NULL || session->socket==NULL)
-  	return SSH_ERROR;
-  enter_function();
-  spoll_in=ssh_socket_get_poll_handle_in(session->socket);
-  spoll_out=ssh_socket_get_poll_handle_out(session->socket);
-  if(session->server)
-    ssh_poll_add_events(spoll_in, POLLIN);
-  ctx=ssh_poll_get_ctx(spoll_in);
-  if(ctx==NULL){
-  	ctx=ssh_poll_get_default_ctx(session);
-  	ssh_poll_ctx_add(ctx,spoll_in);
-  	if(spoll_in != spoll_out)
-  	  ssh_poll_ctx_add(ctx,spoll_out);
-  }
-  rc = ssh_poll_ctx_dopoll(ctx,timeout);
-  if(rc == SSH_ERROR)
-    session->session_state = SSH_SESSION_STATE_ERROR;
-  leave_function();
-  if (session->session_state != SSH_SESSION_STATE_ERROR)
-  	return SSH_OK;
-  else
-  	return SSH_ERROR;
+    ssh_poll_handle spoll_in,spoll_out;
+    ssh_poll_ctx ctx;
+    int tm = timeout;
+    int rc;
+
+    if (session == NULL || session->socket == NULL) {
+        return SSH_ERROR;
+    }
+    enter_function();
+
+    spoll_in = ssh_socket_get_poll_handle_in(session->socket);
+    spoll_out = ssh_socket_get_poll_handle_out(session->socket);
+    if (session->server) {
+        ssh_poll_add_events(spoll_in, POLLIN);
+    }
+    ctx = ssh_poll_get_ctx(spoll_in);
+
+    if (!ctx) {
+        ctx = ssh_poll_get_default_ctx(session);
+        ssh_poll_ctx_add(ctx, spoll_in);
+        if (spoll_in != spoll_out) {
+            ssh_poll_ctx_add(ctx, spoll_out);
+        }
+    }
+
+    if (timeout == -2) {
+        tm = ssh_make_milliseconds(session->timeout, session->timeout_usec);
+    }
+    rc = ssh_poll_ctx_dopoll(ctx, tm);
+
+    if (rc == SSH_ERROR) {
+        session->session_state = SSH_SESSION_STATE_ERROR;
+    }
+
+    leave_function();
+
+    if (session->session_state == SSH_SESSION_STATE_ERROR) {
+        return SSH_ERROR;
+    }
+
+    return SSH_OK;
 }
 
 /**
