@@ -255,7 +255,7 @@ static int wait_auth_status(ssh_session session) {
   enter_function();
 
   if(ssh_is_blocking(session)){
-    if(ssh_handle_packets_termination(session,-1,auth_status_termination,
+    if(ssh_handle_packets_termination(session, -2, auth_status_termination,
         session) == SSH_ERROR){
       leave_function();
       return SSH_AUTH_ERROR;
