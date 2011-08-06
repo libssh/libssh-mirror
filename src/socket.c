@@ -246,32 +246,34 @@ int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p, socket_t fd, int r
 		s->read_wontblock=1;
 		r=ssh_socket_unbuffered_read(s,buffer,sizeof(buffer));
 		if(r<0){
-            if(p != NULL) {
-                ssh_poll_remove_events(p, POLLIN);
-            }
+		if(p != NULL) {
+			ssh_poll_remove_events(p, POLLIN);
+		}
 			if(s->callbacks && s->callbacks->exception){
 				s->callbacks->exception(
 						SSH_SOCKET_EXCEPTION_ERROR,
 						s->last_errno,s->callbacks->userdata);
-                /* p may have been freed, so don't use it
-                 * anymore in this function */
-                p = NULL;
+				/* p may have been freed, so don't use it
+				* anymore in this function */
+				p = NULL;
+				return -2;
 			}
 		}
 		if(r==0){
-            if(p != NULL) {
-                ssh_poll_remove_events(p, POLLIN);
-            }
-            if(p != NULL) {
-                ssh_poll_remove_events(p, POLLIN);
-            }
+			if(p != NULL) {
+				ssh_poll_remove_events(p, POLLIN);
+			}
+			if(p != NULL) {
+				ssh_poll_remove_events(p, POLLIN);
+			}
 			if(s->callbacks && s->callbacks->exception){
 				s->callbacks->exception(
 						SSH_SOCKET_EXCEPTION_EOF,
 						0,s->callbacks->userdata);
-                /* p may have been freed, so don't use it
-                 * anymore in this function */
-                p = NULL;
+				/* p may have been freed, so don't use it
+				* anymore in this function */
+				p = NULL;
+				return -2;
 			}
 		}
 		if(r>0){
@@ -282,9 +284,9 @@ int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p, socket_t fd, int r
 						buffer_get_rest_len(s->in_buffer),
 						s->callbacks->userdata);
 				buffer_pass_bytes(s->in_buffer,r);
-                /* p may have been freed, so don't use it
-                 * anymore in this function */
-                p = NULL;
+				/* p may have been freed, so don't use it
+				* anymore in this function */
+				p = NULL;
 			}
 		}
 	}

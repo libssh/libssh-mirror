@@ -608,11 +608,16 @@ int ssh_poll_ctx_dopoll(ssh_poll_ctx ctx, int timeout) {
     if (!ctx->pollfds[i].revents) {
       i++;
     } else {
+      int ret;
+
       p = ctx->pollptrs[i];
       fd = ctx->pollfds[i].fd;
       revents = ctx->pollfds[i].revents;
 
-      if (p->cb(p, fd, revents, p->cb_data) < 0) {
+      if (p->cb && (ret = p->cb(p, fd, revents, p->cb_data)) < 0) {
+        if (ret == -2) {
+            return -1;
+        }
         /* the poll was removed, reload the used counter and start again */
         used = ctx->polls_used;
         i=0;
