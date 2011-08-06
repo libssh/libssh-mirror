@@ -1452,6 +1452,11 @@ static int channel_request(ssh_channel channel, const char *request,
   }
   while(channel->request_state == SSH_CHANNEL_REQ_STATE_PENDING){
     ssh_handle_packets(session,-1);
+    if(session->session_state == SSH_SESSION_STATE_ERROR) {
+	channel->request_state = SSH_CHANNEL_REQ_STATE_ERROR;
+	break;
+    }
+
   }
   /* we received something */
   switch (channel->request_state){
