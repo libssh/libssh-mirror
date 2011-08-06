@@ -300,24 +300,25 @@ static int channel_open(ssh_channel channel, const char *type_c, int window,
   return err;
 }
 
-/* get ssh channel from local session? */
+/* return channel with corresponding local id, or NULL if not found */
 ssh_channel ssh_channel_from_local(ssh_session session, uint32_t id) {
-  ssh_channel initchan = session->channels;
-  ssh_channel channel;
+    ssh_channel initchan = session->channels;
+    ssh_channel channel = initchan;
 
-  /* We assume we are always the local */
-  if (initchan == NULL) {
-    return NULL;
-  }
-
-  for (channel = initchan; channel->local_channel != id;
-      channel=channel->next) {
-    if (channel->next == initchan) {
-      return NULL;
+    for (;;) {
+        if (channel == NULL) {
+            return NULL;
+        }
+        if (channel->local_channel == id) {
+            return channel;
+        }
+        if (channel->next == initchan) {
+            return NULL;
+        }
+        channel = channel->next;
     }
-  }
 
-  return channel;
+    return NULL;
 }
 
 /**
