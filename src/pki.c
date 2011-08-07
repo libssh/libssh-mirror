@@ -293,6 +293,22 @@ ssh_public_key ssh_pki_convert_key_to_publickey(ssh_key key) {
     return pub;
 }
 
+ssh_private_key ssh_pki_convert_key_to_privatekey(ssh_key key) {
+    ssh_private_key privkey;
+
+    privkey = malloc(sizeof(struct ssh_private_key_struct));
+    if (privkey == NULL) {
+        ssh_key_free(key);
+        return NULL;
+    }
+
+    privkey->type = key->type;
+    privkey->dsa_priv = key->dsa;
+    privkey->rsa_priv = key->rsa;
+
+    return privkey;
+}
+
 /** @brief import a base64 formated key from a memory c-string
  *
  * @param   key     The key to fill, created with ssh_key_new()

@@ -54,6 +54,7 @@ ssh_string ssh_pki_do_sign(ssh_session session, ssh_buffer sigbuf,
 
 /* temporary functions, to be removed after migration to ssh_key */
 ssh_public_key ssh_pki_convert_key_to_publickey(ssh_key key);
+ssh_private_key ssh_pki_convert_key_to_privatekey(ssh_key key);
 
 enum ssh_keytypes_e pki_privatekey_type_from_string(const char *privkey);
 
