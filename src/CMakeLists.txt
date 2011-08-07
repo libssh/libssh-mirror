@@ -91,7 +91,6 @@ set(libssh_SRCS
   gzip.c
   init.c
   kex.c
-  keyfiles.c
   keys.c
   known_hosts.c
   legacy.c
@@ -104,6 +103,7 @@ set(libssh_SRCS
   packet.c
   pcap.c
   pki.c
+  pki_gcrypt.c
   poll.c
   session.c
   scp.c

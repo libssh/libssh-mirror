@@ -361,7 +361,7 @@ static int privatekey_dek_header(const char *header, unsigned int header_len,
         else                  /* calculate length */                    \
             for(p += len, len = 0; p[len] && p[len] != '\n'             \
                                           && p[len] != '\r'; len++);    \
-    } 
+    }
 
 static ssh_buffer privatekey_string_to_buffer(const char *pkey, int type,
                 ssh_auth_callback cb, void *userdata, const char *desc) {
@@ -942,7 +942,7 @@ ssh_private_key privatekey_from_file(ssh_session session, const char *filename,
     return NULL;
   }
   file = fopen(filename,"r");
-  
+
   if (file == NULL) {
     ssh_set_error(session, SSH_REQUEST_DENIED,
         "Error opening %s: %s", filename, strerror(errno));
@@ -1280,10 +1280,10 @@ int ssh_publickey_to_file(ssh_session session, const char *file,
   size_t len;
   int rc;
   if(session==NULL)
-  	return SSH_ERROR;
+	return SSH_ERROR;
   if(file==NULL || pubkey==NULL){
-  	ssh_set_error(session, SSH_FATAL, "Invalid parameters");
-  	return SSH_ERROR;
+	ssh_set_error(session, SSH_FATAL, "Invalid parameters");
+	return SSH_ERROR;
   }
   pubkey_64 = bin_to_base64(pubkey->string, ssh_string_len(pubkey));
   if (pubkey_64 == NULL) {

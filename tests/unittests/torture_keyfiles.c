@@ -1,7 +1,7 @@
 #define LIBSSH_STATIC
 
 #include "torture.h"
-#include "keyfiles.c"
+#include "pki_gcrypt.c"
 
 #define LIBSSH_RSA_TESTKEY "libssh_testkey.id_rsa"
 #define LIBSSH_DSA_TESTKEY "libssh_testkey.id_dsa"
