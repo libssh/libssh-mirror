@@ -114,11 +114,16 @@ set(libssh_SRCS
 )
 
 if (WITH_GCRYPT)
-  set(libssh_SRCS
-    ${libssh_SRCS}
-    libgcrypt.c
-    gcrypt_missing.c  
-  )
+    set(libssh_SRCS
+        ${libssh_SRCS}
+        libgcrypt.c
+        gcrypt_missing.c
+       )
+else (WITH_GCRYPT)
+    set(libssh_SRCS
+        ${libssh_SRCS}
+        pki_crypto.c
+       )
 endif (WITH_GCRYPT)
 
 if (WITH_SFTP)
