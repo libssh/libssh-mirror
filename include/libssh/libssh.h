@@ -425,8 +425,10 @@ LIBSSH_API enum ssh_keytypes_e ssh_key_type_from_name(const char *name);
 LIBSSH_API int ssh_key_is_public(ssh_key k);
 LIBSSH_API int ssh_key_is_private(ssh_key k);
 
-LIBSSH_API int ssh_pki_import_privkey_base64(ssh_key key, ssh_session session,
-                                const char *b64_key, const char *passphrase);
+LIBSSH_API int ssh_pki_import_privkey_base64(ssh_session session,
+                                             const char *b64_key,
+                                             const char *passphrase,
+                                             ssh_key *pkey);
 LIBSSH_API int ssh_userauth_pki_pubkey(ssh_session session, const char *username,
                             ssh_string publickey, ssh_key privatekey);
 LIBSSH_API void ssh_print_hexa(const char *descr, const unsigned char *what, size_t len);

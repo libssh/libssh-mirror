@@ -29,6 +29,8 @@
 #include <libssh/priv.h>
 #include <libssh/server.h>
 #include <libssh/buffer.h>
+#include <libssh/pki.h>
+#include <libssh/keys.h>
 
 void buffer_free(ssh_buffer buffer){
   ssh_buffer_free(buffer);
@@ -232,6 +234,33 @@ ssh_string string_new(size_t size){
 
 char *string_to_char(ssh_string str){
   return ssh_string_to_char(str);
+}
+
+ssh_private_key privatekey_from_base64(ssh_session session,
+                                       const char *b64_pkey,
+                                       int type,
+                                       const char *passphrase) {
+    ssh_private_key privkey;
+    ssh_key key;
+
+    (void) type; /* unused */
+
+    key = pki_private_key_from_base64(session, b64_pkey, passphrase);
+    if (key == NULL) {
+        return NULL;
+    }
+
+    privkey = malloc(sizeof(struct ssh_private_key_struct));
+    if (privkey == NULL) {
+        ssh_key_free(key);
+        return NULL;
+    }
+
+    privkey->type = key->type;
+    privkey->dsa_priv = key->dsa;
+    privkey->rsa_priv = key->rsa;
+
+    return privkey;
 }
 
 /****************************************************************************

@@ -103,13 +103,7 @@ static void torture_pki_import_privkey_base64_RSA(void **state) {
     key_str = read_file(LIBSSH_RSA_TESTKEY);
     assert_true(key_str != NULL);
 
-    key = ssh_key_new();
-    assert_true(key != NULL);
-    /* 
-    int ssh_pki_import_privkey_base64(ssh_key key, ssh_session session,
-                    const char *b64_key, const char *passphrase)
-    */
-    rc = ssh_pki_import_privkey_base64(key, session, key_str, passphrase);
+    rc = ssh_pki_import_privkey_base64(session, key_str, passphrase, &key);
     assert_true(rc == 0);
 
     free(key_str);
@@ -130,7 +124,7 @@ static void torture_pki_import_privkey_base64_NULL_key(void **state) {
     assert_true(key != NULL);
 
     /* test if it returns -1 if key is NULL */
-    rc = ssh_pki_import_privkey_base64(NULL, session, key_str, passphrase);
+    rc = ssh_pki_import_privkey_base64(session, key_str, passphrase, NULL);
     assert_true(rc == -1);
 
     free(key_str);
@@ -141,18 +135,15 @@ static void torture_pki_import_privkey_base64_NULL_session(void **state) {
     ssh_session session = *state;
     int rc;
     char *key_str;
-    ssh_key key;
+    ssh_key key = NULL;
     const char *passphrase = LIBSSH_PASSPHRASE;
 
     key_str = read_file(LIBSSH_RSA_TESTKEY);
     assert_true(key_str != NULL);
 
-    key = ssh_key_new();
-    assert_true(key != NULL);
-
     /* test if it returns -1 if session is NULL */
     (void)session;
-    rc = ssh_pki_import_privkey_base64(key, NULL, key_str, passphrase);
+    rc = ssh_pki_import_privkey_base64(NULL, key_str, passphrase, &key);
     assert_true(rc == -1);
 
     free(key_str);
@@ -163,17 +154,14 @@ static void torture_pki_import_privkey_base64_NULL_str(void **state) {
     ssh_session session = *state;
     int rc;
     char *key_str;
-    ssh_key key;
+    ssh_key key = NULL;
     const char *passphrase = LIBSSH_PASSPHRASE;
 
     key_str = read_file(LIBSSH_RSA_TESTKEY);
     assert_true(key_str != NULL);
 
-    key = ssh_key_new();
-    assert_true(key != NULL);
-
     /* test if it returns -1 if key_str is NULL */
-    rc = ssh_pki_import_privkey_base64(key, session, NULL, passphrase);
+    rc = ssh_pki_import_privkey_base64(session, NULL, passphrase, &key);
     assert_true(rc == -1);
 
     free(key_str);
@@ -190,13 +178,7 @@ static void torture_pki_import_privkey_base64_DSA(void **state) {
     key_str = read_file(LIBSSH_DSA_TESTKEY);
     assert_true(key_str != NULL);
 
-    key = ssh_key_new();
-    assert_true(key != NULL);
-    /* 
-    int ssh_pki_import_privkey_base64(ssh_key key, ssh_session session,
-                    const char *b64_key, const char *passphrase)
-    */
-    rc = ssh_pki_import_privkey_base64(key, session, key_str, passphrase);
+    rc = ssh_pki_import_privkey_base64(session, key_str, passphrase, &key);
     assert_true(rc == 0);
 
     free(key_str);
@@ -207,26 +189,24 @@ static void torture_pki_import_privkey_base64_passphrase(void **state) {
     ssh_session session = *state;
     int rc;
     char *key_str;
-    ssh_key key;
+    ssh_key key = NULL;
     const char *passphrase = LIBSSH_PASSPHRASE;
 
     key_str = read_file(LIBSSH_RSA_TESTKEY);
     assert_true(key_str != NULL);
 
-    key = ssh_key_new();
-    assert_true(key != NULL);
-
-    rc = ssh_pki_import_privkey_base64(key, session, key_str, passphrase);
+    rc = ssh_pki_import_privkey_base64(session, key_str, passphrase, &key);
     assert_true(rc == 0);
+    ssh_key_free(key);
 
     /* test if it returns -1 if passphrase is wrong */
-    rc = ssh_pki_import_privkey_base64(key, session, key_str, "wrong passphrase !!");
+    rc = ssh_pki_import_privkey_base64(session, key_str, "wrong passphrase !!", &key);
     assert_true(rc == -1);
 
 #ifndef HAVE_LIBCRYPTO
     /* test if it returns -1 if passphrase is NULL */
     /* libcrypto asks for a passphrase, so skip this test */
-    rc = ssh_pki_import_privkey_base64(key, session, key_str, NULL);
+    rc = ssh_pki_import_privkey_base64(session, key_str, NULL, &key);
     assert_true(rc == -1);
 #endif
 
@@ -236,22 +216,22 @@ static void torture_pki_import_privkey_base64_passphrase(void **state) {
     key_str = read_file(LIBSSH_DSA_TESTKEY);
     assert_true(key_str != NULL);
 
-    rc = ssh_pki_import_privkey_base64(key, session, key_str, passphrase);
+    rc = ssh_pki_import_privkey_base64(session, key_str, passphrase, &key);
     assert_true(rc == 0);
+    ssh_key_free(key);
 
     /* test if it returns -1 if passphrase is wrong */
-    rc = ssh_pki_import_privkey_base64(key, session, key_str, "wrong passphrase !!");
+    rc = ssh_pki_import_privkey_base64(session, key_str, "wrong passphrase !!", &key);
     assert_true(rc == -1);
 
 #ifndef HAVE_LIBCRYPTO
     /* test if it returns -1 if passphrase is NULL */
     /* libcrypto asks for a passphrase, so skip this test */
-    rc = ssh_pki_import_privkey_base64(key, session, key_str, NULL);
+    rc = ssh_pki_import_privkey_base64(session, key_str, NULL, &key);
     assert_true(rc == -1);
 #endif
 
     free(key_str);
-    ssh_key_free(key);
 }
 
 static void torture_pki_pki_publickey_from_privatekey_RSA(void **state) {
@@ -265,10 +245,7 @@ static void torture_pki_pki_publickey_from_privatekey_RSA(void **state) {
     key_str = read_file(LIBSSH_RSA_TESTKEY);
     assert_true(key_str != NULL);
 
-    key = ssh_key_new();
-    assert_true(key != NULL);
-
-    rc = ssh_pki_import_privkey_base64(key, session, key_str, passphrase);
+    rc = ssh_pki_import_privkey_base64(session, key_str, passphrase, &key);
     assert_true(rc == 0);
 
     pubkey = ssh_pki_publickey_from_privatekey(key);
@@ -290,10 +267,7 @@ static void torture_pki_pki_publickey_from_privatekey_DSA(void **state) {
     key_str = read_file(LIBSSH_DSA_TESTKEY);
     assert_true(key_str != NULL);
 
-    key = ssh_key_new();
-    assert_true(key != NULL);
-
-    rc = ssh_pki_import_privkey_base64(key, session, key_str, passphrase);
+    rc = ssh_pki_import_privkey_base64(session, key_str, passphrase, &key);
     assert_true(rc == 0);
 
     pubkey = ssh_pki_publickey_from_privatekey(key);

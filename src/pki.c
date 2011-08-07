@@ -247,32 +247,30 @@ ssh_public_key ssh_pki_convert_key_to_publickey(ssh_key key) {
  *
  * @return  SSH_ERROR in case of error, SSH_OK otherwise
  */
-int ssh_pki_import_privkey_base64(ssh_key key, ssh_session session,
-                    const char *b64_key, const char *passphrase) {
-    ssh_private_key priv;
+int ssh_pki_import_privkey_base64(ssh_session session,
+                                  const char *b64_key,
+                                  const char *passphrase,
+                                  ssh_key *pkey) {
+    ssh_key key;
 
-    if(key == NULL || session == NULL) {
+    if (pkey == NULL || session == NULL) {
         return SSH_ERROR;
     }
 
-    if(b64_key == NULL || !*b64_key) {
+    if (b64_key == NULL || !*b64_key) {
         return SSH_ERROR;
     }
 
-    priv = privatekey_from_base64(session, b64_key, 0, passphrase);
-    if(priv == NULL) {
+    ssh_log(session, SSH_LOG_RARE, "Trying to decode privkey passphrase=%s",
+            passphrase ? "true" : "false");
+
+    key = pki_private_key_from_base64(session, b64_key, passphrase);
+    if (key == NULL) {
         return SSH_ERROR;
     }
 
-    ssh_key_clean(key);
+    *pkey = key;
 
-    key->dsa = priv->dsa_priv;
-    key->rsa = priv->rsa_priv;
-    key->type = priv->type;
-    key->flags = SSH_KEY_FLAG_PRIVATE | SSH_KEY_FLAG_PUBLIC;
-    key->type_c = ssh_type_to_char(key->type);
-
-    SAFE_FREE(priv);
     return SSH_OK;
 }
 

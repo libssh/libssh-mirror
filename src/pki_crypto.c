@@ -36,6 +36,7 @@
 #include "libssh/libssh.h"
 #include "libssh/session.h"
 #include "libssh/callbacks.h"
+#include "libssh/pki.h"
 
 static int pem_get_password(char *buf, int size, int rwflag, void *userdata) {
     ssh_session session = userdata;
@@ -64,6 +65,102 @@ static int pem_get_password(char *buf, int size, int rwflag, void *userdata) {
     }
 
     return 0;
+}
+
+ssh_key pki_private_key_from_base64(ssh_session session,
+                                    const char *b64_key,
+                                    const char *passphrase) {
+    BIO *mem = NULL;
+    DSA *dsa = NULL;
+    RSA *rsa = NULL;
+    ssh_key key;
+    enum ssh_keytypes_e type;
+
+    /* needed for openssl initialization */
+    if (ssh_init() < 0) {
+        return NULL;
+    }
+
+    type = pki_privatekey_type_from_string(b64_key);
+    if (type == SSH_KEYTYPE_UNKNOWN) {
+        ssh_set_error(session, SSH_FATAL, "Unknown or invalid private key.");
+        return NULL;
+    }
+
+    mem = BIO_new_mem_buf((void*)b64_key, -1);
+
+    switch (type) {
+        case SSH_KEYTYPE_DSS:
+            if (passphrase == NULL) {
+                if (session->common.callbacks && session->common.callbacks->auth_function) {
+                    dsa = PEM_read_bio_DSAPrivateKey(mem, NULL, pem_get_password, session);
+                } else {
+                    /* openssl uses its own callback to get the passphrase here */
+                    dsa = PEM_read_bio_DSAPrivateKey(mem, NULL, NULL, NULL);
+                }
+            } else {
+                dsa = PEM_read_bio_DSAPrivateKey(mem, NULL, NULL, (void *) passphrase);
+            }
+
+            BIO_free(mem);
+
+            if (dsa == NULL) {
+                ssh_set_error(session, SSH_FATAL,
+                              "Parsing private key: %s",
+                              ERR_error_string(ERR_get_error(), NULL));
+                return NULL;
+            }
+
+            break;
+        case SSH_KEYTYPE_RSA:
+        case SSH_KEYTYPE_RSA1:
+            if (passphrase == NULL) {
+                if (session->common.callbacks && session->common.callbacks->auth_function) {
+                    rsa = PEM_read_bio_RSAPrivateKey(mem, NULL, pem_get_password, session);
+                } else {
+                    /* openssl uses its own callback to get the passphrase here */
+                    rsa = PEM_read_bio_RSAPrivateKey(mem, NULL, NULL, NULL);
+                }
+            } else {
+                rsa = PEM_read_bio_RSAPrivateKey(mem, NULL, NULL, (void *) passphrase);
+            }
+
+            BIO_free(mem);
+
+            if (rsa == NULL) {
+                ssh_set_error(session, SSH_FATAL,
+                              "Parsing private key: %s",
+                              ERR_error_string(ERR_get_error(),NULL));
+                return NULL;
+            }
+
+            break;
+        case SSH_KEYTYPE_ECDSA:
+        case SSH_KEYTYPE_UNKNOWN:
+            BIO_free(mem);
+            ssh_set_error(session, SSH_FATAL,
+                          "Unkown or invalid private key type %d", type);
+            return NULL;
+    }
+
+    key = ssh_key_new();
+    if (key == NULL) {
+        goto fail;
+    }
+
+    key->type = type;
+    key->type_c = ssh_key_type_to_char(type);
+    key->flags = SSH_KEY_FLAG_PRIVATE | SSH_KEY_FLAG_PUBLIC;
+    key->dsa = dsa;
+    key->rsa = rsa;
+
+    return key;
+fail:
+    ssh_key_free(key);
+    DSA_free(dsa);
+    RSA_free(rsa);
+
+    return NULL;
 }
 
 #endif /* _PKI_CRYPTO_H */

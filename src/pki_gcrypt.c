@@ -55,6 +55,7 @@
 #include "libssh/wrapper.h"
 #include "libssh/misc.h"
 #include "libssh/keys.h"
+#include "libssh/pki.h"
 
 /*todo: remove this include */
 #include "libssh/string.h"
@@ -861,42 +862,104 @@ error:
 
   return rc;
 }
-#endif /* HAVE_LIBGCRYPT */
 
-#ifdef HAVE_LIBCRYPTO
-static int pem_get_password(char *buf, int size, int rwflag, void *userdata) {
-  ssh_session session = userdata;
+ssh_key pki_private_key_from_base64(ssh_session session,
+                                    const char *b64_key,
+                                    const char *passphrase) {
+    ssh_auth_callback auth_cb = NULL;
+    void *auth_ud = NULL;
 
-  /* unused flag */
-  (void) rwflag;
-  if(buf==NULL)
-    return 0;
-  memset(buf,'\0',size);
-  ssh_log(session, SSH_LOG_RARE,
-      "Trying to call external authentication function");
+    gcry_sexp_t dsa = NULL;
+    gcry_sexp_t rsa = NULL;
+    ssh_key key = NULL;
+    enum ssh_keytypes_e type;
+    int valid;
 
-  if (session && session->common.callbacks && session->common.callbacks->auth_function) {
-    if (session->common.callbacks->auth_function("Passphrase for private key:", buf, size, 0, 0,
-        session->common.callbacks->userdata) < 0) {
-      return 0;
+    /* needed for gcrypt initialization */
+    if (ssh_init() < 0) {
+        return NULL;
     }
 
-    return strlen(buf);
-  }
+    type = pki_privatekey_type_from_string(b64_key);
+    if (type == SSH_KEYTYPE_UNKNOWN) {
+        ssh_set_error(session, SSH_FATAL, "Unknown or invalid private key.");
+        return NULL;
+    }
 
-  return 0;
-}
-#endif /* HAVE_LIBCRYPTO */
+    switch (type) {
+        case SSH_KEYTYPE_DSS:
+            if (passphrase == NULL) {
+                if (session->common.callbacks &&
+                    session->common.callbacks->auth_function) {
+                    auth_cb = session->common.callbacks->auth_function;
+                    auth_ud = session->common.callbacks->userdata;
 
-static int privatekey_type_from_string(const char *pkey) {
-  if (strncmp(pkey, DSA_HEADER_BEGIN, strlen(DSA_HEADER_BEGIN)) == 0) {
-    return SSH_KEYTYPE_DSS;
-  }
-  if (strncmp(pkey, RSA_HEADER_BEGIN, strlen(RSA_HEADER_BEGIN)) == 0) {
-    return SSH_KEYTYPE_RSA;
-  }
-  return 0;
+                    valid = b64decode_dsa_privatekey(b64_key, &dsa, auth_cb,
+                            auth_ud, "Passphrase for private key:");
+                } else {
+                    valid = b64decode_dsa_privatekey(b64_key, &dsa, NULL, NULL,
+                            NULL);
+                }
+            } else {
+                valid = b64decode_dsa_privatekey(b64_key, &dsa, NULL, (void *)
+                        passphrase, NULL);
+            }
+
+            if (!valid) {
+                ssh_set_error(session, SSH_FATAL, "Parsing private key");
+                goto fail;
+            }
+            break;
+        case SSH_KEYTYPE_RSA:
+        case SSH_KEYTYPE_RSA1:
+            if (passphrase == NULL) {
+                if (session->common.callbacks &&
+                    session->common.callbacks->auth_function) {
+                    auth_cb = session->common.callbacks->auth_function;
+                    auth_ud = session->common.callbacks->userdata;
+                    valid = b64decode_rsa_privatekey(b64_key, &rsa, auth_cb,
+                            auth_ud, "Passphrase for private key:");
+                } else {
+                    valid = b64decode_rsa_privatekey(b64_key, &rsa, NULL, NULL,
+                            NULL);
+                }
+            } else {
+                valid = b64decode_rsa_privatekey(b64_key, &rsa, NULL,
+                        (void *)passphrase, NULL);
+            }
+
+            if (!valid) {
+                ssh_set_error(session,SSH_FATAL, "Parsing private key");
+                goto fail;
+            }
+            break;
+        case SSH_KEYTYPE_ECDSA:
+        case SSH_KEYTYPE_UNKNOWN:
+            ssh_set_error(session, SSH_FATAL,
+                          "Unkown or invalid private key type %d", type);
+            return NULL;
+    }
+
+    key = ssh_key_new();
+    if (key == NULL) {
+        goto fail;
+    }
+
+    key->type = type;
+    key->type_c = ssh_key_type_to_char(type);
+    key->flags = SSH_KEY_FLAG_PRIVATE | SSH_KEY_FLAG_PUBLIC;
+    key->dsa = dsa;
+    key->rsa = rsa;
+
+    return key;
+fail:
+    ssh_key_free(key);
+    gcry_sexp_release(dsa);
+    gcry_sexp_release(rsa);
+
+    return NULL;
 }
+#endif /* HAVE_LIBGCRYPT */
 
 /**
  * @addtogroup libssh_auth
@@ -963,156 +1026,6 @@ ssh_private_key privatekey_from_file(ssh_session session, const char *filename,
   privkey = privatekey_from_base64(session, key_buf, type, passphrase);
 
   SAFE_FREE(key_buf);
-  return privkey;
-}
-
-ssh_private_key privatekey_from_base64(ssh_session session, const char *b64_pkey,
-    int type, const char *passphrase) {
-  ssh_private_key privkey = NULL;
-#ifdef HAVE_LIBGCRYPT
-  ssh_auth_callback auth_cb = NULL;
-  void *auth_ud = NULL;
-
-  gcry_sexp_t dsa = NULL;
-  gcry_sexp_t rsa = NULL;
-  int valid;
-#elif defined HAVE_LIBCRYPTO
-  BIO *mem = NULL;
-  DSA *dsa = NULL;
-  RSA *rsa = NULL;
-#endif
-  /* TODO Implement to read both DSA and RSA at once. */
-
-  if(b64_pkey == NULL || !*b64_pkey) {
-      return NULL;
-  }
-
-  /* needed for openssl initialization */
-  if (ssh_init() < 0) {
-    return NULL;
-  }
-
-  ssh_log(session, SSH_LOG_RARE, "Trying to read privkey type=%s, passphase=%s, authcb=%s",
-      type ? type == SSH_KEYTYPE_DSS ? "ssh-dss" : "ssh-rsa": "unknown",
-      passphrase ? "true" : "false",
-      session->common.callbacks && session->common.callbacks->auth_function ? "true" : "false");
-
-  if (type == 0) {
-    type = privatekey_type_from_string(b64_pkey);
-    if (type == 0) {
-      ssh_set_error(session, SSH_FATAL, "Invalid private key.");
-      return NULL;
-    }
-  }
-  switch (type) {
-    case SSH_KEYTYPE_DSS:
-#ifdef HAVE_LIBGCRYPT
-      if (passphrase == NULL) {
-        if (session->common.callbacks && session->common.callbacks->auth_function) {
-          auth_cb = session->common.callbacks->auth_function;
-          auth_ud = session->common.callbacks->userdata;
-
-          valid = b64decode_dsa_privatekey(b64_pkey, &dsa, auth_cb, auth_ud,
-              "Passphrase for private key:");
-        } else { /* authcb */
-          valid = b64decode_dsa_privatekey(b64_pkey, &dsa, NULL, NULL, NULL);
-        } /* authcb */
-      } else { /* passphrase */
-        valid = b64decode_dsa_privatekey(b64_pkey, &dsa, NULL,
-            (void *) passphrase, NULL);
-      }
-
-      if (!valid) {
-        ssh_set_error(session, SSH_FATAL, "Parsing private key");
-        return NULL;
-      }
-#elif defined HAVE_LIBCRYPTO
-      mem = BIO_new_mem_buf((void*)b64_pkey, -1);
-      if (passphrase == NULL) {
-        if (session->common.callbacks && session->common.callbacks->auth_function) {
-          dsa = PEM_read_bio_DSAPrivateKey(mem, NULL, pem_get_password, session);
-        } else { /* authcb */
-          /* openssl uses its own callback to get the passphrase here */
-          dsa = PEM_read_bio_DSAPrivateKey(mem, NULL, NULL, NULL);
-        } /* authcb */
-      } else { /* passphrase */
-        dsa = PEM_read_bio_DSAPrivateKey(mem, NULL, NULL, (void *) passphrase);
-      }
-
-      BIO_free(mem);
-
-      if (dsa == NULL) {
-        ssh_set_error(session, SSH_FATAL,
-            "Parsing private key: %s",
-            ERR_error_string(ERR_get_error(), NULL));
-        return NULL;
-      }
-#endif
-      break;
-    case SSH_KEYTYPE_RSA:
-#ifdef HAVE_LIBGCRYPT
-      if (passphrase == NULL) {
-        if (session->common.callbacks && session->common.callbacks->auth_function) {
-          auth_cb = session->common.callbacks->auth_function;
-          auth_ud = session->common.callbacks->userdata;
-          valid = b64decode_rsa_privatekey(b64_pkey, &rsa, auth_cb, auth_ud,
-              "Passphrase for private key:");
-        } else { /* authcb */
-          valid = b64decode_rsa_privatekey(b64_pkey, &rsa, NULL, NULL, NULL);
-        } /* authcb */
-      } else { /* passphrase */
-        valid = b64decode_rsa_privatekey(b64_pkey, &rsa, NULL,
-            (void *) passphrase, NULL);
-      }
-
-      if (!valid) {
-        ssh_set_error(session,SSH_FATAL, "Parsing private key");
-        return NULL;
-      }
-#elif defined HAVE_LIBCRYPTO
-      mem = BIO_new_mem_buf((void*)b64_pkey, -1);
-      if (passphrase == NULL) {
-        if (session->common.callbacks && session->common.callbacks->auth_function) {
-          rsa = PEM_read_bio_RSAPrivateKey(mem, NULL, pem_get_password, session);
-        } else { /* authcb */
-          /* openssl uses its own callback to get the passphrase here */
-          rsa = PEM_read_bio_RSAPrivateKey(mem, NULL, NULL, NULL);
-        } /* authcb */
-      } else { /* passphrase */
-        rsa = PEM_read_bio_RSAPrivateKey(mem, NULL, NULL, (void *) passphrase);
-      }
-
-      BIO_free(mem);
-
-      if (rsa == NULL) {
-        ssh_set_error(session, SSH_FATAL,
-            "Parsing private key: %s",
-            ERR_error_string(ERR_get_error(),NULL));
-        return NULL;
-      }
-#endif
-      break;
-    default:
-      ssh_set_error(session, SSH_FATAL, "Invalid private key type %d", type);
-      return NULL;
-  } /* switch */
-
-  privkey = malloc(sizeof(struct ssh_private_key_struct));
-  if (privkey == NULL) {
-#ifdef HAVE_LIBGCRYPT
-    gcry_sexp_release(dsa);
-    gcry_sexp_release(rsa);
-#elif defined HAVE_LIBCRYPTO
-    DSA_free(dsa);
-    RSA_free(rsa);
-#endif
-    return NULL;
-  }
-  ZERO_STRUCTP(privkey);
-  privkey->type = type;
-  privkey->dsa_priv = dsa;
-  privkey->rsa_priv = rsa;
-
   return privkey;
 }
 
