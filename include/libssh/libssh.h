@@ -433,6 +433,11 @@ LIBSSH_API int ssh_key_import_private(ssh_session session,
                                       const char *filename,
                                       const char *passphrase,
                                       ssh_key *pkey);
+LIBSSH_API int ssh_pki_import_pubkey_base64(ssh_session session,
+                                            const char *b64_key,
+                                            enum ssh_keytypes_e type,
+                                            ssh_key *pkey);
+
 LIBSSH_API int ssh_userauth_pki_pubkey(ssh_session session, const char *username,
                             ssh_string publickey, ssh_key privatekey);
 LIBSSH_API void ssh_print_hexa(const char *descr, const unsigned char *what, size_t len);

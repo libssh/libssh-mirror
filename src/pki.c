@@ -345,6 +345,133 @@ int ssh_pki_import_privkey_base64(ssh_session session,
     return SSH_OK;
 }
 
+int ssh_pki_import_pubkey_base64(ssh_session session,
+                                 const char *b64_key,
+                                 enum ssh_keytypes_e type,
+                                 ssh_key *pkey) {
+    ssh_buffer buffer;
+    ssh_key key;
+    int rc;
+
+    key = ssh_key_new();
+    if (key == NULL) {
+        return SSH_ERROR;
+    }
+
+    key->type = type;
+    key->type_c = ssh_key_type_to_char(type);
+    key->flags = SSH_KEY_FLAG_PUBLIC;
+
+    buffer = base64_to_bin(b64_key);
+
+    switch (type) {
+        case SSH_KEYTYPE_DSS:
+            {
+                ssh_string p;
+                ssh_string q;
+                ssh_string g;
+                ssh_string pubkey;
+
+                p = buffer_get_ssh_string(buffer);
+                if (p == NULL) {
+                    goto fail;
+                }
+                q = buffer_get_ssh_string(buffer);
+                if (q == NULL) {
+                    ssh_string_burn(p);
+                    ssh_string_free(p);
+
+                    goto fail;
+                }
+                g = buffer_get_ssh_string(buffer);
+                if (g == NULL) {
+                    ssh_string_burn(p);
+                    ssh_string_free(p);
+                    ssh_string_burn(q);
+                    ssh_string_free(q);
+
+                    goto fail;
+                }
+                pubkey = buffer_get_ssh_string(buffer);
+                if (g == NULL) {
+                    ssh_string_burn(p);
+                    ssh_string_free(p);
+                    ssh_string_burn(q);
+                    ssh_string_free(q);
+                    ssh_string_burn(g);
+                    ssh_string_free(g);
+
+                    goto fail;
+                }
+
+                rc = pki_pubkey_build_dss(key, p, q, g, pubkey);
+#ifdef DEBUG_CRYPTO
+                ssh_print_hexa("p", ssh_string_data(p), ssh_string_len(p));
+                ssh_print_hexa("q", ssh_string_data(q), ssh_string_len(q));
+                ssh_print_hexa("g", ssh_string_data(g), ssh_string_len(g));
+#endif
+                ssh_string_burn(p);
+                ssh_string_free(p);
+                ssh_string_burn(q);
+                ssh_string_free(q);
+                ssh_string_burn(g);
+                ssh_string_free(g);
+                if (rc == SSH_ERROR) {
+                    goto fail;
+                }
+            }
+            break;
+        case SSH_KEYTYPE_RSA:
+        case SSH_KEYTYPE_RSA1:
+            {
+                ssh_string e;
+                ssh_string n;
+
+                e = buffer_get_ssh_string(buffer);
+                if (e == NULL) {
+                    goto fail;
+                }
+                n = buffer_get_ssh_string(buffer);
+                if (n == NULL) {
+                    ssh_string_burn(e);
+                    ssh_string_free(e);
+
+                    goto fail;
+                }
+
+                rc = pki_pubkey_build_rsa(key, e, n);
+#ifdef DEBUG_CRYPTO
+                ssh_print_hexa("e", ssh_string_data(e), ssh_string_len(e));
+                ssh_print_hexa("n", ssh_string_data(n), ssh_string_len(n));
+#endif
+                ssh_string_burn(e);
+                ssh_string_free(e);
+                ssh_string_burn(n);
+                ssh_string_free(n);
+                if (rc == SSH_ERROR) {
+                    goto fail;
+                }
+            }
+            break;
+        case SSH_KEYTYPE_ECDSA:
+        case SSH_KEYTYPE_UNKNOWN:
+            ssh_set_error(session, SSH_FATAL,
+                    "Unknown public key protocol %d",
+                    type);
+            goto fail;
+    }
+
+    ssh_buffer_free(buffer);
+
+    *pkey = key;
+    return SSH_OK;
+fail:
+    ssh_buffer_free(buffer);
+    ssh_key_free(key);
+
+    return SSH_ERROR;
+}
+
 ssh_key ssh_pki_publickey_from_privatekey(ssh_key privkey) {
     return pki_publickey_from_privatekey(privkey);
 }

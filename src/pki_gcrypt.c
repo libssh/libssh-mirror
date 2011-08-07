@@ -700,6 +700,38 @@ fail:
     return NULL;
 }
 
+int pki_pubkey_build_dss(ssh_key key,
+                         ssh_string p,
+                         ssh_string q,
+                         ssh_string g,
+                         ssh_string pubkey) {
+    gcry_sexp_build(&key->dsa, NULL,
+            "(public-key(dsa(p %b)(q %b)(g %b)(y %b)))",
+            ssh_string_len(p), ssh_string_data(p),
+            ssh_string_len(q), ssh_string_data(q),
+            ssh_string_len(g), ssh_string_data(g),
+            ssh_string_len(pubkey), ssh_string_data(pubkey));
+    if (key->dsa == NULL) {
+        return SSH_ERROR;
+    }
+
+    return SSH_OK;
+}
+
+int pki_pubkey_build_rsa(ssh_key key,
+                         ssh_string e,
+                         ssh_string n) {
+    gcry_sexp_build(&key->rsa, NULL,
+            "(public-key(rsa(n %b)(e %b)))",
+            ssh_string_len(n), ssh_string_data(n),
+            ssh_string_len(e),ssh_string_data(e));
+    if (key->rsa == NULL) {
+        return SSH_ERROR;
+    }
+
+    return SSH_OK;
+}
+
 ssh_key pki_publickey_from_privatekey(ssh_key privkey) {
     ssh_key pubkey = NULL;
     gcry_sexp_t sexp;
