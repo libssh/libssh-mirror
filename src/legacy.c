@@ -263,6 +263,34 @@ ssh_private_key privatekey_from_base64(ssh_session session,
     return privkey;
 }
 
+ssh_private_key privatekey_from_file(ssh_session session,
+                                     const char *filename,
+                                     int type,
+                                     const char *passphrase) {
+    ssh_key key;
+    ssh_private_key privkey;
+    int rc;
+
+    (void) type; /* unused */
+
+    rc = ssh_key_import_private(session, filename, passphrase, &key);
+    if (rc == SSH_ERROR) {
+        return NULL;
+    }
+
+    privkey = malloc(sizeof(struct ssh_private_key_struct));
+    if (privkey == NULL) {
+        ssh_key_free(key);
+        return NULL;
+    }
+
+    privkey->type = key->type;
+    privkey->dsa_priv = key->dsa;
+    privkey->rsa_priv = key->rsa;
+
+    return privkey;
+}
+
 /****************************************************************************
  * SERVER SUPPORT
  ****************************************************************************/

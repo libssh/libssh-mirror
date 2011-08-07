@@ -968,68 +968,6 @@ fail:
  */
 
 /**
- * @brief Reads a SSH private key from a file.
- *
- * @param[in] session  The SSH Session to use.
- *
- * @param[in] filename The filename of the the private key.
- *
- * @param[in] type     The type of the private key. This could be SSH_KEYTYPE_DSS or
- *                     SSH_KEYTYPE_RSA. Pass 0 to automatically detect the type.
- *
- * @param[in] passphrase The passphrase to decrypt the private key. Set to null
- *                       if none is needed or it is unknown.
- *
- * @return              A private_key object containing the private key, or
- *                       NULL on error.
- * @see privatekey_free()
- * @see publickey_from_privatekey()
- */
-ssh_private_key privatekey_from_file(ssh_session session, const char *filename,
-    int type, const char *passphrase) {
-  ssh_private_key privkey = NULL;
-  FILE *file = NULL;
-  struct stat buf;
-  char *key_buf;
-  off_t size;
-  /* TODO Implement to read both DSA and RSA at once. */
-
-  if(filename == NULL || !*filename) {
-      return NULL;
-  }
-
-  stat(filename, &buf);
-  key_buf = malloc(buf.st_size + 1);
-  if(key_buf == NULL) {
-    ssh_set_error_oom(session);
-    return NULL;
-  }
-  file = fopen(filename,"r");
-
-  if (file == NULL) {
-    ssh_set_error(session, SSH_REQUEST_DENIED,
-        "Error opening %s: %s", filename, strerror(errno));
-    SAFE_FREE(key_buf);
-    return NULL;
-  }
-
-  size = fread(key_buf, 1, buf.st_size, file);
-  fclose(file);
-  if(size != buf.st_size) {
-    SAFE_FREE(key_buf);
-    ssh_set_error(session, SSH_FATAL,
-        "Error Reading %s: %s", filename, strerror(errno));
-    return NULL;
-  }
-
-
-  privkey = privatekey_from_base64(session, key_buf, type, passphrase);
-
-  SAFE_FREE(key_buf);
-  return privkey;
-}
-
-/**
  * @brief returns the type of a private key
  * @param[in] privatekey the private key handle
  * @returns one of SSH_KEYTYPE_RSA,SSH_KEYTYPE_DSS,SSH_KEYTYPE_RSA1

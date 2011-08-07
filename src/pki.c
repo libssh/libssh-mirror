@@ -30,6 +30,13 @@
  * @{
  */
 
+#include "config.h"
+
+#include <errno.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+
 #include "libssh/libssh.h"
 #include "libssh/session.h"
 #include "libssh/priv.h"
@@ -202,18 +209,66 @@ int ssh_key_is_private(ssh_key k) {
  *                        if none is needed or it is unknown.
  * @returns SSH_OK on success, SSH_ERROR otherwise.
  **/
-int ssh_key_import_private(ssh_key key, ssh_session session, const char *filename, const char *passphrase){
-  ssh_private_key priv=privatekey_from_file(session,filename,0,passphrase);
-  if(priv==NULL)
-    return SSH_ERROR;
-  ssh_key_clean(key);
-  key->dsa=priv->dsa_priv;
-  key->rsa=priv->rsa_priv;
-  key->type=priv->type;
-  key->flags=SSH_KEY_FLAG_PRIVATE | SSH_KEY_FLAG_PUBLIC;
-  key->type_c=ssh_type_to_char(key->type);
-  SAFE_FREE(priv);
-  return SSH_OK;
+int ssh_key_import_private(ssh_session session,
+                           const char *filename,
+                           const char *passphrase,
+                           ssh_key *pkey) {
+    struct stat sb;
+    char *key_buf;
+    ssh_key key;
+    FILE *file;
+    off_t size;
+    int rc;
+
+    if (session == NULL || pkey == NULL) {
+        return SSH_ERROR;
+    }
+
+    if (filename == NULL || *filename == '\0') {
+        return SSH_ERROR;
+    }
+
+    rc = stat(filename, &sb);
+    if (rc < 0) {
+        ssh_set_error(session, SSH_REQUEST_DENIED,
+                      "Error gettint stat of %s: %s",
+                      filename, strerror(errno));
+        return SSH_ERROR;
+    }
+
+    file = fopen(filename, "r");
+    if (file == NULL) {
+        ssh_set_error(session, SSH_REQUEST_DENIED,
+                      "Error opening %s: %s",
+                      filename, strerror(errno));
+        return SSH_ERROR;
+    }
+
+    key_buf = malloc(sb.st_size + 1);
+    if (key_buf == NULL) {
+        ssh_set_error_oom(session);
+        return SSH_ERROR;
+    }
+
+    size = fread(key_buf, 1, sb.st_size, file);
+    fclose(file);
+
+    if (size != sb.st_size) {
+        SAFE_FREE(key_buf);
+        ssh_set_error(session, SSH_FATAL,
+                      "Error reading %s: %s",
+                      filename, strerror(errno));
+        return SSH_ERROR;
+    }
+
+    key = pki_private_key_from_base64(session, key_buf, passphrase);
+    SAFE_FREE(key_buf);
+    if (key == NULL) {
+        return SSH_ERROR;
+    }
+
+    *pkey = key;
+    return SSH_OK;
 }
 
 /* temporary function to migrate seemlessly to ssh_key */

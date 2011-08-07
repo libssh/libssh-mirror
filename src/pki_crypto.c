@@ -25,8 +25,6 @@
 #ifndef _PKI_CRYPTO_H
 #define _PKI_CRYPTO_H
 
-#include "config.h"
-
 #include <openssl/pem.h>
 #include <openssl/dsa.h>
 #include <openssl/err.h>

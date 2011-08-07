@@ -47,8 +47,6 @@ struct ssh_key_struct {
 };
 
 void ssh_key_clean (ssh_key key);
-int ssh_key_import_private(ssh_key key, ssh_session session,
-    const char *filename, const char *passphrase);
 
 ssh_key ssh_pki_publickey_from_privatekey(ssh_key privkey);
 ssh_string ssh_pki_do_sign(ssh_session session, ssh_buffer sigbuf,
@@ -62,4 +60,5 @@ enum ssh_keytypes_e pki_privatekey_type_from_string(const char *privkey);
 ssh_key pki_private_key_from_base64(ssh_session session,
                                     const char *b64_key,
                                     const char *passphrase);
+
 #endif /* PKI_H_ */
