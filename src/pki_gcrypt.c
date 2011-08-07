@@ -856,6 +856,49 @@ fail:
     return NULL;
 }
 
+struct signature_struct *pki_do_sign(ssh_key privatekey,
+                                     const unsigned char *hash) {
+    struct signature_struct *sign;
+    gcry_sexp_t gcryhash;
+
+    sign = malloc(sizeof(SIGNATURE));
+    if (sign == NULL) {
+        return NULL;
+    }
+    sign->type = privatekey->type;
+
+    switch(privatekey->type) {
+        case SSH_KEYTYPE_DSS:
+            if (gcry_sexp_build(&gcryhash, NULL, "%b", SHA_DIGEST_LEN + 1, hash) ||
+                gcry_pk_sign(&sign->dsa_sign, gcryhash, privatekey->dsa)) {
+                gcry_sexp_release(gcryhash);
+                signature_free(sign);
+                return NULL;
+            }
+            sign->rsa_sign = NULL;
+            break;
+        case SSH_KEYTYPE_RSA:
+        case SSH_KEYTYPE_RSA1:
+            if (gcry_sexp_build(&gcryhash, NULL, "(data(flags pkcs1)(hash sha1 %b))",
+                                SHA_DIGEST_LEN, hash + 1) ||
+                gcry_pk_sign(&sign->rsa_sign, gcryhash, privatekey->rsa)) {
+                gcry_sexp_release(gcryhash);
+                signature_free(sign);
+                return NULL;
+            }
+            sign->dsa_sign = NULL;
+            break;
+        case SSH_KEYTYPE_ECDSA:
+        case SSH_KEYTYPE_UNKNOWN:
+            signature_free(sign);
+            return NULL;
+    }
+
+    gcry_sexp_release(gcryhash);
+
+    return sign;
+}
+
 #endif /* HAVE_LIBGCRYPT */
 
 /**

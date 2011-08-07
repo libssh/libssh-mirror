@@ -35,6 +35,7 @@
 #include "libssh/session.h"
 #include "libssh/callbacks.h"
 #include "libssh/pki.h"
+#include "libssh/keys.h"
 
 static int pem_get_password(char *buf, int size, int rwflag, void *userdata) {
     ssh_session session = userdata;
@@ -216,6 +217,51 @@ fail:
     ssh_key_free(pubkey);
 
     return NULL;
+}
+
+struct signature_struct *pki_do_sign(ssh_key privatekey,
+                                     const unsigned char *hash) {
+    struct signature_struct *sign;
+
+    sign = malloc(sizeof(SIGNATURE));
+    if (sign == NULL) {
+        return NULL;
+    }
+    sign->type = privatekey->type;
+
+    switch(privatekey->type) {
+        case SSH_KEYTYPE_DSS:
+            sign->dsa_sign = DSA_do_sign(hash + 1, SHA_DIGEST_LEN,
+                    privatekey->dsa);
+            if (sign->dsa_sign == NULL) {
+                signature_free(sign);
+                return NULL;
+            }
+
+#ifdef DEBUG_CRYPTO
+            ssh_print_bignum("r", sign->dsa_sign->r);
+            ssh_print_bignum("s", sign->dsa_sign->s);
+#endif
+
+            sign->rsa_sign = NULL;
+            break;
+        case SSH_KEYTYPE_RSA:
+        case SSH_KEYTYPE_RSA1:
+            sign->rsa_sign = RSA_do_sign(hash + 1, SHA_DIGEST_LEN,
+                    privatekey->rsa);
+            if (sign->rsa_sign == NULL) {
+                signature_free(sign);
+                return NULL;
+            }
+            sign->dsa_sign = NULL;
+            break;
+        case SSH_KEYTYPE_ECDSA:
+        case SSH_KEYTYPE_UNKNOWN:
+            signature_free(sign);
+            return NULL;
+    }
+
+    return sign;
 }
 
 #endif /* _PKI_CRYPTO_H */

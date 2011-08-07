@@ -37,7 +37,9 @@ typedef gcry_md_hd_t HMACCTX;
 #define SHA384_DIGEST_LENGTH 48
 #define SHA512_DIGEST_LENGTH 64
 
+#ifndef EVP_MAX_MD_SIZE
 #define EVP_MAX_MD_SIZE 36
+#endif
 
 typedef gcry_mpi_t bignum;
 
