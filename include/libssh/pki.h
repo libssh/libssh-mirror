@@ -36,7 +36,9 @@ struct ssh_key_struct {
 #elif HAVE_LIBCRYPTO
     DSA *dsa;
     RSA *rsa;
+    void *ecdsa;
 #endif
+    void *cert;
 };
 
 void ssh_key_clean (ssh_key key);
