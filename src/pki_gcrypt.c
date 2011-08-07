@@ -959,6 +959,163 @@ fail:
 
     return NULL;
 }
+
+ssh_key pki_publickey_from_privatekey(ssh_key privkey) {
+    ssh_key pubkey = NULL;
+    gcry_sexp_t sexp;
+    const char *tmp = NULL;
+    ssh_string p = NULL;
+    ssh_string q = NULL;
+    ssh_string g = NULL;
+    ssh_string y = NULL;
+    ssh_string e = NULL;
+    ssh_string n = NULL;
+    size_t size;
+
+    if (privkey == NULL || !ssh_key_is_private(privkey)) {
+        return NULL;
+    }
+
+    pubkey = ssh_key_new();
+    if (pubkey == NULL) {
+        return NULL;
+    }
+    pubkey->type = privkey->type;
+
+    switch(pubkey->type) {
+        case SSH_KEYTYPE_DSS:
+            sexp = gcry_sexp_find_token(privkey->dsa, "p", 0);
+            if (sexp == NULL) {
+                goto fail;
+            }
+            tmp = gcry_sexp_nth_data(sexp, 1, &size);
+            p = ssh_string_new(size);
+            if (p == NULL) {
+                goto fail;
+            }
+            ssh_string_fill(p,(char *) tmp, size);
+            gcry_sexp_release(sexp);
+
+            sexp = gcry_sexp_find_token(privkey->dsa,"q",0);
+            if (sexp == NULL) {
+                goto fail;
+            }
+            tmp = gcry_sexp_nth_data(sexp,1,&size);
+            q = ssh_string_new(size);
+            if (q == NULL) {
+                goto fail;
+            }
+            ssh_string_fill(q,(char *) tmp,size);
+            gcry_sexp_release(sexp);
+
+            sexp = gcry_sexp_find_token(privkey->dsa, "g", 0);
+            if (sexp == NULL) {
+                goto fail;
+            }
+            tmp = gcry_sexp_nth_data(sexp,1,&size);
+            g = ssh_string_new(size);
+            if (g == NULL) {
+                goto fail;
+            }
+            ssh_string_fill(g,(char *) tmp,size);
+            gcry_sexp_release(sexp);
+
+            sexp = gcry_sexp_find_token(privkey->dsa,"y",0);
+            if (sexp == NULL) {
+                goto fail;
+            }
+            tmp = gcry_sexp_nth_data(sexp,1,&size);
+            y = ssh_string_new(size);
+            if (y == NULL) {
+                goto fail;
+            }
+            ssh_string_fill(y,(char *) tmp,size);
+            gcry_sexp_release(sexp);
+
+            gcry_sexp_build(&pubkey->dsa, NULL,
+                    "(public-key(dsa(p %b)(q %b)(g %b)(y %b)))",
+                    ssh_string_len(p), ssh_string_data(p),
+                    ssh_string_len(q), ssh_string_data(q),
+                    ssh_string_len(g), ssh_string_data(g),
+                    ssh_string_len(y), ssh_string_data(y));
+
+            ssh_string_burn(p);
+            ssh_string_free(p);
+            ssh_string_burn(q);
+            ssh_string_free(q);
+            ssh_string_burn(g);
+            ssh_string_free(g);
+            ssh_string_burn(y);
+            ssh_string_free(y);
+            break;
+        case SSH_KEYTYPE_RSA:
+        case SSH_KEYTYPE_RSA1:
+            sexp = gcry_sexp_find_token(privkey->rsa, "n", 0);
+            if (sexp == NULL) {
+                goto fail;
+            }
+            tmp = gcry_sexp_nth_data(sexp, 1, &size);
+            n = ssh_string_new(size);
+            if (n == NULL) {
+                goto fail;
+            }
+            ssh_string_fill(n, (char *) tmp, size);
+            gcry_sexp_release(sexp);
+
+            sexp = gcry_sexp_find_token(privkey->rsa, "e", 0);
+            if (sexp == NULL) {
+                goto fail;
+            }
+            tmp = gcry_sexp_nth_data(sexp, 1, &size);
+            e = ssh_string_new(size);
+            if (e == NULL) {
+                goto fail;
+            }
+            ssh_string_fill(e, (char *) tmp, size);
+            gcry_sexp_release(sexp);
+
+            gcry_sexp_build(&pubkey->rsa, NULL,
+                    "(public-key(rsa(n %b)(e %b)))",
+                    ssh_string_len(n), ssh_string_data(n),
+                    ssh_string_len(e), ssh_string_data(e));
+            if (pubkey->rsa == NULL) {
+                goto fail;
+            }
+
+            ssh_string_burn(e);
+            ssh_string_free(e);
+            ssh_string_burn(n);
+            ssh_string_free(n);
+            break;
+        case SSH_KEYTYPE_ECDSA:
+        case SSH_KEYTYPE_UNKNOWN:
+            ssh_key_free(pubkey);
+            return NULL;
+    }
+    pubkey->type_c = ssh_key_type_to_char(privkey->type);
+
+    return pubkey;
+fail:
+    gcry_sexp_release(sexp);
+    ssh_string_burn(p);
+    ssh_string_free(p);
+    ssh_string_burn(q);
+    ssh_string_free(q);
+    ssh_string_burn(g);
+    ssh_string_free(g);
+    ssh_string_burn(y);
+    ssh_string_free(y);
+
+    ssh_string_burn(e);
+    ssh_string_free(e);
+    ssh_string_burn(n);
+    ssh_string_free(n);
+
+    ssh_key_free(pubkey);
+
+    return NULL;
+}
+
 #endif /* HAVE_LIBGCRYPT */
 
 /**

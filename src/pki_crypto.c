@@ -161,4 +161,61 @@ fail:
     return NULL;
 }
 
+ssh_key pki_publickey_from_privatekey(ssh_key privkey) {
+    ssh_key pubkey = NULL;
+
+    if (privkey == NULL || !ssh_key_is_private(privkey)) {
+        return NULL;
+    }
+
+    pubkey = ssh_key_new();
+    if (pubkey == NULL) {
+        return NULL;
+    }
+    pubkey->type = privkey->type;
+
+    switch (pubkey->type) {
+        case SSH_KEYTYPE_DSS:
+            pubkey->dsa = DSA_new();
+            if (pubkey->dsa == NULL) {
+                goto fail;
+            }
+            pubkey->dsa->p = BN_dup(privkey->dsa->p);
+            pubkey->dsa->q = BN_dup(privkey->dsa->q);
+            pubkey->dsa->g = BN_dup(privkey->dsa->g);
+            pubkey->dsa->pub_key = BN_dup(privkey->dsa->pub_key);
+            if (pubkey->dsa->p == NULL ||
+                    pubkey->dsa->q == NULL ||
+                    pubkey->dsa->g == NULL ||
+                    pubkey->dsa->pub_key == NULL) {
+                goto fail;
+            }
+            break;
+        case SSH_KEYTYPE_RSA:
+        case SSH_KEYTYPE_RSA1:
+            pubkey->rsa = RSA_new();
+            if (pubkey->rsa == NULL) {
+                goto fail;
+            }
+            pubkey->rsa->e = BN_dup(privkey->rsa->e);
+            pubkey->rsa->n = BN_dup(privkey->rsa->n);
+            if (pubkey->rsa->e == NULL ||
+                    pubkey->rsa->n == NULL) {
+                goto fail;
+            }
+            break;
+        case SSH_KEYTYPE_ECDSA:
+        case SSH_KEYTYPE_UNKNOWN:
+            ssh_key_free(pubkey);
+            return NULL;
+    }
+    pubkey->type_c = ssh_key_type_to_char(privkey->type);
+
+    return pubkey;
+fail:
+    ssh_key_free(pubkey);
+
+    return NULL;
+}
+
 #endif /* _PKI_CRYPTO_H */

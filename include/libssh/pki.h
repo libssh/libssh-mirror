@@ -60,5 +60,6 @@ enum ssh_keytypes_e pki_privatekey_type_from_string(const char *privkey);
 ssh_key pki_private_key_from_base64(ssh_session session,
                                     const char *b64_key,
                                     const char *passphrase);
+ssh_key pki_publickey_from_privatekey(ssh_key privkey);
 
 #endif /* PKI_H_ */
