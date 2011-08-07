@@ -22,6 +22,11 @@
 #ifndef PKI_H_
 #define PKI_H_
 
+#define RSA_HEADER_BEGIN "-----BEGIN RSA PRIVATE KEY-----"
+#define RSA_HEADER_END "-----END RSA PRIVATE KEY-----"
+#define DSA_HEADER_BEGIN "-----BEGIN DSA PRIVATE KEY-----"
+#define DSA_HEADER_END "-----END DSA PRIVATE KEY-----"
+
 #define SSH_KEY_FLAG_EMPTY 0
 #define SSH_KEY_FLAG_PUBLIC  1
 #define SSH_KEY_FLAG_PRIVATE 2
@@ -52,5 +57,6 @@ ssh_string ssh_pki_do_sign(ssh_session session, ssh_buffer sigbuf,
 /* temporary functions, to be removed after migration to ssh_key */
 ssh_public_key ssh_pki_convert_key_to_publickey(ssh_key key);
 
+enum ssh_keytypes_e pki_privatekey_type_from_string(const char *privkey);
 
 #endif /* PKI_H_ */

@@ -37,6 +37,18 @@
 #include "libssh/keys.h"
 #include "libssh/buffer.h"
 
+enum ssh_keytypes_e pki_privatekey_type_from_string(const char *privkey) {
+    if (strncmp(privkey, DSA_HEADER_BEGIN, strlen(DSA_HEADER_BEGIN)) == 0) {
+        return SSH_KEYTYPE_DSS;
+    }
+
+    if (strncmp(privkey, RSA_HEADER_BEGIN, strlen(RSA_HEADER_BEGIN)) == 0) {
+        return SSH_KEYTYPE_RSA;
+    }
+
+    return SSH_KEYTYPE_UNKNOWN;
+}
+
 /**
  * @brief creates a new empty SSH key
  * @returns an empty ssh_key handle, or NULL on error.
