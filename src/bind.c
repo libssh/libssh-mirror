@@ -34,7 +34,7 @@
 #include "libssh/bind.h"
 #include "libssh/libssh.h"
 #include "libssh/server.h"
-#include "libssh/keyfiles.h"
+#include "libssh/pki.h"
 #include "libssh/buffer.h"
 #include "libssh/socket.h"
 #include "libssh/session.h"
@@ -287,10 +287,11 @@ void ssh_bind_free(ssh_bind sshbind){
 
 
 int ssh_bind_accept(ssh_bind sshbind, ssh_session session) {
-  ssh_private_key dsa = NULL;
-  ssh_private_key rsa = NULL;
+  ssh_key dsa = NULL;
+  ssh_key rsa = NULL;
   socket_t fd = SSH_INVALID_SOCKET;
   int i;
+  int rc;
 
   if (sshbind->bindfd == SSH_INVALID_SOCKET) {
     ssh_set_error(sshbind, SSH_FATAL,
@@ -308,18 +309,28 @@ int ssh_bind_accept(ssh_bind sshbind, ssh_session session) {
   }
 
   if (sshbind->dsakey) {
-    dsa = _privatekey_from_file(sshbind, sshbind->dsakey, SSH_KEYTYPE_DSS);
-    if (dsa == NULL) {
-      return SSH_ERROR;
-    }
+      rc = ssh_key_import_private(session, sshbind->dsakey, NULL, &dsa);
+      if (rc == SSH_ERROR) {
+          return SSH_ERROR;
+      }
+
+      if (ssh_key_type(dsa) != SSH_KEYTYPE_DSS) {
+          ssh_key_free(dsa);
+          return SSH_ERROR;
+      }
   }
 
   if (sshbind->rsakey) {
-    rsa = _privatekey_from_file(sshbind, sshbind->rsakey, SSH_KEYTYPE_RSA);
-    if (rsa == NULL) {
-      privatekey_free(dsa);
-      return SSH_ERROR;
-    }
+      rc = ssh_key_import_private(session, sshbind->rsakey, NULL, &rsa);
+      if (rc == SSH_ERROR) {
+          return SSH_ERROR;
+      }
+
+      if (ssh_key_type(rsa) != SSH_KEYTYPE_RSA &&
+          ssh_key_type(rsa) != SSH_KEYTYPE_RSA1) {
+          ssh_key_free(dsa);
+          return SSH_ERROR;
+      }
   }
 
   fd = accept(sshbind->bindfd, NULL, NULL);
@@ -327,8 +338,9 @@ int ssh_bind_accept(ssh_bind sshbind, ssh_session session) {
     ssh_set_error(sshbind, SSH_FATAL,
         "Accepting a new connection: %s",
         strerror(errno));
-    privatekey_free(dsa);
-    privatekey_free(rsa);
+    ssh_key_free(dsa);
+    ssh_key_free(rsa);
+
     return SSH_ERROR;
   }
 
@@ -340,8 +352,9 @@ int ssh_bind_accept(ssh_bind sshbind, ssh_session session) {
     if (sshbind->wanted_methods[i]) {
       session->wanted_methods[i] = strdup(sshbind->wanted_methods[i]);
       if (session->wanted_methods[i] == NULL) {
-        privatekey_free(dsa);
-        privatekey_free(rsa);
+        ssh_key_free(dsa);
+        ssh_key_free(rsa);
+
         return SSH_ERROR;
       }
     }
@@ -353,8 +366,9 @@ int ssh_bind_accept(ssh_bind sshbind, ssh_session session) {
     SAFE_FREE(session->bindaddr);
     session->bindaddr = strdup(sshbind->bindaddr);
     if (session->bindaddr == NULL) {
-      privatekey_free(dsa);
-      privatekey_free(rsa);
+      ssh_key_free(dsa);
+      ssh_key_free(rsa);
+
       return SSH_ERROR;
     }
   }
@@ -366,14 +380,15 @@ int ssh_bind_accept(ssh_bind sshbind, ssh_session session) {
   if (session->socket == NULL) {
     /* perhaps it may be better to copy the error from session to sshbind */
     ssh_set_error_oom(sshbind);
-    privatekey_free(dsa);
-    privatekey_free(rsa);
+    ssh_key_free(dsa);
+    ssh_key_free(rsa);
     return SSH_ERROR;
   }
   ssh_socket_set_fd(session->socket, fd);
   ssh_socket_get_poll_handle_out(session->socket);
-  session->dsa_key = dsa;
-  session->rsa_key = rsa;
+
+  session->dsa_key = ssh_pki_convert_key_to_privatekey(dsa);
+  session->rsa_key = ssh_pki_convert_key_to_privatekey(rsa);
 
   return SSH_OK;
 }
