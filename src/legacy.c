@@ -31,6 +31,7 @@
 #include <libssh/buffer.h>
 #include <libssh/pki.h>
 #include <libssh/keys.h>
+#include <libssh/keyfiles.h>
 
 void buffer_free(ssh_buffer buffer){
   ssh_buffer_free(buffer);
@@ -289,6 +290,11 @@ ssh_private_key privatekey_from_file(ssh_session session,
     privkey->rsa_priv = key->rsa;
 
     return privkey;
+}
+
+ssh_private_key _privatekey_from_file(void *session, const char *filename,
+    int type) {
+    return privatekey_from_file(session, filename, type, NULL);
 }
 
 /****************************************************************************
