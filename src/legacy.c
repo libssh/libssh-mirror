@@ -274,7 +274,7 @@ ssh_private_key privatekey_from_file(ssh_session session,
 
     (void) type; /* unused */
 
-    rc = ssh_key_import_private(session, filename, passphrase, &key);
+    rc = ssh_pki_import_privkey_file(session, filename, passphrase, &key);
     if (rc == SSH_ERROR) {
         return NULL;
     }

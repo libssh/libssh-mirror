@@ -200,19 +200,27 @@ int ssh_key_is_private(ssh_key k) {
 }
 
 /**
- * @brief import a key from a file
- * @param[out]  key      the ssh_key to update
- * @param[in]  session  The SSH Session to use. If a key decryption callback is set, it will
- *                      be used to ask for the passphrase.
+ * @brief Import a key from a file.
+ *
+ * @param[in]  session  The SSH Session to use. If a authentication callback is
+ *                      set, it will be used to ask for the passphrase.
+ *
  * @param[in]  filename The filename of the the private key.
- * @param[in]  passphrase The passphrase to decrypt the private key. Set to null
+ *
+ * @param[in]  passphrase The passphrase to decrypt the private key. Set to NULL
  *                        if none is needed or it is unknown.
+ *
+ * @param[out] pkey     A pointer to store the ssh_key. You need to free the
+ *                      key.
+ *
  * @returns SSH_OK on success, SSH_ERROR otherwise.
+ *
+ * @see ssh_key_free()
  **/
-int ssh_key_import_private(ssh_session session,
-                           const char *filename,
-                           const char *passphrase,
-                           ssh_key *pkey) {
+int ssh_pki_import_privkey_file(ssh_session session,
+                                const char *filename,
+                                const char *passphrase,
+                                ssh_key *pkey) {
     struct stat sb;
     char *key_buf;
     ssh_key key;

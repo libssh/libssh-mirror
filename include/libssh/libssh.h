@@ -429,7 +429,7 @@ LIBSSH_API int ssh_pki_import_privkey_base64(ssh_session session,
                                              const char *b64_key,
                                              const char *passphrase,
                                              ssh_key *pkey);
-LIBSSH_API int ssh_key_import_private(ssh_session session,
+LIBSSH_API int ssh_pki_import_privkey_file(ssh_session session,
                                       const char *filename,
                                       const char *passphrase,
                                       ssh_key *pkey);
