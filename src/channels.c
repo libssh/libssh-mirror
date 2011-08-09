@@ -296,11 +296,14 @@ static int channel_open(ssh_channel channel, const char *type_c, int window,
   /* Todo: fix this into a correct loop */
   /* wait until channel is opened by server */
   while(channel->state == SSH_CHANNEL_STATE_NOT_OPEN){
-    ssh_handle_packets(session, -2);
-    if (session->session_state == SSH_SESSION_STATE_ERROR) {
-        err = SSH_ERROR;
-        break;
-    }
+      err = ssh_handle_packets(session, -2);
+      if (err != SSH_OK) {
+          break;
+      }
+      if (session->session_state == SSH_SESSION_STATE_ERROR) {
+          err = SSH_ERROR;
+          break;
+      }
   }
   if(channel->state == SSH_CHANNEL_STATE_OPEN)
     err=SSH_OK;
