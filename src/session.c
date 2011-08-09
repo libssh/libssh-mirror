@@ -464,18 +464,12 @@ int ssh_handle_packets(ssh_session session, int timeout) {
         tm = ssh_make_milliseconds(session->timeout, session->timeout_usec);
     }
     rc = ssh_poll_ctx_dopoll(ctx, tm);
-
     if (rc == SSH_ERROR) {
         session->session_state = SSH_SESSION_STATE_ERROR;
     }
 
     leave_function();
-
-    if (session->session_state == SSH_SESSION_STATE_ERROR) {
-        return SSH_ERROR;
-    }
-
-    return SSH_OK;
+    return rc;
 }
 
 /**
