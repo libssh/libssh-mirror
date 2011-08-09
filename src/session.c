@@ -492,23 +492,17 @@ int ssh_handle_packets(ssh_session session, int timeout) {
  * @return              SSH_OK on success, SSH_ERROR otherwise.
  */
 int ssh_handle_packets_termination(ssh_session session, int timeout,
-    ssh_termination_function fct, void *user){
-  int ret = SSH_ERROR;
-  struct ssh_timestamp ts;
-  ssh_timestamp_init(&ts);
+	ssh_termination_function fct, void *user){
+	int ret = SSH_OK;
 
-  while(!fct(user)){
-    ret = ssh_handle_packets(session, timeout);
-    if(ret == SSH_ERROR)
-      return SSH_ERROR;
-    if(fct(user)) {
-      return SSH_OK;
-    } else if (ssh_timeout_elapsed(&ts, timeout)) {
-      return SSH_AGAIN;
-    }
-    timeout = ssh_timeout_update(&ts,timeout);
-  }
-  return ret;
+	while(!fct(user)){
+		ret = ssh_handle_packets(session, timeout);
+		if(ret == SSH_ERROR || ret == SSH_AGAIN)
+			return ret;
+		if(fct(user)) 
+			return SSH_OK;
+	}
+	return ret;
 }
 
 /**
