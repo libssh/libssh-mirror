@@ -1,6 +1,8 @@
 project(tests C)
 
-find_package(Argp)
+if (BSD OR SOLARIS)
+    find_package(Argp)
+endif (BSD OR SOLARIS)
 
 set(TORTURE_LIBRARY torture)
 
