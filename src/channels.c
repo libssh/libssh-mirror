@@ -22,6 +22,7 @@
  * MA 02111-1307, USA.
  */
 
+#include <limits.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -1148,7 +1149,7 @@ error:
 int channel_write_common(ssh_channel channel, const void *data,
     uint32_t len, int is_stderr) {
   ssh_session session;
-  int origlen = len;
+  uint32_t origlen = len;
   size_t effectivelen;
   size_t maxpacketlen;
 
@@ -1160,6 +1161,13 @@ int channel_write_common(ssh_channel channel, const void *data,
       ssh_set_error_invalid(session, __FUNCTION__);
       return -1;
   }
+
+  if (len > INT_MAX) {
+      ssh_log(session, SSH_LOG_PROTOCOL,
+              "Length (%u) is bigger than INT_MAX", len);
+      return SSH_ERROR;
+  }
+
   enter_function();
 
   /*
@@ -1202,7 +1210,7 @@ int channel_write_common(ssh_channel channel, const void *data,
           /* nothing can be written */
           ssh_log(session, SSH_LOG_PROTOCOL,
                 "Wait for a growing window message...");
-          return 0;
+          goto out;
       }
       effectivelen = len > channel->remote_window ? channel->remote_window : len;
     } else {
@@ -1242,8 +1250,10 @@ int channel_write_common(ssh_channel channel, const void *data,
     data = ((uint8_t*)data + effectivelen);
   }
 
+out:
   leave_function();
-  return origlen;
+  return (int)(origlen - len);
+
 error:
   buffer_reinit(session->out_buffer);
 
