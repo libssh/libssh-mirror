@@ -254,6 +254,7 @@ int ssh_pki_import_privkey_file(ssh_session session,
 
     key_buf = malloc(sb.st_size + 1);
     if (key_buf == NULL) {
+        fclose(file);
         ssh_set_error_oom(session);
         return SSH_ERROR;
     }
