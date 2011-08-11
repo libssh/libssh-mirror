@@ -53,101 +53,116 @@
  *
  * @param src           The session to use to copy the options.
  *
- * @param dest          The session to copy the options to.
+ * @param dest          A pointer to store the allocated session with duplicated
+ *                      options. You have to free the memory.
  *
  * @returns             0 on sucess, -1 on error with errno set.
  *
  * @see ssh_session_connect()
  */
 int ssh_options_copy(ssh_session src, ssh_session *dest) {
-  ssh_session new;
-  int i;
+    ssh_session new;
+    int i;
 
-  if (src == NULL || dest == NULL || *dest == NULL) {
-    return -1;
-  }
-
-  new = *dest;
-
-  if (src->username) {
-    new->username = strdup(src->username);
-    if (new->username == NULL) {
-      return -1;
-    }
-  }
-
-  if (src->host) {
-    new->host = strdup(src->host);
-    if (new->host == NULL) {
-      return -1;
-    }
-  }
-
-  if (src->identity) {
-    struct ssh_iterator *it;
-
-    new->identity = ssh_list_new();
-    if (new->identity == NULL) {
-      return -1;
-    }
-
-    it = ssh_list_get_iterator(src->identity);
-    while (it) {
-      char *id;
-      int rc;
-
-      id = strdup((char *) it->data);
-      if (id == NULL) {
+    if (src == NULL || dest == NULL) {
         return -1;
-      }
+    }
 
-      rc = ssh_list_append(new->identity, id);
-      if (rc < 0) {
+    new = ssh_new();
+    if (new == NULL) {
         return -1;
-      }
-      it = it->next;
     }
-  }
 
-  if (src->sshdir) {
-    new->sshdir = strdup(src->sshdir);
-    if (new->sshdir == NULL) {
-      return -1;
+    if (src->username) {
+        new->username = strdup(src->username);
+        if (new->username == NULL) {
+            ssh_free(new);
+            return -1;
+        }
     }
-  }
 
-  if (src->knownhosts) {
-    new->knownhosts = strdup(src->knownhosts);
-    if (new->knownhosts == NULL) {
-      return -1;
+    if (src->host) {
+        new->host = strdup(src->host);
+        if (new->host == NULL) {
+            ssh_free(new);
+            return -1;
+        }
     }
-  }
 
-  for (i = 0; i < 10; ++i) {
-    if (src->wanted_methods[i]) {
-      new->wanted_methods[i] = strdup(src->wanted_methods[i]);
-      if (new->wanted_methods[i] == NULL) {
-        return -1;
-      }
+    if (src->identity) {
+        struct ssh_iterator *it;
+
+        new->identity = ssh_list_new();
+        if (new->identity == NULL) {
+            ssh_free(new);
+            return -1;
+        }
+
+        it = ssh_list_get_iterator(src->identity);
+        while (it) {
+            char *id;
+            int rc;
+
+            id = strdup((char *) it->data);
+            if (id == NULL) {
+                ssh_free(new);
+                return -1;
+            }
+
+            rc = ssh_list_append(new->identity, id);
+            if (rc < 0) {
+                ssh_free(new);
+                return -1;
+            }
+            it = it->next;
+        }
     }
-  }
 
-  if(src->ProxyCommand) {
-    new->ProxyCommand = strdup(src->ProxyCommand);
-    if(new->ProxyCommand == NULL)
-      return -1;
-  }
-  new->fd = src->fd;
-  new->port = src->port;
-  new->common.callbacks = src->common.callbacks;
-  new->timeout = src->timeout;
-  new->timeout_usec = src->timeout_usec;
-  new->ssh2 = src->ssh2;
-  new->ssh1 = src->ssh1;
-  new->common.log_verbosity = src->common.log_verbosity;
-  new->compressionlevel = src->compressionlevel;
+    if (src->sshdir) {
+        new->sshdir = strdup(src->sshdir);
+        if (new->sshdir == NULL) {
+            ssh_free(new);
+            return -1;
+        }
+    }
 
-  return 0;
+    if (src->knownhosts) {
+        new->knownhosts = strdup(src->knownhosts);
+        if (new->knownhosts == NULL) {
+            ssh_free(new);
+            return -1;
+        }
+    }
+
+    for (i = 0; i < 10; ++i) {
+        if (src->wanted_methods[i]) {
+            new->wanted_methods[i] = strdup(src->wanted_methods[i]);
+            if (new->wanted_methods[i] == NULL) {
+                ssh_free(new);
+                return -1;
+            }
+        }
+    }
+
+    if(src->ProxyCommand) {
+        new->ProxyCommand = strdup(src->ProxyCommand);
+        if(new->ProxyCommand == NULL)
+            ssh_free(new);
+            return -1;
+    }
+    new->fd = src->fd;
+    new->port = src->port;
+    new->common.callbacks = src->common.callbacks;
+    new->timeout = src->timeout;
+    new->timeout_usec = src->timeout_usec;
+    new->ssh2 = src->ssh2;
+    new->ssh1 = src->ssh1;
+    new->common.log_verbosity = src->common.log_verbosity;
+    new->compressionlevel = src->compressionlevel;
+
+    *dest = new;
+
+    return 0;
 }
 
 int ssh_options_set_algo(ssh_session session, int algo,
