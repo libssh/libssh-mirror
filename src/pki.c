@@ -320,12 +320,15 @@ ssh_private_key ssh_pki_convert_key_to_privatekey(ssh_key key) {
 
 /** @brief import a base64 formated key from a memory c-string
  *
- * @param   key     The key to fill, created with ssh_key_new()
  * @param   session The ssh session
  * @param   b64_key The c-string holding the base64 encoded key
  * @param   passphrase  The passphrase to decrypt the key, or NULL
+ * @param   pkey    A pointer where the key can be stored. You need
+ *                  to free the memory.
  *
  * @return  SSH_ERROR in case of error, SSH_OK otherwise
+ *
+ * @see ssh_key_free()
  */
 int ssh_pki_import_privkey_base64(ssh_session session,
                                   const char *b64_key,
