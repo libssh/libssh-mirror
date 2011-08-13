@@ -107,7 +107,7 @@ void ssh_key_free (ssh_key key){
  * @returns one of SSH_KEYTYPE_RSA,SSH_KEYTYPE_DSS,SSH_KEYTYPE_RSA1
  * @returns SSH_KEYTYPE_UNKNOWN if the type is unknown
  */
-enum ssh_keytypes_e ssh_key_type(ssh_key key){
+enum ssh_keytypes_e ssh_key_type(const ssh_key key){
     if (key == NULL) {
         return SSH_KEYTYPE_UNKNOWN;
     }
@@ -176,7 +176,7 @@ enum ssh_keytypes_e ssh_key_type_from_name(const char *name) {
  *
  * @return              1 if it is a public key, 0 if not.
  */
-int ssh_key_is_public(ssh_key k) {
+int ssh_key_is_public(const ssh_key k) {
     if (k == NULL) {
         return 0;
     }
@@ -191,7 +191,7 @@ int ssh_key_is_public(ssh_key k) {
  *
  * @return              1 if it is a private key, 0 if not.
  */
-int ssh_key_is_private(ssh_key k) {
+int ssh_key_is_private(const ssh_key k) {
     if (k == NULL) {
         return 0;
     }
@@ -281,7 +281,7 @@ int ssh_pki_import_privkey_file(ssh_session session,
 }
 
 /* temporary function to migrate seemlessly to ssh_key */
-ssh_public_key ssh_pki_convert_key_to_publickey(ssh_key key) {
+ssh_public_key ssh_pki_convert_key_to_publickey(const ssh_key key) {
     ssh_public_key pub;
 
     if(key == NULL) {
@@ -302,7 +302,7 @@ ssh_public_key ssh_pki_convert_key_to_publickey(ssh_key key) {
     return pub;
 }
 
-ssh_private_key ssh_pki_convert_key_to_privatekey(ssh_key key) {
+ssh_private_key ssh_pki_convert_key_to_privatekey(const ssh_key key) {
     ssh_private_key privkey;
 
     privkey = malloc(sizeof(struct ssh_private_key_struct));
@@ -508,7 +508,7 @@ fail:
  *
  * @return              A public key, NULL on error.
  */
-ssh_key ssh_pki_publickey_from_privatekey(ssh_key privkey) {
+ssh_key ssh_pki_publickey_from_privatekey(const ssh_key privkey) {
     return pki_publickey_from_privatekey(privkey);
 }
 
@@ -516,7 +516,7 @@ ssh_key ssh_pki_publickey_from_privatekey(ssh_key privkey) {
  * This function signs the session id (known as H) as a string then
  * the content of sigbuf */
 ssh_string ssh_pki_do_sign(ssh_session session, ssh_buffer sigbuf,
-    ssh_key privatekey) {
+        const ssh_key privatekey) {
     struct ssh_crypto_struct *crypto = session->current_crypto ? session->current_crypto :
         session->next_crypto;
     unsigned char hash[SHA_DIGEST_LEN + 1] = {0};
