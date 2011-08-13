@@ -318,7 +318,8 @@ ssh_private_key ssh_pki_convert_key_to_privatekey(ssh_key key) {
     return privkey;
 }
 
-/** @brief import a base64 formated key from a memory c-string
+/**
+ * @brief import a base64 formated key from a memory c-string
  *
  * @param   session The ssh session
  * @param   b64_key The c-string holding the base64 encoded key
@@ -357,6 +358,22 @@ int ssh_pki_import_privkey_base64(ssh_session session,
     return SSH_OK;
 }
 
+/**
+ * @brief Import a base64 formated public key from a memory c-string.
+ *
+ * @param[in]  session  The ssh session to use.
+ *
+ * @param[in]  b64_key  The base64 key to format.
+ *
+ * @param[in]  type     The type of the key to format.
+ *
+ * @param[out] pkey     A pointer where the key can be stored. You need
+ *                      to free the memory.
+ *
+ * @return              SSH_OK on success, SSH_ERROR on error.
+ *
+ * @see ssh_key_free()
+ */
 int ssh_pki_import_pubkey_base64(ssh_session session,
                                  const char *b64_key,
                                  enum ssh_keytypes_e type,
@@ -484,6 +501,13 @@ fail:
     return SSH_ERROR;
 }
 
+/**
+ * @brief Generate and duplicate a public key from a private key.
+ *
+ * @param[in] privkey   The private key to get the public key from.
+ *
+ * @return              A public key, NULL on error.
+ */
 ssh_key ssh_pki_publickey_from_privatekey(ssh_key privkey) {
     return pki_publickey_from_privatekey(privkey);
 }
