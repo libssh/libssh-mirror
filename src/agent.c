@@ -54,6 +54,7 @@
 #include "libssh/session.h"
 #include "libssh/keys.h"
 #include "libssh/poll.h"
+#include "libssh/pki.h"
 
 /* macro to check for "agent failure" message */
 #define agent_failed(x) \
@@ -348,9 +349,10 @@ struct ssh_public_key_struct *agent_get_first_ident(struct ssh_session_struct *s
 /* caller has to free commment */
 struct ssh_public_key_struct *agent_get_next_ident(struct ssh_session_struct *session,
     char **comment) {
-  struct ssh_public_key_struct *pubkey = NULL;
+  struct ssh_key_struct *key;
   struct ssh_string_struct *blob = NULL;
   struct ssh_string_struct *tmp = NULL;
+  int rc;
 
   if (session->agent->count == 0) {
     return NULL;
@@ -385,14 +387,17 @@ struct ssh_public_key_struct *agent_get_next_ident(struct ssh_session_struct *se
       ssh_string_free(tmp);
 
       /* get key from blob */
-      pubkey = publickey_from_string(session, blob);
+      rc = ssh_pki_import_pubkey_string(session, blob, &key);
       ssh_string_free(blob);
+      if (rc == SSH_ERROR) {
+        return NULL;
+      }
       break;
     default:
       return NULL;
   }
 
-  return pubkey;
+  return ssh_pki_convert_key_to_publickey(key);
 }
 
 ssh_string agent_sign_data(struct ssh_session_struct *session,
