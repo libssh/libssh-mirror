@@ -71,6 +71,9 @@ int pki_pubkey_build_rsa(ssh_key key,
                          ssh_string e,
                          ssh_string n);
 
+int ssh_pki_import_pubkey_string(ssh_session session,
+                                 const ssh_string pubkey,
+                                 ssh_key *pkey);
 struct signature_struct *pki_do_sign(const ssh_key privatekey,
                                      const unsigned char *hash);
 

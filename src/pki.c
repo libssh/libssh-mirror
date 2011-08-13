@@ -358,27 +358,10 @@ int ssh_pki_import_privkey_base64(ssh_session session,
     return SSH_OK;
 }
 
-/**
- * @brief Import a base64 formated public key from a memory c-string.
- *
- * @param[in]  session  The ssh session to use.
- *
- * @param[in]  b64_key  The base64 key to format.
- *
- * @param[in]  type     The type of the key to format.
- *
- * @param[out] pkey     A pointer where the key can be stored. You need
- *                      to free the memory.
- *
- * @return              SSH_OK on success, SSH_ERROR on error.
- *
- * @see ssh_key_free()
- */
-int ssh_pki_import_pubkey_base64(ssh_session session,
-                                 const char *b64_key,
-                                 enum ssh_keytypes_e type,
-                                 ssh_key *pkey) {
-    ssh_buffer buffer;
+static int pki_import_pubkey_buffer(ssh_session session,
+                                    ssh_buffer buffer,
+                                    enum ssh_keytypes_e type,
+                                    ssh_key *pkey) {
     ssh_key key;
     int rc;
 
@@ -390,8 +373,6 @@ int ssh_pki_import_pubkey_base64(ssh_session session,
     key->type = type;
     key->type_c = ssh_key_type_to_char(type);
     key->flags = SSH_KEY_FLAG_PUBLIC;
-
-    buffer = base64_to_bin(b64_key);
 
     switch (type) {
         case SSH_KEYTYPE_DSS:
@@ -490,13 +471,114 @@ int ssh_pki_import_pubkey_base64(ssh_session session,
             goto fail;
     }
 
-    ssh_buffer_free(buffer);
-
     *pkey = key;
     return SSH_OK;
 fail:
-    ssh_buffer_free(buffer);
     ssh_key_free(key);
+
+    return SSH_ERROR;
+}
+
+/**
+ * @brief Import a base64 formated public key from a memory c-string.
+ *
+ * @param[in]  session  The ssh session to use.
+ *
+ * @param[in]  b64_key  The base64 key to format.
+ *
+ * @param[in]  type     The type of the key to format.
+ *
+ * @param[out] pkey     A pointer where the key can be stored. You need
+ *                      to free the memory.
+ *
+ * @return              SSH_OK on success, SSH_ERROR on error.
+ *
+ * @see ssh_key_free()
+ */
+int ssh_pki_import_pubkey_base64(ssh_session session,
+                                 const char *b64_key,
+                                 enum ssh_keytypes_e type,
+                                 ssh_key *pkey) {
+    ssh_buffer buffer;
+    int rc;
+
+    if (session == NULL || b64_key == NULL || pkey == NULL) {
+        return SSH_ERROR;
+    }
+
+    buffer = base64_to_bin(b64_key);
+
+    rc = pki_import_pubkey_buffer(session, buffer, type, pkey);
+    ssh_buffer_free(buffer);
+
+    return rc;
+}
+
+/**
+ * @internal
+ *
+ * @brief Import a public key from a ssh string.
+ *
+ * @param[in]  session  The ssh session to use.
+ *
+ * @param[in]  keystring The key as a string to import.
+ *
+ * @param[out] pkey     A pointer where the key can be stored. You need
+ *                      to free the memory.
+ *
+ * @return              SSH_OK on success, SSH_ERROR on error.
+ *
+ * @see ssh_key_free()
+ */
+int ssh_pki_import_pubkey_string(ssh_session session,
+                                 const ssh_string pubkey,
+                                 ssh_key *pkey) {
+    ssh_buffer buffer;
+    ssh_string type_s = NULL;
+    char *type_c = NULL;
+    int rc;
+
+    if (pubkey == NULL || pkey == NULL) {
+        return SSH_ERROR;
+    }
+
+    buffer = ssh_buffer_new();
+    if (buffer == NULL) {
+        ssh_set_error_oom(session);
+        return SSH_ERROR;
+    }
+
+    rc = buffer_add_data(buffer, ssh_string_data(pubkey),
+            ssh_string_len(pubkey));
+    if (rc < 0) {
+        ssh_set_error_oom(session);
+        goto fail;
+    }
+
+    type_s = buffer_get_ssh_string(buffer);
+    if (type_s == NULL) {
+        ssh_set_error(session, SSH_FATAL, "Invalid public key format");
+        goto fail;
+    }
+
+    type_c = ssh_string_to_char(type_s);
+    if (type_c == NULL) {
+        ssh_set_error_oom(session);
+        goto fail;
+    }
+    ssh_string_free(type_s);
+
+    rc = pki_import_pubkey_buffer(session, buffer,
+            ssh_key_type_from_name(type_c), pkey);
+
+    ssh_buffer_free(buffer);
+    free(type_c);
+
+    return rc;
+fail:
+    ssh_buffer_free(buffer);
+    ssh_string_free(type_s);
+    free(type_c);
 
     return SSH_ERROR;
 }
