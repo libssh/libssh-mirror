@@ -67,6 +67,146 @@ static int pem_get_password(char *buf, int size, int rwflag, void *userdata) {
     return 0;
 }
 
+ssh_key pki_key_dup(const ssh_key key, int demote)
+{
+    ssh_key new;
+
+    new = ssh_key_new();
+    if (new == NULL) {
+        return NULL;
+    }
+
+    new->type = key->type;
+    new->type_c = key->type_c;
+    new->flags = key->flags;
+
+    switch (key->type) {
+    case SSH_KEYTYPE_DSS:
+        new->dsa = DSA_new();
+        if (new->dsa == NULL) {
+            goto fail;
+        }
+
+        /*
+         * p        = public prime number
+         * q        = public 160-bit subprime, q | p-1
+         * g        = public generator of subgroup
+         * pub_key  = public key y = g^x
+         * priv_key = private key x
+         */
+        new->dsa->p = BN_dup(key->dsa->p);
+        if (new->dsa->p == NULL) {
+            goto fail;
+        }
+
+        new->dsa->q = BN_dup(key->dsa->q);
+        if (new->dsa->q == NULL) {
+            goto fail;
+        }
+
+        new->dsa->g = BN_dup(key->dsa->g);
+        if (new->dsa->g == NULL) {
+            goto fail;
+        }
+
+        new->dsa->pub_key = BN_dup(key->dsa->pub_key);
+        if (new->dsa->pub_key == NULL) {
+            goto fail;
+        }
+
+        if (!demote && (key->flags == SSH_KEY_FLAG_PRIVATE)) {
+            new->dsa->priv_key = BN_dup(key->dsa->priv_key);
+            if (new->dsa->priv_key == NULL) {
+                goto fail;
+            }
+        }
+
+        break;
+    case SSH_KEYTYPE_RSA:
+    case SSH_KEYTYPE_RSA1:
+        new->rsa = RSA_new();
+        if (new->rsa == NULL) {
+            goto fail;
+        }
+
+        /*
+         * n    = public modulus
+         * e    = public exponent
+         * d    = private exponent
+         * p    = secret prime factor
+         * q    = secret prime factor
+         * dmp1 = d mod (p-1)
+         * dmq1 = d mod (q-1)
+         * iqmp = q^-1 mod p
+         */
+        new->rsa->n = BN_dup(key->rsa->n);
+        if (new->rsa->n == NULL) {
+            goto fail;
+        }
+
+        new->rsa->e = BN_dup(key->rsa->e);
+        if (new->rsa->e == NULL) {
+            goto fail;
+        }
+
+        if (!demote && (key->flags == SSH_KEY_FLAG_PRIVATE)) {
+            new->rsa->d = BN_dup(key->rsa->d);
+            if (new->rsa->d == NULL) {
+                goto fail;
+            }
+
+            /* p, q, dmp1, dmq1 and iqmp may be NULL in private keys, but the
+             * RSA operations are much faster when these values are available.
+             */
+            if (key->rsa->p != NULL) {
+                new->rsa->p = BN_dup(key->rsa->p);
+                if (new->rsa->p == NULL) {
+                    goto fail;
+                }
+            }
+
+            if (key->rsa->q != NULL) {
+                new->rsa->q = BN_dup(key->rsa->q);
+                if (new->rsa->q == NULL) {
+                    goto fail;
+                }
+            }
+
+            if (key->rsa->dmp1 != NULL) {
+                new->rsa->dmp1 = BN_dup(key->rsa->dmp1);
+                if (new->rsa->dmp1 == NULL) {
+                    goto fail;
+                }
+            }
+
+            if (key->rsa->dmq1 != NULL) {
+                new->rsa->dmq1 = BN_dup(key->rsa->dmq1);
+                if (new->rsa->dmq1 == NULL) {
+                    goto fail;
+                }
+            }
+
+            if (key->rsa->iqmp != NULL) {
+                new->rsa->iqmp = BN_dup(key->rsa->iqmp);
+                if (new->rsa->iqmp == NULL) {
+                    goto fail;
+                }
+            }
+        }
+
+        break;
+    case SSH_KEYTYPE_ECDSA:
+    case SSH_KEYTYPE_UNKNOWN:
+        ssh_key_free(new);
+        return NULL;
+    }
+
+    return new;
+fail:
+    ssh_key_free(new);
+    return NULL;
+}
+
 ssh_key pki_private_key_from_base64(ssh_session session,
                                     const char *b64_key,
                                     const char *passphrase) {
@@ -205,63 +345,6 @@ int pki_pubkey_build_rsa(ssh_key key,
     }
 
     return SSH_OK;
-}
-
-ssh_key pki_publickey_from_privatekey(ssh_key privkey) {
-    ssh_key pubkey = NULL;
-
-    if (privkey == NULL || !ssh_key_is_private(privkey)) {
-        return NULL;
-    }
-
-    pubkey = ssh_key_new();
-    if (pubkey == NULL) {
-        return NULL;
-    }
-    pubkey->type = privkey->type;
-
-    switch (pubkey->type) {
-        case SSH_KEYTYPE_DSS:
-            pubkey->dsa = DSA_new();
-            if (pubkey->dsa == NULL) {
-                goto fail;
-            }
-            pubkey->dsa->p = BN_dup(privkey->dsa->p);
-            pubkey->dsa->q = BN_dup(privkey->dsa->q);
-            pubkey->dsa->g = BN_dup(privkey->dsa->g);
-            pubkey->dsa->pub_key = BN_dup(privkey->dsa->pub_key);
-            if (pubkey->dsa->p == NULL ||
-                    pubkey->dsa->q == NULL ||
-                    pubkey->dsa->g == NULL ||
-                    pubkey->dsa->pub_key == NULL) {
-                goto fail;
-            }
-            break;
-        case SSH_KEYTYPE_RSA:
-        case SSH_KEYTYPE_RSA1:
-            pubkey->rsa = RSA_new();
-            if (pubkey->rsa == NULL) {
-                goto fail;
-            }
-            pubkey->rsa->e = BN_dup(privkey->rsa->e);
-            pubkey->rsa->n = BN_dup(privkey->rsa->n);
-            if (pubkey->rsa->e == NULL ||
-                    pubkey->rsa->n == NULL) {
-                goto fail;
-            }
-            break;
-        case SSH_KEYTYPE_ECDSA:
-        case SSH_KEYTYPE_UNKNOWN:
-            ssh_key_free(pubkey);
-            return NULL;
-    }
-    pubkey->type_c = ssh_key_type_to_char(privkey->type);
-
-    return pubkey;
-fail:
-    ssh_key_free(pubkey);
-
-    return NULL;
 }
 
 struct signature_struct *pki_do_sign(ssh_key privatekey,

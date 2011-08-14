@@ -69,6 +69,15 @@ ssh_key ssh_key_new (void) {
   return ptr;
 }
 
+ssh_key ssh_key_dup(const ssh_key key)
+{
+    if (key == NULL) {
+        return NULL;
+    }
+
+    return pki_key_dup(key, 0);
+}
+
 /**
  * @brief clean up the key and deallocate all existing keys
  * @param[in] key ssh_key to clean
@@ -591,7 +600,12 @@ fail:
  * @return              A public key, NULL on error.
  */
 ssh_key ssh_pki_publickey_from_privatekey(const ssh_key privkey) {
-    return pki_publickey_from_privatekey(privkey);
+
+    if (privkey == NULL || !ssh_key_is_private(privkey)) {
+        return NULL;
+    }
+
+    return pki_key_dup(privkey, 1);
 }
 
 /*
