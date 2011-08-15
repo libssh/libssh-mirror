@@ -510,6 +510,7 @@ int ssh_pki_import_pubkey_base64(ssh_session session,
                                  enum ssh_keytypes_e type,
                                  ssh_key *pkey) {
     ssh_buffer buffer;
+    ssh_string type_s;
     int rc;
 
     if (session == NULL || b64_key == NULL || pkey == NULL) {
@@ -517,6 +518,16 @@ int ssh_pki_import_pubkey_base64(ssh_session session,
     }
 
     buffer = base64_to_bin(b64_key);
+    if (buffer == NULL) {
+        return SSH_ERROR;
+    }
+
+    type_s = buffer_get_ssh_string(buffer);
+    if (type_s == NULL) {
+        ssh_buffer_free(buffer);
+        return SSH_ERROR;
+    }
+    ssh_string_free(type_s);
 
     rc = pki_import_pubkey_buffer(session, buffer, type, pkey);
     ssh_buffer_free(buffer);
