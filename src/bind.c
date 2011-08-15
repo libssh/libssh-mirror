@@ -386,14 +386,39 @@ int ssh_bind_accept(ssh_bind sshbind, ssh_session session) {
 
   /* FIXME */
 #if 0
-  session->dsa_key = ssh_key_dup(sshbind->dsa);
-  session->rsa_key = ssh_key_dup(sshbind->rsa);
+  if (sshbind->dsa) {
+      session->dsa_key = ssh_key_dup(sshbind->dsa);
+      if (session->dsa_key == NULL) {
+        ssh_set_error_oom(sshbind);
+        return SSH_ERROR;
+      }
+  }
+  if (sshbind->rsa) {
+      session->rsa_key = ssh_key_dup(sshbind->rsa);
+      if (session->rsa_key == NULL) {
+        ssh_set_error_oom(sshbind);
+        return SSH_ERROR;
+      }
+  }
 #else
-  dsa = ssh_key_dup(sshbind->dsa);
-  rsa = ssh_key_dup(sshbind->rsa);
+  if (sshbind->dsa) {
+      dsa = ssh_key_dup(sshbind->dsa);
+      if (dsa == NULL) {
+        ssh_set_error_oom(sshbind);
+        return SSH_ERROR;
+      }
+      session->dsa_key = ssh_pki_convert_key_to_privatekey(dsa);
+  }
 
-  session->dsa_key = ssh_pki_convert_key_to_privatekey(dsa);
-  session->rsa_key = ssh_pki_convert_key_to_privatekey(rsa);
+  if (sshbind->rsa) {
+      rsa = ssh_key_dup(sshbind->rsa);
+      if (rsa == NULL) {
+        ssh_set_error_oom(sshbind);
+        return SSH_ERROR;
+      }
+      session->rsa_key = ssh_pki_convert_key_to_privatekey(rsa);
+  }
+
 #endif
 
   return SSH_OK;
