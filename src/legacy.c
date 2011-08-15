@@ -342,6 +342,11 @@ ssh_string publickey_from_file(ssh_session session, const char *filename,
 const char *ssh_type_to_char(int type) {
     return ssh_key_type_to_char(type);
 }
+
+int ssh_type_from_name(const char *name) {
+    return ssh_key_type_from_name(name);
+}
+
 /****************************************************************************
  * SERVER SUPPORT
  ****************************************************************************/

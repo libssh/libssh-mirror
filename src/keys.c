@@ -44,24 +44,6 @@
  * @{
  */
 
-int ssh_type_from_name(const char *name) {
-  if (strcmp(name, "rsa1") == 0) {
-    return SSH_KEYTYPE_RSA1;
-  } else if (strcmp(name, "rsa") == 0) {
-    return SSH_KEYTYPE_RSA;
-  } else if (strcmp(name, "dsa") == 0) {
-    return SSH_KEYTYPE_DSS;
-  } else if (strcmp(name, "ssh-rsa1") == 0) {
-    return SSH_KEYTYPE_RSA1;
-  } else if (strcmp(name, "ssh-rsa") == 0) {
-    return SSH_KEYTYPE_RSA;
-  } else if (strcmp(name, "ssh-dss") == 0) {
-    return SSH_KEYTYPE_DSS;
-  }
-
-  return -1;
-}
-
 ssh_public_key publickey_make_dss(ssh_session session, ssh_buffer buffer) {
   ssh_string p = NULL;
   ssh_string q = NULL;
