@@ -1,1 +1,1 @@
--Iinclude -Ibuild
+-Iinclude -Ibuild -Itests -Isrc
