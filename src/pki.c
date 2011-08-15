@@ -609,13 +609,21 @@ ssh_key ssh_pki_publickey_from_privatekey(const ssh_key privkey) {
     return pki_key_dup(privkey, 1);
 }
 
-int ssh_pki_publickey_to_string(const ssh_key key, ssh_string *pstr)
+/**
+ * @brief Create a ssh string from a public key.
+ *
+ * @param[in] key       A public or private key to create the public ssh_string
+ *                      from.
+ *
+ * @return              The string or NULL on error.
+ */
+ssh_string ssh_pki_publickey_to_string(const ssh_key key)
 {
-    if (key == NULL || pstr == NULL) {
-        return SSH_ERROR;
+    if (key == NULL) {
+        return NULL;
     }
 
-    return pki_publickey_to_string(key, pstr);
+    return pki_publickey_to_string(key);
 }
 
 /*
