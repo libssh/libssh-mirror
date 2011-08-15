@@ -426,12 +426,12 @@ ssh_string pki_publickey_to_string(const ssh_key key)
         case SSH_KEYTYPE_RSA:
         case SSH_KEYTYPE_RSA1:
             e = make_bignum_string(key->rsa->e);
-            if (p == NULL) {
+            if (e == NULL) {
                 goto fail;
             }
 
             n = make_bignum_string(key->rsa->n);
-            if (q == NULL) {
+            if (n == NULL) {
                 goto fail;
             }
 
