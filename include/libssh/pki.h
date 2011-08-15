@@ -46,23 +46,10 @@ struct ssh_key_struct {
     void *cert;
 };
 
-ssh_key ssh_key_dup(const ssh_key key);
-void ssh_key_clean (ssh_key key);
+/* internal pki functions */
 ssh_key pki_key_dup(const ssh_key key, int demote);
 
-ssh_key ssh_pki_publickey_from_privatekey(const ssh_key privkey);
-ssh_string ssh_pki_do_sign(ssh_session session, ssh_buffer sigbuf,
-    ssh_key privatekey);
-
-/* temporary functions, to be removed after migration to ssh_key */
-ssh_public_key ssh_pki_convert_key_to_publickey(ssh_key key);
-ssh_private_key ssh_pki_convert_key_to_privatekey(ssh_key key);
-
 enum ssh_keytypes_e pki_privatekey_type_from_string(const char *privkey);
-
-ssh_key pki_private_key_from_base64(ssh_session session,
-                                    const char *b64_key,
-                                    const char *passphrase);
 int pki_pubkey_build_dss(ssh_key key,
                          ssh_string p,
                          ssh_string q,
@@ -72,6 +59,23 @@ int pki_pubkey_build_rsa(ssh_key key,
                          ssh_string e,
                          ssh_string n);
 
+
+/* half public ssh pki functions */
+ssh_key ssh_key_dup(const ssh_key key);
+void ssh_key_clean (ssh_key key);
+
+ssh_key ssh_pki_publickey_from_privatekey(const ssh_key privkey);
+ssh_string ssh_pki_do_sign(ssh_session session, ssh_buffer sigbuf,
+    ssh_key privatekey);
+
+/* temporary functions, to be removed after migration to ssh_key */
+ssh_public_key ssh_pki_convert_key_to_publickey(ssh_key key);
+ssh_private_key ssh_pki_convert_key_to_privatekey(ssh_key key);
+
+
+ssh_key pki_private_key_from_base64(ssh_session session,
+                                    const char *b64_key,
+                                    const char *passphrase);
 int ssh_pki_import_pubkey_string(ssh_session session,
                                  const ssh_string pubkey,
                                  ssh_key *pkey);

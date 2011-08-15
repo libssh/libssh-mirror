@@ -609,6 +609,15 @@ ssh_key ssh_pki_publickey_from_privatekey(const ssh_key privkey) {
     return pki_key_dup(privkey, 1);
 }
 
+int ssh_pki_publickey_to_string(const ssh_key key, ssh_string *pstr)
+{
+    if (key == NULL || pstr == NULL) {
+        return SSH_ERROR;
+    }
+
+    return pki_publickey_to_string(key, pstr);
+}
+
 /*
  * This function signs the session id (known as H) as a string then
  * the content of sigbuf */

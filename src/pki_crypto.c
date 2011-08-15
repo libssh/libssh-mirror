@@ -347,6 +347,102 @@ int pki_pubkey_build_rsa(ssh_key key,
     return SSH_OK;
 }
 
+int pki_publickey_to_string(const ssh_key key, ssh_string *pstr)
+{
+    ssh_string buffer;
+    ssh_string type_s;
+    ssh_string e = NULL;
+    ssh_string n = NULL;
+    ssh_string p = NULL;
+    ssh_string g = NULL;
+    ssh_string q = NULL;
+    int rc;
+
+    buffer = ssh_buffer_new();
+    if (buffer == NULL) {
+        return NULL;
+    }
+
+    type_s = ssh_string_from_char(key->type_c);
+    if (type_s == NULL) {
+        ssh_buffer_free(buffer);
+        return NULL;
+    }
+
+    rc = buffer_add_ssh_string(buffer, type_s);
+    string_free(type_s);
+    if (rc < 0) {
+        ssh_buffer_free(buffer);
+        return NULL;
+    }
+
+    switch (key->type) {
+        case SSH_KEYTYPE_DSS:
+            p = make_bignum_string(key->p);
+            if (p == NULL) {
+                goto fail;
+            }
+
+            q = make_bignum_string(key->q);
+            if (q == NULL) {
+                goto fail;
+            }
+
+            g = make_bignum_string(key->g);
+            if (g == NULL) {
+                goto fail;
+            }
+
+            n = make_bignum_string(key->pub_key);
+            if (n == NULL) {
+                goto fail;
+            }
+
+            if (buffer_add_ssh_string(buffer, p) < 0) {
+                goto fail;
+            }
+            if (buffer_add_ssh_string(buffer, q) < 0) {
+                goto fail;
+            }
+            if (buffer_add_ssh_string(buffer, g) < 0) {
+                goto fail;
+            }
+            if (buffer_add_ssh_string(buffer, n) < 0) {
+                goto fail;
+            }
+      break;
+    case SSH_KEYTYPE_RSA:
+    case SSH_KEYTYPE_RSA1:
+      if (rsa_public_to_string(key->rsa_pub, buf) < 0) {
+        goto error;
+      }
+      break;
+  }
+
+    str = ssh_string_new(buffer_get_rest_len(buffer));
+    if (str == NULL) {
+        goto fail;
+    }
+
+    rc = ssh_string_fill(str, buffer_get_rest(buffer), buffer_get_rest_len(buffer));
+    if (rc < 0) {
+        goto fail;
+    }
+    ssh_buffer_free(buffer);
+
+    *pstr = str;
+    return SSH_OK;
+fail:
+    ssh_buffer_free(buffer);
+    ssh_string_free(e);
+    ssh_string_free(p);
+    ssh_string_free(g);
+    ssh_string_free(q);
+    ssh_string_free(n);
+
+    return SSH_ERROR;
+}
+
 struct signature_struct *pki_do_sign(ssh_key privatekey,
                                      const unsigned char *hash) {
     struct signature_struct *sign;
