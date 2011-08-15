@@ -44,20 +44,6 @@
  * @{
  */
 
-/* Public key decoding functions */
-const char *ssh_type_to_char(int type) {
-  switch (type) {
-    case SSH_KEYTYPE_DSS:
-      return "ssh-dss";
-    case SSH_KEYTYPE_RSA:
-      return "ssh-rsa";
-    case SSH_KEYTYPE_RSA1:
-      return "ssh-rsa1";
-    default:
-      return NULL;
-  }
-}
-
 int ssh_type_from_name(const char *name) {
   if (strcmp(name, "rsa1") == 0) {
     return SSH_KEYTYPE_RSA1;

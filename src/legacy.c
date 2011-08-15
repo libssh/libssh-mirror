@@ -339,6 +339,9 @@ ssh_string publickey_from_file(ssh_session session, const char *filename,
     return key_str;
 }
 
+const char *ssh_type_to_char(int type) {
+    return ssh_key_type_to_char(type);
+}
 /****************************************************************************
  * SERVER SUPPORT
  ****************************************************************************/
