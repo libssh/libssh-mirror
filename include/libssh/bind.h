@@ -36,6 +36,8 @@ struct ssh_bind_struct {
   char *banner;
   char *dsakey;
   char *rsakey;
+  ssh_key dsa;
+  ssh_key rsa;
   char *bindaddr;
   socket_t bindfd;
   unsigned int bindport;
