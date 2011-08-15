@@ -1026,7 +1026,7 @@ ssh_string pki_publickey_to_string(const ssh_key key)
 
     switch (key->type) {
         case SSH_KEYTYPE_DSS:
-            sexp = gcry_sexp_find_token(key, "p", 0);
+            sexp = gcry_sexp_find_token(key->dsa, "p", 0);
             if (sexp == NULL) {
                 goto fail;
             }
@@ -1038,7 +1038,7 @@ ssh_string pki_publickey_to_string(const ssh_key key)
             ssh_string_fill(p, (char *) tmp, size);
             gcry_sexp_release(sexp);
 
-            sexp = gcry_sexp_find_token(key, "q", 0);
+            sexp = gcry_sexp_find_token(key->dsa, "q", 0);
             if (sexp == NULL) {
                 goto fail;
             }
@@ -1050,7 +1050,7 @@ ssh_string pki_publickey_to_string(const ssh_key key)
             ssh_string_fill(q, (char *) tmp, size);
             gcry_sexp_release(sexp);
 
-            sexp = gcry_sexp_find_token(key, "g", 0);
+            sexp = gcry_sexp_find_token(key->dsa, "g", 0);
             if (sexp == NULL) {
                 goto fail;
             }
@@ -1062,7 +1062,7 @@ ssh_string pki_publickey_to_string(const ssh_key key)
             ssh_string_fill(g, (char *) tmp, size);
             gcry_sexp_release(sexp);
 
-            sexp = gcry_sexp_find_token(key, "y", 0);
+            sexp = gcry_sexp_find_token(key->dsa, "y", 0);
             if (sexp == NULL) {
                 goto fail;
             }
@@ -1098,25 +1098,25 @@ ssh_string pki_publickey_to_string(const ssh_key key)
             break;
         case SSH_KEYTYPE_RSA:
         case SSH_KEYTYPE_RSA1:
-            sexp = gcry_sexp_find_token(key, "e", 0);
+            sexp = gcry_sexp_find_token(key->rsa, "e", 0);
             if (sexp == NULL) {
-                goto error;
+                goto fail;
             }
             tmp = gcry_sexp_nth_data(sexp, 1, &size);
             e = ssh_string_new(size);
             if (e == NULL) {
-                goto error;
+                goto fail;
             }
             ssh_string_fill(e, (char *) tmp, size);
 
-            sexp = gcry_sexp_find_token(key, "n", 0);
+            sexp = gcry_sexp_find_token(key->rsa, "n", 0);
             if (sexp == NULL) {
-                goto error;
+                goto fail;
             }
             tmp = gcry_sexp_nth_data(sexp, 1, &size);
             n = ssh_string_new(size);
             if (n == NULL) {
-                goto error;
+                goto fail;
             }
             ssh_string_fill(n, (char *) tmp, size);
             gcry_sexp_release(sexp);
