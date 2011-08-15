@@ -542,7 +542,8 @@ int ssh_pki_import_pubkey_base64(ssh_session session,
  *
  * @param[in]  session  The ssh session to use.
  *
- * @param[in]  keystring The key as a string to import.
+ * @param[in]  key_blob The key blob to import as specified in RFC 4253 section
+ *                      6.6 "Public Key Algorithms".
  *
  * @param[out] pkey     A pointer where the key can be stored. You need
  *                      to free the memory.
@@ -551,15 +552,15 @@ int ssh_pki_import_pubkey_base64(ssh_session session,
  *
  * @see ssh_key_free()
  */
-int ssh_pki_import_pubkey_string(ssh_session session,
-                                 const ssh_string pubkey,
-                                 ssh_key *pkey) {
+int ssh_pki_import_pubkey_blob(ssh_session session,
+                               const ssh_string key_blob,
+                               ssh_key *pkey) {
     ssh_buffer buffer;
     ssh_string type_s = NULL;
     char *type_c = NULL;
     int rc;
 
-    if (pubkey == NULL || pkey == NULL) {
+    if (key_blob == NULL || pkey == NULL) {
         return SSH_ERROR;
     }
 
@@ -569,8 +570,8 @@ int ssh_pki_import_pubkey_string(ssh_session session,
         return SSH_ERROR;
     }
 
-    rc = buffer_add_data(buffer, ssh_string_data(pubkey),
-            ssh_string_len(pubkey));
+    rc = buffer_add_data(buffer, ssh_string_data(key_blob),
+            ssh_string_len(key_blob));
     if (rc < 0) {
         ssh_set_error_oom(session);
         goto fail;

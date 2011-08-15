@@ -387,7 +387,7 @@ struct ssh_public_key_struct *agent_get_next_ident(struct ssh_session_struct *se
       ssh_string_free(tmp);
 
       /* get key from blob */
-      rc = ssh_pki_import_pubkey_string(session, blob, &key);
+      rc = ssh_pki_import_pubkey_blob(session, blob, &key);
       ssh_string_free(blob);
       if (rc == SSH_ERROR) {
         return NULL;

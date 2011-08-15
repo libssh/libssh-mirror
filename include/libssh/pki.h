@@ -78,9 +78,6 @@ ssh_private_key ssh_pki_convert_key_to_privatekey(ssh_key key);
 ssh_key pki_private_key_from_base64(ssh_session session,
                                     const char *b64_key,
                                     const char *passphrase);
-int ssh_pki_import_pubkey_string(ssh_session session,
-                                 const ssh_string pubkey,
-                                 ssh_key *pkey);
 struct signature_struct *pki_do_sign(const ssh_key privatekey,
                                      const unsigned char *hash);
 
