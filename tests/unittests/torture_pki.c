@@ -278,6 +278,38 @@ static void torture_pki_pki_publickey_from_privatekey_DSA(void **state) {
     ssh_key_free(pubkey);
 }
 
+static void torture_pki_publickey_rsa_base64(void **state)
+{
+    ssh_session session = *state;
+    enum ssh_keytypes_e type;
+    char *key_buf, *p;
+    const char *q;
+    unsigned char *b64_key;
+    ssh_key key;
+    int rc;
+
+    key_buf = read_file(LIBSSH_RSA_TESTKEY ".pub");
+    assert_true(key_buf != NULL);
+
+    q = p = key_buf;
+    while (*p != ' ') p++;
+    *p = '\0';
+
+    type = ssh_key_type_from_name(q);
+    assert_true(((type == SSH_KEYTYPE_RSA) ||
+                 (type == SSH_KEYTYPE_RSA1)));
+
+    q = ++p;
+    while (*p != ' ') p++;
+    *p = '\0';
+
+    rc = ssh_pki_import_pubkey_base64(session, q, type, &key);
+    assert_true(rc == 0);
+
+    free(key_buf);
+    ssh_key_free(key);
+}
+
 int torture_run_tests(void) {
     int rc;
     const UnitTest tests[] = {
@@ -306,6 +338,10 @@ int torture_run_tests(void) {
                                  teardown),
         unit_test_setup_teardown(torture_pki_pki_publickey_from_privatekey_DSA,
                                  setup_dsa_key,
+                                 teardown),
+        /* public key */
+        unit_test_setup_teardown(torture_pki_publickey_rsa_base64,
+                                 setup_rsa_key,
                                  teardown),
 
 
