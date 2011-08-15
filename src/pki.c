@@ -730,12 +730,8 @@ ssh_string ssh_pki_publickey_to_blob(const ssh_key key)
 int ssh_pki_publickey_to_base64(const ssh_key key, unsigned char **b64_key,
         enum ssh_keytypes_e *ptype)
 {
-    enum ssh_keytypes_e type;
     ssh_string key_str;
-    ssh_buffer key_buf;
-    char *type_c;
     unsigned char *b64;
-    int rc;
 
     if (key == NULL || b64_key == NULL || ptype == NULL) {
         return SSH_ERROR;
@@ -746,11 +742,10 @@ int ssh_pki_publickey_to_base64(const ssh_key key, unsigned char **b64_key,
         return SSH_ERROR;
     }
 
-
     b64 = bin_to_base64(ssh_string_data(key_str), ssh_string_len(key_str));
     ssh_string_free(key_str);
 
-    *ptype = type;
+    *ptype = key->type;
     *b64_key = b64;
 
     return SSH_OK;
