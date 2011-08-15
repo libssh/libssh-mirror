@@ -297,6 +297,28 @@ ssh_private_key _privatekey_from_file(void *session, const char *filename,
     return privatekey_from_file(session, filename, type, NULL);
 }
 
+enum ssh_keytypes_e ssh_privatekey_type(ssh_private_key privatekey){
+  if (privatekey==NULL)
+    return SSH_KEYTYPE_UNKNOWN;
+  return privatekey->type;
+}
+
+void privatekey_free(ssh_private_key prv) {
+  if (prv == NULL) {
+    return;
+  }
+
+#ifdef HAVE_LIBGCRYPT
+  gcry_sexp_release(prv->dsa_priv);
+  gcry_sexp_release(prv->rsa_priv);
+#elif defined HAVE_LIBCRYPTO
+  DSA_free(prv->dsa_priv);
+  RSA_free(prv->rsa_priv);
+#endif
+  memset(prv, 0, sizeof(struct ssh_private_key_struct));
+  SAFE_FREE(prv);
+}
+
 /****************************************************************************
  * SERVER SUPPORT
  ****************************************************************************/

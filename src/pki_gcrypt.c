@@ -1221,41 +1221,6 @@ struct signature_struct *pki_do_sign(ssh_key privatekey,
  */
 
 /**
- * @brief returns the type of a private key
- * @param[in] privatekey the private key handle
- * @returns one of SSH_KEYTYPE_RSA,SSH_KEYTYPE_DSS,SSH_KEYTYPE_RSA1
- * @returns SSH_KEYTYPE_UNKNOWN if the type is unknown
- * @see privatekey_from_file
- * @see ssh_userauth_offer_pubkey
- */
-enum ssh_keytypes_e ssh_privatekey_type(ssh_private_key privatekey){
-  if (privatekey==NULL)
-    return SSH_KEYTYPE_UNKNOWN;
-  return privatekey->type;
-}
-
-/**
- * @brief Deallocate a private key object.
- *
- * @param[in]  prv      The private_key object to free.
- */
-void privatekey_free(ssh_private_key prv) {
-  if (prv == NULL) {
-    return;
-  }
-
-#ifdef HAVE_LIBGCRYPT
-  gcry_sexp_release(prv->dsa_priv);
-  gcry_sexp_release(prv->rsa_priv);
-#elif defined HAVE_LIBCRYPTO
-  DSA_free(prv->dsa_priv);
-  RSA_free(prv->rsa_priv);
-#endif
-  memset(prv, 0, sizeof(struct ssh_private_key_struct));
-  SAFE_FREE(prv);
-}
-
-/**
  * @brief Write a public key to a file.
  *
  * @param[in]  session  The ssh session to use.
