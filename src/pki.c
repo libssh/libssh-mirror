@@ -33,6 +33,7 @@
 #include "config.h"
 
 #include <errno.h>
+#include <ctype.h>
 #include <stdio.h>
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -603,6 +604,78 @@ fail:
     free(type_c);
 
     return SSH_ERROR;
+}
+
+int ssh_pki_import_pubkey_file(ssh_session session, const char *filename,
+        ssh_key *pkey)
+{
+    enum ssh_keytypes_e type;
+    struct stat sb;
+    char *key_buf, *p;
+    const char *q;
+    FILE *file;
+    off_t size;
+    int rc;
+
+    if (session == NULL || pkey == NULL) {
+        return SSH_ERROR;
+    }
+
+    if (filename == NULL || *filename == '\0') {
+        return SSH_ERROR;
+    }
+
+    rc = stat(filename, &sb);
+    if (rc < 0) {
+        ssh_set_error(session, SSH_REQUEST_DENIED,
+                      "Error gettint stat of %s: %s",
+                      filename, strerror(errno));
+        return SSH_ERROR;
+    }
+
+    file = fopen(filename, "r");
+    if (file == NULL) {
+        ssh_set_error(session, SSH_REQUEST_DENIED,
+                      "Error opening %s: %s",
+                      filename, strerror(errno));
+        return SSH_ERROR;
+    }
+
+    key_buf = malloc(sb.st_size + 1);
+    if (key_buf == NULL) {
+        fclose(file);
+        ssh_set_error_oom(session);
+        return SSH_ERROR;
+    }
+
+    size = fread(key_buf, 1, sb.st_size, file);
+    fclose(file);
+
+    if (size != sb.st_size) {
+        SAFE_FREE(key_buf);
+        ssh_set_error(session, SSH_FATAL,
+                      "Error reading %s: %s",
+                      filename, strerror(errno));
+        return SSH_ERROR;
+    }
+
+    q = p = key_buf;
+    while (!isspace((int)*p)) p++;
+    *p = '\0';
+
+    type = ssh_key_type_from_name(q);
+    if (type == SSH_KEYTYPE_UNKNOWN) {
+        SAFE_FREE(key_buf);
+        return SSH_ERROR;
+    }
+    q = ++p;
+    while (!isspace((int)*p)) p++;
+    *p = '\0';
+
+    rc = ssh_pki_import_pubkey_base64(session, q, type, pkey);
+    SAFE_FREE(key_buf);
+
+    return rc;
 }
 
 /**
