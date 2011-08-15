@@ -808,7 +808,7 @@ ssh_key pki_key_dup(const ssh_key key, int demote)
             ssh_string_fill(y, (char *)tmp, size);
             gcry_sexp_release(sexp);
 
-            if (!demote && (key->flags == SSH_KEY_FLAG_PRIVATE)) {
+            if (!demote && (key->flags & SSH_KEY_FLAG_PRIVATE)) {
                 sexp = gcry_sexp_find_token(key->dsa, "x", 0);
                 if (sexp == NULL) {
                     goto fail;
@@ -877,7 +877,7 @@ ssh_key pki_key_dup(const ssh_key key, int demote)
             ssh_string_fill(e, (char *)tmp, size);
             gcry_sexp_release(sexp);
 
-            if (!demote && (key->flags == SSH_KEY_FLAG_PRIVATE)) {
+            if (!demote && (key->flags & SSH_KEY_FLAG_PRIVATE)) {
                 sexp = gcry_sexp_find_token(key->rsa, "d", 0);
                 if (sexp == NULL) {
                     goto fail;

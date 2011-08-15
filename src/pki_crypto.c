@@ -114,7 +114,7 @@ ssh_key pki_key_dup(const ssh_key key, int demote)
             goto fail;
         }
 
-        if (!demote && (key->flags == SSH_KEY_FLAG_PRIVATE)) {
+        if (!demote && (key->flags & SSH_KEY_FLAG_PRIVATE)) {
             new->dsa->priv_key = BN_dup(key->dsa->priv_key);
             if (new->dsa->priv_key == NULL) {
                 goto fail;
@@ -149,7 +149,7 @@ ssh_key pki_key_dup(const ssh_key key, int demote)
             goto fail;
         }
 
-        if (!demote && (key->flags == SSH_KEY_FLAG_PRIVATE)) {
+        if (!demote && (key->flags & SSH_KEY_FLAG_PRIVATE)) {
             new->rsa->d = BN_dup(key->rsa->d);
             if (new->rsa->d == NULL) {
                 goto fail;
