@@ -714,6 +714,48 @@ ssh_string ssh_pki_publickey_to_blob(const ssh_key key)
     return pki_publickey_to_string(key);
 }
 
+/**
+ * @brief Convert a public key to a base64 hased key.
+ *
+ * @param[in] key       The key to hash
+ *
+ * @param[out] b64_key  A pointer to store the base64 hased key.
+ *
+ * @param[out] ptype    The type of the key.
+ *
+ * @return              SSH_OK on success, SSH_ERROR on error.
+ *
+ * @see ssh_string_free_char()
+ */
+int ssh_pki_publickey_to_base64(const ssh_key key, unsigned char **b64_key,
+        enum ssh_keytypes_e *ptype)
+{
+    enum ssh_keytypes_e type;
+    ssh_string key_str;
+    ssh_buffer key_buf;
+    char *type_c;
+    unsigned char *b64;
+    int rc;
+
+    if (key == NULL || b64_key == NULL || ptype == NULL) {
+        return SSH_ERROR;
+    }
+
+    key_str = pki_publickey_to_string(key);
+    if (key_str == NULL) {
+        return SSH_ERROR;
+    }
+
+
+    b64 = bin_to_base64(ssh_string_data(key_str), ssh_string_len(key_str));
+    ssh_string_free(key_str);
+
+    *ptype = type;
+    *b64_key = b64;
+
+    return SSH_OK;
+}
+
 /*
  * This function signs the session id (known as H) as a string then
  * the content of sigbuf */
