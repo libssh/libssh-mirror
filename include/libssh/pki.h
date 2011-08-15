@@ -68,7 +68,6 @@ void ssh_key_clean (ssh_key key);
 ssh_key ssh_pki_publickey_from_privatekey(const ssh_key privkey);
 ssh_string ssh_pki_do_sign(ssh_session session, ssh_buffer sigbuf,
     ssh_key privatekey);
-ssh_string ssh_pki_publickey_to_string(const ssh_key key);
 
 /* temporary functions, to be removed after migration to ssh_key */
 ssh_public_key ssh_pki_convert_key_to_publickey(ssh_key key);

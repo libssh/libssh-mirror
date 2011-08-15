@@ -622,14 +622,17 @@ ssh_key ssh_pki_publickey_from_privatekey(const ssh_key privkey) {
 }
 
 /**
- * @brief Create a ssh string from a public key.
+ * @brief Create a key_blob from a public key.
+ *
+ * The "key_blob" is encoded as per RFC 4253 section 6.6 "Public Key
+ * Algorithms" for any of the supported protocol 2 key types.
  *
  * @param[in] key       A public or private key to create the public ssh_string
  *                      from.
  *
- * @return              The string or NULL on error.
+ * @return              The key_blob or NULL on error.
  */
-ssh_string ssh_pki_publickey_to_string(const ssh_key key)
+ssh_string ssh_pki_publickey_to_blob(const ssh_key key)
 {
     if (key == NULL) {
         return NULL;
