@@ -194,8 +194,6 @@ ssh_private_key privatekey_from_file(ssh_session session, const char *filename,
 void publickey_free(ssh_public_key key);
 int ssh_publickey_to_file(ssh_session session, const char *file,
     ssh_string pubkey, int type);
-ssh_string publickey_from_file(ssh_session session, const char *filename,
-    int *type);
 ssh_public_key publickey_from_privatekey(ssh_private_key prv);
 ssh_string publickey_to_string(ssh_public_key key);
  *
@@ -317,6 +315,28 @@ void privatekey_free(ssh_private_key prv) {
 #endif
   memset(prv, 0, sizeof(struct ssh_private_key_struct));
   SAFE_FREE(prv);
+}
+
+ssh_string publickey_from_file(ssh_session session, const char *filename,
+    int *type) {
+    ssh_key key;
+    ssh_string key_str;
+    int rc;
+
+    rc = ssh_pki_import_pubkey_file(session, filename, &key);
+    if (rc < 0) {
+        return NULL;
+    }
+
+    key_str = ssh_pki_publickey_to_blob(key);
+    if (key_str == NULL) {
+        return NULL;
+    }
+
+    *type = key->type;
+    ssh_key_free(key);
+
+    return key_str;
 }
 
 /****************************************************************************
