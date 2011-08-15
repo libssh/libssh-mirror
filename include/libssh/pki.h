@@ -27,9 +27,9 @@
 #define DSA_HEADER_BEGIN "-----BEGIN DSA PRIVATE KEY-----"
 #define DSA_HEADER_END "-----END DSA PRIVATE KEY-----"
 
-#define SSH_KEY_FLAG_EMPTY 0
-#define SSH_KEY_FLAG_PUBLIC  1
-#define SSH_KEY_FLAG_PRIVATE 2
+#define SSH_KEY_FLAG_EMPTY   0x0
+#define SSH_KEY_FLAG_PUBLIC  0x0001
+#define SSH_KEY_FLAG_PRIVATE 0x0002
 
 struct ssh_key_struct {
     enum ssh_keytypes_e type;
