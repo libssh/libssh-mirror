@@ -46,6 +46,12 @@
 #include "libssh/keys.h"
 #include "libssh/buffer.h"
 
+#ifdef DEBUG_CRYPTO
+#define ssh_pki_log(fmt, ...) fprintf(stderr, fmt, ##__VA_ARGS__);
+#else
+#define ssh_pki_log(fmt, ...)
+#endif
+
 enum ssh_keytypes_e pki_privatekey_type_from_string(const char *privkey) {
     if (strncmp(privkey, DSA_HEADER_BEGIN, strlen(DSA_HEADER_BEGIN)) == 0) {
         return SSH_KEYTYPE_DSS;
@@ -356,8 +362,8 @@ int ssh_pki_import_privkey_base64(ssh_session session,
         return SSH_ERROR;
     }
 
-    ssh_log(session, SSH_LOG_RARE, "Trying to decode privkey passphrase=%s",
-            passphrase ? "true" : "false");
+    ssh_pki_log("Trying to decode privkey passphrase=%s",
+                passphrase ? "true" : "false");
 
     key = pki_private_key_from_base64(session, b64_key, passphrase);
     if (key == NULL) {
