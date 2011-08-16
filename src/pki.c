@@ -3,6 +3,7 @@
  * This file is part of the SSH Library
  *
  * Copyright (c) 2010 by Aris Adamantiadis
+ * Copyright (c) 2011-2011 Andreas Schneider <asn@cryptomilk.org>
  *
  * The SSH Library is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -40,12 +41,12 @@
 #include <sys/types.h>
 
 #include "libssh/libssh.h"
-#include "libssh/callbacks.h"
 #include "libssh/session.h"
 #include "libssh/priv.h"
 #include "libssh/pki.h"
 #include "libssh/keys.h"
 #include "libssh/buffer.h"
+#include "libssh/misc.h"
 
 void ssh_pki_log(const char *format, ...)
 {
@@ -751,6 +752,64 @@ int ssh_pki_export_publickey_base64(const ssh_key key,
     }
 
     *b64_key = (char *)b64;
+
+    return SSH_OK;
+}
+
+int ssh_pki_export_publickey_file(const ssh_key key,
+                                  const char *filename)
+{
+    char key_buf[4096];
+    char host[256];
+    char *b64_key;
+    char *user;
+    FILE *fp;
+    int rc;
+
+    if (key == NULL || filename == NULL || *filename == '\0') {
+        return SSH_ERROR;
+    }
+
+    user = ssh_get_local_username();
+    if (user == NULL) {
+        return SSH_ERROR;
+    }
+
+    rc = gethostname(host, sizeof(host));
+    if (rc < 0) {
+        free(user);
+        return SSH_ERROR;
+    }
+
+    rc = ssh_pki_export_publickey_base64(key, &b64_key);
+    if (rc < 0) {
+        free(user);
+        return SSH_ERROR;
+    }
+
+    rc = snprintf(key_buf, sizeof(key_buf),
+                  "%s %s %s@%s\n",
+                  key->type_c,
+                  b64_key,
+                  user,
+                  host);
+    free(user);
+    free(b64_key);
+    if (rc < 0) {
+        return SSH_ERROR;
+    }
+
+    fp = fopen(filename, "w+");
+    if (fp == NULL) {
+        return SSH_ERROR;
+    }
+    rc = fwrite(key_buf, strlen(key_buf), 1, fp);
+    if (rc != 1 || ferror(fp)) {
+        fclose(fp);
+        unlink(filename);
+        return SSH_ERROR;
+    }
+    fclose(fp);
 
     return SSH_OK;
 }
