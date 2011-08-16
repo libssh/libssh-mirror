@@ -264,9 +264,8 @@ static void torture_pki_publickey_dsa_base64(void **state)
 {
     ssh_session session = *state;
     enum ssh_keytypes_e type;
-    char *key_buf, *p;
+    char *b64_key, *key_buf, *p;
     const char *q;
-    unsigned char *b64_key;
     ssh_key key;
     int rc;
 
@@ -287,7 +286,7 @@ static void torture_pki_publickey_dsa_base64(void **state)
     rc = ssh_pki_import_pubkey_base64(q, type, &key);
     assert_true(rc == 0);
 
-    rc = ssh_pki_publickey_to_base64(key, &b64_key, &type);
+    rc = ssh_pki_export_publickey_base64(key, &b64_key);
     assert_true(rc == 0);
 
     assert_string_equal(q, b64_key);
@@ -301,9 +300,8 @@ static void torture_pki_publickey_rsa_base64(void **state)
 {
     ssh_session session = *state;
     enum ssh_keytypes_e type;
-    char *key_buf, *p;
+    char *b64_key, *key_buf, *p;
     const char *q;
-    unsigned char *b64_key;
     ssh_key key;
     int rc;
 
@@ -325,7 +323,7 @@ static void torture_pki_publickey_rsa_base64(void **state)
     rc = ssh_pki_import_pubkey_base64(q, type, &key);
     assert_true(rc == 0);
 
-    rc = ssh_pki_publickey_to_base64(key, &b64_key, &type);
+    rc = ssh_pki_export_publickey_base64(key, &b64_key);
     assert_true(rc == 0);
 
     assert_string_equal(q, b64_key);

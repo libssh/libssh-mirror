@@ -725,19 +725,17 @@ ssh_string ssh_pki_publickey_to_blob(const ssh_key key)
  *
  * @param[out] b64_key  A pointer to store the base64 hased key.
  *
- * @param[out] ptype    The type of the key.
- *
  * @return              SSH_OK on success, SSH_ERROR on error.
  *
  * @see ssh_string_free_char()
  */
-int ssh_pki_publickey_to_base64(const ssh_key key, unsigned char **b64_key,
-        enum ssh_keytypes_e *ptype)
+int ssh_pki_export_publickey_base64(const ssh_key key,
+                                    char **b64_key)
 {
     ssh_string key_str;
     unsigned char *b64;
 
-    if (key == NULL || b64_key == NULL || ptype == NULL) {
+    if (key == NULL || b64_key == NULL) {
         return SSH_ERROR;
     }
 
@@ -748,9 +746,11 @@ int ssh_pki_publickey_to_base64(const ssh_key key, unsigned char **b64_key,
 
     b64 = bin_to_base64(ssh_string_data(key_str), ssh_string_len(key_str));
     ssh_string_free(key_str);
+    if (b64 == NULL) {
+        return SSH_ERROR;
+    }
 
-    *ptype = key->type;
-    *b64_key = b64;
+    *b64_key = (char *)b64;
 
     return SSH_OK;
 }
