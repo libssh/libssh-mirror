@@ -603,9 +603,11 @@ error:
   return rc;
 }
 
-ssh_key pki_private_key_from_base64(ssh_session session,
-                                    const char *b64_key,
-                                    const char *passphrase) {
+ssh_key pki_private_key_from_base64(const char *b64_key,
+                                    const char *passphrase,
+                                    ssh_auth_callback auth_fn,
+                                    void *auth_data)
+{
     ssh_auth_callback auth_cb = NULL;
     void *auth_ud = NULL;
 
@@ -622,20 +624,16 @@ ssh_key pki_private_key_from_base64(ssh_session session,
 
     type = pki_privatekey_type_from_string(b64_key);
     if (type == SSH_KEYTYPE_UNKNOWN) {
-        ssh_set_error(session, SSH_FATAL, "Unknown or invalid private key.");
+        ssh_pki_log("Unknown or invalid private key.");
         return NULL;
     }
 
     switch (type) {
         case SSH_KEYTYPE_DSS:
             if (passphrase == NULL) {
-                if (session->common.callbacks &&
-                    session->common.callbacks->auth_function) {
-                    auth_cb = session->common.callbacks->auth_function;
-                    auth_ud = session->common.callbacks->userdata;
-
-                    valid = b64decode_dsa_privatekey(b64_key, &dsa, auth_cb,
-                            auth_ud, "Passphrase for private key:");
+                if (auth_fn) {
+                    valid = b64decode_dsa_privatekey(b64_key, &dsa, auth_fn,
+                            auth_data, "Passphrase for private key:");
                 } else {
                     valid = b64decode_dsa_privatekey(b64_key, &dsa, NULL, NULL,
                             NULL);
@@ -646,19 +644,16 @@ ssh_key pki_private_key_from_base64(ssh_session session,
             }
 
             if (!valid) {
-                ssh_set_error(session, SSH_FATAL, "Parsing private key");
+                ssh_pki_log("Parsing private key");
                 goto fail;
             }
             break;
         case SSH_KEYTYPE_RSA:
         case SSH_KEYTYPE_RSA1:
             if (passphrase == NULL) {
-                if (session->common.callbacks &&
-                    session->common.callbacks->auth_function) {
-                    auth_cb = session->common.callbacks->auth_function;
-                    auth_ud = session->common.callbacks->userdata;
-                    valid = b64decode_rsa_privatekey(b64_key, &rsa, auth_cb,
-                            auth_ud, "Passphrase for private key:");
+                if (auth_fn) {
+                    valid = b64decode_rsa_privatekey(b64_key, &rsa, auth_fn,
+                            auth_data, "Passphrase for private key:");
                 } else {
                     valid = b64decode_rsa_privatekey(b64_key, &rsa, NULL, NULL,
                             NULL);
@@ -669,14 +664,13 @@ ssh_key pki_private_key_from_base64(ssh_session session,
             }
 
             if (!valid) {
-                ssh_set_error(session,SSH_FATAL, "Parsing private key");
+                ssh_pki_log("Parsing private key");
                 goto fail;
             }
             break;
         case SSH_KEYTYPE_ECDSA:
         case SSH_KEYTYPE_UNKNOWN:
-            ssh_set_error(session, SSH_FATAL,
-                          "Unkown or invalid private key type %d", type);
+            ssh_pki_log("Unkown or invalid private key type %d", type);
             return NULL;
     }
 

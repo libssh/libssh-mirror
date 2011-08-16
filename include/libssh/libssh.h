@@ -417,6 +417,22 @@ LIBSSH_API int ssh_pcap_file_open(ssh_pcap_file pcap, const char *filename);
 
 LIBSSH_API enum ssh_keytypes_e ssh_privatekey_type(ssh_private_key privatekey);
 
+/**
+ * @brief SSH authentication callback.
+ *
+ * @param prompt        Prompt to be displayed.
+ * @param buf           Buffer to save the password. You should null-terminate it.
+ * @param len           Length of the buffer.
+ * @param echo          Enable or disable the echo of what you type.
+ * @param verify        Should the password be verified?
+ * @param userdata      Userdata to be passed to the callback function. Useful
+ *                      for GUI applications.
+ *
+ * @return              0 on success, < 0 on error.
+ */
+typedef int (*ssh_auth_callback) (const char *prompt, char *buf, size_t len,
+    int echo, int verify, void *userdata);
+
 LIBSSH_API ssh_key ssh_key_new(void);
 LIBSSH_API void ssh_key_free (ssh_key key);
 LIBSSH_API enum ssh_keytypes_e ssh_key_type(const ssh_key key);
@@ -425,14 +441,17 @@ LIBSSH_API enum ssh_keytypes_e ssh_key_type_from_name(const char *name);
 LIBSSH_API int ssh_key_is_public(const ssh_key k);
 LIBSSH_API int ssh_key_is_private(const ssh_key k);
 
-LIBSSH_API int ssh_pki_import_privkey_base64(ssh_session session,
-                                             const char *b64_key,
+LIBSSH_API int ssh_pki_import_privkey_base64(const char *b64_key,
                                              const char *passphrase,
+                                             ssh_auth_callback auth_fn,
+                                             void *auth_data,
                                              ssh_key *pkey);
-LIBSSH_API int ssh_pki_import_privkey_file(ssh_session session,
-                                      const char *filename,
-                                      const char *passphrase,
-                                      ssh_key *pkey);
+LIBSSH_API int ssh_pki_import_privkey_file(const char *filename,
+                                           const char *passphrase,
+                                           ssh_auth_callback auth_fn,
+                                           void *auth_data,
+                                           ssh_key *pkey);
+
 LIBSSH_API int ssh_pki_import_pubkey_base64(ssh_session session,
                                             const char *b64_key,
                                             enum ssh_keytypes_e type,

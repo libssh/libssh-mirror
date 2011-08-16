@@ -27,6 +27,7 @@
 #include "config.h"
 
 #include <libssh/priv.h>
+#include <libssh/session.h>
 #include <libssh/server.h>
 #include <libssh/buffer.h>
 #include <libssh/pki.h>
@@ -239,12 +240,19 @@ ssh_private_key privatekey_from_base64(ssh_session session,
                                        const char *b64_pkey,
                                        int type,
                                        const char *passphrase) {
+    ssh_auth_callback auth_fn = NULL;
+    void *auth_data = NULL;
     ssh_private_key privkey;
     ssh_key key;
 
     (void) type; /* unused */
 
-    key = pki_private_key_from_base64(session, b64_pkey, passphrase);
+    if (session->common.callbacks) {
+        auth_fn = session->common.callbacks->auth_function;
+        auth_data = session->common.callbacks->userdata;
+    }
+
+    key = pki_private_key_from_base64(b64_pkey, passphrase, auth_fn, auth_data);
     if (key == NULL) {
         return NULL;
     }
@@ -266,13 +274,25 @@ ssh_private_key privatekey_from_file(ssh_session session,
                                      const char *filename,
                                      int type,
                                      const char *passphrase) {
-    ssh_key key;
+    ssh_auth_callback auth_fn = NULL;
+    void *auth_data = NULL;
     ssh_private_key privkey;
+    ssh_key key;
     int rc;
 
     (void) type; /* unused */
 
-    rc = ssh_pki_import_privkey_file(session, filename, passphrase, &key);
+    if (session->common.callbacks) {
+        auth_fn = session->common.callbacks->auth_function;
+        auth_data = session->common.callbacks->userdata;
+    }
+
+
+    rc = ssh_pki_import_privkey_file(filename,
+                                     passphrase,
+                                     auth_fn,
+                                     auth_data,
+                                     &key);
     if (rc == SSH_ERROR) {
         return NULL;
     }

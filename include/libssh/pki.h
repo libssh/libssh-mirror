@@ -46,6 +46,8 @@ struct ssh_key_struct {
     void *cert;
 };
 
+void ssh_pki_log(const char *format, ...);
+
 /* internal pki functions */
 ssh_key pki_key_dup(const ssh_key key, int demote);
 
@@ -74,9 +76,10 @@ ssh_public_key ssh_pki_convert_key_to_publickey(ssh_key key);
 ssh_private_key ssh_pki_convert_key_to_privatekey(ssh_key key);
 
 
-ssh_key pki_private_key_from_base64(ssh_session session,
-                                    const char *b64_key,
-                                    const char *passphrase);
+ssh_key pki_private_key_from_base64(const char *b64_key,
+                                    const char *passphrase,
+                                    ssh_auth_callback auth_fn,
+                                    void *auth_data);
 struct signature_struct *pki_do_sign(const ssh_key privatekey,
                                      const unsigned char *hash);
 

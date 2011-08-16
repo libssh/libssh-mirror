@@ -172,7 +172,11 @@ int ssh_bind_listen(ssh_bind sshbind) {
   }
 
   if (sshbind->dsakey) {
-      rc = ssh_pki_import_privkey_file((ssh_session)sshbind, sshbind->dsakey, NULL, &sshbind->dsa);
+      rc = ssh_pki_import_privkey_file(sshbind->dsakey,
+                                       NULL,
+                                       NULL,
+                                       NULL,
+                                       &sshbind->dsa);
       if (rc == SSH_ERROR) {
           return SSH_ERROR;
       }
@@ -184,7 +188,11 @@ int ssh_bind_listen(ssh_bind sshbind) {
   }
 
   if (sshbind->rsakey) {
-      rc = ssh_pki_import_privkey_file((ssh_session)sshbind, sshbind->rsakey, NULL, &sshbind->rsa);
+      rc = ssh_pki_import_privkey_file(sshbind->rsakey,
+                                       NULL,
+                                       NULL,
+                                       NULL,
+                                       &sshbind->rsa);
       if (rc == SSH_ERROR) {
           return SSH_ERROR;
       }

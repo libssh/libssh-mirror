@@ -39,8 +39,13 @@
 #include "libssh/keys.h"
 #include "libssh/dh.h"
 
+struct pem_get_password_struct {
+    ssh_auth_callback fn;
+    void *data;
+};
+
 static int pem_get_password(char *buf, int size, int rwflag, void *userdata) {
-    ssh_session session = userdata;
+    struct pem_get_password_struct *pgp = userdata;
 
     (void) rwflag; /* unused */
 
@@ -48,18 +53,13 @@ static int pem_get_password(char *buf, int size, int rwflag, void *userdata) {
         return 0;
     }
 
-    ssh_log(session, SSH_LOG_RARE,
-            "Trying to call external authentication function");
-
     memset(buf, '\0', size);
-    if (session &&
-        session->common.callbacks &&
-        session->common.callbacks->auth_function) {
+    if (pgp) {
         int rc;
 
-        rc = session->common.callbacks->auth_function("Passphrase for private key:",
-                                                      buf, size, 0, 0,
-                                                      session->common.callbacks->userdata);
+        rc = pgp->fn("Passphrase for private key:",
+                     buf, size, 0, 0,
+                     pgp->data);
         if (rc == 0) {
             return strlen(buf);
         }
@@ -208,9 +208,10 @@ fail:
     return NULL;
 }
 
-ssh_key pki_private_key_from_base64(ssh_session session,
-                                    const char *b64_key,
-                                    const char *passphrase) {
+ssh_key pki_private_key_from_base64(const char *b64_key,
+                                    const char *passphrase,
+                                    ssh_auth_callback auth_fn,
+                                    void *auth_data) {
     BIO *mem = NULL;
     DSA *dsa = NULL;
     RSA *rsa = NULL;
@@ -224,7 +225,7 @@ ssh_key pki_private_key_from_base64(ssh_session session,
 
     type = pki_privatekey_type_from_string(b64_key);
     if (type == SSH_KEYTYPE_UNKNOWN) {
-        ssh_set_error(session, SSH_FATAL, "Unknown or invalid private key.");
+        ssh_pki_log("Unknown or invalid private key.");
         return NULL;
     }
 
@@ -233,8 +234,10 @@ ssh_key pki_private_key_from_base64(ssh_session session,
     switch (type) {
         case SSH_KEYTYPE_DSS:
             if (passphrase == NULL) {
-                if (session->common.callbacks && session->common.callbacks->auth_function) {
-                    dsa = PEM_read_bio_DSAPrivateKey(mem, NULL, pem_get_password, session);
+                if (auth_fn) {
+                    struct pem_get_password_struct pgp = { auth_fn, auth_data };
+
+                    dsa = PEM_read_bio_DSAPrivateKey(mem, NULL, pem_get_password, &pgp);
                 } else {
                     /* openssl uses its own callback to get the passphrase here */
                     dsa = PEM_read_bio_DSAPrivateKey(mem, NULL, NULL, NULL);
@@ -246,9 +249,8 @@ ssh_key pki_private_key_from_base64(ssh_session session,
             BIO_free(mem);
 
             if (dsa == NULL) {
-                ssh_set_error(session, SSH_FATAL,
-                              "Parsing private key: %s",
-                              ERR_error_string(ERR_get_error(), NULL));
+                ssh_pki_log("Parsing private key: %s",
+                            ERR_error_string(ERR_get_error(), NULL));
                 return NULL;
             }
 
@@ -256,8 +258,10 @@ ssh_key pki_private_key_from_base64(ssh_session session,
         case SSH_KEYTYPE_RSA:
         case SSH_KEYTYPE_RSA1:
             if (passphrase == NULL) {
-                if (session->common.callbacks && session->common.callbacks->auth_function) {
-                    rsa = PEM_read_bio_RSAPrivateKey(mem, NULL, pem_get_password, session);
+                if (auth_fn) {
+                    struct pem_get_password_struct pgp = { auth_fn, auth_data };
+
+                    rsa = PEM_read_bio_RSAPrivateKey(mem, NULL, pem_get_password, &pgp);
                 } else {
                     /* openssl uses its own callback to get the passphrase here */
                     rsa = PEM_read_bio_RSAPrivateKey(mem, NULL, NULL, NULL);
@@ -269,9 +273,8 @@ ssh_key pki_private_key_from_base64(ssh_session session,
             BIO_free(mem);
 
             if (rsa == NULL) {
-                ssh_set_error(session, SSH_FATAL,
-                              "Parsing private key: %s",
-                              ERR_error_string(ERR_get_error(),NULL));
+                ssh_pki_log("Parsing private key: %s",
+                            ERR_error_string(ERR_get_error(),NULL));
                 return NULL;
             }
 
@@ -279,8 +282,7 @@ ssh_key pki_private_key_from_base64(ssh_session session,
         case SSH_KEYTYPE_ECDSA:
         case SSH_KEYTYPE_UNKNOWN:
             BIO_free(mem);
-            ssh_set_error(session, SSH_FATAL,
-                          "Unkown or invalid private key type %d", type);
+            ssh_pki_log("Unkown or invalid private key type %d", type);
             return NULL;
     }
 

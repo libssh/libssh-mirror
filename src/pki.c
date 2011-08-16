@@ -40,17 +40,29 @@
 #include <sys/types.h>
 
 #include "libssh/libssh.h"
+#include "libssh/callbacks.h"
 #include "libssh/session.h"
 #include "libssh/priv.h"
 #include "libssh/pki.h"
 #include "libssh/keys.h"
 #include "libssh/buffer.h"
 
+void ssh_pki_log(const char *format, ...)
+{
 #ifdef DEBUG_CRYPTO
-#define ssh_pki_log(fmt, ...) fprintf(stderr, fmt, ##__VA_ARGS__);
+  char buffer[1024];
+  va_list va;
+
+    va_start(va, format);
+    vsnprintf(buffer, sizeof(buffer), format, va);
+    va_end(va);
+
+    fprintf(stderr, "%s\n", buffer);
 #else
-#define ssh_pki_log(fmt, ...)
+    (void) format;
 #endif
+    return;
+}
 
 enum ssh_keytypes_e pki_privatekey_type_from_string(const char *privkey) {
     if (strncmp(privkey, DSA_HEADER_BEGIN, strlen(DSA_HEADER_BEGIN)) == 0) {
@@ -217,15 +229,63 @@ int ssh_key_is_private(const ssh_key k) {
 }
 
 /**
- * @brief Import a key from a file.
+ * @brief import a base64 formated key from a memory c-string
  *
- * @param[in]  session  The SSH Session to use. If a authentication callback is
- *                      set, it will be used to ask for the passphrase.
+ * @param[in]  b64_key  The c-string holding the base64 encoded key
+ *
+ * @param[in]  passphrase The passphrase to decrypt the key, or NULL
+ *
+ * @param[in]  auth_fn  An auth function you may want to use or NULL.
+ *
+ * @param[in]  auth_data Private data passed to the auth function.
+ *
+ * @param[out] pkey     A pointer where the key can be stored. You need
+ *                      to free the memory.
+ *
+ * @return  SSH_ERROR in case of error, SSH_OK otherwise.
+ *
+ * @see ssh_key_free()
+ */
+int ssh_pki_import_privkey_base64(const char *b64_key,
+                                  const char *passphrase,
+                                  ssh_auth_callback auth_fn,
+                                  void *auth_data,
+                                  ssh_key *pkey)
+{
+    ssh_key key;
+
+    if (b64_key == NULL || pkey == NULL) {
+        return SSH_ERROR;
+    }
+
+    if (b64_key == NULL || !*b64_key) {
+        return SSH_ERROR;
+    }
+
+    ssh_pki_log("Trying to decode privkey passphrase=%s",
+                passphrase ? "true" : "false");
+
+    key = pki_private_key_from_base64(b64_key, passphrase, auth_fn, auth_data);
+    if (key == NULL) {
+        return SSH_ERROR;
+    }
+
+    *pkey = key;
+
+    return SSH_OK;
+}
+
+/**
+ * @brief Import a key from a file.
  *
  * @param[in]  filename The filename of the the private key.
  *
  * @param[in]  passphrase The passphrase to decrypt the private key. Set to NULL
  *                        if none is needed or it is unknown.
+ *
+ * @param[in]  auth_fn  An auth function you may want to use or NULL.
+ *
+ * @param[in]  auth_data Private data passed to the auth function.
  *
  * @param[out] pkey     A pointer to store the ssh_key. You need to free the
  *                      key.
@@ -234,9 +294,10 @@ int ssh_key_is_private(const ssh_key k) {
  *
  * @see ssh_key_free()
  **/
-int ssh_pki_import_privkey_file(ssh_session session,
-                                const char *filename,
+int ssh_pki_import_privkey_file(const char *filename,
                                 const char *passphrase,
+                                ssh_auth_callback auth_fn,
+                                void *auth_data,
                                 ssh_key *pkey) {
     struct stat sb;
     char *key_buf;
@@ -245,34 +306,28 @@ int ssh_pki_import_privkey_file(ssh_session session,
     off_t size;
     int rc;
 
-    if (session == NULL || pkey == NULL) {
-        return SSH_ERROR;
-    }
-
-    if (filename == NULL || *filename == '\0') {
+    if (pkey == NULL || filename == NULL || *filename == '\0') {
         return SSH_ERROR;
     }
 
     rc = stat(filename, &sb);
     if (rc < 0) {
-        ssh_set_error(session, SSH_REQUEST_DENIED,
-                      "Error gettint stat of %s: %s",
-                      filename, strerror(errno));
+        ssh_pki_log("Error gettint stat of %s: %s",
+                    filename, strerror(errno));
         return SSH_ERROR;
     }
 
     file = fopen(filename, "r");
     if (file == NULL) {
-        ssh_set_error(session, SSH_REQUEST_DENIED,
-                      "Error opening %s: %s",
-                      filename, strerror(errno));
+        ssh_pki_log("Error opening %s: %s",
+                    filename, strerror(errno));
         return SSH_ERROR;
     }
 
     key_buf = malloc(sb.st_size + 1);
     if (key_buf == NULL) {
         fclose(file);
-        ssh_set_error_oom(session);
+        ssh_pki_log("Out of memory!");
         return SSH_ERROR;
     }
 
@@ -281,13 +336,12 @@ int ssh_pki_import_privkey_file(ssh_session session,
 
     if (size != sb.st_size) {
         SAFE_FREE(key_buf);
-        ssh_set_error(session, SSH_FATAL,
-                      "Error reading %s: %s",
-                      filename, strerror(errno));
+        ssh_pki_log("Error reading %s: %s",
+                    filename, strerror(errno));
         return SSH_ERROR;
     }
 
-    key = pki_private_key_from_base64(session, key_buf, passphrase);
+    key = pki_private_key_from_base64(key_buf, passphrase, auth_fn, auth_data);
     SAFE_FREE(key_buf);
     if (key == NULL) {
         return SSH_ERROR;
@@ -333,46 +387,6 @@ ssh_private_key ssh_pki_convert_key_to_privatekey(const ssh_key key) {
     privkey->rsa_priv = key->rsa;
 
     return privkey;
-}
-
-/**
- * @brief import a base64 formated key from a memory c-string
- *
- * @param   session The ssh session
- * @param   b64_key The c-string holding the base64 encoded key
- * @param   passphrase  The passphrase to decrypt the key, or NULL
- * @param   pkey    A pointer where the key can be stored. You need
- *                  to free the memory.
- *
- * @return  SSH_ERROR in case of error, SSH_OK otherwise
- *
- * @see ssh_key_free()
- */
-int ssh_pki_import_privkey_base64(ssh_session session,
-                                  const char *b64_key,
-                                  const char *passphrase,
-                                  ssh_key *pkey) {
-    ssh_key key;
-
-    if (pkey == NULL || session == NULL) {
-        return SSH_ERROR;
-    }
-
-    if (b64_key == NULL || !*b64_key) {
-        return SSH_ERROR;
-    }
-
-    ssh_pki_log("Trying to decode privkey passphrase=%s",
-                passphrase ? "true" : "false");
-
-    key = pki_private_key_from_base64(session, b64_key, passphrase);
-    if (key == NULL) {
-        return SSH_ERROR;
-    }
-
-    *pkey = key;
-
-    return SSH_OK;
 }
 
 static int pki_import_pubkey_buffer(ssh_session session,

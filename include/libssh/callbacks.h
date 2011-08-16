@@ -64,22 +64,7 @@ typedef void (*ssh_callback_int_int) (int code, int errno_code, void *user);
 typedef int (*ssh_message_callback) (ssh_session, ssh_message message, void *user);
 typedef int (*ssh_channel_callback_int) (ssh_channel channel, int code, void *user);
 typedef int (*ssh_channel_callback_data) (ssh_channel channel, int code, void *data, size_t len, void *user);
-/**
- * @brief SSH authentication callback.
- *
- * @param prompt        Prompt to be displayed.
- * @param buf           Buffer to save the password. You should null-terminate it.
- * @param len           Length of the buffer.
- * @param echo          Enable or disable the echo of what you type.
- * @param verify        Should the password be verified?
- * @param userdata      Userdata to be passed to the callback function. Useful
- *                      for GUI applications.
- *
- * @return              0 on success, < 0 on error.
- */
 
-typedef int (*ssh_auth_callback) (const char *prompt, char *buf, size_t len,
-    int echo, int verify, void *userdata);
 /**
  * @brief SSH log callback. All logging messages will go through this callback
  * @param session Current session handler
