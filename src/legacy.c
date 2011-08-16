@@ -287,6 +287,11 @@ ssh_private_key privatekey_from_file(ssh_session session,
     privkey->dsa_priv = key->dsa;
     privkey->rsa_priv = key->rsa;
 
+    key->dsa = NULL;
+    key->rsa = NULL;
+
+    ssh_key_free(key);
+
     return privkey;
 }
 
