@@ -457,7 +457,7 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
     case SSH_OPTIONS_USER:
       SAFE_FREE(session->username);
       if (value == NULL) { /* set default username */
-        q = ssh_get_local_username(session);
+        q = ssh_get_local_username();
         if (q == NULL) {
           return -1;
         }

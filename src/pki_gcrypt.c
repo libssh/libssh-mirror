@@ -1247,7 +1247,7 @@ int ssh_publickey_to_file(ssh_session session, const char *file,
     return SSH_ERROR;
   }
 
-  user = ssh_get_local_username(session);
+  user = ssh_get_local_username();
   if (user == NULL) {
     SAFE_FREE(pubkey_64);
     return SSH_ERROR;

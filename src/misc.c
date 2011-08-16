@@ -138,24 +138,23 @@ int gettimeofday(struct timeval *__p, void *__t) {
   return (0);
 }
 
-char *ssh_get_local_username(ssh_session session) {
-  DWORD size = 0;
-  char *user;
+char *ssh_get_local_username(void) {
+    DWORD size = 0;
+    char *user;
 
-  /* get the size */
-  GetUserName(NULL, &size);
+    /* get the size */
+    GetUserName(NULL, &size);
 
-  user = (char *) malloc(size);
-  if (user == NULL) {
-    ssh_set_error_oom(session);
+    user = (char *) malloc(size);
+    if (user == NULL) {
+        return NULL;
+    }
+
+    if (GetUserName(user, &size)) {
+        return user;
+    }
+
     return NULL;
-  }
-
-  if (GetUserName(user, &size)) {
-    return user;
-  }
-
-  return NULL;
 }
 
 int ssh_is_ipaddr_v4(const char *str) {
@@ -233,7 +232,7 @@ int ssh_file_readaccess_ok(const char *file) {
   return 1;
 }
 
-char *ssh_get_local_username(ssh_session session) {
+char *ssh_get_local_username(void) {
     struct passwd pwd;
     struct passwd *pwdbuf;
     char buf[NSS_BUFLEN_PASSWD];
@@ -242,16 +241,13 @@ char *ssh_get_local_username(ssh_session session) {
 
     rc = getpwuid_r(getuid(), &pwd, buf, NSS_BUFLEN_PASSWD, &pwdbuf);
     if (rc != 0) {
-        ssh_set_error(session, SSH_FATAL,
-            "Couldn't retrieve information for current user!");
         return NULL;
     }
 
     name = strdup(pwd.pw_name);
 
     if (name == NULL) {
-      ssh_set_error_oom(session);
-      return NULL;
+        return NULL;
     }
 
     return name;
@@ -724,7 +720,7 @@ char *ssh_path_expand_escape(ssh_session session, const char *s) {
                 x = strdup(session->sshdir);
                 break;
             case 'u':
-                x = ssh_get_local_username(session);
+                x = ssh_get_local_username();
                 break;
             case 'l':
                 if (gethostname(host, sizeof(host) == 0)) {

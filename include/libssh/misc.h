@@ -25,7 +25,7 @@
 /* in misc.c */
 /* gets the user home dir. */
 char *ssh_get_user_home_dir(void);
-char *ssh_get_local_username(ssh_session session);
+char *ssh_get_local_username(void);
 int ssh_file_readaccess_ok(const char *file);
 
 char *ssh_path_expand_tilde(const char *d);
