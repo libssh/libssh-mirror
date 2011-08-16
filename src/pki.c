@@ -443,6 +443,8 @@ static int pki_import_pubkey_buffer(ssh_session session,
                 ssh_string_free(q);
                 ssh_string_burn(g);
                 ssh_string_free(g);
+                ssh_string_burn(pubkey);
+                ssh_string_free(pubkey);
                 if (rc == SSH_ERROR) {
                     goto fail;
                 }
