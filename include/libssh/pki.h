@@ -68,6 +68,12 @@ ssh_key ssh_key_dup(const ssh_key key);
 void ssh_key_clean (ssh_key key);
 
 ssh_key ssh_pki_publickey_from_privatekey(const ssh_key privkey);
+
+int ssh_pki_import_pubkey_blob(const ssh_string key_blob,
+                               ssh_key *pkey);
+
+ssh_string ssh_pki_publickey_to_blob(const ssh_key key);
+
 ssh_string ssh_pki_do_sign(ssh_session session, ssh_buffer sigbuf,
     ssh_key privatekey);
 

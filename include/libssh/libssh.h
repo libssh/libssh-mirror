@@ -452,17 +452,11 @@ LIBSSH_API int ssh_pki_import_privkey_file(const char *filename,
                                            void *auth_data,
                                            ssh_key *pkey);
 
-LIBSSH_API int ssh_pki_import_pubkey_base64(ssh_session session,
-                                            const char *b64_key,
+LIBSSH_API int ssh_pki_import_pubkey_base64(const char *b64_key,
                                             enum ssh_keytypes_e type,
                                             ssh_key *pkey);
-LIBSSH_API int ssh_pki_import_pubkey_blob(ssh_session session,
-                                          const ssh_string key_blob,
+LIBSSH_API int ssh_pki_import_pubkey_file(const char *filename,
                                           ssh_key *pkey);
-LIBSSH_API int ssh_pki_import_pubkey_file(ssh_session session,
-                                          const char *filename,
-                                          ssh_key *pkey);
-LIBSSH_API ssh_string ssh_pki_publickey_to_blob(const ssh_key key);
 LIBSSH_API int ssh_pki_publickey_to_base64(const ssh_key key,
                                            unsigned char **b64_key,
                                            enum ssh_keytypes_e *ptype);

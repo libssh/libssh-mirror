@@ -389,8 +389,7 @@ ssh_private_key ssh_pki_convert_key_to_privatekey(const ssh_key key) {
     return privkey;
 }
 
-static int pki_import_pubkey_buffer(ssh_session session,
-                                    ssh_buffer buffer,
+static int pki_import_pubkey_buffer(ssh_buffer buffer,
                                     enum ssh_keytypes_e type,
                                     ssh_key *pkey) {
     ssh_key key;
@@ -498,9 +497,7 @@ static int pki_import_pubkey_buffer(ssh_session session,
             break;
         case SSH_KEYTYPE_ECDSA:
         case SSH_KEYTYPE_UNKNOWN:
-            ssh_set_error(session, SSH_FATAL,
-                    "Unknown public key protocol %d",
-                    type);
+            ssh_pki_log("Unknown public key protocol %d", type);
             goto fail;
     }
 
@@ -515,8 +512,6 @@ fail:
 /**
  * @brief Import a base64 formated public key from a memory c-string.
  *
- * @param[in]  session  The ssh session to use.
- *
  * @param[in]  b64_key  The base64 key to format.
  *
  * @param[in]  type     The type of the key to format.
@@ -528,15 +523,14 @@ fail:
  *
  * @see ssh_key_free()
  */
-int ssh_pki_import_pubkey_base64(ssh_session session,
-                                 const char *b64_key,
+int ssh_pki_import_pubkey_base64(const char *b64_key,
                                  enum ssh_keytypes_e type,
                                  ssh_key *pkey) {
     ssh_buffer buffer;
     ssh_string type_s;
     int rc;
 
-    if (session == NULL || b64_key == NULL || pkey == NULL) {
+    if (b64_key == NULL || pkey == NULL) {
         return SSH_ERROR;
     }
 
@@ -552,7 +546,7 @@ int ssh_pki_import_pubkey_base64(ssh_session session,
     }
     ssh_string_free(type_s);
 
-    rc = pki_import_pubkey_buffer(session, buffer, type, pkey);
+    rc = pki_import_pubkey_buffer(buffer, type, pkey);
     ssh_buffer_free(buffer);
 
     return rc;
@@ -562,8 +556,6 @@ int ssh_pki_import_pubkey_base64(ssh_session session,
  * @internal
  *
  * @brief Import a public key from a ssh string.
- *
- * @param[in]  session  The ssh session to use.
  *
  * @param[in]  key_blob The key blob to import as specified in RFC 4253 section
  *                      6.6 "Public Key Algorithms".
@@ -575,8 +567,7 @@ int ssh_pki_import_pubkey_base64(ssh_session session,
  *
  * @see ssh_key_free()
  */
-int ssh_pki_import_pubkey_blob(ssh_session session,
-                               const ssh_string key_blob,
+int ssh_pki_import_pubkey_blob(const ssh_string key_blob,
                                ssh_key *pkey) {
     ssh_buffer buffer;
     ssh_string type_s = NULL;
@@ -589,32 +580,31 @@ int ssh_pki_import_pubkey_blob(ssh_session session,
 
     buffer = ssh_buffer_new();
     if (buffer == NULL) {
-        ssh_set_error_oom(session);
+        ssh_pki_log("Out of memory!");
         return SSH_ERROR;
     }
 
     rc = buffer_add_data(buffer, ssh_string_data(key_blob),
             ssh_string_len(key_blob));
     if (rc < 0) {
-        ssh_set_error_oom(session);
+        ssh_pki_log("Out of memory!");
         goto fail;
     }
 
     type_s = buffer_get_ssh_string(buffer);
     if (type_s == NULL) {
-        ssh_set_error(session, SSH_FATAL, "Invalid public key format");
+        ssh_pki_log("Out of memory!");
         goto fail;
     }
 
     type_c = ssh_string_to_char(type_s);
     if (type_c == NULL) {
-        ssh_set_error_oom(session);
+        ssh_pki_log("Out of memory!");
         goto fail;
     }
     ssh_string_free(type_s);
 
-    rc = pki_import_pubkey_buffer(session, buffer,
-            ssh_key_type_from_name(type_c), pkey);
+    rc = pki_import_pubkey_buffer(buffer, ssh_key_type_from_name(type_c), pkey);
 
     ssh_buffer_free(buffer);
     free(type_c);
@@ -628,8 +618,7 @@ fail:
     return SSH_ERROR;
 }
 
-int ssh_pki_import_pubkey_file(ssh_session session, const char *filename,
-        ssh_key *pkey)
+int ssh_pki_import_pubkey_file(const char *filename, ssh_key *pkey)
 {
     enum ssh_keytypes_e type;
     struct stat sb;
@@ -639,34 +628,28 @@ int ssh_pki_import_pubkey_file(ssh_session session, const char *filename,
     off_t size;
     int rc;
 
-    if (session == NULL || pkey == NULL) {
-        return SSH_ERROR;
-    }
-
-    if (filename == NULL || *filename == '\0') {
+    if (pkey == NULL || filename == NULL || *filename == '\0') {
         return SSH_ERROR;
     }
 
     rc = stat(filename, &sb);
     if (rc < 0) {
-        ssh_set_error(session, SSH_REQUEST_DENIED,
-                      "Error gettint stat of %s: %s",
-                      filename, strerror(errno));
+        ssh_pki_log("Error gettint stat of %s: %s",
+                    filename, strerror(errno));
         return SSH_ERROR;
     }
 
     file = fopen(filename, "r");
     if (file == NULL) {
-        ssh_set_error(session, SSH_REQUEST_DENIED,
-                      "Error opening %s: %s",
-                      filename, strerror(errno));
+        ssh_pki_log("Error opening %s: %s",
+                    filename, strerror(errno));
         return SSH_ERROR;
     }
 
     key_buf = malloc(sb.st_size + 1);
     if (key_buf == NULL) {
         fclose(file);
-        ssh_set_error_oom(session);
+        ssh_pki_log("Out of memory!");
         return SSH_ERROR;
     }
 
@@ -675,9 +658,8 @@ int ssh_pki_import_pubkey_file(ssh_session session, const char *filename,
 
     if (size != sb.st_size) {
         SAFE_FREE(key_buf);
-        ssh_set_error(session, SSH_FATAL,
-                      "Error reading %s: %s",
-                      filename, strerror(errno));
+        ssh_pki_log("Error reading %s: %s",
+                    filename, strerror(errno));
         return SSH_ERROR;
     }
 
@@ -694,7 +676,7 @@ int ssh_pki_import_pubkey_file(ssh_session session, const char *filename,
     while (!isspace((int)*p)) p++;
     *p = '\0';
 
-    rc = ssh_pki_import_pubkey_base64(session, q, type, pkey);
+    rc = ssh_pki_import_pubkey_base64(q, type, pkey);
     SAFE_FREE(key_buf);
 
     return rc;

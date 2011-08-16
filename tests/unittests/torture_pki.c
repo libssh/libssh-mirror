@@ -284,7 +284,7 @@ static void torture_pki_publickey_dsa_base64(void **state)
     while (*p != ' ') p++;
     *p = '\0';
 
-    rc = ssh_pki_import_pubkey_base64(session, q, type, &key);
+    rc = ssh_pki_import_pubkey_base64(q, type, &key);
     assert_true(rc == 0);
 
     rc = ssh_pki_publickey_to_base64(key, &b64_key, &type);
@@ -322,7 +322,7 @@ static void torture_pki_publickey_rsa_base64(void **state)
     while (*p != ' ') p++;
     *p = '\0';
 
-    rc = ssh_pki_import_pubkey_base64(session, q, type, &key);
+    rc = ssh_pki_import_pubkey_base64(q, type, &key);
     assert_true(rc == 0);
 
     rc = ssh_pki_publickey_to_base64(key, &b64_key, &type);

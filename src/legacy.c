@@ -348,7 +348,9 @@ ssh_string publickey_from_file(ssh_session session, const char *filename,
     ssh_string key_str;
     int rc;
 
-    rc = ssh_pki_import_pubkey_file(session, filename, &key);
+    (void) session; /* unused */
+
+    rc = ssh_pki_import_pubkey_file(filename, &key);
     if (rc < 0) {
         return NULL;
     }
@@ -377,7 +379,9 @@ ssh_public_key publickey_from_string(ssh_session session, ssh_string pubkey_s) {
     ssh_key key;
     int rc;
 
-    rc = ssh_pki_import_pubkey_blob(session, pubkey_s, &key);
+    (void) session; /* unused */
+
+    rc = ssh_pki_import_pubkey_blob(pubkey_s, &key);
     if (rc < 0) {
         return NULL;
     }
