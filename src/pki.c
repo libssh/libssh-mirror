@@ -733,20 +733,20 @@ ssh_string ssh_pki_publickey_to_blob(const ssh_key key)
 int ssh_pki_export_publickey_base64(const ssh_key key,
                                     char **b64_key)
 {
-    ssh_string key_str;
+    ssh_string key_blob;
     unsigned char *b64;
 
     if (key == NULL || b64_key == NULL) {
         return SSH_ERROR;
     }
 
-    key_str = pki_publickey_to_string(key);
-    if (key_str == NULL) {
+    key_blob = pki_publickey_to_string(key);
+    if (key_blob == NULL) {
         return SSH_ERROR;
     }
 
-    b64 = bin_to_base64(ssh_string_data(key_str), ssh_string_len(key_str));
-    ssh_string_free(key_str);
+    b64 = bin_to_base64(ssh_string_data(key_blob), ssh_string_len(key_blob));
+    ssh_string_free(key_blob);
     if (b64 == NULL) {
         return SSH_ERROR;
     }

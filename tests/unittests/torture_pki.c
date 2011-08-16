@@ -93,6 +93,26 @@ static char *read_file(const char *filename) {
     return key;
 }
 
+static int torture_read_one_line(const char *filename, char *buffer, size_t len) {
+  FILE *fp;
+  size_t rc;
+
+  fp = fopen(filename, "r");
+  if (fp == NULL) {
+    return -1;
+  }
+
+  rc = fread(buffer, len, 1, fp);
+  if (rc != 0 || ferror(fp)) {
+    fclose(fp);
+    return -1;
+  }
+
+  fclose(fp);
+
+  return 0;
+}
+
 static void torture_pki_import_privkey_base64_RSA(void **state) {
     ssh_session session = *state;
     int rc;
@@ -333,6 +353,45 @@ static void torture_pki_publickey_rsa_base64(void **state)
     ssh_key_free(key);
 }
 
+static void torture_generate_pubkey_from_privkey(void **state) {
+    char pubkey_original[4096] = {0};
+    char pubkey_generated[4096] = {0};
+    ssh_key privkey;
+    ssh_key pubkey;
+    int rc;
+
+    rc = torture_read_one_line(LIBSSH_DSA_TESTKEY ".pub",
+                               pubkey_original,
+                               sizeof(pubkey_original));
+    assert_true(rc == 0);
+
+    /* remove the public key, generate it from the private key and write it. */
+    unlink(LIBSSH_RSA_TESTKEY ".pub");
+
+    rc = ssh_pki_import_privkey_file(LIBSSH_DSA_TESTKEY,
+                                     NULL,
+                                     NULL,
+                                     NULL,
+                                     &privkey);
+    assert_true(rc == 0);
+
+    pubkey = ssh_pki_publickey_from_privatekey(privkey);
+    assert_true(pubkey != NULL);
+
+    rc = ssh_pki_export_publickey_file(pubkey, LIBSSH_DSA_TESTKEY ".pub");
+    assert_true(rc == 0);
+
+    rc = torture_read_one_line(LIBSSH_DSA_TESTKEY ".pub",
+                               pubkey_generated,
+                               sizeof(pubkey_generated));
+    assert_true(rc == 0);
+
+    assert_string_equal(pubkey_original, pubkey_generated);
+
+    ssh_key_free(privkey);
+    ssh_key_free(pubkey);
+}
+
 int torture_run_tests(void) {
     int rc;
     const UnitTest tests[] = {
@@ -367,6 +426,9 @@ int torture_run_tests(void) {
                                  setup_rsa_key,
                                  teardown),
 
+        unit_test_setup_teardown(torture_generate_pubkey_from_privkey,
+                                 setup_dsa_key,
+                                 teardown),
 
 
     };
