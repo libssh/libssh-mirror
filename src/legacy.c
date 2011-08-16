@@ -352,6 +352,35 @@ int ssh_type_from_name(const char *name) {
     return ssh_key_type_from_name(name);
 }
 
+ssh_public_key publickey_from_string(ssh_session session, ssh_string pubkey_s) {
+    struct ssh_public_key_struct *pubkey;
+    ssh_key key;
+    int rc;
+
+    rc = ssh_pki_import_pubkey_blob(session, pubkey_s, &key);
+    if (rc < 0) {
+        return NULL;
+    }
+
+    pubkey = malloc(sizeof(struct ssh_public_key_struct));
+    if (pubkey == NULL) {
+        ssh_key_free(key);
+        return NULL;
+    }
+
+    pubkey->type = key->type;
+    pubkey->type_c = key->type_c;
+
+    pubkey->dsa_pub = key->dsa;
+    key->dsa = NULL;
+    pubkey->rsa_pub = key->rsa;
+    key->rsa = NULL;
+
+    ssh_key_free(key);
+
+    return pubkey;
+}
+
 /****************************************************************************
  * SERVER SUPPORT
  ****************************************************************************/
