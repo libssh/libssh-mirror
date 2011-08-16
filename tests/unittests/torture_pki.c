@@ -310,6 +310,7 @@ static void torture_pki_publickey_dsa_base64(void **state)
 
     assert_string_equal(q, b64_key);
 
+    free(b64_key);
     free(key_buf);
     ssh_key_free(key);
 }
@@ -347,6 +348,7 @@ static void torture_pki_publickey_rsa_base64(void **state)
 
     assert_string_equal(q, b64_key);
 
+    free(b64_key);
     free(key_buf);
     ssh_key_free(key);
 }
