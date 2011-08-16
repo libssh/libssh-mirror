@@ -381,6 +381,29 @@ ssh_public_key publickey_from_string(ssh_session session, ssh_string pubkey_s) {
     return pubkey;
 }
 
+ssh_string publickey_to_string(ssh_public_key pubkey) {
+    ssh_key key;
+    ssh_string key_blob;
+
+    key = ssh_key_new();
+    if (key == NULL) {
+        return NULL;
+    }
+
+    key->type = pubkey->type;
+    key->type_c = pubkey->type_c;
+
+    key->dsa = pubkey->dsa_pub;
+    key->rsa = pubkey->rsa_pub;
+
+    key_blob = ssh_pki_publickey_to_blob(key);
+
+    key->dsa = NULL;
+    key->rsa = NULL;
+    ssh_key_free(key);
+
+    return key_blob;
+}
 /****************************************************************************
  * SERVER SUPPORT
  ****************************************************************************/
