@@ -10,51 +10,46 @@
 #define LIBSSH_PASSPHRASE "libssh-rocks"
 
 static void setup_rsa_key(void **state) {
-    ssh_session session;
     int rc;
+
+    (void) state; /* unused */
 
     unlink(LIBSSH_RSA_TESTKEY);
     unlink(LIBSSH_RSA_TESTKEY ".pub");
 
     rc = system("ssh-keygen -t rsa -q -N \"\" -f " LIBSSH_RSA_TESTKEY);
     assert_true(rc == 0);
-
-    session = ssh_new();
-    *state = session;
 }
 
 static void setup_dsa_key(void **state) {
-    ssh_session session;
     int rc;
+
+    (void) state; /* unused */
 
     unlink(LIBSSH_DSA_TESTKEY);
     unlink(LIBSSH_DSA_TESTKEY ".pub");
 
     rc = system("ssh-keygen -t dsa -q -N \"\" -f " LIBSSH_DSA_TESTKEY);
     assert_true(rc == 0);
-
-    session = ssh_new();
-    *state = session;
 }
 
 static void setup_both_keys(void **state) {
+    (void) state; /* unused */
+
     setup_rsa_key(state);
-    ssh_free(*state);
     setup_dsa_key(state);
 }
 
 static void setup_both_keys_passphrase(void **state) {
-    ssh_session session;
     int rc;
+
+    (void) state; /* unused */
 
     rc = system("ssh-keygen -t rsa -q -N " LIBSSH_PASSPHRASE " -f " LIBSSH_RSA_TESTKEY);
     assert_true(rc == 0);
 
     rc = system("ssh-keygen -t dsa -q -N " LIBSSH_PASSPHRASE " -f " LIBSSH_DSA_TESTKEY);
     assert_true(rc == 0);
-
-    session = ssh_new();
-    *state = session;
 }
 
 static void teardown(void **state) {
@@ -114,12 +109,13 @@ static int torture_read_one_line(const char *filename, char *buffer, size_t len)
 }
 
 static void torture_pki_import_privkey_base64_RSA(void **state) {
-    ssh_session session = *state;
     int rc;
     char *key_str;
     ssh_key key;
     const char *passphrase = LIBSSH_PASSPHRASE;
     enum ssh_keytypes_e type;
+
+    (void) state; /* unused */
 
     key_str = read_file(LIBSSH_RSA_TESTKEY);
     assert_true(key_str != NULL);
@@ -138,11 +134,12 @@ static void torture_pki_import_privkey_base64_RSA(void **state) {
 }
 
 static void torture_pki_import_privkey_base64_NULL_key(void **state) {
-    ssh_session session = *state;
     int rc;
     char *key_str;
     ssh_key key;
     const char *passphrase = LIBSSH_PASSPHRASE;
+
+    (void) state; /* unused */
 
     key_str = read_file(LIBSSH_RSA_TESTKEY);
     assert_true(key_str != NULL);
@@ -159,11 +156,12 @@ static void torture_pki_import_privkey_base64_NULL_key(void **state) {
 }
 
 static void torture_pki_import_privkey_base64_NULL_str(void **state) {
-    ssh_session session = *state;
     int rc;
     char *key_str;
     ssh_key key = NULL;
     const char *passphrase = LIBSSH_PASSPHRASE;
+
+    (void) state; /* unused */
 
     key_str = read_file(LIBSSH_RSA_TESTKEY);
     assert_true(key_str != NULL);
@@ -177,11 +175,12 @@ static void torture_pki_import_privkey_base64_NULL_str(void **state) {
 }
 
 static void torture_pki_import_privkey_base64_DSA(void **state) {
-    ssh_session session = *state;
     int rc;
     char *key_str;
     ssh_key key;
     const char *passphrase = LIBSSH_PASSPHRASE;
+
+    (void) state; /* unused */
 
     key_str = read_file(LIBSSH_DSA_TESTKEY);
     assert_true(key_str != NULL);
@@ -194,11 +193,12 @@ static void torture_pki_import_privkey_base64_DSA(void **state) {
 }
 
 static void torture_pki_import_privkey_base64_passphrase(void **state) {
-    ssh_session session = *state;
     int rc;
     char *key_str;
     ssh_key key = NULL;
     const char *passphrase = LIBSSH_PASSPHRASE;
+
+    (void) state; /* unused */
 
     key_str = read_file(LIBSSH_RSA_TESTKEY);
     assert_true(key_str != NULL);
@@ -244,12 +244,13 @@ static void torture_pki_import_privkey_base64_passphrase(void **state) {
 }
 
 static void torture_pki_pki_publickey_from_privatekey_RSA(void **state) {
-    ssh_session session = *state;
     int rc;
     char *key_str;
     ssh_key key;
     ssh_key pubkey;
     const char *passphrase = NULL;
+
+    (void) state; /* unused */
 
     key_str = read_file(LIBSSH_RSA_TESTKEY);
     assert_true(key_str != NULL);
@@ -266,12 +267,13 @@ static void torture_pki_pki_publickey_from_privatekey_RSA(void **state) {
 }
 
 static void torture_pki_pki_publickey_from_privatekey_DSA(void **state) {
-    ssh_session session = *state;
     int rc;
     char *key_str;
     ssh_key key;
     ssh_key pubkey;
     const char *passphrase = NULL;
+
+    (void) state; /* unused */
 
     key_str = read_file(LIBSSH_DSA_TESTKEY);
     assert_true(key_str != NULL);
@@ -289,12 +291,13 @@ static void torture_pki_pki_publickey_from_privatekey_DSA(void **state) {
 
 static void torture_pki_publickey_dsa_base64(void **state)
 {
-    ssh_session session = *state;
     enum ssh_keytypes_e type;
     char *b64_key, *key_buf, *p;
     const char *q;
     ssh_key key;
     int rc;
+
+    (void) state; /* unused */
 
     key_buf = read_file(LIBSSH_DSA_TESTKEY ".pub");
     assert_true(key_buf != NULL);
@@ -325,12 +328,13 @@ static void torture_pki_publickey_dsa_base64(void **state)
 
 static void torture_pki_publickey_rsa_base64(void **state)
 {
-    ssh_session session = *state;
     enum ssh_keytypes_e type;
     char *b64_key, *key_buf, *p;
     const char *q;
     ssh_key key;
     int rc;
+
+    (void) state; /* unused */
 
     key_buf = read_file(LIBSSH_RSA_TESTKEY ".pub");
     assert_true(key_buf != NULL);
@@ -366,6 +370,8 @@ static void torture_generate_pubkey_from_privkey(void **state) {
     ssh_key privkey;
     ssh_key pubkey;
     int rc;
+
+    (void) state; /* unused */
 
     rc = torture_read_one_line(LIBSSH_DSA_TESTKEY ".pub",
                                pubkey_original,
