@@ -316,7 +316,7 @@ static void torture_pki_publickey_dsa_base64(void **state)
     rc = ssh_pki_import_pubkey_base64(q, type, &key);
     assert_true(rc == 0);
 
-    rc = ssh_pki_export_publickey_base64(key, &b64_key);
+    rc = ssh_pki_export_pubkey_base64(key, &b64_key);
     assert_true(rc == 0);
 
     assert_string_equal(q, b64_key);
@@ -354,7 +354,7 @@ static void torture_pki_publickey_rsa_base64(void **state)
     rc = ssh_pki_import_pubkey_base64(q, type, &key);
     assert_true(rc == 0);
 
-    rc = ssh_pki_export_publickey_base64(key, &b64_key);
+    rc = ssh_pki_export_pubkey_base64(key, &b64_key);
     assert_true(rc == 0);
 
     assert_string_equal(q, b64_key);
@@ -391,7 +391,7 @@ static void torture_generate_pubkey_from_privkey(void **state) {
     pubkey = ssh_pki_publickey_from_privatekey(privkey);
     assert_true(pubkey != NULL);
 
-    rc = ssh_pki_export_publickey_file(pubkey, LIBSSH_DSA_TESTKEY ".pub");
+    rc = ssh_pki_export_pubkey_file(pubkey, LIBSSH_DSA_TESTKEY ".pub");
     assert_true(rc == 0);
 
     rc = torture_read_one_line(LIBSSH_DSA_TESTKEY ".pub",

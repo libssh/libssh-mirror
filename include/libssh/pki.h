@@ -60,7 +60,7 @@ int pki_pubkey_build_dss(ssh_key key,
 int pki_pubkey_build_rsa(ssh_key key,
                          ssh_string e,
                          ssh_string n);
-ssh_string pki_publickey_to_string(const ssh_key key);
+ssh_string pki_publickey_to_blob(const ssh_key key);
 
 
 /* half public ssh pki functions */
@@ -72,7 +72,7 @@ ssh_key ssh_pki_publickey_from_privatekey(const ssh_key privkey);
 int ssh_pki_import_pubkey_blob(const ssh_string key_blob,
                                ssh_key *pkey);
 
-ssh_string ssh_pki_publickey_to_blob(const ssh_key key);
+ssh_string ssh_pki_export_pubkey_blob(const ssh_key key);
 
 ssh_string ssh_pki_do_sign(ssh_session session, ssh_buffer sigbuf,
     ssh_key privatekey);

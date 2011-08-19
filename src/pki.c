@@ -710,13 +710,13 @@ ssh_key ssh_pki_publickey_from_privatekey(const ssh_key privkey) {
  *
  * @return              The key_blob or NULL on error.
  */
-ssh_string ssh_pki_publickey_to_blob(const ssh_key key)
+ssh_string ssh_pki_export_pubkey_blob(const ssh_key key)
 {
     if (key == NULL) {
         return NULL;
     }
 
-    return pki_publickey_to_string(key);
+    return pki_publickey_to_blob(key);
 }
 
 /**
@@ -730,8 +730,8 @@ ssh_string ssh_pki_publickey_to_blob(const ssh_key key)
  *
  * @see ssh_string_free_char()
  */
-int ssh_pki_export_publickey_base64(const ssh_key key,
-                                    char **b64_key)
+int ssh_pki_export_pubkey_base64(const ssh_key key,
+                                 char **b64_key)
 {
     ssh_string key_blob;
     unsigned char *b64;
@@ -740,7 +740,7 @@ int ssh_pki_export_publickey_base64(const ssh_key key,
         return SSH_ERROR;
     }
 
-    key_blob = pki_publickey_to_string(key);
+    key_blob = pki_publickey_to_blob(key);
     if (key_blob == NULL) {
         return SSH_ERROR;
     }
@@ -756,8 +756,8 @@ int ssh_pki_export_publickey_base64(const ssh_key key,
     return SSH_OK;
 }
 
-int ssh_pki_export_publickey_file(const ssh_key key,
-                                  const char *filename)
+int ssh_pki_export_pubkey_file(const ssh_key key,
+                               const char *filename)
 {
     char key_buf[4096];
     char host[256];
@@ -781,7 +781,7 @@ int ssh_pki_export_publickey_file(const ssh_key key,
         return SSH_ERROR;
     }
 
-    rc = ssh_pki_export_publickey_base64(key, &b64_key);
+    rc = ssh_pki_export_pubkey_base64(key, &b64_key);
     if (rc < 0) {
         free(user);
         return SSH_ERROR;

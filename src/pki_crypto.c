@@ -350,7 +350,7 @@ int pki_pubkey_build_rsa(ssh_key key,
     return SSH_OK;
 }
 
-ssh_string pki_publickey_to_string(const ssh_key key)
+ssh_string pki_publickey_to_blob(const ssh_key key)
 {
     ssh_buffer buffer;
     ssh_string type_s;
