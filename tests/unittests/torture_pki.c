@@ -119,12 +119,19 @@ static void torture_pki_import_privkey_base64_RSA(void **state) {
     char *key_str;
     ssh_key key;
     const char *passphrase = LIBSSH_PASSPHRASE;
+    enum ssh_keytypes_e type;
 
     key_str = read_file(LIBSSH_RSA_TESTKEY);
     assert_true(key_str != NULL);
 
     rc = ssh_pki_import_privkey_base64(key_str, passphrase, NULL, NULL, &key);
     assert_true(rc == 0);
+
+    type = ssh_key_type(key);
+    assert_true(type == SSH_KEYTYPE_RSA);
+
+    rc = ssh_key_is_public(key);
+    assert_true(rc == 1);
 
     free(key_str);
     ssh_key_free(key);
