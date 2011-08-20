@@ -608,9 +608,6 @@ ssh_key pki_private_key_from_base64(const char *b64_key,
                                     ssh_auth_callback auth_fn,
                                     void *auth_data)
 {
-    ssh_auth_callback auth_cb = NULL;
-    void *auth_ud = NULL;
-
     gcry_sexp_t dsa = NULL;
     gcry_sexp_t rsa = NULL;
     ssh_key key = NULL;
