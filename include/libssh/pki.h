@@ -46,7 +46,7 @@ struct ssh_key_struct {
     void *cert;
 };
 
-void ssh_pki_log(const char *format, ...);
+void ssh_pki_log(const char *format, ...) PRINTF_ATTRIBUTE(1, 2);
 
 /* internal pki functions */
 ssh_key pki_key_dup(const ssh_key key, int demote);

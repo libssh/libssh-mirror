@@ -22,6 +22,7 @@
 #include "config.h"
 #include "libssh/session.h"
 #include "libssh/ecdh.h"
+#include "libssh/dh.h"
 #include "libssh/buffer.h"
 #include "libssh/ssh2.h"
 
