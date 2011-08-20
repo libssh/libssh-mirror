@@ -46,7 +46,24 @@ struct ssh_key_struct {
     void *cert;
 };
 
+struct ssh_signature_struct {
+    enum ssh_keytypes_e type;
+#ifdef HAVE_LIBGCRYPT
+    gcry_sexp_t dsa_sig;
+    gcry_sexp_t rsa_sig;
+#elif defined HAVE_LIBCRYPTO
+    DSA_SIG *dsa_sig;
+    ssh_string rsa_sig;
+#endif
+    void *ecdsa;
+};
+
+typedef struct ssh_signature_struct *ssh_signature;
+
 void ssh_pki_log(const char *format, ...) PRINTF_ATTRIBUTE(1, 2);
+
+ssh_signature ssh_signature_new(void);
+void ssh_signature_free(ssh_signature sign);
 
 /* internal pki functions */
 ssh_key pki_key_dup(const ssh_key key, int demote);
