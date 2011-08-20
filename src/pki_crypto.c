@@ -485,6 +485,36 @@ fail:
     return NULL;
 }
 
+static ssh_string _RSA_do_sign(const unsigned char *payload,
+                               int len,
+                               RSA *privkey)
+{
+    ssh_string sign = NULL;
+    unsigned char *buffer = NULL;
+    unsigned int size;
+
+    buffer = malloc(RSA_size(privkey));
+    if (buffer == NULL) {
+        return NULL;
+    }
+
+    if (RSA_sign(NID_sha1, payload, len, buffer, &size, privkey) == 0) {
+        SAFE_FREE(buffer);
+        return NULL;
+    }
+
+    sign = ssh_string_new(size);
+    if (sign == NULL) {
+        SAFE_FREE(buffer);
+        return NULL;
+    }
+
+    ssh_string_fill(sign, buffer, size);
+    SAFE_FREE(buffer);
+
+    return sign;
+}
+
 struct signature_struct *pki_do_sign(ssh_key privatekey,
                                      const unsigned char *hash) {
     struct signature_struct *sign;
@@ -513,7 +543,7 @@ struct signature_struct *pki_do_sign(ssh_key privatekey,
             break;
         case SSH_KEYTYPE_RSA:
         case SSH_KEYTYPE_RSA1:
-            sign->rsa_sign = RSA_do_sign(hash + 1, SHA_DIGEST_LEN,
+            sign->rsa_sign = _RSA_do_sign(hash + 1, SHA_DIGEST_LEN,
                     privatekey->rsa);
             if (sign->rsa_sign == NULL) {
                 signature_free(sign);
