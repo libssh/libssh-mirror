@@ -157,11 +157,11 @@ err:
  */
 void ssh_free(ssh_session session) {
   int i;
-  enter_function();
 
   if (session == NULL) {
     return;
   }
+  enter_function();
 
   SAFE_FREE(session->serverbanner);
   SAFE_FREE(session->clientbanner);
