@@ -58,8 +58,6 @@ static void teardown(void **state) {
 
     unlink(LIBSSH_RSA_TESTKEY);
     unlink(LIBSSH_RSA_TESTKEY ".pub");
-
-    ssh_free(*state);
 }
 
 static char *read_file(const char *filename) {
