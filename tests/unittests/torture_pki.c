@@ -53,6 +53,8 @@ static void setup_both_keys_passphrase(void **state) {
 }
 
 static void teardown(void **state) {
+    (void) state; /* unused */
+
     unlink(LIBSSH_DSA_TESTKEY);
     unlink(LIBSSH_DSA_TESTKEY ".pub");
 
