@@ -178,26 +178,30 @@ const char *ssh_key_type_to_char(enum ssh_keytypes_e type) {
  * @return              The enum ssh key type.
  */
 enum ssh_keytypes_e ssh_key_type_from_name(const char *name) {
-  if (strcmp(name, "rsa1") == 0) {
-    return SSH_KEYTYPE_RSA1;
-  } else if (strcmp(name, "rsa") == 0) {
-    return SSH_KEYTYPE_RSA;
-  } else if (strcmp(name, "dsa") == 0) {
-    return SSH_KEYTYPE_DSS;
-  } else if (strcmp(name, "ssh-rsa1") == 0) {
-    return SSH_KEYTYPE_RSA1;
-  } else if (strcmp(name, "ssh-rsa") == 0) {
-    return SSH_KEYTYPE_RSA;
-  } else if (strcmp(name, "ssh-dss") == 0) {
-    return SSH_KEYTYPE_DSS;
-  } else if (strcmp(name, "ssh-ecdsa") == 0
-             || strcmp(name, "ecdsa") == 0
-             || strcmp(name, "ecdsa-sha2-nistp256") == 0
-             || strcmp(name, "ecdsa-sha2-nistp384") == 0
-             || strcmp(name, "ecdsa-sha2-nistp521") == 0) {
-  }
+    if (name == NULL) {
+        return SSH_KEYTYPE_UNKNOWN;
+    }
 
-  return SSH_KEYTYPE_UNKNOWN;
+    if (strcmp(name, "rsa1") == 0) {
+        return SSH_KEYTYPE_RSA1;
+    } else if (strcmp(name, "rsa") == 0) {
+        return SSH_KEYTYPE_RSA;
+    } else if (strcmp(name, "dsa") == 0) {
+        return SSH_KEYTYPE_DSS;
+    } else if (strcmp(name, "ssh-rsa1") == 0) {
+        return SSH_KEYTYPE_RSA1;
+    } else if (strcmp(name, "ssh-rsa") == 0) {
+        return SSH_KEYTYPE_RSA;
+    } else if (strcmp(name, "ssh-dss") == 0) {
+        return SSH_KEYTYPE_DSS;
+    } else if (strcmp(name, "ssh-ecdsa") == 0
+            || strcmp(name, "ecdsa") == 0
+            || strcmp(name, "ecdsa-sha2-nistp256") == 0
+            || strcmp(name, "ecdsa-sha2-nistp384") == 0
+            || strcmp(name, "ecdsa-sha2-nistp521") == 0) {
+    }
+
+    return SSH_KEYTYPE_UNKNOWN;
 }
 
 /**
