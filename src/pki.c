@@ -44,6 +44,7 @@
 #include "libssh/session.h"
 #include "libssh/priv.h"
 #include "libssh/pki.h"
+#include "libssh/pki_priv.h"
 #include "libssh/keys.h"
 #include "libssh/buffer.h"
 #include "libssh/misc.h"

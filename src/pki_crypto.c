@@ -36,6 +36,7 @@
 #include "libssh/session.h"
 #include "libssh/callbacks.h"
 #include "libssh/pki.h"
+#include "libssh/pki_priv.h"
 #include "libssh/keys.h"
 #include "libssh/dh.h"
 

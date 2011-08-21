@@ -56,6 +56,7 @@
 #include "libssh/misc.h"
 #include "libssh/keys.h"
 #include "libssh/pki.h"
+#include "libssh/pki_priv.h"
 
 /*todo: remove this include */
 #include "libssh/string.h"

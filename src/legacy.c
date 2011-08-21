@@ -31,6 +31,7 @@
 #include <libssh/server.h>
 #include <libssh/buffer.h>
 #include <libssh/pki.h>
+#include "libssh/pki_priv.h"
 #include <libssh/keys.h>
 #include <libssh/keyfiles.h>
 

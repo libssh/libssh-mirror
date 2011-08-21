@@ -22,11 +22,6 @@
 #ifndef PKI_H_
 #define PKI_H_
 
-#define RSA_HEADER_BEGIN "-----BEGIN RSA PRIVATE KEY-----"
-#define RSA_HEADER_END "-----END RSA PRIVATE KEY-----"
-#define DSA_HEADER_BEGIN "-----BEGIN DSA PRIVATE KEY-----"
-#define DSA_HEADER_END "-----END DSA PRIVATE KEY-----"
-
 #define SSH_KEY_FLAG_EMPTY   0x0
 #define SSH_KEY_FLAG_PUBLIC  0x0001
 #define SSH_KEY_FLAG_PRIVATE 0x0002
@@ -60,60 +55,34 @@ struct ssh_signature_struct {
 
 typedef struct ssh_signature_struct *ssh_signature;
 
-void ssh_pki_log(const char *format, ...) PRINTF_ATTRIBUTE(1, 2);
-
-ssh_signature ssh_signature_new(void);
-void ssh_signature_free(ssh_signature sign);
-
-/* internal pki functions */
-ssh_key pki_key_dup(const ssh_key key, int demote);
-
-enum ssh_keytypes_e pki_privatekey_type_from_string(const char *privkey);
-int pki_pubkey_build_dss(ssh_key key,
-                         ssh_string p,
-                         ssh_string q,
-                         ssh_string g,
-                         ssh_string pubkey);
-int pki_pubkey_build_rsa(ssh_key key,
-                         ssh_string e,
-                         ssh_string n);
-ssh_string pki_publickey_to_blob(const ssh_key key);
-
-
-/* half public ssh pki functions */
+/* SSH Key Functions */
 ssh_key ssh_key_dup(const ssh_key key);
 void ssh_key_clean (ssh_key key);
 
-ssh_key ssh_pki_publickey_from_privatekey(const ssh_key privkey);
-
-int ssh_pki_import_pubkey_blob(const ssh_string key_blob,
-                               ssh_key *pkey);
-
-ssh_string ssh_pki_export_pubkey_blob(const ssh_key key);
+/* SSH Signature Functions */
+ssh_signature ssh_signature_new(void);
+void ssh_signature_free(ssh_signature sign);
 
 int ssh_pki_export_signature_blob(const ssh_signature sign,
                                   ssh_string *sign_blob);
 int ssh_pki_import_signature_blob(const ssh_string sig_blob,
                                   const ssh_key pubkey,
                                   ssh_signature *psig);
+
+/* SSH Public Key Functions */
+ssh_string ssh_pki_export_pubkey_blob(const ssh_key key);
+int ssh_pki_import_pubkey_blob(const ssh_string key_blob,
+                               ssh_key *pkey);
+
+/* SSH Private Key Functions */
+ssh_key ssh_pki_publickey_from_privatekey(const ssh_key privkey);
+
+/* SSH Signing Functions */
 ssh_string ssh_pki_do_sign(ssh_session session, ssh_buffer sigbuf,
     ssh_key privatekey);
 
-/* temporary functions, to be removed after migration to ssh_key */
+/* Temporary functions, to be removed after migration to ssh_key */
 ssh_public_key ssh_pki_convert_key_to_publickey(ssh_key key);
 ssh_private_key ssh_pki_convert_key_to_privatekey(ssh_key key);
-
-
-ssh_key pki_private_key_from_base64(const char *b64_key,
-                                    const char *passphrase,
-                                    ssh_auth_callback auth_fn,
-                                    void *auth_data);
-
-ssh_string pki_signature_to_blob(const ssh_signature sign);
-ssh_signature pki_signature_from_blob(const ssh_key pubkey,
-                                      const ssh_string sig_blob,
-                                      enum ssh_keytypes_e type);
-struct signature_struct *pki_do_sign(const ssh_key privatekey,
-                                     const unsigned char *hash);
 
 #endif /* PKI_H_ */
