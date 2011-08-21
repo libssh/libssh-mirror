@@ -1160,6 +1160,70 @@ fail:
     return NULL;
 }
 
+ssh_string pki_signature_to_blob(const ssh_signature sig)
+{
+    char buffer[40] = {0};
+    const char *r = NULL;
+    const char *s = NULL;
+    gcry_sexp_t sexp;
+    size_t size = 0;
+    ssh_string sig_blob;
+
+    switch(sig->type) {
+        case SSH_KEYTYPE_DSS:
+            sexp = gcry_sexp_find_token(sig->dsa_sig, "r", 0);
+            if (sexp == NULL) {
+                return NULL;
+            }
+            r = gcry_sexp_nth_data(sexp, 1, &size);
+            /* libgcrypt put 0 when first bit is set */
+            if (*r == 0) {
+                size--;
+                r++;
+            }
+            memcpy(buffer, r + size - 20, 20);
+            gcry_sexp_release(sexp);
+
+            sexp = gcry_sexp_find_token(sig->dsa_sig, "s", 0);
+            if (sexp == NULL) {
+                return NULL;
+            }
+            s = gcry_sexp_nth_data(sexp,1,&size);
+            if (*s == 0) {
+                size--;
+                s++;
+            }
+            memcpy(buffer+ 20, s + size - 20, 20);
+            gcry_sexp_release(sexp);
+            break;
+        case SSH_KEYTYPE_RSA:
+        case SSH_KEYTYPE_RSA1:
+            sexp = gcry_sexp_find_token(sig->rsa_sig, "s", 0);
+            if (sexp == NULL) {
+                return NULL;
+            }
+            s = gcry_sexp_nth_data(sexp, 1, &size);
+            if (*s == 0) {
+                size--;
+                s++;
+            }
+
+            sig_blob = ssh_string_new(size);
+            if (sig_blob == NULL) {
+                return NULL;
+            }
+            ssh_string_fill(sig_blob, discard_const_p(char, s), size);
+
+            gcry_sexp_release(sexp);
+            break;
+        case SSH_KEYTYPE_ECDSA:
+        case SSH_KEYTYPE_UNKNOWN:
+            break;
+    }
+
+    return sig_blob;
+}
+
 struct signature_struct *pki_do_sign(ssh_key privatekey,
                                      const unsigned char *hash) {
     struct signature_struct *sign;

@@ -515,6 +515,52 @@ static ssh_string _RSA_do_sign(const unsigned char *payload,
     return sign;
 }
 
+ssh_string pki_signature_to_blob(const ssh_signature sig)
+{
+    char buffer[40] = {0};
+    ssh_string sig_blob;
+    ssh_string r;
+    ssh_string s;
+
+    switch(sig->type) {
+        case SSH_KEYTYPE_DSS:
+            r = make_bignum_string(sig->dsa_sig->r);
+            if (r == NULL) {
+                return NULL;
+            }
+            s = make_bignum_string(sig->dsa_sig->s);
+            if (s == NULL) {
+                ssh_string_free(r);
+                return NULL;
+            }
+
+            memcpy(buffer,
+                   ((char *)ssh_string_data(r)) + ssh_string_len(r) - 20,
+                   20);
+            memcpy(buffer + 20,
+                   ((char *)ssh_string_data(s)) + ssh_string_len(s) - 20,
+                   20);
+
+            ssh_string_free(r);
+            ssh_string_free(s);
+
+            sig_blob = ssh_string_new(40);
+            if (sig_blob == NULL) {
+                return NULL;
+            }
+
+            ssh_string_fill(sig_blob, buffer, 40);
+        case SSH_KEYTYPE_RSA:
+        case SSH_KEYTYPE_RSA1:
+            sig_blob = string_copy(sig->rsa_sig);
+        case SSH_KEYTYPE_ECDSA:
+        case SSH_KEYTYPE_UNKNOWN:
+            break;
+    }
+
+    return sig_blob;
+}
+
 struct signature_struct *pki_do_sign(ssh_key privatekey,
                                      const unsigned char *hash) {
     struct signature_struct *sign;

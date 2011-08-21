@@ -91,6 +91,8 @@ int ssh_pki_import_pubkey_blob(const ssh_string key_blob,
 
 ssh_string ssh_pki_export_pubkey_blob(const ssh_key key);
 
+int ssh_pki_export_signature_blob(const ssh_signature sign,
+                                  ssh_string *sign_blob);
 ssh_string ssh_pki_do_sign(ssh_session session, ssh_buffer sigbuf,
     ssh_key privatekey);
 
@@ -103,6 +105,8 @@ ssh_key pki_private_key_from_base64(const char *b64_key,
                                     const char *passphrase,
                                     ssh_auth_callback auth_fn,
                                     void *auth_data);
+
+ssh_string pki_signature_to_blob(const ssh_signature sign);
 struct signature_struct *pki_do_sign(const ssh_key privatekey,
                                      const unsigned char *hash);
 
