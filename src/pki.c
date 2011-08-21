@@ -913,6 +913,66 @@ int ssh_pki_export_signature_blob(const ssh_signature sig,
     return SSH_OK;
 }
 
+int ssh_pki_import_signature_blob(const ssh_string sig_blob,
+                                  const ssh_key pubkey,
+                                  ssh_signature *psig)
+{
+    ssh_signature sig;
+    enum ssh_keytypes_e type;
+    ssh_string str;
+    ssh_buffer buf;
+    char *type_c;
+    int rc;
+
+    if (sig_blob == NULL || psig == NULL) {
+        return SSH_ERROR;
+    }
+
+    buf = ssh_buffer_new();
+    if (buf == NULL) {
+        return SSH_ERROR;
+    }
+
+    rc = buffer_add_data(buf,
+                         ssh_string_data(sig_blob),
+                         ssh_string_len(sig_blob));
+    if (rc < 0) {
+        ssh_buffer_free(buf);
+        return SSH_ERROR;
+    }
+
+    str = buffer_get_ssh_string(buf);
+    if (str == NULL) {
+        ssh_buffer_free(buf);
+        return SSH_ERROR;
+    }
+
+    type_c = ssh_string_to_char(str);
+    ssh_string_free(str);
+    if (type_c == NULL) {
+        ssh_buffer_free(buf);
+        return SSH_ERROR;
+    }
+
+    type = ssh_key_type_from_name(type_c);
+    SAFE_FREE(type_c);
+
+    str = buffer_get_ssh_string(buf);
+    ssh_buffer_free(buf);
+    if (str == NULL) {
+        return SSH_ERROR;
+    }
+
+    sig = pki_signature_from_blob(pubkey, str, type);
+    ssh_string_free(str);
+    if (sig == NULL) {
+        return SSH_ERROR;
+    }
+
+    *psig = sig;
+    return SSH_OK;
+}
+
 /*
  * This function signs the session id (known as H) as a string then
  * the content of sigbuf */

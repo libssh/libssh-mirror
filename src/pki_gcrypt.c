@@ -1224,6 +1224,86 @@ ssh_string pki_signature_to_blob(const ssh_signature sig)
     return sig_blob;
 }
 
+ssh_signature pki_signature_from_blob(const ssh_key pubkey,
+                                      const ssh_string sig_blob,
+                                      enum ssh_keytypes_e type)
+{
+    ssh_signature sig;
+    gcry_error_t err;
+    size_t len;
+    size_t rsalen;
+
+    sig = ssh_signature_new();
+    if (sig == NULL) {
+        return NULL;
+    }
+
+    sig->type = type;
+
+    len = ssh_string_len(sig_blob);
+
+    switch(type) {
+        case SSH_KEYTYPE_DSS:
+            /* 40 is the dual signature blob len. */
+            if (len != 40) {
+                ssh_pki_log("Signature has wrong size: %lu",
+                            (unsigned long)len);
+                ssh_signature_free(sig);
+                return NULL;
+            }
+
+#ifdef DEBUG_CRYPTO
+            ssh_print_hexa("r", ssh_string_data(str), 20);
+            ssh_print_hexa("s", (unsigned char *)ssh_string_data(rs) + 20, 20);
+#endif
+
+            err = gcry_sexp_build(&sig->dsa_sig,
+                                  NULL,
+                                  "(sig-val(dsa(r %b)(s %b)))",
+                                  20,
+                                  ssh_string_data(sig_blob),
+                                  20,
+                                  (unsigned char *)ssh_string_data(sig_blob) + 20);
+            if (err) {
+                ssh_signature_free(sig);
+                return NULL;
+            }
+            break;
+        case SSH_KEYTYPE_RSA:
+        case SSH_KEYTYPE_RSA1:
+            rsalen = (gcry_pk_get_nbits(pubkey->rsa) + 7) / 8;
+
+            if (len > rsalen) {
+                ssh_pki_log("Signature is to big size: %lu",
+                            (unsigned long)len);
+                ssh_signature_free(sig);
+                return NULL;
+            }
+
+            if (len < rsalen) {
+                ssh_pki_log("RSA signature len %lu < %lu",
+                            (unsigned long)len, (unsigned long)rsalen);
+            }
+
+#ifdef DEBUG_CRYPTO
+            ssh_pki_log("RSA signature len: %lu", (unsigned long)len);
+            ssh_print_hexa("RSA signature", ssh_string_data(sig_blob), len);
+#endif
+
+            if (gcry_sexp_build(&sig->rsa_sig, NULL, "(sig-val(rsa(s %b)))",
+                        ssh_string_len(sig_blob), ssh_string_data(sig_blob))) {
+                ssh_signature_free(sig);
+                return NULL;
+            }
+        case SSH_KEYTYPE_ECDSA:
+        case SSH_KEYTYPE_UNKNOWN:
+            ssh_pki_log("Unknown signature type");
+            return NULL;
+    }
+
+    return sig;
+}
+
 struct signature_struct *pki_do_sign(ssh_key privatekey,
                                      const unsigned char *hash) {
     struct signature_struct *sign;
