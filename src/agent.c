@@ -502,6 +502,94 @@ int agent_is_running(ssh_session session) {
   return 0;
 }
 
+ssh_string ssh_agent_sign_data(ssh_session session,
+                               const ssh_key pubkey,
+                               struct ssh_buffer_struct *data)
+{
+    ssh_buffer request;
+    ssh_buffer reply;
+    ssh_string key_blob;
+    ssh_string sig_blob;
+    int type = SSH2_AGENT_FAILURE;
+    int flags = 0;
+    uint32_t dlen;
+    int rc;
+
+    request = ssh_buffer_new();
+    if (request == NULL) {
+        return NULL;
+    }
+
+    /* create request */
+    if (buffer_add_u8(request, SSH2_AGENTC_SIGN_REQUEST) < 0) {
+        return NULL;
+    }
+
+    key_blob = ssh_pki_export_pubkey_blob(pubkey);
+    if (key_blob == NULL) {
+        ssh_buffer_free(request);
+        return NULL;
+    }
+
+    /* adds len + blob */
+    rc = buffer_add_ssh_string(request, key_blob);
+    ssh_string_free(key_blob);
+    if (rc < 0) {
+        ssh_buffer_free(request);
+        return NULL;
+    }
+
+    /* Add data */
+    dlen = buffer_get_rest_len(data);
+    if (buffer_add_u32(request, htonl(dlen)) < 0) {
+        ssh_buffer_free(request);
+        return NULL;
+    }
+    if (buffer_add_data(request, buffer_get_rest(data), dlen) < 0) {
+        ssh_buffer_free(request);
+        return NULL;
+    }
+
+    if (buffer_add_u32(request, htonl(flags)) < 0) {
+        ssh_buffer_free(request);
+        return NULL;
+    }
+
+    reply = ssh_buffer_new();
+    if (reply == NULL) {
+        ssh_buffer_free(request);
+        return NULL;
+    }
+
+    /* send the request */
+    if (agent_talk(session, request, reply) < 0) {
+        ssh_buffer_free(request);
+        return NULL;
+    }
+    ssh_buffer_free(request);
+
+    /* check if reply is valid */
+    if (buffer_get_u8(reply, (uint8_t *) &type) != sizeof(uint8_t)) {
+        ssh_buffer_free(reply);
+        return NULL;
+    }
+
+    if (agent_failed(type)) {
+        ssh_log(session, SSH_LOG_RARE, "Agent reports failure in signing the key");
+        ssh_buffer_free(reply);
+        return NULL;
+    } else if (type != SSH2_AGENT_SIGN_RESPONSE) {
+        ssh_set_error(session, SSH_FATAL, "Bad authentication response: %d", type);
+        ssh_buffer_free(reply);
+        return NULL;
+    }
+
+    sig_blob = buffer_get_ssh_string(reply);
+    ssh_buffer_free(reply);
+
+    return sig_blob;
+}
+
 #endif /* _WIN32 */
 
-/* vim: set ts=2 sw=2 et cindent: */
+/* vim: set ts=4 sw=4 et cindent: */

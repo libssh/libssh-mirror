@@ -91,6 +91,9 @@ struct ssh_public_key_struct *agent_get_first_ident(struct ssh_session_struct *s
 ssh_string agent_sign_data(struct ssh_session_struct *session,
     struct ssh_buffer_struct *data,
     struct ssh_public_key_struct *pubkey);
+ssh_string ssh_agent_sign_data(ssh_session session,
+                               const ssh_key pubkey,
+                               struct ssh_buffer_struct *data);
 #endif
 
 #endif /* __AGENT_H */
