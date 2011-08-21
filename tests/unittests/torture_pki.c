@@ -108,6 +108,28 @@ static int torture_read_one_line(const char *filename, char *buffer, size_t len)
   return 0;
 }
 
+static void torture_pki_keytype(void **state) {
+    enum ssh_keytypes_e type;
+    const char *type_c;
+
+    (void) state; /* unused */
+
+    type = ssh_key_type(NULL);
+    assert_true(type == SSH_KEYTYPE_UNKNOWN);
+
+    type = ssh_key_type_from_name(NULL);
+    assert_true(type == SSH_KEYTYPE_UNKNOWN);
+
+    type = ssh_key_type_from_name("42");
+    assert_true(type == SSH_KEYTYPE_UNKNOWN);
+
+    type_c = ssh_key_type_to_char(SSH_KEYTYPE_UNKNOWN);
+    assert_true(type_c == NULL);
+
+    type_c = ssh_key_type_to_char(42);
+    assert_true(type_c == NULL);
+}
+
 static void torture_pki_import_privkey_base64_RSA(void **state) {
     int rc;
     char *key_str;
@@ -535,6 +557,8 @@ static void torture_pki_duplicate_key_dsa(void **state)
 int torture_run_tests(void) {
     int rc;
     const UnitTest tests[] = {
+        unit_test(torture_pki_keytype),
+
         /* ssh_pki_import_privkey_base64 */
         unit_test_setup_teardown(torture_pki_import_privkey_base64_NULL_key,
                                  setup_rsa_key,
