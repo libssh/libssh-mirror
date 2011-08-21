@@ -811,11 +811,11 @@ ssh_key pki_key_dup(const ssh_key key, int demote)
                     goto fail;
                 }
                 tmp = gcry_sexp_nth_data(sexp, 1, &size);
-                y = ssh_string_new(size);
-                if (y == NULL) {
+                x = ssh_string_new(size);
+                if (x == NULL) {
                     goto fail;
                 }
-                ssh_string_fill(y, (char *)tmp, size);
+                ssh_string_fill(x, (char *)tmp, size);
                 gcry_sexp_release(sexp);
 
                 err = gcry_sexp_build(&new->dsa, NULL,
