@@ -130,6 +130,18 @@ static void torture_pki_keytype(void **state) {
     assert_true(type_c == NULL);
 }
 
+static void torture_pki_signature(void **state)
+{
+    ssh_signature sig;
+
+    (void) state; /* unused */
+
+    sig = ssh_signature_new();
+    assert_true(sig != NULL);
+
+    ssh_signature_free(sig);
+}
+
 static void torture_pki_import_privkey_base64_RSA(void **state) {
     int rc;
     char *key_str;
@@ -558,6 +570,8 @@ int torture_run_tests(void) {
     int rc;
     const UnitTest tests[] = {
         unit_test(torture_pki_keytype),
+
+        unit_test(torture_pki_signature),
 
         /* ssh_pki_import_privkey_base64 */
         unit_test_setup_teardown(torture_pki_import_privkey_base64_NULL_key,
