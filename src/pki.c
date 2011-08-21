@@ -48,6 +48,7 @@
 #include "libssh/keys.h"
 #include "libssh/buffer.h"
 #include "libssh/misc.h"
+#include "libssh/agent.h"
 
 void ssh_pki_log(const char *format, ...)
 {
@@ -1027,6 +1028,58 @@ ssh_string ssh_pki_do_sign(ssh_session session, ssh_buffer sigbuf,
 
     return signature;
 }
+
+#ifndef _WIN32
+ssh_string ssh_pki_do_sign_agent(ssh_session session,
+                                 struct ssh_buffer_struct *buf,
+                                 const ssh_key pubkey) {
+    struct ssh_crypto_struct *crypto;
+    ssh_string session_id;
+    ssh_string sig_blob;
+    ssh_buffer sig_buf;
+    int rc;
+
+    if (session->current_crypto) {
+        crypto = session->current_crypto;
+    } else {
+        crypto = session->next_crypto;
+    }
+
+    /* prepend session identifier */
+    session_id = ssh_string_new(crypto->digest_len);
+    if (session_id == NULL) {
+        return NULL;
+    }
+    ssh_string_fill(session_id, crypto->session_id, crypto->digest_len);
+
+    sig_buf = ssh_buffer_new();
+    if (sig_buf == NULL) {
+        ssh_string_free(session_id);
+        return NULL;
+    }
+
+    rc = buffer_add_ssh_string(sig_buf, session_id);
+    if (rc < 0) {
+        ssh_string_free(session_id);
+        ssh_buffer_free(sig_buf);
+        return NULL;
+    }
+    ssh_string_free(session_id);
+
+    /* append out buffer */
+    if (buffer_add_buffer(sig_buf, buf) < 0) {
+        ssh_buffer_free(sig_buf);
+        return NULL;
+    }
+
+    /* create signature */
+    sig_blob = ssh_agent_sign_data(session, pubkey, sig_buf);
+
+    ssh_buffer_free(sig_buf);
+
+    return sig_blob;
+}
+#endif /* _WIN32 */
 
 
 /**

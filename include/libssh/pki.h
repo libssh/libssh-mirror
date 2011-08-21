@@ -80,6 +80,9 @@ ssh_key ssh_pki_publickey_from_privatekey(const ssh_key privkey);
 /* SSH Signing Functions */
 ssh_string ssh_pki_do_sign(ssh_session session, ssh_buffer sigbuf,
     ssh_key privatekey);
+ssh_string ssh_pki_do_sign_agent(ssh_session session,
+                                 struct ssh_buffer_struct *buf,
+                                 const ssh_key pubkey);
 
 /* Temporary functions, to be removed after migration to ssh_key */
 ssh_public_key ssh_pki_convert_key_to_publickey(ssh_key key);
