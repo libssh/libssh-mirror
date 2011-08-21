@@ -1,4 +1,4 @@
-option(WITH_LIBZ "Build with ZLIB support" ON)
+option(WITH_ZLIB "Build with ZLIB support" ON)
 option(WITH_SSH1 "Build with SSH1 support" OFF)
 option(WITH_SFTP "Build with SFTP support" ON)
 option(WITH_SERVER "Build with SSH server support" ON)
@@ -11,6 +11,12 @@ option(WITH_INTERNAL_DOC "Compile doxygen internal documentation" OFF)
 option(WITH_TESTING "Build with unit tests" OFF)
 option(WITH_CLIENT_TESTING "Build with client tests; requires a running sshd" OFF)
 option(WITH_BENCHMARKS "Build benchmarks tools" OFF)
+
+if (WITH_ZLIB)
+    set(WITH_ZLIB ON)
+else (WITH_ZLIB)
+    set(WITH_ZLIB OFF)
+endif (WITH_ZLIB)
 
 if(WITH_BENCHMARKS)
   set(WITH_TESTING ON)
