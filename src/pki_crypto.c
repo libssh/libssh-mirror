@@ -80,7 +80,11 @@ ssh_key pki_key_dup(const ssh_key key, int demote)
 
     new->type = key->type;
     new->type_c = key->type_c;
-    new->flags = key->flags;
+    if (demote) {
+        new->flags = SSH_KEY_FLAG_PUBLIC;
+    } else {
+        new->flags = key->flags;
+    }
 
     switch (key->type) {
     case SSH_KEYTYPE_DSS:

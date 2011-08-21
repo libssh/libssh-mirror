@@ -749,6 +749,11 @@ ssh_key pki_key_dup(const ssh_key key, int demote)
     }
     new->type = key->type;
     new->type_c = key->type_c;
+    if (demote) {
+        new->flags = SSH_KEY_FLAG_PUBLIC;
+    } else {
+        new->flags = key->flags;
+    }
 
     switch(key->type) {
         case SSH_KEYTYPE_DSS:
@@ -845,18 +850,6 @@ ssh_key pki_key_dup(const ssh_key key, int demote)
             break;
         case SSH_KEYTYPE_RSA:
         case SSH_KEYTYPE_RSA1:
-            sexp = gcry_sexp_find_token(key->rsa, "n", 0);
-            if (sexp == NULL) {
-                goto fail;
-            }
-            tmp = gcry_sexp_nth_data(sexp, 1, &size);
-            n = ssh_string_new(size);
-            if (n == NULL) {
-                goto fail;
-            }
-            ssh_string_fill(n, (char *)tmp, size);
-            gcry_sexp_release(sexp);
-
             sexp = gcry_sexp_find_token(key->rsa, "e", 0);
             if (sexp == NULL) {
                 goto fail;
@@ -867,6 +860,18 @@ ssh_key pki_key_dup(const ssh_key key, int demote)
                 goto fail;
             }
             ssh_string_fill(e, (char *)tmp, size);
+            gcry_sexp_release(sexp);
+
+            sexp = gcry_sexp_find_token(key->rsa, "n", 0);
+            if (sexp == NULL) {
+                goto fail;
+            }
+            tmp = gcry_sexp_nth_data(sexp, 1, &size);
+            n = ssh_string_new(size);
+            if (n == NULL) {
+                goto fail;
+            }
+            ssh_string_fill(n, (char *)tmp, size);
             gcry_sexp_release(sexp);
 
             if (!demote && (key->flags & SSH_KEY_FLAG_PRIVATE)) {
