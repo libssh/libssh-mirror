@@ -484,6 +484,7 @@ static void torture_pki_duplicate_key_rsa(void **state)
 
     ssh_key_free(pubkey);
     ssh_key_free(privkey);
+    ssh_key_free(privkey_dup);
     ssh_string_free_char(b64_key);
     ssh_string_free_char(b64_key_gen);
 }
@@ -526,6 +527,7 @@ static void torture_pki_duplicate_key_dsa(void **state)
 
     ssh_key_free(pubkey);
     ssh_key_free(privkey);
+    ssh_key_free(privkey_dup);
     ssh_string_free_char(b64_key);
     ssh_string_free_char(b64_key_gen);
 }
