@@ -1355,6 +1355,64 @@ struct signature_struct *pki_do_sign(ssh_key privatekey,
     return sign;
 }
 
+#ifdef WITH_SERVER
+ssh_signature pki_do_sign_sessionid(const ssh_key key,
+                                    const unsigned char *hash)
+{
+    ssh_signature sig;
+    gcry_sexp_t sexp;
+    gcry_error_t err;
+
+    sig = ssh_signature_new();
+    if (sig == NULL) {
+        return NULL;
+    }
+    sig->type = key->type;
+
+    switch(key->type) {
+        case SSH_KEYTYPE_DSS:
+            err = gcry_sexp_build(&sexp,
+                                  NULL,
+                                  "%b",
+                                  SHA_DIGEST_LEN + 1,
+                                  hash);
+            if (err) {
+                ssh_signature_free(sig);
+                return NULL;
+            }
+            err = gcry_pk_sign(&sig->dsa_sig, sexp, key->dsa);
+            gcry_sexp_release(sexp);
+            if (err) {
+                ssh_signature_free(sig);
+                return NULL;
+            }
+            break;
+        case SSH_KEYTYPE_RSA:
+        case SSH_KEYTYPE_RSA1:
+            err = gcry_sexp_build(&sexp,
+                                  NULL,
+                                  "(data(flags pkcs1)(hash sha1 %b))",
+                                  SHA_DIGEST_LEN,
+                                  hash + 1);
+            if (err) {
+                ssh_signature_free(sig);
+                return NULL;
+            }
+            err = gcry_pk_sign(&sig->rsa_sig, sexp, key->rsa);
+            gcry_sexp_release(sexp);
+            if (err) {
+                ssh_signature_free(sig);
+                return NULL;
+            }
+            break;
+        case SSH_KEYTYPE_ECDSA:
+        case SSH_KEYTYPE_UNKNOWN:
+            return NULL;
+    }
+
+    return sig;
+}
+#endif /* WITH_SERVER */
 #endif /* HAVE_LIBGCRYPT */
 
 /**

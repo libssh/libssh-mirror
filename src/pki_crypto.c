@@ -716,4 +716,41 @@ struct signature_struct *pki_do_sign(ssh_key privatekey,
     return sign;
 }
 
+#ifdef WITH_SERVER
+ssh_signature pki_do_sign_sessionid(const ssh_key key,
+                                    const unsigned char *hash)
+{
+    ssh_signature sig;
+
+    sig = ssh_signature_new();
+    if (sig == NULL) {
+        return NULL;
+    }
+    sig->type = key->type;
+
+    switch(key->type) {
+        case SSH_KEYTYPE_DSS:
+            sig->dsa_sig = DSA_do_sign(hash + 1, SHA_DIGEST_LEN, key->dsa);
+            if (sig->dsa_sig == NULL) {
+                ssh_signature_free(sig);
+                return NULL;
+            }
+            break;
+        case SSH_KEYTYPE_RSA:
+        case SSH_KEYTYPE_RSA1:
+            sig->rsa_sig = _RSA_do_sign(hash + 1, SHA_DIGEST_LEN, key->rsa);
+            if (sig->rsa_sig == NULL) {
+                ssh_signature_free(sig);
+                return NULL;
+            }
+            break;
+        case SSH_KEYTYPE_ECDSA:
+        case SSH_KEYTYPE_UNKNOWN:
+            return NULL;
+    }
+
+    return sig;
+}
+#endif /* WITH_SERVER */
+
 #endif /* _PKI_CRYPTO_H */

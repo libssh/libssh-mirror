@@ -1081,6 +1081,49 @@ ssh_string ssh_pki_do_sign_agent(ssh_session session,
 }
 #endif /* _WIN32 */
 
+#ifdef WITH_SERVER
+ssh_string ssh_srv_pki_do_sign_sessionid(ssh_session session,
+                                         const ssh_key privkey)
+{
+    struct ssh_crypto_struct *crypto =
+        session->current_crypto ? session->current_crypto :
+        session->next_crypto;
+    unsigned char hash[SHA_DIGEST_LEN + 1] = {0};
+    ssh_signature sig;
+    ssh_string sig_blob;
+    SHACTX ctx;
+    int rc;
+
+    if (session == NULL || privkey == NULL || !ssh_key_is_private(privkey)) {
+        return NULL;
+    }
+
+    ctx = sha1_init();
+    if (ctx == NULL) {
+        return NULL;
+    }
+    sha1_update(ctx, crypto->session_id, SHA_DIGEST_LEN);
+    sha1_final(hash + 1, ctx);
+    hash[0] = 0;
+
+#ifdef DEBUG_CRYPTO
+    ssh_print_hexa("Hash being signed", hash + 1, SHA_DIGEST_LEN);
+#endif
+
+    sig = pki_do_sign_sessionid(privkey, hash);
+    if (sig == NULL) {
+        return NULL;
+    }
+
+    rc = ssh_pki_export_signature_blob(sig, &sig_blob);
+    ssh_signature_free(sig);
+    if (rc < 0) {
+        return NULL;
+    }
+
+    return sig_blob;
+}
+#endif /* WITH_SERVER */
 
 /**
  * @}

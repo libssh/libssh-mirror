@@ -59,4 +59,6 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
 /* SSH Signing Functions */
 struct signature_struct *pki_do_sign(const ssh_key privatekey,
                                      const unsigned char *hash);
+ssh_signature pki_do_sign_sessionid(const ssh_key key,
+                                    const unsigned char *hash);
 #endif /* PKI_PRIV_H_ */
