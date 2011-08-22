@@ -39,6 +39,7 @@
 #include "libssh/ecdh.h"
 #include "libssh/threads.h"
 #include "libssh/misc.h"
+#include "libssh/pki.h"
 
 #define set_status(session, status) do {\
         if (session->common.callbacks && session->common.callbacks->connect_status_function) \
@@ -211,7 +212,7 @@ error:
 }
 
 SSH_PACKET_CALLBACK(ssh_packet_newkeys){
-  ssh_string signature = NULL;
+  ssh_string sig_blob = NULL;
   int rc;
   (void)packet;
   (void)user;
@@ -246,16 +247,19 @@ SSH_PACKET_CALLBACK(ssh_packet_newkeys){
     }
 
     /* Verify the host's signature. FIXME do it sooner */
-    signature = session->next_crypto->dh_server_signature;
+    sig_blob = session->next_crypto->dh_server_signature;
     session->next_crypto->dh_server_signature = NULL;
-    if (signature_verify(session, signature)) {
+    rc = ssh_pki_signature_verify_blob(session,
+                                       sig_blob);
+    if (rc == SSH_ERROR) {
       goto error;
     }
     ssh_log(session,SSH_LOG_PROTOCOL,"Signature verified and valid");
     /* forget it for now ... */
-    ssh_string_burn(signature);
-    ssh_string_free(signature);
-    signature=NULL;
+    ssh_string_burn(sig_blob);
+    ssh_string_free(sig_blob);
+    sig_blob = NULL;
+
     /*
      * Once we got SSH2_MSG_NEWKEYS we can switch next_crypto and
      * current_crypto
