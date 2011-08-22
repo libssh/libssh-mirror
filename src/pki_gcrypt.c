@@ -1298,8 +1298,12 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
             ssh_print_hexa("RSA signature", ssh_string_data(sig_blob), len);
 #endif
 
-            if (gcry_sexp_build(&sig->rsa_sig, NULL, "(sig-val(rsa(s %b)))",
-                        ssh_string_len(sig_blob), ssh_string_data(sig_blob))) {
+            err = gcry_sexp_build(&sig->rsa_sig,
+                                  NULL,
+                                  "(sig-val(rsa(s %b)))",
+                                  ssh_string_len(sig_blob),
+                                  ssh_string_data(sig_blob));
+            if (err) {
                 ssh_signature_free(sig);
                 return NULL;
             }
@@ -1328,7 +1332,7 @@ int pki_signature_verify(ssh_session session,
             if (err) {
                 ssh_set_error(session,
                               SSH_FATAL,
-                              "DSA error: %s", gcry_strerror(err));
+                              "DSA hash error: %s", gcry_strerror(err));
                 return SSH_ERROR;
             }
             err = gcry_pk_verify(sig->dsa_sig, sexp, key->dsa);
@@ -1353,7 +1357,7 @@ int pki_signature_verify(ssh_session session,
             if (err) {
                 ssh_set_error(session,
                               SSH_FATAL,
-                              "RSA error: %s",
+                              "RSA hash error: %s",
                               gcry_strerror(err));
                 return SSH_ERROR;
             }
