@@ -429,6 +429,91 @@ ssh_string publickey_to_string(ssh_public_key pubkey) {
 
     return key_blob;
 }
+
+ssh_string signature_to_string(SIGNATURE *sign)
+{
+    ssh_signature sig;
+    ssh_string sig_blob;
+    int rc;
+
+    if (sign == NULL) {
+        return NULL;
+    }
+
+    sig = ssh_signature_new();
+    if (sig == NULL) {
+        return NULL;
+    }
+
+    sig->type = sign->type;
+    sig->dsa_sig = sign->dsa_sign;
+    sig->rsa_sig = sign->rsa_sign;
+
+    rc = ssh_pki_export_signature_blob(sig, &sig_blob);
+    sig->dsa_sig = NULL;
+    sig->rsa_sig = NULL;
+    ssh_signature_free(sig);
+    if (rc < 0) {
+        return NULL;
+    }
+
+    return sig_blob;
+}
+
+SIGNATURE *signature_from_string(ssh_session session,
+                                 ssh_string signature,
+                                 ssh_public_key pubkey,
+                                 int needed_type)
+{
+    SIGNATURE *sign;
+    ssh_signature sig;
+    ssh_key key;
+    int rc;
+
+    if (session == NULL || signature == NULL || pubkey == NULL) {
+        return NULL;
+    }
+
+    key = ssh_key_new();
+    if (key == NULL) {
+        return NULL;
+    }
+
+    key->type = pubkey->type;
+    key->type_c = pubkey->type_c;
+    key->flags = SSH_KEY_FLAG_PUBLIC;
+    key->dsa = pubkey->dsa_pub;
+    key->rsa = pubkey->rsa_pub;
+
+    rc = ssh_pki_import_signature_blob(signature, key, &sig);
+    key->dsa = NULL;
+    key->rsa = NULL;
+    ssh_key_free(key);
+    if (rc < 0) {
+        return NULL;
+    }
+
+    if ((enum ssh_keytypes_e)needed_type != sig->type) {
+        ssh_signature_free(sig);
+        return NULL;
+    }
+
+    sign = malloc(sizeof(struct signature_struct));
+    if (sign == NULL) {
+        ssh_signature_free(sig);
+        return NULL;
+    }
+
+    sign->type = sig->type;
+    sign->dsa_sign = sig->dsa_sig;
+    sig->dsa_sig = NULL;
+    sign->rsa_sign = sig->rsa_sig;
+    sig->rsa_sig = NULL;
+
+    ssh_signature_free(sig);
+    return sign;
+}
+
 /****************************************************************************
  * SERVER SUPPORT
  ****************************************************************************/
