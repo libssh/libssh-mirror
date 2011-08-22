@@ -1141,6 +1141,44 @@ ssh_string ssh_pki_do_sign_agent(ssh_session session,
 #endif /* _WIN32 */
 
 #ifdef WITH_SERVER
+int ssh_srv_pki_signature_verify_blob(ssh_session session,
+                                      ssh_string sig_blob,
+                                      const ssh_key key,
+                                      unsigned char *digest,
+                                      size_t dlen)
+{
+    unsigned char hash[SHA_DIGEST_LEN + 1] = {0};
+    ssh_signature sig;
+    int rc;
+
+    rc = ssh_pki_import_signature_blob(sig_blob, key, &sig);
+    if (rc < 0) {
+        ssh_key_free(key);
+        return SSH_ERROR;
+    }
+
+    ssh_log(session,
+            SSH_LOG_FUNCTIONS,
+            "Going to verify a %s type signature",
+            key->type_c);
+
+
+    sha1(digest, dlen, hash + 1);
+
+#ifdef DEBUG_CRYPTO
+    ssh_print_hexa("Hash to be verified with dsa", hash + 1, SHA_DIGEST_LEN);
+#endif
+
+    rc = pki_signature_verify(session,
+                              sig,
+                              key,
+                              hash,
+                              SHA_DIGEST_LEN);
+    ssh_signature_free(sig);
+
+    return rc;
+}
+
 ssh_string ssh_srv_pki_do_sign_sessionid(ssh_session session,
                                          const ssh_key privkey)
 {

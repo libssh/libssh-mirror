@@ -70,6 +70,11 @@ int ssh_pki_import_signature_blob(const ssh_string sig_blob,
                                   ssh_signature *psig);
 int ssh_pki_signature_verify_blob(ssh_session session,
                                   ssh_string sig_blob);
+int ssh_srv_pki_signature_verify_blob(ssh_session session,
+                                      ssh_string sig_blob,
+                                      const ssh_key key,
+                                      unsigned char *digest,
+                                      size_t dlen);
 
 /* SSH Public Key Functions */
 ssh_string ssh_pki_export_pubkey_blob(const ssh_key key);
