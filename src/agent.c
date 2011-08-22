@@ -350,6 +350,7 @@ struct ssh_public_key_struct *agent_get_first_ident(struct ssh_session_struct *s
 struct ssh_public_key_struct *agent_get_next_ident(struct ssh_session_struct *session,
     char **comment) {
   struct ssh_key_struct *key;
+  struct ssh_public_key_struct *pkey;
   struct ssh_string_struct *blob = NULL;
   struct ssh_string_struct *tmp = NULL;
   int rc;
@@ -397,7 +398,10 @@ struct ssh_public_key_struct *agent_get_next_ident(struct ssh_session_struct *se
       return NULL;
   }
 
-  return ssh_pki_convert_key_to_publickey(key);
+  pkey = ssh_pki_convert_key_to_publickey(key);
+  ssh_key_free(key);
+
+  return pkey;
 }
 
 ssh_string agent_sign_data(struct ssh_session_struct *session,

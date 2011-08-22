@@ -404,21 +404,33 @@ int ssh_pki_import_privkey_file(const char *filename,
 /* temporary function to migrate seemlessly to ssh_key */
 ssh_public_key ssh_pki_convert_key_to_publickey(const ssh_key key) {
     ssh_public_key pub;
+    ssh_key tmp;
 
     if(key == NULL) {
         return NULL;
     }
 
+    tmp = ssh_key_dup(key);
+    if (tmp == NULL) {
+        return NULL;
+    }
+
     pub = malloc(sizeof(struct ssh_public_key_struct));
     if (pub == NULL) {
+        ssh_key_free(tmp);
         return NULL;
     }
     ZERO_STRUCTP(pub);
 
-    pub->dsa_pub = key->dsa;
-    pub->rsa_pub = key->rsa;
-    pub->type     = key->type;
-    pub->type_c   = key->type_c;
+    pub->type = tmp->type;
+    pub->type_c = tmp->type_c;
+
+    pub->dsa_pub = tmp->dsa;
+    tmp->dsa = NULL;
+    pub->rsa_pub = tmp->rsa;
+    tmp->rsa = NULL;
+
+    ssh_key_free(tmp);
 
     return pub;
 }
