@@ -81,6 +81,5 @@ ssh_string ssh_do_sign_with_agent(struct ssh_session_struct *session,
 ssh_string ssh_do_sign(ssh_session session,ssh_buffer sigbuf,
         ssh_private_key privatekey);
 ssh_string ssh_sign_session_id(ssh_session session, ssh_private_key privatekey);
-ssh_string ssh_encrypt_rsa1(ssh_session session, ssh_string data, ssh_public_key key);
 
 #endif /* KEYS_H_ */
