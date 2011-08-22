@@ -312,6 +312,124 @@ error:
   return SSH_PACKET_USED;
 }
 
+
+/*
+ * This function concats in a buffer the values needed to do a signature
+ * verification.
+ */
+static ssh_buffer ssh_msg_userauth_build_digest(ssh_session session,
+                                                ssh_message msg,
+                                                const char *service)
+{
+    struct ssh_crypto_struct *crypto =
+        session->current_crypto ? session->current_crypto :
+                                  session->next_crypto;
+    ssh_buffer buffer;
+    ssh_string str;
+    int rc;
+
+    buffer = ssh_buffer_new();
+    if (buffer == NULL) {
+        return NULL;
+    }
+
+    /* Add session id */
+    str  = ssh_string_new(SHA_DIGEST_LEN);
+    if (str == NULL) {
+        ssh_buffer_free(buffer);
+        return NULL;
+    }
+    ssh_string_fill(str, crypto->session_id, SHA_DIGEST_LEN);
+
+    rc = buffer_add_ssh_string(buffer, str);
+    string_free(str);
+    if (rc < 0) {
+        ssh_buffer_free(buffer);
+        return NULL;
+    }
+
+    /* Add the type */
+    rc = buffer_add_u8(buffer, SSH2_MSG_USERAUTH_REQUEST);
+    if (rc < 0) {
+        ssh_buffer_free(buffer);
+        return NULL;
+    }
+
+    /* Add the username */
+    str = ssh_string_from_char(msg->auth_request.username);
+    if (str == NULL) {
+        ssh_buffer_free(buffer);
+        return NULL;
+    }
+    rc = buffer_add_ssh_string(buffer, str);
+    string_free(str);
+    if (rc < 0) {
+        ssh_buffer_free(buffer);
+        return NULL;
+    }
+
+    /* Add the service name */
+    str = ssh_string_from_char(service);
+    if (str == NULL) {
+        ssh_buffer_free(buffer);
+        return NULL;
+    }
+    rc = buffer_add_ssh_string(buffer, str);
+    string_free(str);
+    if (rc < 0) {
+        ssh_buffer_free(buffer);
+        return NULL;
+    }
+
+    /* Add the method (publickey) */
+    str = ssh_string_from_char("publickey");
+    if (str == NULL) {
+        ssh_buffer_free(buffer);
+        return NULL;
+    }
+    rc = buffer_add_ssh_string(buffer, str);
+    string_free(str);
+    if (rc < 0) {
+        ssh_buffer_free(buffer);
+        return NULL;
+    }
+
+    /* Has been signed (TRUE) */
+    rc = buffer_add_u8(buffer, 1);
+    if (rc < 0) {
+        ssh_buffer_free(buffer);
+        return NULL;
+    }
+
+    /* Add the public key algorithm */
+    str = ssh_string_from_char(msg->auth_request.public_key->type_c);
+    if (str == NULL) {
+        ssh_buffer_free(buffer);
+        return NULL;
+    }
+    rc = buffer_add_ssh_string(buffer, str);
+    string_free(str);
+    if (rc < 0) {
+        ssh_buffer_free(buffer);
+        return NULL;
+    }
+
+    /* Add the publickey as blob */
+    str = publickey_to_string(msg->auth_request.public_key);
+    if (str == NULL) {
+        ssh_buffer_free(buffer);
+        return NULL;
+    }
+    rc = buffer_add_ssh_string(buffer, str);
+    string_free(str);
+    if (rc < 0) {
+        ssh_buffer_free(buffer);
+        return NULL;
+    }
+
+    return buffer;
+}
+
 /**
  * @internal
  *
@@ -482,7 +600,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
       }
       signature = signature_from_string(session, sign, public_key,
                                                        public_key->type);
-      digest = ssh_userauth_build_digest(session, msg, service_c);
+      digest = ssh_msg_userauth_build_digest(session, msg, service_c);
       if ((digest == NULL || signature == NULL) ||
           (digest != NULL && signature != NULL &&
           sig_verify(session, public_key, signature,

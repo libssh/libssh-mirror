@@ -62,7 +62,6 @@ typedef struct signature_struct {
 
 const char *ssh_type_to_char(int type);
 int ssh_type_from_name(const char *name);
-ssh_buffer ssh_userauth_build_digest(ssh_session session, ssh_message msg, char *service);
 
 ssh_private_key privatekey_make_dss(ssh_session session, ssh_buffer buffer);
 ssh_private_key privatekey_make_rsa(ssh_session session, ssh_buffer buffer,
