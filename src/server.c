@@ -176,14 +176,16 @@ static int dh_handshake_server(ssh_session session) {
     return -1;
   }
 
-  switch(session->hostkeys){
+  switch(session->srv.hostkey) {
     case SSH_KEYTYPE_DSS:
       privkey = session->srv.dsa_key;
       break;
     case SSH_KEYTYPE_RSA:
+    case SSH_KEYTYPE_RSA1:
       privkey = session->srv.rsa_key;
       break;
-    default:
+    case SSH_KEYTYPE_ECDSA:
+    case SSH_KEYTYPE_UNKNOWN:
       privkey = NULL;
   }
 

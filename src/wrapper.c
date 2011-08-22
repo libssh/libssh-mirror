@@ -46,6 +46,7 @@
 #include "libssh/session.h"
 #include "libssh/crypto.h"
 #include "libssh/wrapper.h"
+#include "libssh/pki.h"
 
 /* it allocates a new cipher structure based on its offset into the global table */
 static struct crypto_struct *cipher_new(int offset) {
@@ -348,11 +349,9 @@ int crypt_set_algorithms_server(ssh_session session){
     server=session->server_kex.methods[SSH_HOSTKEYS];
     client=session->client_kex.methods[SSH_HOSTKEYS];
     match=ssh_find_matching(server,client);
-    if(match && !strcmp(match,"ssh-dss"))
-        session->hostkeys=SSH_KEYTYPE_DSS;
-    else if(match && !strcmp(match,"ssh-rsa"))
-        session->hostkeys=SSH_KEYTYPE_RSA;
-    else {
+    if (match) {
+        session->srv.hostkey = ssh_key_type_from_name(match);
+    } else {
         ssh_set_error(session, SSH_FATAL, "Cannot know what %s is into %s",
             match ? match : NULL, server);
         SAFE_FREE(match);

@@ -132,10 +132,12 @@ struct ssh_session_struct {
     struct {
         ssh_key rsa_key;
         ssh_key dsa_key;
+
+        /* The type of host key wanted by client */
+        enum ssh_keytypes_e hostkey;
     } srv;
     /* auths accepted by server */
     int auth_methods;
-    int hostkeys; /* contains type of host key wanted by client, in server impl */
     struct ssh_list *ssh_message_list; /* list of delayed SSH messages */
     int (*ssh_message_callback)( struct ssh_session_struct *session, ssh_message msg, void *userdata);
     void *ssh_message_callback_data;
