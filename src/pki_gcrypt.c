@@ -1303,6 +1303,7 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
                 ssh_signature_free(sig);
                 return NULL;
             }
+            break;
         case SSH_KEYTYPE_ECDSA:
         case SSH_KEYTYPE_UNKNOWN:
             ssh_pki_log("Unknown signature type");
