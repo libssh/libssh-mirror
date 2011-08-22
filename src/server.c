@@ -737,13 +737,21 @@ const char *ssh_message_auth_password(ssh_message msg){
   return msg->auth_request.password;
 }
 
+ssh_key ssh_message_auth_pubkey(ssh_message msg) {
+  if (msg == NULL) {
+    return NULL;
+  }
+
+  return msg->auth_request.pubkey;
+}
+
 /* Get the publickey of an auth request */
 ssh_public_key ssh_message_auth_publickey(ssh_message msg){
   if (msg == NULL) {
     return NULL;
   }
 
-  return msg->auth_request.public_key;
+  return ssh_pki_convert_key_to_publickey(msg->auth_request.pubkey);
 }
 
 enum ssh_publickey_state_e ssh_message_auth_publickey_state(ssh_message msg){
@@ -944,15 +952,27 @@ int ssh_message_auth_reply_pk_ok(ssh_message msg, ssh_string algo, ssh_string pu
 }
 
 int ssh_message_auth_reply_pk_ok_simple(ssh_message msg) {
-	ssh_string algo;
-	ssh_string pubkey;
-	int ret;
-	algo=ssh_string_from_char(msg->auth_request.public_key->type_c);
-	pubkey=publickey_to_string(msg->auth_request.public_key);
-	ret=ssh_message_auth_reply_pk_ok(msg,algo,pubkey);
-	ssh_string_free(algo);
-	ssh_string_free(pubkey);
-	return ret;
+    ssh_string algo;
+    ssh_string pubkey_blob;
+    int ret;
+
+    algo = ssh_string_from_char(msg->auth_request.pubkey->type_c);
+    if (algo == NULL) {
+        return SSH_ERROR;
+    }
+
+    pubkey_blob = ssh_pki_export_pubkey_blob(msg->auth_request.pubkey);
+    if (pubkey_blob == NULL) {
+        ssh_string_free(algo);
+        return SSH_ERROR;
+    }
+
+    ret = ssh_message_auth_reply_pk_ok(msg, algo, pubkey_blob);
+
+    ssh_string_free(algo);
+    ssh_string_free(pubkey_blob);
+
+    return ret;
 }
 
 

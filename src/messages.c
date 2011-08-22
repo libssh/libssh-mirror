@@ -38,7 +38,7 @@
 #include "libssh/channels.h"
 #include "libssh/session.h"
 #include "libssh/misc.h"
-#include "libssh/keys.h"
+#include "libssh/pki.h"
 #include "libssh/dh.h"
 #include "libssh/messages.h"
 #ifdef WITH_SERVER
@@ -252,7 +252,7 @@ void ssh_message_free(ssh_message msg){
             strlen(msg->auth_request.password));
         SAFE_FREE(msg->auth_request.password);
       }
-      publickey_free(msg->auth_request.public_key);
+      ssh_key_free(msg->auth_request.pubkey);
       break;
     case SSH_REQUEST_CHANNEL_OPEN:
       SAFE_FREE(msg->channel_request_open.originator);
@@ -402,7 +402,7 @@ static ssh_buffer ssh_msg_userauth_build_digest(ssh_session session,
     }
 
     /* Add the public key algorithm */
-    str = ssh_string_from_char(msg->auth_request.public_key->type_c);
+    str = ssh_string_from_char(msg->auth_request.pubkey->type_c);
     if (str == NULL) {
         ssh_buffer_free(buffer);
         return NULL;
@@ -415,7 +415,7 @@ static ssh_buffer ssh_msg_userauth_build_digest(ssh_session session,
     }
 
     /* Add the publickey as blob */
-    str = publickey_to_string(msg->auth_request.public_key);
+    str = ssh_pki_export_pubkey_blob(msg->auth_request.pubkey);
     if (str == NULL) {
         ssh_buffer_free(buffer);
         return NULL;
@@ -560,8 +560,9 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
 
   if (strncmp(method_c, "publickey", method_size) == 0) {
     ssh_string algo = NULL;
-    ssh_string publickey = NULL;
+    ssh_string pubkey_blob = NULL;
     uint8_t has_sign;
+    int rc;
 
     msg->auth_request.method = SSH_AUTH_METHOD_PUBLICKEY;
     SAFE_FREE(method_c);
@@ -570,64 +571,67 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
     if (algo == NULL) {
       goto error;
     }
-    publickey = buffer_get_ssh_string(packet);
-    if (publickey == NULL) {
+    pubkey_blob = buffer_get_ssh_string(packet);
+    if (pubkey_blob == NULL) {
       ssh_string_free(algo);
       algo = NULL;
       goto error;
     }
-    msg->auth_request.public_key = publickey_from_string(session, publickey);
     ssh_string_free(algo);
     algo = NULL;
-    ssh_string_free(publickey);
-    publickey = NULL;
-    if (msg->auth_request.public_key == NULL) {
-       goto error;
+
+    rc = ssh_pki_import_pubkey_blob(pubkey_blob, &msg->auth_request.pubkey);
+    ssh_string_free(pubkey_blob);
+    pubkey_blob = NULL;
+    if (rc < 0) {
+        goto error;
     }
     msg->auth_request.signature_state = SSH_PUBLICKEY_STATE_NONE;
     // has a valid signature ?
     if(has_sign) {
-      SIGNATURE *signature = NULL;
-      ssh_public_key public_key = msg->auth_request.public_key;
-      ssh_string sign = NULL;
-      ssh_buffer digest = NULL;
+        ssh_signature sig;
+        ssh_string sig_blob = NULL;
+        ssh_buffer digest = NULL;
 
-      sign = buffer_get_ssh_string(packet);
-      if(sign == NULL) {
-        ssh_log(session, SSH_LOG_PACKET, "Invalid signature packet from peer");
-        msg->auth_request.signature_state = SSH_PUBLICKEY_STATE_ERROR;
-        goto error;
-      }
-      signature = signature_from_string(session, sign, public_key,
-                                                       public_key->type);
-      digest = ssh_msg_userauth_build_digest(session, msg, service_c);
-      if ((digest == NULL || signature == NULL) ||
-          (digest != NULL && signature != NULL &&
-          sig_verify(session, public_key, signature,
-                     buffer_get_rest(digest), buffer_get_rest_len(digest)) < 0)) {
-        ssh_log(session, SSH_LOG_PACKET, "Wrong signature from peer");
+        sig_blob = buffer_get_ssh_string(packet);
+        if(sig_blob == NULL) {
+            ssh_log(session, SSH_LOG_PACKET, "Invalid signature packet from peer");
+            msg->auth_request.signature_state = SSH_PUBLICKEY_STATE_ERROR;
+            goto error;
+        }
+        rc = ssh_pki_import_signature_blob(sig_blob,
+                                           msg->auth_request.pubkey,
+                                           &sig);
+        ssh_string_free(sig_blob);
+        if (rc < 0) {
+            ssh_log(session, SSH_LOG_PACKET, "Wrong signature from peer");
+            msg->auth_request.signature_state = SSH_PUBLICKEY_STATE_WRONG;
+            goto error;
+        }
 
-        ssh_string_free(sign);
-        sign = NULL;
+        digest = ssh_msg_userauth_build_digest(session, msg, service_c);
+        if (digest == NULL) {
+            ssh_signature_free(sig);
+            ssh_log(session, SSH_LOG_PACKET, "Failed to get digest");
+            msg->auth_request.signature_state = SSH_PUBLICKEY_STATE_WRONG;
+            goto error;
+        }
+
+        rc = ssh_srv_pki_signature_verify_blob(session,
+                                               sig_blob,
+                                               msg->auth_request.pubkey,
+                                               buffer_get_rest(digest),
+                                               buffer_get_rest_len(digest));
+        ssh_string_free(sig_blob);
         ssh_buffer_free(digest);
-        digest = NULL;
-        signature_free(signature);
-        signature = NULL;
+        if (rc < 0) {
+            msg->auth_request.signature_state = SSH_PUBLICKEY_STATE_WRONG;
+            goto error;
+        }
 
-        msg->auth_request.signature_state = SSH_PUBLICKEY_STATE_WRONG;
-        goto error;
-      }         
-      else
         ssh_log(session, SSH_LOG_PACKET, "Valid signature received");
 
-      ssh_buffer_free(digest);
-      digest = NULL;
-      ssh_string_free(sign);
-      sign = NULL;
-      signature_free(signature);
-      signature = NULL;
-
-      msg->auth_request.signature_state = SSH_PUBLICKEY_STATE_VALID;
+        msg->auth_request.signature_state = SSH_PUBLICKEY_STATE_VALID;
     }
     SAFE_FREE(service_c);
     goto end;
