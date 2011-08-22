@@ -81,4 +81,6 @@ void ssh_timestamp_init(struct ssh_timestamp *ts);
 int ssh_timeout_elapsed(struct ssh_timestamp *ts, int timeout);
 int ssh_timeout_update(struct ssh_timestamp *ts, int timeout);
 
+int ssh_match_group(const char *group, const char *object);
+
 #endif /* MISC_H_ */

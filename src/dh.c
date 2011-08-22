@@ -54,6 +54,7 @@
 #include "libssh/buffer.h"
 #include "libssh/session.h"
 #include "libssh/keys.h"
+#include "libssh/misc.h"
 #include "libssh/dh.h"
 #include "libssh/ssh2.h"
 
@@ -1016,30 +1017,6 @@ ssh_string ssh_get_pubkey(ssh_session session){
     return ssh_string_copy(session->current_crypto->server_pubkey);
 }
 
-static int match(const char *group, const char *object){
-  const char *a;
-  const char *z;
-
-  z = group;
-  do {
-    a = strchr(z, ',');
-    if (a == NULL) {
-      if (strcmp(z, object) == 0) {
-        return 1;
-      }
-      return 0;
-    } else {
-      if (strncmp(z, object, a - z) == 0) {
-        return 1;
-      }
-    }
-    z = a + 1;
-  } while(1);
-
-  /* not reached */
-  return 0;
-}
-
 int sig_verify(ssh_session session, ssh_public_key pubkey,
     SIGNATURE *signature, unsigned char *digest, int size) {
 #ifdef HAVE_LIBGCRYPT
@@ -1149,7 +1126,7 @@ int signature_verify(ssh_session session, ssh_string signature) {
   }
 
   if (session->wanted_methods[SSH_HOSTKEYS]) {
-    if(!match(session->wanted_methods[SSH_HOSTKEYS],pubkey->type_c)) {
+    if(!ssh_match_group(session->wanted_methods[SSH_HOSTKEYS],pubkey->type_c)) {
       ssh_set_error(session, SSH_FATAL,
           "Public key from server (%s) doesn't match user preference (%s)",
           pubkey->type_c, session->wanted_methods[SSH_HOSTKEYS]);
