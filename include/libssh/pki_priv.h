@@ -55,6 +55,11 @@ ssh_string pki_signature_to_blob(const ssh_signature sign);
 ssh_signature pki_signature_from_blob(const ssh_key pubkey,
                                       const ssh_string sig_blob,
                                       enum ssh_keytypes_e type);
+int pki_signature_verify(ssh_session session,
+                         const ssh_signature sig,
+                         const ssh_key key,
+                         const unsigned char *hash,
+                         size_t len);
 
 /* SSH Signing Functions */
 struct signature_struct *pki_do_sign(const ssh_key privatekey,

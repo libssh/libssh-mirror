@@ -1313,6 +1313,72 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
     return sig;
 }
 
+int pki_signature_verify(ssh_session session,
+                         const ssh_signature sig,
+                         const ssh_key key,
+                         const unsigned char *hash,
+                         size_t len)
+{
+    gcry_sexp_t sexp;
+    gcry_error_t err;
+
+    switch(key->type) {
+        case SSH_KEYTYPE_DSS:
+            err = gcry_sexp_build(&sexp, NULL, "%b", len, hash + 1);
+            if (err) {
+                ssh_set_error(session,
+                              SSH_FATAL,
+                              "DSA error: %s", gcry_strerror(err));
+                return SSH_ERROR;
+            }
+            err = gcry_pk_verify(sig->dsa_sig, sexp, key->dsa);
+            gcry_sexp_release(sexp);
+            if (err) {
+                ssh_set_error(session, SSH_FATAL, "Invalid DSA signature");
+                if (gcry_err_code(err) != GPG_ERR_BAD_SIGNATURE) {
+                    ssh_set_error(session,
+                                  SSH_FATAL,
+                                  "DSA verify error: %s",
+                                  gcry_strerror(err));
+                }
+                return SSH_ERROR;
+            }
+            break;
+        case SSH_KEYTYPE_RSA:
+        case SSH_KEYTYPE_RSA1:
+            err = gcry_sexp_build(&sexp,
+                                  NULL,
+                                  "(data(flags pkcs1)(hash sha1 %b))",
+                                  len, hash + 1);
+            if (err) {
+                ssh_set_error(session,
+                              SSH_FATAL,
+                              "RSA error: %s",
+                              gcry_strerror(err));
+                return SSH_ERROR;
+            }
+            err = gcry_pk_verify(sig->rsa_sig, sexp, key->rsa);
+            gcry_sexp_release(sexp);
+            if (err) {
+                ssh_set_error(session, SSH_FATAL, "Invalid RSA signature");
+                if (gcry_err_code(err) != GPG_ERR_BAD_SIGNATURE) {
+                    ssh_set_error(session,
+                            SSH_FATAL,
+                            "RSA verify error: %s",
+                            gcry_strerror(err));
+                }
+                return SSH_ERROR;
+            }
+            break;
+        case SSH_KEYTYPE_ECDSA:
+        case SSH_KEYTYPE_UNKNOWN:
+            ssh_set_error(session, SSH_FATAL, "Unknown public key type");
+            return SSH_ERROR;
+    }
+
+    return SSH_OK;
+}
+
 struct signature_struct *pki_do_sign(ssh_key privatekey,
                                      const unsigned char *hash) {
     struct signature_struct *sign;
