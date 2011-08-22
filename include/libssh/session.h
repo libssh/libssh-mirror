@@ -129,8 +129,10 @@ struct ssh_session_struct {
     struct ssh_kbdint_struct *kbdint;
     int version; /* 1 or 2 */
     /* server host keys */
-    ssh_private_key rsa_key;
-    ssh_private_key dsa_key;
+    struct {
+        ssh_key rsa_key;
+        ssh_key dsa_key;
+    } srv;
     /* auths accepted by server */
     int auth_methods;
     int hostkeys; /* contains type of host key wanted by client, in server impl */

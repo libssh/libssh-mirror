@@ -54,7 +54,7 @@
 #include "libssh/socket.h"
 #include "libssh/session.h"
 #include "libssh/misc.h"
-#include "libssh/keys.h"
+#include "libssh/pki.h"
 #include "libssh/dh.h"
 #include "libssh/messages.h"
 
@@ -89,12 +89,12 @@ static int server_set_kex(ssh_session session) {
 
   ZERO_STRUCTP(server);
   ssh_get_random(server->cookie, 16, 0);
-  if (session->dsa_key != NULL && session->rsa_key != NULL) {
+  if (session->srv.dsa_key != NULL && session->srv.rsa_key != NULL) {
     if (ssh_options_set_algo(session, SSH_HOSTKEYS,
           "ssh-dss,ssh-rsa") < 0) {
       return -1;
     }
-  } else if (session->dsa_key != NULL) {
+  } else if (session->srv.dsa_key != NULL) {
     if (ssh_options_set_algo(session, SSH_HOSTKEYS, "ssh-dss") < 0) {
       return -1;
     }
@@ -155,11 +155,11 @@ SSH_PACKET_CALLBACK(ssh_packet_kexdh_init){
 }
 
 static int dh_handshake_server(ssh_session session) {
+  ssh_key pubkey;
+  ssh_key privkey;
+  ssh_string pubkey_blob;
+  ssh_string sig_blob;
   ssh_string f;
-  ssh_string pubkey;
-  ssh_string sign;
-  ssh_public_key pub;
-  ssh_private_key prv;
 
   if (dh_generate_y(session) < 0) {
     ssh_set_error(session, SSH_FATAL, "Could not create y number");
@@ -178,31 +178,32 @@ static int dh_handshake_server(ssh_session session) {
 
   switch(session->hostkeys){
     case SSH_KEYTYPE_DSS:
-      prv = session->dsa_key;
+      privkey = session->srv.dsa_key;
       break;
     case SSH_KEYTYPE_RSA:
-      prv = session->rsa_key;
+      privkey = session->srv.rsa_key;
       break;
     default:
-      prv = NULL;
+      privkey = NULL;
   }
 
-  pub = publickey_from_privatekey(prv);
-  if (pub == NULL) {
+  pubkey = ssh_pki_publickey_from_privatekey(privkey);
+  if (pubkey == NULL) {
     ssh_set_error(session, SSH_FATAL,
         "Could not get the public key from the private key");
     ssh_string_free(f);
     return -1;
   }
-  pubkey = publickey_to_string(pub);
-  publickey_free(pub);
-  if (pubkey == NULL) {
-    ssh_set_error(session, SSH_FATAL, "Not enough space");
+
+  pubkey_blob = ssh_pki_export_pubkey_blob(pubkey);
+  ssh_key_free(pubkey);
+  if (pubkey_blob == NULL) {
+    ssh_set_error_oom(session);
     ssh_string_free(f);
     return -1;
   }
 
-  dh_import_pubkey(session, pubkey);
+  dh_import_pubkey(session, pubkey_blob);
   if (dh_build_k(session) < 0) {
     ssh_set_error(session, SSH_FATAL, "Could not import the public key");
     ssh_string_free(f);
@@ -215,35 +216,35 @@ static int dh_handshake_server(ssh_session session) {
     return -1;
   }
 
-  sign = ssh_sign_session_id(session, prv);
-  if (sign == NULL) {
+  sig_blob = ssh_srv_pki_do_sign_sessionid(session, privkey);
+  if (sig_blob == NULL) {
     ssh_set_error(session, SSH_FATAL, "Could not sign the session id");
     ssh_string_free(f);
     return -1;
   }
 
   /* Free private keys as they should not be readable after this point */
-  if (session->rsa_key) {
-    privatekey_free(session->rsa_key);
-    session->rsa_key = NULL;
+  if (session->srv.rsa_key) {
+      ssh_key_free(session->srv.rsa_key);
+      session->srv.rsa_key = NULL;
   }
-  if (session->dsa_key) {
-    privatekey_free(session->dsa_key);
-    session->dsa_key = NULL;
+  if (session->srv.dsa_key) {
+      ssh_key_free(session->srv.dsa_key);
+      session->srv.dsa_key = NULL;
   }
 
   if (buffer_add_u8(session->out_buffer, SSH2_MSG_KEXDH_REPLY) < 0 ||
-      buffer_add_ssh_string(session->out_buffer, pubkey) < 0 ||
+      buffer_add_ssh_string(session->out_buffer, pubkey_blob) < 0 ||
       buffer_add_ssh_string(session->out_buffer, f) < 0 ||
-      buffer_add_ssh_string(session->out_buffer, sign) < 0) {
+      buffer_add_ssh_string(session->out_buffer, sig_blob) < 0) {
     ssh_set_error(session, SSH_FATAL, "Not enough space");
     buffer_reinit(session->out_buffer);
     ssh_string_free(f);
-    ssh_string_free(sign);
+    ssh_string_free(sig_blob);
     return -1;
   }
   ssh_string_free(f);
-  ssh_string_free(sign);
+  ssh_string_free(sig_blob);
   if (packet_send(session) == SSH_ERROR) {
     return -1;
   }

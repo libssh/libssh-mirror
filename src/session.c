@@ -207,8 +207,9 @@ void ssh_free(ssh_session session) {
   SAFE_FREE(session->client_kex.methods);
   SAFE_FREE(session->server_kex.methods);
 
-  privatekey_free(session->dsa_key);
-  privatekey_free(session->rsa_key);
+  ssh_key_free(session->srv.dsa_key);
+  ssh_key_free(session->srv.rsa_key);
+
   if(session->ssh_message_list){
     ssh_message msg;
     while((msg=ssh_list_pop_head(ssh_message ,session->ssh_message_list))
