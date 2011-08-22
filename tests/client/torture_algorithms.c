@@ -99,22 +99,33 @@ static void torture_algorithms_zlib(void **state) {
     assert_true(rc == SSH_OK);
 
     rc = ssh_options_set(session, SSH_OPTIONS_COMPRESSION_C_S, "zlib");
+#if defined(HAVE_LIBZ) && defined(WITH_LIBZ)
     assert_true(rc == SSH_OK);
+#else
+    assert_true(rc == SSH_ERROR);
+#endif
 
     rc = ssh_options_set(session, SSH_OPTIONS_COMPRESSION_S_C, "zlib");
+#if defined(HAVE_LIBZ) && defined(WITH_LIBZ)
     assert_true(rc == SSH_OK);
+#else
+    assert_true(rc == SSH_ERROR);
+#endif
 
     rc = ssh_connect(session);
+#if defined(HAVE_LIBZ) && defined(WITH_LIBZ)
     if (ssh_get_openssh_version(session)) {
         assert_false(rc == SSH_OK);
-    } else {
-        assert_true(rc == SSH_OK);
+        ssh_disconnect(session);
+        return;
+    }
+#endif
+    assert_true(rc == SSH_OK);
 
-        rc = ssh_userauth_none(session, NULL);
-        if (rc != SSH_OK) {
-            rc = ssh_get_error_code(session);
-            assert_true(rc == SSH_REQUEST_DENIED);
-        }
+    rc = ssh_userauth_none(session, NULL);
+    if (rc != SSH_OK) {
+        rc = ssh_get_error_code(session);
+        assert_true(rc == SSH_REQUEST_DENIED);
     }
 
     ssh_disconnect(session);
@@ -128,12 +139,21 @@ static void torture_algorithms_zlib_openssh(void **state) {
     assert_true(rc == SSH_OK);
 
     rc = ssh_options_set(session, SSH_OPTIONS_COMPRESSION_C_S, "zlib@openssh.com");
+#if defined(HAVE_LIBZ) && defined(WITH_LIBZ)
     assert_true(rc == SSH_OK);
+#else
+    assert_true(rc == SSH_ERROR);
+#endif
 
     rc = ssh_options_set(session, SSH_OPTIONS_COMPRESSION_S_C, "zlib@openssh.com");
+#if defined(HAVE_LIBZ) && defined(WITH_LIBZ)
     assert_true(rc == SSH_OK);
+#else
+    assert_true(rc == SSH_ERROR);
+#endif
 
     rc = ssh_connect(session);
+#if defined(HAVE_LIBZ) && defined(WITH_LIBZ)
     if (ssh_get_openssh_version(session)) {
         assert_true(rc==SSH_OK);
         rc = ssh_userauth_none(session, NULL);
@@ -141,9 +161,13 @@ static void torture_algorithms_zlib_openssh(void **state) {
             rc = ssh_get_error_code(session);
             assert_true(rc == SSH_REQUEST_DENIED);
         }
-    } else {
-      assert_false(rc == SSH_OK);
+        ssh_disconnect(session);
+        return;
     }
+    assert_false(rc == SSH_OK);
+#else
+    assert_true(rc == SSH_OK);
+#endif
 
     ssh_disconnect(session);
 }
