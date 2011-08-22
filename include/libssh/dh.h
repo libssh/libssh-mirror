@@ -49,10 +49,6 @@ int make_sessionid(ssh_session session);
 int hashbufin_add_cookie(ssh_session session, unsigned char *cookie);
 int hashbufout_add_cookie(ssh_session session);
 int generate_session_keys(ssh_session session);
-int sig_verify(ssh_session session, ssh_public_key pubkey,
-    SIGNATURE *signature, unsigned char *digest, int size);
-/* returns 1 if server signature ok, 0 otherwise. The NEXT crypto is checked, not the current one */
-int signature_verify(ssh_session session,ssh_string signature);
 bignum make_string_bn(ssh_string string);
 ssh_string make_bignum_string(bignum num);
 
