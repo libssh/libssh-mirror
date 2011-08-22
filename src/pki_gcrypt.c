@@ -1105,6 +1105,7 @@ ssh_string pki_publickey_to_blob(const ssh_key key)
                 goto fail;
             }
             ssh_string_fill(e, (char *) tmp, size);
+            gcry_sexp_release(sexp);
 
             sexp = gcry_sexp_find_token(key->rsa, "n", 0);
             if (sexp == NULL) {
