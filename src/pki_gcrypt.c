@@ -1173,7 +1173,7 @@ ssh_string pki_signature_to_blob(const ssh_signature sig)
     const char *s = NULL;
     gcry_sexp_t sexp;
     size_t size = 0;
-    ssh_string sig_blob;
+    ssh_string sig_blob = NULL;
 
     switch(sig->type) {
         case SSH_KEYTYPE_DSS:
@@ -1224,6 +1224,8 @@ ssh_string pki_signature_to_blob(const ssh_signature sig)
             break;
         case SSH_KEYTYPE_ECDSA:
         case SSH_KEYTYPE_UNKNOWN:
+            ssh_pki_log("Unknown signature key type: %d", sig->type);
+            return NULL;
             break;
     }
 

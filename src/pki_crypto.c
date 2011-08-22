@@ -523,7 +523,7 @@ static ssh_string _RSA_do_sign(const unsigned char *payload,
 ssh_string pki_signature_to_blob(const ssh_signature sig)
 {
     char buffer[40] = {0};
-    ssh_string sig_blob;
+    ssh_string sig_blob = NULL;
     ssh_string r;
     ssh_string s;
 
@@ -560,7 +560,8 @@ ssh_string pki_signature_to_blob(const ssh_signature sig)
             sig_blob = string_copy(sig->rsa_sig);
         case SSH_KEYTYPE_ECDSA:
         case SSH_KEYTYPE_UNKNOWN:
-            break;
+            ssh_pki_log("Unknown signature key type: %d", sig->type);
+            return NULL;
     }
 
     return sig_blob;
