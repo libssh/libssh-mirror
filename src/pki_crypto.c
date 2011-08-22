@@ -555,9 +555,11 @@ ssh_string pki_signature_to_blob(const ssh_signature sig)
             }
 
             ssh_string_fill(sig_blob, buffer, 40);
+            break;
         case SSH_KEYTYPE_RSA:
         case SSH_KEYTYPE_RSA1:
             sig_blob = string_copy(sig->rsa_sig);
+            break;
         case SSH_KEYTYPE_ECDSA:
         case SSH_KEYTYPE_UNKNOWN:
             ssh_pki_log("Unknown signature key type: %d", sig->type);
