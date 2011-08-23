@@ -803,189 +803,216 @@ fail:
     return SSH_AUTH_ERROR;
 }
 
-/**
- * @brief Try to authenticate through public key.
- *
- * @param[in]  session  The ssh session to use.
- *
- * @param[in]  username The username to authenticate. You can specify NULL if
- *                      ssh_option_set_username() has been used. You cannot try
- *                      two different logins in a row.
- *
- * @param[in]  publickey A public key returned by publickey_from_file(), or NULL
- *                       to generate automatically from privatekey.
- *
- * @param[in]  privatekey A private key returned by privatekey_from_file().
- *
- * @returns SSH_AUTH_ERROR:   A serious error happened.\n
- *          SSH_AUTH_DENIED:  Authentication failed: use another method.\n
- *          SSH_AUTH_PARTIAL: You've been partially authenticated, you still
- *                            have to use another method.\n
- *          SSH_AUTH_SUCCESS: Authentication successful.
- *          SSH_AUTH_AGAIN:   In nonblocking mode, you've got to call this again
- *                            later.
- * @see publickey_from_file()
- * @see privatekey_from_file()
- * @see privatekey_free()
- * @see ssh_userauth_offer_pubkey()
- */
-
-int ssh_userauth_pki_pubkey(ssh_session session, const char *username,
-                            ssh_string publickey, ssh_key privatekey) {
-    ssh_string user = NULL;
-    ssh_string service = NULL;
-    ssh_string method = NULL;
-    ssh_string algo = NULL;
-    ssh_string sign = NULL;
-    ssh_key pubkey = NULL;
-    ssh_string pkstr = NULL;
-    int rc = SSH_AUTH_ERROR;
-
-    if(session == NULL) {
-        return SSH_AUTH_ERROR;
-    }
-
-    if(privatekey == NULL) {
-        ssh_set_error(session, SSH_FATAL, "invalid arguments");
-        return SSH_AUTH_ERROR;
-    }
-    enter_function();
-
-#if 0
-    if (session->version == 1) {
-        return ssh_userauth1_pubkey(session, username, publickey, privatekey);
-    }
-#endif
-
-    if (username == NULL) {
-        if (session->username == NULL) {
-            if (ssh_options_apply(session) < 0) {
-                leave_function();
-                return rc;
-            }
-        }
-        user = ssh_string_from_char(session->username);
-    } else {
-        user = ssh_string_from_char(username);
-    }
-
-    if (user == NULL) {
-        ssh_set_error_oom(session);
-        leave_function();
-        return rc;
-    }
+#ifndef _WIN32
+static int ssh_userauth_agent_publickey(ssh_session session,
+                                        const char *username,
+                                        ssh_key pubkey)
+{
+    ssh_string str;
+    int rc;
 
     switch(session->pending_call_state) {
         case SSH_PENDING_CALL_NONE:
             break;
-        case SSH_PENDING_CALL_AUTH_PUBKEY:
-            ssh_string_free(user);
-            user = NULL;
+        case SSH_PENDING_CALL_AUTH_OFFER_PUBKEY:
             goto pending;
         default:
-            ssh_set_error(session, SSH_FATAL,
-                    "Bad call during pending SSH call in ssh_userauth_pubkey");
-            goto error;
-            rc = SSH_ERROR;
+            ssh_set_error(session,
+                          SSH_FATAL,
+                          "Bad call during pending SSH call in ssh_userauth_try_pubkey");
+            return SSH_ERROR;
     }
 
     rc = ssh_userauth_request_service(session);
+    if (rc == SSH_AGAIN) {
+        return SSH_AUTH_AGAIN;
+    } else if (rc == SSH_ERROR) {
+        return SSH_AUTH_ERROR;
+    }
+
+    /* request */
+    rc = buffer_add_u8(session->out_buffer, SSH2_MSG_USERAUTH_REQUEST);
     if (rc < 0) {
-        ssh_string_free(user);
-        leave_function();
-        return rc;
+        goto fail;
     }
 
-    service = ssh_string_from_char("ssh-connection");
-    if (service == NULL) {
-        ssh_set_error_oom(session);
-        goto error;
+    /* username */
+    if (username) {
+        str = ssh_string_from_char(username);
+    } else {
+        str = ssh_string_from_char(session->username);
     }
-    method = ssh_string_from_char("publickey");
-    if (method == NULL) {
-        ssh_set_error_oom(session);
-        goto error;
-    }
-    algo = ssh_string_from_char(ssh_type_to_char(privatekey->type));
-    if (algo == NULL) {
-        ssh_set_error_oom(session);
-        goto error;
-    }
-    if (publickey == NULL) {
-        pubkey = ssh_pki_publickey_from_privatekey(privatekey);
-        if (pubkey == NULL) {
-            /* most likely oom, and publickey_from_privatekey does not
-             * return any more information */
-            ssh_set_error_oom(session);
-            goto error;
-        }
-        pkstr = publickey_to_string(ssh_pki_convert_key_to_publickey(pubkey));
-        free(pubkey);
-        if (pkstr == NULL) {
-            /* same as above */
-            ssh_set_error_oom(session);
-            goto error;
-        }
+    if (str == NULL) {
+        goto fail;
     }
 
-    /* we said previously the public key was accepted */
-    if (buffer_add_u8(session->out_buffer, SSH2_MSG_USERAUTH_REQUEST) < 0 ||
-            buffer_add_ssh_string(session->out_buffer, user) < 0 ||
-            buffer_add_ssh_string(session->out_buffer, service) < 0 ||
-            buffer_add_ssh_string(session->out_buffer, method) < 0 ||
-            buffer_add_u8(session->out_buffer, 1) < 0 ||
-            buffer_add_ssh_string(session->out_buffer, algo) < 0 ||
-            buffer_add_ssh_string(session->out_buffer, (publickey == NULL ? pkstr : publickey)) < 0) {
-        ssh_set_error_oom(session);
-        goto error;
+    rc = buffer_add_ssh_string(session->out_buffer, str);
+    ssh_string_free(str);
+    if (rc < 0) {
+        goto fail;
     }
 
-    ssh_string_free(user);
-    ssh_string_free(service);
-    ssh_string_free(method);
-    ssh_string_free(algo);
-    ssh_string_free(pkstr);
-
-    sign = ssh_pki_do_sign(session,session->out_buffer, privatekey);
-    if(sign == NULL) {
-        ssh_set_error_oom(session);
-        leave_function();
-        return rc;
+    /* service */
+    str = ssh_string_from_char("ssh-connection");
+    if (str == NULL) {
+        goto fail;
     }
 
-    if (buffer_add_ssh_string(session->out_buffer, sign) < 0) {
-        ssh_set_error_oom(session);
-        ssh_string_free(sign);
-        leave_function();
-        return rc;
+    rc = buffer_add_ssh_string(session->out_buffer, str);
+    ssh_string_free(str);
+    if (rc < 0) {
+        goto fail;
     }
 
-    ssh_string_free(sign);
+    /* method */
+    str = ssh_string_from_char("publickey");
+    if (str == NULL) {
+        goto fail;
+    }
+
+    rc = buffer_add_ssh_string(session->out_buffer, str);
+    ssh_string_free(str);
+    if (rc < 0) {
+        goto fail;
+    }
+
+    /* private key? */
+    rc = buffer_add_u8(session->out_buffer, 1);
+    if (rc < 0) {
+        goto fail;
+    }
+
+    /* algo */
+    str = ssh_string_from_char(pubkey->type_c);
+    if (rc < 0) {
+        goto fail;
+    }
+
+    rc = buffer_add_ssh_string(session->out_buffer, str);
+    ssh_string_free(str);
+    if (rc < 0) {
+        goto fail;
+    }
+
+    /* public key */
+    str = ssh_pki_export_pubkey_blob(pubkey);
+    if (str == NULL) {
+        goto fail;
+    }
+
+    rc = buffer_add_ssh_string(session->out_buffer, str);
+    ssh_string_free(str);
+    if (rc < 0) {
+        goto fail;
+    }
+
+    /* sign the buffer with the private key */
+    str = ssh_pki_do_sign_agent(session, session->out_buffer, pubkey);
+    if (str == NULL) {
+        goto fail;
+    }
+
+    rc = buffer_add_ssh_string(session->out_buffer, str);
+    ssh_string_free(str);
+    if (rc < 0) {
+        goto fail;
+    }
+
     session->auth_state = SSH_AUTH_STATE_NONE;
-    session->pending_call_state = SSH_PENDING_CALL_AUTH_PUBKEY;
-    if (packet_send(session) == SSH_ERROR) {
-        leave_function();
-        return rc;
+    session->pending_call_state = SSH_PENDING_CALL_AUTH_OFFER_PUBKEY;
+    rc = packet_send(session);
+    if (rc == SSH_ERROR) {
+        return SSH_AUTH_ERROR;
     }
 
 pending:
     rc = ssh_userauth_get_response(session);
-    if (rc != SSH_AUTH_AGAIN)
+    if (rc != SSH_AUTH_AGAIN) {
         session->pending_call_state = SSH_PENDING_CALL_NONE;
-    leave_function();
-    return rc;
+    }
 
-error:
+    return rc;
+fail:
+    ssh_set_error_oom(session);
     buffer_reinit(session->out_buffer);
-    ssh_string_free(user);
-    ssh_string_free(service);
-    ssh_string_free(method);
-    ssh_string_free(algo);
-    ssh_string_free(pkstr);
 
-    leave_function();
-    return rc;
+    return SSH_AUTH_ERROR;
 }
+
+/**
+ * @brief Try to do public key authentication with ssh agent.
+ *
+ * @param[in]  session  The ssh session to use.
+ *
+ * @param[in]  username The username, this SHOULD be NULL.
+ *
+ * @return  SSH_AUTH_ERROR:   A serious error happened.\n
+ *          SSH_AUTH_DENIED:  The server doesn't accept that public key as an
+ *                            authentication token. Try another key or another
+ *                            method.\n
+ *          SSH_AUTH_PARTIAL: You've been partially authenticated, you still
+ *                            have to use another method.\n
+ *          SSH_AUTH_SUCCESS: The public key is accepted, you want now to use
+ *                            ssh_userauth_pubkey().
+ *          SSH_AUTH_AGAIN:   In nonblocking mode, you've got to call this again
+ *                            later.
+ *
+ * @note Most server implementations do not permit changing the username during
+ * authentication. The username should only be set with ssh_optoins_set() only
+ * before you connect to the server.
+ */
+int ssh_userauth_agent(ssh_session session,
+                       const char *username)
+{
+    ssh_key pubkey;
+    char *comment;
+    int rc;
+
+    if (session == NULL) {
+        return SSH_AUTH_ERROR;
+    }
+
+    if (!agent_is_running(session)) {
+        return SSH_AUTH_DENIED;
+    }
+
+    for (pubkey = ssh_agent_get_first_ident(session, &comment);
+         pubkey != NULL;
+         pubkey = ssh_agent_get_next_ident(session, &comment)) {
+        ssh_log(session, SSH_LOG_RARE, "Trying identity %s", comment);
+
+        rc = ssh_userauth_try_publickey(session, username, pubkey);
+        if (rc == SSH_AUTH_ERROR) {
+            ssh_string_free_char(comment);
+            ssh_key_free(pubkey);
+            return rc;
+        } else if (rc != SSH_AUTH_SUCCESS) {
+            ssh_log(session, SSH_LOG_PROTOCOL, "Public key of %s refused by server", comment);
+            ssh_string_free_char(comment);
+            ssh_key_free(pubkey);
+            continue;
+        }
+
+        ssh_log(session, SSH_LOG_PROTOCOL, "Public key of %s accepted by server", comment);
+
+        rc = ssh_userauth_agent_publickey(session, username, pubkey);
+        ssh_string_free_char(comment);
+        ssh_key_free(pubkey);
+        if (rc == SSH_AUTH_ERROR) {
+            return rc;
+        } else if (rc != SSH_AUTH_SUCCESS) {
+            ssh_log(session,
+                    SSH_LOG_RARE,
+                    "Server accepted public key but refused the signature");
+            continue;
+        }
+
+        return SSH_AUTH_SUCCESS;
+    }
+
+    return SSH_AUTH_ERROR;
+}
+#endif
 
 /**
  * @brief Try to authenticate through a private key file.
@@ -1057,138 +1084,31 @@ error:
 }
 
 #ifndef _WIN32
-/**
- * @brief Try to authenticate through public key with an ssh agent.
- *
- * @param[in]  session  The ssh session to use.
- *
- * @param[in]  username The username to authenticate. You can specify NULL if
- *                      ssh_option_set_username() has been used. You cannot try
- *                      two different logins in a row.
- *
- * @param[in]  publickey The public key provided by the agent.
- *
- * @returns SSH_AUTH_ERROR:   A serious error happened.\n
- *          SSH_AUTH_DENIED:  Authentication failed: use another method.\n
- *          SSH_AUTH_PARTIAL: You've been partially authenticated, you still
- *                            have to use another method.\n
- *          SSH_AUTH_SUCCESS: Authentication successful.
- *
- * @see publickey_from_file()
- * @see privatekey_from_file()
- * @see privatekey_free()
- * @see ssh_userauth_offer_pubkey()
- */
-int ssh_userauth_agent_pubkey(ssh_session session, const char *username,
-    ssh_public_key publickey) {
-  ssh_string user = NULL;
-  ssh_string service = NULL;
-  ssh_string method = NULL;
-  ssh_string algo = NULL;
-  ssh_string key = NULL;
-  ssh_string sign = NULL;
-  int rc = SSH_AUTH_ERROR;
+int ssh_userauth_agent_pubkey(ssh_session session,
+                              const char *username,
+                              ssh_public_key publickey)
+{
+    ssh_key key;
+    int rc;
 
-  enter_function();
-
-  if (! agent_is_running(session)) {
-    return rc;
-  }
-
-  if (username == NULL) {
-    if (session->username == NULL) {
-      if (ssh_options_apply(session) < 0) {
-        leave_function();
-        return rc;
-      }
+    key = ssh_key_new();
+    if (key == NULL) {
+        return SSH_AUTH_ERROR;
     }
-    user = ssh_string_from_char(session->username);
-  } else {
-    user = ssh_string_from_char(username);
-  }
 
-  if (user == NULL) {
-    ssh_set_error_oom(session);
-    leave_function();
+    key->type = publickey->type;
+    key->type_c = ssh_key_type_to_char(key->type);
+    key->flags = SSH_KEY_FLAG_PUBLIC;
+    key->dsa = publickey->dsa_pub;
+    key->rsa = publickey->rsa_pub;
+
+    rc = ssh_userauth_agent_publickey(session, username, key);
+
+    key->dsa = NULL;
+    key->rsa = NULL;
+    ssh_key_free(key);
+
     return rc;
-  }
-
-  rc = ssh_userauth_request_service(session);
-  if (rc < 0) {
-    ssh_string_free(user);
-    leave_function();
-    return rc;
-  }
-
-  service = ssh_string_from_char("ssh-connection");
-  if (service == NULL) {
-    ssh_set_error_oom(session);
-    goto error;
-  }
-  method = ssh_string_from_char("publickey");
-  if (method == NULL) {
-    ssh_set_error_oom(session);
-    goto error;
-  }
-  algo = ssh_string_from_char(ssh_type_to_char(publickey->type));
-  if (algo == NULL) {
-    ssh_set_error_oom(session);
-    goto error;
-  }
-  key = publickey_to_string(publickey);
-  if (key == NULL) {
-    ssh_set_error_oom(session);
-    goto error;
-  }
-
-  /* we said previously the public key was accepted */
-  if (buffer_add_u8(session->out_buffer, SSH2_MSG_USERAUTH_REQUEST) < 0 ||
-      buffer_add_ssh_string(session->out_buffer, user) < 0 ||
-      buffer_add_ssh_string(session->out_buffer, service) < 0 ||
-      buffer_add_ssh_string(session->out_buffer, method) < 0 ||
-      buffer_add_u8(session->out_buffer, 1) < 0 ||
-      buffer_add_ssh_string(session->out_buffer, algo) < 0 ||
-      buffer_add_ssh_string(session->out_buffer, key) < 0) {
-    ssh_set_error_oom(session);
-    goto error;
-  }
-
-  sign = ssh_do_sign_with_agent(session, session->out_buffer, publickey);
-
-  if (sign) {
-    if (buffer_add_ssh_string(session->out_buffer, sign) < 0) {
-      ssh_set_error_oom(session);
-      goto error;
-    }
-    ssh_string_free(sign);
-    session->auth_state=SSH_AUTH_STATE_NONE;
-    if (packet_send(session) == SSH_ERROR) {
-      leave_function();
-      return rc;
-    }
-    rc = ssh_userauth_get_response(session);
-  }
-
-  ssh_string_free(user);
-  ssh_string_free(service);
-  ssh_string_free(method);
-  ssh_string_free(algo);
-  ssh_string_free(key);
-
-  leave_function();
-
-  return rc;
-error:
-  buffer_reinit(session->out_buffer);
-  ssh_string_free(sign);
-  ssh_string_free(user);
-  ssh_string_free(service);
-  ssh_string_free(method);
-  ssh_string_free(algo);
-  ssh_string_free(key);
-
-  leave_function();
-  return rc;
 }
 #endif /* _WIN32 */
 
@@ -1373,68 +1293,13 @@ int ssh_userauth_autopubkey(ssh_session session, const char *passphrase) {
 
   /* Try authentication with ssh-agent first */
 #ifndef _WIN32
-  if (agent_is_running(session)) {
-    char *privkey_file = NULL;
+  rc = ssh_userauth_agent(session, NULL);
+  if (rc == SSH_AUTH_ERROR || rc == SSH_AUTH_SUCCESS) {
+    leave_function();
+    return rc;
+  }
 
-    ssh_log(session, SSH_LOG_RARE,
-        "Trying to authenticate with SSH agent keys as user: %s",
-        session->username);
-
-    for (pubkey = agent_get_first_ident(session, &privkey_file);
-        pubkey != NULL;
-        pubkey = agent_get_next_ident(session, &privkey_file)) {
-
-      ssh_log(session, SSH_LOG_RARE, "Trying identity %s", privkey_file);
-
-      pubkey_string = publickey_to_string(pubkey);
-      if (pubkey_string) {
-        rc = ssh_userauth_offer_pubkey(session, NULL, pubkey->type, pubkey_string);
-        ssh_string_free(pubkey_string);
-        if (rc == SSH_AUTH_ERROR) {
-          SAFE_FREE(privkey_file);
-          publickey_free(pubkey);
-          leave_function();
-
-          return rc;
-        } else if (rc != SSH_AUTH_SUCCESS) {
-          ssh_log(session, SSH_LOG_PROTOCOL, "Public key refused by server");
-          SAFE_FREE(privkey_file);
-          publickey_free(pubkey);
-          continue;
-        }
-        ssh_log(session, SSH_LOG_PROTOCOL, "Public key accepted");
-        /* pubkey accepted by server ! */
-        rc = ssh_userauth_agent_pubkey(session, NULL, pubkey);
-        if (rc == SSH_AUTH_ERROR) {
-          SAFE_FREE(privkey_file);
-          publickey_free(pubkey);
-          leave_function();
-
-          return rc;
-        } else if (rc != SSH_AUTH_SUCCESS) {
-          ssh_log(session, SSH_LOG_RARE,
-              "Server accepted public key but refused the signature ;"
-              " It might be a bug of libssh");
-          SAFE_FREE(privkey_file);
-          publickey_free(pubkey);
-          continue;
-        }
-        /* auth success */
-        ssh_log(session, SSH_LOG_PROTOCOL, "Authentication using %s success",
-            privkey_file);
-        SAFE_FREE(privkey_file);
-        publickey_free(pubkey);
-
-        leave_function();
-
-        return SSH_AUTH_SUCCESS;
-      } /* if pubkey */
-      SAFE_FREE(privkey_file);
-      publickey_free(pubkey);
-    } /* for each privkey */
-  } /* if agent is running */
 #endif
-
 
   for (it = ssh_list_get_iterator(session->identity);
        it != NULL;

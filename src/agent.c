@@ -264,7 +264,7 @@ static int agent_talk(struct ssh_session_struct *session,
   return 0;
 }
 
-int agent_get_ident_count(struct ssh_session_struct *session) {
+int ssh_agent_get_ident_count(struct ssh_session_struct *session) {
   ssh_buffer request = NULL;
   ssh_buffer reply = NULL;
   unsigned int type = 0;
@@ -337,71 +337,67 @@ int agent_get_ident_count(struct ssh_session_struct *session) {
 }
 
 /* caller has to free commment */
-struct ssh_public_key_struct *agent_get_first_ident(struct ssh_session_struct *session,
-    char **comment) {
-  if (agent_get_ident_count(session) > 0) {
-    return agent_get_next_ident(session, comment);
-  }
+ssh_key ssh_agent_get_first_ident(struct ssh_session_struct *session,
+                              char **comment) {
+    if (ssh_agent_get_ident_count(session) > 0) {
+        return ssh_agent_get_next_ident(session, comment);
+    }
 
-  return NULL;
+    return NULL;
 }
 
 /* caller has to free commment */
-struct ssh_public_key_struct *agent_get_next_ident(struct ssh_session_struct *session,
+ssh_key ssh_agent_get_next_ident(struct ssh_session_struct *session,
     char **comment) {
-  struct ssh_key_struct *key;
-  struct ssh_public_key_struct *pkey;
-  struct ssh_string_struct *blob = NULL;
-  struct ssh_string_struct *tmp = NULL;
-  int rc;
+    struct ssh_key_struct *key;
+    struct ssh_string_struct *blob = NULL;
+    struct ssh_string_struct *tmp = NULL;
+    int rc;
 
-  if (session->agent->count == 0) {
-    return NULL;
-  }
-
-  switch(session->version) {
-    case 1:
-      return NULL;
-    case 2:
-      /* get the blob */
-      blob = buffer_get_ssh_string(session->agent->ident);
-      if (blob == NULL) {
+    if (session->agent->count == 0) {
         return NULL;
-      }
+    }
 
-      /* get the comment */
-      tmp = buffer_get_ssh_string(session->agent->ident);
-      if (tmp == NULL) {
-        ssh_string_free(blob);
+    switch(session->version) {
+        case 1:
+            return NULL;
+        case 2:
+            /* get the blob */
+            blob = buffer_get_ssh_string(session->agent->ident);
+            if (blob == NULL) {
+                return NULL;
+            }
 
-        return NULL;
-      }
+            /* get the comment */
+            tmp = buffer_get_ssh_string(session->agent->ident);
+            if (tmp == NULL) {
+                ssh_string_free(blob);
 
-      if (comment) {
-        *comment = ssh_string_to_char(tmp);
-      } else {
-        ssh_string_free(blob);
-        ssh_string_free(tmp);
+                return NULL;
+            }
 
-        return NULL;
-      }
-      ssh_string_free(tmp);
+            if (comment) {
+                *comment = ssh_string_to_char(tmp);
+            } else {
+                ssh_string_free(blob);
+                ssh_string_free(tmp);
 
-      /* get key from blob */
-      rc = ssh_pki_import_pubkey_blob(blob, &key);
-      ssh_string_free(blob);
-      if (rc == SSH_ERROR) {
-        return NULL;
-      }
-      break;
-    default:
-      return NULL;
-  }
+                return NULL;
+            }
+            ssh_string_free(tmp);
 
-  pkey = ssh_pki_convert_key_to_publickey(key);
-  ssh_key_free(key);
+            /* get key from blob */
+            rc = ssh_pki_import_pubkey_blob(blob, &key);
+            ssh_string_free(blob);
+            if (rc == SSH_ERROR) {
+                return NULL;
+            }
+            break;
+        default:
+            return NULL;
+    }
 
-  return pkey;
+    return key;
 }
 
 ssh_string agent_sign_data(struct ssh_session_struct *session,

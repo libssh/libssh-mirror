@@ -500,11 +500,11 @@ LIBSSH_API int ssh_userauth_try_publickey(ssh_session session,
 LIBSSH_API int ssh_userauth_publickey(ssh_session session,
                                       const char *username,
                                       const ssh_key privkey);
-
 #ifndef _WIN32
-LIBSSH_API int ssh_userauth_agent_pubkey(ssh_session session, const char *username,
-    ssh_public_key publickey);
+LIBSSH_API int ssh_userauth_agent(ssh_session session,
+                                  const char *username);
 #endif
+
 LIBSSH_API int ssh_userauth_autopubkey(ssh_session session, const char *passphrase);
 LIBSSH_API int ssh_userauth_kbdint(ssh_session session, const char *user, const char *submethods);
 LIBSSH_API const char *ssh_userauth_kbdint_getinstruction(ssh_session session);

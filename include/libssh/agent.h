@@ -80,13 +80,13 @@ void agent_free(struct ssh_agent_struct *agent);
  */
 int agent_is_running(struct ssh_session_struct *session);
 
-int agent_get_ident_count(struct ssh_session_struct *session);
+int ssh_agent_get_ident_count(struct ssh_session_struct *session);
 
-struct ssh_public_key_struct *agent_get_next_ident(struct ssh_session_struct *session,
-    char **comment);
+ssh_key ssh_agent_get_next_ident(struct ssh_session_struct *session,
+                                 char **comment);
 
-struct ssh_public_key_struct *agent_get_first_ident(struct ssh_session_struct *session,
-    char **comment);
+ssh_key ssh_agent_get_first_ident(struct ssh_session_struct *session,
+                                  char **comment);
 
 ssh_string agent_sign_data(struct ssh_session_struct *session,
     struct ssh_buffer_struct *data,
