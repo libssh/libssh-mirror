@@ -348,14 +348,12 @@ int ssh_userauth_list(ssh_session session, const char *username)
     return session->auth_methods;
 }
 
-/* use the "none" authentication question */
-
 /**
  * @brief Try to authenticate through the "none" method.
  *
  * @param[in] session   The ssh session to use.
  *
- * @param[in] username  Deprecated, set to NULL.
+ * @param[in] username    The username, this SHOULD be NULL.
  *
  * @returns SSH_AUTH_ERROR:   A serious error happened.\n
  *          SSH_AUTH_DENIED:  Authentication failed: use another method\n
@@ -364,113 +362,103 @@ int ssh_userauth_list(ssh_session session, const char *username)
  *          SSH_AUTH_SUCCESS: Authentication success\n
  *          SSH_AUTH_AGAIN:   In nonblocking mode, you've got to call this again
  *                            later.
+ *
+ * @note Most server implementations do not permit changing the username during
+ * authentication. The username should only be set with ssh_optoins_set() only
+ * before you connect to the server.
  */
 int ssh_userauth_none(ssh_session session, const char *username) {
-  ssh_string user = NULL;
-  ssh_string service = NULL;
-  ssh_string method = NULL;
-  int rc = SSH_AUTH_ERROR;
-  int err;
-
-  enter_function();
+    ssh_string str;
+    int rc;
 
 #ifdef WITH_SSH1
-  if (session->version == 1) {
-    rc = ssh_userauth1_none(session, username);
-    leave_function();
-    return rc;
-  }
-#endif
-  if(session->auth_methods != 0){
-    /* userauth_none or other method was already tried before */
-    ssh_set_error(session,SSH_REQUEST_DENIED,"None method rejected by server");
-    leave_function();
-    return SSH_AUTH_DENIED;
-  }
-  if (username == NULL) {
-    if (session->username == NULL) {
-      if (ssh_options_apply(session) < 0) {
-        leave_function();
-        return rc;
-      }
+    if (session->version == 1) {
+        return ssh_userauth1_none(session, username);
     }
-    user = ssh_string_from_char(session->username);
-  } else {
-    user = ssh_string_from_char(username);
-  }
+#endif
 
-  if (user == NULL) {
-    ssh_set_error_oom(session);
-    leave_function();
-    return rc;
-  }
-  switch(session->pending_call_state){
-  case SSH_PENDING_CALL_NONE:
-    break;
-  case SSH_PENDING_CALL_AUTH_NONE:
-    ssh_string_free(user);
-    user=NULL;
-    goto pending;
-  default:
-    ssh_set_error(session,SSH_FATAL,"Bad call during pending SSH call in ssh_userauth_none");
-    goto error;
-    rc=SSH_ERROR;
-  }
+    switch(session->pending_call_state){
+        case SSH_PENDING_CALL_NONE:
+            break;
+        case SSH_PENDING_CALL_AUTH_NONE:
+            goto pending;
+        default:
+            ssh_set_error(session,SSH_FATAL,"Bad call during pending SSH call in ssh_userauth_none");
+            return SSH_AUTH_ERROR;
+    }
 
-  err = ssh_userauth_request_service(session);
-  if(err == SSH_AGAIN){
-    rc=SSH_AUTH_AGAIN;
-    ssh_string_free(user);
-    leave_function();
-    return rc;
-  } else if(err == SSH_ERROR){
-    rc=SSH_AUTH_ERROR;
-    ssh_string_free(user);
-    leave_function();
-    return rc;
-  }
+    rc = ssh_userauth_request_service(session);
+    if (rc == SSH_AGAIN) {
+        return SSH_AUTH_AGAIN;
+    } else if (rc == SSH_ERROR) {
+        return SSH_AUTH_ERROR;
+    }
 
-  method = ssh_string_from_char("none");
-  if (method == NULL) {
-    ssh_set_error_oom(session);
-    goto error;
-  }
-  service = ssh_string_from_char("ssh-connection");
-  if (service == NULL) {
-    ssh_set_error_oom(session);
-    goto error;
-  }
+    /* request */
+    rc = buffer_add_u8(session->out_buffer, SSH2_MSG_USERAUTH_REQUEST);
+    if (rc < 0) {
+        goto fail;
+    }
 
-  if (buffer_add_u8(session->out_buffer, SSH2_MSG_USERAUTH_REQUEST) < 0 ||
-      buffer_add_ssh_string(session->out_buffer, user) < 0 ||
-      buffer_add_ssh_string(session->out_buffer, service) < 0 ||
-      buffer_add_ssh_string(session->out_buffer, method) < 0) {
-    goto error;
-  }
+    /* username */
+    if (username) {
+        str = ssh_string_from_char(username);
+    } else {
+        str = ssh_string_from_char(session->username);
+    }
+    if (str == NULL) {
+        goto fail;
+    }
 
-  ssh_string_free(service);
-  ssh_string_free(method);
-  ssh_string_free(user);
-  session->auth_state=SSH_AUTH_STATE_NONE;
-  session->pending_call_state=SSH_PENDING_CALL_AUTH_NONE;
-  if (packet_send(session) == SSH_ERROR) {
-    leave_function();
-    return rc;
-  }
+    rc = buffer_add_ssh_string(session->out_buffer, str);
+    ssh_string_free(str);
+    if (rc < 0) {
+        goto fail;
+    }
+
+    /* service */
+    str = ssh_string_from_char("ssh-connection");
+    if (str == NULL) {
+        goto fail;
+    }
+
+    rc = buffer_add_ssh_string(session->out_buffer, str);
+    ssh_string_free(str);
+    if (rc < 0) {
+        goto fail;
+    }
+
+    /* method */
+    str = ssh_string_from_char("none");
+    if (str == NULL) {
+        goto fail;
+    }
+
+    rc = buffer_add_ssh_string(session->out_buffer, str);
+    ssh_string_free(str);
+    if (rc < 0) {
+        goto fail;
+    }
+
+    session->auth_state = SSH_AUTH_STATE_NONE;
+    session->pending_call_state = SSH_PENDING_CALL_AUTH_NONE;
+    rc = packet_send(session);
+    if (rc == SSH_ERROR) {
+        return SSH_AUTH_ERROR;
+    }
+
 pending:
-  rc = ssh_userauth_get_response(session);
-  if (rc != SSH_AUTH_AGAIN)
-    session->pending_call_state=SSH_PENDING_CALL_NONE;
-  leave_function();
-  return rc;
-error:
-  buffer_reinit(session->out_buffer);
-  ssh_string_free(service);
-  ssh_string_free(method);
-  ssh_string_free(user);
+    rc = ssh_userauth_get_response(session);
+    if (rc != SSH_AUTH_AGAIN) {
+        session->pending_call_state = SSH_PENDING_CALL_NONE;
+    }
 
-  leave_function();
-  return rc;
+    return rc;
+fail:
+    ssh_set_error_oom(session);
+    buffer_reinit(session->out_buffer);
+
+    return SSH_AUTH_ERROR;
 }
 
 /**
