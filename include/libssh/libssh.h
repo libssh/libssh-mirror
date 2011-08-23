@@ -490,6 +490,14 @@ LIBSSH_API void ssh_set_fd_toread(ssh_session session);
 LIBSSH_API void ssh_set_fd_towrite(ssh_session session);
 LIBSSH_API void ssh_silent_disconnect(ssh_session session);
 LIBSSH_API int ssh_set_pcap_file(ssh_session session, ssh_pcap_file pcapfile);
+
+/* USERAUTH */
+LIBSSH_API int ssh_userauth_none(ssh_session session, const char *username);
+LIBSSH_API int ssh_userauth_list(ssh_session session, const char *username);
+LIBSSH_API int ssh_userauth_try_publickey(ssh_session session,
+                                          const char *username,
+                                          const ssh_key pubkey);
+
 #ifndef _WIN32
 LIBSSH_API int ssh_userauth_agent_pubkey(ssh_session session, const char *username,
     ssh_public_key publickey);
@@ -504,8 +512,6 @@ LIBSSH_API int ssh_userauth_kbdint_getnanswers(ssh_session session);
 LIBSSH_API const char *ssh_userauth_kbdint_getanswer(ssh_session session, unsigned int i);
 LIBSSH_API int ssh_userauth_kbdint_setanswer(ssh_session session, unsigned int i,
     const char *answer);
-LIBSSH_API int ssh_userauth_list(ssh_session session, const char *username);
-LIBSSH_API int ssh_userauth_none(ssh_session session, const char *username);
 LIBSSH_API int ssh_userauth_offer_pubkey(ssh_session session, const char *username, int type, ssh_string publickey);
 LIBSSH_API int ssh_userauth_password(ssh_session session, const char *username, const char *password);
 LIBSSH_API int ssh_userauth_pubkey(ssh_session session, const char *username, ssh_string publickey, ssh_private_key privatekey);

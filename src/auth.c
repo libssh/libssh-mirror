@@ -462,6 +462,172 @@ fail:
 }
 
 /**
+ * @brief Try to authenticate with the given public key.
+ *
+ * To avoid unnecessary processing and user interaction, the following method
+ * is provided for querying whether authentication using the 'pubkey' would
+ * be possible.
+ *
+ * @param[in] ssh_session The SSH session.
+ *
+ * @param[in] username    The username, this SHOULD be NULL.
+ *
+ * @param[in] pubkey      The public key to try.
+ *
+ * @return  SSH_AUTH_ERROR:   A serious error happened.\n
+ *          SSH_AUTH_DENIED:  The server doesn't accept that public key as an
+ *                            authentication token. Try another key or another
+ *                            method.\n
+ *          SSH_AUTH_PARTIAL: You've been partially authenticated, you still
+ *                            have to use another method.\n
+ *          SSH_AUTH_SUCCESS: The public key is accepted, you want now to use
+ *                            ssh_userauth_pubkey().
+ *          SSH_AUTH_AGAIN:   In nonblocking mode, you've got to call this again
+ *                            later.
+ *
+ * @note Most server implementations do not permit changing the username during
+ * authentication. The username should only be set with ssh_optoins_set() only
+ * before you connect to the server.
+ */
+int ssh_userauth_try_publickey(ssh_session session,
+                               const char *username,
+                               const ssh_key pubkey)
+{
+    ssh_string str;
+    int rc;
+
+    if (session == NULL) {
+        return SSH_AUTH_ERROR;
+    }
+
+    if (pubkey == NULL || !ssh_key_is_public(pubkey)) {
+        ssh_set_error(session, SSH_FATAL, "Invalid pubkey");
+        return SSH_AUTH_ERROR;
+    }
+
+#ifdef WITH_SSH1
+    if (session->version == 1) {
+        return SSH_AUTH_DENIED;
+    }
+#endif
+
+    switch(session->pending_call_state) {
+        case SSH_PENDING_CALL_NONE:
+            break;
+        case SSH_PENDING_CALL_AUTH_OFFER_PUBKEY:
+            goto pending;
+        default:
+            ssh_set_error(session,
+                          SSH_FATAL,
+                          "Bad call during pending SSH call in ssh_userauth_try_pubkey");
+            return SSH_ERROR;
+    }
+
+    rc = ssh_userauth_request_service(session);
+    if (rc == SSH_AGAIN) {
+        return SSH_AUTH_AGAIN;
+    } else if (rc == SSH_ERROR) {
+        return SSH_AUTH_ERROR;
+    }
+
+    /* request */
+    rc = buffer_add_u8(session->out_buffer, SSH2_MSG_USERAUTH_REQUEST);
+    if (rc < 0) {
+        goto fail;
+    }
+
+    /* username */
+    if (username) {
+        str = ssh_string_from_char(username);
+    } else {
+        str = ssh_string_from_char(session->username);
+    }
+    if (str == NULL) {
+        goto fail;
+    }
+
+    rc = buffer_add_ssh_string(session->out_buffer, str);
+    ssh_string_free(str);
+    if (rc < 0) {
+        goto fail;
+    }
+
+    /* service */
+    str = ssh_string_from_char("ssh-connection");
+    if (str == NULL) {
+        goto fail;
+    }
+
+    rc = buffer_add_ssh_string(session->out_buffer, str);
+    ssh_string_free(str);
+    if (rc < 0) {
+        goto fail;
+    }
+
+    /* method */
+    str = ssh_string_from_char("publickey");
+    if (str == NULL) {
+        goto fail;
+    }
+
+    rc = buffer_add_ssh_string(session->out_buffer, str);
+    ssh_string_free(str);
+    if (rc < 0) {
+        goto fail;
+    }
+
+    /* private key? */
+    rc = buffer_add_u8(session->out_buffer, 0);
+    if (rc < 0) {
+        goto fail;
+    }
+
+    /* algo */
+    str = ssh_string_from_char(pubkey->type_c);
+    if (rc < 0) {
+        goto fail;
+    }
+
+    rc = buffer_add_ssh_string(session->out_buffer, str);
+    ssh_string_free(str);
+    if (rc < 0) {
+        goto fail;
+    }
+
+    /* public key */
+    str = ssh_pki_export_pubkey_blob(pubkey);
+    if (str == NULL) {
+        goto fail;
+    }
+
+    rc = buffer_add_ssh_string(session->out_buffer, str);
+    ssh_string_free(str);
+    if (rc < 0) {
+        goto fail;
+    }
+
+    session->auth_state = SSH_AUTH_STATE_NONE;
+    session->pending_call_state = SSH_PENDING_CALL_AUTH_OFFER_PUBKEY;
+    rc = packet_send(session);
+    if (rc == SSH_ERROR) {
+        return SSH_AUTH_ERROR;
+    }
+
+pending:
+    rc = ssh_userauth_get_response(session);
+    if (rc != SSH_AUTH_AGAIN) {
+        session->pending_call_state = SSH_PENDING_CALL_NONE;
+    }
+
+    return rc;
+fail:
+    ssh_set_error_oom(session);
+    buffer_reinit(session->out_buffer);
+
+    return SSH_AUTH_ERROR;
+}
+
+/**
  * @brief Try to authenticate through public key.
  *
  * @param[in]  session  The ssh session to use.
