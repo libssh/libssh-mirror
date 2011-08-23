@@ -156,7 +156,7 @@ SSH_PACKET_CALLBACK(ssh_packet_kexdh_init){
 
 static int dh_handshake_server(ssh_session session) {
   ssh_key pubkey;
-  ssh_key privkey;
+  ssh_key privkey = NULL;
   ssh_string pubkey_blob;
   ssh_string sig_blob;
   ssh_string f;
