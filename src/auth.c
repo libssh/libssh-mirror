@@ -1,10 +1,10 @@
 /*
- * auth1.c - authentication with SSH protocols
+ * auth.c - Authentication with SSH protocols
  *
  * This file is part of the SSH Library
  *
  * Copyright (c) 2003-2008 by Aris Adamantiadis
- * Copyright (c) 2008-2009 Andreas Schneider <mail@cynapses.org>
+ * Copyright (c) 2008-2011 Andreas Schneider <asn@cryptomilk.org>
  *
  * The SSH Library is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
