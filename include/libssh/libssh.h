@@ -497,6 +497,9 @@ LIBSSH_API int ssh_userauth_list(ssh_session session, const char *username);
 LIBSSH_API int ssh_userauth_try_publickey(ssh_session session,
                                           const char *username,
                                           const ssh_key pubkey);
+LIBSSH_API int ssh_userauth_publickey(ssh_session session,
+                                      const char *username,
+                                      const ssh_key privkey);
 
 #ifndef _WIN32
 LIBSSH_API int ssh_userauth_agent_pubkey(ssh_session session, const char *username,
