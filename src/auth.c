@@ -298,30 +298,40 @@ static int wait_auth_status(ssh_session session) {
 }
 
 /**
- * @brief retrieves available authentication methods for this session
- * @param[in] session the SSH session
- * @param[in] username Deprecated, set to NULL.
- * @returns A bitfield of values SSH_AUTH_METHOD_PASSWORD,
-            SSH_AUTH_METHOD_PUBLICKEY, SSH_AUTH_METHOD_HOSTBASED,
-            SSH_AUTH_METHOD_INTERACTIVE.
-   @warning Other reserved flags may appear in future versions.
-   @warning This call will block, even in nonblocking mode, if run for the first
-            time before a (complete) call to ssh_userauth_none.
+ * @brief Get available authentication methods from the server.
+ *
+ * This requires the function ssh_userauth_none() to be called before the
+ * methods are available. The server MAY return a list of methods that may
+ * continue.
+ *
+ * @param[in] session   The SSH session.
+ *
+ * @param[in] username  Deprecated, set to NULL.
+ *
+ * @returns             A bitfield of the fllowing values:
+ *                      - SSH_AUTH_METHOD_PASSWORD
+ *                      - SSH_AUTH_METHOD_PUBLICKEY
+ *                      - SSH_AUTH_METHOD_HOSTBASED
+ *                      - SSH_AUTH_METHOD_INTERACTIVE
+ *
+ * @warning Other reserved flags may appear in future versions.
+ * @see ssh_userauth_none()
  */
-int ssh_userauth_list(ssh_session session, const char *username) {
-  if (session == NULL) {
-    return SSH_AUTH_ERROR;
-  }
+int ssh_userauth_list(ssh_session session, const char *username)
+{
+    (void) username; /* unused */
+
+    if (session == NULL) {
+        return 0;
+    }
 
 #ifdef WITH_SSH1
-  if(session->version==1){
-    return SSH_AUTH_METHOD_PASSWORD;
-  }
+    if(session->version == 1) {
+        return SSH_AUTH_METHOD_PASSWORD;
+    }
 #endif
-  if (session->auth_methods == 0) {
-    ssh_userauth_none(session, username);
-  }
-  return session->auth_methods;
+
+    return session->auth_methods;
 }
 
 /* use the "none" authentication question */
