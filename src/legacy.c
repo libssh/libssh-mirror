@@ -60,6 +60,35 @@ int ssh_userauth_offer_pubkey(ssh_session session, const char *username,
     return rc;
 }
 
+int ssh_userauth_pubkey(ssh_session session,
+                        const char *username,
+                        ssh_string publickey,
+                        ssh_private_key privatekey)
+{
+    ssh_key key;
+    int rc;
+
+    (void) publickey; /* unused */
+
+    key = ssh_key_new();
+    if (key == NULL) {
+        return SSH_AUTH_ERROR;
+    }
+
+    key->type = privatekey->type;
+    key->type_c = ssh_key_type_to_char(key->type);
+    key->flags = SSH_KEY_FLAG_PRIVATE|SSH_KEY_FLAG_PUBLIC;
+    key->dsa = privatekey->dsa_priv;
+    key->rsa = privatekey->rsa_priv;
+
+    rc = ssh_userauth_publickey(session, username, key);
+    key->dsa = NULL;
+    key->rsa = NULL;
+    ssh_key_free(key);
+
+    return rc;
+}
+
 /* BUFFER FUNCTIONS */
 
 void buffer_free(ssh_buffer buffer){

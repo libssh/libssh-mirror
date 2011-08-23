@@ -516,7 +516,6 @@ LIBSSH_API const char *ssh_userauth_kbdint_getanswer(ssh_session session, unsign
 LIBSSH_API int ssh_userauth_kbdint_setanswer(ssh_session session, unsigned int i,
     const char *answer);
 LIBSSH_API int ssh_userauth_password(ssh_session session, const char *username, const char *password);
-LIBSSH_API int ssh_userauth_pubkey(ssh_session session, const char *username, ssh_string publickey, ssh_private_key privatekey);
 LIBSSH_API int ssh_userauth_privatekey_file(ssh_session session, const char *username,
     const char *filename, const char *passphrase);
 LIBSSH_API const char *ssh_version(int req_version);

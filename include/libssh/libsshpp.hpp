@@ -219,19 +219,13 @@ public:
     return ret;
   }
   /** @brief Authenticates using the publickey method.
-   * @param[in] pubkey public key to use for authentication
    * @param[in] privkey private key to use for authentication
    * @throws SshException on error
    * @returns SSH_AUTH_SUCCESS, SSH_AUTH_PARTIAL, SSH_AUTH_DENIED
    * @see ssh_userauth_pubkey
    */
-  int userauthPubkey(ssh_string pubkey, ssh_private_key privkey){
-    int ret=ssh_userauth_pubkey(c_session,NULL,pubkey,privkey);
-    ssh_throw(ret);
-    return ret;
-  }
-  int userauthPubkey(ssh_private_key privkey){
-    int ret=ssh_userauth_pubkey(c_session,NULL,NULL,privkey);
+  int userauthPublickey(ssh_key privkey){
+    int ret=ssh_userauth_publickey(c_session, NULL, privkey);
     ssh_throw(ret);
     return ret;
   }
