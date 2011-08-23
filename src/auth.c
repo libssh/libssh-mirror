@@ -82,6 +82,90 @@ static int ssh_userauth_request_service(ssh_session session)
     return rc;
 }
 
+static int auth_status_termination(void *user) {
+  ssh_session session = (ssh_session) user;
+
+  switch(session->auth_state) {
+    case SSH_AUTH_STATE_NONE:
+    case SSH_AUTH_STATE_KBDINT_SENT:
+      return 0;
+    case SSH_AUTH_STATE_PARTIAL:
+    case SSH_AUTH_STATE_SUCCESS:
+    case SSH_AUTH_STATE_INFO:
+    case SSH_AUTH_STATE_FAILED:
+    case SSH_AUTH_STATE_ERROR:
+    case SSH_AUTH_STATE_PK_OK:
+      return 1;
+  }
+
+  /* should never been reached */
+  return 1;
+}
+
+/**
+ * @internal
+ * @brief Wait for a response of an authentication function.
+ *
+ * @param[in] session   The SSH session.
+ *
+ * @returns SSH_AUTH_SUCCESS Authentication success, or pubkey accepted
+ *          SSH_AUTH_PARTIAL Authentication succeeded but another mean
+ *                           of authentication is needed.
+ *          SSH_AUTH_INFO    Data for keyboard-interactive
+ *          SSH_AUTH_AGAIN   In nonblocking mode, call has to be made again
+ *          SSH_AUTH_ERROR   Error during the process.
+ */
+static int ssh_userauth_get_response(ssh_session session) {
+    int rc = SSH_AUTH_ERROR;
+
+    if (ssh_is_blocking(session)) {
+        rc = ssh_handle_packets_termination(session,
+                                            -2,
+                                            auth_status_termination,
+                                            session);
+        if (rc == SSH_ERROR) {
+            leave_function();
+            return SSH_AUTH_ERROR;
+        }
+    } else {
+        rc = ssh_handle_packets(session, 0);
+        if (rc == SSH_ERROR) {
+            leave_function();
+            return SSH_AUTH_ERROR;
+        }
+        if (!auth_status_termination(session)){
+            leave_function();
+            return SSH_AUTH_AGAIN;
+        }
+    }
+
+    switch(session->auth_state) {
+        case SSH_AUTH_STATE_ERROR:
+            rc = SSH_AUTH_ERROR;
+            break;
+        case SSH_AUTH_STATE_FAILED:
+            rc = SSH_AUTH_DENIED;
+            break;
+        case SSH_AUTH_STATE_INFO:
+            rc = SSH_AUTH_INFO;
+            break;
+        case SSH_AUTH_STATE_PARTIAL:
+            rc = SSH_AUTH_PARTIAL;
+            break;
+        case SSH_AUTH_STATE_PK_OK:
+        case SSH_AUTH_STATE_SUCCESS:
+            rc = SSH_AUTH_SUCCESS;
+            break;
+        case SSH_AUTH_STATE_KBDINT_SENT:
+        case SSH_AUTH_STATE_NONE:
+            /* not reached */
+            rc = SSH_AUTH_ERROR;
+            break;
+    }
+
+    return rc;
+}
+
 /**
  * @internal
  *
@@ -222,76 +306,6 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_pk_ok){
     session->auth_state=SSH_AUTH_STATE_PK_OK;
     ssh_log(session,SSH_LOG_PACKET,"assuming SSH_USERAUTH_PK_OK");
     rc=SSH_PACKET_USED;
-  }
-  leave_function();
-  return rc;
-}
-
-static int auth_status_termination(void *user){
-  ssh_session session=(ssh_session)user;
-  switch(session->auth_state){
-    case SSH_AUTH_STATE_NONE:
-    case SSH_AUTH_STATE_KBDINT_SENT:
-      return 0;
-    default:
-      return 1;
-  }
-}
-
-/**
- * @internal
- * @brief waits for a response of an authentication function
- * @param[in] session SSH session
- * @returns SSH_AUTH_SUCCESS Authentication success, or pubkey accepted
- *          SSH_AUTH_PARTIAL Authentication succeeded but another mean
- *                           of authentication is needed.
- *          SSH_AUTH_INFO    Data for keyboard-interactive
- *          SSH_AUTH_AGAIN   In nonblocking mode, call has to be made again
- *          SSH_AUTH_ERROR   Error during the process.
- */
-static int wait_auth_status(ssh_session session) {
-  int rc = SSH_AUTH_ERROR;
-
-  enter_function();
-
-  if(ssh_is_blocking(session)){
-    if(ssh_handle_packets_termination(session, -2, auth_status_termination,
-        session) == SSH_ERROR){
-      leave_function();
-      return SSH_AUTH_ERROR;
-    }
-  } else {
-    if(ssh_handle_packets(session, 0) == SSH_ERROR){
-      leave_function();
-      return SSH_AUTH_ERROR;
-    }
-    if(!auth_status_termination(session)){
-      leave_function();
-      return SSH_AUTH_AGAIN;
-    }
-  }
-  switch(session->auth_state){
-    case SSH_AUTH_STATE_ERROR:
-      rc=SSH_AUTH_ERROR;
-      break;
-    case SSH_AUTH_STATE_FAILED:
-      rc=SSH_AUTH_DENIED;
-      break;
-    case SSH_AUTH_STATE_INFO:
-      rc=SSH_AUTH_INFO;
-      break;
-    case SSH_AUTH_STATE_PARTIAL:
-      rc=SSH_AUTH_PARTIAL;
-      break;
-    case SSH_AUTH_STATE_PK_OK:
-    case SSH_AUTH_STATE_SUCCESS:
-      rc=SSH_AUTH_SUCCESS;
-      break;
-    case SSH_AUTH_STATE_KBDINT_SENT:
-    case SSH_AUTH_STATE_NONE:
-      /* not reached */
-      rc=SSH_AUTH_ERROR;
-      break;
   }
   leave_function();
   return rc;
@@ -444,7 +458,7 @@ int ssh_userauth_none(ssh_session session, const char *username) {
     return rc;
   }
 pending:
-  rc = wait_auth_status(session);
+  rc = ssh_userauth_get_response(session);
   if (rc != SSH_AUTH_AGAIN)
     session->pending_call_state=SSH_PENDING_CALL_NONE;
   leave_function();
@@ -594,7 +608,7 @@ int ssh_userauth_offer_pubkey(ssh_session session, const char *username,
     return rc;
   }
 pending:
-  rc = wait_auth_status(session);
+  rc = ssh_userauth_get_response(session);
   if (rc != SSH_AUTH_AGAIN)
     session->pending_call_state=SSH_PENDING_CALL_NONE;
   leave_function();
@@ -772,7 +786,7 @@ int ssh_userauth_pubkey(ssh_session session, const char *username,
     return rc;
   }
 pending:
-  rc = wait_auth_status(session);
+  rc = ssh_userauth_get_response(session);
   if (rc != SSH_AUTH_AGAIN)
     session->pending_call_state=SSH_PENDING_CALL_NONE;
   leave_function();
@@ -955,7 +969,7 @@ int ssh_userauth_pki_pubkey(ssh_session session, const char *username,
     }
 
 pending:
-    rc = wait_auth_status(session);
+    rc = ssh_userauth_get_response(session);
     if (rc != SSH_AUTH_AGAIN)
         session->pending_call_state = SSH_PENDING_CALL_NONE;
     leave_function();
@@ -1152,7 +1166,7 @@ int ssh_userauth_agent_pubkey(ssh_session session, const char *username,
       leave_function();
       return rc;
     }
-    rc = wait_auth_status(session);
+    rc = ssh_userauth_get_response(session);
   }
 
   ssh_string_free(user);
@@ -1302,7 +1316,7 @@ int ssh_userauth_password(ssh_session session, const char *username,
     return rc;
   }
 pending:
-  rc = wait_auth_status(session);
+  rc = ssh_userauth_get_response(session);
   if(rc!=SSH_AUTH_AGAIN)
     session->pending_call_state=SSH_PENDING_CALL_NONE;
   leave_function();
@@ -1677,7 +1691,7 @@ static int kbdauth_init(ssh_session session, const char *user,
     leave_function();
     return rc;
   }
-  rc = wait_auth_status(session);
+  rc = ssh_userauth_get_response(session);
 
   leave_function();
   return rc;
@@ -1871,7 +1885,7 @@ static int kbdauth_send(ssh_session session) {
     leave_function();
     return rc;
   }
-  rc = wait_auth_status(session);
+  rc = ssh_userauth_get_response(session);
 
   leave_function();
   return rc;
