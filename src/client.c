@@ -228,6 +228,7 @@ SSH_PACKET_CALLBACK(ssh_packet_newkeys){
     /* server things are done in server.c */
     session->dh_handshake_state=DH_STATE_FINISHED;
   } else {
+    ssh_key key;
     /* client */
     rc = make_sessionid(session);
     if (rc != SSH_OK) {
@@ -249,16 +250,44 @@ SSH_PACKET_CALLBACK(ssh_packet_newkeys){
     /* Verify the host's signature. FIXME do it sooner */
     sig_blob = session->next_crypto->dh_server_signature;
     session->next_crypto->dh_server_signature = NULL;
+
+    /* get the server public key */
+    rc = ssh_pki_import_pubkey_blob(session->next_crypto->server_pubkey, &key);
+    if (rc < 0) {
+        return SSH_ERROR;
+    }
+
+    /* check if public key from server matches user preferences */
+    if (session->wanted_methods[SSH_HOSTKEYS]) {
+        if(!ssh_match_group(session->wanted_methods[SSH_HOSTKEYS],
+                            key->type_c)) {
+            ssh_set_error(session,
+                          SSH_FATAL,
+                          "Public key from server (%s) doesn't match user "
+                          "preference (%s)",
+                          key->type_c,
+                          session->wanted_methods[SSH_HOSTKEYS]);
+            ssh_key_free(key);
+            return -1;
+        }
+    }
+
     rc = ssh_pki_signature_verify_blob(session,
-                                       sig_blob);
+                                       sig_blob,
+                                       key,
+                                       session->next_crypto->session_id,
+                                       session->next_crypto->digest_len);
+    /* Set the server public key type for known host checking */
+    session->next_crypto->server_pubkey_type = key->type_c;
+
+    ssh_key_free(key);
+    ssh_string_burn(sig_blob);
+    ssh_string_free(sig_blob);
+    sig_blob = NULL;
     if (rc == SSH_ERROR) {
       goto error;
     }
     ssh_log(session,SSH_LOG_PROTOCOL,"Signature verified and valid");
-    /* forget it for now ... */
-    ssh_string_burn(sig_blob);
-    ssh_string_free(sig_blob);
-    sig_blob = NULL;
 
     /*
      * Once we got SSH2_MSG_NEWKEYS we can switch next_crypto and

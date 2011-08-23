@@ -992,31 +992,14 @@ int ssh_pki_import_signature_blob(const ssh_string sig_blob,
 }
 
 int ssh_pki_signature_verify_blob(ssh_session session,
-                                  ssh_string sig_blob)
+                                  ssh_string sig_blob,
+                                  const ssh_key key,
+                                  unsigned char *digest,
+                                  size_t dlen)
 {
     unsigned char hash[SHA_DIGEST_LEN + 1] = {0};
     ssh_signature sig;
-    ssh_key key;
     int rc;
-
-    rc = ssh_pki_import_pubkey_blob(session->next_crypto->server_pubkey, &key);
-    if (rc < 0) {
-        return SSH_ERROR;
-    }
-
-    if (session->wanted_methods[SSH_HOSTKEYS]) {
-        if(!ssh_match_group(session->wanted_methods[SSH_HOSTKEYS],
-                            key->type_c)) {
-            ssh_set_error(session,
-                          SSH_FATAL,
-                          "Public key from server (%s) doesn't match user "
-                          "preference (%s)",
-                          key->type_c,
-                          session->wanted_methods[SSH_HOSTKEYS]);
-            ssh_key_free(key);
-            return -1;
-        }
-    }
 
     rc = ssh_pki_import_signature_blob(sig_blob, key, &sig);
     if (rc < 0) {
@@ -1030,9 +1013,7 @@ int ssh_pki_signature_verify_blob(ssh_session session,
             key->type_c);
 
 
-    sha1(session->next_crypto->session_id,
-         session->next_crypto->digest_len,
-         hash + 1);
+    sha1(digest, dlen, hash + 1);
 
 #ifdef DEBUG_CRYPTO
     ssh_print_hexa("Hash to be verified with dsa", hash + 1, SHA_DIGEST_LEN);
@@ -1043,9 +1024,7 @@ int ssh_pki_signature_verify_blob(ssh_session session,
                               key,
                               hash,
                               SHA_DIGEST_LEN);
-    session->next_crypto->server_pubkey_type = key->type_c;
     ssh_signature_free(sig);
-    ssh_key_free(key);
 
     return rc;
 }
@@ -1153,44 +1132,6 @@ ssh_string ssh_pki_do_sign_agent(ssh_session session,
 #endif /* _WIN32 */
 
 #ifdef WITH_SERVER
-int ssh_srv_pki_signature_verify_blob(ssh_session session,
-                                      ssh_string sig_blob,
-                                      const ssh_key key,
-                                      unsigned char *digest,
-                                      size_t dlen)
-{
-    unsigned char hash[SHA_DIGEST_LEN + 1] = {0};
-    ssh_signature sig;
-    int rc;
-
-    rc = ssh_pki_import_signature_blob(sig_blob, key, &sig);
-    if (rc < 0) {
-        ssh_key_free(key);
-        return SSH_ERROR;
-    }
-
-    ssh_log(session,
-            SSH_LOG_FUNCTIONS,
-            "Going to verify a %s type signature",
-            key->type_c);
-
-
-    sha1(digest, dlen, hash + 1);
-
-#ifdef DEBUG_CRYPTO
-    ssh_print_hexa("Hash to be verified with dsa", hash + 1, SHA_DIGEST_LEN);
-#endif
-
-    rc = pki_signature_verify(session,
-                              sig,
-                              key,
-                              hash,
-                              SHA_DIGEST_LEN);
-    ssh_signature_free(sig);
-
-    return rc;
-}
-
 ssh_string ssh_srv_pki_do_sign_sessionid(ssh_session session,
                                          const ssh_key privkey)
 {
