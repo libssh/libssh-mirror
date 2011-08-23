@@ -469,16 +469,20 @@ int ssh_scp_read_string(ssh_scp scp, char *buffer, size_t len){
  *
  * @returns             SSH_SCP_REQUEST_NEWFILE:       The other side is sending
  *                                                     a file
- *                      SSH_SCP_REQUEST_NEWDIRECTORY:  The other side is sending
+ *                      SSH_SCP_REQUEST_NEWDIR:  The other side is sending
  *                                                     a directory
- *                      SSH_SCP_REQUEST_END_DIRECTORY: The other side has
+ *                      SSH_SCP_REQUEST_ENDDIR: The other side has
  *                                                     finished with the current
  *                                                     directory
+ *                      SSH_SCP_REQUEST_WARNING: The other side sent us a warning
+ *                      SSH_SCP_REQUEST_EOF: The other side finished sending us
+ *                                           files and data.
  *                      SSH_ERROR:                     Some error happened
  *
  * @see ssh_scp_read()
  * @see ssh_scp_deny_request()
  * @see ssh_scp_accept_request()
+ * @see ssh_scp_request_get_warning()
  */
 int ssh_scp_pull_request(ssh_scp scp){
   char buffer[4096];
