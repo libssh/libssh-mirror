@@ -330,55 +330,6 @@ ssh_string RSA_do_sign(const unsigned char *payload, int len, RSA *privkey) {
 }
 #endif
 
-#ifndef _WIN32
-ssh_string ssh_do_sign_with_agent(ssh_session session,
-    struct ssh_buffer_struct *buf, struct ssh_public_key_struct *publickey) {
-  struct ssh_buffer_struct *sigbuf = NULL;
-  struct ssh_string_struct *signature = NULL;
-  struct ssh_string_struct *session_id = NULL;
-  struct ssh_crypto_struct *crypto = NULL;
-
-  if (session->current_crypto) {
-    crypto = session->current_crypto;
-  } else {
-    crypto = session->next_crypto;
-  }
-
-  /* prepend session identifier */
-  session_id = ssh_string_new(crypto->digest_len);
-  if (session_id == NULL) {
-    return NULL;
-  }
-  ssh_string_fill(session_id, crypto->session_id, crypto->digest_len);
-
-  sigbuf = ssh_buffer_new();
-  if (sigbuf == NULL) {
-    ssh_string_free(session_id);
-    return NULL;
-  }
-
-  if (buffer_add_ssh_string(sigbuf, session_id) < 0) {
-    ssh_buffer_free(sigbuf);
-    ssh_string_free(session_id);
-    return NULL;
-  }
-  ssh_string_free(session_id);
-
-  /* append out buffer */
-  if (buffer_add_buffer(sigbuf, buf) < 0) {
-    ssh_buffer_free(sigbuf);
-    return NULL;
-  }
-
-  /* create signature */
-  signature = agent_sign_data(session, sigbuf, publickey);
-
-  ssh_buffer_free(sigbuf);
-
-  return signature;
-}
-#endif /* _WIN32 */
-
 /*
  * This function signs the session id (known as H) as a string then
  * the content of sigbuf */

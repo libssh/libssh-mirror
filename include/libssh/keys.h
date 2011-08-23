@@ -76,8 +76,6 @@ ssh_string RSA_do_sign(const unsigned char *payload, int len, RSA *privkey);
 #endif
 SIGNATURE *signature_from_string(ssh_session session, ssh_string signature,ssh_public_key pubkey,int needed_type);
 void signature_free(SIGNATURE *sign);
-ssh_string ssh_do_sign_with_agent(struct ssh_session_struct *session,
-    struct ssh_buffer_struct *buf, struct ssh_public_key_struct *publickey);
 ssh_string ssh_do_sign(ssh_session session,ssh_buffer sigbuf,
         ssh_private_key privatekey);
 
