@@ -745,7 +745,8 @@ int ssh_event_add_fd(ssh_event event, socket_t fd, short events,
 
     pw->cb = cb;
     pw->userdata = userdata;
-    
+
+    /* pw is freed by ssh_event_remove_fd */
     p = ssh_poll_new(fd, events, ssh_event_fd_wrapper_callback, pw);
     if(p == NULL) {
         free(pw);
@@ -838,7 +839,6 @@ int ssh_event_dopoll(ssh_event event, int timeout) {
  *          SSH_ERROR   on failure
  */
 int ssh_event_remove_fd(ssh_event event, socket_t fd) {
-    ssh_poll_handle p;
     register size_t i, used;
     int rc = SSH_ERROR;
 
@@ -849,9 +849,11 @@ int ssh_event_remove_fd(ssh_event event, socket_t fd) {
     used = event->ctx->polls_used;
     for (i = 0; i < used; i++) {
         if(fd == event->ctx->pollfds[i].fd) {
-            p = event->ctx->pollptrs[i];
+            ssh_poll_handle p = event->ctx->pollptrs[i];
+            struct ssh_event_fd_wrapper *pw = p->cb_data;
+
             ssh_poll_ctx_remove(event->ctx, p);
-            free(p->cb_data);
+            free(pw);
             ssh_poll_free(p);
             rc = SSH_OK;
             /* restart the loop */
