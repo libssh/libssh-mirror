@@ -62,10 +62,10 @@
  * @returns SSH_AGAIN on nonblocking mode, if calling that function
  * again is necessary
  */
-static int ask_userauth(ssh_session session) {
-    int rc = 0;
+static int ssh_userauth_request_service(ssh_session session)
+{
+    int rc = SSH_OK;
 
-    enter_function();
     do {
         rc = ssh_service_request(session,"ssh-userauth");
         if (ssh_is_blocking(session)) {
@@ -78,7 +78,7 @@ static int ask_userauth(ssh_session session) {
             break;
         }
     } while (rc == SSH_AGAIN);
-    leave_function();
+
     return rc;
 }
 
@@ -402,7 +402,7 @@ int ssh_userauth_none(ssh_session session, const char *username) {
     rc=SSH_ERROR;
   }
 
-  err = ask_userauth(session);
+  err = ssh_userauth_request_service(session);
   if(err == SSH_AGAIN){
     rc=SSH_AUTH_AGAIN;
     ssh_string_free(user);
@@ -542,7 +542,7 @@ int ssh_userauth_offer_pubkey(ssh_session session, const char *username,
     rc=SSH_ERROR;
   }
 
-  rc = ask_userauth(session);
+  rc = ssh_userauth_request_service(session);
   if(rc == SSH_AGAIN){
     rc=SSH_AUTH_AGAIN;
     ssh_string_free(user);
@@ -692,7 +692,8 @@ int ssh_userauth_pubkey(ssh_session session, const char *username,
     rc=SSH_ERROR;
   }
 
-  if (ask_userauth(session) < 0) {
+  rc = ssh_userauth_request_service(session);
+  if (rc < 0) {
     ssh_string_free(user);
     leave_function();
     return rc;
@@ -873,7 +874,8 @@ int ssh_userauth_pki_pubkey(ssh_session session, const char *username,
             rc = SSH_ERROR;
     }
 
-    if (ask_userauth(session) < 0) {
+    rc = ssh_userauth_request_service(session);
+    if (rc < 0) {
         ssh_string_free(user);
         leave_function();
         return rc;
@@ -1096,7 +1098,8 @@ int ssh_userauth_agent_pubkey(ssh_session session, const char *username,
     return rc;
   }
 
-  if (ask_userauth(session) < 0) {
+  rc = ssh_userauth_request_service(session);
+  if (rc < 0) {
     ssh_string_free(user);
     leave_function();
     return rc;
@@ -1247,7 +1250,7 @@ int ssh_userauth_password(ssh_session session, const char *username,
     rc=SSH_ERROR;
   }
 
-  err = ask_userauth(session);
+  err = ssh_userauth_request_service(session);
   if(err == SSH_AGAIN){
     rc=SSH_AUTH_AGAIN;
     ssh_string_free(user);
@@ -1931,7 +1934,8 @@ int ssh_userauth_kbdint(ssh_session session, const char *user,
       }
     }
 
-    if (ask_userauth(session)) {
+    rc = ssh_userauth_request_service(session);
+    if (rc != SSH_OK) {
       leave_function();
       return SSH_AUTH_ERROR;
     }
