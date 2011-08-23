@@ -299,15 +299,6 @@ static int wait_auth_status(ssh_session session) {
 
 /**
  * @brief retrieves available authentication methods for this session
- * @deprecated
- * @see ssh_userauth_list
- */
-int ssh_auth_list(ssh_session session) {
-  return ssh_userauth_list(session, NULL);
-}
-
-/**
- * @brief retrieves available authentication methods for this session
  * @param[in] session the SSH session
  * @param[in] username Deprecated, set to NULL.
  * @returns A bitfield of values SSH_AUTH_METHOD_PASSWORD,

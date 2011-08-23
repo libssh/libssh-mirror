@@ -35,6 +35,13 @@
 #include <libssh/keys.h>
 #include <libssh/keyfiles.h>
 
+/* AUTH FUNCTIONS */
+int ssh_auth_list(ssh_session session) {
+  return ssh_userauth_list(session, NULL);
+}
+
+/* BUFFER FUNCTIONS */
+
 void buffer_free(ssh_buffer buffer){
   ssh_buffer_free(buffer);
 }
