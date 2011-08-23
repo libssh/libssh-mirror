@@ -31,6 +31,7 @@
 #ifndef LEGACY_H_
 #define LEGACY_H_
 LIBSSH_API int ssh_auth_list(ssh_session session);
+LIBSSH_API int ssh_userauth_offer_pubkey(ssh_session session, const char *username, int type, ssh_string publickey);
 
 LIBSSH_API void buffer_free(ssh_buffer buffer);
 LIBSSH_API void *buffer_get(ssh_buffer buffer);

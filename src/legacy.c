@@ -40,6 +40,26 @@ int ssh_auth_list(ssh_session session) {
   return ssh_userauth_list(session, NULL);
 }
 
+int ssh_userauth_offer_pubkey(ssh_session session, const char *username,
+    int type, ssh_string publickey)
+{
+    ssh_key key;
+    int rc;
+
+    (void) type; /* unused */
+
+    rc = ssh_pki_import_pubkey_blob(publickey, &key);
+    if (rc < 0) {
+        ssh_set_error(session, SSH_FATAL, "Failed to convert public key");
+        return SSH_AUTH_ERROR;
+    }
+
+    rc = ssh_userauth_try_publickey(session, username, key);
+    ssh_key_free(key);
+
+    return rc;
+}
+
 /* BUFFER FUNCTIONS */
 
 void buffer_free(ssh_buffer buffer){

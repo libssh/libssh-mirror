@@ -211,10 +211,10 @@ public:
    * @throws SshException on error
    * @returns SSH_AUTH_SUCCESS if the pubkey is accepted,
    * @returns SSH_AUTH_DENIED if the pubkey is denied
-   * @see ssh_userauth_offer_pubkey
+   * @see ssh_userauth_try_pubkey
    */
-  int userauthOfferPubkey(int type, ssh_string pubkey){
-    int ret=ssh_userauth_offer_pubkey(c_session,NULL,type,pubkey);
+  int userauthTryPublickey(ssh_key pubkey){
+    int ret=ssh_userauth_try_publickey(c_session, NULL, pubkey);
     ssh_throw(ret);
     return ret;
   }
