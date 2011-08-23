@@ -340,7 +340,8 @@ int ssh_pki_import_privkey_base64(const char *b64_key,
  * @param[out] pkey     A pointer to store the ssh_key. You need to free the
  *                      key.
  *
- * @returns SSH_OK on success, SSH_ERROR otherwise.
+ * @returns SSH_OK on success, SSH_EOF if the file doesn't exist or permission
+ *          denied, SSH_ERROR otherwise.
  *
  * @see ssh_key_free()
  **/
@@ -364,6 +365,12 @@ int ssh_pki_import_privkey_file(const char *filename,
     if (rc < 0) {
         ssh_pki_log("Error gettint stat of %s: %s",
                     filename, strerror(errno));
+        switch (errno) {
+            case ENOENT:
+            case EACCES:
+                return SSH_EOF;
+        }
+
         return SSH_ERROR;
     }
 
@@ -371,7 +378,7 @@ int ssh_pki_import_privkey_file(const char *filename,
     if (file == NULL) {
         ssh_pki_log("Error opening %s: %s",
                     filename, strerror(errno));
-        return SSH_ERROR;
+        return SSH_EOF;
     }
 
     key_buf = malloc(sb.st_size + 1);
@@ -680,6 +687,19 @@ fail:
     return SSH_ERROR;
 }
 
+/**
+ * @brief Import a public key from the given filename.
+ *
+ * @param[in]  filename The path to the public key.
+ *
+ * @param[out] pkey     A pointer to store the public key. You need to free the
+ *                      memory.
+ *
+ * @returns SSH_OK on success, SSH_EOF if the file doesn't exist or permission
+ *          denied, SSH_ERROR otherwise.
+ *
+ * @see ssh_key_free()
+ */
 int ssh_pki_import_pubkey_file(const char *filename, ssh_key *pkey)
 {
     enum ssh_keytypes_e type;
@@ -698,6 +718,11 @@ int ssh_pki_import_pubkey_file(const char *filename, ssh_key *pkey)
     if (rc < 0) {
         ssh_pki_log("Error gettint stat of %s: %s",
                     filename, strerror(errno));
+        switch (errno) {
+            case ENOENT:
+            case EACCES:
+                return SSH_EOF;
+        }
         return SSH_ERROR;
     }
 
@@ -705,7 +730,7 @@ int ssh_pki_import_pubkey_file(const char *filename, ssh_key *pkey)
     if (file == NULL) {
         ssh_pki_log("Error opening %s: %s",
                     filename, strerror(errno));
-        return SSH_ERROR;
+        return SSH_EOF;
     }
 
     key_buf = malloc(sb.st_size + 1);
