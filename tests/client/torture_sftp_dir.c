@@ -41,6 +41,8 @@ static void torture_sftp_mkdir(void **state) {
     snprintf(tmpdir, sizeof(tmpdir), "%s/mkdir_test", t->testdir);
 
     rc = sftp_mkdir(t->sftp, tmpdir, 0755);
+    if(rc != SSH_OK)
+        fprintf(stderr,"error:%s\n",ssh_get_error(t->sftp->session));
     assert_true(rc == 0);
 
     /* check if it really has been created */

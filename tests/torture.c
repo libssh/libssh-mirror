@@ -248,6 +248,8 @@ struct torture_sftp *torture_sftp_session(ssh_session session) {
     if (p == NULL) {
         goto failed;
     }
+    /* useful if TESTUSER is not the local user */
+    chmod(template,0777);
     t->testdir = strdup(p);
     if (t->testdir == NULL) {
         goto failed;
