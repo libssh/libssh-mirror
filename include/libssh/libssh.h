@@ -461,8 +461,6 @@ LIBSSH_API int ssh_pki_export_pubkey_base64(const ssh_key key,
 LIBSSH_API int ssh_pki_export_pubkey_file(const ssh_key key,
                                           const char *filename);
 
-LIBSSH_API int ssh_userauth_pki_pubkey(ssh_session session, const char *username,
-                            ssh_string publickey, ssh_key privatekey);
 LIBSSH_API void ssh_print_hexa(const char *descr, const unsigned char *what, size_t len);
 LIBSSH_API int ssh_scp_accept_request(ssh_scp scp);
 LIBSSH_API int ssh_scp_close(ssh_scp scp);
@@ -507,6 +505,9 @@ LIBSSH_API int ssh_userauth_agent(ssh_session session,
 LIBSSH_API int ssh_userauth_publickey_auto(ssh_session session,
                                            const char *username,
                                            const char *passphrase);
+LIBSSH_API int ssh_userauth_password(ssh_session session,
+                                     const char *username,
+                                     const char *password);
 
 LIBSSH_API int ssh_userauth_kbdint(ssh_session session, const char *user, const char *submethods);
 LIBSSH_API const char *ssh_userauth_kbdint_getinstruction(ssh_session session);
@@ -517,7 +518,6 @@ LIBSSH_API int ssh_userauth_kbdint_getnanswers(ssh_session session);
 LIBSSH_API const char *ssh_userauth_kbdint_getanswer(ssh_session session, unsigned int i);
 LIBSSH_API int ssh_userauth_kbdint_setanswer(ssh_session session, unsigned int i,
     const char *answer);
-LIBSSH_API int ssh_userauth_password(ssh_session session, const char *username, const char *password);
 LIBSSH_API int ssh_userauth_privatekey_file(ssh_session session, const char *username,
     const char *filename, const char *passphrase);
 LIBSSH_API const char *ssh_version(int req_version);

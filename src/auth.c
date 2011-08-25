@@ -1195,7 +1195,152 @@ int ssh_userauth_publickey_auto(ssh_session session,
     return SSH_AUTH_DENIED;
 }
 
+/**
+ * @brief Try to authenticate by password.
+ *
+ * This authentication method is normally disabled on SSHv2 server. You should
+ * use keyboard-interactive mode.
+ *
+ * The 'password' value MUST be encoded UTF-8.  It is up to the server how to
+ * interpret the password and validate it against the password database.
+ * However, if you read the password in some other encoding, you MUST convert
+ * the password to UTF-8.
+ *
+ * @param[in] session   The ssh session to use.
+ *
+ * @param[in] username  The username, this SHOULD be NULL.
+ *
+ * @param[in] passowrd  The password to authenticate in UTF-8.
+ *
+ * @returns             A bitfield of the fllowing values:
+ *                      - SSH_AUTH_METHOD_PASSWORD
+ *                      - SSH_AUTH_METHOD_PUBLICKEY
+ *                      - SSH_AUTH_METHOD_HOSTBASED
+ *                      - SSH_AUTH_METHOD_INTERACTIVE
+ *
+ * @note Most server implementations do not permit changing the username during
+ * authentication. The username should only be set with ssh_optoins_set() only
+ * before you connect to the server.
+ *
+ * @see ssh_userauth_none()
+ * @see ssh_userauth_kbdint()
+ */
+int ssh_userauth_password(ssh_session session,
+                          const char *username,
+                          const char *password) {
+    ssh_string str;
+    int rc;
 
+#ifdef WITH_SSH1
+    if (session->version == 1) {
+        rc = ssh_userauth1_password(session, username, password);
+        return rc;
+    }
+#endif
+
+    switch(session->pending_call_state) {
+        case SSH_PENDING_CALL_NONE:
+            break;
+        case SSH_PENDING_CALL_AUTH_OFFER_PUBKEY:
+            goto pending;
+        default:
+            ssh_set_error(session,
+                          SSH_FATAL,
+                          "Bad call during pending SSH call in ssh_userauth_try_pubkey");
+            return SSH_ERROR;
+    }
+
+    rc = ssh_userauth_request_service(session);
+    if (rc == SSH_AGAIN) {
+        return SSH_AUTH_AGAIN;
+    } else if (rc == SSH_ERROR) {
+        return SSH_AUTH_ERROR;
+    }
+
+    /* request */
+    rc = buffer_add_u8(session->out_buffer, SSH2_MSG_USERAUTH_REQUEST);
+    if (rc < 0) {
+        goto fail;
+    }
+
+    /* username */
+    if (username) {
+        str = ssh_string_from_char(username);
+    } else {
+        str = ssh_string_from_char(session->username);
+    }
+    if (str == NULL) {
+        goto fail;
+    }
+
+    rc = buffer_add_ssh_string(session->out_buffer, str);
+    ssh_string_free(str);
+    if (rc < 0) {
+        goto fail;
+    }
+
+    /* service */
+    str = ssh_string_from_char("ssh-connection");
+    if (str == NULL) {
+        goto fail;
+    }
+
+    rc = buffer_add_ssh_string(session->out_buffer, str);
+    ssh_string_free(str);
+    if (rc < 0) {
+        goto fail;
+    }
+
+    /* method */
+    str = ssh_string_from_char("password");
+    if (str == NULL) {
+        goto fail;
+    }
+
+    rc = buffer_add_ssh_string(session->out_buffer, str);
+    ssh_string_free(str);
+    if (rc < 0) {
+        goto fail;
+    }
+
+    /* FALSE */
+    rc = buffer_add_u8(session->out_buffer, 0);
+    if (rc < 0) {
+        goto fail;
+    }
+
+    /* password */
+    str = ssh_string_from_char(password);
+    if (rc < 0) {
+        goto fail;
+    }
+
+    rc = buffer_add_ssh_string(session->out_buffer, str);
+    ssh_string_free(str);
+    if (rc < 0) {
+        goto fail;
+    }
+
+    session->auth_state = SSH_AUTH_STATE_NONE;
+    session->pending_call_state = SSH_PENDING_CALL_AUTH_OFFER_PUBKEY;
+    rc = packet_send(session);
+    if (rc == SSH_ERROR) {
+        return SSH_AUTH_ERROR;
+    }
+
+pending:
+    rc = ssh_userauth_get_response(session);
+    if (rc != SSH_AUTH_AGAIN) {
+        session->pending_call_state = SSH_PENDING_CALL_NONE;
+    }
+
+    return rc;
+fail:
+    ssh_set_error_oom(session);
+    buffer_reinit(session->out_buffer);
+
+    return SSH_AUTH_ERROR;
+}
 /**
  * @brief Try to authenticate through a private key file.
  *
@@ -1293,147 +1438,6 @@ int ssh_userauth_agent_pubkey(ssh_session session,
     return rc;
 }
 #endif /* _WIN32 */
-
-/**
- * @brief Try to authenticate by password.
- *
- * @param[in]  session  The ssh session to use.
- *
- * @param[in]  username The username to authenticate. You can specify NULL if
- *                      ssh_option_set_username() has been used. You cannot try
- *                      two different logins in a row.
- *
- * @param[in]  password The password to use. Take care to clean it after
- *                      the authentication.
- *
- * @returns SSH_AUTH_ERROR:   A serious error happened.\n
- *          SSH_AUTH_DENIED:  Authentication failed: use another method.\n
- *          SSH_AUTH_PARTIAL: You've been partially authenticated, you still
- *                            have to use another method.\n
- *          SSH_AUTH_SUCCESS: Authentication successful.\n
- *          SSH_AUTH_AGAIN:   In nonblocking mode, you've got to call this again
- *                            later.
- *
- * @see ssh_userauth_kbdint()
- * @see BURN_STRING
- */
-int ssh_userauth_password(ssh_session session, const char *username,
-    const char *password) {
-  ssh_string user = NULL;
-  ssh_string service = NULL;
-  ssh_string method = NULL;
-  ssh_string pwd = NULL;
-  int rc = SSH_AUTH_ERROR;
-  int err;
-
-  enter_function();
-
-#ifdef WITH_SSH1
-  if (session->version == 1) {
-    rc = ssh_userauth1_password(session, username, password);
-    leave_function();
-    return rc;
-  }
-#endif
-
-  if (username == NULL) {
-    if (session->username == NULL) {
-      if (ssh_options_apply(session) < 0) {
-        leave_function();
-        return rc;
-      }
-    }
-    user = ssh_string_from_char(session->username);
-  } else {
-    user = ssh_string_from_char(username);
-  }
-
-  if (user == NULL) {
-    ssh_set_error_oom(session);
-    leave_function();
-    return rc;
-  }
-
-  switch(session->pending_call_state){
-  case SSH_PENDING_CALL_NONE:
-    break;
-  case SSH_PENDING_CALL_AUTH_PASSWORD:
-    ssh_string_free(user);
-    user=NULL;
-    goto pending;
-  default:
-    ssh_set_error(session,SSH_FATAL,"Bad call during pending SSH call in ssh_userauth_password");
-    goto error;
-    rc=SSH_ERROR;
-  }
-
-  err = ssh_userauth_request_service(session);
-  if(err == SSH_AGAIN){
-    rc=SSH_AUTH_AGAIN;
-    ssh_string_free(user);
-    leave_function();
-    return rc;
-  } else if(err == SSH_ERROR){
-    rc=SSH_AUTH_ERROR;
-    ssh_string_free(user);
-    leave_function();
-    return rc;
-  }
-
-  service = ssh_string_from_char("ssh-connection");
-  if (service == NULL) {
-    ssh_set_error_oom(session);
-    goto error;
-  }
-  method = ssh_string_from_char("password");
-  if (method == NULL) {
-    ssh_set_error_oom(session);
-    goto error;
-  }
-  pwd = ssh_string_from_char(password);
-  if (pwd == NULL) {
-    ssh_set_error_oom(session);
-    goto error;
-  }
-
-  if (buffer_add_u8(session->out_buffer, SSH2_MSG_USERAUTH_REQUEST) < 0 ||
-      buffer_add_ssh_string(session->out_buffer, user) < 0 ||
-      buffer_add_ssh_string(session->out_buffer, service) < 0 ||
-      buffer_add_ssh_string(session->out_buffer, method) < 0 ||
-      buffer_add_u8(session->out_buffer, 0) < 0 ||
-      buffer_add_ssh_string(session->out_buffer, pwd) < 0) {
-    ssh_set_error_oom(session);
-    goto error;
-  }
-
-  ssh_string_free(user);
-  ssh_string_free(service);
-  ssh_string_free(method);
-  ssh_string_burn(pwd);
-  ssh_string_free(pwd);
-  session->auth_state=SSH_AUTH_STATE_NONE;
-  session->pending_call_state=SSH_PENDING_CALL_AUTH_PASSWORD;
-  if (packet_send(session) == SSH_ERROR) {
-    leave_function();
-    return rc;
-  }
-pending:
-  rc = ssh_userauth_get_response(session);
-  if(rc!=SSH_AUTH_AGAIN)
-    session->pending_call_state=SSH_PENDING_CALL_NONE;
-  leave_function();
-  return rc;
-error:
-  buffer_reinit(session->out_buffer);
-  ssh_string_free(user);
-  ssh_string_free(service);
-  ssh_string_free(method);
-  ssh_string_burn(pwd);
-  ssh_string_free(pwd);
-
-  leave_function();
-  return rc;
-}
 
 ssh_kbdint kbdint_new(void) {
   ssh_kbdint kbd;
