@@ -1769,11 +1769,13 @@ int ssh_channel_request_sftp( ssh_channel channel){
 static ssh_string generate_cookie(void) {
   static const char *hex = "0123456789abcdef";
   char s[36];
+  char rnd[16];
   int i;
 
-  srand ((unsigned int)time(NULL));
-  for (i = 0; i < 32; i++) {
-    s[i] = hex[rand() % 16];
+  ssh_get_random(rnd,sizeof(rnd),0);
+  for (i = 0; i < 16; i++) {
+    s[i*2] = hex[rnd[i] & 0x0f];
+    s[i*2+1] = hex[rnd[i] >> 4];
   }
   s[32] = '\0';
   return ssh_string_from_char(s);
