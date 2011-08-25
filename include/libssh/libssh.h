@@ -518,8 +518,6 @@ LIBSSH_API int ssh_userauth_kbdint_getnanswers(ssh_session session);
 LIBSSH_API const char *ssh_userauth_kbdint_getanswer(ssh_session session, unsigned int i);
 LIBSSH_API int ssh_userauth_kbdint_setanswer(ssh_session session, unsigned int i,
     const char *answer);
-LIBSSH_API int ssh_userauth_privatekey_file(ssh_session session, const char *username,
-    const char *filename, const char *passphrase);
 LIBSSH_API const char *ssh_version(int req_version);
 LIBSSH_API int ssh_write_knownhost(ssh_session session);
 

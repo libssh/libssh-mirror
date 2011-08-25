@@ -1341,76 +1341,9 @@ fail:
 
     return SSH_AUTH_ERROR;
 }
-/**
- * @brief Try to authenticate through a private key file.
- *
- * @param[in]  session  The ssh session to use.
- *
- * @param[in]  username The username to authenticate. You can specify NULL if
- *                      ssh_option_set_username() has been used. You cannot try
- *                      two different logins in a row.
- *
- * @param[in] filename  Filename containing the private key.
- *
- * @param[in] passphrase Passphrase to decrypt the private key. Set to null if
- *                       none is needed or it is unknown.
- *
- * @returns SSH_AUTH_ERROR:   A serious error happened.\n
- *          SSH_AUTH_DENIED:  Authentication failed: use another method.\n
- *          SSH_AUTH_PARTIAL: You've been partially authenticated, you still
- *                            have to use another method.\n
- *          SSH_AUTH_SUCCESS: Authentication successful.\n
- *          SSH_AUTH_AGAIN:   In nonblocking mode, you've got to call this again
- *                            later.
- *
- * @see publickey_from_file()
- * @see privatekey_from_file()
- * @see privatekey_free()
- * @see ssh_userauth_pubkey()
- */
-int ssh_userauth_privatekey_file(ssh_session session, const char *username,
-    const char *filename, const char *passphrase) {
-  char *pubkeyfile = NULL;
-  ssh_string pubkey = NULL;
-  ssh_private_key privkey = NULL;
-  int type = 0;
-  int rc = SSH_AUTH_ERROR;
-
-  enter_function();
-
-  pubkeyfile = malloc(strlen(filename) + 1 + 4);
-  if (pubkeyfile == NULL) {
-    ssh_set_error_oom(session);
-    leave_function();
-    return SSH_AUTH_ERROR;
-  }
-  sprintf(pubkeyfile, "%s.pub", filename);
-
-  pubkey = publickey_from_file(session, pubkeyfile, &type);
-  if (pubkey == NULL) {
-    ssh_log(session, SSH_LOG_RARE, "Public key file %s not found. Trying to generate it.", pubkeyfile);
-    /* auto-detect the key type with type=0 */
-    privkey = privatekey_from_file(session, filename, 0, passphrase);
-  } else {
-    ssh_log(session, SSH_LOG_RARE, "Public key file %s loaded.", pubkeyfile);
-    privkey = privatekey_from_file(session, filename, type, passphrase);
-  }
-  if (privkey == NULL) {
-    goto error;
-  }
-  /* ssh_userauth_pubkey is responsible for taking care of null-pubkey */
-  rc = ssh_userauth_pubkey(session, username, pubkey, privkey);
-  privatekey_free(privkey);
-
-error:
-  SAFE_FREE(pubkeyfile);
-  ssh_string_free(pubkey);
-
-  leave_function();
-  return rc;
-}
 
 #ifndef _WIN32
+/* LEGACY */
 int ssh_userauth_agent_pubkey(ssh_session session,
                               const char *username,
                               ssh_public_key publickey)

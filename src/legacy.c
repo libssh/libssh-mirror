@@ -26,6 +26,8 @@
 
 #include "config.h"
 
+#include <stdio.h>
+
 #include <libssh/priv.h>
 #include <libssh/session.h>
 #include <libssh/server.h>
@@ -91,6 +93,50 @@ int ssh_userauth_pubkey(ssh_session session,
 
 int ssh_userauth_autopubkey(ssh_session session, const char *passphrase) {
     return ssh_userauth_publickey_auto(session, NULL, passphrase);
+}
+
+int ssh_userauth_privatekey_file(ssh_session session,
+                                 const char *username,
+                                 const char *filename,
+                                 const char *passphrase) {
+  char *pubkeyfile = NULL;
+  ssh_string pubkey = NULL;
+  ssh_private_key privkey = NULL;
+  int type = 0;
+  int rc = SSH_AUTH_ERROR;
+
+  enter_function();
+
+  pubkeyfile = malloc(strlen(filename) + 1 + 4);
+  if (pubkeyfile == NULL) {
+    ssh_set_error_oom(session);
+    leave_function();
+    return SSH_AUTH_ERROR;
+  }
+  sprintf(pubkeyfile, "%s.pub", filename);
+
+  pubkey = publickey_from_file(session, pubkeyfile, &type);
+  if (pubkey == NULL) {
+    ssh_log(session, SSH_LOG_RARE, "Public key file %s not found. Trying to generate it.", pubkeyfile);
+    /* auto-detect the key type with type=0 */
+    privkey = privatekey_from_file(session, filename, 0, passphrase);
+  } else {
+    ssh_log(session, SSH_LOG_RARE, "Public key file %s loaded.", pubkeyfile);
+    privkey = privatekey_from_file(session, filename, type, passphrase);
+  }
+  if (privkey == NULL) {
+    goto error;
+  }
+  /* ssh_userauth_pubkey is responsible for taking care of null-pubkey */
+  rc = ssh_userauth_pubkey(session, username, pubkey, privkey);
+  privatekey_free(privkey);
+
+error:
+  SAFE_FREE(pubkeyfile);
+  ssh_string_free(pubkey);
+
+  leave_function();
+  return rc;
 }
 
 /* BUFFER FUNCTIONS */
