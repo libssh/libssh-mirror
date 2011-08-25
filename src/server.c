@@ -845,27 +845,27 @@ int ssh_message_auth_interactive_request(ssh_message msg, const char *name,
                                         "keyboard-interactive response but it "
                                         "seems we didn't send the request.");
 
-    msg->session->kbdint = kbdint_new();
+    msg->session->kbdint = ssh_kbdint_new();
     if (msg->session->kbdint == NULL) {
       ssh_set_error_oom(msg->session);
 
       return SSH_ERROR;
     }
   } else {
-    kbdint_clean(msg->session->kbdint);
+    ssh_kbdint_clean(msg->session->kbdint);
   }
 
   msg->session->kbdint->name = strdup(name);
   if(msg->session->kbdint->name == NULL) {
       ssh_set_error_oom(msg->session);
-      kbdint_free(msg->session->kbdint);
+      ssh_kbdint_free(msg->session->kbdint);
       msg->session->kbdint = NULL;
       return SSH_PACKET_USED;
   }
   msg->session->kbdint->instruction = strdup(instruction);
   if(msg->session->kbdint->instruction == NULL) {
       ssh_set_error_oom(msg->session);
-      kbdint_free(msg->session->kbdint);
+      ssh_kbdint_free(msg->session->kbdint);
       msg->session->kbdint = NULL;
       return SSH_PACKET_USED;
   }
@@ -876,14 +876,14 @@ int ssh_message_auth_interactive_request(ssh_message msg, const char *name,
     if (msg->session->kbdint->prompts == NULL) {
       msg->session->kbdint->nprompts = 0;
       ssh_set_error_oom(msg->session);
-      kbdint_free(msg->session->kbdint);
+      ssh_kbdint_free(msg->session->kbdint);
       msg->session->kbdint = NULL;
       return SSH_ERROR;
     }
     msg->session->kbdint->echo = malloc(num_prompts * sizeof(char));
     if (msg->session->kbdint->echo == NULL) {
       ssh_set_error_oom(msg->session);
-      kbdint_free(msg->session->kbdint);
+      ssh_kbdint_free(msg->session->kbdint);
       msg->session->kbdint = NULL;
       return SSH_ERROR;
     }
@@ -893,7 +893,7 @@ int ssh_message_auth_interactive_request(ssh_message msg, const char *name,
       if (msg->session->kbdint->prompts[i] == NULL) {
         ssh_set_error_oom(msg->session);
         msg->session->kbdint->nprompts = i;
-        kbdint_free(msg->session->kbdint);
+        ssh_kbdint_free(msg->session->kbdint);
         msg->session->kbdint = NULL;
         return SSH_PACKET_USED;
       }

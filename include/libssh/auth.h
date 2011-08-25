@@ -46,9 +46,9 @@ struct ssh_kbdint_struct {
 };
 typedef struct ssh_kbdint_struct* ssh_kbdint;
 
-ssh_kbdint kbdint_new(void);
-void kbdint_clean(ssh_kbdint kbd);
-void kbdint_free(ssh_kbdint kbd);
+ssh_kbdint ssh_kbdint_new(void);
+void ssh_kbdint_clean(ssh_kbdint kbd);
+void ssh_kbdint_free(ssh_kbdint kbd);
 
 
 #ifdef WITH_SSH1

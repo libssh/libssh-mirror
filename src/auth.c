@@ -1372,84 +1372,83 @@ int ssh_userauth_agent_pubkey(ssh_session session,
 }
 #endif /* _WIN32 */
 
-ssh_kbdint kbdint_new(void) {
-  ssh_kbdint kbd;
+ssh_kbdint ssh_kbdint_new(void) {
+    ssh_kbdint kbd;
 
-  kbd = malloc(sizeof (struct ssh_kbdint_struct));
-  if (kbd == NULL) {
-    return NULL;
-  }
-  ZERO_STRUCTP(kbd);
+    kbd = malloc(sizeof(struct ssh_kbdint_struct));
+    if (kbd == NULL) {
+        return NULL;
+    }
+    ZERO_STRUCTP(kbd);
 
-  return kbd;
+    return kbd;
 }
 
 
-void kbdint_free(ssh_kbdint kbd) {
-  int i, n;
+void ssh_kbdint_free(ssh_kbdint kbd) {
+    int i, n;
 
-  if (kbd == NULL) {
-    return;
-  }
-
-
-  SAFE_FREE(kbd->name);
-  SAFE_FREE(kbd->instruction);
-  SAFE_FREE(kbd->echo);
-
-  n = kbd->nprompts;
-  if (kbd->prompts) {
-    for (i = 0; i < n; i++) {
-      BURN_STRING(kbd->prompts[i]);
-      SAFE_FREE(kbd->prompts[i]);
+    if (kbd == NULL) {
+        return;
     }
-    SAFE_FREE(kbd->prompts);
-  }
 
-  n = kbd->nanswers;
-  if (kbd->answers) {
-    for (i = 0; i < n; i++) {
-      BURN_STRING(kbd->answers[i]);
-      SAFE_FREE(kbd->answers[i]);
+    SAFE_FREE(kbd->name);
+    SAFE_FREE(kbd->instruction);
+    SAFE_FREE(kbd->echo);
+
+    n = kbd->nprompts;
+    if (kbd->prompts) {
+        for (i = 0; i < n; i++) {
+            BURN_STRING(kbd->prompts[i]);
+            SAFE_FREE(kbd->prompts[i]);
+        }
+        SAFE_FREE(kbd->prompts);
     }
-    SAFE_FREE(kbd->answers);
-  }
 
-  SAFE_FREE(kbd);
+    n = kbd->nanswers;
+    if (kbd->answers) {
+        for (i = 0; i < n; i++) {
+            BURN_STRING(kbd->answers[i]);
+            SAFE_FREE(kbd->answers[i]);
+        }
+        SAFE_FREE(kbd->answers);
+    }
+
+    SAFE_FREE(kbd);
 }
 
-void kbdint_clean(ssh_kbdint kbd) {
-  int i, n;
+void ssh_kbdint_clean(ssh_kbdint kbd) {
+    int i, n;
 
-  if (kbd == NULL) {
-    return;
-  }
-
-  SAFE_FREE(kbd->name);
-  SAFE_FREE(kbd->instruction);
-  SAFE_FREE(kbd->echo);
-
-  n = kbd->nprompts;
-  if (kbd->prompts) {
-    for (i = 0; i < n; i++) {
-      BURN_STRING(kbd->prompts[i]);
-      SAFE_FREE(kbd->prompts[i]);
+    if (kbd == NULL) {
+        return;
     }
-    SAFE_FREE(kbd->prompts);
-  }
 
-  n = kbd->nanswers;
+    SAFE_FREE(kbd->name);
+    SAFE_FREE(kbd->instruction);
+    SAFE_FREE(kbd->echo);
 
-  if (kbd->answers) {
-    for (i = 0; i < n; i++) {
-      BURN_STRING(kbd->answers[i]);
-      SAFE_FREE(kbd->answers[i]);
+    n = kbd->nprompts;
+    if (kbd->prompts) {
+        for (i = 0; i < n; i++) {
+            BURN_STRING(kbd->prompts[i]);
+            SAFE_FREE(kbd->prompts[i]);
+        }
+        SAFE_FREE(kbd->prompts);
     }
-      SAFE_FREE(kbd->answers);
-  }
 
-  kbd->nprompts = 0;
-  kbd->nanswers = 0;
+    n = kbd->nanswers;
+
+    if (kbd->answers) {
+        for (i = 0; i < n; i++) {
+            BURN_STRING(kbd->answers[i]);
+            SAFE_FREE(kbd->answers[i]);
+        }
+        SAFE_FREE(kbd->answers);
+    }
+
+    kbd->nprompts = 0;
+    kbd->nanswers = 0;
 }
 
 /* this function sends the first packet as explained in section 3.1
@@ -1551,7 +1550,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_request) {
   ssh_string_free(tmp);
 
   if (session->kbdint == NULL) {
-    session->kbdint = kbdint_new();
+    session->kbdint = ssh_kbdint_new();
     if (session->kbdint == NULL) {
       ssh_set_error_oom(session);
       ssh_string_free(name);
@@ -1561,14 +1560,14 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_request) {
       return SSH_PACKET_USED;
     }
   } else {
-    kbdint_clean(session->kbdint);
+    ssh_kbdint_clean(session->kbdint);
   }
 
   session->kbdint->name = ssh_string_to_char(name);
   ssh_string_free(name);
   if (session->kbdint->name == NULL) {
     ssh_set_error_oom(session);
-    kbdint_free(session->kbdint);
+    ssh_kbdint_free(session->kbdint);
     leave_function();
     return SSH_PACKET_USED;
   }
@@ -1577,7 +1576,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_request) {
   ssh_string_free(instruction);
   if (session->kbdint->instruction == NULL) {
     ssh_set_error_oom(session);
-    kbdint_free(session->kbdint);
+    ssh_kbdint_free(session->kbdint);
     session->kbdint = NULL;
     leave_function();
     return SSH_PACKET_USED;
@@ -1589,7 +1588,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_request) {
     ssh_set_error(session, SSH_FATAL,
         "Too much prompt asked from server: %u (0x%.4x)",
         nprompts, nprompts);
-    kbdint_free(session->kbdint);
+    ssh_kbdint_free(session->kbdint);
     session->kbdint = NULL;
     leave_function();
     return SSH_PACKET_USED;
@@ -1601,7 +1600,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_request) {
   if (session->kbdint->prompts == NULL) {
     session->kbdint->nprompts = 0;
     ssh_set_error_oom(session);
-    kbdint_free(session->kbdint);
+    ssh_kbdint_free(session->kbdint);
     session->kbdint = NULL;
     leave_function();
     return SSH_PACKET_USED;
@@ -1612,7 +1611,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_request) {
   if (session->kbdint->echo == NULL) {
     session->kbdint->nprompts = 0;
     ssh_set_error_oom(session);
-    kbdint_free(session->kbdint);
+    ssh_kbdint_free(session->kbdint);
     session->kbdint = NULL;
     leave_function();
     return SSH_PACKET_USED;
@@ -1624,7 +1623,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_request) {
     buffer_get_u8(packet, &session->kbdint->echo[i]);
     if (tmp == NULL) {
       ssh_set_error(session, SSH_FATAL, "Short INFO_REQUEST packet");
-      kbdint_free(session->kbdint);
+      ssh_kbdint_free(session->kbdint);
       session->kbdint = NULL;
       leave_function();
       return SSH_PACKET_USED;
@@ -1634,7 +1633,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_request) {
     if (session->kbdint->prompts[i] == NULL) {
       ssh_set_error_oom(session);
       session->kbdint->nprompts = i;
-      kbdint_free(session->kbdint);
+      ssh_kbdint_free(session->kbdint);
       session->kbdint = NULL;
       leave_function();
       return SSH_PACKET_USED;
@@ -1692,7 +1691,7 @@ static int kbdauth_send(ssh_session session) {
     ssh_string_free(answer);
   }
   session->auth_state=SSH_AUTH_STATE_KBDINT_SENT;
-  kbdint_free(session->kbdint);
+  ssh_kbdint_free(session->kbdint);
   session->kbdint = NULL;
   if (packet_send(session) == SSH_ERROR) {
     leave_function();

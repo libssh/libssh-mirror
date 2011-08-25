@@ -706,7 +706,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_response){
     ssh_log(session, SSH_LOG_PROTOCOL, "Warning: Got a keyboard-interactive "
                         "response but it seems we didn't send the request.");
 
-    session->kbdint = kbdint_new();
+    session->kbdint = ssh_kbdint_new();
     if (session->kbdint == NULL) {
       ssh_set_error_oom(session);
 
@@ -721,7 +721,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_response){
     ssh_set_error(session, SSH_FATAL,
         "Too much answers received from client: %u (0x%.4x)",
         nanswers, nanswers);
-    kbdint_free(session->kbdint);
+    ssh_kbdint_free(session->kbdint);
     session->kbdint = NULL;
     leave_function();
     return SSH_PACKET_USED;
@@ -737,7 +737,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_response){
   if (session->kbdint->answers == NULL) {
     session->kbdint->nanswers = 0;
     ssh_set_error_oom(session);
-    kbdint_free(session->kbdint);
+    ssh_kbdint_free(session->kbdint);
     session->kbdint = NULL;
     leave_function();
     return SSH_PACKET_USED;
@@ -749,7 +749,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_response){
     if (tmp == NULL) {
       ssh_set_error(session, SSH_FATAL, "Short INFO_RESPONSE packet");
       session->kbdint->nanswers = i;
-      kbdint_free(session->kbdint);
+      ssh_kbdint_free(session->kbdint);
       session->kbdint = NULL;
       leave_function();
       return SSH_PACKET_USED;
@@ -759,7 +759,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_response){
     if (session->kbdint->answers[i] == NULL) {
       ssh_set_error_oom(session);
       session->kbdint->nanswers = i;
-      kbdint_free(session->kbdint);
+      ssh_kbdint_free(session->kbdint);
       session->kbdint = NULL;
       leave_function();
       return SSH_PACKET_USED;
