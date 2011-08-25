@@ -42,6 +42,7 @@ enum ssh_channel_request_state_e {
 
 enum ssh_channel_state_e {
   SSH_CHANNEL_STATE_NOT_OPEN = 0,
+  SSH_CHANNEL_STATE_OPENING,
   SSH_CHANNEL_STATE_OPEN_DENIED,
   SSH_CHANNEL_STATE_OPEN,
   SSH_CHANNEL_STATE_CLOSED
@@ -66,7 +67,6 @@ struct ssh_channel_struct {
     ssh_buffer stderr_buffer;
     void *userarg;
     int version;
-    int blocking;
     int exit_status;
     enum ssh_channel_request_state_e request_state;
     ssh_channel_callbacks callbacks;

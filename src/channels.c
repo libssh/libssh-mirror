@@ -246,9 +246,22 @@ static int channel_open(ssh_channel channel, const char *type_c, int window,
     int maxpacket, ssh_buffer payload) {
   ssh_session session = channel->session;
   ssh_string type = NULL;
+  int timeout;
   int err=SSH_ERROR;
 
   enter_function();
+  switch(channel->state){
+  case SSH_CHANNEL_STATE_NOT_OPEN:
+    break;
+  case SSH_CHANNEL_STATE_OPENING:
+    goto pending;
+  case SSH_CHANNEL_STATE_OPEN:
+  case SSH_CHANNEL_STATE_CLOSED:
+  case SSH_CHANNEL_STATE_OPEN_DENIED:
+    goto end;
+  default:
+    ssh_set_error(session,SSH_FATAL,"Bad state in channel_open: %d",channel->state);
+  }
   channel->local_channel = ssh_channel_new_id(session);
   channel->local_maxpacket = maxpacket;
   channel->local_window = window;
@@ -284,7 +297,7 @@ static int channel_open(ssh_channel channel, const char *type_c, int window,
       return err;
     }
   }
-
+  channel->state = SSH_CHANNEL_STATE_OPENING;
   if (packet_send(session) == SSH_ERROR) {
     leave_function();
     return err;
@@ -293,11 +306,14 @@ static int channel_open(ssh_channel channel, const char *type_c, int window,
   ssh_log(session, SSH_LOG_PACKET,
       "Sent a SSH_MSG_CHANNEL_OPEN type %s for channel %d",
       type_c, channel->local_channel);
-
-  /* Todo: fix this into a correct loop */
+pending:
   /* wait until channel is opened by server */
-  while(channel->state == SSH_CHANNEL_STATE_NOT_OPEN){
-      err = ssh_handle_packets(session, -2);
+  if(ssh_is_blocking(session))
+    timeout=-2;
+  else
+    timeout=0;
+  while(channel->state == SSH_CHANNEL_STATE_OPENING){
+      err = ssh_handle_packets(session, timeout);
       if (err != SSH_OK) {
           break;
       }
@@ -306,6 +322,7 @@ static int channel_open(ssh_channel channel, const char *type_c, int window,
           break;
       }
   }
+end:
   if(channel->state == SSH_CHANNEL_STATE_OPEN)
     err=SSH_OK;
   leave_function();
@@ -1342,14 +1359,15 @@ int ssh_channel_is_eof(ssh_channel channel) {
  *
  * @param[in]  blocking A boolean for blocking or nonblocking.
  *
- * @bug This functionality is still under development and
- *      doesn't work correctly.
+ * @warning    A side-effect of this is to put the whole session
+ *             in non-blocking mode.
+ * @see ssh_set_blocking()
  */
 void ssh_channel_set_blocking(ssh_channel channel, int blocking) {
   if(channel == NULL) {
       return;
   }
-  channel->blocking = (blocking == 0 ? 0 : 1);
+  ssh_set_blocking(channel->session,blocking);
 }
 
 /**
@@ -1423,13 +1441,15 @@ static int channel_request(ssh_channel channel, const char *request,
     ssh_buffer buffer, int reply) {
   ssh_session session = channel->session;
   ssh_string req = NULL;
+  int timeout;
   int rc = SSH_ERROR;
 
   enter_function();
-  if(channel->request_state != SSH_CHANNEL_REQ_STATE_NONE){
-  	ssh_set_error(session,SSH_REQUEST_DENIED,"channel_request_* used in incorrect state");
-  	leave_function();
-  	return SSH_ERROR;
+  switch(channel->request_state){
+  case SSH_CHANNEL_REQ_STATE_NONE:
+    break;
+  default:
+    goto pending;
   }
 
   req = ssh_string_from_char(request);
@@ -1467,13 +1487,21 @@ static int channel_request(ssh_channel channel, const char *request,
     leave_function();
     return SSH_OK;
   }
+pending:
+  if(ssh_is_blocking(session))
+    timeout=-2;
+  else
+    timeout=0;
   while(channel->request_state == SSH_CHANNEL_REQ_STATE_PENDING){
-    ssh_handle_packets(session, -2);
-    if(session->session_state == SSH_SESSION_STATE_ERROR) {
-	channel->request_state = SSH_CHANNEL_REQ_STATE_ERROR;
-	break;
+    ssh_handle_packets(session, timeout);
+    if(channel->request_state == SSH_CHANNEL_REQ_STATE_PENDING && timeout==0){
+      leave_function();
+      return SSH_AGAIN;
     }
-
+    if(session->session_state == SSH_SESSION_STATE_ERROR) {
+      channel->request_state = SSH_CHANNEL_REQ_STATE_ERROR;
+      break;
+    }
   }
   /* we received something */
   switch (channel->request_state){
@@ -1519,7 +1547,10 @@ error:
  *
  * @param[in]  row      The number of rows.
  *
- * @return              SSH_OK on success, SSH_ERROR if an error occured.
+ * @return              SSH_OK on success,
+ *                      SSH_ERROR if an error occurred,
+ *                      SSH_AGAIN if in nonblocking mode and call has
+ *                      to be done again.
  */
 int ssh_channel_request_pty_size(ssh_channel channel, const char *terminal,
     int col, int row) {
@@ -1544,6 +1575,13 @@ int ssh_channel_request_pty_size(ssh_channel channel, const char *terminal,
     return rc;
     }
 #endif
+  switch(channel->request_state){
+  case SSH_CHANNEL_REQ_STATE_NONE:
+    break;
+  default:
+    goto pending;
+  }
+
   buffer = ssh_buffer_new();
   if (buffer == NULL) {
     ssh_set_error_oom(session);
@@ -1566,7 +1604,7 @@ int ssh_channel_request_pty_size(ssh_channel channel, const char *terminal,
     ssh_set_error_oom(session);
     goto error;
   }
-
+pending:
   rc = channel_request(channel, "pty-req", buffer, 1);
 error:
   ssh_buffer_free(buffer);
@@ -1646,7 +1684,10 @@ error:
  *
  * @param[in]  channel  The channel to send the request.
  *
- * @return              SSH_OK on success, SSH_ERROR if an error occured.
+ * @return              SSH_OK on success,
+ *                      SSH_ERROR if an error occurred,
+ *                      SSH_AGAIN if in nonblocking mode and call has
+ *                      to be done again.
  */
 int ssh_channel_request_shell(ssh_channel channel) {
     if(channel == NULL) {
@@ -1667,7 +1708,10 @@ int ssh_channel_request_shell(ssh_channel channel) {
  *
  * @param[in]  subsys   The subsystem to request (for example "sftp").
  *
- * @return              SSH_OK on success, SSH_ERROR if an error occured.
+ * @return              SSH_OK on success,
+ *                      SSH_ERROR if an error occurred,
+ *                      SSH_AGAIN if in nonblocking mode and call has
+ *                      to be done again.
  *
  * @warning You normally don't have to call it for sftp, see sftp_new().
  */
@@ -1682,6 +1726,12 @@ int ssh_channel_request_subsystem(ssh_channel channel, const char *subsys) {
   if(subsys == NULL) {
       ssh_set_error_invalid(channel->session, __FUNCTION__);
       return rc;
+  }
+  switch(channel->request_state){
+  case SSH_CHANNEL_REQ_STATE_NONE:
+    break;
+  default:
+    goto pending;
   }
 
   buffer = ssh_buffer_new();
@@ -1700,7 +1750,7 @@ int ssh_channel_request_subsystem(ssh_channel channel, const char *subsys) {
     ssh_set_error_oom(channel->session);
     goto error;
   }
-
+pending:
   rc = channel_request(channel, "subsystem", buffer, 1);
 error:
   ssh_buffer_free(buffer);
@@ -1749,7 +1799,10 @@ static ssh_string generate_cookie(void) {
  *
  * @param[in] screen_number The screen number.
  *
- * @return              SSH_OK on success, SSH_ERROR if an error occured.
+ * @return              SSH_OK on success,
+ *                      SSH_ERROR if an error occurred,
+ *                      SSH_AGAIN if in nonblocking mode and call has
+ *                      to be done again.
  */
 int ssh_channel_request_x11(ssh_channel channel, int single_connection, const char *protocol,
     const char *cookie, int screen_number) {
@@ -1760,6 +1813,12 @@ int ssh_channel_request_x11(ssh_channel channel, int single_connection, const ch
 
   if(channel == NULL) {
       return SSH_ERROR;
+  }
+  switch(channel->request_state){
+  case SSH_CHANNEL_REQ_STATE_NONE:
+    break;
+  default:
+    goto pending;
   }
 
   buffer = ssh_buffer_new();
@@ -1791,7 +1850,7 @@ int ssh_channel_request_x11(ssh_channel channel, int single_connection, const ch
     ssh_set_error_oom(channel->session);
     goto error;
   }
-
+pending:
   rc = channel_request(channel, "x11-req", buffer, 1);
 
 error:
@@ -2129,8 +2188,10 @@ error:
  *
  * @param[in]  value    The value to set.
  *
- * @return              SSH_OK on success, SSH_ERROR if an error occured.
- *
+ * @return              SSH_OK on success,
+ *                      SSH_ERROR if an error occurred,
+ *                      SSH_AGAIN if in nonblocking mode and call has
+ *                      to be done again.
  * @warning Some environment variables may be refused by security reasons.
  */
 int ssh_channel_request_env(ssh_channel channel, const char *name, const char *value) {
@@ -2145,7 +2206,12 @@ int ssh_channel_request_env(ssh_channel channel, const char *name, const char *v
       ssh_set_error_invalid(channel->session, __FUNCTION__);
       return rc;
   }
-
+  switch(channel->request_state){
+  case SSH_CHANNEL_REQ_STATE_NONE:
+    break;
+  default:
+    goto pending;
+  }
   buffer = ssh_buffer_new();
   if (buffer == NULL) {
     ssh_set_error_oom(channel->session);
@@ -2174,7 +2240,7 @@ int ssh_channel_request_env(ssh_channel channel, const char *name, const char *v
     ssh_set_error_oom(channel->session);
     goto error;
   }
-
+pending:
   rc = channel_request(channel, "env", buffer,1);
 error:
   ssh_buffer_free(buffer);
@@ -2193,8 +2259,10 @@ error:
  * @param[in]  cmd      The command to execute
  *                      (e.g. "ls ~/ -al | grep -i reports").
  *
- * @return              SSH_OK on success, SSH_ERROR if an error occured.
- *
+ * @return              SSH_OK on success,
+ *                      SSH_ERROR if an error occurred,
+ *                      SSH_AGAIN if in nonblocking mode and call has
+ *                      to be done again.
  * @code
  *   rc = channel_request_exec(channel, "ps aux");
  *   if (rc > 0) {
@@ -2228,7 +2296,12 @@ int ssh_channel_request_exec(ssh_channel channel, const char *cmd) {
     return channel_request_exec1(channel, cmd);
   }
 #endif
-
+  switch(channel->request_state){
+  case SSH_CHANNEL_REQ_STATE_NONE:
+    break;
+  default:
+    goto pending;
+  }
   buffer = ssh_buffer_new();
   if (buffer == NULL) {
     ssh_set_error_oom(channel->session);
@@ -2245,7 +2318,7 @@ int ssh_channel_request_exec(ssh_channel channel, const char *cmd) {
     ssh_set_error_oom(channel->session);
     goto error;
   }
-
+pending:
   rc = channel_request(channel, "exec", buffer, 1);
 error:
   ssh_buffer_free(buffer);
