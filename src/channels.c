@@ -1169,6 +1169,8 @@ int channel_write_common(ssh_channel channel, const void *data,
   uint32_t origlen = len;
   size_t effectivelen;
   size_t maxpacketlen;
+  int timeout;
+  int rc;
 
   if(channel == NULL) {
       return -1;
@@ -1186,7 +1188,10 @@ int channel_write_common(ssh_channel channel, const void *data,
   }
 
   enter_function();
-
+  if(ssh_is_blocking(session))
+    timeout = -2;
+  else
+    timeout = 0;
   /*
    * Handle the max packet len from remote side, be nice
    * 10 bytes for the headers
@@ -1227,7 +1232,10 @@ int channel_write_common(ssh_channel channel, const void *data,
           /* nothing can be written */
           ssh_log(session, SSH_LOG_PROTOCOL,
                 "Wait for a growing window message...");
-          goto out;
+          rc = ssh_handle_packets(session, timeout);
+          if (rc == SSH_ERROR || (channel->remote_window == 0 && timeout==0))
+            goto out;
+          continue;
       }
       effectivelen = len > channel->remote_window ? channel->remote_window : len;
     } else {
@@ -1266,7 +1274,10 @@ int channel_write_common(ssh_channel channel, const void *data,
     len -= effectivelen;
     data = ((uint8_t*)data + effectivelen);
   }
-
+  /* it's a good idea to flush the socket now */
+  do {
+    rc = ssh_handle_packets(session, timeout);
+  } while(ssh_socket_buffered_write_bytes(session->socket) > 0 && timeout != 0);
 out:
   leave_function();
   return (int)(origlen - len);
@@ -1985,19 +1996,20 @@ SSH_PACKET_CALLBACK(ssh_request_denied){
  *
  * @param[in]  reply    Set if you expect a reply from server.
  *
- * @return              SSH_OK on success, SSH_ERROR if an error occured.
+ * @return              SSH_OK on success,
+ *                      SSH_ERROR if an error occurred,
+ *                      SSH_AGAIN if in nonblocking mode and call has
+ *                      to be done again.
  */
 static int global_request(ssh_session session, const char *request,
     ssh_buffer buffer, int reply) {
   ssh_string req = NULL;
   int rc = SSH_ERROR;
+  int timeout;
 
   enter_function();
-  if(session->global_req_state != SSH_CHANNEL_REQ_STATE_NONE){
-    ssh_set_error(session,SSH_FATAL,"Invalid state in start of global_request()");
-    leave_function();
-    return rc;
-  }
+  if(session->global_req_state != SSH_CHANNEL_REQ_STATE_NONE)
+    goto pending;
   req = ssh_string_from_char(request);
   if (req == NULL) {
     ssh_set_error_oom(session);
@@ -2033,12 +2045,20 @@ static int global_request(ssh_session session, const char *request,
     leave_function();
     return SSH_OK;
   }
+pending:
+  if(ssh_is_blocking(session))
+    timeout=-2;
+  else
+    timeout=0;
   while(session->global_req_state == SSH_CHANNEL_REQ_STATE_PENDING){
-    rc=ssh_handle_packets(session, -2);
+    rc=ssh_handle_packets(session, timeout);
     if(rc==SSH_ERROR){
       session->global_req_state = SSH_CHANNEL_REQ_STATE_ERROR;
       break;
     }
+    if(session->global_req_state == SSH_CHANNEL_REQ_STATE_PENDING
+        && timeout == 0)
+      break;
   }
   switch(session->global_req_state){
     case SSH_CHANNEL_REQ_STATE_ACCEPTED:
@@ -2054,10 +2074,11 @@ static int global_request(ssh_session session, const char *request,
       break;
     case SSH_CHANNEL_REQ_STATE_ERROR:
     case SSH_CHANNEL_REQ_STATE_NONE:
-    case SSH_CHANNEL_REQ_STATE_PENDING:
       rc=SSH_ERROR;
       break;
-
+    case SSH_CHANNEL_REQ_STATE_PENDING:
+      rc=SSH_AGAIN;
+      break;
   }
 
   leave_function();
@@ -2093,6 +2114,9 @@ int ssh_forward_listen(ssh_session session, const char *address, int port, int *
   int rc = SSH_ERROR;
   uint32_t tmp;
 
+  if(session->global_req_state != SSH_CHANNEL_REQ_STATE_NONE)
+    goto pending;
+
   buffer = ssh_buffer_new();
   if (buffer == NULL) {
     ssh_set_error_oom(session);
@@ -2110,9 +2134,11 @@ int ssh_forward_listen(ssh_session session, const char *address, int port, int *
     ssh_set_error_oom(session);
     goto error;
   }
-
+pending:
   rc = global_request(session, "tcpip-forward", buffer, 1);
 
+  /* TODO: FIXME no guarantee the last packet we received contains
+   * that info */
   if (rc == SSH_OK && port == 0 && bound_port) {
     buffer_get_u32(session->in_buffer, &tmp);
     *bound_port = ntohl(tmp);
@@ -2155,6 +2181,9 @@ int ssh_forward_cancel(ssh_session session, const char *address, int port) {
   ssh_string addr = NULL;
   int rc = SSH_ERROR;
 
+  if(session->global_req_state != SSH_CHANNEL_REQ_STATE_NONE)
+    goto pending;
+
   buffer = ssh_buffer_new();
   if (buffer == NULL) {
     ssh_set_error_oom(session);
@@ -2172,7 +2201,7 @@ int ssh_forward_cancel(ssh_session session, const char *address, int port) {
     ssh_set_error_oom(session);
     goto error;
   }
-
+pending:
   rc = global_request(session, "cancel-tcpip-forward", buffer, 1);
 
 error:
@@ -2726,17 +2755,21 @@ ssh_session ssh_channel_get_session(ssh_channel channel) {
  *                      or eof not sent.
  */
 int ssh_channel_get_exit_status(ssh_channel channel) {
+  int timeout;
   if(channel == NULL) {
       return SSH_ERROR;
   }
 
   if (channel->local_eof == 0) {
-    return -1;
+    return channel->exit_status;
   }
-
+  if(ssh_is_blocking(channel->session))
+    timeout = -2;
+  else
+    timeout = 0;
   while ((channel->remote_eof == 0 || channel->exit_status == -1) && channel->session->alive) {
     /* Parse every incoming packet */
-    if (ssh_handle_packets(channel->session, -2) != SSH_OK) {
+    if (ssh_handle_packets(channel->session, timeout) != SSH_OK) {
       return -1;
     }
     /* XXX We should actually wait for a close packet and not a close
@@ -2747,6 +2780,8 @@ int ssh_channel_get_exit_status(ssh_channel channel) {
        * come anymore */
       break;
     }
+    if (timeout == 0)
+      break;
   }
 
   return channel->exit_status;
@@ -3022,7 +3057,8 @@ int ssh_channel_open_reverse_forward(ssh_channel channel, const char *remotehost
   session = channel->session;
 
   enter_function();
-
+  if(channel->state != SSH_CHANNEL_STATE_NOT_OPEN)
+    goto pending;
   payload = ssh_buffer_new();
   if (payload == NULL) {
     ssh_set_error_oom(session);
@@ -3052,7 +3088,7 @@ int ssh_channel_open_reverse_forward(ssh_channel channel, const char *remotehost
     ssh_set_error_oom(session);
     goto error;
   }
-
+pending:
   rc = channel_open(channel,
                     "forwarded-tcpip",
                     CHANNEL_INITIAL_WINDOW,
@@ -3096,11 +3132,12 @@ int ssh_channel_open_x11(ssh_channel channel,
       ssh_set_error_invalid(channel->session, __FUNCTION__);
       return rc;
   }
-
-
   session = channel->session;
 
   enter_function();
+
+  if(channel->state != SSH_CHANNEL_STATE_NOT_OPEN)
+    goto pending;
 
   payload = ssh_buffer_new();
   if (payload == NULL) {
@@ -3119,7 +3156,7 @@ int ssh_channel_open_x11(ssh_channel channel,
     ssh_set_error_oom(session);
     goto error;
   }
-
+pending:
   rc = channel_open(channel,
                     "x11",
                     CHANNEL_INITIAL_WINDOW,
