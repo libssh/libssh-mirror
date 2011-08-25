@@ -1451,71 +1451,105 @@ void ssh_kbdint_clean(ssh_kbdint kbd) {
     kbd->nanswers = 0;
 }
 
-/* this function sends the first packet as explained in section 3.1
- * of the draft */
-static int kbdauth_init(ssh_session session, const char *user,
-    const char *submethods) {
-  ssh_string usr = NULL;
-  ssh_string sub = NULL;
-  ssh_string service = NULL;
-  ssh_string method = NULL;
-  int rc = SSH_AUTH_ERROR;
+/*
+ * This function sends the first packet as explained in RFC 3066 section 3.1.
+ */
+static int ssh_userauth_kbdint_init(ssh_session session,
+                                    const char *username,
+                                    const char *submethods)
+{
+    ssh_string str;
+    int rc;
 
-  enter_function();
+    rc = ssh_userauth_request_service(session);
+    if (rc == SSH_AGAIN) {
+        return SSH_AUTH_AGAIN;
+    } else if (rc == SSH_ERROR) {
+        return SSH_AUTH_ERROR;
+    }
 
-  usr = ssh_string_from_char(user);
-  if (usr == NULL) {
-    ssh_set_error_oom(session);
-    goto error;
-  }
-  sub = (submethods ? ssh_string_from_char(submethods) : ssh_string_from_char(""));
-  if (sub == NULL) {
-    ssh_set_error_oom(session);
-    goto error;
-  }
-  service = ssh_string_from_char("ssh-connection");
-  if (service == NULL) {
-    ssh_set_error_oom(session);
-    goto error;
-  }
-  method = ssh_string_from_char("keyboard-interactive");
-  if (method == NULL) {
-    ssh_set_error_oom(session);
-    goto error;
-  }
+    /* request */
+    rc = buffer_add_u8(session->out_buffer, SSH2_MSG_USERAUTH_REQUEST);
+    if (rc < 0) {
+        goto fail;
+    }
 
-  if (buffer_add_u8(session->out_buffer, SSH2_MSG_USERAUTH_REQUEST) < 0 ||
-      buffer_add_ssh_string(session->out_buffer, usr) < 0 ||
-      buffer_add_ssh_string(session->out_buffer, service) < 0 ||
-      buffer_add_ssh_string(session->out_buffer, method) < 0 ||
-      buffer_add_u32(session->out_buffer, 0) < 0 ||
-      buffer_add_ssh_string(session->out_buffer, sub) < 0) {
-    ssh_set_error_oom(session);
-    goto error;
-  }
+    /* username */
+    if (username) {
+        str = ssh_string_from_char(username);
+    } else {
+        str = ssh_string_from_char(session->username);
+    }
+    if (str == NULL) {
+        goto fail;
+    }
 
-  ssh_string_free(usr);
-  ssh_string_free(service);
-  ssh_string_free(method);
-  ssh_string_free(sub);
-  session->auth_state=SSH_AUTH_STATE_KBDINT_SENT;
-  if (packet_send(session) == SSH_ERROR) {
-    leave_function();
+    rc = buffer_add_ssh_string(session->out_buffer, str);
+    ssh_string_free(str);
+    if (rc < 0) {
+        goto fail;
+    }
+
+    /* service */
+    str = ssh_string_from_char("ssh-connection");
+    if (str == NULL) {
+        goto fail;
+    }
+
+    rc = buffer_add_ssh_string(session->out_buffer, str);
+    ssh_string_free(str);
+    if (rc < 0) {
+        goto fail;
+    }
+
+    /* method */
+    str = ssh_string_from_char("keyboard-interactive");
+    if (str == NULL) {
+        goto fail;
+    }
+
+    rc = buffer_add_ssh_string(session->out_buffer, str);
+    ssh_string_free(str);
+    if (rc < 0) {
+        goto fail;
+    }
+
+    /* lang string (ignore it) */
+    rc = buffer_add_u8(session->out_buffer, 0);
+    if (rc < 0) {
+        goto fail;
+    }
+
+    /* submethods */
+    str = ssh_string_from_char(submethods);
+    if (rc < 0) {
+        goto fail;
+    }
+
+    rc = buffer_add_ssh_string(session->out_buffer, str);
+    ssh_string_free(str);
+    if (rc < 0) {
+        goto fail;
+    }
+
+    session->auth_state = SSH_AUTH_STATE_NONE;
+    session->pending_call_state = SSH_PENDING_CALL_AUTH_OFFER_PUBKEY;
+    rc = packet_send(session);
+    if (rc == SSH_ERROR) {
+        return SSH_AUTH_ERROR;
+    }
+
+    rc = ssh_userauth_get_response(session);
+    if (rc != SSH_AUTH_AGAIN) {
+        session->pending_call_state = SSH_PENDING_CALL_NONE;
+    }
+
     return rc;
-  }
-  rc = ssh_userauth_get_response(session);
+fail:
+    ssh_set_error_oom(session);
+    buffer_reinit(session->out_buffer);
 
-  leave_function();
-  return rc;
-error:
-  buffer_reinit(session->out_buffer);
-  ssh_string_free(usr);
-  ssh_string_free(service);
-  ssh_string_free(method);
-  ssh_string_free(sub);
-
-  leave_function();
-  return rc;
+    return SSH_AUTH_ERROR;
 }
 
 /**
@@ -1767,7 +1801,7 @@ int ssh_userauth_kbdint(ssh_session session, const char *user,
       return SSH_AUTH_ERROR;
     }
 
-    rc = kbdauth_init(session, user, submethods);
+    rc = ssh_userauth_kbdint_init(session, user, submethods);
 
     leave_function();
     return rc;
