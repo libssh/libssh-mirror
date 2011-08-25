@@ -29,7 +29,7 @@ int main(int argc, const char **argv){
 	err=session.connect();
 	if(err==SSH_ERROR)
 		goto error;
-	err=session.userauthAutopubkey();
+	err=session.userauthPublickeyAuto();
 	if(err==SSH_ERROR)
 		goto error;
 

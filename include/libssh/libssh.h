@@ -508,7 +508,6 @@ LIBSSH_API int ssh_userauth_publickey_auto(ssh_session session,
                                            const char *username,
                                            const char *passphrase);
 
-LIBSSH_API int ssh_userauth_autopubkey(ssh_session session, const char *passphrase);
 LIBSSH_API int ssh_userauth_kbdint(ssh_session session, const char *user, const char *submethods);
 LIBSSH_API const char *ssh_userauth_kbdint_getinstruction(ssh_session session);
 LIBSSH_API const char *ssh_userauth_kbdint_getname(ssh_session session);

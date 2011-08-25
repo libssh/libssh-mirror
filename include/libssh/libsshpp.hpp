@@ -177,8 +177,8 @@ public:
    * @returns SSH_AUTH_SUCCESS, SSH_AUTH_PARTIAL, SSH_AUTH_DENIED
    * @see ssh_userauth_autopubkey
    */
-  int userauthAutopubkey(void){
-    int ret=ssh_userauth_autopubkey(c_session,NULL);
+  int userauthPublickeyAuto(void){
+    int ret=ssh_userauth_publickey_auto(c_session, NULL, NULL);
     ssh_throw(ret);
     return ret;
   }

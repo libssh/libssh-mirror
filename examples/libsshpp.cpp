@@ -23,7 +23,7 @@ int main(int argc, const char **argv){
     else
       session.setOption(SSH_OPTIONS_HOST,"localhost");
     session.connect();
-    session.userauthAutopubkey();
+    session.userauthPublickeyAuto();
     session.disconnect();
   } catch (ssh::SshException e){
     std::cout << "Error during connection : ";

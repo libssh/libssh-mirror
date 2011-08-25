@@ -89,6 +89,10 @@ int ssh_userauth_pubkey(ssh_session session,
     return rc;
 }
 
+int ssh_userauth_autopubkey(ssh_session session, const char *passphrase) {
+    return ssh_userauth_publickey_auto(session, NULL, passphrase);
+}
+
 /* BUFFER FUNCTIONS */
 
 void buffer_free(ssh_buffer buffer){

@@ -37,6 +37,7 @@ LIBSSH_API int ssh_userauth_pubkey(ssh_session session, const char *username, ss
 LIBSSH_API int ssh_userauth_agent_pubkey(ssh_session session, const char *username,
     ssh_public_key publickey);
 #endif
+LIBSSH_API int ssh_userauth_autopubkey(ssh_session session, const char *passphrase);
 
 LIBSSH_API void buffer_free(ssh_buffer buffer);
 LIBSSH_API void *buffer_get(ssh_buffer buffer);
