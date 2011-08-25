@@ -1015,6 +1015,188 @@ int ssh_userauth_agent(ssh_session session,
 #endif
 
 /**
+ * @brief Tries to automatically authenticate with public key and "none"
+ *
+ * It may fail, for instance it doesn't ask for a password and uses a default
+ * asker for passphrases (in case the private key is encrypted).
+ *
+ * @param[in]  ssh_session The SSH session.
+ *
+ * @param[in]  username    The username, this SHOULD be NULL.
+ *
+ * @param[in]  passphrase  Use this passphrase to unlock the privatekey. Use NULL
+ *                         if you don't want to use a passphrase or the user
+ *                         should be asked.
+ *
+ * @return  SSH_AUTH_ERROR:   A serious error happened.\n
+ *          SSH_AUTH_DENIED:  The server doesn't accept that public key as an
+ *                            authentication token. Try another key or another
+ *                            method.\n
+ *          SSH_AUTH_PARTIAL: You've been partially authenticated, you still
+ *                            have to use another method.\n
+ *          SSH_AUTH_SUCCESS: The public key is accepted, you want now to use
+ *                            ssh_userauth_pubkey().
+ *          SSH_AUTH_AGAIN:   In nonblocking mode, you've got to call this again
+ *                            later.
+ *
+ * @note Most server implementations do not permit changing the username during
+ * authentication. The username should only be set with ssh_optoins_set() only
+ * before you connect to the server.
+ */
+int ssh_userauth_publickey_auto(ssh_session session,
+                                const char *username,
+                                const char *passphrase)
+{
+    struct ssh_iterator *it;
+    ssh_auth_callback auth_fn = NULL;
+    void *auth_data = NULL;
+    int rc;
+
+    if (session == NULL) {
+        return SSH_AUTH_ERROR;
+    }
+
+    if (session->common.callbacks) {
+        auth_fn = session->common.callbacks->auth_function;
+        auth_data = session->common.callbacks->userdata;
+    }
+
+#ifndef _WIN32
+    /* Try authentication with ssh-agent first */
+    rc = ssh_userauth_agent(session, username);
+    if (rc == SSH_AUTH_ERROR || rc == SSH_AUTH_SUCCESS) {
+        return rc;
+    }
+#endif
+
+    for (it = ssh_list_get_iterator(session->identity);
+            it != NULL;
+            it = it->next) {
+        const char *privkey_file = it->data;
+        char pubkey_file[1024] = {0};
+        ssh_key privkey = NULL;
+        ssh_key pubkey;
+
+        ssh_log(session,
+                SSH_LOG_PROTOCOL,
+                "Trying to authenticate with %s",
+                privkey_file);
+
+        snprintf(pubkey_file, sizeof(pubkey_file), "%s.pub", privkey_file);
+
+        rc = ssh_pki_import_pubkey_file(pubkey_file, &pubkey);
+        if (rc == SSH_ERROR) {
+            ssh_set_error(session,
+                          SSH_FATAL,
+                          "Failed to import public key: %s",
+                          pubkey_file);
+            return SSH_AUTH_ERROR;
+        } else if (rc == SSH_EOF) {
+            /* Read the private key and save the public key to file */
+            rc = ssh_pki_import_privkey_file(privkey_file,
+                                             passphrase,
+                                             auth_fn,
+                                             auth_data,
+                                             &privkey);
+            if (rc == SSH_ERROR) {
+                ssh_set_error(session,
+                              SSH_FATAL,
+                              "Failed to read private key: %s",
+                              privkey_file);
+                return SSH_AUTH_ERROR;
+            } else if (rc == SSH_EOF) {
+                /* If the file doesn't exist, continue */
+                ssh_log(session,
+                        SSH_LOG_PACKET,
+                        "Private key %s doesn't exist.",
+                        privkey_file);
+                continue;
+            }
+
+            pubkey = ssh_pki_publickey_from_privatekey(privkey);
+            if (pubkey == NULL) {
+                ssh_key_free(privkey);
+                return SSH_AUTH_ERROR;
+            }
+
+            rc = ssh_pki_export_pubkey_file(pubkey, pubkey_file);
+            if (rc == SSH_ERROR) {
+                ssh_log(session,
+                        SSH_LOG_PACKET,
+                        "Could not write public key to file: %s",
+                        pubkey_file);
+            }
+        }
+
+        rc = ssh_userauth_try_publickey(session, username, pubkey);
+        if (rc == SSH_AUTH_ERROR) {
+            ssh_log(session,
+                    SSH_LOG_RARE,
+                    "Public key authentication error for %s",
+                    privkey_file);
+            ssh_key_free(privkey);
+            ssh_key_free(pubkey);
+            return rc;
+        } else if (rc != SSH_AUTH_SUCCESS) {
+            ssh_log(session,
+                    SSH_LOG_PROTOCOL,
+                    "Public key for %s refused by server",
+                    privkey_file);
+            ssh_key_free(privkey);
+            ssh_key_free(pubkey);
+            continue;
+        }
+
+        /* Public key has been accepted by the server */
+        if (privkey == NULL) {
+            rc = ssh_pki_import_privkey_file(privkey_file,
+                                             passphrase,
+                                             auth_fn,
+                                             auth_data,
+                                             &privkey);
+            if (rc == SSH_ERROR) {
+                ssh_set_error(session,
+                              SSH_FATAL,
+                              "Failed to read private key: %s",
+                              privkey_file);
+                return SSH_AUTH_ERROR;
+            } else if (rc == SSH_EOF) {
+                /* If the file doesn't exist, continue */
+                ssh_log(session,
+                        SSH_LOG_PACKET,
+                        "Private key %s doesn't exist.",
+                        privkey_file);
+                continue;
+            }
+        }
+
+        rc = ssh_userauth_publickey(session, username, privkey);
+        ssh_key_free(privkey);
+        ssh_key_free(pubkey);
+        if (rc == SSH_AUTH_ERROR) {
+            return rc;
+        } else if (rc == SSH_AUTH_SUCCESS) {
+            ssh_log(session,
+                    SSH_LOG_PROTOCOL,
+                    "Successfully authenticated using %s",
+                    privkey_file);
+            return rc;
+        }
+
+        ssh_log(session,
+                SSH_LOG_RARE,
+                "The server accepted the public key but refused the signature");
+        /* continue */
+    }
+    ssh_log(session,
+            SSH_LOG_PROTOCOL,
+            "Tried every public key, none matched");
+
+    return SSH_AUTH_DENIED;
+}
+
+
+/**
  * @brief Try to authenticate through a private key file.
  *
  * @param[in]  session  The ssh session to use.
