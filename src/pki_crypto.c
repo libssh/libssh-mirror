@@ -677,14 +677,14 @@ int pki_signature_verify(ssh_session session,
                          const ssh_signature sig,
                          const ssh_key key,
                          const unsigned char *hash,
-                         size_t len)
+                         size_t hlen)
 {
     int rc;
 
     switch(key->type) {
         case SSH_KEYTYPE_DSS:
-            rc = DSA_do_verify(hash + 1,
-                               len,
+            rc = DSA_do_verify(hash,
+                               hlen,
                                sig->dsa_sig,
                                key->dsa);
             if (rc < 0) {
@@ -698,8 +698,8 @@ int pki_signature_verify(ssh_session session,
         case SSH_KEYTYPE_RSA:
         case SSH_KEYTYPE_RSA1:
             rc = RSA_verify(NID_sha1,
-                            hash + 1,
-                            len,
+                            hash,
+                            hlen,
                             string_data(sig->rsa_sig),
                             ssh_string_len(sig->rsa_sig),
                             key->rsa);
@@ -734,7 +734,7 @@ ssh_signature pki_do_sign(const ssh_key privkey,
 
     switch(privkey->type) {
         case SSH_KEYTYPE_DSS:
-            sig->dsa_sig = DSA_do_sign(hash + 1, hlen, privkey->dsa);
+            sig->dsa_sig = DSA_do_sign(hash, hlen, privkey->dsa);
             if (sig->dsa_sig == NULL) {
                 ssh_signature_free(sig);
                 return NULL;
@@ -748,7 +748,7 @@ ssh_signature pki_do_sign(const ssh_key privkey,
             break;
         case SSH_KEYTYPE_RSA:
         case SSH_KEYTYPE_RSA1:
-            sig->rsa_sig = _RSA_do_sign(hash + 1, hlen, privkey->rsa);
+            sig->rsa_sig = _RSA_do_sign(hash, hlen, privkey->rsa);
             if (sig->rsa_sig == NULL) {
                 ssh_signature_free(sig);
                 return NULL;
@@ -766,7 +766,8 @@ ssh_signature pki_do_sign(const ssh_key privkey,
 
 #ifdef WITH_SERVER
 ssh_signature pki_do_sign_sessionid(const ssh_key key,
-                                    const unsigned char *hash)
+                                    const unsigned char *hash,
+                                    size_t hlen)
 {
     ssh_signature sig;
 
@@ -778,7 +779,7 @@ ssh_signature pki_do_sign_sessionid(const ssh_key key,
 
     switch(key->type) {
         case SSH_KEYTYPE_DSS:
-            sig->dsa_sig = DSA_do_sign(hash + 1, SHA_DIGEST_LEN, key->dsa);
+            sig->dsa_sig = DSA_do_sign(hash, hlen, key->dsa);
             if (sig->dsa_sig == NULL) {
                 ssh_signature_free(sig);
                 return NULL;
@@ -786,7 +787,7 @@ ssh_signature pki_do_sign_sessionid(const ssh_key key,
             break;
         case SSH_KEYTYPE_RSA:
         case SSH_KEYTYPE_RSA1:
-            sig->rsa_sig = _RSA_do_sign(hash + 1, SHA_DIGEST_LEN, key->rsa);
+            sig->rsa_sig = _RSA_do_sign(hash, hlen, key->rsa);
             if (sig->rsa_sig == NULL) {
                 ssh_signature_free(sig);
                 return NULL;

@@ -1322,19 +1322,23 @@ int pki_signature_verify(ssh_session session,
                          const ssh_signature sig,
                          const ssh_key key,
                          const unsigned char *hash,
-                         size_t len)
+                         size_t hlen)
 {
+    unsigned char ghash[hlen + 1];
     gcry_sexp_t sexp;
     gcry_error_t err;
 
     switch(key->type) {
         case SSH_KEYTYPE_DSS:
-            if(hash[1] < 0x80) {
-                hash = hash + 1;
-            } else {
-                len = len + 1;
+            /* That is to mark the number as positive */
+            if(hash[0] >= 0x80) {
+                memcpy(ghash + 1, hash, hlen);
+                ghash[0] = 0;
+                hash = ghash;
+                hlen += 1;
             }
-            err = gcry_sexp_build(&sexp, NULL, "%b", len, hash);
+
+            err = gcry_sexp_build(&sexp, NULL, "%b", hlen, hash);
             if (err) {
                 ssh_set_error(session,
                               SSH_FATAL,
@@ -1359,7 +1363,7 @@ int pki_signature_verify(ssh_session session,
             err = gcry_sexp_build(&sexp,
                                   NULL,
                                   "(data(flags pkcs1)(hash sha1 %b))",
-                                  len, hash + 1);
+                                  hlen, hash);
             if (err) {
                 ssh_set_error(session,
                               SSH_FATAL,
@@ -1392,6 +1396,7 @@ int pki_signature_verify(ssh_session session,
 ssh_signature pki_do_sign(const ssh_key privkey,
                           const unsigned char *hash,
                           size_t hlen) {
+    unsigned char ghash[hlen + 1];
     ssh_signature sig;
     gcry_sexp_t sexp;
     gcry_error_t err;
@@ -1404,11 +1409,14 @@ ssh_signature pki_do_sign(const ssh_key privkey,
 
     switch (privkey->type) {
         case SSH_KEYTYPE_DSS:
-            if(hash[1] < 0x80) {
-                hash = hash + 1;
-            } else {
-                hlen = hlen + 1;
+            /* That is to mark the number as positive */
+            if(hash[0] >= 0x80) {
+                memcpy(ghash + 1, hash, hlen);
+                ghash[0] = 0;
+                hash = ghash;
+                hlen += 1;
             }
+
             err = gcry_sexp_build(&sexp, NULL, "%b", hlen, hash);
             if (err) {
                 ssh_signature_free(sig);
@@ -1428,7 +1436,7 @@ ssh_signature pki_do_sign(const ssh_key privkey,
                                   NULL,
                                   "(data(flags pkcs1)(hash sha1 %b))",
                                   hlen,
-                                  hash + 1);
+                                  hash);
             if (err) {
                 ssh_signature_free(sig);
                 return NULL;
@@ -1452,12 +1460,13 @@ ssh_signature pki_do_sign(const ssh_key privkey,
 
 #ifdef WITH_SERVER
 ssh_signature pki_do_sign_sessionid(const ssh_key key,
-                                    const unsigned char *hash)
+                                    const unsigned char *hash,
+                                    size_t hlen)
 {
+    unsigned char ghash[hlen + 1];
     ssh_signature sig;
     gcry_sexp_t sexp;
     gcry_error_t err;
-    size_t len;
 
     sig = ssh_signature_new();
     if (sig == NULL) {
@@ -1467,17 +1476,15 @@ ssh_signature pki_do_sign_sessionid(const ssh_key key,
 
     switch(key->type) {
         case SSH_KEYTYPE_DSS:
-            len = SHA_DIGEST_LEN;
-            if(hash[1] < 0x80) {
-                hash = hash + 1;
-            } else {
-                len = len + 1;
+            /* That is to mark the number as positive */
+            if(hash[0] >= 0x80) {
+                memcpy(ghash + 1, hash, hlen);
+                ghash[0] = 0;
+                hash = ghash;
+                hlen += 1;
             }
-            err = gcry_sexp_build(&sexp,
-                                  NULL,
-                                  "%b",
-                                  len,
-                                  hash);
+
+            err = gcry_sexp_build(&sexp, NULL, "%b", hlen, hash);
             if (err) {
                 ssh_signature_free(sig);
                 return NULL;
@@ -1494,8 +1501,8 @@ ssh_signature pki_do_sign_sessionid(const ssh_key key,
             err = gcry_sexp_build(&sexp,
                                   NULL,
                                   "(data(flags pkcs1)(hash sha1 %b))",
-                                  SHA_DIGEST_LEN,
-                                  hash + 1);
+                                  hlen,
+                                  hash);
             if (err) {
                 ssh_signature_free(sig);
                 return NULL;

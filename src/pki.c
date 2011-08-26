@@ -1022,7 +1022,7 @@ int ssh_pki_signature_verify_blob(ssh_session session,
                                   unsigned char *digest,
                                   size_t dlen)
 {
-    unsigned char hash[SHA_DIGEST_LEN + 1] = {0};
+    unsigned char hash[SHA_DIGEST_LEN] = {0};
     ssh_signature sig;
     int rc;
 
@@ -1038,10 +1038,10 @@ int ssh_pki_signature_verify_blob(ssh_session session,
             key->type_c);
 
 
-    sha1(digest, dlen, hash + 1);
+    sha1(digest, dlen, hash);
 
 #ifdef DEBUG_CRYPTO
-    ssh_print_hexa("Hash to be verified with dsa", hash + 1, SHA_DIGEST_LEN);
+    ssh_print_hexa("Hash to be verified with dsa", hash, SHA_DIGEST_LEN);
 #endif
 
     rc = pki_signature_verify(session,
@@ -1063,7 +1063,7 @@ ssh_string ssh_pki_do_sign(ssh_session session,
     struct ssh_crypto_struct *crypto =
         session->current_crypto ? session->current_crypto :
                                   session->next_crypto;
-    unsigned char hash[SHA_DIGEST_LEN + 1] = {0};
+    unsigned char hash[SHA_DIGEST_LEN] = {0};
     ssh_signature sig;
     ssh_string sig_blob = NULL;
     ssh_string str = NULL;
@@ -1089,11 +1089,10 @@ ssh_string ssh_pki_do_sign(ssh_session session,
     sha1_update(ctx, str, ssh_string_len(str) + 4);
     ssh_string_free(str);
     sha1_update(ctx, buffer_get_rest(sigbuf), buffer_get_rest_len(sigbuf));
-    sha1_final(hash + 1, ctx);
-    hash[0] = 0;
+    sha1_final(hash, ctx);
 
 #ifdef DEBUG_CRYPTO
-    ssh_print_hexa("Hash being signed with dsa", hash + 1, SHA_DIGEST_LEN);
+    ssh_print_hexa("Hash being signed with dsa", hash, SHA_DIGEST_LEN);
 #endif
 
     sig = pki_do_sign(privkey, hash, SHA_DIGEST_LEN);
@@ -1169,7 +1168,7 @@ ssh_string ssh_srv_pki_do_sign_sessionid(ssh_session session,
     struct ssh_crypto_struct *crypto =
         session->current_crypto ? session->current_crypto :
         session->next_crypto;
-    unsigned char hash[SHA_DIGEST_LEN + 1] = {0};
+    unsigned char hash[SHA_DIGEST_LEN] = {0};
     ssh_signature sig;
     ssh_string sig_blob;
     SHACTX ctx;
@@ -1184,14 +1183,13 @@ ssh_string ssh_srv_pki_do_sign_sessionid(ssh_session session,
         return NULL;
     }
     sha1_update(ctx, crypto->session_id, SHA_DIGEST_LEN);
-    sha1_final(hash + 1, ctx);
-    hash[0] = 0;
+    sha1_final(hash, ctx);
 
 #ifdef DEBUG_CRYPTO
-    ssh_print_hexa("Hash being signed", hash + 1, SHA_DIGEST_LEN);
+    ssh_print_hexa("Hash being signed", hash, SHA_DIGEST_LEN);
 #endif
 
-    sig = pki_do_sign_sessionid(privkey, hash);
+    sig = pki_do_sign_sessionid(privkey, hash, SHA_DIGEST_LEN);
     if (sig == NULL) {
         return NULL;
     }
