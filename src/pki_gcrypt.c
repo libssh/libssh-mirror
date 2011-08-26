@@ -1262,8 +1262,8 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
             }
 
 #ifdef DEBUG_CRYPTO
-            ssh_print_hexa("r", ssh_string_data(str), 20);
-            ssh_print_hexa("s", (unsigned char *)ssh_string_data(rs) + 20, 20);
+            ssh_pki_log("DSA signature len: %lu", (unsigned long)len);
+            ssh_print_hexa("DSA signature", ssh_string_data(sig_blob), len);
 #endif
 
             err = gcry_sexp_build(&sig->dsa_sig,
@@ -1329,7 +1329,12 @@ int pki_signature_verify(ssh_session session,
 
     switch(key->type) {
         case SSH_KEYTYPE_DSS:
-            err = gcry_sexp_build(&sexp, NULL, "%b", len, hash + 1);
+            if(hash[1] < 0x80) {
+                hash = hash + 1;
+            } else {
+                len = len + 1;
+            }
+            err = gcry_sexp_build(&sexp, NULL, "%b", len, hash);
             if (err) {
                 ssh_set_error(session,
                               SSH_FATAL,
@@ -1399,7 +1404,12 @@ ssh_signature pki_do_sign(const ssh_key privkey,
 
     switch (privkey->type) {
         case SSH_KEYTYPE_DSS:
-            err = gcry_sexp_build(&sexp, NULL, "%b", hlen + 1, hash);
+            if(hash[1] < 0x80) {
+                hash = hash + 1;
+            } else {
+                hlen = hlen + 1;
+            }
+            err = gcry_sexp_build(&sexp, NULL, "%b", hlen, hash);
             if (err) {
                 ssh_signature_free(sig);
                 return NULL;
@@ -1447,6 +1457,7 @@ ssh_signature pki_do_sign_sessionid(const ssh_key key,
     ssh_signature sig;
     gcry_sexp_t sexp;
     gcry_error_t err;
+    size_t len;
 
     sig = ssh_signature_new();
     if (sig == NULL) {
@@ -1456,10 +1467,16 @@ ssh_signature pki_do_sign_sessionid(const ssh_key key,
 
     switch(key->type) {
         case SSH_KEYTYPE_DSS:
+            len = SHA_DIGEST_LEN;
+            if(hash[1] < 0x80) {
+                hash = hash + 1;
+            } else {
+                len = len + 1;
+            }
             err = gcry_sexp_build(&sexp,
                                   NULL,
                                   "%b",
-                                  SHA_DIGEST_LEN + 1,
+                                  len,
                                   hash);
             if (err) {
                 ssh_signature_free(sig);
