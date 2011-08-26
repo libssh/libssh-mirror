@@ -343,40 +343,6 @@ char *string_to_char(ssh_string str){
   return ssh_string_to_char(str);
 }
 
-ssh_private_key privatekey_from_base64(ssh_session session,
-                                       const char *b64_pkey,
-                                       int type,
-                                       const char *passphrase) {
-    ssh_auth_callback auth_fn = NULL;
-    void *auth_data = NULL;
-    ssh_private_key privkey;
-    ssh_key key;
-
-    (void) type; /* unused */
-
-    if (session->common.callbacks) {
-        auth_fn = session->common.callbacks->auth_function;
-        auth_data = session->common.callbacks->userdata;
-    }
-
-    key = pki_private_key_from_base64(b64_pkey, passphrase, auth_fn, auth_data);
-    if (key == NULL) {
-        return NULL;
-    }
-
-    privkey = malloc(sizeof(struct ssh_private_key_struct));
-    if (privkey == NULL) {
-        ssh_key_free(key);
-        return NULL;
-    }
-
-    privkey->type = key->type;
-    privkey->dsa_priv = key->dsa;
-    privkey->rsa_priv = key->rsa;
-
-    return privkey;
-}
-
 ssh_private_key privatekey_from_file(ssh_session session,
                                      const char *filename,
                                      int type,
