@@ -1103,6 +1103,7 @@ int ssh_userauth_publickey_auto(ssh_session session,
                               SSH_FATAL,
                               "Failed to read private key: %s",
                               privkey_file);
+                continue;
                 return SSH_AUTH_ERROR;
             } else if (rc == SSH_EOF) {
                 /* If the file doesn't exist, continue */
@@ -1155,13 +1156,15 @@ int ssh_userauth_publickey_auto(ssh_session session,
                                              auth_data,
                                              &privkey);
             if (rc == SSH_ERROR) {
+                ssh_key_free(pubkey);
                 ssh_set_error(session,
                               SSH_FATAL,
                               "Failed to read private key: %s",
                               privkey_file);
-                return SSH_AUTH_ERROR;
+                continue;
             } else if (rc == SSH_EOF) {
                 /* If the file doesn't exist, continue */
+                ssh_key_free(pubkey);
                 ssh_log(session,
                         SSH_LOG_PACKET,
                         "Private key %s doesn't exist.",
