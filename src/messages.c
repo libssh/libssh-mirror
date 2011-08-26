@@ -603,6 +603,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
                                            msg->auth_request.pubkey,
                                            &sig);
         if (rc < 0) {
+            ssh_string_free(sig_blob);
             ssh_log(session, SSH_LOG_PACKET, "Wrong signature from peer");
             msg->auth_request.signature_state = SSH_PUBLICKEY_STATE_WRONG;
             goto error;
@@ -610,6 +611,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
 
         digest = ssh_msg_userauth_build_digest(session, msg, service_c);
         if (digest == NULL) {
+            ssh_string_free(sig_blob);
             ssh_signature_free(sig);
             ssh_log(session, SSH_LOG_PACKET, "Failed to get digest");
             msg->auth_request.signature_state = SSH_PUBLICKEY_STATE_WRONG;
