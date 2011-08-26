@@ -62,8 +62,9 @@ int pki_signature_verify(ssh_session session,
                          size_t len);
 
 /* SSH Signing Functions */
-struct signature_struct *pki_do_sign(const ssh_key privatekey,
-                                     const unsigned char *hash);
+ssh_signature pki_do_sign(const ssh_key privkey,
+                          const unsigned char *hash,
+                          size_t hlen);
 ssh_signature pki_do_sign_sessionid(const ssh_key key,
                                     const unsigned char *hash);
 #endif /* PKI_PRIV_H_ */

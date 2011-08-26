@@ -1057,51 +1057,57 @@ int ssh_pki_signature_verify_blob(ssh_session session,
 /*
  * This function signs the session id (known as H) as a string then
  * the content of sigbuf */
-ssh_string ssh_pki_do_sign(ssh_session session, ssh_buffer sigbuf,
-        const ssh_key privatekey) {
-    struct ssh_crypto_struct *crypto = session->current_crypto ? session->current_crypto :
-        session->next_crypto;
+ssh_string ssh_pki_do_sign(ssh_session session,
+                           ssh_buffer sigbuf,
+                           const ssh_key privkey) {
+    struct ssh_crypto_struct *crypto =
+        session->current_crypto ? session->current_crypto :
+                                  session->next_crypto;
     unsigned char hash[SHA_DIGEST_LEN + 1] = {0};
-    ssh_string session_str = NULL;
-    ssh_string signature = NULL;
-    struct signature_struct *sign = NULL;
+    ssh_signature sig;
+    ssh_string sig_blob = NULL;
+    ssh_string str = NULL;
     SHACTX ctx = NULL;
+    int rc;
 
-    if (privatekey == NULL || !ssh_key_is_private(privatekey)) {
+    if (privkey == NULL || !ssh_key_is_private(privkey)) {
         return NULL;
     }
 
-    session_str = ssh_string_new(SHA_DIGEST_LEN);
-    if (session_str == NULL) {
+    str = ssh_string_new(SHA_DIGEST_LEN);
+    if (str == NULL) {
         return NULL;
     }
-    ssh_string_fill(session_str, crypto->session_id, SHA_DIGEST_LEN);
+    ssh_string_fill(str, crypto->session_id, SHA_DIGEST_LEN);
 
     ctx = sha1_init();
     if (ctx == NULL) {
-        ssh_string_free(session_str);
+        ssh_string_free(str);
         return NULL;
     }
 
-    sha1_update(ctx, session_str, ssh_string_len(session_str) + 4);
-    ssh_string_free(session_str);
+    sha1_update(ctx, str, ssh_string_len(str) + 4);
+    ssh_string_free(str);
     sha1_update(ctx, buffer_get_rest(sigbuf), buffer_get_rest_len(sigbuf));
-    sha1_final(hash + 1,ctx);
+    sha1_final(hash + 1, ctx);
     hash[0] = 0;
 
 #ifdef DEBUG_CRYPTO
     ssh_print_hexa("Hash being signed with dsa", hash + 1, SHA_DIGEST_LEN);
 #endif
 
-    sign = pki_do_sign(privatekey, hash);
-    if (sign == NULL) {
+    sig = pki_do_sign(privkey, hash, SHA_DIGEST_LEN);
+    if (sig == NULL) {
         return NULL;
     }
 
-    signature = signature_to_string(sign);
-    signature_free(sign);
+    rc = ssh_pki_export_signature_blob(sig, &sig_blob);
+    ssh_signature_free(sig);
+    if (rc < 0) {
+        return NULL;
+    }
 
-    return signature;
+    return sig_blob;
 }
 
 #ifndef _WIN32

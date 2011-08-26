@@ -1384,47 +1384,60 @@ int pki_signature_verify(ssh_session session,
     return SSH_OK;
 }
 
-struct signature_struct *pki_do_sign(ssh_key privatekey,
-                                     const unsigned char *hash) {
-    struct signature_struct *sign;
-    gcry_sexp_t gcryhash;
+ssh_signature pki_do_sign(const ssh_key privkey,
+                          const unsigned char *hash,
+                          size_t hlen) {
+    ssh_signature sig;
+    gcry_sexp_t sexp;
+    gcry_error_t err;
 
-    sign = malloc(sizeof(SIGNATURE));
-    if (sign == NULL) {
+    sig = ssh_signature_new();
+    if (sig == NULL) {
         return NULL;
     }
-    sign->type = privatekey->type;
+    sig->type = privkey->type;
 
-    switch(privatekey->type) {
+    switch (privkey->type) {
         case SSH_KEYTYPE_DSS:
-            if (gcry_sexp_build(&gcryhash, NULL, "%b", SHA_DIGEST_LEN + 1, hash) ||
-                gcry_pk_sign(&sign->dsa_sign, gcryhash, privatekey->dsa)) {
-                gcry_sexp_release(gcryhash);
-                signature_free(sign);
+            err = gcry_sexp_build(&sexp, NULL, "%b", hlen + 1, hash);
+            if (err) {
+                ssh_signature_free(sig);
                 return NULL;
             }
-            sign->rsa_sign = NULL;
+
+            err = gcry_pk_sign(&sig->dsa_sig, sexp, privkey->dsa);
+            gcry_sexp_release(sexp);
+            if (err) {
+                ssh_signature_free(sig);
+                return NULL;
+            }
             break;
         case SSH_KEYTYPE_RSA:
         case SSH_KEYTYPE_RSA1:
-            if (gcry_sexp_build(&gcryhash, NULL, "(data(flags pkcs1)(hash sha1 %b))",
-                                SHA_DIGEST_LEN, hash + 1) ||
-                gcry_pk_sign(&sign->rsa_sign, gcryhash, privatekey->rsa)) {
-                gcry_sexp_release(gcryhash);
-                signature_free(sign);
+            err = gcry_sexp_build(&sexp,
+                                  NULL,
+                                  "(data(flags pkcs1)(hash sha1 %b))",
+                                  hlen,
+                                  hash + 1);
+            if (err) {
+                ssh_signature_free(sig);
                 return NULL;
             }
-            sign->dsa_sign = NULL;
+
+            err = gcry_pk_sign(&sig->rsa_sig, sexp, privkey->rsa);
+            gcry_sexp_release(sexp);
+            if (err) {
+                ssh_signature_free(sig);
+                return NULL;
+            }
             break;
         case SSH_KEYTYPE_ECDSA:
         case SSH_KEYTYPE_UNKNOWN:
-            signature_free(sign);
+            ssh_signature_free(sig);
             return NULL;
     }
 
-    gcry_sexp_release(gcryhash);
-
-    return sign;
+    return sig;
 }
 
 #ifdef WITH_SERVER

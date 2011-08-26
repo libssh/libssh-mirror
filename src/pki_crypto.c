@@ -720,22 +720,23 @@ int pki_signature_verify(ssh_session session,
     return SSH_OK;
 }
 
-struct signature_struct *pki_do_sign(ssh_key privatekey,
-                                     const unsigned char *hash) {
-    struct signature_struct *sign;
+ssh_signature pki_do_sign(const ssh_key privkey,
+                          const unsigned char *hash,
+                          size_t hlen) {
+    ssh_signature sig;
 
-    sign = malloc(sizeof(SIGNATURE));
-    if (sign == NULL) {
+    sig = ssh_signature_new();
+    if (sig == NULL) {
         return NULL;
     }
-    sign->type = privatekey->type;
 
-    switch(privatekey->type) {
+    sig->type = privkey->type;
+
+    switch(privkey->type) {
         case SSH_KEYTYPE_DSS:
-            sign->dsa_sign = DSA_do_sign(hash + 1, SHA_DIGEST_LEN,
-                    privatekey->dsa);
-            if (sign->dsa_sign == NULL) {
-                signature_free(sign);
+            sig->dsa_sig = DSA_do_sign(hash + 1, hlen, privkey->dsa);
+            if (sig->dsa_sig == NULL) {
+                ssh_signature_free(sig);
                 return NULL;
             }
 
@@ -744,25 +745,23 @@ struct signature_struct *pki_do_sign(ssh_key privatekey,
             ssh_print_bignum("s", sign->dsa_sign->s);
 #endif
 
-            sign->rsa_sign = NULL;
             break;
         case SSH_KEYTYPE_RSA:
         case SSH_KEYTYPE_RSA1:
-            sign->rsa_sign = _RSA_do_sign(hash + 1, SHA_DIGEST_LEN,
-                    privatekey->rsa);
-            if (sign->rsa_sign == NULL) {
-                signature_free(sign);
+            sig->rsa_sig = _RSA_do_sign(hash + 1, hlen, privkey->rsa);
+            if (sig->rsa_sig == NULL) {
+                ssh_signature_free(sig);
                 return NULL;
             }
-            sign->dsa_sign = NULL;
+            sig->dsa_sig = NULL;
             break;
         case SSH_KEYTYPE_ECDSA:
         case SSH_KEYTYPE_UNKNOWN:
-            signature_free(sign);
+            ssh_signature_free(sig);
             return NULL;
     }
 
-    return sign;
+    return sig;
 }
 
 #ifdef WITH_SERVER
