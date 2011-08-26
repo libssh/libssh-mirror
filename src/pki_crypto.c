@@ -599,8 +599,8 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
             }
 
 #ifdef DEBUG_CRYPTO
-            ssh_print_hexa("r", ssh_string_data(str), 20);
-            ssh_print_hexa("s", (unsigned char *)ssh_string_data(rs) + 20, 20);
+            ssh_print_hexa("r", ssh_string_data(sig_blob), 20);
+            ssh_print_hexa("s", (unsigned char *)ssh_string_data(sig_blob) + 20, 20);
 #endif
 
             sig->dsa_sig = DSA_SIG_new();
@@ -741,8 +741,8 @@ ssh_signature pki_do_sign(const ssh_key privkey,
             }
 
 #ifdef DEBUG_CRYPTO
-            ssh_print_bignum("r", sign->dsa_sign->r);
-            ssh_print_bignum("s", sign->dsa_sign->s);
+            ssh_print_bignum("r", sig->dsa_sig->r);
+            ssh_print_bignum("s", sig->dsa_sig->s);
 #endif
 
             break;
