@@ -678,13 +678,13 @@ int ssh_userauth_publickey(ssh_session session,
     switch(session->pending_call_state) {
         case SSH_PENDING_CALL_NONE:
             break;
-        case SSH_PENDING_CALL_AUTH_OFFER_PUBKEY:
+        case SSH_PENDING_CALL_AUTH_PUBKEY:
             goto pending;
         default:
             ssh_set_error(session,
                           SSH_FATAL,
                           "Bad call during pending SSH call in ssh_userauth_try_pubkey");
-            return SSH_ERROR;
+            return SSH_AUTH_ERROR;
     }
 
     rc = ssh_userauth_request_service(session);
@@ -783,7 +783,7 @@ int ssh_userauth_publickey(ssh_session session,
     }
 
     session->auth_state = SSH_AUTH_STATE_NONE;
-    session->pending_call_state = SSH_PENDING_CALL_AUTH_OFFER_PUBKEY;
+    session->pending_call_state = SSH_PENDING_CALL_AUTH_PUBKEY;
     rc = packet_send(session);
     if (rc == SSH_ERROR) {
         return SSH_AUTH_ERROR;
