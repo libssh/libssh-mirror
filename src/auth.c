@@ -68,8 +68,13 @@ static int ask_userauth(ssh_session session) {
     do {
         rc = ssh_service_request(session,"ssh-userauth");
         if (ssh_is_blocking(session)) {
-            if(rc == SSH_AGAIN)
-                ssh_handle_packets(session, -2);
+            if (rc == SSH_AGAIN) {
+                int err = ssh_handle_packets(session, -2);
+                if (err != SSH_OK) {
+                    /* error or timeout */
+                    return SSH_ERROR;
+                }
+            }
         } else {
             /* nonblocking */
             ssh_handle_packets(session, 0);
