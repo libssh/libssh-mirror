@@ -1465,9 +1465,7 @@ static int ssh_userauth_kbdint_init(ssh_session session,
     int rc;
 
     rc = ssh_userauth_request_service(session);
-    if (rc == SSH_AGAIN) {
-        return SSH_AUTH_AGAIN;
-    } else if (rc == SSH_ERROR) {
+    if (rc != SSH_OK) {
         return SSH_AUTH_ERROR;
     }
 
@@ -1518,7 +1516,13 @@ static int ssh_userauth_kbdint_init(ssh_session session,
     }
 
     /* lang string (ignore it) */
-    rc = buffer_add_u8(session->out_buffer, 0);
+    str = ssh_string_from_char("");
+    if (str == NULL) {
+        goto fail;
+    }
+
+    rc = buffer_add_ssh_string(session->out_buffer, str);
+    ssh_string_free(str);
     if (rc < 0) {
         goto fail;
     }
@@ -1539,17 +1543,13 @@ static int ssh_userauth_kbdint_init(ssh_session session,
         goto fail;
     }
 
-    session->auth_state = SSH_AUTH_STATE_NONE;
-    session->pending_call_state = SSH_PENDING_CALL_AUTH_OFFER_PUBKEY;
+    session->auth_state = SSH_AUTH_STATE_KBDINT_SENT;
     rc = packet_send(session);
     if (rc == SSH_ERROR) {
         return SSH_AUTH_ERROR;
     }
 
     rc = ssh_userauth_get_response(session);
-    if (rc != SSH_AUTH_AGAIN) {
-        session->pending_call_state = SSH_PENDING_CALL_NONE;
-    }
 
     return rc;
 fail:
@@ -1780,50 +1780,35 @@ error:
  */
 int ssh_userauth_kbdint(ssh_session session, const char *user,
     const char *submethods) {
-  int rc = SSH_AUTH_ERROR;
+    int rc = SSH_AUTH_ERROR;
 
-  if (session->version == 1) {
-    ssh_set_error(session, SSH_NO_ERROR, "No keyboard-interactive for ssh1");
+    if (session == NULL) {
+        return SSH_AUTH_ERROR;
+    }
+
+#ifdef WITH_SSH1
+    if (session->version == 1) {
+        return SSH_AUTH_DENIED;
+    }
+#endif
+
+    if (session->kbdint == NULL) {
+        rc = ssh_userauth_kbdint_init(session, user, submethods);
+
+        return rc;
+    } else {
+        /*
+         * If we are at this point, it is because session->kbdint exists.
+         * It means the user has set some information there we need to send
+         * the server and then we need to ack the status (new questions or ok
+         * pass in).
+         */
+        rc = kbdauth_send(session);
+
+        return rc;
+    }
+
     return SSH_AUTH_DENIED;
-  }
-
-  enter_function();
-
-  if (session->kbdint == NULL) {
-    /* first time we call. we must ask for a challenge */
-    if (user == NULL) {
-      if ((user = session->username) == NULL) {
-        if (ssh_options_apply(session) < 0) {
-          leave_function();
-          return SSH_AUTH_ERROR;
-        } else {
-          user = session->username;
-        }
-      }
-    }
-
-    rc = ssh_userauth_request_service(session);
-    if (rc != SSH_OK) {
-      leave_function();
-      return SSH_AUTH_ERROR;
-    }
-
-    rc = ssh_userauth_kbdint_init(session, user, submethods);
-
-    leave_function();
-    return rc;
-  }
-
-  /*
-   * If we are at this point, it is because session->kbdint exists.
-   * It means the user has set some information there we need to send
-   * the server and then we need to ack the status (new questions or ok
-   * pass in).
-   */
-  rc = kbdauth_send(session);
-
-  leave_function();
-  return rc;
 }
 
 /**
