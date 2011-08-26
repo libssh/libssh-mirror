@@ -602,7 +602,6 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
         rc = ssh_pki_import_signature_blob(sig_blob,
                                            msg->auth_request.pubkey,
                                            &sig);
-        ssh_string_free(sig_blob);
         if (rc < 0) {
             ssh_log(session, SSH_LOG_PACKET, "Wrong signature from peer");
             msg->auth_request.signature_state = SSH_PUBLICKEY_STATE_WRONG;
