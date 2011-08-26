@@ -1521,6 +1521,10 @@ static int ssh_userauth_kbdint_init(ssh_session session,
     }
 
     /* submethods */
+    if (submethods == NULL) {
+        submethods = "";
+    }
+
     str = ssh_string_from_char(submethods);
     if (rc < 0) {
         goto fail;
