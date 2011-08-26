@@ -49,17 +49,6 @@ struct ssh_private_key_struct {
 #endif
 };
 
-typedef struct signature_struct {
-    int type;
-#ifdef HAVE_LIBGCRYPT
-    gcry_sexp_t dsa_sign;
-    gcry_sexp_t rsa_sign;
-#elif defined HAVE_LIBCRYPTO
-    DSA_SIG *dsa_sign;
-    ssh_string rsa_sign;
-#endif
-} SIGNATURE;
-
 const char *ssh_type_to_char(int type);
 int ssh_type_from_name(const char *name);
 
@@ -70,8 +59,5 @@ ssh_private_key privatekey_make_rsa(ssh_session session, ssh_buffer buffer,
 ssh_public_key publickey_make_dss(ssh_session session, ssh_buffer buffer);
 ssh_public_key publickey_make_rsa(ssh_session session, ssh_buffer buffer, int type);
 ssh_public_key publickey_from_string(ssh_session session, ssh_string pubkey_s);
-ssh_string signature_to_string(SIGNATURE *sign);
-SIGNATURE *signature_from_string(ssh_session session, ssh_string signature,ssh_public_key pubkey,int needed_type);
-void signature_free(SIGNATURE *sign);
 
 #endif /* KEYS_H_ */

@@ -264,37 +264,6 @@ error:
   return NULL;
 }
 
-void signature_free(SIGNATURE *sign) {
-  if (sign == NULL) {
-    return;
-  }
-
-  switch(sign->type) {
-    case SSH_KEYTYPE_DSS:
-#ifdef HAVE_LIBGCRYPT
-      gcry_sexp_release(sign->dsa_sign);
-#elif defined HAVE_LIBCRYPTO
-      DSA_SIG_free(sign->dsa_sign);
-#endif
-      break;
-    case SSH_KEYTYPE_RSA:
-    case SSH_KEYTYPE_RSA1:
-#ifdef HAVE_LIBGCRYPT
-      gcry_sexp_release(sign->rsa_sign);
-#elif defined HAVE_LIBCRYPTO
-      SAFE_FREE(sign->rsa_sign);
-#endif
-      break;
-    default:
-      /* FIXME Passing NULL segfaults */
-#if 0
-       ssh_log(NULL, SSH_LOG_RARE, "Freeing a signature with no type!\n"); */
-#endif
-         break;
-    }
-  SAFE_FREE(sign);
-}
-
 /** @} */
 
 /* vim: set ts=4 sw=4 et cindent: */
