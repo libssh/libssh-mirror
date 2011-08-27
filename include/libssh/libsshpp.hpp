@@ -206,7 +206,6 @@ public:
     return ret;
   }
   /** @brief Try to authenticate using the publickey method.
-   * @param[in] type public key type
    * @param[in] pubkey public key to use for authentication
    * @throws SshException on error
    * @returns SSH_AUTH_SUCCESS if the pubkey is accepted,
