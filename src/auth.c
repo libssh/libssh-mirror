@@ -475,7 +475,7 @@ fail:
  * is provided for querying whether authentication using the 'pubkey' would
  * be possible.
  *
- * @param[in] ssh_session The SSH session.
+ * @param[in] session     The SSH session.
  *
  * @param[in] username    The username, this SHOULD be NULL.
  *
@@ -637,7 +637,7 @@ fail:
 /**
  * @brief Authenticate with public/private key.
  *
- * @param[in] ssh_session The SSH session.
+ * @param[in] session     The SSH session.
  *
  * @param[in] username    The username, this SHOULD be NULL.
  *
@@ -1025,7 +1025,7 @@ int ssh_userauth_agent(ssh_session session,
  * It may fail, for instance it doesn't ask for a password and uses a default
  * asker for passphrases (in case the private key is encrypted).
  *
- * @param[in]  ssh_session The SSH session.
+ * @param[in]  session     The SSH session.
  *
  * @param[in]  username    The username, this SHOULD be NULL.
  *
@@ -1218,7 +1218,7 @@ int ssh_userauth_publickey_auto(ssh_session session,
  *
  * @param[in] username  The username, this SHOULD be NULL.
  *
- * @param[in] passowrd  The password to authenticate in UTF-8.
+ * @param[in] password  The password to authenticate in UTF-8.
  *
  * @returns             A bitfield of the fllowing values:
  *                      - SSH_AUTH_METHOD_PASSWORD
