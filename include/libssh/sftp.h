@@ -31,8 +31,13 @@
  * the sftp system puts it into the queue, so the process having asked for
  * it can fetch it, while continuing to read for other messages (it is
  * unspecified in which order messages may be sent back to the client
- *
+ */
+
+/**
  * @defgroup libssh_sftp The libssh SFTP API
+ *
+ * Functions to do FTP transfer over SSH.
+ *
  * @{
  */
 
@@ -60,6 +65,8 @@ extern "C" {
 #endif /* ssize_t */
 #endif /* _MSC_VER */
 #endif /* _WIN32 */
+
+#define LIBSFTP_VERSION 3
 
 typedef struct sftp_attributes_struct* sftp_attributes;
 typedef struct sftp_client_message_struct* sftp_client_message;
@@ -174,21 +181,22 @@ struct sftp_attributes_struct {
     ssh_string extended_data;
 };
 
+/**
+ * @brief SFTP statvfs structure.
+ */
 struct sftp_statvfs_struct {
-  uint64_t f_bsize; /* file system block size */
-  uint64_t f_frsize; /* fundamental fs block size */
-  uint64_t f_blocks; /* number of blocks (unit f_frsize) */
-  uint64_t f_bfree; /* free blocks in file system */
-  uint64_t f_bavail; /* free blocks for non-root */
-  uint64_t f_files; /* total file inodes */
-  uint64_t f_ffree; /* free file inodes */
-  uint64_t f_favail; /* free file inodes for to non-root */
-  uint64_t f_fsid; /* file system id */
-  uint64_t f_flag; /* bit mask of f_flag values */
-  uint64_t f_namemax; /* maximum filename length */
+  uint64_t f_bsize;   /** file system block size */
+  uint64_t f_frsize;  /** fundamental fs block size */
+  uint64_t f_blocks;  /** number of blocks (unit f_frsize) */
+  uint64_t f_bfree;   /** free blocks in file system */
+  uint64_t f_bavail;  /** free blocks for non-root */
+  uint64_t f_files;   /** total file inodes */
+  uint64_t f_ffree;   /** free file inodes */
+  uint64_t f_favail;  /** free file inodes for to non-root */
+  uint64_t f_fsid;    /** file system id */
+  uint64_t f_flag;    /** bit mask of f_flag values */
+  uint64_t f_namemax; /** maximum filename length */
 };
-
-#define LIBSFTP_VERSION 3
 
 /**
  * @brief Start a new sftp session.
@@ -196,6 +204,8 @@ struct sftp_statvfs_struct {
  * @param session       The ssh session to use.
  *
  * @return              A new sftp session or NULL on error.
+ *
+ * @see sftp_free()
  */
 LIBSSH_API sftp_session sftp_new(ssh_session session);
 
@@ -212,6 +222,8 @@ LIBSSH_API void sftp_free(sftp_session sftp);
  * @param sftp          The sftp session to initialize.
  *
  * @return              0 on success, < 0 on error with ssh error set.
+ *
+ * @see sftp_new()
  */
 LIBSSH_API int sftp_init(sftp_session sftp);
 
@@ -283,7 +295,7 @@ LIBSSH_API int sftp_extension_supported(sftp_session sftp, const char *name,
 
 /**
  * @brief Open a directory used to obtain directory entries.
- 
+ *
  * @param session       The sftp session handle to open the directory.
  * @param path          The path of the directory to open.
  *
@@ -392,7 +404,7 @@ LIBSSH_API int sftp_close(sftp_file file);
  *
  * @param file          The file to be opened.
  *
- * @param accesstype        Is one of O_RDONLY, O_WRONLY or O_RDWR which request
+ * @param accesstype    Is one of O_RDONLY, O_WRONLY or O_RDWR which request
  *                      opening  the  file  read-only,write-only or read/write.
  *                      Acesss may also be bitwise-or'd with one or  more of
  *                      the following:
@@ -414,8 +426,18 @@ LIBSSH_API int sftp_close(sftp_file file);
 LIBSSH_API sftp_file sftp_open(sftp_session session, const char *file, int accesstype,
     mode_t mode);
 
+/**
+ * @brief Make the sftp communication for this file handle non blocking.
+ *
+ * @param[in]  handle   The file handle to set non blocking.
+ */
 LIBSSH_API void sftp_file_set_nonblocking(sftp_file handle);
 
+/**
+ * @brief Make the sftp communication for this file handle blocking.
+ *
+ * @param[in]  handle   The file handle to set blocking.
+ */
 LIBSSH_API void sftp_file_set_blocking(sftp_file handle);
 
 /**
