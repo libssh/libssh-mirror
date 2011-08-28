@@ -50,7 +50,6 @@
 
 #include "libssh/priv.h"
 #include "libssh/buffer.h"
-#include "libssh/keyfiles.h"
 #include "libssh/session.h"
 #include "libssh/wrapper.h"
 #include "libssh/misc.h"

@@ -34,7 +34,6 @@
 #include "libssh/ssh2.h"
 #include "libssh/buffer.h"
 #include "libssh/agent.h"
-#include "libssh/keyfiles.h"
 #include "libssh/misc.h"
 #include "libssh/packet.h"
 #include "libssh/session.h"

@@ -37,7 +37,6 @@
 #include "libssh/pki_priv.h"
 #include <libssh/misc.h>
 #include <libssh/keys.h>
-#include <libssh/keyfiles.h>
 
 /* AUTH FUNCTIONS */
 int ssh_auth_list(ssh_session session) {
@@ -388,11 +387,6 @@ ssh_private_key privatekey_from_file(ssh_session session,
     ssh_key_free(key);
 
     return privkey;
-}
-
-ssh_private_key _privatekey_from_file(void *session, const char *filename,
-    int type) {
-    return privatekey_from_file(session, filename, type, NULL);
 }
 
 enum ssh_keytypes_e ssh_privatekey_type(ssh_private_key privatekey){
