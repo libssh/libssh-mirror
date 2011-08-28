@@ -26,8 +26,5 @@
 
 ssh_private_key _privatekey_from_file(void *session, const char *filename,
     int type);
-ssh_string try_publickey_from_file(ssh_session session,
-    struct ssh_keys_struct keytab,
-    char **privkeyfile, int *type);
 
 #endif /* KEYFILES_H_ */
