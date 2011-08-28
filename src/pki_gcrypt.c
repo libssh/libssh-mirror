@@ -42,9 +42,6 @@
 #include "libssh/pki.h"
 #include "libssh/pki_priv.h"
 
-/*todo: remove this include */
-#include "libssh/string.h"
-
 #define MAXLINESIZE 80
 #define RSA_HEADER_BEGIN "-----BEGIN RSA PRIVATE KEY-----"
 #define RSA_HEADER_END "-----END RSA PRIVATE KEY-----"
@@ -136,7 +133,7 @@ static ssh_string asn1_get_int(ssh_buffer buffer) {
     return NULL;
   }
 
-  if (buffer_get_data(buffer, str->string, size) == 0) {
+  if (buffer_get_data(buffer, ssh_string_data(str), size) == 0) {
     ssh_string_free(str);
     return NULL;
   }
@@ -446,6 +443,7 @@ static ssh_buffer privatekey_string_to_buffer(const char *pkey, int type,
 
 static int b64decode_rsa_privatekey(const char *pkey, gcry_sexp_t *r,
     ssh_auth_callback cb, void *userdata, const char *desc) {
+  const unsigned char *data;
   ssh_string n = NULL;
   ssh_string e = NULL;
   ssh_string d = NULL;
@@ -469,7 +467,13 @@ static int b64decode_rsa_privatekey(const char *pkey, gcry_sexp_t *r,
   }
 
   v = asn1_get_int(buffer);
-  if (ntohl(v->size) != 1 || v->string[0] != 0) {
+  if (v == NULL) {
+    ssh_buffer_free(buffer);
+    return 0;
+  }
+
+  data = ssh_string_data(v);
+  if (ssh_string_len(v) != 1 || data[0] != 0) {
     ssh_buffer_free(buffer);
     return 0;
   }
@@ -493,12 +497,12 @@ static int b64decode_rsa_privatekey(const char *pkey, gcry_sexp_t *r,
 
   if (gcry_sexp_build(r, NULL,
       "(private-key(rsa(n %b)(e %b)(d %b)(p %b)(q %b)(u %b)))",
-      ntohl(n->size), n->string,
-      ntohl(e->size), e->string,
-      ntohl(d->size), d->string,
-      ntohl(p->size), p->string,
-      ntohl(q->size), q->string,
-      ntohl(u->size), u->string)) {
+      ssh_string_len(n), ssh_string_data(n),
+      ssh_string_len(e), ssh_string_data(e),
+      ssh_string_len(d), ssh_string_data(d),
+      ssh_string_len(p), ssh_string_data(p),
+      ssh_string_len(q), ssh_string_data(q),
+      ssh_string_len(u), ssh_string_data(u))) {
     rc = 0;
   }
 
@@ -518,6 +522,7 @@ error:
 
 static int b64decode_dsa_privatekey(const char *pkey, gcry_sexp_t *r, ssh_auth_callback cb,
     void *userdata, const char *desc) {
+  const unsigned char *data;
   ssh_buffer buffer = NULL;
   ssh_string p = NULL;
   ssh_string q = NULL;
@@ -538,7 +543,13 @@ static int b64decode_dsa_privatekey(const char *pkey, gcry_sexp_t *r, ssh_auth_c
   }
 
   v = asn1_get_int(buffer);
-  if (ntohl(v->size) != 1 || v->string[0] != 0) {
+  if (v == NULL) {
+    ssh_buffer_free(buffer);
+    return 0;
+  }
+
+  data = ssh_string_data(v);
+  if (ssh_string_len(v) != 1 || data[0] != 0) {
     ssh_buffer_free(buffer);
     return 0;
   }
@@ -557,11 +568,11 @@ static int b64decode_dsa_privatekey(const char *pkey, gcry_sexp_t *r, ssh_auth_c
 
   if (gcry_sexp_build(r, NULL,
         "(private-key(dsa(p %b)(q %b)(g %b)(y %b)(x %b)))",
-        ntohl(p->size), p->string,
-        ntohl(q->size), q->string,
-        ntohl(g->size), g->string,
-        ntohl(y->size), y->string,
-        ntohl(x->size), x->string)) {
+        ssh_string_len(p), ssh_string_data(p),
+        ssh_string_len(q), ssh_string_data(q),
+        ssh_string_len(g), ssh_string_data(g),
+        ssh_string_len(y), ssh_string_data(y),
+        ssh_string_len(x), ssh_string_data(x))) {
     rc = 0;
   }
 
