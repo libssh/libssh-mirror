@@ -106,7 +106,9 @@ int direct_forwarding(ssh_session session)
   int nbytes, nwritten;
 
   forwarding_channel = ssh_channel_new(session);
-  if (rc != SSH_OK) return rc;
+  if (forwarding_channel == NULL) {
+      return rc;
+  }
 
   rc = channel_open_forward(forwarding_channel,
                             "www.google.com", 80,
