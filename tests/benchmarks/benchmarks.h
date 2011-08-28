@@ -30,13 +30,14 @@
 #define MAX_HOSTS_CONNECT 20
 
 enum libssh_benchmarks {
-    BENCHMARK_RAW_UPLOAD=1,
+    BENCHMARK_RAW_UPLOAD=0,
+    BENCHMARK_RAW_DOWNLOAD,
     BENCHMARK_NUMBER
 };
 
 struct argument_s {
   const char *hosts[MAX_HOSTS_CONNECT];
-  char benchmarks[BENCHMARK_NUMBER -1];
+  char benchmarks[BENCHMARK_NUMBER];
   int verbose;
   int nhosts;
   int ntests;
@@ -57,6 +58,8 @@ float elapsed_time(struct timestamp_struct *ts);
 /* bench_raw.c */
 
 int benchmarks_raw_up (ssh_session session, struct argument_s *args,
+    float *bps);
+int benchmarks_raw_down (ssh_session session, struct argument_s *args,
     float *bps);
 
 #endif /* BENCHMARKS_H_ */

@@ -28,8 +28,8 @@
 #include <stdio.h>
 
 const char *libssh_benchmarks_names[]={
-    "null",
-    "benchmark_raw_upload"
+    "benchmark_raw_upload",
+    "benchmark_raw_download"
 };
 
 #ifdef HAVE_ARGP_H
@@ -63,6 +63,14 @@ static struct argp_option options[] = {
     .group = 0
   },
   {
+    .name  = "raw-download",
+    .key   = '2',
+    .arg   = NULL,
+    .flags = 0,
+    .doc   = "Download raw data using channel",
+    .group = 0
+  },
+  {
     .name  = "host",
     .key   = 'h',
     .arg   = "HOST",
@@ -85,7 +93,8 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
 
   switch (key) {
     case '1':
-      arguments->benchmarks[key - '1' + 1] = 1;
+    case '2':
+      arguments->benchmarks[key - '1'] = 1;
       arguments->ntests ++;
       break;
     case 'v':
@@ -185,11 +194,18 @@ static void do_benchmarks(ssh_session session, struct argument_s *arguments,
   if(err==0){
     fprintf(stdout, "SSH RTT : %f ms\n",ssh_rtt);
   }
-  if(arguments->benchmarks[BENCHMARK_RAW_UPLOAD-1]){
+  if(arguments->benchmarks[BENCHMARK_RAW_UPLOAD]){
     err=benchmarks_raw_up(session,arguments,&bps);
     if(err==0){
       fprintf(stdout, "%s : %s : %s\n",hostname,
           libssh_benchmarks_names[BENCHMARK_RAW_UPLOAD], network_speed(bps));
+    }
+  }
+  if(arguments->benchmarks[BENCHMARK_RAW_DOWNLOAD]){
+    err=benchmarks_raw_down(session,arguments,&bps);
+    if(err==0){
+      fprintf(stdout, "%s : %s : %s\n",hostname,
+          libssh_benchmarks_names[BENCHMARK_RAW_DOWNLOAD], network_speed(bps));
     }
   }
 }
@@ -207,9 +223,9 @@ int main(int argc, char **argv){
   }
   if (arguments.ntests==0){
     for(i=1; i < BENCHMARK_NUMBER ; ++i){
-      arguments.benchmarks[i-1]=1;
+      arguments.benchmarks[i]=1;
     }
-    arguments.ntests=BENCHMARK_NUMBER-1;
+    arguments.ntests=BENCHMARK_NUMBER;
   }
   if (arguments.verbose > 0){
     fprintf(stdout, "Will try hosts ");
@@ -217,9 +233,9 @@ int main(int argc, char **argv){
       fprintf(stdout,"\"%s\" ", arguments.hosts[i]);
     }
     fprintf(stdout,"with benchmarks ");
-    for(i=0;i<BENCHMARK_NUMBER-1;++i){
+    for(i=0;i<BENCHMARK_NUMBER;++i){
       if(arguments.benchmarks[i])
-        fprintf(stdout,"\"%s\" ",libssh_benchmarks_names[i+1]);
+        fprintf(stdout,"\"%s\" ",libssh_benchmarks_names[i]);
     }
     fprintf(stdout,"\n");
   }
