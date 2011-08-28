@@ -97,6 +97,9 @@ LIBSSH_API ssh_string publickey_from_file(ssh_session session, const char *filen
     int *type);
 LIBSSH_API ssh_public_key publickey_from_privatekey(ssh_private_key prv);
 LIBSSH_API ssh_string publickey_to_string(ssh_public_key key);
+LIBSSH_API int ssh_try_publickey_from_file(ssh_session session, const char *keyfile,
+    ssh_string *publickey, int *type);
+
 LIBSSH_API ssh_message ssh_message_retrieve(ssh_session session, uint32_t packettype);
 LIBSSH_API void string_burn(ssh_string str);
 LIBSSH_API ssh_string string_copy(ssh_string str);

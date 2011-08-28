@@ -364,9 +364,6 @@ LIBSSH_API void ssh_channel_set_blocking(ssh_channel channel, int blocking);
 LIBSSH_API int ssh_channel_write(ssh_channel channel, const void *data, uint32_t len);
 LIBSSH_API uint32_t ssh_channel_window_size(ssh_channel channel);
 
-LIBSSH_API int ssh_try_publickey_from_file(ssh_session session, const char *keyfile,
-    ssh_string *publickey, int *type);
-
 LIBSSH_API char *ssh_basename (const char *path);
 LIBSSH_API void ssh_clean_pubkey_hash(unsigned char **hash);
 LIBSSH_API int ssh_connect(ssh_session session);

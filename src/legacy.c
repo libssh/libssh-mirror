@@ -26,6 +26,7 @@
 
 #include "config.h"
 
+#include <errno.h>
 #include <stdio.h>
 
 #include <libssh/priv.h>
@@ -34,6 +35,7 @@
 #include <libssh/buffer.h>
 #include <libssh/pki.h>
 #include "libssh/pki_priv.h"
+#include <libssh/misc.h>
 #include <libssh/keys.h>
 #include <libssh/keyfiles.h>
 
@@ -500,6 +502,74 @@ ssh_string publickey_to_string(ssh_public_key pubkey) {
     ssh_key_free(key);
 
     return key_blob;
+}
+
+int ssh_publickey_to_file(ssh_session session,
+                          const char *file,
+                          ssh_string pubkey,
+                          int type)
+{
+    FILE *fp;
+    char *user;
+    char buffer[1024];
+    char host[256];
+    unsigned char *pubkey_64;
+    size_t len;
+    int rc;
+    if(session==NULL)
+        return SSH_ERROR;
+    if(file==NULL || pubkey==NULL){
+        ssh_set_error(session, SSH_FATAL, "Invalid parameters");
+        return SSH_ERROR;
+    }
+    pubkey_64 = bin_to_base64(string_data(pubkey), ssh_string_len(pubkey));
+    if (pubkey_64 == NULL) {
+        return SSH_ERROR;
+    }
+
+    user = ssh_get_local_username();
+    if (user == NULL) {
+        SAFE_FREE(pubkey_64);
+        return SSH_ERROR;
+    }
+
+    rc = gethostname(host, sizeof(host));
+    if (rc < 0) {
+        SAFE_FREE(user);
+        SAFE_FREE(pubkey_64);
+        return SSH_ERROR;
+    }
+
+    snprintf(buffer, sizeof(buffer), "%s %s %s@%s\n",
+            ssh_type_to_char(type),
+            pubkey_64,
+            user,
+            host);
+
+    SAFE_FREE(pubkey_64);
+    SAFE_FREE(user);
+
+    ssh_log(session, SSH_LOG_RARE, "Trying to write public key file: %s", file);
+    ssh_log(session, SSH_LOG_PACKET, "public key file content: %s", buffer);
+
+    fp = fopen(file, "w+");
+    if (fp == NULL) {
+        ssh_set_error(session, SSH_REQUEST_DENIED,
+                "Error opening %s: %s", file, strerror(errno));
+        return SSH_ERROR;
+    }
+
+    len = strlen(buffer);
+    if (fwrite(buffer, len, 1, fp) != 1 || ferror(fp)) {
+        ssh_set_error(session, SSH_REQUEST_DENIED,
+                "Unable to write to %s", file);
+        fclose(fp);
+        unlink(file);
+        return SSH_ERROR;
+    }
+
+    fclose(fp);
+    return SSH_OK;
 }
 
 /****************************************************************************
