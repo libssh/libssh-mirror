@@ -111,8 +111,6 @@ typedef struct ssh_buffer_struct* ssh_buffer;
 typedef struct ssh_channel_struct* ssh_channel;
 typedef struct ssh_message_struct* ssh_message;
 typedef struct ssh_pcap_file_struct* ssh_pcap_file;
-typedef struct ssh_private_key_struct* ssh_private_key;
-typedef struct ssh_public_key_struct* ssh_public_key;
 typedef struct ssh_key_struct* ssh_key;
 typedef struct ssh_scp_struct* ssh_scp;
 typedef struct ssh_session_struct* ssh_session;
@@ -410,8 +408,6 @@ LIBSSH_API int ssh_pcap_file_close(ssh_pcap_file pcap);
 LIBSSH_API void ssh_pcap_file_free(ssh_pcap_file pcap);
 LIBSSH_API ssh_pcap_file ssh_pcap_file_new(void);
 LIBSSH_API int ssh_pcap_file_open(ssh_pcap_file pcap, const char *filename);
-
-LIBSSH_API enum ssh_keytypes_e ssh_privatekey_type(ssh_private_key privatekey);
 
 /**
  * @brief SSH authentication callback.

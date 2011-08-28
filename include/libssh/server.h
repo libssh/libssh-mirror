@@ -294,7 +294,6 @@ LIBSSH_API const char *ssh_message_auth_password(ssh_message msg);
  */
 LIBSSH_API ssh_key ssh_message_auth_pubkey(ssh_message msg);
 
-LIBSSH_API ssh_public_key ssh_message_auth_publickey(ssh_message msg);
 LIBSSH_API int ssh_message_auth_kbdint_is_response(ssh_message msg);
 LIBSSH_API enum ssh_publickey_state_e ssh_message_auth_publickey_state(ssh_message msg);
 LIBSSH_API int ssh_message_auth_reply_success(ssh_message msg,int partial);

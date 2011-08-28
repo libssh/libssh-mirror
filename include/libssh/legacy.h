@@ -30,6 +30,10 @@
 
 #ifndef LEGACY_H_
 #define LEGACY_H_
+
+typedef struct ssh_private_key_struct* ssh_private_key;
+typedef struct ssh_public_key_struct* ssh_public_key;
+
 LIBSSH_API int ssh_auth_list(ssh_session session);
 LIBSSH_API int ssh_userauth_offer_pubkey(ssh_session session, const char *username, int type, ssh_string publickey);
 LIBSSH_API int ssh_userauth_pubkey(ssh_session session, const char *username, ssh_string publickey, ssh_private_key privatekey);
@@ -99,8 +103,12 @@ LIBSSH_API ssh_public_key publickey_from_privatekey(ssh_private_key prv);
 LIBSSH_API ssh_string publickey_to_string(ssh_public_key key);
 LIBSSH_API int ssh_try_publickey_from_file(ssh_session session, const char *keyfile,
     ssh_string *publickey, int *type);
+LIBSSH_API enum ssh_keytypes_e ssh_privatekey_type(ssh_private_key privatekey);
+
 
 LIBSSH_API ssh_message ssh_message_retrieve(ssh_session session, uint32_t packettype);
+LIBSSH_API ssh_public_key ssh_message_auth_publickey(ssh_message msg);
+
 LIBSSH_API void string_burn(ssh_string str);
 LIBSSH_API ssh_string string_copy(ssh_string str);
 LIBSSH_API void *string_data(ssh_string str);
