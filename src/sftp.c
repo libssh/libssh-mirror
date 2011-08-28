@@ -1945,9 +1945,8 @@ int sftp_async_read(sftp_file file, void *data, uint32_t size, uint32_t id){
         return SSH_ERROR;
       }
       len = ssh_string_len(datastring);
-      //handle->offset+=len;
-      /* We already have set the offset previously. All we can do is warn that the expected len
-       * and effective lengths are different */
+      /* Update the offset with the correct value */
+      file->offset = file->offset - (size - len);
       memcpy(data, ssh_string_data(datastring), len);
       ssh_string_free(datastring);
       sftp_leave_function();
