@@ -78,6 +78,14 @@ static struct argp_option options[] = {
     .doc   = "Add a host to connect for benchmark (format user@hostname)",
     .group = 0
   },
+  {
+    .name  = "data",
+    .key   = 'd',
+    .arg   = "MBYTES",
+    .flags = 0,
+    .doc   = "MBytes of data to send/receive per test",
+    .group = 0
+  },
   {NULL, 0, NULL, 0, NULL, 0}
 };
 
@@ -99,6 +107,9 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
       break;
     case 'v':
       arguments->verbose++;
+      break;
+    case 'd':
+      arguments->data = atoi(arg);
       break;
     case 'h':
       if(arguments->nhosts >= MAX_HOSTS_CONNECT){
@@ -222,7 +233,7 @@ int main(int argc, char **argv){
     return EXIT_FAILURE;
   }
   if (arguments.ntests==0){
-    for(i=1; i < BENCHMARK_NUMBER ; ++i){
+    for(i=0; i < BENCHMARK_NUMBER ; ++i){
       arguments.benchmarks[i]=1;
     }
     arguments.ntests=BENCHMARK_NUMBER;

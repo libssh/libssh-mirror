@@ -41,6 +41,7 @@ struct argument_s {
   int verbose;
   int nhosts;
   int ntests;
+  int data;
 };
 
 /* latency.c */

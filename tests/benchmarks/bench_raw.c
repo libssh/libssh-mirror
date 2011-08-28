@@ -107,7 +107,7 @@ error:
 int benchmarks_raw_up (ssh_session session, struct argument_s *args,
     float *bps){
   unsigned long bytes=0x1000000;
-  char *script=get_python_eater(bytes);
+  char *script;
   char cmd[128];
   static char buffer[0x10000];
   int err;
@@ -116,6 +116,9 @@ int benchmarks_raw_up (ssh_session session, struct argument_s *args,
   float ms=0.0;
   unsigned long total=0;
 
+  if(args->data != 0)
+    bytes = args->data * 1024 * 1024;
+  script =get_python_eater(bytes);
   err=upload_script(session,"/tmp/eater.py",script);
   free(script);
   if(err<0)
@@ -221,7 +224,7 @@ static char *get_python_giver(unsigned long bytes){
 int benchmarks_raw_down (ssh_session session, struct argument_s *args,
     float *bps){
   unsigned long bytes=0x1000000;
-  char *script=get_python_giver(bytes);
+  char *script;
   char cmd[128];
   static char buffer[0x10000];
   int err;
@@ -230,6 +233,9 @@ int benchmarks_raw_down (ssh_session session, struct argument_s *args,
   float ms=0.0;
   unsigned long total=0;
 
+  if(args->data != 0)
+    bytes = args->data * 1024 * 1024;
+  script =get_python_giver(bytes);
   err=upload_script(session,"/tmp/giver.py",script);
   free(script);
   if(err<0)
