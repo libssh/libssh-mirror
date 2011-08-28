@@ -1544,69 +1544,6 @@ ssh_signature pki_do_sign_sessionid(const ssh_key key,
  * @return              0 on success, -1 on error or the private key doesn't
  *                      exist, 1 if the public key doesn't exist.
  */
-int ssh_try_publickey_from_file(ssh_session session, const char *keyfile,
-    ssh_string *publickey, int *type) {
-  char *pubkey_file;
-  size_t len;
-  ssh_string pubkey_string;
-  int pubkey_type;
-
-  if (session == NULL || keyfile == NULL || publickey == NULL || type == NULL) {
-    return -1;
-  }
-
-  if (session->sshdir == NULL) {
-    if (ssh_options_apply(session) < 0) {
-      return -1;
-    }
-  }
-
-  ssh_log(session, SSH_LOG_PACKET, "Trying to open privatekey %s", keyfile);
-  if (!ssh_file_readaccess_ok(keyfile)) {
-    ssh_log(session, SSH_LOG_PACKET, "Failed to open privatekey %s", keyfile);
-    return -1;
-  }
-
-  len = strlen(keyfile) + 5;
-  pubkey_file = malloc(len);
-  if (pubkey_file == NULL) {
-    return -1;
-  }
-  snprintf(pubkey_file, len, "%s.pub", keyfile);
-
-  ssh_log(session, SSH_LOG_PACKET, "Trying to open publickey %s",
-                                   pubkey_file);
-  if (!ssh_file_readaccess_ok(pubkey_file)) {
-    ssh_log(session, SSH_LOG_PACKET, "Failed to open publickey %s",
-                                     pubkey_file);
-    SAFE_FREE(pubkey_file);
-    return 1;
-  }
-
-  ssh_log(session, SSH_LOG_PACKET, "Success opening public and private key");
-
-  /*
-   * We are sure both the private and public key file is readable. We return
-   * the public as a string, and the private filename as an argument
-   */
-  pubkey_string = publickey_from_file(session, pubkey_file, &pubkey_type);
-  if (pubkey_string == NULL) {
-    ssh_log(session, SSH_LOG_PACKET,
-        "Wasn't able to open public key file %s: %s",
-        pubkey_file,
-        ssh_get_error(session));
-    SAFE_FREE(pubkey_file);
-    return -1;
-  }
-
-  SAFE_FREE(pubkey_file);
-
-  *publickey = pubkey_string;
-  *type = pubkey_type;
-
-  return 0;
-}
-
 ssh_string try_publickey_from_file(ssh_session session, struct ssh_keys_struct keytab,
     char **privkeyfile, int *type) {
   const char *priv;
