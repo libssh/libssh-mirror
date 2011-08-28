@@ -1566,6 +1566,70 @@ fail:
 
 /**
  * @internal
+ *
+ * @brief Send the current challenge response and wait for a reply from the
+ *        server.
+ *
+ * @returns SSH_AUTH_INFO if more info is needed
+ * @returns SSH_AUTH_SUCCESS
+ * @returns SSH_AUTH_FAILURE
+ * @returns SSH_AUTH_PARTIAL
+ */
+static int ssh_userauth_kbdint_send(ssh_session session)
+{
+    ssh_string answer;
+    uint32_t i;
+    int rc;
+
+    rc = buffer_add_u8(session->out_buffer, SSH2_MSG_USERAUTH_INFO_RESPONSE);
+    if (rc < 0) {
+        goto fail;
+    }
+
+    rc = buffer_add_u32(session->out_buffer, htonl(session->kbdint->nprompts));
+    if (rc < 0) {
+        goto fail;
+    }
+
+    for (i = 0; i < session->kbdint->nprompts; i++) {
+        if (session->kbdint->answers && session->kbdint->answers[i]) {
+            answer = ssh_string_from_char(session->kbdint->answers[i]);
+        } else {
+            answer = ssh_string_from_char("");
+        }
+        if (answer == NULL) {
+            goto fail;
+        }
+
+        rc = buffer_add_ssh_string(session->out_buffer, answer);
+        string_burn(answer);
+        string_free(answer);
+        if (rc < 0) {
+            goto fail;
+        }
+    }
+
+    session->auth_state = SSH_AUTH_STATE_KBDINT_SENT;
+    ssh_kbdint_free(session->kbdint);
+    session->kbdint = NULL;
+
+    rc = packet_send(session);
+    if (rc == SSH_ERROR) {
+        return SSH_AUTH_ERROR;
+    }
+
+    rc = ssh_userauth_get_response(session);
+
+    return rc;
+fail:
+    ssh_set_error_oom(session);
+    buffer_reinit(session->out_buffer);
+
+    return SSH_AUTH_ERROR;
+}
+
+/**
+ * @internal
  * @brief handles a SSH_USERAUTH_INFO_REQUEST packet, as used in
  *        keyboard-interactive authentication, and changes the
  *        authentication state.
@@ -1691,72 +1755,6 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_request) {
 }
 
 /**
- * @internal
- * @brief Sends the current challenge response and wait for a
- * reply from the server
- * @returns SSH_AUTH_INFO if more info is needed
- * @returns SSH_AUTH_SUCCESS
- * @returns SSH_AUTH_FAILURE
- * @returns SSH_AUTH_PARTIAL
- */
-static int kbdauth_send(ssh_session session) {
-  ssh_string answer = NULL;
-  int rc = SSH_AUTH_ERROR;
-  uint32_t i;
-
-  enter_function();
-
-  if(session==NULL || session->kbdint == NULL) {
-    return rc;
-  }
-
-  if (buffer_add_u8(session->out_buffer, SSH2_MSG_USERAUTH_INFO_RESPONSE) < 0 ||
-      buffer_add_u32(session->out_buffer,
-        htonl(session->kbdint->nprompts)) < 0) {
-    ssh_set_error_oom(session);
-    goto error;
-  }
-
-  for (i = 0; i < session->kbdint->nprompts; i++) {
-    if (session->kbdint->answers && session->kbdint->answers[i]) {
-      answer = ssh_string_from_char(session->kbdint->answers[i]);
-    } else {
-      answer = ssh_string_from_char("");
-    }
-    if (answer == NULL) {
-      ssh_set_error_oom(session);
-      goto error;
-    }
-
-    if (buffer_add_ssh_string(session->out_buffer, answer) < 0) {
-      ssh_set_error_oom(session);
-      goto error;
-    }
-
-    ssh_string_burn(answer);
-    ssh_string_free(answer);
-  }
-  session->auth_state=SSH_AUTH_STATE_KBDINT_SENT;
-  ssh_kbdint_free(session->kbdint);
-  session->kbdint = NULL;
-  if (packet_send(session) == SSH_ERROR) {
-    leave_function();
-    return rc;
-  }
-  rc = ssh_userauth_get_response(session);
-
-  leave_function();
-  return rc;
-error:
-  buffer_reinit(session->out_buffer);
-  ssh_string_burn(answer);
-  ssh_string_free(answer);
-
-  leave_function();
-  return rc;
-}
-
-/**
  * @brief Try to authenticate through the "keyboard-interactive" method.
  *
  * @param[in]  session  The ssh session to use.
@@ -1808,7 +1806,7 @@ int ssh_userauth_kbdint(ssh_session session, const char *user,
          * the server and then we need to ack the status (new questions or ok
          * pass in).
          */
-        rc = kbdauth_send(session);
+        rc = ssh_userauth_kbdint_send(session);
 
         return rc;
     }
