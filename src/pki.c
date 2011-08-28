@@ -40,6 +40,20 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#ifdef _WIN32
+# if _MSC_VER >= 1400
+#  include <io.h>
+#  undef open
+#  define open _open
+#  undef close
+#  define close _close
+#  undef read
+#  define read _read
+#  undef unlink
+#  define unlink _unlink
+# endif /* _MSC_VER */
+#endif
+
 #include "libssh/libssh.h"
 #include "libssh/session.h"
 #include "libssh/priv.h"
