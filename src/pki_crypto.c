@@ -488,34 +488,50 @@ fail:
     return NULL;
 }
 
-static ssh_string _RSA_do_sign(const unsigned char *payload,
-                               int len,
+/**
+ * @internal
+ *
+ * @brief Compute a digital signature.
+ *
+ * @param[in]  digest    The message digest.
+ *
+ * @param[in]  dlen      The length of the digest.
+ *
+ * @param[in]  privkey   The private rsa key to use for signing.
+ *
+ * @return               A newly allocated rsa sig blob or NULL on error.
+ */
+static ssh_string _RSA_do_sign(const unsigned char *digest,
+                               int dlen,
                                RSA *privkey)
 {
-    ssh_string sign = NULL;
-    unsigned char *buffer = NULL;
-    unsigned int size;
+    ssh_string sig_blob;
+    unsigned char *sig;
+    unsigned int slen;
+    int ok;
 
-    buffer = malloc(RSA_size(privkey));
-    if (buffer == NULL) {
+    sig = malloc(RSA_size(privkey));
+    if (sig == NULL) {
         return NULL;
     }
 
-    if (RSA_sign(NID_sha1, payload, len, buffer, &size, privkey) == 0) {
-        SAFE_FREE(buffer);
+    ok = RSA_sign(NID_sha1, digest, dlen, sig, &slen, privkey);
+    if (!ok) {
+        SAFE_FREE(sig);
         return NULL;
     }
 
-    sign = ssh_string_new(size);
-    if (sign == NULL) {
-        SAFE_FREE(buffer);
+    sig_blob = ssh_string_new(slen);
+    if (sig_blob == NULL) {
+        SAFE_FREE(sig);
         return NULL;
     }
 
-    ssh_string_fill(sign, buffer, size);
-    SAFE_FREE(buffer);
+    ssh_string_fill(sig_blob, sig, slen);
+    memset(sig, 'd', slen);
+    SAFE_FREE(sig);
 
-    return sign;
+    return sig_blob;
 }
 
 ssh_string pki_signature_to_blob(const ssh_signature sig)
