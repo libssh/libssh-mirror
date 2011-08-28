@@ -21,7 +21,7 @@ to read the abundant documentation on this topic to fully understand the
 advantages and security risks linked to each method.
 
 
-@subsection pubkeys Authenticating with public keys 
+@subsection pubkeys Authenticating with public keys
 
 libssh is fully compatible with the openssh public and private keys. You
 can either use the automatic public key authentication method provided by
@@ -40,22 +40,21 @@ The function ssh_userauth_autopubkey() does this using the available keys in
  - SSH_AUTH_DENIED: no key matched
  - SSH_AUTH_SUCCESS: you are now authenticated
  - SSH_AUTH_PARTIAL: some key matched but you still have to provide an other
-                     mean of authentication (like a password). 
+                     mean of authentication (like a password).
 
-The ssh_userauth_autopubkey() function also tries to authenticate using the
+The ssh_userauth_publickey_auto() function also tries to authenticate using the
 SSH agent, if you have one running, or the "none" method otherwise.
 
 If you wish to authenticate with public key by your own, follow these steps:
- - Retrieve the public key in a ssh_string using publickey_from_file().
- - Offer the public key to the SSH server using ssh_userauth_offer_pubkey().
+ - Retrieve the public key with ssh_import_pubkey_file().
+ - Offer the public key to the SSH server using ssh_userauth_try_publickey().
    If the return value is SSH_AUTH_SUCCESS, the SSH server accepts to
    authenticate using the public key and you can go to the next step.
- - Retrieve the private key, using the privatekey_from_file() function. If
-   a passphrase is needed, either the passphrase specified as argument or
-   a callback (see callbacks section) will be used.
- - Authenticate using ssh_userauth_pubkey() with your public key string
-   and private key.
- - Do not forget cleaning up memory using string_free() and privatekey_free().
+ - Retrieve the private key, using the ssh_pki_import_privkey_file() function.
+   If a passphrase is needed, either the passphrase specified as argument or
+   a callback will be used.
+ - Authenticate using ssh_userauth_publickey() with your private key.
+ - Do not forget cleaning up memory using ssh_key_free().
 
 Here is a minimalistic example of public key authentication:
 
@@ -64,7 +63,7 @@ int authenticate_pubkey(ssh_session session)
 {
   int rc;
 
-  rc = ssh_userauth_autopubkey(session, NULL);
+  rc = ssh_userauth_publickey_auto(session, NULL);
 
   if (rc == SSH_AUTH_ERROR)
   {
@@ -77,14 +76,12 @@ int authenticate_pubkey(ssh_session session)
 }
 @endcode
 
-@see ssh_userauth_autopubkey
-@see ssh_userauth_offer_pubkey
-@see ssh_userauth_pubkey
-@see publickey_from_file
-@see publickey_from_privatekey
-@see string_free
-@see privatekey_from_file
-@see privatekey_free
+@see ssh_userauth_publickey_auto()
+@see ssh_userauth_try_publickey()
+@see ssh_userauth_publickey()
+@see ssh_pki_import_pubkey_file()
+@see ssh_pki_import_privkey_file()
+@see ssh_key_free()
 
 
 @subsection password Authenticating with a password
@@ -167,13 +164,13 @@ Here is a little note about how to use the information from
 keyboard-interactive authentication, coming from the RFC itself (rfc4256):
 
 @verbatim
- 
+
   3.3 User Interface Upon receiving a request message, the client SHOULD
   prompt the user as follows: A command line interface (CLI) client SHOULD
   print the name and instruction (if non-empty), adding newlines. Then for
   each prompt in turn, the client SHOULD display the prompt and read the
   user input.
-  
+
   A graphical user interface (GUI) client has many choices on how to prompt
   the user. One possibility is to use the name field (possibly prefixed
   with the application's name) as the title of a dialog window in which
@@ -184,18 +181,18 @@ keyboard-interactive authentication, coming from the RFC itself (rfc4256):
   titles; it SHOULD instead find another way to display this information. If
   prompts are presented in a dialog window, then the client SHOULD NOT
   present each prompt in a separate window.
-  
+
   All clients MUST properly handle an instruction field with embedded
   newlines. They SHOULD also be able to display at least 30 characters for
   the name and prompts. If the server presents names or prompts longer than 30
   characters, the client MAY truncate these fields to the length it can
   display. If the client does truncate any fields, there MUST be an obvious
   indication that such truncation has occured.
-  
+
   The instruction field SHOULD NOT be truncated. Clients SHOULD use control
   character filtering as discussed in [SSH-ARCH] to avoid attacks by
   including terminal control characters in the fields to be displayed.
-  
+
   For each prompt, the corresponding echo field indicates whether or not
   the user input should be echoed as characters are typed. Clients SHOULD
   correctly echo/mask user input for each prompt independently of other
@@ -265,10 +262,10 @@ int authenticate_kbdint(ssh_session session)
 @endcode
 
 @see ssh_userauth_kbdint()
-@see ssh_userauth_kbdint_getnprompts
-@see ssh_userauth_kbdint_getname 
-@see ssh_userauth_kbdint_getinstruction
-@see ssh_userauth_kbdint_getprompt
+@see ssh_userauth_kbdint_getnprompts()
+@see ssh_userauth_kbdint_getname()
+@see ssh_userauth_kbdint_getinstruction()
+@see ssh_userauth_kbdint_getprompt()
 @see ssh_userauth_kbdint_setanswer()
 
 
@@ -306,6 +303,11 @@ methods with ssh_userauth_list() and how to use the result:
 int test_several_auth_methods(ssh_session session)
 {
   int method, rc;
+
+  rc = ssh_userauth_none(session, NULL, NULL);
+  if (rc != SSH_AUTH_SUCCESS) {
+      return rc;
+  }
 
   method = ssh_userauth_list(session, NULL);
 
