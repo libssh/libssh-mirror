@@ -34,10 +34,8 @@
 #include "libssh/libssh.h"
 #include "libssh/buffer.h"
 #include "libssh/session.h"
-#include "libssh/callbacks.h"
 #include "libssh/pki.h"
 #include "libssh/pki_priv.h"
-#include "libssh/keys.h"
 #include "libssh/dh.h"
 
 struct pem_get_password_struct {
