@@ -31,22 +31,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-
-#ifdef _WIN32
-# if _MSC_VER >= 1400
-#  include <io.h>
-#  undef open
-#  define open _open
-#  undef close
-#  define close _close
-#  undef read
-#  define read _read
-#  undef unlink
-#  define unlink _unlink
-# endif /* _MSC_VER */
-#else
-# include <arpa/inet.h>
-#endif
+#include <gcrypt.h>
 
 #include "libssh/priv.h"
 #include "libssh/buffer.h"
@@ -60,23 +45,11 @@
 /*todo: remove this include */
 #include "libssh/string.h"
 
-
-#ifdef HAVE_LIBGCRYPT
-#include <gcrypt.h>
-#elif defined HAVE_LIBCRYPTO
-#include <openssl/pem.h>
-#include <openssl/dsa.h>
-#include <openssl/err.h>
-#include <openssl/rsa.h>
-#endif /* HAVE_LIBCRYPTO */
-
 #define MAXLINESIZE 80
 #define RSA_HEADER_BEGIN "-----BEGIN RSA PRIVATE KEY-----"
 #define RSA_HEADER_END "-----END RSA PRIVATE KEY-----"
 #define DSA_HEADER_BEGIN "-----BEGIN DSA PRIVATE KEY-----"
 #define DSA_HEADER_END "-----END DSA PRIVATE KEY-----"
-
-#ifdef HAVE_LIBGCRYPT
 
 #define MAX_KEY_SIZE 32
 #define MAX_PASSPHRASE_SIZE 1024
@@ -1521,6 +1494,5 @@ ssh_signature pki_do_sign_sessionid(const ssh_key key,
     return sig;
 }
 #endif /* WITH_SERVER */
-#endif /* HAVE_LIBGCRYPT */
 
 /* vim: set ts=4 sw=4 et cindent: */

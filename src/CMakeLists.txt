@@ -103,7 +103,6 @@ set(libssh_SRCS
   packet.c
   pcap.c
   pki.c
-  pki_gcrypt.c
   poll.c
   session.c
   scp.c
@@ -118,6 +117,7 @@ if (WITH_GCRYPT)
         ${libssh_SRCS}
         libgcrypt.c
         gcrypt_missing.c
+        pki_gcrypt.c
        )
 else (WITH_GCRYPT)
     set(libssh_SRCS
