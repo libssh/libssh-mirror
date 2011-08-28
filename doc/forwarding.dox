@@ -118,7 +118,9 @@ int direct_forwarding(ssh_session session)
   }
 
   nbytes = strlen(http_get);
-  nwritten = channel_write(forwarding_channel, http_get, nbytes);
+  nwritten = channel_write(forwarding_channel,
+                           http_get,
+                           nbytes);
   if (nbytes != nwritten)
   {
     ssh_channel_free(forwarding_channel);
@@ -177,14 +179,16 @@ int web_server(ssh_session session)
   rc = ssh_channel_forward_listen(session, NULL, 8080, NULL);
   if (rc != SSH_OK)
   {
-    fprintf(stderr, "Error opening remote port: %s\n", ssh_get_error(session));
+    fprintf(stderr, "Error opening remote port: %s\n",
+            ssh_get_error(session));
     return rc;
   }
 
   channel = ssh_channel_forward_accept(session, 60000);
   if (channel == NULL)
   {
-    fprintf(stderr, "Error waiting for incoming connection: %s\n", ssh_get_error(session));
+    fprintf(stderr, "Error waiting for incoming connection: %s\n",
+            ssh_get_error(session));
     return SSH_ERROR;
   }
 
@@ -193,7 +197,8 @@ int web_server(ssh_session session)
     nbytes = ssh_channel_read(channel, buffer, sizeof(buffer), 0);
     if (nbytes < 0)
     {
-      fprintf(stderr, "Error reading incoming data: %s\n", ssh_get_error(session));
+      fprintf(stderr, "Error reading incoming data: %s\n",
+              ssh_get_error(session));
       ssh_channel_send_eof(channel);
       ssh_channel_free(channel);
       return SSH_ERROR;
@@ -204,7 +209,8 @@ int web_server(ssh_session session)
     nwritten = ssh_channel_write(channel, helloworld, nbytes);
     if (nwritten != nbytes)
     {
-      fprintf(stderr, "Error sending answer: %s\n", ssh_get_error(session));
+      fprintf(stderr, "Error sending answer: %s\n",
+              ssh_get_error(session));
       ssh_channel_send_eof(channel);
       ssh_channel_free(channel);
       return SSH_ERROR;

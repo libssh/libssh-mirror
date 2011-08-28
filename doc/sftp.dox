@@ -53,14 +53,16 @@ int sftp_helloworld(ssh_session session)
   sftp = sftp_new(session);
   if (sftp == NULL)
   {
-    fprintf(stderr, "Error allocating SFTP session: %s\n", ssh_get_error(session));
+    fprintf(stderr, "Error allocating SFTP session: %s\n",
+            ssh_get_error(session));
     return SSH_ERROR;
   }
 
   rc = sftp_init(sftp);
   if (rc != SSH_OK)
   {
-    fprintf(stderr, "Error initializing SFTP session: %s.\n", sftp_get_error(sftp));
+    fprintf(stderr, "Error initializing SFTP session: %s.\n",
+            sftp_get_error(sftp));
     sftp_free(sftp);
     return rc;
   }
@@ -121,7 +123,8 @@ int sftp_helloworld(ssh_session session, sftp_session sftp)
   {
     if (sftp_get_error(sftp) != SSH_FX_FILE_ALREADY_EXISTS)
     {
-      fprintf(stderr, "Can't create directory: %s\n", ssh_get_error(session));
+      fprintf(stderr, "Can't create directory: %s\n",
+              ssh_get_error(session));
         return rc;
     }
   }
@@ -167,17 +170,20 @@ int sftp_helloworld(ssh_session session, sftp_session sftp)
 
   ...
 
-  file = sftp_open(sftp, "helloworld/helloworld.txt", access_type, S_IRWXU);
+  file = sftp_open(sftp, "helloworld/helloworld.txt",
+                   access_type, S_IRWXU);
   if (file == NULL)
   {
-    fprintf(stderr, "Can't open file for writing: %s\n", ssh_get_error(session));
+    fprintf(stderr, "Can't open file for writing: %s\n",
+            ssh_get_error(session));
     return SSH_ERROR;
   }
 
   nwritten = sftp_write(file, helloworld, length);
   if (nwritten != length)
   {
-    fprintf(stderr, "Can't write data to file: %s\n", ssh_get_error(session));
+    fprintf(stderr, "Can't write data to file: %s\n",
+            ssh_get_error(session));
     sftp_close(file);
     return SSH_ERROR;
   }
@@ -185,7 +191,8 @@ int sftp_helloworld(ssh_session session, sftp_session sftp)
   rc = sftp_close(file);
   if (rc != SSH_OK)
   {
-    fprintf(stderr, "Can't close the written file: %s\n", ssh_get_error(session));
+    fprintf(stderr, "Can't close the written file: %s\n",
+            ssh_get_error(session));
     return rc;
   }
 
@@ -215,10 +222,12 @@ int sftp_read_sync(ssh_session session, sftp_session sftp)
   int nbytes, rc;
 
   access_type = O_RDONLY;
-  file = sftp_open(sftp, "/etc/profile", access_type, 0);
+  file = sftp_open(sftp, "/etc/profile",
+                   access_type, 0);
   if (file == NULL)
   {
-    fprintf(stderr, "Can't open file for reading: %s\n", ssh_get_error(session));
+    fprintf(stderr, "Can't open file for reading: %s\n",
+            ssh_get_error(session));
     return SSH_ERROR;
   }
 
@@ -235,7 +244,8 @@ int sftp_read_sync(ssh_session session, sftp_session sftp)
 
   if (nbytes < 0)
   {
-    fprintf(stderr, "Error while reading file: %s\n", ssh_get_error(session));
+    fprintf(stderr, "Error while reading file: %s\n",
+            ssh_get_error(session));
     sftp_close(file);
     return SSH_ERROR;
   }
@@ -243,7 +253,8 @@ int sftp_read_sync(ssh_session session, sftp_session sftp)
   rc = sftp_close(file);
   if (rc != SSH_OK)
   {
-    fprintf(stderr, "Can't close the read file: %s\n", ssh_get_error(session));
+    fprintf(stderr, "Can't close the read file: %s\n",
+            ssh_get_error(session));
     return rc;
   }
 
@@ -274,10 +285,12 @@ int sftp_read_async(ssh_session session, sftp_session sftp)
   int rc;
 
   access_type = O_RDONLY;
-  file = sftp_open(sftp, "some_very_big_file", access_type, 0);
+  file = sftp_open(sftp, "some_very_big_file",
+                   access_type, 0);
   if (file == NULL)
   {
-    fprintf(stderr, "Can't open file for reading: %s\n", ssh_get_error(session));
+    fprintf(stderr, "Can't open file for reading: %s\n",
+                     ssh_get_error(session));
     return SSH_ERROR;
   }
   sftp_file_set_nonblocking(file);
@@ -286,7 +299,8 @@ int sftp_read_async(ssh_session session, sftp_session sftp)
   counter = 0L;
   usleep(10000);
   if (async_request >= 0)
-    nbytes = sftp_async_read(file, buffer, sizeof(buffer), async_request);
+    nbytes = sftp_async_read(file, buffer, sizeof(buffer),
+                             async_request);
   else nbytes = -1;
   while (nbytes > 0 || nbytes == SSH_AGAIN)
   {
@@ -298,13 +312,15 @@ int sftp_read_async(ssh_session session, sftp_session sftp)
     else counter++;
     usleep(10000);
     if (async_request >= 0)
-      nbytes = sftp_async_read(file, buffer, sizeof(buffer), async_request);
+      nbytes = sftp_async_read(file, buffer, sizeof(buffer),
+                               async_request);
     else nbytes = -1;
   }
 
   if (nbytes < 0)
   {
-    fprintf(stderr, "Error while reading file: %s\n", ssh_get_error(session));
+    fprintf(stderr, "Error while reading file: %s\n",
+            ssh_get_error(session));
     sftp_close(file);
     return SSH_ERROR;
   }
@@ -314,7 +330,8 @@ int sftp_read_async(ssh_session session, sftp_session sftp)
   rc = sftp_close(file);
   if (rc != SSH_OK)
   {
-    fprintf(stderr, "Can't close the read file: %s\n", ssh_get_error(session));
+    fprintf(stderr, "Can't close the read file: %s\n",
+            ssh_get_error(session));
     return rc;
   }
 
@@ -356,15 +373,16 @@ int sftp_list_dir(ssh_session session, sftp_session sftp)
   dir = sftp_opendir(sftp, "/var/log");
   if (!dir)
   {
-    fprintf(stderr, "Directory not opened: %s\n", ssh_get_error(session));
+    fprintf(stderr, "Directory not opened: %s\n",
+            ssh_get_error(session));
     return SSH_ERROR;
   }
 
-  printf("Name                         Size Perms    Owner\tGroup\n");
+  printf("Name                       Size Perms    Owner\tGroup\n");
 
   while ((attributes = sftp_readdir(sftp, dir)) != NULL)
   {
-    printf("%-22s %10llu %.8o %s(%d)\t%s(%d)\n",
+    printf("%-20s %10llu %.8o %s(%d)\t%s(%d)\n",
      attributes->name,
      (long long unsigned int) attributes->size,
      attributes->permissions,
@@ -378,7 +396,8 @@ int sftp_list_dir(ssh_session session, sftp_session sftp)
 
   if (!sftp_dir_eof(dir))
   {
-    fprintf(stderr, "Can't list directory: %s\n", ssh_get_error(session));
+    fprintf(stderr, "Can't list directory: %s\n",
+            ssh_get_error(session));
     sftp_closedir(dir);
     return SSH_ERROR;
   }
@@ -386,7 +405,8 @@ int sftp_list_dir(ssh_session session, sftp_session sftp)
   rc = sftp_closedir(dir);
   if (rc != SSH_OK)
   {
-    fprintf(stderr, "Can't close directory: %s\n", ssh_get_error(session));
+    fprintf(stderr, "Can't close directory: %s\n",
+            ssh_get_error(session));
     return rc;
   }
 }

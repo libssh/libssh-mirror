@@ -14,9 +14,8 @@ libssh is a Free Software / Open Source project. The libssh library
 is distributed under LGPL license. The libssh project has nothing to do with
 "libssh2", which is a completly different and independant project.
 
-libssh can run on top of either libgcrypt (http://directory.fsf.org/project/libgcrypt/)
-or libcrypto (http://www.openssl.org/docs/crypto/crypto.html), two general-purpose
-cryptographic libraries.
+libssh can run on top of either libgcrypt or libcrypto,
+two general-purpose cryptographic libraries.
 
 This tutorial concentrates for its main part on the "client" side of libssh.
 To learn how to accept incoming SSH connexions (how to write a SSH server),
