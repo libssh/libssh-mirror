@@ -377,7 +377,7 @@ ssh_string pki_publickey_to_blob(const ssh_key key)
     }
 
     rc = buffer_add_ssh_string(buffer, type_s);
-    string_free(type_s);
+    ssh_string_free(type_s);
     if (rc < 0) {
         ssh_buffer_free(buffer);
         return NULL;
@@ -572,7 +572,7 @@ ssh_string pki_signature_to_blob(const ssh_signature sig)
             break;
         case SSH_KEYTYPE_RSA:
         case SSH_KEYTYPE_RSA1:
-            sig_blob = string_copy(sig->rsa_sig);
+            sig_blob = ssh_string_copy(sig->rsa_sig);
             break;
         case SSH_KEYTYPE_ECDSA:
         case SSH_KEYTYPE_UNKNOWN:
@@ -672,7 +672,7 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
             ssh_pki_log("RSA signature len: %lu", (unsigned long)len);
             ssh_print_hexa("RSA signature", ssh_string_data(sig_blob), len);
 #endif
-            sig->rsa_sig = string_copy(sig_blob);
+            sig->rsa_sig = ssh_string_copy(sig_blob);
             if (sig->rsa_sig == NULL) {
                 ssh_signature_free(sig);
                 return NULL;
@@ -714,7 +714,7 @@ int pki_signature_verify(ssh_session session,
             rc = RSA_verify(NID_sha1,
                             hash,
                             hlen,
-                            string_data(sig->rsa_sig),
+                            ssh_string_data(sig->rsa_sig),
                             ssh_string_len(sig->rsa_sig),
                             key->rsa);
             if (rc < 0) {
