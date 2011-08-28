@@ -20,7 +20,7 @@
  */
 
 /**
- * @file sftp.h
+ * @defgroup libssh_sftp The libssh SFTP API
  *
  * @brief SFTP handling functions
  *
@@ -31,12 +31,6 @@
  * the sftp system puts it into the queue, so the process having asked for
  * it can fetch it, while continuing to read for other messages (it is
  * unspecified in which order messages may be sent back to the client
- */
-
-/**
- * @defgroup libssh_sftp The libssh SFTP API
- *
- * Functions to do FTP transfer over SSH.
  *
  * @{
  */
