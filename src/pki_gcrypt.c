@@ -1,10 +1,10 @@
 /*
- * keyfiles.c - private and public key handling for authentication.
+ * pki_gcrypt.c private and public key handling using gcrypt.
  *
  * This file is part of the SSH Library
  *
- * Copyright (c) 2003-2009 by Aris Adamantiadis
- * Copyright (c) 2009      by Andreas Schneider <mail@cynapses.org>
+ * Copyright (c) 2003-2009 Aris Adamantiadis
+ * Copyright (c) 2009-2011 Andreas Schneider <asn@cryptomilk.org>
  *
  * The SSH Library is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -24,11 +24,6 @@
 
 #include "config.h"
 
-#include <errno.h>
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <gcrypt.h>
