@@ -107,6 +107,7 @@ ssh_channel ssh_channel_new(ssh_session session) {
   channel->session = session;
   channel->version = session->version;
   channel->exit_status = -1;
+  channel->flags = SSH_CHANNEL_FLAG_NOT_BOUND;
 
   if(session->channels == NULL) {
     session->channels = ssh_list_new();
@@ -175,6 +176,7 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_open_conf){
       (long unsigned int) channel->remote_maxpacket);
 
   channel->state = SSH_CHANNEL_STATE_OPEN;
+  channel->flags = channel->flags & ~SSH_CHANNEL_FLAG_NOT_BOUND;
   leave_function();
   return SSH_PACKET_USED;
 }
@@ -620,7 +622,6 @@ SSH_PACKET_CALLBACK(channel_rcv_close) {
 	} else {
 		channel->state = SSH_CHANNEL_STATE_CLOSED;
 	}
-
 	if (channel->remote_eof == 0) {
 		ssh_log(session, SSH_LOG_PACKET,
 				"Remote host not polite enough to send an eof before close");
@@ -631,12 +632,14 @@ SSH_PACKET_CALLBACK(channel_rcv_close) {
 	 * buffer because the eof is ignored until the buffer is empty.
 	 */
 
-    if(ssh_callbacks_exists(channel->callbacks, channel_close_function)) {
-        channel->callbacks->channel_close_function(channel->session,
-                                                 channel,
-                                                 channel->callbacks->userdata);
-    }
-
+	if(ssh_callbacks_exists(channel->callbacks, channel_close_function)) {
+	  channel->callbacks->channel_close_function(channel->session,
+	      channel,
+	      channel->callbacks->userdata);
+	}
+	channel->flags &= SSH_CHANNEL_FLAG_CLOSED_REMOTE;
+	if(channel->flags & SSH_CHANNEL_FLAG_FREED_LOCAL)
+	  ssh_channel_do_free(channel);
 	leave_function();
 	return SSH_PACKET_USED;
 }
@@ -1019,7 +1022,6 @@ error:
  */
 void ssh_channel_free(ssh_channel channel) {
   ssh_session session;
-  struct ssh_iterator *it;
 
   if (channel == NULL) {
     return;
@@ -1031,7 +1033,28 @@ void ssh_channel_free(ssh_channel channel) {
   if (session->alive && channel->state == SSH_CHANNEL_STATE_OPEN) {
     ssh_channel_close(channel);
   }
+  channel->flags &= SSH_CHANNEL_FLAG_FREED_LOCAL;
 
+  /* The idea behind the flags is the following : it is well possible
+   * that a client closes a channel that stills exists on the server side.
+   * We definitively close the channel when we receive a close message *and*
+   * the user closed it.
+   */
+  if((channel->flags & SSH_CHANNEL_FLAG_CLOSED_REMOTE)
+      || (channel->flags & SSH_CHANNEL_FLAG_NOT_BOUND)){
+    ssh_channel_do_free(channel);
+  }
+  leave_function();
+}
+
+/**
+ * @internal
+ * @brief Effectively free a channel, without caring about flags
+ */
+
+void ssh_channel_do_free(ssh_channel channel){
+  struct ssh_iterator *it;
+  ssh_session session = channel->session;
   it = ssh_list_find(session->channels, channel);
   if(it != NULL){
     ssh_list_remove(session->channels, it);
@@ -1042,8 +1065,6 @@ void ssh_channel_free(ssh_channel channel) {
   /* debug trick to catch use after frees */
   memset(channel, 'X', sizeof(struct ssh_channel_struct));
   SAFE_FREE(channel);
-
-  leave_function();
 }
 
 /**

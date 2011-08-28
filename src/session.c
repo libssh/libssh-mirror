@@ -189,7 +189,7 @@ void ssh_free(ssh_session session) {
   }
   /* delete all channels */
   while ((it=ssh_list_get_iterator(session->channels)) != NULL) {
-    ssh_channel_free(ssh_iterator_value(ssh_channel,it));
+    ssh_channel_do_free(ssh_iterator_value(ssh_channel,it));
     ssh_list_remove(session->channels, it);
   }
   ssh_list_free(session->channels);
