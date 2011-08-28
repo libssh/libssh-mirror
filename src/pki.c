@@ -1079,34 +1079,35 @@ ssh_string ssh_pki_do_sign(ssh_session session,
                                   session->next_crypto;
     unsigned char hash[SHA_DIGEST_LEN] = {0};
     ssh_signature sig;
-    ssh_string sig_blob = NULL;
-    ssh_string str = NULL;
-    SHACTX ctx = NULL;
+    ssh_string sig_blob;
+    ssh_string session_id;
+    SHACTX ctx;
     int rc;
 
     if (privkey == NULL || !ssh_key_is_private(privkey)) {
         return NULL;
     }
 
-    str = ssh_string_new(SHA_DIGEST_LEN);
-    if (str == NULL) {
+    session_id = ssh_string_new(SHA_DIGEST_LEN);
+    if (session_id == NULL) {
         return NULL;
     }
-    ssh_string_fill(str, crypto->session_id, SHA_DIGEST_LEN);
+    ssh_string_fill(session_id, crypto->session_id, SHA_DIGEST_LEN);
 
     ctx = sha1_init();
     if (ctx == NULL) {
-        ssh_string_free(str);
+        ssh_string_free(session_id);
         return NULL;
     }
 
-    sha1_update(ctx, str, ssh_string_len(str) + 4);
-    ssh_string_free(str);
+    sha1_update(ctx, session_id, ssh_string_len(session_id) + 4);
+    ssh_string_free(session_id);
+
     sha1_update(ctx, buffer_get_rest(sigbuf), buffer_get_rest_len(sigbuf));
     sha1_final(hash, ctx);
 
 #ifdef DEBUG_CRYPTO
-    ssh_print_hexa("Hash being signed with dsa", hash, SHA_DIGEST_LEN);
+    ssh_print_hexa("Hash being signed", hash, SHA_DIGEST_LEN);
 #endif
 
     sig = pki_do_sign(privkey, hash, SHA_DIGEST_LEN);
