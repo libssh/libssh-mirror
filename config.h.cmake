@@ -38,10 +38,16 @@
 /* Define to 1 if you have the <openssl/ecdh.h> header file. */
 #cmakedefine HAVE_OPENSSL_ECDH_H 1
 
+/* Define to 1 if you have the <openssl/ec.h> header file. */
+#cmakedefine HAVE_OPENSSL_EC_H 1
+
+/* Define to 1 if you have the <openssl/ecdsa.h> header file. */
+#cmakedefine HAVE_OPENSSL_ECDSA_H 1
 
 /* Define to 1 if you have the <pthread.h> header file. */
 #cmakedefine HAVE_PTHREAD_H 1
 
+#cmakedefine HAVE_OPENSSL_ECC 1
 
 /*************************** FUNCTIONS ***************************/
 
