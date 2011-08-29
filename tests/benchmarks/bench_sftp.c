@@ -1,4 +1,4 @@
-/* bench_scp.c
+/* bench_sftp.c
  *
  * This file is part of the SSH Library
  *
@@ -22,36 +22,40 @@
 
 #include "benchmarks.h"
 #include <libssh/libssh.h>
+#include <libssh/sftp.h>
 #include <stdio.h>
+#include <fcntl.h>
 
-#define SCPDIR "/tmp/"
-#define SCPFILE "scpbenchmark"
+#define SFTPDIR "/tmp/"
+#define SFTPFILE "scpbenchmark"
 
 /** @internal
- * @brief benchmarks a scp upload using an
+ * @brief benchmarks a synchronous sftp upload using an
  * existing SSH session.
  * @param[in] session Open SSH session
  * @param[in] args Parsed command line arguments
  * @param[out] bps The calculated bytes per second obtained via benchmark.
  * @return 0 on success, -1 on error.
  */
-int benchmarks_scp_up (ssh_session session, struct argument_s *args,
+int benchmarks_sync_sftp_up (ssh_session session, struct argument_s *args,
     float *bps){
   unsigned long bytes=0x1000000;
   static char buffer[0x10000];
   struct timestamp_struct ts;
   float ms=0.0;
   unsigned long total=0;
-  ssh_scp scp;
+  sftp_session sftp;
+  sftp_file file;
 
   if(args->data != 0)
     bytes = args->data * 1024 * 1024;
-  scp = ssh_scp_new(session,SSH_SCP_WRITE,SCPDIR);
-  if(scp == NULL)
+  sftp = sftp_new(session);
+  if(sftp == NULL)
     goto error;
-  if(ssh_scp_init(scp)==SSH_ERROR)
+  if(sftp_init(sftp)==SSH_ERROR)
     goto error;
-  if(ssh_scp_push_file(scp,SCPFILE,bytes,0777) != SSH_OK)
+  file = sftp_open(sftp,SFTPDIR SFTPFILE,O_RDWR | O_CREAT | O_TRUNC, 0777);
+  if(!file)
     goto error;
   if(args->verbose>0)
     fprintf(stdout,"Starting upload of %lu bytes now\n",bytes);
@@ -61,94 +65,88 @@ int benchmarks_scp_up (ssh_session session, struct argument_s *args,
     int w;
     if(towrite > 32758)
       towrite = 32758;
-    w=ssh_scp_write(scp,buffer,towrite);
+    w=sftp_write(file,buffer,towrite);
     if(w == SSH_ERROR)
       goto error;
-    total += towrite;
+    total += w;
   }
+  sftp_close(file);
   ms=elapsed_time(&ts);
   *bps=8000 * (float)bytes / ms;
   if(args->verbose > 0)
     fprintf(stdout,"Upload took %f ms for %lu bytes, at %f bps\n",ms,
         bytes,*bps);
-  ssh_scp_close(scp);
-  ssh_scp_free(scp);
+  sftp_free(sftp);
   return 0;
 error:
   fprintf(stderr,"Error during scp upload : %s\n",ssh_get_error(session));
-  if(scp){
-    ssh_scp_close(scp);
-    ssh_scp_free(scp);
-  }
+  if(file)
+    sftp_close(file);
+  if(sftp)
+    sftp_free(sftp);
   return -1;
 }
 
 /** @internal
- * @brief benchmarks a scp download using an
+ * @brief benchmarks a synchronous sftp download using an
  * existing SSH session.
  * @param[in] session Open SSH session
  * @param[in] args Parsed command line arguments
  * @param[out] bps The calculated bytes per second obtained via benchmark.
  * @return 0 on success, -1 on error.
  */
-int benchmarks_scp_down (ssh_session session, struct argument_s *args,
+int benchmarks_sync_sftp_down (ssh_session session, struct argument_s *args,
     float *bps){
   unsigned long bytes=0x1000000;
   static char buffer[0x10000];
   struct timestamp_struct ts;
   float ms=0.0;
   unsigned long total=0;
-  ssh_scp scp;
+  sftp_session sftp;
+  sftp_file file;
   int r;
-  size_t size;
 
   if(args->data != 0)
     bytes = args->data * 1024 * 1024;
-  scp = ssh_scp_new(session,SSH_SCP_READ,SCPDIR SCPFILE);
-  if(scp == NULL)
+  sftp = sftp_new(session);
+  if(sftp == NULL)
     goto error;
-  if(ssh_scp_init(scp)==SSH_ERROR)
+  if(sftp_init(sftp)==SSH_ERROR)
     goto error;
-  r=ssh_scp_pull_request(scp);
-  if(r == SSH_SCP_REQUEST_NEWFILE){
-    size=ssh_scp_request_get_size(scp);
-    if(bytes > size){
-      printf("Only %d bytes available (on %lu requested).\n",size,bytes);
-      bytes = size;
-    }
-    if(size > bytes){
-      printf("File is %d bytes (on %lu requested). Will cut the end\n",size,bytes);
-    }
-    if(args->verbose>0)
-      fprintf(stdout,"Starting download of %lu bytes now\n",bytes);
-    timestamp_init(&ts);
-    ssh_scp_accept_request(scp);
-    while(total < bytes){
-      unsigned long toread = bytes - total;
-      if(toread > sizeof(buffer))
-        toread = sizeof(buffer);
-      r=ssh_scp_read(scp,buffer,toread);
-      if(r == SSH_ERROR || r == 0)
-        goto error;
-      total += r;
-    }
-    ms=elapsed_time(&ts);
-    *bps=8000 * (float)bytes / ms;
-    if(args->verbose > 0)
-      fprintf(stdout,"download took %f ms for %lu bytes, at %f bps\n",ms,
-          bytes,*bps);
-  } else {
-    fprintf(stderr,"Expected SSH_SCP_REQUEST_NEWFILE, got %d\n",r);
+  file = sftp_open(sftp,SFTPDIR SFTPFILE,O_RDONLY,0);
+  if(!file)
     goto error;
+  if(args->verbose>0)
+    fprintf(stdout,"Starting download of %lu bytes now\n",bytes);
+  timestamp_init(&ts);
+  while(total < bytes){
+    unsigned long toread = bytes - total;
+    if(toread > sizeof(buffer))
+      toread = sizeof(buffer);
+    r=sftp_read(file,buffer,toread);
+    if(r == SSH_ERROR)
+      goto error;
+    total += r;
+    /* we had a smaller file */
+    if(r==0){
+      fprintf(stdout,"File smaller than expected : %lu (expected %lu).\n",total,bytes);
+      bytes = total;
+      break;
+    }
   }
-  ssh_scp_close(scp);
-  ssh_scp_free(scp);
+  sftp_close(file);
+  ms=elapsed_time(&ts);
+  *bps=8000 * (float)bytes / ms;
+  if(args->verbose > 0)
+    fprintf(stdout,"download took %f ms for %lu bytes, at %f bps\n",ms,
+        bytes,*bps);
+  sftp_free(sftp);
   return 0;
 error:
-  fprintf(stderr,"Error during scp download : %s\n",ssh_get_error(session));
-  if(scp){
-    ssh_scp_close(scp);
-    ssh_scp_free(scp);
-  }
+  fprintf(stderr,"Error during sftp download : %s\n",ssh_get_error(session));
+  if(file)
+    sftp_close(file);
+  if(sftp)
+    sftp_free(sftp);
   return -1;
 }
