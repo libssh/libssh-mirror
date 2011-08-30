@@ -91,7 +91,6 @@ set(libssh_SRCS
   gzip.c
   init.c
   kex.c
-  keys.c
   known_hosts.c
   legacy.c
   libcrypto.c
