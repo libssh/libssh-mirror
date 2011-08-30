@@ -52,12 +52,6 @@ struct ssh_private_key_struct {
 const char *ssh_type_to_char(int type);
 int ssh_type_from_name(const char *name);
 
-ssh_private_key privatekey_make_dss(ssh_session session, ssh_buffer buffer);
-ssh_private_key privatekey_make_rsa(ssh_session session, ssh_buffer buffer,
-    const char *type);
-
-ssh_public_key publickey_make_dss(ssh_session session, ssh_buffer buffer);
-ssh_public_key publickey_make_rsa(ssh_session session, ssh_buffer buffer, int type);
 ssh_public_key publickey_from_string(ssh_session session, ssh_string pubkey_s);
 
 #endif /* KEYS_H_ */
