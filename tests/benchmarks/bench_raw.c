@@ -47,7 +47,7 @@ const char python_eater[]=
 static char *get_python_eater(unsigned long bytes){
   char *eater=malloc(sizeof(python_eater));
   char *ptr;
-  char buffer[12];
+  char buf[12];
 
   memcpy(eater,python_eater,sizeof(python_eater));
   ptr=strstr(eater,"XXXXXXXXXX");
@@ -55,8 +55,8 @@ static char *get_python_eater(unsigned long bytes){
     free(eater);
     return NULL;
   }
-  sprintf(buffer,"0x%.8lx",bytes);
-  memcpy(ptr,buffer,10);
+  sprintf(buf,"0x%.8lx",bytes);
+  memcpy(ptr,buf,10);
   return eater;
 }
 
@@ -106,18 +106,16 @@ error:
  */
 int benchmarks_raw_up (ssh_session session, struct argument_s *args,
     float *bps){
-  unsigned long bytes=0x1000000;
+  unsigned long bytes;
   char *script;
   char cmd[128];
-  static char buffer[0x10000];
   int err;
   ssh_channel channel;
   struct timestamp_struct ts;
   float ms=0.0;
   unsigned long total=0;
 
-  if(args->data != 0)
-    bytes = args->data * 1024 * 1024;
+  bytes = args->datasize * 1024 * 1024;
   script =get_python_eater(bytes);
   err=upload_script(session,"/tmp/eater.py",script);
   free(script);
@@ -146,8 +144,8 @@ int benchmarks_raw_up (ssh_session session, struct argument_s *args,
   while(total < bytes){
     unsigned long towrite = bytes - total;
     int w;
-    if(towrite > 0x10000)
-      towrite = 32758;
+    if(towrite > args->chunksize)
+      towrite = args->chunksize;
     w=ssh_channel_write(channel,buffer,towrite);
     if(w == SSH_ERROR)
       goto error;
@@ -205,7 +203,7 @@ const char python_giver[] =
 static char *get_python_giver(unsigned long bytes){
   char *giver=malloc(sizeof(python_giver));
   char *ptr;
-  char buffer[12];
+  char buf[12];
 
   memcpy(giver,python_giver,sizeof(python_giver));
   ptr=strstr(giver,"XXXXXXXXXX");
@@ -213,8 +211,8 @@ static char *get_python_giver(unsigned long bytes){
     free(giver);
     return NULL;
   }
-  sprintf(buffer,"0x%.8lx",bytes);
-  memcpy(ptr,buffer,10);
+  sprintf(buf,"0x%.8lx",bytes);
+  memcpy(ptr,buf,10);
   return giver;
 }
 
@@ -228,18 +226,16 @@ static char *get_python_giver(unsigned long bytes){
  */
 int benchmarks_raw_down (ssh_session session, struct argument_s *args,
     float *bps){
-  unsigned long bytes=0x1000000;
+  unsigned long bytes;
   char *script;
   char cmd[128];
-  static char buffer[0x10000];
   int err;
   ssh_channel channel;
   struct timestamp_struct ts;
   float ms=0.0;
   unsigned long total=0;
 
-  if(args->data != 0)
-    bytes = args->data * 1024 * 1024;
+  bytes = args->datasize * 1024 * 1024;
   script =get_python_giver(bytes);
   err=upload_script(session,"/tmp/giver.py",script);
   free(script);
@@ -261,8 +257,8 @@ int benchmarks_raw_down (ssh_session session, struct argument_s *args,
   while(total < bytes){
     unsigned long toread = bytes - total;
     int r;
-    if(toread > sizeof(buffer))
-      toread = sizeof(buffer);
+    if(toread > args->chunksize)
+      toread = args->chunksize;
     r=ssh_channel_read(channel,buffer,toread,0);
     if(r == SSH_ERROR)
       goto error;

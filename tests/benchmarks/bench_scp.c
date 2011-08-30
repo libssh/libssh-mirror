@@ -37,15 +37,13 @@
  */
 int benchmarks_scp_up (ssh_session session, struct argument_s *args,
     float *bps){
-  unsigned long bytes=0x1000000;
-  static char buffer[0x10000];
+  unsigned long bytes;
   struct timestamp_struct ts;
   float ms=0.0;
   unsigned long total=0;
   ssh_scp scp;
 
-  if(args->data != 0)
-    bytes = args->data * 1024 * 1024;
+  bytes = args->datasize * 1024 * 1024;
   scp = ssh_scp_new(session,SSH_SCP_WRITE,SCPDIR);
   if(scp == NULL)
     goto error;
@@ -59,8 +57,8 @@ int benchmarks_scp_up (ssh_session session, struct argument_s *args,
   while(total < bytes){
     unsigned long towrite = bytes - total;
     int w;
-    if(towrite > 32758)
-      towrite = 32758;
+    if(towrite > args->chunksize)
+      towrite = args->chunksize;
     w=ssh_scp_write(scp,buffer,towrite);
     if(w == SSH_ERROR)
       goto error;
@@ -93,8 +91,7 @@ error:
  */
 int benchmarks_scp_down (ssh_session session, struct argument_s *args,
     float *bps){
-  unsigned long bytes=0x1000000;
-  static char buffer[0x10000];
+  unsigned long bytes;
   struct timestamp_struct ts;
   float ms=0.0;
   unsigned long total=0;
@@ -102,8 +99,7 @@ int benchmarks_scp_down (ssh_session session, struct argument_s *args,
   int r;
   size_t size;
 
-  if(args->data != 0)
-    bytes = args->data * 1024 * 1024;
+  bytes = args->datasize * 1024 * 1024;
   scp = ssh_scp_new(session,SSH_SCP_READ,SCPDIR SCPFILE);
   if(scp == NULL)
     goto error;
@@ -125,8 +121,8 @@ int benchmarks_scp_down (ssh_session session, struct argument_s *args,
     ssh_scp_accept_request(scp);
     while(total < bytes){
       unsigned long toread = bytes - total;
-      if(toread > sizeof(buffer))
-        toread = sizeof(buffer);
+      if(toread > args->chunksize)
+        toread = args->chunksize;
       r=ssh_scp_read(scp,buffer,toread);
       if(r == SSH_ERROR || r == 0)
         goto error;

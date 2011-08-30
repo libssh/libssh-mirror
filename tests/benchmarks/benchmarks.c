@@ -57,6 +57,11 @@ struct benchmark benchmarks[]= {
         .name="benchmark_sync_sftp_download",
         .fct=benchmarks_sync_sftp_down,
         .enabled=0
+    },
+    {
+        .name="benchmark_async_sftp_download",
+        .fct=benchmarks_async_sftp_down,
+        .enabled=0
     }
 };
 
@@ -128,7 +133,16 @@ static struct argp_option options[] = {
     .key   = '6',
     .arg   = NULL,
     .flags = 0,
-    .doc   = "Download data using synchronous SFTP",
+    .doc   = "Download data using synchronous SFTP (slow)",
+    .group = 0
+
+  },
+  {
+    .name  = "async-sftp-download",
+    .key   = '7',
+    .arg   = NULL,
+    .flags = 0,
+    .doc   = "Download data using asynchronous SFTP (fast)",
     .group = 0
 
   },
@@ -141,11 +155,27 @@ static struct argp_option options[] = {
     .group = 0
   },
   {
-    .name  = "data",
-    .key   = 'd',
+    .name  = "size",
+    .key   = 's',
     .arg   = "MBYTES",
     .flags = 0,
     .doc   = "MBytes of data to send/receive per test",
+    .group = 0
+  },
+  {
+    .name  = "chunk",
+    .key   = 'c',
+    .arg   = "bytes",
+    .flags = 0,
+    .doc   = "size of data chunks to send/receive",
+    .group = 0
+  },
+  {
+    .name  = "prequests",
+    .key   = 'p',
+    .arg   = "number [20]",
+    .flags = 0,
+    .doc   = "[async SFTP] number of concurrent requests",
     .group = 0
   },
   {NULL, 0, NULL, 0, NULL, 0}
@@ -168,14 +198,21 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
     case '4':
     case '5':
     case '6':
+    case '7':
       benchmarks[key - '1'].enabled = 1;
       arguments->ntests ++;
       break;
     case 'v':
       arguments->verbose++;
       break;
-    case 'd':
-      arguments->data = atoi(arg);
+    case 's':
+      arguments->datasize = atoi(arg);
+      break;
+    case 'p':
+      arguments->concurrent_requests = atoi(arg);
+      break;
+    case 'c':
+      arguments->chunksize = atoi(arg);
       break;
     case 'h':
       if(arguments->nhosts >= MAX_HOSTS_CONNECT){
@@ -218,6 +255,9 @@ static void cmdline_parse(int argc, char **argv, struct argument_s *arguments) {
 
 static void arguments_init(struct argument_s *arguments){
   memset(arguments,0,sizeof(*arguments));
+  arguments->chunksize=32758;
+  arguments->concurrent_requests=20;
+  arguments->datasize = 10;
 }
 
 static ssh_session connect_host(const char *host, int verbose){
@@ -239,19 +279,19 @@ error:
 }
 
 static char *network_speed(float bps){
-  static char buffer[128];
+  static char buf[128];
   if(bps > 1000*1000*1000){
     /* Gbps */
-    snprintf(buffer,sizeof(buffer),"%f Gbps",bps/(1000*1000*1000));
+    snprintf(buf,sizeof(buf),"%f Gbps",bps/(1000*1000*1000));
   } else if(bps > 1000*1000){
     /* Mbps */
-    snprintf(buffer,sizeof(buffer),"%f Mbps",bps/(1000*1000));
+    snprintf(buf,sizeof(buf),"%f Mbps",bps/(1000*1000));
   } else if(bps > 1000){
-    snprintf(buffer,sizeof(buffer),"%f Kbps",bps/1000);
+    snprintf(buf,sizeof(buf),"%f Kbps",bps/1000);
   } else {
-    snprintf(buffer,sizeof(buffer),"%f bps",bps);
+    snprintf(buf,sizeof(buf),"%f bps",bps);
   }
-  return buffer;
+  return buf;
 }
 
 static void do_benchmarks(ssh_session session, struct argument_s *arguments,
@@ -284,6 +324,8 @@ static void do_benchmarks(ssh_session session, struct argument_s *arguments,
   }
 }
 
+char *buffer;
+
 int main(int argc, char **argv){
   struct argument_s arguments;
   ssh_session session;
@@ -300,6 +342,11 @@ int main(int argc, char **argv){
       benchmarks[i].enabled=1;
     }
     arguments.ntests=BENCHMARK_NUMBER;
+  }
+  buffer=malloc(arguments.chunksize);
+  if(buffer == NULL){
+    fprintf(stderr,"Allocation of chunk buffer failed\n");
+    return EXIT_FAILURE;
   }
   if (arguments.verbose > 0){
     fprintf(stdout, "Will try hosts ");

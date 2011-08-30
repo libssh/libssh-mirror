@@ -36,6 +36,7 @@ enum libssh_benchmarks {
     BENCHMARK_SCP_DOWNLOAD,
     BENCHMARK_SYNC_SFTP_UPLOAD,
     BENCHMARK_SYNC_SFTP_DOWNLOAD,
+    BENCHMARK_ASYNC_SFTP_DOWNLOAD,
     BENCHMARK_NUMBER
 };
 
@@ -44,8 +45,12 @@ struct argument_s {
   int verbose;
   int nhosts;
   int ntests;
-  int data;
+  unsigned int datasize;
+  unsigned int chunksize;
+  int concurrent_requests;
 };
+
+extern char *buffer;
 
 typedef int (*bench_fct)(ssh_session session, struct argument_s *args,
     float *bps);
@@ -87,5 +92,7 @@ int benchmarks_scp_down (ssh_session session, struct argument_s *args,
 int benchmarks_sync_sftp_up (ssh_session session, struct argument_s *args,
     float *bps);
 int benchmarks_sync_sftp_down (ssh_session session, struct argument_s *args,
+    float *bps);
+int benchmarks_async_sftp_down (ssh_session session, struct argument_s *args,
     float *bps);
 #endif /* BENCHMARKS_H_ */
