@@ -30,6 +30,14 @@
 #include <openssl/err.h>
 #include <openssl/rsa.h>
 
+#ifdef HAVE_OPENSSL_EC_H
+#include <openssl/ec.h>
+#endif
+#ifdef HAVE_OPENSSL_ECDSA_H
+#include <openssl/ecdsa.h>
+#endif
+
+
 #include "libssh/priv.h"
 #include "libssh/libssh.h"
 #include "libssh/buffer.h"
@@ -200,6 +208,29 @@ ssh_key pki_key_dup(const ssh_key key, int demote)
 
         break;
     case SSH_KEYTYPE_ECDSA:
+        /* privkey -> pubkey */
+        if (demote && ssh_key_is_private(key)) {
+            const EC_POINT *p;
+            int ok;
+
+            new->ecdsa = EC_KEY_new_by_curve_name(key->ecdsa_nid);
+            if (new->ecdsa == NULL) {
+                goto fail;
+            }
+
+            p = EC_KEY_get0_public_key(key->ecdsa);
+            if (p == NULL) {
+                goto fail;
+            }
+
+            ok = EC_KEY_set_public_key(new->ecdsa, p);
+            if (!ok) {
+                goto fail;
+            }
+        } else {
+            new->ecdsa = EC_KEY_dup(key->ecdsa);
+        }
+        break;
     case SSH_KEYTYPE_UNKNOWN:
         ssh_key_free(new);
         return NULL;
