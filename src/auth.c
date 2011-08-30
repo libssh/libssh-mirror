@@ -1118,8 +1118,8 @@ int ssh_userauth_publickey_auto(ssh_session session,
                 continue;
             }
 
-            pubkey = ssh_pki_publickey_from_privatekey(privkey);
-            if (pubkey == NULL) {
+            rc = ssh_pki_export_privkey_to_pubkey(privkey, &pubkey);
+            if (rc == SSH_ERROR) {
                 ssh_key_free(privkey);
                 return SSH_AUTH_ERROR;
             }

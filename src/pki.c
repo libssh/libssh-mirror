@@ -784,19 +784,33 @@ int ssh_pki_import_pubkey_file(const char *filename, ssh_key *pkey)
 }
 
 /**
- * @brief Generate and duplicate a public key from a private key.
+ * @brief Create a public key from a private key.
  *
- * @param[in] privkey   The private key to get the public key from.
+ * @param[in]  privkey  The private key to get the public key from.
+ *
+ * @param[out] pkey     A pointer to store the newly allocated public key. You
+ *                      NEED to free the key.
  *
  * @return              A public key, NULL on error.
+ *
+ * @see ssh_key_free()
  */
-ssh_key ssh_pki_publickey_from_privatekey(const ssh_key privkey) {
+int ssh_pki_export_privkey_to_pubkey(const ssh_key privkey,
+                                     ssh_key *pkey)
+{
+    ssh_key pubkey;
 
     if (privkey == NULL || !ssh_key_is_private(privkey)) {
-        return NULL;
+        return SSH_ERROR;
     }
 
-    return pki_key_dup(privkey, 1);
+    pubkey = pki_key_dup(privkey, 1);
+    if (pubkey == NULL) {
+        return SSH_ERROR;
+    }
+
+    *pkey = pubkey;
+    return SSH_OK;
 }
 
 /**

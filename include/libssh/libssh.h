@@ -449,6 +449,9 @@ LIBSSH_API int ssh_pki_import_pubkey_base64(const char *b64_key,
                                             ssh_key *pkey);
 LIBSSH_API int ssh_pki_import_pubkey_file(const char *filename,
                                           ssh_key *pkey);
+
+LIBSSH_API int ssh_pki_export_privkey_to_pubkey(const ssh_key privkey,
+                                                ssh_key *pkey);
 LIBSSH_API int ssh_pki_export_pubkey_base64(const ssh_key key,
                                             char **b64_key);
 LIBSSH_API int ssh_pki_export_pubkey_file(const ssh_key key,

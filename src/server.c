@@ -189,8 +189,8 @@ static int dh_handshake_server(ssh_session session) {
       privkey = NULL;
   }
 
-  pubkey = ssh_pki_publickey_from_privatekey(privkey);
-  if (pubkey == NULL) {
+  rc = ssh_pki_export_privkey_to_pubkey(privkey, &pubkey);
+  if (rc < 0) {
     ssh_set_error(session, SSH_FATAL,
         "Could not get the public key from the private key");
     ssh_string_free(f);

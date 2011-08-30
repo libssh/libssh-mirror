@@ -80,9 +80,6 @@ int ssh_pki_export_pubkey_blob(const ssh_key key,
 int ssh_pki_import_pubkey_blob(const ssh_string key_blob,
                                ssh_key *pkey);
 
-/* SSH Private Key Functions */
-ssh_key ssh_pki_publickey_from_privatekey(const ssh_key privkey);
-
 /* SSH Signing Functions */
 ssh_string ssh_pki_do_sign(ssh_session session, ssh_buffer sigbuf,
     ssh_key privatekey);

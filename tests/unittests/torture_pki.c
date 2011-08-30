@@ -292,8 +292,8 @@ static void torture_pki_pki_publickey_from_privatekey_RSA(void **state) {
     rc = ssh_pki_import_privkey_base64(key_str, passphrase, NULL, NULL, &key);
     assert_true(rc == 0);
 
-    pubkey = ssh_pki_publickey_from_privatekey(key);
-    assert_true(pubkey != NULL);
+    rc = ssh_pki_export_privkey_to_pubkey(key, &pubkey);
+    assert_true(rc == SSH_OK);
 
     free(key_str);
     ssh_key_free(key);
@@ -315,8 +315,8 @@ static void torture_pki_pki_publickey_from_privatekey_DSA(void **state) {
     rc = ssh_pki_import_privkey_base64(key_str, passphrase, NULL, NULL, &key);
     assert_true(rc == 0);
 
-    pubkey = ssh_pki_publickey_from_privatekey(key);
-    assert_true(pubkey != NULL);
+    rc = ssh_pki_export_privkey_to_pubkey(key, &pubkey);
+    assert_true(rc == SSH_OK);
 
     free(key_str);
     ssh_key_free(key);
@@ -422,8 +422,8 @@ static void torture_generate_pubkey_from_privkey_rsa(void **state) {
                                      &privkey);
     assert_true(rc == 0);
 
-    pubkey = ssh_pki_publickey_from_privatekey(privkey);
-    assert_true(pubkey != NULL);
+    rc = ssh_pki_export_privkey_to_pubkey(privkey, &pubkey);
+    assert_true(rc == SSH_OK);
 
     rc = ssh_pki_export_pubkey_file(pubkey, LIBSSH_RSA_TESTKEY ".pub");
     assert_true(rc == 0);
@@ -463,8 +463,8 @@ static void torture_generate_pubkey_from_privkey_dsa(void **state) {
                                      &privkey);
     assert_true(rc == 0);
 
-    pubkey = ssh_pki_publickey_from_privatekey(privkey);
-    assert_true(pubkey != NULL);
+    rc = ssh_pki_export_privkey_to_pubkey(privkey, &pubkey);
+    assert_true(rc == SSH_OK);
 
     rc = ssh_pki_export_pubkey_file(pubkey, LIBSSH_DSA_TESTKEY ".pub");
     assert_true(rc == 0);
@@ -508,8 +508,8 @@ static void torture_pki_duplicate_key_rsa(void **state)
     privkey_dup = ssh_key_dup(privkey);
     assert_true(privkey_dup != NULL);
 
-    pubkey = ssh_pki_publickey_from_privatekey(privkey_dup);
-    assert_true(pubkey != NULL);
+    rc = ssh_pki_export_privkey_to_pubkey(privkey, &pubkey);
+    assert_true(rc == SSH_OK);
 
     rc = ssh_pki_export_pubkey_base64(pubkey, &b64_key_gen);
     assert_true(rc == 0);
@@ -551,8 +551,8 @@ static void torture_pki_duplicate_key_dsa(void **state)
     privkey_dup = ssh_key_dup(privkey);
     assert_true(privkey_dup != NULL);
 
-    pubkey = ssh_pki_publickey_from_privatekey(privkey_dup);
-    assert_true(pubkey != NULL);
+    rc = ssh_pki_export_privkey_to_pubkey(privkey, &pubkey);
+    assert_true(rc == SSH_OK);
 
     rc = ssh_pki_export_pubkey_base64(pubkey, &b64_key_gen);
     assert_true(rc == 0);
@@ -589,7 +589,7 @@ int torture_run_tests(void) {
         unit_test_setup_teardown(torture_pki_import_privkey_base64_passphrase,
                                  setup_both_keys_passphrase,
                                  teardown),
-        /* ssh_pki_publickey_from_privatekey */
+        /* ssh_pki_export_privkey_to_pubkey */
         unit_test_setup_teardown(torture_pki_pki_publickey_from_privatekey_RSA,
                                  setup_rsa_key,
                                  teardown),
