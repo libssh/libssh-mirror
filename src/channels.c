@@ -2731,6 +2731,61 @@ int ssh_channel_poll(ssh_channel channel, int is_stderr){
 }
 
 /**
+ * @brief Polls a channel for data to read, waiting for a certain timeout.
+ *
+ * @param[in]  channel   The channel to poll.
+ * @param[in]  timeout   Set an upper limit on the time for which this function
+ *                       will block, in milliseconds. Specifying a negative value
+ *                       means an infinite timeout. This parameter is passed to
+ *                       the poll() function.
+ * @param[in]  is_stderr A boolean to select the stderr stream.
+ *
+ * @return              The number of bytes available for reading,
+ *                      0 if nothing is available (timeout elapsed),
+ *                      SSH_EOF on end of file,
+ *                      SSH_ERROR on error.
+ *
+ * @warning When the channel is in EOF state, the function returns SSH_EOF.
+ *
+ * @see channel_is_eof()
+ */
+int ssh_channel_poll_timeout(ssh_channel channel, int timeout, int is_stderr){
+  ssh_session session;
+  ssh_buffer stdbuf;
+  struct ssh_channel_read_termination_struct ctx;
+  int rc;
+
+  if(channel == NULL) {
+      return SSH_ERROR;
+  }
+
+  session = channel->session;
+  stdbuf = channel->stdout_buffer;
+  enter_function();
+
+  if (is_stderr) {
+    stdbuf = channel->stderr_buffer;
+  }
+  ctx.buffer = stdbuf;
+  ctx.channel = channel;
+  ctx.count = 1;
+  rc = ssh_handle_packets_termination(channel->session, timeout,
+      ssh_channel_read_termination, &ctx);
+  if(rc ==SSH_ERROR || session->session_state == SSH_SESSION_STATE_ERROR){
+    rc = SSH_ERROR;
+    goto end;
+  }
+  rc = buffer_get_rest_len(stdbuf);
+  if(rc > 0)
+    goto end;
+  if (channel->remote_eof)
+    rc = SSH_EOF;
+end:
+  leave_function();
+  return rc;
+}
+
+/**
  * @brief Recover the session in which belongs a channel.
  *
  * @param[in]  channel  The channel to recover the session from.

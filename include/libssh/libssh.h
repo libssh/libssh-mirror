@@ -341,6 +341,7 @@ LIBSSH_API int ssh_channel_open_forward(ssh_channel channel, const char *remoteh
     int remoteport, const char *sourcehost, int localport);
 LIBSSH_API int ssh_channel_open_session(ssh_channel channel);
 LIBSSH_API int ssh_channel_poll(ssh_channel channel, int is_stderr);
+int ssh_channel_poll_timeout(ssh_channel channel, int timeout, int is_stderr);
 LIBSSH_API int ssh_channel_read(ssh_channel channel, void *dest, uint32_t count, int is_stderr);
 LIBSSH_API int ssh_channel_read_nonblocking(ssh_channel channel, void *dest, uint32_t count,
     int is_stderr);
