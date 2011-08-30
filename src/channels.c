@@ -2934,13 +2934,18 @@ int ssh_channel_select(ssh_channel *readchans, ssh_channel *writechans,
     ssh_channel *exceptchans, struct timeval * timeout) {
   ssh_channel *rchans, *wchans, *echans;
   ssh_channel dummy = NULL;
-  fd_set rset;
-  fd_set wset;
-  fd_set eset;
-  socket_t max_fd = SSH_INVALID_SOCKET;
+  ssh_event event = NULL;
   int rc;
   int i;
+  int tm, tm_base;
+  struct ssh_timestamp ts;
 
+  if (timeout != NULL)
+    tm_base = timeout->tv_sec * 1000 + timeout->tv_usec/1000;
+  else
+    tm_base = SSH_TIMEOUT_INFINITE;
+  ssh_timestamp_init(&ts);
+  tm = tm_base;
   /* don't allow NULL pointers */
   if (readchans == NULL) {
     readchans = &dummy;
@@ -2979,75 +2984,54 @@ int ssh_channel_select(ssh_channel *readchans, ssh_channel *writechans,
   }
 
   /*
-   * First, try without doing network stuff then, select and redo the
-   * networkless stuff
+   * First, try without doing network stuff then, use the ssh_poll
+   * infrastructure to poll on all sessions.
    */
   do {
     channel_protocol_select(readchans, writechans, exceptchans,
         rchans, wchans, echans);
     if (rchans[0] != NULL || wchans[0] != NULL || echans[0] != NULL) {
-      /* We've got one without doing any select overwrite the beginning arrays */
+      /* At least one channel has an event */
       memcpy(readchans, rchans, (count_ptrs(rchans) + 1) * sizeof(ssh_channel ));
       memcpy(writechans, wchans, (count_ptrs(wchans) + 1) * sizeof(ssh_channel ));
       memcpy(exceptchans, echans, (count_ptrs(echans) + 1) * sizeof(ssh_channel ));
       SAFE_FREE(rchans);
       SAFE_FREE(wchans);
       SAFE_FREE(echans);
+      if(event)
+        ssh_event_free(event);
       return 0;
     }
-    /*
-     * Since we verified the invalid fd cases into the networkless select,
-     * we can be sure all fd are valid ones
-     */
-    FD_ZERO(&rset);
-    FD_ZERO(&wset);
-    FD_ZERO(&eset);
-
-    for (i = 0; readchans[i] != NULL; i++) {
-      if (!ssh_socket_fd_isset(readchans[i]->session->socket, &rset)) {
-        ssh_socket_fd_set(readchans[i]->session->socket, &rset, &max_fd);
+    /* Add all channels' sessions right into an event object */
+    if (!event){
+      event = ssh_event_new();
+      if(!event){
+        return SSH_ERROR;
+      }
+      for (i = 0; readchans[i] != NULL; i++) {
+        ssh_poll_get_default_ctx(readchans[i]->session);
+        ssh_event_add_session(event, readchans[i]->session);
+      }
+      for (i = 0; writechans[i] != NULL; i++) {
+        ssh_poll_get_default_ctx(writechans[i]->session);
+        ssh_event_add_session(event, writechans[i]->session);
+      }
+      for (i = 0; exceptchans[i] != NULL; i++) {
+        ssh_poll_get_default_ctx(exceptchans[i]->session);
+        ssh_event_add_session(event, exceptchans[i]->session);
       }
     }
-
-    for (i = 0; writechans[i] != NULL; i++) {
-      if (!ssh_socket_fd_isset(writechans[i]->session->socket, &wset)) {
-        ssh_socket_fd_set(writechans[i]->session->socket, &wset, &max_fd);
-      }
-    }
-
-    for (i = 0; exceptchans[i] != NULL; i++) {
-      if (!ssh_socket_fd_isset(exceptchans[i]->session->socket, &eset)) {
-        ssh_socket_fd_set(exceptchans[i]->session->socket, &eset, &max_fd);
-      }
-    }
-
     /* Here we go */
-    rc = select(max_fd, &rset, &wset, &eset, timeout);
-    /* Leave if select was interrupted */
-    if (rc == EINTR) {
+    rc = ssh_event_dopoll(event,tm);
+    if (rc != SSH_OK){
       SAFE_FREE(rchans);
       SAFE_FREE(wchans);
       SAFE_FREE(echans);
-      return SSH_EINTR;
+      ssh_event_free(event);
+      return rc;
     }
+    tm = ssh_timeout_update(&ts, tm_base);
 
-    for (i = 0; readchans[i] != NULL; i++) {
-      if (ssh_socket_fd_isset(readchans[i]->session->socket, &rset)) {
-        ssh_socket_set_read_wontblock(readchans[i]->session->socket);
-      }
-    }
-
-    for (i = 0; writechans[i] != NULL; i++) {
-      if (ssh_socket_fd_isset(writechans[i]->session->socket, &wset)) {
-        ssh_socket_set_write_wontblock(writechans[i]->session->socket);
-      }
-    }
-
-    for (i = 0; exceptchans[i] != NULL; i++) {
-      if (ssh_socket_fd_isset(exceptchans[i]->session->socket, &eset)) {
-        ssh_socket_set_except(exceptchans[i]->session->socket);
-      }
-    }
   } while(1); /* Return to do loop */
 
   /* not reached */
