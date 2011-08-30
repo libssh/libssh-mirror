@@ -44,33 +44,6 @@
  * @{
  */
 
-void publickey_free(ssh_public_key key) {
-  if (key == NULL) {
-    return;
-  }
-
-  switch(key->type) {
-    case SSH_KEYTYPE_DSS:
-#ifdef HAVE_LIBGCRYPT
-      gcry_sexp_release(key->dsa_pub);
-#elif HAVE_LIBCRYPTO
-      DSA_free(key->dsa_pub);
-#endif
-      break;
-    case SSH_KEYTYPE_RSA:
-    case SSH_KEYTYPE_RSA1:
-#ifdef HAVE_LIBGCRYPT
-      gcry_sexp_release(key->rsa_pub);
-#elif defined HAVE_LIBCRYPTO
-      RSA_free(key->rsa_pub);
-#endif
-      break;
-    default:
-      break;
-  }
-  SAFE_FREE(key);
-}
-
 /**
  * @brief Make a public_key object out of a private_key object.
  *

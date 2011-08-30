@@ -300,7 +300,6 @@ int channel_write(ssh_channel channel, const void *data, uint32_t len){
 void privatekey_free(ssh_private_key prv);
 ssh_private_key privatekey_from_file(ssh_session session, const char *filename,
     int type, const char *passphrase);
-void publickey_free(ssh_public_key key);
 int ssh_publickey_to_file(ssh_session session, const char *file,
     ssh_string pubkey, int type);
 ssh_public_key publickey_from_privatekey(ssh_private_key prv);
@@ -342,6 +341,35 @@ ssh_string string_new(size_t size){
 
 char *string_to_char(ssh_string str){
   return ssh_string_to_char(str);
+}
+
+/* OLD PKI FUNCTIONS */
+
+void publickey_free(ssh_public_key key) {
+  if (key == NULL) {
+    return;
+  }
+
+  switch(key->type) {
+    case SSH_KEYTYPE_DSS:
+#ifdef HAVE_LIBGCRYPT
+      gcry_sexp_release(key->dsa_pub);
+#elif HAVE_LIBCRYPTO
+      DSA_free(key->dsa_pub);
+#endif
+      break;
+    case SSH_KEYTYPE_RSA:
+    case SSH_KEYTYPE_RSA1:
+#ifdef HAVE_LIBGCRYPT
+      gcry_sexp_release(key->rsa_pub);
+#elif defined HAVE_LIBCRYPTO
+      RSA_free(key->rsa_pub);
+#endif
+      break;
+    default:
+      break;
+  }
+  SAFE_FREE(key);
 }
 
 ssh_private_key privatekey_from_file(ssh_session session,
