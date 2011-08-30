@@ -46,7 +46,7 @@
 #include "libssh/server.h"
 #endif
 
-#define WINDOWBASE 128000
+#define WINDOWBASE 1280000
 #define WINDOWLIMIT (WINDOWBASE/2)
 
 /*
