@@ -125,15 +125,21 @@ void ssh_key_clean (ssh_key key){
 #ifdef HAVE_LIBGCRYPT
     if(key->dsa) gcry_sexp_release(key->dsa);
     if(key->rsa) gcry_sexp_release(key->rsa);
+    if(key->ecdsa) gcry_sexp_release(key->ecdsa);
 #elif defined HAVE_LIBCRYPTO
     if(key->dsa) DSA_free(key->dsa);
     if(key->rsa) RSA_free(key->rsa);
+#ifdef HAVE_OPENSSL_ECC
+    if(key->ecdsa) EC_KEY_free(key->ecdsa);
+#endif /* HAVE_OPENSSL_ECC */
 #endif
     key->flags=SSH_KEY_FLAG_EMPTY;
     key->type=SSH_KEYTYPE_UNKNOWN;
+    key->ecdsa_nid = 0;
     key->type_c=NULL;
     key->dsa = NULL;
     key->rsa = NULL;
+    key->ecdsa = NULL;
 }
 
 /**
@@ -214,6 +220,7 @@ enum ssh_keytypes_e ssh_key_type_from_name(const char *name) {
             || strcmp(name, "ecdsa-sha2-nistp256") == 0
             || strcmp(name, "ecdsa-sha2-nistp384") == 0
             || strcmp(name, "ecdsa-sha2-nistp521") == 0) {
+        return SSH_KEYTYPE_ECDSA;
     }
 
     return SSH_KEYTYPE_UNKNOWN;
