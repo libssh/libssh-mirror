@@ -302,7 +302,6 @@ ssh_private_key privatekey_from_file(ssh_session session, const char *filename,
     int type, const char *passphrase);
 int ssh_publickey_to_file(ssh_session session, const char *file,
     ssh_string pubkey, int type);
-ssh_public_key publickey_from_privatekey(ssh_private_key prv);
 ssh_string publickey_to_string(ssh_public_key key);
  *
  */
@@ -370,6 +369,37 @@ void publickey_free(ssh_public_key key) {
       break;
   }
   SAFE_FREE(key);
+}
+
+ssh_public_key publickey_from_privatekey(ssh_private_key prv) {
+    struct ssh_public_key_struct *p;
+    ssh_key privkey;
+    ssh_key pubkey;
+    int rc;
+
+    privkey = ssh_key_new();
+    if (privkey == NULL) {
+        return NULL;
+    }
+
+    privkey->type = prv->type;
+    privkey->type_c = ssh_key_type_to_char(privkey->type);
+    privkey->flags = SSH_KEY_FLAG_PRIVATE | SSH_KEY_FLAG_PUBLIC;
+    privkey->dsa = prv->dsa_priv;
+    privkey->rsa = prv->rsa_priv;
+
+    rc = ssh_pki_export_privkey_to_pubkey(privkey, &pubkey);
+    privkey->dsa = NULL;
+    privkey->rsa = NULL;
+    ssh_key_free(privkey);
+    if (rc < 0) {
+        return NULL;
+    }
+
+    p = ssh_pki_convert_key_to_publickey(pubkey);
+    ssh_key_free(pubkey);
+
+    return p;
 }
 
 ssh_private_key privatekey_from_file(ssh_session session,
