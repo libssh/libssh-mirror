@@ -52,7 +52,6 @@
 #include "libssh/socket.h"
 #include "libssh/buffer.h"
 #include "libssh/session.h"
-#include "libssh/keys.h"
 #include "libssh/poll.h"
 #include "libssh/pki.h"
 

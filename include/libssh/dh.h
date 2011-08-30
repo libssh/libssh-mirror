@@ -21,10 +21,8 @@
 
 #ifndef DH_H_
 #define DH_H_
-#include "config.h"
 
-/* DH key generation */
-#include "libssh/keys.h"
+#include "config.h"
 
 void ssh_print_bignum(const char *which,bignum num);
 int dh_generate_e(ssh_session session);

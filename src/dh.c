@@ -53,7 +53,6 @@
 #include "libssh/crypto.h"
 #include "libssh/buffer.h"
 #include "libssh/session.h"
-#include "libssh/keys.h"
 #include "libssh/misc.h"
 #include "libssh/dh.h"
 #include "libssh/ssh2.h"
