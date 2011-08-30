@@ -48,6 +48,7 @@ struct argument_s {
   unsigned int datasize;
   unsigned int chunksize;
   int concurrent_requests;
+  char *cipher;
 };
 
 extern char *buffer;

@@ -155,7 +155,7 @@ int benchmarks_raw_up (ssh_session session, struct argument_s *args,
   if(args->verbose>0)
     fprintf(stdout,"Finished upload, now waiting the ack\n");
 
-  if((err=ssh_channel_read(channel,buffer,sizeof(buffer)-1,0))==SSH_ERROR)
+  if((err=ssh_channel_read(channel,buffer,5,0))==SSH_ERROR)
       goto error;
   buffer[err]=0;
   if(!strstr(buffer,"done")){

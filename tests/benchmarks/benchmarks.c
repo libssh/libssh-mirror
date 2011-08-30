@@ -178,6 +178,15 @@ static struct argp_option options[] = {
     .doc   = "[async SFTP] number of concurrent requests",
     .group = 0
   },
+  {
+    .name  = "cipher",
+    .key   = 'C',
+    .arg   = "cipher",
+    .flags = 0,
+    .doc   = "Cryptographic cipher to be used",
+    .group = 0
+  },
+
   {NULL, 0, NULL, 0, NULL, 0}
 };
 
@@ -214,6 +223,9 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
     case 'c':
       arguments->chunksize = atoi(arg);
       break;
+    case 'C':
+      arguments->cipher = arg;
+      break;
     case 'h':
       if(arguments->nhosts >= MAX_HOSTS_CONNECT){
         fprintf(stderr, "Too much hosts\n");
@@ -249,7 +261,8 @@ static void cmdline_parse(int argc, char **argv, struct argument_s *arguments) {
 #else /* HAVE_ARGP_H */
   (void) argc;
   (void) argv;
-  (void) arguments;
+  arguments->hosts[0]="localhost";
+  arguments->nhosts=1;
 #endif /* HAVE_ARGP_H */
 }
 
@@ -260,13 +273,19 @@ static void arguments_init(struct argument_s *arguments){
   arguments->datasize = 10;
 }
 
-static ssh_session connect_host(const char *host, int verbose){
+static ssh_session connect_host(const char *host, int verbose, char *cipher){
   ssh_session session=ssh_new();
   if(session==NULL)
     goto error;
   if(ssh_options_set(session,SSH_OPTIONS_HOST, host)<0)
     goto error;
   ssh_options_set(session, SSH_OPTIONS_LOG_VERBOSITY, &verbose);
+  if(cipher != NULL){
+    if (ssh_options_set(session, SSH_OPTIONS_CIPHERS_C_S, cipher) ||
+        ssh_options_set(session, SSH_OPTIONS_CIPHERS_S_C, cipher)){
+      goto error;
+    }
+  }
   if(ssh_connect(session)==SSH_ERROR)
     goto error;
   if(ssh_userauth_autopubkey(session,NULL) != SSH_AUTH_SUCCESS)
@@ -311,7 +330,7 @@ static void do_benchmarks(ssh_session session, struct argument_s *arguments,
   }
   err=benchmarks_ssh_latency(session, &ssh_rtt);
   if(err==0){
-    fprintf(stdout, "SSH RTT : %f ms\n",ssh_rtt);
+    fprintf(stdout, "SSH RTT : %f ms. Theoretical max BW (win=128K) : %s\n",ssh_rtt,network_speed(128000.0/(ssh_rtt / 1000.0)));
   }
   for (i=0 ; i<BENCHMARK_NUMBER ; ++i){
     b = &benchmarks[i];
@@ -343,7 +362,7 @@ int main(int argc, char **argv){
     }
     arguments.ntests=BENCHMARK_NUMBER;
   }
-  buffer=malloc(arguments.chunksize);
+  buffer=malloc(arguments.chunksize > 1024 ? arguments.chunksize : 1024);
   if(buffer == NULL){
     fprintf(stderr,"Allocation of chunk buffer failed\n");
     return EXIT_FAILURE;
@@ -364,7 +383,7 @@ int main(int argc, char **argv){
   for(i=0; i<arguments.nhosts;++i){
     if(arguments.verbose > 0)
       fprintf(stdout,"Connecting to \"%s\"...\n",arguments.hosts[i]);
-    session=connect_host(arguments.hosts[i], arguments.verbose);
+    session=connect_host(arguments.hosts[i], arguments.verbose, arguments.cipher);
     if(session != NULL && arguments.verbose > 0)
       fprintf(stdout,"Success\n");
     if(session == NULL){
