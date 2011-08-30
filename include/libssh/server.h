@@ -285,10 +285,13 @@ LIBSSH_API const char *ssh_message_auth_password(ssh_message msg);
 /**
  * @brief Get the publickey of the authenticated user.
  *
+ * If you need the key for later user you should duplicate it.
+ *
  * @param[in] msg       The message to get the public key from.
  *
  * @return              The public key or NULL.
  *
+ * @see ssh_key_dup()
  * @see ssh_message_get()
  * @see ssh_message_type()
  */
