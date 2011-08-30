@@ -655,6 +655,7 @@ int ssh_pki_import_pubkey_blob(const ssh_string key_blob,
     ssh_buffer buffer;
     ssh_string type_s = NULL;
     char *type_c = NULL;
+    enum ssh_keytypes_e type;
     int rc;
 
     if (key_blob == NULL || pkey == NULL) {
@@ -687,10 +688,16 @@ int ssh_pki_import_pubkey_blob(const ssh_string key_blob,
     }
     ssh_string_free(type_s);
 
-    rc = pki_import_pubkey_buffer(buffer, ssh_key_type_from_name(type_c), pkey);
+    type = ssh_key_type_from_name(type_c);
+    free(type_c);
+    if (type == SSH_KEYTYPE_UNKNOWN) {
+        ssh_pki_log("Unknown key type found!");
+        goto fail;
+    }
+
+    rc = pki_import_pubkey_buffer(buffer, type, pkey);
 
     ssh_buffer_free(buffer);
-    free(type_c);
 
     return rc;
 fail:
