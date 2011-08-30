@@ -27,6 +27,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <gcrypt.h>
+#include <stdio.h>
 
 #include "libssh/priv.h"
 #include "libssh/buffer.h"
