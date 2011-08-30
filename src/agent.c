@@ -441,8 +441,8 @@ ssh_string ssh_agent_sign_data(ssh_session session,
         return NULL;
     }
 
-    key_blob = ssh_pki_export_pubkey_blob(pubkey);
-    if (key_blob == NULL) {
+    rc = ssh_pki_export_pubkey_blob(pubkey, &key_blob);
+    if (rc < 0) {
         ssh_buffer_free(request);
         return NULL;
     }

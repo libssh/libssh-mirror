@@ -424,8 +424,8 @@ ssh_string publickey_from_file(ssh_session session, const char *filename,
         return NULL;
     }
 
-    key_str = ssh_pki_export_pubkey_blob(key);
-    if (key_str == NULL) {
+    rc = ssh_pki_export_pubkey_blob(key, &key_str);
+    if (rc < 0) {
         return NULL;
     }
 
@@ -477,6 +477,7 @@ ssh_public_key publickey_from_string(ssh_session session, ssh_string pubkey_s) {
 ssh_string publickey_to_string(ssh_public_key pubkey) {
     ssh_key key;
     ssh_string key_blob;
+    int rc;
 
     key = ssh_key_new();
     if (key == NULL) {
@@ -489,7 +490,10 @@ ssh_string publickey_to_string(ssh_public_key pubkey) {
     key->dsa = pubkey->dsa_pub;
     key->rsa = pubkey->rsa_pub;
 
-    key_blob = ssh_pki_export_pubkey_blob(key);
+    rc = ssh_pki_export_pubkey_blob(key, &key_blob);
+    if (rc < 0) {
+        key_blob = NULL;
+    }
 
     key->dsa = NULL;
     key->rsa = NULL;

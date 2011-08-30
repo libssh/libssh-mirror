@@ -75,7 +75,8 @@ int ssh_pki_signature_verify_blob(ssh_session session,
                                   size_t dlen);
 
 /* SSH Public Key Functions */
-ssh_string ssh_pki_export_pubkey_blob(const ssh_key key);
+int ssh_pki_export_pubkey_blob(const ssh_key key,
+                               ssh_string *pblob);
 int ssh_pki_import_pubkey_blob(const ssh_string key_blob,
                                ssh_key *pkey);
 

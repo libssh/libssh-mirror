@@ -800,23 +800,39 @@ ssh_key ssh_pki_publickey_from_privatekey(const ssh_key privkey) {
 }
 
 /**
+ * @internal
+ *
  * @brief Create a key_blob from a public key.
  *
  * The "key_blob" is encoded as per RFC 4253 section 6.6 "Public Key
  * Algorithms" for any of the supported protocol 2 key types.
  *
- * @param[in] key       A public or private key to create the public ssh_string
+ * @param[in]  key      A public or private key to create the public ssh_string
  *                      from.
  *
- * @return              The key_blob or NULL on error.
+ * @param[out] pblob    A pointer to store the newly allocated key blob. You
+ *                      NEED to free it.
+ *
+ * @return              SSH_OK on success, SSH_ERROR otherwise.
+ *
+ * @see ssh_string_free()
  */
-ssh_string ssh_pki_export_pubkey_blob(const ssh_key key)
+int ssh_pki_export_pubkey_blob(const ssh_key key,
+                               ssh_string *pblob)
 {
+    ssh_string blob;
+
     if (key == NULL) {
-        return NULL;
+        return SSH_OK;
     }
 
-    return pki_publickey_to_blob(key);
+    blob = pki_publickey_to_blob(key);
+    if (blob == NULL) {
+        return SSH_ERROR;
+    }
+
+    *pblob = blob;
+    return SSH_OK;
 }
 
 /**

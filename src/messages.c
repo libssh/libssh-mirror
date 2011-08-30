@@ -415,8 +415,8 @@ static ssh_buffer ssh_msg_userauth_build_digest(ssh_session session,
     }
 
     /* Add the publickey as blob */
-    str = ssh_pki_export_pubkey_blob(msg->auth_request.pubkey);
-    if (str == NULL) {
+    rc = ssh_pki_export_pubkey_blob(msg->auth_request.pubkey, &str);
+    if (rc < 0) {
         ssh_buffer_free(buffer);
         return NULL;
     }

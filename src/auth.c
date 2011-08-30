@@ -601,8 +601,8 @@ int ssh_userauth_try_publickey(ssh_session session,
     }
 
     /* public key */
-    str = ssh_pki_export_pubkey_blob(pubkey);
-    if (str == NULL) {
+    rc = ssh_pki_export_pubkey_blob(pubkey, &str);
+    if (rc < 0) {
         goto fail;
     }
 
@@ -763,8 +763,8 @@ int ssh_userauth_publickey(ssh_session session,
     }
 
     /* public key */
-    str = ssh_pki_export_pubkey_blob(privkey);
-    if (str == NULL) {
+    rc = ssh_pki_export_pubkey_blob(privkey, &str);
+    if (rc < 0) {
         goto fail;
     }
 
@@ -899,8 +899,8 @@ static int ssh_userauth_agent_publickey(ssh_session session,
     }
 
     /* public key */
-    str = ssh_pki_export_pubkey_blob(pubkey);
-    if (str == NULL) {
+    rc = ssh_pki_export_pubkey_blob(pubkey, &str);
+    if (rc < 0) {
         goto fail;
     }
 

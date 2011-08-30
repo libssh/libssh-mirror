@@ -159,6 +159,7 @@ static int dh_handshake_server(ssh_session session) {
   ssh_string pubkey_blob;
   ssh_string sig_blob;
   ssh_string f;
+  int rc;
 
   if (dh_generate_y(session) < 0) {
     ssh_set_error(session, SSH_FATAL, "Could not create y number");
@@ -196,9 +197,9 @@ static int dh_handshake_server(ssh_session session) {
     return -1;
   }
 
-  pubkey_blob = ssh_pki_export_pubkey_blob(pubkey);
+  rc = ssh_pki_export_pubkey_blob(pubkey, &pubkey_blob);
   ssh_key_free(pubkey);
-  if (pubkey_blob == NULL) {
+  if (rc < 0) {
     ssh_set_error_oom(session);
     ssh_string_free(f);
     return -1;
@@ -960,8 +961,8 @@ int ssh_message_auth_reply_pk_ok_simple(ssh_message msg) {
         return SSH_ERROR;
     }
 
-    pubkey_blob = ssh_pki_export_pubkey_blob(msg->auth_request.pubkey);
-    if (pubkey_blob == NULL) {
+    ret = ssh_pki_export_pubkey_blob(msg->auth_request.pubkey, &pubkey_blob);
+    if (ret < 0) {
         ssh_string_free(algo);
         return SSH_ERROR;
     }
