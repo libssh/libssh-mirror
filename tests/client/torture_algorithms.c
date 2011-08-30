@@ -172,6 +172,7 @@ static void torture_algorithms_zlib_openssh(void **state) {
     ssh_disconnect(session);
 }
 
+#ifdef HAVE_LIBCRYPTO
 static void torture_algorithms_ecdh_sha2_nistp256(void **state) {
     ssh_session session = *state;
     int rc;
@@ -192,6 +193,7 @@ static void torture_algorithms_ecdh_sha2_nistp256(void **state) {
 
     ssh_disconnect(session);
 }
+#endif
 
 static void torture_algorithms_dh_group1(void **state) {
     ssh_session session = *state;
@@ -227,7 +229,9 @@ int torture_run_tests(void) {
         unit_test_setup_teardown(torture_algorithms_zlib, setup, teardown),
         unit_test_setup_teardown(torture_algorithms_zlib_openssh, setup, teardown),
         unit_test_setup_teardown(torture_algorithms_dh_group1,setup,teardown),
+#ifdef HAVE_LIBCRYPTO
         unit_test_setup_teardown(torture_algorithms_ecdh_sha2_nistp256,setup,teardown)
+#endif
     };
 
     ssh_init();
