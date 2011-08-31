@@ -2938,6 +2938,7 @@ int ssh_channel_select(ssh_channel *readchans, ssh_channel *writechans,
   int rc;
   int i;
   int tm, tm_base;
+  int firstround=1;
   struct ssh_timestamp ts;
 
   if (timeout != NULL)
@@ -2992,15 +2993,7 @@ int ssh_channel_select(ssh_channel *readchans, ssh_channel *writechans,
         rchans, wchans, echans);
     if (rchans[0] != NULL || wchans[0] != NULL || echans[0] != NULL) {
       /* At least one channel has an event */
-      memcpy(readchans, rchans, (count_ptrs(rchans) + 1) * sizeof(ssh_channel ));
-      memcpy(writechans, wchans, (count_ptrs(wchans) + 1) * sizeof(ssh_channel ));
-      memcpy(exceptchans, echans, (count_ptrs(echans) + 1) * sizeof(ssh_channel ));
-      SAFE_FREE(rchans);
-      SAFE_FREE(wchans);
-      SAFE_FREE(echans);
-      if(event)
-        ssh_event_free(event);
-      return 0;
+      break;
     }
     /* Add all channels' sessions right into an event object */
     if (!event){
@@ -3021,6 +3014,10 @@ int ssh_channel_select(ssh_channel *readchans, ssh_channel *writechans,
         ssh_event_add_session(event, exceptchans[i]->session);
       }
     }
+    /* Get out if the timeout has elapsed */
+    if (!firstround && ssh_timeout_elapsed(&ts, tm_base)){
+      break;
+    }
     /* Here we go */
     rc = ssh_event_dopoll(event,tm);
     if (rc != SSH_OK){
@@ -3031,10 +3028,17 @@ int ssh_channel_select(ssh_channel *readchans, ssh_channel *writechans,
       return rc;
     }
     tm = ssh_timeout_update(&ts, tm_base);
+    firstround=0;
+  } while(1);
 
-  } while(1); /* Return to do loop */
-
-  /* not reached */
+  memcpy(readchans, rchans, (count_ptrs(rchans) + 1) * sizeof(ssh_channel ));
+  memcpy(writechans, wchans, (count_ptrs(wchans) + 1) * sizeof(ssh_channel ));
+  memcpy(exceptchans, echans, (count_ptrs(echans) + 1) * sizeof(ssh_channel ));
+  SAFE_FREE(rchans);
+  SAFE_FREE(wchans);
+  SAFE_FREE(echans);
+  if(event)
+    ssh_event_free(event);
   return 0;
 }
 

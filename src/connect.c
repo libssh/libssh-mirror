@@ -403,6 +403,13 @@ socket_t ssh_connect_host_nonblocking(ssh_session session, const char *host,
  * @{
  */
 
+static int ssh_select_cb (socket_t fd, int revents, void *userdata){
+  fd_set *set = (fd_set *)userdata;
+  if(revents & POLLIN)
+    FD_SET(fd, set);
+  return 0;
+}
+
 /**
  * @brief A wrapper for the select syscall
  *
@@ -422,132 +429,72 @@ socket_t ssh_connect_host_nonblocking(ssh_session session, const char *host,
  *
  * @param[in]  timeout  A timeout for the select.
  *
- * @return              -1 if an error occured. SSH_EINTR if it was interrupted, in
- *                      that case, just restart it.
+ * @return              SSH_OK on success,
+ *                      SSH_ERROR on error,
+ *                      SSH_EINTR if it was interrupted. In that case,
+ *                      just restart it.
  *
- * @warning libssh is not threadsafe here. That means that if a signal is caught
- *          during the processing of this function, you cannot call ssh
+ * @warning libssh is not reentrant here. That means that if a signal is caught
+ *          during the processing of this function, you cannot call libssh
  *          functions on sessions that are busy with ssh_select().
  *
  * @see select(2)
  */
 int ssh_select(ssh_channel *channels, ssh_channel *outchannels, socket_t maxfd,
     fd_set *readfds, struct timeval *timeout) {
-  struct timeval zerotime;
-  fd_set localset, localset2;
-  socket_t f;
-  int rep;
-  int set;
-  int i;
-  int j;
+  int i,j;
+  int rc;
+  int base_tm, tm;
+  struct ssh_timestamp ts;
+  ssh_event event = ssh_event_new();
+  int firstround=1;
 
-  zerotime.tv_sec = 0;
-  zerotime.tv_usec = 0;
-
-  /*
-   * First, poll the maxfd file descriptors from the user with a zero-second
-   * timeout. They have the bigger priority.
-   */
-  if (maxfd > 0) {
-    memcpy(&localset, readfds, sizeof(fd_set));
-    rep = select(maxfd, &localset, NULL, NULL, &zerotime);
-    /* catch the eventual errors */
-    if (rep==-1) {
-      return -1;
+  base_tm = tm=timeout->tv_sec * 1000 + timeout->tv_usec/1000;
+  for (i=0 ; channels[i] != NULL; ++i){
+    ssh_event_add_session(event, channels[i]->session);
+  }
+  for (i=0; i<maxfd ; ++i){
+    if(FD_ISSET(i, readfds)){
+      ssh_event_add_fd(event, i, POLLIN, ssh_select_cb, readfds);
     }
   }
-
-  /* Poll every channel */
-  j = 0;
-  for (i = 0; channels[i]; i++) {
-    if (channels[i]->session->alive) {
-      if(ssh_channel_poll(channels[i], 0) > 0) {
+  outchannels[0] = NULL;
+  FD_ZERO(readfds);
+  ssh_timestamp_init(&ts);
+  do {
+    /* Poll every channel */
+    j = 0;
+    for (i = 0; channels[i]; i++) {
+      if(ssh_channel_poll(channels[i], 0) != 0) {
         outchannels[j] = channels[i];
         j++;
-      } else {
-        if(ssh_channel_poll(channels[i], 1) > 0) {
-          outchannels[j] = channels[i];
-          j++;
-        }
-      }
-    }
-  }
-  outchannels[j] = NULL;
-
-  /* Look into the localset for active fd */
-  set = 0;
-  for (f = 0; (f < maxfd) && !set; f++) {
-    if (FD_ISSET(f, &localset)) {
-      set = 1;
-    }
-  }
-
-  /* j != 0 means a channel has data */
-  if( (j != 0) || (set != 0)) {
-    if(maxfd > 0) {
-      memcpy(readfds, &localset, sizeof(fd_set));
-    }
-    return 0;
-  }
-
-  /*
-   * At this point, not any channel had any data ready for reading, nor any fd
-   * had data for reading.
-   */
-  memcpy(&localset, readfds, sizeof(fd_set));
-  for (i = 0; channels[i]; i++) {
-    if (channels[i]->session->alive) {
-      ssh_socket_fd_set(channels[i]->session->socket, &localset, &maxfd);
-    }
-  }
-
-  rep = select(maxfd, &localset, NULL, NULL, timeout);
-  if (rep == -1 && errno == EINTR) {
-    /* Interrupted by a signal */
-    return SSH_EINTR;
-  }
-
-  if (rep == -1) {
-    /*
-     * Was the error due to a libssh's channel or from a closed descriptor from
-     * the user? User closed descriptors have been caught in the first select
-     * and not closed since that moment. That case shouldn't occur at all
-     */
-    return -1;
-  }
-
-  /* Set the data_to_read flag on each session */
-  for (i = 0; channels[i]; i++) {
-    if (channels[i]->session->alive &&
-        ssh_socket_fd_isset(channels[i]->session->socket,&localset)) {
-      ssh_socket_set_read_wontblock(channels[i]->session->socket);
-    }
-  }
-
-  /* Now, test each channel */
-  j = 0;
-  for (i = 0; channels[i]; i++) {
-    if (channels[i]->session->alive &&
-        ssh_socket_fd_isset(channels[i]->session->socket,&localset)) {
-      if ((ssh_channel_poll(channels[i],0) > 0) ||
-          (ssh_channel_poll(channels[i], 1) > 0)) {
+      } else if(ssh_channel_poll(channels[i], 1) != 0) {
         outchannels[j] = channels[i];
         j++;
       }
     }
-  }
-  outchannels[j] = NULL;
-
-  FD_ZERO(&localset2);
-  for (f = 0; f < maxfd; f++) {
-    if (FD_ISSET(f, readfds) && FD_ISSET(f, &localset)) {
-      FD_SET(f, &localset2);
+    outchannels[j] = NULL;
+    if(j != 0)
+      break;
+    /* watch if a user socket was triggered */
+    for(i = 0;i<maxfd;++i)
+      if(FD_ISSET(i, readfds))
+        goto out;
+    /* If the timeout is elapsed, we should go out */
+    if(!firstround && ssh_timeout_elapsed(&ts, base_tm))
+      goto out;
+    /* since there's nothing, let's fire the polling */
+    rc = ssh_event_dopoll(event,tm);
+    if (rc == SSH_ERROR){
+      ssh_event_free(event);
+      return SSH_ERROR;
     }
-  }
-
-  memcpy(readfds, &localset2, sizeof(fd_set));
-
-  return 0;
+    tm = ssh_timeout_update(&ts, base_tm);
+    firstround=0;
+  } while (1);
+out:
+  ssh_event_free(event);
+  return SSH_OK;
 }
 
 /** @} */
