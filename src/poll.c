@@ -440,24 +440,9 @@ ssh_poll_ctx ssh_poll_ctx_new(size_t chunk_size) {
  */
 void ssh_poll_ctx_free(ssh_poll_ctx ctx) {
   if (ctx->polls_allocated > 0) {
-    register size_t i, used;
-
-    used = ctx->polls_used;
-    for (i = 0; i < used; ) {
-      ssh_poll_handle p = ctx->pollptrs[i];
-      socket_t fd = ctx->pollfds[i].fd;
-
-      /* force poll object removal */
-      if (p->cb && p->cb(p, fd, POLLERR, p->cb_data) < 0) {
-        if(ctx->polls_used < used) {
-            used = ctx->polls_used;
-        } else {
-            /* nothing to do */
-            i++;
-        }
-      } else {
-        i++;
-      }
+    while (ctx->polls_used > 0){
+      ssh_poll_handle p = ctx->pollptrs[0];
+      ssh_poll_ctx_remove(ctx, p);
     }
 
     SAFE_FREE(ctx->pollptrs);
