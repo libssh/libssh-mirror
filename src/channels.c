@@ -1133,6 +1133,8 @@ int channel_write_common(ssh_channel channel, const void *data,
   uint32_t origlen = len;
   size_t effectivelen;
   size_t maxpacketlen;
+  int timeout;
+  int rc;
 
   if(channel == NULL || data == NULL) {
       return -1;
@@ -1150,7 +1152,10 @@ int channel_write_common(ssh_channel channel, const void *data,
   }
 
   enter_function();
-
+  if(ssh_is_blocking(session))
+    timeout = -2;
+  else
+    timeout = 0;
   /*
    * Handle the max packet len from remote side, be nice
    * 10 bytes for the headers
@@ -1174,7 +1179,7 @@ int channel_write_common(ssh_channel channel, const void *data,
 
 #ifdef WITH_SSH1
   if (channel->version == 1) {
-    int rc = channel_write1(channel, data, len);
+    rc = channel_write1(channel, data, len);
     leave_function();
     return rc;
   }
@@ -1191,7 +1196,10 @@ int channel_write_common(ssh_channel channel, const void *data,
           /* nothing can be written */
           ssh_log(session, SSH_LOG_PROTOCOL,
                 "Wait for a growing window message...");
-          goto out;
+          rc = ssh_handle_packets(session, timeout);
+          if (rc == SSH_ERROR || (channel->remote_window == 0 && timeout==0))
+            goto out;
+          continue;
       }
       effectivelen = len > channel->remote_window ? channel->remote_window : len;
     } else {
@@ -1230,7 +1238,10 @@ int channel_write_common(ssh_channel channel, const void *data,
     len -= effectivelen;
     data = ((uint8_t*)data + effectivelen);
   }
-
+  /* it's a good idea to flush the socket now */
+  do {
+    rc = ssh_handle_packets(session, timeout);
+  } while(ssh_socket_buffered_write_bytes(session->socket) > 0 && timeout != 0);
 out:
   leave_function();
   return (int)(origlen - len);
