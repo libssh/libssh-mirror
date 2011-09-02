@@ -892,7 +892,10 @@ int channel_default_bufferize(ssh_channel channel, void *data, int len,
  *
  * @param[in]  channel  An allocated channel.
  *
- * @return              SSH_OK on success, SSH_ERROR if an error occured.
+ * @return              SSH_OK on success,
+ *                      SSH_ERROR if an error occurred,
+ *                      SSH_AGAIN if in nonblocking mode and call has
+ *                      to be done again.
  *
  * @see channel_open_forward()
  * @see channel_request_env()
@@ -933,7 +936,10 @@ int ssh_channel_open_session(ssh_channel channel) {
  * @param[in]  localport  The port on the host from where the connection
  *                        originated. This is mostly for logging purposes.
  *
- * @return              SSH_OK on success, SSH_ERROR if an error occured.
+ * @return              SSH_OK on success,
+ *                      SSH_ERROR if an error occurred,
+ *                      SSH_AGAIN if in nonblocking mode and call has
+ *                      to be done again.
  *
  * @warning This function does not bind the local port and does not automatically
  *          forward the content of a socket to the channel. You still have to
@@ -1047,7 +1053,7 @@ void ssh_channel_free(ssh_channel channel) {
  *
  * @param[in]  channel  The channel to send the eof to.
  *
- * @return              SSH_OK on success, SSH_ERROR if an error occured.
+ * @return              SSH_OK on success, SSH_ERROR if an error occurred.
  *
  * @see channel_close()
  * @see channel_free()
@@ -1096,7 +1102,7 @@ error:
  *
  * @param[in]  channel  The channel to close.
  *
- * @return              SSH_OK on success, SSH_ERROR if an error occured.
+ * @return              SSH_OK on success, SSH_ERROR if an error occurred.
  *
  * @see channel_free()
  * @see channel_eof()
@@ -1613,7 +1619,10 @@ error:
  *
  * @param[in]  channel  The channel to send the request.
  *
- * @return              SSH_OK on success, SSH_ERROR if an error occured.
+ * @return              SSH_OK on success,
+ *                      SSH_ERROR if an error occurred,
+ *                      SSH_AGAIN if in nonblocking mode and call has
+ *                      to be done again.
  *
  * @see channel_request_pty_size()
  */
@@ -1630,7 +1639,7 @@ int ssh_channel_request_pty(ssh_channel channel) {
  *
  * @param[in]  rows     The new number of rows.
  *
- * @return              SSH_OK on success, SSH_ERROR if an error occured.
+ * @return              SSH_OK on success, SSH_ERROR if an error occurred.
  *
  * @warning Do not call it from a signal handler if you are not sure any other
  *          libssh function using the same channel/session is running at same
@@ -2089,8 +2098,11 @@ error:
  * @param[in]  bound_port The pointer to get actual bound port. Pass NULL to
  *                        ignore.
  *
- * @return              SSH_OK on success, SSH_ERROR if an error occured.
- */
+ * @return              SSH_OK on success,
+ *                      SSH_ERROR if an error occurred,
+ *                      SSH_AGAIN if in nonblocking mode and call has
+ *                      to be done again.
+ **/
 int ssh_forward_listen(ssh_session session, const char *address, int port, int *bound_port) {
   ssh_buffer buffer = NULL;
   ssh_string addr = NULL;
@@ -2157,7 +2169,10 @@ ssh_channel ssh_forward_accept(ssh_session session, int timeout_ms) {
  *
  * @param[in]  port     The bound port on the server.
  *
- * @return              SSH_OK on success, SSH_ERROR if an error occured.
+ * @return              SSH_OK on success,
+ *                      SSH_ERROR if an error occurred,
+ *                      SSH_AGAIN if in nonblocking mode and call has
+ *                      to be done again.
  */
 int ssh_forward_cancel(ssh_session session, const char *address, int port) {
   ssh_buffer buffer = NULL;
@@ -2370,7 +2385,7 @@ error:
  *                      SIGUSR1  -> USR1 \n
  *                      SIGUSR2  -> USR2 \n
  *
- * @return              SSH_OK on success, SSH_ERROR if an error occured
+ * @return              SSH_OK on success, SSH_ERROR if an error occurred
  *                      (including attempts to send signal via SSH-v1 session).
  */
 int ssh_channel_request_send_signal(ssh_channel channel, const char *sig) {
@@ -2515,7 +2530,8 @@ int channel_read_buffer(ssh_channel channel, ssh_buffer buffer, uint32_t count,
  * @param[in]  is_stderr A boolean value to mark reading from the stderr flow.
  *
  * @return              The number of bytes read, 0 on end of file or SSH_ERROR
- *                      on error.
+ *                      on error. Can return 0 if nothing is available in nonblocking
+ *                      mode.
  *
  * @warning This function may return less than count bytes of data, and won't
  *          block until count bytes have been read.
@@ -2526,7 +2542,11 @@ int ssh_channel_read(ssh_channel channel, void *dest, uint32_t count, int is_std
   ssh_session session;
   ssh_buffer stdbuf;
   uint32_t len;
+<<<<<<< HEAD
   int rc;
+=======
+  int ret;
+>>>>>>> 6091147... channel: ssh_channel_read is nonblocking, + docfixes
 
   if(channel == NULL) {
       return SSH_ERROR;
@@ -2539,6 +2559,11 @@ int ssh_channel_read(ssh_channel channel, void *dest, uint32_t count, int is_std
   session = channel->session;
   stdbuf = channel->stdout_buffer;
   enter_function();
+  if(!ssh_is_blocking(session)){
+    ret = ssh_channel_read_nonblocking(channel, dest, count, is_stderr);
+    leave_function();
+    return ret;
+  }
 
   if (count == 0) {
     leave_function();
@@ -3058,7 +3083,10 @@ int ssh_channel_write_stderr(ssh_channel channel, const void *data, uint32_t len
  * @param[in]  localport  The source port (your local computer). It's optional
  *                        and for logging purpose.
  *
- * @return              SSH_OK on success, SSH_ERROR if an error occured.
+ * @return              SSH_OK on success,
+ *                      SSH_ERROR if an error occurred,
+ *                      SSH_AGAIN if in nonblocking mode and call has
+ *                      to be done again.
  *
  * @warning This function does not bind the local port and does not automatically
  *          forward the content of a socket to the channel. You still have to
@@ -3138,8 +3166,10 @@ error:
  *
  * @param[in]  orig_port    The source port (the local server).
  *
- * @return              SSH_OK on success, SSH_ERROR if an error occured.
- *
+ * @return              SSH_OK on success,
+ *                      SSH_ERROR if an error occurred,
+ *                      SSH_AGAIN if in nonblocking mode and call has
+ *                      to be done again.
  * @warning This function does not bind the local port and does not automatically
  *          forward the content of a socket to the channel. You still have to
  *          use channel_read and channel_write for this.
@@ -3207,7 +3237,7 @@ error:
  *
  * @param[in]  sig      The exit status to send
  *
- * @return              SSH_OK on success, SSH_ERROR if an error occured
+ * @return              SSH_OK on success, SSH_ERROR if an error occurred
  *                      (including attempts to send exit status via SSH-v1 session).
  */
 int ssh_channel_request_send_exit_status(ssh_channel channel, int exit_status) {
@@ -3257,7 +3287,7 @@ error:
  * @param[in]  errmsg   A CRLF explanation text about the error condition
  * @param[in]  lang     The language used in the message (format: RFC 3066)
  *
- * @return              SSH_OK on success, SSH_ERROR if an error occured
+ * @return              SSH_OK on success, SSH_ERROR if an error occurred
  *                      (including attempts to send signal via SSH-v1 session).
  */
 int ssh_channel_request_send_exit_signal(ssh_channel channel, const char *sig,
