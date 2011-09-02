@@ -102,7 +102,7 @@ int channel_change_pty_size1(ssh_channel channel, int cols, int rows);
 int channel_request_shell1(ssh_channel channel);
 int channel_request_exec1(ssh_channel channel, const char *cmd);
 int channel_write1(ssh_channel channel, const void *data, int len);
-
+ssh_channel ssh_get_channel1(ssh_session session);
 #endif
 
 #endif /* CHANNELS_H_ */
