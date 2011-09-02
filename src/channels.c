@@ -109,15 +109,9 @@ ssh_channel ssh_channel_new(ssh_session session) {
   channel->exit_status = -1;
 
   if(session->channels == NULL) {
-    session->channels = channel;
-    channel->next = channel->prev = channel;
-    return channel;
+    session->channels = ssh_list_new();
   }
-  channel->next = session->channels;
-  channel->prev = session->channels->prev;
-  channel->next->prev = channel;
-  channel->prev->next = channel;
-
+  ssh_list_prepend(session->channels, channel);
   return channel;
 }
 
@@ -331,23 +325,20 @@ end:
 
 /* return channel with corresponding local id, or NULL if not found */
 ssh_channel ssh_channel_from_local(ssh_session session, uint32_t id) {
-    ssh_channel initchan = session->channels;
-    ssh_channel channel = initchan;
+  struct ssh_iterator *it;
+  ssh_channel channel;
 
-    for (;;) {
-        if (channel == NULL) {
-            return NULL;
-        }
-        if (channel->local_channel == id) {
-            return channel;
-        }
-        if (channel->next == initchan) {
-            return NULL;
-        }
-        channel = channel->next;
+  for (it = ssh_list_get_iterator(session->channels); it != NULL ; it=it->next) {
+    channel = ssh_iterator_value(ssh_channel, it);
+    if (channel == NULL) {
+      continue;
     }
+    if (channel->local_channel == id) {
+      return channel;
+    }
+  }
 
-    return NULL;
+  return NULL;
 }
 
 /**
@@ -1022,6 +1013,7 @@ error:
  */
 void ssh_channel_free(ssh_channel channel) {
   ssh_session session;
+  struct ssh_iterator *it;
 
   if (channel == NULL) {
     return;
@@ -1034,19 +1026,10 @@ void ssh_channel_free(ssh_channel channel) {
     ssh_channel_close(channel);
   }
 
-  /* handle the "my channel is first on session list" case */
-  if (session->channels == channel) {
-    session->channels = channel->next;
+  it = ssh_list_find(session->channels, channel);
+  if(it != NULL){
+    ssh_list_remove(session->channels, it);
   }
-
-  /* handle the "my channel is the only on session list" case */
-  if (channel->next == channel) {
-    session->channels = NULL;
-  } else {
-    channel->prev->next = channel->next;
-    channel->next->prev = channel->prev;
-  }
-
   ssh_buffer_free(channel->stdout_buffer);
   ssh_buffer_free(channel->stderr_buffer);
 
