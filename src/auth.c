@@ -88,24 +88,15 @@ static int ssh_userauth_request_service(ssh_session session)
     return rc;
 }
 
-static int auth_status_termination(void *user) {
-  ssh_session session = (ssh_session) user;
-
-  switch(session->auth_state) {
+static int auth_status_termination(void *user){
+  ssh_session session=(ssh_session)user;
+  switch(session->auth_state){
     case SSH_AUTH_STATE_NONE:
     case SSH_AUTH_STATE_KBDINT_SENT:
       return 0;
-    case SSH_AUTH_STATE_PARTIAL:
-    case SSH_AUTH_STATE_SUCCESS:
-    case SSH_AUTH_STATE_INFO:
-    case SSH_AUTH_STATE_FAILED:
-    case SSH_AUTH_STATE_ERROR:
-    case SSH_AUTH_STATE_PK_OK:
+    default:
       return 1;
   }
-
-  /* should never been reached */
-  return 1;
 }
 
 /**
@@ -315,17 +306,6 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_pk_ok){
   }
   leave_function();
   return rc;
-}
-
-static int auth_status_termination(void *user){
-  ssh_session session=(ssh_session)user;
-  switch(session->auth_state){
-    case SSH_AUTH_STATE_NONE:
-    case SSH_AUTH_STATE_KBDINT_SENT:
-      return 0;
-    default:
-      return 1;
-  }
 }
 
 /**

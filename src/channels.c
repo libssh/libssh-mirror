@@ -1241,7 +1241,7 @@ int channel_write_common(ssh_channel channel, const void *data,
 
 #ifdef WITH_SSH1
   if (channel->version == 1) {
-    int rc = channel_write1(channel, data, len);
+    rc = channel_write1(channel, data, len);
     leave_function();
     return rc;
   }
