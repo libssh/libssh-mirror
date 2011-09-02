@@ -452,10 +452,22 @@ static int callback_receive_banner(const void *data, size_t len, void *user) {
     return ret;
 }
 
+/* returns 0 until the key exchange is not finished */
+static int ssh_server_kex_termination(void *s){
+  ssh_session session = s;
+  if (session->session_state != SSH_SESSION_STATE_ERROR &&
+      session->session_state != SSH_SESSION_STATE_AUTHENTICATING &&
+      session->session_state != SSH_SESSION_STATE_DISCONNECTED)
+    return 0;
+  else
+    return 1;
+}
+
 /* Do the banner and key exchange */
 int ssh_handle_key_exchange(ssh_session session) {
     int rc;
-
+    if (session->session_state != SSH_SESSION_STATE_NONE)
+      goto pending;
     rc = ssh_send_banner(session, 1);
     if (rc < 0) {
         return SSH_ERROR;
@@ -474,22 +486,16 @@ int ssh_handle_key_exchange(ssh_session session) {
     if (rc < 0) {
         return SSH_ERROR;
     }
-
-    while (session->session_state != SSH_SESSION_STATE_ERROR &&
-           session->session_state != SSH_SESSION_STATE_AUTHENTICATING &&
-           session->session_state != SSH_SESSION_STATE_DISCONNECTED) {
-        /*
-         * loop until SSH_SESSION_STATE_BANNER_RECEIVED or
-         * SSH_SESSION_STATE_ERROR
-         */
-        ssh_handle_packets(session, -2);
-        ssh_log(session,SSH_LOG_PACKET, "ssh_handle_key_exchange: Actual state : %d",
-                session->session_state);
-    }
-
+    pending:
+    rc = ssh_handle_packets_termination(session, SSH_TIMEOUT_USER,
+        ssh_server_kex_termination,session);
+    ssh_log(session,SSH_LOG_PACKET, "ssh_handle_key_exchange: Actual state : %d",
+        session->session_state);
+    if (rc != SSH_OK)
+      return rc;
     if (session->session_state == SSH_SESSION_STATE_ERROR ||
         session->session_state == SSH_SESSION_STATE_DISCONNECTED) {
-        return SSH_ERROR;
+      return SSH_ERROR;
     }
 
   return SSH_OK;

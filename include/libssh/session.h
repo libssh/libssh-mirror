@@ -62,6 +62,11 @@ enum ssh_pending_call_e {
 /* libssh calls may block an undefined amount of time */
 #define SSH_SESSION_FLAG_BLOCKING 1
 
+/* codes to use with ssh_handle_packets*() */
+#define SSH_TIMEOUT_INFINITE -1
+#define SSH_TIMEOUT_USER -2
+#define SSH_TIMEOUT_NONBLOCKING 0
+
 /* members that are common to ssh_session and ssh_bind */
 struct ssh_common_struct {
     struct error_struct error;

@@ -933,7 +933,7 @@ int ssh_timeout_elapsed(struct ssh_timestamp *ts, int timeout) {
   struct ssh_timestamp now;
   if(timeout < 0)
     return 0; // -1 means infinite timeout
-  if(timeout == 0)
+  if(timeout == SSH_TIMEOUT_NONBLOCKING)
     return 1; // 0 means no timeout
   ssh_timestamp_init(&now);
 
@@ -948,8 +948,7 @@ int ssh_timeout_elapsed(struct ssh_timestamp *ts, int timeout) {
  * @param[in] ts pointer to an existing timestamp
  * @param[in] timeout timeout in milliseconds. Negative values mean infinite
  *             timeout
- * @returns   remaining time in milliseconds, 0 if elapsed, -1 if never,
- *            -2 if option-set-timeout.
+ * @returns   remaining time in milliseconds, 0 if elapsed, -1 if never.
  */
 int ssh_timeout_update(struct ssh_timestamp *ts, int timeout){
   struct ssh_timestamp now;

@@ -160,18 +160,32 @@ ssh_message ssh_message_pop_head(ssh_session session){
   return msg;
 }
 
+/* Returns 1 if there is a message available */
+static int ssh_message_termination(void *s){
+  ssh_session session = s;
+  struct ssh_iterator *it;
+  if(session->session_state == SSH_SESSION_STATE_ERROR)
+    return 1;
+  it = ssh_list_get_iterator(session->ssh_message_list);
+  if(!it)
+    return 0;
+  else
+    return 1;
+}
 /**
  * @brief Retrieve a SSH message from a SSH session.
  *
  * @param[in]  session  The SSH session to get the message.
  *
- * @returns             The SSH message received, NULL in case of error.
+ * @returns             The SSH message received, NULL in case of error, or timeout
+ *                      elapsed.
  *
  * @warning This function blocks until a message has been received. Betterset up
  *          a callback if this behavior is unwanted.
  */
 ssh_message ssh_message_get(ssh_session session) {
   ssh_message msg = NULL;
+  int rc;
   enter_function();
 
   msg=ssh_message_pop_head(session);
@@ -182,13 +196,11 @@ ssh_message ssh_message_get(ssh_session session) {
   if(session->ssh_message_list == NULL) {
       session->ssh_message_list = ssh_list_new();
   }
-  do {
-    if (ssh_handle_packets(session, -2) == SSH_ERROR) {
-      leave_function();
-      return NULL;
-    }
-    msg=ssh_list_pop_head(ssh_message, session->ssh_message_list);
-  } while(msg==NULL);
+  rc = ssh_handle_packets_termination(session, SSH_TIMEOUT_USER,
+      ssh_message_termination, session);
+  if(rc || session->session_state == SSH_SESSION_STATE_ERROR)
+    return NULL;
+  msg=ssh_list_pop_head(ssh_message, session->ssh_message_list);
   leave_function();
   return msg;
 }

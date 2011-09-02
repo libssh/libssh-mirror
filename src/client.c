@@ -386,6 +386,15 @@ SSH_PACKET_CALLBACK(ssh_packet_service_accept){
 	return SSH_PACKET_USED;
 }
 
+static int ssh_service_request_termination(void *s){
+  ssh_session session = (ssh_session)s;
+  if(session->session_state == SSH_SESSION_STATE_ERROR ||
+      session->auth_service_state != SSH_AUTH_SERVICE_SENT)
+    return 1;
+  else
+    return 0;
+}
+
 /**
  * @internal
  *
@@ -405,48 +414,52 @@ int ssh_service_request(ssh_session session, const char *service) {
   ssh_string service_s = NULL;
   int rc=SSH_ERROR;
   enter_function();
-  switch(session->auth_service_state){
-  	case SSH_AUTH_SERVICE_NONE:
-  		if (buffer_add_u8(session->out_buffer, SSH2_MSG_SERVICE_REQUEST) < 0) {
-  			break;
-  		}
-  		service_s = ssh_string_from_char(service);
-  		if (service_s == NULL) {
-  			break;
-  		}
-
-  		if (buffer_add_ssh_string(session->out_buffer,service_s) < 0) {
-  			ssh_string_free(service_s);
-  			break;
-  		}
-  		ssh_string_free(service_s);
-
-  		if (packet_send(session) == SSH_ERROR) {
-  			ssh_set_error(session, SSH_FATAL,
-  					"Sending SSH2_MSG_SERVICE_REQUEST failed.");
-  			break;
-  		}
-
-  		ssh_log(session, SSH_LOG_PACKET,
-  				"Sent SSH_MSG_SERVICE_REQUEST (service %s)", service);
-  		session->auth_service_state=SSH_AUTH_SERVICE_SENT;
-  		rc=SSH_AGAIN;
-  		break;
-  	case SSH_AUTH_SERVICE_DENIED:
-  		ssh_set_error(session,SSH_FATAL,"ssh_auth_service request denied");
-  		break;
-  	case SSH_AUTH_SERVICE_ACCEPTED:
-  		rc=SSH_OK;
-  		break;
-  	case SSH_AUTH_SERVICE_SENT:
-  		rc=SSH_AGAIN;
-  		break;
-  	case SSH_AUTH_SERVICE_USER_SENT:
-  	  /* Invalid state, SSH1 specific */
-  	  rc=SSH_ERROR;
-  	  break;
+  if(session->auth_service_state != SSH_AUTH_SERVICE_NONE)
+    goto pending;
+  if (buffer_add_u8(session->out_buffer, SSH2_MSG_SERVICE_REQUEST) < 0) {
+    goto error;
+  }
+  service_s = ssh_string_from_char(service);
+  if (service_s == NULL) {
+    goto error;
   }
 
+  if (buffer_add_ssh_string(session->out_buffer,service_s) < 0) {
+    ssh_string_free(service_s);
+    goto error;
+  }
+  ssh_string_free(service_s);
+  session->auth_service_state=SSH_AUTH_SERVICE_SENT;
+  if (packet_send(session) == SSH_ERROR) {
+    ssh_set_error(session, SSH_FATAL,
+        "Sending SSH2_MSG_SERVICE_REQUEST failed.");
+    goto error;
+  }
+
+  ssh_log(session, SSH_LOG_PACKET,
+      "Sent SSH_MSG_SERVICE_REQUEST (service %s)", service);
+pending:
+  rc=ssh_handle_packets_termination(session,SSH_TIMEOUT_USER,
+      ssh_service_request_termination, session);
+  if(rc == SSH_ERROR)
+    goto error;
+  switch(session->auth_service_state){
+  case SSH_AUTH_SERVICE_DENIED:
+    ssh_set_error(session,SSH_FATAL,"ssh_auth_service request denied");
+    break;
+  case SSH_AUTH_SERVICE_ACCEPTED:
+    rc=SSH_OK;
+    break;
+  case SSH_AUTH_SERVICE_SENT:
+    rc=SSH_AGAIN;
+    break;
+  case SSH_AUTH_SERVICE_NONE:
+  case SSH_AUTH_SERVICE_USER_SENT:
+    /* Invalid state, SSH1 specific */
+    rc=SSH_ERROR;
+    break;
+  }
+error:
   leave_function();
   return rc;
 }

@@ -94,6 +94,7 @@ SSH_PACKET_CALLBACK(channel_rcv_data);
 ssh_channel ssh_channel_new(ssh_session session);
 int channel_default_bufferize(ssh_channel channel, void *data, int len,
         int is_stderr);
+int ssh_channel_flush(ssh_channel channel);
 uint32_t ssh_channel_new_id(ssh_session session);
 ssh_channel ssh_channel_from_local(ssh_session session, uint32_t id);
 int channel_write_common(ssh_channel channel, const void *data,

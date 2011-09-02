@@ -220,6 +220,15 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_open_fail){
   return SSH_PACKET_USED;
 }
 
+static int ssh_channel_open_termination(void *c){
+  ssh_channel channel = (ssh_channel) c;
+  if (channel->state != SSH_CHANNEL_STATE_OPENING ||
+      channel->session->session_state == SSH_SESSION_STATE_ERROR)
+    return 1;
+  else
+    return 0;
+}
+
 /**
  * @internal
  *
@@ -242,7 +251,6 @@ static int channel_open(ssh_channel channel, const char *type_c, int window,
     int maxpacket, ssh_buffer payload) {
   ssh_session session = channel->session;
   ssh_string type = NULL;
-  int timeout;
   int err=SSH_ERROR;
 
   enter_function();
@@ -304,20 +312,9 @@ static int channel_open(ssh_channel channel, const char *type_c, int window,
       type_c, channel->local_channel);
 pending:
   /* wait until channel is opened by server */
-  if(ssh_is_blocking(session))
-    timeout=-2;
-  else
-    timeout=0;
-  while(channel->state == SSH_CHANNEL_STATE_OPENING){
-      err = ssh_handle_packets(session, timeout);
-      if (err != SSH_OK) {
-          break;
-      }
-      if (session->session_state == SSH_SESSION_STATE_ERROR) {
-          err = SSH_ERROR;
-          break;
-      }
-  }
+  err = ssh_handle_packets_termination(session, SSH_TIMEOUT_USER, ssh_channel_open_termination, channel);
+  if (err != SSH_OK || session->session_state == SSH_SESSION_STATE_ERROR)
+    err = SSH_ERROR;
 end:
   if(channel->state == SSH_CHANNEL_STATE_OPEN)
     err=SSH_OK;
@@ -1173,13 +1170,35 @@ error:
   return rc;
 }
 
+/* this termination function waits for a window growing condition */
+static int ssh_channel_waitwindow_termination(void *c){
+  ssh_channel channel = (ssh_channel) c;
+  if (channel->remote_window > 0 ||
+      channel->session->session_state == SSH_SESSION_STATE_ERROR)
+    return 1;
+  else
+    return 0;
+}
+
+/**
+ * @internal
+ * @brief Flushes a channel (and its session) until the output buffer
+ *        is empty, or timeout elapsed.
+ * @param channel SSH channel
+ * @returns SSH_OK On success,
+ *          SSH_ERROR on error
+ *          SSH_AGAIN Timeout elapsed (or in nonblocking mode)
+ */
+int ssh_channel_flush(ssh_channel channel){
+  return ssh_blocking_flush(channel->session, SSH_TIMEOUT_USER);
+}
+
 int channel_write_common(ssh_channel channel, const void *data,
     uint32_t len, int is_stderr) {
   ssh_session session;
   uint32_t origlen = len;
   size_t effectivelen;
   size_t maxpacketlen;
-  int timeout;
   int rc;
 
   if(channel == NULL) {
@@ -1198,10 +1217,7 @@ int channel_write_common(ssh_channel channel, const void *data,
   }
 
   enter_function();
-  if(ssh_is_blocking(session))
-    timeout = -2;
-  else
-    timeout = 0;
+
   /*
    * Handle the max packet len from remote side, be nice
    * 10 bytes for the headers
@@ -1242,8 +1258,9 @@ int channel_write_common(ssh_channel channel, const void *data,
           /* nothing can be written */
           ssh_log(session, SSH_LOG_PROTOCOL,
                 "Wait for a growing window message...");
-          rc = ssh_handle_packets(session, timeout);
-          if (rc == SSH_ERROR || (channel->remote_window == 0 && timeout==0))
+          rc = ssh_handle_packets_termination(session, SSH_TIMEOUT_USER,
+              ssh_channel_waitwindow_termination,channel);
+          if (rc == SSH_ERROR || !ssh_channel_waitwindow_termination(channel))
             goto out;
           continue;
       }
@@ -1285,9 +1302,9 @@ int channel_write_common(ssh_channel channel, const void *data,
     data = ((uint8_t*)data + effectivelen);
   }
   /* it's a good idea to flush the socket now */
-  do {
-    rc = ssh_handle_packets(session, timeout);
-  } while(ssh_socket_buffered_write_bytes(session->socket) > 0 && timeout != 0);
+  rc = ssh_channel_flush(channel);
+  if(rc == SSH_ERROR)
+    goto error;
 out:
   leave_function();
   return (int)(origlen - len);
@@ -1458,11 +1475,19 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_failure){
   return SSH_PACKET_USED;
 }
 
+static int ssh_channel_request_termination(void *c){
+  ssh_channel channel = (ssh_channel)c;
+  if(channel->request_state != SSH_CHANNEL_REQ_STATE_PENDING ||
+      channel->session->session_state == SSH_SESSION_STATE_ERROR)
+    return 1;
+  else
+    return 0;
+}
+
 static int channel_request(ssh_channel channel, const char *request,
     ssh_buffer buffer, int reply) {
   ssh_session session = channel->session;
   ssh_string req = NULL;
-  int timeout;
   int rc = SSH_ERROR;
 
   enter_function();
@@ -1509,20 +1534,9 @@ static int channel_request(ssh_channel channel, const char *request,
     return SSH_OK;
   }
 pending:
-  if(ssh_is_blocking(session))
-    timeout=-2;
-  else
-    timeout=0;
-  while(channel->request_state == SSH_CHANNEL_REQ_STATE_PENDING){
-    ssh_handle_packets(session, timeout);
-    if(channel->request_state == SSH_CHANNEL_REQ_STATE_PENDING && timeout==0){
-      leave_function();
-      return SSH_AGAIN;
-    }
-    if(session->session_state == SSH_SESSION_STATE_ERROR) {
+  rc = ssh_handle_packets_termination(session,SSH_TIMEOUT_USER, ssh_channel_request_termination, channel);
+  if(session->session_state == SSH_SESSION_STATE_ERROR) {
       channel->request_state = SSH_CHANNEL_REQ_STATE_ERROR;
-      break;
-    }
   }
   /* we received something */
   switch (channel->request_state){
@@ -1539,8 +1553,11 @@ pending:
           "Channel request %s success",request);
       rc=SSH_OK;
       break;
-    case SSH_CHANNEL_REQ_STATE_NONE:
     case SSH_CHANNEL_REQ_STATE_PENDING:
+      rc = SSH_AGAIN;
+      leave_function();
+      return rc;
+    case SSH_CHANNEL_REQ_STATE_NONE:
       /* Never reached */
       ssh_set_error(session, SSH_FATAL, "Invalid state in channel_request()");
       rc=SSH_ERROR;
@@ -1995,6 +2012,15 @@ SSH_PACKET_CALLBACK(ssh_request_denied){
 
 }
 
+static int ssh_global_request_termination(void *s){
+  ssh_session session = (ssh_session) s;
+  if (session->global_req_state != SSH_CHANNEL_REQ_STATE_PENDING ||
+      session->session_state != SSH_SESSION_STATE_ERROR)
+    return 1;
+  else
+    return 0;
+}
+
 /**
  * @internal
  *
@@ -2018,7 +2044,6 @@ static int global_request(ssh_session session, const char *request,
     ssh_buffer buffer, int reply) {
   ssh_string req = NULL;
   int rc = SSH_ERROR;
-  int timeout;
 
   enter_function();
   if(session->global_req_state != SSH_CHANNEL_REQ_STATE_NONE)
@@ -2059,19 +2084,10 @@ static int global_request(ssh_session session, const char *request,
     return SSH_OK;
   }
 pending:
-  if(ssh_is_blocking(session))
-    timeout=-2;
-  else
-    timeout=0;
-  while(session->global_req_state == SSH_CHANNEL_REQ_STATE_PENDING){
-    rc=ssh_handle_packets(session, timeout);
-    if(rc==SSH_ERROR){
-      session->global_req_state = SSH_CHANNEL_REQ_STATE_ERROR;
-      break;
-    }
-    if(session->global_req_state == SSH_CHANNEL_REQ_STATE_PENDING
-        && timeout == 0)
-      break;
+  rc = ssh_handle_packets_termination(session, SSH_TIMEOUT_USER,
+      ssh_global_request_termination, session);
+  if(rc==SSH_ERROR || session->session_state == SSH_SESSION_STATE_ERROR){
+    session->global_req_state = SSH_CHANNEL_REQ_STATE_ERROR;
   }
   switch(session->global_req_state){
     case SSH_CHANNEL_REQ_STATE_ACCEPTED:
@@ -2469,6 +2485,7 @@ error:
  * @return              The number of bytes read, 0 on end of file or SSH_ERROR
  *                      on error.
  * @deprecated          Please use ssh_channel_read instead
+ * @warning             This function doesn't work in nonblocking/timeout mode
  * @see ssh_channel_read
  */
 int channel_read_buffer(ssh_channel channel, ssh_buffer buffer, uint32_t count,
@@ -2502,9 +2519,9 @@ int channel_read_buffer(ssh_channel channel, ssh_buffer buffer, uint32_t count,
           return r;
         }
         if(buffer_add_data(buffer,buffer_tmp,r) < 0){
-	  ssh_set_error_oom(session);
-	  r = SSH_ERROR;
-	}
+          ssh_set_error_oom(session);
+          r = SSH_ERROR;
+        }
         leave_function();
         return r;
       }
@@ -2512,7 +2529,7 @@ int channel_read_buffer(ssh_channel channel, ssh_buffer buffer, uint32_t count,
         leave_function();
         return 0;
       }
-      ssh_handle_packets(channel->session, -2);
+      ssh_handle_packets(channel->session, SSH_TIMEOUT_INFINITE);
     } while (r == 0);
   }
   while(total < count){
@@ -2534,6 +2551,22 @@ int channel_read_buffer(ssh_channel channel, ssh_buffer buffer, uint32_t count,
   }
   leave_function();
   return total;
+}
+
+struct ssh_channel_read_termination_struct {
+  ssh_channel channel;
+  uint32_t count;
+  ssh_buffer buffer;
+};
+
+static int ssh_channel_read_termination(void *s){
+  struct ssh_channel_read_termination_struct *ctx = s;
+  if (buffer_get_rest_len(ctx->buffer) >= ctx->count ||
+      ctx->channel->remote_eof ||
+      ctx->channel->session->session_state == SSH_SESSION_STATE_ERROR)
+    return 1;
+  else
+    return 0;
 }
 
 /* TODO FIXME Fix the delayed close thing */
@@ -2563,11 +2596,8 @@ int ssh_channel_read(ssh_channel channel, void *dest, uint32_t count, int is_std
   ssh_session session;
   ssh_buffer stdbuf;
   uint32_t len;
-<<<<<<< HEAD
-  int rc;
-=======
-  int ret;
->>>>>>> 6091147... channel: ssh_channel_read is nonblocking, + docfixes
+  struct ssh_channel_read_termination_struct ctx;
+  int ret, rc;
 
   if(channel == NULL) {
       return SSH_ERROR;
@@ -2612,31 +2642,22 @@ int ssh_channel_read(ssh_channel channel, void *dest, uint32_t count, int is_std
     }
   }
 
-  /* block reading until at least one byte is read 
+  /* block reading until all bytes are read
   *  and ignore the trivial case count=0
   */
-  while (buffer_get_rest_len(stdbuf) == 0 && count > 0) {
-    if (channel->remote_eof && buffer_get_rest_len(stdbuf) == 0) {
-      leave_function();
-      return 0;
-    }
-
-    if (channel->remote_eof) {
-      /* Return the resting bytes in buffer */
-      break;
-    }
-
-    if (buffer_get_rest_len(stdbuf) >= count) {
-      /* Stop reading when buffer is full enough */
-      break;
-    }
-
-    rc = ssh_handle_packets(session, -2);
-    if (rc != SSH_OK) {
-        return rc;
-    }
+  ctx.channel = channel;
+  ctx.buffer = stdbuf;
+  ctx.count = count;
+  rc = ssh_handle_packets_termination(session, SSH_TIMEOUT_USER,
+      ssh_channel_read_termination, &ctx);
+  if (rc == SSH_ERROR){
+    leave_function();
+    return rc;
   }
-
+  if (channel->remote_eof && buffer_get_rest_len(stdbuf) == 0) {
+    leave_function();
+    return 0;
+  }
   len = buffer_get_rest_len(stdbuf);
   /* Read count bytes if len is greater, everything otherwise */
   len = (len > count ? count : len);
@@ -2739,7 +2760,7 @@ int ssh_channel_poll(ssh_channel channel, int is_stderr){
   }
 
   if (buffer_get_rest_len(stdbuf) == 0 && channel->remote_eof == 0) {
-    if (ssh_handle_packets(channel->session, 0)==SSH_ERROR) {
+    if (ssh_handle_packets(channel->session, SSH_TIMEOUT_NONBLOCKING)==SSH_ERROR) {
       leave_function();
       return SSH_ERROR;
     }
@@ -2829,6 +2850,18 @@ ssh_session ssh_channel_get_session(ssh_channel channel) {
   return channel->session;
 }
 
+static int ssh_channel_exit_status_termination(void *c){
+  ssh_channel channel = c;
+  if(channel->exit_status != -1 ||
+      /* When a channel is closed, no exit status message can
+       * come anymore */
+      (channel->flags & SSH_CHANNEL_FLAG_CLOSED_REMOTE) ||
+      channel->session->session_state == SSH_SESSION_STATE_ERROR)
+    return 1;
+  else
+    return 0;
+}
+
 /**
  * @brief Get the exit status of the channel (error code from the executed
  *        instruction).
@@ -2836,38 +2869,20 @@ ssh_session ssh_channel_get_session(ssh_channel channel) {
  * @param[in]  channel  The channel to get the status from.
  *
  * @returns             The exit status, -1 if no exit status has been returned
- *                      or eof not sent.
+ *                      (yet).
+ * @warning             This function may block until a timeout (or never)
+ *                      if the other side is not willing to close the channel.
  */
 int ssh_channel_get_exit_status(ssh_channel channel) {
-  int timeout;
+  int rc;
   if(channel == NULL) {
       return SSH_ERROR;
   }
-
-  if (channel->local_eof == 0) {
-    return channel->exit_status;
-  }
-  if(ssh_is_blocking(channel->session))
-    timeout = -2;
-  else
-    timeout = 0;
-  while ((channel->remote_eof == 0 || channel->exit_status == -1) && channel->session->alive) {
-    /* Parse every incoming packet */
-    if (ssh_handle_packets(channel->session, timeout) != SSH_OK) {
-      return -1;
-    }
-    /* XXX We should actually wait for a close packet and not a close
-     * we issued ourselves
-     */
-    if (channel->state != SSH_CHANNEL_STATE_OPEN) {
-      /* When a channel is closed, no exit status message can
-       * come anymore */
-      break;
-    }
-    if (timeout == 0)
-      break;
-  }
-
+  rc = ssh_handle_packets_termination(channel->session, SSH_TIMEOUT_USER,
+      ssh_channel_exit_status_termination, channel);
+  if (rc == SSH_ERROR || channel->session->session_state ==
+      SSH_SESSION_STATE_ERROR)
+    return SSH_ERROR;
   return channel->exit_status;
 }
 
@@ -2890,7 +2905,7 @@ static int channel_protocol_select(ssh_channel *rchans, ssh_channel *wchans,
     chan = rchans[i];
 
     while (ssh_channel_is_open(chan) && ssh_socket_data_available(chan->session->socket)) {
-      ssh_handle_packets(chan->session, -2);
+      ssh_handle_packets(chan->session, SSH_TIMEOUT_NONBLOCKING);
     }
 
     if ((chan->stdout_buffer && buffer_get_rest_len(chan->stdout_buffer) > 0) ||

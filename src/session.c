@@ -302,6 +302,16 @@ int ssh_is_blocking(ssh_session session){
 	return (session->flags&SSH_SESSION_FLAG_BLOCKING) ? 1 : 0;
 }
 
+/* Waits until the output socket is empty */
+static int ssh_flush_termination(void *c){
+  ssh_session session = c;
+  if (ssh_socket_buffered_write_bytes(session->socket) == 0 ||
+      session->session_state == SSH_SESSION_STATE_ERROR)
+    return 1;
+  else
+    return 0;
+}
+
 /**
  * @brief Blocking flush of the outgoing buffer
  * @param[in] session The SSH session
@@ -314,26 +324,20 @@ int ssh_is_blocking(ssh_session session){
  */
 
 int ssh_blocking_flush(ssh_session session, int timeout){
-	ssh_socket s;
-	struct ssh_timestamp ts;
-	int rc = SSH_OK;
-	if(session==NULL)
-		return SSH_ERROR;
+  int rc;
+  if(!session)
+    return SSH_ERROR;
+  enter_function();
 
-	enter_function();
-	s=session->socket;
-	ssh_timestamp_init(&ts);
-	while (ssh_socket_buffered_write_bytes(s) > 0 && session->alive) {
-		rc=ssh_handle_packets(session, timeout);
-		if(ssh_timeout_elapsed(&ts,timeout)){
-		  rc=SSH_AGAIN;
-		  break;
-		}
-		timeout = ssh_timeout_update(&ts, timeout);
-	}
-
-	leave_function();
-	return rc;
+  rc = ssh_handle_packets_termination(session, timeout,
+      ssh_flush_termination, session);
+  if (rc == SSH_ERROR)
+    goto end;
+  if (!ssh_flush_termination(session))
+    rc = SSH_AGAIN;
+end:
+  leave_function();
+  return rc;
 }
 
 /**
@@ -424,18 +428,18 @@ static int ssh_make_milliseconds(long sec, long usec) {
  * @internal
  *
  * @brief Poll the current session for an event and call the appropriate
- * callbacks.
+ * callbacks. This function will not loop until the timeout is expired.
  *
  * This will block until one event happens.
  *
  * @param[in] session   The session handle to use.
  *
  * @param[in] timeout   Set an upper limit on the time for which this function
- *                      will block, in milliseconds. Specifying -1
- *                      means an infinite timeout.
- *                      Specifying -2 means to use the timeout specified in
- *                      options. 0 means poll will return immediately. This
- *                      parameter is passed to the poll() function.
+ *                      will block, in milliseconds. Specifying SSH_TIMEOUT_INFINITE
+ *                      (-1) means an infinite timeout.
+ *                      Specifying SSH_TIMEOUT_USER means to use the timeout
+ *                      specified in options. 0 means poll will return immediately.
+ *                      This parameter is passed to the poll() function.
  *
  * @return              SSH_OK on success, SSH_ERROR otherwise.
  */
@@ -465,8 +469,11 @@ int ssh_handle_packets(ssh_session session, int timeout) {
         }
     }
 
-    if (timeout == -2) {
-        tm = ssh_make_milliseconds(session->timeout, session->timeout_usec);
+    if (timeout == SSH_TIMEOUT_USER) {
+        if (ssh_is_blocking(session))
+          tm = ssh_make_milliseconds(session->timeout, session->timeout_usec);
+        else
+          tm = 0;
     }
     rc = ssh_poll_ctx_dopoll(ctx, tm);
     if (rc == SSH_ERROR) {
@@ -483,14 +490,17 @@ int ssh_handle_packets(ssh_session session, int timeout) {
  * @brief Poll the current session for an event and call the appropriate
  * callbacks.
  *
- * This will block until termination fuction returns true, or timeout expired.
+ * This will block until termination function returns true, or timeout expired.
  *
  * @param[in] session   The session handle to use.
  *
  * @param[in] timeout   Set an upper limit on the time for which this function
- *                      will block, in milliseconds. Specifying a negative value
- *                      means an infinite timeout. This parameter is passed to
- *                      the poll() function.
+ *                      will block, in milliseconds. Specifying SSH_TIMEOUT_INFINITE
+ *                      (-1) means an infinite timeout.
+ *                      Specifying SSH_TIMEOUT_USER means to use the timeout
+ *                      specified in options. 0 means poll will return immediately.
+ *                      This parameter is passed to the poll() function.
+ *
  * @param[in] fct       Termination function to be used to determine if it is
  *                      possible to stop polling.
  * @param[in] user      User parameter to be passed to fct termination function.
@@ -499,13 +509,23 @@ int ssh_handle_packets(ssh_session session, int timeout) {
 int ssh_handle_packets_termination(ssh_session session, int timeout,
 	ssh_termination_function fct, void *user){
 	int ret = SSH_OK;
-
+	struct ssh_timestamp ts;
+	int tm;
+  if (timeout == SSH_TIMEOUT_USER) {
+      if (ssh_is_blocking(session))
+        timeout = ssh_make_milliseconds(session->timeout, session->timeout_usec);
+      else
+        timeout = SSH_TIMEOUT_NONBLOCKING;
+  }
+  ssh_timestamp_init(&ts);
+  tm = timeout;
 	while(!fct(user)){
-		ret = ssh_handle_packets(session, timeout);
-		if(ret == SSH_ERROR || ret == SSH_AGAIN)
-			return ret;
-		if(fct(user)) 
-			return SSH_OK;
+		ret = ssh_handle_packets(session, tm);
+		if(ret == SSH_ERROR)
+		  break;
+		if(ssh_timeout_elapsed(&ts,timeout))
+		  break;
+		tm = ssh_timeout_update(&ts, timeout);
 	}
 	return ret;
 }
