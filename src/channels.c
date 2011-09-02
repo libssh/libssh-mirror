@@ -421,7 +421,7 @@ static ssh_channel channel_from_msg(ssh_session session, ssh_buffer packet) {
 #ifdef WITH_SSH1
   /* With SSH1, the channel is always the first one */
   if(session->version==1)
-    return session->channels;
+    return ssh_get_channel1(session);
 #endif
   if (buffer_get_u32(packet, &chan) != sizeof(uint32_t)) {
     ssh_set_error(session, SSH_FATAL,

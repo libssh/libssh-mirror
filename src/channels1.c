@@ -36,6 +36,7 @@
 #include "libssh/packet.h"
 #include "libssh/channels.h"
 #include "libssh/session.h"
+#include "libssh/misc.h"
 
 #ifdef WITH_SSH1
 
@@ -221,7 +222,7 @@ int channel_request_exec1(ssh_channel channel, const char *cmd) {
 }
 
 SSH_PACKET_CALLBACK(ssh_packet_data1){
-    ssh_channel channel = session->channels;
+    ssh_channel channel = ssh_get_channel1(session);
     ssh_string str = NULL;
     int is_stderr=(type==SSH_SMSG_STDOUT_DATA ? 0 : 1);
     (void)user;
@@ -246,7 +247,7 @@ SSH_PACKET_CALLBACK(ssh_packet_data1){
 }
 
 SSH_PACKET_CALLBACK(ssh_packet_close1){
-  ssh_channel channel = session->channels;
+  ssh_channel channel = ssh_get_channel1(session);
   uint32_t status;
   (void)type;
   (void)user;
@@ -295,5 +296,15 @@ int channel_write1(ssh_channel channel, const void *data, int len) {
   return origlen;
 }
 
+ssh_channel ssh_get_channel1(ssh_session session){
+  struct ssh_iterator *it;
+  /* With SSH1, the channel is always the first one */
+  if(session->channels != NULL){
+    it = ssh_list_get_iterator(session->channels);
+    if(it)
+      return ssh_iterator_value(ssh_channel, it);
+  }
+  return NULL;
+}
 #endif /* WITH_SSH1 */
 /* vim: set ts=2 sw=2 et cindent: */
