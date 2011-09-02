@@ -755,6 +755,7 @@ int ssh_get_openssh_version(ssh_session session) {
  */
 void ssh_disconnect(ssh_session session) {
   ssh_string str = NULL;
+  struct ssh_iterator *it;
   int i;
 
   if (session == NULL) {
@@ -793,8 +794,10 @@ error:
   }
   session->fd = SSH_INVALID_SOCKET;
   session->session_state=SSH_SESSION_STATE_DISCONNECTED;
-  while (session->channels) {
-    ssh_channel_free(session->channels);
+
+  while ((it=ssh_list_get_iterator(session->channels)) != NULL) {
+    ssh_channel_free(ssh_iterator_value(ssh_channel,it));
+    ssh_list_remove(session->channels, it);
   }
   if(session->current_crypto){
     crypto_free(session->current_crypto);

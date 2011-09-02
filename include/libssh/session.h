@@ -110,7 +110,7 @@ struct ssh_session_struct {
     struct ssh_crypto_struct *current_crypto;
     struct ssh_crypto_struct *next_crypto;  /* next_crypto is going to be used after a SSH2_MSG_NEWKEYS */
 
-    ssh_channel channels; /* linked list of channels */
+    struct ssh_list *channels; /* linked list of channels */
     int maxchannel;
     int exec_channel_opened; /* version 1 only. more
                                 info in channels1.c */

@@ -48,8 +48,6 @@ enum ssh_channel_state_e {
 };
 
 struct ssh_channel_struct {
-    struct ssh_channel_struct *prev;
-    struct ssh_channel_struct *next;
     ssh_session session; /* SSH_SESSION pointer */
     uint32_t local_channel;
     uint32_t local_window;

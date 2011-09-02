@@ -377,6 +377,8 @@ struct ssh_list *ssh_list_new(){
 
 void ssh_list_free(struct ssh_list *list){
   struct ssh_iterator *ptr,*next;
+  if(!list)
+    return;
   ptr=list->root;
   while(ptr){
     next=ptr->next;
@@ -387,7 +389,17 @@ void ssh_list_free(struct ssh_list *list){
 }
 
 struct ssh_iterator *ssh_list_get_iterator(const struct ssh_list *list){
+  if(!list)
+    return NULL;
   return list->root;
+}
+
+struct ssh_iterator *ssh_list_find(const struct ssh_list *list, void *value){
+  struct ssh_iterator *it;
+  for(it = ssh_list_get_iterator(list); it != NULL ;it=it->next)
+    if(it->data==value)
+      return it;
+  return NULL;
 }
 
 static struct ssh_iterator *ssh_iterator_new(const void *data){

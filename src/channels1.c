@@ -36,6 +36,7 @@
 #include "libssh/packet.h"
 #include "libssh/channels.h"
 #include "libssh/session.h"
+#include "libssh/misc.h"
 
 #ifdef WITH_SSH1
 
@@ -221,15 +222,17 @@ int channel_request_exec1(ssh_channel channel, const char *cmd) {
 }
 
 SSH_PACKET_CALLBACK(ssh_packet_data1){
-    ssh_channel channel = session->channels;
+    ssh_channel channel;
     ssh_string str = NULL;
     int is_stderr=(type==SSH_SMSG_STDOUT_DATA ? 0 : 1);
+    struct ssh_iterator *it = ssh_list_get_iterator(session->channels);
     (void)user;
     str = buffer_get_ssh_string(packet);
     if (str == NULL) {
       ssh_log(session, SSH_LOG_FUNCTIONS, "Invalid data packet !\n");
       return SSH_PACKET_USED;
     }
+    channel = ssh_iterator_value(ssh_channel, it);
 
     ssh_log(session, SSH_LOG_PROTOCOL,
         "Adding %" PRIdS " bytes data in %d",
@@ -246,10 +249,15 @@ SSH_PACKET_CALLBACK(ssh_packet_data1){
 }
 
 SSH_PACKET_CALLBACK(ssh_packet_close1){
-  ssh_channel channel = session->channels;
+  ssh_channel channel;
+  struct ssh_iterator *it = ssh_list_get_iterator(session->channels);
   uint32_t status;
+
   (void)type;
   (void)user;
+
+  channel = ssh_iterator_value(ssh_channel, it);
+
   buffer_get_u32(packet, &status);
   /*
    * It's much more than a channel closing. spec says it's the last

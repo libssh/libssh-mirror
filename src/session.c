@@ -157,7 +157,7 @@ err:
  */
 void ssh_free(ssh_session session) {
   int i;
-  enter_function();
+  struct ssh_iterator *it;
 
   if (session == NULL) {
     return;
@@ -187,9 +187,12 @@ void ssh_free(ssh_session session) {
   	ssh_poll_ctx_free(session->default_poll_ctx);
   }
   /* delete all channels */
-  while (session->channels) {
-    ssh_channel_free(session->channels);
+  while ((it=ssh_list_get_iterator(session->channels)) != NULL) {
+    ssh_channel_free(ssh_iterator_value(ssh_channel,it));
+    ssh_list_remove(session->channels, it);
   }
+  ssh_list_free(session->channels);
+  session->channels=NULL;
 #ifndef _WIN32
   agent_free(session->agent);
 #endif /* _WIN32 */

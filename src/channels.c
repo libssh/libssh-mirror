@@ -105,15 +105,9 @@ ssh_channel ssh_channel_new(ssh_session session) {
   channel->exit_status = -1;
 
   if(session->channels == NULL) {
-    session->channels = channel;
-    channel->next = channel->prev = channel;
-    return channel;
+    session->channels = ssh_list_new();
   }
-  channel->next = session->channels;
-  channel->prev = session->channels->prev;
-  channel->next->prev = channel;
-  channel->prev->next = channel;
-
+  ssh_list_prepend(session->channels, channel);
   return channel;
 }
 
@@ -310,23 +304,20 @@ static int channel_open(ssh_channel channel, const char *type_c, int window,
 
 /* return channel with corresponding local id, or NULL if not found */
 ssh_channel ssh_channel_from_local(ssh_session session, uint32_t id) {
-    ssh_channel initchan = session->channels;
-    ssh_channel channel = initchan;
+  struct ssh_iterator *it;
+  ssh_channel channel;
 
-    for (;;) {
-        if (channel == NULL) {
-            return NULL;
-        }
-        if (channel->local_channel == id) {
-            return channel;
-        }
-        if (channel->next == initchan) {
-            return NULL;
-        }
-        channel = channel->next;
+  for (it = ssh_list_get_iterator(session->channels); it != NULL ; it=it->next) {
+    channel = ssh_iterator_value(ssh_channel, it);
+    if (channel == NULL) {
+      continue;
     }
+    if (channel->local_channel == id) {
+      return channel;
+    }
+  }
 
-    return NULL;
+  return NULL;
 }
 
 /**
@@ -399,8 +390,10 @@ static ssh_channel channel_from_msg(ssh_session session, ssh_buffer packet) {
   uint32_t chan;
 #ifdef WITH_SSH1
   /* With SSH1, the channel is always the first one */
-  if(session->version==1)
-    return session->channels;
+  if(session->version==1) {
+      struct ssh_iterator *it = ssh_list_get_iterator(session->channels);
+      return ssh_iterator_value(ssh_channel, it);
+  }
 #endif
   if (buffer_get_u32(packet, &chan) != sizeof(uint32_t)) {
     ssh_set_error(session, SSH_FATAL,
@@ -996,31 +989,24 @@ error:
  * @warning Any data unread on this channel will be lost.
  */
 void ssh_channel_free(ssh_channel channel) {
-  ssh_session session = channel->session;
-  enter_function();
+  ssh_session session;
+  struct ssh_iterator *it;
 
   if (channel == NULL) {
-    leave_function();
     return;
   }
+
+  session = channel->session;
+  enter_function();
 
   if (session->alive && channel->state == SSH_CHANNEL_STATE_OPEN) {
     ssh_channel_close(channel);
   }
 
-  /* handle the "my channel is first on session list" case */
-  if (session->channels == channel) {
-    session->channels = channel->next;
+  it = ssh_list_find(session->channels, channel);
+  if(it != NULL){
+    ssh_list_remove(session->channels, it);
   }
-
-  /* handle the "my channel is the only on session list" case */
-  if (channel->next == channel) {
-    session->channels = NULL;
-  } else {
-    channel->prev->next = channel->next;
-    channel->next->prev = channel->prev;
-  }
-
   ssh_buffer_free(channel->stdout_buffer);
   ssh_buffer_free(channel->stderr_buffer);
 
