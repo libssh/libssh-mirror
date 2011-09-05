@@ -32,7 +32,7 @@
 #include "libssh/session.h"
 #include "libssh/buffer.h"
 #include "libssh/misc.h"
-#include "libssh/keys.h"
+#include "libssh/pki.h"
 
 /*todo: remove this include */
 #include "libssh/string.h"
@@ -533,196 +533,116 @@ int ssh_is_server_known(ssh_session session) {
  * @return              SSH_OK on success, SSH_ERROR on error.
  */
 int ssh_write_knownhost(ssh_session session) {
-  ssh_string pubkey;
-  unsigned char *pubkey_64;
-  char buffer[4096] = {0};
-  FILE *file;
-  char *dir;
-  char *host;
-  char *hostport;
-  size_t len = 0;
+    ssh_key key;
+    ssh_string pubkey_s;
+    char *b64_key;
+    char buffer[4096] = {0};
+    FILE *file;
+    char *dir;
+    char *host;
+    char *hostport;
+    int rc;
 
-  if (session->host == NULL) {
-    ssh_set_error(session, SSH_FATAL,
-        "Can't write host in known hosts if the hostname isn't known");
-    return SSH_ERROR;
-  }
+    if (session->host == NULL) {
+        ssh_set_error(session, SSH_FATAL,
+                "Can't write host in known hosts if the hostname isn't known");
+        return SSH_ERROR;
+    }
 
-  host = ssh_lowercase(session->host);
-  /* If using a nonstandard port, save the host in the [host]:port format */
-  if(session->port != 22){
-    hostport = ssh_hostport(host,session->port);
+    host = ssh_lowercase(session->host);
+    /* If using a nonstandard port, save the host in the [host]:port format */
+    if(session->port != 22){
+        hostport = ssh_hostport(host, session->port);
+        SAFE_FREE(host);
+        host = hostport;
+        hostport = NULL;
+    }
+
+    if (session->knownhosts == NULL) {
+        if (ssh_options_apply(session) < 0) {
+            ssh_set_error(session, SSH_FATAL, "Can't find a known_hosts file");
+            return SSH_ERROR;
+        }
+    }
+
+    if (session->current_crypto==NULL) {
+        ssh_set_error(session, SSH_FATAL, "No current crypto context");
+        return SSH_ERROR;
+    }
+
+    pubkey_s = session->current_crypto->server_pubkey;
+    if (pubkey_s == NULL){
+        ssh_set_error(session, SSH_FATAL, "No public key present");
+        return SSH_ERROR;
+    }
+
+    /* Check if ~/.ssh exists and create it if not */
+    dir = ssh_dirname(session->knownhosts);
+    if (dir == NULL) {
+        ssh_set_error(session, SSH_FATAL, "%s", strerror(errno));
+        return SSH_ERROR;
+    }
+
+    if (!ssh_file_readaccess_ok(dir)) {
+        if (ssh_mkdir(dir, 0700) < 0) {
+            ssh_set_error(session, SSH_FATAL,
+                    "Cannot create %s directory.", dir);
+            SAFE_FREE(dir);
+            return SSH_ERROR;
+        }
+    }
+    SAFE_FREE(dir);
+
+    file = fopen(session->knownhosts, "a");
+    if (file == NULL) {
+        ssh_set_error(session, SSH_FATAL,
+                "Couldn't open known_hosts file %s for appending: %s",
+                session->knownhosts, strerror(errno));
+        SAFE_FREE(host);
+        return SSH_ERROR;
+    }
+
+    rc = ssh_pki_import_pubkey_blob(pubkey_s, &key);
+    if (rc < 0) {
+        fclose(file);
+        SAFE_FREE(host);
+        return -1;
+    }
+
+    if (strcmp(session->current_crypto->server_pubkey_type, "ssh-rsa1") == 0) {
+        /* openssh uses a different format for ssh-rsa1 keys.
+           Be compatible --kv */
+        rc = ssh_pki_export_pubkey_rsa1(key, host, buffer, sizeof(buffer));
+        if (rc < 0) {
+            fclose(file);
+            SAFE_FREE(host);
+            return -1;
+        }
+    } else {
+        rc = ssh_pki_export_pubkey_base64(key, &b64_key);
+        if (rc < 0) {
+            fclose(file);
+            SAFE_FREE(host);
+            return -1;
+        }
+
+        snprintf(buffer, sizeof(buffer),
+                "%s %s %s\n",
+                host,
+                key->type_c,
+                b64_key);
+
+        SAFE_FREE(b64_key);
+    }
     SAFE_FREE(host);
-    host=hostport;
-    hostport=NULL;
-  }
 
-  if (session->knownhosts == NULL) {
-    if (ssh_options_apply(session) < 0) {
-      ssh_set_error(session, SSH_FATAL, "Can't find a known_hosts file");
-      return SSH_ERROR;
-    }
-  }
-
-  if(session->current_crypto==NULL) {
-  	ssh_set_error(session, SSH_FATAL, "No current crypto context");
-  	return SSH_ERROR;
-  }
-
-  pubkey = session->current_crypto->server_pubkey;
-  if(pubkey == NULL){
-  	ssh_set_error(session, SSH_FATAL, "No public key present");
-  	return SSH_ERROR;
-  }
-
-  /* Check if ~/.ssh exists and create it if not */
-  dir = ssh_dirname(session->knownhosts);
-  if (dir == NULL) {
-    ssh_set_error(session, SSH_FATAL, "%s", strerror(errno));
-    return -1;
-  }
-  if (! ssh_file_readaccess_ok(dir)) {
-    if (ssh_mkdir(dir, 0700) < 0) {
-      ssh_set_error(session, SSH_FATAL,
-          "Cannot create %s directory.", dir);
-      SAFE_FREE(dir);
-      return -1;
-    }
-  }
-  SAFE_FREE(dir);
-
-  file = fopen(session->knownhosts, "a");
-  if (file == NULL) {
-    ssh_set_error(session, SSH_FATAL,
-        "Couldn't open known_hosts file %s for appending: %s",
-        session->knownhosts, strerror(errno));
-    SAFE_FREE(host);
-    return -1;
-  }
-
-  if (strcmp(session->current_crypto->server_pubkey_type, "ssh-rsa1") == 0) {
-    /* openssh uses a different format for ssh-rsa1 keys.
-       Be compatible --kv */
-    ssh_public_key key;
-    char *e_string = NULL;
-    char *n_string = NULL;
-    bignum e = NULL;
-    bignum n = NULL;
-    int rsa_size;
-#ifdef HAVE_LIBGCRYPT
-    gcry_sexp_t sexp;
-#endif
-
-    key = publickey_from_string(session, pubkey);
-    if (key == NULL) {
-      fclose(file);
-      SAFE_FREE(host);
-      return -1;
+    if (fwrite(buffer, strlen(buffer), 1, file) != 1 || ferror(file)) {
+        fclose(file);
+        return -1;
     }
 
-#ifdef HAVE_LIBGCRYPT
-    sexp = gcry_sexp_find_token(key->rsa_pub, "e", 0);
-    if (sexp == NULL) {
-      publickey_free(key);
-      fclose(file);
-      SAFE_FREE(host);
-      return -1;
-    }
-    e = gcry_sexp_nth_mpi(sexp, 1, GCRYMPI_FMT_USG);
-    gcry_sexp_release(sexp);
-    if (e == NULL) {
-      publickey_free(key);
-      fclose(file);
-      SAFE_FREE(host);
-      return -1;
-    }
-
-    sexp = gcry_sexp_find_token(key->rsa_pub, "n", 0);
-    if (sexp == NULL) {
-      publickey_free(key);
-      bignum_free(e);
-      fclose(file);
-      SAFE_FREE(host);
-      return -1;
-    }
-    n = gcry_sexp_nth_mpi(sexp, 1, GCRYMPI_FMT_USG);
-    gcry_sexp_release(sexp);
-    if (n == NULL) {
-      publickey_free(key);
-      bignum_free(e);
-      fclose(file);
-      SAFE_FREE(host);
-      return -1;
-    }
-
-    rsa_size = (gcry_pk_get_nbits(key->rsa_pub) + 7) / 8;
-#elif defined HAVE_LIBCRYPTO
-    e = key->rsa_pub->e;
-    n = key->rsa_pub->n;
-    rsa_size = RSA_size(key->rsa_pub);
-#endif
-
-    e_string = bignum_bn2dec(e);
-    n_string = bignum_bn2dec(n);
-    if (e_string == NULL || n_string == NULL) {
-#ifdef HAVE_LIBGCRYPT
-      bignum_free(e);
-      bignum_free(n);
-      SAFE_FREE(e_string);
-      SAFE_FREE(n_string);
-#elif defined HAVE_LIBCRYPTO
-      OPENSSL_free(e_string);
-      OPENSSL_free(n_string);
-#endif
-      publickey_free(key);
-      fclose(file);
-      SAFE_FREE(host);
-      return -1;
-    }
-
-    snprintf(buffer, sizeof(buffer),
-        "%s %d %s %s\n",
-        host,
-        rsa_size << 3,
-        e_string,
-        n_string);
-
-#ifdef HAVE_LIBGCRYPT
-    bignum_free(e);
-    bignum_free(n);
-    SAFE_FREE(e_string);
-    SAFE_FREE(n_string);
-#elif defined HAVE_LIBCRYPTO
-    OPENSSL_free(e_string);
-    OPENSSL_free(n_string);
-#endif
-
-    publickey_free(key);
-  } else {
-    pubkey_64 = bin_to_base64(pubkey->string, ssh_string_len(pubkey));
-    if (pubkey_64 == NULL) {
-      fclose(file);
-      SAFE_FREE(host);
-      return -1;
-    }
-
-    snprintf(buffer, sizeof(buffer),
-        "%s %s %s\n",
-        host,
-        session->current_crypto->server_pubkey_type,
-        pubkey_64);
-
-    SAFE_FREE(pubkey_64);
-  }
-  SAFE_FREE(host);
-  len = strlen(buffer);
-  if (fwrite(buffer, len, 1, file) != 1 || ferror(file)) {
     fclose(file);
-    return -1;
-  }
-
-  fclose(file);
-  return 0;
+    return 0;
 }
 
 /** @} */
