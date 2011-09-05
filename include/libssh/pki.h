@@ -85,6 +85,10 @@ int ssh_pki_export_pubkey_blob(const ssh_key key,
                                ssh_string *pblob);
 int ssh_pki_import_pubkey_blob(const ssh_string key_blob,
                                ssh_key *pkey);
+int ssh_pki_export_pubkey_rsa1(const ssh_key key,
+                               const char *host,
+                               char *rsa1,
+                               size_t rsa1_len);
 
 /* SSH Signing Functions */
 ssh_string ssh_pki_do_sign(ssh_session session, ssh_buffer sigbuf,

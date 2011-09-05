@@ -49,6 +49,10 @@ int pki_pubkey_build_rsa(ssh_key key,
                          ssh_string e,
                          ssh_string n);
 ssh_string pki_publickey_to_blob(const ssh_key key);
+int pki_export_pubkey_rsa1(const ssh_key key,
+                           const char *host,
+                           char *rsa1,
+                           size_t rsa1_len);
 
 /* SSH Signature Functions */
 ssh_string pki_signature_to_blob(const ssh_signature sign);

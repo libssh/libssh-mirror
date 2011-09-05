@@ -958,6 +958,14 @@ int ssh_pki_export_pubkey_file(const ssh_key key,
     return SSH_OK;
 }
 
+int ssh_pki_export_pubkey_rsa1(const ssh_key key,
+                               const char *host,
+                               char *rsa1,
+                               size_t rsa1_len)
+{
+    return pki_export_pubkey_rsa1(key, host, rsa1, rsa1_len);
+}
+
 int ssh_pki_export_signature_blob(const ssh_signature sig,
                                   ssh_string *sig_blob)
 {
