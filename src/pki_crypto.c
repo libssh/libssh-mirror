@@ -208,6 +208,7 @@ ssh_key pki_key_dup(const ssh_key key, int demote)
 
         break;
     case SSH_KEYTYPE_ECDSA:
+#ifdef HAVE_OPENSSL_ECC
         /* privkey -> pubkey */
         if (demote && ssh_key_is_private(key)) {
             const EC_POINT *p;
@@ -231,6 +232,7 @@ ssh_key pki_key_dup(const ssh_key key, int demote)
             new->ecdsa = EC_KEY_dup(key->ecdsa);
         }
         break;
+#endif
     case SSH_KEYTYPE_UNKNOWN:
         ssh_key_free(new);
         return NULL;
