@@ -46,12 +46,10 @@ static void torture_options_set_port(void **state) {
     assert_true(session->port == 23);
 
     rc = ssh_options_set(session, SSH_OPTIONS_PORT_STR, "five");
-    assert_true(rc == 0);
-    assert_true(session->port == 0);
+    assert_true(rc == -1);
 
     rc = ssh_options_set(session, SSH_OPTIONS_PORT, NULL);
-    assert_true(rc == 0);
-    assert_true(session->port == 22);
+    assert_true(rc == -1);
 }
 
 static void torture_options_set_fd(void **state) {
@@ -64,7 +62,7 @@ static void torture_options_set_fd(void **state) {
     assert_true(session->fd == fd);
 
     rc = ssh_options_set(session, SSH_OPTIONS_FD, NULL);
-    assert_true(rc == 0);
+    assert_true(rc == -1);
     assert_true(session->fd == SSH_INVALID_SOCKET);
 }
 
