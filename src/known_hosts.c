@@ -613,13 +613,15 @@ int ssh_write_knownhost(ssh_session session) {
         /* openssh uses a different format for ssh-rsa1 keys.
            Be compatible --kv */
         rc = ssh_pki_export_pubkey_rsa1(key, host, buffer, sizeof(buffer));
+        ssh_key_free(key);
+        SAFE_FREE(host);
         if (rc < 0) {
             fclose(file);
-            SAFE_FREE(host);
             return -1;
         }
     } else {
         rc = ssh_pki_export_pubkey_base64(key, &b64_key);
+        ssh_key_free(key);
         if (rc < 0) {
             fclose(file);
             SAFE_FREE(host);
@@ -632,9 +634,9 @@ int ssh_write_knownhost(ssh_session session) {
                 key->type_c,
                 b64_key);
 
+        SAFE_FREE(host);
         SAFE_FREE(b64_key);
     }
-    SAFE_FREE(host);
 
     if (fwrite(buffer, strlen(buffer), 1, file) != 1 || ferror(file)) {
         fclose(file);
