@@ -621,8 +621,8 @@ int ssh_write_knownhost(ssh_session session) {
         }
     } else {
         rc = ssh_pki_export_pubkey_base64(key, &b64_key);
-        ssh_key_free(key);
         if (rc < 0) {
+            ssh_key_free(key);
             fclose(file);
             SAFE_FREE(host);
             return -1;
@@ -634,6 +634,7 @@ int ssh_write_knownhost(ssh_session session) {
                 key->type_c,
                 b64_key);
 
+        ssh_key_free(key);
         SAFE_FREE(host);
         SAFE_FREE(b64_key);
     }
