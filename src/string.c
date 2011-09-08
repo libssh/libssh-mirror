@@ -131,6 +131,25 @@ size_t ssh_string_len(struct ssh_string_struct *s) {
 }
 
 /**
+ * @brief Get the the string as a C nul-terminated string.
+ *
+ * This is only available as long as the SSH string exists.
+ *
+ * @param[in] s         The SSH string to get the C string from.
+ *
+ * @return              The char pointer, NULL on error.
+ */
+const char *ssh_string_get_char(struct ssh_string_struct *s)
+{
+    if (s == NULL) {
+        return NULL;
+    }
+    s->data[ssh_string_len(s)] = '\0';
+
+    return (const char *) s->data;
+}
+
+/**
  * @brief Convert a SSH string to a C nul-terminated string.
  *
  * @param[in] s         The SSH input string.
