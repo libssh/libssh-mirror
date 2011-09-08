@@ -346,8 +346,11 @@ ssh_string make_bignum_string(bignum num) {
   unsigned int len = bignum_num_bytes(num);
   unsigned int bits = bignum_num_bits(num);
 
-  /* Remember if the fist bit is set, it is considered as a
-   * negative number. So 0's must be appended */
+  if (len == 0) {
+      return NULL;
+  }
+
+  /* If the first bit is set we have a negative number */
   if (!(bits % 8) && bignum_is_bit_set(num, bits - 1)) {
     pad++;
   }
@@ -355,12 +358,13 @@ ssh_string make_bignum_string(bignum num) {
 #ifdef DEBUG_CRYPTO
   fprintf(stderr, "%d bits, %d bytes, %d padding\n", bits, len, pad);
 #endif /* DEBUG_CRYPTO */
-/* TODO: fix that crap !! */
-  ptr = malloc(sizeof(struct ssh_string_struct) + len + pad);
+
+  ptr = ssh_string_new(len + pad);
   if (ptr == NULL) {
     return NULL;
   }
-  ptr->size = htonl(len + pad);
+
+  /* We have a negative number so we need a leading zero */
   if (pad) {
     ptr->data[0] = 0;
   }
