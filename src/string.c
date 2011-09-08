@@ -75,7 +75,7 @@ struct ssh_string_struct *ssh_string_new(size_t size) {
  */
 int ssh_string_fill(struct ssh_string_struct *s, const void *data, size_t len) {
   if ((s == NULL) || (data == NULL) ||
-      (len == 0) || (len > s->size)) {
+      (len == 0) || (len > ssh_string_len(s))) {
     return -1;
   }
 
@@ -165,7 +165,7 @@ char *ssh_string_to_char(struct ssh_string_struct *s) {
 	char *new;
     if (s == NULL || s->data == NULL)
 		return NULL;
-  len = ntohl(s->size) + 1;
+  len = ssh_string_len(s) + 1;
   new = malloc(len);
 
   if (new == NULL) {
@@ -200,12 +200,12 @@ struct ssh_string_struct *ssh_string_copy(struct ssh_string_struct *s) {
       return NULL;
   }
 
-  new = ssh_string_new(s->size);
+  new = ssh_string_new(ssh_string_len(s));
   if (new == NULL) {
     return NULL;
   }
-  new->size = s->size;
-  memcpy(new->data, s->data, ntohl(s->size));
+
+  memcpy(new->data, s->data, ssh_string_len(s));
 
   return new;
 }
