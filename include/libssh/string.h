@@ -29,7 +29,7 @@
 #endif
 struct ssh_string_struct {
 	uint32_t size;
-	unsigned char string[MAX_PACKET_LEN];
+	unsigned char data[1];
 }
 #if !defined(__SUNPRO_C) && !defined(_MSC_VER)
 __attribute__ ((packed))

@@ -241,9 +241,9 @@ static int check_public_key(ssh_session session, char **tokens) {
       /* TODO: fix the hardcoding */
       tmpstring->size = htonl(len);
 #ifdef HAVE_LIBGCRYPT
-      bignum_bn2bin(tmpbn, len, tmpstring->string);
+      bignum_bn2bin(tmpbn, len, string_data(tmpstring));
 #elif defined HAVE_LIBCRYPTO
-      bignum_bn2bin(tmpbn, tmpstring->string);
+      bignum_bn2bin(tmpbn, string_data(tmpstring));
 #endif
       bignum_free(tmpbn);
       if (buffer_add_ssh_string(pubkey_buffer, tmpstring) < 0) {
@@ -272,7 +272,7 @@ static int check_public_key(ssh_session session, char **tokens) {
   }
 
   /* now test that they are identical */
-  if (memcmp(buffer_get_rest(pubkey_buffer), pubkey->string,
+  if (memcmp(buffer_get_rest(pubkey_buffer), ssh_string_data(pubkey),
         buffer_get_rest_len(pubkey_buffer)) != 0) {
     ssh_buffer_free(pubkey_buffer);
     return 0;

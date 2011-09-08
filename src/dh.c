@@ -356,19 +356,19 @@ ssh_string make_bignum_string(bignum num) {
   fprintf(stderr, "%d bits, %d bytes, %d padding\n", bits, len, pad);
 #endif /* DEBUG_CRYPTO */
 /* TODO: fix that crap !! */
-  ptr = malloc(4 + len + pad);
+  ptr = malloc(sizeof(struct ssh_string_struct) + len + pad);
   if (ptr == NULL) {
     return NULL;
   }
   ptr->size = htonl(len + pad);
   if (pad) {
-    ptr->string[0] = 0;
+    ptr->data[0] = 0;
   }
 
 #ifdef HAVE_LIBGCRYPT
-  bignum_bn2bin(num, len, ptr->string + pad);
+  bignum_bn2bin(num, len, ptr->data + pad);
 #elif HAVE_LIBCRYPTO
-  bignum_bn2bin(num, ptr->string + pad);
+  bignum_bn2bin(num, ptr->data + pad);
 #endif
 
   return ptr;
@@ -384,9 +384,9 @@ bignum make_string_bn(ssh_string string){
 #endif /* DEBUG_CRYPTO */
 
 #ifdef HAVE_LIBGCRYPT
-  bignum_bin2bn(string->string, len, &bn);
+  bignum_bin2bn(string->data, len, &bn);
 #elif defined HAVE_LIBCRYPTO
-  bn = bignum_bin2bn(string->string, len, NULL);
+  bn = bignum_bin2bn(string->data, len, NULL);
 #endif
 
   return bn;
@@ -985,7 +985,7 @@ int ssh_get_pubkey_hash(ssh_session session, unsigned char **hash) {
 
   pubkey = session->current_crypto->server_pubkey;
 
-  md5_update(ctx, pubkey->string, ssh_string_len(pubkey));
+  md5_update(ctx, ssh_string_data(pubkey), ssh_string_len(pubkey));
   md5_final(h, ctx);
 
   *hash = h;
