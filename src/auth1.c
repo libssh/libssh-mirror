@@ -162,19 +162,21 @@ int ssh_userauth1_password(ssh_session session, const char *username,
       return SSH_AUTH_ERROR;
     }
   } else {
+    char buf[128] = {0};
     /* fill the password string from random things. the strcpy
      * ensure there is at least a nul byte after the password.
      * most implementation won't see the garbage at end.
      * why garbage ? because nul bytes will be compressed by
      * gzip and disclose password len.
      */
-    pwd = ssh_string_new(128);
+    pwd = ssh_string_new(sizeof(buf));
     if (pwd == NULL) {
       leave_function();
       return SSH_AUTH_ERROR;
     }
-    ssh_get_random( pwd->string, 128, 0);
-    strcpy((char *) pwd->string, password);
+    ssh_get_random(buf, sizeof(buf), 0);
+    strcpy(buf, password);
+    ssh_string_fill(pwd, buf, sizeof(buf));
   }
 
   if (buffer_add_u8(session->out_buffer, SSH_CMSG_AUTH_PASSWORD) < 0) {
