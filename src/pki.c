@@ -661,7 +661,6 @@ int ssh_pki_import_pubkey_blob(const ssh_string key_blob,
                                ssh_key *pkey) {
     ssh_buffer buffer;
     ssh_string type_s = NULL;
-    char *type_c = NULL;
     enum ssh_keytypes_e type;
     int rc;
 
@@ -688,15 +687,8 @@ int ssh_pki_import_pubkey_blob(const ssh_string key_blob,
         goto fail;
     }
 
-    type_c = ssh_string_to_char(type_s);
-    if (type_c == NULL) {
-        ssh_pki_log("Out of memory!");
-        goto fail;
-    }
+    type = ssh_key_type_from_name(ssh_string_get_char(type_s));
     ssh_string_free(type_s);
-
-    type = ssh_key_type_from_name(type_c);
-    free(type_c);
     if (type == SSH_KEYTYPE_UNKNOWN) {
         ssh_pki_log("Unknown key type found!");
         goto fail;
@@ -710,7 +702,6 @@ int ssh_pki_import_pubkey_blob(const ssh_string key_blob,
 fail:
     ssh_buffer_free(buffer);
     ssh_string_free(type_s);
-    free(type_c);
 
     return SSH_ERROR;
 }
@@ -1030,7 +1021,6 @@ int ssh_pki_import_signature_blob(const ssh_string sig_blob,
     enum ssh_keytypes_e type;
     ssh_string str;
     ssh_buffer buf;
-    char *type_c;
     int rc;
 
     if (sig_blob == NULL || psig == NULL) {
@@ -1056,15 +1046,8 @@ int ssh_pki_import_signature_blob(const ssh_string sig_blob,
         return SSH_ERROR;
     }
 
-    type_c = ssh_string_to_char(str);
+    type = ssh_key_type_from_name(ssh_string_get_char(str));
     ssh_string_free(str);
-    if (type_c == NULL) {
-        ssh_buffer_free(buf);
-        return SSH_ERROR;
-    }
-
-    type = ssh_key_type_from_name(type_c);
-    SAFE_FREE(type_c);
 
     str = buffer_get_ssh_string(buf);
     ssh_buffer_free(buf);
