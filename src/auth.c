@@ -778,7 +778,7 @@ static int ssh_userauth_agent_publickey(ssh_session session,
     switch(session->pending_call_state) {
         case SSH_PENDING_CALL_NONE:
             break;
-        case SSH_PENDING_CALL_AUTH_PUBKEY:
+        case SSH_PENDING_CALL_AUTH_AGENT:
             goto pending;
         default:
             ssh_set_error(session,
@@ -883,7 +883,7 @@ static int ssh_userauth_agent_publickey(ssh_session session,
     }
 
     session->auth_state = SSH_AUTH_STATE_NONE;
-    session->pending_call_state = SSH_PENDING_CALL_AUTH_PUBKEY;
+    session->pending_call_state = SSH_PENDING_CALL_AUTH_AGENT;
     rc = packet_send(session);
     if (rc == SSH_ERROR) {
         return SSH_AUTH_ERROR;

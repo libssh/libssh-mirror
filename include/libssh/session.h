@@ -57,6 +57,7 @@ enum ssh_pending_call_e {
 	SSH_PENDING_CALL_AUTH_PASSWORD,
 	SSH_PENDING_CALL_AUTH_OFFER_PUBKEY,
 	SSH_PENDING_CALL_AUTH_PUBKEY,
+	SSH_PENDING_CALL_AUTH_AGENT
 };
 
 /* libssh calls may block an undefined amount of time */
