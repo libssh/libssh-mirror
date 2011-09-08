@@ -3,7 +3,7 @@
  *
  * This file is part of the SSH Library
  *
- * Copyright (c) 2003-2008 by Aris Adamantiadis
+ * Copyright (c) 2003-2011 by Aris Adamantiadis <aris@0xbadc0de.be>
  * Copyright (c) 2008-2011 Andreas Schneider <asn@cryptomilk.org>
  *
  * The SSH Library is free software; you can redistribute it and/or modify
@@ -63,32 +63,11 @@
  * @returns SSH_AGAIN on nonblocking mode, if calling that function
  * again is necessary
  */
-static int ssh_userauth_request_service(ssh_session session)
-{
-    int rc = SSH_OK;
-
-    do {
-        rc = ssh_service_request(session,"ssh-userauth");
-        if (ssh_is_blocking(session)) {
-            if (rc == SSH_AGAIN) {
-                int err = ssh_handle_packets(session, -2);
-                if (err != SSH_OK) {
-                    /* error or timeout */
-                    return SSH_ERROR;
-                }
-            }
-        } else {
-            /* nonblocking */
-            ssh_handle_packets(session, 0);
-            rc = ssh_service_request(session, "ssh-userauth");
-            break;
-        }
-    } while (rc == SSH_AGAIN);
-
-    return rc;
+static int ssh_userauth_request_service(ssh_session session) {
+    return ssh_service_request(session,"ssh-userauth");
 }
 
-static int auth_status_termination(void *user){
+static int ssh_auth_response_termination(void *user){
   ssh_session session=(ssh_session)user;
   switch(session->auth_state){
     case SSH_AUTH_STATE_NONE:
@@ -115,25 +94,15 @@ static int auth_status_termination(void *user){
 static int ssh_userauth_get_response(ssh_session session) {
     int rc = SSH_AUTH_ERROR;
 
-    if (ssh_is_blocking(session)) {
-        rc = ssh_handle_packets_termination(session,
-                                            -2,
-                                            auth_status_termination,
-                                            session);
-        if (rc == SSH_ERROR) {
-            leave_function();
-            return SSH_AUTH_ERROR;
-        }
-    } else {
-        rc = ssh_handle_packets(session, 0);
-        if (rc == SSH_ERROR) {
-            leave_function();
-            return SSH_AUTH_ERROR;
-        }
-        if (!auth_status_termination(session)){
-            leave_function();
-            return SSH_AUTH_AGAIN;
-        }
+    rc = ssh_handle_packets_termination(session, SSH_TIMEOUT_USER,
+        ssh_auth_response_termination, session);
+    if (rc == SSH_ERROR) {
+      leave_function();
+      return SSH_AUTH_ERROR;
+    }
+    if (!ssh_auth_response_termination(session)){
+      leave_function();
+      return SSH_AUTH_AGAIN;
     }
 
     switch(session->auth_state) {
