@@ -263,6 +263,14 @@ int ssh_options_apply(ssh_session session);
 /* server.c */
 SSH_PACKET_CALLBACK(ssh_packet_kexdh_init);
 
+/* LOGGING */
+#define SSH_LOG(session, priority, ...) \
+    _ssh_log(session, priority, __FUNCTION__, __VA_ARGS__)
+void ssh_log_function(ssh_session session,
+                      int prioriry,
+                      const char *function,
+                      const char *format, ...) PRINTF_ATTRIBUTE(4, 5);
+
 /** Free memory space */
 #define SAFE_FREE(x) do { if ((x) != NULL) {free(x); x=NULL;} } while(0)
 
