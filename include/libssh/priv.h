@@ -135,11 +135,6 @@ struct error_struct {
 /* TODO: remove that include */
 #include "libssh/wrapper.h"
 
-struct ssh_keys_struct {
-  const char *privatekey;
-  const char *publickey;
-};
-
 struct ssh_message_struct;
 struct ssh_common_struct;
 
