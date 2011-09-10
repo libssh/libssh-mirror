@@ -36,6 +36,8 @@
 
 #ifndef _WIN32
 
+#include "config.h"
+
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
