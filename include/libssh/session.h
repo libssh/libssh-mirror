@@ -118,6 +118,7 @@ struct ssh_session_struct {
     enum ssh_auth_state_e auth_state;
     enum ssh_channel_request_state_e global_req_state;
     struct ssh_agent_state_struct *agent_state;
+    struct ssh_auth_auto_state_struct *auth_auto_state;
 
     KEX server_kex;
     KEX client_kex;
