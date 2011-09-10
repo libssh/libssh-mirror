@@ -193,6 +193,63 @@ static void torture_auth_password_nonblocking(void **state) {
     assert_true(rc == SSH_AUTH_SUCCESS);
 }
 
+static void torture_auth_agent(void **state) {
+    ssh_session session = *state;
+    char *user = getenv("TORTURE_USER");
+    int rc;
+
+    if (user == NULL) {
+        print_message("*** Please set the environment variable TORTURE_USER"
+                      " to enable this test!!\n");
+        return;
+    }
+
+    rc = ssh_options_set(session, SSH_OPTIONS_USER, user);
+    assert_true(rc == SSH_OK);
+
+    rc = ssh_connect(session);
+    assert_true(rc == SSH_OK);
+
+    rc = ssh_userauth_none(session,NULL);
+    /* This request should return a SSH_REQUEST_DENIED error */
+    if (rc == SSH_ERROR) {
+        assert_true(ssh_get_error_code(session) == SSH_REQUEST_DENIED);
+    }
+    assert_true(ssh_auth_list(session) & SSH_AUTH_METHOD_PUBLICKEY);
+
+    rc = ssh_userauth_agent(session, NULL);
+    assert_true(rc == SSH_AUTH_SUCCESS);
+}
+
+static void torture_auth_agent_nonblocking(void **state) {
+    ssh_session session = *state;
+    char *user = getenv("TORTURE_USER");
+    int rc;
+
+    if (user == NULL) {
+        print_message("*** Please set the environment variable TORTURE_USER"
+                      " to enable this test!!\n");
+        return;
+    }
+
+    rc = ssh_options_set(session, SSH_OPTIONS_USER, user);
+    assert_true(rc == SSH_OK);
+
+    rc = ssh_connect(session);
+    assert_true(rc == SSH_OK);
+
+    rc = ssh_userauth_none(session,NULL);
+    /* This request should return a SSH_REQUEST_DENIED error */
+    if (rc == SSH_ERROR) {
+        assert_true(ssh_get_error_code(session) == SSH_REQUEST_DENIED);
+    }
+    assert_true(ssh_auth_list(session) & SSH_AUTH_METHOD_PUBLICKEY);
+    ssh_set_blocking(session, 0);
+    do {
+      rc = ssh_userauth_agent(session, NULL);
+    } while (rc == SSH_AUTH_AGAIN);
+    assert_true(rc == SSH_AUTH_SUCCESS);
+}
 
 int torture_run_tests(void) {
     int rc;
@@ -201,6 +258,8 @@ int torture_run_tests(void) {
         unit_test_setup_teardown(torture_auth_password, setup, teardown),
         unit_test_setup_teardown(torture_auth_password_nonblocking, setup, teardown),
         unit_test_setup_teardown(torture_auth_autopubkey, setup, teardown),
+        unit_test_setup_teardown(torture_auth_agent, setup, teardown),
+        unit_test_setup_teardown(torture_auth_agent_nonblocking, setup, teardown),
     };
 
     ssh_init();
