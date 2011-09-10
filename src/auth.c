@@ -903,6 +903,19 @@ fail:
     return SSH_AUTH_ERROR;
 }
 
+enum ssh_agent_state_e {
+    SSH_AGENT_STATE_NONE = 0,
+    SSH_AGENT_STATE_PUBKEY,
+    SSH_AGENT_STATE_AUTH
+};
+
+struct ssh_agent_state_struct {
+    enum ssh_agent_state_e state;
+    ssh_key pubkey;
+    char *comment;
+};
+
+
 /**
  * @brief Try to do public key authentication with ssh agent.
  *
@@ -926,12 +939,9 @@ fail:
  * before you connect to the server.
  */
 int ssh_userauth_agent(ssh_session session,
-                       const char *username)
-{
-    ssh_key pubkey;
-    char *comment;
+                       const char *username) {
     int rc;
-
+    struct ssh_agent_state_struct *state;
     if (session == NULL) {
         return SSH_AUTH_ERROR;
     }
@@ -939,41 +949,63 @@ int ssh_userauth_agent(ssh_session session,
     if (!agent_is_running(session)) {
         return SSH_AUTH_DENIED;
     }
-
-    for (pubkey = ssh_agent_get_first_ident(session, &comment);
-         pubkey != NULL;
-         pubkey = ssh_agent_get_next_ident(session, &comment)) {
-        ssh_log(session, SSH_LOG_RARE, "Trying identity %s", comment);
-
-        rc = ssh_userauth_try_publickey(session, username, pubkey);
-        if (rc == SSH_AUTH_ERROR) {
-            ssh_string_free_char(comment);
-            ssh_key_free(pubkey);
-            return rc;
-        } else if (rc != SSH_AUTH_SUCCESS) {
-            ssh_log(session, SSH_LOG_PROTOCOL, "Public key of %s refused by server", comment);
-            ssh_string_free_char(comment);
-            ssh_key_free(pubkey);
-            continue;
-        }
-
-        ssh_log(session, SSH_LOG_PROTOCOL, "Public key of %s accepted by server", comment);
-
-        rc = ssh_userauth_agent_publickey(session, username, pubkey);
-        ssh_string_free_char(comment);
-        ssh_key_free(pubkey);
-        if (rc == SSH_AUTH_ERROR) {
-            return rc;
-        } else if (rc != SSH_AUTH_SUCCESS) {
-            ssh_log(session,
-                    SSH_LOG_RARE,
-                    "Server accepted public key but refused the signature");
-            continue;
-        }
-
-        return SSH_AUTH_SUCCESS;
+    if (!session->agent_state){
+        session->agent_state = malloc(sizeof(struct ssh_agent_state_struct));
+        ZERO_STRUCTP(session->agent_state);
+        session->agent_state->state=SSH_AGENT_STATE_NONE;
     }
+    state = session->agent_state;
+    if (state->pubkey == NULL)
+        state->pubkey = ssh_agent_get_first_ident(session, &state->comment);
+    while (state->pubkey != NULL) {
+        if(state->state == SSH_AGENT_STATE_NONE){
+            ssh_log(session, SSH_LOG_RARE, "Trying identity %s", state->comment);
+        }
+        if(state->state == SSH_AGENT_STATE_NONE ||
+                state->state == SSH_AGENT_STATE_PUBKEY){
+            rc = ssh_userauth_try_publickey(session, username, state->pubkey);
+            if (rc == SSH_AUTH_ERROR) {
+                ssh_string_free_char(state->comment);
+                ssh_key_free(state->pubkey);
+                SAFE_FREE(session->agent_state);
+                return rc;
+            } else if (rc == SSH_AUTH_AGAIN) {
+                state->state = SSH_AGENT_STATE_PUBKEY;
+                return rc;
+            } else if (rc != SSH_AUTH_SUCCESS) {
+                ssh_log(session, SSH_LOG_PROTOCOL, "Public key of %s refused by server", state->comment);
+                ssh_string_free_char(state->comment);
+                ssh_key_free(state->pubkey);
+                state->pubkey = ssh_agent_get_next_ident(session, &state->comment);
+                state->state = SSH_AGENT_STATE_NONE;
+                continue;
+            }
 
+            ssh_log(session, SSH_LOG_PROTOCOL, "Public key of %s accepted by server", state->comment);
+            state->state = SSH_AGENT_STATE_AUTH;
+        }
+        if (state->state == SSH_AGENT_STATE_AUTH){
+            rc = ssh_userauth_agent_publickey(session, username, state->pubkey);
+            if (rc == SSH_AUTH_AGAIN)
+                return rc;
+            ssh_string_free_char(state->comment);
+            ssh_key_free(state->pubkey);
+            if (rc == SSH_AUTH_ERROR) {
+                SAFE_FREE(session->agent_state);
+                return rc;
+            } else if (rc != SSH_AUTH_SUCCESS) {
+                ssh_log(session,
+                        SSH_LOG_RARE,
+                        "Server accepted public key but refused the signature");
+                state->pubkey = ssh_agent_get_next_ident(session, &state->comment);
+                state->state = SSH_AGENT_STATE_NONE;
+                continue;
+            }
+            SAFE_FREE(session->agent_state);
+            return SSH_AUTH_SUCCESS;
+        }
+    }
+    SAFE_FREE(session->agent_state);
     return SSH_AUTH_ERROR;
 }
 #endif
