@@ -254,9 +254,6 @@ enum ssh_keytypes_e{
  * @{
  */
 
-/**
- * @brief Verbosity level for logging and help to debugging
- */
 enum {
 	/** No logging at all
 	 */
@@ -276,6 +273,26 @@ enum {
 };
 /** @} */
 #define SSH_LOG_RARE SSH_LOG_WARNING
+
+/**
+ * @name Logging levels
+ *
+ * @brief Debug levels for logging.
+ * @{
+ */
+
+/** No logging at all */
+#define SSH_LOG_NONE 0
+/** Show only warnings */
+#define SSH_LOG_WARN 1
+/** Get some information what's going on */
+#define SSH_LOG_INFO 2
+/** Get detailed debuging information **/
+#define SSH_LOG_DEBUG 3
+/** Get trace output, packet information, ... */
+#define SSH_LOG_TRACE 4
+
+/** @} */
 
 enum ssh_options_e {
   SSH_OPTIONS_HOST,
