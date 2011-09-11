@@ -23,6 +23,10 @@
 
 #include "config.h"
 
+#ifndef _WIN32
+#include <arpa/inet.h>
+#endif
+
 #include "libssh/priv.h"
 #include "libssh/buffer.h"
 #include "libssh/kex.h"
