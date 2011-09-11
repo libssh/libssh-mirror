@@ -1510,8 +1510,15 @@ static int ssh_userauth_kbdint_init(ssh_session session,
 {
     ssh_string str;
     int rc;
-
+    if (session->pending_call_state == SSH_PENDING_CALL_AUTH_KBDINT_INIT)
+        goto pending;
+    if (session->pending_call_state != SSH_PENDING_CALL_NONE){
+        ssh_set_error_invalid(session,"ssh_userauth_kbdint_init");
+        return SSH_ERROR;
+    }
     rc = ssh_userauth_request_service(session);
+    if (rc == SSH_AGAIN)
+        return SSH_AUTH_AGAIN;
     if (rc != SSH_OK) {
         return SSH_AUTH_ERROR;
     }
@@ -1591,13 +1598,16 @@ static int ssh_userauth_kbdint_init(ssh_session session,
     }
 
     session->auth_state = SSH_AUTH_STATE_KBDINT_SENT;
+    session->pending_call_state = SSH_PENDING_CALL_AUTH_KBDINT_INIT;
+    ssh_log(session,SSH_LOG_PROTOCOL,"Sending keyboard-interactive init request");
     rc = packet_send(session);
     if (rc == SSH_ERROR) {
         return SSH_AUTH_ERROR;
     }
-
+pending:
     rc = ssh_userauth_get_response(session);
-
+    if (rc != SSH_AUTH_AGAIN)
+        session->pending_call_state = SSH_PENDING_CALL_NONE;
     return rc;
 fail:
     ssh_set_error_oom(session);
@@ -1622,7 +1632,12 @@ static int ssh_userauth_kbdint_send(ssh_session session)
     ssh_string answer;
     uint32_t i;
     int rc;
-
+    if (session->pending_call_state == SSH_PENDING_CALL_AUTH_KBDINT_SEND)
+        goto pending;
+    if (session->pending_call_state != SSH_PENDING_CALL_NONE){
+        ssh_set_error_invalid(session,"ssh_userauth_kbdint_send");
+        return SSH_ERROR;
+    }
     rc = buffer_add_u8(session->out_buffer, SSH2_MSG_USERAUTH_INFO_RESPONSE);
     if (rc < 0) {
         goto fail;
@@ -1652,16 +1667,19 @@ static int ssh_userauth_kbdint_send(ssh_session session)
     }
 
     session->auth_state = SSH_AUTH_STATE_KBDINT_SENT;
+    session->pending_call_state = SSH_PENDING_CALL_AUTH_KBDINT_SEND;
     ssh_kbdint_free(session->kbdint);
     session->kbdint = NULL;
+    ssh_log(session,SSH_LOG_PROTOCOL,"Sending keyboard-interactive response packet");
 
     rc = packet_send(session);
     if (rc == SSH_ERROR) {
         return SSH_AUTH_ERROR;
     }
-
+pending:
     rc = ssh_userauth_get_response(session);
-
+    if (rc != SSH_AUTH_AGAIN)
+        session->pending_call_state = SSH_PENDING_CALL_NONE;
     return rc;
 fail:
     ssh_set_error_oom(session);
@@ -1837,24 +1855,28 @@ int ssh_userauth_kbdint(ssh_session session, const char *user,
         return SSH_AUTH_DENIED;
     }
 #endif
-
-    if (session->kbdint == NULL) {
+    if ((session->pending_call_state == SSH_PENDING_CALL_NONE && session->kbdint == NULL) ||
+            session->pending_call_state == SSH_PENDING_CALL_AUTH_KBDINT_INIT)
         rc = ssh_userauth_kbdint_init(session, user, submethods);
-
-        return rc;
-    } else {
+    else if (session->pending_call_state == SSH_PENDING_CALL_AUTH_KBDINT_SEND ||
+            session->kbdint != NULL) {
         /*
          * If we are at this point, it is because session->kbdint exists.
          * It means the user has set some information there we need to send
          * the server and then we need to ack the status (new questions or ok
          * pass in).
+         * It is possible that session->kbdint is NULL while we're waiting for
+         * a reply, hence the test for the pending call.
          */
         rc = ssh_userauth_kbdint_send(session);
-
-        return rc;
+    } else {
+        /* We are here because session->kbdint == NULL & state != NONE.
+         * This should not happen
+         */
+        rc = SSH_AUTH_ERROR;
+        ssh_set_error(session,SSH_FATAL,"Invalid state in %s", __FUNCTION__);
     }
-
-    return SSH_AUTH_DENIED;
+    return rc;
 }
 
 /**
