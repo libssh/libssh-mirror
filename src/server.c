@@ -157,7 +157,7 @@ SSH_PACKET_CALLBACK(ssh_packet_kexdh_init){
 static int dh_handshake_server(ssh_session session) {
   ssh_key pubkey;
   ssh_key privkey = NULL;
-  ssh_string pubkey_blob;
+  ssh_string pubkey_blob = NULL;
   ssh_string sig_blob;
   ssh_string f;
   int rc;
@@ -960,7 +960,7 @@ int ssh_message_auth_reply_pk_ok(ssh_message msg, ssh_string algo, ssh_string pu
 
 int ssh_message_auth_reply_pk_ok_simple(ssh_message msg) {
     ssh_string algo;
-    ssh_string pubkey_blob;
+    ssh_string pubkey_blob = NULL;
     int ret;
 
     algo = ssh_string_from_char(msg->auth_request.pubkey->type_c);

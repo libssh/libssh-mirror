@@ -472,7 +472,7 @@ void privatekey_free(ssh_private_key prv) {
 ssh_string publickey_from_file(ssh_session session, const char *filename,
     int *type) {
     ssh_key key;
-    ssh_string key_str;
+    ssh_string key_str = NULL;
     int rc;
 
     (void) session; /* unused */
