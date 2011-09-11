@@ -25,6 +25,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <sys/time.h>
+#include <time.h>
 
 #include "libssh/priv.h"
 #include "libssh/misc.h"
