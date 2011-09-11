@@ -71,7 +71,8 @@ static int dh_handshake_server(ssh_session session);
  * @{
  */
 
-extern char *supported_methods[];
+extern const char *supported_methods[];
+
 /** @internal
  * This functions sets the Key Exchange protocols to be accepted
  * by the server. They depend on
@@ -84,7 +85,7 @@ extern char *supported_methods[];
 static int server_set_kex(ssh_session session) {
   KEX *server = &session->server_kex;
   int i, j;
-  char *wanted;
+  const char *wanted;
 
   ZERO_STRUCTP(server);
   ssh_get_random(server->cookie, 16, 0);
