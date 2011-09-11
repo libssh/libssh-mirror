@@ -91,9 +91,9 @@ static void do_ssh_log(struct ssh_common_struct *common,
 
     rc = current_timestring(1, date, sizeof(date));
     if (rc == 0) {
-        fprintf(stderr, "[%s, %d] %s\n", date, verbosity, function);
+        fprintf(stderr, "[%s, %d] %s", date, verbosity, function);
     } else {
-        fprintf(stderr, "[%d] %s\n", verbosity, function);
+        fprintf(stderr, "[%d] %s", verbosity, function);
     }
     fprintf(stderr, "  %s\n", buffer);
 }
