@@ -80,7 +80,7 @@ static void do_ssh_log(struct ssh_common_struct *common,
     if (common->callbacks && common->callbacks->log_function) {
         char buf[1024];
 
-        snprintf(buf, sizeof(buf), "%s: %s", function, buf);
+        snprintf(buf, sizeof(buf), "%s: %s", function, buffer);
 
         common->callbacks->log_function((ssh_session)common,
                                         verbosity,
