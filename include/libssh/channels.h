@@ -93,6 +93,7 @@ int channel_write_common(ssh_channel channel, const void *data,
 #ifdef WITH_SSH1
 SSH_PACKET_CALLBACK(ssh_packet_data1);
 SSH_PACKET_CALLBACK(ssh_packet_close1);
+SSH_PACKET_CALLBACK(ssh_packet_exist_status1);
 
 /* channels1.c */
 int channel_open_session1(ssh_channel channel);

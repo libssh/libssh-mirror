@@ -269,6 +269,19 @@ SSH_PACKET_CALLBACK(ssh_packet_close1){
   return SSH_PACKET_USED;
 }
 
+SSH_PACKET_CALLBACK(ssh_packet_exist_status1){
+  ssh_channel channel = ssh_get_channel1(session);
+  uint32_t status;
+  (void)type;
+  (void)user;
+  buffer_get_u32(packet, &status);
+  channel->state = SSH_CHANNEL_STATE_CLOSED;
+  channel->remote_eof = 1;
+  channel->exit_status = ntohl(status);
+
+  return SSH_PACKET_USED;
+}
+
 
 int channel_write1(ssh_channel channel, const void *data, int len) {
   ssh_session session = channel->session;
