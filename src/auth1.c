@@ -34,12 +34,23 @@
 #include "libssh/string.h"
 
 #ifdef WITH_SSH1
+
+static int ssh_auth_status_termination(void *s){
+    ssh_session session=s;
+    if(session->auth_state != SSH_AUTH_STATE_NONE ||
+            session->session_state == SSH_SESSION_STATE_ERROR)
+        return 1;
+    return 0;
+}
+
 static int wait_auth1_status(ssh_session session) {
   enter_function();
   /* wait for a packet */
-  while(session->auth_state == SSH_AUTH_STATE_NONE)
-    if (ssh_handle_packets(session, -2) != SSH_OK)
-      break;
+  if (ssh_handle_packets_termination(session,SSH_TIMEOUT_USER,
+          ssh_auth_status_termination, session) != SSH_OK){
+      leave_function();
+      return SSH_AUTH_ERROR;
+  }
   ssh_log(session,SSH_LOG_PROTOCOL,"Auth state : %d",session->auth_state);
   leave_function();
   switch(session->auth_state) {
@@ -48,7 +59,7 @@ static int wait_auth1_status(ssh_session session) {
     case SSH_AUTH_STATE_FAILED:
       return SSH_AUTH_DENIED;
     default:
-      return SSH_AUTH_ERROR;
+      return SSH_AUTH_AGAIN;
   }
   return SSH_AUTH_ERROR;
 }
@@ -67,6 +78,7 @@ void ssh_auth1_handler(ssh_session session, uint8_t type){
 
 static int send_username(ssh_session session, const char *username) {
   ssh_string user = NULL;
+  int rc;
   /* returns SSH_AUTH_SUCCESS or SSH_AUTH_DENIED */
   if(session->auth_service_state == SSH_AUTH_SERVICE_USER_SENT) {
     if(session->auth_state == SSH_AUTH_STATE_FAILED)
@@ -75,7 +87,8 @@ static int send_username(ssh_session session, const char *username) {
       return SSH_AUTH_SUCCESS;
     return SSH_AUTH_ERROR;
   }
-
+  if (session->auth_service_state == SSH_AUTH_SERVICE_SENT)
+      goto pending;
   if (!username) {
     if(!(username = session->username)) {
       if (ssh_options_set(session, SSH_OPTIONS_USER, NULL) < 0) {
@@ -101,20 +114,28 @@ static int send_username(ssh_session session, const char *username) {
   }
   ssh_string_free(user);
   session->auth_state=SSH_AUTH_STATE_NONE;
+  session->auth_service_state = SSH_AUTH_SERVICE_SENT;
   if (packet_send(session) == SSH_ERROR) {
     return SSH_AUTH_ERROR;
   }
-
-  if(wait_auth1_status(session) == SSH_AUTH_SUCCESS){
+pending:
+  rc = wait_auth1_status(session);
+  switch (rc){
+  case SSH_AUTH_SUCCESS:
     session->auth_service_state=SSH_AUTH_SERVICE_USER_SENT;
     session->auth_state=SSH_AUTH_STATE_SUCCESS;
     return SSH_AUTH_SUCCESS;
-  } else {
+  case SSH_AUTH_DENIED:
     session->auth_service_state=SSH_AUTH_SERVICE_USER_SENT;
     ssh_set_error(session,SSH_REQUEST_DENIED,"Password authentication necessary for user %s",username);
     return SSH_AUTH_DENIED;
+  case SSH_AUTH_AGAIN:
+    return SSH_AUTH_AGAIN;
+  default:
+    session->auth_service_state = SSH_AUTH_SERVICE_NONE;
+    session->auth_state=SSH_AUTH_STATE_ERROR;
+    return SSH_AUTH_ERROR;
   }
-
 }
 
 /* use the "none" authentication question */
@@ -146,7 +167,8 @@ int ssh_userauth1_password(ssh_session session, const char *username,
     leave_function();
     return rc;
   }
-
+  if (session->pending_call_state == SSH_PENDING_CALL_AUTH_PASSWORD)
+      goto pending;
   /* we trick a bit here. A known flaw in SSH1 protocol is that it's
    * easy to guess password sizes.
    * not that sure ...
@@ -195,11 +217,15 @@ int ssh_userauth1_password(ssh_session session, const char *username,
   ssh_string_burn(pwd);
   ssh_string_free(pwd);
   session->auth_state=SSH_AUTH_STATE_NONE;
+  session->pending_call_state = SSH_PENDING_CALL_AUTH_PASSWORD;
   if (packet_send(session) == SSH_ERROR) {
     leave_function();
     return SSH_AUTH_ERROR;
   }
+pending:
   rc = wait_auth1_status(session);
+  if (rc != SSH_AUTH_AGAIN)
+      session->pending_call_state = SSH_PENDING_CALL_NONE;
   leave_function();
   return rc;
 }
