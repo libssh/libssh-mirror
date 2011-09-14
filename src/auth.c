@@ -2004,7 +2004,7 @@ const char *ssh_userauth_kbdint_getanswer(ssh_session session, unsigned int i) {
                    || session->kbdint->answers == NULL) {
     return NULL;
   }
-  if (i > session->kbdint->nanswers) {
+  if (i >= session->kbdint->nanswers) {
     return NULL;
   }
 
@@ -2031,7 +2031,7 @@ int ssh_userauth_kbdint_setanswer(ssh_session session, unsigned int i,
   if (session == NULL)
     return -1;
   if (answer == NULL || session->kbdint == NULL ||
-      i > session->kbdint->nprompts) {
+      i >= session->kbdint->nprompts) {
     ssh_set_error_invalid(session, __FUNCTION__);
     return -1;
   }
