@@ -291,8 +291,10 @@ int channel_write1(ssh_channel channel, const void *data, int len) {
     if (packet_send(session) == SSH_ERROR) {
       return -1;
     }
+    ssh_handle_packets(session, SSH_TIMEOUT_NONBLOCKING);
   }
-
+  if (ssh_blocking_flush(session,SSH_TIMEOUT_USER) == SSH_ERROR)
+      return -1;
   return origlen;
 }
 
