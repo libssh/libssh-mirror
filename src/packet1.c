@@ -55,7 +55,7 @@ ssh_packet_callback default_packet_handlers1[]= {
   ssh_packet_data1,               //SSH_SMSG_STDOUT_DATA                17
   ssh_packet_data1,               //SSH_SMSG_STDERR_DATA                18
   NULL,                           //SSH_CMSG_EOF                        19
-  NULL,                           //SSH_SMSG_EXITSTATUS                 20
+  ssh_packet_exist_status1,       //SSH_SMSG_EXITSTATUS                 20
   NULL,                           //SSH_MSG_CHANNEL_OPEN_CONFIRMATION   21
   NULL,                           //SSH_MSG_CHANNEL_OPEN_FAILURE        22
   NULL,                           //SSH_MSG_CHANNEL_DATA                23
