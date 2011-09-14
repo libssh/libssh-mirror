@@ -1754,10 +1754,9 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_request) {
 
   nprompts = ntohl(nprompts);
   ssh_log(session,SSH_LOG_PACKET,"kbdint: %d prompts",nprompts);
-  if (nprompts == 0 ||
-      nprompts > KBDINT_MAX_PROMPT) {
+  if (nprompts > KBDINT_MAX_PROMPT) {
     ssh_set_error(session, SSH_FATAL,
-        "Wrong number of prompts requested by the server: %u (0x%.4x)",
+        "Too much prompt asked from server: %u (0x%.4x)",
         nprompts, nprompts);
     ssh_kbdint_free(session->kbdint);
     session->kbdint = NULL;
