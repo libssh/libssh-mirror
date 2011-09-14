@@ -86,6 +86,13 @@ static int build_session_id1(ssh_session session, ssh_string servern,
   md5_update(md5,ssh_string_data(hostn),ssh_string_len(hostn));
   md5_update(md5,ssh_string_data(servern),ssh_string_len(servern));
   md5_update(md5,session->server_kex.cookie,8);
+  if(session->next_crypto->session_id != NULL)
+      SAFE_FREE(session->next_crypto->session_id);
+  session->next_crypto->session_id = malloc(MD5_DIGEST_LEN);
+  if(session->next_crypto->session_id == NULL){
+      ssh_set_error_oom(session);
+      return SSH_ERROR;
+  }
   md5_final(session->next_crypto->session_id,md5);
 #ifdef DEBUG_CRYPTO
   ssh_print_hexa("session_id",session->next_crypto->session_id,MD5_DIGEST_LEN);
@@ -196,11 +203,31 @@ static ssh_string encrypt_session_key(ssh_session session, ssh_public_key srvkey
   int i;
   ssh_string data1 = NULL;
   ssh_string data2 = NULL;
-
+  if(session->next_crypto->encryptkey != NULL)
+      SAFE_FREE(session->next_crypto->encryptkey);
+  if(session->next_crypto->decryptkey != NULL)
+        SAFE_FREE(session->next_crypto->decryptkey);
+  if(session->next_crypto->encryptIV != NULL)
+          SAFE_FREE(session->next_crypto->encryptIV);
+  if(session->next_crypto->decryptIV != NULL)
+          SAFE_FREE(session->next_crypto->decryptIV);
+  session->next_crypto->encryptkey = malloc(32);
+  session->next_crypto->decryptkey = malloc(32);
+  session->next_crypto->encryptIV = malloc(32);
+  session->next_crypto->decryptIV = malloc(32);
+  if(session->next_crypto->encryptkey == NULL ||
+          session->next_crypto->decryptkey == NULL ||
+          session->next_crypto->encryptIV == NULL ||
+          session->next_crypto->decryptIV == NULL){
+      ssh_set_error_oom(session);
+      return NULL;
+  }
   /* first, generate a session key */
   ssh_get_random(session->next_crypto->encryptkey, 32, 1);
   memcpy(buffer, session->next_crypto->encryptkey, 32);
   memcpy(session->next_crypto->decryptkey, session->next_crypto->encryptkey, 32);
+  memset(session->next_crypto->encryptIV, 0, 32);
+  memset(session->next_crypto->decryptIV, 0, 32);
 
 #ifdef DEBUG_CRYPTO
   ssh_print_hexa("session key",buffer,32);
