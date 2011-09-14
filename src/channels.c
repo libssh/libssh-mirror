@@ -331,6 +331,13 @@ static int grow_window(ssh_session session, ssh_channel channel, int minimumsize
   uint32_t new_window = minimumsize > WINDOWBASE ? minimumsize : WINDOWBASE;
 
   enter_function();
+#ifdef WITH_SSH1
+  if (session->version == 1){
+      channel->remote_window = new_window;
+      leave_function();
+      return SSH_OK;
+  }
+#endif
   if(new_window <= channel->local_window){
     ssh_log(session,SSH_LOG_PROTOCOL,
         "growing window (channel %d:%d) to %d bytes : not needed (%d bytes)",
