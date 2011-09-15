@@ -737,8 +737,21 @@ int ssh_scp_request_get_permissions(ssh_scp scp){
 /** @brief Get the size of the file being pushed from the other party.
  *
  * @returns             The numeric size of the file being read.
+ * @warning             The real size may not fit in a 32 bits field and may
+ *                      be truncated.
+ * @see ssh_scp_request_get_size64()
  */
-uint64_t ssh_scp_request_get_size(ssh_scp scp){
+size_t ssh_scp_request_get_size(ssh_scp scp){
+  if(scp==NULL)
+      return 0;
+  return scp->filelen;
+}
+
+/** @brief Get the size of the file being pushed from the other party.
+ *
+ * @returns             The numeric size of the file being read.
+ */
+uint64_t ssh_scp_request_get_size64(ssh_scp scp){
   if(scp==NULL)
       return 0;
   return scp->filelen;
