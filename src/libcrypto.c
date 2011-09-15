@@ -527,7 +527,8 @@ static struct crypto_struct ssh_ciphertab[] = {
 };
 
 
-struct crypto_struct *ssh_get_ciphertab(){
+struct crypto_struct *ssh_get_ciphertab(void)
+{
   return ssh_ciphertab;
 }
 
