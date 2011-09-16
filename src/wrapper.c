@@ -156,7 +156,10 @@ void crypto_free(struct ssh_crypto_struct *crypto){
 static int crypt_set_algorithms2(ssh_session session){
   const char *wanted;
   int i = 0;
+  int rc = SSH_ERROR;
   struct crypto_struct *ssh_ciphertab=ssh_get_ciphertab();
+
+  enter_function();
   /* we must scan the kex entries to find crypto algorithms and set their appropriate structure */
   /* out */
   wanted = session->kex_methods[SSH_CRYPT_C_S];
@@ -168,14 +171,14 @@ static int crypt_set_algorithms2(ssh_session session){
     ssh_set_error(session, SSH_FATAL,
         "crypt_set_algorithms2: no crypto algorithm function found for %s",
         wanted);
-    return SSH_ERROR;
+    goto error;
   }
   ssh_log(session, SSH_LOG_PACKET, "Set output algorithm to %s", wanted);
 
   session->next_crypto->out_cipher = cipher_new(i);
   if (session->next_crypto->out_cipher == NULL) {
-    ssh_set_error(session, SSH_FATAL, "No space left");
-    return SSH_ERROR;
+    ssh_set_error_oom(session);
+    goto error;
   }
   i = 0;
 
@@ -189,14 +192,14 @@ static int crypt_set_algorithms2(ssh_session session){
     ssh_set_error(session, SSH_FATAL,
         "Crypt_set_algorithms: no crypto algorithm function found for %s",
         wanted);
-    return SSH_ERROR;
+    goto error;
   }
   ssh_log(session, SSH_LOG_PACKET, "Set input algorithm to %s", wanted);
 
   session->next_crypto->in_cipher = cipher_new(i);
   if (session->next_crypto->in_cipher == NULL) {
-    ssh_set_error(session, SSH_FATAL, "Not enough space");
-    return SSH_ERROR;
+    ssh_set_error_oom(session);
+    goto error;
   }
 
   /* compression */
@@ -212,7 +215,10 @@ static int crypt_set_algorithms2(ssh_session session){
   if (strcmp(session->kex_methods[SSH_COMP_S_C], "zlib@openssh.com") == 0) {
     session->next_crypto->delayed_compress_in = 1;
   }
-  return SSH_OK;
+  rc = SSH_OK;
+error:
+  leave_function();
+  return rc;
 }
 
 static int crypt_set_algorithms1(ssh_session session) {
@@ -227,18 +233,18 @@ static int crypt_set_algorithms1(ssh_session session) {
 
   if (ssh_ciphertab[i].name == NULL) {
     ssh_set_error(session, SSH_FATAL, "cipher 3des-cbc-ssh1 not found!");
-    return -1;
+    return SSH_ERROR;
   }
 
   session->next_crypto->out_cipher = cipher_new(i);
   if (session->next_crypto->out_cipher == NULL) {
-    ssh_set_error(session, SSH_FATAL, "No space left");
+    ssh_set_error_oom(session);
     return SSH_ERROR;
   }
 
   session->next_crypto->in_cipher = cipher_new(i);
   if (session->next_crypto->in_cipher == NULL) {
-    ssh_set_error(session, SSH_FATAL, "No space left");
+    ssh_set_error_oom(session);
     return SSH_ERROR;
   }
 
@@ -250,6 +256,7 @@ int crypt_set_algorithms(ssh_session session) {
     crypt_set_algorithms2(session);
 }
 
+#ifdef WITH_SERVER
 int crypt_set_algorithms_server(ssh_session session){
     char *method = NULL;
     int i = 0;
@@ -324,4 +331,5 @@ int crypt_set_algorithms_server(ssh_session session){
     return rc;
 }
 
+#endif /* WITH_SERVER */
 /* vim: set ts=2 sw=2 et cindent: */
