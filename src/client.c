@@ -546,9 +546,11 @@ static void ssh_client_connection_callback(ssh_session session){
 		case SSH_SESSION_STATE_KEXINIT_RECEIVED:
 			set_status(session,0.6f);
 			ssh_list_kex(session, &session->server_kex);
-			if (set_kex(session) < 0) {
+			if (set_client_kex(session) < 0) {
 				goto error;
 			}
+			if (ssh_kex_select_methods(session) == SSH_ERROR)
+			    goto error;
 			if (ssh_send_kex(session, 0) < 0) {
 				goto error;
 			}
@@ -819,8 +821,7 @@ error:
       SAFE_FREE(session->server_kex.methods[i]);
     }
   }
-  SAFE_FREE(session->client_kex.methods);
-  SAFE_FREE(session->server_kex.methods);
+
   if(session->ssh_message_list){
     ssh_message msg;
     while((msg=ssh_list_pop_head(ssh_message ,session->ssh_message_list))

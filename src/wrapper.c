@@ -159,14 +159,14 @@ static int crypt_set_algorithms2(ssh_session session){
   struct crypto_struct *ssh_ciphertab=ssh_get_ciphertab();
   /* we must scan the kex entries to find crypto algorithms and set their appropriate structure */
   /* out */
-  wanted = session->client_kex.methods[SSH_CRYPT_C_S];
+  wanted = session->kex_methods[SSH_CRYPT_C_S];
   while (ssh_ciphertab[i].name && strcmp(wanted, ssh_ciphertab[i].name)) {
     i++;
   }
 
   if (ssh_ciphertab[i].name == NULL) {
     ssh_set_error(session, SSH_FATAL,
-        "Crypt_set_algorithms2: no crypto algorithm function found for %s",
+        "crypt_set_algorithms2: no crypto algorithm function found for %s",
         wanted);
     return SSH_ERROR;
   }
@@ -180,7 +180,7 @@ static int crypt_set_algorithms2(ssh_session session){
   i = 0;
 
   /* in */
-  wanted = session->client_kex.methods[SSH_CRYPT_S_C];
+  wanted = session->kex_methods[SSH_CRYPT_S_C];
   while (ssh_ciphertab[i].name && strcmp(wanted, ssh_ciphertab[i].name)) {
     i++;
   }
@@ -200,16 +200,16 @@ static int crypt_set_algorithms2(ssh_session session){
   }
 
   /* compression */
-  if (strcmp(session->client_kex.methods[SSH_COMP_C_S], "zlib") == 0) {
+  if (strcmp(session->kex_methods[SSH_COMP_C_S], "zlib") == 0) {
     session->next_crypto->do_compress_out = 1;
   }
-  if (strcmp(session->client_kex.methods[SSH_COMP_S_C], "zlib") == 0) {
+  if (strcmp(session->kex_methods[SSH_COMP_S_C], "zlib") == 0) {
     session->next_crypto->do_compress_in = 1;
   }
-  if (strcmp(session->client_kex.methods[SSH_COMP_C_S], "zlib@openssh.com") == 0) {
+  if (strcmp(session->kex_methods[SSH_COMP_C_S], "zlib@openssh.com") == 0) {
     session->next_crypto->delayed_compress_out = 1;
   }
-  if (strcmp(session->client_kex.methods[SSH_COMP_S_C], "zlib@openssh.com") == 0) {
+  if (strcmp(session->kex_methods[SSH_COMP_S_C], "zlib@openssh.com") == 0) {
     session->next_crypto->delayed_compress_in = 1;
   }
   return SSH_OK;

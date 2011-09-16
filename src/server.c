@@ -104,11 +104,6 @@ static int server_set_kex(ssh_session session) {
     }
   }
 
-  server->methods = malloc(10 * sizeof(char *));
-  if (server->methods == NULL) {
-    return -1;
-  }
-
   for (i = 0; i < 10; i++) {
     if ((wanted = session->wanted_methods[i]) == NULL) {
       wanted = supported_methods[i];
@@ -118,7 +113,6 @@ static int server_set_kex(ssh_session session) {
       for (j = i - 1; j <= 0; j--) {
         SAFE_FREE(server->methods[j]);
       }
-      SAFE_FREE(server->methods);
       return -1;
     }
   }
@@ -126,29 +120,50 @@ static int server_set_kex(ssh_session session) {
   return 0;
 }
 
+/** @internal
+ * @brief parse an incoming SSH_MSG_KEXDH_INIT packet and complete
+ *        key exchange
+ **/
+static int ssh_server_kexdh_init(ssh_session session, ssh_buffer packet){
+    ssh_string e;
+    e = buffer_get_ssh_string(packet);
+    if (e == NULL) {
+      ssh_set_error(session, SSH_FATAL, "No e number in client request");
+      return -1;
+    }
+    if (dh_import_e(session, e) < 0) {
+      ssh_set_error(session, SSH_FATAL, "Cannot import e number");
+      session->session_state=SSH_SESSION_STATE_ERROR;
+    } else {
+      session->dh_handshake_state=DH_STATE_INIT_SENT;
+      dh_handshake_server(session);
+    }
+    ssh_string_free(e);
+    return SSH_OK;
+}
+
 SSH_PACKET_CALLBACK(ssh_packet_kexdh_init){
-  ssh_string e;
+  int rc;
   (void)type;
-  (void)user;enter_function();
+  (void)user;
+  enter_function();
   ssh_log(session,SSH_LOG_PACKET,"Received SSH_MSG_KEXDH_INIT");
   if(session->dh_handshake_state != DH_STATE_INIT){
     ssh_log(session,SSH_LOG_RARE,"Invalid state for SSH_MSG_KEXDH_INIT");
     goto error;
   }
-  e = buffer_get_ssh_string(packet);
-  if (e == NULL) {
-    ssh_set_error(session, SSH_FATAL, "No e number in client request");
-    return -1;
+  switch(session->next_crypto->kex_type){
+      case SSH_KEX_DH_GROUP1_SHA1:
+        rc=ssh_server_kexdh_init(session, packet);
+        break;
+  #ifdef HAVE_ECDH
+      case SSH_KEX_ECDH_SHA2_NISTP256:
+        rc = ssh_server_ecdh_init(session, packet);
+        break;
+  #endif
+      default:
+        ssh_set_error(session,SSH_FATAL,"Wrong kex type in ssh_packet_kexdh_init");
   }
-  if (dh_import_e(session, e) < 0) {
-    ssh_set_error(session, SSH_FATAL, "Cannot import e number");
-    session->session_state=SSH_SESSION_STATE_ERROR;
-  } else {
-    session->dh_handshake_state=DH_STATE_INIT_SENT;
-    dh_handshake_server(session);
-  }
-  ssh_string_free(e);
-
   error:
   leave_function();
   return SSH_PACKET_USED;
@@ -343,7 +358,7 @@ static void ssh_server_connection_callback(ssh_session session){
 			set_status(session,0.6f);
 			ssh_list_kex(session, &session->client_kex); // log client kex
             crypt_set_algorithms_server(session);
-			if (set_kex(session) < 0) {
+			if (ssh_kex_select_methods(session) < 0) {
 				goto error;
 			}
 			set_status(session,0.8f);

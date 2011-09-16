@@ -303,22 +303,10 @@ SSH_PACKET_CALLBACK(ssh_packet_kexinit){
 
   /* copy the server kex info into an array of strings */
   if (server_kex) {
-    session->client_kex.methods = malloc(10 * sizeof(char **));
-    if (session->client_kex.methods == NULL) {
-      ssh_set_error_oom(session);
-      goto error;
-    }
-
     for (i = 0; i < 10; i++) {
       session->client_kex.methods[i] = strings[i];
     }
   } else { /* client */
-    session->server_kex.methods = malloc(10 * sizeof(char **));
-    if (session->server_kex.methods == NULL) {
-      ssh_set_error_oom(session);
-      goto error;
-    }
-
     for (i = 0; i < 10; i++) {
       session->server_kex.methods[i] = strings[i];
     }
@@ -355,51 +343,60 @@ void ssh_list_kex(ssh_session session, KEX *kex) {
   }
 }
 
-/* set_kex basicaly look at the option structure of the session and set the output kex message */
-/* it must be aware of the server kex message */
-/* it can fail if option is null, not any user specified kex method matches the server one, if not any default kex matches */
-
-int set_kex(ssh_session session){
-    KEX *server = &session->server_kex;
-    KEX *client=&session->client_kex;
+/**
+ * @brief sets the key exchange parameters to be sent to the server,
+ *        in function of the options and available methods.
+ */
+int set_client_kex(ssh_session session){
+    KEX *client= &session->client_kex;
     int i;
     const char *wanted;
     enter_function();
     ssh_get_random(client->cookie,16,0);
-    client->methods=malloc(10 * sizeof(char **));
-    if (client->methods == NULL) {
-      ssh_set_error_oom(session);
-      leave_function();
-      return -1;
-    }
     memset(client->methods,0,10*sizeof(char **));
     for (i=0;i<10;i++){
-        if(!(wanted=session->wanted_methods[i]))
+        wanted=session->wanted_methods[i];
+        if(wanted == NULL)
             wanted=default_methods[i];
-        client->methods[i]=ssh_find_matching(server->methods[i],wanted);
-        if(!client->methods[i] && i < SSH_LANG_C_S){
-            ssh_set_error(session,SSH_FATAL,"kex error : did not find one of algos %s in list %s for %s",
-            wanted,server->methods[i],ssh_kex_nums[i]);
-            leave_function();
-            return -1;
-        } else {
-          if ((i >= SSH_LANG_C_S) && (client->methods[i] == NULL)) {
-            /* we can safely do that for languages */
-            client->methods[i] = strdup("");
-            if (client->methods[i] == NULL) {
-              return -1;
-            }
-          }
-        }
-    }
-    if(strcmp(client->methods[SSH_KEX], "diffie-hellman-group1-sha1") == 0){
-      session->next_crypto->kex_type=SSH_KEX_DH_GROUP1_SHA1;
-    } else if(strcmp(client->methods[SSH_KEX], "ecdh-sha2-nistp256") == 0){
-      session->next_crypto->kex_type=SSH_KEX_ECDH_SHA2_NISTP256;
+        client->methods[i]=strdup(wanted);
     }
     leave_function();
-    return 0;
+    return SSH_OK;
 }
+
+/** @brief Select the different methods on basis of client's and
+ * server's kex messages, and watches out if a match is possible.
+ */
+int ssh_kex_select_methods (ssh_session session){
+    KEX *server = &session->server_kex;
+    KEX *client = &session->client_kex;
+    int rc = SSH_ERROR;
+    int i;
+
+    enter_function();
+
+    for (i=0;i<10;i++){
+        session->kex_methods[i]=ssh_find_matching(server->methods[i],client->methods[i]);
+        if(session->kex_methods[i] == NULL && i < SSH_LANG_C_S){
+            ssh_set_error(session,SSH_FATAL,"kex error : no match for method %s: server [%s], client [%s]",
+                    ssh_kex_nums[i],server->methods[i],client->methods[i]);
+            goto error;
+        } else if ((i >= SSH_LANG_C_S) && (session->kex_methods[i] == NULL)) {
+            /* we can safely do that for languages */
+            session->kex_methods[i] = strdup("");
+        }
+    }
+    if(strcmp(session->kex_methods[SSH_KEX], "diffie-hellman-group1-sha1") == 0){
+      session->next_crypto->kex_type=SSH_KEX_DH_GROUP1_SHA1;
+    } else if(strcmp(session->kex_methods[SSH_KEX], "ecdh-sha2-nistp256") == 0){
+      session->next_crypto->kex_type=SSH_KEX_ECDH_SHA2_NISTP256;
+    }
+    rc = SSH_OK;
+error:
+    leave_function();
+    return rc;
+}
+
 
 /* this function only sends the predefined set of kex methods */
 int ssh_send_kex(ssh_session session, int server_kex) {

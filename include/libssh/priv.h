@@ -121,11 +121,6 @@ extern "C" {
 #include <sys/time.h>
 #endif
 
-typedef struct kex_struct {
-	unsigned char cookie[16];
-	char **methods;
-} KEX;
-
 struct error_struct {
 /* error handling */
     int error_code;
@@ -137,6 +132,7 @@ struct error_struct {
 
 struct ssh_message_struct;
 struct ssh_common_struct;
+struct ssh_kex_struct;
 
 /* server data */
 
@@ -197,8 +193,9 @@ void ssh_sock_set_blocking(socket_t sock);
 /* in kex.c */
 extern const char *ssh_kex_nums[];
 int ssh_send_kex(ssh_session session, int server_kex);
-void ssh_list_kex(ssh_session session, KEX *kex);
-int set_kex(ssh_session session);
+void ssh_list_kex(ssh_session session, struct ssh_kex_struct *kex);
+int set_client_kex(ssh_session session);
+int ssh_kex_select_methods(ssh_session session);
 int verify_existing_algo(int algo, const char *name);
 char **space_tokenize(const char *chain);
 int ssh_get_kex1(ssh_session session);

@@ -35,5 +35,8 @@
 int ssh_client_ecdh_init(ssh_session session);
 int ssh_client_ecdh_reply(ssh_session session, ssh_buffer packet);
 
+#ifdef WITH_SERVER
+int ssh_server_ecdh_init(ssh_session session, ssh_buffer packet);
+#endif /* WITH_SERVER */
 
 #endif /* ECDH_H_ */

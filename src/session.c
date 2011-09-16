@@ -208,8 +208,6 @@ void ssh_free(ssh_session session) {
       SAFE_FREE(session->server_kex.methods[i]);
     }
   }
-  SAFE_FREE(session->client_kex.methods);
-  SAFE_FREE(session->server_kex.methods);
 
   ssh_key_free(session->srv.dsa_key);
   ssh_key_free(session->srv.rsa_key);

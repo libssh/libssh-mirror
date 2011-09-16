@@ -166,4 +166,12 @@ error:
   return SSH_ERROR;
 }
 
+#ifdef WITH_SERVER
+
+int ssh_server_ecdh_init(ssh_session session, ssh_buffer packet){
+    return SSH_OK;
+}
+
+#endif /* WITH_SERVER */
+
 #endif /* HAVE_ECDH */

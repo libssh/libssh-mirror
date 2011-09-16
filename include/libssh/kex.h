@@ -25,6 +25,13 @@
 #include "libssh/priv.h"
 #include "libssh/callbacks.h"
 
+#define SSH_KEX_METHODS 10
+
+typedef struct ssh_kex_struct {
+    unsigned char cookie[16];
+    char *methods[SSH_KEX_METHODS];
+} KEX;
+
 SSH_PACKET_CALLBACK(ssh_packet_kexinit);
 #ifdef WITH_SSH1
 SSH_PACKET_CALLBACK(ssh_packet_publickey1);
