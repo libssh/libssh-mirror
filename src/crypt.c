@@ -61,7 +61,7 @@ uint32_t packet_decrypt_len(ssh_session session, char *crypted){
 }
 
 int packet_decrypt(ssh_session session, void *data,uint32_t len) {
-  struct crypto_struct *crypto = session->current_crypto->in_cipher;
+  struct ssh_cipher_struct *crypto = session->current_crypto->in_cipher;
   char *out = NULL;
   if(len % session->current_crypto->in_cipher->blocksize != 0){
     ssh_set_error(session, SSH_FATAL, "Cryptographic functions must be set on at least one blocksize (received %d)",len);
@@ -90,7 +90,7 @@ int packet_decrypt(ssh_session session, void *data,uint32_t len) {
 }
 
 unsigned char *packet_encrypt(ssh_session session, void *data, uint32_t len) {
-  struct crypto_struct *crypto = NULL;
+  struct ssh_cipher_struct *crypto = NULL;
   HMACCTX ctx = NULL;
   char *out = NULL;
   unsigned int finallen;

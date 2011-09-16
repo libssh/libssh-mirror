@@ -62,6 +62,6 @@ typedef gcry_mpi_t bignum;
 
 #endif /* HAVE_LIBGCRYPT */
 
-struct crypto_struct *ssh_get_ciphertab(void);
+struct ssh_cipher_struct *ssh_get_ciphertab(void);
 
 #endif /* LIBGCRYPT_H_ */

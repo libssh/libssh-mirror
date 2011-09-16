@@ -36,7 +36,7 @@ struct ssh_mac_ctx_struct {
   gcry_md_hd_t ctx;
 };
 
-static int alloc_key(struct crypto_struct *cipher) {
+static int alloc_key(struct ssh_cipher_struct *cipher) {
     cipher->key = malloc(cipher->keylen);
     if (cipher->key == NULL) {
       return -1;
@@ -166,7 +166,7 @@ void hmac_final(HMACCTX c, unsigned char *hashmacbuf, unsigned int *len) {
 }
 
 /* the wrapper functions for blowfish */
-static int blowfish_set_key(struct crypto_struct *cipher, void *key, void *IV){
+static int blowfish_set_key(struct ssh_cipher_struct *cipher, void *key, void *IV){
   if (cipher->key == NULL) {
     if (alloc_key(cipher) < 0) {
       return -1;
@@ -190,17 +190,17 @@ static int blowfish_set_key(struct crypto_struct *cipher, void *key, void *IV){
   return 0;
 }
 
-static void blowfish_encrypt(struct crypto_struct *cipher, void *in,
+static void blowfish_encrypt(struct ssh_cipher_struct *cipher, void *in,
     void *out, unsigned long len) {
   gcry_cipher_encrypt(cipher->key[0], out, len, in, len);
 }
 
-static void blowfish_decrypt(struct crypto_struct *cipher, void *in,
+static void blowfish_decrypt(struct ssh_cipher_struct *cipher, void *in,
     void *out, unsigned long len) {
   gcry_cipher_decrypt(cipher->key[0], out, len, in, len);
 }
 
-static int aes_set_key(struct crypto_struct *cipher, void *key, void *IV) {
+static int aes_set_key(struct ssh_cipher_struct *cipher, void *key, void *IV) {
   int mode=GCRY_CIPHER_MODE_CBC;
   if (cipher->key == NULL) {
     if (alloc_key(cipher) < 0) {
@@ -252,17 +252,17 @@ static int aes_set_key(struct crypto_struct *cipher, void *key, void *IV) {
   return 0;
 }
 
-static void aes_encrypt(struct crypto_struct *cipher, void *in, void *out,
+static void aes_encrypt(struct ssh_cipher_struct *cipher, void *in, void *out,
     unsigned long len) {
   gcry_cipher_encrypt(cipher->key[0], out, len, in, len);
 }
 
-static void aes_decrypt(struct crypto_struct *cipher, void *in, void *out,
+static void aes_decrypt(struct ssh_cipher_struct *cipher, void *in, void *out,
     unsigned long len) {
   gcry_cipher_decrypt(cipher->key[0], out, len, in, len);
 }
 
-static int des3_set_key(struct crypto_struct *cipher, void *key, void *IV) {
+static int des3_set_key(struct ssh_cipher_struct *cipher, void *key, void *IV) {
   if (cipher->key == NULL) {
     if (alloc_key(cipher) < 0) {
       return -1;
@@ -285,17 +285,17 @@ static int des3_set_key(struct crypto_struct *cipher, void *key, void *IV) {
   return 0;
 }
 
-static void des3_encrypt(struct crypto_struct *cipher, void *in,
+static void des3_encrypt(struct ssh_cipher_struct *cipher, void *in,
     void *out, unsigned long len) {
   gcry_cipher_encrypt(cipher->key[0], out, len, in, len);
 }
 
-static void des3_decrypt(struct crypto_struct *cipher, void *in,
+static void des3_decrypt(struct ssh_cipher_struct *cipher, void *in,
     void *out, unsigned long len) {
   gcry_cipher_decrypt(cipher->key[0], out, len, in, len);
 }
 
-static int des3_1_set_key(struct crypto_struct *cipher, void *key, void *IV) {
+static int des3_1_set_key(struct ssh_cipher_struct *cipher, void *key, void *IV) {
   if (cipher->key == NULL) {
     if (alloc_key(cipher) < 0) {
       return -1;
@@ -346,14 +346,14 @@ static int des3_1_set_key(struct crypto_struct *cipher, void *key, void *IV) {
   return 0;
 }
 
-static void des3_1_encrypt(struct crypto_struct *cipher, void *in,
+static void des3_1_encrypt(struct ssh_cipher_struct *cipher, void *in,
     void *out, unsigned long len) {
   gcry_cipher_encrypt(cipher->key[0], out, len, in, len);
   gcry_cipher_decrypt(cipher->key[1], in, len, out, len);
   gcry_cipher_encrypt(cipher->key[2], out, len, in, len);
 }
 
-static void des3_1_decrypt(struct crypto_struct *cipher, void *in,
+static void des3_1_decrypt(struct ssh_cipher_struct *cipher, void *in,
     void *out, unsigned long len) {
   gcry_cipher_decrypt(cipher->key[2], out, len, in, len);
   gcry_cipher_encrypt(cipher->key[1], in, len, out, len);
@@ -361,7 +361,7 @@ static void des3_1_decrypt(struct crypto_struct *cipher, void *in,
 }
 
 /* the table of supported ciphers */
-static struct crypto_struct ssh_ciphertab[] = {
+static struct ssh_cipher_struct ssh_ciphertab[] = {
   {
     .name            = "blowfish-cbc",
     .blocksize       = 8,
@@ -474,7 +474,7 @@ static struct crypto_struct ssh_ciphertab[] = {
   }
 };
 
-struct crypto_struct *ssh_get_ciphertab(void)
+struct ssh_cipher_struct *ssh_get_ciphertab(void)
 {
   return ssh_ciphertab;
 }

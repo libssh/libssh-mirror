@@ -49,10 +49,10 @@
 #include "libssh/pki.h"
 
 /* it allocates a new cipher structure based on its offset into the global table */
-static struct crypto_struct *cipher_new(int offset) {
-  struct crypto_struct *cipher = NULL;
+static struct ssh_cipher_struct *cipher_new(int offset) {
+  struct ssh_cipher_struct *cipher = NULL;
 
-  cipher = malloc(sizeof(struct crypto_struct));
+  cipher = malloc(sizeof(struct ssh_cipher_struct));
   if (cipher == NULL) {
     return NULL;
   }
@@ -63,7 +63,7 @@ static struct crypto_struct *cipher_new(int offset) {
   return cipher;
 }
 
-static void cipher_free(struct crypto_struct *cipher) {
+static void cipher_free(struct ssh_cipher_struct *cipher) {
 #ifdef HAVE_LIBGCRYPT
   unsigned int i;
 #endif
@@ -164,7 +164,7 @@ static int crypt_set_algorithms2(ssh_session session){
   const char *wanted;
   int i = 0;
   int rc = SSH_ERROR;
-  struct crypto_struct *ssh_ciphertab=ssh_get_ciphertab();
+  struct ssh_cipher_struct *ssh_ciphertab=ssh_get_ciphertab();
 
   enter_function();
   /* we must scan the kex entries to find crypto algorithms and set their appropriate structure */
@@ -230,7 +230,7 @@ error:
 
 static int crypt_set_algorithms1(ssh_session session) {
   int i = 0;
-  struct crypto_struct *ssh_ciphertab=ssh_get_ciphertab();
+  struct ssh_cipher_struct *ssh_ciphertab=ssh_get_ciphertab();
 
   /* right now, we force 3des-cbc to be taken */
   while (ssh_ciphertab[i].name && strcmp(ssh_ciphertab[i].name,
@@ -268,7 +268,7 @@ int crypt_set_algorithms_server(ssh_session session){
     char *method = NULL;
     int i = 0;
     int rc = SSH_ERROR;
-    struct crypto_struct *ssh_ciphertab=ssh_get_ciphertab();
+    struct ssh_cipher_struct *ssh_ciphertab=ssh_get_ciphertab();
 
     if (session == NULL) {
         return SSH_ERROR;

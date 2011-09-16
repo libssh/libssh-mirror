@@ -65,7 +65,7 @@ struct ssh_mac_ctx_struct {
   } ctx;
 };
 
-static int alloc_key(struct crypto_struct *cipher) {
+static int alloc_key(struct ssh_cipher_struct *cipher) {
     cipher->key = malloc(cipher->keylen);
     if (cipher->key == NULL) {
       return -1;
@@ -234,7 +234,7 @@ void hmac_final(HMACCTX ctx, unsigned char *hashmacbuf, unsigned int *len) {
 
 #ifdef HAS_BLOWFISH
 /* the wrapper functions for blowfish */
-static int blowfish_set_key(struct crypto_struct *cipher, void *key, void *IV){
+static int blowfish_set_key(struct ssh_cipher_struct *cipher, void *key, void *IV){
   if (cipher->key == NULL) {
     if (alloc_key(cipher) < 0) {
       return -1;
@@ -245,19 +245,19 @@ static int blowfish_set_key(struct crypto_struct *cipher, void *key, void *IV){
   return 0;
 }
 
-static void blowfish_encrypt(struct crypto_struct *cipher, void *in,
+static void blowfish_encrypt(struct ssh_cipher_struct *cipher, void *in,
     void *out, unsigned long len) {
   BF_cbc_encrypt(in, out, len, cipher->key, cipher->IV, BF_ENCRYPT);
 }
 
-static void blowfish_decrypt(struct crypto_struct *cipher, void *in,
+static void blowfish_decrypt(struct ssh_cipher_struct *cipher, void *in,
     void *out, unsigned long len) {
   BF_cbc_encrypt(in, out, len, cipher->key, cipher->IV, BF_DECRYPT);
 }
 #endif /* HAS_BLOWFISH */
 
 #ifdef HAS_AES
-static int aes_set_encrypt_key(struct crypto_struct *cipher, void *key,
+static int aes_set_encrypt_key(struct ssh_cipher_struct *cipher, void *key,
     void *IV) {
   if (cipher->key == NULL) {
     if (alloc_key(cipher) < 0) {
@@ -271,7 +271,7 @@ static int aes_set_encrypt_key(struct crypto_struct *cipher, void *key,
   cipher->IV=IV;
   return 0;
 }
-static int aes_set_decrypt_key(struct crypto_struct *cipher, void *key,
+static int aes_set_decrypt_key(struct ssh_cipher_struct *cipher, void *key,
     void *IV) {
   if (cipher->key == NULL) {
     if (alloc_key(cipher) < 0) {
@@ -286,12 +286,12 @@ static int aes_set_decrypt_key(struct crypto_struct *cipher, void *key,
   return 0;
 }
 
-static void aes_encrypt(struct crypto_struct *cipher, void *in, void *out,
+static void aes_encrypt(struct ssh_cipher_struct *cipher, void *in, void *out,
     unsigned long len) {
   AES_cbc_encrypt(in, out, len, cipher->key, cipher->IV, AES_ENCRYPT);
 }
 
-static void aes_decrypt(struct crypto_struct *cipher, void *in, void *out,
+static void aes_decrypt(struct ssh_cipher_struct *cipher, void *in, void *out,
     unsigned long len) {
   AES_cbc_encrypt(in, out, len, cipher->key, cipher->IV, AES_DECRYPT);
 }
@@ -306,7 +306,7 @@ static void aes_decrypt(struct crypto_struct *cipher, void *in, void *out,
  * the size of the CTR counter and incidentally the blocksize, but not the keysize.
  * @param len[in] must be a multiple of AES128 block size.
  */
-static void aes_ctr128_encrypt(struct crypto_struct *cipher, void *in, void *out,
+static void aes_ctr128_encrypt(struct ssh_cipher_struct *cipher, void *in, void *out,
     unsigned long len) {
   unsigned char tmp_buffer[128/8];
   unsigned int num=0;
@@ -322,7 +322,7 @@ static void aes_ctr128_encrypt(struct crypto_struct *cipher, void *in, void *out
 #endif /* HAS_AES */
 
 #ifdef HAS_DES
-static int des3_set_key(struct crypto_struct *cipher, void *key,void *IV) {
+static int des3_set_key(struct ssh_cipher_struct *cipher, void *key,void *IV) {
   if (cipher->key == NULL) {
     if (alloc_key(cipher) < 0) {
       return -1;
@@ -339,7 +339,7 @@ static int des3_set_key(struct crypto_struct *cipher, void *key,void *IV) {
   return 0;
 }
 
-static void des3_encrypt(struct crypto_struct *cipher, void *in,
+static void des3_encrypt(struct ssh_cipher_struct *cipher, void *in,
     void *out, unsigned long len) {
   DES_ede3_cbc_encrypt(in, out, len, cipher->key,
       (void*)((uint8_t*)cipher->key + sizeof(DES_key_schedule)),
@@ -347,7 +347,7 @@ static void des3_encrypt(struct crypto_struct *cipher, void *in,
       cipher->IV, 1);
 }
 
-static void des3_decrypt(struct crypto_struct *cipher, void *in,
+static void des3_decrypt(struct ssh_cipher_struct *cipher, void *in,
     void *out, unsigned long len) {
   DES_ede3_cbc_encrypt(in, out, len, cipher->key,
       (void*)((uint8_t*)cipher->key + sizeof(DES_key_schedule)),
@@ -355,7 +355,7 @@ static void des3_decrypt(struct crypto_struct *cipher, void *in,
       cipher->IV, 0);
 }
 
-static void des3_1_encrypt(struct crypto_struct *cipher, void *in,
+static void des3_1_encrypt(struct ssh_cipher_struct *cipher, void *in,
     void *out, unsigned long len) {
 #ifdef DEBUG_CRYPTO
   ssh_print_hexa("Encrypt IV before", cipher->IV, 24);
@@ -370,7 +370,7 @@ static void des3_1_encrypt(struct crypto_struct *cipher, void *in,
 #endif
 }
 
-static void des3_1_decrypt(struct crypto_struct *cipher, void *in,
+static void des3_1_decrypt(struct ssh_cipher_struct *cipher, void *in,
     void *out, unsigned long len) {
 #ifdef DEBUG_CRYPTO
   ssh_print_hexa("Decrypt IV before", cipher->IV, 24);
@@ -392,10 +392,10 @@ static void des3_1_decrypt(struct crypto_struct *cipher, void *in,
 /*
  * The table of supported ciphers
  *
- * WARNING: If you modify crypto_struct, you must make sure the order is
+ * WARNING: If you modify ssh_cipher_struct, you must make sure the order is
  * correct!
  */
-static struct crypto_struct ssh_ciphertab[] = {
+static struct ssh_cipher_struct ssh_ciphertab[] = {
 #ifdef HAS_BLOWFISH
   {
     "blowfish-cbc",
@@ -527,7 +527,7 @@ static struct crypto_struct ssh_ciphertab[] = {
 };
 
 
-struct crypto_struct *ssh_get_ciphertab(void)
+struct ssh_cipher_struct *ssh_get_ciphertab(void)
 {
   return ssh_ciphertab;
 }

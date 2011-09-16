@@ -70,7 +70,7 @@ struct ssh_crypto_struct {
     unsigned char *encryptMAC;
     unsigned char *decryptMAC;
     unsigned char hmacbuf[EVP_MAX_MD_SIZE];
-    struct crypto_struct *in_cipher, *out_cipher; /* the cipher structures/objects */
+    struct ssh_cipher_struct *in_cipher, *out_cipher; /* the cipher structures/objects */
     ssh_string server_pubkey;
     const char *server_pubkey_type;
     int do_compress_out; /* idem */
@@ -87,7 +87,7 @@ struct ssh_crypto_struct {
     enum ssh_mac_e mac_type; /* Mac operations to use for key gen */
 };
 
-struct crypto_struct {
+struct ssh_cipher_struct {
     const char *name; /* ssh name of the algorithm */
     unsigned int blocksize; /* blocksize of the algo */
     unsigned int keylen; /* length of the key structure */
@@ -99,11 +99,11 @@ struct crypto_struct {
 #endif
     unsigned int keysize; /* bytes of key used. != keylen */
     /* sets the new key for immediate use */
-    int (*set_encrypt_key)(struct crypto_struct *cipher, void *key, void *IV);
-    int (*set_decrypt_key)(struct crypto_struct *cipher, void *key, void *IV);
-    void (*cbc_encrypt)(struct crypto_struct *cipher, void *in, void *out,
+    int (*set_encrypt_key)(struct ssh_cipher_struct *cipher, void *key, void *IV);
+    int (*set_decrypt_key)(struct ssh_cipher_struct *cipher, void *key, void *IV);
+    void (*cbc_encrypt)(struct ssh_cipher_struct *cipher, void *in, void *out,
         unsigned long len);
-    void (*cbc_decrypt)(struct crypto_struct *cipher, void *in, void *out,
+    void (*cbc_decrypt)(struct ssh_cipher_struct *cipher, void *in, void *out,
         unsigned long len);
 };
 

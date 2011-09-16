@@ -72,7 +72,7 @@ SHA256CTX sha256_init(void);
 void sha256_update(SHA256CTX c, const void *data, unsigned long len);
 void sha256_final(unsigned char *md, SHA256CTX c);
 
-struct crypto_struct *ssh_get_ciphertab(void);
+struct ssh_cipher_struct *ssh_get_ciphertab(void);
 
 #endif /* HAVE_LIBCRYPTO */
 
