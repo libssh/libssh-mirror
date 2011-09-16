@@ -83,7 +83,7 @@ extern const char *supported_methods[];
  */
 
 static int server_set_kex(ssh_session session) {
-  KEX *server = &session->server_kex;
+  KEX *server = &session->next_crypto->server_kex;
   int i, j;
   const char *wanted;
 
@@ -356,7 +356,7 @@ static void ssh_server_connection_callback(ssh_session session){
 			break;
 		case SSH_SESSION_STATE_KEXINIT_RECEIVED:
 			set_status(session,0.6f);
-			ssh_list_kex(session, &session->client_kex); // log client kex
+			ssh_list_kex(session, &session->next_crypto->client_kex); // log client kex
 			if (ssh_kex_select_methods(session) < 0) {
 				goto error;
 			}

@@ -197,17 +197,6 @@ void ssh_free(ssh_session session) {
 #ifndef _WIN32
   agent_free(session->agent);
 #endif /* _WIN32 */
-  if (session->client_kex.methods) {
-    for (i = 0; i < 10; i++) {
-      SAFE_FREE(session->client_kex.methods[i]);
-    }
-  }
-
-  if (session->server_kex.methods) {
-    for (i = 0; i < 10; i++) {
-      SAFE_FREE(session->server_kex.methods[i]);
-    }
-  }
 
   ssh_key_free(session->srv.dsa_key);
   ssh_key_free(session->srv.rsa_key);

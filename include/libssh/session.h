@@ -27,7 +27,6 @@
 #include "libssh/auth.h"
 #include "libssh/channels.h"
 #include "libssh/poll.h"
-#include "libssh/kex.h"
 
 /* These are the different states a SSH session can be into its life */
 enum ssh_session_state_e {
@@ -122,11 +121,6 @@ struct ssh_session_struct {
     enum ssh_channel_request_state_e global_req_state;
     struct ssh_agent_state_struct *agent_state;
     struct ssh_auth_auto_state_struct *auth_auto_state;
-
-    /* kex sent by server, client, and mutually elected methods */
-    KEX server_kex;
-    KEX client_kex;
-    char *kex_methods[SSH_KEX_METHODS];
 
     ssh_buffer in_hashbuf;
     ssh_buffer out_hashbuf;

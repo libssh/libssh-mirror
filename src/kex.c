@@ -260,22 +260,22 @@ SSH_PACKET_CALLBACK(ssh_packet_kexinit){
   	goto error;
   }
   if (server_kex) {
-      if (buffer_get_data(packet,session->client_kex.cookie,16) != 16) {
+      if (buffer_get_data(packet,session->next_crypto->client_kex.cookie,16) != 16) {
         ssh_set_error(session, SSH_FATAL, "ssh_packet_kexinit: no cookie in packet");
         goto error;
       }
 
-      if (hashbufin_add_cookie(session, session->client_kex.cookie) < 0) {
+      if (hashbufin_add_cookie(session, session->next_crypto->client_kex.cookie) < 0) {
         ssh_set_error(session, SSH_FATAL, "ssh_packet_kexinit: adding cookie failed");
         goto error;
       }
   } else {
-      if (buffer_get_data(packet,session->server_kex.cookie,16) != 16) {
+      if (buffer_get_data(packet,session->next_crypto->server_kex.cookie,16) != 16) {
         ssh_set_error(session, SSH_FATAL, "ssh_packet_kexinit: no cookie in packet");
         goto error;
       }
 
-      if (hashbufin_add_cookie(session, session->server_kex.cookie) < 0) {
+      if (hashbufin_add_cookie(session, session->next_crypto->server_kex.cookie) < 0) {
         ssh_set_error(session, SSH_FATAL, "ssh_packet_kexinit: adding cookie failed");
         goto error;
       }
@@ -303,12 +303,12 @@ SSH_PACKET_CALLBACK(ssh_packet_kexinit){
 
   /* copy the server kex info into an array of strings */
   if (server_kex) {
-    for (i = 0; i < 10; i++) {
-      session->client_kex.methods[i] = strings[i];
+    for (i = 0; i < SSH_KEX_METHODS; i++) {
+      session->next_crypto->client_kex.methods[i] = strings[i];
     }
   } else { /* client */
-    for (i = 0; i < 10; i++) {
-      session->server_kex.methods[i] = strings[i];
+    for (i = 0; i < SSH_KEX_METHODS; i++) {
+      session->next_crypto->server_kex.methods[i] = strings[i];
     }
   }
 
@@ -348,7 +348,7 @@ void ssh_list_kex(ssh_session session, KEX *kex) {
  *        in function of the options and available methods.
  */
 int set_client_kex(ssh_session session){
-    KEX *client= &session->client_kex;
+    KEX *client= &session->next_crypto->client_kex;
     int i;
     const char *wanted;
     enter_function();
@@ -368,27 +368,27 @@ int set_client_kex(ssh_session session){
  * server's kex messages, and watches out if a match is possible.
  */
 int ssh_kex_select_methods (ssh_session session){
-    KEX *server = &session->server_kex;
-    KEX *client = &session->client_kex;
+    KEX *server = &session->next_crypto->server_kex;
+    KEX *client = &session->next_crypto->client_kex;
     int rc = SSH_ERROR;
     int i;
 
     enter_function();
 
     for (i=0;i<10;i++){
-        session->kex_methods[i]=ssh_find_matching(server->methods[i],client->methods[i]);
-        if(session->kex_methods[i] == NULL && i < SSH_LANG_C_S){
+        session->next_crypto->kex_methods[i]=ssh_find_matching(server->methods[i],client->methods[i]);
+        if(session->next_crypto->kex_methods[i] == NULL && i < SSH_LANG_C_S){
             ssh_set_error(session,SSH_FATAL,"kex error : no match for method %s: server [%s], client [%s]",
                     ssh_kex_nums[i],server->methods[i],client->methods[i]);
             goto error;
-        } else if ((i >= SSH_LANG_C_S) && (session->kex_methods[i] == NULL)) {
+        } else if ((i >= SSH_LANG_C_S) && (session->next_crypto->kex_methods[i] == NULL)) {
             /* we can safely do that for languages */
-            session->kex_methods[i] = strdup("");
+            session->next_crypto->kex_methods[i] = strdup("");
         }
     }
-    if(strcmp(session->kex_methods[SSH_KEX], "diffie-hellman-group1-sha1") == 0){
+    if(strcmp(session->next_crypto->kex_methods[SSH_KEX], "diffie-hellman-group1-sha1") == 0){
       session->next_crypto->kex_type=SSH_KEX_DH_GROUP1_SHA1;
-    } else if(strcmp(session->kex_methods[SSH_KEX], "ecdh-sha2-nistp256") == 0){
+    } else if(strcmp(session->next_crypto->kex_methods[SSH_KEX], "ecdh-sha2-nistp256") == 0){
       session->next_crypto->kex_type=SSH_KEX_ECDH_SHA2_NISTP256;
     }
     rc = SSH_OK;
@@ -400,7 +400,8 @@ error:
 
 /* this function only sends the predefined set of kex methods */
 int ssh_send_kex(ssh_session session, int server_kex) {
-  KEX *kex = (server_kex ? &session->server_kex : &session->client_kex);
+  KEX *kex = (server_kex ? &session->next_crypto->server_kex :
+      &session->next_crypto->client_kex);
   ssh_string str = NULL;
   int i;
 

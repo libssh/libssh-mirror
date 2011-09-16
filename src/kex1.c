@@ -85,7 +85,7 @@ static int build_session_id1(ssh_session session, ssh_string servern,
 #endif
   md5_update(md5,ssh_string_data(hostn),ssh_string_len(hostn));
   md5_update(md5,ssh_string_data(servern),ssh_string_len(servern));
-  md5_update(md5,session->server_kex.cookie,8);
+  md5_update(md5,session->next_crypto->server_kex.cookie,8);
   if(session->next_crypto->session_id != NULL)
       SAFE_FREE(session->next_crypto->session_id);
   session->next_crypto->session_id = malloc(MD5_DIGEST_LEN);
@@ -319,7 +319,7 @@ SSH_PACKET_CALLBACK(ssh_packet_publickey1){
     ssh_set_error(session,SSH_FATAL,"SSH_KEXINIT received in wrong state");
     goto error;
   }
-  if (buffer_get_data(packet, session->server_kex.cookie, 8) != 8) {
+  if (buffer_get_data(packet, session->next_crypto->server_kex.cookie, 8) != 8) {
     ssh_set_error(session, SSH_FATAL, "Can't get cookie in buffer");
     goto error;
   }
@@ -408,7 +408,7 @@ SSH_PACKET_CALLBACK(ssh_packet_publickey1){
    if (buffer_add_u8(session->out_buffer, SSH_CIPHER_3DES) < 0) {
      goto error;
    }
-   if (buffer_add_data(session->out_buffer, session->server_kex.cookie, 8) < 0) {
+   if (buffer_add_data(session->out_buffer, session->next_crypto->server_kex.cookie, 8) < 0) {
      goto error;
    }
 

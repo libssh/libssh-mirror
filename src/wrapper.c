@@ -98,6 +98,7 @@ struct ssh_crypto_struct *crypto_new(void) {
 }
 
 void crypto_free(struct ssh_crypto_struct *crypto){
+  int i;
   if (crypto == NULL) {
     return;
   }
@@ -148,6 +149,12 @@ void crypto_free(struct ssh_crypto_struct *crypto){
     SAFE_FREE(crypto->decryptkey);
   }
 
+  for (i = 0; i < SSH_KEX_METHODS; i++) {
+      SAFE_FREE(crypto->client_kex.methods[i]);
+      SAFE_FREE(crypto->server_kex.methods[i]);
+      SAFE_FREE(crypto->kex_methods[i]);
+  }
+
   memset(crypto,0,sizeof(*crypto));
 
   SAFE_FREE(crypto);
@@ -162,7 +169,7 @@ static int crypt_set_algorithms2(ssh_session session){
   enter_function();
   /* we must scan the kex entries to find crypto algorithms and set their appropriate structure */
   /* out */
-  wanted = session->kex_methods[SSH_CRYPT_C_S];
+  wanted = session->next_crypto->kex_methods[SSH_CRYPT_C_S];
   while (ssh_ciphertab[i].name && strcmp(wanted, ssh_ciphertab[i].name)) {
     i++;
   }
@@ -183,7 +190,7 @@ static int crypt_set_algorithms2(ssh_session session){
   i = 0;
 
   /* in */
-  wanted = session->kex_methods[SSH_CRYPT_S_C];
+  wanted = session->next_crypto->kex_methods[SSH_CRYPT_S_C];
   while (ssh_ciphertab[i].name && strcmp(wanted, ssh_ciphertab[i].name)) {
     i++;
   }
@@ -203,16 +210,16 @@ static int crypt_set_algorithms2(ssh_session session){
   }
 
   /* compression */
-  if (strcmp(session->kex_methods[SSH_COMP_C_S], "zlib") == 0) {
+  if (strcmp(session->next_crypto->kex_methods[SSH_COMP_C_S], "zlib") == 0) {
     session->next_crypto->do_compress_out = 1;
   }
-  if (strcmp(session->kex_methods[SSH_COMP_S_C], "zlib") == 0) {
+  if (strcmp(session->next_crypto->kex_methods[SSH_COMP_S_C], "zlib") == 0) {
     session->next_crypto->do_compress_in = 1;
   }
-  if (strcmp(session->kex_methods[SSH_COMP_C_S], "zlib@openssh.com") == 0) {
+  if (strcmp(session->next_crypto->kex_methods[SSH_COMP_C_S], "zlib@openssh.com") == 0) {
     session->next_crypto->delayed_compress_out = 1;
   }
-  if (strcmp(session->kex_methods[SSH_COMP_S_C], "zlib@openssh.com") == 0) {
+  if (strcmp(session->next_crypto->kex_methods[SSH_COMP_S_C], "zlib@openssh.com") == 0) {
     session->next_crypto->delayed_compress_in = 1;
   }
   rc = SSH_OK;
@@ -270,7 +277,7 @@ int crypt_set_algorithms_server(ssh_session session){
     /* we must scan the kex entries to find crypto algorithms and set their appropriate structure */
     enter_function();
     /* out */
-    method = session->kex_methods[SSH_CRYPT_S_C];
+    method = session->next_crypto->kex_methods[SSH_CRYPT_S_C];
     while(ssh_ciphertab[i].name && strcmp(method,ssh_ciphertab[i].name))
         i++;
     if(!ssh_ciphertab[i].name){
@@ -287,7 +294,7 @@ int crypt_set_algorithms_server(ssh_session session){
     }
     i=0;
     /* in */
-    method = session->kex_methods[SSH_CRYPT_C_S];
+    method = session->next_crypto->kex_methods[SSH_CRYPT_C_S];
     while(ssh_ciphertab[i].name && strcmp(method,ssh_ciphertab[i].name))
         i++;
     if(!ssh_ciphertab[i].name){
@@ -304,7 +311,7 @@ int crypt_set_algorithms_server(ssh_session session){
     }
 
     /* compression */
-    method = session->kex_methods[SSH_CRYPT_C_S];
+    method = session->next_crypto->kex_methods[SSH_CRYPT_C_S];
     if(strcmp(method,"zlib") == 0){
         ssh_log(session,SSH_LOG_PACKET,"enabling C->S compression");
         session->next_crypto->do_compress_in=1;
@@ -313,7 +320,7 @@ int crypt_set_algorithms_server(ssh_session session){
         ssh_set_error(session,SSH_FATAL,"zlib@openssh.com not supported");
         goto error;
     }
-    method = session->kex_methods[SSH_CRYPT_S_C];
+    method = session->next_crypto->kex_methods[SSH_CRYPT_S_C];
     if(strcmp(method,"zlib") == 0){
         ssh_log(session,SSH_LOG_PACKET,"enabling S->C compression\n");
         session->next_crypto->do_compress_out=1;
@@ -323,7 +330,7 @@ int crypt_set_algorithms_server(ssh_session session){
         goto error;
     }
 
-    method = session->kex_methods[SSH_HOSTKEYS];
+    method = session->next_crypto->kex_methods[SSH_HOSTKEYS];
     session->srv.hostkey = ssh_key_type_from_name(method);
     rc = SSH_OK;
     error:

@@ -44,6 +44,7 @@
 #include <openssl/ecdh.h>
 #endif
 #include "libssh/ecdh.h"
+#include "libssh/kex.h"
 
 enum ssh_key_exchange_e {
   /* diffie-hellman-group1-sha1 */
@@ -78,6 +79,10 @@ struct ssh_crypto_struct {
     int delayed_compress_out;
     void *compress_out_ctx; /* don't touch it */
     void *compress_in_ctx; /* really, don't */
+    /* kex sent by server, client, and mutually elected methods */
+    KEX server_kex;
+    KEX client_kex;
+    char *kex_methods[SSH_KEX_METHODS];
     enum ssh_key_exchange_e kex_type;
     enum ssh_mac_e mac_type; /* Mac operations to use for key gen */
 };

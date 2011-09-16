@@ -771,13 +771,13 @@ int hashbufout_add_cookie(ssh_session session) {
 
   if (session->server) {
     if (buffer_add_data(session->out_hashbuf,
-          session->server_kex.cookie, 16) < 0) {
+          session->next_crypto->server_kex.cookie, 16) < 0) {
       buffer_reinit(session->out_hashbuf);
       return -1;
     }
   } else {
     if (buffer_add_data(session->out_hashbuf,
-          session->client_kex.cookie, 16) < 0) {
+          session->next_crypto->client_kex.cookie, 16) < 0) {
       buffer_reinit(session->out_hashbuf);
       return -1;
     }

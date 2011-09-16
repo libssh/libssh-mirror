@@ -545,7 +545,7 @@ static void ssh_client_connection_callback(ssh_session session){
 			break;
 		case SSH_SESSION_STATE_KEXINIT_RECEIVED:
 			set_status(session,0.6f);
-			ssh_list_kex(session, &session->server_kex);
+			ssh_list_kex(session, &session->next_crypto->server_kex);
 			if (set_client_kex(session) < 0) {
 				goto error;
 			}
@@ -810,17 +810,6 @@ error:
   session->auth_methods = 0;
   SAFE_FREE(session->serverbanner);
   SAFE_FREE(session->clientbanner);
-  if (session->client_kex.methods) {
-    for (i = 0; i < 10; i++) {
-      SAFE_FREE(session->client_kex.methods[i]);
-    }
-  }
-
-  if (session->server_kex.methods) {
-    for (i = 0; i < 10; i++) {
-      SAFE_FREE(session->server_kex.methods[i]);
-    }
-  }
 
   if(session->ssh_message_list){
     ssh_message msg;
