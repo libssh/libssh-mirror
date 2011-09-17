@@ -157,7 +157,7 @@ int channel_change_pty_size1(ssh_channel channel, int cols, int rows) {
 
   ssh_log(session, SSH_LOG_PROTOCOL, "Change pty size send");
   while(channel->request_state==SSH_CHANNEL_REQ_STATE_PENDING){
-    ssh_handle_packets(session,-1);
+    ssh_handle_packets(session, SSH_TIMEOUT_INFINITE);
   }
   switch(channel->request_state){
     case SSH_CHANNEL_REQ_STATE_ERROR:

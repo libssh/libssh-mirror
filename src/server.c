@@ -1081,7 +1081,7 @@ void ssh_set_message_callback(ssh_session session,
 int ssh_execute_message_callbacks(ssh_session session){
   ssh_message msg=NULL;
   int ret;
-  ssh_handle_packets(session, 0);
+  ssh_handle_packets(session, SSH_TIMEOUT_NONBLOCKING);
   if(!session->ssh_message_list)
     return SSH_OK;
   if(session->ssh_message_callback){

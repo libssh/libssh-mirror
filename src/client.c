@@ -687,8 +687,12 @@ pending:
           session->session_state = SSH_SESSION_STATE_ERROR;
       }
   }
-  else
-      ssh_handle_packets_termination(session, 0, ssh_connect_termination, session);
+  else {
+      ssh_handle_packets_termination(session,
+                                     SSH_TIMEOUT_NONBLOCKING,
+                                     ssh_connect_termination,
+                                     session);
+  }
   ssh_log(session,SSH_LOG_PACKET,"ssh_connect: Actual state : %d",session->session_state);
   if(!ssh_is_blocking(session) && !ssh_connect_termination(session)){
     leave_function();
