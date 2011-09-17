@@ -64,7 +64,15 @@
  * again is necessary
  */
 static int ssh_userauth_request_service(ssh_session session) {
-    return ssh_service_request(session,"ssh-userauth");
+    int rc;
+
+    rc = ssh_service_request(session, "ssh-userauth");
+    if (rc != SSH_OK) {
+        SSH_LOG(session, SSH_LOG_WARN,
+                "Failed to request \"ssh-userauth\" service");
+    }
+
+    return rc;
 }
 
 static int ssh_auth_response_termination(void *user){
@@ -146,10 +154,10 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_banner){
   enter_function();
   banner = buffer_get_ssh_string(packet);
   if (banner == NULL) {
-    ssh_log(session, SSH_LOG_RARE,
+    SSH_LOG(session, SSH_LOG_WARN,
         "Invalid SSH_USERAUTH_BANNER packet");
   } else {
-    ssh_log(session, SSH_LOG_PACKET,
+    SSH_LOG(session, SSH_LOG_DEBUG,
         "Received SSH_USERAUTH_BANNER packet");
     if(session->banner != NULL)
       ssh_string_free(session->banner);
@@ -190,12 +198,12 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_failure){
 
   if (partial) {
     session->auth_state=SSH_AUTH_STATE_PARTIAL;
-    ssh_log(session,SSH_LOG_PROTOCOL,
+    SSH_LOG(session, SSH_LOG_INFO,
         "Partial success. Authentication that can continue: %s",
         auth_methods);
   } else {
     session->auth_state=SSH_AUTH_STATE_FAILED;
-    ssh_log(session, SSH_LOG_PROTOCOL,
+    SSH_LOG(session, SSH_LOG_INFO,
         "Access denied. Authentication that can continue: %s",
         auth_methods);
     ssh_set_error(session, SSH_REQUEST_DENIED,
@@ -236,16 +244,18 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_success){
   (void)packet;
   (void)type;
   (void)user;
-  ssh_log(session,SSH_LOG_PACKET,"Received SSH_USERAUTH_SUCCESS");
-  ssh_log(session,SSH_LOG_PROTOCOL,"Authentication successful");
+
+  SSH_LOG(session, SSH_LOG_DEBUG, "Authentication successful");
+  SSH_LOG(session, SSH_LOG_TRACE, "Received SSH_USERAUTH_SUCCESS");
+
   session->auth_state=SSH_AUTH_STATE_SUCCESS;
   session->session_state=SSH_SESSION_STATE_AUTHENTICATED;
   if(session->current_crypto && session->current_crypto->delayed_compress_out){
-  	ssh_log(session,SSH_LOG_PROTOCOL,"Enabling delayed compression OUT");
+      SSH_LOG(session, SSH_LOG_DEBUG, "Enabling delayed compression OUT");
   	session->current_crypto->do_compress_out=1;
   }
   if(session->current_crypto && session->current_crypto->delayed_compress_in){
-  	ssh_log(session,SSH_LOG_PROTOCOL,"Enabling delayed compression IN");
+      SSH_LOG(session,SSH_LOG_DEBUG, "Enabling delayed compression IN");
   	session->current_crypto->do_compress_in=1;
   }
   leave_function();
@@ -263,14 +273,17 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_success){
 SSH_PACKET_CALLBACK(ssh_packet_userauth_pk_ok){
 	int rc;
 	enter_function();
-  ssh_log(session,SSH_LOG_PACKET,"Received SSH_USERAUTH_PK_OK/INFO_REQUEST");
+
+  SSH_LOG(session, SSH_LOG_TRACE, "Received SSH_USERAUTH_PK_OK/INFO_REQUEST");
+
   if(session->auth_state==SSH_AUTH_STATE_KBDINT_SENT){
     /* Assuming we are in keyboard-interactive context */
-    ssh_log(session,SSH_LOG_PACKET,"keyboard-interactive context, assuming SSH_USERAUTH_INFO_REQUEST");
+    SSH_LOG(session, SSH_LOG_TRACE,
+            "keyboard-interactive context, assuming SSH_USERAUTH_INFO_REQUEST");
     rc=ssh_packet_userauth_info_request(session,type,packet,user);
   } else {
     session->auth_state=SSH_AUTH_STATE_PK_OK;
-    ssh_log(session,SSH_LOG_PACKET,"assuming SSH_USERAUTH_PK_OK");
+    SSH_LOG(session, SSH_LOG_TRACE, "Assuming SSH_USERAUTH_PK_OK");
     rc=SSH_PACKET_USED;
   }
   leave_function();
@@ -960,7 +973,8 @@ int ssh_userauth_agent(ssh_session session,
         state->pubkey = ssh_agent_get_first_ident(session, &state->comment);
     while (state->pubkey != NULL) {
         if(state->state == SSH_AGENT_STATE_NONE){
-            ssh_log(session, SSH_LOG_RARE, "Trying identity %s", state->comment);
+            SSH_LOG(session, SSH_LOG_DEBUG,
+                    "Trying identity %s", state->comment);
         }
         if(state->state == SSH_AGENT_STATE_NONE ||
                 state->state == SSH_AGENT_STATE_PUBKEY){
@@ -974,7 +988,8 @@ int ssh_userauth_agent(ssh_session session,
                 state->state = SSH_AGENT_STATE_PUBKEY;
                 return rc;
             } else if (rc != SSH_AUTH_SUCCESS) {
-                ssh_log(session, SSH_LOG_PROTOCOL, "Public key of %s refused by server", state->comment);
+                SSH_LOG(session, SSH_LOG_DEBUG,
+                        "Public key of %s refused by server", state->comment);
                 ssh_string_free_char(state->comment);
                 ssh_key_free(state->pubkey);
                 state->pubkey = ssh_agent_get_next_ident(session, &state->comment);
@@ -982,7 +997,8 @@ int ssh_userauth_agent(ssh_session session,
                 continue;
             }
 
-            ssh_log(session, SSH_LOG_PROTOCOL, "Public key of %s accepted by server", state->comment);
+            SSH_LOG(session, SSH_LOG_DEBUG,
+                    "Public key of %s accepted by server", state->comment);
             state->state = SSH_AGENT_STATE_AUTH;
         }
         if (state->state == SSH_AGENT_STATE_AUTH){
@@ -995,8 +1011,7 @@ int ssh_userauth_agent(ssh_session session,
                 SAFE_FREE(session->agent_state);
                 return rc;
             } else if (rc != SSH_AUTH_SUCCESS) {
-                ssh_log(session,
-                        SSH_LOG_RARE,
+                SSH_LOG(session, SSH_LOG_INFO,
                         "Server accepted public key but refused the signature");
                 state->pubkey = ssh_agent_get_next_ident(session, &state->comment);
                 state->state = SSH_AGENT_STATE_NONE;
@@ -1081,7 +1096,7 @@ int ssh_userauth_publickey_auto(ssh_session session,
         ZERO_STRUCTP(session->auth_auto_state);
     }
     state = session->auth_auto_state;
-    if (state->state == SSH_AUTH_AUTO_STATE_NONE){
+    if (state->state == SSH_AUTH_AUTO_STATE_NONE) {
 #ifndef _WIN32
     /* Try authentication with ssh-agent first */
         rc = ssh_userauth_agent(session, username);
@@ -1091,18 +1106,18 @@ int ssh_userauth_publickey_auto(ssh_session session,
         if (rc == SSH_AUTH_AGAIN)
             return rc;
 #endif
-    state->state = SSH_AUTH_AUTO_STATE_PUBKEY;
+        state->state = SSH_AUTH_AUTO_STATE_PUBKEY;
     }
-    if (state->it == NULL)
+    if (state->it == NULL) {
         state->it = ssh_list_get_iterator(session->identity);
+    }
+
     while (state->it != NULL){
         const char *privkey_file = state->it->data;
         char pubkey_file[1024] = {0};
         if (state->state == SSH_AUTH_AUTO_STATE_PUBKEY){
-            ssh_log(session,
-                    SSH_LOG_PROTOCOL,
-                    "Trying to authenticate with %s",
-                    privkey_file);
+            SSH_LOG(session, SSH_LOG_DEBUG,
+                    "Trying to authenticate with %s", privkey_file);
             state->privkey = NULL;
             state->pubkey = NULL;
             snprintf(pubkey_file, sizeof(pubkey_file), "%s.pub", privkey_file);
@@ -1131,8 +1146,7 @@ int ssh_userauth_publickey_auto(ssh_session session,
                     continue;
                 } else if (rc == SSH_EOF) {
                     /* If the file doesn't exist, continue */
-                    ssh_log(session,
-                            SSH_LOG_PACKET,
+                    SSH_LOG(session, SSH_LOG_DEBUG,
                             "Private key %s doesn't exist.",
                             privkey_file);
                     state->it=state->it->next;
@@ -1148,8 +1162,8 @@ int ssh_userauth_publickey_auto(ssh_session session,
 
                 rc = ssh_pki_export_pubkey_file(state->pubkey, pubkey_file);
                 if (rc == SSH_ERROR) {
-                    ssh_log(session,
-                            SSH_LOG_PACKET,
+                    SSH_LOG(session,
+                            SSH_LOG_WARN,
                             "Could not write public key to file: %s",
                             pubkey_file);
                 }
@@ -1159,8 +1173,8 @@ int ssh_userauth_publickey_auto(ssh_session session,
         if (state->state == SSH_AUTH_AUTO_STATE_KEY_IMPORTED){
             rc = ssh_userauth_try_publickey(session, username, state->pubkey);
             if (rc == SSH_AUTH_ERROR) {
-                ssh_log(session,
-                        SSH_LOG_RARE,
+                SSH_LOG(session,
+                        SSH_LOG_WARN,
                         "Public key authentication error for %s",
                         privkey_file);
                 ssh_key_free(state->privkey);
@@ -1170,8 +1184,8 @@ int ssh_userauth_publickey_auto(ssh_session session,
             } else if (rc == SSH_AUTH_AGAIN){
                 return rc;
             } else if (rc != SSH_AUTH_SUCCESS) {
-                ssh_log(session,
-                        SSH_LOG_PROTOCOL,
+                SSH_LOG(session,
+                        SSH_LOG_DEBUG,
                         "Public key for %s refused by server",
                         privkey_file);
                 ssh_key_free(state->privkey);
@@ -1203,8 +1217,8 @@ int ssh_userauth_publickey_auto(ssh_session session,
                     /* If the file doesn't exist, continue */
                     ssh_key_free(state->pubkey);
                     state->pubkey=NULL;
-                    ssh_log(session,
-                            SSH_LOG_PACKET,
+                    SSH_LOG(session,
+                            SSH_LOG_INFO,
                             "Private key %s doesn't exist.",
                             privkey_file);
                     state->it=state->it->next;
@@ -1222,8 +1236,8 @@ int ssh_userauth_publickey_auto(ssh_session session,
             if (rc == SSH_AUTH_ERROR) {
                 return rc;
             } else if (rc == SSH_AUTH_SUCCESS) {
-                ssh_log(session,
-                        SSH_LOG_PROTOCOL,
+                SSH_LOG(session,
+                        SSH_LOG_INFO,
                         "Successfully authenticated using %s",
                         privkey_file);
                 return rc;
@@ -1231,16 +1245,16 @@ int ssh_userauth_publickey_auto(ssh_session session,
                 return rc;
             }
 
-            ssh_log(session,
-                    SSH_LOG_RARE,
+            SSH_LOG(session,
+                    SSH_LOG_WARN,
                     "The server accepted the public key but refused the signature");
             state->it=state->it->next;
             state->state=SSH_AUTH_AUTO_STATE_PUBKEY;
             /* continue */
         }
     }
-    ssh_log(session,
-            SSH_LOG_PROTOCOL,
+    SSH_LOG(session,
+            SSH_LOG_INFO,
             "Tried every public key, none matched");
     SAFE_FREE(session->auth_auto_state);
     return SSH_AUTH_DENIED;
@@ -1600,7 +1614,10 @@ static int ssh_userauth_kbdint_init(ssh_session session,
 
     session->auth_state = SSH_AUTH_STATE_KBDINT_SENT;
     session->pending_call_state = SSH_PENDING_CALL_AUTH_KBDINT_INIT;
-    ssh_log(session,SSH_LOG_PROTOCOL,"Sending keyboard-interactive init request");
+
+    SSH_LOG(session, SSH_LOG_DEBUG,
+            "Sending keyboard-interactive init request");
+
     rc = packet_send(session);
     if (rc == SSH_ERROR) {
         return SSH_AUTH_ERROR;
@@ -1671,7 +1688,9 @@ static int ssh_userauth_kbdint_send(ssh_session session)
     session->pending_call_state = SSH_PENDING_CALL_AUTH_KBDINT_SEND;
     ssh_kbdint_free(session->kbdint);
     session->kbdint = NULL;
-    ssh_log(session,SSH_LOG_PROTOCOL,"Sending keyboard-interactive response packet");
+
+    SSH_LOG(session, SSH_LOG_DEBUG,
+            "Sending keyboard-interactive response packet");
 
     rc = packet_send(session);
     if (rc == SSH_ERROR) {
@@ -1754,7 +1773,8 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_request) {
   }
 
   nprompts = ntohl(nprompts);
-  ssh_log(session,SSH_LOG_PACKET,"kbdint: %d prompts",nprompts);
+  SSH_LOG(session, SSH_LOG_DEBUG,
+          "%d keyboard-interactive prompts", nprompts);
   if (nprompts > KBDINT_MAX_PROMPT) {
     ssh_set_error(session, SSH_FATAL,
         "Too much prompts requested by the server: %u (0x%.4x)",
