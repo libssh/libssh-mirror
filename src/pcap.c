@@ -32,6 +32,7 @@
 #include <sys/socket.h>
 #endif
 #include <errno.h>
+#include <stdlib.h>
 
 #include "libssh/libssh.h"
 #include "libssh/pcap.h"

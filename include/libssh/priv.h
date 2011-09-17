@@ -105,7 +105,6 @@ int gettimeofday(struct timeval *__p, void *__t);
 
 #include "libssh/libssh.h"
 #include "libssh/callbacks.h"
-#include "libssh/crypto.h"
 
 /* some constants */
 #define MAX_PACKET_LEN 262144

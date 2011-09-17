@@ -23,15 +23,17 @@
  */
 
 #include "config.h"
-#include "libssh/priv.h"
-#include "libssh/buffer.h"
-#include "libssh/session.h"
 
 #if defined(HAVE_LIBZ) && defined(WITH_LIBZ)
 
 #include <zlib.h>
 #include <string.h>
 #include <stdlib.h>
+
+#include "libssh/priv.h"
+#include "libssh/buffer.h"
+#include "libssh/crypto.h"
+#include "libssh/session.h"
 
 #define BLOCKSIZE 4092
 

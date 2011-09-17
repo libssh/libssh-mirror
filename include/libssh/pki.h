@@ -22,6 +22,8 @@
 #ifndef PKI_H_
 #define PKI_H_
 
+#include "libssh/crypto.h"
+
 #define SSH_KEY_FLAG_EMPTY   0x0
 #define SSH_KEY_FLAG_PUBLIC  0x0001
 #define SSH_KEY_FLAG_PRIVATE 0x0002

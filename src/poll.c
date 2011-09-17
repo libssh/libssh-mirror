@@ -28,6 +28,7 @@
 #include "config.h"
 
 #include <errno.h>
+#include <stdlib.h>
 
 #include "libssh/priv.h"
 #include "libssh/libssh.h"

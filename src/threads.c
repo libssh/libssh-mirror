@@ -27,7 +27,10 @@
  * @{
  */
 
+#include "config.h"
+
 #include "libssh/priv.h"
+#include "libssh/crypto.h"
 #include "libssh/threads.h"
 
 static int threads_noop (void **lock){

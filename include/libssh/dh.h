@@ -24,6 +24,8 @@
 
 #include "config.h"
 
+#include "libssh/crypto.h"
+
 void ssh_print_bignum(const char *which,bignum num);
 int dh_generate_e(ssh_session session);
 int dh_generate_f(ssh_session session);

@@ -31,6 +31,7 @@
 #endif
 
 #include "libssh/priv.h"
+#include "libssh/crypto.h"
 #include "libssh/ssh2.h"
 #include "libssh/buffer.h"
 #include "libssh/agent.h"
