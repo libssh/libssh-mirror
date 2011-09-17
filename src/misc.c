@@ -80,7 +80,7 @@
 #define CRYPTO_STRING ""
 #endif
 
-#if defined(HAVE_LIBZ) && defined(WITH_LIBZ)
+#ifdef WITH_LIBZ
 #define LIBZ_STRING "/zlib"
 #else
 #define LIBZ_STRING ""

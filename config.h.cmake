@@ -98,9 +98,6 @@
 /* Define to 1 if you have the `gcrypt' library (-lgcrypt). */
 #cmakedefine HAVE_LIBGCRYPT 1
 
-/* Define to 1 if you have the `z' library (-lz). */
-#cmakedefine HAVE_LIBZ 1
-
 /* Define to 1 if you have the `pthread' library (-lpthread). */
 #cmakedefine HAVE_PTHREAD 1
 

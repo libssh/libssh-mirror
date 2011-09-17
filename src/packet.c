@@ -255,7 +255,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
       ssh_log(session, SSH_LOG_PACKET,
           "After padding, %d bytes left in buffer",
           buffer_get_rest_len(session->in_buffer));
-#if defined(HAVE_LIBZ) && defined(WITH_LIBZ)
+#ifdef WITH_LIBZ
       if (session->current_crypto
           && session->current_crypto->do_compress_in
           && buffer_get_rest_len(session->in_buffer)) {
@@ -460,7 +460,7 @@ static int packet_send2(ssh_session session) {
   ssh_log(session, SSH_LOG_PACKET,
       "Writing on the wire a packet having %u bytes before", currentlen);
 
-#if defined(HAVE_LIBZ) && defined(WITH_LIBZ)
+#ifdef WITH_LIBZ
   if (session->current_crypto
       && session->current_crypto->do_compress_out
       && buffer_get_rest_len(session->out_buffer)) {

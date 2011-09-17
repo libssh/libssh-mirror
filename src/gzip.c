@@ -24,11 +24,9 @@
 
 #include "config.h"
 
-#if defined(HAVE_LIBZ) && defined(WITH_LIBZ)
-
-#include <zlib.h>
 #include <string.h>
 #include <stdlib.h>
+#include <zlib.h>
 
 #include "libssh/priv.h"
 #include "libssh/buffer.h"
@@ -220,5 +218,4 @@ int decompress_buffer(ssh_session session,ssh_buffer buf, size_t maxlen){
   return 0;
 }
 
-#endif /* HAVE_LIBZ && WITH_LIBZ */
 /* vim: set ts=2 sw=2 et cindent: */

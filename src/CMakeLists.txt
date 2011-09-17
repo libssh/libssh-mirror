@@ -86,7 +86,6 @@ set(libssh_SRCS
   ecdh.c
   error.c
   getpass.c
-  gzip.c
   init.c
   kex.c
   known_hosts.c
@@ -156,6 +155,13 @@ if (WITH_SERVER)
     bind.c
   )
 endif (WITH_SERVER)
+
+if (WITH_ZLIB)
+  set(libssh_SRCS
+    ${libssh_SRCS}
+    gzip.c
+  )
+endif(WITH_ZLIB)
 
 include_directories(
   ${LIBSSH_PUBLIC_INCLUDE_DIRS}
