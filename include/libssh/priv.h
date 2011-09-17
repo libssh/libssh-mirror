@@ -120,13 +120,32 @@ int gettimeofday(struct timeval *__p, void *__t);
 #endif
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#define enter_function() (void)session
+#define leave_function() (void)session
 
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
+
+/* forward declarations */
+struct ssh_common_struct;
+struct ssh_kex_struct;
+
+int ssh_get_key_params(ssh_session session, ssh_key *privkey);
+
+/* LOGGING */
+#define SSH_LOG(session, priority, ...) \
+    ssh_log_common(&session->common, priority, __FUNCTION__, __VA_ARGS__)
+void ssh_log_common(struct ssh_common_struct *common,
+                    int verbosity,
+                    const char *function,
+                    const char *format, ...) PRINTF_ATTRIBUTE(4, 5);
+void ssh_log_function(int verbosity,
+                      const char *function,
+                      const char *buffer);
+
+
+/* ERROR HANDLING */
 
 /* error handling structure */
 struct error_struct {
@@ -134,24 +153,6 @@ struct error_struct {
     char error_buffer[ERROR_BUFFERLEN];
 };
 
-struct ssh_common_struct;
-struct ssh_kex_struct;
-
-/* server data */
-
-
-SSH_PACKET_CALLBACK(ssh_packet_disconnect_callback);
-SSH_PACKET_CALLBACK(ssh_packet_ignore_callback);
-int ssh_get_key_params(ssh_session session, ssh_key *privkey);
-
-/* client.c */
-
-int ssh_send_banner(ssh_session session, int is_server);
-SSH_PACKET_CALLBACK(ssh_packet_dh_reply);
-SSH_PACKET_CALLBACK(ssh_packet_newkeys);
-SSH_PACKET_CALLBACK(ssh_packet_service_accept);
-
-/* errors.c */
 #define ssh_set_error(error, code, ...) \
     _ssh_set_error(error, code, __FUNCTION__, __VA_ARGS__)
 void _ssh_set_error(void *error,
@@ -166,6 +167,23 @@ void _ssh_set_error_oom(void *error, const char *function);
 #define ssh_set_error_invalid(error) \
     _ssh_set_error_invalid(error, __FUNCTION__)
 void _ssh_set_error_invalid(void *error, const char *function);
+
+
+
+
+
+/* server data */
+
+
+SSH_PACKET_CALLBACK(ssh_packet_disconnect_callback);
+SSH_PACKET_CALLBACK(ssh_packet_ignore_callback);
+
+/* client.c */
+
+int ssh_send_banner(ssh_session session, int is_server);
+SSH_PACKET_CALLBACK(ssh_packet_dh_reply);
+SSH_PACKET_CALLBACK(ssh_packet_newkeys);
+SSH_PACKET_CALLBACK(ssh_packet_service_accept);
 
 /* in crypt.c */
 uint32_t packet_decrypt_len(ssh_session session,char *crypted);
@@ -208,44 +226,9 @@ int match_hostname(const char *host, const char *pattern, unsigned int len);
 
 int message_handle(ssh_session session, void *user, uint8_t type, ssh_buffer packet);
 
-#define _enter_function(sess) \
-	do {\
-		if((sess)->common.log_verbosity >= SSH_LOG_FUNCTIONS){ \
-			ssh_log((sess),SSH_LOG_FUNCTIONS,"entering function %s line %d in " __FILE__ , __FUNCTION__,__LINE__);\
-			(sess)->common.log_indent++; \
-		} \
-	} while(0)
-
-#define _leave_function(sess) \
-	do { \
-		if((sess)->common.log_verbosity >= SSH_LOG_FUNCTIONS){ \
-			(sess)->common.log_indent--; \
-			ssh_log((sess),SSH_LOG_FUNCTIONS,"leaving function %s line %d in " __FILE__ , __FUNCTION__,__LINE__);\
-		}\
-	} while(0)
-
-#ifdef DEBUG_CALLTRACE
-#define enter_function() _enter_function(session)
-#define leave_function() _leave_function(session)
-#else
-#define enter_function() (void)session
-#define leave_function() (void)session
-#endif
-
-
 /* server.c */
 SSH_PACKET_CALLBACK(ssh_packet_kexdh_init);
 
-/* LOGGING */
-#define SSH_LOG(session, priority, ...) \
-    ssh_log_common(&session->common, priority, __FUNCTION__, __VA_ARGS__)
-void ssh_log_common(struct ssh_common_struct *common,
-                    int verbosity,
-                    const char *function,
-                    const char *format, ...) PRINTF_ATTRIBUTE(4, 5);
-void ssh_log_function(int verbosity,
-                      const char *function,
-                      const char *buffer);
 
 
 /** Free memory space */
@@ -288,9 +271,5 @@ int my_gcry_dec2bn(bignum *bn, const char *data);
 char *my_gcry_bn2dec(bignum bn);
 #endif /* !HAVE_LIBGCRYPT */
 
-#ifdef __cplusplus
-}
-#endif
-
 #endif /* _LIBSSH_PRIV_H */
-/* vim: set ts=2 sw=2 et cindent: */
+/* vim: set ts=4 sw=4 et cindent: */
