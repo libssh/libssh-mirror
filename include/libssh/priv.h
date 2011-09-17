@@ -171,18 +171,9 @@ void _ssh_set_error_invalid(void *error, const char *function);
 
 
 
-/* server data */
-
-
-SSH_PACKET_CALLBACK(ssh_packet_disconnect_callback);
-SSH_PACKET_CALLBACK(ssh_packet_ignore_callback);
-
 /* client.c */
 
 int ssh_send_banner(ssh_session session, int is_server);
-SSH_PACKET_CALLBACK(ssh_packet_dh_reply);
-SSH_PACKET_CALLBACK(ssh_packet_newkeys);
-SSH_PACKET_CALLBACK(ssh_packet_service_accept);
 
 /* connect.c */
 socket_t ssh_connect_host(ssh_session session, const char *host,const char
@@ -201,8 +192,6 @@ int decompress_buffer(ssh_session session,ssh_buffer buf, size_t maxlen);
 /* match.c */
 int match_hostname(const char *host, const char *pattern, unsigned int len);
 
-/* server.c */
-SSH_PACKET_CALLBACK(ssh_packet_kexdh_init);
 
 
 

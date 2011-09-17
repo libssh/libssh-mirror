@@ -97,6 +97,7 @@ set(libssh_SRCS
   misc.c
   options.c
   packet.c
+  packet_cb.c
   packet_crypt.c
   pcap.c
   pki.c

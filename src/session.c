@@ -601,51 +601,6 @@ int ssh_get_version(ssh_session session) {
 
 /**
  * @internal
- *
- * @brief Handle a SSH_DISCONNECT packet.
- */
-SSH_PACKET_CALLBACK(ssh_packet_disconnect_callback){
-	uint32_t code;
-	char *error=NULL;
-	ssh_string error_s;
-	(void)user;
-	(void)type;
-  buffer_get_u32(packet, &code);
-  error_s = buffer_get_ssh_string(packet);
-  if (error_s != NULL) {
-    error = ssh_string_to_char(error_s);
-    ssh_string_free(error_s);
-  }
-  ssh_log(session, SSH_LOG_PACKET, "Received SSH_MSG_DISCONNECT %d:%s",code,
-      error != NULL ? error : "no error");
-  ssh_set_error(session, SSH_FATAL,
-      "Received SSH_MSG_DISCONNECT: %d:%s",code,
-      error != NULL ? error : "no error");
-  SAFE_FREE(error);
-
-  ssh_socket_close(session->socket);
-  session->alive = 0;
-  session->session_state= SSH_SESSION_STATE_ERROR;
-	/* TODO: handle a graceful disconnect */
-	return SSH_PACKET_USED;
-}
-
-/**
- * @internal
- *
- * @brief Handle a SSH_IGNORE and SSH_DEBUG packet.
- */
-SSH_PACKET_CALLBACK(ssh_packet_ignore_callback){
-	(void)user;
-	(void)type;
-	(void)packet;
-	ssh_log(session,SSH_LOG_PROTOCOL,"Received %s packet",type==SSH2_MSG_IGNORE ? "SSH_MSG_IGNORE" : "SSH_MSG_DEBUG");
-	/* TODO: handle a graceful disconnect */
-	return SSH_PACKET_USED;
-}
-
-/**
- * @internal
  * @brief Callback to be called when the socket received an exception code.
  * @param user is a pointer to session
  */
