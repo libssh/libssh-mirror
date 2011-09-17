@@ -94,6 +94,8 @@
 
 # endif /* _MSC_VER */
 
+int gettimeofday(struct timeval *__p, void *__t);
+
 #else /* _WIN32 */
 
 #include <unistd.h>
@@ -112,10 +114,15 @@
 #define CLIENTBANNER2 "SSH-2.0-libssh-" SSH_STRINGIFY(LIBSSH_VERSION)
 #define KBDINT_MAX_PROMPT 256 /* more than openssh's :) */
 
+#ifndef __FUNCTION__
+#if defined(__SUNPRO_C)
+#define __FUNCTION__ __func__
+#endif
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
@@ -126,9 +133,6 @@ struct error_struct {
     int error_code;
     char error_buffer[ERROR_BUFFERLEN];
 };
-
-/* TODO: remove that include */
-#include "libssh/wrapper.h"
 
 struct ssh_message_struct;
 struct ssh_common_struct;
@@ -219,17 +223,6 @@ uint32_t ssh_crc32(const char *buf, uint32_t len);
 int match_hostname(const char *host, const char *pattern, unsigned int len);
 
 int message_handle(ssh_session session, void *user, uint8_t type, ssh_buffer packet);
-
-/* misc.c */
-#ifdef _WIN32
-int gettimeofday(struct timeval *__p, void *__t);
-#endif /* _WIN32 */
-
-#ifndef __FUNCTION__
-#if defined(__SUNPRO_C)
-#define __FUNCTION__ __func__
-#endif
-#endif
 
 #define _enter_function(sess) \
 	do {\
