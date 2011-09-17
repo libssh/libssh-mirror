@@ -66,6 +66,22 @@ static int current_timestring(int hires, char *buf, size_t len)
     return 0;
 }
 
+void ssh_log_function(int verbosity,
+                      const char *function,
+                      const char *buffer)
+{
+    char date[64] = {0};
+    int rc;
+
+    rc = current_timestring(1, date, sizeof(date));
+    if (rc == 0) {
+        fprintf(stderr, "[%s, %d] %s", date, verbosity, function);
+    } else {
+        fprintf(stderr, "[%d] %s", verbosity, function);
+    }
+    fprintf(stderr, "  %s\n", buffer);
+}
+
 /** @internal
  * @brief do the actual work of logging an event
  */
@@ -74,9 +90,6 @@ static void do_ssh_log(struct ssh_common_struct *common,
                        int verbosity,
                        const char *function,
                        const char *buffer) {
-    char date[64] = {0};
-    int rc;
-
     if (common->callbacks && common->callbacks->log_function) {
         char buf[1024];
 
@@ -89,13 +102,7 @@ static void do_ssh_log(struct ssh_common_struct *common,
         return;
     }
 
-    rc = current_timestring(1, date, sizeof(date));
-    if (rc == 0) {
-        fprintf(stderr, "[%s, %d] %s", date, verbosity, function);
-    } else {
-        fprintf(stderr, "[%d] %s", verbosity, function);
-    }
-    fprintf(stderr, "  %s\n", buffer);
+    ssh_log_function(verbosity, function, buffer);
 }
 
 /* legacy function */

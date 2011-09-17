@@ -272,6 +272,9 @@ void ssh_log_common(struct ssh_common_struct *common,
                     int verbosity,
                     const char *function,
                     const char *format, ...) PRINTF_ATTRIBUTE(4, 5);
+void ssh_log_function(int verbosity,
+                      const char *function,
+                      const char *buffer);
 
 
 /** Free memory space */
