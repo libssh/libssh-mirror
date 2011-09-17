@@ -114,22 +114,6 @@ void ssh_log(ssh_session session,
   }
 }
 
-void ssh_log_function(ssh_session session,
-                      int verbosity,
-                      const char *function,
-                      const char *format, ...)
-{
-  char buffer[1024];
-  va_list va;
-
-  if (verbosity <= session->common.log_verbosity) {
-    va_start(va, format);
-    vsnprintf(buffer, sizeof(buffer), format, va);
-    va_end(va);
-    do_ssh_log(&session->common, verbosity, function, buffer);
-  }
-}
-
 /** @internal
  * @brief log a SSH event with a common pointer
  * @param common       The SSH/bind session.

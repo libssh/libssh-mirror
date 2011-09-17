@@ -267,12 +267,7 @@ SSH_PACKET_CALLBACK(ssh_packet_kexdh_init);
 
 /* LOGGING */
 #define SSH_LOG(session, priority, ...) \
-    ssh_log_function(session, priority, __FUNCTION__, __VA_ARGS__)
-void ssh_log_function(ssh_session session,
-                      int prioriry,
-                      const char *function,
-                      const char *format, ...) PRINTF_ATTRIBUTE(4, 5);
-
+    ssh_log_common(&session->common, priority, __FUNCTION__, __VA_ARGS__)
 void ssh_log_common(struct ssh_common_struct *common,
                     int verbosity,
                     const char *function,
