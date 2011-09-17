@@ -201,8 +201,6 @@ int decompress_buffer(ssh_session session,ssh_buffer buf, size_t maxlen);
 /* match.c */
 int match_hostname(const char *host, const char *pattern, unsigned int len);
 
-int message_handle(ssh_session session, void *user, uint8_t type, ssh_buffer packet);
-
 /* server.c */
 SSH_PACKET_CALLBACK(ssh_packet_kexdh_init);
 
