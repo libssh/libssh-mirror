@@ -265,11 +265,5 @@ SSH_PACKET_CALLBACK(ssh_packet_kexdh_init);
  */
 #define discard_const_p(type, ptr) ((type *)discard_const(ptr))
 
-#ifdef HAVE_LIBGCRYPT
-/* gcrypt_missing.c */
-int my_gcry_dec2bn(bignum *bn, const char *data);
-char *my_gcry_bn2dec(bignum bn);
-#endif /* !HAVE_LIBGCRYPT */
-
 #endif /* _LIBSSH_PRIV_H */
 /* vim: set ts=4 sw=4 et cindent: */

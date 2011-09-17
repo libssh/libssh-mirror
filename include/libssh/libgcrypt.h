@@ -43,6 +43,10 @@ typedef gcry_md_hd_t HMACCTX;
 
 typedef gcry_mpi_t bignum;
 
+/* missing gcrypt functions */
+int my_gcry_dec2bn(bignum *bn, const char *data);
+char *my_gcry_bn2dec(bignum bn);
+
 #define bignum_new() gcry_mpi_new(0)
 #define bignum_free(num) gcry_mpi_release(num)
 #define bignum_set_word(bn,n) gcry_mpi_set_ui(bn,n)
@@ -58,7 +62,6 @@ typedef gcry_mpi_t bignum;
 #define bignum_is_bit_set(num,bit) gcry_mpi_test_bit(num,bit)
 #define bignum_bn2bin(num,datalen,data) gcry_mpi_print(GCRYMPI_FMT_USG,data,datalen,NULL,num)
 #define bignum_cmp(num1,num2) gcry_mpi_cmp(num1,num2)
-
 
 #endif /* HAVE_LIBGCRYPT */
 

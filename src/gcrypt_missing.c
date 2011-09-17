@@ -22,7 +22,9 @@
  */
 
 #include <stdlib.h>
+
 #include "libssh/priv.h"
+#include "libssh/libgcrypt.h"
 
 #ifdef HAVE_LIBGCRYPT
 int my_gcry_dec2bn(bignum *bn, const char *data) {
