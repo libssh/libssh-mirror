@@ -64,18 +64,19 @@
 #include "libssh/misc.h"
 #include "libssh/agent.h"
 
-void ssh_pki_log(const char *format, ...)
+void _ssh_pki_log(const char *function, const char *format, ...)
 {
 #ifdef DEBUG_CRYPTO
-  char buffer[1024];
-  va_list va;
+    char buffer[1024];
+    va_list va;
 
     va_start(va, format);
     vsnprintf(buffer, sizeof(buffer), format, va);
     va_end(va);
 
-    fprintf(stderr, "%s\n", buffer);
+    ssh_log_function(function, buffer);
 #else
+    (void) function;
     (void) format;
 #endif
     return;

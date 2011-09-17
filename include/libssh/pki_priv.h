@@ -27,7 +27,10 @@
 #define DSA_HEADER_BEGIN "-----BEGIN DSA PRIVATE KEY-----"
 #define DSA_HEADER_END "-----END DSA PRIVATE KEY-----"
 
-void ssh_pki_log(const char *format, ...) PRINTF_ATTRIBUTE(1, 2);
+#define ssh_pki_log(...) \
+    _ssh_pki_log(__FUNCTION__, __VA_ARGS__)
+void _ssh_pki_log(const char *function,
+                  const char *format, ...) PRINTF_ATTRIBUTE(2, 3);
 
 /* SSH Key Functions */
 ssh_key pki_key_dup(const ssh_key key, int demote);
