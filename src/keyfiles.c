@@ -610,9 +610,9 @@ static int pem_get_password(char *buf, int size, int rwflag, void *userdata) {
   ssh_log(session, SSH_LOG_RARE,
       "Trying to call external authentication function");
 
-  if (session && session->callbacks && session->callbacks->auth_function) {
-    if (session->callbacks->auth_function("Passphrase for private key:", buf, size, 0, 0,
-        session->callbacks->userdata) < 0) {
+  if (session && session->common.callbacks && session->common.callbacks->auth_function) {
+    if (session->common.callbacks->auth_function("Passphrase for private key:", buf, size, 0, 0,
+        session->common.callbacks->userdata) < 0) {
       return 0;
     }
 
@@ -738,7 +738,7 @@ ssh_private_key privatekey_from_file(ssh_session session, const char *filename,
       if (!valid) {
         ssh_set_error(session, SSH_FATAL, "Parsing private key %s", filename);
 #elif defined HAVE_LIBCRYPTO
-        if (session->callbacks && session->callbacks->auth_function) {
+        if (session->common.callbacks && session->common.callbacks->auth_function) {
           dsa = PEM_read_bio_DSAPrivateKey(bio, NULL, pem_get_password, session);
         } else { /* authcb */
           /* openssl uses its own callback to get the passphrase here */
@@ -779,7 +779,7 @@ ssh_private_key privatekey_from_file(ssh_session session, const char *filename,
       if (!valid) {
         ssh_set_error(session,SSH_FATAL, "Parsing private key %s", filename);
 #elif defined HAVE_LIBCRYPTO
-        if (session->callbacks && session->callbacks->auth_function) {
+        if (session->common.callbacks && session->common.callbacks->auth_function) {
 			rsa = PEM_read_bio_RSAPrivateKey(bio, NULL, pem_get_password, session);
         } else { /* authcb */
           /* openssl uses its own callback to get the passphrase here */
