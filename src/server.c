@@ -169,13 +169,48 @@ SSH_PACKET_CALLBACK(ssh_packet_kexdh_init){
   return SSH_PACKET_USED;
 }
 
+int ssh_get_key_params(ssh_session session, ssh_key *privkey){
+    ssh_key pubkey;
+    ssh_string pubkey_blob;
+    int rc;
+
+    switch(session->srv.hostkey) {
+      case SSH_KEYTYPE_DSS:
+        *privkey = session->srv.dsa_key;
+        break;
+      case SSH_KEYTYPE_RSA:
+      case SSH_KEYTYPE_RSA1:
+        *privkey = session->srv.rsa_key;
+        break;
+      case SSH_KEYTYPE_ECDSA:
+      case SSH_KEYTYPE_UNKNOWN:
+        *privkey = NULL;
+    }
+
+    rc = ssh_pki_export_privkey_to_pubkey(*privkey, &pubkey);
+    if (rc < 0) {
+      ssh_set_error(session, SSH_FATAL,
+          "Could not get the public key from the private key");
+
+      return -1;
+    }
+
+    rc = ssh_pki_export_pubkey_blob(pubkey, &pubkey_blob);
+    ssh_key_free(pubkey);
+    if (rc < 0) {
+      ssh_set_error_oom(session);
+      return -1;
+    }
+
+    dh_import_pubkey(session, pubkey_blob);
+    return SSH_OK;
+}
+
 static int dh_handshake_server(ssh_session session) {
-  ssh_key pubkey;
-  ssh_key privkey = NULL;
-  ssh_string pubkey_blob = NULL;
+  ssh_key privkey;
+  //ssh_string pubkey_blob = NULL;
   ssh_string sig_blob;
   ssh_string f;
-  int rc;
 
   if (dh_generate_y(session) < 0) {
     ssh_set_error(session, SSH_FATAL, "Could not create y number");
@@ -192,36 +227,11 @@ static int dh_handshake_server(ssh_session session) {
     return -1;
   }
 
-  switch(session->srv.hostkey) {
-    case SSH_KEYTYPE_DSS:
-      privkey = session->srv.dsa_key;
-      break;
-    case SSH_KEYTYPE_RSA:
-    case SSH_KEYTYPE_RSA1:
-      privkey = session->srv.rsa_key;
-      break;
-    case SSH_KEYTYPE_ECDSA:
-    case SSH_KEYTYPE_UNKNOWN:
-      privkey = NULL;
+  if (ssh_get_key_params(session,&privkey) != SSH_OK){
+      ssh_string_free(f);
+      return -1;
   }
 
-  rc = ssh_pki_export_privkey_to_pubkey(privkey, &pubkey);
-  if (rc < 0) {
-    ssh_set_error(session, SSH_FATAL,
-        "Could not get the public key from the private key");
-    ssh_string_free(f);
-    return -1;
-  }
-
-  rc = ssh_pki_export_pubkey_blob(pubkey, &pubkey_blob);
-  ssh_key_free(pubkey);
-  if (rc < 0) {
-    ssh_set_error_oom(session);
-    ssh_string_free(f);
-    return -1;
-  }
-
-  dh_import_pubkey(session, pubkey_blob);
   if (dh_build_k(session) < 0) {
     ssh_set_error(session, SSH_FATAL, "Could not import the public key");
     ssh_string_free(f);
@@ -252,7 +262,8 @@ static int dh_handshake_server(ssh_session session) {
   }
 
   if (buffer_add_u8(session->out_buffer, SSH2_MSG_KEXDH_REPLY) < 0 ||
-      buffer_add_ssh_string(session->out_buffer, pubkey_blob) < 0 ||
+      buffer_add_ssh_string(session->out_buffer,
+              session->next_crypto->server_pubkey) < 0 ||
       buffer_add_ssh_string(session->out_buffer, f) < 0 ||
       buffer_add_ssh_string(session->out_buffer, sig_blob) < 0) {
     ssh_set_error(session, SSH_FATAL, "Not enough space");

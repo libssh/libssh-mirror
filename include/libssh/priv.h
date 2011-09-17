@@ -139,6 +139,7 @@ struct ssh_kex_struct;
 
 SSH_PACKET_CALLBACK(ssh_packet_disconnect_callback);
 SSH_PACKET_CALLBACK(ssh_packet_ignore_callback);
+int ssh_get_key_params(ssh_session session, ssh_key *privkey);
 
 /* client.c */
 
