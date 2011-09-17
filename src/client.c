@@ -41,6 +41,7 @@
 #include "libssh/threads.h"
 #include "libssh/misc.h"
 #include "libssh/pki.h"
+#include "libssh/kex.h"
 
 #define set_status(session, status) do {\
         if (session->common.callbacks && session->common.callbacks->connect_status_function) \

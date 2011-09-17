@@ -22,6 +22,7 @@
 #ifndef SESSION_H_
 #define SESSION_H_
 #include "libssh/priv.h"
+#include "libssh/kex.h"
 #include "libssh/packet.h"
 #include "libssh/pcap.h"
 #include "libssh/auth.h"

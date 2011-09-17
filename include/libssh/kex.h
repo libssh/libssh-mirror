@@ -27,14 +27,24 @@
 
 #define SSH_KEX_METHODS 10
 
-typedef struct ssh_kex_struct {
+struct ssh_kex_struct {
     unsigned char cookie[16];
     char *methods[SSH_KEX_METHODS];
-} KEX;
+};
 
 SSH_PACKET_CALLBACK(ssh_packet_kexinit);
 #ifdef WITH_SSH1
 SSH_PACKET_CALLBACK(ssh_packet_publickey1);
 #endif
+
+extern const char *ssh_kex_nums[];
+int ssh_send_kex(ssh_session session, int server_kex);
+void ssh_list_kex(ssh_session session, struct ssh_kex_struct *kex);
+int set_client_kex(ssh_session session);
+int ssh_kex_select_methods(ssh_session session);
+int verify_existing_algo(int algo, const char *name);
+char **space_tokenize(const char *chain);
+int ssh_get_kex1(ssh_session session);
+char *ssh_find_matching(const char *in_d, const char *what_d);
 
 #endif /* KEX_H_ */

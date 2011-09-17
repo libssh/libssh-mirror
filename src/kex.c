@@ -327,7 +327,7 @@ error:
   return SSH_PACKET_USED;
 }
 
-void ssh_list_kex(ssh_session session, KEX *kex) {
+void ssh_list_kex(ssh_session session, struct ssh_kex_struct *kex) {
   int i = 0;
 
 #ifdef DEBUG_CRYPTO
@@ -348,7 +348,7 @@ void ssh_list_kex(ssh_session session, KEX *kex) {
  *        in function of the options and available methods.
  */
 int set_client_kex(ssh_session session){
-    KEX *client= &session->next_crypto->client_kex;
+    struct ssh_kex_struct *client= &session->next_crypto->client_kex;
     int i;
     const char *wanted;
     enter_function();
@@ -368,8 +368,8 @@ int set_client_kex(ssh_session session){
  * server's kex messages, and watches out if a match is possible.
  */
 int ssh_kex_select_methods (ssh_session session){
-    KEX *server = &session->next_crypto->server_kex;
-    KEX *client = &session->next_crypto->client_kex;
+    struct ssh_kex_struct *server = &session->next_crypto->server_kex;
+    struct ssh_kex_struct *client = &session->next_crypto->client_kex;
     int rc = SSH_ERROR;
     int i;
 
@@ -400,7 +400,7 @@ error:
 
 /* this function only sends the predefined set of kex methods */
 int ssh_send_kex(ssh_session session, int server_kex) {
-  KEX *kex = (server_kex ? &session->next_crypto->server_kex :
+  struct ssh_kex_struct *kex = (server_kex ? &session->next_crypto->server_kex :
       &session->next_crypto->client_kex);
   ssh_string str = NULL;
   int i;

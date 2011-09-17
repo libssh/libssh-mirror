@@ -84,7 +84,7 @@ extern const char *supported_methods[];
  */
 
 static int server_set_kex(ssh_session session) {
-  KEX *server = &session->next_crypto->server_kex;
+  struct ssh_kex_struct *server = &session->next_crypto->server_kex;
   int i, j;
   const char *wanted;
 
