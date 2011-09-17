@@ -82,7 +82,6 @@ set(libssh_SRCS
   client.c
   config.c
   connect.c
-  crc32.c
   crypt.c
   dh.c
   ecdh.c
@@ -144,6 +143,7 @@ if (WITH_SSH1)
     ${libssh_SRCS}
     auth1.c
     channels1.c
+    crc32.c
     kex1.c
     packet1.c
   )

@@ -217,10 +217,6 @@ unsigned char *bin_to_base64(const unsigned char *source, int len);
 int compress_buffer(ssh_session session,ssh_buffer buf);
 int decompress_buffer(ssh_session session,ssh_buffer buf, size_t maxlen);
 
-/* crc32.c */
-uint32_t ssh_crc32(const char *buf, uint32_t len);
-
-
 /* match.c */
 int match_hostname(const char *host, const char *pattern, unsigned int len);
 

@@ -26,6 +26,7 @@
 #include "config.h"
 #include "libssh/priv.h"
 #include "libssh/ssh1.h"
+#include "libssh/crc32.h"
 #include "libssh/packet.h"
 #include "libssh/session.h"
 #include "libssh/buffer.h"

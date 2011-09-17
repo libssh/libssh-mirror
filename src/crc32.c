@@ -21,7 +21,10 @@
  * MA 02111-1307, USA.
  */
 
+#include "config.h"
+
 #include "libssh/priv.h"
+#include "libssh/crc32.h"
 
 static uint32_t crc_table[] = {
   0x00000000UL, 0x77073096UL, 0xee0e612cUL, 0x990951baUL, 0x076dc419UL,
