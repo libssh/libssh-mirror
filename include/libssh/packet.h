@@ -22,6 +22,8 @@
 #ifndef PACKET_H_
 #define PACKET_H_
 
+struct ssh_socket_struct;
+
 /* this structure should go someday */
 typedef struct packet_struct {
 	int valid;
@@ -58,5 +60,19 @@ int ssh_packet_send_unimplemented(ssh_session session, uint32_t seqnum);
 int ssh_packet_parse_type(ssh_session session);
 //int packet_flush(ssh_session session, int enforce_blocking);
 
+int ssh_packet_socket_callback(const void *data, size_t len, void *user);
+void ssh_packet_register_socket_callback(ssh_session session, struct ssh_socket_struct *s);
+void ssh_packet_set_callbacks(ssh_session session, ssh_packet_callbacks callbacks);
+void ssh_packet_set_default_callbacks(ssh_session session);
+void ssh_packet_process(ssh_session session, uint8_t type);
+
+/* PACKET CRYPT */
+uint32_t packet_decrypt_len(ssh_session session, char *crypted);
+int packet_decrypt(ssh_session session, void *packet, unsigned int len);
+unsigned char *packet_encrypt(ssh_session session,
+                              void *packet,
+                              unsigned int len);
+int packet_hmac_verify(ssh_session session,ssh_buffer buffer,
+                       unsigned char *mac);
 
 #endif /* PACKET_H_ */

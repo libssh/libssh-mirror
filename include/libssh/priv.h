@@ -184,22 +184,6 @@ SSH_PACKET_CALLBACK(ssh_packet_dh_reply);
 SSH_PACKET_CALLBACK(ssh_packet_newkeys);
 SSH_PACKET_CALLBACK(ssh_packet_service_accept);
 
-/* in crypt.c */
-uint32_t packet_decrypt_len(ssh_session session,char *crypted);
-int packet_decrypt(ssh_session session, void *packet,unsigned int len);
-unsigned char *packet_encrypt(ssh_session session,void *packet,unsigned int len);
- /* it returns the hmac buffer if exists*/
-struct ssh_poll_handle_struct;
-
-int packet_hmac_verify(ssh_session session,ssh_buffer buffer,unsigned char *mac);
-
-struct ssh_socket_struct;
-
-int ssh_packet_socket_callback(const void *data, size_t len, void *user);
-void ssh_packet_register_socket_callback(ssh_session session, struct ssh_socket_struct *s);
-void ssh_packet_set_callbacks(ssh_session session, ssh_packet_callbacks callbacks);
-void ssh_packet_set_default_callbacks(ssh_session session);
-void ssh_packet_process(ssh_session session, uint8_t type);
 /* connect.c */
 socket_t ssh_connect_host(ssh_session session, const char *host,const char
         *bind_addr, int port, long timeout, long usec);

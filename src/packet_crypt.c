@@ -111,7 +111,7 @@ unsigned char *packet_encrypt(ssh_session session, void *data, uint32_t len) {
   seq = ntohl(session->send_seq);
   crypto = session->current_crypto->out_cipher;
 
-  ssh_log(session, SSH_LOG_PACKET, 
+  ssh_log(session, SSH_LOG_PACKET,
       "Encrypting packet with seq num: %d, len: %d",
       session->send_seq,len);
 

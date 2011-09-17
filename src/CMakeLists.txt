@@ -82,7 +82,6 @@ set(libssh_SRCS
   client.c
   config.c
   connect.c
-  crypt.c
   dh.c
   ecdh.c
   error.c
@@ -99,6 +98,7 @@ set(libssh_SRCS
   misc.c
   options.c
   packet.c
+  packet_crypt.c
   pcap.c
   pki.c
   poll.c

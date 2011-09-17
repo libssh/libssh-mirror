@@ -21,6 +21,7 @@
 
 #ifndef POLL_H_
 #define POLL_H_
+
 #include "config.h"
 
 #ifdef HAVE_POLL
@@ -135,6 +136,7 @@ typedef struct ssh_poll_handle_struct *ssh_poll_handle;
 typedef int (*ssh_poll_callback)(ssh_poll_handle p, socket_t fd, int revents,
     void *userdata);
 
+struct ssh_socket_struct;
 
 ssh_poll_handle ssh_poll_new(socket_t fd, short events, ssh_poll_callback cb,
     void *userdata);
