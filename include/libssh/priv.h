@@ -152,9 +152,6 @@ SSH_PACKET_CALLBACK(ssh_packet_dh_reply);
 SSH_PACKET_CALLBACK(ssh_packet_newkeys);
 SSH_PACKET_CALLBACK(ssh_packet_service_accept);
 
-/* config.c */
-int ssh_config_parse_file(ssh_session session, const char *filename);
-
 /* errors.c */
 #define ssh_set_error(error, code, ...) \
     _ssh_set_error(error, code, __FUNCTION__, __VA_ARGS__)
@@ -248,10 +245,6 @@ int message_handle(ssh_session session, void *user, uint8_t type, ssh_buffer pac
 #define leave_function() (void)session
 #endif
 
-/* options.c  */
-
-int ssh_options_set_algo(ssh_session session, int algo, const char *list);
-int ssh_options_apply(ssh_session session);
 
 /* server.c */
 SSH_PACKET_CALLBACK(ssh_packet_kexdh_init);

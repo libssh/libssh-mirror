@@ -56,6 +56,7 @@
 #include "libssh/pki.h"
 #include "libssh/dh.h"
 #include "libssh/messages.h"
+#include "libssh/options.h"
 
 #define set_status(session, status) do {\
         if (session->common.callbacks && session->common.callbacks->connect_status_function) \

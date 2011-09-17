@@ -35,6 +35,7 @@
 #include "libssh/priv.h"
 #include "libssh/session.h"
 #include "libssh/misc.h"
+#include "libssh/options.h"
 #ifdef WITH_SERVER
 #include "libssh/server.h"
 #include "libssh/bind.h"

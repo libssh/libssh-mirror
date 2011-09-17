@@ -33,6 +33,7 @@
 #include "libssh/ssh2.h"
 #include "libssh/buffer.h"
 #include "libssh/packet.h"
+#include "libssh/options.h"
 #include "libssh/socket.h"
 #include "libssh/session.h"
 #include "libssh/dh.h"

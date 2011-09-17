@@ -33,6 +33,7 @@
 #include "libssh/buffer.h"
 #include "libssh/misc.h"
 #include "libssh/pki.h"
+#include "libssh/options.h"
 
 /*todo: remove this include */
 #include "libssh/string.h"

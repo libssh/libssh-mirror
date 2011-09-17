@@ -37,6 +37,7 @@
 #include "libssh/pki_priv.h"
 #include <libssh/misc.h>
 #include <libssh/keys.h>
+#include "libssh/options.h"
 
 /* AUTH FUNCTIONS */
 int ssh_auth_list(ssh_session session) {
