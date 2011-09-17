@@ -136,16 +136,20 @@ void ssh_log_function(ssh_session session,
  * @param verbosity     The verbosity of the event.
  * @param format        The format string of the log entry.
  */
-void ssh_log_common(struct ssh_common_struct *common, int verbosity, const char *format, ...){
-  char buffer[1024];
-  va_list va;
+void ssh_log_common(struct ssh_common_struct *common,
+                    int verbosity,
+                    const char *function,
+                    const char *format, ...)
+{
+    char buffer[1024];
+    va_list va;
 
-  if (verbosity <= common->log_verbosity) {
-    va_start(va, format);
-    vsnprintf(buffer, sizeof(buffer), format, va);
-    va_end(va);
-    do_ssh_log(common, verbosity, "common", buffer);
-  }
+    if (verbosity <= common->log_verbosity) {
+        va_start(va, format);
+        vsnprintf(buffer, sizeof(buffer), format, va);
+        va_end(va);
+        do_ssh_log(common, verbosity, function, buffer);
+    }
 }
 
 /** @} */

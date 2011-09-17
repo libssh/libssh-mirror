@@ -380,7 +380,7 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
         case SSH_OPTIONS_HOST:
             v = value;
             if (v == NULL || v[0] == '\0') {
-                ssh_set_error_invalid(session, __FUNCTION__);
+                ssh_set_error_invalid(session);
                 return -1;
             } else {
                 q = strdup(value);
@@ -415,12 +415,12 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
             break;
         case SSH_OPTIONS_PORT:
             if (value == NULL) {
-                ssh_set_error_invalid(session, __FUNCTION__);
+                ssh_set_error_invalid(session);
                 return -1;
             } else {
                 int *x = (int *) value;
                 if (*x <= 0) {
-                    ssh_set_error_invalid(session, __FUNCTION__);
+                    ssh_set_error_invalid(session);
                     return -1;
                 }
 
@@ -430,7 +430,7 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
         case SSH_OPTIONS_PORT_STR:
             v = value;
             if (v == NULL || v[0] == '\0') {
-                ssh_set_error_invalid(session, __FUNCTION__);
+                ssh_set_error_invalid(session);
                 return -1;
             } else {
                 q = strdup(v);
@@ -444,7 +444,7 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
                 }
                 SAFE_FREE(q);
                 if (i <= 0) {
-                    ssh_set_error_invalid(session, __FUNCTION__);
+                    ssh_set_error_invalid(session);
                     return -1;
                 }
 
@@ -454,13 +454,13 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
         case SSH_OPTIONS_FD:
             if (value == NULL) {
                 session->fd = SSH_INVALID_SOCKET;
-                ssh_set_error_invalid(session, __FUNCTION__);
+                ssh_set_error_invalid(session);
                 return -1;
             } else {
                 socket_t *x = (socket_t *) value;
                 if (*x < 0) {
                     session->fd = SSH_INVALID_SOCKET;
-                    ssh_set_error_invalid(session, __FUNCTION__);
+                    ssh_set_error_invalid(session);
                     return -1;
                 }
 
@@ -470,7 +470,7 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
         case SSH_OPTIONS_BINDADDR:
             v = value;
             if (v == NULL || v[0] == '\0') {
-                ssh_set_error_invalid(session, __FUNCTION__);
+                ssh_set_error_invalid(session);
                 return -1;
             }
 
@@ -525,7 +525,7 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
         case SSH_OPTIONS_ADD_IDENTITY:
             v = value;
             if (v == NULL || v[0] == '\0') {
-                ssh_set_error_invalid(session, __FUNCTION__);
+                ssh_set_error_invalid(session);
                 return -1;
             }
             q = strdup(v);
@@ -548,7 +548,7 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
                     return -1;
                 }
             } else if (v[0] == '\0') {
-                ssh_set_error_invalid(session, __FUNCTION__);
+                ssh_set_error_invalid(session);
                 return -1;
             } else {
                 session->knownhosts = strdup(v);
@@ -560,12 +560,12 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
             break;
         case SSH_OPTIONS_TIMEOUT:
             if (value == NULL) {
-                ssh_set_error_invalid(session, __FUNCTION__);
+                ssh_set_error_invalid(session);
                 return -1;
             } else {
                 long *x = (long *) value;
                 if (*x < 0) {
-                    ssh_set_error_invalid(session, __FUNCTION__);
+                    ssh_set_error_invalid(session);
                     return -1;
                 }
 
@@ -574,12 +574,12 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
             break;
         case SSH_OPTIONS_TIMEOUT_USEC:
             if (value == NULL) {
-                ssh_set_error_invalid(session, __FUNCTION__);
+                ssh_set_error_invalid(session);
                 return -1;
             } else {
                 long *x = (long *) value;
                 if (*x < 0) {
-                    ssh_set_error_invalid(session, __FUNCTION__);
+                    ssh_set_error_invalid(session);
                     return -1;
                 }
 
@@ -588,12 +588,12 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
             break;
         case SSH_OPTIONS_SSH1:
             if (value == NULL) {
-                ssh_set_error_invalid(session, __FUNCTION__);
+                ssh_set_error_invalid(session);
                 return -1;
             } else {
                 int *x = (int *) value;
                 if (*x < 0) {
-                    ssh_set_error_invalid(session, __FUNCTION__);
+                    ssh_set_error_invalid(session);
                     return -1;
                 }
 
@@ -602,12 +602,12 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
             break;
         case SSH_OPTIONS_SSH2:
             if (value == NULL) {
-                ssh_set_error_invalid(session, __FUNCTION__);
+                ssh_set_error_invalid(session);
                 return -1;
             } else {
                 int *x = (int *) value;
                 if (*x < 0) {
-                    ssh_set_error_invalid(session, __FUNCTION__);
+                    ssh_set_error_invalid(session);
                     return -1;
                 }
 
@@ -616,12 +616,12 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
             break;
         case SSH_OPTIONS_LOG_VERBOSITY:
             if (value == NULL) {
-                ssh_set_error_invalid(session, __FUNCTION__);
+                ssh_set_error_invalid(session);
                 return -1;
             } else {
                 int *x = (int *) value;
                 if (*x < 0) {
-                    ssh_set_error_invalid(session, __FUNCTION__);
+                    ssh_set_error_invalid(session);
                     return -1;
                 }
 
@@ -632,7 +632,7 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
             v = value;
             if (v == NULL || v[0] == '\0') {
                 session->common.log_verbosity = 0;
-                ssh_set_error_invalid(session, __FUNCTION__);
+                ssh_set_error_invalid(session);
                 return -1;
             } else {
                 q = strdup(v);
@@ -646,7 +646,7 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
                 }
                 SAFE_FREE(q);
                 if (i < 0) {
-                    ssh_set_error_invalid(session, __FUNCTION__);
+                    ssh_set_error_invalid(session);
                     return -1;
                 }
 
@@ -656,7 +656,7 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
         case SSH_OPTIONS_CIPHERS_C_S:
             v = value;
             if (v == NULL || v[0] == '\0') {
-                ssh_set_error_invalid(session, __FUNCTION__);
+                ssh_set_error_invalid(session);
                 return -1;
             } else {
                 if (ssh_options_set_algo(session, SSH_CRYPT_C_S, v) < 0)
@@ -666,7 +666,7 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
         case SSH_OPTIONS_CIPHERS_S_C:
             v = value;
             if (v == NULL || v[0] == '\0') {
-                ssh_set_error_invalid(session, __FUNCTION__);
+                ssh_set_error_invalid(session);
                 return -1;
             } else {
                 if (ssh_options_set_algo(session, SSH_CRYPT_S_C, v) < 0)
@@ -676,7 +676,7 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
         case SSH_OPTIONS_KEY_EXCHANGE:
             v = value;
             if (v == NULL || v[0] == '\0') {
-                ssh_set_error_invalid(session, __FUNCTION__);
+                ssh_set_error_invalid(session);
                 return -1;
             } else {
                 if (ssh_options_set_algo(session, SSH_KEX, v) < 0)
@@ -686,7 +686,7 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
         case SSH_OPTIONS_COMPRESSION_C_S:
             v = value;
             if (v == NULL || v[0] == '\0') {
-                ssh_set_error_invalid(session, __FUNCTION__);
+                ssh_set_error_invalid(session);
                 return -1;
             } else {
                 if (strcasecmp(value,"yes")==0){
@@ -704,7 +704,7 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
         case SSH_OPTIONS_COMPRESSION_S_C:
             v = value;
             if (v == NULL || v[0] == '\0') {
-                ssh_set_error_invalid(session, __FUNCTION__);
+                ssh_set_error_invalid(session);
                 return -1;
             } else {
                 if (strcasecmp(value,"yes")==0){
@@ -722,7 +722,7 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
         case SSH_OPTIONS_COMPRESSION:
             v = value;
             if (v == NULL || v[0] == '\0') {
-                ssh_set_error_invalid(session, __FUNCTION__);
+                ssh_set_error_invalid(session);
                 return -1;
             }
             if(ssh_options_set(session,SSH_OPTIONS_COMPRESSION_C_S, v) < 0)
@@ -732,12 +732,12 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
             break;
         case SSH_OPTIONS_COMPRESSION_LEVEL:
             if (value == NULL) {
-                ssh_set_error_invalid(session, __FUNCTION__);
+                ssh_set_error_invalid(session);
                 return -1;
             } else {
                 int *x = (int *)value;
                 if (*x < 1 || *x > 9) {
-                    ssh_set_error_invalid(session, __FUNCTION__);
+                    ssh_set_error_invalid(session);
                     return -1;
                 }
                 session->compressionlevel = *x & 0xff;
@@ -745,7 +745,7 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
             break;
         case SSH_OPTIONS_STRICTHOSTKEYCHECK:
             if (value == NULL) {
-                ssh_set_error_invalid(session, __FUNCTION__);
+                ssh_set_error_invalid(session);
                 return -1;
             } else {
                 int *x = (int *) value;
@@ -757,7 +757,7 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
         case SSH_OPTIONS_PROXYCOMMAND:
             v = value;
             if (v == NULL || v[0] == '\0') {
-                ssh_set_error_invalid(session, __FUNCTION__);
+                ssh_set_error_invalid(session);
                 return -1;
             } else {
                 SAFE_FREE(session->ProxyCommand);
@@ -977,7 +977,7 @@ int ssh_options_parse_config(ssh_session session, const char *filename) {
     return -1;
   }
   if (session->host == NULL) {
-    ssh_set_error_invalid(session, __FUNCTION__);
+    ssh_set_error_invalid(session);
     return -1;
   }
 
@@ -1159,7 +1159,7 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
   switch (type) {
     case SSH_BIND_OPTIONS_HOSTKEY:
       if (value == NULL) {
-        ssh_set_error_invalid(sshbind, __FUNCTION__);
+        ssh_set_error_invalid(sshbind);
         return -1;
       } else {
         if (ssh_bind_options_set_algo(sshbind, SSH_HOSTKEYS, value) < 0)
@@ -1168,7 +1168,7 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
       break;
     case SSH_BIND_OPTIONS_BINDADDR:
       if (value == NULL) {
-        ssh_set_error_invalid(sshbind, __FUNCTION__);
+        ssh_set_error_invalid(sshbind);
         return -1;
       } else {
         SAFE_FREE(sshbind->bindaddr);
@@ -1181,7 +1181,7 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
       break;
     case SSH_BIND_OPTIONS_BINDPORT:
       if (value == NULL) {
-        ssh_set_error_invalid(sshbind, __FUNCTION__);
+        ssh_set_error_invalid(sshbind);
         return -1;
       } else {
         int *x = (int *) value;
@@ -1208,7 +1208,7 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
       break;
     case SSH_BIND_OPTIONS_LOG_VERBOSITY:
       if (value == NULL) {
-        ssh_set_error_invalid(sshbind, __FUNCTION__);
+        ssh_set_error_invalid(sshbind);
         return -1;
       } else {
         int *x = (int *) value;
@@ -1235,7 +1235,7 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
       break;
     case SSH_BIND_OPTIONS_DSAKEY:
       if (value == NULL) {
-        ssh_set_error_invalid(sshbind, __FUNCTION__);
+        ssh_set_error_invalid(sshbind);
         return -1;
       } else {
         SAFE_FREE(sshbind->dsakey);
@@ -1248,7 +1248,7 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
       break;
     case SSH_BIND_OPTIONS_RSAKEY:
       if (value == NULL) {
-        ssh_set_error_invalid(sshbind, __FUNCTION__);
+        ssh_set_error_invalid(sshbind);
         return -1;
       } else {
         SAFE_FREE(sshbind->rsakey);
@@ -1261,7 +1261,7 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
       break;
     case SSH_BIND_OPTIONS_BANNER:
       if (value == NULL) {
-        ssh_set_error_invalid(sshbind, __FUNCTION__);
+        ssh_set_error_invalid(sshbind);
         return -1;
       } else {
         SAFE_FREE(sshbind->banner);

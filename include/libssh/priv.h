@@ -155,9 +155,20 @@ SSH_PACKET_CALLBACK(ssh_packet_service_accept);
 int ssh_config_parse_file(ssh_session session, const char *filename);
 
 /* errors.c */
-void ssh_set_error(void *error, int code, const char *descr, ...) PRINTF_ATTRIBUTE(3, 4);
-void ssh_set_error_oom(void *);
-void ssh_set_error_invalid(void *, const char *);
+#define ssh_set_error(error, code, ...) \
+    _ssh_set_error(error, code, __FUNCTION__, __VA_ARGS__)
+void _ssh_set_error(void *error,
+                    int code,
+                    const char *function,
+                    const char *descr, ...) PRINTF_ATTRIBUTE(4, 5);
+
+#define ssh_set_error_oom(error) \
+    _ssh_set_error_oom(error, __FUNCTION__)
+void _ssh_set_error_oom(void *error, const char *function);
+
+#define ssh_set_error_invalid(error) \
+    _ssh_set_error_invalid(error, __FUNCTION__)
+void _ssh_set_error_invalid(void *error, const char *function);
 
 /* in crypt.c */
 uint32_t packet_decrypt_len(ssh_session session,char *crypted);
@@ -210,10 +221,6 @@ uint32_t ssh_crc32(const char *buf, uint32_t len);
 int match_hostname(const char *host, const char *pattern, unsigned int len);
 
 int message_handle(ssh_session session, void *user, uint8_t type, ssh_buffer packet);
-/* log.c */
-
-void ssh_log_common(struct ssh_common_struct *common, int verbosity,
-    const char *format, ...) PRINTF_ATTRIBUTE(3, 4);
 
 /* misc.c */
 #ifdef _WIN32
@@ -260,11 +267,17 @@ SSH_PACKET_CALLBACK(ssh_packet_kexdh_init);
 
 /* LOGGING */
 #define SSH_LOG(session, priority, ...) \
-    _ssh_log(session, priority, __FUNCTION__, __VA_ARGS__)
+    ssh_log_function(session, priority, __FUNCTION__, __VA_ARGS__)
 void ssh_log_function(ssh_session session,
                       int prioriry,
                       const char *function,
                       const char *format, ...) PRINTF_ATTRIBUTE(4, 5);
+
+void ssh_log_common(struct ssh_common_struct *common,
+                    int verbosity,
+                    const char *function,
+                    const char *format, ...) PRINTF_ATTRIBUTE(4, 5);
+
 
 /** Free memory space */
 #define SAFE_FREE(x) do { if ((x) != NULL) {free(x); x=NULL;} } while(0)

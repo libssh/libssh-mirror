@@ -349,7 +349,8 @@ int ssh_userauth_none(ssh_session session, const char *username) {
         case SSH_PENDING_CALL_AUTH_NONE:
             goto pending;
         default:
-            ssh_set_error(session,SSH_FATAL,"Bad call during pending SSH call in ssh_userauth_none");
+            ssh_set_error(session, SSH_FATAL,
+                          "Wrong state during pending SSH call");
             return SSH_AUTH_ERROR;
     }
 
@@ -485,7 +486,7 @@ int ssh_userauth_try_publickey(ssh_session session,
         default:
             ssh_set_error(session,
                           SSH_FATAL,
-                          "Bad call during pending SSH call in ssh_userauth_try_pubkey");
+                          "Wrong state during pending SSH call");
             return SSH_ERROR;
     }
 
@@ -1296,7 +1297,7 @@ int ssh_userauth_password(ssh_session session,
         default:
             ssh_set_error(session,
                           SSH_FATAL,
-                          "Bad call during pending SSH call in ssh_userauth_try_pubkey");
+                          "Wrong state during pending SSH call");
             return SSH_ERROR;
     }
 
@@ -1513,7 +1514,7 @@ static int ssh_userauth_kbdint_init(ssh_session session,
     if (session->pending_call_state == SSH_PENDING_CALL_AUTH_KBDINT_INIT)
         goto pending;
     if (session->pending_call_state != SSH_PENDING_CALL_NONE){
-        ssh_set_error_invalid(session,"ssh_userauth_kbdint_init");
+        ssh_set_error_invalid(session);
         return SSH_ERROR;
     }
     rc = ssh_userauth_request_service(session);
@@ -1635,7 +1636,7 @@ static int ssh_userauth_kbdint_send(ssh_session session)
     if (session->pending_call_state == SSH_PENDING_CALL_AUTH_KBDINT_SEND)
         goto pending;
     if (session->pending_call_state != SSH_PENDING_CALL_NONE){
-        ssh_set_error_invalid(session,"ssh_userauth_kbdint_send");
+        ssh_set_error_invalid(session);
         return SSH_ERROR;
     }
     rc = buffer_add_u8(session->out_buffer, SSH2_MSG_USERAUTH_INFO_RESPONSE);
@@ -1892,7 +1893,7 @@ int ssh_userauth_kbdint_getnprompts(ssh_session session) {
   if(session==NULL)
     return SSH_ERROR;
   if(session->kbdint == NULL) {
-    ssh_set_error_invalid(session, __FUNCTION__);
+    ssh_set_error_invalid(session);
     return SSH_ERROR;
   }
   return session->kbdint->nprompts;
@@ -1912,7 +1913,7 @@ const char *ssh_userauth_kbdint_getname(ssh_session session) {
   if(session==NULL)
     return NULL;
   if(session->kbdint == NULL) {
-    ssh_set_error_invalid(session, __FUNCTION__);
+    ssh_set_error_invalid(session);
     return NULL;
   }
   return session->kbdint->name;
@@ -1933,7 +1934,7 @@ const char *ssh_userauth_kbdint_getinstruction(ssh_session session) {
   if(session==NULL)
     return NULL;
   if(session->kbdint == NULL) {
-    ssh_set_error_invalid(session, __FUNCTION__);
+    ssh_set_error_invalid(session);
     return NULL;
   }
   return session->kbdint->instruction;
@@ -1960,11 +1961,11 @@ const char *ssh_userauth_kbdint_getprompt(ssh_session session, unsigned int i,
   if(session==NULL)
     return NULL;
   if(session->kbdint == NULL) {
-    ssh_set_error_invalid(session, __FUNCTION__);
+    ssh_set_error_invalid(session);
     return NULL;
   }
   if (i > session->kbdint->nprompts) {
-    ssh_set_error_invalid(session, __FUNCTION__);
+    ssh_set_error_invalid(session);
     return NULL;
   }
 
@@ -2031,7 +2032,7 @@ int ssh_userauth_kbdint_setanswer(ssh_session session, unsigned int i,
     return -1;
   if (answer == NULL || session->kbdint == NULL ||
       i >= session->kbdint->nprompts) {
-    ssh_set_error_invalid(session, __FUNCTION__);
+    ssh_set_error_invalid(session);
     return -1;
   }
 

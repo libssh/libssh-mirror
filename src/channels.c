@@ -851,7 +851,7 @@ int channel_default_bufferize(ssh_channel channel, void *data, int len,
   session = channel->session;
 
   if(data == NULL) {
-      ssh_set_error_invalid(session, __FUNCTION__);
+      ssh_set_error_invalid(session);
       return -1;
   }
 
@@ -966,7 +966,7 @@ int ssh_channel_open_forward(ssh_channel channel, const char *remotehost,
   session = channel->session;
 
   if(remotehost == NULL || sourcehost == NULL) {
-      ssh_set_error_invalid(session, __FUNCTION__);
+      ssh_set_error_invalid(session);
       return rc;
   }
 
@@ -1213,7 +1213,7 @@ int channel_write_common(ssh_channel channel, const void *data,
   }
   session = channel->session;
   if(data == NULL) {
-      ssh_set_error_invalid(session, __FUNCTION__);
+      ssh_set_error_invalid(session);
       return -1;
   }
 
@@ -1608,7 +1608,7 @@ int ssh_channel_request_pty_size(ssh_channel channel, const char *terminal,
       return SSH_ERROR;
   }
   if(terminal == NULL) {
-      ssh_set_error_invalid(channel->session, __FUNCTION__);
+      ssh_set_error_invalid(channel->session);
       return rc;
   }
 
@@ -1772,7 +1772,7 @@ int ssh_channel_request_subsystem(ssh_channel channel, const char *subsys) {
       return SSH_ERROR;
   }
   if(subsys == NULL) {
-      ssh_set_error_invalid(channel->session, __FUNCTION__);
+      ssh_set_error_invalid(channel->session);
       return rc;
   }
   switch(channel->request_state){
@@ -2276,7 +2276,7 @@ int ssh_channel_request_env(ssh_channel channel, const char *name, const char *v
       return SSH_ERROR;
   }
   if(name == NULL || value == NULL) {
-      ssh_set_error_invalid(channel->session, __FUNCTION__);
+      ssh_set_error_invalid(channel->session);
       return rc;
   }
   switch(channel->request_state){
@@ -2360,7 +2360,7 @@ int ssh_channel_request_exec(ssh_channel channel, const char *cmd) {
       return SSH_ERROR;
   }
   if(cmd == NULL) {
-      ssh_set_error_invalid(channel->session, __FUNCTION__);
+      ssh_set_error_invalid(channel->session);
       return rc;
   }
 
@@ -2441,7 +2441,7 @@ int ssh_channel_request_send_signal(ssh_channel channel, const char *sig) {
       return SSH_ERROR;
   }
   if(sig == NULL) {
-      ssh_set_error_invalid(channel->session, __FUNCTION__);
+      ssh_set_error_invalid(channel->session);
       return rc;
   }
 
@@ -2506,7 +2506,7 @@ int channel_read_buffer(ssh_channel channel, ssh_buffer buffer, uint32_t count,
       return SSH_ERROR;
   }
   if(buffer == NULL) {
-      ssh_set_error_invalid(channel->session, __FUNCTION__);
+      ssh_set_error_invalid(channel->session);
       return SSH_ERROR;
   }
 
@@ -2610,7 +2610,7 @@ int ssh_channel_read(ssh_channel channel, void *dest, uint32_t count, int is_std
       return SSH_ERROR;
   }
   if(dest == NULL) {
-      ssh_set_error_invalid(channel->session, __FUNCTION__);
+      ssh_set_error_invalid(channel->session);
       return SSH_ERROR;
   }
 
@@ -2713,7 +2713,7 @@ int ssh_channel_read_nonblocking(ssh_channel channel, void *dest, uint32_t count
       return SSH_ERROR;
   }
   if(dest == NULL) {
-      ssh_set_error_invalid(channel->session, __FUNCTION__);
+      ssh_set_error_invalid(channel->session);
       return SSH_ERROR;
   }
 
@@ -3146,7 +3146,7 @@ int ssh_channel_open_reverse_forward(ssh_channel channel, const char *remotehost
       return rc;
   }
   if(remotehost == NULL || sourcehost == NULL) {
-      ssh_set_error_invalid(channel->session, __FUNCTION__);
+      ssh_set_error_invalid(channel->session);
       return rc;
   }
 
@@ -3228,7 +3228,7 @@ int ssh_channel_open_x11(ssh_channel channel,
       return rc;
   }
   if(orig_addr == NULL) {
-      ssh_set_error_invalid(channel->session, __FUNCTION__);
+      ssh_set_error_invalid(channel->session);
       return rc;
   }
   session = channel->session;
@@ -3343,7 +3343,7 @@ int ssh_channel_request_send_exit_signal(ssh_channel channel, const char *sig,
       return rc;
   }
   if(sig == NULL || errmsg == NULL || lang == NULL) {
-      ssh_set_error_invalid(channel->session, __FUNCTION__);
+      ssh_set_error_invalid(channel->session);
       return rc;
   }
 #ifdef WITH_SSH1

@@ -236,7 +236,7 @@ int ssh_bind_set_callbacks(ssh_bind sshbind, ssh_bind_callbacks callbacks,
     return SSH_ERROR;
   }
   if (callbacks == NULL) {
-    ssh_set_error_invalid(sshbind, __FUNCTION__);
+    ssh_set_error_invalid(sshbind);
     return SSH_ERROR;
   }
   if(callbacks->size <= 0 || callbacks->size > 1024 * sizeof(void *)){

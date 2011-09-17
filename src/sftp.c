@@ -636,12 +636,12 @@ const char *sftp_extensions_get_name(sftp_session sftp, unsigned int idx) {
   if (sftp == NULL)
     return NULL;
   if (sftp->ext == NULL || sftp->ext->name == NULL) {
-    ssh_set_error_invalid(sftp->session, __FUNCTION__);
+    ssh_set_error_invalid(sftp->session);
     return NULL;
   }
 
   if (idx > sftp->ext->count) {
-    ssh_set_error_invalid(sftp->session, __FUNCTION__);
+    ssh_set_error_invalid(sftp->session);
     return NULL;
   }
 
@@ -652,12 +652,12 @@ const char *sftp_extensions_get_data(sftp_session sftp, unsigned int idx) {
   if (sftp == NULL)
     return NULL;
   if (sftp->ext == NULL || sftp->ext->name == NULL) {
-    ssh_set_error_invalid(sftp->session, __FUNCTION__);
+    ssh_set_error_invalid(sftp->session);
     return NULL;
   }
 
   if (idx > sftp->ext->count) {
-    ssh_set_error_invalid(sftp->session, __FUNCTION__);
+    ssh_set_error_invalid(sftp->session);
     return NULL;
   }
 
@@ -2549,7 +2549,7 @@ int sftp_symlink(sftp_session sftp, const char *target, const char *dest) {
   if (sftp == NULL)
     return -1;
   if (target == NULL || dest == NULL) {
-    ssh_set_error_invalid(sftp->session, __FUNCTION__);
+    ssh_set_error_invalid(sftp->session);
     return -1;
   }
 
@@ -2665,7 +2665,7 @@ char *sftp_readlink(sftp_session sftp, const char *path) {
   if (sftp == NULL)
     return NULL;
   if (path == NULL) {
-    ssh_set_error_invalid(sftp, __FUNCTION__);
+    ssh_set_error_invalid(sftp);
     return NULL;
   }
   if (sftp->version < 3){
@@ -2843,7 +2843,7 @@ sftp_statvfs_t sftp_statvfs(sftp_session sftp, const char *path) {
   if (sftp == NULL)
     return NULL;
   if (path == NULL) {
-    ssh_set_error_invalid(sftp->session, __FUNCTION__);
+    ssh_set_error_invalid(sftp->session);
     return NULL;
   }
   if (sftp->version < 3){
@@ -3023,7 +3023,7 @@ char *sftp_canonicalize_path(sftp_session sftp, const char *path) {
   if (sftp == NULL)
     return NULL;
   if (path == NULL) {
-    ssh_set_error_invalid(sftp->session, __FUNCTION__);
+    ssh_set_error_invalid(sftp->session);
     return NULL;
   }
 
