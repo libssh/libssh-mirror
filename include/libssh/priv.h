@@ -206,8 +206,6 @@ socket_t ssh_connect_host(ssh_session session, const char *host,const char
         *bind_addr, int port, long timeout, long usec);
 socket_t ssh_connect_host_nonblocking(ssh_session session, const char *host,
 		const char *bind_addr, int port);
-void ssh_sock_set_nonblocking(socket_t sock);
-void ssh_sock_set_blocking(socket_t sock);
 
 /* in base64.c */
 ssh_buffer base64_to_bin(const char *source);
