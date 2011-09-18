@@ -752,7 +752,6 @@ int ssh_get_openssh_version(ssh_session session) {
 void ssh_disconnect(ssh_session session) {
   ssh_string str = NULL;
   struct ssh_iterator *it;
-  int i;
 
   if (session == NULL) {
     return;
