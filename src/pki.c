@@ -257,6 +257,40 @@ int ssh_key_is_private(const ssh_key k) {
     return (k->flags & SSH_KEY_FLAG_PRIVATE);
 }
 
+/**
+ * @brief Compare keys if they are equal.
+ *
+ * @param[in] k1        The first key to compare.
+ *
+ * @param[in] k2        The second key to compare.
+ *
+ * @param[in] what      What part or type of the key do you want to compare.
+ *
+ * @return              0 if equal, 1 if not.
+ */
+int ssh_key_cmp(const ssh_key k1,
+                const ssh_key k2,
+                enum ssh_keycmp_e what)
+{
+    if (k1 == NULL || k2 == NULL) {
+        return 1;
+    }
+
+    if (k1->type != k2->type) {
+        ssh_pki_log("key types don't macth!");
+        return 1;
+    }
+
+    if (what == SSH_KEY_CMP_PRIVATE) {
+        if (!ssh_key_is_private(k1) ||
+            !ssh_key_is_private(k2)) {
+            return 1;
+        }
+    }
+
+    return pki_key_compare(k1, k2, what);
+}
+
 ssh_signature ssh_signature_new(void)
 {
     struct ssh_signature_struct *sig;

@@ -993,6 +993,105 @@ int pki_key_generate_dss(ssh_key key, int parameter){
     return pki_key_generate(key, parameter, "dsa", SSH_KEYTYPE_DSS);
 }
 
+static int _bignum_cmp(const gcry_sexp_t s1,
+                       const gcry_sexp_t s2,
+                       const char *what)
+{
+    gcry_sexp_t sexp;
+    bignum b1;
+    bignum b2;
+
+    sexp = gcry_sexp_find_token(s1, what, 0);
+    if (sexp == NULL) {
+        return 1;
+    }
+    b1 = gcry_sexp_nth_mpi(sexp, 1, GCRYMPI_FMT_USG);
+    gcry_sexp_release(sexp);
+    if (b1 == NULL) {
+        return 1;
+    }
+
+    sexp = gcry_sexp_find_token(s2, what, 0);
+    if (sexp == NULL) {
+        return 1;
+    }
+    b2 = gcry_sexp_nth_mpi(sexp, 1, GCRYMPI_FMT_USG);
+    gcry_sexp_release(sexp);
+    if (b2 == NULL) {
+        return 1;
+    }
+
+    if (bignum_cmp(b1, b2) != 0) {
+        return 1;
+    }
+
+    return 0;
+}
+
+int pki_key_compare(const ssh_key k1,
+                    const ssh_key k2,
+                    enum ssh_keycmp_e what)
+{
+    switch (k1->type) {
+        case SSH_KEYTYPE_DSS:
+            if (_bignum_cmp(k1->dsa, k2->dsa, "p") != 0) {
+                return 1;
+            }
+
+            if (_bignum_cmp(k1->dsa, k2->dsa, "q") != 0) {
+                return 1;
+            }
+
+            if (_bignum_cmp(k1->dsa, k2->dsa, "g") != 0) {
+                return 1;
+            }
+
+            if (_bignum_cmp(k1->dsa, k2->dsa, "y") != 0) {
+                return 1;
+            }
+
+            if (what == SSH_KEY_CMP_PRIVATE) {
+                if (_bignum_cmp(k1->dsa, k2->dsa, "x") != 0) {
+                    return 1;
+                }
+            }
+            break;
+        case SSH_KEYTYPE_RSA:
+        case SSH_KEYTYPE_RSA1:
+            if (_bignum_cmp(k1->rsa, k2->rsa, "e") != 0) {
+                return 1;
+            }
+
+            if (_bignum_cmp(k1->rsa, k2->rsa, "n") != 0) {
+                return 1;
+            }
+
+            if (what == SSH_KEY_CMP_PRIVATE) {
+                if (_bignum_cmp(k1->rsa, k2->rsa, "d") != 0) {
+                    return 1;
+                }
+
+                if (_bignum_cmp(k1->rsa, k2->rsa, "p") != 0) {
+                    return 1;
+                }
+
+                if (_bignum_cmp(k1->rsa, k2->rsa, "q") != 0) {
+                    return 1;
+                }
+
+                if (_bignum_cmp(k1->rsa, k2->rsa, "u") != 0) {
+                    return 1;
+                }
+            }
+            break;
+        case SSH_KEYTYPE_ECDSA:
+        case SSH_KEYTYPE_UNKNOWN:
+            return 1;
+    }
+
+    return 0;
+}
+
 ssh_string pki_publickey_to_blob(const ssh_key key)
 {
     ssh_buffer buffer;

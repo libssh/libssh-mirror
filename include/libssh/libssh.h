@@ -242,6 +242,11 @@ enum ssh_keytypes_e{
   SSH_KEYTYPE_ECDSA
 };
 
+enum ssh_keycmp_e {
+  SSH_KEY_CMP_PUBLIC = 0,
+  SSH_KEY_CMP_PRIVATE
+};
+
 /* Error return codes */
 #define SSH_OK 0     /* No error */
 #define SSH_ERROR -1 /* Error of some kind */
@@ -458,6 +463,9 @@ LIBSSH_API const char *ssh_key_type_to_char(enum ssh_keytypes_e type);
 LIBSSH_API enum ssh_keytypes_e ssh_key_type_from_name(const char *name);
 LIBSSH_API int ssh_key_is_public(const ssh_key k);
 LIBSSH_API int ssh_key_is_private(const ssh_key k);
+LIBSSH_API int ssh_key_cmp(const ssh_key k1,
+                           const ssh_key k2,
+                           enum ssh_keycmp_e what);
 
 LIBSSH_API int ssh_pki_generate(enum ssh_keytypes_e type, int parameter,
         ssh_key *pkey);

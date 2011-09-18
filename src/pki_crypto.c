@@ -267,6 +267,64 @@ int pki_key_generate_dss(ssh_key key, int parameter){
     return SSH_OK;
 }
 
+int pki_key_compare(const ssh_key k1,
+                    const ssh_key k2,
+                    enum ssh_keycmp_e what)
+{
+    switch (k1->type) {
+        case SSH_KEYTYPE_DSS:
+            if (DSA_size(k1->dsa) != DSA_size(k2->dsa)) {
+                return 1;
+            }
+            if (bignum_cmp(k1->dsa->p, k2->dsa->p) != 0) {
+                return 1;
+            }
+            if (bignum_cmp(k1->dsa->q, k2->dsa->q) != 0) {
+                return 1;
+            }
+            if (bignum_cmp(k1->dsa->g, k2->dsa->g) != 0) {
+                return 1;
+            }
+            if (bignum_cmp(k1->dsa->pub_key, k2->dsa->pub_key) != 0) {
+                return 1;
+            }
+
+            if (what == SSH_KEY_CMP_PRIVATE) {
+                if (bignum_cmp(k1->dsa->priv_key, k2->dsa->priv_key) != 0) {
+                    return 1;
+                }
+            }
+            break;
+        case SSH_KEYTYPE_RSA:
+        case SSH_KEYTYPE_RSA1:
+            if (RSA_size(k1->rsa) != RSA_size(k2->rsa)) {
+                return 1;
+            }
+            if (bignum_cmp(k1->rsa->e, k2->rsa->e) != 0) {
+                return 1;
+            }
+            if (bignum_cmp(k1->rsa->n, k2->rsa->n) != 0) {
+                return 1;
+            }
+
+            if (what == SSH_KEY_CMP_PRIVATE) {
+                if (bignum_cmp(k1->rsa->p, k2->rsa->p) != 0) {
+                    return 1;
+                }
+
+                if (bignum_cmp(k1->rsa->q, k2->rsa->q) != 0) {
+                    return 1;
+                }
+            }
+            break;
+        case SSH_KEYTYPE_ECDSA:
+        case SSH_KEYTYPE_UNKNOWN:
+            return 1;
+    }
+
+    return 0;
+}
+
 ssh_key pki_private_key_from_base64(const char *b64_key,
                                     const char *passphrase,
                                     ssh_auth_callback auth_fn,

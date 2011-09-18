@@ -36,6 +36,9 @@ void _ssh_pki_log(const char *function,
 ssh_key pki_key_dup(const ssh_key key, int demote);
 int pki_key_generate_rsa(ssh_key key, int parameter);
 int pki_key_generate_dss(ssh_key key, int parameter);
+int pki_key_compare(const ssh_key k1,
+                    const ssh_key k2,
+                    enum ssh_keycmp_e what);
 
 /* SSH Private Key Functions */
 enum ssh_keytypes_e pki_privatekey_type_from_string(const char *privkey);

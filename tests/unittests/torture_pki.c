@@ -517,6 +517,9 @@ static void torture_pki_duplicate_key_rsa(void **state)
 
     assert_string_equal(b64_key, b64_key_gen);
 
+    rc = ssh_key_cmp(privkey, privkey_dup, SSH_KEY_CMP_PRIVATE);
+    assert_true(rc == 0);
+
     ssh_key_free(pubkey);
     ssh_key_free(privkey);
     ssh_key_free(privkey_dup);
@@ -559,6 +562,9 @@ static void torture_pki_duplicate_key_dsa(void **state)
     assert_true(rc == 0);
 
     assert_string_equal(b64_key, b64_key_gen);
+
+    rc = ssh_key_cmp(privkey, privkey_dup, SSH_KEY_CMP_PRIVATE);
+    assert_true(rc == 0);
 
     ssh_key_free(pubkey);
     ssh_key_free(privkey);

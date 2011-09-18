@@ -307,6 +307,7 @@ LIBSSH_API const char *ssh_message_auth_password(ssh_message msg);
  * @return              The public key or NULL.
  *
  * @see ssh_key_dup()
+ * @see ssh_key_cmp()
  * @see ssh_message_get()
  * @see ssh_message_type()
  */
