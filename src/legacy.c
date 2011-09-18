@@ -487,7 +487,9 @@ ssh_string publickey_from_file(ssh_session session, const char *filename,
         return NULL;
     }
 
-    *type = key->type;
+    if (type) {
+        *type = key->type;
+    }
     ssh_key_free(key);
 
     return key_str;
