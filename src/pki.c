@@ -1233,7 +1233,11 @@ ssh_string ssh_srv_pki_do_sign_sessionid(ssh_session session,
     if (ctx == NULL) {
         return NULL;
     }
-    sha1_update(ctx, crypto->session_id, SHA_DIGEST_LEN);
+    if (crypto->session_id == NULL){
+        ssh_set_error(session,SSH_FATAL,"Missing session_id");
+        return NULL;
+    }
+    sha1_update(ctx, crypto->session_id, crypto->digest_len);
     sha1_final(hash, ctx);
 
 #ifdef DEBUG_CRYPTO
