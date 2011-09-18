@@ -25,6 +25,7 @@
 #include "libssh/dh.h"
 #include "libssh/buffer.h"
 #include "libssh/ssh2.h"
+#include "libssh/pki.h"
 
 #ifdef HAVE_ECDH
 #include <openssl/ecdh.h>
@@ -37,7 +38,6 @@
  * @brief Starts ecdh-sha2-nistp256 key exchange
  */
 int ssh_client_ecdh_init(ssh_session session){
-  ssh_string e = NULL;
   EC_KEY *key=NULL;
   const EC_GROUP *group;
   const EC_POINT *pubkey;
@@ -64,13 +64,9 @@ int ssh_client_ecdh_init(ssh_session session){
   session->next_crypto->ecdh_privkey = key;
   session->next_crypto->ecdh_client_pubkey = client_pubkey;
   rc = packet_send(session);
+  leave_function();
   return rc;
 error:
-  if(e != NULL){
-    ssh_string_burn(e);
-    ssh_string_free(e);
-  }
-
   leave_function();
   return SSH_ERROR;
 }
@@ -98,9 +94,12 @@ static int ecdh_build_k(ssh_session session) {
 #endif
     return -1;
   }
-
-  EC_POINT_oct2point(group,pubkey,ssh_string_data(session->next_crypto->ecdh_server_pubkey),
-      ssh_string_len(session->next_crypto->ecdh_server_pubkey),ctx);
+  if (session->server)
+      EC_POINT_oct2point(group,pubkey,ssh_string_data(session->next_crypto->ecdh_client_pubkey),
+              ssh_string_len(session->next_crypto->ecdh_client_pubkey),ctx);
+  else
+      EC_POINT_oct2point(group,pubkey,ssh_string_data(session->next_crypto->ecdh_server_pubkey),
+              ssh_string_len(session->next_crypto->ecdh_server_pubkey),ctx);
   buffer = malloc(len);
   ECDH_compute_key(buffer,len,pubkey,session->next_crypto->ecdh_privkey,NULL);
   BN_bin2bn(buffer,len,session->next_crypto->k);
@@ -149,6 +148,7 @@ int ssh_client_ecdh_reply(ssh_session session, ssh_buffer packet){
   }
   session->next_crypto->dh_server_signature = signature;
   signature=NULL; /* ownership changed */
+  /* TODO: verify signature now instead of waiting for NEWKEYS */
   if (ecdh_build_k(session) < 0) {
     ssh_set_error(session, SSH_FATAL, "Cannot build k number");
     goto error;
@@ -168,8 +168,101 @@ error:
 
 #ifdef WITH_SERVER
 
+/** @brief Parse a SSH_MSG_KEXDH_INIT packet (server) and send a
+ * SSH_MSG_KEXDH_REPLY
+ */
+
 int ssh_server_ecdh_init(ssh_session session, ssh_buffer packet){
-    return SSH_OK;
+    /* ECDH keys */
+    ssh_string q_c_string = NULL;
+    ssh_string q_s_string = NULL;
+    EC_KEY *ecdh_key=NULL;
+    const EC_GROUP *group;
+    const EC_POINT *ecdh_pubkey;
+    bignum_CTX ctx;
+    /* SSH host keys (rsa,dsa,ecdsa) */
+    ssh_key privkey;
+    ssh_string sig_blob = NULL;
+    int len;
+    int rc;
+
+    enter_function();
+
+    /* Extract the client pubkey from the init packet */
+
+    q_c_string = buffer_get_ssh_string(packet);
+    if (q_c_string == NULL) {
+      ssh_set_error(session,SSH_FATAL, "No Q_C ECC point in packet");
+      goto error;
+    }
+    session->next_crypto->ecdh_client_pubkey = q_c_string;
+
+    /* Build server's keypair */
+
+    ctx = BN_CTX_new();
+    ecdh_key = EC_KEY_new_by_curve_name(NISTP256);
+    group = EC_KEY_get0_group(ecdh_key);
+    EC_KEY_generate_key(ecdh_key);
+    ecdh_pubkey=EC_KEY_get0_public_key(ecdh_key);
+    len = EC_POINT_point2oct(group,ecdh_pubkey,POINT_CONVERSION_UNCOMPRESSED,
+        NULL,0,ctx);
+    q_s_string=ssh_string_new(len);
+
+    EC_POINT_point2oct(group,ecdh_pubkey,POINT_CONVERSION_UNCOMPRESSED,
+        ssh_string_data(q_s_string),len,ctx);
+
+    BN_CTX_free(ctx);
+    session->next_crypto->ecdh_privkey = ecdh_key;
+    session->next_crypto->ecdh_server_pubkey = q_s_string;
+
+    buffer_add_u8(session->out_buffer, SSH2_MSG_KEXDH_REPLY);
+    /* build k and session_id */
+    if (ecdh_build_k(session) < 0) {
+      ssh_set_error(session, SSH_FATAL, "Cannot build k number");
+      goto error;
+    }
+    if (ssh_get_key_params(session, &privkey) == SSH_ERROR)
+        goto error;
+    if (make_sessionid(session) != SSH_OK) {
+      ssh_set_error(session, SSH_FATAL, "Could not create a session id");
+      goto error;
+    }
+
+    /* add host's public key */
+    buffer_add_ssh_string(session->out_buffer, session->next_crypto->server_pubkey);
+    /* add ecdh public key */
+    buffer_add_ssh_string(session->out_buffer,q_s_string);
+    /* add signature blob */
+    sig_blob = ssh_srv_pki_do_sign_sessionid(session, privkey);
+    if (sig_blob == NULL) {
+        ssh_set_error(session, SSH_FATAL, "Could not sign the session id");
+        goto error;
+    }
+    buffer_add_ssh_string(session->out_buffer, sig_blob);
+    /* Free private keys as they should not be readable after this point */
+    if (session->srv.rsa_key) {
+        ssh_key_free(session->srv.rsa_key);
+        session->srv.rsa_key = NULL;
+    }
+    if (session->srv.dsa_key) {
+        ssh_key_free(session->srv.dsa_key);
+        session->srv.dsa_key = NULL;
+    }
+
+    ssh_log(session,SSH_LOG_PROTOCOL, "SSH_MSG_KEXDH_REPLY sent");
+    rc = packet_send(session);
+
+
+    /* Send the MSG_NEWKEYS */
+    if (buffer_add_u8(session->out_buffer, SSH2_MSG_NEWKEYS) < 0) {
+      goto error;
+    }
+    session->dh_handshake_state=DH_STATE_NEWKEYS_SENT;
+    rc=packet_send(session);
+    ssh_log(session, SSH_LOG_PROTOCOL, "SSH_MSG_NEWKEYS sent");
+    return rc;
+  error:
+    return SSH_ERROR;
 }
 
 #endif /* WITH_SERVER */
