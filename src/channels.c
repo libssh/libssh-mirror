@@ -2604,7 +2604,7 @@ int ssh_channel_read(ssh_channel channel, void *dest, uint32_t count, int is_std
   ssh_buffer stdbuf;
   uint32_t len;
   struct ssh_channel_read_termination_struct ctx;
-  int ret, rc;
+  int rc;
 
   if(channel == NULL) {
       return SSH_ERROR;
@@ -2617,11 +2617,6 @@ int ssh_channel_read(ssh_channel channel, void *dest, uint32_t count, int is_std
   session = channel->session;
   stdbuf = channel->stdout_buffer;
   enter_function();
-  if(!ssh_is_blocking(session)){
-    ret = ssh_channel_read_nonblocking(channel, dest, count, is_stderr);
-    leave_function();
-    return ret;
-  }
 
   if (count == 0) {
     leave_function();
@@ -2708,6 +2703,7 @@ int ssh_channel_read_nonblocking(ssh_channel channel, void *dest, uint32_t count
   ssh_session session;
   int to_read;
   int rc;
+  int blocking;
 
   if(channel == NULL) {
       return SSH_ERROR;
@@ -2730,8 +2726,10 @@ int ssh_channel_read_nonblocking(ssh_channel channel, void *dest, uint32_t count
   if (to_read > (int)count) {
     to_read = (int)count;
   }
+  blocking = ssh_is_blocking(session);
+  ssh_set_blocking(session, 0);
   rc = ssh_channel_read(channel, dest, to_read, is_stderr);
-
+  ssh_set_blocking(session,blocking);
   leave_function();
   return rc;
 }
