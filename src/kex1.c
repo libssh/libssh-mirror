@@ -29,6 +29,7 @@
 
 #include "libssh/priv.h"
 #include "libssh/buffer.h"
+#include "libssh/crypto.h"
 #include "libssh/kex.h"
 #include "libssh/keys.h"
 #include "libssh/session.h"

@@ -19,11 +19,14 @@
  * MA 02111-1307, USA.
  */
 
+#include "config.h"
+
+#include <stdlib.h>
+
 #ifndef _WIN32
 #include <netinet/in.h>
 #endif /* _WIN32 */
 
-#include "config.h"
 #include "libssh/priv.h"
 #include "libssh/ssh1.h"
 #include "libssh/crc32.h"
@@ -32,6 +35,7 @@
 #include "libssh/buffer.h"
 #include "libssh/socket.h"
 #include "libssh/kex.h"
+#include "libssh/crypto.h"
 
 #ifdef WITH_SSH1
 
