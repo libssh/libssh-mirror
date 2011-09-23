@@ -251,7 +251,8 @@ int ssh_server_ecdh_init(ssh_session session, ssh_buffer packet){
 
     ssh_log(session,SSH_LOG_PROTOCOL, "SSH_MSG_KEXDH_REPLY sent");
     rc = packet_send(session);
-
+    if (rc == SSH_ERROR)
+        goto error;
 
     /* Send the MSG_NEWKEYS */
     if (buffer_add_u8(session->out_buffer, SSH2_MSG_NEWKEYS) < 0) {

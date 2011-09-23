@@ -165,6 +165,8 @@ SSH_PACKET_CALLBACK(ssh_packet_kexdh_init){
       default:
         ssh_set_error(session,SSH_FATAL,"Wrong kex type in ssh_packet_kexdh_init");
   }
+  if (rc == SSH_ERROR)
+      session->session_state = SSH_SESSION_STATE_ERROR;
   error:
   leave_function();
   return SSH_PACKET_USED;

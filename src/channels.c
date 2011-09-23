@@ -1542,7 +1542,7 @@ static int channel_request(ssh_channel channel, const char *request,
   }
 pending:
   rc = ssh_handle_packets_termination(session,SSH_TIMEOUT_USER, ssh_channel_request_termination, channel);
-  if(session->session_state == SSH_SESSION_STATE_ERROR) {
+  if(session->session_state == SSH_SESSION_STATE_ERROR || rc == SSH_ERROR) {
       channel->request_state = SSH_CHANNEL_REQ_STATE_ERROR;
   }
   /* we received something */

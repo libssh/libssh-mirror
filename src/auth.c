@@ -966,6 +966,10 @@ int ssh_userauth_agent(ssh_session session,
     }
     if (!session->agent_state){
         session->agent_state = malloc(sizeof(struct ssh_agent_state_struct));
+        if (!session->agent_state){
+            ssh_set_error_oom(session);
+            return SSH_AUTH_ERROR;
+        }
         ZERO_STRUCTP(session->agent_state);
         session->agent_state->state=SSH_AGENT_STATE_NONE;
     }
