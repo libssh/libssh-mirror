@@ -8,25 +8,10 @@ set(LIBSSH_PUBLIC_INCLUDE_DIRS
 set(LIBSSH_PRIVATE_INCLUDE_DIRS
   ${CMAKE_BINARY_DIR}
   ${OPENSSL_INCLUDE_DIRS}
-  ${GCRYPT_INCLUDE_DIRS}
-  ${ZLIB_INCLUDE_DIRS}
 )
-
-set(LIBSSH_SHARED_LIBRARY
-  ssh_shared
-  CACHE INTERNAL "libssh shared library"
-)
-
-if (WITH_STATIC_LIB)
-  set(LIBSSH_STATIC_LIBRARY
-    ssh_static
-    CACHE INTERNAL "libssh static library"
-  )
-endif (WITH_STATIC_LIB)
 
 set(LIBSSH_LINK_LIBRARIES
   ${LIBSSH_REQUIRED_LIBRARIES}
-  ${ZLIB_LIBRARIES}
 )
 
 if (WIN32)
@@ -67,10 +52,34 @@ if (GCRYPT_LIBRARY)
   )
 endif (GCRYPT_LIBRARY)
 
+if (WITH_ZLIB)
+  set(LIBSSH_PRIVATE_INCLUDE_DIRS
+    ${LIBSSH_PRIVATE_INCLUDE_DIRS}
+    ${ZLIB_INCLUDE_DIRS}
+  )
+
+  set(LIBSSH_LINK_LIBRARIES
+    ${LIBSSH_LINK_LIBRARIES}
+    ${ZLIB_LIBRARY}
+  )
+endif (WITH_ZLIB)
+
 set(LIBSSH_LINK_LIBRARIES
   ${LIBSSH_LINK_LIBRARIES}
   CACHE INTERNAL "libssh link libraries"
 )
+
+set(LIBSSH_SHARED_LIBRARY
+  ssh_shared
+  CACHE INTERNAL "libssh shared library"
+)
+
+if (WITH_STATIC_LIB)
+  set(LIBSSH_STATIC_LIBRARY
+    ssh_static
+    CACHE INTERNAL "libssh static library"
+  )
+endif (WITH_STATIC_LIB)
 
 set(libssh_SRCS
   agent.c

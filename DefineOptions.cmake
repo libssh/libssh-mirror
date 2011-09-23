@@ -13,9 +13,9 @@ option(WITH_CLIENT_TESTING "Build with client tests; requires a running sshd" OF
 option(WITH_BENCHMARKS "Build benchmarks tools" OFF)
 
 if (WITH_ZLIB)
-    set(WITH_ZLIB ON)
+    set(WITH_LIBZ ON)
 else (WITH_ZLIB)
-    set(WITH_ZLIB OFF)
+    set(WITH_LIBZ OFF)
 endif (WITH_ZLIB)
 
 if(WITH_BENCHMARKS)

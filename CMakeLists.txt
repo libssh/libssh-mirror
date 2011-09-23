@@ -44,9 +44,9 @@ include(MacroAddPlugin)
 include(MacroCopyFile)
 
 # search for libraries
-if (WITH_LIBZ)
+if (WITH_ZLIB)
     find_package(ZLIB REQUIRED)
-endif (WITH_LIBZ)
+endif (WITH_ZLIB)
 
 if (WITH_GCRYPT)
   find_package(GCrypt REQUIRED)
@@ -101,7 +101,7 @@ endif (WITH_TESTING)
 message(STATUS "********************************************")
 message(STATUS "********** ${PROJECT_NAME} build options : **********")
 
-message(STATUS "zlib support: ${WITH_LIBZ}")
+message(STATUS "zlib support: ${WITH_ZLIB}")
 message(STATUS "libgcrypt support: ${WITH_GCRYPT}")
 message(STATUS "SSH-1 support: ${WITH_SSH1}")
 message(STATUS "SFTP support: ${WITH_SFTP}")
