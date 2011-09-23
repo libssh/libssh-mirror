@@ -966,6 +966,33 @@ fail:
     return NULL;
 }
 
+static int pki_key_generate(ssh_key key, int parameter, const char *type_s, int type){
+    gcry_sexp_t parms;
+    int rc;
+    rc = gcry_sexp_build(&parms,
+            NULL,
+            "(genkey(%s(nbits %d)(transient-key)))",
+            type_s,
+            parameter);
+    if (rc != 0)
+        return SSH_ERROR;
+    if(type == SSH_KEYTYPE_RSA)
+        rc = gcry_pk_genkey(&key->rsa, parms);
+    else
+        rc = gcry_pk_genkey(&key->dsa, parms);
+    gcry_sexp_release(parms);
+    if (rc != 0)
+        return SSH_ERROR;
+    return SSH_OK;
+}
+
+int pki_key_generate_rsa(ssh_key key, int parameter){
+    return pki_key_generate(key, parameter, "rsa", SSH_KEYTYPE_RSA);
+}
+int pki_key_generate_dss(ssh_key key, int parameter){
+    return pki_key_generate(key, parameter, "dsa", SSH_KEYTYPE_DSS);
+}
+
 ssh_string pki_publickey_to_blob(const ssh_key key)
 {
     ssh_buffer buffer;

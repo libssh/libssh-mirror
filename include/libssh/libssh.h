@@ -456,6 +456,8 @@ LIBSSH_API enum ssh_keytypes_e ssh_key_type_from_name(const char *name);
 LIBSSH_API int ssh_key_is_public(const ssh_key k);
 LIBSSH_API int ssh_key_is_private(const ssh_key k);
 
+LIBSSH_API int ssh_pki_generate(enum ssh_keytypes_e type, int parameter,
+        ssh_key *pkey);
 LIBSSH_API int ssh_pki_import_privkey_base64(const char *b64_key,
                                              const char *passphrase,
                                              ssh_auth_callback auth_fn,

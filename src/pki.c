@@ -790,6 +790,49 @@ int ssh_pki_import_pubkey_file(const char *filename, ssh_key *pkey)
 }
 
 /**
+ * @brief Generates a keypair.
+ * @param[in] type      Type of key to create
+ * @param[in] parameter Parameter to the creation of key:
+ *                      rsa : length of the key in bits (e.g. 1024, 2048, 4096)
+ *                      dsa : length of the key in bits (e.g. 1024, 2048, 3072)
+ *                      ecdsa : not implemented
+ * @param[out] pkey     A pointer to store the private key. You need to free the
+ *                      memory.
+ * @return              SSH_OK on success, SSH_ERROR on error.
+ * @warning             Generating a key pair may take some time.
+ */
+
+int ssh_pki_generate(enum ssh_keytypes_e type, int parameter,
+        ssh_key *pkey){
+    int rc;
+    ssh_key key = ssh_key_new();
+    switch(type){
+        case SSH_KEYTYPE_RSA:
+        case SSH_KEYTYPE_RSA1:
+            rc = pki_key_generate_rsa(key, parameter);
+            if(rc == SSH_ERROR)
+                goto error;
+            break;
+        case SSH_KEYTYPE_DSS:
+            rc = pki_key_generate_dss(key, parameter);
+            if(rc == SSH_ERROR)
+                goto error;
+            break;
+        case SSH_KEYTYPE_ECDSA:
+        case SSH_KEYTYPE_UNKNOWN:
+            goto error;
+    }
+    key->type = type;
+    key->type_c = ssh_key_type_to_char(type);
+    key->flags = SSH_KEY_FLAG_PRIVATE | SSH_KEY_FLAG_PUBLIC;
+    *pkey = key;
+    return SSH_OK;
+error:
+    ssh_key_free(key);
+    return SSH_ERROR;
+}
+
+/**
  * @brief Create a public key from a private key.
  *
  * @param[in]  privkey  The private key to get the public key from.

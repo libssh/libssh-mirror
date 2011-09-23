@@ -244,6 +244,29 @@ fail:
     return NULL;
 }
 
+int pki_key_generate_rsa(ssh_key key, int parameter){
+    key->rsa = RSA_generate_key(parameter, 65537, NULL, NULL);
+    if(key->rsa == NULL)
+        return SSH_ERROR;
+    return SSH_OK;
+}
+
+int pki_key_generate_dss(ssh_key key, int parameter){
+    int rc;
+    key->dsa = DSA_generate_parameters(parameter, NULL, 0, NULL, NULL,
+            NULL, NULL);
+    if(key->dsa == NULL){
+        return SSH_ERROR;
+    }
+    rc = DSA_generate_key(key->dsa);
+    if (rc != 1){
+        DSA_free(key->dsa);
+        key->dsa=NULL;
+        return SSH_ERROR;
+    }
+    return SSH_OK;
+}
+
 ssh_key pki_private_key_from_base64(const char *b64_key,
                                     const char *passphrase,
                                     ssh_auth_callback auth_fn,
