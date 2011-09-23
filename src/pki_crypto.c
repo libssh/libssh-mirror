@@ -763,7 +763,7 @@ int pki_signature_verify(ssh_session session,
                                hlen,
                                sig->dsa_sig,
                                key->dsa);
-            if (rc < 0) {
+            if (rc <= 0) {
                 ssh_set_error(session,
                               SSH_FATAL,
                               "DSA error: %s",
@@ -779,7 +779,7 @@ int pki_signature_verify(ssh_session session,
                             ssh_string_data(sig->rsa_sig),
                             ssh_string_len(sig->rsa_sig),
                             key->rsa);
-            if (rc < 0) {
+            if (rc <= 0) {
                 ssh_set_error(session,
                               SSH_FATAL,
                               "RSA error: %s",
