@@ -255,7 +255,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
       ssh_log(session, SSH_LOG_PACKET,
           "After padding, %d bytes left in buffer",
           buffer_get_rest_len(session->in_buffer));
-#ifdef WITH_LIBZ
+#ifdef WITH_ZLIB
       if (session->current_crypto
           && session->current_crypto->do_compress_in
           && buffer_get_rest_len(session->in_buffer)) {
@@ -264,7 +264,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
           goto error;
         }
       }
-#endif
+#endif /* WITH_ZLIB */
       session->recv_seq++;
       /* We don't want to rewrite a new packet while still executing the packet callbacks */
       session->packet_state = PACKET_STATE_PROCESSING;
@@ -460,7 +460,7 @@ static int packet_send2(ssh_session session) {
   ssh_log(session, SSH_LOG_PACKET,
       "Writing on the wire a packet having %u bytes before", currentlen);
 
-#ifdef WITH_LIBZ
+#ifdef WITH_ZLIB
   if (session->current_crypto
       && session->current_crypto->do_compress_out
       && buffer_get_rest_len(session->out_buffer)) {
@@ -470,7 +470,7 @@ static int packet_send2(ssh_session session) {
     }
     currentlen = buffer_get_rest_len(session->out_buffer);
   }
-#endif
+#endif /* WITH_ZLIB */
   padding = (blocksize - ((currentlen +5) % blocksize));
   if(padding < 4) {
     padding += blocksize;

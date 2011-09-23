@@ -101,21 +101,21 @@ static void torture_algorithms_zlib(void **state) {
     assert_true(rc == SSH_OK);
 
     rc = ssh_options_set(session, SSH_OPTIONS_COMPRESSION_C_S, "zlib");
-#if defined(HAVE_LIBZ) && defined(WITH_LIBZ)
+#ifdef WITH_ZLIB
     assert_true(rc == SSH_OK);
 #else
     assert_true(rc == SSH_ERROR);
 #endif
 
     rc = ssh_options_set(session, SSH_OPTIONS_COMPRESSION_S_C, "zlib");
-#if defined(HAVE_LIBZ) && defined(WITH_LIBZ)
+#ifdef WITH_ZLIB
     assert_true(rc == SSH_OK);
 #else
     assert_true(rc == SSH_ERROR);
 #endif
 
     rc = ssh_connect(session);
-#if defined(HAVE_LIBZ) && defined(WITH_LIBZ)
+#ifdef WITH_ZLIB
     if (ssh_get_openssh_version(session)) {
         assert_false(rc == SSH_OK);
         ssh_disconnect(session);
@@ -141,21 +141,21 @@ static void torture_algorithms_zlib_openssh(void **state) {
     assert_true(rc == SSH_OK);
 
     rc = ssh_options_set(session, SSH_OPTIONS_COMPRESSION_C_S, "zlib@openssh.com");
-#if defined(HAVE_LIBZ) && defined(WITH_LIBZ)
+#ifdef WITH_ZLIB
     assert_true(rc == SSH_OK);
 #else
     assert_true(rc == SSH_ERROR);
 #endif
 
     rc = ssh_options_set(session, SSH_OPTIONS_COMPRESSION_S_C, "zlib@openssh.com");
-#if defined(HAVE_LIBZ) && defined(WITH_LIBZ)
+#ifdef WITH_ZLIB
     assert_true(rc == SSH_OK);
 #else
     assert_true(rc == SSH_ERROR);
 #endif
 
     rc = ssh_connect(session);
-#if defined(HAVE_LIBZ) && defined(WITH_LIBZ)
+#ifdef WITH_ZLIB
     if (ssh_get_openssh_version(session)) {
         assert_true(rc==SSH_OK);
         rc = ssh_userauth_none(session, NULL);

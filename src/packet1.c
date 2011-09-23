@@ -214,7 +214,7 @@ int ssh_packet_socket_callback1(const void *data, size_t receivedlen, void *user
       ssh_log(session, SSH_LOG_PACKET, "The packet is valid");
 
 /* TODO FIXME
-#if defined(HAVE_LIBZ) && defined(WITH_LIBZ)
+#ifdef WITH_ZLIB
     if(session->current_crypto && session->current_crypto->do_compress_in){
         decompress_buffer(session,session->in_buffer);
     }
@@ -264,7 +264,7 @@ int packet_send1(ssh_session session) {
   ssh_log(session,SSH_LOG_PACKET,"Sending a %d bytes long packet",currentlen);
 
 /* TODO FIXME
-#if defined(HAVE_LIBZ) && defined(WITH_LIBZ)
+#ifdef WITH_ZLIB
   if (session->current_crypto && session->current_crypto->do_compress_out) {
     if (compress_buffer(session, session->out_buffer) < 0) {
       goto error;

@@ -47,7 +47,7 @@ Options are defined in the following files:
 
 They can be changed with the -D option:
 
-`cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Debug -DWITH_LIBZ=OFF ..`
+`cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Debug -DWITH_ZLIB=OFF ..`
 
 ### Browsing/editing CMake options
 

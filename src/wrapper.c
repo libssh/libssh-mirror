@@ -38,7 +38,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifdef WITH_LIBZ
+#ifdef WITH_ZLIB
 #include <zlib.h>
 #endif
 
@@ -122,7 +122,7 @@ void crypto_free(struct ssh_crypto_struct *crypto){
     SAFE_FREE(crypto->session_id);
   }
 
-#ifdef WITH_LIBZ
+#ifdef WITH_ZLIB
   if (crypto->compress_out_ctx &&
       (deflateEnd(crypto->compress_out_ctx) != 0)) {
     inflateEnd(crypto->compress_out_ctx);
@@ -131,7 +131,7 @@ void crypto_free(struct ssh_crypto_struct *crypto){
       (deflateEnd(crypto->compress_in_ctx) != 0)) {
     inflateEnd(crypto->compress_in_ctx);
   }
-#endif
+#endif /* WITH_ZLIB */
   if(crypto->encryptIV)
     SAFE_FREE(crypto->encryptIV);
   if(crypto->decryptIV)

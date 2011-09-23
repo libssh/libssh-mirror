@@ -80,10 +80,10 @@
 #define CRYPTO_STRING ""
 #endif
 
-#ifdef WITH_LIBZ
-#define LIBZ_STRING "/zlib"
+#ifdef WITH_ZLIB
+#define ZLIB_STRING "/zlib"
 #else
-#define LIBZ_STRING ""
+#define ZLIB_STRING ""
 #endif
 
 /**
@@ -357,7 +357,7 @@ char *ssh_hostport(const char *host, int port){
 const char *ssh_version(int req_version) {
   if (req_version <= LIBSSH_VERSION_INT) {
     return SSH_STRINGIFY(LIBSSH_VERSION) GCRYPT_STRING CRYPTO_STRING
-      LIBZ_STRING;
+      ZLIB_STRING;
   }
 
   return NULL;

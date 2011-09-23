@@ -58,7 +58,7 @@
 #define DES "3des-cbc"
 #endif
 
-#ifdef WITH_LIBZ
+#ifdef WITH_ZLIB
 #define ZLIB "none,zlib,zlib@openssh.com"
 #else
 #define ZLIB "none"
