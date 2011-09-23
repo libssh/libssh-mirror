@@ -25,6 +25,7 @@
 #include "libssh/libssh.h"
 #include "libssh/priv.h"
 #include "libssh/session.h"
+#include "agent.c"
 
 static void setup(void **state) {
     int verbosity = torture_libssh_verbosity();
@@ -288,7 +289,10 @@ static void torture_auth_agent(void **state) {
                       " to enable this test!!\n");
         return;
     }
-
+    if (!agent_is_running(session)){
+        print_message("*** Agent not running. Test ignored");
+        return;
+    }
     rc = ssh_options_set(session, SSH_OPTIONS_USER, user);
     assert_true(rc == SSH_OK);
 
@@ -316,7 +320,10 @@ static void torture_auth_agent_nonblocking(void **state) {
                       " to enable this test!!\n");
         return;
     }
-
+    if (!agent_is_running(session)){
+        print_message("*** Agent not running. Test ignored");
+        return;
+    }
     rc = ssh_options_set(session, SSH_OPTIONS_USER, user);
     assert_true(rc == SSH_OK);
 
