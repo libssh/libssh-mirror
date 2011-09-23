@@ -27,7 +27,9 @@
 
 
 static void setup(void **state) {
+    int verbosity=torture_libssh_verbosity();
     ssh_session session = ssh_new();
+    ssh_options_set(session, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
     *state = session;
 }
 
