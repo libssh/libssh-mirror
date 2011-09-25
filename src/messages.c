@@ -346,12 +346,12 @@ static ssh_buffer ssh_msg_userauth_build_digest(ssh_session session,
     }
 
     /* Add session id */
-    str  = ssh_string_new(SHA_DIGEST_LEN);
+    str  = ssh_string_new(crypto->digest_len);
     if (str == NULL) {
         ssh_buffer_free(buffer);
         return NULL;
     }
-    ssh_string_fill(str, crypto->session_id, SHA_DIGEST_LEN);
+    ssh_string_fill(str, crypto->session_id, crypto->digest_len);
 
     rc = buffer_add_ssh_string(buffer, str);
     string_free(str);
