@@ -131,7 +131,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
   void *packet=NULL;
   int to_be_read;
   int rc;
-  uint32_t len;
+  uint32_t len, compsize, payloadsize;
   uint8_t padding;
   size_t processed=0; /* number of byte processed from the callback */
 
@@ -190,13 +190,12 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
       if (to_be_read != 0) {
         if(receivedlen - processed < (unsigned int)to_be_read){
         	/* give up, not enough data in buffer */
+            ssh_log(session,SSH_LOG_PACKET,"packet: partial packet (read len) [len=%d]",len);
         	return processed;
         }
 
         packet = (unsigned char *)data + processed;
 //        ssh_socket_read(session->socket,packet,to_be_read-current_macsize);
-
-        ssh_log(session,SSH_LOG_PACKET,"Read a %d bytes packet",len);
 
         if (buffer_add_data(session->in_buffer, packet,
               to_be_read - current_macsize) < 0) {
@@ -234,41 +233,33 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
         goto error;
       }
 
-      ssh_log(session, SSH_LOG_PACKET,
-          "%hhd bytes padding, %d bytes left in buffer",
-          padding, buffer_get_rest_len(session->in_buffer));
-
       if (padding > buffer_get_rest_len(session->in_buffer)) {
         ssh_set_error(session, SSH_FATAL,
-            "Invalid padding: %d (%d resting)",
+            "Invalid padding: %d (%d left)",
             padding,
             buffer_get_rest_len(session->in_buffer));
-#ifdef DEBUG_CRYPTO
-        ssh_print_hexa("incrimined packet",
-            ssh_buffer_get_begin(session->in_buffer),
-            ssh_buffer_get_len(session->in_buffer));
-#endif
         goto error;
       }
       buffer_pass_bytes_end(session->in_buffer, padding);
+      compsize = buffer_get_rest_len(session->in_buffer);
 
-      ssh_log(session, SSH_LOG_PACKET,
-          "After padding, %d bytes left in buffer",
-          buffer_get_rest_len(session->in_buffer));
 #ifdef WITH_ZLIB
       if (session->current_crypto
           && session->current_crypto->do_compress_in
           && buffer_get_rest_len(session->in_buffer)) {
-        ssh_log(session, SSH_LOG_PACKET, "Decompressing in_buffer ...");
         if (decompress_buffer(session, session->in_buffer,MAX_PACKET_LEN) < 0) {
           goto error;
         }
       }
 #endif /* WITH_ZLIB */
+      payloadsize=buffer_get_rest_len(session->in_buffer);
       session->recv_seq++;
       /* We don't want to rewrite a new packet while still executing the packet callbacks */
       session->packet_state = PACKET_STATE_PROCESSING;
       ssh_packet_parse_type(session);
+      ssh_log(session,SSH_LOG_PACKET,
+              "packet: read type %hhd [len=%d,padding=%hhd,comp=%d,payload=%d]",
+              session->in_packet.type, len, padding, compsize, payloadsize);
       /* execute callbacks */
       ssh_packet_process(session, session->in_packet.type);
       session->packet_state = PACKET_STATE_INIT;
@@ -413,16 +404,12 @@ int ssh_packet_parse_type(ssh_session session) {
     return SSH_ERROR;
   }
 
-  ssh_log(session, SSH_LOG_PACKET, "Final size %d",
-      buffer_get_rest_len(session->in_buffer));
-
   if(buffer_get_u8(session->in_buffer, &session->in_packet.type) == 0) {
     ssh_set_error(session, SSH_FATAL, "Packet too short to read type");
     leave_function();
     return SSH_ERROR;
   }
 
-  ssh_log(session, SSH_LOG_PACKET, "Type %hhd", session->in_packet.type);
   session->in_packet.valid = 1;
 
   leave_function();
@@ -452,25 +439,23 @@ static int packet_send2(ssh_session session) {
   unsigned char *hmac = NULL;
   char padstring[32] = {0};
   int rc = SSH_ERROR;
-  uint32_t finallen;
+  uint32_t finallen,payloadsize,compsize;
   uint8_t padding;
 
   enter_function();
 
-  ssh_log(session, SSH_LOG_PACKET,
-      "Writing on the wire a packet having %u bytes before", currentlen);
-
+  payloadsize = currentlen;
 #ifdef WITH_ZLIB
   if (session->current_crypto
       && session->current_crypto->do_compress_out
       && buffer_get_rest_len(session->out_buffer)) {
-    ssh_log(session, SSH_LOG_PACKET, "Compressing out_buffer ...");
     if (compress_buffer(session,session->out_buffer) < 0) {
       goto error;
     }
     currentlen = buffer_get_rest_len(session->out_buffer);
   }
 #endif /* WITH_ZLIB */
+  compsize = currentlen;
   padding = (blocksize - ((currentlen +5) % blocksize));
   if(padding < 4) {
     padding += blocksize;
@@ -483,9 +468,6 @@ static int packet_send2(ssh_session session) {
   }
 
   finallen = htonl(currentlen + padding + 1);
-  ssh_log(session, SSH_LOG_PACKET,
-      "%d bytes after comp + %d padding bytes = %lu bytes packet",
-      currentlen, padding, (long unsigned int) ntohl(finallen));
 
   if (buffer_prepend_data(session->out_buffer, &padding, sizeof(uint8_t)) < 0) {
     goto error;
@@ -514,6 +496,9 @@ static int packet_send2(ssh_session session) {
   rc = ssh_packet_write(session);
   session->send_seq++;
 
+  ssh_log(session,SSH_LOG_PACKET,
+          "packet: wrote [len=%d,padding=%hhd,comp=%d,payload=%d]",
+          ntohl(finallen), padding, compsize, payloadsize);
   if (buffer_reinit(session->out_buffer) < 0) {
     rc = SSH_ERROR;
   }

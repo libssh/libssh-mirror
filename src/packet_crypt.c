@@ -51,12 +51,7 @@ uint32_t packet_decrypt_len(ssh_session session, char *crypted){
       return 0;
     }
   }
-
   memcpy(&decrypted,crypted,sizeof(decrypted));
-  ssh_log(session, SSH_LOG_PACKET,
-      "Packet size decrypted: %lu (0x%lx)",
-      (long unsigned int) ntohl(decrypted),
-      (long unsigned int) ntohl(decrypted));
   return ntohl(decrypted);
 }
 
@@ -71,9 +66,6 @@ int packet_decrypt(ssh_session session, void *data,uint32_t len) {
   if (out == NULL) {
     return -1;
   }
-
-  ssh_log(session,SSH_LOG_PACKET, "Decrypting %d bytes", len);
-
 
   if (crypto->set_decrypt_key(crypto, session->current_crypto->decryptkey,
         session->current_crypto->decryptIV) < 0) {
@@ -110,10 +102,6 @@ unsigned char *packet_encrypt(ssh_session session, void *data, uint32_t len) {
 
   seq = ntohl(session->send_seq);
   crypto = session->current_crypto->out_cipher;
-
-  ssh_log(session, SSH_LOG_PACKET,
-      "Encrypting packet with seq num: %d, len: %d",
-      session->send_seq,len);
 
   if (crypto->set_encrypt_key(crypto, session->current_crypto->encryptkey,
       session->current_crypto->encryptIV) < 0) {
