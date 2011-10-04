@@ -952,6 +952,10 @@ error:
 /**
  * @brief Allocates a buffer with the MD5 hash of the server public key.
  *
+ * This function allows you to get a MD5 hash of the public key. You can then
+ * print this hash in a human-readable form to the user so that he is able to
+ * verify it. Use ssh_get_hexa() or ssh_print_hexa() to display it.
+ *
  * @param[in] session   The SSH session to use.
  *
  * @param[in] hash      The buffer to allocate.
