@@ -398,7 +398,7 @@ LIBSSH_API socket_t ssh_get_fd(ssh_session session);
 LIBSSH_API char *ssh_get_hexa(const unsigned char *what, size_t len);
 LIBSSH_API char *ssh_get_issue_banner(ssh_session session);
 LIBSSH_API int ssh_get_openssh_version(ssh_session session);
-LIBSSH_API ssh_string ssh_get_pubkey(ssh_session session);
+LIBSSH_API int ssh_get_publickey(ssh_session session, ssh_key *key);
 LIBSSH_API int ssh_get_pubkey_hash(ssh_session session, unsigned char **hash);
 LIBSSH_API int ssh_get_random(void *where,int len,int strong);
 LIBSSH_API int ssh_get_version(ssh_session session);

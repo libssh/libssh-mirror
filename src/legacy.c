@@ -696,6 +696,14 @@ int ssh_try_publickey_from_file(ssh_session session,
     return 0;
 }
 
+ssh_string ssh_get_pubkey(ssh_session session){
+	if(session==NULL || session->current_crypto ==NULL ||
+      session->current_crypto->server_pubkey==NULL)
+    return NULL;
+	else
+    return ssh_string_copy(session->current_crypto->server_pubkey);
+}
+
 /****************************************************************************
  * SERVER SUPPORT
  ****************************************************************************/

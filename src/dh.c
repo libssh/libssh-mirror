@@ -56,6 +56,7 @@
 #include "libssh/misc.h"
 #include "libssh/dh.h"
 #include "libssh/ssh2.h"
+#include "libssh/pki.h"
 
 /* todo: remove it */
 #include "libssh/string.h"
@@ -1021,12 +1022,28 @@ void ssh_clean_pubkey_hash(unsigned char **hash) {
   *hash = NULL;
 }
 
-ssh_string ssh_get_pubkey(ssh_session session){
-	if(session==NULL || session->current_crypto ==NULL ||
-      session->current_crypto->server_pubkey==NULL)
-    return NULL;
-	else
-    return ssh_string_copy(session->current_crypto->server_pubkey);
+/**
+ * @brief Get the server public key from a session.
+ *
+ * @param[in]  session  The session to get the key from.
+ *
+ * @param[out] key      A pointer to store the allocated key. You need to free
+ *                      the key.
+ *
+ * @return              SSH_OK on success, SSH_ERROR on errror.
+ *
+ * @see ssh_key_free()
+ */
+int ssh_get_publickey(ssh_session session, ssh_key *key)
+{
+    if (session==NULL ||
+        session->current_crypto ==NULL ||
+        session->current_crypto->server_pubkey == NULL) {
+        return SSH_ERROR;
+    }
+
+    return ssh_pki_import_pubkey_blob(session->current_crypto->server_pubkey,
+                                      key);
 }
 
 /** @} */

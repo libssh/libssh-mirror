@@ -105,6 +105,7 @@ LIBSSH_API int ssh_try_publickey_from_file(ssh_session session, const char *keyf
     ssh_string *publickey, int *type);
 LIBSSH_API enum ssh_keytypes_e ssh_privatekey_type(ssh_private_key privatekey);
 
+LIBSSH_API ssh_string ssh_get_pubkey(ssh_session session);
 
 LIBSSH_API ssh_message ssh_message_retrieve(ssh_session session, uint32_t packettype);
 LIBSSH_API ssh_public_key ssh_message_auth_publickey(ssh_message msg);
