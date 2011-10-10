@@ -115,6 +115,7 @@ set(libssh_SRCS
   client.c
   config.c
   connect.c
+  connector.c
   curve25519.c
   dh.c
   ecdh.c

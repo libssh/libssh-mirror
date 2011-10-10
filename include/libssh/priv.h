@@ -259,6 +259,10 @@ int decompress_buffer(ssh_session session,ssh_buffer buf, size_t maxlen);
 /* match.c */
 int match_hostname(const char *host, const char *pattern, unsigned int len);
 
+/* connector.c */
+int ssh_connector_set_event(ssh_connector connector, ssh_event event);
+int ssh_connector_remove_event(ssh_connector connector);
+
 #ifndef MIN
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 #endif

@@ -1363,6 +1363,23 @@ error:
   return SSH_ERROR;
 }
 
+/**
+ * @brief Get the remote window size.
+ *
+ * This is the maximum amounts of bytes the remote side expects us to send
+ * before growing the window again.
+ *
+ * @param[in] channel The channel to query.
+ *
+ * @return            The remote window size
+ *
+ * @warning A nonzero return value does not guarantee the socket is ready
+ *          to send that much data. Buffering may happen in the local SSH
+ *          packet buffer, so beware of really big window sizes.
+ *
+ * @warning A zero return value means ssh_channel_write (default settings)
+ *          will block until the window grows back.
+ */
 uint32_t ssh_channel_window_size(ssh_channel channel) {
     return channel->remote_window;
 }
