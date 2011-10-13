@@ -225,6 +225,21 @@ LIBSSH_API void ssh_bind_fd_toaccept(ssh_bind ssh_bind_o);
 LIBSSH_API int ssh_bind_accept(ssh_bind ssh_bind_o, ssh_session session);
 
 /**
+ * @brief Accept an incoming ssh connection on the given file descriptor
+ *        and initialize the session.
+ *
+ * @param  ssh_bind_o     The ssh server bind to accept a connection.
+ * @param  session        A preallocated ssh session
+ * @param  fd             A file descriptor of an already established TCP
+ *                          inbound connection
+ * @see ssh_new
+ * @see ssh_bind_accept
+ * @return SSH_OK when a connection is established
+ */
+LIBSSH_API int ssh_bind_accept_fd(ssh_bind ssh_bind_o, ssh_session session,
+        socket_t fd);
+
+/**
  * @brief Handles the key exchange and set up encryption
  *
  * @param  session			A connected ssh session

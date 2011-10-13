@@ -331,11 +331,69 @@ void ssh_bind_free(ssh_bind sshbind){
   SAFE_FREE(sshbind);
 }
 
+int ssh_bind_accept_fd(ssh_bind sshbind, ssh_session session, socket_t fd){
+    int i;
+
+    if (session == NULL){
+        ssh_set_error(sshbind, SSH_FATAL,"session is null");
+        return SSH_ERROR;
+    }
+
+    session->server = 1;
+    session->version = 2;
+
+    /* copy options */
+    for (i = 0; i < 10; ++i) {
+      if (sshbind->wanted_methods[i]) {
+        session->wanted_methods[i] = strdup(sshbind->wanted_methods[i]);
+        if (session->wanted_methods[i] == NULL) {
+          return SSH_ERROR;
+        }
+      }
+    }
+
+    if (sshbind->bindaddr == NULL)
+      session->bindaddr = NULL;
+    else {
+      SAFE_FREE(session->bindaddr);
+      session->bindaddr = strdup(sshbind->bindaddr);
+      if (session->bindaddr == NULL) {
+        return SSH_ERROR;
+      }
+    }
+
+    session->common.log_verbosity = sshbind->common.log_verbosity;
+
+    ssh_socket_free(session->socket);
+    session->socket = ssh_socket_new(session);
+    if (session->socket == NULL) {
+      /* perhaps it may be better to copy the error from session to sshbind */
+      ssh_set_error_oom(sshbind);
+      return SSH_ERROR;
+    }
+    ssh_socket_set_fd(session->socket, fd);
+    ssh_socket_get_poll_handle_out(session->socket);
+
+    if (sshbind->dsa) {
+        session->srv.dsa_key = ssh_key_dup(sshbind->dsa);
+        if (session->srv.dsa_key == NULL) {
+          ssh_set_error_oom(sshbind);
+          return SSH_ERROR;
+        }
+    }
+    if (sshbind->rsa) {
+        session->srv.rsa_key = ssh_key_dup(sshbind->rsa);
+        if (session->srv.rsa_key == NULL) {
+          ssh_set_error_oom(sshbind);
+          return SSH_ERROR;
+        }
+    }
+    return SSH_OK;
+}
 
 int ssh_bind_accept(ssh_bind sshbind, ssh_session session) {
   socket_t fd = SSH_INVALID_SOCKET;
-  int i;
-
+  int rc;
   if (sshbind->bindfd == SSH_INVALID_SOCKET) {
     ssh_set_error(sshbind, SSH_FATAL,
         "Can't accept new clients on a not bound socket.");
@@ -354,58 +412,18 @@ int ssh_bind_accept(ssh_bind sshbind, ssh_session session) {
         strerror(errno));
     return SSH_ERROR;
   }
+  rc = ssh_bind_accept_fd(sshbind, session, fd);
 
-  session->server = 1;
-  session->version = 2;
-
-  /* copy options */
-  for (i = 0; i < 10; ++i) {
-    if (sshbind->wanted_methods[i]) {
-      session->wanted_methods[i] = strdup(sshbind->wanted_methods[i]);
-      if (session->wanted_methods[i] == NULL) {
-        return SSH_ERROR;
-      }
-    }
+  if(rc == SSH_ERROR){
+#ifdef _WIN32
+      closesocket(fd);
+#else
+      close(fd);
+#endif
+      if (session->socket)
+          ssh_socket_close(session->socket);
   }
-
-  if (sshbind->bindaddr == NULL)
-    session->bindaddr = NULL;
-  else {
-    SAFE_FREE(session->bindaddr);
-    session->bindaddr = strdup(sshbind->bindaddr);
-    if (session->bindaddr == NULL) {
-      return SSH_ERROR;
-    }
-  }
-
-  session->common.log_verbosity = sshbind->common.log_verbosity;
-
-  ssh_socket_free(session->socket);
-  session->socket = ssh_socket_new(session);
-  if (session->socket == NULL) {
-    /* perhaps it may be better to copy the error from session to sshbind */
-    ssh_set_error_oom(sshbind);
-    return SSH_ERROR;
-  }
-  ssh_socket_set_fd(session->socket, fd);
-  ssh_socket_get_poll_handle_out(session->socket);
-
-  if (sshbind->dsa) {
-      session->srv.dsa_key = ssh_key_dup(sshbind->dsa);
-      if (session->srv.dsa_key == NULL) {
-        ssh_set_error_oom(sshbind);
-        return SSH_ERROR;
-      }
-  }
-  if (sshbind->rsa) {
-      session->srv.rsa_key = ssh_key_dup(sshbind->rsa);
-      if (session->srv.rsa_key == NULL) {
-        ssh_set_error_oom(sshbind);
-        return SSH_ERROR;
-      }
-  }
-
-  return SSH_OK;
+  return rc;
 }
 
 
