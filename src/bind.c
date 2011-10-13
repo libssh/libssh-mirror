@@ -208,25 +208,27 @@ int ssh_bind_listen(ssh_bind sshbind) {
   if (host == NULL) {
     host = "0.0.0.0";
   }
+  if (sshbind->bindfd != SSH_INVALID_SOCKET){
+      fd = bind_socket(sshbind, host, sshbind->bindport);
+      if (fd == SSH_INVALID_SOCKET) {
+          ssh_key_free(sshbind->dsa);
+          ssh_key_free(sshbind->rsa);
+          return -1;
+      }
+      sshbind->bindfd = fd;
 
-  fd = bind_socket(sshbind, host, sshbind->bindport);
-  if (fd == SSH_INVALID_SOCKET) {
-    ssh_key_free(sshbind->dsa);
-    ssh_key_free(sshbind->rsa);
-    return -1;
+      if (listen(fd, 10) < 0) {
+          ssh_set_error(sshbind, SSH_FATAL,
+                  "Listening to socket %d: %s",
+                  fd, strerror(errno));
+          close(fd);
+          ssh_key_free(sshbind->dsa);
+          ssh_key_free(sshbind->rsa);
+          return -1;
+      }
+  } else {
+      SSH_LOG(sshbind, SSH_LOG_INFO, "Using app-provided bind socket");
   }
-  sshbind->bindfd = fd;
-
-  if (listen(fd, 10) < 0) {
-    ssh_set_error(sshbind, SSH_FATAL,
-        "Listening to socket %d: %s",
-        fd, strerror(errno));
-    close(fd);
-    ssh_key_free(sshbind->dsa);
-    ssh_key_free(sshbind->rsa);
-    return -1;
-  }
-
   return 0;
 }
 
