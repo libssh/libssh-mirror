@@ -204,11 +204,12 @@ int ssh_bind_listen(ssh_bind sshbind) {
       }
   }
 
-  host = sshbind->bindaddr;
-  if (host == NULL) {
-    host = "0.0.0.0";
-  }
-  if (sshbind->bindfd != SSH_INVALID_SOCKET){
+  if (sshbind->bindfd == SSH_INVALID_SOCKET) {
+      host = sshbind->bindaddr;
+      if (host == NULL) {
+          host = "0.0.0.0";
+      }
+
       fd = bind_socket(sshbind, host, sshbind->bindport);
       if (fd == SSH_INVALID_SOCKET) {
           ssh_key_free(sshbind->dsa);
