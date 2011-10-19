@@ -614,6 +614,96 @@ void ssh_socket_exception_callback(int code, int errno_code, void *user){
     leave_function();
 }
 
+/**
+ * @brief Send a message that should be ignored
+ *
+ * @param[in] session   The SSH session
+ * @param[in] data      Data to be sent
+ *
+ * @return              SSH_OK on success, SSH_ERROR otherwise.
+ */
+int ssh_send_ignore (ssh_session session, const char *data) {
+    ssh_string str;
+
+    if (ssh_socket_is_open(session->socket)) {
+        if (buffer_add_u8(session->out_buffer, SSH2_MSG_IGNORE) < 0) {
+            goto error;
+        }
+
+        str = ssh_string_from_char(data);
+        if (str == NULL) {
+            goto error;
+        }
+
+        if (buffer_add_ssh_string(session->out_buffer, str) < 0) {
+            ssh_string_free(str);
+            goto error;
+        }
+
+        packet_send(session);
+        ssh_handle_packets(session, 0);
+
+        ssh_string_free(str);
+    }
+
+    return SSH_OK;
+
+error:
+    buffer_reinit(session->out_buffer);
+    return SSH_ERROR;
+}
+
+/**
+ * @brief Send a debug message
+ *
+ * @param[in] session          The SSH session
+ * @param[in] message          Data to be sent
+ * @param[in] always_display   Message SHOULD be displayed by the server. It
+ *                             SHOULD NOT be displayed unless debugging
+ *                             information has been explicitly requested.
+ *
+ * @return                     SSH_OK on success, SSH_ERROR otherwise.
+ */
+int ssh_send_debug (ssh_session session, const char *message, int always_display) {
+    ssh_string str;
+
+    if (ssh_socket_is_open(session->socket)) {
+        if (buffer_add_u8(session->out_buffer, SSH2_MSG_DEBUG) < 0) {
+            goto error;
+        }
+
+        if (buffer_add_u8(session->out_buffer, always_display) < 0) {
+            goto error;
+        }
+
+        str = ssh_string_from_char(message);
+        if (str == NULL) {
+            goto error;
+        }
+
+        if (buffer_add_ssh_string(session->out_buffer,str) < 0) {
+            ssh_string_free(str);
+            goto error;
+        }
+
+        /* Empty language tag */
+        if (buffer_add_u32(session->out_buffer, 0) < 0) {
+            goto error;
+        }
+
+        packet_send(session);
+        ssh_handle_packets(session, 0);
+
+        ssh_string_free(str);
+    }
+
+    return SSH_OK;
+
+error:
+    buffer_reinit(session->out_buffer);
+    return SSH_ERROR;
+}
+
 /** @} */
 
 /* vim: set ts=4 sw=4 et cindent: */
