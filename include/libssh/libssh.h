@@ -427,6 +427,8 @@ LIBSSH_API int ssh_options_getopt(ssh_session session, int *argcptr, char **argv
 LIBSSH_API int ssh_options_parse_config(ssh_session session, const char *filename);
 LIBSSH_API int ssh_options_set(ssh_session session, enum ssh_options_e type,
     const void *value);
+LIBSSH_API int ssh_options_get(ssh_session session, enum ssh_options_e type,
+    char **value);
 LIBSSH_API int ssh_pcap_file_close(ssh_pcap_file pcap);
 LIBSSH_API void ssh_pcap_file_free(ssh_pcap_file pcap);
 LIBSSH_API ssh_pcap_file ssh_pcap_file_new(void);

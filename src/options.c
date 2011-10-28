@@ -778,6 +778,92 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
     return 0;
 }
 
+/**
+ * @brief This function can get ssh options, it does not support all options provided for
+ *        ssh options set, but mostly those which a user-space program may care about having
+ *        trusted the ssh driver to infer these values from underlaying configuration files.
+ *        It operates only on those SSH_OPTIONS_* which return char*. If you wish to receive
+ *        the port then please use ssh_options_get_port() which returns an unsigned int.
+ *
+ * @param  session An allocated SSH session structure.
+ *
+ * @param  type The option type to get. This could be one of the
+ *              following:
+ *
+ *              - SSH_OPTIONS_HOST:
+ *                The hostname or ip address to connect to (const char *).
+ *
+ *              - SSH_OPTIONS_USER:
+ *                The username for authentication (const char *).\n
+ *                \n when not explicitly set this will be inferred from the
+ *                ~/.ssh/config file.
+ *
+ *              - SSH_OPTIONS_IDENTITY:
+ *                Set the identity file name (const char *,format string).\n
+ *                \n
+ *                By default identity, id_dsa and id_rsa are checked.\n
+ *                \n
+ *                The identity file used authenticate with public key.
+ *                It may include "%s" which will be replaced by the
+ *                user home directory.
+ *
+ * @param  value The value to get into. As a char**, space will be
+ *               allocated by the function for the value, it is
+ *               your responsibility to free the memory using
+ *               ssh_free().
+ *
+ * @return       0 on success, < 0 on error.
+ */
+int ssh_options_get(ssh_session session, enum ssh_options_e type, char** value)
+{
+    if (session == NULL) {
+        return -1;
+    }
+    switch(type)
+    {
+        case SSH_OPTIONS_HOST: {
+            if (session->host == NULL) {
+                ssh_set_error_invalid(session);
+                return -1;
+            }
+            *value = strdup(session->host);
+            if (*value == NULL) {
+                ssh_set_error_oom(session);
+                return -1;
+            }
+            break;
+        }
+        case SSH_OPTIONS_USER: {
+            if (session->username == NULL) {
+                ssh_set_error_invalid(session);
+                return -1;
+            }
+            *value = strdup(session->username);
+            if (*value == NULL) {
+                ssh_set_error_oom(session);
+                return -1;
+            }
+            break;
+        }
+        case SSH_OPTIONS_IDENTITY: {
+            if (session->identity == NULL) {
+                ssh_set_error_invalid(session);
+                return -1;
+            }
+            *value = strdup(session->identity->root->data);
+            if(*value == NULL){
+                ssh_set_error_oom(session);
+                return -1;
+            }
+            break;
+        }
+        default:
+            ssh_set_error(session, SSH_REQUEST_DENIED, "Unknown ssh option %d", type);
+            return -1;
+        break;
+    }
+    return 0;
+}
 
 /**
  * @brief Parse command line arguments.

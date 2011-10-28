@@ -32,6 +32,20 @@ static void torture_options_set_host(void **state) {
     assert_string_equal(session->username, "guru");
 }
 
+static void torture_options_get_host(void **state) {
+    ssh_session session = *state;
+    int rc;
+    char* host = NULL;
+
+    rc = ssh_options_set(session, SSH_OPTIONS_HOST, "localhost");
+    assert_true(rc == 0);
+    assert_string_equal(session->host, "localhost");
+
+    assert_false(ssh_options_get(session, SSH_OPTIONS_HOST, &host));
+
+    assert_string_equal(host, "localhost");
+}
+
 static void torture_options_set_port(void **state) {
     ssh_session session = *state;
     int rc;
@@ -50,6 +64,16 @@ static void torture_options_set_port(void **state) {
 
     rc = ssh_options_set(session, SSH_OPTIONS_PORT, NULL);
     assert_true(rc == -1);
+}
+
+static void torture_options_get_user(void **state) {
+  ssh_session session = *state;
+  char* user = NULL;
+  int rc;
+  rc = ssh_options_set(session, SSH_OPTIONS_USER, "magicaltrevor");
+  assert_true(rc == 0);
+  rc = ssh_options_get(session, SSH_OPTIONS_USER, &user);
+  assert_string_equal(user, "magicaltrevor");
 }
 
 static void torture_options_set_fd(void **state) {
@@ -117,14 +141,36 @@ static void torture_options_set_identity(void **state) {
     assert_string_equal(session->identity->root->next->data, "identity1");
 }
 
+static void torture_options_get_identity(void **state) {
+    ssh_session session = *state;
+    char *identity = NULL;
+    int rc;
+
+    rc = ssh_options_set(session, SSH_OPTIONS_ADD_IDENTITY, "identity1");
+    assert_true(rc == 0);
+    rc = ssh_options_get(session, SSH_OPTIONS_IDENTITY, &identity);
+    assert_true(rc == 0);
+    assert_string_equal(identity, "identity1");
+
+    rc = ssh_options_set(session, SSH_OPTIONS_IDENTITY, "identity2");
+    assert_true(rc == 0);
+    assert_string_equal(session->identity->root->data, "identity2");
+    rc = ssh_options_get(session, SSH_OPTIONS_IDENTITY, &identity);
+    assert_true(rc == 0);
+    assert_string_equal(identity, "identity2");
+}
+
 int torture_run_tests(void) {
     int rc;
     const UnitTest tests[] = {
         unit_test_setup_teardown(torture_options_set_host, setup, teardown),
+        unit_test_setup_teardown(torture_options_get_host, setup, teardown),
         unit_test_setup_teardown(torture_options_set_port, setup, teardown),
         unit_test_setup_teardown(torture_options_set_fd, setup, teardown),
         unit_test_setup_teardown(torture_options_set_user, setup, teardown),
+        unit_test_setup_teardown(torture_options_get_user, setup, teardown),
         unit_test_setup_teardown(torture_options_set_identity, setup, teardown),
+        unit_test_setup_teardown(torture_options_get_identity, setup, teardown),
     };
 
     ssh_init();
