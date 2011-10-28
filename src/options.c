@@ -838,57 +838,42 @@ int ssh_options_get_port(ssh_session session, unsigned int* port_target) {
  *               your responsibility to free the memory using
  *               ssh_free().
  *
- * @return       0 on success, < 0 on error.
+ * @return       SSH_OK on success, SSH_ERROR on error.
  */
 int ssh_options_get(ssh_session session, enum ssh_options_e type, char** value)
 {
+    char* src = NULL;
     if (session == NULL) {
-        return -1;
+        return SSH_ERROR;
     }
     switch(type)
     {
         case SSH_OPTIONS_HOST: {
-            if (session->host == NULL) {
-                ssh_set_error_invalid(session);
-                return -1;
-            }
-            *value = strdup(session->host);
-            if (*value == NULL) {
-                ssh_set_error_oom(session);
-                return -1;
-            }
+            src = session->host;
             break;
         }
         case SSH_OPTIONS_USER: {
-            if (session->username == NULL) {
-                ssh_set_error_invalid(session);
-                return -1;
-            }
-            *value = strdup(session->username);
-            if (*value == NULL) {
-                ssh_set_error_oom(session);
-                return -1;
-            }
+            src = session->username;
             break;
         }
         case SSH_OPTIONS_IDENTITY: {
-            if (session->identity == NULL) {
-                ssh_set_error_invalid(session);
-                return -1;
-            }
-            *value = strdup(session->identity->root->data);
-            if(*value == NULL){
-                ssh_set_error_oom(session);
-                return -1;
-            }
+            src = ssh_iterator_value(char *, ssh_list_get_iterator(session->identity));
             break;
         }
         default:
             ssh_set_error(session, SSH_REQUEST_DENIED, "Unknown ssh option %d", type);
-            return -1;
+            return SSH_ERROR;
         break;
     }
-    return 0;
+    if (src == NULL) {
+        return SSH_ERROR;
+    }
+    *value = strdup(src);
+    if (*value == NULL) {
+        ssh_set_error_oom(session);
+        return SSH_ERROR;
+    }
+    return SSH_OK;
 }
 
 /**

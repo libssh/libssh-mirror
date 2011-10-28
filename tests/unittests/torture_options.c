@@ -83,7 +83,7 @@ static void torture_options_get_user(void **state) {
   char* user = NULL;
   int rc;
   rc = ssh_options_set(session, SSH_OPTIONS_USER, "magicaltrevor");
-  assert_true(rc == 0);
+  assert_true(rc == SSH_OK);
   rc = ssh_options_get(session, SSH_OPTIONS_USER, &user);
   assert_string_equal(user, "magicaltrevor");
 }
@@ -98,7 +98,7 @@ static void torture_options_set_fd(void **state) {
     assert_true(session->fd == fd);
 
     rc = ssh_options_set(session, SSH_OPTIONS_FD, NULL);
-    assert_true(rc == -1);
+    assert_true(rc == SSH_ERROR);
     assert_true(session->fd == SSH_INVALID_SOCKET);
 }
 
@@ -161,14 +161,14 @@ static void torture_options_get_identity(void **state) {
     rc = ssh_options_set(session, SSH_OPTIONS_ADD_IDENTITY, "identity1");
     assert_true(rc == 0);
     rc = ssh_options_get(session, SSH_OPTIONS_IDENTITY, &identity);
-    assert_true(rc == 0);
+    assert_true(rc == SSH_OK);
     assert_string_equal(identity, "identity1");
 
     rc = ssh_options_set(session, SSH_OPTIONS_IDENTITY, "identity2");
     assert_true(rc == 0);
     assert_string_equal(session->identity->root->data, "identity2");
     rc = ssh_options_get(session, SSH_OPTIONS_IDENTITY, &identity);
-    assert_true(rc == 0);
+    assert_true(rc == SSH_OK);
     assert_string_equal(identity, "identity2");
 }
 
