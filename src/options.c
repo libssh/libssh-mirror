@@ -779,6 +779,32 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
 }
 
 /**
+ * @brief This function can get ssh the ssh port. It must only be used on
+ *        a valid ssh session. This function is useful when the session
+ *        options have been automatically inferred from the environment
+ *        or configuration files and one
+ *
+ * @param  session An allocated SSH session structure.
+ *
+ * @param  unsigned int An unsigned integer into which the
+ *         port will be set from the ssh session.
+ *
+ * @return       0 on success, < 0 on error.
+ *
+ */
+int ssh_options_get_port(ssh_session session, unsigned int* port_target) {
+    if (session == NULL) {
+        return -1;
+    }
+    if (!session->port) {
+        ssh_set_error_invalid(session);
+        return -1;
+    }
+    *port_target = session->port;
+    return 0;
+}
+
+/**
  * @brief This function can get ssh options, it does not support all options provided for
  *        ssh options set, but mostly those which a user-space program may care about having
  *        trusted the ssh driver to infer these values from underlaying configuration files.

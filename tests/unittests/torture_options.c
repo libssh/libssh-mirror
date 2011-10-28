@@ -66,6 +66,19 @@ static void torture_options_set_port(void **state) {
     assert_true(rc == -1);
 }
 
+static void torture_options_get_port(void **state) {
+  ssh_session session = *state;
+  ssh_session uninitialized_session = NULL;
+  unsigned int given_port = 1234;
+  unsigned int port_container;
+  int rc;
+  rc = ssh_options_set(session, SSH_OPTIONS_PORT, &given_port);
+  assert_true(rc == 0);
+  rc = ssh_options_get_port(session, &port_container);
+  assert_true(rc == 0);
+  assert_int_equal(port_container, 1234);
+}
+
 static void torture_options_get_user(void **state) {
   ssh_session session = *state;
   char* user = NULL;
@@ -166,6 +179,7 @@ int torture_run_tests(void) {
         unit_test_setup_teardown(torture_options_set_host, setup, teardown),
         unit_test_setup_teardown(torture_options_get_host, setup, teardown),
         unit_test_setup_teardown(torture_options_set_port, setup, teardown),
+        unit_test_setup_teardown(torture_options_get_port, setup, teardown),
         unit_test_setup_teardown(torture_options_set_fd, setup, teardown),
         unit_test_setup_teardown(torture_options_set_user, setup, teardown),
         unit_test_setup_teardown(torture_options_get_user, setup, teardown),

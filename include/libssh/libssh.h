@@ -429,6 +429,7 @@ LIBSSH_API int ssh_options_set(ssh_session session, enum ssh_options_e type,
     const void *value);
 LIBSSH_API int ssh_options_get(ssh_session session, enum ssh_options_e type,
     char **value);
+LIBSSH_API int ssh_options_get_port(ssh_session session, unsigned int * port_target);
 LIBSSH_API int ssh_pcap_file_close(ssh_pcap_file pcap);
 LIBSSH_API void ssh_pcap_file_free(ssh_pcap_file pcap);
 LIBSSH_API ssh_pcap_file ssh_pcap_file_new(void);
