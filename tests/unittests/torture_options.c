@@ -68,7 +68,6 @@ static void torture_options_set_port(void **state) {
 
 static void torture_options_get_port(void **state) {
   ssh_session session = *state;
-  ssh_session uninitialized_session = NULL;
   unsigned int given_port = 1234;
   unsigned int port_container;
   int rc;
