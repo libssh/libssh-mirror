@@ -843,9 +843,16 @@ int ssh_options_get_port(ssh_session session, unsigned int* port_target) {
 int ssh_options_get(ssh_session session, enum ssh_options_e type, char** value)
 {
     char* src = NULL;
+
     if (session == NULL) {
         return SSH_ERROR;
     }
+
+    if (value == NULL) {
+        ssh_set_error_invalid(session);
+        return SSH_ERROR;
+    }
+
     switch(type)
     {
         case SSH_OPTIONS_HOST: {
