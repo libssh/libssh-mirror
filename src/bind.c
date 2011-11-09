@@ -178,10 +178,14 @@ int ssh_bind_listen(ssh_bind sshbind) {
                                        NULL,
                                        &sshbind->dsa);
       if (rc == SSH_ERROR) {
+          ssh_set_error(sshbind, SSH_FATAL,
+                  "Failed to import private DSA host key");
           return SSH_ERROR;
       }
 
       if (ssh_key_type(sshbind->dsa) != SSH_KEYTYPE_DSS) {
+          ssh_set_error(sshbind, SSH_FATAL,
+                  "The DSA host key has the wrong type");
           ssh_key_free(sshbind->dsa);
           return SSH_ERROR;
       }
@@ -194,12 +198,16 @@ int ssh_bind_listen(ssh_bind sshbind) {
                                        NULL,
                                        &sshbind->rsa);
       if (rc == SSH_ERROR) {
+          ssh_set_error(sshbind, SSH_FATAL,
+                  "Failed to import private RSA host key");
           return SSH_ERROR;
       }
 
       if (ssh_key_type(sshbind->rsa) != SSH_KEYTYPE_RSA &&
           ssh_key_type(sshbind->rsa) != SSH_KEYTYPE_RSA1) {
-          ssh_key_free(sshbind->dsa);
+          ssh_set_error(sshbind, SSH_FATAL,
+                  "The RSA host key has the wrong type");
+          ssh_key_free(sshbind->rsa);
           return SSH_ERROR;
       }
   }
