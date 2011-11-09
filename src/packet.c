@@ -46,6 +46,8 @@
 #include "libssh/kex.h"
 #include "libssh/auth.h"
 
+#define MACSIZE SHA_DIGEST_LEN
+
 ssh_packet_callback default_packet_handlers[]= {
   ssh_packet_disconnect_callback,          // SSH2_MSG_DISCONNECT                 1
   ssh_packet_ignore_callback,              // SSH2_MSG_IGNORE	                    2
@@ -106,9 +108,6 @@ ssh_packet_callback default_packet_handlers[]= {
   ssh_packet_channel_failure,              // SSH2_MSG_CHANNEL_FAILURE            100
 };
 
-/* XXX include selected mac size */
-static int macsize=SHA_DIGEST_LEN;
-
 /* in nonblocking mode, socket_read will read as much as it can, and return */
 /* SSH_OK if it has read at least len bytes, otherwise, SSH_AGAIN. */
 /* in blocking mode, it will read at least len bytes and will block until it's ok. */
@@ -125,7 +124,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
   ssh_session session=(ssh_session) user;
   unsigned int blocksize = (session->current_crypto ?
       session->current_crypto->in_cipher->blocksize : 8);
-  int current_macsize = session->current_crypto ? macsize : 0;
+  int current_macsize = session->current_crypto ? MACSIZE : 0;
   unsigned char mac[30] = {0};
   char buffer[16] = {0};
   void *packet=NULL;
@@ -216,7 +215,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
           goto error;
         }
         /* copy the last part from the incoming buffer */
-        memcpy(mac,(unsigned char *)packet + to_be_read - current_macsize, macsize);
+        memcpy(mac,(unsigned char *)packet + to_be_read - current_macsize, MACSIZE);
 
         if (packet_hmac_verify(session, session->in_buffer, mac) < 0) {
           ssh_set_error(session, SSH_FATAL, "HMAC error");
