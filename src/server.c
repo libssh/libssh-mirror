@@ -52,6 +52,7 @@
 #include "libssh/packet.h"
 #include "libssh/socket.h"
 #include "libssh/session.h"
+#include "libssh/kex.h"
 #include "libssh/misc.h"
 #include "libssh/pki.h"
 #include "libssh/dh.h"
@@ -71,8 +72,6 @@ static int dh_handshake_server(ssh_session session);
  *
  * @{
  */
-
-extern const char *supported_methods[];
 
 /** @internal
  * This functions sets the Key Exchange protocols to be accepted

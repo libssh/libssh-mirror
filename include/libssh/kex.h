@@ -37,7 +37,9 @@ SSH_PACKET_CALLBACK(ssh_packet_kexinit);
 SSH_PACKET_CALLBACK(ssh_packet_publickey1);
 #endif
 
+extern const char *supported_methods[];
 extern const char *ssh_kex_nums[];
+
 int ssh_send_kex(ssh_session session, int server_kex);
 void ssh_list_kex(ssh_session session, struct ssh_kex_struct *kex);
 int set_client_kex(ssh_session session);

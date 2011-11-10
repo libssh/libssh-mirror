@@ -70,7 +70,7 @@
 #define KEY_EXCHANGE "diffie-hellman-group1-sha1"
 #endif
 
-const char *default_methods[] = {
+static const char *default_methods[] = {
   KEY_EXCHANGE,
   "ssh-rsa,ssh-dss",
   AES BLOWFISH DES,
