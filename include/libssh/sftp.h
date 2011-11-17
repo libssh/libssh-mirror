@@ -230,6 +230,8 @@ LIBSSH_API int sftp_init(sftp_session sftp);
  *
  * @return              The saved error (see server responses), < 0 if an error
  *                      in the function occured.
+ *
+ * @see Server responses
  */
 LIBSSH_API int sftp_get_error(sftp_session sftp);
 
@@ -336,6 +338,8 @@ LIBSSH_API int sftp_dir_eof(sftp_dir dir);
  *
  * @return              The sftp attributes structure of the file or directory,
  *                      NULL on error with ssh and sftp error set.
+ *
+ * @see sftp_get_error()
  */
 LIBSSH_API sftp_attributes sftp_stat(sftp_session session, const char *path);
 
@@ -351,6 +355,8 @@ LIBSSH_API sftp_attributes sftp_stat(sftp_session session, const char *path);
  *
  * @return              The sftp attributes structure of the file or directory,
  *                      NULL on error with ssh and sftp error set.
+ *
+ * @see sftp_get_error()
  */
 LIBSSH_API sftp_attributes sftp_lstat(sftp_session session, const char *path);
 
@@ -361,6 +367,8 @@ LIBSSH_API sftp_attributes sftp_lstat(sftp_session session, const char *path);
  *
  * @return              The sftp attributes structure of the file or directory,
  *                      NULL on error with ssh and sftp error set.
+ *
+ * @see sftp_get_error()
  */
 LIBSSH_API sftp_attributes sftp_fstat(sftp_file file);
 
@@ -416,6 +424,8 @@ LIBSSH_API int sftp_close(sftp_file file);
  *
  * @return              A sftp file handle, NULL on error with ssh and sftp
  *                      error set.
+ *
+ * @see sftp_get_error()
  */
 LIBSSH_API sftp_file sftp_open(sftp_session session, const char *file, int accesstype,
     mode_t mode);
@@ -445,6 +455,8 @@ LIBSSH_API void sftp_file_set_blocking(sftp_file handle);
  *
  * @return              Number of bytes written, < 0 on error with ssh and sftp
  *                      error set.
+ *
+ * @see sftp_get_error()
  */
 LIBSSH_API ssize_t sftp_read(sftp_file file, void *buf, size_t count);
 
@@ -585,6 +597,8 @@ LIBSSH_API void sftp_rewind(sftp_file file);
  * @param file          The file to unlink/delete.
  *
  * @return              0 on success, < 0 on error with ssh and sftp error set.
+ *
+ * @see sftp_get_error()
  */
 LIBSSH_API int sftp_unlink(sftp_session sftp, const char *file);
 
@@ -596,6 +610,8 @@ LIBSSH_API int sftp_unlink(sftp_session sftp, const char *file);
  * @param directory     The directory to remove.
  *
  * @return              0 on success, < 0 on error with ssh and sftp error set.
+ *
+ * @see sftp_get_error()
  */
 LIBSSH_API int sftp_rmdir(sftp_session sftp, const char *directory);
 
@@ -611,6 +627,8 @@ LIBSSH_API int sftp_rmdir(sftp_session sftp, const char *directory);
  *                      The permissions of the created file are (mode & ~umask)
  *
  * @return              0 on success, < 0 on error with ssh and sftp error set.
+ *
+ * @see sftp_get_error()
  */
 LIBSSH_API int sftp_mkdir(sftp_session sftp, const char *directory, mode_t mode);
 
@@ -626,6 +644,8 @@ LIBSSH_API int sftp_mkdir(sftp_session sftp, const char *directory, mode_t mode)
  *                      after the move.
  *
  * @return              0 on success, < 0 on error with ssh and sftp error set.
+ *
+ * @see sftp_get_error()
  */
 LIBSSH_API int sftp_rename(sftp_session sftp, const char *original, const  char *newname);
 
@@ -640,6 +660,8 @@ LIBSSH_API int sftp_rename(sftp_session sftp, const char *original, const  char 
  *                      which should be changed.
  *
  * @return              0 on success, < 0 on error with ssh and sftp error set.
+ *
+ * @see sftp_get_error()
  */
 LIBSSH_API int sftp_setstat(sftp_session sftp, const char *file, sftp_attributes attr);
 
@@ -655,6 +677,8 @@ LIBSSH_API int sftp_setstat(sftp_session sftp, const char *file, sftp_attributes
  * @param group         The new group which should be set.
  *
  * @return              0 on success, < 0 on error with ssh and sftp error set.
+ *
+ * @see sftp_get_error()
  */
 LIBSSH_API int sftp_chown(sftp_session sftp, const char *file, uid_t owner, gid_t group);
 
@@ -670,6 +694,8 @@ LIBSSH_API int sftp_chown(sftp_session sftp, const char *file, uid_t owner, gid_
  *                      The permissions of the created file are (mode & ~umask)
  *
  * @return              0 on success, < 0 on error with ssh and sftp error set.
+ *
+ * @see sftp_get_error()
  */
 LIBSSH_API int sftp_chmod(sftp_session sftp, const char *file, mode_t mode);
 
@@ -684,6 +710,8 @@ LIBSSH_API int sftp_chmod(sftp_session sftp, const char *file, mode_t mode);
  *                      and modification time.
  *
  * @return              0 on success, < 0 on error with ssh and sftp error set.
+ *
+ * @see sftp_get_error()
  */
 LIBSSH_API int sftp_utimes(sftp_session sftp, const char *file, const struct timeval *times);
 
@@ -697,6 +725,8 @@ LIBSSH_API int sftp_utimes(sftp_session sftp, const char *file, const struct tim
  * @param  dest         Specifies the path name of the symlink to be created.
  *
  * @return              0 on success, < 0 on error with ssh and sftp error set.
+ *
+ * @see sftp_get_error()
  */
 LIBSSH_API int sftp_symlink(sftp_session sftp, const char *target, const char *dest);
 
@@ -708,6 +738,8 @@ LIBSSH_API int sftp_symlink(sftp_session sftp, const char *target, const char *d
  * @param  path         Specifies the path name of the symlink to be read.
  *
  * @return              The target of the link, NULL on error.
+ *
+ * @see sftp_get_error()
  */
 LIBSSH_API char *sftp_readlink(sftp_session sftp, const char *path);
 
@@ -719,6 +751,8 @@ LIBSSH_API char *sftp_readlink(sftp_session sftp, const char *path);
  * @param  path         The pathname of any file within the mounted file system.
  *
  * @return A statvfs structure or NULL on error.
+ *
+ * @see sftp_get_error()
  */
 LIBSSH_API sftp_statvfs_t sftp_statvfs(sftp_session sftp, const char *path);
 
@@ -728,6 +762,8 @@ LIBSSH_API sftp_statvfs_t sftp_statvfs(sftp_session sftp, const char *path);
  * @param  file         An opened file.
  *
  * @return A statvfs structure or NULL on error.
+ *
+ * @see sftp_get_error()
  */
 LIBSSH_API sftp_statvfs_t sftp_fstatvfs(sftp_file file);
 
