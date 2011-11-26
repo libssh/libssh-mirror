@@ -457,6 +457,7 @@ int ssh_pki_import_privkey_file(const char *filename,
                     filename, strerror(errno));
         return SSH_ERROR;
     }
+    key_buf[size] = 0;
 
     key = pki_private_key_from_base64(key_buf, passphrase, auth_fn, auth_data);
     SAFE_FREE(key_buf);
@@ -812,6 +813,10 @@ int ssh_pki_import_pubkey_file(const char *filename, ssh_key *pkey)
             case EACCES:
                 return SSH_EOF;
         }
+        return SSH_ERROR;
+    }
+
+    if (sb.st_size + 1 < sb.st_size) {
         return SSH_ERROR;
     }
 
