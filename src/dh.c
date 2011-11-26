@@ -45,6 +45,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 
 #ifndef _WIN32
 #include <netinet/in.h>
@@ -255,6 +256,10 @@ char *ssh_get_hexa(const unsigned char *what, size_t len) {
   char *hexa;
   size_t i;
   size_t hlen = len * 3;
+
+  if (len > (UINT_MAX - 1) / 3) {
+    return NULL;
+  }
 
   hexa = malloc(hlen + 1);
   if (hexa == NULL) {
