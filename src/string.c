@@ -22,6 +22,7 @@
  */
 
 #include <errno.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -52,7 +53,11 @@
 struct ssh_string_struct *ssh_string_new(size_t size) {
   struct ssh_string_struct *str = NULL;
 
-  str = malloc(size + 4);
+  if (size > UINT_MAX - sizeof(struct ssh_string_struct)) {
+      return NULL;
+  }
+
+  str = malloc(sizeof(struct ssh_string_struct) + size);
   if (str == NULL) {
     return NULL;
   }
@@ -142,16 +147,22 @@ size_t ssh_string_len(struct ssh_string_struct *s) {
 char *ssh_string_to_char(struct ssh_string_struct *s) {
 	size_t len;
 	char *new;
-	if(s==NULL || s->string == NULL)
-		return NULL;
-  len = ntohl(s->size) + 1;
-  new = malloc(len);
+  if (s == NULL || s->string == NULL) {
+    return NULL;
+  }
 
+  len = ssh_string_len(s);
+  if (len + 1 < len) {
+    return NULL;
+  }
+
+  new = malloc(len + 1);
   if (new == NULL) {
     return NULL;
   }
-  memcpy(new, s->string, len - 1);
-  new[len - 1] = '\0';
+  memcpy(new, s->string, len);
+  new[len] = '\0';
+
   return new;
 }
 
