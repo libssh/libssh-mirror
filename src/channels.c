@@ -1828,7 +1828,7 @@ int ssh_channel_request_sftp( ssh_channel channel){
 static ssh_string generate_cookie(void) {
   static const char *hex = "0123456789abcdef";
   char s[36];
-  char rnd[16];
+  unsigned char rnd[16];
   int i;
 
   ssh_get_random(rnd,sizeof(rnd),0);
