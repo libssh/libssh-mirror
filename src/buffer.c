@@ -21,6 +21,7 @@
  * MA 02111-1307, USA.
  */
 
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -181,6 +182,10 @@ int buffer_reinit(struct ssh_buffer_struct *buffer) {
  */
 int buffer_add_data(struct ssh_buffer_struct *buffer, const void *data, uint32_t len) {
   buffer_verify(buffer);
+
+  if (buffer->used + len < len)
+    return -1;
+
   if (buffer->allocated < (buffer->used + len)) {
     if(buffer->pos > 0)
       buffer_shift(buffer);
@@ -319,6 +324,8 @@ int buffer_prepend_data(struct ssh_buffer_struct *buffer, const void *data,
     return 0;
   }
   /* pos isn't high enough */
+  if (buffer->used - buffer->pos + len < len)
+    return -1;
   if (buffer->allocated < (buffer->used - buffer->pos + len)) {
     if (realloc_buffer(buffer, buffer->used - buffer->pos + len) < 0) {
       return -1;
@@ -430,7 +437,7 @@ uint32_t buffer_get_rest_len(struct ssh_buffer_struct *buffer){
  */
 uint32_t buffer_pass_bytes(struct ssh_buffer_struct *buffer, uint32_t len){
     buffer_verify(buffer);
-    if(buffer->used < buffer->pos+len)
+    if (buffer->pos + len < len || buffer->used < buffer->pos + len)
         return 0;
     buffer->pos+=len;
     /* if the buffer is empty after having passed the whole bytes into it, we can clean it */
@@ -455,8 +462,11 @@ uint32_t buffer_pass_bytes(struct ssh_buffer_struct *buffer, uint32_t len){
  */
 uint32_t buffer_pass_bytes_end(struct ssh_buffer_struct *buffer, uint32_t len){
   buffer_verify(buffer);
-  if(buffer->used < buffer->pos + len)
-    return 0;
+
+  if (buffer->used < len) {
+      return 0;
+  }
+
   buffer->used-=len;
   buffer_verify(buffer);
   return len;
@@ -549,7 +559,7 @@ struct ssh_string_struct *buffer_get_ssh_string(struct ssh_buffer_struct *buffer
   }
   hostlen = ntohl(stringlen);
   /* verify if there is enough space in buffer to get it */
-  if ((buffer->pos + hostlen) > buffer->used) {
+  if (buffer->pos + hostlen < hostlen || buffer->pos + hostlen > buffer->used) {
     return NULL; /* it is indeed */
   }
   str = ssh_string_new(hostlen);
@@ -586,7 +596,7 @@ struct ssh_string_struct *buffer_get_mpint(struct ssh_buffer_struct *buffer) {
   }
   bits = ntohs(bits);
   len = (bits + 7) / 8;
-  if ((buffer->pos + len) > buffer->used) {
+  if (buffer->pos + len < len || buffer->pos + len > buffer->used) {
     return NULL;
   }
   str = ssh_string_new(len);
