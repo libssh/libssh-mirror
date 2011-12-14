@@ -836,7 +836,7 @@ int ssh_options_get_port(ssh_session session, unsigned int* port_target) {
  * @param  value The value to get into. As a char**, space will be
  *               allocated by the function for the value, it is
  *               your responsibility to free the memory using
- *               ssh_free().
+ *               ssh_string_free_char().
  *
  * @return       SSH_OK on success, SSH_ERROR on error.
  */
