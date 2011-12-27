@@ -7,6 +7,7 @@
 
 #define LIBSSH_RSA_TESTKEY "libssh_testkey.id_rsa"
 #define LIBSSH_DSA_TESTKEY "libssh_testkey.id_dsa"
+#define LIBSSH_ECDSA_TESTKEY "libssh_testkey.id_ecdsa"
 #define LIBSSH_PASSPHRASE "libssh-rocks"
 const unsigned char HASH[] = "12345678901234567890";
 
@@ -33,6 +34,20 @@ static void setup_dsa_key(void **state) {
     rc = system("ssh-keygen -t dsa -q -N \"\" -f " LIBSSH_DSA_TESTKEY);
     assert_true(rc == 0);
 }
+
+#ifdef HAVE_OPENSSL_ECC
+static void setup_ecdsa_key(void **state) {
+    int rc;
+
+    (void) state; /* unused */
+
+    unlink(LIBSSH_ECDSA_TESTKEY);
+    unlink(LIBSSH_ECDSA_TESTKEY ".pub");
+
+    rc = system("ssh-keygen -t ecdsa -q -N \"\" -f " LIBSSH_ECDSA_TESTKEY);
+    assert_true(rc == 0);
+}
+#endif
 
 static void setup_both_keys(void **state) {
     (void) state; /* unused */
@@ -61,6 +76,9 @@ static void teardown(void **state) {
 
     unlink(LIBSSH_RSA_TESTKEY);
     unlink(LIBSSH_RSA_TESTKEY ".pub");
+
+    unlink(LIBSSH_ECDSA_TESTKEY);
+    unlink(LIBSSH_ECDSA_TESTKEY ".pub");
 }
 
 static char *read_file(const char *filename) {
@@ -218,6 +236,24 @@ static void torture_pki_import_privkey_base64_DSA(void **state) {
     (void) state; /* unused */
 
     key_str = read_file(LIBSSH_DSA_TESTKEY);
+    assert_true(key_str != NULL);
+
+    rc = ssh_pki_import_privkey_base64(key_str, passphrase, NULL, NULL, &key);
+    assert_true(rc == 0);
+
+    free(key_str);
+    ssh_key_free(key);
+}
+
+static void torture_pki_import_privkey_base64_ECDSA(void **state) {
+    int rc;
+    char *key_str;
+    ssh_key key;
+    const char *passphrase = LIBSSH_PASSPHRASE;
+
+    (void) state; /* unused */
+
+    key_str = read_file(LIBSSH_ECDSA_TESTKEY);
     assert_true(key_str != NULL);
 
     rc = ssh_pki_import_privkey_base64(key_str, passphrase, NULL, NULL, &key);
@@ -724,6 +760,9 @@ int torture_run_tests(void) {
                                  teardown),
         unit_test_setup_teardown(torture_pki_import_privkey_base64_DSA,
                                  setup_dsa_key,
+                                 teardown),
+        unit_test_setup_teardown(torture_pki_import_privkey_base64_ECDSA,
+                                 setup_ecdsa_key,
                                  teardown),
         unit_test_setup_teardown(torture_pki_import_privkey_base64_passphrase,
                                  setup_both_keys_passphrase,
