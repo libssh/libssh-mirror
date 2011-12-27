@@ -75,6 +75,21 @@ static int pem_get_password(char *buf, int size, int rwflag, void *userdata) {
     return 0;
 }
 
+#ifdef HAVE_OPENSSL_ECC
+static int pki_key_ecdsa_to_nid(EC_KEY *k)
+{
+    const EC_GROUP *g = EC_KEY_get0_group(k);
+    int nid;
+
+    nid = EC_GROUP_get_curve_name(g);
+    if (nid) {
+        return nid;
+    }
+
+    return -1;
+}
+#endif
+
 ssh_key pki_key_dup(const ssh_key key, int demote)
 {
     ssh_key new;
@@ -363,6 +378,11 @@ ssh_key pki_private_key_from_base64(const char *b64_key,
     RSA *rsa = NULL;
     ssh_key key;
     enum ssh_keytypes_e type;
+#ifdef HAVE_OPENSSL_ECC
+    EC_KEY *ecdsa = NULL;
+#else
+    void *ecdsa = NULL;
+#endif
 
     /* needed for openssl initialization */
     if (ssh_init() < 0) {
@@ -426,6 +446,30 @@ ssh_key pki_private_key_from_base64(const char *b64_key,
 
             break;
         case SSH_KEYTYPE_ECDSA:
+#ifdef HAVE_OPENSSL_ECC
+            if (passphrase == NULL) {
+                if (auth_fn) {
+                    struct pem_get_password_struct pgp = { auth_fn, auth_data };
+
+                    ecdsa = PEM_read_bio_ECPrivateKey(mem, NULL, pem_get_password, &pgp);
+                } else {
+                    /* openssl uses its own callback to get the passphrase here */
+                    ecdsa = PEM_read_bio_ECPrivateKey(mem, NULL, NULL, NULL);
+                }
+            } else {
+                ecdsa = PEM_read_bio_ECPrivateKey(mem, NULL, NULL, (void *) passphrase);
+            }
+
+            BIO_free(mem);
+
+            if (ecdsa == NULL) {
+                ssh_pki_log("Parsing private key: %s",
+                            ERR_error_string(ERR_get_error(), NULL));
+                return NULL;
+            }
+
+            break;
+#endif
         case SSH_KEYTYPE_UNKNOWN:
             BIO_free(mem);
             ssh_pki_log("Unkown or invalid private key type %d", type);
@@ -442,12 +486,20 @@ ssh_key pki_private_key_from_base64(const char *b64_key,
     key->flags = SSH_KEY_FLAG_PRIVATE | SSH_KEY_FLAG_PUBLIC;
     key->dsa = dsa;
     key->rsa = rsa;
+    key->ecdsa = ecdsa;
+#ifdef HAVE_OPENSSL_ECC
+    if (key->type == SSH_KEYTYPE_ECDSA) {
+        key->ecdsa_nid = pki_key_ecdsa_to_nid(key->ecdsa);
+        key->type_c = pki_key_ecdsa_nid_to_name(key->ecdsa_nid);
+    }
+#endif
 
     return key;
 fail:
     ssh_key_free(key);
     DSA_free(dsa);
     RSA_free(rsa);
+    EC_KEY_free(ecdsa);
 
     return NULL;
 }

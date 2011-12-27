@@ -91,6 +91,10 @@ enum ssh_keytypes_e pki_privatekey_type_from_string(const char *privkey) {
         return SSH_KEYTYPE_RSA;
     }
 
+    if (strncmp(privkey, ECDSA_HEADER_BEGIN, strlen(ECDSA_HEADER_BEGIN)) == 0) {
+        return SSH_KEYTYPE_ECDSA;
+    }
+
     return SSH_KEYTYPE_UNKNOWN;
 }
 

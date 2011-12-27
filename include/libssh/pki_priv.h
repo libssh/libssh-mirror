@@ -26,6 +26,8 @@
 #define RSA_HEADER_END "-----END RSA PRIVATE KEY-----"
 #define DSA_HEADER_BEGIN "-----BEGIN DSA PRIVATE KEY-----"
 #define DSA_HEADER_END "-----END DSA PRIVATE KEY-----"
+#define ECDSA_HEADER_BEGIN "-----BEGIN EC PRIVATE KEY-----"
+#define ECDSA_HEADER_END "-----END EC PRIVATE KEY-----"
 
 #define ssh_pki_log(...) \
     _ssh_pki_log(__FUNCTION__, __VA_ARGS__)
