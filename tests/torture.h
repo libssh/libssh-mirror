@@ -33,10 +33,11 @@
 #include <stdarg.h>
 #include <stddef.h>
 #include <setjmp.h>
-#include <google/cmockery.h>
 
 #include "libssh/priv.h"
 #include "libssh/sftp.h"
+
+#include <google/cmockery.h>
 
 /* Used by main to communicate with parse_opt. */
 struct argument_s {
