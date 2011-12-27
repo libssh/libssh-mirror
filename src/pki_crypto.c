@@ -318,6 +318,35 @@ int pki_key_compare(const ssh_key k1,
             }
             break;
         case SSH_KEYTYPE_ECDSA:
+#ifdef HAVE_OPENSSL_ECC
+            {
+                const EC_POINT *p1 = EC_KEY_get0_public_key(k1->ecdsa);
+                const EC_POINT *p2 = EC_KEY_get0_public_key(k2->ecdsa);
+                const EC_GROUP *g1 = EC_KEY_get0_group(k1->ecdsa);
+                const EC_GROUP *g2 = EC_KEY_get0_group(k2->ecdsa);
+
+                if (p1 == NULL || p2 == NULL) {
+                    return 1;
+                }
+
+                if (EC_GROUP_cmp(g1, g2, NULL) != 0) {
+                    return 1;
+                }
+
+                if (EC_POINT_cmp(g1, p1, p2, NULL) != 0) {
+                    return 1;
+                }
+
+                if (what == SSH_KEY_CMP_PRIVATE) {
+                    if (bignum_cmp(EC_KEY_get0_private_key(k1->ecdsa),
+                                   EC_KEY_get0_private_key(k2->ecdsa))) {
+                        return 1;
+                    }
+                }
+
+                break;
+            }
+#endif
         case SSH_KEYTYPE_UNKNOWN:
             return 1;
     }
