@@ -419,7 +419,7 @@ int ssh_pki_import_privkey_file(const char *filename,
 
     rc = stat(filename, &sb);
     if (rc < 0) {
-        ssh_pki_log("Error gettint stat of %s: %s",
+        ssh_pki_log("Error getting stat of %s: %s",
                     filename, strerror(errno));
         switch (errno) {
             case ENOENT:
