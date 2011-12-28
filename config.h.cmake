@@ -47,7 +47,11 @@
 /* Define to 1 if you have the <pthread.h> header file. */
 #cmakedefine HAVE_PTHREAD_H 1
 
+/* Define to 1 if you have eliptic curve cryptography in openssl */
 #cmakedefine HAVE_OPENSSL_ECC 1
+
+/* Define to 1 if you have eliptic curve cryptography */
+#cmakedefine HAVE_ECC 1
 
 /*************************** FUNCTIONS ***************************/
 
