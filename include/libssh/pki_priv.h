@@ -34,6 +34,8 @@
 void _ssh_pki_log(const char *function,
                   const char *format, ...) PRINTF_ATTRIBUTE(2, 3);
 
+int pki_key_ecdsa_nid_from_name(const char *name);
+
 /* SSH Key Functions */
 ssh_key pki_key_dup(const ssh_key key, int demote);
 int pki_key_generate_rsa(ssh_key key, int parameter);
@@ -58,6 +60,7 @@ int pki_pubkey_build_dss(ssh_key key,
 int pki_pubkey_build_rsa(ssh_key key,
                          ssh_string e,
                          ssh_string n);
+int pki_pubkey_build_ecdsa(ssh_key key, int nid, ssh_string e);
 ssh_string pki_publickey_to_blob(const ssh_key key);
 int pki_export_pubkey_rsa1(const ssh_key key,
                            const char *host,

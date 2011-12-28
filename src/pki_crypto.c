@@ -121,6 +121,19 @@ static const char *pki_key_ecdsa_nid_to_char(int nid)
     return "unknown";
 }
 
+int pki_key_ecdsa_nid_from_name(const char *name)
+{
+    if (strcmp(name, "nistp256") == 0) {
+        return NID_X9_62_prime256v1;
+    } else if (strcmp(name, "nistp384") == 0) {
+        return NID_secp384r1;
+    } else if (strcmp(name, "nistp521") == 0) {
+        return NID_secp521r1;
+    }
+
+    return -1;
+}
+
 static ssh_string make_ecpoint_string(const EC_GROUP *g,
                                       const EC_POINT *p)
 {
@@ -154,6 +167,45 @@ static ssh_string make_ecpoint_string(const EC_GROUP *g,
     }
 
     return s;
+}
+
+int pki_pubkey_build_ecdsa(ssh_key key, int nid, ssh_string e)
+{
+    EC_POINT *p;
+    const EC_GROUP *g;
+    int ok;
+
+    key->ecdsa_nid = nid;
+    key->type_c = pki_key_ecdsa_nid_to_name(nid);
+
+    key->ecdsa = EC_KEY_new_by_curve_name(key->ecdsa_nid);
+    if (key->ecdsa == NULL) {
+        return -1;
+    }
+
+    g = EC_KEY_get0_group(key->ecdsa);
+
+    p = EC_POINT_new(g);
+    if (p == NULL) {
+        return -1;
+    }
+
+    ok = EC_POINT_oct2point(g,
+                            p,
+                            ssh_string_data(e),
+                            ssh_string_len(e),
+                            NULL);
+    if (!ok) {
+        EC_POINT_free(p);
+        return -1;
+    }
+
+    ok = EC_KEY_set_public_key(key->ecdsa, p);
+    if (!ok) {
+        EC_POINT_free(p);
+    }
+
+    return 0;
 }
 #endif
 

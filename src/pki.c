@@ -625,6 +625,35 @@ static int pki_import_pubkey_buffer(ssh_buffer buffer,
             }
             break;
         case SSH_KEYTYPE_ECDSA:
+#ifdef HAVE_ECC
+            {
+                ssh_string e;
+                ssh_string i;
+                int nid;
+
+                i = buffer_get_ssh_string(buffer);
+                if (i == NULL) {
+                    goto fail;
+                }
+                nid = pki_key_ecdsa_nid_from_name(ssh_string_get_char(i));
+                ssh_string_free(i);
+                if (nid == -1) {
+                    goto fail;
+                }
+
+
+                e = buffer_get_ssh_string(buffer);
+                if (e == NULL) {
+                    goto fail;
+                }
+
+                rc = pki_pubkey_build_ecdsa(key, nid, e);
+
+                ssh_string_burn(e);
+                ssh_string_free(e);
+            }
+            break;
+#endif
         case SSH_KEYTYPE_UNKNOWN:
             ssh_pki_log("Unknown public key protocol %d", type);
             goto fail;
@@ -701,6 +730,7 @@ int ssh_pki_import_pubkey_blob(const ssh_string key_blob,
     ssh_buffer buffer;
     ssh_string type_s = NULL;
     enum ssh_keytypes_e type;
+    int nid;
     int rc;
 
     if (key_blob == NULL || pkey == NULL) {
@@ -727,11 +757,18 @@ int ssh_pki_import_pubkey_blob(const ssh_string key_blob,
     }
 
     type = ssh_key_type_from_name(ssh_string_get_char(type_s));
-    ssh_string_free(type_s);
     if (type == SSH_KEYTYPE_UNKNOWN) {
         ssh_pki_log("Unknown key type found!");
         goto fail;
     }
+    if (type == SSH_KEYTYPE_ECDSA) {
+        nid = pki_key_ecdsa_nid_from_name(ssh_string_get_char(type_s));
+        if (nid == -1) {
+            ssh_pki_log("Unknown nid found!");
+            goto fail;
+        }
+    }
+    ssh_string_free(type_s);
 
     rc = pki_import_pubkey_buffer(buffer, type, pkey);
 
