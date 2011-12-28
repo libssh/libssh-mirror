@@ -88,6 +88,73 @@ static int pki_key_ecdsa_to_nid(EC_KEY *k)
 
     return -1;
 }
+
+static const char *pki_key_ecdsa_nid_to_name(int nid)
+{
+    switch (nid) {
+        case NID_X9_62_prime256v1:
+            return "ecdsa-sha2-nistp256";
+        case NID_secp384r1:
+            return "ecdsa-sha2-nistp384";
+        case NID_secp521r1:
+            return "ecdsa-sha2-nistp521";
+        default:
+            break;
+    }
+
+    return "unknown";
+}
+
+static const char *pki_key_ecdsa_nid_to_char(int nid)
+{
+    switch (nid) {
+        case NID_X9_62_prime256v1:
+            return "nistp256";
+        case NID_secp384r1:
+            return "nistp384";
+        case NID_secp521r1:
+            return "nistp521";
+        default:
+            break;
+    }
+
+    return "unknown";
+}
+
+static ssh_string make_ecpoint_string(const EC_GROUP *g,
+                                      const EC_POINT *p)
+{
+    ssh_string s;
+    size_t len;
+
+    len = EC_POINT_point2oct(g,
+                             p,
+                             POINT_CONVERSION_UNCOMPRESSED,
+                             NULL,
+                             0,
+                             NULL);
+    if (len == 0) {
+        return NULL;
+    }
+
+    s = ssh_string_new(len);
+    if (s == NULL) {
+        return NULL;
+    }
+
+    len = EC_POINT_point2oct(g,
+                             p,
+                             POINT_CONVERSION_UNCOMPRESSED,
+                             ssh_string_data(s),
+                             ssh_string_len(s),
+                             NULL);
+    if (len != ssh_string_len(s)) {
+        ssh_string_free(s);
+        return NULL;
+    }
+
+    return s;
+}
 #endif
 
 ssh_key pki_key_dup(const ssh_key key, int demote)
@@ -649,6 +716,55 @@ ssh_string pki_publickey_to_blob(const ssh_key key)
 
             break;
         case SSH_KEYTYPE_ECDSA:
+#ifdef HAVE_OPENSSL_ECC
+            rc = buffer_reinit(buffer);
+            if (rc < 0) {
+                ssh_buffer_free(buffer);
+                return NULL;
+            }
+
+            type_s = ssh_string_from_char(pki_key_ecdsa_nid_to_name(key->ecdsa_nid));
+            if (type_s == NULL) {
+                ssh_buffer_free(buffer);
+                return NULL;
+            }
+
+            rc = buffer_add_ssh_string(buffer, type_s);
+            ssh_string_free(type_s);
+            if (rc < 0) {
+                ssh_buffer_free(buffer);
+                return NULL;
+            }
+
+            type_s = ssh_string_from_char(pki_key_ecdsa_nid_to_char(key->ecdsa_nid));
+            if (type_s == NULL) {
+                ssh_buffer_free(buffer);
+                return NULL;
+            }
+
+            rc = buffer_add_ssh_string(buffer, type_s);
+            ssh_string_free(type_s);
+            if (rc < 0) {
+                ssh_buffer_free(buffer);
+                return NULL;
+            }
+
+            e = make_ecpoint_string(EC_KEY_get0_group(key->ecdsa),
+                                    EC_KEY_get0_public_key(key->ecdsa));
+            if (e == NULL) {
+                return NULL;
+            }
+
+            rc = buffer_add_ssh_string(buffer, e);
+            if (rc < 0) {
+
+                ssh_string_burn(e);
+                ssh_string_free(e);
+                goto fail;
+            }
+
+            break;
+#endif
         case SSH_KEYTYPE_UNKNOWN:
             goto fail;
     }
