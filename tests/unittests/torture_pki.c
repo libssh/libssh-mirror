@@ -577,6 +577,47 @@ static void torture_generate_pubkey_from_privkey_dsa(void **state) {
     ssh_key_free(pubkey);
 }
 
+static void torture_generate_pubkey_from_privkey_ecdsa(void **state) {
+    char pubkey_original[4096] = {0};
+    char pubkey_generated[4096] = {0};
+    ssh_key privkey;
+    ssh_key pubkey;
+    int rc;
+
+    (void) state; /* unused */
+
+    rc = torture_read_one_line(LIBSSH_ECDSA_TESTKEY ".pub",
+                               pubkey_original,
+                               sizeof(pubkey_original));
+    assert_true(rc == 0);
+
+    /* remove the public key, generate it from the private key and write it. */
+    unlink(LIBSSH_ECDSA_TESTKEY ".pub");
+
+    rc = ssh_pki_import_privkey_file(LIBSSH_ECDSA_TESTKEY,
+                                     NULL,
+                                     NULL,
+                                     NULL,
+                                     &privkey);
+    assert_true(rc == 0);
+
+    rc = ssh_pki_export_privkey_to_pubkey(privkey, &pubkey);
+    assert_true(rc == SSH_OK);
+
+    rc = ssh_pki_export_pubkey_file(pubkey, LIBSSH_ECDSA_TESTKEY ".pub");
+    assert_true(rc == 0);
+
+    rc = torture_read_one_line(LIBSSH_ECDSA_TESTKEY ".pub",
+                               pubkey_generated,
+                               sizeof(pubkey_generated));
+    assert_true(rc == 0);
+
+    assert_string_equal(pubkey_original, pubkey_generated);
+
+    ssh_key_free(privkey);
+    ssh_key_free(pubkey);
+}
+
 static void torture_pki_duplicate_key_rsa(void **state)
 {
     int rc;
@@ -850,6 +891,9 @@ int torture_run_tests(void) {
 
         unit_test_setup_teardown(torture_generate_pubkey_from_privkey_dsa,
                                  setup_dsa_key,
+                                 teardown),
+        unit_test_setup_teardown(torture_generate_pubkey_from_privkey_ecdsa,
+                                 setup_ecdsa_key,
                                  teardown),
         unit_test_setup_teardown(torture_generate_pubkey_from_privkey_rsa,
                                  setup_rsa_key,
