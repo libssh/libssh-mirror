@@ -710,6 +710,52 @@ static void torture_pki_duplicate_key_dsa(void **state)
     ssh_string_free_char(b64_key_gen);
 }
 
+static void torture_pki_duplicate_key_ecdsa(void **state)
+{
+    int rc;
+    char *b64_key;
+    char *b64_key_gen;
+    ssh_key pubkey;
+    ssh_key privkey;
+    ssh_key privkey_dup;
+
+    (void) state;
+
+    rc = ssh_pki_import_pubkey_file(LIBSSH_ECDSA_TESTKEY ".pub", &pubkey);
+    assert_true(rc == 0);
+
+    rc = ssh_pki_export_pubkey_base64(pubkey, &b64_key);
+    assert_true(rc == 0);
+    ssh_key_free(pubkey);
+
+    rc = ssh_pki_import_privkey_file(LIBSSH_ECDSA_TESTKEY,
+                                     NULL,
+                                     NULL,
+                                     NULL,
+                                     &privkey);
+    assert_true(rc == 0);
+
+    privkey_dup = ssh_key_dup(privkey);
+    assert_true(privkey_dup != NULL);
+
+    rc = ssh_pki_export_privkey_to_pubkey(privkey, &pubkey);
+    assert_true(rc == SSH_OK);
+
+    rc = ssh_pki_export_pubkey_base64(pubkey, &b64_key_gen);
+    assert_true(rc == 0);
+
+    assert_string_equal(b64_key, b64_key_gen);
+
+    rc = ssh_key_cmp(privkey, privkey_dup, SSH_KEY_CMP_PRIVATE);
+    assert_true(rc == 0);
+
+    ssh_key_free(pubkey);
+    ssh_key_free(privkey);
+    ssh_key_free(privkey_dup);
+    ssh_string_free_char(b64_key);
+    ssh_string_free_char(b64_key_gen);
+}
+
 static void torture_pki_generate_key_rsa(void **state)
 {
     int rc;
@@ -904,6 +950,9 @@ int torture_run_tests(void) {
                                  teardown),
         unit_test_setup_teardown(torture_pki_duplicate_key_dsa,
                                  setup_dsa_key,
+                                 teardown),
+        unit_test_setup_teardown(torture_pki_duplicate_key_ecdsa,
+                                 setup_ecdsa_key,
                                  teardown),
         unit_test(torture_pki_generate_key_rsa),
         unit_test(torture_pki_generate_key_rsa1),
