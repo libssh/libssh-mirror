@@ -360,6 +360,29 @@ static void torture_pki_pki_publickey_from_privatekey_DSA(void **state) {
     ssh_key_free(pubkey);
 }
 
+static void torture_pki_publickey_from_privatekey_ECDSA(void **state) {
+    int rc;
+    char *key_str;
+    ssh_key key;
+    ssh_key pubkey;
+    const char *passphrase = NULL;
+
+    (void) state; /* unused */
+
+    key_str = read_file(LIBSSH_ECDSA_TESTKEY);
+    assert_true(key_str != NULL);
+
+    rc = ssh_pki_import_privkey_base64(key_str, passphrase, NULL, NULL, &key);
+    assert_true(rc == 0);
+
+    rc = ssh_pki_export_privkey_to_pubkey(key, &pubkey);
+    assert_true(rc == SSH_OK);
+
+    free(key_str);
+    ssh_key_free(key);
+    ssh_key_free(pubkey);
+}
+
 static void torture_pki_publickey_dsa_base64(void **state)
 {
     enum ssh_keytypes_e type;
@@ -810,6 +833,9 @@ int torture_run_tests(void) {
                                  teardown),
         unit_test_setup_teardown(torture_pki_pki_publickey_from_privatekey_DSA,
                                  setup_dsa_key,
+                                 teardown),
+        unit_test_setup_teardown(torture_pki_publickey_from_privatekey_ECDSA,
+                                 setup_ecdsa_key,
                                  teardown),
         /* public key */
         unit_test_setup_teardown(torture_pki_publickey_dsa_base64,
