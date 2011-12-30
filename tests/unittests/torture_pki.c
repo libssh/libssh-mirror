@@ -888,6 +888,50 @@ static void torture_pki_generate_key_dsa(void **state)
     ssh_free(session);
 }
 
+static void torture_pki_generate_key_ecdsa(void **state)
+{
+    int rc;
+    ssh_key key;
+    ssh_signature sign;
+    ssh_session session=ssh_new();
+    (void) state;
+
+    rc = ssh_pki_generate(SSH_KEYTYPE_ECDSA, 256, &key);
+    assert_true(rc == SSH_OK);
+    assert_true(key != NULL);
+    sign = pki_do_sign(key, HASH, 20);
+    assert_true(sign != NULL);
+    rc = pki_signature_verify(session,sign,key,HASH,20);
+    assert_true(rc == SSH_OK);
+    ssh_signature_free(sign);
+    ssh_key_free(key);
+    key=NULL;
+
+    rc = ssh_pki_generate(SSH_KEYTYPE_ECDSA, 384, &key);
+    assert_true(rc == SSH_OK);
+    assert_true(key != NULL);
+    sign = pki_do_sign(key, HASH, 20);
+    assert_true(sign != NULL);
+    rc = pki_signature_verify(session,sign,key,HASH,20);
+    assert_true(rc == SSH_OK);
+    ssh_signature_free(sign);
+    ssh_key_free(key);
+    key=NULL;
+
+    rc = ssh_pki_generate(SSH_KEYTYPE_ECDSA, 512, &key);
+    assert_true(rc == SSH_OK);
+    assert_true(key != NULL);
+    sign = pki_do_sign(key, HASH, 20);
+    assert_true(sign != NULL);
+    rc = pki_signature_verify(session,sign,key,HASH,20);
+    assert_true(rc == SSH_OK);
+    ssh_signature_free(sign);
+    ssh_key_free(key);
+    key=NULL;
+
+    ssh_free(session);
+}
+
 int torture_run_tests(void) {
     int rc;
     const UnitTest tests[] = {
@@ -957,6 +1001,7 @@ int torture_run_tests(void) {
         unit_test(torture_pki_generate_key_rsa),
         unit_test(torture_pki_generate_key_rsa1),
         unit_test(torture_pki_generate_key_dsa),
+        unit_test(torture_pki_generate_key_ecdsa),
     };
 
     (void)setup_both_keys;
