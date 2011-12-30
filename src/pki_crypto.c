@@ -1291,6 +1291,20 @@ ssh_signature pki_do_sign(const ssh_key privkey,
             sig->dsa_sig = NULL;
             break;
         case SSH_KEYTYPE_ECDSA:
+#ifdef HAVE_OPENSSL_ECC
+            sig->ecdsa_sig = ECDSA_do_sign(hash, hlen, privkey->ecdsa);
+            if (sig->ecdsa_sig == NULL) {
+                ssh_signature_free(sig);
+                return NULL;
+            }
+
+# ifdef DEBUG_CRYPTO
+            ssh_print_bignum("r", sig->ecdsa_sig->r);
+            ssh_print_bignum("s", sig->ecdsa_sig->s);
+# endif /* DEBUG_CRYPTO */
+
+            break;
+#endif /* HAVE_OPENSSL_ECC */
         case SSH_KEYTYPE_UNKNOWN:
             ssh_signature_free(sig);
             return NULL;
