@@ -1136,6 +1136,56 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
             }
             break;
         case SSH_KEYTYPE_ECDSA:
+#ifdef HAVE_OPENSSL_ECC
+            /* 40 is the dual signature blob len. */
+            if (len != 40) {
+                ssh_pki_log("Signature has wrong size: %lu",
+                            (unsigned long)len);
+                ssh_signature_free(sig);
+                return NULL;
+            }
+
+#ifdef DEBUG_CRYPTO
+            ssh_print_hexa("r", ssh_string_data(sig_blob), 20);
+            ssh_print_hexa("s", (unsigned char *)ssh_string_data(sig_blob) + 20, 20);
+#endif
+
+            sig->ecdsa_sig = ECDSA_SIG_new();
+            if (sig->ecdsa_sig == NULL) {
+                ssh_signature_free(sig);
+                return NULL;
+            }
+
+            r = ssh_string_new(20);
+            if (r == NULL) {
+                ssh_signature_free(sig);
+                return NULL;
+            }
+            ssh_string_fill(r, ssh_string_data(sig_blob), 20);
+
+            sig->ecdsa_sig->r = make_string_bn(r);
+            ssh_string_free(r);
+            if (sig->ecdsa_sig->r == NULL) {
+                ssh_signature_free(sig);
+                return NULL;
+            }
+
+            s = ssh_string_new(20);
+            if (s == NULL) {
+                ssh_signature_free(sig);
+                return NULL;
+            }
+            ssh_string_fill(s, (char *)ssh_string_data(sig_blob) + 20, 20);
+
+            sig->ecdsa_sig->s = make_string_bn(s);
+            ssh_string_free(s);
+            if (sig->ecdsa_sig->s == NULL) {
+                ssh_signature_free(sig);
+                return NULL;
+            }
+
+            break;
+#endif
         case SSH_KEYTYPE_UNKNOWN:
             ssh_pki_log("Unknown signature type");
             return NULL;
