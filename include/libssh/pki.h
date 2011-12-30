@@ -22,6 +22,13 @@
 #ifndef PKI_H_
 #define PKI_H_
 
+#ifdef HAVE_OPENSSL_EC_H
+#include <openssl/ec.h>
+#endif
+#ifdef HAVE_OPENSSL_ECDSA_H
+#include <openssl/ecdsa.h>
+#endif
+
 #include "libssh/crypto.h"
 
 #define SSH_KEY_FLAG_EMPTY   0x0
@@ -54,11 +61,16 @@ struct ssh_signature_struct {
 #ifdef HAVE_LIBGCRYPT
     gcry_sexp_t dsa_sig;
     gcry_sexp_t rsa_sig;
+    void *ecdsa_sig;
 #elif defined HAVE_LIBCRYPTO
     DSA_SIG *dsa_sig;
     ssh_string rsa_sig;
+# ifdef HAVE_OPENSSL_ECC
+    ECDSA_SIG *ecdsa_sig;
+# else
+    void *ecdsa_sig;
+# endif
 #endif
-    void *ecdsa;
 };
 
 typedef struct ssh_signature_struct *ssh_signature;

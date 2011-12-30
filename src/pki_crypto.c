@@ -1003,6 +1003,35 @@ ssh_string pki_signature_to_blob(const ssh_signature sig)
             sig_blob = ssh_string_copy(sig->rsa_sig);
             break;
         case SSH_KEYTYPE_ECDSA:
+#ifdef HAVE_OPENSSL_ECC
+            r = make_bignum_string(sig->ecdsa_sig->r);
+            if (r == NULL) {
+                return NULL;
+            }
+            s = make_bignum_string(sig->ecdsa_sig->s);
+            if (s == NULL) {
+                ssh_string_free(r);
+                return NULL;
+            }
+
+            memcpy(buffer,
+                   ((char *)ssh_string_data(r)) + ssh_string_len(r) - 20,
+                   20);
+            memcpy(buffer + 20,
+                   ((char *)ssh_string_data(s)) + ssh_string_len(s) - 20,
+                   20);
+
+            ssh_string_free(r);
+            ssh_string_free(s);
+
+            sig_blob = ssh_string_new(40);
+            if (sig_blob == NULL) {
+                return NULL;
+            }
+
+            ssh_string_fill(sig_blob, buffer, 40);
+            break;
+#endif
         case SSH_KEYTYPE_UNKNOWN:
             ssh_pki_log("Unknown signature key type: %d", sig->type);
             return NULL;
