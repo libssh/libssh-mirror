@@ -1343,6 +1343,14 @@ ssh_signature pki_do_sign_sessionid(const ssh_key key,
             }
             break;
         case SSH_KEYTYPE_ECDSA:
+#ifdef HAVE_OPENSSL_ECC
+            sig->ecdsa_sig = ECDSA_do_sign(hash, hlen, key->ecdsa);
+            if (sig->ecdsa_sig == NULL) {
+                ssh_signature_free(sig);
+                return NULL;
+            }
+            break;
+#endif
         case SSH_KEYTYPE_UNKNOWN:
             return NULL;
     }
