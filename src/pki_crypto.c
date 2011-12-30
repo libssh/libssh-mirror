@@ -403,6 +403,40 @@ int pki_key_generate_dss(ssh_key key, int parameter){
     return SSH_OK;
 }
 
+int pki_key_generate_ecdsa(ssh_key key, int parameter) {
+    int nid;
+    int ok;
+
+    switch (parameter) {
+        case 384:
+            nid = NID_secp384r1;
+        case 512:
+            nid = NID_secp521r1;
+        case 256:
+        default:
+            nid = NID_X9_62_prime256v1;
+    }
+
+    key->ecdsa_nid = nid;
+    key->type = SSH_KEYTYPE_ECDSA;
+    key->type_c = pki_key_ecdsa_nid_to_name(nid);
+
+    key->ecdsa = EC_KEY_new_by_curve_name(nid);
+    if (key->ecdsa == NULL) {
+        return SSH_ERROR;
+    }
+
+    ok = EC_KEY_generate_key(key->ecdsa);
+    if (!ok) {
+        EC_KEY_free(key->ecdsa);
+        return SSH_ERROR;
+    }
+
+    EC_KEY_set_asn1_flag(key->ecdsa, OPENSSL_EC_NAMED_CURVE);
+
+    return SSH_OK;
+}
+
 int pki_key_compare(const ssh_key k1,
                     const ssh_key k2,
                     enum ssh_keycmp_e what)

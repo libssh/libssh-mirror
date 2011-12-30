@@ -40,6 +40,7 @@ int pki_key_ecdsa_nid_from_name(const char *name);
 ssh_key pki_key_dup(const ssh_key key, int demote);
 int pki_key_generate_rsa(ssh_key key, int parameter);
 int pki_key_generate_dss(ssh_key key, int parameter);
+int pki_key_generate_ecdsa(ssh_key key, int parameter);
 int pki_key_compare(const ssh_key k1,
                     const ssh_key k2,
                     enum ssh_keycmp_e what);

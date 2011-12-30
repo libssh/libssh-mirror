@@ -870,7 +870,7 @@ int ssh_pki_import_pubkey_file(const char *filename, ssh_key *pkey)
  * @param[in] parameter Parameter to the creation of key:
  *                      rsa : length of the key in bits (e.g. 1024, 2048, 4096)
  *                      dsa : length of the key in bits (e.g. 1024, 2048, 3072)
- *                      ecdsa : not implemented
+ *                      ecdsa : bits of the key (e.g. 256, 384, 512)
  * @param[out] pkey     A pointer to store the private key. You need to free the
  *                      memory.
  * @return              SSH_OK on success, SSH_ERROR on error.
@@ -881,6 +881,11 @@ int ssh_pki_generate(enum ssh_keytypes_e type, int parameter,
         ssh_key *pkey){
     int rc;
     ssh_key key = ssh_key_new();
+
+    key->type = type;
+    key->type_c = ssh_key_type_to_char(type);
+    key->flags = SSH_KEY_FLAG_PRIVATE | SSH_KEY_FLAG_PUBLIC;
+
     switch(type){
         case SSH_KEYTYPE_RSA:
         case SSH_KEYTYPE_RSA1:
@@ -894,12 +899,16 @@ int ssh_pki_generate(enum ssh_keytypes_e type, int parameter,
                 goto error;
             break;
         case SSH_KEYTYPE_ECDSA:
+#ifdef HAVE_ECC
+            rc = pki_key_generate_ecdsa(key, parameter);
+            if(rc == SSH_ERROR)
+                goto error;
+            break;
+#endif
         case SSH_KEYTYPE_UNKNOWN:
             goto error;
     }
-    key->type = type;
-    key->type_c = ssh_key_type_to_char(type);
-    key->flags = SSH_KEY_FLAG_PRIVATE | SSH_KEY_FLAG_PUBLIC;
+
     *pkey = key;
     return SSH_OK;
 error:
