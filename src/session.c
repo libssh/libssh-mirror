@@ -306,7 +306,7 @@ static int ssh_flush_termination(void *c){
  * @brief Blocking flush of the outgoing buffer
  * @param[in] session The SSH session
  * @param[in] timeout Set an upper limit on the time for which this function
- *                    will block, in milliseconds. Specifying a negative value
+ *                    will block, in milliseconds. Specifying -1
  *                    means an infinite timeout. This parameter is passed to
  *                    the poll() function.
  * @returns           SSH_OK on success, SSH_AGAIN if timeout occurred,
@@ -401,17 +401,6 @@ void ssh_set_fd_except(ssh_session session) {
   }
 
   ssh_socket_set_except(session->socket);
-}
-
-static int ssh_make_milliseconds(long sec, long usec) {
-    int res = usec ? (usec / 1000) : 0;
-    res += (sec * 1000);
-    if (res == 0) {
-        res = 10 * 1000; /* use a reasonable default value in case
-                          * SSH_OPTIONS_TIMEOUT is not set in options. */
-    }
-
-    return res;
 }
 
 /**
