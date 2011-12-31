@@ -304,7 +304,7 @@ int ssh_is_blocking(ssh_session session){
  * @brief Blocking flush of the outgoing buffer
  * @param[in] session The SSH session
  * @param[in] timeout Set an upper limit on the time for which this function
- *                    will block, in milliseconds. Specifying a negative value
+ *                    will block, in milliseconds. Specifying -1
  *                    means an infinite timeout. This parameter is passed to
  *                    the poll() function.
  * @returns           SSH_OK on success, SSH_AGAIN if timeout occurred,
@@ -313,24 +313,16 @@ int ssh_is_blocking(ssh_session session){
 
 int ssh_blocking_flush(ssh_session session, int timeout){
 	ssh_socket s;
-	struct ssh_timestamp ts;
 	int rc = SSH_OK;
 	if(session==NULL)
 		return SSH_ERROR;
 
-	enter_function();
 	s=session->socket;
-	ssh_timestamp_init(&ts);
 	while (ssh_socket_buffered_write_bytes(s) > 0 && session->alive) {
-		rc=ssh_handle_packets(session, timeout);
-		if(ssh_timeout_elapsed(&ts,timeout)){
-		  rc=SSH_AGAIN;
-		  break;
-		}
-		timeout = ssh_timeout_update(&ts, timeout);
+		rc = ssh_handle_packets(session, timeout);
+		if(rc == SSH_AGAIN || rc == SSH_ERROR) break;
 	}
 
-	leave_function();
 	return rc;
 }
 
@@ -405,17 +397,6 @@ void ssh_set_fd_except(ssh_session session) {
   }
 
   ssh_socket_set_except(session->socket);
-}
-
-static int ssh_make_milliseconds(long sec, long usec) {
-    int res = usec ? (usec / 1000) : 0;
-    res += (sec * 1000);
-    if (res == 0) {
-        res = 10 * 1000; /* use a reasonable default value in case
-                          * SSH_OPTIONS_TIMEOUT is not set in options. */
-    }
-
-    return res;
 }
 
 /**
@@ -497,13 +478,18 @@ int ssh_handle_packets(ssh_session session, int timeout) {
 int ssh_handle_packets_termination(ssh_session session, int timeout,
 	ssh_termination_function fct, void *user){
 	int ret = SSH_OK;
-
+	struct ssh_timestamp ts;
+	ssh_timestamp_init(&ts);
 	while(!fct(user)){
 		ret = ssh_handle_packets(session, timeout);
 		if(ret == SSH_ERROR || ret == SSH_AGAIN)
 			return ret;
 		if(fct(user)) 
 			return SSH_OK;
+		else if(ssh_timeout_elapsed(&ts, timeout == -2 ? ssh_make_milliseconds(session->timeout, session->timeout_usec) : timeout))
+			/* it is possible that we get unrelated packets but still timeout our request,
+			 * so simply relying on the poll timeout is not enough */
+			return SSH_AGAIN;
 	}
 	return ret;
 }

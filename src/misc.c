@@ -925,6 +925,24 @@ static int ssh_timestamp_difference(struct ssh_timestamp *old,
 
 /**
  * @internal
+ * @brief turn seconds and microseconds pair (as provided by user-set options)
+ * into millisecond value
+ * @param[in] sec number of seconds
+ * @param[in] usec number of microseconds
+ * @returns milliseconds, or 10000 if user supplied values are equal to zero
+ */
+int ssh_make_milliseconds(long sec, long usec) {
+	int res = usec ? (usec / 1000) : 0;
+	res += (sec * 1000);
+	if (res == 0) {
+		res = 10 * 1000; /* use a reasonable default value in case
+				* SSH_OPTIONS_TIMEOUT is not set in options. */
+	}
+	return res;
+}
+
+/**
+ * @internal
  * @brief Checks if a timeout is elapsed, in function of a previous
  * timestamp and an assigned timeout
  * @param[in] ts pointer to an existing timestamp
@@ -934,17 +952,20 @@ static int ssh_timestamp_difference(struct ssh_timestamp *old,
  *          0 otherwise
  */
 int ssh_timeout_elapsed(struct ssh_timestamp *ts, int timeout) {
-  struct ssh_timestamp now;
-  if(timeout < 0)
-    return 0; // -1 means infinite timeout
-  if(timeout == 0)
-    return 1; // 0 means no timeout
-  ssh_timestamp_init(&now);
-
-  if(ssh_timestamp_difference(ts,&now) >= timeout)
-    return 1;
-  else
-    return 0;
+	struct ssh_timestamp now;
+	switch(timeout) {
+		case -2: // -2 means user-defined timeout as available in session->timeout, session->timeout_usec.
+			fprintf(stderr, "ssh_timeout_elapsed called with -2. this needs to be fixed. "
+			"please set a breakpoint on %s:%d and fix the caller\n", __FILE__, __LINE__);
+		case -1: // -1 means infinite timeout
+			return 0;
+		case 0: // 0 means no timeout
+			return 1;
+		default:
+			break;
+	}
+	ssh_timestamp_init(&now);
+	return (ssh_timestamp_difference(ts,&now) >= timeout);
 }
 
 /**
