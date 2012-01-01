@@ -1026,8 +1026,9 @@ int ssh_userauth_agent(ssh_session session,
             return SSH_AUTH_SUCCESS;
         }
     }
+
     SAFE_FREE(session->agent_state);
-    return SSH_AUTH_ERROR;
+    return rc;
 }
 #endif
 
@@ -1198,6 +1199,7 @@ int ssh_userauth_publickey_auto(ssh_session session,
                 ssh_key_free(state->pubkey);
                 state->pubkey = NULL;
                 state->it=state->it->next;
+                state->state = SSH_AUTH_AUTO_STATE_PUBKEY;
                 continue;
             }
             state->state = SSH_AUTH_AUTO_STATE_PUBKEY_ACCEPTED;
