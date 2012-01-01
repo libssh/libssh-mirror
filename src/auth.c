@@ -1194,7 +1194,9 @@ int ssh_userauth_publickey_auto(ssh_session session,
                         "Public key for %s refused by server",
                         privkey_file);
                 ssh_key_free(state->privkey);
+                state->privkey = NULL;
                 ssh_key_free(state->pubkey);
+                state->pubkey = NULL;
                 state->it=state->it->next;
                 continue;
             }
