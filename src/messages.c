@@ -911,10 +911,10 @@ SSH_PACKET_CALLBACK(ssh_packet_global_request){
     char *bind_addr=NULL;
     uint32_t bind_port;
     uint8_t want_reply;
+    int rc = SSH_PACKET_USED;
     (void)user;
     (void)type;
     (void)packet;
-    int rc = SSH_PACKET_USED;
 
     request_s = buffer_get_ssh_string(packet);
     if (request_s != NULL) {
