@@ -246,6 +246,17 @@ void ssh_free(ssh_session session) {
 }
 
 /**
+ * @brief get the server banner
+ * @param[in] session   The SSH session
+ */
+const char* ssh_get_serverbanner(ssh_session session) {
+	if(!session) {
+		return NULL;
+	}
+	return session->serverbanner;
+}
+
+/**
  * @brief Disconnect impolitely from a remote host by closing the socket.
  *
  * Suitable if you forked and want to destroy this session.
