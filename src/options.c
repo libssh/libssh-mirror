@@ -147,9 +147,10 @@ int ssh_options_copy(ssh_session src, ssh_session *dest) {
 
     if(src->ProxyCommand) {
         new->ProxyCommand = strdup(src->ProxyCommand);
-        if(new->ProxyCommand == NULL)
+        if(new->ProxyCommand == NULL) {
             ssh_free(new);
             return -1;
+        }
     }
     new->fd = src->fd;
     new->port = src->port;
