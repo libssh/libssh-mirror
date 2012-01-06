@@ -730,7 +730,6 @@ int ssh_pki_import_pubkey_blob(const ssh_string key_blob,
     ssh_buffer buffer;
     ssh_string type_s = NULL;
     enum ssh_keytypes_e type;
-    int nid;
     int rc;
 
     if (key_blob == NULL || pkey == NULL) {
@@ -760,13 +759,6 @@ int ssh_pki_import_pubkey_blob(const ssh_string key_blob,
     if (type == SSH_KEYTYPE_UNKNOWN) {
         ssh_pki_log("Unknown key type found!");
         goto fail;
-    }
-    if (type == SSH_KEYTYPE_ECDSA) {
-        nid = pki_key_ecdsa_nid_from_name(ssh_string_get_char(type_s));
-        if (nid == -1) {
-            ssh_pki_log("Unknown nid found!");
-            goto fail;
-        }
     }
     ssh_string_free(type_s);
 

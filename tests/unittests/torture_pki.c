@@ -245,6 +245,7 @@ static void torture_pki_import_privkey_base64_DSA(void **state) {
     ssh_key_free(key);
 }
 
+#ifdef HAVE_ECC
 static void torture_pki_import_privkey_base64_ECDSA(void **state) {
     int rc;
     char *key_str;
@@ -262,6 +263,7 @@ static void torture_pki_import_privkey_base64_ECDSA(void **state) {
     free(key_str);
     ssh_key_free(key);
 }
+#endif
 
 static void torture_pki_import_privkey_base64_passphrase(void **state) {
     int rc;
@@ -360,6 +362,7 @@ static void torture_pki_pki_publickey_from_privatekey_DSA(void **state) {
     ssh_key_free(pubkey);
 }
 
+#ifdef HAVE_ECC
 static void torture_pki_publickey_from_privatekey_ECDSA(void **state) {
     int rc;
     char *key_str;
@@ -382,6 +385,7 @@ static void torture_pki_publickey_from_privatekey_ECDSA(void **state) {
     ssh_key_free(key);
     ssh_key_free(pubkey);
 }
+#endif
 
 static void torture_pki_publickey_dsa_base64(void **state)
 {
@@ -420,6 +424,7 @@ static void torture_pki_publickey_dsa_base64(void **state)
     ssh_key_free(key);
 }
 
+#ifdef HAVE_ECC
 static void torture_pki_publickey_ecdsa_base64(void **state)
 {
     enum ssh_keytypes_e type;
@@ -456,6 +461,7 @@ static void torture_pki_publickey_ecdsa_base64(void **state)
     free(key_buf);
     ssh_key_free(key);
 }
+#endif
 
 static void torture_pki_publickey_rsa_base64(void **state)
 {
@@ -577,6 +583,7 @@ static void torture_generate_pubkey_from_privkey_dsa(void **state) {
     ssh_key_free(pubkey);
 }
 
+#ifdef HAVE_ECC
 static void torture_generate_pubkey_from_privkey_ecdsa(void **state) {
     char pubkey_original[4096] = {0};
     char pubkey_generated[4096] = {0};
@@ -617,6 +624,7 @@ static void torture_generate_pubkey_from_privkey_ecdsa(void **state) {
     ssh_key_free(privkey);
     ssh_key_free(pubkey);
 }
+#endif
 
 static void torture_pki_duplicate_key_rsa(void **state)
 {
@@ -710,6 +718,7 @@ static void torture_pki_duplicate_key_dsa(void **state)
     ssh_string_free_char(b64_key_gen);
 }
 
+#ifdef HAVE_ECC
 static void torture_pki_duplicate_key_ecdsa(void **state)
 {
     int rc;
@@ -755,6 +764,7 @@ static void torture_pki_duplicate_key_ecdsa(void **state)
     ssh_string_free_char(b64_key);
     ssh_string_free_char(b64_key_gen);
 }
+#endif
 
 static void torture_pki_generate_key_rsa(void **state)
 {
@@ -888,6 +898,7 @@ static void torture_pki_generate_key_dsa(void **state)
     ssh_free(session);
 }
 
+#ifdef HAVE_ECC
 static void torture_pki_generate_key_ecdsa(void **state)
 {
     int rc;
@@ -931,6 +942,7 @@ static void torture_pki_generate_key_ecdsa(void **state)
 
     ssh_free(session);
 }
+#endif
 
 int torture_run_tests(void) {
     int rc;
@@ -952,9 +964,11 @@ int torture_run_tests(void) {
         unit_test_setup_teardown(torture_pki_import_privkey_base64_DSA,
                                  setup_dsa_key,
                                  teardown),
+#ifdef HAVE_ECC
         unit_test_setup_teardown(torture_pki_import_privkey_base64_ECDSA,
                                  setup_ecdsa_key,
                                  teardown),
+#endif
         unit_test_setup_teardown(torture_pki_import_privkey_base64_passphrase,
                                  setup_both_keys_passphrase,
                                  teardown),
@@ -965,29 +979,35 @@ int torture_run_tests(void) {
         unit_test_setup_teardown(torture_pki_pki_publickey_from_privatekey_DSA,
                                  setup_dsa_key,
                                  teardown),
+#ifdef HAVE_ECC
         unit_test_setup_teardown(torture_pki_publickey_from_privatekey_ECDSA,
                                  setup_ecdsa_key,
                                  teardown),
+#endif
         /* public key */
         unit_test_setup_teardown(torture_pki_publickey_dsa_base64,
                                  setup_dsa_key,
                                  teardown),
-        unit_test_setup_teardown(torture_pki_publickey_ecdsa_base64,
-                                 setup_ecdsa_key,
-                                 teardown),
         unit_test_setup_teardown(torture_pki_publickey_rsa_base64,
                                  setup_rsa_key,
                                  teardown),
+#ifdef HAVE_ECC
+        unit_test_setup_teardown(torture_pki_publickey_ecdsa_base64,
+                                 setup_ecdsa_key,
+                                 teardown),
+#endif
 
         unit_test_setup_teardown(torture_generate_pubkey_from_privkey_dsa,
                                  setup_dsa_key,
                                  teardown),
-        unit_test_setup_teardown(torture_generate_pubkey_from_privkey_ecdsa,
-                                 setup_ecdsa_key,
-                                 teardown),
         unit_test_setup_teardown(torture_generate_pubkey_from_privkey_rsa,
                                  setup_rsa_key,
                                  teardown),
+#ifdef HAVE_ECC
+        unit_test_setup_teardown(torture_generate_pubkey_from_privkey_ecdsa,
+                                 setup_ecdsa_key,
+                                 teardown),
+#endif
 
         unit_test_setup_teardown(torture_pki_duplicate_key_rsa,
                                  setup_rsa_key,
@@ -995,13 +1015,17 @@ int torture_run_tests(void) {
         unit_test_setup_teardown(torture_pki_duplicate_key_dsa,
                                  setup_dsa_key,
                                  teardown),
+#ifdef HAVE_ECC
         unit_test_setup_teardown(torture_pki_duplicate_key_ecdsa,
                                  setup_ecdsa_key,
                                  teardown),
+#endif
         unit_test(torture_pki_generate_key_rsa),
         unit_test(torture_pki_generate_key_rsa1),
         unit_test(torture_pki_generate_key_dsa),
+#ifdef HAVE_ECC
         unit_test(torture_pki_generate_key_ecdsa),
+#endif
     };
 
     (void)setup_both_keys;

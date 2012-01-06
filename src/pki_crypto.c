@@ -403,6 +403,7 @@ int pki_key_generate_dss(ssh_key key, int parameter){
     return SSH_OK;
 }
 
+#ifdef HAVE_OPENSSL_ECC
 int pki_key_generate_ecdsa(ssh_key key, int parameter) {
     int nid;
     int ok;
@@ -436,6 +437,7 @@ int pki_key_generate_ecdsa(ssh_key key, int parameter) {
 
     return SSH_OK;
 }
+#endif
 
 int pki_key_compare(const ssh_key k1,
                     const ssh_key k2,
@@ -654,7 +656,9 @@ fail:
     ssh_key_free(key);
     DSA_free(dsa);
     RSA_free(rsa);
+#ifdef HAVE_OPENSSL_ECC
     EC_KEY_free(ecdsa);
+#endif
 
     return NULL;
 }
