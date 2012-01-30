@@ -270,7 +270,8 @@ int main(int argc, char **argv){
     do {
         message=ssh_message_get(session);
         if(message && ssh_message_type(message)==SSH_REQUEST_CHANNEL &&
-           ssh_message_subtype(message)==SSH_CHANNEL_REQUEST_SHELL){
+           (ssh_message_subtype(message)==SSH_CHANNEL_REQUEST_SHELL ||
+            ssh_message_subtype(message)==SSH_CHANNEL_REQUEST_PTY)) {
 //            if(!strcmp(ssh_message_channel_request_subsystem(message),"sftp")){
                 sftp=1;
                 ssh_message_channel_request_reply_success(message);
@@ -294,6 +295,10 @@ int main(int argc, char **argv){
             if (write(1,buf,i) < 0) {
                 printf("error writing to buffer\n");
                 return 1;
+            }
+            if (buf[0] == '\x0d') {
+                write(1, "\n", 1);
+                ssh_channel_write(chan, "\n", 1);
             }
         }
     } while (i>0);
