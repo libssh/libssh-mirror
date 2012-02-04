@@ -74,7 +74,7 @@ void _ssh_pki_log(const char *function, const char *format, ...)
     vsnprintf(buffer, sizeof(buffer), format, va);
     va_end(va);
 
-    ssh_log_function(function, buffer);
+    ssh_log_function(SSH_LOG_DEBUG, function, buffer);
 #else
     (void) function;
     (void) format;
