@@ -66,15 +66,17 @@
 
 #ifdef HAVE_ECDH
 #define KEY_EXCHANGE "ecdh-sha2-nistp256,diffie-hellman-group1-sha1"
+#define HOSTKEYS "ecdsa-sha2-nistp256,ssh-rsa,ssh-dss"
 #else
 #define KEY_EXCHANGE "diffie-hellman-group1-sha1"
+#define HOSTKEYS "ssh-rsa,ssh-dss"
 #endif
 
 #define KEX_METHODS_SIZE 10
 
 static const char *default_methods[] = {
   KEY_EXCHANGE,
-  "ssh-rsa,ssh-dss",
+  HOSTKEYS,
   AES BLOWFISH DES,
   AES BLOWFISH DES,
   "hmac-sha1",
@@ -88,7 +90,7 @@ static const char *default_methods[] = {
 
 const char *supported_methods[] = {
   KEY_EXCHANGE,
-  "ssh-rsa,ssh-dss",
+  HOSTKEYS,
   AES BLOWFISH DES,
   AES BLOWFISH DES,
   "hmac-sha1",
