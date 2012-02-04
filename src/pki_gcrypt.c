@@ -584,6 +584,13 @@ error:
   return rc;
 }
 
+#ifdef HAVE_GCRYPT_ECC
+int pki_key_ecdsa_nid_from_name(const char *name)
+{
+    return -1;
+}
+#endif
+
 ssh_key pki_private_key_from_base64(const char *b64_key,
                                     const char *passphrase,
                                     ssh_auth_callback auth_fn,
@@ -703,6 +710,13 @@ int pki_pubkey_build_rsa(ssh_key key,
 
     return SSH_OK;
 }
+
+#ifdef HAVE_GCRYPT_ECC
+int pki_pubkey_build_ecdsa(ssh_key key, int nid, ssh_string e)
+{
+    return -1;
+}
+#endif
 
 ssh_key pki_key_dup(const ssh_key key, int demote)
 {
@@ -994,6 +1008,12 @@ int pki_key_generate_rsa(ssh_key key, int parameter){
 int pki_key_generate_dss(ssh_key key, int parameter){
     return pki_key_generate(key, parameter, "dsa", SSH_KEYTYPE_DSS);
 }
+
+#ifdef HAVE_GCRYPT_ECC
+int pki_key_generate_ecdsa(ssh_key key, int parameter) {
+    return -1;
+}
+#endif
 
 static int _bignum_cmp(const gcry_sexp_t s1,
                        const gcry_sexp_t s2,
