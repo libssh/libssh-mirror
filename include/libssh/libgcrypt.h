@@ -41,6 +41,8 @@ typedef gcry_md_hd_t HMACCTX;
 #define EVP_MAX_MD_SIZE 36
 #endif
 
+#define EVP_DIGEST_LEN EVP_MAX_MD_SIZE
+
 typedef gcry_mpi_t bignum;
 
 /* missing gcrypt functions */

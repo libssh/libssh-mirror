@@ -31,6 +31,10 @@
 #include <openssl/sha.h>
 #include <openssl/md5.h>
 #include <openssl/hmac.h>
+#ifdef HAVE_OPENSSL_ECC
+#include <openssl/evp.h>
+#endif
+
 typedef SHA_CTX* SHACTX;
 typedef SHA256_CTX* SHA256CTX;
 typedef MD5_CTX*  MD5CTX;
@@ -41,6 +45,10 @@ typedef HMAC_CTX* HMACCTX;
     #undef MD5_DIGEST_LEN
 #endif
 #define MD5_DIGEST_LEN MD5_DIGEST_LENGTH
+
+#ifdef HAVE_OPENSSL_ECC
+#define EVP_DIGEST_LEN EVP_MAX_MD_SIZE
+#endif
 
 #include <openssl/bn.h>
 #include <openssl/opensslv.h>
