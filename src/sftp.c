@@ -242,6 +242,9 @@ void sftp_free(sftp_session sftp){
   }
 
   ssh_channel_free(sftp->channel);
+
+  SAFE_FREE(sftp->handles);
+
   sftp_ext_free(sftp->ext);
   ZERO_STRUCTP(sftp);
 
