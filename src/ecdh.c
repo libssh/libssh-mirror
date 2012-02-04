@@ -239,6 +239,7 @@ int ssh_server_ecdh_init(ssh_session session, ssh_buffer packet){
         goto error;
     }
     buffer_add_ssh_string(session->out_buffer, sig_blob);
+    ssh_string_free(sig_blob);
     /* Free private keys as they should not be readable after this point */
     if (session->srv.rsa_key) {
         ssh_key_free(session->srv.rsa_key);
