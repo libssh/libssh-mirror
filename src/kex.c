@@ -230,7 +230,7 @@ char *ssh_find_matching(const char *available_d, const char *preferred_d){
 
     for(i_pref=0; tok_preferred[i_pref] ; ++i_pref){
       for(i_avail=0; tok_available[i_avail]; ++i_avail){
-        if(!strcmp(tok_available[i_avail],tok_preferred[i_pref])){
+        if(strcmp(tok_available[i_avail],tok_preferred[i_pref]) == 0){
           /* match */
           ret=strdup(tok_available[i_avail]);
           /* free the tokens */
