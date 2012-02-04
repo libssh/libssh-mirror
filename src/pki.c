@@ -1197,7 +1197,6 @@ int ssh_pki_signature_verify_blob(ssh_session session,
 
     rc = ssh_pki_import_signature_blob(sig_blob, key, &sig);
     if (rc < 0) {
-        ssh_key_free(key);
         return SSH_ERROR;
     }
 
