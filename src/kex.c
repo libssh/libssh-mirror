@@ -70,6 +70,8 @@
 #define KEY_EXCHANGE "diffie-hellman-group1-sha1"
 #endif
 
+#define KEX_METHODS_SIZE 10
+
 static const char *default_methods[] = {
   KEY_EXCHANGE,
   "ssh-rsa,ssh-dss",
@@ -248,7 +250,7 @@ char *ssh_find_matching(const char *available_d, const char *preferred_d){
 SSH_PACKET_CALLBACK(ssh_packet_kexinit){
 	int server_kex=session->server;
   ssh_string str = NULL;
-  char *strings[10];
+  char *strings[KEX_METHODS_SIZE];
   int i;
 
   enter_function();
@@ -281,7 +283,7 @@ SSH_PACKET_CALLBACK(ssh_packet_kexinit){
       }
   }
 
-  for (i = 0; i < 10; i++) {
+  for (i = 0; i < KEX_METHODS_SIZE; i++) {
     str = buffer_get_ssh_string(packet);
     if (str == NULL) {
       break;
@@ -318,7 +320,7 @@ SSH_PACKET_CALLBACK(ssh_packet_kexinit){
   return SSH_PACKET_USED;
 error:
   ssh_string_free(str);
-  for (i = 0; i < 10; i++) {
+  for (i = 0; i < SSH_KEX_METHODS; i++) {
     SAFE_FREE(strings[i]);
   }
 
@@ -337,7 +339,7 @@ void ssh_list_kex(ssh_session session, struct ssh_kex_struct *kex) {
     ssh_log(session, SSH_LOG_RARE,"kex->methods is NULL");
     return;
   }
-  for(i = 0; i < 10; i++) {
+  for(i = 0; i < SSH_KEX_METHODS; i++) {
     ssh_log(session, SSH_LOG_FUNCTIONS, "%s: %s",
         ssh_kex_nums[i], kex->methods[i]);
   }
@@ -349,18 +351,19 @@ void ssh_list_kex(ssh_session session, struct ssh_kex_struct *kex) {
  */
 int set_client_kex(ssh_session session){
     struct ssh_kex_struct *client= &session->next_crypto->client_kex;
-    int i;
     const char *wanted;
-    enter_function();
-    ssh_get_random(client->cookie,16,0);
-    memset(client->methods,0,10*sizeof(char **));
-    for (i=0;i<10;i++){
-        wanted=session->wanted_methods[i];
-        if(wanted == NULL)
-            wanted=default_methods[i];
-        client->methods[i]=strdup(wanted);
+    int i;
+
+    ssh_get_random(client->cookie, 16, 0);
+
+    memset(client->methods, 0, KEX_METHODS_SIZE * sizeof(char **));
+    for (i = 0; i < KEX_METHODS_SIZE; i++) {
+        wanted = session->wanted_methods[i];
+        if (wanted == NULL)
+            wanted = default_methods[i];
+        client->methods[i] = strdup(wanted);
     }
-    leave_function();
+
     return SSH_OK;
 }
 
@@ -375,7 +378,7 @@ int ssh_kex_select_methods (ssh_session session){
 
     enter_function();
 
-    for (i=0;i<10;i++){
+    for (i = 0; i < KEX_METHODS_SIZE; i++) {
         session->next_crypto->kex_methods[i]=ssh_find_matching(server->methods[i],client->methods[i]);
         if(session->next_crypto->kex_methods[i] == NULL && i < SSH_LANG_C_S){
             ssh_set_error(session,SSH_FATAL,"kex error : no match for method %s: server [%s], client [%s]",
@@ -420,7 +423,7 @@ int ssh_send_kex(ssh_session session, int server_kex) {
 
   ssh_list_kex(session, kex);
 
-  for (i = 0; i < 10; i++) {
+  for (i = 0; i < KEX_METHODS_SIZE; i++) {
     str = ssh_string_from_char(kex->methods[i]);
     if (str == NULL) {
       goto error;
