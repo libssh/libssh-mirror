@@ -1191,7 +1191,6 @@ int ssh_pki_signature_verify_blob(ssh_session session,
                                   unsigned char *digest,
                                   size_t dlen)
 {
-    unsigned char hash[SHA_DIGEST_LEN] = {0};
     ssh_signature sig;
     int rc;
 
@@ -1206,17 +1205,34 @@ int ssh_pki_signature_verify_blob(ssh_session session,
             key->type_c);
 
 
-    sha1(digest, dlen, hash);
+    if (key->type == SSH_KEYTYPE_ECDSA) {
+#if HAVE_ECC
+        unsigned char ehash[EVP_DIGEST_LEN] = {0};
+        uint32_t elen;
 
+        evp(key->ecdsa_nid, digest, dlen, ehash, &elen);
+
+        rc = pki_signature_verify(session,
+                                  sig,
+                                  key,
+                                  ehash,
+                                  elen);
+#endif
+    } else {
+        unsigned char hash[SHA_DIGEST_LEN] = {0};
+
+        sha1(digest, dlen, hash);
 #ifdef DEBUG_CRYPTO
-    ssh_print_hexa("Hash to be verified with dsa", hash, SHA_DIGEST_LEN);
+        ssh_print_hexa("Hash to be verified with dsa", hash, SHA_DIGEST_LEN);
 #endif
 
-    rc = pki_signature_verify(session,
-                              sig,
-                              key,
-                              hash,
-                              SHA_DIGEST_LEN);
+        rc = pki_signature_verify(session,
+                                  sig,
+                                  key,
+                                  hash,
+                                  SHA_DIGEST_LEN);
+    }
+
     ssh_signature_free(sig);
 
     return rc;
