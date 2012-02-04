@@ -49,7 +49,7 @@ if (WITH_ZLIB)
 endif (WITH_ZLIB)
 
 if (WITH_GCRYPT)
-  find_package(GCrypt REQUIRED)
+  find_package(GCrypt 1.5.0 REQUIRED)
   if (NOT GCRYPT_FOUND)
     message(FATAL_ERROR "Could not find GCrypt")
   endif (NOT GCRYPT_FOUND)

@@ -50,6 +50,9 @@
 /* Define to 1 if you have eliptic curve cryptography in openssl */
 #cmakedefine HAVE_OPENSSL_ECC 1
 
+/* Define to 1 if you have eliptic curve cryptography in gcrypt */
+#cmakedefine HAVE_GCRYPT_ECC 1
+
 /* Define to 1 if you have eliptic curve cryptography */
 #cmakedefine HAVE_ECC 1
 
