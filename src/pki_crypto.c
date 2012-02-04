@@ -1141,51 +1141,79 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
             break;
         case SSH_KEYTYPE_ECDSA:
 #ifdef HAVE_OPENSSL_ECC
-            /* 40 is the dual signature blob len. */
-            if (len != 40) {
-                ssh_pki_log("Signature has wrong size: %lu",
-                            (unsigned long)len);
-                ssh_signature_free(sig);
-                return NULL;
-            }
-
-#ifdef DEBUG_CRYPTO
-            ssh_print_hexa("r", ssh_string_data(sig_blob), 20);
-            ssh_print_hexa("s", (unsigned char *)ssh_string_data(sig_blob) + 20, 20);
-#endif
-
             sig->ecdsa_sig = ECDSA_SIG_new();
             if (sig->ecdsa_sig == NULL) {
                 ssh_signature_free(sig);
                 return NULL;
             }
 
-            r = ssh_string_new(20);
-            if (r == NULL) {
-                ssh_signature_free(sig);
-                return NULL;
-            }
-            ssh_string_fill(r, ssh_string_data(sig_blob), 20);
+            { /* build ecdsa siganature */
+                ssh_buffer b;
+                uint32_t rlen;
+                int rc;
 
-            sig->ecdsa_sig->r = make_string_bn(r);
-            ssh_string_free(r);
-            if (sig->ecdsa_sig->r == NULL) {
-                ssh_signature_free(sig);
-                return NULL;
-            }
+                b = ssh_buffer_new();
+                if (b == NULL) {
+                    ssh_signature_free(sig);
+                    return NULL;
+                }
 
-            s = ssh_string_new(20);
-            if (s == NULL) {
-                ssh_signature_free(sig);
-                return NULL;
-            }
-            ssh_string_fill(s, (char *)ssh_string_data(sig_blob) + 20, 20);
+                rc = buffer_add_data(b,
+                                     ssh_string_data(sig_blob),
+                                     ssh_string_len(sig_blob));
+                if (rc < 0) {
+                    ssh_buffer_free(b);
+                    ssh_signature_free(sig);
+                    return NULL;
+                }
 
-            sig->ecdsa_sig->s = make_string_bn(s);
-            ssh_string_free(s);
-            if (sig->ecdsa_sig->s == NULL) {
-                ssh_signature_free(sig);
-                return NULL;
+                r = buffer_get_ssh_string(b);
+                if (r == NULL) {
+                    ssh_buffer_free(b);
+                    ssh_signature_free(sig);
+                    return NULL;
+                }
+
+#ifdef DEBUG_CRYPTO
+                ssh_print_hexa("r", ssh_string_data(r), ssh_string_len(r));
+#endif
+
+                sig->ecdsa_sig->r = make_string_bn(r);
+                ssh_string_burn(r);
+                ssh_string_free(r);
+                if (sig->ecdsa_sig->r == NULL) {
+                    ssh_buffer_free(b);
+                    ssh_signature_free(sig);
+                    return NULL;
+                }
+
+                s = buffer_get_ssh_string(b);
+                rlen = buffer_get_rest_len(b);
+                ssh_buffer_free(b);
+                if (s == NULL) {
+                    ssh_signature_free(sig);
+                    return NULL;
+                }
+
+#ifdef DEBUG_CRYPTO
+                ssh_print_hexa("s", ssh_string_data(s), ssh_string_len(s));
+#endif
+
+                sig->ecdsa_sig->s = make_string_bn(s);
+                ssh_string_burn(s);
+                ssh_string_free(s);
+                if (sig->ecdsa_sig->s == NULL) {
+                    ssh_signature_free(sig);
+                    return NULL;
+                }
+
+                if (rlen != 0) {
+                    ssh_pki_log("Signature has remaining bytes in inner "
+                                "sigblob: %lu",
+                                (unsigned long)rlen);
+                    ssh_signature_free(sig);
+                    return NULL;
+                }
             }
 
             break;
