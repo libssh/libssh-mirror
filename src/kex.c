@@ -360,7 +360,7 @@ int set_client_kex(ssh_session session){
 
     memset(client->methods, 0, KEX_METHODS_SIZE * sizeof(char **));
     for (i = 0; i < KEX_METHODS_SIZE; i++) {
-        wanted = session->wanted_methods[i];
+        wanted = session->opts.wanted_methods[i];
         if (wanted == NULL)
             wanted = default_methods[i];
         client->methods[i] = strdup(wanted);

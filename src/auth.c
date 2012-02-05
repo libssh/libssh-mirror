@@ -385,7 +385,7 @@ int ssh_userauth_none(ssh_session session, const char *username) {
     if (username) {
         str = ssh_string_from_char(username);
     } else {
-        str = ssh_string_from_char(session->username);
+        str = ssh_string_from_char(session->opts.username);
     }
     if (str == NULL) {
         goto fail;
@@ -521,7 +521,7 @@ int ssh_userauth_try_publickey(ssh_session session,
     if (username) {
         str = ssh_string_from_char(username);
     } else {
-        str = ssh_string_from_char(session->username);
+        str = ssh_string_from_char(session->opts.username);
     }
     if (str == NULL) {
         goto fail;
@@ -683,7 +683,7 @@ int ssh_userauth_publickey(ssh_session session,
     if (username) {
         str = ssh_string_from_char(username);
     } else {
-        str = ssh_string_from_char(session->username);
+        str = ssh_string_from_char(session->opts.username);
     }
     if (str == NULL) {
         goto fail;
@@ -819,7 +819,7 @@ static int ssh_userauth_agent_publickey(ssh_session session,
     if (username) {
         str = ssh_string_from_char(username);
     } else {
-        str = ssh_string_from_char(session->username);
+        str = ssh_string_from_char(session->opts.username);
     }
     if (str == NULL) {
         goto fail;
@@ -1115,7 +1115,7 @@ int ssh_userauth_publickey_auto(ssh_session session,
         state->state = SSH_AUTH_AUTO_STATE_PUBKEY;
     }
     if (state->it == NULL) {
-        state->it = ssh_list_get_iterator(session->identity);
+        state->it = ssh_list_get_iterator(session->opts.identity);
     }
 
     while (state->it != NULL){
@@ -1341,7 +1341,7 @@ int ssh_userauth_password(ssh_session session,
     if (username) {
         str = ssh_string_from_char(username);
     } else {
-        str = ssh_string_from_char(session->username);
+        str = ssh_string_from_char(session->opts.username);
     }
     if (str == NULL) {
         goto fail;
@@ -1557,7 +1557,7 @@ static int ssh_userauth_kbdint_init(ssh_session session,
     if (username) {
         str = ssh_string_from_char(username);
     } else {
-        str = ssh_string_from_char(session->username);
+        str = ssh_string_from_char(session->opts.username);
     }
     if (str == NULL) {
         goto fail;

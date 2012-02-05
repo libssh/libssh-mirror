@@ -644,7 +644,7 @@ int ssh_try_publickey_from_file(ssh_session session,
         return -1;
     }
 
-    if (session->sshdir == NULL) {
+    if (session->opts.sshdir == NULL) {
         if (ssh_options_apply(session) < 0) {
             return -1;
         }

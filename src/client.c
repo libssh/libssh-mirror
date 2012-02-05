@@ -149,10 +149,6 @@ int ssh_send_banner(ssh_session session, int server) {
 
   banner = session->version == 1 ? CLIENTBANNER1 : CLIENTBANNER2;
 
-  if (session->xbanner) {
-    banner = session->xbanner;
-  }
-
   if (server) {
     session->serverbanner = strdup(banner);
     if (session->serverbanner == NULL) {
@@ -345,13 +341,13 @@ static void ssh_client_connection_callback(ssh_session session){
 		    goto error;
 		  }
 		  /* Here we decide which version of the protocol to use. */
-		  if (ssh2 && session->ssh2) {
+		  if (ssh2 && session->opts.ssh2) {
 		    session->version = 2;
 #ifdef WITH_SSH1
-		    } else if(ssh1 && session->ssh1) {
+		    } else if(ssh1 && session->opts.ssh1) {
 		    session->version = 1;
 #endif
-		    } else if(ssh1 && !session->ssh1){
+		    } else if(ssh1 && !session->opts.ssh1){
 #ifdef WITH_SSH1
 		    ssh_set_error(session, SSH_FATAL,
 		        "SSH-1 protocol not available (configure session to allow SSH-1)");
@@ -483,7 +479,9 @@ int ssh_connect(ssh_session session) {
     leave_function();
     return SSH_ERROR;
   }
-  if (session->fd == SSH_INVALID_SOCKET && session->host == NULL && session->ProxyCommand == NULL) {
+  if (session->opts.fd == SSH_INVALID_SOCKET &&
+      session->opts.host == NULL &&
+      session->opts.ProxyCommand == NULL) {
     ssh_set_error(session, SSH_FATAL, "Hostname required");
     leave_function();
     return SSH_ERROR;
@@ -503,16 +501,19 @@ int ssh_connect(ssh_session session) {
   session->socket_callbacks.data=callback_receive_banner;
   session->socket_callbacks.exception=ssh_socket_exception_callback;
   session->socket_callbacks.userdata=session;
-  if (session->fd != SSH_INVALID_SOCKET) {
-    ssh_socket_set_fd(session->socket, session->fd);
+  if (session->opts.fd != SSH_INVALID_SOCKET) {
+    ssh_socket_set_fd(session->socket, session->opts.fd);
     ret=SSH_OK;
 #ifndef _WIN32
-  } else if (session->ProxyCommand != NULL){
-    ret=ssh_socket_connect_proxycommand(session->socket, session->ProxyCommand);
+  } else if (session->opts.ProxyCommand != NULL){
+    ret = ssh_socket_connect_proxycommand(session->socket,
+                                          session->opts.ProxyCommand);
 #endif
   } else {
-    ret=ssh_socket_connect(session->socket, session->host, session->port,
-    		session->bindaddr);
+    ret=ssh_socket_connect(session->socket,
+                           session->opts.host,
+                           session->opts.port,
+                           session->opts.bindaddr);
   }
   if (ret == SSH_ERROR) {
     leave_function();
@@ -526,14 +527,16 @@ int ssh_connect(ssh_session session) {
 pending:
   session->pending_call_state=SSH_PENDING_CALL_CONNECT;
   if(ssh_is_blocking(session)) {
-      int timeout = (session->timeout * 1000) + (session->timeout_usec / 1000);
+      int timeout = (session->opts.timeout * 1000) +
+                    (session->opts.timeout_usec / 1000);
       if (timeout == 0) {
           timeout = 10 * 1000;
       }
       ssh_log(session,SSH_LOG_PACKET,"ssh_connect: Actual timeout : %d", timeout);
       ssh_handle_packets_termination(session, timeout, ssh_connect_termination, session);
       if(!ssh_connect_termination(session)){
-          ssh_set_error(session,SSH_FATAL,"Timeout connecting to %s",session->host);
+          ssh_set_error(session, SSH_FATAL,
+                        "Timeout connecting to %s", session->opts.host);
           session->session_state = SSH_SESSION_STATE_ERROR;
       }
   }
@@ -635,7 +638,7 @@ error:
   if(session->socket){
     ssh_socket_reset(session->socket);
   }
-  session->fd = SSH_INVALID_SOCKET;
+  session->opts.fd = SSH_INVALID_SOCKET;
   session->session_state=SSH_SESSION_STATE_DISCONNECTED;
 
   while ((it=ssh_list_get_iterator(session->channels)) != NULL) {

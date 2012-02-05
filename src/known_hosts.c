@@ -422,7 +422,7 @@ int ssh_is_server_known(ssh_session session) {
 
   enter_function();
 
-  if (session->knownhosts == NULL) {
+  if (session->opts.knownhosts == NULL) {
     if (ssh_options_apply(session) < 0) {
       ssh_set_error(session, SSH_REQUEST_DENIED,
           "Can't find a known_hosts file");
@@ -431,7 +431,7 @@ int ssh_is_server_known(ssh_session session) {
     }
   }
 
-  if (session->host == NULL) {
+  if (session->opts.host == NULL) {
     ssh_set_error(session, SSH_FATAL,
         "Can't verify host in known hosts if the hostname isn't known");
     leave_function();
@@ -444,8 +444,8 @@ int ssh_is_server_known(ssh_session session) {
   	leave_function();
   	return SSH_SERVER_ERROR;
   }
-  host = ssh_lowercase(session->host);
-  hostport = ssh_hostport(host,session->port);
+  host = ssh_lowercase(session->opts.host);
+  hostport = ssh_hostport(host, session->opts.port);
   if (host == NULL || hostport == NULL) {
     ssh_set_error_oom(session);
     SAFE_FREE(host);
@@ -455,8 +455,10 @@ int ssh_is_server_known(ssh_session session) {
   }
 
   do {
-    tokens = ssh_get_knownhost_line(session, &file,
-        session->knownhosts, &type);
+    tokens = ssh_get_knownhost_line(session,
+                                    &file,
+                                    session->opts.knownhosts,
+                                    &type);
 
     /* End of file, return the current state */
     if (tokens == NULL) {
@@ -507,7 +509,8 @@ int ssh_is_server_known(ssh_session session) {
     }
   } while (1);
 
-  if ( (ret == SSH_SERVER_NOT_KNOWN) && (session->StrictHostKeyChecking == 0) ) {
+  if ((ret == SSH_SERVER_NOT_KNOWN) &&
+      (session->opts.StrictHostKeyChecking == 0)) {
     ssh_write_knownhost(session);
     ret = SSH_SERVER_KNOWN_OK;
   }
@@ -544,22 +547,22 @@ int ssh_write_knownhost(ssh_session session) {
     char *hostport;
     int rc;
 
-    if (session->host == NULL) {
+    if (session->opts.host == NULL) {
         ssh_set_error(session, SSH_FATAL,
                 "Can't write host in known hosts if the hostname isn't known");
         return SSH_ERROR;
     }
 
-    host = ssh_lowercase(session->host);
+    host = ssh_lowercase(session->opts.host);
     /* If using a nonstandard port, save the host in the [host]:port format */
-    if(session->port != 22){
-        hostport = ssh_hostport(host, session->port);
+    if(session->opts.port != 22) {
+        hostport = ssh_hostport(host, session->opts.port);
         SAFE_FREE(host);
         host = hostport;
         hostport = NULL;
     }
 
-    if (session->knownhosts == NULL) {
+    if (session->opts.knownhosts == NULL) {
         if (ssh_options_apply(session) < 0) {
             ssh_set_error(session, SSH_FATAL, "Can't find a known_hosts file");
             return SSH_ERROR;
@@ -578,7 +581,7 @@ int ssh_write_knownhost(ssh_session session) {
     }
 
     /* Check if ~/.ssh exists and create it if not */
-    dir = ssh_dirname(session->knownhosts);
+    dir = ssh_dirname(session->opts.knownhosts);
     if (dir == NULL) {
         ssh_set_error(session, SSH_FATAL, "%s", strerror(errno));
         return SSH_ERROR;
@@ -594,11 +597,11 @@ int ssh_write_knownhost(ssh_session session) {
     }
     SAFE_FREE(dir);
 
-    file = fopen(session->knownhosts, "a");
+    file = fopen(session->opts.knownhosts, "a");
     if (file == NULL) {
         ssh_set_error(session, SSH_FATAL,
                 "Couldn't open known_hosts file %s for appending: %s",
-                session->knownhosts, strerror(errno));
+                session->opts.knownhosts, strerror(errno));
         SAFE_FREE(host);
         return SSH_ERROR;
     }

@@ -92,18 +92,6 @@ ssh_session ssh_new(void) {
   session->common.log_indent = 0;
   session->maxchannel = FIRST_CHANNEL;
 
-  /* options */
-  session->StrictHostKeyChecking = 1;
-  session->port = 22;
-  session->fd = -1;
-  session->ssh2 = 1;
-  session->compressionlevel=7;
-#ifdef WITH_SSH1
-  session->ssh1 = 1;
-#else
-  session->ssh1 = 0;
-#endif
-
 #ifndef _WIN32
     session->agent = agent_new(session);
     if (session->agent == NULL) {
@@ -111,8 +99,20 @@ ssh_session ssh_new(void) {
     }
 #endif /* _WIN32 */
 
-    session->identity = ssh_list_new();
-    if (session->identity == NULL) {
+    /* OPTIONS */
+    session->opts.StrictHostKeyChecking = 1;
+    session->opts.port = 22;
+    session->opts.fd = -1;
+    session->opts.ssh2 = 1;
+    session->opts.compressionlevel=7;
+#ifdef WITH_SSH1
+    session->opts.ssh1 = 1;
+#else
+    session->opts.ssh1 = 0;
+#endif
+
+    session->opts.identity = ssh_list_new();
+    if (session->opts.identity == NULL) {
       goto err;
     }
 
@@ -120,7 +120,7 @@ ssh_session ssh_new(void) {
     if (id == NULL) {
       goto err;
     }
-    rc = ssh_list_append(session->identity, id);
+    rc = ssh_list_append(session->opts.identity, id);
     if (rc == SSH_ERROR) {
       goto err;
     }
@@ -129,7 +129,7 @@ ssh_session ssh_new(void) {
     if (id == NULL) {
       goto err;
     }
-    rc = ssh_list_append(session->identity, id);
+    rc = ssh_list_append(session->opts.identity, id);
     if (rc == SSH_ERROR) {
       goto err;
     }
@@ -138,7 +138,7 @@ ssh_session ssh_new(void) {
     if (id == NULL) {
       goto err;
     }
-    rc = ssh_list_append(session->identity, id);
+    rc = ssh_list_append(session->opts.identity, id);
     if (rc == SSH_ERROR) {
       goto err;
     }
@@ -169,7 +169,6 @@ void ssh_free(ssh_session session) {
 
   SAFE_FREE(session->serverbanner);
   SAFE_FREE(session->clientbanner);
-  SAFE_FREE(session->bindaddr);
   SAFE_FREE(session->banner);
 #ifdef WITH_PCAP
   if(session->pcap_ctx){
@@ -216,28 +215,29 @@ void ssh_free(ssh_session session) {
   if (session->packet_callbacks)
     ssh_list_free(session->packet_callbacks);
 
-  if (session->identity) {
-    char *id;
+  /* options */
+  if (session->opts.identity) {
+      char *id;
 
-    for (id = ssh_list_pop_head(char *, session->identity);
-         id != NULL;
-         id = ssh_list_pop_head(char *, session->identity)) {
-      SAFE_FREE(id);
-    }
-    ssh_list_free(session->identity);
+      for (id = ssh_list_pop_head(char *, session->opts.identity);
+              id != NULL;
+              id = ssh_list_pop_head(char *, session->opts.identity)) {
+          SAFE_FREE(id);
+      }
+      ssh_list_free(session->opts.identity);
   }
 
-  /* options */
-  SAFE_FREE(session->username);
-  SAFE_FREE(session->host);
-  SAFE_FREE(session->sshdir);
-  SAFE_FREE(session->knownhosts);
-  SAFE_FREE(session->ProxyCommand);
+  SAFE_FREE(session->opts.bindaddr);
+  SAFE_FREE(session->opts.username);
+  SAFE_FREE(session->opts.host);
+  SAFE_FREE(session->opts.sshdir);
+  SAFE_FREE(session->opts.knownhosts);
+  SAFE_FREE(session->opts.ProxyCommand);
 
   for (i = 0; i < 10; i++) {
-    if (session->wanted_methods[i]) {
-      SAFE_FREE(session->wanted_methods[i]);
-    }
+      if (session->opts.wanted_methods[i]) {
+          SAFE_FREE(session->opts.wanted_methods[i]);
+      }
   }
 
   /* burn connection, it could hang sensitive datas */
@@ -461,7 +461,8 @@ int ssh_handle_packets(ssh_session session, int timeout) {
 
     if (timeout == SSH_TIMEOUT_USER) {
         if (ssh_is_blocking(session))
-          tm = ssh_make_milliseconds(session->timeout, session->timeout_usec);
+          tm = ssh_make_milliseconds(session->opts.timeout,
+                                     session->opts.timeout_usec);
         else
           tm = 0;
     }
@@ -503,7 +504,8 @@ int ssh_handle_packets_termination(ssh_session session, int timeout,
 	int tm;
   if (timeout == SSH_TIMEOUT_USER) {
       if (ssh_is_blocking(session))
-        timeout = ssh_make_milliseconds(session->timeout, session->timeout_usec);
+        timeout = ssh_make_milliseconds(session->opts.timeout,
+                                        session->opts.timeout_usec);
       else
         timeout = SSH_TIMEOUT_NONBLOCKING;
   }

@@ -356,19 +356,19 @@ int ssh_bind_accept_fd(ssh_bind sshbind, ssh_session session, socket_t fd){
     /* copy options */
     for (i = 0; i < 10; ++i) {
       if (sshbind->wanted_methods[i]) {
-        session->wanted_methods[i] = strdup(sshbind->wanted_methods[i]);
-        if (session->wanted_methods[i] == NULL) {
+        session->opts.wanted_methods[i] = strdup(sshbind->wanted_methods[i]);
+        if (session->opts.wanted_methods[i] == NULL) {
           return SSH_ERROR;
         }
       }
     }
 
     if (sshbind->bindaddr == NULL)
-      session->bindaddr = NULL;
+      session->opts.bindaddr = NULL;
     else {
-      SAFE_FREE(session->bindaddr);
-      session->bindaddr = strdup(sshbind->bindaddr);
-      if (session->bindaddr == NULL) {
+      SAFE_FREE(session->opts.bindaddr);
+      session->opts.bindaddr = strdup(sshbind->bindaddr);
+      if (session->opts.bindaddr == NULL) {
         return SSH_ERROR;
       }
     }

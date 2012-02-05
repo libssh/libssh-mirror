@@ -195,7 +195,7 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
   switch (opcode) {
     case SOC_HOST:
       *parsing = 0;
-      lowerhost = (session->host) ? ssh_lowercase(session->host) : NULL;
+      lowerhost = (session->opts.host) ? ssh_lowercase(session->opts.host) : NULL;
       for (p = ssh_config_get_str(&s, NULL); p && *p;
           p = ssh_config_get_str(&s, NULL)) {
         if (match_hostname(lowerhost, p, strlen(p))) {
@@ -211,7 +211,7 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
       }
       break;
     case SOC_PORT:
-      if (session->port == 22) {
+      if (session->opts.port == 22) {
           p = ssh_config_get_str(&s, NULL);
           if (p && *parsing) {
               ssh_options_set(session, SSH_OPTIONS_PORT_STR, p);
@@ -219,7 +219,7 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
       }
       break;
     case SOC_USERNAME:
-      if (session->username == NULL) {
+      if (session->opts.username == NULL) {
           p = ssh_config_get_str(&s, NULL);
           if (p && *parsing) {
             ssh_options_set(session, SSH_OPTIONS_USER, p);

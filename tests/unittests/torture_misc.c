@@ -141,9 +141,9 @@ static void torture_path_expand_escape(void **state) {
     const char *s = "%d/%h/by/%r";
     char *e;
 
-    session->sshdir = strdup("guru");
-    session->host = strdup("meditation");
-    session->username = strdup("root");
+    session->opts.sshdir = strdup("guru");
+    session->opts.host = strdup("meditation");
+    session->opts.username = strdup("root");
 
     e = ssh_path_expand_escape(session, s);
     assert_string_equal(e, "guru/meditation/by/root");
@@ -154,7 +154,7 @@ static void torture_path_expand_known_hosts(void **state) {
     ssh_session session = *state;
     char *tmp;
 
-    session->sshdir = strdup("/home/guru/.ssh");
+    session->opts.sshdir = strdup("/home/guru/.ssh");
 
     tmp = ssh_path_expand_escape(session, "%d/known_hosts");
     assert_string_equal(tmp, "/home/guru/.ssh/known_hosts");

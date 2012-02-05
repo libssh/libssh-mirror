@@ -161,15 +161,15 @@ SSH_PACKET_CALLBACK(ssh_packet_newkeys){
     }
 
     /* check if public key from server matches user preferences */
-    if (session->wanted_methods[SSH_HOSTKEYS]) {
-        if(!ssh_match_group(session->wanted_methods[SSH_HOSTKEYS],
+    if (session->opts.wanted_methods[SSH_HOSTKEYS]) {
+        if(!ssh_match_group(session->opts.wanted_methods[SSH_HOSTKEYS],
                             key->type_c)) {
             ssh_set_error(session,
                           SSH_FATAL,
                           "Public key from server (%s) doesn't match user "
                           "preference (%s)",
                           key->type_c,
-                          session->wanted_methods[SSH_HOSTKEYS]);
+                          session->opts.wanted_methods[SSH_HOSTKEYS]);
             ssh_key_free(key);
             return -1;
         }

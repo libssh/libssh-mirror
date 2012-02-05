@@ -105,7 +105,7 @@ static int server_set_kex(ssh_session session) {
   }
 
   for (i = 0; i < 10; i++) {
-    if ((wanted = session->wanted_methods[i]) == NULL) {
+    if ((wanted = session->opts.wanted_methods[i]) == NULL) {
       wanted = supported_methods[i];
     }
     server->methods[i] = strdup(wanted);
@@ -322,11 +322,11 @@ static void ssh_server_connection_callback(ssh_session session){
 		    goto error;
 		  }
 		  /* Here we decide which version of the protocol to use. */
-		  if (ssh2 && session->ssh2) {
+		  if (ssh2 && session->opts.ssh2) {
 		    session->version = 2;
-		  } else if(ssh1 && session->ssh1) {
+		  } else if (ssh1 && session->opts.ssh1) {
 		    session->version = 1;
-		  } else if(ssh1 && !session->ssh1){
+		  } else if (ssh1 && !session->opts.ssh1) {
 #ifdef WITH_SSH1
 		    ssh_set_error(session, SSH_FATAL,
 		        "SSH-1 protocol not available (configure session to allow SSH-1)");

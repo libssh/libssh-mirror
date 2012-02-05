@@ -160,23 +160,24 @@ struct ssh_session_struct {
 #ifdef WITH_PCAP
     ssh_pcap_context pcap_ctx; /* pcap debugging context */
 #endif
-    char *username;
-    char *host;
-    char *bindaddr; /* bind the client to an ip addr */
-    char *xbanner; /* TODO: looks like it is not needed */
-    struct ssh_list *identity;
-    char *sshdir;
-    char *knownhosts;
-    char *wanted_methods[10];
-    char compressionlevel;
-    unsigned long timeout; /* seconds */
-    unsigned long timeout_usec;
-    unsigned int port;
-    socket_t fd;
-    int ssh2;
-    int ssh1;
-    int StrictHostKeyChecking;
-    char *ProxyCommand;
+    struct {
+        struct ssh_list *identity;
+        char *username;
+        char *host;
+        char *bindaddr; /* bind the client to an ip addr */
+        char *sshdir;
+        char *knownhosts;
+        char *wanted_methods[10];
+        char *ProxyCommand;
+        unsigned long timeout; /* seconds */
+        unsigned long timeout_usec;
+        unsigned int port;
+        socket_t fd;
+        int StrictHostKeyChecking;
+        int ssh2;
+        int ssh1;
+        char compressionlevel;
+    } opts;
 };
 
 /** @internal

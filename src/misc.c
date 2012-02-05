@@ -729,7 +729,7 @@ char *ssh_path_expand_escape(ssh_session session, const char *s) {
 
         switch (*p) {
             case 'd':
-                x = strdup(session->sshdir);
+                x = strdup(session->opts.sshdir);
                 break;
             case 'u':
                 x = ssh_get_local_username();
@@ -740,16 +740,16 @@ char *ssh_path_expand_escape(ssh_session session, const char *s) {
                 }
                 break;
             case 'h':
-                x = strdup(session->host);
+                x = strdup(session->opts.host);
                 break;
             case 'r':
-                x = strdup(session->username);
+                x = strdup(session->opts.username);
                 break;
             case 'p':
-                if (session->port < 65536) {
+                if (session->opts.port < 65536) {
                     char tmp[6];
 
-                    snprintf(tmp, sizeof(tmp), "%u", session->port);
+                    snprintf(tmp, sizeof(tmp), "%u", session->opts.port);
                     x = strdup(tmp);
                 }
                 break;
