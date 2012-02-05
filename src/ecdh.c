@@ -111,9 +111,11 @@ static int ecdh_build_k(ssh_session session) {
   EC_KEY_free(session->next_crypto->ecdh_privkey);
   session->next_crypto->ecdh_privkey=NULL;
 #ifdef DEBUG_CRYPTO
-  ssh_print_hexa("Session server cookie", session->server_kex.cookie, 16);
-  ssh_print_hexa("Session client cookie", session->client_kex.cookie, 16);
-  ssh_print_bignum("Shared secret key", session->next_crypto->k);
+    ssh_print_hexa("Session server cookie",
+                   session->next_crypto->server_kex.cookie, 16);
+    ssh_print_hexa("Session client cookie",
+                   session->next_crypto->client_kex.cookie, 16);
+    ssh_print_bignum("Shared secret key", session->next_crypto->k);
 #endif
 
 #ifdef HAVE_LIBCRYPTO
