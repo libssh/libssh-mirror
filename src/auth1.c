@@ -90,12 +90,12 @@ static int send_username(ssh_session session, const char *username) {
   if (session->auth_service_state == SSH_AUTH_SERVICE_SENT)
       goto pending;
   if (!username) {
-    if(!(username = session->username)) {
+    if(!(username = session->opts.username)) {
       if (ssh_options_set(session, SSH_OPTIONS_USER, NULL) < 0) {
         session->auth_service_state = SSH_AUTH_SERVICE_DENIED;
         return SSH_ERROR;
       } else {
-        username = session->username;
+        username = session->opts.username;
       }
     }
   }
