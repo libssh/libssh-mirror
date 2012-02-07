@@ -64,7 +64,7 @@ static void torture_knownhosts_port(void **state) {
     rc = ssh_connect(session);
     assert_true(rc==SSH_OK);
 
-    session->port = 1234;
+    session->opts.port = 1234;
     rc = ssh_write_knownhost(session);
     assert_true(rc == SSH_OK);
 
@@ -88,7 +88,7 @@ static void torture_knownhosts_port(void **state) {
     rc = ssh_connect(session);
     assert_true(rc == SSH_OK);
 
-    session->port = 1234;
+    session->opts.port = 1234;
     rc = ssh_is_server_known(session);
     assert_true(rc == SSH_SERVER_KNOWN_OK);
 }
