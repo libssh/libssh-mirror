@@ -24,7 +24,11 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
+#ifndef _WIN32
 #include <sys/time.h>
+#else
+#include <sys/utime.h>
+#endif
 #include <time.h>
 
 #include "libssh/priv.h"
