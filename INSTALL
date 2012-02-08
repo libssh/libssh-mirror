@@ -34,6 +34,8 @@ GNU/Linux, MacOS X, MSYS/MinGW:
     cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Debug ..
     make
 
+On Windows you should choose a makefile gernerator with -G.
+
 ### CMake standard options
 Here is a list of the most interesting options provided out of the box by
 CMake.
