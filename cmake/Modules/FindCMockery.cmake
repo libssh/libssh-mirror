@@ -1,63 +1,62 @@
 # - Try to find CMockery
 # Once done this will define
 #
+#  CMOCKERY_ROOT_DIR - Set this variable to the root installation of CMockery
+#
+# Read-Only variables:
 #  CMOCKERY_FOUND - system has CMockery
-#  CMOCKERY_INCLUDE_DIRS - the CMockery include directory
+#  CMOCKERY_INCLUDE_DIR - the CMockery include directory
 #  CMOCKERY_LIBRARIES - Link these to use CMockery
 #  CMOCKERY_DEFINITIONS - Compiler switches required for using CMockery
 #
-#  Copyright (c) 2010 Andreas Schneider <asn@cryptomilk.org>
+#=============================================================================
+#  Copyright (c) 2011-2012 Andreas Schneider <asn@cryptomilk.org>
 #
-#  Redistribution and use is allowed according to the terms of the New
-#  BSD license.
-#  For details see the accompanying COPYING-CMAKE-SCRIPTS file.
+#  Distributed under the OSI-approved BSD License (the "License");
+#  see accompanying file Copyright.txt for details.
+#
+#  This software is distributed WITHOUT ANY WARRANTY; without even the
+#  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#  See the License for more information.
+#=============================================================================
 #
 
+set(_OPENSSL_ROOT_PATHS
+    "C:/OpenSSL/"
+    $ENV{PROGRAMFILES}/cmockery/include
+)
 
-if (CMOCKERY_LIBRARIES AND CMOCKERY_INCLUDE_DIRS)
-  # in cache already
-  set(CMOCKERY_FOUND TRUE)
-else (CMOCKERY_LIBRARIES AND CMOCKERY_INCLUDE_DIRS)
-
-  find_path(CMOCKERY_INCLUDE_DIR
+find_path(OPENSSL_ROOT_DIR
     NAMES
-      google/cmockery.h
+        include/google/cmockery.h
     PATHS
-      ${_CMOCKERY_DIR}/include
-      /usr/include
-      /usr/local/include
-      /opt/local/include
-      /sw/include
-      $ENV{PROGRAMFILES}/cmockery/include
-  )
+        ${_OPENSSL_ROOT_PATHS}
+)
+mark_as_advanced(OPENSSL_ROOT_DIR)
 
-  find_library(CMOCKERY_LIBRARY
+find_path(CMOCKERY_INCLUDE_DIR
     NAMES
-      cmockery
+        google/cmockery.h
     PATHS
-      ${_CMOCKERY_DIR}/lib
-      /usr/lib
-      /usr/local/lib
-      /opt/local/lib
-      /sw/lib
-      $ENV{PROGRAMFILES}/cmockery/lib
+        ${CMOCKERY_ROOT_DIR}/include
+)
+
+find_library(CMOCKERY_LIBRARY
+    NAMES
+        cmockery
+    PATHS
+        ${CMOCKERY_ROOT_DIR}/include
+)
+
+if (CMOCKERY_LIBRARY)
+  set(CMOCKERY_LIBRARIES
+      ${CMOCKERY_LIBRARIES}
+      ${CMOCKERY_LIBRARY}
   )
+endif (CMOCKERY_LIBRARY)
 
-  set(CMOCKERY_INCLUDE_DIRS
-    ${CMOCKERY_INCLUDE_DIR}
-  )
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(CMockery DEFAULT_MSG CMOCKERY_LIBRARIES CMOCKERY_INCLUDE_DIR)
 
-  if (CMOCKERY_LIBRARY)
-    set(CMOCKERY_LIBRARIES
-        ${CMOCKERY_LIBRARIES}
-        ${CMOCKERY_LIBRARY}
-    )
-  endif (CMOCKERY_LIBRARY)
-
-  include(FindPackageHandleStandardArgs)
-  find_package_handle_standard_args(CMockery DEFAULT_MSG CMOCKERY_LIBRARIES CMOCKERY_INCLUDE_DIRS)
-
-  # show the CMOCKERY_INCLUDE_DIRS and CMOCKERY_LIBRARIES variables only in the advanced view
-  mark_as_advanced(CMOCKERY_INCLUDE_DIRS CMOCKERY_LIBRARIES)
-
-endif (CMOCKERY_LIBRARIES AND CMOCKERY_INCLUDE_DIRS)
+# show the CMOCKERY_INCLUDE_DIR and CMOCKERY_LIBRARIES variables only in the advanced view
+mark_as_advanced(CMOCKERY_INCLUDE_DIR CMOCKERY_LIBRARIES)
