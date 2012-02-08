@@ -18,12 +18,18 @@ optional:
 Note that these version numbers are version we know works correctly. If you
 build and run libssh successfully with an older version, please let us know.
 
+Windows binaries known to be working:
+
+- http://www.slproweb.com/products/Win32OpenSSL.html
+- http://www.winimage.com/zLibDll/index.html
+
+We installed them in C:\Program Files
 
 ## Building
 First, you need to configure the compilation, using CMake. Go inside the
 `build` dir. Create it if it doesn't exist.
 
-GNU/Linux and MacOS X:
+GNU/Linux, MacOS X, MSYS/MinGW:
 
     cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Debug ..
     make
@@ -58,6 +64,17 @@ and MacOS X).
 - Go to the build dir
 - On Windows: run `cmakesetup`
 - On GNU/Linux and MacOS X: run `ccmake ..`
+
+### Useful Windows options:
+
+If you have installed OpenSSL or ZLIB in non standard directories, maybe you
+want to set:
+
+OPENSSL_ROOT_DIR
+
+and
+
+ZLIB_ROOT_DIR
 
 ## Installing
 
