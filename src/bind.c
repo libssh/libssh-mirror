@@ -165,11 +165,35 @@ int ssh_bind_listen(ssh_bind sshbind) {
     return -1;
   }
 
-  if (sshbind->dsakey == NULL && sshbind->rsakey == NULL) {
+  if (sshbind->ecdsakey == NULL &&
+      sshbind->dsakey == NULL &&
+      sshbind->rsakey == NULL) {
       ssh_set_error(sshbind, SSH_FATAL,
               "DSA or RSA host key file must be set before listen()");
       return SSH_ERROR;
   }
+
+#ifdef HAVE_ECC
+  if (sshbind->ecdsakey) {
+      rc = ssh_pki_import_privkey_file(sshbind->ecdsakey,
+                                       NULL,
+                                       NULL,
+                                       NULL,
+                                       &sshbind->ecdsa);
+      if (rc == SSH_ERROR) {
+          ssh_set_error(sshbind, SSH_FATAL,
+                  "Failed to import private ECDSA host key");
+          return SSH_ERROR;
+      }
+
+      if (ssh_key_type(sshbind->ecdsa) != SSH_KEYTYPE_ECDSA) {
+          ssh_set_error(sshbind, SSH_FATAL,
+                  "The ECDSA host key has the wrong type");
+          ssh_key_free(sshbind->ecdsa);
+          return SSH_ERROR;
+      }
+  }
+#endif
 
   if (sshbind->dsakey) {
       rc = ssh_pki_import_privkey_file(sshbind->dsakey,
@@ -385,6 +409,15 @@ int ssh_bind_accept_fd(ssh_bind sshbind, ssh_session session, socket_t fd){
     ssh_socket_set_fd(session->socket, fd);
     ssh_socket_get_poll_handle_out(session->socket);
 
+#ifdef HAVE_ECC
+    if (sshbind->ecdsa) {
+        session->srv.ecdsa_key = ssh_key_dup(sshbind->ecdsa);
+        if (session->srv.ecdsa_key == NULL) {
+          ssh_set_error_oom(sshbind);
+          return SSH_ERROR;
+        }
+    }
+#endif
     if (sshbind->dsa) {
         session->srv.dsa_key = ssh_key_dup(sshbind->dsa);
         if (session->srv.dsa_key == NULL) {

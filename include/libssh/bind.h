@@ -34,8 +34,10 @@ struct ssh_bind_struct {
   /* options */
   char *wanted_methods[10];
   char *banner;
+  char *ecdsakey;
   char *dsakey;
   char *rsakey;
+  ssh_key ecdsa;
   ssh_key dsa;
   ssh_key rsa;
   char *bindaddr;

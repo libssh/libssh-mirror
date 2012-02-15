@@ -84,24 +84,47 @@ static int dh_handshake_server(ssh_session session);
 
 static int server_set_kex(ssh_session session) {
   struct ssh_kex_struct *server = &session->next_crypto->server_kex;
-  int i, j;
+  int i, j, rc;
   const char *wanted;
+  char hostkeys[64] = {0};
+  enum ssh_keytypes_e keytype;
+  size_t len;
 
   ZERO_STRUCTP(server);
   ssh_get_random(server->cookie, 16, 0);
-  if (session->srv.dsa_key != NULL && session->srv.rsa_key != NULL) {
-    if (ssh_options_set_algo(session, SSH_HOSTKEYS,
-          "ssh-dss,ssh-rsa") < 0) {
+
+#ifdef HAVE_ECC
+  if (session->srv.ecdsa_key != NULL) {
+      keytype = ssh_key_type(session->srv.ecdsa_key);
+
+      snprintf(hostkeys, sizeof(hostkeys),
+               "%s", session->srv.ecdsa_key->type_c);
+  }
+#endif
+  if (session->srv.dsa_key != NULL) {
+      len = strlen(hostkeys);
+      keytype = ssh_key_type(session->srv.dsa_key);
+
+      snprintf(hostkeys + len, sizeof(hostkeys) - len,
+               ",%s", ssh_key_type_to_char(keytype));
+  }
+  if (session->srv.rsa_key != NULL) {
+      len = strlen(hostkeys);
+      keytype = ssh_key_type(session->srv.rsa_key);
+
+      snprintf(hostkeys + len, sizeof(hostkeys) - len,
+               ",%s", ssh_key_type_to_char(keytype));
+  }
+
+  if (strlen(hostkeys) == 0) {
       return -1;
-    }
-  } else if (session->srv.dsa_key != NULL) {
-    if (ssh_options_set_algo(session, SSH_HOSTKEYS, "ssh-dss") < 0) {
+  }
+
+  rc = ssh_options_set_algo(session,
+                            SSH_HOSTKEYS,
+                            hostkeys[0] == ',' ? hostkeys + 1 : hostkeys);
+  if (rc < 0) {
       return -1;
-    }
-  } else {
-    if (ssh_options_set_algo(session, SSH_HOSTKEYS, "ssh-rsa") < 0) {
-      return -1;
-    }
   }
 
   for (i = 0; i < 10; i++) {
@@ -186,6 +209,8 @@ int ssh_get_key_params(ssh_session session, ssh_key *privkey){
         *privkey = session->srv.rsa_key;
         break;
       case SSH_KEYTYPE_ECDSA:
+        *privkey = session->srv.ecdsa_key;
+        break;
       case SSH_KEYTYPE_UNKNOWN:
         *privkey = NULL;
     }
@@ -263,6 +288,12 @@ static int dh_handshake_server(ssh_session session) {
       ssh_key_free(session->srv.dsa_key);
       session->srv.dsa_key = NULL;
   }
+#ifdef HAVE_ECC
+  if (session->srv.ecdsa_key) {
+      ssh_key_free(session->srv.ecdsa_key);
+      session->srv.ecdsa_key = NULL;
+  }
+#endif
 
   if (buffer_add_u8(session->out_buffer, SSH2_MSG_KEXDH_REPLY) < 0 ||
       buffer_add_ssh_string(session->out_buffer,
