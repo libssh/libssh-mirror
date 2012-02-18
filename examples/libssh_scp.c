@@ -22,10 +22,10 @@ program.
 #include <libssh/libssh.h>
 #include "examples_common.h"
 
-char **sources;
-int nsources;
-char *destination;
-int verbosity=0;
+static char **sources;
+static int nsources;
+static char *destination;
+static int verbosity=0;
 
 struct location {
   int is_ssh;
