@@ -363,7 +363,7 @@ const char *ssh_version(int req_version) {
   return NULL;
 }
 
-struct ssh_list *ssh_list_new(){
+struct ssh_list *ssh_list_new(void) {
   struct ssh_list *ret=malloc(sizeof(struct ssh_list));
   if(!ret)
     return NULL;
