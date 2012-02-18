@@ -52,7 +52,7 @@ static struct ssh_threads_callbacks_struct ssh_threads_noop =
     threads_id_noop
 };
 
-struct ssh_threads_callbacks_struct *ssh_threads_get_noop(){
+struct ssh_threads_callbacks_struct *ssh_threads_get_noop(void) {
 	return &ssh_threads_noop;
 }
 
@@ -165,7 +165,7 @@ int ssh_threads_set_callbacks(struct ssh_threads_callbacks_struct *cb){
   return SSH_OK;
 }
 
-const char *ssh_threads_get_type(){
+const char *ssh_threads_get_type(void) {
 	if(user_callbacks != NULL)
 		return user_callbacks->type;
 	return NULL;
