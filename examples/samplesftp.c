@@ -27,8 +27,9 @@ clients must be made or how a client should react.
 #include "examples_common.h"
 #ifdef WITH_SFTP
 
-int verbosity;
-char *destination;
+static int verbosity;
+static char *destination;
+
 #define DATALEN 65536
 static void do_sftp(ssh_session session){
     sftp_session sftp=sftp_new(session);
