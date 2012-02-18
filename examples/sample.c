@@ -35,14 +35,15 @@ clients must be made or how a client should react.
 
 #include "examples_common.h"
 #define MAXCMD 10
-char *host;
-char *user;
-char *cmds[MAXCMD];
-struct termios terminal;
 
-char *pcap_file=NULL;
+static char *host;
+static char *user;
+static char *cmds[MAXCMD];
+static struct termios terminal;
 
-char *proxycommand;
+static char *pcap_file=NULL;
+
+static char *proxycommand;
 
 static int auth_callback(const char *prompt, char *buf, size_t len,
     int echo, int verify, void *userdata) {
