@@ -123,7 +123,7 @@ struct ssh_pcap_file_struct {
 /**
  * @brief create a new ssh_pcap_file object
  */
-ssh_pcap_file ssh_pcap_file_new(){
+ssh_pcap_file ssh_pcap_file_new(void) {
     struct ssh_pcap_file_struct *pcap;
 
     pcap = (struct ssh_pcap_file_struct *) malloc(sizeof(struct ssh_pcap_file_struct));
