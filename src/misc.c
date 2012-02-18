@@ -288,12 +288,14 @@ uint64_t ntohll(uint64_t a) {
 #ifdef WORDS_BIGENDIAN
   return a;
 #else /* WORDS_BIGENDIAN */
-  uint32_t low = (uint32_t)(a & 0xffffffff);
-  uint32_t high = (uint32_t)(a >> 32);
-  low = ntohl(low);
-  high = ntohl(high);
-
-  return ((((uint64_t) low) << 32) | ( high));
+  return (((uint64_t)(a) << 56) | \
+         (((uint64_t)(a) << 40) & 0xff000000000000ULL) | \
+         (((uint64_t)(a) << 24) & 0xff0000000000ULL) | \
+         (((uint64_t)(a) << 8)  & 0xff00000000ULL) | \
+         (((uint64_t)(a) >> 8)  & 0xff000000ULL) | \
+         (((uint64_t)(a) >> 24) & 0xff0000ULL) | \
+         (((uint64_t)(a) >> 40) & 0xff00ULL) | \
+         ((uint64_t)(a)  >> 56));
 #endif /* WORDS_BIGENDIAN */
 }
 #endif /* HAVE_NTOHLL */
