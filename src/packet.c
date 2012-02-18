@@ -48,7 +48,7 @@
 
 #define MACSIZE SHA_DIGEST_LEN
 
-ssh_packet_callback default_packet_handlers[]= {
+static ssh_packet_callback default_packet_handlers[]= {
   ssh_packet_disconnect_callback,          // SSH2_MSG_DISCONNECT                 1
   ssh_packet_ignore_callback,              // SSH2_MSG_IGNORE	                    2
   ssh_packet_unimplemented,                // SSH2_MSG_UNIMPLEMENTED              3

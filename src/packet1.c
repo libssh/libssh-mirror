@@ -39,7 +39,7 @@
 
 #ifdef WITH_SSH1
 
-ssh_packet_callback default_packet_handlers1[]= {
+static ssh_packet_callback default_packet_handlers1[]= {
   NULL,                           //SSH_MSG_NONE                        0
   ssh_packet_disconnect1,         //SSH_MSG_DISCONNECT                  1
   ssh_packet_publickey1,          //SSH_SMSG_PUBLIC_KEY                 2
