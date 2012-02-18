@@ -36,8 +36,8 @@ clients must be made or how a client should react.
 #endif
 
 #ifdef WITH_PCAP
-const char *pcap_file="debug.server.pcap";
-ssh_pcap_file pcap;
+static const char *pcap_file = "debug.server.pcap";
+static ssh_pcap_file pcap;
 
 static void set_pcap(ssh_session session){
 	if(!pcap_file)
@@ -52,7 +52,7 @@ static void set_pcap(ssh_session session){
 	ssh_set_pcap_file(session,pcap);
 }
 
-static void cleanup_pcap(){
+static void cleanup_pcap(void) {
 	ssh_pcap_file_free(pcap);
 	pcap=NULL;
 }
@@ -172,10 +172,10 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
 static struct argp argp = {options, parse_opt, args_doc, doc, NULL, NULL, NULL};
 #endif /* HAVE_ARGP_H */
 
-const char *name;
-const char *instruction;
-const char *prompts[2];
-char echo[] = { 1, 0 };
+static const char *name;
+static const char *instruction;
+static const char *prompts[2];
+static char echo[] = { 1, 0 };
 
 static int kbdint_check_response(ssh_session session) {
     int count;

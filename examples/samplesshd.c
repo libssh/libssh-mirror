@@ -33,11 +33,10 @@ clients must be made or how a client should react.
 #endif
 
 #ifdef WITH_PCAP
-const char *pcap_file="debug.server.pcap";
-ssh_pcap_file pcap;
+static const char *pcap_file="debug.server.pcap";
+static ssh_pcap_file pcap;
 
-void set_pcap(ssh_session session);
-void set_pcap(ssh_session session){
+static void set_pcap(ssh_session session) {
 	if(!pcap_file)
 		return;
 	pcap=ssh_pcap_file_new();
@@ -50,8 +49,7 @@ void set_pcap(ssh_session session){
 	ssh_set_pcap_file(session,pcap);
 }
 
-void cleanup_pcap(void);
-void cleanup_pcap(){
+static void cleanup_pcap(void) {
 	ssh_pcap_file_free(pcap);
 	pcap=NULL;
 }
@@ -118,7 +116,7 @@ static struct argp_option options[] = {
     .doc   = "Get verbose output.",
     .group = 0
   },
-  {NULL, 0, 0, 0, NULL, 0}
+  {NULL, 0, NULL, 0, NULL, 0}
 };
 
 /* Parse a single option. */
