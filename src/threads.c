@@ -83,7 +83,7 @@ static int libgcrypt_thread_init(void){
 
 /* Libcrypto specific stuff */
 
-void **libcrypto_mutexes;
+static void **libcrypto_mutexes;
 
 static void libcrypto_lock_callback(int mode, int i, const char *file, int line){
 	(void)file;
