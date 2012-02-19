@@ -1979,11 +1979,19 @@ const char *ssh_userauth_kbdint_getinstruction(ssh_session session) {
  *
  * @param[in]  i        The index number of the i'th prompt.
  *
- * @param[in]  echo     When different of NULL, it will obtain a boolean meaning
- *                      that the resulting user input should be echoed or not
- *                      (like passwords).
+ * @param[out] echo     This is an optional variable. You can obtain a
+ *                      boolean if the user input should be echoed or
+ *                      hidden. For passwords it is usually hidden.
  *
  * @returns             A pointer to the prompt. Do not free it.
+ *
+ * @code
+ *   const char prompt;
+ *   char echo;
+ *
+ *   prompt = ssh_userauth_kbdint_getprompt(session, 0, &echo);
+ *   if (echo) ...
+ * @endcode
  */
 const char *ssh_userauth_kbdint_getprompt(ssh_session session, unsigned int i,
     char *echo) {
