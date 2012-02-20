@@ -955,7 +955,7 @@ struct ssh_agent_state_struct {
  */
 int ssh_userauth_agent(ssh_session session,
                        const char *username) {
-    int rc;
+    int rc = SSH_AUTH_ERROR;
     struct ssh_agent_state_struct *state;
     if (session == NULL) {
         return SSH_AUTH_ERROR;
