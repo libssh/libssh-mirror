@@ -92,7 +92,7 @@ static struct ssh_threads_callbacks_struct ssh_threads_pthread =
     .thread_id=ssh_pthread_thread_id
 };
 
-struct ssh_threads_callbacks_struct *ssh_threads_get_pthread(){
+struct ssh_threads_callbacks_struct *ssh_threads_get_pthread(void) {
 	return &ssh_threads_pthread;
 }
 

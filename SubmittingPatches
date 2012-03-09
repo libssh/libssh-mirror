@@ -9,7 +9,7 @@ https://red.libssh.org/
 For larger code changes, breaking the changes up into a set of simple
 patches, each of which does a single thing, are much easier to review.
 Patch sets like that will most likely have an easier time being merged
-into the Samba code than large single patches that make lots of
+into the libssh code than large single patches that make lots of
 changes in one large diff.
 
 Ownership of the contributed code
