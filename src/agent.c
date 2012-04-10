@@ -114,7 +114,8 @@ static size_t atomicio(ssh_socket s, void *buf, size_t n, int do_read) {
         }
         return 0;
     case 0:
-      errno = EPIPE;
+      /* read returns 0 on end-of-file */
+      errno = do_read ? 0 : EPIPE;
       return pos;
     default:
       pos += (size_t) res;
