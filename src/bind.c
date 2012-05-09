@@ -209,7 +209,8 @@ int ssh_bind_listen(ssh_bind sshbind) {
 
       if (ssh_key_type(sshbind->dsa) != SSH_KEYTYPE_DSS) {
           ssh_set_error(sshbind, SSH_FATAL,
-                  "The DSA host key has the wrong type: %d");
+                  "The DSA host key has the wrong type: %d",
+                  ssh_key_type(sshbind->dsa));
           ssh_key_free(sshbind->dsa);
           return SSH_ERROR;
       }
