@@ -190,6 +190,8 @@ void ssh_print_bignum(const char *which, bignum num) {
  * @param  len          Length of the buffer to convert.
  *
  * @return              The hex string or NULL on error.
+ *
+ * @see ssh_string_free_char()
  */
 char *ssh_get_hexa(const unsigned char *what, size_t len) {
   char *hexa = NULL;
