@@ -1913,8 +1913,9 @@ int ssh_userauth_kbdint(ssh_session session, const char *user,
 /**
  * @brief Get the number of prompts (questions) the server has given.
  *
- * You have called ssh_userauth_kbdint() and got SSH_AUTH_INFO. This
- * function returns the questions from the server.
+ * Once you have called ssh_userauth_kbdint() and received SSH_AUTH_INFO return
+ * code, this function can be used to retrieve information about the keyboard
+ * interactive authentication questions sent by the remote host.
  *
  * @param[in]  session  The ssh session to use.
  *
@@ -1933,8 +1934,9 @@ int ssh_userauth_kbdint_getnprompts(ssh_session session) {
 /**
  * @brief Get the "name" of the message block.
  *
- * You have called ssh_userauth_kbdint() and got SSH_AUTH_INFO. This
- * function returns the questions from the server.
+ * Once you have called ssh_userauth_kbdint() and received SSH_AUTH_INFO return
+ * code, this function can be used to retrieve information about the keyboard
+ * interactive authentication questions sent by the remote host.
  *
  * @param[in]  session  The ssh session to use.
  *
@@ -1953,8 +1955,9 @@ const char *ssh_userauth_kbdint_getname(ssh_session session) {
 /**
  * @brief Get the "instruction" of the message block.
  *
- * You have called ssh_userauth_kbdint() and got SSH_AUTH_INFO. This
- * function returns the questions from the server.
+ * Once you have called ssh_userauth_kbdint() and received SSH_AUTH_INFO return
+ * code, this function can be used to retrieve information about the keyboard
+ * interactive authentication questions sent by the remote host.
  *
  * @param[in]  session  The ssh session to use.
  *
@@ -1974,8 +1977,9 @@ const char *ssh_userauth_kbdint_getinstruction(ssh_session session) {
 /**
  * @brief Get a prompt from a message block.
  *
- * You have called ssh_userauth_kbdint() and got SSH_AUTH_INFO. This
- * function returns the questions from the server.
+ * Once you have called ssh_userauth_kbdint() and received SSH_AUTH_INFO return
+ * code, this function can be used to retrieve information about the keyboard
+ * interactive authentication questions sent by the remote host.
  *
  * @param[in]  session  The ssh session to use.
  *
