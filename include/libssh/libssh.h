@@ -211,6 +211,7 @@ enum ssh_publickey_state_e {
 #define SSH_CLOSED 0x01
 #define SSH_READ_PENDING 0x02
 #define SSH_CLOSED_ERROR 0x04
+#define SSH_WRITE_PENDING 0x08
 
 enum ssh_server_known_e {
 	SSH_SERVER_ERROR=-1,

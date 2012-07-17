@@ -527,9 +527,10 @@ int ssh_handle_packets_termination(ssh_session session, int timeout,
  *
  * @param session       The ssh session to use.
  *
- * @returns A bitmask including SSH_CLOSED, SSH_READ_PENDING or SSH_CLOSED_ERROR
- *          which respectively means the session is closed, has data to read on
- *          the connection socket and session was closed due to an error.
+ * @returns A bitmask including SSH_CLOSED, SSH_READ_PENDING, SSH_WRITE_PENDING
+ *          or SSH_CLOSED_ERROR which respectively means the session is closed,
+ *          has data to read on the connection socket and session was closed
+ *          due to an error.
  */
 int ssh_get_status(ssh_session session) {
   int socketstate;
@@ -546,6 +547,9 @@ int ssh_get_status(ssh_session session) {
   }
   if (socketstate & SSH_READ_PENDING) {
     r |= SSH_READ_PENDING;
+  }
+  if (socketstate & SSH_WRITE_PENDING) {
+      r |= SSH_WRITE_PENDING;
   }
   if (session->closed && (socketstate & SSH_CLOSED_ERROR)) {
     r |= SSH_CLOSED_ERROR;

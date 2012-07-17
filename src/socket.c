@@ -694,6 +694,10 @@ int ssh_socket_get_status(ssh_socket s) {
     r |= SSH_READ_PENDING;
   }
 
+  if (s->write_wontblock) {
+      r |= SSH_WRITE_PENDING;
+  }
+
   if (s->data_except) {
     r |= SSH_CLOSED_ERROR;
   }
