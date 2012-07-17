@@ -159,7 +159,7 @@ static int ssh_connect_ai_timeout(ssh_session session, const char *host,
   int timeout_ms;
   ssh_pollfd_t fds;
   int rc = 0;
-  unsigned int len = sizeof(rc);
+  socklen_t len = sizeof(rc);
 
   enter_function();
 
