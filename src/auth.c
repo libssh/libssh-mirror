@@ -2065,7 +2065,11 @@ const char *ssh_userauth_kbdint_getanswer(ssh_session session, unsigned int i) {
  *
  * @param[in]  i index  The number of the ith prompt.
  *
- * @param[in]  answer   The answer to give to the server.
+ * @param[in]  answer   The answer to give to the server. The answer MUST be
+ *                      encoded UTF-8. It is up to the server how to interpret
+ *                      the value and validate it. However, if you read the
+ *                      answer in some other encoding, you MUST convert it to
+ *                      UTF-8.
  *
  * @return              0 on success, < 0 on error.
  */
