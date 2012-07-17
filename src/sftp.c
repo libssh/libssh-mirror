@@ -2207,6 +2207,7 @@ int sftp_mkdir(sftp_session sftp, const char *directory, mode_t mode) {
       sftp_packet_write(sftp, SSH_FXP_MKDIR, buffer) < 0) {
     ssh_buffer_free(buffer);
     ssh_string_free(path);
+    return -1;
   }
   ssh_buffer_free(buffer);
   ssh_string_free(path);
