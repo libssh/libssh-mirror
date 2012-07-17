@@ -26,6 +26,7 @@
 #include <stdio.h>
 
 #ifndef _WIN32
+#include <netinet/in.h>
 #include <arpa/inet.h>
 #endif
 

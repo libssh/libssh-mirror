@@ -35,6 +35,7 @@
 #include <sys/stat.h>
 
 #ifndef _WIN32
+#include <netinet/in.h>
 #include <arpa/inet.h>
 #else
 #define S_IFSOCK 0140000

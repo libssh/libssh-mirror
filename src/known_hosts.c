@@ -47,6 +47,7 @@
 #endif /* HAVE_LIBCRYPTO */
 
 #ifndef _WIN32
+# include <netinet/in.h>
 # include <arpa/inet.h>
 #endif
 
