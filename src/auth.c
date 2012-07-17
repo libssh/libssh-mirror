@@ -1286,11 +1286,13 @@ int ssh_userauth_publickey_auto(ssh_session session,
  *
  * @param[in] password  The password to authenticate in UTF-8.
  *
- * @returns             A bitfield of the fllowing values:
- *                      - SSH_AUTH_METHOD_PASSWORD
- *                      - SSH_AUTH_METHOD_PUBLICKEY
- *                      - SSH_AUTH_METHOD_HOSTBASED
- *                      - SSH_AUTH_METHOD_INTERACTIVE
+ * @returns SSH_AUTH_ERROR:   A serious error happened.\n
+ *          SSH_AUTH_DENIED:  Authentication failed: use another method\n
+ *          SSH_AUTH_PARTIAL: You've been partially authenticated, you still
+ *                            have to use another method\n
+ *          SSH_AUTH_SUCCESS: Authentication success\n
+ *          SSH_AUTH_AGAIN:   In nonblocking mode, you've got to call this again
+ *                            later.
  *
  * @note Most server implementations do not permit changing the username during
  * authentication. The username should only be set with ssh_optoins_set() only
