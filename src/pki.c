@@ -434,7 +434,7 @@ int ssh_pki_import_privkey_file(const char *filename,
         return SSH_ERROR;
     }
 
-    file = fopen(filename, "r");
+    file = fopen(filename, "rb");
     if (file == NULL) {
         ssh_pki_log("Error opening %s: %s",
                     filename, strerror(errno));
