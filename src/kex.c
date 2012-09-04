@@ -65,10 +65,10 @@
 #endif
 
 #ifdef HAVE_ECDH
-#define KEY_EXCHANGE "ecdh-sha2-nistp256,diffie-hellman-group1-sha1"
+#define KEY_EXCHANGE "ecdh-sha2-nistp256,diffie-hellman-group14-sha1,diffie-hellman-group1-sha1"
 #define HOSTKEYS "ecdsa-sha2-nistp256,ssh-rsa,ssh-dss"
 #else
-#define KEY_EXCHANGE "diffie-hellman-group1-sha1"
+#define KEY_EXCHANGE "diffie-hellman-group14-sha1,diffie-hellman-group1-sha1"
 #define HOSTKEYS "ssh-rsa,ssh-dss"
 #endif
 
@@ -393,6 +393,8 @@ int ssh_kex_select_methods (ssh_session session){
     }
     if(strcmp(session->next_crypto->kex_methods[SSH_KEX], "diffie-hellman-group1-sha1") == 0){
       session->next_crypto->kex_type=SSH_KEX_DH_GROUP1_SHA1;
+    } else if(strcmp(session->next_crypto->kex_methods[SSH_KEX], "diffie-hellman-group14-sha1") == 0){
+      session->next_crypto->kex_type=SSH_KEX_DH_GROUP14_SHA1;
     } else if(strcmp(session->next_crypto->kex_methods[SSH_KEX], "ecdh-sha2-nistp256") == 0){
       session->next_crypto->kex_type=SSH_KEX_ECDH_SHA2_NISTP256;
     }

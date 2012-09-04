@@ -94,6 +94,7 @@ SSH_PACKET_CALLBACK(ssh_packet_dh_reply){
   }
   switch(session->next_crypto->kex_type){
     case SSH_KEX_DH_GROUP1_SHA1:
+    case SSH_KEX_DH_GROUP14_SHA1:
       rc=ssh_client_dh_reply(session, packet);
       break;
 #ifdef HAVE_ECDH
