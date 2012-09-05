@@ -1,6 +1,14 @@
 ChangeLog
 ==========
 
+version 0.5.x (released 2012-xx-xx)
+  * Added new PKI infrastructure.
+  * Added simplified user auth functions.
+  * Added ECDSA pubkey support.
+  * Added ECDSA hostkey support.
+  * Added diffie-hellman-group14-sha1 support.
+  * Fixed a ton of bugs.
+
 version 0.5.0 (released 2011-06-01)
   * Added ssh_ prefix to all functions.
   * Added complete Windows support.
