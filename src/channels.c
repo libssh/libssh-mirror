@@ -1616,7 +1616,7 @@ int ssh_channel_request_pty_size(ssh_channel channel, const char *terminal,
   enter_function();
 #ifdef WITH_SSH1
   if (channel->version==1) {
-    channel_request_pty_size1(channel,terminal, col, row);
+    rc = channel_request_pty_size1(channel,terminal, col, row);
     leave_function();
     return rc;
     }
