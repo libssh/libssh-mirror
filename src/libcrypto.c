@@ -415,6 +415,30 @@ static void des3_1_decrypt(struct ssh_cipher_struct *cipher, void *in,
 #endif
 }
 
+static int des1_set_key(struct ssh_cipher_struct *cipher, void *key, void *IV){
+  if(!cipher->key){
+    if (alloc_key(cipher) < 0) {
+      return -1;
+    }
+    DES_set_odd_parity(key);
+    DES_set_key_unchecked(key,cipher->key);
+  }
+  cipher->IV=IV;
+  return 0;
+}
+
+static void des1_1_encrypt(struct ssh_cipher_struct *cipher, void *in, void *out,
+                           unsigned long len){
+
+  DES_ncbc_encrypt(in, out, len, cipher->key, cipher->IV, 1);
+}
+
+static void des1_1_decrypt(struct ssh_cipher_struct *cipher, void *in, void *out,
+                           unsigned long len){
+
+  DES_ncbc_encrypt(in,out,len, cipher->key, cipher->IV, 0);
+}
+
 #endif /* HAS_DES */
 
 /*
@@ -538,6 +562,18 @@ static struct ssh_cipher_struct ssh_ciphertab[] = {
     des3_set_key,
     des3_1_encrypt,
     des3_1_decrypt
+  },
+  {
+    "des-cbc-ssh1",
+    8,
+    sizeof(DES_key_schedule),
+    NULL,
+    NULL,
+    64,
+    des1_set_key,
+    des1_set_key,
+    des1_1_encrypt,
+    des1_1_decrypt
   },
 #endif /* HAS_DES */
   {

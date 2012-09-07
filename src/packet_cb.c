@@ -143,7 +143,7 @@ SSH_PACKET_CALLBACK(ssh_packet_newkeys){
      * Set the cryptographic functions for the next crypto
      * (it is needed for generate_session_keys for key lengths)
      */
-    if (crypt_set_algorithms(session)) {
+    if (crypt_set_algorithms(session, SSH_3DES) /* knows nothing about DES*/ ) {
       goto error;
     }
 

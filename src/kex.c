@@ -56,6 +56,7 @@
 #endif
 
 #define DES "3des-cbc"
+#define SIMPLEDES "des-cbc-ssh1"
 #endif
 
 #ifdef WITH_ZLIB
@@ -93,6 +94,7 @@ const char *supported_methods[] = {
   HOSTKEYS,
   AES BLOWFISH DES,
   AES BLOWFISH DES,
+  SIMPLEDES,
   "hmac-sha1",
   "hmac-sha1",
   ZLIB,

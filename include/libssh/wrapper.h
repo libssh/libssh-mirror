@@ -38,6 +38,11 @@ enum ssh_hmac_e {
   SSH_HMAC_MD5
 };
 
+enum ssh_des_e {
+  SSH_3DES,
+  SSH_DES
+};
+
 typedef struct ssh_mac_ctx_struct *ssh_mac_ctx;
 MD5CTX md5_init(void);
 void md5_update(MD5CTX c, const void *data, unsigned long len);
@@ -58,7 +63,7 @@ HMACCTX hmac_init(const void *key,int len, enum ssh_hmac_e type);
 void hmac_update(HMACCTX c, const void *data, unsigned long len);
 void hmac_final(HMACCTX ctx,unsigned char *hashmacbuf,unsigned int *len);
 
-int crypt_set_algorithms(ssh_session );
+int crypt_set_algorithms(ssh_session session, enum ssh_des_e des_type);
 int crypt_set_algorithms_server(ssh_session session);
 struct ssh_crypto_struct *crypto_new(void);
 void crypto_free(struct ssh_crypto_struct *crypto);

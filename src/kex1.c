@@ -312,6 +312,8 @@ SSH_PACKET_CALLBACK(ssh_packet_publickey1){
   ssh_string enc_session = NULL;
   uint16_t bits;
   int ko;
+  uint32_t support_3DES = 0;
+  uint32_t support_DES = 0;
   enter_function();
   (void)type;
   (void)user;
@@ -397,7 +399,10 @@ SSH_PACKET_CALLBACK(ssh_packet_publickey1){
 
   /* now, we must choose an encryption algo */
   /* hardcode 3des */
-  if (!(supported_ciphers_mask & (1 << SSH_CIPHER_3DES))) {
+  //
+  support_3DES = (supported_ciphers_mask & (1<<SSH_CIPHER_3DES));
+  support_DES  = (supported_ciphers_mask & (1<<SSH_CIPHER_DES));
+  if(!support_3DES && !support_DES){
     ssh_set_error(session, SSH_FATAL, "Remote server doesn't accept 3DES");
     goto error;
   }
@@ -406,7 +411,7 @@ SSH_PACKET_CALLBACK(ssh_packet_publickey1){
    if (buffer_add_u8(session->out_buffer, SSH_CMSG_SESSION_KEY) < 0) {
      goto error;
    }
-   if (buffer_add_u8(session->out_buffer, SSH_CIPHER_3DES) < 0) {
+   if (buffer_add_u8(session->out_buffer, support_3DES ? SSH_CIPHER_3DES : SSH_CIPHER_DES) < 0) {
      goto error;
    }
    if (buffer_add_data(session->out_buffer, session->next_crypto->server_kex.cookie, 8) < 0) {
@@ -440,8 +445,8 @@ SSH_PACKET_CALLBACK(ssh_packet_publickey1){
    }
 
    /* we can set encryption */
-   if (crypt_set_algorithms(session)) {
-     goto error;
+   if(crypt_set_algorithms(session, support_3DES ? SSH_3DES : SSH_DES)){
+      goto error;
    }
 
    session->current_crypto = session->next_crypto;
