@@ -112,10 +112,15 @@ int channel_request_pty_size1(ssh_channel channel, const char *terminal, int col
   }
 
   ssh_log(session, SSH_LOG_FUNCTIONS, "Opening a ssh1 pty");
-
+  channel->request_state = SSH_CHANNEL_REQ_STATE_PENDING;
   if (packet_send(session) == SSH_ERROR) {
     return -1;
   }
+
+  while (channel->request_state == SSH_CHANNEL_REQ_STATE_PENDING) {
+      ssh_handle_packets(session, SSH_TIMEOUT_INFINITE);
+  }
+
   switch(channel->request_state){
     case SSH_CHANNEL_REQ_STATE_ERROR:
     case SSH_CHANNEL_REQ_STATE_PENDING:
