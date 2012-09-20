@@ -97,6 +97,7 @@ else (ZLIB_LIBRARIES AND ZLIB_INCLUDE_DIRS)
             zdll
             zlib
             zlib1
+            zlibd
         PATHS
             /usr/local/lib
             /opt/local/lib
