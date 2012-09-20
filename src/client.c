@@ -665,7 +665,7 @@ int ssh_connect(ssh_session session) {
   session->socket_callbacks.exception=ssh_socket_exception_callback;
   session->socket_callbacks.userdata=session;
   if (session->fd != SSH_INVALID_SOCKET) {
-    ssh_socket_set_fd(session->socket, session->fd);
+    ssh_socket_set_connecting(session->socket, session->fd);
     ret=SSH_OK;
 #ifndef _WIN32
   } else if (session->ProxyCommand != NULL){

@@ -701,6 +701,25 @@ int ssh_socket_get_status(ssh_socket s) {
   return r;
 }
 
+
+/**
+ * @internal
+ * @brief Set a socket into the connecting state
+ * @param s    socket handle
+ * @param fd   file descriptor
+ */
+
+void ssh_socket_set_connecting(ssh_socket s, int fd){
+	ssh_socket_set_fd(s,fd);
+	s->state=SSH_SOCKET_CONNECTING;
+	/* POLLOUT is the event to wait for in a nonblocking connect */
+	ssh_poll_set_events(ssh_socket_get_poll_handle_in(s),POLLOUT);
+#ifdef _WIN32
+	ssh_poll_add_events(ssh_socket_get_poll_handle_in(s),POLLWRNORM);
+#endif
+}
+
+
 /**
  * @internal
  * @brief Launches a socket connection
@@ -729,13 +748,7 @@ int ssh_socket_connect(ssh_socket s, const char *host, int port, const char *bin
 	ssh_log(session,SSH_LOG_PROTOCOL,"Nonblocking connection socket: %d",fd);
 	if(fd == SSH_INVALID_SOCKET)
 		return SSH_ERROR;
-	ssh_socket_set_fd(s,fd);
-	s->state=SSH_SOCKET_CONNECTING;
-	/* POLLOUT is the event to wait for in a nonblocking connect */
-	ssh_poll_set_events(ssh_socket_get_poll_handle_in(s),POLLOUT);
-#ifdef _WIN32
-	ssh_poll_add_events(ssh_socket_get_poll_handle_in(s),POLLWRNORM);
-#endif
+	ssh_socket_set_connecting(s,fd);
 	leave_function();
 	return SSH_OK;
 }
