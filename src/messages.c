@@ -947,7 +947,7 @@ end:
 
 /* TODO: make this function accept a ssh_channel */
 ssh_channel ssh_message_channel_request_open_reply_accept(ssh_message msg) {
-  ssh_session session = msg->session;
+  ssh_session session;
   ssh_channel chan = NULL;
 
   enter_function();
@@ -956,6 +956,8 @@ ssh_channel ssh_message_channel_request_open_reply_accept(ssh_message msg) {
     leave_function();
     return NULL;
   }
+
+  session = msg->session;
 
   chan = ssh_channel_new(session);
   if (chan == NULL) {
