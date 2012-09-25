@@ -352,7 +352,7 @@ int dh_generate_e(ssh_session session) {
 
 #ifdef HAVE_LIBGCRYPT
   bignum_mod_exp(session->next_crypto->e, g, session->next_crypto->x,
-      select_p(type));
+      select_p(session->next_crypto->kex_type));
 #elif defined HAVE_LIBCRYPTO
   bignum_mod_exp(session->next_crypto->e, g, session->next_crypto->x,
       select_p(session->next_crypto->kex_type), ctx);
