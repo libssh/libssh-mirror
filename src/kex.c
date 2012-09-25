@@ -36,27 +36,27 @@
 #include "libssh/string.h"
 
 #ifdef HAVE_LIBGCRYPT
-#define BLOWFISH "blowfish-cbc,"
-#define AES "aes256-ctr,aes192-ctr,aes128-ctr,aes256-cbc,aes192-cbc,aes128-cbc,"
-#define DES "3des-cbc"
-#elif defined HAVE_LIBCRYPTO
-#ifdef HAVE_OPENSSL_BLOWFISH_H
-#define BLOWFISH "blowfish-cbc,"
-#else
-#define BLOWFISH ""
-#endif
-#ifdef HAVE_OPENSSL_AES_H
-#ifdef BROKEN_AES_CTR
-#define AES "aes256-cbc,aes192-cbc,aes128-cbc,"
-#else
-#define AES "aes256-ctr,aes192-ctr,aes128-ctr,aes256-cbc,aes192-cbc,aes128-cbc,"
-#endif /* BROKEN_AES_CTR */
-#else
-#define AES ""
-#endif
-
-#define DES "3des-cbc"
-#define SIMPLEDES "des-cbc-ssh1"
+# define BLOWFISH "blowfish-cbc,"
+# define AES "aes256-ctr,aes192-ctr,aes128-ctr,aes256-cbc,aes192-cbc,aes128-cbc,"
+# define DES "3des-cbc"
+# define SIMPLEDES "des-cbc-ssh1"
+#elif defined(HAVE_LIBCRYPTO)
+# ifdef HAVE_OPENSSL_BLOWFISH_H
+#  define BLOWFISH "blowfish-cbc,"
+# else
+#  define BLOWFISH ""
+# endif
+# ifdef HAVE_OPENSSL_AES_H
+#  ifdef BROKEN_AES_CTR
+#   define AES "aes256-cbc,aes192-cbc,aes128-cbc,"
+#  else
+#   define AES "aes256-ctr,aes192-ctr,aes128-ctr,aes256-cbc,aes192-cbc,aes128-cbc,"
+#  endif /* BROKEN_AES_CTR */
+# else
+#  define AES ""
+#  endif
+# define DES "3des-cbc"
+# define SIMPLEDES "des-cbc-ssh1"
 #endif
 
 #ifdef WITH_ZLIB
