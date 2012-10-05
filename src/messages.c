@@ -1268,6 +1268,9 @@ SSH_PACKET_CALLBACK(ssh_packet_global_request){
     ssh_log(session,SSH_LOG_PROTOCOL,"Received SSH_MSG_GLOBAL_REQUEST packet");
 
     msg = ssh_message_new(session);
+    if (msg == NULL) {
+        return SSH_PACKET_NOT_USED;
+    }
     msg->type = SSH_REQUEST_GLOBAL;
 
     if (request && strcmp(request, "tcpip-forward") == 0) {
