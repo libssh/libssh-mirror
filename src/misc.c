@@ -659,7 +659,7 @@ char *ssh_path_expand_tilde(const char *d) {
         size_t s = p - d;
         char u[128];
 
-        if (s > sizeof(u)) {
+        if (s >= sizeof(u)) {
             return NULL;
         }
         memcpy(u, d, s);
