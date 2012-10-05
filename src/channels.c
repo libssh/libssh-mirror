@@ -1600,7 +1600,7 @@ error:
  */
 int ssh_channel_request_pty_size(ssh_channel channel, const char *terminal,
     int col, int row) {
-  ssh_session session = channel->session;
+  ssh_session session;
   ssh_string term = NULL;
   ssh_buffer buffer = NULL;
   int rc = SSH_ERROR;
@@ -1608,6 +1608,8 @@ int ssh_channel_request_pty_size(ssh_channel channel, const char *terminal,
   if(channel == NULL) {
       return SSH_ERROR;
   }
+  session = channel->session;
+
   if(terminal == NULL) {
       ssh_set_error_invalid(channel->session);
       return rc;
