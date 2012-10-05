@@ -893,6 +893,7 @@ sftp_dir sftp_opendir(sftp_session sftp, const char *path){
         dir = malloc(sizeof(struct sftp_dir_struct));
         if (dir == NULL) {
           ssh_set_error_oom(sftp->session);
+          free(file);
           return NULL;
         }
         ZERO_STRUCTP(dir);
