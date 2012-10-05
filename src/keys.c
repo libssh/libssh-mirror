@@ -88,6 +88,7 @@ ssh_public_key publickey_make_dss(ssh_session session, ssh_buffer buffer) {
     ssh_buffer_free(buffer);
     return NULL;
   }
+  ZERO_STRUCTP(key);
 
   key->type = SSH_KEYTYPE_DSS;
   key->type_c = ssh_type_to_char(key->type);
@@ -173,6 +174,7 @@ ssh_public_key publickey_make_rsa(ssh_session session, ssh_buffer buffer,
     ssh_buffer_free(buffer);
     return NULL;
   }
+  ZERO_STRUCTP(key);
 
   key->type = type;
   key->type_c = ssh_type_to_char(key->type);
@@ -897,6 +899,7 @@ SIGNATURE *signature_from_string(ssh_session session, ssh_string signature,
     ssh_set_error(session, SSH_FATAL, "Not enough space");
     return NULL;
   }
+  ZERO_STRUCTP(sign);
 
   tmpbuf = ssh_buffer_new();
   if (tmpbuf == NULL) {
@@ -1280,6 +1283,7 @@ ssh_string ssh_do_sign(ssh_session session, ssh_buffer sigbuf,
   if (sign == NULL) {
     return NULL;
   }
+  ZERO_STRUCTP(sign);
 
   switch(privatekey->type) {
     case SSH_KEYTYPE_DSS:
@@ -1436,6 +1440,7 @@ ssh_string ssh_sign_session_id(ssh_session session, ssh_private_key privatekey) 
   if (sign == NULL) {
     return NULL;
   }
+  ZERO_STRUCTP(sign);
 
   switch(privatekey->type) {
     case SSH_KEYTYPE_DSS:
