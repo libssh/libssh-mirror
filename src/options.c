@@ -112,6 +112,7 @@ int ssh_options_copy(ssh_session src, ssh_session *dest) {
 
             rc = ssh_list_append(new->opts.identity, id);
             if (rc < 0) {
+                free(id);
                 ssh_free(new);
                 return -1;
             }
