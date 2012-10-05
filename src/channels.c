@@ -1417,6 +1417,7 @@ static int channel_request(ssh_channel channel, const char *request,
       buffer_add_ssh_string(session->out_buffer, req) < 0 ||
       buffer_add_u8(session->out_buffer, reply == 0 ? 0 : 1) < 0) {
     ssh_set_error_oom(session);
+    ssh_string_free(req);
     goto error;
   }
   ssh_string_free(req);
@@ -1476,7 +1477,6 @@ static int channel_request(ssh_channel channel, const char *request,
   return rc;
 error:
   buffer_reinit(session->out_buffer);
-  ssh_string_free(req);
 
   leave_function();
   return rc;
