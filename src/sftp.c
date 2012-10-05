@@ -1165,8 +1165,8 @@ static char *sftp_parse_longname(const char *longname,
                    so that number of pairs equals extended_count              */
 static sftp_attributes sftp_parse_attr_3(sftp_session sftp, ssh_buffer buf,
     int expectname) {
-  ssh_string longname = NULL;
-  ssh_string name = NULL;
+  ssh_string longname;
+  ssh_string name;
   sftp_attributes attr;
   uint32_t flags = 0;
   int ok = 0;
@@ -1181,19 +1181,27 @@ static sftp_attributes sftp_parse_attr_3(sftp_session sftp, ssh_buffer buf,
   /* This isn't really a loop, but it is like a try..catch.. */
   do {
     if (expectname) {
-      if ((name = buffer_get_ssh_string(buf)) == NULL ||
-          (attr->name = ssh_string_to_char(name)) == NULL) {
-        break;
+      name = buffer_get_ssh_string(buf);
+      if (name == NULL) {
+          break;
       }
+      attr->name = ssh_string_to_char(name);
       ssh_string_free(name);
+      if (attr->name == NULL) {
+          break;
+      }
 
       ssh_log(sftp->session, SSH_LOG_RARE, "Name: %s", attr->name);
 
-      if ((longname=buffer_get_ssh_string(buf)) == NULL ||
-          (attr->longname=ssh_string_to_char(longname)) == NULL) {
+      longname = buffer_get_ssh_string(buf);
+      if (longname == NULL) {
+          break;
+      }
+      attr->longname = ssh_string_to_char(longname);
+      ssh_string_free(longname);
+      if (attr->longname == NULL) {
         break;
       }
-      ssh_string_free(longname);
 
       /* Set owner and group if we talk to openssh and have the longname */
       if (ssh_get_openssh_version(sftp->session)) {
@@ -1298,8 +1306,6 @@ static sftp_attributes sftp_parse_attr_3(sftp_session sftp, ssh_buffer buf,
 
   if (!ok) {
     /* break issued somewhere */
-    ssh_string_free(name);
-    ssh_string_free(longname);
     ssh_string_free(attr->extended_type);
     ssh_string_free(attr->extended_data);
     SAFE_FREE(attr->name);
