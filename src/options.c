@@ -541,6 +541,7 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
             }
             rc = ssh_list_prepend(session->opts.identity, q);
             if (rc < 0) {
+                free(q);
                 return -1;
             }
             break;
