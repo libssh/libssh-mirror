@@ -61,6 +61,7 @@ static int ssh_gets(const char *prompt, char *buf, size_t len, int verify) {
         }
         fflush(stdout);
         if (fgets(tmp, len, stdin) == NULL) {
+            free(tmp);
             return 0;
         }
 
