@@ -3046,10 +3046,14 @@ int ssh_channel_select(ssh_channel *readchans, ssh_channel *writechans,
       break;
     }
     /* Add all channels' sessions right into an event object */
-    if (!event){
+    if (event == NULL) {
       event = ssh_event_new();
-      if(!event){
-        return SSH_ERROR;
+      if (event == NULL) {
+          SAFE_FREE(rchans);
+          SAFE_FREE(wchans);
+          SAFE_FREE(echans);
+
+          return SSH_ERROR;
       }
       for (i = 0; readchans[i] != NULL; i++) {
         ssh_poll_get_default_ctx(readchans[i]->session);
