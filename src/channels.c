@@ -1495,10 +1495,15 @@ error:
  */
 int ssh_channel_request_pty_size(ssh_channel channel, const char *terminal,
     int col, int row) {
-  ssh_session session = channel->session;
+  ssh_session session;
   ssh_string term = NULL;
   ssh_buffer buffer = NULL;
   int rc = SSH_ERROR;
+
+  if (channel == NULL) {
+      return SSH_ERROR;
+  }
+  session = channel->session;
 
   enter_function();
 #ifdef WITH_SSH1
