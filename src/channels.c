@@ -2277,10 +2277,15 @@ error:
  */
 int channel_read_buffer(ssh_channel channel, ssh_buffer buffer, uint32_t count,
     int is_stderr) {
-  ssh_session session=channel->session;
+  ssh_session session;
   char buffer_tmp[8192];
   int r;
   uint32_t total=0;
+
+  if (channel == NULL) {
+      return SSH_ERROR;
+  }
+  session = channel->session;
 
   enter_function();
   buffer_reinit(buffer);
