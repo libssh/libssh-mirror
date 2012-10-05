@@ -760,11 +760,13 @@ char *ssh_path_expand_escape(ssh_session session, const char *s) {
             default:
                 ssh_set_error(session, SSH_FATAL,
                         "Wrong escape sequence detected");
+                free(r);
                 return NULL;
         }
 
         if (x == NULL) {
             ssh_set_error_oom(session);
+            free(r);
             return NULL;
         }
 
@@ -772,6 +774,8 @@ char *ssh_path_expand_escape(ssh_session session, const char *s) {
         if (i > MAX_BUF_SIZE) {
             ssh_set_error(session, SSH_FATAL,
                     "String too long");
+            free(x);
+            free(r);
             return NULL;
         }
         l = strlen(buf);
