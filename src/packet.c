@@ -128,12 +128,16 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
   int current_macsize = session->current_crypto ? MACSIZE : 0;
   unsigned char mac[30] = {0};
   char buffer[16] = {0};
-  void *packet=NULL;
+  const void *packet = NULL;
   int to_be_read;
   int rc;
   uint32_t len, compsize, payloadsize;
   uint8_t padding;
   size_t processed=0; /* number of byte processed from the callback */
+
+  if (data == NULL) {
+    goto error;
+  }
 
   enter_function();
   if (session->session_state == SSH_SESSION_STATE_ERROR)
@@ -194,7 +198,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
         	return processed;
         }
 
-        packet = (unsigned char *)data + processed;
+        packet = ((unsigned char *)data) + processed;
 //        ssh_socket_read(session->socket,packet,to_be_read-current_macsize);
 
         if (buffer_add_data(session->in_buffer, packet,
@@ -267,7 +271,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
       	/* Handle a potential packet left in socket buffer */
       	ssh_log(session,SSH_LOG_PACKET,"Processing %" PRIdS " bytes left in socket buffer",
       			receivedlen-processed);
-      	rc = ssh_packet_socket_callback((char *)data + processed,
+        rc = ssh_packet_socket_callback(((unsigned char *)data) + processed,
       			receivedlen - processed,user);
       	processed += rc;
       }
