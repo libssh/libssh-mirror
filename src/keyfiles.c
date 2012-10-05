@@ -1214,7 +1214,7 @@ ssh_string try_publickey_from_file(ssh_session session, struct ssh_keys_struct k
   const char *priv;
   const char *pub;
   char *new;
-  ssh_string pubkey=NULL;
+  ssh_string pubkey;
 
   pub = keytab.publickey;
   if (pub == NULL) {
@@ -1234,13 +1234,13 @@ ssh_string try_publickey_from_file(ssh_session session, struct ssh_keys_struct k
   ssh_log(session, SSH_LOG_PACKET, "Trying to open publickey %s", pub);
   if (!ssh_file_readaccess_ok(pub)) {
     ssh_log(session, SSH_LOG_PACKET, "Failed to open publickey %s", pub);
-    goto error;
+    return NULL;
   }
 
   ssh_log(session, SSH_LOG_PACKET, "Trying to open privatekey %s", priv);
   if (!ssh_file_readaccess_ok(priv)) {
     ssh_log(session, SSH_LOG_PACKET, "Failed to open privatekey %s", priv);
-    goto error;
+    return NULL;
   }
 
   ssh_log(session, SSH_LOG_PACKET, "Success opening public and private key");
@@ -1255,18 +1255,18 @@ ssh_string try_publickey_from_file(ssh_session session, struct ssh_keys_struct k
         "Wasn't able to open public key file %s: %s",
         pub,
         ssh_get_error(session));
-    goto error;
+    return NULL;
   }
 
   new = realloc(*privkeyfile, strlen(priv) + 1);
   if (new == NULL) {
     ssh_string_free(pubkey);
-    goto error;
+    return NULL;
   }
 
   strcpy(new, priv);
   *privkeyfile = new;
-error:
+
   return pubkey;
 }
 
