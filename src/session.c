@@ -146,6 +146,7 @@ ssh_session ssh_new(void) {
     return session;
 
 err:
+    free(id);
     ssh_free(session);
     return NULL;
 }
