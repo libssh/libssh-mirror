@@ -716,8 +716,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_response){
     if (session->kbdint == NULL) {
       ssh_set_error_oom(session);
 
-      leave_function();
-      return SSH_PACKET_USED;
+      goto error;
     }
   }
 
@@ -729,8 +728,8 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_response){
         nanswers, nanswers);
     ssh_kbdint_free(session->kbdint);
     session->kbdint = NULL;
-    leave_function();
-    return SSH_PACKET_USED;
+
+    goto error;
   }
 
   if(nanswers != session->kbdint->nprompts) {
@@ -745,8 +744,8 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_response){
     ssh_set_error_oom(session);
     ssh_kbdint_free(session->kbdint);
     session->kbdint = NULL;
-    leave_function();
-    return SSH_PACKET_USED;
+
+    goto error;
   }
   memset(session->kbdint->answers, 0, nanswers * sizeof(char *));
 
@@ -757,8 +756,8 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_response){
       session->kbdint->nanswers = i;
       ssh_kbdint_free(session->kbdint);
       session->kbdint = NULL;
-      leave_function();
-      return SSH_PACKET_USED;
+
+      goto error;
     }
     session->kbdint->answers[i] = ssh_string_to_char(tmp);
     ssh_string_free(tmp);
@@ -767,21 +766,18 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_response){
       session->kbdint->nanswers = i;
       ssh_kbdint_free(session->kbdint);
       session->kbdint = NULL;
-      leave_function();
-      return SSH_PACKET_USED;
+
+      goto error;
     }
   }
 
-  goto end;
+  ssh_message_queue(session,msg);
+  leave_function();
+  return SSH_PACKET_USED;
 
 error:
   ssh_message_free(msg);
 
-  leave_function();
-  return SSH_PACKET_USED;
-
-end:
-  ssh_message_queue(session,msg);
   leave_function();
   return SSH_PACKET_USED;
 }
