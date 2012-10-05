@@ -669,10 +669,18 @@ int sftp_extension_supported(sftp_session sftp, const char *name,
     const char *data) {
   int i, n;
 
+  if (sftp == NULL || name == NULL || data == NULL) {
+    return 0;
+  }
+
   n = sftp_extensions_get_count(sftp);
   for (i = 0; i < n; i++) {
-    if (strcmp(sftp_extensions_get_name(sftp, i), name) == 0 &&
-        strcmp(sftp_extensions_get_data(sftp, i), data) == 0) {
+    const char *ext_name = sftp_extensions_get_name(sftp, i);
+    const char *ext_data = sftp_extensions_get_data(sftp, i);
+
+    if (ext_name != NULL && ext_data != NULL &&
+        strcmp(ext_name, name) == 0 &&
+        strcmp(ext_data, data) == 0) {
       return 1;
     }
   }
