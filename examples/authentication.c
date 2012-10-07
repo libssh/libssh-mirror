@@ -86,7 +86,9 @@ int authenticate_kbdint(ssh_session session, const char *password) {
                     }
                     answer = buffer;
                 }
-                if (ssh_userauth_kbdint_setanswer(session, i, answer) < 0) {
+                err = ssh_userauth_kbdint_setanswer(session, i, answer);
+                memset(buffer, 0, sizeof(buffer));
+                if (err < 0) {
                     return SSH_AUTH_ERROR;
                 }
             }
@@ -152,6 +154,7 @@ int authenticate_console(ssh_session session){
         break;
       }
     }
+    memset(password, 0, sizeof(password));
   }
 
   banner = ssh_get_issue_banner(session);
