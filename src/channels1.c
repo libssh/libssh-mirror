@@ -50,11 +50,17 @@
  */
 
 int channel_open_session1(ssh_channel chan) {
+  ssh_session session;
+
+  if (chan == NULL) {
+    return -1;
+  }
+  session = chan->session;
+
   /*
    * We guess we are requesting an *exec* channel. It can only have one exec
    * channel. So we abort with an error if we need more than one.
    */
-  ssh_session session = chan->session;
   if (session->exec_channel_opened) {
     ssh_set_error(session, SSH_REQUEST_DENIED,
         "SSH1 supports only one execution channel. "
@@ -85,8 +91,14 @@ int channel_open_session1(ssh_channel chan) {
 
 int channel_request_pty_size1(ssh_channel channel, const char *terminal, int col,
     int row) {
-  ssh_session session = channel->session;
+  ssh_session session;
   ssh_string str = NULL;
+
+  if (channel == NULL) {
+    return SSH_ERROR;
+  }
+  session = channel->session;
+
   if(channel->request_state != SSH_CHANNEL_REQ_STATE_NONE){
     ssh_set_error(session,SSH_REQUEST_DENIED,"Wrong request state");
     return SSH_ERROR;
@@ -139,7 +151,13 @@ int channel_request_pty_size1(ssh_channel channel, const char *terminal, int col
 }
 
 int channel_change_pty_size1(ssh_channel channel, int cols, int rows) {
-  ssh_session session = channel->session;
+  ssh_session session;
+
+  if (channel == NULL) {
+    return SSH_ERROR;
+  }
+  session = channel->session;
+
   if(channel->request_state != SSH_CHANNEL_REQ_STATE_NONE){
     ssh_set_error(session,SSH_REQUEST_DENIED,"Wrong request state");
     return SSH_ERROR;
@@ -182,7 +200,12 @@ int channel_change_pty_size1(ssh_channel channel, int cols, int rows) {
 }
 
 int channel_request_shell1(ssh_channel channel) {
-  ssh_session session = channel->session;
+  ssh_session session;
+
+  if (channel == NULL) {
+    return -1;
+  }
+  session = channel->session;
 
   if (buffer_add_u8(session->out_buffer,SSH_CMSG_EXEC_SHELL) < 0) {
     return -1;
@@ -198,8 +221,13 @@ int channel_request_shell1(ssh_channel channel) {
 }
 
 int channel_request_exec1(ssh_channel channel, const char *cmd) {
-  ssh_session session = channel->session;
+  ssh_session session;
   ssh_string command = NULL;
+
+  if (channel == NULL) {
+    return -1;
+  }
+  session = channel->session;
 
   command = ssh_string_from_char(cmd);
   if (command == NULL) {
@@ -227,6 +255,11 @@ SSH_PACKET_CALLBACK(ssh_packet_data1){
     ssh_string str = NULL;
     int is_stderr=(type==SSH_SMSG_STDOUT_DATA ? 0 : 1);
     (void)user;
+
+    if (channel == NULL) {
+      return SSH_PACKET_NOT_USED;
+    }
+
     str = buffer_get_ssh_string(packet);
     if (str == NULL) {
       ssh_log(session, SSH_LOG_FUNCTIONS, "Invalid data packet !\n");
@@ -254,6 +287,10 @@ SSH_PACKET_CALLBACK(ssh_packet_close1){
   (void)type;
   (void)user;
 
+  if (channel == NULL) {
+    return SSH_PACKET_NOT_USED;
+  }
+
   buffer_get_u32(packet, &status);
   /*
    * It's much more than a channel closing. spec says it's the last
@@ -275,6 +312,11 @@ SSH_PACKET_CALLBACK(ssh_packet_exist_status1){
   uint32_t status;
   (void)type;
   (void)user;
+
+  if (channel == NULL) {
+    return SSH_PACKET_NOT_USED;
+  }
+
   buffer_get_u32(packet, &status);
   channel->state = SSH_CHANNEL_STATE_CLOSED;
   channel->remote_eof = 1;
@@ -285,10 +327,16 @@ SSH_PACKET_CALLBACK(ssh_packet_exist_status1){
 
 
 int channel_write1(ssh_channel channel, const void *data, int len) {
-  ssh_session session = channel->session;
+  ssh_session session;
   int origlen = len;
   int effectivelen;
   const unsigned char *ptr=data;
+
+  if (channel == NULL) {
+    return -1;
+  }
+  session = channel->session;
+
   while (len > 0) {
     if (buffer_add_u8(session->out_buffer, SSH_CMSG_STDIN_DATA) < 0) {
       return -1;
@@ -314,6 +362,11 @@ int channel_write1(ssh_channel channel, const void *data, int len) {
 
 ssh_channel ssh_get_channel1(ssh_session session){
   struct ssh_iterator *it;
+
+  if (session == NULL) {
+    return NULL;
+  }
+
   /* With SSH1, the channel is always the first one */
   if(session->channels != NULL){
     it = ssh_list_get_iterator(session->channels);
