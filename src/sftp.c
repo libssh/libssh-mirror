@@ -1834,12 +1834,17 @@ int sftp_async_read_begin(sftp_file file, uint32_t len){
 
 /* Wait for an asynchronous read to complete and save the data. */
 int sftp_async_read(sftp_file file, void *data, uint32_t size, uint32_t id){
-  sftp_session sftp = file->sftp;
+  sftp_session sftp;
   sftp_message msg = NULL;
   sftp_status_message status;
   ssh_string datastring;
   int err = SSH_OK;
   uint32_t len;
+
+  if (file == NULL) {
+    return SSH_ERROR;
+  }
+  sftp = file->sftp;
 
   if (file->eof) {
     return 0;
