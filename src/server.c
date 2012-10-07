@@ -95,8 +95,6 @@ static int server_set_kex(ssh_session session) {
 
 #ifdef HAVE_ECC
   if (session->srv.ecdsa_key != NULL) {
-      keytype = ssh_key_type(session->srv.ecdsa_key);
-
       snprintf(hostkeys, sizeof(hostkeys),
                "%s", session->srv.ecdsa_key->type_c);
   }
