@@ -92,8 +92,8 @@ install(
 add_subdirectory(examples)
 
 if (WITH_TESTING)
-  find_package(CMockery REQUIRED)
-  include(AddCMockeryTest)
+  find_package(CMocka REQUIRED)
+  include(AddCMockaTest)
   add_subdirectory(tests)
 endif (WITH_TESTING)
 
