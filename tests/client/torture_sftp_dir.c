@@ -37,12 +37,12 @@ static void teardown(void **state) {
 
 static void torture_sftp_mkdir(void **state) {
     struct torture_sftp *t = *state;
-    char tmpdir[128];
+    char tmpdir[128] = {0};
     int rc;
 
     assert_false(t == NULL);
 
-    snprintf(tmpdir, sizeof(tmpdir), "%s/mkdir_test", t->testdir);
+    snprintf(tmpdir, sizeof(tmpdir) - 1, "%s/mkdir_test", t->testdir);
 
     rc = sftp_mkdir(t->sftp, tmpdir, 0755);
     if(rc != SSH_OK)
