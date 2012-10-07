@@ -38,8 +38,7 @@
 #ifdef HAVE_LIBGCRYPT
 # define BLOWFISH "blowfish-cbc,"
 # define AES "aes256-ctr,aes192-ctr,aes128-ctr,aes256-cbc,aes192-cbc,aes128-cbc,"
-# define DES "3des-cbc"
-# define SIMPLEDES "des-cbc-ssh1"
+# define DES "3des-cbc,des-cbc-ssh1"
 #elif defined(HAVE_LIBCRYPTO)
 # ifdef HAVE_OPENSSL_BLOWFISH_H
 #  define BLOWFISH "blowfish-cbc,"
@@ -55,8 +54,7 @@
 # else
 #  define AES ""
 #  endif
-# define DES "3des-cbc"
-# define SIMPLEDES "des-cbc-ssh1"
+# define DES "3des-cbc,des-cbc-ssh1"
 #endif
 
 #ifdef WITH_ZLIB
@@ -75,6 +73,7 @@
 
 #define KEX_METHODS_SIZE 10
 
+/* NOTE: This is a fixed API and the index is defined by ssh_kex_types_e */
 static const char *default_methods[] = {
   KEY_EXCHANGE,
   HOSTKEYS,
@@ -89,12 +88,12 @@ static const char *default_methods[] = {
   NULL
 };
 
+/* NOTE: This is a fixed API and the index is defined by ssh_kex_types_e */
 const char *supported_methods[] = {
   KEY_EXCHANGE,
   HOSTKEYS,
   AES BLOWFISH DES,
   AES BLOWFISH DES,
-  SIMPLEDES,
   "hmac-sha1",
   "hmac-sha1",
   ZLIB,
