@@ -774,12 +774,16 @@ ssh_string pki_publickey_to_blob(const ssh_key key)
 
             ssh_string_burn(p);
             ssh_string_free(p);
+            p = NULL;
             ssh_string_burn(g);
             ssh_string_free(g);
+            g = NULL;
             ssh_string_burn(q);
             ssh_string_free(q);
+            q = NULL;
             ssh_string_burn(n);
             ssh_string_free(n);
+            n = NULL;
 
             break;
         case SSH_KEYTYPE_RSA:
@@ -803,8 +807,10 @@ ssh_string pki_publickey_to_blob(const ssh_key key)
 
             ssh_string_burn(e);
             ssh_string_free(e);
+            e = NULL;
             ssh_string_burn(n);
             ssh_string_free(n);
+            n = NULL;
 
             break;
         case SSH_KEYTYPE_ECDSA:
