@@ -295,7 +295,10 @@ int main(int argc, char **argv){
                 return 1;
             }
             if (buf[0] == '\x0d') {
-                write(1, "\n", 1);
+                if (write(1, "\n", 1) < 0) {
+                    printf("error writing to buffer\n");
+                    return 1;
+                }
                 ssh_channel_write(chan, "\n", 1);
             }
         }
