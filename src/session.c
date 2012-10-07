@@ -57,7 +57,7 @@
  */
 ssh_session ssh_new(void) {
   ssh_session session;
-  char *id;
+  char *id = NULL;
   int rc;
 
   session = malloc(sizeof (struct ssh_session_struct));
