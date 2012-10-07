@@ -855,11 +855,12 @@ ssh_string pki_publickey_to_blob(const ssh_key key)
 
             rc = buffer_add_ssh_string(buffer, e);
             if (rc < 0) {
-
-                ssh_string_burn(e);
-                ssh_string_free(e);
                 goto fail;
             }
+
+            ssh_string_burn(e);
+            ssh_string_free(e);
+            e = NULL;
 
             break;
 #endif
