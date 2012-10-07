@@ -509,7 +509,7 @@ const void *_ssh_list_pop_head(struct ssh_list *list){
  */
 char *ssh_dirname (const char *path) {
   char *new = NULL;
-  unsigned int len;
+  size_t len;
 
   if (path == NULL || *path == '\0') {
     return strdup(".");
@@ -565,7 +565,7 @@ char *ssh_dirname (const char *path) {
 char *ssh_basename (const char *path) {
   char *new = NULL;
   const char *s;
-  unsigned int len;
+  size_t len;
 
   if (path == NULL || *path == '\0') {
     return strdup(".");
