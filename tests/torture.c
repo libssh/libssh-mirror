@@ -156,6 +156,7 @@ ssh_session torture_ssh_session(const char *host,
                                 const char *user,
                                 const char *password) {
     ssh_session session;
+    int method;
     int rc;
 
     if (host == NULL) {
@@ -192,14 +193,20 @@ ssh_session torture_ssh_session(const char *host,
     if (rc == SSH_ERROR) {
         goto failed;
     }
-    if (!(ssh_auth_list(session) & SSH_AUTH_METHOD_INTERACTIVE)) {
+    method = ssh_userauth_list(session, NULL);
+    if (method == 0) {
         goto failed;
     }
 
     if (password != NULL) {
-        rc = _torture_auth_kbdint(session, password);
+        if (method & SSH_AUTH_METHOD_INTERACTIVE) {
+            rc = _torture_auth_kbdint(session, password);
+        }
+        if (method & SSH_AUTH_METHOD_PASSWORD) {
+            rc = ssh_userauth_password(session, NULL, password);
+        }
     } else {
-        rc = ssh_userauth_autopubkey(session, NULL);
+        rc = ssh_userauth_publickey_auto(session, NULL, NULL);
         if (rc == SSH_AUTH_ERROR) {
             goto failed;
         }
