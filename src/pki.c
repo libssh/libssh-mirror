@@ -648,9 +648,11 @@ static int pki_import_pubkey_buffer(ssh_buffer buffer,
                 }
 
                 rc = pki_pubkey_build_ecdsa(key, nid, e);
-
                 ssh_string_burn(e);
                 ssh_string_free(e);
+                if (rc < 0) {
+                    goto fail;
+                }
             }
             break;
 #endif
