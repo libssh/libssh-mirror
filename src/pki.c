@@ -876,6 +876,10 @@ int ssh_pki_generate(enum ssh_keytypes_e type, int parameter,
     int rc;
     ssh_key key = ssh_key_new();
 
+    if (key == NULL) {
+        return SSH_ERROR;
+    }
+
     key->type = type;
     key->type_c = ssh_key_type_to_char(type);
     key->flags = SSH_KEY_FLAG_PRIVATE | SSH_KEY_FLAG_PUBLIC;
