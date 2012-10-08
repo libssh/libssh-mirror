@@ -730,6 +730,7 @@ SSH_PACKET_CALLBACK(channel_rcv_request) {
                                                      sig,
                                                      channel->callbacks->userdata);
         }
+        SAFE_FREE(sig);
 
 		leave_function();
 		return SSH_PACKET_USED;
