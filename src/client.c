@@ -535,18 +535,21 @@ pending:
           timeout = 10 * 1000;
       }
       ssh_log(session,SSH_LOG_PACKET,"ssh_connect: Actual timeout : %d", timeout);
-      ssh_handle_packets_termination(session, timeout, ssh_connect_termination, session);
-      if(!ssh_connect_termination(session)){
+      ret = ssh_handle_packets_termination(session, timeout, ssh_connect_termination, session);
+      if (ret == SSH_ERROR || !ssh_connect_termination(session)) {
           ssh_set_error(session, SSH_FATAL,
                         "Timeout connecting to %s", session->opts.host);
           session->session_state = SSH_SESSION_STATE_ERROR;
       }
   }
   else {
-      ssh_handle_packets_termination(session,
-                                     SSH_TIMEOUT_NONBLOCKING,
-                                     ssh_connect_termination,
-                                     session);
+      ret = ssh_handle_packets_termination(session,
+                                           SSH_TIMEOUT_NONBLOCKING,
+                                           ssh_connect_termination,
+                                           session);
+      if (ret == SSH_ERROR) {
+          session->session_state = SSH_SESSION_STATE_ERROR;
+      }
   }
   ssh_log(session,SSH_LOG_PACKET,"ssh_connect: Actual state : %d",session->session_state);
   if(!ssh_is_blocking(session) && !ssh_connect_termination(session)){
