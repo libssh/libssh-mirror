@@ -214,8 +214,14 @@ char *ssh_get_user_home_dir(void) {
 
   rc = getpwuid_r(getuid(), &pwd, buf, NSS_BUFLEN_PASSWD, &pwdbuf);
   if (rc != 0) {
-    szPath=getenv("HOME");
-    return szPath ? strdup(szPath) : NULL;
+      szPath = getenv("HOME");
+      if (szPath == NULL) {
+          return NULL;
+      }
+      memset(buf, 0, sizeof(buf));
+      snprintf(buf, sizeof(buf), "%s", getenv("HOME"));
+
+      return strdup(buf);
   }
 
   szPath = strdup(pwd.pw_dir);
