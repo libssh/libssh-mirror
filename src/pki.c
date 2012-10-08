@@ -1356,9 +1356,7 @@ ssh_string ssh_pki_do_sign_agent(ssh_session session,
 ssh_string ssh_srv_pki_do_sign_sessionid(ssh_session session,
                                          const ssh_key privkey)
 {
-    struct ssh_crypto_struct *crypto =
-        session->current_crypto ? session->current_crypto :
-        session->next_crypto;
+    struct ssh_crypto_struct *crypto;
     unsigned char hash[SHA_DIGEST_LEN] = {0};
     ssh_signature sig;
     ssh_string sig_blob;
@@ -1368,6 +1366,8 @@ ssh_string ssh_srv_pki_do_sign_sessionid(ssh_session session,
     if (session == NULL || privkey == NULL || !ssh_key_is_private(privkey)) {
         return NULL;
     }
+    crypto = session->current_crypto ? session->current_crypto :
+                                       session->next_crypto;
 
     ctx = sha1_init();
     if (ctx == NULL) {
