@@ -580,16 +580,24 @@ static int ssh_message_auth_reply_default(ssh_message msg,int partial) {
     session->auth_methods = SSH_AUTH_METHOD_PUBLICKEY | SSH_AUTH_METHOD_PASSWORD;
   }
   if (session->auth_methods & SSH_AUTH_METHOD_PUBLICKEY) {
-    strcat(methods_c, "publickey,");
+    strncat(methods_c, "publickey,",
+            sizeof(methods_c) - strlen(methods_c) - 1);
   }
   if (session->auth_methods & SSH_AUTH_METHOD_INTERACTIVE) {
-    strcat(methods_c, "keyboard-interactive,");
+    strncat(methods_c, "keyboard-interactive,",
+            sizeof(methods_c) - strlen(methods_c) - 1);
   }
   if (session->auth_methods & SSH_AUTH_METHOD_PASSWORD) {
-    strcat(methods_c, "password,");
+    strncat(methods_c, "password,",
+            sizeof(methods_c) - strlen(methods_c) - 1);
   }
   if (session->auth_methods & SSH_AUTH_METHOD_HOSTBASED) {
-    strcat(methods_c, "hostbased,");
+    strncat(methods_c, "hostbased,",
+            sizeof(methods_c) - strlen(methods_c) - 1);
+  }
+
+  if (methods_c[0] == '\0' || strlen(methods_c) != ',') {
+      return SSH_ERROR;
   }
 
   /* Strip the comma. */
