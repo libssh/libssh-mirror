@@ -699,6 +699,10 @@ int ssh_message_service_reply_success(ssh_message msg) {
     return -1;
   }
   service=ssh_string_from_char(msg->service_request.service);
+  if (service == NULL) {
+      return -1;
+  }
+
   if (buffer_add_ssh_string(session->out_buffer, service) < 0) {
     ssh_string_free(service);
     return -1;
@@ -866,24 +870,39 @@ int ssh_message_auth_interactive_request(ssh_message msg, const char *name,
 
   /* name */
   tmp = ssh_string_from_char(name);
-  if (buffer_add_ssh_string(msg->session->out_buffer, tmp) < 0) {
+  if (tmp == NULL) {
+      return SSH_ERROR;
+  }
+
+  r = buffer_add_ssh_string(msg->session->out_buffer, tmp);
+  ssh_string_free(tmp);
+  if (r < 0) {
     return SSH_ERROR;
   }
-  ssh_string_free(tmp); tmp = NULL;
 
   /* instruction */
   tmp = ssh_string_from_char(instruction);
-  if (buffer_add_ssh_string(msg->session->out_buffer, tmp) < 0) {
+  if (tmp == NULL) {
+      return SSH_ERROR;
+  }
+
+  r = buffer_add_ssh_string(msg->session->out_buffer, tmp);
+  ssh_string_free(tmp);
+  if (r < 0) {
     return SSH_ERROR;
   }
-  ssh_string_free(tmp); tmp = NULL;
 
   /* language tag */
   tmp = ssh_string_from_char("");
-  if (buffer_add_ssh_string(msg->session->out_buffer, tmp) < 0) {
+  if (tmp == NULL) {
+      return SSH_ERROR;
+  }
+
+  r = buffer_add_ssh_string(msg->session->out_buffer, tmp);
+  ssh_string_free(tmp);
+  if (r < 0) {
     return SSH_ERROR;
   }
-  ssh_string_free(tmp); tmp = NULL;
 
   /* num prompts */
   if (buffer_add_u32(msg->session->out_buffer, ntohl(num_prompts)) < 0) {
@@ -893,10 +912,15 @@ int ssh_message_auth_interactive_request(ssh_message msg, const char *name,
   for(i = 0; i < num_prompts; i++) {
     /* prompt[i] */
     tmp = ssh_string_from_char(prompts[i]);
-    if (buffer_add_ssh_string(msg->session->out_buffer, tmp) < 0) {
+    if (tmp == NULL) {
+        return SSH_ERROR;
+    }
+
+    r = buffer_add_ssh_string(msg->session->out_buffer, tmp);
+    ssh_string_free(tmp);
+    if (r < 0) {
         goto error;
     }
-    ssh_string_free(tmp); tmp = NULL;
 
     /* echo[i] */
     if (buffer_add_u8(msg->session->out_buffer, echo[i]) < 0) {
