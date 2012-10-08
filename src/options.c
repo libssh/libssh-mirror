@@ -882,7 +882,11 @@ int ssh_options_get(ssh_session session, enum ssh_options_e type, char** value)
             break;
         }
         case SSH_OPTIONS_IDENTITY: {
-            src = ssh_iterator_value(char *, ssh_list_get_iterator(session->opts.identity));
+            struct ssh_iterator *it = ssh_list_get_iterator(session->opts.identity);
+            if (it == NULL) {
+                return SSH_ERROR;
+            }
+            src = ssh_iterator_value(char *, it);
             break;
         }
         default:
