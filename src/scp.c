@@ -517,7 +517,7 @@ int ssh_scp_read_string(ssh_scp scp, char *buffer, size_t len){
  * @see ssh_scp_request_get_warning()
  */
 int ssh_scp_pull_request(ssh_scp scp){
-  char buffer[4096];
+  char buffer[4096] = {0};
   char *mode=NULL;
   char *p,*tmp;
   uint64_t size;
