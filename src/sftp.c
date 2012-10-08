@@ -966,12 +966,23 @@ static sftp_attributes sftp_parse_attr_4(sftp_session sftp, ssh_buffer buf,
     }
 
     if (flags & SSH_FILEXFER_ATTR_OWNERGROUP) {
-      if((owner = buffer_get_ssh_string(buf)) == NULL ||
-        (attr->owner = ssh_string_to_char(owner)) == NULL) {
+      owner = buffer_get_ssh_string(buf);
+      if (owner == NULL) {
         break;
       }
-      if ((group = buffer_get_ssh_string(buf)) == NULL ||
-        (attr->group = ssh_string_to_char(group)) == NULL) {
+      attr->owner = ssh_string_to_char(owner);
+      string_free(owner);
+      if (attr->owner == NULL) {
+        break;
+      }
+
+      group = buffer_get_ssh_string(buf);
+      if (group == NULL) {
+        break;
+      }
+      attr->group = ssh_string_to_char(group);
+      string_free(group);
+      if (attr->group == NULL) {
         break;
       }
     }
@@ -1074,8 +1085,6 @@ static sftp_attributes sftp_parse_attr_4(sftp_session sftp, ssh_buffer buf,
 
   if (ok == 0) {
     /* break issued somewhere */
-    ssh_string_free(owner);
-    ssh_string_free(group);
     ssh_string_free(attr->acl);
     ssh_string_free(attr->extended_type);
     ssh_string_free(attr->extended_data);
