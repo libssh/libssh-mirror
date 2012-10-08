@@ -593,7 +593,7 @@ int ssh_client_dh_init(ssh_session session){
 }
 
 int ssh_client_dh_reply(ssh_session session, ssh_buffer packet){
-  ssh_string f = NULL;
+  ssh_string f;
   ssh_string pubkey = NULL;
   ssh_string signature = NULL;
   int rc;
@@ -609,13 +609,14 @@ int ssh_client_dh_reply(ssh_session session, ssh_buffer packet){
     ssh_set_error(session,SSH_FATAL, "No F number in packet");
     goto error;
   }
-  if (dh_import_f(session, f) < 0) {
+  rc = dh_import_f(session, f);
+  ssh_string_burn(f);
+  ssh_string_free(f);
+  if (rc < 0) {
     ssh_set_error(session, SSH_FATAL, "Cannot import f number");
     goto error;
   }
-  ssh_string_burn(f);
-  ssh_string_free(f);
-  f=NULL;
+
   signature = buffer_get_ssh_string(packet);
   if (signature == NULL) {
     ssh_set_error(session, SSH_FATAL, "No signature in packet");
