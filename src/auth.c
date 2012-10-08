@@ -566,7 +566,7 @@ int ssh_userauth_try_publickey(ssh_session session,
 
     /* algo */
     str = ssh_string_from_char(pubkey->type_c);
-    if (rc < 0) {
+    if (str == NULL) {
         goto fail;
     }
 
@@ -728,7 +728,7 @@ int ssh_userauth_publickey(ssh_session session,
 
     /* algo */
     str = ssh_string_from_char(privkey->type_c);
-    if (rc < 0) {
+    if (str == NULL) {
         goto fail;
     }
 
@@ -864,7 +864,7 @@ static int ssh_userauth_agent_publickey(ssh_session session,
 
     /* algo */
     str = ssh_string_from_char(pubkey->type_c);
-    if (rc < 0) {
+    if (str == NULL) {
         goto fail;
     }
 
@@ -1388,7 +1388,7 @@ int ssh_userauth_password(ssh_session session,
 
     /* password */
     str = ssh_string_from_char(password);
-    if (rc < 0) {
+    if (str == NULL) {
         goto fail;
     }
 
@@ -1614,7 +1614,7 @@ static int ssh_userauth_kbdint_init(ssh_session session,
     }
 
     str = ssh_string_from_char(submethods);
-    if (rc < 0) {
+    if (str == NULL) {
         goto fail;
     }
 
