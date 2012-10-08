@@ -295,12 +295,14 @@ int ssh_agent_get_ident_count(struct ssh_session_struct *session) {
 
   reply = ssh_buffer_new();
   if (reply == NULL) {
+    ssh_buffer_free(request);
     ssh_set_error(session, SSH_FATAL, "Not enough space");
     return -1;
   }
 
   if (agent_talk(session, request, reply) < 0) {
     ssh_buffer_free(request);
+    ssh_buffer_free(reply);
     return 0;
   }
   ssh_buffer_free(request);
@@ -440,6 +442,7 @@ ssh_string ssh_agent_sign_data(ssh_session session,
 
     /* create request */
     if (buffer_add_u8(request, SSH2_AGENTC_SIGN_REQUEST) < 0) {
+        ssh_buffer_free(request);
         return NULL;
     }
 
@@ -482,6 +485,7 @@ ssh_string ssh_agent_sign_data(ssh_session session,
     /* send the request */
     if (agent_talk(session, request, reply) < 0) {
         ssh_buffer_free(request);
+        ssh_buffer_free(reply);
         return NULL;
     }
     ssh_buffer_free(request);
