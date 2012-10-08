@@ -106,16 +106,17 @@ int ssh_userauth_privatekey_file(ssh_session session,
   ssh_private_key privkey = NULL;
   int type = 0;
   int rc = SSH_AUTH_ERROR;
+  size_t klen = strlen(filename) + 4 + 1;
 
   enter_function();
 
-  pubkeyfile = malloc(strlen(filename) + 1 + 4);
+  pubkeyfile = malloc(klen);
   if (pubkeyfile == NULL) {
     ssh_set_error_oom(session);
     leave_function();
     return SSH_AUTH_ERROR;
   }
-  sprintf(pubkeyfile, "%s.pub", filename);
+  snprintf(pubkeyfile, klen, "%s.pub", filename);
 
   pubkey = publickey_from_file(session, pubkeyfile, &type);
   if (pubkey == NULL) {
