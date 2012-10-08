@@ -1741,15 +1741,16 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_request) {
   tmp = buffer_get_ssh_string(packet);
   buffer_get_u32(packet, &nprompts);
 
-  if (name == NULL || instruction == NULL || tmp == NULL) {
+  /* We don't care about tmp */
+  ssh_string_free(tmp);
+
+  if (name == NULL || instruction == NULL) {
     ssh_string_free(name);
     ssh_string_free(instruction);
-    /* tmp if empty if we got here */
     ssh_set_error(session, SSH_FATAL, "Invalid USERAUTH_INFO_REQUEST msg");
     leave_function();
     return SSH_PACKET_USED;
   }
-  ssh_string_free(tmp);
 
   if (session->kbdint == NULL) {
     session->kbdint = ssh_kbdint_new();
@@ -1770,6 +1771,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_request) {
   if (session->kbdint->name == NULL) {
     ssh_set_error_oom(session);
     ssh_kbdint_free(session->kbdint);
+    ssh_string_free(instruction);
     leave_function();
     return SSH_PACKET_USED;
   }
