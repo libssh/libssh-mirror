@@ -450,80 +450,71 @@ static ssh_buffer ssh_msg_userauth_build_digest(ssh_session session,
  * SSH Message
  */
 SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
-  ssh_string user_s = NULL;
-  ssh_string service = NULL;
-  ssh_string method = NULL;
+  ssh_string str;
   ssh_message msg = NULL;
-  char *service_c = NULL;
-  char *method_c = NULL;
+  char *service = NULL;
+  char *method = NULL;
   uint32_t method_size = 0;
 
   enter_function();
 
   (void)user;
   (void)type;
+
   msg = ssh_message_new(session);
   if (msg == NULL) {
     ssh_set_error_oom(session);
     goto error;
   }
-
-  user_s = buffer_get_ssh_string(packet);
-  if (user_s == NULL) {
-    goto error;
-  }
-  service = buffer_get_ssh_string(packet);
-  if (service == NULL) {
-    goto error;
-  }
-  method = buffer_get_ssh_string(packet);
-  if (method == NULL) {
-    goto error;
-  }
-
   msg->type = SSH_REQUEST_AUTH;
-  msg->auth_request.username = ssh_string_to_char(user_s);
+
+  str = buffer_get_ssh_string(packet);
+  if (str == NULL) {
+      goto error;
+  }
+  msg->auth_request.username = ssh_string_to_char(str);
+  ssh_string_free(str);
   if (msg->auth_request.username == NULL) {
-    goto error;
+      goto error;
   }
-  ssh_string_free(user_s);
-  user_s = NULL;
 
-  service_c = ssh_string_to_char(service);
-  if (service_c == NULL) {
-    goto error;
+  str = buffer_get_ssh_string(packet);
+  if (str == NULL) {
+      goto error;
   }
-  method_c = ssh_string_to_char(method);
-  if (method_c == NULL) {
-    goto error;
+  service = ssh_string_to_char(str);
+  ssh_string_free(str);
+  if (service == NULL) {
+      goto error;
   }
-  method_size = ssh_string_len(method);
 
-  ssh_string_free(service);
-  service = NULL;
-  ssh_string_free(method);
-  method = NULL;
+  str = buffer_get_ssh_string(packet);
+  if (str == NULL) {
+      goto error;
+  }
+  method = ssh_string_to_char(str);
+  method_size = ssh_string_len(str);
+  ssh_string_free(str);
+  if (method == NULL) {
+      goto error;
+  }
 
   ssh_log(session, SSH_LOG_PACKET,
       "Auth request for service %s, method %s for user '%s'",
-      service_c, method_c,
+      service, method,
       msg->auth_request.username);
 
 
-  if (strncmp(method_c, "none", method_size) == 0) {
+  if (strncmp(method, "none", method_size) == 0) {
     msg->auth_request.method = SSH_AUTH_METHOD_NONE;
-    SAFE_FREE(service_c);
-    SAFE_FREE(method_c);
     goto end;
   }
 
-  if (strncmp(method_c, "password", method_size) == 0) {
+  if (strncmp(method, "password", method_size) == 0) {
     ssh_string pass = NULL;
     uint8_t tmp;
 
     msg->auth_request.method = SSH_AUTH_METHOD_PASSWORD;
-    SAFE_FREE(service_c);
-    SAFE_FREE(method_c);
     buffer_get_u8(packet, &tmp);
     pass = buffer_get_ssh_string(packet);
     if (pass == NULL) {
@@ -539,13 +530,11 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
     goto end;
   }
 
-  if (strncmp(method_c, "keyboard-interactive", method_size) == 0) {
+  if (strncmp(method, "keyboard-interactive", method_size) == 0) {
     ssh_string lang = NULL;
     ssh_string submethods = NULL;
 
     msg->auth_request.method = SSH_AUTH_METHOD_INTERACTIVE;
-    SAFE_FREE(service_c);
-    SAFE_FREE(method_c);
     lang = buffer_get_ssh_string(packet);
     if (lang == NULL) {
       goto error;
@@ -571,14 +560,14 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
     goto end;
   }
 
-  if (strncmp(method_c, "publickey", method_size) == 0) {
+  if (strncmp(method, "publickey", method_size) == 0) {
     ssh_string algo = NULL;
     ssh_string pubkey_blob = NULL;
     uint8_t has_sign;
     int rc;
 
     msg->auth_request.method = SSH_AUTH_METHOD_PUBLICKEY;
-    SAFE_FREE(method_c);
+    SAFE_FREE(method);
     buffer_get_u8(packet, &has_sign);
     algo = buffer_get_ssh_string(packet);
     if (algo == NULL) {
@@ -612,7 +601,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
             goto error;
         }
 
-        digest = ssh_msg_userauth_build_digest(session, msg, service_c);
+        digest = ssh_msg_userauth_build_digest(session, msg, service);
         if (digest == NULL) {
             ssh_string_free(sig_blob);
             ssh_log(session, SSH_LOG_PACKET, "Failed to get digest");
@@ -639,26 +628,24 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
 
         msg->auth_request.signature_state = SSH_PUBLICKEY_STATE_VALID;
     }
-    SAFE_FREE(service_c);
     goto end;
   }
 
   msg->auth_request.method = SSH_AUTH_METHOD_UNKNOWN;
-  SAFE_FREE(method_c);
+  SAFE_FREE(method);
   goto end;
 error:
-  ssh_string_free(user_s);
-  ssh_string_free(service);
-  ssh_string_free(method);
-
-  SAFE_FREE(method_c);
-  SAFE_FREE(service_c);
+  SAFE_FREE(service);
+  SAFE_FREE(method);
 
   ssh_message_free(msg);
 
   leave_function();
   return SSH_PACKET_USED;
 end:
+  SAFE_FREE(service);
+  SAFE_FREE(method);
+
   ssh_message_queue(session,msg);
   leave_function();
   return SSH_PACKET_USED;
