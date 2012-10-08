@@ -247,6 +247,7 @@ socket_t ssh_connect_host(ssh_session session, const char *host,
             "Failed to resolve bind address %s (%s)",
             bind_addr,
             gai_strerror(rc));
+        close(s);
         leave_function();
         return -1;
       }
