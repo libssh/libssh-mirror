@@ -375,8 +375,14 @@ error:
 int ssh_packet_send_unimplemented(ssh_session session, uint32_t seqnum){
   int r;
   enter_function();
-  buffer_add_u8(session->out_buffer, SSH2_MSG_UNIMPLEMENTED);
-  buffer_add_u32(session->out_buffer, htonl(seqnum));
+  r = buffer_add_u8(session->out_buffer, SSH2_MSG_UNIMPLEMENTED);
+  if (r < 0) {
+    return SSH_ERROR;
+  }
+  r = buffer_add_u32(session->out_buffer, htonl(seqnum));
+  if (r < 0) {
+    return SSH_ERROR;
+  }
   r = packet_send(session);
   leave_function();
   return r;
