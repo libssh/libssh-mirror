@@ -559,6 +559,9 @@ int ssh_write_knownhost(ssh_session session) {
     if(session->opts.port != 22) {
         hostport = ssh_hostport(host, session->opts.port);
         SAFE_FREE(host);
+        if (hostport == NULL) {
+            return SSH_ERROR;
+        }
         host = hostport;
         hostport = NULL;
     }
@@ -566,18 +569,21 @@ int ssh_write_knownhost(ssh_session session) {
     if (session->opts.knownhosts == NULL) {
         if (ssh_options_apply(session) < 0) {
             ssh_set_error(session, SSH_FATAL, "Can't find a known_hosts file");
+            SAFE_FREE(host);
             return SSH_ERROR;
         }
     }
 
     if (session->current_crypto==NULL) {
         ssh_set_error(session, SSH_FATAL, "No current crypto context");
+        SAFE_FREE(host);
         return SSH_ERROR;
     }
 
     pubkey_s = session->current_crypto->server_pubkey;
     if (pubkey_s == NULL){
         ssh_set_error(session, SSH_FATAL, "No public key present");
+        SAFE_FREE(host);
         return SSH_ERROR;
     }
 
@@ -585,6 +591,7 @@ int ssh_write_knownhost(ssh_session session) {
     dir = ssh_dirname(session->opts.knownhosts);
     if (dir == NULL) {
         ssh_set_error(session, SSH_FATAL, "%s", strerror(errno));
+        SAFE_FREE(host);
         return SSH_ERROR;
     }
 
@@ -593,6 +600,7 @@ int ssh_write_knownhost(ssh_session session) {
             ssh_set_error(session, SSH_FATAL,
                     "Cannot create %s directory.", dir);
             SAFE_FREE(dir);
+            SAFE_FREE(host);
             return SSH_ERROR;
         }
     }
