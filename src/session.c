@@ -673,6 +673,7 @@ error:
  */
 int ssh_send_debug (ssh_session session, const char *message, int always_display) {
     ssh_string str;
+    int rc;
 
     if (ssh_socket_is_open(session->socket)) {
         if (buffer_add_u8(session->out_buffer, SSH2_MSG_DEBUG) < 0) {
@@ -688,8 +689,9 @@ int ssh_send_debug (ssh_session session, const char *message, int always_display
             goto error;
         }
 
-        if (buffer_add_ssh_string(session->out_buffer,str) < 0) {
-            ssh_string_free(str);
+        rc = buffer_add_ssh_string(session->out_buffer, str);
+        ssh_string_free(str);
+        if (rc < 0) {
             goto error;
         }
 
@@ -700,8 +702,6 @@ int ssh_send_debug (ssh_session session, const char *message, int always_display
 
         packet_send(session);
         ssh_handle_packets(session, 0);
-
-        ssh_string_free(str);
     }
 
     return SSH_OK;
