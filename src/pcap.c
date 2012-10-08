@@ -163,12 +163,28 @@ int ssh_pcap_file_write_packet(ssh_pcap_file pcap, ssh_buffer packet, uint32_t o
 	if(header == NULL)
 		return SSH_ERROR;
 	gettimeofday(&now,NULL);
-	buffer_add_u32(header,htonl(now.tv_sec));
-	buffer_add_u32(header,htonl(now.tv_usec));
-	buffer_add_u32(header,htonl(buffer_get_rest_len(packet)));
-	buffer_add_u32(header,htonl(original_len));
-	buffer_add_buffer(header,packet);
+    err = buffer_add_u32(header,htonl(now.tv_sec));
+    if (err < 0) {
+        goto error;
+    }
+    err = buffer_add_u32(header,htonl(now.tv_usec));
+    if (err < 0) {
+        goto error;
+    }
+    err = buffer_add_u32(header,htonl(buffer_get_rest_len(packet)));
+    if (err < 0) {
+        goto error;
+    }
+    err = buffer_add_u32(header,htonl(original_len));
+    if (err < 0) {
+        goto error;
+    }
+    err = buffer_add_buffer(header,packet);
+    if (err < 0) {
+        goto error;
+    }
 	err=ssh_pcap_file_write(pcap,header);
+error:
 	ssh_buffer_free(header);
 	return err;
 }
@@ -191,18 +207,40 @@ int ssh_pcap_file_open(ssh_pcap_file pcap, const char *filename){
 	header=ssh_buffer_new();
 	if(header==NULL)
 		return SSH_ERROR;
-	buffer_add_u32(header,htonl(PCAP_MAGIC));
-	buffer_add_u16(header,htons(PCAP_VERSION_MAJOR));
-	buffer_add_u16(header,htons(PCAP_VERSION_MINOR));
+    err = buffer_add_u32(header,htonl(PCAP_MAGIC));
+    if (err < 0) {
+        goto error;
+    }
+    err = buffer_add_u16(header,htons(PCAP_VERSION_MAJOR));
+    if (err < 0) {
+        goto error;
+    }
+    err = buffer_add_u16(header,htons(PCAP_VERSION_MINOR));
+    if (err < 0) {
+        goto error;
+    }
 	/* currently hardcode GMT to 0 */
-	buffer_add_u32(header,htonl(0));
+    err = buffer_add_u32(header,htonl(0));
+    if (err < 0) {
+        goto error;
+    }
 	/* accuracy */
-	buffer_add_u32(header,htonl(0));
+    err = buffer_add_u32(header,htonl(0));
+    if (err < 0) {
+        goto error;
+    }
 	/* size of the biggest packet */
-	buffer_add_u32(header,htonl(MAX_PACKET_LEN));
+    err = buffer_add_u32(header,htonl(MAX_PACKET_LEN));
+    if (err < 0) {
+        goto error;
+    }
 	/* we will write sort-of IP */
-	buffer_add_u32(header,htonl(DLT_RAW));
+    err = buffer_add_u32(header,htonl(DLT_RAW));
+    if (err < 0) {
+        goto error;
+    }
 	err=ssh_pcap_file_write(pcap,header);
+error:
 	ssh_buffer_free(header);
 	return err;
 }
@@ -317,64 +355,143 @@ int ssh_pcap_context_write(ssh_pcap_context ctx,enum ssh_pcap_direction directio
 	}
 	/* build an IP packet */
 	/* V4, 20 bytes */
-	buffer_add_u8(ip,4 << 4 | 5);
+    err = buffer_add_u8(ip,4 << 4 | 5);
+    if (err < 0) {
+        goto error;
+    }
 	/* tos */
-	buffer_add_u8(ip,0);
+    err = buffer_add_u8(ip,0);
+    if (err < 0) {
+        goto error;
+    }
 	/* total len */
-	buffer_add_u16(ip,htons(origlen + TCPIPHDR_LEN));
+    err = buffer_add_u16(ip,htons(origlen + TCPIPHDR_LEN));
+    if (err < 0) {
+        goto error;
+    }
 	/* IP id number */
-	buffer_add_u16(ip,htons(ctx->file->ipsequence));
+    err = buffer_add_u16(ip,htons(ctx->file->ipsequence));
+    if (err < 0) {
+        goto error;
+    }
 	ctx->file->ipsequence++;
 	/* fragment offset */
-	buffer_add_u16(ip,htons(0));
+    err = buffer_add_u16(ip,htons(0));
+    if (err < 0) {
+        goto error;
+    }
 	/* TTL */
-	buffer_add_u8(ip,64);
+    err = buffer_add_u8(ip,64);
+    if (err < 0) {
+        goto error;
+    }
 	/* protocol TCP=6 */
-	buffer_add_u8(ip,6);
+    err = buffer_add_u8(ip,6);
+    if (err < 0) {
+        goto error;
+    }
 	/* checksum */
-	buffer_add_u16(ip,0);
+    err = buffer_add_u16(ip,0);
+    if (err < 0) {
+        goto error;
+    }
 	if(direction==SSH_PCAP_DIR_OUT){
-		buffer_add_u32(ip,ctx->ipsource);
-		buffer_add_u32(ip,ctx->ipdest);
+        err = buffer_add_u32(ip,ctx->ipsource);
+        if (err < 0) {
+            goto error;
+        }
+        err = buffer_add_u32(ip,ctx->ipdest);
+        if (err < 0) {
+            goto error;
+        }
 	} else {
-		buffer_add_u32(ip,ctx->ipdest);
-		buffer_add_u32(ip,ctx->ipsource);
+        err = buffer_add_u32(ip,ctx->ipdest);
+        if (err < 0) {
+            goto error;
+        }
+        err = buffer_add_u32(ip,ctx->ipsource);
+        if (err < 0) {
+            goto error;
+        }
 	}
 	/* TCP */
 	if(direction==SSH_PCAP_DIR_OUT){
-		buffer_add_u16(ip,ctx->portsource);
-		buffer_add_u16(ip,ctx->portdest);
+	    err = buffer_add_u16(ip,ctx->portsource);
+        if (err < 0) {
+            goto error;
+        }
+	    err = buffer_add_u16(ip,ctx->portdest);
+        if (err < 0) {
+            goto error;
+        }
 	} else {
-		buffer_add_u16(ip,ctx->portdest);
-		buffer_add_u16(ip,ctx->portsource);
+	    err = buffer_add_u16(ip,ctx->portdest);
+        if (err < 0) {
+            goto error;
+        }
+	    err = buffer_add_u16(ip,ctx->portsource);
+        if (err < 0) {
+            goto error;
+        }
 	}
 	/* sequence number */
 	if(direction==SSH_PCAP_DIR_OUT){
-		buffer_add_u32(ip,ntohl(ctx->outsequence));
+	    err = buffer_add_u32(ip,ntohl(ctx->outsequence));
+        if (err < 0) {
+            goto error;
+        }
 		ctx->outsequence+=origlen;
 	} else {
-		buffer_add_u32(ip,ntohl(ctx->insequence));
+	    err = buffer_add_u32(ip,ntohl(ctx->insequence));
+        if (err < 0) {
+            goto error;
+        }
 		ctx->insequence+=origlen;
 	}
 	/* ack number */
 	if(direction==SSH_PCAP_DIR_OUT){
-		buffer_add_u32(ip,ntohl(ctx->insequence));
+	    err = buffer_add_u32(ip,ntohl(ctx->insequence));
+        if (err < 0) {
+            goto error;
+        }
 	} else {
-		buffer_add_u32(ip,ntohl(ctx->outsequence));
+	    err = buffer_add_u32(ip,ntohl(ctx->outsequence));
+        if (err < 0) {
+            goto error;
+        }
 	}
 	/* header len = 20 = 5 * 32 bits, at offset 4*/
-	buffer_add_u8(ip,5 << 4);
+    err = buffer_add_u8(ip,5 << 4);
+    if (err < 0) {
+        goto error;
+    }
 	/* flags */
-	buffer_add_u8(ip,TH_PUSH | TH_ACK);
+    err = buffer_add_u8(ip,TH_PUSH | TH_ACK);
+    if (err < 0) {
+        goto error;
+    }
 	/* window */
-	buffer_add_u16(ip,htons(65535));
+    err = buffer_add_u16(ip,htons(65535));
+    if (err < 0) {
+        goto error;
+    }
 	/* checksum */
-	buffer_add_u16(ip,htons(0));
+    err = buffer_add_u16(ip,htons(0));
+    if (err < 0) {
+        goto error;
+    }
 	/* urgent data ptr */
-	buffer_add_u16(ip,0);
+    err = buffer_add_u16(ip,0);
+    if (err < 0) {
+        goto error;
+    }
 	/* actual data */
-	buffer_add_data(ip,data,len);
+    err = buffer_add_data(ip,data,len);
+    if (err < 0) {
+        goto error;
+    }
 	err=ssh_pcap_file_write_packet(ctx->file,ip,origlen + TCPIPHDR_LEN);
+error:
 	ssh_buffer_free(ip);
 	return err;
 }
