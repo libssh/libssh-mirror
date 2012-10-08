@@ -216,6 +216,7 @@ sftp_client_message sftp_get_client_message(sftp_session sftp) {
         sftp_client_message_free(msg);
         return NULL;
       }
+      break;
     case SSH_FXP_FSTAT:
       msg->handle = buffer_get_ssh_string(payload);
       if (msg->handle == NULL) {
