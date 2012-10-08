@@ -164,7 +164,7 @@ const char *ssh_string_get_char(struct ssh_string_struct *s)
 char *ssh_string_to_char(struct ssh_string_struct *s) {
 	size_t len;
 	char *new;
-    if (s == NULL || s->data == NULL)
+    if (s == NULL)
 		return NULL;
   len = ssh_string_len(s) + 1;
   new = malloc(len);
@@ -196,17 +196,23 @@ void ssh_string_free_char(char *s) {
  */
 struct ssh_string_struct *ssh_string_copy(struct ssh_string_struct *s) {
   struct ssh_string_struct *new;
+  size_t len;
 
-  if (s == NULL || s->data == NULL) {
+  if (s == NULL) {
       return NULL;
   }
 
-  new = ssh_string_new(ssh_string_len(s));
+  len = ssh_string_len(s);
+  if (len == 0) {
+      return NULL;
+  }
+
+  new = ssh_string_new(len);
   if (new == NULL) {
     return NULL;
   }
 
-  memcpy(new->data, s->data, ssh_string_len(s));
+  memcpy(new->data, s->data, len);
 
   return new;
 }
