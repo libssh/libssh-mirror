@@ -562,7 +562,7 @@ static int pki_import_pubkey_buffer(ssh_buffer buffer,
                     goto fail;
                 }
                 pubkey = buffer_get_ssh_string(buffer);
-                if (g == NULL) {
+                if (pubkey == NULL) {
                     ssh_string_burn(p);
                     ssh_string_free(p);
                     ssh_string_burn(q);
