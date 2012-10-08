@@ -459,7 +459,6 @@ int ssh_connect(ssh_session session) {
   int ret;
 
   if (session == NULL) {
-    ssh_set_error(session, SSH_FATAL, "Invalid session pointer");
     return SSH_ERROR;
   }
 
