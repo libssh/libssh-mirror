@@ -485,6 +485,7 @@ ssh_string publickey_from_file(ssh_session session, const char *filename,
 
     rc = ssh_pki_export_pubkey_blob(key, &key_str);
     if (rc < 0) {
+        ssh_key_free(key);
         return NULL;
     }
 
