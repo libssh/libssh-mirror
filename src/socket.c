@@ -278,7 +278,10 @@ int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p, socket_t fd, int r
 		}
 		if(r>0){
 			/* Bufferize the data and then call the callback */
-			buffer_add_data(s->in_buffer,buffer,r);
+            r = buffer_add_data(s->in_buffer,buffer,r);
+            if (r < 0) {
+                return -1;
+            }
 			if(s->callbacks && s->callbacks->data){
 				r= s->callbacks->data(buffer_get_rest(s->in_buffer),
 						buffer_get_rest_len(s->in_buffer),
