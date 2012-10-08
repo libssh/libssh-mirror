@@ -251,23 +251,22 @@ void ssh_print_bignum(const char *which, bignum num) {
  * @see ssh_string_free_char()
  */
 char *ssh_get_hexa(const unsigned char *what, size_t len) {
-  char *hexa = NULL;
+  const char h[] = "0123456789abcdef";
+  char *hexa;
   size_t i;
+  size_t hlen = len * 3;
 
-  hexa = malloc(len * 3 + 1);
+  hexa = malloc(hlen + 1);
   if (hexa == NULL) {
     return NULL;
   }
 
-  ZERO_STRUCTP(hexa);
-
   for (i = 0; i < len; i++) {
-    char hex[4];
-    snprintf(hex, sizeof(hex), "%02x:", what[i]);
-    strcat(hexa, hex);
+      hexa[i * 3] = h[(what[i] >> 4) & 0xF];
+      hexa[i * 3 + 1] = h[what[i] & 0xF];
+      hexa[i * 3 + 2] = ':';
   }
-
-  hexa[(len * 3) - 1] = '\0';
+  hexa[hlen - 1] = '\0';
 
   return hexa;
 }
