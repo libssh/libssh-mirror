@@ -838,6 +838,7 @@ int ssh_pki_import_pubkey_file(const char *filename, ssh_key *pkey)
                     filename, strerror(errno));
         return SSH_ERROR;
     }
+    key_buf[size] = '\0';
 
     q = p = key_buf;
     while (!isspace((int)*p)) p++;
