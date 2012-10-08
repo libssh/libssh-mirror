@@ -47,31 +47,10 @@ static char *proxycommand;
 
 static int auth_callback(const char *prompt, char *buf, size_t len,
     int echo, int verify, void *userdata) {
-  char *answer = NULL;
-  char *ptr;
+    (void) verify;
+    (void) userdata;
 
-  (void) verify;
-  (void) userdata;
-
-  if (echo) {
-    while ((answer = fgets(buf, len, stdin)) == NULL);
-    if ((ptr = strchr(buf, '\n'))) {
-      *ptr = '\0';
-    }
-  } else {
-    if (ssh_getpass(prompt, buf, len, 0, 0) < 0) {
-        return -1;
-    }
-    return 0;
-  }
-
-  if (answer == NULL) {
-    return -1;
-  }
-
-  strncpy(buf, answer, len);
-
-  return 0;
+    return ssh_getpass(prompt, buf, len, echo, verify);
 }
 
 struct ssh_callbacks_struct cb = {
