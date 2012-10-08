@@ -1227,6 +1227,7 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
 #endif
         case SSH_KEYTYPE_UNKNOWN:
             ssh_pki_log("Unknown signature type");
+            ssh_signature_free(sig);
             return NULL;
     }
 
@@ -1391,6 +1392,7 @@ ssh_signature pki_do_sign_sessionid(const ssh_key key,
             break;
 #endif
         case SSH_KEYTYPE_UNKNOWN:
+            ssh_signature_free(sig);
             return NULL;
     }
 
