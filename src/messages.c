@@ -1198,7 +1198,7 @@ int ssh_message_handle_channel_request(ssh_session session, ssh_channel channel,
     goto end;
   }
 
-  msg->channel_request.type = SSH_CHANNEL_UNKNOWN;
+  msg->channel_request.type = SSH_CHANNEL_REQUEST_UNKNOWN;
 end:
   ssh_message_queue(session,msg);
   leave_function();
