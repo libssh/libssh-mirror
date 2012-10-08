@@ -777,7 +777,7 @@ char *ssh_path_expand_escape(ssh_session session, const char *s) {
             return NULL;
         }
         l = strlen(buf);
-        strcat(buf + l, x);
+        strncpy(buf + l, x, sizeof(buf) - l - 1);
         buf[i] = '\0';
         SAFE_FREE(x);
     }
