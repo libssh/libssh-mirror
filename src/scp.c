@@ -419,7 +419,11 @@ int ssh_scp_write(ssh_scp scp, const void *buffer, size_t len){
   if(scp->processed + len > scp->filelen)
     len = (size_t) (scp->filelen - scp->processed);
   /* hack to avoid waiting for window change */
-  ssh_channel_poll(scp->channel,0);
+  r = ssh_channel_poll(scp->channel, 0);
+  if (r == SSH_ERROR) {
+      scp->state = SSH_SCP_ERROR;
+      return SSH_ERROR;
+  }
   w=ssh_channel_write(scp->channel,buffer,len);
   if(w != SSH_ERROR)
     scp->processed += w;
