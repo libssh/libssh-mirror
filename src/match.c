@@ -46,10 +46,14 @@
  * and * as wildcards), and zero if it does not match.
  */
 static int match_pattern(const char *s, const char *pattern) {
+  if (s == NULL || pattern == NULL) {
+    return 0;
+  }
+
   for (;;) {
     /* If at end of pattern, accept if also at end of string. */
-    if (!*pattern) {
-      return !*s;
+    if (*pattern == '\0') {
+        return (*s == '\0');
     }
 
     if (*pattern == '*') {
