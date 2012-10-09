@@ -6,6 +6,16 @@
    ...
    fun:regcomp
 }
+{
+   glibc_getaddrinfo_leak
+   Memcheck:Leak
+   fun:malloc
+   fun:make_request
+   fun:__check_pf
+   fun:getaddrinfo
+   fun:getai
+   fun:ssh_connect_host_nonblocking
+}
 
 ### OPENSSL
 {
