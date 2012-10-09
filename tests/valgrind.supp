@@ -89,3 +89,8 @@
    fun:*alloc
    fun:CRYPTO_*
 }
+{
+   openssl_CRYPTO_leak
+   Memcheck:Cond
+   fun:OPENSSL_cleanse
+}
