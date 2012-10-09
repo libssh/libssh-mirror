@@ -201,8 +201,7 @@ ssh_session torture_ssh_session(const char *host,
     if (password != NULL) {
         if (method & SSH_AUTH_METHOD_INTERACTIVE) {
             rc = _torture_auth_kbdint(session, password);
-        }
-        if (method & SSH_AUTH_METHOD_PASSWORD) {
+        } else if (method & SSH_AUTH_METHOD_PASSWORD) {
             rc = ssh_userauth_password(session, NULL, password);
         }
     } else {
