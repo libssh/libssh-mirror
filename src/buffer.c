@@ -111,13 +111,18 @@ void ssh_buffer_free(struct ssh_buffer_struct *buffer) {
   SAFE_FREE(buffer);
 }
 
-static int realloc_buffer(struct ssh_buffer_struct *buffer, int needed) {
-  int smallest = 1;
-  char *new = NULL;
+static int realloc_buffer(struct ssh_buffer_struct *buffer, size_t needed) {
+  size_t smallest = 1;
+  char *new;
+
   buffer_verify(buffer);
+
   /* Find the smallest power of two which is greater or equal to needed */
   while(smallest <= needed) {
-    smallest <<= 1;
+      if (smallest == 0) {
+          return -1;
+      }
+      smallest <<= 1;
   }
   needed = smallest;
   new = realloc(buffer->data, needed);
