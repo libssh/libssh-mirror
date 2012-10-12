@@ -173,7 +173,7 @@ int ssh_options_set_algo(ssh_session session, int algo,
   if (!verify_existing_algo(algo, list)) {
     ssh_set_error(session, SSH_REQUEST_DENIED,
         "Setting method: no algorithm for method \"%s\" (%s)\n",
-        ssh_kex_nums[algo], list);
+        ssh_kex_get_description(algo), list);
     return -1;
   }
 
@@ -1205,7 +1205,7 @@ static int ssh_bind_options_set_algo(ssh_bind sshbind, int algo,
   if (!verify_existing_algo(algo, list)) {
     ssh_set_error(sshbind, SSH_REQUEST_DENIED,
         "Setting method: no algorithm for method \"%s\" (%s)\n",
-        ssh_kex_nums[algo], list);
+        ssh_kex_get_description(algo), list);
     return -1;
   }
 

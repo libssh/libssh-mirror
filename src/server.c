@@ -127,7 +127,7 @@ static int server_set_kex(ssh_session session) {
 
   for (i = 0; i < 10; i++) {
     if ((wanted = session->opts.wanted_methods[i]) == NULL) {
-      wanted = supported_methods[i];
+      wanted = ssh_kex_get_supported_method(i);
     }
     server->methods[i] = strdup(wanted);
     if (server->methods[i] == NULL) {

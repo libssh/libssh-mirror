@@ -89,7 +89,7 @@ static const char *default_methods[] = {
 };
 
 /* NOTE: This is a fixed API and the index is defined by ssh_kex_types_e */
-const char *supported_methods[] = {
+static const char *supported_methods[] = {
   KEY_EXCHANGE,
   HOSTKEYS,
   AES BLOWFISH DES,
@@ -104,7 +104,7 @@ const char *supported_methods[] = {
 };
 
 /* descriptions of the key exchange packet */
-const char *ssh_kex_nums[] = {
+static const char *ssh_kex_descriptions[] = {
   "kex algos",
   "server host key algo",
   "encryption client->server",
@@ -202,6 +202,22 @@ char **space_tokenize(const char *chain){
     }
     tokens[i]=NULL;
     return tokens;
+}
+
+const char *ssh_kex_get_supported_method(uint32_t algo) {
+  if (algo >= KEX_METHODS_SIZE) {
+    return NULL;
+  }
+
+  return supported_methods[algo];
+}
+
+const char *ssh_kex_get_description(uint32_t algo) {
+  if (algo >= KEX_METHODS_SIZE) {
+    return NULL;
+  }
+
+  return ssh_kex_descriptions[algo];
 }
 
 /* find_matching gets 2 parameters : a list of available objects (available_d), separated by colons,*/
@@ -344,7 +360,7 @@ void ssh_list_kex(ssh_session session, struct ssh_kex_struct *kex) {
       continue;
     }
     ssh_log(session, SSH_LOG_FUNCTIONS, "%s: %s",
-        ssh_kex_nums[i], kex->methods[i]);
+        ssh_kex_descriptions[i], kex->methods[i]);
   }
 }
 
@@ -385,7 +401,7 @@ int ssh_kex_select_methods (ssh_session session){
         session->next_crypto->kex_methods[i]=ssh_find_matching(server->methods[i],client->methods[i]);
         if(session->next_crypto->kex_methods[i] == NULL && i < SSH_LANG_C_S){
             ssh_set_error(session,SSH_FATAL,"kex error : no match for method %s: server [%s], client [%s]",
-                    ssh_kex_nums[i],server->methods[i],client->methods[i]);
+                    ssh_kex_descriptions[i],server->methods[i],client->methods[i]);
             goto error;
         } else if ((i >= SSH_LANG_C_S) && (session->next_crypto->kex_methods[i] == NULL)) {
             /* we can safely do that for languages */
