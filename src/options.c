@@ -804,7 +804,7 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
  *
  * @param  session An allocated SSH session structure.
  *
- * @param  unsigned int An unsigned integer into which the
+ * @param  port_target An unsigned integer into which the
  *         port will be set from the ssh session.
  *
  * @return       0 on success, < 0 on error.
