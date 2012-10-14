@@ -36,7 +36,12 @@ endfunction()
 if(CMAKE_COMPILER_IS_GNUCC AND NOT MINGW AND NOT OS2)
     compiler_dumpversion(GNUCC_VERSION)
     if (NOT GNUCC_VERSION EQUAL 34)
-        check_c_compiler_flag("-fvisibility=hidden" WITH_VISIBILITY_HIDDEN)
+        set(CMAKE_REQUIRED_FLAGS "-fvisibility=hidden")
+        check_c_source_compiles(
+"void __attribute__((visibility(\"default\"))) test() {}
+int main(void){ return 0; }
+" WITH_VISIBILITY_HIDDEN)
+        set(CMAKE_REQUIRED_FLAGS "")
     endif (NOT GNUCC_VERSION EQUAL 34)
 endif(CMAKE_COMPILER_IS_GNUCC AND NOT MINGW AND NOT OS2)
 
