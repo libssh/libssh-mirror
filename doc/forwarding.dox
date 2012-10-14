@@ -85,7 +85,7 @@ this tutorial.
 
 @subsection libssh_direct Doing direct port forwarding with libssh
 
-To do direct port forwarding, call function channel_open_forward():
+To do direct port forwarding, call function ssh_channel_open_forward():
   - you need a separate channel for the tunnel as first parameter;
   - second and third parameters are the remote endpoint;
   - fourth and fifth parameters are sent to the remote server
@@ -110,9 +110,9 @@ int direct_forwarding(ssh_session session)
       return rc;
   }
 
-  rc = channel_open_forward(forwarding_channel,
-                            "www.google.com", 80,
-                            "localhost", 5555);
+  rc = ssh_channel_open_forward(forwarding_channel,
+                                "www.google.com", 80,
+                                "localhost", 5555);
   if (rc != SSH_OK)
   {
     ssh_channel_free(forwarding_channel);
@@ -120,7 +120,7 @@ int direct_forwarding(ssh_session session)
   }
 
   nbytes = strlen(http_get);
-  nwritten = channel_write(forwarding_channel,
+  nwritten = ssh_channel_write(forwarding_channel,
                            http_get,
                            nbytes);
   if (nbytes != nwritten)
