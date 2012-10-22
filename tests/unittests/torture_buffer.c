@@ -84,12 +84,45 @@ static void torture_buffer_prepend(void **state) {
 
 }
 
+/*
+ * Test the behavior of buffer_get_ssh_string with invalid data
+ */
+static void torture_buffer_get_ssh_string(void **state) {
+  ssh_buffer buffer;
+  int i,j,k,l;
+  /* some values that can go wrong */
+  uint32_t values[] = {0xffffffff, 0xfffffffe, 0xfffffffc, 0xffffff00,
+      0x80000000, 0x80000004, 0x7fffffff};
+  char data[128];
+  (void)state;
+  memset(data,'X',sizeof(data));
+  for(i=0; i < (int)(sizeof(values)/sizeof(values[0]));++i){
+    for(j=0; j< (int)sizeof(data);++j){
+      for(k=1;k<5;++k){
+        buffer=buffer_new();
+        for(l=0;l<k;++l){
+          buffer_add_u32(buffer,htonl(values[i]));
+        }
+        buffer_add_data(buffer,data,j);
+        for(l=0;l<k;++l){
+          ssh_string str = buffer_get_ssh_string(buffer);
+          assert_true(str==NULL);
+        }
+        buffer_free(buffer);
+      }
+    }
+  }
+}
+
+
+
 int torture_run_tests(void) {
     int rc;
     const UnitTest tests[] = {
         unit_test_setup_teardown(torture_growing_buffer, setup, teardown),
         unit_test_setup_teardown(torture_growing_buffer_shifting, setup, teardown),
         unit_test_setup_teardown(torture_buffer_prepend, setup, teardown),
+        unit_test(torture_buffer_get_ssh_string),
     };
 
     ssh_init();
