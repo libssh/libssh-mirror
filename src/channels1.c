@@ -62,6 +62,7 @@ int channel_open_session1(ssh_channel chan) {
     return -1;
   }
   session->exec_channel_opened = 1;
+  chan->request_state = SSH_CHANNEL_REQ_STATE_ACCEPTED;
   chan->state = SSH_CHANNEL_STATE_OPEN;
   chan->local_maxpacket = 32000;
   chan->local_window = 64000;
