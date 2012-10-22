@@ -124,6 +124,7 @@ pending:
   case SSH_AUTH_SUCCESS:
     session->auth_service_state=SSH_AUTH_SERVICE_USER_SENT;
     session->auth_state=SSH_AUTH_STATE_SUCCESS;
+    ssh_set_error(session, SSH_NO_ERROR, "Authentication successful");
     return SSH_AUTH_SUCCESS;
   case SSH_AUTH_DENIED:
     session->auth_service_state=SSH_AUTH_SERVICE_USER_SENT;
