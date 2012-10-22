@@ -164,10 +164,20 @@ void ssh_free(ssh_session session) {
     return;
   }
 
-  SAFE_FREE(session->serverbanner);
-  SAFE_FREE(session->clientbanner);
-  SAFE_FREE(session->bindaddr);
-  SAFE_FREE(session->banner);
+  /* delete all channels */
+  while ((it=ssh_list_get_iterator(session->channels)) != NULL) {
+    ssh_channel_free(ssh_iterator_value(ssh_channel,it));
+    ssh_list_remove(session->channels, it);
+  }
+  ssh_list_free(session->channels);
+  session->channels=NULL;
+
+  ssh_socket_free(session->socket);
+
+  if (session->default_poll_ctx) {
+      ssh_poll_ctx_free(session->default_poll_ctx);
+  }
+
 #ifdef WITH_PCAP
   if(session->pcap_ctx){
   	ssh_pcap_context_free(session->pcap_ctx);
@@ -183,17 +193,6 @@ void ssh_free(ssh_session session) {
   session->in_buffer=session->out_buffer=NULL;
   crypto_free(session->current_crypto);
   crypto_free(session->next_crypto);
-  ssh_socket_free(session->socket);
-  if(session->default_poll_ctx){
-  	ssh_poll_ctx_free(session->default_poll_ctx);
-  }
-  /* delete all channels */
-  while ((it=ssh_list_get_iterator(session->channels)) != NULL) {
-    ssh_channel_free(ssh_iterator_value(ssh_channel,it));
-    ssh_list_remove(session->channels, it);
-  }
-  ssh_list_free(session->channels);
-  session->channels=NULL;
 #ifndef _WIN32
   agent_free(session->agent);
 #endif /* _WIN32 */
@@ -235,6 +234,11 @@ void ssh_free(ssh_session session) {
     }
     ssh_list_free(session->identity);
   }
+
+  SAFE_FREE(session->serverbanner);
+  SAFE_FREE(session->clientbanner);
+  SAFE_FREE(session->bindaddr);
+  SAFE_FREE(session->banner);
 
   /* options */
   SAFE_FREE(session->username);
