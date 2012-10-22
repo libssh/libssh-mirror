@@ -1233,7 +1233,9 @@ int channel_write_common(ssh_channel channel, const void *data,
   /* it's a good idea to flush the socket now */
   do {
     rc = ssh_handle_packets(session, timeout);
-  } while(ssh_socket_buffered_write_bytes(session->socket) > 0 && timeout != 0);
+  } while(rc == SSH_OK &&
+          timeout != 0 &&
+          ssh_socket_buffered_write_bytes(session->socket) > 0);
 out:
   leave_function();
   return (int)(origlen - len);
