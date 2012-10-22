@@ -108,6 +108,7 @@ static int send_username(ssh_session session, const char *username) {
   if(wait_auth1_status(session) == SSH_AUTH_SUCCESS){
     session->auth_service_state=SSH_AUTH_SERVICE_USER_SENT;
     session->auth_state=SSH_AUTH_STATE_SUCCESS;
+    ssh_set_error(session, SSH_NO_ERROR, "Authentication successful");
     return SSH_AUTH_SUCCESS;
   } else {
     session->auth_service_state=SSH_AUTH_SERVICE_USER_SENT;
