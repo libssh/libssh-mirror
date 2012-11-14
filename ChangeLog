@@ -1,6 +1,21 @@
 ChangeLog
 ==========
 
+version 0.5.3 (released 2012-11-20)
+  * CVE-2012-4559 Fixed multiple double free() flaws.
+  * CVE-2012-4560 Fixed multiple buffer overflow flaws.
+  * CVE-2012-4561 Fixed multiple invalid free() flaws.
+  * BUG #84 - Fix bug in sftp_mkdir not returning on error.
+  * BUG #85 - Fixed a possible channel infinite loop if the connection dropped.
+  * BUG #88 - Added missing channel request_state and set it to accepted.
+  * BUG #89 - Reset error state to no error on successful SSHv1 authentiction.
+  * Fixed a possible use after free in ssh_free().
+  * Fixed multiple possible NULL pointer dereferences.
+  * Fixed multiple memory leaks in error paths.
+  * Fixed timeout handling.
+  * Fixed regression in pre-connected socket setting.
+  * Handle all unknown global messages.
+
 version 0.5.2 (released 2011-09-17)
   * Increased window size x10.
   * Fixed SSHv1.
