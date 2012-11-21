@@ -31,6 +31,8 @@
 
 #include "libssh/crypto.h"
 
+#define MAX_PUBKEY_SIZE 0x100000 /* 1M */
+
 #define SSH_KEY_FLAG_EMPTY   0x0
 #define SSH_KEY_FLAG_PUBLIC  0x0001
 #define SSH_KEY_FLAG_PRIVATE 0x0002

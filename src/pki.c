@@ -816,7 +816,7 @@ int ssh_pki_import_pubkey_file(const char *filename, ssh_key *pkey)
         return SSH_ERROR;
     }
 
-    if (sb.st_size + 1 < sb.st_size) {
+    if (sb.st_size > MAX_PUBKEY_SIZE) {
         return SSH_ERROR;
     }
 
