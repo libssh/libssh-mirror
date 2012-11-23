@@ -207,8 +207,11 @@ int match_hostname(const char *host, const char *pattern, unsigned int len);
 /** Get the size of an array */
 #define ARRAY_SIZE(a) (sizeof(a)/sizeof(a[0]))
 
-/** Overwrite the complete string with 'X' */
-#define BURN_STRING(x) do { if ((x) != NULL) memset((x), 'X', strlen((x))); } while(0)
+/** Overwrite a string with '\0' */
+#define BURN_STRING(x) do { if ((x) != NULL) memset((x), '\0', strlen((x))); __asm__ volatile (""); } while(0)
+
+/** Overwrite the buffer with '\0' */
+#define BURN_BUFFER(x, size) do { if ((x) != NULL) memset((x), '\0', (size))); __asm__ volatile (""); } while(0)
 
 /**
  * This is a hack to fix warnings. The idea is to use this everywhere that we
