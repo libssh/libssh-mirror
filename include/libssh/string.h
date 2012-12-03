@@ -31,7 +31,7 @@ struct ssh_string_struct {
 	uint32_t size;
 	unsigned char data[1];
 }
-#if !defined(__SUNPRO_C) && !defined(_MSC_VER)
+#if defined(__GNUC__)
 __attribute__ ((packed))
 #endif
 #ifdef _MSC_VER
