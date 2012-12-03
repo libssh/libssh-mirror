@@ -139,6 +139,8 @@ if (UNIX)
     check_function_exists(cfmakeraw HAVE_CFMAKERAW)
     check_function_exists(ntohll HAVE_NTOHLL)
     check_function_exists(htonll HAVE_HTONLL)
+    check_function_exists(strtoull HAVE_STRTOULL)
+    check_function_exists(__strtoull HAVE___STRTOULL)
 endif (UNIX)
 
 set(LIBSSH_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} CACHE INTERNAL "libssh required system libraries")

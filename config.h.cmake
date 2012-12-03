@@ -100,6 +100,12 @@
 /* Define to 1 if you have the `htonll' function. */
 #cmakedefine HAVE_HTONLL 1
 
+/* Define to 1 if you have the `strtoull' function. */
+#cmakedefine HAVE_STRTOULL 1
+
+/* Define to 1 if you have the `__strtoull' function. */
+#cmakedefine HAVE___STRTOULL 1
+
 /*************************** LIBRARIES ***************************/
 
 /* Define to 1 if you have the `crypto' library (-lcrypto). */
