@@ -34,9 +34,14 @@ int ssh_analyze_banner(ssh_session session, int server, int *ssh1, int *ssh2);
 int ssh_is_ipaddr_v4(const char *str);
 int ssh_is_ipaddr(const char *str);
 
+#ifndef HAVE_NTOHLL
 /* macro for byte ordering */
 uint64_t ntohll(uint64_t);
-#define htonll(x) ntohll(x)
+#endif
+
+#ifndef HAVE_HTONLL
+#define htonll(x) ntohll((x))
+#endif
 
 /* list processing */
 
