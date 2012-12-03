@@ -61,17 +61,6 @@
 
 #define SOCKOPT_TYPE_ARG4 char
 
-/*
- * We need to provide hstrerror. Not we can't call the parameter h_errno
- * because it's #defined
- */
-static char *hstrerror(int h_errno_val) {
-  static char text[50] = {0};
-
-  snprintf(text, sizeof(text), "getaddrino error %d\n", h_errno_val);
-
-  return text;
-}
 #else /* _WIN32 */
 
 #include <sys/socket.h>
@@ -118,7 +107,7 @@ static socket_t bind_socket(ssh_bind sshbind, const char *hostname,
         ssh_set_error(sshbind,
                       SSH_FATAL,
                       "Setting socket options failed: %s",
-                      hstrerror(h_errno));
+                      strerror(errno));
         freeaddrinfo (ai);
         close(s);
         return -1;

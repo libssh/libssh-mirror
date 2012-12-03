@@ -117,12 +117,6 @@ if (UNIX)
           set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} socket)
         endif (HAVE_LIBSOCKET)
 
-        # libresolv
-        check_library_exists(resolv hstrerror "" HAVE_LIBRESOLV)
-        if (HAVE_LIBRESOLV)
-          set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} resolv)
-        endif (HAVE_LIBRESOLV)
-
         # libnsl/inet_pton (Solaris)
         check_library_exists(nsl inet_pton "" HAVE_LIBNSL)
         if (HAVE_LIBNSL)
