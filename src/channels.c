@@ -653,7 +653,7 @@ SSH_PACKET_CALLBACK(channel_rcv_request) {
 	ssh_channel channel;
 	ssh_string request_s;
 	char *request;
-	uint32_t status;
+    uint8_t status;
     int rc;
 	(void)user;
 	(void)type;
@@ -684,9 +684,11 @@ SSH_PACKET_CALLBACK(channel_rcv_request) {
 	buffer_get_u8(packet, (uint8_t *) &status);
 
 	if (strcmp(request,"exit-status") == 0) {
+        uint32_t exit_status = 0;
+
 		SAFE_FREE(request);
-		buffer_get_u32(packet, &status);
-		channel->exit_status = ntohl(status);
+        buffer_get_u32(packet, &exit_status);
+        channel->exit_status = ntohl(exit_status);
 		ssh_log(session, SSH_LOG_PACKET, "received exit-status %d", channel->exit_status);
 
         if(ssh_callbacks_exists(channel->callbacks, channel_exit_status_function)) {
