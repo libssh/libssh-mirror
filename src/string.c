@@ -167,12 +167,12 @@ const char *ssh_string_get_char(struct ssh_string_struct *s)
  * string may not be readable with regular libc functions.
  */
 char *ssh_string_to_char(struct ssh_string_struct *s) {
-	size_t len;
-	char *new;
-    if (s == NULL)
-		return NULL;
-  len = ssh_string_len(s) + 1;
-  new = malloc(len);
+  size_t len;
+  char *new;
+
+  if (s == NULL) {
+      return NULL;
+  }
 
   len = ssh_string_len(s);
   if (len + 1 < len) {
