@@ -596,7 +596,7 @@ static int ssh_message_auth_reply_default(ssh_message msg,int partial) {
             sizeof(methods_c) - strlen(methods_c) - 1);
   }
 
-  if (methods_c[0] == '\0' || strlen(methods_c) != ',') {
+  if (methods_c[0] == '\0' || methods_c[strlen(methods_c)-1] != ',') {
       return SSH_ERROR;
   }
 
