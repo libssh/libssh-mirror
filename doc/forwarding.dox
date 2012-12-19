@@ -178,7 +178,7 @@ int web_server(ssh_session session)
 "  </body>\n"
 "</html>\n";
 
-  rc = ssh_channel_forward_listen(session, NULL, 8080, NULL);
+  rc = ssh_forward_channel_listen(session, NULL, 8080, NULL);
   if (rc != SSH_OK)
   {
     fprintf(stderr, "Error opening remote port: %s\n",
@@ -186,7 +186,7 @@ int web_server(ssh_session session)
     return rc;
   }
 
-  channel = ssh_channel_forward_accept(session, 60000);
+  channel = ssh_forward_channel_accept(session, 60000);
   if (channel == NULL)
   {
     fprintf(stderr, "Error waiting for incoming connection: %s\n",
