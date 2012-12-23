@@ -1198,6 +1198,20 @@ static int ssh_channel_waitwindow_termination(void *c){
     return 0;
 }
 
+/* This termination function waits until the session is not in blocked status
+ * anymore, e.g. because of a key re-exchange.
+ */
+static int ssh_waitsession_unblocked(void *s){
+    ssh_session session = (ssh_session)s;
+    switch (session->session_state){
+        case SSH_SESSION_STATE_DH:
+        case SSH_SESSION_STATE_INITIAL_KEX:
+        case SSH_SESSION_STATE_KEXINIT_RECEIVED:
+            return 0;
+        default:
+            return 1;
+    }
+}
 /**
  * @internal
  * @brief Flushes a channel (and its session) until the output buffer
@@ -1264,7 +1278,12 @@ int channel_write_common(ssh_channel channel, const void *data,
     return rc;
   }
 #endif
-
+  if (ssh_waitsession_unblocked(session) == 0){
+    rc = ssh_handle_packets_termination(session, SSH_TIMEOUT_USER,
+            ssh_waitsession_unblocked, session);
+    if (rc == SSH_ERROR || !ssh_waitsession_unblocked(session))
+        goto out;
+  }
   while (len > 0) {
     if (channel->remote_window < len) {
       ssh_log(session, SSH_LOG_PROTOCOL,
