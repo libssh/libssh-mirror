@@ -286,6 +286,7 @@ static ssh_session connect_host(const char *host, int verbose, char *cipher){
       goto error;
     }
   }
+  ssh_options_parse_config(session, NULL);
   if(ssh_connect(session)==SSH_ERROR)
     goto error;
   if(ssh_userauth_autopubkey(session,NULL) != SSH_AUTH_SUCCESS)
