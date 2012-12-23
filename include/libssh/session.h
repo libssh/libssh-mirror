@@ -66,6 +66,9 @@ enum ssh_pending_call_e {
 /* libssh calls may block an undefined amount of time */
 #define SSH_SESSION_FLAG_BLOCKING 1
 
+/* Client successfully authenticated */
+#define SSH_SESSION_FLAG_AUTHENTICATED 2
+
 /* codes to use with ssh_handle_packets*() */
 #define SSH_TIMEOUT_INFINITE -1
 #define SSH_TIMEOUT_USER -2

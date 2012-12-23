@@ -252,6 +252,8 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_success){
 
   session->auth_state=SSH_AUTH_STATE_SUCCESS;
   session->session_state=SSH_SESSION_STATE_AUTHENTICATED;
+  session->flags |= SSH_SESSION_FLAG_AUTHENTICATED;
+
   if(session->current_crypto && session->current_crypto->delayed_compress_out){
       SSH_LOG(session, SSH_LOG_DEBUG, "Enabling delayed compression OUT");
   	session->current_crypto->do_compress_out=1;

@@ -409,7 +409,10 @@ static void ssh_client_connection_callback(ssh_session session){
 			if(session->dh_handshake_state==DH_STATE_FINISHED){
 				set_status(session,1.0f);
 				session->connected = 1;
-				session->session_state=SSH_SESSION_STATE_AUTHENTICATING;
+				if (session->flags & SSH_SESSION_FLAG_AUTHENTICATED)
+				    session->session_state = SSH_SESSION_STATE_AUTHENTICATED;
+				else
+				    session->session_state=SSH_SESSION_STATE_AUTHENTICATING;
 			}
 			break;
 		case SSH_SESSION_STATE_AUTHENTICATING:

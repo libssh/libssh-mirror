@@ -179,7 +179,7 @@ SSH_PACKET_CALLBACK(ssh_packet_newkeys){
     rc = ssh_pki_signature_verify_blob(session,
                                        sig_blob,
                                        key,
-                                       session->next_crypto->session_id,
+                                       session->next_crypto->secret_hash,
                                        session->next_crypto->digest_len);
     /* Set the server public key type for known host checking */
     session->next_crypto->server_pubkey_type = key->type_c;
@@ -210,6 +210,13 @@ SSH_PACKET_CALLBACK(ssh_packet_newkeys){
       ssh_set_error_oom(session);
       goto error;
     }
+    session->next_crypto->session_id = malloc(session->current_crypto->digest_len);
+    if (session->next_crypto->session_id == NULL) {
+      ssh_set_error_oom(session);
+      goto error;
+    }
+    memcpy(session->next_crypto->session_id, session->current_crypto->session_id,
+            session->current_crypto->digest_len);
   }
   session->dh_handshake_state = DH_STATE_FINISHED;
   session->ssh_connection_callback(session);

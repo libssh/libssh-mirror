@@ -121,7 +121,10 @@ void crypto_free(struct ssh_crypto_struct *crypto){
     memset(crypto->session_id, '\0', crypto->digest_len);
     SAFE_FREE(crypto->session_id);
   }
-
+  if(crypto->secret_hash != NULL){
+    memset(crypto->secret_hash, '\0', crypto->digest_len);
+    SAFE_FREE(crypto->secret_hash);
+  }
 #ifdef WITH_ZLIB
   if (crypto->compress_out_ctx &&
       (deflateEnd(crypto->compress_out_ctx) != 0)) {

@@ -65,6 +65,7 @@ struct ssh_crypto_struct {
     ssh_string dh_server_signature; /* information used by dh_handshake. */
     size_t digest_len; /* len of all the fields below */
     unsigned char *session_id;
+    unsigned char *secret_hash; /* Secret hash is same as session id until re-kex */
     unsigned char *encryptIV;
     unsigned char *decryptIV;
     unsigned char *decryptkey;

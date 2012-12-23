@@ -788,31 +788,43 @@ int make_sessionid(ssh_session session) {
     case SSH_KEX_DH_GROUP14_SHA1:
       session->next_crypto->digest_len = SHA_DIGEST_LENGTH;
       session->next_crypto->mac_type = SSH_MAC_SHA1;
-      session->next_crypto->session_id = malloc(session->next_crypto->digest_len);
-      if(session->next_crypto->session_id == NULL){
+      session->next_crypto->secret_hash = malloc(session->next_crypto->digest_len);
+      if(session->next_crypto->secret_hash == NULL){
         ssh_set_error_oom(session);
         goto error;
       }
       sha1(buffer_get_rest(buf), buffer_get_rest_len(buf),
-                session->next_crypto->session_id);
+                session->next_crypto->secret_hash);
       break;
     case SSH_KEX_ECDH_SHA2_NISTP256:
       session->next_crypto->digest_len = SHA256_DIGEST_LENGTH;
       session->next_crypto->mac_type = SSH_MAC_SHA256;
-      session->next_crypto->session_id = malloc(session->next_crypto->digest_len);
-      if(session->next_crypto->session_id == NULL){
+      session->next_crypto->secret_hash = malloc(session->next_crypto->digest_len);
+      if(session->next_crypto->secret_hash == NULL){
         ssh_set_error_oom(session);
         goto error;
       }
       sha256(buffer_get_rest(buf), buffer_get_rest_len(buf),
-          session->next_crypto->session_id);
+          session->next_crypto->secret_hash);
       break;
   }
-
-
+  /* During the first kex, secret hash and session ID are equal. However, after
+   * a key re-exchange, a new secret hash is calculated. This hash will not replace
+   * but complement existing session id.
+   */
+  if (!session->next_crypto->session_id){
+      session->next_crypto->session_id = malloc(session->next_crypto->digest_len);
+      if (session->next_crypto->session_id == NULL){
+          ssh_set_error_oom(session);
+          goto error;
+      }
+      memcpy(session->next_crypto->session_id, session->next_crypto->secret_hash,
+              session->next_crypto->digest_len);
+  }
 #ifdef DEBUG_CRYPTO
   printf("Session hash: ");
-  ssh_print_hexa("session id", session->next_crypto->session_id, SHA_DIGEST_LEN);
+  ssh_print_hexa("secret hash", session->next_crypto->secret_hash, session->next_crypto->digest_len);
+  ssh_print_hexa("session id", session->next_crypto->session_id, session->next_crypto->digest_len);
 #endif
 
   rc = SSH_OK;
@@ -888,7 +900,7 @@ static int generate_one_key(ssh_string k,
   }
 
   ssh_mac_update(ctx, k, ssh_string_len(k) + 4);
-  ssh_mac_update(ctx, crypto->session_id, crypto->digest_len);
+  ssh_mac_update(ctx, crypto->secret_hash, crypto->digest_len);
   ssh_mac_update(ctx, &letter, 1);
   ssh_mac_update(ctx, crypto->session_id, crypto->digest_len);
   ssh_mac_final(output, ctx);
