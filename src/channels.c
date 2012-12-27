@@ -1270,7 +1270,10 @@ int channel_write_common(ssh_channel channel, const void *data,
     leave_function();
     return -1;
   }
-
+  if (channel->session->session_state == SSH_SESSION_STATE_ERROR){
+    leave_function();
+    return SSH_ERROR;
+  }
 #ifdef WITH_SSH1
   if (channel->version == 1) {
     rc = channel_write1(channel, data, len);
@@ -2690,6 +2693,10 @@ int ssh_channel_read(ssh_channel channel, void *dest, uint32_t count, int is_std
     leave_function();
     return rc;
   }
+  if (channel->session->session_state == SSH_SESSION_STATE_ERROR){
+      leave_function();
+      return SSH_ERROR;
+  }
   if (channel->remote_eof && buffer_get_rest_len(stdbuf) == 0) {
     leave_function();
     return 0;
@@ -2753,8 +2760,12 @@ int ssh_channel_read_nonblocking(ssh_channel channel, void *dest, uint32_t count
   to_read = ssh_channel_poll(channel, is_stderr);
 
   if (to_read <= 0) {
-    leave_function();
-    return to_read; /* may be an error code */
+      if (channel->session->session_state == SSH_SESSION_STATE_ERROR){
+          leave_function();
+          return SSH_ERROR;
+      }
+      leave_function();
+      return to_read; /* may be an error code */
   }
 
   if (to_read > (int)count) {
@@ -2799,6 +2810,10 @@ int ssh_channel_poll(ssh_channel channel, int is_stderr){
   }
 
   if (buffer_get_rest_len(stdbuf) == 0 && channel->remote_eof == 0) {
+    if (channel->session->session_state == SSH_SESSION_STATE_ERROR){
+      leave_function();
+      return SSH_ERROR;
+    }
     if (ssh_handle_packets(channel->session, SSH_TIMEOUT_NONBLOCKING)==SSH_ERROR) {
       leave_function();
       return SSH_ERROR;
