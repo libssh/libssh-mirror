@@ -184,7 +184,11 @@ static int dh_handshake_server(ssh_session session) {
       prv = session->rsa_key;
       break;
     default:
-      prv = NULL;
+      ssh_set_error(session,
+                    SSH_FATAL,
+                    "Could determine the specified hostkey");
+      ssh_string_free(f);
+      return -1;
   }
 
   pub = publickey_from_privatekey(prv);
@@ -270,6 +274,8 @@ static int dh_handshake_server(ssh_session session) {
  */
 static void ssh_server_connection_callback(ssh_session session){
 	int ssh1,ssh2;
+    int rc;
+
 	enter_function();
 	switch(session->session_state){
 		case SSH_SESSION_STATE_NONE:
@@ -338,7 +344,10 @@ static void ssh_server_connection_callback(ssh_session session){
 		case SSH_SESSION_STATE_KEXINIT_RECEIVED:
 			set_status(session,0.6f);
 			ssh_list_kex(session, &session->client_kex); // log client kex
-            crypt_set_algorithms_server(session);
+            rc = crypt_set_algorithms_server(session);
+            if (rc == SSH_ERROR) {
+                goto error;
+            }
 			if (set_kex(session) < 0) {
 				goto error;
 			}
