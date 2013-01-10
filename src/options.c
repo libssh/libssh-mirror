@@ -720,12 +720,6 @@ int ssh_options_getopt(ssh_session session, int *argcptr, char **argv) {
   int saveoptind = optind; /* need to save 'em */
   int saveopterr = opterr;
 
-  save = malloc(argc * sizeof(char *));
-  if (save == NULL) {
-    ssh_set_error_oom(session);
-    return -1;
-  }
-
   opterr = 0; /* shut up getopt */
   while(cont && ((i = getopt(argc, argv, "c:i:Cl:p:vb:rd12")) != -1)) {
     switch(i) {
@@ -763,8 +757,16 @@ int ssh_options_getopt(ssh_session session, int *argcptr, char **argv) {
         break;
       default:
         {
+          char **tmp;
           char opt[3]="- ";
           opt[1] = optopt;
+          tmp = realloc(save, (current + 1) * sizeof(char*));
+          if (tmp == NULL) {
+            SAFE_FREE(save);
+            ssh_set_error_oom(session);
+            return -1;
+          }
+          save = tmp;
           save[current] = strdup(opt);
           if (save[current] == NULL) {
             SAFE_FREE(save);
