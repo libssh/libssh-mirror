@@ -1,6 +1,11 @@
 ChangeLog
 ==========
 
+version 0.5.4 (released 2013-01-22)
+  * CVE-2013-0176 - NULL dereference leads to denial of service
+  * Fixed several NULL pointer dereferences in SSHv1.
+  * Fixed a free crash bug in options parsing.
+
 version 0.5.3 (released 2012-11-20)
   * CVE-2012-4559 Fixed multiple double free() flaws.
   * CVE-2012-4560 Fixed multiple buffer overflow flaws.
