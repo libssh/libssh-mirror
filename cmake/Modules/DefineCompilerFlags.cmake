@@ -26,7 +26,7 @@ if (UNIX AND NOT WIN32)
             set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fstack-protector")
         endif (WITH_STACK_PROTECTOR)
 
-        string(TOLOWER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_LOWER)
+        string(TOLOWER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE_LOWER)
         if (NOT CMAKE_BUILD_TYPE_LOWER MATCHES debug)
             check_c_compiler_flag("-D_FORTIFY_SOURCE=2" WITH_FORTIFY_SOURCE)
             if (WITH_FORTIFY_SOURCE)
