@@ -186,7 +186,7 @@ static int dh_handshake_server(ssh_session session) {
     default:
       ssh_set_error(session,
                     SSH_FATAL,
-                    "Could determine the specified hostkey");
+                    "Could not determine the specified hostkey");
       ssh_string_free(f);
       return -1;
   }
