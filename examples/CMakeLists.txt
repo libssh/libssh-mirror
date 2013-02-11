@@ -11,6 +11,10 @@ include_directories(
   ${CMAKE_BINARY_DIR}
 )
 
+if (BSD OR SOLARIS)
+    find_package(Argp)
+endif (BSD OR SOLARIS)
+
 if (LINUX)
     add_executable(libssh_scp libssh_scp.c ${examples_SRCS})
     target_link_libraries(libssh_scp ${LIBSSH_SHARED_LIBRARY})
