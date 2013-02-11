@@ -153,7 +153,7 @@ struct ssh_session_struct {
     struct ssh_list *ssh_message_list; /* list of delayed SSH messages */
     int (*ssh_message_callback)( struct ssh_session_struct *session, ssh_message msg, void *userdata);
     void *ssh_message_callback_data;
-
+    ssh_server_callbacks server_callbacks;
     void (*ssh_connection_callback)( struct ssh_session_struct *session);
     struct ssh_packet_callbacks_struct default_packet_callbacks;
     struct ssh_list *packet_callbacks;

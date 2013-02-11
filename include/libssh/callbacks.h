@@ -124,6 +124,113 @@ struct ssh_callbacks_struct {
 };
 typedef struct ssh_callbacks_struct *ssh_callbacks;
 
+/** These are callbacks used specifically in SSH servers.
+ */
+
+/**
+ * @brief SSH authentication callback.
+ * @param session Current session handler
+ * @param user User that wants to authenticate
+ * @param password Password used for authentication
+ * @param userdata Userdata to be passed to the callback function.
+ * @returns SSH_AUTH_OK Authentication is accepted.
+ * @returns SSH_AUTH_PARTIAL Partial authentication, more authentication means are needed.
+ * @returns SSH_AUTH_DENIED Authentication failed.
+ */
+typedef int (*ssh_auth_password_callback) (ssh_session session, const char *user, const char *password,
+		void *userdata);
+
+/**
+ * @brief SSH Connection status callback. Tries to authenticates user with the "none" method
+ * which is anonymous or passwordless.
+ * @param session Current session handler
+ * @param user User that wants to authenticate
+ * @param userdata Userdata to be passed to the callback function.
+ * @returns SSH_AUTH_OK Authentication is accepted.
+ * @returns SSH_AUTH_PARTIAL Partial authentication, more authentication means are needed.
+ * @returns SSH_AUTH_DENIED Authentication failed.
+ */
+typedef int (*ssh_auth_none_callback) (ssh_session session, const char *user, void *userdata);
+
+
+/**
+ * @brief Handles an SSH service request
+ * @param session current session handler
+ * @param service name of the service (e.g. "ssh-userauth") requested
+ * @param userdata Userdata to be passed to the callback function.
+ * @returns 0 if the request is to be allowed
+ * @returns -1 if the request should not be allowed
+ */
+
+typedef int (*ssh_service_request_callback) (ssh_session session, const char *service, void *userdata);
+
+/**
+ * @brief Handles an SSH new channel open session request
+ * @param session current session handler
+ * @param channel Channel that will be allocated to this channel
+ * @param userdata Userdata to be passed to the callback function.
+ * @returns 0 if the request is to be allowed
+ * @returns -1 if the request should not be allowed
+ * @warning if the request is denied by the callback, the channel will be deallocated.
+ */
+typedef int (*ssh_channel_open_request_session_callback) (ssh_session session, ssh_channel channel, void *userdata);
+
+
+/**
+ * This structure can be used to implement a libssh server, with appropriate callbacks.
+ */
+
+struct ssh_server_callbacks_struct {
+  /** DON'T SET THIS use ssh_callbacks_init() instead. */
+  size_t size;
+  /**
+   * User-provided data. User is free to set anything he wants here
+   */
+  void *userdata;
+  /** This function gets called when a client tries to authenticate through
+   * password method.
+   */
+  ssh_auth_password_callback auth_password_function;
+
+  /** This function gets called when a client tries to authenticate through
+   * none method.
+   */
+  ssh_auth_none_callback auth_none_function;
+
+  /** This functions gets called when a service request is issued by the
+   * client
+   */
+  ssh_service_request_callback service_request_function;
+  /** This functions gets called when a new channel request is issued by
+   * the client
+   */
+  ssh_channel_open_request_session_callback channel_open_request_session_function;
+};
+typedef struct ssh_server_callbacks_struct *ssh_server_callbacks;
+
+/**
+ * @brief Set the session server callback functions.
+ *
+ * This functions sets the callback structure to use your own callback
+ * functions for user authentication, new channels and requests.
+ *
+ * @code
+ * struct ssh_server_callbacks_struct cb = {
+ *   .userdata = data,
+ *   .auth_password_function = my_auth_function
+ * };
+ * ssh_callbacks_init(&cb);
+ * ssh_set_server_callbacks(session, &cb);
+ * @endcode
+ *
+ * @param  session      The session to set the callback structure.
+ *
+ * @param  cb           The callback structure itself.
+ *
+ * @return SSH_OK on success, SSH_ERROR on error.
+ */
+LIBSSH_API int ssh_set_server_callbacks(ssh_session session, ssh_server_callbacks cb);
+
 /**
  * These are the callbacks exported by the socket structure
  * They are called by the socket module when a socket event appears
