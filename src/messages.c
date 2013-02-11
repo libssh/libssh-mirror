@@ -92,8 +92,97 @@ static int ssh_message_reply_default(ssh_message msg) {
 
 #endif
 
+/** @internal
+ * Executes the callbacks defined in session->server_callbacks, out of an ssh_message
+ * I don't like ssh_message interface but it works.
+ * @returns SSH_OK if the message has been handled, or SSH_AGAIN otherwise.
+ */
+static int ssh_execute_server_callbacks(ssh_session session, ssh_message msg){
+	int rc;
+	ssh_channel channel = NULL;
+	if (session->server_callbacks != NULL){
+		switch(msg->type) {
+		case SSH_REQUEST_AUTH:
+			if (msg->auth_request.method == SSH_AUTH_METHOD_PASSWORD){
+				if(ssh_callbacks_exists(session->server_callbacks, auth_password_function)){
+					rc = session->server_callbacks->auth_password_function(session,
+							msg->auth_request.username, msg->auth_request.password,
+							session->server_callbacks->userdata);
+					if (rc == SSH_AUTH_SUCCESS || rc == SSH_AUTH_PARTIAL){
+						ssh_message_auth_reply_success(msg, rc == SSH_AUTH_PARTIAL);
+					} else {
+						ssh_message_reply_default(msg);
+					}
+					return SSH_OK;
+				}
+			}
+			break;
+		case SSH_REQUEST_CHANNEL_OPEN:
+			if (msg->channel_request_open.type == SSH_CHANNEL_SESSION){
+				if(ssh_callbacks_exists(session->server_callbacks, channel_open_request_session_function)){
+					channel = ssh_channel_new(session);
+					rc = session->server_callbacks->channel_open_request_session_function(session, channel,
+							session->server_callbacks->userdata);
+					if(rc==0) {
+						rc = ssh_message_channel_request_open_reply_accept_channel(msg, channel);
+						if (rc == SSH_ERROR)
+							ssh_channel_free(channel);
+						return SSH_OK;
+					} else {
+						ssh_channel_free(channel);
+						ssh_message_reply_default(msg);
+					}
+					return SSH_OK;
+				}
+			}
+			break;
+		case SSH_REQUEST_CHANNEL:
+			channel = msg->channel_request.channel;
+			if (msg->channel_request.type == SSH_CHANNEL_REQUEST_PTY){
+				if(ssh_callbacks_exists(channel->callbacks, channel_pty_request_function)){
+					rc = channel->callbacks->channel_pty_request_function(session, channel,
+							msg->channel_request.TERM,
+							msg->channel_request.width, msg->channel_request.height,
+							msg->channel_request.pxwidth, msg->channel_request.pxheight,
+							channel->callbacks->userdata);
+					if(rc == 0)
+						ssh_message_channel_request_reply_success(msg);
+					else
+						ssh_message_reply_default(msg);
+					return SSH_OK;
+				}
+			} else if(msg->channel_request.type == SSH_CHANNEL_REQUEST_SHELL){
+				if(ssh_callbacks_exists(channel->callbacks, channel_shell_request_function)){
+					rc = channel->callbacks->channel_shell_request_function(session, channel,
+							channel->callbacks->userdata);
+					if(rc == 0)
+						ssh_message_channel_request_reply_success(msg);
+					else
+						ssh_message_reply_default(msg);
+					return SSH_OK;
+				}
+			}
+			break;
+		case SSH_REQUEST_SERVICE:
+			if(ssh_callbacks_exists(session->server_callbacks, service_request_function)){
+				rc = session->server_callbacks->service_request_function(session,
+						msg->service_request.service, session->server_callbacks->userdata);
+				if (rc == 0)
+					ssh_message_reply_default(msg);
+				else
+					ssh_disconnect(session);
+				return SSH_OK;
+			}
+			return SSH_AGAIN;
+		case SSH_REQUEST_GLOBAL:
+			break;
+		}
+	}
+	return SSH_AGAIN;
+}
+
 static int ssh_execute_message_callback(ssh_session session, ssh_message msg) {
-    int ret;
+	int ret;
     if(session->ssh_message_callback != NULL) {
         ret = session->ssh_message_callback(session, msg,
                 session->ssh_message_callback_data);
@@ -120,19 +209,38 @@ static int ssh_execute_message_callback(ssh_session session, ssh_message msg) {
 /**
  * @internal
  *
- * @brief Add a message to the current queue of messages to be parsed.
+ * @brief Add a message to the current queue of messages to be parsed and/or call
+ * the various callback functions.
  *
  * @param[in]  session  The SSH session to add the message.
  *
  * @param[in]  message  The message to add to the queue.
  */
 void ssh_message_queue(ssh_session session, ssh_message message){
-    if(message) {
+    int ret;
+    if (message != NULL) {
+        /* probably not the best place to execute server callbacks, but still better
+         * than nothing.
+         */
+        ret = ssh_execute_server_callbacks(session, message);
+        if (ret == SSH_OK){
+            ssh_message_free(message);
+            return;
+        }
+        if(session->ssh_message_callback != NULL) {
+            ssh_execute_message_callback(session, message);
+            return;
+        }
+        if (session->server_callbacks != NULL){
+            /* if we have server callbacks, but nothing was executed, it means we are
+             * in non-synchronous mode, and we just don't care about the message we
+             * received. Just send a default response. Do not queue it.
+             */
+            ssh_message_reply_default(message);
+            ssh_message_free(message);
+            return;
+        }
         if(session->ssh_message_list == NULL) {
-            if(session->ssh_message_callback != NULL) {
-                ssh_execute_message_callback(session, message);
-                return;
-            }
             session->ssh_message_list = ssh_list_new();
         }
         if (session->ssh_message_list != NULL) {
