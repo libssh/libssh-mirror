@@ -95,6 +95,7 @@ set(libssh_SRCS
   ecdh.c
   error.c
   getpass.c
+  gssapi.c
   init.c
   kex.c
   known_hosts.c
