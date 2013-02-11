@@ -581,7 +581,7 @@ int ssh_poll_ctx_dopoll(ssh_poll_ctx ctx, int timeout) {
   int revents;
 
   if (!ctx->polls_used)
-    return 0;
+    return SSH_ERROR;
 
   rc = ssh_poll(ctx->pollfds, ctx->polls_used, timeout);
   if(rc < 0)
