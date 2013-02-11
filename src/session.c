@@ -512,6 +512,7 @@ int ssh_handle_packets(ssh_session session, int timeout) {
  *                      (-1) means an infinite timeout.
  *                      Specifying SSH_TIMEOUT_USER means to use the timeout
  *                      specified in options. 0 means poll will return immediately.
+ *                      SSH_TIMEOUT_DEFAULT uses blocking parameters of the session.
  *                      This parameter is passed to the poll() function.
  *
  * @param[in] fct       Termination function to be used to determine if it is
@@ -530,6 +531,11 @@ int ssh_handle_packets_termination(ssh_session session, int timeout,
                                         session->opts.timeout_usec);
       else
         timeout = SSH_TIMEOUT_NONBLOCKING;
+  } else if (timeout == SSH_TIMEOUT_DEFAULT){
+	  if(ssh_is_blocking(session))
+		  timeout = SSH_TIMEOUT_INFINITE;
+	  else
+		  timeout = SSH_TIMEOUT_NONBLOCKING;
   }
   ssh_timestamp_init(&ts);
   tm = timeout;

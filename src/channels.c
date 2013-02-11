@@ -1222,7 +1222,7 @@ static int ssh_waitsession_unblocked(void *s){
  *          SSH_AGAIN Timeout elapsed (or in nonblocking mode)
  */
 int ssh_channel_flush(ssh_channel channel){
-  return ssh_blocking_flush(channel->session, SSH_TIMEOUT_USER);
+  return ssh_blocking_flush(channel->session, SSH_TIMEOUT_DEFAULT);
 }
 
 int channel_write_common(ssh_channel channel, const void *data,
@@ -1282,7 +1282,7 @@ int channel_write_common(ssh_channel channel, const void *data,
   }
 #endif
   if (ssh_waitsession_unblocked(session) == 0){
-    rc = ssh_handle_packets_termination(session, SSH_TIMEOUT_USER,
+    rc = ssh_handle_packets_termination(session, SSH_TIMEOUT_DEFAULT,
             ssh_waitsession_unblocked, session);
     if (rc == SSH_ERROR || !ssh_waitsession_unblocked(session))
         goto out;
@@ -1298,7 +1298,7 @@ int channel_write_common(ssh_channel channel, const void *data,
           /* nothing can be written */
           ssh_log(session, SSH_LOG_PROTOCOL,
                 "Wait for a growing window message...");
-          rc = ssh_handle_packets_termination(session, SSH_TIMEOUT_USER,
+          rc = ssh_handle_packets_termination(session, SSH_TIMEOUT_DEFAULT,
               ssh_channel_waitwindow_termination,channel);
           if (rc == SSH_ERROR || !ssh_channel_waitwindow_termination(channel))
             goto out;
@@ -2681,13 +2681,13 @@ int ssh_channel_read(ssh_channel channel, void *dest, uint32_t count, int is_std
     }
   }
 
-  /* block reading until all bytes are read
+  /* block reading until at least one byte has been read
   *  and ignore the trivial case count=0
   */
   ctx.channel = channel;
   ctx.buffer = stdbuf;
-  ctx.count = count;
-  rc = ssh_handle_packets_termination(session, SSH_TIMEOUT_USER,
+  ctx.count = 1;
+  rc = ssh_handle_packets_termination(session, SSH_TIMEOUT_DEFAULT,
       ssh_channel_read_termination, &ctx);
   if (rc == SSH_ERROR){
     leave_function();

@@ -69,8 +69,13 @@ enum ssh_pending_call_e {
 #define SSH_SESSION_FLAG_AUTHENTICATED 2
 
 /* codes to use with ssh_handle_packets*() */
+/* Infinite timeout */
 #define SSH_TIMEOUT_INFINITE -1
+/* Use the timeout defined by user if any. Mostly used with new connections */
 #define SSH_TIMEOUT_USER -2
+/* Use the default timeout, depending on ssh_is_blocking() */
+#define SSH_TIMEOUT_DEFAULT -3
+/* Don't block at all */
 #define SSH_TIMEOUT_NONBLOCKING 0
 
 /* members that are common to ssh_session and ssh_bind */
