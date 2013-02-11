@@ -28,25 +28,29 @@ if (LINUX)
     add_executable(sshnetcat sshnetcat.c ${examples_SRCS})
     target_link_libraries(sshnetcat ${LIBSSH_SHARED_LIBRARY})
 
+    if (WITH_SERVER)
+        if (HAVE_LIBUTIL)
+            add_executable(samplesshd-tty samplesshd-tty.c)
+            target_link_libraries(samplesshd-tty ${LIBSSH_SHARED_LIBRARY} util)
+        endif (HAVE_LIBUTIL)
+    endif (WITH_SERVER)
+
     if (WITH_SFTP)
         add_executable(samplesftp samplesftp.c ${examples_SRCS})
         target_link_libraries(samplesftp ${LIBSSH_SHARED_LIBRARY})
     endif (WITH_SFTP)
 
-    if (WITH_SERVER)
-        add_executable(samplesshd samplesshd.c)
-        target_link_libraries(samplesshd ${LIBSSH_SHARED_LIBRARY})
-
-        add_executable(samplesshd-kbdint samplesshd-kbdint.c)
-        target_link_libraries(samplesshd-kbdint ${LIBSSH_SHARED_LIBRARY})
-
-        if (HAVE_LIBUTIL)
-            add_executable(samplesshd-tty samplesshd-tty.c)
-            target_link_libraries(samplesshd-tty ${LIBSSH_SHARED_LIBRARY} util)
-        endif (HAVE_LIBUTIL)
-
-    endif (WITH_SERVER)
 endif (LINUX)
+
+if (WITH_SERVER)
+    add_executable(samplesshd samplesshd.c)
+    target_link_libraries(samplesshd ${LIBSSH_SHARED_LIBRARY} ${ARGP_LIBRARIES})
+
+
+    add_executable(samplesshd-kbdint samplesshd-kbdint.c)
+    target_link_libraries(samplesshd-kbdint ${LIBSSH_SHARED_LIBRARY} ${ARGP_LIBRARIES})
+
+endif (WITH_SERVER)
 
 add_executable(exec exec.c ${examples_SRCS})
 target_link_libraries(exec ${LIBSSH_SHARED_LIBRARY})
