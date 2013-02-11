@@ -100,5 +100,6 @@ int ssh_message_handle_channel_request(ssh_session session, ssh_channel channel,
     const char *request, uint8_t want_reply);
 void ssh_message_queue(ssh_session session, ssh_message message);
 ssh_message ssh_message_pop_head(ssh_session session);
+int ssh_message_channel_request_open_reply_accept_channel(ssh_message msg, ssh_channel chan);
 
 #endif /* MESSAGES_H_ */

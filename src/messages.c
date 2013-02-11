@@ -930,25 +930,17 @@ end:
   return SSH_PACKET_USED;
 }
 
-/* TODO: make this function accept a ssh_channel */
-ssh_channel ssh_message_channel_request_open_reply_accept(ssh_message msg) {
+int ssh_message_channel_request_open_reply_accept_channel(ssh_message msg, ssh_channel chan) {
   ssh_session session;
-  ssh_channel chan = NULL;
 
   enter_function();
 
   if (msg == NULL) {
     leave_function();
-    return NULL;
+    return SSH_ERROR;
   }
 
   session = msg->session;
-
-  chan = ssh_channel_new(session);
-  if (chan == NULL) {
-    leave_function();
-    return NULL;
-  }
 
   chan->local_channel = ssh_channel_new_id(session);
   chan->local_maxpacket = 35000;
@@ -982,12 +974,33 @@ ssh_channel ssh_message_channel_request_open_reply_accept(ssh_message msg) {
   }
 
   leave_function();
-  return chan;
-error:
-  ssh_channel_free(chan);
+  return SSH_OK;
+  error:
 
   leave_function();
-  return NULL;
+  return SSH_ERROR;
+}
+
+
+ssh_channel ssh_message_channel_request_open_reply_accept(ssh_message msg) {
+	ssh_channel chan;
+	int rc;
+
+	if (msg == NULL) {
+	    return NULL;
+	}
+
+	chan = ssh_channel_new(msg->session);
+	if (chan == NULL) {
+		return NULL;
+	}
+	rc = ssh_message_channel_request_open_reply_accept_channel(msg, chan);
+	if (rc < 0) {
+		ssh_channel_free(chan);
+		chan = NULL;
+	}
+	return chan;
+
 }
 
 /**

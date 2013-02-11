@@ -439,6 +439,34 @@ typedef void (*ssh_channel_exit_signal_callback) (ssh_session session,
                                             const char *lang,
                                             void *userdata);
 
+/**
+ * @brief SSH channel PTY request from a client.
+ * @param channel the channel
+ * @param width width of the terminal, in characters
+ * @param height height of the terminal, in characters
+ * @param pxwidth width of the terminal, in pixels
+ * @param pxheight height of the terminal, in pixels
+ * @param userdata Userdata to be passed to the callback function.
+ * @returns 0 if the pty request is accepted
+ * @returns -1 if the request is denied
+ */
+typedef int (*ssh_channel_pty_request_callback) (ssh_session session,
+                                            ssh_channel channel,
+                                            const char *term,
+                                            int width, int height,
+                                            int pxwidth, int pwheight,
+                                            void *userdata);
+
+/**
+ * @brief SSH channel Shell request from a client.
+ * @param channel the channel
+ * @param userdata Userdata to be passed to the callback function.
+ * @returns 0 if the pty request is accepted
+ * @returns 1 if the request is denied
+ */
+typedef int (*ssh_channel_shell_request_callback) (ssh_session session,
+                                            ssh_channel channel,
+                                            void *userdata);
 struct ssh_channel_callbacks_struct {
   /** DON'T SET THIS use ssh_callbacks_init() instead. */
   size_t size;
@@ -470,6 +498,14 @@ struct ssh_channel_callbacks_struct {
    * This functions will be called when an exit signal has been received
    */
   ssh_channel_exit_signal_callback channel_exit_signal_function;
+  /**
+   * This function will be called when a client requests a PTY
+   */
+  ssh_channel_pty_request_callback channel_pty_request_function;
+  /**
+   * This function will be called when a client requests a shell
+   */
+  ssh_channel_shell_request_callback channel_shell_request_function;
 };
 typedef struct ssh_channel_callbacks_struct *ssh_channel_callbacks;
 
