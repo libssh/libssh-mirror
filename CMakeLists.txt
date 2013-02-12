@@ -89,6 +89,22 @@ install(
     pkgconfig
 )
 
+# cmake config files
+configure_file(libssh-config.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/libssh-config.cmake @ONLY)
+configure_file(libssh-config-version.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/libssh-config-version.cmake @ONLY)
+install(
+    FILES
+        ${CMAKE_CURRENT_BINARY_DIR}/libssh-config.cmake
+        ${CMAKE_CURRENT_BINARY_DIR}/libssh-config-version.cmake
+    DESTINATION
+        ${CMAKE_INSTALL_DIR}
+    COMPONENT
+        devel
+)
+
+# in tree build settings
+configure_file(libssh-build-tree-settings.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/libssh-build-tree-settings.cmake @ONLY)
+
 add_subdirectory(examples)
 
 if (WITH_TESTING)

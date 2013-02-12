@@ -4,6 +4,7 @@ if (WIN32)
   set(SBIN_INSTALL_DIR "." CACHE PATH "-")
   set(LIB_INSTALL_DIR "lib" CACHE PATH "-")
   set(INCLUDE_INSTALL_DIR "include" CACHE PATH "-")
+  set(CMAKE_INSTALL_DIR "CMake" CACHE PATH "-")
   set(PLUGIN_INSTALL_DIR "plugins" CACHE PATH "-")
   set(HTML_INSTALL_DIR "doc/HTML" CACHE PATH "-")
   set(ICON_INSTALL_DIR "." CACHE PATH "-")
@@ -57,6 +58,10 @@ elseif (UNIX OR OS2)
     "${CMAKE_INSTALL_PREFIX}/include"
     CACHE PATH "The subdirectory to the header prefix (default prefix/include)"
   )
+
+  set(CMAKE_INSTALL_DIR
+    "${LIB_INSTALL_DIR}/cmake"
+    CACHE PATH "The subdirectory to install cmake config files")
 
   SET(DATA_INSTALL_DIR
     "${DATA_INSTALL_PREFIX}"
