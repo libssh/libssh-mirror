@@ -4,7 +4,7 @@ if (EXISTS "${LIBSSH_CMAKE_DIR}/CMakeCache.txt")
     # In build tree
     include(${LIBSSH_CMAKE_DIR}/libssh-build-tree-settings.cmake)
 else()
-    set(LIBSSH_INCLUDE_DIRS @INCLUDE_INSTALL_DIR@)
+    set(LIBSSH_INCLUDE_DIR @INCLUDE_INSTALL_DIR@)
 endif()
 
 set(LIBSSH_LIRBARY @LIB_INSTALL_DIR@/libssh.so)
