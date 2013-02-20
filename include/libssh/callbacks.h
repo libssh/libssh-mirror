@@ -141,7 +141,7 @@ typedef int (*ssh_auth_password_callback) (ssh_session session, const char *user
 		void *userdata);
 
 /**
- * @brief SSH Connection status callback. Tries to authenticates user with the "none" method
+ * @brief SSH authentication callback. Tries to authenticates user with the "none" method
  * which is anonymous or passwordless.
  * @param session Current session handler
  * @param user User that wants to authenticate
@@ -151,6 +151,17 @@ typedef int (*ssh_auth_password_callback) (ssh_session session, const char *user
  * @returns SSH_AUTH_DENIED Authentication failed.
  */
 typedef int (*ssh_auth_none_callback) (ssh_session session, const char *user, void *userdata);
+
+/**
+ * @brief SSH authentication callback. Tries to authenticates user with the "gssapi-with-mic" method
+ * @param session Current session handler
+ * @param user Authenticated login of the user, including realm.
+ * @param userdata Userdata to be passed to the callback function.
+ * @returns SSH_AUTH_OK Authentication is accepted.
+ * @returns SSH_AUTH_PARTIAL Partial authentication, more authentication means are needed.
+ * @returns SSH_AUTH_DENIED Authentication failed.
+ */
+typedef int (*ssh_auth_gssapi_mic_callback) (ssh_session session, const char *user, void *userdata);
 
 
 /**
@@ -197,6 +208,10 @@ struct ssh_server_callbacks_struct {
    */
   ssh_auth_none_callback auth_none_function;
 
+  /** This function gets called when a client tries to authenticate through
+   * gssapi-mic method.
+   */
+  ssh_auth_gssapi_mic_callback auth_gssapi_mic_function;
   /** This functions gets called when a service request is issued by the
    * client
    */
