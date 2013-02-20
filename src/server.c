@@ -524,6 +524,17 @@ static int ssh_server_kex_termination(void *s){
     return 1;
 }
 
+/** Set the acceptable authentication methods to be sent to
+ *  client.
+ *  @param[in] session the SSH server session
+ *  @param[in] Bitfield of authentication methods to be accepted,
+ *             e.g. SSH_AUTH_METHOD_PUBLICKEY
+ */
+void ssh_set_auth_methods(ssh_session session, int auth_methods){
+	/* accept only methods in range */
+	session->auth_methods = auth_methods & 0x3f;
+}
+
 /* Do the banner and key exchange */
 int ssh_handle_key_exchange(ssh_session session) {
     int rc;
@@ -564,8 +575,10 @@ int ssh_handle_key_exchange(ssh_session session) {
 
 /* messages */
 
-static int ssh_message_auth_reply_default(ssh_message msg,int partial) {
-  ssh_session session = msg->session;
+/** @internal
+ * replies to an SSH_AUTH packet with a default (denied) response.
+ */
+int ssh_auth_reply_default(ssh_session session,int partial) {
   char methods_c[128] = {0};
   ssh_string methods = NULL;
   int rc = SSH_ERROR;
@@ -582,6 +595,10 @@ static int ssh_message_auth_reply_default(ssh_message msg,int partial) {
   if (session->auth_methods & SSH_AUTH_METHOD_PUBLICKEY) {
     strncat(methods_c, "publickey,",
             sizeof(methods_c) - strlen(methods_c) - 1);
+  }
+  if (session->auth_methods & SSH_AUTH_METHOD_GSSAPI_MIC){
+	  strncat(methods_c,"gssapi-with-mic,",
+			  sizeof(methods_c) - strlen(methods_c) - 1);
   }
   if (session->auth_methods & SSH_AUTH_METHOD_INTERACTIVE) {
     strncat(methods_c, "keyboard-interactive,",
@@ -611,7 +628,7 @@ static int ssh_message_auth_reply_default(ssh_message msg,int partial) {
     goto error;
   }
 
-  if (buffer_add_ssh_string(msg->session->out_buffer, methods) < 0) {
+  if (buffer_add_ssh_string(session->out_buffer, methods) < 0) {
     goto error;
   }
 
@@ -625,7 +642,7 @@ static int ssh_message_auth_reply_default(ssh_message msg,int partial) {
     }
   }
 
-  rc = packet_send(msg->session);
+  rc = packet_send(session);
 error:
   ssh_string_free(methods);
 
@@ -774,7 +791,7 @@ int ssh_message_reply_default(ssh_message msg) {
 
   switch(msg->type) {
     case SSH_REQUEST_AUTH:
-      return ssh_message_auth_reply_default(msg, 0);
+      return ssh_auth_reply_default(msg->session, 0);
     case SSH_REQUEST_CHANNEL_OPEN:
       return ssh_message_channel_request_open_reply_default(msg);
     case SSH_REQUEST_CHANNEL:
@@ -1005,31 +1022,37 @@ int ssh_message_auth_interactive_request(ssh_message msg, const char *name,
   return r;
 }
 
-int ssh_message_auth_reply_success(ssh_message msg, int partial) {
+int ssh_auth_reply_success(ssh_session session, int partial) {
   int r;
 
-	if (msg == NULL) {
-    return SSH_ERROR;
+  if (session == NULL) {
+	  return SSH_ERROR;
   }
 
   if (partial) {
-    return ssh_message_auth_reply_default(msg, partial);
+    return ssh_auth_reply_default(session, partial);
   }
 
-  if (buffer_add_u8(msg->session->out_buffer,SSH2_MSG_USERAUTH_SUCCESS) < 0) {
+  if (buffer_add_u8(session->out_buffer,SSH2_MSG_USERAUTH_SUCCESS) < 0) {
     return SSH_ERROR;
   }
 
-  r = packet_send(msg->session);
-  if(msg->session->current_crypto && msg->session->current_crypto->delayed_compress_out){
-  	ssh_log(msg->session,SSH_LOG_PROTOCOL,"Enabling delayed compression OUT");
-  	msg->session->current_crypto->do_compress_out=1;
+  r = packet_send(session);
+  if(session->current_crypto && session->current_crypto->delayed_compress_out){
+  	ssh_log(session,SSH_LOG_PROTOCOL,"Enabling delayed compression OUT");
+  	session->current_crypto->do_compress_out=1;
   }
-  if(msg->session->current_crypto && msg->session->current_crypto->delayed_compress_in){
-  	ssh_log(msg->session,SSH_LOG_PROTOCOL,"Enabling delayed compression IN");
-  	msg->session->current_crypto->do_compress_in=1;
+  if(session->current_crypto && session->current_crypto->delayed_compress_in){
+  	ssh_log(session,SSH_LOG_PROTOCOL,"Enabling delayed compression IN");
+  	session->current_crypto->do_compress_in=1;
   }
   return r;
+}
+
+int ssh_message_auth_reply_success(ssh_message msg, int partial) {
+	if(msg == NULL)
+		return SSH_ERROR;
+	return ssh_auth_reply_success(msg->session, partial);
 }
 
 /* Answer OK to a pubkey auth request */
