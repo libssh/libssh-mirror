@@ -143,6 +143,7 @@ struct ssh_session_struct {
 
 /* keyb interactive data */
     struct ssh_kbdint_struct *kbdint;
+    struct ssh_gssapi_struct *gssapi;
     int version; /* 1 or 2 */
     /* server host keys */
     struct {

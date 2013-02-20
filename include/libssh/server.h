@@ -254,6 +254,8 @@ LIBSSH_API int ssh_handle_key_exchange(ssh_session session);
  */
 LIBSSH_API void ssh_bind_free(ssh_bind ssh_bind_o);
 
+LIBSSH_API void ssh_set_auth_methods(ssh_session session, int auth_methods);
+
 /**********************************************************
  * SERVER MESSAGING
  **********************************************************/

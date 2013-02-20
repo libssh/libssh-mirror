@@ -46,6 +46,7 @@
 #include "libssh/pcap.h"
 #include "libssh/kex.h"
 #include "libssh/auth.h"
+#include "libssh/gssapi.h"
 
 #define MACSIZE SHA_DIGEST_LEN
 
@@ -83,11 +84,17 @@ static ssh_packet_callback default_packet_handlers[]= {
   NULL,NULL,NULL,NULL,NULL,NULL,           //                                     54-59
   ssh_packet_userauth_pk_ok,               // SSH2_MSG_USERAUTH_PK_OK             60
                                            // SSH2_MSG_USERAUTH_PASSWD_CHANGEREQ  60
-                                           // SSH2_MSG_USERAUTH_INFO_REQUEST	    60
+                                           // SSH2_MSG_USERAUTH_INFO_REQUEST	  60
   ssh_packet_userauth_info_response,       // SSH2_MSG_USERAUTH_INFO_RESPONSE     61
+                                           // SSH2_MSG_USERAUTH_GSSAPI_TOKEN      61
+  NULL,                                    //                                     62
+  NULL,                             // SSH2_MSG_USERAUTH_GSSAPI_EXCHANGE_COMPLETE 63
+  NULL,                                    // SSH2_MSG_USERAUTH_GSSAPI_ERROR      64
+  NULL,                                    // SSH2_MSG_USERAUTH_GSSAPI_ERRTOK     65
+  ssh_packet_userauth_gssapi_mic,          // SSH2_MSG_USERAUTH_GSSAPI_MIC        66
+  NULL, NULL,
   NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-  NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-  NULL, NULL, NULL, NULL,                  //                                     62-79
+  NULL, NULL, NULL, NULL,                  //                                     67-79
 #ifdef WITH_SERVER
   ssh_packet_global_request,               // SSH2_MSG_GLOBAL_REQUEST             80
 #else /* WITH_SERVER */

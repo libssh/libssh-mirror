@@ -44,6 +44,7 @@
 #include "libssh/messages.h"
 #ifdef WITH_SERVER
 #include "libssh/server.h"
+#include "libssh/gssapi.h"
 #endif
 
 /**
@@ -740,6 +741,54 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
     }
     goto end;
   }
+  if (strncmp(method, "gssapi-with-mic", method_size) == 0) {
+     uint32_t n_oid;
+     ssh_string *oids;
+     ssh_string oid;
+     char *hexa;
+     int i;
+     buffer_get_u32(packet, &n_oid);
+     n_oid=ntohl(n_oid);
+     if(n_oid > 100){
+    	 ssh_set_error(session, SSH_FATAL, "USERAUTH_REQUEST: gssapi-with-mic OID count too big (%d)",n_oid);
+    	 goto error;
+     }
+     ssh_log(session, SSH_LOG_PACKET, "gssapi: %d OIDs", n_oid);
+     oids = calloc(n_oid, sizeof(ssh_string));
+     if (oids == NULL){
+    	 ssh_set_error_oom(session);
+    	 goto error;
+     }
+     for (i=0;i<(int) n_oid;++i){
+    	 oid=buffer_get_ssh_string(packet);
+    	 if(oid == NULL){
+    		 for(i=i-1;i>=0;--i){
+    			 SAFE_FREE(oids[i]);
+    		 }
+    		 SAFE_FREE(oids);
+    		 ssh_set_error(session, SSH_LOG_PACKET, "USERAUTH_REQUEST: gssapi-with-mic missing OID");
+    		 goto error;
+    	 }
+    	 oids[i] = oid;
+    	 if(session->common.log_verbosity >= SSH_LOG_PACKET){
+    		 hexa = ssh_get_hexa(ssh_string_data(oid), ssh_string_len(oid));
+    		 ssh_log(session, SSH_LOG_PACKET,"gssapi: OID %d: %s",i, hexa);
+    		 SAFE_FREE(hexa);
+    	 }
+     }
+     ssh_gssapi_handle_userauth(session, msg->auth_request.username, n_oid, oids);
+
+     for(i=0;i<(int)n_oid;++i){
+    	 SAFE_FREE(oids[i]);
+     }
+     SAFE_FREE(oids);
+     /* bypass the message queue thing */
+     SAFE_FREE(service);
+     SAFE_FREE(method);
+     ssh_message_free(msg);
+     leave_function();
+     return SSH_PACKET_USED;
+  }
 
   msg->auth_request.method = SSH_AUTH_METHOD_UNKNOWN;
   SAFE_FREE(method);
@@ -782,6 +831,10 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_response){
   ssh_string tmp;
 
   ssh_message msg = NULL;
+
+  /* GSSAPI_TOKEN has same packed number. XXX fix this */
+  if (session->gssapi != NULL)
+	  return ssh_packet_userauth_gssapi_token(session, type, packet, user);
 
   enter_function();
 

@@ -179,8 +179,9 @@ void _ssh_set_error_oom(void *error, const char *function);
 void _ssh_set_error_invalid(void *error, const char *function);
 
 
-
-
+/* server.c */
+int ssh_auth_reply_default(ssh_session session,int partial);
+int ssh_auth_reply_success(ssh_session session, int partial);
 
 /* client.c */
 

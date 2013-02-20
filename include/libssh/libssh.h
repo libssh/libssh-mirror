@@ -164,6 +164,7 @@ enum ssh_auth_e {
 #define SSH_AUTH_METHOD_PUBLICKEY 0x0004
 #define SSH_AUTH_METHOD_HOSTBASED 0x0008
 #define SSH_AUTH_METHOD_INTERACTIVE 0x0010
+#define SSH_AUTH_METHOD_GSSAPI_MIC 0x0020
 
 /* messages */
 enum ssh_requests_e {
