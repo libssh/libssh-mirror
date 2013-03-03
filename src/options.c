@@ -1017,6 +1017,13 @@ int ssh_options_getopt(ssh_session session, int *argcptr, char **argv) {
     } /* switch */
   } /* while */
   opterr = saveopterr;
+  tmp = realloc(save, (current + (argc - optind)) * sizeof(char*));
+  if (tmp == NULL) {
+    SAFE_FREE(save);
+    ssh_set_error_oom(session);
+    return -1;
+  }
+  save = tmp;
   while (optind < argc) {
       tmp = realloc(save, (current + 1) * sizeof(char*));
       if (tmp == NULL) {
