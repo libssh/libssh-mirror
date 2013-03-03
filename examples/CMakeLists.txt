@@ -22,9 +22,6 @@ if (LINUX)
     add_executable(scp_download scp_download.c ${examples_SRCS})
     target_link_libraries(scp_download ${LIBSSH_SHARED_LIBRARY})
 
-    add_executable(samplessh sample.c ${examples_SRCS})
-    target_link_libraries(samplessh ${LIBSSH_SHARED_LIBRARY})
-
     add_executable(sshnetcat sshnetcat.c ${examples_SRCS})
     target_link_libraries(sshnetcat ${LIBSSH_SHARED_LIBRARY})
 
@@ -41,6 +38,9 @@ if (LINUX)
     endif (WITH_SFTP)
 
 endif (LINUX)
+
+    add_executable(samplessh sample.c ${examples_SRCS})
+    target_link_libraries(samplessh ${LIBSSH_SHARED_LIBRARY})
 
 if (WITH_SERVER)
     add_executable(samplesshd samplesshd.c)
