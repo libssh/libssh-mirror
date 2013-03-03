@@ -45,13 +45,13 @@ struct ssh_gssapi_struct{
 	enum ssh_gssapi_state_e state; /* current state */
 	struct gss_OID_desc_struct mech; /* mechanism being elected for auth */
 	gss_cred_id_t server_creds; /* credentials of server */
+	gss_cred_id_t client_creds; /* creds of the client */
 	gss_ctx_id_t ctx; /* the authentication context */
 	gss_name_t client_name; /* Identity of the client */
 	char *user; /* username of client */
 	char *canonic_user; /* canonic form of the client's username */
 	char *service; /* name of the service */
 	struct {
-		gss_cred_id_t client_creds; /* creds of the client */
 		gss_name_t server_name; /* identity of server */
 		gss_OID oid; /* mech being used for authentication */
 	} client;
@@ -71,6 +71,7 @@ static int ssh_gssapi_init(ssh_session session){
 	}
 	ZERO_STRUCTP(session->gssapi);
 	session->gssapi->server_creds = GSS_C_NO_CREDENTIAL;
+	session->gssapi->client_creds = GSS_C_NO_CREDENTIAL;
 	session->gssapi->ctx = GSS_C_NO_CONTEXT;
 	session->gssapi->state = SSH_GSSAPI_STATE_NONE;
 	return SSH_OK;
@@ -278,7 +279,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_token_server){
 
 	maj_stat = gss_accept_sec_context(&min_stat, &session->gssapi->ctx, session->gssapi->server_creds,
 			&input_token, input_bindings, &client_name, NULL /*mech_oid*/, &output_token, &ret_flags,
-			NULL /*time*/, &deleg_cred);
+			NULL /*time*/, &session->gssapi->client_creds);
 	ssh_gssapi_log_error(session, 0, "accepting token", maj_stat);
 	ssh_string_free(token);
 	if (client_name != GSS_C_NO_NAME){
@@ -392,7 +393,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_mic){
 		}
 	}
 
-	ssh_gssapi_free(session);
+	//ssh_gssapi_free(session);
 	return SSH_PACKET_USED;
 
 	error:
@@ -654,7 +655,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_response){
 	gss_add_oid_set_member(&min_stat, oid, &tmp);
 	maj_stat = gss_acquire_cred(&min_stat, session->gssapi->client_name, 0,
 			tmp, GSS_C_INITIATE,
-			&session->gssapi->client.client_creds, NULL, NULL);
+			&session->gssapi->client_creds, NULL, NULL);
 	gss_release_oid_set(&min_stat, &tmp);
 	if (GSS_ERROR(maj_stat)){
 		ssh_gssapi_log_error(session,SSH_LOG_WARNING,"Error acquiring credentials",maj_stat);
@@ -662,7 +663,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_response){
 	}
 	/* prepare the first TOKEN response */
     maj_stat = gss_init_sec_context(&min_stat,
-        session->gssapi->client.client_creds, &session->gssapi->ctx, session->gssapi->client.server_name, oid,
+        session->gssapi->client_creds, &session->gssapi->ctx, session->gssapi->client.server_name, oid,
         GSS_C_MUTUAL_FLAG | GSS_C_INTEG_FLAG | (deleg ? GSS_C_DELEG_FLAG : 0),
         0, NULL, &input_token, NULL, &output_token, NULL, NULL);
     if(GSS_ERROR(maj_stat)){
@@ -746,7 +747,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_token_client){
 	input_token.value = ssh_string_data(token);
 
 	maj_stat = gss_init_sec_context(&min_stat,
-        session->gssapi->client.client_creds, &session->gssapi->ctx, session->gssapi->client.server_name, session->gssapi->client.oid,
+        session->gssapi->client_creds, &session->gssapi->ctx, session->gssapi->client.server_name, session->gssapi->client.oid,
         GSS_C_MUTUAL_FLAG | GSS_C_INTEG_FLAG | (deleg ? GSS_C_DELEG_FLAG : 0),
         0, NULL, &input_token, NULL, &output_token, NULL, NULL);
 
