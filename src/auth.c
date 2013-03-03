@@ -42,7 +42,7 @@
 #include "libssh/keys.h"
 #include "libssh/auth.h"
 #include "libssh/pki.h"
-
+#include "libssh/gssapi.h"
 #include "libssh/legacy.h"
 
 /**
@@ -82,6 +82,9 @@ static int ssh_auth_response_termination(void *user){
   switch(session->auth_state){
     case SSH_AUTH_STATE_NONE:
     case SSH_AUTH_STATE_KBDINT_SENT:
+    case SSH_AUTH_STATE_GSSAPI_REQUEST_SENT:
+    case SSH_AUTH_STATE_GSSAPI_TOKEN:
+    case SSH_AUTH_STATE_GSSAPI_MIC_SENT:
       return 0;
     default:
       return 1;
@@ -226,6 +229,9 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_failure){
   if (strstr(auth_methods, "hostbased") != NULL) {
     session->auth_methods |= SSH_AUTH_METHOD_HOSTBASED;
   }
+  if (strstr(auth_methods, "gssapi-with-mic") != NULL) {
+	  session->auth_methods |= SSH_AUTH_METHOD_GSSAPI_MIC;
+  }
 
 end:
   ssh_string_free(auth);
@@ -278,13 +284,15 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_pk_ok){
 	int rc;
 	enter_function();
 
-  SSH_LOG(session, SSH_LOG_TRACE, "Received SSH_USERAUTH_PK_OK/INFO_REQUEST");
+  SSH_LOG(session, SSH_LOG_TRACE, "Received SSH_USERAUTH_PK_OK/INFO_REQUEST/GSSAPI_RESPONSE");
 
   if(session->auth_state==SSH_AUTH_STATE_KBDINT_SENT){
     /* Assuming we are in keyboard-interactive context */
     SSH_LOG(session, SSH_LOG_TRACE,
             "keyboard-interactive context, assuming SSH_USERAUTH_INFO_REQUEST");
     rc=ssh_packet_userauth_info_request(session,type,packet,user);
+  } else if (session->auth_state == SSH_AUTH_STATE_GSSAPI_REQUEST_SENT){
+    rc = ssh_packet_userauth_gssapi_response(session, type, packet, user);
   } else {
     session->auth_state=SSH_AUTH_STATE_PK_OK;
     SSH_LOG(session, SSH_LOG_TRACE, "Assuming SSH_USERAUTH_PK_OK");
@@ -2107,6 +2115,64 @@ int ssh_userauth_kbdint_setanswer(ssh_session session, unsigned int i,
   }
 
   return 0;
+}
+
+/**
+ * @brief Try to authenticate through the "gssapi-with-mic" method.
+ *
+ * @param[in]  session  The ssh session to use.
+ *
+ * @returns SSH_AUTH_ERROR:   A serious error happened\n
+ *          SSH_AUTH_DENIED:  Authentication failed : use another method\n
+ *          SSH_AUTH_PARTIAL: You've been partially authenticated, you still
+ *                            have to use another method\n
+ *          SSH_AUTH_SUCCESS: Authentication success\n
+ *          SSH_AUTH_AGAIN:   In nonblocking mode, you've got to call this again
+ *                            later.
+ */
+int ssh_userauth_gssapi(ssh_session session) {
+	int rc;
+	switch(session->pending_call_state) {
+	case SSH_PENDING_CALL_NONE:
+		break;
+	case SSH_PENDING_CALL_AUTH_GSSAPI_MIC:
+		goto pending;
+	default:
+		ssh_set_error(session,
+				SSH_FATAL,
+				"Wrong state during pending SSH call");
+		return SSH_ERROR;
+	}
+
+	rc = ssh_userauth_request_service(session);
+	if (rc == SSH_AGAIN) {
+		return SSH_AUTH_AGAIN;
+	} else if (rc == SSH_ERROR) {
+		return SSH_AUTH_ERROR;
+	}
+	ssh_log(session,SSH_LOG_PROTOCOL, "Authenticating with gssapi-with-mic");
+	session->auth_state = SSH_AUTH_STATE_NONE;
+	session->pending_call_state = SSH_PENDING_CALL_AUTH_GSSAPI_MIC;
+	rc = ssh_gssapi_auth_mic(session);
+
+	if (rc == SSH_AUTH_ERROR || rc == SSH_AUTH_DENIED) {
+		session->auth_state = SSH_AUTH_STATE_NONE;
+		session->pending_call_state = SSH_PENDING_CALL_NONE;
+		return rc;
+	}
+
+pending:
+	rc = ssh_userauth_get_response(session);
+	if (rc != SSH_AUTH_AGAIN) {
+		session->pending_call_state = SSH_PENDING_CALL_NONE;
+	}
+
+	return rc;
+fail:
+	ssh_set_error_oom(session);
+	buffer_reinit(session->out_buffer);
+
+	return SSH_AUTH_ERROR;
 }
 
 /** @} */

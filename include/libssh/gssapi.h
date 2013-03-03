@@ -32,7 +32,13 @@ typedef struct ssh_gssapi_struct *ssh_gssapi;
 #ifdef WITH_SERVER
 int ssh_gssapi_handle_userauth(ssh_session session, const char *user, uint32_t n_oid, ssh_string *oids);
 SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_token);
+SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_token_server);
+SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_token_client);
 SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_mic);
+SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_response);
+
 #endif /* WITH_SERVER */
+
+int ssh_gssapi_auth_mic(ssh_session session);
 
 #endif /* GSSAPI_H */
