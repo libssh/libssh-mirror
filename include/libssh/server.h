@@ -238,6 +238,8 @@ LIBSSH_API int ssh_bind_accept(ssh_bind ssh_bind_o, ssh_session session);
 LIBSSH_API int ssh_bind_accept_fd(ssh_bind ssh_bind_o, ssh_session session,
         socket_t fd);
 
+LIBSSH_API ssh_gssapi_creds ssh_gssapi_get_creds(ssh_session session);
+
 /**
  * @brief Handles the key exchange and set up encryption
  *

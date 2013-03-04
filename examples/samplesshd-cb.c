@@ -61,8 +61,15 @@ static int auth_password(ssh_session session, const char *user,
 }
 
 static int auth_gssapi_mic(ssh_session session, const char *user, void *userdata){
+	ssh_gssapi_creds creds = ssh_gssapi_get_creds(session);
+
 	(void)userdata;
+
 	printf("Authenticating used %s with gssapi\n",user);
+	if (creds != NULL)
+		printf("Received some gssapi credentials\n");
+	else
+		printf("Not received any forwardable creds\n");
 	printf("authenticated\n");
 	authenticated = 1;
 	return SSH_AUTH_SUCCESS;

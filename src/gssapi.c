@@ -26,6 +26,7 @@
 #include "libssh/crypto.h"
 #include "libssh/callbacks.h"
 #include "libssh/string.h"
+#include "libssh/server.h"
 
 #include <gssapi.h>
 
@@ -402,7 +403,19 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_mic){
 	return SSH_PACKET_USED;
 }
 
-#endif
+/** @brief returns the client credentials of the connected client.
+ * If the client has given a forwardable token, the SSH server will
+ * retrieve it.
+ * @returns gssapi credentials handle.
+ * @returns NULL if no forwardable token is available.
+ */
+LIBSSH_API ssh_gssapi_creds ssh_gssapi_get_creds(ssh_session session){
+	if (!session || !session->gssapi || session->gssapi->client_creds == GSS_C_NO_CREDENTIAL)
+		return NULL;
+	return (ssh_gssapi_creds)session->gssapi->client_creds;
+}
+
+#endif /* SERVER */
 
 static int ssh_gssapi_send_auth_mic(ssh_session session, ssh_string *oid_set, int n_oid){
 	ssh_string str;

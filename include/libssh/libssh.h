@@ -115,6 +115,7 @@ typedef struct ssh_scp_struct* ssh_scp;
 typedef struct ssh_session_struct* ssh_session;
 typedef struct ssh_string_struct* ssh_string;
 typedef struct ssh_event_struct* ssh_event;
+typedef void* ssh_gssapi_creds;
 
 /* Socket type */
 #ifdef _WIN32
