@@ -499,6 +499,7 @@ LIBSSH_API int ssh_pki_export_pubkey_file(const ssh_key key,
 LIBSSH_API void ssh_print_hexa(const char *descr, const unsigned char *what, size_t len);
 LIBSSH_API int ssh_send_ignore (ssh_session session, const char *data);
 LIBSSH_API int ssh_send_debug (ssh_session session, const char *message, int always_display);
+LIBSSH_API void ssh_gssapi_set_creds(ssh_session session, const ssh_gssapi_creds creds);
 LIBSSH_API int ssh_scp_accept_request(ssh_scp scp);
 LIBSSH_API int ssh_scp_close(ssh_scp scp);
 LIBSSH_API int ssh_scp_deny_request(ssh_scp scp, const char *reason);
