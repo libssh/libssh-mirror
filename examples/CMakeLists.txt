@@ -49,6 +49,9 @@ if (WITH_SERVER)
     add_executable(samplesshd-cb samplesshd-cb.c)
     target_link_libraries(samplesshd-cb ${LIBSSH_SHARED_LIBRARY} ${ARGP_LIBRARIES})
 
+    add_executable(proxy proxy.c)
+    target_link_libraries(proxy ${LIBSSH_SHARED_LIBRARY} ${ARGP_LIBRARIES})
+
     add_executable(samplesshd-kbdint samplesshd-kbdint.c)
     target_link_libraries(samplesshd-kbdint ${LIBSSH_SHARED_LIBRARY} ${ARGP_LIBRARIES})
 
