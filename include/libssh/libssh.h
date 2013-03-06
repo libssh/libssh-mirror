@@ -521,6 +521,7 @@ LIBSSH_API int ssh_scp_write(ssh_scp scp, const void *buffer, size_t len);
 LIBSSH_API int ssh_select(ssh_channel *channels, ssh_channel *outchannels, socket_t maxfd,
     fd_set *readfds, struct timeval *timeout);
 LIBSSH_API int ssh_service_request(ssh_session session, const char *service);
+LIBSSH_API int ssh_set_agent_channel(ssh_session session, ssh_channel channel);
 LIBSSH_API void ssh_set_blocking(ssh_session session, int blocking);
 LIBSSH_API void ssh_set_fd_except(ssh_session session);
 LIBSSH_API void ssh_set_fd_toread(ssh_session session);
