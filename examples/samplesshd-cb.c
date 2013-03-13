@@ -101,16 +101,16 @@ struct ssh_channel_callbacks_struct channel_cb = {
     .channel_shell_request_function = shell_request
 };
 
-static int new_session_channel(ssh_session session, ssh_channel channel, void *userdata){
+static ssh_channel new_session_channel(ssh_session session, void *userdata){
     (void) session;
     (void) userdata;
     if(chan != NULL)
-        return -1;
+        return NULL;
     printf("Allocated session channel\n");
-    chan = channel;
+    chan = ssh_channel_new(session);
     ssh_callbacks_init(&channel_cb);
-    ssh_set_channel_callbacks(channel, &channel_cb);
-    return 0;
+    ssh_set_channel_callbacks(chan, &channel_cb);
+    return chan;
 }
 
 
