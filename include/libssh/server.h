@@ -55,7 +55,6 @@ typedef struct ssh_bind_struct* ssh_bind;
  * @brief Incoming connection callback. This callback is called when a ssh_bind
  *        has a new incoming connection.
  * @param sshbind Current sshbind session handler
- * @param message the actual message
  * @param userdata Userdata to be passed to the callback function.
  */
 typedef void (*ssh_bind_incoming_connection_callback) (ssh_bind sshbind,

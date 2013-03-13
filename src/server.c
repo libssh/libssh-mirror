@@ -527,8 +527,8 @@ static int ssh_server_kex_termination(void *s){
 /** Set the acceptable authentication methods to be sent to
  *  client.
  *  @param[in] session the SSH server session
- *  @param[in] Bitfield of authentication methods to be accepted,
- *             e.g. SSH_AUTH_METHOD_PUBLICKEY
+ *  @param[in] auth_methods Bitfield of authentication methods
+ *             to be accepted, e.g. SSH_AUTH_METHOD_PUBLICKEY
  */
 void ssh_set_auth_methods(ssh_session session, int auth_methods){
 	/* accept only methods in range */
