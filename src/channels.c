@@ -833,6 +833,16 @@ SSH_PACKET_CALLBACK(channel_rcv_request) {
 	  return SSH_PACKET_USED;
 	}
 
+  if (strcmp(request, "auth-agent-req@openssh.com") == 0) {
+    SAFE_FREE(request);
+    ssh_log(session, SSH_LOG_PROTOCOL, "Received an auth-agent-req request");
+    if(ssh_callbacks_exists(channel->callbacks, channel_auth_agent_req_function)) {
+        channel->callbacks->channel_auth_agent_req_function(channel->session, channel,
+            channel->callbacks->userdata);
+    }
+    leave_function();
+    return SSH_PACKET_USED;
+  }
 	/* If we are here, that means we have a request that is not in the understood
 	 * client requests. That means we need to create a ssh message to be passed
 	 * to the user code handling ssh messages

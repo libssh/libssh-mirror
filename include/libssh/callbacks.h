@@ -481,6 +481,16 @@ typedef int (*ssh_channel_pty_request_callback) (ssh_session session,
 typedef int (*ssh_channel_shell_request_callback) (ssh_session session,
                                             ssh_channel channel,
                                             void *userdata);
+/**
+ * @brief SSH auth-agent-request from the client. This request is
+ * sent by a client when agent forwarding is available.
+ * Server is free to ignore this callback, no answer is expected.
+ * @param channel the channel
+ * @param userdata Userdata to be passed to the callback function.
+ */
+typedef void (*channel_auth_agent_req_callback) (ssh_session session,
+                                            ssh_channel channel,
+                                            void *userdata);
 struct ssh_channel_callbacks_struct {
   /** DON'T SET THIS use ssh_callbacks_init() instead. */
   size_t size;
@@ -520,6 +530,10 @@ struct ssh_channel_callbacks_struct {
    * This function will be called when a client requests a shell
    */
   ssh_channel_shell_request_callback channel_shell_request_function;
+  /** This function will be called when a client requests agent
+   * authentication forwarding.
+   */
+  channel_auth_agent_req_callback channel_auth_agent_req_function;
 };
 typedef struct ssh_channel_callbacks_struct *ssh_channel_callbacks;
 
