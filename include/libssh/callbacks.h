@@ -178,13 +178,12 @@ typedef int (*ssh_service_request_callback) (ssh_session session, const char *se
 /**
  * @brief Handles an SSH new channel open session request
  * @param session current session handler
- * @param channel Channel that will be allocated to this channel
  * @param userdata Userdata to be passed to the callback function.
- * @returns 0 if the request is to be allowed
- * @returns -1 if the request should not be allowed
- * @warning if the request is denied by the callback, the channel will be deallocated.
+ * @returns a valid ssh_channel handle if the request is to be allowed
+ * @returns NULL if the request should not be allowed
+ * @warning The channel pointer returned by this callback must be closed by the application.
  */
-typedef int (*ssh_channel_open_request_session_callback) (ssh_session session, ssh_channel channel, void *userdata);
+typedef ssh_channel (*ssh_channel_open_request_session_callback) (ssh_session session, void *userdata);
 
 
 /**
@@ -476,7 +475,7 @@ typedef int (*ssh_channel_pty_request_callback) (ssh_session session,
  * @brief SSH channel Shell request from a client.
  * @param channel the channel
  * @param userdata Userdata to be passed to the callback function.
- * @returns 0 if the pty request is accepted
+ * @returns 0 if the shell request is accepted
  * @returns 1 if the request is denied
  */
 typedef int (*ssh_channel_shell_request_callback) (ssh_session session,

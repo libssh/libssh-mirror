@@ -121,16 +121,12 @@ static int ssh_execute_server_callbacks(ssh_session session, ssh_message msg){
 		case SSH_REQUEST_CHANNEL_OPEN:
 			if (msg->channel_request_open.type == SSH_CHANNEL_SESSION){
 				if(ssh_callbacks_exists(session->server_callbacks, channel_open_request_session_function)){
-					channel = ssh_channel_new(session);
-					rc = session->server_callbacks->channel_open_request_session_function(session, channel,
+					channel = session->server_callbacks->channel_open_request_session_function(session,
 							session->server_callbacks->userdata);
-					if(rc==0) {
+					if(channel != NULL) {
 						rc = ssh_message_channel_request_open_reply_accept_channel(msg, channel);
-						if (rc == SSH_ERROR)
-							ssh_channel_free(channel);
 						return SSH_OK;
 					} else {
-						ssh_channel_free(channel);
 						ssh_message_reply_default(msg);
 					}
 					return SSH_OK;
