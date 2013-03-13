@@ -96,16 +96,16 @@ struct ssh_channel_callbacks_struct channel_cb = {
     .channel_shell_request_function = shell_request
 };
 
-static int new_session_channel(ssh_session session, ssh_channel channel, void *userdata){
+static ssh_channel new_session_channel(ssh_session session, void *userdata){
     (void) session;
     (void) userdata;
     if(chan != NULL)
-        return -1;
+        return NULL;
     printf("Allocated session channel\n");
-    chan = channel;
+    chan = ssh_channel_new(session);
     ssh_callbacks_init(&channel_cb);
-    ssh_set_channel_callbacks(channel, &channel_cb);
-    return 0;
+    ssh_set_channel_callbacks(chan, &channel_cb);
+    return chan;
 }
 
 
@@ -286,6 +286,7 @@ int main(int argc, char **argv){
         snprintf(buf,sizeof(buf), "Sorry, but you do not have forwardable tickets. Try again with -K\r\n");
         ssh_channel_write(chan,buf,strlen(buf));
         printf("%s",buf);
+        ssh_disconnect(session);
         return 1;
     }
     snprintf(buf,sizeof(buf), "Hello %s, welcome to the Sample SSH proxy.\r\nPlease select your destination: ", username);
