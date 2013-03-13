@@ -949,6 +949,40 @@ int ssh_channel_open_session(ssh_channel channel) {
 }
 
 /**
+ * @brief Open an agent authentication forwarding channel. This type of channel
+ * can be opened by a server towards a client in order to provide SSH-Agent services
+ * to the server-side process. This channel can only be opened if the client
+ * claimed support by sending a channel request beforehand.
+ *
+ * @param[in]  channel  An allocated channel.
+ *
+ * @return              SSH_OK on success,
+ *                      SSH_ERROR if an error occurred,
+ *                      SSH_AGAIN if in nonblocking mode and call has
+ *                      to be done again.
+ *
+ * @see channel_open_forward()
+ */
+int ssh_channel_open_auth_agent(ssh_channel channel){
+  if(channel == NULL) {
+      return SSH_ERROR;
+  }
+
+#ifdef WITH_SSH1
+  if (channel->session->version == 1) {
+    return SSH_ERROR;
+  }
+#endif
+
+  return channel_open(channel,
+                      "auth-agent",
+                      CHANNEL_INITIAL_WINDOW,
+                      CHANNEL_MAX_PACKET,
+                      NULL);
+}
+
+
+/**
  * @brief Open a TCP/IP forwarding channel.
  *
  * @param[in]  channel  An allocated channel.
