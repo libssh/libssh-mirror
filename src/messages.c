@@ -130,19 +130,6 @@ static int ssh_execute_server_callbacks(ssh_session session, ssh_message msg){
 						ssh_message_reply_default(msg);
 					}
 					return SSH_OK;
-				} else if (msg->channel_request_open.type == SSH_CHANNEL_X11){
-				  if(ssh_callbacks_exists(session->common.callbacks, channel_open_request_x11_function)){
-				    channel = session->common.callbacks->channel_open_request_x11_function (session,
-				        msg->channel_request_open.originator, msg->channel_request_open.originator_port,
-				        session->common.callbacks->userdata);
-				    if(channel != NULL) {
-				      rc = ssh_message_channel_request_open_reply_accept_channel(msg, channel);
-				      return SSH_OK;
-				    } else {
-				      ssh_message_reply_default(msg);
-				    }
-				    return SSH_OK;
-				  }
 				}
 			}
 			break;
@@ -205,6 +192,22 @@ static int ssh_execute_server_callbacks(ssh_session session, ssh_message msg){
 		case SSH_REQUEST_GLOBAL:
 			break;
 		}
+	}
+	/* This one is in fact a client callback... */
+	if (session->common.callbacks != NULL && msg->type== SSH_REQUEST_CHANNEL_OPEN &&
+	    msg->channel_request_open.type == SSH_CHANNEL_X11){
+	  if(ssh_callbacks_exists(session->common.callbacks, channel_open_request_x11_function)){
+	    channel = session->common.callbacks->channel_open_request_x11_function (session,
+	        msg->channel_request_open.originator, msg->channel_request_open.originator_port,
+	        session->common.callbacks->userdata);
+	    if(channel != NULL) {
+	      rc = ssh_message_channel_request_open_reply_accept_channel(msg, channel);
+	      return SSH_OK;
+	    } else {
+	      ssh_message_reply_default(msg);
+	    }
+	    return SSH_OK;
+	  }
 	}
 	return SSH_AGAIN;
 }
