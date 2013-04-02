@@ -158,6 +158,24 @@ static int ssh_execute_server_callbacks(ssh_session session, ssh_message msg){
 						ssh_message_reply_default(msg);
 					return SSH_OK;
 				}
+			} else if(msg->channel_request.type == SSH_CHANNEL_REQUEST_X11){
+			  if(ssh_callbacks_exists(channel->callbacks, channel_x11_req_function)){
+			    channel->callbacks->channel_x11_req_function(session, channel,
+			        msg->channel_request.x11_single_connection,
+			        msg->channel_request.x11_auth_protocol,
+			        msg->channel_request.x11_auth_cookie,
+			        msg->channel_request.x11_screen_number,
+			        channel->callbacks->userdata);
+			    ssh_message_channel_request_reply_success(msg);
+			    return SSH_OK;
+			  }
+			} else if (msg->channel_request.type == SSH_CHANNEL_REQUEST_WINDOW_CHANGE){
+			  if(ssh_callbacks_exists(channel->callbacks, channel_pty_window_change_function)){
+			    rc = channel->callbacks->channel_pty_window_change_function(session, channel,
+			        msg->channel_request.height, msg->channel_request.width,
+			        msg->channel_request.pxheight, msg->channel_request.pxwidth,
+			        channel->callbacks->userdata);
+			  }
 			}
 			break;
 		case SSH_REQUEST_SERVICE:

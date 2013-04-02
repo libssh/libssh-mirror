@@ -456,6 +456,7 @@ typedef void (*ssh_channel_exit_signal_callback) (ssh_session session,
 /**
  * @brief SSH channel PTY request from a client.
  * @param channel the channel
+ * @param term The type of terminal emulation
  * @param width width of the terminal, in characters
  * @param height height of the terminal, in characters
  * @param pxwidth width of the terminal, in pixels
@@ -488,9 +489,41 @@ typedef int (*ssh_channel_shell_request_callback) (ssh_session session,
  * @param channel the channel
  * @param userdata Userdata to be passed to the callback function.
  */
-typedef void (*channel_auth_agent_req_callback) (ssh_session session,
+typedef void (*ssh_channel_auth_agent_req_callback) (ssh_session session,
                                             ssh_channel channel,
                                             void *userdata);
+
+/**
+ * @brief SSH X11 request from the client. This request is
+ * sent by a client when X11 forwarding is requested(and available).
+ * Server is free to ignore this callback, no answer is expected.
+ * @param channel the channel
+ * @param userdata Userdata to be passed to the callback function.
+ */
+typedef void (*ssh_channel_x11_req_callback) (ssh_session session,
+                                            ssh_channel channel,
+                                            int single_connection,
+                                            const char *auth_protocol,
+                                            const char *auth_cookie,
+                                            uint32_t screen_number,
+                                            void *userdata);
+/**
+ * @brief SSH channel PTY windows change (terminal size) from a client.
+ * @param channel the channel
+ * @param width width of the terminal, in characters
+ * @param height height of the terminal, in characters
+ * @param pxwidth width of the terminal, in pixels
+ * @param pxheight height of the terminal, in pixels
+ * @param userdata Userdata to be passed to the callback function.
+ * @returns 0 if the pty request is accepted
+ * @returns -1 if the request is denied
+ */
+typedef int (*ssh_channel_pty_window_change_callback) (ssh_session session,
+                                            ssh_channel channel,
+                                            int width, int height,
+                                            int pxwidth, int pwheight,
+                                            void *userdata);
+
 struct ssh_channel_callbacks_struct {
   /** DON'T SET THIS use ssh_callbacks_init() instead. */
   size_t size;
@@ -533,7 +566,16 @@ struct ssh_channel_callbacks_struct {
   /** This function will be called when a client requests agent
    * authentication forwarding.
    */
-  channel_auth_agent_req_callback channel_auth_agent_req_function;
+  ssh_channel_auth_agent_req_callback channel_auth_agent_req_function;
+  /** This function will be called when a client requests X11
+   * forwarding.
+   */
+  ssh_channel_x11_req_callback channel_x11_req_function;
+  /** This function will be called when a client requests a
+   * window change.
+   */
+  ssh_channel_pty_window_change_callback channel_pty_window_change_function;
+
 };
 typedef struct ssh_channel_callbacks_struct *ssh_channel_callbacks;
 
