@@ -95,6 +95,19 @@ typedef void (*ssh_global_request_callback) (ssh_session session,
                                         ssh_message message, void *userdata);
 
 /**
+ * @brief Handles an SSH new channel open X11 request. This happens when the server
+ * sends back an X11 connection attempt. This is a client-side API
+ * @param session current session handler
+ * @param userdata Userdata to be passed to the callback function.
+ * @returns a valid ssh_channel handle if the request is to be allowed
+ * @returns NULL if the request should not be allowed
+ * @warning The channel pointer returned by this callback must be closed by the application.
+ */
+typedef ssh_channel (*ssh_channel_open_request_x11_callback) (ssh_session session,
+      const char * originator_address, int originator_port, void *userdata);
+
+
+/**
  * The structure to replace libssh functions with appropriate callbacks.
  */
 struct ssh_callbacks_struct {
@@ -121,6 +134,10 @@ struct ssh_callbacks_struct {
    * This function will be called each time a global request is received.
    */
   ssh_global_request_callback global_request_function;
+  /** This function will be called when an incoming X11 request is received.
+   */
+  ssh_channel_open_request_x11_callback channel_open_request_x11_function;
+
 };
 typedef struct ssh_callbacks_struct *ssh_callbacks;
 
@@ -184,7 +201,6 @@ typedef int (*ssh_service_request_callback) (ssh_session session, const char *se
  * @warning The channel pointer returned by this callback must be closed by the application.
  */
 typedef ssh_channel (*ssh_channel_open_request_session_callback) (ssh_session session, void *userdata);
-
 
 /**
  * This structure can be used to implement a libssh server, with appropriate callbacks.
