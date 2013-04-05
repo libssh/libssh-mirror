@@ -220,31 +220,33 @@ int ssh_getpass(const char *prompt,
         return -1;
     }
 
-    ZERO_STRUCT(attr);
-    ZERO_STRUCT(old_attr);
+    if (isatty(STDIN_FILENO)) {
+        ZERO_STRUCT(attr);
+        ZERO_STRUCT(old_attr);
 
-    /* get local terminal attributes */
-    if (tcgetattr(STDIN_FILENO, &attr) < 0) {
-        perror("tcgetattr");
-        return -1;
-    }
+        /* get local terminal attributes */
+        if (tcgetattr(STDIN_FILENO, &attr) < 0) {
+            perror("tcgetattr");
+            return -1;
+        }
 
-    /* save terminal attributes */
-    memcpy(&old_attr, &attr, sizeof(attr));
-    if((fd = fcntl(0, F_GETFL, 0)) < 0) {
-        perror("fcntl");
-        return -1;
-    }
+        /* save terminal attributes */
+        memcpy(&old_attr, &attr, sizeof(attr));
+        if((fd = fcntl(0, F_GETFL, 0)) < 0) {
+            perror("fcntl");
+            return -1;
+        }
 
-    /* disable echo */
-    if (!echo) {
-        attr.c_lflag &= ~(ECHO);
-    }
+        /* disable echo */
+        if (!echo) {
+            attr.c_lflag &= ~(ECHO);
+        }
 
-    /* write attributes to terminal */
-    if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &attr) < 0) {
-        perror("tcsetattr");
-        return -1;
+        /* write attributes to terminal */
+        if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &attr) < 0) {
+            perror("tcsetattr");
+            return -1;
+        }
     }
 
     /* disable nonblocking I/O */
@@ -254,8 +256,10 @@ int ssh_getpass(const char *prompt,
 
     ok = ssh_gets(prompt, buf, len, verify);
 
-    /* reset terminal */
-    tcsetattr(STDIN_FILENO, TCSANOW, &old_attr);
+    if (isatty(STDIN_FILENO)) {
+        /* reset terminal */
+        tcsetattr(STDIN_FILENO, TCSANOW, &old_attr);
+    }
 
     /* close fd */
     if (fd & O_NDELAY) {
