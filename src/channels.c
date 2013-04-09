@@ -975,7 +975,7 @@ int ssh_channel_open_auth_agent(ssh_channel channel){
 #endif
 
   return channel_open(channel,
-                      "auth-agent",
+                      "auth-agent@openssh.com",
                       CHANNEL_INITIAL_WINDOW,
                       CHANNEL_MAX_PACKET,
                       NULL);
