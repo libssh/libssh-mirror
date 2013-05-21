@@ -540,6 +540,37 @@ typedef int (*ssh_channel_pty_window_change_callback) (ssh_session session,
                                             int pxwidth, int pwheight,
                                             void *userdata);
 
+/**
+ * @brief SSH channel Exec request from a client.
+ * @param channel the channel
+ * @param command the shell command to be executed
+ * @param userdata Userdata to be passed to the callback function.
+ * @returns 0 if the exec request is accepted
+ * @returns 1 if the request is denied
+ */
+typedef int (*ssh_channel_exec_request_callback) (ssh_session session,
+                                            ssh_channel channel,
+                                            const char *command,
+                                            void *userdata);
+
+/**
+ * @brief SSH channel environment request from a client.
+ * @param channel the channel
+ * @param env_name name of the environment value to be set
+ * @param env_value value of the environment value to be set
+ * @param userdata Userdata to be passed to the callback function.
+ * @returns 0 if the env request is accepted
+ * @returns 1 if the request is denied
+ * @warning some environment variables can be dangerous if changed (e.g.
+ * 			LD_PRELOAD) and should not be fulfilled.
+ */
+typedef int (*ssh_channel_env_request_callback) (ssh_session session,
+                                            ssh_channel channel,
+                                            const char *env_name,
+                                            const char *env_value,
+                                            void *userdata);
+
+
 struct ssh_channel_callbacks_struct {
   /** DON'T SET THIS use ssh_callbacks_init() instead. */
   size_t size;
@@ -591,8 +622,16 @@ struct ssh_channel_callbacks_struct {
    * window change.
    */
   ssh_channel_pty_window_change_callback channel_pty_window_change_function;
-
+  /** This function will be called when a client requests a
+   * command execution.
+   */
+  ssh_channel_exec_request_callback channel_exec_request_function;
+  /** This function will be called when a client requests an environment
+   * variable to be set.
+   */
+  ssh_channel_env_request_callback channel_env_request_function;
 };
+
 typedef struct ssh_channel_callbacks_struct *ssh_channel_callbacks;
 
 /**
