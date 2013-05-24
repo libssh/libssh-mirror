@@ -511,7 +511,7 @@ static int ssh_gssapi_match(ssh_session session, char *hostname, char *username,
 	maj_stat = gss_indicate_mechs(&min_stat, &supported);
 	for (i=0; i < supported->count; ++i){
 		ptr=ssh_get_hexa(supported->elements[i].elements, supported->elements[i].length);
-		printf("supported %d : %s\n",i, ptr);
+		ssh_log(session, SSH_LOG_DEBUG, "GSSAPI oid supported %d : %s\n",i, ptr);
 		SAFE_FREE(ptr);
 	}
 
@@ -520,8 +520,8 @@ static int ssh_gssapi_match(ssh_session session, char *hostname, char *username,
 	maj_stat = gss_import_name(&min_stat, &user_namebuf,
 			(gss_OID) GSS_C_NT_USER_NAME, &user_name);
 	if (maj_stat != GSS_S_COMPLETE) {
-		ssh_log(session, 0, "importing name %d, %d", maj_stat, min_stat);
-		ssh_gssapi_log_error(session, 0, "importing name", maj_stat);
+		ssh_log(session, SSH_LOG_DEBUG, "importing name %d, %d", maj_stat, min_stat);
+		ssh_gssapi_log_error(session, SSH_LOG_DEBUG, "importing name", maj_stat);
 		return -1;
 	}
 
@@ -608,12 +608,14 @@ int ssh_gssapi_auth_mic(ssh_session session){
 
 	ssh_log(session, 0, "acquiring credentials %d, %d", maj_stat, min_stat);
 */
+	ssh_log(session,SSH_LOG_PROTOCOL, "Authenticating with gssapi to host %s with user %s",
+			session->opts.host, session->opts.username);
 	rc = ssh_gssapi_match(session,session->opts.host, session->opts.username, &selected, 0);
 	if (rc == SSH_ERROR)
 		return SSH_AUTH_DENIED;
 
 	n_oids = selected->count;
-	ssh_log(session, 0, "Sending %d oids", n_oids);
+	ssh_log(session, SSH_LOG_PROTOCOL, "Sending %d oids", n_oids);
 
 	oids = calloc(n_oids, sizeof(ssh_string));
 
