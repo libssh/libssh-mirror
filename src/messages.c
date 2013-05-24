@@ -198,6 +198,17 @@ static int ssh_execute_server_callbacks(ssh_session session, ssh_message msg){
 						ssh_message_reply_default(msg);
 					return SSH_OK;
 				}
+			} else if(msg->channel_request.type == SSH_CHANNEL_REQUEST_SUBSYSTEM){
+				if(ssh_callbacks_exists(channel->callbacks, channel_subsystem_request_function)){
+					rc = channel->callbacks->channel_subsystem_request_function(session, channel,
+							msg->channel_request.subsystem,
+							channel->callbacks->userdata);
+					if(rc == 0)
+						ssh_message_channel_request_reply_success(msg);
+					else
+						ssh_message_reply_default(msg);
+					return SSH_OK;
+				}
 			}
 			break;
 		case SSH_REQUEST_SERVICE:

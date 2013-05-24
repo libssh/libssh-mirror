@@ -569,6 +569,18 @@ typedef int (*ssh_channel_env_request_callback) (ssh_session session,
                                             const char *env_name,
                                             const char *env_value,
                                             void *userdata);
+/**
+ * @brief SSH channel subsystem request from a client.
+ * @param channel the channel
+ * @param subsystem the subsystem required
+ * @param userdata Userdata to be passed to the callback function.
+ * @returns 0 if the subsystem request is accepted
+ * @returns 1 if the request is denied
+ */
+typedef int (*ssh_channel_subsystem_request_callback) (ssh_session session,
+                                            ssh_channel channel,
+                                            const char *subsystem,
+                                            void *userdata);
 
 
 struct ssh_channel_callbacks_struct {
@@ -630,6 +642,10 @@ struct ssh_channel_callbacks_struct {
    * variable to be set.
    */
   ssh_channel_env_request_callback channel_env_request_function;
+  /** This function will be called when a client requests a subsystem
+   * (like sftp).
+   */
+  ssh_channel_subsystem_request_callback channel_subsystem_request_function;
 };
 
 typedef struct ssh_channel_callbacks_struct *ssh_channel_callbacks;
