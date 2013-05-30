@@ -132,6 +132,7 @@ struct sftp_client_message_struct {
     int attr_num;
     ssh_buffer attrbuf; /* used by sftp_reply_attrs */
     ssh_string data; /* can be newpath of rename() */
+    ssh_buffer complete_message; /* complete message in case of retransmission*/
 };
 
 struct sftp_request_queue_struct {
@@ -824,8 +825,14 @@ int buffer_add_attributes(ssh_buffer buffer, sftp_attributes attr);
 sftp_attributes sftp_parse_attr(sftp_session session, ssh_buffer buf,int expectname);
 /* sftpserver.c */
 
-sftp_client_message sftp_get_client_message(sftp_session sftp);
-void sftp_client_message_free(sftp_client_message msg);
+LIBSSH_API sftp_client_message sftp_get_client_message(sftp_session sftp);
+LIBSSH_API void sftp_client_message_free(sftp_client_message msg);
+LIBSSH_API uint8_t sftp_client_message_get_type(sftp_client_message msg);
+LIBSSH_API const char *sftp_client_message_get_filename(sftp_client_message msg);
+LIBSSH_API void sftp_client_message_set_filename(sftp_client_message msg, const char *newname);
+LIBSSH_API char *sftp_client_message_get_data(sftp_client_message msg);
+LIBSSH_API uint32_t sftp_client_message_get_flags(sftp_client_message msg);
+LIBSSH_API int sftp_send_client_message(sftp_session sftp, sftp_client_message msg);
 int sftp_reply_name(sftp_client_message msg, const char *name,
     sftp_attributes attr);
 int sftp_reply_handle(sftp_client_message msg, ssh_string handle);
