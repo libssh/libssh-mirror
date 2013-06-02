@@ -106,7 +106,6 @@ typedef void (*ssh_global_request_callback) (ssh_session session,
 typedef ssh_channel (*ssh_channel_open_request_x11_callback) (ssh_session session,
       const char * originator_address, int originator_port, void *userdata);
 
-
 /**
  * The structure to replace libssh functions with appropriate callbacks.
  */
@@ -137,7 +136,6 @@ struct ssh_callbacks_struct {
   /** This function will be called when an incoming X11 request is received.
    */
   ssh_channel_open_request_x11_callback channel_open_request_x11_function;
-
 };
 typedef struct ssh_callbacks_struct *ssh_callbacks;
 
@@ -202,6 +200,49 @@ typedef int (*ssh_service_request_callback) (ssh_session session, const char *se
  */
 typedef ssh_channel (*ssh_channel_open_request_session_callback) (ssh_session session, void *userdata);
 
+/*
+ * @brief handle the beginning of a GSSAPI authentication, server side.
+ * @param session current session handler
+ * @param user the username of the client
+ * @param n_oid number of available oids
+ * @param oids OIDs provided by the client
+ * @returns an ssh_string containing the chosen OID, that's supported by both
+ * client and server.
+ * @warning It is not necessary to fill this callback in if libssh is linked
+ * with libgssapi.
+ */
+typedef ssh_string (*ssh_gssapi_select_oid_callback) (ssh_session session, const char *user,
+		int n_oid, ssh_string *oids, void *userdata);
+
+/*
+ * @brief handle the negociation of a security context, server side.
+ * @param session current session handler
+ * @param[in] input_token input token provided by client
+ * @param[out] output_token output of the gssapi accept_sec_context method,
+ * 				NULL after completion.
+ * @returns SSH_OK if the token was generated correctly or accept_sec_context
+ * returned GSS_S_COMPLETE
+ * @returns SSH_ERROR in case of error
+ * @warning It is not necessary to fill this callback in if libssh is linked
+ * with libgssapi.
+ */
+typedef int (*ssh_gssapi_accept_sec_ctx_callback) (ssh_session session,
+		ssh_string input_token, ssh_string *output_token, void *userdata);
+
+/*
+ * @brief Verify and authenticates a MIC, server side.
+ * @param session current session handler
+ * @param[in] mic input mic to be verified provided by client
+ * @param[in] mic_buffer buffer of data to be signed.
+ * @param[in] mic_buffer_size size of mic_buffer
+ * @returns SSH_OK if the MIC was authenticated correctly
+ * @returns SSH_ERROR in case of error
+ * @warning It is not necessary to fill this callback in if libssh is linked
+ * with libgssapi.
+ */
+typedef int (*ssh_gssapi_verify_mic_callback) (ssh_session session,
+		ssh_string mic, void *mic_buffer, size_t mic_buffer_size, void *userdata);
+
 /**
  * This structure can be used to implement a libssh server, with appropriate callbacks.
  */
@@ -235,6 +276,15 @@ struct ssh_server_callbacks_struct {
    * the client
    */
   ssh_channel_open_request_session_callback channel_open_request_session_function;
+  /** This function will be called when a new gssapi authentication is attempted.
+   */
+  ssh_gssapi_select_oid_callback gssapi_select_oid_function;
+  /** This function will be called when a gssapi token comes in.
+   */
+  ssh_gssapi_accept_sec_ctx_callback gssapi_accept_sec_ctx_function;
+  /* This function will be called when a MIC needs to be verified.
+   */
+  ssh_gssapi_verify_mic_callback gssapi_verify_mic_function;
 };
 typedef struct ssh_server_callbacks_struct *ssh_server_callbacks;
 

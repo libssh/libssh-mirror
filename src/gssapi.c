@@ -144,7 +144,23 @@ int ssh_gssapi_handle_userauth(ssh_session session, const char *user, uint32_t n
 	int present=0;
 	int oid_count=0;
 	struct gss_OID_desc_struct oid;
+	int rc;
 
+	if (ssh_callbacks_exists(session->server_callbacks, gssapi_select_oid_function)){
+		ssh_string oid_s = session->server_callbacks->gssapi_select_oid_function(session,
+				user, n_oid, oids,
+				session->server_callbacks->userdata);
+		if (oid_s != NULL){
+			if (ssh_gssapi_init(session) == SSH_ERROR)
+					return SSH_ERROR;
+			session->gssapi->state = SSH_GSSAPI_STATE_RCV_TOKEN;
+			rc = ssh_gssapi_send_response(session, oid_s);
+			ssh_string_free(oid_s);
+			return rc;
+		} else {
+			return ssh_auth_reply_default(session,0);
+		}
+	}
 	gss_create_empty_oid_set(&min_stat, &both_supported);
 
 	maj_stat = gss_indicate_mechs(&min_stat, &supported);
@@ -273,6 +289,27 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_token_server){
 		ssh_set_error(session, SSH_REQUEST_DENIED, "ssh_packet_userauth_gssapi_token: invalid packet");
 		return SSH_PACKET_USED;
 	}
+
+	if (ssh_callbacks_exists(session->server_callbacks, gssapi_accept_sec_ctx_function)){
+		ssh_string out_token=NULL;
+		int rc = session->server_callbacks->gssapi_accept_sec_ctx_function(session,
+				token, &out_token, session->server_callbacks->userdata);
+		if (rc == SSH_ERROR){
+			ssh_auth_reply_default(session, 0);
+			ssh_gssapi_free(session);
+			session->gssapi=NULL;
+			return SSH_PACKET_USED;
+		}
+		if (ssh_string_len(out_token) != 0){
+			buffer_add_u8(session->out_buffer, SSH2_MSG_USERAUTH_GSSAPI_TOKEN);
+			buffer_add_ssh_string(session->out_buffer,out_token);
+			packet_send(session);
+			ssh_string_free(out_token);
+		} else {
+			session->gssapi->state = SSH_GSSAPI_STATE_RCV_MIC;
+		}
+		return SSH_PACKET_USED;
+	}
 	hexa = ssh_get_hexa(ssh_string_data(token),ssh_string_len(token));
 	ssh_log(session, SSH_LOG_PACKET, "GSSAPI Token : %s",hexa);
 	SAFE_FREE(hexa);
@@ -346,7 +383,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_mic){
 	OM_uint32 maj_stat, min_stat;
 	gss_buffer_desc mic_buf = GSS_C_EMPTY_BUFFER;
 	gss_buffer_desc mic_token_buf = GSS_C_EMPTY_BUFFER;
-	ssh_buffer mic_buffer;
+	ssh_buffer mic_buffer = NULL;
 
 	(void)user;
 	(void)type;
@@ -367,18 +404,24 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_mic){
 		ssh_set_error_oom(session);
 		goto error;
 	}
-	mic_buf.length = ssh_buffer_get_len(mic_buffer);
-	mic_buf.value = ssh_buffer_get_begin(mic_buffer);
-	mic_token_buf.length = ssh_string_len(mic_token);
-	mic_token_buf.value = ssh_string_data(mic_token);
+	if (ssh_callbacks_exists(session->server_callbacks, gssapi_verify_mic_function)){
+		int rc = session->server_callbacks->gssapi_verify_mic_function(session, mic_token,
+				ssh_buffer_get_begin(mic_buffer), ssh_buffer_get_len(mic_buffer),
+				session->server_callbacks->userdata);
+		if (rc != SSH_OK)
+			goto error;
+	} else {
+		mic_buf.length = ssh_buffer_get_len(mic_buffer);
+		mic_buf.value = ssh_buffer_get_begin(mic_buffer);
+		mic_token_buf.length = ssh_string_len(mic_token);
+		mic_token_buf.value = ssh_string_data(mic_token);
 
-	maj_stat = gss_verify_mic(&min_stat, session->gssapi->ctx, &mic_buf, &mic_token_buf, NULL);
-	ssh_gssapi_log_error(session, 0, "verifying MIC", maj_stat);
-	ssh_gssapi_log_error(session, 0, "verifying MIC (min stat)", min_stat);
-	if (maj_stat == GSS_S_DEFECTIVE_TOKEN)
-
-	if(GSS_ERROR(maj_stat))
-		goto error;
+		maj_stat = gss_verify_mic(&min_stat, session->gssapi->ctx, &mic_buf, &mic_token_buf, NULL);
+		ssh_gssapi_log_error(session, 0, "verifying MIC", maj_stat);
+		ssh_gssapi_log_error(session, 0, "verifying MIC (min stat)", min_stat);
+		if (maj_stat == GSS_S_DEFECTIVE_TOKEN || GSS_ERROR(maj_stat))
+			goto error;
+	}
 
 	if (ssh_callbacks_exists(session->server_callbacks, auth_gssapi_mic_function)){
 		switch(session->server_callbacks->auth_gssapi_mic_function(session,
@@ -395,12 +438,17 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_mic){
 		}
 	}
 
-	//ssh_gssapi_free(session);
-	return SSH_PACKET_USED;
+	goto end;
 
 	error:
 	ssh_auth_reply_default(session,0);
+
+	end:
 	ssh_gssapi_free(session);
+	if(mic_buffer != NULL)
+		ssh_buffer_free(mic_buffer);
+	if(mic_token != NULL)
+		ssh_string_free(mic_token);
 	return SSH_PACKET_USED;
 }
 
