@@ -78,7 +78,7 @@ static enum ssh_config_opcode_e ssh_config_get_opcode(char *keyword) {
   return SOC_UNSUPPORTED;
 }
 
-static char *ssh_config_get_token(char **str) {
+static char *ssh_config_get_cmd(char **str) {
   register char *c;
   char *r;
 
@@ -97,6 +97,25 @@ static char *ssh_config_get_token(char **str) {
       }
     }
   }
+
+  for (r = c; *c; c++) {
+    if (*c == '\n') {
+      *c = '\0';
+      goto out;
+    }
+  }
+
+out:
+  *str = c + 1;
+
+  return r;
+}
+
+static char *ssh_config_get_token(char **str) {
+  register char *c;
+  char *r;
+
+  c = ssh_config_get_cmd(str);
 
   for (r = c; *c; c++) {
     if (isblank(*c)) {
@@ -295,7 +314,7 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
       }
       break;
     case SOC_PROXYCOMMAND:
-      p = ssh_config_get_str(&s, NULL);
+      p = ssh_config_get_cmd(&s);
       if (p && *parsing) {
         ssh_options_set(session, SSH_OPTIONS_PROXYCOMMAND, p);
       }
