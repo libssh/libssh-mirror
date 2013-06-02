@@ -263,9 +263,10 @@ void sftp_client_message_set_filename(sftp_client_message msg, const char *newna
 	msg->filename = strdup(newname);
 }
 
-char *sftp_client_message_get_data(sftp_client_message msg){
-	char *str = ssh_string_to_char(msg->data);
-	return str;
+const char *sftp_client_message_get_data(sftp_client_message msg){
+	if (msg->str_data == NULL)
+		msg->str_data = ssh_string_to_char(msg->data);
+	return msg->str_data;
 }
 
 uint32_t sftp_client_message_get_flags(sftp_client_message msg){
@@ -282,6 +283,7 @@ void sftp_client_message_free(sftp_client_message msg) {
   ssh_string_free(msg->handle);
   sftp_attributes_free(msg->attr);
   ssh_buffer_free(msg->complete_message);
+  SAFE_FREE(msg->str_data);
   ZERO_STRUCTP(msg);
   SAFE_FREE(msg);
 }
