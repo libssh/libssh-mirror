@@ -698,7 +698,7 @@ int ssh_options_getopt(ssh_session session, int *argcptr, char **argv) {
   char *cipher = NULL;
   char *identity = NULL;
   char *port = NULL;
-  char **save = NULL;
+  char **save = NULL, **tmp;
   int i = 0;
   int argc = *argcptr;
   int debuglevel = 0;
@@ -757,7 +757,6 @@ int ssh_options_getopt(ssh_session session, int *argcptr, char **argv) {
         break;
       default:
         {
-          char **tmp;
           char opt[3]="- ";
           opt[1] = optopt;
           tmp = realloc(save, (current + 1) * sizeof(char*));
@@ -782,7 +781,16 @@ int ssh_options_getopt(ssh_session session, int *argcptr, char **argv) {
   } /* while */
   opterr = saveopterr;
   while (optind < argc) {
-    save[current++] = argv[optind++];
+      tmp = realloc(save, (current + 1) * sizeof(char*));
+      if (tmp == NULL) {
+          SAFE_FREE(save);
+          ssh_set_error_oom(session);
+          return -1;
+      }
+      save = tmp;
+      save[current] = argv[optind];
+      current++;
+      optind++;
   }
 
   if (usersa && usedss) {
