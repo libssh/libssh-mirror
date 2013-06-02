@@ -131,7 +131,7 @@ static int ssh_config_get_int(char **str, int notfound) {
   return notfound;
 }
 
-static const char *ssh_config_get_str(char **str, const char *def) {
+static const char *ssh_config_get_str_tok(char **str, const char *def) {
   char *p;
 
   p = ssh_config_get_token(str);
@@ -145,7 +145,7 @@ static const char *ssh_config_get_str(char **str, const char *def) {
 static int ssh_config_get_yesno(char **str, int notfound) {
   const char *p;
 
-  p = ssh_config_get_str(str, NULL);
+  p = ssh_config_get_str_tok(str, NULL);
   if (p == NULL) {
     return notfound;
   }
@@ -196,8 +196,8 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
     case SOC_HOST:
       *parsing = 0;
       lowerhost = (session->opts.host) ? ssh_lowercase(session->opts.host) : NULL;
-      for (p = ssh_config_get_str(&s, NULL); p && *p;
-          p = ssh_config_get_str(&s, NULL)) {
+      for (p = ssh_config_get_str_tok(&s, NULL); p && *p;
+          p = ssh_config_get_str_tok(&s, NULL)) {
         if (match_hostname(lowerhost, p, strlen(p))) {
           *parsing = 1;
         }
@@ -205,14 +205,14 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
       SAFE_FREE(lowerhost);
       break;
     case SOC_HOSTNAME:
-      p = ssh_config_get_str(&s, NULL);
+      p = ssh_config_get_str_tok(&s, NULL);
       if (p && *parsing) {
         ssh_options_set(session, SSH_OPTIONS_HOST, p);
       }
       break;
     case SOC_PORT:
       if (session->opts.port == 22) {
-          p = ssh_config_get_str(&s, NULL);
+          p = ssh_config_get_str_tok(&s, NULL);
           if (p && *parsing) {
               ssh_options_set(session, SSH_OPTIONS_PORT_STR, p);
           }
@@ -220,20 +220,20 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
       break;
     case SOC_USERNAME:
       if (session->opts.username == NULL) {
-          p = ssh_config_get_str(&s, NULL);
+          p = ssh_config_get_str_tok(&s, NULL);
           if (p && *parsing) {
             ssh_options_set(session, SSH_OPTIONS_USER, p);
          }
       }
       break;
     case SOC_IDENTITY:
-      p = ssh_config_get_str(&s, NULL);
+      p = ssh_config_get_str_tok(&s, NULL);
       if (p && *parsing) {
         ssh_options_set(session, SSH_OPTIONS_ADD_IDENTITY, p);
       }
       break;
     case SOC_CIPHERS:
-      p = ssh_config_get_str(&s, NULL);
+      p = ssh_config_get_str_tok(&s, NULL);
       if (p && *parsing) {
         ssh_options_set(session, SSH_OPTIONS_CIPHERS_C_S, p);
         ssh_options_set(session, SSH_OPTIONS_CIPHERS_S_C, p);
@@ -250,7 +250,7 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
       }
       break;
     case SOC_PROTOCOL:
-      p = ssh_config_get_str(&s, NULL);
+      p = ssh_config_get_str_tok(&s, NULL);
       if (p && *parsing) {
         char *a, *b;
         b = strdup(p);
@@ -293,7 +293,7 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
       }
       break;
     case SOC_KNOWNHOSTS:
-      p = ssh_config_get_str(&s, NULL);
+      p = ssh_config_get_str_tok(&s, NULL);
       if (p && *parsing) {
         ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, p);
       }
