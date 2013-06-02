@@ -272,7 +272,6 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_token_server){
 	gss_buffer_desc input_token, output_token = GSS_C_EMPTY_BUFFER;
 	gss_name_t client_name = GSS_C_NO_NAME;
 	OM_uint32 ret_flags=0;
-	gss_cred_id_t deleg_cred = GSS_C_NO_CREDENTIAL;
 	gss_channel_bindings_t input_bindings=GSS_C_NO_CHANNEL_BINDINGS;
 	//char *name;
 	(void)user;
@@ -623,39 +622,16 @@ static int ssh_gssapi_match(ssh_session session, char *hostname, char *username,
  *                            later.
  */
 int ssh_gssapi_auth_mic(ssh_session session){
-	gss_buffer_desc name_buf;
-	gss_name_t principal_name; /* local server fqdn */
-	OM_uint32 maj_stat, min_stat;
 	int i;
-	char *ptr;
-	//gss_OID_set supported; /* oids supported by server */
-	//gss_OID_set both_supported; /* oids supported by both client and server */
 	gss_OID_set selected; /* oid selected for authentication */
 	ssh_string *oids;
 	int rc;
 	int n_oids = 0;
 
-	//gss_create_empty_oid_set(&min_stat, &both_supported);
-
 	if (ssh_gssapi_init(session) == SSH_ERROR)
 		return SSH_AUTH_ERROR;
 
-/*
-	maj_stat = gss_acquire_cred(&min_stat, principal_name, 0,
-			supported, GSS_C_INITIATE,
-			&session->gssapi->client.client_creds, &selected, NULL);
-	gss_release_name(&min_stat, &principal_name);
-	gss_release_oid_set(&min_stat, &both_supported);
 
-	if (maj_stat != GSS_S_COMPLETE) {
-		ssh_log(session, 0, "error acquiring credentials %d, %d", maj_stat, min_stat);
-		ssh_gssapi_log_error(session, 0, "acquiring creds", maj_stat);
-		ssh_auth_reply_default(session,0);
-		return SSH_ERROR;
-	}
-
-	ssh_log(session, 0, "acquiring credentials %d, %d", maj_stat, min_stat);
-*/
 	ssh_log(session,SSH_LOG_PROTOCOL, "Authenticating with gssapi to host %s with user %s",
 			session->opts.host, session->opts.username);
 	rc = ssh_gssapi_match(session,session->opts.host, session->opts.username, &selected, 0);
@@ -770,7 +746,6 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_response){
 }
 
 static int ssh_gssapi_send_mic(ssh_session session){
-	ssh_string mic_token;
 	OM_uint32 maj_stat, min_stat;
 	gss_buffer_desc mic_buf = GSS_C_EMPTY_BUFFER;
 	gss_buffer_desc mic_token_buf = GSS_C_EMPTY_BUFFER;
@@ -804,12 +779,8 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_token_client){
 	OM_uint32 maj_stat, min_stat;
 	gss_buffer_desc input_token, output_token = GSS_C_EMPTY_BUFFER;
 	gss_name_t client_name = GSS_C_NO_NAME;
-	OM_uint32 ret_flags=0;
-	gss_cred_id_t deleg_cred = GSS_C_NO_CREDENTIAL;
 	gss_cred_id_t creds = GSS_C_NO_CREDENTIAL;
-	gss_channel_bindings_t input_bindings=GSS_C_NO_CHANNEL_BINDINGS;
 	int deleg = 0;
-	//char *name;
 	(void)user;
 	(void)type;
 
