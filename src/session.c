@@ -547,6 +547,7 @@ int ssh_handle_packets_termination(ssh_session session,
             break;
         }
         if (ssh_timeout_elapsed(&ts,timeout)) {
+            ret = fct(user) ? SSH_OK : SSH_AGAIN;
             break;
         }
 
