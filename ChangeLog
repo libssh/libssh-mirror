@@ -1,6 +1,13 @@
 ChangeLog
 ==========
 
+version 0.5.5 (released 2013-07-26)
+  * BUG 103: Fix ProxyCommand parsing.
+  * Fix setting -D_FORTIFY_SOURCE=2.
+  * Fix pollset error return if emtpy.
+  * Fix NULL pointer checks in channel functions.
+  * Several bugfixes.
+
 version 0.5.4 (released 2013-01-22)
   * CVE-2013-0176 - NULL dereference leads to denial of service
   * Fixed several NULL pointer dereferences in SSHv1.
