@@ -421,7 +421,14 @@ int ssh_pki_import_privkey_file(const char *filename,
         return SSH_ERROR;
     }
 
-    rc = stat(filename, &sb);
+    file = fopen(filename, "rb");
+    if (file == NULL) {
+        ssh_pki_log("Error opening %s: %s",
+                    filename, strerror(errno));
+        return SSH_EOF;
+    }
+
+    rc = fstat(fileno(file), &sb);
     if (rc < 0) {
         ssh_pki_log("Error getting stat of %s: %s",
                     filename, strerror(errno));
@@ -432,13 +439,6 @@ int ssh_pki_import_privkey_file(const char *filename,
         }
 
         return SSH_ERROR;
-    }
-
-    file = fopen(filename, "rb");
-    if (file == NULL) {
-        ssh_pki_log("Error opening %s: %s",
-                    filename, strerror(errno));
-        return SSH_EOF;
     }
 
     key_buf = malloc(sb.st_size + 1);
@@ -804,7 +804,14 @@ int ssh_pki_import_pubkey_file(const char *filename, ssh_key *pkey)
         return SSH_ERROR;
     }
 
-    rc = stat(filename, &sb);
+    file = fopen(filename, "r");
+    if (file == NULL) {
+        ssh_pki_log("Error opening %s: %s",
+                    filename, strerror(errno));
+        return SSH_EOF;
+    }
+
+    rc = fstat(fileno(file), &sb);
     if (rc < 0) {
         ssh_pki_log("Error gettint stat of %s: %s",
                     filename, strerror(errno));
@@ -818,13 +825,6 @@ int ssh_pki_import_pubkey_file(const char *filename, ssh_key *pkey)
 
     if (sb.st_size > MAX_PUBKEY_SIZE) {
         return SSH_ERROR;
-    }
-
-    file = fopen(filename, "r");
-    if (file == NULL) {
-        ssh_pki_log("Error opening %s: %s",
-                    filename, strerror(errno));
-        return SSH_EOF;
     }
 
     key_buf = malloc(sb.st_size + 1);
