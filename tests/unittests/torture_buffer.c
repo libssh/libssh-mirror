@@ -106,7 +106,8 @@ static void torture_buffer_get_ssh_string(void **state) {
         buffer_add_data(buffer,data,j);
         for(l=0;l<k;++l){
           ssh_string str = buffer_get_ssh_string(buffer);
-          assert_true(str==NULL);
+          assert_null(str);
+          ssh_string_free(str);
         }
         buffer_free(buffer);
       }
