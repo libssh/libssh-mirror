@@ -617,7 +617,7 @@ void ssh_disconnect(ssh_session session) {
 
   enter_function();
 
-  if (ssh_socket_is_open(session->socket)) {
+  if (session->socket != NULL && ssh_socket_is_open(session->socket)) {
     if (buffer_add_u8(session->out_buffer, SSH2_MSG_DISCONNECT) < 0) {
       goto error;
     }
@@ -642,7 +642,7 @@ void ssh_disconnect(ssh_session session) {
   }
 error:
   session->alive = 0;
-  if(session->socket){
+  if (session->socket != NULL){
     ssh_socket_reset(session->socket);
   }
   session->opts.fd = SSH_INVALID_SOCKET;
