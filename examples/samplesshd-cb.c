@@ -60,19 +60,17 @@ static int auth_password(ssh_session session, const char *user,
     return SSH_AUTH_DENIED;
 }
 
-static int auth_gssapi_mic(ssh_session session, const char *user, void *userdata){
-	ssh_gssapi_creds creds = ssh_gssapi_get_creds(session);
-
-	(void)userdata;
-
-	printf("Authenticating used %s with gssapi\n",user);
-	if (creds != NULL)
-		printf("Received some gssapi credentials\n");
-	else
-		printf("Not received any forwardable creds\n");
-	printf("authenticated\n");
-	authenticated = 1;
-	return SSH_AUTH_SUCCESS;
+static int auth_gssapi_mic(ssh_session session, const char *user, const char *principal, void *userdata){
+    (void)userdata;
+    ssh_gssapi_creds creds = ssh_gssapi_get_creds(session);
+    printf("Authenticating user %s with gssapi principal %s\n",user, principal);
+    if (creds != NULL)
+        printf("Received some gssapi credentials\n");
+    else
+        printf("Not received any forwardable creds\n");
+    printf("authenticated\n");
+    authenticated = 1;
+    return SSH_AUTH_SUCCESS;
 }
 
 static int pty_request(ssh_session session, ssh_channel channel, const char *term,

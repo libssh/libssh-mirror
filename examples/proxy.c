@@ -56,17 +56,17 @@ static int auth_password(ssh_session session, const char *user,
     return SSH_AUTH_DENIED;
 }
 
-static int auth_gssapi_mic(ssh_session session, const char *user, void *userdata){
+static int auth_gssapi_mic(ssh_session session, const char *user, const char *principal, void *userdata){
     (void)userdata;
     client_creds = ssh_gssapi_get_creds(session);
-    printf("Authenticating used %s with gssapi\n",user);
+    printf("Authenticating user %s with gssapi principal %s\n",user, principal);
     if (client_creds != NULL)
         printf("Received some gssapi credentials\n");
     else
         printf("Not received any forwardable creds\n");
     printf("authenticated\n");
     authenticated = 1;
-    username = strdup(user);
+    username = strdup(principal);
     return SSH_AUTH_SUCCESS;
 }
 
@@ -323,7 +323,7 @@ int main(int argc, char **argv){
     ssh_gssapi_set_creds(client_session, client_creds);
     rc = ssh_connect(client_session);
     if (rc != SSH_OK){
-        printf("Error connecting to %s: %d", host, ssh_get_error(client_session));
+        printf("Error connecting to %s: %s", host, ssh_get_error(client_session));
         return 1;
     }
     rc = ssh_userauth_none(client_session, NULL);
