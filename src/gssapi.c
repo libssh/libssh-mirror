@@ -424,7 +424,8 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_mic){
 
 	if (ssh_callbacks_exists(session->server_callbacks, auth_gssapi_mic_function)){
 		switch(session->server_callbacks->auth_gssapi_mic_function(session,
-				session->gssapi->canonic_user, session->server_callbacks->userdata)){
+				session->gssapi->user, session->gssapi->canonic_user,
+				session->server_callbacks->userdata)){
 		case SSH_AUTH_SUCCESS:
 			ssh_auth_reply_success(session, 0);
 			break;
