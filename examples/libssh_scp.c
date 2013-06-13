@@ -286,7 +286,7 @@ int main(int argc, char **argv){
     	break;
     }
   }
-  if(dest->is_ssh){
+  if (dest->is_ssh && dest->scp != NULL) {
 	  r=ssh_scp_close(dest->scp);
 	  if(r == SSH_ERROR){
 		  fprintf(stderr,"Error closing scp: %s\n",ssh_get_error(dest->session));
