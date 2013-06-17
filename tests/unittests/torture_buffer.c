@@ -66,22 +66,25 @@ static void torture_buffer_prepend(void **state) {
   buffer_add_data(buffer,"abcdef",6);
   buffer_prepend_data(buffer,"xyz",3);
   assert_int_equal(buffer_get_rest_len(buffer),9);
-  assert_int_equal(memcmp(buffer_get_rest(buffer), "xyzabcdef", 9), 0);
-// Now remove 4 bytes and see if we can replace them
+  assert_memory_equal(buffer_get_rest(buffer),  "xyzabcdef", 9);
+
+  /* Now remove 4 bytes and see if we can replace them */
   buffer_get_u32(buffer,&v);
   assert_int_equal(buffer_get_rest_len(buffer),5);
-  assert_int_equal(memcmp(buffer_get_rest(buffer), "bcdef", 5), 0);
+  assert_memory_equal(buffer_get_rest(buffer), "bcdef", 5);
+
   buffer_prepend_data(buffer,"aris",4);
   assert_int_equal(buffer_get_rest_len(buffer),9);
-  assert_int_equal(memcmp(buffer_get_rest(buffer), "arisbcdef", 9), 0);
+  assert_memory_equal(buffer_get_rest(buffer), "arisbcdef", 9);
+
   /* same thing but we add 5 bytes now */
   buffer_get_u32(buffer,&v);
   assert_int_equal(buffer_get_rest_len(buffer),5);
-  assert_int_equal(memcmp(buffer_get_rest(buffer), "bcdef", 5), 0);
+  assert_memory_equal(buffer_get_rest(buffer), "bcdef", 5);
+
   buffer_prepend_data(buffer,"12345",5);
   assert_int_equal(buffer_get_rest_len(buffer),10);
-  assert_int_equal(memcmp(buffer_get_rest(buffer), "12345bcdef", 10), 0);
-
+  assert_memory_equal(buffer_get_rest(buffer), "12345bcdef", 10);
 }
 
 /*
