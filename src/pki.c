@@ -430,6 +430,7 @@ int ssh_pki_import_privkey_file(const char *filename,
 
     rc = fstat(fileno(file), &sb);
     if (rc < 0) {
+        fclose(file);
         ssh_pki_log("Error getting stat of %s: %s",
                     filename, strerror(errno));
         switch (errno) {
@@ -813,6 +814,7 @@ int ssh_pki_import_pubkey_file(const char *filename, ssh_key *pkey)
 
     rc = fstat(fileno(file), &sb);
     if (rc < 0) {
+        fclose(file);
         ssh_pki_log("Error gettint stat of %s: %s",
                     filename, strerror(errno));
         switch (errno) {
@@ -824,6 +826,7 @@ int ssh_pki_import_pubkey_file(const char *filename, ssh_key *pkey)
     }
 
     if (sb.st_size > MAX_PUBKEY_SIZE) {
+        fclose(file);
         return SSH_ERROR;
     }
 
