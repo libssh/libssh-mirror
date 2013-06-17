@@ -149,7 +149,13 @@ static int ssh_connect_ai_timeout(ssh_session session, const char *host,
    */
   timeout_ms=timeout * 1000 + usec / 1000;
 
-  ssh_socket_set_nonblocking(s);
+  rc = ssh_socket_set_nonblocking(s);
+  if (rc < 0) {
+      ssh_set_error(session, SSH_FATAL,
+          "Failed to set socket non-blocking for %s:%d", host, port);
+      ssh_connect_socket_close(s);
+      return -1;
+  }
 
   ssh_log(session, SSH_LOG_RARE, "Trying to connect to host: %s:%d with "
       "timeout %d ms", host, port, timeout_ms);
@@ -196,7 +202,14 @@ static int ssh_connect_ai_timeout(ssh_session session, const char *host,
 
   /* s is connected ? */
   ssh_log(session, SSH_LOG_PACKET, "Socket connected with timeout\n");
-  ssh_socket_set_blocking(s);
+  ret = ssh_socket_set_blocking(s);
+  if (ret < 0) {
+      ssh_set_error(session, SSH_FATAL,
+          "Failed to set socket as blocking connecting to %s:%d failed: %s",
+          host, port, strerror(errno));
+      ssh_connect_socket_close(s);
+      return -1;
+  }
 
   leave_function();
   return s;
@@ -368,7 +381,13 @@ socket_t ssh_connect_host_nonblocking(ssh_session session, const char *host,
         continue;
       }
     }
-    ssh_socket_set_nonblocking(s);
+
+    rc = ssh_socket_set_nonblocking(s);
+    if (rc < 0) {
+        ssh_set_error(session, SSH_FATAL,
+            "Failed to set socket non-blocking for %s:%d", host, port);
+        ssh_connect_socket_close(s);
+    }
 
     connect(s, itr->ai_addr, itr->ai_addrlen);
     break;
