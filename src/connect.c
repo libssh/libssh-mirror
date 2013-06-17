@@ -139,6 +139,7 @@ static int ssh_connect_ai_timeout(ssh_session session, const char *host,
   int timeout_ms;
   ssh_pollfd_t fds;
   int rc = 0;
+  int ret;
   socklen_t len = sizeof(rc);
 
   enter_function();
@@ -181,11 +182,11 @@ static int ssh_connect_ai_timeout(ssh_session session, const char *host,
     leave_function();
     return -1;
   }
-  rc = 0;
+  rc = -1;
 
   /* Get connect(2) return code. Zero means no error */
-  getsockopt(s, SOL_SOCKET, SO_ERROR,(char *) &rc, &len);
-  if (rc != 0) {
+  ret = getsockopt(s, SOL_SOCKET, SO_ERROR,(char *) &rc, &len);
+  if (ret < 0 || rc != 0) {
     ssh_set_error(session, SSH_FATAL,
         "Connect to %s:%d failed: %s", host, port, strerror(rc));
     ssh_connect_socket_close(s);
