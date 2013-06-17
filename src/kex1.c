@@ -375,7 +375,7 @@ SSH_PACKET_CALLBACK(ssh_packet_publickey1){
     goto error;
   }
   hostkey = make_rsa1_string(host_exp,host_mod);
-  if (serverkey == NULL) {
+  if (hostkey == NULL) {
     goto error;
   }
   if (build_session_id1(session, server_mod, host_mod) < 0) {
