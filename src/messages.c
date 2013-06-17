@@ -135,7 +135,9 @@ void ssh_message_queue(ssh_session session, ssh_message message){
             }
             session->ssh_message_list = ssh_list_new();
         }
-        ssh_list_append(session->ssh_message_list, message);
+        if (session->ssh_message_list != NULL) {
+            ssh_list_append(session->ssh_message_list, message);
+        }
     }
 }
 
