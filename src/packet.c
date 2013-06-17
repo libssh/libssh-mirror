@@ -305,10 +305,12 @@ void ssh_packet_register_socket_callback(ssh_session session, ssh_socket s){
  * @brief sets the callbacks for the packet layer
  */
 void ssh_packet_set_callbacks(ssh_session session, ssh_packet_callbacks callbacks){
-	if(session->packet_callbacks == NULL){
-		session->packet_callbacks = ssh_list_new();
-	}
-  ssh_list_append(session->packet_callbacks, callbacks);
+  if(session->packet_callbacks == NULL){
+    session->packet_callbacks = ssh_list_new();
+  }
+  if (session->packet_callbacks != NULL) {
+    ssh_list_append(session->packet_callbacks, callbacks);
+  }
 }
 
 /** @internal
@@ -526,6 +528,3 @@ int packet_send(ssh_session session) {
 #endif
   return packet_send2(session);
 }
-
-
-/* vim: set ts=2 sw=2 et cindent: */
