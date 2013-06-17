@@ -442,6 +442,12 @@ int ssh_pki_import_privkey_file(const char *filename,
         return SSH_ERROR;
     }
 
+    if (sb.st_size > MAX_PRIVKEY_SIZE) {
+        ssh_pki_log("Private key is bigger than 4M.");
+        fclose(file);
+        return SSH_ERROR;
+    }
+
     key_buf = malloc(sb.st_size + 1);
     if (key_buf == NULL) {
         fclose(file);
