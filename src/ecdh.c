@@ -59,7 +59,11 @@ int ssh_client_ecdh_init(ssh_session session){
 
   EC_POINT_point2oct(group,pubkey,POINT_CONVERSION_UNCOMPRESSED,
       ssh_string_data(client_pubkey),len,ctx);
-  buffer_add_ssh_string(session->out_buffer,client_pubkey);
+  rc = buffer_add_ssh_string(session->out_buffer,client_pubkey);
+  if (rc < 0) {
+      goto error;
+  }
+
   BN_CTX_free(ctx);
   session->next_crypto->ecdh_privkey = key;
   session->next_crypto->ecdh_client_pubkey = client_pubkey;
@@ -221,7 +225,12 @@ int ssh_server_ecdh_init(ssh_session session, ssh_buffer packet){
     session->next_crypto->ecdh_privkey = ecdh_key;
     session->next_crypto->ecdh_server_pubkey = q_s_string;
 
-    buffer_add_u8(session->out_buffer, SSH2_MSG_KEXDH_REPLY);
+    rc = buffer_add_u8(session->out_buffer, SSH2_MSG_KEXDH_REPLY);
+    if (rc < 0) {
+      ssh_set_error_oom(session);
+      goto error;
+    }
+
     /* build k and session_id */
     if (ecdh_build_k(session) < 0) {
       ssh_set_error(session, SSH_FATAL, "Cannot build k number");
@@ -235,9 +244,19 @@ int ssh_server_ecdh_init(ssh_session session, ssh_buffer packet){
     }
 
     /* add host's public key */
-    buffer_add_ssh_string(session->out_buffer, session->next_crypto->server_pubkey);
+    rc = buffer_add_ssh_string(session->out_buffer,
+                               session->next_crypto->server_pubkey);
+    if (rc < 0) {
+        ssh_set_error_oom(session);
+        goto error;
+    }
+
     /* add ecdh public key */
-    buffer_add_ssh_string(session->out_buffer,q_s_string);
+    rc = buffer_add_ssh_string(session->out_buffer, q_s_string);
+    if (rc < 0) {
+        ssh_set_error_oom(session);
+        goto error;
+    }
     /* add signature blob */
     sig_blob = ssh_srv_pki_do_sign_sessionid(session, privkey);
     if (sig_blob == NULL) {
