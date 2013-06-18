@@ -92,7 +92,7 @@ static void torture_buffer_prepend(void **state) {
  */
 static void torture_buffer_get_ssh_string(void **state) {
   ssh_buffer buffer;
-  int i,j,k,l;
+  int i,j,k,l, rc;
   /* some values that can go wrong */
   uint32_t values[] = {0xffffffff, 0xfffffffe, 0xfffffffc, 0xffffff00,
       0x80000000, 0x80000004, 0x7fffffff};
@@ -103,10 +103,14 @@ static void torture_buffer_get_ssh_string(void **state) {
     for(j=0; j< (int)sizeof(data);++j){
       for(k=1;k<5;++k){
         buffer=buffer_new();
+        assert_non_null(buffer);
+
         for(l=0;l<k;++l){
-          buffer_add_u32(buffer,htonl(values[i]));
+          rc = buffer_add_u32(buffer,htonl(values[i]));
+          assert_int_equal(rc, 0);
         }
-        buffer_add_data(buffer,data,j);
+        rc = buffer_add_data(buffer,data,j);
+        assert_int_equal(rc, 0);
         for(l=0;l<k;++l){
           ssh_string str = buffer_get_ssh_string(buffer);
           assert_null(str);
