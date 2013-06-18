@@ -387,6 +387,8 @@ socket_t ssh_connect_host_nonblocking(ssh_session session, const char *host,
         ssh_set_error(session, SSH_FATAL,
             "Failed to set socket non-blocking for %s:%d", host, port);
         ssh_connect_socket_close(s);
+        s = -1;
+        continue;
     }
 
     connect(s, itr->ai_addr, itr->ai_addrlen);
