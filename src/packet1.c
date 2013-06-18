@@ -144,6 +144,7 @@ int ssh_packet_socket_callback1(const void *data, size_t receivedlen, void *user
 
       session->in_packet.len = len;
       session->packet_state = PACKET_STATE_SIZEREAD;
+      /* FALL THROUGH */
     case PACKET_STATE_SIZEREAD:
       len = session->in_packet.len;
       /* SSH-1 has a fixed padding lenght */

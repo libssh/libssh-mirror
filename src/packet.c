@@ -187,6 +187,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
       /* saves the status of the current operations */
       session->in_packet.len = len;
       session->packet_state = PACKET_STATE_SIZEREAD;
+      /* FALL TROUGH */
     case PACKET_STATE_SIZEREAD:
       len = session->in_packet.len;
       to_be_read = len - blocksize + sizeof(uint32_t) + current_macsize;
