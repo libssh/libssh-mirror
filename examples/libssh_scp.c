@@ -174,7 +174,7 @@ static int do_copy(struct location *src, struct location *dest, int recursive){
   char buffer[16384];
   int total=0;
   int mode;
-  char *filename;
+  char *filename = NULL;
   /* recursive mode doesn't work yet */
   (void)recursive;
   /* Get the file name and size*/
@@ -201,6 +201,7 @@ static int do_copy(struct location *src, struct location *dest, int recursive){
     	}
     	if(r==SSH_ERROR){
     		fprintf(stderr,"Error: %s\n",ssh_get_error(src->session));
+                ssh_string_free_char(filename);
     		return -1;
     	}
     } while(r != SSH_SCP_REQUEST_NEWFILE);
@@ -211,6 +212,7 @@ static int do_copy(struct location *src, struct location *dest, int recursive){
 	  //  snprintf(buffer,sizeof(buffer),"C0644 %d %s\n",size,src->path);
 	  if(r==SSH_ERROR){
 		  fprintf(stderr,"error: %s\n",ssh_get_error(dest->session));
+                  ssh_string_free_char(filename);
 		  ssh_scp_free(dest->scp);
 		  return -1;
 	  }
@@ -221,6 +223,7 @@ static int do_copy(struct location *src, struct location *dest, int recursive){
 			  fprintf(stderr,"Cannot open %s for writing: %s\n",filename,strerror(errno));
 			  if(src->is_ssh)
 				  ssh_scp_deny_request(src->scp,"Cannot open local file");
+                          ssh_string_free_char(filename);
 			  return -1;
 		  }
 	  }
@@ -233,6 +236,7 @@ static int do_copy(struct location *src, struct location *dest, int recursive){
 		  r=ssh_scp_read(src->scp,buffer,sizeof(buffer));
 		  if(r==SSH_ERROR){
 			  fprintf(stderr,"Error reading scp: %s\n",ssh_get_error(src->session));
+                          ssh_string_free_char(filename);
 			  return -1;
 		  }
 		  if(r==0)
@@ -243,6 +247,7 @@ static int do_copy(struct location *src, struct location *dest, int recursive){
 			  break;
 		  if(r<0){
 			  fprintf(stderr,"Error reading file: %s\n",strerror(errno));
+                          ssh_string_free_char(filename);
 			  return -1;
 		  }
 	  }
@@ -252,18 +257,21 @@ static int do_copy(struct location *src, struct location *dest, int recursive){
 			  fprintf(stderr,"Error writing in scp: %s\n",ssh_get_error(dest->session));
 			  ssh_scp_free(dest->scp);
 			  dest->scp=NULL;
+                          ssh_string_free_char(filename);
 			  return -1;
 		  }
 	  } else {
 		  w=fwrite(buffer,r,1,dest->file);
 		  if(w<=0){
 			  fprintf(stderr,"Error writing in local file: %s\n",strerror(errno));
+                          ssh_string_free_char(filename);
 			  return -1;
 		  }
 	  }
 	  total+=r;
 
   } while(total < size);
+  ssh_string_free_char(filename);
  printf("wrote %d bytes\n",total);
  return 0;
 }
