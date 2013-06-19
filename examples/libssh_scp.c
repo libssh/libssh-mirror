@@ -179,7 +179,11 @@ static int do_copy(struct location *src, struct location *dest, int recursive){
   (void)recursive;
   /* Get the file name and size*/
   if(!src->is_ssh){
-    fd=fileno(src->file);
+    fd = fileno(src->file);
+    if (fd < 0) {
+        fprintf(stderr, "Invalid file pointer, error: %s\n", strerror(errno));
+        return -1;
+    }
     fstat(fd,&s);
     size=s.st_size;
     mode = s.st_mode & ~S_IFMT;
