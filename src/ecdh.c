@@ -69,6 +69,7 @@ int ssh_client_ecdh_init(ssh_session session){
   if (client_pubkey == NULL) {
       BN_CTX_free(ctx);
       EC_KEY_free(key);
+      return SSH_ERROR;
   }
 
   EC_POINT_point2oct(group,pubkey,POINT_CONVERSION_UNCOMPRESSED,
