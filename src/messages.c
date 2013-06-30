@@ -116,6 +116,19 @@ static int ssh_execute_server_callbacks(ssh_session session, ssh_message msg){
 					}
 					return SSH_OK;
 				}
+			} else if(msg->auth_request.method == SSH_AUTH_METHOD_PUBLICKEY){
+				if(ssh_callbacks_exists(session->server_callbacks, auth_pubkey_function)){
+					rc = session->server_callbacks->auth_pubkey_function(session,
+							msg->auth_request.username, msg->auth_request.pubkey,
+							msg->auth_request.signature_state,
+							session->server_callbacks->userdata);
+					if (rc == SSH_AUTH_SUCCESS || rc == SSH_AUTH_PARTIAL){
+						ssh_message_auth_reply_success(msg, rc == SSH_AUTH_PARTIAL);
+					} else {
+						ssh_message_reply_default(msg);
+					}
+					return SSH_OK;
+				}
 			}
 			break;
 		case SSH_REQUEST_CHANNEL_OPEN:

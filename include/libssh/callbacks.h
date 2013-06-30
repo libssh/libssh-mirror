@@ -182,6 +182,22 @@ typedef int (*ssh_auth_none_callback) (ssh_session session, const char *user, vo
 typedef int (*ssh_auth_gssapi_mic_callback) (ssh_session session, const char *user, const char *principal,
 		void *userdata);
 
+/**
+ * @brief SSH authentication callback.
+ * @param session Current session handler
+ * @param user User that wants to authenticate
+ * @param pubkey public key used for authentication
+ * @param signature_state SSH_PUBLICKEY_STATE_NONE if the key is not signed (simple public key probe),
+ * 							SSH_PUBLICKEY_STATE_VALID if the signature is valid. Others values should be
+ * 							replied with a SSH_AUTH_DENIED.
+ * @param userdata Userdata to be passed to the callback function.
+ * @returns SSH_AUTH_OK Authentication is accepted.
+ * @returns SSH_AUTH_PARTIAL Partial authentication, more authentication means are needed.
+ * @returns SSH_AUTH_DENIED Authentication failed.
+ */
+typedef int (*ssh_auth_pubkey_callback) (ssh_session session, const char *user, struct ssh_key_struct *pubkey,
+		char signature_state, void *userdata);
+
 
 /**
  * @brief Handles an SSH service request
@@ -247,6 +263,7 @@ typedef int (*ssh_gssapi_accept_sec_ctx_callback) (ssh_session session,
 typedef int (*ssh_gssapi_verify_mic_callback) (ssh_session session,
 		ssh_string mic, void *mic_buffer, size_t mic_buffer_size, void *userdata);
 
+
 /**
  * This structure can be used to implement a libssh server, with appropriate callbacks.
  */
@@ -272,6 +289,12 @@ struct ssh_server_callbacks_struct {
    * gssapi-mic method.
    */
   ssh_auth_gssapi_mic_callback auth_gssapi_mic_function;
+
+  /** this function gets called when a client tries to authenticate or offer
+   * a public key.
+   */
+  ssh_auth_pubkey_callback auth_pubkey_function;
+
   /** This functions gets called when a service request is issued by the
    * client
    */
