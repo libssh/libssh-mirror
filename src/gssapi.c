@@ -595,18 +595,24 @@ static int ssh_gssapi_match(ssh_session session, char *hostname, char *username,
             GSS_C_MUTUAL_FLAG | GSS_C_INTEG_FLAG | (deleg ? GSS_C_DELEG_FLAG : 0),
             0, NULL, &input_token, NULL, &output_token, NULL, NULL);
         if (!GSS_ERROR(maj_stat)){
-        	gss_OID_set tmp;
-        	gss_create_empty_oid_set(&min_stat, &tmp);
-        	gss_add_oid_set_member(&min_stat, oid, &tmp);
-        	maj_stat = gss_acquire_cred(&min_stat, user_name, 0,
-        			tmp, GSS_C_INITIATE,
-        			&client_creds, NULL, NULL);
-        	gss_release_oid_set(&min_stat, &tmp);
-        	if (!GSS_ERROR(maj_stat)){
-        		gss_release_cred(&min_stat, &client_creds);
-        		gss_add_oid_set_member(&min_stat,oid,valid_oids);
-        		ssh_log(session, SSH_LOG_PROTOCOL, "Matched oid %u for server", i);
-        	}
+            gss_OID_set tmp;
+            if (session->gssapi->client.client_deleg_creds != GSS_C_NO_CREDENTIAL){
+                /* we know the oid is ok since init_sec_context worked */
+                gss_add_oid_set_member(&min_stat, oid, valid_oids);
+                ssh_log(session, SSH_LOG_PROTOCOL, "Matched oid %u for server (with forwarding)", i);
+            } else {
+                gss_create_empty_oid_set(&min_stat, &tmp);
+                gss_add_oid_set_member(&min_stat, oid, &tmp);
+                maj_stat = gss_acquire_cred(&min_stat, user_name, 0,
+                        tmp, GSS_C_INITIATE,
+                        &client_creds, NULL, NULL);
+                gss_release_oid_set(&min_stat, &tmp);
+                if (!GSS_ERROR(maj_stat)){
+                    gss_release_cred(&min_stat, &client_creds);
+                    gss_add_oid_set_member(&min_stat,oid,valid_oids);
+                    ssh_log(session, SSH_LOG_PROTOCOL, "Matched oid %u for server", i);
+                }
+            }
         }
         gss_delete_sec_context(&min_stat,&ctx, &output_token);
         ctx = GSS_C_NO_CONTEXT;
