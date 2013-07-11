@@ -780,11 +780,15 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
                 return -1;
             } else {
                 SAFE_FREE(session->opts.ProxyCommand);
-                q = strdup(v);
-                if (q == NULL) {
-                    return -1;
+                /* Setting the command to 'none' disables this option. */
+                rc = strcasecmp(v, "none");
+                if (rc != 0) {
+                    q = strdup(v);
+                    if (q == NULL) {
+                        return -1;
+                    }
+                    session->opts.ProxyCommand = q;
                 }
-                session->opts.ProxyCommand = q;
             }
             break;
         default:
