@@ -1147,6 +1147,10 @@ int ssh_channel_send_eof(ssh_channel channel){
       channel->local_channel,
       channel->remote_channel);
 
+  rc = ssh_channel_flush(channel);
+  if(rc == SSH_ERROR)
+    goto error;
+
   channel->local_eof = 1;
 
   return rc;
@@ -1202,6 +1206,10 @@ int ssh_channel_close(ssh_channel channel){
   if(rc == SSH_OK) {
     channel->state=SSH_CHANNEL_STATE_CLOSED;
   }
+
+  rc = ssh_channel_flush(channel);
+  if(rc == SSH_ERROR)
+    goto error;
 
   return rc;
 error:
