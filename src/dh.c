@@ -983,7 +983,7 @@ int generate_session_keys(ssh_session session) {
       goto error;
     }
     ssh_mac_update(ctx, k_string, ssh_string_len(k_string) + 4);
-    ssh_mac_update(ctx, crypto->session_id,
+    ssh_mac_update(ctx, crypto->secret_hash,
         crypto->digest_len);
     ssh_mac_update(ctx, crypto->encryptkey, crypto->digest_len);
     ssh_mac_final(crypto->encryptkey + crypto->digest_len, ctx);
@@ -995,7 +995,7 @@ int generate_session_keys(ssh_session session) {
       goto error;
     ctx = ssh_mac_ctx_init(crypto->mac_type);
     ssh_mac_update(ctx, k_string, ssh_string_len(k_string) + 4);
-    ssh_mac_update(ctx, crypto->session_id,
+    ssh_mac_update(ctx, crypto->secret_hash,
         crypto->digest_len);
     ssh_mac_update(ctx, crypto->decryptkey, crypto->digest_len);
     ssh_mac_final(crypto->decryptkey + crypto->digest_len, ctx);
