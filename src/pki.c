@@ -1260,7 +1260,7 @@ int ssh_pki_signature_verify_blob(ssh_session session,
 }
 
 /*
- * This function signs the session id (known as H) as a string then
+ * This function signs the session id as a string then
  * the content of sigbuf */
 ssh_string ssh_pki_do_sign(ssh_session session,
                            ssh_buffer sigbuf,
@@ -1284,7 +1284,7 @@ ssh_string ssh_pki_do_sign(ssh_session session,
         return NULL;
     }
     ssh_string_fill(session_id, crypto->session_id, crypto->digest_len);
-
+    /* TODO: change when supporting ECDSA keys */
     ctx = sha1_init();
     if (ctx == NULL) {
         ssh_string_free(session_id);
