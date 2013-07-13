@@ -68,7 +68,7 @@ set(CMAKE_THREAD_PREFER_PTHREADS ON)
 find_package(Threads)
 
 if (WITH_GSSAPI)
-    find_package(GSSAPI REQUIRED)
+    find_package(GSSAPI)
 endif (WITH_GSSAPI)
 
 # config.h checks
