@@ -1054,6 +1054,11 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_open){
   msg->channel_request_open.window = ntohl(window);
   msg->channel_request_open.packet_size = ntohl(packet_size);
 
+  if (session->session_state != SSH_SESSION_STATE_AUTHENTICATED){
+    ssh_set_error(session,SSH_FATAL, "Invalid state when receiving channel open request (must be authenticated)");
+    goto error;
+  }
+  
   if (strcmp(type_c,"session") == 0) {
     msg->channel_request_open.type = SSH_CHANNEL_SESSION;
     SAFE_FREE(type_c);
