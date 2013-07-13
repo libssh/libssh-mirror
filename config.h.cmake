@@ -120,6 +120,9 @@
 
 /**************************** OPTIONS ****************************/
 
+/* Define to 1 if you want to enable GSSAPI */
+#cmakedefine WITH_GSSAPI 1
+
 /* Define to 1 if you want to enable ZLIB */
 #cmakedefine WITH_ZLIB 1
 

@@ -92,7 +92,11 @@ static ssh_packet_callback default_packet_handlers[]= {
   NULL,                             // SSH2_MSG_USERAUTH_GSSAPI_EXCHANGE_COMPLETE 63
   NULL,                                    // SSH2_MSG_USERAUTH_GSSAPI_ERROR      64
   NULL,                                    // SSH2_MSG_USERAUTH_GSSAPI_ERRTOK     65
+#ifdef WITH_GSSAPI
   ssh_packet_userauth_gssapi_mic,          // SSH2_MSG_USERAUTH_GSSAPI_MIC        66
+#else /* WITH_GSSAPI */
+  NULL,
+#endif /* WITH_GSSAPI */
   NULL, NULL,
   NULL, NULL, NULL, NULL, NULL, NULL, NULL,
   NULL, NULL, NULL, NULL,                  //                                     67-79

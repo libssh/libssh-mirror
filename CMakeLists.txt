@@ -67,10 +67,9 @@ endif(WITH_GCRYPT)
 set(CMAKE_THREAD_PREFER_PTHREADS ON)
 find_package(Threads)
 
-find_package(GSSAPI)
-if (GSSAPI_LIBS)
-  set (WITH_GSSAPI "ON")
-endif (GSSAPI_LIBS)  
+if (WITH_GSSAPI)
+    find_package(GSSAPI REQUIRED)
+endif (WITH_GSSAPI)
 
 # config.h checks
 include(ConfigureChecks.cmake)

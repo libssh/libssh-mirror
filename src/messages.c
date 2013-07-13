@@ -817,6 +817,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
     }
     goto end;
   }
+#if WITH_GSSAPI
   if (strncmp(method, "gssapi-with-mic", method_size) == 0) {
      uint32_t n_oid;
      ssh_string *oids;
@@ -865,6 +866,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
      leave_function();
      return SSH_PACKET_USED;
   }
+#endif
 
   msg->auth_request.method = SSH_AUTH_METHOD_UNKNOWN;
   SAFE_FREE(method);
@@ -909,9 +911,11 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_response){
   ssh_message msg = NULL;
 
   /* GSSAPI_TOKEN has same packed number. XXX fix this */
-  if (session->gssapi != NULL)
-	  return ssh_packet_userauth_gssapi_token(session, type, packet, user);
-
+#if WITH_GSSAPI
+  if (session->gssapi != NULL) {
+      return ssh_packet_userauth_gssapi_token(session, type, packet, user);
+  }
+#endif
   enter_function();
 
   (void)user;

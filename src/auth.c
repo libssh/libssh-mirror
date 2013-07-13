@@ -291,8 +291,10 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_pk_ok){
     SSH_LOG(session, SSH_LOG_TRACE,
             "keyboard-interactive context, assuming SSH_USERAUTH_INFO_REQUEST");
     rc=ssh_packet_userauth_info_request(session,type,packet,user);
+#if WITH_GSSAPI
   } else if (session->auth_state == SSH_AUTH_STATE_GSSAPI_REQUEST_SENT){
     rc = ssh_packet_userauth_gssapi_response(session, type, packet, user);
+#endif
   } else {
     session->auth_state=SSH_AUTH_STATE_PK_OK;
     SSH_LOG(session, SSH_LOG_TRACE, "Assuming SSH_USERAUTH_PK_OK");
@@ -2131,7 +2133,8 @@ int ssh_userauth_kbdint_setanswer(ssh_session session, unsigned int i,
  *                            later.
  */
 int ssh_userauth_gssapi(ssh_session session) {
-	int rc;
+	int rc = SSH_AUTH_DENIED;
+#if WITH_GSSAPI
 	switch(session->pending_call_state) {
 	case SSH_PENDING_CALL_NONE:
 		break;
@@ -2166,7 +2169,7 @@ pending:
 	if (rc != SSH_AUTH_AGAIN) {
 		session->pending_call_state = SSH_PENDING_CALL_NONE;
 	}
-
+#endif
 	return rc;
 }
 

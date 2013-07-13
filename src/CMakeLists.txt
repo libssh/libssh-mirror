@@ -64,12 +64,12 @@ if (WITH_ZLIB)
   )
 endif (WITH_ZLIB)
 
-if (GSSAPI_LIBS)
+if (WITH_GSSAPI AND GSSAPI_LIBS)
   set(LIBSSH_LINK_LIBRARIES
     ${LIBSSH_LINK_LIBRARIES}
     ${GSSAPI_LIBS}
   )
-endif (GSSAPI_LIBS)
+endif (WITH_GSSAPI AND GSSAPI_LIBS)
 
 set(LIBSSH_LINK_LIBRARIES
   ${LIBSSH_LINK_LIBRARIES}
@@ -102,7 +102,6 @@ set(libssh_SRCS
   ecdh.c
   error.c
   getpass.c
-  gssapi.c
   init.c
   kex.c
   known_hosts.c
@@ -180,6 +179,13 @@ if (WITH_ZLIB)
     gzip.c
   )
 endif(WITH_ZLIB)
+
+if (WITH_GSSAPI AND GSSAPI_LIBS)
+  set(libssh_SRCS
+    ${libssh_SRCS}
+    gssapi.c
+  )
+endif (WITH_GSSAPI AND GSSAPI_LIBS)
 
 include_directories(
   ${LIBSSH_PUBLIC_INCLUDE_DIRS}
