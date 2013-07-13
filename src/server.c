@@ -278,22 +278,6 @@ static int dh_handshake_server(ssh_session session) {
     return -1;
   }
 
-  /* Free private keys as they should not be readable after this point */
-  if (session->srv.rsa_key) {
-      ssh_key_free(session->srv.rsa_key);
-      session->srv.rsa_key = NULL;
-  }
-  if (session->srv.dsa_key) {
-      ssh_key_free(session->srv.dsa_key);
-      session->srv.dsa_key = NULL;
-  }
-#ifdef HAVE_ECC
-  if (session->srv.ecdsa_key) {
-      ssh_key_free(session->srv.ecdsa_key);
-      session->srv.ecdsa_key = NULL;
-  }
-#endif
-
   if (buffer_add_u8(session->out_buffer, SSH2_MSG_KEXDH_REPLY) < 0 ||
       buffer_add_ssh_string(session->out_buffer,
               session->next_crypto->server_pubkey) < 0 ||
@@ -400,6 +384,13 @@ static void ssh_server_connection_callback(ssh_session session){
 			break;
 		case SSH_SESSION_STATE_KEXINIT_RECEIVED:
 			set_status(session,0.6f);
+			if(session->next_crypto->server_kex.methods[0]==NULL){
+			      if(server_set_kex(session) == SSH_ERROR)
+				goto error;
+			      /* We are in a rekeying, so we need to send the server kex */
+			      if(ssh_send_kex(session, 1) < 0)
+				goto error;
+			}
 			ssh_list_kex(session, &session->next_crypto->client_kex); // log client kex
 			if (ssh_kex_select_methods(session) < 0) {
 				goto error;
@@ -429,10 +420,20 @@ static void ssh_server_connection_callback(ssh_session session){
                 if (session->next_crypto == NULL) {
                   goto error;
                 }
-				set_status(session,1.0f);
-				session->connected = 1;
-				session->session_state=SSH_SESSION_STATE_AUTHENTICATING;
-            }
+			session->next_crypto->session_id = malloc(session->current_crypto->digest_len);
+			if (session->next_crypto->session_id == NULL) {
+			  ssh_set_error_oom(session);
+			  goto error;
+			}
+			memcpy(session->next_crypto->session_id, session->current_crypto->session_id,
+			    session->current_crypto->digest_len);
+
+			    set_status(session,1.0f);
+			    session->connected = 1;
+			    session->session_state=SSH_SESSION_STATE_AUTHENTICATING;
+			    if (session->flags & SSH_SESSION_FLAG_AUTHENTICATED)
+				    session->session_state = SSH_SESSION_STATE_AUTHENTICATED;
+		}
 			break;
 		case SSH_SESSION_STATE_AUTHENTICATING:
 			break;
@@ -561,7 +562,7 @@ int ssh_handle_key_exchange(ssh_session session) {
     pending:
     rc = ssh_handle_packets_termination(session, SSH_TIMEOUT_USER,
         ssh_server_kex_termination,session);
-    ssh_log(session,SSH_LOG_PACKET, "ssh_handle_key_exchange: Actual state : %d",
+    ssh_log(session,SSH_LOG_PACKET, "ssh_handle_key_exchange: current state : %d",
         session->session_state);
     if (rc != SSH_OK)
       return rc;
@@ -1032,6 +1033,9 @@ int ssh_auth_reply_success(ssh_session session, int partial) {
   if (partial) {
     return ssh_auth_reply_default(session, partial);
   }
+  
+  session->session_state = SSH_SESSION_STATE_AUTHENTICATED;
+  session->flags |= SSH_SESSION_FLAG_AUTHENTICATED;
 
   if (buffer_add_u8(session->out_buffer,SSH2_MSG_USERAUTH_SUCCESS) < 0) {
     return SSH_ERROR;

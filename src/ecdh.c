@@ -312,16 +312,6 @@ int ssh_server_ecdh_init(ssh_session session, ssh_buffer packet){
         return SSH_ERROR;
     }
 
-    /* Free private keys as they should not be readable after this point */
-    if (session->srv.rsa_key) {
-        ssh_key_free(session->srv.rsa_key);
-        session->srv.rsa_key = NULL;
-    }
-    if (session->srv.dsa_key) {
-        ssh_key_free(session->srv.dsa_key);
-        session->srv.dsa_key = NULL;
-    }
-
     ssh_log(session,SSH_LOG_PROTOCOL, "SSH_MSG_KEXDH_REPLY sent");
     rc = packet_send(session);
     if (rc == SSH_ERROR) {

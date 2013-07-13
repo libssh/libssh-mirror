@@ -828,7 +828,7 @@ int make_sessionid(ssh_session session) {
               session->next_crypto->digest_len);
   }
 #ifdef DEBUG_CRYPTO
-  printf("Session hash: ");
+  printf("Session hash: \n");
   ssh_print_hexa("secret hash", session->next_crypto->secret_hash, session->next_crypto->digest_len);
   ssh_print_hexa("session id", session->next_crypto->session_id, session->next_crypto->digest_len);
 #endif
