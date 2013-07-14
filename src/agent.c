@@ -334,11 +334,11 @@ int ssh_agent_get_ident_count(struct ssh_session_struct *session) {
   /* send message to the agent requesting the list of identities */
   request = ssh_buffer_new();
   if (request == NULL) {
-      ssh_set_error_oom(request);
+      ssh_set_error_oom(session);
       return -1;
   }
   if (buffer_add_u8(request, c1) < 0) {
-      ssh_set_error_oom(request);
+      ssh_set_error_oom(session);
       ssh_buffer_free(request);
       return -1;
   }
