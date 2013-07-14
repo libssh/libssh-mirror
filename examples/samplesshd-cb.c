@@ -61,8 +61,8 @@ static int auth_password(ssh_session session, const char *user,
 }
 
 static int auth_gssapi_mic(ssh_session session, const char *user, const char *principal, void *userdata){
-    (void)userdata;
     ssh_gssapi_creds creds = ssh_gssapi_get_creds(session);
+    (void)userdata;
     printf("Authenticating user %s with gssapi principal %s\n",user, principal);
     if (creds != NULL)
         printf("Received some gssapi credentials\n");
@@ -227,7 +227,6 @@ int main(int argc, char **argv){
     };
 
     char buf[2048];
-    int sftp=0;
     int i;
     int r;
 
