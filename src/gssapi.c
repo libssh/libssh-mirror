@@ -847,7 +847,6 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_token_client){
     char *hexa;
     OM_uint32 maj_stat, min_stat;
     gss_buffer_desc input_token, output_token = GSS_C_EMPTY_BUFFER;
-    gss_name_t client_name = GSS_C_NO_NAME;
     gss_cred_id_t creds = GSS_C_NO_CREDENTIAL;
     int deleg = 0;
     (void)user;
@@ -880,10 +879,6 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_token_client){
 
     ssh_gssapi_log_error(0, "accepting token", maj_stat);
     ssh_string_free(token);
-    if (client_name != GSS_C_NO_NAME){
-        session->gssapi->client_name = client_name;
-        session->gssapi->canonic_user = ssh_gssapi_name_to_char(client_name);
-    }
     if (GSS_ERROR(maj_stat)){
         ssh_gssapi_log_error(SSH_LOG_PROTOCOL, "Gssapi error", maj_stat);
         ssh_gssapi_free(session);
