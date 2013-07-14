@@ -286,7 +286,7 @@ static int main_loop(ssh_channel chan) {
     pid_t childpid;
     ssh_event event;
     short events;
-
+    int rc;
 
     childpid = forkpty(&fd, NULL, term, win);
     if(childpid == 0) {
@@ -318,7 +318,12 @@ static int main_loop(ssh_channel chan) {
     }
 
     do {
-        ssh_event_dopoll(event, 1000);
+        rc = ssh_event_dopoll(event, 1000);
+        if (rc == SSH_ERROR){
+            fprintf(stderr, "Error : %s\n", ssh_get_error(session));
+            ssh_disconnect(session);
+            return -1;
+        }
     } while(!ssh_channel_is_closed(chan));
 
     ssh_event_remove_fd(event, fd);
