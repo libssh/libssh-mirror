@@ -827,6 +827,7 @@ static int ssh_gssapi_send_mic(ssh_session session){
     gss_buffer_desc mic_buf = GSS_C_EMPTY_BUFFER;
     gss_buffer_desc mic_token_buf = GSS_C_EMPTY_BUFFER;
     ssh_buffer mic_buffer;
+    int rc;
 
     SSH_LOG(SSH_LOG_PACKET,"Sending SSH_MSG_USERAUTH_GSSAPI_MIC");
 
@@ -840,14 +841,31 @@ static int ssh_gssapi_send_mic(ssh_session session){
 
     maj_stat = gss_get_mic(&min_stat,session->gssapi->ctx, GSS_C_QOP_DEFAULT, &mic_buf, &mic_token_buf);
     if (GSS_ERROR(maj_stat)){
+        ssh_buffer_free(mic_buffer);
         ssh_gssapi_log_error(0, "generating MIC", maj_stat);
         return SSH_ERROR;
     }
 
-    buffer_add_u8(session->out_buffer, SSH2_MSG_USERAUTH_GSSAPI_MIC);
-    buffer_add_u32(session->out_buffer, htonl(mic_token_buf.length));
-    buffer_add_data(session->out_buffer, mic_token_buf.value, mic_token_buf.length);
+    rc = buffer_add_u8(session->out_buffer, SSH2_MSG_USERAUTH_GSSAPI_MIC);
+    if (rc < 0) {
+        ssh_buffer_free(mic_buffer);
+        ssh_set_error_oom(session);
+        return SSH_ERROR;
+    }
+
+    rc = buffer_add_u32(session->out_buffer, htonl(mic_token_buf.length));
+    if (rc < 0) {
+        ssh_buffer_free(mic_buffer);
+        ssh_set_error_oom(session);
+        return SSH_ERROR;
+    }
+
+    rc = buffer_add_data(session->out_buffer, mic_token_buf.value, mic_token_buf.length);
     ssh_buffer_free(mic_buffer);
+    if (rc < 0) {
+        ssh_set_error_oom(session);
+        return SSH_ERROR;
+    }
 
     return packet_send(session);
 }
