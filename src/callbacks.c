@@ -26,6 +26,22 @@
 #include "libssh/callbacks.h"
 #include "libssh/session.h"
 
+
+/* LEGACY */
+static void ssh_legacy_log_callback(int priority,
+                                    const char *function,
+                                    const char *buffer,
+                                    void *userdata)
+{
+    ssh_session session = (ssh_session)userdata;
+    ssh_log_callback log_fn = session->common.callbacks->log_function;
+    void *log_data = log_data = session->common.callbacks->userdata;
+
+    (void)function; /* unused */
+
+    log_fn(session, priority, buffer, log_data);
+}
+
 int ssh_set_callbacks(ssh_session session, ssh_callbacks cb) {
   if (session == NULL || cb == NULL) {
     return SSH_ERROR;
@@ -38,6 +54,12 @@ int ssh_set_callbacks(ssh_session session, ssh_callbacks cb) {
   	return SSH_ERROR;
   }
   session->common.callbacks = cb;
+
+  /* LEGACY */
+  if (ssh_get_log_callback() == NULL && cb->log_function) {
+      ssh_set_log_callback(ssh_legacy_log_callback);
+      ssh_set_log_userdata(session);
+  }
 
   return 0;
 }
