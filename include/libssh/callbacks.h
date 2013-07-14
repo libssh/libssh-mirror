@@ -75,6 +75,24 @@ typedef void (*ssh_log_callback) (ssh_session session, int priority,
     const char *message, void *userdata);
 
 /**
+ * @brief SSH log callback.
+ *
+ * All logging messages will go through this callback.
+ *
+ * @param priority  Priority of the log, the smaller being the more important.
+ *
+ * @param function  The function name calling the the logging fucntions.
+ *
+ * @param message   The actual message
+ *
+ * @param userdata Userdata to be passed to the callback function.
+ */
+typedef void (*ssh_logging_callback) (int priority,
+                                      const char *function,
+                                      const char *buffer,
+                                      void *userdata);
+
+/**
  * @brief SSH Connection status callback.
  * @param session Current session handler
  * @param status Percentage of connection status, going from 0.0 to 1.0
@@ -797,6 +815,22 @@ LIBSSH_API struct ssh_threads_callbacks_struct *ssh_threads_get_pthread(void);
  * @see ssh_threads_set_callbacks
  */
 LIBSSH_API struct ssh_threads_callbacks_struct *ssh_threads_get_noop(void);
+
+/**
+ * @brief Set the logging callback function.
+ *
+ * @param[in]  cb  The callback to set.
+ *
+ * @return         0 on success, < 0 on errror.
+ */
+LIBSSH_API int ssh_set_log_callback(ssh_logging_callback cb);
+
+/**
+ * @brief Get the pointer to the logging callback function.
+ *
+ * @return The pointer the the callback or NULL if none set.
+ */
+LIBSSH_API ssh_logging_callback ssh_get_log_callback(void);
 
 /** @} */
 #ifdef __cplusplus

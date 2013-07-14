@@ -35,6 +35,10 @@
 #include "libssh/misc.h"
 #include "libssh/session.h"
 
+LIBSSH_THREAD int ssh_log_level;
+LIBSSH_THREAD ssh_logging_callback ssh_log_cb;
+LIBSSH_THREAD void *ssh_log_userdata;
+
 /**
  * @defgroup libssh_log The SSH logging functions.
  * @ingroup libssh
@@ -70,46 +74,60 @@ static int current_timestring(int hires, char *buf, size_t len)
     return 0;
 }
 
-void ssh_log_function(int verbosity,
-                      const char *function,
-                      const char *buffer)
+static void ssh_log_stderr(int verbosity,
+                           const char *function,
+                           const char *buffer)
 {
     char date[64] = {0};
     int rc;
 
     rc = current_timestring(1, date, sizeof(date));
     if (rc == 0) {
-        fprintf(stderr, "[%s, %d] %s", date, verbosity, function);
+        fprintf(stderr, "[%s, %d] %s:", date, verbosity, function);
     } else {
         fprintf(stderr, "[%d] %s", verbosity, function);
     }
+
     fprintf(stderr, "  %s\n", buffer);
 }
 
-/** @internal
- * @brief do the actual work of logging an event
- */
-
-static void do_ssh_log(struct ssh_common_struct *common,
-                       int verbosity,
-                       const char *function,
-                       const char *buffer) {
-    if (common->callbacks && common->callbacks->log_function) {
+static void ssh_log_function(int verbosity,
+                             const char *function,
+                             const char *buffer)
+{
+    ssh_logging_callback log_fn = ssh_get_log_callback();
+    if (log_fn) {
         char buf[1024];
 
         snprintf(buf, sizeof(buf), "%s: %s", function, buffer);
 
-        common->callbacks->log_function((ssh_session)common,
-                                        verbosity,
-                                        buf,
-                                        common->callbacks->userdata);
+        log_fn(verbosity,
+               function,
+               buf,
+               ssh_get_log_userdata());
         return;
     }
 
-    ssh_log_function(verbosity, function, buffer);
+    ssh_log_stderr(verbosity, function, buffer);
 }
 
-/* legacy function */
+void _ssh_log(int verbosity,
+              const char *function,
+              const char *format, ...)
+{
+    char buffer[1024];
+    va_list va;
+
+    if (verbosity <= ssh_get_log_level()) {
+        va_start(va, format);
+        vsnprintf(buffer, sizeof(buffer), format, va);
+        va_end(va);
+        ssh_log_function(verbosity, function, buffer);
+    }
+}
+
+/* LEGACY */
+
 void ssh_log(ssh_session session,
              int verbosity,
              const char *format, ...)
@@ -121,7 +139,7 @@ void ssh_log(ssh_session session,
     va_start(va, format);
     vsnprintf(buffer, sizeof(buffer), format, va);
     va_end(va);
-    do_ssh_log(&session->common, verbosity, "", buffer);
+    ssh_log_function(verbosity, "", buffer);
   }
 }
 
@@ -143,8 +161,51 @@ void ssh_log_common(struct ssh_common_struct *common,
         va_start(va, format);
         vsnprintf(buffer, sizeof(buffer), format, va);
         va_end(va);
-        do_ssh_log(common, verbosity, function, buffer);
+        ssh_log_function(verbosity, function, buffer);
     }
+}
+
+
+/* PUBLIC */
+
+int ssh_set_log_level(int level) {
+  if (level < 0) {
+    return -1;
+  }
+
+  ssh_log_level = level;
+
+  return 0;
+}
+
+int ssh_get_log_level(void) {
+  return ssh_log_level;
+}
+
+int ssh_set_log_callback(ssh_logging_callback cb) {
+  if (cb == NULL) {
+    return -1;
+  }
+
+  ssh_log_cb = cb;
+
+  return 0;
+}
+
+ssh_logging_callback ssh_get_log_callback(void) {
+  return ssh_log_cb;
+}
+
+void *ssh_get_log_userdata(void)
+{
+    return ssh_log_userdata;
+}
+
+int ssh_set_log_userdata(void *data)
+{
+    ssh_log_userdata = data;
+
+    return 0;
 }
 
 /** @} */

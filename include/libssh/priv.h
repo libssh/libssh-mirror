@@ -152,15 +152,17 @@ struct ssh_kex_struct;
 int ssh_get_key_params(ssh_session session, ssh_key *privkey);
 
 /* LOGGING */
-#define SSH_LOG(session, priority, ...) \
-    ssh_log_common(&session->common, priority, __FUNCTION__, __VA_ARGS__)
+void _ssh_log(int verbosity,
+              const char *function,
+              const char *format, ...) PRINTF_ATTRIBUTE(3, 4);
+#define SSH_LOG(priority, ...) \
+    _ssh_log(priority, __FUNCTION__, __VA_ARGS__)
+
+/* LEGACY */
 void ssh_log_common(struct ssh_common_struct *common,
                     int verbosity,
                     const char *function,
                     const char *format, ...) PRINTF_ATTRIBUTE(4, 5);
-void ssh_log_function(int verbosity,
-                      const char *function,
-                      const char *buffer);
 
 
 /* ERROR HANDLING */

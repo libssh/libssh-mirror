@@ -250,7 +250,7 @@ int ssh_bind_listen(ssh_bind sshbind) {
           return -1;
       }
   } else {
-      SSH_LOG(sshbind, SSH_LOG_INFO, "Using app-provided bind socket");
+      SSH_LOG(SSH_LOG_INFO, "Using app-provided bind socket");
   }
   return 0;
 }
