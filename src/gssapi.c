@@ -773,7 +773,7 @@ static int ssh_gssapi_send_mic(ssh_session session){
     SSH_LOG(SSH_LOG_PACKET,"Sending SSH_MSG_USERAUTH_GSSAPI_MIC");
 
     mic_buffer = ssh_gssapi_build_mic(session);
-    if(!mic_buffer){
+    if (mic_buffer == NULL) {
         ssh_set_error_oom(session);
         return SSH_ERROR;
     }
@@ -789,6 +789,8 @@ static int ssh_gssapi_send_mic(ssh_session session){
     buffer_add_u8(session->out_buffer, SSH2_MSG_USERAUTH_GSSAPI_MIC);
     buffer_add_u32(session->out_buffer, htonl(mic_token_buf.length));
     buffer_add_data(session->out_buffer, mic_token_buf.value, mic_token_buf.length);
+    ssh_buffer_free(mic_buffer);
+
     return packet_send(session);
 }
 
