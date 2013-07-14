@@ -425,9 +425,9 @@ LIBSSH_API void *ssh_get_log_userdata(void);
 LIBSSH_API int ssh_set_log_userdata(void *data);
 
 /* legacy */
-LIBSSH_API void ssh_log(ssh_session session,
-                        int prioriry,
-                        const char *format, ...) PRINTF_ATTRIBUTE(3, 4);
+SSH_DEPRECATED LIBSSH_API void ssh_log(ssh_session session,
+                                       int prioriry,
+                                       const char *format, ...) PRINTF_ATTRIBUTE(3, 4);
 
 LIBSSH_API ssh_channel ssh_message_channel_request_open_reply_accept(ssh_message msg);
 LIBSSH_API int ssh_message_channel_request_reply_success(ssh_message msg);
