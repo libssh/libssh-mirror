@@ -165,6 +165,20 @@ if (CMAKE_HAVE_THREADS_LIBRARY)
 endif (CMAKE_HAVE_THREADS_LIBRARY)
 
 # OPTIONS
+check_c_source_compiles("
+__thread int tls;
+
+int main(void) {
+    return 0;
+}" HAVE_GCC_THREAD_LOCAL_STORAGE)
+
+check_c_source_compiles("
+__declspec(thread) int tls;
+
+int main(void) {
+    return 0;
+}" HAVE_MSC_THREAD_LOCAL_STORAGE)
+
 if (WITH_DEBUG_CRYPTO)
   set(DEBUG_CRYPTO 1)
 endif (WITH_DEBUG_CRYPTO)

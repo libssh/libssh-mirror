@@ -130,6 +130,14 @@ int gettimeofday(struct timeval *__p, void *__t);
 #endif
 #endif
 
+#if defined(HAVE_GCC_THREAD_LOCAL_STORAGE)
+# define LIBSSH_THREAD __thread
+#elif defined(HAVE_MSC_THREAD_LOCAL_STORAGE)
+# define LIBSSH_THREAD __declspec(thread)
+#else
+# define LIBSSH_THREAD
+#endif
+
 #define enter_function() (void)session
 #define leave_function() (void)session
 
