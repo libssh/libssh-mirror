@@ -186,7 +186,7 @@ int ssh_client_ecdh_reply(ssh_session session, ssh_buffer packet){
   }
 
   rc=packet_send(session);
-  ssh_log(session, SSH_LOG_PROTOCOL, "SSH_MSG_NEWKEYS sent");
+  SSH_LOG(SSH_LOG_PROTOCOL, "SSH_MSG_NEWKEYS sent");
   return rc;
 error:
   return SSH_ERROR;
@@ -312,7 +312,7 @@ int ssh_server_ecdh_init(ssh_session session, ssh_buffer packet){
         return SSH_ERROR;
     }
 
-    ssh_log(session,SSH_LOG_PROTOCOL, "SSH_MSG_KEXDH_REPLY sent");
+    SSH_LOG(SSH_LOG_PROTOCOL, "SSH_MSG_KEXDH_REPLY sent");
     rc = packet_send(session);
     if (rc == SSH_ERROR) {
         return SSH_ERROR;
@@ -326,7 +326,7 @@ int ssh_server_ecdh_init(ssh_session session, ssh_buffer packet){
 
     session->dh_handshake_state = DH_STATE_NEWKEYS_SENT;
     rc = packet_send(session);
-    ssh_log(session, SSH_LOG_PROTOCOL, "SSH_MSG_NEWKEYS sent");
+    SSH_LOG(SSH_LOG_PROTOCOL, "SSH_MSG_NEWKEYS sent");
 
     return rc;
 }

@@ -641,7 +641,7 @@ int ssh_get_version(ssh_session session) {
 void ssh_socket_exception_callback(int code, int errno_code, void *user){
     ssh_session session=(ssh_session)user;
     enter_function();
-    ssh_log(session,SSH_LOG_RARE,"Socket exception callback: %d (%d)",code, errno_code);
+    SSH_LOG(SSH_LOG_RARE,"Socket exception callback: %d (%d)",code, errno_code);
     session->session_state=SSH_SESSION_STATE_ERROR;
     ssh_set_error(session,SSH_FATAL,"Socket error: %s",strerror(errno_code));
     session->ssh_connection_callback(session);

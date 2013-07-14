@@ -93,7 +93,7 @@ int ssh_scp_init(ssh_scp scp){
     ssh_set_error(scp->session,SSH_FATAL,"ssh_scp_init called under invalid state");
     return SSH_ERROR;
   }
-  ssh_log(scp->session,SSH_LOG_PROTOCOL,"Initializing scp session %s %son location '%s'",
+  SSH_LOG(SSH_LOG_PROTOCOL,"Initializing scp session %s %son location '%s'",
 		  scp->mode==SSH_SCP_WRITE?"write":"read",
 				  scp->recursive?"recursive ":"",
 						  scp->location);
@@ -300,7 +300,7 @@ int ssh_scp_push_file64(ssh_scp scp, const char *filename, uint64_t size, int mo
   }
   file=ssh_basename(filename);
   perms=ssh_scp_string_mode(mode);
-  ssh_log(scp->session,SSH_LOG_PROTOCOL,"SCP pushing file %s, size %" PRIu64 " with permissions '%s'",file,size,perms);
+  SSH_LOG(SSH_LOG_PROTOCOL,"SCP pushing file %s, size %" PRIu64 " with permissions '%s'",file,size,perms);
   snprintf(buffer, sizeof(buffer), "C%s %" PRIu64 " %s\n", perms, size, file);
   SAFE_FREE(file);
   SAFE_FREE(perms);
@@ -379,7 +379,7 @@ int ssh_scp_response(ssh_scp scp, char **response){
 	/* Warning */
 	if(code == 1){
 		ssh_set_error(scp->session,SSH_REQUEST_DENIED, "SCP: Warning: status code 1 received: %s", msg);
-		ssh_log(scp->session,SSH_LOG_RARE,"SCP: Warning: status code 1 received: %s", msg);
+		SSH_LOG(SSH_LOG_RARE,"SCP: Warning: status code 1 received: %s", msg);
 		if(response)
 			*response=strdup(msg);
 		return 1;
@@ -540,7 +540,7 @@ int ssh_scp_pull_request(ssh_scp scp){
   p=strchr(buffer,'\n');
   if(p!=NULL)
 	  *p='\0';
-  ssh_log(scp->session,SSH_LOG_PROTOCOL,"Received SCP request: '%s'",buffer);
+  SSH_LOG(SSH_LOG_PROTOCOL,"Received SCP request: '%s'",buffer);
   switch(buffer[0]){
     case 'C':
       /* File */

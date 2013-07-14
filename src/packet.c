@@ -215,7 +215,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
       if (to_be_read != 0) {
         if(receivedlen - processed < (unsigned int)to_be_read){
         	/* give up, not enough data in buffer */
-            ssh_log(session,SSH_LOG_PACKET,"packet: partial packet (read len) [len=%d]",len);
+            SSH_LOG(SSH_LOG_PACKET,"packet: partial packet (read len) [len=%d]",len);
         	return processed;
         }
 
@@ -282,7 +282,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
       /* We don't want to rewrite a new packet while still executing the packet callbacks */
       session->packet_state = PACKET_STATE_PROCESSING;
       ssh_packet_parse_type(session);
-      ssh_log(session,SSH_LOG_PACKET,
+      SSH_LOG(SSH_LOG_PACKET,
               "packet: read type %hhd [len=%d,padding=%hhd,comp=%d,payload=%d]",
               session->in_packet.type, len, padding, compsize, payloadsize);
       /* execute callbacks */
@@ -290,7 +290,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
       session->packet_state = PACKET_STATE_INIT;
       if(processed < receivedlen){
       	/* Handle a potential packet left in socket buffer */
-      	ssh_log(session,SSH_LOG_PACKET,"Processing %" PRIdS " bytes left in socket buffer",
+      	SSH_LOG(SSH_LOG_PACKET,"Processing %" PRIdS " bytes left in socket buffer",
       			receivedlen-processed);
         rc = ssh_packet_socket_callback(((unsigned char *)data) + processed,
       			receivedlen - processed,user);
@@ -299,7 +299,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
       leave_function();
       return processed;
     case PACKET_STATE_PROCESSING:
-    	ssh_log(session, SSH_LOG_RARE, "Nested packet processing. Delaying.");
+    	SSH_LOG(SSH_LOG_RARE, "Nested packet processing. Delaying.");
     	return 0;
   }
 
@@ -360,9 +360,9 @@ void ssh_packet_process(ssh_session session, uint8_t type){
 	int r=SSH_PACKET_NOT_USED;
 	ssh_packet_callbacks cb;
 	enter_function();
-	ssh_log(session,SSH_LOG_PACKET, "Dispatching handler for packet type %d",type);
+	SSH_LOG(SSH_LOG_PACKET, "Dispatching handler for packet type %d",type);
 	if(session->packet_callbacks == NULL){
-		ssh_log(session,SSH_LOG_RARE,"Packet callback is not initialized !");
+		SSH_LOG(SSH_LOG_RARE,"Packet callback is not initialized !");
 		goto error;
 	}
 	i=ssh_list_get_iterator(session->packet_callbacks);
@@ -382,7 +382,7 @@ void ssh_packet_process(ssh_session session, uint8_t type){
 			break;
 	}
 	if(r==SSH_PACKET_NOT_USED){
-		ssh_log(session,SSH_LOG_RARE,"Couldn't do anything with packet type %d",type);
+		SSH_LOG(SSH_LOG_RARE,"Couldn't do anything with packet type %d",type);
 		ssh_packet_send_unimplemented(session, session->recv_seq-1);
 	}
 error:
@@ -416,11 +416,12 @@ int ssh_packet_send_unimplemented(ssh_session session, uint32_t seqnum){
  */
 SSH_PACKET_CALLBACK(ssh_packet_unimplemented){
   uint32_t seq;
+    (void)session; /* unused */
   (void)type;
   (void)user;
   buffer_get_u32(packet,&seq);
   seq=ntohl(seq);
-  ssh_log(session,SSH_LOG_RARE,
+  SSH_LOG(SSH_LOG_RARE,
       "Received SSH_MSG_UNIMPLEMENTED (sequence number %d)",seq);
   return SSH_PACKET_USED;
 }
@@ -529,7 +530,7 @@ static int packet_send2(ssh_session session) {
   rc = ssh_packet_write(session);
   session->send_seq++;
 
-  ssh_log(session,SSH_LOG_PACKET,
+  SSH_LOG(SSH_LOG_PACKET,
           "packet: wrote [len=%d,padding=%hhd,comp=%d,payload=%d]",
           ntohl(finallen), padding, compsize, payloadsize);
   if (buffer_reinit(session->out_buffer) < 0) {

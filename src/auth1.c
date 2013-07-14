@@ -51,7 +51,7 @@ static int wait_auth1_status(ssh_session session) {
       leave_function();
       return SSH_AUTH_ERROR;
   }
-  ssh_log(session,SSH_LOG_PROTOCOL,"Auth state : %d",session->auth_state);
+  SSH_LOG(SSH_LOG_PROTOCOL,"Auth state : %d",session->auth_state);
   leave_function();
   switch(session->auth_state) {
     case SSH_AUTH_STATE_SUCCESS:

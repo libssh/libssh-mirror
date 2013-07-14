@@ -369,7 +369,7 @@ static int match_hashed_host(ssh_session session, const char *host,
   ssh_buffer_free(salt);
   ssh_buffer_free(hash);
 
-  ssh_log(session, SSH_LOG_PACKET,
+  SSH_LOG(SSH_LOG_PACKET,
       "Matching a hashed host: %s match=%d", host, match);
 
   leave_function();
@@ -478,8 +478,7 @@ int ssh_is_server_known(ssh_session session) {
     if (match) {
       /* We got a match. Now check the key type */
       if (strcmp(session->current_crypto->server_pubkey_type, type) != 0) {
-          ssh_log(session,
-                  SSH_LOG_PACKET,
+          SSH_LOG(SSH_LOG_PACKET,
                   "ssh_is_server_known: server type [%s] doesn't match the "
                   "type [%s] in known_hosts file",
                   session->current_crypto->server_pubkey_type,

@@ -1220,8 +1220,7 @@ int ssh_pki_signature_verify_blob(ssh_session session,
         return SSH_ERROR;
     }
 
-    ssh_log(session,
-            SSH_LOG_FUNCTIONS,
+    SSH_LOG(SSH_LOG_FUNCTIONS,
             "Going to verify a %s type signature",
             key->type_c);
 

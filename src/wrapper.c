@@ -183,7 +183,7 @@ static int crypt_set_algorithms2(ssh_session session){
         wanted);
     goto error;
   }
-  ssh_log(session, SSH_LOG_PACKET, "Set output algorithm to %s", wanted);
+  SSH_LOG(SSH_LOG_PACKET, "Set output algorithm to %s", wanted);
 
   session->next_crypto->out_cipher = cipher_new(i);
   if (session->next_crypto->out_cipher == NULL) {
@@ -204,7 +204,7 @@ static int crypt_set_algorithms2(ssh_session session){
         wanted);
     goto error;
   }
-  ssh_log(session, SSH_LOG_PACKET, "Set input algorithm to %s", wanted);
+  SSH_LOG(SSH_LOG_PACKET, "Set input algorithm to %s", wanted);
 
   session->next_crypto->in_cipher = cipher_new(i);
   if (session->next_crypto->in_cipher == NULL) {
@@ -288,7 +288,7 @@ int crypt_set_algorithms_server(ssh_session session){
                 "no crypto algorithm function found for %s",method);
         goto error;
     }
-    ssh_log(session,SSH_LOG_PACKET,"Set output algorithm %s",method);
+    SSH_LOG(SSH_LOG_PACKET,"Set output algorithm %s",method);
 
     session->next_crypto->out_cipher = cipher_new(i);
     if (session->next_crypto->out_cipher == NULL) {
@@ -305,7 +305,7 @@ int crypt_set_algorithms_server(ssh_session session){
                 "no crypto algorithm function found for %s",method);
         goto error;
     }
-    ssh_log(session,SSH_LOG_PACKET,"Set input algorithm %s",method);
+    SSH_LOG(SSH_LOG_PACKET,"Set input algorithm %s",method);
 
     session->next_crypto->in_cipher = cipher_new(i);
     if (session->next_crypto->in_cipher == NULL) {
@@ -316,7 +316,7 @@ int crypt_set_algorithms_server(ssh_session session){
     /* compression */
     method = session->next_crypto->kex_methods[SSH_CRYPT_C_S];
     if(strcmp(method,"zlib") == 0){
-        ssh_log(session,SSH_LOG_PACKET,"enabling C->S compression");
+        SSH_LOG(SSH_LOG_PACKET,"enabling C->S compression");
         session->next_crypto->do_compress_in=1;
     }
     if(strcmp(method,"zlib@openssh.com") == 0){
@@ -325,7 +325,7 @@ int crypt_set_algorithms_server(ssh_session session){
     }
     method = session->next_crypto->kex_methods[SSH_CRYPT_S_C];
     if(strcmp(method,"zlib") == 0){
-        ssh_log(session,SSH_LOG_PACKET,"enabling S->C compression\n");
+        SSH_LOG(SSH_LOG_PACKET, "enabling S->C compression\n");
         session->next_crypto->do_compress_out=1;
     }
     if(strcmp(method,"zlib@openssh.com") == 0){

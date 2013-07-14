@@ -639,7 +639,7 @@ int ssh_client_dh_reply(ssh_session session, ssh_buffer packet){
   }
 
   rc=packet_send(session);
-  ssh_log(session, SSH_LOG_PROTOCOL, "SSH_MSG_NEWKEYS sent");
+  SSH_LOG(SSH_LOG_PROTOCOL, "SSH_MSG_NEWKEYS sent");
   return rc;
 error:
   return SSH_ERROR;
@@ -762,7 +762,7 @@ int make_sessionid(ssh_session session) {
   } else if (session->next_crypto->kex_type == SSH_KEX_ECDH_SHA2_NISTP256){
     if(session->next_crypto->ecdh_client_pubkey == NULL ||
             session->next_crypto->ecdh_server_pubkey == NULL){
-        ssh_log(session,SSH_LOG_WARNING,"ECDH parameted missing");
+        SSH_LOG(SSH_LOG_WARNING, "ECDH parameted missing");
         goto error;
     }
     rc = buffer_add_ssh_string(buf,session->next_crypto->ecdh_client_pubkey);

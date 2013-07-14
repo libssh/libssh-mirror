@@ -305,7 +305,7 @@ int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p, socket_t fd, int r
 #endif
 		/* First, POLLOUT is a sign we may be connected */
 		if(s->state == SSH_SOCKET_CONNECTING){
-			ssh_log(s->session,SSH_LOG_PACKET,"Received POLLOUT in connecting state");
+			SSH_LOG(SSH_LOG_PACKET,"Received POLLOUT in connecting state");
 			s->state = SSH_SOCKET_CONNECTED;
 			ssh_poll_set_events(p,POLLOUT | POLLIN);
             r = ssh_socket_set_blocking(ssh_socket_get_fd_in(s));
@@ -543,7 +543,7 @@ static int ssh_socket_unbuffered_write(ssh_socket s, const void *buffer,
   s->write_wontblock = 0;
   /* Reactive the POLLOUT detector in the poll multiplexer system */
   if(s->poll_out){
-  	ssh_log(s->session, SSH_LOG_PACKET, "Enabling POLLOUT for socket");
+      SSH_LOG(SSH_LOG_PACKET, "Enabling POLLOUT for socket");
   	ssh_poll_set_events(s->poll_out,ssh_poll_get_events(s->poll_out) | POLLOUT);
   }
   if (w < 0) {
@@ -762,7 +762,7 @@ int ssh_socket_connect(ssh_socket s, const char *host, int port, const char *bin
 		return SSH_ERROR;
 	}
 	fd=ssh_connect_host_nonblocking(s->session,host,bind_addr,port);
-	ssh_log(session,SSH_LOG_PROTOCOL,"Nonblocking connection socket: %d",fd);
+	SSH_LOG(SSH_LOG_PROTOCOL,"Nonblocking connection socket: %d",fd);
 	if(fd == SSH_INVALID_SOCKET)
 		return SSH_ERROR;
 	ssh_socket_set_fd(s,fd);
@@ -825,14 +825,14 @@ int ssh_socket_connect_proxycommand(ssh_socket s, const char *command){
       return SSH_ERROR;
   }
 
-  ssh_log(session,SSH_LOG_PROTOCOL,"Executing proxycommand '%s'",command);
+  SSH_LOG(SSH_LOG_PROTOCOL,"Executing proxycommand '%s'",command);
   pid = fork();
   if(pid == 0){
     ssh_execute_command(command,out_pipe[0],in_pipe[1]);
   }
   close(in_pipe[1]);
   close(out_pipe[0]);
-  ssh_log(session,SSH_LOG_PROTOCOL,"ProxyCommand connection pipe: [%d,%d]",in_pipe[0],out_pipe[1]);
+  SSH_LOG(SSH_LOG_PROTOCOL,"ProxyCommand connection pipe: [%d,%d]",in_pipe[0],out_pipe[1]);
   ssh_socket_set_fd_in(s,in_pipe[0]);
   ssh_socket_set_fd_out(s,out_pipe[1]);
   s->state=SSH_SOCKET_CONNECTED;

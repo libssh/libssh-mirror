@@ -104,7 +104,7 @@ static int ssh_connect_socket_close(socket_t s){
 }
 
 
-static int getai(ssh_session session, const char *host, int port, struct addrinfo **ai) {
+static int getai(const char *host, int port, struct addrinfo **ai) {
   const char *service = NULL;
   struct addrinfo hints;
   char s_port[10];
@@ -127,7 +127,7 @@ static int getai(ssh_session session, const char *host, int port, struct addrinf
 
   if (ssh_is_ipaddr(host)) {
     /* this is an IP address */
-    ssh_log(session,SSH_LOG_PACKET,"host %s matches an IP address",host);
+    SSH_LOG(SSH_LOG_PACKET,"host %s matches an IP address",host);
     hints.ai_flags |= AI_NUMERICHOST;
   }
 
@@ -157,7 +157,7 @@ static int ssh_connect_ai_timeout(ssh_session session, const char *host,
       return -1;
   }
 
-  ssh_log(session, SSH_LOG_RARE, "Trying to connect to host: %s:%d with "
+  SSH_LOG(SSH_LOG_RARE, "Trying to connect to host: %s:%d with "
       "timeout %d ms", host, port, timeout_ms);
 
   /* The return value is checked later */
@@ -201,7 +201,7 @@ static int ssh_connect_ai_timeout(ssh_session session, const char *host,
   }
 
   /* s is connected ? */
-  ssh_log(session, SSH_LOG_PACKET, "Socket connected with timeout\n");
+  SSH_LOG(SSH_LOG_PACKET, "Socket connected with timeout\n");
   ret = ssh_socket_set_blocking(s);
   if (ret < 0) {
       ssh_set_error(session, SSH_FATAL,
@@ -232,7 +232,7 @@ socket_t ssh_connect_host(ssh_session session, const char *host,
 
   enter_function();
 
-  rc = getai(session,host, port, &ai);
+  rc = getai(host, port, &ai);
   if (rc != 0) {
     ssh_set_error(session, SSH_FATAL,
         "Failed to resolve hostname %s (%s)", host, gai_strerror(rc));
@@ -253,9 +253,9 @@ socket_t ssh_connect_host(ssh_session session, const char *host,
       struct addrinfo *bind_ai;
       struct addrinfo *bind_itr;
 
-      ssh_log(session, SSH_LOG_PACKET, "Resolving %s\n", bind_addr);
+      SSH_LOG(SSH_LOG_PACKET, "Resolving %s\n", bind_addr);
 
-      rc = getai(session,bind_addr, 0, &bind_ai);
+      rc = getai(bind_addr, 0, &bind_ai);
       if (rc != 0) {
         ssh_set_error(session, SSH_FATAL,
             "Failed to resolve bind address %s (%s)",
@@ -329,7 +329,7 @@ socket_t ssh_connect_host_nonblocking(ssh_session session, const char *host,
 
   enter_function();
 
-  rc = getai(session,host, port, &ai);
+  rc = getai(host, port, &ai);
   if (rc != 0) {
     ssh_set_error(session, SSH_FATAL,
         "Failed to resolve hostname %s (%s)", host, gai_strerror(rc));
@@ -350,9 +350,9 @@ socket_t ssh_connect_host_nonblocking(ssh_session session, const char *host,
       struct addrinfo *bind_ai;
       struct addrinfo *bind_itr;
 
-      ssh_log(session, SSH_LOG_PACKET, "Resolving %s\n", bind_addr);
+      SSH_LOG(SSH_LOG_PACKET, "Resolving %s\n", bind_addr);
 
-      rc = getai(session,bind_addr, 0, &bind_ai);
+      rc = getai(bind_addr, 0, &bind_ai);
       if (rc != 0) {
         ssh_set_error(session, SSH_FATAL,
             "Failed to resolve bind address %s (%s)",

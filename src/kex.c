@@ -277,7 +277,7 @@ SSH_PACKET_CALLBACK(ssh_packet_kexinit){
   (void)user;
   memset(strings, 0, sizeof(strings));
   if (session->session_state == SSH_SESSION_STATE_AUTHENTICATED){
-      ssh_log(session,SSH_LOG_WARNING, "Other side initiating key re-exchange");
+      SSH_LOG(SSH_LOG_WARNING, "Other side initiating key re-exchange");
   } else if(session->session_state != SSH_SESSION_STATE_INITIAL_KEX){
   	ssh_set_error(session,SSH_FATAL,"SSH_KEXINIT received in wrong state");
   	goto error;
@@ -351,7 +351,7 @@ error:
   return SSH_PACKET_USED;
 }
 
-void ssh_list_kex(ssh_session session, struct ssh_kex_struct *kex) {
+void ssh_list_kex(struct ssh_kex_struct *kex) {
   int i = 0;
 
 #ifdef DEBUG_CRYPTO
@@ -362,7 +362,7 @@ void ssh_list_kex(ssh_session session, struct ssh_kex_struct *kex) {
     if (kex->methods[i] == NULL) {
       continue;
     }
-    ssh_log(session, SSH_LOG_FUNCTIONS, "%s: %s",
+    SSH_LOG(SSH_LOG_FUNCTIONS, "%s: %s",
         ssh_kex_descriptions[i], kex->methods[i]);
   }
 }
@@ -445,7 +445,7 @@ int ssh_send_kex(ssh_session session, int server_kex) {
     goto error;
   }
 
-  ssh_list_kex(session, kex);
+  ssh_list_kex(kex);
 
   for (i = 0; i < KEX_METHODS_SIZE; i++) {
     str = ssh_string_from_char(kex->methods[i]);

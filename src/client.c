@@ -66,7 +66,7 @@ static void socket_callback_connected(int code, int errno_code, void *user){
 		leave_function();
 		return;
 	}
-	ssh_log(session,SSH_LOG_RARE,"Socket connection callback: %d (%d)",code, errno_code);
+	SSH_LOG(SSH_LOG_RARE,"Socket connection callback: %d (%d)",code, errno_code);
 	if(code == SSH_SOCKET_CONNECTED_OK)
 		session->session_state=SSH_SESSION_STATE_SOCKET_CONNECTED;
 	else {
@@ -115,7 +115,7 @@ static int callback_receive_banner(const void *data, size_t len, void *user) {
   		ret=i+1;
   		session->serverbanner=str;
   		session->session_state=SSH_SESSION_STATE_BANNER_RECEIVED;
-  		ssh_log(session,SSH_LOG_PACKET,"Received banner: %s",str);
+  		SSH_LOG(SSH_LOG_PACKET,"Received banner: %s",str);
 		session->ssh_connection_callback(session);
   		leave_function();
   		return ret;
@@ -282,7 +282,7 @@ int ssh_service_request(ssh_session session, const char *service) {
     goto error;
   }
 
-  ssh_log(session, SSH_LOG_PACKET,
+  SSH_LOG(SSH_LOG_PACKET,
       "Sent SSH_MSG_SERVICE_REQUEST (service %s)", service);
 pending:
   rc=ssh_handle_packets_termination(session,SSH_TIMEOUT_USER,
@@ -335,7 +335,7 @@ static void ssh_client_connection_callback(ssh_session session){
 		    goto error;
 		  }
 		  set_status(session, 0.4f);
-		  ssh_log(session, SSH_LOG_RARE,
+		  SSH_LOG(SSH_LOG_RARE,
 		      "SSH server banner: %s", session->serverbanner);
 
 		  /* Here we analyze the different protocols the server allows. */
@@ -391,7 +391,7 @@ static void ssh_client_connection_callback(ssh_session session){
 			break;
 		case SSH_SESSION_STATE_KEXINIT_RECEIVED:
 			set_status(session,0.6f);
-			ssh_list_kex(session, &session->next_crypto->server_kex);
+			ssh_list_kex(&session->next_crypto->server_kex);
 			if (set_client_kex(session) < 0) {
 				goto error;
 			}
@@ -498,7 +498,7 @@ int ssh_connect(ssh_session session) {
       leave_function();
       return SSH_ERROR;
   }
-  ssh_log(session,SSH_LOG_RARE,"libssh %s, using threading %s", ssh_copyright(), ssh_threads_get_type());
+  SSH_LOG(SSH_LOG_RARE,"libssh %s, using threading %s", ssh_copyright(), ssh_threads_get_type());
   session->ssh_connection_callback = ssh_client_connection_callback;
   session->session_state=SSH_SESSION_STATE_CONNECTING;
   ssh_socket_set_callbacks(session->socket,&session->socket_callbacks);
@@ -528,7 +528,7 @@ int ssh_connect(ssh_session session) {
   set_status(session, 0.2f);
 
   session->alive = 1;
-  ssh_log(session,SSH_LOG_PROTOCOL,"Socket connecting, now waiting for the callbacks to work");
+  SSH_LOG(SSH_LOG_PROTOCOL,"Socket connecting, now waiting for the callbacks to work");
 pending:
   session->pending_call_state=SSH_PENDING_CALL_CONNECT;
   if(ssh_is_blocking(session)) {
@@ -537,7 +537,7 @@ pending:
       if (timeout == 0) {
           timeout = 10 * 1000;
       }
-      ssh_log(session,SSH_LOG_PACKET,"ssh_connect: Actual timeout : %d", timeout);
+      SSH_LOG(SSH_LOG_PACKET,"ssh_connect: Actual timeout : %d", timeout);
       ret = ssh_handle_packets_termination(session, timeout, ssh_connect_termination, session);
       if (ret == SSH_ERROR || !ssh_connect_termination(session)) {
           ssh_set_error(session, SSH_FATAL,
@@ -554,7 +554,7 @@ pending:
           session->session_state = SSH_SESSION_STATE_ERROR;
       }
   }
-  ssh_log(session,SSH_LOG_PACKET,"ssh_connect: Actual state : %d",session->session_state);
+  SSH_LOG(SSH_LOG_PACKET,"ssh_connect: Actual state : %d",session->session_state);
   if(!ssh_is_blocking(session) && !ssh_connect_termination(session)){
     leave_function();
     return SSH_AGAIN;
