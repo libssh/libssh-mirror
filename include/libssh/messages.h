@@ -92,9 +92,12 @@ struct ssh_message_struct {
 };
 
 SSH_PACKET_CALLBACK(ssh_packet_channel_open);
+SSH_PACKET_CALLBACK(ssh_packet_global_request);
+
+#ifdef WITH_SERVER
 SSH_PACKET_CALLBACK(ssh_packet_service_request);
 SSH_PACKET_CALLBACK(ssh_packet_userauth_request);
-SSH_PACKET_CALLBACK(ssh_packet_global_request);
+#endif /* WITH_SERVER */
 
 int ssh_message_handle_channel_request(ssh_session session, ssh_channel channel, ssh_buffer packet,
     const char *request, uint8_t want_reply);

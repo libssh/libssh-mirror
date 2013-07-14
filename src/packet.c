@@ -55,7 +55,11 @@ static ssh_packet_callback default_packet_handlers[]= {
   ssh_packet_ignore_callback,              // SSH2_MSG_IGNORE	                    2
   ssh_packet_unimplemented,                // SSH2_MSG_UNIMPLEMENTED              3
   ssh_packet_ignore_callback,              // SSH2_MSG_DEBUG	                    4
+#if WITH_SERVER
   ssh_packet_service_request,              // SSH2_MSG_SERVICE_REQUEST	          5
+#else
+  NULL,
+#endif
   ssh_packet_service_accept,               // SSH2_MSG_SERVICE_ACCEPT             6
   NULL, NULL, NULL, NULL, NULL, NULL, NULL,
   NULL, NULL, NULL,	NULL, NULL, NULL,      //                                     7-19
@@ -77,7 +81,11 @@ static ssh_packet_callback default_packet_handlers[]= {
   NULL, NULL, NULL, NULL, NULL, NULL,	NULL,
   NULL, NULL, NULL, NULL, NULL, NULL, NULL,
   NULL,                                    //                                     35-49
+#if WITH_SERVER
   ssh_packet_userauth_request,             // SSH2_MSG_USERAUTH_REQUEST           50
+#else
+  NULL,
+#endif
   ssh_packet_userauth_failure,             // SSH2_MSG_USERAUTH_FAILURE           51
   ssh_packet_userauth_success,             // SSH2_MSG_USERAUTH_SUCCESS           52
   ssh_packet_userauth_banner,              // SSH2_MSG_USERAUTH_BANNER            53
@@ -92,11 +100,11 @@ static ssh_packet_callback default_packet_handlers[]= {
   NULL,                             // SSH2_MSG_USERAUTH_GSSAPI_EXCHANGE_COMPLETE 63
   NULL,                                    // SSH2_MSG_USERAUTH_GSSAPI_ERROR      64
   NULL,                                    // SSH2_MSG_USERAUTH_GSSAPI_ERRTOK     65
-#ifdef WITH_GSSAPI
+#if WITH_GSSAPI && WITH_SERVER
   ssh_packet_userauth_gssapi_mic,          // SSH2_MSG_USERAUTH_GSSAPI_MIC        66
-#else /* WITH_GSSAPI */
+#else /* WITH_GSSAPI && WITH_SERVER */
   NULL,
-#endif /* WITH_GSSAPI */
+#endif /* WITH_GSSAPI && WITH_SERVER */
   NULL, NULL,
   NULL, NULL, NULL, NULL, NULL, NULL, NULL,
   NULL, NULL, NULL, NULL,                  //                                     67-79

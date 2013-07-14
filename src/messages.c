@@ -93,6 +93,7 @@ static int ssh_message_reply_default(ssh_message msg) {
 
 #endif
 
+#ifdef WITH_SERVER
 /** @internal
  * Executes the callbacks defined in session->server_callbacks, out of an ssh_message
  * I don't like ssh_message interface but it works.
@@ -258,6 +259,8 @@ static int ssh_execute_server_callbacks(ssh_session session, ssh_message msg){
 	return SSH_AGAIN;
 }
 
+#endif /* WITH_SERVER */
+
 static int ssh_execute_message_callback(ssh_session session, ssh_message msg) {
 	int ret;
     if(session->ssh_message_callback != NULL) {
@@ -282,7 +285,6 @@ static int ssh_execute_message_callback(ssh_session session, ssh_message msg) {
     return SSH_OK;
 }
 
-
 /**
  * @internal
  *
@@ -294,8 +296,9 @@ static int ssh_execute_message_callback(ssh_session session, ssh_message msg) {
  * @param[in]  message  The message to add to the queue.
  */
 void ssh_message_queue(ssh_session session, ssh_message message){
-    int ret;
     if (message != NULL) {
+#ifdef WITH_SERVER
+	int ret;
         /* probably not the best place to execute server callbacks, but still better
          * than nothing.
          */
@@ -304,6 +307,7 @@ void ssh_message_queue(ssh_session session, ssh_message message){
             ssh_message_free(message);
             return;
         }
+#endif /* WITH_SERVER */
         if(session->ssh_message_callback != NULL) {
             ssh_execute_message_callback(session, message);
             return;
@@ -476,6 +480,8 @@ void ssh_message_free(ssh_message msg){
   ZERO_STRUCTP(msg);
   SAFE_FREE(msg);
 }
+
+#ifdef WITH_SERVER
 
 SSH_PACKET_CALLBACK(ssh_packet_service_request){
   ssh_string service = NULL;
@@ -888,6 +894,7 @@ end:
   return SSH_PACKET_USED;
 }
 
+#endif /* WITH_SERVER */
 /**
  * @internal
  *
@@ -902,7 +909,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_response){
     (void)user;
     return SSH_PACKET_USED;
 }
-#else
+#else /* WITH_SERVER */
 SSH_PACKET_CALLBACK(ssh_packet_userauth_info_response){
   uint32_t nanswers;
   uint32_t i;
@@ -1011,7 +1018,7 @@ error:
   leave_function();
   return SSH_PACKET_USED;
 }
-#endif
+#endif /* WITH_SERVER */
 
 SSH_PACKET_CALLBACK(ssh_packet_channel_open){
   ssh_message msg = NULL;

@@ -180,9 +180,10 @@ void _ssh_set_error_invalid(void *error, const char *function);
 
 
 /* server.c */
+#ifdef WITH_SERVER
 int ssh_auth_reply_default(ssh_session session,int partial);
 int ssh_auth_reply_success(ssh_session session, int partial);
-
+#endif
 /* client.c */
 
 int ssh_send_banner(ssh_session session, int is_server);

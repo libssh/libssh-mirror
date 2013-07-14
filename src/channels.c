@@ -843,12 +843,16 @@ SSH_PACKET_CALLBACK(channel_rcv_request) {
     leave_function();
     return SSH_PACKET_USED;
   }
+#ifdef WITH_SERVER
 	/* If we are here, that means we have a request that is not in the understood
 	 * client requests. That means we need to create a ssh message to be passed
 	 * to the user code handling ssh messages
 	 */
 	ssh_message_handle_channel_request(session,channel,packet,request,status);
-
+#else
+	SSH_LOG(session,SSH_LOG_WARNING, "Unhandled channel request %s", request);
+#endif
+	
 	SAFE_FREE(request);
 
 	leave_function();

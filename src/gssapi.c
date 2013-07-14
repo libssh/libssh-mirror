@@ -121,12 +121,16 @@ static int ssh_gssapi_send_response(ssh_session session, ssh_string oid){
     return SSH_OK;
 }
 
+#endif /* WITH_SERVER */
+
 static void ssh_gssapi_log_error(ssh_session session, int verb, const char *msg, int maj_stat){
     gss_buffer_desc buffer;
     OM_uint32 dummy, message_context;
     gss_display_status(&dummy,maj_stat,GSS_C_GSS_CODE, GSS_C_NO_OID, &message_context, &buffer);
     ssh_log(session, verb, "GSSAPI(%s): %s", msg, (const char *)buffer.value);
 }
+
+#ifdef WITH_SERVER
 
 /** @internal
  * @brief handles an user authentication using GSSAPI
@@ -251,6 +255,8 @@ int ssh_gssapi_handle_userauth(ssh_session session, const char *user, uint32_t n
     return ssh_gssapi_send_response(session, oids[i]);
 }
 
+#endif /* WITH_SERVER */
+
 static char * ssh_gssapi_name_to_char(ssh_session session, gss_name_t name){
     gss_buffer_desc buffer;
     OM_uint32 maj_stat, min_stat;
@@ -264,6 +270,8 @@ static char * ssh_gssapi_name_to_char(ssh_session session, gss_name_t name){
     return ptr;
 
 }
+
+#ifdef WITH_SERVER
 
 SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_token_server){
     ssh_string token;
@@ -349,6 +357,8 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_token_server){
     return SSH_PACKET_USED;
 }
 
+#endif /* WITH_SERVER */
+
 static ssh_buffer ssh_gssapi_build_mic(ssh_session session){
     ssh_buffer mic_buffer = ssh_buffer_new();
     ssh_string str;
@@ -376,6 +386,8 @@ static ssh_buffer ssh_gssapi_build_mic(ssh_session session){
 
     return mic_buffer;
 }
+
+#ifdef WITH_SERVER
 
 SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_mic){
     ssh_string mic_token;
@@ -824,7 +836,6 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_token_client){
     }
     if (GSS_ERROR(maj_stat)){
         ssh_gssapi_log_error(session, SSH_LOG_PROTOCOL, "Gssapi error", maj_stat);
-        ssh_auth_reply_default(session,0);
         ssh_gssapi_free(session);
         session->gssapi=NULL;
         return SSH_PACKET_USED;
