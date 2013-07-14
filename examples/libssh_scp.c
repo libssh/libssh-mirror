@@ -192,7 +192,10 @@ static int do_copy(struct location *src, struct location *dest, int recursive){
         fprintf(stderr, "Invalid file pointer, error: %s\n", strerror(errno));
         return -1;
     }
-    fstat(fd,&s);
+    r = fstat(fd, &s);
+    if (r < 0) {
+        return -1;
+    }
     size=s.st_size;
     mode = s.st_mode & ~S_IFMT;
     filename=ssh_basename(src->path);
