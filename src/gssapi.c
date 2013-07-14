@@ -281,7 +281,8 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_token_server){
     gss_name_t client_name = GSS_C_NO_NAME;
     OM_uint32 ret_flags=0;
     gss_channel_bindings_t input_bindings=GSS_C_NO_CHANNEL_BINDINGS;
-    //char *name;
+    int rc;
+
     (void)user;
     (void)type;
 
@@ -299,7 +300,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_token_server){
 
     if (ssh_callbacks_exists(session->server_callbacks, gssapi_accept_sec_ctx_function)){
         ssh_string out_token=NULL;
-        int rc = session->server_callbacks->gssapi_accept_sec_ctx_function(session,
+        rc = session->server_callbacks->gssapi_accept_sec_ctx_function(session,
                 token, &out_token, session->server_callbacks->userdata);
         if (rc == SSH_ERROR){
             ssh_auth_reply_default(session, 0);
@@ -308,8 +309,17 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_token_server){
             return SSH_PACKET_USED;
         }
         if (ssh_string_len(out_token) != 0){
-            buffer_add_u8(session->out_buffer, SSH2_MSG_USERAUTH_GSSAPI_TOKEN);
-            buffer_add_ssh_string(session->out_buffer,out_token);
+            rc = buffer_add_u8(session->out_buffer,
+                               SSH2_MSG_USERAUTH_GSSAPI_TOKEN);
+            if (rc < 0) {
+                ssh_set_error_oom(session);
+                return SSH_PACKET_USED;
+            }
+            rc = buffer_add_ssh_string(session->out_buffer, out_token);
+            if (rc < 0) {
+                ssh_set_error_oom(session);
+                return SSH_PACKET_USED;
+            }
             packet_send(session);
             ssh_string_free(out_token);
         } else {
