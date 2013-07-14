@@ -84,8 +84,14 @@ static int opts(int argc, char **argv){
 }
 
 static struct location *parse_location(char *loc){
-  struct location *location=malloc(sizeof(struct location));
+  struct location *location;
   char *ptr;
+
+  location = malloc(sizeof(struct location));
+  if (location == NULL) {
+      return NULL;
+  }
+  memset(location, 0, sizeof(struct location));
 
   location->host=location->user=NULL;
   ptr=strchr(loc,':');
@@ -123,6 +129,7 @@ static int open_location(struct location *loc, int flag){
     if(ssh_scp_init(loc->scp)==SSH_ERROR){
       fprintf(stderr,"error : %s\n",ssh_get_error(loc->session));
       ssh_scp_free(loc->scp);
+      loc->scp = NULL;
       return -1;
     }
     return 0;
@@ -140,6 +147,7 @@ static int open_location(struct location *loc, int flag){
     if(ssh_scp_init(loc->scp)==SSH_ERROR){
       fprintf(stderr,"error : %s\n",ssh_get_error(loc->session));
       ssh_scp_free(loc->scp);
+      loc->scp = NULL;
       return -1;
     }
     return 0;
