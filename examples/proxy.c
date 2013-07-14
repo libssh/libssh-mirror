@@ -227,7 +227,6 @@ int main(int argc, char **argv){
 
     char buf[2048];
     char host[128]="";
-    int sftp=0;
     char *ptr;
     int i,r, rc;
 
