@@ -1042,7 +1042,7 @@ int ssh_options_getopt(ssh_session session, int *argcptr, char **argv) {
     cont = 0;
   }
 
-  ssh_options_set(session, SSH_OPTIONS_LOG_VERBOSITY, &debuglevel);
+  ssh_set_log_level(debuglevel);
 
   optind = saveoptind;
 
@@ -1360,7 +1360,7 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
         return -1;
       } else {
         int *x = (int *) value;
-        sshbind->common.log_verbosity = *x & 0xffff;
+        ssh_set_log_level(*x & 0xffff);
       }
       break;
     case SSH_BIND_OPTIONS_LOG_VERBOSITY_STR:
