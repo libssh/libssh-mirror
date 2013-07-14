@@ -671,10 +671,14 @@ int ssh_gssapi_auth_mic(ssh_session session){
     }
 
     rc = ssh_gssapi_send_auth_mic(session, oids, n_oids);
-    if (rc != SSH_ERROR)
+    for (i = 0; i < n_oids; i++) {
+        ssh_string_free(oids[i]);
+    }
+    if (rc != SSH_ERROR) {
         return SSH_AUTH_AGAIN;
-    else
-        return SSH_AUTH_ERROR;
+    }
+
+    return SSH_AUTH_ERROR;
 }
 
 static gss_OID ssh_gssapi_oid_from_string(ssh_string oid_s){
