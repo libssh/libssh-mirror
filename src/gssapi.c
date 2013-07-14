@@ -360,29 +360,73 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_token_server){
 #endif /* WITH_SERVER */
 
 static ssh_buffer ssh_gssapi_build_mic(ssh_session session){
-    ssh_buffer mic_buffer = ssh_buffer_new();
+    ssh_buffer mic_buffer;
     ssh_string str;
-    if(!mic_buffer){
+    int rc;
+
+    str = ssh_string_new(session->current_crypto->digest_len);
+    if (str == NULL) {
         return NULL;
     }
-    str = ssh_string_new(session->current_crypto->digest_len);
-    ssh_string_fill(str, session->current_crypto->session_id, session->current_crypto->digest_len);
-    buffer_add_ssh_string(mic_buffer, str);
-    ssh_string_free(str);
+    ssh_string_fill(str, session->current_crypto->session_id,
+                    session->current_crypto->digest_len);
 
-    buffer_add_u8(mic_buffer, SSH2_MSG_USERAUTH_REQUEST);
+    mic_buffer = ssh_buffer_new();
+    if (mic_buffer == NULL) {
+        ssh_string_free(str);
+        return NULL;
+    }
+
+    rc = buffer_add_ssh_string(mic_buffer, str);
+    ssh_string_free(str);
+    if (rc < 0) {
+        ssh_buffer_free(mic_buffer);
+        return NULL;
+    }
+
+    rc = buffer_add_u8(mic_buffer, SSH2_MSG_USERAUTH_REQUEST);
+    if (rc < 0) {
+        ssh_buffer_free(mic_buffer);
+        return NULL;
+    }
 
     str = ssh_string_from_char(session->gssapi->user);
-    buffer_add_ssh_string(mic_buffer, str);
-    ssh_string_free(str);
+    if (str == NULL) {
+        ssh_buffer_free(mic_buffer);
+        return NULL;
+    }
 
-    str= ssh_string_from_char("ssh-connection");
-    buffer_add_ssh_string(mic_buffer, str);
+    rc = buffer_add_ssh_string(mic_buffer, str);
     ssh_string_free(str);
+    if (rc < 0) {
+        ssh_buffer_free(mic_buffer);
+        return NULL;
+    }
+
+    str = ssh_string_from_char("ssh-connection");
+    if (str == NULL) {
+        ssh_buffer_free(mic_buffer);
+        return NULL;
+    }
+    rc = buffer_add_ssh_string(mic_buffer, str);
+    ssh_string_free(str);
+    if (rc < 0) {
+        ssh_buffer_free(mic_buffer);
+        return NULL;
+    }
 
     str = ssh_string_from_char("gssapi-with-mic");
-    buffer_add_ssh_string(mic_buffer, str);
+    if (str == NULL) {
+        ssh_buffer_free(mic_buffer);
+        return NULL;
+    }
+
+    rc = buffer_add_ssh_string(mic_buffer, str);
     ssh_string_free(str);
+    if (rc < 0) {
+        ssh_buffer_free(mic_buffer);
+        return NULL;
+    }
 
     return mic_buffer;
 }
