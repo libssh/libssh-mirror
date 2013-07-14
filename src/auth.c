@@ -135,7 +135,10 @@ static int ssh_userauth_get_response(ssh_session session) {
         case SSH_AUTH_STATE_SUCCESS:
             rc = SSH_AUTH_SUCCESS;
             break;
-        case SSH_AUTH_STATE_KBDINT_SENT:
+        case SSH_AUTH_STATE_KBDINT_SENT:    
+        case SSH_AUTH_STATE_GSSAPI_REQUEST_SENT:
+        case SSH_AUTH_STATE_GSSAPI_TOKEN:
+        case SSH_AUTH_STATE_GSSAPI_MIC_SENT:
         case SSH_AUTH_STATE_NONE:
             /* not reached */
             rc = SSH_AUTH_ERROR;
