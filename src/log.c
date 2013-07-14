@@ -168,39 +168,63 @@ void ssh_log_common(struct ssh_common_struct *common,
 
 /* PUBLIC */
 
+/**
+ * @brief Set the log level of the library.
+ *
+ * @param[in]  level    The level to set.
+ *
+ * @return              SSH_OK on success, SSH_ERROR on error.
+ */
 int ssh_set_log_level(int level) {
   if (level < 0) {
-    return -1;
+    return SSH_ERROR;
   }
 
   ssh_log_level = level;
 
-  return 0;
+  return SSH_OK;
 }
 
+/**
+ * @brief Get the log level of the library.
+ *
+ * @return    The value of the log level.
+ */
 int ssh_get_log_level(void) {
   return ssh_log_level;
 }
 
 int ssh_set_log_callback(ssh_logging_callback cb) {
   if (cb == NULL) {
-    return -1;
+    return SSH_ERROR;
   }
 
   ssh_log_cb = cb;
 
-  return 0;
+  return SSH_OK;
 }
 
 ssh_logging_callback ssh_get_log_callback(void) {
   return ssh_log_cb;
 }
 
+/**
+ * @brief Get the userdata of the logging function.
+ *
+ * @return    The userdata if set or NULL.
+ */
 void *ssh_get_log_userdata(void)
 {
     return ssh_log_userdata;
 }
 
+/**
+ * @brief Set the userdata for the logging function.
+ *
+ * @param[in]  data     The userdata to set.
+ *
+ * @return              SSH_OK on success.
+ */
 int ssh_set_log_userdata(void *data)
 {
     ssh_log_userdata = data;
