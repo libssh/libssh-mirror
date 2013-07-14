@@ -84,7 +84,6 @@ struct ssh_common_struct {
     struct error_struct error;
     ssh_callbacks callbacks; /* Callbacks to user functions */
     int log_verbosity; /* verbosity of the log functions */
-    int log_indent; /* indentation level in enter_function logs */
 };
 
 struct ssh_session_struct {

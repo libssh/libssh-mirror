@@ -138,9 +138,6 @@ int gettimeofday(struct timeval *__p, void *__t);
 # define LIBSSH_THREAD
 #endif
 
-#define enter_function() (void)session
-#define leave_function() (void)session
-
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif

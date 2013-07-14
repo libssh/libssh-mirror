@@ -108,12 +108,10 @@ int ssh_userauth_privatekey_file(ssh_session session,
   int rc = SSH_AUTH_ERROR;
   size_t klen = strlen(filename) + 4 + 1;
 
-  enter_function();
-
   pubkeyfile = malloc(klen);
   if (pubkeyfile == NULL) {
     ssh_set_error_oom(session);
-    leave_function();
+
     return SSH_AUTH_ERROR;
   }
   snprintf(pubkeyfile, klen, "%s.pub", filename);
@@ -138,7 +136,6 @@ error:
   SAFE_FREE(pubkeyfile);
   ssh_string_free(pubkey);
 
-  leave_function();
   return rc;
 }
 

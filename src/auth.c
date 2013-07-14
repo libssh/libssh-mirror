@@ -110,11 +110,9 @@ static int ssh_userauth_get_response(ssh_session session) {
     rc = ssh_handle_packets_termination(session, SSH_TIMEOUT_USER,
         ssh_auth_response_termination, session);
     if (rc == SSH_ERROR) {
-      leave_function();
       return SSH_AUTH_ERROR;
     }
     if (!ssh_auth_response_termination(session)){
-      leave_function();
       return SSH_AUTH_AGAIN;
     }
 
@@ -159,7 +157,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_banner){
   ssh_string banner;
   (void)type;
   (void)user;
-  enter_function();
+
   banner = buffer_get_ssh_string(packet);
   if (banner == NULL) {
     SSH_LOG(SSH_LOG_WARN,
@@ -171,7 +169,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_banner){
       ssh_string_free(session->banner);
     session->banner = banner;
   }
-  leave_function();
+
   return SSH_PACKET_USED;
 }
 
@@ -188,7 +186,6 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_failure){
   uint8_t partial = 0;
   (void) type;
   (void) user;
-  enter_function();
 
   auth = buffer_get_ssh_string(packet);
   if (auth == NULL || buffer_get_u8(packet, &partial) != 1) {
@@ -239,7 +236,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_failure){
 end:
   ssh_string_free(auth);
   SAFE_FREE(auth_methods);
-  leave_function();
+
   return SSH_PACKET_USED;
 }
 
@@ -251,7 +248,6 @@ end:
  * It is also used to communicate the new to the upper levels.
  */
 SSH_PACKET_CALLBACK(ssh_packet_userauth_success){
-  enter_function();
   (void)packet;
   (void)type;
   (void)user;
@@ -271,7 +267,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_success){
       SSH_LOG(SSH_LOG_DEBUG, "Enabling delayed compression IN");
   	session->current_crypto->do_compress_in=1;
   }
-  leave_function();
+
   return SSH_PACKET_USED;
 }
 
@@ -285,7 +281,6 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_success){
  */
 SSH_PACKET_CALLBACK(ssh_packet_userauth_pk_ok){
 	int rc;
-	enter_function();
 
   SSH_LOG(SSH_LOG_TRACE, "Received SSH_USERAUTH_PK_OK/INFO_REQUEST/GSSAPI_RESPONSE");
 
@@ -303,7 +298,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_pk_ok){
     SSH_LOG(SSH_LOG_TRACE, "Assuming SSH_USERAUTH_PK_OK");
     rc=SSH_PACKET_USED;
   }
-  leave_function();
+
   return rc;
 }
 
@@ -1740,7 +1735,6 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_request) {
   uint32_t i;
   (void)user;
   (void)type;
-  enter_function();
 
   name = buffer_get_ssh_string(packet);
   instruction = buffer_get_ssh_string(packet);
@@ -1754,7 +1748,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_request) {
     ssh_string_free(name);
     ssh_string_free(instruction);
     ssh_set_error(session, SSH_FATAL, "Invalid USERAUTH_INFO_REQUEST msg");
-    leave_function();
+
     return SSH_PACKET_USED;
   }
 
@@ -1765,7 +1759,6 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_request) {
       ssh_string_free(name);
       ssh_string_free(instruction);
 
-      leave_function();
       return SSH_PACKET_USED;
     }
   } else {
@@ -1778,7 +1771,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_request) {
     ssh_set_error_oom(session);
     ssh_kbdint_free(session->kbdint);
     ssh_string_free(instruction);
-    leave_function();
+
     return SSH_PACKET_USED;
   }
 
@@ -1788,7 +1781,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_request) {
     ssh_set_error_oom(session);
     ssh_kbdint_free(session->kbdint);
     session->kbdint = NULL;
-    leave_function();
+
     return SSH_PACKET_USED;
   }
 
@@ -1801,7 +1794,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_request) {
         nprompts, nprompts);
     ssh_kbdint_free(session->kbdint);
     session->kbdint = NULL;
-    leave_function();
+
     return SSH_PACKET_USED;
   }
 
@@ -1813,7 +1806,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_request) {
     ssh_set_error_oom(session);
     ssh_kbdint_free(session->kbdint);
     session->kbdint = NULL;
-    leave_function();
+
     return SSH_PACKET_USED;
   }
   memset(session->kbdint->prompts, 0, nprompts * sizeof(char *));
@@ -1824,7 +1817,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_request) {
     ssh_set_error_oom(session);
     ssh_kbdint_free(session->kbdint);
     session->kbdint = NULL;
-    leave_function();
+
     return SSH_PACKET_USED;
   }
   memset(session->kbdint->echo, 0, nprompts);
@@ -1836,7 +1829,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_request) {
       ssh_set_error(session, SSH_FATAL, "Short INFO_REQUEST packet");
       ssh_kbdint_free(session->kbdint);
       session->kbdint = NULL;
-      leave_function();
+
       return SSH_PACKET_USED;
     }
     session->kbdint->prompts[i] = ssh_string_to_char(tmp);
@@ -1846,12 +1839,12 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_request) {
       session->kbdint->nprompts = i;
       ssh_kbdint_free(session->kbdint);
       session->kbdint = NULL;
-      leave_function();
+
       return SSH_PACKET_USED;
     }
   }
   session->auth_state=SSH_AUTH_STATE_INFO;
-  leave_function();
+
   return SSH_PACKET_USED;
 }
 

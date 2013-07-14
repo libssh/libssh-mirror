@@ -317,7 +317,7 @@ SSH_PACKET_CALLBACK(ssh_packet_publickey1){
   int ko;
   uint32_t support_3DES = 0;
   uint32_t support_DES = 0;
-  enter_function();
+
   (void)type;
   (void)user;
   SSH_LOG(SSH_LOG_PROTOCOL, "Got a SSH_SMSG_PUBLIC_KEY");
@@ -470,30 +470,28 @@ end:
    publickey_free(srv);
    publickey_free(host);
 
-   leave_function();
    return SSH_PACKET_USED;
 }
 
 int ssh_get_kex1(ssh_session session) {
-  int ret=SSH_ERROR;
-  enter_function();
   SSH_LOG(SSH_LOG_PROTOCOL, "Waiting for a SSH_SMSG_PUBLIC_KEY");
+
   /* Here the callback is called */
   while(session->session_state==SSH_SESSION_STATE_INITIAL_KEX){
     ssh_handle_packets(session, SSH_TIMEOUT_USER);
   }
-  if(session->session_state==SSH_SESSION_STATE_ERROR)
-    goto error;
+  if (session->session_state==SSH_SESSION_STATE_ERROR) {
+      return SSH_ERROR;
+  }
   SSH_LOG(SSH_LOG_PROTOCOL, "Waiting for a SSH_SMSG_SUCCESS");
   /* Waiting for SSH_SMSG_SUCCESS */
   while(session->session_state==SSH_SESSION_STATE_KEXINIT_RECEIVED){
     ssh_handle_packets(session, SSH_TIMEOUT_USER);
   }
-  if(session->session_state==SSH_SESSION_STATE_ERROR)
-      goto error;
+  if(session->session_state==SSH_SESSION_STATE_ERROR) {
+      return SSH_ERROR;
+  }
   SSH_LOG(SSH_LOG_PROTOCOL, "received SSH_SMSG_SUCCESS\n");
-  ret=SSH_OK;
-error:
-  leave_function();
-  return ret;
+
+  return SSH_OK;
 }

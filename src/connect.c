@@ -142,8 +142,6 @@ static int ssh_connect_ai_timeout(ssh_session session, const char *host,
   int ret;
   socklen_t len = sizeof(rc);
 
-  enter_function();
-
   /* I know we're losing some precision. But it's not like poll-like family
    * type of mechanisms are precise up to the microsecond.
    */
@@ -177,7 +175,7 @@ static int ssh_connect_ai_timeout(ssh_session session, const char *host,
     ssh_set_error(session, SSH_FATAL,
         "Timeout while connecting to %s:%d", host, port);
     ssh_connect_socket_close(s);
-    leave_function();
+
     return -1;
   }
 
@@ -185,7 +183,7 @@ static int ssh_connect_ai_timeout(ssh_session session, const char *host,
     ssh_set_error(session, SSH_FATAL,
         "poll error: %s", strerror(errno));
     ssh_connect_socket_close(s);
-    leave_function();
+
     return -1;
   }
   rc = -1;
@@ -196,7 +194,7 @@ static int ssh_connect_ai_timeout(ssh_session session, const char *host,
     ssh_set_error(session, SSH_FATAL,
         "Connect to %s:%d failed: %s", host, port, strerror(rc));
     ssh_connect_socket_close(s);
-    leave_function();
+
     return -1;
   }
 
@@ -211,7 +209,6 @@ static int ssh_connect_ai_timeout(ssh_session session, const char *host,
       return -1;
   }
 
-  leave_function();
   return s;
 }
 
@@ -230,13 +227,11 @@ socket_t ssh_connect_host(ssh_session session, const char *host,
   struct addrinfo *ai;
   struct addrinfo *itr;
 
-  enter_function();
-
   rc = getai(host, port, &ai);
   if (rc != 0) {
     ssh_set_error(session, SSH_FATAL,
         "Failed to resolve hostname %s (%s)", host, gai_strerror(rc));
-    leave_function();
+
     return -1;
   }
 
@@ -263,7 +258,7 @@ socket_t ssh_connect_host(ssh_session session, const char *host,
             gai_strerror(rc));
         freeaddrinfo(ai);
         close(s);
-        leave_function();
+
         return -1;
       }
 
@@ -289,7 +284,7 @@ socket_t ssh_connect_host(ssh_session session, const char *host,
     if (timeout || usec) {
       socket_t ret = ssh_connect_ai_timeout(session, host, port, itr,
           timeout, usec, s);
-      leave_function();
+
       return ret;
     }
 
@@ -297,7 +292,6 @@ socket_t ssh_connect_host(ssh_session session, const char *host,
       ssh_set_error(session, SSH_FATAL, "Connect failed: %s", strerror(errno));
       ssh_connect_socket_close(s);
       s = -1;
-      leave_function();
       continue;
     } else {
       /* We are connected */
@@ -306,7 +300,6 @@ socket_t ssh_connect_host(ssh_session session, const char *host,
   }
 
   freeaddrinfo(ai);
-  leave_function();
 
   return s;
 }
@@ -327,13 +320,11 @@ socket_t ssh_connect_host_nonblocking(ssh_session session, const char *host,
   struct addrinfo *ai;
   struct addrinfo *itr;
 
-  enter_function();
-
   rc = getai(host, port, &ai);
   if (rc != 0) {
     ssh_set_error(session, SSH_FATAL,
         "Failed to resolve hostname %s (%s)", host, gai_strerror(rc));
-    leave_function();
+
     return -1;
   }
 
@@ -396,7 +387,6 @@ socket_t ssh_connect_host_nonblocking(ssh_session session, const char *host,
   }
 
   freeaddrinfo(ai);
-  leave_function();
 
   return s;
 }

@@ -89,7 +89,6 @@ ssh_session ssh_new(void) {
   session->alive = 0;
   session->auth_methods = 0;
   ssh_set_blocking(session, 1);
-  session->common.log_indent = 0;
   session->maxchannel = FIRST_CHANNEL;
 
 #ifndef _WIN32
@@ -286,8 +285,6 @@ const char* ssh_get_serverbanner(ssh_session session) {
  * @param[in]  session  The SSH session to disconnect.
  */
 void ssh_silent_disconnect(ssh_session session) {
-  enter_function();
-
   if (session == NULL) {
     return;
   }
@@ -295,7 +292,6 @@ void ssh_silent_disconnect(ssh_session session) {
   ssh_socket_close(session->socket);
   session->alive = 0;
   ssh_disconnect(session);
-  leave_function();
 }
 
 /**
@@ -347,20 +343,21 @@ static int ssh_flush_termination(void *c){
  */
 
 int ssh_blocking_flush(ssh_session session, int timeout){
-  int rc;
-  if(!session)
-    return SSH_ERROR;
-  enter_function();
+    int rc;
+    if (session == NULL) {
+        return SSH_ERROR;
+    }
 
-  rc = ssh_handle_packets_termination(session, timeout,
-      ssh_flush_termination, session);
-  if (rc == SSH_ERROR)
-    goto end;
-  if (!ssh_flush_termination(session))
-    rc = SSH_AGAIN;
-end:
-  leave_function();
-  return rc;
+    rc = ssh_handle_packets_termination(session, timeout,
+            ssh_flush_termination, session);
+    if (rc == SSH_ERROR) {
+        return rc;
+    }
+    if (!ssh_flush_termination(session)) {
+        rc = SSH_AGAIN;
+    }
+
+    return rc;
 }
 
 /**
@@ -464,7 +461,6 @@ int ssh_handle_packets(ssh_session session, int timeout) {
     if (session == NULL || session->socket == NULL) {
         return SSH_ERROR;
     }
-    enter_function();
 
     spoll_in = ssh_socket_get_poll_handle_in(session->socket);
     spoll_out = ssh_socket_get_poll_handle_out(session->socket);
@@ -493,7 +489,6 @@ int ssh_handle_packets(ssh_session session, int timeout) {
         session->session_state = SSH_SESSION_STATE_ERROR;
     }
 
-    leave_function();
     return rc;
 }
 
@@ -640,12 +635,11 @@ int ssh_get_version(ssh_session session) {
  */
 void ssh_socket_exception_callback(int code, int errno_code, void *user){
     ssh_session session=(ssh_session)user;
-    enter_function();
+
     SSH_LOG(SSH_LOG_RARE,"Socket exception callback: %d (%d)",code, errno_code);
     session->session_state=SSH_SESSION_STATE_ERROR;
     ssh_set_error(session,SSH_FATAL,"Socket error: %s",strerror(errno_code));
     session->ssh_connection_callback(session);
-    leave_function();
 }
 
 /**

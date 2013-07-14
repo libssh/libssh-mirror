@@ -560,7 +560,7 @@ int dh_build_k(ssh_session session) {
 int ssh_client_dh_init(ssh_session session){
   ssh_string e = NULL;
   int rc;
-  enter_function();
+
   if (buffer_add_u8(session->out_buffer, SSH2_MSG_KEXDH_INIT) < 0) {
     goto error;
   }
@@ -592,7 +592,6 @@ int ssh_client_dh_init(ssh_session session){
     ssh_string_free(e);
   }
 
-  leave_function();
   return SSH_ERROR;
 }
 
@@ -663,8 +662,6 @@ int make_sessionid(ssh_session session) {
   ssh_buffer buf = NULL;
   uint32_t len;
   int rc = SSH_ERROR;
-
-  enter_function();
 
   buf = ssh_buffer_new();
   if (buf == NULL) {
@@ -845,8 +842,6 @@ error:
   ssh_string_free(str);
   ssh_string_free(num);
 
-  leave_function();
-
   return rc;
 }
 
@@ -919,8 +914,6 @@ int generate_session_keys(ssh_session session) {
   ssh_mac_ctx ctx = NULL;
   struct ssh_crypto_struct *crypto = session->next_crypto;
   int rc = -1;
-
-  enter_function();
 
   k_string = make_bignum_string(crypto->k);
   if (k_string == NULL) {
@@ -1030,7 +1023,6 @@ int generate_session_keys(ssh_session session) {
   rc = 0;
 error:
   ssh_string_free(k_string);
-  leave_function();
 
   return rc;
 }

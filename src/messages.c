@@ -378,11 +378,9 @@ static int ssh_message_termination(void *s){
 ssh_message ssh_message_get(ssh_session session) {
   ssh_message msg = NULL;
   int rc;
-  enter_function();
 
   msg=ssh_message_pop_head(session);
   if(msg) {
-      leave_function();
       return msg;
   }
   if(session->ssh_message_list == NULL) {
@@ -393,7 +391,7 @@ ssh_message ssh_message_get(ssh_session session) {
   if(rc || session->session_state == SSH_SESSION_STATE_ERROR)
     return NULL;
   msg=ssh_list_pop_head(ssh_message, session->ssh_message_list);
-  leave_function();
+
   return msg;
 }
 
@@ -488,7 +486,6 @@ SSH_PACKET_CALLBACK(ssh_packet_service_request){
   char *service_c = NULL;
   ssh_message msg=NULL;
 
-  enter_function();
   (void)type;
   (void)user;
   service = buffer_get_ssh_string(packet);
@@ -514,7 +511,7 @@ error:
   ssh_string_free(service);
   if(msg != NULL)
     ssh_message_queue(session,msg);
-  leave_function();
+
   return SSH_PACKET_USED;
 }
 
@@ -648,8 +645,6 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
   char *service = NULL;
   char *method = NULL;
   uint32_t method_size = 0;
-
-  enter_function();
 
   (void)user;
   (void)type;
@@ -869,7 +864,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
      SAFE_FREE(service);
      SAFE_FREE(method);
      ssh_message_free(msg);
-     leave_function();
+
      return SSH_PACKET_USED;
   }
 #endif
@@ -883,14 +878,13 @@ error:
 
   ssh_message_free(msg);
 
-  leave_function();
   return SSH_PACKET_USED;
 end:
   SAFE_FREE(service);
   SAFE_FREE(method);
 
   ssh_message_queue(session,msg);
-  leave_function();
+
   return SSH_PACKET_USED;
 }
 
@@ -923,8 +917,6 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_response){
       return ssh_packet_userauth_gssapi_token(session, type, packet, user);
   }
 #endif
-  enter_function();
-
   (void)user;
   (void)type;
 
@@ -1009,13 +1001,12 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_response){
   }
 
   ssh_message_queue(session,msg);
-  leave_function();
+
   return SSH_PACKET_USED;
 
 error:
   ssh_message_free(msg);
 
-  leave_function();
   return SSH_PACKET_USED;
 }
 #endif /* WITH_SERVER */
@@ -1026,7 +1017,6 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_open){
   char *type_c = NULL;
   uint32_t sender, window, packet_size, originator_port, destination_port;
 
-  enter_function();
   (void)type;
   (void)user;
   msg = ssh_message_new(session);
@@ -1179,59 +1169,60 @@ end:
   SAFE_FREE(type_c);
   if(msg != NULL)
     ssh_message_queue(session,msg);
-  leave_function();
+
   return SSH_PACKET_USED;
 }
 
 int ssh_message_channel_request_open_reply_accept_channel(ssh_message msg, ssh_channel chan) {
-  ssh_session session;
+    ssh_session session;
+    int rc;
 
-  enter_function();
+    if (msg == NULL) {
+        return SSH_ERROR;
+    }
 
-  if (msg == NULL) {
-    leave_function();
-    return SSH_ERROR;
-  }
+    session = msg->session;
 
-  session = msg->session;
+    chan->local_channel = ssh_channel_new_id(session);
+    chan->local_maxpacket = 35000;
+    chan->local_window = 32000;
+    chan->remote_channel = msg->channel_request_open.sender;
+    chan->remote_maxpacket = msg->channel_request_open.packet_size;
+    chan->remote_window = msg->channel_request_open.window;
+    chan->state = SSH_CHANNEL_STATE_OPEN;
 
-  chan->local_channel = ssh_channel_new_id(session);
-  chan->local_maxpacket = 35000;
-  chan->local_window = 32000;
-  chan->remote_channel = msg->channel_request_open.sender;
-  chan->remote_maxpacket = msg->channel_request_open.packet_size;
-  chan->remote_window = msg->channel_request_open.window;
-  chan->state = SSH_CHANNEL_STATE_OPEN;
+    rc = buffer_add_u8(session->out_buffer, SSH2_MSG_CHANNEL_OPEN_CONFIRMATION);
+    if (rc < 0) {
+        return SSH_ERROR;
+    }
 
-  if (buffer_add_u8(session->out_buffer, SSH2_MSG_CHANNEL_OPEN_CONFIRMATION) < 0) {
-    goto error;
-  }
-  if (buffer_add_u32(session->out_buffer, htonl(chan->remote_channel)) < 0) {
-    goto error;
-  }
-  if (buffer_add_u32(session->out_buffer, htonl(chan->local_channel)) < 0) {
-    goto error;
-  }
-  if (buffer_add_u32(session->out_buffer, htonl(chan->local_window)) < 0) {
-    goto error;
-  }
-  if (buffer_add_u32(session->out_buffer, htonl(chan->local_maxpacket)) < 0) {
-    goto error;
-  }
+    rc = buffer_add_u32(session->out_buffer, htonl(chan->remote_channel));
+    if (rc < 0) {
+        return SSH_ERROR;
+    }
 
-  SSH_LOG(SSH_LOG_PACKET,
-      "Accepting a channel request_open for chan %d", chan->remote_channel);
+    rc =buffer_add_u32(session->out_buffer, htonl(chan->local_channel));
+    if (rc < 0) {
+        return SSH_ERROR;
+    }
 
-  if (packet_send(session) == SSH_ERROR) {
-    goto error;
-  }
+    rc = buffer_add_u32(session->out_buffer, htonl(chan->local_window));
+    if (rc < 0) {
+        return SSH_ERROR;
+    }
 
-  leave_function();
-  return SSH_OK;
-  error:
+    rc = buffer_add_u32(session->out_buffer, htonl(chan->local_maxpacket));
+    if (rc < 0) {
+        return SSH_ERROR;
+    }
 
-  leave_function();
-  return SSH_ERROR;
+    SSH_LOG(SSH_LOG_PACKET,
+            "Accepting a channel request_open for chan %d",
+            chan->remote_channel);
+
+    rc = packet_send(session);
+
+    return rc;
 }
 
 
@@ -1278,7 +1269,7 @@ ssh_channel ssh_message_channel_request_open_reply_accept(ssh_message msg) {
 int ssh_message_handle_channel_request(ssh_session session, ssh_channel channel, ssh_buffer packet,
     const char *request, uint8_t want_reply) {
   ssh_message msg = NULL;
-  enter_function();
+
   msg = ssh_message_new(session);
   if (msg == NULL) {
     ssh_set_error_oom(session);
@@ -1456,12 +1447,11 @@ int ssh_message_handle_channel_request(ssh_session session, ssh_channel channel,
   msg->channel_request.type = SSH_CHANNEL_REQUEST_UNKNOWN;
 end:
   ssh_message_queue(session,msg);
-  leave_function();
+
   return SSH_OK;
 error:
   ssh_message_free(msg);
 
-  leave_function();
   return SSH_ERROR;
 }
 
