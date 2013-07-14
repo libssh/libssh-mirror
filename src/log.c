@@ -91,9 +91,9 @@ static void ssh_log_stderr(int verbosity,
     fprintf(stderr, "  %s\n", buffer);
 }
 
-static void ssh_log_function(int verbosity,
-                             const char *function,
-                             const char *buffer)
+void ssh_log_function(int verbosity,
+                      const char *function,
+                      const char *buffer)
 {
     ssh_logging_callback log_fn = ssh_get_log_callback();
     if (log_fn) {
