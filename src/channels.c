@@ -834,7 +834,7 @@ SSH_PACKET_CALLBACK(channel_rcv_request) {
 	 */
 	ssh_message_handle_channel_request(session,channel,packet,request,status);
 #else
-	SSH_LOG(session,SSH_LOG_WARNING, "Unhandled channel request %s", request);
+    SSH_LOG(SSH_LOG_WARNING, "Unhandled channel request %s", request);
 #endif
 	
 	SAFE_FREE(request);
