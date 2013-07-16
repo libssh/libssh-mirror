@@ -219,7 +219,7 @@ char *ssh_get_user_home_dir(void) {
           return NULL;
       }
       memset(buf, 0, sizeof(buf));
-      snprintf(buf, sizeof(buf), "%s", getenv("HOME"));
+      snprintf(buf, sizeof(buf), "%s", szPath);
 
       return strdup(buf);
   }
