@@ -443,7 +443,8 @@ static ssh_buffer ssh_gssapi_build_mic(ssh_session session){
 
 #ifdef WITH_SERVER
 
-SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_mic){
+SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_mic)
+{
     ssh_string mic_token;
     OM_uint32 maj_stat, min_stat;
     gss_buffer_desc mic_buf = GSS_C_EMPTY_BUFFER;
@@ -455,17 +456,18 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_mic){
 
     SSH_LOG(SSH_LOG_PACKET,"Received SSH_MSG_USERAUTH_GSSAPI_MIC");
     mic_token = buffer_get_ssh_string(packet);
-    if (!mic_token){
+    if (mic_token == NULL) {
         ssh_set_error(session, SSH_FATAL, "Missing MIC in packet");
         goto error;
     }
-    if (!session->gssapi || session->gssapi->state != SSH_GSSAPI_STATE_RCV_MIC){
+    if (session->gssapi == NULL
+        || session->gssapi->state != SSH_GSSAPI_STATE_RCV_MIC) {
         ssh_set_error(session, SSH_FATAL, "Received SSH_MSG_USERAUTH_GSSAPI_MIC in invalid state");
         goto error;
     }
 
     mic_buffer = ssh_gssapi_build_mic(session);
-    if(!mic_buffer){
+    if (mic_buffer == NULL) {
         ssh_set_error_oom(session);
         goto error;
     }
@@ -473,8 +475,9 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_mic){
         int rc = session->server_callbacks->gssapi_verify_mic_function(session, mic_token,
                 ssh_buffer_get_begin(mic_buffer), ssh_buffer_get_len(mic_buffer),
                 session->server_callbacks->userdata);
-        if (rc != SSH_OK)
+        if (rc != SSH_OK) {
             goto error;
+        }
     } else {
         mic_buf.length = ssh_buffer_get_len(mic_buffer);
         mic_buf.value = ssh_buffer_get_begin(mic_buffer);
@@ -484,8 +487,9 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_mic){
         maj_stat = gss_verify_mic(&min_stat, session->gssapi->ctx, &mic_buf, &mic_token_buf, NULL);
         ssh_gssapi_log_error(0, "verifying MIC", maj_stat);
         ssh_gssapi_log_error(0, "verifying MIC (min stat)", min_stat);
-        if (maj_stat == GSS_S_DEFECTIVE_TOKEN || GSS_ERROR(maj_stat))
+        if (maj_stat == GSS_S_DEFECTIVE_TOKEN || GSS_ERROR(maj_stat)) {
             goto error;
+        }
     }
 
     if (ssh_callbacks_exists(session->server_callbacks, auth_gssapi_mic_function)){
@@ -511,10 +515,13 @@ error:
 
 end:
     ssh_gssapi_free(session);
-    if(mic_buffer != NULL)
+    if (mic_buffer != NULL) {
         ssh_buffer_free(mic_buffer);
-    if(mic_token != NULL)
+    }
+    if (mic_token != NULL) {
         ssh_string_free(mic_token);
+    }
+
     return SSH_PACKET_USED;
 }
 
