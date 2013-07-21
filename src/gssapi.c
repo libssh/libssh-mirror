@@ -169,8 +169,8 @@ int ssh_gssapi_handle_userauth(ssh_session session, const char *user, uint32_t n
 
     maj_stat = gss_indicate_mechs(&min_stat, &supported);
     for (i=0; i < supported->count; ++i){
-        ptr=ssh_get_hexa(supported->elements[i].elements, supported->elements[i].length);
-        printf("supported %d : %s\n",i, ptr);
+        ptr = ssh_get_hexa(supported->elements[i].elements, supported->elements[i].length);
+        SSH_LOG(SSH_LOG_DEBUG, "Supported mech %d: %s\n", i, ptr);
         free(ptr);
     }
 
