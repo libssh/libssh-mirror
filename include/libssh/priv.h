@@ -152,10 +152,6 @@ int ssh_get_key_params(ssh_session session, ssh_key *privkey);
 void ssh_log_function(int verbosity,
                       const char *function,
                       const char *buffer);
-
-void _ssh_log(int verbosity,
-              const char *function,
-              const char *format, ...) PRINTF_ATTRIBUTE(3, 4);
 #define SSH_LOG(priority, ...) \
     _ssh_log(priority, __FUNCTION__, __VA_ARGS__)
 

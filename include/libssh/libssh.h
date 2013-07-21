@@ -423,6 +423,9 @@ LIBSSH_API int ssh_set_log_level(int level);
 LIBSSH_API int ssh_get_log_level(void);
 LIBSSH_API void *ssh_get_log_userdata(void);
 LIBSSH_API int ssh_set_log_userdata(void *data);
+LIBSSH_API void _ssh_log(int verbosity,
+                         const char *function,
+                         const char *format, ...) PRINTF_ATTRIBUTE(3, 4);
 
 /* legacy */
 SSH_DEPRECATED LIBSSH_API void ssh_log(ssh_session session,
