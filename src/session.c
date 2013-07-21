@@ -515,34 +515,45 @@ int ssh_handle_packets(ssh_session session, int timeout) {
  * @param[in] user      User parameter to be passed to fct termination function.
  * @return              SSH_OK on success, SSH_ERROR otherwise.
  */
-int ssh_handle_packets_termination(ssh_session session, int timeout,
-	ssh_termination_function fct, void *user){
-	int ret = SSH_OK;
-	struct ssh_timestamp ts;
-	int tm;
-  if (timeout == SSH_TIMEOUT_USER) {
-      if (ssh_is_blocking(session))
-        timeout = ssh_make_milliseconds(session->opts.timeout,
-                                        session->opts.timeout_usec);
-      else
-        timeout = SSH_TIMEOUT_NONBLOCKING;
-  } else if (timeout == SSH_TIMEOUT_DEFAULT){
-	  if(ssh_is_blocking(session))
-		  timeout = SSH_TIMEOUT_INFINITE;
-	  else
-		  timeout = SSH_TIMEOUT_NONBLOCKING;
-  }
-  ssh_timestamp_init(&ts);
-  tm = timeout;
-	while(!fct(user)){
-		ret = ssh_handle_packets(session, tm);
-		if(ret == SSH_ERROR)
-		  break;
-		if(ssh_timeout_elapsed(&ts,timeout))
-		  break;
-		tm = ssh_timeout_update(&ts, timeout);
-	}
-	return ret;
+int ssh_handle_packets_termination(ssh_session session,
+                                   int timeout,
+                                   ssh_termination_function fct,
+                                   void *user)
+{
+    struct ssh_timestamp ts;
+    int ret = SSH_OK;
+    int tm;
+
+    if (timeout == SSH_TIMEOUT_USER) {
+        if (ssh_is_blocking(session)) {
+            timeout = ssh_make_milliseconds(session->opts.timeout,
+                                            session->opts.timeout_usec);
+        } else {
+            timeout = SSH_TIMEOUT_NONBLOCKING;
+        }
+    } else if (timeout == SSH_TIMEOUT_DEFAULT) {
+        if (ssh_is_blocking(session)) {
+            timeout = SSH_TIMEOUT_INFINITE;
+        } else {
+            timeout = SSH_TIMEOUT_NONBLOCKING;
+        }
+    }
+
+    ssh_timestamp_init(&ts);
+    tm = timeout;
+    while(!fct(user)) {
+        ret = ssh_handle_packets(session, tm);
+        if (ret == SSH_ERROR) {
+            break;
+        }
+        if (ssh_timeout_elapsed(&ts,timeout)) {
+            break;
+        }
+
+        tm = ssh_timeout_update(&ts, timeout);
+    }
+
+    return ret;
 }
 
 /**
