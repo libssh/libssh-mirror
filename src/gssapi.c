@@ -530,16 +530,23 @@ ssh_gssapi_creds ssh_gssapi_get_creds(ssh_session session){
     return (ssh_gssapi_creds)session->gssapi->client_creds;
 }
 
-/** @brief Set the forwadable ticket to be given to the server for authentication.
+/**
+ * @brief Set the forwadable ticket to be given to the server for authentication.
+ *
  * @param[in] creds gssapi credentials handle.
  */
-void ssh_gssapi_set_creds(ssh_session session, const ssh_gssapi_creds creds){
-    if (!session)
+void ssh_gssapi_set_creds(ssh_session session, const ssh_gssapi_creds creds)
+{
+    if (session == NULL) {
         return;
-    if(!session->gssapi)
+    }
+    if (session->gssapi == NULL) {
         ssh_gssapi_init(session);
-    if(!session->gssapi)
-        return;
+        if (session->gssapi == NULL) {
+            return;
+        }
+    }
+
     session->gssapi->client.client_deleg_creds = (gss_cred_id_t)creds;
 }
 
