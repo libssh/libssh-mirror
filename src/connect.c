@@ -436,6 +436,7 @@ static int ssh_select_cb (socket_t fd, int revents, void *userdata){
  */
 int ssh_select(ssh_channel *channels, ssh_channel *outchannels, socket_t maxfd,
     fd_set *readfds, struct timeval *timeout) {
+  socket_t fd;
   int i,j;
   int rc;
   int base_tm, tm;
@@ -447,10 +448,11 @@ int ssh_select(ssh_channel *channels, ssh_channel *outchannels, socket_t maxfd,
   for (i=0 ; channels[i] != NULL; ++i){
     ssh_event_add_session(event, channels[i]->session);
   }
-  for (i=0; i<maxfd ; ++i){
-    if(FD_ISSET(i, readfds)){
-      ssh_event_add_fd(event, i, POLLIN, ssh_select_cb, readfds);
-    }
+
+  for (fd = 0; fd < maxfd ; fd++) {
+      if (FD_ISSET(fd, readfds)) {
+          ssh_event_add_fd(event, fd, POLLIN, ssh_select_cb, readfds);
+      }
   }
   outchannels[0] = NULL;
   FD_ZERO(readfds);
@@ -471,9 +473,12 @@ int ssh_select(ssh_channel *channels, ssh_channel *outchannels, socket_t maxfd,
     if(j != 0)
       break;
     /* watch if a user socket was triggered */
-    for(i = 0;i<maxfd;++i)
-      if(FD_ISSET(i, readfds))
-        goto out;
+    for (fd = 0; fd < maxfd; fd++) {
+        if (FD_ISSET(fd, readfds)) {
+            goto out;
+        }
+    }
+
     /* If the timeout is elapsed, we should go out */
     if(!firstround && ssh_timeout_elapsed(&ts, base_tm))
       goto out;
