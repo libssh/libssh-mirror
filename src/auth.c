@@ -2158,6 +2158,8 @@ pending:
 	if (rc != SSH_AUTH_AGAIN) {
 		session->pending_call_state = SSH_PENDING_CALL_NONE;
 	}
+#else
+    (void) session; /* unused */
 #endif
 	return rc;
 }
