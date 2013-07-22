@@ -15,7 +15,7 @@ if (BSD OR SOLARIS)
     find_package(Argp)
 endif (BSD OR SOLARIS)
 
-if (LINUX)
+if (UNIX AND NOT WIN32)
     add_executable(libssh_scp libssh_scp.c ${examples_SRCS})
     target_link_libraries(libssh_scp ${LIBSSH_SHARED_LIBRARY})
 
@@ -37,27 +37,26 @@ if (LINUX)
         target_link_libraries(samplesftp ${LIBSSH_SHARED_LIBRARY})
     endif (WITH_SFTP)
 
-endif (LINUX)
-
     add_executable(samplessh sample.c ${examples_SRCS})
     target_link_libraries(samplessh ${LIBSSH_SHARED_LIBRARY})
 
-if (WITH_SERVER)
-    add_executable(samplesshd samplesshd.c)
-    target_link_libraries(samplesshd ${LIBSSH_SHARED_LIBRARY} ${ARGP_LIBRARIES})
+    if (WITH_SERVER)
+        add_executable(samplesshd samplesshd.c)
+        target_link_libraries(samplesshd ${LIBSSH_SHARED_LIBRARY} ${ARGP_LIBRARIES})
 
-    if (WITH_GSSAPI)
-        add_executable(samplesshd-cb samplesshd-cb.c)
-        target_link_libraries(samplesshd-cb ${LIBSSH_SHARED_LIBRARY} ${ARGP_LIBRARIES})
+        if (WITH_GSSAPI)
+            add_executable(samplesshd-cb samplesshd-cb.c)
+            target_link_libraries(samplesshd-cb ${LIBSSH_SHARED_LIBRARY} ${ARGP_LIBRARIES})
 
-        add_executable(proxy proxy.c)
-        target_link_libraries(proxy ${LIBSSH_SHARED_LIBRARY} ${ARGP_LIBRARIES})
-    endif (WITH_GSSAPI)
+            add_executable(proxy proxy.c)
+            target_link_libraries(proxy ${LIBSSH_SHARED_LIBRARY} ${ARGP_LIBRARIES})
+        endif (WITH_GSSAPI)
 
-    add_executable(samplesshd-kbdint samplesshd-kbdint.c)
-    target_link_libraries(samplesshd-kbdint ${LIBSSH_SHARED_LIBRARY} ${ARGP_LIBRARIES})
+        add_executable(samplesshd-kbdint samplesshd-kbdint.c)
+        target_link_libraries(samplesshd-kbdint ${LIBSSH_SHARED_LIBRARY} ${ARGP_LIBRARIES})
 
-endif (WITH_SERVER)
+    endif (WITH_SERVER)
+endif (UNIX AND NOT WIN32)
 
 add_executable(exec exec.c ${examples_SRCS})
 target_link_libraries(exec ${LIBSSH_SHARED_LIBRARY})
