@@ -126,6 +126,8 @@
 #cmakedefine HAVE_GCC_THREAD_LOCAL_STORAGE 1
 #cmakedefine HAVE_MSC_THREAD_LOCAL_STORAGE 1
 
+#cmakedefine HAVE_GCC_VOLATILE_MEMORY_PROTECTION 1
+
 /* Define to 1 if you want to enable GSSAPI */
 #cmakedefine WITH_GSSAPI 1
 

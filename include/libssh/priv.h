@@ -137,6 +137,17 @@ int gettimeofday(struct timeval *__p, void *__t);
 # define LIBSSH_THREAD
 #endif
 
+/*
+ * This makes sure that the compiler doesn't optimize out the code
+ *
+ * Use it in a macro where the provided variable is 'x'.
+ */
+#if defined(HAVE_GCC_VOLATILE_MEMORY_PROTECTION)
+# define LIBSSH_MEM_PROTECTION __asm__ volatile("" : : "r"(&(x)) : "memory")
+#else
+# define LIBSSH_MEM_PROTECTION
+#endif
+
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
@@ -226,11 +237,33 @@ int match_hostname(const char *host, const char *pattern, unsigned int len);
 /** Get the size of an array */
 #define ARRAY_SIZE(a) (sizeof(a)/sizeof(a[0]))
 
+/*
+ * See http://llvm.org/bugs/show_bug.cgi?id=15495
+ */
+#if defined(HAVE_GCC_VOLATILE_MEMORY_PROTECTION)
 /** Overwrite a string with '\0' */
-#define BURN_STRING(x) do { if ((x) != NULL) memset((x), '\0', strlen((x))); __asm__ volatile ("" : : : "memory"); } while(0)
+# define BURN_STRING(x) do { \
+    if ((x) != NULL) \
+        memset((x), '\0', strlen((x))); __asm__ volatile("" : : "r"(&(x)) : "memory"); \
+  } while(0)
 
 /** Overwrite the buffer with '\0' */
-#define BURN_BUFFER(x, size) do { if ((x) != NULL) memset((x), '\0', (size))); __asm__ volatile ("") : : : "memory"; } while(0)
+# define BURN_BUFFER(x, size) do { \
+    if ((x) != NULL) \
+        memset((x), '\0', (size))); __asm__ volatile("" : : "r"(&(x)) : "memory"); \
+  } while(0)
+#else /* HAVE_GCC_VOLATILE_MEMORY_PROTECTION */
+/** Overwrite a string with '\0' */
+# define BURN_STRING(x) do { \
+    if ((x) != NULL) memset((x), '\0', strlen((x))); \
+  } while(0)
+
+/** Overwrite the buffer with '\0' */
+# define BURN_BUFFER(x, size) do { \
+    if ((x) != NULL) \
+        memset((x), '\0', (size))); __asm__ volatile("" : : "r"(&(x)) : "memory"); \
+  } while(0)
+#endif /* HAVE_GCC_VOLATILE_MEMORY_PROTECTION */
 
 /**
  * This is a hack to fix warnings. The idea is to use this everywhere that we

@@ -181,6 +181,18 @@ int main(void) {
     return 0;
 }" HAVE_MSC_THREAD_LOCAL_STORAGE)
 
+check_c_source_compiles("
+#include <string.h>
+
+int main(void)
+{
+    char buf[] = \"This is some content\";
+
+    memset(buf, '\\\\0', sizeof(buf)); __asm__ volatile(\"\" : : \"r\"(&buf) : \"memory\");
+
+    return 0;
+}" HAVE_GCC_VOLATILE_MEMORY_PROTECTION)
+
 if (WITH_DEBUG_CRYPTO)
   set(DEBUG_CRYPTO 1)
 endif (WITH_DEBUG_CRYPTO)
