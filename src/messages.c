@@ -859,7 +859,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
     }
     goto end;
   }
-#if WITH_GSSAPI
+#ifdef WITH_GSSAPI
   if (strncmp(method, "gssapi-with-mic", method_size) == 0) {
      uint32_t n_oid;
      ssh_string *oids;
@@ -953,7 +953,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_response){
   ssh_message msg = NULL;
 
   /* GSSAPI_TOKEN has same packed number. XXX fix this */
-#if WITH_GSSAPI
+#ifdef WITH_GSSAPI
   if (session->gssapi != NULL) {
       return ssh_packet_userauth_gssapi_token(session, type, packet, user);
   }
