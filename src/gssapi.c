@@ -19,21 +19,24 @@
  * MA 02111-1307, USA.
  */
 
-#include "libssh/gssapi.h"
-#include "libssh/libssh.h"
-#include "libssh/ssh2.h"
-#include "libssh/buffer.h"
-#include "libssh/crypto.h"
-#include "libssh/callbacks.h"
-#include "libssh/string.h"
-#include "libssh/server.h"
+#include "config.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 
 #include <gssapi.h>
 
-/* to remove */
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
+#include <libssh/gssapi.h>
+#include <libssh/libssh.h>
+#include <libssh/ssh2.h>
+#include <libssh/buffer.h>
+#include <libssh/crypto.h>
+#include <libssh/callbacks.h>
+#include <libssh/string.h>
+#include <libssh/server.h>
 
 /** current state of an GSSAPI authentication */
 enum ssh_gssapi_state_e {

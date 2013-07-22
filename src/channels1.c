@@ -27,6 +27,8 @@
 #include <stdio.h>
 #ifndef _WIN32
 #include <arpa/inet.h>
+#endif
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 

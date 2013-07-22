@@ -42,12 +42,12 @@
 #include <string.h>
 #include <stdio.h>
 
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 
-#ifndef _WIN32
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#endif
 
 #include "libssh/agent.h"
 #include "libssh/priv.h"

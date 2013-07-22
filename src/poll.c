@@ -115,9 +115,12 @@ static poll_fn ssh_poll_emu;
 #else /* _WIN32 */
 #include <sys/select.h>
 #include <sys/socket.h>
-#include <unistd.h>
 #include <sys/time.h>
 #endif /* _WIN32 */
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 
 
 /*

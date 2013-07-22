@@ -14,24 +14,31 @@ clients must be made or how a client should react.
 
 #include "config.h"
 #include <stdio.h>
-#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-#include <termios.h>
 
 #include <sys/select.h>
 #include <sys/time.h>
+
+#ifdef HAVE_TERMIOS_H
+#include <termios.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 #ifdef HAVE_PTY_H
 #include <pty.h>
 #endif
+
 #include <sys/ioctl.h>
 #include <signal.h>
 #include <errno.h>
+#include <fcntl.h>
+
 #include <libssh/callbacks.h>
 #include <libssh/libssh.h>
 #include <libssh/sftp.h>
 
-#include <fcntl.h>
 
 #include "examples_common.h"
 #define MAXCMD 10
