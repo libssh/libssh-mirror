@@ -936,7 +936,8 @@ int ssh_options_getopt(ssh_session session, int *argcptr, char **argv) {
   char *cipher = NULL;
   char *identity = NULL;
   char *port = NULL;
-  char **save = NULL, **tmp;
+  char **save = NULL;
+  char **tmp = NULL;
   int i = 0;
   int argc = *argcptr;
   int debuglevel = 0;
