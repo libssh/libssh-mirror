@@ -103,6 +103,8 @@ check_function_exists(vsnprintf HAVE_VSNPRINTF)
 check_function_exists(snprintf HAVE_SNPRINTF)
 
 if (WIN32)
+    check_function_exists(_strtoui64 HAVE__STRTOUI64)
+
     check_function_exists(_vsnprintf_s HAVE__VSNPRINTF_S)
     check_function_exists(_vsnprintf HAVE__VSNPRINTF)
     check_function_exists(_snprintf HAVE__SNPRINTF)

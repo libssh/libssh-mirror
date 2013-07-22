@@ -31,6 +31,18 @@
 
 #include "config.h"
 
+#if !defined(HAVE_STRTOULL)
+# if defined(HAVE___STRTOULL)
+#  define strtoull __strtoull
+# elif defined(HAVE__STRTOUI64)
+#  define strtoull _strtoui64
+# elif defined(__hpux) && defined(__LP64__)
+#  define strtoull strtoul
+# else
+#  error "no strtoull function found"
+# endif
+#endif /* !defined(HAVE_STRTOULL) */
+
 #ifdef _WIN32
 
 /* Imitate define of inttypes.h */
@@ -46,16 +58,6 @@
 #  endif /* __WORDSIZE */
 # endif /* PRIu64 */
 
-#if !defined(HAVE_STRTOULL)
-# if defined(HAVE___STRTOULL)
-#  define strtoull __strtoull
-# elif defined(__hpux) && defined(__LP64__)
-#  define strtoull strtoul
-# else
-#  error "no strtoull function found"
-# endif
-#endif /* !defined(HAVE_STRTOULL) */
-
 # ifdef _MSC_VER
 #  include <stdio.h>
 
@@ -65,9 +67,6 @@
 
 #  define strcasecmp _stricmp
 #  define strncasecmp _strnicmp
-#  if !defined(HAVE_STRTOULL)
-#   define strtoull _strtoui64
-#  endif
 #  define isblank(ch) ((ch) == ' ' || (ch) == '\t' || (ch) == '\n' || (ch) == '\r')
 
 #  define usleep(X) Sleep(((X)+1000)/1000)

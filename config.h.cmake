@@ -106,6 +106,9 @@
 /* Define to 1 if you have the `__strtoull' function. */
 #cmakedefine HAVE___STRTOULL 1
 
+/* Define to 1 if you have the `_strtoui64' function. */
+#cmakedefine HAVE__STRTOUI64 1
+
 /*************************** LIBRARIES ***************************/
 
 /* Define to 1 if you have the `crypto' library (-lcrypto). */
