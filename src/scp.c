@@ -751,7 +751,7 @@ int ssh_scp_request_get_permissions(ssh_scp scp){
 size_t ssh_scp_request_get_size(ssh_scp scp){
   if(scp==NULL)
       return 0;
-  return scp->filelen;
+  return (size_t)scp->filelen;
 }
 
 /** @brief Get the size of the file being pushed from the other party.
