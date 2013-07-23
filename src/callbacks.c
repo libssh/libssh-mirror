@@ -35,7 +35,7 @@ static void ssh_legacy_log_callback(int priority,
 {
     ssh_session session = (ssh_session)userdata;
     ssh_log_callback log_fn = session->common.callbacks->log_function;
-    void *log_data = log_data = session->common.callbacks->userdata;
+    void *log_data = session->common.callbacks->userdata;
 
     (void)function; /* unused */
 
