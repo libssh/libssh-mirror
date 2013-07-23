@@ -745,6 +745,7 @@ int ssh_gssapi_auth_mic(ssh_session session){
     for (i = 0; i < n_oids; i++) {
         ssh_string_free(oids[i]);
     }
+    free(oids);
     if (rc != SSH_ERROR) {
         return SSH_AUTH_AGAIN;
     }
