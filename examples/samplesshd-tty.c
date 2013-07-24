@@ -321,6 +321,7 @@ static int main_loop(ssh_channel chan) {
         rc = ssh_event_dopoll(event, 1000);
         if (rc == SSH_ERROR){
             fprintf(stderr, "Error : %s\n", ssh_get_error(session));
+            ssh_event_free(event);
             ssh_disconnect(session);
             return -1;
         }
