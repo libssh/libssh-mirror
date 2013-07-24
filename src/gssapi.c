@@ -27,7 +27,7 @@
 #include <unistd.h>
 #endif
 
-#include <gssapi.h>
+#include <gssapi/gssapi.h>
 
 #include <libssh/gssapi.h>
 #include <libssh/libssh.h>
