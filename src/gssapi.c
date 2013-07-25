@@ -258,9 +258,7 @@ int ssh_gssapi_handle_userauth(ssh_session session, const char *user, uint32_t n
     return ssh_gssapi_send_response(session, oids[i]);
 }
 
-#endif /* WITH_SERVER */
-
-static char * ssh_gssapi_name_to_char(gss_name_t name){
+static char *ssh_gssapi_name_to_char(gss_name_t name){
     gss_buffer_desc buffer;
     OM_uint32 maj_stat, min_stat;
     char *ptr;
@@ -273,8 +271,6 @@ static char * ssh_gssapi_name_to_char(gss_name_t name){
     return ptr;
 
 }
-
-#ifdef WITH_SERVER
 
 SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_token_server){
     ssh_string token;
