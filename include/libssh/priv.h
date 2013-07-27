@@ -104,6 +104,7 @@
 
 # endif /* _MSC_VER */
 
+struct timeval;
 int gettimeofday(struct timeval *__p, void *__t);
 
 #else /* _WIN32 */
