@@ -311,7 +311,7 @@ int crypt_set_algorithms_server(ssh_session session){
     }
 
     /* compression */
-    method = session->next_crypto->kex_methods[SSH_CRYPT_C_S];
+    method = session->next_crypto->kex_methods[SSH_COMP_C_S];
     if(strcmp(method,"zlib") == 0){
         SSH_LOG(SSH_LOG_PACKET,"enabling C->S compression");
         session->next_crypto->do_compress_in=1;
@@ -320,7 +320,8 @@ int crypt_set_algorithms_server(ssh_session session){
         ssh_set_error(session,SSH_FATAL,"zlib@openssh.com not supported");
         return SSH_ERROR;
     }
-    method = session->next_crypto->kex_methods[SSH_CRYPT_S_C];
+
+    method = session->next_crypto->kex_methods[SSH_COMP_S_C];
     if(strcmp(method,"zlib") == 0){
         SSH_LOG(SSH_LOG_PACKET, "enabling S->C compression\n");
         session->next_crypto->do_compress_out=1;
