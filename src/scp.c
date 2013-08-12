@@ -83,7 +83,17 @@ ssh_scp ssh_scp_new(ssh_session session, int mode, const char *location){
   return scp;
 }
 
-int ssh_scp_init(ssh_scp scp){
+/**
+ * @brief Initialize the scp channel.
+ *
+ * @param[in]  scp      The scp context to initialize.
+ *
+ * @return SSH_OK on success or an SSH error code.
+ *
+ * @see ssh_scp_new()
+ */
+int ssh_scp_init(ssh_scp scp)
+{
   int r;
   char execbuffer[1024];
   uint8_t code;
@@ -139,7 +149,17 @@ int ssh_scp_init(ssh_scp scp){
   return SSH_OK;
 }
 
-int ssh_scp_close(ssh_scp scp){
+/**
+ * @brief Close the scp channel.
+ *
+ * @param[in]  scp      The scp context to close.
+ *
+ * @return SSH_OK on success or an SSH error code.
+ *
+ * @see ssh_scp_init()
+ */
+int ssh_scp_close(ssh_scp scp)
+{
   char buffer[128];
   int err;
   if(scp==NULL)
@@ -169,7 +189,15 @@ int ssh_scp_close(ssh_scp scp){
   return SSH_OK;
 }
 
-void ssh_scp_free(ssh_scp scp){
+/**
+ * @brief Free a scp context.
+ *
+ * @param[in]  scp      The context to free.
+ *
+ * @see ssh_scp_new()
+ */
+void ssh_scp_free(ssh_scp scp)
+{
   if(scp==NULL)
       return;
   if(scp->state != SSH_SCP_NEW)
