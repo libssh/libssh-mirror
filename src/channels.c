@@ -1243,8 +1243,10 @@ int ssh_channel_flush(ssh_channel channel){
   return ssh_blocking_flush(channel->session, SSH_TIMEOUT_DEFAULT);
 }
 
-int channel_write_common(ssh_channel channel, const void *data,
-    uint32_t len, int is_stderr) {
+static int channel_write_common(ssh_channel channel,
+                                const void *data,
+                                uint32_t len, int is_stderr)
+{
   ssh_session session;
   uint32_t origlen = len;
   size_t effectivelen;
