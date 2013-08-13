@@ -1287,8 +1287,8 @@ static int channel_write_common(ssh_channel channel,
 
     return -1;
   }
-  if (channel->session->session_state == SSH_SESSION_STATE_ERROR){
 
+  if (channel->session->session_state == SSH_SESSION_STATE_ERROR) {
     return SSH_ERROR;
   }
 #ifdef WITH_SSH1
@@ -1328,28 +1328,46 @@ static int channel_write_common(ssh_channel channel,
 
     effectivelen = MIN(effectivelen, maxpacketlen);;
 
-    if (buffer_add_u8(session->out_buffer, is_stderr ?
-				SSH2_MSG_CHANNEL_EXTENDED_DATA : SSH2_MSG_CHANNEL_DATA) < 0 ||
-        buffer_add_u32(session->out_buffer,
-          htonl(channel->remote_channel)) < 0) {
+    rc = buffer_add_u8(session->out_buffer,
+                       is_stderr ? SSH2_MSG_CHANNEL_EXTENDED_DATA
+                                 : SSH2_MSG_CHANNEL_DATA);
+    if (rc < 0) {
         ssh_set_error_oom(session);
         goto error;
-    }
-    /* stderr message has an extra field */
-    if (is_stderr && 
-        buffer_add_u32(session->out_buffer, htonl(SSH2_EXTENDED_DATA_STDERR)) < 0) {
-        ssh_set_error_oom(session);
-        goto error;
-    }
-    /* append payload data */
-    if (buffer_add_u32(session->out_buffer, htonl(effectivelen)) < 0 ||
-        buffer_add_data(session->out_buffer, data, effectivelen) < 0) {
-      ssh_set_error_oom(session);
-      goto error;
     }
 
-    if (packet_send(session) == SSH_ERROR) {
-      return SSH_ERROR;
+    rc = buffer_add_u32(session->out_buffer, htonl(channel->remote_channel));
+    if (rc < 0) {
+        ssh_set_error_oom(session);
+        goto error;
+    }
+
+    /* stderr message has an extra field */
+    if (is_stderr) {
+        rc = buffer_add_u32(session->out_buffer,
+                            htonl(SSH2_EXTENDED_DATA_STDERR));
+        if (rc < 0) {
+            ssh_set_error_oom(session);
+            goto error;
+        }
+    }
+
+    /* append payload data */
+    rc = buffer_add_u32(session->out_buffer, htonl(effectivelen));
+    if (rc < 0) {
+        ssh_set_error_oom(session);
+        goto error;
+    }
+
+    rc = buffer_add_data(session->out_buffer, data, effectivelen);
+    if (rc < 0) {
+        ssh_set_error_oom(session);
+        goto error;
+    }
+
+    rc = packet_send(session);
+    if (rc == SSH_ERROR) {
+        return SSH_ERROR;
     }
 
     SSH_LOG(SSH_LOG_RARE,
@@ -1359,10 +1377,13 @@ static int channel_write_common(ssh_channel channel,
     len -= effectivelen;
     data = ((uint8_t*)data + effectivelen);
   }
+
   /* it's a good idea to flush the socket now */
   rc = ssh_channel_flush(channel);
-  if(rc == SSH_ERROR)
-    goto error;
+  if (rc == SSH_ERROR) {
+      goto error;
+  }
+
 out:
   return (int)(origlen - len);
 
