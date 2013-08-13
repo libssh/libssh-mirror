@@ -4,6 +4,8 @@
 -DWITH_SFTP=1
 -DWITH_SSH1=1
 -DWITH_PCAP=1
+-DHAVE_ECDH=1
+-DHAVE_ECC=1
 -Iinclude/libssh
 -Iinclude
 -Ibuild
