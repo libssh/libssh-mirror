@@ -1319,11 +1319,13 @@ int channel_write_common(ssh_channel channel, const void *data,
             goto out;
           continue;
       }
-      effectivelen = len > channel->remote_window ? channel->remote_window : len;
+      effectivelen = MIN(len, channel->remote_window);
     } else {
       effectivelen = len;
     }
-    effectivelen = effectivelen > maxpacketlen ? maxpacketlen : effectivelen;
+
+    effectivelen = MIN(effectivelen, maxpacketlen);;
+
     if (buffer_add_u8(session->out_buffer, is_stderr ?
 				SSH2_MSG_CHANNEL_EXTENDED_DATA : SSH2_MSG_CHANNEL_DATA) < 0 ||
         buffer_add_u32(session->out_buffer,
