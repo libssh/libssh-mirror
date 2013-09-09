@@ -300,8 +300,6 @@ void ssh_silent_disconnect(ssh_session session) {
  * @param[in]  session  The ssh session to change.
  *
  * @param[in]  blocking Zero for nonblocking mode.
- *
- * \bug nonblocking code is in development and won't work as expected
  */
 void ssh_set_blocking(ssh_session session, int blocking) {
 	if (session == NULL) {
