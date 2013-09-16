@@ -2615,8 +2615,8 @@ static int ssh_channel_read_termination(void *s){
  * @param[in]  is_stderr A boolean value to mark reading from the stderr flow.
  *
  * @return              The number of bytes read, 0 on end of file or SSH_ERROR
- *                      on error. Can return 0 if nothing is available in nonblocking
- *                      mode.
+ *                      on error. In nonblocking mode it Can return 0 if no data
+ *                      is available or SSH_AGAIN.
  *
  * @warning This function may return less than count bytes of data, and won't
  *          block until count bytes have been read.
