@@ -575,7 +575,7 @@ int ssh_get_status(ssh_session session) {
 
   socketstate = ssh_socket_get_status(session->socket);
 
-  if (session->closed) {
+  if (session->session_state == SSH_SESSION_STATE_DISCONNECTED) {
     r |= SSH_CLOSED;
   }
   if (socketstate & SSH_READ_PENDING) {
@@ -584,7 +584,8 @@ int ssh_get_status(ssh_session session) {
   if (socketstate & SSH_WRITE_PENDING) {
       r |= SSH_WRITE_PENDING;
   }
-  if ((session->closed && (socketstate & SSH_CLOSED_ERROR)) ||
+  if ((session->session_state == SSH_SESSION_STATE_DISCONNECTED &&
+       (socketstate & SSH_CLOSED_ERROR)) ||
       session->session_state == SSH_SESSION_STATE_ERROR) {
     r |= SSH_CLOSED_ERROR;
   }
@@ -608,12 +609,9 @@ const char *ssh_get_disconnect_message(ssh_session session) {
     return NULL;
   }
 
-  if (!session->closed) {
+  if (session->session_state != SSH_SESSION_STATE_DISCONNECTED) {
     ssh_set_error(session, SSH_REQUEST_DENIED,
         "Connection not closed yet");
-  } else if(session->closed_by_except) {
-    ssh_set_error(session, SSH_REQUEST_DENIED,
-        "Connection closed by socket error");
   } else if(!session->discon_msg) {
     ssh_set_error(session, SSH_FATAL,
         "Connection correctly closed but no disconnect message");
