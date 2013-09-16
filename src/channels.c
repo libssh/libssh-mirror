@@ -1983,8 +1983,11 @@ static ssh_channel ssh_channel_accept(ssh_session session, int channeltype,
   struct ssh_iterator *iterator;
   int t;
 
-  for (t = timeout_ms; t >= 0; t -= 50)
-  {
+  /*
+   * We sleep for 50 ms in ssh_handle_packets() and later sleep for
+   * 50 ms. So we need to decrement by 100 ms.
+   */
+  for (t = timeout_ms; t >= 0; t -= 100) {
     ssh_handle_packets(session, 50);
 
     if (session->ssh_message_list) {
