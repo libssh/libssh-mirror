@@ -809,9 +809,13 @@ LIBSSH_API int ssh_threads_set_callbacks(struct ssh_threads_callbacks_struct
 LIBSSH_API struct ssh_threads_callbacks_struct *ssh_threads_get_pthread(void);
 
 /**
- * @brief returns a pointer on the noop threads callbacks, to be used with
- * ssh_threads_set_callbacks. These callbacks do nothing and are being used by
- * default.
+ * @brief Get the noop threads callbacks structure
+ *
+ * This can be used with ssh_threads_set_callbacks. These callbacks do nothing
+ * and are being used by default.
+ *
+ * @return Always returns a valid pointer to the noop callbacks structure.
+ *
  * @see ssh_threads_set_callbacks
  */
 LIBSSH_API struct ssh_threads_callbacks_struct *ssh_threads_get_noop(void);
