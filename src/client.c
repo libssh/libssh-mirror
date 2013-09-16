@@ -584,6 +584,14 @@ char *ssh_get_issue_banner(ssh_session session) {
  * @param[in]  session  The SSH session to use.
  *
  * @return The version number if available, 0 otherwise.
+ *
+ * @code
+ * int openssh = ssh_get_openssh_version();
+ *
+ * if (openssh == SSH_INT_VERSION(6, 1, 0)) {
+ *     printf("Version match!\m");
+ * }
+ * @endcode
  */
 int ssh_get_openssh_version(ssh_session session) {
   if (session == NULL) {
