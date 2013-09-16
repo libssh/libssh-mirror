@@ -268,7 +268,10 @@ void ssh_free(ssh_session session) {
 
 /**
  * @brief get the server banner
+ *
  * @param[in] session   The SSH session
+ *
+ * @return Returns the server banner string or NULL.
  */
 const char* ssh_get_serverbanner(ssh_session session) {
 	if(!session) {
