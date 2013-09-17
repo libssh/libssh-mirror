@@ -1611,7 +1611,11 @@ static int channel_request(ssh_channel channel, const char *request,
     return SSH_OK;
   }
 pending:
-  rc = ssh_handle_packets_termination(session,SSH_TIMEOUT_USER, ssh_channel_request_termination, channel);
+  rc = ssh_handle_packets_termination(session,
+                                      SSH_TIMEOUT_DEFAULT,
+                                      ssh_channel_request_termination,
+                                      channel);
+
   if(session->session_state == SSH_SESSION_STATE_ERROR || rc == SSH_ERROR) {
       channel->request_state = SSH_CHANNEL_REQ_STATE_ERROR;
   }
@@ -2152,8 +2156,11 @@ static int global_request(ssh_session session, const char *request,
     return SSH_OK;
   }
 pending:
-  rc = ssh_handle_packets_termination(session, SSH_TIMEOUT_USER,
-      ssh_global_request_termination, session);
+  rc = ssh_handle_packets_termination(session,
+                                      SSH_TIMEOUT_USER,
+                                      ssh_global_request_termination,
+                                      session);
+
   if(rc==SSH_ERROR || session->session_state == SSH_SESSION_STATE_ERROR){
     session->global_req_state = SSH_CHANNEL_REQ_STATE_ERROR;
   }
@@ -2931,8 +2938,10 @@ int ssh_channel_get_exit_status(ssh_channel channel) {
   if(channel == NULL) {
       return SSH_ERROR;
   }
-  rc = ssh_handle_packets_termination(channel->session, SSH_TIMEOUT_USER,
-      ssh_channel_exit_status_termination, channel);
+  rc = ssh_handle_packets_termination(channel->session,
+                                      SSH_TIMEOUT_DEFAULT,
+                                      ssh_channel_exit_status_termination,
+                                      channel);
   if (rc == SSH_ERROR || channel->session->session_state ==
       SSH_SESSION_STATE_ERROR)
     return SSH_ERROR;
