@@ -197,6 +197,11 @@ static int dh_handshake(ssh_session session) {
           rc = ssh_client_ecdh_init(session);
           break;
 #endif
+#ifdef HAVE_CURVE25519
+        case SSH_KEX_CURVE25519_SHA256_LIBSSH_ORG:
+          rc = ssh_client_curve25519_init(session);
+          break;
+#endif
         default:
           rc = SSH_ERROR;
       }
