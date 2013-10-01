@@ -2132,7 +2132,7 @@ static int global_request(ssh_session session, const char *request,
   }
 pending:
   rc = ssh_handle_packets_termination(session,
-                                      SSH_TIMEOUT_USER,
+                                      SSH_TIMEOUT_DEFAULT,
                                       ssh_global_request_termination,
                                       session);
 
