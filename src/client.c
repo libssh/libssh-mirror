@@ -112,7 +112,6 @@ static int callback_receive_banner(const void *data, size_t len, void *user) {
         buffer[i] = '\0';
         str = strdup(buffer);
         if (str == NULL) {
-            leave_function();
             return SSH_ERROR;
         }
         /* number of bytes read */
