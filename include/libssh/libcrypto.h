@@ -38,6 +38,9 @@ typedef SHA_CTX* SHACTX;
 typedef SHA256_CTX* SHA256CTX;
 typedef MD5_CTX*  MD5CTX;
 typedef HMAC_CTX* HMACCTX;
+#ifdef HAVE_ECC
+typedef EVP_MD_CTX *EVPCTX;
+#endif
 
 #define SHA_DIGEST_LEN SHA_DIGEST_LENGTH
 #ifdef MD5_DIGEST_LEN
