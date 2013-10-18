@@ -1047,7 +1047,7 @@ ssh_string pki_signature_to_blob(const ssh_signature sig)
             break;
 #endif
         case SSH_KEYTYPE_UNKNOWN:
-            ssh_pki_log("Unknown signature key type: %d", sig->type);
+            ssh_pki_log("Unknown signature key type: %s", sig->type_c);
             return NULL;
     }
 
@@ -1070,6 +1070,7 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
     }
 
     sig->type = type;
+    sig->type_c = ssh_key_type_to_char(type);
 
     len = ssh_string_len(sig_blob);
 
@@ -1309,6 +1310,7 @@ ssh_signature pki_do_sign(const ssh_key privkey,
     }
 
     sig->type = privkey->type;
+    sig->type_c = privkey->type_c;
 
     switch(privkey->type) {
         case SSH_KEYTYPE_DSS:
@@ -1368,6 +1370,7 @@ ssh_signature pki_do_sign_sessionid(const ssh_key key,
         return NULL;
     }
     sig->type = key->type;
+    sig->type_c = key->type_c;
 
     switch(key->type) {
         case SSH_KEYTYPE_DSS:
