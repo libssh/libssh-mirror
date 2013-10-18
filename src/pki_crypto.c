@@ -1018,33 +1018,47 @@ ssh_string pki_signature_to_blob(const ssh_signature sig)
             break;
         case SSH_KEYTYPE_ECDSA:
 #ifdef HAVE_OPENSSL_ECC
+        {
+            ssh_buffer b;
+            int rc;
+
+            b = ssh_buffer_new();
+            if (b == NULL) {
+                return NULL;
+            }
+
             r = make_bignum_string(sig->ecdsa_sig->r);
             if (r == NULL) {
+                ssh_buffer_free(b);
                 return NULL;
             }
+            rc = buffer_add_ssh_string(b, r);
+            ssh_string_free(r);
+            if (rc < 0) {
+                ssh_buffer_free(b);
+                return NULL;
+            }
+
             s = make_bignum_string(sig->ecdsa_sig->s);
             if (s == NULL) {
-                ssh_string_free(r);
+                ssh_buffer_free(b);
+                return NULL;
+            }
+            rc = buffer_add_ssh_string(b, s);
+            ssh_string_free(s);
+            if (rc < 0) {
+                ssh_buffer_free(b);
                 return NULL;
             }
 
-            memcpy(buffer,
-                   ((char *)ssh_string_data(r)) + ssh_string_len(r) - 20,
-                   20);
-            memcpy(buffer + 20,
-                   ((char *)ssh_string_data(s)) + ssh_string_len(s) - 20,
-                   20);
-
-            ssh_string_free(r);
-            ssh_string_free(s);
-
-            sig_blob = ssh_string_new(40);
+            sig_blob = ssh_string_new(buffer_get_rest_len(b));
             if (sig_blob == NULL) {
                 return NULL;
             }
 
-            ssh_string_fill(sig_blob, buffer, 40);
+            ssh_string_fill(sig_blob, buffer_get_rest(b), buffer_get_rest_len(b));
             break;
+        }
 #endif
         case SSH_KEYTYPE_UNKNOWN:
             ssh_pki_log("Unknown signature key type: %s", sig->type_c);
