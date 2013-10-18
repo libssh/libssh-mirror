@@ -1118,7 +1118,7 @@ int ssh_pki_export_signature_blob(const ssh_signature sig,
         return SSH_ERROR;
     }
 
-    str = ssh_string_from_char(ssh_key_type_to_char(sig->type));
+    str = ssh_string_from_char(sig->type_c);
     if (str == NULL) {
         ssh_buffer_free(buf);
         return SSH_ERROR;
