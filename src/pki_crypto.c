@@ -1053,10 +1053,12 @@ ssh_string pki_signature_to_blob(const ssh_signature sig)
 
             sig_blob = ssh_string_new(buffer_get_rest_len(b));
             if (sig_blob == NULL) {
+                ssh_buffer_free(b);
                 return NULL;
             }
 
             ssh_string_fill(sig_blob, buffer_get_rest(b), buffer_get_rest_len(b));
+            ssh_buffer_free(b);
             break;
         }
 #endif
