@@ -64,12 +64,13 @@ static void torture_ssh_forward(void **state)
     int bound_port;
     int rc;
 
-    rc = ssh_forward_listen(session, "127.0.0.1", 23424, &bound_port);
+    rc = ssh_forward_listen(session, "127.0.0.1", 8080, &bound_port);
     assert_int_equal(rc, SSH_OK);
 
-    c = ssh_forward_accept(session, 50);
-    assert_null(c);
+    c = ssh_forward_accept(session, 1000);
+    assert_non_null(c);
 
+    ssh_channel_send_eof(c);
     ssh_channel_close(c);
 }
 
