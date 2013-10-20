@@ -2089,7 +2089,7 @@ SSH_PACKET_CALLBACK(ssh_request_denied){
 static int ssh_global_request_termination(void *s){
   ssh_session session = (ssh_session) s;
   if (session->global_req_state != SSH_CHANNEL_REQ_STATE_PENDING ||
-      session->session_state != SSH_SESSION_STATE_ERROR)
+      session->session_state == SSH_SESSION_STATE_ERROR)
     return 1;
   else
     return 0;
