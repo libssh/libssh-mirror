@@ -158,7 +158,7 @@ void crypto_free(struct ssh_crypto_struct *crypto){
       SAFE_FREE(crypto->kex_methods[i]);
   }
 
-  memset(crypto,0,sizeof(*crypto));
+  BURN_BUFFER(crypto, sizeof(struct ssh_crypto_struct));
 
   SAFE_FREE(crypto);
 }
