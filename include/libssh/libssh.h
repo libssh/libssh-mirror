@@ -208,10 +208,14 @@ enum ssh_publickey_state_e {
 	SSH_PUBLICKEY_STATE_WRONG=2
 };
 
-/* status flags */
+/* Status flags */
+/** Socket is closed */
 #define SSH_CLOSED 0x01
+/** Reading to socket won't block */
 #define SSH_READ_PENDING 0x02
+/** Session was closed due to an error */
 #define SSH_CLOSED_ERROR 0x04
+/** Output buffer not empty */
 #define SSH_WRITE_PENDING 0x08
 
 enum ssh_server_known_e {
