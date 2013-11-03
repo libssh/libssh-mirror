@@ -25,7 +25,9 @@ clients must be made or how a client should react.
 #include <string.h>
 #include <stdio.h>
 #include <poll.h>
+#ifdef HAVE_PTY_H
 #include <pty.h>
+#endif
 
 #define SSHD_USER "libssh"
 #define SSHD_PASSWORD "libssh"
