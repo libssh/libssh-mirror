@@ -26,7 +26,10 @@
 #include "libssh/curve25519.h"
 #ifdef HAVE_CURVE25519
 
+#ifdef WITH_NACL
 #include "nacl/crypto_scalarmult_curve25519.h"
+#endif
+
 #include "libssh/ssh2.h"
 #include "libssh/buffer.h"
 #include "libssh/priv.h"
@@ -53,7 +56,7 @@ int ssh_client_curve25519_init(ssh_session session){
 	  return SSH_ERROR;
   }
 
-  crypto_scalarmult_curve25519_base(session->next_crypto->curve25519_client_pubkey,
+  crypto_scalarmult_base(session->next_crypto->curve25519_client_pubkey,
 		  session->next_crypto->curve25519_privkey);
   client_pubkey = ssh_string_new(CURVE25519_PUBKEY_SIZE);
   if (client_pubkey == NULL) {
@@ -81,10 +84,10 @@ static int ssh_curve25519_build_k(ssh_session session) {
   }
 
   if (session->server)
-	  crypto_scalarmult_curve25519(k, session->next_crypto->curve25519_privkey,
+	  crypto_scalarmult(k, session->next_crypto->curve25519_privkey,
 			  session->next_crypto->curve25519_client_pubkey);
   else
-	  crypto_scalarmult_curve25519(k, session->next_crypto->curve25519_privkey,
+	  crypto_scalarmult(k, session->next_crypto->curve25519_privkey,
 			  session->next_crypto->curve25519_server_pubkey);
 
   BN_bin2bn(k, CURVE25519_PUBKEY_SIZE, session->next_crypto->k);
@@ -195,7 +198,7 @@ int ssh_server_curve25519_init(ssh_session session, ssh_buffer packet){
   	  return SSH_ERROR;
     }
 
-    crypto_scalarmult_curve25519_base(session->next_crypto->curve25519_server_pubkey,
+    crypto_scalarmult_base(session->next_crypto->curve25519_server_pubkey,
   		  session->next_crypto->curve25519_privkey);
 
     q_s_string = ssh_string_new(CURVE25519_PUBKEY_SIZE);
