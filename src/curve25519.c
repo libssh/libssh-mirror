@@ -128,7 +128,7 @@ int ssh_client_curve25519_reply(ssh_session session, ssh_buffer packet){
   }
   if (ssh_string_len(q_s_string) != CURVE25519_PUBKEY_SIZE){
 	  ssh_set_error(session, SSH_FATAL, "Incorrect size for server Curve25519 public key: %d",
-			  ssh_string_len(q_s_string));
+			  (int)ssh_string_len(q_s_string));
 	  ssh_string_free(q_s_string);
 	  goto error;
   }
@@ -182,7 +182,7 @@ int ssh_server_curve25519_init(ssh_session session, ssh_buffer packet){
     }
     if (ssh_string_len(q_c_string) != CURVE25519_PUBKEY_SIZE){
     	ssh_set_error(session, SSH_FATAL, "Incorrect size for server Curve25519 public key: %d",
-    			ssh_string_len(q_c_string));
+    			(int)ssh_string_len(q_c_string));
     	ssh_string_free(q_c_string);
     	return SSH_ERROR;
     }
