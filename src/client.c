@@ -504,6 +504,7 @@ int ssh_connect(ssh_session session) {
   session->socket_callbacks.exception=ssh_socket_exception_callback;
   session->socket_callbacks.userdata=session;
   if (session->opts.fd != SSH_INVALID_SOCKET) {
+    session->session_state=SSH_SESSION_STATE_SOCKET_CONNECTED;
     ssh_socket_set_fd(session->socket, session->opts.fd);
     ret=SSH_OK;
 #ifndef _WIN32
