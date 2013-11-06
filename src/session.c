@@ -476,9 +476,7 @@ int ssh_handle_packets(ssh_session session, int timeout) {
 
     spoll_in = ssh_socket_get_poll_handle_in(session->socket);
     spoll_out = ssh_socket_get_poll_handle_out(session->socket);
-    if (session->server) {
-        ssh_poll_add_events(spoll_in, POLLIN);
-    }
+    ssh_poll_add_events(spoll_in, POLLIN);
     ctx = ssh_poll_get_ctx(spoll_in);
 
     if (!ctx) {
