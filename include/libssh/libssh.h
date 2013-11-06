@@ -429,6 +429,7 @@ SSH_DEPRECATED LIBSSH_API int ssh_get_pubkey_hash(ssh_session session, unsigned 
 LIBSSH_API int ssh_get_random(void *where,int len,int strong);
 LIBSSH_API int ssh_get_version(ssh_session session);
 LIBSSH_API int ssh_get_status(ssh_session session);
+LIBSSH_API int ssh_get_poll_flags(ssh_session session);
 LIBSSH_API int ssh_init(void);
 LIBSSH_API int ssh_is_blocking(ssh_session session);
 LIBSSH_API int ssh_is_connected(ssh_session session);
