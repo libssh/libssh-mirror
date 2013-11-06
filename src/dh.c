@@ -239,63 +239,6 @@ void ssh_print_bignum(const char *which, bignum num) {
   SAFE_FREE(hex);
 }
 
-/**
- * @brief Convert a buffer into a colon separated hex string.
- * The caller has to free the memory.
- *
- * @param  what         What should be converted to a hex string.
- *
- * @param  len          Length of the buffer to convert.
- *
- * @return              The hex string or NULL on error.
- *
- * @see ssh_string_free_char()
- */
-char *ssh_get_hexa(const unsigned char *what, size_t len) {
-  const char h[] = "0123456789abcdef";
-  char *hexa;
-  size_t i;
-  size_t hlen = len * 3;
-
-  if (len > (UINT_MAX - 1) / 3) {
-    return NULL;
-  }
-
-  hexa = malloc(hlen + 1);
-  if (hexa == NULL) {
-    return NULL;
-  }
-
-  for (i = 0; i < len; i++) {
-      hexa[i * 3] = h[(what[i] >> 4) & 0xF];
-      hexa[i * 3 + 1] = h[what[i] & 0xF];
-      hexa[i * 3 + 2] = ':';
-  }
-  hexa[hlen - 1] = '\0';
-
-  return hexa;
-}
-
-/**
- * @brief Print a buffer as colon separated hex string.
- *
- * @param  descr        Description printed in front of the hex string.
- *
- * @param  what         What should be converted to a hex string.
- *
- * @param  len          Length of the buffer to convert.
- */
-void ssh_print_hexa(const char *descr, const unsigned char *what, size_t len) {
-    char *hexa = ssh_get_hexa(what, len);
-
-    if (hexa == NULL) {
-      return;
-    }
-    printf("%s: %s\n", descr, hexa);
-
-    free(hexa);
-}
-
 int dh_generate_x(ssh_session session) {
   session->next_crypto->x = bignum_new();
   if (session->next_crypto->x == NULL) {
@@ -1223,6 +1166,63 @@ int ssh_get_publickey_hash(const ssh_key key,
 out:
     ssh_string_free(blob);
     return rc;
+}
+
+/**
+ * @brief Convert a buffer into a colon separated hex string.
+ * The caller has to free the memory.
+ *
+ * @param  what         What should be converted to a hex string.
+ *
+ * @param  len          Length of the buffer to convert.
+ *
+ * @return              The hex string or NULL on error.
+ *
+ * @see ssh_string_free_char()
+ */
+char *ssh_get_hexa(const unsigned char *what, size_t len) {
+  const char h[] = "0123456789abcdef";
+  char *hexa;
+  size_t i;
+  size_t hlen = len * 3;
+
+  if (len > (UINT_MAX - 1) / 3) {
+    return NULL;
+  }
+
+  hexa = malloc(hlen + 1);
+  if (hexa == NULL) {
+    return NULL;
+  }
+
+  for (i = 0; i < len; i++) {
+      hexa[i * 3] = h[(what[i] >> 4) & 0xF];
+      hexa[i * 3 + 1] = h[what[i] & 0xF];
+      hexa[i * 3 + 2] = ':';
+  }
+  hexa[hlen - 1] = '\0';
+
+  return hexa;
+}
+
+/**
+ * @brief Print a buffer as colon separated hex string.
+ *
+ * @param  descr        Description printed in front of the hex string.
+ *
+ * @param  what         What should be converted to a hex string.
+ *
+ * @param  len          Length of the buffer to convert.
+ */
+void ssh_print_hexa(const char *descr, const unsigned char *what, size_t len) {
+    char *hexa = ssh_get_hexa(what, len);
+
+    if (hexa == NULL) {
+      return;
+    }
+    printf("%s: %s\n", descr, hexa);
+
+    free(hexa);
 }
 
 /** @} */
