@@ -608,6 +608,25 @@ int ssh_get_status(ssh_session session) {
 }
 
 /**
+ * @brief Get poll flags for an external mainloop
+ *
+ * @param session       The ssh session to use.
+ *
+ * @returns A bitmask including SSH_READ_PENDING or SSH_WRITE_PENDING.
+ *          For SSH_READ_PENDING, your invocation of poll() should include
+ *          POLLIN.  For SSH_WRITE_PENDING, your invocation of poll() should
+ *          include POLLOUT.
+ */
+int ssh_get_poll_flags(ssh_session session)
+{
+  if (session == NULL) {
+    return 0;
+  }
+
+  return ssh_socket_get_poll_flags (session->socket);
+}
+
+/**
  * @brief Get the disconnect message from the server.
  *
  * @param[in] session   The ssh session to use.
