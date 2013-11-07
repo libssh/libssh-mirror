@@ -1221,6 +1221,47 @@ int ssh_execute_message_callbacks(ssh_session session){
   return SSH_OK;
 }
 
+int ssh_send_keepalive(ssh_session session)
+{
+  struct ssh_string_struct *req;
+  int rc;
+
+  rc = buffer_add_u8(session->out_buffer, SSH2_MSG_GLOBAL_REQUEST);
+  if (rc < 0) {
+    goto err;
+  }
+
+  req = ssh_string_from_char("keepalive@openssh.com");
+  if (req == NULL) {
+    goto err;
+  }
+
+  rc = buffer_add_ssh_string(session->out_buffer, req);
+  ssh_string_free(req);
+  if (rc < 0) {
+    goto err;
+  }
+
+  rc = buffer_add_u8(session->out_buffer, 1);
+  if (rc < 0) {
+    goto err;
+  }
+
+  if (packet_send(session) == SSH_ERROR) {
+    goto err;
+  }
+
+  ssh_handle_packets(session, 0);
+
+  SSH_LOG(SSH_LOG_PACKET, "Sent a keepalive");
+  return SSH_OK;
+
+err:
+  ssh_set_error_oom(session);
+  buffer_reinit(session->out_buffer);
+  return SSH_ERROR;
+}
+
 /** @} */
 
 /* vim: set ts=4 sw=4 et cindent: */
