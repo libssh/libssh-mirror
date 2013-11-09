@@ -869,6 +869,7 @@ int generate_session_keys(ssh_session session) {
   ssh_string k_string = NULL;
   ssh_mac_ctx ctx = NULL;
   struct ssh_crypto_struct *crypto = session->next_crypto;
+  unsigned char *tmp;
   int rc = -1;
 
   k_string = make_bignum_string(crypto->k);
@@ -924,9 +925,12 @@ int generate_session_keys(ssh_session session) {
 
   /* some ciphers need more than DIGEST_LEN bytes of input key */
   if (crypto->out_cipher->keysize > crypto->digest_len * 8) {
-    crypto->encryptkey = realloc(crypto->encryptkey, crypto->digest_len * 2);
-    if(crypto->encryptkey == NULL)
-      goto error;
+      tmp = realloc(crypto->encryptkey, crypto->digest_len * 2);
+      if (tmp == NULL) {
+          goto error;
+      }
+      crypto->encryptkey = tmp;
+
     ctx = ssh_mac_ctx_init(crypto->mac_type);
     if (ctx == NULL) {
       goto error;
@@ -939,7 +943,12 @@ int generate_session_keys(ssh_session session) {
   }
 
   if (crypto->in_cipher->keysize > crypto->digest_len * 8) {
-    crypto->decryptkey = realloc(crypto->decryptkey, crypto->digest_len *2);
+      tmp = realloc(crypto->decryptkey, crypto->digest_len *2);
+      if (tmp == NULL) {
+          goto error;
+      }
+      tmp = crypto->decryptkey;
+
     if(crypto->decryptkey == NULL)
       goto error;
     ctx = ssh_mac_ctx_init(crypto->mac_type);
