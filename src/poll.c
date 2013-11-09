@@ -472,14 +472,18 @@ static int ssh_poll_ctx_resize(ssh_poll_ctx ctx, size_t new_size) {
   if (pollptrs == NULL) {
     return -1;
   }
+  ctx->pollptrs = pollptrs;
 
   pollfds = realloc(ctx->pollfds, sizeof(ssh_pollfd_t) * new_size);
   if (pollfds == NULL) {
-    ctx->pollptrs = realloc(pollptrs, sizeof(ssh_poll_handle) * ctx->polls_allocated);
+    pollptrs = realloc(ctx->pollptrs, sizeof(ssh_poll_handle) * ctx->polls_allocated);
+    if (pollptrs == NULL) {
+        return -1;
+    }
+    ctx->pollptrs = pollptrs;
     return -1;
   }
 
-  ctx->pollptrs = pollptrs;
   ctx->pollfds = pollfds;
   ctx->polls_allocated = new_size;
 
