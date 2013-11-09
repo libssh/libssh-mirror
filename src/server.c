@@ -994,7 +994,7 @@ int ssh_message_auth_interactive_request(ssh_message msg, const char *name,
       msg->session->kbdint = NULL;
       return SSH_ERROR;
     }
-    msg->session->kbdint->echo = malloc(num_prompts * sizeof(char));
+    msg->session->kbdint->echo = malloc(num_prompts * sizeof(unsigned char));
     if (msg->session->kbdint->echo == NULL) {
       ssh_set_error_oom(msg->session);
       ssh_kbdint_free(msg->session->kbdint);
