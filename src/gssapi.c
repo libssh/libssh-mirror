@@ -57,6 +57,7 @@ struct ssh_gssapi_struct{
     char *service; /* name of the service */
     struct {
         gss_name_t server_name; /* identity of server */
+        OM_uint32 flags; /* flags used for init context */
         gss_OID oid; /* mech being used for authentication */
         gss_cred_id_t client_deleg_creds; /* delegated creds (const, not freeable) */
     } client;
@@ -616,85 +617,40 @@ fail:
     return SSH_ERROR;
 }
 
-/** @brief returns the OIDs of the mechs that work with both
- * hostname and username
+/** @brief returns the OIDs of the mechs that have usable credentials
  */
-static int ssh_gssapi_match(ssh_session session, char *hostname, char *username, gss_OID_set *valid_oids, int deleg){
-    gss_buffer_desc host_namebuf, user_namebuf;
-    gss_name_t host_name, user_name;
-    OM_uint32 maj_stat, min_stat;
-    gss_OID_set supported;
+static int ssh_gssapi_match(ssh_session session, gss_OID_set *valid_oids)
+{
+    OM_uint32 maj_stat, min_stat, lifetime;
+    gss_OID_set actual_mechs;
     gss_OID oid;
-    gss_ctx_id_t ctx = GSS_C_NO_CONTEXT;
-    gss_buffer_desc input_token = GSS_C_EMPTY_BUFFER;
-    gss_buffer_desc output_token = GSS_C_EMPTY_BUFFER;
-    gss_cred_id_t client_creds = GSS_C_NO_CREDENTIAL;
     unsigned int i;
     char *ptr;
-    char hostname_buf[256];
 
+    maj_stat = gss_acquire_cred(&min_stat, GSS_C_NO_NAME, GSS_C_INDEFINITE,
+                                GSS_C_NO_OID_SET, GSS_C_INITIATE,
+                                &session->gssapi->client_creds,
+                                &actual_mechs, NULL);
+    if (GSS_ERROR(maj_stat)) {
+        return SSH_ERROR;
+    }
 
     gss_create_empty_oid_set(&min_stat, valid_oids);
-    maj_stat = gss_indicate_mechs(&min_stat, &supported);
-    for (i=0; i < supported->count; ++i){
-        ptr=ssh_get_hexa(supported->elements[i].elements, supported->elements[i].length);
-        SSH_LOG(SSH_LOG_DEBUG, "GSSAPI oid supported %d : %s\n",i, ptr);
-        SAFE_FREE(ptr);
-    }
 
-    user_namebuf.value = username;
-    user_namebuf.length = strlen(username) + 1;
-    maj_stat = gss_import_name(&min_stat, &user_namebuf,
-            (gss_OID) GSS_C_NT_USER_NAME, &user_name);
-    if (maj_stat != GSS_S_COMPLETE) {
-        SSH_LOG(SSH_LOG_DEBUG, "importing name %d, %d", maj_stat, min_stat);
-        ssh_gssapi_log_error(SSH_LOG_DEBUG, "importing name", maj_stat);
-        return -1;
-    }
-
-    snprintf(hostname_buf, sizeof(hostname_buf),"host@%s", hostname);
-    host_namebuf.value = hostname_buf;
-    host_namebuf.length = strlen(hostname_buf) + 1;
-    maj_stat = gss_import_name(&min_stat, &host_namebuf,
-            (gss_OID) GSS_C_NT_HOSTBASED_SERVICE, &host_name);
-    if (maj_stat != GSS_S_COMPLETE) {
-        SSH_LOG(0, "importing name %d, %d", maj_stat, min_stat);
-        ssh_gssapi_log_error(0, "importing name", maj_stat);
-        return -1;
-    }
-
-    ssh_gssapi_init(session);
-    session->gssapi->client_name = user_name;
-    session->gssapi->client.server_name = host_name;
-    session->gssapi->user = strdup(username);
-    for (i=0; i<supported->count; ++i){
-        oid = &supported->elements[i];
-        maj_stat = gss_init_sec_context(&min_stat,
-                session->gssapi->client.client_deleg_creds, &ctx, host_name, oid,
-                GSS_C_MUTUAL_FLAG | GSS_C_INTEG_FLAG | (deleg ? GSS_C_DELEG_FLAG : 0),
-                0, NULL, &input_token, NULL, &output_token, NULL, NULL);
-        if (!GSS_ERROR(maj_stat)){
-            gss_OID_set tmp;
-            if (session->gssapi->client.client_deleg_creds != GSS_C_NO_CREDENTIAL){
-                /* we know the oid is ok since init_sec_context worked */
-                gss_add_oid_set_member(&min_stat, oid, valid_oids);
-                SSH_LOG(SSH_LOG_PROTOCOL, "Matched oid %u for server (with forwarding)", i);
-            } else {
-                gss_create_empty_oid_set(&min_stat, &tmp);
-                gss_add_oid_set_member(&min_stat, oid, &tmp);
-                maj_stat = gss_acquire_cred(&min_stat, user_name, 0,
-                        tmp, GSS_C_INITIATE,
-                        &client_creds, NULL, NULL);
-                gss_release_oid_set(&min_stat, &tmp);
-                if (!GSS_ERROR(maj_stat)){
-                    gss_release_cred(&min_stat, &client_creds);
-                    gss_add_oid_set_member(&min_stat,oid,valid_oids);
-                    SSH_LOG(SSH_LOG_PROTOCOL, "Matched oid %u for server", i);
-                }
-            }
+    /* double check each single cred */
+    for (i = 0; i < actual_mechs->count; i++) {
+        /* check lifetime is not 0 or skip */
+        lifetime = 0;
+        oid = &actual_mechs->elements[i];
+        maj_stat = gss_inquire_cred_by_mech(&min_stat,
+                                            session->gssapi->client_creds,
+                                            oid, NULL, &lifetime, NULL, NULL);
+        if (maj_stat == GSS_S_COMPLETE && lifetime > 0) {
+            gss_add_oid_set_member(&min_stat, oid, valid_oids);
+            ptr = ssh_get_hexa(oid->elements, oid->length);
+            SSH_LOG(SSH_LOG_DEBUG, "GSSAPI valid oid %d : %s\n", i, ptr);
+            SAFE_FREE(ptr);
         }
-        gss_delete_sec_context(&min_stat,&ctx, &output_token);
-        ctx = GSS_C_NO_CONTEXT;
     }
 
     return SSH_OK;
@@ -713,14 +669,32 @@ int ssh_gssapi_auth_mic(ssh_session session){
     ssh_string *oids;
     int rc;
     int n_oids = 0;
+    OM_uint32 maj_stat, min_stat;
+    char name_buf[256];
+    gss_buffer_desc hostname;
 
     if (ssh_gssapi_init(session) == SSH_ERROR)
         return SSH_AUTH_ERROR;
 
+    /* import target host name */
+    snprintf(name_buf, sizeof(name_buf), "host@%s", session->opts.host);
+    hostname.value = name_buf;
+    hostname.length = strlen(name_buf) + 1;
+    maj_stat = gss_import_name(&min_stat, &hostname,
+                               (gss_OID)GSS_C_NT_HOSTBASED_SERVICE,
+                               &session->gssapi->client.server_name);
+    if (maj_stat != GSS_S_COMPLETE) {
+        SSH_LOG(0, "importing name %d, %d", maj_stat, min_stat);
+        ssh_gssapi_log_error(0, "importing name", maj_stat);
+        return SSH_PACKET_USED;
+    }
+
+    /* copy username */
+    session->gssapi->user = strdup(session->opts.username);
 
     SSH_LOG(SSH_LOG_PROTOCOL, "Authenticating with gssapi to host %s with user %s",
-            session->opts.host, session->opts.username);
-    rc = ssh_gssapi_match(session,session->opts.host, session->opts.username, &selected, 0);
+            session->opts.host, session->gssapi->user);
+    rc = ssh_gssapi_match(session, &selected);
     if (rc == SSH_ERROR)
         return SSH_AUTH_DENIED;
 
@@ -769,15 +743,11 @@ static gss_OID ssh_gssapi_oid_from_string(ssh_string oid_s){
 
 SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_response){
     ssh_string oid_s;
-    gss_OID oid;
     gss_uint32 maj_stat, min_stat;
-    int deleg = 0;
     gss_buffer_desc input_token = GSS_C_EMPTY_BUFFER;
     gss_buffer_desc output_token = GSS_C_EMPTY_BUFFER;
-    gss_OID_set tmp;
     char *hexa;
     ssh_string token;
-    gss_cred_id_t creds = GSS_C_NO_CREDENTIAL;
     (void)type;
     (void)user;
 
@@ -791,31 +761,24 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_response){
         ssh_set_error(session, SSH_FATAL, "Missing OID");
         return SSH_PACKET_USED;
     }
-    oid = ssh_gssapi_oid_from_string(oid_s);
+    session->gssapi->client.oid = ssh_gssapi_oid_from_string(oid_s);
     ssh_string_free(oid_s);
-    if (!oid) {
+    if (!session->gssapi->client.oid) {
         ssh_set_error(session, SSH_FATAL, "Invalid OID");
         return SSH_PACKET_USED;
     }
-    if (session->gssapi->client.client_deleg_creds != GSS_C_NO_CREDENTIAL)
-        creds = session->gssapi->client.client_deleg_creds;
-    if (creds == GSS_C_NO_CREDENTIAL){
-        gss_create_empty_oid_set(&min_stat, &tmp);
-        gss_add_oid_set_member(&min_stat, oid, &tmp);
-        maj_stat = gss_acquire_cred(&min_stat, session->gssapi->client_name, 0,
-                tmp, GSS_C_INITIATE,
-                &session->gssapi->client_creds, NULL, NULL);
-        gss_release_oid_set(&min_stat, &tmp);
-        if (GSS_ERROR(maj_stat)){
-            ssh_gssapi_log_error(SSH_LOG_WARNING,"Error acquiring credentials",maj_stat);
-            return SSH_PACKET_USED;
-        }
-    }
+
+    session->gssapi->client.flags = GSS_C_MUTUAL_FLAG | GSS_C_INTEG_FLAG;
+
     /* prepare the first TOKEN response */
     maj_stat = gss_init_sec_context(&min_stat,
-            creds, &session->gssapi->ctx, session->gssapi->client.server_name, oid,
-            GSS_C_MUTUAL_FLAG | GSS_C_INTEG_FLAG | (deleg ? GSS_C_DELEG_FLAG : 0),
-            0, NULL, &input_token, NULL, &output_token, NULL, NULL);
+                                    session->gssapi->client_creds,
+                                    &session->gssapi->ctx,
+                                    session->gssapi->client.server_name,
+                                    session->gssapi->client.oid,
+                                    session->gssapi->client.flags,
+                                    0, NULL, &input_token, NULL,
+                                    &output_token, NULL, NULL);
     if(GSS_ERROR(maj_stat)){
         ssh_gssapi_log_error(SSH_LOG_WARNING, "Initializing gssapi context", maj_stat);
         return SSH_PACKET_USED;
@@ -832,7 +795,6 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_response){
         ssh_string_free(token);
         session->auth_state = SSH_AUTH_STATE_GSSAPI_TOKEN;
     }
-    session->gssapi->client.oid = oid;
     return SSH_PACKET_USED;
 }
 
@@ -889,8 +851,6 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_token_client){
     char *hexa;
     OM_uint32 maj_stat, min_stat;
     gss_buffer_desc input_token, output_token = GSS_C_EMPTY_BUFFER;
-    gss_cred_id_t creds = GSS_C_NO_CREDENTIAL;
-    int deleg = 0;
     (void)user;
     (void)type;
 
@@ -910,14 +870,14 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_token_client){
     SAFE_FREE(hexa);
     input_token.length = ssh_string_len(token);
     input_token.value = ssh_string_data(token);
-    if (session->gssapi->client.client_deleg_creds != GSS_C_NO_CREDENTIAL)
-        creds = session->gssapi->client.client_deleg_creds;
-    else
-        creds = session->gssapi->client_creds;
     maj_stat = gss_init_sec_context(&min_stat,
-            creds, &session->gssapi->ctx, session->gssapi->client.server_name, session->gssapi->client.oid,
-            GSS_C_MUTUAL_FLAG | GSS_C_INTEG_FLAG | (deleg ? GSS_C_DELEG_FLAG : 0),
-            0, NULL, &input_token, NULL, &output_token, NULL, NULL);
+                                    session->gssapi->client_creds,
+                                    &session->gssapi->ctx,
+                                    session->gssapi->client.server_name,
+                                    session->gssapi->client.oid,
+                                    session->gssapi->client.flags,
+                                    0, NULL, &input_token, NULL,
+                                    &output_token, NULL, NULL);
 
     ssh_gssapi_log_error(0, "accepting token", maj_stat);
     ssh_string_free(token);
