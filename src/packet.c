@@ -231,9 +231,6 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
                 }
 
                 packet = ((uint8_t*)data) + processed;
-                if (packet == NULL) {
-                    goto error;
-                }
 #if 0
                 ssh_socket_read(session->socket,
                                 packet,
@@ -264,9 +261,6 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
 
                 /* copy the last part from the incoming buffer */
                 packet = ((uint8_t *)data) + processed;
-                if (packet == NULL) {
-                    goto error;
-                }
                 memcpy(mac, packet, MACSIZE);
 
                 rc = packet_hmac_verify(session, session->in_buffer, mac);
