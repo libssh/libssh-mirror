@@ -947,7 +947,7 @@ int generate_session_keys(ssh_session session) {
       if (tmp == NULL) {
           goto error;
       }
-      tmp = crypto->decryptkey;
+      crypto->decryptkey = tmp;
 
     if(crypto->decryptkey == NULL)
       goto error;
