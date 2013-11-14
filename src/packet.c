@@ -263,7 +263,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
                 }
 
                 /* copy the last part from the incoming buffer */
-                packet = packet + to_be_read - current_macsize;
+                packet = ((uint8_t *)data) + processed;
                 if (packet == NULL) {
                     goto error;
                 }
