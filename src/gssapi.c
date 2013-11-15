@@ -49,7 +49,7 @@ struct ssh_gssapi_struct{
     enum ssh_gssapi_state_e state; /* current state */
     struct gss_OID_desc_struct mech; /* mechanism being elected for auth */
     gss_cred_id_t server_creds; /* credentials of server */
-    gss_cred_id_t client_creds; /* creds of the client */
+    gss_cred_id_t client_creds; /* creds delegated by the client */
     gss_ctx_id_t ctx; /* the authentication context */
     gss_name_t client_name; /* Identity of the client */
     char *user; /* username of client */
@@ -59,6 +59,7 @@ struct ssh_gssapi_struct{
         gss_name_t server_name; /* identity of server */
         OM_uint32 flags; /* flags used for init context */
         gss_OID oid; /* mech being used for authentication */
+        gss_cred_id_t creds; /* creds used to initialize context */
         gss_cred_id_t client_deleg_creds; /* delegated creds (const, not freeable) */
     } client;
 };
@@ -90,12 +91,13 @@ static void ssh_gssapi_free(ssh_session session){
     OM_uint32 min;
     if (session->gssapi == NULL)
         return;
-    if (session->gssapi->mech.elements)
-        SAFE_FREE(session->gssapi->mech.elements);
-    if (session->gssapi->user)
-        SAFE_FREE(session->gssapi->user);
-    if (session->gssapi->server_creds)
-        gss_release_cred(&min,&session->gssapi->server_creds);
+    SAFE_FREE(session->gssapi->user);
+    SAFE_FREE(session->gssapi->mech.elements);
+    gss_release_cred(&min,&session->gssapi->server_creds);
+    if (session->gssapi->client.creds !=
+                    session->gssapi->client.client_deleg_creds) {
+        gss_release_cred(&min, &session->gssapi->client.creds);
+    }
     SAFE_FREE(session->gssapi);
 }
 
@@ -630,25 +632,37 @@ static int ssh_gssapi_match(ssh_session session, gss_OID_set *valid_oids)
     char *ptr;
     int ret;
 
-    if (session->opts.gss_client_identity != NULL) {
-        namebuf.value = (void *)session->opts.gss_client_identity;
-        namebuf.length = strlen(session->opts.gss_client_identity);
+    if (session->gssapi->client.client_deleg_creds == NULL) {
+        if (session->opts.gss_client_identity != NULL) {
+            namebuf.value = (void *)session->opts.gss_client_identity;
+            namebuf.length = strlen(session->opts.gss_client_identity);
 
-        maj_stat = gss_import_name(&min_stat, &namebuf,
-                                   GSS_C_NT_USER_NAME, &client_id);
+            maj_stat = gss_import_name(&min_stat, &namebuf,
+                                       GSS_C_NT_USER_NAME, &client_id);
+            if (GSS_ERROR(maj_stat)) {
+                ret = SSH_ERROR;
+                goto end;
+            }
+        }
+
+        maj_stat = gss_acquire_cred(&min_stat, client_id, GSS_C_INDEFINITE,
+                                    GSS_C_NO_OID_SET, GSS_C_INITIATE,
+                                    &session->gssapi->client.creds,
+                                    &actual_mechs, NULL);
         if (GSS_ERROR(maj_stat)) {
             ret = SSH_ERROR;
             goto end;
         }
-    }
+    } else {
+        session->gssapi->client.creds =
+                                    session->gssapi->client.client_deleg_creds;
 
-    maj_stat = gss_acquire_cred(&min_stat, client_id, GSS_C_INDEFINITE,
-                                GSS_C_NO_OID_SET, GSS_C_INITIATE,
-                                &session->gssapi->client_creds,
-                                &actual_mechs, NULL);
-    if (GSS_ERROR(maj_stat)) {
-        ret = SSH_ERROR;
-        goto end;
+        maj_stat = gss_inquire_cred(&min_stat, session->gssapi->client.creds,
+                                    &client_id, NULL, NULL, &actual_mechs);
+        if (GSS_ERROR(maj_stat)) {
+            ret = SSH_ERROR;
+            goto end;
+        }
     }
 
     gss_create_empty_oid_set(&min_stat, valid_oids);
@@ -659,7 +673,7 @@ static int ssh_gssapi_match(ssh_session session, gss_OID_set *valid_oids)
         lifetime = 0;
         oid = &actual_mechs->elements[i];
         maj_stat = gss_inquire_cred_by_mech(&min_stat,
-                                            session->gssapi->client_creds,
+                                            session->gssapi->client.creds,
                                             oid, NULL, &lifetime, NULL, NULL);
         if (maj_stat == GSS_S_COMPLETE && lifetime > 0) {
             gss_add_oid_set_member(&min_stat, oid, valid_oids);
@@ -811,7 +825,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_response){
 
     /* prepare the first TOKEN response */
     maj_stat = gss_init_sec_context(&min_stat,
-                                    session->gssapi->client_creds,
+                                    session->gssapi->client.creds,
                                     &session->gssapi->ctx,
                                     session->gssapi->client.server_name,
                                     session->gssapi->client.oid,
@@ -910,7 +924,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_token_client){
     input_token.length = ssh_string_len(token);
     input_token.value = ssh_string_data(token);
     maj_stat = gss_init_sec_context(&min_stat,
-                                    session->gssapi->client_creds,
+                                    session->gssapi->client.creds,
                                     &session->gssapi->ctx,
                                     session->gssapi->client.server_name,
                                     session->gssapi->client.oid,
