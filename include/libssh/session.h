@@ -183,6 +183,7 @@ struct ssh_session_struct {
         int ssh2;
         int ssh1;
         char compressionlevel;
+        char *gss_server_identity;
     } opts;
 };
 
