@@ -449,9 +449,19 @@ void ssh_socket_close(ssh_socket s){
  * file descriptors
  */
 void ssh_socket_set_fd(ssh_socket s, socket_t fd) {
-  s->fd_in = s->fd_out = fd;
-  if(s->poll_in)
-  	ssh_poll_set_fd(s->poll_in,fd);
+    s->fd_in = s->fd_out = fd;
+
+    if (s->poll_in) {
+        ssh_poll_set_fd(s->poll_in,fd);
+    } else {
+        s->state = SSH_SOCKET_CONNECTING;
+
+        /* POLLOUT is the event to wait for in a nonblocking connect */
+        ssh_poll_set_events(ssh_socket_get_poll_handle_in(s), POLLOUT);
+#ifdef _WIN32
+        ssh_poll_add_events(ssh_socket_get_poll_handle_in(s), POLLWRNORM);
+#endif
+    }
 }
 
 /**
@@ -770,12 +780,6 @@ int ssh_socket_connect(ssh_socket s, const char *host, int port, const char *bin
 	if(fd == SSH_INVALID_SOCKET)
 		return SSH_ERROR;
 	ssh_socket_set_fd(s,fd);
-	s->state=SSH_SOCKET_CONNECTING;
-	/* POLLOUT is the event to wait for in a nonblocking connect */
-	ssh_poll_set_events(ssh_socket_get_poll_handle_in(s),POLLOUT);
-#ifdef _WIN32
-	ssh_poll_add_events(ssh_socket_get_poll_handle_in(s),POLLWRNORM);
-#endif
 
 	return SSH_OK;
 }
