@@ -805,6 +805,9 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_response){
     }
 
     session->gssapi->client.flags = GSS_C_MUTUAL_FLAG | GSS_C_INTEG_FLAG;
+    if (session->opts.gss_delegate_creds) {
+        session->gssapi->client.flags |= GSS_C_DELEG_FLAG;
+    }
 
     /* prepare the first TOKEN response */
     maj_stat = gss_init_sec_context(&min_stat,
