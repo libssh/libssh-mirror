@@ -48,7 +48,8 @@ enum ssh_config_opcode_e {
   SOC_KNOWNHOSTS,
   SOC_PROXYCOMMAND,
   SOC_GSSAPISERVERIDENTITY,
-  SOC_GSSAPICLIENTIDENTITY
+  SOC_GSSAPICLIENTIDENTITY,
+  SOC_GSSAPIDELEGATECREDENTIALS,
 };
 
 struct ssh_config_keyword_table_s {
@@ -71,6 +72,7 @@ static struct ssh_config_keyword_table_s ssh_config_keyword_table[] = {
   { "proxycommand", SOC_PROXYCOMMAND },
   { "gssapiserveridentity", SOC_GSSAPISERVERIDENTITY },
   { "gssapiserveridentity", SOC_GSSAPICLIENTIDENTITY },
+  { "gssapidelegatecredentials", SOC_GSSAPIDELEGATECREDENTIALS },
   { NULL, SOC_UNSUPPORTED }
 };
 
@@ -337,6 +339,12 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
       p = ssh_config_get_str_tok(&s, NULL);
       if (p && *parsing) {
         ssh_options_set(session, SSH_OPTIONS_GSSAPI_CLIENT_IDENTITY, p);
+      }
+      break;
+    case SOC_GSSAPIDELEGATECREDENTIALS:
+      i = ssh_config_get_yesno(&s, -1);
+      if (i >=0 && *parsing) {
+        ssh_options_set(session, SSH_OPTIONS_GSSAPI_DELEGATE_CREDENTIALS, &i);
       }
       break;
     case SOC_UNSUPPORTED:
