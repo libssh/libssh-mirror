@@ -371,6 +371,10 @@ int ssh_options_set_algo(ssh_session session, int algo,
  *                Set it to specify the GSSAPI server identity that libssh
  *                should expect when connecting to the server (const char *).
  *
+ *              - SSH_OPTIONS_GSSAPI_CLIENT_IDENTITY
+ *                Set it to specify the GSSAPI client identity that libssh
+ *                should expect when connecting to the server (const char *).
+ *
  * @param  value The value to set. This is a generic pointer and the
  *               datatype which is used should be set according to the
  *               type set.
@@ -805,6 +809,20 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
                 SAFE_FREE(session->opts.gss_server_identity);
                 session->opts.gss_server_identity = strdup(v);
                 if (session->opts.gss_server_identity == NULL) {
+                    ssh_set_error_oom(session);
+                    return -1;
+                }
+            }
+            break;
+        case SSH_OPTIONS_GSSAPI_CLIENT_IDENTITY:
+            v = value;
+            if (v == NULL || v[0] == '\0') {
+                ssh_set_error_invalid(session);
+                return -1;
+            } else {
+                SAFE_FREE(session->opts.gss_client_identity);
+                session->opts.gss_client_identity = strdup(v);
+                if (session->opts.gss_client_identity == NULL) {
                     ssh_set_error_oom(session);
                     return -1;
                 }
