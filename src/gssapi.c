@@ -672,12 +672,17 @@ int ssh_gssapi_auth_mic(ssh_session session){
     OM_uint32 maj_stat, min_stat;
     char name_buf[256];
     gss_buffer_desc hostname;
+    const char *gss_host = session->opts.host;
 
     if (ssh_gssapi_init(session) == SSH_ERROR)
         return SSH_AUTH_ERROR;
 
+    if (session->opts.gss_server_identity != NULL) {
+        gss_host = session->opts.gss_server_identity;
+    }
     /* import target host name */
-    snprintf(name_buf, sizeof(name_buf), "host@%s", session->opts.host);
+    snprintf(name_buf, sizeof(name_buf), "host@%s", gss_host);
+
     hostname.value = name_buf;
     hostname.length = strlen(name_buf) + 1;
     maj_stat = gss_import_name(&min_stat, &hostname,
