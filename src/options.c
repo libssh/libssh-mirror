@@ -375,6 +375,10 @@ int ssh_options_set_algo(ssh_session session, int algo,
  *                Set it to specify the GSSAPI client identity that libssh
  *                should expect when connecting to the server (const char *).
  *
+ *              - SSH_OPTIONS_GSSAPI_DELEGATE_CREDENTIALS
+ *                Set it to specify that GSSAPI should delegate credentials
+ *                to the server (int, 0 = false).
+ *
  * @param  value The value to set. This is a generic pointer and the
  *               datatype which is used should be set according to the
  *               type set.
@@ -828,6 +832,17 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
                 }
             }
             break;
+        case SSH_OPTIONS_GSSAPI_DELEGATE_CREDENTIALS:
+            if (value == NULL) {
+                ssh_set_error_invalid(session);
+                return -1;
+            } else {
+                int x = *(int *)value;
+
+                session->opts.gss_delegate_creds = (x & 0xff);
+            }
+            break;
+
         default:
             ssh_set_error(session, SSH_REQUEST_DENIED, "Unknown ssh option %d", type);
             return -1;

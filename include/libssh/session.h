@@ -185,6 +185,7 @@ struct ssh_session_struct {
         char compressionlevel;
         char *gss_server_identity;
         char *gss_client_identity;
+        int gss_delegate_creds;
     } opts;
 };
 
