@@ -184,6 +184,7 @@ struct ssh_session_struct {
         int ssh1;
         char compressionlevel;
         char *gss_server_identity;
+        char *gss_client_identity;
     } opts;
 };
 
