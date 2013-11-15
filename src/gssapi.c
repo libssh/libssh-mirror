@@ -694,8 +694,10 @@ int ssh_gssapi_auth_mic(ssh_session session){
     gss_buffer_desc hostname;
     const char *gss_host = session->opts.host;
 
-    if (ssh_gssapi_init(session) == SSH_ERROR)
+    rc = ssh_gssapi_init(session);
+    if (rc == SSH_ERROR) {
         return SSH_AUTH_ERROR;
+    }
 
     if (session->opts.gss_server_identity != NULL) {
         gss_host = session->opts.gss_server_identity;
@@ -716,17 +718,26 @@ int ssh_gssapi_auth_mic(ssh_session session){
 
     /* copy username */
     session->gssapi->user = strdup(session->opts.username);
+    if (session->gssapi->user == NULL) {
+        ssh_set_error_oom(session);
+        return SSH_AUTH_ERROR;
+    }
 
     SSH_LOG(SSH_LOG_PROTOCOL, "Authenticating with gssapi to host %s with user %s",
             session->opts.host, session->gssapi->user);
     rc = ssh_gssapi_match(session, &selected);
-    if (rc == SSH_ERROR)
+    if (rc == SSH_ERROR) {
         return SSH_AUTH_DENIED;
+    }
 
     n_oids = selected->count;
     SSH_LOG(SSH_LOG_PROTOCOL, "Sending %d oids", n_oids);
 
     oids = calloc(n_oids, sizeof(ssh_string));
+    if (oids == NULL) {
+        ssh_set_error_oom(session);
+        return SSH_AUTH_ERROR;
+    }
 
     for (i=0; i<n_oids; ++i){
         oids[i] = ssh_string_new(selected->elements[i].length + 2);
