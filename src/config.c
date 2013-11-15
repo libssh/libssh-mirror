@@ -46,7 +46,8 @@ enum ssh_config_opcode_e {
   SOC_PROTOCOL,
   SOC_STRICTHOSTKEYCHECK,
   SOC_KNOWNHOSTS,
-  SOC_PROXYCOMMAND
+  SOC_PROXYCOMMAND,
+  SOC_GSSAPISERVERIDENTITY
 };
 
 struct ssh_config_keyword_table_s {
@@ -67,6 +68,7 @@ static struct ssh_config_keyword_table_s ssh_config_keyword_table[] = {
   { "stricthostkeychecking", SOC_STRICTHOSTKEYCHECK },
   { "userknownhostsfile", SOC_KNOWNHOSTS },
   { "proxycommand", SOC_PROXYCOMMAND },
+  { "gssapiserveridentity", SOC_GSSAPISERVERIDENTITY },
   { NULL, SOC_UNSUPPORTED }
 };
 
@@ -321,6 +323,12 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
       p = ssh_config_get_cmd(&s);
       if (p && *parsing) {
         ssh_options_set(session, SSH_OPTIONS_PROXYCOMMAND, p);
+      }
+      break;
+    case SOC_GSSAPISERVERIDENTITY:
+      p = ssh_config_get_str_tok(&s, NULL);
+      if (p && *parsing) {
+        ssh_options_set(session, SSH_OPTIONS_GSSAPI_SERVER_IDENTITY, p);
       }
       break;
     case SOC_UNSUPPORTED:
