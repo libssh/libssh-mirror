@@ -623,16 +623,32 @@ static int ssh_gssapi_match(ssh_session session, gss_OID_set *valid_oids)
 {
     OM_uint32 maj_stat, min_stat, lifetime;
     gss_OID_set actual_mechs;
+    gss_buffer_desc namebuf;
+    gss_name_t client_id = GSS_C_NO_NAME;
     gss_OID oid;
     unsigned int i;
     char *ptr;
+    int ret;
 
-    maj_stat = gss_acquire_cred(&min_stat, GSS_C_NO_NAME, GSS_C_INDEFINITE,
+    if (session->opts.gss_client_identity != NULL) {
+        namebuf.value = (void *)session->opts.gss_client_identity;
+        namebuf.length = strlen(session->opts.gss_client_identity);
+
+        maj_stat = gss_import_name(&min_stat, &namebuf,
+                                   GSS_C_NT_USER_NAME, &client_id);
+        if (GSS_ERROR(maj_stat)) {
+            ret = SSH_ERROR;
+            goto end;
+        }
+    }
+
+    maj_stat = gss_acquire_cred(&min_stat, client_id, GSS_C_INDEFINITE,
                                 GSS_C_NO_OID_SET, GSS_C_INITIATE,
                                 &session->gssapi->client_creds,
                                 &actual_mechs, NULL);
     if (GSS_ERROR(maj_stat)) {
-        return SSH_ERROR;
+        ret = SSH_ERROR;
+        goto end;
     }
 
     gss_create_empty_oid_set(&min_stat, valid_oids);
@@ -653,7 +669,11 @@ static int ssh_gssapi_match(ssh_session session, gss_OID_set *valid_oids)
         }
     }
 
-    return SSH_OK;
+    ret = SSH_OK;
+
+end:
+    gss_release_name(&min_stat, &client_id);
+    return ret;
 }
 
 /**
