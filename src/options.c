@@ -673,6 +673,7 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
                 }
 
                 session->common.log_verbosity = i & 0xffff;
+                ssh_set_log_level(i & 0xffff);
             }
             break;
         case SSH_OPTIONS_CIPHERS_C_S:
@@ -1427,7 +1428,7 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
       break;
     case SSH_BIND_OPTIONS_LOG_VERBOSITY_STR:
       if (value == NULL) {
-        sshbind->common.log_verbosity = 0;
+      	ssh_set_log_level(0);
       } else {
         q = strdup(value);
         if (q == NULL) {
@@ -1440,7 +1441,7 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
         }
         SAFE_FREE(q);
 
-        sshbind->common.log_verbosity = i & 0xffff;
+        ssh_set_log_level(i & 0xffff);
       }
       break;
     case SSH_BIND_OPTIONS_DSAKEY:
