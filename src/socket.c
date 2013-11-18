@@ -307,11 +307,13 @@ int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p, socket_t fd, int r
 		if(s->state == SSH_SOCKET_CONNECTING){
 			SSH_LOG(SSH_LOG_PACKET,"Received POLLOUT in connecting state");
 			s->state = SSH_SOCKET_CONNECTED;
-			ssh_poll_set_events(p,POLLOUT | POLLIN);
-            r = ssh_socket_set_blocking(ssh_socket_get_fd_in(s));
-            if (r < 0) {
-                return -1;
-            }
+			if (p != NULL) {
+				ssh_poll_set_events(p,POLLOUT | POLLIN);
+			}
+			r = ssh_socket_set_blocking(ssh_socket_get_fd_in(s));
+			if (r < 0) {
+				return -1;
+			}
 			if(s->callbacks && s->callbacks->connected)
 				s->callbacks->connected(SSH_SOCKET_CONNECTED_OK,0,s->callbacks->userdata);
 			return 0;
