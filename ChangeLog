@@ -4,13 +4,20 @@ ChangeLog
 version 0.6.0 (released 2013-XX-XX)
   * Added new publicy key API.
   * Added new userauth API.
+  * Added ssh_get_publickey_hash() function.
+  * Added ssh_get_poll_flags() function.
   * Added gssapi-mic userauth.
+  * Added GSSAPIServerIdentity option.
+  * Added GSSAPIClientIdentity option.
+  * Added GSSAPIDelegateCredentials option.
   * Added new callback based server API.
   * Added Elliptic Curve DSA (ECDSA) support (with OpenSSL).
   * Added Elliptic Curve Diffie Hellman (ECDH) support.
+  * Added Curve25519 for ECDH key exchange.
   * Added improved logging system.
   * Added SSH-agent forwarding.
   * Added key-reexchange.
+  * Added more unit tests.
   * Improved documentation.
   * Fixed timeout handling.
 
