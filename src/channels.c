@@ -1327,7 +1327,9 @@ int channel_write_common(ssh_channel channel, const void *data,
                 "Wait for a growing window message...");
           rc = ssh_handle_packets_termination(session, SSH_TIMEOUT_DEFAULT,
               ssh_channel_waitwindow_termination,channel);
-          if (rc == SSH_ERROR || !ssh_channel_waitwindow_termination(channel))
+          if (rc == SSH_ERROR ||
+              !ssh_channel_waitwindow_termination(channel) ||
+              channel->session->session_state == SSH_SESSION_STATE_ERROR)
             goto out;
           continue;
       }
