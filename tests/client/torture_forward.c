@@ -47,7 +47,7 @@ static void setup(void **state)
 
 static void teardown(void **state)
 {
-    ssh_session session = *state;
+    ssh_session session = (ssh_session)*state;
 
     assert_false(session == NULL);
 
@@ -59,7 +59,7 @@ static void teardown(void **state)
 
 static void torture_ssh_forward(void **state)
 {
-    ssh_session session = *state;
+    ssh_session session = (ssh_session)*state;
 #if 0
     ssh_channel c;
 #endif
