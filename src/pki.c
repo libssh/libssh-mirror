@@ -476,6 +476,64 @@ int ssh_pki_import_privkey_file(const char *filename,
     return SSH_OK;
 }
 
+/**
+ * @brief Export a private key to a pam file on disk.
+ *
+ * @param[in]  privkey  The private key to export.
+ *
+ * @param[in]  passphrase The passphrase to use to encrypt the key with or
+ *             NULL. An empty string means no passphrase.
+ *
+ * @param[in]  auth_fn  An auth function you may want to use or NULL.
+ *
+ * @param[in]  auth_data Private data passed to the auth function.
+ *
+ * @param[in]  filename  The path where to store the pem file.
+ *
+ * @return     SSH_OK on success, SSH_ERROR on error.
+ */
+int ssh_pki_export_privkey_file(const ssh_key privkey,
+                                const char *passphrase,
+                                ssh_auth_callback auth_fn,
+                                void *auth_data,
+                                const char *filename)
+{
+    ssh_string blob;
+    FILE *fp;
+    int rc;
+
+    if (privkey == NULL || !ssh_key_is_private(privkey)) {
+        return SSH_ERROR;
+    }
+
+    fp = fopen(filename, "wb");
+    if (fp == NULL) {
+        SSH_LOG(SSH_LOG_FUNCTIONS, "Error opening %s: %s",
+                filename, strerror(errno));
+        return SSH_EOF;
+    }
+
+
+    blob = pki_private_key_to_pem(privkey,
+                                  passphrase,
+                                  auth_fn,
+                                  auth_data);
+    if (blob == NULL) {
+        fclose(fp);
+        return -1;
+    }
+
+    rc = fwrite(ssh_string_data(blob), ssh_string_len(blob), 1, fp);
+    if (rc != 1 || ferror(fp)) {
+        fclose(fp);
+        unlink(filename);
+        return SSH_ERROR;
+    }
+    fclose(fp);
+
+    return SSH_OK;
+}
+
 /* temporary function to migrate seemlessly to ssh_key */
 ssh_public_key ssh_pki_convert_key_to_publickey(const ssh_key key) {
     ssh_public_key pub;
