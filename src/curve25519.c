@@ -133,6 +133,7 @@ int ssh_client_curve25519_reply(ssh_session session, ssh_buffer packet){
 	  goto error;
   }
   memcpy(session->next_crypto->curve25519_server_pubkey, ssh_string_data(q_s_string), CURVE25519_PUBKEY_SIZE);
+  ssh_string_free(q_s_string);
 
   signature = buffer_get_ssh_string(packet);
   if (signature == NULL) {
