@@ -528,6 +528,124 @@ int pki_key_compare(const ssh_key k1,
     return 0;
 }
 
+ssh_string pki_private_key_to_pem(const ssh_key key,
+                                  const char *passphrase,
+                                  ssh_auth_callback auth_fn,
+                                  void *auth_data)
+{
+    ssh_string blob;
+    BUF_MEM *buf;
+    BIO *mem;
+    int rc;
+
+    /* needed for openssl initialization */
+    if (ssh_init() < 0) {
+        return NULL;
+    }
+
+    mem = BIO_new(BIO_s_mem());
+    if (mem == NULL) {
+        return NULL;
+    }
+
+    switch (key->type) {
+        case SSH_KEYTYPE_DSS:
+            if (passphrase == NULL) {
+                struct pem_get_password_struct pgp = { auth_fn, auth_data };
+
+                rc = PEM_write_bio_DSAPrivateKey(mem,
+                                                 key->dsa,
+                                                 NULL, /* cipher */
+                                                 NULL, /* kstr */
+                                                 0, /* klen */
+                                                 pem_get_password,
+                                                 &pgp);
+            } else {
+                rc = PEM_write_bio_DSAPrivateKey(mem,
+                                                 key->dsa,
+                                                 NULL, /* cipher */
+                                                 NULL, /* kstr */
+                                                 0, /* klen */
+                                                 NULL, /* auth_fn */
+                                                 (void*) passphrase);
+            }
+            if (rc != 1) {
+                goto err;
+            }
+            break;
+        case SSH_KEYTYPE_RSA:
+        case SSH_KEYTYPE_RSA1:
+            if (passphrase == NULL) {
+                struct pem_get_password_struct pgp = { auth_fn, auth_data };
+
+                rc = PEM_write_bio_RSAPrivateKey(mem,
+                                                 key->rsa,
+                                                 NULL, /* cipher */
+                                                 NULL, /* kstr */
+                                                 0, /* klen */
+                                                 pem_get_password,
+                                                 &pgp);
+            } else {
+                rc = PEM_write_bio_RSAPrivateKey(mem,
+                                                 key->rsa,
+                                                 NULL, /* cipher */
+                                                 NULL, /* kstr */
+                                                 0, /* klen */
+                                                 NULL, /* auth_fn */
+                                                 (void*) passphrase);
+            }
+            if (rc != 1) {
+                goto err;
+            }
+            break;
+        case SSH_KEYTYPE_ECDSA:
+#ifdef HAVE_ECC
+            if (passphrase == NULL) {
+                struct pem_get_password_struct pgp = { auth_fn, auth_data };
+
+                rc = PEM_write_bio_ECPrivateKey(mem,
+                                                key->ecdsa,
+                                                NULL, /* cipher */
+                                                NULL, /* kstr */
+                                                0, /* klen */
+                                                pem_get_password,
+                                                &pgp);
+            } else {
+                rc = PEM_write_bio_ECPrivateKey(mem,
+                                                key->ecdsa,
+                                                NULL, /* cipher */
+                                                NULL, /* kstr */
+                                                0, /* klen */
+                                                NULL, /* auth_fn */
+                                                (void*) passphrase);
+            }
+            if (rc != 1) {
+                goto err;
+            }
+            break;
+#endif
+        case SSH_KEYTYPE_UNKNOWN:
+            BIO_free(mem);
+            ssh_pki_log("Unkown or invalid private key type %d", key->type);
+            return NULL;
+    }
+
+    BIO_get_mem_ptr(mem, &buf);
+
+    blob = ssh_string_new(buf->length);
+    if (blob == NULL) {
+        goto err;
+    }
+
+    ssh_string_fill(blob, buf->data, buf->length);
+    BIO_free(mem);
+
+    return blob;
+err:
+    BIO_free(mem);
+    return NULL;
+}
+
 ssh_key pki_private_key_from_base64(const char *b64_key,
                                     const char *passphrase,
                                     ssh_auth_callback auth_fn,
