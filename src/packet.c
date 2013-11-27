@@ -326,9 +326,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
                         receivedlen-processed);
 
                 packet = ((uint8_t*)data) + processed;
-                if (packet == NULL) {
-                    goto error;
-                }
+
                 rc = ssh_packet_socket_callback(packet, receivedlen - processed,user);
                 processed += rc;
             }
