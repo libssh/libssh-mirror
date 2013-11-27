@@ -946,6 +946,43 @@ static void torture_pki_generate_key_ecdsa(void **state)
 }
 #endif
 
+static void torture_pki_write_privkey_rsa(void **state)
+{
+    ssh_key origkey;
+    ssh_key privkey;
+    int rc;
+
+    (void) state; /* unused */
+
+    ssh_set_log_level(5);
+
+    rc = ssh_pki_import_privkey_file(LIBSSH_RSA_TESTKEY,
+                                     NULL,
+                                     NULL,
+                                     NULL,
+                                     &origkey);
+    assert_true(rc == 0);
+
+    unlink(LIBSSH_RSA_TESTKEY);
+
+    rc = ssh_pki_export_privkey_file(origkey,
+                                     "",
+                                     NULL,
+                                     NULL,
+                                     LIBSSH_RSA_TESTKEY);
+    assert_true(rc == 0);
+
+    rc = ssh_pki_import_privkey_file(LIBSSH_RSA_TESTKEY,
+                                     NULL,
+                                     NULL,
+                                     NULL,
+                                     &privkey);
+    assert_true(rc == 0);
+
+    rc = ssh_key_cmp(origkey, privkey, SSH_KEY_CMP_PRIVATE);
+    assert_true(rc == 0);
+}
+
 int torture_run_tests(void) {
     int rc;
     const UnitTest tests[] = {
@@ -1028,6 +1065,9 @@ int torture_run_tests(void) {
 #ifdef HAVE_ECC
         unit_test(torture_pki_generate_key_ecdsa),
 #endif
+        unit_test_setup_teardown(torture_pki_write_privkey_rsa,
+                                 setup_rsa_key,
+                                 teardown),
     };
 
     (void)setup_both_keys;
