@@ -513,6 +513,11 @@ LIBSSH_API int ssh_pki_import_privkey_file(const char *filename,
                                            ssh_auth_callback auth_fn,
                                            void *auth_data,
                                            ssh_key *pkey);
+LIBSSH_API int ssh_pki_export_privkey_file(const ssh_key privkey,
+                                           const char *passphrase,
+                                           ssh_auth_callback auth_fn,
+                                           void *auth_data,
+                                           const char *filename);
 
 LIBSSH_API int ssh_pki_import_pubkey_base64(const char *b64_key,
                                             enum ssh_keytypes_e type,
