@@ -591,6 +591,19 @@ int pki_key_ecdsa_nid_from_name(const char *name)
 }
 #endif
 
+ssh_string pki_private_key_to_pem(const ssh_key key,
+                                  const char *passphrase,
+                                  ssh_auth_callback auth_fn,
+                                  void *auth_data)
+{
+    (void) key;
+    (void) passphrase;
+    (void) auth_fn;
+    (void) auth_data;
+
+    return NULL;
+}
+
 ssh_key pki_private_key_from_base64(const char *b64_key,
                                     const char *passphrase,
                                     ssh_auth_callback auth_fn,

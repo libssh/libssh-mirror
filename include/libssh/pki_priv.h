@@ -51,6 +51,11 @@ ssh_key pki_private_key_from_base64(const char *b64_key,
                                     ssh_auth_callback auth_fn,
                                     void *auth_data);
 
+ssh_string pki_private_key_to_pem(const ssh_key key,
+                                  const char *passphrase,
+                                  ssh_auth_callback auth_fn,
+                                  void *auth_data);
+
 /* SSH Public Key Functions */
 int pki_pubkey_build_dss(ssh_key key,
                          ssh_string p,
