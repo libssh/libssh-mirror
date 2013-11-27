@@ -983,6 +983,43 @@ static void torture_pki_write_privkey_rsa(void **state)
     assert_true(rc == 0);
 }
 
+static void torture_pki_write_privkey_dsa(void **state)
+{
+    ssh_key origkey;
+    ssh_key privkey;
+    int rc;
+
+    (void) state; /* unused */
+
+    ssh_set_log_level(5);
+
+    rc = ssh_pki_import_privkey_file(LIBSSH_DSA_TESTKEY,
+                                     NULL,
+                                     NULL,
+                                     NULL,
+                                     &origkey);
+    assert_true(rc == 0);
+
+    unlink(LIBSSH_DSA_TESTKEY);
+
+    rc = ssh_pki_export_privkey_file(origkey,
+                                     "",
+                                     NULL,
+                                     NULL,
+                                     LIBSSH_DSA_TESTKEY);
+    assert_true(rc == 0);
+
+    rc = ssh_pki_import_privkey_file(LIBSSH_DSA_TESTKEY,
+                                     NULL,
+                                     NULL,
+                                     NULL,
+                                     &privkey);
+    assert_true(rc == 0);
+
+    rc = ssh_key_cmp(origkey, privkey, SSH_KEY_CMP_PRIVATE);
+    assert_true(rc == 0);
+}
+
 int torture_run_tests(void) {
     int rc;
     const UnitTest tests[] = {
@@ -1067,6 +1104,9 @@ int torture_run_tests(void) {
 #endif
         unit_test_setup_teardown(torture_pki_write_privkey_rsa,
                                  setup_rsa_key,
+                                 teardown),
+        unit_test_setup_teardown(torture_pki_write_privkey_dsa,
+                                 setup_dsa_key,
                                  teardown),
     };
 
