@@ -65,8 +65,8 @@ int ssh_client_curve25519_init(ssh_session session){
   ssh_string_fill(client_pubkey, session->next_crypto->curve25519_client_pubkey,
 		  CURVE25519_PUBKEY_SIZE);
   rc = buffer_add_ssh_string(session->out_buffer,client_pubkey);
+  ssh_string_free(client_pubkey);
   if (rc < 0) {
-      ssh_string_free(client_pubkey);
       return SSH_ERROR;
   }
 
