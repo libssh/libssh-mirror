@@ -1020,6 +1020,45 @@ static void torture_pki_write_privkey_dsa(void **state)
     assert_true(rc == 0);
 }
 
+#ifdef HAVE_ECC
+static void torture_pki_write_privkey_ecdsa(void **state)
+{
+    ssh_key origkey;
+    ssh_key privkey;
+    int rc;
+
+    (void) state; /* unused */
+
+    ssh_set_log_level(5);
+
+    rc = ssh_pki_import_privkey_file(LIBSSH_ECDSA_TESTKEY,
+                                     NULL,
+                                     NULL,
+                                     NULL,
+                                     &origkey);
+    assert_true(rc == 0);
+
+    unlink(LIBSSH_ECDSA_TESTKEY);
+
+    rc = ssh_pki_export_privkey_file(origkey,
+                                     "",
+                                     NULL,
+                                     NULL,
+                                     LIBSSH_ECDSA_TESTKEY);
+    assert_true(rc == 0);
+
+    rc = ssh_pki_import_privkey_file(LIBSSH_ECDSA_TESTKEY,
+                                     NULL,
+                                     NULL,
+                                     NULL,
+                                     &privkey);
+    assert_true(rc == 0);
+
+    rc = ssh_key_cmp(origkey, privkey, SSH_KEY_CMP_PRIVATE);
+    assert_true(rc == 0);
+}
+#endif
+
 int torture_run_tests(void) {
     int rc;
     const UnitTest tests[] = {
@@ -1108,6 +1147,11 @@ int torture_run_tests(void) {
         unit_test_setup_teardown(torture_pki_write_privkey_dsa,
                                  setup_dsa_key,
                                  teardown),
+#ifdef HAVE_ECC
+        unit_test_setup_teardown(torture_pki_write_privkey_ecdsa,
+                                 setup_ecdsa_key,
+                                 teardown),
+#endif
     };
 
     (void)setup_both_keys;
