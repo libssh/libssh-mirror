@@ -100,6 +100,7 @@ static int ecdh_build_k(ssh_session session) {
   EC_POINT *pubkey;
   void *buffer;
   int len = (EC_GROUP_get_degree(group) + 7) / 8;
+  int rc;
   bignum_CTX ctx = bignum_ctx_new();
   if (ctx == NULL) {
     return -1;
@@ -124,9 +125,23 @@ static int ecdh_build_k(ssh_session session) {
       EC_POINT_oct2point(group,pubkey,ssh_string_data(session->next_crypto->ecdh_server_pubkey),
               ssh_string_len(session->next_crypto->ecdh_server_pubkey),ctx);
   buffer = malloc(len);
-  ECDH_compute_key(buffer,len,pubkey,session->next_crypto->ecdh_privkey,NULL);
-  EC_POINT_free(pubkey);
-  BN_bin2bn(buffer,len,session->next_crypto->k);
+  if (buffer == NULL) {
+      EC_POINT_clear_free(pubkey);
+      return -1;
+  }
+
+  rc = ECDH_compute_key(buffer,
+                        len,
+                        pubkey,
+                        session->next_crypto->ecdh_privkey,
+                        NULL);
+  EC_POINT_clear_free(pubkey);
+  if (rc <= 0) {
+      free(buffer);
+      return -1;
+  }
+
+  bignum_bin2bn(buffer, len, session->next_crypto->k);
   free(buffer);
   EC_KEY_free(session->next_crypto->ecdh_privkey);
   session->next_crypto->ecdh_privkey=NULL;

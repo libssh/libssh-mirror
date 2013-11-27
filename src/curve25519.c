@@ -90,7 +90,7 @@ static int ssh_curve25519_build_k(ssh_session session) {
 	  crypto_scalarmult(k, session->next_crypto->curve25519_privkey,
 			  session->next_crypto->curve25519_server_pubkey);
 
-  BN_bin2bn(k, CURVE25519_PUBKEY_SIZE, session->next_crypto->k);
+  bignum_bin2bn(k, CURVE25519_PUBKEY_SIZE, session->next_crypto->k);
 
 #ifdef DEBUG_CRYPTO
     ssh_print_hexa("Session server cookie",
