@@ -154,7 +154,7 @@ static int ecdh_build_k(ssh_session session) {
       return -1;
   }
 
-  BN_bin2bn(buffer, len, session->next_crypto->k);
+  bignum_bin2bn(buffer, len, session->next_crypto->k);
   free(buffer);
 
   EC_KEY_free(session->next_crypto->ecdh_privkey);
