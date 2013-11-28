@@ -524,6 +524,7 @@ int ssh_pki_export_privkey_file(const ssh_key privkey,
     }
 
     rc = fwrite(ssh_string_data(blob), ssh_string_len(blob), 1, fp);
+    ssh_string_free(blob);
     if (rc != 1 || ferror(fp)) {
         fclose(fp);
         unlink(filename);
