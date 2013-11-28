@@ -981,6 +981,9 @@ static void torture_pki_write_privkey_rsa(void **state)
 
     rc = ssh_key_cmp(origkey, privkey, SSH_KEY_CMP_PRIVATE);
     assert_true(rc == 0);
+
+    ssh_key_free(origkey);
+    ssh_key_free(privkey);
 }
 
 static void torture_pki_write_privkey_dsa(void **state)
@@ -1018,6 +1021,9 @@ static void torture_pki_write_privkey_dsa(void **state)
 
     rc = ssh_key_cmp(origkey, privkey, SSH_KEY_CMP_PRIVATE);
     assert_true(rc == 0);
+
+    ssh_key_free(origkey);
+    ssh_key_free(privkey);
 }
 
 #ifdef HAVE_ECC
@@ -1056,6 +1062,9 @@ static void torture_pki_write_privkey_ecdsa(void **state)
 
     rc = ssh_key_cmp(origkey, privkey, SSH_KEY_CMP_PRIVATE);
     assert_true(rc == 0);
+
+    ssh_key_free(origkey);
+    ssh_key_free(privkey);
 }
 #endif
 
