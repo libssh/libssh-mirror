@@ -280,6 +280,21 @@ void ssh_free(ssh_session session) {
 }
 
 /**
+ * @brief get the client banner
+ *
+ * @param[in] session   The SSH session
+ *
+ * @return Returns the client banner string or NULL.
+ */
+const char* ssh_get_clientbanner(ssh_session session) {
+    if (session == NULL) {
+        return NULL;
+    }
+
+    return session->clientbanner;
+}
+
+/**
  * @brief get the server banner
  *
  * @param[in] session   The SSH session
