@@ -2695,7 +2695,40 @@ static int ssh_channel_read_termination(void *s){
  * @warning The read function using a buffer has been renamed to
  *          channel_read_buffer().
  */
-int ssh_channel_read(ssh_channel channel, void *dest, uint32_t count, int is_stderr) {
+int ssh_channel_read(ssh_channel channel, void *dest, uint32_t count, int is_stderr)
+{
+    return ssh_channel_read_timeout(channel, dest, count, is_stderr, -1);
+}
+
+/**
+ * @brief Reads data from a channel.
+ *
+ * @param[in]  channel  The channel to read from.
+ *
+ * @param[in]  dest     The destination buffer which will get the data.
+ *
+ * @param[in]  count    The count of bytes to be read.
+ *
+ * @param[in]  is_stderr A boolean value to mark reading from the stderr flow.
+ *
+ * @param[in]  timeout  A timeout in seconds. A value of -1 means infinite
+ *                      timeout.
+ *
+ * @return              The number of bytes read, 0 on end of file or SSH_ERROR
+ *                      on error. In nonblocking mode it Can return 0 if no data
+ *                      is available or SSH_AGAIN.
+ *
+ * @warning This function may return less than count bytes of data, and won't
+ *          block until count bytes have been read.
+ * @warning The read function using a buffer has been renamed to
+ *          channel_read_buffer().
+ */
+int ssh_channel_read_timeout(ssh_channel channel,
+                             void *dest,
+                             uint32_t count,
+                             int is_stderr,
+                             int timeout)
+{
   ssh_session session;
   ssh_buffer stdbuf;
   uint32_t len;
@@ -2743,8 +2776,15 @@ int ssh_channel_read(ssh_channel channel, void *dest, uint32_t count, int is_std
   ctx.channel = channel;
   ctx.buffer = stdbuf;
   ctx.count = 1;
-  rc = ssh_handle_packets_termination(session, SSH_TIMEOUT_DEFAULT,
-      ssh_channel_read_termination, &ctx);
+
+  if (timeout < 0) {
+      timeout = SSH_TIMEOUT_DEFAULT;
+  }
+
+  rc = ssh_handle_packets_termination(session,
+                                      timeout,
+                                      ssh_channel_read_termination,
+                                      &ctx);
   if (rc == SSH_ERROR){
     return rc;
   }
