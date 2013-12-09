@@ -341,11 +341,15 @@ void ssh_bind_free(ssh_bind sshbind){
 
   /* options */
   SAFE_FREE(sshbind->banner);
+  SAFE_FREE(sshbind->bindaddr);
+
   SAFE_FREE(sshbind->dsakey);
   SAFE_FREE(sshbind->rsakey);
-  SAFE_FREE(sshbind->dsa);
-  SAFE_FREE(sshbind->rsa);
-  SAFE_FREE(sshbind->bindaddr);
+  SAFE_FREE(sshbind->ecdsakey);
+
+  ssh_key_free(sshbind->dsa);
+  ssh_key_free(sshbind->rsa);
+  ssh_key_free(sshbind->ecdsa);
 
   for (i = 0; i < 10; i++) {
     if (sshbind->wanted_methods[i]) {
