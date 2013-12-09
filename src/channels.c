@@ -177,7 +177,7 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_open_conf){
       (long unsigned int) channel->remote_maxpacket);
 
   channel->state = SSH_CHANNEL_STATE_OPEN;
-  channel->flags = channel->flags & ~SSH_CHANNEL_FLAG_NOT_BOUND;
+  channel->flags &= ~SSH_CHANNEL_FLAG_NOT_BOUND;
 
   return SSH_PACKET_USED;
 }
@@ -635,7 +635,7 @@ SSH_PACKET_CALLBACK(channel_rcv_close) {
 	      channel,
 	      channel->callbacks->userdata);
 	}
-	channel->flags &= SSH_CHANNEL_FLAG_CLOSED_REMOTE;
+	channel->flags |= SSH_CHANNEL_FLAG_CLOSED_REMOTE;
 	if(channel->flags & SSH_CHANNEL_FLAG_FREED_LOCAL)
 	  ssh_channel_do_free(channel);
 
@@ -1078,7 +1078,7 @@ void ssh_channel_free(ssh_channel channel) {
   if (session->alive && channel->state == SSH_CHANNEL_STATE_OPEN) {
     ssh_channel_close(channel);
   }
-  channel->flags &= SSH_CHANNEL_FLAG_FREED_LOCAL;
+  channel->flags |= SSH_CHANNEL_FLAG_FREED_LOCAL;
 
   /* The idea behind the flags is the following : it is well possible
    * that a client closes a channel that stills exists on the server side.
