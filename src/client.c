@@ -652,7 +652,7 @@ error:
   session->session_state=SSH_SESSION_STATE_DISCONNECTED;
 
   while ((it=ssh_list_get_iterator(session->channels)) != NULL) {
-    ssh_channel_free(ssh_iterator_value(ssh_channel,it));
+    ssh_channel_do_free(ssh_iterator_value(ssh_channel,it));
     ssh_list_remove(session->channels, it);
   }
   if(session->current_crypto){
