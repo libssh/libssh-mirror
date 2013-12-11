@@ -946,6 +946,7 @@ static void torture_pki_generate_key_ecdsa(void **state)
 }
 #endif
 
+#ifdef HAVE_LIBCRYPTO
 static void torture_pki_write_privkey_rsa(void **state)
 {
     ssh_key origkey;
@@ -1067,6 +1068,7 @@ static void torture_pki_write_privkey_ecdsa(void **state)
     ssh_key_free(privkey);
 }
 #endif
+#endif /* HAVE_LIBCRYPTO */
 
 int torture_run_tests(void) {
     int rc;
@@ -1150,6 +1152,7 @@ int torture_run_tests(void) {
 #ifdef HAVE_ECC
         unit_test(torture_pki_generate_key_ecdsa),
 #endif
+#ifdef HAVE_LIBCRYPTO
         unit_test_setup_teardown(torture_pki_write_privkey_rsa,
                                  setup_rsa_key,
                                  teardown),
@@ -1161,6 +1164,7 @@ int torture_run_tests(void) {
                                  setup_ecdsa_key,
                                  teardown),
 #endif
+#endif /* HAVE_LIBCRYPTO */
     };
 
     (void)setup_both_keys;
