@@ -852,12 +852,18 @@ int ssh_event_remove_fd(ssh_event event, socket_t fd) {
     for (i = 0; i < used; i++) {
         if(fd == event->ctx->pollfds[i].fd) {
             ssh_poll_handle p = event->ctx->pollptrs[i];
-            struct ssh_event_fd_wrapper *pw = p->cb_data;
+            if (p->cb == ssh_event_fd_wrapper_callback) {
+                struct ssh_event_fd_wrapper *pw = p->cb_data;
+                SAFE_FREE(pw);
+            }
 
-            ssh_poll_ctx_remove(event->ctx, p);
-            free(pw);
+            /*
+             * The free function calls ssh_poll_ctx_remove() and decrements
+             * event->ctx->polls_used.
+             */
             ssh_poll_free(p);
             rc = SSH_OK;
+
             /* restart the loop */
             used = event->ctx->polls_used;
             i = 0;
