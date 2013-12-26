@@ -42,6 +42,8 @@ clients must be made or how a client should react.
 #endif
 #endif
 
+static int port = 22;
+
 #ifdef WITH_PCAP
 const char *pcap_file="debug.server.pcap";
 ssh_pcap_file pcap;
@@ -83,8 +85,6 @@ static char doc[] = "libssh -- a Secure Shell protocol implementation";
 
 /* A description of the arguments we accept. */
 static char args_doc[] = "BINDADDR";
-
-static int port = 22;
 
 /* The options we understand. */
 static struct argp_option options[] = {
