@@ -255,6 +255,7 @@ void ssh_free(ssh_session session) {
       ssh_list_free(session->opts.identity);
   }
 
+  SAFE_FREE(session->auth_auto_state);
   SAFE_FREE(session->serverbanner);
   SAFE_FREE(session->clientbanner);
   SAFE_FREE(session->banner);
