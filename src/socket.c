@@ -245,7 +245,7 @@ int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p, socket_t fd, int r
 		/* force a read to get an explanation */
 		revents |= POLLIN;
 	}
-	if(revents & POLLIN){
+	if((revents & POLLIN) && s->state == SSH_SOCKET_CONNECTED){
 		s->read_wontblock=1;
 		r=ssh_socket_unbuffered_read(s,buffer,sizeof(buffer));
 		if(r<0){
