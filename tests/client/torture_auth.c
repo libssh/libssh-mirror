@@ -381,7 +381,7 @@ static void torture_auth_none(void **state) {
 
     rc = ssh_userauth_none(session,NULL);
 
-    assert_true(rc == SSH_ERROR);
+    assert_true(rc == SSH_AUTH_DENIED);
     /* This request should return a SSH_REQUEST_DENIED error */
     if (rc == SSH_ERROR) {
         assert_true(ssh_get_error_code(session) == SSH_REQUEST_DENIED);
@@ -414,7 +414,7 @@ static void torture_auth_none_nonblocking(void **state) {
     do {
         rc = ssh_userauth_none(session,NULL);
     } while (rc == SSH_AUTH_AGAIN);
-    assert_true(rc == SSH_AUTH_ERROR);
+    assert_true(rc == SSH_AUTH_DENIED);
     assert_true(ssh_get_error_code(session) == SSH_REQUEST_DENIED);
 
 }
