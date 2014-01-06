@@ -273,7 +273,6 @@ static void torture_auth_password_nonblocking(void **state) {
 
     rc = ssh_connect(session);
     assert_true(rc == SSH_OK);
-    ssh_set_blocking(session,0);
 
     ssh_set_blocking(session,0);
     do {
@@ -354,6 +353,8 @@ static void torture_auth_agent_nonblocking(void **state) {
     }
     rc = ssh_userauth_list(session, NULL);
     assert_true(rc & SSH_AUTH_METHOD_PUBLICKEY);
+
+    ssh_set_blocking(session,0);
 
     do {
       rc = ssh_userauth_agent(session, NULL);
