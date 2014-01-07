@@ -31,6 +31,9 @@ clients must be made or how a client should react.
 #ifdef HAVE_UTIL_H
 #include <util.h>
 #endif
+#ifdef HAVE_TERMIOS_H
+#include <termios.h>
+#endif
 #define SSHD_USER "libssh"
 #define SSHD_PASSWORD "libssh"
 
