@@ -78,13 +78,13 @@ static void torture_request_env(void **state)
     rc = ssh_channel_request_exec(c, "bash -c export");
     assert_int_equal(rc, SSH_OK);
 
-    nbytes = ssh_channel_read(c, buffer, sizeof(buffer), 0);
+    nbytes = ssh_channel_read(c, buffer, sizeof(buffer) - 1, 0);
     while (nbytes > 0) {
 #if 0
         rc = fwrite(buffer, 1, nbytes, stdout);
         assert_int_equal(rc, nbytes);
 #endif
-
+        buffer[nbytes]='\0';
         if (strstr(buffer, "LC_LIBSSH=\"LIBSSH\"")) {
             lang_found = 1;
             break;
