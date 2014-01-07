@@ -1590,7 +1590,7 @@ ssh_signature pki_do_sign(const ssh_key privkey,
         return NULL;
     }
     sig->type = privkey->type;
-
+    sig->type_c = privkey->type_c;
     switch (privkey->type) {
         case SSH_KEYTYPE_DSS:
             /* That is to mark the number as positive */
