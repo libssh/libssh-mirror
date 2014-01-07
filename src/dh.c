@@ -4,7 +4,7 @@
  * This file is part of the SSH Library
  *
  * Copyright (c) 2003-2013 by Aris Adamantiadis
- * Copyright (c) 2009-2013 by Andreas Schneider <mail@cynapses.org>
+ * Copyright (c) 2009-2013 by Andreas Schneider <asn@cryptomilk.org>
  * Copyright (c) 2012      by Dmitriy Kuznetsov <dk@yandex.ru>
  *
  * The SSH Library is free software; you can redistribute it and/or modify

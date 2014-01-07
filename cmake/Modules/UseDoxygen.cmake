@@ -23,7 +23,7 @@
 
 #
 #  Copyright (c) 2009-2010 Tobias Rautenkranz <tobias@rautenkranz.ch>
-#  Copyright (c) 2010      Andreas Schneider <mail@cynapses.org>
+#  Copyright (c) 2010      Andreas Schneider <asn@cryptomilk.org>
 #
 #  Redistribution and use is allowed according to the terms of the New
 #  BSD license.
