@@ -61,7 +61,7 @@ static void torture_request_env(void **state)
 {
     ssh_session session = *state;
     ssh_channel c;
-    char buffer[4096];
+    char buffer[4096] = {0};
     int nbytes;
     int rc;
     int lang_found = 0;
