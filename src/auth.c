@@ -3,8 +3,8 @@
  *
  * This file is part of the SSH Library
  *
- * Copyright (c) 2003-2011 by Aris Adamantiadis <aris@0xbadc0de.be>
- * Copyright (c) 2008-2011 Andreas Schneider <asn@cryptomilk.org>
+ * Copyright (c) 2003-2013 by Aris Adamantiadis <aris@0xbadc0de.be>
+ * Copyright (c) 2008-2013 Andreas Schneider <asn@cryptomilk.org>
  *
  * The SSH Library is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by

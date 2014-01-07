@@ -3,7 +3,7 @@
  *
  * This file is part of the SSH Library
  *
- * Copyright (c) 2003-2008 by Aris Adamantiadis
+ * Copyright (c) 2003-2013 by Aris Adamantiadis
  *
  * The SSH Library is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -688,8 +688,8 @@ error:
 }
 
 const char *ssh_copyright(void) {
-    return SSH_STRINGIFY(LIBSSH_VERSION) " (c) 2003-2010 Aris Adamantiadis "
-    "(aris@0xbadc0de.be) Distributed under the LGPL, please refer to COPYING "
+    return SSH_STRINGIFY(LIBSSH_VERSION) " (c) 2003-2014 Aris Adamantiadis, Andreas Schneider, "
+    "and libssh contributors. Distributed under the LGPL, please refer to COPYING "
     "file for information about your rights";
 }
 /** @} */
