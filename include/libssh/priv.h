@@ -267,7 +267,6 @@ int match_hostname(const char *host, const char *pattern, unsigned int len);
         memset((x), '\0', (size)); __asm__ volatile("" : : "r"(&(x)) : "memory"); \
   } while(0)
 #else /* HAVE_GCC_VOLATILE_MEMORY_PROTECTION */
-#warning "We do not have asn volatile memory protection"
 /** Overwrite a string with '\0' */
 # define BURN_STRING(x) do { \
     if ((x) != NULL) memset((x), '\0', strlen((x))); \
