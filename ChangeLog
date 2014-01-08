@@ -1,7 +1,7 @@
 ChangeLog
 ==========
 
-version 0.6.0 (released 2013-XX-XX)
+version 0.6.0 (released 2014-01-08)
   * Added new publicy key API.
   * Added new userauth API.
   * Added ssh_get_publickey_hash() function.
