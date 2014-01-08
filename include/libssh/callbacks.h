@@ -801,6 +801,8 @@ struct ssh_threads_callbacks_struct {
  *
  * @see ssh_threads_callbacks_struct
  * @see SSH_THREADS_PTHREAD
+ * @bug libgcrypt 1.6 and bigger backend does not support custom callback.
+ *      Using anything else than pthreads here will fail.
  */
 LIBSSH_API int ssh_threads_set_callbacks(struct ssh_threads_callbacks_struct
     *cb);
