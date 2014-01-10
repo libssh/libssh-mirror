@@ -406,6 +406,7 @@ LIBSSH_API void ssh_disconnect(ssh_session session);
 LIBSSH_API char *ssh_dirname (const char *path);
 LIBSSH_API int ssh_finalize(void);
 LIBSSH_API ssh_channel ssh_forward_accept(ssh_session session, int timeout_ms);
+LIBSSH_API ssh_channel ssh_channel_accept_forward(ssh_session session, int timeout_ms, int *destination_port);
 LIBSSH_API int ssh_forward_cancel(ssh_session session, const char *address, int port);
 LIBSSH_API int ssh_forward_listen(ssh_session session, const char *address, int port, int *bound_port);
 LIBSSH_API void ssh_free(ssh_session session);
