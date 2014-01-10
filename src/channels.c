@@ -1964,7 +1964,7 @@ error:
 }
 
 static ssh_channel ssh_channel_accept(ssh_session session, int channeltype,
-    int timeout_ms) {
+    int timeout_ms, int *destination_port) {
 #ifndef _WIN32
   static const struct timespec ts = {
     .tv_sec = 0,
@@ -1991,6 +1991,10 @@ static ssh_channel ssh_channel_accept(ssh_session session, int channeltype,
             ssh_message_subtype(msg) == channeltype) {
           ssh_list_remove(session->ssh_message_list, iterator);
           channel = ssh_message_channel_request_open_reply_accept(msg);
+          if(destination_port) {
+            *destination_port=msg->channel_request_open.destination_port;
+          }
+
           ssh_message_free(msg);
           return channel;
         }
@@ -2021,7 +2025,7 @@ static ssh_channel ssh_channel_accept(ssh_session session, int channeltype,
  *                      the server.
  */
 ssh_channel ssh_channel_accept_x11(ssh_channel channel, int timeout_ms) {
-  return ssh_channel_accept(channel->session, SSH_CHANNEL_X11, timeout_ms);
+  return ssh_channel_accept(channel->session, SSH_CHANNEL_X11, timeout_ms, NULL);
 }
 
 /**
@@ -2275,7 +2279,23 @@ error:
  *         the server
  */
 ssh_channel ssh_forward_accept(ssh_session session, int timeout_ms) {
-  return ssh_channel_accept(session, SSH_CHANNEL_FORWARDED_TCPIP, timeout_ms);
+  return ssh_channel_accept(session, SSH_CHANNEL_FORWARDED_TCPIP, timeout_ms, NULL);
+}
+
+/**
+ * @brief Accept an incoming TCP/IP forwarding channel and get information
+ * about incomming connection
+ * @param[in]  session    The ssh session to use.
+ *
+ * @param[in]  timeout_ms A timeout in milliseconds.
+ *
+ * @param[in]  destination_port A pointer to destination port or NULL.
+ *
+ * @return Newly created channel, or NULL if no incoming channel request from
+ *         the server
+ */
+ssh_channel ssh_channel_accept_forward(ssh_session session, int timeout_ms, int* destination_port) {
+  return ssh_channel_accept(session, SSH_CHANNEL_FORWARDED_TCPIP, timeout_ms, destination_port);
 }
 
 /**
