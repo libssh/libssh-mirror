@@ -179,6 +179,7 @@ int ssh_bind_listen(ssh_bind sshbind) {
           ssh_set_error(sshbind, SSH_FATAL,
                   "The ECDSA host key has the wrong type");
           ssh_key_free(sshbind->ecdsa);
+          sshbind->ecdsa = NULL;
           return SSH_ERROR;
       }
   }
@@ -201,6 +202,7 @@ int ssh_bind_listen(ssh_bind sshbind) {
                   "The DSA host key has the wrong type: %d",
                   ssh_key_type(sshbind->dsa));
           ssh_key_free(sshbind->dsa);
+          sshbind->dsa = NULL;
           return SSH_ERROR;
       }
   }
@@ -222,6 +224,7 @@ int ssh_bind_listen(ssh_bind sshbind) {
           ssh_set_error(sshbind, SSH_FATAL,
                   "The RSA host key has the wrong type");
           ssh_key_free(sshbind->rsa);
+          sshbind->rsa = NULL;
           return SSH_ERROR;
       }
   }
@@ -235,7 +238,9 @@ int ssh_bind_listen(ssh_bind sshbind) {
       fd = bind_socket(sshbind, host, sshbind->bindport);
       if (fd == SSH_INVALID_SOCKET) {
           ssh_key_free(sshbind->dsa);
+          sshbind->dsa = NULL;
           ssh_key_free(sshbind->rsa);
+          sshbind->rsa = NULL;
           return -1;
       }
       sshbind->bindfd = fd;
@@ -246,7 +251,9 @@ int ssh_bind_listen(ssh_bind sshbind) {
                   fd, strerror(errno));
           close(fd);
           ssh_key_free(sshbind->dsa);
+          sshbind->dsa = NULL;
           ssh_key_free(sshbind->rsa);
+          sshbind->rsa = NULL;
           return -1;
       }
   } else {
@@ -348,8 +355,11 @@ void ssh_bind_free(ssh_bind sshbind){
   SAFE_FREE(sshbind->ecdsakey);
 
   ssh_key_free(sshbind->dsa);
+  sshbind->dsa = NULL;
   ssh_key_free(sshbind->rsa);
+  sshbind->rsa = NULL;
   ssh_key_free(sshbind->ecdsa);
+  sshbind->ecdsa = NULL;
 
   for (i = 0; i < 10; i++) {
     if (sshbind->wanted_methods[i]) {
