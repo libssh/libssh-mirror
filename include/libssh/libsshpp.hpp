@@ -365,14 +365,14 @@ public:
   /* acceptForward is implemented later in this file */
 
   void_throwable cancelForward(const char *address, int port){
-    int err=ssh_forward_cancel(c_session, address, port);
+    int err=ssh_channel_cancel_forward(c_session, address, port);
     ssh_throw(err);
     return_throwable;
   }
 
   void_throwable listenForward(const char *address, int port,
       int &boundport){
-    int err=ssh_forward_listen(c_session, address, port, &boundport);
+    int err=ssh_channel_listen_forward(c_session, address, port, &boundport);
     ssh_throw(err);
     return_throwable;
   }
@@ -583,8 +583,8 @@ private:
 
 /* This code cannot be put inline due to references to Channel */
 Channel *Session::acceptForward(int timeout_ms){
-    ssh_channel forward = ssh_forward_accept(c_session,
-        timeout_ms);
+    ssh_channel forward =
+        ssh_channel_accept_forward(c_session, timeout_ms, NULL);
     ssh_throw_null(c_session,forward);
     Channel *newchan = new Channel(*this,forward);
     return newchan;

@@ -2251,7 +2251,11 @@ error:
  *                      SSH_AGAIN if in nonblocking mode and call has
  *                      to be done again.
  **/
-int ssh_forward_listen(ssh_session session, const char *address, int port, int *bound_port) {
+int ssh_channel_listen_forward(ssh_session session,
+                               const char *address,
+                               int port,
+                               int *bound_port)
+{
   ssh_buffer buffer = NULL;
   ssh_string addr = NULL;
   int rc = SSH_ERROR;
@@ -2293,16 +2297,7 @@ error:
   return rc;
 }
 
-/**
- * @brief Accept an incoming TCP/IP forwarding channel.
- *
- * @param[in]  session    The ssh session to use.
- *
- * @param[in]  timeout_ms A timeout in milliseconds.
- *
- * @return Newly created channel, or NULL if no incoming channel request from
- *         the server
- */
+/* DEPRECATED */
 ssh_channel ssh_forward_accept(ssh_session session, int timeout_ms) {
   return ssh_channel_accept(session, SSH_CHANNEL_FORWARDED_TCPIP, timeout_ms, NULL);
 }
@@ -2338,7 +2333,10 @@ ssh_channel ssh_channel_accept_forward(ssh_session session, int timeout_ms, int*
  *                      SSH_AGAIN if in nonblocking mode and call has
  *                      to be done again.
  */
-int ssh_forward_cancel(ssh_session session, const char *address, int port) {
+int ssh_channel_cancel_forward(ssh_session session,
+                               const char *address,
+                               int port)
+{
   ssh_buffer buffer = NULL;
   ssh_string addr = NULL;
   int rc = SSH_ERROR;
@@ -2370,6 +2368,10 @@ error:
   ssh_buffer_free(buffer);
   ssh_string_free(addr);
   return rc;
+}
+
+int ssh_forward_cancel(ssh_session session, const char *address, int port) {
+    return ssh_channel_cancel_forward(session, address, port);
 }
 
 /**

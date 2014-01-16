@@ -66,7 +66,7 @@ static void torture_ssh_forward(void **state)
     int bound_port;
     int rc;
 
-    rc = ssh_forward_listen(session, "127.0.0.1", 8080, &bound_port);
+    rc = ssh_channel_listen_forward(session, "127.0.0.1", 8080, &bound_port);
     assert_int_equal(rc, SSH_OK);
 
 #if 0
