@@ -3,6 +3,6 @@
 .*
 *.swp
 *~$
-build
+obj
 cscope.*
 tags
