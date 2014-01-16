@@ -1690,8 +1690,8 @@ static int ssh_userauth_kbdint_send(ssh_session session)
         }
 
         rc = buffer_add_ssh_string(session->out_buffer, answer);
-        string_burn(answer);
-        string_free(answer);
+        ssh_string_burn(answer);
+        ssh_string_free(answer);
         if (rc < 0) {
             goto fail;
         }

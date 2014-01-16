@@ -603,7 +603,7 @@ static ssh_buffer ssh_msg_userauth_build_digest(ssh_session session,
     ssh_string_fill(str, crypto->session_id, crypto->digest_len);
 
     rc = buffer_add_ssh_string(buffer, str);
-    string_free(str);
+    ssh_string_free(str);
     if (rc < 0) {
         ssh_buffer_free(buffer);
         return NULL;
@@ -623,7 +623,7 @@ static ssh_buffer ssh_msg_userauth_build_digest(ssh_session session,
         return NULL;
     }
     rc = buffer_add_ssh_string(buffer, str);
-    string_free(str);
+    ssh_string_free(str);
     if (rc < 0) {
         ssh_buffer_free(buffer);
         return NULL;
@@ -636,7 +636,7 @@ static ssh_buffer ssh_msg_userauth_build_digest(ssh_session session,
         return NULL;
     }
     rc = buffer_add_ssh_string(buffer, str);
-    string_free(str);
+    ssh_string_free(str);
     if (rc < 0) {
         ssh_buffer_free(buffer);
         return NULL;
@@ -649,7 +649,7 @@ static ssh_buffer ssh_msg_userauth_build_digest(ssh_session session,
         return NULL;
     }
     rc = buffer_add_ssh_string(buffer, str);
-    string_free(str);
+    ssh_string_free(str);
     if (rc < 0) {
         ssh_buffer_free(buffer);
         return NULL;
@@ -669,7 +669,7 @@ static ssh_buffer ssh_msg_userauth_build_digest(ssh_session session,
         return NULL;
     }
     rc = buffer_add_ssh_string(buffer, str);
-    string_free(str);
+    ssh_string_free(str);
     if (rc < 0) {
         ssh_buffer_free(buffer);
         return NULL;
@@ -682,7 +682,7 @@ static ssh_buffer ssh_msg_userauth_build_digest(ssh_session session,
         return NULL;
     }
     rc = buffer_add_ssh_string(buffer, str);
-    string_free(str);
+    ssh_string_free(str);
     if (rc < 0) {
         ssh_buffer_free(buffer);
         return NULL;

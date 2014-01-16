@@ -239,9 +239,9 @@ static int check_public_key(ssh_session session, char **tokens) {
       /* TODO: fix the hardcoding */
       tmpstring->size = htonl(len);
 #ifdef HAVE_LIBGCRYPT
-      bignum_bn2bin(tmpbn, len, string_data(tmpstring));
+      bignum_bn2bin(tmpbn, len, ssh_string_data(tmpstring));
 #elif defined HAVE_LIBCRYPTO
-      bignum_bn2bin(tmpbn, string_data(tmpstring));
+      bignum_bn2bin(tmpbn, ssh_string_data(tmpstring));
 #endif
       bignum_free(tmpbn);
       if (buffer_add_ssh_string(pubkey_buffer, tmpstring) < 0) {

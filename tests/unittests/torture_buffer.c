@@ -102,7 +102,7 @@ static void torture_buffer_get_ssh_string(void **state) {
   for(i=0; i < (int)(sizeof(values)/sizeof(values[0]));++i){
     for(j=0; j< (int)sizeof(data);++j){
       for(k=1;k<5;++k){
-        buffer=buffer_new();
+        buffer = ssh_buffer_new();
         assert_non_null(buffer);
 
         for(l=0;l<k;++l){
@@ -116,7 +116,7 @@ static void torture_buffer_get_ssh_string(void **state) {
           assert_null(str);
           ssh_string_free(str);
         }
-        buffer_free(buffer);
+        ssh_buffer_free(buffer);
       }
     }
   }

@@ -580,7 +580,7 @@ int ssh_publickey_to_file(ssh_session session,
         ssh_set_error(session, SSH_FATAL, "Invalid parameters");
         return SSH_ERROR;
     }
-    pubkey_64 = bin_to_base64(string_data(pubkey), ssh_string_len(pubkey));
+    pubkey_64 = bin_to_base64(ssh_string_data(pubkey), ssh_string_len(pubkey));
     if (pubkey_64 == NULL) {
         return SSH_ERROR;
     }

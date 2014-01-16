@@ -998,7 +998,7 @@ static sftp_attributes sftp_parse_attr_4(sftp_session sftp, ssh_buffer buf,
         break;
       }
       attr->owner = ssh_string_to_char(owner);
-      string_free(owner);
+      ssh_string_free(owner);
       if (attr->owner == NULL) {
         break;
       }
@@ -1008,7 +1008,7 @@ static sftp_attributes sftp_parse_attr_4(sftp_session sftp, ssh_buffer buf,
         break;
       }
       attr->group = ssh_string_to_char(group);
-      string_free(group);
+      ssh_string_free(group);
       if (attr->group == NULL) {
         break;
       }
