@@ -1154,7 +1154,7 @@ ssh_string pki_publickey_to_blob(const ssh_key key)
     }
 
     rc = buffer_add_ssh_string(buffer, type_s);
-    string_free(type_s);
+    ssh_string_free(type_s);
     if (rc < 0) {
         ssh_buffer_free(buffer);
         return NULL;
