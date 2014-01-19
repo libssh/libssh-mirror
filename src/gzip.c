@@ -90,7 +90,7 @@ static ssh_buffer gzip_compress(ssh_session session,ssh_buffer source,int level)
       return NULL;
     }
     len = BLOCKSIZE - zout->avail_out;
-    if (buffer_add_data(dest, out_buf, len) < 0) {
+    if (ssh_buffer_add_data(dest, out_buf, len) < 0) {
       ssh_buffer_free(dest);
       return NULL;
     }
@@ -113,7 +113,7 @@ int compress_buffer(ssh_session session, ssh_buffer buf) {
     return -1;
   }
 
-  if (buffer_add_data(buf, buffer_get_rest(dest), buffer_get_rest_len(dest)) < 0) {
+  if (ssh_buffer_add_data(buf, buffer_get_rest(dest), buffer_get_rest_len(dest)) < 0) {
     ssh_buffer_free(dest);
     return -1;
   }
@@ -181,7 +181,7 @@ static ssh_buffer gzip_decompress(ssh_session session, ssh_buffer source, size_t
     }
 
     len = BLOCKSIZE - zin->avail_out;
-    if (buffer_add_data(dest,out_buf,len) < 0) {
+    if (ssh_buffer_add_data(dest,out_buf,len) < 0) {
       ssh_buffer_free(dest);
       return NULL;
     }
@@ -209,7 +209,7 @@ int decompress_buffer(ssh_session session,ssh_buffer buf, size_t maxlen){
     return -1;
   }
 
-  if (buffer_add_data(buf, buffer_get_rest(dest), buffer_get_rest_len(dest)) < 0) {
+  if (ssh_buffer_add_data(buf, buffer_get_rest(dest), buffer_get_rest_len(dest)) < 0) {
     ssh_buffer_free(dest);
     return -1;
   }

@@ -889,7 +889,7 @@ static int ssh_gssapi_send_mic(ssh_session session){
         return SSH_ERROR;
     }
 
-    rc = buffer_add_data(session->out_buffer, mic_token_buf.value, mic_token_buf.length);
+    rc = ssh_buffer_add_data(session->out_buffer, mic_token_buf.value, mic_token_buf.length);
     ssh_buffer_free(mic_buffer);
     if (rc < 0) {
         ssh_set_error_oom(session);

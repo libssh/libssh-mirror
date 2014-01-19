@@ -281,7 +281,7 @@ int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p, socket_t fd, int r
 		}
 		if(r>0){
 			/* Bufferize the data and then call the callback */
-            r = buffer_add_data(s->in_buffer,buffer,r);
+            r = ssh_buffer_add_data(s->in_buffer,buffer,r);
             if (r < 0) {
                 return -1;
             }
@@ -606,7 +606,7 @@ void ssh_socket_fd_set(ssh_socket s, fd_set *set, socket_t *max_fd) {
  */
 int ssh_socket_write(ssh_socket s, const void *buffer, int len) {
   if(len > 0) {
-    if (buffer_add_data(s->out_buffer, buffer, len) < 0) {
+    if (ssh_buffer_add_data(s->out_buffer, buffer, len) < 0) {
       ssh_set_error_oom(s->session);
       return SSH_ERROR;
     }

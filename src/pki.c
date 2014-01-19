@@ -811,7 +811,7 @@ int ssh_pki_import_pubkey_blob(const ssh_string key_blob,
         return SSH_ERROR;
     }
 
-    rc = buffer_add_data(buffer, ssh_string_data(key_blob),
+    rc = ssh_buffer_add_data(buffer, ssh_string_data(key_blob),
             ssh_string_len(key_blob));
     if (rc < 0) {
         ssh_pki_log("Out of memory!");
@@ -1236,9 +1236,9 @@ int ssh_pki_import_signature_blob(const ssh_string sig_blob,
         return SSH_ERROR;
     }
 
-    rc = buffer_add_data(buf,
-                         ssh_string_data(sig_blob),
-                         ssh_string_len(sig_blob));
+    rc = ssh_buffer_add_data(buf,
+                             ssh_string_data(sig_blob),
+                             ssh_string_len(sig_blob));
     if (rc < 0) {
         ssh_buffer_free(buf);
         return SSH_ERROR;

@@ -300,7 +300,7 @@ static int agent_talk(struct ssh_session_struct *session,
           "Error reading response from authentication socket.");
       return -1;
     }
-    if (buffer_add_data(reply, payload, n) < 0) {
+    if (ssh_buffer_add_data(reply, payload, n) < 0) {
       SSH_LOG(SSH_LOG_WARN, "Not enough space");
       return -1;
     }
@@ -526,7 +526,7 @@ ssh_string ssh_agent_sign_data(ssh_session session,
         ssh_buffer_free(request);
         return NULL;
     }
-    if (buffer_add_data(request, buffer_get_rest(data), dlen) < 0) {
+    if (ssh_buffer_add_data(request, buffer_get_rest(data), dlen) < 0) {
         ssh_buffer_free(request);
         return NULL;
     }

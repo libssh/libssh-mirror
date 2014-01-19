@@ -486,7 +486,7 @@ int ssh_pcap_context_write(ssh_pcap_context ctx,enum ssh_pcap_direction directio
         goto error;
     }
 	/* actual data */
-    err = buffer_add_data(ip,data,len);
+    err = ssh_buffer_add_data(ip, data, len);
     if (err < 0) {
         goto error;
     }

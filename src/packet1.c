@@ -155,7 +155,7 @@ int ssh_packet_socket_callback1(const void *data, size_t receivedlen, void *user
       /* it is _not_ possible that to_be_read be < 8. */
       packet = (char *)data + processed;
 
-      if (buffer_add_data(session->in_buffer,packet,to_be_read) < 0) {
+      if (ssh_buffer_add_data(session->in_buffer,packet,to_be_read) < 0) {
         goto error;
       }
       processed += to_be_read;

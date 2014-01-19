@@ -45,7 +45,7 @@ int buffer_add_u8(ssh_buffer buffer, uint8_t data);
 int buffer_add_u16(ssh_buffer buffer, uint16_t data);
 int buffer_add_u32(ssh_buffer buffer, uint32_t data);
 int buffer_add_u64(ssh_buffer buffer, uint64_t data);
-int buffer_add_data(ssh_buffer buffer, const void *data, uint32_t len);
+int ssh_buffer_add_data(ssh_buffer buffer, const void *data, uint32_t len);
 int buffer_prepend_data(ssh_buffer buffer, const void *data, uint32_t len);
 int buffer_add_buffer(ssh_buffer buffer, ssh_buffer source);
 int ssh_buffer_reinit(ssh_buffer buffer);

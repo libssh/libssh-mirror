@@ -655,7 +655,7 @@ int make_sessionid(ssh_session session) {
   if (buffer_add_u32(buf,len) < 0) {
     goto error;
   }
-  if (buffer_add_data(buf, buffer_get_rest(client_hash),
+  if (ssh_buffer_add_data(buf, buffer_get_rest(client_hash),
         buffer_get_rest_len(client_hash)) < 0) {
     goto error;
   }
@@ -664,13 +664,13 @@ int make_sessionid(ssh_session session) {
   if (buffer_add_u32(buf, len) < 0) {
     goto error;
   }
-  if (buffer_add_data(buf, buffer_get_rest(server_hash),
+  if (ssh_buffer_add_data(buf, buffer_get_rest(server_hash),
         buffer_get_rest_len(server_hash)) < 0) {
     goto error;
   }
 
   len = ssh_string_len(session->next_crypto->server_pubkey) + 4;
-  if (buffer_add_data(buf, session->next_crypto->server_pubkey, len) < 0) {
+  if (ssh_buffer_add_data(buf, session->next_crypto->server_pubkey, len) < 0) {
     goto error;
   }
   if(session->next_crypto->kex_type == SSH_KEX_DH_GROUP1_SHA1 ||
@@ -682,7 +682,7 @@ int make_sessionid(ssh_session session) {
     }
 
     len = ssh_string_len(num) + 4;
-    if (buffer_add_data(buf, num, len) < 0) {
+    if (ssh_buffer_add_data(buf, num, len) < 0) {
       goto error;
     }
 
@@ -693,7 +693,7 @@ int make_sessionid(ssh_session session) {
     }
 
     len = ssh_string_len(num) + 4;
-    if (buffer_add_data(buf, num, len) < 0) {
+    if (ssh_buffer_add_data(buf, num, len) < 0) {
       goto error;
     }
 
@@ -717,10 +717,10 @@ int make_sessionid(ssh_session session) {
 #ifdef HAVE_CURVE25519
   } else if(session->next_crypto->kex_type == SSH_KEX_CURVE25519_SHA256_LIBSSH_ORG){
 	  rc = buffer_add_u32(buf, htonl(CURVE25519_PUBKEY_SIZE));
-	  rc += buffer_add_data(buf, session->next_crypto->curve25519_client_pubkey,
+	  rc += ssh_buffer_add_data(buf, session->next_crypto->curve25519_client_pubkey,
 			  CURVE25519_PUBKEY_SIZE);
 	  rc += buffer_add_u32(buf, htonl(CURVE25519_PUBKEY_SIZE));
-	  rc += buffer_add_data(buf, session->next_crypto->curve25519_server_pubkey,
+	  rc += ssh_buffer_add_data(buf, session->next_crypto->curve25519_server_pubkey,
 			  CURVE25519_PUBKEY_SIZE);
 	  if (rc != SSH_OK) {
 		  goto error;
@@ -733,7 +733,7 @@ int make_sessionid(ssh_session session) {
   }
 
   len = ssh_string_len(num) + 4;
-  if (buffer_add_data(buf, num, len) < 0) {
+  if (ssh_buffer_add_data(buf, num, len) < 0) {
     goto error;
   }
 
@@ -813,13 +813,13 @@ int hashbufout_add_cookie(ssh_session session) {
   }
 
   if (session->server) {
-    if (buffer_add_data(session->out_hashbuf,
+    if (ssh_buffer_add_data(session->out_hashbuf,
           session->next_crypto->server_kex.cookie, 16) < 0) {
       ssh_buffer_reinit(session->out_hashbuf);
       return -1;
     }
   } else {
-    if (buffer_add_data(session->out_hashbuf,
+    if (ssh_buffer_add_data(session->out_hashbuf,
           session->next_crypto->client_kex.cookie, 16) < 0) {
       ssh_buffer_reinit(session->out_hashbuf);
       return -1;
@@ -839,7 +839,7 @@ int hashbufin_add_cookie(ssh_session session, unsigned char *cookie) {
     ssh_buffer_reinit(session->in_hashbuf);
     return -1;
   }
-  if (buffer_add_data(session->in_hashbuf,cookie, 16) < 0) {
+  if (ssh_buffer_add_data(session->in_hashbuf,cookie, 16) < 0) {
     ssh_buffer_reinit(session->in_hashbuf);
     return -1;
   }

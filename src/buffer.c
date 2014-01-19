@@ -186,7 +186,8 @@ int ssh_buffer_reinit(struct ssh_buffer_struct *buffer)
  *
  * @return              0 on success, < 0 on error.
  */
-int buffer_add_data(struct ssh_buffer_struct *buffer, const void *data, uint32_t len) {
+int ssh_buffer_add_data(struct ssh_buffer_struct *buffer, const void *data, uint32_t len)
+{
   buffer_verify(buffer);
 
   if (buffer->used + len < len) {
@@ -223,7 +224,7 @@ int buffer_add_ssh_string(struct ssh_buffer_struct *buffer,
   uint32_t len = 0;
 
   len = ssh_string_len(string);
-  if (buffer_add_data(buffer, string, len + sizeof(uint32_t)) < 0) {
+  if (ssh_buffer_add_data(buffer, string, len + sizeof(uint32_t)) < 0) {
     return -1;
   }
 
@@ -241,12 +242,16 @@ int buffer_add_ssh_string(struct ssh_buffer_struct *buffer,
  *
  * @return              0 on success, -1 on error.
  */
-int buffer_add_u32(struct ssh_buffer_struct *buffer,uint32_t data){
-  if (buffer_add_data(buffer, &data, sizeof(data)) < 0) {
-    return -1;
-  }
+int buffer_add_u32(struct ssh_buffer_struct *buffer,uint32_t data)
+{
+    int rc;
 
-  return 0;
+    rc = ssh_buffer_add_data(buffer, &data, sizeof(data));
+    if (rc < 0) {
+        return -1;
+    }
+
+    return 0;
 }
 
 /**
@@ -260,12 +265,16 @@ int buffer_add_u32(struct ssh_buffer_struct *buffer,uint32_t data){
  *
  * @return              0 on success, -1 on error.
  */
-int buffer_add_u16(struct ssh_buffer_struct *buffer,uint16_t data){
-  if (buffer_add_data(buffer, &data, sizeof(data)) < 0) {
-    return -1;
-  }
+int buffer_add_u16(struct ssh_buffer_struct *buffer,uint16_t data)
+{
+    int rc;
 
-  return 0;
+    rc = ssh_buffer_add_data(buffer, &data, sizeof(data));
+    if (rc < 0) {
+        return -1;
+    }
+
+    return 0;
 }
 
 /**
@@ -279,12 +288,16 @@ int buffer_add_u16(struct ssh_buffer_struct *buffer,uint16_t data){
  *
  * @return              0 on success, -1 on error.
  */
-int buffer_add_u64(struct ssh_buffer_struct *buffer, uint64_t data){
-  if (buffer_add_data(buffer, &data, sizeof(data)) < 0) {
-    return -1;
-  }
+int buffer_add_u64(struct ssh_buffer_struct *buffer, uint64_t data)
+{
+    int rc;
 
-  return 0;
+    rc = ssh_buffer_add_data(buffer, &data, sizeof(data));
+    if (rc < 0) {
+        return -1;
+    }
+
+    return 0;
 }
 
 /**
@@ -298,12 +311,16 @@ int buffer_add_u64(struct ssh_buffer_struct *buffer, uint64_t data){
  *
  * @return              0 on success, -1 on error.
  */
-int buffer_add_u8(struct ssh_buffer_struct *buffer,uint8_t data){
-  if (buffer_add_data(buffer, &data, sizeof(uint8_t)) < 0) {
-    return -1;
-  }
+int buffer_add_u8(struct ssh_buffer_struct *buffer,uint8_t data)
+{
+    int rc;
 
-  return 0;
+    rc = ssh_buffer_add_data(buffer, &data, sizeof(uint8_t));
+    if (rc < 0) {
+        return -1;
+    }
+
+    return 0;
 }
 
 /**
@@ -361,12 +378,18 @@ int buffer_prepend_data(struct ssh_buffer_struct *buffer, const void *data,
  * @return              0 on success, -1 on error.
  */
 int buffer_add_buffer(struct ssh_buffer_struct *buffer,
-    struct ssh_buffer_struct *source) {
-  if (buffer_add_data(buffer, buffer_get_rest(source), buffer_get_rest_len(source)) < 0) {
-    return -1;
-  }
+    struct ssh_buffer_struct *source)
+{
+    int rc;
 
-  return 0;
+    rc = ssh_buffer_add_data(buffer,
+                             buffer_get_rest(source),
+                             buffer_get_rest_len(source));
+    if (rc < 0) {
+        return -1;
+    }
+
+    return 0;
 }
 
 /**

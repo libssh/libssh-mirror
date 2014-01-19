@@ -879,7 +879,7 @@ int channel_default_bufferize(ssh_channel channel, void *data, int len,
       }
     }
 
-    if (buffer_add_data(channel->stdout_buffer, data, len) < 0) {
+    if (ssh_buffer_add_data(channel->stdout_buffer, data, len) < 0) {
       ssh_set_error_oom(session);
       ssh_buffer_free(channel->stdout_buffer);
       channel->stdout_buffer = NULL;
@@ -895,7 +895,7 @@ int channel_default_bufferize(ssh_channel channel, void *data, int len,
       }
     }
 
-    if (buffer_add_data(channel->stderr_buffer, data, len) < 0) {
+    if (ssh_buffer_add_data(channel->stderr_buffer, data, len) < 0) {
       ssh_set_error_oom(session);
       ssh_buffer_free(channel->stderr_buffer);
       channel->stderr_buffer = NULL;
@@ -1389,7 +1389,7 @@ static int channel_write_common(ssh_channel channel,
         goto error;
     }
 
-    rc = buffer_add_data(session->out_buffer, data, effectivelen);
+    rc = ssh_buffer_add_data(session->out_buffer, data, effectivelen);
     if (rc < 0) {
         ssh_set_error_oom(session);
         goto error;
@@ -1619,7 +1619,7 @@ static int channel_request(ssh_channel channel, const char *request,
   ssh_string_free(req);
 
   if (buffer != NULL) {
-    if (buffer_add_data(session->out_buffer, buffer_get_rest(buffer),
+    if (ssh_buffer_add_data(session->out_buffer, buffer_get_rest(buffer),
         buffer_get_rest_len(buffer)) < 0) {
       ssh_set_error_oom(session);
       goto error;
@@ -2184,7 +2184,7 @@ static int global_request(ssh_session session, const char *request,
   }
 
   if (buffer != NULL) {
-      rc = buffer_add_data(session->out_buffer,
+      rc = ssh_buffer_add_data(session->out_buffer,
                            buffer_get_rest(buffer),
                            buffer_get_rest_len(buffer));
       if (rc < 0) {
@@ -2664,7 +2664,7 @@ int channel_read_buffer(ssh_channel channel, ssh_buffer buffer, uint32_t count,
         if(r < 0){
           return r;
         }
-        if(buffer_add_data(buffer,buffer_tmp,r) < 0){
+        if(ssh_buffer_add_data(buffer,buffer_tmp,r) < 0){
           ssh_set_error_oom(session);
           r = SSH_ERROR;
         }
@@ -2685,7 +2685,7 @@ int channel_read_buffer(ssh_channel channel, ssh_buffer buffer, uint32_t count,
     if(r==0){
       return total;
     }
-    if(buffer_add_data(buffer,buffer_tmp,r) < 0){
+    if (ssh_buffer_add_data(buffer,buffer_tmp,r) < 0) {
       ssh_set_error_oom(session);
 
       return SSH_ERROR;

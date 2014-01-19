@@ -1303,9 +1303,9 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
                     return NULL;
                 }
 
-                rc = buffer_add_data(b,
-                                     ssh_string_data(sig_blob),
-                                     ssh_string_len(sig_blob));
+                rc = ssh_buffer_add_data(b,
+                                         ssh_string_data(sig_blob),
+                                         ssh_string_len(sig_blob));
                 if (rc < 0) {
                     ssh_buffer_free(b);
                     ssh_signature_free(sig);

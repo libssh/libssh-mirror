@@ -332,7 +332,7 @@ sftp_packet sftp_packet_read(sftp_session sftp) {
     SAFE_FREE(packet);
     return NULL;
   }
-  buffer_add_data(packet->payload,buffer, r);
+  ssh_buffer_add_data(packet->payload, buffer, r);
   if (buffer_get_u32(packet->payload, &size) != sizeof(uint32_t)) {
     ssh_set_error(sftp->session, SSH_FATAL, "Short sftp packet!");
     ssh_buffer_free(packet->payload);
@@ -348,7 +348,7 @@ sftp_packet sftp_packet_read(sftp_session sftp) {
     SAFE_FREE(packet);
     return NULL;
   }
-  buffer_add_data(packet->payload, buffer, r);
+  ssh_buffer_add_data(packet->payload, buffer, r);
   buffer_get_u8(packet->payload, &packet->type);
   size=size-1;
   while (size>0){
@@ -361,7 +361,7 @@ sftp_packet sftp_packet_read(sftp_session sftp) {
       SAFE_FREE(packet);
       return NULL;
     }
-    if(buffer_add_data(packet->payload,buffer,r)==SSH_ERROR){
+    if (ssh_buffer_add_data(packet->payload, buffer, r) == SSH_ERROR) {
       ssh_buffer_free(packet->payload);
       SAFE_FREE(packet);
       ssh_set_error_oom(sftp->session);
@@ -451,7 +451,7 @@ static sftp_message sftp_get_message(sftp_packet packet) {
       msg->id,
       msg->packet_type);
 
-  if (buffer_add_data(msg->payload, buffer_get_rest(packet->payload),
+  if (ssh_buffer_add_data(msg->payload, buffer_get_rest(packet->payload),
         buffer_get_rest_len(packet->payload)) < 0) {
     ssh_set_error_oom(sftp->session);
     sftp_message_free(msg);

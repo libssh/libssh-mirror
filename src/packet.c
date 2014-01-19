@@ -192,7 +192,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
             processed += blocksize;
             len = packet_decrypt_len(session, buffer);
 
-            rc = buffer_add_data(session->in_buffer, buffer, blocksize);
+            rc = ssh_buffer_add_data(session->in_buffer, buffer, blocksize);
             if (rc < 0) {
                 goto error;
             }
@@ -237,7 +237,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
                                 to_be_read - current_macsize);
 #endif
 
-                rc = buffer_add_data(session->in_buffer,
+                rc = ssh_buffer_add_data(session->in_buffer,
                                      packet,
                                      to_be_read - current_macsize);
                 if (rc < 0) {
@@ -534,7 +534,7 @@ static int packet_send2(ssh_session session) {
   if (buffer_prepend_data(session->out_buffer, &finallen, sizeof(uint32_t)) < 0) {
     goto error;
   }
-  if (buffer_add_data(session->out_buffer, padstring, padding) < 0) {
+  if (ssh_buffer_add_data(session->out_buffer, padstring, padding) < 0) {
     goto error;
   }
 #ifdef WITH_PCAP
@@ -547,7 +547,7 @@ static int packet_send2(ssh_session session) {
   hmac = packet_encrypt(session, buffer_get_rest(session->out_buffer),
       buffer_get_rest_len(session->out_buffer));
   if (hmac) {
-    if (buffer_add_data(session->out_buffer, hmac, 20) < 0) {
+    if (ssh_buffer_add_data(session->out_buffer, hmac, 20) < 0) {
       goto error;
     }
   }

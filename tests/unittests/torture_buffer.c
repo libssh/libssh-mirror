@@ -25,7 +25,7 @@ static void torture_growing_buffer(void **state) {
   int i;
 
   for(i=0;i<LIMIT;++i){
-    buffer_add_data(buffer,"A",1);
+    ssh_buffer_add_data(buffer,"A",1);
     if(buffer->used >= 128){
       if(buffer_get_rest_len(buffer) * 2 < buffer->allocated){
         assert_true(buffer_get_rest_len(buffer) * 2 >= buffer->allocated);
@@ -43,11 +43,11 @@ static void torture_growing_buffer_shifting(void **state) {
   int i;
   unsigned char c;
   for(i=0; i<1024;++i){
-    buffer_add_data(buffer,"S",1);
+    ssh_buffer_add_data(buffer,"S",1);
   }
   for(i=0;i<LIMIT;++i){
     buffer_get_u8(buffer,&c);
-    buffer_add_data(buffer,"A",1);
+    ssh_buffer_add_data(buffer,"A",1);
     if(buffer->used >= 128){
       if(buffer_get_rest_len(buffer) * 4 < buffer->allocated){
         assert_true(buffer_get_rest_len(buffer) * 4 >= buffer->allocated);
@@ -63,7 +63,7 @@ static void torture_growing_buffer_shifting(void **state) {
 static void torture_buffer_prepend(void **state) {
   ssh_buffer buffer = *state;
   uint32_t v;
-  buffer_add_data(buffer,"abcdef",6);
+  ssh_buffer_add_data(buffer,"abcdef",6);
   buffer_prepend_data(buffer,"xyz",3);
   assert_int_equal(buffer_get_rest_len(buffer),9);
   assert_memory_equal(buffer_get_rest(buffer),  "xyzabcdef", 9);
@@ -109,7 +109,7 @@ static void torture_buffer_get_ssh_string(void **state) {
           rc = buffer_add_u32(buffer,htonl(values[i]));
           assert_int_equal(rc, 0);
         }
-        rc = buffer_add_data(buffer,data,j);
+        rc = ssh_buffer_add_data(buffer,data,j);
         assert_int_equal(rc, 0);
         for(l=0;l<k;++l){
           ssh_string str = buffer_get_ssh_string(buffer);
