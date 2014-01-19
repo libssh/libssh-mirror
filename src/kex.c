@@ -477,8 +477,8 @@ int ssh_send_kex(ssh_session session, int server_kex) {
 
   return 0;
 error:
-  buffer_reinit(session->out_buffer);
-  buffer_reinit(session->out_hashbuf);
+  ssh_buffer_reinit(session->out_buffer);
+  ssh_buffer_reinit(session->out_hashbuf);
   ssh_string_free(str);
 
   return -1;

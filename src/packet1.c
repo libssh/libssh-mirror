@@ -114,7 +114,7 @@ int ssh_packet_socket_callback1(const void *data, size_t receivedlen, void *user
       memset(&session->in_packet, 0, sizeof(PACKET));
 
       if (session->in_buffer) {
-        if (buffer_reinit(session->in_buffer) < 0) {
+        if (ssh_buffer_reinit(session->in_buffer) < 0) {
           goto error;
         }
       } else {
@@ -315,7 +315,7 @@ int packet_send1(ssh_session session) {
 
   session->send_seq++;
 
-  if (buffer_reinit(session->out_buffer) < 0) {
+  if (ssh_buffer_reinit(session->out_buffer) < 0) {
     rc = SSH_ERROR;
   }
 error:

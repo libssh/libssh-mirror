@@ -393,7 +393,7 @@ int ssh_agent_get_ident_count(struct ssh_session_struct *session) {
   }
 
   if (session->agent->ident) {
-    buffer_reinit(session->agent->ident);
+    ssh_buffer_reinit(session->agent->ident);
   }
   session->agent->ident = reply;
 

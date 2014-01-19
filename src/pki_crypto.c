@@ -935,7 +935,7 @@ ssh_string pki_publickey_to_blob(const ssh_key key)
             break;
         case SSH_KEYTYPE_ECDSA:
 #ifdef HAVE_OPENSSL_ECC
-            rc = buffer_reinit(buffer);
+            rc = ssh_buffer_reinit(buffer);
             if (rc < 0) {
                 ssh_buffer_free(buffer);
                 return NULL;

@@ -290,7 +290,7 @@ static int dh_handshake_server(ssh_session session) {
       buffer_add_ssh_string(session->out_buffer, f) < 0 ||
       buffer_add_ssh_string(session->out_buffer, sig_blob) < 0) {
     ssh_set_error(session, SSH_FATAL, "Not enough space");
-    buffer_reinit(session->out_buffer);
+    ssh_buffer_reinit(session->out_buffer);
     ssh_string_free(f);
     ssh_string_free(sig_blob);
     return -1;
@@ -302,7 +302,7 @@ static int dh_handshake_server(ssh_session session) {
   }
 
   if (buffer_add_u8(session->out_buffer, SSH2_MSG_NEWKEYS) < 0) {
-    buffer_reinit(session->out_buffer);
+    ssh_buffer_reinit(session->out_buffer);
     return -1;
   }
 
@@ -1258,7 +1258,7 @@ int ssh_send_keepalive(ssh_session session)
 
 err:
   ssh_set_error_oom(session);
-  buffer_reinit(session->out_buffer);
+  ssh_buffer_reinit(session->out_buffer);
   return SSH_ERROR;
 }
 

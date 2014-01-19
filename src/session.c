@@ -735,7 +735,7 @@ int ssh_send_ignore (ssh_session session, const char *data) {
     return SSH_OK;
 
 error:
-    buffer_reinit(session->out_buffer);
+    ssh_buffer_reinit(session->out_buffer);
     return SSH_ERROR;
 }
 
@@ -786,7 +786,7 @@ int ssh_send_debug (ssh_session session, const char *message, int always_display
     return SSH_OK;
 
 error:
-    buffer_reinit(session->out_buffer);
+    ssh_buffer_reinit(session->out_buffer);
     return SSH_ERROR;
 }
 

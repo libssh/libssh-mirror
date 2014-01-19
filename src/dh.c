@@ -808,20 +808,20 @@ int hashbufout_add_cookie(ssh_session session) {
   }
 
   if (buffer_add_u8(session->out_hashbuf, 20) < 0) {
-    buffer_reinit(session->out_hashbuf);
+    ssh_buffer_reinit(session->out_hashbuf);
     return -1;
   }
 
   if (session->server) {
     if (buffer_add_data(session->out_hashbuf,
           session->next_crypto->server_kex.cookie, 16) < 0) {
-      buffer_reinit(session->out_hashbuf);
+      ssh_buffer_reinit(session->out_hashbuf);
       return -1;
     }
   } else {
     if (buffer_add_data(session->out_hashbuf,
           session->next_crypto->client_kex.cookie, 16) < 0) {
-      buffer_reinit(session->out_hashbuf);
+      ssh_buffer_reinit(session->out_hashbuf);
       return -1;
     }
   }
@@ -836,11 +836,11 @@ int hashbufin_add_cookie(ssh_session session, unsigned char *cookie) {
   }
 
   if (buffer_add_u8(session->in_hashbuf, 20) < 0) {
-    buffer_reinit(session->in_hashbuf);
+    ssh_buffer_reinit(session->in_hashbuf);
     return -1;
   }
   if (buffer_add_data(session->in_hashbuf,cookie, 16) < 0) {
-    buffer_reinit(session->in_hashbuf);
+    ssh_buffer_reinit(session->in_hashbuf);
     return -1;
   }
 

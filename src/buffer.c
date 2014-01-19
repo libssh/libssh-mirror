@@ -158,7 +158,8 @@ static void buffer_shift(ssh_buffer buffer){
  *
  * @return              0 on success, < 0 on error.
  */
-int buffer_reinit(struct ssh_buffer_struct *buffer) {
+int ssh_buffer_reinit(struct ssh_buffer_struct *buffer)
+{
   buffer_verify(buffer);
   memset(buffer->data, 0, buffer->used);
   buffer->used = 0;

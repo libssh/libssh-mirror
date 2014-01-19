@@ -393,7 +393,7 @@ static int grow_window(ssh_session session, ssh_channel channel, int minimumsize
 
   return SSH_OK;
 error:
-  buffer_reinit(session->out_buffer);
+  ssh_buffer_reinit(session->out_buffer);
 
   return SSH_ERROR;
 }
@@ -1171,7 +1171,7 @@ int ssh_channel_send_eof(ssh_channel channel){
 
   return rc;
 error:
-  buffer_reinit(session->out_buffer);
+  ssh_buffer_reinit(session->out_buffer);
 
   return rc;
 }
@@ -1229,7 +1229,7 @@ int ssh_channel_close(ssh_channel channel){
 
   return rc;
 error:
-  buffer_reinit(session->out_buffer);
+  ssh_buffer_reinit(session->out_buffer);
 
   return rc;
 }
@@ -1418,7 +1418,7 @@ out:
   return (int)(origlen - len);
 
 error:
-  buffer_reinit(session->out_buffer);
+  ssh_buffer_reinit(session->out_buffer);
 
   return SSH_ERROR;
 }
@@ -1673,7 +1673,7 @@ pending:
 
   return rc;
 error:
-  buffer_reinit(session->out_buffer);
+  ssh_buffer_reinit(session->out_buffer);
 
   return rc;
 }
@@ -2240,7 +2240,7 @@ pending:
 
   return rc;
 error:
-  buffer_reinit(session->out_buffer);
+  ssh_buffer_reinit(session->out_buffer);
 
   return rc;
 }
@@ -2652,7 +2652,7 @@ int channel_read_buffer(ssh_channel channel, ssh_buffer buffer, uint32_t count,
       return SSH_ERROR;
   }
 
-  buffer_reinit(buffer);
+  ssh_buffer_reinit(buffer);
   if(count==0){
     do {
       r=ssh_channel_poll(channel, is_stderr);

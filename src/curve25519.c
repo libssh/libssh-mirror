@@ -283,7 +283,7 @@ int ssh_server_curve25519_init(ssh_session session, ssh_buffer packet){
 
     return rc;
 error:
-    buffer_reinit(session->out_buffer);
+    ssh_buffer_reinit(session->out_buffer);
     return SSH_ERROR;
 }
 

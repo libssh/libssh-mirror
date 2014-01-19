@@ -448,7 +448,7 @@ pending:
     return rc;
 fail:
     ssh_set_error_oom(session);
-    buffer_reinit(session->out_buffer);
+    ssh_buffer_reinit(session->out_buffer);
 
     return SSH_AUTH_ERROR;
 }
@@ -614,7 +614,7 @@ pending:
     return rc;
 fail:
     ssh_set_error_oom(session);
-    buffer_reinit(session->out_buffer);
+    ssh_buffer_reinit(session->out_buffer);
 
     return SSH_AUTH_ERROR;
 }
@@ -788,7 +788,7 @@ pending:
     return rc;
 fail:
     ssh_set_error_oom(session);
-    buffer_reinit(session->out_buffer);
+    ssh_buffer_reinit(session->out_buffer);
 
     return SSH_AUTH_ERROR;
 }
@@ -924,7 +924,7 @@ pending:
     return rc;
 fail:
     ssh_set_error_oom(session);
-    buffer_reinit(session->out_buffer);
+    ssh_buffer_reinit(session->out_buffer);
 
     return SSH_AUTH_ERROR;
 }
@@ -1415,7 +1415,7 @@ pending:
     return rc;
 fail:
     ssh_set_error_oom(session);
-    buffer_reinit(session->out_buffer);
+    ssh_buffer_reinit(session->out_buffer);
 
     return SSH_AUTH_ERROR;
 }
@@ -1642,7 +1642,7 @@ pending:
     return rc;
 fail:
     ssh_set_error_oom(session);
-    buffer_reinit(session->out_buffer);
+    ssh_buffer_reinit(session->out_buffer);
 
     return SSH_AUTH_ERROR;
 }
@@ -1716,7 +1716,7 @@ pending:
     return rc;
 fail:
     ssh_set_error_oom(session);
-    buffer_reinit(session->out_buffer);
+    ssh_buffer_reinit(session->out_buffer);
 
     return SSH_AUTH_ERROR;
 }

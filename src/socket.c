@@ -182,8 +182,8 @@ void ssh_socket_reset(ssh_socket s){
   s->fd_out= SSH_INVALID_SOCKET;
   s->last_errno = -1;
   s->fd_is_socket = 1;
-  buffer_reinit(s->in_buffer);
-  buffer_reinit(s->out_buffer);
+  ssh_buffer_reinit(s->in_buffer);
+  ssh_buffer_reinit(s->out_buffer);
   s->read_wontblock = 0;
   s->write_wontblock = 0;
   s->data_except = 0;

@@ -108,7 +108,7 @@ int compress_buffer(ssh_session session, ssh_buffer buf) {
     return -1;
   }
 
-  if (buffer_reinit(buf) < 0) {
+  if (ssh_buffer_reinit(buf) < 0) {
     ssh_buffer_free(dest);
     return -1;
   }
@@ -204,7 +204,7 @@ int decompress_buffer(ssh_session session,ssh_buffer buf, size_t maxlen){
     return -1;
   }
 
-  if (buffer_reinit(buf) < 0) {
+  if (ssh_buffer_reinit(buf) < 0) {
     ssh_buffer_free(dest);
     return -1;
   }

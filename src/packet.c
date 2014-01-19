@@ -177,7 +177,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
             memset(&session->in_packet, 0, sizeof(PACKET));
 
             if (session->in_buffer) {
-                rc = buffer_reinit(session->in_buffer);
+                rc = ssh_buffer_reinit(session->in_buffer);
                 if (rc < 0) {
                     goto error;
                 }
@@ -558,7 +558,7 @@ static int packet_send2(ssh_session session) {
   SSH_LOG(SSH_LOG_PACKET,
           "packet: wrote [len=%d,padding=%hhd,comp=%d,payload=%d]",
           ntohl(finallen), padding, compsize, payloadsize);
-  if (buffer_reinit(session->out_buffer) < 0) {
+  if (ssh_buffer_reinit(session->out_buffer) < 0) {
     rc = SSH_ERROR;
   }
 error:

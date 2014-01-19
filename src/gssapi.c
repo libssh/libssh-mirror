@@ -615,7 +615,7 @@ static int ssh_gssapi_send_auth_mic(ssh_session session, ssh_string *oid_set, in
     session->auth_state = SSH_AUTH_STATE_GSSAPI_REQUEST_SENT;
     return packet_send(session);
 fail:
-    buffer_reinit(session->out_buffer);
+    ssh_buffer_reinit(session->out_buffer);
     return SSH_ERROR;
 }
 
