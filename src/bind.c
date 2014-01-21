@@ -382,7 +382,7 @@ void ssh_bind_free(ssh_bind sshbind){
 }
 
 int ssh_bind_accept_fd(ssh_bind sshbind, ssh_session session, socket_t fd){
-    int i;
+    int i, rc;
 
     if (session == NULL){
         ssh_set_error(sshbind, SSH_FATAL,"session is null");
@@ -423,6 +423,16 @@ int ssh_bind_accept_fd(ssh_bind sshbind, ssh_session session, socket_t fd){
     }
     ssh_socket_set_fd(session->socket, fd);
     ssh_socket_get_poll_handle_out(session->socket);
+
+    /* We must try to import any keys that could be imported in case
+     * we are not using ssh_bind_listen (which is the other place
+     * where keys can be imported) on this ssh_bind and are instead
+     * only using ssh_bind_accept_fd to manage sockets ourselves.
+     */
+    rc = ssh_bind_import_keys(sshbind);
+    if (rc != SSH_OK) {
+      return SSH_ERROR;
+    }
 
 #ifdef HAVE_ECC
     if (sshbind->ecdsa) {
