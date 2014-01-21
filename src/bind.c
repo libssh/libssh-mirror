@@ -144,26 +144,19 @@ ssh_bind ssh_bind_new(void) {
   return ptr;
 }
 
-int ssh_bind_listen(ssh_bind sshbind) {
-  const char *host;
-  socket_t fd;
+static int ssh_bind_import_keys(ssh_bind sshbind) {
   int rc;
-
-  if (ssh_init() < 0) {
-    ssh_set_error(sshbind, SSH_FATAL, "ssh_init() failed");
-    return -1;
-  }
 
   if (sshbind->ecdsakey == NULL &&
       sshbind->dsakey == NULL &&
       sshbind->rsakey == NULL) {
       ssh_set_error(sshbind, SSH_FATAL,
-              "DSA or RSA host key file must be set before listen()");
+                    "ECDSA, DSA, or RSA host key file must be set");
       return SSH_ERROR;
   }
 
 #ifdef HAVE_ECC
-  if (sshbind->ecdsakey) {
+  if (sshbind->ecdsa == NULL && sshbind->ecdsakey != NULL) {
       rc = ssh_pki_import_privkey_file(sshbind->ecdsakey,
                                        NULL,
                                        NULL,
@@ -185,7 +178,7 @@ int ssh_bind_listen(ssh_bind sshbind) {
   }
 #endif
 
-  if (sshbind->dsakey) {
+  if (sshbind->dsa == NULL && sshbind->dsakey != NULL) {
       rc = ssh_pki_import_privkey_file(sshbind->dsakey,
                                        NULL,
                                        NULL,
@@ -207,7 +200,7 @@ int ssh_bind_listen(ssh_bind sshbind) {
       }
   }
 
-  if (sshbind->rsakey) {
+  if (sshbind->rsa == NULL && sshbind->rsakey != NULL) {
       rc = ssh_pki_import_privkey_file(sshbind->rsakey,
                                        NULL,
                                        NULL,
@@ -227,6 +220,24 @@ int ssh_bind_listen(ssh_bind sshbind) {
           sshbind->rsa = NULL;
           return SSH_ERROR;
       }
+  }
+
+  return SSH_OK;
+}
+
+int ssh_bind_listen(ssh_bind sshbind) {
+  const char *host;
+  socket_t fd;
+  int rc;
+
+  if (ssh_init() < 0) {
+    ssh_set_error(sshbind, SSH_FATAL, "ssh_init() failed");
+    return -1;
+  }
+
+  rc = ssh_bind_import_keys(sshbind);
+  if (rc != SSH_OK) {
+    return SSH_ERROR;
   }
 
   if (sshbind->bindfd == SSH_INVALID_SOCKET) {
