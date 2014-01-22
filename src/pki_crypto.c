@@ -1094,41 +1094,65 @@ static ssh_string _RSA_do_sign(const unsigned char *digest,
     return sig_blob;
 }
 
+static ssh_string pki_dsa_signature_to_blob(const ssh_signature sig)
+{
+    char buffer[40] = { 0 };
+    ssh_string sig_blob = NULL;
+
+    ssh_string r;
+    int r_len, r_offset_in, r_offset_out;
+
+    ssh_string s;
+    int s_len, s_offset_in, s_offset_out;
+
+    r = make_bignum_string(sig->dsa_sig->r);
+    if (r == NULL) {
+        return NULL;
+    }
+
+    s = make_bignum_string(sig->dsa_sig->s);
+    if (s == NULL) {
+        ssh_string_free(r);
+        return NULL;
+    }
+
+    r_len = ssh_string_len(r);
+    r_offset_in  = (r_len > 20) ? (r_len - 20) : 0;
+    r_offset_out = (r_len < 20) ? (20 - r_len) : 0;
+
+    s_len = ssh_string_len(s);
+    s_offset_in  = (s_len > 20) ? (s_len - 20) : 0;
+    s_offset_out = (s_len < 20) ? (20 - s_len) : 0;
+
+    memcpy(buffer + r_offset_out,
+           ((char *)ssh_string_data(r)) + r_offset_in,
+           r_len - r_offset_in);
+    memcpy(buffer + 20 + s_offset_out,
+           ((char *)ssh_string_data(s)) + s_offset_in,
+           s_len - s_offset_in);
+
+    ssh_string_free(r);
+    ssh_string_free(s);
+
+    sig_blob = ssh_string_new(40);
+    if (sig_blob == NULL) {
+        return NULL;
+    }
+
+    ssh_string_fill(sig_blob, buffer, 40);
+
+    return sig_blob;
+}
+
 ssh_string pki_signature_to_blob(const ssh_signature sig)
 {
-    char buffer[40] = {0};
-    ssh_string sig_blob = NULL;
     ssh_string r;
     ssh_string s;
+    ssh_string sig_blob = NULL;
 
     switch(sig->type) {
         case SSH_KEYTYPE_DSS:
-            r = make_bignum_string(sig->dsa_sig->r);
-            if (r == NULL) {
-                return NULL;
-            }
-            s = make_bignum_string(sig->dsa_sig->s);
-            if (s == NULL) {
-                ssh_string_free(r);
-                return NULL;
-            }
-
-            memcpy(buffer,
-                   ((char *)ssh_string_data(r)) + ssh_string_len(r) - 20,
-                   20);
-            memcpy(buffer + 20,
-                   ((char *)ssh_string_data(s)) + ssh_string_len(s) - 20,
-                   20);
-
-            ssh_string_free(r);
-            ssh_string_free(s);
-
-            sig_blob = ssh_string_new(40);
-            if (sig_blob == NULL) {
-                return NULL;
-            }
-
-            ssh_string_fill(sig_blob, buffer, 40);
+            sig_blob = pki_dsa_signature_to_blob(sig);
             break;
         case SSH_KEYTYPE_RSA:
         case SSH_KEYTYPE_RSA1:
