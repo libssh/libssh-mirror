@@ -388,7 +388,7 @@ static ssh_buffer privatekey_string_to_buffer(const char *pkey, int type,
         }
     } else {
         if(len > 0) {
-            if (buffer_add_data(buffer, p, len) < 0) {
+            if (ssh_buffer_add_data(buffer, p, len) < 0) {
                 ssh_buffer_free(buffer);
                 SAFE_FREE(iv);
                 return NULL;
@@ -398,7 +398,7 @@ static ssh_buffer privatekey_string_to_buffer(const char *pkey, int type,
 
     get_next_line(p, len);
     while(len > 0 && strncmp(p, header_end, header_end_size) != 0) {
-        if (buffer_add_data(buffer, p, len) < 0) {
+        if (ssh_buffer_add_data(buffer, p, len) < 0) {
             ssh_buffer_free(buffer);
             SAFE_FREE(iv);
             return NULL;
@@ -412,7 +412,7 @@ static ssh_buffer privatekey_string_to_buffer(const char *pkey, int type,
         return NULL;
     }
 
-    if (buffer_add_data(buffer, "\0", 1) < 0) {
+    if (ssh_buffer_add_data(buffer, "\0", 1) < 0) {
         ssh_buffer_free(buffer);
         SAFE_FREE(iv);
         return NULL;
