@@ -1997,7 +1997,11 @@ static ssh_channel ssh_channel_accept(ssh_session session, int channeltype,
    * 50 ms. So we need to decrement by 100 ms.
    */
   for (t = timeout_ms; t >= 0; t -= 100) {
-    ssh_handle_packets(session, 50);
+    if (timeout_ms == 0) {
+        ssh_handle_packets(session, 0);
+    } else {
+        ssh_handle_packets(session, 50);
+    }
 
     if (session->ssh_message_list) {
       iterator = ssh_list_get_iterator(session->ssh_message_list);
