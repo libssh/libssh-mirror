@@ -421,7 +421,7 @@ static int ssh_select_cb (socket_t fd, int revents, void *userdata){
  * @param[in]  readfds  A fd_set of file descriptors to be select'ed for
  *                      reading.
  *
- * @param[in]  timeout  A timeout for the select.
+ * @param[in]  timeout  The timeout in milliseconds.
  *
  * @return              SSH_OK on success,
  *                      SSH_ERROR on error,
