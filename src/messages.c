@@ -208,8 +208,8 @@ static int ssh_execute_server_request(ssh_session session, ssh_message msg)
                        ssh_callbacks_exists(channel->callbacks, channel_pty_window_change_function)) {
                 rc = channel->callbacks->channel_pty_window_change_function(session,
                                                                             channel,
-                                                                            msg->channel_request.height, msg->channel_request.width,
-                                                                            msg->channel_request.pxheight, msg->channel_request.pxwidth,
+                                                                            msg->channel_request.width, msg->channel_request.height,
+                                                                            msg->channel_request.pxwidth, msg->channel_request.pxheight,
                                                                             channel->callbacks->userdata);
             } else if (msg->channel_request.type == SSH_CHANNEL_REQUEST_EXEC &&
                        ssh_callbacks_exists(channel->callbacks, channel_exec_request_function)) {
