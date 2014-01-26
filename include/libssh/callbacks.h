@@ -495,6 +495,8 @@ LIBSSH_API int ssh_set_callbacks(ssh_session session, ssh_callbacks cb);
  * @param len the length of the data
  * @param is_stderr is 0 for stdout or 1 for stderr
  * @param userdata Userdata to be passed to the callback function.
+ * @returns number of bytes processed by the callee. The remaining bytes will
+ * be sent in the next callback message, when more data is available.
  */
 typedef int (*ssh_channel_data_callback) (ssh_session session,
                                            ssh_channel channel,
