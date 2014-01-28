@@ -200,9 +200,11 @@ int pki_pubkey_build_ecdsa(ssh_key key, int nid, ssh_string e)
         return -1;
     }
 
+    /* EC_KEY_set_public_key duplicates p */
     ok = EC_KEY_set_public_key(key->ecdsa, p);
+    EC_POINT_free(p);
     if (!ok) {
-        EC_POINT_free(p);
+        return -1;
     }
 
     return 0;
