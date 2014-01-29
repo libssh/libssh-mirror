@@ -2720,16 +2720,16 @@ int ssh_channel_read(ssh_channel channel, void *dest, uint32_t count, int is_std
 /**
  * @brief Reads data from a channel.
  *
- * @param[in]  channel  The channel to read from.
+ * @param[in]  channel     The channel to read from.
  *
- * @param[in]  dest     The destination buffer which will get the data.
+ * @param[in]  dest        The destination buffer which will get the data.
  *
- * @param[in]  count    The count of bytes to be read.
+ * @param[in]  count       The count of bytes to be read.
  *
- * @param[in]  is_stderr A boolean value to mark reading from the stderr flow.
+ * @param[in]  is_stderr   A boolean value to mark reading from the stderr flow.
  *
- * @param[in]  timeout  A timeout in seconds. A value of -1 means infinite
- *                      timeout.
+ * @param[in]  timeout_ms  A timeout in milliseconds. A value of -1 means
+ *                         infinite timeout.
  *
  * @return              The number of bytes read, 0 on end of file or SSH_ERROR
  *                      on error. In nonblocking mode it Can return 0 if no data

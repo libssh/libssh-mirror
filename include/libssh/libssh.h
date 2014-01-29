@@ -377,7 +377,7 @@ LIBSSH_API int ssh_channel_open_x11(ssh_channel channel, const char *orig_addr, 
 LIBSSH_API int ssh_channel_poll(ssh_channel channel, int is_stderr);
 LIBSSH_API int ssh_channel_poll_timeout(ssh_channel channel, int timeout, int is_stderr);
 LIBSSH_API int ssh_channel_read(ssh_channel channel, void *dest, uint32_t count, int is_stderr);
-LIBSSH_API int ssh_channel_read_timeout(ssh_channel channel, void *dest, uint32_t count, int is_stderr, int timeout);
+LIBSSH_API int ssh_channel_read_timeout(ssh_channel channel, void *dest, uint32_t count, int is_stderr, int timeout_ms);
 LIBSSH_API int ssh_channel_read_nonblocking(ssh_channel channel, void *dest, uint32_t count,
     int is_stderr);
 LIBSSH_API int ssh_channel_request_env(ssh_channel channel, const char *name, const char *value);
