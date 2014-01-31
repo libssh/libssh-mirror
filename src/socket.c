@@ -291,7 +291,7 @@ int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p, socket_t fd, int r
 							buffer_get_rest_len(s->in_buffer),
 							s->callbacks->userdata);
 					buffer_pass_bytes(s->in_buffer,r);
-				} while (r > 0);
+				} while ((r > 0) && (s->state == SSH_SOCKET_CONNECTED));
 				/* p may have been freed, so don't use it
 				* anymore in this function */
 				p = NULL;
@@ -440,6 +440,8 @@ void ssh_socket_close(ssh_socket s){
     ssh_poll_free(s->poll_out);
     s->poll_out=NULL;
   }
+
+  s->state = SSH_SOCKET_CLOSED;
 }
 
 /**
