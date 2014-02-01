@@ -380,11 +380,34 @@ void ssh_list_kex(struct ssh_kex_struct *kex) {
 int set_client_kex(ssh_session session){
     struct ssh_kex_struct *client= &session->next_crypto->client_kex;
     const char *wanted;
-    int i;
+    char methods_buffer[128]={0};
+    int prefered_hostkeys[]={SSH_KEYTYPE_ECDSA, SSH_KEYTYPE_RSA,
+    		SSH_KEYTYPE_DSS, SSH_KEYTYPE_RSA1, SSH_KEYTYPE_UNKNOWN};
+    int i, methods, needcoma=0;
 
     ssh_get_random(client->cookie, 16, 0);
 
     memset(client->methods, 0, KEX_METHODS_SIZE * sizeof(char **));
+    /* first check if we have specific host key methods */
+    if(session->opts.wanted_methods[SSH_HOSTKEYS] == NULL){
+    	/* Only if no override */
+    	methods = ssh_knownhosts_algorithms(session);
+    	if (methods != SSH_ERROR && methods != 0){
+    		for(i=0; prefered_hostkeys[i] != SSH_KEYTYPE_UNKNOWN;++i){
+    			if (methods & (1 << prefered_hostkeys[i])){
+    				if (verify_existing_algo(SSH_HOSTKEYS, ssh_key_type_to_char(prefered_hostkeys[i]))){
+    					if(needcoma)
+    						strcat(methods_buffer,",");
+    					strcat(methods_buffer, ssh_key_type_to_char(prefered_hostkeys[i]));
+    					needcoma = 1;
+    				}
+    			}
+    		}
+    		SSH_LOG(SSH_LOG_DEBUG, "Changing host key method to \"%s\"", methods_buffer);
+    		session->opts.wanted_methods[SSH_HOSTKEYS] = strdup(methods_buffer);
+    	}
+    }
+
     for (i = 0; i < KEX_METHODS_SIZE; i++) {
         wanted = session->opts.wanted_methods[i];
         if (wanted == NULL)
