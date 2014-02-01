@@ -175,6 +175,7 @@ struct ssh_session_struct {
         char *knownhosts;
         char *wanted_methods[10];
         char *ProxyCommand;
+        char *custombanner;
         unsigned long timeout; /* seconds */
         unsigned long timeout_usec;
         unsigned int port;

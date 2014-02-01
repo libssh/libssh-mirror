@@ -413,7 +413,8 @@ int ssh_bind_accept_fd(ssh_bind sshbind, ssh_session session, socket_t fd){
     }
 
     session->common.log_verbosity = sshbind->common.log_verbosity;
-
+    if(sshbind->banner != NULL)
+    	session->opts.custombanner = strdup(sshbind->banner);
     ssh_socket_free(session->socket);
     session->socket = ssh_socket_new(session);
     if (session->socket == NULL) {

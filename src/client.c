@@ -152,7 +152,15 @@ int ssh_send_banner(ssh_session session, int server) {
   banner = session->version == 1 ? CLIENTBANNER1 : CLIENTBANNER2;
 
   if (server) {
-    session->serverbanner = strdup(banner);
+    if(session->opts.custombanner == NULL){
+    	session->serverbanner = strdup(banner);
+    } else {
+    	session->serverbanner = malloc(strlen(session->opts.custombanner) + 9);
+    	if(!session->serverbanner)
+    		goto end;
+    	strcpy(session->serverbanner, "SSH-2.0-");
+    	strcat(session->serverbanner, session->opts.custombanner);
+    }
     if (session->serverbanner == NULL) {
       goto end;
     }
