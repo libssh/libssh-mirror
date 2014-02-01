@@ -647,6 +647,83 @@ int ssh_write_knownhost(ssh_session session) {
     return 0;
 }
 
+/**
+ * @brief Check which kind of host keys should be preferred for connection
+ *        by reading the known_hosts file.
+ *
+ * @param[in]  session  The SSH session to use.
+ *
+ * @returns Bitfield of supported SSH hostkey algorithms
+ *					SSH_ERROR on error
+ */
+int ssh_knownhosts_algorithms(ssh_session session) {
+  FILE *file = NULL;
+  char **tokens;
+  char *host;
+  char *hostport;
+  const char *type;
+  int match;
+  int ret = 0;
+
+  if (session->opts.knownhosts == NULL) {
+    if (ssh_options_apply(session) < 0) {
+      ssh_set_error(session, SSH_REQUEST_DENIED,
+          "Can't find a known_hosts file");
+      return SSH_ERROR;
+    }
+  }
+
+  if (session->opts.host == NULL) {
+    return 0;
+  }
+
+  host = ssh_lowercase(session->opts.host);
+  hostport = ssh_hostport(host, session->opts.port);
+  if (host == NULL || hostport == NULL) {
+    ssh_set_error_oom(session);
+    SAFE_FREE(host);
+    SAFE_FREE(hostport);
+
+    return SSH_ERROR;
+  }
+
+  do {
+    tokens = ssh_get_knownhost_line(&file,
+    		session->opts.knownhosts, &type);
+
+    /* End of file, return the current state */
+    if (tokens == NULL) {
+      break;
+    }
+    match = match_hashed_host(host, tokens[0]);
+    if (match == 0){
+    	match = match_hostname(hostport, tokens[0], strlen(tokens[0]));
+    }
+    if (match == 0) {
+      match = match_hostname(host, tokens[0], strlen(tokens[0]));
+    }
+    if (match == 0) {
+      match = match_hashed_host(hostport, tokens[0]);
+    }
+    if (match) {
+      /* We got a match. Now check the key type */
+    	SSH_LOG(SSH_LOG_DEBUG, "server %s:%d has %s in known_hosts",
+    							host, session->opts.port, type);
+    	ret |= 1 << ssh_key_type_from_name(type);
+    }
+    tokens_free(tokens);
+  } while (1);
+
+  SAFE_FREE(host);
+  SAFE_FREE(hostport);
+  if (file != NULL) {
+    fclose(file);
+  }
+
+  /* Return the current state at end of file */
+  return ret;
+}
+
 /** @} */
 
 /* vim: set ts=4 sw=4 et cindent: */

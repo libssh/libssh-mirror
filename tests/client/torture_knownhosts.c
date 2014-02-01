@@ -93,10 +93,142 @@ static void torture_knownhosts_port(void **state) {
     assert_true(rc == SSH_SERVER_KNOWN_OK);
 }
 
+static void torture_knownhosts_fail(void **state) {
+    ssh_session session = *state;
+    FILE *file;
+    int rc;
+
+    rc = ssh_options_set(session, SSH_OPTIONS_HOST, "localhost");
+    assert_true(rc == SSH_OK);
+
+    rc = ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, KNOWNHOSTFILES);
+    assert_true(rc == SSH_OK);
+
+    rc = ssh_options_set(session, SSH_OPTIONS_HOSTKEYS, "ssh-rsa");
+    assert_true(rc == SSH_OK);
+
+    file = fopen(KNOWNHOSTFILES, "w");
+    assert_true(file != NULL);
+    fprintf(file, "localhost ssh-rsa %s\n", BADRSA);
+    fclose(file);
+
+    rc = ssh_connect(session);
+    assert_true(rc==SSH_OK);
+
+    rc = ssh_is_server_known(session);
+    assert_true(rc == SSH_SERVER_KNOWN_CHANGED);
+}
+
+static void torture_knownhosts_other(void **state) {
+    ssh_session session = *state;
+    FILE *file;
+    int rc;
+
+    rc = ssh_options_set(session, SSH_OPTIONS_HOST, "localhost");
+    assert_true(rc == SSH_OK);
+
+    rc = ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, KNOWNHOSTFILES);
+    assert_true(rc == SSH_OK);
+
+    rc = ssh_options_set(session, SSH_OPTIONS_HOSTKEYS, "ssh-dss");
+    assert_true(rc == SSH_OK);
+
+    file = fopen(KNOWNHOSTFILES, "w");
+    assert_true(file != NULL);
+    fprintf(file, "localhost ssh-rsa %s\n", BADRSA);
+    fclose(file);
+
+    rc = ssh_connect(session);
+    assert_true(rc==SSH_OK);
+
+    rc = ssh_is_server_known(session);
+    assert_true(rc == SSH_SERVER_FOUND_OTHER);
+}
+
+static void torture_knownhosts_conflict(void **state) {
+    ssh_session session = *state;
+    FILE *file;
+    int rc;
+
+    rc = ssh_options_set(session, SSH_OPTIONS_HOST, "localhost");
+    assert_true(rc == SSH_OK);
+
+    rc = ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, KNOWNHOSTFILES);
+    assert_true(rc == SSH_OK);
+
+    rc = ssh_options_set(session, SSH_OPTIONS_HOSTKEYS, "ssh-rsa");
+    assert_true(rc == SSH_OK);
+
+    file = fopen(KNOWNHOSTFILES, "w");
+    assert_true(file != NULL);
+    fprintf(file, "localhost ssh-rsa %s\n", BADRSA);
+    fprintf(file, "localhost ssh-dss %s\n", BADDSA);
+    fclose(file);
+
+    rc = ssh_connect(session);
+    assert_true(rc==SSH_OK);
+
+    rc = ssh_is_server_known(session);
+    assert_true(rc == SSH_SERVER_KNOWN_CHANGED);
+
+    rc = ssh_write_knownhost(session);
+    assert_true(rc==SSH_OK);
+
+    ssh_disconnect(session);
+    ssh_free(session);
+
+    /* connect again and check host key */
+    *state = session = ssh_new();
+
+    ssh_options_set(session, SSH_OPTIONS_HOST, "localhost");
+    ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, KNOWNHOSTFILES);
+    rc = ssh_options_set(session, SSH_OPTIONS_HOSTKEYS, "ssh-rsa");
+    assert_true(rc == SSH_OK);
+
+    rc = ssh_connect(session);
+    assert_true(rc == SSH_OK);
+
+    rc = ssh_is_server_known(session);
+    assert_true(rc == SSH_SERVER_KNOWN_OK);
+}
+
+static void torture_knownhosts_precheck(void **state) {
+    ssh_session session = *state;
+    FILE *file;
+    int rc;
+    int dsa;
+    int rsa;
+
+    rc = ssh_options_set(session, SSH_OPTIONS_HOST, "localhost");
+    assert_true(rc == SSH_OK);
+
+    rc = ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, KNOWNHOSTFILES);
+    assert_true(rc == SSH_OK);
+
+    file = fopen(KNOWNHOSTFILES, "w");
+    assert_true(file != NULL);
+    fprintf(file, "localhost ssh-rsa %s\n", BADRSA);
+    fprintf(file, "localhost ssh-dss %s\n", BADDSA);
+    fclose(file);
+
+    rc = ssh_knownhosts_algorithms(session);
+    assert_true(rc != SSH_ERROR);
+    dsa = 1 << SSH_KEYTYPE_DSS;
+    rsa = 1 << SSH_KEYTYPE_RSA;
+    assert_true(rc & dsa);
+    assert_true(rc & rsa);
+    /* nothing else than dsa and rsa */
+    assert_true((rc & (dsa | rsa)) == rc);
+}
+
 int torture_run_tests(void) {
     int rc;
     const UnitTest tests[] = {
         unit_test_setup_teardown(torture_knownhosts_port, setup, teardown),
+        unit_test_setup_teardown(torture_knownhosts_fail, setup, teardown),
+        unit_test_setup_teardown(torture_knownhosts_other, setup, teardown),
+        unit_test_setup_teardown(torture_knownhosts_conflict, setup, teardown),
+        unit_test_setup_teardown(torture_knownhosts_precheck, setup, teardown)
     };
 
     ssh_init();
