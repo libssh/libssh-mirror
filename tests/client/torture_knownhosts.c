@@ -145,6 +145,48 @@ static void torture_knownhosts_other(void **state) {
     assert_true(rc == SSH_SERVER_FOUND_OTHER);
 }
 
+static void torture_knownhosts_other_auto(void **state) {
+    ssh_session session = *state;
+    int rc;
+
+    rc = ssh_options_set(session, SSH_OPTIONS_HOST, "localhost");
+    assert_true(rc == SSH_OK);
+
+    rc = ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, KNOWNHOSTFILES);
+    assert_true(rc == SSH_OK);
+
+    rc = ssh_options_set(session, SSH_OPTIONS_HOSTKEYS, "ssh-dss");
+    assert_true(rc == SSH_OK);
+
+    rc = ssh_connect(session);
+    assert_true(rc==SSH_OK);
+
+    rc = ssh_is_server_known(session);
+    assert_true(rc == SSH_SERVER_NOT_KNOWN);
+
+    rc = ssh_write_knownhost(session);
+    assert_true(rc == SSH_OK);
+
+    ssh_disconnect(session);
+    ssh_free(session);
+
+    /* connect again and check host key */
+    *state = session = ssh_new();
+
+    rc = ssh_options_set(session, SSH_OPTIONS_HOST, "localhost");
+    assert_true(rc == SSH_OK);
+
+    rc = ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, KNOWNHOSTFILES);
+    assert_true(rc == SSH_OK);
+
+    rc = ssh_connect(session);
+    assert_true(rc==SSH_OK);
+
+    /* ssh-rsa is the default but libssh should try ssh-dss instead */
+    rc = ssh_is_server_known(session);
+    assert_true(rc == SSH_SERVER_KNOWN_OK);
+}
+
 static void torture_knownhosts_conflict(void **state) {
     ssh_session session = *state;
     FILE *file;
@@ -227,6 +269,7 @@ int torture_run_tests(void) {
         unit_test_setup_teardown(torture_knownhosts_port, setup, teardown),
         unit_test_setup_teardown(torture_knownhosts_fail, setup, teardown),
         unit_test_setup_teardown(torture_knownhosts_other, setup, teardown),
+        unit_test_setup_teardown(torture_knownhosts_other_auto, setup, teardown),
         unit_test_setup_teardown(torture_knownhosts_conflict, setup, teardown),
         unit_test_setup_teardown(torture_knownhosts_precheck, setup, teardown)
     };
