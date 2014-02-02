@@ -120,11 +120,24 @@ int gettimeofday(struct timeval *__p, void *__t);
 #include "libssh/callbacks.h"
 
 /* some constants */
+#ifndef MAX_PACKAT_LEN
 #define MAX_PACKET_LEN 262144
+#endif
+#ifndef ERROR_BUFFERLEN
 #define ERROR_BUFFERLEN 1024
+#endif
+#ifndef CLIENTBANNER1
 #define CLIENTBANNER1 "SSH-1.5-libssh-" SSH_STRINGIFY(LIBSSH_VERSION)
+#endif
+#ifndef CLIENTBANNER2
 #define CLIENTBANNER2 "SSH-2.0-libssh-" SSH_STRINGIFY(LIBSSH_VERSION)
+#endif
+#ifndef KBDINT_MAX_PROMPT
 #define KBDINT_MAX_PROMPT 256 /* more than openssh's :) */
+#endif
+#ifndef MAX_BUF_SIZE
+#define MAX_BUF_SIZE 4096
+#endif
 
 #ifndef __FUNCTION__
 #if defined(__SUNPRO_C)

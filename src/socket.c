@@ -218,7 +218,7 @@ void ssh_socket_set_callbacks(ssh_socket s, ssh_socket_callbacks callbacks){
  */
 int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p, socket_t fd, int revents, void *v_s){
 	ssh_socket s=(ssh_socket )v_s;
-	char buffer[4096];
+	char buffer[MAX_BUF_SIZE];
 	int r;
 	int err=0;
 	socklen_t errlen=sizeof(err);

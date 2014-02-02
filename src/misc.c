@@ -697,7 +697,6 @@ char *ssh_path_expand_tilde(const char *d) {
 }
 
 char *ssh_path_expand_escape(ssh_session session, const char *s) {
-#define MAX_BUF_SIZE 4096
     char host[NI_MAXHOST];
     char buf[MAX_BUF_SIZE];
     char *r, *x = NULL;
