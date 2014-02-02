@@ -536,7 +536,8 @@ pending:
       }
       SSH_LOG(SSH_LOG_PACKET,"ssh_connect: Actual timeout : %d", timeout);
       ret = ssh_handle_packets_termination(session, timeout, ssh_connect_termination, session);
-      if (ret == SSH_ERROR || !ssh_connect_termination(session)) {
+      if (session->session_state != SSH_SESSION_STATE_ERROR &&
+          (ret == SSH_ERROR || !ssh_connect_termination(session))) {
           ssh_set_error(session, SSH_FATAL,
                         "Timeout connecting to %s", session->opts.host);
           session->session_state = SSH_SESSION_STATE_ERROR;
