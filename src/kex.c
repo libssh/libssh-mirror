@@ -397,14 +397,18 @@ int set_client_kex(ssh_session session){
     			if (methods & (1 << prefered_hostkeys[i])){
     				if (verify_existing_algo(SSH_HOSTKEYS, ssh_key_type_to_char(prefered_hostkeys[i]))){
     					if(needcoma)
-    						strcat(methods_buffer,",");
-    					strcat(methods_buffer, ssh_key_type_to_char(prefered_hostkeys[i]));
+    						strncat(methods_buffer,",",sizeof(methods_buffer)-strlen(methods_buffer)-1);
+    					strncat(methods_buffer, ssh_key_type_to_char(prefered_hostkeys[i]), sizeof(methods_buffer)-strlen(methods_buffer)-1);
     					needcoma = 1;
     				}
     			}
     		}
-    		SSH_LOG(SSH_LOG_DEBUG, "Changing host key method to \"%s\"", methods_buffer);
-    		session->opts.wanted_methods[SSH_HOSTKEYS] = strdup(methods_buffer);
+    		if(strlen(methods_buffer) > 0){
+    			SSH_LOG(SSH_LOG_DEBUG, "Changing host key method to \"%s\"", methods_buffer);
+    			session->opts.wanted_methods[SSH_HOSTKEYS] = strdup(methods_buffer);
+    		} else {
+    			SSH_LOG(SSH_LOG_DEBUG, "No supported kex method for existing key in known_hosts file");
+    		}
     	}
     }
 
