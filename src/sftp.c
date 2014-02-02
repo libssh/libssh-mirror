@@ -308,7 +308,7 @@ int sftp_packet_write(sftp_session sftp, uint8_t type, ssh_buffer payload){
 }
 
 sftp_packet sftp_packet_read(sftp_session sftp) {
-  unsigned char buffer[4096];
+  unsigned char buffer[MAX_BUF_SIZE];
   sftp_packet packet = NULL;
   uint32_t size;
   int r;
