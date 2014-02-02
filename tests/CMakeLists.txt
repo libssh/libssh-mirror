@@ -1,8 +1,8 @@
 project(tests C)
 
-if (BSD OR SOLARIS)
+if (BSD OR SOLARIS OR OSX)
     find_package(Argp)
-endif (BSD OR SOLARIS)
+endif (BSD OR SOLARIS OR OSX)
 
 set(TORTURE_LIBRARY torture)
 
@@ -25,7 +25,7 @@ target_link_libraries(${TORTURE_LIBRARY}
     ${LIBSSH_LINK_LIBRARIES}
     ${LIBSSH_THREADS_STATIC_LIBRARY}
     ${LIBSSH_THREADS_LINK_LIBRARIES}
-    ${ARGP_LIBRARY}
+    ${ARGP_LIBRARIES}
 )
 
 set(TEST_TARGET_LIBRARIES
