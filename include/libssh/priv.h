@@ -168,16 +168,6 @@ int gettimeofday(struct timeval *__p, void *__t);
 #include <sys/time.h>
 #endif
 
-/*
- * get rid of deprecacy warnings on OSX when using OpenSSL 
- */
-#if defined(__APPLE__)
-    #ifdef MAC_OS_X_VERSION_MIN_REQUIRED
-        #undef MAC_OS_X_VERSION_MIN_REQUIRED
-    #endif
-    #define MAC_OS_X_VERSION_MIN_REQUIRED MAC_OS_X_VERSION_10_6
-#endif
-
 /* forward declarations */
 struct ssh_common_struct;
 struct ssh_kex_struct;
