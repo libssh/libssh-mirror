@@ -164,14 +164,14 @@ int ssh_send_banner(ssh_session session, int server) {
     if (session->serverbanner == NULL) {
       goto end;
     }
+    snprintf(buffer, 128, "%s\n", session->serverbanner);
   } else {
     session->clientbanner = strdup(banner);
     if (session->clientbanner == NULL) {
       goto end;
     }
+    snprintf(buffer, 128, "%s\n", session->clientbanner);
   }
-
-  snprintf(buffer, 128, "%s\n", banner);
 
   if (ssh_socket_write(session->socket, buffer, strlen(buffer)) == SSH_ERROR) {
     goto end;
