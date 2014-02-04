@@ -310,6 +310,38 @@ const char* ssh_get_serverbanner(ssh_session session) {
 }
 
 /**
+ * @brief get the name of the input for the given session.
+ *
+ * @param[in] session The SSH session.
+ *
+ * @return Returns cipher name or NULL.
+ */
+const char* ssh_get_cipher_in(ssh_session session) {
+    if ((session != NULL) &&
+        (session->current_crypto != NULL) &&
+        (session->current_crypto->in_cipher != NULL)) {
+        return session->current_crypto->in_cipher->name;
+    }
+    return NULL;
+}
+
+/**
+ * @brief get the name of the output cipher for the given session.
+ *
+ * @param[in] session The SSH session.
+ *
+ * @return Returns cipher name or NULL.
+ */
+const char* ssh_get_cipher_out(ssh_session session) {
+    if ((session != NULL) &&
+        (session->current_crypto != NULL) &&
+        (session->current_crypto->out_cipher != NULL)) {
+        return session->current_crypto->out_cipher->name;
+    }
+    return NULL;
+}
+
+/**
  * @brief Disconnect impolitely from a remote host by closing the socket.
  *
  * Suitable if you forked and want to destroy this session.
