@@ -642,6 +642,8 @@ LIBSSH_API int ssh_event_remove_session(ssh_event event, ssh_session session);
 LIBSSH_API void ssh_event_free(ssh_event event);
 LIBSSH_API const char* ssh_get_clientbanner(ssh_session session);
 LIBSSH_API const char* ssh_get_serverbanner(ssh_session session);
+LIBSSH_API const char* ssh_get_cipher_in(ssh_session session);
+LIBSSH_API const char* ssh_get_cipher_out(ssh_session session);
 
 #ifndef LIBSSH_LEGACY_0_4
 #include "libssh/legacy.h"
