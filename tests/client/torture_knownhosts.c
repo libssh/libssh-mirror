@@ -23,6 +23,7 @@
 
 #include "torture.h"
 #include "session.c"
+#include "known_hosts.c"
 
 #define KNOWNHOSTFILES "libssh_torture_knownhosts"
 #define BADRSA "AAAAB3NzaC1yc2EAAAADAQABAAABAQChm5" \
@@ -255,8 +256,7 @@ static void torture_knownhosts_precheck(void **state) {
     ssh_session session = *state;
     FILE *file;
     int rc;
-    int dsa;
-    int rsa;
+    char **kex;
 
     rc = ssh_options_set(session, SSH_OPTIONS_HOST, "localhost");
     assert_true(rc == SSH_OK);
@@ -270,14 +270,14 @@ static void torture_knownhosts_precheck(void **state) {
     fprintf(file, "localhost ssh-dss %s\n", BADDSA);
     fclose(file);
 
-    rc = ssh_knownhosts_algorithms(session);
-    assert_true(rc != SSH_ERROR);
-    dsa = 1 << SSH_KEYTYPE_DSS;
-    rsa = 1 << SSH_KEYTYPE_RSA;
-    assert_true(rc & dsa);
-    assert_true(rc & rsa);
-    /* nothing else than dsa and rsa */
-    assert_true((rc & (dsa | rsa)) == rc);
+    kex = ssh_knownhosts_algorithms(session);
+    assert_true(kex != NULL);
+    assert_string_equal(kex[0],"ssh-rsa");
+    assert_string_equal(kex[1],"ssh-dss");
+    assert_true(kex[2]==NULL);
+    free(kex[1]);
+    free(kex[0]);
+    free(kex);
 }
 
 int torture_run_tests(void) {
