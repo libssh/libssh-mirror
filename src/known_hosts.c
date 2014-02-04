@@ -34,7 +34,7 @@
 #include "libssh/misc.h"
 #include "libssh/pki.h"
 #include "libssh/options.h"
-
+#include "libssh/knownhosts.h"
 /*todo: remove this include */
 #include "libssh/string.h"
 
@@ -647,29 +647,33 @@ int ssh_write_knownhost(ssh_session session) {
     return 0;
 }
 
+#define KNOWNHOSTS_MAXTYPES 10
+
 /**
+ * @internal
  * @brief Check which kind of host keys should be preferred for connection
  *        by reading the known_hosts file.
  *
  * @param[in]  session  The SSH session to use.
  *
- * @returns Bitfield of supported SSH hostkey algorithms
- *					SSH_ERROR on error
+ * @returns array of supported key types
+ *			NULL on error
  */
-int ssh_knownhosts_algorithms(ssh_session session) {
+char **ssh_knownhosts_algorithms(ssh_session session) {
   FILE *file = NULL;
   char **tokens;
   char *host;
   char *hostport;
   const char *type;
   int match;
-  int ret = 0;
+  char **array;
+  int i=0, j;
 
   if (session->opts.knownhosts == NULL) {
     if (ssh_options_apply(session) < 0) {
       ssh_set_error(session, SSH_REQUEST_DENIED,
           "Can't find a known_hosts file");
-      return SSH_ERROR;
+      return NULL;
     }
   }
 
@@ -683,8 +687,13 @@ int ssh_knownhosts_algorithms(ssh_session session) {
     ssh_set_error_oom(session);
     SAFE_FREE(host);
     SAFE_FREE(hostport);
+    return NULL;
+  }
 
-    return SSH_ERROR;
+  array = malloc(sizeof(char *) * KNOWNHOSTS_MAXTYPES);
+  if (array==NULL){
+	  ssh_set_error_oom(session);
+	  return NULL;
   }
 
   do {
@@ -709,11 +718,24 @@ int ssh_knownhosts_algorithms(ssh_session session) {
       /* We got a match. Now check the key type */
     	SSH_LOG(SSH_LOG_DEBUG, "server %s:%d has %s in known_hosts",
     							host, session->opts.port, type);
-    	ret |= 1 << ssh_key_type_from_name(type);
+    	/* don't copy more than once */
+    	for(j=0;j<i && match;++j){
+    		if(strcmp(array[j], type)==0)
+    			match=0;
+    	}
+    	if (match){
+    		array[i] = strdup(type);
+    		i++;
+    		if(i>= KNOWNHOSTS_MAXTYPES-1){
+    			tokens_free(tokens);
+    			break;
+    		}
+    	}
     }
     tokens_free(tokens);
   } while (1);
 
+  array[i]=NULL;
   SAFE_FREE(host);
   SAFE_FREE(hostport);
   if (file != NULL) {
@@ -721,7 +743,7 @@ int ssh_knownhosts_algorithms(ssh_session session) {
   }
 
   /* Return the current state at end of file */
-  return ret;
+  return array;
 }
 
 /** @} */

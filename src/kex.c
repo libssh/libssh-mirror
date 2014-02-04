@@ -35,6 +35,7 @@
 #include "libssh/ssh2.h"
 #include "libssh/string.h"
 #include "libssh/curve25519.h"
+#include "libssh/knownhosts.h"
 
 #ifdef HAVE_LIBGCRYPT
 # define BLOWFISH "blowfish-cbc,"
@@ -374,16 +375,58 @@ void ssh_list_kex(struct ssh_kex_struct *kex) {
 }
 
 /**
+ * @internal
+ * @brief selects the hostkey mechanisms to be chosen for the key exchange,
+ * as some hostkey mechanisms may be present in known_hosts file and preferred
+ * @returns a cstring containing a comma-separated list of hostkey methods.
+ *          NULL if no method matches
+ */
+static char *ssh_client_select_hostkeys(ssh_session session){
+    char methods_buffer[128]={0};
+    static const char *preferred_hostkeys[]={"ecdsa-sha2-nistp521","ecdsa-sha2-nistp384",
+    		"ecdsa-sha2-nistp256", "ssh-rsa", "ssh-dss", "ssh-rsa1", NULL};
+    char **methods;
+    int i,j;
+    int needcoma=0;
+
+    methods = ssh_knownhosts_algorithms(session);
+	if (methods == NULL || methods[0] == NULL)
+		return NULL;
+
+	for (i=0;preferred_hostkeys[i] != NULL; ++i){
+		for (j=0; methods[j] != NULL; ++j){
+			if(strcmp(preferred_hostkeys[i], methods[j]) == 0){
+				if (verify_existing_algo(SSH_HOSTKEYS, methods[j])){
+					if(needcoma)
+						strncat(methods_buffer,",",sizeof(methods_buffer)-strlen(methods_buffer)-1);
+					strncat(methods_buffer, methods[j], sizeof(methods_buffer)-strlen(methods_buffer)-1);
+					needcoma = 1;
+				}
+			}
+		}
+	}
+	for(i=0;methods[i]!= NULL; ++i){
+		SAFE_FREE(methods[i]);
+	}
+	SAFE_FREE(methods);
+
+	if(strlen(methods_buffer) > 0){
+		SSH_LOG(SSH_LOG_DEBUG, "Changing host key method to \"%s\"", methods_buffer);
+		return strdup(methods_buffer);
+	} else {
+		SSH_LOG(SSH_LOG_DEBUG, "No supported kex method for existing key in known_hosts file");
+		return NULL;
+	}
+
+}
+/**
  * @brief sets the key exchange parameters to be sent to the server,
  *        in function of the options and available methods.
  */
 int set_client_kex(ssh_session session){
     struct ssh_kex_struct *client= &session->next_crypto->client_kex;
     const char *wanted;
-    char methods_buffer[128]={0};
-    int prefered_hostkeys[]={SSH_KEYTYPE_ECDSA, SSH_KEYTYPE_RSA,
-    		SSH_KEYTYPE_DSS, SSH_KEYTYPE_RSA1, SSH_KEYTYPE_UNKNOWN};
-    int i, methods, needcoma=0;
+    int i;
 
     ssh_get_random(client->cookie, 16, 0);
 
@@ -391,25 +434,8 @@ int set_client_kex(ssh_session session){
     /* first check if we have specific host key methods */
     if(session->opts.wanted_methods[SSH_HOSTKEYS] == NULL){
     	/* Only if no override */
-    	methods = ssh_knownhosts_algorithms(session);
-    	if (methods != SSH_ERROR && methods != 0){
-    		for(i=0; prefered_hostkeys[i] != SSH_KEYTYPE_UNKNOWN;++i){
-    			if (methods & (1 << prefered_hostkeys[i])){
-    				if (verify_existing_algo(SSH_HOSTKEYS, ssh_key_type_to_char(prefered_hostkeys[i]))){
-    					if(needcoma)
-    						strncat(methods_buffer,",",sizeof(methods_buffer)-strlen(methods_buffer)-1);
-    					strncat(methods_buffer, ssh_key_type_to_char(prefered_hostkeys[i]), sizeof(methods_buffer)-strlen(methods_buffer)-1);
-    					needcoma = 1;
-    				}
-    			}
-    		}
-    		if(strlen(methods_buffer) > 0){
-    			SSH_LOG(SSH_LOG_DEBUG, "Changing host key method to \"%s\"", methods_buffer);
-    			session->opts.wanted_methods[SSH_HOSTKEYS] = strdup(methods_buffer);
-    		} else {
-    			SSH_LOG(SSH_LOG_DEBUG, "No supported kex method for existing key in known_hosts file");
-    		}
-    	}
+    	session->opts.wanted_methods[SSH_HOSTKEYS] =
+    			ssh_client_select_hostkeys(session);
     }
 
     for (i = 0; i < KEX_METHODS_SIZE; i++) {

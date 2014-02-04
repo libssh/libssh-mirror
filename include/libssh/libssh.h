@@ -503,7 +503,6 @@ LIBSSH_API int ssh_key_cmp(const ssh_key k1,
                            const ssh_key k2,
                            enum ssh_keycmp_e what);
 
-LIBSSH_API int ssh_knownhosts_algorithms(ssh_session session);
 LIBSSH_API int ssh_pki_generate(enum ssh_keytypes_e type, int parameter,
         ssh_key *pkey);
 LIBSSH_API int ssh_pki_import_privkey_base64(const char *b64_key,
