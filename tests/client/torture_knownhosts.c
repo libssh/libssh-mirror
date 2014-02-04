@@ -25,6 +25,23 @@
 #include "session.c"
 
 #define KNOWNHOSTFILES "libssh_torture_knownhosts"
+#define BADRSA "AAAAB3NzaC1yc2EAAAADAQABAAABAQChm5" \
+ "a6Av65O8cKtx5YXOnui3wJnYE6A6J/I4kZSAibbn14Jcl+34VJQwv96f25AxNmo" \
+ "NwoiZV93IzdypQmiuieh6s6wB9WhYjU9K/6CkIpNhpCxswA90b3ePjS7LnR9B9J" \
+ "slPSbG1H0KC1c5lb7G3utXteXtM+4YvCvpN5VdC4CpghT+p0cwN2Na8Md5vRItz" \
+ "YgIytryNn7LLiwYfoSxvWigFrTTZsrVtCOYyNgklmffpGdzuC43wdANvTewfI9G" \
+ "o71r8EXmEc228CrYPmb8Scv3mpXFK/BosohSGkPlEHu9lf3YjnknBicDaVtJOYp" \
+ "wnXJPjZo2EhG79HxDRpjJHH"
+#define BADDSA "AAAAB3NzaC1kc3MAAACBAITDKqGQ5aC5wHySG6ZdL1+BVBY2nLP5vzw3i3pvZfP" \
+ "yNUS0UCwrt5pajsMvDRGXXebTJhWVonDnv8tpSgiuIBXMZrma8CU1KCFGRzwb/n8" \
+ "cc5tJmIphlOUTrObjBmsRz7u1eZmoaddXC9ask6BNnt0DmhzYi2esL3mbardy8IN" \
+ "zAAAAFQDlPFCm410pgQQPb3X5FWjyVEIl+QAAAIAp0vqfir8K8p+zP4dzFG7ppnt" \
+ "DjaXf3ge6URF7f5xPDo6CClGo2JQ2REF8NxM7K9cLgR9Ifx2ahO48UMgrXEl/BOp" \
+ "IQHpeBqUz26a49O5J0WEW16YSUHxWwMxWVe/SRmyKdTUZJ6fcepH88JNqm3XudNn" \
+ "s78grM+yx9mcXnK2AsAAAAIBxpF8ZQIlGrSgwCmCfwjP156bC3Ya6LYf9ZpLJ0dX" \
+ "EcxqLVllrNEvd2EGD9p16BYO2yaalYon8im59PtOcul2ay5XQ6rVDQ2T0pgNUpsI" \
+ "h0dSi8VJXI1wes5HTyLsv9VBmU1uCXUUvufoQKfF/OcSH0ufcCpnd62g1/adZcy2" \
+ "WJg=="
 
 static void setup(void **state) {
     int verbosity=torture_libssh_verbosity();
