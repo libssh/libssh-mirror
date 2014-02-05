@@ -599,7 +599,11 @@ int ssh_handle_packets_termination(ssh_session session,
         }
     }
 
-    ssh_timestamp_init(&ts);
+    /* avoid unnecessary syscall for the SSH_TIMEOUT_NONBLOCKING case */
+    if (timeout != SSH_TIMEOUT_NONBLOCKING) {
+        ssh_timestamp_init(&ts);
+    }
+
     tm = timeout;
     while(!fct(user)) {
         ret = ssh_handle_packets(session, tm);
