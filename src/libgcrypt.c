@@ -41,6 +41,9 @@ static int alloc_key(struct crypto_struct *cipher) {
     return 0;
 }
 
+void ssh_reseed(void){
+	}
+
 SHACTX sha1_init(void) {
   SHACTX ctx = NULL;
   gcry_md_open(&ctx, GCRY_MD_SHA1, 0);

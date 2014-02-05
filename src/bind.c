@@ -374,7 +374,8 @@ int ssh_bind_accept(ssh_bind sshbind, ssh_session session) {
   ssh_socket_get_poll_handle_out(session->socket);
   session->dsa_key = dsa;
   session->rsa_key = rsa;
-
+  /* force PRNG to change state in case we fork after ssh_bind_accept */
+  ssh_reseed();
   return SSH_OK;
 }
 
