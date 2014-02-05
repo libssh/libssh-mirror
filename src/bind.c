@@ -458,6 +458,8 @@ int ssh_bind_accept_fd(ssh_bind sshbind, ssh_session session, socket_t fd){
           return SSH_ERROR;
         }
     }
+    /* force PRNG to change state in case we fork after ssh_bind_accept */
+    ssh_reseed();
     return SSH_OK;
 }
 
