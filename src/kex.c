@@ -390,8 +390,10 @@ static char *ssh_client_select_hostkeys(ssh_session session){
     int needcoma=0;
 
     methods = ssh_knownhosts_algorithms(session);
-	if (methods == NULL || methods[0] == NULL)
+	if (methods == NULL || methods[0] == NULL){
+		SAFE_FREE(methods);
 		return NULL;
+	}
 
 	for (i=0;preferred_hostkeys[i] != NULL; ++i){
 		for (j=0; methods[j] != NULL; ++j){
