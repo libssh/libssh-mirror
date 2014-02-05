@@ -678,22 +678,19 @@ char **ssh_knownhosts_algorithms(ssh_session session) {
   }
 
   if (session->opts.host == NULL) {
-    return 0;
+    return NULL;
   }
 
   host = ssh_lowercase(session->opts.host);
   hostport = ssh_hostport(host, session->opts.port);
-  if (host == NULL || hostport == NULL) {
+  array = malloc(sizeof(char *) * KNOWNHOSTS_MAXTYPES);
+
+  if (host == NULL || hostport == NULL || array == NULL) {
     ssh_set_error_oom(session);
     SAFE_FREE(host);
     SAFE_FREE(hostport);
+    SAFE_FREE(array);
     return NULL;
-  }
-
-  array = malloc(sizeof(char *) * KNOWNHOSTS_MAXTYPES);
-  if (array==NULL){
-	  ssh_set_error_oom(session);
-	  return NULL;
   }
 
   do {
