@@ -70,5 +70,6 @@ int crypt_set_algorithms_server(ssh_session session);
 struct ssh_crypto_struct *crypto_new(void);
 void crypto_free(struct ssh_crypto_struct *crypto);
 
+void ssh_reseed(void);
 
 #endif /* WRAPPER_H_ */

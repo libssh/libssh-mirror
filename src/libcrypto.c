@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/time.h>
 
 #include "libssh/priv.h"
 #include "libssh/session.h"
@@ -38,6 +39,8 @@
 #include <openssl/rsa.h>
 #include <openssl/hmac.h>
 #include <openssl/opensslv.h>
+#include <openssl/rand.h>
+
 #ifdef HAVE_OPENSSL_AES_H
 #define HAS_AES
 #include <openssl/aes.h>
@@ -72,6 +75,12 @@ static int alloc_key(struct ssh_cipher_struct *cipher) {
     }
 
     return 0;
+}
+
+void ssh_reseed(void){
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    RAND_add(&tv, sizeof(tv), 0.0);
 }
 
 SHACTX sha1_init(void) {
