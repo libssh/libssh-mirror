@@ -22,6 +22,7 @@
  */
 
 #include "config.h"
+#include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -59,6 +60,9 @@ uint32_t packet_decrypt_len(ssh_session session, char *crypted){
 int packet_decrypt(ssh_session session, void *data,uint32_t len) {
   struct ssh_cipher_struct *crypto = session->current_crypto->in_cipher;
   char *out = NULL;
+
+  assert(len);
+
   if(len % session->current_crypto->in_cipher->blocksize != 0){
     ssh_set_error(session, SSH_FATAL, "Cryptographic functions must be set on at least one blocksize (received %d)",len);
     return SSH_ERROR;
@@ -88,6 +92,8 @@ unsigned char *packet_encrypt(ssh_session session, void *data, uint32_t len) {
   char *out = NULL;
   unsigned int finallen;
   uint32_t seq;
+
+  assert(len);
 
   if (!session->current_crypto) {
     return NULL; /* nothing to do here */
