@@ -288,6 +288,6 @@ if (WITH_STATIC_LIB)
   )
 endif (WITH_STATIC_LIB)
 
-if (CMAKE_THREAD_LIBS_INIT)
+if (Threads_FOUND)
     add_subdirectory(threads)
-endif (CMAKE_THREAD_LIBS_INIT)
+endif (Threads_FOUND)
