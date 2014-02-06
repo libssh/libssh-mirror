@@ -152,7 +152,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
     const uint8_t *packet;
     int to_be_read;
     int rc;
-    uint32_t len, compsize, payloadsize;
+    uint32_t len, compsize, payloadsize, buffer_len;
     uint8_t padding;
     size_t processed = 0; /* number of byte processed from the callback */
 
@@ -251,12 +251,17 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
                  * Decrypt the rest of the packet (blocksize bytes already
                  * have been decrypted)
                  */
-                rc = packet_decrypt(session,
-                                    ((uint8_t*)buffer_get_rest(session->in_buffer) + blocksize),
-                                    buffer_get_rest_len(session->in_buffer) - blocksize);
-                if (rc < 0) {
-                    ssh_set_error(session, SSH_FATAL, "Decrypt error");
-                    goto error;
+
+                /* The following check avoids decrypting zero bytes */
+                buffer_len = buffer_get_rest_len(session->in_buffer);
+                if (buffer_len != blocksize) {
+                    rc = packet_decrypt(session,
+                                        ((uint8_t*)buffer_get_rest(session->in_buffer) + blocksize),
+                                        buffer_len - blocksize);
+                    if (rc < 0) {
+                        ssh_set_error(session, SSH_FATAL, "Decrypt error");
+                        goto error;
+                    }
                 }
 
                 /* copy the last part from the incoming buffer */
