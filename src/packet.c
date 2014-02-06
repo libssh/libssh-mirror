@@ -504,10 +504,12 @@ static int packet_send2(ssh_session session) {
       session->current_crypto->out_cipher->blocksize : 8);
   uint32_t currentlen = buffer_get_rest_len(session->out_buffer);
   unsigned char *hmac = NULL;
-  char padstring[32] = {0};
+  char padstring[32] = { 0 };
   int rc = SSH_ERROR;
   uint32_t finallen,payloadsize,compsize;
   uint8_t padding;
+
+  uint8_t header[sizeof(padding) + sizeof(finallen)] = { 0 };
 
   payloadsize = currentlen;
 #ifdef WITH_ZLIB
@@ -528,19 +530,18 @@ static int packet_send2(ssh_session session) {
 
   if (session->current_crypto) {
     ssh_get_random(padstring, padding, 0);
-  } else {
-    memset(padstring,0,padding);
   }
 
   finallen = htonl(currentlen + padding + 1);
 
-  if (buffer_prepend_data(session->out_buffer, &padding, sizeof(uint8_t)) < 0) {
+  memcpy(&header[0], &finallen, sizeof(finallen));
+  header[sizeof(finallen)] = padding;
+  rc = buffer_prepend_data(session->out_buffer, &header, sizeof(header));
+  if (rc < 0) {
     goto error;
   }
-  if (buffer_prepend_data(session->out_buffer, &finallen, sizeof(uint32_t)) < 0) {
-    goto error;
-  }
-  if (buffer_add_data(session->out_buffer, padstring, padding) < 0) {
+  rc = buffer_add_data(session->out_buffer, padstring, padding);
+  if (rc < 0) {
     goto error;
   }
 #ifdef WITH_PCAP
