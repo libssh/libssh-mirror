@@ -1,6 +1,18 @@
 ChangeLog
 ==========
 
+version 0.6.1 (released 2014-02-08)
+  * Added support for libgcrypt 1.6.
+  * Added ssh_channel_accept_forward().
+  * Added known_hosts heuristic during connection (#138).
+  * Added getters for session cipher names.
+  * Fixed decrypt of zero length buffer.
+  * Fixed padding in RSA signature blobs.
+  * Fixed DSA signature extraction.
+  * Fixed some memory leaks.
+  * Fixed read of non-connected socket.
+  * Fixed thread dectection.
+
 version 0.6.0 (released 2014-01-08)
   * Added new publicy key API.
   * Added new userauth API.
