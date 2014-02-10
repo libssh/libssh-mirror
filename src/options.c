@@ -136,7 +136,7 @@ int ssh_options_copy(ssh_session src, ssh_session *dest) {
         }
     }
 
-    for (i = 0; i < 10; ++i) {
+    for (i = 0; i < 10; i++) {
         if (src->opts.wanted_methods[i]) {
             new->opts.wanted_methods[i] = strdup(src->opts.wanted_methods[i]);
             if (new->opts.wanted_methods[i] == NULL) {

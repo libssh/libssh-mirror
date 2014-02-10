@@ -394,7 +394,7 @@ int ssh_bind_accept_fd(ssh_bind sshbind, ssh_session session, socket_t fd){
     session->version = 2;
 
     /* copy options */
-    for (i = 0; i < 10; ++i) {
+    for (i = 0; i < 10; i++) {
       if (sshbind->wanted_methods[i]) {
         session->opts.wanted_methods[i] = strdup(sshbind->wanted_methods[i]);
         if (session->opts.wanted_methods[i] == NULL) {
