@@ -1233,9 +1233,15 @@ static ssh_signature pki_signature_from_rsa_blob(const ssh_key pubkey,
     char *blob_padded_data;
     ssh_string sig_blob_padded;
 
+    size_t rsalen = 0;
     size_t len = ssh_string_len(sig_blob);
-    size_t rsalen= RSA_size(pubkey->rsa);
 
+    if (pubkey->rsa == NULL) {
+        ssh_pki_log("Pubkey RSA field NULL");
+        goto errout;
+    }
+
+    rsalen = RSA_size(pubkey->rsa);
     if (len > rsalen) {
         ssh_pki_log("Signature is too big: %lu > %lu",
                     (unsigned long)len, (unsigned long)rsalen);
