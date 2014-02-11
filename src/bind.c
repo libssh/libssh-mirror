@@ -254,7 +254,6 @@ int ssh_bind_listen(ssh_bind sshbind) {
           sshbind->rsa = NULL;
           return -1;
       }
-      sshbind->bindfd = fd;
 
       if (listen(fd, 10) < 0) {
           ssh_set_error(sshbind, SSH_FATAL,
@@ -267,6 +266,8 @@ int ssh_bind_listen(ssh_bind sshbind) {
           sshbind->rsa = NULL;
           return -1;
       }
+
+      sshbind->bindfd = fd;
   } else {
       SSH_LOG(SSH_LOG_INFO, "Using app-provided bind socket");
   }
