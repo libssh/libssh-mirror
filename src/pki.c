@@ -331,6 +331,10 @@ void ssh_signature_free(ssh_signature sig)
 #endif
             break;
         case SSH_KEYTYPE_ECDSA:
+#ifdef HAVE_LIBCRYPTO
+            ECDSA_SIG_free(sig->ecdsa_sig);
+#endif
+            break;
         case SSH_KEYTYPE_UNKNOWN:
             break;
     }
