@@ -104,6 +104,13 @@
 extern "C" {
 #endif
 
+struct ssh_counter_struct {
+    uint64_t in_bytes;
+    uint64_t out_bytes;
+    uint64_t in_packets;
+    uint64_t out_packets;
+};
+typedef struct ssh_counter_struct *ssh_counter;
 
 typedef struct ssh_agent_struct* ssh_agent;
 typedef struct ssh_buffer_struct* ssh_buffer;
@@ -395,6 +402,8 @@ LIBSSH_API int ssh_channel_send_eof(ssh_channel channel);
 LIBSSH_API int ssh_channel_select(ssh_channel *readchans, ssh_channel *writechans, ssh_channel *exceptchans, struct
         timeval * timeout);
 LIBSSH_API void ssh_channel_set_blocking(ssh_channel channel, int blocking);
+LIBSSH_API void ssh_channel_set_counter(ssh_channel channel,
+                                        ssh_counter counter);
 LIBSSH_API int ssh_channel_write(ssh_channel channel, const void *data, uint32_t len);
 LIBSSH_API uint32_t ssh_channel_window_size(ssh_channel channel);
 
@@ -575,6 +584,8 @@ LIBSSH_API int ssh_select(ssh_channel *channels, ssh_channel *outchannels, socke
 LIBSSH_API int ssh_service_request(ssh_session session, const char *service);
 LIBSSH_API int ssh_set_agent_channel(ssh_session session, ssh_channel channel);
 LIBSSH_API void ssh_set_blocking(ssh_session session, int blocking);
+LIBSSH_API void ssh_set_counters(ssh_session session, ssh_counter scounter,
+                                 ssh_counter rcounter);
 LIBSSH_API void ssh_set_fd_except(ssh_session session);
 LIBSSH_API void ssh_set_fd_toread(ssh_session session);
 LIBSSH_API void ssh_set_fd_towrite(ssh_session session);

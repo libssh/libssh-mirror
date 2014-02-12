@@ -311,6 +311,10 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
 #endif /* WITH_ZLIB */
             payloadsize = buffer_get_rest_len(session->in_buffer);
             session->recv_seq++;
+            if (session->raw_counter != NULL) {
+                session->raw_counter->in_bytes += payloadsize;
+                session->raw_counter->in_packets++;
+            }
 
             /*
              * We don't want to rewrite a new packet while still executing the
@@ -560,6 +564,10 @@ static int packet_send2(ssh_session session) {
 
   rc = ssh_packet_write(session);
   session->send_seq++;
+  if (session->raw_counter != NULL) {
+      session->raw_counter->out_bytes += payloadsize;
+      session->raw_counter->out_packets++;
+  }
 
   SSH_LOG(SSH_LOG_PACKET,
           "packet: wrote [len=%d,padding=%hhd,comp=%d,payload=%d]",

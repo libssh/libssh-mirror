@@ -188,6 +188,9 @@ struct ssh_session_struct {
         char *gss_client_identity;
         int gss_delegate_creds;
     } opts;
+    /* counters */
+    ssh_counter socket_counter;
+    ssh_counter raw_counter;
 };
 
 /** @internal

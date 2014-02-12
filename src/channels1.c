@@ -367,6 +367,9 @@ int channel_write1(ssh_channel channel, const void *data, int len) {
       return -1;
     }
     ssh_handle_packets(session, SSH_TIMEOUT_NONBLOCKING);
+    if (channel->counter != NULL) {
+        channel->counter->out_bytes += effectivelen;
+    }
   }
   if (ssh_blocking_flush(session,SSH_TIMEOUT_USER) == SSH_ERROR)
       return -1;

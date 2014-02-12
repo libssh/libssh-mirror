@@ -831,6 +831,45 @@ error:
     return SSH_ERROR;
 }
 
+ /**
+ * @brief Set the session data counters.
+ *
+ * This functions sets the counter structures to be used to calculate data
+ * which comes in and goes out through the session at different levels.
+ *
+ * @code
+ * struct ssh_counter_struct scounter = {
+ *     .in_bytes = 0,
+ *     .out_bytes = 0,
+ *     .in_packets = 0,
+ *     .out_packets = 0
+ * };
+ *
+ * struct ssh_counter_struct rcounter = {
+ *     .in_bytes = 0,
+ *     .out_bytes = 0,
+ *     .in_packets = 0,
+ *     .out_packets = 0
+ * };
+ *
+ * ssh_set_counters(session, &scounter, &rcounter);
+ * @endcode
+ *
+ * @param[in] session   The SSH session.
+ *
+ * @param[in] scounter  Counter for byte data handled by the session sockets.
+ *
+ * @param[in] rcounter  Counter for byte and packet data handled by the session,
+ *                      prior compression and SSH overhead.
+ */
+void ssh_set_counters(ssh_session session, ssh_counter scounter,
+                              ssh_counter rcounter) {
+    if (session != NULL) {
+        session->socket_counter = scounter;
+        session->raw_counter = rcounter;
+    }
+}
+
 /** @} */
 
 /* vim: set ts=4 sw=4 et cindent: */

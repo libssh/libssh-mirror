@@ -280,6 +280,9 @@ int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p, socket_t fd, int r
 			}
 		}
 		if(r>0){
+            if (s->session->socket_counter != NULL) {
+                s->session->socket_counter->in_bytes += r;
+            }
 			/* Bufferize the data and then call the callback */
             r = ssh_buffer_add_data(s->in_buffer,buffer,r);
             if (r < 0) {
@@ -659,6 +662,9 @@ int ssh_socket_nonblocking_flush(ssh_socket s) {
       return SSH_ERROR;
     }
     buffer_pass_bytes(s->out_buffer, w);
+    if (s->session->socket_counter != NULL) {
+        s->session->socket_counter->out_bytes += w;
+    }
   }
 
   /* Is there some data pending? */
