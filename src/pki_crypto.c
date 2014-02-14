@@ -1148,8 +1148,6 @@ static ssh_string pki_dsa_signature_to_blob(const ssh_signature sig)
 
 ssh_string pki_signature_to_blob(const ssh_signature sig)
 {
-    ssh_string r;
-    ssh_string s;
     ssh_string sig_blob = NULL;
 
     switch(sig->type) {
@@ -1163,6 +1161,8 @@ ssh_string pki_signature_to_blob(const ssh_signature sig)
         case SSH_KEYTYPE_ECDSA:
 #ifdef HAVE_OPENSSL_ECC
         {
+            ssh_string r;
+            ssh_string s;
             ssh_buffer b;
             int rc;
 
