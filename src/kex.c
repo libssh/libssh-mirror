@@ -73,7 +73,7 @@
 
 #ifdef HAVE_ECDH
 #define ECDH "ecdh-sha2-nistp256,"
-#define HOSTKEYS "ecdsa-sha2-nistp256,ssh-rsa,ssh-dss"
+#define HOSTKEYS "ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,ssh-rsa,ssh-dss"
 #else
 #define HOSTKEYS "ssh-rsa,ssh-dss"
 #define ECDH ""
