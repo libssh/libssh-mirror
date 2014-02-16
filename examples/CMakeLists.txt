@@ -44,9 +44,6 @@ if (UNIX AND NOT WIN32)
     target_link_libraries(samplessh ${LIBSSH_SHARED_LIBRARY})
 
     if (WITH_SERVER)
-        add_executable(samplesshd samplesshd.c)
-        target_link_libraries(samplesshd ${LIBSSH_SHARED_LIBRARY} ${ARGP_LIBRARIES})
-
         if (WITH_GSSAPI AND GSSAPI_FOUND)
             add_executable(samplesshd-cb samplesshd-cb.c)
             target_link_libraries(samplesshd-cb ${LIBSSH_SHARED_LIBRARY} ${ARGP_LIBRARIES})
