@@ -48,6 +48,7 @@ endif(CMAKE_COMPILER_IS_GNUCC AND NOT MINGW AND NOT OS2)
 # HEADER FILES
 check_include_file(argp.h HAVE_ARGP_H)
 check_include_file(pty.h HAVE_PTY_H)
+check_include_file(utmp.h HAVE_UTMP_H)
 check_include_file(termios.h HAVE_TERMIOS_H)
 check_include_file(unistd.h HAVE_UNISTD_H)
 check_include_file(util.h HAVE_UTIL_H)
