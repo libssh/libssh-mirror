@@ -27,9 +27,6 @@ if (UNIX AND NOT WIN32)
 
     if (WITH_SERVER)
         if (HAVE_LIBUTIL)
-            add_executable(samplesshd-tty samplesshd-tty.c)
-            target_link_libraries(samplesshd-tty ${LIBSSH_SHARED_LIBRARY} ${ARGP_LIBRARIES} util)
-
             add_executable(ssh_server_fork ssh_server_fork.c)
             target_link_libraries(ssh_server_fork ${LIBSSH_SHARED_LIBRARY} ${ARGP_LIBRARIES} util)
         endif (HAVE_LIBUTIL)
