@@ -37,6 +37,7 @@ The goal is to show the API in action.
 #endif
 #include <sys/ioctl.h>
 #include <sys/wait.h>
+#include <stdio.h>
 
 #ifndef KEYS_FOLDER
 #ifdef _WIN32
