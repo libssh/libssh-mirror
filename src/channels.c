@@ -1241,7 +1241,8 @@ error:
 static int ssh_channel_waitwindow_termination(void *c){
   ssh_channel channel = (ssh_channel) c;
   if (channel->remote_window > 0 ||
-      channel->session->session_state == SSH_SESSION_STATE_ERROR)
+      channel->session->session_state == SSH_SESSION_STATE_ERROR ||
+      channel->state == SSH_CHANNEL_STATE_CLOSED)
     return 1;
   else
     return 0;
@@ -1350,7 +1351,8 @@ static int channel_write_common(ssh_channel channel,
               ssh_channel_waitwindow_termination,channel);
           if (rc == SSH_ERROR ||
               !ssh_channel_waitwindow_termination(channel) ||
-              channel->session->session_state == SSH_SESSION_STATE_ERROR)
+              channel->session->session_state == SSH_SESSION_STATE_ERROR ||
+              channel->state == SSH_CHANNEL_STATE_CLOSED)
             goto out;
           continue;
       }
