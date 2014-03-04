@@ -1,6 +1,10 @@
 ChangeLog
 ==========
 
+version 0.6.3 (released 2014-03-04)
+  * Fixed CVE-2014-0017.
+  * Fixed memory leak with ecdsa signatures.
+
 version 0.6.2 (released 2014-03-04)
   * security: fix for vulnerability CVE-2014-0017
 
