@@ -1,6 +1,9 @@
 ChangeLog
 ==========
 
+version 0.6.2 (released 2014-03-04)
+  * security: fix for vulnerability CVE-2014-0017
+
 version 0.6.1 (released 2014-02-08)
   * Added support for libgcrypt 1.6.
   * Added ssh_channel_accept_forward().
