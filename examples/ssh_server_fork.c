@@ -55,7 +55,8 @@ The goal is to show the API in action.
 
 static void set_default_keys(ssh_bind sshbind,
                              int rsa_already_set,
-                             int dsa_already_set) {
+                             int dsa_already_set,
+                             int ecdsa_already_set) {
     if (!rsa_already_set) {
         ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_RSAKEY,
                              KEYS_FOLDER "ssh_host_rsa_key");
@@ -63,6 +64,10 @@ static void set_default_keys(ssh_bind sshbind,
     if (!dsa_already_set) {
         ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_DSAKEY,
                              KEYS_FOLDER "ssh_host_dsa_key");
+    }
+    if (!ecdsa_already_set) {
+        ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_ECDSAKEY,
+                             KEYS_FOLDER "ssh_host_ecdsa_key");
     }
 }
 
@@ -112,6 +117,14 @@ static struct argp_option options[] = {
         .group = 0
     },
     {
+        .name  = "ecdsakey",
+        .key   = 'e',
+        .arg   = "FILE",
+        .flags = 0,
+        .doc   = "Set the ecdsa key.",
+        .group = 0
+    },
+    {
         .name  = "no-default-keys",
         .key   = 'n',
         .arg   = NULL,
@@ -136,7 +149,7 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
      * know is a pointer to our arguments structure. */
     ssh_bind sshbind = state->input;
     static int no_default_keys = 0;
-    static int rsa_already_set = 0, dsa_already_set = 0;
+    static int rsa_already_set = 0, dsa_already_set = 0, ecdsa_already_set = 0;
 
     switch (key) {
         case 'n':
@@ -159,6 +172,10 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
             ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_RSAKEY, arg);
             rsa_already_set = 1;
             break;
+        case 'e':
+            ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_ECDSAKEY, arg);
+            ecdsa_already_set = 1;
+            break;
         case 'v':
             ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_LOG_VERBOSITY_STR,
                                  "3");
@@ -179,7 +196,8 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
             if (!no_default_keys) {
                 set_default_keys(sshbind,
                                  rsa_already_set,
-                                 dsa_already_set);
+                                 dsa_already_set,
+                                 ecdsa_already_set);
             }
 
             break;
@@ -620,7 +638,7 @@ int main(int argc, char **argv) {
     (void) argc;
     (void) argv;
 
-    set_default_keys(sshbind, 0, 0);
+    set_default_keys(sshbind, 0, 0, 0);
 #endif /* HAVE_ARGP_H */
 
     if(ssh_bind_listen(sshbind) < 0) {
