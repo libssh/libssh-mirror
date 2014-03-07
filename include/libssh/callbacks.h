@@ -124,6 +124,7 @@ typedef void (*ssh_global_request_callback) (ssh_session session,
 typedef ssh_channel (*ssh_channel_open_request_x11_callback) (ssh_session session,
       const char * originator_address, int originator_port, void *userdata);
 
+
 /**
  * The structure to replace libssh functions with appropriate callbacks.
  */
@@ -239,6 +240,21 @@ typedef int (*ssh_service_request_callback) (ssh_session session, const char *se
 typedef ssh_channel (*ssh_channel_open_request_session_callback) (ssh_session session, void *userdata);
 
 /*
+ * @brief Handles an SSH new channel open direct TCPIP request
+ */
+typedef ssh_channel (*ssh_channel_open_request_direct_tcpip_callback) (ssh_session session,
+            const char *destination, uint16_t destination_port, const char *originator,
+            uint16_t originator_port, void *userdata);
+
+/*
+ * @brief Handles an SSH new channel open forwarded TCPIP request
+ */
+
+typedef ssh_channel (*ssh_channel_open_request_forwarded_tcpip_callback) (ssh_session session,
+        const char *destination, uint16_t destination_port, const char *originator,
+        uint16_t originator_port, void *userdata);
+
+/*
  * @brief handle the beginning of a GSSAPI authentication, server side.
  * @param session current session handler
  * @param user the username of the client
@@ -313,20 +329,34 @@ struct ssh_server_callbacks_struct {
    */
   ssh_auth_pubkey_callback auth_pubkey_function;
 
-  /** This functions gets called when a service request is issued by the
+  /** This function gets called when a service request is issued by the
    * client
    */
   ssh_service_request_callback service_request_function;
-  /** This functions gets called when a new channel request is issued by
+
+  /** This function gets called when a new channel request is issued by
    * the client
    */
   ssh_channel_open_request_session_callback channel_open_request_session_function;
+
+  /** This function gets called when a new direct tcpip channel request is issued by
+   * the client
+   */
+  ssh_channel_open_request_direct_tcpip_callback channel_open_request_direct_tcpip_function;
+
+  /** This function gets called when a new forwarded tcpip channel request is issued by
+   * the client
+   */
+  ssh_channel_open_request_forwarded_tcpip_callback channel_open_request_forwarded_tcpip_function;
+
   /** This function will be called when a new gssapi authentication is attempted.
    */
   ssh_gssapi_select_oid_callback gssapi_select_oid_function;
+
   /** This function will be called when a gssapi token comes in.
    */
   ssh_gssapi_accept_sec_ctx_callback gssapi_accept_sec_ctx_function;
+
   /* This function will be called when a MIC needs to be verified.
    */
   ssh_gssapi_verify_mic_callback gssapi_verify_mic_function;
