@@ -1303,6 +1303,22 @@ static int ssh_bind_options_set_algo(ssh_bind sshbind, int algo,
   return 0;
 }
 
+static int ssh_bind_set_key(ssh_bind sshbind, char **key_loc,
+                            const void *value) {
+    if (value == NULL) {
+        ssh_set_error_invalid(sshbind);
+        return -1;
+    } else {
+        SAFE_FREE(*key_loc);
+        *key_loc = strdup(value);
+        if (*key_loc == NULL) {
+            ssh_set_error_oom(sshbind);
+            return -1;
+        }
+    }
+    return 0;
+}
+
 /**
  * @brief This function can set all possible ssh bind options.
  *
@@ -1361,7 +1377,7 @@ static int ssh_bind_options_set_algo(ssh_bind sshbind, int algo,
 int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
     const void *value) {
   char *p, *q;
-  int i;
+  int i, rc;
 
   if (sshbind == NULL) {
     return -1;
@@ -1445,31 +1461,23 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
       }
       break;
     case SSH_BIND_OPTIONS_DSAKEY:
-      if (value == NULL) {
-        ssh_set_error_invalid(sshbind);
-        return -1;
-      } else {
-        SAFE_FREE(sshbind->dsakey);
-        sshbind->dsakey = strdup(value);
-        if (sshbind->dsakey == NULL) {
-          ssh_set_error_oom(sshbind);
-          return -1;
+        rc = ssh_bind_set_key(sshbind, &sshbind->dsakey, value);
+        if (rc < 0) {
+            return -1;
         }
-      }
-      break;
+        break;
     case SSH_BIND_OPTIONS_RSAKEY:
-      if (value == NULL) {
-        ssh_set_error_invalid(sshbind);
-        return -1;
-      } else {
-        SAFE_FREE(sshbind->rsakey);
-        sshbind->rsakey = strdup(value);
-        if (sshbind->rsakey == NULL) {
-          ssh_set_error_oom(sshbind);
-          return -1;
+        rc = ssh_bind_set_key(sshbind, &sshbind->rsakey, value);
+        if (rc < 0) {
+            return -1;
         }
-      }
-      break;
+        break;
+    case SSH_BIND_OPTIONS_ECDSAKEY:
+        rc = ssh_bind_set_key(sshbind, &sshbind->ecdsakey, value);
+        if (rc < 0) {
+            return -1;
+        }
+        break;
     case SSH_BIND_OPTIONS_BANNER:
       if (value == NULL) {
         ssh_set_error_invalid(sshbind);
