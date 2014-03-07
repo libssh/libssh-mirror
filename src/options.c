@@ -1360,10 +1360,13 @@ static int ssh_bind_set_key(ssh_bind sshbind, char **key_loc,
  *                        (string).
  *
  *                      SSH_BIND_OPTIONS_DSAKEY:
- *                        Set the path to the dsa ssh host key (string).
+ *                        Set the path to the ssh host dsa key (string).
  *
  *                      SSH_BIND_OPTIONS_RSAKEY:
  *                        Set the path to the ssh host rsa key (string).
+ *
+ *                      SSH_BIND_OPTIONS_ECDSAKEY:
+ *                        Set the path to the ssh host ecdsa key (string).
  *
  *                      SSH_BIND_OPTIONS_BANNER:
  *                        Set the server banner sent to clients (string).
