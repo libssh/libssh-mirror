@@ -53,6 +53,19 @@ The goal is to show the API in action.
 #define SESSION_END (SSH_CLOSED | SSH_CLOSED_ERROR)
 #define SFTP_SERVER_PATH "/usr/lib/sftp-server"
 
+static void set_default_keys(ssh_bind sshbind,
+                             int rsa_already_set,
+                             int dsa_already_set) {
+    if (!rsa_already_set) {
+        ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_RSAKEY,
+                             KEYS_FOLDER "ssh_host_rsa_key");
+    }
+    if (!dsa_already_set) {
+        ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_DSAKEY,
+                             KEYS_FOLDER "ssh_host_dsa_key");
+    }
+}
+
 #ifdef HAVE_ARGP_H
 const char *argp_program_version = "libssh server example "
 SSH_STRINGIFY(LIBSSH_VERSION);
@@ -99,6 +112,14 @@ static struct argp_option options[] = {
         .group = 0
     },
     {
+        .name  = "no-default-keys",
+        .key   = 'n',
+        .arg   = NULL,
+        .flags = 0,
+        .doc   = "Do not set default key locations.",
+        .group = 0
+    },
+    {
         .name  = "verbose",
         .key   = 'v',
         .arg   = NULL,
@@ -114,19 +135,29 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
     /* Get the input argument from argp_parse, which we
      * know is a pointer to our arguments structure. */
     ssh_bind sshbind = state->input;
+    static int no_default_keys = 0;
+    static int rsa_already_set = 0, dsa_already_set = 0;
 
     switch (key) {
+        case 'n':
+            no_default_keys = 1;
+            break;
         case 'p':
             ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_BINDPORT_STR, arg);
             break;
         case 'd':
             ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_DSAKEY, arg);
+            dsa_already_set = 1;
             break;
         case 'k':
+            /* This currently sets the public key algorithms the
+               server is willing to use, not which key files it will
+               load */
             ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HOSTKEY, arg);
             break;
         case 'r':
             ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_RSAKEY, arg);
+            rsa_already_set = 1;
             break;
         case 'v':
             ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_LOG_VERBOSITY_STR,
@@ -144,6 +175,13 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
                 /* Not enough arguments. */
                 argp_usage (state);
             }
+
+            if (!no_default_keys) {
+                set_default_keys(sshbind,
+                                 rsa_already_set,
+                                 dsa_already_set);
+            }
+
             break;
         default:
             return ARGP_ERR_UNKNOWN;
@@ -576,16 +614,13 @@ int main(int argc, char **argv) {
     ssh_init();
     sshbind = ssh_bind_new();
 
-    ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_DSAKEY,
-                         KEYS_FOLDER "ssh_host_dsa_key");
-    ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_RSAKEY,
-                         KEYS_FOLDER "ssh_host_rsa_key");
-
 #ifdef HAVE_ARGP_H
     argp_parse(&argp, argc, argv, 0, 0, sshbind);
 #else
     (void) argc;
     (void) argv;
+
+    set_default_keys(sshbind, 0, 0);
 #endif /* HAVE_ARGP_H */
 
     if(ssh_bind_listen(sshbind) < 0) {
