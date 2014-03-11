@@ -217,6 +217,7 @@ int ssh_get_key_params(ssh_session session, ssh_key *privkey){
         *privkey = session->srv.ecdsa_key;
         break;
       case SSH_KEYTYPE_UNKNOWN:
+      default:
         *privkey = NULL;
     }
 
