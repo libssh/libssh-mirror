@@ -766,6 +766,37 @@ static void torture_pki_duplicate_key_ecdsa(void **state)
     ssh_string_free_char(b64_key);
     ssh_string_free_char(b64_key_gen);
 }
+
+/* Test case for bug #147: Private ECDSA key duplication did not carry
+ * over parts of the key that then caused subsequent key demotion to
+ * fail.
+ */
+static void torture_pki_ecdsa_duplicate_then_demote(void **state)
+{
+    ssh_key pubkey;
+    ssh_key privkey;
+    ssh_key privkey_dup;
+    int rc;
+
+    (void) state;
+
+    rc = ssh_pki_import_privkey_file(LIBSSH_ECDSA_TESTKEY,
+                                     NULL,
+                                     NULL,
+                                     NULL,
+                                     &privkey);
+    assert_true(rc == 0);
+
+    privkey_dup = ssh_key_dup(privkey);
+    assert_true(privkey_dup != NULL);
+
+    rc = ssh_pki_export_privkey_to_pubkey(privkey_dup, &pubkey);
+    assert_true(rc == 0);
+
+    ssh_key_free(pubkey);
+    ssh_key_free(privkey);
+    ssh_key_free(privkey_dup);
+}
 #endif
 
 static void torture_pki_generate_key_rsa(void **state)
@@ -1107,6 +1138,9 @@ int torture_run_tests(void) {
                                  teardown),
 #ifdef HAVE_ECC
         unit_test_setup_teardown(torture_pki_publickey_from_privatekey_ECDSA,
+                                 setup_ecdsa_key,
+                                 teardown),
+        unit_test_setup_teardown(torture_pki_ecdsa_duplicate_then_demote,
                                  setup_ecdsa_key,
                                  teardown),
 #endif
