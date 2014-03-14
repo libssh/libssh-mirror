@@ -54,12 +54,11 @@ static void torture_connect_nonblocking(void **state) {
     ssh_set_blocking(session,0);
 
     do {
-    	rc = ssh_connect(session);
-    	assert_true(rc != SSH_ERROR);
+        rc = ssh_connect(session);
+        assert_true(rc != SSH_ERROR);
     } while(rc == SSH_AGAIN);
 
-    assert_true(rc==SSH_OK);
-
+    assert_true(rc == SSH_OK);
 }
 
 static void torture_connect_timeout(void **state) {
@@ -84,9 +83,9 @@ static void torture_connect_timeout(void **state) {
     sec = after.tv_sec - before.tv_sec;
     usec = after.tv_usec - before.tv_usec;
     /* Borrow a second for the missing usecs, but don't bother calculating */
-    if(usec < 0)
+    if (usec < 0)
       sec--;
-    assert_in_range(sec,1,3);
+    assert_in_range(sec, 1, 3);
 }
 
 static void torture_connect_double(void **state) {
@@ -102,10 +101,9 @@ static void torture_connect_double(void **state) {
 
     rc = ssh_connect(session);
     assert_true(rc == SSH_OK);
-
 }
 
-static void torture_connect_failure(void **state){
+static void torture_connect_failure(void **state) {
     /*
      * The intent of this test is to check that a fresh
      * ssh_new/ssh_disconnect/ssh_free sequence doesn't crash/leak
@@ -114,6 +112,7 @@ static void torture_connect_failure(void **state){
     ssh_session session = *state;
     ssh_disconnect(session);
 }
+
 int torture_run_tests(void) {
     int rc;
     const UnitTest tests[] = {
