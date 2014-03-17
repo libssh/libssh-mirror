@@ -60,12 +60,15 @@
 static void socket_callback_connected(int code, int errno_code, void *user){
 	ssh_session session=(ssh_session)user;
 
-	if(session->session_state != SSH_SESSION_STATE_CONNECTING){
+	if (session->session_state != SSH_SESSION_STATE_CONNECTING &&
+	    session->session_state != SSH_SESSION_STATE_SOCKET_CONNECTED)
+	{
 		ssh_set_error(session,SSH_FATAL, "Wrong state in socket_callback_connected : %d",
 				session->session_state);
 
 		return;
 	}
+
 	SSH_LOG(SSH_LOG_RARE,"Socket connection callback: %d (%d)",code, errno_code);
 	if(code == SSH_SOCKET_CONNECTED_OK)
 		session->session_state=SSH_SESSION_STATE_SOCKET_CONNECTED;
