@@ -361,8 +361,8 @@ public:
    * @see ssh_channel_forward_accept
    * @see Session::listenForward
    */
-  Channel *acceptForward(int timeout_ms);
-  /* acceptForward is implemented later in this file */
+  inline Channel *acceptForward(int timeout_ms);
+  /* implemented outside the class due Channel references */
 
   void_throwable cancelForward(const char *address, int port){
     int err=ssh_channel_cancel_forward(c_session, address, port);
@@ -581,8 +581,7 @@ private:
 };
 
 
-/* This code cannot be put inline due to references to Channel */
-Channel *Session::acceptForward(int timeout_ms){
+inline Channel *Session::acceptForward(int timeout_ms){
     ssh_channel forward =
         ssh_channel_accept_forward(c_session, timeout_ms, NULL);
     ssh_throw_null(c_session,forward);
