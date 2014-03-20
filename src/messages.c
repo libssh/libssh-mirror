@@ -508,8 +508,7 @@ void ssh_message_free(ssh_message msg){
     case SSH_REQUEST_AUTH:
       SAFE_FREE(msg->auth_request.username);
       if (msg->auth_request.password) {
-        memset(msg->auth_request.password, 0,
-            strlen(msg->auth_request.password));
+        BURN_STRING(msg->auth_request.password);
         SAFE_FREE(msg->auth_request.password);
       }
       ssh_key_free(msg->auth_request.pubkey);
