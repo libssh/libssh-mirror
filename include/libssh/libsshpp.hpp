@@ -485,7 +485,7 @@ public:
     /* handle int overflow */
     if(count > 0x7fffffff)
       count = 0x7fffffff;
-    err=ssh_channel_read(channel,dest,count,is_stderr);
+    err=ssh_channel_read_timeout(channel,dest,count,is_stderr,-1);
     ssh_throw(err);
     return err;
   }
