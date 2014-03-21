@@ -1320,62 +1320,67 @@ static int ssh_bind_set_key(ssh_bind sshbind, char **key_loc,
 }
 
 /**
- * @brief This function can set all possible ssh bind options.
+ * @brief Set options for an SSH server bind.
  *
- * @param  sshbind      An allocated ssh bind structure.
+ * @param  sshbind      The ssh server bind to configure.
  *
- * @param  type         The option type to set. This could be one of the
+ * @param  type         The option type to set. This should be one of the
  *                      following:
  *
- *                      SSH_BIND_OPTIONS_LOG_VERBOSITY:
- *                        Set the session logging verbosity (integer).
- *
- *                        The verbosity of the messages. Every log smaller or
- *                        equal to verbosity will be shown.
- *                          SSH_LOG_NOLOG: No logging
- *                          SSH_LOG_RARE: Rare conditions or warnings
- *                          SSH_LOG_ENTRY: API-accessible entrypoints
- *                          SSH_LOG_PACKET: Packet id and size
- *                          SSH_LOG_FUNCTIONS: Function entering and leaving
- *
- *                      SSH_BIND_OPTIONS_LOG_VERBOSITY_STR:
- *                        Set the session logging verbosity (integer).
- *
- *                        The verbosity of the messages. Every log smaller or
- *                        equal to verbosity will be shown.
- *                          SSH_LOG_NOLOG: No logging
- *                          SSH_LOG_RARE: Rare conditions or warnings
- *                          SSH_LOG_ENTRY: API-accessible entrypoints
- *                          SSH_LOG_PACKET: Packet id and size
- *                          SSH_LOG_FUNCTIONS: Function entering and leaving
- *
- *                      SSH_BIND_OPTIONS_BINDADDR:
- *                        Set the bind address.
- *
- *                      SSH_BIND_OPTIONS_BINDPORT:
- *                        Set the bind port, default is 22.
- *
- *                      SSH_BIND_OPTIONS_HOSTKEY:
+ *                      - SSH_BIND_OPTIONS_HOSTKEY:
  *                        Set the server public key type: ssh-rsa or ssh-dss
- *                        (string).
+ *                        (const char *).
  *
- *                      SSH_BIND_OPTIONS_DSAKEY:
- *                        Set the path to the ssh host dsa key (string).
+ *                      - SSH_BIND_OPTIONS_BINDADDR:
+ *                        Set the IP address to bind (const char *).
  *
- *                      SSH_BIND_OPTIONS_RSAKEY:
- *                        Set the path to the ssh host rsa key (string).
+ *                      - SSH_BIND_OPTIONS_BINDPORT:
+ *                        Set the port to bind (unsigned int *).
  *
- *                      SSH_BIND_OPTIONS_ECDSAKEY:
- *                        Set the path to the ssh host ecdsa key (string).
+ *                      - SSH_BIND_OPTIONS_BINDPORT_STR:
+ *                        Set the port to bind (const char *).
  *
- *                      SSH_BIND_OPTIONS_BANNER:
- *                        Set the server banner sent to clients (string).
+ *                      - SSH_BIND_OPTIONS_LOG_VERBOSITY:
+ *                        Set the session logging verbosity (int *).
+ *                        The logging verbosity should have one of the
+ *                        following values, which are listed in order
+ *                        of increasing verbosity.  Every log message
+ *                        with verbosity less than or equal to the
+ *                        logging verbosity will be shown.
+ *                        - SSH_LOG_NOLOG: No logging
+ *                        - SSH_LOG_RARE: Rare conditions or warnings
+ *                        - SSH_LOG_ENTRY: API-accessible entrypoints
+ *                        - SSH_LOG_PACKET: Packet id and size
+ *                        - SSH_LOG_FUNCTIONS: Function entering and leaving
+ *
+ *                      - SSH_BIND_OPTIONS_LOG_VERBOSITY_STR:
+ *                        Set the session logging verbosity via a
+ *                        string that will be converted to a numerical
+ *                        value (e.g. "3") and interpreted according
+ *                        to the values of
+ *                        SSH_BIND_OPTIONS_LOG_VERBOSITY above (const
+ *                        char *).
+ *
+ *                      - SSH_BIND_OPTIONS_DSAKEY:
+ *                        Set the path to the ssh host dsa key, SSHv2
+ *                        only (const char *).
+ *
+ *                      - SSH_BIND_OPTIONS_RSAKEY:
+ *                        Set the path to the ssh host rsa key, SSHv2
+ *                        only (const char *).
+ *
+ *                      - SSH_BIND_OPTIONS_ECDSAKEY:
+ *                        Set the path to the ssh host ecdsa key,
+ *                        SSHv2 only (const char *).
+ *
+ *                      - SSH_BIND_OPTIONS_BANNER:
+ *                        Set the server banner sent to clients (const char *).
  *
  * @param  value        The value to set. This is a generic pointer and the
- *                      datatype which is used should be set according to the
- *                      type set.
+ *                      datatype which should be used is described at the
+ *                      corresponding value of type above.
  *
- * @return              0 on success, < 0 on error.
+ * @return              0 on success, < 0 on error, invalid option, or parameter.
  */
 int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
     const void *value) {
