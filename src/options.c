@@ -1309,8 +1309,12 @@ static int ssh_bind_set_key(ssh_bind sshbind, char **key_loc,
  *                      following:
  *
  *                      - SSH_BIND_OPTIONS_HOSTKEY:
- *                        Set the server public key type: ssh-rsa or ssh-dss
- *                        (const char *).
+ *                        Set the path to an ssh host key, regardless
+ *                        of type.  Only one key from per key type
+ *                        (RSA, DSA, ECDSA) is allowed in an ssh_bind
+ *                        at a time, and later calls to this function
+ *                        with this option for the same key type will
+ *                        override prior calls (const char *).
  *
  *                      - SSH_BIND_OPTIONS_BINDADDR:
  *                        Set the IP address to bind (const char *).
