@@ -97,7 +97,8 @@ static struct argp_option options[] = {
         .key   = 'k',
         .arg   = "FILE",
         .flags = 0,
-        .doc   = "Set the host key.",
+        .doc   = "Set a host key.  Can be used multiple times.  "
+                 "Implies no default keys.",
         .group = 0
     },
     {
@@ -163,10 +164,11 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
             dsa_already_set = 1;
             break;
         case 'k':
-            /* This currently sets the public key algorithms the
-               server is willing to use, not which key files it will
-               load */
             ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HOSTKEY, arg);
+            /* We can't track the types of keys being added with this
+               option, so let's ensure we keep the keys we're adding
+               by just not setting the default keys */
+            no_default_keys = 1;
             break;
         case 'r':
             ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_RSAKEY, arg);
