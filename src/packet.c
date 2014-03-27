@@ -544,7 +544,7 @@ static int packet_send2(ssh_session session) {
   if (rc < 0) {
     goto error;
   }
-  rc = buffer_add_data(session->out_buffer, padstring, padding);
+  rc = ssh_buffer_add_data(session->out_buffer, padstring, padding);
   if (rc < 0) {
     goto error;
   }
