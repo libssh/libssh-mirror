@@ -36,16 +36,35 @@ static void setup_dsa_key(void **state) {
 }
 
 #ifdef HAVE_OPENSSL_ECC
-static void setup_ecdsa_key(void **state) {
-    int rc;
+static void setup_ecdsa_key(void **state, int ecdsa_bits) {
+    int rc = -1;
 
     (void) state; /* unused */
 
     unlink(LIBSSH_ECDSA_TESTKEY);
     unlink(LIBSSH_ECDSA_TESTKEY ".pub");
 
-    rc = system("ssh-keygen -t ecdsa -q -N \"\" -f " LIBSSH_ECDSA_TESTKEY);
+    if (ecdsa_bits == 256) {
+        rc = system("ssh-keygen -t ecdsa -b 256 -q -N \"\" -f " LIBSSH_ECDSA_TESTKEY);
+    } else if (ecdsa_bits == 384) {
+        rc = system("ssh-keygen -t ecdsa -b 384 -q -N \"\" -f " LIBSSH_ECDSA_TESTKEY);
+    } else if (ecdsa_bits == 521) {
+        rc = system("ssh-keygen -t ecdsa -b 521 -q -N \"\" -f " LIBSSH_ECDSA_TESTKEY);
+    }
+
     assert_true(rc == 0);
+}
+
+static void setup_ecdsa_key_521(void **state) {
+    setup_ecdsa_key(state, 521);
+}
+
+static void setup_ecdsa_key_384(void **state) {
+    setup_ecdsa_key(state, 384);
+}
+
+static void setup_ecdsa_key_256(void **state) {
+    setup_ecdsa_key(state, 256);
 }
 #endif
 
@@ -939,6 +958,9 @@ static void torture_pki_generate_key_ecdsa(void **state)
     int rc;
     ssh_key key;
     ssh_signature sign;
+    enum ssh_keytypes_e type = SSH_KEYTYPE_UNKNOWN;
+    const char *type_char = NULL;
+    const char *etype_char = NULL;
     ssh_session session=ssh_new();
     (void) state;
 
@@ -949,6 +971,13 @@ static void torture_pki_generate_key_ecdsa(void **state)
     assert_true(sign != NULL);
     rc = pki_signature_verify(session,sign,key,HASH,20);
     assert_true(rc == SSH_OK);
+    type = ssh_key_type(key);
+    assert_true(type == SSH_KEYTYPE_ECDSA);
+    type_char = ssh_key_type_to_char(type);
+    assert_true(strcmp(type_char, "ssh-ecdsa") == 0);
+    etype_char = ssh_pki_key_ecdsa_name(key);
+    assert_true(strcmp(etype_char, "ecdsa-sha2-nistp256") == 0);
+
     ssh_signature_free(sign);
     ssh_key_free(key);
     key=NULL;
@@ -960,6 +989,13 @@ static void torture_pki_generate_key_ecdsa(void **state)
     assert_true(sign != NULL);
     rc = pki_signature_verify(session,sign,key,HASH,20);
     assert_true(rc == SSH_OK);
+    type = ssh_key_type(key);
+    assert_true(type == SSH_KEYTYPE_ECDSA);
+    type_char = ssh_key_type_to_char(type);
+    assert_true(strcmp(type_char, "ssh-ecdsa") == 0);
+    etype_char =ssh_pki_key_ecdsa_name(key);
+    assert_true(strcmp(etype_char, "ecdsa-sha2-nistp384") == 0);
+
     ssh_signature_free(sign);
     ssh_key_free(key);
     key=NULL;
@@ -971,6 +1007,13 @@ static void torture_pki_generate_key_ecdsa(void **state)
     assert_true(sign != NULL);
     rc = pki_signature_verify(session,sign,key,HASH,20);
     assert_true(rc == SSH_OK);
+    type = ssh_key_type(key);
+    assert_true(type == SSH_KEYTYPE_ECDSA);
+    type_char = ssh_key_type_to_char(type);
+    assert_true(strcmp(type_char, "ssh-ecdsa") == 0);
+    etype_char =ssh_pki_key_ecdsa_name(key);
+    assert_true(strcmp(etype_char, "ecdsa-sha2-nistp521") == 0);
+
     ssh_signature_free(sign);
     ssh_key_free(key);
     key=NULL;
@@ -1103,6 +1146,42 @@ static void torture_pki_write_privkey_ecdsa(void **state)
 #endif
 #endif /* HAVE_LIBCRYPTO */
 
+#ifdef HAVE_ECC
+static void torture_pki_ecdsa_name(void **state, const char *expected_name)
+{
+    int rc;
+    ssh_key key;
+    const char *etype_char = NULL;
+
+    (void) state; /* unused */
+
+    ssh_set_log_level(5);
+
+    rc = ssh_pki_import_privkey_file(LIBSSH_ECDSA_TESTKEY, NULL, NULL, NULL, &key);
+    assert_true(rc == 0);
+
+    etype_char =ssh_pki_key_ecdsa_name(key);
+    assert_true(strcmp(etype_char, expected_name) == 0);
+
+    ssh_key_free(key);
+}
+
+static void torture_pki_ecdsa_name256(void **state)
+{
+    torture_pki_ecdsa_name(state, "ecdsa-sha2-nistp256");
+}
+
+static void torture_pki_ecdsa_name384(void **state)
+{
+    torture_pki_ecdsa_name(state, "ecdsa-sha2-nistp384");
+}
+
+static void torture_pki_ecdsa_name521(void **state)
+{
+    torture_pki_ecdsa_name(state, "ecdsa-sha2-nistp521");
+}
+#endif
+
 int torture_run_tests(void) {
     int rc;
     const UnitTest tests[] = {
@@ -1125,7 +1204,13 @@ int torture_run_tests(void) {
                                  teardown),
 #ifdef HAVE_ECC
         unit_test_setup_teardown(torture_pki_import_privkey_base64_ECDSA,
-                                 setup_ecdsa_key,
+                                 setup_ecdsa_key_256,
+                                 teardown),
+        unit_test_setup_teardown(torture_pki_import_privkey_base64_ECDSA,
+                                 setup_ecdsa_key_384,
+                                 teardown),
+        unit_test_setup_teardown(torture_pki_import_privkey_base64_ECDSA,
+                                 setup_ecdsa_key_521,
                                  teardown),
 #endif
         unit_test_setup_teardown(torture_pki_import_privkey_base64_passphrase,
@@ -1140,10 +1225,22 @@ int torture_run_tests(void) {
                                  teardown),
 #ifdef HAVE_ECC
         unit_test_setup_teardown(torture_pki_publickey_from_privatekey_ECDSA,
-                                 setup_ecdsa_key,
+                                 setup_ecdsa_key_256,
+                                 teardown),
+        unit_test_setup_teardown(torture_pki_publickey_from_privatekey_ECDSA,
+                                 setup_ecdsa_key_384,
+                                 teardown),
+        unit_test_setup_teardown(torture_pki_publickey_from_privatekey_ECDSA,
+                                 setup_ecdsa_key_521,
                                  teardown),
         unit_test_setup_teardown(torture_pki_ecdsa_duplicate_then_demote,
-                                 setup_ecdsa_key,
+                                 setup_ecdsa_key_256,
+                                 teardown),
+        unit_test_setup_teardown(torture_pki_ecdsa_duplicate_then_demote,
+                                 setup_ecdsa_key_384,
+                                 teardown),
+        unit_test_setup_teardown(torture_pki_ecdsa_duplicate_then_demote,
+                                 setup_ecdsa_key_521,
                                  teardown),
 #endif
         /* public key */
@@ -1155,7 +1252,13 @@ int torture_run_tests(void) {
                                  teardown),
 #ifdef HAVE_ECC
         unit_test_setup_teardown(torture_pki_publickey_ecdsa_base64,
-                                 setup_ecdsa_key,
+                                 setup_ecdsa_key_256,
+                                 teardown),
+        unit_test_setup_teardown(torture_pki_publickey_ecdsa_base64,
+                                 setup_ecdsa_key_384,
+                                 teardown),
+        unit_test_setup_teardown(torture_pki_publickey_ecdsa_base64,
+                                 setup_ecdsa_key_521,
                                  teardown),
 #endif
 
@@ -1167,7 +1270,13 @@ int torture_run_tests(void) {
                                  teardown),
 #ifdef HAVE_ECC
         unit_test_setup_teardown(torture_generate_pubkey_from_privkey_ecdsa,
-                                 setup_ecdsa_key,
+                                 setup_ecdsa_key_256,
+                                 teardown),
+        unit_test_setup_teardown(torture_generate_pubkey_from_privkey_ecdsa,
+                                 setup_ecdsa_key_384,
+                                 teardown),
+        unit_test_setup_teardown(torture_generate_pubkey_from_privkey_ecdsa,
+                                 setup_ecdsa_key_521,
                                  teardown),
 #endif
 
@@ -1179,7 +1288,13 @@ int torture_run_tests(void) {
                                  teardown),
 #ifdef HAVE_ECC
         unit_test_setup_teardown(torture_pki_duplicate_key_ecdsa,
-                                 setup_ecdsa_key,
+                                 setup_ecdsa_key_256,
+                                 teardown),
+        unit_test_setup_teardown(torture_pki_duplicate_key_ecdsa,
+                                 setup_ecdsa_key_384,
+                                 teardown),
+        unit_test_setup_teardown(torture_pki_duplicate_key_ecdsa,
+                                 setup_ecdsa_key_521,
                                  teardown),
 #endif
         unit_test(torture_pki_generate_key_rsa),
@@ -1197,10 +1312,27 @@ int torture_run_tests(void) {
                                  teardown),
 #ifdef HAVE_ECC
         unit_test_setup_teardown(torture_pki_write_privkey_ecdsa,
-                                 setup_ecdsa_key,
+                                 setup_ecdsa_key_256,
+                                 teardown),
+        unit_test_setup_teardown(torture_pki_write_privkey_ecdsa,
+                                 setup_ecdsa_key_384,
+                                 teardown),
+        unit_test_setup_teardown(torture_pki_write_privkey_ecdsa,
+                                 setup_ecdsa_key_521,
                                  teardown),
 #endif
 #endif /* HAVE_LIBCRYPTO */
+#ifdef HAVE_ECC
+        unit_test_setup_teardown(torture_pki_ecdsa_name256,
+                                 setup_ecdsa_key_256,
+                                 teardown),
+        unit_test_setup_teardown(torture_pki_ecdsa_name384,
+                                 setup_ecdsa_key_384,
+                                 teardown),
+        unit_test_setup_teardown(torture_pki_ecdsa_name521,
+                                 setup_ecdsa_key_521,
+                                 teardown),
+#endif
     };
 
     (void)setup_both_keys;
