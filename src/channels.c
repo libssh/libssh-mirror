@@ -3024,6 +3024,11 @@ static int ssh_channel_exit_status_termination(void *c){
  *                      (yet).
  * @warning             This function may block until a timeout (or never)
  *                      if the other side is not willing to close the channel.
+ *
+ * If you're looking for an async handling of this register a callback for the
+ * exit status.
+ *
+ * @see ssh_channel_exit_status_callback
  */
 int ssh_channel_get_exit_status(ssh_channel channel) {
   int rc;
