@@ -122,7 +122,102 @@ static void torture_buffer_get_ssh_string(void **state) {
   }
 }
 
+static void torture_buffer_add_format(void **state) {
+    ssh_buffer buffer=*state;
+    uint8_t b;
+    uint16_t w;
+    uint32_t d;
+    uint64_t q;
+    ssh_string s;
+    int rc;
+    size_t len;
+    uint8_t verif[]="\x42\x13\x37\x0b\xad\xc0\xde\x13\x24\x35\x46"
+            "\xac\xbd\xce\xdf"
+            "\x00\x00\x00\x06" "libssh"
+            "\x00\x00\x00\x05" "rocks"
+            "So much";
 
+    b=0x42;
+    w=0x1337;
+    d=0xbadc0de;
+    q=0x13243546acbdcedf;
+    s=ssh_string_from_char("libssh");
+    rc=ssh_buffer_pack(buffer, "bwdqSsP",b,w,d,q,s,"rocks",7,"So much");
+    assert_int_equal(rc, SSH_OK);
+
+    len = buffer_get_rest_len(buffer);
+    assert_int_equal(len, sizeof(verif) - 1);
+    assert_memory_equal(buffer_get_rest(buffer), verif, sizeof(verif) -1);
+}
+
+static void torture_buffer_get_format(void **state) {
+    ssh_buffer buffer=*state;
+    uint8_t b=0;
+    uint16_t w=0;
+    uint32_t d=0;
+    uint64_t q=0;
+    ssh_string s=NULL;
+    char *s1=NULL, *s2=NULL;
+    int rc;
+    size_t len;
+    uint8_t verif[]="\x42\x13\x37\x0b\xad\xc0\xde\x13\x24\x35\x46"
+            "\xac\xbd\xce\xdf"
+            "\x00\x00\x00\x06" "libssh"
+            "\x00\x00\x00\x05" "rocks"
+            "So much";
+
+    rc = ssh_buffer_add_data(buffer, verif, sizeof(verif) - 1);
+    assert_int_equal(rc, SSH_OK);
+    rc = ssh_buffer_unpack(buffer, "bwdqSsP",&b,&w,&d,&q,&s,&s1,(size_t)7,&s2);
+    assert_int_equal(rc, SSH_OK);
+
+    assert_int_equal(b, 0x42);
+    assert_int_equal(w, 0x1337);
+
+    assert_true(d == 0xbadc0de);
+    assert_true(q == 0x13243546acbdcedf);
+
+    assert_true(s != NULL);
+    assert_int_equal(ssh_string_len(s), 6);
+    assert_memory_equal(ssh_string_data(s), "libssh", 6);
+
+    assert_true(s1 != NULL);
+    assert_string_equal(s1, "rocks");
+
+    assert_true(s2 != NULL);
+    assert_memory_equal(s2, "So much", 7);
+
+    len = buffer_get_rest_len(buffer);
+    assert_int_equal(len, 0);
+    SAFE_FREE(s);
+    SAFE_FREE(s1);
+    SAFE_FREE(s2);
+}
+
+static void torture_buffer_get_format_error(void **state) {
+    ssh_buffer buffer=*state;
+    uint8_t b=0;
+    uint16_t w=0;
+    uint32_t d=0;
+    uint64_t q=0;
+    ssh_string s=NULL;
+    char *s1=NULL, *s2=NULL;
+    int rc;
+    uint8_t verif[]="\x42\x13\x37\x0b\xad\xc0\xde\x13\x24\x35\x46"
+            "\xac\xbd\xce\xdf"
+            "\x00\x00\x00\x06" "libssh"
+            "\x00\x00\x00\x05" "rocks"
+            "So much";
+
+    rc = ssh_buffer_add_data(buffer, verif, sizeof(verif) - 1);
+    assert_int_equal(rc, SSH_OK);
+    rc = ssh_buffer_unpack(buffer, "bwdqSsPb",&b,&w,&d,&q,&s,&s1,(size_t)7,&s2,&b);
+    assert_int_equal(rc, SSH_ERROR);
+
+    assert_true(s==NULL);
+    assert_true(s1 == NULL);
+    assert_true(s2 == NULL);
+}
 
 int torture_run_tests(void) {
     int rc;
@@ -131,6 +226,9 @@ int torture_run_tests(void) {
         unit_test_setup_teardown(torture_growing_buffer_shifting, setup, teardown),
         unit_test_setup_teardown(torture_buffer_prepend, setup, teardown),
         unit_test(torture_buffer_get_ssh_string),
+        unit_test_setup_teardown(torture_buffer_add_format, setup, teardown),
+        unit_test_setup_teardown(torture_buffer_get_format, setup, teardown),
+        unit_test_setup_teardown(torture_buffer_get_format_error, setup, teardown)
     };
 
     ssh_init();
