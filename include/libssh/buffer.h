@@ -21,6 +21,8 @@
 #ifndef BUFFER_H_
 #define BUFFER_H_
 
+#include <stdarg.h>
+
 #include "libssh/libssh.h"
 /*
  * Describes a buffer state
@@ -46,6 +48,10 @@ int buffer_add_u16(ssh_buffer buffer, uint16_t data);
 int buffer_add_u32(ssh_buffer buffer, uint32_t data);
 int buffer_add_u64(ssh_buffer buffer, uint64_t data);
 int ssh_buffer_add_data(ssh_buffer buffer, const void *data, uint32_t len);
+int ssh_buffer_pack_va(struct ssh_buffer_struct *buffer, const char *format, va_list ap);
+int ssh_buffer_pack(struct ssh_buffer_struct *buffer, const char *format, ...);
+int ssh_buffer_unpack_va(struct ssh_buffer_struct *buffer, const char *format, va_list ap);
+int ssh_buffer_unpack(struct ssh_buffer_struct *buffer, const char *format, ...);
 int buffer_prepend_data(ssh_buffer buffer, const void *data, uint32_t len);
 int buffer_add_buffer(ssh_buffer buffer, ssh_buffer source);
 int ssh_buffer_reinit(ssh_buffer buffer);
