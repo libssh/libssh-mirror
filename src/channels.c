@@ -3462,9 +3462,9 @@ error:
 }
 
 /**
- * @brief Send an exit signal to remote process (as described in RFC 4254, section 6.10).
+ * @brief Send an exit signal to remote process (RFC 4254, section 6.10).
  *
- * Sends a signal 'sig' to the remote process.
+ * This sends the exit status of the remote process.
  * Note, that remote system may not support signals concept.
  * In such a case this request will be silently ignored.
  * Only SSH-v2 is supported (I'm not sure about SSH-v1).
@@ -3542,7 +3542,7 @@ int ssh_channel_request_send_exit_signal(ssh_channel channel, const char *sig,
     goto error;
   }
 
-  rc = channel_request(channel, "signal", buffer, 0);
+  rc = channel_request(channel, "exit-signal", buffer, 0);
 error:
   ssh_buffer_free(buffer);
   if(tmp)
