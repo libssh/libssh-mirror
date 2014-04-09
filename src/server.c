@@ -174,6 +174,15 @@ SSH_PACKET_CALLBACK(ssh_packet_kexdh_init){
     SSH_LOG(SSH_LOG_RARE,"Invalid state for SSH_MSG_KEXDH_INIT");
     goto error;
   }
+
+  /* If first_kex_packet_follows guess was wrong, ignore this message. */
+  if (session->first_kex_follows_guess_wrong != 0) {
+    SSH_LOG(SSH_LOG_RARE, "first_kex_packet_follows guess was wrong, "
+                          "ignoring first SSH_MSG_KEXDH_INIT message");
+    session->first_kex_follows_guess_wrong = 0;
+    goto error;
+  }
+
   switch(session->next_crypto->kex_type){
       case SSH_KEX_DH_GROUP1_SHA1:
       case SSH_KEX_DH_GROUP14_SHA1:
