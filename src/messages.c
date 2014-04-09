@@ -162,38 +162,6 @@ static int ssh_execute_server_request(ssh_session session, ssh_message msg)
 
                 return SSH_OK;
             }
-            else if (msg->channel_request_open.type == SSH_CHANNEL_DIRECT_TCPIP &&
-                    ssh_callbacks_exists(session->server_callbacks, channel_open_request_direct_tcpip_function)) {
-                channel = session->server_callbacks->channel_open_request_direct_tcpip_function(session,
-                        msg->channel_request_open.destination,
-                        msg->channel_request_open.destination_port,
-                        msg->channel_request_open.originator,
-                        msg->channel_request_open.originator_port,
-                        session->server_callbacks->userdata);
-                if (channel != NULL) {
-                    rc = ssh_message_channel_request_open_reply_accept_channel(msg, channel);
-                    return SSH_OK;
-                } else {
-                    ssh_message_reply_default(msg);
-                }
-                return SSH_OK;
-            }
-            else if (msg->channel_request_open.type == SSH_CHANNEL_FORWARDED_TCPIP &&
-                    ssh_callbacks_exists(session->server_callbacks, channel_open_request_forwarded_tcpip_function)) {
-                channel = session->server_callbacks->channel_open_request_forwarded_tcpip_function(session,
-                        msg->channel_request_open.destination,
-                        msg->channel_request_open.destination_port,
-                        msg->channel_request_open.originator,
-                        msg->channel_request_open.originator_port,
-                        session->server_callbacks->userdata);
-                if (channel != NULL) {
-                    rc = ssh_message_channel_request_open_reply_accept_channel(msg, channel);
-                    return SSH_OK;
-                } else {
-                    ssh_message_reply_default(msg);
-                }
-                return SSH_OK;
-            }
             break;
         case SSH_REQUEST_CHANNEL:
             channel = msg->channel_request.channel;
