@@ -504,10 +504,6 @@ int ssh_client_dh_init(ssh_session session){
   ssh_string e = NULL;
   int rc;
 
-  if (buffer_add_u8(session->out_buffer, SSH2_MSG_KEXDH_INIT) < 0) {
-    goto error;
-  }
-
   if (dh_generate_x(session) < 0) {
     goto error;
   }
@@ -520,9 +516,11 @@ int ssh_client_dh_init(ssh_session session){
     goto error;
   }
 
-  if (buffer_add_ssh_string(session->out_buffer, e) < 0) {
+  rc = ssh_buffer_pack(session->out_buffer, "bS", SSH2_MSG_KEXDH_INIT, e);
+  if (rc != SSH_OK) {
     goto error;
   }
+
   ssh_string_burn(e);
   ssh_string_free(e);
   e=NULL;
@@ -589,11 +587,9 @@ error:
 
 int make_sessionid(ssh_session session) {
     ssh_string num = NULL;
-    ssh_string str = NULL;
     ssh_buffer server_hash = NULL;
     ssh_buffer client_hash = NULL;
     ssh_buffer buf = NULL;
-    uint32_t len;
     int rc = SSH_ERROR;
 
     buf = ssh_buffer_new();
@@ -601,24 +597,11 @@ int make_sessionid(ssh_session session) {
         return rc;
     }
 
-    str = ssh_string_from_char(session->clientbanner);
-    if (str == NULL) {
-        goto error;
-    }
-
-    rc = buffer_add_ssh_string(buf, str);
-    if (rc < 0) {
-        goto error;
-    }
-    ssh_string_free(str);
-
-    str = ssh_string_from_char(session->serverbanner);
-    if (str == NULL) {
-        goto error;
-    }
-
-    rc = buffer_add_ssh_string(buf, str);
-    if (rc < 0) {
+    rc = ssh_buffer_pack(buf,
+                         "ss",
+                         session->clientbanner,
+                         session->serverbanner);
+    if (rc == SSH_ERROR) {
         goto error;
     }
 
@@ -657,61 +640,30 @@ int make_sessionid(ssh_session session) {
         }
     }
 
-    len = ntohl(buffer_get_rest_len(client_hash));
-    rc = buffer_add_u32(buf,len);
-    if (rc < 0) {
-        goto error;
-    }
-    rc = ssh_buffer_add_data(buf, buffer_get_rest(client_hash),
-                              buffer_get_rest_len(client_hash));
-    if (rc < 0) {
-        goto error;
-    }
+    rc = ssh_buffer_pack(buf,
+                         "dPdPS",
+                         buffer_get_rest_len(client_hash),
+                         buffer_get_rest_len(client_hash),
+                         buffer_get_rest(client_hash),
+                         buffer_get_rest_len(server_hash),
+                         buffer_get_rest_len(server_hash),
+                         buffer_get_rest(server_hash),
+                         session->next_crypto->server_pubkey);
 
-    len = ntohl(buffer_get_rest_len(server_hash));
-    rc = buffer_add_u32(buf, len);
-    if (rc < 0) {
-        goto error;
-    }
-    rc = ssh_buffer_add_data(buf, buffer_get_rest(server_hash),
-                                  buffer_get_rest_len(server_hash));
-    if (rc < 0) {
-        goto error;
-    }
-
-    len = ssh_string_len(session->next_crypto->server_pubkey) + 4;
-    rc = ssh_buffer_add_data(buf, session->next_crypto->server_pubkey, len);
-    if (rc < 0) {
+    if(rc != SSH_OK){
         goto error;
     }
 
     if (session->next_crypto->kex_type == SSH_KEX_DH_GROUP1_SHA1 ||
-        session->next_crypto->kex_type == SSH_KEX_DH_GROUP14_SHA1) {
-
-        num = make_bignum_string(session->next_crypto->e);
-        if (num == NULL) {
+            session->next_crypto->kex_type == SSH_KEX_DH_GROUP14_SHA1) {
+        rc = ssh_buffer_pack(buf,
+                             "BB",
+                             session->next_crypto->e,
+                             session->next_crypto->f);
+        if (rc != SSH_OK) {
             goto error;
         }
 
-        len = ssh_string_len(num) + 4;
-        rc = ssh_buffer_add_data(buf, num, len);
-        if (rc < 0) {
-            goto error;
-        }
-
-        ssh_string_free(num);
-        num = make_bignum_string(session->next_crypto->f);
-        if (num == NULL) {
-            goto error;
-        }
-
-        len = ssh_string_len(num) + 4;
-        rc = ssh_buffer_add_data(buf, num, len);
-        if (rc < 0) {
-          goto error;
-        }
-
-        ssh_string_free(num);
 #ifdef HAVE_ECDH
     } else if (session->next_crypto->kex_type == SSH_KEX_ECDH_SHA2_NISTP256) {
         if (session->next_crypto->ecdh_client_pubkey == NULL ||
@@ -719,37 +671,30 @@ int make_sessionid(ssh_session session) {
             SSH_LOG(SSH_LOG_WARNING, "ECDH parameted missing");
             goto error;
         }
-        rc = buffer_add_ssh_string(buf,session->next_crypto->ecdh_client_pubkey);
-        if (rc < 0) {
-            goto error;
-        }
-        rc = buffer_add_ssh_string(buf,session->next_crypto->ecdh_server_pubkey);
-        if (rc < 0) {
+        rc = ssh_buffer_pack(buf,
+                             "SS",
+                             session->next_crypto->ecdh_client_pubkey,
+                             session->next_crypto->ecdh_server_pubkey);
+        if (rc != SSH_OK) {
             goto error;
         }
 #endif
 #ifdef HAVE_CURVE25519
     } else if (session->next_crypto->kex_type == SSH_KEX_CURVE25519_SHA256_LIBSSH_ORG) {
-        rc = buffer_add_u32(buf, htonl(CURVE25519_PUBKEY_SIZE));
-        rc += ssh_buffer_add_data(buf, session->next_crypto->curve25519_client_pubkey,
-                                       CURVE25519_PUBKEY_SIZE);
-        rc += buffer_add_u32(buf, htonl(CURVE25519_PUBKEY_SIZE));
-        rc += ssh_buffer_add_data(buf, session->next_crypto->curve25519_server_pubkey,
-                                       CURVE25519_PUBKEY_SIZE);
+        rc = ssh_buffer_pack(buf,
+                             "dPdP",
+                             CURVE25519_PUBKEY_SIZE,
+                             session->next_crypto->curve25519_client_pubkey,
+                             CURVE25519_PUBKEY_SIZE,
+                             session->next_crypto->curve25519_server_pubkey);
+
         if (rc != SSH_OK) {
-                goto error;
+            goto error;
         }
 #endif
     }
-
-    num = make_bignum_string(session->next_crypto->k);
-    if (num == NULL) {
-        goto error;
-    }
-
-    len = ssh_string_len(num) + 4;
-    rc = ssh_buffer_add_data(buf, num, len);
-    if (rc < 0) {
+    rc = ssh_buffer_pack(buf, "B", session->next_crypto->k);
+    if (rc != SSH_OK) {
         goto error;
     }
 
@@ -811,7 +756,6 @@ error:
     session->in_hashbuf = NULL;
     session->out_hashbuf = NULL;
 
-    ssh_string_free(str);
     ssh_string_free(num);
 
     return rc;
