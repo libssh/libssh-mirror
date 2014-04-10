@@ -582,14 +582,15 @@ int ssh_send_kex(ssh_session session, int server_kex) {
       &session->next_crypto->client_kex);
   ssh_string str = NULL;
   int i;
+  int rc;
 
-  if (buffer_add_u8(session->out_buffer, SSH2_MSG_KEXINIT) < 0) {
+  rc = ssh_buffer_pack(session->out_buffer,
+                       "bP",
+                       SSH2_MSG_KEXINIT,
+                       16,
+                       kex->cookie); /* cookie */
+  if (rc != SSH_OK)
     goto error;
-  }
-  if (ssh_buffer_add_data(session->out_buffer, kex->cookie, 16) < 0) {
-    goto error;
-  }
-
   if (hashbufout_add_cookie(session) < 0) {
     goto error;
   }
@@ -612,10 +613,11 @@ int ssh_send_kex(ssh_session session, int server_kex) {
     str = NULL;
   }
 
-  if (buffer_add_u8(session->out_buffer, 0) < 0) {
-    goto error;
-  }
-  if (buffer_add_u32(session->out_buffer, 0) < 0) {
+  rc = ssh_buffer_pack(session->out_buffer,
+                       "bd",
+                       0,
+                       0);
+  if (rc != SSH_OK) {
     goto error;
   }
 
