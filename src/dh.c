@@ -587,218 +587,234 @@ error:
   return SSH_ERROR;
 }
 
-
-/*
-static void sha_add(ssh_string str,SHACTX ctx){
-    sha1_update(ctx,str,string_len(str)+4);
-#ifdef DEBUG_CRYPTO
-    ssh_print_hexa("partial hashed sessionid",str,string_len(str)+4);
-#endif
-}
-*/
-
 int make_sessionid(ssh_session session) {
-  ssh_string num = NULL;
-  ssh_string str = NULL;
-  ssh_buffer server_hash = NULL;
-  ssh_buffer client_hash = NULL;
-  ssh_buffer buf = NULL;
-  uint32_t len;
-  int rc = SSH_ERROR;
+    ssh_string num = NULL;
+    ssh_string str = NULL;
+    ssh_buffer server_hash = NULL;
+    ssh_buffer client_hash = NULL;
+    ssh_buffer buf = NULL;
+    uint32_t len;
+    int rc = SSH_ERROR;
 
-  buf = ssh_buffer_new();
-  if (buf == NULL) {
-    return rc;
-  }
-
-  str = ssh_string_from_char(session->clientbanner);
-  if (str == NULL) {
-    goto error;
-  }
-
-  if (buffer_add_ssh_string(buf, str) < 0) {
-    goto error;
-  }
-  ssh_string_free(str);
-
-  str = ssh_string_from_char(session->serverbanner);
-  if (str == NULL) {
-    goto error;
-  }
-
-  if (buffer_add_ssh_string(buf, str) < 0) {
-    goto error;
-  }
-
-  if (session->client) {
-    server_hash = session->in_hashbuf;
-    client_hash = session->out_hashbuf;
-  } else {
-    server_hash = session->out_hashbuf;
-    client_hash = session->in_hashbuf;
-  }
-
-  if (buffer_add_u32(server_hash, 0) < 0) {
-    goto error;
-  }
-  if (buffer_add_u8(server_hash, 0) < 0) {
-    goto error;
-  }
-  if (buffer_add_u32(client_hash, 0) < 0) {
-    goto error;
-  }
-  if (buffer_add_u8(client_hash, 0) < 0) {
-    goto error;
-  }
-
-  len = ntohl(buffer_get_rest_len(client_hash));
-  if (buffer_add_u32(buf,len) < 0) {
-    goto error;
-  }
-  if (ssh_buffer_add_data(buf, buffer_get_rest(client_hash),
-        buffer_get_rest_len(client_hash)) < 0) {
-    goto error;
-  }
-
-  len = ntohl(buffer_get_rest_len(server_hash));
-  if (buffer_add_u32(buf, len) < 0) {
-    goto error;
-  }
-  if (ssh_buffer_add_data(buf, buffer_get_rest(server_hash),
-        buffer_get_rest_len(server_hash)) < 0) {
-    goto error;
-  }
-
-  len = ssh_string_len(session->next_crypto->server_pubkey) + 4;
-  if (ssh_buffer_add_data(buf, session->next_crypto->server_pubkey, len) < 0) {
-    goto error;
-  }
-  if(session->next_crypto->kex_type == SSH_KEX_DH_GROUP1_SHA1 ||
-     session->next_crypto->kex_type == SSH_KEX_DH_GROUP14_SHA1) {
-
-    num = make_bignum_string(session->next_crypto->e);
-    if (num == NULL) {
-      goto error;
+    buf = ssh_buffer_new();
+    if (buf == NULL) {
+        return rc;
     }
 
-    len = ssh_string_len(num) + 4;
-    if (ssh_buffer_add_data(buf, num, len) < 0) {
-      goto error;
+    str = ssh_string_from_char(session->clientbanner);
+    if (str == NULL) {
+        goto error;
     }
 
-    ssh_string_free(num);
-    num = make_bignum_string(session->next_crypto->f);
-    if (num == NULL) {
-      goto error;
+    rc = buffer_add_ssh_string(buf, str);
+    if (rc < 0) {
+        goto error;
+    }
+    ssh_string_free(str);
+
+    str = ssh_string_from_char(session->serverbanner);
+    if (str == NULL) {
+        goto error;
     }
 
-    len = ssh_string_len(num) + 4;
-    if (ssh_buffer_add_data(buf, num, len) < 0) {
-      goto error;
+    rc = buffer_add_ssh_string(buf, str);
+    if (rc < 0) {
+        goto error;
     }
 
-    ssh_string_free(num);
+    if (session->client) {
+        server_hash = session->in_hashbuf;
+        client_hash = session->out_hashbuf;
+    } else {
+        server_hash = session->out_hashbuf;
+        client_hash = session->in_hashbuf;
+    }
+
+    /*
+     * Handle the two final fields for the KEXINIT message (RFC 4253 7.1):
+     *
+     *      boolean      first_kex_packet_follows
+     *      uint32       0 (reserved for future extension)
+     */
+    rc = buffer_add_u8(server_hash, 0);
+    if (rc < 0) {
+        goto error;
+    }
+    rc = buffer_add_u32(server_hash, 0);
+    if (rc < 0) {
+        goto error;
+    }
+
+    /* These fields are handled for the server case in ssh_packet_kexinit. */
+    if (session->client) {
+        rc = buffer_add_u8(client_hash, 0);
+        if (rc < 0) {
+            goto error;
+        }
+        rc = buffer_add_u32(client_hash, 0);
+        if (rc < 0) {
+            goto error;
+        }
+    }
+
+    len = ntohl(buffer_get_rest_len(client_hash));
+    rc = buffer_add_u32(buf,len);
+    if (rc < 0) {
+        goto error;
+    }
+    rc = ssh_buffer_add_data(buf, buffer_get_rest(client_hash),
+                              buffer_get_rest_len(client_hash));
+    if (rc < 0) {
+        goto error;
+    }
+
+    len = ntohl(buffer_get_rest_len(server_hash));
+    rc = buffer_add_u32(buf, len);
+    if (rc < 0) {
+        goto error;
+    }
+    rc = ssh_buffer_add_data(buf, buffer_get_rest(server_hash),
+                                  buffer_get_rest_len(server_hash));
+    if (rc < 0) {
+        goto error;
+    }
+
+    len = ssh_string_len(session->next_crypto->server_pubkey) + 4;
+    rc = ssh_buffer_add_data(buf, session->next_crypto->server_pubkey, len);
+    if (rc < 0) {
+        goto error;
+    }
+
+    if (session->next_crypto->kex_type == SSH_KEX_DH_GROUP1_SHA1 ||
+        session->next_crypto->kex_type == SSH_KEX_DH_GROUP14_SHA1) {
+
+        num = make_bignum_string(session->next_crypto->e);
+        if (num == NULL) {
+            goto error;
+        }
+
+        len = ssh_string_len(num) + 4;
+        rc = ssh_buffer_add_data(buf, num, len);
+        if (rc < 0) {
+            goto error;
+        }
+
+        ssh_string_free(num);
+        num = make_bignum_string(session->next_crypto->f);
+        if (num == NULL) {
+            goto error;
+        }
+
+        len = ssh_string_len(num) + 4;
+        rc = ssh_buffer_add_data(buf, num, len);
+        if (rc < 0) {
+          goto error;
+        }
+
+        ssh_string_free(num);
 #ifdef HAVE_ECDH
-  } else if (session->next_crypto->kex_type == SSH_KEX_ECDH_SHA2_NISTP256){
-    if(session->next_crypto->ecdh_client_pubkey == NULL ||
-            session->next_crypto->ecdh_server_pubkey == NULL){
-        SSH_LOG(SSH_LOG_WARNING, "ECDH parameted missing");
-        goto error;
-    }
-    rc = buffer_add_ssh_string(buf,session->next_crypto->ecdh_client_pubkey);
-    if (rc < 0) {
-        goto error;
-    }
-    rc = buffer_add_ssh_string(buf,session->next_crypto->ecdh_server_pubkey);
-    if (rc < 0) {
-        goto error;
-    }
+    } else if (session->next_crypto->kex_type == SSH_KEX_ECDH_SHA2_NISTP256) {
+        if (session->next_crypto->ecdh_client_pubkey == NULL ||
+            session->next_crypto->ecdh_server_pubkey == NULL) {
+            SSH_LOG(SSH_LOG_WARNING, "ECDH parameted missing");
+            goto error;
+        }
+        rc = buffer_add_ssh_string(buf,session->next_crypto->ecdh_client_pubkey);
+        if (rc < 0) {
+            goto error;
+        }
+        rc = buffer_add_ssh_string(buf,session->next_crypto->ecdh_server_pubkey);
+        if (rc < 0) {
+            goto error;
+        }
 #endif
 #ifdef HAVE_CURVE25519
-  } else if(session->next_crypto->kex_type == SSH_KEX_CURVE25519_SHA256_LIBSSH_ORG){
-	  rc = buffer_add_u32(buf, htonl(CURVE25519_PUBKEY_SIZE));
-	  rc += ssh_buffer_add_data(buf, session->next_crypto->curve25519_client_pubkey,
-			  CURVE25519_PUBKEY_SIZE);
-	  rc += buffer_add_u32(buf, htonl(CURVE25519_PUBKEY_SIZE));
-	  rc += ssh_buffer_add_data(buf, session->next_crypto->curve25519_server_pubkey,
-			  CURVE25519_PUBKEY_SIZE);
-	  if (rc != SSH_OK) {
-		  goto error;
-      }
+    } else if (session->next_crypto->kex_type == SSH_KEX_CURVE25519_SHA256_LIBSSH_ORG) {
+        rc = buffer_add_u32(buf, htonl(CURVE25519_PUBKEY_SIZE));
+        rc += ssh_buffer_add_data(buf, session->next_crypto->curve25519_client_pubkey,
+                                       CURVE25519_PUBKEY_SIZE);
+        rc += buffer_add_u32(buf, htonl(CURVE25519_PUBKEY_SIZE));
+        rc += ssh_buffer_add_data(buf, session->next_crypto->curve25519_server_pubkey,
+                                       CURVE25519_PUBKEY_SIZE);
+        if (rc != SSH_OK) {
+                goto error;
+        }
 #endif
-  }
-  num = make_bignum_string(session->next_crypto->k);
-  if (num == NULL) {
-    goto error;
-  }
+    }
 
-  len = ssh_string_len(num) + 4;
-  if (ssh_buffer_add_data(buf, num, len) < 0) {
-    goto error;
-  }
+    num = make_bignum_string(session->next_crypto->k);
+    if (num == NULL) {
+        goto error;
+    }
+
+    len = ssh_string_len(num) + 4;
+    rc = ssh_buffer_add_data(buf, num, len);
+    if (rc < 0) {
+        goto error;
+    }
 
 #ifdef DEBUG_CRYPTO
-  ssh_print_hexa("hash buffer", ssh_buffer_get_begin(buf), ssh_buffer_get_len(buf));
+    ssh_print_hexa("hash buffer", ssh_buffer_get_begin(buf), ssh_buffer_get_len(buf));
 #endif
 
-  switch(session->next_crypto->kex_type){
+    switch (session->next_crypto->kex_type) {
     case SSH_KEX_DH_GROUP1_SHA1:
     case SSH_KEX_DH_GROUP14_SHA1:
-      session->next_crypto->digest_len = SHA_DIGEST_LENGTH;
-      session->next_crypto->mac_type = SSH_MAC_SHA1;
-      session->next_crypto->secret_hash = malloc(session->next_crypto->digest_len);
-      if(session->next_crypto->secret_hash == NULL){
-        ssh_set_error_oom(session);
-        goto error;
-      }
-      sha1(buffer_get_rest(buf), buffer_get_rest_len(buf),
-                session->next_crypto->secret_hash);
-      break;
+        session->next_crypto->digest_len = SHA_DIGEST_LENGTH;
+        session->next_crypto->mac_type = SSH_MAC_SHA1;
+        session->next_crypto->secret_hash = malloc(session->next_crypto->digest_len);
+        if (session->next_crypto->secret_hash == NULL) {
+            ssh_set_error_oom(session);
+            goto error;
+        }
+        sha1(buffer_get_rest(buf), buffer_get_rest_len(buf),
+                                   session->next_crypto->secret_hash);
+        break;
     case SSH_KEX_ECDH_SHA2_NISTP256:
     case SSH_KEX_CURVE25519_SHA256_LIBSSH_ORG:
-      session->next_crypto->digest_len = SHA256_DIGEST_LENGTH;
-      session->next_crypto->mac_type = SSH_MAC_SHA256;
-      session->next_crypto->secret_hash = malloc(session->next_crypto->digest_len);
-      if(session->next_crypto->secret_hash == NULL){
-        ssh_set_error_oom(session);
-        goto error;
-      }
-      sha256(buffer_get_rest(buf), buffer_get_rest_len(buf),
-          session->next_crypto->secret_hash);
-      break;
-  }
-  /* During the first kex, secret hash and session ID are equal. However, after
-   * a key re-exchange, a new secret hash is calculated. This hash will not replace
-   * but complement existing session id.
-   */
-  if (!session->next_crypto->session_id){
-      session->next_crypto->session_id = malloc(session->next_crypto->digest_len);
-      if (session->next_crypto->session_id == NULL){
-          ssh_set_error_oom(session);
-          goto error;
-      }
-      memcpy(session->next_crypto->session_id, session->next_crypto->secret_hash,
-              session->next_crypto->digest_len);
-  }
+        session->next_crypto->digest_len = SHA256_DIGEST_LENGTH;
+        session->next_crypto->mac_type = SSH_MAC_SHA256;
+        session->next_crypto->secret_hash = malloc(session->next_crypto->digest_len);
+        if (session->next_crypto->secret_hash == NULL) {
+            ssh_set_error_oom(session);
+            goto error;
+        }
+        sha256(buffer_get_rest(buf), buffer_get_rest_len(buf),
+                                     session->next_crypto->secret_hash);
+        break;
+    }
+    /* During the first kex, secret hash and session ID are equal. However, after
+     * a key re-exchange, a new secret hash is calculated. This hash will not replace
+     * but complement existing session id.
+     */
+    if (!session->next_crypto->session_id) {
+        session->next_crypto->session_id = malloc(session->next_crypto->digest_len);
+        if (session->next_crypto->session_id == NULL) {
+            ssh_set_error_oom(session);
+            goto error;
+        }
+        memcpy(session->next_crypto->session_id, session->next_crypto->secret_hash,
+                session->next_crypto->digest_len);
+    }
 #ifdef DEBUG_CRYPTO
-  printf("Session hash: \n");
-  ssh_print_hexa("secret hash", session->next_crypto->secret_hash, session->next_crypto->digest_len);
-  ssh_print_hexa("session id", session->next_crypto->session_id, session->next_crypto->digest_len);
+    printf("Session hash: \n");
+    ssh_print_hexa("secret hash", session->next_crypto->secret_hash, session->next_crypto->digest_len);
+    ssh_print_hexa("session id", session->next_crypto->session_id, session->next_crypto->digest_len);
 #endif
 
-  rc = SSH_OK;
+    rc = SSH_OK;
 error:
-  ssh_buffer_free(buf);
-  ssh_buffer_free(client_hash);
-  ssh_buffer_free(server_hash);
+    ssh_buffer_free(buf);
+    ssh_buffer_free(client_hash);
+    ssh_buffer_free(server_hash);
 
-  session->in_hashbuf = NULL;
-  session->out_hashbuf = NULL;
+    session->in_hashbuf = NULL;
+    session->out_hashbuf = NULL;
 
-  ssh_string_free(str);
-  ssh_string_free(num);
+    ssh_string_free(str);
+    ssh_string_free(num);
 
-  return rc;
+    return rc;
 }
 
 int hashbufout_add_cookie(ssh_session session) {
