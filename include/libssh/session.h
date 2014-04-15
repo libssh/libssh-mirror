@@ -127,15 +127,6 @@ struct ssh_session_struct {
     struct ssh_agent_state_struct *agent_state;
     struct ssh_auth_auto_state_struct *auth_auto_state;
 
-    /*
-     * RFC 4253, 7.1: if the first_kex_packet_follows flag was set in
-     * the received SSH_MSG_KEXINIT, but the guess was wrong, this
-     * field will be set such that the following guessed packet will
-     * be ignored.  Once that packet has been received and ignored,
-     * this field is cleared.
-     */
-    int first_kex_follows_guess_wrong;
-
     ssh_buffer in_hashbuf;
     ssh_buffer out_hashbuf;
     struct ssh_crypto_struct *current_crypto;
