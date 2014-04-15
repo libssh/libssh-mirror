@@ -44,6 +44,18 @@ set(TEST_TARGET_LIBRARIES
 add_subdirectory(unittests)
 
 if (WITH_CLIENT_TESTING)
+    find_package(socket_wrapper 1.1.5 REQUIRED)
+    find_package(nss_wrapper 1.1.2 REQUIRED)
+    find_program(SSHD_EXECUTABLE
+                 NAME
+                    sshd
+                 PATHS
+                    /sbin
+                    /usr/sbin
+                    /usr/local/sbin)
+    if (NOT SSHD_EXECUTABLE)
+        message(SEND_ERROR "Could not find sshd which is required for client testing")
+    endif()
     add_subdirectory(client)
 endif (WITH_CLIENT_TESTING)
 
