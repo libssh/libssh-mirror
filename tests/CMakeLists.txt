@@ -46,6 +46,8 @@ add_subdirectory(unittests)
 if (WITH_CLIENT_TESTING)
     find_package(socket_wrapper 1.1.5 REQUIRED)
     find_package(nss_wrapper 1.1.2 REQUIRED)
+    find_package(uid_wrapper 1.2.0 REQUIRED)
+
     find_program(SSHD_EXECUTABLE
                  NAME
                     sshd
@@ -56,6 +58,24 @@ if (WITH_CLIENT_TESTING)
     if (NOT SSHD_EXECUTABLE)
         message(SEND_ERROR "Could not find sshd which is required for client testing")
     endif()
+
+    # homedir will be used in passwd
+    set(HOMEDIR ${CMAKE_CURRENT_BINARY_DIR}/home)
+
+    ### Setup nss_wrapper
+    configure_file(etc/passwd.in ${CMAKE_CURRENT_BINARY_DIR}/etc/passwd @ONLY)
+    configure_file(etc/shadow.in ${CMAKE_CURRENT_BINARY_DIR}/etc/shadow @ONLY)
+    configure_file(etc/group.in ${CMAKE_CURRENT_BINARY_DIR}/etc/group @ONLY)
+    configure_file(etc/hosts.in ${CMAKE_CURRENT_BINARY_DIR}/etc/hosts @ONLY)
+
+    set(TORTURE_ENVIRONMENT "LD_PRELOAD=${SOCKET_WRAPPER_LIBRARY}:${NSS_WRAPPER_LIBRARY}:${UID_WRAPPER_LIBRARY}")
+    list(APPEND TORTURE_ENVIRONMENT UID_WRAPPER=1)
+    list(APPEND TORTURE_ENVIRONMENT NSS_WRAPPER_PASSWD=${CMAKE_CURRENT_BINARY_DIR}/etc/passwd)
+    list(APPEND TORTURE_ENVIRONMENT NSS_WRAPPER_SHADOW=${CMAKE_CURRENT_BINARY_DIR}/etc/shadow)
+    list(APPEND TORTURE_ENVIRONMENT NSS_WRAPPER_GROUP=${CMAKE_CURRENT_BINARY_DIR}/etc/group)
+
+    message(STATUS "TORTURE_ENVIRONMENT=${TORTURE_ENVIRONMENT}")
+
     add_subdirectory(client)
 endif (WITH_CLIENT_TESTING)
 

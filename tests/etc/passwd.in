@@ -1,0 +1,5 @@
+bob:x:1000:1000:bob gecos:@HOMEDIR@/bob:/bin/false
+alice:x:1001:1000:alice gecos:@HOMEDIR@/alice:/bin/bash
+sshd:x:65530:65531:sshd:@HOMEDIR@:/sbin/nologin
+nobody:x:65533:65534:nobody gecos:@HOMEDIR@:/bin/false
+root:x:65534:65532:root gecos:@HOMEDIR@:/bin/false
