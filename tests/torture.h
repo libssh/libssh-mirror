@@ -60,6 +60,16 @@ struct torture_sftp {
     char *testdir;
 };
 
+struct torture_state {
+    char *socket_dir;
+    char *pcap_file;
+    char *srv_pidfile;
+};
+
+#ifndef ZERO_STRUCT
+#define ZERO_STRUCT(x) memset((char *)&(x), 0, sizeof(x))
+#endif
+
 void torture_cmdline_parse(int argc, char **argv, struct argument_s *arguments);
 
 int torture_rmdirs(const char *path);
@@ -93,6 +103,8 @@ void torture_write_file(const char *filename, const char *data);
 
 #define torture_filter_tests(tests) _torture_filter_tests(tests, sizeof(tests) / sizeof(tests)[0])
 void _torture_filter_tests(UnitTest *tests, size_t ntests);
+
+void torture_setup_socket_dir(void **state);
 
 /*
  * This function must be defined in every unit test file.

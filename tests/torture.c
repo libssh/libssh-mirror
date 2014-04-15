@@ -219,6 +219,10 @@ static const char torture_ed25519_testkey_pp[]=
         "Y3GsmYTDstmicanQ==\n"
         "-----END OPENSSH PRIVATE KEY-----\n";
 
+#define TORTURE_SOCKET_DIR "/tmp/test_socket_wrapper_XXXXXX"
+#define TORTURE_SSHD_PIDFILE "sshd.pid"
+#define TORTURE_PCAP_FILE "socket_trace.pcap"
+
 static int verbosity = 0;
 static const char *pattern = NULL;
 
@@ -645,6 +649,44 @@ const char *torture_get_testkey_pub(enum ssh_keytypes_e type, int ecda_bits)
 const char *torture_get_testkey_passphrase(void)
 {
     return TORTURE_TESTKEY_PASSWORD;
+}
+
+void torture_setup_socket_dir(void **state)
+{
+    struct torture_state *s;
+    const char *p;
+    size_t len;
+
+    s = malloc(sizeof(struct torture_state));
+    assert_non_null(s);
+
+    s->socket_dir = strdup(TORTURE_SOCKET_DIR);
+    assert_non_null(s->socket_dir);
+
+    p = mkdtemp(s->socket_dir);
+    assert_non_null(p);
+
+    /* pcap file */
+    len = strlen(p) + 1 + strlen(TORTURE_PCAP_FILE) + 1;
+
+    s->pcap_file = malloc(len);
+    assert_non_null(s->pcap_file);
+
+    snprintf(s->pcap_file, len, "%s/%s", p, TORTURE_PCAP_FILE);
+
+    /* pid file */
+    len = strlen(p) + 1 + strlen(TORTURE_SSHD_PIDFILE) + 1;
+
+    s->srv_pidfile = malloc(len);
+    assert_non_null(s->srv_pidfile);
+
+    snprintf(s->srv_pidfile, len, "%s/%s", p, TORTURE_SSHD_PIDFILE);
+
+    setenv("SOCKET_WRAPPER_DIR", p, 1);
+    setenv("SOCKET_WRAPPER_DEFAULT_IFACE", "170", 1);
+    setenv("SOCKET_WRAPPER_PCAP_FILE", s->pcap_file, 1);
+
+    *state = s;
 }
 
 int torture_libssh_verbosity(void){
