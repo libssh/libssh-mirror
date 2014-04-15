@@ -106,6 +106,8 @@ void _torture_filter_tests(UnitTest *tests, size_t ntests);
 
 void torture_setup_socket_dir(void **state);
 
+void torture_teardown_socket_dir(void **state);
+
 /*
  * This function must be defined in every unit test file.
  */

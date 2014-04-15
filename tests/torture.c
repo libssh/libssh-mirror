@@ -689,6 +689,30 @@ void torture_setup_socket_dir(void **state)
     *state = s;
 }
 
+void torture_teardown_socket_dir(void **state)
+{
+    struct torture_state *s = *state;
+    char *env = getenv("TORTURE_SKIP_CLEANUP");
+    int rc;
+
+    if (env != NULL && env[0] == '1') {
+        fprintf(stderr, ">>> Skipping cleanup of %s\n", s->socket_dir);
+    } else {
+        rc = torture_rmdirs(s->socket_dir);
+        if (rc < 0) {
+            fprintf(stderr,
+                    "torture_rmdirs(%s) failed: %s",
+                    s->socket_dir,
+                    strerror(errno));
+        }
+    }
+
+    free(s->socket_dir);
+    free(s->pcap_file);
+    free(s->srv_pidfile);
+    free(s);
+}
+
 int torture_libssh_verbosity(void){
   return verbosity;
 }
