@@ -94,6 +94,9 @@ void torture_write_file(const char *filename, const char *data);
 #define torture_filter_tests(tests) _torture_filter_tests(tests, sizeof(tests) / sizeof(tests)[0])
 void _torture_filter_tests(struct CMUnitTest *tests, size_t ntests);
 
+const char *torture_server_address(int domain);
+int torture_server_port(void);
+
 /*
  * This function must be defined in every unit test file.
  */

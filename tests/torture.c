@@ -42,6 +42,11 @@
 /* for pattern matching */
 #include "match.c"
 
+#define TORTURE_SSHD_SRV_IPV4 "127.0.0.10"
+/* socket wrapper IPv6 prefix  fd00::5357:5fxx */
+#define TORTURE_SSHD_SRV_IPV6 "fd00::5357:5f0a"
+#define TORTURE_SSHD_SRV_PORT 22
+
 static const char torture_rsa_testkey[] =
         "-----BEGIN RSA PRIVATE KEY-----\n"
         "MIIEowIBAAKCAQEArAOREUWlBXJAKZ5hABYyxnRayDZP1bJeLbPVK+npxemrhHyZ\n"
@@ -704,6 +709,49 @@ const char *torture_get_testkey_pub(enum ssh_keytypes_e type, int ecda_bits)
 const char *torture_get_testkey_passphrase(void)
 {
     return TORTURE_TESTKEY_PASSWORD;
+}
+
+int torture_server_port(void)
+{
+    char *env = getenv("TORTURE_SERVER_PORT");
+
+    if (env != NULL && env[0] != '\0' && strlen(env) < 6) {
+        int port = atoi(env);
+
+        if (port > 0 && port < 65536) {
+            return port;
+        }
+    }
+
+    return TORTURE_SSHD_SRV_PORT;
+}
+
+const char *torture_server_address(int family)
+{
+    switch (family) {
+    case AF_INET: {
+        const char *ip4 = getenv("TORTURE_SERVER_ADDRESS_IPV4");
+
+        if (ip4 != NULL && ip4[0] != '\0') {
+            return ip4;
+        }
+
+        return TORTURE_SSHD_SRV_IPV4;
+    }
+    case AF_INET6: {
+        const char *ip6 = getenv("TORTURE_SERVER_ADDRESS_IPV6");
+
+        if (ip6 != NULL && ip6[0] != '\0') {
+            return ip6;
+        }
+
+        return TORTURE_SSHD_SRV_IPV6;
+    }
+    default:
+        return NULL;
+    }
+
+    return NULL;
 }
 
 int torture_libssh_verbosity(void){
