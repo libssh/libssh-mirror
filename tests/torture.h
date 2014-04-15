@@ -109,6 +109,8 @@ int torture_server_port(void);
 
 void torture_setup_socket_dir(void **state);
 
+void torture_teardown_socket_dir(void **state);
+
 /*
  * This function must be defined in every unit test file.
  */
