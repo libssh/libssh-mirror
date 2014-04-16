@@ -42,13 +42,7 @@
  * @brief Starts curve25519-sha256@libssh.org key exchange
  */
 int ssh_client_curve25519_init(ssh_session session){
-  ssh_string client_pubkey;
   int rc;
-
-  rc = buffer_add_u8(session->out_buffer, SSH2_MSG_KEX_ECDH_INIT);
-  if (rc < 0) {
-      return SSH_ERROR;
-  }
 
   rc = ssh_get_random(session->next_crypto->curve25519_privkey, CURVE25519_PRIVKEY_SIZE, 1);
   if (rc == 0){
@@ -58,15 +52,14 @@ int ssh_client_curve25519_init(ssh_session session){
 
   crypto_scalarmult_base(session->next_crypto->curve25519_client_pubkey,
 		  session->next_crypto->curve25519_privkey);
-  client_pubkey = ssh_string_new(CURVE25519_PUBKEY_SIZE);
-  if (client_pubkey == NULL) {
-      return SSH_ERROR;
-  }
-  ssh_string_fill(client_pubkey, session->next_crypto->curve25519_client_pubkey,
-		  CURVE25519_PUBKEY_SIZE);
-  rc = buffer_add_ssh_string(session->out_buffer,client_pubkey);
-  ssh_string_free(client_pubkey);
-  if (rc < 0) {
+
+  rc = ssh_buffer_pack(session->out_buffer,
+                       "bdP",
+                       SSH2_MSG_KEX_ECDH_INIT,
+                       CURVE25519_PUBKEY_SIZE,
+                       (size_t)CURVE25519_PUBKEY_SIZE, session->next_crypto->curve25519_client_pubkey);
+  if (rc != SSH_OK) {
+      ssh_set_error_oom(session);
       return SSH_ERROR;
   }
 
