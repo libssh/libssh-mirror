@@ -104,7 +104,7 @@ install(
         ${CMAKE_CURRENT_BINARY_DIR}/libssh-config.cmake
         ${CMAKE_CURRENT_BINARY_DIR}/libssh-config-version.cmake
     DESTINATION
-        ${CMAKE_INSTALL_DIR}
+        ${CMAKE_INSTALL_DIR}/libssh
     COMPONENT
         devel
 )
