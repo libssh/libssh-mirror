@@ -269,24 +269,19 @@ static int ssh_service_request_termination(void *s){
  * @bug actually only works with ssh-userauth
  */
 int ssh_service_request(ssh_session session, const char *service) {
-  ssh_string service_s = NULL;
   int rc=SSH_ERROR;
 
   if(session->auth_service_state != SSH_AUTH_SERVICE_NONE)
     goto pending;
-  if (buffer_add_u8(session->out_buffer, SSH2_MSG_SERVICE_REQUEST) < 0) {
-      return SSH_ERROR;
-  }
-  service_s = ssh_string_from_char(service);
-  if (service_s == NULL) {
-      return SSH_ERROR;
-  }
 
-  if (buffer_add_ssh_string(session->out_buffer,service_s) < 0) {
-    ssh_string_free(service_s);
+  rc = ssh_buffer_pack(session->out_buffer,
+                       "bs",
+                       SSH2_MSG_SERVICE_REQUEST,
+                       service);
+  if (rc != SSH_OK){
+      ssh_set_error_oom(session);
       return SSH_ERROR;
   }
-  ssh_string_free(service_s);
   session->auth_service_state=SSH_AUTH_SERVICE_SENT;
   if (packet_send(session) == SSH_ERROR) {
     ssh_set_error(session, SSH_FATAL,
@@ -630,32 +625,23 @@ int ssh_get_openssh_version(ssh_session session) {
  * @param[in]  session  The SSH session to use.
  */
 void ssh_disconnect(ssh_session session) {
-  ssh_string str = NULL;
   struct ssh_iterator *it;
+  int rc;
 
   if (session == NULL) {
     return;
   }
 
   if (session->socket != NULL && ssh_socket_is_open(session->socket)) {
-    if (buffer_add_u8(session->out_buffer, SSH2_MSG_DISCONNECT) < 0) {
+    rc = ssh_buffer_pack(session->out_buffer,
+                         "bds",
+                         SSH2_MSG_DISCONNECT,
+                         SSH2_DISCONNECT_BY_APPLICATION,
+                         "Bye Bye");
+    if (rc != SSH_OK){
+      ssh_set_error_oom(session);
       goto error;
     }
-    if (buffer_add_u32(session->out_buffer,
-          htonl(SSH2_DISCONNECT_BY_APPLICATION)) < 0) {
-      goto error;
-    }
-
-    str = ssh_string_from_char("Bye Bye");
-    if (str == NULL) {
-      goto error;
-    }
-
-    if (buffer_add_ssh_string(session->out_buffer,str) < 0) {
-      ssh_string_free(str);
-      goto error;
-    }
-    ssh_string_free(str);
 
     packet_send(session);
     ssh_socket_close(session->socket);
