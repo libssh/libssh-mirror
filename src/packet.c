@@ -442,19 +442,19 @@ void ssh_packet_process(ssh_session session, uint8_t type){
  * @return SSH_ERROR on error, else SSH_OK
  */
 int ssh_packet_send_unimplemented(ssh_session session, uint32_t seqnum){
-  int r;
+    int rc;
 
-  r = buffer_add_u8(session->out_buffer, SSH2_MSG_UNIMPLEMENTED);
-  if (r < 0) {
-    return SSH_ERROR;
-  }
-  r = buffer_add_u32(session->out_buffer, htonl(seqnum));
-  if (r < 0) {
-    return SSH_ERROR;
-  }
-  r = packet_send(session);
+    rc = ssh_buffer_pack(session->out_buffer,
+                         "bd",
+                         SSH2_MSG_UNIMPLEMENTED,
+                         seqnum);
+    if (rc != SSH_OK) {
+        ssh_set_error_oom(session);
+        return SSH_ERROR;
+    }
+    rc = packet_send(session);
 
-  return r;
+    return rc;
 }
 
 /** @internal
@@ -465,8 +465,7 @@ SSH_PACKET_CALLBACK(ssh_packet_unimplemented){
     (void)session; /* unused */
   (void)type;
   (void)user;
-  buffer_get_u32(packet,&seq);
-  seq=ntohl(seq);
+  ssh_buffer_unpack(packet, "d", &seq);
   SSH_LOG(SSH_LOG_RARE,
       "Received SSH_MSG_UNIMPLEMENTED (sequence number %d)",seq);
   return SSH_PACKET_USED;
