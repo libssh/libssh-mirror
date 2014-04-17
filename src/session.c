@@ -785,27 +785,20 @@ void ssh_socket_exception_callback(int code, int errno_code, void *user){
  * @return              SSH_OK on success, SSH_ERROR otherwise.
  */
 int ssh_send_ignore (ssh_session session, const char *data) {
-    ssh_string str;
+    int rc;
 
     if (ssh_socket_is_open(session->socket)) {
-        if (buffer_add_u8(session->out_buffer, SSH2_MSG_IGNORE) < 0) {
+
+        rc = ssh_buffer_pack(session->out_buffer,
+                             "bs",
+                             SSH2_MSG_IGNORE,
+                             data);
+        if (rc != SSH_OK){
+            ssh_set_error_oom(session);
             goto error;
         }
-
-        str = ssh_string_from_char(data);
-        if (str == NULL) {
-            goto error;
-        }
-
-        if (buffer_add_ssh_string(session->out_buffer, str) < 0) {
-            ssh_string_free(str);
-            goto error;
-        }
-
         packet_send(session);
         ssh_handle_packets(session, 0);
-
-        ssh_string_free(str);
     }
 
     return SSH_OK;
@@ -827,34 +820,19 @@ error:
  * @return                     SSH_OK on success, SSH_ERROR otherwise.
  */
 int ssh_send_debug (ssh_session session, const char *message, int always_display) {
-    ssh_string str;
     int rc;
 
     if (ssh_socket_is_open(session->socket)) {
-        if (buffer_add_u8(session->out_buffer, SSH2_MSG_DEBUG) < 0) {
+        rc = ssh_buffer_pack(session->out_buffer,
+                             "bbsd",
+                             SSH2_MSG_DEBUG,
+                             always_display != 0 ? 1 : 0,
+                             message,
+                             0); /* empty language tag */
+        if (rc != SSH_OK) {
+            ssh_set_error_oom(session);
             goto error;
         }
-
-        if (buffer_add_u8(session->out_buffer, always_display) < 0) {
-            goto error;
-        }
-
-        str = ssh_string_from_char(message);
-        if (str == NULL) {
-            goto error;
-        }
-
-        rc = buffer_add_ssh_string(session->out_buffer, str);
-        ssh_string_free(str);
-        if (rc < 0) {
-            goto error;
-        }
-
-        /* Empty language tag */
-        if (buffer_add_u32(session->out_buffer, 0) < 0) {
-            goto error;
-        }
-
         packet_send(session);
         ssh_handle_packets(session, 0);
     }
