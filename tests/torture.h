@@ -35,6 +35,7 @@
 #include <setjmp.h>
 
 #include "libssh/priv.h"
+#include "libssh/server.h"
 #include "libssh/sftp.h"
 
 #include <cmocka.h>
@@ -65,6 +66,10 @@ ssh_session torture_ssh_session(const char *host,
                                 const unsigned int *port,
                                 const char *user,
                                 const char *password);
+
+ssh_bind torture_ssh_bind(const char *addr,
+                          const unsigned int port,
+                          const char *private_key_file);
 
 struct torture_sftp *torture_sftp_session(ssh_session session);
 void torture_sftp_close(struct torture_sftp *t);

@@ -393,6 +393,50 @@ failed:
     return NULL;
 }
 
+#ifdef WITH_SERVER
+
+ssh_bind torture_ssh_bind(const char *addr,
+                          const unsigned int port,
+                          const char *private_key_file) {
+    int rc;
+    ssh_bind sshbind = NULL;
+
+    sshbind = ssh_bind_new();
+    if (sshbind == NULL) {
+        goto out;
+    }
+
+    rc = ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_BINDADDR, addr);
+    if (rc != 0) {
+        goto out_free;
+    }
+
+    rc = ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_BINDPORT, &port);
+    if (rc != 0) {
+        goto out_free;
+    }
+
+    rc = ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HOSTKEY,
+                              private_key_file);
+    if (rc != 0) {
+        goto out_free;
+    }
+
+    rc = ssh_bind_listen(sshbind);
+    if (rc != SSH_OK) {
+        goto out_free;
+    }
+
+    goto out;
+ out_free:
+    ssh_bind_free(sshbind);
+    sshbind = NULL;
+ out:
+    return sshbind;
+}
+
+#endif
+
 #ifdef WITH_SFTP
 
 struct torture_sftp *torture_sftp_session(ssh_session session) {
