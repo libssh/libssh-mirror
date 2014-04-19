@@ -15,4 +15,7 @@ if (UNIX AND NOT WIN32)
     add_cmocka_test(torture_rand torture_rand.c ${TORTURE_LIBRARY})
     # requires /dev/null
     add_cmocka_test(torture_channel torture_channel.c ${TORTURE_LIBRARY})
+    if (WITH_SERVER AND Threads_FOUND)
+        add_cmocka_test(torture_server_x11 torture_server_x11.c ${TORTURE_LIBRARY})
+    endif (WITH_SERVER AND Threads_FOUND)
 endif (UNIX AND NOT WIN32)
