@@ -1469,6 +1469,7 @@ int ssh_message_handle_channel_request(ssh_session session, ssh_channel channel,
   if (strcmp(request, "x11-req") == 0) {
     ssh_string auth_protocol = NULL;
     ssh_string auth_cookie = NULL;
+    uint32_t screen_number;
 
     buffer_get_u8(packet, &msg->channel_request.x11_single_connection);
 
@@ -1496,7 +1497,8 @@ int ssh_message_handle_channel_request(ssh_session session, ssh_channel channel,
     ssh_string_free(auth_protocol);
     ssh_string_free(auth_cookie);
 
-    buffer_get_u32(packet, &msg->channel_request.x11_screen_number);
+    buffer_get_u32(packet, &screen_number);
+    msg->channel_request.x11_screen_number = ntohl(screen_number);
 
     goto end;
   }
