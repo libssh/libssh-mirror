@@ -315,6 +315,7 @@ int torture_isdir(const char *path) {
 }
 
 ssh_session torture_ssh_session(const char *host,
+                                const unsigned int *port,
                                 const char *user,
                                 const char *password) {
     ssh_session session;
@@ -332,6 +333,12 @@ ssh_session torture_ssh_session(const char *host,
 
     if (ssh_options_set(session, SSH_OPTIONS_HOST, host) < 0) {
         goto failed;
+    }
+
+    if (port != NULL) {
+      if (ssh_options_set(session, SSH_OPTIONS_PORT, port) < 0) {
+        goto failed;
+      }
     }
 
     if (user != NULL) {

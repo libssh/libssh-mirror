@@ -39,7 +39,7 @@ static void setup(void **state)
     user = getenv("TORTURE_USER");
     password = getenv("TORTURE_PASSWORD");
 
-    session = torture_ssh_session(host, user, password);
+    session = torture_ssh_session(host, NULL, user, password);
 
     assert_false(session == NULL);
     *state = session;

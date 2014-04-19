@@ -62,6 +62,7 @@ int torture_isdir(const char *path);
 int torture_libssh_verbosity(void);
 
 ssh_session torture_ssh_session(const char *host,
+                                const unsigned int *port,
                                 const char *user,
                                 const char *password);
 
