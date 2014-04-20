@@ -311,7 +311,7 @@ const char* ssh_get_serverbanner(ssh_session session) {
 }
 
 /**
- * @brief get the name of the input for the given session.
+ * @brief get the name of the input cipher for the given session.
  *
  * @param[in] session The SSH session.
  *
@@ -338,6 +338,36 @@ const char* ssh_get_cipher_out(ssh_session session) {
         (session->current_crypto != NULL) &&
         (session->current_crypto->out_cipher != NULL)) {
         return session->current_crypto->out_cipher->name;
+    }
+    return NULL;
+}
+
+/**
+ * @brief get the name of the input HMAC algorithm for the given session.
+ *
+ * @param[in] session The SSH session.
+ *
+ * @return Returns HMAC algorithm name or NULL if unknown.
+ */
+const char* ssh_get_hmac_in(ssh_session session) {
+    if ((session != NULL) &&
+        (session->current_crypto != NULL)) {
+        return ssh_hmac_type_to_string(session->current_crypto->in_hmac);
+    }
+    return NULL;
+}
+
+/**
+ * @brief get the name of the output HMAC algorithm for the given session.
+ *
+ * @param[in] session The SSH session.
+ *
+ * @return Returns HMAC algorithm name or NULL if unknown.
+ */
+const char* ssh_get_hmac_out(ssh_session session) {
+    if ((session != NULL) &&
+        (session->current_crypto != NULL)) {
+        return ssh_hmac_type_to_string(session->current_crypto->out_hmac);
     }
     return NULL;
 }

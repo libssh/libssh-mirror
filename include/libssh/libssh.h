@@ -342,6 +342,8 @@ enum ssh_options_e {
   SSH_OPTIONS_GSSAPI_SERVER_IDENTITY,
   SSH_OPTIONS_GSSAPI_CLIENT_IDENTITY,
   SSH_OPTIONS_GSSAPI_DELEGATE_CREDENTIALS,
+  SSH_OPTIONS_HMAC_C_S,
+  SSH_OPTIONS_HMAC_S_C,
 };
 
 enum {
@@ -657,6 +659,8 @@ LIBSSH_API const char* ssh_get_clientbanner(ssh_session session);
 LIBSSH_API const char* ssh_get_serverbanner(ssh_session session);
 LIBSSH_API const char* ssh_get_cipher_in(ssh_session session);
 LIBSSH_API const char* ssh_get_cipher_out(ssh_session session);
+LIBSSH_API const char* ssh_get_hmac_in(ssh_session session);
+LIBSSH_API const char* ssh_get_hmac_out(ssh_session session);
 
 #ifndef LIBSSH_LEGACY_0_4
 #include "libssh/legacy.h"
