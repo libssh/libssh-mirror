@@ -65,6 +65,8 @@ struct ssh_mac_ctx_struct {
   union {
     SHACTX sha1_ctx;
     SHA256CTX sha256_ctx;
+    SHA384CTX sha384_ctx;
+    SHA512CTX sha512_ctx;
   } ctx;
 };
 
@@ -181,6 +183,52 @@ void sha256(unsigned char *digest, int len, unsigned char *hash) {
   SHA256(digest, len, hash);
 }
 
+SHA384CTX sha384_init(void){
+  SHA384CTX c = malloc(sizeof(*c));
+  if (c == NULL) {
+    return NULL;
+  }
+  SHA384_Init(c);
+
+  return c;
+}
+
+void sha384_update(SHA384CTX c, const void *data, unsigned long len){
+  SHA384_Update(c,data,len);
+}
+
+void sha384_final(unsigned char *md, SHA384CTX c) {
+  SHA384_Final(md, c);
+  SAFE_FREE(c);
+}
+
+void sha384(unsigned char *digest, int len, unsigned char *hash) {
+  SHA384(digest, len, hash);
+}
+
+SHA512CTX sha512_init(void){
+  SHA512CTX c = malloc(sizeof(*c));
+  if (c == NULL) {
+    return NULL;
+  }
+  SHA512_Init(c);
+
+  return c;
+}
+
+void sha512_update(SHA512CTX c, const void *data, unsigned long len){
+  SHA512_Update(c,data,len);
+}
+
+void sha512_final(unsigned char *md, SHA512CTX c) {
+  SHA512_Final(md, c);
+  SAFE_FREE(c);
+}
+
+void sha512(unsigned char *digest, int len, unsigned char *hash) {
+  SHA512(digest, len, hash);
+}
+
 MD5CTX md5_init(void) {
   MD5CTX c = malloc(sizeof(*c));
   if (c == NULL) {
@@ -212,7 +260,11 @@ ssh_mac_ctx ssh_mac_ctx_init(enum ssh_mac_e type){
       ctx->ctx.sha256_ctx = sha256_init();
       return ctx;
     case SSH_MAC_SHA384:
+      ctx->ctx.sha384_ctx = sha384_init();
+      return ctx;
     case SSH_MAC_SHA512:
+      ctx->ctx.sha512_ctx = sha512_init();
+      return ctx;
     default:
       SAFE_FREE(ctx);
       return NULL;
@@ -228,7 +280,11 @@ void ssh_mac_update(ssh_mac_ctx ctx, const void *data, unsigned long len) {
       sha256_update(ctx->ctx.sha256_ctx, data, len);
       break;
     case SSH_MAC_SHA384:
+      sha384_update(ctx->ctx.sha384_ctx, data, len);
+      break;
     case SSH_MAC_SHA512:
+      sha512_update(ctx->ctx.sha512_ctx, data, len);
+      break;
     default:
       break;
   }
@@ -243,7 +299,11 @@ void ssh_mac_final(unsigned char *md, ssh_mac_ctx ctx) {
       sha256_final(md,ctx->ctx.sha256_ctx);
       break;
     case SSH_MAC_SHA384:
+      sha384_final(md,ctx->ctx.sha384_ctx);
+      break;
     case SSH_MAC_SHA512:
+      sha512_final(md,ctx->ctx.sha512_ctx);
+      break;
     default:
       break;
   }
@@ -265,6 +325,15 @@ HMACCTX hmac_init(const void *key, int len, enum ssh_hmac_e type) {
   switch(type) {
     case SSH_HMAC_SHA1:
       HMAC_Init(ctx, key, len, EVP_sha1());
+      break;
+    case SSH_HMAC_SHA256:
+      HMAC_Init(ctx, key, len, EVP_sha256());
+      break;
+    case SSH_HMAC_SHA384:
+      HMAC_Init(ctx, key, len, EVP_sha384());
+      break;
+    case SSH_HMAC_SHA512:
+      HMAC_Init(ctx, key, len, EVP_sha512());
       break;
     case SSH_HMAC_MD5:
       HMAC_Init(ctx, key, len, EVP_md5());

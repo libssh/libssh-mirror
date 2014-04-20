@@ -69,8 +69,67 @@ void sha1(unsigned char *digest, int len, unsigned char *hash) {
   gcry_md_hash_buffer(GCRY_MD_SHA1, hash, digest, len);
 }
 
+SHA256CTX sha256_init(void) {
+  SHA256CTX ctx = NULL;
+  gcry_md_open(&ctx, GCRY_MD_SHA256, 0);
+
+  return ctx;
+}
+
+void sha256_update(SHACTX c, const void *data, unsigned long len) {
+  gcry_md_write(c, data, len);
+}
+
+void sha256_final(unsigned char *md, SHACTX c) {
+  gcry_md_final(c);
+  memcpy(md, gcry_md_read(c, 0), SHA256_DIGEST_LEN);
+  gcry_md_close(c);
+}
+
 void sha256(unsigned char *digest, int len, unsigned char *hash){
   gcry_md_hash_buffer(GCRY_MD_SHA256, hash, digest, len);
+}
+
+SHA384CTX sha384_init(void) {
+  SHA384CTX ctx = NULL;
+  gcry_md_open(&ctx, GCRY_MD_SHA384, 0);
+
+  return ctx;
+}
+
+void sha384_update(SHACTX c, const void *data, unsigned long len) {
+  gcry_md_write(c, data, len);
+}
+
+void sha384_final(unsigned char *md, SHACTX c) {
+  gcry_md_final(c);
+  memcpy(md, gcry_md_read(c, 0), SHA384_DIGEST_LEN);
+  gcry_md_close(c);
+}
+
+void sha384(unsigned char *digest, int len, unsigned char *hash) {
+  gcry_md_hash_buffer(GCRY_MD_SHA384, hash, digest, len);
+}
+
+SHA512CTX sha512_init(void) {
+  SHA512CTX ctx = NULL;
+  gcry_md_open(&ctx, GCRY_MD_SHA512, 0);
+
+  return ctx;
+}
+
+void sha512_update(SHACTX c, const void *data, unsigned long len) {
+  gcry_md_write(c, data, len);
+}
+
+void sha512_final(unsigned char *md, SHACTX c) {
+  gcry_md_final(c);
+  memcpy(md, gcry_md_read(c, 0), SHA512_DIGEST_LEN);
+  gcry_md_close(c);
+}
+
+void sha512(unsigned char *digest, int len, unsigned char *hash) {
+  gcry_md_hash_buffer(GCRY_MD_SHA512, hash, digest, len);
 }
 
 MD5CTX md5_init(void) {
@@ -124,13 +183,13 @@ void ssh_mac_final(unsigned char *md, ssh_mac_ctx ctx) {
       len=SHA_DIGEST_LEN;
       break;
     case SSH_MAC_SHA256:
-      len=SHA256_DIGEST_LENGTH;
+      len=SHA256_DIGEST_LEN;
       break;
     case SSH_MAC_SHA384:
-      len=SHA384_DIGEST_LENGTH;
+      len=SHA384_DIGEST_LEN;
       break;
     case SSH_MAC_SHA512:
-      len=SHA512_DIGEST_LENGTH;
+      len=SHA512_DIGEST_LEN;
       break;
   }
   gcry_md_final(ctx->ctx);
@@ -145,6 +204,15 @@ HMACCTX hmac_init(const void *key, int len, enum ssh_hmac_e type) {
   switch(type) {
     case SSH_HMAC_SHA1:
       gcry_md_open(&c, GCRY_MD_SHA1, GCRY_MD_FLAG_HMAC);
+      break;
+    case SSH_HMAC_SHA256:
+      gcry_md_open(&c, GCRY_MD_SHA256, GCRY_MD_FLAG_HMAC);
+      break;
+    case SSH_HMAC_SHA384:
+      gcry_md_open(&c, GCRY_MD_SHA384, GCRY_MD_FLAG_HMAC);
+      break;
+    case SSH_HMAC_SHA512:
+      gcry_md_open(&c, GCRY_MD_SHA512, GCRY_MD_FLAG_HMAC);
       break;
     case SSH_HMAC_MD5:
       gcry_md_open(&c, GCRY_MD_MD5, GCRY_MD_FLAG_HMAC);
