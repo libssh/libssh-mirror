@@ -45,6 +45,11 @@ enum ssh_des_e {
   SSH_DES
 };
 
+struct ssh_hmac_struct {
+  const char* name;
+  enum ssh_hmac_e hmac_type;
+};
+
 typedef struct ssh_mac_ctx_struct *ssh_mac_ctx;
 MD5CTX md5_init(void);
 void md5_update(MD5CTX c, const void *data, unsigned long len);
@@ -90,5 +95,7 @@ struct ssh_crypto_struct *crypto_new(void);
 void crypto_free(struct ssh_crypto_struct *crypto);
 
 void ssh_reseed(void);
+
+struct ssh_hmac_struct *ssh_get_hmactab(void);
 
 #endif /* WRAPPER_H_ */
