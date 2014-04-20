@@ -48,6 +48,23 @@
 #include "libssh/wrapper.h"
 #include "libssh/pki.h"
 
+size_t hmac_digest_len(enum ssh_hmac_e type) {
+  switch(type) {
+    case SSH_HMAC_SHA1:
+      return SHA_DIGEST_LEN;
+    case SSH_HMAC_SHA256:
+      return SHA256_DIGEST_LEN;
+    case SSH_HMAC_SHA384:
+      return SHA384_DIGEST_LEN;
+    case SSH_HMAC_SHA512:
+      return SHA512_DIGEST_LEN;
+    case SSH_HMAC_MD5:
+      return MD5_DIGEST_LEN;
+    default:
+      return 0;
+  }
+}
+
 /* it allocates a new cipher structure based on its offset into the global table */
 static struct ssh_cipher_struct *cipher_new(int offset) {
   struct ssh_cipher_struct *cipher = NULL;

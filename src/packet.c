@@ -48,8 +48,6 @@
 #include "libssh/auth.h"
 #include "libssh/gssapi.h"
 
-#define MACSIZE SHA_DIGEST_LEN
-
 static ssh_packet_callback default_packet_handlers[]= {
   ssh_packet_disconnect_callback,          // SSH2_MSG_DISCONNECT                 1
   ssh_packet_ignore_callback,              // SSH2_MSG_IGNORE	                    2
@@ -146,15 +144,19 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
     ssh_session session= (ssh_session) user;
     unsigned int blocksize = (session->current_crypto ?
                               session->current_crypto->in_cipher->blocksize : 8);
-    int current_macsize = session->current_crypto ? MACSIZE : 0;
-    unsigned char mac[30] = {0};
+    unsigned char mac[DIGEST_MAX_LEN] = {0};
     char buffer[16] = {0};
+    size_t current_macsize = 0;
     const uint8_t *packet;
     int to_be_read;
     int rc;
     uint32_t len, compsize, payloadsize;
     uint8_t padding;
     size_t processed = 0; /* number of byte processed from the callback */
+
+    if(session->current_crypto != NULL) {
+      current_macsize = hmac_digest_len(session->current_crypto->in_hmac);
+    }
 
     if (data == NULL) {
         goto error;
@@ -267,9 +269,9 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
 
                 /* copy the last part from the incoming buffer */
                 packet = ((uint8_t *)data) + processed;
-                memcpy(mac, packet, MACSIZE);
+                memcpy(mac, packet, current_macsize);
 
-                rc = packet_hmac_verify(session, session->in_buffer, mac);
+                rc = packet_hmac_verify(session, session->in_buffer, mac, session->current_crypto->in_hmac);
                 if (rc < 0) {
                     ssh_set_error(session, SSH_FATAL, "HMAC error");
                     goto error;
@@ -506,6 +508,8 @@ static int ssh_packet_write(ssh_session session) {
 static int packet_send2(ssh_session session) {
   unsigned int blocksize = (session->current_crypto ?
       session->current_crypto->out_cipher->blocksize : 8);
+  enum ssh_hmac_e hmac_type = (session->current_crypto ?
+      session->current_crypto->out_hmac : session->next_crypto->out_hmac);
   uint32_t currentlen = buffer_get_rest_len(session->out_buffer);
   unsigned char *hmac = NULL;
   char padstring[32] = { 0 };
@@ -558,7 +562,8 @@ static int packet_send2(ssh_session session) {
   hmac = packet_encrypt(session, buffer_get_rest(session->out_buffer),
       buffer_get_rest_len(session->out_buffer));
   if (hmac) {
-    if (ssh_buffer_add_data(session->out_buffer, hmac, 20) < 0) {
+    rc = ssh_buffer_add_data(session->out_buffer, hmac, hmac_digest_len(hmac_type));
+    if (rc < 0) {
       goto error;
     }
   }
