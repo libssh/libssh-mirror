@@ -732,6 +732,13 @@ int ssh_buffer_pack_va(struct ssh_buffer_struct *buffer, const char *format, va_
         }
     }
 
+    if (rc != SSH_ERROR){
+        /* verify that the last hidden argument is correct */
+        o.dword = va_arg(ap, uint32_t);
+        if (o.dword != SSH_BUFFER_PACK_END){
+            rc = SSH_ERROR;
+        }
+    }
     return rc;
 }
 
@@ -754,7 +761,7 @@ int ssh_buffer_pack_va(struct ssh_buffer_struct *buffer, const char *format, va_
  * @warning             when using 'P' with a constant size (e.g. 8), do not
  *                      forget to cast to (size_t).
  */
-int ssh_buffer_pack(struct ssh_buffer_struct *buffer, const char *format, ...){
+int _ssh_buffer_pack(struct ssh_buffer_struct *buffer, const char *format, ...){
     va_list ap;
     int rc;
 
@@ -876,7 +883,13 @@ int ssh_buffer_unpack_va(struct ssh_buffer_struct *buffer, const char *format, v
             break;
         }
     }
-
+    if (rc != SSH_ERROR){
+        /* verify that the last hidden argument is correct */
+        uint32_t canary = va_arg(ap, uint32_t);
+        if (canary != SSH_BUFFER_PACK_END){
+            rc = SSH_ERROR;
+        }
+    }
     if (rc != SSH_OK){
         /* Reset the format string and erase everything that was allocated */
         last = p;
@@ -930,7 +943,7 @@ int ssh_buffer_unpack_va(struct ssh_buffer_struct *buffer, const char *format, v
  * @warning             when using 'P' with a constant size (e.g. 8), do not
  *                      forget to cast to (size_t).
  */
-int ssh_buffer_unpack(struct ssh_buffer_struct *buffer, const char *format, ...){
+int _ssh_buffer_unpack(struct ssh_buffer_struct *buffer, const char *format, ...){
     va_list ap;
     int rc;
 
