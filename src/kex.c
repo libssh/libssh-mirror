@@ -286,7 +286,13 @@ static int is_first_kex_packet_follows_guess_wrong(const char *client_kex,
                                                    const char *server_kex) {
     int is_wrong = 1;
     char **server_kex_tokens = NULL;
-    char **client_kex_tokens = tokenize(client_kex);
+    char **client_kex_tokens = NULL;
+
+    if ((client_kex == NULL) || (server_kex == NULL)) {
+        goto out;
+    }
+
+    client_kex_tokens = tokenize(client_kex);
 
     if (client_kex_tokens == NULL) {
         goto out;
@@ -416,17 +422,17 @@ SSH_PACKET_CALLBACK(ssh_packet_kexinit){
         if (rc < 0) {
             goto error;
         }
-    }
 
-    /*
-     * Remember whether 'first_kex_packet_follows' was set and the client
-     * guess was wrong: in this case the next SSH_MSG_KEXDH_INIT message
-     * must be ignored.
-     */
-    if (server_kex && first_kex_packet_follows) {
-      session->first_kex_follows_guess_wrong =
-        is_first_kex_packet_follows_guess_wrong(session->next_crypto->client_kex.methods[SSH_KEX],
-                                                session->next_crypto->server_kex.methods[SSH_KEX]);
+        /*
+         * Remember whether 'first_kex_packet_follows' was set and the client
+         * guess was wrong: in this case the next SSH_MSG_KEXDH_INIT message
+         * must be ignored.
+         */
+        if (first_kex_packet_follows) {
+          session->first_kex_follows_guess_wrong =
+            is_first_kex_packet_follows_guess_wrong(session->next_crypto->client_kex.methods[SSH_KEX],
+                                                    session->next_crypto->server_kex.methods[SSH_KEX]);
+        }
     }
 
     session->session_state = SSH_SESSION_STATE_KEXINIT_RECEIVED;
