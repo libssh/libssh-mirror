@@ -219,6 +219,31 @@ static void torture_buffer_get_format_error(void **state) {
     assert_true(s2 == NULL);
 }
 
+static void torture_buffer_pack_badformat(void **state){
+    ssh_buffer buffer = *state;
+    uint8_t b = 42;
+    int rc;
+
+    /* first with missing format */
+    rc = ssh_buffer_pack(buffer, "b", b, b);
+    assert_int_equal(rc, SSH_ERROR);
+    ssh_buffer_reinit(buffer);
+
+    /* with additional format */
+    rc = ssh_buffer_pack(buffer, "bb", b);
+    assert_int_equal(rc, SSH_ERROR);
+
+    /* unpack with missing format */
+    ssh_buffer_reinit(buffer);
+    rc = ssh_buffer_pack(buffer, "bb", 42, 43);
+    assert_int_equal(rc, SSH_OK);
+    rc = ssh_buffer_unpack(buffer, "b", &b, &b);
+    assert_int_equal(rc, SSH_ERROR);
+
+    /* not doing the test with additional format as
+     * it could crash the process */
+}
+
 int torture_run_tests(void) {
     int rc;
     const UnitTest tests[] = {
@@ -228,7 +253,8 @@ int torture_run_tests(void) {
         unit_test(torture_buffer_get_ssh_string),
         unit_test_setup_teardown(torture_buffer_add_format, setup, teardown),
         unit_test_setup_teardown(torture_buffer_get_format, setup, teardown),
-        unit_test_setup_teardown(torture_buffer_get_format_error, setup, teardown)
+        unit_test_setup_teardown(torture_buffer_get_format_error, setup, teardown),
+        unit_test_setup_teardown(torture_buffer_pack_badformat, setup, teardown)
     };
 
     ssh_init();
