@@ -241,7 +241,7 @@ int ssh_packet_socket_callback1(const void *data, size_t receivedlen, void *user
 
       return processed;
     case PACKET_STATE_PROCESSING:
-      SSH_LOG(SSH_LOG_RARE, "Nested packet processing. Delaying.");
+      SSH_LOG(SSH_LOG_PACKET, "Nested packet processing. Delaying.");
       return 0;
   }
 

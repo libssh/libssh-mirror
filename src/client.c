@@ -506,7 +506,12 @@ int ssh_connect(ssh_session session) {
       ssh_set_error(session, SSH_FATAL, "Couldn't apply options");
       return SSH_ERROR;
   }
-  SSH_LOG(SSH_LOG_RARE,"libssh %s, using threading %s", ssh_copyright(), ssh_threads_get_type());
+
+  SSH_LOG(SSH_LOG_PROTOCOL,
+          "libssh %s, using threading %s",
+          ssh_copyright(),
+          ssh_threads_get_type());
+
   session->ssh_connection_callback = ssh_client_connection_callback;
   session->session_state=SSH_SESSION_STATE_CONNECTING;
   ssh_socket_set_callbacks(session->socket,&session->socket_callbacks);

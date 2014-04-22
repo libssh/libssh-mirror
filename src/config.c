@@ -383,7 +383,7 @@ int ssh_config_parse_file(ssh_session session, const char *filename) {
     return 0;
   }
 
-  SSH_LOG(SSH_LOG_RARE, "Reading configuration data from %s", filename);
+  SSH_LOG(SSH_LOG_PACKET, "Reading configuration data from %s", filename);
 
   parsing = 1;
   while (fgets(line, sizeof(line), f)) {

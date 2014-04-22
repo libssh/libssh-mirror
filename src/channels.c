@@ -507,7 +507,7 @@ SSH_PACKET_CALLBACK(channel_rcv_data){
   }
   len = ssh_string_len(str);
 
-  SSH_LOG(SSH_LOG_PROTOCOL,
+  SSH_LOG(SSH_LOG_PACKET,
       "Channel receiving %" PRIdS " bytes data in %d (local win=%d remote win=%d)",
       len,
       is_stderr,
@@ -535,7 +535,7 @@ SSH_PACKET_CALLBACK(channel_rcv_data){
     channel->local_window = 0; /* buggy remote */
   }
 
-  SSH_LOG(SSH_LOG_PROTOCOL,
+  SSH_LOG(SSH_LOG_PACKET,
       "Channel windows are now (local win=%d remote win=%d)",
       channel->local_window,
       channel->remote_window);
@@ -870,7 +870,7 @@ int channel_default_bufferize(ssh_channel channel, void *data, int len,
       return -1;
   }
 
-  SSH_LOG(SSH_LOG_RARE,
+  SSH_LOG(SSH_LOG_PACKET,
       "placing %d bytes into channel buffer (stderr=%d)", len, is_stderr);
   if (is_stderr == 0) {
     /* stdout */
@@ -1405,7 +1405,7 @@ static int channel_write_common(ssh_channel channel,
         return SSH_ERROR;
     }
 
-    SSH_LOG(SSH_LOG_RARE,
+    SSH_LOG(SSH_LOG_PACKET,
         "channel_write wrote %ld bytes", (long int) effectivelen);
 
     channel->remote_window -= effectivelen;
@@ -2810,7 +2810,7 @@ int ssh_channel_read_timeout(ssh_channel channel,
    * We may have problem if the window is too small to accept as much data
    * as asked
    */
-  SSH_LOG(SSH_LOG_PROTOCOL,
+  SSH_LOG(SSH_LOG_PACKET,
       "Read (%d) buffered : %d bytes. Window: %d",
       count,
       buffer_get_rest_len(stdbuf),
