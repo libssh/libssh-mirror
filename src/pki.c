@@ -99,6 +99,20 @@ enum ssh_keytypes_e pki_privatekey_type_from_string(const char *privkey) {
 }
 
 /**
+ * @brief returns the ECDSA key name ("ecdsa-sha2-nistp256" for example)
+ *
+ * @param[in] key the ssh_key whose ECDSA name to get
+ *
+ * @returns the ECDSA key name ("ecdsa-sha2-nistp256" for example)
+ *
+ * @returns "unknown" if the ECDSA key name is not known
+ */
+const char *ssh_pki_key_ecdsa_name(const ssh_key key)
+{
+    return pki_key_ecdsa_nid_to_name(key->ecdsa_nid);
+}
+
+/**
  * @brief creates a new empty SSH key
  * @returns an empty ssh_key handle, or NULL on error.
  */
