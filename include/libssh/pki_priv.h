@@ -34,6 +34,7 @@ void _ssh_pki_log(const char *function,
                   const char *format, ...) PRINTF_ATTRIBUTE(2, 3);
 
 int pki_key_ecdsa_nid_from_name(const char *name);
+const char *pki_key_ecdsa_nid_to_name(int nid)
 
 /* SSH Key Functions */
 ssh_key pki_key_dup(const ssh_key key, int demote);

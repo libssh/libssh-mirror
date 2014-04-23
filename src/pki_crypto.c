@@ -89,7 +89,7 @@ static int pki_key_ecdsa_to_nid(EC_KEY *k)
     return -1;
 }
 
-static const char *pki_key_ecdsa_nid_to_name(int nid)
+const char *pki_key_ecdsa_nid_to_name(int nid)
 {
     switch (nid) {
         case NID_X9_62_prime256v1:
