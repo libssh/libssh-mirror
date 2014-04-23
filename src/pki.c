@@ -738,6 +738,9 @@ static int pki_import_pubkey_buffer(ssh_buffer buffer,
                 if (rc < 0) {
                     goto fail;
                 }
+
+                /* Update key type */
+                key->type_c = ssh_pki_key_ecdsa_name(key);
             }
             break;
 #endif
@@ -994,8 +997,12 @@ int ssh_pki_generate(enum ssh_keytypes_e type, int parameter,
         case SSH_KEYTYPE_ECDSA:
 #ifdef HAVE_ECC
             rc = pki_key_generate_ecdsa(key, parameter);
-            if(rc == SSH_ERROR)
+            if (rc == SSH_ERROR) {
                 goto error;
+            }
+
+            /* Update key type */
+            key->type_c = ssh_pki_key_ecdsa_name(key);
             break;
 #endif
         case SSH_KEYTYPE_UNKNOWN:
