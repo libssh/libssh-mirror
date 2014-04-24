@@ -77,11 +77,10 @@ int packet_decrypt(ssh_session session, void *data,uint32_t len) {
     SAFE_FREE(out);
     return -1;
   }
-  crypto->cbc_decrypt(crypto,data,out,len);
+  crypto->decrypt(crypto,data,out,len);
 
   memcpy(data,out,len);
-  memset(out,0,len);
-
+  BURN_BUFFER(out, len);
   SAFE_FREE(out);
   return 0;
 }
@@ -136,10 +135,10 @@ unsigned char *packet_encrypt(ssh_session session, void *data, uint32_t len) {
 #endif
   }
 
-  crypto->cbc_encrypt(crypto, data, out, len);
+  crypto->encrypt(crypto, data, out, len);
 
   memcpy(data, out, len);
-  memset(out, 0, len);
+  BURN_BUFFER(out, len);
   SAFE_FREE(out);
 
   if (session->version == 2) {
