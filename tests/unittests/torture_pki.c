@@ -11,33 +11,176 @@
 #define LIBSSH_PASSPHRASE "libssh-rocks"
 const unsigned char HASH[] = "12345678901234567890";
 
-static void setup_rsa_key(void **state) {
-    int rc;
+static const char rsa_testkey[]=
+        "-----BEGIN RSA PRIVATE KEY-----\n"
+        "MIIEowIBAAKCAQEArAOREUWlBXJAKZ5hABYyxnRayDZP1bJeLbPVK+npxemrhHyZ\n"
+        "gjdbY3ADot+JRyWjvll2w2GI+3blt0j+x/ZWwjMKu/QYcycYp5HL01goxOxuusZb\n"
+        "i+KiHRGB6z0EMdXM7U82U7lA/j//HyZppyDjUDniWabXQJge8ksGXGTiFeAJ/687\n"
+        "uV+JJcjGPxAGFQxzyjitf/FrL9S0WGKZbyqeGDzyeBZ1NLIuaiOORyLGSW4duHLD\n"
+        "N78EmsJnwqg2gJQmRSaD4BNZMjtbfiFcSL9Uw4XQFTsWugUDEY1AU4c5g11nhzHz\n"
+        "Bi9qMOt5DzrZQpD4j0gA2LOHpHhoOdg1ZuHrGQIDAQABAoIBAFJTaqy/jllq8vZ4\n"
+        "TKiD900wBvrns5HtSlHJTe80hqQoT+Sa1cWSxPR0eekL32Hjy9igbMzZ83uWzh7I\n"
+        "mtgNODy9vRdznfgO8CfTCaBfAzQsjFpr8QikMT6EUI/LpiRL1UaGsNOlSEvnSS0Z\n"
+        "b1uDzAdrjL+nsEHEDJud+K9jwSkCRifVMy7fLfaum+YKpdeEz7K2Mgm5pJ/Vg+9s\n"
+        "vI2V1q7HAOI4eUVTgJNHXy5ediRJlajQHf/lNUzHKqn7iH+JRl01gt62X8roG62b\n"
+        "TbFylbheqMm9awuSF2ucOcx+guuwhkPir8BEMb08j3hiK+TfwPdY0F6QH4OhiKK7\n"
+        "MTqTVgECgYEA0vmmu5GOBtwRmq6gVNCHhdLDQWaxAZqQRmRbzxVhFpbv0GjbQEF7\n"
+        "tttq3fjDrzDf6CE9RtZWw2BUSXVq+IXB/bXb1kgWU2xWywm+OFDk9OXQs8ui+MY7\n"
+        "FiP3yuq3YJob2g5CCsVQWl2CHvWGmTLhE1ODll39t7Y1uwdcDobJN+ECgYEA0LlR\n"
+        "hfMjydWmwqooU9TDjXNBmwufyYlNFTH351amYgFUDpNf35SMCP4hDosUw/zCTDpc\n"
+        "+1w04BJJfkH1SNvXSOilpdaYRTYuryDvGmWC66K2KX1nLErhlhs17CwzV997nYgD\n"
+        "H3OOU4HfqIKmdGbjvWlkmY+mLHyG10bbpOTbujkCgYAc68xHejSWDCT9p2KjPdLW\n"
+        "LYZGuOUa6y1L+QX85Vlh118Ymsczj8Z90qZbt3Zb1b9b+vKDe255agMj7syzNOLa\n"
+        "/MseHNOyq+9Z9gP1hGFekQKDIy88GzCOYG/fiT2KKJYY1kuHXnUdbiQgSlghODBS\n"
+        "jehD/K6DOJ80/FVKSH/dAQKBgQDJ+apTzpZhJ2f5k6L2jDq3VEK2ACedZEm9Kt9T\n"
+        "c1wKFnL6r83kkuB3i0L9ycRMavixvwBfFDjuY4POs5Dh8ip/mPFCa0hqISZHvbzi\n"
+        "dDyePJO9zmXaTJPDJ42kfpkofVAnfohXFQEy+cguTk848J+MmMIKfyE0h0QMabr9\n"
+        "86BUsQKBgEVgoi4RXwmtGovtMew01ORPV9MOX3v+VnsCgD4/56URKOAngiS70xEP\n"
+        "ONwNbTCWuuv43HGzJoVFiAMGnQP1BAJ7gkHkjSegOGKkiw12EPUWhFcMg+GkgPhc\n"
+        "pOqNt/VMBPjJ/ysHJqmLfQK9A35JV6Cmdphe+OIl28bcKhAOz8Dw\n"
+        "-----END RSA PRIVATE KEY-----\n";
+static const char rsa_testkey_pub[]=
+        "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCsA5ERRaUFckApnmEAFjLGdFrIN"
+        "k/Vsl4ts9Ur6enF6auEfJmCN1tjcAOi34lHJaO+WXbDYYj7duW3SP7H9lbCMwq79B"
+        "hzJxinkcvTWCjE7G66xluL4qIdEYHrPQQx1cztTzZTuUD+P/8fJmmnIONQOeJZptd"
+        "AmB7ySwZcZOIV4An/rzu5X4klyMY/EAYVDHPKOK1/8Wsv1LRYYplvKp4YPPJ4FnU0"
+        "si5qI45HIsZJbh24csM3vwSawmfCqDaAlCZFJoPgE1kyO1t+IVxIv1TDhdAVOxa6B"
+        "QMRjUBThzmDXWeHMfMGL2ow63kPOtlCkPiPSADYs4ekeGg52DVm4esZ "
+        "aris@aris-air\n";
 
+static const char dsa_testkey[]=
+        "-----BEGIN DSA PRIVATE KEY-----\n"
+        "MIIBuwIBAAKBgQCUyvVPEkn3UnZDjzCzSzSHpTltzr0Ec+1mz/JACjHMBJ9C/W/P\n"
+        "wvH3yjkfoFhhREvoY7IPnwAu5bcxw8TkISq7YROQ409PqwwPvy0N3GUp/+kKS268\n"
+        "BIJ+VKN513XRf7eL1e4aHUJ+al9x1JxTmc6T0GBq1lyu+CTUUyh25aNDFwIVAK84\n"
+        "j20GmU+zewjQwsIXuVb6C/PHAoGAXhuIVsJxUQJ5nWQRLf7o3XEGQ+EcVmHOzMB1\n"
+        "xCsHjYnpEhhco+r/HDZSD31kzDeAZUycz31WqGL8yXr+OZRLqEsGC7dwEAzPiXDu\n"
+        "l0zHcl0yiKPrRrLgNJHeKcT6JflBngK7jQRIVUg3F3104fbVa2rwaniLl4GSBZPX\n"
+        "MpUdng8CgYB4roDQBfgf8AoSAJAb7y8OVvxt5cT7iqaRMQX2XgtW09Nu9RbUIVS7\n"
+        "n2mw3iqZG0xnG3iv1oL9gwNXMLlf+gLmsqU3788jaEZ9IhZ8VdgHAoHm6UWM7b2u\n"
+        "ADmhirI6dRZUVO+/iMGUvDxa66OI4hDV055pbwQhtxupUatThyDzIgIVAI1Hd8/i\n"
+        "Pzsg7bTzoNvjQL+Noyiy\n"
+        "-----END DSA PRIVATE KEY-----\n";
+static const char dsa_testkey_pub[]=
+        "ssh-dss AAAAB3NzaC1kc3MAAACBAJTK9U8SSfdSdkOPMLNLNIelOW3OvQRz7WbP8k"
+        "AKMcwEn0L9b8/C8ffKOR+gWGFES+hjsg+fAC7ltzHDxOQhKrthE5DjT0+rDA+/LQ3c"
+        "ZSn/6QpLbrwEgn5Uo3nXddF/t4vV7hodQn5qX3HUnFOZzpPQYGrWXK74JNRTKHblo0"
+        "MXAAAAFQCvOI9tBplPs3sI0MLCF7lW+gvzxwAAAIBeG4hWwnFRAnmdZBEt/ujdcQZD"
+        "4RxWYc7MwHXEKweNiekSGFyj6v8cNlIPfWTMN4BlTJzPfVaoYvzJev45lEuoSwYLt3"
+        "AQDM+JcO6XTMdyXTKIo+tGsuA0kd4pxPol+UGeAruNBEhVSDcXfXTh9tVravBqeIuX"
+        "gZIFk9cylR2eDwAAAIB4roDQBfgf8AoSAJAb7y8OVvxt5cT7iqaRMQX2XgtW09Nu9R"
+        "bUIVS7n2mw3iqZG0xnG3iv1oL9gwNXMLlf+gLmsqU3788jaEZ9IhZ8VdgHAoHm6UWM"
+        "7b2uADmhirI6dRZUVO+/iMGUvDxa66OI4hDV055pbwQhtxupUatThyDzIg== "
+        "aris@aris-air\n";
+
+static const char rsa_testkey_pp[]=
+        "-----BEGIN RSA PRIVATE KEY-----\n"
+        "Proc-Type: 4,ENCRYPTED\n"
+        "DEK-Info: AES-128-CBC,5375534F40903DD66B3851A0DA03F6FA\n"
+        "\n"
+        "m5YYTNOMd1xCKfifwCX4R1iLJoAc4cn1aFiL7f2kBbfE2jF1LTQBJV1h1CqYZfAB\n"
+        "WtM/7FkQPnKXqsMndP+v+1Xc+PYigE3AezJj/0g7xn/zIBwGjkLAp435AdL5i6Fg\n"
+        "OhOL8LyolRrcGn17jE4S4iGbzw8PVyfzNzdj0Emwql5F6M7pgLbInRNKM/TF4z2h\n"
+        "b6Pi9Bw43dwaJ7wiiy/vo/v4MyXsJBoeKbc4VCmxiYFvAYCvVFlDkyIw/QnR3MKQ\n"
+        "g/Zsk7Pw3aOioxk6LJpZ5x0tO23nXDG1aOZHWykI0BpJV+LIpD2oSYOHJyVO83XT\n"
+        "RQUMSTXc2K2+ejs0XQoLt/GxDDHe+8W8fWQK3C7Lyvl9oKjmb5sTWi3mdSv0C+zR\n"
+        "n5KSVbUKNXrjix7qPKkv5rWqb84CKVnCMb7tWaPLR19nQqKVYBIs6v0OTTvS6Le7\n"
+        "lz4lxBkcUy6vi0tWH9MvLuT+ugdHLJZ4UXBthCgV58pM1o+L+WMIl+SZXckiCAO3\n"
+        "7ercA57695IA6iHskmr3eazJsYFEVFdR/cm+IDy2FPkKmJMjXeIWuh3yASBk7LBR\n"
+        "EQq3CC7AioO+Vj8m/fEIiNZJSQ6p0NmgnPoO3rTYT/IobmE99/Ht6oNLmFX4Pr7e\n"
+        "F4CGWKzwxWpCnw2vVolCFByASmZycbJvrIonZBKY1toU28lRm4tCM6eCNISVLMeE\n"
+        "VtQ+1PH9/2KZspZl+SX/kjV3egggy0TFKRU8EcYPJFC3Vpy+shEai35KBVo44Z18\n"
+        "apza7exm3igNEqOqe07hLs3Bjhvk1oS+WhMbAG9ARTOKuyBOJh/ZV9tFMNZ6v+q5\n"
+        "TofgNcIhNYNascymU1io18xTW9c3RRcmRKqIWnj4EH8o7Aojv/l+zvdV7/GVlR4W\n"
+        "pR9cuJEiyiEjS46axoc6dSOtdnvag+BpFQb+lGY97F9nNGyBdtLD5ASVh5OVG4fu\n"
+        "Pf0O7Bdj1kIuBhV8axE/slf6UHANiodeqkR9B24+0Cy+miPiHazzUkbdSJ4r03g5\n"
+        "J1Y5S8qbl9++sqhQMLMUkeK4pDWh1aocA9bDA2RcBNuXGiZeRFUiqxcBS+iO418n\n"
+        "DFyWz4UfI/m1IRSjoo/PEpgu5GmosUzs3Dl4nAcf/REBEX6M/kKKxHTLjE8DxDsz\n"
+        "fn/vfsXV3s0tbN7YyJdP8aU+ApZntw1OF2TS2qS8CPWHTcCGGTab5WEGC3xFXKp0\n"
+        "uyonCxV7vNLOiIiHdQX+1bLu7ps7GBH92xGkPg7FrNNcMc07soP7jjjB578n9Gpl\n"
+        "cIDBdgovTRFHiWu3yRspVt0zPfMJB/hqn+IAp98wfvjl8OZM1ZZkejnwXnQil5ZU\n"
+        "wjEBEtx+nX56vdxipzKoHh5yDXmPbNajBYkg3rXJrLFh3Tsf0CzHcLdHNz/qJ9LO\n"
+        "wH16grjR1Q0CzCW3FAv0Q0euqkXac+TfuIg3HiTPrBPnJQW1uivrx1F5tpO/uboG\n"
+        "h28LwqJLYh+1T0V//uiy3SMATpYKvzg2byGct9VUib8QVop8LvVF/n42RaxtTCfw\n"
+        "JSvUyxoaZUjQkT7iF94HsF+FVVJdI55UjgnMiZ0d5vKffWyTHYcYHkFYaSloAMWN\n"
+        "-----END RSA PRIVATE KEY-----\n";
+
+static const char dsa_testkey_pp[]=
+        "-----BEGIN DSA PRIVATE KEY-----\n"
+        "Proc-Type: 4,ENCRYPTED\n"
+        "DEK-Info: AES-128-CBC,266023B64B1B814BCD0D0E477257F06D\n"
+        "\n"
+        "QJQErZrvYsfeMNMnU+6yVHH5Zze/zUFdPip7Bon4T1wCGlVasn4x/GQcMm1+mgmb\n"
+        "PCK/qJ5qw9nCepLYJq2xh8gohbwF/XKxeaNGcRA2+ancTooDUjeRTlk1WRtS1+bq\n"
+        "LBkwhxLXW26lIuQUHzfi93rRqQI2LC4McngY7L7WVJer7sH7hk5//4Gf6zHtPEl+\n"
+        "Tr2ub1zNrVbh6e1Bitw7DaGZNX6XEWpyTTsAd42sQWh6o23MC6GyfS1YFsPGHzGe\n"
+        "WYQbWn2AZ1mK32z2mLZfVg41qu9RKG20iCyaczZ2YmuYyOkoLHijOAHC8vZbHwYC\n"
+        "+lN9Yc8/BoMuMMwDTMDaJD0TsBX02hi9YI7Gu88PMCJO+SRe5400MonUMXTwCa91\n"
+        "Tt3RhYpBzx2XGOq5199+oLdTJAaXHJcuB6viKNdSLBuhx6RAEJXZnVexchaHs4Q6\n"
+        "HweIv6Et8MjVoqwkaQDmcIGA73qZ0lbUJFZAu2YDJ6TpHc1lHZes763HoMYfuvkX\n"
+        "HTSuHZ7edjoWqwnl/vkc3+nG//IEj8LqAacx0i4krDcQpGuQ6BnPfwPFco2NQQpw\n"
+        "wHBOL6HrOnD+gGs6DUFwzA==\n"
+        "-----END DSA PRIVATE KEY-----\n";
+
+static const char ecdsa256_testkey[]=
+        "-----BEGIN EC PRIVATE KEY-----\n"
+        "MHcCAQEEIBCDeeYYAtX3EnsP0ratwVpNTaA/4K1N6VvHMiUZlVdhoAoGCCqGSM49\n"
+        "AwEHoUQDQgAEx+9ud88Q5GWtLd+yMtYaapC85g+2ZLp7VtFHA0EbNHqBUQxoh+Ik\n"
+        "89Mlr7AUxcFPd+kCo+NE6yq/mNQcL7E6iQ==\n"
+        "-----END EC PRIVATE KEY-----\n";
+static const char ecdsa256_testkey_pub[]=
+        "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNT"
+        "YAAABBBMfvbnfPEORlrS3fsjLWGmqQvOYPtmS6e1bRRwNBGzR6gVEMaIfiJPPTJa+w"
+        "FMXBT3fpAqPjROsqv5jUHC+xOok= aris@kalix86\n";
+static const char ecdsa384_testkey[]=
+        "-----BEGIN EC PRIVATE KEY-----\n"
+        "MIGkAgEBBDBY8jEa5DtRy4AVeTWhPJ/TK257behiC3uafEi6YA2oHORibqX55EDN\n"
+        "wz29MT40mQSgBwYFK4EEACKhZANiAARXc4BN6BrVo1QMi3+i/B85Lu7SMuzBi+1P\n"
+        "bJti8xz+Szgq64gaBGOK9o+WOdLAd/w7p7DJLdztJ0bYoyT4V3B3ZqR9RyGq6mYC\n"
+        "jkXlc5YbYHjueBbp0oeNXqsXHNAWQZo=\n"
+        "-----END EC PRIVATE KEY-----\n";
+static const char ecdsa384_testkey_pub[]=
+        "ecdsa-sha2-nistp384 AAAAE2VjZHNhLXNoYTItbmlzdHAzODQAAAAIbmlzdHAzOD"
+        "QAAABhBFdzgE3oGtWjVAyLf6L8Hzku7tIy7MGL7U9sm2LzHP5LOCrriBoEY4r2j5Y5"
+        "0sB3/DunsMkt3O0nRtijJPhXcHdmpH1HIarqZgKOReVzlhtgeO54FunSh41eqxcc0B"
+        "ZBmg== aris@kalix86";
+static const char ecdsa521_testkey[]=
+        "-----BEGIN EC PRIVATE KEY-----\n"
+        "MIHbAgEBBEG83nSJ2SLoiBvEku1JteQKWx/Xt6THksgC7rrIaTUmNzk+60f0sCCm\n"
+        "Gll0dgrZLmeIw+TtnG1E20VZflCKq+IdkaAHBgUrgQQAI6GBiQOBhgAEAc6D728d\n"
+        "baQkHnSPtztaRwJw63CBl15cykB4SXXuwWdNOtPzBijUULMTTvBXbra8gL4ATd9d\n"
+        "Qnuwn8KQUh2T/z+BARjWPKhcHcGx57XpXCEkawzMYaHUUnRdeFEmNRsbXypsf0mJ\n"
+        "KATU3h8gzTMkbrx8DJTFHEIjXBShs44HsSYVl3Xy\n"
+        "-----END EC PRIVATE KEY-----\n";
+static const char ecdsa521_testkey_pub[]=
+        "ecdsa-sha2-nistp521 AAAAE2VjZHNhLXNoYTItbmlzdHA1MjEAAAAIbmlzdHA1Mj"
+        "EAAACFBAHOg+9vHW2kJB50j7c7WkcCcOtwgZdeXMpAeEl17sFnTTrT8wYo1FCzE07w"
+        "V262vIC+AE3fXUJ7sJ/CkFIdk/8/gQEY1jyoXB3Bsee16VwhJGsMzGGh1FJ0XXhRJj"
+        "UbG18qbH9JiSgE1N4fIM0zJG68fAyUxRxCI1wUobOOB7EmFZd18g== aris@kalix86";
+
+static void write_file(const char *filename, const char *data);
+static void setup_rsa_key(void **state) {
     (void) state; /* unused */
 
     unlink(LIBSSH_RSA_TESTKEY);
     unlink(LIBSSH_RSA_TESTKEY ".pub");
 
-    rc = system("ssh-keygen -t rsa -q -N \"\" -f " LIBSSH_RSA_TESTKEY);
-    assert_true(rc == 0);
+    write_file(LIBSSH_RSA_TESTKEY, rsa_testkey);
+    write_file(LIBSSH_RSA_TESTKEY ".pub", rsa_testkey_pub);
 }
 
 static void setup_dsa_key(void **state) {
-    int rc;
-
     (void) state; /* unused */
 
     unlink(LIBSSH_DSA_TESTKEY);
     unlink(LIBSSH_DSA_TESTKEY ".pub");
 
-    rc = system("ssh-keygen -t dsa -q -N \"\" -f " LIBSSH_DSA_TESTKEY);
-    assert_true(rc == 0);
+    write_file(LIBSSH_DSA_TESTKEY, dsa_testkey);
+    write_file(LIBSSH_DSA_TESTKEY ".pub", dsa_testkey_pub);
 }
 
 #ifdef HAVE_OPENSSL_ECC
 static void setup_ecdsa_key(void **state, int ecdsa_bits) {
-    int rc = -1;
 
     (void) state; /* unused */
 
@@ -45,14 +188,15 @@ static void setup_ecdsa_key(void **state, int ecdsa_bits) {
     unlink(LIBSSH_ECDSA_TESTKEY ".pub");
 
     if (ecdsa_bits == 256) {
-        rc = system("ssh-keygen -t ecdsa -b 256 -q -N \"\" -f " LIBSSH_ECDSA_TESTKEY);
+        write_file(LIBSSH_ECDSA_TESTKEY, ecdsa256_testkey);
+        write_file(LIBSSH_ECDSA_TESTKEY ".pub", ecdsa256_testkey_pub);
     } else if (ecdsa_bits == 384) {
-        rc = system("ssh-keygen -t ecdsa -b 384 -q -N \"\" -f " LIBSSH_ECDSA_TESTKEY);
+        write_file(LIBSSH_ECDSA_TESTKEY, ecdsa384_testkey);
+        write_file(LIBSSH_ECDSA_TESTKEY ".pub", ecdsa384_testkey_pub);
     } else if (ecdsa_bits == 521) {
-        rc = system("ssh-keygen -t ecdsa -b 521 -q -N \"\" -f " LIBSSH_ECDSA_TESTKEY);
+        write_file(LIBSSH_ECDSA_TESTKEY, ecdsa521_testkey);
+        write_file(LIBSSH_ECDSA_TESTKEY ".pub", ecdsa521_testkey_pub);
     }
-
-    assert_true(rc == 0);
 }
 
 static void setup_ecdsa_key_521(void **state) {
@@ -73,18 +217,6 @@ static void setup_both_keys(void **state) {
 
     setup_rsa_key(state);
     setup_dsa_key(state);
-}
-
-static void setup_both_keys_passphrase(void **state) {
-    int rc;
-
-    (void) state; /* unused */
-
-    rc = system("ssh-keygen -t rsa -q -N " LIBSSH_PASSPHRASE " -f " LIBSSH_RSA_TESTKEY);
-    assert_true(rc == 0);
-
-    rc = system("ssh-keygen -t dsa -q -N " LIBSSH_PASSPHRASE " -f " LIBSSH_DSA_TESTKEY);
-    assert_true(rc == 0);
 }
 
 static void teardown(void **state) {
@@ -128,6 +260,23 @@ static char *read_file(const char *filename) {
     return key;
 }
 
+static void write_file(const char *filename, const char *data){
+    int fd;
+    int rc;
+
+    assert_non_null(filename);
+    assert_true(filename[0] != '\0');
+    assert_non_null(data);
+
+    fd = open(filename, O_WRONLY | O_TRUNC | O_CREAT, 0755);
+    assert_true(fd >= 0);
+
+    rc = write(fd, data, strlen(data));
+    assert_int_equal(rc, strlen(data));
+
+    close(fd);
+}
+
 static int torture_read_one_line(const char *filename, char *buffer, size_t len) {
   FILE *fp;
   size_t rc;
@@ -146,6 +295,21 @@ static int torture_read_one_line(const char *filename, char *buffer, size_t len)
   fclose(fp);
 
   return 0;
+}
+
+/** @internal
+ * returns the character len of a public key string, omitting the comment part
+ */
+static int torture_pubkey_len(const char *pubkey){
+    const char *ptr;
+    ptr=strchr(pubkey, ' ');
+    if (ptr != NULL){
+        ptr = strchr(ptr + 1, ' ');
+        if (ptr != NULL){
+            return ptr - pubkey;
+        }
+    }
+    return 0;
 }
 
 static void torture_pki_keytype(void **state) {
@@ -209,60 +373,40 @@ static void torture_pki_import_privkey_base64_RSA(void **state) {
 
 static void torture_pki_import_privkey_base64_NULL_key(void **state) {
     int rc;
-    char *key_str;
-    ssh_key key;
     const char *passphrase = LIBSSH_PASSPHRASE;
 
     (void) state; /* unused */
 
-    key_str = read_file(LIBSSH_RSA_TESTKEY);
-    assert_true(key_str != NULL);
-
-    key = ssh_key_new();
-    assert_true(key != NULL);
-
     /* test if it returns -1 if key is NULL */
-    rc = ssh_pki_import_privkey_base64(key_str, passphrase, NULL, NULL, NULL);
+    rc = ssh_pki_import_privkey_base64(rsa_testkey, passphrase, NULL, NULL, NULL);
     assert_true(rc == -1);
 
-    free(key_str);
-    ssh_key_free(key);
 }
 
 static void torture_pki_import_privkey_base64_NULL_str(void **state) {
     int rc;
-    char *key_str;
     ssh_key key = NULL;
     const char *passphrase = LIBSSH_PASSPHRASE;
 
     (void) state; /* unused */
 
-    key_str = read_file(LIBSSH_RSA_TESTKEY);
-    assert_true(key_str != NULL);
-
     /* test if it returns -1 if key_str is NULL */
     rc = ssh_pki_import_privkey_base64(NULL, passphrase, NULL, NULL, &key);
     assert_true(rc == -1);
 
-    free(key_str);
     ssh_key_free(key);
 }
 
 static void torture_pki_import_privkey_base64_DSA(void **state) {
     int rc;
-    char *key_str;
     ssh_key key;
     const char *passphrase = LIBSSH_PASSPHRASE;
 
     (void) state; /* unused */
 
-    key_str = read_file(LIBSSH_DSA_TESTKEY);
-    assert_true(key_str != NULL);
-
-    rc = ssh_pki_import_privkey_base64(key_str, passphrase, NULL, NULL, &key);
+    rc = ssh_pki_import_privkey_base64(dsa_testkey, passphrase, NULL, NULL, &key);
     assert_true(rc == 0);
 
-    free(key_str);
     ssh_key_free(key);
 }
 
@@ -288,97 +432,79 @@ static void torture_pki_import_privkey_base64_ECDSA(void **state) {
 
 static void torture_pki_import_privkey_base64_passphrase(void **state) {
     int rc;
-    char *key_str;
     ssh_key key = NULL;
     const char *passphrase = LIBSSH_PASSPHRASE;
 
     (void) state; /* unused */
 
-    key_str = read_file(LIBSSH_RSA_TESTKEY);
-    assert_true(key_str != NULL);
 
-    rc = ssh_pki_import_privkey_base64(key_str, passphrase, NULL, NULL, &key);
+    rc = ssh_pki_import_privkey_base64(rsa_testkey_pp, passphrase, NULL, NULL, &key);
     assert_true(rc == 0);
     ssh_key_free(key);
 
     /* test if it returns -1 if passphrase is wrong */
-    rc = ssh_pki_import_privkey_base64(key_str, "wrong passphrase !!", NULL,
+    rc = ssh_pki_import_privkey_base64(rsa_testkey_pp, "wrong passphrase !!", NULL,
             NULL, &key);
     assert_true(rc == -1);
 
 #ifndef HAVE_LIBCRYPTO
     /* test if it returns -1 if passphrase is NULL */
     /* libcrypto asks for a passphrase, so skip this test */
-    rc = ssh_pki_import_privkey_base64(key_str, NULL, NULL, NULL, &key);
+    rc = ssh_pki_import_privkey_base64(rsa_testkey_pp, NULL, NULL, NULL, &key);
     assert_true(rc == -1);
 #endif
 
-    free(key_str);
-
     /* same for DSA */
-    key_str = read_file(LIBSSH_DSA_TESTKEY);
-    assert_true(key_str != NULL);
 
-    rc = ssh_pki_import_privkey_base64(key_str, passphrase, NULL, NULL, &key);
+    rc = ssh_pki_import_privkey_base64(dsa_testkey_pp, passphrase, NULL, NULL, &key);
     assert_true(rc == 0);
     ssh_key_free(key);
 
     /* test if it returns -1 if passphrase is wrong */
-    rc = ssh_pki_import_privkey_base64(key_str, "wrong passphrase !!", NULL, NULL, &key);
+    rc = ssh_pki_import_privkey_base64(dsa_testkey_pp, "wrong passphrase !!", NULL, NULL, &key);
     assert_true(rc == -1);
 
 #ifndef HAVE_LIBCRYPTO
     /* test if it returns -1 if passphrase is NULL */
     /* libcrypto asks for a passphrase, so skip this test */
-    rc = ssh_pki_import_privkey_base64(key_str, NULL, NULL, NULL, &key);
+    rc = ssh_pki_import_privkey_base64(dsa_testkey_pp, NULL, NULL, NULL, &key);
     assert_true(rc == -1);
 #endif
 
-    free(key_str);
 }
 
 static void torture_pki_pki_publickey_from_privatekey_RSA(void **state) {
     int rc;
-    char *key_str;
     ssh_key key;
     ssh_key pubkey;
     const char *passphrase = NULL;
 
     (void) state; /* unused */
 
-    key_str = read_file(LIBSSH_RSA_TESTKEY);
-    assert_true(key_str != NULL);
-
-    rc = ssh_pki_import_privkey_base64(key_str, passphrase, NULL, NULL, &key);
+    rc = ssh_pki_import_privkey_base64(rsa_testkey, passphrase, NULL, NULL, &key);
     assert_true(rc == 0);
 
     rc = ssh_pki_export_privkey_to_pubkey(key, &pubkey);
     assert_true(rc == SSH_OK);
 
-    free(key_str);
     ssh_key_free(key);
     ssh_key_free(pubkey);
 }
 
 static void torture_pki_pki_publickey_from_privatekey_DSA(void **state) {
     int rc;
-    char *key_str;
     ssh_key key;
     ssh_key pubkey;
     const char *passphrase = NULL;
 
     (void) state; /* unused */
 
-    key_str = read_file(LIBSSH_DSA_TESTKEY);
-    assert_true(key_str != NULL);
-
-    rc = ssh_pki_import_privkey_base64(key_str, passphrase, NULL, NULL, &key);
+    rc = ssh_pki_import_privkey_base64(dsa_testkey, passphrase, NULL, NULL, &key);
     assert_true(rc == 0);
 
     rc = ssh_pki_export_privkey_to_pubkey(key, &pubkey);
     assert_true(rc == SSH_OK);
 
-    free(key_str);
     ssh_key_free(key);
     ssh_key_free(pubkey);
 }
@@ -418,7 +544,7 @@ static void torture_pki_publickey_dsa_base64(void **state)
 
     (void) state; /* unused */
 
-    key_buf = read_file(LIBSSH_DSA_TESTKEY ".pub");
+    key_buf = strdup(dsa_testkey_pub);
     assert_true(key_buf != NULL);
 
     q = p = key_buf;
@@ -494,7 +620,7 @@ static void torture_pki_publickey_rsa_base64(void **state)
 
     (void) state; /* unused */
 
-    key_buf = read_file(LIBSSH_RSA_TESTKEY ".pub");
+    key_buf = strdup(rsa_testkey_pub);
     assert_true(key_buf != NULL);
 
     q = p = key_buf;
@@ -523,18 +649,13 @@ static void torture_pki_publickey_rsa_base64(void **state)
 }
 
 static void torture_generate_pubkey_from_privkey_rsa(void **state) {
-    char pubkey_original[4096] = {0};
     char pubkey_generated[4096] = {0};
     ssh_key privkey;
     ssh_key pubkey;
     int rc;
+    int len;
 
     (void) state; /* unused */
-
-    rc = torture_read_one_line(LIBSSH_RSA_TESTKEY ".pub",
-                               pubkey_original,
-                               sizeof(pubkey_original));
-    assert_true(rc == 0);
 
     /* remove the public key, generate it from the private key and write it. */
     unlink(LIBSSH_RSA_TESTKEY ".pub");
@@ -557,25 +678,21 @@ static void torture_generate_pubkey_from_privkey_rsa(void **state) {
                                sizeof(pubkey_generated));
     assert_true(rc == 0);
 
-    assert_string_equal(pubkey_original, pubkey_generated);
+    len = torture_pubkey_len(rsa_testkey_pub);
+    assert_int_equal(strncmp(rsa_testkey_pub, pubkey_generated, len), 0);
 
     ssh_key_free(privkey);
     ssh_key_free(pubkey);
 }
 
 static void torture_generate_pubkey_from_privkey_dsa(void **state) {
-    char pubkey_original[4096] = {0};
     char pubkey_generated[4096] = {0};
     ssh_key privkey;
     ssh_key pubkey;
+    int len;
     int rc;
 
     (void) state; /* unused */
-
-    rc = torture_read_one_line(LIBSSH_DSA_TESTKEY ".pub",
-                               pubkey_original,
-                               sizeof(pubkey_original));
-    assert_true(rc == 0);
 
     /* remove the public key, generate it from the private key and write it. */
     unlink(LIBSSH_DSA_TESTKEY ".pub");
@@ -597,8 +714,8 @@ static void torture_generate_pubkey_from_privkey_dsa(void **state) {
                                pubkey_generated,
                                sizeof(pubkey_generated));
     assert_true(rc == 0);
-
-    assert_string_equal(pubkey_original, pubkey_generated);
+    len = torture_pubkey_len(dsa_testkey_pub);
+    assert_int_equal(strncmp(dsa_testkey_pub, pubkey_generated, len), 0);
 
     ssh_key_free(privkey);
     ssh_key_free(pubkey);
@@ -611,6 +728,7 @@ static void torture_generate_pubkey_from_privkey_ecdsa(void **state) {
     ssh_key privkey;
     ssh_key pubkey;
     int rc;
+    int len;
 
     (void) state; /* unused */
 
@@ -639,8 +757,8 @@ static void torture_generate_pubkey_from_privkey_ecdsa(void **state) {
                                pubkey_generated,
                                sizeof(pubkey_generated));
     assert_true(rc == 0);
-
-    assert_string_equal(pubkey_original, pubkey_generated);
+    len = torture_pubkey_len(pubkey_original);
+    assert_int_equal(strncmp(pubkey_original, pubkey_generated, len), 0);
 
     ssh_key_free(privkey);
     ssh_key_free(pubkey);
@@ -1213,9 +1331,7 @@ int torture_run_tests(void) {
                                  setup_ecdsa_key_521,
                                  teardown),
 #endif
-        unit_test_setup_teardown(torture_pki_import_privkey_base64_passphrase,
-                                 setup_both_keys_passphrase,
-                                 teardown),
+        unit_test(torture_pki_import_privkey_base64_passphrase),
         /* ssh_pki_export_privkey_to_pubkey */
         unit_test_setup_teardown(torture_pki_pki_publickey_from_privatekey_RSA,
                                  setup_rsa_key,
