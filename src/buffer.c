@@ -34,7 +34,7 @@
 #include "libssh/priv.h"
 #include "libssh/buffer.h"
 #include "libssh/misc.h"
-#include "libssh/dh.h"
+#include "libssh/bignum.h"
 
 /**
  * @defgroup libssh_buffer The SSH buffer functions.

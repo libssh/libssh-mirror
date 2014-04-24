@@ -60,6 +60,7 @@
 #include "libssh/dh.h"
 #include "libssh/ssh2.h"
 #include "libssh/pki.h"
+#include "libssh/bignum.h"
 
 /* todo: remove it */
 #include "libssh/string.h"
@@ -225,20 +226,6 @@ void ssh_crypto_finalize(void) {
   }
 }
 
-/* prints the bignum on stderr */
-void ssh_print_bignum(const char *which, bignum num) {
-#ifdef HAVE_LIBGCRYPT
-  unsigned char *hex = NULL;
-  bignum_bn2hex(num, &hex);
-#elif defined HAVE_LIBCRYPTO
-  char *hex = NULL;
-  hex = bignum_bn2hex(num);
-#endif
-  fprintf(stderr, "%s value: ", which);
-  fprintf(stderr, "%s\n", (hex == NULL) ? "(null)" : (char *) hex);
-  SAFE_FREE(hex);
-}
-
 int dh_generate_x(ssh_session session) {
   session->next_crypto->x = bignum_new();
   if (session->next_crypto->x == NULL) {
@@ -349,62 +336,6 @@ int dh_generate_f(ssh_session session) {
 #endif
 
   return 0;
-}
-
-ssh_string make_bignum_string(bignum num) {
-  ssh_string ptr = NULL;
-  int pad = 0;
-  unsigned int len = bignum_num_bytes(num);
-  unsigned int bits = bignum_num_bits(num);
-
-  if (len == 0) {
-      return NULL;
-  }
-
-  /* If the first bit is set we have a negative number */
-  if (!(bits % 8) && bignum_is_bit_set(num, bits - 1)) {
-    pad++;
-  }
-
-#ifdef DEBUG_CRYPTO
-  fprintf(stderr, "%d bits, %d bytes, %d padding\n", bits, len, pad);
-#endif /* DEBUG_CRYPTO */
-
-  ptr = ssh_string_new(len + pad);
-  if (ptr == NULL) {
-    return NULL;
-  }
-
-  /* We have a negative number so we need a leading zero */
-  if (pad) {
-    ptr->data[0] = 0;
-  }
-
-#ifdef HAVE_LIBGCRYPT
-  bignum_bn2bin(num, len, ptr->data + pad);
-#elif HAVE_LIBCRYPTO
-  bignum_bn2bin(num, ptr->data + pad);
-#endif
-
-  return ptr;
-}
-
-bignum make_string_bn(ssh_string string){
-  bignum bn = NULL;
-  unsigned int len = ssh_string_len(string);
-
-#ifdef DEBUG_CRYPTO
-  fprintf(stderr, "Importing a %d bits, %d bytes object ...\n",
-      len * 8, len);
-#endif /* DEBUG_CRYPTO */
-
-#ifdef HAVE_LIBGCRYPT
-  bignum_bin2bn(string->data, len, &bn);
-#elif defined HAVE_LIBCRYPTO
-  bn = bignum_bin2bn(string->data, len, NULL);
-#endif
-
-  return bn;
 }
 
 ssh_string dh_get_e(ssh_session session) {

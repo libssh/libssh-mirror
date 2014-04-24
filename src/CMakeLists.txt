@@ -109,6 +109,7 @@ set(libssh_SRCS
   agent.c
   auth.c
   base64.c
+  bignum.c
   buffer.c
   callbacks.c
   channels.c

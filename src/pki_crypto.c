@@ -44,7 +44,7 @@
 #include "libssh/session.h"
 #include "libssh/pki.h"
 #include "libssh/pki_priv.h"
-#include "libssh/dh.h"
+#include "libssh/bignum.h"
 
 struct pem_get_password_struct {
     ssh_auth_callback fn;
