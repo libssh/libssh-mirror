@@ -1083,11 +1083,11 @@ int ssh_pki_export_pubkey_blob(const ssh_key key,
 }
 
 /**
- * @brief Convert a public key to a base64 hased key.
+ * @brief Convert a public key to a base64 encoded key.
  *
  * @param[in] key       The key to hash
  *
- * @param[out] b64_key  A pointer to store the allocated base64 hashed key. You
+ * @param[out] b64_key  A pointer to store the allocated base64 encoded key. You
  *                      need to free the buffer.
  *
  * @return              SSH_OK on success, SSH_ERROR on error.
