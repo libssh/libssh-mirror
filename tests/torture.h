@@ -64,6 +64,7 @@ struct torture_state {
     char *socket_dir;
     char *pcap_file;
     char *srv_pidfile;
+    char *srv_config;
 };
 
 #ifndef ZERO_STRUCT
@@ -108,6 +109,7 @@ const char *torture_server_address(int domain);
 int torture_server_port(void);
 
 void torture_setup_socket_dir(void **state);
+void torture_setup_sshd_server(void **state);
 
 void torture_teardown_socket_dir(void **state);
 
