@@ -220,7 +220,8 @@ static const char torture_ed25519_testkey_pp[]=
         "-----END OPENSSH PRIVATE KEY-----\n";
 
 #define TORTURE_SOCKET_DIR "/tmp/test_socket_wrapper_XXXXXX"
-#define TORTURE_SSHD_PIDFILE "sshd.pid"
+#define TORTURE_SSHD_PIDFILE "sshd/sshd.pid"
+#define TORTURE_SSHD_CONFIG "sshd/sshd_config"
 #define TORTURE_PCAP_FILE "socket_trace.pcap"
 
 static int verbosity = 0;
@@ -545,13 +546,6 @@ void torture_sftp_close(struct torture_sftp *t) {
         sftp_free(t->sftp);
     }
 
-    if (t->ssh != NULL) {
-        if (ssh_is_connected(t->ssh)) {
-            ssh_disconnect(t->ssh);
-        }
-        ssh_free(t->ssh);
-    }
-
     free(t->testdir);
     free(t);
 }
@@ -682,11 +676,124 @@ void torture_setup_socket_dir(void **state)
 
     snprintf(s->srv_pidfile, len, "%s/%s", p, TORTURE_SSHD_PIDFILE);
 
+    /* config file */
+    len = strlen(p) + 1 + strlen(TORTURE_SSHD_CONFIG) + 1;
+
+    s->srv_config = malloc(len);
+    assert_non_null(s->srv_config);
+
+    snprintf(s->srv_config, len, "%s/%s", p, TORTURE_SSHD_CONFIG);
+
     setenv("SOCKET_WRAPPER_DIR", p, 1);
     setenv("SOCKET_WRAPPER_DEFAULT_IFACE", "170", 1);
     setenv("SOCKET_WRAPPER_PCAP_FILE", s->pcap_file, 1);
 
     *state = s;
+}
+
+static void torture_setup_create_sshd_config(void **state)
+{
+    struct torture_state *s = *state;
+    char dsa_hostkey[1024];
+    char rsa_hostkey[1024];
+    char ecdsa_hostkey[1024];
+    char sshd_config[2048];
+    char sshd_path[1024];
+    struct stat sb;
+    const char *sftp_server;
+    int rc;
+
+    snprintf(sshd_path,
+             sizeof(sshd_path),
+             "%s/sshd",
+             s->socket_dir);
+
+    rc = mkdir(sshd_path, 0755);
+    assert_return_code(rc, errno);
+
+    snprintf(dsa_hostkey,
+             sizeof(dsa_hostkey),
+             "%s/sshd/ssh_host_dsa_key",
+             s->socket_dir);
+    torture_write_file(dsa_hostkey, torture_get_testkey(SSH_KEYTYPE_DSS, 0, 0));
+
+    snprintf(rsa_hostkey,
+             sizeof(rsa_hostkey),
+             "%s/sshd/ssh_host_rsa_key",
+             s->socket_dir);
+    torture_write_file(rsa_hostkey, torture_get_testkey(SSH_KEYTYPE_RSA, 0, 0));
+
+    snprintf(ecdsa_hostkey,
+             sizeof(ecdsa_hostkey),
+             "%s/sshd/ssh_host_ecdsa_key",
+             s->socket_dir);
+    torture_write_file(ecdsa_hostkey,
+                       torture_get_testkey(SSH_KEYTYPE_ECDSA, 521, 0));
+
+    assert_non_null(s->socket_dir);
+
+    sftp_server = "/usr/lib/ssh/sftp-server";
+    rc = lstat(sftp_server, &sb);
+    if (rc < 0) {
+        sftp_server = "/usr/libexec/openssh/sftp-server";
+        rc = lstat(sftp_server, &sb);
+        if (rc < 0) {
+            sftp_server = getenv("TORTURE_SFTP_SERVER");
+        }
+    }
+    assert_non_null(sftp_server);
+
+    snprintf(sshd_config, sizeof(sshd_config),
+             "Port 22\n"
+             "ListenAddress 127.0.0.10\n"
+             "HostKey %s\n"
+             "HostKey %s\n"
+             "HostKey %s\n"
+             "\n"
+             "LogLevel DEBUG1\n"
+             "Subsystem sftp %s\n"
+             "\n"
+             "PasswordAuthentication yes\n"
+             "KbdInteractiveAuthentication yes\n"
+             "PubkeyAuthentication yes\n"
+             "\n"
+             "UsePrivilegeSeparation no\n"
+             "StrictModes no\n"
+             "\n"
+             "AcceptEnv LANG LC_CTYPE LC_NUMERIC LC_TIME LC_COLLATE LC_MONETARY LC_MESSAGES\n"
+             "AcceptEnv LC_PAPER LC_NAME LC_ADDRESS LC_TELEPHONE LC_MEASUREMENT\n"
+             "AcceptEnv LC_IDENTIFICATION LC_ALL LC_LIBSSH\n"
+             "\n"
+             "PidFile %s\n",
+             dsa_hostkey,
+             rsa_hostkey,
+             ecdsa_hostkey,
+             sftp_server,
+             s->srv_pidfile);
+
+    torture_write_file(s->srv_config, sshd_config);
+}
+
+void torture_setup_sshd_server(void **state)
+{
+    struct torture_state *s;
+    char sshd_start_cmd[1024];
+    int rc;
+
+    torture_setup_socket_dir(state);
+    torture_setup_create_sshd_config(state);
+
+    /* Set the default interface for the server */
+    setenv("SOCKET_WRAPPER_DEFAULT_IFACE", "10", 1);
+
+    s = *state;
+
+    snprintf(sshd_start_cmd, sizeof(sshd_start_cmd),
+             "/usr/sbin/sshd -r -f %s -E %s/sshd/sshd.log",
+             s->srv_config, s->socket_dir);
+
+    rc = system(sshd_start_cmd);
+    assert_return_code(rc, errno);
 }
 
 void torture_teardown_socket_dir(void **state)
@@ -696,7 +803,7 @@ void torture_teardown_socket_dir(void **state)
     int rc;
 
     if (env != NULL && env[0] == '1') {
-        fprintf(stderr, ">>> Skipping cleanup of %s\n", s->socket_dir);
+        fprintf(stderr, "[ TORTURE  ] >>> Skipping cleanup of %s\n", s->socket_dir);
     } else {
         rc = torture_rmdirs(s->socket_dir);
         if (rc < 0) {
