@@ -226,7 +226,11 @@ void ssh_free(ssh_session session) {
 #endif /* _WIN32 */
 
   ssh_key_free(session->srv.dsa_key);
+  session->srv.dsa_key = NULL;
   ssh_key_free(session->srv.rsa_key);
+  session->srv.rsa_key = NULL;
+  ssh_key_free(session->srv.ecdsa_key);
+  session->srv.ecdsa_key = NULL;
 
   if (session->ssh_message_list) {
       ssh_message msg;
