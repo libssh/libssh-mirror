@@ -215,6 +215,10 @@ ssh_logging_callback ssh_get_log_callback(void) {
  */
 void *ssh_get_log_userdata(void)
 {
+    if (ssh_log_userdata == NULL) {
+        return NULL;
+    }
+
     return ssh_log_userdata;
 }
 
