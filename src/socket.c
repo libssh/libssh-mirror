@@ -630,10 +630,15 @@ int ssh_socket_nonblocking_flush(ssh_socket s) {
 
   if (!ssh_socket_is_open(s)) {
     session->alive = 0;
-    /* FIXME use ssh_socket_get_errno */
-    ssh_set_error(session, SSH_FATAL,
-        "Writing packet: error on socket (or connection closed): %s",
-        strerror(s->last_errno));
+    if(s->callbacks && s->callbacks->exception){
+      s->callbacks->exception(
+          SSH_SOCKET_EXCEPTION_ERROR,
+          s->last_errno,s->callbacks->userdata);
+    }else{
+      ssh_set_error(session, SSH_FATAL,
+          "Writing packet: error on socket (or connection closed): %s",
+          strerror(s->last_errno));
+    }
 
     return SSH_ERROR;
   }
@@ -650,12 +655,16 @@ int ssh_socket_nonblocking_flush(ssh_socket s) {
     if (w < 0) {
       session->alive = 0;
       ssh_socket_close(s);
-      /* FIXME use ssh_socket_get_errno() */
-      /* FIXME use callback for errors */
-      ssh_set_error(session, SSH_FATAL,
-          "Writing packet: error on socket (or connection closed): %s",
-          strerror(s->last_errno));
 
+      if(s->callbacks && s->callbacks->exception){
+        s->callbacks->exception(
+                SSH_SOCKET_EXCEPTION_ERROR,
+                s->last_errno,s->callbacks->userdata);
+      }else{
+        ssh_set_error(session, SSH_FATAL,
+                "Writing packet: error on socket (or connection closed): %s",
+                strerror(s->last_errno));
+      }
       return SSH_ERROR;
     }
     buffer_pass_bytes(s->out_buffer, w);
