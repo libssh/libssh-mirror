@@ -239,6 +239,34 @@ static void torture_options_proxycommand(void **state) {
     assert_null(session->opts.ProxyCommand);
 }
 
+static void torture_options_config_host(void **state) {
+    ssh_session session = *state;
+    FILE *config = NULL;
+
+    /* create a new config file */
+    config = fopen("test_config", "w");
+    assert_non_null(config);
+    fputs("Host testhost1\nPort 42\nHost testhost2,testhost3\nPort 43\n", config);
+    fclose(config);
+
+    ssh_options_set(session, SSH_OPTIONS_HOST, "testhost1");
+    ssh_options_parse_config(session, "test_config");
+
+    assert_int_equal(session->opts.port, 42);
+
+    ssh_options_set(session, SSH_OPTIONS_HOST, "testhost2");
+    ssh_options_parse_config(session, "test_config");
+    assert_int_equal(session->opts.port, 43);
+
+    session->opts.port = 0;
+
+    ssh_options_set(session, SSH_OPTIONS_HOST, "testhost3");
+    ssh_options_parse_config(session, "test_config");
+    assert_int_equal(session->opts.port, 43);
+
+    unlink("test_config");
+}
+
 
 #ifdef WITH_SERVER
 /* sshbind options */
@@ -304,6 +332,7 @@ int torture_run_tests(void) {
         cmocka_unit_test_setup_teardown(torture_options_proxycommand, setup, teardown),
         cmocka_unit_test_setup_teardown(torture_options_set_ciphers, setup, teardown),
         cmocka_unit_test_setup_teardown(torture_options_set_macs, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_options_config_host, setup, teardown)
     };
 
 #ifdef WITH_SERVER

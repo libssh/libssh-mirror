@@ -681,6 +681,17 @@ char *ssh_path_expand_tilde(const char *d) {
     return r;
 }
 
+/** @internal
+ * @brief expands a string in function of session options
+ * @param[in] s Format string to expand. Known parameters:
+ *              %d SSH configuration directory (~/.ssh)
+ *              %h target host name
+ *              %u local username
+ *              %l local hostname
+ *              %r remote username
+ *              %p remote port
+ * @returns Expanded string.
+ */
 char *ssh_path_expand_escape(ssh_session session, const char *s) {
     char host[NI_MAXHOST];
     char buf[MAX_BUF_SIZE];
@@ -971,7 +982,7 @@ int ssh_timeout_elapsed(struct ssh_timestamp *ts, int timeout) {
                   * -2 means user-defined timeout as available in
                   * session->timeout, session->timeout_usec.
                   */
-            fprintf(stderr, "ssh_timeout_elapsed called with -2. this needs to "
+            SSH_LOG(SSH_LOG_WARN, "ssh_timeout_elapsed called with -2. this needs to "
                             "be fixed. please set a breakpoint on %s:%d and "
                             "fix the caller\n", __FILE__, __LINE__);
             return 0;

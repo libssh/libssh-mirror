@@ -374,6 +374,28 @@ int ssh_options_set_algo(ssh_session session,
  *                Set it to specify that GSSAPI should delegate credentials
  *                to the server (int, 0 = false).
  *
+ *              - SSH_OPTIONS_PASSWORD_AUTH
+ *                Set it if password authentication should be used
+ *                in ssh_userauth_auto_pubkey(). (int, 0=false).
+ *                Currently without effect (ssh_userauth_auto_pubkey doesn't use
+ *                password authentication).
+ *
+ *              - SSH_OPTIONS_PUBKEY_AUTH
+ *                Set it if pubkey authentication should be used
+ *                in ssh_userauth_auto_pubkey(). (int, 0=false).
+ *
+ *              - SSH_OPTIONS_KBDINT_AUTH
+ *                Set it if keyboard-interactive authentication should be used
+ *                in ssh_userauth_auto_pubkey(). (int, 0=false).
+ *                Currently without effect (ssh_userauth_auto_pubkey doesn't use
+ *                keyboard-interactive authentication).
+ *
+ *              - SSH_OPTIONS_GSSAPI_AUTH
+ *                Set it if gssapi authentication should be used
+ *                in ssh_userauth_auto_pubkey(). (int, 0=false).
+ *                Currently without effect (ssh_userauth_auto_pubkey doesn't use
+ *                gssapi authentication).
+ *
  * @param  value The value to set. This is a generic pointer and the
  *               datatype which is used should be set according to the
  *               type set.
@@ -385,6 +407,7 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
     const char *v;
     char *p, *q;
     long int i;
+    unsigned int u;
     int rc;
 
     if (session == NULL) {
@@ -569,6 +592,20 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
             } else {
                 session->opts.knownhosts = strdup(v);
                 if (session->opts.knownhosts == NULL) {
+                    ssh_set_error_oom(session);
+                    return -1;
+                }
+            }
+            break;
+        case SSH_OPTIONS_GLOBAL_KNOWNHOSTS:
+            v = value;
+            SAFE_FREE(session->opts.global_knownhosts);
+            if (v == NULL || v[0] == '\0') {
+                ssh_set_error_invalid(session);
+                return -1;
+            } else {
+                session->opts.global_knownhosts = strdup(v);
+                if (session->opts.global_knownhosts == NULL) {
                     ssh_set_error_oom(session);
                     return -1;
                 }
@@ -856,6 +893,30 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
                 int x = *(int *)value;
 
                 session->opts.gss_delegate_creds = (x & 0xff);
+            }
+            break;
+        case SSH_OPTIONS_PASSWORD_AUTH:
+        case SSH_OPTIONS_PUBKEY_AUTH:
+        case SSH_OPTIONS_KBDINT_AUTH:
+        case SSH_OPTIONS_GSSAPI_AUTH:
+            u = 0;
+            if (value == NULL) {
+                ssh_set_error_invalid(session);
+                return -1;
+            } else {
+                int x = *(int *)value;
+                u = type == SSH_OPTIONS_PASSWORD_AUTH ?
+                    SSH_OPT_FLAG_PASSWORD_AUTH:
+                    type == SSH_OPTIONS_PUBKEY_AUTH ?
+                        SSH_OPT_FLAG_PUBKEY_AUTH:
+                        type == SSH_OPTIONS_KBDINT_AUTH ?
+                            SSH_OPT_FLAG_KBDINT_AUTH:
+                            SSH_OPT_FLAG_GSSAPI_AUTH;
+                if (x != 0){
+                    session->opts.flags |= u;
+                } else {
+                    session->opts.flags &= ~u;
+                }
             }
             break;
 

@@ -921,7 +921,10 @@ int ssh_userauth_publickey_auto(ssh_session session,
     if (session == NULL) {
         return SSH_AUTH_ERROR;
     }
-
+    if (! (session->opts.flags & SSH_OPT_FLAG_PUBKEY_AUTH)) {
+        session->auth_methods &= ~SSH_AUTH_METHOD_PUBLICKEY;
+        return SSH_AUTH_DENIED;
+    }
     if (session->common.callbacks) {
         auth_fn = session->common.callbacks->auth_function;
         auth_data = session->common.callbacks->userdata;

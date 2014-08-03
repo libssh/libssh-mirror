@@ -36,8 +36,14 @@
 #define MAX_LINE_SIZE 1024
 
 enum ssh_config_opcode_e {
+  /* Unknown opcode */
+  SOC_UNKNOWN = -3,
+  /* Known and not applicable to libssh */
+  SOC_NA = -2,
+  /* Known but not supported by current libssh version */
   SOC_UNSUPPORTED = -1,
   SOC_HOST,
+  SOC_MATCH,
   SOC_HOSTNAME,
   SOC_PORT,
   SOC_USERNAME,
@@ -53,6 +59,17 @@ enum ssh_config_opcode_e {
   SOC_GSSAPICLIENTIDENTITY,
   SOC_GSSAPIDELEGATECREDENTIALS,
   SOC_INCLUDE,
+  SOC_BINDADDRESS,
+  SOC_CONNECTTIMEOUT,
+  SOC_GLOBALKNOWNHOSTSFILE,
+  SOC_LOGLEVEL,
+  SOC_HOSTKEYALGORITHMS,
+  SOC_KEXALGORITHMS,
+  SOC_MAC,
+  SOC_GSSAPIAUTHENTICATION,
+  SOC_KBDINTERACTIVEAUTHENTICATION,
+  SOC_PASSWORDAUTHENTICATION,
+  SOC_PUBKEYAUTHENTICATION,
 
   SOC_END /* Keep this one last in the list */
 };
@@ -64,6 +81,7 @@ struct ssh_config_keyword_table_s {
 
 static struct ssh_config_keyword_table_s ssh_config_keyword_table[] = {
   { "host", SOC_HOST },
+  { "match", SOC_MATCH },
   { "hostname", SOC_HOSTNAME },
   { "port", SOC_PORT },
   { "user", SOC_USERNAME },
@@ -79,7 +97,76 @@ static struct ssh_config_keyword_table_s ssh_config_keyword_table[] = {
   { "gssapiserveridentity", SOC_GSSAPICLIENTIDENTITY },
   { "gssapidelegatecredentials", SOC_GSSAPIDELEGATECREDENTIALS },
   { "include", SOC_INCLUDE },
-  { NULL, SOC_UNSUPPORTED }
+  { "bindaddress", SOC_BINDADDRESS},
+  { "connecttimeout", SOC_CONNECTTIMEOUT},
+  { "globalknownhostsfile", SOC_GLOBALKNOWNHOSTSFILE},
+  { "loglevel", SOC_LOGLEVEL},
+  { "hostkeyalgorithms", SOC_HOSTKEYALGORITHMS},
+  { "kexalgorithms", SOC_KEXALGORITHMS},
+  { "mac", SOC_MAC},
+  { "gssapiauthentication", SOC_GSSAPIAUTHENTICATION},
+  { "kbdinteractiveauthentication", SOC_KBDINTERACTIVEAUTHENTICATION},
+  { "passwordauthentication", SOC_PASSWORDAUTHENTICATION},
+  { "pubkeyauthentication", SOC_PUBKEYAUTHENTICATION},
+  { "addressfamily", SOC_UNSUPPORTED},
+  { "batchmode", SOC_UNSUPPORTED},
+  { "canonicaldomains", SOC_UNSUPPORTED},
+  { "canonicalizefallbacklocal", SOC_UNSUPPORTED},
+  { "canonicalizehostname", SOC_UNSUPPORTED},
+  { "canonicalizemaxdots", SOC_UNSUPPORTED},
+  { "canonicalizepermittedcnames", SOC_UNSUPPORTED},
+  { "challengeresponseauthentication", SOC_UNSUPPORTED},
+  { "checkhostip", SOC_UNSUPPORTED},
+  { "cipher", SOC_UNSUPPORTED},
+  { "compressionlevel", SOC_UNSUPPORTED},
+  { "connectionattempts", SOC_UNSUPPORTED},
+  { "enablesshkeysign", SOC_UNSUPPORTED},
+  { "forwardagent", SOC_UNSUPPORTED},
+  { "gssapikeyexchange", SOC_UNSUPPORTED},
+  { "gssapirenewalforcesrekey", SOC_UNSUPPORTED},
+  { "gssapitrustdns", SOC_UNSUPPORTED},
+  { "hashknownhosts", SOC_UNSUPPORTED},
+  { "hostbasedauthentication", SOC_UNSUPPORTED},
+  { "hostkeyalias", SOC_UNSUPPORTED},
+  { "identitiesonly", SOC_UNSUPPORTED},
+  { "ipqos", SOC_UNSUPPORTED},
+  { "kbdinteractivedevices", SOC_UNSUPPORTED},
+  { "nohostauthenticationforlocalhost", SOC_UNSUPPORTED},
+  { "numberofpasswordprompts", SOC_UNSUPPORTED},
+  { "pkcs11provider", SOC_UNSUPPORTED},
+  { "preferredauthentications", SOC_UNSUPPORTED},
+  { "proxyusefdpass", SOC_UNSUPPORTED},
+  { "rekeylimit", SOC_UNSUPPORTED},
+  { "rhostsrsaauthentication", SOC_UNSUPPORTED},
+  { "rsaauthentication", SOC_UNSUPPORTED},
+  { "serveralivecountmax", SOC_UNSUPPORTED},
+  { "serveraliveinterval", SOC_UNSUPPORTED},
+  { "tcpkeepalive", SOC_UNSUPPORTED},
+  { "useprivilegedport", SOC_UNSUPPORTED},
+  { "verifyhostkeydns", SOC_UNSUPPORTED},
+  { "visualhostkey", SOC_UNSUPPORTED},
+  { "clearallforwardings", SOC_NA},
+  { "controlmaster", SOC_NA},
+  { "controlpersist", SOC_NA},
+  { "controlpath", SOC_NA},
+  { "dynamicforward", SOC_NA},
+  { "escapechar", SOC_NA},
+  { "exitonforwardfailure", SOC_NA},
+  { "forwardx11", SOC_NA},
+  { "forwardx11timeout", SOC_NA},
+  { "forwardx11trusted", SOC_NA},
+  { "gatewayports", SOC_NA},
+  { "ignoreunknown", SOC_NA},
+  { "localcommand", SOC_NA},
+  { "localforward", SOC_NA},
+  { "permitlocalcommand", SOC_NA},
+  { "remoteforward", SOC_NA},
+  { "requesttty", SOC_NA},
+  { "sendenv", SOC_NA},
+  { "tunnel", SOC_NA},
+  { "tunneldevice", SOC_NA},
+  { "xauthlocation", SOC_NA},
+  { NULL, SOC_UNKNOWN }
 };
 
 static int ssh_config_parse_line(ssh_session session, const char *line,
@@ -94,7 +181,7 @@ static enum ssh_config_opcode_e ssh_config_get_opcode(char *keyword) {
     }
   }
 
-  return SOC_UNSUPPORTED;
+  return SOC_UNKNOWN;
 }
 
 static char *ssh_config_get_cmd(char **str) {
@@ -297,13 +384,11 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
       }
       break;
     case SOC_PORT:
-      if (session->opts.port == 0) {
-          p = ssh_config_get_str_tok(&s, NULL);
-          if (p && *parsing) {
-              ssh_options_set(session, SSH_OPTIONS_PORT_STR, p);
-          }
-      }
-      break;
+        p = ssh_config_get_str_tok(&s, NULL);
+        if (p && *parsing) {
+            ssh_options_set(session, SSH_OPTIONS_PORT_STR, p);
+        }
+        break;
     case SOC_USERNAME:
       if (session->opts.username == NULL) {
           p = ssh_config_get_str_tok(&s, NULL);
@@ -408,8 +493,99 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
         ssh_options_set(session, SSH_OPTIONS_GSSAPI_DELEGATE_CREDENTIALS, &i);
       }
       break;
+    case SOC_BINDADDRESS:
+        p = ssh_config_get_str_tok(&s, NULL);
+        if (p && *parsing) {
+            ssh_options_set(session, SSH_OPTIONS_BINDADDR, p);
+        }
+        break;
+    case SOC_CONNECTTIMEOUT:
+        i = ssh_config_get_int(&s, 0);
+        if (i >= 0 && *parsing) {
+          long t = i;
+          ssh_options_set(session, SSH_OPTIONS_TIMEOUT, &t);
+        }
+        break;
+    case SOC_GLOBALKNOWNHOSTSFILE:
+        p = ssh_config_get_str_tok(&s, NULL);
+        if (p && *parsing) {
+            ssh_options_set(session, SSH_OPTIONS_GLOBAL_KNOWNHOSTS, p);
+        }
+        break;
+    case SOC_LOGLEVEL:
+        p = ssh_config_get_str_tok(&s, NULL);
+        if (p && *parsing) {
+            if (strcasecmp(p, "quiet") == 0) {
+                ssh_set_log_level(SSH_LOG_NONE);
+            } else if (strcasecmp(p, "fatal") == 0 ||
+                    strcasecmp(p, "error")== 0 ||
+                    strcasecmp(p, "info") == 0) {
+                ssh_set_log_level(SSH_LOG_WARN);
+            } else if (strcasecmp(p, "verbose") == 0) {
+                ssh_set_log_level(SSH_LOG_INFO);
+            } else if (strcasecmp(p, "DEBUG") == 0 ||
+                    strcasecmp(p, "DEBUG1") == 0) {
+                ssh_set_log_level(SSH_LOG_DEBUG);
+            } else if (strcasecmp(p, "DEBUG2") == 0 ||
+                    strcasecmp(p, "DEBUG3") == 0) {
+                ssh_set_log_level(SSH_LOG_TRACE);
+            }
+        }
+        break;
+    case SOC_HOSTKEYALGORITHMS:
+        p = ssh_config_get_str_tok(&s, NULL);
+        if (p && *parsing) {
+            ssh_options_set(session, SSH_OPTIONS_HOSTKEYS, p);
+        }
+        break;
+    case SOC_KEXALGORITHMS:
+        p = ssh_config_get_str_tok(&s, NULL);
+        if (p && *parsing) {
+            ssh_options_set(session, SSH_OPTIONS_KEY_EXCHANGE, p);
+        }
+        break;
+    case SOC_MAC:
+        p = ssh_config_get_str_tok(&s, NULL);
+        if (p && *parsing) {
+            ssh_options_set(session, SSH_OPTIONS_HMAC_C_S, p);
+            ssh_options_set(session, SSH_OPTIONS_HMAC_S_C, p);
+        }
+        break;
+    case SOC_GSSAPIAUTHENTICATION:
+    case SOC_KBDINTERACTIVEAUTHENTICATION:
+    case SOC_PASSWORDAUTHENTICATION:
+    case SOC_PUBKEYAUTHENTICATION:
+        i = ssh_config_get_yesno(&s, 0);
+        if (i>=0 && *parsing) {
+            switch(opcode){
+            case SOC_GSSAPIAUTHENTICATION:
+                ssh_options_set(session, SSH_OPTIONS_GSSAPI_AUTH, &i);
+                break;
+            case SOC_KBDINTERACTIVEAUTHENTICATION:
+                ssh_options_set(session, SSH_OPTIONS_KBDINT_AUTH, &i);
+                break;
+            case SOC_PASSWORDAUTHENTICATION:
+                ssh_options_set(session, SSH_OPTIONS_PASSWORD_AUTH, &i);
+                break;
+            case SOC_PUBKEYAUTHENTICATION:
+                ssh_options_set(session, SSH_OPTIONS_PUBKEY_AUTH, &i);
+                break;
+            /* make gcc happy */
+            default:
+                break;
+            }
+        }
+        break;
+    case SOC_NA:
+      SSH_LOG(SSH_LOG_INFO, "Unapplicable option: %s, line: %d\n",
+              keyword, count);
+      break;
     case SOC_UNSUPPORTED:
       SSH_LOG(SSH_LOG_RARE, "Unsupported option: %s, line: %d",
+              keyword, count);
+      break;
+    case SOC_UNKNOWN:
+      SSH_LOG(SSH_LOG_WARN, "Unknown option: %s, line: %d\n",
               keyword, count);
       break;
     default:

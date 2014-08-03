@@ -410,6 +410,8 @@ int ssh_is_server_known(ssh_session session) {
   char *hostport;
   const char *type;
   int match;
+  int i=0;
+  char * files[3];
   int ret = SSH_SERVER_NOT_KNOWN;
 
   if (session->opts.knownhosts == NULL) {
@@ -444,14 +446,27 @@ int ssh_is_server_known(ssh_session session) {
     return SSH_SERVER_ERROR;
   }
 
+  /* set the list of known hosts */
+  i = 0;
+  if (session->opts.global_knownhosts != NULL){
+      files[i++]=session->opts.global_knownhosts;
+  }
+  files[i++] = session->opts.knownhosts;
+  files[i] = NULL;
+  i = 0;
+
   do {
     tokens = ssh_get_knownhost_line(&file,
-                                    session->opts.knownhosts,
+                                    files[i],
                                     &type);
 
-    /* End of file, return the current state */
+    /* End of file, return the current state or use next file */
     if (tokens == NULL) {
-      break;
+      ++i;
+      if(files[i] == NULL)
+          break;
+      else
+          continue;
     }
     match = match_hashed_host(host, tokens[0]);
     if (match == 0){
@@ -694,7 +709,8 @@ char **ssh_knownhosts_algorithms(ssh_session session) {
   const char *type;
   int match;
   char **array;
-  int i=0, j;
+  char *files[3] = { NULL };
+  int i=0, j, k;
 
   if (session->opts.knownhosts == NULL) {
     if (ssh_options_apply(session) < 0) {
@@ -720,13 +736,26 @@ char **ssh_knownhosts_algorithms(ssh_session session) {
     return NULL;
   }
 
+  /* set the list of known hosts */
+  if (session->opts.global_knownhosts != NULL){
+      files[i++]=session->opts.global_knownhosts;
+  }
+  files[i++] = session->opts.knownhosts;
+  files[i] = NULL;
+  k = 0;
+  i = 0;
+
   do {
-    tokens = ssh_get_knownhost_line(&file,
-    		session->opts.knownhosts, &type);
+    tokens = ssh_get_knownhost_line(&file, files[k], &type);
 
     /* End of file, return the current state */
     if (tokens == NULL) {
-      break;
+      ++k;
+      if (files[k] == NULL) {
+          break;
+      } else {
+          continue;
+      }
     }
     match = match_hashed_host(host, tokens[0]);
     if (match == 0){

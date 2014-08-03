@@ -112,7 +112,8 @@ ssh_session ssh_new(void) {
 #else
     session->opts.ssh1 = 0;
 #endif
-
+    session->opts.flags = SSH_OPT_FLAG_PASSWORD_AUTH | SSH_OPT_FLAG_PUBKEY_AUTH |
+            SSH_OPT_FLAG_KBDINT_AUTH | SSH_OPT_FLAG_GSSAPI_AUTH;
     session->opts.identity = ssh_list_new();
     if (session->opts.identity == NULL) {
       goto err;
