@@ -641,11 +641,11 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
     goto error;
   }
   msg->type = SSH_REQUEST_AUTH;
-  rc = ssh_buffer_unpack(packet, "ss",
-          &msg->auth_request.username,
-          &service,
-          &method
-          );
+  rc = ssh_buffer_unpack(packet,
+                         "sss",
+                         &msg->auth_request.username,
+                         &service,
+                         &method);
 
   if (rc != SSH_OK) {
       goto error;
@@ -1002,11 +1002,12 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_open){
   }
 
   if (strcmp(type_c,"direct-tcpip") == 0) {
-    rc = ssh_buffer_unpack(packet, "sds",
-            &msg->channel_request_open.destination,
-            &destination_port,
-            &msg->channel_request_open.originator,
-            &originator_port);
+    rc = ssh_buffer_unpack(packet,
+                           "sdsd",
+                           &msg->channel_request_open.destination,
+                           &destination_port,
+                           &msg->channel_request_open.originator,
+                           &originator_port);
 	if (rc != SSH_OK) {
 		goto error;
 	}
