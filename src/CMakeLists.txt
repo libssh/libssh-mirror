@@ -119,7 +119,10 @@ set(libssh_SRCS
   curve25519.c
   dh.c
   ecdh.c
+  ed25519.c
   error.c
+  fe25519.c
+  ge25519.c
   getpass.c
   init.c
   kex.c
@@ -138,6 +141,7 @@ set(libssh_SRCS
   pki.c
   poll.c
   session.c
+  sc25519.c
   scp.c
   socket.c
   string.c
