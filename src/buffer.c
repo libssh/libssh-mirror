@@ -658,7 +658,7 @@ struct ssh_string_struct *buffer_get_mpint(struct ssh_buffer_struct *buffer) {
  * @see ssh_buffer_add_format() for format list values.
  */
 int ssh_buffer_pack_va(struct ssh_buffer_struct *buffer, const char *format, va_list ap){
-    int rc;
+    int rc = SSH_ERROR;
     const char *p;
     union {
         uint8_t byte;
@@ -781,7 +781,7 @@ int _ssh_buffer_pack(struct ssh_buffer_struct *buffer, const char *format, ...){
  * @see ssh_buffer_get_format() for format list values.
  */
 int ssh_buffer_unpack_va(struct ssh_buffer_struct *buffer, const char *format, va_list ap){
-    int rc;
+    int rc = SSH_ERROR;
     const char *p, *last;
     union {
         uint8_t *byte;
