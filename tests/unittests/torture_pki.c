@@ -8,7 +8,6 @@
 #define LIBSSH_RSA_TESTKEY "libssh_testkey.id_rsa"
 #define LIBSSH_DSA_TESTKEY "libssh_testkey.id_dsa"
 #define LIBSSH_ECDSA_TESTKEY "libssh_testkey.id_ecdsa"
-#define LIBSSH_PASSPHRASE "libssh-rocks"
 
 const unsigned char HASH[] = "12345678901234567890";
 
@@ -185,7 +184,7 @@ static void torture_pki_import_privkey_base64_RSA(void **state) {
     int rc;
     char *key_str;
     ssh_key key;
-    const char *passphrase = LIBSSH_PASSPHRASE;
+    const char *passphrase = torture_get_testkey_passphrase();
     enum ssh_keytypes_e type;
 
     (void) state; /* unused */
@@ -208,7 +207,7 @@ static void torture_pki_import_privkey_base64_RSA(void **state) {
 
 static void torture_pki_import_privkey_base64_NULL_key(void **state) {
     int rc;
-    const char *passphrase = LIBSSH_PASSPHRASE;
+    const char *passphrase = torture_get_testkey_passphrase();
 
     (void) state; /* unused */
 
@@ -225,7 +224,7 @@ static void torture_pki_import_privkey_base64_NULL_key(void **state) {
 static void torture_pki_import_privkey_base64_NULL_str(void **state) {
     int rc;
     ssh_key key = NULL;
-    const char *passphrase = LIBSSH_PASSPHRASE;
+    const char *passphrase = torture_get_testkey_passphrase();
 
     (void) state; /* unused */
 
@@ -239,7 +238,7 @@ static void torture_pki_import_privkey_base64_NULL_str(void **state) {
 static void torture_pki_import_privkey_base64_DSA(void **state) {
     int rc;
     ssh_key key;
-    const char *passphrase = LIBSSH_PASSPHRASE;
+    const char *passphrase = torture_get_testkey_passphrase();
 
     (void) state; /* unused */
 
@@ -258,7 +257,7 @@ static void torture_pki_import_privkey_base64_ECDSA(void **state) {
     int rc;
     char *key_str;
     ssh_key key;
-    const char *passphrase = LIBSSH_PASSPHRASE;
+    const char *passphrase = torture_get_testkey_passphrase();
 
     (void) state; /* unused */
 
@@ -276,7 +275,7 @@ static void torture_pki_import_privkey_base64_ECDSA(void **state) {
 static void torture_pki_import_privkey_base64_passphrase(void **state) {
     int rc;
     ssh_key key = NULL;
-    const char *passphrase = LIBSSH_PASSPHRASE;
+    const char *passphrase = torture_get_testkey_passphrase();
 
     (void) state; /* unused */
 
