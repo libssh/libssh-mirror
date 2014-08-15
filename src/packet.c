@@ -461,14 +461,23 @@ int ssh_packet_send_unimplemented(ssh_session session, uint32_t seqnum){
  * @brief handles a SSH_MSG_UNIMPLEMENTED packet
  */
 SSH_PACKET_CALLBACK(ssh_packet_unimplemented){
-  uint32_t seq;
+    uint32_t seq;
+    int rc;
+
     (void)session; /* unused */
-  (void)type;
-  (void)user;
-  ssh_buffer_unpack(packet, "d", &seq);
-  SSH_LOG(SSH_LOG_RARE,
-      "Received SSH_MSG_UNIMPLEMENTED (sequence number %d)",seq);
-  return SSH_PACKET_USED;
+    (void)type;
+    (void)user;
+
+    rc = ssh_buffer_unpack(packet, "d", &seq);
+    if (rc != SSH_OK) {
+        SSH_LOG(SSH_LOG_WARNING,
+                "Could not unpack SSH_MSG_UNIMPLEMENTED packet");
+    }
+
+    SSH_LOG(SSH_LOG_RARE,
+            "Received SSH_MSG_UNIMPLEMENTED (sequence number %d)",seq);
+
+    return SSH_PACKET_USED;
 }
 
 /** @internal
