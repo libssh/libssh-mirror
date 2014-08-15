@@ -158,15 +158,14 @@ static const char ecdsa521_testkey_pub[]=
         "V262vIC+AE3fXUJ7sJ/CkFIdk/8/gQEY1jyoXB3Bsee16VwhJGsMzGGh1FJ0XXhRJj"
         "UbG18qbH9JiSgE1N4fIM0zJG68fAyUxRxCI1wUobOOB7EmFZd18g== aris@kalix86";
 
-static void write_file(const char *filename, const char *data);
 static void setup_rsa_key(void **state) {
     (void) state; /* unused */
 
     unlink(LIBSSH_RSA_TESTKEY);
     unlink(LIBSSH_RSA_TESTKEY ".pub");
 
-    write_file(LIBSSH_RSA_TESTKEY, rsa_testkey);
-    write_file(LIBSSH_RSA_TESTKEY ".pub", rsa_testkey_pub);
+    torture_write_file(LIBSSH_RSA_TESTKEY, rsa_testkey);
+    torture_write_file(LIBSSH_RSA_TESTKEY ".pub", rsa_testkey_pub);
 }
 
 static void setup_dsa_key(void **state) {
@@ -175,8 +174,8 @@ static void setup_dsa_key(void **state) {
     unlink(LIBSSH_DSA_TESTKEY);
     unlink(LIBSSH_DSA_TESTKEY ".pub");
 
-    write_file(LIBSSH_DSA_TESTKEY, dsa_testkey);
-    write_file(LIBSSH_DSA_TESTKEY ".pub", dsa_testkey_pub);
+    torture_write_file(LIBSSH_DSA_TESTKEY, dsa_testkey);
+    torture_write_file(LIBSSH_DSA_TESTKEY ".pub", dsa_testkey_pub);
 }
 
 #ifdef HAVE_OPENSSL_ECC
@@ -188,14 +187,14 @@ static void setup_ecdsa_key(void **state, int ecdsa_bits) {
     unlink(LIBSSH_ECDSA_TESTKEY ".pub");
 
     if (ecdsa_bits == 256) {
-        write_file(LIBSSH_ECDSA_TESTKEY, ecdsa256_testkey);
-        write_file(LIBSSH_ECDSA_TESTKEY ".pub", ecdsa256_testkey_pub);
+        torture_write_file(LIBSSH_ECDSA_TESTKEY, ecdsa256_testkey);
+        torture_write_file(LIBSSH_ECDSA_TESTKEY ".pub", ecdsa256_testkey_pub);
     } else if (ecdsa_bits == 384) {
-        write_file(LIBSSH_ECDSA_TESTKEY, ecdsa384_testkey);
-        write_file(LIBSSH_ECDSA_TESTKEY ".pub", ecdsa384_testkey_pub);
+        torture_write_file(LIBSSH_ECDSA_TESTKEY, ecdsa384_testkey);
+        torture_write_file(LIBSSH_ECDSA_TESTKEY ".pub", ecdsa384_testkey_pub);
     } else if (ecdsa_bits == 521) {
-        write_file(LIBSSH_ECDSA_TESTKEY, ecdsa521_testkey);
-        write_file(LIBSSH_ECDSA_TESTKEY ".pub", ecdsa521_testkey_pub);
+        torture_write_file(LIBSSH_ECDSA_TESTKEY, ecdsa521_testkey);
+        torture_write_file(LIBSSH_ECDSA_TESTKEY ".pub", ecdsa521_testkey_pub);
     }
 }
 
@@ -258,23 +257,6 @@ static char *read_file(const char *filename) {
 
     key[size] = '\0';
     return key;
-}
-
-static void write_file(const char *filename, const char *data){
-    int fd;
-    int rc;
-
-    assert_non_null(filename);
-    assert_true(filename[0] != '\0');
-    assert_non_null(data);
-
-    fd = open(filename, O_WRONLY | O_TRUNC | O_CREAT, 0755);
-    assert_true(fd >= 0);
-
-    rc = write(fd, data, strlen(data));
-    assert_int_equal(rc, strlen(data));
-
-    close(fd);
 }
 
 static int torture_read_one_line(const char *filename, char *buffer, size_t len) {

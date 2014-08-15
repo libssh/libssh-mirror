@@ -25,9 +25,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
 #ifndef _WIN32
-# include <sys/types.h>
-# include <sys/stat.h>
 # include <dirent.h>
 # include <errno.h>
 #endif
@@ -302,6 +304,22 @@ void torture_sftp_close(struct torture_sftp *t) {
 
 #endif /* _WIN32 */
 
+void torture_write_file(const char *filename, const char *data){
+    int fd;
+    int rc;
+
+    assert_non_null(filename);
+    assert_true(filename[0] != '\0');
+    assert_non_null(data);
+
+    fd = open(filename, O_WRONLY | O_TRUNC | O_CREAT, 0755);
+    assert_true(fd >= 0);
+
+    rc = write(fd, data, strlen(data));
+    assert_int_equal(rc, strlen(data));
+
+    close(fd);
+}
 
 int torture_libssh_verbosity(void){
   return verbosity;
