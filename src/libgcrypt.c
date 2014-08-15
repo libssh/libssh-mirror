@@ -474,8 +474,8 @@ static struct ssh_cipher_struct ssh_ciphertab[] = {
     .keysize         = 128,
     .set_encrypt_key = blowfish_set_key,
     .set_decrypt_key = blowfish_set_key,
-    .cbc_encrypt     = blowfish_encrypt,
-    .cbc_decrypt     = blowfish_decrypt
+    .encrypt     = blowfish_encrypt,
+    .decrypt     = blowfish_decrypt
   },
   {
     .name            = "aes128-ctr",
@@ -485,8 +485,8 @@ static struct ssh_cipher_struct ssh_ciphertab[] = {
     .keysize         = 128,
     .set_encrypt_key = aes_set_key,
     .set_decrypt_key = aes_set_key,
-    .cbc_encrypt     = aes_encrypt,
-    .cbc_decrypt     = aes_encrypt
+    .encrypt     = aes_encrypt,
+    .decrypt     = aes_encrypt
   },
   {
       .name            = "aes192-ctr",
@@ -496,8 +496,8 @@ static struct ssh_cipher_struct ssh_ciphertab[] = {
       .keysize         = 192,
       .set_encrypt_key = aes_set_key,
       .set_decrypt_key = aes_set_key,
-      .cbc_encrypt     = aes_encrypt,
-      .cbc_decrypt     = aes_encrypt
+      .encrypt     = aes_encrypt,
+      .decrypt     = aes_encrypt
   },
   {
       .name            = "aes256-ctr",
@@ -507,8 +507,8 @@ static struct ssh_cipher_struct ssh_ciphertab[] = {
       .keysize         = 256,
       .set_encrypt_key = aes_set_key,
       .set_decrypt_key = aes_set_key,
-      .cbc_encrypt     = aes_encrypt,
-      .cbc_decrypt     = aes_encrypt
+      .encrypt     = aes_encrypt,
+      .decrypt     = aes_encrypt
   },
   {
     .name            = "aes128-cbc",
@@ -518,8 +518,8 @@ static struct ssh_cipher_struct ssh_ciphertab[] = {
     .keysize         = 128,
     .set_encrypt_key = aes_set_key,
     .set_decrypt_key = aes_set_key,
-    .cbc_encrypt     = aes_encrypt,
-    .cbc_decrypt     = aes_decrypt
+    .encrypt     = aes_encrypt,
+    .decrypt     = aes_decrypt
   },
   {
     .name            = "aes192-cbc",
@@ -529,8 +529,8 @@ static struct ssh_cipher_struct ssh_ciphertab[] = {
     .keysize         = 192,
     .set_encrypt_key = aes_set_key,
     .set_decrypt_key = aes_set_key,
-    .cbc_encrypt     = aes_encrypt,
-    .cbc_decrypt     = aes_decrypt
+    .encrypt     = aes_encrypt,
+    .decrypt     = aes_decrypt
   },
   {
     .name            = "aes256-cbc",
@@ -540,8 +540,8 @@ static struct ssh_cipher_struct ssh_ciphertab[] = {
     .keysize         = 256,
     .set_encrypt_key = aes_set_key,
     .set_decrypt_key = aes_set_key,
-    .cbc_encrypt     = aes_encrypt,
-    .cbc_decrypt     = aes_decrypt
+    .encrypt     = aes_encrypt,
+    .decrypt     = aes_decrypt
   },
   {
     .name            = "3des-cbc",
@@ -551,8 +551,8 @@ static struct ssh_cipher_struct ssh_ciphertab[] = {
     .keysize         = 192,
     .set_encrypt_key = des3_set_key,
     .set_decrypt_key = des3_set_key,
-    .cbc_encrypt     = des3_encrypt,
-    .cbc_decrypt     = des3_decrypt
+    .encrypt     = des3_encrypt,
+    .decrypt     = des3_decrypt
   },
   {
     .name            = "3des-cbc-ssh1",
@@ -562,8 +562,8 @@ static struct ssh_cipher_struct ssh_ciphertab[] = {
     .keysize         = 192,
     .set_encrypt_key = des3_1_set_key,
     .set_decrypt_key = des3_1_set_key,
-    .cbc_encrypt     = des3_1_encrypt,
-    .cbc_decrypt     = des3_1_decrypt
+    .encrypt     = des3_1_encrypt,
+    .decrypt     = des3_1_decrypt
   },
   {
     .name            = "des-cbc-ssh1",
@@ -573,8 +573,8 @@ static struct ssh_cipher_struct ssh_ciphertab[] = {
     .keysize         = 64,
     .set_encrypt_key = des1_set_key,
     .set_decrypt_key = des1_set_key,
-    .cbc_encrypt     = des1_1_encrypt,
-    .cbc_decrypt     = des1_1_decrypt
+    .encrypt     = des1_1_encrypt,
+    .decrypt     = des1_1_decrypt
   },
   {
     .name            = NULL,
@@ -584,8 +584,8 @@ static struct ssh_cipher_struct ssh_ciphertab[] = {
     .keysize         = 0,
     .set_encrypt_key = NULL,
     .set_decrypt_key = NULL,
-    .cbc_encrypt     = NULL,
-    .cbc_decrypt     = NULL
+    .encrypt     = NULL,
+    .decrypt     = NULL
   }
 };
 
