@@ -72,6 +72,7 @@ const char *torture_get_testkey(enum ssh_keytypes_e type,
                                 int ecdsa_bits,
                                 int with_passphrase);
 const char *torture_get_testkey_pub(enum ssh_keytypes_e type, int ecdsa_bits);
+const char *torture_get_testkey_passphrase(void);
 
 void torture_write_file(const char *filename, const char *data);
 

@@ -534,6 +534,11 @@ const char *torture_get_testkey_pub(enum ssh_keytypes_e type, int ecda_bits)
     return torture_get_testkey_internal(type, ecda_bits, 0, 1);
 }
 
+const char *torture_get_testkey_passphrase(void)
+{
+    return TORTURE_TESTKEY_PASSWORD;
+}
+
 int torture_libssh_verbosity(void){
   return verbosity;
 }
