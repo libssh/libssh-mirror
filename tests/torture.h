@@ -68,6 +68,11 @@ ssh_session torture_ssh_session(const char *host,
 struct torture_sftp *torture_sftp_session(ssh_session session);
 void torture_sftp_close(struct torture_sftp *t);
 
+const char *torture_get_testkey(enum ssh_keytypes_e type,
+                                int ecdsa_bits,
+                                int with_passphrase);
+const char *torture_get_testkey_pub(enum ssh_keytypes_e type, int ecdsa_bits);
+
 void torture_write_file(const char *filename, const char *data);
 
 /*
