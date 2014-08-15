@@ -279,18 +279,19 @@ static void write_file(const char *filename, const char *data){
 
 static int torture_read_one_line(const char *filename, char *buffer, size_t len) {
   FILE *fp;
-  size_t rc;
+  size_t nmemb;
 
   fp = fopen(filename, "r");
   if (fp == NULL) {
     return -1;
   }
 
-  rc = fread(buffer, len, 1, fp);
-  if (rc != 0 || ferror(fp)) {
+  nmemb = fread(buffer, len - 1, 1, fp);
+  if (nmemb != 0 || ferror(fp)) {
     fclose(fp);
     return -1;
   }
+  buffer[len] = '\0';
 
   fclose(fp);
 
