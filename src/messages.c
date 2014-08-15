@@ -860,6 +860,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_response){
   uint32_t nanswers;
   uint32_t i;
   ssh_string tmp;
+  int rc;
 
   ssh_message msg = NULL;
 
@@ -887,7 +888,11 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_response){
   msg->auth_request.username = NULL;
 #endif
 
-  ssh_buffer_unpack(packet, "d", &nanswers);
+  rc = ssh_buffer_unpack(packet, "d", &nanswers);
+  if (rc != SSH_OK) {
+      ssh_set_error_invalid(session);
+      goto error;
+  }
 
   if (session->kbdint == NULL) {
     SSH_LOG(SSH_LOG_PROTOCOL, "Warning: Got a keyboard-interactive "
