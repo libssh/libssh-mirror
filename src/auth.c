@@ -649,7 +649,7 @@ static int ssh_userauth_agent_publickey(ssh_session session,
                                         const char *username,
                                         ssh_key pubkey)
 {
-    ssh_string str;
+    ssh_string str = NULL;
     int rc;
 
     switch(session->pending_call_state) {
@@ -723,6 +723,7 @@ pending:
 fail:
     ssh_set_error_oom(session);
     ssh_buffer_reinit(session->out_buffer);
+    ssh_string_free(str);
 
     return SSH_AUTH_ERROR;
 }
