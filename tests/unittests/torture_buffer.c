@@ -148,6 +148,8 @@ static void torture_buffer_add_format(void **state) {
     len = buffer_get_rest_len(buffer);
     assert_int_equal(len, sizeof(verif) - 1);
     assert_memory_equal(buffer_get_rest(buffer), verif, sizeof(verif) -1);
+
+    ssh_string_free(s);
 }
 
 static void torture_buffer_get_format(void **state) {
