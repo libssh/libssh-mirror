@@ -119,12 +119,12 @@ static int torture_read_one_line(const char *filename, char *buffer, size_t len)
     return -1;
   }
 
-  nmemb = fread(buffer, len - 1, 1, fp);
+  nmemb = fread(buffer, len - 2, 1, fp);
   if (nmemb != 0 || ferror(fp)) {
     fclose(fp);
     return -1;
   }
-  buffer[len] = '\0';
+  buffer[len - 1] = '\0';
 
   fclose(fp);
 
