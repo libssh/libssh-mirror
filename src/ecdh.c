@@ -26,6 +26,7 @@
 #include "libssh/buffer.h"
 #include "libssh/ssh2.h"
 #include "libssh/pki.h"
+#include "libssh/bignum.h"
 
 #ifdef HAVE_ECDH
 #include <openssl/ecdh.h>

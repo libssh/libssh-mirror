@@ -37,6 +37,7 @@
 #include "libssh/crypto.h"
 #include "libssh/dh.h"
 #include "libssh/pki.h"
+#include "libssh/bignum.h"
 
 /** @internal
  * @brief Starts curve25519-sha256@libssh.org key exchange
