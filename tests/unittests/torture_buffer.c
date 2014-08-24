@@ -9,6 +9,7 @@
 static void setup(void **state) {
     ssh_buffer buffer;
     buffer = ssh_buffer_new();
+    ssh_buffer_set_secure(buffer);
     *state = (void *) buffer;
 }
 

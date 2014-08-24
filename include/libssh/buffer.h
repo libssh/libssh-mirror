@@ -36,6 +36,7 @@ struct ssh_buffer_struct {
     uint32_t used;
     uint32_t allocated;
     uint32_t pos;
+    int secure;
 };
 
 #define SSH_BUFFER_PACK_END ((uint32_t) 0x4f65feb3)
@@ -44,6 +45,7 @@ LIBSSH_API void ssh_buffer_free(ssh_buffer buffer);
 LIBSSH_API void *ssh_buffer_get_begin(ssh_buffer buffer);
 LIBSSH_API uint32_t ssh_buffer_get_len(ssh_buffer buffer);
 LIBSSH_API ssh_buffer ssh_buffer_new(void);
+void ssh_buffer_set_secure(ssh_buffer buffer);
 int buffer_add_ssh_string(ssh_buffer buffer, ssh_string string);
 int buffer_add_u8(ssh_buffer buffer, uint8_t data);
 int buffer_add_u16(ssh_buffer buffer, uint16_t data);

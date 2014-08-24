@@ -107,11 +107,23 @@ void ssh_buffer_free(struct ssh_buffer_struct *buffer) {
 
   if (buffer->data) {
     /* burn the data */
-    memset(buffer->data, 0, buffer->allocated);
+    BURN_BUFFER(buffer->data, buffer->allocated);
     SAFE_FREE(buffer->data);
   }
-  memset(buffer, 'X', sizeof(*buffer));
+  BURN_BUFFER(buffer, sizeof(struct ssh_buffer_struct));
   SAFE_FREE(buffer);
+}
+
+/**
+ * @brief Sets the buffer as secure.
+ *
+ * A secure buffer will never leave cleartext data in the heap
+ * after being reallocated or freed.
+ *
+ * @param[in] buffer buffer to set secure.
+ */
+void ssh_buffer_set_secure(ssh_buffer buffer){
+	buffer->secure = 1;
 }
 
 static int realloc_buffer(struct ssh_buffer_struct *buffer, size_t needed) {
@@ -128,9 +140,20 @@ static int realloc_buffer(struct ssh_buffer_struct *buffer, size_t needed) {
       smallest <<= 1;
   }
   needed = smallest;
-  new = realloc(buffer->data, needed);
-  if (new == NULL) {
-    return -1;
+  if (buffer->secure){
+	  new = malloc(needed);
+	  if (new == NULL) {
+		  return -1;
+      }
+	  memcpy(new, buffer->data,buffer->used);
+	  BURN_BUFFER(buffer->data, buffer->used);
+	  SAFE_FREE(buffer->data);
+  } else {
+	  new = realloc(buffer->data, needed);
+	  if (new == NULL) {
+		  buffer->data = NULL;
+		  return -1;
+	  }
   }
   buffer->data = new;
   buffer->allocated = needed;
@@ -143,12 +166,20 @@ static int realloc_buffer(struct ssh_buffer_struct *buffer, size_t needed) {
  * @param buffer SSH buffer
  */
 static void buffer_shift(ssh_buffer buffer){
+  uint32_t burn_pos = buffer->pos;
+
   buffer_verify(buffer);
   if(buffer->pos==0)
     return;
   memmove(buffer->data, buffer->data + buffer->pos, buffer->used - buffer->pos);
   buffer->used -= buffer->pos;
   buffer->pos=0;
+
+  if (buffer->secure){
+	  void *ptr = buffer->data + buffer->used;
+	  BURN_BUFFER(ptr, burn_pos);
+  }
+
   buffer_verify(buffer);
 }
 
@@ -164,7 +195,7 @@ static void buffer_shift(ssh_buffer buffer){
 int ssh_buffer_reinit(struct ssh_buffer_struct *buffer)
 {
   buffer_verify(buffer);
-  memset(buffer->data, 0, buffer->used);
+  BURN_BUFFER(buffer->data, buffer->used);
   buffer->used = 0;
   buffer->pos = 0;
   if(buffer->allocated > 127) {
@@ -906,7 +937,7 @@ int ssh_buffer_unpack_va(struct ssh_buffer_struct *buffer, const char *format, v
             case 'w':
             case 'd':
             case 'q':
-                va_arg(ap_copy, void *);
+                (void)va_arg(ap_copy, void *);
                 break;
             case 'S':
                 o.string=va_arg(ap_copy, ssh_string *);
@@ -917,12 +948,12 @@ int ssh_buffer_unpack_va(struct ssh_buffer_struct *buffer, const char *format, v
                 SAFE_FREE(*o.cstring);
                 break;
             case 'P':
-                va_arg(ap_copy, size_t);
+                (void)va_arg(ap_copy, size_t);
                 o.data = va_arg(ap_copy, void **);
                 SAFE_FREE(*o.data);
                 break;
             default:
-                va_arg(ap_copy, void *);
+                (void)va_arg(ap_copy, void *);
                 break;
             }
         }
