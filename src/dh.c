@@ -615,9 +615,9 @@ int make_sessionid(ssh_session session) {
         rc = ssh_buffer_pack(buf,
                              "dPdP",
                              CURVE25519_PUBKEY_SIZE,
-                             session->next_crypto->curve25519_client_pubkey,
+                             (size_t)CURVE25519_PUBKEY_SIZE, session->next_crypto->curve25519_client_pubkey,
                              CURVE25519_PUBKEY_SIZE,
-                             session->next_crypto->curve25519_server_pubkey);
+                             (size_t)CURVE25519_PUBKEY_SIZE, session->next_crypto->curve25519_server_pubkey);
 
         if (rc != SSH_OK) {
             goto error;
