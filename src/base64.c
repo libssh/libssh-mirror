@@ -82,6 +82,11 @@ ssh_buffer base64_to_bin(const char *source) {
     SAFE_FREE(base64);
     return NULL;
   }
+  /*
+   * The base64 buffer often contains sensitive data. Make sure we don't leak
+   * sensitive data
+   */
+  ssh_buffer_set_secure(buffer);
 
   len = strlen(ptr);
   while (len > 4) {
