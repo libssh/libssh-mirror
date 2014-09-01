@@ -149,6 +149,8 @@ set(libssh_SRCS
   string.c
   threads.c
   wrapper.c
+  external/bcrypt_pbkdf.c
+  external/blowfish.c
 )
 
 if (WITH_GCRYPT)
