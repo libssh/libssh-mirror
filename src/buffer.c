@@ -723,6 +723,12 @@ int ssh_buffer_pack_va(struct ssh_buffer_struct *buffer, const char *format, va_
             rc = buffer_add_ssh_string(buffer, o.string);
             SAFE_FREE(o.string);
             break;
+        case 't':
+            cstring = va_arg(ap, char *);
+            len = strlen(cstring);
+            rc = ssh_buffer_add_data(buffer, cstring, len);
+            cstring = NULL;
+            break;
         default:
             SSH_LOG(SSH_LOG_WARN, "Invalid buffer format %c", *p);
             rc = SSH_ERROR;
@@ -753,9 +759,10 @@ int ssh_buffer_pack_va(struct ssh_buffer_struct *buffer, const char *format, va_
  *                         'q': uint64_t (pushed in network byte order)
  *                         'S': ssh_string
  *                         's': char * (C string, pushed as SSH string)
+ *                         't': char * (C string, pushed as free text)
  *                         'P': size_t, void * (len of data, pointer to data)
  *                              only pushes data.
- *                         'S': bignum (pushed as SSH string)
+ *                         'B': bignum (pushed as SSH string)
  * @returns             SSH_OK on success
  *                      SSH_ERROR on error
  * @warning             when using 'P' with a constant size (e.g. 8), do not

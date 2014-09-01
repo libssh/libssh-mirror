@@ -135,14 +135,15 @@ static void torture_buffer_add_format(void **state) {
             "\xac\xbd\xce\xdf"
             "\x00\x00\x00\x06" "libssh"
             "\x00\x00\x00\x05" "rocks"
-            "So much";
+            "So much"
+            "Fun!";
 
     b=0x42;
     w=0x1337;
     d=0xbadc0de;
     q=0x13243546acbdcedf;
     s=ssh_string_from_char("libssh");
-    rc=ssh_buffer_pack(buffer, "bwdqSsP",b,w,d,q,s,"rocks",7,"So much");
+    rc=ssh_buffer_pack(buffer, "bwdqSsPt",b,w,d,q,s,"rocks",7,"So much","Fun!");
     assert_int_equal(rc, SSH_OK);
 
     len = buffer_get_rest_len(buffer);
