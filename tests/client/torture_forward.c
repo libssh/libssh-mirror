@@ -81,12 +81,13 @@ static void torture_ssh_forward(void **state)
 int torture_run_tests(void) {
     int rc;
 
-    const UnitTest tests[] = {
+    UnitTest tests[] = {
         unit_test_setup_teardown(torture_ssh_forward, setup, teardown),
     };
 
     ssh_init();
 
+    torture_filter_tests(tests);
     rc = run_tests(tests);
 
     ssh_finalize();

@@ -41,6 +41,7 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
       break;
     case ARGP_KEY_ARG:
       /* End processing here. */
+      arguments->pattern = state->argv[state->next - 1];
       cmdline = &state->argv [state->next - 1];
       state->next = state->argc;
       break;

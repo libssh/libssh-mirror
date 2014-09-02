@@ -60,9 +60,10 @@ static void torture_rand_threading(void **state) {
 }
 
 int torture_run_tests(void) {
-    const UnitTest tests[] = {
+    UnitTest tests[] = {
         unit_test_setup_teardown(torture_rand_threading, setup, teardown),
     };
 
+    torture_filter_tests(tests);
     return run_tests(tests);
 }

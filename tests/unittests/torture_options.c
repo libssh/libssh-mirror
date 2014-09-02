@@ -195,7 +195,7 @@ static void torture_options_proxycommand(void **state) {
 
 int torture_run_tests(void) {
     int rc;
-    const UnitTest tests[] = {
+    UnitTest tests[] = {
         unit_test_setup_teardown(torture_options_set_host, setup, teardown),
         unit_test_setup_teardown(torture_options_get_host, setup, teardown),
         unit_test_setup_teardown(torture_options_set_port, setup, teardown),
@@ -209,6 +209,7 @@ int torture_run_tests(void) {
     };
 
     ssh_init();
+    torture_filter_tests(tests);
     rc=run_tests(tests);
     ssh_finalize();
     return rc;

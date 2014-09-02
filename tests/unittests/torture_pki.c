@@ -1437,7 +1437,7 @@ static void torture_pki_ecdsa_name521(void **state)
 
 int torture_run_tests(void) {
     int rc;
-    const UnitTest tests[] = {
+    UnitTest tests[] = {
         unit_test(torture_pki_keytype),
 
         unit_test(torture_pki_signature),
@@ -1607,6 +1607,7 @@ int torture_run_tests(void) {
     (void)setup_both_keys;
 
     ssh_init();
+    torture_filter_tests(tests);
     rc=run_tests(tests);
     ssh_finalize();
     return rc;

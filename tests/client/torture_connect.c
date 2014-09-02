@@ -139,7 +139,7 @@ static void torture_connect_socket(void **state) {
 
 int torture_run_tests(void) {
     int rc;
-    const UnitTest tests[] = {
+    UnitTest tests[] = {
         unit_test_setup_teardown(torture_connect_nonblocking, setup, teardown),
         unit_test_setup_teardown(torture_connect_double, setup, teardown),
         unit_test_setup_teardown(torture_connect_failure, setup, teardown),
@@ -149,6 +149,7 @@ int torture_run_tests(void) {
 
     ssh_init();
 
+    torture_filter_tests(tests);
     rc = run_tests(tests);
 
     ssh_finalize();

@@ -421,7 +421,7 @@ static void torture_auth_none_nonblocking(void **state) {
 
 int torture_run_tests(void) {
     int rc;
-    const UnitTest tests[] = {
+    UnitTest tests[] = {
         unit_test_setup_teardown(torture_auth_kbdint, setup, teardown),
         unit_test_setup_teardown(torture_auth_kbdint_nonblocking, setup, teardown),
         unit_test_setup_teardown(torture_auth_password, setup, teardown),
@@ -435,7 +435,7 @@ int torture_run_tests(void) {
     };
 
     ssh_init();
-
+    torture_filter_tests(tests);
     rc = run_tests(tests);
     ssh_finalize();
 

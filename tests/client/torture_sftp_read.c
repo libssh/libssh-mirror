@@ -70,12 +70,13 @@ static void torture_sftp_read_blocking(void **state) {
 
 int torture_run_tests(void) {
     int rc;
-    const UnitTest tests[] = {
+    UnitTest tests[] = {
         unit_test_setup_teardown(torture_sftp_read_blocking, setup, teardown)
     };
 
     ssh_init();
 
+    torture_filter_tests(tests);
     rc = run_tests(tests);
     ssh_finalize();
 

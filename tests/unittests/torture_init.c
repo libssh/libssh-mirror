@@ -15,9 +15,9 @@ static void torture_ssh_init(void **state) {
 }
 
 int torture_run_tests(void) {
-    const UnitTest tests[] = {
+    UnitTest tests[] = {
         unit_test(torture_ssh_init),
     };
-
+    torture_filter_tests(tests);
     return run_tests(tests);
 }

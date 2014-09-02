@@ -99,12 +99,13 @@ static void torture_channel_read_error(void **state) {
 
 int torture_run_tests(void) {
     int rc;
-    const UnitTest tests[] = {
+    UnitTest tests[] = {
         unit_test_setup_teardown(torture_channel_read_error, setup, teardown),
     };
 
     ssh_init();
 
+    torture_filter_tests(tests);
     rc = run_tests(tests);
     ssh_finalize();
 

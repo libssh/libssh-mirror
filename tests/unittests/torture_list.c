@@ -78,13 +78,14 @@ static void torture_ssh_list_prepend(void **state) {
 
 int torture_run_tests(void) {
     int rc;
-    const UnitTest tests[] = {
+    UnitTest tests[] = {
         unit_test(torture_ssh_list_new),
         unit_test(torture_ssh_list_append),
         unit_test(torture_ssh_list_prepend),
     };
 
     ssh_init();
+    torture_filter_tests(tests);
     rc=run_tests(tests);
     ssh_finalize();
     return rc;

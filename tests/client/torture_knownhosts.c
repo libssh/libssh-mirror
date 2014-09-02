@@ -282,7 +282,7 @@ static void torture_knownhosts_precheck(void **state) {
 
 int torture_run_tests(void) {
     int rc;
-    const UnitTest tests[] = {
+    UnitTest tests[] = {
         unit_test_setup_teardown(torture_knownhosts_port, setup, teardown),
         unit_test_setup_teardown(torture_knownhosts_fail, setup, teardown),
         unit_test_setup_teardown(torture_knownhosts_other, setup, teardown),
@@ -293,6 +293,7 @@ int torture_run_tests(void) {
 
     ssh_init();
 
+    torture_filter_tests(tests);
     rc = run_tests(tests);
 
     ssh_finalize();

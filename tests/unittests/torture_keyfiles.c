@@ -240,7 +240,7 @@ static void torture_privatekey_from_file_passphrase(void **state) {
 
 int torture_run_tests(void) {
     int rc;
-    const UnitTest tests[] = {
+    UnitTest tests[] = {
         unit_test_setup_teardown(torture_pubkey_from_file,
                                  setup_rsa_key,
                                  teardown),
@@ -255,6 +255,7 @@ int torture_run_tests(void) {
 
 
     ssh_init();
+    torture_filter_tests(tests);
     rc=run_tests(tests);
     ssh_finalize();
     return rc;

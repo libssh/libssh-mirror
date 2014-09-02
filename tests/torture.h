@@ -42,7 +42,7 @@
 
 /* Used by main to communicate with parse_opt. */
 struct argument_s {
-  char *args[2];
+  const char *pattern;
   int verbose;
 };
 
@@ -82,6 +82,9 @@ const char *torture_get_testkey_pub(enum ssh_keytypes_e type, int ecdsa_bits);
 const char *torture_get_testkey_passphrase(void);
 
 void torture_write_file(const char *filename, const char *data);
+
+#define torture_filter_tests(tests) _torture_filter_tests(tests, sizeof(tests) / sizeof(tests)[0])
+void _torture_filter_tests(UnitTest *tests, size_t ntests);
 
 /*
  * This function must be defined in every unit test file.
