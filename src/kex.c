@@ -75,9 +75,9 @@
 
 #ifdef HAVE_ECDH
 #define ECDH "ecdh-sha2-nistp256,"
-#define HOSTKEYS "ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,ssh-rsa,ssh-dss"
+#define HOSTKEYS "ssh-ed25519,ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,ssh-rsa,ssh-dss"
 #else
-#define HOSTKEYS "ssh-rsa,ssh-dss"
+#define HOSTKEYS "ssh-ed25519,ssh-rsa,ssh-dss"
 #define ECDH ""
 #endif
 
@@ -483,8 +483,16 @@ void ssh_list_kex(struct ssh_kex_struct *kex) {
  */
 static char *ssh_client_select_hostkeys(ssh_session session){
     char methods_buffer[128]={0};
-    static const char *preferred_hostkeys[]={"ecdsa-sha2-nistp521","ecdsa-sha2-nistp384",
-    		"ecdsa-sha2-nistp256", "ssh-rsa", "ssh-dss", "ssh-rsa1", NULL};
+    static const char *preferred_hostkeys[] = {
+        "ssh-ed25519",
+        "ecdsa-sha2-nistp521",
+        "ecdsa-sha2-nistp384",
+        "ecdsa-sha2-nistp256",
+        "ssh-rsa",
+        "ssh-dss",
+        "ssh-rsa1",
+        NULL
+    };
     char **methods;
     int i,j;
     int needcoma=0;
