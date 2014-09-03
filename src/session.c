@@ -231,6 +231,8 @@ void ssh_free(ssh_session session) {
   session->srv.rsa_key = NULL;
   ssh_key_free(session->srv.ecdsa_key);
   session->srv.ecdsa_key = NULL;
+  ssh_key_free(session->srv.ed25519_key);
+  session->srv.ed25519_key = NULL;
 
   if (session->ssh_message_list) {
       ssh_message msg;

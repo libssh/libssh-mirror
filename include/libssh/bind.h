@@ -36,9 +36,11 @@ struct ssh_bind_struct {
   char *ecdsakey;
   char *dsakey;
   char *rsakey;
+  char *ed25519key;
   ssh_key ecdsa;
   ssh_key dsa;
   ssh_key rsa;
+  ssh_key ed25519;
   char *bindaddr;
   socket_t bindfd;
   unsigned int bindport;

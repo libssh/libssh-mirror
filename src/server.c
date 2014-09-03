@@ -94,10 +94,17 @@ static int server_set_kex(ssh_session session) {
   ZERO_STRUCTP(server);
   ssh_get_random(server->cookie, 16, 0);
 
+  if (session->srv.ed25519_key != NULL) {
+      snprintf(hostkeys,
+               sizeof(hostkeys),
+               "%s",
+               ssh_key_type_to_char(ssh_key_type(session->srv.ed25519_key)));
+  }
 #ifdef HAVE_ECC
   if (session->srv.ecdsa_key != NULL) {
-      snprintf(hostkeys, sizeof(hostkeys),
-               "%s", session->srv.ecdsa_key->type_c);
+	  len = strlen(hostkeys);
+      snprintf(hostkeys + len, sizeof(hostkeys) - len,
+               ",%s", session->srv.ecdsa_key->type_c);
   }
 #endif
   if (session->srv.dsa_key != NULL) {
@@ -225,6 +232,9 @@ int ssh_get_key_params(ssh_session session, ssh_key *privkey){
       case SSH_KEYTYPE_ECDSA:
         *privkey = session->srv.ecdsa_key;
         break;
+      case SSH_KEYTYPE_ED25519:
+	*privkey = session->srv.ed25519_key;
+	break;
       case SSH_KEYTYPE_UNKNOWN:
       default:
         *privkey = NULL;

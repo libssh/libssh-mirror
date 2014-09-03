@@ -1436,6 +1436,10 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
               bind_key_loc = &sshbind->rsa;
               bind_key_path_loc = &sshbind->rsakey;
               break;
+          case SSH_KEYTYPE_ED25519:
+		  bind_key_loc = &sshbind->ed25519;
+		  bind_key_path_loc = &sshbind->ed25519key;
+		  break;
           default:
               ssh_set_error(sshbind,
                             SSH_FATAL,

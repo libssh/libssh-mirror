@@ -156,7 +156,7 @@ struct ssh_session_struct {
         ssh_key rsa_key;
         ssh_key dsa_key;
         ssh_key ecdsa_key;
-
+        ssh_key ed25519_key;
         /* The type of host key wanted by client */
         enum ssh_keytypes_e hostkey;
     } srv;

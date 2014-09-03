@@ -365,6 +365,7 @@ void ssh_bind_free(ssh_bind sshbind){
   SAFE_FREE(sshbind->dsakey);
   SAFE_FREE(sshbind->rsakey);
   SAFE_FREE(sshbind->ecdsakey);
+  SAFE_FREE(sshbind->ed25519key);
 
   ssh_key_free(sshbind->dsa);
   sshbind->dsa = NULL;
@@ -372,6 +373,8 @@ void ssh_bind_free(ssh_bind sshbind){
   sshbind->rsa = NULL;
   ssh_key_free(sshbind->ecdsa);
   sshbind->ecdsa = NULL;
+  ssh_key_free(sshbind->ed25519);
+  sshbind->ed25519 = NULL;
 
   for (i = 0; i < 10; i++) {
     if (sshbind->wanted_methods[i]) {
@@ -459,6 +462,14 @@ int ssh_bind_accept_fd(ssh_bind sshbind, ssh_session session, socket_t fd){
           return SSH_ERROR;
         }
     }
+    if (sshbind->ed25519 != NULL) {
+        session->srv.ed25519_key = ssh_key_dup(sshbind->ed25519);
+        if (session->srv.ed25519_key == NULL){
+            ssh_set_error_oom(sshbind);
+            return SSH_ERROR;
+        }
+    }
+
     /* force PRNG to change state in case we fork after ssh_bind_accept */
     ssh_reseed();
     return SSH_OK;
