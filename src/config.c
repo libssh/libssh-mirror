@@ -128,7 +128,7 @@ static char *ssh_config_get_token(char **str) {
   c = ssh_config_get_cmd(str);
 
   for (r = c; *c; c++) {
-    if (isblank(*c)) {
+    if (isblank(*c) || *c == '=') {
       *c = '\0';
       goto out;
     }
