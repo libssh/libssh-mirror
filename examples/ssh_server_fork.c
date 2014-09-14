@@ -221,10 +221,10 @@ struct channel_data_struct {
     socket_t pty_master;
     socket_t pty_slave;
     /* For communication with the child process. */
-    socket_t stdin;
-    socket_t stdout;
+    socket_t child_stdin;
+    socket_t child_stdout;
     /* Only used for subsystem and exec requests. */
-    socket_t stderr;
+    socket_t child_stderr;
     /* Event which is used to poll the above descriptors. */
     ssh_event event;
     /* Terminal size struct. */
@@ -251,7 +251,7 @@ static int data_function(ssh_session session, ssh_channel channel, void *data,
         return 0;
     }
 
-    return write(cdata->stdin, (char *) data, len);
+    return write(cdata->child_stdin, (char *) data, len);
 }
 
 static int pty_request(ssh_session session, ssh_channel channel,
@@ -313,7 +313,7 @@ static int exec_pty(const char *mode, const char *command,
         default:
             close(cdata->pty_slave);
             /* pty fd is bi-directional */
-            cdata->stdout = cdata->stdin = cdata->pty_master;
+            cdata->child_stdout = cdata->child_stdin = cdata->pty_master;
     }
     return SSH_OK;
 }
@@ -355,9 +355,9 @@ static int exec_nopty(const char *command, struct channel_data_struct *cdata) {
     close(out[1]);
     close(err[1]);
 
-    cdata->stdin = in[1];
-    cdata->stdout = out[0];
-    cdata->stderr = err[0];
+    cdata->child_stdin = in[1];
+    cdata->child_stdout = out[0];
+    cdata->child_stderr = err[0];
 
     return SSH_OK;
 
@@ -487,9 +487,9 @@ static void handle_session(ssh_event event, ssh_session session) {
         .pid = 0,
         .pty_master = -1,
         .pty_slave = -1,
-        .stdin = -1,
-        .stdout = -1,
-        .stderr = -1,
+        .child_stdin = -1,
+        .child_stdout = -1,
+        .child_stderr = -1,
         .event = NULL,
         .winsize = &wsize
     };
@@ -562,8 +562,8 @@ static void handle_session(ssh_event event, ssh_session session) {
         /* Executed only once, once the child process starts. */
         cdata.event = event;
         /* If stdout valid, add stdout to be monitored by the poll event. */
-        if (cdata.stdout != -1) {
-            if (ssh_event_add_fd(event, cdata.stdout, POLLIN, process_stdout,
+        if (cdata.child_stdout != -1) {
+            if (ssh_event_add_fd(event, cdata.child_stdout, POLLIN, process_stdout,
                                  sdata.channel) != SSH_OK) {
                 fprintf(stderr, "Failed to register stdout to poll context\n");
                 ssh_channel_close(sdata.channel);
@@ -571,8 +571,8 @@ static void handle_session(ssh_event event, ssh_session session) {
         }
 
         /* If stderr valid, add stderr to be monitored by the poll event. */
-        if (cdata.stderr != -1){
-            if (ssh_event_add_fd(event, cdata.stderr, POLLIN, process_stderr,
+        if (cdata.child_stderr != -1){
+            if (ssh_event_add_fd(event, cdata.child_stderr, POLLIN, process_stderr,
                                  sdata.channel) != SSH_OK) {
                 fprintf(stderr, "Failed to register stderr to poll context\n");
                 ssh_channel_close(sdata.channel);
@@ -582,14 +582,14 @@ static void handle_session(ssh_event event, ssh_session session) {
             (cdata.pid == 0 || waitpid(cdata.pid, &rc, WNOHANG) == 0));
 
     close(cdata.pty_master);
-    close(cdata.stdin);
-    close(cdata.stdout);
-    close(cdata.stderr);
+    close(cdata.child_stdin);
+    close(cdata.child_stdout);
+    close(cdata.child_stderr);
 
     /* Remove the descriptors from the polling context, since they are now
      * closed, they will always trigger during the poll calls. */
-    ssh_event_remove_fd(event, cdata.stdout);
-    ssh_event_remove_fd(event, cdata.stderr);
+    ssh_event_remove_fd(event, cdata.child_stdout);
+    ssh_event_remove_fd(event, cdata.child_stderr);
 
     /* If the child process exited. */
     if (kill(cdata.pid, 0) < 0 && WIFEXITED(rc)) {
