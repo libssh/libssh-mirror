@@ -91,7 +91,11 @@ void md5_final(unsigned char *md, MD5CTX c) {
 }
 
 ssh_mac_ctx ssh_mac_ctx_init(enum ssh_mac_e type){
-  ssh_mac_ctx ctx=malloc(sizeof(struct ssh_mac_ctx_struct));
+  ssh_mac_ctx ctx = malloc(sizeof(struct ssh_mac_ctx_struct));
+  if (ctx == NULL) {
+    return NULL;
+  }
+
   ctx->mac_type=type;
   switch(type){
     case SSH_MAC_SHA1:
