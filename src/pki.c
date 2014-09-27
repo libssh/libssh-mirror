@@ -768,13 +768,17 @@ static int pki_import_pubkey_buffer(ssh_buffer buffer,
         case SSH_KEYTYPE_ED25519:
         {
             ssh_string pubkey = buffer_get_ssh_string(buffer);
-
             if (ssh_string_len(pubkey) != ED25519_PK_LEN) {
                 ssh_pki_log("Invalid public key length");
+                ssh_string_burn(pubkey);
+                ssh_string_free(pubkey);
+                goto fail;
             }
 
             key->ed25519_pubkey = malloc(ED25519_PK_LEN);
             if (key->ed25519_pubkey == NULL) {
+                ssh_string_burn(pubkey);
+                ssh_string_free(pubkey);
                 goto fail;
             }
 
