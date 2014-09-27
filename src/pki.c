@@ -1453,16 +1453,21 @@ ssh_string ssh_pki_do_sign(ssh_session session,
         ssh_buffer buf;
 
         buf = ssh_buffer_new();
-        if (buf == NULL){
+        if (buf == NULL) {
             ssh_string_free(session_id);
             return NULL;
         }
 
         ssh_buffer_set_secure(buf);
-        ssh_buffer_pack(buf,
-                        "SP",
-                        session_id,
-                        buffer_get_rest_len(sigbuf), buffer_get_rest(sigbuf));
+        rc = ssh_buffer_pack(buf,
+                             "SP",
+                             session_id,
+                             buffer_get_rest_len(sigbuf), buffer_get_rest(sigbuf));
+        if (rc != SSH_OK) {
+            ssh_string_free(session_id);
+            ssh_buffer_free(buf);
+            return NULL;
+        }
 
         sig = pki_do_sign(privkey,
                           ssh_buffer_get_begin(buf),
