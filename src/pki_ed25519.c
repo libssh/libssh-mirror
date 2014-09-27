@@ -59,9 +59,9 @@ int pki_ed25519_sign(const ssh_key privkey,
                      const unsigned char *hash,
                      size_t hlen)
 {
-    uint8_t *buffer = malloc(hlen + ED25519_SIG_LEN);
-    unsigned long long dlen = 0;
     int rc;
+    uint8_t *buffer;
+    unsigned long long dlen = 0;
 
     buffer = malloc(hlen + ED25519_SIG_LEN);
     if (buffer == NULL) {
