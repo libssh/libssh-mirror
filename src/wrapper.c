@@ -130,10 +130,13 @@ void crypto_free(struct ssh_crypto_struct *crypto){
       (deflateEnd(crypto->compress_out_ctx) != 0)) {
     inflateEnd(crypto->compress_out_ctx);
   }
+  SAFE_FREE(crypto->compress_out_ctx);
+
   if (crypto->compress_in_ctx &&
       (deflateEnd(crypto->compress_in_ctx) != 0)) {
     inflateEnd(crypto->compress_in_ctx);
   }
+  SAFE_FREE(crypto->compress_in_ctx);
 #endif /* WITH_ZLIB */
   if(crypto->encryptIV)
     SAFE_FREE(crypto->encryptIV);
