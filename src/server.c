@@ -876,7 +876,7 @@ int ssh_message_auth_interactive_request(ssh_message msg, const char *name,
   }
 
   rc = ssh_buffer_pack(msg->session->out_buffer,
-                       "bsss",
+                       "bsssd",
                        SSH2_MSG_USERAUTH_INFO_REQUEST,
                        name,
                        instruction,
