@@ -1657,6 +1657,7 @@ ssh_signature pki_do_sign_sessionid(const ssh_key key,
         return NULL;
     }
     sig->type = key->type;
+    sig->type_c = key->type_c;
 
     switch(key->type) {
         case SSH_KEYTYPE_DSS:
