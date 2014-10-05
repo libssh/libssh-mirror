@@ -81,6 +81,15 @@ bignum make_string_bn(ssh_string string){
   return bn;
 }
 
+void make_string_bn_inplace(ssh_string string, bignum bnout) {
+  unsigned int len = ssh_string_len(string);
+#ifdef HAVE_LIBGCRYPT
+  #error "unsupported"
+#elif defined HAVE_LIBCRYPTO
+  bignum_bin2bn(string->data, len, bnout);
+#endif
+}
+
 /* prints the bignum on stderr */
 void ssh_print_bignum(const char *which, bignum num) {
 #ifdef HAVE_LIBGCRYPT
