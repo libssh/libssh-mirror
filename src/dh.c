@@ -407,6 +407,15 @@ bignum make_string_bn(ssh_string string){
   return bn;
 }
 
+void make_string_bn_inplace(ssh_string string, bignum bnout) {
+  unsigned int len = ssh_string_len(string);
+#ifdef HAVE_LIBGCRYPT
+  #error "unsupported"
+#elif defined HAVE_LIBCRYPTO
+  bignum_bin2bn(string->data, len, bnout);
+#endif
+}
+
 ssh_string dh_get_e(ssh_session session) {
   return make_bignum_string(session->next_crypto->e);
 }

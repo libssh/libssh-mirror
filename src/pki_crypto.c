@@ -1397,7 +1397,7 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
                 ssh_print_hexa("r", ssh_string_data(r), ssh_string_len(r));
 #endif
 
-                sig->ecdsa_sig->r = make_string_bn(r);
+                make_string_bn_inplace(r, sig->ecdsa_sig->r);
                 ssh_string_burn(r);
                 ssh_string_free(r);
                 if (sig->ecdsa_sig->r == NULL) {
@@ -1418,7 +1418,7 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
                 ssh_print_hexa("s", ssh_string_data(s), ssh_string_len(s));
 #endif
 
-                sig->ecdsa_sig->s = make_string_bn(s);
+                make_string_bn_inplace(s, sig->ecdsa_sig->s);
                 ssh_string_burn(s);
                 ssh_string_free(s);
                 if (sig->ecdsa_sig->s == NULL) {
