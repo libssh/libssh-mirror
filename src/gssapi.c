@@ -539,8 +539,12 @@ ssh_gssapi_creds ssh_gssapi_get_creds(ssh_session session){
     return (ssh_gssapi_creds)session->gssapi->client_creds;
 }
 
+#endif /* SERVER */
+
 /**
  * @brief Set the forwadable ticket to be given to the server for authentication.
+ * Unlike ssh_gssapi_get_creds() this is called on the client side of an ssh
+ * connection.
  *
  * @param[in] creds gssapi credentials handle.
  */
@@ -558,8 +562,6 @@ void ssh_gssapi_set_creds(ssh_session session, const ssh_gssapi_creds creds)
 
     session->gssapi->client.client_deleg_creds = (gss_cred_id_t)creds;
 }
-
-#endif /* SERVER */
 
 static int ssh_gssapi_send_auth_mic(ssh_session session, ssh_string *oid_set, int n_oid){
     ssh_string str;
