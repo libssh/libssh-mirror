@@ -561,7 +561,7 @@ void torture_write_file(const char *filename, const char *data){
     assert_true(filename[0] != '\0');
     assert_non_null(data);
 
-    fd = open(filename, O_WRONLY | O_TRUNC | O_CREAT, 0755);
+    fd = open(filename, O_WRONLY | O_TRUNC | O_CREAT, 0600);
     assert_true(fd >= 0);
 
     rc = write(fd, data, strlen(data));
