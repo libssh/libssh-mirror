@@ -109,6 +109,7 @@ void torture_setup_socket_dir(void **state);
 void torture_setup_sshd_server(void **state);
 
 void torture_teardown_socket_dir(void **state);
+void torture_teardown_sshd_server(void **state);
 
 /*
  * This function must be defined in every unit test file.

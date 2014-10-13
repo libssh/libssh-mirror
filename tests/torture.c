@@ -28,6 +28,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <signal.h>
 
 #ifndef _WIN32
 # include <dirent.h>
@@ -818,6 +819,49 @@ void torture_teardown_socket_dir(void **state)
     free(s->pcap_file);
     free(s->srv_pidfile);
     free(s);
+}
+
+void torture_teardown_sshd_server(void **state)
+{
+    struct torture_state *s = *state;
+    char buf[8] = {0};
+    long int tmp;
+    ssize_t rc;
+    pid_t pid;
+    int fd;
+
+    /* read the pidfile */
+    fd = open(s->srv_pidfile, O_RDONLY);
+    if (fd < 0) {
+        goto done;
+    }
+
+    rc = read(fd, buf, sizeof(buf));
+    close(fd);
+    if (rc <= 0) {
+        goto done;
+    }
+
+    buf[sizeof(buf) - 1] = '\0';
+
+    tmp = strtol(buf, NULL, 10);
+    if (tmp == 0 || tmp > 0xFFFF || errno == ERANGE) {
+        goto done;
+    }
+
+    pid = (pid_t)(tmp & 0xFFFF);
+
+    /* Make sure the daemon goes away! */
+    kill(pid, SIGTERM);
+
+    kill(pid, 0);
+    if (rc == 0) {
+        fprintf(stderr,
+                "WARNING the sshd server is still running!\n");
+    }
+
+done:
+    torture_teardown_socket_dir(state);
 }
 
 int torture_libssh_verbosity(void){
