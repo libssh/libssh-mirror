@@ -47,4 +47,6 @@ if (WITH_BENCHMARKS)
     add_subdirectory(benchmarks)
 endif (WITH_BENCHMARKS)
 
-add_subdirectory(pkd)
+if (WITH_SERVER)
+    add_subdirectory(pkd)
+endif (WITH_SERVER)

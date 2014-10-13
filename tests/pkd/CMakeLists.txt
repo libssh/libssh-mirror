@@ -1,6 +1,6 @@
 project(pkd C)
 
-if (UNIX AND NOT WIN32)
+if (WITH_SERVER AND UNIX AND NOT WIN32)
 
 include_directories(
   ${LIBSSH_PUBLIC_INCLUDE_DIRS}
@@ -32,4 +32,4 @@ set(pkd_libs
 add_executable(pkd_hello ${pkd_hello_src})
 target_link_libraries(pkd_hello ${pkd_libs})
 
-endif (UNIX AND NOT WIN32)
+endif (WITH_SERVER AND UNIX AND NOT WIN32)
