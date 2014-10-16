@@ -315,6 +315,35 @@ const char* ssh_get_serverbanner(ssh_session session) {
 }
 
 /**
+ * @brief get the name of the current key exchange algorithm.
+ *
+ * @param[in] session   The SSH session
+ *
+ * @return Returns the key exchange algorithm string or NULL.
+ */
+const char* ssh_get_kex_algo(ssh_session session) {
+    if ((session == NULL) ||
+        (session->current_crypto == NULL)) {
+        return NULL;
+    }
+
+    switch (session->current_crypto->kex_type) {
+        case SSH_KEX_DH_GROUP1_SHA1:
+            return "diffie-hellman-group1-sha1";
+        case SSH_KEX_DH_GROUP14_SHA1:
+            return "diffie-hellman-group14-sha1";
+        case SSH_KEX_ECDH_SHA2_NISTP256:
+            return "ecdh-sha2-nistp256";
+        case SSH_KEX_CURVE25519_SHA256_LIBSSH_ORG:
+            return "curve25519-sha256@libssh.org";
+        default:
+            break;
+    }
+
+    return NULL;
+}
+
+/**
  * @brief get the name of the input cipher for the given session.
  *
  * @param[in] session The SSH session.
