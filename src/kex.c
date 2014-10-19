@@ -315,7 +315,7 @@ SSH_PACKET_CALLBACK(ssh_packet_kexinit){
   for (i = 0; i < KEX_METHODS_SIZE; i++) {
     str = buffer_get_ssh_string(packet);
     if (str == NULL) {
-      break;
+      goto error;
     }
 
     if (buffer_add_ssh_string(session->in_hashbuf, str) < 0) {
@@ -350,6 +350,11 @@ SSH_PACKET_CALLBACK(ssh_packet_kexinit){
 error:
   ssh_string_free(str);
   for (i = 0; i < SSH_KEX_METHODS; i++) {
+    if (server_kex) {
+        session->next_crypto->client_kex.methods[i] = NULL;
+    } else { /* client */
+        session->next_crypto->server_kex.methods[i] = NULL;
+    }
     SAFE_FREE(strings[i]);
   }
 
