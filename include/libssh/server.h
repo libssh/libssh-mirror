@@ -188,6 +188,24 @@ LIBSSH_API ssh_gssapi_creds ssh_gssapi_get_creds(ssh_session session);
 LIBSSH_API int ssh_handle_key_exchange(ssh_session session);
 
 /**
+ * @brief Initialize the set of key exchange, hostkey, ciphers, MACs, and
+ *        compression algorithms for the given ssh_session.
+ *
+ * The selection of algorithms and keys used are determined by the
+ * options that are currently set in the given ssh_session structure.
+ * May only be called before the initial key exchange has begun.
+ *
+ * @param session  The session structure to initialize.
+ *
+ * @see ssh_handle_key_exchange
+ * @see ssh_options_set
+ *
+ * @return SSH_OK if initialization succeeds.
+ */
+
+LIBSSH_API int ssh_server_init_kex(ssh_session session);
+
+/**
  * @brief Free a ssh servers bind.
  *
  * @param  ssh_bind_o     The ssh server bind to free.

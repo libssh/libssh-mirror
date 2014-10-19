@@ -75,12 +75,12 @@ static int dh_handshake_server(ssh_session session);
  */
 
 /** @internal
- * This functions sets the Key Exchange protocols to be accepted
- * by the server. They depend on
- * -What the user asked (via options)
- * -What is available (keys)
- * It should then accept the intersection of what the user asked
- * and what is available, and return an error if nothing matches
+ *
+ * @brief initialize the set of key exchange, hostkey, ciphers, MACs, and
+ *        compression algorithms for the given ssh_session
+ *
+ * The selection of algorithms and keys used are determined by the
+ * options that are currently set in the given ssh_session structure.
  */
 
 static int server_set_kex(ssh_session session) {
@@ -147,6 +147,21 @@ static int server_set_kex(ssh_session session) {
   }
 
   return 0;
+}
+
+int ssh_server_init_kex(ssh_session session) {
+    int i;
+
+    if (session->session_state > SSH_SESSION_STATE_BANNER_RECEIVED) {
+        return SSH_ERROR;
+    }
+
+    /* free any currently-set methods: server_set_kex will allocate new ones */
+    for (i = 0; i < 10 /* SSH_KEX_METHODS */; i++) {
+        SAFE_FREE(session->next_crypto->server_kex.methods[i]);
+    }
+
+    return server_set_kex(session);
 }
 
 /** @internal
