@@ -526,7 +526,7 @@ int ssh_connect(ssh_session session) {
   } else {
     ret=ssh_socket_connect(session->socket,
                            session->opts.host,
-                           session->opts.port,
+                           session->opts.port > 0 ? session->opts.port : 22,
                            session->opts.bindaddr);
   }
   if (ret == SSH_ERROR) {

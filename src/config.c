@@ -245,7 +245,7 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
       }
       break;
     case SOC_PORT:
-      if (session->opts.port == 22) {
+      if (session->opts.port == 0) {
           p = ssh_config_get_str_tok(&s, NULL);
           if (p && *parsing) {
               ssh_options_set(session, SSH_OPTIONS_PORT_STR, p);

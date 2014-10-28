@@ -871,11 +871,14 @@ int ssh_options_get_port(ssh_session session, unsigned int* port_target) {
     if (session == NULL) {
         return -1;
     }
-    if (!session->opts.port) {
-        ssh_set_error_invalid(session);
-        return -1;
+
+    if (session->opts.port == 0) {
+        *port_target = 22;
+        return 0;
     }
+
     *port_target = session->opts.port;
+
     return 0;
 }
 
