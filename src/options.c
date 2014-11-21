@@ -512,7 +512,7 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
                 }
                 session->opts.username = q;
             } else if (v[0] == '\0') {
-                ssh_set_error_oom(session);
+                ssh_set_error_invalid(session);
                 return -1;
             } else { /* username provided */
                 session->opts.username = strdup(value);
@@ -531,7 +531,7 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
                     return -1;
                 }
             } else if (v[0] == '\0') {
-                ssh_set_error_oom(session);
+                ssh_set_error_invalid(session);
                 return -1;
             } else {
                 session->opts.sshdir = ssh_path_expand_tilde(v);
