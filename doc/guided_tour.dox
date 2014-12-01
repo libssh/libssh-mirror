@@ -443,11 +443,10 @@ Most of time, the error returned are SSH_FATAL, but some functions
 (generaly the ssh_request_xxx ones) may fail because of server denying request.
 In these cases, SSH_REQUEST_DENIED is returned.
 
-ssh_get_error() and ssh_get_error_code() take a ssh_session as a parameter.
-That's for thread safety, error messages that can be attached to a session
-aren't static anymore. Any error that happens during ssh_options_xxx()
-or ssh_connect() (i.e., outside of any session) can be retrieved by
-giving NULL as argument.
+For thread safety, errors are bound to ssh_session objects.
+As long as your ssh_session object is not NULL, you can retrieve the last error
+message and error code from the ssh_session using ssh_get_error() and
+ssh_get_error_code() respectively.
 
 The SFTP subsystem has its own error codes, in addition to libssh ones.
 
