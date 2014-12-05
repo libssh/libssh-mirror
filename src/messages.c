@@ -1371,6 +1371,7 @@ int ssh_message_handle_channel_request(ssh_session session, ssh_channel channel,
     msg->channel_request.pxheight = ntohl(msg->channel_request.pxheight);
     msg->channel_request.modes = buffer_get_ssh_string(packet);
     if (msg->channel_request.modes == NULL) {
+      msg->channel_request.TERM = NULL;
       SAFE_FREE(term_c);
       goto error;
     }
