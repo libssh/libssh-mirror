@@ -84,7 +84,9 @@ bignum make_string_bn(ssh_string string){
 void make_string_bn_inplace(ssh_string string, bignum bnout) {
   unsigned int len = ssh_string_len(string);
 #ifdef HAVE_LIBGCRYPT
-  #error "unsupported"
+  /* XXX: FIXME as needed for LIBGCRYPT ECDSA codepaths. */
+  (void) len;
+  (void) bnout;
 #elif defined HAVE_LIBCRYPTO
   bignum_bin2bn(string->data, len, bnout);
 #endif
