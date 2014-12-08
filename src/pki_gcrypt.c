@@ -1357,9 +1357,14 @@ int pki_export_pubkey_rsa1(const ssh_key key,
 
 ssh_string pki_signature_to_blob(const ssh_signature sig)
 {
-    char buffer[40] = {0};
+    char buffer[40] = { 0 };
+
     const char *r = NULL;
+    size_t r_len, r_offset_in, r_offset_out;
+
     const char *s = NULL;
+    size_t s_len, s_offset_in, s_offset_out;
+
     gcry_sexp_t sexp;
     size_t size = 0;
     ssh_string sig_blob = NULL;
@@ -1376,7 +1381,14 @@ ssh_string pki_signature_to_blob(const ssh_signature sig)
                 size--;
                 r++;
             }
-            memcpy(buffer, r + size - 20, 20);
+
+            r_len = size;
+            r_offset_in  = (r_len > 20) ? (r_len - 20) : 0;
+            r_offset_out = (r_len < 20) ? (20 - r_len) : 0;
+            memcpy(buffer + r_offset_out,
+                   r + r_offset_in,
+                   r_len - r_offset_in);
+
             gcry_sexp_release(sexp);
 
             sexp = gcry_sexp_find_token(sig->dsa_sig, "s", 0);
@@ -1388,8 +1400,22 @@ ssh_string pki_signature_to_blob(const ssh_signature sig)
                 size--;
                 s++;
             }
-            memcpy(buffer+ 20, s + size - 20, 20);
+
+            s_len = size;
+            s_offset_in  = (s_len > 20) ? (s_len - 20) : 0;
+            s_offset_out = (s_len < 20) ? (20 - s_len) : 0;
+            memcpy(buffer + 20 + s_offset_out,
+                   s + s_offset_in,
+                   s_len - s_offset_in);
+
             gcry_sexp_release(sexp);
+
+            sig_blob = ssh_string_new(40);
+            if (sig_blob == NULL) {
+                return NULL;
+            }
+
+            ssh_string_fill(sig_blob, buffer, 40);
             break;
         case SSH_KEYTYPE_RSA:
         case SSH_KEYTYPE_RSA1:
