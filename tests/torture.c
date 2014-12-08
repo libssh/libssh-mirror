@@ -514,6 +514,7 @@ static const char *torture_get_testkey_internal(enum ssh_keytypes_e type,
             return torture_ecdsa256_testkey_pub;
         }
         return torture_ecdsa256_testkey;
+    case SSH_KEYTYPE_ED25519:
     case SSH_KEYTYPE_RSA1:
     case SSH_KEYTYPE_UNKNOWN:
         return NULL;
