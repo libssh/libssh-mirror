@@ -1,6 +1,20 @@
 ChangeLog
 ==========
 
+version 0.6.4 (released 2014-12-19)
+  * Fixed CVE-2014-8132.
+  * Added SHA-2 for session ID signing with ECDSA keys.
+  * Added support for ECDSA host keys.
+  * Added support for more ECDSA hostkey algorithms.
+  * Added ssh_pki_key_ecdsa_name() API.
+  * Fixed setting the bindfd only after successful listen.
+  * Fixed issues with user created sockets.
+  * Fixed several issues in libssh C++ wrapper.
+  * Fixed several documentation issues.
+  * Fixed channel exit-signal request.
+  * Fixed X11 request screen number in messages.
+  * Fixed several memory leaks.
+
 version 0.6.3 (released 2014-03-04)
   * Fixed CVE-2014-0017.
   * Fixed memory leak with ecdsa signatures.
