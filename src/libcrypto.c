@@ -19,11 +19,14 @@
  * MA 02111-1307, USA.
  */
 
+#include "config.h"
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
+#endif
 
 #include "libssh/priv.h"
 #include "libssh/session.h"
@@ -78,9 +81,11 @@ static int alloc_key(struct ssh_cipher_struct *cipher) {
 }
 
 void ssh_reseed(void){
+#ifndef _WIN32
     struct timeval tv;
     gettimeofday(&tv, NULL);
     RAND_add(&tv, sizeof(tv), 0.0);
+#endif
 }
 
 SHACTX sha1_init(void) {
