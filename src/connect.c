@@ -64,6 +64,10 @@
 #include <wspiapi.h>
 #endif
 
+#ifndef EINPROGRESS
+#define EINPROGRESS WSAEINPROGRESS
+#endif
+
 #else /* _WIN32 */
 
 #include <netdb.h>
