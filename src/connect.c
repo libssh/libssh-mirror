@@ -382,8 +382,9 @@ socket_t ssh_connect_host_nonblocking(ssh_session session, const char *host,
         continue;
     }
 
+    errno = 0;
     rc = connect(s, itr->ai_addr, itr->ai_addrlen);
-    if (rc == -1 && (errno != EINPROGRESS)) {
+    if (rc == -1 && (errno != 0) && (errno != EINPROGRESS)) {
       ssh_set_error(session, SSH_FATAL,
           "Failed to connect: %s", strerror(errno));
       ssh_connect_socket_close(s);
