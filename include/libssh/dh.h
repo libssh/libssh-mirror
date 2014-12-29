@@ -49,7 +49,9 @@ int hashbufin_add_cookie(ssh_session session, unsigned char *cookie);
 int hashbufout_add_cookie(ssh_session session);
 int generate_session_keys(ssh_session session);
 bignum make_string_bn(ssh_string string);
+#ifdef HAVE_LIBCRYPTO
 void make_string_bn_inplace(ssh_string string, bignum bnout);
+#endif /* HAVE_LIBCRYPTO */
 ssh_string make_bignum_string(bignum num);
 
 #endif /* DH_H_ */
