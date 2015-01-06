@@ -1,6 +1,6 @@
 curve25519-sha256@libssh.org.txt        Aris Adamantiadis <aris@badcode.be>
                                                                   21/9/2013
-                                                                  
+
 1. Introduction
 
 This document describes the key exchange methode curve25519-sha256@libssh.org
@@ -28,8 +28,8 @@ lack of nebulous hard-coded constants.
 
 The reference version being used in this document is the one described in
 [Curve25519] as implemented in the library NaCl [NaCl].
-This document does not attempts to provide alternatives to the ecdsa-sha1-*
-authentication keys. 
+This document does not attempt to provide alternatives to the ecdsa-sha1-*
+authentication keys.
 
 2. Key exchange
 
@@ -99,7 +99,7 @@ It should be noted that, in opposition to NIST curves, no special validation
 should be done to ensure the received public keys are valid curves point. The
 Curve25519 algorithm ensure that every possible public key maps to a valid
 ECC Point.
-     
+
 4.3 Shared secret generation
 
 The shared secret, k, is defined in SSH specifications to be a big integer.
@@ -107,7 +107,7 @@ This number is calculated using the following procedure:
 
      X is the 32 bytes point obtained by the scalar multiplication of the other
      side's public key and the local private key scalar.
-     
+
      The whole 32 bytes of the number X are then converted into a big integer k.
      This conversion follows the network byte order. This step differs from 
      RFC5656.
@@ -115,5 +115,5 @@ This number is calculated using the following procedure:
 [RFC5656]    http://tools.ietf.org/html/rfc5656
 [SCHNEIER]   https://www.schneier.com/blog/archives/2013/09/the_nsa_is_brea.html#c1675929
 [DJB]        http://cr.yp.to/talks/2013.05.31/slides-dan+tanja-20130531-4x3.pdf
-[Curve25519] "Curve25519: new Diffie-Hellman speed records." 
-                     http://cr.yp.to/ecdh/curve25519-20060209.pdf
+[Curve25519] "Curve25519: new Diffie-Hellman speed records."
+             http://cr.yp.to/ecdh/curve25519-20060209.pdf
