@@ -208,7 +208,7 @@ do the same in libssh.
 The libssh project has an extension to support Curve25519 which is also supported by
 the OpenSSH project.
 
- - <a href="" target="_blank">curve25519-sha256@libssh.org</a>,
+ - <a href="http://git.libssh.org/projects/libssh.git/tree/doc/curve25519-sha256@libssh.org.txt" target="_blank">curve25519-sha256@libssh.org</a>,
    Curve25519-SHA256 for ECDH KEX
 
 The OpenSSH project has defined some extensions to the protocol. We support some of
