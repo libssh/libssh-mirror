@@ -22,7 +22,7 @@ claims to be able to eavesdrop. Having a secure replacement would make passive
 attacks much harder if such a backdoor exists.
 
 However an alternative exists in the form of Curve25519. This algorithm has been
-proposed in 2006 by DJB [Curve25519]. Its main stengths are its speed, its 
+proposed in 2006 by DJB [Curve25519]. Its main strengths are its speed, its
 constant-time run time (and resistance against side-channel attacks), and its
 lack of nebulous hard-coded constants.
 
