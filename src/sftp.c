@@ -545,6 +545,7 @@ int sftp_init(sftp_session sftp) {
   rc = ssh_buffer_unpack(packet->payload, "s", &ext_name);
   while (rc == SSH_OK) {
     int count = sftp->ext->count;
+    char **tmp;
 
     rc = ssh_buffer_unpack(packet->payload, "s", &ext_data);
     if (rc == SSH_ERROR) {
@@ -556,23 +557,25 @@ int sftp_init(sftp_session sftp) {
         ext_name, ext_data);
 
     count++;
-    sftp->ext->name = realloc(sftp->ext->name, count * sizeof(char *));
-    if (sftp->ext->name == NULL) {
+    tmp = realloc(sftp->ext->name, count * sizeof(char *));
+    if (tmp == NULL) {
       ssh_set_error_oom(sftp->session);
       SAFE_FREE(ext_name);
       SAFE_FREE(ext_data);
       return -1;
     }
-    sftp->ext->name[count - 1] = ext_name;
+    tmp[count - 1] = ext_name;
+    sftp->ext->name = tmp;
 
-    sftp->ext->data = realloc(sftp->ext->data, count * sizeof(char *));
-    if (sftp->ext->data == NULL) {
+    tmp = realloc(sftp->ext->data, count * sizeof(char *));
+    if (tmp == NULL) {
       ssh_set_error_oom(sftp->session);
       SAFE_FREE(ext_name);
       SAFE_FREE(ext_data);
       return -1;
     }
-    sftp->ext->data[count - 1] = ext_data;
+    tmp[count - 1] = ext_data;
+    sftp->ext->data = tmp;
 
     sftp->ext->count = count;
 
