@@ -340,7 +340,6 @@ sftp_packet sftp_packet_read(sftp_session sftp) {
     return NULL;
   }
 
-  size = ntohl(size);
   r=ssh_channel_read(sftp->channel, buffer, 1, 0);
   if (r <= 0) {
     /* TODO: check if there are cases where an error needs to be set here */
@@ -350,7 +349,12 @@ sftp_packet sftp_packet_read(sftp_session sftp) {
   }
   ssh_buffer_add_data(packet->payload, buffer, r);
   buffer_get_u8(packet->payload, &packet->type);
-  size=size-1;
+
+  size = ntohl(size);
+  if (size == 0) {
+    return packet;
+  }
+  size--;
   while (size>0){
     r=ssh_channel_read(sftp->channel,buffer,
         sizeof(buffer)>size ? size:sizeof(buffer),0);
