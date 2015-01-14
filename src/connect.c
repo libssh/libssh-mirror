@@ -289,6 +289,7 @@ socket_t ssh_connect_host(ssh_session session, const char *host,
       socket_t ret = ssh_connect_ai_timeout(session, host, port, itr,
           timeout, usec, s);
 
+      freeaddrinfo(ai);
       return ret;
     }
 
