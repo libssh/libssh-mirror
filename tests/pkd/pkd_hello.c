@@ -523,6 +523,9 @@ int main(int argc, char **argv) {
         }
     } else {
         rc = pkd_run_tests();
+        if (rc != 0) {
+            fprintf(stderr, "pkd_run_tests failed: %d\n", rc);
+        }
     }
 
     rc = ssh_finalize();
