@@ -1712,6 +1712,7 @@ ssize_t sftp_read(sftp_file handle, void *buf, size_t count) {
   sftp_message msg = NULL;
   sftp_status_message status;
   ssh_string datastring;
+  size_t datalen;
   ssh_buffer buffer;
   int id;
   int rc;
@@ -1788,19 +1789,19 @@ ssize_t sftp_read(sftp_file handle, void *buf, size_t count) {
         return -1;
       }
 
-      if (ssh_string_len(datastring) > count) {
+      datalen = ssh_string_len(datastring);
+      if (datalen > count) {
         ssh_set_error(sftp->session, SSH_FATAL,
             "Received a too big DATA packet from sftp server: "
             "%" PRIdS " and asked for %" PRIdS,
-            ssh_string_len(datastring), count);
+            datalen, count);
         ssh_string_free(datastring);
         return -1;
       }
-      count = ssh_string_len(datastring);
-      handle->offset += count;
-      memcpy(buf, ssh_string_data(datastring), count);
+      handle->offset += (uint64_t)datalen;
+      memcpy(buf, ssh_string_data(datastring), datalen);
       ssh_string_free(datastring);
-      return count;
+      return datalen;
     default:
       ssh_set_error(sftp->session, SSH_FATAL,
           "Received message %d during read!", msg->packet_type);
