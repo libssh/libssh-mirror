@@ -451,7 +451,9 @@ static void *pkd_main(void *args) {
         }
     }
 
-    close(pkd_state.server_fd);
+    if (pkd_state.server_fd != -1) {
+        close(pkd_state.server_fd);
+    }
     pkd_state.server_fd = -1;
 out:
     ctx.rc = rc;
