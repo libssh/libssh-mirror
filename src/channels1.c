@@ -101,7 +101,8 @@ int channel_request_pty_size1(ssh_channel channel, const char *terminal, int col
   }
   session = channel->session;
 
-  if(channel->request_state != SSH_CHANNEL_REQ_STATE_NONE){
+  if(channel->request_state != SSH_CHANNEL_REQ_STATE_NONE &&
+     channel->request_state != SSH_CHANNEL_REQ_STATE_ACCEPTED){
     ssh_set_error(session,SSH_REQUEST_DENIED,"Wrong request state");
     return SSH_ERROR;
   }
