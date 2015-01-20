@@ -1365,7 +1365,7 @@ ssh_string ssh_pki_do_sign(ssh_session session,
     struct ssh_crypto_struct *crypto =
         session->current_crypto ? session->current_crypto :
                                   session->next_crypto;
-    ssh_signature sig;
+    ssh_signature sig = NULL;
     ssh_string sig_blob;
     ssh_string session_id;
     int rc;
