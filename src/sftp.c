@@ -765,7 +765,7 @@ static sftp_message sftp_dequeue(sftp_session sftp, uint32_t id){
  * Returns a new ID ready to use in a request
  */
 static inline uint32_t sftp_get_new_id(sftp_session session) {
-  return ++session->id_counter;
+  ++session->id_counter;
 }
 
 static sftp_status_message parse_status_msg(sftp_message msg){
@@ -890,7 +890,7 @@ sftp_dir sftp_opendir(sftp_session sftp, const char *path){
   }
 
   id = sftp_get_new_id(sftp);
-  if (buffer_add_u32(payload, id) < 0 ||
+  if (buffer_add_u32(payload, htonl(id)) < 0 ||
       buffer_add_ssh_string(payload, path_s) < 0) {
     ssh_set_error_oom(sftp->session);
     ssh_buffer_free(payload);
@@ -1437,7 +1437,7 @@ sftp_attributes sftp_readdir(sftp_session sftp, sftp_dir dir) {
     }
 
     id = sftp_get_new_id(sftp);
-    if (buffer_add_u32(payload, id) < 0 ||
+    if (buffer_add_u32(payload, htonl(id)) < 0 ||
         buffer_add_ssh_string(payload, dir->handle) < 0) {
       ssh_set_error_oom(sftp->session);
       ssh_buffer_free(payload);
@@ -1561,7 +1561,7 @@ static int sftp_handle_close(sftp_session sftp, ssh_string handle) {
   }
 
   id = sftp_get_new_id(sftp);
-  if (buffer_add_u32(buffer, id) < 0 ||
+  if (buffer_add_u32(buffer, htonl(id)) < 0 ||
       buffer_add_ssh_string(buffer, handle) < 0) {
     ssh_set_error_oom(sftp->session);
     ssh_buffer_free(buffer);
@@ -1685,7 +1685,7 @@ sftp_file sftp_open(sftp_session sftp, const char *file, int flags,
     sftp_flags |= SSH_FXF_EXCL;
   SSH_LOG(SSH_LOG_PACKET,"Opening file %s with sftp flags %x",file,sftp_flags);
   id = sftp_get_new_id(sftp);
-  if (buffer_add_u32(buffer, id) < 0 ||
+  if (buffer_add_u32(buffer, htonl(id)) < 0 ||
       buffer_add_ssh_string(buffer, filename) < 0) {
     ssh_set_error_oom(sftp->session);
     ssh_buffer_free(buffer);
@@ -1767,7 +1767,7 @@ ssize_t sftp_read(sftp_file handle, void *buf, size_t count) {
     return -1;
   }
   id = sftp_get_new_id(handle->sftp);
-  if (buffer_add_u32(buffer, id) < 0 ||
+  if (buffer_add_u32(buffer, htonl(id)) < 0 ||
       buffer_add_ssh_string(buffer, handle->handle) < 0 ||
       buffer_add_u64(buffer, htonll(handle->offset)) < 0 ||
       buffer_add_u32(buffer,htonl(count)) < 0) {
@@ -1860,7 +1860,7 @@ int sftp_async_read_begin(sftp_file file, uint32_t len){
   }
 
   id = sftp_get_new_id(sftp);
-  if (buffer_add_u32(buffer, id) < 0 ||
+  if (buffer_add_u32(buffer, htonl(id)) < 0 ||
       buffer_add_ssh_string(buffer, file->handle) < 0 ||
       buffer_add_u64(buffer, htonll(file->offset)) < 0 ||
       buffer_add_u32(buffer, htonl(len)) < 0) {
@@ -1987,7 +1987,7 @@ ssize_t sftp_write(sftp_file file, const void *buf, size_t count) {
   ssh_string_fill(datastring, buf, count);
 
   id = sftp_get_new_id(file->sftp);
-  if (buffer_add_u32(buffer, id) < 0 ||
+  if (buffer_add_u32(buffer, htonl(id)) < 0 ||
       buffer_add_ssh_string(buffer, file->handle) < 0 ||
       buffer_add_u64(buffer, htonll(file->offset)) < 0 ||
       buffer_add_ssh_string(buffer, datastring) < 0) {
@@ -2106,7 +2106,7 @@ int sftp_unlink(sftp_session sftp, const char *file) {
   }
 
   id = sftp_get_new_id(sftp);
-  if (buffer_add_u32(buffer, id) < 0 ||
+  if (buffer_add_u32(buffer, htonl(id)) < 0 ||
       buffer_add_ssh_string(buffer, filename) < 0) {
     ssh_set_error_oom(sftp->session);
     ssh_buffer_free(buffer);
@@ -2183,7 +2183,7 @@ int sftp_rmdir(sftp_session sftp, const char *directory) {
   }
 
   id = sftp_get_new_id(sftp);
-  if (buffer_add_u32(buffer, id) < 0 ||
+  if (buffer_add_u32(buffer, htonl(id)) < 0 ||
       buffer_add_ssh_string(buffer, filename) < 0) {
     ssh_set_error_oom(sftp->session);
     ssh_buffer_free(buffer);
@@ -2263,7 +2263,7 @@ int sftp_mkdir(sftp_session sftp, const char *directory, mode_t mode) {
   attr.flags = SSH_FILEXFER_ATTR_PERMISSIONS;
 
   id = sftp_get_new_id(sftp);
-  if (buffer_add_u32(buffer, id) < 0 ||
+  if (buffer_add_u32(buffer, htonl(id)) < 0 ||
       buffer_add_ssh_string(buffer, path) < 0 ||
       buffer_add_attributes(buffer, &attr) < 0 ||
       sftp_packet_write(sftp, SSH_FXP_MKDIR, buffer) < 0) {
@@ -2358,7 +2358,7 @@ int sftp_rename(sftp_session sftp, const char *original, const char *newname) {
   }
 
   id = sftp_get_new_id(sftp);
-  if (buffer_add_u32(buffer, id) < 0 ||
+  if (buffer_add_u32(buffer, htonl(id)) < 0 ||
       buffer_add_ssh_string(buffer, oldpath) < 0 ||
       buffer_add_ssh_string(buffer, newpath) < 0 ||
       /* POSIX rename atomically replaces newpath, we should do the same
@@ -2443,7 +2443,7 @@ int sftp_setstat(sftp_session sftp, const char *file, sftp_attributes attr) {
   }
 
   id = sftp_get_new_id(sftp);
-  if (buffer_add_u32(buffer, id) < 0 ||
+  if (buffer_add_u32(buffer, htonl(id)) < 0 ||
       buffer_add_ssh_string(buffer, path) < 0 ||
       buffer_add_attributes(buffer, attr) < 0) {
     ssh_set_error_oom(sftp->session);
@@ -2576,7 +2576,7 @@ int sftp_symlink(sftp_session sftp, const char *target, const char *dest) {
   }
 
   id = sftp_get_new_id(sftp);
-  if (buffer_add_u32(buffer, id) < 0) {
+  if (buffer_add_u32(buffer, htonl(id)) < 0) {
     ssh_set_error_oom(sftp->session);
     ssh_buffer_free(buffer);
     ssh_string_free(dest_s);
@@ -2687,7 +2687,7 @@ char *sftp_readlink(sftp_session sftp, const char *path) {
   }
 
   id = sftp_get_new_id(sftp);
-  if (buffer_add_u32(buffer, id) < 0 ||
+  if (buffer_add_u32(buffer, htonl(id)) < 0 ||
       buffer_add_ssh_string(buffer, path_s) < 0) {
     ssh_set_error_oom(sftp->session);
     ssh_buffer_free(buffer);
@@ -2874,7 +2874,7 @@ sftp_statvfs_t sftp_statvfs(sftp_session sftp, const char *path) {
   }
 
   id = sftp_get_new_id(sftp);
-  if (buffer_add_u32(buffer, id) < 0 ||
+  if (buffer_add_u32(buffer, htonl(id)) < 0 ||
       buffer_add_ssh_string(buffer, ext) < 0 ||
       buffer_add_ssh_string(buffer, pathstr) < 0) {
     ssh_set_error_oom(sftp->session);
@@ -2953,7 +2953,7 @@ sftp_statvfs_t sftp_fstatvfs(sftp_file file) {
   }
 
   id = sftp_get_new_id(sftp);
-  if (buffer_add_u32(buffer, id) < 0 ||
+  if (buffer_add_u32(buffer, htonl(id)) < 0 ||
       buffer_add_ssh_string(buffer, ext) < 0 ||
       buffer_add_ssh_string(buffer, file->handle) < 0) {
     ssh_set_error_oom(sftp->session);
@@ -3042,7 +3042,7 @@ char *sftp_canonicalize_path(sftp_session sftp, const char *path) {
   }
 
   id = sftp_get_new_id(sftp);
-  if (buffer_add_u32(buffer, id) < 0 ||
+  if (buffer_add_u32(buffer, htonl(id)) < 0 ||
       buffer_add_ssh_string(buffer, pathstr) < 0) {
     ssh_set_error_oom(sftp->session);
     ssh_buffer_free(buffer);
@@ -3120,7 +3120,7 @@ static sftp_attributes sftp_xstat(sftp_session sftp, const char *path,
   }
 
   id = sftp_get_new_id(sftp);
-  if (buffer_add_u32(buffer, id) < 0 ||
+  if (buffer_add_u32(buffer, htonl(id)) < 0 ||
       buffer_add_ssh_string(buffer, pathstr) < 0) {
     ssh_set_error_oom(sftp->session);
     ssh_buffer_free(buffer);
@@ -3187,7 +3187,7 @@ sftp_attributes sftp_fstat(sftp_file file) {
   }
 
   id = sftp_get_new_id(file->sftp);
-  if (buffer_add_u32(buffer, id) < 0 ||
+  if (buffer_add_u32(buffer, htonl(id)) < 0 ||
       buffer_add_ssh_string(buffer, file->handle) < 0) {
     ssh_set_error_oom(file->sftp->session);
     ssh_buffer_free(buffer);
