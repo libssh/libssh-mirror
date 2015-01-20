@@ -75,7 +75,7 @@ static int ssh_pthread_mutex_unlock (void **lock){
 }
 
 static unsigned long ssh_pthread_thread_id (void){
-#if _WIN32
+#if defined(_WIN32) && !defined(__WINPTHREADS_VERSION)
     return (unsigned long) pthread_self().p;
 #else
     return (unsigned long) pthread_self();
