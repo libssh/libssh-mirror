@@ -144,10 +144,10 @@ fail:
  * @brief Import a private key in OpenSSH (new) format. This format is
  * typically used with ed25519 keys but can be used for others.
  */
- ssh_key ssh_pki_openssh_privkey_import(const char *text_key,
-                                        const char *passphrase,
-                                        ssh_auth_callback auth_fn,
-                                        void *auth_data)
+ssh_key ssh_pki_openssh_privkey_import(const char *text_key,
+                                       const char *passphrase,
+                                       ssh_auth_callback auth_fn,
+                                       void *auth_data)
 {
     const char *ptr=text_key;
     const char *end;
@@ -248,6 +248,162 @@ error:
     SAFE_FREE(privkeys);
     return key;
 }
+
+
+/** @internal
+ * @brief exports a private key to a string blob.
+ * @param[in] privkey private key to convert
+ * @param[out] buffer buffer to write the blob in.
+ * @returns SSH_OK on success
+ * @warning only supports ed25519 key type at the moment.
+ */
+static int pki_openssh_export_privkey_blob(const ssh_key privkey,
+                                           ssh_buffer buffer)
+{
+    int rc;
+
+    if (privkey->type != SSH_KEYTYPE_ED25519) {
+        ssh_pki_log("Type %s not supported", privkey->type_c);
+        return SSH_ERROR;
+    }
+    if (privkey->ed25519_privkey == NULL ||
+            privkey->ed25519_pubkey == NULL){
+        return SSH_ERROR;
+    }
+    rc = ssh_buffer_pack(buffer,
+                         "sdPdP",
+                         privkey->type_c,
+                         (uint32_t)ED25519_PK_LEN,
+                         (size_t)ED25519_PK_LEN, privkey->ed25519_pubkey,
+                         (uint32_t)ED25519_SK_LEN,
+                         (size_t)ED25519_SK_LEN, privkey->ed25519_privkey);
+    return rc;
+}
+
+/** @internal
+ * generate an OpenSSH private key (defined in PROTOCOL.key) and output it in text format.
+ * @param privkey[in] private key to export
+ * @returns an SSH string containing the text representation of the exported key.
+ * @warning currently only supports ED25519 key types.
+ */
+
+ssh_string ssh_pki_openssh_privkey_export(const ssh_key privkey,
+                                          const char *passphrase,
+                                          ssh_auth_callback auth_fn,
+                                          void *auth_data)
+{
+    ssh_buffer buffer;
+    ssh_string str = NULL;
+    ssh_string pubkey_s=NULL;
+    ssh_buffer privkey_buffer = NULL;
+    uint32_t rnd;
+    unsigned char *b64;
+    uint32_t str_len, len;
+    int rc;
+
+    if (privkey == NULL) {
+        return NULL;
+    }
+    if (privkey->type != SSH_KEYTYPE_ED25519){
+        ssh_pki_log("Unsupported key type %s", privkey->type_c);
+        return NULL;
+    }
+    buffer = ssh_buffer_new();
+    pubkey_s = pki_publickey_to_blob(privkey);
+    if(buffer == NULL || pubkey_s == NULL){
+        goto error;
+    }
+    ssh_get_random(&rnd, sizeof(rnd), 0);
+
+    privkey_buffer = ssh_buffer_new();
+    if (privkey_buffer == NULL) {
+        goto error;
+    }
+
+    /* checkint1 & 2 */
+    rc = ssh_buffer_pack(privkey_buffer,
+                         "dd",
+                         rnd,
+                         rnd);
+    if (rc == SSH_ERROR){
+        goto error;
+    }
+
+    rc = pki_openssh_export_privkey_blob(privkey, privkey_buffer);
+    if (rc == SSH_ERROR){
+        goto error;
+    }
+
+    /* comment */
+    rc = ssh_buffer_pack(privkey_buffer, "s", "" /* comment */);
+    if (rc == SSH_ERROR){
+        goto error;
+    }
+
+    rc = ssh_buffer_pack(buffer,
+                         "PsssdSdP",
+                         (size_t)strlen(OPENSSH_AUTH_MAGIC) + 1, OPENSSH_AUTH_MAGIC,
+                         "none", /* ciphername */
+                         "none", /* kdfname */
+                         "", /* kdfoptions */
+                         (uint32_t)1, /* nkeys */
+                         pubkey_s,
+                         (uint32_t)ssh_buffer_get_len(privkey_buffer),
+                         /* rest of buffer is a string */
+                         (size_t)ssh_buffer_get_len(privkey_buffer), ssh_buffer_get_begin(privkey_buffer));
+    if (rc != SSH_OK) {
+        goto error;
+    }
+
+    b64 = bin_to_base64(ssh_buffer_get_begin(buffer),
+                        ssh_buffer_get_len(buffer));
+    if (b64 == NULL){
+        goto error;
+    }
+
+    /* we can reuse the buffer */
+    ssh_buffer_reinit(buffer);
+    rc = ssh_buffer_pack(buffer,
+                         "tttttt",
+                         OPENSSH_HEADER_BEGIN,
+                         "\n",
+                         b64,
+                         "\n",
+                         OPENSSH_HEADER_END,
+                         "\n");
+    BURN_BUFFER(b64, strlen((char *)b64));
+    SAFE_FREE(b64);
+
+    if (rc != SSH_OK){
+        goto error;
+    }
+
+    str = ssh_string_new(ssh_buffer_get_len(buffer));
+    if (str == NULL){
+        goto error;
+    }
+
+    str_len = ssh_buffer_get_len(buffer);
+    len = buffer_get_data(buffer, ssh_string_data(str), str_len);
+    if (str_len != len) {
+        ssh_string_free(str);
+        str = NULL;
+    }
+
+error:
+    if (privkey_buffer != NULL) {
+        void *bufptr = ssh_buffer_get_begin(privkey_buffer);
+        BURN_BUFFER(bufptr, ssh_buffer_get_len(privkey_buffer));
+        ssh_buffer_free(privkey_buffer);
+    }
+    SAFE_FREE(pubkey_s);
+    if (buffer != NULL){
+        ssh_buffer_free(buffer);
+    }
+
+    return str;
+}
+
 
 /**
  * @}

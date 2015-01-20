@@ -112,5 +112,7 @@ int pki_ed25519_sig_from_blob(ssh_signature sig, ssh_string sig_blob);
 /* PKI Container OpenSSH */
 ssh_key ssh_pki_openssh_privkey_import(const char *text_key,
         const char *passphrase, ssh_auth_callback auth_fn, void *auth_data);
+ssh_string ssh_pki_openssh_privkey_export(const ssh_key privkey,
+        const char *passphrase, ssh_auth_callback auth_fn, void *auth_data);
 
 #endif /* PKI_PRIV_H_ */

@@ -529,7 +529,8 @@ int ssh_pki_import_privkey_file(const char *filename,
 }
 
 /**
- * @brief Export a private key to a pam file on disk.
+ * @brief Export a private key to a pem file on disk, or OpenSSH format for
+ *        keytype ssh-ed25519
  *
  * @param[in]  privkey  The private key to export.
  *
@@ -565,11 +566,17 @@ int ssh_pki_export_privkey_file(const ssh_key privkey,
         return SSH_EOF;
     }
 
-
-    blob = pki_private_key_to_pem(privkey,
-                                  passphrase,
-                                  auth_fn,
-                                  auth_data);
+    if (privkey->type == SSH_KEYTYPE_ED25519){
+        blob = ssh_pki_openssh_privkey_export(privkey,
+                                              passphrase,
+                                              auth_fn,
+                                              auth_data);
+    } else {
+        blob = pki_private_key_to_pem(privkey,
+                                      passphrase,
+                                      auth_fn,
+                                      auth_data);
+    }
     if (blob == NULL) {
         fclose(fp);
         return -1;
