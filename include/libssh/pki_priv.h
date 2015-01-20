@@ -27,6 +27,10 @@
 #define DSA_HEADER_END "-----END DSA PRIVATE KEY-----"
 #define ECDSA_HEADER_BEGIN "-----BEGIN EC PRIVATE KEY-----"
 #define ECDSA_HEADER_END "-----END EC PRIVATE KEY-----"
+#define OPENSSH_HEADER_BEGIN "-----BEGIN OPENSSH PRIVATE KEY-----"
+#define OPENSSH_HEADER_END "-----END OPENSSH PRIVATE KEY-----"
+/* Magic defined in OpenSSH/PROTOCOL.key */
+#define OPENSSH_AUTH_MAGIC      "openssh-key-v1"
 
 #define ssh_pki_log(...) \
     _ssh_pki_log(__FUNCTION__, __VA_ARGS__)
@@ -104,5 +108,9 @@ int pki_ed25519_key_dup(ssh_key new, const ssh_key key);
 int pki_ed25519_public_key_to_blob(ssh_buffer buffer, ssh_key key);
 ssh_string pki_ed25519_sig_to_blob(ssh_signature sig);
 int pki_ed25519_sig_from_blob(ssh_signature sig, ssh_string sig_blob);
+
+/* PKI Container OpenSSH */
+ssh_key ssh_pki_openssh_privkey_import(const char *text_key,
+        const char *passphrase, ssh_auth_callback auth_fn, void *auth_data);
 
 #endif /* PKI_PRIV_H_ */

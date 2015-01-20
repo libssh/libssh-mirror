@@ -1,5 +1,5 @@
 /*
- * known_hosts.c
+ * pki.c
  * This file is part of the SSH Library
  *
  * Copyright (c) 2010 by Aris Adamantiadis
@@ -402,6 +402,7 @@ int ssh_pki_import_privkey_base64(const char *b64_key,
                                   ssh_key *pkey)
 {
     ssh_key key;
+    int cmp;
 
     if (b64_key == NULL || pkey == NULL) {
         return SSH_ERROR;
@@ -414,7 +415,20 @@ int ssh_pki_import_privkey_base64(const char *b64_key,
     ssh_pki_log("Trying to decode privkey passphrase=%s",
                 passphrase ? "true" : "false");
 
-    key = pki_private_key_from_base64(b64_key, passphrase, auth_fn, auth_data);
+    /* Test for OpenSSH key format first */
+    cmp = strncmp(b64_key, OPENSSH_HEADER_BEGIN, strlen(OPENSSH_HEADER_BEGIN));
+    if (cmp == 0) {
+        key = ssh_pki_openssh_privkey_import(b64_key,
+                                             passphrase,
+                                             auth_fn,
+                                             auth_data);
+    } else {
+        /* fallback on PEM decoder */
+        key = pki_private_key_from_base64(b64_key,
+                                          passphrase,
+                                          auth_fn,
+                                          auth_data);
+    }
     if (key == NULL) {
         return SSH_ERROR;
     }
@@ -451,7 +465,6 @@ int ssh_pki_import_privkey_file(const char *filename,
                                 ssh_key *pkey) {
     struct stat sb;
     char *key_buf;
-    ssh_key key;
     FILE *file;
     off_t size;
     int rc;
@@ -505,14 +518,14 @@ int ssh_pki_import_privkey_file(const char *filename,
     }
     key_buf[size] = 0;
 
-    key = pki_private_key_from_base64(key_buf, passphrase, auth_fn, auth_data);
-    SAFE_FREE(key_buf);
-    if (key == NULL) {
-        return SSH_ERROR;
-    }
+    rc = ssh_pki_import_privkey_base64(key_buf,
+                                       passphrase,
+                                       auth_fn,
+                                       auth_data,
+                                       pkey);
 
-    *pkey = key;
-    return SSH_OK;
+    SAFE_FREE(key_buf);
+    return rc;
 }
 
 /**

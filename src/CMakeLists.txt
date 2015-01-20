@@ -139,6 +139,7 @@ set(libssh_SRCS
   packet_crypt.c
   pcap.c
   pki.c
+  pki_container_openssh.c
   pki_ed25519.c
   poll.c
   session.c
