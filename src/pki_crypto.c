@@ -648,6 +648,9 @@ ssh_string pki_private_key_to_pem(const ssh_key key,
             break;
 #endif
         case SSH_KEYTYPE_ED25519:
+            BIO_free(mem);
+            ssh_pki_log("PEM output not supported for key type ssh-ed25519");
+            return NULL;
         case SSH_KEYTYPE_UNKNOWN:
             BIO_free(mem);
             ssh_pki_log("Unkown or invalid private key type %d", key->type);
@@ -677,6 +680,7 @@ ssh_key pki_private_key_from_base64(const char *b64_key,
     BIO *mem = NULL;
     DSA *dsa = NULL;
     RSA *rsa = NULL;
+    ed25519_privkey *ed25519 = NULL;
     ssh_key key;
     enum ssh_keytypes_e type;
 #ifdef HAVE_OPENSSL_ECC
@@ -772,6 +776,7 @@ ssh_key pki_private_key_from_base64(const char *b64_key,
             break;
 #endif
         case SSH_KEYTYPE_ED25519:
+            /* Cannot open ed25519 keys with libcrypto */
         case SSH_KEYTYPE_UNKNOWN:
             BIO_free(mem);
             ssh_pki_log("Unkown or invalid private key type %d", type);
@@ -789,6 +794,7 @@ ssh_key pki_private_key_from_base64(const char *b64_key,
     key->dsa = dsa;
     key->rsa = rsa;
     key->ecdsa = ecdsa;
+    key->ed25519_privkey = ed25519;
 #ifdef HAVE_OPENSSL_ECC
     if (key->type == SSH_KEYTYPE_ECDSA) {
         key->ecdsa_nid = pki_key_ecdsa_to_nid(key->ecdsa);
