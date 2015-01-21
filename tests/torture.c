@@ -209,6 +209,16 @@ static const char torture_ed25519_testkey_pub[]=
         "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBWWnxuCYiOyvMYLtkgoEyEKlLV+klM+"
         "BU6Nh3PmAiqX aris@kalix86";
 
+static const char torture_ed25519_testkey_pp[]=
+        "-----BEGIN OPENSSH PRIVATE KEY-----\n"
+        "b3BlbnNzaC1rZXktdjEAAAAACmFlczI1Ni1jYmMAAAAGYmNyeXB0AAAAGAAAABB3FWpQcE\n"
+        "KHKq6PcjkxjmKzAAAAEAAAAAEAAAAzAAAAC3NzaC1lZDI1NTE5AAAAIOGFVuOyZBL0T+NR\n"
+        "C7qEV9qr6QiGhz2XSXrxuQoU84FgAAAAkBlOVfS5U7FxtBEtxfxQhZjrZAj2z9d4OfGRPl\n"
+        "ZfCnAJNEM3BZ3XCabsujhMkqEs9eptRfj41X6NA8aSFs5JYT+JFVfg470FKtpyUmAibMIo\n"
+        "JzI41zAncFd1x7bAgO5HBDe3xNsV159D+sXRkWB9Tzk0l4F8SZvInheIS7VSbqH7t1+yDB\n"
+        "Y3GsmYTDstmicanQ==\n"
+        "-----END OPENSSH PRIVATE KEY-----\n";
+
 static int verbosity = 0;
 
 #ifndef _WIN32
@@ -585,24 +595,30 @@ static const char *torture_get_testkey_internal(enum ssh_keytypes_e type,
         if (bits == 521) {
             if (pubkey) {
                 return torture_ecdsa521_testkey_pub;
+            } else if (with_passphrase) {
+		return NULL;
             }
             return torture_ecdsa521_testkey;
         } else if (bits == 384) {
             if (pubkey) {
                 return torture_ecdsa384_testkey_pub;
+            } else if (with_passphrase){
+		return NULL;
             }
             return torture_ecdsa384_testkey;
         }
 
         if (pubkey) {
             return torture_ecdsa256_testkey_pub;
+        } else if (with_passphrase){
+		return NULL;
         }
         return torture_ecdsa256_testkey;
     case SSH_KEYTYPE_ED25519:
         if (pubkey) {
             return torture_ed25519_testkey_pub;
         } else if (with_passphrase) {
-            return NULL;
+            return torture_ed25519_testkey_pp;
         }
         return torture_ed25519_testkey;
     case SSH_KEYTYPE_RSA1:

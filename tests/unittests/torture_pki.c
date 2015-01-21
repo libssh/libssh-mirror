@@ -350,6 +350,24 @@ static void torture_pki_import_privkey_base64_passphrase(void **state) {
     assert_true(rc == -1);
 #endif
 
+    /* same for ED25519 */
+
+    rc = ssh_pki_import_privkey_base64(torture_get_testkey(SSH_KEYTYPE_ED25519, 0, 1),
+                                       passphrase,
+                                       NULL,
+                                       NULL,
+                                       &key);
+    assert_true(rc == 0);
+    ssh_key_free(key);
+
+    /* test if it returns -1 if passphrase is wrong */
+    rc = ssh_pki_import_privkey_base64(torture_get_testkey(SSH_KEYTYPE_ED25519, 0, 1),
+                                       "wrong passphrase !!",
+                                       NULL,
+                                       NULL,
+                                       &key);
+    assert_true(rc == -1);
+
 }
 
 static void torture_pki_import_privkey_base64_ed25519(void **state){
