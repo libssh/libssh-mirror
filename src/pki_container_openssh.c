@@ -437,6 +437,111 @@ static int pki_openssh_export_privkey_blob(const ssh_key privkey,
 }
 
 /** @internal
+ * @brief encrypts an ed25519 private key blob
+ *
+ */
+static int pki_private_key_encrypt(ssh_buffer privkey_buffer,
+                                   const char* passphrase,
+                                   const char *ciphername,
+                                   const char *kdfname,
+                                   ssh_auth_callback auth_fn,
+                                   void *auth_data,
+                                   uint32_t rounds,
+                                   ssh_string salt)
+{
+    struct ssh_cipher_struct *ciphers = ssh_get_ciphertab();
+    struct ssh_cipher_struct cipher;
+    uint8_t key_material[128];
+    size_t key_material_len;
+    char passphrase_buffer[128];
+    int rc;
+    int i;
+    uint8_t padding = 1;
+    int cmp;
+
+    cmp = strcmp(ciphername, "none");
+    if (cmp == 0){
+        /* no encryption required */
+        return SSH_OK;
+    }
+
+    for (i = 0; ciphers[i].name != NULL; i++) {
+        cmp = strcmp(ciphername, ciphers[i].name);
+        if (cmp == 0){
+            memcpy(&cipher, &ciphers[i], sizeof(cipher));
+            break;
+        }
+    }
+
+    if (ciphers[i].name == NULL){
+        SSH_LOG(SSH_LOG_WARN, "Unsupported cipher %s", ciphername);
+        return SSH_ERROR;
+    }
+
+    cmp = strcmp(kdfname, "bcrypt");
+    if (cmp != 0){
+        SSH_LOG(SSH_LOG_WARN, "Unsupported KDF %s", kdfname);
+        return SSH_ERROR;
+    }
+    while (ssh_buffer_get_len(privkey_buffer) % cipher.blocksize != 0) {
+        buffer_add_u8(privkey_buffer, padding);
+        padding++;
+    }
+
+    /* We need material for key (keysize bits / 8) and IV (blocksize)  */
+    key_material_len =  cipher.keysize/8 + cipher.blocksize;
+    if (key_material_len > sizeof(key_material)){
+        ssh_pki_log("Key material too big");
+        return SSH_ERROR;
+    }
+
+    ssh_pki_log("Encryption: %d key, %d IV, %d rounds, %zu bytes salt",
+                cipher.keysize/8,
+                cipher.blocksize, rounds, ssh_string_len(salt));
+
+    if (passphrase == NULL){
+        if (auth_fn == NULL){
+            ssh_pki_log("No passphrase provided");
+            return SSH_ERROR;
+        }
+        rc = auth_fn("Passphrase",
+                     passphrase_buffer,
+                     sizeof(passphrase_buffer),
+                     0,
+                     0,
+                     auth_data);
+        if (rc != SSH_OK){
+            return SSH_ERROR;
+        }
+        passphrase = passphrase_buffer;
+    }
+
+    rc = bcrypt_pbkdf(passphrase,
+                      strlen(passphrase),
+                      ssh_string_data(salt),
+                      ssh_string_len(salt),
+                      key_material,
+                      key_material_len,
+                      rounds);
+    if (rc < 0){
+        return SSH_ERROR;
+    }
+
+    cipher.set_encrypt_key(&cipher,
+                           key_material,
+                           key_material + cipher.keysize/8);
+    cipher.encrypt(&cipher,
+                   ssh_buffer_get_begin(privkey_buffer),
+                   ssh_buffer_get_begin(privkey_buffer),
+                   ssh_buffer_get_len(privkey_buffer));
+    ssh_cipher_clear(&cipher);
+    BURN_BUFFER(passphrase_buffer, sizeof(passphrase_buffer));
+
+    return SSH_OK;
+}
+
+
+/** @internal
  * generate an OpenSSH private key (defined in PROTOCOL.key) and output it in text format.
  * @param privkey[in] private key to export
  * @returns an SSH string containing the text representation of the exported key.
@@ -453,6 +558,10 @@ ssh_string ssh_pki_openssh_privkey_export(const ssh_key privkey,
     ssh_string pubkey_s=NULL;
     ssh_buffer privkey_buffer = NULL;
     uint32_t rnd;
+    uint32_t rounds = 16;
+    ssh_string salt=NULL;
+    ssh_string kdf_options=NULL;
+    int to_encrypt=0;
     unsigned char *b64;
     uint32_t str_len, len;
     int rc;
@@ -463,6 +572,10 @@ ssh_string ssh_pki_openssh_privkey_export(const ssh_key privkey,
     if (privkey->type != SSH_KEYTYPE_ED25519){
         ssh_pki_log("Unsupported key type %s", privkey->type_c);
         return NULL;
+    }
+    if (passphrase != NULL || auth_fn != NULL){
+        ssh_pki_log("Enabling encryption for private key export");
+        to_encrypt = 1;
     }
     buffer = ssh_buffer_new();
     pubkey_s = pki_publickey_to_blob(privkey);
@@ -496,13 +609,45 @@ ssh_string ssh_pki_openssh_privkey_export(const ssh_key privkey,
         goto error;
     }
 
+    if (to_encrypt){
+        ssh_buffer kdf_buf = ssh_buffer_new();
+        salt = ssh_string_new(16);
+        if (kdf_buf == NULL || salt == NULL){
+            goto error;
+        }
+        ssh_get_random(ssh_string_data(salt),16, 0);
+        ssh_buffer_pack(kdf_buf, "Sd", salt, rounds);
+        kdf_options = ssh_string_new(ssh_buffer_get_len(kdf_buf));
+        if (kdf_options == NULL){
+            ssh_buffer_free(kdf_buf);
+            goto error;
+        }
+        memcpy(ssh_string_data(kdf_options),
+               ssh_buffer_get_begin(kdf_buf),
+               ssh_buffer_get_len(kdf_buf));
+        ssh_buffer_free(kdf_buf);
+        rc = pki_private_key_encrypt(privkey_buffer,
+                                     passphrase,
+                                     "aes128-cbc",
+                                     "bcrypt",
+                                     auth_fn,
+                                     auth_data,
+                                     rounds,
+                                     salt);
+        if (rc != SSH_OK){
+            goto error;
+        }
+    } else {
+        kdf_options = ssh_string_new(0);
+    }
+
     rc = ssh_buffer_pack(buffer,
-                         "PsssdSdP",
+                         "PssSdSdP",
                          (size_t)strlen(OPENSSH_AUTH_MAGIC) + 1, OPENSSH_AUTH_MAGIC,
-                         "none", /* ciphername */
-                         "none", /* kdfname */
-                         "", /* kdfoptions */
-                         (uint32_t)1, /* nkeys */
+                         to_encrypt ? "aes128-cbc" : "none", /* ciphername */
+                         to_encrypt ? "bcrypt" : "none", /* kdfname */
+                         kdf_options, /* kdfoptions */
+                         (uint32_t) 1, /* nkeys */
                          pubkey_s,
                          (uint32_t)ssh_buffer_get_len(privkey_buffer),
                          /* rest of buffer is a string */
@@ -553,7 +698,9 @@ error:
         ssh_buffer_free(privkey_buffer);
     }
     SAFE_FREE(pubkey_s);
-    if (buffer != NULL){
+    SAFE_FREE(kdf_options);
+    SAFE_FREE(salt);
+    if (buffer != NULL) {
         ssh_buffer_free(buffer);
     }
 
