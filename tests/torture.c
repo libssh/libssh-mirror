@@ -331,6 +331,11 @@ ssh_session torture_ssh_session(const char *host,
         return NULL;
     }
 
+    rc = ssh_options_set(session, SSH_OPTIONS_SSH_DIR, "/tmp");
+    if (rc < 0) {
+        goto failed;
+    }
+
     if (ssh_options_set(session, SSH_OPTIONS_HOST, host) < 0) {
         goto failed;
     }
@@ -397,9 +402,11 @@ failed:
 
 ssh_bind torture_ssh_bind(const char *addr,
                           const unsigned int port,
+                          enum ssh_keytypes_e key_type,
                           const char *private_key_file) {
     int rc;
     ssh_bind sshbind = NULL;
+    enum ssh_bind_options_e opts = -1;
 
     sshbind = ssh_bind_new();
     if (sshbind == NULL) {
@@ -416,8 +423,21 @@ ssh_bind torture_ssh_bind(const char *addr,
         goto out_free;
     }
 
-    rc = ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HOSTKEY,
-                              private_key_file);
+    switch (key_type) {
+        case SSH_KEYTYPE_DSS:
+            opts = SSH_BIND_OPTIONS_DSAKEY;
+            break;
+        case SSH_KEYTYPE_RSA:
+            opts = SSH_BIND_OPTIONS_RSAKEY;
+            break;
+        case SSH_KEYTYPE_ECDSA:
+            opts = SSH_BIND_OPTIONS_ECDSAKEY;
+            break;
+        default:
+            goto out_free;
+    }
+
+    rc = ssh_bind_options_set(sshbind, opts, private_key_file);
     if (rc != 0) {
         goto out_free;
     }

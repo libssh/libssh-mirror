@@ -12,6 +12,7 @@
 struct hostkey_state {
     const char *hostkey;
     char *hostkey_path;
+    enum ssh_keytypes_e key_type;
     int fd;
 };
 
@@ -27,7 +28,8 @@ static void setup(void **state) {
     assert_return_code(h->fd, errno);
     close(h->fd);
 
-    h->hostkey = torture_get_testkey(SSH_KEYTYPE_ECDSA, 512, 0);
+    h->key_type = SSH_KEYTYPE_RSA;
+    h->hostkey = torture_get_testkey(h->key_type, 0, 0);
 
     torture_write_file(h->hostkey_path, h->hostkey);
 
@@ -152,7 +154,10 @@ static void test_ssh_channel_request_x11(void **state) {
     ssh_callbacks_init(&server_cb);
 
     /* Create server */
-    sshbind = torture_ssh_bind("localhost", TEST_SERVER_PORT, h->hostkey_path);
+    sshbind = torture_ssh_bind("localhost",
+                               TEST_SERVER_PORT,
+                               h->key_type,
+                               h->hostkey_path);
     assert_non_null(sshbind);
 
     /* Get client to connect */

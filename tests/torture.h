@@ -69,6 +69,7 @@ ssh_session torture_ssh_session(const char *host,
 
 ssh_bind torture_ssh_bind(const char *addr,
                           const unsigned int port,
+                          enum ssh_keytypes_e key_type,
                           const char *private_key_file);
 
 struct torture_sftp *torture_sftp_session(ssh_session session);
