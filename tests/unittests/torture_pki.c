@@ -1366,6 +1366,35 @@ static void torture_pki_write_privkey_ed25519(void **state){
     rc = ssh_key_cmp(origkey, privkey, SSH_KEY_CMP_PRIVATE);
     assert_true(rc == 0);
 
+    unlink(LIBSSH_ED25519_TESTKEY);
+    ssh_key_free(privkey);
+    /* do the same with passphrase */
+    rc = ssh_pki_export_privkey_file(origkey,
+            torture_get_testkey_passphrase(),
+            NULL,
+            NULL,
+            LIBSSH_ED25519_TESTKEY);
+    assert_true(rc == 0);
+
+    rc = ssh_pki_import_privkey_file(LIBSSH_ED25519_TESTKEY,
+            NULL,
+            NULL,
+            NULL,
+            &privkey);
+    /* opening without passphrase should fail */
+    assert_true(rc == SSH_ERROR);
+
+    rc = ssh_pki_import_privkey_file(LIBSSH_ED25519_TESTKEY,
+            torture_get_testkey_passphrase(),
+            NULL,
+            NULL,
+            &privkey);
+    assert_true(rc == 0);
+
+    rc = ssh_key_cmp(origkey, privkey, SSH_KEY_CMP_PRIVATE);
+    assert_true(rc == 0);
+    unlink(LIBSSH_ED25519_TESTKEY);
+
     ssh_key_free(origkey);
     ssh_key_free(privkey);
 }
