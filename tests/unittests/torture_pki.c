@@ -723,14 +723,14 @@ static void torture_generate_pubkey_from_privkey_ed25519(void **state){
     assert_true(rc == 0);
 
     rc = torture_read_one_line(LIBSSH_ED25519_TESTKEY ".pub",
-            pubkey_generated,
-            sizeof(pubkey_generated));
+                               pubkey_generated,
+                               sizeof(pubkey_generated));
     assert_true(rc == 0);
 
     len = torture_pubkey_len(torture_get_testkey_pub(SSH_KEYTYPE_ED25519, 0));
     assert_memory_equal(torture_get_testkey_pub(SSH_KEYTYPE_ED25519, 0),
-            pubkey_generated,
-            len);
+                        pubkey_generated,
+                        len);
 
     ssh_key_free(privkey);
     ssh_key_free(pubkey);
@@ -1313,6 +1313,45 @@ static void torture_pki_write_privkey_ecdsa(void **state)
 #endif
 #endif /* HAVE_LIBCRYPTO */
 
+static void torture_pki_write_privkey_ed25519(void **state){
+    ssh_key origkey;
+    ssh_key privkey;
+    int rc;
+
+    (void) state; /* unused */
+
+    ssh_set_log_level(5);
+
+    rc = ssh_pki_import_privkey_file(LIBSSH_ED25519_TESTKEY,
+            NULL,
+            NULL,
+            NULL,
+            &origkey);
+    assert_true(rc == 0);
+
+    unlink(LIBSSH_ED25519_TESTKEY);
+
+    rc = ssh_pki_export_privkey_file(origkey,
+            NULL,
+            NULL,
+            NULL,
+            LIBSSH_ED25519_TESTKEY);
+    assert_true(rc == 0);
+
+    rc = ssh_pki_import_privkey_file(LIBSSH_ED25519_TESTKEY,
+            NULL,
+            NULL,
+            NULL,
+            &privkey);
+    assert_true(rc == 0);
+
+    rc = ssh_key_cmp(origkey, privkey, SSH_KEY_CMP_PRIVATE);
+    assert_true(rc == 0);
+
+    ssh_key_free(origkey);
+    ssh_key_free(privkey);
+}
+
 #ifdef HAVE_ECC
 static void torture_pki_ecdsa_name(void **state, const char *expected_name)
 {
@@ -1501,6 +1540,10 @@ int torture_run_tests(void) {
                                  teardown),
 #endif
 #endif /* HAVE_LIBCRYPTO */
+        unit_test_setup_teardown(torture_pki_write_privkey_ed25519,
+                                 setup_dsa_key,
+                                 teardown),
+
 #ifdef HAVE_ECC
         unit_test_setup_teardown(torture_pki_ecdsa_name256,
                                  setup_ecdsa_key_256,
