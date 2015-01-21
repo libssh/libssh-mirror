@@ -97,6 +97,7 @@ void crypto_free(struct ssh_crypto_struct *crypto);
 
 void ssh_reseed(void);
 
+void ssh_cipher_clear(struct ssh_cipher_struct *cipher);
 struct ssh_hmac_struct *ssh_get_hmactab(void);
 const char *ssh_hmac_type_to_string(enum ssh_hmac_e hmac_type);
 

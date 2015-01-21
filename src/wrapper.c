@@ -103,7 +103,7 @@ static struct ssh_cipher_struct *cipher_new(int offset) {
   return cipher;
 }
 
-static void cipher_free(struct ssh_cipher_struct *cipher) {
+void ssh_cipher_clear(struct ssh_cipher_struct *cipher){
 #ifdef HAVE_LIBGCRYPT
   unsigned int i;
 #endif
@@ -123,6 +123,10 @@ static void cipher_free(struct ssh_cipher_struct *cipher) {
 #endif
     SAFE_FREE(cipher->key);
   }
+}
+
+static void cipher_free(struct ssh_cipher_struct *cipher) {
+  ssh_cipher_clear(cipher);
   SAFE_FREE(cipher);
 }
 
