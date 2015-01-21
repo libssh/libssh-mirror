@@ -112,7 +112,7 @@ static void barrett_reduce(sc25519 *r, const uint32_t x[64])
         pb = b;
     }
 
-    /* XXX: Can it really happen that r<0?, See HAC, Alg 14.42, Step 3 
+    /* XXX: Can it really happen that r<0?, See HAC, Alg 14.42, Step 3
      * If so: Handle  it here!
      */
 

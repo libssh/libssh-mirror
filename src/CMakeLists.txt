@@ -119,10 +119,7 @@ set(libssh_SRCS
   curve25519.c
   dh.c
   ecdh.c
-  ed25519.c
   error.c
-  fe25519.c
-  ge25519.c
   getpass.c
   init.c
   kex.c
@@ -143,7 +140,6 @@ set(libssh_SRCS
   pki_ed25519.c
   poll.c
   session.c
-  sc25519.c
   scp.c
   socket.c
   string.c
@@ -151,6 +147,10 @@ set(libssh_SRCS
   wrapper.c
   external/bcrypt_pbkdf.c
   external/blowfish.c
+  external/ed25519.c
+  external/fe25519.c
+  external/ge25519.c
+  external/sc25519.c
 )
 
 if (WITH_GCRYPT)
@@ -217,7 +217,7 @@ endif (WITH_GSSAPI AND GSSAPI_FOUND)
 if (NOT WITH_NACL)
   set(libssh_SRCS
     ${libssh_SRCS}
-    curve25519_ref.c
+    external/curve25519_ref.c
   )
 endif (NOT WITH_NACL)
 

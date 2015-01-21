@@ -10,8 +10,8 @@
 #include "libssh/sc25519.h"
 #include "libssh/ge25519.h"
 
-/* 
- * Arithmetic on the twisted Edwards curve -x^2 + y^2 = 1 + dx^2y^2 
+/*
+ * Arithmetic on the twisted Edwards curve -x^2 + y^2 = 1 + dx^2y^2
  * with d = -(121665/121666) = 37095705934669439343138083508754565189542113879843219016388785533085940283555
  * Base point: (15112221349535400772501151409588531511454012693041857206046113283949847762202,46316835694926478169428394003475163141307993866256225615783033603165251855960);
  */
@@ -230,7 +230,7 @@ int ge25519_unpackneg_vartime(ge25519_p3 *r, const unsigned char p[32])
     fe25519 t, chk, num, den, den2, den4, den6;
     fe25519_setone(&r->z);
     par = p[31] >> 7;
-    fe25519_unpack(&r->y, p); 
+    fe25519_unpack(&r->y, p);
     fe25519_square(&num, &r->y); /* x = y^2 */
     fe25519_mul(&den, &num, &ge25519_ecd); /* den = dy^2 */
     fe25519_sub(&num, &num, &r->z); /* x = y^2-1 */
@@ -279,7 +279,7 @@ void ge25519_pack(unsigned char r[32], const ge25519_p3 *p)
 {
     fe25519 tx, ty, zi;
 
-    fe25519_invert(&zi, &p->z); 
+    fe25519_invert(&zi, &p->z);
     fe25519_mul(&tx, &p->x, &zi);
     fe25519_mul(&ty, &p->y, &zi);
     fe25519_pack(r, &ty);

@@ -75,7 +75,7 @@ static void reduce_mul(fe25519 *r)
 }
 
 /* reduction modulo 2^255-19 */
-void fe25519_freeze(fe25519 *r) 
+void fe25519_freeze(fe25519 *r)
 {
     int i;
     uint32_t m = equal(r->v[31],127);

@@ -269,4 +269,3 @@ int crypto_scalarmult(unsigned char *q,
   for (i = 0;i < 32;++i) q[i] = work[64 + i];
   return 0;
 }
-
