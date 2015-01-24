@@ -39,6 +39,12 @@
 
 #include <cmocka.h>
 
+#ifndef assert_return_code
+/* hack for older versions of cmocka */
+#define assert_return_code(code, errno) \
+    assert_true(code >= 0)
+#endif /* assert_return_code */
+
 /* Used by main to communicate with parse_opt. */
 struct argument_s {
   char *args[2];
