@@ -52,9 +52,18 @@ int buffer_add_u16(ssh_buffer buffer, uint16_t data);
 int buffer_add_u32(ssh_buffer buffer, uint32_t data);
 int buffer_add_u64(ssh_buffer buffer, uint64_t data);
 int ssh_buffer_add_data(ssh_buffer buffer, const void *data, uint32_t len);
-int ssh_buffer_pack_va(struct ssh_buffer_struct *buffer, const char *format, va_list ap);
-int _ssh_buffer_pack(struct ssh_buffer_struct *buffer, const char *format, ...);
-#define ssh_buffer_pack(buffer, format, ...) _ssh_buffer_pack((buffer),(format), __VA_ARGS__, SSH_BUFFER_PACK_END)
+
+int ssh_buffer_pack_va(struct ssh_buffer_struct *buffer,
+                       const char *format,
+                       int argc,
+                       va_list ap);
+int _ssh_buffer_pack(struct ssh_buffer_struct *buffer,
+                     const char *format,
+                     int argc,
+                     ...);
+#define ssh_buffer_pack(buffer, format, ...) \
+    _ssh_buffer_pack((buffer), (format), __VA_NARG__(__VA_ARGS__), __VA_ARGS__, SSH_BUFFER_PACK_END)
+
 int ssh_buffer_unpack_va(struct ssh_buffer_struct *buffer, const char *format, va_list ap);
 int _ssh_buffer_unpack(struct ssh_buffer_struct *buffer, const char *format, ...);
 #define ssh_buffer_unpack(buffer, format, ...) _ssh_buffer_unpack((buffer),(format), __VA_ARGS__, SSH_BUFFER_PACK_END)

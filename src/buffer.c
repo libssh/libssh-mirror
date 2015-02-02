@@ -688,7 +688,11 @@ struct ssh_string_struct *buffer_get_mpint(struct ssh_buffer_struct *buffer) {
  *                      SSH_ERROR on error
  * @see ssh_buffer_add_format() for format list values.
  */
-int ssh_buffer_pack_va(struct ssh_buffer_struct *buffer, const char *format, va_list ap){
+int ssh_buffer_pack_va(struct ssh_buffer_struct *buffer,
+                       const char *format,
+                       int argc,
+                       va_list ap)
+{
     int rc = SSH_ERROR;
     const char *p;
     union {
@@ -702,8 +706,14 @@ int ssh_buffer_pack_va(struct ssh_buffer_struct *buffer, const char *format, va_
     char *cstring;
     bignum b;
     size_t len;
+    int count;
 
-    for (p = format; *p != '\0'; p++) {
+    for (p = format, count = 0; *p != '\0'; p++, count++) {
+        /* Invalid number of arguments passed */
+        if (count > argc) {
+            return SSH_ERROR;
+        }
+
         switch(*p) {
         case 'b':
             o.byte = (uint8_t)va_arg(ap, unsigned int);
@@ -740,7 +750,10 @@ int ssh_buffer_pack_va(struct ssh_buffer_struct *buffer, const char *format, va_
             break;
         case 'P':
             len = va_arg(ap, size_t);
+
             o.data = va_arg(ap, void *);
+            count++; /* increase argument count */
+
             rc = ssh_buffer_add_data(buffer, o.data, len);
             o.data = NULL;
             break;
@@ -767,6 +780,10 @@ int ssh_buffer_pack_va(struct ssh_buffer_struct *buffer, const char *format, va_
         if (rc != SSH_OK){
             break;
         }
+    }
+
+    if (argc != count) {
+        return SSH_ERROR;
     }
 
     if (rc != SSH_ERROR){
@@ -799,12 +816,16 @@ int ssh_buffer_pack_va(struct ssh_buffer_struct *buffer, const char *format, va_
  * @warning             when using 'P' with a constant size (e.g. 8), do not
  *                      forget to cast to (size_t).
  */
-int _ssh_buffer_pack(struct ssh_buffer_struct *buffer, const char *format, ...){
+int _ssh_buffer_pack(struct ssh_buffer_struct *buffer,
+                     const char *format,
+                     int argc,
+                     ...)
+{
     va_list ap;
     int rc;
 
-    va_start(ap, format);
-    rc = ssh_buffer_pack_va(buffer, format, ap);
+    va_start(ap, argc);
+    rc = ssh_buffer_pack_va(buffer, format, argc, ap);
     va_end(ap);
     return rc;
 }
