@@ -669,7 +669,6 @@ ssh_key pki_private_key_from_base64(const char *b64_key,
         case SSH_KEYTYPE_ED25519:
 		/* Cannot open ed25519 keys with libgcrypt */
         case SSH_KEYTYPE_ECDSA:
-        case SSH_KEYTYPE_ED25519:
         case SSH_KEYTYPE_UNKNOWN:
         default:
             ssh_pki_log("Unkown or invalid private key type %d", type);
@@ -976,7 +975,6 @@ ssh_key pki_key_dup(const ssh_key key, int demote)
 		break;
 
         case SSH_KEYTYPE_ECDSA:
-        case SSH_KEYTYPE_ED25519:
         case SSH_KEYTYPE_UNKNOWN:
         default:
             ssh_key_free(new);
@@ -1137,7 +1135,6 @@ int pki_key_compare(const ssh_key k1,
 		/* ed25519 keys handled globaly */
 		return 0;
         case SSH_KEYTYPE_ECDSA:
-        case SSH_KEYTYPE_ED25519:
         case SSH_KEYTYPE_UNKNOWN:
             return 1;
     }
@@ -1296,7 +1293,6 @@ ssh_string pki_publickey_to_blob(const ssh_key key)
 		}
 		break;
         case SSH_KEYTYPE_ECDSA:
-        case SSH_KEYTYPE_ED25519:
         case SSH_KEYTYPE_UNKNOWN:
         default:
             goto fail;
@@ -1463,7 +1459,6 @@ ssh_string pki_signature_to_blob(const ssh_signature sig)
 		sig_blob = pki_ed25519_sig_to_blob(sig);
 		break;
         case SSH_KEYTYPE_ECDSA:
-        case SSH_KEYTYPE_ED25519:
         case SSH_KEYTYPE_UNKNOWN:
         default:
             ssh_pki_log("Unknown signature key type: %d", sig->type);
@@ -1559,7 +1554,6 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
 		}
 		break;
         case SSH_KEYTYPE_ECDSA:
-        case SSH_KEYTYPE_ED25519:
         case SSH_KEYTYPE_UNKNOWN:
         default:
             ssh_pki_log("Unknown signature type");
@@ -1643,7 +1637,6 @@ int pki_signature_verify(ssh_session session,
 		}
 		break;
         case SSH_KEYTYPE_ECDSA:
-        case SSH_KEYTYPE_ED25519:
         case SSH_KEYTYPE_UNKNOWN:
         default:
             ssh_set_error(session, SSH_FATAL, "Unknown public key type");
@@ -1717,7 +1710,6 @@ ssh_signature pki_do_sign(const ssh_key privkey,
 		}
 		break;
         case SSH_KEYTYPE_ECDSA:
-        case SSH_KEYTYPE_ED25519:
         case SSH_KEYTYPE_UNKNOWN:
         default:
             ssh_signature_free(sig);
@@ -1787,7 +1779,6 @@ ssh_signature pki_do_sign_sessionid(const ssh_key key,
         case SSH_KEYTYPE_ED25519:
 		/* ED25519 handled in caller */
         case SSH_KEYTYPE_ECDSA:
-        case SSH_KEYTYPE_ED25519:
         case SSH_KEYTYPE_UNKNOWN:
         default:
             return NULL;
