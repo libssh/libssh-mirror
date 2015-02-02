@@ -961,10 +961,10 @@ int ssh_buffer_unpack_va(struct ssh_buffer_struct *buffer,
     }
 
     if (rc != SSH_ERROR){
-        /* verify that the last hidden argument is correct */
+        /* Check if our canary is intact, if not somthing really bad happened */
         uint32_t canary = va_arg(ap, uint32_t);
         if (canary != SSH_BUFFER_PACK_END){
-            rc = SSH_ERROR;
+            abort();
         }
     }
 
