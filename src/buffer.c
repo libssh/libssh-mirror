@@ -787,10 +787,10 @@ int ssh_buffer_pack_va(struct ssh_buffer_struct *buffer,
     }
 
     if (rc != SSH_ERROR){
-        /* verify that the last hidden argument is correct */
-        o.dword = va_arg(ap, uint32_t);
-        if (o.dword != SSH_BUFFER_PACK_END){
-            rc = SSH_ERROR;
+        /* Check if our canary is intact, if not somthing really bad happened */
+        uint32_t canary = va_arg(ap, uint32_t);
+        if (canary != SSH_BUFFER_PACK_END) {
+            abort();
         }
     }
     return rc;
