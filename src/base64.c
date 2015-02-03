@@ -78,8 +78,6 @@ ssh_buffer base64_to_bin(const char *source) {
   }
 
   buffer = ssh_buffer_new();
-  /* base64 buffer often used to contain sensitive data */
-  ssh_buffer_set_secure(buffer);
   if (buffer == NULL) {
     SAFE_FREE(base64);
     return NULL;
