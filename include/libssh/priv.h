@@ -304,6 +304,7 @@ int match_hostname(const char *host, const char *pattern, unsigned int len);
 /**
  * Get the argument cound of variadic arguments
  */
+#ifdef HAVE_GCC_NARG_MACRO
 #define __VA_NARG__(...) \
         (__VA_NARG_(_0, ## __VA_ARGS__, __RSEQ_N()) - 1)
 #define __VA_NARG_(...) \
@@ -324,6 +325,10 @@ int match_hostname(const char *host, const char *pattern, unsigned int len);
         29, 28, 27, 26, 25, 24, 23, 22, 21, 20, \
         19, 18, 17, 16, 15, 14, 13, 12, 11, 10, \
          9,  8,  7,  6,  5,  4,  3,  2,  1,  0
+#else
+/* clang does not support the above construction */
+#define __VA_NARG__(...) (-1)
+#endif
 
 #endif /* _LIBSSH_PRIV_H */
 /* vim: set ts=4 sw=4 et cindent: */
