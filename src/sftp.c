@@ -449,6 +449,7 @@ static sftp_message sftp_get_message(sftp_packet packet) {
     sftp_message_free(msg);
     return NULL;
   }
+  msg->id = ntohl(msg->id);
 
   SSH_LOG(SSH_LOG_PACKET,
       "Packet with id %d type %d",
