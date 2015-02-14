@@ -25,7 +25,9 @@
 #include <libssh/libssh.h>
 #include <sys/time.h>
 #include <arpa/inet.h>
-
+#include <netinet/in.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 #define HOST "localhost"
 /* Should work until Apnic decides to assign it :) */
 #define BLACKHOLE "1.1.1.1"
