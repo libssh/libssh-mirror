@@ -69,6 +69,7 @@ static void torture_pki_ed25519_verify(void **state){
 
     ssh_key_free(pubkey);
     ssh_string_free(blob);
+    free(pkey_ptr);
 }
 
 static void torture_pki_ed25519_verify_bad(void **state){
@@ -104,6 +105,7 @@ static void torture_pki_ed25519_verify_bad(void **state){
     }
     ssh_key_free(pubkey);
     ssh_string_free(blob);
+    free(pkey_ptr);
 }
 
 int torture_run_tests(void) {
