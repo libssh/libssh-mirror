@@ -146,6 +146,9 @@
 #cmakedefine HAVE_GCC_VOLATILE_MEMORY_PROTECTION 1
 #cmakedefine HAVE_GCC_NARG_MACRO 1
 
+#cmakedefine HAVE_COMPILER__FUNC__ 1
+#cmakedefine HAVE_COMPILER__FUNCTION__ 1
+
 /* Define to 1 if you want to enable GSSAPI */
 #cmakedefine WITH_GSSAPI 1
 
