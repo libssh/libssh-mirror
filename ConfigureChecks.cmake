@@ -201,6 +201,20 @@ int main(void)
     return 0;
 }" HAVE_GCC_VOLATILE_MEMORY_PROTECTION)
 
+check_c_source_compiles("
+#include <stdio.h>
+int main(void) {
+    printf(\"%s\", __func__);
+    return 0;
+}" HAVE_COMPILER__FUNC__)
+
+check_c_source_compiles("
+#include <stdio.h>
+int main(void) {
+    printf(\"%s\", __FUNCTION__);
+    return 0;
+}" HAVE_COMPILER__FUNCTION__)
+
 if (WITH_DEBUG_CRYPTO)
   set(DEBUG_CRYPTO 1)
 endif (WITH_DEBUG_CRYPTO)

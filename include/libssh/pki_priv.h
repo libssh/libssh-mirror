@@ -29,7 +29,7 @@
 #define ECDSA_HEADER_END "-----END EC PRIVATE KEY-----"
 
 #define ssh_pki_log(...) \
-    _ssh_pki_log(__FUNCTION__, __VA_ARGS__)
+    _ssh_log(SSH_LOG_FUNCTIONS, __func__, __VA_ARGS__)
 void _ssh_pki_log(const char *function,
                   const char *format, ...) PRINTF_ATTRIBUTE(2, 3);
 

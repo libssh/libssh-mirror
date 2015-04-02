@@ -139,8 +139,12 @@ int gettimeofday(struct timeval *__p, void *__t);
 #define MAX_BUF_SIZE 4096
 #endif
 
-#ifndef __func__
-#define __func__ __FUNCTION__
+#ifndef HAVE_COMPILER__FUNC__
+# ifdef HAVE_COMPILER__FUNCTION__
+#  define __func__ __FUNCTION__
+# else
+#  error "Your system must provide a __func__ macro"
+# endif
 #endif
 
 #if defined(HAVE_GCC_THREAD_LOCAL_STORAGE)
