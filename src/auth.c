@@ -1907,7 +1907,7 @@ int ssh_userauth_kbdint(ssh_session session, const char *user,
          * This should not happen
          */
         rc = SSH_AUTH_ERROR;
-        ssh_set_error(session,SSH_FATAL,"Invalid state in %s", __FUNCTION__);
+        ssh_set_error(session, SSH_FATAL, "Invalid state in %s", __func__);
     }
     return rc;
 }

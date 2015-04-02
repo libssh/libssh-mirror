@@ -139,10 +139,8 @@ int gettimeofday(struct timeval *__p, void *__t);
 #define MAX_BUF_SIZE 4096
 #endif
 
-#ifndef __FUNCTION__
-#if defined(__SUNPRO_C)
-#define __FUNCTION__ __func__
-#endif
+#ifndef __func__
+#define __func__ __FUNCTION__
 #endif
 
 #if defined(HAVE_GCC_THREAD_LOCAL_STORAGE)
@@ -179,7 +177,7 @@ void ssh_log_function(int verbosity,
                       const char *function,
                       const char *buffer);
 #define SSH_LOG(priority, ...) \
-    _ssh_log(priority, __FUNCTION__, __VA_ARGS__)
+    _ssh_log(priority, __func__, __VA_ARGS__)
 
 /* LEGACY */
 void ssh_log_common(struct ssh_common_struct *common,
@@ -197,18 +195,18 @@ struct error_struct {
 };
 
 #define ssh_set_error(error, code, ...) \
-    _ssh_set_error(error, code, __FUNCTION__, __VA_ARGS__)
+    _ssh_set_error(error, code, __func__, __VA_ARGS__)
 void _ssh_set_error(void *error,
                     int code,
                     const char *function,
                     const char *descr, ...) PRINTF_ATTRIBUTE(4, 5);
 
 #define ssh_set_error_oom(error) \
-    _ssh_set_error_oom(error, __FUNCTION__)
+    _ssh_set_error_oom(error, __func__)
 void _ssh_set_error_oom(void *error, const char *function);
 
 #define ssh_set_error_invalid(error) \
-    _ssh_set_error_invalid(error, __FUNCTION__)
+    _ssh_set_error_invalid(error, __func__)
 void _ssh_set_error_invalid(void *error, const char *function);
 
 
