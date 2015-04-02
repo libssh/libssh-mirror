@@ -35,9 +35,9 @@
 #include "libssh/poll.h"
 #include "libssh/socket.h"
 #include "libssh/session.h"
+#include "libssh/misc.h"
 #ifdef WITH_SERVER
 #include "libssh/server.h"
-#include "libssh/misc.h"
 #endif
 
 
