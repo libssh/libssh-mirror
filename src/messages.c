@@ -524,6 +524,25 @@ void ssh_message_free(ssh_message msg){
       SAFE_FREE(msg->channel_request.var_value);
       SAFE_FREE(msg->channel_request.command);
       SAFE_FREE(msg->channel_request.subsystem);
+      switch (msg->channel_request.type) {
+      case SSH_CHANNEL_REQUEST_EXEC:
+          SAFE_FREE(msg->channel_request.command);
+          break;
+      case SSH_CHANNEL_REQUEST_ENV:
+          SAFE_FREE(msg->channel_request.var_name);
+          SAFE_FREE(msg->channel_request.var_value);
+          break;
+      case SSH_CHANNEL_REQUEST_PTY:
+          SAFE_FREE(msg->channel_request.TERM);
+          break;
+      case SSH_CHANNEL_REQUEST_SUBSYSTEM:
+          SAFE_FREE(msg->channel_request.subsystem);
+          break;
+      case SSH_CHANNEL_REQUEST_X11:
+          SAFE_FREE(msg->channel_request.x11_auth_protocol);
+          SAFE_FREE(msg->channel_request.x11_auth_cookie);
+          break;
+      }
       break;
     case SSH_REQUEST_SERVICE:
       SAFE_FREE(msg->service_request.service);
