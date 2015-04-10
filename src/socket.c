@@ -425,17 +425,18 @@ int ssh_socket_unix(ssh_socket s, const char *path) {
 void ssh_socket_close(ssh_socket s){
   if (ssh_socket_is_open(s)) {
 #ifdef _WIN32
-    closesocket(s->fd_in);
+    CLOSE_SOCKET(s->fd_in);
     /* fd_in = fd_out under win32 */
     s->last_errno = WSAGetLastError();
 #else
-    close(s->fd_in);
-    if(s->fd_out != s->fd_in && s->fd_out != -1)
-      close(s->fd_out);
+    if (s->fd_out != s->fd_in && s->fd_out != -1) {
+        CLOSE_SOCKET(s->fd_out);
+    }
+    CLOSE_SOCKET(s->fd_in);
     s->last_errno = errno;
 #endif
-    s->fd_in = s->fd_out = SSH_INVALID_SOCKET;
   }
+
   if(s->poll_in != NULL){
     if(s->poll_out == s->poll_in)
       s->poll_out = NULL;
