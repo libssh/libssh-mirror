@@ -109,7 +109,7 @@ static socket_t bind_socket(ssh_bind sshbind, const char *hostname,
                       "Setting socket options failed: %s",
                       strerror(errno));
         freeaddrinfo (ai);
-        close(s);
+        CLOSE_SOCKET(s);
         return -1;
     }
 
@@ -121,7 +121,7 @@ static socket_t bind_socket(ssh_bind sshbind, const char *hostname,
                       port,
                       strerror(errno));
         freeaddrinfo (ai);
-        close(s);
+        CLOSE_SOCKET(s);
         return -1;
     }
 
@@ -259,7 +259,7 @@ int ssh_bind_listen(ssh_bind sshbind) {
           ssh_set_error(sshbind, SSH_FATAL,
                   "Listening to socket %d: %s",
                   fd, strerror(errno));
-          close(fd);
+          CLOSE_SOCKET(fd);
           ssh_key_free(sshbind->dsa);
           sshbind->dsa = NULL;
           ssh_key_free(sshbind->rsa);
@@ -350,11 +350,7 @@ void ssh_bind_free(ssh_bind sshbind){
   }
 
   if (sshbind->bindfd >= 0) {
-#ifdef _WIN32
-    closesocket(sshbind->bindfd);
-#else
-    close(sshbind->bindfd);
-#endif
+      CLOSE_SOCKET(sshbind->bindfd);
   }
   sshbind->bindfd = SSH_INVALID_SOCKET;
 
@@ -499,11 +495,7 @@ int ssh_bind_accept(ssh_bind sshbind, ssh_session session) {
   rc = ssh_bind_accept_fd(sshbind, session, fd);
 
   if(rc == SSH_ERROR){
-#ifdef _WIN32
-      closesocket(fd);
-#else
-      close(fd);
-#endif
+      CLOSE_SOCKET(fd);
       ssh_socket_free(session->socket);
   }
   return rc;

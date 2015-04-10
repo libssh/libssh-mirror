@@ -109,10 +109,14 @@
 struct timeval;
 int gettimeofday(struct timeval *__p, void *__t);
 
+#define _XCLOSESOCKET closesocket
+
 #else /* _WIN32 */
 
 #include <unistd.h>
 #define PRIdS "zd"
+
+#define _XCLOSESOCKET close
 
 #endif /* _WIN32 */
 
@@ -331,6 +335,8 @@ int match_hostname(const char *host, const char *pattern, unsigned int len);
 /* clang does not support the above construction */
 #define __VA_NARG__(...) (-1)
 #endif
+
+#define CLOSE_SOCKET(s) do { if ((s) != SSH_INVALID_SOCKET) { _XCLOSESOCKET(s); (s) = SSH_INVALID_SOCKET;} } while(0)
 
 #endif /* _LIBSSH_PRIV_H */
 /* vim: set ts=4 sw=4 et cindent: */
