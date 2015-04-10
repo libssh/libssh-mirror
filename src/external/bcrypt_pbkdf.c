@@ -23,7 +23,9 @@
 #include "libssh/wrapper.h"
 #include <stdlib.h>
 #include <sys/types.h>
+#ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
+#endif
 
 #include "libssh/blf.h"
 #include "libssh/pki_priv.h"
