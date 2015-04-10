@@ -22,9 +22,15 @@
 #define PKI_PRIV_H_
 
 #include "libssh/pki.h"
+
 /* defined in bcrypt_pbkdf.c */
-int bcrypt_pbkdf(const char *pass, size_t passlen, const u_int8_t *salt,
-        size_t saltlen, u_int8_t *key, size_t keylen, unsigned int rounds);
+int bcrypt_pbkdf(const char *pass,
+                 size_t passlen,
+                 const uint8_t *salt,
+                 size_t saltlen,
+                 uint8_t *key,
+                 size_t keylen,
+                 unsigned int rounds);
 
 #define RSA_HEADER_BEGIN "-----BEGIN RSA PRIVATE KEY-----"
 #define RSA_HEADER_END "-----END RSA PRIVATE KEY-----"

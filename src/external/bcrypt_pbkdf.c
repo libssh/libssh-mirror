@@ -59,10 +59,10 @@
 #define BCRYPT_HASHSIZE (BCRYPT_BLOCKS * 4)
 
 static void
-bcrypt_hash(u_int8_t *sha2pass, u_int8_t *sha2salt, u_int8_t *out)
+bcrypt_hash(uint8_t *sha2pass, uint8_t *sha2salt, uint8_t *out)
 {
 	blf_ctx state;
-	u_int8_t ciphertext[BCRYPT_HASHSIZE] =
+	uint8_t ciphertext[BCRYPT_HASHSIZE] =
 	    "OxychromaticBlowfishSwatDynamite";
 	uint32_t cdata[BCRYPT_BLOCKS];
 	int i;
@@ -100,14 +100,14 @@ bcrypt_hash(u_int8_t *sha2pass, u_int8_t *sha2salt, u_int8_t *out)
 }
 
 int
-bcrypt_pbkdf(const char *pass, size_t passlen, const u_int8_t *salt, size_t saltlen,
-    u_int8_t *key, size_t keylen, unsigned int rounds)
+bcrypt_pbkdf(const char *pass, size_t passlen, const uint8_t *salt, size_t saltlen,
+    uint8_t *key, size_t keylen, unsigned int rounds)
 {
-	u_int8_t sha2pass[SHA512_DIGEST_LENGTH];
-	u_int8_t sha2salt[SHA512_DIGEST_LENGTH];
-	u_int8_t out[BCRYPT_HASHSIZE];
-	u_int8_t tmpout[BCRYPT_HASHSIZE];
-	u_int8_t *countsalt;
+	uint8_t sha2pass[SHA512_DIGEST_LENGTH];
+	uint8_t sha2salt[SHA512_DIGEST_LENGTH];
+	uint8_t out[BCRYPT_HASHSIZE];
+	uint8_t tmpout[BCRYPT_HASHSIZE];
+	uint8_t *countsalt;
 	size_t i, j, amt, stride;
 	uint32_t count;
 	SHA512CTX ctx;
