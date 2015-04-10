@@ -1,7 +1,7 @@
 project(libssh C)
 
 # Required cmake version
-cmake_minimum_required(VERSION 2.6.0)
+cmake_minimum_required(VERSION 2.8.0)
 
 # global needed variables
 set(APPLICATION_NAME ${PROJECT_NAME})
