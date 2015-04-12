@@ -221,20 +221,24 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
     case SOC_HOST:
         *parsing = 0;
         lowerhost = (session->opts.host) ? ssh_lowercase(session->opts.host) : NULL;
+        int ok = 0;
         for (p = ssh_config_get_str_tok(&s, NULL);
              p != NULL && p[0] != '\0';
              p = ssh_config_get_str_tok(&s, NULL)) {
-            char *z = ssh_path_expand_escape(session, p);
-            int ok;
+             if (ok >= 0) {
+               char *z = ssh_path_expand_escape(session, p);
 
-            if (z == NULL) {
-                z = strdup(p);
+               if (z == NULL) {
+                   z = strdup(p);
+               }
+               ok = match_hostname(lowerhost, z, strlen(z));
+               if (ok < 0) {
+                   *parsing = 0;
+               } else if (ok > 0) {
+                   *parsing = 1;
+               }
+               free(z);
             }
-            ok = match_hostname(lowerhost, z, strlen(z));
-            if (ok) {
-                *parsing = 1;
-            }
-            free(z);
         }
         SAFE_FREE(lowerhost);
         break;
