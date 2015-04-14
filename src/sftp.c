@@ -126,6 +126,7 @@ sftp_session sftp_new(ssh_session session){
   sftp->session = session;
   sftp->channel = ssh_channel_new(session);
   if (sftp->channel == NULL) {
+    sftp_ext_free(sftp->ext);
     SAFE_FREE(sftp);
 
     return NULL;
@@ -133,6 +134,7 @@ sftp_session sftp_new(ssh_session session){
 
   if (ssh_channel_open_session(sftp->channel)) {
     ssh_channel_free(sftp->channel);
+    sftp_ext_free(sftp->ext);
     SAFE_FREE(sftp);
 
     return NULL;
