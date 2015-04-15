@@ -165,7 +165,7 @@ static int ssh_server_kexdh_init(ssh_session session, ssh_buffer packet){
 }
 
 SSH_PACKET_CALLBACK(ssh_packet_kexdh_init){
-  int rc;
+  int rc = SSH_ERROR;
   (void)type;
   (void)user;
 
@@ -193,9 +193,11 @@ SSH_PACKET_CALLBACK(ssh_packet_kexdh_init){
         ssh_set_error(session,SSH_FATAL,"Wrong kex type in ssh_packet_kexdh_init");
         rc = SSH_ERROR;
   }
-  if (rc == SSH_ERROR)
+
+error:
+  if (rc == SSH_ERROR) {
       session->session_state = SSH_SESSION_STATE_ERROR;
-  error:
+  }
 
   return SSH_PACKET_USED;
 }

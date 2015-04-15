@@ -94,7 +94,7 @@ SSH_PACKET_CALLBACK(ssh_packet_dh_reply){
   (void)type;
   (void)user;
   SSH_LOG(SSH_LOG_PROTOCOL,"Received SSH_KEXDH_REPLY");
-  if(session->session_state!= SSH_SESSION_STATE_DH &&
+  if (session->session_state != SSH_SESSION_STATE_DH ||
 		session->dh_handshake_state != DH_STATE_INIT_SENT){
 	ssh_set_error(session,SSH_FATAL,"ssh_packet_dh_reply called in wrong state : %d:%d",
 			session->session_state,session->dh_handshake_state);
@@ -135,12 +135,16 @@ SSH_PACKET_CALLBACK(ssh_packet_newkeys){
   (void)user;
   (void)type;
   SSH_LOG(SSH_LOG_PROTOCOL, "Received SSH_MSG_NEWKEYS");
-  if(session->session_state!= SSH_SESSION_STATE_DH &&
-		session->dh_handshake_state != DH_STATE_NEWKEYS_SENT){
-	ssh_set_error(session,SSH_FATAL,"ssh_packet_newkeys called in wrong state : %d:%d",
-			session->session_state,session->dh_handshake_state);
-	goto error;
+
+  if (session->session_state != SSH_SESSION_STATE_DH ||
+      session->dh_handshake_state != DH_STATE_NEWKEYS_SENT) {
+      ssh_set_error(session,
+                    SSH_FATAL,
+                    "ssh_packet_newkeys called in wrong state : %d:%d",
+                    session->session_state,session->dh_handshake_state);
+      goto error;
   }
+
   if(session->server){
     /* server things are done in server.c */
     session->dh_handshake_state=DH_STATE_FINISHED;
