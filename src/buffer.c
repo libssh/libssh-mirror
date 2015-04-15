@@ -188,6 +188,10 @@ int buffer_reinit(struct ssh_buffer_struct *buffer) {
 int buffer_add_data(struct ssh_buffer_struct *buffer, const void *data, uint32_t len) {
   buffer_verify(buffer);
 
+  if (data == NULL) {
+      return -1;
+  }
+
   if (buffer->used + len < len) {
     return -1;
   }
@@ -220,6 +224,10 @@ int buffer_add_data(struct ssh_buffer_struct *buffer, const void *data, uint32_t
 int buffer_add_ssh_string(struct ssh_buffer_struct *buffer,
     struct ssh_string_struct *string) {
   uint32_t len = 0;
+
+  if (string == NULL) {
+      return -1;
+  }
 
   len = ssh_string_len(string);
   if (buffer_add_data(buffer, string, len + sizeof(uint32_t)) < 0) {
