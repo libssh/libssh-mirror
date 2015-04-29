@@ -1,6 +1,18 @@
 ChangeLog
 ==========
 
+version 0.6.5 (released 2015-04-29)
+  * Fixed CVE-2015-3146
+  * Fixed port handling in config file
+  * Fixed the build with libgcrypt
+  * Fixed SFTP endian issues (rlo #179)
+  * Fixed uninitilized sig variable (rlo #167)
+  * Fixed polling issues which could result in a hang
+  * Fixed handling of EINTR in ssh_poll() (rlo #186)
+  * Fixed C99 issues with __func__
+  * Fixed some memory leaks
+  * Improved macro detection on Windows
+
 version 0.6.4 (released 2014-12-19)
   * Fixed CVE-2014-8132.
   * Added SHA-2 for session ID signing with ECDSA keys.
