@@ -484,7 +484,10 @@ static int pki_private_key_encrypt(ssh_buffer privkey_buffer,
         return SSH_ERROR;
     }
     while (ssh_buffer_get_len(privkey_buffer) % cipher.blocksize != 0) {
-        buffer_add_u8(privkey_buffer, padding);
+        rc = buffer_add_u8(privkey_buffer, padding);
+        if (rc < 0) {
+            return SSH_ERROR;
+        }
         padding++;
     }
 
