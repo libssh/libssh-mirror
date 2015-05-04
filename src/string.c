@@ -129,11 +129,18 @@ struct ssh_string_struct *ssh_string_from_char(const char *what) {
  * @return The size of the content of the string, 0 on error.
  */
 size_t ssh_string_len(struct ssh_string_struct *s) {
-  if (s == NULL) {
-    return ntohl(0);
-  }
+    size_t size;
 
-  return ntohl(s->size);
+    if (s == NULL) {
+        return 0;
+    }
+
+    size = ntohl(s->size);
+    if (size > 0 && size < UINT_MAX) {
+        return size;
+    }
+
+    return 0;
 }
 
 /**
