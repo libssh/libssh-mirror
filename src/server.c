@@ -187,6 +187,7 @@ SSH_PACKET_CALLBACK(ssh_packet_kexdh_init){
     SSH_LOG(SSH_LOG_RARE, "first_kex_packet_follows guess was wrong, "
                           "ignoring first SSH_MSG_KEXDH_INIT message");
     session->first_kex_follows_guess_wrong = 0;
+    rc = SSH_OK;
     goto error;
   }
 
