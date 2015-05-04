@@ -279,43 +279,43 @@ char *ssh_find_matching(const char *available_d, const char *preferred_d){
 
 /**
  * @internal
- * @brief returns whether the first client key exchange algorithm matches
- *        the first server key exchange algorithm
- * @returns whether the first client key exchange algorithm matches
- *          the first server key exchange algorithm
+ * @brief returns whether the first client key exchange algorithm or
+ *        hostkey type matches its server counterpart
+ * @returns whether the first client key exchange algorithm or hostkey type
+ *          matches its server counterpart
  */
-static int is_first_kex_packet_follows_guess_wrong(const char *client_kex,
-                                                   const char *server_kex) {
+static int cmp_first_kex_algo(const char *client_str,
+                              const char *server_str) {
     int is_wrong = 1;
-    char **server_kex_tokens = NULL;
-    char **client_kex_tokens = NULL;
+    char **server_str_tokens = NULL;
+    char **client_str_tokens = NULL;
 
-    if ((client_kex == NULL) || (server_kex == NULL)) {
+    if ((client_str == NULL) || (server_str == NULL)) {
         goto out;
     }
 
-    client_kex_tokens = tokenize(client_kex);
+    client_str_tokens = tokenize(client_str);
 
-    if (client_kex_tokens == NULL) {
+    if (client_str_tokens == NULL) {
         goto out;
     }
 
-    if (client_kex_tokens[0] == NULL) {
+    if (client_str_tokens[0] == NULL) {
         goto freeout;
     }
 
-    server_kex_tokens = tokenize(server_kex);
-    if (server_kex_tokens == NULL) {
+    server_str_tokens = tokenize(server_str);
+    if (server_str_tokens == NULL) {
         goto freeout;
     }
 
-    is_wrong = (strcmp(client_kex_tokens[0], server_kex_tokens[0]) != 0);
+    is_wrong = (strcmp(client_str_tokens[0], server_str_tokens[0]) != 0);
 
-    SAFE_FREE(server_kex_tokens[0]);
-    SAFE_FREE(server_kex_tokens);
+    SAFE_FREE(server_str_tokens[0]);
+    SAFE_FREE(server_str_tokens);
 freeout:
-    SAFE_FREE(client_kex_tokens[0]);
-    SAFE_FREE(client_kex_tokens);
+    SAFE_FREE(client_str_tokens[0]);
+    SAFE_FREE(client_str_tokens);
 out:
     return is_wrong;
 }
@@ -432,8 +432,10 @@ SSH_PACKET_CALLBACK(ssh_packet_kexinit){
          */
         if (first_kex_packet_follows) {
           session->first_kex_follows_guess_wrong =
-            is_first_kex_packet_follows_guess_wrong(session->next_crypto->client_kex.methods[SSH_KEX],
-                                                    session->next_crypto->server_kex.methods[SSH_KEX]);
+            cmp_first_kex_algo(session->next_crypto->client_kex.methods[SSH_KEX],
+                               session->next_crypto->server_kex.methods[SSH_KEX]) ||
+            cmp_first_kex_algo(session->next_crypto->client_kex.methods[SSH_HOSTKEYS],
+                               session->next_crypto->server_kex.methods[SSH_HOSTKEYS]);
         }
     }
 
