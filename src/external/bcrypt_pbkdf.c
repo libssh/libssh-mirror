@@ -96,9 +96,9 @@ bcrypt_hash(uint8_t *sha2pass, uint8_t *sha2salt, uint8_t *out)
 	}
 
 	/* zap */
-	memset(ciphertext, 0, sizeof(ciphertext));
-	memset(cdata, 0, sizeof(cdata));
-	memset(&state, 0, sizeof(state));
+	BURN_BUFFER(ciphertext, sizeof(ciphertext));
+	BURN_BUFFER(cdata, sizeof(cdata));
+	BURN_BUFFER(&state, sizeof(state));
 }
 
 int
@@ -173,8 +173,7 @@ bcrypt_pbkdf(const char *pass, size_t passlen, const uint8_t *salt, size_t saltl
 	}
 
 	/* zap */
-	memset(out, 0, sizeof(out));
-	memset(countsalt, 0, saltlen + 4);
+	BURN_BUFFER(out, sizeof(out));
 	free(countsalt);
 
 	return 0;
