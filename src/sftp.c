@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <limits.h>
 
 #ifndef _WIN32
 #include <netinet/in.h>
@@ -353,7 +354,7 @@ sftp_packet sftp_packet_read(sftp_session sftp) {
   buffer_get_u8(packet->payload, &packet->type);
 
   size = ntohl(size);
-  if (size == 0) {
+  if (size == 0 || size > UINT_MAX) {
     return packet;
   }
   size--;
