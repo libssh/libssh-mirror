@@ -613,9 +613,16 @@ ssh_string ssh_pki_openssh_privkey_export(const ssh_key privkey,
     }
 
     if (to_encrypt){
-        ssh_buffer kdf_buf = ssh_buffer_new();
+        ssh_buffer kdf_buf;
+
+        kdf_buf = ssh_buffer_new();
+        if (kdf_buf == NULL) {
+            goto error;
+        }
+
         salt = ssh_string_new(16);
-        if (kdf_buf == NULL || salt == NULL){
+        if (salt == NULL){
+            ssh_buffer_free(kdf_buf);
             goto error;
         }
         ssh_get_random(ssh_string_data(salt),16, 0);
