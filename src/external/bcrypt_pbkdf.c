@@ -98,7 +98,7 @@ bcrypt_hash(uint8_t *sha2pass, uint8_t *sha2salt, uint8_t *out)
 	/* zap */
 	BURN_BUFFER(ciphertext, sizeof(ciphertext));
 	BURN_BUFFER(cdata, sizeof(cdata));
-	BURN_BUFFER(&state, sizeof(state));
+	ZERO_STRUCT(state);
 }
 
 int
