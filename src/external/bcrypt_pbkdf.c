@@ -112,6 +112,7 @@ bcrypt_pbkdf(const char *pass, size_t passlen, const uint8_t *salt, size_t saltl
 	uint8_t *countsalt;
 	size_t i, j, amt, stride;
 	uint32_t count;
+	size_t origkeylen = keylen;
 	SHA512CTX ctx;
 
 	/* nothing crazy */
@@ -161,9 +162,14 @@ bcrypt_pbkdf(const char *pass, size_t passlen, const uint8_t *salt, size_t saltl
 		 * pbkdf2 deviation: ouput the key material non-linearly.
 		 */
 		amt = MIN(amt, keylen);
-		for (i = 0; i < amt; i++)
-			key[i * stride + (count - 1)] = out[i];
-		keylen -= amt;
+		for (i = 0; i < amt; i++) {
+			size_t dest = i * stride + (count - 1);
+			if (dest >= origkeylen) {
+				break;
+			}
+			key[dest] = out[i];
+		}
+		keylen -= i;
 	}
 
 	/* zap */
