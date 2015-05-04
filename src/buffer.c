@@ -878,6 +878,7 @@ int ssh_buffer_unpack_va(struct ssh_buffer_struct *buffer,
     for (p = format, count = 0; *p != '\0'; p++, count++) {
         /* Invalid number of arguments passed */
         if (argc != -1 && count > argc) {
+            va_end(ap_copy);
             return SSH_ERROR;
         }
 
