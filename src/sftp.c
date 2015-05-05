@@ -313,7 +313,8 @@ int sftp_packet_write(sftp_session sftp, uint8_t type, ssh_buffer payload){
 sftp_packet sftp_packet_read(sftp_session sftp) {
   unsigned char buffer[MAX_BUF_SIZE];
   sftp_packet packet = NULL;
-  uint32_t size;
+  uint32_t tmp;
+  size_t size;
   int r;
 
   packet = malloc(sizeof(struct sftp_packet_struct));
@@ -336,7 +337,7 @@ sftp_packet sftp_packet_read(sftp_session sftp) {
     return NULL;
   }
   ssh_buffer_add_data(packet->payload, buffer, r);
-  if (buffer_get_u32(packet->payload, &size) != sizeof(uint32_t)) {
+  if (buffer_get_u32(packet->payload, &tmp) != sizeof(uint32_t)) {
     ssh_set_error(sftp->session, SSH_FATAL, "Short sftp packet!");
     ssh_buffer_free(packet->payload);
     SAFE_FREE(packet);
@@ -353,12 +354,13 @@ sftp_packet sftp_packet_read(sftp_session sftp) {
   ssh_buffer_add_data(packet->payload, buffer, r);
   buffer_get_u8(packet->payload, &packet->type);
 
-  size = ntohl(size);
-  if (size == 0 || size > UINT_MAX) {
+  size = ntohl(tmp);
+  if (size == 0) {
     return packet;
   }
   size--;
-  while (size>0){
+
+  while (size > 0 && size < UINT_MAX) {
     r=ssh_channel_read(sftp->channel,buffer,
         sizeof(buffer)>size ? size:sizeof(buffer),0);
 
