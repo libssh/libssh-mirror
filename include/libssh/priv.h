@@ -311,10 +311,18 @@ int match_hostname(const char *host, const char *pattern, unsigned int len);
  * Get the argument cound of variadic arguments
  */
 #ifdef HAVE_GCC_NARG_MACRO
+/*
+ * Since MSVC 2010 there is a bug in passing __VA_ARGS__ to subsequent
+ * macros as a single token, which results in:
+ *    warning C4003: not enough actual parameters for macro '_VA_ARG_N'
+ *  and incorrect behavior. This fixes issue.
+ */
+#define VA_APPLY_VARIADIC_MACRO(macro, tuple) macro tuple
+
 #define __VA_NARG__(...) \
         (__VA_NARG_(_0, ## __VA_ARGS__, __RSEQ_N()) - 1)
 #define __VA_NARG_(...) \
-        __VA_ARG_N(__VA_ARGS__)
+        VA_APPLY_VARIADIC_MACRO(__VA_ARG_N, (__VA_ARGS__))
 #define __VA_ARG_N( \
          _1, _2, _3, _4, _5, _6, _7, _8, _9,_10, \
         _11,_12,_13,_14,_15,_16,_17,_18,_19,_20, \
