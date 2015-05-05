@@ -1,5 +1,7 @@
 project(unittests C)
 
+include_directories(${OPENSSL_INCLUDE_DIR})
+
 add_cmocka_test(torture_buffer torture_buffer.c ${TORTURE_LIBRARY})
 add_cmocka_test(torture_callbacks torture_callbacks.c ${TORTURE_LIBRARY})
 add_cmocka_test(torture_init torture_init.c ${TORTURE_LIBRARY})
