@@ -229,6 +229,7 @@ static int do_copy(struct location *src, struct location *dest, int recursive){
 		  fprintf(stderr,"error: %s\n",ssh_get_error(dest->session));
                   ssh_string_free_char(filename);
 		  ssh_scp_free(dest->scp);
+		  dest->scp = NULL;
 		  return -1;
 	  }
   } else {
