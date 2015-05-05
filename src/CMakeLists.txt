@@ -246,6 +246,10 @@ if (WITH_VISIBILITY_HIDDEN)
   set_target_properties(${LIBSSH_SHARED_LIBRARY} PROPERTIES COMPILE_FLAGS "-fvisibility=hidden")
 endif (WITH_VISIBILITY_HIDDEN)
 
+if (MINGW)
+    set_target_properties(${LIBSSH_SHARED_LIBRARY} PROPERTIES LINK_FLAGS "-Wl,--enable-stdcall-fixup")
+endif ()
+
 
 install(
   TARGETS
