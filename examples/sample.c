@@ -298,13 +298,22 @@ static void select_loop(ssh_session session,ssh_channel channel){
 	int ret;
 	while(channel){
 		do{
+			int fd;
+
 			FD_ZERO(&fds);
 			if(!eof)
 				FD_SET(0,&fds);
 			timeout.tv_sec=30;
 			timeout.tv_usec=0;
-			FD_SET(ssh_get_fd(session),&fds);
-			maxfd=ssh_get_fd(session)+1;
+
+			fd = ssh_get_fd(session);
+			if (fd < 0) {
+				fprintf(stderr, "Error getting fd\n");
+				return;
+			}
+			FD_SET(fd, &fds);
+			maxfd = fd + 1;
+
 			channels[0]=channel; // set the first channel we want to read from
 			channels[1]=NULL;
 			ret=ssh_select(channels,outchannels,maxfd,&fds,&timeout);
