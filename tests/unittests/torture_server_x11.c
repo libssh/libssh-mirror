@@ -3,6 +3,8 @@
 #include <errno.h>
 #include <pthread.h>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include <libssh/libssh.h>
 #include "torture.h"
@@ -18,13 +20,16 @@ struct hostkey_state {
 
 static void setup(void **state) {
     struct hostkey_state *h;
+    mode_t mask;
 
     h = malloc(sizeof(struct hostkey_state));
     assert_non_null(h);
 
     h->hostkey_path = strdup("/tmp/libssh_hostkey_XXXXXX");
 
+    mask = umask(S_IRWXO | S_IRWXG);
     h->fd = mkstemp(h->hostkey_path);
+    umask(mask);
     assert_return_code(h->fd, errno);
     close(h->fd);
 

@@ -45,12 +45,14 @@ static void torture_sftp_read_blocking(void **state) {
     ssize_t byteswritten;
     int fd;
     sftp_file file;
-
+    mode_t mask;
 
     file = sftp_open(t->sftp, "/usr/bin/ssh", O_RDONLY, 0);
     assert_non_null(file);
 
+    mask = umask(S_IRWXO | S_IRWXG);
     fd = mkstemp(libssh_tmp_file);
+    umask(mask);
     unlink(libssh_tmp_file);
 
     for (;;) {
