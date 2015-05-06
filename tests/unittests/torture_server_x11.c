@@ -45,6 +45,8 @@ static void teardown(void **state) {
     struct hostkey_state *h = (struct hostkey_state *)*state;
 
     unlink(h->hostkey);
+    free(h->hostkey_path);
+    free(h);
 }
 
 /* For x11_screen_number, need something that is not equal to htonl
