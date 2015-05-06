@@ -42,8 +42,6 @@
 /* for pattern matching */
 #include "match.c"
 
-#define TORTURE_TESTKEY_PASSWORD "libssh-rocks"
-
 static const char torture_rsa_testkey[] =
         "-----BEGIN RSA PRIVATE KEY-----\n"
         "MIIEowIBAAKCAQEArAOREUWlBXJAKZ5hABYyxnRayDZP1bJeLbPVK+npxemrhHyZ\n"

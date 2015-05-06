@@ -46,6 +46,8 @@
     assert_true(code >= 0)
 #endif /* assert_return_code */
 
+#define TORTURE_TESTKEY_PASSWORD "libssh-rocks"
+
 /* Used by main to communicate with parse_opt. */
 struct argument_s {
   const char *pattern;
