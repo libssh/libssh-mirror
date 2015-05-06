@@ -28,6 +28,18 @@
    obj:/lib64/ld-2.15.so
 }
 
+### VALGRIND
+{
+    valgrind_exit_free_bug
+    Memcheck:Free
+    fun:free
+    fun:__libc_freeres
+    fun:_vgnU_freeres
+    fun:__run_exit_handlers
+    fun:exit
+}
+
+
 ### OPENSSL
 {
    openssl_crypto_value8
