@@ -127,3 +127,15 @@
    Memcheck:Cond
    fun:OPENSSL_cleanse
 }
+{
+   openssl_FIPS_dlopen_leak
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   fun:_dlerror_run
+   fun:dlopen*
+   obj:/lib64/libcrypto.so*
+   fun:FIPS_module_mode_set
+   fun:FIPS_mode_set
+   fun:OPENSSL_init_library
+}
