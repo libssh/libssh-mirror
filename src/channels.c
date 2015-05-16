@@ -2277,6 +2277,7 @@ error:
   return rc;
 }
 
+/* DEPRECATED */
 int ssh_forward_cancel(ssh_session session, const char *address, int port) {
     return ssh_channel_cancel_forward(session, address, port);
 }
