@@ -2206,6 +2206,11 @@ error:
 }
 
 /* DEPRECATED */
+int ssh_forward_listen(ssh_session session, const char *address, int port, int *bound_port) {
+  return ssh_channel_listen_forward(session, address, port, bound_port);
+}
+
+/* DEPRECATED */
 ssh_channel ssh_forward_accept(ssh_session session, int timeout_ms) {
   return ssh_channel_accept(session, SSH_CHANNEL_FORWARDED_TCPIP, timeout_ms, NULL);
 }
