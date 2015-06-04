@@ -93,12 +93,6 @@ int ssh_options_copy(ssh_session src, ssh_session *dest) {
     if (src->opts.identity) {
         struct ssh_iterator *it;
 
-        new->opts.identity = ssh_list_new();
-        if (new->opts.identity == NULL) {
-            ssh_free(new);
-            return -1;
-        }
-
         it = ssh_list_get_iterator(src->opts.identity);
         while (it) {
             char *id;
