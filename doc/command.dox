@@ -56,7 +56,7 @@ If an error has been encountered, it returns a negative value:
 
 @code
   char buffer[256];
-  unsigned int nbytes;
+  int nbytes;
 
   nbytes = ssh_channel_read(channel, buffer, sizeof(buffer), 0);
   while (nbytes > 0)
