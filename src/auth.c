@@ -209,8 +209,8 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_failure){
             "Access denied. Authentication that can continue: %s",
             auth_methods);
 
-    session->auth_methods = 0;
   }
+  session->auth_methods = 0;
   if (strstr(auth_methods, "password") != NULL) {
     session->auth_methods |= SSH_AUTH_METHOD_PASSWORD;
   }
