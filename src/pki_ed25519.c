@@ -35,8 +35,8 @@ int pki_key_generate_ed25519(ssh_key key)
         goto error;
     }
 
-    key->ed25519_pubkey = malloc(sizeof (ed25519_privkey));
-    if (key->ed25519_privkey == NULL) {
+    key->ed25519_pubkey = malloc(sizeof (ed25519_pubkey));
+    if (key->ed25519_pubkey == NULL) {
         goto error;
     }
 
