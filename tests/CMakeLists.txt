@@ -1,4 +1,4 @@
-project(tests C)
+project(libssh-tests C)
 
 if (BSD OR SOLARIS OR OSX)
     find_package(Argp)
