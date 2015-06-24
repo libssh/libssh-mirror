@@ -33,9 +33,10 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#ifndef HAVE_CLOCK_GETTIME
+#ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
-#endif /* HAVE_CLOCK_GETTIME */
+#endif /* HAVE_SYS_TIME_H */
+
 #endif /* _WIN32 */
 
 #include <limits.h>
