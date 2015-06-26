@@ -712,7 +712,7 @@ SSH_PACKET_CALLBACK(channel_rcv_request) {
 
 		SAFE_FREE(request);
 
-		rc = ssh_buffer_unpack(packet, "sbs",
+		rc = ssh_buffer_unpack(packet, "sbss",
 		        &sig, /* signal name */
 		        &core_dumped,    /* core dumped */
 		        &errmsg, /* error message */
