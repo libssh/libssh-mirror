@@ -588,6 +588,7 @@ LIBSSH_API int ssh_select(ssh_channel *channels, ssh_channel *outchannels, socke
     fd_set *readfds, struct timeval *timeout);
 LIBSSH_API int ssh_service_request(ssh_session session, const char *service);
 LIBSSH_API int ssh_set_agent_channel(ssh_session session, ssh_channel channel);
+LIBSSH_API int ssh_set_agent_socket(ssh_session session, socket_t fd);
 LIBSSH_API void ssh_set_blocking(ssh_session session, int blocking);
 LIBSSH_API void ssh_set_counters(ssh_session session, ssh_counter scounter,
                                  ssh_counter rcounter);
