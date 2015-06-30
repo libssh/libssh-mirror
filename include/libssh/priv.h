@@ -60,6 +60,7 @@
 
 # ifdef _MSC_VER
 #  include <stdio.h>
+#  include <stdarg.h> /* va_copy define check */
 
 /* On Microsoft compilers define inline to __inline on all others use inline */
 #  undef inline
