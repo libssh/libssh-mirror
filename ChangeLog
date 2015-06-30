@@ -1,6 +1,13 @@
 ChangeLog
 ==========
 
+version 0.7.1 (released 2015-06-30)
+  * Fixed SSH_AUTH_PARTIAL auth with auto public key
+  * Fixed memory leak in session options
+  * Fixed allocation of ed25519 public keys
+  * Fixed channel exit-status and exit-signal
+  * Reintroduce ssh_forward_listen()
+
 version 0.7.0 (released 2015-05-11)
   * Added support for ed25519 keys
   * Added SHA2 algorithms for HMAC
