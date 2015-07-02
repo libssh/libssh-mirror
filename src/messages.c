@@ -294,6 +294,21 @@ static int ssh_execute_client_request(ssh_session session, ssh_message msg)
         }
 
         return SSH_OK;
+    } else if (msg->type == SSH_REQUEST_CHANNEL_OPEN
+               && msg->channel_request_open.type == SSH_CHANNEL_AUTH_AGENT
+               && ssh_callbacks_exists(session->common.callbacks, channel_open_request_auth_agent_function)) {
+        channel = session->common.callbacks->channel_open_request_auth_agent_function (session,
+                session->common.callbacks->userdata);
+
+        if (channel != NULL) {
+            rc = ssh_message_channel_request_open_reply_accept_channel(msg, channel);
+
+            return rc;
+        } else {
+            ssh_message_reply_default(msg);
+        }
+
+        return SSH_OK;
     }
 
     return rc;
@@ -1067,6 +1082,11 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_open){
     }
     msg->channel_request_open.originator_port = (uint16_t) originator_port;
     msg->channel_request_open.type = SSH_CHANNEL_X11;
+    goto end;
+  }
+
+  if (strcmp(type_c,"auth-agent@openssh.com") == 0) {
+    msg->channel_request_open.type = SSH_CHANNEL_AUTH_AGENT;
     goto end;
   }
 

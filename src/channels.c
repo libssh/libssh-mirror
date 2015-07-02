@@ -1982,6 +1982,25 @@ ssh_channel ssh_channel_accept_x11(ssh_channel channel, int timeout_ms) {
 }
 
 /**
+ * @brief Send an "auth-agent-req" channel request over an existing session channel.
+ *
+ * This client-side request will enable forwarding the agent over an secure tunnel.
+ * When the server is ready to open one authentication agent channel, an
+ * ssh_channel_open_request_auth_agent_callback event will be generated.
+ *
+ * @param[in]  channel  The channel to send signal.
+ *
+ * @return              SSH_OK on success, SSH_ERROR if an error occurred
+ */
+int ssh_channel_request_auth_agent(ssh_channel channel) {
+  if (channel == NULL) {
+    return SSH_ERROR;
+  }
+
+  return channel_request(channel, "auth-agent-req@openssh.com", NULL, 0);
+}
+
+/**
  * @internal
  *
  * @brief Handle a SSH_REQUEST_SUCCESS packet normally sent after a global

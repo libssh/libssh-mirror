@@ -188,7 +188,8 @@ enum ssh_channel_type_e {
 	SSH_CHANNEL_SESSION,
 	SSH_CHANNEL_DIRECT_TCPIP,
 	SSH_CHANNEL_FORWARDED_TCPIP,
-	SSH_CHANNEL_X11
+	SSH_CHANNEL_X11,
+	SSH_CHANNEL_AUTH_AGENT
 };
 
 enum ssh_channel_requests_e {
@@ -401,6 +402,7 @@ LIBSSH_API int ssh_channel_request_sftp(ssh_channel channel);
 LIBSSH_API int ssh_channel_request_subsystem(ssh_channel channel, const char *subsystem);
 LIBSSH_API int ssh_channel_request_x11(ssh_channel channel, int single_connection, const char *protocol,
     const char *cookie, int screen_number);
+LIBSSH_API int ssh_channel_request_auth_agent(ssh_channel channel);
 LIBSSH_API int ssh_channel_send_eof(ssh_channel channel);
 LIBSSH_API int ssh_channel_select(ssh_channel *readchans, ssh_channel *writechans, ssh_channel *exceptchans, struct
         timeval * timeout);

@@ -125,6 +125,18 @@ typedef ssh_channel (*ssh_channel_open_request_x11_callback) (ssh_session sessio
       const char * originator_address, int originator_port, void *userdata);
 
 /**
+ * @brief Handles an SSH new channel open "auth-agent" request. This happens when the server
+ * sends back an "auth-agent" connection attempt. This is a client-side API
+ * @param session current session handler
+ * @param userdata Userdata to be passed to the callback function.
+ * @returns a valid ssh_channel handle if the request is to be allowed
+ * @returns NULL if the request should not be allowed
+ * @warning The channel pointer returned by this callback must be closed by the application.
+ */
+typedef ssh_channel (*ssh_channel_open_request_auth_agent_callback) (ssh_session session,
+      void *userdata);
+
+/**
  * The structure to replace libssh functions with appropriate callbacks.
  */
 struct ssh_callbacks_struct {
@@ -154,6 +166,9 @@ struct ssh_callbacks_struct {
   /** This function will be called when an incoming X11 request is received.
    */
   ssh_channel_open_request_x11_callback channel_open_request_x11_function;
+  /** This function will be called when an incoming "auth-agent" request is received.
+   */
+  ssh_channel_open_request_auth_agent_callback channel_open_request_auth_agent_function;
 };
 typedef struct ssh_callbacks_struct *ssh_callbacks;
 
