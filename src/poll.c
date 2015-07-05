@@ -775,6 +775,33 @@ int ssh_event_add_fd(ssh_event event, socket_t fd, short events,
 }
 
 /**
+ * @brief Add a poll handle to the event.
+ *
+ * @param   event     the ssh_event
+ *
+ * @param   p         the poll handle
+ *
+ * @returns SSH_OK    on success
+ *          SSH_ERROR on failure
+ */
+int ssh_event_add_poll(ssh_event event, ssh_poll_handle p)
+{
+    return ssh_poll_ctx_add(event->ctx, p);
+}
+
+/**
+ * @brief remove a poll handle to the event.
+ *
+ * @param   event     the ssh_event
+ *
+ * @param   p         the poll handle
+ */
+void ssh_event_remove_poll(ssh_event event, ssh_poll_handle p)
+{
+    ssh_poll_ctx_remove(event->ctx,p);
+}
+
+/**
  * @brief remove the poll handle from session and assign them to a event,
  * when used in blocking mode.
  *
