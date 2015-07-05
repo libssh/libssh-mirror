@@ -171,214 +171,44 @@ static void sizechanged(void){
     setsignal();
 }
 
-/* There are two flavors of select loop: the one based on
- * ssh_select and the one based on channel_select.
- * The ssh_select one permits you to give your own file descriptors to
- * follow. It is thus a complete select loop.
- * The second one only selects on channels. It is simplier to use
- * but doesn't permit you to fill in your own file descriptor. It is
- * more adapted if you can't use ssh_select as a main loop (because
- * you already have another main loop system).
- */
-
-#ifdef USE_CHANNEL_SELECT
-
-/* channel_select base main loop, with a standard select(2)
- */
 static void select_loop(ssh_session session,ssh_channel channel){
-    fd_set fds;
-    struct timeval timeout;
-    char buffer[4096];
-    ssh_buffer readbuf=ssh_buffer_new();
-    ssh_channel channels[2];
-    int lus;
-    int eof=0;
-    int maxfd;
-    int ret;
-    while(channel){
-       /* when a signal is caught, ssh_select will return
-         * with SSH_EINTR, which means it should be started
-         * again. It lets you handle the signal the faster you
-         * can, like in this window changed example. Of course, if
-         * your signal handler doesn't call libssh at all, you're
-         * free to handle signals directly in sighandler.
-         */
-        do{
-            FD_ZERO(&fds);
-            if(!eof)
-                FD_SET(0,&fds);
-            timeout.tv_sec=30;
-            timeout.tv_usec=0;
-            FD_SET(ssh_get_fd(session),&fds);
-            maxfd=ssh_get_fd(session)+1;
-            ret=select(maxfd,&fds,NULL,NULL,&timeout);
-            if(ret==EINTR)
-                continue;
-            if(FD_ISSET(0,&fds)){
-                lus=read(0,buffer,sizeof(buffer));
-                if(lus)
-                    ssh_channel_write(channel,buffer,lus);
-                else {
-                    eof=1;
-                    ssh_channel_send_eof(channel);
-                }
-            }
-            if(FD_ISSET(ssh_get_fd(session),&fds)){
-                ssh_set_fd_toread(session);
-            }
-            channels[0]=channel; // set the first channel we want to read from
-            channels[1]=NULL;
-            ret=ssh_channel_select(channels,NULL,NULL,NULL); // no specific timeout - just poll
-            if(signal_delayed)
-                sizechanged();
-        } while (ret==EINTR || ret==SSH_EINTR);
+    ssh_connector connector_in, connector_out, connector_err;
+    ssh_event event = ssh_event_new();
 
-        // we already looked for input from stdin. Now, we are looking for input from the channel
+    /* stdin */
+    connector_in = ssh_connector_new(session);
+    ssh_connector_set_out_channel(connector_in, channel, SSH_CONNECTOR_STDOUT);
+    ssh_connector_set_in_fd(connector_in, 0);
+    ssh_event_add_connector(event, connector_in);
 
-        if(channel && ssh_channel_is_closed(channel)){
-            ssh_channel_free(channel);
-            channel=NULL;
-            channels[0]=NULL;
-        }
-        if(channels[0]){
-            while(channel && ssh_channel_is_open(channel) && ssh_channel_poll(channel,0)>0){
-                lus=channel_read_buffer(channel,readbuf,0,0);
-                if(lus==-1){
-                    fprintf(stderr, "Error reading channel: %s\n",
-                        ssh_get_error(session));
-                    return;
-                }
-                if(lus==0){
-                    ssh_channel_free(channel);
-                    channel=channels[0]=NULL;
-                } else
-                    if (write(1,ssh_buffer_get(readbuf),lus) < 0) {
-                      fprintf(stderr, "Error writing to buffer\n");
-                      return;
-                    }
-            }
-            while(channel && ssh_channel_is_open(channel) && ssh_channel_poll(channel,1)>0){ /* stderr */
-                lus=channel_read_buffer(channel,readbuf,0,1);
-                if(lus==-1){
-                    fprintf(stderr, "Error reading channel: %s\n",
-                        ssh_get_error(session));
-                    return;
-                }
-                if(lus==0){
-                    ssh_channel_free(channel);
-                    channel=channels[0]=NULL;
-                } else
-                    if (write(2,ssh_buffer_get(readbuf),lus) < 0) {
-                      fprintf(stderr, "Error writing to buffer\n");
-                      return;
-                    }
-            }
-        }
-        if(channel && ssh_channel_is_closed(channel)){
-            ssh_channel_free(channel);
-            channel=NULL;
-        }
+    /* stdout */
+    connector_out = ssh_connector_new(session);
+    ssh_connector_set_out_fd(connector_out, 1);
+    ssh_connector_set_in_channel(connector_out, channel, SSH_CONNECTOR_STDOUT);
+    ssh_event_add_connector(event, connector_out);
+
+    /* stderr */
+    connector_err = ssh_connector_new(session);
+    ssh_connector_set_out_fd(connector_err, 2);
+    ssh_connector_set_in_channel(connector_err, channel, SSH_CONNECTOR_STDERR);
+    ssh_event_add_connector(event, connector_err);
+
+    while(ssh_channel_is_open(channel)){
+        if(signal_delayed)
+            sizechanged();
+        ssh_event_dopoll(event, 60000);
     }
-    ssh_buffer_free(readbuf);
+    ssh_event_remove_connector(event, connector_in);
+    ssh_event_remove_connector(event, connector_out);
+    ssh_event_remove_connector(event, connector_err);
+
+    ssh_connector_free(connector_in);
+    ssh_connector_free(connector_out);
+    ssh_connector_free(connector_err);
+
+    ssh_event_free(event);
+    ssh_channel_free(channel);
 }
-#else /* CHANNEL_SELECT */
-
-static void select_loop(ssh_session session,ssh_channel channel){
-	fd_set fds;
-	struct timeval timeout;
-	char buffer[4096];
-	/* channels will be set to the channels to poll.
-	 * outchannels will contain the result of the poll
-	 */
-	ssh_channel channels[2], outchannels[2];
-	int lus;
-	int eof=0;
-	int maxfd;
-	unsigned int r;
-	int ret;
-	while(channel){
-		do{
-			int fd;
-
-			FD_ZERO(&fds);
-			if(!eof)
-				FD_SET(0,&fds);
-			timeout.tv_sec=30;
-			timeout.tv_usec=0;
-
-			fd = ssh_get_fd(session);
-			if (fd < 0) {
-				fprintf(stderr, "Error getting fd\n");
-				return;
-			}
-			FD_SET(fd, &fds);
-			maxfd = fd + 1;
-
-			channels[0]=channel; // set the first channel we want to read from
-			channels[1]=NULL;
-			ret=ssh_select(channels,outchannels,maxfd,&fds,&timeout);
-			if(signal_delayed)
-				sizechanged();
-			if(ret==EINTR)
-				continue;
-			if(FD_ISSET(0,&fds)){
-				lus=read(0,buffer,sizeof(buffer));
-				if(lus)
-					ssh_channel_write(channel,buffer,lus);
-				else {
-					eof=1;
-					ssh_channel_send_eof(channel);
-				}
-			}
-			if(channel && ssh_channel_is_closed(channel)){
-				ssh_channel_free(channel);
-				channel=NULL;
-				channels[0]=NULL;
-			}
-			if(outchannels[0]){
-				while(channel && ssh_channel_is_open(channel) && (r = ssh_channel_poll(channel,0))!=0){
-					lus=ssh_channel_read(channel,buffer,sizeof(buffer) > r ? r : sizeof(buffer),0);
-					if(lus==-1){
-						fprintf(stderr, "Error reading channel: %s\n",
-								ssh_get_error(session));
-						return;
-					}
-					if(lus==0){
-						ssh_channel_free(channel);
-						channel=channels[0]=NULL;
-					} else
-					  if (write(1,buffer,lus) < 0) {
-					    fprintf(stderr, "Error writing to buffer\n");
-					    return;
-					  }
-				}
-				while(channel && ssh_channel_is_open(channel) && (r = ssh_channel_poll(channel,1))!=0){ /* stderr */
-					lus=ssh_channel_read(channel,buffer,sizeof(buffer) > r ? r : sizeof(buffer),1);
-					if(lus==-1){
-						fprintf(stderr, "Error reading channel: %s\n",
-								ssh_get_error(session));
-						return;
-					}
-					if(lus==0){
-						ssh_channel_free(channel);
-						channel=channels[0]=NULL;
-					} else
-					  if (write(2,buffer,lus) < 0) {
-					    fprintf(stderr, "Error writing to buffer\n");
-					    return;
-					  }
-				}
-			}
-			if(channel && ssh_channel_is_closed(channel)){
-				ssh_channel_free(channel);
-				channel=NULL;
-			}
-		} while (ret==EINTR || ret==SSH_EINTR);
-
-	}
-}
-
-#endif
 
 static void shell(ssh_session session){
     ssh_channel channel;
