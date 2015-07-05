@@ -360,10 +360,34 @@ error:
     return processed;
 }
 
+static void ssh_packet_socket_controlflow_callback(int code, void *userdata)
+{
+    ssh_session session = userdata;
+    struct ssh_iterator *it;
+    ssh_channel channel;
+
+    if (code == SSH_SOCKET_FLOW_WRITEWONTBLOCK) {
+        /* the out pipe is empty so we can forward this to channels */
+        it = ssh_list_get_iterator(session->channels);
+        while (it != NULL) {
+            channel = ssh_iterator_value(ssh_channel, it);
+            if (ssh_callbacks_exists(channel->callbacks,
+                                     channel_write_wontblock_function)) {
+                SSH_LOG(SSH_LOG_TRACE, "Executing write_wontblock callback for channel");
+                channel->callbacks->channel_write_wontblock_function(session,
+                                                                     channel,
+                                                                     channel->remote_window,
+                                                                     channel->callbacks->userdata);
+            }
+            it = it->next;
+        }
+    }
+}
+
 void ssh_packet_register_socket_callback(ssh_session session, ssh_socket s){
 	session->socket_callbacks.data=ssh_packet_socket_callback;
 	session->socket_callbacks.connected=NULL;
-	session->socket_callbacks.controlflow=NULL;
+    session->socket_callbacks.controlflow = ssh_packet_socket_controlflow_callback;
 	session->socket_callbacks.exception=NULL;
 	session->socket_callbacks.userdata=session;
 	ssh_socket_set_callbacks(s,&session->socket_callbacks);

@@ -694,6 +694,22 @@ typedef int (*ssh_channel_subsystem_request_callback) (ssh_session session,
                                             const char *subsystem,
                                             void *userdata);
 
+/**
+ * @brief SSH channel write will not block (flow control).
+ *
+ * @param channel the channel
+ *
+ * @param[in] bytes size of the remote window in bytes. Writing as much data
+ *            will not block.
+ *
+ * @param[in] userdata Userdata to be passed to the callback function.
+ *
+ * @returns 0 default return value (other return codes may be added in future).
+ */
+typedef int (*ssh_channel_write_wontblock_callback) (ssh_session session,
+                                                     ssh_channel channel,
+                                                     size_t bytes,
+                                                     void *userdata);
 
 struct ssh_channel_callbacks_struct {
   /** DON'T SET THIS use ssh_callbacks_init() instead. */
@@ -758,6 +774,10 @@ struct ssh_channel_callbacks_struct {
    * (like sftp).
    */
   ssh_channel_subsystem_request_callback channel_subsystem_request_function;
+  /** This function will be called when the channel write is guaranteed
+   * not to block.
+   */
+  ssh_channel_write_wontblock_callback channel_write_wontblock_function;
 };
 
 typedef struct ssh_channel_callbacks_struct *ssh_channel_callbacks;
