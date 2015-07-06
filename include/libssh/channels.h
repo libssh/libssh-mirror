@@ -74,7 +74,8 @@ struct ssh_channel_struct {
     int version;
     int exit_status;
     enum ssh_channel_request_state_e request_state;
-    ssh_channel_callbacks callbacks;
+    struct ssh_list *callbacks; /* list of ssh_channel_callbacks */
+
     /* counters */
     ssh_counter counter;
 };

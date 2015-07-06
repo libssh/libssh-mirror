@@ -538,31 +538,37 @@ SSH_PACKET_CALLBACK(channel_rcv_data){
 
   ssh_string_free(str);
 
-  if(ssh_callbacks_exists(channel->callbacks, channel_data_function)) {
-      if(is_stderr) {
-        buf = channel->stderr_buffer;
-      } else {
-        buf = channel->stdout_buffer;
-      }
-      rest = channel->callbacks->channel_data_function(channel->session,
-                                                channel,
-                                                ssh_buffer_get(buf),
-                                                ssh_buffer_get_len(buf),
-                                                is_stderr,
-                                                channel->callbacks->userdata);
-      if(rest > 0) {
-        if (channel->counter != NULL) {
-            channel->counter->in_bytes += rest;
-        }
-        ssh_buffer_pass_bytes(buf, rest);
-      }
-      if (channel->local_window + ssh_buffer_get_len(buf) < WINDOWLIMIT) {
-        if (grow_window(session, channel, 0) < 0) {
-          return -1;
-        }
-      }
+  if (is_stderr) {
+      buf = channel->stderr_buffer;
+  } else {
+      buf = channel->stdout_buffer;
   }
 
+  ssh_callbacks_iterate(channel->callbacks,
+                        ssh_channel_callbacks,
+                        channel_data_function) {
+      if (ssh_buffer_get(buf) == 0) {
+          break;
+      }
+      rest = ssh_callbacks_iterate_exec(channel->session,
+                                        channel,
+                                        ssh_buffer_get(buf),
+                                        ssh_buffer_get_len(buf),
+                                        is_stderr);
+      if (rest > 0) {
+          if (channel->counter != NULL) {
+              channel->counter->in_bytes += rest;
+          }
+          ssh_buffer_pass_bytes(buf, rest);
+      }
+  }
+  ssh_callbacks_iterate_end();
+
+  if (channel->local_window + ssh_buffer_get_len(buf) < WINDOWLIMIT) {
+      if (grow_window(session, channel, 0) < 0) {
+          return -1;
+      }
+  }
   return SSH_PACKET_USED;
 }
 
@@ -585,11 +591,11 @@ SSH_PACKET_CALLBACK(channel_rcv_eof) {
   /* channel->remote_window = 0; */
   channel->remote_eof = 1;
 
-  if(ssh_callbacks_exists(channel->callbacks, channel_eof_function)) {
-      channel->callbacks->channel_eof_function(channel->session,
-                                               channel,
-                                               channel->callbacks->userdata);
-  }
+  ssh_callbacks_execute_list(channel->callbacks,
+                             ssh_channel_callbacks,
+                             channel_eof_function,
+                             channel->session,
+                             channel);
 
   return SSH_PACKET_USED;
 }
@@ -629,11 +635,12 @@ SSH_PACKET_CALLBACK(channel_rcv_close) {
 	 * buffer because the eof is ignored until the buffer is empty.
 	 */
 
-	if(ssh_callbacks_exists(channel->callbacks, channel_close_function)) {
-	  channel->callbacks->channel_close_function(channel->session,
-	      channel,
-	      channel->callbacks->userdata);
-	}
+    ssh_callbacks_execute_list(channel->callbacks,
+                               ssh_channel_callbacks,
+                               channel_close_function,
+                               channel->session,
+                               channel);
+
 	channel->flags |= SSH_CHANNEL_FLAG_CLOSED_REMOTE;
 	if(channel->flags & SSH_CHANNEL_FLAG_FREED_LOCAL)
 	  ssh_channel_do_free(channel);
@@ -668,12 +675,12 @@ SSH_PACKET_CALLBACK(channel_rcv_request) {
         rc = ssh_buffer_unpack(packet, "d", &channel->exit_status);
         SSH_LOG(SSH_LOG_PACKET, "received exit-status %d", channel->exit_status);
 
-        if(ssh_callbacks_exists(channel->callbacks, channel_exit_status_function)) {
-            channel->callbacks->channel_exit_status_function(channel->session,
-                                                     channel,
-                                                     channel->exit_status,
-                                                     channel->callbacks->userdata);
-        }
+        ssh_callbacks_execute_list(channel->callbacks,
+                                   ssh_channel_callbacks,
+                                   channel_exit_status_function,
+                                   channel->session,
+                                   channel,
+                                   channel->exit_status);
 
 		return SSH_PACKET_USED;
 	}
@@ -692,13 +699,13 @@ SSH_PACKET_CALLBACK(channel_rcv_request) {
 
 		SSH_LOG(SSH_LOG_PACKET,
 				"Remote connection sent a signal SIG %s", sig);
-        if(ssh_callbacks_exists(channel->callbacks, channel_signal_function)) {
-            channel->callbacks->channel_signal_function(channel->session,
-                                                     channel,
-                                                     sig,
-                                                     channel->callbacks->userdata);
-        }
-        SAFE_FREE(sig);
+        ssh_callbacks_execute_list(channel->callbacks,
+                                   ssh_channel_callbacks,
+                                   channel_signal_function,
+                                   channel->session,
+                                   channel,
+                                   sig);
+		SAFE_FREE(sig);
 
 		return SSH_PACKET_USED;
 	}
@@ -728,12 +735,15 @@ SSH_PACKET_CALLBACK(channel_rcv_request) {
 
 		SSH_LOG(SSH_LOG_PACKET,
 				"Remote connection closed by signal SIG %s %s", sig, core);
-        if(ssh_callbacks_exists(channel->callbacks, channel_exit_signal_function)) {
-            channel->callbacks->channel_exit_signal_function(channel->session,
-                                                     channel,
-                                                     sig, core_dumped, errmsg, lang,
-                                                     channel->callbacks->userdata);
-        }
+		ssh_callbacks_execute_list(channel->callbacks,
+                                   ssh_channel_callbacks,
+                                   channel_exit_signal_function,
+                                   channel->session,
+                                   channel,
+                                   sig,
+                                   core_dumped,
+                                   errmsg,
+                                   lang);
 
         SAFE_FREE(lang);
         SAFE_FREE(errmsg);
@@ -760,10 +770,11 @@ SSH_PACKET_CALLBACK(channel_rcv_request) {
   if (strcmp(request, "auth-agent-req@openssh.com") == 0) {
     SAFE_FREE(request);
     SSH_LOG(SSH_LOG_PROTOCOL, "Received an auth-agent-req request");
-    if(ssh_callbacks_exists(channel->callbacks, channel_auth_agent_req_function)) {
-        channel->callbacks->channel_auth_agent_req_function(channel->session, channel,
-            channel->callbacks->userdata);
-    }
+    ssh_callbacks_execute_list(channel->callbacks,
+                               ssh_channel_callbacks,
+                               channel_auth_agent_req_function,
+                               channel->session,
+                               channel);
 
     return SSH_PACKET_USED;
   }
@@ -1028,6 +1039,9 @@ void ssh_channel_do_free(ssh_channel channel){
   }
   ssh_buffer_free(channel->stdout_buffer);
   ssh_buffer_free(channel->stderr_buffer);
+  if (channel->callbacks != NULL){
+    ssh_list_free(channel->callbacks);
+  }
 
   /* debug trick to catch use after frees */
   memset(channel, 'X', sizeof(struct ssh_channel_struct));

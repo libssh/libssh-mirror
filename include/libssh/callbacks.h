@@ -867,9 +867,45 @@ typedef struct ssh_channel_callbacks_struct *ssh_channel_callbacks;
  * @param  cb           The callback structure itself.
  *
  * @return SSH_OK on success, SSH_ERROR on error.
+ * @warning this function will not replace existing callbacks but set the
+ *          new one atop of them.
  */
 LIBSSH_API int ssh_set_channel_callbacks(ssh_channel channel,
                                          ssh_channel_callbacks cb);
+
+/**
+ * @brief Add channel callback functions
+ *
+ * This function will add channel callback functions to the channel callback
+ * list.
+ * Callbacks missing from a callback structure will be probed in the next
+ * on the list.
+ *
+ * @param  channel      The channel to set the callback structure.
+ *
+ * @param  cb           The callback structure itself.
+ *
+ * @return SSH_OK on success, SSH_ERROR on error.
+ *
+ * @see ssh_set_channel_callbacks
+ */
+LIBSSH_API int ssh_add_channel_callbacks(ssh_channel channel,
+                                         ssh_channel_callbacks cb);
+
+/**
+ * @brief Remove a channel callback.
+ *
+ * The channel has been added with ssh_add_channel_callbacks or
+ * ssh_set_channel_callbacks in this case.
+ *
+ * @param channel  The channel to remove the callback structure from.
+ *
+ * @param cb       The callback structure to remove
+ *
+ * @returns SSH_OK on success, SSH_ERROR on error.
+ */
+LIBSSH_API int ssh_remove_channel_callbacks(ssh_channel channel,
+                                            ssh_channel_callbacks cb);
 
 /** @} */
 
