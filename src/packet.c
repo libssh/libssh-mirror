@@ -388,7 +388,6 @@ void ssh_packet_register_socket_callback(ssh_session session, ssh_socket s){
 	session->socket_callbacks.data=ssh_packet_socket_callback;
 	session->socket_callbacks.connected=NULL;
     session->socket_callbacks.controlflow = ssh_packet_socket_controlflow_callback;
-	session->socket_callbacks.exception=NULL;
 	session->socket_callbacks.userdata=session;
 	ssh_socket_set_callbacks(s,&session->socket_callbacks);
 }

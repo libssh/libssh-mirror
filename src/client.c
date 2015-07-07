@@ -373,8 +373,9 @@ static void ssh_client_connection_callback(ssh_session session){
 		    goto error;
 		  }
 		  /* from now, the packet layer is handling incoming packets */
-		  if(session->version==2)
-		    session->socket_callbacks.data=ssh_packet_socket_callback;
+		  if (session->version == 2) {
+		      ssh_packet_register_socket_callback(session, session->socket);
+		  }
 #ifdef WITH_SSH1
 		  else
 		    session->socket_callbacks.data=ssh_packet_socket_callback1;
