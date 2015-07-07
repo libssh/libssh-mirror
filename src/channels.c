@@ -3192,7 +3192,6 @@ void ssh_channel_set_counter(ssh_channel channel,
     }
 }
 
-#if WITH_SERVER
 /**
  * @brief Blocking write on a channel stderr.
  *
@@ -3209,6 +3208,8 @@ void ssh_channel_set_counter(ssh_channel channel,
 int ssh_channel_write_stderr(ssh_channel channel, const void *data, uint32_t len) {
   return channel_write_common(channel, data, len, 1);
 }
+
+#if WITH_SERVER
 
 /**
  * @brief Open a TCP/IP reverse forwarding channel.
