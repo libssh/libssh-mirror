@@ -786,6 +786,11 @@ int ssh_userauth_agent(ssh_session session,
     state = session->agent_state;
     if (state->pubkey == NULL)
         state->pubkey = ssh_agent_get_first_ident(session, &state->comment);
+
+    if (state->pubkey == NULL) {
+        return SSH_AUTH_DENIED;
+    }
+
     while (state->pubkey != NULL) {
         if(state->state == SSH_AGENT_STATE_NONE){
             SSH_LOG(SSH_LOG_DEBUG,
