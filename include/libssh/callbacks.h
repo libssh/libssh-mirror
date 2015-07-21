@@ -435,6 +435,34 @@ typedef struct ssh_socket_callbacks_struct *ssh_socket_callbacks;
   ((p)-> c != NULL) \
   )
 
+/**
+ * @internal
+ *
+ * @brief Iterate through a list of callback structures
+ *
+ * This tests for their validity and executes them. The userdata argument is
+ * automatically passed through.
+ *
+ * @param list     list of callbacks
+ *
+ * @param cbtype   type of the callback
+ *
+ * @param c        callback name
+ *
+ * @param va_args parameters to be passed
+ */
+#define ssh_callbacks_execute_list(list, cbtype, c, ...)      \
+    do {                                                      \
+        struct ssh_iterator *i = ssh_list_get_iterator(list); \
+        cbtype cb;                                            \
+        while (i != NULL){                                    \
+            cb = ssh_iterator_value(cbtype, i);               \
+            if (ssh_callbacks_exists(cb, c))                  \
+                cb-> c (__VA_ARGS__, cb->userdata);           \
+            i = i->next;                                      \
+        }                                                     \
+    } while(0)
+
 /** @brief Prototype for a packet callback, to be called when a new packet arrives
  * @param session The current session of the packet
  * @param type packet type (see ssh2.h)
