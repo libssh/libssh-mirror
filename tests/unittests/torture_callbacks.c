@@ -3,6 +3,7 @@
 #include "torture.h"
 #include <libssh/priv.h>
 #include <libssh/callbacks.h>
+#include <libssh/misc.h>
 
 static int myauthcallback (const char *prompt, char *buf, size_t len,
     int echo, int verify, void *userdata) {
@@ -102,12 +103,97 @@ static void torture_log_callback(void **state)
     assert_int_equal(t.executed, 1);
 }
 
+static void cb1(ssh_session session, ssh_channel channel, void *userdata){
+    int *v = userdata;
+    (void) session;
+    (void) channel;
+    *v += 1;
+}
+
+static void cb2(ssh_session session, ssh_channel channel, int status, void *userdata){
+    int *v = userdata;
+    (void) session;
+    (void) channel;
+    (void) status;
+    *v += 10;
+}
+
+static void torture_callbacks_execute_list(void **state){
+    struct ssh_list *list = ssh_list_new();
+    int v = 0, w = 0;
+    struct ssh_channel_callbacks_struct c1 = {
+            .channel_eof_function = cb1,
+            .userdata = &v
+    };
+    struct ssh_channel_callbacks_struct c2 = {
+            .channel_exit_status_function = cb2,
+            .userdata = &v
+    };
+    struct ssh_channel_callbacks_struct c3 = {
+            .channel_eof_function = cb1,
+            .channel_exit_status_function = cb2,
+            .userdata = &w
+    };
+
+    (void)state;
+    ssh_callbacks_init(&c1);
+    ssh_callbacks_init(&c2);
+    ssh_callbacks_init(&c3);
+
+    ssh_list_append(list, &c1);
+    ssh_callbacks_execute_list(list,
+                               ssh_channel_callbacks,
+                               channel_eof_function,
+                               NULL,
+                               NULL);
+    assert_int_equal(v, 1);
+
+    v = 0;
+    ssh_list_append(list, &c2);
+    ssh_callbacks_execute_list(list,
+                               ssh_channel_callbacks,
+                               channel_eof_function,
+                               NULL,
+                               NULL);
+    assert_int_equal(v, 1);
+    ssh_callbacks_execute_list(list,
+                               ssh_channel_callbacks,
+                               channel_exit_status_function,
+                               NULL,
+                               NULL,
+                               0);
+    assert_int_equal(v, 11);
+
+    v = 0;
+    w = 0;
+    ssh_list_append(list, &c3);
+    ssh_callbacks_execute_list(list,
+                               ssh_channel_callbacks,
+                               channel_eof_function,
+                               NULL,
+                               NULL);
+    assert_int_equal(v, 1);
+    assert_int_equal(w, 1);
+    ssh_callbacks_execute_list(list,
+                               ssh_channel_callbacks,
+                               channel_exit_status_function,
+                               NULL,
+                               NULL,
+                               0);
+    assert_int_equal(v, 11);
+    assert_int_equal(w, 11);
+
+    ssh_list_free(list);
+
+}
+
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
         cmocka_unit_test_setup_teardown(torture_callbacks_size, setup, teardown),
         cmocka_unit_test_setup_teardown(torture_callbacks_exists, setup, teardown),
         cmocka_unit_test(torture_log_callback),
+        cmocka_unit_test(torture_callbacks_execute_list)
     };
 
     ssh_init();
