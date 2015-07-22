@@ -187,13 +187,64 @@ static void torture_callbacks_execute_list(void **state){
 
 }
 
+static int cb3(ssh_session session, ssh_channel channel, void *userdata){
+    int *v = userdata;
+    (void)session;
+    (void)channel;
+    *v = 1;
+    return 10;
+}
+
+static void torture_callbacks_iterate(void **state){
+    struct ssh_list *list = ssh_list_new();
+    int v = 0, w = 0;
+    struct ssh_channel_callbacks_struct c1 = {
+            .channel_eof_function = cb1,
+            .channel_shell_request_function = cb3,
+            .userdata = &v
+    };
+    struct ssh_channel_callbacks_struct c2 = {
+            .channel_eof_function = cb1,
+            .channel_shell_request_function = cb3,
+            .userdata = &v
+    };
+
+    (void)state; /* unused */
+
+    ssh_callbacks_init(&c1);
+    ssh_callbacks_init(&c2);
+
+    ssh_list_append(list, &c1);
+    ssh_list_append(list, &c2);
+
+    ssh_callbacks_iterate(list, ssh_channel_callbacks, channel_eof_function){
+        ssh_callbacks_iterate_exec(NULL, NULL);
+    }
+    ssh_callbacks_iterate_end();
+
+    assert_int_equal(v, 2);
+
+    v = 0;
+    ssh_callbacks_iterate(list, ssh_channel_callbacks, channel_shell_request_function){
+        w = ssh_callbacks_iterate_exec(NULL, NULL);
+        if (w) {
+            break;
+        }
+    }
+    ssh_callbacks_iterate_end();
+
+    assert_int_equal(w, 10);
+    assert_int_equal(v, 1);
+}
+
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
         cmocka_unit_test_setup_teardown(torture_callbacks_size, setup, teardown),
         cmocka_unit_test_setup_teardown(torture_callbacks_exists, setup, teardown),
         cmocka_unit_test(torture_log_callback),
-        cmocka_unit_test(torture_callbacks_execute_list)
+        cmocka_unit_test(torture_callbacks_execute_list),
+        cmocka_unit_test(torture_callbacks_iterate)
     };
 
     ssh_init();
