@@ -38,14 +38,6 @@
 #ifndef _WIN32
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#else
-#define S_IFSOCK 0140000
-#define S_IFLNK  0120000
-
-#ifdef _MSC_VER
-#define S_IFBLK  0060000
-#define S_IFIFO  0010000
-#endif
 #endif
 
 #include "libssh/priv.h"
@@ -1008,20 +1000,20 @@ static sftp_attributes sftp_parse_attr_4(sftp_session sftp, ssh_buffer buf,
       attr->permissions = ntohl(attr->permissions);
 
       /* FIXME on windows! */
-      switch (attr->permissions & S_IFMT) {
-        case S_IFSOCK:
-        case S_IFBLK:
-        case S_IFCHR:
-        case S_IFIFO:
+      switch (attr->permissions & SSH_S_IFMT) {
+        case SSH_S_IFSOCK:
+        case SSH_S_IFBLK:
+        case SSH_S_IFCHR:
+        case SSH_S_IFIFO:
           attr->type = SSH_FILEXFER_TYPE_SPECIAL;
           break;
-        case S_IFLNK:
+        case SSH_S_IFLNK:
           attr->type = SSH_FILEXFER_TYPE_SYMLINK;
           break;
-        case S_IFREG:
+        case SSH_S_IFREG:
           attr->type = SSH_FILEXFER_TYPE_REGULAR;
           break;
-        case S_IFDIR:
+        case SSH_S_IFDIR:
           attr->type = SSH_FILEXFER_TYPE_DIRECTORY;
           break;
         default:
@@ -1244,20 +1236,20 @@ static sftp_attributes sftp_parse_attr_3(sftp_session sftp, ssh_buffer buf,
             goto error;
         }
 
-        switch (attr->permissions & S_IFMT) {
-        case S_IFSOCK:
-        case S_IFBLK:
-        case S_IFCHR:
-        case S_IFIFO:
+        switch (attr->permissions & SSH_S_IFMT) {
+        case SSH_S_IFSOCK:
+        case SSH_S_IFBLK:
+        case SSH_S_IFCHR:
+        case SSH_S_IFIFO:
             attr->type = SSH_FILEXFER_TYPE_SPECIAL;
             break;
-        case S_IFLNK:
+        case SSH_S_IFLNK:
             attr->type = SSH_FILEXFER_TYPE_SYMLINK;
             break;
-        case S_IFREG:
+        case SSH_S_IFREG:
             attr->type = SSH_FILEXFER_TYPE_REGULAR;
             break;
-        case S_IFDIR:
+        case SSH_S_IFDIR:
             attr->type = SSH_FILEXFER_TYPE_DIRECTORY;
             break;
         default:
