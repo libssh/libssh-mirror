@@ -463,6 +463,43 @@ typedef struct ssh_socket_callbacks_struct *ssh_socket_callbacks;
         }                                                     \
     } while(0)
 
+/**
+ * @internal
+ *
+ * @brief iterate through a list of callback structures.
+ *
+ * This tests for their validity and give control back to the calling code to
+ * execute them. Caller can decide to break the loop or continue executing the
+ * callbacks with different parameters
+ *
+ * @code
+ * ssh_callbacks_iterate(channel->callbacks, ssh_channel_callbacks,
+ *                     channel_eof_function){
+ *     rc = ssh_callbacks_iterate_exec(session, channel);
+ *     if (rc != SSH_OK){
+ *         break;
+ *     }
+ * }
+ * ssh_callbacks_iterate_end();
+ * @endcode
+ */
+#define ssh_callbacks_iterate(_cb_list, _cb_type, _cb_name)           \
+    do {                                                              \
+        struct ssh_iterator *_cb_i = ssh_list_get_iterator(_cb_list); \
+        _cb_type _cb;                                                 \
+        __typeof__(_cb->_cb_name) _cb_p;                              \
+        for (; _cb_i != NULL; _cb_i = _cb_i->next) {                  \
+            _cb = ssh_iterator_value(_cb_type, _cb_i);                \
+            if (ssh_callbacks_exists(_cb, _cb_name) &&                \
+               (_cb_p = _cb->_cb_name))
+
+#define ssh_callbacks_iterate_exec(...) \
+                _cb_p(__VA_ARGS__, _cb->userdata)
+
+#define ssh_callbacks_iterate_end() \
+        }                           \
+    } while(0)
+
 /** @brief Prototype for a packet callback, to be called when a new packet arrives
  * @param session The current session of the packet
  * @param type packet type (see ssh2.h)
