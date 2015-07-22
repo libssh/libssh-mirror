@@ -1638,18 +1638,17 @@ sftp_file sftp_open(sftp_session sftp, const char *file, int flags,
   attr.permissions = mode;
   attr.flags = SSH_FILEXFER_ATTR_PERMISSIONS;
 
-  if (flags == O_RDONLY)
-    sftp_flags |= SSH_FXF_READ; /* if any of the other flag is set,
-                                   READ should not be set initialy */
-  if (flags & O_WRONLY)
+  if ((flags & O_RDONLY) == O_RDONLY)
+    sftp_flags |= SSH_FXF_READ;
+  if ((flags & O_WRONLY) == O_WRONLY)
     sftp_flags |= SSH_FXF_WRITE;
-  if (flags & O_RDWR)
+  if ((flags & O_RDWR) == O_RDWR)
     sftp_flags |= (SSH_FXF_WRITE | SSH_FXF_READ);
-  if (flags & O_CREAT)
+  if ((flags & O_CREAT) == O_CREAT)
     sftp_flags |= SSH_FXF_CREAT;
-  if (flags & O_TRUNC)
+  if ((flags & O_TRUNC) == O_TRUNC)
     sftp_flags |= SSH_FXF_TRUNC;
-  if (flags & O_EXCL)
+  if ((flags & O_EXCL) == O_EXCL)
     sftp_flags |= SSH_FXF_EXCL;
   SSH_LOG(SSH_LOG_PACKET,"Opening file %s with sftp flags %x",file,sftp_flags);
   id = sftp_get_new_id(sftp);
