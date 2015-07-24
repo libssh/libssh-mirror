@@ -1242,6 +1242,17 @@ void ssh_packet_set_callbacks(ssh_session session, ssh_packet_callbacks callback
 }
 
 /** @internal
+ * @brief remove the callbacks from the packet layer
+ */
+void ssh_packet_remove_callbacks(ssh_session session, ssh_packet_callbacks callbacks){
+    struct ssh_iterator *it = NULL;
+    it = ssh_list_find(session->packet_callbacks, callbacks);
+    if (it != NULL) {
+        ssh_list_remove(session->packet_callbacks, it);
+    }
+}
+
+/** @internal
  * @brief sets the default packet handlers
  */
 void ssh_packet_set_default_callbacks(ssh_session session){
