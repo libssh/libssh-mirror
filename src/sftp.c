@@ -315,7 +315,7 @@ sftp_packet sftp_packet_read(sftp_session sftp) {
   sftp_packet packet = NULL;
   uint32_t tmp;
   size_t size;
-  int r;
+  int r, s;
 
   packet = malloc(sizeof(struct sftp_packet_struct));
   if (packet == NULL) {
@@ -330,12 +330,18 @@ sftp_packet sftp_packet_read(sftp_session sftp) {
     return NULL;
   }
 
-  r=ssh_channel_read(sftp->channel, buffer, 4, 0);
-  if (r < 0) {
-    ssh_buffer_free(packet->payload);
-    SAFE_FREE(packet);
-    return NULL;
-  }
+  r=0;
+  do {
+    // read from channel until 4 bytes have been read or an error occurs
+    s=ssh_channel_read(sftp->channel, buffer+r, 4-r, 0);
+    if (s < 0) {
+      ssh_buffer_free(packet->payload);
+      SAFE_FREE(packet);
+      return NULL;
+    } else {
+      r += s;
+    }
+  } while (r<4);
   ssh_buffer_add_data(packet->payload, buffer, r);
   if (buffer_get_u32(packet->payload, &tmp) != sizeof(uint32_t)) {
     ssh_set_error(sftp->session, SSH_FATAL, "Short sftp packet!");
