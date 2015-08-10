@@ -271,7 +271,7 @@ int ssh_key_is_public(const ssh_key k) {
         return 0;
     }
 
-    return (k->flags & SSH_KEY_FLAG_PUBLIC);
+    return (k->flags & SSH_KEY_FLAG_PUBLIC) == SSH_KEY_FLAG_PUBLIC;
 }
 
 /**
@@ -286,7 +286,7 @@ int ssh_key_is_private(const ssh_key k) {
         return 0;
     }
 
-    return (k->flags & SSH_KEY_FLAG_PRIVATE);
+    return (k->flags & SSH_KEY_FLAG_PRIVATE) == SSH_KEY_FLAG_PRIVATE;
 }
 
 /**
