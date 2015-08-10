@@ -212,6 +212,9 @@ static void torture_pki_import_privkey_base64_RSA(void **state) {
     type = ssh_key_type(key);
     assert_true(type == SSH_KEYTYPE_RSA);
 
+    rc = ssh_key_is_private(key);
+    assert_true(rc == 1);
+
     rc = ssh_key_is_public(key);
     assert_true(rc == 1);
 
@@ -281,6 +284,9 @@ static void torture_pki_import_privkey_base64_ECDSA(void **state) {
     rc = ssh_pki_import_privkey_base64(key_str, passphrase, NULL, NULL, &key);
     assert_true(rc == 0);
 
+    rc = ssh_key_is_private(key);
+    assert_true(rc == 1);
+
     free(key_str);
     ssh_key_free(key);
 }
@@ -300,6 +306,10 @@ static void torture_pki_import_privkey_base64_passphrase(void **state) {
                                        NULL,
                                        &key);
     assert_true(rc == 0);
+
+    rc = ssh_key_is_private(key);
+    assert_true(rc == 1);
+
     ssh_key_free(key);
 
     /* test if it returns -1 if passphrase is wrong */
@@ -329,6 +339,10 @@ static void torture_pki_import_privkey_base64_passphrase(void **state) {
                                        NULL,
                                        &key);
     assert_true(rc == 0);
+
+    rc = ssh_key_is_private(key);
+    assert_true(rc == 1);
+
     ssh_key_free(key);
 
     /* test if it returns -1 if passphrase is wrong */
@@ -358,6 +372,10 @@ static void torture_pki_import_privkey_base64_passphrase(void **state) {
                                        NULL,
                                        &key);
     assert_true(rc == 0);
+
+    rc = ssh_key_is_private(key);
+    assert_true(rc == 1);
+
     ssh_key_free(key);
 
     /* test if it returns -1 if passphrase is wrong */
@@ -388,6 +406,9 @@ static void torture_pki_import_privkey_base64_ed25519(void **state){
     type = ssh_key_type(key);
     assert_true(type == SSH_KEYTYPE_ED25519);
 
+    rc = ssh_key_is_private(key);
+    assert_true(rc == 1);
+
     rc = ssh_key_is_public(key);
     assert_true(rc == 1);
 
@@ -411,6 +432,9 @@ static void torture_pki_pki_publickey_from_privatekey_RSA(void **state) {
                                        &key);
     assert_true(rc == 0);
 
+    rc = ssh_key_is_private(key);
+    assert_true(rc == 1);
+
     rc = ssh_pki_export_privkey_to_pubkey(key, &pubkey);
     assert_true(rc == SSH_OK);
 
@@ -433,6 +457,9 @@ static void torture_pki_pki_publickey_from_privatekey_DSA(void **state) {
                                        &key);
     assert_true(rc == 0);
 
+    rc = ssh_key_is_private(key);
+    assert_true(rc == 1);
+
     rc = ssh_pki_export_privkey_to_pubkey(key, &pubkey);
     assert_true(rc == SSH_OK);
 
@@ -454,6 +481,9 @@ static void torture_pki_pki_publickey_from_privatekey_ed25519(void **state){
                                        NULL,
                                        &key);
     assert_true(rc == 0);
+
+    rc = ssh_key_is_private(key);
+    assert_true(rc == 1);
 
     rc = ssh_pki_export_privkey_to_pubkey(key, &pubkey);
     assert_true(rc == SSH_OK);
