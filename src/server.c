@@ -746,7 +746,7 @@ int ssh_message_global_request_reply_success(ssh_message msg, uint16_t bound_por
         if(msg->global_request.type == SSH_GLOBAL_REQUEST_TCPIP_FORWARD 
                                 && msg->global_request.bind_port == 0) {
             rc = ssh_buffer_pack(msg->session->out_buffer, "d", bound_port);
-            if (rc != SSH_ERROR) {
+            if (rc != SSH_OK) {
                 ssh_set_error_oom(msg->session);
                 goto error;
             }
