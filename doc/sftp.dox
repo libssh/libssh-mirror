@@ -253,7 +253,7 @@ int sftp_read_sync(ssh_session session, sftp_session sftp)
           return SSH_ERROR;
       }
 
-      nwritten = write(fd, buf, nbytes);
+      nwritten = write(fd, buffer, nbytes);
       if (nwritten != nbytes) {
           fprintf(stderr, "Error writing: %s\n",
                   strerror(errno));
@@ -282,7 +282,7 @@ sftp_async_read() waits for the data to come. To open a file in nonblocking mode
 call sftp_file_set_nonblocking() right after you opened it. Default is blocking mode.
 
 The example below reads a very big file in asynchronous, nonblocking, mode. Each
-time the data are not ready yet, a counter is incrementer.
+time the data is not ready yet, a counter is incremented.
 
 @code
 // Good chunk size
