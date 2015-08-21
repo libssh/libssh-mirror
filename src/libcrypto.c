@@ -90,27 +90,42 @@ void ssh_reseed(void){
 #endif
 }
 
-SHACTX sha1_init(void) {
-  SHACTX c = malloc(sizeof(*c));
-  if (c == NULL) {
-    return NULL;
-  }
-  SHA1_Init(c);
-
-  return c;
+SHACTX sha1_init(void)
+{
+    int rc;
+    SHACTX c = EVP_MD_CTX_create();
+    if (c == NULL) {
+        return NULL;
+    }
+    EVP_MD_CTX_init(c);
+    rc = EVP_DigestInit_ex(c, EVP_sha1(), NULL);
+    if (rc == 0) {
+        EVP_MD_CTX_destroy(c);
+        c = NULL;
+    }
+    return c;
 }
 
-void sha1_update(SHACTX c, const void *data, unsigned long len) {
-  SHA1_Update(c,data,len);
+void sha1_update(SHACTX c, const void *data, unsigned long len)
+{
+    EVP_DigestUpdate(c, data, len);
 }
 
-void sha1_final(unsigned char *md, SHACTX c) {
-  SHA1_Final(md, c);
-  SAFE_FREE(c);
+void sha1_final(unsigned char *md, SHACTX c)
+{
+    unsigned int mdlen = 0;
+
+    EVP_DigestFinal(c, md, &mdlen);
+    EVP_MD_CTX_destroy(c);
 }
 
-void sha1(unsigned char *digest, int len, unsigned char *hash) {
-  SHA1(digest, len, hash);
+void sha1(unsigned char *digest, int len, unsigned char *hash)
+{
+    SHACTX c = sha1_init();
+    if (c != NULL) {
+        sha1_update(c, digest, len);
+        sha1_final(hash, c);
+    }
 }
 
 #ifdef HAVE_OPENSSL_ECC
@@ -165,93 +180,147 @@ void evp_final(EVPCTX ctx, unsigned char *md, unsigned int *mdlen)
 }
 #endif
 
-SHA256CTX sha256_init(void){
-  SHA256CTX c = malloc(sizeof(*c));
-  if (c == NULL) {
-    return NULL;
-  }
-  SHA256_Init(c);
-
-  return c;
+SHA256CTX sha256_init(void)
+{
+    int rc;
+    SHA256CTX c = EVP_MD_CTX_create();
+    if (c == NULL) {
+        return NULL;
+    }
+    EVP_MD_CTX_init(c);
+    rc = EVP_DigestInit_ex(c, EVP_sha256(), NULL);
+    if (rc == 0) {
+        EVP_MD_CTX_destroy(c);
+        c = NULL;
+    }
+    return c;
 }
 
-void sha256_update(SHA256CTX c, const void *data, unsigned long len){
-  SHA256_Update(c,data,len);
+void sha256_update(SHA256CTX c, const void *data, unsigned long len)
+{
+    EVP_DigestUpdate(c, data, len);
 }
 
-void sha256_final(unsigned char *md, SHA256CTX c) {
-  SHA256_Final(md, c);
-  SAFE_FREE(c);
+void sha256_final(unsigned char *md, SHA256CTX c)
+{
+    unsigned int mdlen = 0;
+
+    EVP_DigestFinal(c, md, &mdlen);
+    EVP_MD_CTX_destroy(c);
 }
 
-void sha256(unsigned char *digest, int len, unsigned char *hash) {
-  SHA256(digest, len, hash);
+void sha256(unsigned char *digest, int len, unsigned char *hash)
+{
+    SHA256CTX c = sha256_init();
+    if (c != NULL) {
+        sha256_update(c, digest, len);
+        sha256_final(hash, c);
+    }
 }
 
-SHA384CTX sha384_init(void){
-  SHA384CTX c = malloc(sizeof(*c));
-  if (c == NULL) {
-    return NULL;
-  }
-  SHA384_Init(c);
-
-  return c;
+SHA384CTX sha384_init(void)
+{
+    int rc;
+    SHA384CTX c = EVP_MD_CTX_create();
+    if (c == NULL) {
+        return NULL;
+    }
+    EVP_MD_CTX_init(c);
+    rc = EVP_DigestInit_ex(c, EVP_sha384(), NULL);
+    if (rc == 0) {
+        EVP_MD_CTX_destroy(c);
+        c = NULL;
+    }
+    return c;
 }
 
-void sha384_update(SHA384CTX c, const void *data, unsigned long len){
-  SHA384_Update(c,data,len);
+void sha384_update(SHA384CTX c, const void *data, unsigned long len)
+{
+    EVP_DigestUpdate(c, data, len);
 }
 
-void sha384_final(unsigned char *md, SHA384CTX c) {
-  SHA384_Final(md, c);
-  SAFE_FREE(c);
+void sha384_final(unsigned char *md, SHA384CTX c)
+{
+    unsigned int mdlen = 0;
+
+    EVP_DigestFinal(c, md, &mdlen);
+    EVP_MD_CTX_destroy(c);
 }
 
-void sha384(unsigned char *digest, int len, unsigned char *hash) {
-  SHA384(digest, len, hash);
+void sha384(unsigned char *digest, int len, unsigned char *hash)
+{
+    SHA384CTX c = sha384_init();
+    if (c != NULL) {
+        sha384_update(c, digest, len);
+        sha384_final(hash, c);
+    }
 }
 
-SHA512CTX sha512_init(void){
-  SHA512CTX c = malloc(sizeof(*c));
-  if (c == NULL) {
-    return NULL;
-  }
-  SHA512_Init(c);
-
-  return c;
+SHA512CTX sha512_init(void)
+{
+    int rc = 0;
+    SHA512CTX c = EVP_MD_CTX_create();
+    if (c == NULL) {
+        return NULL;
+    }
+    EVP_MD_CTX_init(c);
+    rc = EVP_DigestInit_ex(c, EVP_sha512(), NULL);
+    if (rc == 0) {
+        EVP_MD_CTX_destroy(c);
+        c = NULL;
+    }
+    return c;
 }
 
-void sha512_update(SHA512CTX c, const void *data, unsigned long len){
-  SHA512_Update(c,data,len);
+void sha512_update(SHA512CTX c, const void *data, unsigned long len)
+{
+    EVP_DigestUpdate(c, data, len);
 }
 
-void sha512_final(unsigned char *md, SHA512CTX c) {
-  SHA512_Final(md, c);
-  SAFE_FREE(c);
+void sha512_final(unsigned char *md, SHA512CTX c)
+{
+    unsigned int mdlen = 0;
+
+    EVP_DigestFinal(c, md, &mdlen);
+    EVP_MD_CTX_destroy(c);
 }
 
-void sha512(unsigned char *digest, int len, unsigned char *hash) {
-  SHA512(digest, len, hash);
+void sha512(unsigned char *digest, int len, unsigned char *hash)
+{
+    SHA512CTX c = sha512_init();
+    if (c != NULL) {
+        sha512_update(c, digest, len);
+        sha512_final(hash, c);
+    }
 }
 
-MD5CTX md5_init(void) {
-  MD5CTX c = malloc(sizeof(*c));
-  if (c == NULL) {
-    return NULL;
-  }
-
-  MD5_Init(c);
-
-  return c;
+MD5CTX md5_init(void)
+{
+    int rc;
+    MD5CTX c = EVP_MD_CTX_create();
+    if (c == NULL) {
+        return NULL;
+    }
+    EVP_MD_CTX_init(c);
+    rc = EVP_DigestInit_ex(c, EVP_md5(), NULL);
+    if(rc == 0) {
+        EVP_MD_CTX_destroy(c);
+        c = NULL;
+    }
+    return c;
 }
 
-void md5_update(MD5CTX c, const void *data, unsigned long len) {
-  MD5_Update(c, data, len);
+void md5_update(MD5CTX c, const void *data, unsigned long len)
+{
+    EVP_DigestUpdate(c, data, len);
 }
 
-void md5_final(unsigned char *md, MD5CTX c) {
-  MD5_Final(md,c);
-  SAFE_FREE(c);
+void md5_final(unsigned char *md, MD5CTX c)
+{
+    unsigned int mdlen = 0;
+
+    EVP_DigestFinal(c, md, &mdlen);
+    EVP_MD_CTX_destroy(c);
 }
 
 ssh_mac_ctx ssh_mac_ctx_init(enum ssh_mac_e type){
@@ -371,9 +440,114 @@ void hmac_final(HMACCTX ctx, unsigned char *hashmacbuf, unsigned int *len) {
   SAFE_FREE(ctx);
 }
 
+
+/* EVP wrapper function for encrypt/decrypt */
+static void EVP_encrypt(struct ssh_cipher_struct *cipher,
+                        void *in,
+                        void *out,
+                        unsigned long len,
+                        const EVP_CIPHER* evpCipher)
+{
+    int datalen = 0;
+    int outlen = 0;
+    int outlenfinal = 0;
+    int ctxIvLen = 0;
+    int rc = 0;
+
+    EVP_CIPHER_CTX ctx;
+    EVP_CIPHER_CTX_init(&ctx);
+
+    rc = EVP_EncryptInit_ex(&ctx, evpCipher, NULL, (unsigned char*)cipher->key, cipher->IV);
+    if (rc == 1) {
+        EVP_CIPHER_CTX_set_padding(&ctx, 0);
+
+        rc = EVP_EncryptUpdate(&ctx, (unsigned char *)out, &outlen, (unsigned char *)in, len);
+        if(rc == 1) {
+            datalen += outlen;
+
+            rc = EVP_EncryptFinal_ex(&ctx, (unsigned char *)out + outlen, &outlenfinal);
+            if(rc == 1) {
+                datalen += outlenfinal;
+
+                /* Get size of source buffer from ctx object */
+                ctxIvLen = EVP_CIPHER_CTX_iv_length(&ctx);
+
+                /*
+                 * Copy updated IV from ctx to ssh struct
+                 * There is no access to the post encrypt/decrypt updated iv
+                 * from openssl via an API so I'm just accessing it directly.
+                 */
+                memcpy(cipher->IV, ctx.iv, ctxIvLen);
+            } else {
+                printf("EVP_EncryptFinal_ex failed\n");
+            }
+        } else {
+            printf("EVP_EncryptUpdate failed\n");
+        }
+    } else {
+        printf("EVP_EncryptInit_ex failed\n");
+    }
+    /* Cleanup */
+    EVP_CIPHER_CTX_cleanup(&ctx);
+}
+
+static void EVP_decrypt(struct ssh_cipher_struct *cipher,
+                        void *in,
+                        void *out,
+                        unsigned long len,
+                        const EVP_CIPHER* evpCipher)
+{
+    int datalen = 0;
+    int outlen = 0;
+    int outlenfinal = 0;
+    int ctxIvLen = 0;
+    int rc = 0;
+
+    EVP_CIPHER_CTX ctx;
+    EVP_CIPHER_CTX_init(&ctx);
+
+    rc = EVP_DecryptInit_ex(&ctx, evpCipher, NULL, (unsigned char*)cipher->key, cipher->IV);
+    if (rc == 1) {
+        EVP_CIPHER_CTX_set_padding(&ctx, 0);
+
+        rc = EVP_DecryptUpdate(&ctx, (unsigned char *)out, &outlen, (unsigned char *)in, len);
+        if (rc == 1) {
+            datalen += outlen;
+
+            rc = EVP_DecryptFinal_ex(&ctx, (unsigned char *)out + outlen, &outlenfinal);
+            if (rc == 1) {
+                datalen += outlenfinal;
+
+                /* Get size of source buffer from ctx object */
+                ctxIvLen = EVP_CIPHER_CTX_iv_length(&ctx);
+
+                /*
+                 * Copy updated IV from ctx to ssh struct
+                 * There is no access to the post encrypt/decrypt updated iv
+                 * from openssl via an API so I'm just accessing it directly.
+                 */
+                memcpy(cipher->IV, ctx.iv, ctxIvLen);
+            } else {
+                printf("EVP_DecryptFinal_ex failed\n");
+            }
+        } else {
+            printf("EVP_DecryptUpdate failed\n");
+        }
+    } else {
+        printf("EVP_DecryptInit_ex failed\n");
+    }
+
+    /* Cleanup */
+    EVP_CIPHER_CTX_cleanup(&ctx);
+}
+
+//EVP wrapper function for encrypt/decrypt
 #ifdef HAS_BLOWFISH
 /* the wrapper functions for blowfish */
-static int blowfish_set_key(struct ssh_cipher_struct *cipher, void *key, void *IV){
+static int blowfish_set_key(struct ssh_cipher_struct *cipher,
+                            void *key,
+                            void *IV)
+{
   if (cipher->key == NULL) {
     if (alloc_key(cipher) < 0) {
       return -1;
@@ -396,43 +570,113 @@ static void blowfish_decrypt(struct ssh_cipher_struct *cipher, void *in,
 #endif /* HAS_BLOWFISH */
 
 #ifdef HAS_AES
-static int aes_set_encrypt_key(struct ssh_cipher_struct *cipher, void *key,
-    void *IV) {
-  if (cipher->key == NULL) {
-    if (alloc_key(cipher) < 0) {
-      return -1;
+static int aes_set_encrypt_key(struct ssh_cipher_struct *cipher,
+                               void *key,
+                               void *IV)
+{
+    size_t size = 0;
+    if (cipher->key == NULL) {
+        int rc;
+
+        rc = alloc_key(cipher);
+        if (rc < 0) {
+            return -1;
+        }
+        /* cipher->keylen is the size of the cipher->key buffer so clear it
+         * Don't read or write invalid memory
+         * For the EVP functions, save the raw key which gets transformed
+         * in the EVP_EncryptInit(...)
+         */
+        memset(cipher->key, 0, cipher->keylen);
+        size = cipher->keylen;
+
+        /*
+         * Check if source buffer is smaller than destination buffer (hard coded
+         * as 32 in kex1.c - encryptkey, decryptkey, encryptIV, decryptIV)
+         * This should probably be a define, or a member of
+         * struct ssh_crypto_struct and passed as a parameter.
+         */
+        if (size > 32) {
+            size = 32;
+        }
+        memcpy(cipher->key, key, size);
     }
-    if (AES_set_encrypt_key(key,cipher->keysize,cipher->key) < 0) {
-      SAFE_FREE(cipher->key);
-      return -1;
-    }
-  }
-  cipher->IV=IV;
-  return 0;
-}
-static int aes_set_decrypt_key(struct ssh_cipher_struct *cipher, void *key,
-    void *IV) {
-  if (cipher->key == NULL) {
-    if (alloc_key(cipher) < 0) {
-      return -1;
-    }
-    if (AES_set_decrypt_key(key,cipher->keysize,cipher->key) < 0) {
-      SAFE_FREE(cipher->key);
-      return -1;
-    }
-  }
-  cipher->IV=IV;
-  return 0;
+    cipher->IV = IV;
+    return 0;
 }
 
-static void aes_encrypt(struct ssh_cipher_struct *cipher, void *in, void *out,
-    unsigned long len) {
-  AES_cbc_encrypt(in, out, len, cipher->key, cipher->IV, AES_ENCRYPT);
+static int aes_set_decrypt_key(struct ssh_cipher_struct *cipher,
+                               void *key,
+                               void *IV)
+{
+    size_t size = 0;
+
+    if (cipher->key == NULL) {
+        int rc;
+
+        rc = alloc_key(cipher);
+        if (rc < 0) {
+            return -1;
+        }
+        /*
+         * cipher->keylen is the size of the cipher->key buffer so clear it
+         * keyLen param is the size of the void* key param
+         * Don't read or write invalid memory
+         * For the EVP functions, save the raw key which gets transformed
+         * in the EVP_EncryptInit(...)
+         */
+        memset(cipher->key, 0, cipher->keylen);
+        size = cipher->keylen;
+
+        /*
+         * Check if source buffer is smaller than destination buffer (hard coded
+         * as 32 in kex1.c - encryptkey, decryptkey, encryptIV, decryptIV)
+         * This should probably be a define, or a member of
+         * struct ssh_crypto_struct and passed as a parameter.
+         */
+        if (size > 32) {
+            size = 32;
+        }
+        memcpy(cipher->key, key, size);
+    }
+    cipher->IV = IV;
+    return 0;
 }
 
-static void aes_decrypt(struct ssh_cipher_struct *cipher, void *in, void *out,
-    unsigned long len) {
-  AES_cbc_encrypt(in, out, len, cipher->key, cipher->IV, AES_DECRYPT);
+static void aes_encrypt(struct ssh_cipher_struct *cipher,
+                        void *in,
+                        void *out,
+                        unsigned long len)
+{
+    const EVP_CIPHER *pCipherType = NULL;
+
+    if (cipher->keysize == 128) {
+        pCipherType = EVP_aes_128_cbc();
+    } else if(cipher->keysize == 192) {
+        pCipherType = EVP_aes_192_cbc();
+    } else if(cipher->keysize == 256) {
+        pCipherType = EVP_aes_256_cbc();
+    }
+
+    EVP_encrypt(cipher, in, out, len, pCipherType);
+}
+
+static void aes_decrypt(struct ssh_cipher_struct *cipher,
+                        void *in,
+                        void *out,
+                        unsigned long len)
+{
+    const EVP_CIPHER *pCipherType = NULL;
+
+    if (cipher->keysize == 128) {
+        pCipherType = EVP_aes_128_cbc();
+    } else if(cipher->keysize == 192) {
+        pCipherType = EVP_aes_192_cbc();
+    } else if(cipher->keysize == 256) {
+        pCipherType = EVP_aes_256_cbc();
+    }
+
+    EVP_decrypt(cipher, in, out, len, pCipherType);
 }
 
 #ifndef BROKEN_AES_CTR
@@ -445,53 +689,74 @@ static void aes_decrypt(struct ssh_cipher_struct *cipher, void *in, void *out,
  * the size of the CTR counter and incidentally the blocksize, but not the keysize.
  * @param len[in] must be a multiple of AES128 block size.
  */
-static void aes_ctr128_encrypt(struct ssh_cipher_struct *cipher, void *in, void *out,
-    unsigned long len) {
-  unsigned char tmp_buffer[128/8];
-  unsigned int num=0;
-  /* Some things are special with ctr128 :
-   * In this case, tmp_buffer is not being used, because it is used to store temporary data
-   * when an encryption is made on lengths that are not multiple of blocksize.
-   * Same for num, which is being used to store the current offset in blocksize in CTR
-   * function.
-   */
-  AES_ctr128_encrypt(in, out, len, cipher->key, cipher->IV, tmp_buffer, &num);
+static void aes_ctr128_encrypt(struct ssh_cipher_struct *cipher,
+                               void *in,
+                               void *out,
+                               unsigned long len)
+{
+    if (cipher->keysize == 128) {
+        EVP_encrypt(cipher, in, out, len, EVP_aes_128_ctr());
+    } else if(cipher->keysize == 192) {
+        EVP_encrypt(cipher, in, out, len, EVP_aes_192_ctr());
+    } else if(cipher->keysize == 256) {
+        EVP_encrypt(cipher, in, out, len, EVP_aes_256_ctr());
+    }
 }
 #endif /* BROKEN_AES_CTR */
 #endif /* HAS_AES */
 
 #ifdef HAS_DES
-static int des3_set_key(struct ssh_cipher_struct *cipher, void *key,void *IV) {
-  if (cipher->key == NULL) {
-    if (alloc_key(cipher) < 0) {
-      return -1;
+static int des3_set_key(struct ssh_cipher_struct *cipher, void *key, void *IV)
+{
+    size_t size = 0;
+
+    if (cipher->key == NULL) {
+        int rc;
+
+        rc = alloc_key(cipher);
+        if (rc < 0) {
+            return -1;
+        }
+
+        /*
+         * cipher->keylen is the size of the cipher->key buffer so clear it
+         * keyLen param is the size of the void* key param
+         * Don't read or write invalid memory
+         * For the EVP functions, save the raw key which gets transformed
+         * in the EVP_EncryptInit(...)
+         */
+        memset(cipher->key, 0, cipher->keylen);
+        size = cipher->keylen;
+
+        /*
+         * Check if source buffer is smaller than destination buffer (hard coded
+         * as 32 in kex1.c - encryptkey, decryptkey, encryptIV, decryptIV)
+         * This should probably be a define, or a member of
+         * struct ssh_crypto_struct and passed as a parameter.
+         */
+        if (size > 32) {
+            size = 32;
+        }
+        memcpy(cipher->key, key, size);
     }
-
-    DES_set_odd_parity(key);
-    DES_set_odd_parity((void*)((uint8_t*)key + 8));
-    DES_set_odd_parity((void*)((uint8_t*)key + 16));
-    DES_set_key_unchecked(key, cipher->key);
-    DES_set_key_unchecked((void*)((uint8_t*)key + 8), (void*)((uint8_t*)cipher->key + sizeof(DES_key_schedule)));
-    DES_set_key_unchecked((void*)((uint8_t*)key + 16), (void*)((uint8_t*)cipher->key + 2 * sizeof(DES_key_schedule)));
-  }
-  cipher->IV=IV;
-  return 0;
+    cipher->IV = IV;
+    return 0;
 }
 
-static void des3_encrypt(struct ssh_cipher_struct *cipher, void *in,
-    void *out, unsigned long len) {
-  DES_ede3_cbc_encrypt(in, out, len, cipher->key,
-      (void*)((uint8_t*)cipher->key + sizeof(DES_key_schedule)),
-      (void*)((uint8_t*)cipher->key + 2 * sizeof(DES_key_schedule)),
-      cipher->IV, 1);
+static void des3_encrypt(struct ssh_cipher_struct *cipher,
+                         void *in,
+                         void *out,
+                         unsigned long len)
+{
+    EVP_encrypt(cipher, in, out, len, EVP_des_ede3_cbc());
 }
 
-static void des3_decrypt(struct ssh_cipher_struct *cipher, void *in,
-    void *out, unsigned long len) {
-  DES_ede3_cbc_encrypt(in, out, len, cipher->key,
-      (void*)((uint8_t*)cipher->key + sizeof(DES_key_schedule)),
-      (void*)((uint8_t*)cipher->key + 2 * sizeof(DES_key_schedule)),
-      cipher->IV, 0);
+static void des3_decrypt(struct ssh_cipher_struct *cipher,
+                         void *in,
+                         void *out,
+                         unsigned long len)
+{
+    EVP_decrypt(cipher, in, out, len, EVP_des_ede3_cbc());
 }
 
 static void des3_1_encrypt(struct ssh_cipher_struct *cipher, void *in,
@@ -526,7 +791,8 @@ static void des3_1_decrypt(struct ssh_cipher_struct *cipher, void *in,
 #endif
 }
 
-static int des1_set_key(struct ssh_cipher_struct *cipher, void *key, void *IV){
+static int des1_set_key(struct ssh_cipher_struct *cipher, void *key, void *IV)
+{
   if(!cipher->key){
     if (alloc_key(cipher) < 0) {
       return -1;
