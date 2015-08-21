@@ -103,5 +103,9 @@ void ssh_print_bignum(const char *which, bignum num) {
 #endif
   fprintf(stderr, "%s value: ", which);
   fprintf(stderr, "%s\n", (hex == NULL) ? "(null)" : (char *) hex);
+#ifdef HAVE_LIBGCRYPT
   SAFE_FREE(hex);
+#elif defined HAVE_LIBCRYPTO
+  OPENSSL_free(hex);
+#endif
 }
