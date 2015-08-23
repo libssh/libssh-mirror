@@ -915,7 +915,12 @@ int ssh_pki_import_pubkey_base64(const char *b64_key,
     }
     ssh_string_free(type_s);
 
-    rc = pki_import_pubkey_buffer(buffer, type, pkey);
+    if (type == SSH_KEYTYPE_RSA_CERT01 ||
+        type == SSH_KEYTYPE_DSS_CERT01) {
+        rc = pki_import_cert_buffer(buffer, type, pkey);
+    } else {
+        rc = pki_import_pubkey_buffer(buffer, type, pkey);
+    }
     ssh_buffer_free(buffer);
 
     return rc;
@@ -973,7 +978,12 @@ int ssh_pki_import_pubkey_blob(const ssh_string key_blob,
     }
     ssh_string_free(type_s);
 
-    rc = pki_import_pubkey_buffer(buffer, type, pkey);
+    if (type == SSH_KEYTYPE_RSA_CERT01 ||
+        type == SSH_KEYTYPE_DSS_CERT01) {
+        rc = pki_import_cert_buffer(buffer, type, pkey);
+    } else {
+        rc = pki_import_pubkey_buffer(buffer, type, pkey);
+    }
 
     ssh_buffer_free(buffer);
 
@@ -1072,6 +1082,64 @@ int ssh_pki_import_pubkey_file(const char *filename, ssh_key *pkey)
     SAFE_FREE(key_buf);
 
     return rc;
+}
+
+/**
+ * @brief Import a base64 formated certificate from a memory c-string.
+ *
+ * @param[in]  b64_cert  The base64 cert to format.
+ *
+ * @param[in]  type     The type of the cert to format.
+ *
+ * @param[out] pkey     A pointer where the allocated key can be stored. You
+ *                      need to free the memory.
+ *
+ * @return              SSH_OK on success, SSH_ERROR on error.
+ *
+ * @see ssh_key_free()
+ */
+int ssh_pki_import_cert_base64(const char *b64_cert,
+                               enum ssh_keytypes_e type,
+                               ssh_key *pkey) {
+    return ssh_pki_import_pubkey_base64(b64_cert, type, pkey);
+}
+
+/**
+ * @internal
+ *
+ * @brief Import a certificate from a ssh string.
+ *
+ * @param[in]  cert_blob The cert blob to import as specified in RFC 4253 section
+ *                      6.6 "Public Key Algorithms".
+ *
+ * @param[out] pkey     A pointer where the allocated key can be stored. You
+ *                      need to free the memory.
+ *
+ * @return              SSH_OK on success, SSH_ERROR on error.
+ *
+ * @see ssh_key_free()
+ */
+int ssh_pki_import_cert_blob(const ssh_string cert_blob,
+                             ssh_key *pkey) {
+    return ssh_pki_import_pubkey_blob(cert_blob, pkey);
+}
+
+/**
+ * @brief Import a certificate from the given filename.
+ *
+ * @param[in]  filename The path to the certificate.
+ *
+ * @param[out] pkey     A pointer to store the allocated certificate. You need to
+ *                      free the memory.
+ *
+ * @returns SSH_OK on success, SSH_EOF if the file doesn't exist or permission
+ *          denied, SSH_ERROR otherwise.
+ *
+ * @see ssh_key_free()
+ */
+int ssh_pki_import_cert_file(const char *filename, ssh_key *pkey)
+{
+    return ssh_pki_import_pubkey_file(filename, pkey);
 }
 
 /**
@@ -1305,6 +1373,46 @@ int ssh_pki_export_pubkey_file(const ssh_key key,
     fclose(fp);
 
     return SSH_OK;
+}
+
+/**
+ * @brief Copy the certificate part of a public key into a private key.
+ *
+ * @param[in]  certkey  The certificate key.
+ *
+ * @param[in]  privkey  The target private key to copy the certificate to.
+ *
+ * @returns SSH_OK on success, SSH_ERROR otherwise.
+ **/
+int ssh_pki_copy_cert_to_privkey(const ssh_key certkey, ssh_key privkey) {
+  ssh_buffer cert_buffer;
+  int rc;
+
+  if (certkey == NULL || privkey == NULL) {
+      return SSH_ERROR;
+  }
+
+  if (privkey->cert != NULL) {
+      return SSH_ERROR;
+  }
+
+  if (certkey->cert == NULL) {
+      return SSH_ERROR;
+  }
+
+  cert_buffer = ssh_buffer_new();
+  if (cert_buffer == NULL) {
+      return SSH_ERROR;
+  }
+
+  rc = buffer_add_buffer(cert_buffer, certkey->cert);
+  if (rc != 0) {
+      return SSH_ERROR;
+  }
+
+  privkey->cert = cert_buffer;
+  privkey->cert_type = certkey->type;
+  return SSH_OK;
 }
 
 int ssh_pki_export_pubkey_rsa1(const ssh_key key,

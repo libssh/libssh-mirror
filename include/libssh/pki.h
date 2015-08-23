@@ -113,6 +113,10 @@ int ssh_pki_export_pubkey_rsa1(const ssh_key key,
                                char *rsa1,
                                size_t rsa1_len);
 
+int ssh_pki_import_cert_blob(const ssh_string cert_blob,
+                             ssh_key *pkey);
+
+
 /* SSH Signing Functions */
 ssh_string ssh_pki_do_sign(ssh_session session, ssh_buffer sigbuf,
     const ssh_key privatekey);

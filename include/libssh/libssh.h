@@ -551,11 +551,20 @@ LIBSSH_API int ssh_pki_export_privkey_file(const ssh_key privkey,
                                            void *auth_data,
                                            const char *filename);
 
+LIBSSH_API int ssh_pki_copy_cert_to_privkey(const ssh_key cert_key,
+                                            ssh_key privkey);
+
 LIBSSH_API int ssh_pki_import_pubkey_base64(const char *b64_key,
                                             enum ssh_keytypes_e type,
                                             ssh_key *pkey);
 LIBSSH_API int ssh_pki_import_pubkey_file(const char *filename,
                                           ssh_key *pkey);
+
+LIBSSH_API int ssh_pki_import_cert_base64(const char *b64_cert,
+                                          enum ssh_keytypes_e type,
+                                          ssh_key *pkey);
+LIBSSH_API int ssh_pki_import_cert_file(const char *filename,
+                                        ssh_key *pkey);
 
 LIBSSH_API int ssh_pki_export_privkey_to_pubkey(const ssh_key privkey,
                                                 ssh_key *pkey);
