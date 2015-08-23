@@ -827,6 +827,57 @@ fail:
     return SSH_ERROR;
 }
 
+static int pki_import_cert_buffer(ssh_buffer buffer,
+                                  enum ssh_keytypes_e type,
+                                  ssh_key *pkey) {
+    ssh_buffer cert;
+    ssh_string type_s;
+    ssh_key key;
+    int rc;
+
+    key = ssh_key_new();
+    if (key == NULL) {
+        return SSH_ERROR;
+    }
+    cert = ssh_buffer_new();
+    if (cert == NULL) {
+        ssh_key_free(key);
+        return SSH_ERROR;
+    }
+
+    key->type = type;
+    key->type_c = ssh_key_type_to_char(type);
+    key->flags = SSH_KEY_FLAG_PUBLIC;
+
+    /*
+     * The cert blob starts with the key type as an ssh_string, but this
+     * string has been read out of the buffer to identify the key type.
+     * Simply add it again as first element before copying the rest.
+     */
+    type_s = ssh_string_from_char(key->type_c);
+    if (type_s == NULL) {
+        goto fail;
+    }
+    rc = buffer_add_ssh_string(cert, type_s);
+    if (rc != 0) {
+        goto fail;
+    }
+
+    rc = buffer_add_buffer(cert, buffer);
+    if (rc != 0) {
+        goto fail;
+    }
+    key->cert = (void*) cert;
+
+    *pkey = key;
+    return SSH_OK;
+
+fail:
+    ssh_key_free(key);
+    ssh_buffer_free(cert);
+    return SSH_ERROR;
+}
+
 /**
  * @brief Import a base64 formated public key from a memory c-string.
  *
