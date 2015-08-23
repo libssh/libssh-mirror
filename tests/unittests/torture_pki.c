@@ -18,11 +18,14 @@ static int setup_rsa_key(void **state)
 
     unlink(LIBSSH_RSA_TESTKEY);
     unlink(LIBSSH_RSA_TESTKEY ".pub");
+    unlink(LIBSSH_RSA_TESTKEY "-cert.pub");
 
     torture_write_file(LIBSSH_RSA_TESTKEY,
                        torture_get_testkey(SSH_KEYTYPE_RSA, 0, 0));
     torture_write_file(LIBSSH_RSA_TESTKEY ".pub",
                        torture_get_testkey_pub(SSH_KEYTYPE_RSA, 0));
+    torture_write_file(LIBSSH_RSA_TESTKEY "-cert.pub",
+                       torture_get_testkey_pub(SSH_KEYTYPE_RSA_CERT01, 0));
 
     return 0;
 }
@@ -32,11 +35,14 @@ static int setup_dsa_key(void **state) {
 
     unlink(LIBSSH_DSA_TESTKEY);
     unlink(LIBSSH_DSA_TESTKEY ".pub");
+    unlink(LIBSSH_DSA_TESTKEY "-cert.pub");
 
     torture_write_file(LIBSSH_DSA_TESTKEY,
                        torture_get_testkey(SSH_KEYTYPE_DSS, 0, 0));
     torture_write_file(LIBSSH_DSA_TESTKEY ".pub",
                        torture_get_testkey_pub(SSH_KEYTYPE_DSS, 0));
+    torture_write_file(LIBSSH_DSA_TESTKEY "-cert.pub",
+                       torture_get_testkey_pub(SSH_KEYTYPE_DSS_CERT01, 0));
 
     return 0;
 }
@@ -105,9 +111,11 @@ static int teardown(void **state) {
 
     unlink(LIBSSH_DSA_TESTKEY);
     unlink(LIBSSH_DSA_TESTKEY ".pub");
+    unlink(LIBSSH_DSA_TESTKEY "-cert.pub");
 
     unlink(LIBSSH_RSA_TESTKEY);
     unlink(LIBSSH_RSA_TESTKEY ".pub");
+    unlink(LIBSSH_RSA_TESTKEY "-cert.pub");
 
     unlink(LIBSSH_ECDSA_TESTKEY);
     unlink(LIBSSH_ECDSA_TESTKEY ".pub");
@@ -535,6 +543,97 @@ static void torture_pki_publickey_from_privatekey_ECDSA(void **state) {
     ssh_key_free(pubkey);
 }
 #endif
+
+static void torture_pki_copy_cert_to_privkey(void **state) {
+    /* Tests copying a cert loaded into a public key to a private key.
+       The function is encryption type agnostic, no need to run this
+       against all supported key types.
+     */
+    int rc;
+    const char *passphrase = torture_get_testkey_passphrase();
+    ssh_key pubkey;
+    ssh_key privkey;
+    ssh_key cert;
+
+    (void) state; /* unused */
+
+    rc = ssh_pki_import_cert_file(LIBSSH_RSA_TESTKEY "-cert.pub", &cert);
+    assert_true(rc == SSH_OK);
+
+    rc = ssh_pki_import_pubkey_file(LIBSSH_RSA_TESTKEY ".pub", &pubkey);
+    assert_true(rc == SSH_OK);
+
+    rc = ssh_pki_import_privkey_base64(torture_get_testkey(SSH_KEYTYPE_RSA, 0, 0),
+				       passphrase,
+				       NULL,
+				       NULL,
+				       &privkey);
+    assert_true(rc == SSH_OK);
+
+    /* Basic sanity. */
+    rc = ssh_pki_copy_cert_to_privkey(NULL, privkey);
+    assert_true(rc == SSH_ERROR);
+
+    rc = ssh_pki_copy_cert_to_privkey(pubkey, NULL);
+    assert_true(rc == SSH_ERROR);
+
+    /* A public key doesn't have a cert, copy should fail. */
+    assert_true(pubkey->cert == NULL);
+    rc = ssh_pki_copy_cert_to_privkey(pubkey, privkey);
+    assert_true(rc == SSH_ERROR);
+
+    /* Copying the cert to non-cert keys should work fine. */
+    rc = ssh_pki_copy_cert_to_privkey(cert, pubkey);
+    assert_true(rc == SSH_OK);
+    rc = ssh_pki_copy_cert_to_privkey(cert, privkey);
+    assert_true(rc == SSH_OK);
+
+    /* The private key's cert is already set, another copy should fail. */
+    rc = ssh_pki_copy_cert_to_privkey(cert, privkey);
+    assert_true(rc == SSH_ERROR);
+
+    ssh_key_free(cert);
+    ssh_key_free(privkey);
+    ssh_key_free(pubkey);
+}
+
+static void torture_pki_import_cert_file_rsa(void **state) {
+    int rc;
+    ssh_key cert;
+    enum ssh_keytypes_e type;
+
+    (void) state; /* unused */
+
+    rc = ssh_pki_import_cert_file(LIBSSH_RSA_TESTKEY "-cert.pub", &cert);
+    assert_true(rc == 0);
+
+    type = ssh_key_type(cert);
+    assert_true(type == SSH_KEYTYPE_RSA_CERT01);
+
+    rc = ssh_key_is_public(cert);
+    assert_true(rc == 1);
+
+    ssh_key_free(cert);
+}
+
+static void torture_pki_import_cert_file_dsa(void **state) {
+    int rc;
+    ssh_key cert;
+    enum ssh_keytypes_e type;
+
+    (void) state; /* unused */
+
+    rc = ssh_pki_import_cert_file(LIBSSH_DSA_TESTKEY "-cert.pub", &cert);
+    assert_true(rc == 0);
+
+    type = ssh_key_type(cert);
+    assert_true(type == SSH_KEYTYPE_DSS_CERT01);
+
+    rc = ssh_key_is_public(cert);
+    assert_true(rc == 1);
+
+    ssh_key_free(cert);
+}
 
 static void torture_pki_publickey_dsa_base64(void **state)
 {
@@ -1539,6 +1638,17 @@ int torture_run_tests(void) {
         cmocka_unit_test_setup_teardown(torture_pki_pki_publickey_from_privatekey_ed25519,
                                  setup_ed25519_key,
                                  teardown),
+        /* cert */
+        cmocka_unit_test_setup_teardown(torture_pki_copy_cert_to_privkey,
+                                        setup_rsa_key,
+                                        teardown),
+        cmocka_unit_test_setup_teardown(torture_pki_import_cert_file_rsa,
+                                        setup_rsa_key,
+                                        teardown),
+        cmocka_unit_test_setup_teardown(torture_pki_import_cert_file_dsa,
+                                        setup_dsa_key,
+                                        teardown),
+
         /* public key */
         cmocka_unit_test_setup_teardown(torture_pki_publickey_dsa_base64,
                                  setup_dsa_key,
