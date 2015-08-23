@@ -60,6 +60,7 @@ struct ssh_key_struct {
     ed25519_pubkey *ed25519_pubkey;
     ed25519_privkey *ed25519_privkey;
     void *cert;
+    enum ssh_keytypes_e cert_type;
 };
 
 struct ssh_signature_struct {

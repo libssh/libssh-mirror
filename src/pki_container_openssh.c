@@ -113,8 +113,10 @@ static int pki_openssh_import_privkey_blob(ssh_buffer key_blob_buffer,
         SAFE_FREE(privkey);
         SAFE_FREE(pubkey);
         break;
+    case SSH_KEYTYPE_DSS_CERT01:
     case SSH_KEYTYPE_DSS:
         /* p,q,g,pub_key,priv_key */
+    case SSH_KEYTYPE_RSA_CERT01:
     case SSH_KEYTYPE_RSA:
         /* n,e,d,iqmp,p,q */
     case SSH_KEYTYPE_RSA1:

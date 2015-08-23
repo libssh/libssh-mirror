@@ -144,6 +144,10 @@ void ssh_key_clean (ssh_key key){
         SAFE_FREE(key->ed25519_privkey);
     }
     SAFE_FREE(key->ed25519_pubkey);
+    if (key->cert != NULL) {
+        ssh_buffer_free(key->cert);
+    }
+    key->cert_type = SSH_KEYTYPE_UNKNOWN;
     key->flags=SSH_KEY_FLAG_EMPTY;
     key->type=SSH_KEYTYPE_UNKNOWN;
     key->ecdsa_nid = 0;
@@ -196,6 +200,10 @@ const char *ssh_key_type_to_char(enum ssh_keytypes_e type) {
       return "ssh-ecdsa";
     case SSH_KEYTYPE_ED25519:
       return "ssh-ed25519";
+    case SSH_KEYTYPE_DSS_CERT01:
+      return "ssh-dss-cert-v01@openssh.com";
+    case SSH_KEYTYPE_RSA_CERT01:
+      return "ssh-rsa-cert-v01@openssh.com";
     case SSH_KEYTYPE_UNKNOWN:
       return NULL;
   }
@@ -236,6 +244,10 @@ enum ssh_keytypes_e ssh_key_type_from_name(const char *name) {
         return SSH_KEYTYPE_ECDSA;
     } else if (strcmp(name, "ssh-ed25519") == 0){
         return SSH_KEYTYPE_ED25519;
+    } else if (strcmp(name, "ssh-dss-cert-v01@openssh.com") == 0) {
+        return SSH_KEYTYPE_DSS_CERT01;
+    } else if (strcmp(name, "ssh-rsa-cert-v01@openssh.com") == 0) {
+        return SSH_KEYTYPE_RSA_CERT01;
     }
 
     return SSH_KEYTYPE_UNKNOWN;
@@ -352,6 +364,8 @@ void ssh_signature_free(ssh_signature sig)
         case SSH_KEYTYPE_ED25519:
             SAFE_FREE(sig->ed25519_sig);
             break;
+        case SSH_KEYTYPE_DSS_CERT01:
+        case SSH_KEYTYPE_RSA_CERT01:
         case SSH_KEYTYPE_UNKNOWN:
             break;
     }
@@ -797,6 +811,8 @@ static int pki_import_pubkey_buffer(ssh_buffer buffer,
             ssh_string_free(pubkey);
         }
         break;
+        case SSH_KEYTYPE_DSS_CERT01:
+        case SSH_KEYTYPE_RSA_CERT01:
         case SSH_KEYTYPE_UNKNOWN:
         default:
             SSH_LOG(SSH_LOG_WARN, "Unknown public key protocol %d", type);
@@ -1065,6 +1081,8 @@ int ssh_pki_generate(enum ssh_keytypes_e type, int parameter,
                 goto error;
             }
             break;
+        case SSH_KEYTYPE_DSS_CERT01:
+        case SSH_KEYTYPE_RSA_CERT01:
         case SSH_KEYTYPE_UNKNOWN:
             goto error;
     }

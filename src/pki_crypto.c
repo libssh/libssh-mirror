@@ -651,6 +651,8 @@ ssh_string pki_private_key_to_pem(const ssh_key key,
             BIO_free(mem);
             SSH_LOG(SSH_LOG_WARN, "PEM output not supported for key type ssh-ed25519");
             return NULL;
+        case SSH_KEYTYPE_DSS_CERT01:
+        case SSH_KEYTYPE_RSA_CERT01:
         case SSH_KEYTYPE_UNKNOWN:
             BIO_free(mem);
             SSH_LOG(SSH_LOG_WARN, "Unkown or invalid private key type %d", key->type);
@@ -780,6 +782,8 @@ ssh_key pki_private_key_from_base64(const char *b64_key,
 #endif
         case SSH_KEYTYPE_ED25519:
             /* Cannot open ed25519 keys with libcrypto */
+        case SSH_KEYTYPE_DSS_CERT01:
+        case SSH_KEYTYPE_RSA_CERT01:
         case SSH_KEYTYPE_UNKNOWN:
             BIO_free(mem);
             SSH_LOG(SSH_LOG_WARN, "Unkown or invalid private key type %d", type);
