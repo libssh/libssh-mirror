@@ -367,6 +367,8 @@ static void ssh_packet_socket_controlflow_callback(int code, void *userdata)
     ssh_channel channel;
 
     if (code == SSH_SOCKET_FLOW_WRITEWONTBLOCK) {
+        SSH_LOG(SSH_LOG_TRACE, "sending channel_write_wontblock callback");
+
         /* the out pipe is empty so we can forward this to channels */
         it = ssh_list_get_iterator(session->channels);
         while (it != NULL) {

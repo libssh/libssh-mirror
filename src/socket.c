@@ -227,6 +227,11 @@ int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p, socket_t fd,
     if (!ssh_socket_is_open(s)) {
         return -1;
     }
+    SSH_LOG(SSH_LOG_TRACE, "Poll callback on socket %d (%s%s%s), out buffer %d",fd,
+            (revents & POLLIN) ? "POLLIN ":"",
+            (revents & POLLOUT) ? "POLLOUT ":"",
+            (revents & POLLERR) ? "POLLERR":"",
+            ssh_buffer_get_len(s->out_buffer));
     if (revents & POLLERR || revents & POLLHUP) {
         /* Check if we are in a connecting state */
         if (s->state == SSH_SOCKET_CONNECTING) {
@@ -334,6 +339,7 @@ int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p, socket_t fd,
             ssh_socket_nonblocking_flush(s);
         } else if (s->callbacks && s->callbacks->controlflow) {
             /* Otherwise advertise the upper level that write can be done */
+            SSH_LOG(SSH_LOG_TRACE,"sending control flow event");
             s->callbacks->controlflow(SSH_SOCKET_FLOW_WRITEWONTBLOCK,
                                       s->callbacks->userdata);
         }
