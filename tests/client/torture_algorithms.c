@@ -26,15 +26,19 @@
 #include "libssh/priv.h"
 
 
-static void setup(void **state) {
+static int setup(void **state) {
     int verbosity=torture_libssh_verbosity();
     ssh_session session = ssh_new();
     ssh_options_set(session, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
     *state = session;
+
+    return 0;
 }
 
-static void teardown(void **state) {
+static int teardown(void **state) {
     ssh_free(*state);
+
+    return 0;
 }
 
 static void test_algorithm(ssh_session session, const char *algo, const char *hmac) {
@@ -289,42 +293,42 @@ static void torture_algorithms_dh_group1(void **state) {
 }
 int torture_run_tests(void) {
     int rc;
-    UnitTest tests[] = {
-        unit_test_setup_teardown(torture_algorithms_aes128_cbc_hmac_sha1, setup, teardown),
-        unit_test_setup_teardown(torture_algorithms_aes128_cbc_hmac_sha2_256, setup, teardown),
-        unit_test_setup_teardown(torture_algorithms_aes128_cbc_hmac_sha2_512, setup, teardown),
-        unit_test_setup_teardown(torture_algorithms_aes192_cbc_hmac_sha1, setup, teardown),
-        unit_test_setup_teardown(torture_algorithms_aes192_cbc_hmac_sha2_256, setup, teardown),
-        unit_test_setup_teardown(torture_algorithms_aes192_cbc_hmac_sha2_512, setup, teardown),
-        unit_test_setup_teardown(torture_algorithms_aes256_cbc_hmac_sha1, setup, teardown),
-        unit_test_setup_teardown(torture_algorithms_aes256_cbc_hmac_sha2_256, setup, teardown),
-        unit_test_setup_teardown(torture_algorithms_aes256_cbc_hmac_sha2_512, setup, teardown),
-        unit_test_setup_teardown(torture_algorithms_aes128_ctr_hmac_sha1, setup, teardown),
-        unit_test_setup_teardown(torture_algorithms_aes128_ctr_hmac_sha2_256, setup, teardown),
-        unit_test_setup_teardown(torture_algorithms_aes128_ctr_hmac_sha2_512, setup, teardown),
-        unit_test_setup_teardown(torture_algorithms_aes192_ctr_hmac_sha1, setup, teardown),
-        unit_test_setup_teardown(torture_algorithms_aes192_ctr_hmac_sha2_256, setup, teardown),
-        unit_test_setup_teardown(torture_algorithms_aes192_ctr_hmac_sha2_512, setup, teardown),
-        unit_test_setup_teardown(torture_algorithms_aes256_ctr_hmac_sha1, setup, teardown),
-        unit_test_setup_teardown(torture_algorithms_aes256_ctr_hmac_sha2_256, setup, teardown),
-        unit_test_setup_teardown(torture_algorithms_aes256_ctr_hmac_sha2_512, setup, teardown),
-        unit_test_setup_teardown(torture_algorithms_3des_cbc_hmac_sha1, setup, teardown),
-        unit_test_setup_teardown(torture_algorithms_3des_cbc_hmac_sha2_256, setup, teardown),
-        unit_test_setup_teardown(torture_algorithms_3des_cbc_hmac_sha2_512, setup, teardown),
-        unit_test_setup_teardown(torture_algorithms_blowfish_cbc_hmac_sha1, setup, teardown),
-        unit_test_setup_teardown(torture_algorithms_blowfish_cbc_hmac_sha2_256, setup, teardown),
-        unit_test_setup_teardown(torture_algorithms_blowfish_cbc_hmac_sha2_512, setup, teardown),
-        unit_test_setup_teardown(torture_algorithms_zlib, setup, teardown),
-        unit_test_setup_teardown(torture_algorithms_zlib_openssh, setup, teardown),
-        unit_test_setup_teardown(torture_algorithms_dh_group1,setup,teardown),
+    struct CMUnitTest tests[] = {
+        cmocka_unit_test_setup_teardown(torture_algorithms_aes128_cbc_hmac_sha1, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_algorithms_aes128_cbc_hmac_sha2_256, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_algorithms_aes128_cbc_hmac_sha2_512, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_algorithms_aes192_cbc_hmac_sha1, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_algorithms_aes192_cbc_hmac_sha2_256, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_algorithms_aes192_cbc_hmac_sha2_512, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_algorithms_aes256_cbc_hmac_sha1, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_algorithms_aes256_cbc_hmac_sha2_256, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_algorithms_aes256_cbc_hmac_sha2_512, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_algorithms_aes128_ctr_hmac_sha1, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_algorithms_aes128_ctr_hmac_sha2_256, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_algorithms_aes128_ctr_hmac_sha2_512, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_algorithms_aes192_ctr_hmac_sha1, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_algorithms_aes192_ctr_hmac_sha2_256, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_algorithms_aes192_ctr_hmac_sha2_512, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_algorithms_aes256_ctr_hmac_sha1, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_algorithms_aes256_ctr_hmac_sha2_256, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_algorithms_aes256_ctr_hmac_sha2_512, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_algorithms_3des_cbc_hmac_sha1, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_algorithms_3des_cbc_hmac_sha2_256, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_algorithms_3des_cbc_hmac_sha2_512, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_algorithms_blowfish_cbc_hmac_sha1, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_algorithms_blowfish_cbc_hmac_sha2_256, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_algorithms_blowfish_cbc_hmac_sha2_512, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_algorithms_zlib, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_algorithms_zlib_openssh, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_algorithms_dh_group1,setup,teardown),
 #if defined(HAVE_LIBCRYPTO) && defined(HAVE_ECC)
-        unit_test_setup_teardown(torture_algorithms_ecdh_sha2_nistp256,setup,teardown)
+        cmocka_unit_test_setup_teardown(torture_algorithms_ecdh_sha2_nistp256,setup,teardown)
 #endif
     };
 
     ssh_init();
     torture_filter_tests(tests);
-    rc = run_tests(tests);
+    rc = cmocka_run_group_tests(tests, NULL, NULL);
     ssh_finalize();
 
     return rc;

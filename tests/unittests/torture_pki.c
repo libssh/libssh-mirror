@@ -12,7 +12,8 @@
 
 const unsigned char HASH[] = "12345678901234567890";
 
-static void setup_rsa_key(void **state) {
+static int setup_rsa_key(void **state)
+{
     (void) state; /* unused */
 
     unlink(LIBSSH_RSA_TESTKEY);
@@ -22,9 +23,11 @@ static void setup_rsa_key(void **state) {
                        torture_get_testkey(SSH_KEYTYPE_RSA, 0, 0));
     torture_write_file(LIBSSH_RSA_TESTKEY ".pub",
                        torture_get_testkey_pub(SSH_KEYTYPE_RSA, 0));
+
+    return 0;
 }
 
-static void setup_dsa_key(void **state) {
+static int setup_dsa_key(void **state) {
     (void) state; /* unused */
 
     unlink(LIBSSH_DSA_TESTKEY);
@@ -34,10 +37,12 @@ static void setup_dsa_key(void **state) {
                        torture_get_testkey(SSH_KEYTYPE_DSS, 0, 0));
     torture_write_file(LIBSSH_DSA_TESTKEY ".pub",
                        torture_get_testkey_pub(SSH_KEYTYPE_DSS, 0));
+
+    return 0;
 }
 
 #ifdef HAVE_OPENSSL_ECC
-static void setup_ecdsa_key(void **state, int ecdsa_bits) {
+static int setup_ecdsa_key(void **state, int ecdsa_bits) {
 
     (void) state; /* unused */
 
@@ -48,22 +53,30 @@ static void setup_ecdsa_key(void **state, int ecdsa_bits) {
                        torture_get_testkey(SSH_KEYTYPE_ECDSA, ecdsa_bits, 0));
     torture_write_file(LIBSSH_ECDSA_TESTKEY ".pub",
                        torture_get_testkey_pub(SSH_KEYTYPE_ECDSA, ecdsa_bits));
+
+    return 0;
 }
 
-static void setup_ecdsa_key_521(void **state) {
+static int setup_ecdsa_key_521(void **state) {
     setup_ecdsa_key(state, 521);
+
+    return 0;
 }
 
-static void setup_ecdsa_key_384(void **state) {
+static int setup_ecdsa_key_384(void **state) {
     setup_ecdsa_key(state, 384);
+
+    return 0;
 }
 
-static void setup_ecdsa_key_256(void **state) {
+static int setup_ecdsa_key_256(void **state) {
     setup_ecdsa_key(state, 256);
+
+    return 0;
 }
 #endif
 
-static void setup_ed25519_key(void **state) {
+static int setup_ed25519_key(void **state) {
     (void) state; /* unused */
 
     unlink(LIBSSH_ED25519_TESTKEY);
@@ -74,16 +87,20 @@ static void setup_ed25519_key(void **state) {
 
     torture_write_file(LIBSSH_ED25519_TESTKEY ".pub",
                        torture_get_testkey_pub(SSH_KEYTYPE_ED25519,0));
+
+    return 0;
 }
 
-static void setup_both_keys(void **state) {
+static int setup_both_keys(void **state) {
     (void) state; /* unused */
 
     setup_rsa_key(state);
     setup_dsa_key(state);
+
+    return 0;
 }
 
-static void teardown(void **state) {
+static int teardown(void **state) {
     (void) state; /* unused */
 
     unlink(LIBSSH_DSA_TESTKEY);
@@ -94,6 +111,8 @@ static void teardown(void **state) {
 
     unlink(LIBSSH_ECDSA_TESTKEY);
     unlink(LIBSSH_ECDSA_TESTKEY ".pub");
+
+    return 0;
 }
 
 static char *read_file(const char *filename) {
@@ -1467,168 +1486,168 @@ static void torture_pki_ecdsa_name521(void **state)
 
 int torture_run_tests(void) {
     int rc;
-    UnitTest tests[] = {
-        unit_test(torture_pki_keytype),
+    struct CMUnitTest tests[] = {
+        cmocka_unit_test(torture_pki_keytype),
 
-        unit_test(torture_pki_signature),
+        cmocka_unit_test(torture_pki_signature),
 
         /* ssh_pki_import_privkey_base64 */
-        unit_test_setup_teardown(torture_pki_import_privkey_base64_NULL_key,
+        cmocka_unit_test_setup_teardown(torture_pki_import_privkey_base64_NULL_key,
                                  setup_rsa_key,
                                  teardown),
-        unit_test_setup_teardown(torture_pki_import_privkey_base64_NULL_str,
+        cmocka_unit_test_setup_teardown(torture_pki_import_privkey_base64_NULL_str,
                                  setup_rsa_key,
                                  teardown),
-        unit_test_setup_teardown(torture_pki_import_privkey_base64_RSA,
+        cmocka_unit_test_setup_teardown(torture_pki_import_privkey_base64_RSA,
                                  setup_rsa_key,
                                  teardown),
-        unit_test_setup_teardown(torture_pki_import_privkey_base64_DSA,
+        cmocka_unit_test_setup_teardown(torture_pki_import_privkey_base64_DSA,
                                  setup_dsa_key,
                                  teardown),
 #ifdef HAVE_ECC
-        unit_test_setup_teardown(torture_pki_import_privkey_base64_ECDSA,
+        cmocka_unit_test_setup_teardown(torture_pki_import_privkey_base64_ECDSA,
                                  setup_ecdsa_key_256,
                                  teardown),
-        unit_test_setup_teardown(torture_pki_import_privkey_base64_ECDSA,
+        cmocka_unit_test_setup_teardown(torture_pki_import_privkey_base64_ECDSA,
                                  setup_ecdsa_key_384,
                                  teardown),
-        unit_test_setup_teardown(torture_pki_import_privkey_base64_ECDSA,
+        cmocka_unit_test_setup_teardown(torture_pki_import_privkey_base64_ECDSA,
                                  setup_ecdsa_key_521,
                                  teardown),
 #endif
-        unit_test_setup_teardown(torture_pki_import_privkey_base64_ed25519,
+        cmocka_unit_test_setup_teardown(torture_pki_import_privkey_base64_ed25519,
                                 setup_ed25519_key,
                                 teardown),
-        unit_test(torture_pki_import_privkey_base64_passphrase),
+        cmocka_unit_test(torture_pki_import_privkey_base64_passphrase),
         /* ssh_pki_export_privkey_to_pubkey */
-        unit_test_setup_teardown(torture_pki_pki_publickey_from_privatekey_RSA,
+        cmocka_unit_test_setup_teardown(torture_pki_pki_publickey_from_privatekey_RSA,
                                  setup_rsa_key,
                                  teardown),
-        unit_test_setup_teardown(torture_pki_pki_publickey_from_privatekey_DSA,
+        cmocka_unit_test_setup_teardown(torture_pki_pki_publickey_from_privatekey_DSA,
                                  setup_dsa_key,
                                  teardown),
 #ifdef HAVE_ECC
-        unit_test_setup_teardown(torture_pki_publickey_from_privatekey_ECDSA,
+        cmocka_unit_test_setup_teardown(torture_pki_publickey_from_privatekey_ECDSA,
                                  setup_ecdsa_key_256,
                                  teardown),
-        unit_test_setup_teardown(torture_pki_publickey_from_privatekey_ECDSA,
+        cmocka_unit_test_setup_teardown(torture_pki_publickey_from_privatekey_ECDSA,
                                  setup_ecdsa_key_384,
                                  teardown),
-        unit_test_setup_teardown(torture_pki_publickey_from_privatekey_ECDSA,
+        cmocka_unit_test_setup_teardown(torture_pki_publickey_from_privatekey_ECDSA,
                                  setup_ecdsa_key_521,
                                  teardown),
-        unit_test_setup_teardown(torture_pki_ecdsa_duplicate_then_demote,
+        cmocka_unit_test_setup_teardown(torture_pki_ecdsa_duplicate_then_demote,
                                  setup_ecdsa_key_256,
                                  teardown),
-        unit_test_setup_teardown(torture_pki_ecdsa_duplicate_then_demote,
+        cmocka_unit_test_setup_teardown(torture_pki_ecdsa_duplicate_then_demote,
                                  setup_ecdsa_key_384,
                                  teardown),
-        unit_test_setup_teardown(torture_pki_ecdsa_duplicate_then_demote,
+        cmocka_unit_test_setup_teardown(torture_pki_ecdsa_duplicate_then_demote,
                                  setup_ecdsa_key_521,
                                  teardown),
 #endif
-        unit_test_setup_teardown(torture_pki_pki_publickey_from_privatekey_ed25519,
+        cmocka_unit_test_setup_teardown(torture_pki_pki_publickey_from_privatekey_ed25519,
                                  setup_ed25519_key,
                                  teardown),
         /* public key */
-        unit_test_setup_teardown(torture_pki_publickey_dsa_base64,
+        cmocka_unit_test_setup_teardown(torture_pki_publickey_dsa_base64,
                                  setup_dsa_key,
                                  teardown),
-        unit_test_setup_teardown(torture_pki_publickey_rsa_base64,
+        cmocka_unit_test_setup_teardown(torture_pki_publickey_rsa_base64,
                                  setup_rsa_key,
                                  teardown),
 #ifdef HAVE_ECC
-        unit_test_setup_teardown(torture_pki_publickey_ecdsa_base64,
+        cmocka_unit_test_setup_teardown(torture_pki_publickey_ecdsa_base64,
                                  setup_ecdsa_key_256,
                                  teardown),
-        unit_test_setup_teardown(torture_pki_publickey_ecdsa_base64,
+        cmocka_unit_test_setup_teardown(torture_pki_publickey_ecdsa_base64,
                                  setup_ecdsa_key_384,
                                  teardown),
-        unit_test_setup_teardown(torture_pki_publickey_ecdsa_base64,
+        cmocka_unit_test_setup_teardown(torture_pki_publickey_ecdsa_base64,
                                  setup_ecdsa_key_521,
                                  teardown),
 #endif
-        unit_test_setup_teardown(torture_pki_publickey_ed25519_base64,
+        cmocka_unit_test_setup_teardown(torture_pki_publickey_ed25519_base64,
                                  setup_ed25519_key,
                                  teardown),
-        unit_test_setup_teardown(torture_generate_pubkey_from_privkey_dsa,
+        cmocka_unit_test_setup_teardown(torture_generate_pubkey_from_privkey_dsa,
                                  setup_dsa_key,
                                  teardown),
-        unit_test_setup_teardown(torture_generate_pubkey_from_privkey_rsa,
+        cmocka_unit_test_setup_teardown(torture_generate_pubkey_from_privkey_rsa,
                                  setup_rsa_key,
                                  teardown),
 #ifdef HAVE_ECC
-        unit_test_setup_teardown(torture_generate_pubkey_from_privkey_ecdsa,
+        cmocka_unit_test_setup_teardown(torture_generate_pubkey_from_privkey_ecdsa,
                                  setup_ecdsa_key_256,
                                  teardown),
-        unit_test_setup_teardown(torture_generate_pubkey_from_privkey_ecdsa,
+        cmocka_unit_test_setup_teardown(torture_generate_pubkey_from_privkey_ecdsa,
                                  setup_ecdsa_key_384,
                                  teardown),
-        unit_test_setup_teardown(torture_generate_pubkey_from_privkey_ecdsa,
+        cmocka_unit_test_setup_teardown(torture_generate_pubkey_from_privkey_ecdsa,
                                  setup_ecdsa_key_521,
                                  teardown),
 #endif
-        unit_test_setup_teardown(torture_generate_pubkey_from_privkey_ed25519,
+        cmocka_unit_test_setup_teardown(torture_generate_pubkey_from_privkey_ed25519,
                                  setup_rsa_key,
                                  teardown),
-        unit_test_setup_teardown(torture_pki_duplicate_key_rsa,
+        cmocka_unit_test_setup_teardown(torture_pki_duplicate_key_rsa,
                                  setup_rsa_key,
                                  teardown),
-        unit_test_setup_teardown(torture_pki_duplicate_key_dsa,
+        cmocka_unit_test_setup_teardown(torture_pki_duplicate_key_dsa,
                                  setup_dsa_key,
                                  teardown),
 #ifdef HAVE_ECC
-        unit_test_setup_teardown(torture_pki_duplicate_key_ecdsa,
+        cmocka_unit_test_setup_teardown(torture_pki_duplicate_key_ecdsa,
                                  setup_ecdsa_key_256,
                                  teardown),
-        unit_test_setup_teardown(torture_pki_duplicate_key_ecdsa,
+        cmocka_unit_test_setup_teardown(torture_pki_duplicate_key_ecdsa,
                                  setup_ecdsa_key_384,
                                  teardown),
-        unit_test_setup_teardown(torture_pki_duplicate_key_ecdsa,
+        cmocka_unit_test_setup_teardown(torture_pki_duplicate_key_ecdsa,
                                  setup_ecdsa_key_521,
                                  teardown),
 #endif
-        unit_test_setup_teardown(torture_pki_duplicate_key_dsa,
+        cmocka_unit_test_setup_teardown(torture_pki_duplicate_key_dsa,
                                  setup_dsa_key,
                                  teardown),
-        unit_test(torture_pki_generate_key_rsa),
-        unit_test(torture_pki_generate_key_rsa1),
-        unit_test(torture_pki_generate_key_dsa),
+        cmocka_unit_test(torture_pki_generate_key_rsa),
+        cmocka_unit_test(torture_pki_generate_key_rsa1),
+        cmocka_unit_test(torture_pki_generate_key_dsa),
 #ifdef HAVE_ECC
-        unit_test(torture_pki_generate_key_ecdsa),
+        cmocka_unit_test(torture_pki_generate_key_ecdsa),
 #endif
-        unit_test(torture_pki_generate_key_ed25519),
+        cmocka_unit_test(torture_pki_generate_key_ed25519),
 #ifdef HAVE_LIBCRYPTO
-        unit_test_setup_teardown(torture_pki_write_privkey_rsa,
+        cmocka_unit_test_setup_teardown(torture_pki_write_privkey_rsa,
                                  setup_rsa_key,
                                  teardown),
-        unit_test_setup_teardown(torture_pki_write_privkey_dsa,
+        cmocka_unit_test_setup_teardown(torture_pki_write_privkey_dsa,
                                  setup_dsa_key,
                                  teardown),
 #ifdef HAVE_ECC
-        unit_test_setup_teardown(torture_pki_write_privkey_ecdsa,
+        cmocka_unit_test_setup_teardown(torture_pki_write_privkey_ecdsa,
                                  setup_ecdsa_key_256,
                                  teardown),
-        unit_test_setup_teardown(torture_pki_write_privkey_ecdsa,
+        cmocka_unit_test_setup_teardown(torture_pki_write_privkey_ecdsa,
                                  setup_ecdsa_key_384,
                                  teardown),
-        unit_test_setup_teardown(torture_pki_write_privkey_ecdsa,
+        cmocka_unit_test_setup_teardown(torture_pki_write_privkey_ecdsa,
                                  setup_ecdsa_key_521,
                                  teardown),
 #endif
 #endif /* HAVE_LIBCRYPTO */
-        unit_test_setup_teardown(torture_pki_write_privkey_ed25519,
+        cmocka_unit_test_setup_teardown(torture_pki_write_privkey_ed25519,
                                  setup_dsa_key,
                                  teardown),
 
 #ifdef HAVE_ECC
-        unit_test_setup_teardown(torture_pki_ecdsa_name256,
+        cmocka_unit_test_setup_teardown(torture_pki_ecdsa_name256,
                                  setup_ecdsa_key_256,
                                  teardown),
-        unit_test_setup_teardown(torture_pki_ecdsa_name384,
+        cmocka_unit_test_setup_teardown(torture_pki_ecdsa_name384,
                                  setup_ecdsa_key_384,
                                  teardown),
-        unit_test_setup_teardown(torture_pki_ecdsa_name521,
+        cmocka_unit_test_setup_teardown(torture_pki_ecdsa_name521,
                                  setup_ecdsa_key_521,
                                  teardown),
 #endif
@@ -1638,7 +1657,7 @@ int torture_run_tests(void) {
 
     ssh_init();
     torture_filter_tests(tests);
-    rc=run_tests(tests);
+    rc = cmocka_run_group_tests(tests, NULL, NULL);
     ssh_finalize();
     return rc;
 }

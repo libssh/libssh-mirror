@@ -44,22 +44,26 @@
                "h0dSi8VJXI1wes5HTyLsv9VBmU1uCXUUvufoQKfF/OcSH0ufcCpnd62g1/adZcy2" \
                "WJg=="
 
-static void setup(void **state) {
+static int setup(void **state) {
     int verbosity=torture_libssh_verbosity();
     ssh_session session = ssh_new();
 
     ssh_options_set(session, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
 
     *state = session;
+
+    return 0;
 }
 
-static void teardown(void **state) {
+static int teardown(void **state) {
     ssh_session session = *state;
 
     ssh_disconnect(session);
     ssh_free(session);
 
     unlink(KNOWNHOSTFILES);
+
+    return 0;
 }
 
 static void torture_knownhosts_port(void **state) {
@@ -282,19 +286,19 @@ static void torture_knownhosts_precheck(void **state) {
 
 int torture_run_tests(void) {
     int rc;
-    UnitTest tests[] = {
-        unit_test_setup_teardown(torture_knownhosts_port, setup, teardown),
-        unit_test_setup_teardown(torture_knownhosts_fail, setup, teardown),
-        unit_test_setup_teardown(torture_knownhosts_other, setup, teardown),
-        unit_test_setup_teardown(torture_knownhosts_other_auto, setup, teardown),
-        unit_test_setup_teardown(torture_knownhosts_conflict, setup, teardown),
-        unit_test_setup_teardown(torture_knownhosts_precheck, setup, teardown)
+    struct CMUnitTest tests[] = {
+        cmocka_unit_test_setup_teardown(torture_knownhosts_port, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_knownhosts_fail, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_knownhosts_other, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_knownhosts_other_auto, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_knownhosts_conflict, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_knownhosts_precheck, setup, teardown)
     };
 
     ssh_init();
 
     torture_filter_tests(tests);
-    rc = run_tests(tests);
+    rc = cmocka_run_group_tests(tests, NULL, NULL);
 
     ssh_finalize();
     return rc;

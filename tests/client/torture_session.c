@@ -29,7 +29,7 @@
 #define BUFLEN 4096
 static char buffer[BUFLEN];
 
-static void setup(void **state) {
+static int setup(void **state) {
     int verbosity = torture_libssh_verbosity();
     ssh_session session = ssh_new();
 
@@ -37,10 +37,14 @@ static void setup(void **state) {
     ssh_options_set(session, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
 
     *state = session;
+
+    return 0;
 }
 
-static void teardown(void **state) {
+static int teardown(void **state) {
     ssh_disconnect(*state);
+
+    return 0;
     ssh_free(*state);
 }
 
@@ -99,14 +103,14 @@ static void torture_channel_read_error(void **state) {
 
 int torture_run_tests(void) {
     int rc;
-    UnitTest tests[] = {
-        unit_test_setup_teardown(torture_channel_read_error, setup, teardown),
+    struct CMUnitTest tests[] = {
+        cmocka_unit_test_setup_teardown(torture_channel_read_error, setup, teardown),
     };
 
     ssh_init();
 
     torture_filter_tests(tests);
-    rc = run_tests(tests);
+    rc = cmocka_run_group_tests(tests, NULL, NULL);
     ssh_finalize();
 
     return rc;

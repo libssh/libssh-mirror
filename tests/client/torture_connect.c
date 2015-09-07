@@ -32,19 +32,23 @@
 /* Should work until Apnic decides to assign it :) */
 #define BLACKHOLE "1.1.1.1"
 
-static void setup(void **state) {
+static int setup(void **state) {
     int verbosity=torture_libssh_verbosity();
     ssh_session session = ssh_new();
 
     ssh_options_set(session, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
 
     *state = session;
+
+    return 0;
 }
 
-static void teardown(void **state) {
+static int teardown(void **state) {
     ssh_session session = *state;
     ssh_disconnect(session);
     ssh_free(session);
+
+    return 0;
 }
 
 static void torture_connect_nonblocking(void **state) {
@@ -141,18 +145,18 @@ static void torture_connect_socket(void **state) {
 
 int torture_run_tests(void) {
     int rc;
-    UnitTest tests[] = {
-        unit_test_setup_teardown(torture_connect_nonblocking, setup, teardown),
-        unit_test_setup_teardown(torture_connect_double, setup, teardown),
-        unit_test_setup_teardown(torture_connect_failure, setup, teardown),
-        unit_test_setup_teardown(torture_connect_timeout, setup, teardown),
-        unit_test_setup_teardown(torture_connect_socket, setup, teardown),
+    struct CMUnitTest tests[] = {
+        cmocka_unit_test_setup_teardown(torture_connect_nonblocking, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_connect_double, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_connect_failure, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_connect_timeout, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_connect_socket, setup, teardown),
     };
 
     ssh_init();
 
     torture_filter_tests(tests);
-    rc = run_tests(tests);
+    rc = cmocka_run_group_tests(tests, NULL, NULL);
 
     ssh_finalize();
     return rc;

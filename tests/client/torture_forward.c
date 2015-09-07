@@ -24,7 +24,7 @@
 #include "torture.h"
 #include <libssh/libssh.h>
 
-static void setup(void **state)
+static int setup(void **state)
 {
     ssh_session session;
     const char *host;
@@ -43,9 +43,11 @@ static void setup(void **state)
 
     assert_non_null(session);
     *state = session;
+
+    return 0;
 }
 
-static void teardown(void **state)
+static int teardown(void **state)
 {
     ssh_session session = (ssh_session) *state;
 
@@ -55,6 +57,8 @@ static void teardown(void **state)
             ssh_disconnect(session);
     }
     ssh_free(session);
+
+    return 0;
 }
 
 static void torture_ssh_forward(void **state)
@@ -81,14 +85,14 @@ static void torture_ssh_forward(void **state)
 int torture_run_tests(void) {
     int rc;
 
-    UnitTest tests[] = {
-        unit_test_setup_teardown(torture_ssh_forward, setup, teardown),
+    struct CMUnitTest tests[] = {
+        cmocka_unit_test_setup_teardown(torture_ssh_forward, setup, teardown),
     };
 
     ssh_init();
 
     torture_filter_tests(tests);
-    rc = run_tests(tests);
+    rc = cmocka_run_group_tests(tests, NULL, NULL);
 
     ssh_finalize();
     return rc;

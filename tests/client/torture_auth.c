@@ -27,7 +27,7 @@
 #include "libssh/session.h"
 #include "agent.c"
 
-static void setup(void **state) {
+static int setup(void **state) {
     int verbosity = torture_libssh_verbosity();
     ssh_session session = ssh_new();
 
@@ -35,11 +35,15 @@ static void setup(void **state) {
     ssh_options_set(session, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
 
     *state = session;
+
+    return 0;
 }
 
-static void teardown(void **state) {
+static int teardown(void **state) {
     ssh_disconnect(*state);
     ssh_free(*state);
+
+    return 0;
 }
 
 static void torture_auth_autopubkey(void **state) {
@@ -421,22 +425,22 @@ static void torture_auth_none_nonblocking(void **state) {
 
 int torture_run_tests(void) {
     int rc;
-    UnitTest tests[] = {
-        unit_test_setup_teardown(torture_auth_kbdint, setup, teardown),
-        unit_test_setup_teardown(torture_auth_kbdint_nonblocking, setup, teardown),
-        unit_test_setup_teardown(torture_auth_password, setup, teardown),
-        unit_test_setup_teardown(torture_auth_password_nonblocking, setup, teardown),
-        unit_test_setup_teardown(torture_auth_autopubkey, setup, teardown),
-        unit_test_setup_teardown(torture_auth_autopubkey_nonblocking, setup, teardown),
-        unit_test_setup_teardown(torture_auth_agent, setup, teardown),
-        unit_test_setup_teardown(torture_auth_agent_nonblocking, setup, teardown),
-        unit_test_setup_teardown(torture_auth_none, setup, teardown),
-        unit_test_setup_teardown(torture_auth_none_nonblocking, setup, teardown),
+    struct CMUnitTest tests[] = {
+        cmocka_unit_test_setup_teardown(torture_auth_kbdint, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_auth_kbdint_nonblocking, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_auth_password, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_auth_password_nonblocking, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_auth_autopubkey, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_auth_autopubkey_nonblocking, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_auth_agent, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_auth_agent_nonblocking, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_auth_none, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_auth_none_nonblocking, setup, teardown),
     };
 
     ssh_init();
     torture_filter_tests(tests);
-    rc = run_tests(tests);
+    rc = cmocka_run_group_tests(tests, NULL, NULL);
     ssh_finalize();
 
     return rc;

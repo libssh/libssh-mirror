@@ -13,17 +13,21 @@
 #endif
 #define NUM_THREADS 100
 
-static void setup(void **state) {
+static int setup(void **state) {
     (void) state;
 
     ssh_threads_set_callbacks(ssh_threads_get_pthread());
     ssh_init();
+
+    return 0;
 }
 
-static void teardown(void **state) {
+static int teardown(void **state) {
     (void) state;
 
     ssh_finalize();
+
+    return 0;
 }
 
 static void *torture_rand_thread(void *threadid) {
@@ -60,10 +64,13 @@ static void torture_rand_threading(void **state) {
 }
 
 int torture_run_tests(void) {
-    UnitTest tests[] = {
-        unit_test_setup_teardown(torture_rand_threading, setup, teardown),
+    int rc;
+    struct CMUnitTest tests[] = {
+        cmocka_unit_test_setup_teardown(torture_rand_threading, setup, teardown),
     };
 
     torture_filter_tests(tests);
-    return run_tests(tests);
+    rc = cmocka_run_group_tests(tests, NULL, NULL);
+
+    return rc;
 }

@@ -45,13 +45,13 @@ static void torture_ssh_is_ipaddr(void **state) {
 
 int torture_run_tests(void) {
     int rc;
-    UnitTest tests[] = {
-        unit_test(torture_ssh_is_ipaddr)
+    struct CMUnitTest tests[] = {
+        cmocka_unit_test(torture_ssh_is_ipaddr)
     };
 
     ssh_init();
     torture_filter_tests(tests);
-    rc=run_tests(tests);
+    rc = cmocka_run_group_tests(tests, NULL, NULL);
     ssh_finalize();
     return rc;
 }

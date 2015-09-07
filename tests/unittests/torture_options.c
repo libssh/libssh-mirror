@@ -9,13 +9,19 @@
 #include <libssh/session.h>
 #include <libssh/misc.h>
 
-static void setup(void **state) {
+static int setup(void **state)
+{
     ssh_session session = ssh_new();
     *state = session;
+
+    return 0;
 }
 
-static void teardown(void **state) {
+static int teardown(void **state)
+{
     ssh_free(*state);
+
+    return 0;
 }
 
 static void torture_options_set_host(void **state) {
@@ -195,22 +201,22 @@ static void torture_options_proxycommand(void **state) {
 
 int torture_run_tests(void) {
     int rc;
-    UnitTest tests[] = {
-        unit_test_setup_teardown(torture_options_set_host, setup, teardown),
-        unit_test_setup_teardown(torture_options_get_host, setup, teardown),
-        unit_test_setup_teardown(torture_options_set_port, setup, teardown),
-        unit_test_setup_teardown(torture_options_get_port, setup, teardown),
-        unit_test_setup_teardown(torture_options_set_fd, setup, teardown),
-        unit_test_setup_teardown(torture_options_set_user, setup, teardown),
-        unit_test_setup_teardown(torture_options_get_user, setup, teardown),
-        unit_test_setup_teardown(torture_options_set_identity, setup, teardown),
-        unit_test_setup_teardown(torture_options_get_identity, setup, teardown),
-        unit_test_setup_teardown(torture_options_proxycommand, setup, teardown),
+    struct CMUnitTest tests[] = {
+        cmocka_unit_test_setup_teardown(torture_options_set_host, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_options_get_host, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_options_set_port, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_options_get_port, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_options_set_fd, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_options_set_user, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_options_get_user, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_options_set_identity, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_options_get_identity, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_options_proxycommand, setup, teardown),
     };
 
     ssh_init();
     torture_filter_tests(tests);
-    rc=run_tests(tests);
+    rc = cmocka_run_group_tests(tests, NULL, NULL);
     ssh_finalize();
     return rc;
 }

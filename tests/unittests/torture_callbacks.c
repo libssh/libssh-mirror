@@ -15,7 +15,8 @@ static int myauthcallback (const char *prompt, char *buf, size_t len,
     return 0;
 }
 
-static void setup(void **state) {
+static int setup(void **state)
+{
     struct ssh_callbacks_struct *cb;
 
     cb = malloc(sizeof(struct ssh_callbacks_struct));
@@ -27,10 +28,15 @@ static void setup(void **state) {
 
     ssh_callbacks_init(cb);
     *state = cb;
+
+    return 0;
 }
 
-static void teardown(void **state) {
+static int teardown(void **state)
+{
     free(*state);
+
+    return 0;
 }
 
 static void torture_callbacks_size(void **state) {
@@ -98,15 +104,15 @@ static void torture_log_callback(void **state)
 
 int torture_run_tests(void) {
     int rc;
-    UnitTest tests[] = {
-        unit_test_setup_teardown(torture_callbacks_size, setup, teardown),
-        unit_test_setup_teardown(torture_callbacks_exists, setup, teardown),
-        unit_test(torture_log_callback),
+    struct CMUnitTest tests[] = {
+        cmocka_unit_test_setup_teardown(torture_callbacks_size, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_callbacks_exists, setup, teardown),
+        cmocka_unit_test(torture_log_callback),
     };
 
     ssh_init();
     torture_filter_tests(tests);
-    rc=run_tests(tests);
+    rc = cmocka_run_group_tests(tests, NULL, NULL);
     ssh_finalize();
     return rc;
 }

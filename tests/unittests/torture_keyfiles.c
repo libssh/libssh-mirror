@@ -6,7 +6,8 @@
 #define LIBSSH_RSA_TESTKEY "libssh_testkey.id_rsa"
 #define LIBSSH_DSA_TESTKEY "libssh_testkey.id_dsa"
 
-static void setup_rsa_key(void **state) {
+static int setup_rsa_key(void **state)
+{
     ssh_session session;
 
     unlink(LIBSSH_RSA_TESTKEY);
@@ -19,9 +20,12 @@ static void setup_rsa_key(void **state) {
 
     session = ssh_new();
     *state = session;
+
+    return 0;
 }
 
-static void setup_dsa_key(void **state) {
+static int setup_dsa_key(void **state)
+{
     ssh_session session;
 
     unlink(LIBSSH_DSA_TESTKEY);
@@ -34,15 +38,26 @@ static void setup_dsa_key(void **state) {
 
     session = ssh_new();
     *state = session;
+
+    return 0;
 }
 
-static void setup_both_keys(void **state) {
-    setup_rsa_key(state);
+static int setup_both_keys(void **state) {
+    int rc;
+
+    rc = setup_rsa_key(state);
+    if (rc != 0) {
+        return rc;
+    }
     ssh_free(*state);
-    setup_dsa_key(state);
+
+    rc = setup_dsa_key(state);
+
+    return rc;
 }
 
-static void setup_both_keys_passphrase(void **state) {
+static int setup_both_keys_passphrase(void **state)
+{
     ssh_session session;
 
     torture_write_file(LIBSSH_RSA_TESTKEY,
@@ -57,8 +72,12 @@ static void setup_both_keys_passphrase(void **state) {
 
     session = ssh_new();
     *state = session;
+
+    return 0;
 }
-static void teardown(void **state) {
+
+static int teardown(void **state)
+{
     unlink(LIBSSH_DSA_TESTKEY);
     unlink(LIBSSH_DSA_TESTKEY ".pub");
 
@@ -66,6 +85,8 @@ static void teardown(void **state) {
     unlink(LIBSSH_RSA_TESTKEY ".pub");
 
     ssh_free(*state);
+
+    return 0;
 }
 
 static void torture_pubkey_from_file(void **state) {
@@ -255,23 +276,25 @@ static void torture_privatekey_from_file_passphrase(void **state) {
 
 int torture_run_tests(void) {
     int rc;
-    UnitTest tests[] = {
-        unit_test_setup_teardown(torture_pubkey_from_file,
-                                 setup_rsa_key,
-                                 teardown),
-        unit_test_setup_teardown(torture_pubkey_generate_from_privkey,
-                                 setup_rsa_key, teardown),
-        unit_test_setup_teardown(torture_privatekey_from_file,
-                                 setup_both_keys,
-                                 teardown),
-        unit_test_setup_teardown(torture_privatekey_from_file_passphrase,
-                                 setup_both_keys_passphrase, teardown),
+    struct CMUnitTest tests[] = {
+        cmocka_unit_test_setup_teardown(torture_pubkey_from_file,
+                                        setup_rsa_key,
+                                        teardown),
+        cmocka_unit_test_setup_teardown(torture_pubkey_generate_from_privkey,
+                                        setup_rsa_key,
+                                        teardown),
+        cmocka_unit_test_setup_teardown(torture_privatekey_from_file,
+                                        setup_both_keys,
+                                        teardown),
+        cmocka_unit_test_setup_teardown(torture_privatekey_from_file_passphrase,
+                                        setup_both_keys_passphrase,
+                                        teardown),
     };
 
 
     ssh_init();
     torture_filter_tests(tests);
-    rc=run_tests(tests);
+    rc = cmocka_run_group_tests(tests, NULL, NULL);
     ssh_finalize();
     return rc;
 }

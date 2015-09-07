@@ -6,15 +6,23 @@
 
 #define LIMIT (8*1024*1024)
 
-static void setup(void **state) {
+static int setup(void **state) {
     ssh_buffer buffer;
+
     buffer = ssh_buffer_new();
+    if (buffer == NULL) {
+        return -1;
+    }
     ssh_buffer_set_secure(buffer);
     *state = (void *) buffer;
+
+    return 0;
 }
 
-static void teardown(void **state) {
+static int teardown(void **state) {
     ssh_buffer_free(*state);
+
+    return 0;
 }
 
 /*
@@ -250,20 +258,20 @@ static void torture_buffer_pack_badformat(void **state){
 
 int torture_run_tests(void) {
     int rc;
-    UnitTest tests[] = {
-        unit_test_setup_teardown(torture_growing_buffer, setup, teardown),
-        unit_test_setup_teardown(torture_growing_buffer_shifting, setup, teardown),
-        unit_test_setup_teardown(torture_buffer_prepend, setup, teardown),
-        unit_test(torture_buffer_get_ssh_string),
-        unit_test_setup_teardown(torture_buffer_add_format, setup, teardown),
-        unit_test_setup_teardown(torture_buffer_get_format, setup, teardown),
-        unit_test_setup_teardown(torture_buffer_get_format_error, setup, teardown),
-        unit_test_setup_teardown(torture_buffer_pack_badformat, setup, teardown)
+    struct CMUnitTest tests[] = {
+        cmocka_unit_test_setup_teardown(torture_growing_buffer, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_growing_buffer_shifting, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_buffer_prepend, setup, teardown),
+        cmocka_unit_test(torture_buffer_get_ssh_string),
+        cmocka_unit_test_setup_teardown(torture_buffer_add_format, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_buffer_get_format, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_buffer_get_format_error, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_buffer_pack_badformat, setup, teardown)
     };
 
     ssh_init();
     torture_filter_tests(tests);
-    rc=run_tests(tests);
+    rc = cmocka_run_group_tests(tests, NULL, NULL);
     ssh_finalize();
     return rc;
 }

@@ -92,7 +92,7 @@ const char *torture_get_testkey_passphrase(void);
 void torture_write_file(const char *filename, const char *data);
 
 #define torture_filter_tests(tests) _torture_filter_tests(tests, sizeof(tests) / sizeof(tests)[0])
-void _torture_filter_tests(UnitTest *tests, size_t ntests);
+void _torture_filter_tests(struct CMUnitTest *tests, size_t ntests);
 
 /*
  * This function must be defined in every unit test file.

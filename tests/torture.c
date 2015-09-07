@@ -651,29 +651,22 @@ int torture_libssh_verbosity(void){
   return verbosity;
 }
 
-void _torture_filter_tests(UnitTest *tests, size_t ntests){
+void _torture_filter_tests(struct CMUnitTest *tests, size_t ntests)
+{
     size_t i,j;
-    const char *name, *last_name=NULL;
+    const char *name;
     if (pattern == NULL){
         return;
     }
     for (i=0; i < ntests; ++i){
-        if(tests[i].function_type == UNIT_TEST_FUNCTION_TYPE_SETUP){
-            /* match on the next test name */
-            name = tests[i+1].name;
-        } else if (tests[i].function_type == UNIT_TEST_FUNCTION_TYPE_TEARDOWN){
-            /* match on the previous test name */
-            name = last_name;
-        } else {
-            name = last_name = tests[i].name;
-        }
+        name = tests[i].name;
         /*printf("match(%s,%s)\n",name,pattern);*/
         if (!match_pattern(name, pattern)){
             for (j = i; j < ntests-1;++j){
                 tests[j]=tests[j+1];
             }
             tests[ntests-1].name = NULL;
-            tests[ntests-1].function = NULL;
+            tests[ntests-1].test_func = NULL;
             ntests--;
             --i;
         }

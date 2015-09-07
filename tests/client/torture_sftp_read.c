@@ -5,7 +5,8 @@
 
 #define MAX_XFER_BUF_SIZE 16384
 
-static void setup(void **state) {
+static int setup(void **state)
+{
     ssh_session session;
     struct torture_sftp *t;
     const char *host;
@@ -26,15 +27,20 @@ static void setup(void **state) {
     assert_false(t == NULL);
 
     *state = t;
+
+    return 0;
 }
 
-static void teardown(void **state) {
+static int teardown(void **state)
+{
     struct torture_sftp *t = (struct torture_sftp*) *state;
 
     assert_false(t == NULL);
 
     torture_rmdirs(t->testdir);
     torture_sftp_close(t);
+
+    return 0;
 }
 
 static void torture_sftp_read_blocking(void **state) {
@@ -72,14 +78,14 @@ static void torture_sftp_read_blocking(void **state) {
 
 int torture_run_tests(void) {
     int rc;
-    UnitTest tests[] = {
-        unit_test_setup_teardown(torture_sftp_read_blocking, setup, teardown)
+    struct CMUnitTest tests[] = {
+        cmocka_unit_test_setup_teardown(torture_sftp_read_blocking, setup, teardown)
     };
 
     ssh_init();
 
     torture_filter_tests(tests);
-    rc = run_tests(tests);
+    rc = cmocka_run_group_tests(tests, NULL, NULL);
     ssh_finalize();
 
     return rc;

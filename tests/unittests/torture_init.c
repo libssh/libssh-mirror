@@ -15,9 +15,13 @@ static void torture_ssh_init(void **state) {
 }
 
 int torture_run_tests(void) {
-    UnitTest tests[] = {
-        unit_test(torture_ssh_init),
+    int rc;
+    struct CMUnitTest tests[] = {
+        cmocka_unit_test(torture_ssh_init),
     };
+
     torture_filter_tests(tests);
-    return run_tests(tests);
+    rc = cmocka_run_group_tests(tests, NULL, NULL);
+
+    return 0;
 }

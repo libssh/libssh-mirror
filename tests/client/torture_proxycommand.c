@@ -4,14 +4,18 @@
 #include <libssh/libssh.h>
 #include "libssh/priv.h"
 
-static void setup(void **state) {
+static int setup(void **state) {
     ssh_session session = ssh_new();
 
     *state = session;
+
+    return 0;
 }
 
-static void teardown(void **state) {
+static int teardown(void **state) {
     ssh_free(*state);
+
+    return 0;
 }
 
 static void torture_options_set_proxycommand(void **state) {
@@ -42,16 +46,16 @@ static void torture_options_set_proxycommand_notexist(void **state) {
 
 int torture_run_tests(void) {
     int rc;
-    UnitTest tests[] = {
-        unit_test_setup_teardown(torture_options_set_proxycommand, setup, teardown),
-        unit_test_setup_teardown(torture_options_set_proxycommand_notexist, setup, teardown),
+    struct CMUnitTest tests[] = {
+        cmocka_unit_test_setup_teardown(torture_options_set_proxycommand, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_options_set_proxycommand_notexist, setup, teardown),
     };
 
 
     ssh_init();
 
     torture_filter_tests(tests);
-    rc = run_tests(tests);
+    rc = cmocka_run_group_tests(tests, NULL, NULL);
     ssh_finalize();
 
     return rc;

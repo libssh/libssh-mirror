@@ -16,13 +16,19 @@
 #define TORTURE_TEST_DIR "/usr/local/bin/truc/much/.."
 
 
-static void setup(void **state) {
+static int setup(void **state)
+{
     ssh_session session = ssh_new();
     *state = session;
+
+    return 0;
 }
 
-static void teardown(void **state) {
+static int teardown(void **state)
+{
     ssh_free(*state);
+
+    return 0;
 }
 
 static void torture_get_user_home_dir(void **state) {
@@ -201,25 +207,25 @@ static void torture_timeout_update(void **state){
 
 int torture_run_tests(void) {
     int rc;
-    UnitTest tests[] = {
-        unit_test(torture_get_user_home_dir),
-        unit_test(torture_basename),
-        unit_test(torture_dirname),
-        unit_test(torture_ntohll),
+    struct CMUnitTest tests[] = {
+        cmocka_unit_test(torture_get_user_home_dir),
+        cmocka_unit_test(torture_basename),
+        cmocka_unit_test(torture_dirname),
+        cmocka_unit_test(torture_ntohll),
 #ifdef _WIN32
-        unit_test(torture_path_expand_tilde_win),
+        cmocka_unit_test(torture_path_expand_tilde_win),
 #else
-        unit_test(torture_path_expand_tilde_unix),
+        cmocka_unit_test(torture_path_expand_tilde_unix),
 #endif
-        unit_test_setup_teardown(torture_path_expand_escape, setup, teardown),
-        unit_test_setup_teardown(torture_path_expand_known_hosts, setup, teardown),
-        unit_test(torture_timeout_elapsed),
-        unit_test(torture_timeout_update),
+        cmocka_unit_test_setup_teardown(torture_path_expand_escape, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_path_expand_known_hosts, setup, teardown),
+        cmocka_unit_test(torture_timeout_elapsed),
+        cmocka_unit_test(torture_timeout_update),
     };
 
     ssh_init();
     torture_filter_tests(tests);
-    rc=run_tests(tests);
+    rc = cmocka_run_group_tests(tests, NULL, NULL);
     ssh_finalize();
     return rc;
 }
