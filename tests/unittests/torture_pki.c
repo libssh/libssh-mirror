@@ -1265,8 +1265,6 @@ static void torture_pki_write_privkey_rsa(void **state)
 
     (void) state; /* unused */
 
-    ssh_set_log_level(5);
-
     rc = ssh_pki_import_privkey_file(LIBSSH_RSA_TESTKEY,
                                      NULL,
                                      NULL,
@@ -1304,8 +1302,6 @@ static void torture_pki_write_privkey_dsa(void **state)
     int rc;
 
     (void) state; /* unused */
-
-    ssh_set_log_level(5);
 
     rc = ssh_pki_import_privkey_file(LIBSSH_DSA_TESTKEY,
                                      NULL,
@@ -1346,8 +1342,6 @@ static void torture_pki_write_privkey_ecdsa(void **state)
 
     (void) state; /* unused */
 
-    ssh_set_log_level(5);
-
     rc = ssh_pki_import_privkey_file(LIBSSH_ECDSA_TESTKEY,
                                      NULL,
                                      NULL,
@@ -1386,8 +1380,6 @@ static void torture_pki_write_privkey_ed25519(void **state){
     int rc;
 
     (void) state; /* unused */
-
-    ssh_set_log_level(5);
 
     rc = ssh_pki_import_privkey_file(LIBSSH_ED25519_TESTKEY,
             NULL,
@@ -1456,8 +1448,6 @@ static void torture_pki_ecdsa_name(void **state, const char *expected_name)
     const char *etype_char = NULL;
 
     (void) state; /* unused */
-
-    ssh_set_log_level(5);
 
     rc = ssh_pki_import_privkey_file(LIBSSH_ECDSA_TESTKEY, NULL, NULL, NULL, &key);
     assert_true(rc == 0);

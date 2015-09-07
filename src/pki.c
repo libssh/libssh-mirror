@@ -64,24 +64,6 @@
 #include "libssh/misc.h"
 #include "libssh/agent.h"
 
-void _ssh_pki_log(const char *function, const char *format, ...)
-{
-#ifdef DEBUG_CRYPTO
-    char buffer[1024];
-    va_list va;
-
-    va_start(va, format);
-    vsnprintf(buffer, sizeof(buffer), format, va);
-    va_end(va);
-
-    ssh_log_function(SSH_LOG_DEBUG, function, buffer);
-#else
-    (void) function;
-    (void) format;
-#endif
-    return;
-}
-
 enum ssh_keytypes_e pki_privatekey_type_from_string(const char *privkey) {
     if (strncmp(privkey, DSA_HEADER_BEGIN, strlen(DSA_HEADER_BEGIN)) == 0) {
         return SSH_KEYTYPE_DSS;
@@ -309,7 +291,7 @@ int ssh_key_cmp(const ssh_key k1,
     }
 
     if (k1->type != k2->type) {
-        ssh_pki_log("key types don't match!");
+        SSH_LOG(SSH_LOG_WARN, "key types don't match!");
         return 1;
     }
 
@@ -412,8 +394,9 @@ int ssh_pki_import_privkey_base64(const char *b64_key,
         return SSH_ERROR;
     }
 
-    ssh_pki_log("Trying to decode privkey passphrase=%s",
-                passphrase ? "true" : "false");
+    SSH_LOG(SSH_LOG_INFO,
+            "Trying to decode privkey passphrase=%s",
+            passphrase ? "true" : "false");
 
     /* Test for OpenSSH key format first */
     cmp = strncmp(b64_key, OPENSSH_HEADER_BEGIN, strlen(OPENSSH_HEADER_BEGIN));
@@ -475,16 +458,20 @@ int ssh_pki_import_privkey_file(const char *filename,
 
     file = fopen(filename, "rb");
     if (file == NULL) {
-        ssh_pki_log("Error opening %s: %s",
-                    filename, strerror(errno));
+        SSH_LOG(SSH_LOG_WARN,
+                "Error opening %s: %s",
+                filename,
+                strerror(errno));
         return SSH_EOF;
     }
 
     rc = fstat(fileno(file), &sb);
     if (rc < 0) {
         fclose(file);
-        ssh_pki_log("Error getting stat of %s: %s",
-                    filename, strerror(errno));
+        SSH_LOG(SSH_LOG_WARN,
+                "Error getting stat of %s: %s",
+                filename,
+                strerror(errno));
         switch (errno) {
             case ENOENT:
             case EACCES:
@@ -495,7 +482,8 @@ int ssh_pki_import_privkey_file(const char *filename,
     }
 
     if (sb.st_size > MAX_PRIVKEY_SIZE) {
-        ssh_pki_log("Private key is bigger than 4M.");
+        SSH_LOG(SSH_LOG_WARN,
+                "Private key is bigger than 4M.");
         fclose(file);
         return SSH_ERROR;
     }
@@ -503,7 +491,7 @@ int ssh_pki_import_privkey_file(const char *filename,
     key_buf = malloc(sb.st_size + 1);
     if (key_buf == NULL) {
         fclose(file);
-        ssh_pki_log("Out of memory!");
+        SSH_LOG(SSH_LOG_WARN, "Out of memory!");
         return SSH_ERROR;
     }
 
@@ -512,8 +500,10 @@ int ssh_pki_import_privkey_file(const char *filename,
 
     if (size != sb.st_size) {
         SAFE_FREE(key_buf);
-        ssh_pki_log("Error reading %s: %s",
-                    filename, strerror(errno));
+        SSH_LOG(SSH_LOG_WARN,
+                "Error reading %s: %s",
+                filename,
+                strerror(errno));
         return SSH_ERROR;
     }
     key_buf[size] = 0;
@@ -789,7 +779,7 @@ static int pki_import_pubkey_buffer(ssh_buffer buffer,
         {
             ssh_string pubkey = buffer_get_ssh_string(buffer);
             if (ssh_string_len(pubkey) != ED25519_PK_LEN) {
-                ssh_pki_log("Invalid public key length");
+                SSH_LOG(SSH_LOG_WARN, "Invalid public key length");
                 ssh_string_burn(pubkey);
                 ssh_string_free(pubkey);
                 goto fail;
@@ -809,7 +799,7 @@ static int pki_import_pubkey_buffer(ssh_buffer buffer,
         break;
         case SSH_KEYTYPE_UNKNOWN:
         default:
-            ssh_pki_log("Unknown public key protocol %d", type);
+            SSH_LOG(SSH_LOG_WARN, "Unknown public key protocol %d", type);
             goto fail;
     }
 
@@ -892,26 +882,26 @@ int ssh_pki_import_pubkey_blob(const ssh_string key_blob,
 
     buffer = ssh_buffer_new();
     if (buffer == NULL) {
-        ssh_pki_log("Out of memory!");
+        SSH_LOG(SSH_LOG_WARN, "Out of memory!");
         return SSH_ERROR;
     }
 
     rc = ssh_buffer_add_data(buffer, ssh_string_data(key_blob),
             ssh_string_len(key_blob));
     if (rc < 0) {
-        ssh_pki_log("Out of memory!");
+        SSH_LOG(SSH_LOG_WARN, "Out of memory!");
         goto fail;
     }
 
     type_s = buffer_get_ssh_string(buffer);
     if (type_s == NULL) {
-        ssh_pki_log("Out of memory!");
+        SSH_LOG(SSH_LOG_WARN, "Out of memory!");
         goto fail;
     }
 
     type = ssh_key_type_from_name(ssh_string_get_char(type_s));
     if (type == SSH_KEYTYPE_UNKNOWN) {
-        ssh_pki_log("Unknown key type found!");
+        SSH_LOG(SSH_LOG_WARN, "Unknown key type found!");
         goto fail;
     }
     ssh_string_free(type_s);
@@ -957,7 +947,7 @@ int ssh_pki_import_pubkey_file(const char *filename, ssh_key *pkey)
 
     file = fopen(filename, "r");
     if (file == NULL) {
-        ssh_pki_log("Error opening %s: %s",
+        SSH_LOG(SSH_LOG_WARN, "Error opening %s: %s",
                     filename, strerror(errno));
         return SSH_EOF;
     }
@@ -965,7 +955,7 @@ int ssh_pki_import_pubkey_file(const char *filename, ssh_key *pkey)
     rc = fstat(fileno(file), &sb);
     if (rc < 0) {
         fclose(file);
-        ssh_pki_log("Error gettint stat of %s: %s",
+        SSH_LOG(SSH_LOG_WARN, "Error gettint stat of %s: %s",
                     filename, strerror(errno));
         switch (errno) {
             case ENOENT:
@@ -983,7 +973,7 @@ int ssh_pki_import_pubkey_file(const char *filename, ssh_key *pkey)
     key_buf = malloc(sb.st_size + 1);
     if (key_buf == NULL) {
         fclose(file);
-        ssh_pki_log("Out of memory!");
+        SSH_LOG(SSH_LOG_WARN, "Out of memory!");
         return SSH_ERROR;
     }
 
@@ -992,7 +982,7 @@ int ssh_pki_import_pubkey_file(const char *filename, ssh_key *pkey)
 
     if (size != sb.st_size) {
         SAFE_FREE(key_buf);
-        ssh_pki_log("Error reading %s: %s",
+        SSH_LOG(SSH_LOG_WARN, "Error reading %s: %s",
                     filename, strerror(errno));
         return SSH_ERROR;
     }

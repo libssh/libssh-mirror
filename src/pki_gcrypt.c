@@ -622,7 +622,7 @@ ssh_key pki_private_key_from_base64(const char *b64_key,
 
     type = pki_privatekey_type_from_string(b64_key);
     if (type == SSH_KEYTYPE_UNKNOWN) {
-        ssh_pki_log("Unknown or invalid private key.");
+        SSH_LOG(SSH_LOG_WARN, "Unknown or invalid private key.");
         return NULL;
     }
 
@@ -642,7 +642,7 @@ ssh_key pki_private_key_from_base64(const char *b64_key,
             }
 
             if (!valid) {
-                ssh_pki_log("Parsing private key");
+                SSH_LOG(SSH_LOG_WARN, "Parsing private key");
                 goto fail;
             }
             break;
@@ -662,7 +662,7 @@ ssh_key pki_private_key_from_base64(const char *b64_key,
             }
 
             if (!valid) {
-                ssh_pki_log("Parsing private key");
+                SSH_LOG(SSH_LOG_WARN, "Parsing private key");
                 goto fail;
             }
             break;
@@ -671,7 +671,7 @@ ssh_key pki_private_key_from_base64(const char *b64_key,
         case SSH_KEYTYPE_ECDSA:
         case SSH_KEYTYPE_UNKNOWN:
         default:
-            ssh_pki_log("Unkown or invalid private key type %d", type);
+            SSH_LOG(SSH_LOG_WARN, "Unkown or invalid private key type %d", type);
             return NULL;
     }
 
@@ -1461,7 +1461,7 @@ ssh_string pki_signature_to_blob(const ssh_signature sig)
         case SSH_KEYTYPE_ECDSA:
         case SSH_KEYTYPE_UNKNOWN:
         default:
-            ssh_pki_log("Unknown signature key type: %d", sig->type);
+            SSH_LOG(SSH_LOG_WARN, "Unknown signature key type: %d", sig->type);
             return NULL;
             break;
     }
@@ -1492,14 +1492,17 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
         case SSH_KEYTYPE_DSS:
             /* 40 is the dual signature blob len. */
             if (len != 40) {
-                ssh_pki_log("Signature has wrong size: %lu",
-                            (unsigned long)len);
+                SSH_LOG(SSH_LOG_WARN,
+                        "Signature has wrong size: %lu",
+                        (unsigned long)len);
                 ssh_signature_free(sig);
                 return NULL;
             }
 
 #ifdef DEBUG_CRYPTO
-            ssh_pki_log("DSA signature len: %lu", (unsigned long)len);
+            SSH_LOG(SSH_LOG_DEBUG,
+                    "DSA signature len: %lu",
+                    (unsigned long)len);
             ssh_print_hexa("DSA signature", ssh_string_data(sig_blob), len);
 #endif
 
@@ -1520,19 +1523,22 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
             rsalen = (gcry_pk_get_nbits(pubkey->rsa) + 7) / 8;
 
             if (len > rsalen) {
-                ssh_pki_log("Signature is to big size: %lu",
-                            (unsigned long)len);
+                SSH_LOG(SSH_LOG_WARN,
+                        "Signature is to big size: %lu",
+                        (unsigned long)len);
                 ssh_signature_free(sig);
                 return NULL;
             }
 
             if (len < rsalen) {
-                ssh_pki_log("RSA signature len %lu < %lu",
-                            (unsigned long)len, (unsigned long)rsalen);
+                SSH_LOG(SSH_LOG_DEBUG,
+                        "RSA signature len %lu < %lu",
+                        (unsigned long)len,
+                        (unsigned long)rsalen);
             }
 
 #ifdef DEBUG_CRYPTO
-            ssh_pki_log("RSA signature len: %lu", (unsigned long)len);
+            SSH_LOG(SSH_LOG_DEBUG, "RSA signature len: %lu", (unsigned long)len);
             ssh_print_hexa("RSA signature", ssh_string_data(sig_blob), len);
 #endif
 
@@ -1556,7 +1562,7 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
         case SSH_KEYTYPE_ECDSA:
         case SSH_KEYTYPE_UNKNOWN:
         default:
-            ssh_pki_log("Unknown signature type");
+            SSH_LOG(SSH_LOG_WARN, "Unknown signature type");
             return NULL;
     }
 
