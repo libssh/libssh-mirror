@@ -22,12 +22,12 @@ set(TORTURE_LINK_LIBRARIES
     ${LIBSSH_STATIC_LIBRARY}
     ${LIBSSH_LINK_LIBRARIES})
 
-if (Threads_FOUND)
+if (LIBSSH_THREADS)
     set(TORTURE_LINK_LIBRARIES
         ${TORTURE_LINK_LIBRARIES}
         ${LIBSSH_THREADS_STATIC_LIBRARY}
         ${LIBSSH_THREADS_LINK_LIBRARIES})
-endif ()
+endif (LIBSSH_THREADS)
 
 # create test library
 add_library(${TORTURE_LIBRARY} STATIC cmdline.c torture.c)

@@ -27,8 +27,9 @@ set(LIBSSH_THREADS_LINK_LIBRARIES
     ${LIBSSH_SHARED_LIBRARY}
 )
 
-set(libssh_threads_SRCS
-)
+message(STATUS "threads library: Threads_FOUND=${Threads_FOUND}")
+
+set(libssh_threads_SRCS) # empty SRC
 
 # build and link pthread
 if (CMAKE_USE_PTHREADS_INIT)
@@ -41,6 +42,8 @@ if (CMAKE_USE_PTHREADS_INIT)
         ${LIBSSH_THREADS_LINK_LIBRARIES}
         ${CMAKE_THREAD_LIBS_INIT}
     )
+
+    message(STATUS "libssh_threads_SRCS=${libssh_threads_SRCS}")
 endif (CMAKE_USE_PTHREADS_INIT)
 
 set(LIBSSH_THREADS_LINK_LIBRARIES
@@ -54,6 +57,8 @@ include_directories(
 )
 
 if (libssh_threads_SRCS)
+    set(LIBSSH_THREADS ON CACHE "libssh threads lib" INTERNAL)
+
     add_library(${LIBSSH_THREADS_SHARED_LIBRARY} SHARED ${libssh_threads_SRCS})
 
     target_link_libraries(${LIBSSH_THREADS_SHARED_LIBRARY} ${LIBSSH_THREADS_LINK_LIBRARIES})
