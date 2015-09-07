@@ -14,11 +14,13 @@ if (UNIX AND NOT WIN32)
     # requires ssh-keygen
     add_cmocka_test(torture_keyfiles torture_keyfiles.c ${TORTURE_LIBRARY})
     add_cmocka_test(torture_pki torture_pki.c ${TORTURE_LIBRARY})
-    # requires pthread
-    add_cmocka_test(torture_rand torture_rand.c ${TORTURE_LIBRARY})
     # requires /dev/null
     add_cmocka_test(torture_channel torture_channel.c ${TORTURE_LIBRARY})
-    if (WITH_SERVER AND Threads_FOUND)
-        add_cmocka_test(torture_server_x11 torture_server_x11.c ${TORTURE_LIBRARY})
-    endif (WITH_SERVER AND Threads_FOUND)
+    # requires pthread
+    if (LIBSSH_THREADS)
+        add_cmocka_test(torture_rand torture_rand.c ${TORTURE_LIBRARY})
+        if (WITH_SERVER)
+            add_cmocka_test(torture_server_x11 torture_server_x11.c ${TORTURE_LIBRARY})
+        endif (WITH_SERVER)
+    endif (LIBSSH_THREADS)
 endif (UNIX AND NOT WIN32)
