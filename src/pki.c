@@ -1408,6 +1408,7 @@ int ssh_pki_copy_cert_to_privkey(const ssh_key certkey, ssh_key privkey) {
 
   rc = buffer_add_buffer(cert_buffer, certkey->cert);
   if (rc != 0) {
+      ssh_buffer_free(cert_buffer);
       return SSH_ERROR;
   }
 
