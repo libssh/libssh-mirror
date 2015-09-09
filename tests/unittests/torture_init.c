@@ -23,5 +23,5 @@ int torture_run_tests(void) {
     torture_filter_tests(tests);
     rc = cmocka_run_group_tests(tests, NULL, NULL);
 
-    return 0;
+    return rc;
 }
