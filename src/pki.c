@@ -859,6 +859,7 @@ static int pki_import_cert_buffer(ssh_buffer buffer,
         goto fail;
     }
     rc = buffer_add_ssh_string(cert, type_s);
+    ssh_string_free(type_s);
     if (rc != 0) {
         goto fail;
     }
