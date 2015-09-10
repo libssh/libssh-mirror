@@ -804,6 +804,7 @@ static void torture_setup_create_sshd_config(void **state)
              "\n"
              "Ciphers +3des-cbc,aes128-cbc,aes192-cbc,aes256-cbc,blowfish-cbc\n"
              "KexAlgorithms +diffie-hellman-group1-sha1\n"
+             "HostKeyAlgorithms +ssh-dss\n"
              "\n"
              "AcceptEnv LANG LC_CTYPE LC_NUMERIC LC_TIME LC_COLLATE LC_MONETARY LC_MESSAGES\n"
              "AcceptEnv LC_PAPER LC_NAME LC_ADDRESS LC_TELEPHONE LC_MEASUREMENT\n"
