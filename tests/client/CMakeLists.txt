@@ -2,7 +2,6 @@ project(clienttests C)
 
 find_package(socket_wrapper)
 
-add_cmocka_test(torture_algorithms torture_algorithms.c ${TORTURE_LIBRARY})
 add_cmocka_test(torture_knownhosts torture_knownhosts.c ${TORTURE_LIBRARY})
 add_cmocka_test(torture_proxycommand torture_proxycommand.c ${TORTURE_LIBRARY})
 add_cmocka_test(torture_session torture_session.c ${TORTURE_LIBRARY})
@@ -15,6 +14,7 @@ if (WITH_SFTP)
 endif (WITH_SFTP)
 
 set(LIBSSH_CLIENT_TESTS
+    torture_algorithms
     torture_connect
     torture_auth)
 
