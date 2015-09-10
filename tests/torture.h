@@ -47,6 +47,10 @@
 #endif /* assert_return_code */
 
 #define TORTURE_SSH_SERVER "127.0.0.10"
+#define TORTURE_SSH_USER_BOB "bob"
+#define TORTURE_SSH_USER_BOB_PASSWORD "secret"
+
+#define TORTURE_SSH_USER_ALICE "alice"
 
 #define TORTURE_TESTKEY_PASSWORD "libssh-rocks"
 

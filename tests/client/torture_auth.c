@@ -25,43 +25,192 @@
 #include "libssh/libssh.h"
 #include "libssh/priv.h"
 #include "libssh/session.h"
+#include <sys/types.h>
+#include <pwd.h>
+
+/* agent_is_running */
 #include "agent.c"
 
-static int setup(void **state) {
-    int verbosity = torture_libssh_verbosity();
-    ssh_session session = ssh_new();
-
-    ssh_options_set(session, SSH_OPTIONS_HOST, "localhost");
-    ssh_options_set(session, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
-
-    *state = session;
+static int sshd_setup(void **state)
+{
+    torture_setup_sshd_server(state);
 
     return 0;
 }
 
-static int teardown(void **state) {
-    ssh_disconnect(*state);
-    ssh_free(*state);
+static int sshd_teardown(void **state) {
+    torture_teardown_sshd_server(state);
 
     return 0;
+}
+
+static int session_setup(void **state)
+{
+    struct torture_state *s = *state;
+    int verbosity = torture_libssh_verbosity();
+
+    s->ssh.session = ssh_new();
+    assert_non_null(s->ssh.session);
+
+    ssh_options_set(s->ssh.session, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
+    ssh_options_set(s->ssh.session, SSH_OPTIONS_HOST, TORTURE_SSH_SERVER);
+
+    return 0;
+}
+
+static int session_teardown(void **state)
+{
+    struct torture_state *s = *state;
+
+    ssh_disconnect(s->ssh.session);
+    ssh_free(s->ssh.session);
+
+    return 0;
+}
+
+static int pubkey_setup(void **state)
+{
+    int rc;
+    struct passwd *pwd;
+
+    rc = session_setup(state);
+    if (rc != 0) {
+        return rc;
+    }
+
+    pwd = getpwnam("bob");
+    assert_non_null(pwd);
+    setuid(pwd->pw_uid);
+
+    /* Make sure we do not interfere with another ssh-agent */
+    unsetenv("SSH_AUTH_SOCK");
+    unsetenv("SSH_AGENT_PID");
+
+    return 0;
+}
+
+static int agent_setup(void **state)
+{
+    struct torture_state *s = *state;
+    char ssh_agent_cmd[4096];
+    char ssh_agent_sock[1024];
+    char ssh_agent_pidfile[1024];
+    int rc;
+
+    rc = pubkey_setup(state);
+    if (rc != 0) {
+        return rc;
+    }
+
+    snprintf(ssh_agent_sock,
+             sizeof(ssh_agent_cmd),
+             "%s/agent.sock",
+             s->socket_dir);
+
+    snprintf(ssh_agent_pidfile,
+             sizeof(ssh_agent_pidfile),
+             "%s/agent.pid",
+             s->socket_dir);
+
+    /* Production ready code!!! */
+    snprintf(ssh_agent_cmd,
+             sizeof(ssh_agent_cmd),
+             "eval `ssh-agent -a %s`; echo $SSH_AGENT_PID > %s",
+             ssh_agent_sock, ssh_agent_pidfile);
+
+    rc = system(ssh_agent_cmd);
+    assert_return_code(rc, errno);
+
+    setenv("SSH_AUTH_SOCK", ssh_agent_sock, 1);
+    setenv("TORTURE_SSH_AGENT_PIDFILE", ssh_agent_pidfile, 1);
+
+    rc = system("ssh-add");
+    assert_return_code(rc, errno);
+
+    return 0;
+}
+
+static int agent_teardown(void **state)
+{
+    const char *ssh_agent_pidfile;
+    int rc;
+
+    rc = session_teardown(state);
+    if (rc != 0) {
+        return rc;
+    }
+
+    ssh_agent_pidfile = getenv("TORTURE_SSH_AGENT_PIDFILE");
+    assert_non_null(ssh_agent_pidfile);
+
+    /* kill agent pid */
+    torture_terminate_process(ssh_agent_pidfile);
+
+    unlink(ssh_agent_pidfile);
+
+    unsetenv("TORTURE_SSH_AGENT_PIDFILE");
+    unsetenv("SSH_AUTH_SOCK");
+
+    return 0;
+}
+
+static void torture_auth_none(void **state) {
+    struct torture_state *s = *state;
+    ssh_session session = s->ssh.session;
+    int rc;
+
+    rc = ssh_options_set(session, SSH_OPTIONS_USER, TORTURE_SSH_USER_BOB);
+    assert_int_equal(rc, SSH_OK);
+
+    rc = ssh_connect(session);
+    assert_int_equal(rc, SSH_OK);
+
+    rc = ssh_userauth_none(session,NULL);
+    assert_int_equal(rc, SSH_AUTH_DENIED);
+
+    /* This request should return a SSH_REQUEST_DENIED error */
+    if (rc == SSH_ERROR) {
+        assert_int_equal(ssh_get_error_code(session), SSH_REQUEST_DENIED);
+    }
+}
+
+static void torture_auth_none_nonblocking(void **state) {
+    struct torture_state *s = *state;
+    ssh_session session = s->ssh.session;
+    int rc;
+
+    rc = ssh_options_set(session, SSH_OPTIONS_USER, TORTURE_SSH_USER_ALICE);
+    assert_int_equal(rc, SSH_OK);
+
+    rc = ssh_connect(session);
+    assert_int_equal(rc, SSH_OK);
+
+    /* This request should return a SSH_REQUEST_DENIED error */
+    if (rc == SSH_ERROR) {
+        assert_true(ssh_get_error_code(session) == SSH_REQUEST_DENIED);
+    }
+
+    ssh_set_blocking(session,0);
+
+    do {
+        rc = ssh_userauth_none(session,NULL);
+    } while (rc == SSH_AUTH_AGAIN);
+    assert_int_equal(rc, SSH_AUTH_DENIED);
+    assert_true(ssh_get_error_code(session) == SSH_REQUEST_DENIED);
+
 }
 
 static void torture_auth_autopubkey(void **state) {
-    ssh_session session = *state;
-    char *user = getenv("TORTURE_USER");
+    struct torture_state *s = *state;
+    ssh_session session = s->ssh.session;
     int rc;
 
-    if (user == NULL) {
-        print_message("*** Please set the environment variable TORTURE_USER"
-                      " to enable this test!!\n");
-        return;
-    }
-
-    rc = ssh_options_set(session, SSH_OPTIONS_USER, user);
-    assert_true(rc == SSH_OK);
+    /* Authenticate as alice with bob his pubkey */
+    rc = ssh_options_set(session, SSH_OPTIONS_USER, TORTURE_SSH_USER_ALICE);
+    assert_int_equal(rc, SSH_OK);
 
     rc = ssh_connect(session);
-    assert_true(rc == SSH_OK);
+    assert_int_equal(rc, SSH_OK);
 
     rc = ssh_userauth_none(session,NULL);
     /* This request should return a SSH_REQUEST_DENIED error */
@@ -72,25 +221,19 @@ static void torture_auth_autopubkey(void **state) {
     assert_true(rc & SSH_AUTH_METHOD_PUBLICKEY);
 
     rc = ssh_userauth_publickey_auto(session, NULL, NULL);
-    assert_true(rc == SSH_AUTH_SUCCESS);
+    assert_int_equal(rc, SSH_AUTH_SUCCESS);
 }
 
 static void torture_auth_autopubkey_nonblocking(void **state) {
-    ssh_session session = *state;
-    char *user = getenv("TORTURE_USER");
+    struct torture_state *s = *state;
+    ssh_session session = s->ssh.session;
     int rc;
 
-    if (user == NULL) {
-        print_message("*** Please set the environment variable TORTURE_USER"
-                      " to enable this test!!\n");
-        return;
-    }
-
-    rc = ssh_options_set(session, SSH_OPTIONS_USER, user);
-    assert_true(rc == SSH_OK);
+    rc = ssh_options_set(session, SSH_OPTIONS_USER, TORTURE_SSH_USER_ALICE);
+    assert_int_equal(rc, SSH_OK);
 
     rc = ssh_connect(session);
-    assert_true(rc == SSH_OK);
+    assert_int_equal(rc, SSH_OK);
 
     ssh_set_blocking(session,0);
     do {
@@ -99,7 +242,7 @@ static void torture_auth_autopubkey_nonblocking(void **state) {
 
     /* This request should return a SSH_REQUEST_DENIED error */
     if (rc == SSH_ERROR) {
-        assert_true(ssh_get_error_code(session) == SSH_REQUEST_DENIED);
+        assert_int_equal(ssh_get_error_code(session), SSH_REQUEST_DENIED);
     }
 
     rc = ssh_userauth_list(session, NULL);
@@ -108,32 +251,20 @@ static void torture_auth_autopubkey_nonblocking(void **state) {
     do {
         rc = ssh_userauth_publickey_auto(session, NULL, NULL);
     } while (rc == SSH_AUTH_AGAIN);
-    assert_true(rc == SSH_AUTH_SUCCESS);
+    assert_int_equal(rc, SSH_AUTH_SUCCESS);
 }
 
+#if 0 /* FIXME Requires UsePAM and pam_wrapper */
 static void torture_auth_kbdint(void **state) {
-    ssh_session session = *state;
-    char *user = getenv("TORTURE_USER");
-    char *password = getenv("TORTURE_PASSWORD");
+    struct torture_state *s = *state;
+    ssh_session session = s->ssh.session;
     int rc;
 
-    if (user == NULL) {
-        print_message("*** Please set the environment variable TORTURE_USER"
-                      " to enable this test!!\n");
-        return;
-    }
-
-    if (password == NULL) {
-        print_message("*** Please set the environment variable "
-                      "TORTURE_PASSWORD to enable this test!!\n");
-        return;
-    }
-
-    rc = ssh_options_set(session, SSH_OPTIONS_USER, user);
-    assert_true(rc == SSH_OK);
+    rc = ssh_options_set(session, SSH_OPTIONS_USER, TORTURE_SSH_USER_BOB);
+    assert_int_equal(rc, SSH_OK);
 
     rc = ssh_connect(session);
-    assert_true(rc == SSH_OK);
+    assert_int_equal(rc, SSH_OK);
 
     rc = ssh_userauth_none(session,NULL);
     /* This request should return a SSH_REQUEST_DENIED error */
@@ -144,10 +275,10 @@ static void torture_auth_kbdint(void **state) {
     assert_true(rc & SSH_AUTH_METHOD_INTERACTIVE);
 
     rc = ssh_userauth_kbdint(session, NULL, NULL);
-    assert_true(rc == SSH_AUTH_INFO);
+    assert_int_equal(rc, SSH_AUTH_INFO);
     assert_int_equal(ssh_userauth_kbdint_getnprompts(session), 1);
 
-    rc = ssh_userauth_kbdint_setanswer(session, 0, password);
+    rc = ssh_userauth_kbdint_setanswer(session, 0, TORTURE_SSH_USER_BOB_PASSWORD);
     assert_false(rc < 0);
 
     rc = ssh_userauth_kbdint(session, NULL, NULL);
@@ -156,32 +287,19 @@ static void torture_auth_kbdint(void **state) {
         assert_int_equal(ssh_userauth_kbdint_getnprompts(session), 0);
         rc = ssh_userauth_kbdint(session, NULL, NULL);
     }
-    assert_true(rc == SSH_AUTH_SUCCESS);
+    assert_int_equal(rc, SSH_AUTH_SUCCESS);
 }
 
 static void torture_auth_kbdint_nonblocking(void **state) {
-    ssh_session session = *state;
-    char *user = getenv("TORTURE_USER");
-    char *password = getenv("TORTURE_PASSWORD");
+    struct torture_state *s = *state;
+    ssh_session session = s->ssh.session;
     int rc;
 
-    if (user == NULL) {
-        print_message("*** Please set the environment variable TORTURE_USER"
-                      " to enable this test!!\n");
-        return;
-    }
-
-    if (password == NULL) {
-        print_message("*** Please set the environment variable "
-                      "TORTURE_PASSWORD to enable this test!!\n");
-        return;
-    }
-
-    rc = ssh_options_set(session, SSH_OPTIONS_USER, user);
-    assert_true(rc == SSH_OK);
+    rc = ssh_options_set(session, SSH_OPTIONS_USER, TORTURE_SSH_USER_BOB);
+    assert_int_equal(rc, SSH_OK);
 
     rc = ssh_connect(session);
-    assert_true(rc == SSH_OK);
+    assert_int_equal(rc, SSH_OK);
 
     ssh_set_blocking(session,0);
     do {
@@ -198,10 +316,10 @@ static void torture_auth_kbdint_nonblocking(void **state) {
     do {
         rc = ssh_userauth_kbdint(session, NULL, NULL);
     } while (rc == SSH_AUTH_AGAIN);
-    assert_true(rc == SSH_AUTH_INFO);
+    assert_int_equal(rc, SSH_AUTH_INFO);
     assert_int_equal(ssh_userauth_kbdint_getnprompts(session), 1);
     do {
-        rc = ssh_userauth_kbdint_setanswer(session, 0, password);
+        rc = ssh_userauth_kbdint_setanswer(session, 0, TORTURE_SSH_USER_BOB_PASSWORD);
     } while (rc == SSH_AUTH_AGAIN);
     assert_false(rc < 0);
 
@@ -215,32 +333,20 @@ static void torture_auth_kbdint_nonblocking(void **state) {
             rc = ssh_userauth_kbdint(session, NULL, NULL);
         } while (rc == SSH_AUTH_AGAIN);
     }
-    assert_true(rc == SSH_AUTH_SUCCESS);
+    assert_int_equal(rc, SSH_AUTH_SUCCESS);
 }
+#endif
 
 static void torture_auth_password(void **state) {
-    ssh_session session = *state;
-    char *user = getenv("TORTURE_USER");
-    char *password = getenv("TORTURE_PASSWORD");
+    struct torture_state *s = *state;
+    ssh_session session = s->ssh.session;
     int rc;
 
-    if (user == NULL) {
-        print_message("*** Please set the environment variable TORTURE_USER"
-                      " to enable this test!!\n");
-        return;
-    }
-
-    if (password == NULL) {
-        print_message("*** Please set the environment variable "
-                      "TORTURE_PASSWORD to enable this test!!\n");
-        return;
-    }
-
-    rc = ssh_options_set(session, SSH_OPTIONS_USER, user);
-    assert_true(rc == SSH_OK);
+    rc = ssh_options_set(session, SSH_OPTIONS_USER, TORTURE_SSH_USER_BOB);
+    assert_int_equal(rc, SSH_OK);
 
     rc = ssh_connect(session);
-    assert_true(rc == SSH_OK);
+    assert_int_equal(rc, SSH_OK);
 
     rc = ssh_userauth_none(session, NULL);
     /* This request should return a SSH_REQUEST_DENIED error */
@@ -250,33 +356,20 @@ static void torture_auth_password(void **state) {
     rc = ssh_userauth_list(session, NULL);
     assert_true(rc & SSH_AUTH_METHOD_PASSWORD);
 
-    rc = ssh_userauth_password(session, NULL, password);
-    assert_true(rc == SSH_AUTH_SUCCESS);
+    rc = ssh_userauth_password(session, NULL, TORTURE_SSH_USER_BOB_PASSWORD);
+    assert_int_equal(rc, SSH_AUTH_SUCCESS);
 }
 
 static void torture_auth_password_nonblocking(void **state) {
-    ssh_session session = *state;
-    char *user = getenv("TORTURE_USER");
-    char *password = getenv("TORTURE_PASSWORD");
+    struct torture_state *s = *state;
+    ssh_session session = s->ssh.session;
     int rc;
 
-    if (user == NULL) {
-        print_message("*** Please set the environment variable TORTURE_USER"
-                      " to enable this test!!\n");
-        return;
-    }
-
-    if (password == NULL) {
-        print_message("*** Please set the environment variable "
-                      "TORTURE_PASSWORD to enable this test!!\n");
-        return;
-    }
-
-    rc = ssh_options_set(session, SSH_OPTIONS_USER, user);
-    assert_true(rc == SSH_OK);
+    rc = ssh_options_set(session, SSH_OPTIONS_USER, TORTURE_SSH_USER_BOB);
+    assert_int_equal(rc, SSH_OK);
 
     rc = ssh_connect(session);
-    assert_true(rc == SSH_OK);
+    assert_int_equal(rc, SSH_OK);
 
     ssh_set_blocking(session,0);
     do {
@@ -292,31 +385,26 @@ static void torture_auth_password_nonblocking(void **state) {
     assert_true(rc & SSH_AUTH_METHOD_PASSWORD);
 
     do {
-      rc = ssh_userauth_password(session, NULL, password);
+      rc = ssh_userauth_password(session, NULL, TORTURE_SSH_USER_BOB_PASSWORD);
     } while(rc==SSH_AUTH_AGAIN);
 
-    assert_true(rc == SSH_AUTH_SUCCESS);
+    assert_int_equal(rc, SSH_AUTH_SUCCESS);
 }
 
 static void torture_auth_agent(void **state) {
-    ssh_session session = *state;
-    char *user = getenv("TORTURE_USER");
+    struct torture_state *s = *state;
+    ssh_session session = s->ssh.session;
     int rc;
 
-    if (user == NULL) {
-        print_message("*** Please set the environment variable TORTURE_USER"
-                      " to enable this test!!\n");
-        return;
-    }
     if (!agent_is_running(session)){
         print_message("*** Agent not running. Test ignored\n");
         return;
     }
-    rc = ssh_options_set(session, SSH_OPTIONS_USER, user);
-    assert_true(rc == SSH_OK);
+    rc = ssh_options_set(session, SSH_OPTIONS_USER, TORTURE_SSH_USER_ALICE);
+    assert_int_equal(rc, SSH_OK);
 
     rc = ssh_connect(session);
-    assert_true(rc == SSH_OK);
+    assert_int_equal(rc, SSH_OK);
 
     rc = ssh_userauth_none(session,NULL);
     /* This request should return a SSH_REQUEST_DENIED error */
@@ -327,28 +415,23 @@ static void torture_auth_agent(void **state) {
     assert_true(rc & SSH_AUTH_METHOD_PUBLICKEY);
 
     rc = ssh_userauth_agent(session, NULL);
-    assert_true(rc == SSH_AUTH_SUCCESS);
+    assert_int_equal(rc, SSH_AUTH_SUCCESS);
 }
 
 static void torture_auth_agent_nonblocking(void **state) {
-    ssh_session session = *state;
-    char *user = getenv("TORTURE_USER");
+    struct torture_state *s = *state;
+    ssh_session session = s->ssh.session;
     int rc;
 
-    if (user == NULL) {
-        print_message("*** Please set the environment variable TORTURE_USER"
-                      " to enable this test!!\n");
-        return;
-    }
     if (!agent_is_running(session)){
         print_message("*** Agent not running. Test ignored\n");
         return;
     }
-    rc = ssh_options_set(session, SSH_OPTIONS_USER, user);
-    assert_true(rc == SSH_OK);
+    rc = ssh_options_set(session, SSH_OPTIONS_USER, TORTURE_SSH_USER_ALICE);
+    assert_int_equal(rc, SSH_OK);
 
     rc = ssh_connect(session);
-    assert_true(rc == SSH_OK);
+    assert_int_equal(rc, SSH_OK);
 
     rc = ssh_userauth_none(session,NULL);
     /* This request should return a SSH_REQUEST_DENIED error */
@@ -363,84 +446,50 @@ static void torture_auth_agent_nonblocking(void **state) {
     do {
       rc = ssh_userauth_agent(session, NULL);
     } while (rc == SSH_AUTH_AGAIN);
-    assert_true(rc == SSH_AUTH_SUCCESS);
+    assert_int_equal(rc, SSH_AUTH_SUCCESS);
 }
 
-
-static void torture_auth_none(void **state) {
-    ssh_session session = *state;
-    char *user = getenv("TORTURE_USER");
-    int rc;
-
-    if (user == NULL) {
-        print_message("*** Please set the environment variable TORTURE_USER"
-                      " to enable this test!!\n");
-        return;
-    }
-    rc = ssh_options_set(session, SSH_OPTIONS_USER, user);
-    assert_true(rc == SSH_OK);
-
-    rc = ssh_connect(session);
-    assert_true(rc == SSH_OK);
-
-    rc = ssh_userauth_none(session,NULL);
-
-    assert_true(rc == SSH_AUTH_DENIED);
-    /* This request should return a SSH_REQUEST_DENIED error */
-    if (rc == SSH_ERROR) {
-        assert_true(ssh_get_error_code(session) == SSH_REQUEST_DENIED);
-    }
-}
-
-static void torture_auth_none_nonblocking(void **state) {
-    ssh_session session = *state;
-    char *user = getenv("TORTURE_USER");
-    int rc;
-
-    if (user == NULL) {
-        print_message("*** Please set the environment variable TORTURE_USER"
-                      " to enable this test!!\n");
-        return;
-    }
-    rc = ssh_options_set(session, SSH_OPTIONS_USER, user);
-    assert_true(rc == SSH_OK);
-
-    rc = ssh_connect(session);
-    assert_true(rc == SSH_OK);
-
-    /* This request should return a SSH_REQUEST_DENIED error */
-    if (rc == SSH_ERROR) {
-        assert_true(ssh_get_error_code(session) == SSH_REQUEST_DENIED);
-    }
-
-    ssh_set_blocking(session,0);
-
-    do {
-        rc = ssh_userauth_none(session,NULL);
-    } while (rc == SSH_AUTH_AGAIN);
-    assert_true(rc == SSH_AUTH_DENIED);
-    assert_true(ssh_get_error_code(session) == SSH_REQUEST_DENIED);
-
-}
 
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
-        cmocka_unit_test_setup_teardown(torture_auth_kbdint, setup, teardown),
-        cmocka_unit_test_setup_teardown(torture_auth_kbdint_nonblocking, setup, teardown),
-        cmocka_unit_test_setup_teardown(torture_auth_password, setup, teardown),
-        cmocka_unit_test_setup_teardown(torture_auth_password_nonblocking, setup, teardown),
-        cmocka_unit_test_setup_teardown(torture_auth_autopubkey, setup, teardown),
-        cmocka_unit_test_setup_teardown(torture_auth_autopubkey_nonblocking, setup, teardown),
-        cmocka_unit_test_setup_teardown(torture_auth_agent, setup, teardown),
-        cmocka_unit_test_setup_teardown(torture_auth_agent_nonblocking, setup, teardown),
-        cmocka_unit_test_setup_teardown(torture_auth_none, setup, teardown),
-        cmocka_unit_test_setup_teardown(torture_auth_none_nonblocking, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_auth_none,
+                                        session_setup,
+                                        session_teardown),
+        cmocka_unit_test_setup_teardown(torture_auth_none_nonblocking,
+                                        session_setup,
+                                        session_teardown),
+        cmocka_unit_test_setup_teardown(torture_auth_password,
+                                        session_setup,
+                                        session_teardown),
+        cmocka_unit_test_setup_teardown(torture_auth_password_nonblocking,
+                                        session_setup,
+                                        session_teardown),
+#if 0 /* FIXME requires UsePAM and probably pam_wrapper */
+        cmocka_unit_test_setup_teardown(torture_auth_kbdint,
+                                        session_setup,
+                                        session_teardown),
+        cmocka_unit_test_setup_teardown(torture_auth_kbdint_nonblocking,
+                                        session_setup,
+                                        session_teardown),
+#endif
+        cmocka_unit_test_setup_teardown(torture_auth_autopubkey,
+                                        pubkey_setup,
+                                        session_teardown),
+        cmocka_unit_test_setup_teardown(torture_auth_autopubkey_nonblocking,
+                                        pubkey_setup,
+                                        session_teardown),
+        cmocka_unit_test_setup_teardown(torture_auth_agent,
+                                        agent_setup,
+                                        agent_teardown),
+        cmocka_unit_test_setup_teardown(torture_auth_agent_nonblocking,
+                                        agent_setup,
+                                        agent_teardown),
     };
 
     ssh_init();
     torture_filter_tests(tests);
-    rc = cmocka_run_group_tests(tests, NULL, NULL);
+    rc = cmocka_run_group_tests(tests, sshd_setup, sshd_teardown);
     ssh_finalize();
 
     return rc;
