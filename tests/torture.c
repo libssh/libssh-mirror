@@ -344,6 +344,47 @@ int torture_isdir(const char *path) {
     return 0;
 }
 
+int torture_terminate_process(const char *pidfile)
+{
+    char buf[8] = {0};
+    long int tmp;
+    ssize_t rc;
+    pid_t pid;
+    int fd;
+
+    /* read the pidfile */
+    fd = open(pidfile, O_RDONLY);
+    if (fd < 0) {
+        return -1;
+    }
+
+    rc = read(fd, buf, sizeof(buf));
+    close(fd);
+    if (rc <= 0) {
+        return -1;
+    }
+
+    buf[sizeof(buf) - 1] = '\0';
+
+    tmp = strtol(buf, NULL, 10);
+    if (tmp == 0 || tmp > 0xFFFF || errno == ERANGE) {
+        return -1;
+    }
+
+    pid = (pid_t)(tmp & 0xFFFF);
+
+    /* Make sure the process goes away! */
+    kill(pid, SIGTERM);
+
+    kill(pid, 0);
+    if (rc == 0) {
+        fprintf(stderr,
+                "WARNING: The process server is still running!\n");
+    }
+
+    return 0;
+}
+
 ssh_session torture_ssh_session(const char *host,
                                 const unsigned int *port,
                                 const char *user,
@@ -824,43 +865,13 @@ void torture_teardown_socket_dir(void **state)
 void torture_teardown_sshd_server(void **state)
 {
     struct torture_state *s = *state;
-    char buf[8] = {0};
-    long int tmp;
-    ssize_t rc;
-    pid_t pid;
-    int fd;
+    int rc;
 
-    /* read the pidfile */
-    fd = open(s->srv_pidfile, O_RDONLY);
-    if (fd < 0) {
-        goto done;
+    rc = torture_terminate_process(s->srv_pidfile);
+    if (rc != 0) {
+        fprintf(stderr, "Failed to terminate sshd");
     }
 
-    rc = read(fd, buf, sizeof(buf));
-    close(fd);
-    if (rc <= 0) {
-        goto done;
-    }
-
-    buf[sizeof(buf) - 1] = '\0';
-
-    tmp = strtol(buf, NULL, 10);
-    if (tmp == 0 || tmp > 0xFFFF || errno == ERANGE) {
-        goto done;
-    }
-
-    pid = (pid_t)(tmp & 0xFFFF);
-
-    /* Make sure the daemon goes away! */
-    kill(pid, SIGTERM);
-
-    kill(pid, 0);
-    if (rc == 0) {
-        fprintf(stderr,
-                "WARNING the sshd server is still running!\n");
-    }
-
-done:
     torture_teardown_socket_dir(state);
 }
 
