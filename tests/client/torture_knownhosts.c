@@ -22,10 +22,15 @@
 #define LIBSSH_STATIC
 
 #include "torture.h"
+
+#include <sys/types.h>
+#include <pwd.h>
+
 #include "session.c"
 #include "known_hosts.c"
 
-#define KNOWNHOSTFILES "libssh_torture_knownhosts"
+#define TORTURE_KNOWN_HOSTS_FILE "libssh_torture_knownhosts"
+
 #define BADRSA "AAAAB3NzaC1yc2EAAAADAQABAAABAQChm5" \
                "a6Av65O8cKtx5YXOnui3wJnYE6A6J/I4kZSAibbn14Jcl+34VJQwv96f25AxNmo" \
                "NwoiZV93IzdypQmiuieh6s6wB9WhYjU9K/6CkIpNhpCxswA90b3ePjS7LnR9B9J" \
@@ -44,150 +49,202 @@
                "h0dSi8VJXI1wes5HTyLsv9VBmU1uCXUUvufoQKfF/OcSH0ufcCpnd62g1/adZcy2" \
                "WJg=="
 
-static int setup(void **state) {
-    int verbosity=torture_libssh_verbosity();
-    ssh_session session = ssh_new();
-
-    ssh_options_set(session, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
-
-    *state = session;
+static int sshd_setup(void **state)
+{
+    torture_setup_sshd_server(state);
 
     return 0;
 }
 
-static int teardown(void **state) {
-    ssh_session session = *state;
-
-    ssh_disconnect(session);
-    ssh_free(session);
-
-    unlink(KNOWNHOSTFILES);
+static int sshd_teardown(void **state) {
+    torture_teardown_sshd_server(state);
 
     return 0;
 }
+
+static int session_setup(void **state)
+{
+    struct torture_state *s = *state;
+    int verbosity = torture_libssh_verbosity();
+    struct passwd *pwd;
+
+    pwd = getpwnam("bob");
+    assert_non_null(pwd);
+    setuid(pwd->pw_uid);
+
+    s->ssh.session = ssh_new();
+    assert_non_null(s->ssh.session);
+
+    ssh_options_set(s->ssh.session, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
+    ssh_options_set(s->ssh.session, SSH_OPTIONS_HOST, TORTURE_SSH_SERVER);
+
+    ssh_options_set(s->ssh.session, SSH_OPTIONS_USER, TORTURE_SSH_USER_ALICE);
+
+    return 0;
+}
+
+static int session_teardown(void **state)
+{
+    struct torture_state *s = *state;
+    char known_hosts_file[1024];
+
+    snprintf(known_hosts_file,
+             sizeof(known_hosts_file),
+             "%s/%s",
+             s->socket_dir,
+             TORTURE_KNOWN_HOSTS_FILE);
+
+    ssh_disconnect(s->ssh.session);
+    ssh_free(s->ssh.session);
+
+    unlink(known_hosts_file);
+
+    return 0;
+}
+
 
 static void torture_knownhosts_port(void **state) {
-    ssh_session session = *state;
+    struct torture_state *s = *state;
+    ssh_session session = s->ssh.session;
+    char known_hosts_file[1024];
     char buffer[200];
     char *p;
     FILE *file;
     int rc;
 
-    /* Connect to localhost:22, force the port to 1234 and then write
-     * the known hosts file. Then check that the entry written is
-     * [localhost]:1234
-     */
-    rc = ssh_options_set(session, SSH_OPTIONS_HOST, "localhost");
-    assert_true(rc == SSH_OK);
+    snprintf(known_hosts_file,
+             sizeof(known_hosts_file),
+             "%s/%s",
+             s->socket_dir,
+             TORTURE_KNOWN_HOSTS_FILE);
 
-    rc = ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, KNOWNHOSTFILES);
-    assert_true(rc == SSH_OK);
+    rc = ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, known_hosts_file);
+    assert_int_equal(rc, SSH_OK);
 
     rc = ssh_connect(session);
-    assert_true(rc==SSH_OK);
+    assert_int_equal(rc, SSH_OK);
 
     session->opts.port = 1234;
     rc = ssh_write_knownhost(session);
-    assert_true(rc == SSH_OK);
+    assert_int_equal(rc, SSH_OK);
 
-    file = fopen(KNOWNHOSTFILES, "r");
+    file = fopen(known_hosts_file, "r");
     assert_true(file != NULL);
     p = fgets(buffer, sizeof(buffer), file);
     assert_false(p == NULL);
     fclose(file);
     buffer[sizeof(buffer) - 1] = '\0';
-    assert_true(strstr(buffer,"[localhost]:1234 ") != NULL);
+    assert_true(strstr(buffer,"[127.0.0.10]:1234 ") != NULL);
 
     ssh_disconnect(session);
     ssh_free(session);
 
     /* Now, connect back to the ssh server and verify the known host line */
-    *state = session = ssh_new();
+    s->ssh.session = session = ssh_new();
 
-    ssh_options_set(session, SSH_OPTIONS_HOST, "localhost");
-    ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, KNOWNHOSTFILES);
+    ssh_options_set(session, SSH_OPTIONS_HOST, TORTURE_SSH_SERVER);
+    ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, known_hosts_file);
 
     rc = ssh_connect(session);
-    assert_true(rc == SSH_OK);
+    assert_int_equal(rc, SSH_OK);
 
     session->opts.port = 1234;
     rc = ssh_is_server_known(session);
-    assert_true(rc == SSH_SERVER_KNOWN_OK);
+    assert_int_equal(rc, SSH_SERVER_KNOWN_OK);
 }
 
 static void torture_knownhosts_fail(void **state) {
-    ssh_session session = *state;
+    struct torture_state *s = *state;
+    ssh_session session = s->ssh.session;
+    char known_hosts_file[1024];
     FILE *file;
     int rc;
 
-    rc = ssh_options_set(session, SSH_OPTIONS_HOST, "localhost");
-    assert_true(rc == SSH_OK);
+    snprintf(known_hosts_file,
+             sizeof(known_hosts_file),
+             "%s/%s",
+             s->socket_dir,
+             TORTURE_KNOWN_HOSTS_FILE);
 
-    rc = ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, KNOWNHOSTFILES);
-    assert_true(rc == SSH_OK);
+    rc = ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, known_hosts_file);
+    assert_int_equal(rc, SSH_OK);
 
     rc = ssh_options_set(session, SSH_OPTIONS_HOSTKEYS, "ssh-rsa");
-    assert_true(rc == SSH_OK);
+    assert_int_equal(rc, SSH_OK);
 
-    file = fopen(KNOWNHOSTFILES, "w");
-    assert_true(file != NULL);
-    fprintf(file, "localhost ssh-rsa %s\n", BADRSA);
+    file = fopen(known_hosts_file, "w");
+    assert_non_null(file);
+
+    fprintf(file, "127.0.0.10 ssh-rsa %s\n", BADRSA);
     fclose(file);
 
     rc = ssh_connect(session);
-    assert_true(rc==SSH_OK);
+    assert_int_equal(rc, SSH_OK);
 
     rc = ssh_is_server_known(session);
-    assert_true(rc == SSH_SERVER_KNOWN_CHANGED);
+    assert_int_equal(rc, SSH_SERVER_KNOWN_CHANGED);
 }
 
 static void torture_knownhosts_other(void **state) {
-    ssh_session session = *state;
+    struct torture_state *s = *state;
+    ssh_session session = s->ssh.session;
+    char known_hosts_file[1024];
     FILE *file;
     int rc;
 
-    rc = ssh_options_set(session, SSH_OPTIONS_HOST, "localhost");
-    assert_true(rc == SSH_OK);
+    snprintf(known_hosts_file,
+             sizeof(known_hosts_file),
+             "%s/%s",
+             s->socket_dir,
+             TORTURE_KNOWN_HOSTS_FILE);
 
-    rc = ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, KNOWNHOSTFILES);
-    assert_true(rc == SSH_OK);
+    rc = ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, known_hosts_file);
+    assert_int_equal(rc, SSH_OK);
 
     rc = ssh_options_set(session, SSH_OPTIONS_HOSTKEYS, "ssh-dss");
-    assert_true(rc == SSH_OK);
+    assert_int_equal(rc, SSH_OK);
 
-    file = fopen(KNOWNHOSTFILES, "w");
-    assert_true(file != NULL);
-    fprintf(file, "localhost ssh-rsa %s\n", BADRSA);
+    file = fopen(known_hosts_file, "w");
+    assert_non_null(file);
+    fprintf(file, "127.0.0.10 ssh-rsa %s\n", BADRSA);
     fclose(file);
 
     rc = ssh_connect(session);
-    assert_true(rc==SSH_OK);
+    assert_int_equal(rc, SSH_OK);
 
     rc = ssh_is_server_known(session);
-    assert_true(rc == SSH_SERVER_FOUND_OTHER);
+    assert_int_equal(rc, SSH_SERVER_FOUND_OTHER);
 }
 
 static void torture_knownhosts_other_auto(void **state) {
-    ssh_session session = *state;
+    struct torture_state *s = *state;
+    ssh_session session = s->ssh.session;
+    char known_hosts_file[1024];
     int rc;
 
-    rc = ssh_options_set(session, SSH_OPTIONS_HOST, "localhost");
-    assert_true(rc == SSH_OK);
+    snprintf(known_hosts_file,
+             sizeof(known_hosts_file),
+             "%s/%s",
+             s->socket_dir,
+             TORTURE_KNOWN_HOSTS_FILE);
 
-    rc = ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, KNOWNHOSTFILES);
-    assert_true(rc == SSH_OK);
+    rc = ssh_options_set(session, SSH_OPTIONS_HOST, TORTURE_SSH_SERVER);
+    assert_int_equal(rc, SSH_OK);
+
+    rc = ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, known_hosts_file);
+    assert_int_equal(rc, SSH_OK);
 
     rc = ssh_options_set(session, SSH_OPTIONS_HOSTKEYS, "ssh-dss");
-    assert_true(rc == SSH_OK);
+    assert_int_equal(rc, SSH_OK);
 
     rc = ssh_connect(session);
     assert_true(rc==SSH_OK);
 
     rc = ssh_is_server_known(session);
-    assert_true(rc == SSH_SERVER_NOT_KNOWN);
+    assert_int_equal(rc, SSH_SERVER_NOT_KNOWN);
 
     rc = ssh_write_knownhost(session);
-    assert_true(rc == SSH_OK);
+    assert_int_equal(rc, SSH_OK);
 
     ssh_disconnect(session);
     ssh_free(session);
@@ -195,45 +252,53 @@ static void torture_knownhosts_other_auto(void **state) {
     /* connect again and check host key */
     *state = session = ssh_new();
 
-    rc = ssh_options_set(session, SSH_OPTIONS_HOST, "localhost");
-    assert_true(rc == SSH_OK);
+    rc = ssh_options_set(session, SSH_OPTIONS_HOST, TORTURE_SSH_SERVER);
+    assert_int_equal(rc, SSH_OK);
 
-    rc = ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, KNOWNHOSTFILES);
-    assert_true(rc == SSH_OK);
+    rc = ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, known_hosts_file);
+    assert_int_equal(rc, SSH_OK);
 
     rc = ssh_connect(session);
     assert_true(rc==SSH_OK);
 
     /* ssh-rsa is the default but libssh should try ssh-dss instead */
     rc = ssh_is_server_known(session);
-    assert_true(rc == SSH_SERVER_KNOWN_OK);
+    assert_int_equal(rc, SSH_SERVER_KNOWN_OK);
 }
 
 static void torture_knownhosts_conflict(void **state) {
-    ssh_session session = *state;
+    struct torture_state *s = *state;
+    ssh_session session = s->ssh.session;
+    char known_hosts_file[1024];
     FILE *file;
     int rc;
 
-    rc = ssh_options_set(session, SSH_OPTIONS_HOST, "localhost");
-    assert_true(rc == SSH_OK);
+    snprintf(known_hosts_file,
+             sizeof(known_hosts_file),
+             "%s/%s",
+             s->socket_dir,
+             TORTURE_KNOWN_HOSTS_FILE);
 
-    rc = ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, KNOWNHOSTFILES);
-    assert_true(rc == SSH_OK);
+    rc = ssh_options_set(session, SSH_OPTIONS_HOST, TORTURE_SSH_SERVER);
+    assert_int_equal(rc, SSH_OK);
+
+    rc = ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, known_hosts_file);
+    assert_int_equal(rc, SSH_OK);
 
     rc = ssh_options_set(session, SSH_OPTIONS_HOSTKEYS, "ssh-rsa");
-    assert_true(rc == SSH_OK);
+    assert_int_equal(rc, SSH_OK);
 
-    file = fopen(KNOWNHOSTFILES, "w");
+    file = fopen(known_hosts_file, "w");
     assert_true(file != NULL);
-    fprintf(file, "localhost ssh-rsa %s\n", BADRSA);
-    fprintf(file, "localhost ssh-dss %s\n", BADDSA);
+    fprintf(file, "127.0.0.10 ssh-rsa %s\n", BADRSA);
+    fprintf(file, "127.0.0.10 ssh-dss %s\n", BADDSA);
     fclose(file);
 
     rc = ssh_connect(session);
     assert_true(rc==SSH_OK);
 
     rc = ssh_is_server_known(session);
-    assert_true(rc == SSH_SERVER_KNOWN_CHANGED);
+    assert_int_equal(rc, SSH_SERVER_KNOWN_CHANGED);
 
     rc = ssh_write_knownhost(session);
     assert_true(rc==SSH_OK);
@@ -244,34 +309,42 @@ static void torture_knownhosts_conflict(void **state) {
     /* connect again and check host key */
     *state = session = ssh_new();
 
-    ssh_options_set(session, SSH_OPTIONS_HOST, "localhost");
-    ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, KNOWNHOSTFILES);
+    ssh_options_set(session, SSH_OPTIONS_HOST, TORTURE_SSH_SERVER);
+    ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, known_hosts_file);
     rc = ssh_options_set(session, SSH_OPTIONS_HOSTKEYS, "ssh-rsa");
-    assert_true(rc == SSH_OK);
+    assert_int_equal(rc, SSH_OK);
 
     rc = ssh_connect(session);
-    assert_true(rc == SSH_OK);
+    assert_int_equal(rc, SSH_OK);
 
     rc = ssh_is_server_known(session);
-    assert_true(rc == SSH_SERVER_KNOWN_OK);
+    assert_int_equal(rc, SSH_SERVER_KNOWN_OK);
 }
 
 static void torture_knownhosts_precheck(void **state) {
-    ssh_session session = *state;
+    struct torture_state *s = *state;
+    ssh_session session = s->ssh.session;
+    char known_hosts_file[1024];
     FILE *file;
     int rc;
     char **kex;
 
-    rc = ssh_options_set(session, SSH_OPTIONS_HOST, "localhost");
-    assert_true(rc == SSH_OK);
+    snprintf(known_hosts_file,
+             sizeof(known_hosts_file),
+             "%s/%s",
+             s->socket_dir,
+             TORTURE_KNOWN_HOSTS_FILE);
 
-    rc = ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, KNOWNHOSTFILES);
-    assert_true(rc == SSH_OK);
+    rc = ssh_options_set(session, SSH_OPTIONS_HOST, TORTURE_SSH_SERVER);
+    assert_int_equal(rc, SSH_OK);
 
-    file = fopen(KNOWNHOSTFILES, "w");
+    rc = ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, known_hosts_file);
+    assert_int_equal(rc, SSH_OK);
+
+    file = fopen(known_hosts_file, "w");
     assert_true(file != NULL);
-    fprintf(file, "localhost ssh-rsa %s\n", BADRSA);
-    fprintf(file, "localhost ssh-dss %s\n", BADDSA);
+    fprintf(file, "127.0.0.10 ssh-rsa %s\n", BADRSA);
+    fprintf(file, "127.0.0.10 ssh-dss %s\n", BADDSA);
     fclose(file);
 
     kex = ssh_knownhosts_algorithms(session);
@@ -287,18 +360,30 @@ static void torture_knownhosts_precheck(void **state) {
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
-        cmocka_unit_test_setup_teardown(torture_knownhosts_port, setup, teardown),
-        cmocka_unit_test_setup_teardown(torture_knownhosts_fail, setup, teardown),
-        cmocka_unit_test_setup_teardown(torture_knownhosts_other, setup, teardown),
-        cmocka_unit_test_setup_teardown(torture_knownhosts_other_auto, setup, teardown),
-        cmocka_unit_test_setup_teardown(torture_knownhosts_conflict, setup, teardown),
-        cmocka_unit_test_setup_teardown(torture_knownhosts_precheck, setup, teardown)
+        cmocka_unit_test_setup_teardown(torture_knownhosts_port,
+                                        session_setup,
+                                        session_teardown),
+        cmocka_unit_test_setup_teardown(torture_knownhosts_fail,
+                                        session_setup,
+                                        session_teardown),
+        cmocka_unit_test_setup_teardown(torture_knownhosts_other,
+                                        session_setup,
+                                        session_teardown),
+        cmocka_unit_test_setup_teardown(torture_knownhosts_other_auto,
+                                        session_setup,
+                                        session_teardown),
+        cmocka_unit_test_setup_teardown(torture_knownhosts_conflict,
+                                        session_setup,
+                                        session_teardown),
+        cmocka_unit_test_setup_teardown(torture_knownhosts_precheck,
+                                        session_setup,
+                                        session_teardown),
     };
 
     ssh_init();
 
     torture_filter_tests(tests);
-    rc = cmocka_run_group_tests(tests, NULL, NULL);
+    rc = cmocka_run_group_tests(tests, sshd_setup, sshd_teardown);
 
     ssh_finalize();
     return rc;

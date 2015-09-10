@@ -2,7 +2,6 @@ project(clienttests C)
 
 find_package(socket_wrapper)
 
-add_cmocka_test(torture_knownhosts torture_knownhosts.c ${TORTURE_LIBRARY})
 add_cmocka_test(torture_proxycommand torture_proxycommand.c ${TORTURE_LIBRARY})
 add_cmocka_test(torture_session torture_session.c ${TORTURE_LIBRARY})
 add_cmocka_test(torture_request_env torture_request_env.c ${TORTURE_LIBRARY})
@@ -16,7 +15,8 @@ set(LIBSSH_CLIENT_TESTS
     torture_algorithms
     torture_connect
     torture_auth
-    torture_forward)
+    torture_forward
+    torture_knownhosts)
 
 foreach(_CLI_TEST ${LIBSSH_CLIENT_TESTS})
     add_cmocka_test(${_CLI_TEST} ${_CLI_TEST}.c ${TORTURE_LIBRARY})
