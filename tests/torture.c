@@ -414,11 +414,6 @@ ssh_session torture_ssh_session(const char *host,
         return NULL;
     }
 
-    rc = ssh_options_set(session, SSH_OPTIONS_SSH_DIR, "/tmp");
-    if (rc < 0) {
-        goto failed;
-    }
-
     if (ssh_options_set(session, SSH_OPTIONS_HOST, host) < 0) {
         goto failed;
     }
@@ -456,10 +451,10 @@ ssh_session torture_ssh_session(const char *host,
     }
 
     if (password != NULL) {
-        if (method & SSH_AUTH_METHOD_INTERACTIVE) {
-            rc = _torture_auth_kbdint(session, password);
-        } else if (method & SSH_AUTH_METHOD_PASSWORD) {
+        if (method & SSH_AUTH_METHOD_PASSWORD) {
             rc = ssh_userauth_password(session, NULL, password);
+        } else if (method & SSH_AUTH_METHOD_INTERACTIVE) {
+            rc = _torture_auth_kbdint(session, password);
         }
     } else {
         rc = ssh_userauth_publickey_auto(session, NULL, NULL);
