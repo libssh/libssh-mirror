@@ -24,46 +24,54 @@
 #include "torture.h"
 #include <libssh/libssh.h>
 
-static int setup(void **state)
+#include <sys/types.h>
+#include <pwd.h>
+
+static int sshd_setup(void **state)
 {
-    ssh_session session;
-    const char *host;
-    const char *user;
-    const char *password;
-
-    host = getenv("TORTURE_HOST");
-    if (host == NULL) {
-        host = "localhost";
-    }
-
-    user = getenv("TORTURE_USER");
-    password = getenv("TORTURE_PASSWORD");
-
-    session = torture_ssh_session(host, NULL, user, password);
-
-    assert_false(session == NULL);
-    *state = session;
+    torture_setup_sshd_server(state);
 
     return 0;
 }
 
-static int teardown(void **state)
+static int sshd_teardown(void **state) {
+    torture_teardown_sshd_server(state);
+
+    return 0;
+}
+
+static int session_setup(void **state)
 {
-    ssh_session session = *state;
+    struct torture_state *s = *state;
+    struct passwd *pwd;
 
-    assert_false(session == NULL);
+    pwd = getpwnam("bob");
+    assert_non_null(pwd);
+    setuid(pwd->pw_uid);
 
-    if (ssh_is_connected(session)) {
-            ssh_disconnect(session);
-    }
-    ssh_free(session);
+    s->ssh.session = torture_ssh_session(TORTURE_SSH_SERVER,
+                                         NULL,
+                                         TORTURE_SSH_USER_ALICE,
+                                         NULL);
+    assert_non_null(s->ssh.session);
+
+    return 0;
+}
+
+static int session_teardown(void **state)
+{
+    struct torture_state *s = *state;
+
+    ssh_disconnect(s->ssh.session);
+    ssh_free(s->ssh.session);
 
     return 0;
 }
 
 static void torture_request_env(void **state)
 {
-    ssh_session session = *state;
+    struct torture_state *s = *state;
+    ssh_session session = s->ssh.session;
     ssh_channel c;
     char buffer[4096] = {0};
     int nbytes;
@@ -83,8 +91,9 @@ static void torture_request_env(void **state)
     assert_int_equal(rc, SSH_OK);
 
     nbytes = ssh_channel_read(c, buffer, sizeof(buffer) - 1, 0);
+    printf("nbytes=%d\n", nbytes);
     while (nbytes > 0) {
-#if 0
+#if 1
         rc = fwrite(buffer, 1, nbytes, stdout);
         assert_int_equal(rc, nbytes);
 #endif
@@ -105,13 +114,15 @@ int torture_run_tests(void) {
     int rc;
 
     struct CMUnitTest tests[] = {
-        cmocka_unit_test_setup_teardown(torture_request_env, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_request_env,
+                                        session_setup,
+                                        session_teardown),
     };
 
     ssh_init();
 
     torture_filter_tests(tests);
-    rc = cmocka_run_group_tests(tests, NULL, NULL);
+    rc = cmocka_run_group_tests(tests, sshd_setup, sshd_teardown);
 
     ssh_finalize();
     return rc;
