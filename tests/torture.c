@@ -831,6 +831,7 @@ void torture_setup_sshd_server(void **state)
 
     /* Set the default interface for the server */
     setenv("SOCKET_WRAPPER_DEFAULT_IFACE", "10", 1);
+    setenv("UID_WRAPPER_ROOT", "1", 1);
 
     s = *state;
 
@@ -840,6 +841,9 @@ void torture_setup_sshd_server(void **state)
 
     rc = system(sshd_start_cmd);
     assert_return_code(rc, errno);
+
+    setenv("SOCKET_WRAPPER_DEFAULT_IFACE", "21", 1);
+    unsetenv("UID_WRAPPER_ROOT");
 }
 
 void torture_teardown_socket_dir(void **state)
