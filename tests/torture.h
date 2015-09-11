@@ -73,6 +73,7 @@ struct torture_state {
     char *srv_config;
     struct {
         ssh_session session;
+        struct torture_sftp *tsftp;
     } ssh;
 };
 
