@@ -3,44 +3,59 @@
 #include "torture.h"
 #include "sftp.c"
 
-static int setup(void **state) {
-    ssh_session session;
-    struct torture_sftp *t;
-    const char *host;
-    const char *user;
-    const char *password;
+#include <sys/types.h>
+#include <pwd.h>
 
-    host = getenv("TORTURE_HOST");
-    if (host == NULL) {
-        host = "localhost";
-    }
-
-    user = getenv("TORTURE_USER");
-    password = getenv("TORTURE_PASSWORD");
-
-    session = torture_ssh_session(host, NULL, user, password);
-    assert_false(session == NULL);
-    t = torture_sftp_session(session);
-    assert_false(t == NULL);
-
-    *state = t;
+static int sshd_setup(void **state)
+{
+    torture_setup_sshd_server(state);
 
     return 0;
 }
 
-static int teardown(void **state) {
-    struct torture_sftp *t = *state;
+static int sshd_teardown(void **state) {
+    torture_teardown_sshd_server(state);
 
-    assert_false(t == NULL);
+    return 0;
+}
 
-    torture_rmdirs(t->testdir);
-    torture_sftp_close(t);
+static int session_setup(void **state)
+{
+    struct torture_state *s = *state;
+    struct passwd *pwd;
+
+    pwd = getpwnam("bob");
+    assert_non_null(pwd);
+    setuid(pwd->pw_uid);
+
+    s->ssh.session = torture_ssh_session(TORTURE_SSH_SERVER,
+                                         NULL,
+                                         TORTURE_SSH_USER_ALICE,
+                                         NULL);
+    assert_non_null(s->ssh.session);
+
+    s->ssh.tsftp = torture_sftp_session(s->ssh.session);
+    assert_non_null(s->ssh.tsftp);
+
+    return 0;
+}
+
+static int session_teardown(void **state)
+{
+    struct torture_state *s = *state;
+
+    torture_rmdirs(s->ssh.tsftp->testdir);
+    torture_sftp_close(s->ssh.tsftp);
+    ssh_disconnect(s->ssh.session);
+    ssh_free(s->ssh.session);
 
     return 0;
 }
 
 static void torture_sftp_mkdir(void **state) {
-    struct torture_sftp *t = *state;
+    struct torture_state *s = *state;
+
+    struct torture_sftp *t = s->ssh.tsftp;
     char tmpdir[128] = {0};
     int rc;
 
@@ -66,13 +81,16 @@ static void torture_sftp_mkdir(void **state) {
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
-        cmocka_unit_test_setup_teardown(torture_sftp_mkdir, setup, teardown)
+        cmocka_unit_test_setup_teardown(torture_sftp_mkdir,
+                                        session_setup,
+                                        session_teardown)
     };
 
     ssh_init();
 
     torture_filter_tests(tests);
-    rc = cmocka_run_group_tests(tests, NULL, NULL);
+    rc = cmocka_run_group_tests(tests, sshd_setup, sshd_teardown);
+
     ssh_finalize();
 
     return rc;
