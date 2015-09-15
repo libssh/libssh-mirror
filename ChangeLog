@@ -1,6 +1,14 @@
 ChangeLog
 ==========
 
+version 0.7.2 (released 2015-09-15)
+  * Fixed OpenSSL detection on Windows
+  * Fixed return status for ssh_userauth_agent()
+  * Fixed KEX to prefer hmac-sha2-256
+  * Fixed sftp packet handling
+  * Fixed return values of ssh_key_is_(public|private)
+  * Fixed bug in global success reply
+
 version 0.7.1 (released 2015-06-30)
   * Fixed SSH_AUTH_PARTIAL auth with auto public key
   * Fixed memory leak in session options
