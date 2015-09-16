@@ -770,7 +770,7 @@ int ssh_userauth_agent(ssh_session session,
         return SSH_AUTH_ERROR;
     }
 
-    if (!agent_is_running(session)) {
+    if (!ssh_agent_is_running(session)) {
         return SSH_AUTH_DENIED;
     }
     if (!session->agent_state){

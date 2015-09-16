@@ -143,7 +143,7 @@ static size_t atomicio(struct ssh_agent_struct *agent, void *buf, size_t n, int 
     }
 }
 
-ssh_agent agent_new(struct ssh_session_struct *session) {
+ssh_agent ssh_agent_new(struct ssh_session_struct *session) {
   ssh_agent agent = NULL;
 
   agent = malloc(sizeof(struct ssh_agent_struct));
@@ -205,7 +205,7 @@ int ssh_set_agent_socket(ssh_session session, socket_t fd){
   return SSH_OK;
 }
 
-void agent_close(struct ssh_agent_struct *agent) {
+void ssh_agent_close(struct ssh_agent_struct *agent) {
   if (agent == NULL) {
     return;
   }
@@ -213,13 +213,13 @@ void agent_close(struct ssh_agent_struct *agent) {
   ssh_socket_close(agent->sock);
 }
 
-void agent_free(ssh_agent agent) {
+void ssh_agent_free(ssh_agent agent) {
   if (agent) {
     if (agent->ident) {
       ssh_buffer_free(agent->ident);
     }
     if (agent->sock) {
-      agent_close(agent);
+      ssh_agent_close(agent);
       ssh_socket_free(agent->sock);
     }
     SAFE_FREE(agent);
@@ -484,7 +484,7 @@ ssh_key ssh_agent_get_next_ident(struct ssh_session_struct *session,
     return key;
 }
 
-int agent_is_running(ssh_session session) {
+int ssh_agent_is_running(ssh_session session) {
   if (session == NULL || session->agent == NULL) {
     return 0;
   }

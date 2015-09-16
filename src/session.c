@@ -92,7 +92,7 @@ ssh_session ssh_new(void) {
   session->maxchannel = FIRST_CHANNEL;
 
 #ifndef _WIN32
-    session->agent = agent_new(session);
+    session->agent = ssh_agent_new(session);
     if (session->agent == NULL) {
       goto err;
     }
@@ -222,7 +222,7 @@ void ssh_free(ssh_session session) {
   crypto_free(session->next_crypto);
 
 #ifndef _WIN32
-  agent_free(session->agent);
+  ssh_agent_free(session->agent);
 #endif /* _WIN32 */
 
   ssh_key_free(session->srv.dsa_key);
