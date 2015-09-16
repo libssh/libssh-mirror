@@ -339,12 +339,12 @@ int dh_generate_f(ssh_session session) {
 }
 
 ssh_string dh_get_e(ssh_session session) {
-  return make_bignum_string(session->next_crypto->e);
+  return ssh_make_bignum_string(session->next_crypto->e);
 }
 
 /* used by server */
 ssh_string dh_get_f(ssh_session session) {
-  return make_bignum_string(session->next_crypto->f);
+  return ssh_make_bignum_string(session->next_crypto->f);
 }
 
 void dh_import_pubkey(ssh_session session, ssh_string pubkey_string) {
@@ -352,7 +352,7 @@ void dh_import_pubkey(ssh_session session, ssh_string pubkey_string) {
 }
 
 int dh_import_f(ssh_session session, ssh_string f_string) {
-  session->next_crypto->f = make_string_bn(f_string);
+  session->next_crypto->f = ssh_make_string_bn(f_string);
   if (session->next_crypto->f == NULL) {
     return -1;
   }
@@ -366,7 +366,7 @@ int dh_import_f(ssh_session session, ssh_string f_string) {
 
 /* used by the server implementation */
 int dh_import_e(ssh_session session, ssh_string e_string) {
-  session->next_crypto->e = make_string_bn(e_string);
+  session->next_crypto->e = ssh_make_string_bn(e_string);
   if (session->next_crypto->e == NULL) {
     return -1;
   }
@@ -782,7 +782,7 @@ int generate_session_keys(ssh_session session) {
   struct ssh_crypto_struct *crypto = session->next_crypto;
   int rc = -1;
 
-  k_string = make_bignum_string(crypto->k);
+  k_string = ssh_make_bignum_string(crypto->k);
   if (k_string == NULL) {
     ssh_set_error_oom(session);
     goto error;

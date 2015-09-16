@@ -767,7 +767,7 @@ int ssh_buffer_pack_va(struct ssh_buffer_struct *buffer,
             break;
         case 'B':
             b = va_arg(ap, bignum);
-            o.string = make_bignum_string(b);
+            o.string = ssh_make_bignum_string(b);
             if(o.string == NULL){
                 rc = SSH_ERROR;
                 break;

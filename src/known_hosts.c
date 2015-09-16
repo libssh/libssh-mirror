@@ -225,9 +225,9 @@ static int check_public_key(ssh_session session, char **tokens) {
         ssh_buffer_free(pubkey_buffer);
         return -1;
       }
-      /* for some reason, make_bignum_string does not work
+      /* for some reason, ssh_make_bignum_string does not work
          because of the padding which it does --kv */
-      /* tmpstring = make_bignum_string(tmpbn); */
+      /* tmpstring = ssh_make_bignum_string(tmpbn); */
       /* do it manually instead */
       len = bignum_num_bytes(tmpbn);
       tmpstring = malloc(4 + len);
