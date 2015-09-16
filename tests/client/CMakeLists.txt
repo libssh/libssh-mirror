@@ -2,10 +2,6 @@ project(clienttests C)
 
 find_package(socket_wrapper)
 
-if (WITH_SFTP)
-    add_cmocka_test(torture_sftp_static torture_sftp_static.c ${TORTURE_LIBRARY})
-endif (WITH_SFTP)
-
 set(LIBSSH_CLIENT_TESTS
     torture_algorithms
     torture_connect
@@ -19,6 +15,7 @@ set(LIBSSH_CLIENT_TESTS
 if (WITH_SFTP)
     set(LIBSSH_CLIENT_TESTS
         ${LIBSSH_CLIENT_TESTS}
+        torture_sftp_ext
         torture_sftp_dir
         torture_sftp_read)
 endif (WITH_SFTP)
