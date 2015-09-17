@@ -1135,6 +1135,8 @@ int pki_key_compare(const ssh_key k1,
 		/* ed25519 keys handled globaly */
 		return 0;
         case SSH_KEYTYPE_ECDSA:
+        case SSH_KEYTYPE_DSS_CERT01:
+        case SSH_KEYTYPE_RSA_CERT01:
         case SSH_KEYTYPE_UNKNOWN:
             return 1;
     }
