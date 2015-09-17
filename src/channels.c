@@ -864,7 +864,7 @@ int ssh_channel_open_session(ssh_channel channel) {
 
 #ifdef WITH_SSH1
   if (channel->session->version == 1) {
-    return channel_open_session1(channel);
+    return ssh_channel_open_session1(channel);
   }
 #endif
 
@@ -1250,7 +1250,7 @@ static int channel_write_common(ssh_channel channel,
   }
 #ifdef WITH_SSH1
   if (channel->version == 1) {
-    rc = channel_write1(channel, data, len);
+    rc = ssh_channel_write1(channel, data, len);
 
     return rc;
   }
@@ -1633,7 +1633,7 @@ int ssh_channel_request_pty_size(ssh_channel channel, const char *terminal,
 
 #ifdef WITH_SSH1
   if (channel->version==1) {
-    rc = channel_request_pty_size1(channel,terminal, col, row);
+    rc = ssh_channel_request_pty_size1(channel,terminal, col, row);
 
     return rc;
     }
@@ -1711,7 +1711,7 @@ int ssh_channel_change_pty_size(ssh_channel channel, int cols, int rows) {
 
 #ifdef WITH_SSH1
   if (channel->version == 1) {
-    rc = channel_change_pty_size1(channel,cols,rows);
+    rc = ssh_channel_change_pty_size1(channel,cols,rows);
 
     return rc;
   }
@@ -1757,7 +1757,7 @@ int ssh_channel_request_shell(ssh_channel channel) {
     }
 #ifdef WITH_SSH1
   if (channel->version == 1) {
-    return channel_request_shell1(channel);
+    return ssh_channel_request_shell1(channel);
   }
 #endif
   return channel_request(channel, "shell", NULL, 1);
@@ -2398,7 +2398,7 @@ int ssh_channel_request_exec(ssh_channel channel, const char *cmd) {
 
 #ifdef WITH_SSH1
   if (channel->version == 1) {
-    return channel_request_exec1(channel, cmd);
+    return ssh_channel_request_exec1(channel, cmd);
   }
 #endif
   switch(channel->request_state){

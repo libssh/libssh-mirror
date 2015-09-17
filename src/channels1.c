@@ -51,7 +51,7 @@
  * protocol.
  */
 
-int channel_open_session1(ssh_channel chan) {
+int ssh_channel_open_session1(ssh_channel chan) {
   ssh_session session;
 
   if (chan == NULL) {
@@ -91,7 +91,7 @@ int channel_open_session1(ssh_channel chan) {
  *  much simplier under ssh2. I just hope the defaults values are ok ...
  */
 
-int channel_request_pty_size1(ssh_channel channel, const char *terminal, int col,
+int ssh_channel_request_pty_size1(ssh_channel channel, const char *terminal, int col,
     int row) {
   ssh_session session;
   ssh_string str = NULL;
@@ -158,7 +158,7 @@ int channel_request_pty_size1(ssh_channel channel, const char *terminal, int col
   return SSH_ERROR;
 }
 
-int channel_change_pty_size1(ssh_channel channel, int cols, int rows) {
+int ssh_channel_change_pty_size1(ssh_channel channel, int cols, int rows) {
   ssh_session session;
 
   if (channel == NULL) {
@@ -207,7 +207,7 @@ int channel_change_pty_size1(ssh_channel channel, int cols, int rows) {
 
 }
 
-int channel_request_shell1(ssh_channel channel) {
+int ssh_channel_request_shell1(ssh_channel channel) {
   ssh_session session;
 
   if (channel == NULL) {
@@ -228,7 +228,7 @@ int channel_request_shell1(ssh_channel channel) {
   return 0;
 }
 
-int channel_request_exec1(ssh_channel channel, const char *cmd) {
+int ssh_channel_request_exec1(ssh_channel channel, const char *cmd) {
   ssh_session session;
   ssh_string command = NULL;
 
@@ -338,7 +338,7 @@ SSH_PACKET_CALLBACK(ssh_packet_exist_status1){
 }
 
 
-int channel_write1(ssh_channel channel, const void *data, int len) {
+int ssh_channel_write1(ssh_channel channel, const void *data, int len) {
   ssh_session session;
   int origlen = len;
   int effectivelen;

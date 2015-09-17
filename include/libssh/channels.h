@@ -105,13 +105,13 @@ SSH_PACKET_CALLBACK(ssh_packet_close1);
 SSH_PACKET_CALLBACK(ssh_packet_exist_status1);
 
 /* channels1.c */
-int channel_open_session1(ssh_channel channel);
-int channel_request_pty_size1(ssh_channel channel, const char *terminal,
+int ssh_channel_open_session1(ssh_channel channel);
+int ssh_channel_request_pty_size1(ssh_channel channel, const char *terminal,
     int cols, int rows);
-int channel_change_pty_size1(ssh_channel channel, int cols, int rows);
-int channel_request_shell1(ssh_channel channel);
-int channel_request_exec1(ssh_channel channel, const char *cmd);
-int channel_write1(ssh_channel channel, const void *data, int len);
+int ssh_channel_change_pty_size1(ssh_channel channel, int cols, int rows);
+int ssh_channel_request_shell1(ssh_channel channel);
+int ssh_channel_request_exec1(ssh_channel channel, const char *cmd);
+int ssh_channel_write1(ssh_channel channel, const void *data, int len);
 ssh_channel ssh_get_channel1(ssh_session session);
 #endif
 
