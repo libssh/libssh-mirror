@@ -321,7 +321,7 @@ static int dh_handshake_server(ssh_session session) {
     return -1;
   }
 
-  if (packet_send(session) == SSH_ERROR) {
+  if (ssh_packet_send(session) == SSH_ERROR) {
     return -1;
   }
 
@@ -330,7 +330,7 @@ static int dh_handshake_server(ssh_session session) {
     return -1;
   }
 
-  if (packet_send(session) == SSH_ERROR) {
+  if (ssh_packet_send(session) == SSH_ERROR) {
     return -1;
   }
   SSH_LOG(SSH_LOG_PACKET, "SSH_MSG_NEWKEYS sent");
@@ -659,7 +659,7 @@ int ssh_auth_reply_default(ssh_session session,int partial) {
       ssh_set_error_oom(session);
       return SSH_ERROR;
   }
-  rc = packet_send(session);
+  rc = ssh_packet_send(session);
   return rc;
 }
 
@@ -680,7 +680,7 @@ static int ssh_message_channel_request_open_reply_default(ssh_message msg) {
         return SSH_ERROR;
     }
 
-    rc = packet_send(msg->session);
+    rc = ssh_packet_send(msg->session);
     return rc;
 }
 
@@ -702,7 +702,7 @@ static int ssh_message_channel_request_reply_default(ssh_message msg) {
         ssh_set_error_oom(msg->session);
         return SSH_ERROR;
     }
-    return packet_send(msg->session);
+    return ssh_packet_send(msg->session);
   }
 
   SSH_LOG(SSH_LOG_PACKET,
@@ -736,7 +736,7 @@ int ssh_message_service_reply_success(ssh_message msg) {
         ssh_set_error_oom(session);
         return SSH_ERROR;
     }
-    rc = packet_send(msg->session);
+    rc = ssh_packet_send(msg->session);
     return rc;
 }
 
@@ -760,7 +760,7 @@ int ssh_message_global_request_reply_success(ssh_message msg, uint16_t bound_por
             }
         }
 
-        return packet_send(msg->session);
+        return ssh_packet_send(msg->session);
     }
 
     if(msg->global_request.type == SSH_GLOBAL_REQUEST_TCPIP_FORWARD 
@@ -782,7 +782,7 @@ static int ssh_message_global_request_reply_default(ssh_message msg) {
                     , SSH2_MSG_REQUEST_FAILURE) < 0) {
             goto error;
         }
-        return packet_send(msg->session);
+        return ssh_packet_send(msg->session);
     }
     SSH_LOG(SSH_LOG_PACKET,
             "The client doesn't want to know the request failed!");
@@ -919,7 +919,7 @@ int ssh_message_auth_interactive_request(ssh_message msg, const char *name,
     }
   }
 
-  rc = packet_send(msg->session);
+  rc = ssh_packet_send(msg->session);
 
   /* fill in the kbdint structure */
   if (msg->session->kbdint == NULL) {
@@ -1006,7 +1006,7 @@ int ssh_auth_reply_success(ssh_session session, int partial) {
     return SSH_ERROR;
   }
 
-  r = packet_send(session);
+  r = ssh_packet_send(session);
   if(session->current_crypto && session->current_crypto->delayed_compress_out){
       SSH_LOG(SSH_LOG_PROTOCOL,"Enabling delayed compression OUT");
   	session->current_crypto->do_compress_out=1;
@@ -1041,7 +1041,7 @@ int ssh_message_auth_reply_pk_ok(ssh_message msg, ssh_string algo, ssh_string pu
         return SSH_ERROR;
     }
 
-    rc = packet_send(msg->session);
+    rc = ssh_packet_send(msg->session);
     return rc;
 }
 
@@ -1208,7 +1208,7 @@ int ssh_send_keepalive(ssh_session session)
     goto err;
   }
 
-  if (packet_send(session) == SSH_ERROR) {
+  if (ssh_packet_send(session) == SSH_ERROR) {
     goto err;
   }
 

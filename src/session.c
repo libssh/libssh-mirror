@@ -828,7 +828,7 @@ int ssh_send_ignore (ssh_session session, const char *data) {
             ssh_set_error_oom(session);
             goto error;
         }
-        packet_send(session);
+        ssh_packet_send(session);
         ssh_handle_packets(session, 0);
     }
 
@@ -864,7 +864,7 @@ int ssh_send_debug (ssh_session session, const char *message, int always_display
             ssh_set_error_oom(session);
             goto error;
         }
-        packet_send(session);
+        ssh_packet_send(session);
         ssh_handle_packets(session, 0);
     }
 

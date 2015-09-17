@@ -642,7 +642,7 @@ int ssh_send_kex(ssh_session session, int server_kex) {
     goto error;
   }
 
-  if (packet_send(session) == SSH_ERROR) {
+  if (ssh_packet_send(session) == SSH_ERROR) {
     return -1;
   }
 

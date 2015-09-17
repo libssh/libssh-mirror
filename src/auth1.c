@@ -114,7 +114,7 @@ static int send_username(ssh_session session, const char *username) {
   ssh_string_free(user);
   session->auth_state=SSH_AUTH_STATE_NONE;
   session->auth_service_state = SSH_AUTH_SERVICE_SENT;
-  if (packet_send(session) == SSH_ERROR) {
+  if (ssh_packet_send(session) == SSH_ERROR) {
     return SSH_AUTH_ERROR;
   }
 pending:
@@ -214,7 +214,7 @@ int ssh_userauth1_password(ssh_session session, const char *username,
   ssh_string_free(pwd);
   session->auth_state=SSH_AUTH_STATE_NONE;
   session->pending_call_state = SSH_PENDING_CALL_AUTH_PASSWORD;
-  if (packet_send(session) == SSH_ERROR) {
+  if (ssh_packet_send(session) == SSH_ERROR) {
     return SSH_AUTH_ERROR;
   }
 pending:

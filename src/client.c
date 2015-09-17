@@ -283,7 +283,7 @@ int ssh_service_request(ssh_session session, const char *service) {
       return SSH_ERROR;
   }
   session->auth_service_state=SSH_AUTH_SERVICE_SENT;
-  if (packet_send(session) == SSH_ERROR) {
+  if (ssh_packet_send(session) == SSH_ERROR) {
     ssh_set_error(session, SSH_FATAL,
         "Sending SSH2_MSG_SERVICE_REQUEST failed.");
       return SSH_ERROR;
@@ -643,7 +643,7 @@ void ssh_disconnect(ssh_session session) {
       goto error;
     }
 
-    packet_send(session);
+    ssh_packet_send(session);
     ssh_socket_close(session->socket);
   }
 error:

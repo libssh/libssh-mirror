@@ -391,7 +391,7 @@ int ssh_userauth_none(ssh_session session, const char *username) {
 
     session->auth_state = SSH_AUTH_STATE_NONE;
     session->pending_call_state = SSH_PENDING_CALL_AUTH_NONE;
-    rc = packet_send(session);
+    rc = ssh_packet_send(session);
     if (rc == SSH_ERROR) {
         return SSH_AUTH_ERROR;
     }
@@ -503,7 +503,7 @@ int ssh_userauth_try_publickey(ssh_session session,
 
     session->auth_state = SSH_AUTH_STATE_NONE;
     session->pending_call_state = SSH_PENDING_CALL_AUTH_OFFER_PUBKEY;
-    rc = packet_send(session);
+    rc = ssh_packet_send(session);
     if (rc == SSH_ERROR) {
         return SSH_AUTH_ERROR;
     }
@@ -623,7 +623,7 @@ int ssh_userauth_publickey(ssh_session session,
 
     session->auth_state = SSH_AUTH_STATE_NONE;
     session->pending_call_state = SSH_PENDING_CALL_AUTH_PUBKEY;
-    rc = packet_send(session);
+    rc = ssh_packet_send(session);
     if (rc == SSH_ERROR) {
         return SSH_AUTH_ERROR;
     }
@@ -707,7 +707,7 @@ static int ssh_userauth_agent_publickey(ssh_session session,
 
     session->auth_state = SSH_AUTH_STATE_NONE;
     session->pending_call_state = SSH_PENDING_CALL_AUTH_AGENT;
-    rc = packet_send(session);
+    rc = ssh_packet_send(session);
     if (rc == SSH_ERROR) {
         return SSH_AUTH_ERROR;
     }
@@ -1151,7 +1151,7 @@ int ssh_userauth_password(ssh_session session,
 
     session->auth_state = SSH_AUTH_STATE_NONE;
     session->pending_call_state = SSH_PENDING_CALL_AUTH_OFFER_PUBKEY;
-    rc = packet_send(session);
+    rc = ssh_packet_send(session);
     if (rc == SSH_ERROR) {
         return SSH_AUTH_ERROR;
     }
@@ -1320,7 +1320,7 @@ static int ssh_userauth_kbdint_init(ssh_session session,
     SSH_LOG(SSH_LOG_DEBUG,
             "Sending keyboard-interactive init request");
 
-    rc = packet_send(session);
+    rc = ssh_packet_send(session);
     if (rc == SSH_ERROR) {
         return SSH_AUTH_ERROR;
     }
@@ -1381,7 +1381,7 @@ static int ssh_userauth_kbdint_send(ssh_session session)
     SSH_LOG(SSH_LOG_DEBUG,
             "Sending keyboard-interactive response packet");
 
-    rc = packet_send(session);
+    rc = ssh_packet_send(session);
     if (rc == SSH_ERROR) {
         return SSH_AUTH_ERROR;
     }

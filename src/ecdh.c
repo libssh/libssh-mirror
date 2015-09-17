@@ -87,7 +87,7 @@ int ssh_client_ecdh_init(ssh_session session){
   session->next_crypto->ecdh_privkey = key;
   session->next_crypto->ecdh_client_pubkey = client_pubkey;
 
-  rc = packet_send(session);
+  rc = ssh_packet_send(session);
 
   return rc;
 }
@@ -212,7 +212,7 @@ int ssh_client_ecdh_reply(ssh_session session, ssh_buffer packet){
     goto error;
   }
 
-  rc=packet_send(session);
+  rc=ssh_packet_send(session);
   SSH_LOG(SSH_LOG_PROTOCOL, "SSH_MSG_NEWKEYS sent");
   return rc;
 error:
@@ -326,7 +326,7 @@ int ssh_server_ecdh_init(ssh_session session, ssh_buffer packet){
     }
 
     SSH_LOG(SSH_LOG_PROTOCOL, "SSH_MSG_KEXDH_REPLY sent");
-    rc = packet_send(session);
+    rc = ssh_packet_send(session);
     if (rc == SSH_ERROR) {
         return SSH_ERROR;
     }
@@ -338,7 +338,7 @@ int ssh_server_ecdh_init(ssh_session session, ssh_buffer packet){
     }
 
     session->dh_handshake_state = DH_STATE_NEWKEYS_SENT;
-    rc = packet_send(session);
+    rc = ssh_packet_send(session);
     SSH_LOG(SSH_LOG_PROTOCOL, "SSH_MSG_NEWKEYS sent");
 
     return rc;

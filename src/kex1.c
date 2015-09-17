@@ -443,7 +443,7 @@ SSH_PACKET_CALLBACK(ssh_packet_publickey1){
      goto error;
    }
    session->session_state=SSH_SESSION_STATE_KEXINIT_RECEIVED;
-   if (packet_send(session) == SSH_ERROR) {
+   if (ssh_packet_send(session) == SSH_ERROR) {
      goto error;
    }
 

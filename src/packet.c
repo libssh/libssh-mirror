@@ -192,7 +192,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
 
             memcpy(buffer, data, blocksize);
             processed += blocksize;
-            len = packet_decrypt_len(session, buffer);
+            len = ssh_packet_decrypt_len(session, buffer);
 
             rc = ssh_buffer_add_data(session->in_buffer, buffer, blocksize);
             if (rc < 0) {
@@ -260,7 +260,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
                     uint8_t *payload = ((uint8_t*)ssh_buffer_get_rest(session->in_buffer) + blocksize);
                     uint32_t plen = buffer_len - blocksize;
 
-                    rc = packet_decrypt(session, payload, plen);
+                    rc = ssh_packet_decrypt(session, payload, plen);
                     if (rc < 0) {
                         ssh_set_error(session, SSH_FATAL, "Decrypt error");
                         goto error;
@@ -271,7 +271,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
                 packet = ((uint8_t *)data) + processed;
                 memcpy(mac, packet, current_macsize);
 
-                rc = packet_hmac_verify(session, session->in_buffer, mac, session->current_crypto->in_hmac);
+                rc = ssh_packet_hmac_verify(session, session->in_buffer, mac, session->current_crypto->in_hmac);
                 if (rc < 0) {
                     ssh_set_error(session, SSH_FATAL, "HMAC error");
                     goto error;
@@ -452,7 +452,7 @@ int ssh_packet_send_unimplemented(ssh_session session, uint32_t seqnum){
         ssh_set_error_oom(session);
         return SSH_ERROR;
     }
-    rc = packet_send(session);
+    rc = ssh_packet_send(session);
 
     return rc;
 }
@@ -567,7 +567,7 @@ static int packet_send2(ssh_session session) {
   			,ssh_buffer_get_rest_len(session->out_buffer));
   }
 #endif
-  hmac = packet_encrypt(session, ssh_buffer_get_rest(session->out_buffer),
+  hmac = ssh_packet_encrypt(session, ssh_buffer_get_rest(session->out_buffer),
       ssh_buffer_get_rest_len(session->out_buffer));
   if (hmac) {
     rc = ssh_buffer_add_data(session->out_buffer, hmac, hmac_digest_len(hmac_type));
@@ -595,10 +595,10 @@ error:
 }
 
 
-int packet_send(ssh_session session) {
+int ssh_packet_send(ssh_session session) {
 #ifdef WITH_SSH1
   if (session->version == 1) {
-    return packet_send1(session);
+    return ssh_packet_send1(session);
   }
 #endif
   return packet_send2(session);

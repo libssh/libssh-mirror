@@ -293,7 +293,7 @@ static int channel_open(ssh_channel channel, const char *type, int window,
     }
   }
   channel->state = SSH_CHANNEL_STATE_OPENING;
-  if (packet_send(session) == SSH_ERROR) {
+  if (ssh_packet_send(session) == SSH_ERROR) {
 
     return err;
   }
@@ -374,7 +374,7 @@ static int grow_window(ssh_session session, ssh_channel channel, int minimumsize
     goto error;
   }
 
-  if (packet_send(session) == SSH_ERROR) {
+  if (ssh_packet_send(session) == SSH_ERROR) {
     goto error;
   }
 
@@ -752,7 +752,7 @@ SSH_PACKET_CALLBACK(channel_rcv_request) {
       if (rc != SSH_OK) {
           return SSH_PACKET_USED;
       }
-	  packet_send(session);
+	  ssh_packet_send(session);
 
 	  return SSH_PACKET_USED;
 	}
@@ -1082,7 +1082,7 @@ int ssh_channel_send_eof(ssh_channel channel){
     goto error;
   }
 
-  rc = packet_send(session);
+  rc = ssh_packet_send(session);
   SSH_LOG(SSH_LOG_PACKET,
       "Sent a EOF on client channel (%d:%d)",
       channel->local_channel,
@@ -1141,7 +1141,7 @@ int ssh_channel_close(ssh_channel channel){
     goto error;
   }
 
-  rc = packet_send(session);
+  rc = ssh_packet_send(session);
   SSH_LOG(SSH_LOG_PACKET,
       "Sent a close on client channel (%d:%d)",
       channel->local_channel,
@@ -1318,7 +1318,7 @@ static int channel_write_common(ssh_channel channel,
         goto error;
     }
 
-    rc = packet_send(session);
+    rc = ssh_packet_send(session);
     if (rc == SSH_ERROR) {
         return SSH_ERROR;
     }
@@ -1547,7 +1547,7 @@ static int channel_request(ssh_channel channel, const char *request,
     }
   }
   channel->request_state = SSH_CHANNEL_REQ_STATE_PENDING;
-  if (packet_send(session) == SSH_ERROR) {
+  if (ssh_packet_send(session) == SSH_ERROR) {
     return rc;
   }
 
@@ -2109,7 +2109,7 @@ static int global_request(ssh_session session, const char *request,
   }
 
   session->global_req_state = SSH_CHANNEL_REQ_STATE_PENDING;
-  rc = packet_send(session);
+  rc = ssh_packet_send(session);
   if (rc == SSH_ERROR) {
       return rc;
   }

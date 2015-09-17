@@ -121,7 +121,7 @@ static int ssh_gssapi_send_response(ssh_session session, ssh_string oid){
         return SSH_ERROR;
     }
 
-    packet_send(session);
+    ssh_packet_send(session);
     SSH_LOG(SSH_LOG_PACKET,
             "Sent SSH_MSG_USERAUTH_GSSAPI_RESPONSE");
     return SSH_OK;
@@ -319,7 +319,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_token_server){
                 ssh_set_error_oom(session);
                 return SSH_PACKET_USED;
             }
-            packet_send(session);
+            ssh_packet_send(session);
             ssh_string_free(out_token);
         } else {
             session->gssapi->state = SSH_GSSAPI_STATE_RCV_MIC;
@@ -358,7 +358,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_token_server){
                         SSH2_MSG_USERAUTH_GSSAPI_TOKEN,
                         output_token.length,
                         (size_t)output_token.length, output_token.value);
-        packet_send(session);
+        ssh_packet_send(session);
     }
     if(maj_stat == GSS_S_COMPLETE){
         session->gssapi->state = SSH_GSSAPI_STATE_RCV_MIC;
@@ -540,7 +540,7 @@ static int ssh_gssapi_send_auth_mic(ssh_session session, ssh_string *oid_set, in
     }
 
     session->auth_state = SSH_AUTH_STATE_GSSAPI_REQUEST_SENT;
-    return packet_send(session);
+    return ssh_packet_send(session);
 fail:
     ssh_buffer_reinit(session->out_buffer);
     return SSH_ERROR;
@@ -771,7 +771,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_response){
                         SSH2_MSG_USERAUTH_GSSAPI_TOKEN,
                         output_token.length,
                         (size_t)output_token.length, output_token.value);
-        packet_send(session);
+        ssh_packet_send(session);
         session->auth_state = SSH_AUTH_STATE_GSSAPI_TOKEN;
     }
     return SSH_PACKET_USED;
@@ -812,7 +812,7 @@ static int ssh_gssapi_send_mic(ssh_session session){
         return SSH_ERROR;
     }
 
-    return packet_send(session);
+    return ssh_packet_send(session);
 }
 
 SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_token_client){
@@ -866,7 +866,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_token_client){
                         SSH2_MSG_USERAUTH_GSSAPI_TOKEN,
                         output_token.length,
                         (size_t)output_token.length, output_token.value);
-        packet_send(session);
+        ssh_packet_send(session);
     }
     if(maj_stat == GSS_S_COMPLETE){
         session->auth_state = SSH_AUTH_STATE_NONE;

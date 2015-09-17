@@ -171,7 +171,7 @@ int ssh_packet_socket_callback1(const void *data, size_t receivedlen, void *user
         buffer_len = ssh_buffer_get_len(session->in_buffer);
         if (buffer_len > 0) {
           int rc;
-          rc = packet_decrypt(session,
+          rc = ssh_packet_decrypt(session,
                  ssh_buffer_get_begin(session->in_buffer),
                  buffer_len);
           if (rc < 0) {
@@ -252,7 +252,7 @@ error:
 }
 
 
-int packet_send1(ssh_session session) {
+int ssh_packet_send1(ssh_session session) {
   unsigned int blocksize = (session->current_crypto ?
       session->current_crypto->out_cipher->blocksize : 8);
   uint32_t currentlen = ssh_buffer_get_len(session->out_buffer) + sizeof(uint32_t);
@@ -306,8 +306,8 @@ int packet_send1(ssh_session session) {
 #endif
 
   /* session->out_buffer should have more than sizeof(uint32_t) bytes
-     in it as required for packet_encrypt */
-  packet_encrypt(session, (unsigned char *)ssh_buffer_get_begin(session->out_buffer) + sizeof(uint32_t),
+     in it as required for ssh_packet_encrypt */
+  ssh_packet_encrypt(session, (unsigned char *)ssh_buffer_get_begin(session->out_buffer) + sizeof(uint32_t),
       ssh_buffer_get_len(session->out_buffer) - sizeof(uint32_t));
 
 #ifdef DEBUG_CRYPTO

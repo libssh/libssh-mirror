@@ -456,7 +456,7 @@ int ssh_client_dh_init(ssh_session session){
   ssh_string_free(e);
   e=NULL;
 
-  rc = packet_send(session);
+  rc = ssh_packet_send(session);
   return rc;
   error:
   if(e != NULL){
@@ -509,7 +509,7 @@ int ssh_client_dh_reply(ssh_session session, ssh_buffer packet){
     goto error;
   }
 
-  rc=packet_send(session);
+  rc=ssh_packet_send(session);
   SSH_LOG(SSH_LOG_PROTOCOL, "SSH_MSG_NEWKEYS sent");
   return rc;
 error:

@@ -86,7 +86,7 @@ static int ssh_message_reply_default(ssh_message msg) {
   if (ssh_buffer_add_u32(msg->session->out_buffer,
       htonl(msg->session->recv_seq-1)) < 0)
     goto error;
-  return packet_send(msg->session);
+  return ssh_packet_send(msg->session);
   error:
   return SSH_ERROR;
 }
@@ -1138,7 +1138,7 @@ int ssh_message_channel_request_open_reply_accept_channel(ssh_message msg, ssh_c
             "Accepting a channel request_open for chan %d",
             chan->remote_channel);
 
-    rc = packet_send(session);
+    rc = ssh_packet_send(session);
 
     return rc;
 }
@@ -1319,7 +1319,7 @@ int ssh_message_channel_request_reply_success(ssh_message msg) {
       return SSH_ERROR;
     }
 
-    return packet_send(msg->session);
+    return ssh_packet_send(msg->session);
   }
 
   SSH_LOG(SSH_LOG_PACKET,

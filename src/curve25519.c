@@ -64,7 +64,7 @@ int ssh_client_curve25519_init(ssh_session session){
       return SSH_ERROR;
   }
 
-  rc = packet_send(session);
+  rc = ssh_packet_send(session);
 
   return rc;
 }
@@ -147,7 +147,7 @@ int ssh_client_curve25519_reply(ssh_session session, ssh_buffer packet){
     goto error;
   }
 
-  rc=packet_send(session);
+  rc=ssh_packet_send(session);
   SSH_LOG(SSH_LOG_PROTOCOL, "SSH_MSG_NEWKEYS sent");
   return rc;
 error:
@@ -260,7 +260,7 @@ int ssh_server_curve25519_init(ssh_session session, ssh_buffer packet){
     }
 
     SSH_LOG(SSH_LOG_PROTOCOL, "SSH_MSG_KEX_ECDH_REPLY sent");
-    rc = packet_send(session);
+    rc = ssh_packet_send(session);
     if (rc == SSH_ERROR) {
         return SSH_ERROR;
     }
@@ -272,7 +272,7 @@ int ssh_server_curve25519_init(ssh_session session, ssh_buffer packet){
     }
 
     session->dh_handshake_state = DH_STATE_NEWKEYS_SENT;
-    rc = packet_send(session);
+    rc = ssh_packet_send(session);
     SSH_LOG(SSH_LOG_PROTOCOL, "SSH_MSG_NEWKEYS sent");
 
     return rc;
