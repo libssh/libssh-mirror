@@ -109,11 +109,11 @@ int benchmarks_scp_down (ssh_session session, struct argument_s *args,
   if(r == SSH_SCP_REQUEST_NEWFILE){
     size=ssh_scp_request_get_size(scp);
     if(bytes > size){
-      printf("Only %d bytes available (on %lu requested).\n",size,bytes);
+      printf("Only %zd bytes available (on %lu requested).\n",size,bytes);
       bytes = size;
     }
     if(size > bytes){
-      printf("File is %d bytes (on %lu requested). Will cut the end\n",size,bytes);
+      printf("File is %zd bytes (on %lu requested). Will cut the end\n",size,bytes);
     }
     if(args->verbose>0)
       fprintf(stdout,"Starting download of %lu bytes now\n",bytes);
