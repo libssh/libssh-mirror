@@ -164,7 +164,7 @@ int ssh_options_copy(ssh_session src, ssh_session *dest) {
 
 int ssh_options_set_algo(ssh_session session, int algo,
     const char *list) {
-  if (!verify_existing_algo(algo, list)) {
+  if (!ssh_verify_existing_algo(algo, list)) {
     ssh_set_error(session, SSH_REQUEST_DENIED,
         "Setting method: no algorithm for method \"%s\" (%s)\n",
         ssh_kex_get_description(algo), list);

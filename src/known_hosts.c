@@ -134,7 +134,7 @@ static char **ssh_get_knownhost_line(FILE **file, const char *filename,
       continue; /* skip empty lines */
     }
 
-    tokens = space_tokenize(buffer);
+    tokens = ssh_space_tokenize(buffer);
     if (tokens == NULL) {
       fclose(*file);
       *file = NULL;

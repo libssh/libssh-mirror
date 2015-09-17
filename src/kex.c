@@ -172,7 +172,7 @@ static char **tokenize(const char *chain){
 
 /* same as tokenize(), but with spaces instead of ',' */
 /* TODO FIXME rewrite me! */
-char **space_tokenize(const char *chain){
+char **ssh_space_tokenize(const char *chain){
     char **tokens;
     int n=1;
     int i=0;
@@ -512,7 +512,7 @@ static char *ssh_client_select_hostkeys(ssh_session session){
 	for (i=0;preferred_hostkeys[i] != NULL; ++i){
 		for (j=0; methods[j] != NULL; ++j){
 			if(strcmp(preferred_hostkeys[i], methods[j]) == 0){
-				if (verify_existing_algo(SSH_HOSTKEYS, methods[j])){
+				if (ssh_verify_existing_algo(SSH_HOSTKEYS, methods[j])){
 					if(needcoma)
 						strncat(methods_buffer,",",sizeof(methods_buffer)-strlen(methods_buffer)-1);
 					strncat(methods_buffer, methods[j], sizeof(methods_buffer)-strlen(methods_buffer)-1);
@@ -539,7 +539,7 @@ static char *ssh_client_select_hostkeys(ssh_session session){
  * @brief sets the key exchange parameters to be sent to the server,
  *        in function of the options and available methods.
  */
-int set_client_kex(ssh_session session){
+int ssh_set_client_kex(ssh_session session){
     struct ssh_kex_struct *client= &session->next_crypto->client_kex;
     const char *wanted;
     int i;
@@ -656,7 +656,7 @@ error:
 }
 
 /* returns 1 if at least one of the name algos is in the default algorithms table */
-int verify_existing_algo(int algo, const char *name){
+int ssh_verify_existing_algo(int algo, const char *name){
     char *ptr;
     if(algo>9 || algo <0)
         return -1;

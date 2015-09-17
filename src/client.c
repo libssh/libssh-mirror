@@ -399,7 +399,7 @@ static void ssh_client_connection_callback(ssh_session session){
 		case SSH_SESSION_STATE_KEXINIT_RECEIVED:
 			set_status(session,0.6f);
 			ssh_list_kex(&session->next_crypto->server_kex);
-			if (set_client_kex(session) < 0) {
+			if (ssh_set_client_kex(session) < 0) {
 				goto error;
 			}
 			if (ssh_kex_select_methods(session) == SSH_ERROR)
