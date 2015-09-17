@@ -458,35 +458,38 @@ static void EVP_encrypt(struct ssh_cipher_struct *cipher,
     EVP_CIPHER_CTX_init(&ctx);
 
     rc = EVP_EncryptInit_ex(&ctx, evpCipher, NULL, (unsigned char*)cipher->key, cipher->IV);
-    if (rc == 1) {
-        EVP_CIPHER_CTX_set_padding(&ctx, 0);
-
-        rc = EVP_EncryptUpdate(&ctx, (unsigned char *)out, &outlen, (unsigned char *)in, len);
-        if(rc == 1) {
-            datalen += outlen;
-
-            rc = EVP_EncryptFinal_ex(&ctx, (unsigned char *)out + outlen, &outlenfinal);
-            if(rc == 1) {
-                datalen += outlenfinal;
-
-                /* Get size of source buffer from ctx object */
-                ctxIvLen = EVP_CIPHER_CTX_iv_length(&ctx);
-
-                /*
-                 * Copy updated IV from ctx to ssh struct
-                 * There is no access to the post encrypt/decrypt updated iv
-                 * from openssl via an API so I'm just accessing it directly.
-                 */
-                memcpy(cipher->IV, ctx.iv, ctxIvLen);
-            } else {
-                printf("EVP_EncryptFinal_ex failed\n");
-            }
-        } else {
-            printf("EVP_EncryptUpdate failed\n");
-        }
-    } else {
-        printf("EVP_EncryptInit_ex failed\n");
+    if (rc != 1){
+        SSH_LOG(SSH_LOG_WARNING, "EVP_EncryptInit_ex failed");
+        goto cleanup;
     }
+    EVP_CIPHER_CTX_set_padding(&ctx, 0);
+
+    rc = EVP_EncryptUpdate(&ctx, (unsigned char *)out, &outlen, (unsigned char *)in, len);
+    if (rc != 1){
+        SSH_LOG(SSH_LOG_WARNING, "EVP_EncryptUpdate failed");
+        goto cleanup;
+    }
+    datalen += outlen;
+
+    rc = EVP_EncryptFinal_ex(&ctx, (unsigned char *)out + outlen, &outlenfinal);
+    if (rc != 1){
+        SSH_LOG(SSH_LOG_WARNING, "EVP_EncryptFinal_ex failed");
+        goto cleanup;
+    }
+    datalen += outlenfinal;
+
+    ctxIvLen = EVP_CIPHER_CTX_iv_length(&ctx);
+
+    /*
+     * Copy updated IV from ctx to ssh struct
+     * There is no access to the post encrypt/decrypt updated iv
+     * from openssl via an API so we access it directly.
+     */
+    if (ctxIvLen > 0){
+        memcpy(cipher->IV, ctx.iv, ctxIvLen);
+    }
+
+cleanup:
     /* Cleanup */
     EVP_CIPHER_CTX_cleanup(&ctx);
 }
@@ -507,36 +510,38 @@ static void EVP_decrypt(struct ssh_cipher_struct *cipher,
     EVP_CIPHER_CTX_init(&ctx);
 
     rc = EVP_DecryptInit_ex(&ctx, evpCipher, NULL, (unsigned char*)cipher->key, cipher->IV);
-    if (rc == 1) {
-        EVP_CIPHER_CTX_set_padding(&ctx, 0);
+    if (rc != 1){
+        SSH_LOG(SSH_LOG_WARNING, "EVP_DecryptInit_ex failed");
+        goto cleanup;
+    }
+    EVP_CIPHER_CTX_set_padding(&ctx, 0);
 
-        rc = EVP_DecryptUpdate(&ctx, (unsigned char *)out, &outlen, (unsigned char *)in, len);
-        if (rc == 1) {
-            datalen += outlen;
+    rc = EVP_DecryptUpdate(&ctx, (unsigned char *)out, &outlen, (unsigned char *)in, len);
+    if (rc != 1){
+        SSH_LOG(SSH_LOG_WARNING, "EVP_DecryptUpdate failed");
+        goto cleanup;
+    }
+    datalen += outlen;
 
-            rc = EVP_DecryptFinal_ex(&ctx, (unsigned char *)out + outlen, &outlenfinal);
-            if (rc == 1) {
-                datalen += outlenfinal;
+    rc = EVP_DecryptFinal_ex(&ctx, (unsigned char *)out + outlen, &outlenfinal);
+    if (rc != 1){
+        SSH_LOG(SSH_LOG_WARNING, "EVP_DecryptFinal_ex failed");
+        goto cleanup;
+    }
+    datalen += outlenfinal;
 
-                /* Get size of source buffer from ctx object */
-                ctxIvLen = EVP_CIPHER_CTX_iv_length(&ctx);
+    ctxIvLen = EVP_CIPHER_CTX_iv_length(&ctx);
 
-                /*
-                 * Copy updated IV from ctx to ssh struct
-                 * There is no access to the post encrypt/decrypt updated iv
-                 * from openssl via an API so I'm just accessing it directly.
-                 */
-                memcpy(cipher->IV, ctx.iv, ctxIvLen);
-            } else {
-                printf("EVP_DecryptFinal_ex failed\n");
-            }
-        } else {
-            printf("EVP_DecryptUpdate failed\n");
-        }
-    } else {
-        printf("EVP_DecryptInit_ex failed\n");
+    /*
+     * Copy updated IV from ctx to ssh struct
+     * There is no access to the post encrypt/decrypt updated iv
+     * from openssl via an API so we access it directly.
+     */
+    if (ctxIvLen > 0){
+        memcpy(cipher->IV, ctx.iv, ctxIvLen);
     }
 
+cleanup:
     /* Cleanup */
     EVP_CIPHER_CTX_cleanup(&ctx);
 }
