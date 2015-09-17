@@ -27,7 +27,7 @@
 #include "libssh/libgcrypt.h"
 
 #ifdef HAVE_LIBGCRYPT
-int my_gcry_dec2bn(bignum *bn, const char *data) {
+int ssh_gcry_dec2bn(bignum *bn, const char *data) {
   int count;
 
   *bn = bignum_new();
@@ -43,7 +43,7 @@ int my_gcry_dec2bn(bignum *bn, const char *data) {
   return count;
 }
 
-char *my_gcry_bn2dec(bignum bn) {
+char *ssh_gcry_bn2dec(bignum bn) {
   bignum bndup, num, ten;
   char *ret;
   int count, count2;

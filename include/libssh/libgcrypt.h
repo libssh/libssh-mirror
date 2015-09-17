@@ -52,15 +52,15 @@ typedef void *EVPCTX;
 typedef gcry_mpi_t bignum;
 
 /* missing gcrypt functions */
-int my_gcry_dec2bn(bignum *bn, const char *data);
-char *my_gcry_bn2dec(bignum bn);
+int ssh_gcry_dec2bn(bignum *bn, const char *data);
+char *ssh_gcry_bn2dec(bignum bn);
 
 #define bignum_new() gcry_mpi_new(0)
 #define bignum_free(num) gcry_mpi_release(num)
 #define bignum_set_word(bn,n) gcry_mpi_set_ui(bn,n)
 #define bignum_bin2bn(bn,datalen,data) gcry_mpi_scan(data,GCRYMPI_FMT_USG,bn,datalen,NULL)
-#define bignum_bn2dec(num) my_gcry_bn2dec(num)
-#define bignum_dec2bn(num, data) my_gcry_dec2bn(data, num)
+#define bignum_bn2dec(num) ssh_gcry_bn2dec(num)
+#define bignum_dec2bn(num, data) ssh_gcry_dec2bn(data, num)
 #define bignum_bn2hex(num,data) gcry_mpi_aprint(GCRYMPI_FMT_HEX,data,NULL,num)
 #define bignum_hex2bn(num,datalen,data) gcry_mpi_scan(num,GCRYMPI_FMT_HEX,data,datalen,NULL)
 #define bignum_rand(num,bits) gcry_mpi_randomize(num,bits,GCRY_STRONG_RANDOM),gcry_mpi_set_bit(num,bits-1),gcry_mpi_set_bit(num,0)
