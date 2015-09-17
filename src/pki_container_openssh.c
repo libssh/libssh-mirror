@@ -384,11 +384,11 @@ ssh_key ssh_pki_openssh_privkey_import(const char *text_key,
     if (rc == SSH_ERROR){
         goto error;
     }
-    comment = buffer_get_ssh_string(privkey_buffer);
+    comment = ssh_buffer_get_ssh_string(privkey_buffer);
     SAFE_FREE(comment);
     /* verify that the remaining data is correct padding */
-    for (i=1; buffer_get_rest_len(privkey_buffer) > 0; ++i){
-        buffer_get_u8(privkey_buffer, &padding);
+    for (i=1; ssh_buffer_get_rest_len(privkey_buffer) > 0; ++i){
+        ssh_buffer_get_u8(privkey_buffer, &padding);
         if (padding != i){
             ssh_key_free(key);
             key = NULL;
@@ -493,7 +493,7 @@ static int pki_private_key_encrypt(ssh_buffer privkey_buffer,
         return SSH_ERROR;
     }
     while (ssh_buffer_get_len(privkey_buffer) % cipher.blocksize != 0) {
-        rc = buffer_add_u8(privkey_buffer, padding);
+        rc = ssh_buffer_add_u8(privkey_buffer, padding);
         if (rc < 0) {
             return SSH_ERROR;
         }
@@ -704,7 +704,7 @@ ssh_string ssh_pki_openssh_privkey_export(const ssh_key privkey,
     }
 
     str_len = ssh_buffer_get_len(buffer);
-    len = buffer_get_data(buffer, ssh_string_data(str), str_len);
+    len = ssh_buffer_get_data(buffer, ssh_string_data(str), str_len);
     if (str_len != len) {
         ssh_string_free(str);
         str = NULL;

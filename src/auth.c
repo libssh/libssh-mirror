@@ -158,7 +158,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_banner){
   (void)type;
   (void)user;
 
-  banner = buffer_get_ssh_string(packet);
+  banner = ssh_buffer_get_ssh_string(packet);
   if (banner == NULL) {
     SSH_LOG(SSH_LOG_WARN,
         "Invalid SSH_USERAUTH_BANNER packet");
@@ -614,7 +614,7 @@ int ssh_userauth_publickey(ssh_session session,
         goto fail;
     }
 
-    rc = buffer_add_ssh_string(session->out_buffer, str);
+    rc = ssh_buffer_add_ssh_string(session->out_buffer, str);
     ssh_string_free(str);
     str = NULL;
     if (rc < 0) {
@@ -699,7 +699,7 @@ static int ssh_userauth_agent_publickey(ssh_session session,
         goto fail;
     }
 
-    rc = buffer_add_ssh_string(session->out_buffer, str);
+    rc = ssh_buffer_add_ssh_string(session->out_buffer, str);
     ssh_string_free(str);
     if (rc < 0) {
         goto fail;

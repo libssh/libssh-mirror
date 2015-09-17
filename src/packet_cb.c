@@ -53,12 +53,12 @@ SSH_PACKET_CALLBACK(ssh_packet_disconnect_callback){
   (void)user;
   (void)type;
 
-  rc = buffer_get_u32(packet, &code);
+  rc = ssh_buffer_get_u32(packet, &code);
   if (rc != 0) {
     code = ntohl(code);
   }
 
-  error_s = buffer_get_ssh_string(packet);
+  error_s = ssh_buffer_get_ssh_string(packet);
   if (error_s != NULL) {
     error = ssh_string_to_char(error_s);
     ssh_string_free(error_s);

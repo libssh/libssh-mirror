@@ -472,14 +472,14 @@ int ssh_client_dh_reply(ssh_session session, ssh_buffer packet){
   ssh_string pubkey = NULL;
   ssh_string signature = NULL;
   int rc;
-  pubkey = buffer_get_ssh_string(packet);
+  pubkey = ssh_buffer_get_ssh_string(packet);
   if (pubkey == NULL){
     ssh_set_error(session,SSH_FATAL, "No public key in packet");
     goto error;
   }
   dh_import_pubkey(session, pubkey);
 
-  f = buffer_get_ssh_string(packet);
+  f = ssh_buffer_get_ssh_string(packet);
   if (f == NULL) {
     ssh_set_error(session,SSH_FATAL, "No F number in packet");
     goto error;
@@ -492,7 +492,7 @@ int ssh_client_dh_reply(ssh_session session, ssh_buffer packet){
     goto error;
   }
 
-  signature = buffer_get_ssh_string(packet);
+  signature = ssh_buffer_get_ssh_string(packet);
   if (signature == NULL) {
     ssh_set_error(session, SSH_FATAL, "No signature in packet");
     goto error;
@@ -505,7 +505,7 @@ int ssh_client_dh_reply(ssh_session session, ssh_buffer packet){
   }
 
   /* Send the MSG_NEWKEYS */
-  if (buffer_add_u8(session->out_buffer, SSH2_MSG_NEWKEYS) < 0) {
+  if (ssh_buffer_add_u8(session->out_buffer, SSH2_MSG_NEWKEYS) < 0) {
     goto error;
   }
 
@@ -550,22 +550,22 @@ int make_sessionid(ssh_session session) {
      *      boolean      first_kex_packet_follows
      *      uint32       0 (reserved for future extension)
      */
-    rc = buffer_add_u8(server_hash, 0);
+    rc = ssh_buffer_add_u8(server_hash, 0);
     if (rc < 0) {
         goto error;
     }
-    rc = buffer_add_u32(server_hash, 0);
+    rc = ssh_buffer_add_u32(server_hash, 0);
     if (rc < 0) {
         goto error;
     }
 
     /* These fields are handled for the server case in ssh_packet_kexinit. */
     if (session->client) {
-        rc = buffer_add_u8(client_hash, 0);
+        rc = ssh_buffer_add_u8(client_hash, 0);
         if (rc < 0) {
             goto error;
         }
-        rc = buffer_add_u32(client_hash, 0);
+        rc = ssh_buffer_add_u32(client_hash, 0);
         if (rc < 0) {
             goto error;
         }
@@ -573,12 +573,12 @@ int make_sessionid(ssh_session session) {
 
     rc = ssh_buffer_pack(buf,
                          "dPdPS",
-                         buffer_get_rest_len(client_hash),
-                         buffer_get_rest_len(client_hash),
-                         buffer_get_rest(client_hash),
-                         buffer_get_rest_len(server_hash),
-                         buffer_get_rest_len(server_hash),
-                         buffer_get_rest(server_hash),
+                         ssh_buffer_get_rest_len(client_hash),
+                         ssh_buffer_get_rest_len(client_hash),
+                         ssh_buffer_get_rest(client_hash),
+                         ssh_buffer_get_rest_len(server_hash),
+                         ssh_buffer_get_rest_len(server_hash),
+                         ssh_buffer_get_rest(server_hash),
                          session->next_crypto->server_pubkey);
 
     if(rc != SSH_OK){
@@ -643,7 +643,7 @@ int make_sessionid(ssh_session session) {
             ssh_set_error_oom(session);
             goto error;
         }
-        sha1(buffer_get_rest(buf), buffer_get_rest_len(buf),
+        sha1(ssh_buffer_get_rest(buf), ssh_buffer_get_rest_len(buf),
                                    session->next_crypto->secret_hash);
         break;
     case SSH_KEX_ECDH_SHA2_NISTP256:
@@ -655,7 +655,7 @@ int make_sessionid(ssh_session session) {
             ssh_set_error_oom(session);
             goto error;
         }
-        sha256(buffer_get_rest(buf), buffer_get_rest_len(buf),
+        sha256(ssh_buffer_get_rest(buf), ssh_buffer_get_rest_len(buf),
                                      session->next_crypto->secret_hash);
         break;
     }
@@ -698,7 +698,7 @@ int hashbufout_add_cookie(ssh_session session) {
     return -1;
   }
 
-  if (buffer_add_u8(session->out_hashbuf, 20) < 0) {
+  if (ssh_buffer_add_u8(session->out_hashbuf, 20) < 0) {
     ssh_buffer_reinit(session->out_hashbuf);
     return -1;
   }
@@ -726,7 +726,7 @@ int hashbufin_add_cookie(ssh_session session, unsigned char *cookie) {
     return -1;
   }
 
-  if (buffer_add_u8(session->in_hashbuf, 20) < 0) {
+  if (ssh_buffer_add_u8(session->in_hashbuf, 20) < 0) {
     ssh_buffer_reinit(session->in_hashbuf);
     return -1;
   }

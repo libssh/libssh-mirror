@@ -346,7 +346,7 @@ SSH_PACKET_CALLBACK(ssh_packet_kexinit){
     }
 
     if (server_kex) {
-        rc = buffer_get_data(packet,session->next_crypto->client_kex.cookie, 16);
+        rc = ssh_buffer_get_data(packet,session->next_crypto->client_kex.cookie, 16);
         if (rc != 16) {
             ssh_set_error(session, SSH_FATAL, "ssh_packet_kexinit: no cookie in packet");
             goto error;
@@ -358,7 +358,7 @@ SSH_PACKET_CALLBACK(ssh_packet_kexinit){
             goto error;
         }
     } else {
-        rc = buffer_get_data(packet,session->next_crypto->server_kex.cookie, 16);
+        rc = ssh_buffer_get_data(packet,session->next_crypto->server_kex.cookie, 16);
         if (rc != 16) {
             ssh_set_error(session, SSH_FATAL, "ssh_packet_kexinit: no cookie in packet");
             goto error;
@@ -372,12 +372,12 @@ SSH_PACKET_CALLBACK(ssh_packet_kexinit){
     }
 
     for (i = 0; i < KEX_METHODS_SIZE; i++) {
-        str = buffer_get_ssh_string(packet);
+        str = ssh_buffer_get_ssh_string(packet);
         if (str == NULL) {
           goto error;
         }
 
-        rc = buffer_add_ssh_string(session->in_hashbuf, str);
+        rc = ssh_buffer_add_ssh_string(session->in_hashbuf, str);
         if (rc < 0) {
             ssh_set_error(session, SSH_FATAL, "Error adding string in hash buffer");
             goto error;
@@ -414,17 +414,17 @@ SSH_PACKET_CALLBACK(ssh_packet_kexinit){
      * 'make_sessionid').
      */
     if (server_kex) {
-        rc = buffer_get_u8(packet, &first_kex_packet_follows);
+        rc = ssh_buffer_get_u8(packet, &first_kex_packet_follows);
         if (rc != 1) {
             goto error;
         }
 
-        rc = buffer_add_u8(session->in_hashbuf, first_kex_packet_follows);
+        rc = ssh_buffer_add_u8(session->in_hashbuf, first_kex_packet_follows);
         if (rc < 0) {
             goto error;
         }
 
-        rc = buffer_add_u32(session->in_hashbuf, kexinit_reserved);
+        rc = ssh_buffer_add_u32(session->in_hashbuf, kexinit_reserved);
         if (rc < 0) {
             goto error;
         }
@@ -624,10 +624,10 @@ int ssh_send_kex(ssh_session session, int server_kex) {
       goto error;
     }
 
-    if (buffer_add_ssh_string(session->out_hashbuf, str) < 0) {
+    if (ssh_buffer_add_ssh_string(session->out_hashbuf, str) < 0) {
       goto error;
     }
-    if (buffer_add_ssh_string(session->out_buffer, str) < 0) {
+    if (ssh_buffer_add_ssh_string(session->out_buffer, str) < 0) {
       goto error;
     }
     ssh_string_free(str);

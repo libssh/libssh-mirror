@@ -155,7 +155,7 @@ static int server_set_kex(ssh_session session) {
  **/
 static int ssh_server_kexdh_init(ssh_session session, ssh_buffer packet){
     ssh_string e;
-    e = buffer_get_ssh_string(packet);
+    e = ssh_buffer_get_ssh_string(packet);
     if (e == NULL) {
       ssh_set_error(session, SSH_FATAL, "No e number in client request");
       return -1;
@@ -325,7 +325,7 @@ static int dh_handshake_server(ssh_session session) {
     return -1;
   }
 
-  if (buffer_add_u8(session->out_buffer, SSH2_MSG_NEWKEYS) < 0) {
+  if (ssh_buffer_add_u8(session->out_buffer, SSH2_MSG_NEWKEYS) < 0) {
     ssh_buffer_reinit(session->out_buffer);
     return -1;
   }
@@ -746,7 +746,7 @@ int ssh_message_global_request_reply_success(ssh_message msg, uint16_t bound_por
     SSH_LOG(SSH_LOG_FUNCTIONS, "Accepting a global request");
 
     if (msg->global_request.want_reply) {
-        if (buffer_add_u8(msg->session->out_buffer
+        if (ssh_buffer_add_u8(msg->session->out_buffer
                     , SSH2_MSG_REQUEST_SUCCESS) < 0) {
             goto error;
         }
@@ -778,7 +778,7 @@ static int ssh_message_global_request_reply_default(ssh_message msg) {
     SSH_LOG(SSH_LOG_FUNCTIONS, "Refusing a global request");
 
     if (msg->global_request.want_reply) {
-        if (buffer_add_u8(msg->session->out_buffer
+        if (ssh_buffer_add_u8(msg->session->out_buffer
                     , SSH2_MSG_REQUEST_FAILURE) < 0) {
             goto error;
         }
@@ -1002,7 +1002,7 @@ int ssh_auth_reply_success(ssh_session session, int partial) {
   session->session_state = SSH_SESSION_STATE_AUTHENTICATED;
   session->flags |= SSH_SESSION_FLAG_AUTHENTICATED;
 
-  if (buffer_add_u8(session->out_buffer,SSH2_MSG_USERAUTH_SUCCESS) < 0) {
+  if (ssh_buffer_add_u8(session->out_buffer,SSH2_MSG_USERAUTH_SUCCESS) < 0) {
     return SSH_ERROR;
   }
 

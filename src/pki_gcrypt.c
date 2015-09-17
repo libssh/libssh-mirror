@@ -92,7 +92,7 @@ static uint32_t asn1_get_len(ssh_buffer buffer) {
   uint32_t len;
   unsigned char tmp[4];
 
-  if (buffer_get_data(buffer,tmp,1) == 0) {
+  if (ssh_buffer_get_data(buffer,tmp,1) == 0) {
     return 0;
   }
 
@@ -101,7 +101,7 @@ static uint32_t asn1_get_len(ssh_buffer buffer) {
     if (len > 4) {
       return 0; /* Length doesn't fit in u32. Can this really happen? */
     }
-    if (buffer_get_data(buffer,tmp,len) == 0) {
+    if (ssh_buffer_get_data(buffer,tmp,len) == 0) {
       return 0;
     }
     len = char_to_u32(tmp, len);
@@ -117,7 +117,7 @@ static ssh_string asn1_get_int(ssh_buffer buffer) {
   unsigned char type;
   uint32_t size;
 
-  if (buffer_get_data(buffer, &type, 1) == 0 || type != ASN1_INTEGER) {
+  if (ssh_buffer_get_data(buffer, &type, 1) == 0 || type != ASN1_INTEGER) {
     return NULL;
   }
   size = asn1_get_len(buffer);
@@ -130,7 +130,7 @@ static ssh_string asn1_get_int(ssh_buffer buffer) {
     return NULL;
   }
 
-  if (buffer_get_data(buffer, ssh_string_data(str), size) == 0) {
+  if (ssh_buffer_get_data(buffer, ssh_string_data(str), size) == 0) {
     ssh_string_free(str);
     return NULL;
   }
@@ -145,7 +145,7 @@ static int asn1_check_sequence(ssh_buffer buffer) {
   uint32_t size;
   uint32_t padding;
 
-  if (buffer_get_data(buffer, &tmp, 1) == 0 || tmp != ASN1_SEQUENCE) {
+  if (ssh_buffer_get_data(buffer, &tmp, 1) == 0 || tmp != ASN1_SEQUENCE) {
     return 0;
   }
 
@@ -1168,7 +1168,7 @@ ssh_string pki_publickey_to_blob(const ssh_key key)
         return NULL;
     }
 
-    rc = buffer_add_ssh_string(buffer, type_s);
+    rc = ssh_buffer_add_ssh_string(buffer, type_s);
     ssh_string_free(type_s);
     if (rc < 0) {
         ssh_buffer_free(buffer);
@@ -1224,16 +1224,16 @@ ssh_string pki_publickey_to_blob(const ssh_key key)
             }
             ssh_string_fill(n, (char *) tmp, size);
 
-            if (buffer_add_ssh_string(buffer, p) < 0) {
+            if (ssh_buffer_add_ssh_string(buffer, p) < 0) {
                 goto fail;
             }
-            if (buffer_add_ssh_string(buffer, q) < 0) {
+            if (ssh_buffer_add_ssh_string(buffer, q) < 0) {
                 goto fail;
             }
-            if (buffer_add_ssh_string(buffer, g) < 0) {
+            if (ssh_buffer_add_ssh_string(buffer, g) < 0) {
                 goto fail;
             }
-            if (buffer_add_ssh_string(buffer, n) < 0) {
+            if (ssh_buffer_add_ssh_string(buffer, n) < 0) {
                 goto fail;
             }
 
@@ -1273,10 +1273,10 @@ ssh_string pki_publickey_to_blob(const ssh_key key)
             ssh_string_fill(n, (char *) tmp, size);
             gcry_sexp_release(sexp);
 
-            if (buffer_add_ssh_string(buffer, e) < 0) {
+            if (ssh_buffer_add_ssh_string(buffer, e) < 0) {
                 goto fail;
             }
-            if (buffer_add_ssh_string(buffer, n) < 0) {
+            if (ssh_buffer_add_ssh_string(buffer, n) < 0) {
                 goto fail;
             }
 
@@ -1298,12 +1298,12 @@ ssh_string pki_publickey_to_blob(const ssh_key key)
             goto fail;
     }
 
-    str = ssh_string_new(buffer_get_rest_len(buffer));
+    str = ssh_string_new(ssh_buffer_get_rest_len(buffer));
     if (str == NULL) {
         goto fail;
     }
 
-    rc = ssh_string_fill(str, buffer_get_rest(buffer), buffer_get_rest_len(buffer));
+    rc = ssh_string_fill(str, ssh_buffer_get_rest(buffer), ssh_buffer_get_rest_len(buffer));
     if (rc < 0) {
         goto fail;
     }

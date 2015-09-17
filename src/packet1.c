@@ -185,7 +185,7 @@ int ssh_packet_socket_callback1(const void *data, size_t receivedlen, void *user
           ssh_buffer_get_len(session->in_buffer));
 #endif
       SSH_LOG(SSH_LOG_PACKET, "%d bytes padding", padding);
-      if(((len + padding) != buffer_get_rest_len(session->in_buffer)) ||
+      if(((len + padding) != ssh_buffer_get_rest_len(session->in_buffer)) ||
           ((len + padding) < sizeof(uint32_t))) {
         SSH_LOG(SSH_LOG_RARE, "no crc32 in packet");
         ssh_set_error(session, SSH_FATAL, "no crc32 in packet");
@@ -193,26 +193,26 @@ int ssh_packet_socket_callback1(const void *data, size_t receivedlen, void *user
       }
 
       memcpy(&crc,
-          (unsigned char *)buffer_get_rest(session->in_buffer) + (len+padding) - sizeof(uint32_t),
+          (unsigned char *)ssh_buffer_get_rest(session->in_buffer) + (len+padding) - sizeof(uint32_t),
           sizeof(uint32_t));
-      buffer_pass_bytes_end(session->in_buffer, sizeof(uint32_t));
+      ssh_buffer_pass_bytes_end(session->in_buffer, sizeof(uint32_t));
       crc = ntohl(crc);
-      if (ssh_crc32(buffer_get_rest(session->in_buffer),
+      if (ssh_crc32(ssh_buffer_get_rest(session->in_buffer),
             (len + padding) - sizeof(uint32_t)) != crc) {
 #ifdef DEBUG_CRYPTO
-        ssh_print_hexa("crc32 on",buffer_get_rest(session->in_buffer),
+        ssh_print_hexa("crc32 on",ssh_buffer_get_rest(session->in_buffer),
             len + padding - sizeof(uint32_t));
 #endif
         SSH_LOG(SSH_LOG_RARE, "Invalid crc32");
         ssh_set_error(session, SSH_FATAL,
             "Invalid crc32: expected %.8x, got %.8x",
             crc,
-            ssh_crc32(buffer_get_rest(session->in_buffer),
+            ssh_crc32(ssh_buffer_get_rest(session->in_buffer),
               len + padding - sizeof(uint32_t)));
         goto error;
       }
       /* pass the padding */
-      buffer_pass_bytes(session->in_buffer, padding);
+      ssh_buffer_pass_bytes(session->in_buffer, padding);
       SSH_LOG(SSH_LOG_PACKET, "The packet is valid");
 
 /* TODO FIXME
@@ -270,7 +270,7 @@ int packet_send1(ssh_session session) {
     if (compress_buffer(session, session->out_buffer) < 0) {
       goto error;
     }
-    currentlen = buffer_get_len(session->out_buffer);
+    currentlen = ssh_buffer_get_len(session->out_buffer);
   }
 #endif
 */
@@ -286,17 +286,17 @@ int packet_send1(ssh_session session) {
       "%d bytes after comp + %d padding bytes = %d bytes packet",
       currentlen, padding, ntohl(finallen));
 
-  if (buffer_prepend_data(session->out_buffer, &padstring, padding) < 0) {
+  if (ssh_buffer_prepend_data(session->out_buffer, &padstring, padding) < 0) {
     goto error;
   }
-  if (buffer_prepend_data(session->out_buffer, &finallen, sizeof(uint32_t)) < 0) {
+  if (ssh_buffer_prepend_data(session->out_buffer, &finallen, sizeof(uint32_t)) < 0) {
     goto error;
   }
 
   crc = ssh_crc32((char *)ssh_buffer_get_begin(session->out_buffer) + sizeof(uint32_t),
       ssh_buffer_get_len(session->out_buffer) - sizeof(uint32_t));
 
-  if (buffer_add_u32(session->out_buffer, ntohl(crc)) < 0) {
+  if (ssh_buffer_add_u32(session->out_buffer, ntohl(crc)) < 0) {
     goto error;
   }
 

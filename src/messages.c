@@ -81,9 +81,9 @@ static ssh_message ssh_message_new(ssh_session session){
 static int ssh_message_reply_default(ssh_message msg) {
   SSH_LOG(SSH_LOG_FUNCTIONS, "Reporting unknown packet");
 
-  if (buffer_add_u8(msg->session->out_buffer, SSH2_MSG_UNIMPLEMENTED) < 0)
+  if (ssh_buffer_add_u8(msg->session->out_buffer, SSH2_MSG_UNIMPLEMENTED) < 0)
     goto error;
-  if (buffer_add_u32(msg->session->out_buffer,
+  if (ssh_buffer_add_u32(msg->session->out_buffer,
       htonl(msg->session->recv_seq-1)) < 0)
     goto error;
   return packet_send(msg->session);
@@ -579,7 +579,7 @@ SSH_PACKET_CALLBACK(ssh_packet_service_request){
 
   (void)type;
   (void)user;
-  service = buffer_get_ssh_string(packet);
+  service = ssh_buffer_get_ssh_string(packet);
   if (service == NULL) {
     ssh_set_error(session, SSH_FATAL, "Invalid SSH_MSG_SERVICE_REQUEST packet");
     goto error;
@@ -712,7 +712,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
     ssh_string submethods = NULL;
 
     msg->auth_request.method = SSH_AUTH_METHOD_INTERACTIVE;
-    lang = buffer_get_ssh_string(packet);
+    lang = ssh_buffer_get_ssh_string(packet);
     if (lang == NULL) {
       goto error;
     }
@@ -722,7 +722,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
      */
     ssh_string_free(lang);
 
-    submethods = buffer_get_ssh_string(packet);
+    submethods = ssh_buffer_get_ssh_string(packet);
     if (submethods == NULL) {
       goto error;
     }
@@ -768,7 +768,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
         ssh_string sig_blob = NULL;
         ssh_buffer digest = NULL;
 
-        sig_blob = buffer_get_ssh_string(packet);
+        sig_blob = ssh_buffer_get_ssh_string(packet);
         if(sig_blob == NULL) {
             SSH_LOG(SSH_LOG_PACKET, "Invalid signature packet from peer");
             msg->auth_request.signature_state = SSH_PUBLICKEY_STATE_ERROR;
@@ -786,8 +786,8 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
         rc = ssh_pki_signature_verify_blob(session,
                                            sig_blob,
                                            msg->auth_request.pubkey,
-                                           buffer_get_rest(digest),
-                                           buffer_get_rest_len(digest));
+                                           ssh_buffer_get_rest(digest),
+                                           ssh_buffer_get_rest_len(digest));
         ssh_string_free(sig_blob);
         ssh_buffer_free(digest);
         if (rc < 0) {
@@ -811,7 +811,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
      ssh_string oid;
      char *hexa;
      int i;
-     buffer_get_u32(packet, &n_oid);
+     ssh_buffer_get_u32(packet, &n_oid);
      n_oid=ntohl(n_oid);
      if(n_oid > 100){
     	 ssh_set_error(session, SSH_FATAL, "USERAUTH_REQUEST: gssapi-with-mic OID count too big (%d)",n_oid);
@@ -824,7 +824,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
     	 goto error;
      }
      for (i=0;i<(int) n_oid;++i){
-    	 oid=buffer_get_ssh_string(packet);
+    	 oid=ssh_buffer_get_ssh_string(packet);
     	 if(oid == NULL){
     		 for(i=i-1;i>=0;--i){
     			 SAFE_FREE(oids[i]);
@@ -969,7 +969,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_response){
   memset(session->kbdint->answers, 0, nanswers * sizeof(char *));
 
   for (i = 0; i < nanswers; i++) {
-    tmp = buffer_get_ssh_string(packet);
+    tmp = ssh_buffer_get_ssh_string(packet);
     if (tmp == NULL) {
       ssh_set_error(session, SSH_FATAL, "Short INFO_RESPONSE packet");
       session->kbdint->nanswers = i;

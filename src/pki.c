@@ -671,18 +671,18 @@ static int pki_import_pubkey_buffer(ssh_buffer buffer,
                 ssh_string g;
                 ssh_string pubkey;
 
-                p = buffer_get_ssh_string(buffer);
+                p = ssh_buffer_get_ssh_string(buffer);
                 if (p == NULL) {
                     goto fail;
                 }
-                q = buffer_get_ssh_string(buffer);
+                q = ssh_buffer_get_ssh_string(buffer);
                 if (q == NULL) {
                     ssh_string_burn(p);
                     ssh_string_free(p);
 
                     goto fail;
                 }
-                g = buffer_get_ssh_string(buffer);
+                g = ssh_buffer_get_ssh_string(buffer);
                 if (g == NULL) {
                     ssh_string_burn(p);
                     ssh_string_free(p);
@@ -691,7 +691,7 @@ static int pki_import_pubkey_buffer(ssh_buffer buffer,
 
                     goto fail;
                 }
-                pubkey = buffer_get_ssh_string(buffer);
+                pubkey = ssh_buffer_get_ssh_string(buffer);
                 if (pubkey == NULL) {
                     ssh_string_burn(p);
                     ssh_string_free(p);
@@ -728,11 +728,11 @@ static int pki_import_pubkey_buffer(ssh_buffer buffer,
                 ssh_string e;
                 ssh_string n;
 
-                e = buffer_get_ssh_string(buffer);
+                e = ssh_buffer_get_ssh_string(buffer);
                 if (e == NULL) {
                     goto fail;
                 }
-                n = buffer_get_ssh_string(buffer);
+                n = ssh_buffer_get_ssh_string(buffer);
                 if (n == NULL) {
                     ssh_string_burn(e);
                     ssh_string_free(e);
@@ -761,7 +761,7 @@ static int pki_import_pubkey_buffer(ssh_buffer buffer,
                 ssh_string i;
                 int nid;
 
-                i = buffer_get_ssh_string(buffer);
+                i = ssh_buffer_get_ssh_string(buffer);
                 if (i == NULL) {
                     goto fail;
                 }
@@ -772,7 +772,7 @@ static int pki_import_pubkey_buffer(ssh_buffer buffer,
                 }
 
 
-                e = buffer_get_ssh_string(buffer);
+                e = ssh_buffer_get_ssh_string(buffer);
                 if (e == NULL) {
                     goto fail;
                 }
@@ -791,7 +791,7 @@ static int pki_import_pubkey_buffer(ssh_buffer buffer,
 #endif
         case SSH_KEYTYPE_ED25519:
         {
-            ssh_string pubkey = buffer_get_ssh_string(buffer);
+            ssh_string pubkey = ssh_buffer_get_ssh_string(buffer);
             if (ssh_string_len(pubkey) != ED25519_PK_LEN) {
                 SSH_LOG(SSH_LOG_WARN, "Invalid public key length");
                 ssh_string_burn(pubkey);
@@ -858,13 +858,13 @@ static int pki_import_cert_buffer(ssh_buffer buffer,
     if (type_s == NULL) {
         goto fail;
     }
-    rc = buffer_add_ssh_string(cert, type_s);
+    rc = ssh_buffer_add_ssh_string(cert, type_s);
     ssh_string_free(type_s);
     if (rc != 0) {
         goto fail;
     }
 
-    rc = buffer_add_buffer(cert, buffer);
+    rc = ssh_buffer_add_buffer(cert, buffer);
     if (rc != 0) {
         goto fail;
     }
@@ -909,7 +909,7 @@ int ssh_pki_import_pubkey_base64(const char *b64_key,
         return SSH_ERROR;
     }
 
-    type_s = buffer_get_ssh_string(buffer);
+    type_s = ssh_buffer_get_ssh_string(buffer);
     if (type_s == NULL) {
         ssh_buffer_free(buffer);
         return SSH_ERROR;
@@ -966,7 +966,7 @@ int ssh_pki_import_pubkey_blob(const ssh_string key_blob,
         goto fail;
     }
 
-    type_s = buffer_get_ssh_string(buffer);
+    type_s = ssh_buffer_get_ssh_string(buffer);
     if (type_s == NULL) {
         SSH_LOG(SSH_LOG_WARN, "Out of memory!");
         goto fail;
@@ -1406,7 +1406,7 @@ int ssh_pki_copy_cert_to_privkey(const ssh_key certkey, ssh_key privkey) {
       return SSH_ERROR;
   }
 
-  rc = buffer_add_buffer(cert_buffer, certkey->cert);
+  rc = ssh_buffer_add_buffer(cert_buffer, certkey->cert);
   if (rc != 0) {
       ssh_buffer_free(cert_buffer);
       return SSH_ERROR;
@@ -1447,7 +1447,7 @@ int ssh_pki_export_signature_blob(const ssh_signature sig,
         return SSH_ERROR;
     }
 
-    rc = buffer_add_ssh_string(buf, str);
+    rc = ssh_buffer_add_ssh_string(buf, str);
     ssh_string_free(str);
     if (rc < 0) {
         ssh_buffer_free(buf);
@@ -1460,20 +1460,20 @@ int ssh_pki_export_signature_blob(const ssh_signature sig,
         return SSH_ERROR;
     }
 
-    rc = buffer_add_ssh_string(buf, str);
+    rc = ssh_buffer_add_ssh_string(buf, str);
     ssh_string_free(str);
     if (rc < 0) {
         ssh_buffer_free(buf);
         return SSH_ERROR;
     }
 
-    str = ssh_string_new(buffer_get_rest_len(buf));
+    str = ssh_string_new(ssh_buffer_get_rest_len(buf));
     if (str == NULL) {
         ssh_buffer_free(buf);
         return SSH_ERROR;
     }
 
-    ssh_string_fill(str, buffer_get_rest(buf), buffer_get_rest_len(buf));
+    ssh_string_fill(str, ssh_buffer_get_rest(buf), ssh_buffer_get_rest_len(buf));
     ssh_buffer_free(buf);
 
     *sig_blob = str;
@@ -1508,7 +1508,7 @@ int ssh_pki_import_signature_blob(const ssh_string sig_blob,
         return SSH_ERROR;
     }
 
-    str = buffer_get_ssh_string(buf);
+    str = ssh_buffer_get_ssh_string(buf);
     if (str == NULL) {
         ssh_buffer_free(buf);
         return SSH_ERROR;
@@ -1517,7 +1517,7 @@ int ssh_pki_import_signature_blob(const ssh_string sig_blob,
     type = ssh_key_type_from_name(ssh_string_get_char(str));
     ssh_string_free(str);
 
-    str = buffer_get_ssh_string(buf);
+    str = ssh_buffer_get_ssh_string(buf);
     ssh_buffer_free(buf);
     if (str == NULL) {
         return SSH_ERROR;
@@ -1629,7 +1629,7 @@ ssh_string ssh_pki_do_sign(ssh_session session,
         }
 
         evp_update(ctx, session_id, ssh_string_len(session_id) + 4);
-        evp_update(ctx, buffer_get_rest(sigbuf), buffer_get_rest_len(sigbuf));
+        evp_update(ctx, ssh_buffer_get_rest(sigbuf), ssh_buffer_get_rest_len(sigbuf));
         evp_final(ctx, ehash, &elen);
 
 #ifdef DEBUG_CRYPTO
@@ -1651,7 +1651,7 @@ ssh_string ssh_pki_do_sign(ssh_session session,
         rc = ssh_buffer_pack(buf,
                              "SP",
                              session_id,
-                             buffer_get_rest_len(sigbuf), buffer_get_rest(sigbuf));
+                             ssh_buffer_get_rest_len(sigbuf), ssh_buffer_get_rest(sigbuf));
         if (rc != SSH_OK) {
             ssh_string_free(session_id);
             ssh_buffer_free(buf);
@@ -1673,7 +1673,7 @@ ssh_string ssh_pki_do_sign(ssh_session session,
         }
 
         sha1_update(ctx, session_id, ssh_string_len(session_id) + 4);
-        sha1_update(ctx, buffer_get_rest(sigbuf), buffer_get_rest_len(sigbuf));
+        sha1_update(ctx, ssh_buffer_get_rest(sigbuf), ssh_buffer_get_rest_len(sigbuf));
         sha1_final(hash, ctx);
 
 #ifdef DEBUG_CRYPTO
@@ -1725,7 +1725,7 @@ ssh_string ssh_pki_do_sign_agent(ssh_session session,
         return NULL;
     }
 
-    rc = buffer_add_ssh_string(sig_buf, session_id);
+    rc = ssh_buffer_add_ssh_string(sig_buf, session_id);
     if (rc < 0) {
         ssh_string_free(session_id);
         ssh_buffer_free(sig_buf);
@@ -1734,7 +1734,7 @@ ssh_string ssh_pki_do_sign_agent(ssh_session session,
     ssh_string_free(session_id);
 
     /* append out buffer */
-    if (buffer_add_buffer(sig_buf, buf) < 0) {
+    if (ssh_buffer_add_buffer(sig_buf, buf) < 0) {
         ssh_buffer_free(sig_buf);
         return NULL;
     }

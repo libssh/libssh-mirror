@@ -103,11 +103,11 @@ static int send_username(ssh_session session, const char *username) {
     return SSH_AUTH_ERROR;
   }
 
-  if (buffer_add_u8(session->out_buffer, SSH_CMSG_USER) < 0) {
+  if (ssh_buffer_add_u8(session->out_buffer, SSH_CMSG_USER) < 0) {
     ssh_string_free(user);
     return SSH_AUTH_ERROR;
   }
-  if (buffer_add_ssh_string(session->out_buffer, user) < 0) {
+  if (ssh_buffer_add_ssh_string(session->out_buffer, user) < 0) {
     ssh_string_free(user);
     return SSH_AUTH_ERROR;
   }
@@ -197,13 +197,13 @@ int ssh_userauth1_password(ssh_session session, const char *username,
     ssh_string_fill(pwd, buf, sizeof(buf));
   }
 
-  if (buffer_add_u8(session->out_buffer, SSH_CMSG_AUTH_PASSWORD) < 0) {
+  if (ssh_buffer_add_u8(session->out_buffer, SSH_CMSG_AUTH_PASSWORD) < 0) {
     ssh_string_burn(pwd);
     ssh_string_free(pwd);
 
     return SSH_AUTH_ERROR;
   }
-  if (buffer_add_ssh_string(session->out_buffer, pwd) < 0) {
+  if (ssh_buffer_add_ssh_string(session->out_buffer, pwd) < 0) {
     ssh_string_burn(pwd);
     ssh_string_free(pwd);
 
