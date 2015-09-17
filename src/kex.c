@@ -352,7 +352,7 @@ SSH_PACKET_CALLBACK(ssh_packet_kexinit){
             goto error;
         }
 
-        rc = hashbufin_add_cookie(session, session->next_crypto->client_kex.cookie);
+        rc = ssh_hashbufin_add_cookie(session, session->next_crypto->client_kex.cookie);
         if (rc < 0) {
             ssh_set_error(session, SSH_FATAL, "ssh_packet_kexinit: adding cookie failed");
             goto error;
@@ -364,7 +364,7 @@ SSH_PACKET_CALLBACK(ssh_packet_kexinit){
             goto error;
         }
 
-        rc = hashbufin_add_cookie(session, session->next_crypto->server_kex.cookie);
+        rc = ssh_hashbufin_add_cookie(session, session->next_crypto->server_kex.cookie);
         if (rc < 0) {
             ssh_set_error(session, SSH_FATAL, "ssh_packet_kexinit: adding cookie failed");
             goto error;
@@ -612,7 +612,7 @@ int ssh_send_kex(ssh_session session, int server_kex) {
                        kex->cookie); /* cookie */
   if (rc != SSH_OK)
     goto error;
-  if (hashbufout_add_cookie(session) < 0) {
+  if (ssh_hashbufout_add_cookie(session) < 0) {
     goto error;
   }
 

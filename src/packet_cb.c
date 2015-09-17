@@ -154,20 +154,20 @@ SSH_PACKET_CALLBACK(ssh_packet_newkeys){
   } else {
     ssh_key key;
     /* client */
-    rc = make_sessionid(session);
+    rc = ssh_make_sessionid(session);
     if (rc != SSH_OK) {
       goto error;
     }
 
     /*
      * Set the cryptographic functions for the next crypto
-     * (it is needed for generate_session_keys for key lengths)
+     * (it is needed for ssh_generate_session_keys for key lengths)
      */
     if (crypt_set_algorithms(session, SSH_3DES) /* knows nothing about DES*/ ) {
       goto error;
     }
 
-    if (generate_session_keys(session) < 0) {
+    if (ssh_generate_session_keys(session) < 0) {
       goto error;
     }
 

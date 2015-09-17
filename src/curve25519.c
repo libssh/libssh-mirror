@@ -215,7 +215,7 @@ int ssh_server_curve25519_init(ssh_session session, ssh_buffer packet){
         goto error;
     }
 
-    rc = make_sessionid(session);
+    rc = ssh_make_sessionid(session);
     if (rc != SSH_OK) {
         ssh_set_error(session, SSH_FATAL, "Could not create a session id");
         goto error;

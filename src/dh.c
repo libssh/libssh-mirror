@@ -226,7 +226,7 @@ void ssh_crypto_finalize(void) {
   }
 }
 
-int dh_generate_x(ssh_session session) {
+int ssh_dh_generate_x(ssh_session session) {
   session->next_crypto->x = bignum_new();
   if (session->next_crypto->x == NULL) {
     return -1;
@@ -247,7 +247,7 @@ int dh_generate_x(ssh_session session) {
 }
 
 /* used by server */
-int dh_generate_y(ssh_session session) {
+int ssh_dh_generate_y(ssh_session session) {
     session->next_crypto->y = bignum_new();
   if (session->next_crypto->y == NULL) {
     return -1;
@@ -268,7 +268,7 @@ int dh_generate_y(ssh_session session) {
 }
 
 /* used by server */
-int dh_generate_e(ssh_session session) {
+int ssh_dh_generate_e(ssh_session session) {
 #ifdef HAVE_LIBCRYPTO
   bignum_CTX ctx = bignum_ctx_new();
   if (ctx == NULL) {
@@ -303,7 +303,7 @@ int dh_generate_e(ssh_session session) {
   return 0;
 }
 
-int dh_generate_f(ssh_session session) {
+int ssh_dh_generate_f(ssh_session session) {
 #ifdef HAVE_LIBCRYPTO
   bignum_CTX ctx = bignum_ctx_new();
   if (ctx == NULL) {
@@ -338,20 +338,20 @@ int dh_generate_f(ssh_session session) {
   return 0;
 }
 
-ssh_string dh_get_e(ssh_session session) {
+ssh_string ssh_dh_get_e(ssh_session session) {
   return ssh_make_bignum_string(session->next_crypto->e);
 }
 
 /* used by server */
-ssh_string dh_get_f(ssh_session session) {
+ssh_string ssh_dh_get_f(ssh_session session) {
   return ssh_make_bignum_string(session->next_crypto->f);
 }
 
-void dh_import_pubkey(ssh_session session, ssh_string pubkey_string) {
+void ssh_dh_import_pubkey(ssh_session session, ssh_string pubkey_string) {
   session->next_crypto->server_pubkey = pubkey_string;
 }
 
-int dh_import_f(ssh_session session, ssh_string f_string) {
+int ssh_dh_import_f(ssh_session session, ssh_string f_string) {
   session->next_crypto->f = ssh_make_string_bn(f_string);
   if (session->next_crypto->f == NULL) {
     return -1;
@@ -365,7 +365,7 @@ int dh_import_f(ssh_session session, ssh_string f_string) {
 }
 
 /* used by the server implementation */
-int dh_import_e(ssh_session session, ssh_string e_string) {
+int ssh_dh_import_e(ssh_session session, ssh_string e_string) {
   session->next_crypto->e = ssh_make_string_bn(e_string);
   if (session->next_crypto->e == NULL) {
     return -1;
@@ -378,7 +378,7 @@ int dh_import_e(ssh_session session, ssh_string e_string) {
   return 0;
 }
 
-int dh_build_k(ssh_session session) {
+int ssh_dh_build_k(ssh_session session) {
 #ifdef HAVE_LIBCRYPTO
   bignum_CTX ctx = bignum_ctx_new();
   if (ctx == NULL) {
@@ -435,14 +435,14 @@ int ssh_client_dh_init(ssh_session session){
   ssh_string e = NULL;
   int rc;
 
-  if (dh_generate_x(session) < 0) {
+  if (ssh_dh_generate_x(session) < 0) {
     goto error;
   }
-  if (dh_generate_e(session) < 0) {
+  if (ssh_dh_generate_e(session) < 0) {
     goto error;
   }
 
-  e = dh_get_e(session);
+  e = ssh_dh_get_e(session);
   if (e == NULL) {
     goto error;
   }
@@ -477,14 +477,14 @@ int ssh_client_dh_reply(ssh_session session, ssh_buffer packet){
     ssh_set_error(session,SSH_FATAL, "No public key in packet");
     goto error;
   }
-  dh_import_pubkey(session, pubkey);
+  ssh_dh_import_pubkey(session, pubkey);
 
   f = ssh_buffer_get_ssh_string(packet);
   if (f == NULL) {
     ssh_set_error(session,SSH_FATAL, "No F number in packet");
     goto error;
   }
-  rc = dh_import_f(session, f);
+  rc = ssh_dh_import_f(session, f);
   ssh_string_burn(f);
   ssh_string_free(f);
   if (rc < 0) {
@@ -499,7 +499,7 @@ int ssh_client_dh_reply(ssh_session session, ssh_buffer packet){
   }
   session->next_crypto->dh_server_signature = signature;
   signature=NULL; /* ownership changed */
-  if (dh_build_k(session) < 0) {
+  if (ssh_dh_build_k(session) < 0) {
     ssh_set_error(session, SSH_FATAL, "Cannot build k number");
     goto error;
   }
@@ -516,7 +516,7 @@ error:
   return SSH_ERROR;
 }
 
-int make_sessionid(ssh_session session) {
+int ssh_make_sessionid(ssh_session session) {
     ssh_string num = NULL;
     ssh_buffer server_hash = NULL;
     ssh_buffer client_hash = NULL;
@@ -692,7 +692,7 @@ error:
     return rc;
 }
 
-int hashbufout_add_cookie(ssh_session session) {
+int ssh_hashbufout_add_cookie(ssh_session session) {
   session->out_hashbuf = ssh_buffer_new();
   if (session->out_hashbuf == NULL) {
     return -1;
@@ -720,7 +720,7 @@ int hashbufout_add_cookie(ssh_session session) {
   return 0;
 }
 
-int hashbufin_add_cookie(ssh_session session, unsigned char *cookie) {
+int ssh_hashbufin_add_cookie(ssh_session session, unsigned char *cookie) {
   session->in_hashbuf = ssh_buffer_new();
   if (session->in_hashbuf == NULL) {
     return -1;
@@ -777,7 +777,7 @@ static int generate_one_key(ssh_string k,
   return 0;
 }
 
-int generate_session_keys(ssh_session session) {
+int ssh_generate_session_keys(ssh_session session) {
   ssh_string k_string = NULL;
   struct ssh_crypto_struct *crypto = session->next_crypto;
   int rc = -1;
