@@ -583,7 +583,7 @@ uint32_t ssh_buffer_get_data(struct ssh_buffer_struct *buffer, void *data, uint3
  *
  * @param[in]  buffer   The buffer to read.
  *
- * @param[in]   data    A pointer to a uint8_t where to store the data.
+ * @param[in]  data     A pointer to a uint8_t where to store the data.
  *
  * @returns             0 if there is not enough data in buffer, 1 otherwise.
  */
