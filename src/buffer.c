@@ -591,12 +591,16 @@ int ssh_buffer_get_u8(struct ssh_buffer_struct *buffer, uint8_t *data){
     return ssh_buffer_get_data(buffer,data,sizeof(uint8_t));
 }
 
-/** \internal
- * \brief gets a 32 bits unsigned int out of the buffer. Adjusts the read pointer.
- * \param buffer Buffer to read
- * \param data pointer to a uint32_t where to store the data
- * \returns 0 if there is not enough data in buffer
- * \returns 4 otherwise.
+/**
+ * @internal
+ *
+ * @brief gets a 32 bits unsigned int out of the buffer. Adjusts the read pointer.
+ *
+ * @param[in]  buffer   The buffer to read.
+ *
+ * @param[in]  data     A pointer to a uint32_t where to store the data.
+ *
+ * @returns             0 if there is not enough data in buffer, 4 otherwise.
  */
 int ssh_buffer_get_u32(struct ssh_buffer_struct *buffer, uint32_t *data){
     return ssh_buffer_get_data(buffer,data,sizeof(uint32_t));
