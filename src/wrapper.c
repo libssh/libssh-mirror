@@ -160,6 +160,10 @@ void crypto_free(struct ssh_crypto_struct *crypto){
 #ifdef HAVE_ECDH
   SAFE_FREE(crypto->ecdh_client_pubkey);
   SAFE_FREE(crypto->ecdh_server_pubkey);
+  if(crypto->ecdh_privkey != NULL){
+    EC_KEY_free(crypto->ecdh_privkey);
+    crypto->ecdh_privkey = NULL;
+  }
 #endif
   if(crypto->session_id != NULL){
     memset(crypto->session_id, '\0', crypto->digest_len);
