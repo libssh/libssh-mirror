@@ -72,11 +72,6 @@ int packet_decrypt(ssh_session session, void *data,uint32_t len) {
     return -1;
   }
 
-  if (crypto->set_decrypt_key(crypto, session->current_crypto->decryptkey,
-        session->current_crypto->decryptIV) < 0) {
-    SAFE_FREE(out);
-    return -1;
-  }
   crypto->decrypt(crypto,data,out,len);
 
   memcpy(data,out,len);
@@ -110,12 +105,6 @@ unsigned char *packet_encrypt(ssh_session session, void *data, uint32_t len) {
   type = session->current_crypto->out_hmac;
   seq = ntohl(session->send_seq);
   crypto = session->current_crypto->out_cipher;
-
-  if (crypto->set_encrypt_key(crypto, session->current_crypto->encryptkey,
-      session->current_crypto->encryptIV) < 0) {
-    SAFE_FREE(out);
-    return NULL;
-  }
 
   if (session->version == 2) {
     ctx = hmac_init(session->current_crypto->encryptMAC, hmac_digest_len(type), type);

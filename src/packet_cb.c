@@ -237,6 +237,14 @@ SSH_PACKET_CALLBACK(ssh_packet_newkeys){
     }
     memcpy(session->next_crypto->session_id, session->current_crypto->session_id,
             session->current_crypto->digest_len);
+    if (session->current_crypto->in_cipher->set_decrypt_key(session->current_crypto->in_cipher, session->current_crypto->decryptkey,
+        session->current_crypto->decryptIV) < 0) {
+      goto error;
+    }
+    if (session->current_crypto->out_cipher->set_encrypt_key(session->current_crypto->out_cipher, session->current_crypto->encryptkey,
+        session->current_crypto->encryptIV) < 0) {
+      goto error;
+    }
   }
   session->dh_handshake_state = DH_STATE_FINISHED;
   session->ssh_connection_callback(session);
