@@ -476,7 +476,7 @@ void *ssh_buffer_get(struct ssh_buffer_struct *buffer){
  * @see ssh_buffer_get()
  */
 uint32_t ssh_buffer_get_len(struct ssh_buffer_struct *buffer){
-    return buffer->used;
+    return ssh_buffer_get_rest_len(buffer);
 }
 
 /**
