@@ -467,21 +467,6 @@ void *ssh_buffer_get(struct ssh_buffer_struct *buffer){
 }
 
 /**
- * @brief Get the length of the buffer, not counting position.
- *
- * @param[in]  buffer   The buffer to get the length from.
- *
- * @return              The length of the buffer.
- *
- * @see ssh_buffer_get()
- */
-uint32_t ssh_buffer_get_len(struct ssh_buffer_struct *buffer){
-    return ssh_buffer_get_rest_len(buffer);
-}
-
-/**
- * @internal
- *
  * @brief Get the length of the buffer from the current position.
  *
  * @param[in]  buffer   The buffer to get the length from.
@@ -490,7 +475,7 @@ uint32_t ssh_buffer_get_len(struct ssh_buffer_struct *buffer){
  *
  * @see ssh_buffer_get()
  */
-uint32_t ssh_buffer_get_rest_len(struct ssh_buffer_struct *buffer){
+uint32_t ssh_buffer_get_len(struct ssh_buffer_struct *buffer){
   buffer_verify(buffer);
   return buffer->used - buffer->pos;
 }
