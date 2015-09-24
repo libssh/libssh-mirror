@@ -1305,7 +1305,7 @@ ssh_string pki_publickey_to_blob(const ssh_key key)
         goto fail;
     }
 
-    rc = ssh_string_fill(str, ssh_buffer_get_rest(buffer), ssh_buffer_get_rest_len(buffer));
+    rc = ssh_string_fill(str, ssh_buffer_get(buffer), ssh_buffer_get_rest_len(buffer));
     if (rc < 0) {
         goto fail;
     }

@@ -79,7 +79,7 @@ int ssh_buffer_add_buffer(ssh_buffer buffer, ssh_buffer source);
 int ssh_buffer_reinit(ssh_buffer buffer);
 
 /* ssh_buffer_get_rest returns a pointer to the current position into the buffer */
-void *ssh_buffer_get_rest(ssh_buffer buffer);
+void *ssh_buffer_get(ssh_buffer buffer);
 /* ssh_buffer_get_rest_len returns the number of bytes which can be read */
 uint32_t ssh_buffer_get_rest_len(ssh_buffer buffer);
 

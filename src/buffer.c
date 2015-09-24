@@ -425,7 +425,7 @@ int ssh_buffer_add_buffer(struct ssh_buffer_struct *buffer,
     int rc;
 
     rc = ssh_buffer_add_data(buffer,
-                             ssh_buffer_get_rest(source),
+                             ssh_buffer_get(source),
                              ssh_buffer_get_rest_len(source));
     if (rc < 0) {
         return -1;
@@ -444,7 +444,7 @@ int ssh_buffer_add_buffer(struct ssh_buffer_struct *buffer,
  *
  * @warning Don't expect data to be nul-terminated.
  *
- * @see ssh_buffer_get_rest()
+ * @see ssh_buffer_get()
  * @see ssh_buffer_get_len()
  */
 void *ssh_buffer_get_begin(struct ssh_buffer_struct *buffer){
@@ -461,9 +461,8 @@ void *ssh_buffer_get_begin(struct ssh_buffer_struct *buffer){
  * @return              A pointer to the data from current position.
  *
  * @see ssh_buffer_get_rest_len()
- * @see ssh_buffer_get()
  */
-void *ssh_buffer_get_rest(struct ssh_buffer_struct *buffer){
+void *ssh_buffer_get(struct ssh_buffer_struct *buffer){
     return buffer->data + buffer->pos;
 }
 
@@ -489,7 +488,7 @@ uint32_t ssh_buffer_get_len(struct ssh_buffer_struct *buffer){
  *
  * @return              The length of the buffer.
  *
- * @see ssh_buffer_get_rest()
+ * @see ssh_buffer_get()
  */
 uint32_t ssh_buffer_get_rest_len(struct ssh_buffer_struct *buffer){
   buffer_verify(buffer);

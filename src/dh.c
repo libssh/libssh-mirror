@@ -575,10 +575,10 @@ int ssh_make_sessionid(ssh_session session) {
                          "dPdPS",
                          ssh_buffer_get_rest_len(client_hash),
                          ssh_buffer_get_rest_len(client_hash),
-                         ssh_buffer_get_rest(client_hash),
+                         ssh_buffer_get(client_hash),
                          ssh_buffer_get_rest_len(server_hash),
                          ssh_buffer_get_rest_len(server_hash),
-                         ssh_buffer_get_rest(server_hash),
+                         ssh_buffer_get(server_hash),
                          session->next_crypto->server_pubkey);
 
     if(rc != SSH_OK){
@@ -643,7 +643,7 @@ int ssh_make_sessionid(ssh_session session) {
             ssh_set_error_oom(session);
             goto error;
         }
-        sha1(ssh_buffer_get_rest(buf), ssh_buffer_get_rest_len(buf),
+        sha1(ssh_buffer_get(buf), ssh_buffer_get_rest_len(buf),
                                    session->next_crypto->secret_hash);
         break;
     case SSH_KEX_ECDH_SHA2_NISTP256:
@@ -655,7 +655,7 @@ int ssh_make_sessionid(ssh_session session) {
             ssh_set_error_oom(session);
             goto error;
         }
-        sha256(ssh_buffer_get_rest(buf), ssh_buffer_get_rest_len(buf),
+        sha256(ssh_buffer_get(buf), ssh_buffer_get_rest_len(buf),
                                      session->next_crypto->secret_hash);
         break;
     }

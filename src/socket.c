@@ -290,7 +290,7 @@ int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p, socket_t fd,
             }
             if (s->callbacks && s->callbacks->data) {
                 do {
-                    r = s->callbacks->data(ssh_buffer_get_rest(s->in_buffer),
+                    r = s->callbacks->data(ssh_buffer_get(s->in_buffer),
                                            ssh_buffer_get_rest_len(s->in_buffer),
                                            s->callbacks->userdata);
                     ssh_buffer_pass_bytes(s->in_buffer, r);
@@ -658,7 +658,7 @@ int ssh_socket_nonblocking_flush(ssh_socket s) {
       return SSH_AGAIN;
   }
   if (s->write_wontblock && len > 0) {
-    w = ssh_socket_unbuffered_write(s, ssh_buffer_get_rest(s->out_buffer), len);
+    w = ssh_socket_unbuffered_write(s, ssh_buffer_get(s->out_buffer), len);
     if (w < 0) {
       session->alive = 0;
       ssh_socket_close(s);

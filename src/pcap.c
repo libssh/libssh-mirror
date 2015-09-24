@@ -145,7 +145,7 @@ static int ssh_pcap_file_write(ssh_pcap_file pcap, ssh_buffer packet){
 	if(pcap == NULL || pcap->output==NULL)
 		return SSH_ERROR;
 	len=ssh_buffer_get_rest_len(packet);
-	err=fwrite(ssh_buffer_get_rest(packet),len,1,pcap->output);
+	err=fwrite(ssh_buffer_get(packet),len,1,pcap->output);
 	if(err<0)
 		return SSH_ERROR;
 	else

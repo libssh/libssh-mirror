@@ -58,7 +58,7 @@ static z_stream *initcompress(ssh_session session, int level) {
 
 static ssh_buffer gzip_compress(ssh_session session,ssh_buffer source,int level){
   z_stream *zout = session->current_crypto->compress_out_ctx;
-  void *in_ptr = ssh_buffer_get_rest(source);
+  void *in_ptr = ssh_buffer_get(source);
   unsigned long in_size = ssh_buffer_get_rest_len(source);
   ssh_buffer dest = NULL;
   unsigned char out_buf[BLOCKSIZE] = {0};
@@ -113,7 +113,7 @@ int compress_buffer(ssh_session session, ssh_buffer buf) {
     return -1;
   }
 
-  if (ssh_buffer_add_data(buf, ssh_buffer_get_rest(dest), ssh_buffer_get_rest_len(dest)) < 0) {
+  if (ssh_buffer_add_data(buf, ssh_buffer_get(dest), ssh_buffer_get_rest_len(dest)) < 0) {
     ssh_buffer_free(dest);
     return -1;
   }
@@ -147,7 +147,7 @@ static z_stream *initdecompress(ssh_session session) {
 
 static ssh_buffer gzip_decompress(ssh_session session, ssh_buffer source, size_t maxlen) {
   z_stream *zin = session->current_crypto->compress_in_ctx;
-  void *in_ptr = ssh_buffer_get_rest(source);
+  void *in_ptr = ssh_buffer_get(source);
   unsigned long in_size = ssh_buffer_get_rest_len(source);
   unsigned char out_buf[BLOCKSIZE] = {0};
   ssh_buffer dest = NULL;
@@ -209,7 +209,7 @@ int decompress_buffer(ssh_session session,ssh_buffer buf, size_t maxlen){
     return -1;
   }
 
-  if (ssh_buffer_add_data(buf, ssh_buffer_get_rest(dest), ssh_buffer_get_rest_len(dest)) < 0) {
+  if (ssh_buffer_add_data(buf, ssh_buffer_get(dest), ssh_buffer_get_rest_len(dest)) < 0) {
     ssh_buffer_free(dest);
     return -1;
   }

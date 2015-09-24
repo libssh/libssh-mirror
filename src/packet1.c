@@ -193,21 +193,21 @@ int ssh_packet_socket_callback1(const void *data, size_t receivedlen, void *user
       }
 
       memcpy(&crc,
-          (unsigned char *)ssh_buffer_get_rest(session->in_buffer) + (len+padding) - sizeof(uint32_t),
+          (unsigned char *)ssh_buffer_get(session->in_buffer) + (len+padding) - sizeof(uint32_t),
           sizeof(uint32_t));
       ssh_buffer_pass_bytes_end(session->in_buffer, sizeof(uint32_t));
       crc = ntohl(crc);
-      if (ssh_crc32(ssh_buffer_get_rest(session->in_buffer),
+      if (ssh_crc32(ssh_buffer_get(session->in_buffer),
             (len + padding) - sizeof(uint32_t)) != crc) {
 #ifdef DEBUG_CRYPTO
-        ssh_print_hexa("crc32 on",ssh_buffer_get_rest(session->in_buffer),
+        ssh_print_hexa("crc32 on",ssh_buffer_get(session->in_buffer),
             len + padding - sizeof(uint32_t));
 #endif
         SSH_LOG(SSH_LOG_RARE, "Invalid crc32");
         ssh_set_error(session, SSH_FATAL,
             "Invalid crc32: expected %.8x, got %.8x",
             crc,
-            ssh_crc32(ssh_buffer_get_rest(session->in_buffer),
+            ssh_crc32(ssh_buffer_get(session->in_buffer),
               len + padding - sizeof(uint32_t)));
         goto error;
       }

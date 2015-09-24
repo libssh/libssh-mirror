@@ -288,7 +288,7 @@ int sftp_packet_write(sftp_session sftp, uint8_t type, ssh_buffer payload){
     return -1;
   }
 
-  size = ssh_channel_write(sftp->channel, ssh_buffer_get_rest(payload),
+  size = ssh_channel_write(sftp->channel, ssh_buffer_get(payload),
       ssh_buffer_get_rest_len(payload));
   if (size < 0) {
     return -1;
@@ -460,7 +460,7 @@ static sftp_message sftp_get_message(sftp_packet packet) {
       msg->id,
       msg->packet_type);
 
-  if (ssh_buffer_add_data(msg->payload, ssh_buffer_get_rest(packet->payload),
+  if (ssh_buffer_add_data(msg->payload, ssh_buffer_get(packet->payload),
         ssh_buffer_get_rest_len(packet->payload)) < 0) {
     ssh_set_error_oom(sftp->session);
     sftp_message_free(msg);

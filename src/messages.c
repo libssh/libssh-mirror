@@ -786,7 +786,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
         rc = ssh_pki_signature_verify_blob(session,
                                            sig_blob,
                                            msg->auth_request.pubkey,
-                                           ssh_buffer_get_rest(digest),
+                                           ssh_buffer_get(digest),
                                            ssh_buffer_get_rest_len(digest));
         ssh_string_free(sig_blob);
         ssh_buffer_free(digest);

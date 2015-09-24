@@ -257,7 +257,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
 
                 /* The following check avoids decrypting zero bytes */
                 if (buffer_len > blocksize) {
-                    uint8_t *payload = ((uint8_t*)ssh_buffer_get_rest(session->in_buffer) + blocksize);
+                    uint8_t *payload = ((uint8_t*)ssh_buffer_get(session->in_buffer) + blocksize);
                     uint32_t plen = buffer_len - blocksize;
 
                     rc = ssh_packet_decrypt(session, payload, plen);
@@ -507,7 +507,7 @@ static int ssh_packet_write(ssh_session session) {
   int rc = SSH_ERROR;
 
   rc=ssh_socket_write(session->socket,
-      ssh_buffer_get_rest(session->out_buffer),
+      ssh_buffer_get(session->out_buffer),
       ssh_buffer_get_rest_len(session->out_buffer));
 
   return rc;
@@ -563,11 +563,11 @@ static int packet_send2(ssh_session session) {
 #ifdef WITH_PCAP
   if(session->pcap_ctx){
   	ssh_pcap_context_write(session->pcap_ctx,SSH_PCAP_DIR_OUT,
-  			ssh_buffer_get_rest(session->out_buffer),ssh_buffer_get_rest_len(session->out_buffer)
+  			ssh_buffer_get(session->out_buffer),ssh_buffer_get_rest_len(session->out_buffer)
   			,ssh_buffer_get_rest_len(session->out_buffer));
   }
 #endif
-  hmac = ssh_packet_encrypt(session, ssh_buffer_get_rest(session->out_buffer),
+  hmac = ssh_packet_encrypt(session, ssh_buffer_get(session->out_buffer),
       ssh_buffer_get_rest_len(session->out_buffer));
   if (hmac) {
     rc = ssh_buffer_add_data(session->out_buffer, hmac, hmac_digest_len(hmac_type));

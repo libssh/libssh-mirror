@@ -1039,7 +1039,7 @@ ssh_string pki_publickey_to_blob(const ssh_key key)
         goto fail;
     }
 
-    rc = ssh_string_fill(str, ssh_buffer_get_rest(buffer), ssh_buffer_get_rest_len(buffer));
+    rc = ssh_string_fill(str, ssh_buffer_get(buffer), ssh_buffer_get_rest_len(buffer));
     if (rc < 0) {
         goto fail;
     }
@@ -1244,7 +1244,7 @@ ssh_string pki_signature_to_blob(const ssh_signature sig)
                 return NULL;
             }
 
-            ssh_string_fill(sig_blob, ssh_buffer_get_rest(b), ssh_buffer_get_rest_len(b));
+            ssh_string_fill(sig_blob, ssh_buffer_get(b), ssh_buffer_get_rest_len(b));
             ssh_buffer_free(b);
             break;
         }

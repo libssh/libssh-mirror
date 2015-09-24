@@ -279,7 +279,7 @@ static int agent_talk(struct ssh_session_struct *session,
 
   /* send length and then the request packet */
   if (atomicio(session->agent, payload, 4, 0) == 4) {
-    if (atomicio(session->agent, ssh_buffer_get_rest(request), len, 0)
+    if (atomicio(session->agent, ssh_buffer_get(request), len, 0)
         != len) {
       SSH_LOG(SSH_LOG_WARN, "atomicio sending request failed: %s",
           strerror(errno));
@@ -546,7 +546,7 @@ ssh_string ssh_agent_sign_data(ssh_session session,
         ssh_buffer_free(request);
         return NULL;
     }
-    if (ssh_buffer_add_data(request, ssh_buffer_get_rest(data), dlen) < 0) {
+    if (ssh_buffer_add_data(request, ssh_buffer_get(data), dlen) < 0) {
         ssh_buffer_free(request);
         return NULL;
     }

@@ -546,7 +546,7 @@ SSH_PACKET_CALLBACK(channel_rcv_data){
       }
       rest = channel->callbacks->channel_data_function(channel->session,
                                                 channel,
-                                                ssh_buffer_get_rest(buf),
+                                                ssh_buffer_get(buf),
                                                 ssh_buffer_get_rest_len(buf),
                                                 is_stderr,
                                                 channel->callbacks->userdata);
@@ -1540,7 +1540,7 @@ static int channel_request(ssh_channel channel, const char *request,
   }
 
   if (buffer != NULL) {
-    if (ssh_buffer_add_data(session->out_buffer, ssh_buffer_get_rest(buffer),
+    if (ssh_buffer_add_data(session->out_buffer, ssh_buffer_get(buffer),
         ssh_buffer_get_rest_len(buffer)) < 0) {
       ssh_set_error_oom(session);
       goto error;
@@ -2099,7 +2099,7 @@ static int global_request(ssh_session session, const char *request,
 
   if (buffer != NULL) {
       rc = ssh_buffer_add_data(session->out_buffer,
-                           ssh_buffer_get_rest(buffer),
+                           ssh_buffer_get(buffer),
                            ssh_buffer_get_rest_len(buffer));
       if (rc < 0) {
           ssh_set_error_oom(session);
@@ -2717,7 +2717,7 @@ int ssh_channel_read_timeout(ssh_channel channel,
   len = ssh_buffer_get_rest_len(stdbuf);
   /* Read count bytes if len is greater, everything otherwise */
   len = (len > count ? count : len);
-  memcpy(dest, ssh_buffer_get_rest(stdbuf), len);
+  memcpy(dest, ssh_buffer_get(stdbuf), len);
   ssh_buffer_pass_bytes(stdbuf,len);
   if (channel->counter != NULL) {
       channel->counter->in_bytes += len;
