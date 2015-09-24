@@ -427,14 +427,14 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_mic)
     }
     if (ssh_callbacks_exists(session->server_callbacks, gssapi_verify_mic_function)){
         int rc = session->server_callbacks->gssapi_verify_mic_function(session, mic_token,
-                ssh_buffer_get_begin(mic_buffer), ssh_buffer_get_len(mic_buffer),
+                ssh_buffer_get(mic_buffer), ssh_buffer_get_len(mic_buffer),
                 session->server_callbacks->userdata);
         if (rc != SSH_OK) {
             goto error;
         }
     } else {
         mic_buf.length = ssh_buffer_get_len(mic_buffer);
-        mic_buf.value = ssh_buffer_get_begin(mic_buffer);
+        mic_buf.value = ssh_buffer_get(mic_buffer);
         mic_token_buf.length = ssh_string_len(mic_token);
         mic_token_buf.value = ssh_string_data(mic_token);
 
@@ -792,7 +792,7 @@ static int ssh_gssapi_send_mic(ssh_session session){
         return SSH_ERROR;
     }
     mic_buf.length = ssh_buffer_get_len(mic_buffer);
-    mic_buf.value = ssh_buffer_get_begin(mic_buffer);
+    mic_buf.value = ssh_buffer_get(mic_buffer);
 
     maj_stat = gss_get_mic(&min_stat,session->gssapi->ctx, GSS_C_QOP_DEFAULT, &mic_buf, &mic_token_buf);
     if (GSS_ERROR(maj_stat)){

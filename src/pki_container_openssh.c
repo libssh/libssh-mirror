@@ -543,8 +543,8 @@ static int pki_private_key_encrypt(ssh_buffer privkey_buffer,
                            key_material,
                            key_material + cipher.keysize/8);
     cipher.encrypt(&cipher,
-                   ssh_buffer_get_begin(privkey_buffer),
-                   ssh_buffer_get_begin(privkey_buffer),
+                   ssh_buffer_get(privkey_buffer),
+                   ssh_buffer_get(privkey_buffer),
                    ssh_buffer_get_len(privkey_buffer));
     ssh_cipher_clear(&cipher);
     BURN_BUFFER(passphrase_buffer, sizeof(passphrase_buffer));
@@ -642,7 +642,7 @@ ssh_string ssh_pki_openssh_privkey_export(const ssh_key privkey,
             goto error;
         }
         memcpy(ssh_string_data(kdf_options),
-               ssh_buffer_get_begin(kdf_buf),
+               ssh_buffer_get(kdf_buf),
                ssh_buffer_get_len(kdf_buf));
         ssh_buffer_free(kdf_buf);
         rc = pki_private_key_encrypt(privkey_buffer,
@@ -670,12 +670,12 @@ ssh_string ssh_pki_openssh_privkey_export(const ssh_key privkey,
                          pubkey_s,
                          (uint32_t)ssh_buffer_get_len(privkey_buffer),
                          /* rest of buffer is a string */
-                         (size_t)ssh_buffer_get_len(privkey_buffer), ssh_buffer_get_begin(privkey_buffer));
+                         (size_t)ssh_buffer_get_len(privkey_buffer), ssh_buffer_get(privkey_buffer));
     if (rc != SSH_OK) {
         goto error;
     }
 
-    b64 = bin_to_base64(ssh_buffer_get_begin(buffer),
+    b64 = bin_to_base64(ssh_buffer_get(buffer),
                         ssh_buffer_get_len(buffer));
     if (b64 == NULL){
         goto error;
@@ -712,7 +712,7 @@ ssh_string ssh_pki_openssh_privkey_export(const ssh_key privkey,
 
 error:
     if (privkey_buffer != NULL) {
-        void *bufptr = ssh_buffer_get_begin(privkey_buffer);
+        void *bufptr = ssh_buffer_get(privkey_buffer);
         BURN_BUFFER(bufptr, ssh_buffer_get_len(privkey_buffer));
         ssh_buffer_free(privkey_buffer);
     }

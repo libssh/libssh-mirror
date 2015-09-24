@@ -152,7 +152,7 @@ static int asn1_check_sequence(ssh_buffer buffer) {
   size = asn1_get_len(buffer);
   if ((padding = ssh_buffer_get_len(buffer) - size) > 0) {
     for (i = ssh_buffer_get_len(buffer) - size,
-         j = (unsigned char*)ssh_buffer_get_begin(buffer) + size + buffer->pos;
+         j = (unsigned char*)ssh_buffer_get(buffer) + size;
          i;
          i--, j++)
     {
@@ -235,12 +235,12 @@ static int privatekey_decrypt(int algo, int mode, unsigned int key_len,
       || gcry_cipher_setiv(cipher, iv, iv_len)
       || (tmp = malloc(ssh_buffer_get_len(data) * sizeof (char))) == NULL
       || gcry_cipher_decrypt(cipher, tmp, ssh_buffer_get_len(data),
-                       ssh_buffer_get_begin(data), ssh_buffer_get_len(data))) {
+                       ssh_buffer_get(data), ssh_buffer_get_len(data))) {
     gcry_cipher_close(cipher);
     return -1;
   }
 
-  memcpy(ssh_buffer_get_begin(data), tmp, ssh_buffer_get_len(data));
+  memcpy(ssh_buffer_get(data), tmp, ssh_buffer_get_len(data));
 
   SAFE_FREE(tmp);
   gcry_cipher_close(cipher);
@@ -418,7 +418,7 @@ static ssh_buffer privatekey_string_to_buffer(const char *pkey, int type,
         return NULL;
     }
 
-    out = base64_to_bin(ssh_buffer_get_begin(buffer));
+    out = base64_to_bin(ssh_buffer_get(buffer));
     ssh_buffer_free(buffer);
     if (out == NULL) {
         SAFE_FREE(iv);

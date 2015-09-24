@@ -630,7 +630,7 @@ int ssh_make_sessionid(ssh_session session) {
     }
 
 #ifdef DEBUG_CRYPTO
-    ssh_print_hexa("hash buffer", ssh_buffer_get_begin(buf), ssh_buffer_get_len(buf));
+    ssh_print_hexa("hash buffer", ssh_buffer_get(buf), ssh_buffer_get_len(buf));
 #endif
 
     switch (session->next_crypto->kex_type) {

@@ -66,7 +66,7 @@ static ssh_string make_rsa1_string(ssh_string e, ssh_string n){
     goto error;
   }
 
-  ssh_string_fill(ret, ssh_buffer_get_begin(buffer), ssh_buffer_get_len(buffer));
+  ssh_string_fill(ret, ssh_buffer_get(buffer), ssh_buffer_get_len(buffer));
 error:
   ssh_buffer_free(buffer);
   ssh_string_free(rsa);

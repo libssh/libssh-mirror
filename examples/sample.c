@@ -252,7 +252,7 @@ static void select_loop(ssh_session session,ssh_channel channel){
                     ssh_channel_free(channel);
                     channel=channels[0]=NULL;
                 } else
-                    if (write(1,ssh_buffer_get_begin(readbuf),lus) < 0) {
+                    if (write(1,ssh_buffer_get(readbuf),lus) < 0) {
                       fprintf(stderr, "Error writing to buffer\n");
                       return;
                     }
@@ -268,7 +268,7 @@ static void select_loop(ssh_session session,ssh_channel channel){
                     ssh_channel_free(channel);
                     channel=channels[0]=NULL;
                 } else
-                    if (write(2,ssh_buffer_get_begin(readbuf),lus) < 0) {
+                    if (write(2,ssh_buffer_get(readbuf),lus) < 0) {
                       fprintf(stderr, "Error writing to buffer\n");
                       return;
                     }

@@ -1659,7 +1659,7 @@ ssh_string ssh_pki_do_sign(ssh_session session,
         }
 
         sig = pki_do_sign(privkey,
-                          ssh_buffer_get_begin(buf),
+                          ssh_buffer_get(buf),
                           ssh_buffer_get_len(buf));
         ssh_buffer_free(buf);
     } else {
