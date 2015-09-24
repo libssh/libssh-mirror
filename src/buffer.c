@@ -206,8 +206,6 @@ int ssh_buffer_reinit(struct ssh_buffer_struct *buffer)
 }
 
 /**
- * @internal
- *
  * @brief Add data at the tail of a buffer.
  *
  * @param[in]  buffer   The buffer to add the data.
@@ -515,8 +513,6 @@ uint32_t ssh_buffer_pass_bytes_end(struct ssh_buffer_struct *buffer, uint32_t le
 }
 
 /**
- * @internal
- *
  * @brief Get the remaining data out of the buffer and adjust the read pointer.
  *
  * @param[in]  buffer   The buffer to read.

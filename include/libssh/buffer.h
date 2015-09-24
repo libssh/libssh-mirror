@@ -47,7 +47,6 @@ int ssh_buffer_add_u8(ssh_buffer buffer, uint8_t data);
 int ssh_buffer_add_u16(ssh_buffer buffer, uint16_t data);
 int ssh_buffer_add_u32(ssh_buffer buffer, uint32_t data);
 int ssh_buffer_add_u64(ssh_buffer buffer, uint64_t data);
-int ssh_buffer_add_data(ssh_buffer buffer, const void *data, uint32_t len);
 
 int ssh_buffer_pack_va(struct ssh_buffer_struct *buffer,
                        const char *format,
@@ -81,7 +80,6 @@ int ssh_buffer_get_u8(ssh_buffer buffer, uint8_t *data);
 int ssh_buffer_get_u32(ssh_buffer buffer, uint32_t *data);
 int ssh_buffer_get_u64(ssh_buffer buffer, uint64_t *data);
 
-uint32_t ssh_buffer_get_data(ssh_buffer buffer, void *data, uint32_t requestedlen);
 /* ssh_buffer_get_ssh_string() is an exception. if the String read is too large or invalid, it will answer NULL. */
 ssh_string ssh_buffer_get_ssh_string(ssh_buffer buffer);
 /* ssh_gets a string out of a SSH-1 mpint */
