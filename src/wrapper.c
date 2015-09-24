@@ -112,16 +112,16 @@ void ssh_cipher_clear(struct ssh_cipher_struct *cipher){
     return;
   }
 
-  if(cipher->key) {
 #ifdef HAVE_LIBGCRYPT
+  if(cipher->key) {
     for (i = 0; i < (cipher->keylen / sizeof(gcry_cipher_hd_t)); i++) {
       gcry_cipher_close(cipher->key[i]);
     }
-#elif defined HAVE_LIBCRYPTO
-    /* destroy the key */
-    memset(cipher->key, 0, cipher->keylen);
-#endif
     SAFE_FREE(cipher->key);
+  }
+#endif
+  if (cipher->cleanup != NULL){
+    cipher->cleanup(cipher);
   }
 }
 
