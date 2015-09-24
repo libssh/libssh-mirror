@@ -184,8 +184,6 @@ static void buffer_shift(ssh_buffer buffer){
 }
 
 /**
- * @internal
- *
  * @brief Reinitialize a SSH buffer.
  *
  * @param[in]  buffer   The buffer to reinitialize.
