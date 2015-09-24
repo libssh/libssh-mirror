@@ -41,8 +41,6 @@ struct ssh_buffer_struct {
 
 #define SSH_BUFFER_PACK_END ((uint32_t) 0x4f65feb3)
 
-LIBSSH_API void ssh_buffer_free(ssh_buffer buffer);
-LIBSSH_API ssh_buffer ssh_buffer_new(void);
 void ssh_buffer_set_secure(ssh_buffer buffer);
 int ssh_buffer_add_ssh_string(ssh_buffer buffer, ssh_string string);
 int ssh_buffer_add_u8(ssh_buffer buffer, uint8_t data);
@@ -78,8 +76,6 @@ int ssh_buffer_reinit(ssh_buffer buffer);
 
 /* ssh_buffer_get_rest returns a pointer to the current position into the buffer */
 void *ssh_buffer_get(ssh_buffer buffer);
-/* ssh_buffer_get_len returns the number of bytes which can be read */
-LIBSSH_API uint32_t ssh_buffer_get_len(ssh_buffer buffer);
 
 /* buffer_read_*() returns the number of bytes read, except for ssh strings */
 int ssh_buffer_get_u8(ssh_buffer buffer, uint8_t *data);
