@@ -825,150 +825,118 @@ static void des1_1_decrypt(struct ssh_cipher_struct *cipher, void *in, void *out
 
 /*
  * The table of supported ciphers
- *
- * WARNING: If you modify ssh_cipher_struct, you must make sure the order is
- * correct!
  */
 static struct ssh_cipher_struct ssh_ciphertab[] = {
 #ifdef HAS_BLOWFISH
   {
-    "blowfish-cbc",
-    8,
-    sizeof (BF_KEY),
-    NULL,
-    NULL,
-    128,
-    blowfish_set_key,
-    blowfish_set_key,
-    blowfish_encrypt,
-    blowfish_decrypt
+    .name = "blowfish-cbc",
+    .blocksize = 8,
+    .keylen = sizeof(BF_KEY),
+    .keysize = 128,
+    .set_encrypt_key = blowfish_set_key,
+    .set_decrypt_key = blowfish_set_key,
+    .encrypt = blowfish_encrypt,
+    .decrypt = blowfish_decrypt
   },
 #endif /* HAS_BLOWFISH */
 #ifdef HAS_AES
 #ifndef BROKEN_AES_CTR
   {
-    "aes128-ctr",
-    16,
-    sizeof(AES_KEY),
-    NULL,
-    NULL,
-    128,
-    aes_set_encrypt_key,
-    aes_set_encrypt_key,
-    aes_ctr128_encrypt,
-    aes_ctr128_encrypt
+    .name = "aes128-ctr",
+    .blocksize = 16,
+    .keylen = 16,
+    .keysize = 128,
+    .set_encrypt_key = aes_set_encrypt_key,
+    .set_decrypt_key = aes_set_encrypt_key,
+    .encrypt = aes_ctr128_encrypt,
+    .decrypt = aes_ctr128_encrypt
   },
   {
-    "aes192-ctr",
-    16,
-    sizeof(AES_KEY),
-    NULL,
-    NULL,
-    192,
-    aes_set_encrypt_key,
-    aes_set_encrypt_key,
-    aes_ctr128_encrypt,
-    aes_ctr128_encrypt
+    .name = "aes192-ctr",
+    .blocksize = 16,
+    .keylen = 24,
+    .keysize = 192,
+    .set_encrypt_key = aes_set_encrypt_key,
+    .set_decrypt_key = aes_set_encrypt_key,
+    .encrypt = aes_ctr128_encrypt,
+    .decrypt = aes_ctr128_encrypt
   },
   {
-    "aes256-ctr",
-    16,
-    sizeof(AES_KEY),
-    NULL,
-    NULL,
-    256,
-    aes_set_encrypt_key,
-    aes_set_encrypt_key,
-    aes_ctr128_encrypt,
-    aes_ctr128_encrypt
+    .name = "aes256-ctr",
+    .blocksize = 16,
+    .keylen = 32,
+    .keysize = 256,
+    .set_encrypt_key = aes_set_encrypt_key,
+    .set_decrypt_key = aes_set_encrypt_key,
+    .encrypt = aes_ctr128_encrypt,
+    .decrypt = aes_ctr128_encrypt
   },
 #endif /* BROKEN_AES_CTR */
   {
-    "aes128-cbc",
-    16,
-    sizeof(AES_KEY),
-    NULL,
-    NULL,
-    128,
-    aes_set_encrypt_key,
-    aes_set_decrypt_key,
-    aes_encrypt,
-    aes_decrypt
+    .name = "aes128-cbc",
+    .blocksize = 16,
+    .keylen = 16,
+    .keysize = 128,
+    .set_encrypt_key = aes_set_encrypt_key,
+    .set_decrypt_key = aes_set_decrypt_key,
+    .encrypt = aes_encrypt,
+    .decrypt = aes_decrypt
   },
   {
-    "aes192-cbc",
-    16,
-    sizeof(AES_KEY),
-    NULL,
-    NULL,
-    192,
-    aes_set_encrypt_key,
-    aes_set_decrypt_key,
-    aes_encrypt,
-    aes_decrypt
+    .name = "aes192-cbc",
+    .blocksize = 16,
+    .keylen = 24,
+    .keysize = 192,
+    .set_encrypt_key = aes_set_encrypt_key,
+    .set_decrypt_key = aes_set_decrypt_key,
+    .encrypt = aes_encrypt,
+    .decrypt = aes_decrypt
   },
   {
-    "aes256-cbc",
-    16,
-    sizeof(AES_KEY),
-    NULL,
-    NULL,
-    256,
-    aes_set_encrypt_key,
-    aes_set_decrypt_key,
-    aes_encrypt,
-    aes_decrypt
+    .name = "aes256-cbc",
+    .blocksize = 16,
+    .keylen = 32,
+    .keysize = 256,
+    .set_encrypt_key = aes_set_encrypt_key,
+    .set_decrypt_key = aes_set_decrypt_key,
+    .encrypt = aes_encrypt,
+    .decrypt = aes_decrypt
   },
 #endif /* HAS_AES */
 #ifdef HAS_DES
   {
-    "3des-cbc",
-    8,
-    sizeof(DES_key_schedule) * 3,
-    NULL,
-    NULL,
-    192,
-    des3_set_key,
-    des3_set_key,
-    des3_encrypt,
-    des3_decrypt
+    .name = "3des-cbc",
+    .blocksize = 8,
+    .keylen = 24,
+    .keysize = 192,
+    .set_encrypt_key = des3_set_key,
+    .set_decrypt_key = des3_set_key,
+    .encrypt = des3_encrypt,
+    .decrypt = des3_decrypt
   },
   {
-    "3des-cbc-ssh1",
-    8,
-    sizeof(DES_key_schedule) * 3,
-    NULL,
-    NULL,
-    192,
-    des3_set_key,
-    des3_set_key,
-    des3_1_encrypt,
-    des3_1_decrypt
+    .name = "3des-cbc-ssh1",
+    .blocksize = 8,
+    .keylen = 24,
+    .keysize = 192,
+    .set_encrypt_key = des3_set_key,
+    .set_decrypt_key = des3_set_key,
+    .encrypt = des3_1_encrypt,
+    .decrypt = des3_1_decrypt
   },
   {
-    "des-cbc-ssh1",
-    8,
-    sizeof(DES_key_schedule),
-    NULL,
-    NULL,
-    64,
-    des1_set_key,
-    des1_set_key,
-    des1_1_encrypt,
-    des1_1_decrypt
+    .name = "des-cbc-ssh1",
+    .blocksize = 8,
+    .keylen = 8,
+    .keysize = 64,
+    .set_encrypt_key = des1_set_key,
+    .set_decrypt_key = des1_set_key,
+    .encrypt = des1_1_encrypt,
+    .decrypt = des1_1_decrypt
   },
 #endif /* HAS_DES */
   {
-    NULL,
-    0,
-    0,
-    NULL,
-    NULL,
-    0,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    .name = NULL
   }
 };
 
