@@ -435,23 +435,6 @@ int ssh_buffer_add_buffer(struct ssh_buffer_struct *buffer,
 }
 
 /**
- * @brief Get a pointer on the head of a buffer.
- *
- * @param[in]  buffer   The buffer to get the head pointer.
- *
- * @return              A data pointer on the head. It doesn't take the position
- *                      into account.
- *
- * @warning Don't expect data to be nul-terminated.
- *
- * @see ssh_buffer_get()
- * @see ssh_buffer_get_len()
- */
-void *ssh_buffer_get_begin(struct ssh_buffer_struct *buffer){
-  return buffer->data;
-}
-
-/**
  * @internal
  *
  * @brief Get a pointer to the head of a buffer at the current position.
