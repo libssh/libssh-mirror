@@ -291,7 +291,7 @@ int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p, socket_t fd,
             if (s->callbacks && s->callbacks->data) {
                 do {
                     r = s->callbacks->data(ssh_buffer_get(s->in_buffer),
-                                           ssh_buffer_get_rest_len(s->in_buffer),
+                                           ssh_buffer_get_len(s->in_buffer),
                                            s->callbacks->userdata);
                     ssh_buffer_pass_bytes(s->in_buffer, r);
                 } while ((r > 0) && (s->state == SSH_SOCKET_CONNECTED));
@@ -330,7 +330,7 @@ int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p, socket_t fd,
         }
 
         /* If buffered data is pending, write it */
-        if (ssh_buffer_get_rest_len(s->out_buffer) > 0) {
+        if (ssh_buffer_get_len(s->out_buffer) > 0) {
             ssh_socket_nonblocking_flush(s);
         } else if (s->callbacks && s->callbacks->controlflow) {
             /* Otherwise advertise the upper level that write can be done */
@@ -650,7 +650,7 @@ int ssh_socket_nonblocking_flush(ssh_socket s) {
     return SSH_ERROR;
   }
 
-  len = ssh_buffer_get_rest_len(s->out_buffer);
+  len = ssh_buffer_get_len(s->out_buffer);
   if (!s->write_wontblock && s->poll_out && len > 0) {
       /* force the poll system to catch pollout events */
       ssh_poll_add_events(s->poll_out, POLLOUT);
@@ -681,7 +681,7 @@ int ssh_socket_nonblocking_flush(ssh_socket s) {
   }
 
   /* Is there some data pending? */
-  len = ssh_buffer_get_rest_len(s->out_buffer);
+  len = ssh_buffer_get_len(s->out_buffer);
   if (s->poll_out && len > 0) {
       /* force the poll system to catch pollout events */
       ssh_poll_add_events(s->poll_out, POLLOUT);
@@ -721,7 +721,7 @@ int ssh_socket_data_writable(ssh_socket s) {
 int ssh_socket_buffered_write_bytes(ssh_socket s){
 	if(s==NULL || s->out_buffer == NULL)
 		return 0;
-	return ssh_buffer_get_rest_len(s->out_buffer);
+	return ssh_buffer_get_len(s->out_buffer);
 }
 
 

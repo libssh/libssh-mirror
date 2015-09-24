@@ -787,7 +787,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
                                            sig_blob,
                                            msg->auth_request.pubkey,
                                            ssh_buffer_get(digest),
-                                           ssh_buffer_get_rest_len(digest));
+                                           ssh_buffer_get_len(digest));
         ssh_string_free(sig_blob);
         ssh_buffer_free(digest);
         if (rc < 0) {

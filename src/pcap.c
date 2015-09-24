@@ -144,7 +144,7 @@ static int ssh_pcap_file_write(ssh_pcap_file pcap, ssh_buffer packet){
 	uint32_t len;
 	if(pcap == NULL || pcap->output==NULL)
 		return SSH_ERROR;
-	len=ssh_buffer_get_rest_len(packet);
+	len=ssh_buffer_get_len(packet);
 	err=fwrite(ssh_buffer_get(packet),len,1,pcap->output);
 	if(err<0)
 		return SSH_ERROR;
@@ -171,7 +171,7 @@ int ssh_pcap_file_write_packet(ssh_pcap_file pcap, ssh_buffer packet, uint32_t o
     if (err < 0) {
         goto error;
     }
-    err = ssh_buffer_add_u32(header,htonl(ssh_buffer_get_rest_len(packet)));
+    err = ssh_buffer_add_u32(header,htonl(ssh_buffer_get_len(packet)));
     if (err < 0) {
         goto error;
     }

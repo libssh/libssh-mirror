@@ -1467,13 +1467,13 @@ int ssh_pki_export_signature_blob(const ssh_signature sig,
         return SSH_ERROR;
     }
 
-    str = ssh_string_new(ssh_buffer_get_rest_len(buf));
+    str = ssh_string_new(ssh_buffer_get_len(buf));
     if (str == NULL) {
         ssh_buffer_free(buf);
         return SSH_ERROR;
     }
 
-    ssh_string_fill(str, ssh_buffer_get(buf), ssh_buffer_get_rest_len(buf));
+    ssh_string_fill(str, ssh_buffer_get(buf), ssh_buffer_get_len(buf));
     ssh_buffer_free(buf);
 
     *sig_blob = str;
@@ -1629,7 +1629,7 @@ ssh_string ssh_pki_do_sign(ssh_session session,
         }
 
         evp_update(ctx, session_id, ssh_string_len(session_id) + 4);
-        evp_update(ctx, ssh_buffer_get(sigbuf), ssh_buffer_get_rest_len(sigbuf));
+        evp_update(ctx, ssh_buffer_get(sigbuf), ssh_buffer_get_len(sigbuf));
         evp_final(ctx, ehash, &elen);
 
 #ifdef DEBUG_CRYPTO
@@ -1651,7 +1651,7 @@ ssh_string ssh_pki_do_sign(ssh_session session,
         rc = ssh_buffer_pack(buf,
                              "SP",
                              session_id,
-                             ssh_buffer_get_rest_len(sigbuf), ssh_buffer_get(sigbuf));
+                             ssh_buffer_get_len(sigbuf), ssh_buffer_get(sigbuf));
         if (rc != SSH_OK) {
             ssh_string_free(session_id);
             ssh_buffer_free(buf);
@@ -1673,7 +1673,7 @@ ssh_string ssh_pki_do_sign(ssh_session session,
         }
 
         sha1_update(ctx, session_id, ssh_string_len(session_id) + 4);
-        sha1_update(ctx, ssh_buffer_get(sigbuf), ssh_buffer_get_rest_len(sigbuf));
+        sha1_update(ctx, ssh_buffer_get(sigbuf), ssh_buffer_get_len(sigbuf));
         sha1_final(hash, ctx);
 
 #ifdef DEBUG_CRYPTO

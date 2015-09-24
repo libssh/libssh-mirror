@@ -253,7 +253,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
                  * Decrypt the rest of the packet (blocksize bytes already
                  * have been decrypted)
                  */
-                uint32_t buffer_len = ssh_buffer_get_rest_len(session->in_buffer);
+                uint32_t buffer_len = ssh_buffer_get_len(session->in_buffer);
 
                 /* The following check avoids decrypting zero bytes */
                 if (buffer_len > blocksize) {
@@ -290,28 +290,28 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
                 goto error;
             }
 
-            if (padding > ssh_buffer_get_rest_len(session->in_buffer)) {
+            if (padding > ssh_buffer_get_len(session->in_buffer)) {
                 ssh_set_error(session,
                               SSH_FATAL,
                               "Invalid padding: %d (%d left)",
                               padding,
-                              ssh_buffer_get_rest_len(session->in_buffer));
+                              ssh_buffer_get_len(session->in_buffer));
                 goto error;
             }
             ssh_buffer_pass_bytes_end(session->in_buffer, padding);
-            compsize = ssh_buffer_get_rest_len(session->in_buffer);
+            compsize = ssh_buffer_get_len(session->in_buffer);
 
 #ifdef WITH_ZLIB
             if (session->current_crypto
                 && session->current_crypto->do_compress_in
-                && ssh_buffer_get_rest_len(session->in_buffer) > 0) {
+                && ssh_buffer_get_len(session->in_buffer) > 0) {
                 rc = decompress_buffer(session, session->in_buffer,MAX_PACKET_LEN);
                 if (rc < 0) {
                     goto error;
                 }
             }
 #endif /* WITH_ZLIB */
-            payloadsize = ssh_buffer_get_rest_len(session->in_buffer);
+            payloadsize = ssh_buffer_get_len(session->in_buffer);
             session->recv_seq++;
             if (session->raw_counter != NULL) {
                 session->raw_counter->in_bytes += payloadsize;
@@ -508,7 +508,7 @@ static int ssh_packet_write(ssh_session session) {
 
   rc=ssh_socket_write(session->socket,
       ssh_buffer_get(session->out_buffer),
-      ssh_buffer_get_rest_len(session->out_buffer));
+      ssh_buffer_get_len(session->out_buffer));
 
   return rc;
 }
@@ -518,7 +518,7 @@ static int packet_send2(ssh_session session) {
       session->current_crypto->out_cipher->blocksize : 8);
   enum ssh_hmac_e hmac_type = (session->current_crypto ?
       session->current_crypto->out_hmac : session->next_crypto->out_hmac);
-  uint32_t currentlen = ssh_buffer_get_rest_len(session->out_buffer);
+  uint32_t currentlen = ssh_buffer_get_len(session->out_buffer);
   unsigned char *hmac = NULL;
   char padstring[32] = { 0 };
   int rc = SSH_ERROR;
@@ -531,11 +531,11 @@ static int packet_send2(ssh_session session) {
 #ifdef WITH_ZLIB
   if (session->current_crypto
       && session->current_crypto->do_compress_out
-      && ssh_buffer_get_rest_len(session->out_buffer)) {
+      && ssh_buffer_get_len(session->out_buffer)) {
     if (compress_buffer(session,session->out_buffer) < 0) {
       goto error;
     }
-    currentlen = ssh_buffer_get_rest_len(session->out_buffer);
+    currentlen = ssh_buffer_get_len(session->out_buffer);
   }
 #endif /* WITH_ZLIB */
   compsize = currentlen;
@@ -563,12 +563,12 @@ static int packet_send2(ssh_session session) {
 #ifdef WITH_PCAP
   if(session->pcap_ctx){
   	ssh_pcap_context_write(session->pcap_ctx,SSH_PCAP_DIR_OUT,
-  			ssh_buffer_get(session->out_buffer),ssh_buffer_get_rest_len(session->out_buffer)
-  			,ssh_buffer_get_rest_len(session->out_buffer));
+  			ssh_buffer_get(session->out_buffer),ssh_buffer_get_len(session->out_buffer)
+  			,ssh_buffer_get_len(session->out_buffer));
   }
 #endif
   hmac = ssh_packet_encrypt(session, ssh_buffer_get(session->out_buffer),
-      ssh_buffer_get_rest_len(session->out_buffer));
+      ssh_buffer_get_len(session->out_buffer));
   if (hmac) {
     rc = ssh_buffer_add_data(session->out_buffer, hmac, hmac_digest_len(hmac_type));
     if (rc < 0) {

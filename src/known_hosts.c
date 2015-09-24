@@ -264,14 +264,14 @@ static int check_public_key(ssh_session session, char **tokens) {
     return -1;
   }
 
-  if (ssh_buffer_get_rest_len(pubkey_buffer) != ssh_string_len(pubkey)) {
+  if (ssh_buffer_get_len(pubkey_buffer) != ssh_string_len(pubkey)) {
     ssh_buffer_free(pubkey_buffer);
     return 0;
   }
 
   /* now test that they are identical */
   if (memcmp(ssh_buffer_get(pubkey_buffer), ssh_string_data(pubkey),
-        ssh_buffer_get_rest_len(pubkey_buffer)) != 0) {
+        ssh_buffer_get_len(pubkey_buffer)) != 0) {
     ssh_buffer_free(pubkey_buffer);
     return 0;
   }
@@ -340,7 +340,7 @@ static int match_hashed_host(const char *host, const char *sourcehash)
     return 0;
   }
 
-  mac = hmac_init(ssh_buffer_get(salt), ssh_buffer_get_rest_len(salt), SSH_HMAC_SHA1);
+  mac = hmac_init(ssh_buffer_get(salt), ssh_buffer_get_len(salt), SSH_HMAC_SHA1);
   if (mac == NULL) {
     ssh_buffer_free(salt);
     ssh_buffer_free(hash);
@@ -351,7 +351,7 @@ static int match_hashed_host(const char *host, const char *sourcehash)
   hmac_update(mac, host, strlen(host));
   hmac_final(mac, buffer, &size);
 
-  if (size == ssh_buffer_get_rest_len(hash) &&
+  if (size == ssh_buffer_get_len(hash) &&
       memcmp(buffer, ssh_buffer_get(hash), size) == 0) {
     match = 1;
   } else {

@@ -1300,12 +1300,12 @@ ssh_string pki_publickey_to_blob(const ssh_key key)
             goto fail;
     }
 
-    str = ssh_string_new(ssh_buffer_get_rest_len(buffer));
+    str = ssh_string_new(ssh_buffer_get_len(buffer));
     if (str == NULL) {
         goto fail;
     }
 
-    rc = ssh_string_fill(str, ssh_buffer_get(buffer), ssh_buffer_get_rest_len(buffer));
+    rc = ssh_string_fill(str, ssh_buffer_get(buffer), ssh_buffer_get_len(buffer));
     if (rc < 0) {
         goto fail;
     }

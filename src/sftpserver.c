@@ -66,7 +66,7 @@ sftp_client_message sftp_get_client_message(sftp_session sftp) {
   msg->complete_message = ssh_buffer_new();
   ssh_buffer_add_data(msg->complete_message,
                       ssh_buffer_get(payload),
-                      ssh_buffer_get_rest_len(payload));
+                      ssh_buffer_get_len(payload));
 
   ssh_buffer_get_u32(payload, &msg->id);
 
@@ -378,7 +378,7 @@ int sftp_reply_names(sftp_client_message msg) {
   if (ssh_buffer_add_u32(out, msg->id) < 0 ||
       ssh_buffer_add_u32(out, htonl(msg->attr_num)) < 0 ||
       ssh_buffer_add_data(out, ssh_buffer_get(msg->attrbuf),
-        ssh_buffer_get_rest_len(msg->attrbuf)) < 0 ||
+        ssh_buffer_get_len(msg->attrbuf)) < 0 ||
       sftp_packet_write(msg->sftp, SSH_FXP_NAME, out) < 0) {
     ssh_buffer_free(out);
     ssh_buffer_free(msg->attrbuf);

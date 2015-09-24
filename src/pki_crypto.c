@@ -1034,12 +1034,12 @@ ssh_string pki_publickey_to_blob(const ssh_key key)
             goto fail;
     }
 
-    str = ssh_string_new(ssh_buffer_get_rest_len(buffer));
+    str = ssh_string_new(ssh_buffer_get_len(buffer));
     if (str == NULL) {
         goto fail;
     }
 
-    rc = ssh_string_fill(str, ssh_buffer_get(buffer), ssh_buffer_get_rest_len(buffer));
+    rc = ssh_string_fill(str, ssh_buffer_get(buffer), ssh_buffer_get_len(buffer));
     if (rc < 0) {
         goto fail;
     }
@@ -1238,13 +1238,13 @@ ssh_string pki_signature_to_blob(const ssh_signature sig)
                 return NULL;
             }
 
-            sig_blob = ssh_string_new(ssh_buffer_get_rest_len(b));
+            sig_blob = ssh_string_new(ssh_buffer_get_len(b));
             if (sig_blob == NULL) {
                 ssh_buffer_free(b);
                 return NULL;
             }
 
-            ssh_string_fill(sig_blob, ssh_buffer_get(b), ssh_buffer_get_rest_len(b));
+            ssh_string_fill(sig_blob, ssh_buffer_get(b), ssh_buffer_get_len(b));
             ssh_buffer_free(b);
             break;
         }

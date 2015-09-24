@@ -387,7 +387,7 @@ ssh_key ssh_pki_openssh_privkey_import(const char *text_key,
     comment = ssh_buffer_get_ssh_string(privkey_buffer);
     SAFE_FREE(comment);
     /* verify that the remaining data is correct padding */
-    for (i=1; ssh_buffer_get_rest_len(privkey_buffer) > 0; ++i){
+    for (i=1; ssh_buffer_get_len(privkey_buffer) > 0; ++i){
         ssh_buffer_get_u8(privkey_buffer, &padding);
         if (padding != i){
             ssh_key_free(key);

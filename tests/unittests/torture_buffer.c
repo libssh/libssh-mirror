@@ -36,8 +36,8 @@ static void torture_growing_buffer(void **state) {
   for(i=0;i<LIMIT;++i){
     ssh_buffer_add_data(buffer,"A",1);
     if(buffer->used >= 128){
-      if(ssh_buffer_get_rest_len(buffer) * 2 < buffer->allocated){
-        assert_true(ssh_buffer_get_rest_len(buffer) * 2 >= buffer->allocated);
+      if(ssh_buffer_get_len(buffer) * 2 < buffer->allocated){
+        assert_true(ssh_buffer_get_len(buffer) * 2 >= buffer->allocated);
       }
     }
   }
@@ -58,8 +58,8 @@ static void torture_growing_buffer_shifting(void **state) {
     ssh_buffer_get_u8(buffer,&c);
     ssh_buffer_add_data(buffer,"A",1);
     if(buffer->used >= 128){
-      if(ssh_buffer_get_rest_len(buffer) * 4 < buffer->allocated){
-        assert_true(ssh_buffer_get_rest_len(buffer) * 4 >= buffer->allocated);
+      if(ssh_buffer_get_len(buffer) * 4 < buffer->allocated){
+        assert_true(ssh_buffer_get_len(buffer) * 4 >= buffer->allocated);
         return;
       }
     }
@@ -74,25 +74,25 @@ static void torture_buffer_prepend(void **state) {
   uint32_t v;
   ssh_buffer_add_data(buffer,"abcdef",6);
   ssh_buffer_prepend_data(buffer,"xyz",3);
-  assert_int_equal(ssh_buffer_get_rest_len(buffer),9);
+  assert_int_equal(ssh_buffer_get_len(buffer),9);
   assert_memory_equal(ssh_buffer_get(buffer),  "xyzabcdef", 9);
 
   /* Now remove 4 bytes and see if we can replace them */
   ssh_buffer_get_u32(buffer,&v);
-  assert_int_equal(ssh_buffer_get_rest_len(buffer),5);
+  assert_int_equal(ssh_buffer_get_len(buffer),5);
   assert_memory_equal(ssh_buffer_get(buffer), "bcdef", 5);
 
   ssh_buffer_prepend_data(buffer,"aris",4);
-  assert_int_equal(ssh_buffer_get_rest_len(buffer),9);
+  assert_int_equal(ssh_buffer_get_len(buffer),9);
   assert_memory_equal(ssh_buffer_get(buffer), "arisbcdef", 9);
 
   /* same thing but we add 5 bytes now */
   ssh_buffer_get_u32(buffer,&v);
-  assert_int_equal(ssh_buffer_get_rest_len(buffer),5);
+  assert_int_equal(ssh_buffer_get_len(buffer),5);
   assert_memory_equal(ssh_buffer_get(buffer), "bcdef", 5);
 
   ssh_buffer_prepend_data(buffer,"12345",5);
-  assert_int_equal(ssh_buffer_get_rest_len(buffer),10);
+  assert_int_equal(ssh_buffer_get_len(buffer),10);
   assert_memory_equal(ssh_buffer_get(buffer), "12345bcdef", 10);
 }
 
@@ -155,7 +155,7 @@ static void torture_ssh_buffer_add_format(void **state) {
     rc=ssh_buffer_pack(buffer, "bwdqSsPt",b,w,d,q,s,"rocks",7,"So much","Fun!");
     assert_int_equal(rc, SSH_OK);
 
-    len = ssh_buffer_get_rest_len(buffer);
+    len = ssh_buffer_get_len(buffer);
     assert_int_equal(len, sizeof(verif) - 1);
     assert_memory_equal(ssh_buffer_get(buffer), verif, sizeof(verif) -1);
 
@@ -199,7 +199,7 @@ static void torture_ssh_buffer_get_format(void **state) {
     assert_true(s2 != NULL);
     assert_memory_equal(s2, "So much", 7);
 
-    len = ssh_buffer_get_rest_len(buffer);
+    len = ssh_buffer_get_len(buffer);
     assert_int_equal(len, 0);
     SAFE_FREE(s);
     SAFE_FREE(s1);

@@ -185,7 +185,7 @@ int ssh_packet_socket_callback1(const void *data, size_t receivedlen, void *user
           ssh_buffer_get_len(session->in_buffer));
 #endif
       SSH_LOG(SSH_LOG_PACKET, "%d bytes padding", padding);
-      if(((len + padding) != ssh_buffer_get_rest_len(session->in_buffer)) ||
+      if(((len + padding) != ssh_buffer_get_len(session->in_buffer)) ||
           ((len + padding) < sizeof(uint32_t))) {
         SSH_LOG(SSH_LOG_RARE, "no crc32 in packet");
         ssh_set_error(session, SSH_FATAL, "no crc32 in packet");
