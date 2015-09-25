@@ -431,8 +431,6 @@ int ssh_buffer_add_buffer(struct ssh_buffer_struct *buffer,
 }
 
 /**
- * @internal
- *
  * @brief Get a pointer to the head of a buffer at the current position.
  *
  * @param[in]  buffer   The buffer to get the head pointer.

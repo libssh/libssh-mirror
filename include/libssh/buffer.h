@@ -72,9 +72,6 @@ int _ssh_buffer_unpack(struct ssh_buffer_struct *buffer,
 int ssh_buffer_prepend_data(ssh_buffer buffer, const void *data, uint32_t len);
 int ssh_buffer_add_buffer(ssh_buffer buffer, ssh_buffer source);
 
-/* ssh_buffer_get_rest returns a pointer to the current position into the buffer */
-void *ssh_buffer_get(ssh_buffer buffer);
-
 /* buffer_read_*() returns the number of bytes read, except for ssh strings */
 int ssh_buffer_get_u8(ssh_buffer buffer, uint8_t *data);
 int ssh_buffer_get_u32(ssh_buffer buffer, uint32_t *data);
