@@ -92,11 +92,11 @@ if (OPENSSL_FOUND)
 
     set(CMAKE_REQUIRED_INCLUDES ${OPENSSL_INCLUDE_DIR})
     set(CMAKE_REQUIRED_LIBRARIES ${OPENSSL_CRYPTO_LIBRARY})
-    check_symbol_exists(EVP_aes_128_ctr openssl/evp.h HAVE_OPENSSL_EVP_AES_CTR)
+    check_function_exists(EVP_aes_128_ctr HAVE_OPENSSL_EVP_AES_CTR)
 
     set(CMAKE_REQUIRED_INCLUDES ${OPENSSL_INCLUDE_DIR})
     set(CMAKE_REQUIRED_LIBRARIES ${OPENSSL_CRYPTO_LIBRARY})
-    check_symbol_exists(EVP_aes_128_cbc openssl/evp.h HAVE_OPENSSL_EVP_AES_CBC)
+    check_function_exists(EVP_aes_128_cbc HAVE_OPENSSL_EVP_AES_CBC)
 
 endif()
 
