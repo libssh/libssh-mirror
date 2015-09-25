@@ -458,7 +458,7 @@ static void evp_cipher_init(struct ssh_cipher_struct *cipher) {
     case SSH_DES_CBC_SSH1:
         SSH_LOG(SSH_LOG_WARNING, "This cipher should not use evp_cipher_init");
         break;
-    case SSH_CIPHER_NONE:
+    case SSH_NO_CIPHER:
         SSH_LOG(SSH_LOG_WARNING, "No valid ciphertype found");
         break;
     }

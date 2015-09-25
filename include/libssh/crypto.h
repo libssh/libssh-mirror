@@ -60,7 +60,7 @@ enum ssh_key_exchange_e {
 };
 
 enum ssh_cipher_e {
-    SSH_CIPHER_NONE=0,
+    SSH_NO_CIPHER=0,
     SSH_BLOWFISH_CBC,
     SSH_3DES_CBC,
     SSH_3DES_CBC_SSH1,
