@@ -124,6 +124,7 @@ struct ssh_cipher_struct {
     gcry_cipher_hd_t *key;
 #elif defined HAVE_LIBCRYPTO
     struct ssh_3des_key_schedule *des3_key;
+    struct ssh_aes_key_schedule *aes_key;
     const EVP_CIPHER *cipher;
     EVP_CIPHER_CTX ctx;
 #endif

@@ -438,6 +438,7 @@ static void evp_cipher_init(struct ssh_cipher_struct *cipher) {
     case SSH_AES256_CBC:
         cipher->cipher = EVP_aes_256_cbc();
         break;
+#ifdef HAVE_OPENSSL_EVP_AES_CTR
     case SSH_AES128_CTR:
         cipher->cipher = EVP_aes_128_ctr();
         break;
@@ -447,6 +448,13 @@ static void evp_cipher_init(struct ssh_cipher_struct *cipher) {
     case SSH_AES256_CTR:
         cipher->cipher = EVP_aes_256_ctr();
         break;
+#else
+    case SSH_AES128_CTR:
+    case SSH_AES192_CTR:
+    case SSH_AES256_CTR:
+        SSH_LOG(SSH_LOG_WARNING, "This cipher is not available in evp_cipher_init");
+        break;
+#endif
     case SSH_3DES_CBC:
         cipher->cipher = EVP_des_ede3_cbc();
         break;
@@ -540,6 +548,54 @@ static void evp_cipher_cleanup(struct ssh_cipher_struct *cipher) {
     EVP_CIPHER_CTX_cleanup(&cipher->ctx);
 }
 
+#ifndef HAVE_EVP_AES_CTR
+/* Some OS (osx, OpenIndiana, ...) have no support for CTR ciphers in EVP_aes */
+
+struct ssh_aes_key_schedule {
+    AES_KEY key;
+    uint8_t IV[AES_BLOCK_SIZE];
+};
+
+static int aes_ctr_set_key(struct ssh_cipher_struct *cipher, void *key,
+    void *IV) {
+    int rc;
+
+    if (cipher->aes_key == NULL) {
+        cipher->aes_key = malloc(sizeof (struct ssh_aes_key_schedule));
+    }
+    if (cipher->aes_key == NULL) {
+        return SSH_ERROR;
+    }
+    ZERO_STRUCTP(cipher->aes_key);
+    /* CTR doesn't need a decryption key */
+    rc = AES_set_encrypt_key(key, cipher->keysize, &cipher->aes_key->key);
+    if (rc < 0) {
+        SAFE_FREE(cipher->aes_key);
+        return SSH_ERROR;
+    }
+    memcpy(cipher->aes_key->IV, IV, AES_BLOCK_SIZE);
+    return SSH_OK;
+}
+
+static void aes_ctr_encrypt(struct ssh_cipher_struct *cipher, void *in, void *out,
+    unsigned long len) {
+  unsigned char tmp_buffer[AES_BLOCK_SIZE];
+  unsigned int num=0;
+  /* Some things are special with ctr128 :
+   * In this case, tmp_buffer is not being used, because it is used to store temporary data
+   * when an encryption is made on lengths that are not multiple of blocksize.
+   * Same for num, which is being used to store the current offset in blocksize in CTR
+   * function.
+   */
+  AES_ctr128_encrypt(in, out, len, &cipher->aes_key->key, cipher->aes_key->IV, tmp_buffer, &num);
+}
+
+static void aes_ctr_cleanup(struct ssh_cipher_struct *cipher){
+    BURN_BUFFER(cipher->aes_key, sizeof(*cipher->aes_key));
+    SAFE_FREE(cipher->aes_key);
+}
+
+#endif /* HAVE_EVP_AES_CTR */
 #ifdef HAS_DES
 
 typedef uint8_t des_iv_t[8];
@@ -647,6 +703,7 @@ static struct ssh_cipher_struct ssh_ciphertab[] = {
 /* OpenSSL until 0.9.7c has a broken AES_ctr128_encrypt implementation which
  * increments the counter from 2^64 instead of 1. It's better not to use it
  */
+#ifdef HAVE_OPENSSL_EVP_AES_CTR
   {
     .name = "aes128-ctr",
     .blocksize = 16,
@@ -680,6 +737,41 @@ static struct ssh_cipher_struct ssh_ciphertab[] = {
     .decrypt = evp_cipher_decrypt,
     .cleanup = evp_cipher_cleanup
   },
+#else /* HAVE_OPENSSL_EVP_AES_CTR */
+  {
+    .name = "aes128-ctr",
+    .blocksize = 16,
+    .ciphertype = SSH_AES128_CTR,
+    .keysize = 128,
+    .set_encrypt_key = aes_ctr_set_key,
+    .set_decrypt_key = aes_ctr_set_key,
+    .encrypt = aes_ctr_encrypt,
+    .decrypt = aes_ctr_encrypt,
+    .cleanup = aes_ctr_cleanup
+  },
+  {
+    .name = "aes192-ctr",
+    .blocksize = 16,
+    .ciphertype = SSH_AES192_CTR,
+    .keysize = 192,
+    .set_encrypt_key = aes_ctr_set_key,
+    .set_decrypt_key = aes_ctr_set_key,
+    .encrypt = aes_ctr_encrypt,
+    .decrypt = aes_ctr_encrypt,
+    .cleanup = aes_ctr_cleanup
+  },
+  {
+    .name = "aes256-ctr",
+    .blocksize = 16,
+    .ciphertype = SSH_AES256_CTR,
+    .keysize = 256,
+    .set_encrypt_key = aes_ctr_set_key,
+    .set_decrypt_key = aes_ctr_set_key,
+    .encrypt = aes_ctr_encrypt,
+    .decrypt = aes_ctr_encrypt,
+    .cleanup = aes_ctr_cleanup
+  },
+#endif /* HAVE_OPENSSL_EVP_AES_CTR */
 #endif /* BROKEN_AES_CTR */
   {
     .name = "aes128-cbc",

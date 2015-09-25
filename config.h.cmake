@@ -76,6 +76,12 @@
 
 /*************************** FUNCTIONS ***************************/
 
+/* Define to 1 if you have the `EVP_aes128_ctr' function. */
+#cmakedefine HAVE_OPENSSL_EVP_AES_CTR 1
+
+/* Define to 1 if you have the `EVP_aes128_cbc' function. */
+#cmakedefine HAVE_OPENSSL_EVP_AES_CBC 1
+
 /* Define to 1 if you have the `snprintf' function. */
 #cmakedefine HAVE_SNPRINTF 1
 
