@@ -548,7 +548,7 @@ static void evp_cipher_cleanup(struct ssh_cipher_struct *cipher) {
     EVP_CIPHER_CTX_cleanup(&cipher->ctx);
 }
 
-#ifndef HAVE_EVP_AES_CTR
+#ifndef HAVE_OPENSSL_EVP_AES_CTR
 /* Some OS (osx, OpenIndiana, ...) have no support for CTR ciphers in EVP_aes */
 
 struct ssh_aes_key_schedule {
@@ -595,7 +595,7 @@ static void aes_ctr_cleanup(struct ssh_cipher_struct *cipher){
     SAFE_FREE(cipher->aes_key);
 }
 
-#endif /* HAVE_EVP_AES_CTR */
+#endif /* HAVE_OPENSSL_EVP_AES_CTR */
 #ifdef HAS_DES
 
 typedef uint8_t des_iv_t[8];
