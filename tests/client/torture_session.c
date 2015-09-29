@@ -98,14 +98,12 @@ static void torture_channel_read_error(void **state) {
         if (rc == SSH_ERROR)
             break;
     }
-#if 0
-    /*
-     * Either this is a change in sshd or socker_wrapper can't detect the
-     * remote fatal disconnect correctly
-     */
+#if OPENSSH_VERSION_MAJOR == 6 && OPENSSH_VERSION_MINOR >= 7
+    /* With openssh 6.7 this doesn't produce and error anymore */
+    assert_int_equal(rc, SSH_OK);
+#else
     assert_int_equal(rc, SSH_ERROR);
 #endif
-    assert_int_equal(rc, SSH_OK);
 
     ssh_channel_free(channel);
 }
