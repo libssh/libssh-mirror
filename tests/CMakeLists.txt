@@ -59,6 +59,14 @@ if (WITH_CLIENT_TESTING)
         message(SEND_ERROR "Could not find sshd which is required for client testing")
     endif()
 
+    find_program(SSH_EXECUTABLE NAMES ssh)
+    if (SSH_EXECUTABLE)
+        execute_process(COMMAND ${SSH_EXECUTABLE} -V ERROR_VARIABLE OPENSSH_VERSION_STR)
+        string(REGEX REPLACE "^OpenSSH_([0-9]).[0-9].*$" "\\1" OPENSSH_VERSION_MAJOR "${OPENSSH_VERSION_STR}")
+        string(REGEX REPLACE "^OpenSSH_[0-9].([0-9]).*$" "\\1" OPENSSH_VERSION_MINOR "${OPENSSH_VERSION_STR}")
+        add_definitions(-DOPENSSH_VERSION_MAJOR=${OPENSSH_VERSION_MAJOR} -DOPENSSH_VERSION_MINOR=${OPENSSH_VERSION_MINOR})
+    endif()
+
     # homedir will be used in passwd
     set(HOMEDIR ${CMAKE_CURRENT_BINARY_DIR}/home)
 

@@ -92,7 +92,12 @@ static void torture_channel_read_error(void **state) {
         if (rc == SSH_ERROR)
             break;
     }
-    assert_true(rc == SSH_ERROR);
+#if OPENSSH_VERSION_MAJOR == 6 && OPENSSH_VERSION_MINOR >= 7
+    /* With openssh 6.7 this doesn't produce and error anymore */
+    assert_int_equal(rc, SSH_OK);
+#else
+    assert_int_equal(rc, SSH_ERROR);
+#endif
 
     ssh_channel_free(channel);
 }
