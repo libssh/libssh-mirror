@@ -254,7 +254,6 @@ static void torture_auth_autopubkey_nonblocking(void **state) {
     assert_int_equal(rc, SSH_AUTH_SUCCESS);
 }
 
-#if 0 /* FIXME Requires UsePAM and pam_wrapper */
 static void torture_auth_kbdint(void **state) {
     struct torture_state *s = *state;
     ssh_session session = s->ssh.session;
@@ -335,7 +334,6 @@ static void torture_auth_kbdint_nonblocking(void **state) {
     }
     assert_int_equal(rc, SSH_AUTH_SUCCESS);
 }
-#endif
 
 static void torture_auth_password(void **state) {
     struct torture_state *s = *state;
@@ -465,14 +463,12 @@ int torture_run_tests(void) {
         cmocka_unit_test_setup_teardown(torture_auth_password_nonblocking,
                                         session_setup,
                                         session_teardown),
-#if 0 /* FIXME requires UsePAM and probably pam_wrapper */
         cmocka_unit_test_setup_teardown(torture_auth_kbdint,
                                         session_setup,
                                         session_teardown),
         cmocka_unit_test_setup_teardown(torture_auth_kbdint_nonblocking,
                                         session_setup,
                                         session_teardown),
-#endif
         cmocka_unit_test_setup_teardown(torture_auth_autopubkey,
                                         pubkey_setup,
                                         session_teardown),
