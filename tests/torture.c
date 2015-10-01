@@ -351,6 +351,8 @@ int torture_terminate_process(const char *pidfile)
     ssize_t rc;
     pid_t pid;
     int fd;
+    int is_running = 1;
+    int count;
 
     /* read the pidfile */
     fd = open(pidfile, O_RDONLY);
@@ -373,11 +375,20 @@ int torture_terminate_process(const char *pidfile)
 
     pid = (pid_t)(tmp & 0xFFFF);
 
-    /* Make sure the process goes away! */
-    kill(pid, SIGTERM);
+    for (count = 0; count < 10; count++) {
+        /* Make sure the daemon goes away! */
+        kill(pid, SIGTERM);
 
-    kill(pid, 0);
-    if (rc == 0) {
+        usleep(200);
+
+        rc = kill(pid, 0);
+        if (rc != 0) {
+            is_running = 0;
+            break;
+        }
+    }
+
+    if (is_running) {
         fprintf(stderr,
                 "WARNING: The process server is still running!\n");
     }
@@ -890,7 +901,7 @@ void torture_teardown_sshd_server(void **state)
 
     rc = torture_terminate_process(s->srv_pidfile);
     if (rc != 0) {
-        fprintf(stderr, "Failed to terminate sshd");
+        fprintf(stderr, "XXXXXX Failed to terminate sshd\n");
     }
 
     torture_teardown_socket_dir(state);
