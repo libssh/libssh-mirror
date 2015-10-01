@@ -813,6 +813,8 @@ static void torture_setup_create_sshd_config(void **state)
              "UsePrivilegeSeparation no\n"
              "StrictModes no\n"
              "\n"
+             "UsePAM yes\n"
+             "\n"
 #if OPENSSH_VERSION_MAJOR == 6 && OPENSSH_VERSION_MINOR >= 7
              "HostKeyAlgorithms +ssh-dss\n"
              "Ciphers +3des-cbc,aes128-cbc,aes192-cbc,aes256-cbc,blowfish-cbc\n"
@@ -856,6 +858,7 @@ void torture_setup_sshd_server(void **state)
     /* Set the default interface for the server */
     setenv("SOCKET_WRAPPER_DEFAULT_IFACE", "10", 1);
     setenv("UID_WRAPPER_ROOT", "1", 1);
+    setenv("PAM_WRAPPER", "1", 1);
 
     s = *state;
 
@@ -868,6 +871,7 @@ void torture_setup_sshd_server(void **state)
 
     setenv("SOCKET_WRAPPER_DEFAULT_IFACE", "21", 1);
     unsetenv("UID_WRAPPER_ROOT");
+    unsetenv("PAM_WRAPPER");
 }
 
 void torture_teardown_socket_dir(void **state)

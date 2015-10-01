@@ -47,6 +47,7 @@ if (WITH_CLIENT_TESTING)
     find_package(socket_wrapper 1.1.5 REQUIRED)
     find_package(nss_wrapper 1.1.2 REQUIRED)
     find_package(uid_wrapper 1.2.0 REQUIRED)
+    find_package(pam_wrapper 1.0.0 REQUIRED)
 
     find_program(SSHD_EXECUTABLE
                  NAME
@@ -76,11 +77,16 @@ if (WITH_CLIENT_TESTING)
     configure_file(etc/group.in ${CMAKE_CURRENT_BINARY_DIR}/etc/group @ONLY)
     configure_file(etc/hosts.in ${CMAKE_CURRENT_BINARY_DIR}/etc/hosts @ONLY)
 
-    set(TORTURE_ENVIRONMENT "LD_PRELOAD=${SOCKET_WRAPPER_LIBRARY}:${NSS_WRAPPER_LIBRARY}:${UID_WRAPPER_LIBRARY}")
+    ### Setup pam_wrapper
+    configure_file(etc/pam_matrix_passdb.in ${CMAKE_CURRENT_BINARY_DIR}/etc/pam_matrix_passdb @ONLY)
+    configure_file(etc/pam.d/sshd.in ${CMAKE_CURRENT_BINARY_DIR}/etc/pam.d/sshd @ONLY)
+
+    set(TORTURE_ENVIRONMENT "LD_PRELOAD=${SOCKET_WRAPPER_LIBRARY}:${NSS_WRAPPER_LIBRARY}:${UID_WRAPPER_LIBRARY}:${PAM_WRAPPER_LIBRARY}")
     list(APPEND TORTURE_ENVIRONMENT UID_WRAPPER=1)
     list(APPEND TORTURE_ENVIRONMENT NSS_WRAPPER_PASSWD=${CMAKE_CURRENT_BINARY_DIR}/etc/passwd)
     list(APPEND TORTURE_ENVIRONMENT NSS_WRAPPER_SHADOW=${CMAKE_CURRENT_BINARY_DIR}/etc/shadow)
     list(APPEND TORTURE_ENVIRONMENT NSS_WRAPPER_GROUP=${CMAKE_CURRENT_BINARY_DIR}/etc/group)
+    list(APPEND TORTURE_ENVIRONMENT PAM_WRAPPER_SERVICE_DIR=${CMAKE_CURRENT_BINARY_DIR}/etc/pam.d)
 
     message(STATUS "TORTURE_ENVIRONMENT=${TORTURE_ENVIRONMENT}")
 
