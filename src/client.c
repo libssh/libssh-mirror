@@ -113,6 +113,8 @@ static int callback_receive_banner(const void *data, size_t len, void *user) {
     }
     if (buffer[i]=='\n') {
         buffer[i] = '\0';
+        /* The server MAY send other lines of data... */
+        if (strncmp(buffer, "SSH-", 4) == 0) {
         str = strdup(buffer);
         if (str == NULL) {
             return SSH_ERROR;
@@ -125,6 +127,11 @@ static int callback_receive_banner(const void *data, size_t len, void *user) {
 		session->ssh_connection_callback(session);
 
   		return ret;
+      } else {
+        SSH_LOG(SSH_LOG_DEBUG, "ssh_protocol_version_exchange: %s", buffer);
+        ret = i + 1;
+		break;
+      }
   	}
   	if(i>127){
   		/* Too big banner */
