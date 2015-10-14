@@ -382,6 +382,9 @@ int ssh_agent_get_ident_count(struct ssh_session_struct *session) {
     ssh_buffer_free(reply);
     return -1;
   }
+#ifdef WORDS_BIGENDIAN
+  type = bswap_32(type);
+#endif
 
   SSH_LOG(SSH_LOG_WARN,
       "Answer type: %d, expected answer: %d",
@@ -392,7 +395,7 @@ int ssh_agent_get_ident_count(struct ssh_session_struct *session) {
       return 0;
   } else if (type != c2) {
       ssh_set_error(session, SSH_FATAL,
-          "Bad authentication reply message type: %d", type);
+          "Bad authentication reply message type: %u", type);
       ssh_buffer_free(reply);
       return -1;
   }
@@ -507,8 +510,8 @@ ssh_string ssh_agent_sign_data(ssh_session session,
     ssh_buffer reply;
     ssh_string key_blob;
     ssh_string sig_blob;
-    int type = SSH2_AGENT_FAILURE;
-    int flags = 0;
+    unsigned int type = 0;
+    unsigned int flags = 0;
     uint32_t dlen;
     int rc;
 
@@ -572,13 +575,19 @@ ssh_string ssh_agent_sign_data(ssh_session session,
         ssh_buffer_free(reply);
         return NULL;
     }
+#ifdef WORDS_BIGENDIAN
+    type = bswap_32(type);
+#endif
 
     if (agent_failed(type)) {
         SSH_LOG(SSH_LOG_WARN, "Agent reports failure in signing the key");
         ssh_buffer_free(reply);
         return NULL;
     } else if (type != SSH2_AGENT_SIGN_RESPONSE) {
-        ssh_set_error(session, SSH_FATAL, "Bad authentication response: %d", type);
+        ssh_set_error(session,
+                      SSH_FATAL,
+                      "Bad authentication response: %u",
+                      type);
         ssh_buffer_free(reply);
         return NULL;
     }

@@ -43,6 +43,16 @@
 # endif
 #endif /* !defined(HAVE_STRTOULL) */
 
+#ifdef HAVE_BYTESWAP_H
+#include <byteswap.h>
+#endif
+
+#ifndef bswap_32
+#define bswap_32(x) \
+    ((((x) & 0xff000000) >> 24) | (((x) & 0x00ff0000) >>  8) | \
+     (((x) & 0x0000ff00) <<  8) | (((x) & 0x000000ff) << 24))
+#endif
+
 #ifdef _WIN32
 
 /* Imitate define of inttypes.h */
