@@ -671,6 +671,7 @@ LIBSSH_API int ssh_userauth_kbdint_setanswer(ssh_session session, unsigned int i
 LIBSSH_API int ssh_userauth_gssapi(ssh_session session);
 LIBSSH_API const char *ssh_version(int req_version);
 LIBSSH_API int ssh_write_knownhost(ssh_session session);
+LIBSSH_API char *ssh_dump_knownhost(ssh_session session);
 
 LIBSSH_API void ssh_string_burn(ssh_string str);
 LIBSSH_API ssh_string ssh_string_copy(ssh_string str);

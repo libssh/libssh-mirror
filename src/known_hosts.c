@@ -514,30 +514,29 @@ int ssh_is_server_known(ssh_session session) {
 }
 
 /**
- * @brief Write the current server as known in the known hosts file.
+ * @brief Output the current server as a known host line.
  *
- * This will create the known hosts file if it does not exist. You generaly use
- * it when ssh_is_server_known() answered SSH_SERVER_NOT_KNOWN.
+ * This could be placed in a known hosts file after user confirmation.
+ * The return value should be passed to free() after the caller is done with it.
  *
  * @param[in]  session  The ssh session to use.
  *
- * @return              SSH_OK on success, SSH_ERROR on error.
+ * @return              string on success, NULL on error.
  */
-int ssh_write_knownhost(ssh_session session) {
-    ssh_key key;
+char * ssh_dump_knownhost(ssh_session session) {
     ssh_string pubkey_s;
-    char *b64_key;
-    char buffer[4096] = {0};
-    FILE *file;
-    char *dir;
+    ssh_key key;
     char *host;
     char *hostport;
+    size_t len = 4096;
+    char *buffer;
+    char *b64_key;
     int rc;
 
     if (session->opts.host == NULL) {
         ssh_set_error(session, SSH_FATAL,
                 "Can't write host in known hosts if the hostname isn't known");
-        return SSH_ERROR;
+        return NULL;
     }
 
     host = ssh_lowercase(session->opts.host);
@@ -546,88 +545,58 @@ int ssh_write_knownhost(ssh_session session) {
         hostport = ssh_hostport(host, session->opts.port);
         SAFE_FREE(host);
         if (hostport == NULL) {
-            return SSH_ERROR;
+            return NULL;
         }
         host = hostport;
         hostport = NULL;
     }
 
-    if (session->opts.knownhosts == NULL) {
-        if (ssh_options_apply(session) < 0) {
-            ssh_set_error(session, SSH_FATAL, "Can't find a known_hosts file");
-            SAFE_FREE(host);
-            return SSH_ERROR;
-        }
-    }
-
     if (session->current_crypto==NULL) {
         ssh_set_error(session, SSH_FATAL, "No current crypto context");
         SAFE_FREE(host);
-        return SSH_ERROR;
+        return NULL;
     }
 
     pubkey_s = session->current_crypto->server_pubkey;
     if (pubkey_s == NULL){
         ssh_set_error(session, SSH_FATAL, "No public key present");
         SAFE_FREE(host);
-        return SSH_ERROR;
-    }
-
-    /* Check if ~/.ssh exists and create it if not */
-    dir = ssh_dirname(session->opts.knownhosts);
-    if (dir == NULL) {
-        ssh_set_error(session, SSH_FATAL, "%s", strerror(errno));
-        SAFE_FREE(host);
-        return SSH_ERROR;
-    }
-
-    if (!ssh_file_readaccess_ok(dir)) {
-        if (ssh_mkdir(dir, 0700) < 0) {
-            ssh_set_error(session, SSH_FATAL,
-                    "Cannot create %s directory.", dir);
-            SAFE_FREE(dir);
-            SAFE_FREE(host);
-            return SSH_ERROR;
-        }
-    }
-    SAFE_FREE(dir);
-
-    file = fopen(session->opts.knownhosts, "a");
-    if (file == NULL) {
-        ssh_set_error(session, SSH_FATAL,
-                "Couldn't open known_hosts file %s for appending: %s",
-                session->opts.knownhosts, strerror(errno));
-        SAFE_FREE(host);
-        return SSH_ERROR;
+        return NULL;
     }
 
     rc = ssh_pki_import_pubkey_blob(pubkey_s, &key);
     if (rc < 0) {
-        fclose(file);
         SAFE_FREE(host);
-        return -1;
+        return NULL;
+    }
+
+    buffer = calloc (1, 4096);
+    if (!buffer) {
+        ssh_key_free(key);
+        SAFE_FREE(host);
+        return NULL;
     }
 
     if (strcmp(session->current_crypto->server_pubkey_type, "ssh-rsa1") == 0) {
         /* openssh uses a different format for ssh-rsa1 keys.
            Be compatible --kv */
-        rc = ssh_pki_export_pubkey_rsa1(key, host, buffer, sizeof(buffer));
+        rc = ssh_pki_export_pubkey_rsa1(key, host, buffer, len);
         ssh_key_free(key);
         SAFE_FREE(host);
         if (rc < 0) {
-            fclose(file);
-            return -1;
+            SAFE_FREE(buffer);
+            return NULL;
         }
     } else {
         rc = ssh_pki_export_pubkey_base64(key, &b64_key);
         if (rc < 0) {
             ssh_key_free(key);
-            fclose(file);
+            SAFE_FREE(buffer);
             SAFE_FREE(host);
-            return -1;
+            return NULL;
         }
 
-        snprintf(buffer, sizeof(buffer),
+        snprintf(buffer, len,
                 "%s %s %s\n",
                 host,
                 key->type_c,
@@ -638,11 +607,69 @@ int ssh_write_knownhost(ssh_session session) {
         SAFE_FREE(b64_key);
     }
 
+    return buffer;
+}
+
+/**
+ * @brief Write the current server as known in the known hosts file.
+ *
+ * This will create the known hosts file if it does not exist. You generaly use
+ * it when ssh_is_server_known() answered SSH_SERVER_NOT_KNOWN.
+ *
+ * @param[in]  session  The ssh session to use.
+ *
+ * @return              SSH_OK on success, SSH_ERROR on error.
+ */
+int ssh_write_knownhost(ssh_session session) {
+    FILE *file;
+    char *buffer;
+    char *dir;
+
+    if (session->opts.knownhosts == NULL) {
+        if (ssh_options_apply(session) < 0) {
+            ssh_set_error(session, SSH_FATAL, "Can't find a known_hosts file");
+            return SSH_ERROR;
+        }
+    }
+
+    /* Check if directory exists and create it if not */
+    dir = ssh_dirname(session->opts.knownhosts);
+    if (dir == NULL) {
+        ssh_set_error(session, SSH_FATAL, "%s", strerror(errno));
+        return SSH_ERROR;
+    }
+
+    if (!ssh_file_readaccess_ok(dir)) {
+        if (ssh_mkdir(dir, 0700) < 0) {
+            ssh_set_error(session, SSH_FATAL,
+                    "Cannot create %s directory.", dir);
+            SAFE_FREE(dir);
+            return SSH_ERROR;
+        }
+    }
+    SAFE_FREE(dir);
+
+    file = fopen(session->opts.knownhosts, "a");
+    if (file == NULL) {
+        ssh_set_error(session, SSH_FATAL,
+                "Couldn't open known_hosts file %s for appending: %s",
+                session->opts.knownhosts, strerror(errno));
+        return SSH_ERROR;
+    }
+
+    buffer = ssh_dump_knownhost(session);
+    if (buffer == NULL) {
+        fclose(file);
+        return SSH_ERROR;
+    }
+
     if (fwrite(buffer, strlen(buffer), 1, file) != 1 || ferror(file)) {
+        SAFE_FREE(buffer);
         fclose(file);
         return -1;
     }
 
+    SAFE_FREE(buffer);
     fclose(file);
     return 0;
 }
