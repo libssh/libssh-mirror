@@ -361,5 +361,7 @@ int match_hostname(const char *host, const char *pattern, unsigned int len);
 
 #define CLOSE_SOCKET(s) do { if ((s) != SSH_INVALID_SOCKET) { _XCLOSESOCKET(s); (s) = SSH_INVALID_SOCKET;} } while(0)
 
+void ssh_agent_state_free(void *data);
+
 #endif /* _LIBSSH_PRIV_H */
 /* vim: set ts=4 sw=4 et cindent: */

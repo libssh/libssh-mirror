@@ -261,6 +261,9 @@ void ssh_free(ssh_session session) {
       ssh_list_free(session->opts.identity);
   }
 
+  ssh_agent_state_free (session->agent_state);
+  session->agent_state = NULL;
+
   SAFE_FREE(session->auth_auto_state);
   SAFE_FREE(session->serverbanner);
   SAFE_FREE(session->clientbanner);
