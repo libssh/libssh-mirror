@@ -14,9 +14,9 @@ The goal is to show the API in action.
 #include "config.h"
 
 #include <libssh/callbacks.h>
-#include <libssh/poll.h>
 #include <libssh/server.h>
 
+#include <poll.h>
 #ifdef HAVE_ARGP_H
 #include <argp.h>
 #endif
