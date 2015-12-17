@@ -45,7 +45,7 @@ int benchmarks_sync_sftp_up (ssh_session session, struct argument_s *args,
   float ms=0.0;
   unsigned long total=0;
   sftp_session sftp;
-  sftp_file file;
+  sftp_file file = NULL;
 
   bytes = args->datasize * 1024 * 1024;
   sftp = sftp_new(session);
@@ -101,7 +101,7 @@ int benchmarks_sync_sftp_down (ssh_session session, struct argument_s *args,
   float ms=0.0;
   unsigned long total=0;
   sftp_session sftp;
-  sftp_file file;
+  sftp_file file = NULL;
   int r;
 
   bytes = args->datasize * 1024 * 1024;
@@ -163,7 +163,7 @@ int benchmarks_async_sftp_down (ssh_session session, struct argument_s *args,
   float ms=0.0;
   unsigned long total=0;
   sftp_session sftp;
-  sftp_file file;
+  sftp_file file = NULL;
   int r,i;
   int warned = 0;
   unsigned long toread;
