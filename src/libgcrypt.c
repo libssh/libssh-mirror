@@ -181,7 +181,7 @@ void ssh_mac_update(ssh_mac_ctx ctx, const void *data, unsigned long len) {
 }
 
 void ssh_mac_final(unsigned char *md, ssh_mac_ctx ctx) {
-  size_t len;
+  size_t len = 0;
   switch(ctx->mac_type){
     case SSH_MAC_SHA1:
       len=SHA_DIGEST_LEN;

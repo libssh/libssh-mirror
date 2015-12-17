@@ -737,7 +737,7 @@ int pki_pubkey_build_ecdsa(ssh_key key, int nid, ssh_string e)
 ssh_key pki_key_dup(const ssh_key key, int demote)
 {
     ssh_key new;
-    gcry_sexp_t sexp;
+    gcry_sexp_t sexp = NULL;
     gcry_error_t err;
     const char *tmp = NULL;
     size_t size;
