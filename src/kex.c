@@ -674,7 +674,18 @@ int ssh_kex_select_methods (ssh_session session){
     } else if(strcmp(session->next_crypto->kex_methods[SSH_KEX], "curve25519-sha256@libssh.org") == 0){
       session->next_crypto->kex_type=SSH_KEX_CURVE25519_SHA256_LIBSSH_ORG;
     }
-
+    SSH_LOG(SSH_LOG_INFO, "Negotiated %s,%s,%s,%s,%s,%s,%s,%s,%s,%s",
+            session->next_crypto->kex_methods[SSH_KEX],
+            session->next_crypto->kex_methods[SSH_HOSTKEYS],
+            session->next_crypto->kex_methods[SSH_CRYPT_C_S],
+            session->next_crypto->kex_methods[SSH_CRYPT_S_C],
+            session->next_crypto->kex_methods[SSH_MAC_C_S],
+            session->next_crypto->kex_methods[SSH_MAC_S_C],
+            session->next_crypto->kex_methods[SSH_COMP_C_S],
+            session->next_crypto->kex_methods[SSH_COMP_S_C],
+            session->next_crypto->kex_methods[SSH_LANG_C_S],
+            session->next_crypto->kex_methods[SSH_LANG_S_C]
+    );
     return SSH_OK;
 }
 
