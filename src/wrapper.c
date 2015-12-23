@@ -48,6 +48,9 @@
 #include "libssh/wrapper.h"
 #include "libssh/pki.h"
 #include "libssh/poly1305.h"
+#include "libssh/dh.h"
+#include "libssh/ecdh.h"
+#include "libssh/curve25519.h"
 
 static struct ssh_hmac_struct ssh_hmac_tab[] = {
   { "hmac-sha1",     SSH_HMAC_SHA1 },
@@ -530,6 +533,35 @@ int crypt_set_algorithms_server(ssh_session session){
     method = session->next_crypto->kex_methods[SSH_HOSTKEYS];
     session->srv.hostkey = ssh_key_type_from_signature_name(method);
 
+    /* setup DH key exchange type */
+    switch (session->next_crypto->kex_type) {
+    case SSH_KEX_DH_GROUP1_SHA1:
+    case SSH_KEX_DH_GROUP14_SHA1:
+    case SSH_KEX_DH_GROUP16_SHA512:
+    case SSH_KEX_DH_GROUP18_SHA512:
+      ssh_server_dh_init(session);
+      break;
+#ifdef HAVE_ECDH
+    case SSH_KEX_ECDH_SHA2_NISTP256:
+    case SSH_KEX_ECDH_SHA2_NISTP384:
+    case SSH_KEX_ECDH_SHA2_NISTP521:
+      ssh_server_ecdh_init(session);
+      break;
+#endif
+#ifdef HAVE_CURVE25519
+    case SSH_KEX_CURVE25519_SHA256:
+    case SSH_KEX_CURVE25519_SHA256_LIBSSH_ORG:
+        ssh_server_curve25519_init(session);
+        break;
+#endif
+    default:
+        ssh_set_error(session,
+                      SSH_FATAL,
+                      "crypt_set_algorithms_server: could not find init "
+                      "handler for kex type %d",
+                      session->next_crypto->kex_type);
+        return SSH_ERROR;
+    }
     return SSH_OK;
 }
 

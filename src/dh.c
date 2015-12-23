@@ -772,6 +772,155 @@ error:
   return SSH_PACKET_USED;
 }
 
+#ifdef WITH_SERVER
+
+static SSH_PACKET_CALLBACK(ssh_packet_server_dh_init);
+
+static ssh_packet_callback dh_server_callbacks[] = {
+    ssh_packet_server_dh_init,
+};
+
+static struct ssh_packet_callbacks_struct ssh_dh_server_callbacks = {
+    .start = SSH2_MSG_KEXDH_INIT,
+    .n_callbacks = 1,
+    .callbacks = dh_server_callbacks,
+    .user = NULL
+};
+
+/** @internal
+ * @brief sets up the diffie-hellman-groupx kex callbacks
+ */
+void ssh_server_dh_init(ssh_session session){
+    /* register the packet callbacks */
+    ssh_packet_set_callbacks(session, &ssh_dh_server_callbacks);
+}
+
+static int dh_handshake_server(ssh_session session)
+{
+    ssh_key privkey = NULL;
+    ssh_string sig_blob = NULL;
+    ssh_string f = NULL;
+    ssh_string pubkey_blob = NULL;
+    int rc;
+
+    rc = ssh_dh_generate_y(session);
+    if (rc < 0) {
+        ssh_set_error(session, SSH_FATAL, "Could not create y number");
+        return -1;
+    }
+    rc = ssh_dh_generate_f(session);
+    if (rc < 0) {
+        ssh_set_error(session, SSH_FATAL, "Could not create f number");
+        return -1;
+    }
+
+    f = ssh_dh_get_f(session);
+    if (f == NULL) {
+        ssh_set_error(session, SSH_FATAL, "Could not get the f number");
+        return -1;
+    }
+
+    if (ssh_get_key_params(session,&privkey) != SSH_OK){
+        ssh_string_free(f);
+        return -1;
+    }
+
+    rc = ssh_dh_build_k(session);
+    if (rc < 0) {
+        ssh_set_error(session, SSH_FATAL, "Could not import the public key");
+        ssh_string_free(f);
+        return -1;
+    }
+
+    rc = ssh_make_sessionid(session);
+    if (rc != SSH_OK) {
+        ssh_set_error(session, SSH_FATAL, "Could not create a session id");
+        ssh_string_free(f);
+        return -1;
+    }
+
+    sig_blob = ssh_srv_pki_do_sign_sessionid(session, privkey);
+    if (sig_blob == NULL) {
+        ssh_set_error(session, SSH_FATAL, "Could not sign the session id");
+        ssh_string_free(f);
+        return -1;
+    }
+    rc = ssh_dh_get_next_server_publickey_blob(session, &pubkey_blob);
+    if (rc != SSH_OK){
+        ssh_set_error_oom(session);
+        ssh_string_free(f);
+        ssh_string_free(sig_blob);
+        return -1;
+    }
+    rc = ssh_buffer_pack(session->out_buffer,
+            "bSSS",
+            SSH2_MSG_KEXDH_REPLY,
+            pubkey_blob,
+            f,
+            sig_blob);
+    ssh_string_free(f);
+    ssh_string_free(sig_blob);
+    if (rc != SSH_OK) {
+        ssh_set_error_oom(session);
+        ssh_buffer_reinit(session->out_buffer);
+        return -1;
+    }
+
+    rc = ssh_packet_send(session);
+    if (rc == SSH_ERROR) {
+        return -1;
+    }
+
+    rc = ssh_buffer_add_u8(session->out_buffer, SSH2_MSG_NEWKEYS);
+    if (rc < 0) {
+        ssh_buffer_reinit(session->out_buffer);
+        return -1;
+    }
+
+    rc = ssh_packet_send(session);
+    if (rc == SSH_ERROR) {
+        return -1;
+    }
+    SSH_LOG(SSH_LOG_PACKET, "SSH_MSG_NEWKEYS sent");
+    session->dh_handshake_state=DH_STATE_NEWKEYS_SENT;
+
+    return 0;
+}
+
+/** @internal
+ * @brief parse an incoming SSH_MSG_KEXDH_INIT packet and complete
+ *        Diffie-Hellman key exchange
+ **/
+static SSH_PACKET_CALLBACK(ssh_packet_server_dh_init)
+{
+    ssh_string e = NULL;
+    int rc;
+
+    (void)type;
+    (void)user;
+
+    ssh_packet_remove_callbacks(session, &ssh_dh_server_callbacks);
+    e = ssh_buffer_get_ssh_string(packet);
+    if (e == NULL) {
+        ssh_set_error(session, SSH_FATAL, "No e number in client request");
+        return -1;
+    }
+    rc = ssh_dh_import_e(session, e);
+    if (rc < 0) {
+      ssh_set_error(session, SSH_FATAL, "Cannot import e number");
+      goto error;
+    }
+    session->dh_handshake_state = DH_STATE_INIT_SENT;
+    dh_handshake_server(session);
+    ssh_string_free(e);
+    return SSH_PACKET_USED;
+error:
+    session->session_state = SSH_SESSION_STATE_ERROR;
+    return SSH_PACKET_USED;
+}
+
+#endif /* WITH_SERVER */
+
 int ssh_make_sessionid(ssh_session session) {
     ssh_string num = NULL;
     ssh_buffer server_hash = NULL;

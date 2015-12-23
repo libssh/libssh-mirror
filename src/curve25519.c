@@ -205,10 +205,31 @@ error:
 
 #ifdef WITH_SERVER
 
+static SSH_PACKET_CALLBACK(ssh_packet_server_curve25519_init);
+
+static ssh_packet_callback dh_server_callbacks[]= {
+    ssh_packet_server_curve25519_init
+};
+
+static struct ssh_packet_callbacks_struct ssh_curve25519_server_callbacks = {
+    .start = SSH2_MSG_KEX_ECDH_INIT,
+    .n_callbacks = 1,
+    .callbacks = dh_server_callbacks,
+    .user = NULL
+};
+
+/** @internal
+ * @brief sets up the curve25519-sha256@libssh.org kex callbacks
+ */
+void ssh_server_curve25519_init(ssh_session session){
+    /* register the packet callbacks */
+    ssh_packet_set_callbacks(session, &ssh_curve25519_server_callbacks);
+}
+
 /** @brief Parse a SSH_MSG_KEXDH_INIT packet (server) and send a
  * SSH_MSG_KEXDH_REPLY
  */
-int ssh_server_curve25519_init(ssh_session session, ssh_buffer packet){
+static SSH_PACKET_CALLBACK(ssh_packet_server_curve25519_init){
     /* ECDH keys */
     ssh_string q_c_string;
     ssh_string q_s_string;
@@ -219,18 +240,24 @@ int ssh_server_curve25519_init(ssh_session session, ssh_buffer packet){
     ssh_string sig_blob = NULL;
     int ok;
     int rc;
+    (void)type;
+    (void)user;
+
+    ssh_packet_remove_callbacks(session, &ssh_curve25519_server_callbacks);
 
     /* Extract the client pubkey from the init packet */
     q_c_string = ssh_buffer_get_ssh_string(packet);
     if (q_c_string == NULL) {
         ssh_set_error(session,SSH_FATAL, "No Q_C ECC point in packet");
-        return SSH_ERROR;
+        goto error;
     }
     if (ssh_string_len(q_c_string) != CURVE25519_PUBKEY_SIZE){
-    	ssh_set_error(session, SSH_FATAL, "Incorrect size for server Curve25519 public key: %d",
-    			(int)ssh_string_len(q_c_string));
-    	ssh_string_free(q_c_string);
-    	return SSH_ERROR;
+        ssh_set_error(session,
+                      SSH_FATAL,
+                      "Incorrect size for server Curve25519 public key: %zu",
+                      ssh_string_len(q_c_string));
+        ssh_string_free(q_c_string);
+        goto error;
     }
 
     memcpy(session->next_crypto->curve25519_client_pubkey,
@@ -241,7 +268,7 @@ int ssh_server_curve25519_init(ssh_session session, ssh_buffer packet){
     ok = ssh_get_random(session->next_crypto->curve25519_privkey, CURVE25519_PRIVKEY_SIZE, 1);
     if (!ok) {
         ssh_set_error(session, SSH_FATAL, "PRNG error");
-        return SSH_ERROR;
+        goto error;
     }
 
     crypto_scalarmult_base(session->next_crypto->curve25519_server_pubkey,
@@ -331,12 +358,16 @@ int ssh_server_curve25519_init(ssh_session session, ssh_buffer packet){
 
     session->dh_handshake_state = DH_STATE_NEWKEYS_SENT;
     rc = ssh_packet_send(session);
+    if (rc == SSH_ERROR) {
+        goto error;
+    }
     SSH_LOG(SSH_LOG_PROTOCOL, "SSH_MSG_NEWKEYS sent");
 
-    return rc;
+    return SSH_PACKET_USED;
 error:
     ssh_buffer_reinit(session->out_buffer);
-    return SSH_ERROR;
+    session->session_state=SSH_SESSION_STATE_ERROR;
+    return SSH_PACKET_USED;
 }
 
 #endif /* WITH_SERVER */

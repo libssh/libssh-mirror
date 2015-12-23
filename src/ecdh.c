@@ -107,4 +107,25 @@ error:
   return SSH_PACKET_USED;
 }
 
+#ifdef WITH_SERVER
+
+static ssh_packet_callback ecdh_server_callbacks[] = {
+    ssh_packet_server_ecdh_init
+};
+
+struct ssh_packet_callbacks_struct ssh_ecdh_server_callbacks = {
+    .start = SSH2_MSG_KEX_ECDH_INIT,
+    .n_callbacks = 1,
+    .callbacks = ecdh_server_callbacks,
+    .user = NULL
+};
+
+/** @internal
+ * @brief sets up the ecdh kex callbacks
+ */
+void ssh_server_ecdh_init(ssh_session session){
+    ssh_packet_set_callbacks(session, &ssh_ecdh_server_callbacks);
+}
+
+#endif /* WITH_SERVER */
 #endif /* HAVE_ECDH */

@@ -182,8 +182,8 @@ out:
 }
 
 #ifdef WITH_SERVER
-int ssh_server_ecdh_init(ssh_session session, ssh_buffer packet)
-{
+
+SSH_PACKET_CALLBACK(ssh_packet_server_ecdh_init){
     ssh_string q_c_string = NULL;
     ssh_string q_s_string = NULL;
     mbedtls_ecp_group grp;
@@ -192,7 +192,10 @@ int ssh_server_ecdh_init(ssh_session session, ssh_buffer packet)
     ssh_string pubkey_blob = NULL;
     int rc;
     mbedtls_ecp_group_id curve;
+    (void)type;
+    (void)user;
 
+    ssh_packet_remove_callbacks(session, &ssh_ecdh_server_callbacks);
     curve = ecdh_kex_type_to_curve(session->next_crypto->kex_type);
     if (curve == MBEDTLS_ECP_DP_NONE) {
         return SSH_ERROR;
@@ -308,7 +311,11 @@ int ssh_server_ecdh_init(ssh_session session, ssh_buffer packet)
 
 out:
     mbedtls_ecp_group_free(&grp);
-    return rc;
+    if (rc == SSH_ERROR) {
+        ssh_buffer_reinit(session->out_buffer);
+        session->session_state = SSH_SESSION_STATE_ERROR;
+    }
+    return SSH_PACKET_USED;
 }
 
 #endif /* WITH_SERVER */

@@ -259,10 +259,11 @@ int ecdh_build_k(ssh_session session)
 
 #ifdef WITH_SERVER
 
-/** @brief Parse a SSH_MSG_KEXDH_INIT packet (server) and send a
+
+/** @brief Handle a SSH_MSG_KEXDH_INIT packet (server) and send a
  * SSH_MSG_KEXDH_REPLY
  */
-int ssh_server_ecdh_init(ssh_session session, ssh_buffer packet) {
+SSH_PACKET_CALLBACK(ssh_packet_server_ecdh_init){
     gpg_error_t err;
     /* ECDH keys */
     ssh_string q_c_string;
@@ -275,7 +276,10 @@ int ssh_server_ecdh_init(ssh_session session, ssh_buffer packet) {
     ssh_string pubkey_blob = NULL;
     int rc = SSH_ERROR;
     const char *curve = NULL;
+    (void)type;
+    (void)user;
 
+    ssh_packet_remove_callbacks(session, &ssh_ecdh_server_callbacks);
     curve = ecdh_kex_type_to_curve(session->next_crypto->kex_type);
     if (curve == NULL) {
         goto out;
@@ -380,7 +384,11 @@ int ssh_server_ecdh_init(ssh_session session, ssh_buffer packet) {
  out:
     gcry_sexp_release(param);
     gcry_sexp_release(key);
-    return rc;
+    if (rc == SSH_ERROR) {
+        ssh_buffer_reinit(session->out_buffer);
+        session->session_state = SSH_SESSION_STATE_ERROR;
+    }
+    return SSH_PACKET_USED;
 }
 
 #endif /* WITH_SERVER */

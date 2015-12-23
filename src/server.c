@@ -65,8 +65,6 @@
             session->common.callbacks->connect_status_function(session->common.callbacks->userdata, status); \
     } while (0)
 
-static int dh_handshake_server(ssh_session session);
-
 /**
  * @addtogroup libssh_server
  *
@@ -177,28 +175,6 @@ int ssh_server_init_kex(ssh_session session) {
     return server_set_kex(session);
 }
 
-/** @internal
- * @brief parse an incoming SSH_MSG_KEXDH_INIT packet and complete
- *        key exchange
- **/
-static int ssh_server_kexdh_init(ssh_session session, ssh_buffer packet){
-    ssh_string e;
-    e = ssh_buffer_get_ssh_string(packet);
-    if (e == NULL) {
-      ssh_set_error(session, SSH_FATAL, "No e number in client request");
-      return -1;
-    }
-    if (ssh_dh_import_e(session, e) < 0) {
-      ssh_set_error(session, SSH_FATAL, "Cannot import e number");
-      session->session_state=SSH_SESSION_STATE_ERROR;
-    } else {
-      session->dh_handshake_state=DH_STATE_INIT_SENT;
-      dh_handshake_server(session);
-    }
-    ssh_string_free(e);
-    return SSH_OK;
-}
-
 static int ssh_server_send_extensions(ssh_session session) {
     int rc;
     const char *hostkey_algorithms;
@@ -231,14 +207,15 @@ error:
 }
 
 SSH_PACKET_CALLBACK(ssh_packet_kexdh_init){
-  int rc = SSH_ERROR;
+  (void)packet;
   (void)type;
   (void)user;
 
   SSH_LOG(SSH_LOG_PACKET,"Received SSH_MSG_KEXDH_INIT");
   if(session->dh_handshake_state != DH_STATE_INIT){
     SSH_LOG(SSH_LOG_RARE,"Invalid state for SSH_MSG_KEXDH_INIT");
-    goto error;
+    session->session_state = SSH_SESSION_STATE_ERROR;
+    return SSH_PACKET_USED;
   }
 
   /* If first_kex_packet_follows guess was wrong, ignore this message. */
@@ -246,41 +223,10 @@ SSH_PACKET_CALLBACK(ssh_packet_kexdh_init){
     SSH_LOG(SSH_LOG_RARE, "first_kex_packet_follows guess was wrong, "
                           "ignoring first SSH_MSG_KEXDH_INIT message");
     session->first_kex_follows_guess_wrong = 0;
-    rc = SSH_OK;
-    goto error;
-  }
 
-  switch(session->next_crypto->kex_type){
-      case SSH_KEX_DH_GROUP1_SHA1:
-      case SSH_KEX_DH_GROUP14_SHA1:
-      case SSH_KEX_DH_GROUP16_SHA512:
-      case SSH_KEX_DH_GROUP18_SHA512:
-        rc=ssh_server_kexdh_init(session, packet);
-        break;
-  #ifdef HAVE_ECDH
-      case SSH_KEX_ECDH_SHA2_NISTP256:
-      case SSH_KEX_ECDH_SHA2_NISTP384:
-      case SSH_KEX_ECDH_SHA2_NISTP521:
-        rc = ssh_server_ecdh_init(session, packet);
-        break;
-  #endif
-  #ifdef HAVE_CURVE25519
-      case SSH_KEX_CURVE25519_SHA256:
-      case SSH_KEX_CURVE25519_SHA256_LIBSSH_ORG:
-    	rc = ssh_server_curve25519_init(session, packet);
-    	break;
-  #endif
-      default:
-        ssh_set_error(session,SSH_FATAL,"Wrong kex type in ssh_packet_kexdh_init");
-        rc = SSH_ERROR;
+    return SSH_PACKET_USED;
   }
-
-error:
-  if (rc == SSH_ERROR) {
-      session->session_state = SSH_SESSION_STATE_ERROR;
-  }
-
-  return SSH_PACKET_USED;
+  return SSH_PACKET_NOT_USED;
 }
 
 int ssh_get_key_params(ssh_session session, ssh_key *privkey){
@@ -332,93 +278,6 @@ int ssh_get_key_params(ssh_session session, ssh_key *privkey){
     }
 
     return SSH_OK;
-}
-
-static int dh_handshake_server(ssh_session session) {
-  ssh_key privkey;
-  ssh_string sig_blob;
-  ssh_string f;
-  ssh_string pubkey_blob = NULL;
-  int rc;
-
-  if (ssh_dh_generate_y(session) < 0) {
-    ssh_set_error(session, SSH_FATAL, "Could not create y number");
-    return -1;
-  }
-  if (ssh_dh_generate_f(session) < 0) {
-    ssh_set_error(session, SSH_FATAL, "Could not create f number");
-    return -1;
-  }
-
-  f = ssh_dh_get_f(session);
-  if (f == NULL) {
-    ssh_set_error(session, SSH_FATAL, "Could not get the f number");
-    return -1;
-  }
-
-  if (ssh_get_key_params(session,&privkey) != SSH_OK){
-      ssh_string_free(f);
-      return -1;
-  }
-
-  if (ssh_dh_build_k(session) < 0) {
-    ssh_set_error(session, SSH_FATAL, "Could not import the public key");
-    ssh_string_free(f);
-    return -1;
-  }
-
-  if (ssh_make_sessionid(session) != SSH_OK) {
-    ssh_set_error(session, SSH_FATAL, "Could not create a session id");
-    ssh_string_free(f);
-    return -1;
-  }
-
-  sig_blob = ssh_srv_pki_do_sign_sessionid(session, privkey);
-  if (sig_blob == NULL) {
-    ssh_set_error(session, SSH_FATAL, "Could not sign the session id");
-    ssh_string_free(f);
-    return -1;
-  }
-
-  rc = ssh_dh_get_next_server_publickey_blob(session, &pubkey_blob);
-  if (rc != SSH_OK) {
-      ssh_set_error_oom(session);
-      ssh_string_free(f);
-      ssh_string_free(sig_blob);
-      return -1;
-  }
-
-  rc = ssh_buffer_pack(session->out_buffer,
-                       "bSSS",
-                       SSH2_MSG_KEXDH_REPLY,
-                       pubkey_blob,
-                       f,
-                       sig_blob);
-  ssh_string_free(f);
-  ssh_string_free(sig_blob);
-  ssh_string_free(pubkey_blob);
-  if(rc != SSH_OK){
-    ssh_set_error_oom(session);
-    ssh_buffer_reinit(session->out_buffer);
-    return -1;
-  }
-
-  if (ssh_packet_send(session) == SSH_ERROR) {
-    return -1;
-  }
-
-  if (ssh_buffer_add_u8(session->out_buffer, SSH2_MSG_NEWKEYS) < 0) {
-    ssh_buffer_reinit(session->out_buffer);
-    return -1;
-  }
-
-  if (ssh_packet_send(session) == SSH_ERROR) {
-    return -1;
-  }
-  SSH_LOG(SSH_LOG_PACKET, "SSH_MSG_NEWKEYS sent");
-  session->dh_handshake_state=DH_STATE_NEWKEYS_SENT;
-
-  return 0;
 }
 
 /**
