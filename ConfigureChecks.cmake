@@ -120,8 +120,9 @@ endif (NOT WITH_GCRYPT)
 
 check_function_exists(isblank HAVE_ISBLANK)
 check_function_exists(strncpy HAVE_STRNCPY)
-check_function_exists(vsnprintf HAVE_VSNPRINTF)
-check_function_exists(snprintf HAVE_SNPRINTF)
+
+check_symbol_exists(vsnprintf "stdio.h" HAVE_VSNPRINTF)
+check_symbol_exists(snprintf "stdio.h" HAVE_SNPRINTF)
 
 if (WIN32)
     check_function_exists(_strtoui64 HAVE__STRTOUI64)
