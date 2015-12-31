@@ -122,37 +122,6 @@ static bignum select_p(enum ssh_key_exchange_e type) {
     return type == SSH_KEX_DH_GROUP14_SHA1 ? p_group14 : p_group1;
 }
 
-int ssh_get_random(void *where, int len, int strong){
-
-#ifdef HAVE_LIBGCRYPT
-  /* variable not used in gcrypt */
-  (void) strong;
-  /* not using GCRY_VERY_STRONG_RANDOM which is a bit overkill */
-  gcry_randomize(where,len,GCRY_STRONG_RANDOM);
-
-  return 1;
-#elif defined HAVE_LIBCRYPTO
-# if OPENSSL_VERSION_NUMBER > 0x10100000L
-  /* variable not used in new libcrypto */
-  (void) strong;
-
-  return RAND_bytes(where, len);
-# else /* OPENSSL_VERSION_NUMBER */
-  if (strong) {
-    return RAND_bytes(where,len);
-  } else {
-    return RAND_pseudo_bytes(where,len);
-  }
-# endif /* OPENSSL_VERSION_NUMBER */
-#elif defined HAVE_LIBMBEDCRYPTO
-  return ssh_mbedtls_random(where, len, strong);
-#endif
-
-  /* never reached */
-  return 1;
-}
-
-
 /*
  * This inits the values g and p which are used for DH key agreement
  * FIXME: Make the function thread safe by adding a semaphore or mutex.
@@ -260,13 +229,7 @@ int ssh_dh_generate_x(ssh_session session) {
     return -1;
   }
 
-#ifdef HAVE_LIBGCRYPT
   bignum_rand(session->next_crypto->x, keysize);
-#elif defined HAVE_LIBCRYPTO
-  bignum_rand(session->next_crypto->x, keysize, -1, 0);
-#elif defined HAVE_LIBMBEDCRYPTO
-  bignum_rand(session->next_crypto->x, keysize, -1, 0);
-#endif
 
   /* not harder than this */
 #ifdef DEBUG_CRYPTO
@@ -289,13 +252,7 @@ int ssh_dh_generate_y(ssh_session session) {
     return -1;
   }
 
-#ifdef HAVE_LIBGCRYPT
   bignum_rand(session->next_crypto->y, keysize);
-#elif defined HAVE_LIBCRYPTO
-  bignum_rand(session->next_crypto->y, keysize, -1, 0);
-#elif defined HAVE_LIBMBEDCRYPTO
-  bignum_rand(session->next_crypto->y, keysize, -1, 0);
-#endif
 
   /* not harder than this */
 #ifdef DEBUG_CRYPTO

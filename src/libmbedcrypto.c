@@ -40,6 +40,11 @@ void ssh_reseed(void)
     mbedtls_ctr_drbg_reseed(&ssh_mbedtls_ctr_drbg, NULL, 0);
 }
 
+int ssh_get_random(void *where, int len, int strong)
+{
+    return ssh_mbedtls_random(where, len, strong);
+}
+
 SHACTX sha1_init(void)
 {
     SHACTX ctx = NULL;

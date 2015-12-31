@@ -73,7 +73,7 @@ typedef BN_CTX* bignum_CTX;
 #define bignum_bn2dec(num) BN_bn2dec(num)
 #define bignum_dec2bn(bn,data) BN_dec2bn(data,bn)
 #define bignum_bn2hex(num) BN_bn2hex(num)
-#define bignum_rand(rnd, bits, top, bottom) BN_rand(rnd,bits,top,bottom)
+#define bignum_rand(rnd, bits) BN_rand(rnd, bits, 0, 1)
 #define bignum_ctx_new() BN_CTX_new()
 #define bignum_ctx_free(num) BN_CTX_free(num)
 #define bignum_mod_exp(dest,generator,exp,modulo,ctx) BN_mod_exp(dest,generator,exp,modulo,ctx)

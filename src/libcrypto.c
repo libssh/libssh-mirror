@@ -78,6 +78,14 @@ void ssh_reseed(void){
 #endif
 }
 
+int ssh_get_random(void *where, int len, int strong)
+{
+    (void)strong;
+
+    /* Returns -1 when not supported, 0 on error, 1 on success */
+    return !!RAND_bytes(where, len);
+}
+
 SHACTX sha1_init(void)
 {
     int rc;

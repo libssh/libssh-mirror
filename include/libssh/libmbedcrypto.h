@@ -86,8 +86,7 @@ int ssh_mbedcry_is_bit_set(bignum num, size_t pos);
 #define bignum_bn2dec(num) ssh_mbedcry_bn2num(num, 10)
 #define bignum_dec2bn(data, bn) mbedtls_mpi_read_string(bn, 10, data)
 #define bignum_bn2hex(num) ssh_mbedcry_bn2num(num, 16)
-#define bignum_rand(rnd, bits, top, bottom) ssh_mbedcry_rand(rnd, bits, \
-        top, bottom)
+#define bignum_rand(rnd, bits) ssh_mbedcry_rand((rnd), (bits), 0, 1)
 #define bignum_mod_exp(dest, generator, exp, modulo, ctx) \
         mbedtls_mpi_exp_mod(dest, generator, exp, modulo, NULL)
 #define bignum_num_bytes(num) mbedtls_mpi_size(num)
