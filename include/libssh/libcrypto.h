@@ -83,21 +83,6 @@ typedef BN_CTX* bignum_CTX;
 #define bignum_bn2bin(num,ptr) BN_bn2bin(num,ptr)
 #define bignum_cmp(num1,num2) BN_cmp(num1,num2)
 
-SHA256CTX sha256_init(void);
-void sha256_update(SHA256CTX c, const void *data, unsigned long len);
-void sha256_final(unsigned char *md, SHA256CTX c);
-
-SHA384CTX sha384_init(void);
-void sha384_update(SHA384CTX c, const void *data, unsigned long len);
-void sha384_final(unsigned char *md, SHA384CTX c);
-
-SHA512CTX sha512_init(void);
-void sha512_update(SHA512CTX c, const void *data, unsigned long len);
-void sha512_final(unsigned char *md, SHA512CTX c);
-
-void libcrypto_init(void);
-struct ssh_cipher_struct *ssh_get_ciphertab(void);
-
 #endif /* HAVE_LIBCRYPTO */
 
 #endif /* LIBCRYPTO_H_ */

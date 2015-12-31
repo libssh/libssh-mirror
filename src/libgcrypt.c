@@ -40,6 +40,8 @@ struct ssh_mac_ctx_struct {
   gcry_md_hd_t ctx;
 };
 
+static int libgcrypt_initialized = 0;
+
 static int alloc_key(struct ssh_cipher_struct *cipher) {
     cipher->key = malloc(cipher->keylen);
     if (cipher->key == NULL) {
@@ -544,22 +546,6 @@ static struct ssh_cipher_struct ssh_ciphertab[] = {
   }
 };
 
-void libgcrypt_init(void)
-{
-    size_t i;
-
-    for (i = 0; ssh_ciphertab[i].name != NULL; i++) {
-        int cmp;
-        cmp = strcmp(ssh_ciphertab[i].name, "chacha20-poly1305@openssh.com");
-        if (cmp == 0) {
-            memcpy(&ssh_ciphertab[i],
-                   ssh_get_chacha20poly1305_cipher(),
-                   sizeof(struct ssh_cipher_struct));
-            break;
-        }
-    }
-}
-
 struct ssh_cipher_struct *ssh_get_ciphertab(void)
 {
   return ssh_ciphertab;
@@ -613,6 +599,58 @@ fail:
     gcry_sexp_release(fragment);
     gcry_mpi_release(mpi);
     return result;
+}
+
+
+/**
+ * @internal
+ *
+ * @brief Initialize libgcrypt's subsystem
+ */
+int ssh_crypto_init(void)
+{
+    size_t i;
+
+    if (libgcrypt_initialized) {
+        return SSH_OK;
+    }
+
+    gcry_check_version(NULL);
+    if (!gcry_control(GCRYCTL_INITIALIZATION_FINISHED_P, 0)) {
+        gcry_control(GCRYCTL_INIT_SECMEM, 4096);
+        gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
+    }
+
+    for (i = 0; ssh_ciphertab[i].name != NULL; i++) {
+        int cmp;
+        cmp = strcmp(ssh_ciphertab[i].name, "chacha20-poly1305@openssh.com");
+        if (cmp == 0) {
+            memcpy(&ssh_ciphertab[i],
+                   ssh_get_chacha20poly1305_cipher(),
+                   sizeof(struct ssh_cipher_struct));
+            break;
+        }
+    }
+
+    libgcrypt_initialized = 1;
+
+    return SSH_OK;
+}
+
+/**
+ * @internal
+ *
+ * @brief Finalize libgcrypt's subsystem
+ */
+void ssh_crypto_finalize(void)
+{
+    if (!libgcrypt_initialized) {
+        return;
+    }
+
+    gcry_control(GCRYCTL_TERM_SECMEM);
+
+    libgcrypt_initialized = 0;
 }
 
 #endif

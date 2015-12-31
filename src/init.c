@@ -51,13 +51,29 @@
  * @returns             0 on success, -1 if an error occured.
  */
 int ssh_init(void) {
-  if(ssh_threads_init())
-    return -1;
-  if(ssh_crypto_init())
-    return -1;
-  if(ssh_socket_init())
-    return -1;
-  return 0;
+    int rc;
+
+    rc = ssh_threads_init();
+    if (rc != SSH_OK) {
+        return -1;
+    }
+
+    rc = ssh_crypto_init();
+    if (rc != SSH_OK) {
+        return -1;
+    }
+
+    rc = ssh_dh_init();
+    if (rc != SSH_OK) {
+        return -1;
+    }
+
+    rc = ssh_socket_init();
+    if (rc != SSH_OK) {
+        return -1;
+    }
+
+    return 0;
 }
 
 
@@ -70,14 +86,16 @@ int ssh_init(void) {
  *
    @returns 0 otherwise
  */
-int ssh_finalize(void) {
-  ssh_crypto_finalize();
-  ssh_socket_cleanup();
-  /* It is important to finalize threading after CRYPTO because
-   * it still depends on it */
-  ssh_threads_finalize();
+int ssh_finalize(void)
+{
+    ssh_dh_finalize();
+    ssh_crypto_finalize();
+    ssh_socket_cleanup();
+    /* It is important to finalize threading after CRYPTO because
+     * it still depends on it */
+    ssh_threads_finalize();
 
-  return 0;
+    return 0;
 }
 
 /** @} */

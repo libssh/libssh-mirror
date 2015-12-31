@@ -99,8 +99,6 @@ int ssh_mbedcry_is_bit_set(bignum num, size_t pos);
 mbedtls_entropy_context ssh_mbedtls_entropy;
 mbedtls_ctr_drbg_context ssh_mbedtls_ctr_drbg;
 
-void ssh_mbedtls_init(void);
-void ssh_mbedtls_cleanup(void);
 int ssh_mbedtls_random(void *where, int len, int strong);
 
 ssh_string make_ecpoint_string(const mbedtls_ecp_group *g, const

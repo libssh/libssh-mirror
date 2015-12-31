@@ -116,105 +116,92 @@ static unsigned long g_int = 2 ;	/* G is defined as 2 by the ssh2 standards */
 static bignum g;
 static bignum p_group1;
 static bignum p_group14;
-static int ssh_crypto_initialized;
+static int dh_crypto_initialized;
 
 static bignum select_p(enum ssh_key_exchange_e type) {
     return type == SSH_KEX_DH_GROUP14_SHA1 ? p_group14 : p_group1;
 }
 
-/*
- * This inits the values g and p which are used for DH key agreement
- * FIXME: Make the function thread safe by adding a semaphore or mutex.
+/**
+ * @internal
+ * @brief Initialize global constants used in DH key agreement
+ * @return SSH_OK on success, SSH_ERROR otherwise.
  */
-int ssh_crypto_init(void) {
-  if (ssh_crypto_initialized == 0) {
-#ifdef HAVE_LIBGCRYPT
-    gcry_check_version(NULL);
-    if (!gcry_control(GCRYCTL_INITIALIZATION_FINISHED_P,0)) {
-      gcry_control(GCRYCTL_INIT_SECMEM, 4096);
-      gcry_control(GCRYCTL_INITIALIZATION_FINISHED,0);
+int ssh_dh_init(void)
+{
+    if (dh_crypto_initialized) {
+        return SSH_OK;
     }
-#elif HAVE_LIBMBEDCRYPTO
-    ssh_mbedtls_init();
-#endif
 
     g = bignum_new();
     if (g == NULL) {
-      return -1;
+        return SSH_ERROR;
     }
     bignum_set_word(g,g_int);
 
-#ifdef HAVE_LIBGCRYPT
+#if defined(HAVE_LIBGCRYPT)
     bignum_bin2bn(p_group1_value, P_GROUP1_LEN, &p_group1);
     if (p_group1 == NULL) {
-      bignum_free(g);
-      g = NULL;
-      return -1;
+        bignum_free(g);
+        g = NULL;
+        return -1;
     }
     bignum_bin2bn(p_group14_value, P_GROUP14_LEN, &p_group14);
     if (p_group14 == NULL) {
-      bignum_free(g);
-      bignum_free(p_group1);
-      g = NULL;
-      p_group1 = NULL;
-      return -1;
+        bignum_free(g);
+        bignum_free(p_group1);
+        g = NULL;
+        p_group1 = NULL;
+        return -1;
     }
-    libgcrypt_init();
-
-#elif defined HAVE_LIBCRYPTO
+#elif defined(HAVE_LIBCRYPTO)
     p_group1 = bignum_new();
     if (p_group1 == NULL) {
-      bignum_free(g);
-      g = NULL;
-      return -1;
+        bignum_free(g);
+        g = NULL;
+        return -1;
     }
     bignum_bin2bn(p_group1_value, P_GROUP1_LEN, p_group1);
 
     p_group14 = bignum_new();
     if (p_group14 == NULL) {
-      bignum_free(g);
-      bignum_free(p_group1);
-      g = NULL;
-      p_group1 = NULL;
-      return -1;
+        bignum_free(g);
+        bignum_free(p_group1);
+        g = NULL;
+        p_group1 = NULL;
+        return SSH_ERROR;
     }
     bignum_bin2bn(p_group14_value, P_GROUP14_LEN, p_group14);
-
-    OpenSSL_add_all_algorithms();
-
-    libcrypto_init();
-#elif defined HAVE_LIBMBEDCRYPTO
+#elif defined(HAVE_LIBMBEDCRYPTO)
     p_group1 = bignum_new();
     bignum_bin2bn(p_group1_value, P_GROUP1_LEN, p_group1);
 
     p_group14 = bignum_new();
     bignum_bin2bn(p_group14_value, P_GROUP14_LEN, p_group14);
 #endif
+    dh_crypto_initialized = 1;
 
-    ssh_crypto_initialized = 1;
-  }
-
-  return 0;
+    return 0;
 }
 
-void ssh_crypto_finalize(void) {
-  if (ssh_crypto_initialized) {
+/**
+ * @internal
+ * @brief Finalize and free global constants used in DH key agreement
+ */
+void ssh_dh_finalize(void)
+{
+    if (!dh_crypto_initialized) {
+        return;
+    }
+
     bignum_free(g);
     g = NULL;
     bignum_free(p_group1);
     p_group1 = NULL;
     bignum_free(p_group14);
     p_group14 = NULL;
-#ifdef HAVE_LIBGCRYPT
-    gcry_control(GCRYCTL_TERM_SECMEM);
-#elif defined HAVE_LIBCRYPTO
-    EVP_cleanup();
-    CRYPTO_cleanup_all_ex_data();
-#elif defined HAVE_LIBMBEDTLS
-    ssh_mbedtls_cleanup();
-#endif
-    ssh_crypto_initialized=0;
-  }
+
+    dh_crypto_initialized = 0;
 }
 
 int ssh_dh_generate_x(ssh_session session) {

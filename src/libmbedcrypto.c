@@ -34,6 +34,7 @@ struct ssh_mac_ctx_struct {
     enum ssh_mac_e mac_type;
     mbedtls_md_context_t ctx;
 };
+static int libmbedcrypto_initialized = 0;
 
 void ssh_reseed(void)
 {
@@ -947,10 +948,14 @@ struct ssh_cipher_struct *ssh_get_ciphertab(void)
     return ssh_ciphertab;
 }
 
-void ssh_mbedtls_init(void)
+int ssh_crypto_init(void)
 {
     size_t i;
     int rc;
+
+    if (libmbedcrypto_initialized) {
+        return SSH_OK;
+    }
 
     mbedtls_entropy_init(&ssh_mbedtls_entropy);
     mbedtls_ctr_drbg_init(&ssh_mbedtls_ctr_drbg);
@@ -972,6 +977,10 @@ void ssh_mbedtls_init(void)
             break;
         }
     }
+
+    libmbedcrypto_initialized = 1;
+
+    return SSH_OK;
 }
 
 int ssh_mbedtls_random(void *where, int len, int strong)
@@ -990,10 +999,16 @@ int ssh_mbedtls_random(void *where, int len, int strong)
     return !rc;
 }
 
-void ssh_mbedtls_cleanup(void)
+void ssh_crypto_finalize(void)
 {
+    if (!libmbedcrypto_initialized) {
+        return;
+    }
+
     mbedtls_ctr_drbg_free(&ssh_mbedtls_ctr_drbg);
     mbedtls_entropy_free(&ssh_mbedtls_entropy);
+
+    libmbedcrypto_initialized = 0;
 }
 
 #endif /* HAVE_LIBMBEDCRYPTO */

@@ -70,6 +70,8 @@ struct ssh_mac_ctx_struct {
   } ctx;
 };
 
+static int libcrypto_initialized = 0;
+
 void ssh_reseed(void){
 #ifndef _WIN32
     struct timeval tv;
@@ -787,9 +789,24 @@ static struct ssh_cipher_struct ssh_ciphertab[] = {
   }
 };
 
-void libcrypto_init(void)
+struct ssh_cipher_struct *ssh_get_ciphertab(void)
+{
+  return ssh_ciphertab;
+}
+
+/**
+ * @internal
+ * @brief Initialize libcrypto's subsystem
+ */
+int ssh_crypto_init(void)
 {
     size_t i;
+
+    if (libcrypto_initialized) {
+        return SSH_OK;
+    }
+
+    OpenSSL_add_all_algorithms();
 
     for (i = 0; ssh_ciphertab[i].name != NULL; i++) {
         int cmp;
@@ -802,11 +819,26 @@ void libcrypto_init(void)
             break;
         }
     }
+
+    libcrypto_initialized = 1;
+
+    return SSH_OK;
 }
 
-struct ssh_cipher_struct *ssh_get_ciphertab(void)
+/**
+ * @internal
+ * @brief Finalize libcrypto's subsystem
+ */
+void ssh_crypto_finalize(void)
 {
-  return ssh_ciphertab;
+    if (!libcrypto_initialized) {
+        return;
+    }
+
+    EVP_cleanup();
+    CRYPTO_cleanup_all_ex_data();
+
+    libcrypto_initialized = 0;
 }
 
 #endif /* LIBCRYPTO */

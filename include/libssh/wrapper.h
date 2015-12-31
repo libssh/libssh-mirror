@@ -53,6 +53,8 @@ struct ssh_hmac_struct {
   enum ssh_hmac_e hmac_type;
 };
 
+struct ssh_cipher_struct;
+
 typedef struct ssh_mac_ctx_struct *ssh_mac_ctx;
 MD5CTX md5_init(void);
 void md5_update(MD5CTX c, const void *data, unsigned long len);
@@ -98,9 +100,12 @@ struct ssh_crypto_struct *crypto_new(void);
 void crypto_free(struct ssh_crypto_struct *crypto);
 
 void ssh_reseed(void);
+int ssh_crypto_init(void);
+void ssh_crypto_finalize(void);
 
 void ssh_cipher_clear(struct ssh_cipher_struct *cipher);
 struct ssh_hmac_struct *ssh_get_hmactab(void);
+struct ssh_cipher_struct *ssh_get_ciphertab(void);
 const char *ssh_hmac_type_to_string(enum ssh_hmac_e hmac_type);
 
 #endif /* WRAPPER_H_ */

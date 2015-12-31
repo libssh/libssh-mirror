@@ -30,8 +30,8 @@ int ssh_dh_generate_f(ssh_session session);
 int ssh_dh_generate_x(ssh_session session);
 int ssh_dh_generate_y(ssh_session session);
 
-int ssh_crypto_init(void);
-void ssh_crypto_finalize(void);
+int ssh_dh_init(void);
+void ssh_dh_finalize(void);
 
 ssh_string ssh_dh_get_e(ssh_session session);
 ssh_string ssh_dh_get_f(ssh_session session);
