@@ -74,19 +74,32 @@ typedef BN_CTX* bignum_CTX;
     } \
     } while(0)
 #define bignum_set_word(bn,n) BN_set_word(bn,n)
-#define bignum_bin2bn(bn,datalen,data) BN_bin2bn(bn,datalen,data)
+#define bignum_bin2bn(data, datalen, dest)   \
+    do {                                     \
+        (*dest) = BN_new();                  \
+        if ((*dest) != NULL) {               \
+            BN_bin2bn(data,datalen,(*dest)); \
+        }                                    \
+    } while(0)
 #define bignum_bn2dec(num) BN_bn2dec(num)
-#define bignum_dec2bn(bn,data) BN_dec2bn(data,bn)
-#define bignum_bn2hex(num) BN_bn2hex(num)
+#define bignum_dec2bn(data, bn) BN_dec2bn(bn, data)
+#define bignum_hex2bn(data, bn) BN_hex2bn(bn, data)
+#define bignum_bn2hex(num, dest) (*dest)=(unsigned char *)BN_bn2hex(num)
 #define bignum_rand(rnd, bits) BN_rand(rnd, bits, 0, 1)
+#define bignum_rand_range(rnd, max) BN_rand_range(rnd, max)
 #define bignum_ctx_new() BN_CTX_new()
 #define bignum_ctx_free(num) BN_CTX_free(num)
+#define bignum_ctx_invalid(ctx) ((ctx) == NULL)
 #define bignum_mod_exp(dest,generator,exp,modulo,ctx) BN_mod_exp(dest,generator,exp,modulo,ctx)
+#define bignum_add(dest, a, b) BN_add(dest, a, b)
+#define bignum_sub(dest, a, b) BN_sub(dest, a, b)
+#define bignum_mod(dest, a, b, ctx) BN_mod(dest, a, b, ctx)
 #define bignum_num_bytes(num) BN_num_bytes(num)
 #define bignum_num_bits(num) BN_num_bits(num)
 #define bignum_is_bit_set(num,bit) BN_is_bit_set(num,bit)
-#define bignum_bn2bin(num,ptr) BN_bn2bin(num,ptr)
+#define bignum_bn2bin(num,len, ptr) BN_bn2bin(num, ptr)
 #define bignum_cmp(num1,num2) BN_cmp(num1,num2)
+#define bignum_rshift1(dest, src) BN_rshift1(dest, src)
 
 #endif /* HAVE_LIBCRYPTO */
 

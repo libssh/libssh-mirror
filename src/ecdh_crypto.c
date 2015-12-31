@@ -128,12 +128,6 @@ int ecdh_build_k(ssh_session session) {
     return -1;
   }
 
-  session->next_crypto->k = bignum_new();
-  if (session->next_crypto->k == NULL) {
-    bignum_ctx_free(ctx);
-    return -1;
-  }
-
   pubkey = EC_POINT_new(group);
   if (pubkey == NULL) {
     bignum_ctx_free(ctx);
@@ -176,9 +170,13 @@ int ecdh_build_k(ssh_session session) {
       return -1;
   }
 
-  bignum_bin2bn(buffer, len, session->next_crypto->k);
+  bignum_bin2bn(buffer, len, &session->next_crypto->k);
   free(buffer);
-
+  if (session->next_crypto->k == NULL) {
+      EC_KEY_free(session->next_crypto->ecdh_privkey);
+      session->next_crypto->ecdh_privkey = NULL;
+      return -1;
+  }
   EC_KEY_free(session->next_crypto->ecdh_privkey);
   session->next_crypto->ecdh_privkey = NULL;
 

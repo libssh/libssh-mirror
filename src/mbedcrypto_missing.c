@@ -45,7 +45,7 @@ void ssh_mbedcry_bn_free(bignum bn)
     SAFE_FREE(bn);
 }
 
-char *ssh_mbedcry_bn2num(bignum num, int radix)
+unsigned char *ssh_mbedcry_bn2num(bignum num, int radix)
 {
     char *buf = NULL;
     size_t olen;
@@ -67,7 +67,7 @@ char *ssh_mbedcry_bn2num(bignum num, int radix)
         return NULL;
     }
 
-    return buf;
+    return (unsigned char *) buf;
 }
 
 int ssh_mbedcry_rand(bignum rnd, int bits, int top, int bottom)
@@ -127,4 +127,40 @@ int ssh_mbedcry_is_bit_set(bignum num, size_t pos)
     bit = mbedtls_mpi_get_bit(num, pos);
     return bit;
 }
+
+/** @brief generates a random integer between 0 and max
+ * @returns 1 in case of success, 0 otherwise
+ */
+int ssh_mbedcry_rand_range(bignum dest, bignum max)
+{
+    size_t bits;
+    bignum rnd;
+
+    bits = bignum_num_bits(max) + 64;
+    rnd = bignum_new();
+    if (rnd == NULL){
+        return 0;
+    }
+    bignum_rand(rnd, bits);
+    mbedtls_mpi_mod_mpi(dest, rnd, max);
+    bignum_safe_free(rnd);
+    return 1;
+}
+
+int ssh_mbedcry_hex2bn(bignum *dest, char *data)
+{
+    int rc;
+
+    *dest = bignum_new();
+    if (*dest == NULL){
+        return 0;
+    }
+    rc = mbedtls_mpi_read_string(*dest, 16, data);
+    if (rc == 0) {
+        return 1;
+    }
+
+    return 0;
+}
+
 #endif

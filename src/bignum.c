@@ -56,13 +56,7 @@ ssh_string ssh_make_bignum_string(bignum num) {
     ptr->data[0] = 0;
   }
 
-#ifdef HAVE_LIBGCRYPT
   bignum_bn2bin(num, len, ptr->data + pad);
-#elif HAVE_LIBCRYPTO
-  bignum_bn2bin(num, ptr->data + pad);
-#elif HAVE_LIBMBEDCRYPTO
-  bignum_bn2bin(num, ptr->data + pad);
-#endif
 
   return ptr;
 }
@@ -76,50 +70,30 @@ bignum ssh_make_string_bn(ssh_string string){
       len * 8, len);
 #endif /* DEBUG_CRYPTO */
 
-#ifdef HAVE_LIBGCRYPT
-  bignum_bin2bn(string->data, len, &bn);
-#elif defined HAVE_LIBCRYPTO
-  bn = bignum_bin2bn(string->data, len, NULL);
-#elif defined HAVE_LIBMBEDCRYPTO
+#if defined HAVE_LIBMBEDCRYPTO
   bn = bignum_new();
   bignum_bin2bn(string->data, len, bn);
+#else
+  // FIXME
+  bignum_bin2bn(string->data, len, &bn);
 #endif
 
   return bn;
 }
 
-void ssh_make_string_bn_inplace(ssh_string string,
-                                UNUSED_PARAM(bignum bnout))
-{
-  UNUSED_VAR(size_t len) = ssh_string_len(string);
-#ifdef HAVE_LIBGCRYPT
-  /* XXX: FIXME as needed for LIBGCRYPT ECDSA codepaths. */
-#elif defined HAVE_LIBCRYPTO
-  bignum_bin2bn(string->data, len, bnout);
-#elif defined HAVE_LIBMBEDCRYPTO
-  bignum_bin2bn(string->data, len, bnout);
-#endif
-}
-
 /* prints the bignum on stderr */
-void ssh_print_bignum(const char *which, const bignum num) {
+void ssh_print_bignum(const char *name, const bignum num)
+{
+    unsigned char *hex = NULL;
+    if (num != NULL) {
+        bignum_bn2hex(num, &hex);
+    }
+    fprintf(stderr, "%s value: %s\n", name, (hex == NULL) ? "(null)" : (char *) hex);
 #ifdef HAVE_LIBGCRYPT
-  unsigned char *hex = NULL;
-  bignum_bn2hex(num, &hex);
+    SAFE_FREE(hex);
 #elif defined HAVE_LIBCRYPTO
-  char *hex = NULL;
-  hex = bignum_bn2hex(num);
+    OPENSSL_free(hex);
 #elif defined HAVE_LIBMBEDCRYPTO
-  char *hex = NULL;
-  hex = bignum_bn2hex(num);
-#endif
-  fprintf(stderr, "%s value: ", which);
-  fprintf(stderr, "%s\n", (hex == NULL) ? "(null)" : (char *) hex);
-#ifdef HAVE_LIBGCRYPT
-  SAFE_FREE(hex);
-#elif defined HAVE_LIBCRYPTO
-  OPENSSL_free(hex);
-#elif defined HAVE_LIBMBEDCRYPTO
-  SAFE_FREE(hex);
+    SAFE_FREE(hex);
 #endif
 }

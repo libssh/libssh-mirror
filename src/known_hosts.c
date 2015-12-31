@@ -39,15 +39,6 @@
 /*todo: remove this include */
 #include "libssh/string.h"
 
-#ifdef HAVE_LIBGCRYPT
-#include <gcrypt.h>
-#elif defined HAVE_LIBCRYPTO
-#include <openssl/pem.h>
-#include <openssl/dsa.h>
-#include <openssl/err.h>
-#include <openssl/rsa.h>
-#endif /* HAVE_LIBCRYPTO */
-
 #ifndef _WIN32
 # include <netinet/in.h>
 # include <arpa/inet.h>

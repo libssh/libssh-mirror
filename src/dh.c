@@ -279,101 +279,62 @@ static bignum select_p(enum ssh_key_exchange_e type) {
  */
 int ssh_dh_init(void)
 {
+    int rc;
     if (dh_crypto_initialized) {
         return SSH_OK;
     }
 
     g = bignum_new();
     if (g == NULL) {
-        return SSH_ERROR;
+        goto error;
     }
-    bignum_set_word(g,g_int);
+    rc = bignum_set_word(g, g_int);
+    if (rc != 1) {
+        goto error;
+    }
 
-#if defined(HAVE_LIBGCRYPT)
+#if defined(HAVE_LIBMBEDCRYPTO)
+    /* FIXME */
+    p_group1 = bignum_new();
+    bignum_bin2bn(p_group1_value, P_GROUP1_LEN, p_group1);
+
+    p_group14 = bignum_new();
+    bignum_bin2bn(p_group14_value, P_GROUP14_LEN, p_group14);
+
+    p_group16 = bignum_new();
+    bignum_bin2bn(p_group16_value, P_GROUP16_LEN, p_group16);
+
+    p_group18 = bignum_new();
+    bignum_bin2bn(p_group18_value, P_GROUP18_LEN, p_group18);
+#else
     bignum_bin2bn(p_group1_value, P_GROUP1_LEN, &p_group1);
     if (p_group1 == NULL) {
-        bignum_safe_free(g);
-
-        return SSH_ERROR;
+        goto error;
     }
     bignum_bin2bn(p_group14_value, P_GROUP14_LEN, &p_group14);
     if (p_group14 == NULL) {
-        bignum_safe_free(g);
-        bignum_safe_free(p_group1);
-
-        return SSH_ERROR;
+        goto error;
     }
     bignum_bin2bn(p_group16_value, P_GROUP16_LEN, &p_group16);
     if (p_group16 == NULL) {
-        bignum_safe_free(g);
-        bignum_safe_free(p_group1);
-        bignum_safe_free(p_group14);
-
-        return SSH_ERROR;
+        goto error;
     }
     bignum_bin2bn(p_group18_value, P_GROUP18_LEN, &p_group18);
     if (p_group18 == NULL) {
-        bignum_safe_free(g);
-        bignum_safe_free(p_group1);
-        bignum_safe_free(p_group14);
-        bignum_safe_free(p_group16);
-
-        return SSH_ERROR;
+        goto error;
     }
-#elif defined(HAVE_LIBCRYPTO)
-    p_group1 = bignum_new();
-    if (p_group1 == NULL) {
-        bignum_safe_free(g);
 
-        return SSH_ERROR;
-    }
-    bignum_bin2bn(p_group1_value, P_GROUP1_LEN, p_group1);
-
-    p_group14 = bignum_new();
-    if (p_group14 == NULL) {
-        bignum_safe_free(g);
-        bignum_safe_free(p_group1);
-
-        return SSH_ERROR;
-    }
-    bignum_bin2bn(p_group14_value, P_GROUP14_LEN, p_group14);
-
-    p_group16 = bignum_new();
-    if (p_group16 == NULL) {
-        bignum_safe_free(g);
-        bignum_safe_free(p_group1);
-        bignum_safe_free(p_group14);
-
-        return SSH_ERROR;
-    }
-    bignum_bin2bn(p_group16_value, P_GROUP16_LEN, p_group16);
-
-    p_group18 = bignum_new();
-    if (p_group18 == NULL) {
-        bignum_safe_free(g);
-        bignum_safe_free(p_group1);
-        bignum_safe_free(p_group14);
-        bignum_safe_free(p_group16);
-
-        return SSH_ERROR;
-    }
-    bignum_bin2bn(p_group18_value, P_GROUP18_LEN, p_group18);
-#elif defined(HAVE_LIBMBEDCRYPTO)
-    p_group1 = bignum_new();
-    bignum_bin2bn(p_group1_value, P_GROUP1_LEN, p_group1);
-
-    p_group14 = bignum_new();
-    bignum_bin2bn(p_group14_value, P_GROUP14_LEN, p_group14);
-
-    p_group16 = bignum_new();
-    bignum_bin2bn(p_group16_value, P_GROUP16_LEN, p_group16);
-
-    p_group18 = bignum_new();
-    bignum_bin2bn(p_group18_value, P_GROUP18_LEN, p_group18);
 #endif
+
     dh_crypto_initialized = 1;
 
     return 0;
+error:
+    bignum_safe_free(g);
+    bignum_safe_free(p_group1);
+    bignum_safe_free(p_group14);
+    bignum_safe_free(p_group16);
+    return SSH_ERROR;
 }
 
 /**
@@ -470,78 +431,49 @@ int ssh_dh_generate_y(ssh_session session)
 
 /* used by server */
 int ssh_dh_generate_e(ssh_session session) {
-#ifdef HAVE_LIBCRYPTO
   bignum_CTX ctx = bignum_ctx_new();
-  if (ctx == NULL) {
+  if (bignum_ctx_invalid(ctx)) {
     return -1;
   }
-#endif
 
   session->next_crypto->e = bignum_new();
   if (session->next_crypto->e == NULL) {
-#ifdef HAVE_LIBCRYPTO
     bignum_ctx_free(ctx);
-#endif
     return -1;
   }
 
-#ifdef HAVE_LIBGCRYPT
-  bignum_mod_exp(session->next_crypto->e, g, session->next_crypto->x,
-      select_p(session->next_crypto->kex_type));
-#elif defined HAVE_LIBCRYPTO
   bignum_mod_exp(session->next_crypto->e, g, session->next_crypto->x,
       select_p(session->next_crypto->kex_type), ctx);
-#elif defined HAVE_LIBMBEDCRYPTO
-  bignum_mod_exp(session->next_crypto->e, g, session->next_crypto->x,
-      select_p(session->next_crypto->kex_type), NULL);
-#endif
 
 #ifdef DEBUG_CRYPTO
   ssh_print_bignum("e", session->next_crypto->e);
 #endif
 
-#ifdef HAVE_LIBCRYPTO
   bignum_ctx_free(ctx);
-#endif
 
   return 0;
 }
 
 int ssh_dh_generate_f(ssh_session session) {
-#ifdef HAVE_LIBCRYPTO
   bignum_CTX ctx = bignum_ctx_new();
-  if (ctx == NULL) {
+  if (bignum_ctx_invalid(ctx)) {
     return -1;
-  }
-#endif
+   }
 
   session->next_crypto->f = bignum_new();
   if (session->next_crypto->f == NULL) {
-#ifdef HAVE_LIBCRYPTO
     bignum_ctx_free(ctx);
-#endif
     return -1;
   }
 
-#ifdef HAVE_LIBGCRYPT
-  bignum_mod_exp(session->next_crypto->f, g, session->next_crypto->y,
-      select_p(session->next_crypto->kex_type));
-#elif defined HAVE_LIBCRYPTO
   bignum_mod_exp(session->next_crypto->f, g, session->next_crypto->y,
       select_p(session->next_crypto->kex_type), ctx);
-#elif defined HAVE_LIBMBEDCRYPTO
-  bignum_mod_exp(session->next_crypto->f, g, session->next_crypto->y,
-      select_p(session->next_crypto->kex_type), NULL);
-#endif
 
 #ifdef DEBUG_CRYPTO
   ssh_print_bignum("f", session->next_crypto->f);
 #endif
 
-#ifdef HAVE_LIBCRYPTO
   bignum_ctx_free(ctx);
-#endif
-
   return 0;
 }
 
@@ -595,47 +527,26 @@ int ssh_dh_import_e(ssh_session session, ssh_string e_string) {
 }
 
 int ssh_dh_build_k(ssh_session session) {
-#ifdef HAVE_LIBCRYPTO
+  int rc;
   bignum_CTX ctx = bignum_ctx_new();
-  if (ctx == NULL) {
+  if (bignum_ctx_invalid(ctx)) {
     return -1;
   }
-#endif
 
   session->next_crypto->k = bignum_new();
   if (session->next_crypto->k == NULL) {
-#ifdef HAVE_LIBCRYPTO
     bignum_ctx_free(ctx);
-#endif
     return -1;
   }
 
-    /* the server and clients don't use the same numbers */
-#ifdef HAVE_LIBGCRYPT
-  if(session->client) {
-    bignum_mod_exp(session->next_crypto->k, session->next_crypto->f,
-        session->next_crypto->x, select_p(session->next_crypto->kex_type));
-  } else {
-    bignum_mod_exp(session->next_crypto->k, session->next_crypto->e,
-        session->next_crypto->y, select_p(session->next_crypto->kex_type));
-  }
-#elif defined HAVE_LIBCRYPTO
+  /* the server and clients don't use the same numbers */
   if (session->client) {
-    bignum_mod_exp(session->next_crypto->k, session->next_crypto->f,
+    rc = bignum_mod_exp(session->next_crypto->k, session->next_crypto->f,
         session->next_crypto->x, select_p(session->next_crypto->kex_type), ctx);
   } else {
-    bignum_mod_exp(session->next_crypto->k, session->next_crypto->e,
+    rc = bignum_mod_exp(session->next_crypto->k, session->next_crypto->e,
         session->next_crypto->y, select_p(session->next_crypto->kex_type), ctx);
   }
-#elif defined HAVE_LIBMBEDCRYPTO
-  if (session->client) {
-    bignum_mod_exp(session->next_crypto->k, session->next_crypto->f,
-        session->next_crypto->x, select_p(session->next_crypto->kex_type), NULL);
-  } else {
-    bignum_mod_exp(session->next_crypto->k, session->next_crypto->e,
-        session->next_crypto->y, select_p(session->next_crypto->kex_type), NULL);
-  }
-#endif
 
 #ifdef DEBUG_CRYPTO
     ssh_print_hexa("Session server cookie",
@@ -645,11 +556,11 @@ int ssh_dh_build_k(ssh_session session) {
     ssh_print_bignum("Shared secret key", session->next_crypto->k);
 #endif
 
-#ifdef HAVE_LIBCRYPTO
   bignum_ctx_free(ctx);
-#endif
-
-  return 0;
+  if (rc != 1) {
+    return SSH_ERROR;
+  }
+  return SSH_OK;
 }
 
 static SSH_PACKET_CALLBACK(ssh_packet_client_dh_reply);
