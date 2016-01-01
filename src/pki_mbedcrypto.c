@@ -1036,7 +1036,7 @@ ssh_signature pki_do_sign(const ssh_key privkey, const unsigned char *hash,
 
             sig->ecdsa_sig.s = bignum_new();
             if (sig->ecdsa_sig.s == NULL) {
-                bignum_free(sig->ecdsa_sig.r);
+                bignum_safe_free(sig->ecdsa_sig.r);
                 return NULL;
             }
 
@@ -1094,7 +1094,7 @@ ssh_signature pki_do_sign_sessionid(const ssh_key key, const unsigned char
 
             sig->ecdsa_sig.s = bignum_new();
             if (sig->ecdsa_sig.s == NULL) {
-                bignum_free(sig->ecdsa_sig.r);
+                bignum_safe_free(sig->ecdsa_sig.r);
                 return NULL;
             }
 

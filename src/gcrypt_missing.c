@@ -72,7 +72,7 @@ char *ssh_gcry_bn2dec(bignum bn) {
     num = bignum_new();
     if (num == NULL) {
       SAFE_FREE(ret);
-      bignum_free(ten);
+      bignum_safe_free(ten);
       return NULL;
     }
 
@@ -91,9 +91,9 @@ char *ssh_gcry_bn2dec(bignum bn) {
       ret[count2] = ret[count2 + count];
     }
     ret[count2] = 0;
-    bignum_free(num);
-    bignum_free(bndup);
-    bignum_free(ten);
+    bignum_safe_free(num);
+    bignum_safe_free(bndup);
+    bignum_safe_free(ten);
   }
 
   return ret;

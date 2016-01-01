@@ -142,33 +142,31 @@ int ssh_dh_init(void)
 #if defined(HAVE_LIBGCRYPT)
     bignum_bin2bn(p_group1_value, P_GROUP1_LEN, &p_group1);
     if (p_group1 == NULL) {
-        bignum_free(g);
-        g = NULL;
-        return -1;
+        bignum_safe_free(g);
+
+        return SSH_ERROR;
     }
     bignum_bin2bn(p_group14_value, P_GROUP14_LEN, &p_group14);
     if (p_group14 == NULL) {
-        bignum_free(g);
-        bignum_free(p_group1);
-        g = NULL;
-        p_group1 = NULL;
-        return -1;
+        bignum_safe_free(g);
+        bignum_safe_free(p_group1);
+
+        return SSH_ERROR;
     }
 #elif defined(HAVE_LIBCRYPTO)
     p_group1 = bignum_new();
     if (p_group1 == NULL) {
-        bignum_free(g);
-        g = NULL;
-        return -1;
+        bignum_safe_free(g);
+
+        return SSH_ERROR;
     }
     bignum_bin2bn(p_group1_value, P_GROUP1_LEN, p_group1);
 
     p_group14 = bignum_new();
     if (p_group14 == NULL) {
-        bignum_free(g);
-        bignum_free(p_group1);
-        g = NULL;
-        p_group1 = NULL;
+        bignum_safe_free(g);
+        bignum_safe_free(p_group1);
+
         return SSH_ERROR;
     }
     bignum_bin2bn(p_group14_value, P_GROUP14_LEN, p_group14);
@@ -194,12 +192,9 @@ void ssh_dh_finalize(void)
         return;
     }
 
-    bignum_free(g);
-    g = NULL;
-    bignum_free(p_group1);
-    p_group1 = NULL;
-    bignum_free(p_group14);
-    p_group14 = NULL;
+    bignum_safe_free(g);
+    bignum_safe_free(p_group1);
+    bignum_safe_free(p_group14);
 
     dh_crypto_initialized = 0;
 }

@@ -61,7 +61,12 @@ int ssh_gcry_dec2bn(bignum *bn, const char *data);
 char *ssh_gcry_bn2dec(bignum bn);
 
 #define bignum_new() gcry_mpi_new(0)
-#define bignum_free(num) gcry_mpi_release(num)
+#define bignum_safe_free(num) do { \
+    if ((num) != NULL) { \
+        gcry_mpi_release((num)); \
+        (num)=NULL; \
+    } \
+    } while (0)
 #define bignum_set_word(bn,n) gcry_mpi_set_ui(bn,n)
 #define bignum_bin2bn(bn,datalen,data) gcry_mpi_scan(data,GCRYMPI_FMT_USG,bn,datalen,NULL)
 #define bignum_bn2dec(num) ssh_gcry_bn2dec(num)

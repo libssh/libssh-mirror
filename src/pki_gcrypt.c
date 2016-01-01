@@ -1321,19 +1321,19 @@ static int _bignum_cmp(const gcry_sexp_t s1,
 
     sexp = gcry_sexp_find_token(s2, what, 0);
     if (sexp == NULL) {
-        bignum_free(b1);
+        bignum_safe_free(b1);
         return 1;
     }
     b2 = gcry_sexp_nth_mpi(sexp, 1, GCRYMPI_FMT_USG);
     gcry_sexp_release(sexp);
     if (b2 == NULL) {
-        bignum_free(b1);
+        bignum_safe_free(b1);
         return 1;
     }
 
     result = !! bignum_cmp(b1, b2);
-    bignum_free(b1);
-    bignum_free(b2);
+    bignum_safe_free(b1);
+    bignum_safe_free(b2);
     return result;
 }
 

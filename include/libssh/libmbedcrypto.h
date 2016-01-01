@@ -78,7 +78,12 @@ int ssh_mbedcry_rand(bignum rnd, int bits, int top, int bottom);
 int ssh_mbedcry_is_bit_set(bignum num, size_t pos);
 
 #define bignum_new() ssh_mbedcry_bn_new()
-#define bignum_free(num) ssh_mbedcry_bn_free(num);
+#define bignum_safe_free(num) do { \
+    if ((num) != NULL) { \
+        ssh_mbedcry_bn_free(num); \
+        (num)=NULL; \
+    } \
+    } while(0)
 #define bignum_set_word(bn, n) mbedtls_mpi_lset(bn, n) /* TODO fix
                                                           overflow/underflow */
 #define bignum_bin2bn(data, datalen, bn) mbedtls_mpi_read_binary(bn, data, \
