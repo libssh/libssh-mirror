@@ -430,7 +430,7 @@ fail:
  *          SSH_AUTH_PARTIAL: You've been partially authenticated, you still
  *                            have to use another method.\n
  *          SSH_AUTH_SUCCESS: The public key is accepted, you want now to use
- *                            ssh_userauth_pubkey().
+ *                            ssh_userauth_publickey().
  *          SSH_AUTH_AGAIN:   In nonblocking mode, you've got to call this again
  *                            later.
  *
