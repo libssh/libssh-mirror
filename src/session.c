@@ -115,6 +115,15 @@ ssh_session ssh_new(void) {
       goto err;
     }
 
+    id = strdup("%d/id_ed25519");
+    if (id == NULL) {
+      goto err;
+    }
+    rc = ssh_list_append(session->opts.identity, id);
+    if (rc == SSH_ERROR) {
+      goto err;
+    }
+
 #ifdef HAVE_ECC
     id = strdup("%d/id_ecdsa");
     if (id == NULL) {
