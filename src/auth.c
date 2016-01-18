@@ -430,7 +430,7 @@ fail:
  *          SSH_AUTH_PARTIAL: You've been partially authenticated, you still
  *                            have to use another method.\n
  *          SSH_AUTH_SUCCESS: The public key is accepted, you want now to use
- *                            ssh_userauth_publickey().
+ *                            ssh_userauth_publickey().\n
  *          SSH_AUTH_AGAIN:   In nonblocking mode, you've got to call this again
  *                            later.
  *
@@ -538,8 +538,7 @@ fail:
  *                            method.\n
  *          SSH_AUTH_PARTIAL: You've been partially authenticated, you still
  *                            have to use another method.\n
- *          SSH_AUTH_SUCCESS: The public key is accepted, you want now to use
- *                            ssh_userauth_pubkey().
+ *          SSH_AUTH_SUCCESS: The public key is accepted.\n
  *          SSH_AUTH_AGAIN:   In nonblocking mode, you've got to call this again
  *                            later.
  *
@@ -577,7 +576,7 @@ int ssh_userauth_publickey(ssh_session session,
         default:
             ssh_set_error(session,
                           SSH_FATAL,
-                          "Bad call during pending SSH call in ssh_userauth_try_pubkey");
+                          "Bad call during pending SSH call in ssh_userauth_try_publickey");
             return SSH_AUTH_ERROR;
     }
 
@@ -660,7 +659,7 @@ static int ssh_userauth_agent_publickey(ssh_session session,
         default:
             ssh_set_error(session,
                           SSH_FATAL,
-                          "Bad call during pending SSH call in ssh_userauth_try_pubkey");
+                          "Bad call during pending SSH call in ssh_userauth_try_publickey");
             return SSH_ERROR;
     }
 
@@ -755,7 +754,7 @@ struct ssh_agent_state_struct {
  *          SSH_AUTH_PARTIAL: You've been partially authenticated, you still
  *                            have to use another method.\n
  *          SSH_AUTH_SUCCESS: The public key is accepted, you want now to use
- *                            ssh_userauth_pubkey().
+ *                            ssh_userauth_publickey().\n
  *          SSH_AUTH_AGAIN:   In nonblocking mode, you've got to call this again
  *                            later.
  *
@@ -882,7 +881,7 @@ struct ssh_auth_auto_state_struct {
  *          SSH_AUTH_PARTIAL: You've been partially authenticated, you still
  *                            have to use another method.\n
  *          SSH_AUTH_SUCCESS: The public key is accepted, you want now to use
- *                            ssh_userauth_pubkey().
+ *                            ssh_userauth_publickey().\n
  *          SSH_AUTH_AGAIN:   In nonblocking mode, you've got to call this again
  *                            later.
  *
