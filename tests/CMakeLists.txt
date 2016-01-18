@@ -47,7 +47,7 @@ if (WITH_CLIENT_TESTING)
     find_package(socket_wrapper 1.1.5 REQUIRED)
     find_package(nss_wrapper 1.1.2 REQUIRED)
     find_package(uid_wrapper 1.2.0 REQUIRED)
-    find_package(pam_wrapper 1.0.0 REQUIRED)
+    find_package(pam_wrapper 1.0.1 REQUIRED)
 
     find_program(SSHD_EXECUTABLE
                  NAME
