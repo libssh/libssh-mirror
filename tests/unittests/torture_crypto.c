@@ -49,11 +49,12 @@ static int get_cipher(struct ssh_cipher_struct *cipher, const char *ciphername){
     return SSH_ERROR;
 }
 
-static void torture_crypto_aes256_cbc(void **state){
+static void torture_crypto_aes256_cbc(void **state)
+{
+    uint8_t output[sizeof(cleartext)] = {0};
+    uint8_t iv[16] = {0};
     struct ssh_cipher_struct cipher;
     int rc;
-    uint8_t output[sizeof(cleartext)];
-    uint8_t iv[16];
     (void)state;
 
     rc = get_cipher(&cipher, "aes256-cbc");
