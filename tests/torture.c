@@ -998,6 +998,7 @@ void torture_teardown_socket_dir(void **state)
         }
     }
 
+    free(s->srv_config);
     free(s->socket_dir);
     free(s->pcap_file);
     free(s->srv_pidfile);
