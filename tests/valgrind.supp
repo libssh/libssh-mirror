@@ -28,6 +28,14 @@
    obj:/lib64/ld-2.15.so
 }
 
+{
+   glibc_dlopen_alloc
+   Memcheck:Leak
+   fun:calloc
+   fun:_dlerror_run
+   fun:dlopen@@GLIBC_2.2.5
+}
+
 ### VALGRIND
 {
     valgrind_exit_free_bug
