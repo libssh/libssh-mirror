@@ -287,7 +287,7 @@ ssh_key ssh_pki_openssh_privkey_import(const char *text_key,
     int i;
     ssh_buffer buffer = NULL, privkey_buffer=NULL;
     char *magic = NULL, *ciphername = NULL, *kdfname = NULL;
-    uint32_t nkeys = 0, checkint1, checkint2;
+    uint32_t nkeys = 0, checkint1 = 0, checkint2 = 0xFFFF;
     ssh_string kdfoptions = NULL;
     ssh_string pubkey0 = NULL;
     ssh_string privkeys = NULL;
