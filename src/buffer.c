@@ -868,7 +868,6 @@ int ssh_buffer_unpack_va(struct ssh_buffer_struct *buffer,
         void **data;
     } o;
     size_t len, rlen;
-    uint32_t u32len;
     va_list ap_copy;
     int count;
 
@@ -912,7 +911,9 @@ int ssh_buffer_unpack_va(struct ssh_buffer_struct *buffer,
             rc = *o.string != NULL ? SSH_OK : SSH_ERROR;
             o.string = NULL;
             break;
-        case 's':
+        case 's': {
+            uint32_t u32len = 0;
+
             o.cstring = va_arg(ap, char **);
             *o.cstring = NULL;
             rc = buffer_get_u32(buffer, &u32len);
@@ -940,6 +941,7 @@ int ssh_buffer_unpack_va(struct ssh_buffer_struct *buffer,
             o.cstring = NULL;
             rc = SSH_OK;
             break;
+        }
         case 'P':
             len = va_arg(ap, size_t);
 
