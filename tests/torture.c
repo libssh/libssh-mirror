@@ -788,10 +788,14 @@ static void torture_setup_create_sshd_config(void **state)
     sftp_server = "/usr/lib/ssh/sftp-server";
     rc = lstat(sftp_server, &sb);
     if (rc < 0) {
-        sftp_server = "/usr/libexec/openssh/sftp-server";
+        sftp_server = "/usr/libexec/sftp-server";
         rc = lstat(sftp_server, &sb);
         if (rc < 0) {
-            sftp_server = getenv("TORTURE_SFTP_SERVER");
+            sftp_server = "/usr/libexec/openssh/sftp-server";
+            rc = lstat(sftp_server, &sb);
+            if (rc < 0) {
+                sftp_server = getenv("TORTURE_SFTP_SERVER");
+            }
         }
     }
     assert_non_null(sftp_server);
