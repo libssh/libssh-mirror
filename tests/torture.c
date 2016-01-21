@@ -867,8 +867,8 @@ void torture_setup_sshd_server(void **state)
     s = *state;
 
     snprintf(sshd_start_cmd, sizeof(sshd_start_cmd),
-             "/usr/sbin/sshd -r -f %s -E %s/sshd/sshd.log",
-             s->srv_config, s->socket_dir);
+             "/usr/sbin/sshd -r -f %s -E %s/sshd/daemon.log 2> %s/sshd/cwrap.log",
+             s->srv_config, s->socket_dir, s->socket_dir);
 
     rc = system(sshd_start_cmd);
     assert_return_code(rc, errno);
