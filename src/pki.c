@@ -1094,7 +1094,7 @@ error:
  * @param[out] pkey     A pointer to store the newly allocated public key. You
  *                      NEED to free the key.
  *
- * @return              A public key, NULL on error.
+ * @return              SSH_OK on success, SSH_ERROR on error.
  *
  * @see ssh_key_free()
  */
