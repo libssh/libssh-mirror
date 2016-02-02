@@ -25,6 +25,8 @@
 #include "libssh/libssh.h"
 #include "libssh/priv.h"
 #include "libssh/session.h"
+
+#include <errno.h>
 #include <sys/types.h>
 #include <pwd.h>
 
@@ -80,7 +82,9 @@ static int pubkey_setup(void **state)
 
     pwd = getpwnam("bob");
     assert_non_null(pwd);
-    setuid(pwd->pw_uid);
+
+    rc = setuid(pwd->pw_uid);
+    assert_return_code(rc, errno);
 
     /* Make sure we do not interfere with another ssh-agent */
     unsetenv("SSH_AUTH_SOCK");
@@ -95,12 +99,17 @@ static int agent_setup(void **state)
     char ssh_agent_cmd[4096];
     char ssh_agent_sock[1024];
     char ssh_agent_pidfile[1024];
+    char bob_ssh_key[1024];
+    struct passwd *pwd;
     int rc;
 
     rc = pubkey_setup(state);
     if (rc != 0) {
         return rc;
     }
+
+    pwd = getpwnam("bob");
+    assert_non_null(pwd);
 
     snprintf(ssh_agent_sock,
              sizeof(ssh_agent_cmd),
@@ -118,13 +127,21 @@ static int agent_setup(void **state)
              "eval `ssh-agent -a %s`; echo $SSH_AGENT_PID > %s",
              ssh_agent_sock, ssh_agent_pidfile);
 
+    /* run ssh-agent and ssh-add as the normal user */
+    unsetenv("UID_WRAPPER_ROOT");
+
     rc = system(ssh_agent_cmd);
     assert_return_code(rc, errno);
 
     setenv("SSH_AUTH_SOCK", ssh_agent_sock, 1);
     setenv("TORTURE_SSH_AGENT_PIDFILE", ssh_agent_pidfile, 1);
 
-    rc = system("ssh-add");
+    snprintf(bob_ssh_key,
+             sizeof(bob_ssh_key),
+             "ssh-add %s/.ssh/id_rsa",
+             pwd->pw_dir);
+
+    rc = system(bob_ssh_key);
     assert_return_code(rc, errno);
 
     return 0;
