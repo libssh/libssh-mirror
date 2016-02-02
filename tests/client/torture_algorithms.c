@@ -25,6 +25,10 @@
 #include "libssh/libssh.h"
 #include "libssh/priv.h"
 
+#include <errno.h>
+#include <sys/types.h>
+#include <pwd.h>
+
 static int sshd_setup(void **state)
 {
     torture_setup_sshd_server(state);
@@ -41,6 +45,14 @@ static int sshd_teardown(void **state) {
 static int session_setup(void **state) {
     struct torture_state *s = *state;
     int verbosity = torture_libssh_verbosity();
+    struct passwd *pwd;
+    int rc;
+
+    pwd = getpwnam("bob");
+    assert_non_null(pwd);
+
+    rc = setuid(pwd->pw_uid);
+    assert_return_code(rc, errno);
 
     ssh_init();
 

@@ -28,6 +28,8 @@
 #include <netinet/in.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <errno.h>
+#include <pwd.h>
 
 /* Should work until Apnic decides to assign it :) */
 #define BLACKHOLE "1.1.1.1"
@@ -49,6 +51,14 @@ static int session_setup(void **state)
 {
     struct torture_state *s = *state;
     int verbosity = torture_libssh_verbosity();
+    struct passwd *pwd;
+    int rc;
+
+    pwd = getpwnam("bob");
+    assert_non_null(pwd);
+
+    rc = setuid(pwd->pw_uid);
+    assert_return_code(rc, errno);
 
     s->ssh.session = ssh_new();
     assert_non_null(s->ssh.session);
