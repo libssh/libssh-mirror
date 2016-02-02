@@ -807,7 +807,7 @@ static void torture_setup_create_sshd_config(void **state)
              "HostKey %s\n"
              "HostKey %s\n"
              "\n"
-             "LogLevel DEBUG1\n"
+             "LogLevel DEBUG3\n"
              "Subsystem sftp %s\n"
              "\n"
              "PasswordAuthentication yes\n"
