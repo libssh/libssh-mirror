@@ -964,7 +964,6 @@ void torture_setup_sshd_server(void **state)
 
     /* Set the default interface for the server */
     setenv("SOCKET_WRAPPER_DEFAULT_IFACE", "10", 1);
-    setenv("UID_WRAPPER_ROOT", "1", 1);
     setenv("PAM_WRAPPER", "1", 1);
 
     s = *state;
@@ -980,7 +979,6 @@ void torture_setup_sshd_server(void **state)
     usleep(500);
 
     setenv("SOCKET_WRAPPER_DEFAULT_IFACE", "21", 1);
-    unsetenv("UID_WRAPPER_ROOT");
     unsetenv("PAM_WRAPPER");
 }
 
