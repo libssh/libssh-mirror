@@ -36,7 +36,7 @@ static int setup(void **state) {
     assert_return_code(h->fd, errno);
     close(h->fd);
 
-    h->key_type = SSH_KEYTYPE_RSA;
+    h->key_type = SSH_KEYTYPE_ECDSA;
     h->hostkey = torture_get_testkey(h->key_type, 0, 0);
 
     torture_write_file(h->hostkey_path, h->hostkey);
