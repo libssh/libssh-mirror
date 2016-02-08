@@ -819,7 +819,7 @@ static void torture_setup_create_sshd_config(void **state)
              "\n"
              "UsePAM yes\n"
              "\n"
-#if OPENSSH_VERSION_MAJOR == 6 && OPENSSH_VERSION_MINOR >= 7
+#if (OPENSSH_VERSION_MAJOR == 6 && OPENSSH_VERSION_MINOR >= 7) || (OPENSSH_VERSION_MAJOR >= 7)
              "HostKeyAlgorithms +ssh-dss\n"
              "Ciphers +3des-cbc,aes128-cbc,aes192-cbc,aes256-cbc,blowfish-cbc\n"
              "KexAlgorithms +diffie-hellman-group1-sha1"
