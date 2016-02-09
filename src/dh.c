@@ -227,15 +227,21 @@ void ssh_crypto_finalize(void) {
 }
 
 int dh_generate_x(ssh_session session) {
+  int keysize;
+  if (session->next_crypto->kex_type == SSH_KEX_DH_GROUP1_SHA1) {
+    keysize = 1023;
+  } else {
+    keysize = 2047;
+  }
   session->next_crypto->x = bignum_new();
   if (session->next_crypto->x == NULL) {
     return -1;
   }
 
 #ifdef HAVE_LIBGCRYPT
-  bignum_rand(session->next_crypto->x, 128);
+  bignum_rand(session->next_crypto->x, keysize);
 #elif defined HAVE_LIBCRYPTO
-  bignum_rand(session->next_crypto->x, 128, 0, -1);
+  bignum_rand(session->next_crypto->x, keysize, -1, 0);
 #endif
 
   /* not harder than this */
@@ -248,15 +254,21 @@ int dh_generate_x(ssh_session session) {
 
 /* used by server */
 int dh_generate_y(ssh_session session) {
-    session->next_crypto->y = bignum_new();
+  int keysize;
+  if (session->next_crypto->kex_type == SSH_KEX_DH_GROUP1_SHA1) {
+    keysize = 1023;
+  } else {
+    keysize = 2047;
+  }
+  session->next_crypto->y = bignum_new();
   if (session->next_crypto->y == NULL) {
     return -1;
   }
 
 #ifdef HAVE_LIBGCRYPT
-  bignum_rand(session->next_crypto->y, 128);
+  bignum_rand(session->next_crypto->y, keysize);
 #elif defined HAVE_LIBCRYPTO
-  bignum_rand(session->next_crypto->y, 128, 0, -1);
+  bignum_rand(session->next_crypto->y, keysize, -1, 0);
 #endif
 
   /* not harder than this */
