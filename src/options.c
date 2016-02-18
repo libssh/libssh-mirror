@@ -332,7 +332,7 @@ int ssh_options_set_algo(ssh_session session, int algo,
  *              - SSH_OPTIONS_HOSTKEYS:
  *                Set the preferred server host key types (const char *,
  *                comma-separated list). ex:
- *                "ssh-rsa,ssh-dsa,ecdh-sha2-nistp256"
+ *                "ssh-rsa,ssh-dss,ecdh-sha2-nistp256"
  *
  *              - SSH_OPTIONS_COMPRESSION_C_S:
  *                Set the compression to use for client to server
