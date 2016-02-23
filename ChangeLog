@@ -1,6 +1,11 @@
 ChangeLog
 ==========
 
+version 0.7.3 (released 2016-01-23)
+  * Fixed CVE-2016-0739
+  * Fixed ssh-agent on big endian
+  * Fixed some documentation issues
+
 version 0.7.2 (released 2015-09-15)
   * Fixed OpenSSL detection on Windows
   * Fixed return status for ssh_userauth_agent()
