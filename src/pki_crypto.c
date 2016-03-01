@@ -882,6 +882,15 @@ ssh_string pki_publickey_to_blob(const ssh_key key)
         return NULL;
     }
 
+    if (key->cert != NULL) {
+        rc = ssh_buffer_add_buffer(buffer, key->cert);
+        if (rc < 0) {
+            ssh_buffer_free(buffer);
+            return NULL;
+        }
+        goto makestring;
+    }
+
     type_s = ssh_string_from_char(key->type_c);
     if (type_s == NULL) {
         ssh_buffer_free(buffer);
@@ -1034,6 +1043,7 @@ ssh_string pki_publickey_to_blob(const ssh_key key)
             goto fail;
     }
 
+makestring:
     str = ssh_string_new(ssh_buffer_get_len(buffer));
     if (str == NULL) {
         goto fail;
