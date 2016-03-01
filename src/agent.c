@@ -472,6 +472,10 @@ ssh_key ssh_agent_get_next_ident(struct ssh_session_struct *session,
 
             /* get key from blob */
             rc = ssh_pki_import_pubkey_blob(blob, &key);
+            if (rc == SSH_ERROR) {
+                /* Try again as a cert. */
+                rc = ssh_pki_import_cert_blob(blob, &key);
+            }
             ssh_string_free(blob);
             if (rc == SSH_ERROR) {
                 return NULL;
