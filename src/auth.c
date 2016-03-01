@@ -524,7 +524,7 @@ fail:
 }
 
 /**
- * @brief Authenticate with public/private key.
+ * @brief Authenticate with public/private key or certificate.
  *
  * @param[in] session     The SSH session.
  *
@@ -552,6 +552,8 @@ int ssh_userauth_publickey(ssh_session session,
 {
     ssh_string str = NULL;
     int rc;
+    const char *type_c;
+    enum ssh_keytypes_e key_type;
 
     if (session == NULL) {
         return SSH_AUTH_ERROR;
@@ -587,7 +589,11 @@ int ssh_userauth_publickey(ssh_session session,
         return SSH_AUTH_ERROR;
     }
 
-    /* public key */
+    /* Cert auth requires presenting the cert type name (*-cert@openssh.com) */
+    key_type = privkey->cert != NULL ? privkey->cert_type : privkey->type;
+    type_c = ssh_key_type_to_char(key_type);
+
+    /* get public key or cert */
     rc = ssh_pki_export_pubkey_blob(privkey, &str);
     if (rc < 0) {
         goto fail;
@@ -600,8 +606,8 @@ int ssh_userauth_publickey(ssh_session session,
             "ssh-connection",
             "publickey",
             1, /* private key */
-            privkey->type_c, /* algo */
-            str /* public key */
+            type_c, /* algo */
+            str /* public key or cert */
             );
     if (rc < 0) {
         goto fail;
