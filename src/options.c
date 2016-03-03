@@ -925,6 +925,17 @@ int ssh_options_get_port(ssh_session session, unsigned int* port_target) {
  *                It may include "%s" which will be replaced by the
  *                user home directory.
  *
+ *              - SSH_OPTIONS_ADD_IDENTITY:
+ *                Add a new identity file (const char *,format string) to
+ *                the identity list.\n
+ *                \n
+ *                By default identity, id_dsa and id_rsa are checked.\n
+ *                \n
+ *                The identity used authenticate with public key will be
+ *                prepended to the list.
+ *                It may include "%s" which will be replaced by the
+ *                user home directory.
+ *
  *              - SSH_OPTIONS_PROXYCOMMAND:
  *                Get the proxycommand necessary to log into the
  *                remote host. When not explicitly set, it will be read
