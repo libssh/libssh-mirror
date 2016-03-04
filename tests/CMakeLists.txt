@@ -104,6 +104,11 @@ if (WITH_CLIENT_TESTING)
     # Allow to auth with bob his public keys on alice account
     configure_file(keys/id_rsa.pub ${CMAKE_CURRENT_BINARY_DIR}/home/alice/.ssh/authorized_keys @ONLY)
 
+    # Copy the signed key to an alternative directory in bob's homedir.
+    file(COPY keys/certauth/id_rsa DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/home/bob/.ssh_cert/ FILE_PERMISSIONS OWNER_READ OWNER_WRITE)
+    file(COPY keys/certauth/id_rsa.pub DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/home/bob/.ssh_cert/ FILE_PERMISSIONS OWNER_READ OWNER_WRITE)
+    file(COPY keys/certauth/id_rsa-cert.pub DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/home/bob/.ssh_cert/ FILE_PERMISSIONS OWNER_READ OWNER_WRITE)
+
     message(STATUS "TORTURE_ENVIRONMENT=${TORTURE_ENVIRONMENT}")
 
     add_subdirectory(client)

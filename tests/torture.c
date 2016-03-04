@@ -281,6 +281,15 @@ static const char torture_ed25519_testkey_pp[]=
         "Y3GsmYTDstmicanQ==\n"
         "-----END OPENSSH PRIVATE KEY-----\n";
 
+static const char torture_rsa_certauth_pub[]=
+        "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCnA2n5vHzZbs/GvRkGloJNV1CXHI"
+        "S5Xnrm05HusUJSWyPq3I1iCMHdYA7oezHa9GCFYbIenaYPy+G6USQRjYQz8SvAZo06"
+        "SFNeJSsa1kAIqxzdPT9kBrRrYK39PZQPsYVfRPqZBdmc+jwrfz97IFEJyXMI47FoTG"
+        "kgEq7eu3z2px/tdIZ34I5Hr5DDBxicZi4jluyRUJHfSPoBxyhF7OkPX4bYkrc691je"
+        "IQDxubl650WYLHgFfad0xTzBIFE6XUb55Dp5AgRdevSoso1Pe0IKFxxMVpP664LCbY"
+        "K06Lv6kcotfFlpvUtR1yx8jToGcSoq5sSzTwvXSHCQQ9ZA1hvF "
+        "torture_certauth_key";
+
 #define TORTURE_SOCKET_DIR "/tmp/test_socket_wrapper_XXXXXX"
 #define TORTURE_SSHD_PIDFILE "sshd/sshd.pid"
 #define TORTURE_SSHD_CONFIG "sshd/sshd_config"
@@ -853,6 +862,7 @@ static void torture_setup_create_sshd_config(void **state)
     char dsa_hostkey[1024];
     char rsa_hostkey[1024];
     char ecdsa_hostkey[1024];
+    char trusted_ca_pubkey[1024];
     char sshd_config[2048];
     char sshd_path[1024];
     struct stat sb;
@@ -886,6 +896,12 @@ static void torture_setup_create_sshd_config(void **state)
     torture_write_file(ecdsa_hostkey,
                        torture_get_testkey(SSH_KEYTYPE_ECDSA, 521, 0));
 
+    snprintf(trusted_ca_pubkey,
+             sizeof(trusted_ca_pubkey),
+             "%s/sshd/user_ca.pub",
+             s->socket_dir);
+    torture_write_file(trusted_ca_pubkey, torture_rsa_certauth_pub);
+
     assert_non_null(s->socket_dir);
 
     sftp_server = "/usr/lib/ssh/sftp-server";
@@ -909,6 +925,8 @@ static void torture_setup_create_sshd_config(void **state)
              "HostKey %s\n"
              "HostKey %s\n"
              "HostKey %s\n"
+             "\n"
+             "TrustedUserCAKeys %s\n"
              "\n"
              "LogLevel DEBUG3\n"
              "Subsystem sftp %s\n"
@@ -947,6 +965,7 @@ static void torture_setup_create_sshd_config(void **state)
              dsa_hostkey,
              rsa_hostkey,
              ecdsa_hostkey,
+             trusted_ca_pubkey,
              sftp_server,
              s->srv_pidfile);
 
