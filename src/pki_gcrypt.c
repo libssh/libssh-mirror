@@ -471,6 +471,7 @@ static int b64decode_rsa_privatekey(const char *pkey, gcry_sexp_t *r,
 
   data = ssh_string_data(v);
   if (ssh_string_len(v) != 1 || data[0] != 0) {
+    ssh_string_free(v);
     ssh_buffer_free(buffer);
     return 0;
   }
@@ -547,6 +548,7 @@ static int b64decode_dsa_privatekey(const char *pkey, gcry_sexp_t *r, ssh_auth_c
 
   data = ssh_string_data(v);
   if (ssh_string_len(v) != 1 || data[0] != 0) {
+    ssh_string_free(v);
     ssh_buffer_free(buffer);
     return 0;
   }
