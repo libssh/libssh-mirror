@@ -8,12 +8,9 @@ set(examples_SRCS
 
 include_directories(
   ${LIBSSH_PUBLIC_INCLUDE_DIRS}
+  ${ARGP_INCLUDE_DIRS}
   ${CMAKE_BINARY_DIR}
 )
-
-if (BSD OR SOLARIS OR OSX)
-    find_package(Argp)
-endif (BSD OR SOLARIS OR OSX)
 
 if (UNIX AND NOT WIN32)
     add_executable(libssh_scp libssh_scp.c ${examples_SRCS})

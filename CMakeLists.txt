@@ -74,6 +74,10 @@ if (WITH_NACL)
     endif (NOT NACL_FOUND)
 endif (WITH_NACL)
 
+if (BSD OR SOLARIS OR OSX)
+    find_package(Argp)
+endif (BSD OR SOLARIS OR OSX)
+
 # config.h checks
 include(ConfigureChecks.cmake)
 configure_file(config.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/config.h)
