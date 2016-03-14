@@ -47,7 +47,7 @@ static int setup_dsa_key(void **state) {
     return 0;
 }
 
-#ifdef HAVE_OPENSSL_ECC
+#ifdef HAVE_ECC
 static int setup_ecdsa_key(void **state, int ecdsa_bits) {
 
     (void) state; /* unused */
