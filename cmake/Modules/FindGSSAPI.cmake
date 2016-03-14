@@ -54,7 +54,8 @@ if (UNIX)
             OUTPUT_VARIABLE
                 _GSSAPI_VENDOR_STRING)
 
-        if (_GSSAPI_VENDOR_STRING MATCHES ".*Massachusetts.*")
+        if ((_GSSAPI_VENDOR_STRING MATCHES ".*Massachusetts.*") OR (_GSSAPI_VENDOR_STRING
+                        MATCHES ".*MITKerberosShim.*"))
             set(GSSAPI_FLAVOR_MIT TRUE)
         else()
             execute_process(
