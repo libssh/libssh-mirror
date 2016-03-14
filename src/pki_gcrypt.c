@@ -112,12 +112,12 @@ static uint32_t asn1_get_len(ssh_buffer buffer) {
   return len;
 }
 
-static ssh_string asn1_get_int(ssh_buffer buffer) {
+static ssh_string asn1_get(ssh_buffer buffer, unsigned char want) {
   ssh_string str;
   unsigned char type;
   uint32_t size;
 
-  if (ssh_buffer_get_data(buffer, &type, 1) == 0 || type != ASN1_INTEGER) {
+  if (ssh_buffer_get_data(buffer, &type, 1) == 0 || type != want) {
     return NULL;
   }
   size = asn1_get_len(buffer);
@@ -136,6 +136,10 @@ static ssh_string asn1_get_int(ssh_buffer buffer) {
   }
 
   return str;
+}
+
+static ssh_string asn1_get_int(ssh_buffer buffer) {
+  return asn1_get(buffer, ASN1_INTEGER);
 }
 
 static int asn1_check_sequence(ssh_buffer buffer) {
