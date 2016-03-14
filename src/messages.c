@@ -1396,6 +1396,15 @@ SSH_PACKET_CALLBACK(ssh_packet_global_request){
         } else {
             ssh_message_reply_default(msg);
         }
+    } else if(strcmp(request, "keepalive@openssh.com") == 0) {
+        msg->global_request.type = SSH_GLOBAL_REQUEST_KEEPALIVE;
+        msg->global_request.want_reply = want_reply;
+        SSH_LOG(SSH_LOG_PROTOCOL, "Received keepalive@openssh.com %d", want_reply);
+        if(ssh_callbacks_exists(session->common.callbacks, global_request_function)) {
+            session->common.callbacks->global_request_function(session, msg, session->common.callbacks->userdata);
+        } else {
+            ssh_message_global_request_reply_success(msg, 0);
+        }
     } else {
         SSH_LOG(SSH_LOG_PROTOCOL, "UNKNOWN SSH_MSG_GLOBAL_REQUEST %s %d", request, want_reply);
         rc = SSH_PACKET_NOT_USED;
