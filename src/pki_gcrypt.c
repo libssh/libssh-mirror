@@ -509,13 +509,19 @@ static int b64decode_rsa_privatekey(const char *pkey, gcry_sexp_t *r,
   }
 
 error:
+  ssh_string_burn(n);
   ssh_string_free(n);
+  ssh_string_burn(e);
   ssh_string_free(e);
+  ssh_string_burn(d);
   ssh_string_free(d);
+  ssh_string_burn(p);
   ssh_string_free(p);
+  ssh_string_burn(q);
   ssh_string_free(q);
   ssh_string_free(unused1);
   ssh_string_free(unused2);
+  ssh_string_burn(u);
   ssh_string_free(u);
   ssh_string_free(v);
 
@@ -580,10 +586,15 @@ static int b64decode_dsa_privatekey(const char *pkey, gcry_sexp_t *r, ssh_auth_c
   }
 
 error:
+  ssh_string_burn(p);
   ssh_string_free(p);
+  ssh_string_burn(q);
   ssh_string_free(q);
+  ssh_string_burn(g);
   ssh_string_free(g);
+  ssh_string_burn(y);
   ssh_string_free(y);
+  ssh_string_burn(x);
   ssh_string_free(x);
   ssh_string_free(v);
 
