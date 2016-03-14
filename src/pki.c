@@ -1251,6 +1251,8 @@ int ssh_pki_export_privkey_to_pubkey(const ssh_key privkey,
  *
  * The "key_blob" is encoded as per RFC 4253 section 6.6 "Public Key
  * Algorithms" for any of the supported protocol 2 key types.
+ * Encoding of EC keys is described in RFC 5656 section 3.1 "Key
+ * Format".
  *
  * @param[in]  key      A public or private key to create the public ssh_string
  *                      from.
