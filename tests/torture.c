@@ -753,7 +753,15 @@ static void torture_setup_create_sshd_config(void **state)
     char sshd_config[2048];
     char sshd_path[1024];
     struct stat sb;
+    const char *sftp_server_locations[] = {
+        "/usr/lib/ssh/sftp-server",
+        "/usr/libexec/sftp-server",
+        "/usr/libexec/openssh/sftp-server",
+        "/usr/lib/openssh/sftp-server",     /* Debian */
+    };
+    size_t sftp_sl_size = ARRAY_SIZE(sftp_server_locations);
     const char *sftp_server;
+    size_t i;
     int rc;
 
     snprintf(sshd_path,
@@ -785,16 +793,13 @@ static void torture_setup_create_sshd_config(void **state)
 
     assert_non_null(s->socket_dir);
 
-    sftp_server = "/usr/lib/ssh/sftp-server";
-    rc = lstat(sftp_server, &sb);
-    if (rc < 0) {
-        sftp_server = "/usr/libexec/sftp-server";
-        rc = lstat(sftp_server, &sb);
-        if (rc < 0) {
-            sftp_server = "/usr/libexec/openssh/sftp-server";
+    sftp_server = getenv("TORTURE_SFTP_SERVER");
+    if (sftp_server == NULL) {
+        for (i = 0; i < sftp_sl_size; i++) {
+            sftp_server = sftp_server_locations[i];
             rc = lstat(sftp_server, &sb);
-            if (rc < 0) {
-                sftp_server = getenv("TORTURE_SFTP_SERVER");
+            if (rc == 0) {
+                break;
             }
         }
     }
