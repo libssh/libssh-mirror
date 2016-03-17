@@ -31,9 +31,11 @@ endif (LIBSSH_THREADS)
 
 # create test library
 add_library(${TORTURE_LIBRARY} STATIC cmdline.c torture.c)
-if (ARGP_LIBRARY)
     target_link_libraries(${TORTURE_LIBRARY}
         ${TORTURE_LINK_LIBRARIES}
+    )
+if (ARGP_LIBRARY)
+    target_link_libraries(${TORTURE_LIBRARY}
         ${ARGP_LIBRARY}
     )
 endif()
