@@ -1245,7 +1245,7 @@ static int channel_write_common(ssh_channel channel,
     return -1;
   }
 
-  if (channel->session->session_state == SSH_SESSION_STATE_ERROR) {
+  if (session->session_state == SSH_SESSION_STATE_ERROR) {
     return SSH_ERROR;
   }
 #ifdef WITH_SSH1
@@ -1276,7 +1276,7 @@ static int channel_write_common(ssh_channel channel,
               ssh_channel_waitwindow_termination,channel);
           if (rc == SSH_ERROR ||
               !ssh_channel_waitwindow_termination(channel) ||
-              channel->session->session_state == SSH_SESSION_STATE_ERROR ||
+              session->session_state == SSH_SESSION_STATE_ERROR ||
               channel->state == SSH_CHANNEL_STATE_CLOSED)
             goto out;
           continue;
@@ -2689,7 +2689,7 @@ int ssh_channel_read_timeout(ssh_channel channel,
   if (rc == SSH_ERROR){
     return rc;
   }
-  if (channel->session->session_state == SSH_SESSION_STATE_ERROR){
+  if (session->session_state == SSH_SESSION_STATE_ERROR){
       return SSH_ERROR;
   }
   if (channel->remote_eof && buffer_get_rest_len(stdbuf) == 0) {
@@ -2754,7 +2754,7 @@ int ssh_channel_read_nonblocking(ssh_channel channel, void *dest, uint32_t count
   to_read = ssh_channel_poll(channel, is_stderr);
 
   if (to_read <= 0) {
-      if (channel->session->session_state == SSH_SESSION_STATE_ERROR){
+      if (session->session_state == SSH_SESSION_STATE_ERROR){
           return SSH_ERROR;
       }
 
