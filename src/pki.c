@@ -1579,7 +1579,11 @@ int ssh_pki_signature_verify_blob(ssh_session session,
 
         sha1(digest, dlen, hash);
 #ifdef DEBUG_CRYPTO
-        ssh_print_hexa("Hash to be verified with dsa", hash, SHA_DIGEST_LEN);
+        ssh_print_hexa(key->type == SSH_KEYTYPE_DSS
+                       ? "Hash to be verified with DSA"
+                       : "Hash to be verified with RSA",
+                       hash,
+                       SHA_DIGEST_LEN);
 #endif
 
         rc = pki_signature_verify(session,
