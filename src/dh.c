@@ -1134,7 +1134,7 @@ void ssh_print_hexa(const char *descr, const unsigned char *what, size_t len) {
     if (hexa == NULL) {
       return;
     }
-    printf("%s: %s\n", descr, hexa);
+    fprintf(stderr, "%s: %s\n", descr, hexa);
 
     free(hexa);
 }
