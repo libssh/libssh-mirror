@@ -754,22 +754,19 @@ int pki_pubkey_build_ecdsa(ssh_key key, int nid, ssh_string e)
 ssh_key pki_key_dup(const ssh_key key, int demote)
 {
     ssh_key new;
-    gcry_sexp_t sexp = NULL;
-    gcry_error_t err;
-    const char *tmp = NULL;
-    size_t size;
+    gcry_error_t err = 0;
     int rc;
 
-    ssh_string p = NULL;
-    ssh_string q = NULL;
-    ssh_string g = NULL;
-    ssh_string y = NULL;
-    ssh_string x = NULL;
+    gcry_mpi_t p = NULL;
+    gcry_mpi_t q = NULL;
+    gcry_mpi_t g = NULL;
+    gcry_mpi_t y = NULL;
+    gcry_mpi_t x = NULL;
 
-    ssh_string e = NULL;
-    ssh_string n = NULL;
-    ssh_string d = NULL;
-    ssh_string u = NULL;
+    gcry_mpi_t e = NULL;
+    gcry_mpi_t n = NULL;
+    gcry_mpi_t d = NULL;
+    gcry_mpi_t u = NULL;
 
     new = ssh_key_new();
     if (new == NULL) {
@@ -785,209 +782,64 @@ ssh_key pki_key_dup(const ssh_key key, int demote)
 
     switch(key->type) {
         case SSH_KEYTYPE_DSS:
-            sexp = gcry_sexp_find_token(key->dsa, "p", 0);
-            if (sexp == NULL) {
-                goto fail;
+            err = gcry_sexp_extract_param(key->dsa,
+                                          NULL,
+                                          "pqgyx?",
+                                          &p,
+                                          &q,
+                                          &g,
+                                          &y,
+                                          &x,
+                                          NULL);
+            if (err != 0) {
+                break;
             }
-            tmp = gcry_sexp_nth_data(sexp, 1, &size);
-            p = ssh_string_new(size);
-            if (p == NULL) {
-                goto fail;
-            }
-            ssh_string_fill(p, (char *)tmp, size);
-            gcry_sexp_release(sexp);
-
-            sexp = gcry_sexp_find_token(key->dsa, "q", 0);
-            if (sexp == NULL) {
-                goto fail;
-            }
-            tmp = gcry_sexp_nth_data(sexp, 1, &size);
-            q = ssh_string_new(size);
-            if (q == NULL) {
-                goto fail;
-            }
-            ssh_string_fill(q, (char *)tmp, size);
-            gcry_sexp_release(sexp);
-
-            sexp = gcry_sexp_find_token(key->dsa, "g", 0);
-            if (sexp == NULL) {
-                goto fail;
-            }
-            tmp = gcry_sexp_nth_data(sexp, 1, &size);
-            g = ssh_string_new(size);
-            if (g == NULL) {
-                goto fail;
-            }
-            ssh_string_fill(g, (char *)tmp, size);
-            gcry_sexp_release(sexp);
-
-            sexp = gcry_sexp_find_token(key->dsa, "y", 0);
-            if (sexp == NULL) {
-                goto fail;
-            }
-            tmp = gcry_sexp_nth_data(sexp, 1, &size);
-            y = ssh_string_new(size);
-            if (y == NULL) {
-                goto fail;
-            }
-            ssh_string_fill(y, (char *)tmp, size);
-            gcry_sexp_release(sexp);
 
             if (!demote && (key->flags & SSH_KEY_FLAG_PRIVATE)) {
-                sexp = gcry_sexp_find_token(key->dsa, "x", 0);
-                if (sexp == NULL) {
-                    goto fail;
-                }
-                tmp = gcry_sexp_nth_data(sexp, 1, &size);
-                x = ssh_string_new(size);
-                if (x == NULL) {
-                    goto fail;
-                }
-                ssh_string_fill(x, (char *)tmp, size);
-                gcry_sexp_release(sexp);
-
-                err = gcry_sexp_build(&new->dsa, NULL,
-                        "(private-key(dsa(p %b)(q %b)(g %b)(y %b)(x %b)))",
-                        ssh_string_len(p), ssh_string_data(p),
-                        ssh_string_len(q), ssh_string_data(q),
-                        ssh_string_len(g), ssh_string_data(g),
-                        ssh_string_len(y), ssh_string_data(y),
-                        ssh_string_len(x), ssh_string_data(x));
+                err = gcry_sexp_build(&new->dsa,
+                        NULL,
+                        "(private-key(dsa(p %m)(q %m)(g %m)(y %m)(x %m)))",
+                        p, q, g, y, x);
             } else {
-                err = gcry_sexp_build(&new->dsa, NULL,
-                        "(public-key(dsa(p %b)(q %b)(g %b)(y %b)))",
-                        ssh_string_len(p), ssh_string_data(p),
-                        ssh_string_len(q), ssh_string_data(q),
-                        ssh_string_len(g), ssh_string_data(g),
-                        ssh_string_len(y), ssh_string_data(y));
+                err = gcry_sexp_build(&new->dsa,
+                        NULL,
+                        "(public-key(dsa(p %m)(q %m)(g %m)(y %m)))",
+                        p, q, g, y);
             }
-            if (err) {
-                goto fail;
-            }
-
-            ssh_string_burn(p);
-            ssh_string_free(p);
-            ssh_string_burn(q);
-            ssh_string_free(q);
-            ssh_string_burn(g);
-            ssh_string_free(g);
-            ssh_string_burn(y);
-            ssh_string_free(y);
-            ssh_string_burn(x);
-            ssh_string_free(x);
             break;
         case SSH_KEYTYPE_RSA:
         case SSH_KEYTYPE_RSA1:
-            sexp = gcry_sexp_find_token(key->rsa, "e", 0);
-            if (sexp == NULL) {
-                goto fail;
+            err = gcry_sexp_extract_param(key->rsa,
+                                          NULL,
+                                          "ned?p?q?u?",
+                                          &n,
+                                          &e,
+                                          &d,
+                                          &p,
+                                          &q,
+                                          &u,
+                                          NULL);
+            if (err != 0) {
+                break;
             }
-            tmp = gcry_sexp_nth_data(sexp, 1, &size);
-            e = ssh_string_new(size);
-            if (e == NULL) {
-                goto fail;
-            }
-            ssh_string_fill(e, (char *)tmp, size);
-            gcry_sexp_release(sexp);
-
-            sexp = gcry_sexp_find_token(key->rsa, "n", 0);
-            if (sexp == NULL) {
-                goto fail;
-            }
-            tmp = gcry_sexp_nth_data(sexp, 1, &size);
-            n = ssh_string_new(size);
-            if (n == NULL) {
-                goto fail;
-            }
-            ssh_string_fill(n, (char *)tmp, size);
-            gcry_sexp_release(sexp);
 
             if (!demote && (key->flags & SSH_KEY_FLAG_PRIVATE)) {
-                sexp = gcry_sexp_find_token(key->rsa, "d", 0);
-                if (sexp == NULL) {
-                    goto fail;
-                }
-                tmp = gcry_sexp_nth_data(sexp, 1, &size);
-                d = ssh_string_new(size);
-                if (e == NULL) {
-                    goto fail;
-                }
-                ssh_string_fill(d, (char *)tmp, size);
-                gcry_sexp_release(sexp);
-
-                sexp = gcry_sexp_find_token(key->rsa, "p", 0);
-                if (sexp == NULL) {
-                    goto fail;
-                }
-                tmp = gcry_sexp_nth_data(sexp, 1, &size);
-                p = ssh_string_new(size);
-                if (p == NULL) {
-                    goto fail;
-                }
-                ssh_string_fill(p, (char *)tmp, size);
-                gcry_sexp_release(sexp);
-
-                sexp = gcry_sexp_find_token(key->rsa, "q", 0);
-                if (sexp == NULL) {
-                    goto fail;
-                }
-                tmp = gcry_sexp_nth_data(sexp, 1, &size);
-                q = ssh_string_new(size);
-                if (q == NULL) {
-                    goto fail;
-                }
-                ssh_string_fill(q, (char *)tmp, size);
-                gcry_sexp_release(sexp);
-
-                sexp = gcry_sexp_find_token(key->rsa, "u", 0);
-                if (sexp == NULL) {
-                    goto fail;
-                }
-                tmp = gcry_sexp_nth_data(sexp, 1, &size);
-                u = ssh_string_new(size);
-                if (u == NULL) {
-                    goto fail;
-                }
-                ssh_string_fill(u, (char *)tmp, size);
-                gcry_sexp_release(sexp);
-
-                err = gcry_sexp_build(&new->rsa, NULL,
-                        "(private-key(rsa(n %b)(e %b)(d %b)(p %b)(q %b)(u %b)))",
-                        ssh_string_len(n), ssh_string_data(n),
-                        ssh_string_len(e), ssh_string_data(e),
-                        ssh_string_len(d), ssh_string_data(d),
-                        ssh_string_len(p), ssh_string_data(p),
-                        ssh_string_len(q), ssh_string_data(q),
-                        ssh_string_len(u), ssh_string_data(u));
+                err = gcry_sexp_build(&new->rsa,
+                        NULL,
+                        "(private-key(rsa(n %m)(e %m)(d %m)(p %m)(q %m)(u %m)))",
+                        n, e, d, p, q, u);
             } else {
-                err = gcry_sexp_build(&new->rsa, NULL,
-                        "(public-key(rsa(n %b)(e %b)))",
-                        ssh_string_len(n), ssh_string_data(n),
-                        ssh_string_len(e), ssh_string_data(e));
+                err = gcry_sexp_build(&new->rsa,
+                                      NULL,
+                                      "(public-key(rsa(n %m)(e %m)))",
+                                      n, e);
             }
-
-            if (err) {
-                goto fail;
-            }
-
-            ssh_string_burn(e);
-            ssh_string_free(e);
-            ssh_string_burn(n);
-            ssh_string_free(n);
-            ssh_string_burn(d);
-            ssh_string_free(d);
-            ssh_string_burn(p);
-            ssh_string_free(p);
-            ssh_string_burn(q);
-            ssh_string_free(q);
-            ssh_string_burn(u);
-            ssh_string_free(u);
-
             break;
         case SSH_KEYTYPE_ED25519:
 		rc = pki_ed25519_key_dup(new, key);
-		if (rc != SSH_OK){
-			goto fail;
+		if (rc != SSH_OK) {
+                    ssh_key_free(new);
+                    return NULL;
 		}
 		break;
 
@@ -998,30 +850,23 @@ ssh_key pki_key_dup(const ssh_key key, int demote)
             return NULL;
     }
 
+    if (err) {
+        ssh_key_free(new);
+        new = NULL;
+    }
+
+    gcry_mpi_release(p);
+    gcry_mpi_release(q);
+    gcry_mpi_release(g);
+    gcry_mpi_release(y);
+    gcry_mpi_release(x);
+
+    gcry_mpi_release(e);
+    gcry_mpi_release(n);
+    gcry_mpi_release(d);
+    gcry_mpi_release(u);
+
     return new;
-fail:
-    gcry_sexp_release(sexp);
-    ssh_string_burn(p);
-    ssh_string_free(p);
-    ssh_string_burn(q);
-    ssh_string_free(q);
-    ssh_string_burn(g);
-    ssh_string_free(g);
-    ssh_string_burn(y);
-    ssh_string_free(y);
-    ssh_string_burn(x);
-    ssh_string_free(x);
-
-    ssh_string_burn(e);
-    ssh_string_free(e);
-    ssh_string_burn(n);
-    ssh_string_free(n);
-    ssh_string_burn(u);
-    ssh_string_free(u);
-
-    ssh_key_free(new);
-
-    return NULL;
 }
 
 static int pki_key_generate(ssh_key key, int parameter, const char *type_s, int type){
