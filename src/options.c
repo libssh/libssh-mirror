@@ -1179,7 +1179,9 @@ int ssh_options_getopt(ssh_session session, int *argcptr, char **argv) {
     }
   }
 
-  ssh_options_set(session, SSH_OPTIONS_PORT_STR, port);
+  if (port != NULL) {
+    ssh_options_set(session, SSH_OPTIONS_PORT_STR, port);
+  }
 
   ssh_options_set(session, SSH_OPTIONS_SSH1, &ssh1);
   ssh_options_set(session, SSH_OPTIONS_SSH2, &ssh2);
