@@ -71,6 +71,16 @@ char *ssh_gcry_bn2dec(bignum bn);
 #define bignum_bn2bin(num,datalen,data) gcry_mpi_print(GCRYMPI_FMT_USG,data,datalen,NULL,num)
 #define bignum_cmp(num1,num2) gcry_mpi_cmp(num1,num2)
 
+/* Helper functions for data conversions.  */
+
+/* Extract an MPI from the given s-expression SEXP named NAME which is
+   encoded using INFORMAT and store it in a newly allocated ssh_string
+   encoded using OUTFORMAT.  */
+ssh_string ssh_sexp_extract_mpi(const gcry_sexp_t sexp,
+                                const char *name,
+                                enum gcry_mpi_format informat,
+                                enum gcry_mpi_format outformat);
+
 #endif /* HAVE_LIBGCRYPT */
 
 struct ssh_cipher_struct *ssh_get_ciphertab(void);
