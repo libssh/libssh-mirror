@@ -5,6 +5,7 @@
  *
  * Copyright (c) 2003-2009 Aris Adamantiadis
  * Copyright (c) 2009-2011 Andreas Schneider <asn@cryptomilk.org>
+ * Copyright (C) 2016 g10 Code GmbH
  *
  * The SSH Library is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -48,6 +49,7 @@
 #define MAX_KEY_SIZE 32
 #define MAX_PASSPHRASE_SIZE 1024
 #define ASN1_INTEGER 2
+#define ASN1_BIT_STRING 3
 #define ASN1_SEQUENCE 48
 #define PKCS5_SALT_LEN 8
 
@@ -140,6 +142,63 @@ static ssh_string asn1_get(ssh_buffer buffer, unsigned char want) {
 
 static ssh_string asn1_get_int(ssh_buffer buffer) {
   return asn1_get(buffer, ASN1_INTEGER);
+}
+
+static ssh_string asn1_get_bit_string(ssh_buffer buffer)
+{
+    ssh_string str;
+    unsigned char type;
+    uint32_t size;
+    unsigned char unused, last, *p;
+    uint32_t len;
+
+    len = ssh_buffer_get_data(buffer, &type, 1);
+    if (len == 0 || type != ASN1_BIT_STRING) {
+        return NULL;
+    }
+    size = asn1_get_len(buffer);
+    if (size == 0) {
+        return NULL;
+    }
+
+    /* The first octet encodes the number of unused bits.  */
+    size -= 1;
+
+    str = ssh_string_new(size);
+    if (str == NULL) {
+        return NULL;
+    }
+
+    len = ssh_buffer_get_data(buffer, &unused, 1);
+    if (len == 0) {
+        ssh_string_free(str);
+        return NULL;
+    }
+
+    if (unused == 0) {
+        len = ssh_buffer_get_data(buffer, ssh_string_data(str), size);
+        if (len == 0) {
+            ssh_string_free(str);
+            return NULL;
+        }
+        return str;
+    }
+
+    /* The bit string is padded at the end, we must shift the whole
+       string by UNUSED bits.  */
+    for (p = ssh_string_data(str), last = 0; size; size--, p++) {
+        unsigned char c;
+
+        len = ssh_buffer_get_data(buffer, &c, 1);
+        if (len == 0) {
+            ssh_string_free(str);
+            return NULL;
+        }
+        *p = last | (c >> unused);
+        last = c << (8 - unused);
+    }
+
+    return str;
 }
 
 static int asn1_check_sequence(ssh_buffer buffer) {
