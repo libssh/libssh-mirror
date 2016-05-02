@@ -805,7 +805,11 @@ static void torture_setup_create_sshd_config(void **state)
     }
     assert_non_null(sftp_server);
 
-    snprintf(sshd_config, sizeof(sshd_config),
+#ifndef OPENSSH_VERSION_MAJOR
+#define OPENSSH_VERSION_MAJOR 7U
+#define OPENSSH_VERSION_MINOR 0U
+#endif
+    const char config_string[]=
              "Port 22\n"
              "ListenAddress 127.0.0.10\n"
              "HostKey %s\n"
@@ -845,7 +849,9 @@ static void torture_setup_create_sshd_config(void **state)
              "AcceptEnv LC_PAPER LC_NAME LC_ADDRESS LC_TELEPHONE LC_MEASUREMENT\n"
              "AcceptEnv LC_IDENTIFICATION LC_ALL LC_LIBSSH\n"
              "\n"
-             "PidFile %s\n",
+             "PidFile %s\n";
+    snprintf(sshd_config, sizeof(sshd_config),
+             config_string,
              dsa_hostkey,
              rsa_hostkey,
              ecdsa_hostkey,
