@@ -386,7 +386,13 @@ static void ssh_client_connection_callback(ssh_session session){
 	switch(session->session_state){
 		case SSH_SESSION_STATE_NONE:
 		case SSH_SESSION_STATE_CONNECTING:
+			break;
 		case SSH_SESSION_STATE_SOCKET_CONNECTED:
+            /* If SSHv1 is disabled, we can send the banner immedietly */
+            if (session->opts.ssh1 == 0) {
+                ssh_set_fd_towrite(session);
+                ssh_send_banner(session, 0);
+            }
 			break;
 		case SSH_SESSION_STATE_BANNER_RECEIVED:
 		  if (session->serverbanner == NULL) {
@@ -433,7 +439,9 @@ static void ssh_client_connection_callback(ssh_session session){
 #endif
 		  ssh_packet_set_default_callbacks(session);
 		  session->session_state=SSH_SESSION_STATE_INITIAL_KEX;
-		  ssh_send_banner(session, 0);
+          if (session->opts.ssh1 == 1) {
+              ssh_send_banner(session, 0);
+          }
 		  set_status(session, 0.5f);
 		  break;
 		case SSH_SESSION_STATE_INITIAL_KEX:
