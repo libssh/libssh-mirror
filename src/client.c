@@ -145,7 +145,8 @@ static int callback_receive_banner(const void *data, size_t len, void *user)
                 break;
             }
         }
-        if (i > 127) {
+        /* According to RFC 4253 the max banner length is 255 */
+        if (i > 255) {
             /* Too big banner */
             session->session_state=SSH_SESSION_STATE_ERROR;
             ssh_set_error(session,
