@@ -28,7 +28,7 @@ The libssh library provides:
  - <strong>Channels</strong>: shell, exec (incl. SCP wrapper), direct-tcpip, subsystem, <i>auth-agent-req@openssh.com</i>
  - <strong>Global Requests</strong>: tcpip-forward, forwarded-tcpip
  - <strong>Channel Requests</strong>: x11, pty, <i>exit-status, signal, exit-signal, keepalive@openssh.com, auth-agent-req@openssh.com</i>
- - <strong>Subsystems</strong>: sftp(version 3), publickey(version 2), <i>OpenSSH Extensions</i>
+ - <strong>Subsystems</strong>: sftp(version 3), <i>OpenSSH Extensions</i>
  - <strong>SFTP</strong>: <i>statvfs@openssh.com, fstatvfs@openssh.com</i>
  - <strong>Thread-safe</strong>: Just don't share sessions
  - <strong>Non-blocking</strong>: it can be used both blocking and non-blocking
