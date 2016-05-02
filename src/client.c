@@ -169,46 +169,75 @@ static int callback_receive_banner(const void *data, size_t len, void *user)
  *
  * @return 0 on success, < 0 on error.
  */
-int ssh_send_banner(ssh_session session, int server) {
-  const char *banner = NULL;
-  char buffer[128] = {0};
-  int err=SSH_ERROR;
+int ssh_send_banner(ssh_session session, int server)
+{
+    const char *banner = NULL;
+    const char *terminator = NULL;
+    /* The maximum banner length is 255 for SSH2 */
+    char buffer[256] = {0};
+    size_t len;
+    int rc = SSH_ERROR;
 
-  banner = session->version == 1 ? CLIENTBANNER1 : CLIENTBANNER2;
+    banner = session->version == 1 ? CLIENTBANNER1 : CLIENTBANNER2;
+    terminator = session->version == 1 ? "\n" : "\r\n";
 
-  if (server) {
-    if(session->opts.custombanner == NULL){
-    	session->serverbanner = strdup(banner);
+    if (server == 1) {
+        if (session->opts.custombanner == NULL){
+            len = strlen(banner);
+            session->serverbanner = strdup(banner);
+            if (session->serverbanner == NULL) {
+                goto end;
+            }
+        } else {
+            len = strlen(session->opts.custombanner);
+            session->serverbanner = malloc(len + 8 + 1);
+            if(session->serverbanner == NULL) {
+                goto end;
+            }
+            snprintf(session->serverbanner,
+                     len + 8 + 1,
+                     "SSH-2.0-%s",
+                     session->opts.custombanner);
+        }
+
+        snprintf(buffer,
+                 sizeof(buffer),
+                 "%s%s",
+                 session->serverbanner,
+                 terminator);
     } else {
-    	session->serverbanner = malloc(strlen(session->opts.custombanner) + 9);
-    	if(!session->serverbanner)
-    		goto end;
-    	strcpy(session->serverbanner, "SSH-2.0-");
-    	strcat(session->serverbanner, session->opts.custombanner);
-    }
-    if (session->serverbanner == NULL) {
-      goto end;
-    }
-    snprintf(buffer, 128, "%s\n", session->serverbanner);
-  } else {
-    session->clientbanner = strdup(banner);
-    if (session->clientbanner == NULL) {
-      goto end;
-    }
-    snprintf(buffer, 128, "%s\n", session->clientbanner);
-  }
+        session->clientbanner = strdup(banner);
+        if (session->clientbanner == NULL) {
+            goto end;
+        }
 
-  if (ssh_socket_write(session->socket, buffer, strlen(buffer)) == SSH_ERROR) {
-    goto end;
-  }
+        /* SSH version 1 has a banner length of 128 only */
+        len = session->version == 1 ? 128 : 0;
+
+        snprintf(buffer,
+                 sizeof(buffer) - len,
+                 "%s%s",
+                 session->clientbanner,
+                 terminator);
+    }
+
+    rc = ssh_socket_write(session->socket, buffer, strlen(buffer));
+    if (rc == SSH_ERROR) {
+        goto end;
+    }
 #ifdef WITH_PCAP
-  if(session->pcap_ctx)
-  	ssh_pcap_context_write(session->pcap_ctx,SSH_PCAP_DIR_OUT,buffer,strlen(buffer),strlen(buffer));
+    if (session->pcap_ctx != NULL) {
+        ssh_pcap_context_write(session->pcap_ctx,
+                               SSH_PCAP_DIR_OUT,
+                               buffer,
+                               strlen(buffer),
+                               strlen(buffer));
+    }
 #endif
-  err=SSH_OK;
-end:
 
-  return err;
+    rc = SSH_OK;
+end:
+    return rc;
 }
 
 /** @internal
