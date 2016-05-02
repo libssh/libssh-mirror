@@ -50,6 +50,8 @@
 #define MAX_PASSPHRASE_SIZE 1024
 #define ASN1_INTEGER 2
 #define ASN1_BIT_STRING 3
+#define ASN1_OCTET_STRING 4
+#define ASN1_OBJECT_IDENTIFIER 6
 #define ASN1_SEQUENCE 48
 #define PKCS5_SALT_LEN 8
 
@@ -226,6 +228,19 @@ static int asn1_check_sequence(ssh_buffer buffer) {
   }
 
   return 1;
+}
+
+static int asn1_check_tag(ssh_buffer buffer, unsigned char tag) {
+    unsigned char tmp;
+    uint32_t len;
+
+    len = ssh_buffer_get_data(buffer, &tmp, 1);
+    if (len == 0 || tmp != tag) {
+        return 0;
+    }
+
+    (void) asn1_get_len(buffer);
+    return 1;
 }
 
 static int passphrase_to_key(char *data, unsigned int datalen,
