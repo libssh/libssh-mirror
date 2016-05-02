@@ -47,7 +47,7 @@ struct ssh_key_struct {
 #ifdef HAVE_LIBGCRYPT
     gcry_sexp_t dsa;
     gcry_sexp_t rsa;
-    void *ecdsa;
+    gcry_sexp_t ecdsa;
 #elif HAVE_LIBCRYPTO
     DSA *dsa;
     RSA *rsa;
@@ -69,7 +69,7 @@ struct ssh_signature_struct {
 #ifdef HAVE_LIBGCRYPT
     gcry_sexp_t dsa_sig;
     gcry_sexp_t rsa_sig;
-    void *ecdsa_sig;
+    gcry_sexp_t ecdsa_sig;
 #elif defined HAVE_LIBCRYPTO
     DSA_SIG *dsa_sig;
     ssh_string rsa_sig;
