@@ -23,6 +23,7 @@
 
 #include "config.h"
 
+#include <errno.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -117,6 +118,7 @@ static int send_username(ssh_session session, const char *username) {
   if (packet_send(session) == SSH_ERROR) {
     return SSH_AUTH_ERROR;
   }
+  return SSH_AUTH_AGAIN;
 pending:
   rc = wait_auth1_status(session);
   switch (rc){
@@ -161,12 +163,14 @@ int ssh_userauth1_password(ssh_session session, const char *username,
   ssh_string pwd = NULL;
   int rc;
 
+  if (session->pending_call_state == SSH_PENDING_CALL_AUTH_PASSWORD) {
+      goto pending;
+  }
+
   rc = send_username(session, username);
   if (rc != SSH_AUTH_DENIED) {
     return rc;
   }
-  if (session->pending_call_state == SSH_PENDING_CALL_AUTH_PASSWORD)
-      goto pending;
   /* we trick a bit here. A known flaw in SSH1 protocol is that it's
    * easy to guess password sizes.
    * not that sure ...
@@ -219,8 +223,11 @@ int ssh_userauth1_password(ssh_session session, const char *username,
   }
 pending:
   rc = wait_auth1_status(session);
-  if (rc != SSH_AUTH_AGAIN)
-      session->pending_call_state = SSH_PENDING_CALL_NONE;
+  if (rc == SSH_AUTH_ERROR && errno == EAGAIN) {
+    /* Nothing to do */
+  } else if (rc != SSH_AUTH_AGAIN) {
+    session->pending_call_state = SSH_PENDING_CALL_NONE;
+  }
 
   return rc;
 }
