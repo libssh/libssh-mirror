@@ -71,11 +71,14 @@ int ssh_client_curve25519_init(ssh_session session){
 
 static int ssh_curve25519_build_k(ssh_session session) {
   ssh_curve25519_pubkey k;
+
+#ifdef HAVE_LIBCRYPTO
   session->next_crypto->k = bignum_new();
 
   if (session->next_crypto->k == NULL) {
     return SSH_ERROR;
   }
+#endif
 
   if (session->server)
 	  crypto_scalarmult(k, session->next_crypto->curve25519_privkey,
@@ -84,7 +87,11 @@ static int ssh_curve25519_build_k(ssh_session session) {
 	  crypto_scalarmult(k, session->next_crypto->curve25519_privkey,
 			  session->next_crypto->curve25519_server_pubkey);
 
+#ifdef HAVE_LIBGCRYPT
+  bignum_bin2bn(k, CURVE25519_PUBKEY_SIZE, &session->next_crypto->k);
+#elif defined HAVE_LIBCRYPTO
   bignum_bin2bn(k, CURVE25519_PUBKEY_SIZE, session->next_crypto->k);
+#endif
 
 #ifdef DEBUG_CRYPTO
     ssh_print_hexa("Session server cookie",
