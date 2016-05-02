@@ -90,59 +90,73 @@ static void socket_callback_connected(int code, int errno_code, void *user){
  * @param  user is a pointer to session
  * @returns Number of bytes processed, or zero if the banner is not complete.
  */
-static int callback_receive_banner(const void *data, size_t len, void *user) {
-  char *buffer = (char *)data;
-  ssh_session session=(ssh_session) user;
-  char *str = NULL;
-  size_t i;
-  int ret=0;
+static int callback_receive_banner(const void *data, size_t len, void *user)
+{
+    char *buffer = (char *)data;
+    ssh_session session=(ssh_session) user;
+    char *str = NULL;
+    size_t i;
+    int ret=0;
 
-  if(session->session_state != SSH_SESSION_STATE_SOCKET_CONNECTED){
-  	ssh_set_error(session,SSH_FATAL,"Wrong state in callback_receive_banner : %d",session->session_state);
+    if (session->session_state != SSH_SESSION_STATE_SOCKET_CONNECTED) {
+        ssh_set_error(session,SSH_FATAL,
+                      "Wrong state in callback_receive_banner : %d",
+                      session->session_state);
 
-  	return SSH_ERROR;
-  }
-  for(i=0;i<len;++i){
-#ifdef WITH_PCAP
-  	if(session->pcap_ctx && buffer[i] == '\n'){
-  		ssh_pcap_context_write(session->pcap_ctx,SSH_PCAP_DIR_IN,buffer,i+1,i+1);
-  	}
-#endif
-    if(buffer[i]=='\r') {
-        buffer[i]='\0';
+        return SSH_ERROR;
     }
-    if (buffer[i]=='\n') {
-        buffer[i] = '\0';
-        /* The server MAY send other lines of data... */
-        if (strncmp(buffer, "SSH-", 4) == 0) {
-        str = strdup(buffer);
-        if (str == NULL) {
-            return SSH_ERROR;
+    for (i = 0; i < len; ++i) {
+#ifdef WITH_PCAP
+        if (session->pcap_ctx && buffer[i] == '\n') {
+            ssh_pcap_context_write(session->pcap_ctx,
+                                   SSH_PCAP_DIR_IN,
+                                   buffer,i+1,
+                                   i+1);
         }
-        /* number of bytes read */
-        ret = i + 1;
-        session->serverbanner = str;
-  		session->session_state=SSH_SESSION_STATE_BANNER_RECEIVED;
-  		SSH_LOG(SSH_LOG_PACKET,"Received banner: %s",str);
-		session->ssh_connection_callback(session);
+#endif
+        if (buffer[i] == '\r') {
+            buffer[i] = '\0';
+        }
+        if (buffer[i] == '\n') {
+            int cmp;
 
-  		return ret;
-      } else {
-        SSH_LOG(SSH_LOG_DEBUG, "ssh_protocol_version_exchange: %s", buffer);
-        ret = i + 1;
-		break;
-      }
-  	}
-  	if(i>127){
-  		/* Too big banner */
-  		session->session_state=SSH_SESSION_STATE_ERROR;
-  		ssh_set_error(session,SSH_FATAL,"Receiving banner: too large banner");
+            buffer[i] = '\0';
 
-  		return 0;
-  	}
-  }
+            /* The server MAY send other lines of data... */
+            cmp = strncmp(buffer, "SSH-", 4);
+            if (cmp == 0) {
+                str = strdup(buffer);
+                if (str == NULL) {
+                    return SSH_ERROR;
+                }
+                /* number of bytes read */
+                ret = i + 1;
+                session->serverbanner = str;
+                session->session_state = SSH_SESSION_STATE_BANNER_RECEIVED;
+                SSH_LOG(SSH_LOG_PACKET, "Received banner: %s", str);
+                session->ssh_connection_callback(session);
 
-  return ret;
+                return ret;
+            } else {
+                SSH_LOG(SSH_LOG_DEBUG,
+                        "ssh_protocol_version_exchange: %s",
+                        buffer);
+                ret = i + 1;
+                break;
+            }
+        }
+        if (i > 127) {
+            /* Too big banner */
+            session->session_state=SSH_SESSION_STATE_ERROR;
+            ssh_set_error(session,
+                          SSH_FATAL,
+                          "Receiving banner: too large banner");
+
+            return 0;
+        }
+    }
+
+    return ret;
 }
 
 /** @internal
