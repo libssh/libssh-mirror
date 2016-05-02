@@ -445,7 +445,7 @@ LIBSSH_API char *ssh_get_hexa(const unsigned char *what, size_t len);
 LIBSSH_API char *ssh_get_issue_banner(ssh_session session);
 LIBSSH_API int ssh_get_openssh_version(ssh_session session);
 
-LIBSSH_API int ssh_get_publickey(ssh_session session, ssh_key *key);
+LIBSSH_API int ssh_get_server_publickey(ssh_session session, ssh_key *key);
 
 enum ssh_publickey_hash_type {
     SSH_PUBLICKEY_HASH_SHA1,
@@ -461,6 +461,7 @@ SSH_DEPRECATED LIBSSH_API int ssh_get_pubkey_hash(ssh_session session, unsigned 
 SSH_DEPRECATED LIBSSH_API ssh_channel ssh_forward_accept(ssh_session session, int timeout_ms);
 SSH_DEPRECATED LIBSSH_API int ssh_forward_cancel(ssh_session session, const char *address, int port);
 SSH_DEPRECATED LIBSSH_API int ssh_forward_listen(ssh_session session, const char *address, int port, int *bound_port);
+SSH_DEPRECATED LIBSSH_API int ssh_get_publickey(ssh_session session, ssh_key *key);
 
 
 LIBSSH_API int ssh_get_random(void *where,int len,int strong);

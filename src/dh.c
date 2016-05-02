@@ -961,7 +961,7 @@ void ssh_clean_pubkey_hash(unsigned char **hash) {
  *
  * @see ssh_key_free()
  */
-int ssh_get_publickey(ssh_session session, ssh_key *key)
+int ssh_get_server_publickey(ssh_session session, ssh_key *key)
 {
     if (session==NULL ||
         session->current_crypto ==NULL ||
@@ -971,6 +971,14 @@ int ssh_get_publickey(ssh_session session, ssh_key *key)
 
     return ssh_pki_import_pubkey_blob(session->current_crypto->server_pubkey,
                                       key);
+}
+
+/**
+ * @deprecated Use ssh_get_server_publickey()
+ */
+int ssh_get_publickey(ssh_session session, ssh_key *key)
+{
+    return ssh_get_server_publickey(session, key);
 }
 
 /**
