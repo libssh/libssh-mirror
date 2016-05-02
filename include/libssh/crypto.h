@@ -76,7 +76,11 @@ enum ssh_cipher_e {
 struct ssh_crypto_struct {
     bignum e,f,x,k,y;
 #ifdef HAVE_ECDH
+#ifdef HAVE_OPENSSL_ECC
     EC_KEY *ecdh_privkey;
+#elif defined HAVE_GCRYPT_ECC
+    gcry_sexp_t ecdh_privkey;
+#endif
     ssh_string ecdh_client_pubkey;
     ssh_string ecdh_server_pubkey;
 #endif

@@ -161,7 +161,11 @@ void crypto_free(struct ssh_crypto_struct *crypto){
   SAFE_FREE(crypto->ecdh_client_pubkey);
   SAFE_FREE(crypto->ecdh_server_pubkey);
   if(crypto->ecdh_privkey != NULL){
+#ifdef HAVE_OPENSSL_ECC
     EC_KEY_free(crypto->ecdh_privkey);
+#elif defined HAVE_GCRYPT_ECC
+    gcry_sexp_release(crypto->ecdh_privkey);
+#endif
     crypto->ecdh_privkey = NULL;
   }
 #endif

@@ -159,11 +159,13 @@ if (WITH_GCRYPT)
         libgcrypt.c
         gcrypt_missing.c
         pki_gcrypt.c
+        ecdh_gcrypt.c
        )
 else (WITH_GCRYPT)
     set(libssh_SRCS
         ${libssh_SRCS}
         pki_crypto.c
+        ecdh_crypto.c
        )
 endif (WITH_GCRYPT)
 
