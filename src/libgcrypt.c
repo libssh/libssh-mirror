@@ -71,6 +71,59 @@ void sha1(unsigned char *digest, int len, unsigned char *hash) {
   gcry_md_hash_buffer(GCRY_MD_SHA1, hash, digest, len);
 }
 
+#ifdef HAVE_GCRYPT_ECC
+static int nid_to_md_algo(int nid)
+{
+    switch (nid) {
+    case NID_gcrypt_nistp256:
+        return GCRY_MD_SHA256;
+    case NID_gcrypt_nistp384:
+        return GCRY_MD_SHA384;
+    case NID_gcrypt_nistp521:
+        return GCRY_MD_SHA512;
+    }
+    return GCRY_MD_NONE;
+}
+
+void evp(int nid, unsigned char *digest, int len,
+         unsigned char *hash, unsigned int *hlen)
+{
+    int algo = nid_to_md_algo(nid);
+
+    /* Note: What gcrypt calls 'hash' is called 'digest' here and
+       vice-versa.  */
+    gcry_md_hash_buffer(algo, hash, digest, len);
+    *hlen = gcry_md_get_algo_dlen(algo);
+}
+
+EVPCTX evp_init(int nid)
+{
+    gcry_error_t err;
+    int algo = nid_to_md_algo(nid);
+    EVPCTX ctx;
+
+    err = gcry_md_open(&ctx, algo, 0);
+    if (err) {
+        return NULL;
+    }
+
+    return ctx;
+}
+
+void evp_update(EVPCTX ctx, const void *data, unsigned long len)
+{
+    gcry_md_write(ctx, data, len);
+}
+
+void evp_final(EVPCTX ctx, unsigned char *md, unsigned int *mdlen)
+{
+    int algo = gcry_md_get_algo(ctx);
+    *mdlen = gcry_md_get_algo_dlen(algo);
+    memcpy(md, gcry_md_read(ctx, algo), *mdlen);
+    gcry_md_close(ctx);
+}
+#endif
+
 SHA256CTX sha256_init(void) {
   SHA256CTX ctx = NULL;
   gcry_md_open(&ctx, GCRY_MD_SHA256, 0);

@@ -32,7 +32,7 @@ typedef gcry_md_hd_t SHA384CTX;
 typedef gcry_md_hd_t SHA512CTX;
 typedef gcry_md_hd_t MD5CTX;
 typedef gcry_md_hd_t HMACCTX;
-typedef void *EVPCTX;
+typedef gcry_md_hd_t EVPCTX;
 #define SHA_DIGEST_LENGTH 20
 #define SHA_DIGEST_LEN SHA_DIGEST_LENGTH
 #define MD5_DIGEST_LEN 16
@@ -50,6 +50,11 @@ typedef void *EVPCTX;
 #define EVP_DIGEST_LEN EVP_MAX_MD_SIZE
 
 typedef gcry_mpi_t bignum;
+
+/* Constants for curves.  */
+#define NID_gcrypt_nistp256 0
+#define NID_gcrypt_nistp384 1
+#define NID_gcrypt_nistp521 2
 
 /* missing gcrypt functions */
 int ssh_gcry_dec2bn(bignum *bn, const char *data);
