@@ -84,10 +84,10 @@ static void torture_request_env(void **state)
     rc = ssh_channel_open_session(c);
     assert_int_equal(rc, SSH_OK);
 
-    rc = ssh_channel_request_env(c, "LC_LIBSSH", "LIBSSH");
+    rc = ssh_channel_request_env(c, "LC_LIBSSH", "LIBSSH_EXPORTED_VARIABLE");
     assert_int_equal(rc, SSH_OK);
 
-    rc = ssh_channel_request_exec(c, "bash -c export");
+    rc = ssh_channel_request_exec(c, "echo $LC_LIBSSH");
     assert_int_equal(rc, SSH_OK);
 
     nbytes = ssh_channel_read(c, buffer, sizeof(buffer) - 1, 0);
@@ -98,7 +98,7 @@ static void torture_request_env(void **state)
         assert_int_equal(rc, nbytes);
 #endif
         buffer[nbytes]='\0';
-        if (strstr(buffer, "LC_LIBSSH=\"LIBSSH\"")) {
+        if (strstr(buffer, "LIBSSH_EXPORTED_VARIABLE")) {
             lang_found = 1;
             break;
         }
