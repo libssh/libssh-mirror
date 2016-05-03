@@ -759,6 +759,51 @@ static void torture_setup_create_sshd_config(void **state)
         "/usr/libexec/openssh/sftp-server",
         "/usr/lib/openssh/sftp-server",     /* Debian */
     };
+#ifndef OPENSSH_VERSION_MAJOR
+#define OPENSSH_VERSION_MAJOR 7U
+#define OPENSSH_VERSION_MINOR 0U
+#endif
+    const char config_string[]=
+             "Port 22\n"
+             "ListenAddress 127.0.0.10\n"
+             "HostKey %s\n"
+             "HostKey %s\n"
+             "HostKey %s\n"
+             "\n"
+             "LogLevel DEBUG3\n"
+             "Subsystem sftp %s\n"
+             "\n"
+             "PasswordAuthentication yes\n"
+             "KbdInteractiveAuthentication yes\n"
+             "PubkeyAuthentication yes\n"
+             "\n"
+             "UsePrivilegeSeparation no\n"
+             "StrictModes no\n"
+             "\n"
+             "UsePAM yes\n"
+             "\n"
+#if (OPENSSH_VERSION_MAJOR == 6 && OPENSSH_VERSION_MINOR >= 7) || (OPENSSH_VERSION_MAJOR >= 7)
+             "HostKeyAlgorithms +ssh-dss\n"
+             "Ciphers +3des-cbc,aes128-cbc,aes192-cbc,aes256-cbc,blowfish-cbc\n"
+             "KexAlgorithms +diffie-hellman-group1-sha1"
+#else
+             "Ciphers 3des-cbc,aes128-cbc,aes192-cbc,aes256-cbc,aes128-ctr,"
+                     "aes192-ctr,aes256-ctr,aes128-gcm@openssh.com,"
+                     "aes256-gcm@openssh.com,arcfour128,arcfour256,arcfour,"
+                     "blowfish-cbc,cast128-cbc,chacha20-poly1305@openssh.com\n"
+             "KexAlgorithms curve25519-sha256@libssh.org,ecdh-sha2-nistp256,"
+                           "ecdh-sha2-nistp384,ecdh-sha2-nistp521,"
+                           "diffie-hellman-group-exchange-sha256,"
+                           "diffie-hellman-group-exchange-sha1,"
+                           "diffie-hellman-group14-sha1,"
+                           "diffie-hellman-group1-sha1\n"
+#endif
+             "\n"
+             "AcceptEnv LANG LC_CTYPE LC_NUMERIC LC_TIME LC_COLLATE LC_MONETARY LC_MESSAGES\n"
+             "AcceptEnv LC_PAPER LC_NAME LC_ADDRESS LC_TELEPHONE LC_MEASUREMENT\n"
+             "AcceptEnv LC_IDENTIFICATION LC_ALL LC_LIBSSH\n"
+             "\n"
+             "PidFile %s\n";
     size_t sftp_sl_size = ARRAY_SIZE(sftp_server_locations);
     const char *sftp_server;
     size_t i;
@@ -805,51 +850,6 @@ static void torture_setup_create_sshd_config(void **state)
     }
     assert_non_null(sftp_server);
 
-#ifndef OPENSSH_VERSION_MAJOR
-#define OPENSSH_VERSION_MAJOR 7U
-#define OPENSSH_VERSION_MINOR 0U
-#endif
-    const char config_string[]=
-             "Port 22\n"
-             "ListenAddress 127.0.0.10\n"
-             "HostKey %s\n"
-             "HostKey %s\n"
-             "HostKey %s\n"
-             "\n"
-             "LogLevel DEBUG3\n"
-             "Subsystem sftp %s\n"
-             "\n"
-             "PasswordAuthentication yes\n"
-             "KbdInteractiveAuthentication yes\n"
-             "PubkeyAuthentication yes\n"
-             "\n"
-             "UsePrivilegeSeparation no\n"
-             "StrictModes no\n"
-             "\n"
-             "UsePAM yes\n"
-             "\n"
-#if (OPENSSH_VERSION_MAJOR == 6 && OPENSSH_VERSION_MINOR >= 7) || (OPENSSH_VERSION_MAJOR >= 7)
-             "HostKeyAlgorithms +ssh-dss\n"
-             "Ciphers +3des-cbc,aes128-cbc,aes192-cbc,aes256-cbc,blowfish-cbc\n"
-             "KexAlgorithms +diffie-hellman-group1-sha1"
-#else
-             "Ciphers 3des-cbc,aes128-cbc,aes192-cbc,aes256-cbc,aes128-ctr,"
-                     "aes192-ctr,aes256-ctr,aes128-gcm@openssh.com,"
-                     "aes256-gcm@openssh.com,arcfour128,arcfour256,arcfour,"
-                     "blowfish-cbc,cast128-cbc,chacha20-poly1305@openssh.com\n"
-             "KexAlgorithms curve25519-sha256@libssh.org,ecdh-sha2-nistp256,"
-                           "ecdh-sha2-nistp384,ecdh-sha2-nistp521,"
-                           "diffie-hellman-group-exchange-sha256,"
-                           "diffie-hellman-group-exchange-sha1,"
-                           "diffie-hellman-group14-sha1,"
-                           "diffie-hellman-group1-sha1\n"
-#endif
-             "\n"
-             "AcceptEnv LANG LC_CTYPE LC_NUMERIC LC_TIME LC_COLLATE LC_MONETARY LC_MESSAGES\n"
-             "AcceptEnv LC_PAPER LC_NAME LC_ADDRESS LC_TELEPHONE LC_MEASUREMENT\n"
-             "AcceptEnv LC_IDENTIFICATION LC_ALL LC_LIBSSH\n"
-             "\n"
-             "PidFile %s\n";
     snprintf(sshd_config, sizeof(sshd_config),
              config_string,
              dsa_hostkey,
