@@ -8,9 +8,12 @@ set(examples_SRCS
 
 include_directories(
   ${LIBSSH_PUBLIC_INCLUDE_DIRS}
-  ${ARGP_INCLUDE_DIR}
   ${CMAKE_BINARY_DIR}
 )
+
+if (ARGP_INCLUDE_DIR)
+    include_directories(${ARGP_INCLUDE_DIR})
+endif()
 
 if (UNIX AND NOT WIN32)
     add_executable(libssh_scp libssh_scp.c ${examples_SRCS})
@@ -30,7 +33,7 @@ if (UNIX AND NOT WIN32)
     add_executable(samplessh sample.c ${examples_SRCS})
     target_link_libraries(samplessh ${LIBSSH_SHARED_LIBRARY})
 
-    if (WITH_SERVER)
+    if (WITH_SERVER AND ARGP_LIBRARY)
         if (HAVE_LIBUTIL)
             add_executable(ssh_server_fork ssh_server_fork.c)
             target_link_libraries(ssh_server_fork ${LIBSSH_SHARED_LIBRARY} ${ARGP_LIBRARY} util)
