@@ -50,7 +50,7 @@ if (UNIX AND NOT WIN32)
         add_executable(samplesshd-kbdint samplesshd-kbdint.c)
         target_link_libraries(samplesshd-kbdint ${LIBSSH_SHARED_LIBRARY} ${ARGP_LIBRARY})
 
-    endif (WITH_SERVER)
+    endif (WITH_SERVER AND ARGP_LIBRARY)
 endif (UNIX AND NOT WIN32)
 
 add_executable(exec exec.c ${examples_SRCS})
