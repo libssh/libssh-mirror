@@ -71,6 +71,7 @@ static void *client_thread(void *arg) {
     /* unused */
     (void)arg;
 
+    usleep(200);
     session = torture_ssh_session("localhost",
                                   &test_port,
                                   "foo", "bar");
