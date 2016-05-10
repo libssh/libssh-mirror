@@ -194,9 +194,8 @@ sftp_client_message sftp_get_client_message(sftp_session sftp) {
       break;
     case SSH_FXP_FSTAT:
       rc = ssh_buffer_unpack(payload,
-                             "Sd",
-                             &msg->handle,
-                             &msg->flags);
+                             "S",
+                             &msg->handle);
       if (rc != SSH_OK) {
         ssh_set_error_oom(session);
         sftp_client_message_free(msg);
