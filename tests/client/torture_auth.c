@@ -112,7 +112,7 @@ static int agent_setup(void **state)
     assert_non_null(pwd);
 
     snprintf(ssh_agent_sock,
-             sizeof(ssh_agent_cmd),
+             sizeof(ssh_agent_sock),
              "%s/agent.sock",
              s->socket_dir);
 
