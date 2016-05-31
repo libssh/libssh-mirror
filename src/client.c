@@ -274,7 +274,6 @@ static int dh_handshake(ssh_session session) {
           return SSH_ERROR;
       }
 
-      session->dh_handshake_state = DH_STATE_INIT_SENT;
     case DH_STATE_INIT_SENT:
     	/* wait until ssh_packet_dh_reply is called */
     	break;

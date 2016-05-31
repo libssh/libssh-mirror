@@ -79,6 +79,7 @@ int ssh_client_curve25519_init(ssh_session session){
   }
   /* register the packet callbacks */
   ssh_packet_set_callbacks(session, &ssh_curve25519_client_callbacks);
+  session->dh_handshake_state = DH_STATE_INIT_SENT;
   rc = ssh_packet_send(session);
 
   return rc;
