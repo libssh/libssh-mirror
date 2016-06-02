@@ -42,6 +42,13 @@ if (UNIX AND NOT WIN32)
         torture_channel
     )
 
+    if (WITH_SERVER)
+        set(LIBSSH_UNIT_TESTS
+            ${LIBSSH_UNIT_TESTS}
+            torture_moduli)
+    endif()
+
+
     if (HAVE_DSA)
         set(LIBSSH_UNIT_TESTS
             ${LIBSSH_UNIT_TESTS}
