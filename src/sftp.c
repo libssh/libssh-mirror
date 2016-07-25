@@ -322,7 +322,7 @@ sftp_packet sftp_packet_read(sftp_session sftp) {
   do {
     // read from channel until 4 bytes have been read or an error occurs
     s=ssh_channel_read(sftp->channel, buffer+r, 4-r, 0);
-    if (s < 0) {
+    if (s <= 0) {
       ssh_buffer_free(packet->payload);
       SAFE_FREE(packet);
       return NULL;
