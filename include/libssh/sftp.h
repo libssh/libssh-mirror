@@ -789,6 +789,22 @@ LIBSSH_API sftp_statvfs_t sftp_fstatvfs(sftp_file file);
 LIBSSH_API void sftp_statvfs_free(sftp_statvfs_t statvfs_o);
 
 /**
+ * @brief Synchronize a file's in-core state with storage device
+ *
+ * This calls the "fsync@openssh.com" extention. You should check if the
+ * extensions is supported using:
+ *
+ * @code
+ * int supported = sftp_extension_supported(sftp, "fsync@openssh.com", "1");
+ * @endcode
+ *
+ * @param file          The opened sftp file handle to sync
+ *
+ * @return              0 on success, < 0 on error with ssh and sftp error set.
+ */
+LIBSSH_API int sftp_fsync(sftp_file file);
+
+/**
  * @brief Canonicalize a sftp path.
  *
  * @param sftp          The sftp session handle.
