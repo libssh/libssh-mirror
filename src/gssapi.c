@@ -716,7 +716,7 @@ int ssh_gssapi_auth_mic(ssh_session session){
                              "importing name",
                              maj_stat,
                              min_stat);
-        return SSH_PACKET_USED;
+        return SSH_AUTH_DENIED;
     }
 
     /* copy username */
