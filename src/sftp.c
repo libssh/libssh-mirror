@@ -3077,7 +3077,10 @@ sftp_attributes sftp_fstat(sftp_file file) {
   }
 
   if (msg->packet_type == SSH_FXP_ATTRS){
-    return sftp_parse_attr(file->sftp, msg->payload, 0);
+    sftp_attributes attr = sftp_parse_attr(file->sftp, msg->payload, 0);
+    sftp_message_free(msg);
+
+    return attr;
   } else if (msg->packet_type == SSH_FXP_STATUS) {
     status = parse_status_msg(msg);
     sftp_message_free(msg);
