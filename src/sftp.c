@@ -334,10 +334,15 @@ sftp_packet sftp_packet_read(sftp_session sftp) {
   do {
     // read from channel until 4 bytes have been read or an error occurs
     s=ssh_channel_read(sftp->channel, buffer+r, 4-r, 0);
-    if (s <= 0) {
-      ssh_buffer_free(packet->payload);
-      SAFE_FREE(packet);
-      return NULL;
+    if (s < 0) {
+        goto error;
+    } else if (s == 0) {
+        int is_eof;
+
+        is_eof = ssh_channel_is_eof(sftp->channel);
+        if (is_eof) {
+            goto error;
+        }
     } else {
       r += s;
     }
@@ -345,17 +350,13 @@ sftp_packet sftp_packet_read(sftp_session sftp) {
   ssh_buffer_add_data(packet->payload, buffer, r);
   if (buffer_get_u32(packet->payload, &tmp) != sizeof(uint32_t)) {
     ssh_set_error(sftp->session, SSH_FATAL, "Short sftp packet!");
-    ssh_buffer_free(packet->payload);
-    SAFE_FREE(packet);
-    return NULL;
+    goto error;
   }
 
   r=ssh_channel_read(sftp->channel, buffer, 1, 0);
   if (r <= 0) {
     /* TODO: check if there are cases where an error needs to be set here */
-    ssh_buffer_free(packet->payload);
-    SAFE_FREE(packet);
-    return NULL;
+    goto error;
   }
   ssh_buffer_add_data(packet->payload, buffer, r);
   buffer_get_u8(packet->payload, &packet->type);
@@ -372,20 +373,20 @@ sftp_packet sftp_packet_read(sftp_session sftp) {
 
     if(r <= 0) {
       /* TODO: check if there are cases where an error needs to be set here */
-      ssh_buffer_free(packet->payload);
-      SAFE_FREE(packet);
-      return NULL;
+      goto error;
     }
     if (ssh_buffer_add_data(packet->payload, buffer, r) == SSH_ERROR) {
-      ssh_buffer_free(packet->payload);
-      SAFE_FREE(packet);
       ssh_set_error_oom(sftp->session);
-      return NULL;
+      goto error;
     }
     size -= r;
   }
 
   return packet;
+error:
+    ssh_buffer_free(packet->payload);
+    SAFE_FREE(packet);
+    return NULL;
 }
 
 static void sftp_set_error(sftp_session sftp, int errnum) {
