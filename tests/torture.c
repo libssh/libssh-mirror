@@ -771,7 +771,7 @@ static void torture_setup_create_sshd_config(void **state)
              "HostKey %s\n"
              "\n"
              "LogLevel DEBUG3\n"
-             "Subsystem sftp %s\n"
+             "Subsystem sftp %s -l DEBUG2\n"
              "\n"
              "PasswordAuthentication yes\n"
              "KbdInteractiveAuthentication yes\n"
@@ -969,12 +969,19 @@ void _torture_filter_tests(UnitTest *tests, size_t ntests){
 
 int main(int argc, char **argv) {
   struct argument_s arguments;
+  char *env = getenv("LIBSSH_VERBOSITY");
 
   arguments.verbose=0;
   arguments.pattern=NULL;
   torture_cmdline_parse(argc, argv, &arguments);
   verbosity=arguments.verbose;
   pattern=arguments.pattern;
+
+  if (verbosity == 0 && env != NULL && env[0] != '\0') {
+      if (env[0] > '0' && env[0] < '9') {
+          verbosity = atoi(env);
+      }
+  }
 
   return torture_run_tests();
 }
