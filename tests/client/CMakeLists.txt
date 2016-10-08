@@ -17,7 +17,8 @@ if (WITH_SFTP)
         ${LIBSSH_CLIENT_TESTS}
         torture_sftp_ext
         torture_sftp_dir
-        torture_sftp_read)
+        torture_sftp_read
+        torture_sftp_fsync)
 endif (WITH_SFTP)
 
 foreach(_CLI_TEST ${LIBSSH_CLIENT_TESTS})
