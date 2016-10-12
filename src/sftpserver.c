@@ -204,7 +204,7 @@ sftp_client_message sftp_get_client_message(sftp_session sftp) {
       break;
     default:
       ssh_set_error(sftp->session, SSH_FATAL,
-                    "Received unhandled sftp message %d\n", msg->type);
+                    "Received unhandled sftp message %d", msg->type);
       sftp_client_message_free(msg);
       return NULL;
   }

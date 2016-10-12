@@ -203,7 +203,7 @@ static int ssh_connect_ai_timeout(ssh_session session, const char *host,
   }
 
   /* s is connected ? */
-  SSH_LOG(SSH_LOG_PACKET, "Socket connected with timeout\n");
+  SSH_LOG(SSH_LOG_PACKET, "Socket connected with timeout");
   ret = ssh_socket_set_blocking(s);
   if (ret < 0) {
       ssh_set_error(session, SSH_FATAL,
@@ -252,7 +252,7 @@ socket_t ssh_connect_host(ssh_session session, const char *host,
       struct addrinfo *bind_ai;
       struct addrinfo *bind_itr;
 
-      SSH_LOG(SSH_LOG_PACKET, "Resolving %s\n", bind_addr);
+      SSH_LOG(SSH_LOG_PACKET, "Resolving %s", bind_addr);
 
       rc = getai(bind_addr, 0, &bind_ai);
       if (rc != 0) {
@@ -346,7 +346,7 @@ socket_t ssh_connect_host_nonblocking(ssh_session session, const char *host,
       struct addrinfo *bind_ai;
       struct addrinfo *bind_itr;
 
-      SSH_LOG(SSH_LOG_PACKET, "Resolving %s\n", bind_addr);
+      SSH_LOG(SSH_LOG_PACKET, "Resolving %s", bind_addr);
 
       rc = getai(bind_addr, 0, &bind_ai);
       if (rc != 0) {

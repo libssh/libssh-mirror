@@ -491,7 +491,7 @@ int ssh_get_kex1(ssh_session session) {
   if(session->session_state==SSH_SESSION_STATE_ERROR) {
       return SSH_ERROR;
   }
-  SSH_LOG(SSH_LOG_PROTOCOL, "received SSH_SMSG_SUCCESS\n");
+  SSH_LOG(SSH_LOG_PROTOCOL, "received SSH_SMSG_SUCCESS");
 
   return SSH_OK;
 }

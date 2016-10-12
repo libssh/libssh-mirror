@@ -363,11 +363,11 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
       }
       break;
     case SOC_UNSUPPORTED:
-      SSH_LOG(SSH_LOG_RARE, "Unsupported option: %s, line: %d\n",
+      SSH_LOG(SSH_LOG_RARE, "Unsupported option: %s, line: %d",
               keyword, count);
       break;
     default:
-      ssh_set_error(session, SSH_FATAL, "ERROR - unimplemented opcode: %d\n",
+      ssh_set_error(session, SSH_FATAL, "ERROR - unimplemented opcode: %d",
               opcode);
       SAFE_FREE(x);
       return -1;

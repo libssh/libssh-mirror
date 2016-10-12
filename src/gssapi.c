@@ -218,7 +218,7 @@ int ssh_gssapi_handle_userauth(ssh_session session, const char *user, uint32_t n
     maj_stat = gss_indicate_mechs(&min_stat, &supported);
     for (i=0; i < supported->count; ++i){
         ptr = ssh_get_hexa(supported->elements[i].elements, supported->elements[i].length);
-        SSH_LOG(SSH_LOG_DEBUG, "Supported mech %d: %s\n", i, ptr);
+        SSH_LOG(SSH_LOG_DEBUG, "Supported mech %d: %s", i, ptr);
         free(ptr);
     }
 
@@ -664,7 +664,7 @@ static int ssh_gssapi_match(ssh_session session, gss_OID_set *valid_oids)
         if (maj_stat == GSS_S_COMPLETE && lifetime > 0) {
             gss_add_oid_set_member(&min_stat, oid, valid_oids);
             ptr = ssh_get_hexa(oid->elements, oid->length);
-            SSH_LOG(SSH_LOG_DEBUG, "GSSAPI valid oid %d : %s\n", i, ptr);
+            SSH_LOG(SSH_LOG_DEBUG, "GSSAPI valid oid %d : %s", i, ptr);
             SAFE_FREE(ptr);
         }
     }

@@ -166,7 +166,7 @@ int ssh_options_set_algo(ssh_session session, int algo,
     const char *list) {
   if (!ssh_verify_existing_algo(algo, list)) {
     ssh_set_error(session, SSH_REQUEST_DENIED,
-        "Setting method: no algorithm for method \"%s\" (%s)\n",
+        "Setting method: no algorithm for method \"%s\" (%s)",
         ssh_kex_get_description(algo), list);
     return -1;
   }

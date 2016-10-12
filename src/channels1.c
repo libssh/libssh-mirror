@@ -151,7 +151,7 @@ int ssh_channel_request_pty_size1(ssh_channel channel, const char *terminal, int
       channel->request_state=SSH_CHANNEL_REQ_STATE_NONE;
       ssh_set_error(session, SSH_REQUEST_DENIED,
           "Server denied PTY allocation");
-      SSH_LOG(SSH_LOG_RARE, "PTY: denied\n");
+      SSH_LOG(SSH_LOG_RARE, "PTY: denied");
       return SSH_ERROR;
   }
   // Not reached
@@ -270,7 +270,7 @@ SSH_PACKET_CALLBACK(ssh_packet_data1){
 
     str = ssh_buffer_get_ssh_string(packet);
     if (str == NULL) {
-      SSH_LOG(SSH_LOG_FUNCTIONS, "Invalid data packet !\n");
+      SSH_LOG(SSH_LOG_FUNCTIONS, "Invalid data packet !");
       return SSH_PACKET_USED;
     }
 

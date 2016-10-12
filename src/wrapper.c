@@ -451,11 +451,11 @@ int crypt_set_algorithms_server(ssh_session session){
 
     method = session->next_crypto->kex_methods[SSH_COMP_S_C];
     if(strcmp(method,"zlib") == 0){
-        SSH_LOG(SSH_LOG_PACKET, "enabling S->C compression\n");
+        SSH_LOG(SSH_LOG_PACKET, "enabling S->C compression");
         session->next_crypto->do_compress_out=1;
     }
     if(strcmp(method,"zlib@openssh.com") == 0){
-        SSH_LOG(SSH_LOG_PACKET,"enabling S->C delayed compression\n");
+        SSH_LOG(SSH_LOG_PACKET,"enabling S->C delayed compression");
 
         if (session->flags & SSH_SESSION_FLAG_AUTHENTICATED) {
             session->next_crypto->do_compress_out = 1;
