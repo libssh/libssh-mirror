@@ -43,6 +43,7 @@
 #include <openssl/hmac.h>
 #include <openssl/opensslv.h>
 #include <openssl/rand.h>
+#include <openssl/modes.h>
 
 #ifdef HAVE_OPENSSL_AES_H
 #define HAS_AES
@@ -455,7 +456,12 @@ static void aes_ctr128_encrypt(struct ssh_cipher_struct *cipher, void *in, void 
    * Same for num, which is being used to store the current offset in blocksize in CTR
    * function.
    */
+# if OPENSSL_VERSION_NUMBER >= 0x10100000L
+  CRYPTO_ctr128_encrypt(in, out, len, cipher->key, cipher->IV, tmp_buffer,
+    &num, (block128_f)AES_encrypt);
+# else
   AES_ctr128_encrypt(in, out, len, cipher->key, cipher->IV, tmp_buffer, &num);
+# endif /* OPENSSL_VERSION_NUMBER >= 0x10100000L */
 }
 #endif /* BROKEN_AES_CTR */
 #endif /* HAS_AES */
