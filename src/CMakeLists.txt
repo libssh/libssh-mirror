@@ -126,6 +126,7 @@ set(libssh_SRCS
   known_hosts.c
   legacy.c
   libcrypto.c
+  libcrypto-compat.c
   log.c
   match.c
   messages.c
