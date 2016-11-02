@@ -93,7 +93,7 @@ void ssh_make_string_bn_inplace(ssh_string string, bignum bnout) {
 }
 
 /* prints the bignum on stderr */
-void ssh_print_bignum(const char *which, bignum num) {
+void ssh_print_bignum(const char *which, const bignum num) {
 #ifdef HAVE_LIBGCRYPT
   unsigned char *hex = NULL;
   bignum_bn2hex(num, &hex);
