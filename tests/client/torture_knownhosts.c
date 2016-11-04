@@ -264,6 +264,9 @@ static void torture_knownhosts_other_auto(void **state) {
     /* ssh-rsa is the default but libssh should try ssh-dss instead */
     rc = ssh_is_server_known(session);
     assert_int_equal(rc, SSH_SERVER_KNOWN_OK);
+
+    ssh_disconnect(session);
+    ssh_free(session);
 }
 
 static void torture_knownhosts_conflict(void **state) {
@@ -319,6 +322,9 @@ static void torture_knownhosts_conflict(void **state) {
 
     rc = ssh_is_server_known(session);
     assert_int_equal(rc, SSH_SERVER_KNOWN_OK);
+
+    ssh_disconnect(session);
+    ssh_free(session);
 }
 
 static void torture_knownhosts_precheck(void **state) {
