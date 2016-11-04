@@ -235,6 +235,8 @@ static void torture_callbacks_iterate(void **state){
 
     assert_int_equal(w, 10);
     assert_int_equal(v, 1);
+
+    ssh_list_free(list);
 }
 
 int torture_run_tests(void) {
