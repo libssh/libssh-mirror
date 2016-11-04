@@ -332,12 +332,13 @@ static void torture_pki_import_privkey_base64_passphrase(void **state) {
                                        NULL,
                                        NULL,
                                        &key);
-    assert_true(rc == 0);
+    assert_return_code(rc, errno);
 
     rc = ssh_key_is_private(key);
     assert_true(rc == 1);
 
     ssh_key_free(key);
+    key = NULL;
 
     /* test if it returns -1 if passphrase is wrong */
     rc = ssh_pki_import_privkey_base64(torture_get_testkey(SSH_KEYTYPE_RSA, 0, 1),
@@ -365,12 +366,13 @@ static void torture_pki_import_privkey_base64_passphrase(void **state) {
                                        NULL,
                                        NULL,
                                        &key);
-    assert_true(rc == 0);
+    assert_return_code(rc, errno);
 
     rc = ssh_key_is_private(key);
     assert_true(rc == 1);
 
     ssh_key_free(key);
+    key = NULL;
 
     /* test if it returns -1 if passphrase is wrong */
     rc = ssh_pki_import_privkey_base64(torture_get_testkey(SSH_KEYTYPE_DSS, 0, 1),
@@ -404,6 +406,7 @@ static void torture_pki_import_privkey_base64_passphrase(void **state) {
     assert_true(rc == 1);
 
     ssh_key_free(key);
+    key = NULL;
 
     /* test if it returns -1 if passphrase is wrong */
     rc = ssh_pki_import_privkey_base64(torture_get_testkey(SSH_KEYTYPE_ED25519, 0, 1),
