@@ -409,7 +409,8 @@ struct {
     emit_testmap(client, noop, "", setup_noop, teardown)
 
     /* NULL tail entry */
-    { NULL, { { NULL, NULL, NULL, NULL }, { NULL, NULL, NULL, NULL }, { NULL, NULL, NULL, NULL } } }
+    { .testname = NULL, {
+        { .name = NULL, }, { .name = NULL }, { .name = NULL } } }
 };
 
 static int pkd_run_tests(void) {
