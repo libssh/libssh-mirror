@@ -76,22 +76,25 @@ static void add_cmd(char *cmd){
     cmds[n]=strdup(cmd);
 }
 
-static void usage(){
-    fprintf(stderr,"Usage : ssh [options] [login@]hostname\n"
-    "sample client - libssh-%s\n"
-    "Options :\n"
-    "  -l user : log in as user\n"
-    "  -p port : connect to port\n"
-    "  -d : use DSS to verify host public key\n"
-    "  -r : use RSA to verify host public key\n"
+static void usage(void)
+{
+    fprintf(stderr,
+            "Usage : ssh [options] [login@]hostname\n"
+            "sample client - libssh-%s\n"
+            "Options :\n"
+            "  -l user : log in as user\n"
+            "  -p port : connect to port\n"
+            "  -d : use DSS to verify host public key\n"
+            "  -r : use RSA to verify host public key\n"
 #ifdef WITH_PCAP
-    "  -P file : create a pcap debugging file\n"
+            "  -P file : create a pcap debugging file\n"
 #endif
 #ifndef _WIN32
-    "  -T proxycommand : command to execute as a socket proxy\n"
+            "  -T proxycommand : command to execute as a socket proxy\n"
 #endif
-    		,
-    ssh_version(0));
+            "\n",
+            ssh_version(0));
+
     exit(0);
 }
 
