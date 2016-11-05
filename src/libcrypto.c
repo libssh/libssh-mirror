@@ -135,18 +135,19 @@ static const EVP_MD *nid_to_evpmd(int nid)
 void evp(int nid, unsigned char *digest, int len, unsigned char *hash, unsigned int *hlen)
 {
     const EVP_MD *evp_md = nid_to_evpmd(nid);
-    EVP_MD_CTX md;
+    EVP_MD_CTX *md = EVP_MD_CTX_new();
 
-    EVP_DigestInit(&md, evp_md);
-    EVP_DigestUpdate(&md, digest, len);
-    EVP_DigestFinal(&md, hash, hlen);
+    EVP_DigestInit(md, evp_md);
+    EVP_DigestUpdate(md, digest, len);
+    EVP_DigestFinal(md, hash, hlen);
+    EVP_MD_CTX_free(md);
 }
 
 EVPCTX evp_init(int nid)
 {
     const EVP_MD *evp_md = nid_to_evpmd(nid);
 
-    EVPCTX ctx = malloc(sizeof(EVP_MD_CTX));
+    EVPCTX ctx = EVP_MD_CTX_new();
     if (ctx == NULL) {
         return NULL;
     }
