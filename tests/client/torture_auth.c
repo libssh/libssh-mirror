@@ -500,9 +500,6 @@ static void torture_auth_cert(void **state) {
     struct passwd *pwd;
     int rc;
 
-    cert = ssh_key_new();
-    assert_true(cert != NULL);
-
     pwd = getpwnam("bob");
     assert_non_null(pwd);
 
