@@ -170,7 +170,8 @@ static int ssh_execute_server_request(ssh_session session, ssh_message msg)
                 ssh_callbacks_iterate(channel->callbacks,
                                       ssh_channel_callbacks,
                                       channel_pty_request_function) {
-                    rc = ssh_callbacks_iterate_exec(session,
+                    rc = ssh_callbacks_iterate_exec(channel_pty_request_function,
+                                                    session,
                                                     channel,
                                                     msg->channel_request.TERM,
                                                     msg->channel_request.width,
@@ -189,7 +190,9 @@ static int ssh_execute_server_request(ssh_session session, ssh_message msg)
                 ssh_callbacks_iterate(channel->callbacks,
                                       ssh_channel_callbacks,
                                       channel_shell_request_function) {
-                    rc = ssh_callbacks_iterate_exec(session, channel);
+                    rc = ssh_callbacks_iterate_exec(channel_shell_request_function,
+                                                    session,
+                                                    channel);
                     if (rc == 0) {
                         ssh_message_channel_request_reply_success(msg);
                     } else {
@@ -202,7 +205,8 @@ static int ssh_execute_server_request(ssh_session session, ssh_message msg)
                 ssh_callbacks_iterate(channel->callbacks,
                                       ssh_channel_callbacks,
                                       channel_x11_req_function) {
-                    ssh_callbacks_iterate_exec(session,
+                    ssh_callbacks_iterate_exec(channel_x11_req_function,
+                                               session,
                                                channel,
                                                msg->channel_request.x11_single_connection,
                                                msg->channel_request.x11_auth_protocol,
@@ -216,7 +220,8 @@ static int ssh_execute_server_request(ssh_session session, ssh_message msg)
                 ssh_callbacks_iterate(channel->callbacks,
                                       ssh_channel_callbacks,
                                       channel_pty_window_change_function) {
-                    rc = ssh_callbacks_iterate_exec(session,
+                    rc = ssh_callbacks_iterate_exec(channel_pty_window_change_function,
+                                                    session,
                                                     channel,
                                                     msg->channel_request.width,
                                                     msg->channel_request.height,
@@ -229,7 +234,8 @@ static int ssh_execute_server_request(ssh_session session, ssh_message msg)
                 ssh_callbacks_iterate(channel->callbacks,
                                       ssh_channel_callbacks,
                                       channel_exec_request_function) {
-                    rc = ssh_callbacks_iterate_exec(session,
+                    rc = ssh_callbacks_iterate_exec(channel_exec_request_function,
+                                                    session,
                                                     channel,
                                                     msg->channel_request.command);
                     if (rc == 0) {
@@ -245,7 +251,8 @@ static int ssh_execute_server_request(ssh_session session, ssh_message msg)
                 ssh_callbacks_iterate(channel->callbacks,
                                       ssh_channel_callbacks,
                                       channel_env_request_function) {
-                    rc = ssh_callbacks_iterate_exec(session,
+                    rc = ssh_callbacks_iterate_exec(channel_env_request_function,
+                                                    session,
                                                     channel,
                                                     msg->channel_request.var_name,
                                                     msg->channel_request.var_value);
@@ -261,7 +268,8 @@ static int ssh_execute_server_request(ssh_session session, ssh_message msg)
                 ssh_callbacks_iterate(channel->callbacks,
                                       ssh_channel_callbacks,
                                       channel_subsystem_request_function) {
-                    rc = ssh_callbacks_iterate_exec(session,
+                    rc = ssh_callbacks_iterate_exec(channel_subsystem_request_function,
+                                                    session,
                                                     channel,
                                                     msg->channel_request.subsystem);
                     if (rc == 0) {

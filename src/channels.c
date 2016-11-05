@@ -550,7 +550,8 @@ SSH_PACKET_CALLBACK(channel_rcv_data){
       if (ssh_buffer_get(buf) == 0) {
           break;
       }
-      rest = ssh_callbacks_iterate_exec(channel->session,
+      rest = ssh_callbacks_iterate_exec(channel_data_function,
+                                        channel->session,
                                         channel,
                                         ssh_buffer_get(buf),
                                         ssh_buffer_get_len(buf),

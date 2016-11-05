@@ -218,7 +218,7 @@ static void torture_callbacks_iterate(void **state){
     ssh_list_append(list, &c2);
 
     ssh_callbacks_iterate(list, ssh_channel_callbacks, channel_eof_function){
-        ssh_callbacks_iterate_exec(NULL, NULL);
+        ssh_callbacks_iterate_exec(channel_eof_function, NULL, NULL);
     }
     ssh_callbacks_iterate_end();
 
@@ -226,7 +226,7 @@ static void torture_callbacks_iterate(void **state){
 
     v = 0;
     ssh_callbacks_iterate(list, ssh_channel_callbacks, channel_shell_request_function){
-        w = ssh_callbacks_iterate_exec(NULL, NULL);
+        w = ssh_callbacks_iterate_exec(channel_shell_request_function, NULL, NULL);
         if (w) {
             break;
         }
