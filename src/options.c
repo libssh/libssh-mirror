@@ -1350,10 +1350,10 @@ static int ssh_bind_set_key(ssh_bind sshbind, char **key_loc,
  *                        with verbosity less than or equal to the
  *                        logging verbosity will be shown.
  *                        - SSH_LOG_NOLOG: No logging
- *                        - SSH_LOG_RARE: Rare conditions or warnings
- *                        - SSH_LOG_ENTRY: API-accessible entrypoints
- *                        - SSH_LOG_PACKET: Packet id and size
- *                        - SSH_LOG_FUNCTIONS: Function entering and leaving
+ *                        - SSH_LOG_WARNING: Only warnings
+ *                        - SSH_LOG_PROTOCOL: High level protocol information
+ *                        - SSH_LOG_PACKET: Lower level protocol infomations, packet level
+ *                        - SSH_LOG_FUNCTIONS: Every function path
  *
  *                      - SSH_BIND_OPTIONS_LOG_VERBOSITY_STR:
  *                        Set the session logging verbosity via a
