@@ -130,7 +130,7 @@ struct ssh_cipher_struct {
     struct ssh_3des_key_schedule *des3_key;
     struct ssh_aes_key_schedule *aes_key;
     const EVP_CIPHER *cipher;
-    EVP_CIPHER_CTX ctx;
+    EVP_CIPHER_CTX *ctx;
 #endif
     unsigned int keysize; /* bytes of key used. != keylen */
     /* sets the new key for immediate use */

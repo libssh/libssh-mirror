@@ -43,6 +43,7 @@
 #include <openssl/hmac.h>
 #include <openssl/opensslv.h>
 #include <openssl/rand.h>
+#include "libcrypto-compat.h"
 
 #ifdef HAVE_OPENSSL_AES_H
 #define HAS_AES
@@ -430,6 +431,10 @@ void hmac_final(HMACCTX ctx, unsigned char *hashmacbuf, unsigned int *len) {
 }
 
 static void evp_cipher_init(struct ssh_cipher_struct *cipher) {
+    if (cipher->ctx == NULL) {
+        cipher->ctx = EVP_CIPHER_CTX_new();
+    }
+
     switch(cipher->ciphertype){
     case SSH_AES128_CBC:
         cipher->cipher = EVP_aes_128_cbc();
@@ -480,14 +485,14 @@ static int evp_cipher_set_encrypt_key(struct ssh_cipher_struct *cipher,
     int rc;
 
     evp_cipher_init(cipher);
-    EVP_CIPHER_CTX_init(&cipher->ctx);
+    EVP_CIPHER_CTX_init(cipher->ctx);
 
-    rc = EVP_EncryptInit_ex(&cipher->ctx, cipher->cipher, NULL, key, IV);
+    rc = EVP_EncryptInit_ex(cipher->ctx, cipher->cipher, NULL, key, IV);
     if (rc != 1){
         SSH_LOG(SSH_LOG_WARNING, "EVP_EncryptInit_ex failed");
         return SSH_ERROR;
     }
-    EVP_CIPHER_CTX_set_padding(&cipher->ctx, 0);
+    EVP_CIPHER_CTX_set_padding(cipher->ctx, 0);
 
     return SSH_OK;
 }
@@ -497,14 +502,14 @@ static int evp_cipher_set_decrypt_key(struct ssh_cipher_struct *cipher,
     int rc;
 
     evp_cipher_init(cipher);
-    EVP_CIPHER_CTX_init(&cipher->ctx);
+    EVP_CIPHER_CTX_init(cipher->ctx);
 
-    rc = EVP_DecryptInit_ex(&cipher->ctx, cipher->cipher, NULL, key, IV);
+    rc = EVP_DecryptInit_ex(cipher->ctx, cipher->cipher, NULL, key, IV);
     if (rc != 1){
         SSH_LOG(SSH_LOG_WARNING, "EVP_DecryptInit_ex failed");
         return SSH_ERROR;
     }
-    EVP_CIPHER_CTX_set_padding(&cipher->ctx, 0);
+    EVP_CIPHER_CTX_set_padding(cipher->ctx, 0);
 
     return SSH_OK;
 }
@@ -517,7 +522,7 @@ static void evp_cipher_encrypt(struct ssh_cipher_struct *cipher,
     int outlen = 0;
     int rc = 0;
 
-    rc = EVP_EncryptUpdate(&cipher->ctx, (unsigned char *)out, &outlen, (unsigned char *)in, len);
+    rc = EVP_EncryptUpdate(cipher->ctx, (unsigned char *)out, &outlen, (unsigned char *)in, len);
     if (rc != 1){
         SSH_LOG(SSH_LOG_WARNING, "EVP_EncryptUpdate failed");
         return;
@@ -535,7 +540,7 @@ static void evp_cipher_decrypt(struct ssh_cipher_struct *cipher,
     int outlen = 0;
     int rc = 0;
 
-    rc = EVP_DecryptUpdate(&cipher->ctx, (unsigned char *)out, &outlen, (unsigned char *)in, len);
+    rc = EVP_DecryptUpdate(cipher->ctx, (unsigned char *)out, &outlen, (unsigned char *)in, len);
     if (rc != 1){
         SSH_LOG(SSH_LOG_WARNING, "EVP_DecryptUpdate failed");
         return;
@@ -547,7 +552,7 @@ static void evp_cipher_decrypt(struct ssh_cipher_struct *cipher,
 }
 
 static void evp_cipher_cleanup(struct ssh_cipher_struct *cipher) {
-    EVP_CIPHER_CTX_cleanup(&cipher->ctx);
+    EVP_CIPHER_CTX_cleanup(cipher->ctx);
 }
 
 #ifndef HAVE_OPENSSL_EVP_AES_CTR
