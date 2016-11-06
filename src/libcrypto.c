@@ -594,11 +594,11 @@ static void aes_ctr_encrypt(struct ssh_cipher_struct *cipher, void *in, void *ou
    * Same for num, which is being used to store the current offset in blocksize in CTR
    * function.
    */
-# if OPENSSL_VERSION_NUMBER >= 0x10100000L
+#ifdef HAVE_OPENSSL_CRYPTO_CTR128_ENCRYPT
   CRYPTO_ctr128_encrypt(in, out, len, &cipher->aes_key->key, cipher->aes_key->IV, tmp_buffer, &num, (block128_f)AES_encrypt);
-# else
+#else
   AES_ctr128_encrypt(in, out, len, &cipher->aes_key->key, cipher->aes_key->IV, tmp_buffer, &num);
-# endif /* OPENSSL_VERSION_NUMBER >= 0x10100000L */
+#endif /* HAVE_OPENSSL_CRYPTO_CTR128_ENCRYPT */
 }
 
 static void aes_ctr_cleanup(struct ssh_cipher_struct *cipher){
