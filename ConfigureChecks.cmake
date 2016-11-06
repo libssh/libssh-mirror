@@ -111,6 +111,7 @@ endif (NOT WITH_GCRYPT)
 
 check_function_exists(isblank HAVE_ISBLANK)
 check_function_exists(strncpy HAVE_STRNCPY)
+check_function_exists(strtoull HAVE_STRTOULL)
 
 if (NOT WIN32)
   check_function_exists(vsnprintf HAVE_VSNPRINTF)
@@ -177,7 +178,6 @@ if (UNIX)
 
     check_library_exists(util forkpty "" HAVE_LIBUTIL)
     check_function_exists(cfmakeraw HAVE_CFMAKERAW)
-    check_function_exists(strtoull HAVE_STRTOULL)
     check_function_exists(__strtoull HAVE___STRTOULL)
 endif (UNIX)
 
