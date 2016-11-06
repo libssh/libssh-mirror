@@ -59,9 +59,9 @@
 #include <shlobj.h>
 #include <direct.h>
 
-#if _MSC_VER >= 1400
-# include <io.h>
-#endif /* _MSC_VER */
+#ifdef HAVE_IO_H
+#include <io.h>
+#endif /* HAVE_IO_H */
 
 #endif /* _WIN32 */
 

@@ -65,6 +65,8 @@ check_include_file(arpa/inet.h HAVE_ARPA_INET_H)
 check_include_file(byteswap.h HAVE_BYTESWAP_H)
 
 if (WIN32)
+  check_include_file(io.h HAVE_IO_H)
+
   check_include_files("winsock2.h;ws2tcpip.h;wspiapi.h" HAVE_WSPIAPI_H)
   if (NOT HAVE_WSPIAPI_H)
     message(STATUS "WARNING: Without wspiapi.h, this build will only work on Windows XP and newer versions")

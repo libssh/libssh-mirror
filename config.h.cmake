@@ -38,6 +38,9 @@
 /* Define to 1 if you have the <sys/utime.h> header file. */
 #cmakedefine HAVE_SYS_UTIME_H 1
 
+/* Define to 1 if you have the <io.h> header file. */
+#cmakedefine HAVE_IO_H 1
+
 /* Define to 1 if you have the <termios.h> header file. */
 #cmakedefine HAVE_TERMIOS_H 1
 

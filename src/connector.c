@@ -27,7 +27,7 @@
 #define CHUNKSIZE 4096
 
 #ifdef _WIN32
-# if _MSC_VER >= 1400
+# ifdef HAVE_IO_H
 #  include <io.h>
 #  undef open
 #  define open _open
@@ -37,7 +37,7 @@
 #  define read _read
 #  undef unlink
 #  define unlink _unlink
-# endif /* _MSC_VER */
+# endif /* HAVE_IO_H */
 #endif
 
 struct ssh_connector_struct {
