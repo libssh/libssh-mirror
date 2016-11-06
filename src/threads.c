@@ -116,6 +116,15 @@ static void libcrypto_lock_callback(int mode, int i, const char *file, int line)
 	}
 }
 
+#ifdef HAVE_OPENSSL_CRYPTO_THREADID_SET_CALLBACK
+static void libcrypto_THREADID_callback(CRYPTO_THREADID *id)
+{
+    unsigned long thread_id = (*user_callbacks->thread_id)();
+
+    CRYPTO_THREADID_set_numeric(id, thread_id);
+}
+#endif /* HAVE_OPENSSL_CRYPTO_THREADID_SET_CALLBACK */
+
 static int libcrypto_thread_init(void){
 	int n=CRYPTO_num_locks();
 	int i;
@@ -127,8 +136,14 @@ static int libcrypto_thread_init(void){
 	for (i=0;i<n;++i){
 		user_callbacks->mutex_init(&libcrypto_mutexes[i]);
 	}
-  CRYPTO_set_id_callback(user_callbacks->thread_id);
-	CRYPTO_set_locking_callback(libcrypto_lock_callback);
+
+#ifdef HAVE_OPENSSL_CRYPTO_THREADID_SET_CALLBACK
+    CRYPTO_THREADID_set_callback(libcrypto_THREADID_callback);
+#else
+    CRYPTO_set_id_callback(user_callbacks->thread_id);
+#endif
+
+    CRYPTO_set_locking_callback(libcrypto_lock_callback);
 
 	return SSH_OK;
 }
