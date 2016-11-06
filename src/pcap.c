@@ -29,9 +29,11 @@
 #include <ws2tcpip.h>
 #else
 #include <netinet/in.h>
-#include <sys/time.h>
 #include <sys/socket.h>
 #endif
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif /* HAVE_SYS_TIME_H */
 #include <errno.h>
 #include <stdlib.h>
 

@@ -33,10 +33,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#ifdef HAVE_SYS_TIME_H
-#include <sys/time.h>
-#endif /* HAVE_SYS_TIME_H */
-
 #endif /* _WIN32 */
 
 #include <limits.h>
@@ -47,6 +43,10 @@
 #include <sys/types.h>
 #include <ctype.h>
 #include <time.h>
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif /* HAVE_SYS_TIME_H */
+
 
 #ifdef _WIN32
 

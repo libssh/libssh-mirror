@@ -185,10 +185,6 @@ int gettimeofday(struct timeval *__p, void *__t);
 # define LIBSSH_MEM_PROTECTION
 #endif
 
-#ifdef HAVE_SYS_TIME_H
-#include <sys/time.h>
-#endif
-
 /* forward declarations */
 struct ssh_common_struct;
 struct ssh_kex_struct;
