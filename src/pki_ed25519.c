@@ -76,16 +76,18 @@ int pki_ed25519_sign(const ssh_key privkey,
     if (rc != 0) {
         goto error;
     }
-    sig->ed25519_sig = malloc(ED25519_SIG_LEN);
-    if (sig->ed25519_sig == NULL) {
-        goto error;
-    }
 
     /* This shouldn't happen */
     if (dlen - hlen != ED25519_SIG_LEN) {
         goto error;
     }
-    memcpy(sig->ed25519_sig, buffer, dlen - hlen);
+
+    sig->ed25519_sig = malloc(ED25519_SIG_LEN);
+    if (sig->ed25519_sig == NULL) {
+        goto error;
+    }
+
+    memcpy(sig->ed25519_sig, buffer, ED25519_SIG_LEN);
     SAFE_FREE(buffer);
 
     return SSH_OK;
