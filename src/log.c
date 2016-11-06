@@ -21,6 +21,8 @@
  * MA 02111-1307, USA.
  */
 
+#include "config.h"
+
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
@@ -29,7 +31,7 @@
 #endif /* HAVE_SYS_TIME_H */
 #ifdef HAVE_SYS_UTIME_H
 #include <sys/utime.h>
-#endif /* HAVE_SYS_TIME_H */
+#endif /* HAVE_SYS_UTIME_H */
 #include <time.h>
 
 #include "libssh/priv.h"
