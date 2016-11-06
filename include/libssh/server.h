@@ -193,6 +193,23 @@ LIBSSH_API int ssh_handle_key_exchange(ssh_session session);
  */
 LIBSSH_API void ssh_bind_free(ssh_bind ssh_bind_o);
 
+/**
+ * @brief Set the acceptable authentication methods to be sent to the client.
+ *
+ *
+ * @param[in]  session  The server session
+ *
+ * @param[in]  auth_methods The authentication methods we will support, which
+ *                          can be bitwise-or'd.
+ *
+ *                          Supported methods are:
+ *
+ *                          SSH_AUTH_METHOD_PASSWORD
+ *                          SSH_AUTH_METHOD_PUBLICKEY
+ *                          SSH_AUTH_METHOD_HOSTBASED
+ *                          SSH_AUTH_METHOD_INTERACTIVE
+ *                          SSH_AUTH_METHOD_GSSAPI_MIC
+ */
 LIBSSH_API void ssh_set_auth_methods(ssh_session session, int auth_methods);
 
 /**********************************************************
