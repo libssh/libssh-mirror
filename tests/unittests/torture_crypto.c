@@ -84,7 +84,7 @@ static void torture_crypto_aes256_cbc(void **state)
             iv
     );
 
-    memset(output, '0', sizeof(output));
+    memset(output, '\0', sizeof(output));
     cipher.decrypt(&cipher,
             aes256_cbc_encrypted,
             output,
