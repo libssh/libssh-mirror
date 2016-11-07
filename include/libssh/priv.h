@@ -361,6 +361,24 @@ int ssh_connector_remove_event(ssh_connector connector);
 
 #define CLOSE_SOCKET(s) do { if ((s) != SSH_INVALID_SOCKET) { _XCLOSESOCKET(s); (s) = SSH_INVALID_SOCKET;} } while(0)
 
+#ifndef HAVE_HTONLL
+# ifdef WORDS_BIGENDIAN
+#  define htonll(x) (x)
+# else
+#  define htonll(x) \
+    (((uint64_t)htonl((x) & 0xFFFFFFFF) << 32) | htonl((x) >> 32))
+# endif
+#endif
+
+#ifndef HAVE_NTOHLL
+# ifdef WORDS_BIGENDIAN
+#  define ntohll(x) (x)
+# else
+#  define ntohll(x) \
+    (((uint64_t)ntohl((x) & 0xFFFFFFFF) << 32) | ntohl((x) >> 32))
+# endif
+#endif
+
 void ssh_agent_state_free(void *data);
 
 #endif /* _LIBSSH_PRIV_H */
