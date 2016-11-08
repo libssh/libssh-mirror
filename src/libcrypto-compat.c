@@ -7,9 +7,6 @@
  * https://www.openssl.org/source/license.html
  */
 
-#include <openssl/opensslv.h>
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-
 #include <string.h>
 #include <openssl/engine.h>
 #include "libcrypto-compat.h"
@@ -317,7 +314,3 @@ int HMAC_CTX_reset(HMAC_CTX *ctx)
     HMAC_CTX_init(ctx);
     return 1;
 }
-
-#else
-typedef int iso_c_forbids_an_empty_source_file;
-#endif /* OPENSSL_VERSION_NUMBER */
