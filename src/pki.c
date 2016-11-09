@@ -357,7 +357,7 @@ void ssh_signature_free(ssh_signature sig)
 #endif
             break;
         case SSH_KEYTYPE_ECDSA:
-#ifdef HAVE_LIBGCRYPT_ECC
+#ifdef HAVE_GCRYPT_ECC
             gcry_sexp_release(sig->ecdsa_sig);
 #elif defined(HAVE_LIBCRYPTO) && defined(HAVE_OPENSSL_ECC)
             ECDSA_SIG_free(sig->ecdsa_sig);
