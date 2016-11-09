@@ -701,20 +701,24 @@ static int pki_key_ecdsa_to_nid(gcry_sexp_t k)
 
         cmp = memcmp("NIST P-256", tmp, size);
         if (cmp == 0) {
+            gcry_sexp_release(sexp);
             return NID_gcrypt_nistp256;
         }
 
         cmp = memcmp("NIST P-384", tmp, size);
         if (cmp == 0) {
+            gcry_sexp_release(sexp);
             return NID_gcrypt_nistp384;
         }
 
         cmp = memcmp("NIST P-521", tmp, size);
         if (cmp == 0) {
+            gcry_sexp_release(sexp);
             return NID_gcrypt_nistp521;
         }
     }
 
+    gcry_sexp_release(sexp);
     return -1;
 }
 
