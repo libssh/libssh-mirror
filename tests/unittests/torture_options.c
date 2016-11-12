@@ -199,6 +199,53 @@ static void torture_options_proxycommand(void **state) {
     assert_null(session->opts.ProxyCommand);
 }
 
+
+/* sshbind options */
+static int sshbind_setup(void **state)
+{
+    ssh_bind bind = ssh_bind_new();
+    *state = bind;
+    return 0;
+}
+
+static int sshbind_teardown(void **state)
+{
+    ssh_bind_free(*state);
+    return 0;
+}
+
+static void torture_bind_options_import_key(void **state)
+{
+    ssh_bind bind = *state;
+    int rc;
+    ssh_key key = ssh_key_new();
+    const char *base64_key;
+
+    /* set null */
+    rc = ssh_bind_options_set(bind, SSH_BIND_OPTIONS_IMPORT_KEY, NULL);
+    assert_int_equal(rc, -1);
+    /* set invalid key */
+    rc = ssh_bind_options_set(bind, SSH_BIND_OPTIONS_IMPORT_KEY, key);
+    assert_int_equal(rc, -1);
+
+    /* set rsa key */
+    base64_key = torture_get_testkey(SSH_KEYTYPE_RSA, 0, 0);
+    ssh_pki_import_privkey_base64(base64_key, NULL, NULL, NULL, &key);
+    rc = ssh_bind_options_set(bind, SSH_BIND_OPTIONS_IMPORT_KEY, key);
+    assert_int_equal(rc, 0);
+    /* set dsa key */
+    base64_key = torture_get_testkey(SSH_KEYTYPE_DSS, 0, 0);
+    ssh_pki_import_privkey_base64(base64_key, NULL, NULL, NULL, &key);
+    rc = ssh_bind_options_set(bind, SSH_BIND_OPTIONS_IMPORT_KEY, key);
+    assert_int_equal(rc, 0);
+    /* set ecdsa key */
+    base64_key = torture_get_testkey(SSH_KEYTYPE_ECDSA, 512, 0);
+    ssh_pki_import_privkey_base64(base64_key, NULL, NULL, NULL, &key);
+    rc = ssh_bind_options_set(bind, SSH_BIND_OPTIONS_IMPORT_KEY, key);
+    assert_int_equal(rc, 0);
+}
+
+
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
@@ -214,9 +261,14 @@ int torture_run_tests(void) {
         cmocka_unit_test_setup_teardown(torture_options_proxycommand, setup, teardown),
     };
 
+    struct CMUnitTest sshbind_tests[] = {
+        cmocka_unit_test_setup_teardown(torture_bind_options_import_key, sshbind_setup, sshbind_teardown),
+    };
+
     ssh_init();
     torture_filter_tests(tests);
     rc = cmocka_run_group_tests(tests, NULL, NULL);
+    rc += cmocka_run_group_tests(sshbind_tests, NULL, NULL);
     ssh_finalize();
     return rc;
 }

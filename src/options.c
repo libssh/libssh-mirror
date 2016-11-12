@@ -1391,6 +1391,9 @@ static int ssh_bind_set_key(ssh_bind sshbind, char **key_loc,
  *                      - SSH_BIND_OPTIONS_BANNER:
  *                        Set the server banner sent to clients (const char *).
  *
+ *                      - SSH_BIND_OPTIONS_IMPORT_KEY:
+ *                        Set the Private Key for the server directly (ssh_key)
+ *
  * @param  value        The value to set. This is a generic pointer and the
  *                      datatype which should be used is described at the
  *                      corresponding value of type above.
@@ -1469,6 +1472,48 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
           *bind_key_loc = key;
       }
       break;
+    case SSH_BIND_OPTIONS_IMPORT_KEY:
+        if (value == NULL) {
+            ssh_set_error_invalid(sshbind);
+            return -1;
+        } else {
+            int key_type;
+            ssh_key *bind_key_loc = NULL;
+            ssh_key key = (ssh_key)value;
+
+            key_type = ssh_key_type(key);
+            switch (key_type) {
+                case SSH_KEYTYPE_DSS:
+                    bind_key_loc = &sshbind->dsa;
+                    break;
+                case SSH_KEYTYPE_ECDSA:
+#ifdef HAVE_ECC
+                    bind_key_loc = &sshbind->ecdsa;
+#else
+                    ssh_set_error(sshbind,
+                                  SSH_FATAL,
+                                  "ECDSA key used and libssh compiled "
+                                  "without ECDSA support");
+#endif
+                    break;
+                case SSH_KEYTYPE_RSA:
+                case SSH_KEYTYPE_RSA1:
+                    bind_key_loc = &sshbind->rsa;
+                    break;
+                case SSH_KEYTYPE_ED25519:
+                    bind_key_loc = &sshbind->ed25519;
+                    break;
+                default:
+                    ssh_set_error(sshbind,
+                                  SSH_FATAL,
+                                  "Unsupported key type %d", key_type);
+            }
+            if (bind_key_loc == NULL)
+                return -1;
+            ssh_key_free(*bind_key_loc);
+            *bind_key_loc = key;
+        }
+        break;
     case SSH_BIND_OPTIONS_BINDADDR:
       if (value == NULL) {
         ssh_set_error_invalid(sshbind);

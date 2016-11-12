@@ -235,9 +235,11 @@ int ssh_bind_listen(ssh_bind sshbind) {
     return -1;
   }
 
-  rc = ssh_bind_import_keys(sshbind);
-  if (rc != SSH_OK) {
-    return SSH_ERROR;
+  if (sshbind->rsa == NULL && sshbind->dsa == NULL && sshbind->ecdsa == NULL) {
+      rc = ssh_bind_import_keys(sshbind);
+      if (rc != SSH_OK) {
+          return SSH_ERROR;
+      }
   }
 
   if (sshbind->bindfd == SSH_INVALID_SOCKET) {
@@ -430,9 +432,13 @@ int ssh_bind_accept_fd(ssh_bind sshbind, ssh_session session, socket_t fd){
      * where keys can be imported) on this ssh_bind and are instead
      * only using ssh_bind_accept_fd to manage sockets ourselves.
      */
-    rc = ssh_bind_import_keys(sshbind);
-    if (rc != SSH_OK) {
-      return SSH_ERROR;
+    if (sshbind->rsa == NULL &&
+        sshbind->dsa == NULL &&
+        sshbind->ecdsa == NULL) {
+        rc = ssh_bind_import_keys(sshbind);
+        if (rc != SSH_OK) {
+            return SSH_ERROR;
+        }
     }
 
 #ifdef HAVE_ECC
