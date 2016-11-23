@@ -647,6 +647,11 @@ LIBSSH_API int ssh_pki_import_privkey_base64(const char *b64_key,
                                              ssh_auth_callback auth_fn,
                                              void *auth_data,
                                              ssh_key *pkey);
+LIBSSH_API int ssh_pki_export_privkey_base64(const ssh_key privkey,
+                                             const char *passphrase,
+                                             ssh_auth_callback auth_fn,
+                                             void *auth_data,
+                                             char **b64_key);
 LIBSSH_API int ssh_pki_import_privkey_file(const char *filename,
                                            const char *passphrase,
                                            ssh_auth_callback auth_fn,

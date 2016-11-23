@@ -596,6 +596,67 @@ int ssh_pki_import_privkey_base64(const char *b64_key,
 
     return SSH_OK;
 }
+ /**
+ * @brief Convert a private key to a pem base64 encoded key, or OpenSSH format for
+ *        keytype ssh-ed25519
+ *
+ * @param[in]  privkey  The private key to export.
+ *
+ * @param[in]  passphrase The passphrase to use to encrypt the key with or
+ *             NULL. An empty string means no passphrase.
+ *
+ * @param[in]  auth_fn  An auth function you may want to use or NULL.
+ *
+ * @param[in]  auth_data Private data passed to the auth function.
+ *
+ * @param[out] b64_key  A pointer to store the allocated base64 encoded key. You
+ *                      need to free the buffer.
+ *
+ * @return     SSH_OK on success, SSH_ERROR on error.
+ */
+int ssh_pki_export_privkey_base64(const ssh_key privkey,
+                                  const char *passphrase,
+                                  ssh_auth_callback auth_fn,
+                                  void *auth_data,
+                                  char **b64_key)
+{
+    ssh_string blob;
+    unsigned char *b64;
+
+    if (privkey == NULL || !ssh_key_is_private(privkey)) {
+        return SSH_ERROR;
+    }
+
+    if (privkey->type == SSH_KEYTYPE_ED25519){
+        blob = ssh_pki_openssh_privkey_export(privkey,
+                                              passphrase,
+                                              auth_fn,
+                                              auth_data);
+    } else {
+        blob = pki_private_key_to_pem(privkey,
+                                      passphrase,
+                                      auth_fn,
+                                      auth_data);
+    }
+    if (blob == NULL) {
+        return SSH_ERROR;
+    }
+
+
+    b64 = malloc(ssh_string_len(blob));
+    if(b64 == NULL){
+        ssh_string_free(blob);
+        return SSH_ERROR;
+    }
+
+    memcpy(b64,ssh_string_data(blob),ssh_string_len(blob));
+
+    ssh_string_free(blob);
+
+    *b64_key = (char *)b64;
+
+    return SSH_OK;
+}
 
 /**
  * @brief Import a key from a file.
