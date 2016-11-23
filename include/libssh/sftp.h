@@ -863,18 +863,18 @@ LIBSSH_API void sftp_client_message_set_filename(sftp_client_message msg, const 
 LIBSSH_API const char *sftp_client_message_get_data(sftp_client_message msg);
 LIBSSH_API uint32_t sftp_client_message_get_flags(sftp_client_message msg);
 LIBSSH_API int sftp_send_client_message(sftp_session sftp, sftp_client_message msg);
-int sftp_reply_name(sftp_client_message msg, const char *name,
+LIBSSH_API int sftp_reply_name(sftp_client_message msg, const char *name,
     sftp_attributes attr);
-int sftp_reply_handle(sftp_client_message msg, ssh_string handle);
-ssh_string sftp_handle_alloc(sftp_session sftp, void *info);
-int sftp_reply_attr(sftp_client_message msg, sftp_attributes attr);
-void *sftp_handle(sftp_session sftp, ssh_string handle);
-int sftp_reply_status(sftp_client_message msg, uint32_t status, const char *message);
-int sftp_reply_names_add(sftp_client_message msg, const char *file,
+LIBSSH_API int sftp_reply_handle(sftp_client_message msg, ssh_string handle);
+LIBSSH_API ssh_string sftp_handle_alloc(sftp_session sftp, void *info);
+LIBSSH_API int sftp_reply_attr(sftp_client_message msg, sftp_attributes attr);
+LIBSSH_API void *sftp_handle(sftp_session sftp, ssh_string handle);
+LIBSSH_API int sftp_reply_status(sftp_client_message msg, uint32_t status, const char *message);
+LIBSSH_API int sftp_reply_names_add(sftp_client_message msg, const char *file,
     const char *longname, sftp_attributes attr);
-int sftp_reply_names(sftp_client_message msg);
-int sftp_reply_data(sftp_client_message msg, const void *data, int len);
-void sftp_handle_remove(sftp_session sftp, void *handle);
+LIBSSH_API int sftp_reply_names(sftp_client_message msg);
+LIBSSH_API int sftp_reply_data(sftp_client_message msg, const void *data, int len);
+LIBSSH_API void sftp_handle_remove(sftp_session sftp, void *handle);
 
 /* SFTP commands and constants */
 #define SSH_FXP_INIT 1
