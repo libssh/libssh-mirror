@@ -1355,7 +1355,8 @@ SSH_PACKET_CALLBACK(ssh_packet_global_request){
                     msg->global_request.bind_port);
             session->common.callbacks->global_request_function(session, msg, session->common.callbacks->userdata);
         } else {
-            ssh_message_reply_default(msg);
+            ssh_message_queue(session, msg);
+            return rc;
         }
     } else if (strcmp(request, "cancel-tcpip-forward") == 0) {
         r = ssh_buffer_unpack(packet, "sd",
@@ -1374,7 +1375,8 @@ SSH_PACKET_CALLBACK(ssh_packet_global_request){
         if(ssh_callbacks_exists(session->common.callbacks, global_request_function)) {
             session->common.callbacks->global_request_function(session, msg, session->common.callbacks->userdata);
         } else {
-            ssh_message_reply_default(msg);
+            ssh_message_queue(session, msg);
+            return rc;
         }
     } else {
         SSH_LOG(SSH_LOG_PROTOCOL, "UNKNOWN SSH_MSG_GLOBAL_REQUEST %s %d", request, want_reply);
