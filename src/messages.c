@@ -1406,7 +1406,8 @@ SSH_PACKET_CALLBACK(ssh_packet_global_request){
                     msg->global_request.bind_port);
             session->common.callbacks->global_request_function(session, msg, session->common.callbacks->userdata);
         } else {
-            ssh_message_reply_default(msg);
+            ssh_message_queue(session, msg);
+            return rc;
         }
     } else if (strcmp(request, "cancel-tcpip-forward") == 0) {
         r = ssh_buffer_unpack(packet, "sd",
@@ -1425,7 +1426,8 @@ SSH_PACKET_CALLBACK(ssh_packet_global_request){
         if(ssh_callbacks_exists(session->common.callbacks, global_request_function)) {
             session->common.callbacks->global_request_function(session, msg, session->common.callbacks->userdata);
         } else {
-            ssh_message_reply_default(msg);
+            ssh_message_queue(session, msg);
+            return rc;
         }
     } else if(strcmp(request, "keepalive@openssh.com") == 0) {
         msg->global_request.type = SSH_GLOBAL_REQUEST_KEEPALIVE;
