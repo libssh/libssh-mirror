@@ -955,7 +955,7 @@ int ssh_pki_import_pubkey_file(const char *filename, ssh_key *pkey)
         return SSH_ERROR;
     }
 
-    file = fopen(filename, "r");
+    file = fopen(filename, "rb");
     if (file == NULL) {
         ssh_pki_log("Error opening %s: %s",
                     filename, strerror(errno));
@@ -1233,7 +1233,7 @@ int ssh_pki_export_pubkey_file(const ssh_key key,
         return SSH_ERROR;
     }
 
-    fp = fopen(filename, "w+");
+    fp = fopen(filename, "wb+");
     if (fp == NULL) {
         return SSH_ERROR;
     }
