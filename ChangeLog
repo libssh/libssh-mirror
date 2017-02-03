@@ -1,5 +1,10 @@
 ChangeLog
 ==========
+version 0.7.4 (released 2017-02-03)
+  * Added id_ed25519 to the default identity list
+  * Fixed sftp EOF packet handling
+  * Fixed ssh_send_banner() to confirm with RFC 4253
+  * Fixed some memory leaks
 
 version 0.7.3 (released 2016-01-23)
   * Fixed CVE-2016-0739
