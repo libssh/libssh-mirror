@@ -267,6 +267,16 @@ enum ssh_keycmp_e {
   SSH_KEY_CMP_PRIVATE
 };
 
+#define SSH_ADDRSTRLEN 46
+
+struct ssh_knownhosts_entry {
+    char *hostname;
+    char *unparsed;
+    ssh_key publickey;
+    char *comment;
+};
+
+
 /* Error return codes */
 #define SSH_OK 0     /* No error */
 #define SSH_ERROR -1 /* Error of some kind */
@@ -504,6 +514,19 @@ LIBSSH_API int ssh_init(void);
 LIBSSH_API int ssh_is_blocking(ssh_session session);
 LIBSSH_API int ssh_is_connected(ssh_session session);
 LIBSSH_API int ssh_is_server_known(ssh_session session);
+
+/* KNOWN HOSTS */
+LIBSSH_API void ssh_knownhosts_entry_free(struct ssh_knownhosts_entry *entry);
+#define SSH_KNOWNHOSTS_ENTRY_FREE(e) do { \
+  if ((e) != NULL) { \
+    ssh_knownhosts_entry_free(e); \
+    e = NULL; \
+  } \
+} while(0)
+
+LIBSSH_API int ssh_known_hosts_parse_line(const char *host,
+                                          const char *line,
+                                          struct ssh_knownhosts_entry **entry);
 
 /* LOGGING */
 LIBSSH_API int ssh_set_log_level(int level);
