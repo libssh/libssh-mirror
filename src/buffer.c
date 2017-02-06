@@ -84,12 +84,12 @@ static void buffer_verify(ssh_buffer buf){
  * @return A newly initialized SSH buffer, NULL on error.
  */
 struct ssh_buffer_struct *ssh_buffer_new(void) {
-  struct ssh_buffer_struct *buf = malloc(sizeof(struct ssh_buffer_struct));
-
+  struct ssh_buffer_struct *buf =
+      calloc(1, sizeof(struct ssh_buffer_struct));
   if (buf == NULL) {
     return NULL;
   }
-  memset(buf, 0, sizeof(struct ssh_buffer_struct));
+
   buffer_verify(buf);
   return buf;
 }
