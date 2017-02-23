@@ -521,13 +521,17 @@ uint32_t ssh_buffer_pass_bytes_end(struct ssh_buffer_struct *buffer, uint32_t le
  *
  * @returns             0 if there is not enough data in buffer, len otherwise.
  */
-uint32_t ssh_buffer_get_data(struct ssh_buffer_struct *buffer, void *data, uint32_t len){
+uint32_t ssh_buffer_get_data(struct ssh_buffer_struct *buffer, void *data, uint32_t len)
+{
+    int rc;
+
     /*
      * Check for a integer overflow first, then check if not enough data is in
      * the buffer.
      */
-    if (buffer->pos + len < len || buffer->pos + len > buffer->used) {
-      return 0;
+    rc = ssh_buffer_validate_length(buffer, len);
+    if (rc != SSH_OK) {
+        return 0;
     }
     memcpy(data,buffer->data+buffer->pos,len);
     buffer->pos+=len;
@@ -581,6 +585,24 @@ int ssh_buffer_get_u64(struct ssh_buffer_struct *buffer, uint64_t *data){
 }
 
 /**
+ * @brief Valdiates that the given length can be obtained from the buffer.
+ *
+ * @param[in]  buffer  The buffer to read from.
+ *
+ * @param[in]  len     The length to be checked.
+ *
+ * @return             SSH_OK if the length is valid, SSH_ERROR otherwise.
+ */
+int ssh_buffer_validate_length(struct ssh_buffer_struct *buffer, size_t len)
+{
+    if (buffer->pos + len < len || buffer->pos + len > buffer->used) {
+        return SSH_ERROR;
+    }
+
+    return SSH_OK;
+}
+
+/**
  * @internal
  *
  * @brief Get a SSH String out of the buffer and adjusts the read pointer.
@@ -593,13 +615,15 @@ struct ssh_string_struct *ssh_buffer_get_ssh_string(struct ssh_buffer_struct *bu
   uint32_t stringlen;
   uint32_t hostlen;
   struct ssh_string_struct *str = NULL;
+  int rc;
 
   if (ssh_buffer_get_u32(buffer, &stringlen) == 0) {
     return NULL;
   }
   hostlen = ntohl(stringlen);
   /* verify if there is enough space in buffer to get it */
-  if (buffer->pos + hostlen < hostlen || buffer->pos + hostlen > buffer->used) {
+  rc = ssh_buffer_validate_length(buffer, hostlen);
+  if (rc != SSH_OK) {
     return NULL; /* it is indeed */
   }
   str = ssh_string_new(hostlen);
