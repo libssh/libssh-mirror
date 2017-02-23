@@ -890,10 +890,12 @@ int ssh_buffer_unpack_va(struct ssh_buffer_struct *buffer,
         char **cstring;
         void **data;
     } o;
-    size_t len, rlen;
+    size_t len, rlen, max_len;
     uint32_t u32len;
     va_list ap_copy;
     int count;
+
+    max_len = ssh_buffer_get_len(buffer);
 
     /* copy the argument list in case a rollback is needed */
     va_copy(ap_copy, ap);
@@ -944,10 +946,16 @@ int ssh_buffer_unpack_va(struct ssh_buffer_struct *buffer,
                 break;
             }
             len = ntohl(u32len);
-            if (len > UINT_MAX - 1){
+            if (len > max_len - 1) {
                 rc = SSH_ERROR;
                 break;
             }
+
+            rc = ssh_buffer_validate_length(buffer, len);
+            if (rc != SSH_OK) {
+                break;
+            }
+
             *o.cstring = malloc(len + 1);
             if (*o.cstring == NULL){
                 rc = SSH_ERROR;
@@ -965,6 +973,15 @@ int ssh_buffer_unpack_va(struct ssh_buffer_struct *buffer,
             break;
         case 'P':
             len = va_arg(ap, size_t);
+            if (len > max_len - 1) {
+                rc = SSH_ERROR;
+                break;
+            }
+
+            rc = ssh_buffer_validate_length(buffer, len);
+            if (rc != SSH_OK) {
+                break;
+            }
 
             o.data = va_arg(ap, void **);
             count++;
