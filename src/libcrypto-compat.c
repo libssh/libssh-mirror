@@ -7,6 +7,8 @@
  * https://www.openssl.org/source/license.html
  */
 
+#include "config.h"
+
 #include <string.h>
 #include <openssl/engine.h>
 #include "libcrypto-compat.h"
@@ -315,6 +317,7 @@ int HMAC_CTX_reset(HMAC_CTX *ctx)
     return 1;
 }
 
+#ifndef HAVE_OPENSSL_EVP_CIPHER_CTX_NEW
 EVP_CIPHER_CTX *EVP_CIPHER_CTX_new(void)
 {
     return OPENSSL_zalloc(sizeof(EVP_CIPHER_CTX));
@@ -326,3 +329,4 @@ void EVP_CIPHER_CTX_free(EVP_CIPHER_CTX *ctx)
     EVP_CIPHER_CTX_init(ctx);
     OPENSSL_free(ctx);
 }
+#endif
