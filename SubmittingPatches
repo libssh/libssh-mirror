@@ -1,9 +1,9 @@
 How to contribute a patch to libssh
 ====================================
 
-Simple, just make the code change, and email it as either a "diff -u"
-change, or as a "git format-patch" change against the original source
-code to libssh@libssh.org, or attach it to a bug report at
+Please checkout the libssh source code using git. Change the code and then
+use  "git format-patch" to create a patch. The patch should be signed (see
+below) and send it to libssh@libssh.org, or attach it to a bug report at
 https://red.libssh.org/
 
 For larger code changes, breaking the changes up into a set of simple
