@@ -247,7 +247,12 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
     case SOC_HOSTNAME:
       p = ssh_config_get_str_tok(&s, NULL);
       if (p && *parsing) {
-        ssh_options_set(session, SSH_OPTIONS_HOST, p);
+        char *z = ssh_path_expand_escape(session, p);
+        if (z == NULL) {
+            z = strdup(p);
+        }
+        ssh_options_set(session, SSH_OPTIONS_HOST, z);
+        free(z);
       }
       break;
     case SOC_PORT:
