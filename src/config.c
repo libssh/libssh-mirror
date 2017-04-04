@@ -227,18 +227,12 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
              p != NULL && p[0] != '\0';
              p = ssh_config_get_str_tok(&s, NULL)) {
              if (ok >= 0) {
-               char *z = ssh_path_expand_escape(session, p);
-
-               if (z == NULL) {
-                   z = strdup(p);
-               }
-               ok = match_hostname(lowerhost, z, strlen(z));
+               ok = match_hostname(lowerhost, p, strlen(p));
                if (ok < 0) {
                    *parsing = 0;
                } else if (ok > 0) {
                    *parsing = 1;
                }
-               free(z);
             }
         }
         SAFE_FREE(lowerhost);
