@@ -35,6 +35,8 @@ find_path(GCRYPT_INCLUDE_DIR
         gcrypt.h
     HINTS
         ${_GCRYPT_ROOT_HINTS_AND_PATHS}
+    PATH_SUFFIXES
+        include
 )
 
 find_library(GCRYPT_LIBRARY
@@ -44,6 +46,8 @@ find_library(GCRYPT_LIBRARY
         libgcrypt-11
     HINTS
         ${_GCRYPT_ROOT_HINTS_AND_PATHS}
+    PATH_SUFFIXES
+        lib
 )
 set(GCRYPT_LIBRARIES ${GCRYPT_LIBRARY})
 
