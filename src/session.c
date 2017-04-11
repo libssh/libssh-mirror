@@ -875,12 +875,22 @@ int ssh_send_debug (ssh_session session, const char *message, int always_display
     int rc;
 
     if (ssh_socket_is_open(session->socket)) {
-        rc = ssh_buffer_pack(session->out_buffer,
-                             "bbsd",
-                             SSH2_MSG_DEBUG,
-                             always_display != 0 ? 1 : 0,
-                             message,
-                             0); /* empty language tag */
+#ifdef WITH_SSH1
+        if (session->version == 1) {
+            rc = ssh_buffer_pack(session->out_buffer,
+                                 "bs",
+                                 SSH_MSG_DEBUG,
+                                 message);
+        } else
+#endif /* WITH_SSH1 */
+        {
+            rc = ssh_buffer_pack(session->out_buffer,
+                                 "bbsd",
+                                 SSH2_MSG_DEBUG,
+                                 always_display != 0 ? 1 : 0,
+                                 message,
+                                 0); /* empty language tag */
+        }
         if (rc != SSH_OK) {
             ssh_set_error_oom(session);
             goto error;
