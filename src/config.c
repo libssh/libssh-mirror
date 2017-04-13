@@ -50,6 +50,8 @@ enum ssh_config_opcode_e {
   SOC_GSSAPISERVERIDENTITY,
   SOC_GSSAPICLIENTIDENTITY,
   SOC_GSSAPIDELEGATECREDENTIALS,
+
+  SOC_END /* Keep this one last in the list */
 };
 
 struct ssh_config_keyword_table_s {
@@ -185,7 +187,7 @@ static int ssh_config_get_yesno(char **str, int notfound) {
 }
 
 static int ssh_config_parse_line(ssh_session session, const char *line,
-    unsigned int count, int *parsing) {
+    unsigned int count, int *parsing, int seen[]) {
   enum ssh_config_opcode_e opcode;
   const char *p;
   char *s, *x;
@@ -216,6 +218,12 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
   }
 
   opcode = ssh_config_get_opcode(keyword);
+  if (*parsing == 1 && opcode != SOC_HOST) {
+      if (seen[opcode] == 0) {
+          return 0;
+      }
+      seen[opcode] = 1;
+  }
 
   switch (opcode) {
     case SOC_HOST: {
@@ -383,6 +391,7 @@ int ssh_config_parse_file(ssh_session session, const char *filename) {
   unsigned int count = 0;
   FILE *f;
   int parsing;
+  int seen[SOC_END - SOC_UNSUPPORTED] = {0};
 
   if ((f = fopen(filename, "r")) == NULL) {
     return 0;
@@ -393,7 +402,7 @@ int ssh_config_parse_file(ssh_session session, const char *filename) {
   parsing = 1;
   while (fgets(line, sizeof(line), f)) {
     count++;
-    if (ssh_config_parse_line(session, line, count, &parsing) < 0) {
+    if (ssh_config_parse_line(session, line, count, &parsing, seen) < 0) {
       fclose(f);
       return -1;
     }
