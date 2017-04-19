@@ -257,6 +257,10 @@ void ssh_free(ssh_session session) {
       ssh_list_free(session->ssh_message_list);
   }
 
+  if (session->kbdint != NULL) {
+    ssh_kbdint_free(session->kbdint);
+  }
+
   if (session->packet_callbacks) {
     ssh_list_free(session->packet_callbacks);
   }
