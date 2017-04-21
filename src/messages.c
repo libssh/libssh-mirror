@@ -942,7 +942,9 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_response){
                 " mismatch: p=%u a=%u", session->kbdint->nprompts, nanswers);
   }
   session->kbdint->nanswers = nanswers;
-  session->kbdint->answers = malloc(nanswers * sizeof(char *));
+
+  SAFE_FREE(session->kbdint->answers);
+  session->kbdint->answers = calloc(1, nanswers * sizeof(char *));
   if (session->kbdint->answers == NULL) {
     session->kbdint->nanswers = 0;
     ssh_set_error_oom(session);
@@ -951,7 +953,6 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_response){
 
     goto error;
   }
-  memset(session->kbdint->answers, 0, nanswers * sizeof(char *));
 
   for (i = 0; i < nanswers; i++) {
     tmp = buffer_get_ssh_string(packet);
