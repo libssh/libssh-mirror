@@ -846,7 +846,7 @@ int ssh_analyze_banner(ssh_session session, int server, int *ssh1, int *ssh2) {
 
   openssh = strstr(banner, "OpenSSH");
   if (openssh != NULL) {
-      int major, minor;
+      unsigned int major, minor;
 
       /*
        * The banner is typical:
@@ -854,8 +854,22 @@ int ssh_analyze_banner(ssh_session session, int server, int *ssh1, int *ssh2) {
        * 012345678901234567890
        */
       if (strlen(openssh) > 9) {
-          major = strtol(openssh + 8, (char **) NULL, 10);
+          major = strtoul(openssh + 8, (char **) NULL, 10);
+          if (major < 1 || major > 100) {
+              ssh_set_error(session,
+                            SSH_FATAL,
+                            "Invalid major version number: %s",
+                            banner);
+              return -1;
+          }
           minor = strtol(openssh + 10, (char **) NULL, 10);
+          if (minor > 100) {
+              ssh_set_error(session,
+                            SSH_FATAL,
+                            "Invalid minor version number: %s",
+                            banner);
+              return -1;
+          }
           session->openssh = SSH_VERSION_INT(major, minor, 0);
           SSH_LOG(SSH_LOG_RARE,
                   "We are talking to an OpenSSH client version: %d.%d (%x)",
