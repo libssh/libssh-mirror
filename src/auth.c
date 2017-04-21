@@ -1217,11 +1217,10 @@ int ssh_userauth_agent_pubkey(ssh_session session,
 ssh_kbdint ssh_kbdint_new(void) {
     ssh_kbdint kbd;
 
-    kbd = malloc(sizeof(struct ssh_kbdint_struct));
+    kbd = calloc(1, sizeof(struct ssh_kbdint_struct));
     if (kbd == NULL) {
         return NULL;
     }
-    ZERO_STRUCTP(kbd);
 
     return kbd;
 }
