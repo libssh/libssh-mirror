@@ -1010,6 +1010,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_response){
 
       goto error;
     }
+    SAFE_FREE(session->kbdint->answers[i]);
     session->kbdint->answers[i] = ssh_string_to_char(tmp);
     ssh_string_free(tmp);
     if (session->kbdint->answers[i] == NULL) {
