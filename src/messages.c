@@ -969,6 +969,15 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_response){
 
       goto error;
     }
+  } else if (session->kbdint->nanswers > 0) {
+      uint32_t n;
+
+      for (n = 0; n < session->kbdint->nanswers; n++) {
+            BURN_STRING(session->kbdint->answers[n]);
+            SAFE_FREE(session->kbdint->answers[n]);
+      }
+      SAFE_FREE(session->kbdint->answers);
+      session->kbdint->nanswers = 0;
   }
 
   SSH_LOG(SSH_LOG_PACKET,"kbdint: %d answers",nanswers);
@@ -989,7 +998,6 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_response){
   }
   session->kbdint->nanswers = nanswers;
 
-  SAFE_FREE(session->kbdint->answers);
   session->kbdint->answers = calloc(1, nanswers * sizeof(char *));
   if (session->kbdint->answers == NULL) {
     session->kbdint->nanswers = 0;
@@ -1010,7 +1018,6 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_response){
 
       goto error;
     }
-    SAFE_FREE(session->kbdint->answers[i]);
     session->kbdint->answers[i] = ssh_string_to_char(tmp);
     ssh_string_free(tmp);
     if (session->kbdint->answers[i] == NULL) {
