@@ -969,7 +969,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_response){
 
       goto error;
     }
-  } else if (session->kbdint->nanswers > 0) {
+  } else if (session->kbdint->answers != NULL) {
       uint32_t n;
 
       for (n = 0; n < session->kbdint->nanswers; n++) {
@@ -998,7 +998,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_response){
   }
   session->kbdint->nanswers = nanswers;
 
-  session->kbdint->answers = calloc(1, nanswers * sizeof(char *));
+  session->kbdint->answers = calloc(nanswers, sizeof(char *));
   if (session->kbdint->answers == NULL) {
     session->kbdint->nanswers = 0;
     ssh_set_error_oom(session);
