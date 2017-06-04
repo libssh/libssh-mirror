@@ -219,7 +219,7 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
 
   opcode = ssh_config_get_opcode(keyword);
   if (*parsing == 1 && opcode != SOC_HOST) {
-      if (seen[opcode] == 0) {
+      if (seen[opcode] != 0) {
           return 0;
       }
       seen[opcode] = 1;
