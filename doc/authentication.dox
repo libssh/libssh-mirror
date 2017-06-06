@@ -305,7 +305,7 @@ int test_several_auth_methods(ssh_session session)
   int method, rc;
 
   rc = ssh_userauth_none(session, NULL);
-  if (rc != SSH_AUTH_SUCCESS) {
+  if (rc == SSH_AUTH_SUCCESS || rc == SSH_AUTH_ERROR) {
       return rc;
   }
 
