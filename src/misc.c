@@ -968,6 +968,7 @@ int ssh_timeout_elapsed(struct ssh_timestamp *ts, int timeout) {
             fprintf(stderr, "ssh_timeout_elapsed called with -2. this needs to "
                             "be fixed. please set a breakpoint on %s:%d and "
                             "fix the caller\n", __FILE__, __LINE__);
+            return 0;
         case -1: /* -1 means infinite timeout */
             return 0;
         case 0: /* 0 means no timeout */
