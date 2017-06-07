@@ -218,7 +218,7 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
   }
 
   opcode = ssh_config_get_opcode(keyword);
-  if (*parsing == 1 && opcode != SOC_HOST) {
+  if (*parsing == 1 && opcode != SOC_HOST && opcode != SOC_UNSUPPORTED) {
       if (seen[opcode] != 0) {
           return 0;
       }
