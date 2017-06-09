@@ -58,6 +58,11 @@
 #define OLD_CRYPTO
 #endif
 
+#if (HAVE_VALGRIND_VALGRIND_H && HAVE_OPENSSL_IA32CAP_LOC)
+#include <valgrind/valgrind.h>
+#define CAN_DISABLE_AESNI
+#endif
+
 #include "libssh/crypto.h"
 
 struct ssh_mac_ctx_struct {
@@ -1059,7 +1064,17 @@ int ssh_crypto_init(void)
             SSLeay_version(SSLeay())
         );
     }
-
+#ifdef CAN_DISABLE_AESNI
+    /*
+     * disable AES-NI when running within Valgrind, because they generate
+     * too many "uninitialized memory access" false positives
+     */
+    if (RUNNING_ON_VALGRIND){
+        SSH_LOG(SSH_LOG_INFO, "Running within Valgrind, disabling AES-NI");
+        /* Bit #57 denotes AES-NI instruction set extension */
+        OPENSSL_ia32cap &= ~(1LL << 57);
+    }
+#endif
     OpenSSL_add_all_algorithms();
 
     for (i = 0; ssh_ciphertab[i].name != NULL; i++) {

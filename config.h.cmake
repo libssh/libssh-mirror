@@ -23,6 +23,9 @@
 /* Define to 1 if you have the <glob.h> header file. */
 #cmakedefine HAVE_GLOB_H 1
 
+/* Define to 1 if you have the <valgrind/valgrind.h> header file. */
+#cmakedefine HAVE_VALGRIND_VALGRIND_H 1
+
 /* Define to 1 if you have the <pty.h> header file. */
 #cmakedefine HAVE_PTY_H 1
 
@@ -111,6 +114,9 @@
 
 /* Define to 1 if you have the `EVP_CIPHER_CTX_new' function. */
 #cmakedefine HAVE_OPENSSL_EVP_CIPHER_CTX_NEW 1
+
+/* Define to 1 if you have the `OPENSSL_ia32cap_loc' function. */
+#cmakedefine HAVE_OPENSSL_IA32CAP_LOC 1
 
 /* Define to 1 if you have the `snprintf' function. */
 #cmakedefine HAVE_SNPRINTF 1
