@@ -862,7 +862,7 @@ int ssh_analyze_banner(ssh_session session, int server, int *ssh1, int *ssh2) {
                             banner);
               return -1;
           }
-          minor = strtol(openssh + 10, (char **) NULL, 10);
+          minor = strtoul(openssh + 10, (char **) NULL, 10);
           if (minor > 100) {
               ssh_set_error(session,
                             SSH_FATAL,
