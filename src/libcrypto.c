@@ -366,7 +366,8 @@ void hmac_final(HMACCTX ctx, unsigned char *hashmacbuf, unsigned int *len) {
   HMAC_Final(ctx,hashmacbuf,len);
 
 #ifndef OLD_CRYPTO
-  HMAC_CTX_reset(ctx);
+  HMAC_CTX_free(ctx);
+  ctx = NULL;
 #else
   HMAC_cleanup(ctx);
 #endif
