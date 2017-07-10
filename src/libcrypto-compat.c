@@ -304,9 +304,11 @@ void HMAC_CTX_free(HMAC_CTX *ctx)
 {
     if (ctx != NULL) {
         hmac_ctx_cleanup(ctx);
+#if OPENSSL_VERSION_NUMBER > 0x10100000L
         EVP_MD_CTX_free(&ctx->i_ctx);
         EVP_MD_CTX_free(&ctx->o_ctx);
         EVP_MD_CTX_free(&ctx->md_ctx);
+#endif
         OPENSSL_free(ctx);
     }
 }
