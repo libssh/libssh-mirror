@@ -87,11 +87,11 @@ static void torture_ntohll(void **state) {
     (void) state;
 
     if (ptr[0] == 1){
-      /* we're in little endian */
-      check = 0xefcdab8967452301;
+        /* we're in little endian */
+        check = 0xefcdab8967452301;
     } else {
-      /* big endian */
-      check = value;
+        /* big endian */
+        check = value;
     }
     value = ntohll(value);
     assert_true(value == check);
