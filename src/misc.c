@@ -780,8 +780,7 @@ char *ssh_path_expand_escape(ssh_session session, const char *s) {
 /**
  * @internal
  *
- * @brief Analyze the SSH banner to find out if we have a SSHv1 or SSHv2
- * server.
+ * @brief Analyze the SSH banner to extract version information.
  *
  * @param  session      The session to analyze the banner from.
  * @param  server       0 means we are a client, 1 a server.
@@ -790,95 +789,94 @@ char *ssh_path_expand_escape(ssh_session session, const char *s) {
  *
  * @return 0 on success, < 0 on error.
  *
- * @see ssh_get_banner()
+ * @see ssh_get_issue_banner()
  */
 int ssh_analyze_banner(ssh_session session, int server, int *ssh1, int *ssh2) {
-  const char *banner;
-  const char *openssh;
+    const char *banner;
+    const char *openssh;
 
-  if (server) {
-      banner = session->clientbanner;
-  } else {
-      banner = session->serverbanner;
-  }
+    if (server) {
+        banner = session->clientbanner;
+    } else {
+        banner = session->serverbanner;
+    }
 
-  if (banner == NULL) {
-      ssh_set_error(session, SSH_FATAL, "Invalid banner");
-      return -1;
-  }
+    if (banner == NULL) {
+        ssh_set_error(session, SSH_FATAL, "Invalid banner");
+        return -1;
+    }
 
-  /*
-   * Typical banners e.g. are:
-   *
-   * SSH-1.5-openSSH_5.4
-   * SSH-1.99-openSSH_3.0
-   *
-   * SSH-2.0-something
-   * 012345678901234567890
-   */
-  if (strlen(banner) < 6 ||
-      strncmp(banner, "SSH-", 4) != 0) {
-    ssh_set_error(session, SSH_FATAL, "Protocol mismatch: %s", banner);
-    return -1;
-  }
+    /*
+     * Typical banners e.g. are:
+     *
+     * SSH-1.5-openSSH_5.4
+     * SSH-1.99-openSSH_3.0
+     *
+     * SSH-2.0-something
+     * 012345678901234567890
+     */
+    if (strlen(banner) < 6 ||
+        strncmp(banner, "SSH-", 4) != 0) {
+          ssh_set_error(session, SSH_FATAL, "Protocol mismatch: %s", banner);
+          return -1;
+    }
 
-  SSH_LOG(SSH_LOG_RARE, "Analyzing banner: %s", banner);
+    SSH_LOG(SSH_LOG_RARE, "Analyzing banner: %s", banner);
 
-  switch(banner[4]) {
-    case '1':
-      *ssh1 = 1;
-      if (strlen(banner) > 6) {
-          if (banner[6] == '9') {
+    switch (banner[4]) {
+        case '1':
+            *ssh1 = 1;
+            if (strlen(banner) > 6) {
+                if (banner[6] == '9') {
+                    *ssh2 = 1;
+                } else {
+                    *ssh2 = 0;
+                }
+            }
+            break;
+        case '2':
+            *ssh1 = 0;
             *ssh2 = 1;
-          } else {
-            *ssh2 = 0;
-          }
-      }
-      break;
-    case '2':
-      *ssh1 = 0;
-      *ssh2 = 1;
-      break;
-    default:
-      ssh_set_error(session, SSH_FATAL, "Protocol mismatch: %s", banner);
-      return -1;
-  }
+            break;
+        default:
+            ssh_set_error(session, SSH_FATAL, "Protocol mismatch: %s", banner);
+            return -1;
+    }
 
-  openssh = strstr(banner, "OpenSSH");
-  if (openssh != NULL) {
-      unsigned int major, minor;
+    openssh = strstr(banner, "OpenSSH");
+    if (openssh != NULL) {
+        unsigned int major, minor;
 
-      /*
-       * The banner is typical:
-       * OpenSSH_5.4
-       * 012345678901234567890
-       */
-      if (strlen(openssh) > 9) {
-          major = strtoul(openssh + 8, (char **) NULL, 10);
-          if (major < 1 || major > 100) {
-              ssh_set_error(session,
-                            SSH_FATAL,
-                            "Invalid major version number: %s",
-                            banner);
-              return -1;
-          }
-          minor = strtoul(openssh + 10, (char **) NULL, 10);
-          if (minor > 100) {
-              ssh_set_error(session,
-                            SSH_FATAL,
-                            "Invalid minor version number: %s",
-                            banner);
-              return -1;
-          }
-          session->openssh = SSH_VERSION_INT(major, minor, 0);
-          SSH_LOG(SSH_LOG_RARE,
-                  "We are talking to an OpenSSH client version: %d.%d (%x)",
-                  major, minor, session->openssh);
-      }
-  }
+        /*
+         * The banner is typical:
+         * OpenSSH_5.4
+         * 012345678901234567890
+         */
+        if (strlen(openssh) > 9) {
+            major = strtoul(openssh + 8, (char **) NULL, 10);
+            if (major < 1 || major > 100) {
+                ssh_set_error(session,
+                              SSH_FATAL,
+                              "Invalid major version number: %s",
+                              banner);
+                return -1;
+            }
+            minor = strtoul(openssh + 10, (char **) NULL, 10);
+            if (minor > 100) {
+                ssh_set_error(session,
+                              SSH_FATAL,
+                              "Invalid minor version number: %s",
+                              banner);
+                return -1;
+            }
+            session->openssh = SSH_VERSION_INT(major, minor, 0);
+            SSH_LOG(SSH_LOG_RARE,
+                    "We are talking to an OpenSSH client version: %d.%d (%x)",
+                    major, minor, session->openssh);
+        }
+    }
 
-
-  return 0;
+    return 0;
 }
 
 /* try the Monotonic clock if possible for perfs reasons */
