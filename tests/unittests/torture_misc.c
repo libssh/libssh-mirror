@@ -315,35 +315,33 @@ static void torture_ssh_analyze_banner(void **state) {
     assert_server_banner_accepted("SSH-2.0-OpenSSH_1.99", 0, 1);
     assert_int_equal(SSH_VERSION_INT(1, 99, 0), session->openssh);
 
-    /* OpenSSH banners: major, minor version limits */
-    reset_banner_test();
-    assert_client_banner_rejected("SSH-2.0-OpenSSH_0.99p1");
-    reset_banner_test();
-    assert_server_banner_rejected("SSH-2.0-OpenSSH_0.99p1");
-    reset_banner_test();
-    assert_client_banner_rejected("SSH-2.0-OpenSSH_1.101p1");
-    reset_banner_test();
-    assert_server_banner_rejected("SSH-2.0-OpenSSH_1.101p1");
+    /* OpenSSH banners: major, minor version limits result in zero */
+    assert_client_banner_accepted("SSH-2.0-OpenSSH_0.99p1", 0, 1);
+    assert_int_equal(0, session->openssh);
+    assert_server_banner_accepted("SSH-2.0-OpenSSH_0.99p1", 0, 1);
+    assert_int_equal(0, session->openssh);
+    assert_client_banner_accepted("SSH-2.0-OpenSSH_1.101p1", 0, 1);
+    assert_int_equal(0, session->openssh);
+    assert_server_banner_accepted("SSH-2.0-OpenSSH_1.101p1", 0, 1);
+    assert_int_equal(0, session->openssh);
 
-    /* OpenSSH banners: bogus major */
-    reset_banner_test();
-    assert_client_banner_rejected("SSH-2.0-OpenSSH_X.9p1");
-    reset_banner_test();
-    assert_server_banner_rejected("SSH-2.0-OpenSSH_X.9p1");
+    /* OpenSSH banners: bogus major results in zero */
+    assert_client_banner_accepted("SSH-2.0-OpenSSH_X.9p1", 0, 1);
+    assert_int_equal(0, session->openssh);
+    assert_server_banner_accepted("SSH-2.0-OpenSSH_X.9p1", 0, 1);
+    assert_int_equal(0, session->openssh);
 
-    /* OpenSSH banners: bogus minor */
-    reset_banner_test();
-    assert_server_banner_rejected("SSH-2.0-OpenSSH_5.Yp1");
-    reset_banner_test();
-    assert_client_banner_rejected("SSH-2.0-OpenSSH_5.Yp1");
+    /* OpenSSH banners: bogus minor results in zero */
+    assert_server_banner_accepted("SSH-2.0-OpenSSH_5.Yp1", 0, 1);
+    assert_int_equal(0, session->openssh);
+    assert_client_banner_accepted("SSH-2.0-OpenSSH_5.Yp1", 0, 1);
+    assert_int_equal(0, session->openssh);
 
     /* OpenSSH banners: ssh-keyscan(1) */
-    #if 0 /* these don't pass */
     assert_client_banner_accepted("SSH-2.0-OpenSSH-keyscan", 0, 1);
     assert_int_equal(0, session->openssh);
     assert_server_banner_accepted("SSH-2.0-OpenSSH-keyscan", 0, 1);
     assert_int_equal(0, session->openssh);
-    #endif /* these don't pass */
 
     ssh_free(session);
 }

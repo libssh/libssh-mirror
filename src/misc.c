@@ -844,6 +844,7 @@ int ssh_analyze_banner(ssh_session session, int server, int *ssh1, int *ssh2) {
             return -1;
     }
 
+    /* Make a best-effort to extract OpenSSH version numbers. */
     openssh = strstr(banner, "OpenSSH");
     if (openssh != NULL) {
         char *tmp = NULL;
@@ -861,11 +862,8 @@ int ssh_analyze_banner(ssh_session session, int server, int *ssh1, int *ssh2) {
                 ((errno == ERANGE) && (major == ULONG_MAX)) ||
                 ((errno != 0) && (major == 0)) ||
                 ((major < 1) || (major > 100))) {
-                ssh_set_error(session,
-                              SSH_FATAL,
-                              "Invalid major version number: %s",
-                              banner);
-                return -1;
+                /* invalid major */
+                goto done;
             }
 
             minor = strtoul(openssh + 10, &tmp, 10);
@@ -873,12 +871,10 @@ int ssh_analyze_banner(ssh_session session, int server, int *ssh1, int *ssh2) {
                 ((errno == ERANGE) && (major == ULONG_MAX)) ||
                 ((errno != 0) && (major == 0)) ||
                 (minor > 100)) {
-                ssh_set_error(session,
-                              SSH_FATAL,
-                              "Invalid minor version number: %s",
-                              banner);
-                return -1;
+                /* invalid minor */
+                goto done;
             }
+
             session->openssh = SSH_VERSION_INT(((int) major), ((int) minor), 0);
 
             SSH_LOG(SSH_LOG_RARE,
@@ -887,6 +883,7 @@ int ssh_analyze_banner(ssh_session session, int server, int *ssh1, int *ssh2) {
         }
     }
 
+done:
     return 0;
 }
 
