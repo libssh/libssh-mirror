@@ -332,12 +332,10 @@ static void torture_ssh_analyze_banner(void **state) {
     assert_server_banner_rejected("SSH-2.0-OpenSSH_X.9p1");
 
     /* OpenSSH banners: bogus minor */
-    #if 0 /* these don't pass */
     reset_banner_test();
     assert_server_banner_rejected("SSH-2.0-OpenSSH_5.Yp1");
     reset_banner_test();
     assert_client_banner_rejected("SSH-2.0-OpenSSH_5.Yp1");
-    #endif /* these don't pass */
 
     /* OpenSSH banners: ssh-keyscan(1) */
     #if 0 /* these don't pass */

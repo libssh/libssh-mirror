@@ -35,6 +35,7 @@
 
 #endif /* _WIN32 */
 
+#include <errno.h>
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
@@ -845,7 +846,9 @@ int ssh_analyze_banner(ssh_session session, int server, int *ssh1, int *ssh2) {
 
     openssh = strstr(banner, "OpenSSH");
     if (openssh != NULL) {
-        unsigned int major, minor;
+        char *tmp = NULL;
+        unsigned long int major = 0UL;
+        unsigned long int minor = 0UL;
 
         /*
          * The banner is typical:
@@ -853,25 +856,33 @@ int ssh_analyze_banner(ssh_session session, int server, int *ssh1, int *ssh2) {
          * 012345678901234567890
          */
         if (strlen(openssh) > 9) {
-            major = strtoul(openssh + 8, (char **) NULL, 10);
-            if (major < 1 || major > 100) {
+            major = strtoul(openssh + 8, &tmp, 10);
+            if ((tmp == (openssh + 8)) ||
+                ((errno == ERANGE) && (major == ULONG_MAX)) ||
+                ((errno != 0) && (major == 0)) ||
+                ((major < 1) || (major > 100))) {
                 ssh_set_error(session,
                               SSH_FATAL,
                               "Invalid major version number: %s",
                               banner);
                 return -1;
             }
-            minor = strtoul(openssh + 10, (char **) NULL, 10);
-            if (minor > 100) {
+
+            minor = strtoul(openssh + 10, &tmp, 10);
+            if ((tmp == (openssh + 10)) ||
+                ((errno == ERANGE) && (major == ULONG_MAX)) ||
+                ((errno != 0) && (major == 0)) ||
+                (minor > 100)) {
                 ssh_set_error(session,
                               SSH_FATAL,
                               "Invalid minor version number: %s",
                               banner);
                 return -1;
             }
-            session->openssh = SSH_VERSION_INT(major, minor, 0);
+            session->openssh = SSH_VERSION_INT(((int) major), ((int) minor), 0);
+
             SSH_LOG(SSH_LOG_RARE,
-                    "We are talking to an OpenSSH client version: %d.%d (%x)",
+                    "We are talking to an OpenSSH client version: %lu.%lu (%x)",
                     major, minor, session->openssh);
         }
     }
