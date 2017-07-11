@@ -205,6 +205,151 @@ static void torture_timeout_update(void **state){
     assert_int_equal(ssh_timeout_update(&ts,-1),-1);
 }
 
+static void torture_ssh_analyze_banner(void **state) {
+    int rc = 0;
+    int ssh1 = 0;
+    int ssh2 = 0;
+    ssh_session session = NULL;
+    (void) state;
+
+#define reset_banner_test() \
+    do {                           \
+        rc = 0;                    \
+        ssh1 = 0;                  \
+        ssh2 = 0;                  \
+        ssh_free(session);         \
+        session = ssh_new();       \
+        assert_non_null(session);  \
+    } while (0)
+
+#define assert_banner_rejected(is_server) \
+    do {                                                            \
+        rc = ssh_analyze_banner(session, is_server, &ssh1, &ssh2);  \
+        assert_int_not_equal(0, rc);                                \
+    } while (0);
+
+#define assert_client_banner_rejected(banner) \
+    do {                                         \
+        reset_banner_test();                     \
+        session->clientbanner = strdup(banner);  \
+        assert_non_null(session->clientbanner);  \
+        assert_banner_rejected(1 /*server*/);    \
+        SAFE_FREE(session->clientbanner);        \
+    } while (0)
+
+#define assert_server_banner_rejected(banner) \
+    do {                                         \
+        reset_banner_test();                     \
+        session->serverbanner = strdup(banner);  \
+        assert_non_null(session->serverbanner);  \
+        assert_banner_rejected(0 /*client*/);    \
+        SAFE_FREE(session->serverbanner);        \
+    } while (0)
+
+#define assert_banner_accepted(is_server, expected_ssh1, expected_ssh2) \
+    do {                                                            \
+        rc = ssh_analyze_banner(session, is_server, &ssh1, &ssh2);  \
+        assert_int_equal(0, rc);                                    \
+        assert_int_equal(expected_ssh1, ssh1);                      \
+        assert_int_equal(expected_ssh2, ssh2);                      \
+    } while (0)
+
+#define assert_client_banner_accepted(banner, e1, e2) \
+    do {                                               \
+        reset_banner_test();                           \
+        session->clientbanner = strdup(banner);        \
+        assert_non_null(session->clientbanner);        \
+        assert_banner_accepted(1 /*server*/, e1, e2);  \
+        SAFE_FREE(session->clientbanner);              \
+    } while (0)
+
+#define assert_server_banner_accepted(banner, e1, e2) \
+    do {                                               \
+        reset_banner_test();                           \
+        session->serverbanner = strdup(banner);        \
+        assert_non_null(session->serverbanner);        \
+        assert_banner_accepted(0 /*client*/, e1, e2);  \
+        SAFE_FREE(session->serverbanner);              \
+    } while (0)
+
+    /* no banner is set */
+    reset_banner_test();
+    assert_banner_rejected(0 /*client*/);
+    reset_banner_test();
+    assert_banner_rejected(1 /*server*/);
+
+    /* banner is too short */
+    assert_client_banner_rejected("abc");
+    assert_server_banner_rejected("abc");
+
+    /* banner doesn't start "SSH-" */
+    assert_client_banner_rejected("abc-2.0");
+    assert_server_banner_rejected("abc-2.0");
+
+    /* SSH v1 */
+    assert_client_banner_accepted("SSH-1.0", 1, 0);
+    assert_server_banner_accepted("SSH-1.0", 1, 0);
+
+    /* SSH v1.9 gets counted as both v1 and v2 */
+    assert_client_banner_accepted("SSH-1.9", 1, 1);
+    assert_server_banner_accepted("SSH-1.9", 1, 1);
+
+    /* SSH v2 */
+    assert_client_banner_accepted("SSH-2.0", 0, 1);
+    assert_server_banner_accepted("SSH-2.0", 0, 1);
+
+    /* OpenSSH banners: too short to extract major and minor versions */
+    assert_client_banner_accepted("SSH-2.0-OpenSSH", 0, 1);
+    assert_int_equal(0, session->openssh);
+    assert_server_banner_accepted("SSH-2.0-OpenSSH", 0, 1);
+    assert_int_equal(0, session->openssh);
+
+    /* OpenSSH banners: big enough to extract major and minor versions */
+    assert_client_banner_accepted("SSH-2.0-OpenSSH_5.9p1", 0, 1);
+    assert_int_equal(SSH_VERSION_INT(5, 9, 0), session->openssh);
+    assert_server_banner_accepted("SSH-2.0-OpenSSH_5.9p1", 0, 1);
+    assert_int_equal(SSH_VERSION_INT(5, 9, 0), session->openssh);
+
+    assert_client_banner_accepted("SSH-2.0-OpenSSH_1.99", 0, 1);
+    assert_int_equal(SSH_VERSION_INT(1, 99, 0), session->openssh);
+    assert_server_banner_accepted("SSH-2.0-OpenSSH_1.99", 0, 1);
+    assert_int_equal(SSH_VERSION_INT(1, 99, 0), session->openssh);
+
+    /* OpenSSH banners: major, minor version limits */
+    reset_banner_test();
+    assert_client_banner_rejected("SSH-2.0-OpenSSH_0.99p1");
+    reset_banner_test();
+    assert_server_banner_rejected("SSH-2.0-OpenSSH_0.99p1");
+    reset_banner_test();
+    assert_client_banner_rejected("SSH-2.0-OpenSSH_1.101p1");
+    reset_banner_test();
+    assert_server_banner_rejected("SSH-2.0-OpenSSH_1.101p1");
+
+    /* OpenSSH banners: bogus major */
+    reset_banner_test();
+    assert_client_banner_rejected("SSH-2.0-OpenSSH_X.9p1");
+    reset_banner_test();
+    assert_server_banner_rejected("SSH-2.0-OpenSSH_X.9p1");
+
+    /* OpenSSH banners: bogus minor */
+    #if 0 /* these don't pass */
+    reset_banner_test();
+    assert_server_banner_rejected("SSH-2.0-OpenSSH_5.Yp1");
+    reset_banner_test();
+    assert_client_banner_rejected("SSH-2.0-OpenSSH_5.Yp1");
+    #endif /* these don't pass */
+
+    /* OpenSSH banners: ssh-keyscan(1) */
+    #if 0 /* these don't pass */
+    assert_client_banner_accepted("SSH-2.0-OpenSSH-keyscan", 0, 1);
+    assert_int_equal(0, session->openssh);
+    assert_server_banner_accepted("SSH-2.0-OpenSSH-keyscan", 0, 1);
+    assert_int_equal(0, session->openssh);
+    #endif /* these don't pass */
+
+    ssh_free(session);
+}
+
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
@@ -221,6 +366,7 @@ int torture_run_tests(void) {
         cmocka_unit_test_setup_teardown(torture_path_expand_known_hosts, setup, teardown),
         cmocka_unit_test(torture_timeout_elapsed),
         cmocka_unit_test(torture_timeout_update),
+        cmocka_unit_test(torture_ssh_analyze_banner),
     };
 
     ssh_init();
