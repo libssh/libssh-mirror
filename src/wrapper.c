@@ -105,29 +105,29 @@ static struct ssh_cipher_struct *cipher_new(int offset) {
 
 void ssh_cipher_clear(struct ssh_cipher_struct *cipher){
 #ifdef HAVE_LIBGCRYPT
-  unsigned int i;
+    unsigned int i;
 #endif
 
-  if (cipher == NULL) {
-    return;
-  }
+    if (cipher == NULL) {
+        return;
+    }
 
 #ifdef HAVE_LIBGCRYPT
-  if(cipher->key) {
-    for (i = 0; i < (cipher->keylen / sizeof(gcry_cipher_hd_t)); i++) {
-      gcry_cipher_close(cipher->key[i]);
+    if (cipher->key) {
+        for (i = 0; i < (cipher->keylen / sizeof(gcry_cipher_hd_t)); i++) {
+            gcry_cipher_close(cipher->key[i]);
+        }
+        SAFE_FREE(cipher->key);
     }
-    SAFE_FREE(cipher->key);
-  }
 #endif
-  if (cipher->ctx != NULL) {
-    if (cipher->cleanup != NULL) {
-      cipher->cleanup(cipher);
-    }
+    if (cipher->ctx != NULL) {
+        if (cipher->cleanup != NULL) {
+            cipher->cleanup(cipher);
+        }
 #ifdef HAVE_LIBCRYPTO
-    EVP_CIPHER_CTX_free(cipher->ctx);
+        EVP_CIPHER_CTX_free(cipher->ctx);
 #endif
-  }
+    }
 }
 
 static void cipher_free(struct ssh_cipher_struct *cipher) {
