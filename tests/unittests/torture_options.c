@@ -200,6 +200,7 @@ static void torture_options_proxycommand(void **state) {
 }
 
 
+#ifdef WITH_SERVER
 /* sshbind options */
 static int sshbind_setup(void **state)
 {
@@ -213,6 +214,7 @@ static int sshbind_teardown(void **state)
     ssh_bind_free(*state);
     return 0;
 }
+#endif /* WITH_SERVER */
 
 static void torture_bind_options_import_key(void **state)
 {
@@ -261,14 +263,18 @@ int torture_run_tests(void) {
         cmocka_unit_test_setup_teardown(torture_options_proxycommand, setup, teardown),
     };
 
+#ifdef WITH_SERVER
     struct CMUnitTest sshbind_tests[] = {
         cmocka_unit_test_setup_teardown(torture_bind_options_import_key, sshbind_setup, sshbind_teardown),
     };
+#endif /* WITH_SERVER */
 
     ssh_init();
     torture_filter_tests(tests);
     rc = cmocka_run_group_tests(tests, NULL, NULL);
+#ifdef WITH_SERVER
     rc += cmocka_run_group_tests(sshbind_tests, NULL, NULL);
+#endif /* WITH_SERVER */
     ssh_finalize();
     return rc;
 }
