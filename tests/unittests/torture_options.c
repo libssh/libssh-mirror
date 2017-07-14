@@ -214,7 +214,6 @@ static int sshbind_teardown(void **state)
     ssh_bind_free(*state);
     return 0;
 }
-#endif /* WITH_SERVER */
 
 static void torture_bind_options_import_key(void **state)
 {
@@ -246,6 +245,7 @@ static void torture_bind_options_import_key(void **state)
     rc = ssh_bind_options_set(bind, SSH_BIND_OPTIONS_IMPORT_KEY, key);
     assert_int_equal(rc, 0);
 }
+#endif /* WITH_SERVER */
 
 
 int torture_run_tests(void) {
