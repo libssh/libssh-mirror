@@ -124,12 +124,6 @@ void ssh_cipher_clear(struct ssh_cipher_struct *cipher){
     if (cipher->cleanup != NULL) {
         cipher->cleanup(cipher);
     }
-
-#ifdef HAVE_LIBCRYPTO
-    if (cipher->ctx != NULL) {
-        EVP_CIPHER_CTX_free(cipher->ctx);
-    }
-#endif
 }
 
 static void cipher_free(struct ssh_cipher_struct *cipher) {
