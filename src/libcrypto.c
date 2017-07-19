@@ -553,8 +553,8 @@ static void evp_cipher_decrypt(struct ssh_cipher_struct *cipher,
 }
 
 static void evp_cipher_cleanup(struct ssh_cipher_struct *cipher) {
-    EVP_CIPHER_CTX_cleanup(cipher->ctx);
     if (cipher->ctx != NULL) {
+        EVP_CIPHER_CTX_cleanup(cipher->ctx);
         EVP_CIPHER_CTX_free(cipher->ctx);
     }
 }
