@@ -128,9 +128,6 @@ void ssh_cipher_clear(struct ssh_cipher_struct *cipher){
     if (cipher->cleanup != NULL) {
         cipher->cleanup(cipher);
     }
-    if (cipher->chacha20_schedule != NULL){
-        SAFE_FREE(cipher->chacha20_schedule);
-    }
 }
 
 static void cipher_free(struct ssh_cipher_struct *cipher) {
