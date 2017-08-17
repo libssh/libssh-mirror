@@ -26,6 +26,7 @@ struct pkd_daemon_args {
         int libssh_log_level;
 
         const char *testname;
+        const char *testmatch;
         unsigned int iterations;
     } opts;
 };

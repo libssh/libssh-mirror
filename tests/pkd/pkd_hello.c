@@ -1,7 +1,7 @@
 /*
  * pkd_hello.c --
  *
- * (c) 2014 Jon Simons
+ * (c) 2014, 2017 Jon Simons <jon@jonsimons.org>
  */
 
 #include <setjmp.h> // for cmocka
@@ -25,9 +25,9 @@ static struct pkd_daemon_args pkd_dargs;
 #include <argp.h>
 #define PROGNAME "pkd_hello"
 #define ARGP_PROGNAME "libssh " PROGNAME
-const char *argp_program_version = ARGP_PROGNAME " 2014-04-12";
+const char *argp_program_version = ARGP_PROGNAME " 2017-07-12";
 const char *argp_program_bug_address = "Jon Simons <jon@jonsimons.org>";
-//static char **cmdline;
+
 static char doc[] = \
     "\nExample usage:\n\n"
     "    " PROGNAME "\n"
@@ -36,6 +36,8 @@ static char doc[] = \
     "        List available individual test names.\n"
     "    " PROGNAME " -i 1000 -t torture_pkd_rsa_ecdh_sha2_nistp256\n"
     "        Run only the torture_pkd_rsa_ecdh_sha2_nistp256 testcase 1000 times.\n"
+    "    " PROGNAME " -i 1000 -m curve25519\n"
+    "        Run all tests with the string 'curve25519' 1000 times.\n"
     "    " PROGNAME " -v -v -v -v -e -o\n"
     "        Run all tests with maximum libssh and pkd logging.\n"
 ;
@@ -47,6 +49,8 @@ static struct argp_option options[] = {
       "List available individual test names", 0 },
     { "iterations", 'i', "number", 0,
       "Run each test for the given number of iterations (default is 10)", 0 },
+    { "match", 'm', "testmatch", 0,
+      "Run all tests with the given string", 0 },
     { "stdout", 'o', NULL, 0,
       "Emit pkd stdout messages", 0 },
     { "test", 't', "testname", 0,
@@ -70,6 +74,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
         break;
     case 'i':
         pkd_dargs.opts.iterations = atoi(arg);
+        break;
+    case 'm':
+        pkd_dargs.opts.testmatch = arg;
         break;
     case 'o':
         pkd_dargs.opts.log_stdout = 1;
@@ -235,7 +242,7 @@ static int torture_pkd_setup_ecdsa_521(void **state) {
     f(client, ecdsa_521_aes256_ctr,    ciphercmd("aes256-ctr"),    setup_ecdsa_521,  teardown) \
     f(client, ecdsa_521_blowfish_cbc,  ciphercmd("blowfish-cbc"),  setup_ecdsa_521,  teardown)
 
-#define PKDTESTS_CIPHER_AES192(f, client, ciphercmd) \
+#define PKDTESTS_CIPHER_OPENSSHONLY(f, client, ciphercmd) \
     /* Ciphers. */ \
     f(client, rsa_aes192_cbc,          ciphercmd("aes192-cbc"),    setup_rsa,        teardown) \
     f(client, rsa_aes192_ctr,          ciphercmd("aes192-ctr"),    setup_rsa,        teardown) \
@@ -315,7 +322,7 @@ static void torture_pkd_runtest(const char *testname,
 PKDTESTS_DEFAULT(emit_keytest, openssh_dsa, OPENSSH_CMD)
 PKDTESTS_KEX(emit_keytest, openssh_dsa, OPENSSH_KEX_CMD)
 PKDTESTS_CIPHER(emit_keytest, openssh_dsa, OPENSSH_CIPHER_CMD)
-PKDTESTS_CIPHER_AES192(emit_keytest, openssh_dsa, OPENSSH_CIPHER_CMD)
+PKDTESTS_CIPHER_OPENSSHONLY(emit_keytest, openssh_dsa, OPENSSH_CIPHER_CMD)
 PKDTESTS_MAC(emit_keytest, openssh_dsa, OPENSSH_MAC_CMD)
 #undef CLIENT_ID_FILE
 
@@ -323,7 +330,7 @@ PKDTESTS_MAC(emit_keytest, openssh_dsa, OPENSSH_MAC_CMD)
 PKDTESTS_DEFAULT(emit_keytest, openssh_rsa, OPENSSH_CMD)
 PKDTESTS_KEX(emit_keytest, openssh_rsa, OPENSSH_KEX_CMD)
 PKDTESTS_CIPHER(emit_keytest, openssh_rsa, OPENSSH_CIPHER_CMD)
-PKDTESTS_CIPHER_AES192(emit_keytest, openssh_rsa, OPENSSH_CIPHER_CMD)
+PKDTESTS_CIPHER_OPENSSHONLY(emit_keytest, openssh_rsa, OPENSSH_CIPHER_CMD)
 PKDTESTS_MAC(emit_keytest, openssh_rsa, OPENSSH_MAC_CMD)
 #undef CLIENT_ID_FILE
 
@@ -331,7 +338,7 @@ PKDTESTS_MAC(emit_keytest, openssh_rsa, OPENSSH_MAC_CMD)
 PKDTESTS_DEFAULT(emit_keytest, openssh_e256, OPENSSH_CMD)
 PKDTESTS_KEX(emit_keytest, openssh_e256, OPENSSH_KEX_CMD)
 PKDTESTS_CIPHER(emit_keytest, openssh_e256, OPENSSH_CIPHER_CMD)
-PKDTESTS_CIPHER_AES192(emit_keytest, openssh_e256, OPENSSH_CIPHER_CMD)
+PKDTESTS_CIPHER_OPENSSHONLY(emit_keytest, openssh_e256, OPENSSH_CIPHER_CMD)
 PKDTESTS_MAC(emit_keytest, openssh_e256, OPENSSH_MAC_CMD)
 #undef CLIENT_ID_FILE
 
@@ -343,7 +350,7 @@ PKDTESTS_MAC(emit_keytest, openssh_e256, OPENSSH_MAC_CMD)
 PKDTESTS_DEFAULT(emit_keytest, openssh_ed, OPENSSH_CMD)
 PKDTESTS_KEX(emit_keytest, openssh_ed, OPENSSH_KEX_CMD)
 PKDTESTS_CIPHER(emit_keytest, openssh_ed, OPENSSH_CIPHER_CMD)
-PKDTESTS_CIPHER_AES192(emit_keytest, openssh_ed, OPENSSH_CIPHER_CMD)
+PKDTESTS_CIPHER_OPENSSHONLY(emit_keytest, openssh_ed, OPENSSH_CIPHER_CMD)
 PKDTESTS_MAC(emit_keytest, openssh_ed, OPENSSH_MAC_CMD)
 #undef CLIENT_ID_FILE
 
@@ -361,7 +368,7 @@ PKDTESTS_MAC(emit_keytest, dropbear, DROPBEAR_MAC_CMD)
 
 #define emit_testmap(client, testname, sshcmd, setup, teardown) \
     { "torture_pkd_" #client "_" #testname,                     \
-      { emit_unit_test(client, testname, sshcmd, setup, teardown) } },
+      emit_unit_test(client, testname, sshcmd, setup, teardown) },
 
 #define emit_unit_test(client, testname, sshcmd, setup, teardown) \
     cmocka_unit_test_setup_teardown(torture_pkd_ ## client ## _ ## testname, \
@@ -373,31 +380,31 @@ PKDTESTS_MAC(emit_keytest, dropbear, DROPBEAR_MAC_CMD)
 
 struct {
     const char *testname;
-    const struct CMUnitTest test[3]; /* requires setup + test + teardown */
+    const struct CMUnitTest test;
 } testmap[] = {
     /* OpenSSH */
     PKDTESTS_DEFAULT(emit_testmap, openssh_dsa, OPENSSH_CMD)
     PKDTESTS_KEX(emit_testmap, openssh_dsa, OPENSSH_KEX_CMD)
     PKDTESTS_CIPHER(emit_testmap, openssh_dsa, OPENSSH_CIPHER_CMD)
-    PKDTESTS_CIPHER_AES192(emit_testmap, openssh_dsa, OPENSSH_CIPHER_CMD)
+    PKDTESTS_CIPHER_OPENSSHONLY(emit_testmap, openssh_dsa, OPENSSH_CIPHER_CMD)
     PKDTESTS_MAC(emit_testmap, openssh_dsa, OPENSSH_MAC_CMD)
 
     PKDTESTS_DEFAULT(emit_testmap, openssh_rsa, OPENSSH_CMD)
     PKDTESTS_KEX(emit_testmap, openssh_rsa, OPENSSH_KEX_CMD)
     PKDTESTS_CIPHER(emit_testmap, openssh_rsa, OPENSSH_CIPHER_CMD)
-    PKDTESTS_CIPHER_AES192(emit_testmap, openssh_rsa, OPENSSH_CIPHER_CMD)
+    PKDTESTS_CIPHER_OPENSSHONLY(emit_testmap, openssh_rsa, OPENSSH_CIPHER_CMD)
     PKDTESTS_MAC(emit_testmap, openssh_rsa, OPENSSH_MAC_CMD)
 
     PKDTESTS_DEFAULT(emit_testmap, openssh_e256, OPENSSH_CMD)
     PKDTESTS_KEX(emit_testmap, openssh_e256, OPENSSH_KEX_CMD)
     PKDTESTS_CIPHER(emit_testmap, openssh_e256, OPENSSH_CIPHER_CMD)
-    PKDTESTS_CIPHER_AES192(emit_testmap, openssh_e256, OPENSSH_CIPHER_CMD)
+    PKDTESTS_CIPHER_OPENSSHONLY(emit_testmap, openssh_e256, OPENSSH_CIPHER_CMD)
     PKDTESTS_MAC(emit_testmap, openssh_e256, OPENSSH_MAC_CMD)
 
     PKDTESTS_DEFAULT(emit_testmap, openssh_ed, OPENSSH_CMD)
     PKDTESTS_KEX(emit_testmap, openssh_ed, OPENSSH_KEX_CMD)
     PKDTESTS_CIPHER(emit_testmap, openssh_ed, OPENSSH_CIPHER_CMD)
-    PKDTESTS_CIPHER_AES192(emit_testmap, openssh_ed, OPENSSH_CIPHER_CMD)
+    PKDTESTS_CIPHER_OPENSSHONLY(emit_testmap, openssh_ed, OPENSSH_CIPHER_CMD)
     PKDTESTS_MAC(emit_testmap, openssh_ed, OPENSSH_MAC_CMD)
 
     /* Dropbear */
@@ -409,8 +416,11 @@ struct {
     emit_testmap(client, noop, "", setup_noop, teardown)
 
     /* NULL tail entry */
-    { .testname = NULL, {
-        { .name = NULL, }, { .name = NULL }, { .name = NULL } } }
+    { .testname = NULL,
+      .test = { .name = NULL,
+                .test_func = NULL,
+                .setup_func = NULL,
+                .teardown_func = NULL } }
 };
 
 static int pkd_run_tests(void) {
@@ -421,25 +431,25 @@ static int pkd_run_tests(void) {
         PKDTESTS_DEFAULT(emit_unit_test_comma, openssh_dsa, OPENSSH_CMD)
         PKDTESTS_KEX(emit_unit_test_comma, openssh_dsa, OPENSSH_KEX_CMD)
         PKDTESTS_CIPHER(emit_unit_test_comma, openssh_dsa, OPENSSH_CIPHER_CMD)
-        PKDTESTS_CIPHER_AES192(emit_unit_test_comma, openssh_dsa, OPENSSH_CIPHER_CMD)
+        PKDTESTS_CIPHER_OPENSSHONLY(emit_unit_test_comma, openssh_dsa, OPENSSH_CIPHER_CMD)
         PKDTESTS_MAC(emit_unit_test_comma, openssh_dsa, OPENSSH_MAC_CMD)
 
         PKDTESTS_DEFAULT(emit_unit_test_comma, openssh_rsa, OPENSSH_CMD)
         PKDTESTS_KEX(emit_unit_test_comma, openssh_rsa, OPENSSH_KEX_CMD)
         PKDTESTS_CIPHER(emit_unit_test_comma, openssh_rsa, OPENSSH_CIPHER_CMD)
-        PKDTESTS_CIPHER_AES192(emit_unit_test_comma, openssh_rsa, OPENSSH_CIPHER_CMD)
+        PKDTESTS_CIPHER_OPENSSHONLY(emit_unit_test_comma, openssh_rsa, OPENSSH_CIPHER_CMD)
         PKDTESTS_MAC(emit_unit_test_comma, openssh_rsa, OPENSSH_MAC_CMD)
 
         PKDTESTS_DEFAULT(emit_unit_test_comma, openssh_e256, OPENSSH_CMD)
         PKDTESTS_KEX(emit_unit_test_comma, openssh_e256, OPENSSH_KEX_CMD)
         PKDTESTS_CIPHER(emit_unit_test_comma, openssh_e256, OPENSSH_CIPHER_CMD)
-        PKDTESTS_CIPHER_AES192(emit_unit_test_comma, openssh_e256, OPENSSH_CIPHER_CMD)
+        PKDTESTS_CIPHER_OPENSSHONLY(emit_unit_test_comma, openssh_e256, OPENSSH_CIPHER_CMD)
         PKDTESTS_MAC(emit_unit_test_comma, openssh_e256, OPENSSH_MAC_CMD)
 
         PKDTESTS_DEFAULT(emit_unit_test_comma, openssh_ed, OPENSSH_CMD)
         PKDTESTS_KEX(emit_unit_test_comma, openssh_ed, OPENSSH_KEX_CMD)
         PKDTESTS_CIPHER(emit_unit_test_comma, openssh_ed, OPENSSH_CIPHER_CMD)
-        PKDTESTS_CIPHER_AES192(emit_unit_test_comma, openssh_ed, OPENSSH_CIPHER_CMD)
+        PKDTESTS_CIPHER_OPENSSHONLY(emit_unit_test_comma, openssh_ed, OPENSSH_CIPHER_CMD)
         PKDTESTS_MAC(emit_unit_test_comma, openssh_ed, OPENSSH_MAC_CMD)
     };
 
@@ -455,8 +465,8 @@ static int pkd_run_tests(void) {
 
     /* Test list is populated depending on which clients are enabled. */
     struct CMUnitTest all_tests[(sizeof(openssh_tests) / sizeof(openssh_tests[0])) +
-                       (sizeof(dropbear_tests) / sizeof(dropbear_tests[0])) +
-                       (sizeof(noop_tests) / sizeof(noop_tests[0]))];
+                                (sizeof(dropbear_tests) / sizeof(dropbear_tests[0])) +
+                                (sizeof(noop_tests) / sizeof(noop_tests[0]))];
     memset(&all_tests[0], 0x0, sizeof(all_tests));
 
     /* Generate client keys and populate test list for each enabled client. */
@@ -475,23 +485,41 @@ static int pkd_run_tests(void) {
     memcpy(&all_tests[tindex], &noop_tests[0], sizeof(noop_tests));
     tindex += (sizeof(noop_tests) / sizeof(noop_tests[0]));
 
-    if (pkd_dargs.opts.testname == NULL) {
+    if ((pkd_dargs.opts.testname == NULL) &&
+        (pkd_dargs.opts.testmatch == NULL)) {
         rc = _cmocka_run_group_tests("all tests", all_tests, tindex, NULL, NULL);
     } else {
         int i = 0;
-        const struct CMUnitTest *found = NULL;
+        int num_found = 0;
         const char *testname = pkd_dargs.opts.testname;
+        const char *testmatch = pkd_dargs.opts.testmatch;
+
+        struct CMUnitTest matching_tests[sizeof(all_tests)];
+        memset(&matching_tests[0], 0x0, sizeof(matching_tests));
 
         while (testmap[i].testname != NULL) {
-            if (strcmp(testmap[i].testname, testname) == 0) {
-                found = &testmap[i].test[0];
+            if ((testname != NULL) &&
+                (strcmp(testmap[i].testname, testname) == 0)) {
+                memcpy(&matching_tests[0],
+                       &testmap[i].test,
+                       sizeof(struct CMUnitTest));
+                num_found += 1;
                 break;
             }
+
+            if ((testmatch != NULL) &&
+                (strstr(testmap[i].testname, testmatch) != NULL)) {
+                memcpy(&matching_tests[num_found],
+                       &testmap[i].test,
+                       sizeof(struct CMUnitTest));
+                num_found += 1;
+            }
+
             i += 1;
         }
 
-        if (found != NULL) {
-            rc = _cmocka_run_group_tests("found", found, 3, NULL, NULL);
+        if (num_found > 0) {
+            rc = _cmocka_run_group_tests("found", matching_tests, num_found, NULL, NULL);
         } else {
             fprintf(stderr, "Did not find test '%s'\n", testname);
         }

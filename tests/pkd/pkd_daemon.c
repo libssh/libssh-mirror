@@ -58,7 +58,7 @@ static struct {
     int rc;
     pthread_t tid;
     int keep_going;
-    int pkd_ready;
+    volatile int pkd_ready;
 } ctx;
 
 static struct {
