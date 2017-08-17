@@ -219,8 +219,8 @@ static void torture_bind_options_import_key(void **state)
 {
     ssh_bind bind = *state;
     int rc;
-    ssh_key key = ssh_key_new();
     const char *base64_key;
+    ssh_key key = ssh_key_new();
 
     /* set null */
     rc = ssh_bind_options_set(bind, SSH_BIND_OPTIONS_IMPORT_KEY, NULL);
@@ -228,6 +228,7 @@ static void torture_bind_options_import_key(void **state)
     /* set invalid key */
     rc = ssh_bind_options_set(bind, SSH_BIND_OPTIONS_IMPORT_KEY, key);
     assert_int_equal(rc, -1);
+    ssh_key_free(key);
 
     /* set rsa key */
     base64_key = torture_get_testkey(SSH_KEYTYPE_RSA, 0, 0);
