@@ -1,4 +1,4 @@
 {
-  "phabricator.uri" : "https://bugs.libssh.org/"
+  "phabricator.uri" : "https://bugs.libssh.org/",
   "history.immutable": true
 }
