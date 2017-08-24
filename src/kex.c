@@ -721,10 +721,14 @@ error:
 }
 
 /* returns 1 if at least one of the name algos is in the default algorithms table */
-int ssh_verify_existing_algo(int algo, const char *name){
+int ssh_verify_existing_algo(enum ssh_kex_types_e algo, const char *name)
+{
     char *ptr;
-    if(algo>9 || algo <0)
+
+    if (algo > SSH_LANG_S_C) {
         return -1;
+    }
+
     ptr=ssh_find_matching(supported_methods[algo],name);
     if(ptr){
         free(ptr);
