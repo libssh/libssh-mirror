@@ -357,6 +357,10 @@ const char* ssh_get_kex_algo(ssh_session session) {
             return "diffie-hellman-group14-sha1";
         case SSH_KEX_ECDH_SHA2_NISTP256:
             return "ecdh-sha2-nistp256";
+        case SSH_KEX_ECDH_SHA2_NISTP384:
+            return "ecdh-sha2-nistp384";
+        case SSH_KEX_ECDH_SHA2_NISTP521:
+            return "ecdh-sha2-nistp521";
         case SSH_KEX_CURVE25519_SHA256_LIBSSH_ORG:
             return "curve25519-sha256@libssh.org";
         default:

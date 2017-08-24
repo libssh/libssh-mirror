@@ -110,6 +110,8 @@ SSH_PACKET_CALLBACK(ssh_packet_dh_reply){
       break;
 #ifdef HAVE_ECDH
     case SSH_KEX_ECDH_SHA2_NISTP256:
+    case SSH_KEX_ECDH_SHA2_NISTP384:
+    case SSH_KEX_ECDH_SHA2_NISTP521:
       rc = ssh_client_ecdh_reply(session, packet);
       break;
 #endif

@@ -55,6 +55,10 @@ enum ssh_key_exchange_e {
   SSH_KEX_DH_GROUP14_SHA1,
   /* ecdh-sha2-nistp256 */
   SSH_KEX_ECDH_SHA2_NISTP256,
+  /* ecdh-sha2-nistp384 */
+  SSH_KEX_ECDH_SHA2_NISTP384,
+  /* ecdh-sha2-nistp521 */
+  SSH_KEX_ECDH_SHA2_NISTP521,
   /* curve25519-sha256@libssh.org */
   SSH_KEX_CURVE25519_SHA256_LIBSSH_ORG
 };

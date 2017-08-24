@@ -198,6 +198,8 @@ SSH_PACKET_CALLBACK(ssh_packet_kexdh_init){
         break;
   #ifdef HAVE_ECDH
       case SSH_KEX_ECDH_SHA2_NISTP256:
+      case SSH_KEX_ECDH_SHA2_NISTP384:
+      case SSH_KEX_ECDH_SHA2_NISTP521:
         rc = ssh_server_ecdh_init(session, packet);
         break;
   #endif
