@@ -31,12 +31,16 @@ First, you need to configure the compilation, using CMake. Go inside the
 
 GNU/Linux, MacOS X, MSYS/MinGW:
 
-    cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Debug ..
+    cmake -DWITH_TESTING=ON -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Debug ..
     make
 
 On Windows you should choose a makefile gernerator with -G or use
 
     cmake-gui.exe ..
+
+## Testing build
+
+    make test
 
 ### CMake standard options
 Here is a list of the most interesting options provided out of the box by
