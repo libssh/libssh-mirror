@@ -33,6 +33,8 @@
 #include "libssh/misc.h"
 #include "libssh/options.h"
 
+#define MAX_LINE_SIZE 1024
+
 enum ssh_config_opcode_e {
   SOC_UNSUPPORTED = -1,
   SOC_HOST,
@@ -50,6 +52,7 @@ enum ssh_config_opcode_e {
   SOC_GSSAPISERVERIDENTITY,
   SOC_GSSAPICLIENTIDENTITY,
   SOC_GSSAPIDELEGATECREDENTIALS,
+  SOC_INCLUDE,
 
   SOC_END /* Keep this one last in the list */
 };
@@ -75,8 +78,12 @@ static struct ssh_config_keyword_table_s ssh_config_keyword_table[] = {
   { "gssapiserveridentity", SOC_GSSAPISERVERIDENTITY },
   { "gssapiserveridentity", SOC_GSSAPICLIENTIDENTITY },
   { "gssapidelegatecredentials", SOC_GSSAPIDELEGATECREDENTIALS },
+  { "include", SOC_INCLUDE },
   { NULL, SOC_UNSUPPORTED }
 };
+
+static int ssh_config_parse_line(ssh_session session, const char *line,
+    unsigned int count, int *parsing, int seen[]);
 
 static enum ssh_config_opcode_e ssh_config_get_opcode(char *keyword) {
   int i;
@@ -186,6 +193,30 @@ static int ssh_config_get_yesno(char **str, int notfound) {
   return notfound;
 }
 
+static void local_parse_file(ssh_session session, const char *filename, int *parsing, int seen[]) {
+  FILE *f;
+  char line[MAX_LINE_SIZE] = {0};
+  unsigned int count = 0;
+
+  if ((f = fopen(filename, "r")) == NULL) {
+    SSH_LOG(SSH_LOG_RARE, "Cannot find file %s to load",
+            filename);
+    return;
+  }
+
+  SSH_LOG(SSH_LOG_PACKET, "Reading additional configuration data from %s", filename);
+  while (fgets(line, sizeof(line), f)) {
+    count++;
+    if (ssh_config_parse_line(session, line, count, parsing, seen) < 0) {
+       fclose(f);
+       return;
+    }
+  }
+
+  fclose(f);
+  return;
+}
+
 static int ssh_config_parse_line(ssh_session session, const char *line,
     unsigned int count, int *parsing, int seen[]) {
   enum ssh_config_opcode_e opcode;
@@ -218,7 +249,7 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
   }
 
   opcode = ssh_config_get_opcode(keyword);
-  if (*parsing == 1 && opcode != SOC_HOST && opcode != SOC_UNSUPPORTED) {
+  if (*parsing == 1 && opcode != SOC_HOST && opcode != SOC_UNSUPPORTED && opcode != SOC_INCLUDE) {
       if (seen[opcode] != 0) {
           return 0;
       }
@@ -226,6 +257,13 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
   }
 
   switch (opcode) {
+    case SOC_INCLUDE: /* recursive include of other files */
+
+      p = ssh_config_get_str_tok(&s, NULL);
+      if (p && *parsing) {
+        local_parse_file(session, p, parsing, seen);
+      }
+      break;
     case SOC_HOST: {
         int ok = 0;
 
@@ -387,7 +425,7 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
 
 /* ssh_config_parse_file */
 int ssh_config_parse_file(ssh_session session, const char *filename) {
-  char line[1024] = {0};
+  char line[MAX_LINE_SIZE] = {0};
   unsigned int count = 0;
   FILE *f;
   int parsing;
