@@ -281,6 +281,71 @@ char *ssh_find_matching(const char *available_d, const char *preferred_d){
     return NULL;
 }
 
+static char *ssh_find_all_matching(const char *available_d,
+                                   const char *preferred_d)
+{
+    char **tok_available, **tok_preferred;
+    int i_avail, i_pref;
+    char *ret;
+    unsigned max, len, pos = 0;
+
+    if ((available_d == NULL) || (preferred_d == NULL)) {
+        return NULL; /* don't deal with null args */
+    }
+
+    max = MAX(strlen(available_d), strlen(preferred_d));
+
+    ret = malloc(max+1);
+    if (ret == NULL) {
+      return NULL;
+    }
+    ret[0] = 0;
+
+    tok_available = tokenize(available_d);
+    if (tok_available == NULL) {
+        SAFE_FREE(ret);
+        return NULL;
+    }
+
+    tok_preferred = tokenize(preferred_d);
+    if (tok_preferred == NULL) {
+        SAFE_FREE(ret);
+        SAFE_FREE(tok_available[0]);
+        SAFE_FREE(tok_available);
+        return NULL;
+    }
+
+    for (i_pref = 0; tok_preferred[i_pref] ; ++i_pref) {
+        for (i_avail = 0; tok_available[i_avail]; ++i_avail) {
+            int cmp = strcmp(tok_available[i_avail],tok_preferred[i_pref]);
+            if (cmp == 0) {
+                /* match */
+                if (pos != 0) {
+                    ret[pos] = ',';
+                    pos++;
+                }
+
+                len = strlen(tok_available[i_avail]);
+                memcpy(&ret[pos], tok_available[i_avail], len);
+                pos += len;
+                ret[pos] = '\0';
+            }
+        }
+    }
+
+    if (ret[0] == '\0') {
+        SAFE_FREE(ret);
+        ret = NULL;
+    }
+
+    SAFE_FREE(tok_available[0]);
+    SAFE_FREE(tok_preferred[0]);
+    SAFE_FREE(tok_available);
+    SAFE_FREE(tok_preferred);
+
+    return ret;
+}
+
 /**
  * @internal
  * @brief returns whether the first client key exchange algorithm or
@@ -668,4 +733,13 @@ int ssh_verify_existing_algo(int algo, const char *name){
     return 0;
 }
 
-/* vim: set ts=2 sw=2 et cindent: */
+/* returns a copy of the provided list if everything is supported,
+ * otherwise a new list of the supported algorithms */
+char *ssh_keep_known_algos(enum ssh_kex_types_e algo, const char *list)
+{
+    if (algo > SSH_LANG_S_C) {
+        return NULL;
+    }
+
+    return ssh_find_all_matching(supported_methods[algo], list);
+}

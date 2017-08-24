@@ -41,6 +41,7 @@ void ssh_list_kex(struct ssh_kex_struct *kex);
 int ssh_set_client_kex(ssh_session session);
 int ssh_kex_select_methods(ssh_session session);
 int ssh_verify_existing_algo(int algo, const char *name);
+char *ssh_keep_known_algos(enum ssh_kex_types_e algo, const char *list);
 char **ssh_space_tokenize(const char *chain);
 int ssh_get_kex1(ssh_session session);
 char *ssh_find_matching(const char *in_d, const char *what_d);

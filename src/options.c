@@ -164,7 +164,10 @@ int ssh_options_copy(ssh_session src, ssh_session *dest) {
 
 int ssh_options_set_algo(ssh_session session, int algo,
     const char *list) {
-  if (!ssh_verify_existing_algo(algo, list)) {
+  char *p = NULL;
+
+  p = ssh_keep_known_algos(algo, list);
+  if (p == NULL) {
     ssh_set_error(session, SSH_REQUEST_DENIED,
         "Setting method: no algorithm for method \"%s\" (%s)",
         ssh_kex_get_description(algo), list);
@@ -172,11 +175,7 @@ int ssh_options_set_algo(ssh_session session, int algo,
   }
 
   SAFE_FREE(session->opts.wanted_methods[algo]);
-  session->opts.wanted_methods[algo] = strdup(list);
-  if (session->opts.wanted_methods[algo] == NULL) {
-    ssh_set_error_oom(session);
-    return -1;
-  }
+  session->opts.wanted_methods[algo] = p;
 
   return 0;
 }
