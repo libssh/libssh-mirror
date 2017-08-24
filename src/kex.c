@@ -78,7 +78,7 @@
 #endif
 
 #ifdef HAVE_ECDH
-#define ECDH "ecdh-sha2-nistp256,"
+#define ECDH "ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521,"
 #define HOSTKEYS "ssh-ed25519,ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,ssh-rsa,ssh-dss"
 #else
 #define HOSTKEYS "ssh-ed25519,ssh-rsa,ssh-dss"
@@ -654,6 +654,10 @@ int ssh_kex_select_methods (ssh_session session){
       session->next_crypto->kex_type=SSH_KEX_DH_GROUP14_SHA1;
     } else if(strcmp(session->next_crypto->kex_methods[SSH_KEX], "ecdh-sha2-nistp256") == 0){
       session->next_crypto->kex_type=SSH_KEX_ECDH_SHA2_NISTP256;
+    } else if(strcmp(session->next_crypto->kex_methods[SSH_KEX], "ecdh-sha2-nistp384") == 0){
+      session->next_crypto->kex_type=SSH_KEX_ECDH_SHA2_NISTP384;
+    } else if(strcmp(session->next_crypto->kex_methods[SSH_KEX], "ecdh-sha2-nistp521") == 0){
+      session->next_crypto->kex_type=SSH_KEX_ECDH_SHA2_NISTP521;
     } else if(strcmp(session->next_crypto->kex_methods[SSH_KEX], "curve25519-sha256@libssh.org") == 0){
       session->next_crypto->kex_type=SSH_KEX_CURVE25519_SHA256_LIBSSH_ORG;
     }

@@ -608,7 +608,9 @@ int ssh_make_sessionid(ssh_session session) {
         }
 
 #ifdef HAVE_ECDH
-    } else if (session->next_crypto->kex_type == SSH_KEX_ECDH_SHA2_NISTP256) {
+    } else if ((session->next_crypto->kex_type == SSH_KEX_ECDH_SHA2_NISTP256) ||
+               (session->next_crypto->kex_type == SSH_KEX_ECDH_SHA2_NISTP384) ||
+               (session->next_crypto->kex_type == SSH_KEX_ECDH_SHA2_NISTP521)) {
         if (session->next_crypto->ecdh_client_pubkey == NULL ||
             session->next_crypto->ecdh_server_pubkey == NULL) {
             SSH_LOG(SSH_LOG_WARNING, "ECDH parameted missing");
@@ -668,6 +670,28 @@ int ssh_make_sessionid(ssh_session session) {
             goto error;
         }
         sha256(ssh_buffer_get(buf), ssh_buffer_get_len(buf),
+                                     session->next_crypto->secret_hash);
+        break;
+    case SSH_KEX_ECDH_SHA2_NISTP384:
+        session->next_crypto->digest_len = SHA384_DIGEST_LENGTH;
+        session->next_crypto->mac_type = SSH_MAC_SHA384;
+        session->next_crypto->secret_hash = malloc(session->next_crypto->digest_len);
+        if (session->next_crypto->secret_hash == NULL) {
+            ssh_set_error_oom(session);
+            goto error;
+        }
+        sha384(ssh_buffer_get(buf), ssh_buffer_get_len(buf),
+                                     session->next_crypto->secret_hash);
+        break;
+    case SSH_KEX_ECDH_SHA2_NISTP521:
+        session->next_crypto->digest_len = SHA512_DIGEST_LENGTH;
+        session->next_crypto->mac_type = SSH_MAC_SHA512;
+        session->next_crypto->secret_hash = malloc(session->next_crypto->digest_len);
+        if (session->next_crypto->secret_hash == NULL) {
+            ssh_set_error_oom(session);
+            goto error;
+        }
+        sha512(ssh_buffer_get(buf), ssh_buffer_get_len(buf),
                                      session->next_crypto->secret_hash);
         break;
     }

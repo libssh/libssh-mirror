@@ -260,6 +260,8 @@ static int dh_handshake(ssh_session session) {
           break;
 #ifdef HAVE_ECDH
         case SSH_KEX_ECDH_SHA2_NISTP256:
+        case SSH_KEX_ECDH_SHA2_NISTP384:
+        case SSH_KEX_ECDH_SHA2_NISTP521:
           rc = ssh_client_ecdh_init(session);
           break;
 #endif

@@ -34,7 +34,21 @@
 #include <gcrypt.h>
 
 /** @internal
- * @brief Starts ecdh-sha2-nistp256 key exchange
+ * @brief Map the given key exchange enum value to its curve name.
+ */
+static const char *ecdh_kex_type_to_curve(enum ssh_key_exchange_e kex_type) {
+    if (kex_type == SSH_KEX_ECDH_SHA2_NISTP256) {
+        return "NIST P-256";
+    } else if (kex_type == SSH_KEX_ECDH_SHA2_NISTP384) {
+        return "NIST P-384";
+    } else if (kex_type == SSH_KEX_ECDH_SHA2_NISTP521) {
+        return "NIST P-521";
+    }
+    return NULL;
+}
+
+/** @internal
+ * @brief Starts ecdh-sha2-nistp{256,384,521} key exchange.
  */
 int ssh_client_ecdh_init(ssh_session session)
 {
@@ -43,6 +57,13 @@ int ssh_client_ecdh_init(ssh_session session)
     ssh_string client_pubkey = NULL;
     gcry_sexp_t param = NULL;
     gcry_sexp_t key = NULL;
+    const char *curve = NULL;
+
+    curve = ecdh_kex_type_to_curve(session->next_crypto->kex_type);
+    if (curve == NULL) {
+        rc = SSH_ERROR;
+        goto out;
+    }
 
     rc = ssh_buffer_add_u8(session->out_buffer, SSH2_MSG_KEX_ECDH_INIT);
     if (rc < 0) {
@@ -53,7 +74,7 @@ int ssh_client_ecdh_init(ssh_session session)
     err = gcry_sexp_build(&param,
                           NULL,
                           "(genkey(ecdh(curve %s)))",
-                          "NIST P-256");
+                          curve);
     if (err) {
         rc = SSH_ERROR;
         goto out;
@@ -105,12 +126,20 @@ int ecdh_build_k(ssh_session session)
     gcry_mpi_t s = NULL;
     gcry_mpi_point_t point;
 #else
+    size_t k_len = 0;
+    enum ssh_key_exchange_e kex_type = session->next_crypto->kex_type;
     ssh_string s;
 #endif
     ssh_string pubkey_raw;
     gcry_sexp_t pubkey = NULL;
     ssh_string privkey = NULL;
     int rc = SSH_ERROR;
+    const char *curve = NULL;
+
+    curve = ecdh_kex_type_to_curve(session->next_crypto->kex_type);
+    if (curve == NULL) {
+        goto out;
+    }
 
     pubkey_raw = session->server
         ? session->next_crypto->ecdh_client_pubkey
@@ -119,7 +148,7 @@ int ecdh_build_k(ssh_session session)
     err = gcry_sexp_build(&pubkey,
                           NULL,
                           "(key-data(public-key(ecdh(curve %s)(q %b))))",
-                          "NIST P-256",
+                          curve,
                           ssh_string_len(pubkey_raw),
                           ssh_string_data(pubkey_raw));
     if (err) {
@@ -173,7 +202,19 @@ int ecdh_build_k(ssh_session session)
         goto out;
     }
 
-    if (ssh_string_len(s) != 65) {
+    if (kex_type == SSH_KEX_ECDH_SHA2_NISTP256) {
+        k_len = 65;
+    } else if (kex_type == SSH_KEX_ECDH_SHA2_NISTP384) {
+        k_len = 97;
+    } else if (kex_type == SSH_KEX_ECDH_SHA2_NISTP521) {
+        k_len = 133;
+    } else {
+        ssh_string_burn(s);
+        ssh_string_free(s);
+        goto out;
+    }
+
+    if (ssh_string_len(s) != k_length) {
         ssh_string_burn(s);
         ssh_string_free(s);
         goto out;
@@ -182,7 +223,7 @@ int ecdh_build_k(ssh_session session)
     err = gcry_mpi_scan(&session->next_crypto->k,
                         GCRYMPI_FMT_USG,
                         (const char *)ssh_string_data(s) + 1,
-                        32,
+                        k_length / 2,
                         NULL);
     ssh_string_burn(s);
     ssh_string_free(s);
@@ -228,6 +269,12 @@ int ssh_server_ecdh_init(ssh_session session, ssh_buffer packet) {
     ssh_key privkey;
     ssh_string sig_blob = NULL;
     int rc = SSH_ERROR;
+    const char *curve = NULL;
+
+    curve = ecdh_kex_type_to_curve(session->next_crypto->kex_type);
+    if (curve == NULL) {
+        goto out;
+    }
 
     /* Extract the client pubkey from the init packet */
     q_c_string = ssh_buffer_get_ssh_string(packet);
@@ -239,7 +286,7 @@ int ssh_server_ecdh_init(ssh_session session, ssh_buffer packet) {
 
     /* Build server's keypair */
     err = gcry_sexp_build(&param, NULL, "(genkey(ecdh(curve %s)))",
-                          "NIST P-256");
+                          curve);
     if (err) {
         goto out;
     }
