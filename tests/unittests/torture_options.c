@@ -38,6 +38,44 @@ static void torture_options_set_host(void **state) {
     assert_string_equal(session->opts.username, "guru");
 }
 
+static void torture_options_set_ciphers(void **state) {
+    ssh_session session = *state;
+    int rc;
+
+    /* Test known ciphers */
+    rc = ssh_options_set(session, SSH_OPTIONS_CIPHERS_C_S, "aes128-ctr,aes192-ctr,aes256-ctr");
+    assert_true(rc == 0);
+    assert_string_equal(session->opts.wanted_methods[SSH_CRYPT_C_S], "aes128-ctr,aes192-ctr,aes256-ctr");
+
+    /* Test one unknown cipher */
+    rc = ssh_options_set(session, SSH_OPTIONS_CIPHERS_C_S, "aes128-ctr,unknown-crap@example.com,aes192-ctr,aes256-ctr");
+    assert_true(rc == 0);
+    assert_string_equal(session->opts.wanted_methods[SSH_CRYPT_C_S], "aes128-ctr,aes192-ctr,aes256-ctr");
+
+    /* Test all unknown ciphers */
+    rc = ssh_options_set(session, SSH_OPTIONS_CIPHERS_C_S, "unknown-crap@example.com,more-crap@example.com");
+    assert_false(rc == 0);
+}
+
+static void torture_options_set_macs(void **state) {
+    ssh_session session = *state;
+    int rc;
+
+    /* Test known MACs */
+    rc = ssh_options_set(session, SSH_OPTIONS_HMAC_S_C, "hmac-sha1");
+    assert_true(rc == 0);
+    assert_string_equal(session->opts.wanted_methods[SSH_MAC_S_C], "hmac-sha1");
+
+    /* Test unknown MACs */
+    rc = ssh_options_set(session, SSH_OPTIONS_HMAC_S_C, "unknown-crap@example.com,hmac-sha1,unknown@example.com");
+    assert_true(rc == 0);
+    assert_string_equal(session->opts.wanted_methods[SSH_MAC_S_C], "hmac-sha1");
+
+    /* Test all unknown MACs */
+    rc = ssh_options_set(session, SSH_OPTIONS_HMAC_S_C, "unknown-crap@example.com");
+    assert_false(rc == 0);
+}
+
 static void torture_options_get_host(void **state) {
     ssh_session session = *state;
     int rc;
@@ -262,6 +300,8 @@ int torture_run_tests(void) {
         cmocka_unit_test_setup_teardown(torture_options_set_identity, setup, teardown),
         cmocka_unit_test_setup_teardown(torture_options_get_identity, setup, teardown),
         cmocka_unit_test_setup_teardown(torture_options_proxycommand, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_options_set_ciphers, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_options_set_macs, setup, teardown),
     };
 
 #ifdef WITH_SERVER
