@@ -162,22 +162,24 @@ int ssh_options_copy(ssh_session src, ssh_session *dest) {
     return 0;
 }
 
-int ssh_options_set_algo(ssh_session session, int algo,
-    const char *list) {
-  char *p = NULL;
+int ssh_options_set_algo(ssh_session session,
+                         enum ssh_kex_types_e algo,
+                         const char *list)
+{
+    char *p = NULL;
 
-  p = ssh_keep_known_algos(algo, list);
-  if (p == NULL) {
-    ssh_set_error(session, SSH_REQUEST_DENIED,
-        "Setting method: no algorithm for method \"%s\" (%s)",
-        ssh_kex_get_description(algo), list);
-    return -1;
-  }
+    p = ssh_keep_known_algos(algo, list);
+    if (p == NULL) {
+        ssh_set_error(session, SSH_REQUEST_DENIED,
+                "Setting method: no algorithm for method \"%s\" (%s)",
+                ssh_kex_get_description(algo), list);
+        return -1;
+    }
 
-  SAFE_FREE(session->opts.wanted_methods[algo]);
-  session->opts.wanted_methods[algo] = p;
+    SAFE_FREE(session->opts.wanted_methods[algo]);
+    session->opts.wanted_methods[algo] = p;
 
-  return 0;
+    return 0;
 }
 
 /**
