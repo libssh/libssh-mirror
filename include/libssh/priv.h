@@ -383,6 +383,14 @@ int ssh_connector_remove_event(ssh_connector connector);
 # endif
 #endif
 
+#ifndef FALL_THROUGH
+# ifdef HAVE_FALLTHROUGH_ATTRIBUTE
+#  define FALL_THROUGH __attribute__ ((fallthrough))
+# else /* HAVE_FALLTHROUGH_ATTRIBUTE */
+#  define FALL_THROUGH
+# endif /* HAVE_FALLTHROUGH_ATTRIBUTE */
+#endif /* FALL_THROUGH */
+
 void ssh_agent_state_free(void *data);
 
 #endif /* _LIBSSH_PRIV_H */
