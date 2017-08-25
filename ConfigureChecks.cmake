@@ -243,6 +243,33 @@ int main(void) {
 }" HAVE_MSC_THREAD_LOCAL_STORAGE)
 
 check_c_source_compiles("
+#define FALL_THROUGH __attribute__((fallthrough))
+
+enum direction_e {
+    UP = 0,
+    DOWN,
+};
+
+int main(void) {
+    enum direction_e key = UP;
+    int i = 10;
+    int j = 0;
+
+    switch (key) {
+    case UP:
+        i = 5;
+        FALL_THROUGH;
+    case DOWN:
+        j = i * 2;
+        break;
+    default:
+        break;
+    }
+
+    return 0;
+}" HAVE_FALLTHROUGH_ATTRIBUTE)
+
+check_c_source_compiles("
 #include <string.h>
 
 int main(void)
