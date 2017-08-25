@@ -17,11 +17,14 @@ The goal is to show the API in action. It's not a reference on how terminal
 clients must be made or how a client should react.
  */
 
+#include "config.h"
+
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "libssh/priv.h"
 #include <libssh/libssh.h>
 #include "examples_common.h"
 
@@ -73,6 +76,7 @@ int verify_knownhost(ssh_session session){
       fprintf(stderr,"Could not find known host file. If you accept the host key here,\n");
       fprintf(stderr,"the file will be automatically created.\n");
       /* fallback to SSH_SERVER_NOT_KNOWN behavior */
+      FALL_THROUGH;
     case SSH_SERVER_NOT_KNOWN:
       hexa = ssh_get_hexa(hash, hlen);
       fprintf(stderr,"The server is unknown. Do you trust the host key ?\n");
