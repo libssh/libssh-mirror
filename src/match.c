@@ -109,6 +109,7 @@ static int match_pattern(const char *s, const char *pattern) {
   }
 
   /* NOTREACHED */
+  return 0;
 }
 
 /*
