@@ -364,11 +364,21 @@ static int pkd_exec_hello(int fd, struct pkd_daemon_args *args) {
 
     while ((ctx.keep_going != 0) &&
            (pkd_state.eof_received == 0) &&
-           (pkd_state.close_received == 0) &&
-           (ssh_channel_is_closed(c) == 0)) {
+           (pkd_state.close_received == 0)) {
         rc = ssh_event_dopoll(e, 1000 /* milliseconds */);
         if (rc == SSH_ERROR) {
             pkderr("ssh_event_dopoll for eof + close: %s\n", ssh_get_error(s));
+            break;
+        } else {
+            rc = 0;
+        }
+    }
+
+    while ((ctx.keep_going != 0) &&
+           (ssh_is_connected(s))) {
+        rc = ssh_event_dopoll(e, 1000 /* milliseconds */);
+        if (rc == SSH_ERROR) {
+            pkderr("ssh_event_dopoll for session connection: %s\n", ssh_get_error(s));
             break;
         } else {
             rc = 0;
