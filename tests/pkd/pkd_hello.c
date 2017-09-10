@@ -555,6 +555,7 @@ static int pkd_run_tests(void) {
 int main(int argc, char **argv) {
     int i = 0;
     int rc = 0;
+    int exit_code = -1;
 
     unsetenv("SSH_AUTH_SOCK");
 
@@ -575,9 +576,9 @@ int main(int argc, char **argv) {
             printf("%s\n", testmap[i++].testname);
         }
     } else {
-        rc = pkd_run_tests();
-        if (rc != 0) {
-            fprintf(stderr, "pkd_run_tests failed: %d\n", rc);
+        exit_code = pkd_run_tests();
+        if (exit_code != 0) {
+            fprintf(stderr, "pkd_run_tests failed: %d\n", exit_code);
         }
     }
 
@@ -586,5 +587,5 @@ int main(int argc, char **argv) {
         fprintf(stderr, "ssh_finalize: %d\n", rc);
     }
 out:
-    return rc;
+    return exit_code;
 }
