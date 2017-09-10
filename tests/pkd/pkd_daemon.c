@@ -498,6 +498,7 @@ void pkd_stop(struct pkd_result *out) {
     int rc = 0;
 
     ctx.keep_going = 0;
+    close(pkd_state.server_fd);
 
     rc = pthread_kill(ctx.tid, SIGUSR1);
     assert_int_equal(rc, 0);
