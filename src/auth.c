@@ -707,6 +707,7 @@ static int ssh_userauth_agent_publickey(ssh_session session,
 
     rc = ssh_buffer_add_ssh_string(session->out_buffer, str);
     ssh_string_free(str);
+    str = NULL;
     if (rc < 0) {
         goto fail;
     }
