@@ -287,6 +287,27 @@ Good Examples:
         return rc;
     }
 
+Initialize pointers
+-------------------
+
+All pointer variables MUST be initialized to NULL. History has
+demonstrated that uninitialized pointer variables have lead to various
+bugs and security issues.
+
+Pointers MUST be initialized even if the assignment directly follows
+the declaration, like pointer2 in the example below, because the
+instructions sequence may change over time.
+
+Good Example:
+
+    char *pointer1 = NULL;
+    char *pointer2 = NULL;
+
+    pointer2 = some_func2();
+
+    ...
+
+    pointer1 = some_func1();
 
 Typedefs
 ---------
