@@ -52,9 +52,9 @@ find_library(GCRYPT_LIBRARY
 set(GCRYPT_LIBRARIES ${GCRYPT_LIBRARY})
 
 if (GCRYPT_INCLUDE_DIR)
-    file(STRINGS "${GCRYPT_INCLUDE_DIR}/gcrypt.h" _gcrypt_version_str REGEX "^#define GCRYPT_VERSION \"[0-9]+.[0-9]+.[0-9]+\"")
+    file(STRINGS "${GCRYPT_INCLUDE_DIR}/gcrypt.h" _gcrypt_version_str REGEX "^#define GCRYPT_VERSION \"[0-9]+\\.[0-9]+\\.[0-9]")
 
-    string(REGEX REPLACE "^.*GCRYPT_VERSION.*([0-9]+.[0-9]+.[0-9]+).*" "\\1" GCRYPT_VERSION "${_gcrypt_version_str}")
+    string(REGEX REPLACE "^.*GCRYPT_VERSION.*([0-9]+\\.[0-9]+\\.[0-9]+).*" "\\1" GCRYPT_VERSION "${_gcrypt_version_str}")
 endif (GCRYPT_INCLUDE_DIR)
 
 include(FindPackageHandleStandardArgs)
