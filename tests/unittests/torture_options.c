@@ -59,6 +59,34 @@ static void torture_options_set_ciphers(void **state) {
     assert_false(rc == 0);
 }
 
+static void torture_options_set_key_exchange(void **state)
+{
+    ssh_session session = *state;
+    int rc;
+
+    /* Test known kexes */
+    rc = ssh_options_set(session,
+                         SSH_OPTIONS_KEY_EXCHANGE,
+                         "curve25519-sha256@libssh.org,ecdh-sha2-nistp256,diffie-hellman-group14-sha1");
+    assert_true(rc == 0);
+    assert_string_equal(session->opts.wanted_methods[SSH_KEX],
+                        "curve25519-sha256@libssh.org,ecdh-sha2-nistp256,diffie-hellman-group14-sha1");
+
+    /* Test one unknown kex */
+    rc = ssh_options_set(session,
+                         SSH_OPTIONS_KEY_EXCHANGE,
+                         "curve25519-sha256@libssh.org,unknown-crap@example.com,diffie-hellman-group14-sha1");
+    assert_true(rc == 0);
+    assert_string_equal(session->opts.wanted_methods[SSH_KEX],
+                        "curve25519-sha256@libssh.org,diffie-hellman-group14-sha1");
+
+    /* Test all unknown kexes */
+    rc = ssh_options_set(session,
+                         SSH_OPTIONS_KEY_EXCHANGE,
+                         "unknown-crap@example.com,more-crap@example.com");
+    assert_false(rc == 0);
+}
+
 static void torture_options_set_macs(void **state) {
     ssh_session session = *state;
     int rc;
@@ -331,6 +359,7 @@ int torture_run_tests(void) {
         cmocka_unit_test_setup_teardown(torture_options_get_identity, setup, teardown),
         cmocka_unit_test_setup_teardown(torture_options_proxycommand, setup, teardown),
         cmocka_unit_test_setup_teardown(torture_options_set_ciphers, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_options_set_key_exchange, setup, teardown),
         cmocka_unit_test_setup_teardown(torture_options_set_macs, setup, teardown),
         cmocka_unit_test_setup_teardown(torture_options_config_host, setup, teardown)
     };
