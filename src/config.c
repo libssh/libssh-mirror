@@ -49,6 +49,7 @@ enum ssh_config_opcode_e {
   SOC_USERNAME,
   SOC_IDENTITY,
   SOC_CIPHERS,
+  SOC_MACS,
   SOC_COMPRESSION,
   SOC_TIMEOUT,
   SOC_PROTOCOL,
@@ -85,6 +86,7 @@ static struct ssh_config_keyword_table_s ssh_config_keyword_table[] = {
   { "user", SOC_USERNAME },
   { "identityfile", SOC_IDENTITY },
   { "ciphers", SOC_CIPHERS },
+  { "macs", SOC_MACS },
   { "compression", SOC_COMPRESSION },
   { "connecttimeout", SOC_TIMEOUT },
   { "protocol", SOC_PROTOCOL },
@@ -418,6 +420,13 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
       if (p && *parsing) {
         ssh_options_set(session, SSH_OPTIONS_CIPHERS_C_S, p);
         ssh_options_set(session, SSH_OPTIONS_CIPHERS_S_C, p);
+      }
+      break;
+    case SOC_MACS:
+      p = ssh_config_get_str_tok(&s, NULL);
+      if (p && *parsing) {
+        ssh_options_set(session, SSH_OPTIONS_HMAC_C_S, p);
+        ssh_options_set(session, SSH_OPTIONS_HMAC_S_C, p);
       }
       break;
     case SOC_COMPRESSION:
