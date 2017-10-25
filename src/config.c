@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <glob.h>
 
 #include "libssh/priv.h"
 #include "libssh/session.h"
@@ -316,6 +317,33 @@ static void local_parse_file(ssh_session session, const char *filename, int *par
   return;
 }
 
+static void local_parse_glob(ssh_session session,
+                             const char *fileglob,
+                             int *parsing,
+                             int seen[])
+{
+    glob_t globbuf = {0};
+    int rt;
+    u_int i;
+
+    rt = glob(fileglob, GLOB_TILDE, NULL, &globbuf);
+    if (rt == GLOB_NOMATCH) {
+        globfree(&globbuf);
+        return;
+    } else if (rt != 0) {
+        SSH_LOG(SSH_LOG_RARE, "Glob error: %s",
+                fileglob);
+        globfree(&globbuf);
+        return;
+    }
+
+    for (i = 0; i < globbuf.gl_pathc; i++) {
+        local_parse_file(session, globbuf.gl_pathv[i], parsing, seen);
+    }
+
+    globfree(&globbuf);
+}
+
 static int ssh_config_parse_line(ssh_session session, const char *line,
     unsigned int count, int *parsing, int seen[]) {
   enum ssh_config_opcode_e opcode;
@@ -361,7 +389,7 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
 
       p = ssh_config_get_str_tok(&s, NULL);
       if (p && *parsing) {
-        local_parse_file(session, p, parsing, seen);
+        local_parse_glob(session, p, parsing, seen);
       }
       break;
     case SOC_HOST: {
