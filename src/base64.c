@@ -22,9 +22,9 @@
  */
 
 /* just the dirtiest part of code i ever made */
-#include <string.h>
+#include "config.h"
+
 #include <stdio.h>
-#include <stdlib.h>
 
 #include "libssh/priv.h"
 #include "libssh/buffer.h"

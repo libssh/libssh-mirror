@@ -1,3 +1,5 @@
+#include "config.h"
+
 #define LIBSSH_STATIC
 #include <libssh/priv.h>
 #include <libssh/callbacks.h>

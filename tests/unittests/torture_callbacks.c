@@ -1,3 +1,5 @@
+#include "config.h"
+
 #define LIBSSH_STATIC
 
 #include "torture.h"

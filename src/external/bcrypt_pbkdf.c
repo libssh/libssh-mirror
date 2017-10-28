@@ -19,6 +19,8 @@
 
 #ifndef HAVE_BCRYPT_PBKDF
 
+#include "config.h"
+
 #include "libssh/priv.h"
 #include "libssh/wrapper.h"
 #include <stdlib.h>

@@ -1,5 +1,7 @@
 #define LIBSSH_STATIC
 
+#include "config.h"
+
 #include "torture.h"
 #include "sftp.c"
 

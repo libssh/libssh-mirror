@@ -24,12 +24,12 @@
 
 /* This file contains code written by Nick Zitzmann */
 
+#include "config.h"
+
 #include <errno.h>
 #include <ctype.h>
 #include <fcntl.h>
-#include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>

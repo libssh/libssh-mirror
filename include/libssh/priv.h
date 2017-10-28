@@ -29,7 +29,8 @@
 #ifndef _LIBSSH_PRIV_H
 #define _LIBSSH_PRIV_H
 
-#include "config.h"
+#include <stdlib.h>
+#include <string.h>
 
 #if !defined(HAVE_STRTOULL)
 # if defined(HAVE___STRTOULL)

@@ -35,8 +35,9 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "config.h"
+
 #include <ctype.h>
-#include <string.h>
 #include <sys/types.h>
 
 #include "libssh/priv.h"

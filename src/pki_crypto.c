@@ -25,6 +25,8 @@
 #ifndef _PKI_CRYPTO_H
 #define _PKI_CRYPTO_H
 
+#include "config.h"
+
 #include "libssh/priv.h"
 
 #include <openssl/pem.h>

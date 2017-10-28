@@ -1,3 +1,5 @@
+#include "config.h"
+
 #define LIBSSH_STATIC
 
 #ifndef _WIN32

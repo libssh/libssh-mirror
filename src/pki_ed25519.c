@@ -21,6 +21,8 @@
  * MA 02111-1307, USA.
  */
 
+#include "config.h"
+
 #include "libssh/pki.h"
 #include "libssh/pki_priv.h"
 #include "libssh/ed25519.h"

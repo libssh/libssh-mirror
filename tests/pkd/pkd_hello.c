@@ -3,10 +3,10 @@
  *
  * (c) 2014, 2017 Jon Simons <jon@jonsimons.org>
  */
+#include "config.h"
 
 #include <setjmp.h> // for cmocka
 #include <stdarg.h> // for cmocka
-#include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h> // for cmocka
 #include <cmocka.h>
