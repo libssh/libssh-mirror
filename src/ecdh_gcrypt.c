@@ -214,7 +214,7 @@ int ecdh_build_k(ssh_session session)
         goto out;
     }
 
-    if (ssh_string_len(s) != k_length) {
+    if (ssh_string_len(s) != k_len) {
         ssh_string_burn(s);
         ssh_string_free(s);
         goto out;
@@ -223,7 +223,7 @@ int ecdh_build_k(ssh_session session)
     err = gcry_mpi_scan(&session->next_crypto->k,
                         GCRYMPI_FMT_USG,
                         (const char *)ssh_string_data(s) + 1,
-                        k_length / 2,
+                        k_len / 2,
                         NULL);
     ssh_string_burn(s);
     ssh_string_free(s);
