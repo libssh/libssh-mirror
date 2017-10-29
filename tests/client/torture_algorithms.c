@@ -79,20 +79,30 @@ static int session_teardown(void **state)
     return 0;
 }
 
-static void test_algorithm(ssh_session session, const char *algo, const char *hmac) {
+static void test_algorithm(ssh_session session,
+                           const char *kex,
+                           const char *cipher,
+                           const char *hmac) {
     int rc;
 
-    rc = ssh_options_set(session, SSH_OPTIONS_CIPHERS_C_S, algo);
-    assert_int_equal(rc, SSH_OK);
+    if (kex != NULL) {
+        rc = ssh_options_set(session, SSH_OPTIONS_KEY_EXCHANGE, kex);
+        assert_int_equal(rc, SSH_OK);
+    }
 
-    rc = ssh_options_set(session, SSH_OPTIONS_CIPHERS_S_C, algo);
-    assert_int_equal(rc, SSH_OK);
+    if (cipher != NULL) {
+        rc = ssh_options_set(session, SSH_OPTIONS_CIPHERS_C_S, cipher);
+        assert_int_equal(rc, SSH_OK);
+        rc = ssh_options_set(session, SSH_OPTIONS_CIPHERS_S_C, cipher);
+        assert_int_equal(rc, SSH_OK);
+    }
 
-    rc = ssh_options_set(session, SSH_OPTIONS_HMAC_C_S, hmac);
-    assert_int_equal(rc, SSH_OK);
-
-    rc = ssh_options_set(session, SSH_OPTIONS_HMAC_S_C, hmac);
-    assert_int_equal(rc, SSH_OK);
+    if (hmac != NULL) {
+        rc = ssh_options_set(session, SSH_OPTIONS_HMAC_C_S, hmac);
+        assert_int_equal(rc, SSH_OK);
+        rc = ssh_options_set(session, SSH_OPTIONS_HMAC_S_C, hmac);
+        assert_int_equal(rc, SSH_OK);
+    }
 
     rc = ssh_connect(session);
     assert_int_equal(rc, SSH_OK);
@@ -109,145 +119,145 @@ static void test_algorithm(ssh_session session, const char *algo, const char *hm
 static void torture_algorithms_aes128_cbc_hmac_sha1(void **state) {
     struct torture_state *s = *state;
 
-    test_algorithm(s->ssh.session, "aes128-cbc", "hmac-sha1");
+    test_algorithm(s->ssh.session, NULL/*kex*/, "aes128-cbc", "hmac-sha1");
 }
 
 static void torture_algorithms_aes128_cbc_hmac_sha2_256(void **state) {
     struct torture_state *s = *state;
 
-    test_algorithm(s->ssh.session, "aes128-cbc", "hmac-sha2-256");
+    test_algorithm(s->ssh.session, NULL/*kex*/, "aes128-cbc", "hmac-sha2-256");
 }
 
 static void torture_algorithms_aes128_cbc_hmac_sha2_512(void **state) {
     struct torture_state *s = *state;
 
-    test_algorithm(s->ssh.session, "aes128-cbc", "hmac-sha2-512");
+    test_algorithm(s->ssh.session, NULL/*kex*/, "aes128-cbc", "hmac-sha2-512");
 }
 
 static void torture_algorithms_aes192_cbc_hmac_sha1(void **state) {
     struct torture_state *s = *state;
 
-    test_algorithm(s->ssh.session, "aes192-cbc", "hmac-sha1");
+    test_algorithm(s->ssh.session, NULL/*kex*/, "aes192-cbc", "hmac-sha1");
 }
 
 static void torture_algorithms_aes192_cbc_hmac_sha2_256(void **state) {
     struct torture_state *s = *state;
 
-    test_algorithm(s->ssh.session, "aes192-cbc", "hmac-sha2-256");
+    test_algorithm(s->ssh.session, NULL/*kex*/, "aes192-cbc", "hmac-sha2-256");
 }
 
 static void torture_algorithms_aes192_cbc_hmac_sha2_512(void **state) {
     struct torture_state *s = *state;
 
-    test_algorithm(s->ssh.session, "aes192-cbc", "hmac-sha2-512");
+    test_algorithm(s->ssh.session, NULL/*kex*/, "aes192-cbc", "hmac-sha2-512");
 }
 
 static void torture_algorithms_aes256_cbc_hmac_sha1(void **state) {
     struct torture_state *s = *state;
 
-    test_algorithm(s->ssh.session, "aes256-cbc", "hmac-sha1");
+    test_algorithm(s->ssh.session, NULL/*kex*/, "aes256-cbc", "hmac-sha1");
 }
 
 static void torture_algorithms_aes256_cbc_hmac_sha2_256(void **state) {
     struct torture_state *s = *state;
 
-    test_algorithm(s->ssh.session, "aes256-cbc", "hmac-sha2-256");
+    test_algorithm(s->ssh.session, NULL/*kex*/, "aes256-cbc", "hmac-sha2-256");
 }
 
 static void torture_algorithms_aes256_cbc_hmac_sha2_512(void **state) {
     struct torture_state *s = *state;
 
-    test_algorithm(s->ssh.session, "aes256-cbc", "hmac-sha2-512");
+    test_algorithm(s->ssh.session, NULL/*kex*/, "aes256-cbc", "hmac-sha2-512");
 }
 
 static void torture_algorithms_aes128_ctr_hmac_sha1(void **state) {
     struct torture_state *s = *state;
 
-    test_algorithm(s->ssh.session, "aes128-ctr", "hmac-sha1");
+    test_algorithm(s->ssh.session, NULL/*kex*/, "aes128-ctr", "hmac-sha1");
 }
 
 static void torture_algorithms_aes128_ctr_hmac_sha2_256(void **state) {
     struct torture_state *s = *state;
 
-    test_algorithm(s->ssh.session, "aes128-ctr", "hmac-sha2-256");
+    test_algorithm(s->ssh.session, NULL/*kex*/, "aes128-ctr", "hmac-sha2-256");
 }
 
 static void torture_algorithms_aes128_ctr_hmac_sha2_512(void **state) {
     struct torture_state *s = *state;
 
-    test_algorithm(s->ssh.session, "aes128-ctr", "hmac-sha2-512");
+    test_algorithm(s->ssh.session, NULL/*kex*/, "aes128-ctr", "hmac-sha2-512");
 }
 
 static void torture_algorithms_aes192_ctr_hmac_sha1(void **state) {
     struct torture_state *s = *state;
 
-    test_algorithm(s->ssh.session, "aes192-ctr", "hmac-sha1");
+    test_algorithm(s->ssh.session, NULL/*kex*/, "aes192-ctr", "hmac-sha1");
 }
 
 static void torture_algorithms_aes192_ctr_hmac_sha2_256(void **state) {
     struct torture_state *s = *state;
 
-    test_algorithm(s->ssh.session, "aes192-ctr", "hmac-sha2-256");
+    test_algorithm(s->ssh.session, NULL/*kex*/, "aes192-ctr", "hmac-sha2-256");
 }
 
 static void torture_algorithms_aes192_ctr_hmac_sha2_512(void **state) {
     struct torture_state *s = *state;
 
-    test_algorithm(s->ssh.session, "aes192-ctr", "hmac-sha2-512");
+    test_algorithm(s->ssh.session, NULL/*kex*/, "aes192-ctr", "hmac-sha2-512");
 }
 
 static void torture_algorithms_aes256_ctr_hmac_sha1(void **state) {
     struct torture_state *s = *state;
 
-    test_algorithm(s->ssh.session, "aes256-ctr", "hmac-sha1");
+    test_algorithm(s->ssh.session, NULL/*kex*/, "aes256-ctr", "hmac-sha1");
 }
 
 static void torture_algorithms_aes256_ctr_hmac_sha2_256(void **state) {
     struct torture_state *s = *state;
 
-    test_algorithm(s->ssh.session, "aes256-ctr", "hmac-sha2-256");
+    test_algorithm(s->ssh.session, NULL/*kex*/, "aes256-ctr", "hmac-sha2-256");
 }
 
 static void torture_algorithms_aes256_ctr_hmac_sha2_512(void **state) {
     struct torture_state *s = *state;
 
-    test_algorithm(s->ssh.session, "aes256-ctr", "hmac-sha2-512");
+    test_algorithm(s->ssh.session, NULL/*kex*/, "aes256-ctr", "hmac-sha2-512");
 }
 
 static void torture_algorithms_3des_cbc_hmac_sha1(void **state) {
     struct torture_state *s = *state;
 
-    test_algorithm(s->ssh.session, "3des-cbc", "hmac-sha1");
+    test_algorithm(s->ssh.session, NULL/*kex*/, "3des-cbc", "hmac-sha1");
 }
 
 static void torture_algorithms_3des_cbc_hmac_sha2_256(void **state) {
     struct torture_state *s = *state;
 
-    test_algorithm(s->ssh.session, "3des-cbc", "hmac-sha2-256");
+    test_algorithm(s->ssh.session, NULL/*kex*/, "3des-cbc", "hmac-sha2-256");
 }
 
 static void torture_algorithms_3des_cbc_hmac_sha2_512(void **state) {
     struct torture_state *s = *state;
 
-    test_algorithm(s->ssh.session, "3des-cbc", "hmac-sha2-512");
+    test_algorithm(s->ssh.session, NULL/*kex*/, "3des-cbc", "hmac-sha2-512");
 }
 
 static void torture_algorithms_blowfish_cbc_hmac_sha1(void **state) {
     struct torture_state *s = *state;
 
-    test_algorithm(s->ssh.session, "blowfish-cbc", "hmac-sha1");
+    test_algorithm(s->ssh.session, NULL/*kex*/, "blowfish-cbc", "hmac-sha1");
 }
 
 static void torture_algorithms_blowfish_cbc_hmac_sha2_256(void **state) {
     struct torture_state *s = *state;
 
-    test_algorithm(s->ssh.session, "blowfish-cbc", "hmac-sha2-256");
+    test_algorithm(s->ssh.session, NULL/*kex*/, "blowfish-cbc", "hmac-sha2-256");
 }
 
 static void torture_algorithms_blowfish_cbc_hmac_sha2_512(void **state) {
     struct torture_state *s = *state;
 
-    test_algorithm(s->ssh.session, "blowfish-cbc", "hmac-sha2-512");
+    test_algorithm(s->ssh.session, NULL/*kex*/, "blowfish-cbc", "hmac-sha2-512");
 }
 
 static void torture_algorithms_zlib(void **state) {
@@ -330,80 +340,29 @@ static void torture_algorithms_zlib_openssh(void **state) {
 #if defined(HAVE_ECC)
 static void torture_algorithms_ecdh_sha2_nistp256(void **state) {
     struct torture_state *s = *state;
-    ssh_session session = s->ssh.session;
-    int rc;
 
-    rc = ssh_options_set(session, SSH_OPTIONS_KEY_EXCHANGE, "ecdh-sha2-nistp256");
-    assert_int_equal(rc, SSH_OK);
-
-    rc = ssh_connect(session);
-    assert_int_equal(rc, SSH_OK);
-    rc = ssh_userauth_none(session, NULL);
-    if (rc != SSH_OK) {
-      rc = ssh_get_error_code(session);
-      assert_int_equal(rc, SSH_REQUEST_DENIED);
-    }
-
-    ssh_disconnect(session);
+    test_algorithm(s->ssh.session, "ecdh-sha2-nistp256", NULL/*cipher*/, NULL/*hmac*/);
 }
 
 static void torture_algorithms_ecdh_sha2_nistp384(void **state) {
     struct torture_state *s = *state;
-    ssh_session session = s->ssh.session;
-    int rc;
 
-    rc = ssh_options_set(session, SSH_OPTIONS_KEY_EXCHANGE, "ecdh-sha2-nistp384");
-    assert_int_equal(rc, SSH_OK);
-
-    rc = ssh_connect(session);
-    assert_int_equal(rc, SSH_OK);
-    rc = ssh_userauth_none(session, NULL);
-    if (rc != SSH_OK) {
-      rc = ssh_get_error_code(session);
-      assert_int_equal(rc, SSH_REQUEST_DENIED);
-    }
-
-    ssh_disconnect(session);
+    test_algorithm(s->ssh.session, "ecdh-sha2-nistp384", NULL/*cipher*/, NULL/*hmac*/);
 }
 
 static void torture_algorithms_ecdh_sha2_nistp521(void **state) {
     struct torture_state *s = *state;
-    ssh_session session = s->ssh.session;
-    int rc;
 
-    rc = ssh_options_set(session, SSH_OPTIONS_KEY_EXCHANGE, "ecdh-sha2-nistp521");
-    assert_int_equal(rc, SSH_OK);
-
-    rc = ssh_connect(session);
-    assert_int_equal(rc, SSH_OK);
-    rc = ssh_userauth_none(session, NULL);
-    if (rc != SSH_OK) {
-      rc = ssh_get_error_code(session);
-      assert_int_equal(rc, SSH_REQUEST_DENIED);
-    }
-
-    ssh_disconnect(session);
+    test_algorithm(s->ssh.session, "ecdh-sha2-nistp521", NULL/*cipher*/, NULL/*hmac*/);
 }
 #endif
 
 static void torture_algorithms_dh_group1(void **state) {
     struct torture_state *s = *state;
-    ssh_session session = s->ssh.session;
-    int rc;
 
-    rc = ssh_options_set(session, SSH_OPTIONS_KEY_EXCHANGE, "diffie-hellman-group1-sha1");
-    assert_int_equal(rc, SSH_OK);
-
-    rc = ssh_connect(session);
-    assert_int_equal(rc, SSH_OK);
-    rc = ssh_userauth_none(session, NULL);
-    if (rc != SSH_OK) {
-      rc = ssh_get_error_code(session);
-      assert_int_equal(rc, SSH_REQUEST_DENIED);
-    }
-
-    ssh_disconnect(session);
+    test_algorithm(s->ssh.session, "diffie-hellman-group1-sha1", NULL/*cipher*/, NULL/*hmac*/);
 }
+
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
