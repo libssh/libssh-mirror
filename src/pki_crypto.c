@@ -453,11 +453,24 @@ int pki_key_generate_rsa(ssh_key key, int parameter){
 
 int pki_key_generate_dss(ssh_key key, int parameter){
     int rc;
+#if OPENSSL_VERSION_NUMBER > 0x10100000L
+    rc = DSA_generate_parameters_ex(key->dsa,
+                                    parameter,
+                                    NULL,  /* seed */
+                                    0,     /* seed_len */
+                                    NULL,  /* counter_ret */
+                                    NULL,  /* h_ret */
+                                    NULL); /* cb */
+    if (rc != 1) {
+        return SSH_ERROR;
+    }
+#else
     key->dsa = DSA_generate_parameters(parameter, NULL, 0, NULL, NULL,
             NULL, NULL);
     if(key->dsa == NULL){
         return SSH_ERROR;
     }
+#endif
     rc = DSA_generate_key(key->dsa);
     if (rc != 1){
         DSA_free(key->dsa);
