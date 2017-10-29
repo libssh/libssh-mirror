@@ -131,11 +131,18 @@ int ssh_get_random(void *where, int len, int strong){
 
   return 1;
 #elif defined HAVE_LIBCRYPTO
+# if OPENSSL_VERSION_NUMBER > 0x10100000L
+  /* variable not used in new libcrypto */
+  (void) strong;
+
+  return RAND_bytes(where, len);
+# else /* OPENSSL_VERSION_NUMBER */
   if (strong) {
     return RAND_bytes(where,len);
   } else {
     return RAND_pseudo_bytes(where,len);
   }
+# endif /* OPENSSL_VERSION_NUMBER */
 #endif
 
   /* never reached */
