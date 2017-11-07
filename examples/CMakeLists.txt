@@ -30,8 +30,8 @@ if (UNIX AND NOT WIN32)
         target_link_libraries(samplesftp ${LIBSSH_SHARED_LIBRARY})
     endif (WITH_SFTP)
 
-    add_executable(samplessh sample.c ${examples_SRCS})
-    target_link_libraries(samplessh ${LIBSSH_SHARED_LIBRARY})
+    add_executable(ssh-client ssh_client.c ${examples_SRCS})
+    target_link_libraries(ssh-client ${LIBSSH_SHARED_LIBRARY})
 
     if (WITH_SERVER AND ARGP_LIBRARY)
         if (HAVE_LIBUTIL)
