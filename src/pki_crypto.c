@@ -455,7 +455,7 @@ int pki_key_generate_dss(ssh_key key, int parameter){
     int rc;
 #if OPENSSL_VERSION_NUMBER > 0x10100000L
     key->dsa = DSA_new();
-    if (!key->dsa) {
+    if (key->dsa == NULL) {
         return SSH_ERROR;
     }
     rc = DSA_generate_parameters_ex(key->dsa,
@@ -466,6 +466,8 @@ int pki_key_generate_dss(ssh_key key, int parameter){
                                     NULL,  /* h_ret */
                                     NULL); /* cb */
     if (rc != 1) {
+        DSA_free(key->dsa);
+        key->dsa = NULL;
         return SSH_ERROR;
     }
 #else
