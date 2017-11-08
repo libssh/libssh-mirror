@@ -33,7 +33,7 @@ if (UNIX AND NOT WIN32)
     add_executable(ssh-client ssh_client.c ${examples_SRCS})
     target_link_libraries(ssh-client ${LIBSSH_SHARED_LIBRARY})
 
-    if (WITH_SERVER AND ARGP_LIBRARY)
+    if (WITH_SERVER AND (ARGP_LIBRARY OR HAVE_ARGP_H))
         if (HAVE_LIBUTIL)
             add_executable(ssh_server_fork ssh_server_fork.c)
             target_link_libraries(ssh_server_fork ${LIBSSH_SHARED_LIBRARY} ${ARGP_LIBRARY} util)
@@ -50,7 +50,7 @@ if (UNIX AND NOT WIN32)
         add_executable(samplesshd-kbdint samplesshd-kbdint.c)
         target_link_libraries(samplesshd-kbdint ${LIBSSH_SHARED_LIBRARY} ${ARGP_LIBRARY})
 
-    endif (WITH_SERVER AND ARGP_LIBRARY)
+    endif()
 endif (UNIX AND NOT WIN32)
 
 add_executable(exec exec.c ${examples_SRCS})
