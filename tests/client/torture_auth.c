@@ -362,9 +362,7 @@ static void torture_auth_kbdint_nonblocking(void **state) {
     } while (rc == SSH_AUTH_AGAIN);
     assert_int_equal(rc, SSH_AUTH_INFO);
     assert_int_equal(ssh_userauth_kbdint_getnprompts(session), 1);
-    do {
-        rc = ssh_userauth_kbdint_setanswer(session, 0, TORTURE_SSH_USER_BOB_PASSWORD);
-    } while (rc == SSH_AUTH_AGAIN);
+    rc = ssh_userauth_kbdint_setanswer(session, 0, TORTURE_SSH_USER_BOB_PASSWORD);
     assert_false(rc < 0);
 
     do {
