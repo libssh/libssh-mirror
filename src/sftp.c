@@ -3088,6 +3088,11 @@ static sftp_attributes sftp_xstat(sftp_session sftp, const char *path,
   ssh_buffer buffer;
   uint32_t id;
 
+  if (path == NULL) {
+      ssh_set_error_invalid(sftp->session);
+      return NULL;
+  }
+
   buffer = ssh_buffer_new();
   if (buffer == NULL) {
     ssh_set_error_oom(sftp->session);
