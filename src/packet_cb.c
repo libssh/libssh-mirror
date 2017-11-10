@@ -154,7 +154,8 @@ SSH_PACKET_CALLBACK(ssh_packet_newkeys){
     /* server things are done in server.c */
     session->dh_handshake_state=DH_STATE_FINISHED;
   } else {
-    ssh_key key;
+    ssh_key server_key;
+
     /* client */
     rc = ssh_make_sessionid(session);
     if (rc != SSH_OK) {
@@ -178,7 +179,7 @@ SSH_PACKET_CALLBACK(ssh_packet_newkeys){
     session->next_crypto->dh_server_signature = NULL;
 
     /* get the server public key */
-    rc = ssh_pki_import_pubkey_blob(session->next_crypto->server_pubkey, &key);
+    server_key = ssh_dh_get_next_server_publickey(session);
     if (rc < 0) {
         return SSH_ERROR;
     }
@@ -186,27 +187,22 @@ SSH_PACKET_CALLBACK(ssh_packet_newkeys){
     /* check if public key from server matches user preferences */
     if (session->opts.wanted_methods[SSH_HOSTKEYS]) {
         if(!ssh_match_group(session->opts.wanted_methods[SSH_HOSTKEYS],
-                            key->type_c)) {
+                            server_key->type_c)) {
             ssh_set_error(session,
                           SSH_FATAL,
                           "Public key from server (%s) doesn't match user "
                           "preference (%s)",
-                          key->type_c,
+                          server_key->type_c,
                           session->opts.wanted_methods[SSH_HOSTKEYS]);
-            ssh_key_free(key);
             return -1;
         }
     }
 
     rc = ssh_pki_signature_verify_blob(session,
                                        sig_blob,
-                                       key,
+                                       server_key,
                                        session->next_crypto->secret_hash,
                                        session->next_crypto->digest_len);
-    /* Set the server public key type for known host checking */
-    session->next_crypto->server_pubkey_type = key->type_c;
-
-    ssh_key_free(key);
     ssh_string_burn(sig_blob);
     ssh_string_free(sig_blob);
     sig_blob = NULL;

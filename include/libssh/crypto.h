@@ -109,8 +109,7 @@ struct ssh_crypto_struct {
     struct ssh_cipher_struct *in_cipher, *out_cipher; /* the cipher structures/objects */
     enum ssh_hmac_e in_hmac, out_hmac; /* the MAC algorithms used */
 
-    ssh_string server_pubkey;
-    const char *server_pubkey_type;
+    ssh_key server_pubkey;
     int do_compress_out; /* idem */
     int do_compress_in; /* don't set them, set the option instead */
     int delayed_compress_in; /* Use of zlib@openssh.org */

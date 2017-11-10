@@ -37,10 +37,20 @@ ssh_string ssh_dh_get_e(ssh_session session);
 ssh_string ssh_dh_get_f(ssh_session session);
 int ssh_dh_import_f(ssh_session session,ssh_string f_string);
 int ssh_dh_import_e(ssh_session session, ssh_string e_string);
-void ssh_dh_import_pubkey(ssh_session session,ssh_string pubkey_string);
+
+int ssh_dh_import_pubkey_blob(ssh_session session, ssh_string pubkey_blob);
+int ssh_dh_import_next_pubkey_blob(ssh_session session, ssh_string pubkey_blob);
+
 int ssh_dh_build_k(ssh_session session);
 int ssh_client_dh_init(ssh_session session);
 int ssh_client_dh_reply(ssh_session session, ssh_buffer packet);
+
+ssh_key ssh_dh_get_current_server_publickey(ssh_session session);
+int ssh_dh_get_current_server_publickey_blob(ssh_session session,
+                                             ssh_string *pubkey_blob);
+ssh_key ssh_dh_get_next_server_publickey(ssh_session session);
+int ssh_dh_get_next_server_publickey_blob(ssh_session session,
+                                          ssh_string *pubkey_blob);
 
 int ssh_make_sessionid(ssh_session session);
 /* add data for the final cookie */

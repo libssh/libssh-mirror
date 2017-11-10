@@ -32,6 +32,7 @@
 #include "libssh/session.h"
 #include "libssh/buffer.h"
 #include "libssh/misc.h"
+#include "libssh/dh.h"
 #include "libssh/pki.h"
 #include "libssh/options.h"
 #include "libssh/knownhosts.h"
@@ -188,9 +189,10 @@ static char **ssh_get_knownhost_line(FILE **file, const char *filename,
  *                      on error.
  */
 static int check_public_key(ssh_session session, char **tokens) {
-  ssh_string pubkey = session->current_crypto->server_pubkey;
+  ssh_string pubkey_blob = NULL;
   ssh_buffer pubkey_buffer;
   char *pubkey_64;
+  int rc;
 
   /* ok we found some public key in known hosts file. now un-base64it */
   if (alldigits(tokens[1])) {
@@ -270,18 +272,26 @@ static int check_public_key(ssh_session session, char **tokens) {
     return -1;
   }
 
-  if (ssh_buffer_get_len(pubkey_buffer) != ssh_string_len(pubkey)) {
+  rc = ssh_dh_get_current_server_publickey_blob(session, &pubkey_blob);
+  if (rc != 0) {
+      return -1;
+  }
+
+  if (ssh_buffer_get_len(pubkey_buffer) != ssh_string_len(pubkey_blob)) {
+    ssh_string_free(pubkey_blob);
     ssh_buffer_free(pubkey_buffer);
     return 0;
   }
 
   /* now test that they are identical */
-  if (memcmp(ssh_buffer_get(pubkey_buffer), ssh_string_data(pubkey),
+  if (memcmp(ssh_buffer_get(pubkey_buffer), ssh_string_data(pubkey_blob),
         ssh_buffer_get_len(pubkey_buffer)) != 0) {
+    ssh_string_free(pubkey_blob);
     ssh_buffer_free(pubkey_buffer);
     return 0;
   }
 
+  ssh_string_free(pubkey_blob);
   ssh_buffer_free(pubkey_buffer);
   return 1;
 }
@@ -485,12 +495,21 @@ int ssh_is_server_known(ssh_session session) {
       match = match_hashed_host(hostport, tokens[0]);
     }
     if (match) {
+      ssh_key pubkey = ssh_dh_get_current_server_publickey(session);
+      const char *pubkey_type = NULL;
+
+      if (ssh_key_type(pubkey) == SSH_KEYTYPE_ECDSA) {
+          pubkey_type = ssh_pki_key_ecdsa_name(pubkey);
+      } else {
+        pubkey_type = ssh_key_type_to_char(ssh_key_type(pubkey));
+      }
+
       /* We got a match. Now check the key type */
-      if (strcmp(session->current_crypto->server_pubkey_type, type) != 0) {
+      if (strcmp(pubkey_type, type) != 0) {
           SSH_LOG(SSH_LOG_PACKET,
                   "ssh_is_server_known: server type [%s] doesn't match the "
                   "type [%s] in known_hosts file",
-                  session->current_crypto->server_pubkey_type,
+                  pubkey_type,
                   type);
         /* Different type. We don't override the known_changed error which is
          * more important */
@@ -545,8 +564,7 @@ int ssh_is_server_known(ssh_session session) {
  * @return              string on success, NULL on error.
  */
 char * ssh_dump_knownhost(ssh_session session) {
-    ssh_string pubkey_s;
-    ssh_key key;
+    ssh_key server_pubkey = NULL;
     char *host;
     char *hostport;
     size_t len = 4096;
@@ -578,40 +596,31 @@ char * ssh_dump_knownhost(ssh_session session) {
         return NULL;
     }
 
-    pubkey_s = session->current_crypto->server_pubkey;
-    if (pubkey_s == NULL){
+    server_pubkey = ssh_dh_get_current_server_publickey(session);
+    if (server_pubkey == NULL){
         ssh_set_error(session, SSH_FATAL, "No public key present");
-        SAFE_FREE(host);
-        return NULL;
-    }
-
-    rc = ssh_pki_import_pubkey_blob(pubkey_s, &key);
-    if (rc < 0) {
         SAFE_FREE(host);
         return NULL;
     }
 
     buffer = calloc (1, 4096);
     if (!buffer) {
-        ssh_key_free(key);
         SAFE_FREE(host);
         return NULL;
     }
 
-    if (strcmp(session->current_crypto->server_pubkey_type, "ssh-rsa1") == 0) {
+    if (ssh_key_type(server_pubkey) == SSH_KEYTYPE_RSA1) {
         /* openssh uses a different format for ssh-rsa1 keys.
            Be compatible --kv */
-        rc = ssh_pki_export_pubkey_rsa1(key, host, buffer, len);
-        ssh_key_free(key);
+        rc = ssh_pki_export_pubkey_rsa1(server_pubkey, host, buffer, len);
         SAFE_FREE(host);
         if (rc < 0) {
             SAFE_FREE(buffer);
             return NULL;
         }
     } else {
-        rc = ssh_pki_export_pubkey_base64(key, &b64_key);
+        rc = ssh_pki_export_pubkey_base64(server_pubkey, &b64_key);
         if (rc < 0) {
-            ssh_key_free(key);
             SAFE_FREE(buffer);
             SAFE_FREE(host);
             return NULL;
@@ -620,10 +629,9 @@ char * ssh_dump_knownhost(ssh_session session) {
         snprintf(buffer, len,
                 "%s %s %s\n",
                 host,
-                key->type_c,
+                server_pubkey->type_c,
                 b64_key);
 
-        ssh_key_free(key);
         SAFE_FREE(host);
         SAFE_FREE(b64_key);
     }

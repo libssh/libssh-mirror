@@ -277,7 +277,14 @@ int ssh_get_key_params(ssh_session session, ssh_key *privkey){
       return -1;
     }
 
-    ssh_dh_import_pubkey(session, pubkey_blob);
+    rc = ssh_dh_import_pubkey_blob(session, pubkey_blob);
+    if (rc != 0) {
+        ssh_set_error(session,
+                      SSH_FATAL,
+                      "Could not import server public key");
+        return -1;
+    }
+
     return SSH_OK;
 }
 

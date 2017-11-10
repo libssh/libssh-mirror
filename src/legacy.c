@@ -33,6 +33,7 @@
 #include <libssh/session.h>
 #include <libssh/server.h>
 #include <libssh/buffer.h>
+#include <libssh/dh.h>
 #include <libssh/pki.h>
 #include "libssh/pki_priv.h"
 #include <libssh/misc.h>
@@ -701,12 +702,24 @@ int ssh_try_publickey_from_file(ssh_session session,
     return 0;
 }
 
-ssh_string ssh_get_pubkey(ssh_session session){
-	if(session==NULL || session->current_crypto ==NULL ||
-      session->current_crypto->server_pubkey==NULL)
-    return NULL;
-	else
-    return ssh_string_copy(session->current_crypto->server_pubkey);
+ssh_string ssh_get_pubkey(ssh_session session)
+{
+    ssh_string pubkey_blob = NULL;
+    int rc;
+
+    if (session == NULL ||
+        session->current_crypto == NULL ||
+        session->current_crypto->server_pubkey == NULL) {
+        return NULL;
+    }
+
+    rc = ssh_dh_get_current_server_publickey_blob(session,
+                                                  &pubkey_blob);
+    if (rc != 0) {
+        return NULL;
+    }
+
+    return pubkey_blob;
 }
 
 /****************************************************************************

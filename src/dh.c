@@ -387,8 +387,17 @@ ssh_string ssh_dh_get_f(ssh_session session) {
   return ssh_make_bignum_string(session->next_crypto->f);
 }
 
-void ssh_dh_import_pubkey(ssh_session session, ssh_string pubkey_string) {
-  session->next_crypto->server_pubkey = pubkey_string;
+int ssh_dh_import_pubkey_blob(ssh_session session, ssh_string pubkey_blob)
+{
+    return ssh_pki_import_pubkey_blob(pubkey_blob,
+                                      &session->current_crypto->server_pubkey);
+}
+
+int ssh_dh_import_next_pubkey_blob(ssh_session session, ssh_string pubkey_blob)
+{
+    return ssh_pki_import_pubkey_blob(pubkey_blob,
+                                      &session->next_crypto->server_pubkey);
+
 }
 
 int ssh_dh_import_f(ssh_session session, ssh_string f_string) {
@@ -517,15 +526,21 @@ int ssh_client_dh_init(ssh_session session){
 
 int ssh_client_dh_reply(ssh_session session, ssh_buffer packet){
   ssh_string f;
-  ssh_string pubkey = NULL;
+  ssh_string pubkey_blob = NULL;
   ssh_string signature = NULL;
   int rc;
-  pubkey = ssh_buffer_get_ssh_string(packet);
-  if (pubkey == NULL){
+
+  pubkey_blob = ssh_buffer_get_ssh_string(packet);
+  if (pubkey_blob == NULL){
     ssh_set_error(session,SSH_FATAL, "No public key in packet");
     goto error;
   }
-  ssh_dh_import_pubkey(session, pubkey);
+
+  rc = ssh_dh_import_next_pubkey_blob(session, pubkey_blob);
+  ssh_string_free(pubkey_blob);
+  if (rc != 0) {
+      goto error;
+  }
 
   f = ssh_buffer_get_ssh_string(packet);
   if (f == NULL) {
@@ -569,6 +584,7 @@ int ssh_make_sessionid(ssh_session session) {
     ssh_buffer server_hash = NULL;
     ssh_buffer client_hash = NULL;
     ssh_buffer buf = NULL;
+    ssh_string server_pubkey_blob = NULL;
     int rc = SSH_ERROR;
 
     buf = ssh_buffer_new();
@@ -619,6 +635,11 @@ int ssh_make_sessionid(ssh_session session) {
         }
     }
 
+    rc = ssh_dh_get_next_server_publickey_blob(session, &server_pubkey_blob);
+    if (rc != SSH_OK) {
+        goto error;
+    }
+
     rc = ssh_buffer_pack(buf,
                          "dPdPS",
                          ssh_buffer_get_len(client_hash),
@@ -627,8 +648,8 @@ int ssh_make_sessionid(ssh_session session) {
                          ssh_buffer_get_len(server_hash),
                          ssh_buffer_get_len(server_hash),
                          ssh_buffer_get(server_hash),
-                         session->next_crypto->server_pubkey);
-
+                         server_pubkey_blob);
+    ssh_string_free(server_pubkey_blob);
     if(rc != SSH_OK){
         goto error;
     }
@@ -959,9 +980,11 @@ error:
  * @deprecated Use ssh_get_publickey_hash()
  */
 int ssh_get_pubkey_hash(ssh_session session, unsigned char **hash) {
-  ssh_string pubkey;
+  ssh_key pubkey = NULL;
+  ssh_string pubkey_blob = NULL;
   MD5CTX ctx;
   unsigned char *h;
+  int rc;
 
   if (session == NULL || hash == NULL) {
     return SSH_ERROR;
@@ -984,9 +1007,19 @@ int ssh_get_pubkey_hash(ssh_session session, unsigned char **hash) {
     return SSH_ERROR;
   }
 
-  pubkey = session->current_crypto->server_pubkey;
+  rc = ssh_get_server_publickey(session, &pubkey);
+  if (rc != 0) {
+    SAFE_FREE(h);
+    return SSH_ERROR;
+  }
 
-  md5_update(ctx, ssh_string_data(pubkey), ssh_string_len(pubkey));
+  rc = ssh_pki_export_pubkey_blob(pubkey,
+                                  &pubkey_blob);
+  ssh_key_free(pubkey);
+  if (rc != 0) {
+  }
+  md5_update(ctx, ssh_string_data(pubkey_blob), ssh_string_len(pubkey_blob));
+  ssh_string_free(pubkey_blob);
   md5_final(h, ctx);
 
   *hash = h;
@@ -1023,14 +1056,49 @@ void ssh_clean_pubkey_hash(unsigned char **hash) {
  */
 int ssh_get_server_publickey(ssh_session session, ssh_key *key)
 {
-    if (session==NULL ||
-        session->current_crypto ==NULL ||
+    ssh_key pubkey = NULL;
+
+    if (session == NULL ||
+        session->current_crypto == NULL ||
         session->current_crypto->server_pubkey == NULL) {
         return SSH_ERROR;
     }
 
-    return ssh_pki_import_pubkey_blob(session->current_crypto->server_pubkey,
-                                      key);
+    pubkey = ssh_key_dup(session->current_crypto->server_pubkey);
+    if (pubkey == NULL) {
+        return SSH_ERROR;
+    }
+
+    *key = pubkey;
+    return SSH_OK;
+}
+
+ssh_key ssh_dh_get_current_server_publickey(ssh_session session)
+{
+    return session->current_crypto->server_pubkey;
+}
+
+/* Caller need to free the blob */
+int ssh_dh_get_current_server_publickey_blob(ssh_session session,
+                                     ssh_string *pubkey_blob)
+{
+    const ssh_key pubkey = ssh_dh_get_current_server_publickey(session);
+
+    return ssh_pki_export_pubkey_blob(pubkey, pubkey_blob);
+}
+
+ssh_key ssh_dh_get_next_server_publickey(ssh_session session)
+{
+    return session->next_crypto->server_pubkey;
+}
+
+/* Caller need to free the blob */
+int ssh_dh_get_next_server_publickey_blob(ssh_session session,
+                                          ssh_string *pubkey_blob)
+{
+    const ssh_key pubkey = ssh_dh_get_next_server_publickey(session);
+
+    return ssh_pki_export_pubkey_blob(pubkey, pubkey_blob);
 }
 
 /**

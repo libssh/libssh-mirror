@@ -118,17 +118,24 @@ static int ssh_curve25519_build_k(ssh_session session) {
  */
 int ssh_client_curve25519_reply(ssh_session session, ssh_buffer packet){
   ssh_string q_s_string = NULL;
-  ssh_string pubkey = NULL;
+  ssh_string pubkey_blob = NULL;
   ssh_string signature = NULL;
   int rc;
-  pubkey = ssh_buffer_get_ssh_string(packet);
-  if (pubkey == NULL){
+
+  pubkey_blob = ssh_buffer_get_ssh_string(packet);
+  if (pubkey_blob == NULL) {
     ssh_set_error(session,SSH_FATAL, "No public key in packet");
     goto error;
   }
-  /* this is the server host key */
-  session->next_crypto->server_pubkey = pubkey;
-  pubkey = NULL;
+
+  rc = ssh_dh_import_next_pubkey_blob(session, pubkey_blob);
+  ssh_string_free(pubkey_blob);
+  if (rc != 0) {
+      ssh_set_error(session,
+                    SSH_FATAL,
+                    "Failed to import next public key");
+      goto error;
+  }
 
   q_s_string = ssh_buffer_get_ssh_string(packet);
   if (q_s_string == NULL) {
@@ -178,6 +185,7 @@ int ssh_server_curve25519_init(ssh_session session, ssh_buffer packet){
     /* ECDH keys */
     ssh_string q_c_string;
     ssh_string q_s_string;
+    ssh_string server_pubkey_blob = NULL;
 
     /* SSH host keys (rsa,dsa,ecdsa) */
     ssh_key privkey;
@@ -236,9 +244,16 @@ int ssh_server_curve25519_init(ssh_session session, ssh_buffer packet){
         goto error;
     }
 
+    rc = ssh_dh_get_next_server_publickey_blob(session, &server_pubkey_blob);
+    if (rc != 0) {
+        ssh_set_error(session, SSH_FATAL, "Could not export server public key");
+        goto error;
+    }
+
     /* add host's public key */
     rc = ssh_buffer_add_ssh_string(session->out_buffer,
-                               session->next_crypto->server_pubkey);
+                                   server_pubkey_blob);
+    ssh_string_free(server_pubkey_blob);
     if (rc < 0) {
         ssh_set_error_oom(session);
         goto error;

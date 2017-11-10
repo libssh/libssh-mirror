@@ -30,25 +30,27 @@
 
 #ifdef HAVE_ECDH
 
-static void ecdh_import_pubkey(ssh_session session, ssh_string pubkey_string) {
-  session->next_crypto->server_pubkey = pubkey_string;
-}
-
 /** @internal
  * @brief parses a SSH_MSG_KEX_ECDH_REPLY packet and sends back
  * a SSH_MSG_NEWKEYS
  */
 int ssh_client_ecdh_reply(ssh_session session, ssh_buffer packet){
   ssh_string q_s_string = NULL;
-  ssh_string pubkey = NULL;
+  ssh_string pubkey_blob = NULL;
   ssh_string signature = NULL;
   int rc;
-  pubkey = ssh_buffer_get_ssh_string(packet);
-  if (pubkey == NULL){
+
+  pubkey_blob = ssh_buffer_get_ssh_string(packet);
+  if (pubkey_blob == NULL) {
     ssh_set_error(session,SSH_FATAL, "No public key in packet");
     goto error;
   }
-  ecdh_import_pubkey(session, pubkey);
+
+  rc = ssh_dh_import_next_pubkey_blob(session, pubkey_blob);
+  ssh_string_free(pubkey_blob);
+  if (rc != 0) {
+      goto error;
+  }
 
   q_s_string = ssh_buffer_get_ssh_string(packet);
   if (q_s_string == NULL) {
