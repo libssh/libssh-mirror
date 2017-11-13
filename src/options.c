@@ -235,7 +235,7 @@ int ssh_options_set_algo(ssh_session session,
  *                ~/.ssh/known_hosts.\n
  *                \n
  *                The known hosts file is used to certify remote hosts
- *                are genuine. It may include "%s" which will be
+ *                are genuine. It may include "%d" which will be
  *                replaced by the user home directory.
  *
  *              - SSH_OPTIONS_GLOBAL_KNOWNHOSTS:
