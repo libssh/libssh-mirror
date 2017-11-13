@@ -238,6 +238,16 @@ int ssh_options_set_algo(ssh_session session,
  *                are genuine. It may include "%s" which will be
  *                replaced by the user home directory.
  *
+ *              - SSH_OPTIONS_GLOBAL_KNOWNHOSTS:
+ *                Set the global known hosts file name (const char *,format string).\n
+ *                \n
+ *                If the value is NULL, the directory is set to the
+ *                default global known hosts file, normally
+ *                /etc/ssh/ssh_known_hosts.\n
+ *                \n
+ *                The known hosts file is used to certify remote hosts
+ *                are genuine.
+ *
  *              - SSH_OPTIONS_IDENTITY:
  *                Set the identity file name (const char *,format string).\n
  *                \n
@@ -600,7 +610,14 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
         case SSH_OPTIONS_GLOBAL_KNOWNHOSTS:
             v = value;
             SAFE_FREE(session->opts.global_knownhosts);
-            if (v == NULL || v[0] == '\0') {
+            if (v == NULL) {
+                session->opts.global_knownhosts =
+                    strdup("/etc/ssh/ssh_known_hosts");
+                if (session->opts.global_knownhosts == NULL) {
+                    ssh_set_error_oom(session);
+                    return -1;
+                }
+            } else if (v[0] == '\0') {
                 ssh_set_error_invalid(session);
                 return -1;
             } else {
