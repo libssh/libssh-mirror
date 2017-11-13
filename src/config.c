@@ -60,7 +60,6 @@ enum ssh_config_opcode_e {
   SOC_GSSAPIDELEGATECREDENTIALS,
   SOC_INCLUDE,
   SOC_BINDADDRESS,
-  SOC_CONNECTTIMEOUT,
   SOC_GLOBALKNOWNHOSTSFILE,
   SOC_LOGLEVEL,
   SOC_HOSTKEYALGORITHMS,
@@ -94,11 +93,10 @@ static struct ssh_config_keyword_table_s ssh_config_keyword_table[] = {
   { "userknownhostsfile", SOC_KNOWNHOSTS },
   { "proxycommand", SOC_PROXYCOMMAND },
   { "gssapiserveridentity", SOC_GSSAPISERVERIDENTITY },
-  { "gssapiserveridentity", SOC_GSSAPICLIENTIDENTITY },
+  { "gssapiclientidentity", SOC_GSSAPICLIENTIDENTITY },
   { "gssapidelegatecredentials", SOC_GSSAPIDELEGATECREDENTIALS },
   { "include", SOC_INCLUDE },
   { "bindaddress", SOC_BINDADDRESS},
-  { "connecttimeout", SOC_CONNECTTIMEOUT},
   { "globalknownhostsfile", SOC_GLOBALKNOWNHOSTSFILE},
   { "loglevel", SOC_LOGLEVEL},
   { "hostkeyalgorithms", SOC_HOSTKEYALGORITHMS},
@@ -108,6 +106,7 @@ static struct ssh_config_keyword_table_s ssh_config_keyword_table[] = {
   { "kbdinteractiveauthentication", SOC_KBDINTERACTIVEAUTHENTICATION},
   { "passwordauthentication", SOC_PASSWORDAUTHENTICATION},
   { "pubkeyauthentication", SOC_PUBKEYAUTHENTICATION},
+  { "addkeystoagent", SOC_UNSUPPORTED},
   { "addressfamily", SOC_UNSUPPORTED},
   { "batchmode", SOC_UNSUPPORTED},
   { "canonicaldomains", SOC_UNSUPPORTED},
@@ -115,33 +114,45 @@ static struct ssh_config_keyword_table_s ssh_config_keyword_table[] = {
   { "canonicalizehostname", SOC_UNSUPPORTED},
   { "canonicalizemaxdots", SOC_UNSUPPORTED},
   { "canonicalizepermittedcnames", SOC_UNSUPPORTED},
+  { "certificatefile", SOC_UNSUPPORTED},
   { "challengeresponseauthentication", SOC_UNSUPPORTED},
   { "checkhostip", SOC_UNSUPPORTED},
-  { "cipher", SOC_UNSUPPORTED},
-  { "compressionlevel", SOC_UNSUPPORTED},
+  { "cipher", SOC_UNSUPPORTED}, /* SSHv1 */
+  { "compressionlevel", SOC_UNSUPPORTED}, /* SSHv1 */
   { "connectionattempts", SOC_UNSUPPORTED},
   { "enablesshkeysign", SOC_UNSUPPORTED},
+  { "fingerprinthash", SOC_UNSUPPORTED},
   { "forwardagent", SOC_UNSUPPORTED},
   { "gssapikeyexchange", SOC_UNSUPPORTED},
   { "gssapirenewalforcesrekey", SOC_UNSUPPORTED},
   { "gssapitrustdns", SOC_UNSUPPORTED},
   { "hashknownhosts", SOC_UNSUPPORTED},
   { "hostbasedauthentication", SOC_UNSUPPORTED},
+  { "hostbasedkeytypes", SOC_UNSUPPORTED},
   { "hostkeyalias", SOC_UNSUPPORTED},
   { "identitiesonly", SOC_UNSUPPORTED},
+  { "identityagent", SOC_UNSUPPORTED},
   { "ipqos", SOC_UNSUPPORTED},
   { "kbdinteractivedevices", SOC_UNSUPPORTED},
   { "nohostauthenticationforlocalhost", SOC_UNSUPPORTED},
   { "numberofpasswordprompts", SOC_UNSUPPORTED},
   { "pkcs11provider", SOC_UNSUPPORTED},
   { "preferredauthentications", SOC_UNSUPPORTED},
+  { "proxyjump", SOC_UNSUPPORTED},
   { "proxyusefdpass", SOC_UNSUPPORTED},
+  { "pubkeyacceptedtypes", SOC_UNSUPPORTED},
   { "rekeylimit", SOC_UNSUPPORTED},
+  { "remotecommand", SOC_UNSUPPORTED},
+  { "revokedhostkeys", SOC_UNSUPPORTED},
   { "rhostsrsaauthentication", SOC_UNSUPPORTED},
-  { "rsaauthentication", SOC_UNSUPPORTED},
+  { "rsaauthentication", SOC_UNSUPPORTED}, /* SSHv1 */
   { "serveralivecountmax", SOC_UNSUPPORTED},
   { "serveraliveinterval", SOC_UNSUPPORTED},
+  { "streamlocalbindmask", SOC_UNSUPPORTED},
+  { "streamlocalbindunlink", SOC_UNSUPPORTED},
+  { "syslogfacility", SOC_UNSUPPORTED},
   { "tcpkeepalive", SOC_UNSUPPORTED},
+  { "updatehostkeys", SOC_UNSUPPORTED},
   { "useprivilegedport", SOC_UNSUPPORTED},
   { "verifyhostkeydns", SOC_UNSUPPORTED},
   { "visualhostkey", SOC_UNSUPPORTED},
@@ -497,13 +508,6 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
         p = ssh_config_get_str_tok(&s, NULL);
         if (p && *parsing) {
             ssh_options_set(session, SSH_OPTIONS_BINDADDR, p);
-        }
-        break;
-    case SOC_CONNECTTIMEOUT:
-        i = ssh_config_get_int(&s, 0);
-        if (i >= 0 && *parsing) {
-          long t = i;
-          ssh_options_set(session, SSH_OPTIONS_TIMEOUT, &t);
         }
         break;
     case SOC_GLOBALKNOWNHOSTSFILE:
