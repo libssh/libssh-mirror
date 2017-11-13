@@ -998,13 +998,9 @@ int ssh_options_get_port(ssh_session session, unsigned int* port_target) {
  *                ~/.ssh/config file.
  *
  *              - SSH_OPTIONS_IDENTITY:
- *                Set the identity file name (const char *,format string).\n
+ *                Get the first identity file name (const char *).\n
  *                \n
- *                By default identity, id_dsa and id_rsa are checked.\n
- *                \n
- *                The identity file used authenticate with public key.
- *                It may include "%s" which will be replaced by the
- *                user home directory.
+ *                By default identity, id_dsa and id_rsa are checked.
  *
  *              - SSH_OPTIONS_PROXYCOMMAND:
  *                Get the proxycommand necessary to log into the
