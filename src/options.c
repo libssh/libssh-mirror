@@ -248,12 +248,14 @@ int ssh_options_set_algo(ssh_session session,
  *                The known hosts file is used to certify remote hosts
  *                are genuine.
  *
- *              - SSH_OPTIONS_IDENTITY:
- *                Set the identity file name (const char *,format string).\n
+ *              - SSH_OPTIONS_ADD_IDENTITY (or SSH_OPTIONS_IDENTITY):
+ *                Add a new identity file (const char *, format string) to
+ *                the identity list.\n
  *                \n
  *                By default identity, id_dsa and id_rsa are checked.\n
  *                \n
- *                The identity file used authenticate with public key.
+ *                The identity used to authenticate with public key will be
+ *                prepended to the list.
  *                It may include "%s" which will be replaced by the
  *                user home directory.
  *
@@ -1001,17 +1003,6 @@ int ssh_options_get_port(ssh_session session, unsigned int* port_target) {
  *                By default identity, id_dsa and id_rsa are checked.\n
  *                \n
  *                The identity file used authenticate with public key.
- *                It may include "%s" which will be replaced by the
- *                user home directory.
- *
- *              - SSH_OPTIONS_ADD_IDENTITY:
- *                Add a new identity file (const char *,format string) to
- *                the identity list.\n
- *                \n
- *                By default identity, id_dsa and id_rsa are checked.\n
- *                \n
- *                The identity used authenticate with public key will be
- *                prepended to the list.
  *                It may include "%s" which will be replaced by the
  *                user home directory.
  *
