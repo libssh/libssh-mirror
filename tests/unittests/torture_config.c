@@ -18,6 +18,7 @@
 #define PROXYCMD "ssh -q -W %h:%p gateway.example.com"
 #define ID_FILE "/etc/xxx"
 #define KEXALGORITHMS "ecdh-sha2-nistp521,diffie-hellman-group14-sha1"
+#define HOSTKEYALGORITHMS "ssh-ed25519,ecdsa-sha2-nistp521,ssh-rsa"
 #define MACS "hmac-sha1,hmac-sha2-256"
 
 static int setup_config_files(void **state)
@@ -39,6 +40,7 @@ static int setup_config_files(void **state)
     torture_write_file(LIBSSH_TESTCONFIG3,
                        "\n\nIdentityFile "ID_FILE"\n"
                        "\n\nKexAlgorithms "KEXALGORITHMS"\n"
+                       "\n\nHostKeyAlgorithms "HOSTKEYALGORITHMS"\n"
                        "\n\nMACs "MACS"\n");
 
     /* Multiple Port settings -> parsing returns early. */
@@ -105,6 +107,8 @@ static void torture_config_from_file(void **state) {
     ssh_string_free_char(v);
 
     assert_string_equal(session->opts.wanted_methods[SSH_KEX], KEXALGORITHMS);
+
+    assert_string_equal(session->opts.wanted_methods[SSH_HOSTKEYS], HOSTKEYALGORITHMS);
 
     assert_string_equal(session->opts.wanted_methods[SSH_MAC_C_S], MACS);
     assert_string_equal(session->opts.wanted_methods[SSH_MAC_S_C], MACS);

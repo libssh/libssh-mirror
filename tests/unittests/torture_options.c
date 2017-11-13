@@ -87,6 +87,33 @@ static void torture_options_set_key_exchange(void **state)
     assert_false(rc == 0);
 }
 
+static void torture_options_set_hostkey(void **state) {
+    ssh_session session = *state;
+    int rc;
+
+    /* Test known host keys */
+    rc = ssh_options_set(session,
+                         SSH_OPTIONS_HOSTKEYS,
+                         "ssh-ed25519,ecdsa-sha2-nistp384,ssh-rsa");
+    assert_true(rc == 0);
+    assert_string_equal(session->opts.wanted_methods[SSH_HOSTKEYS],
+                        "ssh-ed25519,ecdsa-sha2-nistp384,ssh-rsa");
+
+    /* Test one unknown kex */
+    rc = ssh_options_set(session,
+                         SSH_OPTIONS_HOSTKEYS,
+                         "ssh-ed25519,unknown-crap@example.com,ssh-rsa");
+    assert_true(rc == 0);
+    assert_string_equal(session->opts.wanted_methods[SSH_HOSTKEYS],
+                        "ssh-ed25519,ssh-rsa");
+
+    /* Test all unknown kexes */
+    rc = ssh_options_set(session,
+                         SSH_OPTIONS_HOSTKEYS,
+                         "unknown-crap@example.com,more-crap@example.com");
+    assert_false(rc == 0);
+}
+
 static void torture_options_set_macs(void **state) {
     ssh_session session = *state;
     int rc;
@@ -368,6 +395,7 @@ int torture_run_tests(void) {
         cmocka_unit_test_setup_teardown(torture_options_proxycommand, setup, teardown),
         cmocka_unit_test_setup_teardown(torture_options_set_ciphers, setup, teardown),
         cmocka_unit_test_setup_teardown(torture_options_set_key_exchange, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_options_set_hostkey, setup, teardown),
         cmocka_unit_test_setup_teardown(torture_options_set_macs, setup, teardown),
         cmocka_unit_test_setup_teardown(torture_options_config_host, setup, teardown)
     };
