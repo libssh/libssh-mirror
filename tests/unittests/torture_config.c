@@ -12,6 +12,7 @@
 #define LIBSSH_TESTCONFIG4 "libssh_testconfig4.tmp"
 #define LIBSSH_TESTCONFIG5 "libssh_testconfig5.tmp"
 #define LIBSSH_TESTCONFIG6 "libssh_testconfig6.tmp"
+#define LIBSSH_TESTCONFIG7 "libssh_testconfig7.tmp"
 #define LIBSSH_TESTCONFIGGLOB "libssh_testc*[36].tmp"
 
 #define USERNAME "testuser"
@@ -20,6 +21,8 @@
 #define KEXALGORITHMS "ecdh-sha2-nistp521,diffie-hellman-group14-sha1"
 #define HOSTKEYALGORITHMS "ssh-ed25519,ecdsa-sha2-nistp521,ssh-rsa"
 #define MACS "hmac-sha1,hmac-sha2-256"
+#define USER_KNOWN_HOSTS "%d/my_known_hosts"
+#define GLOBAL_KNOWN_HOSTS "/etc/ssh/my_ssh_known_hosts"
 
 static int setup_config_files(void **state)
 {
@@ -31,6 +34,7 @@ static int setup_config_files(void **state)
     unlink(LIBSSH_TESTCONFIG4);
     unlink(LIBSSH_TESTCONFIG5);
     unlink(LIBSSH_TESTCONFIG6);
+    unlink(LIBSSH_TESTCONFIG7);
 
     torture_write_file(LIBSSH_TESTCONFIG1,
                        "User "USERNAME"\nInclude "LIBSSH_TESTCONFIG2"\n\n");
@@ -54,6 +58,10 @@ static int setup_config_files(void **state)
     torture_write_file(LIBSSH_TESTCONFIG6,
                         "ProxyCommand "PROXYCMD"\n\n");
 
+    torture_write_file(LIBSSH_TESTCONFIG7,
+                        "\tGlobalKnownHostsFile "GLOBAL_KNOWN_HOSTS"\n"
+                        "\tUserKnownHostsFile "USER_KNOWN_HOSTS"\n");
+
     session = ssh_new();
     *state = session;
 
@@ -68,6 +76,7 @@ static int teardown(void **state)
     unlink(LIBSSH_TESTCONFIG4);
     unlink(LIBSSH_TESTCONFIG5);
     unlink(LIBSSH_TESTCONFIG6);
+    unlink(LIBSSH_TESTCONFIG7);
 
     ssh_free(*state);
 
@@ -150,6 +159,20 @@ static void torture_config_glob(void **state) {
 #endif /* HAVE_GLOB */
 }
 
+/**
+ * @brief Verify the known host files are passed from configuration
+ */
+static void torture_config_known_hosts(void **state) {
+    ssh_session session = *state;
+    int ret = 0;
+
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG7);
+    assert_true(ret == 0);
+
+    assert_string_equal(session->opts.knownhosts, USER_KNOWN_HOSTS);
+    assert_string_equal(session->opts.global_knownhosts, GLOBAL_KNOWN_HOSTS);
+}
+
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
@@ -160,6 +183,9 @@ int torture_run_tests(void) {
                                         setup_config_files,
                                         teardown),
         cmocka_unit_test_setup_teardown(torture_config_glob,
+                                        setup_config_files,
+                                        teardown),
+        cmocka_unit_test_setup_teardown(torture_config_known_hosts,
                                         setup_config_files,
                                         teardown),
     };
