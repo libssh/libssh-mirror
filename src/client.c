@@ -696,10 +696,11 @@ void ssh_disconnect(ssh_session session) {
 
   if (session->socket != NULL && ssh_socket_is_open(session->socket)) {
     rc = ssh_buffer_pack(session->out_buffer,
-                         "bds",
+                         "bdss",
                          SSH2_MSG_DISCONNECT,
                          SSH2_DISCONNECT_BY_APPLICATION,
-                         "Bye Bye");
+                         "Bye Bye",
+                         ""); /* language tag */
     if (rc != SSH_OK){
       ssh_set_error_oom(session);
       goto error;
