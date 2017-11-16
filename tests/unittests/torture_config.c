@@ -24,6 +24,7 @@
 #define MACS "hmac-sha1,hmac-sha2-256"
 #define USER_KNOWN_HOSTS "%d/my_known_hosts"
 #define GLOBAL_KNOWN_HOSTS "/etc/ssh/my_ssh_known_hosts"
+#define BIND_ADDRESS "::1"
 
 static int setup_config_files(void **state)
 {
@@ -60,7 +61,10 @@ static int setup_config_files(void **state)
     torture_write_file(LIBSSH_TESTCONFIG6,
                         "ProxyCommand "PROXYCMD"\n\n");
 
+    /* new options */
     torture_write_file(LIBSSH_TESTCONFIG7,
+                        "\tBindAddress "BIND_ADDRESS"\n"
+                        "\tConnectTimeout 30\n"
                         "\tGlobalKnownHostsFile "GLOBAL_KNOWN_HOSTS"\n"
                         "\tUserKnownHostsFile "USER_KNOWN_HOSTS"\n");
 
@@ -182,9 +186,10 @@ static void torture_config_glob(void **state) {
 }
 
 /**
- * @brief Verify the known host files are passed from configuration
+ * @brief Verify the new options are passed from configuration
  */
-static void torture_config_known_hosts(void **state) {
+static void torture_config_new(void **state)
+{
     ssh_session session = *state;
     int ret = 0;
 
@@ -193,6 +198,8 @@ static void torture_config_known_hosts(void **state) {
 
     assert_string_equal(session->opts.knownhosts, USER_KNOWN_HOSTS);
     assert_string_equal(session->opts.global_knownhosts, GLOBAL_KNOWN_HOSTS);
+    assert_int_equal(session->opts.timeout, 30);
+    assert_string_equal(session->opts.bindaddr, BIND_ADDRESS);
 }
 
 /**
@@ -262,7 +269,7 @@ int torture_run_tests(void) {
         cmocka_unit_test_setup_teardown(torture_config_glob,
                                         setup_config_files,
                                         teardown),
-        cmocka_unit_test_setup_teardown(torture_config_known_hosts,
+        cmocka_unit_test_setup_teardown(torture_config_new,
                                         setup_config_files,
                                         teardown),
         cmocka_unit_test_setup_teardown(torture_config_auth_methods,
