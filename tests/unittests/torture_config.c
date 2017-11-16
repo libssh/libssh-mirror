@@ -13,6 +13,7 @@
 #define LIBSSH_TESTCONFIG5 "libssh_testconfig5.tmp"
 #define LIBSSH_TESTCONFIG6 "libssh_testconfig6.tmp"
 #define LIBSSH_TESTCONFIG7 "libssh_testconfig7.tmp"
+#define LIBSSH_TESTCONFIG8 "libssh_testconfig8.tmp"
 #define LIBSSH_TESTCONFIGGLOB "libssh_testc*[36].tmp"
 
 #define USERNAME "testuser"
@@ -35,6 +36,7 @@ static int setup_config_files(void **state)
     unlink(LIBSSH_TESTCONFIG5);
     unlink(LIBSSH_TESTCONFIG6);
     unlink(LIBSSH_TESTCONFIG7);
+    unlink(LIBSSH_TESTCONFIG8);
 
     torture_write_file(LIBSSH_TESTCONFIG1,
                        "User "USERNAME"\nInclude "LIBSSH_TESTCONFIG2"\n\n");
@@ -62,6 +64,25 @@ static int setup_config_files(void **state)
                         "\tGlobalKnownHostsFile "GLOBAL_KNOWN_HOSTS"\n"
                         "\tUserKnownHostsFile "USER_KNOWN_HOSTS"\n");
 
+    /* authentication methods */
+    torture_write_file(LIBSSH_TESTCONFIG8,
+                        "Host gss\n"
+                        "\tGSSAPIAuthentication yes\n"
+                        "Host kbd\n"
+                        "\tKbdInteractiveAuthentication yes\n"
+                        "Host pass\n"
+                        "\tPasswordAuthentication yes\n"
+                        "Host pubkey\n"
+                        "\tPubkeyAuthentication yes\n"
+                        "Host nogss\n"
+                        "\tGSSAPIAuthentication no\n"
+                        "Host nokbd\n"
+                        "\tKbdInteractiveAuthentication no\n"
+                        "Host nopass\n"
+                        "\tPasswordAuthentication no\n"
+                        "Host nopubkey\n"
+                        "\tPubkeyAuthentication no\n");
+
     session = ssh_new();
     *state = session;
 
@@ -77,6 +98,7 @@ static int teardown(void **state)
     unlink(LIBSSH_TESTCONFIG5);
     unlink(LIBSSH_TESTCONFIG6);
     unlink(LIBSSH_TESTCONFIG7);
+    unlink(LIBSSH_TESTCONFIG8);
 
     ssh_free(*state);
 
@@ -173,6 +195,61 @@ static void torture_config_known_hosts(void **state) {
     assert_string_equal(session->opts.global_knownhosts, GLOBAL_KNOWN_HOSTS);
 }
 
+/**
+ * @brief Verify the authentication methods from configuration are effective
+ */
+static void torture_config_auth_methods(void **state) {
+    ssh_session session = *state;
+    int ret = 0;
+
+    /* gradually disable all the methods based on different hosts */
+    ssh_options_set(session, SSH_OPTIONS_HOST, "nogss");
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG8);
+    assert_true(ret == 0);
+    assert_false(session->opts.flags & SSH_OPT_FLAG_GSSAPI_AUTH);
+    assert_true(session->opts.flags & SSH_OPT_FLAG_KBDINT_AUTH);
+
+    ssh_options_set(session, SSH_OPTIONS_HOST, "nokbd");
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG8);
+    assert_true(ret == 0);
+    assert_false(session->opts.flags & SSH_OPT_FLAG_KBDINT_AUTH);
+
+    ssh_options_set(session, SSH_OPTIONS_HOST, "nopass");
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG8);
+    assert_true(ret == 0);
+    assert_false(session->opts.flags & SSH_OPT_FLAG_PASSWORD_AUTH);
+
+    ssh_options_set(session, SSH_OPTIONS_HOST, "nopubkey");
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG8);
+    assert_true(ret == 0);
+    assert_false(session->opts.flags & SSH_OPT_FLAG_PUBKEY_AUTH);
+
+    /* no method should be left enabled */
+    assert_int_equal(session->opts.port, 0);
+
+    /* gradually enable them again */
+    ssh_options_set(session, SSH_OPTIONS_HOST, "gss");
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG8);
+    assert_true(ret == 0);
+    assert_true(session->opts.flags & SSH_OPT_FLAG_GSSAPI_AUTH);
+    assert_false(session->opts.flags & SSH_OPT_FLAG_KBDINT_AUTH);
+
+    ssh_options_set(session, SSH_OPTIONS_HOST, "kbd");
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG8);
+    assert_true(ret == 0);
+    assert_true(session->opts.flags & SSH_OPT_FLAG_KBDINT_AUTH);
+
+    ssh_options_set(session, SSH_OPTIONS_HOST, "pass");
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG8);
+    assert_true(ret == 0);
+    assert_true(session->opts.flags & SSH_OPT_FLAG_PASSWORD_AUTH);
+
+    ssh_options_set(session, SSH_OPTIONS_HOST, "pubkey");
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG8);
+    assert_true(ret == 0);
+    assert_true(session->opts.flags & SSH_OPT_FLAG_PUBKEY_AUTH);
+}
+
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
@@ -186,6 +263,9 @@ int torture_run_tests(void) {
                                         setup_config_files,
                                         teardown),
         cmocka_unit_test_setup_teardown(torture_config_known_hosts,
+                                        setup_config_files,
+                                        teardown),
+        cmocka_unit_test_setup_teardown(torture_config_auth_methods,
                                         setup_config_files,
                                         teardown),
     };
