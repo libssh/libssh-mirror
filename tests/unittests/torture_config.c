@@ -6,6 +6,8 @@
 #include "libssh/options.h"
 #include "libssh/session.h"
 
+extern LIBSSH_THREAD int ssh_log_level;
+
 #define LIBSSH_TESTCONFIG1 "libssh_testconfig1.tmp"
 #define LIBSSH_TESTCONFIG2 "libssh_testconfig2.tmp"
 #define LIBSSH_TESTCONFIG3 "libssh_testconfig3.tmp"
@@ -65,6 +67,7 @@ static int setup_config_files(void **state)
     torture_write_file(LIBSSH_TESTCONFIG7,
                         "\tBindAddress "BIND_ADDRESS"\n"
                         "\tConnectTimeout 30\n"
+                        "\tLogLevel DEBUG3\n"
                         "\tGlobalKnownHostsFile "GLOBAL_KNOWN_HOSTS"\n"
                         "\tUserKnownHostsFile "USER_KNOWN_HOSTS"\n");
 
@@ -192,6 +195,7 @@ static void torture_config_new(void **state)
 {
     ssh_session session = *state;
     int ret = 0;
+    int verbosity = SSH_LOG_WARNING;
 
     ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG7);
     assert_true(ret == 0);
@@ -200,6 +204,12 @@ static void torture_config_new(void **state)
     assert_string_equal(session->opts.global_knownhosts, GLOBAL_KNOWN_HOSTS);
     assert_int_equal(session->opts.timeout, 30);
     assert_string_equal(session->opts.bindaddr, BIND_ADDRESS);
+
+    assert_int_equal(ssh_log_level, SSH_LOG_TRACE);
+    assert_int_equal(session->common.log_verbosity, SSH_LOG_TRACE);
+
+    /* reset to something sane */
+    ssh_options_set(session, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
 }
 
 /**
