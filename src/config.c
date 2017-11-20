@@ -518,20 +518,25 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
     case SOC_LOGLEVEL:
         p = ssh_config_get_str_tok(&s, NULL);
         if (p && *parsing) {
+            int value = -1;
+
             if (strcasecmp(p, "quiet") == 0) {
-                ssh_set_log_level(SSH_LOG_NONE);
+                value = SSH_LOG_NONE;
             } else if (strcasecmp(p, "fatal") == 0 ||
                     strcasecmp(p, "error")== 0 ||
                     strcasecmp(p, "info") == 0) {
-                ssh_set_log_level(SSH_LOG_WARN);
+                value = SSH_LOG_WARN;
             } else if (strcasecmp(p, "verbose") == 0) {
-                ssh_set_log_level(SSH_LOG_INFO);
+                value = SSH_LOG_INFO;
             } else if (strcasecmp(p, "DEBUG") == 0 ||
                     strcasecmp(p, "DEBUG1") == 0) {
-                ssh_set_log_level(SSH_LOG_DEBUG);
+                value = SSH_LOG_DEBUG;
             } else if (strcasecmp(p, "DEBUG2") == 0 ||
                     strcasecmp(p, "DEBUG3") == 0) {
-                ssh_set_log_level(SSH_LOG_TRACE);
+                value = SSH_LOG_TRACE;
+            }
+            if (value != -1) {
+                ssh_options_set(session, SSH_OPTIONS_LOG_VERBOSITY, &value);
             }
         }
         break;
