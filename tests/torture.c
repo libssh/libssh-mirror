@@ -784,7 +784,11 @@ static void torture_setup_create_sshd_config(void **state)
              "\n"
 #if (OPENSSH_VERSION_MAJOR == 6 && OPENSSH_VERSION_MINOR >= 7) || (OPENSSH_VERSION_MAJOR >= 7)
              "HostKeyAlgorithms +ssh-dss\n"
+# if (OPENSSH_VERSION_MAJOR == 7 && OPENSSH_VERSION_MINOR < 6)
              "Ciphers +3des-cbc,aes128-cbc,aes192-cbc,aes256-cbc,blowfish-cbc\n"
+# else
+             "Ciphers +3des-cbc,aes128-cbc,aes192-cbc,aes256-cbc\n"
+# endif
              "KexAlgorithms +diffie-hellman-group1-sha1"
 #else
              "Ciphers 3des-cbc,aes128-cbc,aes192-cbc,aes256-cbc,aes128-ctr,"

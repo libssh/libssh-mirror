@@ -151,6 +151,7 @@ static void torture_algorithms_3des_cbc_hmac_sha2_512(void **state) {
     test_algorithm(*state, "3des-cbc", "hmac-sha2-512");
 }
 
+#if ((OPENSSH_VERSION_MAJOR == 7 && OPENSSH_VERSION_MINOR < 6) || OPENSSH_VERSION_MAJOR <= 6)
 static void torture_algorithms_blowfish_cbc_hmac_sha1(void **state) {
     test_algorithm(*state, "blowfish-cbc", "hmac-sha1");
 }
@@ -162,6 +163,7 @@ static void torture_algorithms_blowfish_cbc_hmac_sha2_256(void **state) {
 static void torture_algorithms_blowfish_cbc_hmac_sha2_512(void **state) {
     test_algorithm(*state, "blowfish-cbc", "hmac-sha2-512");
 }
+#endif
 
 static void torture_algorithms_zlib(void **state) {
     ssh_session session = *state;
@@ -311,9 +313,11 @@ int torture_run_tests(void) {
         unit_test_setup_teardown(torture_algorithms_3des_cbc_hmac_sha1, setup, teardown),
         unit_test_setup_teardown(torture_algorithms_3des_cbc_hmac_sha2_256, setup, teardown),
         unit_test_setup_teardown(torture_algorithms_3des_cbc_hmac_sha2_512, setup, teardown),
+#if ((OPENSSH_VERSION_MAJOR == 7 && OPENSSH_VERSION_MINOR < 6) || OPENSSH_VERSION_MAJOR <= 6)
         unit_test_setup_teardown(torture_algorithms_blowfish_cbc_hmac_sha1, setup, teardown),
         unit_test_setup_teardown(torture_algorithms_blowfish_cbc_hmac_sha2_256, setup, teardown),
         unit_test_setup_teardown(torture_algorithms_blowfish_cbc_hmac_sha2_512, setup, teardown),
+#endif
         unit_test_setup_teardown(torture_algorithms_zlib, setup, teardown),
         unit_test_setup_teardown(torture_algorithms_zlib_openssh, setup, teardown),
         unit_test_setup_teardown(torture_algorithms_dh_group1,setup,teardown),
