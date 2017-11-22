@@ -85,6 +85,9 @@ static void test_algorithm(ssh_session session,
                            const char *hmac) {
     int rc;
 
+    int verbosity = torture_libssh_verbosity();
+    ssh_options_set(session, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
+
     if (kex != NULL) {
         rc = ssh_options_set(session, SSH_OPTIONS_KEY_EXCHANGE, kex);
         assert_int_equal(rc, SSH_OK);
