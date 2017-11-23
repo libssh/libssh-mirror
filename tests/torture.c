@@ -703,6 +703,7 @@ void torture_setup_socket_dir(void **state)
     struct torture_state *s;
     const char *p;
     size_t len;
+    char *env = getenv("TORTURE_GENERATE_PCAP");
 
     s = malloc(sizeof(struct torture_state));
     assert_non_null(s);
@@ -739,7 +740,9 @@ void torture_setup_socket_dir(void **state)
 
     setenv("SOCKET_WRAPPER_DIR", p, 1);
     setenv("SOCKET_WRAPPER_DEFAULT_IFACE", "170", 1);
-    setenv("SOCKET_WRAPPER_PCAP_FILE", s->pcap_file, 1);
+    if (env != NULL && env[0] == '1') {
+        setenv("SOCKET_WRAPPER_PCAP_FILE", s->pcap_file, 1);
+    }
 
     *state = s;
 }
