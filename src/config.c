@@ -64,7 +64,6 @@ enum ssh_config_opcode_e {
   SOC_LOGLEVEL,
   SOC_HOSTKEYALGORITHMS,
   SOC_KEXALGORITHMS,
-  SOC_MAC,
   SOC_GSSAPIAUTHENTICATION,
   SOC_KBDINTERACTIVEAUTHENTICATION,
   SOC_PASSWORDAUTHENTICATION,
@@ -101,7 +100,7 @@ static struct ssh_config_keyword_table_s ssh_config_keyword_table[] = {
   { "loglevel", SOC_LOGLEVEL},
   { "hostkeyalgorithms", SOC_HOSTKEYALGORITHMS},
   { "kexalgorithms", SOC_KEXALGORITHMS},
-  { "mac", SOC_MAC},
+  { "mac", SOC_UNSUPPORTED}, /* SSHv1 */
   { "gssapiauthentication", SOC_GSSAPIAUTHENTICATION},
   { "kbdinteractiveauthentication", SOC_KBDINTERACTIVEAUTHENTICATION},
   { "passwordauthentication", SOC_PASSWORDAUTHENTICATION},
@@ -546,13 +545,6 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
         p = ssh_config_get_str_tok(&s, NULL);
         if (p && *parsing) {
             ssh_options_set(session, SSH_OPTIONS_KEY_EXCHANGE, p);
-        }
-        break;
-    case SOC_MAC:
-        p = ssh_config_get_str_tok(&s, NULL);
-        if (p && *parsing) {
-            ssh_options_set(session, SSH_OPTIONS_HMAC_C_S, p);
-            ssh_options_set(session, SSH_OPTIONS_HMAC_S_C, p);
         }
         break;
     case SOC_GSSAPIAUTHENTICATION:
