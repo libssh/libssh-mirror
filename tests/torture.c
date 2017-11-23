@@ -889,7 +889,7 @@ void torture_setup_sshd_server(void **state)
     assert_return_code(rc, errno);
 
     /* Give the process some time to start */
-    usleep(300);
+    usleep(1000);
 
     setenv("SOCKET_WRAPPER_DEFAULT_IFACE", "21", 1);
     unsetenv("UID_WRAPPER_ROOT");
