@@ -37,6 +37,7 @@ The goal is to show the API in action.
 #endif
 #include <sys/ioctl.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
 #include <stdio.h>
 
 #ifndef KEYS_FOLDER
@@ -70,7 +71,8 @@ static void set_default_keys(ssh_bind sshbind,
                              KEYS_FOLDER "ssh_host_ecdsa_key");
     }
 }
-
+#define DEF_STR_SIZE 1024
+char authorizedkeys[DEF_STR_SIZE] = {0};
 #ifdef HAVE_ARGP_H
 const char *argp_program_version = "libssh server example "
 SSH_STRINGIFY(LIBSSH_VERSION);
@@ -126,6 +128,14 @@ static struct argp_option options[] = {
         .group = 0
     },
     {
+        .name  = "authorizedkeys",
+        .key   = 'a',
+        .arg   = "FILE",
+        .flags = 0,
+        .doc   = "Set the authorized keys file.",
+        .group = 0
+    },
+    {
         .name  = "no-default-keys",
         .key   = 'n',
         .arg   = NULL,
@@ -177,6 +187,9 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
         case 'e':
             ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_ECDSAKEY, arg);
             ecdsa_already_set = 1;
+            break;
+        case 'a':
+            strncpy(authorizedkeys, arg, DEF_STR_SIZE-1);
             break;
         case 'v':
             ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_LOG_VERBOSITY_STR,
@@ -434,6 +447,53 @@ static int auth_password(ssh_session session, const char *user,
     return SSH_AUTH_DENIED;
 }
 
+static int auth_publickey(ssh_session session,
+                          const char *user,
+                          struct ssh_key_struct *pubkey,
+                          char signature_state,
+                          void *userdata)
+{
+    struct session_data_struct *sdata = (struct session_data_struct *) userdata;
+
+    (void) user;
+    (void) session;
+
+    if (signature_state == SSH_PUBLICKEY_STATE_NONE) {
+        return SSH_AUTH_SUCCESS;
+    }
+
+    if (signature_state != SSH_PUBLICKEY_STATE_VALID) {
+        return SSH_AUTH_DENIED;
+    }
+
+    // valid so far.  Now look through authorized keys for a match
+    if (authorizedkeys[0]) {
+        ssh_key key = NULL;
+        int result;
+        struct stat buf;
+
+        if (stat(authorizedkeys, &buf) == 0) {
+            result = ssh_pki_import_pubkey_file( authorizedkeys, &key );
+            if ((result != SSH_OK) || (key==NULL)) {
+                fprintf(stderr,
+                        "Unable to import public key file %s\n",
+                        authorizedkeys);
+            } else {
+                result = ssh_key_cmp( key, pubkey, SSH_KEY_CMP_PUBLIC );
+                ssh_key_free(key);
+                if (result == 0) {
+                    sdata->authenticated = 1;
+                    return SSH_AUTH_SUCCESS;
+                }
+            }
+        }
+    }
+
+    // no matches
+    sdata->authenticated = 0;
+    return SSH_AUTH_DENIED;
+}
+
 static ssh_channel channel_open(ssh_session session, void *userdata) {
     struct session_data_struct *sdata = (struct session_data_struct *) userdata;
 
@@ -518,6 +578,12 @@ static void handle_session(ssh_event event, ssh_session session) {
         .channel_open_request_session_function = channel_open,
     };
 
+    if (authorizedkeys[0]) {
+        server_cb.auth_pubkey_function = auth_publickey;
+        ssh_set_auth_methods(session, SSH_AUTH_METHOD_PASSWORD | SSH_AUTH_METHOD_PUBLICKEY);
+    } else
+        ssh_set_auth_methods(session, SSH_AUTH_METHOD_PASSWORD);
+
     ssh_callbacks_init(&server_cb);
     ssh_callbacks_init(&channel_cb);
 
@@ -528,7 +594,6 @@ static void handle_session(ssh_event event, ssh_session session) {
         return;
     }
 
-    ssh_set_auth_methods(session, SSH_AUTH_METHOD_PASSWORD);
     ssh_event_add_session(event, session);
 
     n = 0;
