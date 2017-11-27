@@ -100,6 +100,39 @@ int authenticate_kbdint(ssh_session session, const char *password)
     return err;
 }
 
+static int auth_keyfile(ssh_session session, char* keyfile)
+{
+    ssh_key key = NULL;
+    char pubkey[132] = {0}; // +".pub"
+    int rc;
+
+    snprintf(pubkey, sizeof(pubkey), "%s.pub", keyfile);
+
+    rc = ssh_pki_import_pubkey_file( pubkey, &key);
+
+    if (rc != SSH_OK)
+        return SSH_AUTH_DENIED;
+
+    rc = ssh_userauth_try_publickey(session, NULL, key);
+
+    ssh_key_free(key);
+
+    if (rc!=SSH_AUTH_SUCCESS)
+        return SSH_AUTH_DENIED;
+
+    rc = ssh_pki_import_privkey_file(keyfile, NULL, NULL, NULL, &key);
+
+    if (rc != SSH_OK)
+        return SSH_AUTH_DENIED;
+
+    rc = ssh_userauth_publickey(session, NULL, key);
+
+    ssh_key_free(key);
+
+    return rc;
+}
+
+
 static void error(ssh_session session)
 {
     fprintf(stderr,"Authentication failed: %s\n",ssh_get_error(session));
@@ -138,6 +171,35 @@ int authenticate_console(ssh_session session)
                 return rc;
             } else if (rc == SSH_AUTH_SUCCESS) {
                 break;
+            }
+        }
+        {
+            char buffer[128] = {0};
+            char *p = NULL;
+
+            printf("Automatic pubkey failed. "
+                   "Do you want to try a specific key? (y/n)\n");
+            if (fgets(buffer, sizeof(buffer), stdin) == NULL) {
+                break;
+            }
+            if ((buffer[0]=='Y') || (buffer[0]=='y')) {
+                printf("private key filename: ");
+
+                if (fgets(buffer, sizeof(buffer), stdin) == NULL) {
+                    return SSH_AUTH_ERROR;
+                }
+
+                buffer[sizeof(buffer) - 1] = '\0';
+                if ((p = strchr(buffer, '\n'))) {
+                    *p = '\0';
+                }
+
+                rc = auth_keyfile(session, buffer);
+
+                if(rc == SSH_AUTH_SUCCESS) {
+                    break;
+                }
+                fprintf(stderr, "failed with key\n");
             }
         }
 
