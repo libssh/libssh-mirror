@@ -46,7 +46,7 @@ The ssh_userauth_publickey_auto() function also tries to authenticate using the
 SSH agent, if you have one running, or the "none" method otherwise.
 
 If you wish to authenticate with public key by your own, follow these steps:
- - Retrieve the public key with ssh_import_pubkey_file().
+ - Retrieve the public key with ssh_pki_import_pubkey_file().
  - Offer the public key to the SSH server using ssh_userauth_try_publickey().
    If the return value is SSH_AUTH_SUCCESS, the SSH server accepts to
    authenticate using the public key and you can go to the next step.
