@@ -63,6 +63,7 @@ check_include_file(sys/utime.h HAVE_SYS_UTIME_H)
 check_include_file(sys/param.h HAVE_SYS_PARAM_H)
 check_include_file(arpa/inet.h HAVE_ARPA_INET_H)
 check_include_file(byteswap.h HAVE_BYTESWAP_H)
+check_include_file(glob.h HAVE_GLOB_H)
 
 if (WIN32)
   check_include_file(io.h HAVE_IO_H)
@@ -139,6 +140,10 @@ endif (NOT WITH_GCRYPT)
 check_function_exists(isblank HAVE_ISBLANK)
 check_function_exists(strncpy HAVE_STRNCPY)
 check_function_exists(strtoull HAVE_STRTOULL)
+
+if (HAVE_GLOB_H)
+  check_function_exists(glob HAVE_GLOB)
+endif (HAVE_GLOB_H)
 
 if (NOT WIN32)
   check_function_exists(vsnprintf HAVE_VSNPRINTF)
