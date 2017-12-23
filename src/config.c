@@ -251,9 +251,9 @@ out:
   return r;
 }
 
-static int ssh_config_get_int(char **str, int notfound) {
+static long ssh_config_get_long(char **str, long notfound) {
   char *p, *endp;
-  int i;
+  long i;
 
   p = ssh_config_get_token(str);
   if (p && *p) {
@@ -357,6 +357,7 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
   char *lowerhost;
   size_t len;
   int i;
+  long l;
 
   x = s = strdup(line);
   if (s == NULL) {
@@ -507,9 +508,9 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
       }
       break;
     case SOC_TIMEOUT:
-      i = ssh_config_get_int(&s, -1);
-      if (i >= 0 && *parsing) {
-        ssh_options_set(session, SSH_OPTIONS_TIMEOUT, &i);
+      l = ssh_config_get_long(&s, -1);
+      if (l >= 0 && *parsing) {
+        ssh_options_set(session, SSH_OPTIONS_TIMEOUT, &l);
       }
       break;
     case SOC_STRICTHOSTKEYCHECK:
