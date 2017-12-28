@@ -771,8 +771,8 @@ static int pki_import_pubkey_buffer(ssh_buffer buffer,
                 }
             }
             break;
-        case SSH_KEYTYPE_ECDSA:
 #ifdef HAVE_ECC
+        case SSH_KEYTYPE_ECDSA:
             {
                 ssh_string e;
                 ssh_string i;
@@ -1201,8 +1201,8 @@ int ssh_pki_generate(enum ssh_keytypes_e type, int parameter,
             if(rc == SSH_ERROR)
                 goto error;
             break;
-        case SSH_KEYTYPE_ECDSA:
 #ifdef HAVE_ECC
+        case SSH_KEYTYPE_ECDSA:
             rc = pki_key_generate_ecdsa(key, parameter);
             if (rc == SSH_ERROR) {
                 goto error;
@@ -1221,6 +1221,7 @@ int ssh_pki_generate(enum ssh_keytypes_e type, int parameter,
         case SSH_KEYTYPE_DSS_CERT01:
         case SSH_KEYTYPE_RSA_CERT01:
         case SSH_KEYTYPE_UNKNOWN:
+        default:
             goto error;
     }
 
