@@ -178,6 +178,7 @@ static int ssh_bind_import_keys(ssh_bind sshbind) {
   }
 #endif
 
+#ifdef HAVE_DSA
   if (sshbind->dsa == NULL && sshbind->dsakey != NULL) {
       rc = ssh_pki_import_privkey_file(sshbind->dsakey,
                                        NULL,
@@ -199,6 +200,7 @@ static int ssh_bind_import_keys(ssh_bind sshbind) {
           return SSH_ERROR;
       }
   }
+#endif
 
   if (sshbind->rsa == NULL && sshbind->rsakey != NULL) {
       rc = ssh_pki_import_privkey_file(sshbind->rsakey,
@@ -450,6 +452,7 @@ int ssh_bind_accept_fd(ssh_bind sshbind, ssh_session session, socket_t fd){
         }
     }
 #endif
+#ifdef HAVE_DSA
     if (sshbind->dsa) {
         session->srv.dsa_key = ssh_key_dup(sshbind->dsa);
         if (session->srv.dsa_key == NULL) {
@@ -457,6 +460,7 @@ int ssh_bind_accept_fd(ssh_bind sshbind, ssh_session session, socket_t fd){
           return SSH_ERROR;
         }
     }
+#endif
     if (sshbind->rsa) {
         session->srv.rsa_key = ssh_key_dup(sshbind->rsa);
         if (session->srv.rsa_key == NULL) {

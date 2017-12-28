@@ -25,6 +25,7 @@
 #include "libssh/libssh.h"
 #include "libssh/libcrypto.h"
 #include "libssh/libgcrypt.h"
+#include "libssh/libmbedcrypto.h"
 
 enum ssh_mac_e {
   SSH_MAC_SHA1=1,

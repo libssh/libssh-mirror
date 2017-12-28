@@ -82,6 +82,12 @@
 #define CRYPTO_STRING ""
 #endif
 
+#ifdef HAVE_LIBMBEDCRYPTO
+#define MBED_STRING "/mbedtls"
+#else
+#define MBED_STRING ""
+#endif
+
 #ifdef WITH_ZLIB
 #define ZLIB_STRING "/zlib"
 #else
@@ -349,7 +355,7 @@ char *ssh_hostport(const char *host, int port){
  */
 const char *ssh_version(int req_version) {
   if (req_version <= LIBSSH_VERSION_INT) {
-    return SSH_STRINGIFY(LIBSSH_VERSION) GCRYPT_STRING CRYPTO_STRING
+    return SSH_STRINGIFY(LIBSSH_VERSION) GCRYPT_STRING CRYPTO_STRING MBED_STRING
       ZLIB_STRING;
   }
 

@@ -33,6 +33,10 @@
 #include "libssh/crypto.h"
 #include "libssh/threads.h"
 
+#ifdef HAVE_LIBMBEDCRYPTO
+#include <mbedtls/threading.h>
+#endif
+
 static int threads_noop (void **lock){
 	(void)lock;
   return 0;
@@ -100,6 +104,28 @@ static int libgcrypt_thread_init(void){
 	return SSH_OK;
 }
 #endif /* GCRYPT_VERSION_NUMBER */
+#elif defined HAVE_LIBMBEDCRYPTO
+static int libmbedcrypto_thread_init(void)
+{
+    if (user_callbacks == NULL) {
+        return SSH_ERROR;
+    }
+
+    if (user_callbacks == &ssh_threads_noop) {
+        return SSH_OK;
+    }
+#ifdef MBEDTLS_THREADING_ALT
+    else {
+        mbedtls_threading_set_alt(user_callbacks->mutex_init,
+                user_callbacks->mutex_destroy, user_callbacks->mutex_lock,
+                user_callbacks->mutex_unlock);
+    }
+#elif defined MBEDTLS_THREADING_PTHREAD
+    return SSH_OK;
+#else
+    return SSH_ERROR;
+#endif
+}
 #else /* HAVE_LIBGCRYPT */
 
 /* Libcrypto specific stuff */
@@ -181,6 +207,8 @@ int ssh_threads_init(void){
 	/* Then initialize the crypto libraries threading callbacks */
 #ifdef HAVE_LIBGCRYPT
 	ret = libgcrypt_thread_init();
+#elif HAVE_LIBMBEDCRYPTO
+    ret = libmbedcrypto_thread_init();
 #else /* Libcrypto */
 	ret = libcrypto_thread_init();
 #endif
@@ -191,6 +219,10 @@ int ssh_threads_init(void){
 
 void ssh_threads_finalize(void){
 #ifdef HAVE_LIBGCRYPT
+#elif HAVE_LIBMBEDCRYPTO
+#ifdef MBEDTLS_THREADING_ALT
+    mbedtls_threading_free_alt();
+#endif
 #else
 	libcrypto_thread_finalize();
 #endif

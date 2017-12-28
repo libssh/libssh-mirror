@@ -39,6 +39,17 @@ if (OPENSSL_CRYPTO_LIBRARY)
   )
 endif (OPENSSL_CRYPTO_LIBRARY)
 
+if (MBEDTLS_CRYPTO_LIBRARY)
+    set(LIBSSH_PRIVATE_INCLUDE_DIRS
+      ${LIBSSH_PRIVATE_INCLUDE_DIRS}
+      ${MBEDTLS_INCLUDE_DIR}
+    )
+  set(LIBSSH_LINK_LIBRARIES
+    ${LIBSSH_LINK_LIBRARIES}
+    ${MBEDTLS_CRYPTO_LIBRARY}
+  )
+endif (MBEDTLS_CRYPTO_LIBRARY)
+
 if (GCRYPT_LIBRARY)
   set(LIBSSH_PRIVATE_INCLUDE_DIRS
     ${LIBSSH_PRIVATE_INCLUDE_DIRS}
@@ -159,6 +170,14 @@ if (WITH_GCRYPT)
         gcrypt_missing.c
         pki_gcrypt.c
         ecdh_gcrypt.c
+       )
+elseif (WITH_MBEDTLS)
+    set(libssh_SRCS
+        ${libssh_SRCS}
+        libmbedcrypto.c
+        mbedcrypto_missing.c
+        pki_mbedcrypto.c
+        ecdh_mbedcrypto.c
        )
 else (WITH_GCRYPT)
     set(libssh_SRCS

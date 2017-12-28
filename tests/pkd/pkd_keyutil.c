@@ -27,6 +27,7 @@ void setup_rsa_key() {
     assert_int_equal(rc, 0);
 }
 
+#ifdef HAVE_DSA
 void setup_dsa_key() {
     int rc = 0;
     if (access(LIBSSH_DSA_TESTKEY, F_OK) != 0) {
@@ -35,6 +36,7 @@ void setup_dsa_key() {
     }
     assert_int_equal(rc, 0);
 }
+#endif
 
 void setup_ecdsa_keys() {
     int rc = 0;
@@ -65,9 +67,11 @@ void cleanup_rsa_key() {
     cleanup_key(LIBSSH_RSA_TESTKEY, LIBSSH_RSA_TESTKEY ".pub");
 }
 
+#ifdef HAVE_DSA
 void cleanup_dsa_key() {
     cleanup_key(LIBSSH_DSA_TESTKEY, LIBSSH_DSA_TESTKEY ".pub");
 }
+#endif
 
 void cleanup_ecdsa_keys() {
     cleanup_key(LIBSSH_ECDSA_256_TESTKEY, LIBSSH_ECDSA_256_TESTKEY ".pub");
@@ -78,11 +82,13 @@ void cleanup_ecdsa_keys() {
 void setup_openssh_client_keys() {
     int rc = 0;
 
+#ifdef HAVE_DSA
     if (access(OPENSSH_DSA_TESTKEY, F_OK) != 0) {
         rc = system_checked(OPENSSH_KEYGEN " -t dsa -q -N \"\" -f "
                             OPENSSH_DSA_TESTKEY);
     }
     assert_int_equal(rc, 0);
+#endif
 
     if (access(OPENSSH_RSA_TESTKEY, F_OK) != 0) {
         rc = system_checked(OPENSSH_KEYGEN " -t rsa -q -N \"\" -f "
@@ -116,7 +122,9 @@ void setup_openssh_client_keys() {
 }
 
 void cleanup_openssh_client_keys() {
+#ifdef HAVE_DSA
     cleanup_key(OPENSSH_DSA_TESTKEY, OPENSSH_DSA_TESTKEY ".pub");
+#endif
     cleanup_key(OPENSSH_RSA_TESTKEY, OPENSSH_RSA_TESTKEY ".pub");
     cleanup_key(OPENSSH_ECDSA256_TESTKEY, OPENSSH_ECDSA256_TESTKEY ".pub");
     cleanup_key(OPENSSH_ECDSA384_TESTKEY, OPENSSH_ECDSA384_TESTKEY ".pub");

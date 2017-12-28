@@ -220,7 +220,11 @@ static int check_public_key(ssh_session session, char **tokens) {
 
     for (i = 2; i < 4; i++) { /* e, then n */
       tmpbn = NULL;
+#ifdef HAVE_LIBMBEDCRYPTO
+      bignum_dec2bn(tokens[i], tmpbn);
+#else
       bignum_dec2bn(tokens[i], &tmpbn);
+#endif
       if (tmpbn == NULL) {
         ssh_buffer_free(pubkey_buffer);
         return -1;
@@ -241,6 +245,8 @@ static int check_public_key(ssh_session session, char **tokens) {
 #ifdef HAVE_LIBGCRYPT
       bignum_bn2bin(tmpbn, len, ssh_string_data(tmpstring));
 #elif defined HAVE_LIBCRYPTO
+      bignum_bn2bin(tmpbn, ssh_string_data(tmpstring));
+#elif defined HAVE_LIBMBEDCRYPTO
       bignum_bn2bin(tmpbn, ssh_string_data(tmpstring));
 #endif
       bignum_free(tmpbn);

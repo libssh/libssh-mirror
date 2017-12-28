@@ -362,6 +362,9 @@ void publickey_free(ssh_public_key key) {
       gcry_sexp_release(key->rsa_pub);
 #elif defined HAVE_LIBCRYPTO
       RSA_free(key->rsa_pub);
+#elif defined HAVE_LIBMBEDCRYPTO
+      mbedtls_pk_free(key->rsa_pub);
+      SAFE_FREE(key->rsa_pub);
 #endif
       break;
     default:
@@ -463,6 +466,9 @@ void privatekey_free(ssh_private_key prv) {
 #elif defined HAVE_LIBCRYPTO
   DSA_free(prv->dsa_priv);
   RSA_free(prv->rsa_priv);
+#elif defined HAVE_LIBMBEDCRYPTO
+  mbedtls_pk_free(prv->rsa_priv);
+  SAFE_FREE(prv->rsa_priv);
 #endif
   memset(prv, 0, sizeof(struct ssh_private_key_struct));
   SAFE_FREE(prv);

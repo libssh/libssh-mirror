@@ -34,6 +34,9 @@ struct ssh_public_key_struct {
 #elif HAVE_LIBCRYPTO
     DSA *dsa_pub;
     RSA *rsa_pub;
+#elif HAVE_LIBMBEDCRYPTO
+    mbedtls_pk_context *rsa_pub;
+    void *dsa_pub;
 #endif
 };
 
@@ -45,6 +48,9 @@ struct ssh_private_key_struct {
 #elif defined HAVE_LIBCRYPTO
     DSA *dsa_priv;
     RSA *rsa_priv;
+#elif HAVE_LIBMBEDCRYPTO
+    mbedtls_pk_context *rsa_priv;
+    void *dsa_priv;
 #endif
 };
 

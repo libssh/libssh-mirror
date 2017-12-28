@@ -148,6 +148,7 @@ ssh_session ssh_new(void) {
       goto err;
     }
 
+#ifdef HAVE_DSA
     id = strdup("%d/id_dsa");
     if (id == NULL) {
       goto err;
@@ -156,6 +157,7 @@ ssh_session ssh_new(void) {
     if (rc == SSH_ERROR) {
       goto err;
     }
+#endif
 
     id = strdup("%d/identity");
     if (id == NULL) {

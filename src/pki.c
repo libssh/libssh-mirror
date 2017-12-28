@@ -138,6 +138,16 @@ void ssh_key_clean (ssh_key key){
 #ifdef HAVE_OPENSSL_ECC
     if(key->ecdsa) EC_KEY_free(key->ecdsa);
 #endif /* HAVE_OPENSSL_ECC */
+#elif defined HAVE_LIBMBEDCRYPTO
+    if (key->rsa != NULL) {
+        mbedtls_pk_free(key->rsa);
+        SAFE_FREE(key->rsa);
+    }
+
+    if (key->ecdsa != NULL) {
+        mbedtls_ecdsa_free(key->ecdsa);
+        SAFE_FREE(key->ecdsa);
+    }
 #endif
     if (key->ed25519_privkey != NULL){
         BURN_BUFFER(key->ed25519_privkey, sizeof(ed25519_privkey));
@@ -354,6 +364,8 @@ void ssh_signature_free(ssh_signature sig)
             gcry_sexp_release(sig->rsa_sig);
 #elif defined HAVE_LIBCRYPTO
             SAFE_FREE(sig->rsa_sig);
+#elif defined HAVE_LIBMBEDCRYPTO
+            SAFE_FREE(sig->rsa_sig);
 #endif
             break;
         case SSH_KEYTYPE_ECDSA:
@@ -361,6 +373,9 @@ void ssh_signature_free(ssh_signature sig)
             gcry_sexp_release(sig->ecdsa_sig);
 #elif defined(HAVE_LIBCRYPTO) && defined(HAVE_OPENSSL_ECC)
             ECDSA_SIG_free(sig->ecdsa_sig);
+#elif defined HAVE_LIBMBEDCRYPTO
+            bignum_free(sig->ecdsa_sig.r);
+            bignum_free(sig->ecdsa_sig.s);
 #endif
             break;
         case SSH_KEYTYPE_ED25519:

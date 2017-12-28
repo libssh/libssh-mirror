@@ -37,6 +37,10 @@
 #define HAVE_ECDH 1
 #endif
 
+#ifdef HAVE_LIBMBEDCRYPTO
+#define HAVE_ECDH 1
+#endif
+
 /* Common functions.  */
 int ssh_client_ecdh_reply(ssh_session session, ssh_buffer packet);
 

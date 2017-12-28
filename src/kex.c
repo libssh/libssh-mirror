@@ -43,6 +43,12 @@
 # define DES "3des-cbc"
 # define DES_SUPPORTED "3des-cbc,des-cbc-ssh1"
 
+#elif defined HAVE_LIBMBEDCRYPTO
+# define BLOWFISH "blowfish-cbc,"
+# define AES "aes256-ctr,aes192-ctr,aes128-ctr,aes256-cbc,aes192-cbc,aes128-cbc,"
+# define DES "3des-cbc"
+# define DES_SUPPORTED "3des-cbc,des-cbc-ssh1"
+
 #elif defined(HAVE_LIBCRYPTO)
 
 # ifdef HAVE_OPENSSL_BLOWFISH_H
@@ -81,7 +87,11 @@
 #define ECDH "ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521,"
 #define HOSTKEYS "ssh-ed25519,ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,ssh-rsa,ssh-dss"
 #else
+#ifdef HAVE_DSA
 #define HOSTKEYS "ssh-ed25519,ssh-rsa,ssh-dss"
+#else
+#define HOSTKEYS "ssh-ed25519,ssh-rsa"
+#endif
 #define ECDH ""
 #endif
 
@@ -560,7 +570,9 @@ static char *ssh_client_select_hostkeys(ssh_session session){
         "ecdsa-sha2-nistp384",
         "ecdsa-sha2-nistp256",
         "ssh-rsa",
+#ifdef HAVE_DSA
         "ssh-dss",
+#endif
         "ssh-rsa1",
         NULL
     };

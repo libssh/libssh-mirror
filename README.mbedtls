@@ -1,0 +1,7 @@
+When built with mbedTLS, libssh currently does not support ECDSA key comparison.
+Since the comparison function is used during the verification of publickey
+authentication requests a libssh server will not be able to deal with ECDSA
+keys.
+
+In general, if the ssh_key_cmp function is used with mbedTLS, ECDSA key
+comparison won't work.

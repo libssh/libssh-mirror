@@ -83,6 +83,9 @@
 /* Define to 1 if you have eliptic curve cryptography */
 #cmakedefine HAVE_ECC 1
 
+/* Define to 1 if you have DSA */
+#cmakedefine HAVE_DSA 1
+
 /*************************** FUNCTIONS ***************************/
 
 /* Define to 1 if you have the `EVP_aes128_ctr' function. */
@@ -164,6 +167,9 @@
 
 /* Define to 1 if you have the `gcrypt' library (-lgcrypt). */
 #cmakedefine HAVE_LIBGCRYPT 1
+
+/* Define to 1 if you have the 'mbedTLS' library (-lmbedtls). */
+#cmakedefine HAVE_LIBMBEDCRYPTO 1
 
 /* Define to 1 if you have the `pthread' library (-lpthread). */
 #cmakedefine HAVE_PTHREAD 1

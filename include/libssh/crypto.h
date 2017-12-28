@@ -84,6 +84,8 @@ struct ssh_crypto_struct {
     EC_KEY *ecdh_privkey;
 #elif defined HAVE_GCRYPT_ECC
     gcry_sexp_t ecdh_privkey;
+#elif defined HAVE_LIBMBEDCRYPTO
+    mbedtls_ecp_keypair *ecdh_privkey;
 #endif
     ssh_string ecdh_client_pubkey;
     ssh_string ecdh_server_pubkey;
@@ -135,6 +137,10 @@ struct ssh_cipher_struct {
     struct ssh_aes_key_schedule *aes_key;
     const EVP_CIPHER *cipher;
     EVP_CIPHER_CTX *ctx;
+#elif defined HAVE_LIBMBEDCRYPTO
+    mbedtls_cipher_context_t encrypt_ctx;
+    mbedtls_cipher_context_t decrypt_ctx;
+    mbedtls_cipher_type_t type;
 #endif
     unsigned int keysize; /* bytes of key used. != keylen */
     /* sets the new key for immediate use */

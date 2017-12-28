@@ -113,6 +113,7 @@ static const char torture_rsa_testkey_cert[] =
         "neB6OdgTpKFsmgPZVtqrvhjw+b5T8a4W4iWSl+6wg6gowAm "
         "rsa_privkey.pub\n";
 
+#ifdef HAVE_DSA
 static const char torture_dsa_testkey[] =
         "-----BEGIN DSA PRIVATE KEY-----\n"
         "MIIBuwIBAAKBgQCUyvVPEkn3UnZDjzCzSzSHpTltzr0Ec+1mz/JACjHMBJ9C/W/P\n"
@@ -167,6 +168,7 @@ static const char torture_dsa_testkey_cert[] =
         "4mMXgzaLViFtcwah6wHGlW0UPQMvrq/RqigAkyUszSccfibkIXJ+wGAgsRYhVAMwME"
         "JqPZ6GHOEIjLBKUegsclHb7Pk0YO8Auaw== "
         "aris@aris-air\n";
+#endif
 
 static const char torture_rsa_testkey_pp[] =
         "-----BEGIN RSA PRIVATE KEY-----\n"
@@ -200,6 +202,7 @@ static const char torture_rsa_testkey_pp[] =
         "JSvUyxoaZUjQkT7iF94HsF+FVVJdI55UjgnMiZ0d5vKffWyTHYcYHkFYaSloAMWN\n"
         "-----END RSA PRIVATE KEY-----\n";
 
+#ifdef HAVE_DSA
 static const char torture_dsa_testkey_pp[] =
         "-----BEGIN DSA PRIVATE KEY-----\n"
         "Proc-Type: 4,ENCRYPTED\n"
@@ -216,6 +219,7 @@ static const char torture_dsa_testkey_pp[] =
         "HTSuHZ7edjoWqwnl/vkc3+nG//IEj8LqAacx0i4krDcQpGuQ6BnPfwPFco2NQQpw\n"
         "wHBOL6HrOnD+gGs6DUFwzA==\n"
         "-----END DSA PRIVATE KEY-----\n";
+#endif
 
 static const char torture_ecdsa256_testkey[] =
         "-----BEGIN EC PRIVATE KEY-----\n"
@@ -571,9 +575,11 @@ ssh_bind torture_ssh_bind(const char *addr,
     }
 
     switch (key_type) {
+#ifdef HAVE_DSA
         case SSH_KEYTYPE_DSS:
             opts = SSH_BIND_OPTIONS_DSAKEY;
             break;
+#endif
         case SSH_KEYTYPE_RSA:
             opts = SSH_BIND_OPTIONS_RSAKEY;
             break;
@@ -694,6 +700,7 @@ static const char *torture_get_testkey_internal(enum ssh_keytypes_e type,
                                                 int pubkey)
 {
     switch (type) {
+#ifdef HAVE_DSA
     case SSH_KEYTYPE_DSS:
         if (pubkey) {
             return torture_dsa_testkey_pub;
@@ -701,6 +708,7 @@ static const char *torture_get_testkey_internal(enum ssh_keytypes_e type,
             return torture_dsa_testkey_pp;
         }
         return torture_dsa_testkey;
+#endif
     case SSH_KEYTYPE_RSA:
        if (pubkey) {
                 return torture_rsa_testkey_pub;
@@ -738,8 +746,10 @@ static const char *torture_get_testkey_internal(enum ssh_keytypes_e type,
             return torture_ed25519_testkey_pp;
         }
         return torture_ed25519_testkey;
+#ifdef HAVE_DSA
     case SSH_KEYTYPE_DSS_CERT01:
         return torture_dsa_testkey_cert;
+#endif
     case SSH_KEYTYPE_RSA_CERT01:
         return torture_rsa_testkey_cert;
     case SSH_KEYTYPE_RSA1:
@@ -862,7 +872,9 @@ void torture_setup_socket_dir(void **state)
 static void torture_setup_create_sshd_config(void **state)
 {
     struct torture_state *s = *state;
+#ifdef HAVE_DSA
     char dsa_hostkey[1024];
+#endif
     char rsa_hostkey[1024];
     char ecdsa_hostkey[1024];
     char trusted_ca_pubkey[1024];
@@ -882,7 +894,9 @@ static void torture_setup_create_sshd_config(void **state)
     const char config_string[]=
              "Port 22\n"
              "ListenAddress 127.0.0.10\n"
+#ifdef HAVE_DSA
              "HostKey %s\n"
+#endif
              "HostKey %s\n"
              "HostKey %s\n"
              "\n"
@@ -901,8 +915,12 @@ static void torture_setup_create_sshd_config(void **state)
              "UsePAM yes\n"
              "\n"
 #if (OPENSSH_VERSION_MAJOR == 6 && OPENSSH_VERSION_MINOR >= 7) || (OPENSSH_VERSION_MAJOR >= 7)
+# ifdef HAVE_DSA
              "HostKeyAlgorithms +ssh-dss\n"
-# if (OPENSSH_VERSION_MAJOR == 7 && OPENSSH_VERSION_MINOR < 6)
+# else
+             "HostKeyAlgorithms +ssh-rsa\n"
+# endif
+#  if (OPENSSH_VERSION_MAJOR == 7 && OPENSSH_VERSION_MINOR < 6)
              "Ciphers +3des-cbc,aes128-cbc,aes192-cbc,aes256-cbc,blowfish-cbc\n"
 # else
              "Ciphers +3des-cbc,aes128-cbc,aes192-cbc,aes256-cbc\n"
@@ -939,11 +957,13 @@ static void torture_setup_create_sshd_config(void **state)
     rc = mkdir(sshd_path, 0755);
     assert_return_code(rc, errno);
 
+#ifdef HAVE_DSA
     snprintf(dsa_hostkey,
              sizeof(dsa_hostkey),
              "%s/sshd/ssh_host_dsa_key",
              s->socket_dir);
     torture_write_file(dsa_hostkey, torture_get_testkey(SSH_KEYTYPE_DSS, 0, 0));
+#endif
 
     snprintf(rsa_hostkey,
              sizeof(rsa_hostkey),
@@ -980,7 +1000,9 @@ static void torture_setup_create_sshd_config(void **state)
 
     snprintf(sshd_config, sizeof(sshd_config),
              config_string,
+#ifdef HAVE_DSA
              dsa_hostkey,
+#endif
              rsa_hostkey,
              ecdsa_hostkey,
              trusted_ca_pubkey,

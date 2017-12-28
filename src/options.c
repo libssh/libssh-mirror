@@ -1493,8 +1493,15 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
           key_type = ssh_key_type(key);
           switch (key_type) {
           case SSH_KEYTYPE_DSS:
+#ifdef HAVE_DSA
               bind_key_loc = &sshbind->dsa;
               bind_key_path_loc = &sshbind->dsakey;
+#else
+              ssh_set_error(sshbind,
+                      SSH_FATAL,
+                      "DSS key used and libssh compiled "
+                      "without DSA support");
+#endif
               break;
           case SSH_KEYTYPE_ECDSA:
 #ifdef HAVE_ECC
@@ -1550,7 +1557,14 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
             key_type = ssh_key_type(key);
             switch (key_type) {
                 case SSH_KEYTYPE_DSS:
+#ifdef HAVE_DSA
                     bind_key_loc = &sshbind->dsa;
+#else
+                    ssh_set_error(sshbind,
+                                  SSH_FATAL,
+                                  "DSA key used and libssh compiled "
+                                  "without DSA support");
+#endif
                     break;
                 case SSH_KEYTYPE_ECDSA:
 #ifdef HAVE_ECC

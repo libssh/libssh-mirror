@@ -73,10 +73,18 @@ void ssh_server() {
     errx(1, "ssh_bind_new");
   }
 
+#ifdef HAVE_DSA
+  /*TODO mbedtls this is probably required */
   if (ssh_bind_options_set(bind, SSH_BIND_OPTIONS_DSAKEY,
                            options.server_keyfile) != SSH_OK) {
     errx(1, "ssh_bind_options_set(SSH_BIND_OPTIONS_DSAKEY");
   }
+#else
+  if (ssh_bind_options_set(bind, SSH_BIND_OPTIONS_RSAKEY,
+                           options.server_keyfile) != SSH_OK) {
+    errx(1, "ssh_bind_options_set(SSH_BIND_OPTIONS_RSAKEY");
+  }
+#endif
 
   session = ssh_new();
   if (!session) {

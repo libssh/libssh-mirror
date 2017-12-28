@@ -143,6 +143,8 @@ int ssh_get_random(void *where, int len, int strong){
     return RAND_pseudo_bytes(where,len);
   }
 # endif /* OPENSSL_VERSION_NUMBER */
+#elif defined HAVE_LIBMBEDCRYPTO
+  return ssh_mbedtls_random(where, len, strong);
 #endif
 
   /* never reached */
@@ -162,6 +164,8 @@ int ssh_crypto_init(void) {
       gcry_control(GCRYCTL_INIT_SECMEM, 4096);
       gcry_control(GCRYCTL_INITIALIZATION_FINISHED,0);
     }
+#elif HAVE_LIBMBEDCRYPTO
+    ssh_mbedtls_init();
 #endif
 
     g = bignum_new();
@@ -206,7 +210,12 @@ int ssh_crypto_init(void) {
     bignum_bin2bn(p_group14_value, P_GROUP14_LEN, p_group14);
 
     OpenSSL_add_all_algorithms();
+#elif defined HAVE_LIBMBEDCRYPTO
+    p_group1 = bignum_new();
+    bignum_bin2bn(p_group1_value, P_GROUP1_LEN, p_group1);
 
+    p_group14 = bignum_new();
+    bignum_bin2bn(p_group14_value, P_GROUP14_LEN, p_group14);
 #endif
 
     ssh_crypto_initialized = 1;
@@ -228,6 +237,8 @@ void ssh_crypto_finalize(void) {
 #elif defined HAVE_LIBCRYPTO
     EVP_cleanup();
     CRYPTO_cleanup_all_ex_data();
+#elif defined HAVE_LIBMBEDTLS
+    ssh_mbedtls_cleanup();
 #endif
     ssh_crypto_initialized=0;
   }
@@ -248,6 +259,8 @@ int ssh_dh_generate_x(ssh_session session) {
 #ifdef HAVE_LIBGCRYPT
   bignum_rand(session->next_crypto->x, keysize);
 #elif defined HAVE_LIBCRYPTO
+  bignum_rand(session->next_crypto->x, keysize, -1, 0);
+#elif defined HAVE_LIBMBEDCRYPTO
   bignum_rand(session->next_crypto->x, keysize, -1, 0);
 #endif
 
@@ -275,6 +288,8 @@ int ssh_dh_generate_y(ssh_session session) {
 #ifdef HAVE_LIBGCRYPT
   bignum_rand(session->next_crypto->y, keysize);
 #elif defined HAVE_LIBCRYPTO
+  bignum_rand(session->next_crypto->y, keysize, -1, 0);
+#elif defined HAVE_LIBMBEDCRYPTO
   bignum_rand(session->next_crypto->y, keysize, -1, 0);
 #endif
 
@@ -309,6 +324,9 @@ int ssh_dh_generate_e(ssh_session session) {
 #elif defined HAVE_LIBCRYPTO
   bignum_mod_exp(session->next_crypto->e, g, session->next_crypto->x,
       select_p(session->next_crypto->kex_type), ctx);
+#elif defined HAVE_LIBMBEDCRYPTO
+  bignum_mod_exp(session->next_crypto->e, g, session->next_crypto->x,
+      select_p(session->next_crypto->kex_type), NULL);
 #endif
 
 #ifdef DEBUG_CRYPTO
@@ -344,6 +362,9 @@ int ssh_dh_generate_f(ssh_session session) {
 #elif defined HAVE_LIBCRYPTO
   bignum_mod_exp(session->next_crypto->f, g, session->next_crypto->y,
       select_p(session->next_crypto->kex_type), ctx);
+#elif defined HAVE_LIBMBEDCRYPTO
+  bignum_mod_exp(session->next_crypto->f, g, session->next_crypto->y,
+      select_p(session->next_crypto->kex_type), NULL);
 #endif
 
 #ifdef DEBUG_CRYPTO
@@ -429,6 +450,14 @@ int ssh_dh_build_k(ssh_session session) {
   } else {
     bignum_mod_exp(session->next_crypto->k, session->next_crypto->e,
         session->next_crypto->y, select_p(session->next_crypto->kex_type), ctx);
+  }
+#elif defined HAVE_LIBMBEDCRYPTO
+  if (session->client) {
+    bignum_mod_exp(session->next_crypto->k, session->next_crypto->f,
+        session->next_crypto->x, select_p(session->next_crypto->kex_type), NULL);
+  } else {
+    bignum_mod_exp(session->next_crypto->k, session->next_crypto->e,
+        session->next_crypto->y, select_p(session->next_crypto->kex_type), NULL);
   }
 #endif
 

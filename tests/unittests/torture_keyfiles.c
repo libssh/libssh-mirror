@@ -6,7 +6,9 @@
 #include "legacy.c"
 
 #define LIBSSH_RSA_TESTKEY "libssh_testkey.id_rsa"
+#ifdef HAVE_DSA
 #define LIBSSH_DSA_TESTKEY "libssh_testkey.id_dsa"
+#endif
 
 static int setup_rsa_key(void **state)
 {
@@ -26,6 +28,7 @@ static int setup_rsa_key(void **state)
     return 0;
 }
 
+#ifdef HAVE_DSA
 static int setup_dsa_key(void **state)
 {
     ssh_session session;
@@ -43,6 +46,7 @@ static int setup_dsa_key(void **state)
 
     return 0;
 }
+#endif
 
 static int setup_both_keys(void **state) {
     int rc;
@@ -51,9 +55,11 @@ static int setup_both_keys(void **state) {
     if (rc != 0) {
         return rc;
     }
+#ifdef HAVE_DSA
     ssh_free(*state);
 
     rc = setup_dsa_key(state);
+#endif
 
     return rc;
 }
@@ -67,10 +73,12 @@ static int setup_both_keys_passphrase(void **state)
     torture_write_file(LIBSSH_RSA_TESTKEY ".pub",
                        torture_get_testkey_pub(SSH_KEYTYPE_RSA, 0));
 
+#ifdef HAVE_DSA
     torture_write_file(LIBSSH_DSA_TESTKEY,
                        torture_get_testkey(SSH_KEYTYPE_DSS, 0, 1));
     torture_write_file(LIBSSH_DSA_TESTKEY ".pub",
                        torture_get_testkey_pub(SSH_KEYTYPE_DSS, 0));
+#endif
 
     session = ssh_new();
     *state = session;
@@ -80,8 +88,10 @@ static int setup_both_keys_passphrase(void **state)
 
 static int teardown(void **state)
 {
+#ifdef HAVE_DSA
     unlink(LIBSSH_DSA_TESTKEY);
     unlink(LIBSSH_DSA_TESTKEY ".pub");
+#endif
 
     unlink(LIBSSH_RSA_TESTKEY);
     unlink(LIBSSH_RSA_TESTKEY ".pub");
@@ -216,12 +226,14 @@ static void torture_privatekey_from_file(void **state) {
         key = NULL;
     }
 
+#ifdef HAVE_DSA
     key = privatekey_from_file(session, LIBSSH_DSA_TESTKEY, SSH_KEYTYPE_DSS, NULL);
     assert_true(key != NULL);
     if (key != NULL) {
         privatekey_free(key);
         key = NULL;
     }
+#endif
 
     /* Test the automatic type discovery */
     key = privatekey_from_file(session, LIBSSH_RSA_TESTKEY, 0, NULL);
@@ -231,12 +243,14 @@ static void torture_privatekey_from_file(void **state) {
         key = NULL;
     }
 
+#ifdef HAVE_DSA
     key = privatekey_from_file(session, LIBSSH_DSA_TESTKEY, 0, NULL);
     assert_true(key != NULL);
     if (key != NULL) {
         privatekey_free(key);
         key = NULL;
     }
+#endif
 }
 
 /**
@@ -253,12 +267,14 @@ static void torture_privatekey_from_file_passphrase(void **state) {
         key = NULL;
     }
 
+#ifdef HAVE_DSA
     key = privatekey_from_file(session, LIBSSH_DSA_TESTKEY, SSH_KEYTYPE_DSS, TORTURE_TESTKEY_PASSWORD);
     assert_true(key != NULL);
     if (key != NULL) {
         privatekey_free(key);
         key = NULL;
     }
+#endif
 
     /* Test the automatic type discovery */
     key = privatekey_from_file(session, LIBSSH_RSA_TESTKEY, 0, TORTURE_TESTKEY_PASSWORD);
@@ -268,12 +284,14 @@ static void torture_privatekey_from_file_passphrase(void **state) {
         key = NULL;
     }
 
+#ifdef HAVE_DSA
     key = privatekey_from_file(session, LIBSSH_DSA_TESTKEY, 0, TORTURE_TESTKEY_PASSWORD);
     assert_true(key != NULL);
     if (key != NULL) {
         privatekey_free(key);
         key = NULL;
     }
+#endif
 }
 
 int torture_run_tests(void) {

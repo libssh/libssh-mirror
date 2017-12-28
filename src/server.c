@@ -107,6 +107,7 @@ static int server_set_kex(ssh_session session) {
                ",%s", session->srv.ecdsa_key->type_c);
   }
 #endif
+#ifdef HAVE_DSA
   if (session->srv.dsa_key != NULL) {
       len = strlen(hostkeys);
       keytype = ssh_key_type(session->srv.dsa_key);
@@ -114,6 +115,7 @@ static int server_set_kex(ssh_session session) {
       snprintf(hostkeys + len, sizeof(hostkeys) - len,
                ",%s", ssh_key_type_to_char(keytype));
   }
+#endif
   if (session->srv.rsa_key != NULL) {
       len = strlen(hostkeys);
       keytype = ssh_key_type(session->srv.rsa_key);

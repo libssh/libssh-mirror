@@ -60,6 +60,8 @@ ssh_string ssh_make_bignum_string(bignum num) {
   bignum_bn2bin(num, len, ptr->data + pad);
 #elif HAVE_LIBCRYPTO
   bignum_bn2bin(num, ptr->data + pad);
+#elif HAVE_LIBMBEDCRYPTO
+  bignum_bn2bin(num, ptr->data + pad);
 #endif
 
   return ptr;
@@ -78,6 +80,9 @@ bignum ssh_make_string_bn(ssh_string string){
   bignum_bin2bn(string->data, len, &bn);
 #elif defined HAVE_LIBCRYPTO
   bn = bignum_bin2bn(string->data, len, NULL);
+#elif defined HAVE_LIBMBEDCRYPTO
+  bn = bignum_new();
+  bignum_bin2bn(string->data, len, bn);
 #endif
 
   return bn;
@@ -91,6 +96,8 @@ void ssh_make_string_bn_inplace(ssh_string string, bignum bnout) {
   (void) bnout;
 #elif defined HAVE_LIBCRYPTO
   bignum_bin2bn(string->data, len, bnout);
+#elif defined HAVE_LIBMBEDCRYPTO
+  bignum_bin2bn(string->data, len, bnout);
 #endif
 }
 
@@ -102,6 +109,9 @@ void ssh_print_bignum(const char *which, const bignum num) {
 #elif defined HAVE_LIBCRYPTO
   char *hex = NULL;
   hex = bignum_bn2hex(num);
+#elif defined HAVE_LIBMBEDCRYPTO
+  char *hex = NULL;
+  hex = bignum_bn2hex(num);
 #endif
   fprintf(stderr, "%s value: ", which);
   fprintf(stderr, "%s\n", (hex == NULL) ? "(null)" : (char *) hex);
@@ -109,5 +119,7 @@ void ssh_print_bignum(const char *which, const bignum num) {
   SAFE_FREE(hex);
 #elif defined HAVE_LIBCRYPTO
   OPENSSL_free(hex);
+#elif defined HAVE_LIBMBEDCRYPTO
+  SAFE_FREE(hex);
 #endif
 }

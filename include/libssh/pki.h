@@ -48,6 +48,10 @@ struct ssh_key_struct {
     gcry_sexp_t dsa;
     gcry_sexp_t rsa;
     gcry_sexp_t ecdsa;
+#elif HAVE_LIBMBEDCRYPTO
+    mbedtls_pk_context *rsa;
+    mbedtls_ecdsa_context *ecdsa;
+    void *dsa;
 #elif HAVE_LIBCRYPTO
     DSA *dsa;
     RSA *rsa;
@@ -78,6 +82,9 @@ struct ssh_signature_struct {
 # else
     void *ecdsa_sig;
 # endif
+#elif defined HAVE_LIBMBEDCRYPTO
+    ssh_string rsa_sig;
+    struct mbedtls_ecdsa_sig ecdsa_sig;
 #endif
     ed25519_signature *ed25519_sig;
 };

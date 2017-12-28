@@ -40,6 +40,7 @@
                "YgIytryNn7LLiwYfoSxvWigFrTTZsrVtCOYyNgklmffpGdzuC43wdANvTewfI9G" \
                "o71r8EXmEc228CrYPmb8Scv3mpXFK/BosohSGkPlEHu9lf3YjnknBicDaVtJOYp" \
                "wnXJPjZo2EhG79HxDRpjJHH"
+#ifdef HAVE_DSA
 #define BADDSA "AAAAB3NzaC1kc3MAAACBAITDKqGQ5aC5wHySG6ZdL1+BVBY2nLP5vzw3i3pvZfP" \
                "yNUS0UCwrt5pajsMvDRGXXebTJhWVonDnv8tpSgiuIBXMZrma8CU1KCFGRzwb/n8" \
                "cc5tJmIphlOUTrObjBmsRz7u1eZmoaddXC9ask6BNnt0DmhzYi2esL3mbardy8IN" \
@@ -50,6 +51,7 @@
                "EcxqLVllrNEvd2EGD9p16BYO2yaalYon8im59PtOcul2ay5XQ6rVDQ2T0pgNUpsI" \
                "h0dSi8VJXI1wes5HTyLsv9VBmU1uCXUUvufoQKfF/OcSH0ufcCpnd62g1/adZcy2" \
                "WJg=="
+#endif
 
 static int sshd_setup(void **state)
 {
@@ -187,6 +189,7 @@ static void torture_knownhosts_fail(void **state) {
     assert_int_equal(rc, SSH_SERVER_KNOWN_CHANGED);
 }
 
+#ifdef HAVE_DSA
 static void torture_knownhosts_other(void **state) {
     struct torture_state *s = *state;
     ssh_session session = s->ssh.session;
@@ -272,6 +275,7 @@ static void torture_knownhosts_other_auto(void **state) {
 
     /* session will be freed by session_teardown() */
 }
+#endif
 
 static void torture_knownhosts_conflict(void **state) {
     struct torture_state *s = *state;
@@ -298,7 +302,9 @@ static void torture_knownhosts_conflict(void **state) {
     file = fopen(known_hosts_file, "w");
     assert_true(file != NULL);
     fprintf(file, "127.0.0.10 ssh-rsa %s\n", BADRSA);
+#ifdef HAVE_DSA
     fprintf(file, "127.0.0.10 ssh-dss %s\n", BADDSA);
+#endif
     fclose(file);
 
     rc = ssh_connect(session);
@@ -356,15 +362,21 @@ static void torture_knownhosts_precheck(void **state) {
     file = fopen(known_hosts_file, "w");
     assert_true(file != NULL);
     fprintf(file, "127.0.0.10 ssh-rsa %s\n", BADRSA);
+#ifdef HAVE_DSA
     fprintf(file, "127.0.0.10 ssh-dss %s\n", BADDSA);
+#endif
     fclose(file);
 
     kex = ssh_knownhosts_algorithms(session);
     assert_true(kex != NULL);
     assert_string_equal(kex[0],"ssh-rsa");
+#ifdef HAVE_DSA
     assert_string_equal(kex[1],"ssh-dss");
     assert_true(kex[2]==NULL);
     free(kex[1]);
+#else
+    assert_true(kex[1]==NULL);
+#endif
     free(kex[0]);
     free(kex);
 }
@@ -378,12 +390,14 @@ int torture_run_tests(void) {
         cmocka_unit_test_setup_teardown(torture_knownhosts_fail,
                                         session_setup,
                                         session_teardown),
+#ifdef HAVE_DSA
         cmocka_unit_test_setup_teardown(torture_knownhosts_other,
                                         session_setup,
                                         session_teardown),
         cmocka_unit_test_setup_teardown(torture_knownhosts_other_auto,
                                         session_setup,
                                         session_teardown),
+#endif
         cmocka_unit_test_setup_teardown(torture_knownhosts_conflict,
                                         session_setup,
                                         session_teardown),

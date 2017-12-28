@@ -78,6 +78,12 @@ static int ssh_curve25519_build_k(ssh_session session) {
   if (session->next_crypto->k == NULL) {
     return SSH_ERROR;
   }
+#elif defined HAVE_LIBMBEDCRYPTO
+  session->next_crypto->k = bignum_new();
+
+  if (session->next_crypto->k == NULL) {
+    return SSH_ERROR;
+  }
 #endif
 
   if (session->server)
@@ -90,6 +96,8 @@ static int ssh_curve25519_build_k(ssh_session session) {
 #ifdef HAVE_LIBGCRYPT
   bignum_bin2bn(k, CURVE25519_PUBKEY_SIZE, &session->next_crypto->k);
 #elif defined HAVE_LIBCRYPTO
+  bignum_bin2bn(k, CURVE25519_PUBKEY_SIZE, session->next_crypto->k);
+#elif defined HAVE_LIBMBEDCRYPTO
   bignum_bin2bn(k, CURVE25519_PUBKEY_SIZE, session->next_crypto->k);
 #endif
 
