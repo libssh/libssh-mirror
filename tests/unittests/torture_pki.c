@@ -399,6 +399,7 @@ static void torture_pki_import_privkey_base64_passphrase(void **state) {
                                        &key);
     assert_true(rc == -1);
 
+#ifndef HAVE_LIBCRYPTO
     /* test if it returns -1 if passphrase is NULL */
     /* libcrypto asks for a passphrase, so skip this test */
     rc = ssh_pki_import_privkey_base64(torture_get_testkey(SSH_KEYTYPE_DSS, 0, 1),
@@ -407,7 +408,8 @@ static void torture_pki_import_privkey_base64_passphrase(void **state) {
                                        NULL,
                                        &key);
     assert_true(rc == -1);
-# endif
+#endif /* HAVE_LIBCRYPTO */
+#endif /* HAVE_DSA */
     /* same for ED25519 */
     rc = ssh_pki_import_privkey_base64(torture_get_testkey(SSH_KEYTYPE_ED25519, 0, 1),
                                        passphrase,
