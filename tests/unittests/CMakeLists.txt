@@ -20,6 +20,10 @@ if (UNIX AND NOT WIN32)
     if (HAVE_DSA)
         add_cmocka_test(torture_pki_dsa torture_pki_dsa.c ${TORTURE_LIBRARY})
     endif()
+    if (HAVE_ECC)
+        add_cmocka_test(torture_pki_ecdsa torture_pki_ecdsa.c ${TORTURE_LIBRARY})
+    endif()
+
     # requires /dev/null
     add_cmocka_test(torture_channel torture_channel.c ${TORTURE_LIBRARY})
     # requires pthread

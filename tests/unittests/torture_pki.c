@@ -10,7 +10,6 @@
 #include "pki.c"
 
 #define LIBSSH_RSA_TESTKEY "libssh_testkey.id_rsa"
-#define LIBSSH_ECDSA_TESTKEY "libssh_testkey.id_ecdsa"
 #define LIBSSH_ED25519_TESTKEY "libssh_testkey.id_ed25519"
 
 const unsigned char HASH[] = "12345678901234567890";
@@ -32,41 +31,6 @@ static int setup_rsa_key(void **state)
 
     return 0;
 }
-
-#ifdef HAVE_ECC
-static int setup_ecdsa_key(void **state, int ecdsa_bits) {
-
-    (void) state; /* unused */
-
-    unlink(LIBSSH_ECDSA_TESTKEY);
-    unlink(LIBSSH_ECDSA_TESTKEY ".pub");
-
-    torture_write_file(LIBSSH_ECDSA_TESTKEY,
-                       torture_get_testkey(SSH_KEYTYPE_ECDSA, ecdsa_bits, 0));
-    torture_write_file(LIBSSH_ECDSA_TESTKEY ".pub",
-                       torture_get_testkey_pub(SSH_KEYTYPE_ECDSA, ecdsa_bits));
-
-    return 0;
-}
-
-static int setup_ecdsa_key_521(void **state) {
-    setup_ecdsa_key(state, 521);
-
-    return 0;
-}
-
-static int setup_ecdsa_key_384(void **state) {
-    setup_ecdsa_key(state, 384);
-
-    return 0;
-}
-
-static int setup_ecdsa_key_256(void **state) {
-    setup_ecdsa_key(state, 256);
-
-    return 0;
-}
-#endif
 
 static int setup_ed25519_key(void **state) {
     (void) state; /* unused */
@@ -97,9 +61,6 @@ static int teardown(void **state) {
     unlink(LIBSSH_RSA_TESTKEY);
     unlink(LIBSSH_RSA_TESTKEY ".pub");
     unlink(LIBSSH_RSA_TESTKEY "-cert.pub");
-
-    unlink(LIBSSH_ECDSA_TESTKEY);
-    unlink(LIBSSH_ECDSA_TESTKEY ".pub");
 
     return 0;
 }
@@ -195,29 +156,6 @@ static void torture_pki_import_privkey_base64_NULL_str(void **state) {
 
     ssh_key_free(key);
 }
-
-#ifdef HAVE_ECC
-static void torture_pki_import_privkey_base64_ECDSA(void **state) {
-    int rc;
-    char *key_str;
-    ssh_key key;
-    const char *passphrase = torture_get_testkey_passphrase();
-
-    (void) state; /* unused */
-
-    key_str = torture_pki_read_file(LIBSSH_ECDSA_TESTKEY);
-    assert_true(key_str != NULL);
-
-    rc = ssh_pki_import_privkey_base64(key_str, passphrase, NULL, NULL, &key);
-    assert_true(rc == 0);
-
-    rc = ssh_key_is_private(key);
-    assert_true(rc == 1);
-
-    free(key_str);
-    ssh_key_free(key);
-}
-#endif
 
 static void torture_pki_import_privkey_base64_passphrase(void **state) {
     int rc;
@@ -365,31 +303,6 @@ static void torture_pki_pki_publickey_from_privatekey_ed25519(void **state){
     ssh_key_free(pubkey);
 }
 
-#ifdef HAVE_ECC
-static void torture_pki_publickey_from_privatekey_ECDSA(void **state) {
-    int rc;
-    char *key_str;
-    ssh_key key;
-    ssh_key pubkey;
-    const char *passphrase = NULL;
-
-    (void) state; /* unused */
-
-    key_str = torture_pki_read_file(LIBSSH_ECDSA_TESTKEY);
-    assert_true(key_str != NULL);
-
-    rc = ssh_pki_import_privkey_base64(key_str, passphrase, NULL, NULL, &key);
-    assert_true(rc == 0);
-
-    rc = ssh_pki_export_privkey_to_pubkey(key, &pubkey);
-    assert_true(rc == SSH_OK);
-
-    free(key_str);
-    ssh_key_free(key);
-    ssh_key_free(pubkey);
-}
-#endif
-
 static void torture_pki_copy_cert_to_privkey(void **state) {
     /* Tests copying a cert loaded into a public key to a private key.
        The function is encryption type agnostic, no need to run this
@@ -461,45 +374,6 @@ static void torture_pki_import_cert_file_rsa(void **state) {
 
     ssh_key_free(cert);
 }
-
-#ifdef HAVE_ECC
-static void torture_pki_publickey_ecdsa_base64(void **state)
-{
-    enum ssh_keytypes_e type;
-    char *b64_key, *key_buf, *p;
-    const char *q;
-    ssh_key key;
-    int rc;
-
-    (void) state; /* unused */
-
-    key_buf = torture_pki_read_file(LIBSSH_ECDSA_TESTKEY ".pub");
-    assert_true(key_buf != NULL);
-
-    q = p = key_buf;
-    while (*p != ' ') p++;
-    *p = '\0';
-
-    type = ssh_key_type_from_name(q);
-    assert_true(type == SSH_KEYTYPE_ECDSA);
-
-    q = ++p;
-    while (*p != ' ') p++;
-    *p = '\0';
-
-    rc = ssh_pki_import_pubkey_base64(q, type, &key);
-    assert_true(rc == 0);
-
-    rc = ssh_pki_export_pubkey_base64(key, &b64_key);
-    assert_true(rc == 0);
-
-    assert_string_equal(q, b64_key);
-
-    free(b64_key);
-    free(key_buf);
-    ssh_key_free(key);
-}
-#endif
 
 static void torture_pki_publickey_rsa_base64(void **state)
 {
@@ -653,50 +527,6 @@ static void torture_generate_pubkey_from_privkey_ed25519(void **state){
     ssh_key_free(pubkey);
 }
 
-#ifdef HAVE_ECC
-static void torture_generate_pubkey_from_privkey_ecdsa(void **state) {
-    char pubkey_original[4096] = {0};
-    char pubkey_generated[4096] = {0};
-    ssh_key privkey;
-    ssh_key pubkey;
-    int rc;
-    int len;
-
-    (void) state; /* unused */
-
-    rc = torture_read_one_line(LIBSSH_ECDSA_TESTKEY ".pub",
-                               pubkey_original,
-                               sizeof(pubkey_original));
-    assert_true(rc == 0);
-
-    /* remove the public key, generate it from the private key and write it. */
-    unlink(LIBSSH_ECDSA_TESTKEY ".pub");
-
-    rc = ssh_pki_import_privkey_file(LIBSSH_ECDSA_TESTKEY,
-                                     NULL,
-                                     NULL,
-                                     NULL,
-                                     &privkey);
-    assert_true(rc == 0);
-
-    rc = ssh_pki_export_privkey_to_pubkey(privkey, &pubkey);
-    assert_true(rc == SSH_OK);
-
-    rc = ssh_pki_export_pubkey_file(pubkey, LIBSSH_ECDSA_TESTKEY ".pub");
-    assert_true(rc == 0);
-
-    rc = torture_read_one_line(LIBSSH_ECDSA_TESTKEY ".pub",
-                               pubkey_generated,
-                               sizeof(pubkey_generated));
-    assert_true(rc == 0);
-    len = torture_pubkey_len(pubkey_original);
-    assert_int_equal(strncmp(pubkey_original, pubkey_generated, len), 0);
-
-    ssh_key_free(privkey);
-    ssh_key_free(pubkey);
-}
-#endif
-
 static void torture_pki_duplicate_key_rsa(void **state)
 {
     int rc;
@@ -742,90 +572,6 @@ static void torture_pki_duplicate_key_rsa(void **state)
     ssh_string_free_char(b64_key);
     ssh_string_free_char(b64_key_gen);
 }
-
-#ifdef HAVE_ECC
-static void torture_pki_duplicate_key_ecdsa(void **state)
-{
-    int rc;
-    char *b64_key;
-    char *b64_key_gen;
-    ssh_key pubkey;
-    ssh_key privkey;
-    ssh_key privkey_dup;
-
-    (void) state;
-
-    rc = ssh_pki_import_pubkey_file(LIBSSH_ECDSA_TESTKEY ".pub", &pubkey);
-    assert_true(rc == 0);
-
-    rc = ssh_pki_export_pubkey_base64(pubkey, &b64_key);
-    assert_true(rc == 0);
-    ssh_key_free(pubkey);
-
-    rc = ssh_pki_import_privkey_file(LIBSSH_ECDSA_TESTKEY,
-                                     NULL,
-                                     NULL,
-                                     NULL,
-                                     &privkey);
-    assert_true(rc == 0);
-
-    privkey_dup = ssh_key_dup(privkey);
-    assert_true(privkey_dup != NULL);
-
-    rc = ssh_pki_export_privkey_to_pubkey(privkey, &pubkey);
-    assert_true(rc == SSH_OK);
-
-    rc = ssh_pki_export_pubkey_base64(pubkey, &b64_key_gen);
-    assert_true(rc == 0);
-
-    assert_string_equal(b64_key, b64_key_gen);
-
-#ifndef HAVE_LIBMBEDCRYPTO
-    /* libmbedcrypto can't compare ecdsa keys */
-    rc = ssh_key_cmp(privkey, privkey_dup, SSH_KEY_CMP_PRIVATE);
-    assert_true(rc == 0);
-#endif
-
-    ssh_key_free(pubkey);
-    ssh_key_free(privkey);
-    ssh_key_free(privkey_dup);
-    ssh_string_free_char(b64_key);
-    ssh_string_free_char(b64_key_gen);
-}
-
-/* Test case for bug #147: Private ECDSA key duplication did not carry
- * over parts of the key that then caused subsequent key demotion to
- * fail.
- */
-static void torture_pki_ecdsa_duplicate_then_demote(void **state)
-{
-    ssh_key pubkey;
-    ssh_key privkey;
-    ssh_key privkey_dup;
-    int rc;
-
-    (void) state;
-
-    rc = ssh_pki_import_privkey_file(LIBSSH_ECDSA_TESTKEY,
-                                     NULL,
-                                     NULL,
-                                     NULL,
-                                     &privkey);
-    assert_true(rc == 0);
-
-    privkey_dup = ssh_key_dup(privkey);
-    assert_true(privkey_dup != NULL);
-    assert_int_equal(privkey->ecdsa_nid, privkey_dup->ecdsa_nid);
-
-    rc = ssh_pki_export_privkey_to_pubkey(privkey_dup, &pubkey);
-    assert_true(rc == 0);
-    assert_int_equal(pubkey->ecdsa_nid, privkey->ecdsa_nid);
-
-    ssh_key_free(pubkey);
-    ssh_key_free(privkey);
-    ssh_key_free(privkey_dup);
-}
-#endif
 
 static void torture_pki_generate_key_rsa(void **state)
 {
@@ -915,76 +661,6 @@ static void torture_pki_generate_key_rsa1(void **state)
     ssh_free(session);
 }
 
-#ifdef HAVE_ECC
-static void torture_pki_generate_key_ecdsa(void **state)
-{
-    int rc;
-    ssh_key key;
-    ssh_signature sign;
-    enum ssh_keytypes_e type = SSH_KEYTYPE_UNKNOWN;
-    const char *type_char = NULL;
-    const char *etype_char = NULL;
-    ssh_session session=ssh_new();
-    (void) state;
-
-    rc = ssh_pki_generate(SSH_KEYTYPE_ECDSA, 256, &key);
-    assert_true(rc == SSH_OK);
-    assert_true(key != NULL);
-    sign = pki_do_sign(key, HASH, 20);
-    assert_true(sign != NULL);
-    rc = pki_signature_verify(session,sign,key,HASH,20);
-    assert_true(rc == SSH_OK);
-    type = ssh_key_type(key);
-    assert_true(type == SSH_KEYTYPE_ECDSA);
-    type_char = ssh_key_type_to_char(type);
-    assert_true(strcmp(type_char, "ssh-ecdsa") == 0);
-    etype_char = ssh_pki_key_ecdsa_name(key);
-    assert_true(strcmp(etype_char, "ecdsa-sha2-nistp256") == 0);
-
-    ssh_signature_free(sign);
-    ssh_key_free(key);
-    key=NULL;
-
-    rc = ssh_pki_generate(SSH_KEYTYPE_ECDSA, 384, &key);
-    assert_true(rc == SSH_OK);
-    assert_true(key != NULL);
-    sign = pki_do_sign(key, HASH, 20);
-    assert_true(sign != NULL);
-    rc = pki_signature_verify(session,sign,key,HASH,20);
-    assert_true(rc == SSH_OK);
-    type = ssh_key_type(key);
-    assert_true(type == SSH_KEYTYPE_ECDSA);
-    type_char = ssh_key_type_to_char(type);
-    assert_true(strcmp(type_char, "ssh-ecdsa") == 0);
-    etype_char =ssh_pki_key_ecdsa_name(key);
-    assert_true(strcmp(etype_char, "ecdsa-sha2-nistp384") == 0);
-
-    ssh_signature_free(sign);
-    ssh_key_free(key);
-    key=NULL;
-
-    rc = ssh_pki_generate(SSH_KEYTYPE_ECDSA, 512, &key);
-    assert_true(rc == SSH_OK);
-    assert_true(key != NULL);
-    sign = pki_do_sign(key, HASH, 20);
-    assert_true(sign != NULL);
-    rc = pki_signature_verify(session,sign,key,HASH,20);
-    assert_true(rc == SSH_OK);
-    type = ssh_key_type(key);
-    assert_true(type == SSH_KEYTYPE_ECDSA);
-    type_char = ssh_key_type_to_char(type);
-    assert_true(strcmp(type_char, "ssh-ecdsa") == 0);
-    etype_char =ssh_pki_key_ecdsa_name(key);
-    assert_true(strcmp(etype_char, "ecdsa-sha2-nistp521") == 0);
-
-    ssh_signature_free(sign);
-    ssh_key_free(key);
-    key=NULL;
-
-    ssh_free(session);
-}
-#endif
-
 static void torture_pki_generate_key_ed25519(void **state)
 {
     int rc;
@@ -1057,46 +733,6 @@ static void torture_pki_write_privkey_rsa(void **state)
     ssh_key_free(origkey);
     ssh_key_free(privkey);
 }
-
-#ifdef HAVE_ECC
-static void torture_pki_write_privkey_ecdsa(void **state)
-{
-    ssh_key origkey;
-    ssh_key privkey;
-    int rc;
-
-    (void) state; /* unused */
-
-    rc = ssh_pki_import_privkey_file(LIBSSH_ECDSA_TESTKEY,
-                                     NULL,
-                                     NULL,
-                                     NULL,
-                                     &origkey);
-    assert_true(rc == 0);
-
-    unlink(LIBSSH_ECDSA_TESTKEY);
-
-    rc = ssh_pki_export_privkey_file(origkey,
-                                     "",
-                                     NULL,
-                                     NULL,
-                                     LIBSSH_ECDSA_TESTKEY);
-    assert_true(rc == 0);
-
-    rc = ssh_pki_import_privkey_file(LIBSSH_ECDSA_TESTKEY,
-                                     NULL,
-                                     NULL,
-                                     NULL,
-                                     &privkey);
-    assert_true(rc == 0);
-
-    rc = ssh_key_cmp(origkey, privkey, SSH_KEY_CMP_PRIVATE);
-    assert_true(rc == 0);
-
-    ssh_key_free(origkey);
-    ssh_key_free(privkey);
-}
-#endif
 #endif /* HAVE_LIBCRYPTO */
 
 #ifdef HAVE_DSA
@@ -1168,40 +804,6 @@ static void torture_pki_write_privkey_ed25519(void **state){
 }
 #endif
 
-#ifdef HAVE_ECC
-static void torture_pki_ecdsa_name(void **state, const char *expected_name)
-{
-    int rc;
-    ssh_key key;
-    const char *etype_char = NULL;
-
-    (void) state; /* unused */
-
-    rc = ssh_pki_import_privkey_file(LIBSSH_ECDSA_TESTKEY, NULL, NULL, NULL, &key);
-    assert_true(rc == 0);
-
-    etype_char =ssh_pki_key_ecdsa_name(key);
-    assert_true(strcmp(etype_char, expected_name) == 0);
-
-    ssh_key_free(key);
-}
-
-static void torture_pki_ecdsa_name256(void **state)
-{
-    torture_pki_ecdsa_name(state, "ecdsa-sha2-nistp256");
-}
-
-static void torture_pki_ecdsa_name384(void **state)
-{
-    torture_pki_ecdsa_name(state, "ecdsa-sha2-nistp384");
-}
-
-static void torture_pki_ecdsa_name521(void **state)
-{
-    torture_pki_ecdsa_name(state, "ecdsa-sha2-nistp521");
-}
-#endif
-
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
@@ -1219,17 +821,6 @@ int torture_run_tests(void) {
         cmocka_unit_test_setup_teardown(torture_pki_import_privkey_base64_RSA,
                                  setup_rsa_key,
                                  teardown),
-#ifdef HAVE_ECC
-        cmocka_unit_test_setup_teardown(torture_pki_import_privkey_base64_ECDSA,
-                                 setup_ecdsa_key_256,
-                                 teardown),
-        cmocka_unit_test_setup_teardown(torture_pki_import_privkey_base64_ECDSA,
-                                 setup_ecdsa_key_384,
-                                 teardown),
-        cmocka_unit_test_setup_teardown(torture_pki_import_privkey_base64_ECDSA,
-                                 setup_ecdsa_key_521,
-                                 teardown),
-#endif
         cmocka_unit_test_setup_teardown(torture_pki_import_privkey_base64_ed25519,
                                 setup_ed25519_key,
                                 teardown),
@@ -1238,26 +829,6 @@ int torture_run_tests(void) {
         cmocka_unit_test_setup_teardown(torture_pki_pki_publickey_from_privatekey_RSA,
                                  setup_rsa_key,
                                  teardown),
-#ifdef HAVE_ECC
-        cmocka_unit_test_setup_teardown(torture_pki_publickey_from_privatekey_ECDSA,
-                                 setup_ecdsa_key_256,
-                                 teardown),
-        cmocka_unit_test_setup_teardown(torture_pki_publickey_from_privatekey_ECDSA,
-                                 setup_ecdsa_key_384,
-                                 teardown),
-        cmocka_unit_test_setup_teardown(torture_pki_publickey_from_privatekey_ECDSA,
-                                 setup_ecdsa_key_521,
-                                 teardown),
-        cmocka_unit_test_setup_teardown(torture_pki_ecdsa_duplicate_then_demote,
-                                 setup_ecdsa_key_256,
-                                 teardown),
-        cmocka_unit_test_setup_teardown(torture_pki_ecdsa_duplicate_then_demote,
-                                 setup_ecdsa_key_384,
-                                 teardown),
-        cmocka_unit_test_setup_teardown(torture_pki_ecdsa_duplicate_then_demote,
-                                 setup_ecdsa_key_521,
-                                 teardown),
-#endif
         cmocka_unit_test_setup_teardown(torture_pki_pki_publickey_from_privatekey_ed25519,
                                  setup_ed25519_key,
                                  teardown),
@@ -1271,72 +842,25 @@ int torture_run_tests(void) {
         cmocka_unit_test_setup_teardown(torture_pki_publickey_rsa_base64,
                                  setup_rsa_key,
                                  teardown),
-#ifdef HAVE_ECC
-        cmocka_unit_test_setup_teardown(torture_pki_publickey_ecdsa_base64,
-                                 setup_ecdsa_key_256,
-                                 teardown),
-        cmocka_unit_test_setup_teardown(torture_pki_publickey_ecdsa_base64,
-                                 setup_ecdsa_key_384,
-                                 teardown),
-        cmocka_unit_test_setup_teardown(torture_pki_publickey_ecdsa_base64,
-                                 setup_ecdsa_key_521,
-                                 teardown),
-#endif
         cmocka_unit_test_setup_teardown(torture_pki_publickey_ed25519_base64,
                                  setup_ed25519_key,
                                  teardown),
         cmocka_unit_test_setup_teardown(torture_generate_pubkey_from_privkey_rsa,
                                  setup_rsa_key,
                                  teardown),
-#ifdef HAVE_ECC
-        cmocka_unit_test_setup_teardown(torture_generate_pubkey_from_privkey_ecdsa,
-                                 setup_ecdsa_key_256,
-                                 teardown),
-        cmocka_unit_test_setup_teardown(torture_generate_pubkey_from_privkey_ecdsa,
-                                 setup_ecdsa_key_384,
-                                 teardown),
-        cmocka_unit_test_setup_teardown(torture_generate_pubkey_from_privkey_ecdsa,
-                                 setup_ecdsa_key_521,
-                                 teardown),
-#endif
         cmocka_unit_test_setup_teardown(torture_generate_pubkey_from_privkey_ed25519,
                                  setup_rsa_key,
                                  teardown),
         cmocka_unit_test_setup_teardown(torture_pki_duplicate_key_rsa,
                                  setup_rsa_key,
                                  teardown),
-#ifdef HAVE_ECC
-        cmocka_unit_test_setup_teardown(torture_pki_duplicate_key_ecdsa,
-                                 setup_ecdsa_key_256,
-                                 teardown),
-        cmocka_unit_test_setup_teardown(torture_pki_duplicate_key_ecdsa,
-                                 setup_ecdsa_key_384,
-                                 teardown),
-        cmocka_unit_test_setup_teardown(torture_pki_duplicate_key_ecdsa,
-                                 setup_ecdsa_key_521,
-                                 teardown),
-#endif
         cmocka_unit_test(torture_pki_generate_key_rsa),
         cmocka_unit_test(torture_pki_generate_key_rsa1),
-#ifdef HAVE_ECC
-        cmocka_unit_test(torture_pki_generate_key_ecdsa),
-#endif
         cmocka_unit_test(torture_pki_generate_key_ed25519),
 #ifdef HAVE_LIBCRYPTO
         cmocka_unit_test_setup_teardown(torture_pki_write_privkey_rsa,
                                  setup_rsa_key,
                                  teardown),
-#ifdef HAVE_ECC
-        cmocka_unit_test_setup_teardown(torture_pki_write_privkey_ecdsa,
-                                 setup_ecdsa_key_256,
-                                 teardown),
-        cmocka_unit_test_setup_teardown(torture_pki_write_privkey_ecdsa,
-                                 setup_ecdsa_key_384,
-                                 teardown),
-        cmocka_unit_test_setup_teardown(torture_pki_write_privkey_ecdsa,
-                                 setup_ecdsa_key_521,
-                                 teardown),
-#endif
 #endif /* HAVE_LIBCRYPTO */
 #ifdef HAVE_DSA
         cmocka_unit_test_setup_teardown(torture_pki_write_privkey_ed25519,
@@ -1344,17 +868,6 @@ int torture_run_tests(void) {
                                  teardown),
 #endif
 
-#ifdef HAVE_ECC
-        cmocka_unit_test_setup_teardown(torture_pki_ecdsa_name256,
-                                 setup_ecdsa_key_256,
-                                 teardown),
-        cmocka_unit_test_setup_teardown(torture_pki_ecdsa_name384,
-                                 setup_ecdsa_key_384,
-                                 teardown),
-        cmocka_unit_test_setup_teardown(torture_pki_ecdsa_name521,
-                                 setup_ecdsa_key_521,
-                                 teardown),
-#endif
     };
 
     (void)setup_both_keys;
