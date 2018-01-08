@@ -3,6 +3,7 @@
 #define LIBSSH_STATIC
 
 #include "torture.h"
+#include "torture_pki.h"
 #include "pki.c"
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -133,70 +134,6 @@ static int teardown(void **state) {
     return 0;
 }
 
-static char *read_file(const char *filename) {
-    char *key;
-    int fd;
-    int size;
-    int rc;
-    struct stat sb;
-
-    assert_true(filename != NULL);
-    assert_true(*filename != '\0');
-
-    fd = open(filename, O_RDONLY);
-    assert_true(fd >= 0);
-
-    rc = fstat(fd, &sb);
-    assert_int_equal(rc, 0);
-
-    key = malloc(sb.st_size + 1);
-    assert_true(key != NULL);
-
-    size = read(fd, key, sb.st_size);
-    assert_true(size == sb.st_size);
-
-    close(fd);
-
-    key[size] = '\0';
-    return key;
-}
-
-static int torture_read_one_line(const char *filename, char *buffer, size_t len) {
-  FILE *fp;
-  size_t nmemb;
-
-  fp = fopen(filename, "r");
-  if (fp == NULL) {
-    return -1;
-  }
-
-  nmemb = fread(buffer, len - 2, 1, fp);
-  if (nmemb != 0 || ferror(fp)) {
-    fclose(fp);
-    return -1;
-  }
-  buffer[len - 1] = '\0';
-
-  fclose(fp);
-
-  return 0;
-}
-
-/** @internal
- * returns the character len of a public key string, omitting the comment part
- */
-static int torture_pubkey_len(const char *pubkey){
-    const char *ptr;
-    ptr=strchr(pubkey, ' ');
-    if (ptr != NULL){
-        ptr = strchr(ptr + 1, ' ');
-        if (ptr != NULL){
-            return ptr - pubkey;
-        }
-    }
-    return 0;
-}
-
 static void torture_pki_keytype(void **state) {
     enum ssh_keytypes_e type;
     const char *type_c;
@@ -240,7 +177,7 @@ static void torture_pki_import_privkey_base64_RSA(void **state) {
 
     (void) state; /* unused */
 
-    key_str = read_file(LIBSSH_RSA_TESTKEY);
+    key_str = torture_pki_read_file(LIBSSH_RSA_TESTKEY);
     assert_true(key_str != NULL);
 
     rc = ssh_pki_import_privkey_base64(key_str, passphrase, NULL, NULL, &key);
@@ -317,7 +254,7 @@ static void torture_pki_import_privkey_base64_ECDSA(void **state) {
 
     (void) state; /* unused */
 
-    key_str = read_file(LIBSSH_ECDSA_TESTKEY);
+    key_str = torture_pki_read_file(LIBSSH_ECDSA_TESTKEY);
     assert_true(key_str != NULL);
 
     rc = ssh_pki_import_privkey_base64(key_str, passphrase, NULL, NULL, &key);
@@ -442,7 +379,7 @@ static void torture_pki_import_privkey_base64_ed25519(void **state){
 
     (void) state; /* unused */
 
-    key_str = read_file(LIBSSH_ED25519_TESTKEY);
+    key_str = torture_pki_read_file(LIBSSH_ED25519_TESTKEY);
     assert_true(key_str != NULL);
 
     rc = ssh_pki_import_privkey_base64(key_str, passphrase, NULL, NULL, &key);
@@ -549,7 +486,7 @@ static void torture_pki_publickey_from_privatekey_ECDSA(void **state) {
 
     (void) state; /* unused */
 
-    key_str = read_file(LIBSSH_ECDSA_TESTKEY);
+    key_str = torture_pki_read_file(LIBSSH_ECDSA_TESTKEY);
     assert_true(key_str != NULL);
 
     rc = ssh_pki_import_privkey_base64(key_str, passphrase, NULL, NULL, &key);
@@ -705,7 +642,7 @@ static void torture_pki_publickey_ecdsa_base64(void **state)
 
     (void) state; /* unused */
 
-    key_buf = read_file(LIBSSH_ECDSA_TESTKEY ".pub");
+    key_buf = torture_pki_read_file(LIBSSH_ECDSA_TESTKEY ".pub");
     assert_true(key_buf != NULL);
 
     q = p = key_buf;
