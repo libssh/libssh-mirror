@@ -31,14 +31,6 @@ static int setup_rsa_key(void **state)
     return 0;
 }
 
-static int setup_both_keys(void **state) {
-    (void) state; /* unused */
-
-    setup_rsa_key(state);
-
-    return 0;
-}
-
 static int teardown(void **state) {
     (void) state; /* unused */
 
@@ -580,8 +572,6 @@ int torture_run_tests(void) {
                                  teardown),
 #endif /* HAVE_LIBCRYPTO */
     };
-
-    (void)setup_both_keys;
 
     ssh_init();
     torture_filter_tests(tests);
