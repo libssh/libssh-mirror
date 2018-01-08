@@ -16,6 +16,10 @@ if (UNIX AND NOT WIN32)
     # requires ssh-keygen
     add_cmocka_test(torture_keyfiles torture_keyfiles.c ${TORTURE_LIBRARY})
     add_cmocka_test(torture_pki torture_pki.c ${TORTURE_LIBRARY})
+
+    if (HAVE_DSA)
+        add_cmocka_test(torture_pki_dsa torture_pki_dsa.c ${TORTURE_LIBRARY})
+    endif()
     # requires /dev/null
     add_cmocka_test(torture_channel torture_channel.c ${TORTURE_LIBRARY})
     # requires pthread
