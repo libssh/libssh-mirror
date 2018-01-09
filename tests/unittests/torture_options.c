@@ -8,6 +8,7 @@
 #endif
 
 #include "torture.h"
+#include "torture_key.h"
 #include <libssh/session.h>
 #include <libssh/misc.h>
 

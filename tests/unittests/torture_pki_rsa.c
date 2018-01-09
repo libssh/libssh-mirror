@@ -8,6 +8,7 @@
 
 #include "torture.h"
 #include "torture_pki.h"
+#include "torture_key.h"
 #include "pki.c"
 
 #define LIBSSH_RSA_TESTKEY "libssh_testkey.id_rsa"

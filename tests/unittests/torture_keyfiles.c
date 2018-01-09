@@ -3,6 +3,7 @@
 #define LIBSSH_STATIC
 
 #include "torture.h"
+#include "torture_key.h"
 #include "legacy.c"
 
 #define LIBSSH_RSA_TESTKEY "libssh_testkey.id_rsa"

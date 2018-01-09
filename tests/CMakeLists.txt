@@ -30,10 +30,14 @@ if (LIBSSH_THREADS)
 endif (LIBSSH_THREADS)
 
 # create test library
-add_library(${TORTURE_LIBRARY} STATIC cmdline.c torture.c torture_pki.c)
-    target_link_libraries(${TORTURE_LIBRARY}
-        ${TORTURE_LINK_LIBRARIES}
-    )
+add_library(${TORTURE_LIBRARY}
+            STATIC
+                cmdline.c
+                torture.c
+                torture_key.c
+                torture_pki.c)
+target_link_libraries(${TORTURE_LIBRARY} ${TORTURE_LINK_LIBRARIES})
+
 if (ARGP_LIBRARY)
     target_link_libraries(${TORTURE_LIBRARY}
         ${ARGP_LIBRARY}

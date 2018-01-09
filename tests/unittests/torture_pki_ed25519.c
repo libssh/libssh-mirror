@@ -3,6 +3,7 @@
 #define LIBSSH_STATIC
 
 #include "torture.h"
+#include "torture_key.h"
 #include "torture_pki.h"
 #include "pki.c"
 #include <sys/stat.h>
