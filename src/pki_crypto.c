@@ -662,7 +662,7 @@ ssh_string pki_private_key_to_pem(const ssh_key key,
             } else {
                 rc = PEM_write_bio_DSAPrivateKey(mem,
                                                  key->dsa,
-                                                 NULL, /* cipher */
+                                                 EVP_aes_128_cbc(),
                                                  NULL, /* kstr */
                                                  0, /* klen */
                                                  NULL, /* auth_fn */
@@ -687,7 +687,7 @@ ssh_string pki_private_key_to_pem(const ssh_key key,
             } else {
                 rc = PEM_write_bio_RSAPrivateKey(mem,
                                                  key->rsa,
-                                                 NULL, /* cipher */
+                                                 EVP_aes_128_cbc(),
                                                  NULL, /* kstr */
                                                  0, /* klen */
                                                  NULL, /* auth_fn */
@@ -712,7 +712,7 @@ ssh_string pki_private_key_to_pem(const ssh_key key,
             } else {
                 rc = PEM_write_bio_ECPrivateKey(mem,
                                                 key->ecdsa,
-                                                NULL, /* cipher */
+                                                EVP_aes_128_cbc(),
                                                 NULL, /* kstr */
                                                 0, /* klen */
                                                 NULL, /* auth_fn */

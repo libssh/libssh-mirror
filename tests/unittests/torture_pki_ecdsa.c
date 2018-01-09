@@ -354,7 +354,7 @@ static void torture_pki_ecdsa_write_privkey(void **state)
     unlink(LIBSSH_ECDSA_TESTKEY);
 
     rc = ssh_pki_export_privkey_file(origkey,
-                                     "",
+                                     NULL,
                                      NULL,
                                      NULL,
                                      LIBSSH_ECDSA_TESTKEY);

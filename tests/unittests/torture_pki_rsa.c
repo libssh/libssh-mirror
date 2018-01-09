@@ -434,7 +434,7 @@ static void torture_pki_rsa_write_privkey(void **state)
     unlink(LIBSSH_RSA_TESTKEY);
 
     rc = ssh_pki_export_privkey_file(origkey,
-                                     "",
+                                     NULL,
                                      NULL,
                                      NULL,
                                      LIBSSH_RSA_TESTKEY);

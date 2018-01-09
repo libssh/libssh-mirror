@@ -81,7 +81,7 @@ static void torture_pki_dsa_write_privkey(void **state)
     unlink(LIBSSH_DSA_TESTKEY);
 
     rc = ssh_pki_export_privkey_file(origkey,
-                                     "",
+                                     NULL,
                                      NULL,
                                      NULL,
                                      LIBSSH_DSA_TESTKEY);
