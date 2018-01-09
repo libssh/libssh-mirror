@@ -213,6 +213,16 @@ static const char torture_ecdsa256_private_testkey[] =
         "89Mlr7AUxcFPd+kCo+NE6yq/mNQcL7E6iQ==\n"
         "-----END EC PRIVATE KEY-----\n";
 
+static const char torture_ecdsa256_private_testkey_passphrase[] =
+        "-----BEGIN EC PRIVATE KEY-----\n"
+        "Proc-Type: 4,ENCRYPTED\n"
+        "DEK-Info: AES-128-CBC,5C825E6FE821D0DE99D8403F4B4020CB\n"
+        "\n"
+        "TaUq8Qenb52dKAYcQGIYfdT7Z2DroySk38w51kw/gd8o79ZHaAQv60GtaNoy0203\n"
+        "2X1o29E6c0WsY9DKhSHKm/zzvZmL+ChZYqqh3sd1gp55aJsHNN4axiIu2YCbCavh\n"
+        "8VZn2VJDaitLy8ARqA/lMGQfqHSa3EOqti9FzWG/P6s=\n"
+        "-----END EC PRIVATE KEY-----\n";
+
 static const char torture_ecdsa256_public_testkey[] =
         "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNT"
         "YAAABBBMfvbnfPEORlrS3fsjLWGmqQvOYPtmS6e1bRRwNBGzR6gVEMaIfiJPPTJa+w"
@@ -224,6 +234,16 @@ static const char torture_ecdsa384_private_testkey[] =
         "wz29MT40mQSgBwYFK4EEACKhZANiAARXc4BN6BrVo1QMi3+i/B85Lu7SMuzBi+1P\n"
         "bJti8xz+Szgq64gaBGOK9o+WOdLAd/w7p7DJLdztJ0bYoyT4V3B3ZqR9RyGq6mYC\n"
         "jkXlc5YbYHjueBbp0oeNXqsXHNAWQZo=\n"
+        "-----END EC PRIVATE KEY-----\n";
+
+static const char torture_ecdsa384_private_testkey_passphrase[] =
+        "-----BEGIN EC PRIVATE KEY-----\n"
+        "Proc-Type: 4,ENCRYPTED\n"
+        "DEK-Info: AES-128-CBC,5C825E6FE821D0DE99D8403F4B4020CB\n"
+        "\n"
+        "TaUq8Qenb52dKAYcQGIYfdT7Z2DroySk38w51kw/gd8o79ZHaAQv60GtaNoy0203\n"
+        "2X1o29E6c0WsY9DKhSHKm/zzvZmL+ChZYqqh3sd1gp55aJsHNN4axiIu2YCbCavh\n"
+        "8VZn2VJDaitLy8ARqA/lMGQfqHSa3EOqti9FzWG/P6s=\n"
         "-----END EC PRIVATE KEY-----\n";
 
 static const char torture_ecdsa384_public_testkey[] =
@@ -239,6 +259,18 @@ static const char torture_ecdsa521_private_testkey[] =
         "baQkHnSPtztaRwJw63CBl15cykB4SXXuwWdNOtPzBijUULMTTvBXbra8gL4ATd9d\n"
         "Qnuwn8KQUh2T/z+BARjWPKhcHcGx57XpXCEkawzMYaHUUnRdeFEmNRsbXypsf0mJ\n"
         "KATU3h8gzTMkbrx8DJTFHEIjXBShs44HsSYVl3Xy\n"
+        "-----END EC PRIVATE KEY-----\n";
+
+static const char torture_ecdsa521_private_testkey_passphrase[] =
+        "-----BEGIN EC PRIVATE KEY-----\n"
+        "Proc-Type: 4,ENCRYPTED\n"
+        "DEK-Info: AES-128-CBC,24C4F383915BC07D9C63209BF6AD3DEE\n"
+        "\n"
+        "M+JGfpGfoH3Wn6XWSoHrGGevaS6p2vJGQdkFEIgUfh16s+U/LcRhAhRnhX/MV6Ds\n"
+        "OZTpusrjInlZXNUR97fJbmjr/600qUlh4y3U9ikiX3IXE+RI80TPNdishOOjKRF7\n"
+        "aWDW8UxTlFfU2Zc1Ew0pTvMXXcuTpozW1NNVY+6S9uWfHwq1/EcR35dbnEmG0gId\n"
+        "qsiEdVKh7p+9Qto8jcVWzMh7ANMcIwmxQ4zbvnqypwgAgpMbamWqBZ9q4egsVZKd\n"
+        "uRzL95L05ctOBGYNYqpPNIX3UdQU07kzwNC+yaHOb2s=\n"
         "-----END EC PRIVATE KEY-----\n";
 
 static const char torture_ecdsa521_public_testkey[] =
@@ -299,14 +331,14 @@ static const char *torture_get_testkey_internal(enum ssh_keytypes_e type,
                 if (pubkey) {
                     return torture_ecdsa521_public_testkey;
                 } else if (with_passphrase) {
-                    return NULL;
+                    return torture_ecdsa521_private_testkey_passphrase;
                 }
                 return torture_ecdsa521_private_testkey;
             } else if (bits == 384) {
                 if (pubkey) {
                     return torture_ecdsa384_public_testkey;
                 } else if (with_passphrase){
-                    return NULL;
+                    return torture_ecdsa384_private_testkey_passphrase;
                 }
                 return torture_ecdsa384_private_testkey;
             }
@@ -314,7 +346,7 @@ static const char *torture_get_testkey_internal(enum ssh_keytypes_e type,
             if (pubkey) {
                 return torture_ecdsa256_public_testkey;
             } else if (with_passphrase){
-                return NULL;
+                return torture_ecdsa256_private_testkey_passphrase;
             }
             return torture_ecdsa256_private_testkey;
         case SSH_KEYTYPE_ED25519:
