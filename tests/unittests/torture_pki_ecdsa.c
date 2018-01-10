@@ -11,6 +11,7 @@
 #include "pki.c"
 
 #define LIBSSH_ECDSA_TESTKEY "libssh_testkey.id_ecdsa"
+#define LIBSSH_ECDSA_TESTKEY_PASSPHRASE "libssh_testkey_passphrase.id_ecdsa"
 
 const unsigned char ECDSA_HASH[] = "12345678901234567890";
 
@@ -19,9 +20,12 @@ static int setup_ecdsa_key(void **state, int ecdsa_bits)
     (void) state; /* unused */
 
     unlink(LIBSSH_ECDSA_TESTKEY);
+    unlink(LIBSSH_ECDSA_TESTKEY_PASSPHRASE);
     unlink(LIBSSH_ECDSA_TESTKEY ".pub");
 
     torture_write_file(LIBSSH_ECDSA_TESTKEY,
+                       torture_get_testkey(SSH_KEYTYPE_ECDSA, ecdsa_bits, 0));
+    torture_write_file(LIBSSH_ECDSA_TESTKEY_PASSPHRASE,
                        torture_get_testkey(SSH_KEYTYPE_ECDSA, ecdsa_bits, 0));
     torture_write_file(LIBSSH_ECDSA_TESTKEY ".pub",
                        torture_get_testkey_pub(SSH_KEYTYPE_ECDSA, ecdsa_bits));
@@ -55,6 +59,7 @@ static int teardown(void **state)
     (void) state; /* unused */
 
     unlink(LIBSSH_ECDSA_TESTKEY);
+    unlink(LIBSSH_ECDSA_TESTKEY_PASSPHRASE);
     unlink(LIBSSH_ECDSA_TESTKEY ".pub");
 
     return 0;
@@ -362,6 +367,43 @@ static void torture_pki_ecdsa_write_privkey(void **state)
 
     rc = ssh_pki_import_privkey_file(LIBSSH_ECDSA_TESTKEY,
                                      NULL,
+                                     NULL,
+                                     NULL,
+                                     &privkey);
+    assert_true(rc == 0);
+
+    rc = ssh_key_cmp(origkey, privkey, SSH_KEY_CMP_PRIVATE);
+    assert_true(rc == 0);
+
+    ssh_key_free(origkey);
+    ssh_key_free(privkey);
+
+    /* Test with passphrase */
+    rc = ssh_pki_import_privkey_file(LIBSSH_ECDSA_TESTKEY_PASSPHRASE,
+                                     torture_get_testkey_passphrase(),
+                                     NULL,
+                                     NULL,
+                                     &origkey);
+    assert_true(rc == 0);
+
+    unlink(LIBSSH_ECDSA_TESTKEY_PASSPHRASE);
+    rc = ssh_pki_export_privkey_file(origkey,
+                                     torture_get_testkey_passphrase(),
+                                     NULL,
+                                     NULL,
+                                     LIBSSH_ECDSA_TESTKEY_PASSPHRASE);
+    assert_true(rc == 0);
+
+    /* Test with invalid passphrase */
+    rc = ssh_pki_import_privkey_file(LIBSSH_ECDSA_TESTKEY_PASSPHRASE,
+                                     "invalid secret",
+                                     NULL,
+                                     NULL,
+                                     &privkey);
+    assert_true(rc == SSH_ERROR);
+
+    rc = ssh_pki_import_privkey_file(LIBSSH_ECDSA_TESTKEY_PASSPHRASE,
+                                     torture_get_testkey_passphrase(),
                                      NULL,
                                      NULL,
                                      &privkey);
