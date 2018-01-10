@@ -12,6 +12,7 @@
 #include "pki.c"
 
 #define LIBSSH_DSA_TESTKEY "libssh_testkey.id_dsa"
+#define LIBSSH_DSA_TESTKEY_PASSPHRASE "libssh_testkey_passphrase.id_dsa"
 
 const unsigned char DSA_HASH[] = "12345678901234567890";
 
@@ -20,10 +21,13 @@ static int setup_dsa_key(void **state)
     (void) state; /* unused */
 
     unlink(LIBSSH_DSA_TESTKEY);
+    unlink(LIBSSH_DSA_TESTKEY_PASSPHRASE);
     unlink(LIBSSH_DSA_TESTKEY ".pub");
     unlink(LIBSSH_DSA_TESTKEY "-cert.pub");
 
     torture_write_file(LIBSSH_DSA_TESTKEY,
+                       torture_get_testkey(SSH_KEYTYPE_DSS, 0, 0));
+    torture_write_file(LIBSSH_DSA_TESTKEY_PASSPHRASE,
                        torture_get_testkey(SSH_KEYTYPE_DSS, 0, 0));
     torture_write_file(LIBSSH_DSA_TESTKEY ".pub",
                        torture_get_testkey_pub(SSH_KEYTYPE_DSS, 0));
@@ -38,6 +42,7 @@ static int teardown_dsa_key(void **state)
     (void)state;
 
     unlink(LIBSSH_DSA_TESTKEY);
+    unlink(LIBSSH_DSA_TESTKEY_PASSPHRASE);
     unlink(LIBSSH_DSA_TESTKEY ".pub");
     unlink(LIBSSH_DSA_TESTKEY "-cert.pub");
 
@@ -89,6 +94,43 @@ static void torture_pki_dsa_write_privkey(void **state)
 
     rc = ssh_pki_import_privkey_file(LIBSSH_DSA_TESTKEY,
                                      NULL,
+                                     NULL,
+                                     NULL,
+                                     &privkey);
+    assert_true(rc == 0);
+
+    rc = ssh_key_cmp(origkey, privkey, SSH_KEY_CMP_PRIVATE);
+    assert_true(rc == 0);
+
+    ssh_key_free(origkey);
+    ssh_key_free(privkey);
+
+    /* Test with passphrase */
+    rc = ssh_pki_import_privkey_file(LIBSSH_DSA_TESTKEY_PASSPHRASE,
+                                     torture_get_testkey_passphrase(),
+                                     NULL,
+                                     NULL,
+                                     &origkey);
+    assert_true(rc == 0);
+
+    unlink(LIBSSH_DSA_TESTKEY_PASSPHRASE);
+    rc = ssh_pki_export_privkey_file(origkey,
+                                     torture_get_testkey_passphrase(),
+                                     NULL,
+                                     NULL,
+                                     LIBSSH_DSA_TESTKEY_PASSPHRASE);
+    assert_true(rc == 0);
+
+    /* Test with invalid passphrase */
+    rc = ssh_pki_import_privkey_file(LIBSSH_DSA_TESTKEY_PASSPHRASE,
+                                     "invalid secret",
+                                     NULL,
+                                     NULL,
+                                     &privkey);
+    assert_true(rc == SSH_ERROR);
+
+    rc = ssh_pki_import_privkey_file(LIBSSH_DSA_TESTKEY_PASSPHRASE,
+                                     torture_get_testkey_passphrase(),
                                      NULL,
                                      NULL,
                                      &privkey);
