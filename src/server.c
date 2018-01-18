@@ -967,7 +967,7 @@ int ssh_message_auth_interactive_request(ssh_message msg, const char *name,
 
   msg->session->kbdint->nprompts = num_prompts;
   if(num_prompts > 0) {
-    msg->session->kbdint->prompts = malloc(num_prompts * sizeof(char *));
+    msg->session->kbdint->prompts = calloc(num_prompts, sizeof(char *));
     if (msg->session->kbdint->prompts == NULL) {
       msg->session->kbdint->nprompts = 0;
       ssh_set_error_oom(msg->session);
@@ -975,7 +975,7 @@ int ssh_message_auth_interactive_request(ssh_message msg, const char *name,
       msg->session->kbdint = NULL;
       return SSH_ERROR;
     }
-    msg->session->kbdint->echo = malloc(num_prompts * sizeof(unsigned char));
+    msg->session->kbdint->echo = calloc(num_prompts, sizeof(unsigned char));
     if (msg->session->kbdint->echo == NULL) {
       ssh_set_error_oom(msg->session);
       ssh_kbdint_free(msg->session->kbdint);
