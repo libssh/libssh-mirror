@@ -1475,7 +1475,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_request) {
 
   session->kbdint->nprompts = nprompts;
   session->kbdint->nanswers = nprompts;
-  session->kbdint->prompts = malloc(nprompts * sizeof(char *));
+  session->kbdint->prompts = calloc(nprompts, sizeof(char *));
   if (session->kbdint->prompts == NULL) {
     session->kbdint->nprompts = 0;
     ssh_set_error_oom(session);
@@ -1484,7 +1484,6 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_request) {
 
     return SSH_PACKET_USED;
   }
-  memset(session->kbdint->prompts, 0, nprompts * sizeof(char *));
 
   session->kbdint->echo = malloc(nprompts);
   if (session->kbdint->echo == NULL) {
@@ -1752,12 +1751,11 @@ int ssh_userauth_kbdint_setanswer(ssh_session session, unsigned int i,
   }
 
   if (session->kbdint->answers == NULL) {
-    session->kbdint->answers = malloc(sizeof(char*) * session->kbdint->nprompts);
+    session->kbdint->answers = calloc(session->kbdint->nprompts, sizeof(char *));
     if (session->kbdint->answers == NULL) {
       ssh_set_error_oom(session);
       return -1;
     }
-    memset(session->kbdint->answers, 0, sizeof(char *) * session->kbdint->nprompts);
   }
 
   if (session->kbdint->answers[i]) {
