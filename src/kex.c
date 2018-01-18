@@ -164,7 +164,7 @@ static char **tokenize(const char *chain){
         ptr++;
     }
     /* now n contains the number of tokens, the first possibly empty if the list was empty too e.g. "" */
-    tokens=malloc(sizeof(char *) * (n+1) ); /* +1 for the null */
+    tokens = calloc(n + 1, sizeof(char *)); /* +1 for the null */
     if (tokens == NULL) {
       SAFE_FREE(tmp);
       return NULL;
@@ -208,7 +208,7 @@ char **ssh_space_tokenize(const char *chain){
         ptr++;
     }
     /* now n contains the number of tokens, the first possibly empty if the list was empty too e.g. "" */
-    tokens = malloc(sizeof(char *) * (n + 1)); /* +1 for the null */
+    tokens = calloc(n + 1, sizeof(char *)); /* +1 for the null */
     if (tokens == NULL) {
       SAFE_FREE(tmp);
       return NULL;
