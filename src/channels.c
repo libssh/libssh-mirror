@@ -3105,18 +3105,18 @@ int ssh_channel_select(ssh_channel *readchans, ssh_channel *writechans,
   }
 
   /* Prepare the outgoing temporary arrays */
-  rchans = malloc(sizeof(ssh_channel ) * (count_ptrs(readchans) + 1));
+  rchans = calloc(count_ptrs(readchans) + 1, sizeof(ssh_channel));
   if (rchans == NULL) {
     return SSH_ERROR;
   }
 
-  wchans = malloc(sizeof(ssh_channel ) * (count_ptrs(writechans) + 1));
+  wchans = calloc(count_ptrs(writechans) + 1, sizeof(ssh_channel));
   if (wchans == NULL) {
     SAFE_FREE(rchans);
     return SSH_ERROR;
   }
 
-  echans = malloc(sizeof(ssh_channel ) * (count_ptrs(exceptchans) + 1));
+  echans = calloc(count_ptrs(exceptchans) + 1, sizeof(ssh_channel));
   if (echans == NULL) {
     SAFE_FREE(rchans);
     SAFE_FREE(wchans);
