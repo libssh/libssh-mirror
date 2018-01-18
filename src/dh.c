@@ -973,7 +973,7 @@ int ssh_get_pubkey_hash(ssh_session session, unsigned char **hash) {
     return SSH_ERROR;
   }
 
-  h = malloc(sizeof(unsigned char) * MD5_DIGEST_LEN);
+  h = calloc(MD5_DIGEST_LEN, sizeof(unsigned char));
   if (h == NULL) {
     return SSH_ERROR;
   }
