@@ -457,11 +457,10 @@ ssh_string sftp_handle_alloc(sftp_session sftp, void *info) {
   int i;
 
   if (sftp->handles == NULL) {
-    sftp->handles = malloc(sizeof(void *) * SFTP_HANDLES);
+    sftp->handles = calloc(SFTP_HANDLES, sizeof(void *));
     if (sftp->handles == NULL) {
       return NULL;
     }
-    memset(sftp->handles, 0, sizeof(void *) * SFTP_HANDLES);
   }
 
   for (i = 0; i < SFTP_HANDLES; i++) {
