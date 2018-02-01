@@ -1110,6 +1110,7 @@ int ssh_message_channel_request_open_reply_accept_channel(ssh_message msg, ssh_c
     chan->remote_maxpacket = msg->channel_request_open.packet_size;
     chan->remote_window = msg->channel_request_open.window;
     chan->state = SSH_CHANNEL_STATE_OPEN;
+    chan->flags &= ~SSH_CHANNEL_FLAG_NOT_BOUND;
 
     rc = ssh_buffer_pack(session->out_buffer,
                          "bdddd",
