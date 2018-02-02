@@ -397,6 +397,25 @@ struct ssh_iterator *ssh_list_find(const struct ssh_list *list, void *value){
   return NULL;
 }
 
+/**
+ * @brief Get the number of elements in the list
+ *
+ * @param[in]  list     The list to count.
+ *
+ * @return The number of elements in the list.
+ */
+size_t ssh_list_count(const struct ssh_list *list)
+{
+  struct ssh_iterator *it = NULL;
+  int count = 0;
+
+  for (it = ssh_list_get_iterator(list); it != NULL ; it = it->next) {
+      count++;
+  }
+
+  return count;
+}
+
 static struct ssh_iterator *ssh_iterator_new(const void *data){
   struct ssh_iterator *iterator=malloc(sizeof(struct ssh_iterator));
   if(!iterator)
