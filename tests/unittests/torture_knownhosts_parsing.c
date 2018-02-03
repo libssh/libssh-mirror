@@ -226,6 +226,29 @@ static void torture_knownhosts_read_file(void **state)
     }
 }
 
+static void torture_knownhosts_host_exists(void **state)
+{
+    const char *knownhosts_file = *state;
+    enum ssh_known_hosts_e found;
+    ssh_session session;
+
+    session = ssh_new();
+    assert_non_null(session);
+
+    ssh_options_set(session, SSH_OPTIONS_HOST, "localhost");
+    ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, knownhosts_file);
+
+    found = ssh_session_has_known_hosts_entry(session);
+    assert_int_equal(found, SSH_KNOWN_HOSTS_OK);
+    assert_true(found == SSH_KNOWN_HOSTS_OK);
+
+    ssh_options_set(session, SSH_OPTIONS_HOST, "wurstbrot");
+    found = ssh_session_has_known_hosts_entry(session);
+    assert_true(found == SSH_KNOWN_HOSTS_NOT_FOUND);
+
+    ssh_free(session);
+}
+
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
@@ -236,6 +259,9 @@ int torture_run_tests(void) {
         cmocka_unit_test(torture_knownhosts_parse_line_pattern_ed25519),
         cmocka_unit_test(torture_knownhosts_parse_line_hashed_ed25519),
         cmocka_unit_test_setup_teardown(torture_knownhosts_read_file,
+                                        setup_knownhosts_file,
+                                        teardown_knownhosts_file),
+        cmocka_unit_test_setup_teardown(torture_knownhosts_host_exists,
                                         setup_knownhosts_file,
                                         teardown_knownhosts_file),
     };

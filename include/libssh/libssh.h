@@ -238,6 +238,15 @@ enum ssh_server_known_e {
 	SSH_SERVER_FILE_NOT_FOUND
 };
 
+enum ssh_known_hosts_e {
+    SSH_KNOWN_HOSTS_ERROR = -2,
+    SSH_KNOWN_HOSTS_NOT_FOUND = -1,
+    SSH_KNOWN_HOSTS_UNKNOWN = 0,
+    SSH_KNOWN_HOSTS_OK,
+    SSH_KNOWN_HOSTS_CHANGED,
+    SSH_KNOWN_HOSTS_OTHER,
+};
+
 #ifndef MD5_DIGEST_LEN
     #define MD5_DIGEST_LEN 16
 #endif
@@ -527,6 +536,7 @@ LIBSSH_API void ssh_knownhosts_entry_free(struct ssh_knownhosts_entry *entry);
 LIBSSH_API int ssh_known_hosts_parse_line(const char *host,
                                           const char *line,
                                           struct ssh_knownhosts_entry **entry);
+LIBSSH_API enum ssh_known_hosts_e ssh_session_has_known_hosts_entry(ssh_session session);
 
 /* LOGGING */
 LIBSSH_API int ssh_set_log_level(int level);

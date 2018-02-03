@@ -229,6 +229,40 @@ error:
     return SSH_ERROR;
 }
 
+static char *ssh_session_get_host_port(ssh_session session)
+{
+    char *host_port;
+    char *host;
+
+    if (session->opts.host == NULL) {
+        ssh_set_error(session,
+                      SSH_FATAL,
+                      "Can't verify server inn known hosts if the host we "
+                      "should connect to has not been set");
+
+        return NULL;
+    }
+
+    host = ssh_lowercase(session->opts.host);
+    if (host == NULL) {
+        ssh_set_error_oom(session);
+        return NULL;
+    }
+
+    if (session->opts.port == 0 || session->opts.port == 22) {
+        host_port = host;
+    } else {
+        host_port = ssh_hostport(host, session->opts.port);
+        SAFE_FREE(host);
+        if (host_port == NULL) {
+            ssh_set_error_oom(session);
+            return NULL;
+        }
+    }
+
+    return host_port;
+}
+
 /**
  * @brief Parse a line from a known_hosts entry into a structure
  *
@@ -379,4 +413,61 @@ out:
     SAFE_FREE(known_host);
     ssh_knownhosts_entry_free(e);
     return rc;
+}
+
+/**
+ * @brief Check if the set hostname and port matches an entry in known_hosts.
+ *
+ * This check if the set hostname and port has an entry in the known_hosts file.
+ * You need to set at least the hostname using ssh_options_set().
+ *
+ * @param[in]  session  The session with with the values set to check.
+ *
+ * @return A @ssh_known_hosts_e return value.
+ */
+enum ssh_known_hosts_e ssh_session_has_known_hosts_entry(ssh_session session)
+{
+    struct ssh_list *entry_list = NULL;
+    struct ssh_iterator *it = NULL;
+    char *host_port = NULL;
+    int rc;
+
+    if (session->opts.knownhosts == NULL) {
+        if (ssh_options_apply(session) < 0) {
+            ssh_set_error(session,
+                          SSH_REQUEST_DENIED,
+                          "Can't find a known_hosts file");
+
+            return SSH_KNOWN_HOSTS_NOT_FOUND;
+        }
+    }
+
+    host_port = ssh_session_get_host_port(session);
+    if (host_port == NULL) {
+        return SSH_KNOWN_HOSTS_NOT_FOUND;
+    }
+
+    rc = ssh_known_hosts_read_entries(host_port,
+                                      session->opts.knownhosts,
+                                      &entry_list);
+    if (rc != 0) {
+        return SSH_KNOWN_HOSTS_NOT_FOUND;
+    }
+
+    if (ssh_list_count(entry_list) == 0) {
+        return SSH_KNOWN_HOSTS_NOT_FOUND;
+    }
+
+    for (it = ssh_list_get_iterator(entry_list);
+         it != NULL;
+         it = ssh_list_get_iterator(entry_list)) {
+        struct ssh_knownhosts_entry *entry = NULL;
+
+        entry = ssh_iterator_value(struct ssh_knownhosts_entry *, it);
+        ssh_knownhosts_entry_free(entry);
+        ssh_list_remove(entry_list, it);
+    }
+    ssh_list_free(entry_list);
+
+    return SSH_KNOWN_HOSTS_OK;
 }
