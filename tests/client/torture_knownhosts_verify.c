@@ -103,10 +103,30 @@ static void torture_knownhosts_export(void **state)
     SAFE_FREE(entry);
 }
 
+static void torture_knownhosts_write_and_verify(void **state)
+{
+    struct torture_state *s = *state;
+    ssh_session session = s->ssh.session;
+    enum ssh_known_hosts_e found;
+    int rc;
+
+    rc = ssh_connect(session);
+    assert_int_equal(rc, SSH_OK);
+
+    rc = ssh_session_update_known_hosts(session);
+    assert_int_equal(rc, SSH_OK);
+
+    found = ssh_session_is_known_server(session);
+    assert_int_equal(found, SSH_KNOWN_HOSTS_OK);
+}
+
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
         cmocka_unit_test_setup_teardown(torture_knownhosts_export,
+                                        session_setup,
+                                        session_teardown),
+        cmocka_unit_test_setup_teardown(torture_knownhosts_write_and_verify,
                                         session_setup,
                                         session_teardown),
     };

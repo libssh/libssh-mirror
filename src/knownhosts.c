@@ -32,6 +32,7 @@
 #include <netinet/in.h>
 
 #include "libssh/priv.h"
+#include "libssh/dh.h"
 #include "libssh/session.h"
 #include "libssh/options.h"
 #include "libssh/misc.h"
@@ -633,4 +634,159 @@ int ssh_session_update_known_hosts(ssh_session session)
     }
 
     return SSH_OK;
+}
+
+static enum ssh_known_hosts_e
+ssh_known_hosts_check_server_key(const char *hosts_entry,
+                                 const char *filename,
+                                 ssh_key server_key,
+                                 struct ssh_knownhosts_entry **pentry)
+{
+    struct ssh_list *entry_list = NULL;
+    struct ssh_iterator *it = NULL;
+    enum ssh_known_hosts_e found = SSH_KNOWN_HOSTS_UNKNOWN;
+    int rc;
+
+    rc = ssh_known_hosts_read_entries(hosts_entry,
+                                      filename,
+                                      &entry_list);
+    if (rc != 0) {
+        return SSH_KNOWN_HOSTS_NOT_FOUND;
+    }
+
+    it = ssh_list_get_iterator(entry_list);
+    if (it == NULL) {
+        ssh_list_free(entry_list);
+        return SSH_KNOWN_HOSTS_UNKNOWN;
+    }
+
+    for (;it != NULL; it = it->next) {
+        struct ssh_knownhosts_entry *entry = NULL;
+        int cmp;
+
+        entry = ssh_iterator_value(struct ssh_knownhosts_entry *, it);
+
+        cmp = ssh_key_cmp(server_key, entry->publickey, SSH_KEY_CMP_PUBLIC);
+        if (cmp == 0) {
+            found = SSH_KNOWN_HOSTS_OK;
+            if (pentry != NULL) {
+                *pentry = entry;
+                ssh_list_remove(entry_list, it);
+            }
+            break;
+        }
+
+        if (ssh_key_type(server_key) == ssh_key_type(entry->publickey)) {
+            found = SSH_KNOWN_HOSTS_CHANGED;
+        } else {
+            found = SSH_KNOWN_HOSTS_OTHER;
+        }
+    }
+
+    for (it = ssh_list_get_iterator(entry_list);
+         it != NULL;
+         it = ssh_list_get_iterator(entry_list)) {
+        struct ssh_knownhosts_entry *entry = NULL;
+
+        entry = ssh_iterator_value(struct ssh_knownhosts_entry *, it);
+        ssh_knownhosts_entry_free(entry);
+        ssh_list_remove(entry_list, it);
+    }
+    ssh_list_free(entry_list);
+
+    return found;
+}
+
+/**
+ * @brief Get the known_hosts entry for the current connected session.
+ *
+ * @param[in]  session  The session to validate.
+ *
+ * @param[in]  pentry   A pointer to store the allocated known hosts entry.
+ *
+ * @returns SSH_KNOWN_HOSTS_OK:        The server is known and has not changed.\n
+ *          SSH_KNOWN_HOSTS_CHANGED:   The server key has changed. Either you
+ *                                     are under attack or the administrator
+ *                                     changed the key. You HAVE to warn the
+ *                                     user about a possible attack.\n
+ *          SSH_KNOWN_HOSTS_OTHER:     The server gave use a key of a type while
+ *                                     we had an other type recorded. It is a
+ *                                     possible attack.\n
+ *          SSH_KNOWN_HOSTS_UNKNOWN:   The server is unknown. User should
+ *                                     confirm the public key hash is correct.\n
+ *          SSH_KNOWN_HOSTS_NOT_FOUND: The known host file does not exist. The
+ *                                     host is thus unknown. File will be
+ *                                     created if host key is accepted.\n
+ *          SSH_KNOWN_HOSTS_ERROR:     There had been an eror checking the host.
+ *
+ * @see ssh_knownhosts_entry_free()
+ */
+enum ssh_known_hosts_e
+ssh_session_get_known_hosts_entry(ssh_session session,
+                                  struct ssh_knownhosts_entry **pentry)
+{
+    ssh_key server_pubkey = NULL;
+    char *host_port = NULL;
+    enum ssh_known_hosts_e found = SSH_KNOWN_HOSTS_UNKNOWN;
+
+    if (session->opts.knownhosts == NULL) {
+        if (ssh_options_apply(session) < 0) {
+            ssh_set_error(session,
+                          SSH_REQUEST_DENIED,
+                          "Can't find a known_hosts file");
+
+            return SSH_KNOWN_HOSTS_NOT_FOUND;
+        }
+    }
+
+    server_pubkey = ssh_dh_get_current_server_publickey(session);
+    if (server_pubkey == NULL) {
+        ssh_set_error(session,
+                      SSH_FATAL,
+                      "ssh_session_is_known_host called without a "
+                      "server_key!");
+
+        return SSH_KNOWN_HOSTS_ERROR;
+    }
+
+    host_port = ssh_session_get_host_port(session);
+    if (host_port == NULL) {
+        return SSH_KNOWN_HOSTS_ERROR;
+    }
+
+    found = ssh_known_hosts_check_server_key(host_port,
+                                             session->opts.knownhosts,
+                                             server_pubkey,
+                                             pentry);
+
+    return found;
+}
+
+/**
+ * @brief Check if the servers public key for the connected session is known.
+ *
+ * This checks if we already know the public key of the server we want to
+ * connect to. This allows to detect if there is a MITM attach going on
+ * of if there have been changes on the server we don't know about.
+ *
+ * @param[in]  session  The SSH to validate.
+ *
+ * @returns SSH_KNOWN_HOSTS_OK:        The server is known and has not changed.\n
+ *          SSH_KNOWN_HOSTS_CHANGED:   The server key has changed. Either you
+ *                                     are under attack or the administrator
+ *                                     changed the key. You HAVE to warn the
+ *                                     user about a possible attack.\n
+ *          SSH_KNOWN_HOSTS_OTHER:     The server gave use a key of a type while
+ *                                     we had an other type recorded. It is a
+ *                                     possible attack.\n
+ *          SSH_KNOWN_HOSTS_UNKNOWN:   The server is unknown. User should
+ *                                     confirm the public key hash is correct.\n
+ *          SSH_KNOWN_HOSTS_NOT_FOUND: The known host file does not exist. The
+ *                                     host is thus unknown. File will be
+ *                                     created if host key is accepted.\n
+ *          SSH_KNOWN_HOSTS_ERROR:     There had been an eror checking the host.
+ */
+enum ssh_known_hosts_e ssh_session_is_known_server(ssh_session session)
+{
+    return ssh_session_get_known_hosts_entry(session, NULL);
 }
