@@ -142,6 +142,93 @@ void ssh_knownhosts_entry_free(struct ssh_knownhosts_entry *entry)
     SAFE_FREE(entry);
 }
 
+static int known_hosts_read_line(FILE *fp,
+                                 char *buf,
+                                 size_t buf_size,
+                                 size_t *buf_len,
+                                 size_t *lineno)
+{
+    while (fgets(buf, buf_size, fp) != NULL) {
+        size_t len;
+        if (buf[0] == '\0') {
+            continue;
+        }
+
+        *lineno += 1;
+        len = strlen(buf);
+        if (buf_len != NULL) {
+            *buf_len = len;
+        }
+        if (buf[len - 1] == '\n' || feof(fp)) {
+            return 0;
+        } else {
+            errno = E2BIG;
+            return -1;
+        }
+    }
+
+    return -1;
+}
+
+static int ssh_known_hosts_read_entries(const char *match,
+                                        const char *filename,
+                                        struct ssh_list **entries)
+{
+    struct ssh_list *entry_list;
+    char line[8192];
+    size_t lineno = 0;
+    size_t len = 0;
+    FILE *fp;
+    int rc;
+
+    fp = fopen(filename, "r");
+    if (fp == NULL) {
+        return SSH_ERROR;
+    }
+
+    entry_list = ssh_list_new();
+    if (entry_list == NULL) {
+        return SSH_ERROR;
+    }
+
+    for (rc = known_hosts_read_line(fp, line, sizeof(line), &len, &lineno);
+         rc == 0;
+         rc = known_hosts_read_line(fp, line, sizeof(line), &len, &lineno)) {
+        struct ssh_knownhosts_entry *entry = NULL;
+        char *p;
+
+        if (line[len] != '\n') {
+            len = strcspn(line, "\n");
+        }
+        line[len] = '\0';
+
+        /* Skip leading spaces */
+        for (p = line; isspace((int)p[0]); p++);
+
+        /* Skip comments and empty lines */
+        if (p[0] == '\0' || p[0] == '#') {
+            continue;
+        }
+
+        rc = ssh_known_hosts_parse_line(match,
+                                        line,
+                                        &entry);
+        if (rc == SSH_AGAIN) {
+            continue;
+        } else if (rc != SSH_OK) {
+            goto error;
+        }
+        ssh_list_append(entry_list, entry);
+    }
+
+    *entries = entry_list;
+
+    return SSH_OK;
+error:
+    ssh_list_free(entry_list);
+    return SSH_ERROR;
+}
+
 /**
  * @brief Parse a line from a known_hosts entry into a structure
  *

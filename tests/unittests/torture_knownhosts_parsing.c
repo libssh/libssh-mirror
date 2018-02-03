@@ -199,6 +199,33 @@ static void torture_knownhosts_parse_line_hashed_ed25519(void **state) {
     SSH_KNOWNHOSTS_ENTRY_FREE(entry);
 }
 
+static void torture_knownhosts_read_file(void **state)
+{
+    const char *knownhosts_file = *state;
+    struct ssh_list *entry_list = NULL;
+    struct ssh_iterator *it = NULL;
+    int rc;
+
+    rc = ssh_known_hosts_read_entries("localhost",
+                                      knownhosts_file,
+                                      &entry_list);
+    assert_int_equal(rc, SSH_OK);
+    assert_non_null(entry_list);
+    it = ssh_list_get_iterator(entry_list);
+    assert_non_null(it);
+    for (;it != NULL; it = it->next) {
+        struct ssh_knownhosts_entry *entry = NULL;
+        enum ssh_keytypes_e type;
+
+        entry = ssh_iterator_value(struct ssh_knownhosts_entry *, it);
+        assert_non_null(entry);
+
+        assert_string_equal(entry->hostname, "localhost");
+        type = ssh_key_type(entry->publickey);
+        assert_int_equal(type, SSH_KEYTYPE_ED25519);
+    }
+}
+
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
@@ -208,6 +235,9 @@ int torture_run_tests(void) {
         cmocka_unit_test(torture_knownhosts_parse_line_port_ed25519),
         cmocka_unit_test(torture_knownhosts_parse_line_pattern_ed25519),
         cmocka_unit_test(torture_knownhosts_parse_line_hashed_ed25519),
+        cmocka_unit_test_setup_teardown(torture_knownhosts_read_file,
+                                        setup_knownhosts_file,
+                                        teardown_knownhosts_file),
     };
 
     ssh_init();
