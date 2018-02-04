@@ -36,6 +36,7 @@
 #include "libssh/options.h"
 #include "libssh/misc.h"
 #include "libssh/pki.h"
+#include "libssh/dh.h"
 
 static int hash_hostname(const char *name,
                          unsigned char *salt,
@@ -470,4 +471,92 @@ enum ssh_known_hosts_e ssh_session_has_known_hosts_entry(ssh_session session)
     ssh_list_free(entry_list);
 
     return SSH_KNOWN_HOSTS_OK;
+}
+
+/**
+ * @brief Export the current session information to a known_hosts string.
+ *
+ * This exports the current information of a session which is connected so a
+ * ssh server into an entry line which can be added to a known_hosts file.
+ *
+ * @param[in]  session  The session with information to export.
+ *
+ * @param[in]  pentry_string A pointer to a string to store the alloocated
+ *                           line of the entry. The user must free it using
+ *                           ssh_string_free_char().
+ *
+ * @return SSH_OK on succcess, SSH_ERROR otherwise.
+ */
+int ssh_session_export_known_hosts_entry(ssh_session session,
+                                         char **pentry_string)
+{
+    ssh_key server_pubkey = NULL;
+    char *host = NULL;
+    char entry_buf[4096] = {0};
+    int rc;
+
+    if (pentry_string == NULL) {
+        ssh_set_error_invalid(session);
+        return SSH_ERROR;
+    }
+
+    if (session->opts.host == NULL) {
+        ssh_set_error(session, SSH_FATAL,
+                      "Can't create known_hosts entry - hostname unknown");
+        return SSH_ERROR;
+    }
+
+    host = ssh_session_get_host_port(session);
+    if (host == NULL) {
+        return SSH_ERROR;
+    }
+
+    if (session->current_crypto == NULL) {
+        ssh_set_error(session, SSH_FATAL,
+                      "No current crypto context, please connnect first");
+        SAFE_FREE(host);
+        return SSH_ERROR;
+    }
+
+    server_pubkey = ssh_dh_get_current_server_publickey(session);
+    if (server_pubkey == NULL){
+        ssh_set_error(session, SSH_FATAL, "No public key present");
+        SAFE_FREE(host);
+        return SSH_ERROR;
+    }
+
+    if (ssh_key_type(server_pubkey) == SSH_KEYTYPE_RSA1) {
+        rc = ssh_pki_export_pubkey_rsa1(server_pubkey,
+                                        host,
+                                        entry_buf,
+                                        sizeof(entry_buf));
+        SAFE_FREE(host);
+        if (rc < 0) {
+            return SSH_ERROR;
+        }
+    } else {
+        char *b64_key = NULL;
+
+        rc = ssh_pki_export_pubkey_base64(server_pubkey, &b64_key);
+        if (rc < 0) {
+            SAFE_FREE(host);
+            return SSH_ERROR;
+        }
+
+        snprintf(entry_buf, sizeof(entry_buf),
+                    "%s %s %s\n",
+                    host,
+                    server_pubkey->type_c,
+                    b64_key);
+
+        SAFE_FREE(host);
+        SAFE_FREE(b64_key);
+    }
+
+    *pentry_string = strdup(entry_buf);
+    if (*pentry_string == NULL) {
+        return SSH_ERROR;
+    }
+
+    return SSH_OK;
 }
