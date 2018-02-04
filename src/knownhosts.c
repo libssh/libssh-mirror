@@ -560,3 +560,77 @@ int ssh_session_export_known_hosts_entry(ssh_session session,
 
     return SSH_OK;
 }
+
+/**
+ * @brief Add the current connected server to the known_hosts file.
+ *
+ * This adds the currently connected server to the known_hosts file by
+ * appending a new line at the end.
+ *
+ * @param[in]  session  The session to use to write the entry.
+ *
+ * @return SSH_OK on success, SSH_ERROR otherwise.
+ */
+int ssh_session_update_known_hosts(ssh_session session)
+{
+    FILE *fp = NULL;
+    char *entry = NULL;
+    char *dir = NULL;
+    size_t nwritten;
+    size_t len;
+    int rc;
+
+    if (session->opts.knownhosts == NULL) {
+        rc = ssh_options_apply(session);
+        if (rc != SSH_OK) {
+            ssh_set_error(session, SSH_FATAL, "Can't find a known_hosts file");
+            return SSH_ERROR;
+        }
+    }
+
+    /* Check if directory exists and create it if not */
+    dir = ssh_dirname(session->opts.knownhosts);
+    if (dir == NULL) {
+        ssh_set_error(session, SSH_FATAL, "%s", strerror(errno));
+        return SSH_ERROR;
+    }
+
+    rc = ssh_file_readaccess_ok(dir);
+    if (rc == 0) {
+        rc = ssh_mkdir(dir, 0700);
+    } else {
+        rc = 0;
+    }
+    SAFE_FREE(dir);
+    if (rc != 0) {
+        ssh_set_error(session, SSH_FATAL,
+                      "Cannot create %s directory.", dir);
+        return SSH_ERROR;
+    }
+
+    fp = fopen(session->opts.knownhosts, "a");
+    if (fp == NULL) {
+        ssh_set_error(session, SSH_FATAL,
+                "Couldn't open known_hosts file %s for appending: %s",
+                session->opts.knownhosts, strerror(errno));
+        return SSH_ERROR;
+    }
+
+    rc = ssh_session_export_known_hosts_entry(session, &entry);
+    if (rc != SSH_OK) {
+        return rc;
+    }
+
+    len = strlen(entry);
+    nwritten = fwrite(entry, sizeof(char), len, fp);
+    SAFE_FREE(entry);
+    fclose(fp);
+    if (nwritten != len || ferror(fp)) {
+        ssh_set_error(session, SSH_FATAL,
+                      "Couldn't append to known_hosts file %s: %s",
+                      session->opts.knownhosts, strerror(errno));
+        return SSH_ERROR;
+    }
+
+    return SSH_OK;
+}

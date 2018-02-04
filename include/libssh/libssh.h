@@ -541,6 +541,8 @@ LIBSSH_API enum ssh_known_hosts_e ssh_session_has_known_hosts_entry(ssh_session 
 LIBSSH_API int ssh_session_export_known_hosts_entry(ssh_session session,
                                                     char **pentry_string);
 
+LIBSSH_API int ssh_session_update_known_hosts(ssh_session session);
+
 /* LOGGING */
 LIBSSH_API int ssh_set_log_level(int level);
 LIBSSH_API int ssh_get_log_level(void);
