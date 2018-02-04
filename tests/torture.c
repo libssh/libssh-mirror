@@ -555,6 +555,7 @@ void torture_setup_socket_dir(void **state)
 static void torture_setup_create_sshd_config(void **state)
 {
     struct torture_state *s = *state;
+    char ed25519_hostkey[1024] = {0};
 #ifdef HAVE_DSA
     char dsa_hostkey[1024];
 #endif
@@ -577,6 +578,7 @@ static void torture_setup_create_sshd_config(void **state)
     const char config_string[]=
              "Port 22\n"
              "ListenAddress 127.0.0.10\n"
+             "HostKey %s\n"
 #ifdef HAVE_DSA
              "HostKey %s\n"
 #endif
@@ -640,6 +642,13 @@ static void torture_setup_create_sshd_config(void **state)
     rc = mkdir(sshd_path, 0755);
     assert_return_code(rc, errno);
 
+    snprintf(ed25519_hostkey,
+             sizeof(ed25519_hostkey),
+             "%s/sshd/ssh_host_ed25519_key",
+             s->socket_dir);
+    torture_write_file(ed25519_hostkey,
+                       torture_get_testkey(SSH_KEYTYPE_ED25519, 0, 0));
+
 #ifdef HAVE_DSA
     snprintf(dsa_hostkey,
              sizeof(dsa_hostkey),
@@ -660,6 +669,13 @@ static void torture_setup_create_sshd_config(void **state)
              s->socket_dir);
     torture_write_file(ecdsa_hostkey,
                        torture_get_testkey(SSH_KEYTYPE_ECDSA, 521, 0));
+
+    snprintf(ed25519_hostkey,
+             sizeof(ed25519_hostkey),
+             "%s/sshd/ssh_host_ed25519_key",
+             s->socket_dir);
+    torture_write_file(ed25519_hostkey,
+                       torture_get_testkey(SSH_KEYTYPE_ED25519, 0, 0));
 
     snprintf(trusted_ca_pubkey,
              sizeof(trusted_ca_pubkey),
@@ -684,6 +700,7 @@ static void torture_setup_create_sshd_config(void **state)
 #ifdef HAVE_DSA
     snprintf(sshd_config, sizeof(sshd_config),
              config_string,
+             ed25519_hostkey,
              dsa_hostkey,
              rsa_hostkey,
              ecdsa_hostkey,
@@ -693,6 +710,7 @@ static void torture_setup_create_sshd_config(void **state)
 #else
     snprintf(sshd_config, sizeof(sshd_config),
              config_string,
+             ed25519_hostkey,
              rsa_hostkey,
              ecdsa_hostkey,
              trusted_ca_pubkey,
