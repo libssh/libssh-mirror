@@ -219,7 +219,7 @@ int torture_terminate_process(const char *pidfile)
         /* Make sure the daemon goes away! */
         kill(pid, SIGTERM);
 
-        usleep(200);
+        usleep(5000);
 
         rc = kill(pid, 0);
         if (rc != 0) {
@@ -230,7 +230,7 @@ int torture_terminate_process(const char *pidfile)
 
     if (is_running) {
         fprintf(stderr,
-                "WARNING: The process server is still running!\n");
+                "WARNING: The process with pid %u is still running!\n", pid);
     }
 
     return 0;
