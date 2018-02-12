@@ -150,7 +150,7 @@ void ssh_key_clean (ssh_key key){
     }
 #endif
     if (key->ed25519_privkey != NULL){
-        BURN_BUFFER(key->ed25519_privkey, sizeof(ed25519_privkey));
+        explicit_bzero(key->ed25519_privkey, sizeof(ed25519_privkey));
         SAFE_FREE(key->ed25519_privkey);
     }
     SAFE_FREE(key->ed25519_pubkey);

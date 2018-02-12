@@ -280,33 +280,22 @@ int ssh_connector_remove_event(ssh_connector connector);
 /** Get the size of an array */
 #define ARRAY_SIZE(a) (sizeof(a)/sizeof(a[0]))
 
+#ifndef HAVE_EXPLICIT_BZERO
 /*
  * See http://llvm.org/bugs/show_bug.cgi?id=15495
  */
 #if defined(HAVE_GCC_VOLATILE_MEMORY_PROTECTION)
-/** Overwrite a string with '\0' */
-# define BURN_STRING(x) do { \
-    if ((x) != NULL) \
-        memset((x), '\0', strlen((x))); __asm__ volatile("" : : "r"(&(x)) : "memory"); \
-  } while(0)
-
-/** Overwrite the buffer with '\0' */
-# define BURN_BUFFER(x, size) do { \
-    if ((x) != NULL) \
-        memset((x), '\0', (size)); __asm__ volatile("" : : "r"(&(x)) : "memory"); \
-  } while(0)
+#define explicit_bzero(s, n) do { \
+    if ((s) != NULL) { \
+        memset((s), '\0', (n)); __asm__ volatile("" : : "r"(&(s)) : "memory"); \
+    } \
+} while (0)
 #else /* HAVE_GCC_VOLATILE_MEMORY_PROTECTION */
-/** Overwrite a string with '\0' */
-# define BURN_STRING(x) do { \
-    if ((x) != NULL) memset((x), '\0', strlen((x))); \
-  } while(0)
-
-/** Overwrite the buffer with '\0' */
-# define BURN_BUFFER(x, size) do { \
-    if ((x) != NULL) \
-        memset((x), '\0', (size)); \
-  } while(0)
+#define explicit_bzero(s, n) do { \
+    memset((s), '\0', (n)); \
+} while (0)
 #endif /* HAVE_GCC_VOLATILE_MEMORY_PROTECTION */
+#endif /* !HAVE_EXPLICIT_BZERO */
 
 /**
  * This is a hack to fix warnings. The idea is to use this everywhere that we

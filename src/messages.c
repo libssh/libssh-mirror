@@ -554,7 +554,8 @@ void ssh_message_free(ssh_message msg){
     case SSH_REQUEST_AUTH:
       SAFE_FREE(msg->auth_request.username);
       if (msg->auth_request.password) {
-        BURN_STRING(msg->auth_request.password);
+        explicit_bzero(msg->auth_request.password,
+                       strlen(msg->auth_request.password));
         SAFE_FREE(msg->auth_request.password);
       }
       ssh_key_free(msg->auth_request.pubkey);
@@ -973,7 +974,8 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_response){
       uint32_t n;
 
       for (n = 0; n < session->kbdint->nanswers; n++) {
-            BURN_STRING(session->kbdint->answers[n]);
+            explicit_bzero(session->kbdint->answers[n],
+                           strlen(session->kbdint->answers[n]));
             SAFE_FREE(session->kbdint->answers[n]);
       }
       SAFE_FREE(session->kbdint->answers);

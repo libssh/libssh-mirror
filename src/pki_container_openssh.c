@@ -256,7 +256,7 @@ static int pki_private_key_decrypt(ssh_string blob,
     if (rc < 0){
         return SSH_ERROR;
     }
-    BURN_BUFFER(passphrase_buffer, sizeof(passphrase_buffer));
+    explicit_bzero(passphrase_buffer, sizeof(passphrase_buffer));
 
     cipher.set_decrypt_key(&cipher,
                            key_material,
@@ -547,7 +547,7 @@ static int pki_private_key_encrypt(ssh_buffer privkey_buffer,
                    ssh_buffer_get(privkey_buffer),
                    ssh_buffer_get_len(privkey_buffer));
     ssh_cipher_clear(&cipher);
-    BURN_BUFFER(passphrase_buffer, sizeof(passphrase_buffer));
+    explicit_bzero(passphrase_buffer, sizeof(passphrase_buffer));
 
     return SSH_OK;
 }
@@ -691,7 +691,7 @@ ssh_string ssh_pki_openssh_privkey_export(const ssh_key privkey,
                          "\n",
                          OPENSSH_HEADER_END,
                          "\n");
-    BURN_BUFFER(b64, strlen((char *)b64));
+    explicit_bzero(b64, strlen((char *)b64));
     SAFE_FREE(b64);
 
     if (rc != SSH_OK){
@@ -713,7 +713,7 @@ ssh_string ssh_pki_openssh_privkey_export(const ssh_key privkey,
 error:
     if (privkey_buffer != NULL) {
         void *bufptr = ssh_buffer_get(privkey_buffer);
-        BURN_BUFFER(bufptr, ssh_buffer_get_len(privkey_buffer));
+        explicit_bzero(bufptr, ssh_buffer_get_len(privkey_buffer));
         ssh_buffer_free(privkey_buffer);
     }
     SAFE_FREE(pubkey_s);

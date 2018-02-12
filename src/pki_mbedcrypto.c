@@ -832,7 +832,7 @@ static ssh_signature pki_signature_from_rsa_blob(const ssh_key pubkey, const
         blob_padded_data = (char *) ssh_string_data(sig_blob_padded);
         blob_orig = (char *) ssh_string_data(sig_blob);
 
-        BURN_BUFFER(blob_padded_data, pad_len);
+        explicit_bzero(blob_padded_data, pad_len);
         memcpy(blob_padded_data + pad_len, blob_orig, len);
 
         sig->rsa_sig = sig_blob_padded;

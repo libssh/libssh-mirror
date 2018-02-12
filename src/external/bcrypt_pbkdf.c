@@ -98,8 +98,8 @@ bcrypt_hash(uint8_t *sha2pass, uint8_t *sha2salt, uint8_t *out)
 	}
 
 	/* zap */
-	BURN_BUFFER(ciphertext, sizeof(ciphertext));
-	BURN_BUFFER(cdata, sizeof(cdata));
+	explicit_bzero(ciphertext, sizeof(ciphertext));
+	explicit_bzero(cdata, sizeof(cdata));
 	ZERO_STRUCT(state);
 }
 
@@ -175,7 +175,7 @@ bcrypt_pbkdf(const char *pass, size_t passlen, const uint8_t *salt, size_t saltl
 	}
 
 	/* zap */
-	BURN_BUFFER(out, sizeof(out));
+	explicit_bzero(out, sizeof(out));
 	free(countsalt);
 
 	return 0;

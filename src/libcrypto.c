@@ -606,7 +606,7 @@ static void aes_ctr_encrypt(struct ssh_cipher_struct *cipher, void *in, void *ou
 }
 
 static void aes_ctr_cleanup(struct ssh_cipher_struct *cipher){
-    BURN_BUFFER(cipher->aes_key, sizeof(*cipher->aes_key));
+    explicit_bzero(cipher->aes_key, sizeof(*cipher->aes_key));
     SAFE_FREE(cipher->aes_key);
 }
 
@@ -695,7 +695,7 @@ static void des1_1_decrypt(struct ssh_cipher_struct *cipher, void *in, void *out
 }
 
 static void des_cleanup(struct ssh_cipher_struct *cipher){
-    BURN_BUFFER(cipher->des3_key, sizeof(*cipher->des3_key));
+    explicit_bzero(cipher->des3_key, sizeof(*cipher->des3_key));
     SAFE_FREE(cipher->des3_key);
 }
 

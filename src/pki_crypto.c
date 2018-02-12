@@ -1434,7 +1434,7 @@ static ssh_signature pki_signature_from_rsa_blob(const ssh_key pubkey,
         blob_orig = (char *) ssh_string_data(sig_blob);
 
         /* front-pad the buffer with zeroes */
-        BURN_BUFFER(blob_padded_data, pad_len);
+        explicit_bzero(blob_padded_data, pad_len);
         /* fill the rest with the actual signature blob */
         memcpy(blob_padded_data + pad_len, blob_orig, len);
 

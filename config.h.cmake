@@ -160,6 +160,9 @@
 /* Define to 1 if you have the `glob' function. */
 #cmakedefine HAVE_GLOB 1
 
+/* Define to 1 if you have the `explicit_bzero' function. */
+#cmakedefine HAVE_EXPLICIT_BZERO 1
+
 /*************************** LIBRARIES ***************************/
 
 /* Define to 1 if you have the `crypto' library (-lcrypto). */

@@ -144,6 +144,7 @@ endif()
 check_function_exists(isblank HAVE_ISBLANK)
 check_function_exists(strncpy HAVE_STRNCPY)
 check_function_exists(strtoull HAVE_STRTOULL)
+check_function_exists(explicit_bzero HAVE_EXPLICIT_BZERO)
 
 if (HAVE_GLOB_H)
   check_function_exists(glob HAVE_GLOB)
