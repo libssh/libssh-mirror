@@ -1017,7 +1017,7 @@ LIBSSH_API void sftp_handle_remove(sftp_session sftp, void *handle);
 #define SSH_FXE_STATVFS_ST_NOSUID 0x2 /* no setuid */
 
 #ifdef __cplusplus
-} ;
+}
 #endif
 
 #endif /* SFTP_H */
