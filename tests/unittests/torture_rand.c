@@ -17,9 +17,13 @@
 
 static int setup(void **state) {
     (void) state;
+    int rc;
 
     ssh_threads_set_callbacks(ssh_threads_get_pthread());
-    ssh_init();
+    rc = ssh_init();
+    if (rc != SSH_OK) {
+        return -1;
+    }
 
     return 0;
 }
