@@ -109,7 +109,7 @@ static int pki_openssh_import_privkey_blob(ssh_buffer key_blob_buffer,
         }
         memcpy(key->ed25519_privkey, ssh_string_data(privkey), ED25519_SK_LEN);
         memcpy(key->ed25519_pubkey, ssh_string_data(pubkey), ED25519_PK_LEN);
-        memset(ssh_string_data(privkey), 0, ED25519_SK_LEN);
+        explicit_bzero(ssh_string_data(privkey), ED25519_SK_LEN);
         SAFE_FREE(privkey);
         SAFE_FREE(pubkey);
         break;
