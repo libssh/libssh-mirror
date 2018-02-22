@@ -287,7 +287,8 @@ int ssh_connector_remove_event(ssh_connector connector);
 #if defined(HAVE_GCC_VOLATILE_MEMORY_PROTECTION)
 #define explicit_bzero(s, n) do { \
     if ((s) != NULL) { \
-        memset((s), '\0', (n)); __asm__ volatile("" : : "r"(&(s)) : "memory"); \
+        void *_x = (s); \
+        memset((_x), '\0', (n)); __asm__ volatile("" : : "r"(&(_x)) : "memory"); \
     } \
 } while (0)
 #else /* HAVE_GCC_VOLATILE_MEMORY_PROTECTION */
