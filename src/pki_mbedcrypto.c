@@ -451,15 +451,34 @@ int pki_key_compare(const ssh_key k1, const ssh_key k2, enum ssh_keycmp_e what)
             }
             break;
         }
-        case SSH_KEYTYPE_ECDSA:
-            /* TODO: mbedTLS can't compare ecdsa keys.
-               mbedtls_ecdsa_context is actually a mbedtls_ecp_keypair,
-               so the private and public points and the group can be accessed
-               through the keypair. However, mbedtls has no method corresponding
-               to OpenSSL's EC_GROUP_cmp and EC_POITN_cmp, so the comparison
-               would have to be done manually.
-             */
-            return 1;
+        case SSH_KEYTYPE_ECDSA: {
+            mbedtls_ecp_keypair *ecdsa1 = k1->ecdsa;
+            mbedtls_ecp_keypair *ecdsa2 = k2->ecdsa;
+
+            if (ecdsa1->grp.id != ecdsa2->grp.id) {
+                return 1;
+            }
+
+            if (mbedtls_mpi_cmp_mpi(&ecdsa1->Q.X, &ecdsa2->Q.X)) {
+                return 1;
+            }
+
+            if (mbedtls_mpi_cmp_mpi(&ecdsa1->Q.Y, &ecdsa2->Q.Y)) {
+                return 1;
+            }
+
+            if (mbedtls_mpi_cmp_mpi(&ecdsa1->Q.Z, &ecdsa2->Q.Z)) {
+                return 1;
+            }
+
+            if (what == SSH_KEY_CMP_PRIVATE) {
+                if (mbedtls_mpi_cmp_mpi(&ecdsa1->d, &ecdsa2->d)) {
+                    return 1;
+                }
+            }
+
+            break;
+        }
         case SSH_KEYTYPE_ED25519:
             /* ed25519 keys handled globally */
             return 0;

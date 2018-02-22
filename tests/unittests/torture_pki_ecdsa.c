@@ -227,11 +227,8 @@ static void torture_pki_ecdsa_duplicate_key(void **state)
 
     assert_string_equal(b64_key, b64_key_gen);
 
-#ifndef HAVE_LIBMBEDCRYPTO
-    /* libmbedcrypto can't compare ecdsa keys */
     rc = ssh_key_cmp(privkey, privkey_dup, SSH_KEY_CMP_PRIVATE);
     assert_true(rc == 0);
-#endif
 
     ssh_key_free(pubkey);
     ssh_key_free(privkey);
