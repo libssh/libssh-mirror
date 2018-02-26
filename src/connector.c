@@ -106,6 +106,15 @@ ssh_connector ssh_connector_new(ssh_session session)
 
 void ssh_connector_free (ssh_connector connector)
 {
+    if (connector->in_channel != NULL) {
+        ssh_remove_channel_callbacks(connector->in_channel,
+                                     &connector->in_channel_cb);
+    }
+    if (connector->out_channel != NULL) {
+        ssh_remove_channel_callbacks(connector->out_channel,
+                                     &connector->out_channel_cb);
+    }
+
     if (connector->event != NULL){
         ssh_connector_remove_event(connector);
     }
@@ -118,15 +127,6 @@ void ssh_connector_free (ssh_connector connector)
     if (connector->out_poll != NULL) {
         ssh_poll_free(connector->out_poll);
         connector->out_poll = NULL;
-    }
-
-    if (connector->in_channel != NULL) {
-        ssh_remove_channel_callbacks(connector->in_channel,
-                                     &connector->in_channel_cb);
-    }
-    if (connector->out_channel != NULL) {
-        ssh_remove_channel_callbacks(connector->out_channel,
-                                     &connector->out_channel_cb);
     }
 
     free(connector);
