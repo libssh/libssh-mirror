@@ -199,6 +199,8 @@
 #cmakedefine HAVE_COMPILER__FUNC__ 1
 #cmakedefine HAVE_COMPILER__FUNCTION__ 1
 
+#cmakedefine HAVE_GCC_BOUNDED_ATTRIBUTE 1
+
 /* Define to 1 if you want to enable GSSAPI */
 #cmakedefine WITH_GSSAPI 1
 
