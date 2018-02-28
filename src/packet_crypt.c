@@ -117,13 +117,6 @@ int ssh_packet_decrypt(ssh_session session,
         return SSH_ERROR;
     }
 
-    rc = crypto->set_decrypt_key(crypto,
-                                 session->current_crypto->decryptkey,
-                                 session->current_crypto->decryptIV);
-    if (rc < 0) {
-        return -1;
-    }
-
     if (crypto->aead_decrypt != NULL) {
         return crypto->aead_decrypt(crypto,
                                     source,
@@ -176,12 +169,6 @@ unsigned char *ssh_packet_encrypt(ssh_session session, void *data, uint32_t len)
       hmac_update(ctx,(unsigned char *)&seq,sizeof(uint32_t));
       hmac_update(ctx,data,len);
       hmac_final(ctx,session->current_crypto->hmacbuf,&finallen);
-
-      if (crypto->set_encrypt_key(crypto, session->current_crypto->encryptkey,
-          session->current_crypto->encryptIV) < 0) {
-        SAFE_FREE(out);
-        return NULL;
-      }
 
 #ifdef DEBUG_CRYPTO
       ssh_print_hexa("mac: ",data,hmac_digest_len(type));
