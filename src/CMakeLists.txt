@@ -158,9 +158,11 @@ set(libssh_SRCS
   wrapper.c
   external/bcrypt_pbkdf.c
   external/blowfish.c
+  external/chacha.c
   external/ed25519.c
   external/fe25519.c
   external/ge25519.c
+  external/poly1305.c
   external/sc25519.c
 )
 
