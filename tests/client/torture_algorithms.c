@@ -261,6 +261,16 @@ static void torture_algorithms_blowfish_cbc_hmac_sha2_512(void **state) {
 }
 #endif
 
+static void torture_algorithms_chacha20_poly1305(void **state)
+{
+    struct torture_state *s = *state;
+
+    test_algorithm(s->ssh.session,
+                   NULL, /*kex*/
+                   "chacha20-poly1305@openssh.com",
+                   NULL);
+}
+
 static void torture_algorithms_zlib(void **state) {
     struct torture_state *s = *state;
     ssh_session session = s->ssh.session;
@@ -441,6 +451,9 @@ int torture_run_tests(void) {
                                         session_setup,
                                         session_teardown),
 #endif
+        cmocka_unit_test_setup_teardown(torture_algorithms_chacha20_poly1305,
+                                        session_setup,
+                                        session_teardown),
         cmocka_unit_test_setup_teardown(torture_algorithms_zlib,
                                         session_setup,
                                         session_teardown),
