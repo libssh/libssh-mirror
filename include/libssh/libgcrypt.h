@@ -88,6 +88,7 @@ ssh_string ssh_sexp_extract_mpi(const gcry_sexp_t sexp,
 
 #endif /* HAVE_LIBGCRYPT */
 
+void libgcrypt_init(void);
 struct ssh_cipher_struct *ssh_get_ciphertab(void);
 
 #endif /* LIBGCRYPT_H_ */
