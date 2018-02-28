@@ -45,6 +45,8 @@ static void torture_packet(const char *cipher,
     ssh_session session = ssh_new();
     int verbosity = torture_libssh_verbosity();
     struct ssh_crypto_struct *crypto;
+    struct ssh_cipher_struct *in_cipher;
+    struct ssh_cipher_struct *out_cipher;
     int rc;
     int sockets[2];
     uint8_t buffer[1024];
@@ -86,6 +88,18 @@ static void torture_packet(const char *cipher,
     crypto->decryptIV = copy_data(iv, sizeof(iv));
     crypto->encryptMAC = copy_data(mac, sizeof(mac));
     crypto->decryptMAC = copy_data(mac, sizeof(mac));
+
+    in_cipher = session->current_crypto->in_cipher;
+    rc = in_cipher->set_decrypt_key(in_cipher,
+                                    session->current_crypto->decryptkey,
+                                    session->current_crypto->decryptIV);
+    assert_int_equal(rc, SSH_OK);
+
+    out_cipher = session->current_crypto->out_cipher;
+    rc = out_cipher->set_encrypt_key(out_cipher,
+                                     session->current_crypto->encryptkey,
+                                     session->current_crypto->encryptIV);
+    assert_int_equal(rc, SSH_OK);
 
     assert_non_null(session->out_buffer);
     ssh_buffer_add_data(session->out_buffer, test_data, payload_len);
