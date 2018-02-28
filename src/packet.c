@@ -144,20 +144,26 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
     ssh_session session= (ssh_session) user;
     unsigned int blocksize = (session->current_crypto ?
                               session->current_crypto->in_cipher->blocksize : 8);
-    unsigned char mac[DIGEST_MAX_LEN] = {0};
-    char buffer[16] = {0};
+    unsigned int lenfield_blocksize = (session->current_crypto ?
+                                  session->current_crypto->in_cipher->lenfield_blocksize : 8);
     size_t current_macsize = 0;
-    const uint8_t *packet;
+    uint8_t *ptr = NULL;
     int to_be_read;
     int rc;
-    uint32_t len, compsize, payloadsize;
+    uint8_t *cleartext_packet = NULL;
+    uint8_t *packet_second_block = NULL;
+    uint8_t *mac = NULL;
+    size_t packet_remaining;
+    uint32_t packet_len, compsize, payloadsize;
     uint8_t padding;
     size_t processed = 0; /* number of byte processed from the callback */
 
     if(session->current_crypto != NULL) {
       current_macsize = hmac_digest_len(session->current_crypto->in_hmac);
     }
-
+    if (lenfield_blocksize == 0) {
+        lenfield_blocksize = blocksize;
+    }
     if (data == NULL) {
         goto error;
     }
@@ -178,7 +184,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
 #endif
     switch(session->packet_state) {
         case PACKET_STATE_INIT:
-            if (receivedlen < blocksize) {
+            if (receivedlen < lenfield_blocksize) {
                 /*
                  * We didn't receive enough data to read at least one
                  * block size, give up
@@ -187,7 +193,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
                 SSH_LOG(SSH_LOG_PACKET,
                         "Waiting for more data (%zu < %zu)",
                         receivedlen,
-                        blocksize);
+                        lenfield_blocksize);
 #endif
                 return 0;
             }
@@ -206,24 +212,21 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
                 }
             }
 
-            memcpy(buffer, data, blocksize);
-            processed += blocksize;
-            len = ssh_packet_decrypt_len(session, buffer);
-
-            rc = ssh_buffer_add_data(session->in_buffer, buffer, blocksize);
-            if (rc < 0) {
+            ptr = ssh_buffer_allocate(session->in_buffer, lenfield_blocksize);
+            if (ptr == NULL) {
                 goto error;
             }
+            processed += lenfield_blocksize;
+            packet_len = ssh_packet_decrypt_len(session, ptr, (uint8_t *)data);
 
-            if (len > MAX_PACKET_LEN) {
+            if (packet_len > MAX_PACKET_LEN) {
                 ssh_set_error(session,
                               SSH_FATAL,
                               "read_packet(): Packet len too high(%u %.4x)",
-                              len, len);
+                              packet_len, packet_len);
                 goto error;
             }
-
-            to_be_read = len - blocksize + sizeof(uint32_t);
+            to_be_read = packet_len - lenfield_blocksize + sizeof(uint32_t);
             if (to_be_read < 0) {
                 /* remote sshd sends invalid sizes? */
                 ssh_set_error(session,
@@ -233,59 +236,52 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
                 goto error;
             }
 
-            /* Saves the status of the current operations */
-            session->in_packet.len = len;
+            session->in_packet.len = packet_len;
             session->packet_state = PACKET_STATE_SIZEREAD;
             FALL_THROUGH;
         case PACKET_STATE_SIZEREAD:
-            len = session->in_packet.len;
-            to_be_read = len - blocksize + sizeof(uint32_t) + current_macsize;
+            packet_len = session->in_packet.len;
+            processed = lenfield_blocksize;
+            to_be_read = packet_len + sizeof(uint32_t) + current_macsize;
             /* if to_be_read is zero, the whole packet was blocksize bytes. */
             if (to_be_read != 0) {
-                if (receivedlen - processed < (unsigned int)to_be_read) {
+                if (receivedlen  < (unsigned int)to_be_read) {
                     /* give up, not enough data in buffer */
-                    SSH_LOG(SSH_LOG_PACKET,"packet: partial packet (read len) [len=%d]",len);
-                    return processed;
+                    SSH_LOG(SSH_LOG_PACKET,
+                            "packet: partial packet (read len) "
+                            "[len=%d, receivedlen=%d, to_be_read=%d]",
+                            packet_len,
+                            (int)receivedlen,
+                            to_be_read);
+                    return 0;
                 }
 
-                packet = ((uint8_t*)data) + processed;
-#if 0
-                ssh_socket_read(session->socket,
-                                packet,
-                                to_be_read - current_macsize);
-#endif
-
-                rc = ssh_buffer_add_data(session->in_buffer,
-                                     packet,
-                                     to_be_read - current_macsize);
-                if (rc < 0) {
-                    goto error;
-                }
-                processed += to_be_read - current_macsize;
+                packet_second_block = (uint8_t*)data + lenfield_blocksize;
+                processed = to_be_read - current_macsize;
             }
 
+            /* remaining encrypted bytes from the packet, MAC not included */
+            packet_remaining =
+                packet_len - (lenfield_blocksize - sizeof(uint32_t));
+            cleartext_packet = ssh_buffer_allocate(session->in_buffer,
+                                                   packet_remaining);
             if (session->current_crypto) {
                 /*
-                 * Decrypt the rest of the packet (blocksize bytes already
+                 * Decrypt the rest of the packet (lenfield_blocksize bytes already
                  * have been decrypted)
                  */
-                uint32_t buffer_len = ssh_buffer_get_len(session->in_buffer);
-
-                /* The following check avoids decrypting zero bytes */
-                if (buffer_len > blocksize) {
-                    uint8_t *payload = ((uint8_t*)ssh_buffer_get(session->in_buffer) + blocksize);
-                    uint32_t plen = buffer_len - blocksize;
-
-                    rc = ssh_packet_decrypt(session, payload, plen);
+                if (packet_remaining > 0) {
+                    rc = ssh_packet_decrypt(session,
+                                            cleartext_packet,
+                                            (uint8_t *)data,
+                                            lenfield_blocksize,
+                                            processed - lenfield_blocksize);
                     if (rc < 0) {
-                        ssh_set_error(session, SSH_FATAL, "Decrypt error");
+                        ssh_set_error(session, SSH_FATAL, "Decryption error");
                         goto error;
                     }
                 }
-
-                /* copy the last part from the incoming buffer */
-                packet = ((uint8_t *)data) + processed;
-                memcpy(mac, packet, current_macsize);
+                mac = packet_second_block + packet_remaining;
 
                 rc = ssh_packet_hmac_verify(session, session->in_buffer, mac, session->current_crypto->in_hmac);
                 if (rc < 0) {
@@ -293,6 +289,8 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
                     goto error;
                 }
                 processed += current_macsize;
+            } else {
+                memcpy(cleartext_packet, packet_second_block, packet_remaining);
             }
 
             /* skip the size field which has been processed before */
@@ -342,7 +340,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
             ssh_packet_parse_type(session);
             SSH_LOG(SSH_LOG_PACKET,
                     "packet: read type %hhd [len=%d,padding=%hhd,comp=%d,payload=%d]",
-                    session->in_packet.type, len, padding, compsize, payloadsize);
+                    session->in_packet.type, packet_len, padding, compsize, payloadsize);
 
             /* Execute callbacks */
             ssh_packet_process(session, session->in_packet.type);
@@ -353,9 +351,9 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
                         "Processing %" PRIdS " bytes left in socket buffer",
                         receivedlen-processed);
 
-                packet = ((uint8_t*)data) + processed;
+                ptr = ((uint8_t*)data) + processed;
 
-                rc = ssh_packet_socket_callback(packet, receivedlen - processed,user);
+                rc = ssh_packet_socket_callback(ptr, receivedlen - processed,user);
                 processed += rc;
             }
 
@@ -372,7 +370,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
 
 error:
     session->session_state= SSH_SESSION_STATE_ERROR;
-
+    SSH_LOG(SSH_LOG_PACKET,"Packet: processed %" PRIdS " bytes", processed);
     return processed;
 }
 

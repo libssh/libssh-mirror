@@ -120,7 +120,7 @@ static const char *supported_methods[] = {
   KEY_EXCHANGE,
   HOSTKEYS,
   CHACHA20 AES BLOWFISH DES_SUPPORTED,
-  AES BLOWFISH DES_SUPPORTED,
+  CHACHA20 AES BLOWFISH DES_SUPPORTED,
   "hmac-sha2-256,hmac-sha2-512,hmac-sha1",
   "hmac-sha2-256,hmac-sha2-512,hmac-sha1",
   ZLIB,

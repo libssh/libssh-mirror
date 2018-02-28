@@ -155,6 +155,10 @@ struct ssh_cipher_struct {
         unsigned long len);
     void (*aead_encrypt)(struct ssh_cipher_struct *cipher, void *in, void *out,
         size_t len, uint8_t *mac, uint64_t seq);
+    int (*aead_decrypt_length)(struct ssh_cipher_struct *cipher, void *in,
+        uint8_t *out, size_t len, uint64_t seq);
+    int (*aead_decrypt)(struct ssh_cipher_struct *cipher, void *complete_packet, uint8_t *out,
+        size_t encrypted_size, uint64_t seq);
     void (*cleanup)(struct ssh_cipher_struct *cipher);
 };
 

@@ -231,8 +231,13 @@ static int crypt_set_algorithms2(ssh_session session){
   int i = 0;
   struct ssh_cipher_struct *ssh_ciphertab=ssh_get_ciphertab();
   struct ssh_hmac_struct *ssh_hmactab=ssh_get_hmactab();
+  int cmp;
 
-  /* we must scan the kex entries to find crypto algorithms and set their appropriate structure */
+  /*
+   * We must scan the kex entries to find crypto algorithms and set their
+   * appropriate structure.
+   */
+
   /* out */
   wanted = session->next_crypto->kex_methods[SSH_CRYPT_C_S];
   while (ssh_ciphertab[i].name && strcmp(wanted, ssh_ciphertab[i].name)) {
@@ -258,12 +263,20 @@ static int crypt_set_algorithms2(ssh_session session){
       /* this cipher has integrated MAC */
       wanted = "aead-poly1305";
   } else {
-      /* we must scan the kex entries to find hmac algorithms and set their appropriate structure */
+      /*
+       * We must scan the kex entries to find hmac algorithms and set their
+       * appropriate structure.
+       */
+
       /* out */
       wanted = session->next_crypto->kex_methods[SSH_MAC_C_S];
   }
-  while (ssh_hmactab[i].name && strcmp(wanted, ssh_hmactab[i].name)) {
-    i++;
+
+  for (i = 0; ssh_hmactab[i].name != NULL; i++) {
+      cmp = strcmp(wanted, ssh_hmactab[i].name);
+      if (cmp == 0) {
+          break;
+      }
   }
 
   if (ssh_hmactab[i].name == NULL) {
@@ -275,12 +288,15 @@ static int crypt_set_algorithms2(ssh_session session){
   SSH_LOG(SSH_LOG_PACKET, "Set HMAC output algorithm to %s", wanted);
 
   session->next_crypto->out_hmac = ssh_hmactab[i].hmac_type;
-  i = 0;
 
   /* in */
   wanted = session->next_crypto->kex_methods[SSH_CRYPT_S_C];
-  while (ssh_ciphertab[i].name && strcmp(wanted, ssh_ciphertab[i].name)) {
-    i++;
+
+  for (i = 0; ssh_ciphertab[i].name != NULL; i++) {
+      cmp = strcmp(wanted, ssh_ciphertab[i].name);
+      if (cmp == 0) {
+        break;
+      }
   }
 
   if (ssh_ciphertab[i].name == NULL) {
@@ -296,12 +312,20 @@ static int crypt_set_algorithms2(ssh_session session){
       ssh_set_error_oom(session);
       return SSH_ERROR;
   }
-  i = 0;
 
-  /* we must scan the kex entries to find hmac algorithms and set their appropriate structure */
-  wanted = session->next_crypto->kex_methods[SSH_MAC_S_C];
-  while (ssh_hmactab[i].name && strcmp(wanted, ssh_hmactab[i].name)) {
-    i++;
+  if (session->next_crypto->in_cipher->aead_encrypt != NULL){
+      /* this cipher has integrated MAC */
+      wanted = "aead-poly1305";
+  } else {
+      /* we must scan the kex entries to find hmac algorithms and set their appropriate structure */
+      wanted = session->next_crypto->kex_methods[SSH_MAC_S_C];
+  }
+
+  for (i = 0; ssh_hmactab[i].name != NULL; i++) {
+      cmp = strcmp(wanted, ssh_hmactab[i].name);
+      if (cmp == 0) {
+          break;
+      }
   }
 
   if (ssh_hmactab[i].name == NULL) {
@@ -310,7 +334,7 @@ static int crypt_set_algorithms2(ssh_session session){
         wanted);
       return SSH_ERROR;
   }
-  SSH_LOG(SSH_LOG_PACKET, "Set HMAC output algorithm to %s", wanted);
+  SSH_LOG(SSH_LOG_PACKET, "Set HMAC input algorithm to %s", wanted);
 
   session->next_crypto->in_hmac = ssh_hmactab[i].hmac_type;
   i = 0;
@@ -458,7 +482,13 @@ int crypt_set_algorithms_server(ssh_session session){
     }
     i=0;
 
-    method = session->next_crypto->kex_methods[SSH_MAC_C_S];
+    if (session->next_crypto->in_cipher->aead_encrypt != NULL){
+        /* this cipher has integrated MAC */
+        method = "aead-poly1305";
+    } else {
+        /* we must scan the kex entries to find hmac algorithms and set their appropriate structure */
+        method = session->next_crypto->kex_methods[SSH_MAC_C_S];
+    }
 
     for (i = 0; ssh_hmactab[i].name != NULL; i++) {
       int cmp;

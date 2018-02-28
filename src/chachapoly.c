@@ -109,8 +109,82 @@ static void chacha20_poly1305_aead_encrypt(struct ssh_cipher_struct *cipher,
                          out_packet->payload,
                          len - sizeof(uint32_t));
 
+    /* ssh_print_hexa("poly1305_ctx", poly1305_ctx, sizeof(poly1305_ctx)); */
     /* step 4, compute the MAC */
     poly1305_auth(tag, (uint8_t *)out_packet, len, poly1305_ctx);
+    /* ssh_print_hexa("poly1305 src", (uint8_t *)out_packet, len);
+    ssh_print_hexa("poly1305 tag", tag, POLY1305_TAGLEN); */
+}
+
+static int chacha20_poly1305_aead_decrypt_length(
+        struct ssh_cipher_struct *cipher,
+        void *in,
+        uint8_t *out,
+        size_t len,
+        uint64_t seq)
+{
+    struct chacha20_poly1305_keysched *keys = cipher->chacha20_schedule;
+
+    if (len < sizeof(uint32_t)) {
+        return SSH_ERROR;
+    }
+    seq = htonll(seq);
+
+    chacha_ivsetup(&keys->k1, (uint8_t *)&seq, zero_block_counter);
+    chacha_encrypt_bytes(&keys->k1,
+                         in,
+                         (uint8_t *)out,
+                         sizeof(uint32_t));
+    return SSH_OK;
+}
+
+static int chacha20_poly1305_aead_decrypt(struct ssh_cipher_struct *cipher,
+                                          void *complete_packet,
+                                          uint8_t *out,
+                                          size_t encrypted_size,
+                                          uint64_t seq)
+{
+    uint8_t poly1305_ctx[POLY1305_KEYLEN] = {0};
+    uint8_t tag[POLY1305_TAGLEN] = {0};
+    struct chacha20_poly1305_keysched *keys = cipher->chacha20_schedule;
+    uint8_t *mac = (uint8_t *)complete_packet + sizeof(uint32_t) + encrypted_size;
+    int cmp;
+
+    seq = htonll(seq);
+
+    ZERO_STRUCT(poly1305_ctx);
+    chacha_ivsetup(&keys->k2, (uint8_t *)&seq, zero_block_counter);
+    chacha_encrypt_bytes(&keys->k2,
+                         poly1305_ctx,
+                         poly1305_ctx,
+                         POLY1305_KEYLEN);
+#if 0
+    ssh_print_hexa("poly1305_ctx", poly1305_ctx, sizeof(poly1305_ctx));
+#endif
+
+    poly1305_auth(tag, (uint8_t *)complete_packet, encrypted_size +
+            sizeof(uint32_t), poly1305_ctx);
+#if 0
+    ssh_print_hexa("poly1305 src",
+                   (uint8_t*)complete_packet,
+                   encrypted_size + 4);
+    ssh_print_hexa("poly1305 tag", tag, POLY1305_TAGLEN);
+    ssh_print_hexa("received tag", mac, POLY1305_TAGLEN);
+#endif
+
+    cmp = memcmp(tag, mac, POLY1305_TAGLEN);
+    if(cmp != 0) {
+        /* mac error */
+        SSH_LOG(SSH_LOG_PACKET,"poly1305 verify error");
+        return SSH_ERROR;
+    }
+    chacha_ivsetup(&keys->k2, (uint8_t *)&seq, payload_block_counter);
+    chacha_encrypt_bytes(&keys->k2,
+                         (uint8_t *)complete_packet + sizeof(uint32_t),
+                         out,
+                         encrypted_size);
+
+    return SSH_OK;
 }
 
 const struct ssh_cipher_struct chacha20poly1305_cipher = {
@@ -123,4 +197,6 @@ const struct ssh_cipher_struct chacha20poly1305_cipher = {
     .set_encrypt_key = chacha20_set_encrypt_key,
     .set_decrypt_key = chacha20_set_encrypt_key,
     .aead_encrypt = chacha20_poly1305_aead_encrypt,
+    .aead_decrypt_length = chacha20_poly1305_aead_decrypt_length,
+    .aead_decrypt = chacha20_poly1305_aead_decrypt
 };

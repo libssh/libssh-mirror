@@ -78,8 +78,9 @@ void ssh_packet_set_default_callbacks(ssh_session session);
 void ssh_packet_process(ssh_session session, uint8_t type);
 
 /* PACKET CRYPT */
-uint32_t ssh_packet_decrypt_len(ssh_session session, char *crypted);
-int ssh_packet_decrypt(ssh_session session, void *packet, unsigned int len);
+uint32_t ssh_packet_decrypt_len(ssh_session session, uint8_t *destination, uint8_t *source);
+int ssh_packet_decrypt(ssh_session session, uint8_t *destination, uint8_t *source,
+        size_t start, size_t encrypted_size);
 unsigned char *ssh_packet_encrypt(ssh_session session,
                                   void *packet,
                                   unsigned int len);
