@@ -128,10 +128,12 @@ struct ssh_cipher_struct {
     const char *name; /* ssh name of the algorithm */
     unsigned int blocksize; /* blocksize of the algo */
     enum ssh_cipher_e ciphertype;
+    uint32_t lenfield_blocksize; /* blocksize of the packet length field */
 #ifdef HAVE_LIBGCRYPT
     size_t keylen; /* length of the key structure */
     gcry_cipher_hd_t *key;
 #elif defined HAVE_LIBCRYPTO
+    size_t keylen; /* length of the key structure */
     struct ssh_3des_key_schedule *des3_key;
     struct ssh_aes_key_schedule *aes_key;
     const EVP_CIPHER *cipher;
@@ -141,7 +143,9 @@ struct ssh_cipher_struct {
     mbedtls_cipher_context_t decrypt_ctx;
     mbedtls_cipher_type_t type;
 #endif
+    struct chacha20_poly1305_keysched *chacha20_schedule;
     unsigned int keysize; /* bytes of key used. != keylen */
+    size_t tag_size; /* overhead required for tag */
     /* sets the new key for immediate use */
     int (*set_encrypt_key)(struct ssh_cipher_struct *cipher, void *key, void *IV);
     int (*set_decrypt_key)(struct ssh_cipher_struct *cipher, void *key, void *IV);
@@ -149,6 +153,8 @@ struct ssh_cipher_struct {
         unsigned long len);
     void (*decrypt)(struct ssh_cipher_struct *cipher, void *in, void *out,
         unsigned long len);
+    void (*aead_encrypt)(struct ssh_cipher_struct *cipher, void *in, void *out,
+        size_t len, uint8_t *mac, uint64_t seq);
     void (*cleanup)(struct ssh_cipher_struct *cipher);
 };
 

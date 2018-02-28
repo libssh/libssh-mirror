@@ -95,6 +95,8 @@
 #define ECDH ""
 #endif
 
+#define CHACHA20 "chacha20-poly1305@openssh.com,"
+
 #define KEY_EXCHANGE CURVE25519 ECDH "diffie-hellman-group14-sha1,diffie-hellman-group1-sha1"
 #define KEX_METHODS_SIZE 10
 
@@ -117,7 +119,7 @@ static const char *default_methods[] = {
 static const char *supported_methods[] = {
   KEY_EXCHANGE,
   HOSTKEYS,
-  AES BLOWFISH DES_SUPPORTED,
+  CHACHA20 AES BLOWFISH DES_SUPPORTED,
   AES BLOWFISH DES_SUPPORTED,
   "hmac-sha2-256,hmac-sha2-512,hmac-sha1",
   "hmac-sha2-256,hmac-sha2-512,hmac-sha1",

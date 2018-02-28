@@ -555,6 +555,8 @@ static int ssh_packet_write(ssh_session session) {
 static int packet_send2(ssh_session session) {
   unsigned int blocksize = (session->current_crypto ?
       session->current_crypto->out_cipher->blocksize : 8);
+  unsigned int lenfield_blocksize = (session->current_crypto ?
+      session->current_crypto->out_cipher->lenfield_blocksize : 0);
   enum ssh_hmac_e hmac_type = (session->current_crypto ?
       session->current_crypto->out_hmac : session->next_crypto->out_hmac);
   uint32_t currentlen = ssh_buffer_get_len(session->out_buffer);
@@ -563,8 +565,7 @@ static int packet_send2(ssh_session session) {
   int rc = SSH_ERROR;
   uint32_t finallen,payloadsize,compsize;
   uint8_t padding;
-
-  uint8_t header[sizeof(padding) + sizeof(finallen)] = { 0 };
+  ssh_buffer header_buffer = ssh_buffer_new();
 
   payloadsize = currentlen;
 #ifdef WITH_ZLIB
@@ -578,20 +579,30 @@ static int packet_send2(ssh_session session) {
   }
 #endif /* WITH_ZLIB */
   compsize = currentlen;
-  padding = (blocksize - ((currentlen +5) % blocksize));
+  /* compressed payload + packet len (4) + padding len (1) */
+  /* totallen - lenfield_blocksize must be equal to 0 (mod blocksize) */
+  padding = (blocksize - ((blocksize - lenfield_blocksize + currentlen + 5) % blocksize));
   if(padding < 4) {
     padding += blocksize;
   }
 
-  if (session->current_crypto) {
+  if (session->current_crypto != NULL) {
     ssh_get_random(padstring, padding, 0);
   }
 
-  finallen = htonl(currentlen + padding + 1);
+  if (header_buffer == NULL){
+    ssh_set_error_oom(session);
+    goto error;
+  }
+  finallen = currentlen + padding + 1;
+  rc = ssh_buffer_pack(header_buffer, "db", finallen, padding);
+  if (rc == SSH_ERROR){
+    goto error;
+  }
 
-  memcpy(&header[0], &finallen, sizeof(finallen));
-  header[sizeof(finallen)] = padding;
-  rc = ssh_buffer_prepend_data(session->out_buffer, &header, sizeof(header));
+  rc = ssh_buffer_prepend_data(session->out_buffer,
+                               ssh_buffer_get(header_buffer),
+                               ssh_buffer_get_len(header_buffer));
   if (rc < 0) {
     goto error;
   }
@@ -600,10 +611,12 @@ static int packet_send2(ssh_session session) {
     goto error;
   }
 #ifdef WITH_PCAP
-  if(session->pcap_ctx){
-  	ssh_pcap_context_write(session->pcap_ctx,SSH_PCAP_DIR_OUT,
-  			ssh_buffer_get(session->out_buffer),ssh_buffer_get_len(session->out_buffer)
-  			,ssh_buffer_get_len(session->out_buffer));
+  if (session->pcap_ctx) {
+      ssh_pcap_context_write(session->pcap_ctx,
+                             SSH_PCAP_DIR_OUT,
+                             ssh_buffer_get(session->out_buffer),
+                             ssh_buffer_get_len(session->out_buffer),
+                             ssh_buffer_get_len(session->out_buffer));
   }
 #endif
   hmac = ssh_packet_encrypt(session, ssh_buffer_get(session->out_buffer),
@@ -624,12 +637,14 @@ static int packet_send2(ssh_session session) {
 
   SSH_LOG(SSH_LOG_PACKET,
           "packet: wrote [len=%d,padding=%hhd,comp=%d,payload=%d]",
-          ntohl(finallen), padding, compsize, payloadsize);
+          finallen, padding, compsize, payloadsize);
   if (ssh_buffer_reinit(session->out_buffer) < 0) {
     rc = SSH_ERROR;
   }
 error:
-
+  if (header_buffer != NULL) {
+      ssh_buffer_free(header_buffer);
+  }
   return rc; /* SSH_OK, AGAIN or ERROR */
 }
 

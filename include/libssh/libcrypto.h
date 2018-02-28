@@ -95,6 +95,7 @@ SHA512CTX sha512_init(void);
 void sha512_update(SHA512CTX c, const void *data, unsigned long len);
 void sha512_final(unsigned char *md, SHA512CTX c);
 
+void libcrypto_init(void);
 struct ssh_cipher_struct *ssh_get_ciphertab(void);
 
 #endif /* HAVE_LIBCRYPTO */
