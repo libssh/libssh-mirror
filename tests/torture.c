@@ -681,16 +681,24 @@ static void torture_setup_create_sshd_config(void **state)
     }
     assert_non_null(sftp_server);
 
+#ifdef HAVE_DSA
     snprintf(sshd_config, sizeof(sshd_config),
              config_string,
-#ifdef HAVE_DSA
              dsa_hostkey,
-#endif
              rsa_hostkey,
              ecdsa_hostkey,
              trusted_ca_pubkey,
              sftp_server,
              s->srv_pidfile);
+#else
+    snprintf(sshd_config, sizeof(sshd_config),
+             config_string,
+             rsa_hostkey,
+             ecdsa_hostkey,
+             trusted_ca_pubkey,
+             sftp_server,
+             s->srv_pidfile);
+#endif
 
     torture_write_file(s->srv_config, sshd_config);
 }
