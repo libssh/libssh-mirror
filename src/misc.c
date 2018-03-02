@@ -1055,11 +1055,15 @@ int ssh_match_group(const char *group, const char *object)
 #if !defined(HAVE_EXPLICIT_BZERO)
 void explicit_bzero(void *s, size_t n)
 {
+#if defined(HAVE_MEMSET_S)
+    memset_s(s, n, '\0', n);
+#else
     memset(s, '\0', n);
 #if defined(HAVE_GCC_VOLATILE_MEMORY_PROTECTION)
     /* See http://llvm.org/bugs/show_bug.cgi?id=15495 */
     __asm__ volatile("" : : "g"(s) : "memory");
 #endif /* HAVE_GCC_VOLATILE_MEMORY_PROTECTION */
+#endif
 }
 #endif /* !HAVE_EXPLICIT_BZERO */
 
