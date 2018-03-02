@@ -180,6 +180,8 @@ if (WIN32)
     check_function_exists(_strtoui64 HAVE__STRTOUI64)
 
     set(HAVE_SELECT TRUE)
+
+    check_symbol_exists(SecureZeroMemory "windows.h" HAVE_SECURE_ZERO_MEMORY)
 else (WIN32)
     check_function_exists(poll HAVE_POLL)
     check_function_exists(select HAVE_SELECT)

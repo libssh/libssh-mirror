@@ -166,6 +166,9 @@
 /* Define to 1 if you have the `memset_s' function. */
 #cmakedefine HAVE_MEMSET_S 1
 
+/* Define to 1 if you have the `SecureZeroMemory' function. */
+#cmakedefine HAVE_SECURE_ZERO_MEMORY 1
+
 /*************************** LIBRARIES ***************************/
 
 /* Define to 1 if you have the `crypto' library (-lcrypto). */

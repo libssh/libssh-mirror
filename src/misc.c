@@ -1057,6 +1057,8 @@ void explicit_bzero(void *s, size_t n)
 {
 #if defined(HAVE_MEMSET_S)
     memset_s(s, n, '\0', n);
+#elif defined(HAVE_SECURE_ZERO_MEMORY)
+    SecureZeroMemory(s, n);
 #else
     memset(s, '\0', n);
 #if defined(HAVE_GCC_VOLATILE_MEMORY_PROTECTION)
