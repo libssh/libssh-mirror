@@ -281,21 +281,7 @@ int ssh_connector_remove_event(ssh_connector connector);
 #define ARRAY_SIZE(a) (sizeof(a)/sizeof(a[0]))
 
 #ifndef HAVE_EXPLICIT_BZERO
-/*
- * See http://llvm.org/bugs/show_bug.cgi?id=15495
- */
-#if defined(HAVE_GCC_VOLATILE_MEMORY_PROTECTION)
-#define explicit_bzero(s, n) do { \
-    if ((s) != NULL) { \
-        void *_x = (s); \
-        memset((_x), '\0', (n)); __asm__ volatile("" : : "r"(&(_x)) : "memory"); \
-    } \
-} while (0)
-#else /* HAVE_GCC_VOLATILE_MEMORY_PROTECTION */
-#define explicit_bzero(s, n) do { \
-    memset((s), '\0', (n)); \
-} while (0)
-#endif /* HAVE_GCC_VOLATILE_MEMORY_PROTECTION */
+void explicit_bzero(void *s, size_t n);
 #endif /* !HAVE_EXPLICIT_BZERO */
 
 /**

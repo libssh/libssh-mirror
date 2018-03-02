@@ -291,7 +291,7 @@ int main(void)
 {
     char buf[] = \"This is some content\";
 
-    memset(buf, '\\\\0', sizeof(buf)); __asm__ volatile(\"\" : : \"r\"(&buf) : \"memory\");
+    memset(buf, '\\\\0', sizeof(buf)); __asm__ volatile(\"\" : : \"g\"(&buf) : \"memory\");
 
     return 0;
 }" HAVE_GCC_VOLATILE_MEMORY_PROTECTION)
