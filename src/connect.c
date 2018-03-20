@@ -74,6 +74,7 @@
 #include <sys/socket.h>
 #include <sys/select.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 
 #endif /* _WIN32 */
 
@@ -214,6 +215,12 @@ static int ssh_connect_ai_timeout(ssh_session session, const char *host,
   }
 
   return s;
+}
+
+static int set_tcp_nodelay(socket_t socket)
+{
+    int opt = 1;
+    return setsockopt(socket, IPPROTO_TCP, TCP_NODELAY, &opt, sizeof(opt));
 }
 
 /**
@@ -385,6 +392,18 @@ socket_t ssh_connect_host_nonblocking(ssh_session session, const char *host,
         ssh_connect_socket_close(s);
         s = -1;
         continue;
+    }
+
+    if (session->opts.nodelay) {
+        /* For winsock, socket options are only effective before connect */
+        rc = set_tcp_nodelay(s);
+        if (rc < 0) {
+            ssh_set_error(session, SSH_FATAL,
+                "Failed to set TCP_NODELAY on socket: %s", strerror(errno));
+            ssh_connect_socket_close(s);
+            s = -1;
+            continue;
+        }
     }
 
     errno = 0;

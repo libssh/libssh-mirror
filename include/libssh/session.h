@@ -205,6 +205,7 @@ struct ssh_session_struct {
         char *gss_client_identity;
         int gss_delegate_creds;
         int flags;
+        int nodelay;
     } opts;
     /* counters */
     ssh_counter socket_counter;

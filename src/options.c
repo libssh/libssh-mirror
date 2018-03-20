@@ -408,6 +408,10 @@ int ssh_options_set_algo(ssh_session session,
  *                Currently without effect (ssh_userauth_auto_pubkey doesn't use
  *                gssapi authentication).
  *
+ *              - SSH_OPTIONS_NODELAY
+ *                Set it to disable Nagle's Algorithm (TCP_NODELAY) on the
+ *                session socket. (int, 0=false)
+ *
  * @param  value The value to set. This is a generic pointer and the
  *               datatype which is used should be set according to the
  *               type set.
@@ -938,7 +942,15 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
                 }
             }
             break;
-
+        case SSH_OPTIONS_NODELAY:
+            if (value == NULL) {
+                ssh_set_error_invalid(session);
+                return -1;
+            } else {
+                int *x = (int *) value;
+                session->opts.nodelay = (*x & 0xff) > 0 ? 1 : 0;
+            }
+            break;
         default:
             ssh_set_error(session, SSH_REQUEST_DENIED, "Unknown ssh option %d", type);
             return -1;

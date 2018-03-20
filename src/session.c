@@ -107,6 +107,7 @@ ssh_session ssh_new(void) {
     session->opts.fd = -1;
     session->opts.ssh2 = 1;
     session->opts.compressionlevel=7;
+    session->opts.nodelay = 0;
 #ifdef WITH_SSH1
     session->opts.ssh1 = 1;
 #else
