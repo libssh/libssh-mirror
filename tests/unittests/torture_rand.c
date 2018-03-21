@@ -16,8 +16,9 @@
 #define NUM_THREADS 100
 
 static int setup(void **state) {
-    (void) state;
     int rc;
+
+    (void) state;
 
     ssh_threads_set_callbacks(ssh_threads_get_pthread());
     rc = ssh_init();
