@@ -35,6 +35,7 @@
 #include "libssh/session.h"
 #include "libssh/ssh1.h"
 #include "libssh/wrapper.h"
+#include "libssh/dh.h"
 
 /* SSHv1 functions */
 
@@ -317,6 +318,7 @@ SSH_PACKET_CALLBACK(ssh_packet_publickey1){
   int ko;
   uint32_t support_3DES = 0;
   uint32_t support_DES = 0;
+  int rc;
 
   (void)type;
   (void)user;
@@ -394,11 +396,10 @@ SSH_PACKET_CALLBACK(ssh_packet_publickey1){
     goto error;
   }
 
-  session->next_crypto->server_pubkey = ssh_string_copy(hostkey);
-  if (session->next_crypto->server_pubkey == NULL) {
+  rc = ssh_dh_import_next_pubkey_blob(session, hostkey);
+  if (rc != SSH_OK) {
     goto error;
   }
-  session->next_crypto->server_pubkey_type = "ssh-rsa1";
 
   /* now, we must choose an encryption algo */
   /* hardcode 3des */
