@@ -119,8 +119,8 @@ static int modulus_smaller(ssh_public_key k1, ssh_public_key k2){
     n2=gcry_sexp_nth_mpi(sexp,1,GCRYMPI_FMT_USG);
     gcry_sexp_release(sexp);
 #elif defined HAVE_LIBCRYPTO
-    n1=k1->rsa_pub->n;
-    n2=k2->rsa_pub->n;
+    RSA_get0_key(k1->rsa_pub, (const BIGNUM **)&n1, NULL, NULL);
+    RSA_get0_key(k2->rsa_pub, (const BIGNUM **)&n2, NULL, NULL);
 #endif
     if(bignum_cmp(n1,n2)<0)
         res=1;
