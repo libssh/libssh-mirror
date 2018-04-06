@@ -2529,6 +2529,55 @@ error:
 
 
 /**
+ * @brief Send a break signal to the server (as described in RFC 4335).
+ *
+ * Sends a break signal to the remote process.
+ * Note, that remote system may not support breaks.
+ * In such a case this request will be silently ignored.
+ * Only SSH-v2 is supported.
+ *
+ * @param[in]  channel  The channel to send the break to.
+ *
+ * @param[in]  length   The break-length in milliseconds to send.
+ *
+ * @return              SSH_OK on success, SSH_ERROR if an error occurred
+ *                      (including attempts to send signal via SSH-v1 session).
+ */
+int ssh_channel_request_send_break(ssh_channel channel, uint32_t length) {
+    ssh_buffer buffer = NULL;
+    int rc = SSH_ERROR;
+
+    if (channel == NULL) {
+        return SSH_ERROR;
+    }
+
+#ifdef WITH_SSH1
+    if (channel->version == 1) {
+        return SSH_ERROR;
+    }
+#endif
+
+    buffer = ssh_buffer_new();
+    if (buffer == NULL) {
+        ssh_set_error_oom(channel->session);
+        goto error;
+    }
+
+    rc = ssh_buffer_pack(buffer, "d", length);
+    if (rc != SSH_OK) {
+        ssh_set_error_oom(channel->session);
+        goto error;
+    }
+
+    rc = channel_request(channel, "break", buffer, 0);
+
+error:
+    ssh_buffer_free(buffer);
+    return rc;
+}
+
+
+/**
  * @brief Read data from a channel into a buffer.
  *
  * @param[in]  channel  The channel to read from.
