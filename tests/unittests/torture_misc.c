@@ -1,5 +1,8 @@
 #include "config.h"
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 #include <sys/types.h>
 #ifndef _WIN32
 
@@ -129,7 +132,14 @@ static void torture_path_expand_tilde_unix(void **state) {
     if (user == NULL){
         user = getenv("LOGNAME");
     }
-    assert_non_null(user);
+    /* in certain CIs there no such variables */
+    if (!user){
+        struct passwd *pw = getpwuid(getuid());
+        if (pw){
+            user = pw->pw_name;
+        }
+    }
+
     home = getenv("HOME");
     assert_non_null(home);
     snprintf(h, 256 - 1, "%s/.ssh", home);
