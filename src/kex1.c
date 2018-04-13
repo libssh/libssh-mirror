@@ -37,6 +37,10 @@
 #include "libssh/wrapper.h"
 #include "libssh/dh.h"
 
+#if defined(HAVE_LIBCRYPTO)
+#include "libcrypto-compat.h"
+#endif
+
 /* SSHv1 functions */
 
 /* makes a STRING contating 3 strings : ssh-rsa1,e and n */
