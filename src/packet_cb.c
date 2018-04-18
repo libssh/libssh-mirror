@@ -180,7 +180,7 @@ SSH_PACKET_CALLBACK(ssh_packet_newkeys){
 
     /* get the server public key */
     server_key = ssh_dh_get_next_server_publickey(session);
-    if (rc < 0) {
+    if (server_key == NULL) {
         return SSH_ERROR;
     }
 
