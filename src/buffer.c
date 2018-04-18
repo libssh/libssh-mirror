@@ -145,9 +145,11 @@ static int realloc_buffer(struct ssh_buffer_struct *buffer, size_t needed) {
         if (new == NULL) {
             return -1;
         }
-        memcpy(new, buffer->data,buffer->used);
-        explicit_bzero(buffer->data, buffer->used);
-        SAFE_FREE(buffer->data);
+        if (buffer->used > 0) {
+            memcpy(new, buffer->data,buffer->used);
+            explicit_bzero(buffer->data, buffer->used);
+            SAFE_FREE(buffer->data);
+        }
     } else {
         new = realloc(buffer->data, needed);
         if (new == NULL) {
