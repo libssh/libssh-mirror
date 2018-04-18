@@ -195,7 +195,9 @@ static void buffer_shift(ssh_buffer buffer){
 int ssh_buffer_reinit(struct ssh_buffer_struct *buffer)
 {
     buffer_verify(buffer);
-    explicit_bzero(buffer->data, buffer->used);
+    if (buffer->used > 0) {
+        explicit_bzero(buffer->data, buffer->used);
+    }
     buffer->used = 0;
     buffer->pos = 0;
 
