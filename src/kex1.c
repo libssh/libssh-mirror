@@ -51,6 +51,10 @@ static ssh_string make_rsa1_string(ssh_string e, ssh_string n){
   ssh_string ret = NULL;
 
   buffer = ssh_buffer_new();
+  if (buffer == NULL) {
+      goto error;
+  }
+
   rsa = ssh_string_from_char("ssh-rsa1");
   if (rsa == NULL) {
       goto error;
