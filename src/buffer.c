@@ -192,17 +192,19 @@ static void buffer_shift(ssh_buffer buffer){
  */
 int ssh_buffer_reinit(struct ssh_buffer_struct *buffer)
 {
-  buffer_verify(buffer);
-  explicit_bzero(buffer->data, buffer->used);
-  buffer->used = 0;
-  buffer->pos = 0;
-  if(buffer->allocated > 127) {
-    if (realloc_buffer(buffer, 127) < 0) {
-      return -1;
+    buffer_verify(buffer);
+    explicit_bzero(buffer->data, buffer->used);
+    buffer->used = 0;
+    buffer->pos = 0;
+
+    if (buffer->allocated > 127) {
+        if (realloc_buffer(buffer, 127) < 0) {
+            return -1;
+        }
     }
-  }
-  buffer_verify(buffer);
-  return 0;
+    buffer_verify(buffer);
+
+    return 0;
 }
 
 /**
