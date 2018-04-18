@@ -274,6 +274,7 @@ static int check_public_key(ssh_session session, char **tokens) {
 
   rc = ssh_dh_get_current_server_publickey_blob(session, &pubkey_blob);
   if (rc != 0) {
+      ssh_buffer_free(pubkey_buffer);
       return -1;
   }
 
