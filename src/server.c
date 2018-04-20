@@ -277,7 +277,7 @@ int ssh_get_key_params(ssh_session session, ssh_key *privkey){
       return -1;
     }
 
-    rc = ssh_dh_import_pubkey_blob(session, pubkey_blob);
+    rc = ssh_dh_import_next_pubkey_blob(session, pubkey_blob);
     ssh_string_free(pubkey_blob);
     if (rc != 0) {
         ssh_set_error(session,
