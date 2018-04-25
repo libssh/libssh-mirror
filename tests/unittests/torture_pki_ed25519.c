@@ -445,6 +445,69 @@ static void torture_pki_ed25519_import_privkey_base64_passphrase(void **state)
     ssh_key_free(key);
 }
 
+static void torture_pki_ed25519_privkey_dup(void **state)
+{
+    const char *passphrase = torture_get_testkey_passphrase();
+    ssh_key key = NULL;
+    ssh_key dup = NULL;
+    int rc;
+
+    (void) state; /* unused */
+
+    rc = ssh_pki_import_privkey_base64(torture_get_testkey(SSH_KEYTYPE_ED25519, 0, 1),
+                                       passphrase,
+                                       NULL,
+                                       NULL,
+                                       &key);
+    assert_true(rc == 0);
+
+    rc = ssh_key_is_private(key);
+    assert_true(rc == 1);
+
+    dup = ssh_key_dup(key);
+    assert_non_null(dup);
+
+    SAFE_FREE(key);
+    SAFE_FREE(dup);
+}
+
+static void torture_pki_ed25519_pubkey_dup(void **state)
+{
+    ssh_key pubkey = NULL;
+    ssh_key dup = NULL;
+    const char *p = strchr(torture_get_testkey_pub(SSH_KEYTYPE_ED25519, 0), ' ');
+    char *pub_str = NULL;
+    char *q = NULL;
+    int rc;
+
+    (void) state; /* unused */
+
+    pub_str = strdup(p + 1);
+    assert_non_null(pub_str);
+
+    q = strchr(pub_str, ' ');
+    assert_non_null(q);
+    *q = '\0';
+
+    rc = ssh_pki_import_pubkey_base64(pub_str,
+                                      SSH_KEYTYPE_ED25519,
+                                      &pubkey);
+    assert_true(rc == 0);
+
+    rc = ssh_key_is_public(pubkey);
+    assert_true(rc == 1);
+
+    dup = ssh_key_dup(pubkey);
+    assert_non_null(dup);
+
+    rc = ssh_key_is_public(dup);
+    assert_true(rc == 1);
+
+    SAFE_FREE(pub_str);
+    SAFE_FREE(pubkey);
+    SAFE_FREE(dup);
+}
+
 int torture_run_tests(void) {
     int rc;
     const struct CMUnitTest tests[] = {
@@ -467,7 +530,9 @@ int torture_run_tests(void) {
         cmocka_unit_test(torture_pki_ed25519_import_privkey_base64_passphrase),
         cmocka_unit_test(torture_pki_ed25519_sign),
         cmocka_unit_test(torture_pki_ed25519_verify),
-        cmocka_unit_test(torture_pki_ed25519_verify_bad)
+        cmocka_unit_test(torture_pki_ed25519_verify_bad),
+        cmocka_unit_test(torture_pki_ed25519_privkey_dup),
+        cmocka_unit_test(torture_pki_ed25519_pubkey_dup),
     };
 
     ssh_init();
