@@ -842,7 +842,7 @@ int ssh_userauth_agent(ssh_session session,
                 return rc;
             ssh_string_free_char(state->comment);
             state->comment = NULL;
-            if (rc == SSH_AUTH_ERROR) {
+            if (rc == SSH_AUTH_ERROR || rc == SSH_AUTH_PARTIAL) {
                 ssh_agent_state_free (session->agent_state);
                 session->agent_state = NULL;
                 return rc;
@@ -943,7 +943,9 @@ int ssh_userauth_publickey_auto(ssh_session session,
 #ifndef _WIN32
         /* Try authentication with ssh-agent first */
         rc = ssh_userauth_agent(session, username);
-        if (rc == SSH_AUTH_SUCCESS || rc == SSH_AUTH_AGAIN) {
+        if (rc == SSH_AUTH_SUCCESS ||
+            rc == SSH_AUTH_PARTIAL ||
+            rc == SSH_AUTH_AGAIN ) {
             return rc;
         }
 #endif
