@@ -56,8 +56,6 @@ static int session_setup(void **state) {
     rc = setuid(pwd->pw_uid);
     assert_return_code(rc, errno);
 
-    ssh_init();
-
     s->ssh.session = ssh_new();
     assert_non_null(s->ssh.session);
 
@@ -73,8 +71,6 @@ static int session_teardown(void **state)
 
     ssh_disconnect(s->ssh.session);
     ssh_free(s->ssh.session);
-
-    ssh_finalize();
 
     return 0;
 }
@@ -467,8 +463,12 @@ int torture_run_tests(void) {
 #endif
     };
 
+    ssh_init();
+
     torture_filter_tests(tests);
     rc = cmocka_run_group_tests(tests, sshd_setup, sshd_teardown);
+
+    ssh_finalize();
 
     return rc;
 }
