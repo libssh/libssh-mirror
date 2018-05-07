@@ -219,7 +219,7 @@ int torture_terminate_process(const char *pidfile)
         /* Make sure the daemon goes away! */
         kill(pid, SIGTERM);
 
-        usleep(5000);
+        usleep(10000);
 
         rc = kill(pid, 0);
         if (rc != 0) {
