@@ -372,7 +372,8 @@ static int ssh_connector_fd_cb(ssh_poll_handle p,
         ssh_connector_except(connector, fd);
     } else if((revents & (POLLIN|POLLHUP)) && fd == connector->in_fd) {
         ssh_connector_fd_in_cb(connector);
-    } else if((revents & POLLOUT) && fd == connector->out_fd) {
+    } else if(((revents & POLLOUT) || (revents & POLLHUP)) &&
+              fd == connector->out_fd) {
         ssh_connector_fd_out_cb(connector);
     }
     ssh_connector_reset_pollevents(connector);
