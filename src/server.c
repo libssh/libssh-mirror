@@ -293,6 +293,7 @@ static int dh_handshake_server(ssh_session session) {
   ssh_key privkey;
   ssh_string sig_blob;
   ssh_string f;
+  ssh_string pubkey_blob = NULL;
   int rc;
 
   if (ssh_dh_generate_y(session) < 0) {
@@ -334,14 +335,23 @@ static int dh_handshake_server(ssh_session session) {
     return -1;
   }
 
+  rc = ssh_dh_get_next_server_publickey_blob(session, &pubkey_blob);
+  if (rc != SSH_OK) {
+      ssh_set_error_oom(session);
+      ssh_string_free(f);
+      ssh_string_free(sig_blob);
+      return -1;
+  }
+
   rc = ssh_buffer_pack(session->out_buffer,
                        "bSSS",
                        SSH2_MSG_KEXDH_REPLY,
-                       session->next_crypto->server_pubkey,
+                       pubkey_blob,
                        f,
                        sig_blob);
   ssh_string_free(f);
   ssh_string_free(sig_blob);
+  ssh_string_free(pubkey_blob);
   if(rc != SSH_OK){
     ssh_set_error_oom(session);
     ssh_buffer_reinit(session->out_buffer);
