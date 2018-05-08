@@ -496,7 +496,7 @@ static void torture_auth_cert(void **state) {
     ssh_key privkey = NULL;
     ssh_key cert = NULL;
     char bob_ssh_key[1024];
-    char bob_ssh_cert[1024];
+    char bob_ssh_cert[2048];
     struct passwd *pwd;
     int rc;
 
