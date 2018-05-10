@@ -13,7 +13,10 @@
 #include <sys/socket.h>
 #include "socket.c"
 
-uint8_t test_data[]="AThis is test data. Use it to check the validity of packet functions";
+uint8_t test_data[]="AThis is test data. Use it to check the validity of packet functions"
+                    "AThis is test data. Use it to check the validity of packet functions"
+                    "AThis is test data. Use it to check the validity of packet functions"
+                    "AThis is test data. Use it to check the validity of packet functions";
 uint8_t key[]="iekaeshoa7ooCie2shai8shahngee3ONsee3xoishooj0ojei6aeChieth1iraPh";
 uint8_t iv[]="eixaxughoomah4ui7Aew3ohxuolaifuu";
 uint8_t mac[]="thook2Jai0ahmahyae7ChuuruoPhee8Y";
