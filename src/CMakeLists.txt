@@ -1,5 +1,3 @@
-project(libssh-library C)
-
 set(LIBSSH_PUBLIC_INCLUDE_DIRS
   ${libssh_SOURCE_DIR}/include
   CACHE INTERNAL "libssh public include directories"
@@ -265,9 +263,51 @@ include_directories(
   ${LIBSSH_PRIVATE_INCLUDE_DIRS}
 )
 
+# Set the path to the default map file
+set(MAP_PATH "${CMAKE_CURRENT_SOURCE_DIR}/${PROJECT_NAME}.map")
+
+if (WITH_SYMBOL_VERSIONING AND ABIMAP_FOUND)
+    # Get the list of header files
+    get_file_list("dev_header_list"
+                  DIRECTORIES "${LIBSSH_PUBLIC_INCLUDE_DIRS}/libssh"
+                  FILES_PATTERNS "*.h")
+
+    # Extract the symbols marked as "LIBSSH_API" from the header files
+    extract_symbols("${PROJECT_NAME}_dev.symbols"
+                    HEADERS_LIST_FILE "dev_header_list"
+                    FILTER_PATTERN "LIBSSH_API")
+
+    if (WITH_ABI_BREAK)
+        set(ALLOW_ABI_BREAK "BREAK_ABI")
+    endif()
+
+    # Generate the symbol version map file
+    generate_map_file("${PROJECT_NAME}_dev.map"
+                      SYMBOLS "${PROJECT_NAME}_dev.symbols"
+                      RELEASE_NAME_VERSION ${PROJECT_NAME}_AFTER_${LIBRARY_VERSION}
+                      CURRENT_MAP ${MAP_PATH}
+                      ${ALLOW_ABI_BREAK})
+
+    set(libssh_SRCS
+      ${libssh_SRCS}
+      ${PROJECT_NAME}_dev.map
+    )
+endif (WITH_SYMBOL_VERSIONING AND ABIMAP_FOUND)
+
 add_library(${LIBSSH_SHARED_LIBRARY} SHARED ${libssh_SRCS})
 
 target_link_libraries(${LIBSSH_SHARED_LIBRARY} ${LIBSSH_LINK_LIBRARIES})
+
+if (WITH_SYMBOL_VERSIONING)
+    if (ABIMAP_FOUND)
+        # Change path to devel map file
+        set(MAP_PATH "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_dev.map")
+    endif (ABIMAP_FOUND)
+
+    set_target_properties(${LIBSSH_SHARED_LIBRARY}
+                          PROPERTIES LINK_FLAGS
+                          "-Wl,--version-script,\"${MAP_PATH}\"")
+endif (WITH_SYMBOL_VERSIONING)
 
 set_target_properties(
   ${LIBSSH_SHARED_LIBRARY}

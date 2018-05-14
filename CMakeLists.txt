@@ -81,6 +81,13 @@ if (BSD OR SOLARIS OR OSX)
     find_package(Argp)
 endif (BSD OR SOLARIS OR OSX)
 
+# Disable symbol versioning in non UNIX platforms
+if (UNIX)
+    find_package(ABIMap)
+else (UNIX)
+    set(WITH_SYMBOL_VERSIONING OFF)
+endif (UNIX)
+
 # config.h checks
 include(ConfigureChecks.cmake)
 configure_file(config.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/config.h)
@@ -132,6 +139,60 @@ if (UNIT_TESTING)
   add_subdirectory(tests)
 endif (UNIT_TESTING)
 
+### SOURCE PACKAGE
+if (WITH_SYMBOL_VERSIONING AND ABIMAP_FOUND)
+    # Get the current ABI version from source
+    get_filename_component(current_abi_path
+                           "${CMAKE_SOURCE_DIR}/src/ABI/current"
+                           ABSOLUTE)
+
+    # Check if the ABI version should be updated
+    file(READ ${current_abi_path} CURRENT_ABI_CONTENT)
+    string(STRIP "${CURRENT_ABI_CONTENT}" CURRENT_ABI_VERSION)
+
+    if (LIBRARY_VERSION VERSION_GREATER CURRENT_ABI_VERSION)
+        set(UPDATE_ABI TRUE)
+    endif ()
+
+    if (UPDATE_ABI)
+        message(STATUS "Library version bumped to ${LIBRARY_VERSION}: Updating ABI")
+
+        # Get the list of header files
+        get_file_list("${PROJECT_NAME}_header_list"
+                      DIRECTORIES "${CMAKE_SOURCE_DIR}/include/libssh"
+                      FILES_PATTERNS "*.h")
+
+        # Extract the symbols marked as "LIBSSH_API" from the header files
+        extract_symbols(${PROJECT_NAME}.symbols
+                        HEADERS_LIST_FILE "${PROJECT_NAME}_header_list"
+                        FILTER_PATTERN "LIBSSH_API"
+                        COPY_TO "${CMAKE_SOURCE_DIR}/src/ABI/${PROJECT_NAME}-${LIBRARY_VERSION}.symbols")
+
+        if (WITH_ABI_BREAK)
+            set(ALLOW_ABI_BREAK "BREAK_ABI")
+        endif()
+
+        # Target we can depend on in 'make dist'
+        set(_SYMBOL_TARGET "${PROJECT_NAME}.map")
+
+        # Set the path to the current map file
+        set(MAP_PATH "${CMAKE_SOURCE_DIR}/src/${_SYMBOL_TARGET}")
+
+        # Generate the symbol version map file
+        generate_map_file(${_SYMBOL_TARGET}
+                          SYMBOLS "${PROJECT_NAME}.symbols"
+                          RELEASE_NAME_VERSION ${PROJECT_NAME}_${LIBRARY_VERSION}
+                          CURRENT_MAP ${MAP_PATH}
+                          COPY_TO ${MAP_PATH}
+                          FINAL
+                          ${ALLOW_ABI_BREAK})
+
+        # Write the current version to the source
+        file(WRITE ${current_abi_path} ${LIBRARY_VERSION})
+    endif(UPDATE_ABI)
+endif (WITH_SYMBOL_VERSIONING AND ABIMAP_FOUND)
+
+add_custom_target(dist COMMAND ${CMAKE_MAKE_PROGRAM} package_source DEPENDS ${_SYMBOL_TARGET})
 
 message(STATUS "********************************************")
 message(STATUS "********** ${PROJECT_NAME} build options : **********")
@@ -158,5 +219,8 @@ else (WITH_INTERNAL_DOC)
     message(STATUS "Public API documentation generation")
 endif (WITH_INTERNAL_DOC)
 message(STATUS "Benchmarks: ${WITH_BENCHMARKS}")
+message(STATUS "Symbol versioning: ${WITH_SYMBOL_VERSIONING}")
+message(STATUS "Allow ABI break: ${WITH_ABI_BREAK}")
+message(STATUS "Release is final: ${WITH_FINAL}")
 message(STATUS "********************************************")
 
