@@ -148,7 +148,7 @@ void crypto_free(struct ssh_crypto_struct *crypto){
     return;
   }
 
-  SAFE_FREE(crypto->server_pubkey);
+  ssh_key_free(crypto->server_pubkey);
 
   cipher_free(crypto->in_cipher);
   cipher_free(crypto->out_cipher);
