@@ -980,51 +980,50 @@ error:
  * @deprecated Use ssh_get_publickey_hash()
  */
 int ssh_get_pubkey_hash(ssh_session session, unsigned char **hash) {
-  ssh_key pubkey = NULL;
-  ssh_string pubkey_blob = NULL;
-  MD5CTX ctx;
-  unsigned char *h;
-  int rc;
+    ssh_key pubkey = NULL;
+    ssh_string pubkey_blob = NULL;
+    MD5CTX ctx;
+    unsigned char *h;
+    int rc;
 
-  if (session == NULL || hash == NULL) {
-    return SSH_ERROR;
-  }
-  *hash = NULL;
-  if (session->current_crypto == NULL ||
-      session->current_crypto->server_pubkey == NULL){
-    ssh_set_error(session,SSH_FATAL,"No current cryptographic context");
-    return SSH_ERROR;
-  }
+    if (session == NULL || hash == NULL) {
+        return SSH_ERROR;
+    }
+    *hash = NULL;
+    if (session->current_crypto == NULL ||
+        session->current_crypto->server_pubkey == NULL) {
+        ssh_set_error(session,SSH_FATAL,"No current cryptographic context");
+        return SSH_ERROR;
+    }
 
-  h = calloc(MD5_DIGEST_LEN, sizeof(unsigned char));
-  if (h == NULL) {
-    return SSH_ERROR;
-  }
+    h = calloc(MD5_DIGEST_LEN, sizeof(unsigned char));
+    if (h == NULL) {
+        return SSH_ERROR;
+    }
 
-  ctx = md5_init();
-  if (ctx == NULL) {
-    SAFE_FREE(h);
-    return SSH_ERROR;
-  }
+    ctx = md5_init();
+    if (ctx == NULL) {
+        SAFE_FREE(h);
+        return SSH_ERROR;
+    }
 
-  rc = ssh_get_server_publickey(session, &pubkey);
-  if (rc != 0) {
-    SAFE_FREE(h);
-    return SSH_ERROR;
-  }
+    rc = ssh_get_server_publickey(session, &pubkey);
+    if (rc != 0) {
+        SAFE_FREE(h);
+        return SSH_ERROR;
+    }
 
-  rc = ssh_pki_export_pubkey_blob(pubkey,
-                                  &pubkey_blob);
-  ssh_key_free(pubkey);
-  if (rc != 0) {
-  }
-  md5_update(ctx, ssh_string_data(pubkey_blob), ssh_string_len(pubkey_blob));
-  ssh_string_free(pubkey_blob);
-  md5_final(h, ctx);
+    rc = ssh_pki_export_pubkey_blob(pubkey, &pubkey_blob);
+    ssh_key_free(pubkey);
+    if (rc != 0) {
+    }
+    md5_update(ctx, ssh_string_data(pubkey_blob), ssh_string_len(pubkey_blob));
+    ssh_string_free(pubkey_blob);
+    md5_final(h, ctx);
 
-  *hash = h;
+    *hash = h;
 
-  return MD5_DIGEST_LEN;
+    return MD5_DIGEST_LEN;
 }
 
 /**
