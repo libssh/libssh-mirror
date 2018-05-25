@@ -181,6 +181,7 @@ int ssh_server_ecdh_init(ssh_session session, ssh_buffer packet)
     mbedtls_ecp_group grp;
     ssh_key privkey = NULL;
     ssh_string sig_blob = NULL;
+    ssh_string pubkey_blob = NULL;
     int rc;
     mbedtls_ecp_group_id curve;
 
@@ -256,12 +257,21 @@ int ssh_server_ecdh_init(ssh_session session, ssh_buffer packet)
         goto out;
     }
 
+    rc = ssh_dh_get_next_server_publickey_blob(session, &pubkey_blob);
+    if (rc != SSH_OK) {
+        ssh_set_error(session, SSH_FATAL, "Could not export server public key");
+        ssh_string_free(sig_blob);
+        goto out;
+    }
+
     rc = ssh_buffer_pack(session->out_buffer, "bSSS",
-            SSH2_MSG_KEXDH_REPLY, session->next_crypto->server_pubkey,
-            q_s_string,
-            sig_blob);
+                         SSH2_MSG_KEXDH_REPLY,
+                         pubkey_blob, /* host's pubkey */
+                         q_s_string, /* ecdh public key */
+                         sig_blob); /* signature blob */
 
     ssh_string_free(sig_blob);
+    ssh_string_free(pubkey_blob);
 
     if (rc != SSH_OK) {
         ssh_set_error_oom(session);
