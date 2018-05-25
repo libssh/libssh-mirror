@@ -32,4 +32,12 @@ set(pkd_libs
 add_executable(pkd_hello ${pkd_hello_src})
 target_link_libraries(pkd_hello ${pkd_libs})
 
+#
+# pkd_hello_i1 runs only one iteration per algorithm combination for
+# sake of speeding up overall test run time.  More iterations can be
+# specified with `-i` and may be helpful for chasing down bugs that
+# are not 100% reproducible.
+#
+add_test(pkd_hello_i1 ${CMAKE_CURRENT_BINARY_DIR}/pkd_hello -i1)
+
 endif (WITH_SERVER AND UNIX AND NOT WIN32)
