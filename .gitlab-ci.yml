@@ -2,6 +2,7 @@ variables:
   BUILD_IMAGES_PROJECT: libssh/build-images
   FEDORA_BUILD: buildenv-fedora
   CENTOS7_BUILD: buildenv-centos7
+  TUMBLEWEED_BUILD: buildenv-tumbleweed
 
 debian/openssl_1.0.x/aarch64:
   script:
@@ -143,3 +144,55 @@ freebsd/x86-64:
     when: on_failure
     paths:
       - build/
+
+tumbleweed/openssl_1.1.x/x86-64:
+  image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$TUMBLEWEED_BUILD
+  script:
+  - mkdir build && cd build && cmake -DWITH_TESTING=ON -DCMAKE_BUILD_TYPE=Debug
+    -DWITH_CLIENT_TESTING=ON -DWITH_SSH1=ON -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON
+    -DWITH_PCAP=ON .. && make -j$(nproc) && ctest --output-on-failure
+  tags:
+  - shared
+  except:
+  - tags
+  artifacts:
+    expire_in: 1 week
+    when: on_failure
+    paths:
+      - build/
+
+tumbleweed/undefined-sanitizer:
+  image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$TUMBLEWEED_BUILD
+  script:
+  - export CFLAGS="-fsanitize=undefined -fsanitize=null -fsanitize=alignment -fno-sanitize-recover"
+  - mkdir build && cd build && cmake -DWITH_TESTING=ON -DCMAKE_BUILD_TYPE=Debug
+    -DWITH_CLIENT_TESTING=ON -DWITH_SSH1=ON -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON
+    -DWITH_PCAP=ON .. && make -j$(nproc) && ctest --output-on-failure
+  tags:
+  - shared
+  except:
+  - tags
+  artifacts:
+    expire_in: 1 week
+    when: on_failure
+    paths:
+      - build/
+
+tumbleweed/static-analysis:
+  image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$TUMBLEWEED_BUILD
+  script:
+  - export CCC_CC=clang
+  - export CCC_CXX=clang++
+  - mkdir build && cd build && scan-build cmake -DWITH_TESTING=ON -DCMAKE_BUILD_TYPE=Debug
+    -DWITH_CLIENT_TESTING=ON -DWITH_SSH1=ON -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON
+    -DWITH_PCAP=ON -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang .. &&
+    scan-build --status-bugs -o scan make -j$(nproc)
+  tags:
+  - shared
+  except:
+  - tags
+  artifacts:
+    expire_in: 1 week
+    when: on_failure
+    paths:
+      - build/scan
