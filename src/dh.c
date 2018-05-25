@@ -1008,15 +1008,20 @@ int ssh_get_pubkey_hash(ssh_session session, unsigned char **hash) {
     }
 
     rc = ssh_get_server_publickey(session, &pubkey);
-    if (rc != 0) {
+    if (rc != SSH_OK) {
+        md5_final(h, ctx);
         SAFE_FREE(h);
         return SSH_ERROR;
     }
 
     rc = ssh_pki_export_pubkey_blob(pubkey, &pubkey_blob);
     ssh_key_free(pubkey);
-    if (rc != 0) {
+    if (rc != SSH_OK) {
+        md5_final(h, ctx);
+        SAFE_FREE(h);
+        return SSH_ERROR;
     }
+
     md5_update(ctx, ssh_string_data(pubkey_blob), ssh_string_len(pubkey_blob));
     ssh_string_free(pubkey_blob);
     md5_final(h, ctx);
