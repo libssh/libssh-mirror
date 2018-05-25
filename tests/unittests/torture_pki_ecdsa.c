@@ -338,6 +338,7 @@ static void torture_pki_generate_key_ecdsa(void **state)
     ssh_free(session);
 }
 
+#ifdef HAVE_LIBCRYPTO
 static void torture_pki_ecdsa_write_privkey(void **state)
 {
     ssh_key origkey;
@@ -412,6 +413,7 @@ static void torture_pki_ecdsa_write_privkey(void **state)
     ssh_key_free(origkey);
     ssh_key_free(privkey);
 }
+#endif /* HAVE_LIBCRYPTO */
 
 static void torture_pki_ecdsa_name(void **state, const char *expected_name)
 {
