@@ -8,6 +8,8 @@
 #ifndef __PKD_DAEMON_H__
 #define __PKD_DAEMON_H__
 
+#include "config.h"
+
 enum pkd_hostkey_type_e {
     PKD_RSA,
 #ifdef HAVE_DSA
