@@ -32,6 +32,10 @@ struct pkd_daemon_args {
         const char *testname;
         const char *testmatch;
         unsigned int iterations;
+
+        struct {
+            const char *mkdtemp_str;
+        } socket_wrapper;
     } opts;
 };
 

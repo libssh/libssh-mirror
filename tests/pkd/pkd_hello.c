@@ -1,13 +1,14 @@
 /*
  * pkd_hello.c --
  *
- * (c) 2014, 2017 Jon Simons <jon@jonsimons.org>
+ * (c) 2014, 2017-2018 Jon Simons <jon@jonsimons.org>
  */
 #include "config.h"
 
 #include <setjmp.h> // for cmocka
 #include <stdarg.h> // for cmocka
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h> // for cmocka
 #include <cmocka.h>
 
@@ -51,6 +52,8 @@ static struct argp_option options[] = {
       "Run each test for the given number of iterations (default is 10)", 0 },
     { "match", 'm', "testmatch", 0,
       "Run all tests with the given string", 0 },
+    { "socket-wrapper-dir", 'w', "<mkdtemp-template>", 0,
+      "Run in socket-wrapper mode using the given mkdtemp directory template", 0 },
     { "stdout", 'o', NULL, 0,
       "Emit pkd stdout messages", 0 },
     { "test", 't', "testname", 0,
@@ -86,6 +89,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
         break;
     case 'v':
         pkd_dargs.opts.libssh_log_level += 1;
+        break;
+    case 'w':
+        pkd_dargs.opts.socket_wrapper.mkdtemp_str = arg;
         break;
     default:
         return ARGP_ERR_UNKNOWN;
@@ -651,6 +657,75 @@ static int pkd_run_tests(void) {
     return rc;
 }
 
+static int pkd_init_socket_wrapper(void) {
+    int rc = 0;
+    char *mkdtemp_str = NULL;
+
+    if (pkd_dargs.opts.socket_wrapper.mkdtemp_str == NULL) {
+        goto out;
+    }
+
+    mkdtemp_str = strdup(pkd_dargs.opts.socket_wrapper.mkdtemp_str);
+    if (mkdtemp_str == NULL) {
+        fprintf(stderr, "pkd_init_socket_wrapper strdup failed\n");
+        goto errstrdup;
+    }
+    pkd_dargs.opts.socket_wrapper.mkdtemp_str = mkdtemp_str;
+
+    if (mkdtemp(mkdtemp_str) == NULL) {
+        fprintf(stderr, "pkd_init_socket_wrapper mkdtemp '%s' failed\n", mkdtemp_str);
+        goto errmkdtemp;
+    }
+
+    if (setenv("SOCKET_WRAPPER_DIR", mkdtemp_str, 1) != 0) {
+        fprintf(stderr, "pkd_init_socket_wrapper setenv failed\n");
+        goto errsetenv;
+    }
+
+    goto out;
+errsetenv:
+errmkdtemp:
+    free(mkdtemp_str);
+errstrdup:
+    rc = -1;
+out:
+    return rc;
+}
+
+static int pkd_rmfiles(const char *path) {
+    char bin[1024] = { 0 };
+    snprintf(&bin[0], sizeof(bin), "rm -f %s/*", path);
+    return system_checked(bin);
+}
+
+static int pkd_cleanup_socket_wrapper(void) {
+    int rc = 0;
+
+    if (pkd_dargs.opts.socket_wrapper.mkdtemp_str == NULL) {
+        goto out;
+    }
+
+    /* clean up socket-wrapper unix domain sockets */
+    if (pkd_rmfiles(pkd_dargs.opts.socket_wrapper.mkdtemp_str) != 0) {
+        fprintf(stderr, "pkd_cleanup_socket_wrapper pkd_rmfiles '%s' failed\n",
+                        pkd_dargs.opts.socket_wrapper.mkdtemp_str);
+        goto errrmfiles;
+    }
+
+    if (rmdir(pkd_dargs.opts.socket_wrapper.mkdtemp_str) != 0) {
+        fprintf(stderr, "pkd_cleanup_socket_wrapper rmdir '%s' failed\n",
+                        pkd_dargs.opts.socket_wrapper.mkdtemp_str);
+        goto errrmdir;
+    }
+
+    goto out;
+errrmdir:
+errrmfiles:
+    rc = -1;
+out:
+    return rc;
+}
+
 int main(int argc, char **argv) {
     int i = 0;
     int rc = 0;
@@ -670,6 +745,12 @@ int main(int argc, char **argv) {
     (void) argc;  (void) argv;
 #endif /* HAVE_ARGP_H */
 
+    rc = pkd_init_socket_wrapper();
+    if (rc != 0) {
+        fprintf(stderr, "pkd_init_socket_wrapper failed: %d\n", rc);
+        goto out_finalize;
+    }
+
     if (pkd_dargs.opts.list != 0) {
         while (testmap[i].testname != NULL) {
             printf("%s\n", testmap[i++].testname);
@@ -681,6 +762,12 @@ int main(int argc, char **argv) {
         }
     }
 
+    rc = pkd_cleanup_socket_wrapper();
+    if (rc != 0) {
+        fprintf(stderr, "pkd_cleanup_socket_wrapper failed: %d\n", rc);
+    }
+
+out_finalize:
     rc = ssh_finalize();
     if (rc != 0) {
         fprintf(stderr, "ssh_finalize: %d\n", rc);
