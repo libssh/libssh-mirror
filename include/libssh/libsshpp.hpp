@@ -306,9 +306,9 @@ public:
    * @see ssh_is_server_known
    */
   int isServerKnown(){
-    int ret=ssh_is_server_known(c_session);
-    ssh_throw(ret);
-    return ret;
+    int state = ssh_session_is_known_server(c_session);
+    ssh_throw(state);
+    return state;
   }
   void log(int priority, const char *format, ...){
     char buffer[1024];
