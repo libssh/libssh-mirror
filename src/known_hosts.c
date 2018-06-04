@@ -393,32 +393,10 @@ static int match_hashed_host(const char *host, const char *sourcehash)
  */
 
 /**
- * @brief Check if the server is known.
+ * @brief This function is depcrecated
  *
- * Checks the user's known host file for a previous connection to the
- * current server.
- *
- * @param[in]  session  The SSH session to use.
- *
- * @returns SSH_SERVER_KNOWN_OK:       The server is known and has not changed.\n
- *          SSH_SERVER_KNOWN_CHANGED:  The server key has changed. Either you
- *                                     are under attack or the administrator
- *                                     changed the key. You HAVE to warn the
- *                                     user about a possible attack.\n
- *          SSH_SERVER_FOUND_OTHER:    The server gave use a key of a type while
- *                                     we had an other type recorded. It is a
- *                                     possible attack.\n
- *          SSH_SERVER_NOT_KNOWN:      The server is unknown. User should
- *                                     confirm the MD5 is correct.\n
- *          SSH_SERVER_FILE_NOT_FOUND: The known host file does not exist. The
- *                                     host is thus unknown. File will be
- *                                     created if host key is accepted.\n
- *          SSH_SERVER_ERROR:          Some error happened.
- *
- * @see ssh_get_pubkey_hash()
- *
- * @bug There is no current way to remove or modify an entry into the known
- *      host table.
+ * @deprecated          Please use ssh_session_is_known_server()
+ * @see ssh_session_is_known_server()
  */
 int ssh_is_server_known(ssh_session session) {
   FILE *file = NULL;
