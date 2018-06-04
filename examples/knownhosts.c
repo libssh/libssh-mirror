@@ -34,14 +34,12 @@ clients must be made or how a client should react.
 
 int verify_knownhost(ssh_session session){
   char *hexa;
-  int state;
+  enum ssh_known_hosts_e state;
   char buf[10];
   unsigned char *hash = NULL;
   size_t hlen;
   ssh_key srv_pubkey;
   int rc;
-
-  state=ssh_is_server_known(session);
 
   rc = ssh_get_server_publickey(session, &srv_pubkey);
   if (rc < 0) {
@@ -57,22 +55,24 @@ int verify_knownhost(ssh_session session){
       return -1;
   }
 
+  state = ssh_session_is_known_server(session);
+
   switch(state){
-    case SSH_SERVER_KNOWN_OK:
+    case SSH_KNOWN_HOSTS_OK:
       break; /* ok */
-    case SSH_SERVER_KNOWN_CHANGED:
+    case SSH_KNOWN_HOSTS_CHANGED:
       fprintf(stderr,"Host key for server changed : server's one is now :\n");
       ssh_print_hexa("Public key hash",hash, hlen);
       ssh_clean_pubkey_hash(&hash);
       fprintf(stderr,"For security reason, connection will be stopped\n");
       return -1;
-    case SSH_SERVER_FOUND_OTHER:
+    case SSH_KNOWN_HOSTS_OTHER:
       fprintf(stderr,"The host key for this server was not found but an other type of key exists.\n");
       fprintf(stderr,"An attacker might change the default server key to confuse your client"
           "into thinking the key does not exist\n"
           "We advise you to rerun the client with -d or -r for more safety.\n");
       return -1;
-    case SSH_SERVER_FILE_NOT_FOUND:
+    case SSH_KNOWN_HOSTS_NOT_FOUND:
       fprintf(stderr,"Could not find known host file. If you accept the host key here,\n");
       fprintf(stderr,"the file will be automatically created.\n");
       /* fallback to SSH_SERVER_NOT_KNOWN behavior */
@@ -104,7 +104,7 @@ int verify_knownhost(ssh_session session){
       }
 
       break;
-    case SSH_SERVER_ERROR:
+    case SSH_KNOWN_HOSTS_ERROR:
       ssh_clean_pubkey_hash(&hash);
       fprintf(stderr,"%s",ssh_get_error(session));
       return -1;
