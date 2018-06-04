@@ -132,7 +132,10 @@ static int libmbedcrypto_thread_init(void)
 
 static void **libcrypto_mutexes;
 
-static void libcrypto_lock_callback(int mode, int i, const char *file, int line){
+void libcrypto_lock_callback(int mode, int i, const char *file, int line);
+
+void libcrypto_lock_callback(int mode, int i, const char *file, int line)
+{
 	(void)file;
 	(void)line;
 	if(mode & CRYPTO_LOCK){
