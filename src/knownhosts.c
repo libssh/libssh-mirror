@@ -190,6 +190,7 @@ static int ssh_known_hosts_read_entries(const char *match,
 
     entry_list = ssh_list_new();
     if (entry_list == NULL) {
+        fclose(fp);
         return SSH_ERROR;
     }
 
@@ -225,9 +226,11 @@ static int ssh_known_hosts_read_entries(const char *match,
 
     *entries = entry_list;
 
+    fclose(fp);
     return SSH_OK;
 error:
     ssh_list_free(entry_list);
+    fclose(fp);
     return SSH_ERROR;
 }
 
