@@ -86,7 +86,7 @@ static int session_teardown(void **state)
 }
 
 #define KNOWN_HOST_ENTRY_ECDSA "127.0.0.10 ecdsa-sha2-nistp521 AAAAE2VjZHNhLXNoYTItbmlzdHA1MjEAAAAIbmlzdHA1MjEAAACFBAHOg+9vHW2kJB50j7c7WkcCcOtwgZdeXMpAeEl17sFnTTrT8wYo1FCzE07wV262vIC+AE3fXUJ7sJ/CkFIdk/8/gQEY1jyoXB3Bsee16VwhJGsMzGGh1FJ0XXhRJjUbG18qbH9JiSgE1N4fIM0zJG68fAyUxRxCI1wUobOOB7EmFZd18g==\n"
-#define KNOWN_HOST_ENTRY_ED25519 "127.0.0.10 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBWWnxuCYiOyvMYLtkgoEyEKlLV+klM+BU6Nh3PmAiqX"
+#define KNOWN_HOST_ENTRY_ED25519 "127.0.0.10 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBWWnxuCYiOyvMYLtkgoEyEKlLV+klM+BU6Nh3PmAiqX\n"
 static void torture_knownhosts_export(void **state)
 {
     struct torture_state *s = *state;
