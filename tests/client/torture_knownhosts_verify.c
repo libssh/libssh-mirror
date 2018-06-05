@@ -85,12 +85,14 @@ static int session_teardown(void **state)
     return 0;
 }
 
-#define KNOWN_HOST_ENTRY "127.0.0.10 ecdsa-sha2-nistp521 AAAAE2VjZHNhLXNoYTItbmlzdHA1MjEAAAAIbmlzdHA1MjEAAACFBAHOg+9vHW2kJB50j7c7WkcCcOtwgZdeXMpAeEl17sFnTTrT8wYo1FCzE07wV262vIC+AE3fXUJ7sJ/CkFIdk/8/gQEY1jyoXB3Bsee16VwhJGsMzGGh1FJ0XXhRJjUbG18qbH9JiSgE1N4fIM0zJG68fAyUxRxCI1wUobOOB7EmFZd18g==\n"
+#define KNOWN_HOST_ENTRY_ECDSA "127.0.0.10 ecdsa-sha2-nistp521 AAAAE2VjZHNhLXNoYTItbmlzdHA1MjEAAAAIbmlzdHA1MjEAAACFBAHOg+9vHW2kJB50j7c7WkcCcOtwgZdeXMpAeEl17sFnTTrT8wYo1FCzE07wV262vIC+AE3fXUJ7sJ/CkFIdk/8/gQEY1jyoXB3Bsee16VwhJGsMzGGh1FJ0XXhRJjUbG18qbH9JiSgE1N4fIM0zJG68fAyUxRxCI1wUobOOB7EmFZd18g==\n"
+#define KNOWN_HOST_ENTRY_ED25519 "127.0.0.10 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBWWnxuCYiOyvMYLtkgoEyEKlLV+klM+BU6Nh3PmAiqX"
 static void torture_knownhosts_export(void **state)
 {
     struct torture_state *s = *state;
     ssh_session session = s->ssh.session;
     char *entry = NULL;
+    char *p = NULL;
     int rc;
 
     rc = ssh_connect(session);
@@ -99,7 +101,12 @@ static void torture_knownhosts_export(void **state)
     rc = ssh_session_export_known_hosts_entry(session, &entry);
     assert_int_equal(rc, SSH_OK);
 
-    assert_string_equal(entry, KNOWN_HOST_ENTRY);
+    p = strstr(entry, "ssh-ed25519");
+    if (p != NULL) {
+        assert_string_equal(entry, KNOWN_HOST_ENTRY_ED25519);
+    } else {
+        assert_string_equal(entry, KNOWN_HOST_ENTRY_ECDSA);
+    }
     SAFE_FREE(entry);
 }
 
