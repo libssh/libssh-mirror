@@ -462,6 +462,7 @@ enum ssh_known_hosts_e ssh_session_has_known_hosts_entry(ssh_session session)
     }
 
     if (ssh_list_count(entry_list) == 0) {
+        ssh_list_free(entry_list);
         return SSH_KNOWN_HOSTS_NOT_FOUND;
     }
 
