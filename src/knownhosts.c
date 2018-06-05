@@ -352,13 +352,15 @@ int ssh_known_hosts_parse_line(const char *hostname,
     SAFE_FREE(known_host);
     known_host = strdup(line);
     if (known_host == NULL) {
-        return SSH_ERROR;
+        rc = SSH_ERROR;
+        goto out;
     }
 
     p = strtok(known_host, " ");
     if (p == NULL ) {
         free(known_host);
-        return SSH_ERROR;
+        rc = SSH_ERROR;
+        goto out;
     }
 
     e->unparsed = strdup(p);
