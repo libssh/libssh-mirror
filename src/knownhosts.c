@@ -622,20 +622,22 @@ int ssh_session_update_known_hosts(ssh_session session)
 
     rc = ssh_session_export_known_hosts_entry(session, &entry);
     if (rc != SSH_OK) {
+        fclose(fp);
         return rc;
     }
 
     len = strlen(entry);
     nwritten = fwrite(entry, sizeof(char), len, fp);
     SAFE_FREE(entry);
-    fclose(fp);
     if (nwritten != len || ferror(fp)) {
         ssh_set_error(session, SSH_FATAL,
                       "Couldn't append to known_hosts file %s: %s",
                       session->opts.knownhosts, strerror(errno));
+        fclose(fp);
         return SSH_ERROR;
     }
 
+    fclose(fp);
     return SSH_OK;
 }
 
