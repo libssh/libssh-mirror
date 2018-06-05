@@ -403,10 +403,12 @@ int ssh_known_hosts_parse_line(const char *hostname,
     p = strtok(NULL, " ");
     if (p != NULL) {
         p = strstr(line, p);
-        e->comment = strdup(p);
-        if (e->comment == NULL) {
-            rc = SSH_ERROR;
-            goto out;
+        if (p != NULL) {
+            e->comment = strdup(p);
+            if (e->comment == NULL) {
+                rc = SSH_ERROR;
+                goto out;
+            }
         }
     }
 
