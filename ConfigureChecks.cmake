@@ -138,7 +138,8 @@ endif ()
 
 if (NOT WITH_MBEDTLS)
     set(HAVE_DSA 1)
-endif()
+    set(HAVE_CHACHA 1)
+endif (NOT WITH_MBEDTLS)
 
 # FUNCTIONS
 

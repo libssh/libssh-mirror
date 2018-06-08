@@ -95,7 +95,11 @@
 #define ECDH ""
 #endif
 
+#ifdef    HAVE_CHACHA
 #define CHACHA20 "chacha20-poly1305@openssh.com,"
+#else  /* HAVE_CHACHA */
+#define CHACHA20
+#endif /* HAVE_CHACHA */
 
 #define KEY_EXCHANGE CURVE25519 ECDH "diffie-hellman-group14-sha1,diffie-hellman-group1-sha1"
 #define KEX_METHODS_SIZE 10

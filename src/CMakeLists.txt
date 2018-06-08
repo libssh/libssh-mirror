@@ -122,7 +122,6 @@ set(libssh_SRCS
   bignum.c
   buffer.c
   callbacks.c
-  chachapoly.c
   channels.c
   client.c
   config.c
@@ -166,6 +165,13 @@ set(libssh_SRCS
   external/poly1305.c
   external/sc25519.c
 )
+
+if (NOT WITH_MBEDTLS)
+    set(libssh_SRCS
+        ${libssh_SRCS}
+        chachapoly.c
+       )
+endif (NOT WITH_MBEDTLS)
 
 if (WITH_GCRYPT)
     set(libssh_SRCS

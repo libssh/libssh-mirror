@@ -89,6 +89,9 @@
 /* Define to 1 if you have DSA */
 #cmakedefine HAVE_DSA 1
 
+/* Define to 1 if you have chacha20-poly1305 */
+#cmakedefine HAVE_CHACHA 1
+
 /*************************** FUNCTIONS ***************************/
 
 /* Define to 1 if you have the `EVP_aes128_ctr' function. */
