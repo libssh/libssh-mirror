@@ -58,14 +58,6 @@ uint32_t ssh_packet_decrypt_len(ssh_session session,
 
     if (session->current_crypto != NULL) {
         if (session->current_crypto->in_cipher->aead_decrypt_length != NULL) {
-            rc =
-              session->current_crypto->in_cipher->set_decrypt_key(
-                  session->current_crypto->in_cipher,
-                  session->current_crypto->decryptkey,
-                  session->current_crypto->decryptIV);
-            if (rc < 0) {
-                return (uint32_t)-1;
-            }
             session->current_crypto->in_cipher->aead_decrypt_length(
                     session->current_crypto->in_cipher, source, destination,
                     session->current_crypto->in_cipher->lenfield_blocksize,
