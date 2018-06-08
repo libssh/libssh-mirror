@@ -102,7 +102,6 @@ int ssh_packet_decrypt(ssh_session session,
                        size_t encrypted_size)
 {
     struct ssh_cipher_struct *crypto = session->current_crypto->in_cipher;
-    int rc;
 
     if (encrypted_size <= 0) {
         return SSH_ERROR;
