@@ -3,6 +3,7 @@ variables:
   FEDORA_BUILD: buildenv-fedora
   CENTOS7_BUILD: buildenv-centos7
   TUMBLEWEED_BUILD: buildenv-tumbleweed
+  MINGW_BUILD: buildenv-mingw
 
 debian/openssl_1.0.x/aarch64:
   script:
@@ -196,3 +197,41 @@ tumbleweed/static-analysis:
     when: on_failure
     paths:
       - build/scan
+
+# Unit testing only, no client and pkd testing, because cwrap is not available
+# for MinGW
+mingw64:
+  image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$MINGW_BUILD
+  script:
+  - mkdir obj && cd obj && mingw64-cmake -DCMAKE_BUILD_TYPE=Debug
+    -DWITH_SSH1=ON -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON
+    -DWITH_PCAP=ON -DWITH_TESTING=ON .. && make -j$(nproc) &&
+    ctest --output-on-failure
+  tags:
+  - shared
+  except:
+  - tags
+  artifacts:
+    expire_in: 1 week
+    when: on_failure
+    paths:
+      - build/
+
+# Unit testing only, no client and pkd testing, because cwrap is not available
+# for MinGW
+mingw32:
+  image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$MINGW_BUILD
+  script:
+  - mkdir obj && cd obj && mingw32-cmake -DCMAKE_BUILD_TYPE=Debug
+    -DWITH_SSH1=ON -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON
+    -DWITH_PCAP=ON -DWITH_TESTING=ON .. && make -j$(nproc) &&
+    ctest --output-on-failure
+  tags:
+  - shared
+  except:
+  - tags
+  artifacts:
+    expire_in: 1 week
+    when: on_failure
+    paths:
+      - build/
