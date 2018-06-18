@@ -15,18 +15,23 @@
 #define OPENSSH_BINARY "ssh"
 #define OPENSSH_KEYGEN "ssh-keygen"
 
-#define OPENSSH_HOSTKEY_ALGOS_DEFAULT "ssh-rsa"
+#define OPENSSH_HOSTKEY_ALGOS_DEFAULT "ssh-ed25519,ssh-rsa"
+#define OPENSSH_PKACCEPTED_DEFAULT    "ssh-ed25519,ssh-rsa"
 
 #if       HAVE_ECC
 #define OPENSSH_HOSTKEY_ALGOS_ECDSA   ",ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521"
+#define OPENSSH_PKACCEPTED_ECDSA      ",ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521"
 #else  /* HAVE_ECC */
 #define OPENSSH_HOSTKEY_ALGOS_ECDSA   ""
+#define OPENSSH_PKACCEPTED_ECDSA      ""
 #endif /* HAVE_ECC */
 
 #if       HAVE_DSA
 #define OPENSSH_HOSTKEY_ALGOS_DSA     ",ssh-dss"
+#define OPENSSH_PKACCEPTED_DSA        ",ssh-dss"
 #else  /* HAVE_DSA */
 #define OPENSSH_HOSTKEY_ALGOS_DSA     ""
+#define OPENSSH_PKACCEPTED_DSA        ""
 #endif /* HAVE_DSA */
 
 #define OPENSSH_HOSTKEY_ALGOS \
@@ -35,11 +40,19 @@
   OPENSSH_HOSTKEY_ALGOS_ECDSA    \
   OPENSSH_HOSTKEY_ALGOS_DSA
 
+#define OPENSSH_PKACCEPTED_TYPES \
+  "-o PubkeyAcceptedKeyTypes="  \
+  OPENSSH_PKACCEPTED_DEFAULT    \
+  OPENSSH_PKACCEPTED_ECDSA      \
+  OPENSSH_PKACCEPTED_DSA
+
 #define OPENSSH_CMD_START \
     OPENSSH_BINARY " "                  \
     "-o UserKnownHostsFile=/dev/null "  \
     "-o StrictHostKeyChecking=no "      \
+    "-F /dev/null "                     \
     OPENSSH_HOSTKEY_ALGOS " "           \
+    OPENSSH_PKACCEPTED_TYPES " "        \
     "-i " CLIENT_ID_FILE " "            \
     "1> %s.out "                        \
     "2> %s.err "                        \
