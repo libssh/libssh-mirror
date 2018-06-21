@@ -82,7 +82,6 @@
     DROPBEAR_BINARY " "      \
     "-y -y "                 \
     "-i " CLIENT_ID_FILE " " \
-    "-v "                    \
     "1> %s.out "             \
     "2> %s.err "
 
