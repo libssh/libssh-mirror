@@ -191,7 +191,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
                  */
 #ifdef DEBUG_PACKET
                 SSH_LOG(SSH_LOG_PACKET,
-                        "Waiting for more data (%zu < %zu)",
+                        "Waiting for more data (%zu < %u)",
                         receivedlen,
                         lenfield_blocksize);
 #endif
