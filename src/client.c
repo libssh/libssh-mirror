@@ -667,6 +667,8 @@ void ssh_disconnect(ssh_session session) {
     ssh_socket_close(session->socket);
   }
 error:
+  session->recv_seq = 0;
+  session->send_seq = 0;
   session->alive = 0;
   if (session->socket != NULL){
     ssh_socket_reset(session->socket);
@@ -681,6 +683,13 @@ error:
   if(session->current_crypto){
     crypto_free(session->current_crypto);
     session->current_crypto=NULL;
+  }
+  if (session->next_crypto) {
+    crypto_free(session->next_crypto);
+    session->next_crypto = crypto_new();
+    if (session->next_crypto == NULL) {
+      ssh_set_error_oom(session);
+    }
   }
   if (session->in_buffer) {
     ssh_buffer_reinit(session->in_buffer);
