@@ -28,8 +28,11 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#ifndef _WIN32
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#endif
 
 #include "libssh/priv.h"
 #include "libssh/dh.h"
