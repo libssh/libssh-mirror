@@ -221,6 +221,7 @@ SSH_PACKET_CALLBACK(ssh_packet_kexdh_init){
         break;
   #endif
   #ifdef HAVE_CURVE25519
+      case SSH_KEX_CURVE25519_SHA256:
       case SSH_KEX_CURVE25519_SHA256_LIBSSH_ORG:
     	rc = ssh_server_curve25519_init(session, packet);
     	break;

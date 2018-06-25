@@ -78,7 +78,7 @@
 #endif
 
 #ifdef HAVE_CURVE25519
-#define CURVE25519 "curve25519-sha256@libssh.org,"
+#define CURVE25519 "curve25519-sha256,curve25519-sha256@libssh.org,"
 #else
 #define CURVE25519 ""
 #endif
@@ -673,6 +673,8 @@ int ssh_kex_select_methods (ssh_session session){
       session->next_crypto->kex_type=SSH_KEX_ECDH_SHA2_NISTP521;
     } else if(strcmp(session->next_crypto->kex_methods[SSH_KEX], "curve25519-sha256@libssh.org") == 0){
       session->next_crypto->kex_type=SSH_KEX_CURVE25519_SHA256_LIBSSH_ORG;
+    } else if(strcmp(session->next_crypto->kex_methods[SSH_KEX], "curve25519-sha256") == 0){
+      session->next_crypto->kex_type=SSH_KEX_CURVE25519_SHA256;
     }
     SSH_LOG(SSH_LOG_INFO, "Negotiated %s,%s,%s,%s,%s,%s,%s,%s,%s,%s",
             session->next_crypto->kex_methods[SSH_KEX],

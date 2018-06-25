@@ -686,7 +686,8 @@ int ssh_make_sessionid(ssh_session session) {
         }
 #endif
 #ifdef HAVE_CURVE25519
-    } else if (session->next_crypto->kex_type == SSH_KEX_CURVE25519_SHA256_LIBSSH_ORG) {
+    } else if ((session->next_crypto->kex_type == SSH_KEX_CURVE25519_SHA256) ||
+               (session->next_crypto->kex_type == SSH_KEX_CURVE25519_SHA256_LIBSSH_ORG)) {
         rc = ssh_buffer_pack(buf,
                              "dPdP",
                              CURVE25519_PUBKEY_SIZE,
@@ -722,6 +723,7 @@ int ssh_make_sessionid(ssh_session session) {
                                    session->next_crypto->secret_hash);
         break;
     case SSH_KEX_ECDH_SHA2_NISTP256:
+    case SSH_KEX_CURVE25519_SHA256:
     case SSH_KEX_CURVE25519_SHA256_LIBSSH_ORG:
         session->next_crypto->digest_len = SHA256_DIGEST_LENGTH;
         session->next_crypto->mac_type = SSH_MAC_SHA256;

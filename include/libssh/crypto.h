@@ -60,7 +60,9 @@ enum ssh_key_exchange_e {
   /* ecdh-sha2-nistp521 */
   SSH_KEX_ECDH_SHA2_NISTP521,
   /* curve25519-sha256@libssh.org */
-  SSH_KEX_CURVE25519_SHA256_LIBSSH_ORG
+  SSH_KEX_CURVE25519_SHA256_LIBSSH_ORG,
+  /* curve25519-sha256 */
+  SSH_KEX_CURVE25519_SHA256
 };
 
 enum ssh_cipher_e {

@@ -1,6 +1,6 @@
 /*
  * curve25519.c - Curve25519 ECDH functions for key exchange
- * curve25519-sha256@libssh.org
+ * curve25519-sha256@libssh.org and curve25519-sha256
  *
  * This file is part of the SSH Library
  *
@@ -40,7 +40,7 @@
 #include "libssh/bignum.h"
 
 /** @internal
- * @brief Starts curve25519-sha256@libssh.org key exchange
+ * @brief Starts curve25519-sha256@libssh.org / curve25519-sha256 key exchange
  */
 int ssh_client_curve25519_init(ssh_session session){
   int rc;
