@@ -14,6 +14,10 @@ or
 
 optional:
 - [libz](http://www.zlib.net) >= 1.2
+- [socket_wrapper](https://cwrap.org/) >= 1.1.5
+- [nss_wrapper](https://cwrap.org/) >= 1.1.2
+- [uid_wrapper](https://cwrap.org/) >= 1.2.0
+- [pam_wrapper](https://cwrap.org/) >= 1.0.1
 
 Note that these version numbers are version we know works correctly. If you
 build and run libssh successfully with an older version, please let us know.
@@ -37,6 +41,11 @@ GNU/Linux, MacOS X, MSYS/MinGW:
 On Windows you should choose a makefile gernerator with -G or use
 
     cmake-gui.exe ..
+
+To enable additional client tests against a local OpenSSH server, add the
+compile option -DCLIENT_TESTING=ON. These tests require an OpenSSH
+server package and some wrapper libraries (see optional requirements) to
+be installed.
 
 ## Testing build
 
