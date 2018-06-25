@@ -385,6 +385,22 @@ static void torture_algorithms_ecdh_sha2_nistp521(void **state) {
 }
 #endif
 
+#if ((OPENSSH_VERSION_MAJOR == 7 && OPENSSH_VERSION_MINOR >= 3) || OPENSSH_VERSION_MAJOR > 7)
+static void torture_algorithms_ecdh_curve25519_sha256(void **state) {
+    struct torture_state *s = *state;
+
+    test_algorithm(s->ssh.session, "curve25519-sha256", NULL/*cipher*/, NULL/*hmac*/);
+}
+#endif
+
+#if ((OPENSSH_VERSION_MAJOR == 6 && OPENSSH_VERSION_MINOR >= 5) || OPENSSH_VERSION_MAJOR > 6)
+static void torture_algorithms_ecdh_curve25519_sha256_libssh_org(void **state) {
+    struct torture_state *s = *state;
+
+    test_algorithm(s->ssh.session, "curve25519-sha256@libssh.org", NULL/*cipher*/, NULL/*hmac*/);
+}
+#endif
+
 static void torture_algorithms_dh_group1(void **state) {
     struct torture_state *s = *state;
 
@@ -480,6 +496,16 @@ int torture_run_tests(void) {
         cmocka_unit_test_setup_teardown(torture_algorithms_dh_group1,
                                         session_setup,
                                         session_teardown),
+#if ((OPENSSH_VERSION_MAJOR == 7 && OPENSSH_VERSION_MINOR >= 3) || OPENSSH_VERSION_MAJOR > 7)
+        cmocka_unit_test_setup_teardown(torture_algorithms_ecdh_curve25519_sha256,
+                                        session_setup,
+                                        session_teardown),
+#endif
+#if ((OPENSSH_VERSION_MAJOR == 6 && OPENSSH_VERSION_MINOR >= 5) || OPENSSH_VERSION_MAJOR > 6)
+        cmocka_unit_test_setup_teardown(torture_algorithms_ecdh_curve25519_sha256_libssh_org,
+                                        session_setup,
+                                        session_teardown),
+#endif
 #if defined(HAVE_ECC)
         cmocka_unit_test_setup_teardown(torture_algorithms_ecdh_sha2_nistp256,
                                         session_setup,
