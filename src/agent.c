@@ -548,6 +548,14 @@ ssh_string ssh_agent_sign_data(ssh_session session,
         return NULL;
     }
 
+    /* Add Flags: SHA2 extension (RFC 8332) if negotiated */
+    if (pubkey->type == SSH_KEYTYPE_RSA) {
+        if (session->extensions & SSH_EXT_SIG_RSA_SHA512) {
+            flags |= SSH_AGENT_RSA_SHA2_512;
+        } else if (session->extensions & SSH_EXT_SIG_RSA_SHA256) {
+            flags |= SSH_AGENT_RSA_SHA2_256;
+        }
+    }
     if (ssh_buffer_add_u32(request, htonl(flags)) < 0) {
         ssh_buffer_free(request);
         return NULL;
