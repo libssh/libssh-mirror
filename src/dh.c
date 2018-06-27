@@ -1132,7 +1132,7 @@ int ssh_get_publickey(ssh_session session, ssh_key *key)
  *          you at making things secure.
  *          OpenSSH uses SHA1 to print public key digests.
  *
- * @see ssh_is_server_known()
+ * @see ssh_session_update_known_hosts()
  * @see ssh_get_hexa()
  * @see ssh_print_hexa()
  * @see ssh_clean_pubkey_hash()
