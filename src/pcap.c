@@ -165,6 +165,12 @@ int ssh_pcap_file_write_packet(ssh_pcap_file pcap, ssh_buffer packet, uint32_t o
 	if(header == NULL)
 		return SSH_ERROR;
 	gettimeofday(&now,NULL);
+    err = ssh_buffer_allocate_size(header,
+                                   sizeof(uint32_t) * 4 +
+                                   ssh_buffer_get_len(packet));
+    if (err < 0) {
+        goto error;
+    }
     err = ssh_buffer_add_u32(header,htonl(now.tv_sec));
     if (err < 0) {
         goto error;
@@ -209,6 +215,12 @@ int ssh_pcap_file_open(ssh_pcap_file pcap, const char *filename){
 	header=ssh_buffer_new();
 	if(header==NULL)
 		return SSH_ERROR;
+    err = ssh_buffer_allocate_size(header,
+                                   sizeof(uint32_t) * 5 +
+                                   sizeof(uint16_t) * 2);
+    if (err < 0) {
+        goto error;
+    }
     err = ssh_buffer_add_u32(header,htonl(PCAP_MAGIC));
     if (err < 0) {
         goto error;

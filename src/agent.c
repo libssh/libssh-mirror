@@ -514,6 +514,21 @@ ssh_string ssh_agent_sign_data(ssh_session session,
         return NULL;
     }
 
+    /*
+     * make sure it already can contain all the expected content:
+     * - 1 x uint8_t
+     * - 2 x uint32_t
+     * - 1 x ssh_string (uint8_t + data)
+     */
+    rc = ssh_buffer_allocate_size(request,
+                                  sizeof(uint8_t) * 2 +
+                                  sizeof(uint32_t) * 2 +
+                                  ssh_string_len(key_blob));
+    if (rc < 0) {
+        ssh_buffer_free(request);
+        return NULL;
+    }
+
     /* adds len + blob */
     rc = ssh_buffer_add_ssh_string(request, key_blob);
     ssh_string_free(key_blob);

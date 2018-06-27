@@ -731,8 +731,17 @@ error:
 }
 
 int ssh_hashbufout_add_cookie(ssh_session session) {
+  int rc;
+
   session->out_hashbuf = ssh_buffer_new();
   if (session->out_hashbuf == NULL) {
+    return -1;
+  }
+
+  rc = ssh_buffer_allocate_size(session->out_hashbuf,
+                                sizeof(uint8_t) + 16);
+  if (rc < 0) {
+    ssh_buffer_reinit(session->out_hashbuf);
     return -1;
   }
 
@@ -759,8 +768,17 @@ int ssh_hashbufout_add_cookie(ssh_session session) {
 }
 
 int ssh_hashbufin_add_cookie(ssh_session session, unsigned char *cookie) {
+  int rc;
+
   session->in_hashbuf = ssh_buffer_new();
   if (session->in_hashbuf == NULL) {
+    return -1;
+  }
+
+  rc = ssh_buffer_allocate_size(session->in_hashbuf,
+                                sizeof(uint8_t) + 20 + 16);
+  if (rc < 0) {
+    ssh_buffer_reinit(session->in_hashbuf);
     return -1;
   }
 
