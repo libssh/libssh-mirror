@@ -144,6 +144,22 @@ fedora/libgcrypt/x86-64:
     paths:
       - build/
 
+fedora/mbedtls/x86-64:
+  image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$FEDORA_BUILD
+  script:
+  - mkdir -p obj && cd obj && cmake -DWITH_TESTING=ON -DCMAKE_BUILD_TYPE=Debug -DWITH_MBEDTLS=ON
+    -DWITH_CLIENT_TESTING=ON -DWITH_SSH1=ON -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON
+    -DWITH_PCAP=ON .. && make -j$(nproc) && ctest --output-on-failure
+  tags:
+  - shared
+  except:
+  - tags
+  artifacts:
+    expire_in: 1 week
+    when: on_failure
+    paths:
+      - build/
+
 tumbleweed/openssl_1.1.x/x86-64:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$TUMBLEWEED_BUILD
   script:
