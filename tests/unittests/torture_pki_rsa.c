@@ -15,6 +15,9 @@
 #define LIBSSH_RSA_TESTKEY_PASSPHRASE "libssh_testkey_passphrase.id_rsa"
 
 const unsigned char RSA_HASH[] = "12345678901234567890";
+const unsigned char SHA256_HASH[] = "12345678901234567890123456789012";
+const unsigned char SHA512_HASH[] = "1234567890123456789012345678901234567890"
+                                    "123456789012345678901234";
 
 static int setup_rsa_key(void **state)
 {
@@ -393,6 +396,54 @@ static void torture_pki_rsa_generate_key(void **state)
     ssh_free(session);
 }
 
+static void torture_pki_rsa_sha2(void **state)
+{
+    int rc;
+    ssh_key key = NULL;
+    ssh_signature sign;
+    ssh_session session=ssh_new();
+    (void) state;
+
+    assert_non_null(session);
+
+    /* Setup */
+    rc = ssh_pki_generate(SSH_KEYTYPE_RSA, 2048, &key);
+    assert_true(rc == SSH_OK);
+    assert_true(key != NULL);
+
+    /* Sign using automatic digest */
+    sign = pki_do_sign_hash(key, RSA_HASH, 20, SSH_DIGEST_AUTO);
+    assert_true(sign != NULL);
+    rc = pki_signature_verify(session, sign, key, RSA_HASH, 20);
+    assert_ssh_return_code(session, rc);
+    ssh_signature_free(sign);
+
+    /* Sign using old SHA1 digest */
+    sign = pki_do_sign_hash(key, RSA_HASH, 20, SSH_DIGEST_SHA1);
+    assert_true(sign != NULL);
+    rc = pki_signature_verify(session, sign, key, RSA_HASH, 20);
+    assert_ssh_return_code(session, rc);
+    ssh_signature_free(sign);
+
+    /* Sign using new SHA256 digest */
+    sign = pki_do_sign_hash(key, SHA256_HASH, 32, SSH_DIGEST_SHA256);
+    assert_true(sign != NULL);
+    rc = pki_signature_verify(session, sign, key, SHA256_HASH, 32);
+    assert_ssh_return_code(session, rc);
+    ssh_signature_free(sign);
+
+    /* Sign using rsa-sha2-512 algorithm */
+    sign = pki_do_sign_hash(key, SHA512_HASH, 64, SSH_DIGEST_SHA512);
+    assert_true(sign != NULL);
+    rc = pki_signature_verify(session, sign, key, SHA512_HASH, 64);
+    assert_ssh_return_code(session, rc);
+    ssh_signature_free(sign);
+
+    /* Cleanup */
+    ssh_key_free(key);
+    ssh_free(session);
+}
+
 #ifdef HAVE_LIBCRYPTO
 static void torture_pki_rsa_write_privkey(void **state)
 {
@@ -557,6 +608,7 @@ int torture_run_tests(void) {
                                         setup_rsa_key,
                                         teardown),
 #endif /* HAVE_LIBCRYPTO */
+        cmocka_unit_test(torture_pki_rsa_sha2),
     };
 
     ssh_init();
