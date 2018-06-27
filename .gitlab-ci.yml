@@ -7,7 +7,7 @@ variables:
 
 debian/openssl_1.0.x/aarch64:
   script:
-  - mkdir obj && cd obj && cmake -DWITH_TESTING=ON -DCMAKE_BUILD_TYPE=Debug
+  - mkdir -p obj && cd obj && cmake -DWITH_TESTING=ON -DCMAKE_BUILD_TYPE=Debug
     -DWITH_SSH1=ON -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON
     -DWITH_PCAP=ON .. && make -j$(nproc) && ctest --output-on-failure
     make -j$(nproc) && ctest --output-on-failure
@@ -25,7 +25,7 @@ debian/openssl_1.0.x/aarch64:
 centos7/openssl_1.0.x/x86-64:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$CENTOS7_BUILD
   script:
-  - mkdir obj && cd obj && cmake -DWITH_TESTING=ON -DCMAKE_BUILD_TYPE=Debug
+  - mkdir -p obj && cd obj && cmake -DWITH_TESTING=ON -DCMAKE_BUILD_TYPE=Debug
     -DWITH_SSH1=ON -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON
     -DWITH_PCAP=ON .. && make -j$(nproc) && ctest --output-on-failure
   tags:
@@ -41,7 +41,7 @@ centos7/openssl_1.0.x/x86-64:
 fedora/openssl_1.1.x/x86-64:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$FEDORA_BUILD
   script:
-  - mkdir obj && cd obj && cmake -DWITH_TESTING=ON -DCMAKE_BUILD_TYPE=Debug
+  - mkdir -p obj && cd obj && cmake -DWITH_TESTING=ON -DCMAKE_BUILD_TYPE=Debug
     -DWITH_CLIENT_TESTING=ON -DWITH_SSH1=ON -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON
     -DWITH_PCAP=ON .. && make -j$(nproc) && ctest --output-on-failure
   tags:
@@ -60,7 +60,7 @@ fedora/openssl_1.1.x/x86-64:
   script:
   - export CFLAGS="-fsanitize=address -g -O2"
   - export LDFLAGS="-fsanitize=address -static-libasan"
-  - mkdir obj && cd obj && cmake -DWITH_TESTING=ON -DCMAKE_BUILD_TYPE=Debug
+  - mkdir -p obj && cd obj && cmake -DWITH_TESTING=ON -DCMAKE_BUILD_TYPE=Debug
     -DWITH_CLIENT_TESTING=ON -DWITH_SSH1=ON -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON
     -DWITH_PCAP=ON .. && make -j$(nproc) && ctest --output-on-failure
   tags:
@@ -77,7 +77,7 @@ fedora/undefined-sanitizer:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$FEDORA_BUILD
   script:
   - export CFLAGS="-fsanitize=undefined -fsanitize=null -fsanitize=alignment -fno-sanitize-recover"
-  - mkdir obj && cd obj && cmake -DWITH_TESTING=ON -DCMAKE_BUILD_TYPE=Debug
+  - mkdir -p obj && cd obj && cmake -DWITH_TESTING=ON -DCMAKE_BUILD_TYPE=Debug
     -DWITH_CLIENT_TESTING=ON -DWITH_SSH1=ON -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON
     -DWITH_PCAP=ON .. && make -j$(nproc) && ctest --output-on-failure
   tags:
@@ -95,7 +95,7 @@ fedora/static-analysis:
   script:
   - export CCC_CC=clang
   - export CCC_CXX=clang++
-  - mkdir obj && cd obj && scan-build cmake -DWITH_TESTING=ON -DCMAKE_BUILD_TYPE=Debug
+  - mkdir -p obj && cd obj && scan-build cmake -DWITH_TESTING=ON -DCMAKE_BUILD_TYPE=Debug
     -DWITH_CLIENT_TESTING=ON -DWITH_SSH1=ON -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON
     -DWITH_PCAP=ON -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang .. &&
     scan-build --status-bugs -o scan make -j$(nproc)
@@ -114,7 +114,7 @@ fedora/static-analysis:
 freebsd/x86-64:
   image:
   script:
-  - mkdir obj && cd obj && cmake -DWITH_TESTING=ON -DCMAKE_BUILD_TYPE=Debug
+  - mkdir -p obj && cd obj && cmake -DWITH_TESTING=ON -DCMAKE_BUILD_TYPE=Debug
     -DWITH_SSH1=ON -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON
     -DWITH_PCAP=ON .. && make && ctest --output-on-failure
     make -j$(nproc) && ctest --output-on-failure
@@ -133,7 +133,7 @@ freebsd/x86-64:
 .fedora/libgcrypt/x86-64:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$FEDORA_BUILD
   script:
-  - mkdir obj && cd obj && cmake -DWITH_TESTING=ON -DCMAKE_BUILD_TYPE=Debug -DWITH_GCRYPT=1
+  - mkdir -p obj && cd obj && cmake -DWITH_TESTING=ON -DCMAKE_BUILD_TYPE=Debug -DWITH_GCRYPT=1
     -DWITH_CLIENT_TESTING=ON -DWITH_SSH1=ON -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON
     -DWITH_PCAP=ON .. && make -j$(nproc) && ctest --output-on-failure
   tags:
@@ -149,7 +149,7 @@ freebsd/x86-64:
 tumbleweed/openssl_1.1.x/x86-64:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$TUMBLEWEED_BUILD
   script:
-  - mkdir obj && cd obj && cmake -DWITH_TESTING=ON -DCMAKE_BUILD_TYPE=Debug
+  - mkdir -p obj && cd obj && cmake -DWITH_TESTING=ON -DCMAKE_BUILD_TYPE=Debug
     -DWITH_CLIENT_TESTING=ON -DWITH_SSH1=ON -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON
     -DWITH_PCAP=ON .. && make -j$(nproc) && ctest --output-on-failure
   tags:
@@ -166,7 +166,7 @@ tumbleweed/undefined-sanitizer:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$TUMBLEWEED_BUILD
   script:
   - export CFLAGS="-fsanitize=undefined -fsanitize=null -fsanitize=alignment -fno-sanitize-recover"
-  - mkdir obj && cd obj && cmake -DWITH_TESTING=ON -DCMAKE_BUILD_TYPE=Debug
+  - mkdir -p obj && cd obj && cmake -DWITH_TESTING=ON -DCMAKE_BUILD_TYPE=Debug
     -DWITH_CLIENT_TESTING=ON -DWITH_SSH1=ON -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON
     -DWITH_PCAP=ON .. && make -j$(nproc) && ctest --output-on-failure
   tags:
@@ -184,7 +184,7 @@ tumbleweed/static-analysis:
   script:
   - export CCC_CC=clang
   - export CCC_CXX=clang++
-  - mkdir obj && cd obj && scan-build cmake -DWITH_TESTING=ON -DCMAKE_BUILD_TYPE=Debug
+  - mkdir -p obj && cd obj && scan-build cmake -DWITH_TESTING=ON -DCMAKE_BUILD_TYPE=Debug
     -DWITH_CLIENT_TESTING=ON -DWITH_SSH1=ON -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON
     -DWITH_PCAP=ON -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang .. &&
     scan-build --status-bugs -o scan make -j$(nproc)
@@ -203,7 +203,7 @@ tumbleweed/static-analysis:
 mingw64:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$MINGW_BUILD
   script:
-  - mkdir obj && cd obj && mingw64-cmake -DCMAKE_BUILD_TYPE=Debug
+  - mkdir -p obj && cd obj && mingw64-cmake -DCMAKE_BUILD_TYPE=Debug
     -DWITH_SSH1=ON -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON
     -DWITH_PCAP=ON -DWITH_TESTING=ON .. && make -j$(nproc) &&
     ctest --output-on-failure
@@ -222,7 +222,7 @@ mingw64:
 mingw32:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$MINGW_BUILD
   script:
-  - mkdir obj && cd obj && mingw32-cmake -DCMAKE_BUILD_TYPE=Debug
+  - mkdir -p obj && cd obj && mingw32-cmake -DCMAKE_BUILD_TYPE=Debug
     -DWITH_SSH1=ON -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON
     -DWITH_PCAP=ON -DWITH_TESTING=ON .. && make -j$(nproc) &&
     ctest --output-on-failure
