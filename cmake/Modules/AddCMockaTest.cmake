@@ -23,8 +23,16 @@ if(CMAKE_COMPILER_IS_GNUCC AND NOT MINGW)
     set(CMAKE_EXEC_LINKER_FLAGS_ADDRESSSANITIZER "-fsanitize=address" CACHE STRING "Address sanitizer executable linker flags")
 endif(CMAKE_COMPILER_IS_GNUCC AND NOT MINGW)
 
+if (CMAKE_CROSSCOMPILING)
+    if (WIN32)
+        find_program(WINE_EXECUTABLE
+                     NAMES wine)
+        set(TARGET_SYSTEM_EMULATOR ${WINE_EXECUTABLE})
+    endif()
+endif()
+
 function (ADD_CMOCKA_TEST _testName _testSource)
     add_executable(${_testName} ${_testSource})
     target_link_libraries(${_testName} ${ARGN})
-    add_test(${_testName} ${CMAKE_CURRENT_BINARY_DIR}/${_testName}${CMAKE_EXECUTABLE_SUFFIX})
+    add_test(${_testName} ${TARGET_SYSTEM_EMULATOR} ${CMAKE_CURRENT_BINARY_DIR}/${_testName}${CMAKE_EXECUTABLE_SUFFIX})
 endfunction (ADD_CMOCKA_TEST)
