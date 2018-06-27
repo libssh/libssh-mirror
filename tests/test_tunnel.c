@@ -14,7 +14,7 @@ void do_connect(SSH_SESSION *session){
 		return;
 	}
 	printf("Connected\n");
-	ssh_is_server_known(session);
+	ssh_session_is_known_server(session);
 	// we don't care what happens here
 	error=authenticate(session);
 	if(error != SSH_AUTH_SUCCESS){

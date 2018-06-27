@@ -88,8 +88,8 @@ SSH_SESSION *connect_host(const char *hostname){
     ssh_disconnect(session);
     return NULL;
   }
-  state=ssh_is_server_known(session);
 
+  state = ssh_session_is_known_server(session);
   switch(state){
     case SSH_SERVER_KNOWN_OK:
       break; /* ok */
