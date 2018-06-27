@@ -662,6 +662,10 @@ int ssh_set_client_kex(ssh_session session){
         if (wanted == NULL)
             wanted = default_methods[i];
         client->methods[i] = strdup(wanted);
+        if (client->methods[i] == NULL) {
+            ssh_set_error_oom(session);
+            return SSH_ERROR;
+        }
     }
 
     return SSH_OK;
