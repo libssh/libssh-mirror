@@ -303,7 +303,7 @@ public:
    * @throws SshException on error
    * @returns Integer value depending on the knowledge of the
    * server key
-   * @see ssh_is_server_known
+   * @see ssh_session_update_known_hosts
    */
   int isServerKnown(){
     int state = ssh_session_is_known_server(c_session);
