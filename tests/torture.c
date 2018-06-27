@@ -770,6 +770,8 @@ void torture_teardown_sshd_server(void **state)
     torture_teardown_socket_dir(state);
 }
 
+#endif /* _WIN32 */
+
 int torture_libssh_verbosity(void){
   return verbosity;
 }
@@ -800,8 +802,6 @@ void _torture_filter_tests(struct CMUnitTest *tests, size_t ntests)
         printf("No matching test left\n");
     }
 }
-
-#endif /* _WIN32 */
 
 void torture_write_file(const char *filename, const char *data){
     int fd;
