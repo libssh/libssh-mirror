@@ -69,6 +69,7 @@ static int verbosity = 0;
 static const char *pattern = NULL;
 
 #ifndef _WIN32
+
 static int _torture_auth_kbdint(ssh_session session,
                                const char *password) {
     const char *prompt;
@@ -345,7 +346,7 @@ ssh_bind torture_ssh_bind(const char *addr,
         case SSH_KEYTYPE_DSS:
             opts = SSH_BIND_OPTIONS_DSAKEY;
             break;
-#endif
+#endif /* HAVE_DSA */
         case SSH_KEYTYPE_RSA:
             opts = SSH_BIND_OPTIONS_RSAKEY;
             break;
@@ -374,7 +375,7 @@ ssh_bind torture_ssh_bind(const char *addr,
     return sshbind;
 }
 
-#endif
+#endif /* WITH_SERVER */
 
 #ifdef WITH_SFTP
 
@@ -440,25 +441,6 @@ void torture_sftp_close(struct torture_sftp *t) {
     free(t);
 }
 #endif /* WITH_SFTP */
-
-#endif /* _WIN32 */
-
-void torture_write_file(const char *filename, const char *data){
-    int fd;
-    int rc;
-
-    assert_non_null(filename);
-    assert_true(filename[0] != '\0');
-    assert_non_null(data);
-
-    fd = open(filename, O_WRONLY | O_TRUNC | O_CREAT, 0600);
-    assert_true(fd >= 0);
-
-    rc = write(fd, data, strlen(data));
-    assert_int_equal(rc, strlen(data));
-
-    close(fd);
-}
 
 int torture_server_port(void)
 {
@@ -558,7 +540,7 @@ static void torture_setup_create_sshd_config(void **state)
     char ed25519_hostkey[1024] = {0};
 #ifdef HAVE_DSA
     char dsa_hostkey[1024];
-#endif
+#endif /* HAVE_DSA */
     char rsa_hostkey[1024];
     char ecdsa_hostkey[1024];
     char trusted_ca_pubkey[1024];
@@ -574,14 +556,14 @@ static void torture_setup_create_sshd_config(void **state)
 #ifndef OPENSSH_VERSION_MAJOR
 #define OPENSSH_VERSION_MAJOR 7U
 #define OPENSSH_VERSION_MINOR 0U
-#endif
+#endif /* OPENSSH_VERSION_MAJOR */
     const char config_string[]=
              "Port 22\n"
              "ListenAddress 127.0.0.10\n"
              "HostKey %s\n"
 #ifdef HAVE_DSA
              "HostKey %s\n"
-#endif
+#endif /* HAVE_DSA */
              "HostKey %s\n"
              "HostKey %s\n"
              "\n"
@@ -602,16 +584,16 @@ static void torture_setup_create_sshd_config(void **state)
 #if (OPENSSH_VERSION_MAJOR == 6 && OPENSSH_VERSION_MINOR >= 7) || (OPENSSH_VERSION_MAJOR >= 7)
 # ifdef HAVE_DSA
              "HostKeyAlgorithms +ssh-dss\n"
-# else
+# else /* HAVE_DSA */
              "HostKeyAlgorithms +ssh-rsa\n"
-# endif
-#  if (OPENSSH_VERSION_MAJOR == 7 && OPENSSH_VERSION_MINOR < 6)
+# endif /* HAVE_DSA */
+# if (OPENSSH_VERSION_MAJOR == 7 && OPENSSH_VERSION_MINOR < 6)
              "Ciphers +3des-cbc,aes128-cbc,aes192-cbc,aes256-cbc,blowfish-cbc\n"
-# else
+# else /* OPENSSH_VERSION 7.0 - 7.5 */
              "Ciphers +3des-cbc,aes128-cbc,aes192-cbc,aes256-cbc\n"
-# endif
+# endif /* OPENSSH_VERSION 7.0 - 7.6 */
              "KexAlgorithms +diffie-hellman-group1-sha1"
-#else
+#else /* OPENSSH_VERSION >= 6.7 */
              "Ciphers 3des-cbc,aes128-cbc,aes192-cbc,aes256-cbc,aes128-ctr,"
                      "aes192-ctr,aes256-ctr,aes128-gcm@openssh.com,"
                      "aes256-gcm@openssh.com,arcfour128,arcfour256,arcfour,"
@@ -622,7 +604,7 @@ static void torture_setup_create_sshd_config(void **state)
                            "diffie-hellman-group-exchange-sha1,"
                            "diffie-hellman-group14-sha1,"
                            "diffie-hellman-group1-sha1\n"
-#endif
+#endif /* OPENSSH_VERSION >= 6.7 */
              "\n"
              "AcceptEnv LANG LC_CTYPE LC_NUMERIC LC_TIME LC_COLLATE LC_MONETARY LC_MESSAGES\n"
              "AcceptEnv LC_PAPER LC_NAME LC_ADDRESS LC_TELEPHONE LC_MEASUREMENT\n"
@@ -655,7 +637,7 @@ static void torture_setup_create_sshd_config(void **state)
              "%s/sshd/ssh_host_dsa_key",
              s->socket_dir);
     torture_write_file(dsa_hostkey, torture_get_testkey(SSH_KEYTYPE_DSS, 0, 0));
-#endif
+#endif /* HAVE_DSA */
 
     snprintf(rsa_hostkey,
              sizeof(rsa_hostkey),
@@ -707,7 +689,7 @@ static void torture_setup_create_sshd_config(void **state)
              trusted_ca_pubkey,
              sftp_server,
              s->srv_pidfile);
-#else
+#else /* HAVE_DSA */
     snprintf(sshd_config, sizeof(sshd_config),
              config_string,
              ed25519_hostkey,
@@ -716,7 +698,7 @@ static void torture_setup_create_sshd_config(void **state)
              trusted_ca_pubkey,
              sftp_server,
              s->srv_pidfile);
-#endif
+#endif /* HAVE_DSA */
 
     torture_write_file(s->srv_config, sshd_config);
 }
@@ -818,6 +800,26 @@ void _torture_filter_tests(struct CMUnitTest *tests, size_t ntests)
         printf("No matching test left\n");
     }
 }
+
+#endif /* _WIN32 */
+
+void torture_write_file(const char *filename, const char *data){
+    int fd;
+    int rc;
+
+    assert_non_null(filename);
+    assert_true(filename[0] != '\0');
+    assert_non_null(data);
+
+    fd = open(filename, O_WRONLY | O_TRUNC | O_CREAT, 0600);
+    assert_true(fd >= 0);
+
+    rc = write(fd, data, strlen(data));
+    assert_int_equal(rc, strlen(data));
+
+    close(fd);
+}
+
 
 int main(int argc, char **argv) {
   struct argument_s arguments;
