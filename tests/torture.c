@@ -27,13 +27,13 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/socket.h>
 #include <fcntl.h>
 #include <signal.h>
 
 #ifndef _WIN32
 # include <dirent.h>
 # include <errno.h>
+# include <sys/socket.h>
 #endif
 
 #ifdef HAVE_UNISTD_H
