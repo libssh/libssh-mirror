@@ -12,8 +12,6 @@
  */
 static void torture_ssh_is_ipaddr(void **state)
 {
-    char *env = NULL;
-
     (void)state;
 
     assert_int_equal(ssh_is_ipaddr("127.0.0.1"),1);
