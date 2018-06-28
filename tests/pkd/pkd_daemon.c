@@ -369,7 +369,9 @@ static int pkd_exec_hello(int fd, struct pkd_daemon_args *args) {
            (pkd_state.close_received == 0)) {
         rc = ssh_event_dopoll(e, 1000 /* milliseconds */);
         if (rc == SSH_ERROR) {
-            pkderr("ssh_event_dopoll for eof + close: %s\n", ssh_get_error(s));
+            /* log, but don't consider this fatal */
+            pkdout("ssh_event_dopoll for eof + close: %s\n", ssh_get_error(s));
+            rc = 0;
             break;
         } else {
             rc = 0;
@@ -380,7 +382,9 @@ static int pkd_exec_hello(int fd, struct pkd_daemon_args *args) {
            (ssh_is_connected(s))) {
         rc = ssh_event_dopoll(e, 1000 /* milliseconds */);
         if (rc == SSH_ERROR) {
-            pkderr("ssh_event_dopoll for session connection: %s\n", ssh_get_error(s));
+            /* log, but don't consider this fatal */
+            pkdout("ssh_event_dopoll for session connection: %s\n", ssh_get_error(s));
+            rc = 0;
             break;
         } else {
             rc = 0;
