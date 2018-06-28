@@ -44,10 +44,9 @@ static void torture_ssh_is_ipaddr(void **state)
     /*
      * FIXME: Temporary workaround for Wine bug
      */
-    env = getenv("WINEPATH");
-    if (env == NULL) {
-        assert_int_equal(ssh_is_ipaddr("255.255.255"),0);
-    }
+#ifndef _WIN32
+    assert_int_equal(ssh_is_ipaddr("255.255.255"),0);
+#endif
 
     assert_int_equal(ssh_is_ipaddr("2001:0db8:85a3:0000:0000:8a2e:0370:7334:1002"), 0);
     assert_int_equal(ssh_is_ipaddr("fe80:x:202:b3ff:fe1e:8329"), 0);
