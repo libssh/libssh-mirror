@@ -209,17 +209,6 @@ if (WITH_SFTP)
   endif (WITH_SERVER)
 endif (WITH_SFTP)
 
-if (WITH_SSH1)
-  set(libssh_SRCS
-    ${libssh_SRCS}
-    auth1.c
-    channels1.c
-    crc32.c
-    kex1.c
-    packet1.c
-  )
-endif (WITH_SSH1)
-
 if (WITH_SERVER)
   set(libssh_SRCS
     ${libssh_SRCS}

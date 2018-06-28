@@ -683,41 +683,6 @@ struct ssh_string_struct *ssh_buffer_get_ssh_string(struct ssh_buffer_struct *bu
   return str;
 }
 
-/**
- * @internal
- *
- * @brief Get a mpint out of the buffer and adjusts the read pointer.
- *
- * @note This function is SSH-1 only.
- *
- * @param[in]  buffer   The buffer to read.
- *
- * @returns             The SSH String containing the mpint, NULL on error.
- */
-struct ssh_string_struct *ssh_buffer_get_mpint(struct ssh_buffer_struct *buffer) {
-  uint16_t bits;
-  uint32_t len;
-  struct ssh_string_struct *str = NULL;
-
-  if (ssh_buffer_get_data(buffer, &bits, sizeof(uint16_t)) != sizeof(uint16_t)) {
-    return NULL;
-  }
-  bits = ntohs(bits);
-  len = (bits + 7) / 8;
-  if (buffer->pos + len < len || buffer->pos + len > buffer->used) {
-    return NULL;
-  }
-  str = ssh_string_new(len);
-  if (str == NULL) {
-    return NULL;
-  }
-  if (ssh_buffer_get_data(buffer, ssh_string_data(str), len) != len) {
-    SAFE_FREE(str);
-    return NULL;
-  }
-  return str;
-}
-
 /** @internal
  * @brief Add multiple values in a buffer on a single function call
  * @param[in] buffer    The buffer to add to

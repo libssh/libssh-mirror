@@ -821,14 +821,13 @@ char *ssh_path_expand_escape(ssh_session session, const char *s) {
  *
  * @param  session      The session to analyze the banner from.
  * @param  server       0 means we are a client, 1 a server.
- * @param  ssh1         The variable which is set if it is a SSHv1 server.
- * @param  ssh2         The variable which is set if it is a SSHv2 server.
  *
  * @return 0 on success, < 0 on error.
  *
  * @see ssh_get_issue_banner()
  */
-int ssh_analyze_banner(ssh_session session, int server, int *ssh1, int *ssh2) {
+int ssh_analyze_banner(ssh_session session, int server)
+{
     const char *banner;
     const char *openssh;
 
@@ -861,20 +860,15 @@ int ssh_analyze_banner(ssh_session session, int server, int *ssh1, int *ssh2) {
     SSH_LOG(SSH_LOG_RARE, "Analyzing banner: %s", banner);
 
     switch (banner[4]) {
+        case '2':
+            break;
         case '1':
-            *ssh1 = 1;
             if (strlen(banner) > 6) {
                 if (banner[6] == '9') {
-                    *ssh2 = 1;
-                } else {
-                    *ssh2 = 0;
+                    break;
                 }
             }
-            break;
-        case '2':
-            *ssh1 = 0;
-            *ssh2 = 1;
-            break;
+            FALL_THROUGH;
         default:
             ssh_set_error(session, SSH_FATAL, "Protocol mismatch: %s", banner);
             return -1;

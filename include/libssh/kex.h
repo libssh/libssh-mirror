@@ -32,9 +32,6 @@ struct ssh_kex_struct {
 };
 
 SSH_PACKET_CALLBACK(ssh_packet_kexinit);
-#ifdef WITH_SSH1
-SSH_PACKET_CALLBACK(ssh_packet_publickey1);
-#endif
 
 int ssh_send_kex(ssh_session session, int server_kex);
 void ssh_list_kex(struct ssh_kex_struct *kex);

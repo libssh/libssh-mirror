@@ -244,8 +244,7 @@ static void torture_pki_rsa_publickey_base64(void **state)
     *p = '\0';
 
     type = ssh_key_type_from_name(q);
-    assert_true(((type == SSH_KEYTYPE_RSA) ||
-                 (type == SSH_KEYTYPE_RSA1)));
+    assert_true(type == SSH_KEYTYPE_RSA);
 
     q = ++p;
     while (*p != ' ') p++;
@@ -380,50 +379,6 @@ static void torture_pki_rsa_generate_key(void **state)
     key=NULL;
 
     rc = ssh_pki_generate(SSH_KEYTYPE_RSA, 4096, &key);
-    assert_true(rc == SSH_OK);
-    assert_true(key != NULL);
-    sign = pki_do_sign(key, RSA_HASH, 20);
-    assert_true(sign != NULL);
-    rc = pki_signature_verify(session,sign,key,RSA_HASH,20);
-    assert_true(rc == SSH_OK);
-    ssh_signature_free(sign);
-    ssh_key_free(key);
-    key=NULL;
-
-    ssh_free(session);
-}
-
-static void torture_pki_rsa_generate_key1(void **state)
-{
-    int rc;
-    ssh_key key;
-    ssh_signature sign;
-    ssh_session session=ssh_new();
-    (void) state;
-
-    rc = ssh_pki_generate(SSH_KEYTYPE_RSA1, 1024, &key);
-    assert_true(rc == SSH_OK);
-    assert_true(key != NULL);
-    sign = pki_do_sign(key, RSA_HASH, 20);
-    assert_true(sign != NULL);
-    rc = pki_signature_verify(session,sign,key,RSA_HASH,20);
-    assert_true(rc == SSH_OK);
-    ssh_signature_free(sign);
-    ssh_key_free(key);
-    key=NULL;
-
-    rc = ssh_pki_generate(SSH_KEYTYPE_RSA1, 2048, &key);
-    assert_true(rc == SSH_OK);
-    assert_true(key != NULL);
-    sign = pki_do_sign(key, RSA_HASH, 20);
-    assert_true(sign != NULL);
-    rc = pki_signature_verify(session,sign,key,RSA_HASH,20);
-    assert_true(rc == SSH_OK);
-    ssh_signature_free(sign);
-    ssh_key_free(key);
-    key=NULL;
-
-    rc = ssh_pki_generate(SSH_KEYTYPE_RSA1, 4096, &key);
     assert_true(rc == SSH_OK);
     assert_true(key != NULL);
     sign = pki_do_sign(key, RSA_HASH, 20);
@@ -595,7 +550,6 @@ int torture_run_tests(void) {
                                         setup_rsa_key,
                                         teardown),
         cmocka_unit_test(torture_pki_rsa_generate_key),
-        cmocka_unit_test(torture_pki_rsa_generate_key1),
 #ifdef HAVE_LIBCRYPTO
         cmocka_unit_test_setup_teardown(torture_pki_rsa_write_privkey,
                                         setup_rsa_key,

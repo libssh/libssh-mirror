@@ -49,20 +49,6 @@ ssh_kbdint ssh_kbdint_new(void);
 void ssh_kbdint_clean(ssh_kbdint kbd);
 void ssh_kbdint_free(ssh_kbdint kbd);
 
-
-#ifdef WITH_SSH1
-void ssh_auth1_handler(ssh_session session, uint8_t type);
-
-/* auth1.c */
-int ssh_userauth1_none(ssh_session session, const char *username);
-int ssh_userauth1_offer_pubkey(ssh_session session, const char *username,
-        int type, ssh_string pubkey);
-int ssh_userauth1_password(ssh_session session, const char *username,
-        const char *password);
-
-
-#endif
-
 /** @internal
  * States of authentication in the client-side. They describe
  * what was the last response from the server
@@ -104,8 +90,6 @@ enum ssh_auth_service_state_e {
   SSH_AUTH_SERVICE_ACCEPTED,
   /** Access to service denied (fatal) */
   SSH_AUTH_SERVICE_DENIED,
-  /** Specific to SSH1 */
-  SSH_AUTH_SERVICE_USER_SENT
 };
 
 #endif /* AUTH_H_ */

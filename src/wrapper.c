@@ -353,39 +353,9 @@ static int crypt_set_algorithms2(ssh_session session){
   return SSH_OK;
 }
 
-static int crypt_set_algorithms1(ssh_session session, enum ssh_des_e des_type) {
-  int i = 0;
-  struct ssh_cipher_struct *ssh_ciphertab=ssh_get_ciphertab();
-
-  /* right now, we force 3des-cbc to be taken */
-  while (ssh_ciphertab[i].name && strcmp(ssh_ciphertab[i].name,
-        des_type == SSH_DES ? "des-cbc-ssh1" : "3des-cbc-ssh1")) {
-    i++;
-  }
-
-  if (ssh_ciphertab[i].name == NULL) {
-    ssh_set_error(session, SSH_FATAL, "cipher 3des-cbc-ssh1 or des-cbc-ssh1 not found!");
-    return SSH_ERROR;
-  }
-
-  session->next_crypto->out_cipher = cipher_new(i);
-  if (session->next_crypto->out_cipher == NULL) {
-    ssh_set_error_oom(session);
-    return SSH_ERROR;
-  }
-
-  session->next_crypto->in_cipher = cipher_new(i);
-  if (session->next_crypto->in_cipher == NULL) {
-    ssh_set_error_oom(session);
-    return SSH_ERROR;
-  }
-
-  return SSH_OK;
-}
-
-int crypt_set_algorithms(ssh_session session, enum ssh_des_e des_type) {
-  return (session->version == 1) ? crypt_set_algorithms1(session, des_type) :
-    crypt_set_algorithms2(session);
+int crypt_set_algorithms_client(ssh_session session)
+{
+    return crypt_set_algorithms2(session);
 }
 
 #ifdef WITH_SERVER

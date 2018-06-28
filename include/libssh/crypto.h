@@ -67,8 +67,6 @@ enum ssh_cipher_e {
     SSH_NO_CIPHER=0,
     SSH_BLOWFISH_CBC,
     SSH_3DES_CBC,
-    SSH_3DES_CBC_SSH1,
-    SSH_DES_CBC_SSH1,
     SSH_AES128_CBC,
     SSH_AES192_CBC,
     SSH_AES256_CBC,

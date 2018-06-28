@@ -471,10 +471,6 @@ static void evp_cipher_init(struct ssh_cipher_struct *cipher) {
         cipher->cipher = EVP_bf_cbc();
         break;
         /* ciphers not using EVP */
-    case SSH_3DES_CBC_SSH1:
-    case SSH_DES_CBC_SSH1:
-        SSH_LOG(SSH_LOG_WARNING, "This cipher should not use evp_cipher_init");
-        break;
     case SSH_NO_CIPHER:
         SSH_LOG(SSH_LOG_WARNING, "No valid ciphertype found");
         break;
@@ -612,95 +608,6 @@ static void aes_ctr_cleanup(struct ssh_cipher_struct *cipher){
 }
 
 #endif /* HAVE_OPENSSL_EVP_AES_CTR */
-#ifdef HAS_DES
-
-typedef uint8_t des_iv_t[8];
-
-struct ssh_3des_key_schedule {
-    DES_key_schedule keys[3];
-    union {
-        des_iv_t v[3];
-        uint8_t *c;
-    } ivs;
-};
-
-/* 3des cbc for SSH-1 has no suitable EVP construct and requires
- * a custom key setup
- */
-static int des3_set_key(struct ssh_cipher_struct *cipher, void *key, void *IV){
-    DES_cblock *keys = key;
-
-    DES_set_odd_parity(&keys[0]);
-    DES_set_odd_parity(&keys[1]);
-    DES_set_odd_parity(&keys[2]);
-
-    cipher->des3_key = malloc(sizeof (struct ssh_3des_key_schedule));
-    if (cipher->des3_key == NULL){
-        return SSH_ERROR;
-    }
-    DES_set_key_unchecked(&keys[0], &cipher->des3_key->keys[0]);
-    DES_set_key_unchecked(&keys[1], &cipher->des3_key->keys[1]);
-    DES_set_key_unchecked(&keys[2], &cipher->des3_key->keys[2]);
-    memcpy(cipher->des3_key->ivs.v, IV, 24);
-    return SSH_OK;
-}
-
-static void des3_1_encrypt(struct ssh_cipher_struct *cipher, void *in,
-    void *out, unsigned long len) {
-#ifdef DEBUG_CRYPTO
-  ssh_print_hexa("Encrypt IV before", cipher->des3_key->ivs.c, 24);
-#endif
-  DES_ncbc_encrypt(in, out, len, &cipher->des3_key->keys[0], &cipher->des3_key->ivs.v[0], 1);
-  DES_ncbc_encrypt(out, in, len, &cipher->des3_key->keys[1], &cipher->des3_key->ivs.v[1], 0);
-  DES_ncbc_encrypt(in, out, len, &cipher->des3_key->keys[2], &cipher->des3_key->ivs.v[2], 1);
-#ifdef DEBUG_CRYPTO
-  ssh_print_hexa("Encrypt IV after", cipher->des3_key->ivs.c, 24);
-#endif
-}
-
-static void des3_1_decrypt(struct ssh_cipher_struct *cipher, void *in,
-    void *out, unsigned long len) {
-#ifdef DEBUG_CRYPTO
-  ssh_print_hexa("Decrypt IV before", cipher->des3_key->ivs.c, 24);
-#endif
-
-  DES_ncbc_encrypt(in, out, len, &cipher->des3_key->keys[2], &cipher->des3_key->ivs.v[0], 0);
-  DES_ncbc_encrypt(out, in, len, &cipher->des3_key->keys[1], &cipher->des3_key->ivs.v[1], 1);
-  DES_ncbc_encrypt(in, out, len, &cipher->des3_key->keys[0], &cipher->des3_key->ivs.v[2], 0);
-
-#ifdef DEBUG_CRYPTO
-  ssh_print_hexa("Decrypt IV after", cipher->des3_key->ivs.c, 24);
-#endif
-}
-
-static int des1_set_key(struct ssh_cipher_struct *cipher, void *key, void *IV) {
-    DES_set_odd_parity(key);
-
-    cipher->des3_key = malloc(sizeof (struct ssh_3des_key_schedule));
-    if (cipher->des3_key == NULL){
-        return SSH_ERROR;
-    }
-    DES_set_key_unchecked(key, &cipher->des3_key->keys[0]);
-    memcpy(cipher->des3_key->ivs.v, IV, 8);
-    return SSH_OK;
-}
-
-static void des1_1_encrypt(struct ssh_cipher_struct *cipher, void *in, void *out,
-                           unsigned long len){
-    DES_ncbc_encrypt(in, out, len, &cipher->des3_key->keys[0], &cipher->des3_key->ivs.v[0], 1);
-}
-
-static void des1_1_decrypt(struct ssh_cipher_struct *cipher, void *in, void *out,
-        unsigned long len){
-    DES_ncbc_encrypt(in,out,len, &cipher->des3_key->keys[0], &cipher->des3_key->ivs.v[0], 0);
-}
-
-static void des_cleanup(struct ssh_cipher_struct *cipher){
-    explicit_bzero(cipher->des3_key, sizeof(*cipher->des3_key));
-    SAFE_FREE(cipher->des3_key);
-}
-
-#endif /* HAS_DES */
 
 /*
  * The table of supported ciphers
@@ -837,28 +744,6 @@ static struct ssh_cipher_struct ssh_ciphertab[] = {
     .encrypt = evp_cipher_encrypt,
     .decrypt = evp_cipher_decrypt,
     .cleanup = evp_cipher_cleanup
-  },
-  {
-    .name = "3des-cbc-ssh1",
-    .blocksize = 8,
-    .ciphertype = SSH_3DES_CBC_SSH1,
-    .keysize = 192,
-    .set_encrypt_key = des3_set_key,
-    .set_decrypt_key = des3_set_key,
-    .encrypt = des3_1_encrypt,
-    .decrypt = des3_1_decrypt,
-    .cleanup = des_cleanup
-  },
-  {
-    .name = "des-cbc-ssh1",
-    .blocksize = 8,
-    .ciphertype = SSH_DES_CBC_SSH1,
-    .keysize = 64,
-    .set_encrypt_key = des1_set_key,
-    .set_decrypt_key = des1_set_key,
-    .encrypt = des1_1_encrypt,
-    .decrypt = des1_1_decrypt,
-    .cleanup = des_cleanup
   },
 #endif /* HAS_DES */
   {

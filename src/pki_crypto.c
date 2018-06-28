@@ -1180,37 +1180,6 @@ fail:
     return NULL;
 }
 
-int pki_export_pubkey_rsa1(const ssh_key key,
-                           const char *host,
-                           char *rsa1,
-                           size_t rsa1_len)
-{
-    char *e;
-    char *n;
-    int rsa_size = RSA_size(key->rsa);
-    const BIGNUM *be, *bn;
-
-    RSA_get0_key(key->rsa, &bn, &be, NULL);
-    e = bignum_bn2dec(be);
-    if (e == NULL) {
-        return SSH_ERROR;
-    }
-
-    n = bignum_bn2dec(bn);
-    if (n == NULL) {
-        OPENSSL_free(e);
-        return SSH_ERROR;
-    }
-
-    snprintf(rsa1, rsa1_len,
-             "%s %d %s %s\n",
-             host, rsa_size << 3, e, n);
-    OPENSSL_free(e);
-    OPENSSL_free(n);
-
-    return SSH_OK;
-}
-
 /**
  * @internal
  *

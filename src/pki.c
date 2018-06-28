@@ -181,7 +181,9 @@ void ssh_key_free (ssh_key key){
 /**
  * @brief returns the type of a ssh key
  * @param[in] key the ssh_key handle
- * @returns one of SSH_KEYTYPE_RSA,SSH_KEYTYPE_DSS,SSH_KEYTYPE_RSA1
+ * @returns one of SSH_KEYTYPE_RSA, SSH_KEYTYPE_DSS,
+ *          SSH_KEYTYPE_ECDSA, SSH_KEYTYPE_ED25519,
+ *          SSH_KEYTYPE_DSS_CERT01, SSH_KEYTYPE_RSA_CERT01
  * @returns SSH_KEYTYPE_UNKNOWN if the type is unknown
  */
 enum ssh_keytypes_e ssh_key_type(const ssh_key key){
@@ -204,8 +206,6 @@ const char *ssh_key_type_to_char(enum ssh_keytypes_e type) {
       return "ssh-dss";
     case SSH_KEYTYPE_RSA:
       return "ssh-rsa";
-    case SSH_KEYTYPE_RSA1:
-      return "ssh-rsa1";
     case SSH_KEYTYPE_ECDSA:
       return "ssh-ecdsa";
     case SSH_KEYTYPE_ED25519:
@@ -214,6 +214,7 @@ const char *ssh_key_type_to_char(enum ssh_keytypes_e type) {
       return "ssh-dss-cert-v01@openssh.com";
     case SSH_KEYTYPE_RSA_CERT01:
       return "ssh-rsa-cert-v01@openssh.com";
+    case SSH_KEYTYPE_RSA1:
     case SSH_KEYTYPE_UNKNOWN:
       return NULL;
   }
@@ -234,14 +235,10 @@ enum ssh_keytypes_e ssh_key_type_from_name(const char *name) {
         return SSH_KEYTYPE_UNKNOWN;
     }
 
-    if (strcmp(name, "rsa1") == 0) {
-        return SSH_KEYTYPE_RSA1;
-    } else if (strcmp(name, "rsa") == 0) {
+    if (strcmp(name, "rsa") == 0) {
         return SSH_KEYTYPE_RSA;
     } else if (strcmp(name, "dsa") == 0) {
         return SSH_KEYTYPE_DSS;
-    } else if (strcmp(name, "ssh-rsa1") == 0) {
-        return SSH_KEYTYPE_RSA1;
     } else if (strcmp(name, "ssh-rsa") == 0) {
         return SSH_KEYTYPE_RSA;
     } else if (strcmp(name, "ssh-dss") == 0) {
@@ -359,7 +356,6 @@ void ssh_signature_free(ssh_signature sig)
 #endif
             break;
         case SSH_KEYTYPE_RSA:
-        case SSH_KEYTYPE_RSA1:
 #ifdef HAVE_LIBGCRYPT
             gcry_sexp_release(sig->rsa_sig);
 #elif defined HAVE_LIBCRYPTO
@@ -383,6 +379,7 @@ void ssh_signature_free(ssh_signature sig)
             break;
         case SSH_KEYTYPE_DSS_CERT01:
         case SSH_KEYTYPE_RSA_CERT01:
+        case SSH_KEYTYPE_RSA1:
         case SSH_KEYTYPE_UNKNOWN:
             break;
     }
@@ -740,7 +737,6 @@ static int pki_import_pubkey_buffer(ssh_buffer buffer,
             }
             break;
         case SSH_KEYTYPE_RSA:
-        case SSH_KEYTYPE_RSA1:
             {
                 ssh_string e;
                 ssh_string n;
@@ -830,6 +826,7 @@ static int pki_import_pubkey_buffer(ssh_buffer buffer,
         break;
         case SSH_KEYTYPE_DSS_CERT01:
         case SSH_KEYTYPE_RSA_CERT01:
+        case SSH_KEYTYPE_RSA1:
         case SSH_KEYTYPE_UNKNOWN:
         default:
             SSH_LOG(SSH_LOG_WARN, "Unknown public key protocol %d", type);
@@ -1191,7 +1188,6 @@ int ssh_pki_generate(enum ssh_keytypes_e type, int parameter,
 
     switch(type){
         case SSH_KEYTYPE_RSA:
-        case SSH_KEYTYPE_RSA1:
             rc = pki_key_generate_rsa(key, parameter);
             if(rc == SSH_ERROR)
                 goto error;
@@ -1220,6 +1216,7 @@ int ssh_pki_generate(enum ssh_keytypes_e type, int parameter,
             break;
         case SSH_KEYTYPE_DSS_CERT01:
         case SSH_KEYTYPE_RSA_CERT01:
+        case SSH_KEYTYPE_RSA1:
         case SSH_KEYTYPE_UNKNOWN:
         default:
             goto error;
@@ -1435,14 +1432,6 @@ int ssh_pki_copy_cert_to_privkey(const ssh_key certkey, ssh_key privkey) {
   privkey->cert = cert_buffer;
   privkey->cert_type = certkey->type;
   return SSH_OK;
-}
-
-int ssh_pki_export_pubkey_rsa1(const ssh_key key,
-                               const char *host,
-                               char *rsa1,
-                               size_t rsa1_len)
-{
-    return pki_export_pubkey_rsa1(key, host, rsa1, rsa1_len);
 }
 
 int ssh_pki_export_signature_blob(const ssh_signature sig,

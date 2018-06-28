@@ -59,18 +59,6 @@
  * @{
  */
 
-static int alldigits(const char *s) {
-  while (*s) {
-    if (isdigit(*s)) {
-      s++;
-    } else {
-      return 0;
-    }
-  }
-
-  return 1;
-}
-
 /**
  * @internal
  *
@@ -103,7 +91,7 @@ static void tokens_free(char **tokens) {
  * @param[out] found_type A pointer to a string to be set with the found key
  *                        type.
  *
- * @returns             The found_type type of key (ie "dsa","ssh-rsa1"). Don't
+ * @returns             The found_type type of key (ie "dsa","ssh-rsa"). Don't
  *                      free that value. NULL if no match was found or the file
  *                      was not found.
  */
@@ -151,20 +139,14 @@ static char **ssh_get_knownhost_line(FILE **file, const char *filename,
 
     *found_type = tokens[1];
     if (tokens[3]) {
-      /* openssh rsa1 format has 4 tokens on the line. Recognize it
-         by the fact that everything is all digits */
       if (tokens[4]) {
         /* that's never valid */
         tokens_free(tokens);
         continue;
       }
-      if (alldigits(tokens[1]) && alldigits(tokens[2]) && alldigits(tokens[3])) {
-        *found_type = "ssh-rsa1";
-      } else {
-        /* 3 tokens only, not four */
-        tokens_free(tokens);
-        continue;
-      }
+      /* 3 tokens only, not four */
+      tokens_free(tokens);
+      continue;
     }
 
     return tokens;
@@ -194,77 +176,9 @@ static int check_public_key(ssh_session session, char **tokens) {
   char *pubkey_64;
   int rc;
 
-  /* ok we found some public key in known hosts file. now un-base64it */
-  if (alldigits(tokens[1])) {
-    /* openssh rsa1 format */
-    bignum tmpbn;
-    ssh_string tmpstring;
-    unsigned int len;
-    int i;
-
-    pubkey_buffer = ssh_buffer_new();
-    if (pubkey_buffer == NULL) {
-      return -1;
-    }
-
-    tmpstring = ssh_string_from_char("ssh-rsa1");
-    if (tmpstring == NULL) {
-      ssh_buffer_free(pubkey_buffer);
-      return -1;
-    }
-
-    if (ssh_buffer_add_ssh_string(pubkey_buffer, tmpstring) < 0) {
-      ssh_buffer_free(pubkey_buffer);
-      ssh_string_free(tmpstring);
-      return -1;
-    }
-    ssh_string_free(tmpstring);
-
-    for (i = 2; i < 4; i++) { /* e, then n */
-      tmpbn = NULL;
-#ifdef HAVE_LIBMBEDCRYPTO
-      bignum_dec2bn(tokens[i], tmpbn);
-#else
-      bignum_dec2bn(tokens[i], &tmpbn);
-#endif
-      if (tmpbn == NULL) {
-        ssh_buffer_free(pubkey_buffer);
-        return -1;
-      }
-      /* for some reason, ssh_make_bignum_string does not work
-         because of the padding which it does --kv */
-      /* tmpstring = ssh_make_bignum_string(tmpbn); */
-      /* do it manually instead */
-      len = bignum_num_bytes(tmpbn);
-      tmpstring = malloc(4 + len);
-      if (tmpstring == NULL) {
-        ssh_buffer_free(pubkey_buffer);
-        bignum_free(tmpbn);
-        return -1;
-      }
-      /* TODO: fix the hardcoding */
-      tmpstring->size = htonl(len);
-#ifdef HAVE_LIBGCRYPT
-      bignum_bn2bin(tmpbn, len, ssh_string_data(tmpstring));
-#elif defined HAVE_LIBCRYPTO
-      bignum_bn2bin(tmpbn, ssh_string_data(tmpstring));
-#elif defined HAVE_LIBMBEDCRYPTO
-      bignum_bn2bin(tmpbn, ssh_string_data(tmpstring));
-#endif
-      bignum_free(tmpbn);
-      if (ssh_buffer_add_ssh_string(pubkey_buffer, tmpstring) < 0) {
-        ssh_buffer_free(pubkey_buffer);
-        ssh_string_free(tmpstring);
-        bignum_free(tmpbn);
-        return -1;
-      }
-      ssh_string_free(tmpstring);
-    }
-  } else {
     /* ssh-dss or ssh-rsa */
     pubkey_64 = tokens[2];
     pubkey_buffer = base64_to_bin(pubkey_64);
-  }
 
   if (pubkey_buffer == NULL) {
     ssh_set_error(session, SSH_FATAL,
@@ -588,32 +502,21 @@ char * ssh_dump_knownhost(ssh_session session) {
         return NULL;
     }
 
-    if (ssh_key_type(server_pubkey) == SSH_KEYTYPE_RSA1) {
-        /* openssh uses a different format for ssh-rsa1 keys.
-           Be compatible --kv */
-        rc = ssh_pki_export_pubkey_rsa1(server_pubkey, host, buffer, len);
+    rc = ssh_pki_export_pubkey_base64(server_pubkey, &b64_key);
+    if (rc < 0) {
+        SAFE_FREE(buffer);
         SAFE_FREE(host);
-        if (rc < 0) {
-            SAFE_FREE(buffer);
-            return NULL;
-        }
-    } else {
-        rc = ssh_pki_export_pubkey_base64(server_pubkey, &b64_key);
-        if (rc < 0) {
-            SAFE_FREE(buffer);
-            SAFE_FREE(host);
-            return NULL;
-        }
-
-        snprintf(buffer, len,
-                "%s %s %s\n",
-                host,
-                server_pubkey->type_c,
-                b64_key);
-
-        SAFE_FREE(host);
-        SAFE_FREE(b64_key);
+        return NULL;
     }
+
+    snprintf(buffer, len,
+            "%s %s %s\n",
+            host,
+            server_pubkey->type_c,
+            b64_key);
+
+    SAFE_FREE(host);
+    SAFE_FREE(b64_key);
 
     return buffer;
 }

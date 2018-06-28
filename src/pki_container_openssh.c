@@ -119,11 +119,11 @@ static int pki_openssh_import_privkey_blob(ssh_buffer key_blob_buffer,
     case SSH_KEYTYPE_RSA_CERT01:
     case SSH_KEYTYPE_RSA:
         /* n,e,d,iqmp,p,q */
-    case SSH_KEYTYPE_RSA1:
     case SSH_KEYTYPE_ECDSA:
         /* curve_name, group, privkey */
         SSH_LOG(SSH_LOG_WARN, "Unsupported private key method %s", key->type_c);
         goto fail;
+    case SSH_KEYTYPE_RSA1:
     case SSH_KEYTYPE_UNKNOWN:
         SSH_LOG(SSH_LOG_WARN, "Unknown private key protocol %s", key->type_c);
         goto fail;

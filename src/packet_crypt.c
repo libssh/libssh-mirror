@@ -151,7 +151,6 @@ unsigned char *ssh_packet_encrypt(ssh_session session, void *data, uint32_t len)
     crypto->aead_encrypt(crypto, data, out, len,
             session->current_crypto->hmacbuf, session->send_seq);
   } else {
-    if (session->version == 2) {
       ctx = hmac_init(session->current_crypto->encryptMAC, hmac_digest_len(type), type);
       if (ctx == NULL) {
         SAFE_FREE(out);
@@ -168,18 +167,13 @@ unsigned char *ssh_packet_encrypt(ssh_session session, void *data, uint32_t len)
       }
       ssh_print_hexa("Packet hmac", session->current_crypto->hmacbuf, hmac_digest_len(type));
 #endif
-    }
-  crypto->encrypt(crypto, data, out, len);
+      crypto->encrypt(crypto, data, out, len);
   }
   memcpy(data, out, len);
   explicit_bzero(out, len);
   SAFE_FREE(out);
 
-  if (session->version == 2) {
-    return session->current_crypto->hmacbuf;
-  }
-
-  return NULL;
+  return session->current_crypto->hmacbuf;
 }
 
 /**

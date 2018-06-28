@@ -45,17 +45,6 @@ enum ssh_packet_state_e {
 
 int ssh_packet_send(ssh_session session);
 
-#ifdef WITH_SSH1
-int ssh_packet_send1(ssh_session session) ;
-void ssh_packet_set_default_callbacks1(ssh_session session);
-
-SSH_PACKET_CALLBACK(ssh_packet_disconnect1);
-SSH_PACKET_CALLBACK(ssh_packet_smsg_success1);
-SSH_PACKET_CALLBACK(ssh_packet_smsg_failure1);
-int ssh_packet_socket_callback1(const void *data, size_t receivedlen, void *user);
-
-#endif
-
 SSH_PACKET_CALLBACK(ssh_packet_unimplemented);
 SSH_PACKET_CALLBACK(ssh_packet_disconnect_callback);
 SSH_PACKET_CALLBACK(ssh_packet_ignore_callback);

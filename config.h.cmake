@@ -210,9 +210,6 @@
 /* Define to 1 if you want to enable SFTP */
 #cmakedefine WITH_SFTP 1
 
-/* Define to 1 if you want to enable SSH1 */
-#cmakedefine WITH_SSH1 1
-
 /* Define to 1 if you want to enable server support */
 #cmakedefine WITH_SERVER 1
 

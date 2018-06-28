@@ -331,22 +331,8 @@ int ssh_agent_get_ident_count(struct ssh_session_struct *session) {
   ssh_buffer request = NULL;
   ssh_buffer reply = NULL;
   unsigned int type = 0;
-  unsigned int c1 = 0, c2 = 0;
   uint8_t buf[4] = {0};
   int rc;
-
-  switch (session->version) {
-    case 1:
-      c1 = SSH_AGENTC_REQUEST_RSA_IDENTITIES;
-      c2 = SSH_AGENT_RSA_IDENTITIES_ANSWER;
-      break;
-    case 2:
-      c1 = SSH2_AGENTC_REQUEST_IDENTITIES;
-      c2 = SSH2_AGENT_IDENTITIES_ANSWER;
-      break;
-    default:
-      return 0;
-  }
 
   /* send message to the agent requesting the list of identities */
   request = ssh_buffer_new();
@@ -354,7 +340,7 @@ int ssh_agent_get_ident_count(struct ssh_session_struct *session) {
       ssh_set_error_oom(session);
       return -1;
   }
-  if (ssh_buffer_add_u8(request, c1) < 0) {
+  if (ssh_buffer_add_u8(request, SSH2_AGENTC_REQUEST_IDENTITIES) < 0) {
       ssh_set_error_oom(session);
       ssh_buffer_free(request);
       return -1;
@@ -388,12 +374,12 @@ int ssh_agent_get_ident_count(struct ssh_session_struct *session) {
 
   SSH_LOG(SSH_LOG_WARN,
       "Answer type: %d, expected answer: %d",
-      type, c2);
+      type, SSH2_AGENT_IDENTITIES_ANSWER);
 
   if (agent_failed(type)) {
       ssh_buffer_free(reply);
       return 0;
-  } else if (type != c2) {
+  } else if (type != SSH2_AGENT_IDENTITIES_ANSWER) {
       ssh_set_error(session, SSH_FATAL,
           "Bad authentication reply message type: %u", type);
       ssh_buffer_free(reply);
@@ -442,47 +428,39 @@ ssh_key ssh_agent_get_next_ident(struct ssh_session_struct *session,
         return NULL;
     }
 
-    switch(session->version) {
-        case 1:
-            return NULL;
-        case 2:
-            /* get the blob */
-            blob = ssh_buffer_get_ssh_string(session->agent->ident);
-            if (blob == NULL) {
-                return NULL;
-            }
+    /* get the blob */
+    blob = ssh_buffer_get_ssh_string(session->agent->ident);
+    if (blob == NULL) {
+        return NULL;
+    }
 
-            /* get the comment */
-            tmp = ssh_buffer_get_ssh_string(session->agent->ident);
-            if (tmp == NULL) {
-                ssh_string_free(blob);
+    /* get the comment */
+    tmp = ssh_buffer_get_ssh_string(session->agent->ident);
+    if (tmp == NULL) {
+        ssh_string_free(blob);
 
-                return NULL;
-            }
+        return NULL;
+    }
 
-            if (comment) {
-                *comment = ssh_string_to_char(tmp);
-            } else {
-                ssh_string_free(blob);
-                ssh_string_free(tmp);
+    if (comment) {
+        *comment = ssh_string_to_char(tmp);
+    } else {
+        ssh_string_free(blob);
+        ssh_string_free(tmp);
 
-                return NULL;
-            }
-            ssh_string_free(tmp);
+        return NULL;
+    }
+    ssh_string_free(tmp);
 
-            /* get key from blob */
-            rc = ssh_pki_import_pubkey_blob(blob, &key);
-            if (rc == SSH_ERROR) {
-                /* Try again as a cert. */
-                rc = ssh_pki_import_cert_blob(blob, &key);
-            }
-            ssh_string_free(blob);
-            if (rc == SSH_ERROR) {
-                return NULL;
-            }
-            break;
-        default:
-            return NULL;
+    /* get key from blob */
+    rc = ssh_pki_import_pubkey_blob(blob, &key);
+    if (rc == SSH_ERROR) {
+        /* Try again as a cert. */
+        rc = ssh_pki_import_cert_blob(blob, &key);
+    }
+    ssh_string_free(blob);
+    if (rc == SSH_ERROR) {
+        return NULL;
     }
 
     return key;

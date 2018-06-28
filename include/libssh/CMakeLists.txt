@@ -15,13 +15,6 @@ if (WITH_SFTP)
   )
 endif (WITH_SFTP)
 
-if (WITH_SSH1)
-  set(libssh_HDRS
-    ${libssh_HDRS}
-    ssh1.h
-  )
-endif (WITH_SSH1)
-
 if (WITH_SERVER)
   set(libssh_HDRS
     ${libssh_HDRS}

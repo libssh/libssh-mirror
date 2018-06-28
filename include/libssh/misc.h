@@ -29,7 +29,7 @@ int ssh_file_readaccess_ok(const char *file);
 
 char *ssh_path_expand_tilde(const char *d);
 char *ssh_path_expand_escape(ssh_session session, const char *s);
-int ssh_analyze_banner(ssh_session session, int server, int *ssh1, int *ssh2);
+int ssh_analyze_banner(ssh_session session, int server);
 int ssh_is_ipaddr_v4(const char *str);
 int ssh_is_ipaddr(const char *str);
 

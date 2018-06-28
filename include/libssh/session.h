@@ -157,7 +157,7 @@ struct ssh_session_struct {
 /* keyb interactive data */
     struct ssh_kbdint_struct *kbdint;
     struct ssh_gssapi_struct *gssapi;
-    int version; /* 1 or 2 */
+
     /* server host keys */
     struct {
         ssh_key rsa_key;
@@ -198,8 +198,6 @@ struct ssh_session_struct {
         unsigned int port;
         socket_t fd;
         int StrictHostKeyChecking;
-        int ssh2;
-        int ssh1;
         char compressionlevel;
         char *gss_server_identity;
         char *gss_client_identity;

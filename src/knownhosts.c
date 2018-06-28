@@ -504,6 +504,7 @@ int ssh_session_export_known_hosts_entry(ssh_session session,
     ssh_key server_pubkey = NULL;
     char *host = NULL;
     char entry_buf[4096] = {0};
+    char *b64_key = NULL;
     int rc;
 
     if (pentry_string == NULL) {
@@ -536,33 +537,20 @@ int ssh_session_export_known_hosts_entry(ssh_session session,
         return SSH_ERROR;
     }
 
-    if (ssh_key_type(server_pubkey) == SSH_KEYTYPE_RSA1) {
-        rc = ssh_pki_export_pubkey_rsa1(server_pubkey,
-                                        host,
-                                        entry_buf,
-                                        sizeof(entry_buf));
+    rc = ssh_pki_export_pubkey_base64(server_pubkey, &b64_key);
+    if (rc < 0) {
         SAFE_FREE(host);
-        if (rc < 0) {
-            return SSH_ERROR;
-        }
-    } else {
-        char *b64_key = NULL;
-
-        rc = ssh_pki_export_pubkey_base64(server_pubkey, &b64_key);
-        if (rc < 0) {
-            SAFE_FREE(host);
-            return SSH_ERROR;
-        }
-
-        snprintf(entry_buf, sizeof(entry_buf),
-                    "%s %s %s\n",
-                    host,
-                    server_pubkey->type_c,
-                    b64_key);
-
-        SAFE_FREE(host);
-        SAFE_FREE(b64_key);
+        return SSH_ERROR;
     }
+
+    snprintf(entry_buf, sizeof(entry_buf),
+                "%s %s %s\n",
+                host,
+                server_pubkey->type_c,
+                b64_key);
+
+    SAFE_FREE(host);
+    SAFE_FREE(b64_key);
 
     *pentry_string = strdup(entry_buf);
     if (*pentry_string == NULL) {

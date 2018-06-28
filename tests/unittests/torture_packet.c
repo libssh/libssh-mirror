@@ -69,7 +69,6 @@ static void torture_packet(const char *cipher,
     rc = socketpair(AF_UNIX, SOCK_STREAM, 0, sockets);
     assert_int_equal(rc, 0);
 
-    session->version = 2;
     crypto->kex_methods[SSH_KEX] = strdup("curve25519-sha256@libssh.org");
     crypto->kex_methods[SSH_HOSTKEYS] = strdup("ssh-rsa");
     crypto->kex_methods[SSH_CRYPT_C_S] = strdup(cipher);
@@ -80,7 +79,7 @@ static void torture_packet(const char *cipher,
     crypto->kex_methods[SSH_COMP_S_C] = strdup("none");
     crypto->kex_methods[SSH_LANG_C_S] = strdup("none");
     crypto->kex_methods[SSH_LANG_S_C] = strdup("none");
-    rc = crypt_set_algorithms(session, 0);
+    rc = crypt_set_algorithms_client(session);
     assert_int_equal(rc, SSH_OK);
     session->current_crypto = session->next_crypto;
     session->next_crypto = crypto_new();

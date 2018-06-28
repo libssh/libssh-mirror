@@ -31,9 +31,6 @@
 #include "libssh/crypto.h"
 #include "libssh/server.h"
 #include "libssh/socket.h"
-#ifdef WITH_SSH1
-#include "libssh/ssh1.h"
-#endif /* WITH_SSH1 */
 #include "libssh/ssh2.h"
 #include "libssh/agent.h"
 #include "libssh/packet.h"
@@ -105,14 +102,8 @@ ssh_session ssh_new(void) {
     session->opts.StrictHostKeyChecking = 1;
     session->opts.port = 0;
     session->opts.fd = -1;
-    session->opts.ssh2 = 1;
     session->opts.compressionlevel=7;
     session->opts.nodelay = 0;
-#ifdef WITH_SSH1
-    session->opts.ssh1 = 1;
-#else
-    session->opts.ssh1 = 0;
-#endif
     session->opts.flags = SSH_OPT_FLAG_PASSWORD_AUTH | SSH_OPT_FLAG_PUBKEY_AUTH |
             SSH_OPT_FLAG_KBDINT_AUTH | SSH_OPT_FLAG_GSSAPI_AUTH;
     session->opts.identity = ssh_list_new();
@@ -807,14 +798,14 @@ const char *ssh_get_disconnect_message(ssh_session session) {
  *
  * @param session       The ssh session to use.
  *
- * @return 1 or 2, for ssh1 or ssh2, < 0 on error.
+ * @return The SSH version as integer, < 0 on error.
  */
 int ssh_get_version(ssh_session session) {
-  if (session == NULL) {
-    return -1;
-  }
+    if (session == NULL) {
+        return -1;
+    }
 
-  return session->version;
+    return 2;
 }
 
 /**
@@ -845,11 +836,7 @@ void ssh_socket_exception_callback(int code, int errno_code, void *user){
  * @return              SSH_OK on success, SSH_ERROR otherwise.
  */
 int ssh_send_ignore (ssh_session session, const char *data) {
-#ifdef WITH_SSH1
-    const int type = session->version == 1 ? SSH_MSG_IGNORE : SSH2_MSG_IGNORE;
-#else /* WITH_SSH1 */
     const int type = SSH2_MSG_IGNORE;
-#endif /* WITH_SSH1 */
     int rc;
 
     if (ssh_socket_is_open(session->socket)) {
@@ -887,22 +874,12 @@ int ssh_send_debug (ssh_session session, const char *message, int always_display
     int rc;
 
     if (ssh_socket_is_open(session->socket)) {
-#ifdef WITH_SSH1
-        if (session->version == 1) {
-            rc = ssh_buffer_pack(session->out_buffer,
-                                 "bs",
-                                 SSH_MSG_DEBUG,
-                                 message);
-        } else
-#endif /* WITH_SSH1 */
-        {
-            rc = ssh_buffer_pack(session->out_buffer,
-                                 "bbsd",
-                                 SSH2_MSG_DEBUG,
-                                 always_display != 0 ? 1 : 0,
-                                 message,
-                                 0); /* empty language tag */
-        }
+        rc = ssh_buffer_pack(session->out_buffer,
+                             "bbsd",
+                             SSH2_MSG_DEBUG,
+                             always_display != 0 ? 1 : 0,
+                             message,
+                             0); /* empty language tag */
         if (rc != SSH_OK) {
             ssh_set_error_oom(session);
             goto error;

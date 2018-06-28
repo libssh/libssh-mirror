@@ -323,12 +323,6 @@ int ssh_userauth_list(ssh_session session, const char *username)
         return 0;
     }
 
-#ifdef WITH_SSH1
-    if(session->version == 1) {
-        return SSH_AUTH_METHOD_PASSWORD;
-    }
-#endif
-
     return session->auth_methods;
 }
 
@@ -353,12 +347,6 @@ int ssh_userauth_list(ssh_session session, const char *username)
  */
 int ssh_userauth_none(ssh_session session, const char *username) {
     int rc;
-
-#ifdef WITH_SSH1
-    if (session->version == 1) {
-        return ssh_userauth1_none(session, username);
-    }
-#endif
 
     switch(session->pending_call_state){
         case SSH_PENDING_CALL_NONE:
@@ -453,12 +441,6 @@ int ssh_userauth_try_publickey(ssh_session session,
         ssh_set_error(session, SSH_FATAL, "Invalid pubkey");
         return SSH_AUTH_ERROR;
     }
-
-#ifdef WITH_SSH1
-    if (session->version == 1) {
-        return SSH_AUTH_DENIED;
-    }
-#endif
 
     switch(session->pending_call_state) {
         case SSH_PENDING_CALL_NONE:
@@ -563,12 +545,6 @@ int ssh_userauth_publickey(ssh_session session,
         ssh_set_error(session, SSH_FATAL, "Invalid private key");
         return SSH_AUTH_ERROR;
     }
-
-#ifdef WITH_SSH1
-    if (session->version == 1) {
-        return SSH_AUTH_DENIED;
-    }
-#endif
 
     switch(session->pending_call_state) {
         case SSH_PENDING_CALL_NONE:
@@ -1135,13 +1111,6 @@ int ssh_userauth_password(ssh_session session,
                           const char *password) {
     int rc;
 
-#ifdef WITH_SSH1
-    if (session->version == 1) {
-        rc = ssh_userauth1_password(session, username, password);
-        return rc;
-    }
-#endif
-
     switch(session->pending_call_state) {
         case SSH_PENDING_CALL_NONE:
             break;
@@ -1550,11 +1519,6 @@ int ssh_userauth_kbdint(ssh_session session, const char *user,
         return SSH_AUTH_ERROR;
     }
 
-#ifdef WITH_SSH1
-    if (session->version == 1) {
-        return SSH_AUTH_DENIED;
-    }
-#endif
     if ((session->pending_call_state == SSH_PENDING_CALL_NONE && session->kbdint == NULL) ||
             session->pending_call_state == SSH_PENDING_CALL_AUTH_KBDINT_INIT)
         rc = ssh_userauth_kbdint_init(session, user, submethods);

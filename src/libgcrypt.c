@@ -396,28 +396,6 @@ static void aes_decrypt(struct ssh_cipher_struct *cipher, void *in, void *out,
   gcry_cipher_decrypt(cipher->key[0], out, len, in, len);
 }
 
-static int des1_set_key(struct ssh_cipher_struct *cipher, void *key, void *IV){
-  if(!cipher->key){
-    if (alloc_key(cipher) < 0) {
-      return -1;
-    }
-    if (gcry_cipher_open(&cipher->key[0], GCRY_CIPHER_DES,
-          GCRY_CIPHER_MODE_CBC, 0)) {
-      SAFE_FREE(cipher->key);
-      return -1;
-    }
-    if (gcry_cipher_setkey(cipher->key[0], key, 8)) {
-      SAFE_FREE(cipher->key);
-      return -1;
-    }
-    if (gcry_cipher_setiv(cipher->key[0], IV, 8)) {
-      SAFE_FREE(cipher->key);
-      return -1;
-    }
-  }
-  return 0;
-}
-
 static int des3_set_key(struct ssh_cipher_struct *cipher, void *key, void *IV) {
   if (cipher->key == NULL) {
     if (alloc_key(cipher) < 0) {
@@ -441,17 +419,6 @@ static int des3_set_key(struct ssh_cipher_struct *cipher, void *key, void *IV) {
   return 0;
 }
 
-
-static void des1_1_encrypt(struct ssh_cipher_struct *cipher, void *in,
-    void *out, unsigned long len) {
-  gcry_cipher_encrypt(cipher->key[0], out, len, in, len);
-}
-
-static void des1_1_decrypt(struct ssh_cipher_struct *cipher, void *in,
-    void *out, unsigned long len) {
-  gcry_cipher_decrypt(cipher->key[0], out, len, in, len);
-}
-
 static void des3_encrypt(struct ssh_cipher_struct *cipher, void *in,
     void *out, unsigned long len) {
   gcry_cipher_encrypt(cipher->key[0], out, len, in, len);
@@ -459,71 +426,6 @@ static void des3_encrypt(struct ssh_cipher_struct *cipher, void *in,
 
 static void des3_decrypt(struct ssh_cipher_struct *cipher, void *in,
     void *out, unsigned long len) {
-  gcry_cipher_decrypt(cipher->key[0], out, len, in, len);
-}
-
-static int des3_1_set_key(struct ssh_cipher_struct *cipher, void *key, void *IV) {
-  if (cipher->key == NULL) {
-    if (alloc_key(cipher) < 0) {
-      return -1;
-    }
-    if (gcry_cipher_open(&cipher->key[0], GCRY_CIPHER_DES,
-          GCRY_CIPHER_MODE_CBC, 0)) {
-      SAFE_FREE(cipher->key);
-      return -1;
-    }
-    if (gcry_cipher_setkey(cipher->key[0], key, 8)) {
-      SAFE_FREE(cipher->key);
-      return -1;
-    }
-    if (gcry_cipher_setiv(cipher->key[0], IV, 8)) {
-      SAFE_FREE(cipher->key);
-      return -1;
-    }
-
-    if (gcry_cipher_open(&cipher->key[1], GCRY_CIPHER_DES,
-          GCRY_CIPHER_MODE_CBC, 0)) {
-      SAFE_FREE(cipher->key);
-      return -1;
-    }
-    if (gcry_cipher_setkey(cipher->key[1], (unsigned char *)key + 8, 8)) {
-      SAFE_FREE(cipher->key);
-      return -1;
-    }
-    if (gcry_cipher_setiv(cipher->key[1], (unsigned char *)IV + 8, 8)) {
-      SAFE_FREE(cipher->key);
-      return -1;
-    }
-
-    if (gcry_cipher_open(&cipher->key[2], GCRY_CIPHER_DES,
-          GCRY_CIPHER_MODE_CBC, 0)) {
-      SAFE_FREE(cipher->key);
-      return -1;
-    }
-    if (gcry_cipher_setkey(cipher->key[2], (unsigned char *)key + 16, 8)) {
-      SAFE_FREE(cipher->key);
-      return -1;
-    }
-    if (gcry_cipher_setiv(cipher->key[2], (unsigned char *)IV + 16, 8)) {
-      SAFE_FREE(cipher->key);
-      return -1;
-    }
-  }
-
-  return 0;
-}
-
-static void des3_1_encrypt(struct ssh_cipher_struct *cipher, void *in,
-    void *out, unsigned long len) {
-  gcry_cipher_encrypt(cipher->key[0], out, len, in, len);
-  gcry_cipher_decrypt(cipher->key[1], in, len, out, len);
-  gcry_cipher_encrypt(cipher->key[2], out, len, in, len);
-}
-
-static void des3_1_decrypt(struct ssh_cipher_struct *cipher, void *in,
-    void *out, unsigned long len) {
-  gcry_cipher_decrypt(cipher->key[2], out, len, in, len);
-  gcry_cipher_encrypt(cipher->key[1], in, len, out, len);
   gcry_cipher_decrypt(cipher->key[0], out, len, in, len);
 }
 
@@ -616,28 +518,6 @@ static struct ssh_cipher_struct ssh_ciphertab[] = {
     .set_decrypt_key = des3_set_key,
     .encrypt     = des3_encrypt,
     .decrypt     = des3_decrypt
-  },
-  {
-    .name            = "3des-cbc-ssh1",
-    .blocksize       = 8,
-    .keylen          = sizeof(gcry_cipher_hd_t) * 3,
-    .key             = NULL,
-    .keysize         = 192,
-    .set_encrypt_key = des3_1_set_key,
-    .set_decrypt_key = des3_1_set_key,
-    .encrypt     = des3_1_encrypt,
-    .decrypt     = des3_1_decrypt
-  },
-  {
-    .name            = "des-cbc-ssh1",
-    .blocksize       = 8,
-    .keylen          = sizeof(gcry_cipher_hd_t),
-    .key             = NULL,
-    .keysize         = 64,
-    .set_encrypt_key = des1_set_key,
-    .set_decrypt_key = des1_set_key,
-    .encrypt     = des1_1_encrypt,
-    .decrypt     = des1_1_decrypt
   },
   {
     .name = "chacha20-poly1305@openssh.com"

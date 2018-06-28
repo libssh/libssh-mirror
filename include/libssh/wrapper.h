@@ -92,7 +92,7 @@ void hmac_update(HMACCTX c, const void *data, unsigned long len);
 void hmac_final(HMACCTX ctx,unsigned char *hashmacbuf,unsigned int *len);
 size_t hmac_digest_len(enum ssh_hmac_e type);
 
-int crypt_set_algorithms(ssh_session session, enum ssh_des_e des_type);
+int crypt_set_algorithms_client(ssh_session session);
 int crypt_set_algorithms_server(ssh_session session);
 struct ssh_crypto_struct *crypto_new(void);
 void crypto_free(struct ssh_crypto_struct *crypto);

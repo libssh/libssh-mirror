@@ -487,14 +487,11 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
           return -1;
         }
         i = 0;
-        ssh_options_set(session, SSH_OPTIONS_SSH1, &i);
         ssh_options_set(session, SSH_OPTIONS_SSH2, &i);
 
         for (a = strtok(b, ","); a; a = strtok(NULL, ",")) {
           switch (atoi(a)) {
             case 1:
-              i = 1;
-              ssh_options_set(session, SSH_OPTIONS_SSH1, &i);
               break;
             case 2:
               i = 1;

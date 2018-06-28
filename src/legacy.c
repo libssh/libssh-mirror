@@ -358,7 +358,6 @@ void publickey_free(ssh_public_key key) {
 #endif
       break;
     case SSH_KEYTYPE_RSA:
-    case SSH_KEYTYPE_RSA1:
 #ifdef HAVE_LIBGCRYPT
       gcry_sexp_release(key->rsa_pub);
 #elif defined HAVE_LIBCRYPTO

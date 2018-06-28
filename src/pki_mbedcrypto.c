@@ -86,7 +86,6 @@ ssh_key pki_private_key_from_base64(const char *b64_key, const char *passphrase,
 
     switch (type) {
         case SSH_KEYTYPE_RSA:
-        case SSH_KEYTYPE_RSA1:
             rsa = malloc(sizeof(mbedtls_pk_context));
             if (rsa == NULL) {
                 return NULL;
@@ -277,8 +276,7 @@ ssh_key pki_key_dup(const ssh_key key, int demote)
 
 
     switch(key->type) {
-        case SSH_KEYTYPE_RSA:
-        case SSH_KEYTYPE_RSA1: {
+        case SSH_KEYTYPE_RSA: {
             mbedtls_rsa_context *rsa, *new_rsa;
 
             new->rsa = malloc(sizeof(mbedtls_pk_context));
@@ -418,8 +416,7 @@ int pki_key_generate_rsa(ssh_key key, int parameter)
 int pki_key_compare(const ssh_key k1, const ssh_key k2, enum ssh_keycmp_e what)
 {
     switch (k1->type) {
-        case SSH_KEYTYPE_RSA:
-        case SSH_KEYTYPE_RSA1: {
+        case SSH_KEYTYPE_RSA: {
             mbedtls_rsa_context *rsa1, *rsa2;
             if (mbedtls_pk_can_do(k1->rsa, MBEDTLS_PK_RSA) &&
                     mbedtls_pk_can_do(k2->rsa, MBEDTLS_PK_RSA)) {
@@ -582,8 +579,7 @@ ssh_string pki_publickey_to_blob(const ssh_key key)
     }
 
     switch (key->type) {
-        case SSH_KEYTYPE_RSA:
-        case SSH_KEYTYPE_RSA1: {
+        case SSH_KEYTYPE_RSA: {
             mbedtls_rsa_context *rsa;
             if (mbedtls_pk_can_do(key->rsa, MBEDTLS_PK_RSA) == 0) {
                 ssh_buffer_free(buffer);
@@ -706,45 +702,12 @@ fail:
     return NULL;
 }
 
-int pki_export_pubkey_rsa1(const ssh_key key, const char *host, char *rsa1,
-        size_t rsa1_len)
-{
-    char *e = NULL;
-    char *n = NULL;
-    int rsa_size = mbedtls_pk_get_bitlen(key->rsa);
-    mbedtls_rsa_context *rsa = NULL;
-
-    if (!mbedtls_pk_can_do(key->rsa, MBEDTLS_PK_RSA)) {
-        return SSH_ERROR;
-    }
-
-    rsa = mbedtls_pk_rsa(*key->rsa);
-
-    n = bignum_bn2dec(&rsa->N);
-    if (n == NULL) {
-        return SSH_ERROR;
-    }
-
-    e = bignum_bn2dec(&rsa->E);
-    if (e == NULL) {
-        return SSH_ERROR;
-    }
-
-    snprintf(rsa1, rsa1_len, "%s %d %s %s\n",
-            host, rsa_size << 3, e, n);
-
-    SAFE_FREE(e);
-    SAFE_FREE(n);
-    return SSH_OK;
-}
-
 ssh_string pki_signature_to_blob(const ssh_signature sig)
 {
     ssh_string sig_blob = NULL;
 
     switch(sig->type) {
         case SSH_KEYTYPE_RSA:
-        case SSH_KEYTYPE_RSA1:
             sig_blob = ssh_string_copy(sig->rsa_sig);
             break;
         case SSH_KEYTYPE_ECDSA: {
@@ -879,7 +842,6 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey, const ssh_string
 
     switch(type) {
         case SSH_KEYTYPE_RSA:
-        case SSH_KEYTYPE_RSA1:
             sig = pki_signature_from_rsa_blob(pubkey, sig_blob, sig);
             break;
         case SSH_KEYTYPE_ECDSA: {
@@ -972,7 +934,6 @@ int pki_signature_verify(ssh_session session, const ssh_signature sig, const
 
     switch (key->type) {
         case SSH_KEYTYPE_RSA:
-        case SSH_KEYTYPE_RSA1:
             rc = mbedtls_pk_verify(key->rsa, MBEDTLS_MD_SHA1, hash, hlen,
                     ssh_string_data(sig->rsa_sig),
                     ssh_string_len(sig->rsa_sig));
@@ -1061,7 +1022,6 @@ ssh_signature pki_do_sign(const ssh_key privkey, const unsigned char *hash,
 
     switch(privkey->type) {
         case SSH_KEYTYPE_RSA:
-        case SSH_KEYTYPE_RSA1:
             sig->rsa_sig = rsa_do_sign(hash, hlen, privkey->rsa);
             if (sig->rsa_sig == NULL) {
                 ssh_signature_free(sig);
@@ -1120,7 +1080,6 @@ ssh_signature pki_do_sign_sessionid(const ssh_key key, const unsigned char
 
     switch (key->type) {
         case SSH_KEYTYPE_RSA:
-        case SSH_KEYTYPE_RSA1:
             sig->rsa_sig = rsa_do_sign(hash, hlen, key->rsa);
             if (sig->rsa_sig == NULL) {
                 ssh_signature_free(sig);

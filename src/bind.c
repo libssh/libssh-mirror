@@ -214,8 +214,7 @@ static int ssh_bind_import_keys(ssh_bind sshbind) {
           return SSH_ERROR;
       }
 
-      if (ssh_key_type(sshbind->rsa) != SSH_KEYTYPE_RSA &&
-          ssh_key_type(sshbind->rsa) != SSH_KEYTYPE_RSA1) {
+      if (ssh_key_type(sshbind->rsa) != SSH_KEYTYPE_RSA) {
           ssh_set_error(sshbind, SSH_FATAL,
                   "The RSA host key has the wrong type");
           ssh_key_free(sshbind->rsa);
@@ -394,7 +393,6 @@ int ssh_bind_accept_fd(ssh_bind sshbind, ssh_session session, socket_t fd){
     }
 
     session->server = 1;
-    session->version = 2;
 
     /* copy options */
     for (i = 0; i < 10; i++) {

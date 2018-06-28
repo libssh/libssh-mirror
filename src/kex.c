@@ -41,13 +41,13 @@
 # define BLOWFISH "blowfish-cbc,"
 # define AES "aes256-ctr,aes192-ctr,aes128-ctr,aes256-cbc,aes192-cbc,aes128-cbc,"
 # define DES "3des-cbc"
-# define DES_SUPPORTED "3des-cbc,des-cbc-ssh1"
+# define DES_SUPPORTED "3des-cbc"
 
 #elif defined HAVE_LIBMBEDCRYPTO
 # define BLOWFISH "blowfish-cbc,"
 # define AES "aes256-ctr,aes192-ctr,aes128-ctr,aes256-cbc,aes192-cbc,aes128-cbc,"
 # define DES "3des-cbc"
-# define DES_SUPPORTED "3des-cbc,des-cbc-ssh1"
+# define DES_SUPPORTED "3des-cbc"
 
 #elif defined(HAVE_LIBCRYPTO)
 
@@ -68,7 +68,7 @@
 # endif /* HAVE_OPENSSL_AES_H */
 
 # define DES "3des-cbc"
-# define DES_SUPPORTED "3des-cbc,des-cbc-ssh1"
+# define DES_SUPPORTED "3des-cbc"
 #endif /* HAVE_LIBCRYPTO */
 
 #ifdef WITH_ZLIB
@@ -575,7 +575,6 @@ static char *ssh_client_select_hostkeys(ssh_session session){
 #ifdef HAVE_DSA
         "ssh-dss",
 #endif
-        "ssh-rsa1",
         NULL
     };
     char **methods;

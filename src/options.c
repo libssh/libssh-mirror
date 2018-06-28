@@ -151,8 +151,6 @@ int ssh_options_copy(ssh_session src, ssh_session *dest) {
     new->opts.port                 = src->opts.port;
     new->opts.timeout              = src->opts.timeout;
     new->opts.timeout_usec         = src->opts.timeout_usec;
-    new->opts.ssh2                 = src->opts.ssh2;
-    new->opts.ssh1                 = src->opts.ssh1;
     new->opts.compressionlevel     = src->opts.compressionlevel;
     new->common.log_verbosity      = src->common.log_verbosity;
     new->common.callbacks          = src->common.callbacks;
@@ -267,12 +265,10 @@ int ssh_options_set_algo(ssh_session session,
  *                        (long).
  *
  *              - SSH_OPTIONS_SSH1:
- *                Allow or deny the connection to SSH1 servers
- *                (int, 0 is false).
+ *                Deprecated
  *
  *              - SSH_OPTIONS_SSH2:
- *                Allow or deny the connection to SSH2 servers
- *                (int, 0 is false).
+                  Unused
  *
  *              - SSH_OPTIONS_LOG_VERBOSITY:
  *                Set the session logging verbosity (int).\n
@@ -663,32 +659,8 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
             }
             break;
         case SSH_OPTIONS_SSH1:
-            if (value == NULL) {
-                ssh_set_error_invalid(session);
-                return -1;
-            } else {
-                int *x = (int *) value;
-                if (*x < 0) {
-                    ssh_set_error_invalid(session);
-                    return -1;
-                }
-
-                session->opts.ssh1 = *x;
-            }
             break;
         case SSH_OPTIONS_SSH2:
-            if (value == NULL) {
-                ssh_set_error_invalid(session);
-                return -1;
-            } else {
-                int *x = (int *) value;
-                if (*x < 0) {
-                    ssh_set_error_invalid(session);
-                    return -1;
-                }
-
-                session->opts.ssh2 = *x & 0xffff;
-            }
             break;
         case SSH_OPTIONS_LOG_VERBOSITY:
             if (value == NULL) {
@@ -1113,12 +1085,6 @@ int ssh_options_getopt(ssh_session session, int *argcptr, char **argv) {
   int compress = 0;
   int cont = 1;
   int current = 0;
-#ifdef WITH_SSH1
-  int ssh1 = 1;
-#else
-  int ssh1 = 0;
-#endif
-  int ssh2 = 1;
 #ifdef _MSC_VER
     /* Not supported with a Microsoft compiler */
     return -1;
@@ -1154,12 +1120,8 @@ int ssh_options_getopt(ssh_session session, int *argcptr, char **argv) {
         compress++;
         break;
       case '2':
-        ssh2 = 1;
-        ssh1 = 0;
         break;
       case '1':
-        ssh2 = 0;
-        ssh1 = 1;
         break;
       default:
         {
@@ -1260,9 +1222,6 @@ int ssh_options_getopt(ssh_session session, int *argcptr, char **argv) {
   if (port != NULL) {
     ssh_options_set(session, SSH_OPTIONS_PORT_STR, port);
   }
-
-  ssh_options_set(session, SSH_OPTIONS_SSH1, &ssh1);
-  ssh_options_set(session, SSH_OPTIONS_SSH2, &ssh2);
 
   if (!cont) {
     return SSH_ERROR;
@@ -1527,7 +1486,6 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
 #endif
               break;
           case SSH_KEYTYPE_RSA:
-          case SSH_KEYTYPE_RSA1:
               bind_key_loc = &sshbind->rsa;
               bind_key_path_loc = &sshbind->rsakey;
               break;
@@ -1589,7 +1547,6 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
 #endif
                     break;
                 case SSH_KEYTYPE_RSA:
-                case SSH_KEYTYPE_RSA1:
                     bind_key_loc = &sshbind->rsa;
                     break;
                 case SSH_KEYTYPE_ED25519:
