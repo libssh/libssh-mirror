@@ -115,4 +115,3 @@ ssh_string ssh_agent_sign_data(ssh_session session,
 #endif
 
 #endif /* __AGENT_H */
-/* vim: set ts=2 sw=2 et cindent: */

@@ -839,5 +839,3 @@ int main(int argc, char **argv) {
 
   return torture_run_tests();
 }
-
-/* vim: set ts=4 sw=4 et cindent syntax=c.doxygen: */

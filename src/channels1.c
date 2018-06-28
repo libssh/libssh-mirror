@@ -395,4 +395,3 @@ ssh_channel ssh_get_channel1(ssh_session session){
   return NULL;
 }
 #endif /* WITH_SSH1 */
-/* vim: set ts=2 sw=2 et cindent: */

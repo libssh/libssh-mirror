@@ -774,4 +774,3 @@ LIBSSH_API uint32_t ssh_buffer_get_len(ssh_buffer buffer);
 }
 #endif
 #endif /* _LIBSSH_H */
-/* vim: set ts=2 sw=2 et cindent: */

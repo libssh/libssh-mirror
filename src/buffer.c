@@ -1103,5 +1103,3 @@ int _ssh_buffer_unpack(struct ssh_buffer_struct *buffer,
 }
 
 /** @} */
-
-/* vim: set ts=4 sw=4 et cindent: */

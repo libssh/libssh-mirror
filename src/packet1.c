@@ -369,5 +369,3 @@ SSH_PACKET_CALLBACK(ssh_packet_smsg_failure1){
 
 
 #endif /* WITH_SSH1 */
-
-/* vim: set ts=2 sw=2 et cindent: */

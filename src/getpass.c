@@ -284,5 +284,3 @@ int ssh_getpass(const char *prompt,
 }
 
 #endif
-
-/* vim: set ts=4 sw=4 et cindent syntax=c.doxygen: */

@@ -793,5 +793,3 @@ char **ssh_knownhosts_algorithms(ssh_session session) {
 }
 
 /** @} */
-
-/* vim: set ts=4 sw=4 et cindent: */

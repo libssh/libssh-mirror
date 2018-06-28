@@ -476,4 +476,3 @@ int crypt_set_algorithms_server(ssh_session session){
 }
 
 #endif /* WITH_SERVER */
-/* vim: set ts=2 sw=2 et cindent: */

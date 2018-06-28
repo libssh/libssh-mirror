@@ -100,4 +100,3 @@ char *ssh_gcry_bn2dec(bignum bn) {
 }
 
 #endif
-/* vim: set ts=2 sw=2 et cindent: */

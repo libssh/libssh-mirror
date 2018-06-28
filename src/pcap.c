@@ -509,5 +509,3 @@ int ssh_set_pcap_file(ssh_session session, ssh_pcap_file pcapfile){
 #endif
 
 /** @} */
-
-/* vim: set ts=4 sw=4 et cindent: */

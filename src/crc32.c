@@ -91,5 +91,3 @@ uint32_t ssh_crc32(const char *buf, uint32_t len) {
 
   return ret;
 }
-
-/* vim: set ts=2 sw=2 et cindent: */

@@ -765,5 +765,3 @@ const char *ssh_copyright(void) {
            "file for information about your rights";
 }
 /** @} */
-
-/* vim: set ts=4 sw=4 et cindent: */

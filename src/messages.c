@@ -1470,5 +1470,3 @@ error:
 #endif /* WITH_SERVER */
 
 /** @} */
-
-/* vim: set ts=4 sw=4 et cindent: */

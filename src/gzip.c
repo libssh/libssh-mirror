@@ -217,5 +217,3 @@ int decompress_buffer(ssh_session session,ssh_buffer buf, size_t maxlen){
   ssh_buffer_free(dest);
   return 0;
 }
-
-/* vim: set ts=2 sw=2 et cindent: */

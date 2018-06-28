@@ -515,5 +515,3 @@ void sftp_handle_remove(sftp_session sftp, void *handle) {
     }
   }
 }
-
-/* vim: set ts=2 sw=2 et cindent: */

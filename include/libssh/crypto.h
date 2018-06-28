@@ -152,5 +152,4 @@ struct ssh_cipher_struct {
     void (*cleanup)(struct ssh_cipher_struct *cipher);
 };
 
-/* vim: set ts=2 sw=2 et cindent: */
 #endif /* _CRYPTO_H_ */

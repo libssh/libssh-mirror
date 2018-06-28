@@ -1715,5 +1715,3 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
 #endif
 
 /** @} */
-
-/* vim: set ts=4 sw=4 et cindent: */

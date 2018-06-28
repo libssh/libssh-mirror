@@ -2271,5 +2271,3 @@ ssh_signature pki_do_sign_sessionid(const ssh_key key,
 #endif /* WITH_SERVER */
 
 #endif /* HAVE_LIBGCRYPT */
-
-/* vim: set ts=4 sw=4 et cindent: */

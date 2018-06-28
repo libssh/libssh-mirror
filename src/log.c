@@ -240,5 +240,3 @@ int ssh_set_log_userdata(void *data)
 }
 
 /** @} */
-
-/* vim: set ts=4 sw=4 et cindent: */

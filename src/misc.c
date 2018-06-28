@@ -1089,5 +1089,3 @@ void explicit_bzero(void *s, size_t n)
 #endif /* !HAVE_EXPLICIT_BZERO */
 
 /** @} */
-
-/* vim: set ts=4 sw=4 et cindent: */

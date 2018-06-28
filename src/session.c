@@ -958,5 +958,3 @@ void ssh_set_counters(ssh_session session, ssh_counter scounter,
 }
 
 /** @} */
-
-/* vim: set ts=4 sw=4 et cindent: */

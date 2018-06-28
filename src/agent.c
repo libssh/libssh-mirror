@@ -603,5 +603,3 @@ ssh_string ssh_agent_sign_data(ssh_session session,
 }
 
 #endif /* _WIN32 */
-
-/* vim: set ts=4 sw=4 et cindent: */

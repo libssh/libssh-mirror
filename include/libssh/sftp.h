@@ -1023,4 +1023,3 @@ LIBSSH_API void sftp_handle_remove(sftp_session sftp, void *handle);
 #endif /* SFTP_H */
 
 /** @} */
-/* vim: set ts=2 sw=2 et cindent: */

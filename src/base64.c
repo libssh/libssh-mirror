@@ -288,5 +288,3 @@ unsigned char *bin_to_base64(const unsigned char *source, int len) {
 
   return base64;
 }
-
-/* vim: set ts=2 sw=2 et cindent: */

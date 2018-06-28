@@ -833,5 +833,3 @@ const char *ssh_scp_request_get_warning(ssh_scp scp){
 }
 
 /** @} */
-
-/* vim: set ts=4 sw=4 et cindent: */

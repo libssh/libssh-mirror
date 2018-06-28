@@ -371,4 +371,3 @@ void explicit_bzero(void *s, size_t n);
 void ssh_agent_state_free(void *data);
 
 #endif /* _LIBSSH_PRIV_H */
-/* vim: set ts=4 sw=4 et cindent: */

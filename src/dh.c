@@ -1272,5 +1272,3 @@ void ssh_print_hexa(const char *descr, const unsigned char *what, size_t len) {
 }
 
 /** @} */
-
-/* vim: set ts=4 sw=4 et cindent: */

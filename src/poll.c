@@ -21,8 +21,6 @@
  * along with the SSH Library; see the file COPYING.  If not, write to
  * the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
  * MA 02111-1307, USA.
- *
- * vim: ts=2 sw=2 et cindent
  */
 
 #include "config.h"
@@ -1044,5 +1042,3 @@ void ssh_event_free(ssh_event event) {
 }
 
 /** @} */
-
-/* vim: set ts=4 sw=4 et cindent: */
