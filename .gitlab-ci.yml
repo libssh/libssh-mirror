@@ -8,7 +8,7 @@ variables:
 debian/openssl_1.0.x/aarch64:
   script:
   - mkdir -p obj && cd obj && cmake -DWITH_TESTING=ON -DCMAKE_BUILD_TYPE=Debug
-    -DWITH_SSH1=ON -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON
+    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON
     -DWITH_PCAP=ON .. && make -j$(nproc) && ctest --output-on-failure
     make -j$(nproc) && ctest --output-on-failure
   tags:
@@ -26,7 +26,7 @@ centos7/openssl_1.0.x/x86-64:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$CENTOS7_BUILD
   script:
   - mkdir -p obj && cd obj && cmake -DWITH_TESTING=ON -DCMAKE_BUILD_TYPE=Debug
-    -DWITH_SSH1=ON -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON
+    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON
     -DWITH_PCAP=ON .. && make -j$(nproc) && ctest --output-on-failure
   tags:
   - shared
@@ -42,7 +42,7 @@ fedora/openssl_1.1.x/x86-64:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$FEDORA_BUILD
   script:
   - mkdir -p obj && cd obj && cmake -DWITH_TESTING=ON -DCMAKE_BUILD_TYPE=Debug
-    -DWITH_CLIENT_TESTING=ON -DWITH_SSH1=ON -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON
+    -DWITH_CLIENT_TESTING=ON -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON
     -DWITH_PCAP=ON .. && make -j$(nproc) && ctest --output-on-failure
   tags:
   - shared
@@ -61,7 +61,7 @@ fedora/openssl_1.1.x/x86-64:
   - export CFLAGS="-fsanitize=address -g -O2"
   - export LDFLAGS="-fsanitize=address -static-libasan"
   - mkdir -p obj && cd obj && cmake -DWITH_TESTING=ON -DCMAKE_BUILD_TYPE=Debug
-    -DWITH_CLIENT_TESTING=ON -DWITH_SSH1=ON -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON
+    -DWITH_CLIENT_TESTING=ON -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON
     -DWITH_PCAP=ON .. && make -j$(nproc) && ctest --output-on-failure
   tags:
   - shared
@@ -78,7 +78,7 @@ fedora/undefined-sanitizer:
   script:
   - export CFLAGS="-fsanitize=undefined -fsanitize=null -fsanitize=alignment -fno-sanitize-recover"
   - mkdir -p obj && cd obj && cmake -DWITH_TESTING=ON -DCMAKE_BUILD_TYPE=Debug
-    -DWITH_CLIENT_TESTING=ON -DWITH_SSH1=ON -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON
+    -DWITH_CLIENT_TESTING=ON -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON
     -DWITH_PCAP=ON .. && make -j$(nproc) && ctest --output-on-failure
   tags:
   - shared
@@ -96,7 +96,7 @@ fedora/static-analysis:
   - export CCC_CC=clang
   - export CCC_CXX=clang++
   - mkdir -p obj && cd obj && scan-build cmake -DWITH_TESTING=ON -DCMAKE_BUILD_TYPE=Debug
-    -DWITH_CLIENT_TESTING=ON -DWITH_SSH1=ON -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON
+    -DWITH_CLIENT_TESTING=ON -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON
     -DWITH_PCAP=ON -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang .. &&
     scan-build --status-bugs -o scan make -j$(nproc)
   tags:
@@ -115,7 +115,7 @@ freebsd/x86-64:
   image:
   script:
   - mkdir -p obj && cd obj && cmake -DWITH_TESTING=ON -DCMAKE_BUILD_TYPE=Debug
-    -DWITH_SSH1=ON -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON
+    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON
     -DWITH_PCAP=ON .. && make && ctest --output-on-failure
     make -j$(nproc) && ctest --output-on-failure
   tags:
@@ -132,7 +132,7 @@ fedora/libgcrypt/x86-64:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$FEDORA_BUILD
   script:
   - mkdir -p obj && cd obj && cmake -DWITH_TESTING=ON -DCMAKE_BUILD_TYPE=Debug -DWITH_GCRYPT=ON
-    -DWITH_CLIENT_TESTING=ON -DWITH_SSH1=ON -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON
+    -DWITH_CLIENT_TESTING=ON -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON
     -DWITH_PCAP=ON .. && make -j$(nproc) && ctest --output-on-failure
   tags:
   - shared
