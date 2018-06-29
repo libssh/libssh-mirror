@@ -31,6 +31,8 @@ static int setup_rsa_key(void **state)
                        torture_get_testkey(SSH_KEYTYPE_RSA, 0, 1));
     torture_write_file(LIBSSH_RSA_TESTKEY ".pub",
                        torture_get_testkey_pub(SSH_KEYTYPE_RSA, 0));
+    torture_write_file(LIBSSH_RSA_TESTKEY ".pub",
+                       torture_get_testkey_pub(SSH_KEYTYPE_RSA, 0));
     torture_write_file(LIBSSH_RSA_TESTKEY "-cert.pub",
                        torture_get_testkey_pub(SSH_KEYTYPE_RSA_CERT01, 0));
 
@@ -46,6 +48,21 @@ static int teardown(void **state) {
     unlink(LIBSSH_RSA_TESTKEY "-cert.pub");
 
     return 0;
+}
+
+static void torture_pki_rsa_import_pubkey_file(void **state)
+{
+    ssh_key pubkey = NULL;
+    int rc;
+
+    (void)state;
+
+    /* The key doesn't have the hostname as comment after the key */
+    rc = ssh_pki_import_pubkey_file(LIBSSH_RSA_TESTKEY ".pub", &pubkey);
+    assert_return_code(rc, errno);
+    assert_non_null(pubkey);
+
+    ssh_key_free(pubkey);
 }
 
 static void torture_pki_rsa_import_privkey_base64_NULL_key(void **state)
@@ -546,6 +563,9 @@ static void torture_pki_rsa_import_privkey_base64_passphrase(void **state)
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
+        cmocka_unit_test_setup_teardown(torture_pki_rsa_import_pubkey_file,
+                                        setup_rsa_key,
+                                        teardown),
         cmocka_unit_test_setup_teardown(torture_pki_rsa_import_privkey_base64_NULL_key,
                                         setup_rsa_key,
                                         teardown),
