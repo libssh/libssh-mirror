@@ -277,14 +277,14 @@ static void torture_pki_dsa_publickey_base64(void **state)
     assert_true(key_buf != NULL);
 
     q = p = key_buf;
-    while (*p != ' ') p++;
+    while (*p != '\0' && !isspace((int)*p)) p++;
     *p = '\0';
 
     type = ssh_key_type_from_name(q);
     assert_true(type == SSH_KEYTYPE_DSS);
 
     q = ++p;
-    while (*p != ' ') p++;
+    while (*p != '\0' && !isspace((int)*p)) p++;
     *p = '\0';
 
     rc = ssh_pki_import_pubkey_base64(q, type, &key);
