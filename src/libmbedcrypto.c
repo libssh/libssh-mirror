@@ -30,6 +30,8 @@
 #ifdef HAVE_LIBMBEDCRYPTO
 #include <mbedtls/md.h>
 
+extern const struct ssh_cipher_struct chacha20poly1305_cipher;
+
 struct ssh_mac_ctx_struct {
     enum ssh_mac_e mac_type;
     mbedtls_md_context_t ctx;
@@ -1067,6 +1069,9 @@ static struct ssh_cipher_struct ssh_ciphertab[] = {
         .decrypt = cipher_decrypt_cbc,
     },
     {
+        .name = "chacha20-poly1305@openssh.com"
+    },
+    {
         .name = NULL,
         .blocksize = 0,
         .keysize = 0,
@@ -1085,6 +1090,7 @@ struct ssh_cipher_struct *ssh_get_ciphertab(void)
 
 void ssh_mbedtls_init(void)
 {
+    size_t i;
     int rc;
 
     mbedtls_entropy_init(&ssh_mbedtls_entropy);
@@ -1094,6 +1100,18 @@ void ssh_mbedtls_init(void)
             &ssh_mbedtls_entropy, NULL, 0);
     if (rc != 0) {
         mbedtls_ctr_drbg_free(&ssh_mbedtls_ctr_drbg);
+    }
+
+    for (i = 0; ssh_ciphertab[i].name != NULL; i++) {
+        int cmp;
+
+        cmp = strcmp(ssh_ciphertab[i].name, "chacha20-poly1305@openssh.com");
+        if (cmp == 0) {
+            memcpy(&ssh_ciphertab[i],
+                   &chacha20poly1305_cipher,
+                   sizeof(struct ssh_cipher_struct));
+            break;
+        }
     }
 }
 

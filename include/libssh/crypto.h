@@ -129,11 +129,10 @@ struct ssh_cipher_struct {
     unsigned int blocksize; /* blocksize of the algo */
     enum ssh_cipher_e ciphertype;
     uint32_t lenfield_blocksize; /* blocksize of the packet length field */
-#ifdef HAVE_LIBGCRYPT
     size_t keylen; /* length of the key structure */
+#ifdef HAVE_LIBGCRYPT
     gcry_cipher_hd_t *key;
 #elif defined HAVE_LIBCRYPTO
-    size_t keylen; /* length of the key structure */
     struct ssh_3des_key_schedule *des3_key;
     struct ssh_aes_key_schedule *aes_key;
     const EVP_CIPHER *cipher;

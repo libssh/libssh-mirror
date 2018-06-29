@@ -164,14 +164,8 @@ set(libssh_SRCS
   external/ge25519.c
   external/poly1305.c
   external/sc25519.c
+  chachapoly.c
 )
-
-if (NOT WITH_MBEDTLS)
-    set(libssh_SRCS
-        ${libssh_SRCS}
-        chachapoly.c
-       )
-endif (NOT WITH_MBEDTLS)
 
 if (WITH_GCRYPT)
     set(libssh_SRCS
