@@ -47,6 +47,11 @@ compile option -DCLIENT_TESTING=ON. These tests require an OpenSSH
 server package and some wrapper libraries (see optional requirements) to
 be installed.
 
+If you're interested in server testing, then a OpenSSH client should be
+installed on the system and if possible also dropbear. Once that is done
+enable server support with -DWITH_SERVER=ON and enable testing of it with
+-DSERVER_TESTING=ON.
+
 ## Testing build
 
     make test
