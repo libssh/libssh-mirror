@@ -9,8 +9,7 @@
 #include "libssh/buffer.h"
 #include "libssh/socket.h"
 #include "libssh/callbacks.h"
-#include <sys/types.h>
-#include <sys/socket.h>
+
 #include "socket.c"
 
 uint8_t test_data[]="AThis is test data. Use it to check the validity of packet functions"
