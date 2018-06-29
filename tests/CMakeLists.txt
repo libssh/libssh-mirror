@@ -51,7 +51,7 @@ set(TEST_TARGET_LIBRARIES
 
 add_subdirectory(unittests)
 
-if (WITH_CLIENT_TESTING)
+if (CLIENT_TESTING)
     find_package(socket_wrapper 1.1.5 REQUIRED)
     find_package(nss_wrapper 1.1.2 REQUIRED)
     find_package(uid_wrapper 1.2.0 REQUIRED)
@@ -129,7 +129,7 @@ if (WITH_CLIENT_TESTING)
     message(STATUS "TORTURE_ENVIRONMENT=${TORTURE_ENVIRONMENT}")
 
     add_subdirectory(client)
-endif (WITH_CLIENT_TESTING)
+endif (CLIENT_TESTING)
 
 if (WITH_BENCHMARKS)
     add_subdirectory(benchmarks)

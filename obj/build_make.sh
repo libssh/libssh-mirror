@@ -140,7 +140,7 @@ while test -n "$1"; do
 			OPTIONS="${OPTIONS} -DUNIT_TESTING=ON"
 		;;
 		*-clientunittesting)
-			OPTIONS="${OPTIONS} -DWITH_CLIENT_TESTING=ON"
+			OPTIONS="${OPTIONS} -DCLIENT_TESTING=ON"
 		;;
 		*-withssh1)
 			OPTIONS="${OPTIONS} -DWITH_SSH1=ON"
