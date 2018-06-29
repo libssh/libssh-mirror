@@ -5,22 +5,6 @@ variables:
   TUMBLEWEED_BUILD: buildenv-tumbleweed
   MINGW_BUILD: buildenv-mingw
 
-debian/openssl_1.0.x/aarch64:
-  script:
-  - mkdir -p obj && cd obj && cmake -DUNIT_TESTING=ON -DCMAKE_BUILD_TYPE=Debug
-    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON
-    -DWITH_PCAP=ON .. && make -j$(nproc) && ctest --output-on-failure
-    make -j$(nproc) && ctest --output-on-failure
-  tags:
-  - aarch64
-  except:
-  - tags
-  artifacts:
-    expire_in: 1 week
-    when: on_failure
-    paths:
-      - build/
-
 # torture_auth fails on centos7 docker images, so we don't use -DCLIENT_TESTING=ON
 centos7/openssl_1.0.x/x86-64:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$CENTOS7_BUILD
