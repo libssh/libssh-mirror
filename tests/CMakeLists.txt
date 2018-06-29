@@ -135,9 +135,9 @@ if (WITH_BENCHMARKS)
     add_subdirectory(benchmarks)
 endif (WITH_BENCHMARKS)
 
-if (WITH_SERVER)
+if (WITH_SERVER AND SERVER_TESTING)
     add_subdirectory(pkd)
-endif (WITH_SERVER)
+endif (WITH_SERVER AND SERVER_TESTING)
 
 if (FUZZ_TESTING)
     add_subdirectory(fuzz)
