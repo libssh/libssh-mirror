@@ -254,7 +254,7 @@ mingw32:
       - obj/
 
 .Debian.cross.template: &Debian_cross_template
-  stage: stage1-testing
+  stage: test
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$DEBIAN_CROSS_BUILD
   script:
   - build=$(dpkg-architecture -qDEB_HOST_GNU_TYPE)
