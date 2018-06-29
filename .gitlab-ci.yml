@@ -252,3 +252,28 @@ mingw32:
     when: on_failure
     paths:
       - build/
+
+.Debian.cross.template: &Debian_cross_template
+  stage: stage1-testing
+  image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$DEBIAN_CROSS_BUILD
+  script:
+  - build=$(dpkg-architecture -qDEB_HOST_GNU_TYPE)
+  - host="${CI_JOB_NAME#*.cross.}"
+  - export CC="$(which $host-gcc)"
+  - export CXX="$(which $host-g++)"
+  - mkdir -p obj && cd obj && cmake -DUNIT_TESTING=ON -DCMAKE_BUILD_TYPE=Debug
+    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DCMAKE_SYSTEM_NAME="$host"
+    -DWITH_PCAP=ON .. && make -j$(nproc)
+  - ctest --output-on-failure -j$(nproc)
+  tags:
+  - shared
+  except:
+  - tags
+  artifacts:
+    expire_in: 1 week
+    when: on_failure
+    paths:
+      - obj/
+
+Debian.cross.mips-linux-gnu:
+  <<: *Debian_cross_template
