@@ -999,7 +999,7 @@ int ssh_pki_import_pubkey_file(const char *filename, ssh_key *pkey)
     key_buf[size] = '\0';
 
     q = p = key_buf;
-    while (!isspace((int)*p)) p++;
+    while (*p != '\0' && !isspace((int)*p)) p++;
     *p = '\0';
 
     type = ssh_key_type_from_name(q);
@@ -1008,7 +1008,7 @@ int ssh_pki_import_pubkey_file(const char *filename, ssh_key *pkey)
         return SSH_ERROR;
     }
     q = ++p;
-    while (!isspace((int)*p)) p++;
+    while (*p != '\0' && !isspace((int)*p)) p++;
     *p = '\0';
 
     rc = ssh_pki_import_pubkey_base64(q, type, pkey);
