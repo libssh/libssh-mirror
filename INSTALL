@@ -31,7 +31,7 @@ First, you need to configure the compilation, using CMake. Go inside the
 
 GNU/Linux, MacOS X, MSYS/MinGW:
 
-    cmake -DWITH_TESTING=ON -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Debug ..
+    cmake -DUNIT_TESTING=ON -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Debug ..
     make
 
 On Windows you should choose a makefile gernerator with -G or use

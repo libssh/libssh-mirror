@@ -137,7 +137,7 @@ while test -n "$1"; do
 			OPTIONS="${OPTIONS} -DWITH_STATIC_LIB=ON"
 		;;
 		*-unittesting)
-			OPTIONS="${OPTIONS} -DWITH_TESTING=ON"
+			OPTIONS="${OPTIONS} -DUNIT_TESTING=ON"
 		;;
 		*-clientunittesting)
 			OPTIONS="${OPTIONS} -DWITH_CLIENT_TESTING=ON"
