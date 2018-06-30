@@ -725,8 +725,8 @@ void torture_setup_sshd_server(void **state)
     rc = system(sshd_start_cmd);
     assert_return_code(rc, errno);
 
-    /* Give the process some time to start */
-    usleep(10000);
+    /* Give the process 100ms time to initialize and start */
+    usleep(100 * 1000);
 
     setenv("SOCKET_WRAPPER_DEFAULT_IFACE", "21", 1);
     unsetenv("PAM_WRAPPER");
