@@ -172,7 +172,7 @@ tumbleweed/openssl_1.1.x/x86-64:
 tumbleweed/openssl_1.1.x/x86:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$TUMBLEWEED_BUILD
   script:
-  - mkdir -p obj && cd obj && cmake -DCMAKE_TOOLCHAIN_FILE=cmake/Toolchain-cross-m32.cmake
+  - mkdir -p obj && cd obj && cmake -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain-cross-m32.cmake
     -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON --DWITH_PCAP=ON
     -DUNIT_TESTING=ON .. &&
     make -j$(nproc) && ctest --output-on-failure
