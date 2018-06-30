@@ -43,8 +43,8 @@ struct ssh_packet_header {
 };
 #pragma pack(pop)
 
-const uint8_t zero_block_counter[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-const uint8_t payload_block_counter[8] = {1, 0, 0, 0, 0, 0, 0, 0};
+static const uint8_t zero_block_counter[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+static const uint8_t payload_block_counter[8] = {1, 0, 0, 0, 0, 0, 0, 0};
 
 static int chacha20_set_encrypt_key(struct ssh_cipher_struct *cipher,
                                     void *key,
