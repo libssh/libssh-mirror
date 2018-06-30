@@ -38,9 +38,9 @@
 #include "libssh/misc.h"
 #include "libssh/session.h"
 
-LIBSSH_THREAD int ssh_log_level;
-LIBSSH_THREAD ssh_logging_callback ssh_log_cb;
-LIBSSH_THREAD void *ssh_log_userdata;
+static LIBSSH_THREAD int ssh_log_level;
+static LIBSSH_THREAD ssh_logging_callback ssh_log_cb;
+static LIBSSH_THREAD void *ssh_log_userdata;
 
 /**
  * @defgroup libssh_log The SSH logging functions.

@@ -205,7 +205,7 @@ static void torture_config_new(void **state)
     assert_int_equal(session->opts.timeout, 30);
     assert_string_equal(session->opts.bindaddr, BIND_ADDRESS);
 
-    assert_int_equal(ssh_log_level, SSH_LOG_TRACE);
+    assert_int_equal(ssh_get_log_level(), SSH_LOG_TRACE);
     assert_int_equal(session->common.log_verbosity, SSH_LOG_TRACE);
 
     /* reset to something sane */
