@@ -44,6 +44,7 @@
 #include <openssl/opensslv.h>
 #include <openssl/rand.h>
 #include <openssl/modes.h>
+#include "libcrypto-compat.h"
 
 #ifdef HAVE_OPENSSL_AES_H
 #define HAS_AES
