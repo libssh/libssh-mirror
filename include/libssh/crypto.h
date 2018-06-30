@@ -161,4 +161,6 @@ struct ssh_cipher_struct {
     void (*cleanup)(struct ssh_cipher_struct *cipher);
 };
 
+const struct ssh_cipher_struct *ssh_get_chacha20poly1305_cipher(void);
+
 #endif /* _CRYPTO_H_ */

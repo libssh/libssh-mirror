@@ -205,3 +205,8 @@ const struct ssh_cipher_struct chacha20poly1305_cipher = {
     .aead_decrypt = chacha20_poly1305_aead_decrypt,
     .cleanup = chacha20_cleanup
 };
+
+const struct ssh_cipher_struct *ssh_get_chacha20poly1305_cipher(void)
+{
+    return &chacha20poly1305_cipher;
+}
