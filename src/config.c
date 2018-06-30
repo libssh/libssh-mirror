@@ -325,7 +325,9 @@ static void local_parse_glob(ssh_session session,
                              int *parsing,
                              int seen[])
 {
-    glob_t globbuf = {0};
+    glob_t globbuf = {
+        .gl_flags = 0,
+    };
     int rt;
     u_int i;
 
