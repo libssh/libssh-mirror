@@ -88,15 +88,15 @@ static void torture_connect_nonblocking(void **state) {
     int rc;
 
     rc = ssh_options_set(session, SSH_OPTIONS_HOST, TORTURE_SSH_SERVER);
-    assert_true(rc == SSH_OK);
+    assert_ssh_return_code(session, rc);
     ssh_set_blocking(session,0);
 
     do {
         rc = ssh_connect(session);
-        assert_true(rc != SSH_ERROR);
+        assert_ssh_return_code_not_equal(session, rc, SSH_ERROR);
     } while(rc == SSH_AGAIN);
 
-    assert_true(rc == SSH_OK);
+    assert_ssh_return_code(session, rc);
 }
 
 #if 0 /* This does not work with socket_wrapper */
@@ -136,13 +136,14 @@ static void torture_connect_double(void **state) {
     int rc;
 
     rc = ssh_options_set(session, SSH_OPTIONS_HOST, TORTURE_SSH_SERVER);
-    assert_true(rc == SSH_OK);
+    assert_ssh_return_code(session, rc);
+
     rc = ssh_connect(session);
-    assert_true(rc == SSH_OK);
+    assert_ssh_return_code(session, rc);
     ssh_disconnect(session);
 
     rc = ssh_connect(session);
-    assert_true(rc == SSH_OK);
+    assert_ssh_return_code(session, rc);
 }
 
 static void torture_connect_failure(void **state) {
@@ -173,12 +174,12 @@ static void torture_connect_socket(void **state) {
     server_addr.sin_addr.s_addr = inet_addr(TORTURE_SSH_SERVER);
 
     rc = connect(sock_fd, (struct sockaddr *)&server_addr, sizeof(server_addr));
-    assert_true(rc == 0);
+    assert_return_code(rc, errno);
 
     ssh_options_set(session, SSH_OPTIONS_FD, &sock_fd);
 
     rc = ssh_connect(session);
-    assert_true(rc == SSH_OK);
+    assert_ssh_return_code(session, rc);
 }
 
 int torture_run_tests(void) {
