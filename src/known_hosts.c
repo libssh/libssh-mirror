@@ -138,13 +138,7 @@ static char **ssh_get_knownhost_line(FILE **file, const char *filename,
     }
 
     *found_type = tokens[1];
-    if (tokens[3]) {
-      if (tokens[4]) {
-        /* that's never valid */
-        tokens_free(tokens);
-        continue;
-      }
-      /* 3 tokens only, not four */
+    if (tokens[3] || tokens[4]) {
       tokens_free(tokens);
       continue;
     }
