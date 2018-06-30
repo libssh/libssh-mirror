@@ -40,6 +40,8 @@
 
 #include <cmocka.h>
 
+#include "torture_cmocka.h"
+
 #ifndef assert_return_code
 /* hack for older versions of cmocka */
 #define assert_return_code(code, errno) \

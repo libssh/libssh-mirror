@@ -35,7 +35,8 @@ add_library(${TORTURE_LIBRARY}
                 cmdline.c
                 torture.c
                 torture_key.c
-                torture_pki.c)
+                torture_pki.c
+                torture_cmocka.c)
 target_link_libraries(${TORTURE_LIBRARY} ${TORTURE_LINK_LIBRARIES})
 
 if (ARGP_LIBRARY)
