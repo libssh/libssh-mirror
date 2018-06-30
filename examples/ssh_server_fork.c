@@ -621,6 +621,7 @@ int main(int argc, char **argv) {
     ssh_session session;
     ssh_event event;
     struct sigaction sa;
+    int rc;
 
     /* Set up SIGCHLD handler. */
     sa.sa_handler = sigchld_handler;
@@ -631,8 +632,17 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    ssh_init();
+    rc = ssh_init();
+    if (rc < 0) {
+        fprintf(stderr, "ssh_init failed\n");
+        return 1;
+    }
+
     sshbind = ssh_bind_new();
+    if (sshbind == NULL) {
+        fprintf(stderr, "ssh_bind_new failed\n");
+        return 1;
+    }
 
 #ifdef HAVE_ARGP_H
     argp_parse(&argp, argc, argv, 0, 0, sshbind);
