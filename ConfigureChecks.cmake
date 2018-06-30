@@ -42,15 +42,14 @@ if(CMAKE_COMPILER_IS_GNUCC AND NOT MINGW AND NOT OS2)
 "void __attribute__((visibility(\"default\"))) test() {}
 int main(void){ return 0; }
 " WITH_VISIBILITY_HIDDEN)
-        set(CMAKE_REQUIRED_FLAGS "")
+        unset(CMAKE_REQUIRED_FLAGS)
     endif (NOT GNUCC_VERSION EQUAL 34)
 endif(CMAKE_COMPILER_IS_GNUCC AND NOT MINGW AND NOT OS2)
 
 # HEADER FILES
-set(CMAKE_REQUIRED_INCLUDES_SAVE ${CMAKE_REQUIRED_INCLUDES})
 set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${ARGP_INCLUDE_DIR})
 check_include_file(argp.h HAVE_ARGP_H)
-set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES_SAVE})
+unset(CMAKE_REQUIRED_INCLUDES)
 
 check_include_file(pty.h HAVE_PTY_H)
 check_include_file(utmp.h HAVE_UTMP_H)
@@ -120,6 +119,9 @@ if (OPENSSL_FOUND)
     set(CMAKE_REQUIRED_INCLUDES ${OPENSSL_INCLUDE_DIR})
     set(CMAKE_REQUIRED_LIBRARIES ${OPENSSL_CRYPTO_LIBRARY})
     check_function_exists(EVP_CIPHER_CTX_new HAVE_OPENSSL_EVP_CIPHER_CTX_NEW)
+
+    unset(CMAKE_REQUIRED_INCLUDES)
+    unset(CMAKE_REQUIRED_LIBRARIES)
 endif()
 
 if (CMAKE_HAVE_PTHREAD_H)
@@ -175,7 +177,7 @@ if (WIN32)
         check_symbol_exists(poll "winsock2.h;ws2tcpip.h" HAVE_SELECT)
         # The getaddrinfo function is defined to the WspiapiGetAddrInfo inline function
         check_symbol_exists(getaddrinfo "winsock2.h;ws2tcpip.h" HAVE_GETADDRINFO)
-        set(CMAKE_REQUIRED_LIBRARIES)
+        unset(CMAKE_REQUIRED_LIBRARIES)
     endif (HAVE_WSPIAPI_H OR HAVE_WS2TCPIP_H)
 
     check_function_exists(_strtoui64 HAVE__STRTOUI64)
@@ -199,13 +201,13 @@ if (UNIX)
         check_library_exists(socket getaddrinfo "" HAVE_LIBSOCKET)
         if (HAVE_LIBSOCKET)
             set(HAVE_GETADDRINFO TRUE)
-            set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} socket)
+            set(_REQUIRED_LIBRARIES ${_REQUIRED_LIBRARIES} socket)
         endif (HAVE_LIBSOCKET)
 
         # libnsl/inet_pton (Solaris)
         check_library_exists(nsl inet_pton "" HAVE_LIBNSL)
         if (HAVE_LIBNSL)
-            set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} nsl)
+            set(_REQUIRED_LIBRARIES ${_REQUIRED_LIBRARIES} nsl)
         endif (HAVE_LIBNSL)
 
         # librt
@@ -214,7 +216,7 @@ if (UNIX)
 
     check_library_exists(rt clock_gettime "" HAVE_CLOCK_GETTIME)
     if (HAVE_LIBRT OR HAVE_CLOCK_GETTIME)
-        set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} rt)
+        set(_REQUIRED_LIBRARIES ${_REQUIRED_LIBRARIES} rt)
     endif (HAVE_LIBRT OR HAVE_CLOCK_GETTIME)
 
     check_library_exists(util forkpty "" HAVE_LIBUTIL)
@@ -222,7 +224,7 @@ if (UNIX)
     check_function_exists(__strtoull HAVE___STRTOULL)
 endif (UNIX)
 
-set(LIBSSH_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} CACHE INTERNAL "libssh required system libraries")
+set(LIBSSH_REQUIRED_LIBRARIES ${_REQUIRED_LIBRARIES} CACHE INTERNAL "libssh required system libraries")
 
 # LIBRARIES
 if (OPENSSL_FOUND)
