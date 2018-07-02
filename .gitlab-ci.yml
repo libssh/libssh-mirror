@@ -4,6 +4,7 @@ variables:
   CENTOS7_BUILD: buildenv-centos7
   TUMBLEWEED_BUILD: buildenv-tumbleweed
   MINGW_BUILD: buildenv-mingw
+  DEBIAN_CROSS_BUILD: buildenv-debian-cross
 
 # torture_auth fails on centos7 docker images, so we don't use -DCLIENT_TESTING=ON
 centos7/openssl_1.0.x/x86-64:
