@@ -86,12 +86,12 @@
 
 #ifdef HAVE_ECDH
 #define ECDH "ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521,"
-#define HOSTKEYS "ssh-ed25519,ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,ssh-rsa,rsa-sha2-512,rsa-sha2-256,ssh-dss"
+#define PUBLIC_KEY_ALGORITHMS "ssh-ed25519,ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,ssh-rsa,rsa-sha2-512,rsa-sha2-256,ssh-dss"
 #else
 #ifdef HAVE_DSA
-#define HOSTKEYS "ssh-ed25519,ssh-rsa,rsa-sha2-512,rsa-sha2-256,ssh-dss"
+#define PUBLIC_KEY_ALGORITHMS "ssh-ed25519,ssh-rsa,rsa-sha2-512,rsa-sha2-256,ssh-dss"
 #else
-#define HOSTKEYS "ssh-ed25519,ssh-rsa,rsa-sha2-512,rsa-sha2-256"
+#define PUBLIC_KEY_ALGORITHMS "ssh-ed25519,ssh-rsa,rsa-sha2-512,rsa-sha2-256"
 #endif
 #define ECDH ""
 #endif
@@ -107,7 +107,7 @@
 /* NOTE: This is a fixed API and the index is defined by ssh_kex_types_e */
 static const char *default_methods[] = {
   KEY_EXCHANGE,
-  HOSTKEYS,
+  PUBLIC_KEY_ALGORITHMS,
   AES BLOWFISH DES,
   AES BLOWFISH DES,
   "hmac-sha2-256,hmac-sha2-512,hmac-sha1",
@@ -122,7 +122,7 @@ static const char *default_methods[] = {
 /* NOTE: This is a fixed API and the index is defined by ssh_kex_types_e */
 static const char *supported_methods[] = {
   KEY_EXCHANGE,
-  HOSTKEYS,
+  PUBLIC_KEY_ALGORITHMS,
   CHACHA20 AES BLOWFISH DES_SUPPORTED,
   CHACHA20 AES BLOWFISH DES_SUPPORTED,
   "hmac-sha2-256,hmac-sha2-512,hmac-sha1",
