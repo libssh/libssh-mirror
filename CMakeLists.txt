@@ -69,6 +69,7 @@ endif(WITH_GCRYPT)
 
 # Find out if we have threading available
 set(CMAKE_THREAD_PREFER_PTHREADS ON)
+set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads)
 
 if (WITH_GSSAPI)
@@ -101,30 +102,15 @@ configure_file(libssh.pc.cmake ${CMAKE_CURRENT_BINARY_DIR}/libssh.pc)
 install(
   FILES
     ${CMAKE_CURRENT_BINARY_DIR}/libssh.pc
-    ${CMAKE_CURRENT_BINARY_DIR}/libssh_threads.pc
   DESTINATION
     ${LIB_INSTALL_DIR}/pkgconfig
   COMPONENT
     pkgconfig
 )
-
-    if (LIBSSH_THREADS)
-        configure_file(libssh_threads.pc.cmake ${CMAKE_CURRENT_BINARY_DIR}/libssh_threads.pc)
-        install(
-          FILES
-            ${CMAKE_CURRENT_BINARY_DIR}/libssh.pc
-            ${CMAKE_CURRENT_BINARY_DIR}/libssh_threads.pc
-          DESTINATION
-            ${LIB_INSTALL_DIR}/pkgconfig
-          COMPONENT
-            pkgconfig
-        )
-    endif (LIBSSH_THREADS)
 endif (UNIX)
 
 # cmake config files
 set(LIBSSH_LIBRARY_NAME ${CMAKE_SHARED_LIBRARY_PREFIX}ssh${CMAKE_SHARED_LIBRARY_SUFFIX})
-set(LIBSSH_THREADS_LIBRARY_NAME ${CMAKE_SHARED_LIBRARY_PREFIX}ssh${CMAKE_SHARED_LIBRARY_SUFFIX})
 
 configure_file(${PROJECT_NAME}-config.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake @ONLY)
 configure_file(${PROJECT_NAME}-config-version.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake @ONLY)

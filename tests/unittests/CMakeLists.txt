@@ -32,11 +32,12 @@ if (UNIX AND NOT WIN32)
     # requires /dev/null
     add_cmocka_test(torture_channel torture_channel.c ${TORTURE_LIBRARY})
     # requires pthread
-    if (LIBSSH_THREADS)
+    if (CMAKE_USE_PTHREADS_INIT)
         add_cmocka_test(torture_rand torture_rand.c ${TORTURE_LIBRARY})
+        target_link_libraries(torture_rand Threads::Threads)
         # Not working correctly
         #if (WITH_SERVER)
         #    add_cmocka_test(torture_server_x11 torture_server_x11.c ${TORTURE_LIBRARY})
         #endif (WITH_SERVER)
-    endif (LIBSSH_THREADS)
+    endif ()
 endif (UNIX AND NOT WIN32)

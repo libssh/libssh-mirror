@@ -32,12 +32,94 @@
 #include <winsock2.h>
 #endif
 
+#define CONSTRUCTOR_ATTRIBUTE __attribute__((constructor))
+#define DESTRUCTOR_ATTRIBUTE __attribute__((destructor))
+
+/* Declare static mutex */
+static SSH_MUTEX ssh_init_mutex = SSH_MUTEX_STATIC_INIT;
+
+/* Counter for initializations */
+static int _ssh_initialized = 0;
+
+/* Cache the returned value */
+static int _ssh_init_ret = 0;
+
+void libssh_constructor(void) CONSTRUCTOR_ATTRIBUTE;
+void libssh_destructor(void) DESTRUCTOR_ATTRIBUTE;
+
+static int _ssh_init(unsigned constructor) {
+
+    int rc = 0;
+
+    if (!constructor) {
+        ssh_mutex_lock(&ssh_init_mutex);
+    }
+
+    _ssh_initialized++;
+
+    if (_ssh_initialized > 1) {
+        rc = _ssh_init_ret;
+        goto _ret;
+    }
+
+    rc = ssh_threads_init();
+    if (rc) {
+        goto _ret;
+    }
+
+    rc = ssh_crypto_init();
+    if (rc) {
+        goto _ret;
+    }
+
+    rc = ssh_dh_init();
+    if (rc) {
+        goto _ret;
+    }
+
+    rc = ssh_socket_init();
+    if (rc) {
+        goto _ret;
+    }
+
+_ret:
+    _ssh_init_ret = rc;
+
+    if (!constructor) {
+        ssh_mutex_unlock(&ssh_init_mutex);
+    }
+
+    return rc;
+}
+
+/**
+ * @brief Initialize global cryptographic data structures.
+ *
+ * This functions is automatically called when the library is loaded.
+ *
+ * @returns             0 on success, -1 if an error occured.
+ */
+void libssh_constructor(void)
+{
+
+    int rc;
+
+    rc = _ssh_init(1);
+
+    if (rc < 0) {
+        fprintf(stderr, "Error in auto_init()\n");
+    }
+
+    return;
+}
+
 /**
  * @defgroup libssh The libssh API
  *
  * The libssh library is implementing the SSH protocols and some of its
- * extensions. This group of functions is mostly used to implment a SSH client.
- * Some function are needed to implement a SSH server too.
+ * extensions. This group of functions is mostly used to implement an SSH
+ * client.
+ * Some function are needed to implement an SSH server too.
  *
  * @{
  */
@@ -45,57 +127,97 @@
 /**
  * @brief Initialize global cryptographic data structures.
  *
- * This function should only be called once, at the beginning of the program, in
- * the main thread. It may be omitted if your program is not multithreaded.
+ * Since version 0.8.0, it is not necessary to call this function on systems
+ * which are fully supported with regards to threading (that is, system with
+ * pthreads available).
+ *
+ * If the library is already initialized, increments the _ssh_initialized
+ * counter and return the error code cached in _ssh_init_ret.
  *
  * @returns             0 on success, -1 if an error occured.
  */
 int ssh_init(void) {
-    int rc;
-
-    rc = ssh_threads_init();
-    if (rc != SSH_OK) {
-        return -1;
-    }
-
-    rc = ssh_crypto_init();
-    if (rc != SSH_OK) {
-        return -1;
-    }
-
-    rc = ssh_dh_init();
-    if (rc != SSH_OK) {
-        return -1;
-    }
-
-    rc = ssh_socket_init();
-    if (rc != SSH_OK) {
-        return -1;
-    }
-
-    return 0;
+    return _ssh_init(0);
 }
 
+static int _ssh_finalize(unsigned destructor) {
+
+    if (!destructor) {
+        ssh_mutex_lock(&ssh_init_mutex);
+    }
+
+    if (_ssh_initialized == 1) {
+        _ssh_initialized = 0;
+
+        if (_ssh_init_ret < 0) {
+            goto _ret;
+        }
+
+        ssh_dh_finalize();
+        ssh_crypto_finalize();
+        ssh_socket_cleanup();
+        /* It is important to finalize threading after CRYPTO because
+         * it still depends on it */
+        ssh_threads_finalize();
+
+    }
+    else {
+        if (_ssh_initialized > 0) {
+            _ssh_initialized--;
+        }
+    }
+
+_ret:
+    if (!destructor) {
+        ssh_mutex_unlock(&ssh_init_mutex);
+    }
+    return 0;
+}
 
 /**
  * @brief Finalize and cleanup all libssh and cryptographic data structures.
  *
- * This function should only be called once, at the end of the program!
+ * This function is automatically called when the library is unloaded.
  *
  * @returns             0 on succes, -1 if an error occured.
  *
-   @returns 0 otherwise
  */
-int ssh_finalize(void)
+void libssh_destructor(void)
 {
-    ssh_dh_finalize();
-    ssh_crypto_finalize();
-    ssh_socket_cleanup();
-    /* It is important to finalize threading after CRYPTO because
-     * it still depends on it */
-    ssh_threads_finalize();
+    int rc;
 
-    return 0;
+    rc = _ssh_finalize(1);
+
+    if (rc < 0) {
+        fprintf(stderr, "Error in libssh_destructor()\n");
+    }
+
+    /* Detect if ssh_init() was called without matching ssh_finalize() */
+    if (_ssh_initialized > 0) {
+        fprintf(stderr,
+                "Error: ssh still initialized; probably ssh_init() was"
+                " called more than once\n");
+    }
+}
+
+/**
+ * @brief Finalize and cleanup all libssh and cryptographic data structures.
+ *
+ * Since version 0.8.0, it is not necessary to call this function, since it is
+ * automatically called when the library is unloaded.
+ *
+ * If ssh_init() is called explicitly, then ssh_finalize() must be called
+ * explicitly.
+ *
+ * When called, decrements the counter _ssh_initialized. If the counter reaches
+ * zero, then the libssh and cryptographic data structures are cleaned up.
+ *
+ * @returns             0 on succes, -1 if an error occured.
+ *
+ @returns 0 otherwise
+ */
+int ssh_finalize(void) {
+    return _ssh_finalize(0);
 }
 
 /** @} */

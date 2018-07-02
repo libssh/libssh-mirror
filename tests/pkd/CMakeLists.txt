@@ -24,9 +24,8 @@ set(pkd_libs
     ${CMOCKA_LIBRARY}
     ${LIBSSH_STATIC_LIBRARY}
     ${LIBSSH_LINK_LIBRARIES}
-    ${LIBSSH_THREADS_STATIC_LIBRARY}
-    ${LIBSSH_THREADS_LINK_LIBRARIES}
     ${ARGP_LIBRARIES}
+    pthread
 )
 
 add_executable(pkd_hello ${pkd_hello_src})
