@@ -47,7 +47,7 @@ static struct ssh_threads_callbacks_struct ssh_threads_noop =
 
 /* Threads interface implementation */
 
-#if !(HAVE_PTHREAD)
+#if !(HAVE_PTHREAD) && !(defined _WIN32 || defined _WIN64)
 void ssh_mutex_lock(SSH_MUTEX *mutex)
 {
     (void) mutex;

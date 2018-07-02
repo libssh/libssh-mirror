@@ -173,6 +173,12 @@ if (CMAKE_USE_PTHREADS_INIT)
         threads/noop.c
         threads/pthread.c
     )
+elseif (CMAKE_USE_WIN32_THREADS_INIT)
+        set(libssh_SRCS
+            ${libssh_SRCS}
+            threads/noop.c
+            threads/winlocks.c
+        )
 else()
     set(libssh_SRCS
         ${libssh_SRCS}

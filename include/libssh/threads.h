@@ -35,6 +35,13 @@
 #define SSH_MUTEX_STATIC_INIT PTHREAD_MUTEX_INITIALIZER
 #endif
 
+#elif (defined _WIN32) || (defined _WIN64)
+
+#include <windows.h>
+#include <winbase.h>
+#define SSH_MUTEX CRITICAL_SECTION *
+#define SSH_MUTEX_STATIC_INIT NULL
+
 #else
 
 # define SSH_MUTEX void *
