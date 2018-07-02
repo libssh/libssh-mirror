@@ -268,7 +268,7 @@ int ssh_options_set_algo(ssh_session session,
  *                Deprecated
  *
  *              - SSH_OPTIONS_SSH2:
-                  Unused
+ *                Unused
  *
  *              - SSH_OPTIONS_LOG_VERBOSITY:
  *                Set the session logging verbosity (int).\n

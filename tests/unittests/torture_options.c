@@ -100,7 +100,7 @@ static void torture_options_set_hostkey(void **state) {
     assert_string_equal(session->opts.wanted_methods[SSH_HOSTKEYS],
                         "ssh-ed25519,ecdsa-sha2-nistp384,ssh-rsa");
 
-    /* Test one unknown kex */
+    /* Test one unknown host key */
     rc = ssh_options_set(session,
                          SSH_OPTIONS_HOSTKEYS,
                          "ssh-ed25519,unknown-crap@example.com,ssh-rsa");
@@ -108,7 +108,7 @@ static void torture_options_set_hostkey(void **state) {
     assert_string_equal(session->opts.wanted_methods[SSH_HOSTKEYS],
                         "ssh-ed25519,ssh-rsa");
 
-    /* Test all unknown kexes */
+    /* Test all unknown host keys */
     rc = ssh_options_set(session,
                          SSH_OPTIONS_HOSTKEYS,
                          "unknown-crap@example.com,more-crap@example.com");
