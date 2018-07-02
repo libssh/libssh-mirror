@@ -95,25 +95,25 @@ static void test_algorithm(ssh_session session,
 
     if (kex != NULL) {
         rc = ssh_options_set(session, SSH_OPTIONS_KEY_EXCHANGE, kex);
-        assert_int_equal(rc, SSH_OK);
+        assert_ssh_return_code(session, rc);
     }
 
     if (cipher != NULL) {
         rc = ssh_options_set(session, SSH_OPTIONS_CIPHERS_C_S, cipher);
-        assert_int_equal(rc, SSH_OK);
+        assert_ssh_return_code(session, rc);
         rc = ssh_options_set(session, SSH_OPTIONS_CIPHERS_S_C, cipher);
-        assert_int_equal(rc, SSH_OK);
+        assert_ssh_return_code(session, rc);
     }
 
     if (hmac != NULL) {
         rc = ssh_options_set(session, SSH_OPTIONS_HMAC_C_S, hmac);
-        assert_int_equal(rc, SSH_OK);
+        assert_ssh_return_code(session, rc);
         rc = ssh_options_set(session, SSH_OPTIONS_HMAC_S_C, hmac);
-        assert_int_equal(rc, SSH_OK);
+        assert_ssh_return_code(session, rc);
     }
 
     rc = ssh_connect(session);
-    assert_int_equal(rc, SSH_OK);
+    assert_ssh_return_code(session, rc);
 
     /* send ignore packets of all sizes */
     memset(data, 0, sizeof(data));
