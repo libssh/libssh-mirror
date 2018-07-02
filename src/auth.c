@@ -495,6 +495,17 @@ int ssh_userauth_try_publickey(ssh_session session,
             return SSH_ERROR;
     }
 
+    sig_type_c = ssh_key_get_signature_algorithm(session, pubkey->type);
+
+    /* Check if the given public key algorithm is allowed */
+    if (!ssh_key_algorithm_allowed(session, sig_type_c)) {
+        ssh_set_error(session, SSH_REQUEST_DENIED,
+                      "The key algorithm '%s' is not allowed to be used by"
+                      " PUBLICKEY_ACCEPTED_TYPES configuration option",
+                      sig_type_c);
+        return SSH_AUTH_DENIED;
+    }
+
     rc = ssh_userauth_request_service(session);
     if (rc == SSH_AGAIN) {
         return SSH_AUTH_AGAIN;
@@ -507,7 +518,6 @@ int ssh_userauth_try_publickey(ssh_session session,
     if (rc < 0) {
         goto fail;
     }
-    sig_type_c = ssh_key_get_signature_algorithm(session, pubkey->type);
 
     /* request */
     rc = ssh_buffer_pack(session->out_buffer, "bsssbsS",
@@ -601,16 +611,25 @@ int ssh_userauth_publickey(ssh_session session,
             return SSH_AUTH_ERROR;
     }
 
+    /* Cert auth requires presenting the cert type name (*-cert@openssh.com) */
+    key_type = privkey->cert != NULL ? privkey->cert_type : privkey->type;
+    sig_type_c = ssh_key_get_signature_algorithm(session, key_type);
+
+    /* Check if the given public key algorithm is allowed */
+    if (!ssh_key_algorithm_allowed(session, sig_type_c)) {
+        ssh_set_error(session, SSH_REQUEST_DENIED,
+                      "The key algorithm '%s' is not allowed to be used by"
+                      " PUBLICKEY_ACCEPTED_TYPES configuration option",
+                      sig_type_c);
+        return SSH_AUTH_DENIED;
+    }
+
     rc = ssh_userauth_request_service(session);
     if (rc == SSH_AGAIN) {
         return SSH_AUTH_AGAIN;
     } else if (rc == SSH_ERROR) {
         return SSH_AUTH_ERROR;
     }
-
-    /* Cert auth requires presenting the cert type name (*-cert@openssh.com) */
-    key_type = privkey->cert != NULL ? privkey->cert_type : privkey->type;
-    sig_type_c = ssh_key_get_signature_algorithm(session, key_type);
 
     /* get public key or cert */
     rc = ssh_pki_export_pubkey_blob(privkey, &str);
@@ -697,13 +716,21 @@ static int ssh_userauth_agent_publickey(ssh_session session,
         return SSH_AUTH_ERROR;
     }
 
-
     /* public key */
     rc = ssh_pki_export_pubkey_blob(pubkey, &str);
     if (rc < 0) {
         goto fail;
     }
     sig_type_c = ssh_key_get_signature_algorithm(session, pubkey->type);
+
+    /* Check if the given public key algorithm is allowed */
+    if (!ssh_key_algorithm_allowed(session, sig_type_c)) {
+        ssh_set_error(session, SSH_REQUEST_DENIED,
+                      "The key algorithm '%s' is not allowed to be used by"
+                      " PUBLICKEY_ACCEPTED_TYPES configuration option",
+                      sig_type_c);
+        return SSH_AUTH_DENIED;
+    }
 
     /* request */
     rc = ssh_buffer_pack(session->out_buffer, "bsssbsS",
