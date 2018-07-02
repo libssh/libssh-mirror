@@ -151,15 +151,6 @@ ssh_session ssh_new(void) {
     }
 #endif
 
-    id = strdup("%d/identity");
-    if (id == NULL) {
-      goto err;
-    }
-    rc = ssh_list_append(session->opts.identity, id);
-    if (rc == SSH_ERROR) {
-      goto err;
-    }
-
     return session;
 
 err:
