@@ -22,7 +22,6 @@
 #ifndef SSH_KNOWNHOSTS_H_
 #define SSH_KNOWNHOSTS_H_
 
-char **ssh_knownhosts_algorithms(ssh_session session);
 struct ssh_list *ssh_known_hosts_get_algorithms(ssh_session session);
 
 #endif /* SSH_KNOWNHOSTS_H_ */

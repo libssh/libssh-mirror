@@ -324,42 +324,6 @@ static void torture_knownhosts_conflict(void **state) {
     /* session will be freed by session_teardown() */
 }
 
-static void torture_knownhosts_precheck(void **state) {
-    struct torture_state *s = *state;
-    ssh_session session = s->ssh.session;
-    char known_hosts_file[1024];
-    FILE *file;
-    int rc;
-    char **kex;
-
-    snprintf(known_hosts_file,
-             sizeof(known_hosts_file),
-             "%s/%s",
-             s->socket_dir,
-             TORTURE_KNOWN_HOSTS_FILE);
-
-    rc = ssh_options_set(session, SSH_OPTIONS_HOST, TORTURE_SSH_SERVER);
-    assert_int_equal(rc, SSH_OK);
-
-    rc = ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, known_hosts_file);
-    assert_int_equal(rc, SSH_OK);
-
-    file = fopen(known_hosts_file, "w");
-    assert_true(file != NULL);
-    fprintf(file, "127.0.0.10 ssh-rsa %s\n", BADRSA);
-    fprintf(file, "127.0.0.10 ssh-ed25519 %s\n", BADED25519);
-    fclose(file);
-
-    kex = ssh_knownhosts_algorithms(session);
-    assert_true(kex != NULL);
-    assert_string_equal(kex[0],"ssh-rsa");
-    assert_string_equal(kex[1],"ssh-ed25519");
-    assert_true(kex[2]==NULL);
-    free(kex[1]);
-    free(kex[0]);
-    free(kex);
-}
-
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
@@ -376,9 +340,6 @@ int torture_run_tests(void) {
                                         session_setup,
                                         session_teardown),
         cmocka_unit_test_setup_teardown(torture_knownhosts_conflict,
-                                        session_setup,
-                                        session_teardown),
-        cmocka_unit_test_setup_teardown(torture_knownhosts_precheck,
                                         session_setup,
                                         session_teardown),
     };
