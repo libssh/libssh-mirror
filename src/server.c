@@ -86,7 +86,7 @@ static int server_set_kex(ssh_session session) {
   struct ssh_kex_struct *server = &session->next_crypto->server_kex;
   int i, j, rc;
   const char *wanted;
-  char hostkeys[64] = {0};
+  char hostkeys[128] = {0};
   enum ssh_keytypes_e keytype;
   size_t len;
   int ok;
@@ -122,6 +122,11 @@ static int server_set_kex(ssh_session session) {
   }
 #endif
   if (session->srv.rsa_key != NULL) {
+      /* We support also the SHA2 variants */
+      len = strlen(hostkeys);
+      snprintf(hostkeys + len, sizeof(hostkeys) - len,
+               ",rsa-sha2-512,rsa-sha2-256");
+
       len = strlen(hostkeys);
       keytype = ssh_key_type(session->srv.rsa_key);
 
