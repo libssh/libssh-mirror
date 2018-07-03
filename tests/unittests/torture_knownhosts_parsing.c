@@ -244,7 +244,7 @@ static void torture_knownhosts_host_exists(void **state)
 
     ssh_options_set(session, SSH_OPTIONS_HOST, "wurstbrot");
     found = ssh_session_has_known_hosts_entry(session);
-    assert_true(found == SSH_KNOWN_HOSTS_NOT_FOUND);
+    assert_true(found == SSH_KNOWN_HOSTS_UNKNOWN);
 
     ssh_free(session);
 }

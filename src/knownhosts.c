@@ -542,19 +542,19 @@ enum ssh_known_hosts_e ssh_session_has_known_hosts_entry(ssh_session session)
 
     host_port = ssh_session_get_host_port(session);
     if (host_port == NULL) {
-        return SSH_KNOWN_HOSTS_NOT_FOUND;
+        return SSH_KNOWN_HOSTS_ERROR;
     }
 
     rc = ssh_known_hosts_read_entries(host_port,
                                       session->opts.knownhosts,
                                       &entry_list);
     if (rc != 0) {
-        return SSH_KNOWN_HOSTS_NOT_FOUND;
+        return SSH_KNOWN_HOSTS_UNKNOWN;
     }
 
     if (ssh_list_count(entry_list) == 0) {
         ssh_list_free(entry_list);
-        return SSH_KNOWN_HOSTS_NOT_FOUND;
+        return SSH_KNOWN_HOSTS_UNKNOWN;
     }
 
     for (it = ssh_list_get_iterator(entry_list);
@@ -738,7 +738,7 @@ ssh_known_hosts_check_server_key(const char *hosts_entry,
                                       filename,
                                       &entry_list);
     if (rc != 0) {
-        return SSH_KNOWN_HOSTS_NOT_FOUND;
+        return SSH_KNOWN_HOSTS_UNKNOWN;
     }
 
     it = ssh_list_get_iterator(entry_list);
