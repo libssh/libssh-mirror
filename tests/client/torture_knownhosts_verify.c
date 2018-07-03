@@ -24,6 +24,7 @@
 #define LIBSSH_STATIC
 
 #include "torture.h"
+#include "torture_key.h"
 
 #include <sys/types.h>
 #include <pwd.h>
@@ -50,6 +51,7 @@ static int session_setup(void **state)
     struct torture_state *s = *state;
     int verbosity = torture_libssh_verbosity();
     struct passwd *pwd;
+    int rc;
 
     pwd = getpwnam("bob");
     assert_non_null(pwd);
@@ -58,10 +60,16 @@ static int session_setup(void **state)
     s->ssh.session = ssh_new();
     assert_non_null(s->ssh.session);
 
-    ssh_options_set(s->ssh.session, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
-    ssh_options_set(s->ssh.session, SSH_OPTIONS_HOST, TORTURE_SSH_SERVER);
+    rc = ssh_options_set(s->ssh.session, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
+    assert_ssh_return_code(s->ssh.session, rc);
 
-    ssh_options_set(s->ssh.session, SSH_OPTIONS_USER, TORTURE_SSH_USER_ALICE);
+    rc = ssh_options_set(s->ssh.session, SSH_OPTIONS_HOST, TORTURE_SSH_SERVER);
+    assert_ssh_return_code(s->ssh.session, rc);
+
+    rc = ssh_options_set(s->ssh.session,
+                         SSH_OPTIONS_USER,
+                         TORTURE_SSH_USER_ALICE);
+    assert_ssh_return_code(s->ssh.session, rc);
 
     return 0;
 }
@@ -127,6 +135,60 @@ static void torture_knownhosts_write_and_verify(void **state)
     assert_int_equal(found, SSH_KNOWN_HOSTS_OK);
 }
 
+static void torture_knownhosts_precheck(void **state)
+{
+    struct torture_state *s = *state;
+    ssh_session session = s->ssh.session;
+    struct ssh_list *algo_list = NULL;
+    struct ssh_iterator *it = NULL;
+    size_t algo_count;
+    const char *algo = NULL;
+    char known_hosts_file[1024] = {0};
+    FILE *file;
+    int rc;
+
+    snprintf(known_hosts_file,
+             sizeof(known_hosts_file),
+             "%s/%s",
+             s->socket_dir,
+             TORTURE_KNOWN_HOSTS_FILE);
+
+    file = fopen(known_hosts_file, "w");
+    assert_non_null(file);
+    fprintf(file,
+            "127.0.0.10 %s\n",
+            torture_get_testkey_pub(SSH_KEYTYPE_RSA, 0));
+
+    fprintf(file,
+            "127.0.0.10 %s\n",
+            torture_get_testkey_pub(SSH_KEYTYPE_ED25519, 0));
+
+    fclose(file);
+
+    rc = ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, known_hosts_file);
+    assert_ssh_return_code(session, rc);
+
+    algo_list = ssh_known_hosts_get_algorithms(session);
+    assert_non_null(algo_list);
+
+    algo_count = ssh_list_count(algo_list);
+    assert_int_equal(algo_count, 2);
+
+    it = ssh_list_get_iterator(algo_list);
+    assert_non_null(it);
+    algo = ssh_iterator_value(const char *, it);
+    assert_string_equal(algo, "ssh-rsa");
+
+    ssh_list_remove(algo_list, it);
+
+    it = ssh_list_get_iterator(algo_list);
+    assert_non_null(it);
+    algo = ssh_iterator_value(const char *, it);
+    assert_string_equal(algo, "ssh-ed25519");
+
+    ssh_list_free(algo_list);
+}
+
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
@@ -134,6 +196,9 @@ int torture_run_tests(void) {
                                         session_setup,
                                         session_teardown),
         cmocka_unit_test_setup_teardown(torture_knownhosts_write_and_verify,
+                                        session_setup,
+                                        session_teardown),
+        cmocka_unit_test_setup_teardown(torture_knownhosts_precheck,
                                         session_setup,
                                         session_teardown),
     };
