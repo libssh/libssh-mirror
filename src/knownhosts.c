@@ -41,6 +41,7 @@
 #include "libssh/misc.h"
 #include "libssh/pki.h"
 #include "libssh/dh.h"
+#include "libssh/knownhosts.h"
 
 static int hash_hostname(const char *name,
                          unsigned char *salt,
@@ -269,6 +270,92 @@ static char *ssh_session_get_host_port(ssh_session session)
     }
 
     return host_port;
+}
+
+/**
+ * @internal
+ * @brief Check which host keys should be preferred for the session.
+ *
+ * This checks the known_hosts file to find out which algorithms should be
+ * preferred for the connection we are going to establish.
+ *
+ * @param[in]  session  The ssh session to use.
+ *
+ * @return A list of supported key types, NULL on error.
+ */
+struct ssh_list *ssh_known_hosts_get_algorithms(ssh_session session)
+{
+    struct ssh_list *entry_list = NULL;
+    struct ssh_iterator *it = NULL;
+    char *host_port = NULL;
+    size_t count;
+    struct ssh_list *list = NULL;
+    int list_error = 0;
+    int rc;
+
+    if (session->opts.knownhosts == NULL) {
+        if (ssh_options_apply(session) < 0) {
+            ssh_set_error(session,
+                          SSH_REQUEST_DENIED,
+                          "Can't find a known_hosts file");
+
+            return NULL;
+        }
+    }
+
+    host_port = ssh_session_get_host_port(session);
+    if (host_port == NULL) {
+        return NULL;
+    }
+
+    list = ssh_list_new();
+    if (list == NULL) {
+        return NULL;
+    }
+
+    rc = ssh_known_hosts_read_entries(host_port,
+                                      session->opts.knownhosts,
+                                      &entry_list);
+    if (rc != 0) {
+        ssh_list_free(list);
+        return NULL;
+    }
+
+    count = ssh_list_count(entry_list);
+    if (count == 0) {
+        ssh_list_free(list);
+        ssh_list_free(entry_list);
+        return NULL;
+    }
+
+    for (it = ssh_list_get_iterator(entry_list);
+         it != NULL;
+         it = ssh_list_get_iterator(entry_list)) {
+        struct ssh_knownhosts_entry *entry = NULL;
+        enum ssh_keytypes_e key_type;
+        const char *algo = NULL;
+
+        entry = ssh_iterator_value(struct ssh_knownhosts_entry *, it);
+        key_type = ssh_key_type(entry->publickey);
+        algo = ssh_key_type_to_char(key_type);
+
+        rc = ssh_list_append(list, algo);
+        if (rc != SSH_OK) {
+            list_error = 1;
+        }
+
+        ssh_knownhosts_entry_free(entry);
+        ssh_list_remove(entry_list, it);
+    }
+    ssh_list_free(entry_list);
+    if (list_error) {
+        goto error;
+    }
+
+    return list;
+error:
+    ssh_list_free(list);
+    return NULL;
 }
 
 /**
