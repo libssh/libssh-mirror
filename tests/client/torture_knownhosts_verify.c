@@ -189,6 +189,41 @@ static void torture_knownhosts_precheck(void **state)
     ssh_list_free(algo_list);
 }
 
+static void torture_knownhosts_other(void **state)
+{
+    struct torture_state *s = *state;
+    ssh_session session = s->ssh.session;
+    char known_hosts_file[1024] = {0};
+    enum ssh_known_hosts_e found;
+    FILE *file = NULL;
+    int rc;
+
+    snprintf(known_hosts_file,
+             sizeof(known_hosts_file),
+             "%s/%s",
+             s->socket_dir,
+             TORTURE_KNOWN_HOSTS_FILE);
+
+    rc = ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, known_hosts_file);
+    assert_ssh_return_code(session, rc);
+
+    rc = ssh_options_set(session, SSH_OPTIONS_HOSTKEYS, "ssh-ed25519");
+    assert_ssh_return_code(session, rc);
+
+    file = fopen(known_hosts_file, "w");
+    assert_non_null(file);
+    fprintf(file,
+            "127.0.0.10 %s\n",
+            torture_get_testkey_pub(SSH_KEYTYPE_RSA, 0));
+    fclose(file);
+
+    rc = ssh_connect(session);
+    assert_ssh_return_code(session, rc);
+
+    found = ssh_session_is_known_server(session);
+    assert_int_equal(found, SSH_KNOWN_HOSTS_OTHER);
+}
+
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
@@ -199,6 +234,9 @@ int torture_run_tests(void) {
                                         session_setup,
                                         session_teardown),
         cmocka_unit_test_setup_teardown(torture_knownhosts_precheck,
+                                        session_setup,
+                                        session_teardown),
+        cmocka_unit_test_setup_teardown(torture_knownhosts_other,
                                         session_setup,
                                         session_teardown),
     };
