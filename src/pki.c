@@ -1569,7 +1569,7 @@ int ssh_pki_signature_verify_blob(ssh_session session,
 
     SSH_LOG(SSH_LOG_FUNCTIONS,
             "Going to verify a %s type signature",
-            key->type_c);
+            sig->type_c);
 
 
     if (key->type == SSH_KEYTYPE_ECDSA) {
