@@ -111,6 +111,9 @@ freebsd/x86-64:
   - freebsd
   except:
   - tags
+  only:
+  - branches@libssh/libssh-mirror
+  - branches@cryptomilk/libssh-mirror
   artifacts:
     expire_in: 1 week
     when: on_failure
