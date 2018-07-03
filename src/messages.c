@@ -645,7 +645,8 @@ error:
  */
 static ssh_buffer ssh_msg_userauth_build_digest(ssh_session session,
                                                 ssh_message msg,
-                                                const char *service)
+                                                const char *service,
+                                                ssh_string algo)
 {
     struct ssh_crypto_struct *crypto =
         session->current_crypto ? session->current_crypto :
@@ -673,7 +674,7 @@ static ssh_buffer ssh_msg_userauth_build_digest(ssh_session session,
                          service,
                          "publickey", /* method */
                          1, /* has to be signed (true) */
-                         msg->auth_request.pubkey->type_c, /* pubkey algorithm */
+                         ssh_string_get_char(algo), /* pubkey algorithm */
                          str); /* public key as a blob */
 
     ssh_string_free(str);
@@ -785,13 +786,13 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
     if (rc != SSH_OK) {
       goto error;
     }
-    ssh_string_free(algo);
-    algo = NULL;
 
     rc = ssh_pki_import_pubkey_blob(pubkey_blob, &msg->auth_request.pubkey);
     ssh_string_free(pubkey_blob);
     pubkey_blob = NULL;
     if (rc < 0) {
+        ssh_string_free(algo);
+        algo = NULL;
         goto error;
     }
     msg->auth_request.signature_state = SSH_PUBLICKEY_STATE_NONE;
@@ -804,10 +805,14 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
         if(sig_blob == NULL) {
             SSH_LOG(SSH_LOG_PACKET, "Invalid signature packet from peer");
             msg->auth_request.signature_state = SSH_PUBLICKEY_STATE_ERROR;
+            ssh_string_free(algo);
+            algo = NULL;
             goto error;
         }
 
-        digest = ssh_msg_userauth_build_digest(session, msg, service);
+        digest = ssh_msg_userauth_build_digest(session, msg, service, algo);
+        ssh_string_free(algo);
+        algo = NULL;
         if (digest == NULL) {
             ssh_string_free(sig_blob);
             SSH_LOG(SSH_LOG_PACKET, "Failed to get digest");
