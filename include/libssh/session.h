@@ -90,6 +90,7 @@ enum ssh_pending_call_e {
 /* server-sig-algs extension */
 #define SSH_EXT_SIG_RSA_SHA256  0x01
 #define SSH_EXT_SIG_RSA_SHA512  0x02
+#define SSH_EXT_ALL             SSH_EXT_SIG_RSA_SHA256 | SSH_EXT_SIG_RSA_SHA512
 
 /* members that are common to ssh_session and ssh_bind */
 struct ssh_common_struct {

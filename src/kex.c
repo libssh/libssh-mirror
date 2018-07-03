@@ -415,7 +415,7 @@ out:
 }
 
 SSH_PACKET_CALLBACK(ssh_packet_kexinit){
-    int i;
+    int i, ok;
     int server_kex=session->server;
     ssh_string str = NULL;
     char *strings[KEX_METHODS_SIZE];
@@ -517,6 +517,22 @@ SSH_PACKET_CALLBACK(ssh_packet_kexinit){
         rc = ssh_buffer_add_u32(session->in_hashbuf, kexinit_reserved);
         if (rc < 0) {
             goto error;
+        }
+
+        /*
+         * If client sent a ext-info-c message in the kex list, it supports
+         * RFC 8308 extension negotiation.
+         */
+        ok = ssh_match_group(session->next_crypto->client_kex.methods[SSH_KEX],
+                             KEX_EXTENSION_CLIENT);
+        if (ok) {
+            /*
+             * Enable all the supported extensions and when the time comes
+             * (after NEWKEYS) send them to the client.
+             */
+            SSH_LOG(SSH_LOG_DEBUG, "The client supports extension "
+                    "negotiation: enabling all extensions");
+            session->extensions = SSH_EXT_ALL;
         }
 
         /*
