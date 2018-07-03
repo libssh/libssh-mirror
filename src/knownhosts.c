@@ -765,7 +765,10 @@ ssh_known_hosts_check_server_key(const char *hosts_entry,
 
         if (ssh_key_type(server_key) == ssh_key_type(entry->publickey)) {
             found = SSH_KNOWN_HOSTS_CHANGED;
-        } else {
+            continue;
+        }
+
+        if (found != SSH_KNOWN_HOSTS_CHANGED) {
             found = SSH_KNOWN_HOSTS_OTHER;
         }
     }
