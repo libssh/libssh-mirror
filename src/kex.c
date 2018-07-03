@@ -36,6 +36,7 @@
 #include "libssh/string.h"
 #include "libssh/curve25519.h"
 #include "libssh/knownhosts.h"
+#include "libssh/misc.h"
 
 #ifdef HAVE_LIBGCRYPT
 # define BLOWFISH "blowfish-cbc,"
@@ -564,7 +565,8 @@ void ssh_list_kex(struct ssh_kex_struct *kex) {
  * @returns a cstring containing a comma-separated list of hostkey methods.
  *          NULL if no method matches
  */
-static char *ssh_client_select_hostkeys(ssh_session session){
+static char *ssh_client_select_hostkeys(ssh_session session)
+{
     char methods_buffer[128]={0};
     static const char *preferred_hostkeys[] = {
         "ssh-ed25519",
@@ -577,42 +579,65 @@ static char *ssh_client_select_hostkeys(ssh_session session){
 #endif
         NULL
     };
-    char **methods;
-    int i,j;
-    int needcoma=0;
+    struct ssh_list *algo_list = NULL;
+    struct ssh_iterator *it = NULL;
+    size_t algo_count;
+    int needcomma = 0;
+    int i;
 
-    methods = ssh_knownhosts_algorithms(session);
-	if (methods == NULL || methods[0] == NULL){
-		SAFE_FREE(methods);
-		return NULL;
-	}
+    algo_list = ssh_known_hosts_get_algorithms(session);
+    if (algo_list == NULL) {
+        return NULL;
+    }
 
-	for (i=0;preferred_hostkeys[i] != NULL; ++i){
-		for (j=0; methods[j] != NULL; ++j){
-			if(strcmp(preferred_hostkeys[i], methods[j]) == 0){
-				if (ssh_verify_existing_algo(SSH_HOSTKEYS, methods[j])){
-					if(needcoma)
-						strncat(methods_buffer,",",sizeof(methods_buffer)-strlen(methods_buffer)-1);
-					strncat(methods_buffer, methods[j], sizeof(methods_buffer)-strlen(methods_buffer)-1);
-					needcoma = 1;
-				}
-			}
-		}
-	}
-	for(i=0;methods[i]!= NULL; ++i){
-		SAFE_FREE(methods[i]);
-	}
-	SAFE_FREE(methods);
+    algo_count = ssh_list_count(algo_list);
+    if (algo_count == 0) {
+        ssh_list_free(algo_list);
+        return NULL;
+    }
 
-	if(strlen(methods_buffer) > 0){
-		SSH_LOG(SSH_LOG_DEBUG, "Changing host key method to \"%s\"", methods_buffer);
-		return strdup(methods_buffer);
-	} else {
-		SSH_LOG(SSH_LOG_DEBUG, "No supported kex method for existing key in known_hosts file");
-		return NULL;
-	}
+    for (i = 0; preferred_hostkeys[i] != NULL; ++i) {
+        for (it = ssh_list_get_iterator(algo_list);
+             it != NULL;
+             it = ssh_list_get_iterator(algo_list)) {
+            const char *algo = ssh_iterator_value(const char *, it);
+            int cmp;
+            int ok;
 
+            cmp = strcmp(preferred_hostkeys[i], algo);
+            if (cmp == 0) {
+                ok = ssh_verify_existing_algo(SSH_HOSTKEYS, algo);
+                if (ok) {
+                    if (needcomma) {
+                        strncat(methods_buffer,
+                                ",",
+                                sizeof(methods_buffer) - strlen(methods_buffer) - 1);
+                    }
+                    strncat(methods_buffer,
+                            algo,
+                            sizeof(methods_buffer) - strlen(methods_buffer) - 1);
+                    needcomma = 1;
+                }
+            }
+
+            ssh_list_remove(algo_list, it);
+        }
+    }
+    ssh_list_free(algo_list);
+
+    if (strlen(methods_buffer) == 0) {
+        SSH_LOG(SSH_LOG_DEBUG,
+                "No supported kex method for existing key in known_hosts file");
+        return NULL;
+    }
+
+    SSH_LOG(SSH_LOG_DEBUG,
+            "Changing host key method to \"%s\"",
+            methods_buffer);
+
+    return strdup(methods_buffer);
 }
+
 /**
  * @brief sets the key exchange parameters to be sent to the server,
  *        in function of the options and available methods.
