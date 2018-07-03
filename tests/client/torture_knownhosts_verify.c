@@ -224,6 +224,65 @@ static void torture_knownhosts_other(void **state)
     assert_int_equal(found, SSH_KNOWN_HOSTS_OTHER);
 }
 
+static void torture_knownhosts_unknown(void **state)
+{
+    struct torture_state *s = *state;
+    ssh_session session = s->ssh.session;
+    char known_hosts_file[1024] = {0};
+    enum ssh_known_hosts_e found;
+    int rc;
+
+    snprintf(known_hosts_file,
+             sizeof(known_hosts_file),
+             "%s/%s",
+             s->socket_dir,
+             TORTURE_KNOWN_HOSTS_FILE);
+
+    rc = ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, known_hosts_file);
+    assert_ssh_return_code(session, rc);
+
+    rc = ssh_options_set(session, SSH_OPTIONS_HOSTKEYS, "ssh-ed25519");
+    assert_ssh_return_code(session, rc);
+
+    rc = ssh_connect(session);
+    assert_ssh_return_code(session, rc);
+
+    found = ssh_session_is_known_server(session);
+    assert_int_equal(found, SSH_KNOWN_HOSTS_UNKNOWN);
+
+    rc = ssh_session_update_known_hosts(session);
+    assert_ssh_return_code(session, rc);
+
+    ssh_disconnect(session);
+    ssh_free(session);
+
+    /* connect again and check host key */
+    session = ssh_new();
+    assert_non_null(session);
+
+    s->ssh.session = session;
+
+    rc = ssh_options_set(s->ssh.session, SSH_OPTIONS_HOST, TORTURE_SSH_SERVER);
+    assert_ssh_return_code(s->ssh.session, rc);
+
+    rc = ssh_options_set(s->ssh.session,
+                         SSH_OPTIONS_USER,
+                         TORTURE_SSH_USER_ALICE);
+    assert_ssh_return_code(s->ssh.session, rc);
+
+    rc = ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, known_hosts_file);
+    assert_ssh_return_code(session, rc);
+
+    rc = ssh_connect(session);
+    assert_ssh_return_code(session, rc);
+
+    /* ssh-rsa is the default but libssh should try ssh-ed25519 instead */
+    found = ssh_session_is_known_server(session);
+    assert_int_equal(found, SSH_KNOWN_HOSTS_OK);
+
+    /* session will be freed by session_teardown() */
+}
+
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
@@ -237,6 +296,9 @@ int torture_run_tests(void) {
                                         session_setup,
                                         session_teardown),
         cmocka_unit_test_setup_teardown(torture_knownhosts_other,
+                                        session_setup,
+                                        session_teardown),
+        cmocka_unit_test_setup_teardown(torture_knownhosts_unknown,
                                         session_setup,
                                         session_teardown),
     };
