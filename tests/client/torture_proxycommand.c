@@ -61,7 +61,7 @@ static void torture_options_set_proxycommand(void **state) {
     rc = ssh_options_set(session, SSH_OPTIONS_PROXYCOMMAND, "nc 127.0.0.10 22");
     assert_int_equal(rc, 0);
     rc = ssh_connect(session);
-    assert_int_equal(rc, SSH_OK);
+    assert_ssh_return_code(session, rc);
 }
 
 static void torture_options_set_proxycommand_notexist(void **state) {
@@ -70,9 +70,10 @@ static void torture_options_set_proxycommand_notexist(void **state) {
     int rc;
 
     rc = ssh_options_set(session, SSH_OPTIONS_PROXYCOMMAND, "this_command_does_not_exist");
-    assert_int_equal(rc, SSH_OK);
+    assert_ssh_return_code(session, rc);
+
     rc = ssh_connect(session);
-    assert_int_equal(rc, SSH_ERROR);
+    assert_ssh_return_code_equal(session, rc, SSH_ERROR);
 }
 
 int torture_run_tests(void) {

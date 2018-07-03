@@ -96,10 +96,10 @@ static void torture_knownhosts_export(void **state)
     int rc;
 
     rc = ssh_connect(session);
-    assert_int_equal(rc, SSH_OK);
+    assert_ssh_return_code(session, rc);
 
     rc = ssh_session_export_known_hosts_entry(session, &entry);
-    assert_int_equal(rc, SSH_OK);
+    assert_ssh_return_code(session, rc);
 
     p = strstr(entry, "ssh-ed25519");
     if (p != NULL) {
@@ -118,10 +118,10 @@ static void torture_knownhosts_write_and_verify(void **state)
     int rc;
 
     rc = ssh_connect(session);
-    assert_int_equal(rc, SSH_OK);
+    assert_ssh_return_code(session, rc);
 
     rc = ssh_session_update_known_hosts(session);
-    assert_int_equal(rc, SSH_OK);
+    assert_ssh_return_code(session, rc);
 
     found = ssh_session_is_known_server(session);
     assert_int_equal(found, SSH_KNOWN_HOSTS_OK);

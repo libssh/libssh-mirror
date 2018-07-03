@@ -84,7 +84,7 @@ static void torture_ssh_forward(void **state)
     int rc;
 
     rc = ssh_channel_listen_forward(session, "127.0.0.21", 8080, &bound_port);
-    assert_int_equal(rc, SSH_OK);
+    assert_ssh_return_code(session, rc);
 
     c = ssh_channel_accept_forward(session, 10, &dport);
     /* We do not get a listener and run into the timeout here */

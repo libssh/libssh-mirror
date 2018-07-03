@@ -86,10 +86,10 @@ static void torture_channel_read_error(void **state) {
     assert_non_null(channel);
 
     rc = ssh_channel_open_session(channel);
-    assert_int_equal(rc, SSH_OK);
+    assert_ssh_return_code(session, rc);
 
     rc = ssh_channel_request_exec(channel, "hexdump -C /dev/urandom");
-    assert_int_equal(rc, SSH_OK);
+    assert_ssh_return_code(session, rc);
 
     /* send crap and for server to send us a disconnect */
     rc = write(ssh_get_fd(session),"AAAA", 4);
@@ -102,9 +102,9 @@ static void torture_channel_read_error(void **state) {
     }
 #if OPENSSH_VERSION_MAJOR == 6 && OPENSSH_VERSION_MINOR >= 7
     /* With openssh 6.7 this doesn't produce and error anymore */
-    assert_int_equal(rc, SSH_OK);
+    assert_ssh_return_code(session, rc);
 #else
-    assert_int_equal(rc, SSH_ERROR);
+    assert_ssh_return_code_equal(session, rc, SSH_ERROR);
 #endif
 
     ssh_channel_free(channel);
