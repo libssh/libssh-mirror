@@ -195,8 +195,9 @@ void libssh_destructor(void)
     /* Detect if ssh_init() was called without matching ssh_finalize() */
     if (_ssh_initialized > 0) {
         fprintf(stderr,
-                "Error: ssh still initialized; probably ssh_init() was"
-                " called more than once\n");
+                "Warning: ssh still initialized; probably ssh_init() "
+                "was called more than once (init count: %d)\n",
+                _ssh_initialized);
     }
 }
 

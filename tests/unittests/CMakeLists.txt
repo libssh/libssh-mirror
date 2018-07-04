@@ -41,6 +41,8 @@ if (UNIX AND NOT WIN32)
         target_link_libraries(torture_threads_buffer Threads::Threads)
         add_cmocka_test(torture_threads_crypto torture_threads_crypto.c ${TORTURE_LIBRARY})
         target_link_libraries(torture_threads_crypto Threads::Threads)
+        add_cmocka_test(torture_threads_pki_rsa torture_threads_pki_rsa.c ${TORTURE_LIBRARY})
+        target_link_libraries(torture_threads_pki_rsa Threads::Threads)
 
         # Not working correctly
         #if (WITH_SERVER)
