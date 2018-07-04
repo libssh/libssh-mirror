@@ -37,6 +37,9 @@ if (UNIX AND NOT WIN32)
         target_link_libraries(torture_rand Threads::Threads)
         add_cmocka_test(torture_threads_init torture_threads_init.c ${TORTURE_LIBRARY})
         target_link_libraries(torture_threads_init Threads::Threads)
+        add_cmocka_test(torture_threads_buffer torture_threads_buffer.c ${TORTURE_LIBRARY})
+        target_link_libraries(torture_threads_buffer Threads::Threads)
+
         # Not working correctly
         #if (WITH_SERVER)
         #    add_cmocka_test(torture_server_x11 torture_server_x11.c ${TORTURE_LIBRARY})
