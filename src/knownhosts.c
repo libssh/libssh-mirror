@@ -310,12 +310,14 @@ struct ssh_list *ssh_known_hosts_get_algorithms(ssh_session session)
 
     list = ssh_list_new();
     if (list == NULL) {
+        SAFE_FREE(host_port);
         return NULL;
     }
 
     rc = ssh_known_hosts_read_entries(host_port,
                                       session->opts.knownhosts,
                                       &entry_list);
+    SAFE_FREE(host_port);
     if (rc != 0) {
         ssh_list_free(list);
         return NULL;
