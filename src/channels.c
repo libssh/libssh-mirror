@@ -1802,9 +1802,14 @@ static char *generate_cookie(void) {
   static const char *hex = "0123456789abcdef";
   char s[36];
   unsigned char rnd[16];
+  int ok;
   int i;
 
-  ssh_get_random(rnd,sizeof(rnd),0);
+  ok = ssh_get_random(rnd, sizeof(rnd), 0);
+  if (!ok) {
+      return NULL;
+  }
+
   for (i = 0; i < 16; i++) {
     s[i*2] = hex[rnd[i] & 0x0f];
     s[i*2+1] = hex[rnd[i] >> 4];

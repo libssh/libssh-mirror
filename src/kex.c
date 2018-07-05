@@ -645,9 +645,14 @@ static char *ssh_client_select_hostkeys(ssh_session session)
 int ssh_set_client_kex(ssh_session session){
     struct ssh_kex_struct *client= &session->next_crypto->client_kex;
     const char *wanted;
+    int ok;
     int i;
 
-    ssh_get_random(client->cookie, 16, 0);
+    ok = ssh_get_random(client->cookie, 16, 0);
+    if (!ok) {
+        ssh_set_error(session, SSH_FATAL, "PRNG error");
+        return SSH_ERROR;
+    }
 
     memset(client->methods, 0, KEX_METHODS_SIZE * sizeof(char **));
     /* first check if we have specific host key methods */

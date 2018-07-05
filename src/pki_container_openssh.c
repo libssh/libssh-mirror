@@ -576,6 +576,7 @@ ssh_string ssh_pki_openssh_privkey_export(const ssh_key privkey,
     int to_encrypt=0;
     unsigned char *b64;
     uint32_t str_len, len;
+    int ok;
     int rc;
 
     if (privkey == NULL) {
@@ -594,7 +595,11 @@ ssh_string ssh_pki_openssh_privkey_export(const ssh_key privkey,
     if(buffer == NULL || pubkey_s == NULL){
         goto error;
     }
-    ssh_get_random(&rnd, sizeof(rnd), 0);
+
+    ok = ssh_get_random(&rnd, sizeof(rnd), 0);
+    if (!ok) {
+        goto error;
+    }
 
     privkey_buffer = ssh_buffer_new();
     if (privkey_buffer == NULL) {
@@ -634,7 +639,13 @@ ssh_string ssh_pki_openssh_privkey_export(const ssh_key privkey,
             ssh_buffer_free(kdf_buf);
             goto error;
         }
-        ssh_get_random(ssh_string_data(salt),16, 0);
+
+        ok = ssh_get_random(ssh_string_data(salt), 16, 0);
+        if (!ok) {
+            ssh_buffer_free(kdf_buf);
+            goto error;
+        }
+
         ssh_buffer_pack(kdf_buf, "Sd", salt, rounds);
         kdf_options = ssh_string_new(ssh_buffer_get_len(kdf_buf));
         if (kdf_options == NULL){

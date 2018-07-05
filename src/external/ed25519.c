@@ -85,10 +85,10 @@ int crypto_sign_ed25519_keypair(unsigned char *pk,
     SHA512CTX ctx;
     unsigned char extsk[64];
     int i;
-    int rc;
+    int ok;
 
-    rc = ssh_get_random(sk, 32, 0);
-    if (rc < 0){
+    ok = ssh_get_random(sk, 32, 0);
+    if (!ok) {
         return -1;
     }
 

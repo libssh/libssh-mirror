@@ -44,9 +44,10 @@
  */
 int ssh_client_curve25519_init(ssh_session session){
   int rc;
+  int ok;
 
-  rc = ssh_get_random(session->next_crypto->curve25519_privkey, CURVE25519_PRIVKEY_SIZE, 1);
-  if (rc == 0){
+  ok = ssh_get_random(session->next_crypto->curve25519_privkey, CURVE25519_PRIVKEY_SIZE, 1);
+  if (!ok) {
 	  ssh_set_error(session, SSH_FATAL, "PRNG error");
 	  return SSH_ERROR;
   }
@@ -190,6 +191,7 @@ int ssh_server_curve25519_init(ssh_session session, ssh_buffer packet){
     /* SSH host keys (rsa,dsa,ecdsa) */
     ssh_key privkey;
     ssh_string sig_blob = NULL;
+    int ok;
     int rc;
 
     /* Extract the client pubkey from the init packet */
@@ -210,8 +212,8 @@ int ssh_server_curve25519_init(ssh_session session, ssh_buffer packet){
     ssh_string_free(q_c_string);
     /* Build server's keypair */
 
-    rc = ssh_get_random(session->next_crypto->curve25519_privkey, CURVE25519_PRIVKEY_SIZE, 1);
-    if (rc == 0){
+    ok = ssh_get_random(session->next_crypto->curve25519_privkey, CURVE25519_PRIVKEY_SIZE, 1);
+    if (!ok) {
         ssh_set_error(session, SSH_FATAL, "PRNG error");
         return SSH_ERROR;
     }

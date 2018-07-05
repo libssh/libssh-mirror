@@ -90,9 +90,15 @@ static int server_set_kex(ssh_session session) {
   char hostkeys[64] = {0};
   enum ssh_keytypes_e keytype;
   size_t len;
+  int ok;
 
   ZERO_STRUCTP(server);
-  ssh_get_random(server->cookie, 16, 0);
+
+  ok = ssh_get_random(server->cookie, 16, 0);
+  if (!ok) {
+      ssh_set_error(session, SSH_FATAL, "PRNG error");
+      return -1;
+  }
 
   if (session->srv.ed25519_key != NULL) {
       snprintf(hostkeys,

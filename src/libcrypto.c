@@ -78,6 +78,19 @@ void ssh_reseed(void){
 #endif
 }
 
+/**
+ * @brief Get random bytes
+ *
+ * Make sure to always check the return code of this function!
+ *
+ * @param[in]  where    The buffer to fill with random bytes
+ *
+ * @param[in]  len      The size of the buffer to fill.
+ *
+ * @param[in]  strong   Use a strong or private RNG source.
+ *
+ * @return 1 on success, 0 on error.
+ */
 int ssh_get_random(void *where, int len, int strong)
 {
     (void)strong;

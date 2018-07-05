@@ -579,7 +579,13 @@ static int packet_send2(ssh_session session) {
   }
 
   if (session->current_crypto != NULL) {
-    ssh_get_random(padstring, padding, 0);
+      int ok;
+
+      ok = ssh_get_random(padstring, padding, 0);
+      if (!ok) {
+          ssh_set_error(session, SSH_FATAL, "PRNG error");
+          goto error;
+      }
   }
 
   if (header_buffer == NULL){
