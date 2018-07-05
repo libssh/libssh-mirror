@@ -1028,6 +1028,7 @@ int ssh_pki_import_pubkey_file(const char *filename, ssh_key *pkey)
     enum ssh_keytypes_e type;
     struct stat sb;
     char *key_buf, *p;
+    size_t buflen, i;
     const char *q;
     FILE *file;
     off_t size;
@@ -1079,19 +1080,29 @@ int ssh_pki_import_pubkey_file(const char *filename, ssh_key *pkey)
         return SSH_ERROR;
     }
     key_buf[size] = '\0';
+    buflen = strlen(key_buf);
 
     q = p = key_buf;
-    while (*p != '\0' && !isspace((int)*p)) p++;
-    *p = '\0';
+    for (i = 0; i < buflen; i++) {
+        if (isspace((int)p[i])) {
+            p[i] = '\0';
+            break;
+        }
+    }
 
     type = ssh_key_type_from_name(q);
     if (type == SSH_KEYTYPE_UNKNOWN) {
         SAFE_FREE(key_buf);
         return SSH_ERROR;
     }
-    q = ++p;
-    while (*p != '\0' && !isspace((int)*p)) p++;
-    *p = '\0';
+
+    q = &p[i + 1];
+    for (; i < buflen; i++) {
+        if (isspace((int)p[i])) {
+            p[i] = '\0';
+            break;
+        }
+    }
 
     rc = ssh_pki_import_pubkey_base64(q, type, pkey);
     SAFE_FREE(key_buf);
