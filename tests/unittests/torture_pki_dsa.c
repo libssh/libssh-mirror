@@ -267,8 +267,10 @@ static void torture_pki_dsa_publickey_base64(void **state)
 {
     enum ssh_keytypes_e type;
     char *b64_key, *key_buf, *p;
-    const char *q;
+    const char *str;
     ssh_key key;
+    size_t keylen;
+    size_t i;
     int rc;
 
     (void) state; /* unused */
@@ -276,24 +278,36 @@ static void torture_pki_dsa_publickey_base64(void **state)
     key_buf = strdup(torture_get_testkey_pub(SSH_KEYTYPE_DSS, 0));
     assert_true(key_buf != NULL);
 
-    q = p = key_buf;
-    while (*p != '\0' && !isspace((int)*p)) p++;
-    *p = '\0';
+    keylen = strlen(key_buf);
 
-    type = ssh_key_type_from_name(q);
+    str = p = key_buf;
+    for (i = 0; i < keylen; i++) {
+        if (isspace((int)p[i])) {
+            p[i] = '\0';
+            break;
+        }
+
+    }
+
+    type = ssh_key_type_from_name(str);
     assert_true(type == SSH_KEYTYPE_DSS);
 
-    q = ++p;
-    while (*p != '\0' && !isspace((int)*p)) p++;
-    *p = '\0';
+    str = &p[i + 1];
 
-    rc = ssh_pki_import_pubkey_base64(q, type, &key);
+    for (; i < keylen; i++) {
+        if (isspace((int)p[i])) {
+            p[i] = '\0';
+            break;
+        }
+    }
+
+    rc = ssh_pki_import_pubkey_base64(str, type, &key);
     assert_true(rc == 0);
 
     rc = ssh_pki_export_pubkey_base64(key, &b64_key);
     assert_true(rc == 0);
 
-    assert_string_equal(q, b64_key);
+    assert_string_equal(str, b64_key);
 
     free(b64_key);
     free(key_buf);
