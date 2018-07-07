@@ -68,7 +68,7 @@ static int is_openssh_client_new_enough(void) {
     /* Extract major. */
     major = strtoul(version + 8, &tmp, 10);
     if ((tmp == (version + 8)) ||
-        ((errno = ERANGE) && (major == ULONG_MAX)) ||
+        ((errno == ERANGE) && (major == ULONG_MAX)) ||
         ((errno != 0) && (major == 0)) ||
         ((major < 1) || (major > 100))) {
         fprintf(stderr, "failed to parse OpenSSH client version, "
