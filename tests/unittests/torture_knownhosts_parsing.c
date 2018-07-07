@@ -1,5 +1,7 @@
 #include "config.h"
 
+#include <sys/stat.h>
+
 #define LIBSSH_STATIC
 #include <libssh/priv.h>
 #include "torture.h"
@@ -20,13 +22,16 @@ static int setup_knownhosts_file(void **state)
     char *tmp_file = NULL;
     size_t nwritten;
     FILE *fp = NULL;
+    mode_t mask;
     int fd;
 
     tmp_file = strdup(TMP_FILE_NAME);
     assert_non_null(tmp_file);
     *state = tmp_file;
 
+    mask = umask(S_IRWXO | S_IRWXG);
     fd = mkstemp(tmp_file);
+    umask(mask);
     assert_return_code(fd, errno);
 
     fp = fdopen(fd, "w");
