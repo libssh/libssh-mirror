@@ -763,20 +763,27 @@ int ssh_gssapi_auth_mic(ssh_session session){
 }
 
 static gss_OID ssh_gssapi_oid_from_string(ssh_string oid_s){
-    gss_OID ret = malloc(sizeof (gss_OID_desc));
+    gss_OID ret;
     unsigned char *data = ssh_string_data(oid_s);
     size_t len = ssh_string_len(oid_s);
-    if(len > 256 || len <= 2){
+
+    ret = malloc(sizeof(gss_OID_desc));
+    if (ret == NULL) {
+        return NULL;
+    }
+
+    if (len > 256 || len <= 2) {
         SAFE_FREE(ret);
         return NULL;
     }
-    if(data[0] != SSH_OID_TAG || data[1] != len - 2){
+    if (data[0] != SSH_OID_TAG || data[1] != len - 2) {
         SAFE_FREE(ret);
         return NULL;
     }
     ret->elements = malloc(len - 2);
     memcpy(ret->elements, &data[2], len-2);
     ret->length = len-2;
+
     return ret;
 }
 
@@ -792,18 +799,19 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_response){
     SSH_LOG(SSH_LOG_PACKET, "Received SSH_USERAUTH_GSSAPI_RESPONSE");
     if (session->auth_state != SSH_AUTH_STATE_GSSAPI_REQUEST_SENT){
         ssh_set_error(session, SSH_FATAL, "Invalid state in ssh_packet_userauth_gssapi_response");
-        return SSH_PACKET_USED;
+        goto error;
     }
+
     oid_s = ssh_buffer_get_ssh_string(packet);
     if (!oid_s){
         ssh_set_error(session, SSH_FATAL, "Missing OID");
-        return SSH_PACKET_USED;
+        goto error;
     }
     session->gssapi->client.oid = ssh_gssapi_oid_from_string(oid_s);
     ssh_string_free(oid_s);
     if (!session->gssapi->client.oid) {
         ssh_set_error(session, SSH_FATAL, "Invalid OID");
-        return SSH_PACKET_USED;
+        goto error;
     }
 
     session->gssapi->client.flags = GSS_C_MUTUAL_FLAG | GSS_C_INTEG_FLAG;
@@ -825,11 +833,11 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_response){
                              "Initializing gssapi context",
                              maj_stat,
                              min_stat);
-        return SSH_PACKET_USED;
+        goto error;
     }
     if (output_token.length != 0){
         hexa = ssh_get_hexa(output_token.value, output_token.length);
-        SSH_LOG(SSH_LOG_PACKET, "GSSAPI: sending token %s",hexa);
+        SSH_LOG(SSH_LOG_PACKET, "GSSAPI: sending token %s", hexa);
         SAFE_FREE(hexa);
         ssh_buffer_pack(session->out_buffer,
                         "bdP",
@@ -839,6 +847,12 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_response){
         ssh_packet_send(session);
         session->auth_state = SSH_AUTH_STATE_GSSAPI_TOKEN;
     }
+    return SSH_PACKET_USED;
+
+error:
+    session->auth_state = SSH_AUTH_STATE_ERROR;
+    ssh_gssapi_free(session);
+    session->gssapi = NULL;
     return SSH_PACKET_USED;
 }
 
@@ -859,7 +873,8 @@ static int ssh_gssapi_send_mic(ssh_session session){
     mic_buf.length = ssh_buffer_get_len(mic_buffer);
     mic_buf.value = ssh_buffer_get(mic_buffer);
 
-    maj_stat = gss_get_mic(&min_stat,session->gssapi->ctx, GSS_C_QOP_DEFAULT, &mic_buf, &mic_token_buf);
+    maj_stat = gss_get_mic(&min_stat,session->gssapi->ctx, GSS_C_QOP_DEFAULT,
+                           &mic_buf, &mic_token_buf);
     if (GSS_ERROR(maj_stat)){
         ssh_buffer_free(mic_buffer);
         ssh_gssapi_log_error(SSH_LOG_PROTOCOL,
@@ -892,16 +907,19 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_token_client){
     (void)type;
 
     SSH_LOG(SSH_LOG_PACKET,"Received SSH_MSG_USERAUTH_GSSAPI_TOKEN");
-    if (!session->gssapi || session->auth_state != SSH_AUTH_STATE_GSSAPI_TOKEN){
-        ssh_set_error(session, SSH_FATAL, "Received SSH_MSG_USERAUTH_GSSAPI_TOKEN in invalid state");
-        return SSH_PACKET_USED;
+    if (!session->gssapi || session->auth_state != SSH_AUTH_STATE_GSSAPI_TOKEN) {
+        ssh_set_error(session, SSH_FATAL,
+                      "Received SSH_MSG_USERAUTH_GSSAPI_TOKEN in invalid state");
+        goto error;
     }
     token = ssh_buffer_get_ssh_string(packet);
 
     if (token == NULL){
-        ssh_set_error(session, SSH_REQUEST_DENIED, "ssh_packet_userauth_gssapi_token: invalid packet");
-        return SSH_PACKET_USED;
+        ssh_set_error(session, SSH_REQUEST_DENIED,
+                      "ssh_packet_userauth_gssapi_token: invalid packet");
+        goto error;
     }
+
     hexa = ssh_get_hexa(ssh_string_data(token),ssh_string_len(token));
     SSH_LOG(SSH_LOG_PACKET, "GSSAPI Token : %s",hexa);
     SAFE_FREE(hexa);
@@ -926,12 +944,10 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_token_client){
                              "Gssapi error",
                              maj_stat,
                              min_stat);
-        ssh_gssapi_free(session);
-        session->gssapi=NULL;
-        return SSH_PACKET_USED;
+        goto error;
     }
 
-    if (output_token.length != 0){
+    if (output_token.length != 0) {
         hexa = ssh_get_hexa(output_token.value, output_token.length);
         SSH_LOG(SSH_LOG_PACKET, "GSSAPI: sending token %s",hexa);
         SAFE_FREE(hexa);
@@ -942,9 +958,17 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_token_client){
                         (size_t)output_token.length, output_token.value);
         ssh_packet_send(session);
     }
-    if(maj_stat == GSS_S_COMPLETE){
+
+    if (maj_stat == GSS_S_COMPLETE) {
         session->auth_state = SSH_AUTH_STATE_NONE;
         ssh_gssapi_send_mic(session);
     }
+
+    return SSH_PACKET_USED;
+
+error:
+    session->auth_state = SSH_AUTH_STATE_ERROR;
+    ssh_gssapi_free(session);
+    session->gssapi = NULL;
     return SSH_PACKET_USED;
 }
