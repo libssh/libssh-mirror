@@ -355,7 +355,8 @@ int ssh_userauth_none(ssh_session session, const char *username) {
             goto pending;
         default:
             ssh_set_error(session, SSH_FATAL,
-                          "Wrong state during pending SSH call");
+                          "Wrong state (%d) during pending SSH call",
+                          session->pending_call_state);
             return SSH_AUTH_ERROR;
     }
 
@@ -450,7 +451,8 @@ int ssh_userauth_try_publickey(ssh_session session,
         default:
             ssh_set_error(session,
                           SSH_FATAL,
-                          "Wrong state during pending SSH call");
+                          "Wrong state (%d) during pending SSH call",
+                          session->pending_call_state);
             return SSH_ERROR;
     }
 
@@ -1119,7 +1121,8 @@ int ssh_userauth_password(ssh_session session,
         default:
             ssh_set_error(session,
                           SSH_FATAL,
-                          "Wrong state during pending SSH call");
+                          "Wrong state (%d) during pending SSH call",
+                          session->pending_call_state);
             return SSH_ERROR;
     }
 
@@ -1763,7 +1766,8 @@ int ssh_userauth_gssapi(ssh_session session) {
 	default:
 		ssh_set_error(session,
 				SSH_FATAL,
-				"Wrong state during pending SSH call");
+				"Wrong state (%d) during pending SSH call",
+				session->pending_call_state);
 		return SSH_ERROR;
 	}
 
