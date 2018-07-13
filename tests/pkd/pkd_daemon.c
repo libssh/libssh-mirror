@@ -253,6 +253,8 @@ static int pkd_exec_hello(int fd, struct pkd_daemon_args *args) {
 
     if (type == PKD_RSA) {
         opts = SSH_BIND_OPTIONS_RSAKEY;
+    } else if (type == PKD_ED25519) {
+        opts = SSH_BIND_OPTIONS_HOSTKEY;
 #ifdef HAVE_DSA
     } else if (type == PKD_DSA) {
         opts = SSH_BIND_OPTIONS_DSAKEY;

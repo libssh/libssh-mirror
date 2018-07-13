@@ -27,6 +27,15 @@ void setup_rsa_key() {
     assert_int_equal(rc, 0);
 }
 
+void setup_ed25519_key() {
+    int rc = 0;
+    if (access(LIBSSH_ED25519_TESTKEY, F_OK) != 0) {
+        rc = system_checked(OPENSSH_KEYGEN " -t ed25519 -q -N \"\" -f "
+                            LIBSSH_ED25519_TESTKEY);
+    }
+    assert_int_equal(rc, 0);
+}
+
 #ifdef HAVE_DSA
 void setup_dsa_key() {
     int rc = 0;
@@ -65,6 +74,10 @@ static void cleanup_key(const char *privkey, const char *pubkey) {
 
 void cleanup_rsa_key() {
     cleanup_key(LIBSSH_RSA_TESTKEY, LIBSSH_RSA_TESTKEY ".pub");
+}
+
+void cleanup_ed25519_key() {
+    cleanup_key(LIBSSH_ED25519_TESTKEY, LIBSSH_ED25519_TESTKEY ".pub");
 }
 
 #ifdef HAVE_DSA

@@ -15,6 +15,7 @@ enum pkd_hostkey_type_e {
 #ifdef HAVE_DSA
     PKD_DSA,
 #endif
+    PKD_ED25519,
     PKD_ECDSA
 };
 
