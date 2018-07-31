@@ -505,9 +505,6 @@ int ssh_connect(ssh_session session) {
   session->alive = 0;
   session->client = 1;
 
-  if (ssh_init() < 0) {
-    return SSH_ERROR;
-  }
   if (session->opts.fd == SSH_INVALID_SOCKET &&
       session->opts.host == NULL &&
       session->opts.ProxyCommand == NULL) {

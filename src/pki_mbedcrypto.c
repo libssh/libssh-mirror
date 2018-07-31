@@ -74,10 +74,6 @@ ssh_key pki_private_key_from_base64(const char *b64_key, const char *passphrase,
     size_t b64len = strlen(b64_key) + 1;
     unsigned char tmp[MAX_PASSPHRASE_SIZE] = {0};
 
-    if (ssh_init() < 0) {
-        return NULL;
-    }
-
     type = pki_privatekey_type_from_string(b64_key);
     if (type == SSH_KEYTYPE_UNKNOWN) {
         SSH_LOG(SSH_LOG_WARN, "Unknown or invalid private key.");

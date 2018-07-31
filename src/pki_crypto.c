@@ -637,11 +637,6 @@ ssh_string pki_private_key_to_pem(const ssh_key key,
     BIO *mem;
     int rc;
 
-    /* needed for openssl initialization */
-    if (ssh_init() < 0) {
-        return NULL;
-    }
-
     mem = BIO_new(BIO_s_mem());
     if (mem == NULL) {
         return NULL;
@@ -767,11 +762,6 @@ ssh_key pki_private_key_from_base64(const char *b64_key,
 #else
     void *ecdsa = NULL;
 #endif
-
-    /* needed for openssl initialization */
-    if (ssh_init() < 0) {
-        return NULL;
-    }
 
     type = pki_privatekey_type_from_string(b64_key);
     if (type == SSH_KEYTYPE_UNKNOWN) {

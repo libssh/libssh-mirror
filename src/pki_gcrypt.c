@@ -918,11 +918,6 @@ ssh_key pki_private_key_from_base64(const char *b64_key,
     enum ssh_keytypes_e type;
     int valid;
 
-    /* needed for gcrypt initialization */
-    if (ssh_init() < 0) {
-        return NULL;
-    }
-
     type = pki_privatekey_type_from_string(b64_key);
     if (type == SSH_KEYTYPE_UNKNOWN) {
         SSH_LOG(SSH_LOG_WARN, "Unknown or invalid private key.");

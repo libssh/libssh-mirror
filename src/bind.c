@@ -253,11 +253,6 @@ int ssh_bind_listen(ssh_bind sshbind) {
   socket_t fd;
   int rc;
 
-  if (ssh_init() < 0) {
-    ssh_set_error(sshbind, SSH_FATAL, "ssh_init() failed");
-    return -1;
-  }
-
   if (sshbind->rsa == NULL &&
       sshbind->dsa == NULL &&
       sshbind->ecdsa == NULL &&
