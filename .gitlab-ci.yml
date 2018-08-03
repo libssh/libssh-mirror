@@ -10,7 +10,7 @@ variables:
 centos7/openssl_1.0.x/x86-64:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$CENTOS7_BUILD
   script:
-  - mkdir -p obj && cd obj && cmake -DUNIT_TESTING=ON -DCMAKE_BUILD_TYPE=Debug
+  - mkdir -p obj && cd obj && cmake3 -DUNIT_TESTING=ON -DCMAKE_BUILD_TYPE=Debug
     -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON
     -DWITH_PCAP=ON .. && make -j$(nproc) && ctest --output-on-failure
   tags:
