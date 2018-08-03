@@ -921,7 +921,7 @@ int ssh_message_auth_interactive_request(ssh_message msg, const char *name,
     rc = ssh_buffer_pack(msg->session->out_buffer,
                          "sb",
                          prompts[i],
-                         echo[1] ? 1 : 0);
+                         echo[i] ? 1 : 0);
     if (rc != SSH_OK){
         ssh_set_error_oom(msg->session);
         return SSH_ERROR;
