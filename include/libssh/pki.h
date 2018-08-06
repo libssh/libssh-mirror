@@ -99,6 +99,7 @@ void ssh_key_clean (ssh_key key);
 const char *
 ssh_key_get_signature_algorithm(ssh_session session,
                                 enum ssh_keytypes_e type);
+enum ssh_keytypes_e ssh_key_type_from_signature_name(const char *name);
 
 /* SSH Signature Functions */
 ssh_signature ssh_signature_new(void);

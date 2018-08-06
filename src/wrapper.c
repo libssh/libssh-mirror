@@ -509,7 +509,7 @@ int crypt_set_algorithms_server(ssh_session session){
     }
 
     method = session->next_crypto->kex_methods[SSH_HOSTKEYS];
-    session->srv.hostkey = ssh_key_type_from_name(method);
+    session->srv.hostkey = ssh_key_type_from_signature_name(method);
 
     return SSH_OK;
 }

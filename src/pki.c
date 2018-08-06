@@ -357,7 +357,7 @@ ssh_key_get_signature_algorithm(ssh_session session,
  *
  * @return              The enum ssh key algorithm type.
  */
-static enum ssh_keytypes_e ssh_key_type_from_signature_name(const char *name) {
+enum ssh_keytypes_e ssh_key_type_from_signature_name(const char *name) {
     if (name == NULL) {
         return SSH_KEYTYPE_UNKNOWN;
     }
@@ -2033,21 +2033,36 @@ ssh_string ssh_srv_pki_do_sign_sessionid(ssh_session session,
             sig = NULL;
         }
     } else {
-        unsigned char hash[SHA_DIGEST_LEN] = {0};
-        SHACTX ctx;
+        unsigned char hash[SHA512_DIGEST_LEN] = {0};
+        uint32_t hlen = 0;
+        enum ssh_digest_e hash_type;
 
-        ctx = sha1_init();
-        if (ctx == NULL) {
+        hash_type = ssh_key_type_to_hash(session, privkey->type);
+        switch (hash_type) {
+        case SSH_DIGEST_SHA256:
+            sha256(crypto->secret_hash, crypto->digest_len, hash);
+            hlen = SHA256_DIGEST_LEN;
+            break;
+        case SSH_DIGEST_SHA512:
+            sha512(crypto->secret_hash, crypto->digest_len, hash);
+            hlen = SHA512_DIGEST_LEN;
+            break;
+        case SSH_DIGEST_SHA1:
+        case SSH_DIGEST_AUTO:
+            sha1(crypto->secret_hash, crypto->digest_len, hash);
+            hlen = SHA_DIGEST_LEN;
+            break;
+        default:
+            SSH_LOG(SSH_LOG_TRACE, "Unknown sig->type: %d", sig->type);
             return NULL;
         }
-        sha1_update(ctx, crypto->secret_hash, crypto->digest_len);
-        sha1_final(hash, ctx);
+
 
 #ifdef DEBUG_CRYPTO
-        ssh_print_hexa("Hash being signed", hash, SHA_DIGEST_LEN);
+        ssh_print_hexa("Hash being signed", hash, hlen);
 #endif
 
-        sig = pki_do_sign_sessionid(privkey, hash, SHA_DIGEST_LEN);
+        sig = pki_do_sign_sessionid_hash(privkey, hash, hlen, hash_type);
         if (sig == NULL) {
             return NULL;
         }

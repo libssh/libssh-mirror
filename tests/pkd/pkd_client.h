@@ -15,8 +15,8 @@
 #define OPENSSH_BINARY "ssh"
 #define OPENSSH_KEYGEN "ssh-keygen"
 
-#define OPENSSH_HOSTKEY_ALGOS_DEFAULT "ssh-ed25519,ssh-rsa"
-#define OPENSSH_PKACCEPTED_DEFAULT    "ssh-ed25519,ssh-rsa"
+#define OPENSSH_HOSTKEY_ALGOS_DEFAULT "ssh-ed25519,rsa-sha2-512,rsa-sha2-256,ssh-rsa"
+#define OPENSSH_PKACCEPTED_DEFAULT    "ssh-ed25519,rsa-sha2-512,rsa-sha2-256,ssh-rsa"
 
 #if       HAVE_ECC
 #define OPENSSH_HOSTKEY_ALGOS_ECDSA   ",ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521"

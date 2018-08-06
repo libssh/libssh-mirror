@@ -1236,26 +1236,6 @@ static ssh_string _RSA_do_sign_hash(const unsigned char *digest,
     return sig_blob;
 }
 
-/**
- * @internal
- *
- * @brief Compute a digital signature.
- *
- * @param[in]  digest    The message digest.
- *
- * @param[in]  dlen      The length of the digest.
- *
- * @param[in]  privkey   The private rsa key to use for signing.
- *
- * @return               A newly allocated rsa sig blob or NULL on error.
- */
-static ssh_string _RSA_do_sign(const unsigned char *digest,
-                                    int dlen,
-                                    RSA *privkey)
-{
-    return _RSA_do_sign_hash(digest, dlen, privkey, SSH_DIGEST_AUTO);
-}
-
 static ssh_string pki_dsa_signature_to_blob(const ssh_signature sig)
 {
     char buffer[40] = { 0 };
@@ -1813,16 +1793,24 @@ ssh_signature pki_do_sign_hash(const ssh_key privkey,
 }
 
 #ifdef WITH_SERVER
-ssh_signature pki_do_sign_sessionid(const ssh_key key,
-                                    const unsigned char *hash,
-                                    size_t hlen)
+ssh_signature pki_do_sign_sessionid_hash(const ssh_key key,
+                                         const unsigned char *hash,
+                                         size_t hlen,
+                                         enum ssh_digest_e hash_type)
 {
     ssh_signature sig;
+
+    /* Only RSA supports different signature algorithm types now */
+    if (key->type != SSH_KEYTYPE_RSA && hash_type != SSH_DIGEST_AUTO) {
+        SSH_LOG(SSH_LOG_WARN, "Incompatible signature algorithm passed");
+        return NULL;
+    }
 
     sig = ssh_signature_new();
     if (sig == NULL) {
         return NULL;
     }
+
     sig->type = key->type;
     sig->type_c = key->type_c;
 
@@ -1836,7 +1824,8 @@ ssh_signature pki_do_sign_sessionid(const ssh_key key,
             break;
         case SSH_KEYTYPE_RSA:
         case SSH_KEYTYPE_RSA1:
-            sig->rsa_sig = _RSA_do_sign(hash, hlen, key->rsa);
+            sig->type_c = ssh_key_signature_to_char(key->type, hash_type);
+            sig->rsa_sig = _RSA_do_sign_hash(hash, hlen, key->rsa, hash_type);
             if (sig->rsa_sig == NULL) {
                 ssh_signature_free(sig);
                 return NULL;
