@@ -355,7 +355,7 @@ sftp_packet sftp_packet_read(sftp_session sftp) {
   ssh_buffer_get_u8(packet->payload, &packet->type);
 
   size = ntohl(tmp);
-  if (size == 0) {
+  if (size == 0 || size > UINT32_MAX) {
     return packet;
   }
   size--;
