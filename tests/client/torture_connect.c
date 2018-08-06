@@ -164,14 +164,14 @@ static void torture_connect_socket(void **state) {
 
     int rc;
     int sock_fd = 0;
-    struct sockaddr_in server_addr;
+    struct sockaddr_in server_addr = {
+        .sin_family = AF_INET,
+        .sin_port = htons(22),
+        .sin_addr.s_addr = inet_addr(TORTURE_SSH_SERVER),
+    };
 
     sock_fd = socket(AF_INET, SOCK_STREAM, 0);
-    assert_true(sock_fd > 0);
-
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(22);
-    server_addr.sin_addr.s_addr = inet_addr(TORTURE_SSH_SERVER);
+    assert_true(sock_fd > 2);
 
     rc = connect(sock_fd, (struct sockaddr *)&server_addr, sizeof(server_addr));
     assert_return_code(rc, errno);
