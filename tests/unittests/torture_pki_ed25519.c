@@ -321,13 +321,24 @@ static void torture_pki_ed25519_write_privkey(void **state)
 
 static void torture_pki_ed25519_sign(void **state){
     ssh_key privkey;
-    ssh_signature sig = ssh_signature_new();
+    ssh_signature sig;
     ssh_string blob;
     int rc;
+
     (void)state;
 
-    rc = ssh_pki_import_privkey_base64(torture_get_testkey(SSH_KEYTYPE_ED25519,0,0), NULL, NULL, NULL, &privkey);
+    sig = ssh_signature_new();
+    assert_non_null(sig);
+
+    rc = ssh_pki_import_privkey_base64(torture_get_testkey(SSH_KEYTYPE_ED25519,
+                                                           0,
+                                                           0),
+                                       NULL,
+                                       NULL,
+                                       NULL,
+                                       &privkey);
     assert_true(rc == SSH_OK);
+    assert_non_null(privkey);
 
     sig->type = SSH_KEYTYPE_ED25519;
     rc = pki_ed25519_sign(privkey, sig, HASH, sizeof(HASH));
