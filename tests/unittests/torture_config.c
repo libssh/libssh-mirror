@@ -176,12 +176,14 @@ static void torture_config_glob(void **state) {
 #ifdef HAVE_GLOB
     ret = ssh_options_get(session, SSH_OPTIONS_PROXYCOMMAND, &v);
     assert_true(ret == 0);
+    assert_non_null(v);
 
     assert_string_equal(v, PROXYCMD);
     ssh_string_free_char(v);
 
     ret = ssh_options_get(session, SSH_OPTIONS_IDENTITY, &v);
     assert_true(ret == 0);
+    assert_non_null(v);
 
     assert_string_equal(v, ID_FILE);
     ssh_string_free_char(v);
