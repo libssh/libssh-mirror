@@ -101,6 +101,9 @@
 #define KEY_EXCHANGE CURVE25519 ECDH "diffie-hellman-group14-sha1,diffie-hellman-group1-sha1"
 #define KEX_METHODS_SIZE 10
 
+/* RFC 8308 */
+#define KEX_EXTENSION_CLIENT "ext-info-c"
+
 /* NOTE: This is a fixed API and the index is defined by ssh_kex_types_e */
 static const char *default_methods[] = {
   KEY_EXCHANGE,
@@ -642,11 +645,15 @@ static char *ssh_client_select_hostkeys(ssh_session session)
  * @brief sets the key exchange parameters to be sent to the server,
  *        in function of the options and available methods.
  */
-int ssh_set_client_kex(ssh_session session){
+int ssh_set_client_kex(ssh_session session)
+{
     struct ssh_kex_struct *client= &session->next_crypto->client_kex;
     const char *wanted;
+    char *kex = NULL;
+    char *kex_tmp = NULL;
     int ok;
     int i;
+    size_t kex_len, len;
 
     ok = ssh_get_random(client->cookie, 16, 0);
     if (!ok) {
@@ -673,6 +680,23 @@ int ssh_set_client_kex(ssh_session session){
         }
     }
 
+    /* Here we append  ext-info-c  to the list of kex algorithms */
+    kex = client->methods[SSH_KEX];
+    len = strlen(kex);
+    if (len + strlen(KEX_EXTENSION_CLIENT) + 2 < len) {
+        /* Overflow */
+        return SSH_ERROR;
+    }
+    kex_len = len + strlen(KEX_EXTENSION_CLIENT) + 2; /* comma, NULL */
+    kex_tmp = realloc(kex, kex_len);
+    if (kex_tmp == NULL) {
+        free(kex);
+        ssh_set_error_oom(session);
+        return SSH_ERROR;
+    }
+    snprintf(kex_tmp + len, kex_len - len, ",%s", KEX_EXTENSION_CLIENT);
+    client->methods[SSH_KEX] = kex_tmp;
+
     return SSH_OK;
 }
 
@@ -682,7 +706,15 @@ int ssh_set_client_kex(ssh_session session){
 int ssh_kex_select_methods (ssh_session session){
     struct ssh_kex_struct *server = &session->next_crypto->server_kex;
     struct ssh_kex_struct *client = &session->next_crypto->client_kex;
+    char *ext_start = NULL;
     int i;
+
+    /* Here we should drop the  ext-info-c  from the list so we avoid matching.
+     * it. We added it to the end, so we can just truncate the string here */
+    ext_start = strstr(client->methods[SSH_KEX], ","KEX_EXTENSION_CLIENT);
+    if (ext_start != NULL) {
+        ext_start[0] = '\0';
+    }
 
     for (i = 0; i < KEX_METHODS_SIZE; i++) {
         session->next_crypto->kex_methods[i]=ssh_find_matching(server->methods[i],client->methods[i]);
