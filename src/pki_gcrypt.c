@@ -2199,19 +2199,28 @@ ssh_signature pki_do_sign_hash(const ssh_key privkey,
 }
 
 #ifdef WITH_SERVER
-ssh_signature pki_do_sign_sessionid(const ssh_key key,
-                                    const unsigned char *hash,
-                                    size_t hlen)
+ssh_signature pki_do_sign_sessionid_hash(const ssh_key key,
+                                         const unsigned char *hash,
+                                         size_t hlen,
+                                         enum ssh_digest_e hash_type)
 {
     unsigned char ghash[hlen + 1];
+    const char *hash_c = NULL;
     ssh_signature sig;
     gcry_sexp_t sexp;
     gcry_error_t err;
+
+    /* Only RSA supports different signature algorithm types now */
+    if (key->type != SSH_KEYTYPE_RSA && hash_type != SSH_DIGEST_AUTO) {
+        SSH_LOG(SSH_LOG_WARN, "Incompatible signature algorithm passed");
+        return NULL;
+    }
 
     sig = ssh_signature_new();
     if (sig == NULL) {
         return NULL;
     }
+
     sig->type = key->type;
     sig->type_c = key->type_c;
 
@@ -2238,9 +2247,25 @@ ssh_signature pki_do_sign_sessionid(const ssh_key key,
             }
             break;
         case SSH_KEYTYPE_RSA:
+            sig->type_c = ssh_key_signature_to_char(key->type, hash_type);
+            switch (hash_type) {
+            case SSH_DIGEST_SHA1:
+                hash_c = "sha1";
+                break;
+            case SSH_DIGEST_SHA256:
+                hash_c = "sha256";
+                break;
+            case SSH_DIGEST_SHA512:
+                hash_c = "sha512";
+                break;
+            default:
+                SSH_LOG(SSH_LOG_WARN, "Incomplatible key algorithm");
+                return NULL;
+            }
             err = gcry_sexp_build(&sexp,
                                   NULL,
-                                  "(data(flags pkcs1)(hash sha1 %b))",
+                                  "(data(flags pkcs1)(hash %s %b))",
+                                  hash_c,
                                   hlen,
                                   hash);
             if (err) {

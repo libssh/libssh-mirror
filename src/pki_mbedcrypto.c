@@ -1127,22 +1127,32 @@ ssh_signature pki_do_sign_hash(const ssh_key privkey,
 }
 
 #ifdef WITH_SERVER
-ssh_signature pki_do_sign_sessionid(const ssh_key key, const unsigned char
-        *hash, size_t hlen)
+ssh_signature pki_do_sign_sessionid_hash(const ssh_key key,
+                                         const unsigned char *hash,
+                                         size_t hlen,
+                                         enum ssh_digest_e hash_type)
 {
     ssh_signature sig = NULL;
     int rc;
+
+    /* Only RSA supports different signature algorithm types now */
+    if (key->type != SSH_KEYTYPE_RSA && hash_type != SSH_DIGEST_AUTO) {
+        SSH_LOG(SSH_LOG_WARN, "Incompatible signature algorithm passed");
+        return NULL;
+    }
 
     sig = ssh_signature_new();
     if (sig == NULL) {
         return NULL;
     }
+
     sig->type = key->type;
     sig->type_c = key->type_c;
 
     switch (key->type) {
         case SSH_KEYTYPE_RSA:
-            sig->rsa_sig = rsa_do_sign_hash(hash, hlen, key->rsa, SSH_DIGEST_AUTO);
+            sig->type_c = ssh_key_signature_to_char(key->type, hash_type);
+            sig->rsa_sig = rsa_do_sign_hash(hash, hlen, key->rsa, hash_type);
             if (sig->rsa_sig == NULL) {
                 ssh_signature_free(sig);
                 return NULL;
