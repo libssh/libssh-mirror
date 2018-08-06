@@ -270,3 +270,55 @@ SSH_PACKET_CALLBACK(ssh_packet_service_accept){
 
 	return SSH_PACKET_USED;
 }
+
+/**
+ * @internal
+ * @brief handles a SSH2_MSG_EXT_INFO packet defined in RFC 8308
+ *
+ */
+SSH_PACKET_CALLBACK(ssh_packet_ext_info)
+{
+    int rc;
+    uint32_t nr_extensions = 0;
+    uint32_t i;
+    (void)type;
+    (void)user;
+
+    SSH_LOG(SSH_LOG_PACKET, "Received SSH_MSG_EXT_INFO");
+
+    rc = ssh_buffer_get_u32(packet, &nr_extensions);
+    if (rc == 0) {
+        SSH_LOG(SSH_LOG_PACKET, "Failed to read number of extensions");
+        return SSH_PACKET_USED;
+    }
+    nr_extensions = ntohl(nr_extensions);
+    SSH_LOG(SSH_LOG_PACKET, "Follows %u extensions", nr_extensions);
+
+    for (i = 0; i < nr_extensions; i++) {
+        char *name = NULL;
+        char *value = NULL;
+        int cmp;
+
+        rc = ssh_buffer_unpack(packet, "ss", &name, &value);
+        if (rc != SSH_OK) {
+            SSH_LOG(SSH_LOG_PACKET, "Error reading extension name-value pair");
+            return SSH_PACKET_USED;
+        }
+
+        cmp = strcmp(name, "server-sig-algs");
+        if (cmp == 0) {
+            /* TODO check for NULL bytes */
+            SSH_LOG(SSH_LOG_PACKET, "Extension: %s=<%s>", name, value);
+            if (ssh_match_group(value, "rsa-sha2-512")) {
+                session->extensions |= SSH_EXT_SIG_RSA_SHA512;
+            }
+            if (ssh_match_group(value, "rsa-sha2-256")) {
+                session->extensions |= SSH_EXT_SIG_RSA_SHA256;
+            }
+        }
+        free(name);
+        free(value);
+    }
+
+    return SSH_PACKET_USED;
+}

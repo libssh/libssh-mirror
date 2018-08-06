@@ -51,6 +51,7 @@ SSH_PACKET_CALLBACK(ssh_packet_ignore_callback);
 SSH_PACKET_CALLBACK(ssh_packet_dh_reply);
 SSH_PACKET_CALLBACK(ssh_packet_newkeys);
 SSH_PACKET_CALLBACK(ssh_packet_service_accept);
+SSH_PACKET_CALLBACK(ssh_packet_ext_info);
 
 #ifdef WITH_SERVER
 SSH_PACKET_CALLBACK(ssh_packet_kexdh_init);
