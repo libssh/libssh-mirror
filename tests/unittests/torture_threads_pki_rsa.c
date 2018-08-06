@@ -447,12 +447,13 @@ static void torture_pki_rsa_publickey_base64(void **state)
 
 static void *thread_pki_rsa_duplicate_key(void *threadid)
 {
-    int rc;
     char *b64_key;
     char *b64_key_gen;
     ssh_key pubkey;
     ssh_key privkey;
     ssh_key privkey_dup;
+    int cmp;
+    int rc;
 
     (void) threadid;
 
@@ -471,18 +472,20 @@ static void *thread_pki_rsa_duplicate_key(void *threadid)
     assert_true(rc == 0);
 
     privkey_dup = ssh_key_dup(privkey);
-    assert_true(privkey_dup != NULL);
+    assert_non_null(privkey_dup);
 
     rc = ssh_pki_export_privkey_to_pubkey(privkey, &pubkey);
     assert_true(rc == SSH_OK);
+    assert_non_null(pubkey);
 
     rc = ssh_pki_export_pubkey_base64(pubkey, &b64_key_gen);
     assert_true(rc == 0);
+    assert_non_null(b64_key_gen);
 
     assert_string_equal(b64_key, b64_key_gen);
 
-    rc = ssh_key_cmp(privkey, privkey_dup, SSH_KEY_CMP_PRIVATE);
-    assert_true(rc == 0);
+    cmp = ssh_key_cmp(privkey, privkey_dup, SSH_KEY_CMP_PRIVATE);
+    assert_true(cmp == 0);
 
     ssh_key_free(pubkey);
     ssh_key_free(privkey);

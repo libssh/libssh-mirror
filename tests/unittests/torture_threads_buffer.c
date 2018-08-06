@@ -239,7 +239,7 @@ static void *thread_ssh_buffer_get_ssh_string(void *threadid)
                 assert_non_null(buffer);
 
                 for (l = 0; l < k; ++l) {
-                    rc = ssh_buffer_add_u32(buffer,htonl(values[i]));
+                    rc = ssh_buffer_add_u32(buffer, htonl(values[i]));
                     assert_int_equal(rc, 0);
                 }
                 rc = ssh_buffer_add_data(buffer,data,j);
