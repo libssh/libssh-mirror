@@ -80,6 +80,7 @@ static void torture_channel_read_error(void **state) {
     ssh_session session = s->ssh.session;
     ssh_channel channel;
     int rc;
+    int fd;
     int i;
 
     channel = ssh_channel_new(session);
@@ -92,7 +93,9 @@ static void torture_channel_read_error(void **state) {
     assert_ssh_return_code(session, rc);
 
     /* send crap and for server to send us a disconnect */
-    rc = write(ssh_get_fd(session),"AAAA", 4);
+    fd = ssh_get_fd(session);
+    assert_true(fd > 2);
+    rc = write(fd, "AAAA", 4);
     assert_int_equal(rc, 4);
 
     for (i=0;i<20;++i){
