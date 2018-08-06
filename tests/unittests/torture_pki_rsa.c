@@ -326,6 +326,7 @@ static void torture_pki_rsa_duplicate_key(void **state)
                                      NULL,
                                      &privkey);
     assert_true(rc == 0);
+    assert_non_null(privkey);
 
     privkey_dup = ssh_key_dup(privkey);
     assert_true(privkey_dup != NULL);
@@ -460,6 +461,7 @@ static void torture_pki_rsa_write_privkey(void **state)
                                      NULL,
                                      &privkey);
     assert_true(rc == 0);
+    assert_non_null(privkey);
 
     rc = ssh_key_cmp(origkey, privkey, SSH_KEY_CMP_PRIVATE);
     assert_true(rc == 0);
