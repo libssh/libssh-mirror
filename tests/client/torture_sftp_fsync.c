@@ -98,7 +98,7 @@ static void torture_sftp_fsync(void **state) {
     fp = fopen(libssh_tmp_file, "r");
     assert_non_null(fp);
 
-    rc = lstat(libssh_tmp_file, &sb);
+    rc = fstat(fileno(fp), &sb);
     assert_return_code(rc, errno);
 
     bytesread = fread(buf_verify, sizeof(buf_verify), 1, fp);
