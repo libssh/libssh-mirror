@@ -1,16 +1,10 @@
-project(libssh C)
+cmake_minimum_required(VERSION 3.2.0)
+cmake_policy(SET CMP0048 NEW)
 
-# Required cmake version
-cmake_minimum_required(VERSION 3.1.0)
+project(libssh VERSION 0.8.0 DESCRIPTION "The SSH library" LANGUAGES C)
 
-# global needed variables
+# global needed variable
 set(APPLICATION_NAME ${PROJECT_NAME})
-
-set(APPLICATION_VERSION_MAJOR "0")
-set(APPLICATION_VERSION_MINOR "7")
-set(APPLICATION_VERSION_PATCH "90")
-
-set(APPLICATION_VERSION "${APPLICATION_VERSION_MAJOR}.${APPLICATION_VERSION_MINOR}.${APPLICATION_VERSION_PATCH}")
 
 # SOVERSION scheme: CURRENT.AGE.REVISION
 #   If there was an incompatible interface change:
