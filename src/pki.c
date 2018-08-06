@@ -282,8 +282,8 @@ static enum ssh_digest_e ssh_key_hash_from_name(const char *name)
  *
  * @return              A hash type to be used.
  */
-static enum ssh_keytypes_e ssh_key_type_to_hash(ssh_session session,
-                                                enum ssh_keytypes_e type)
+static enum ssh_digest_e ssh_key_type_to_hash(ssh_session session,
+                                       enum ssh_keytypes_e type)
 {
     /* TODO this should also reflect supported key types specified in
      * configuration (ssh_config PubkeyAcceptedKeyTypes) */
@@ -307,6 +307,26 @@ static enum ssh_keytypes_e ssh_key_type_to_hash(ssh_session session,
 
     /* We should never reach this */
     return SSH_DIGEST_AUTO;
+}
+
+/**
+ * @brief Gets signature algorithm name to be used with the given
+ *        key type.
+ *
+ * @param[in]  session  SSH session.
+ * @param[in]  type     The algorithm type to convert.
+ *
+ * @return              A string for the keytype or NULL if unknown.
+ */
+const char *
+ssh_key_get_signature_algorithm(ssh_session session,
+                                enum ssh_keytypes_e type)
+{
+    enum ssh_digest_e hash_type;
+
+    hash_type = ssh_key_type_to_hash(session, type);
+
+    return ssh_key_signature_to_char(type, hash_type);
 }
 
 /**

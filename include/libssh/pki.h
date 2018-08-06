@@ -96,6 +96,10 @@ typedef struct ssh_signature_struct *ssh_signature;
 ssh_key ssh_key_dup(const ssh_key key);
 void ssh_key_clean (ssh_key key);
 
+const char *
+ssh_key_get_signature_algorithm(ssh_session session,
+                                enum ssh_keytypes_e type);
+
 /* SSH Signature Functions */
 ssh_signature ssh_signature_new(void);
 void ssh_signature_free(ssh_signature sign);

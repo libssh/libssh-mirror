@@ -470,6 +470,7 @@ int ssh_userauth_try_publickey(ssh_session session,
                                const ssh_key pubkey)
 {
     ssh_string pubkey_s = NULL;
+    const char *sig_type_c = NULL;
     int rc;
 
     if (session == NULL) {
@@ -506,6 +507,7 @@ int ssh_userauth_try_publickey(ssh_session session,
     if (rc < 0) {
         goto fail;
     }
+    sig_type_c = ssh_key_get_signature_algorithm(session, pubkey->type);
 
     /* request */
     rc = ssh_buffer_pack(session->out_buffer, "bsssbsS",
@@ -514,7 +516,7 @@ int ssh_userauth_try_publickey(ssh_session session,
             "ssh-connection",
             "publickey",
             0, /* private key ? */
-            pubkey->type_c, /* algo */
+            sig_type_c, /* algo */
             pubkey_s /* public key */
             );
     if (rc < 0) {
@@ -575,7 +577,7 @@ int ssh_userauth_publickey(ssh_session session,
 {
     ssh_string str = NULL;
     int rc;
-    const char *type_c;
+    const char *sig_type_c;
     enum ssh_keytypes_e key_type;
 
     if (session == NULL) {
@@ -608,7 +610,7 @@ int ssh_userauth_publickey(ssh_session session,
 
     /* Cert auth requires presenting the cert type name (*-cert@openssh.com) */
     key_type = privkey->cert != NULL ? privkey->cert_type : privkey->type;
-    type_c = ssh_key_type_to_char(key_type);
+    sig_type_c = ssh_key_get_signature_algorithm(session, key_type);
 
     /* get public key or cert */
     rc = ssh_pki_export_pubkey_blob(privkey, &str);
@@ -623,7 +625,7 @@ int ssh_userauth_publickey(ssh_session session,
             "ssh-connection",
             "publickey",
             1, /* private key */
-            type_c, /* algo */
+            sig_type_c, /* algo */
             str /* public key or cert */
             );
     if (rc < 0) {
@@ -673,6 +675,7 @@ static int ssh_userauth_agent_publickey(ssh_session session,
                                         ssh_key pubkey)
 {
     ssh_string str = NULL;
+    const char *sig_type_c = NULL;
     int rc;
 
     switch(session->pending_call_state) {
@@ -700,6 +703,7 @@ static int ssh_userauth_agent_publickey(ssh_session session,
     if (rc < 0) {
         goto fail;
     }
+    sig_type_c = ssh_key_get_signature_algorithm(session, pubkey->type);
 
     /* request */
     rc = ssh_buffer_pack(session->out_buffer, "bsssbsS",
@@ -708,7 +712,7 @@ static int ssh_userauth_agent_publickey(ssh_session session,
             "ssh-connection",
             "publickey",
             1, /* private key */
-            pubkey->type_c, /* algo */
+            sig_type_c, /* algo */
             str /* public key */
             );
     if (rc < 0) {
