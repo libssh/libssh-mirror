@@ -59,8 +59,9 @@ static ssh_packet_callback default_packet_handlers[]= {
   NULL,
 #endif
   ssh_packet_service_accept,               // SSH2_MSG_SERVICE_ACCEPT             6
-  NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-  NULL, NULL, NULL,	NULL, NULL, NULL,      //                                     7-19
+  ssh_packet_ext_info,                     // SSH2_MSG_EXT_INFO                   7
+  NULL, NULL, NULL, NULL, NULL, NULL,
+  NULL, NULL, NULL, NULL, NULL, NULL,      //                                     8-19
   ssh_packet_kexinit,                      // SSH2_MSG_KEXINIT	                  20
   ssh_packet_newkeys,                      // SSH2_MSG_NEWKEYS                    21
   NULL, NULL, NULL, NULL, NULL, NULL, NULL,

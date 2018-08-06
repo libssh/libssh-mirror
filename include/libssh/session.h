@@ -86,6 +86,11 @@ enum ssh_pending_call_e {
 #define SSH_OPT_FLAG_KBDINT_AUTH 0x4
 #define SSH_OPT_FLAG_GSSAPI_AUTH 0x8
 
+/* extensions flags */
+/* server-sig-algs extension */
+#define SSH_EXT_SIG_RSA_SHA256  0x01
+#define SSH_EXT_SIG_RSA_SHA512  0x02
+
 /* members that are common to ssh_session and ssh_bind */
 struct ssh_common_struct {
     struct error_struct error;
@@ -113,6 +118,9 @@ struct ssh_session_struct {
 
     /* session flags (SSH_SESSION_FLAG_*) */
     int flags;
+
+    /* Extensions negotiated using RFC 8308 */
+    uint32_t extensions;
 
     ssh_string banner; /* that's the issue banner from
                        the server */
