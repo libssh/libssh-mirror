@@ -364,7 +364,9 @@ static void torture_bind_options_import_key(void **state)
 
     /* set rsa key */
     base64_key = torture_get_testkey(SSH_KEYTYPE_RSA, 0, 0);
-    ssh_pki_import_privkey_base64(base64_key, NULL, NULL, NULL, &key);
+    rc = ssh_pki_import_privkey_base64(base64_key, NULL, NULL, NULL, &key);
+    assert_int_equal(rc, SSH_OK);
+
     rc = ssh_bind_options_set(bind, SSH_BIND_OPTIONS_IMPORT_KEY, key);
     assert_int_equal(rc, 0);
 #ifdef HAVE_DSA
