@@ -140,6 +140,7 @@ static int torture_read_one_line(const char *filename, char *buffer, size_t len)
     fclose(fp);
     return -1;
   }
+  buffer[len - 1] = '\0';
 
   fclose(fp);
 
