@@ -27,6 +27,13 @@
 #include "libssh/libgcrypt.h"
 #include "libssh/libmbedcrypto.h"
 
+enum ssh_digest_e {
+    SSH_DIGEST_AUTO=0,
+    SSH_DIGEST_SHA1=1,
+    SSH_DIGEST_SHA256,
+    SSH_DIGEST_SHA512
+};
+
 enum ssh_mac_e {
   SSH_MAC_SHA1=1,
   SSH_MAC_SHA256,

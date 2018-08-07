@@ -1773,7 +1773,8 @@ ssh_string pki_signature_to_blob(const ssh_signature sig)
 
 ssh_signature pki_signature_from_blob(const ssh_key pubkey,
                                       const ssh_string sig_blob,
-                                      enum ssh_keytypes_e type)
+                                      enum ssh_keytypes_e type,
+                                      enum ssh_digest_e hash_type)
 {
     ssh_signature sig;
     gcry_error_t err;
@@ -1787,6 +1788,8 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
     }
 
     sig->type = type;
+    sig->hash_type = hash_type;
+    sig->type_c = ssh_key_signature_to_char(type, hash_type);
 
     len = ssh_string_len(sig_blob);
 
@@ -1952,6 +1955,7 @@ int pki_signature_verify(ssh_session session,
                          size_t hlen)
 {
     unsigned char ghash[hlen + 1];
+    const char *hash_type = NULL;
     gcry_sexp_t sexp;
     gcry_error_t err;
 
@@ -1986,10 +1990,29 @@ int pki_signature_verify(ssh_session session,
             }
             break;
         case SSH_KEYTYPE_RSA:
+            switch (sig->hash_type) {
+            case SSH_DIGEST_SHA256:
+                hash_type = "sha256";
+                break;
+            case SSH_DIGEST_SHA512:
+                hash_type = "sha512";
+                break;
+            case SSH_DIGEST_SHA1:
+            case SSH_DIGEST_AUTO:
+                hash_type = "sha1";
+                break;
+            default:
+                SSH_LOG(SSH_LOG_TRACE, "Unknown sig type %d", sig->hash_type);
+                ssh_set_error(session,
+                              SSH_FATAL,
+                              "Unexpected signature type %d during RSA verify",
+                              sig->hash_type);
+                return SSH_ERROR;
+            }
             err = gcry_sexp_build(&sexp,
                                   NULL,
-                                  "(data(flags pkcs1)(hash sha1 %b))",
-                                  hlen, hash);
+                                  "(data(flags pkcs1)(hash %s %b))",
+                                  hash_type, hlen, hash);
             if (err) {
                 ssh_set_error(session,
                               SSH_FATAL,

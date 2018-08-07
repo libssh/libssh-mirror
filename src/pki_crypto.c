@@ -1409,7 +1409,8 @@ errout:
 
 ssh_signature pki_signature_from_blob(const ssh_key pubkey,
                                       const ssh_string sig_blob,
-                                      enum ssh_keytypes_e type)
+                                      enum ssh_keytypes_e type,
+                                      enum ssh_digest_e hash_type)
 {
     ssh_signature sig;
     ssh_string r;
@@ -1424,7 +1425,8 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
     }
 
     sig->type = type;
-    sig->type_c = ssh_key_type_to_char(type);
+    sig->hash_type = hash_type;
+    sig->type_c = ssh_key_signature_to_char(type, hash_type);
 
     len = ssh_string_len(sig_blob);
 
@@ -1598,6 +1600,7 @@ int pki_signature_verify(ssh_session session,
                          size_t hlen)
 {
     int rc;
+    int nid;
 
     switch(key->type) {
         case SSH_KEYTYPE_DSS:
@@ -1615,13 +1618,33 @@ int pki_signature_verify(ssh_session session,
             break;
         case SSH_KEYTYPE_RSA:
         case SSH_KEYTYPE_RSA1:
-            rc = RSA_verify(NID_sha1,
+            switch (sig->hash_type) {
+            case SSH_DIGEST_AUTO:
+            case SSH_DIGEST_SHA1:
+                nid = NID_sha1;
+                break;
+            case SSH_DIGEST_SHA256:
+                nid = NID_sha256;
+                break;
+            case SSH_DIGEST_SHA512:
+                nid = NID_sha512;
+                break;
+            default:
+                SSH_LOG(SSH_LOG_TRACE, "Unknown hash type %d", sig->hash_type);
+                ssh_set_error(session,
+                              SSH_FATAL,
+                              "Unexpected hash type %d during RSA verify",
+                              sig->hash_type);
+                return SSH_ERROR;
+            }
+            rc = RSA_verify(nid,
                             hash,
                             hlen,
                             ssh_string_data(sig->rsa_sig),
                             ssh_string_len(sig->rsa_sig),
                             key->rsa);
             if (rc <= 0) {
+                SSH_LOG(SSH_LOG_TRACE, "RSA verify failed");
                 ssh_set_error(session,
                               SSH_FATAL,
                               "RSA error: %s",
@@ -1655,6 +1678,7 @@ int pki_signature_verify(ssh_session session,
 #endif
         case SSH_KEYTYPE_UNKNOWN:
         default:
+            SSH_LOG(SSH_LOG_TRACE, "Unknown key type");
             ssh_set_error(session, SSH_FATAL, "Unknown public key type");
             return SSH_ERROR;
     }
