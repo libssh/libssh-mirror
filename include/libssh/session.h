@@ -204,6 +204,7 @@ struct ssh_session_struct {
         char *knownhosts;
         char *global_knownhosts;
         char *wanted_methods[10];
+        char *pubkey_accepted_types;
         char *ProxyCommand;
         char *custombanner;
         unsigned long timeout; /* seconds */
