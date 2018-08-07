@@ -11,6 +11,7 @@
 #include "torture_key.h"
 #include <libssh/session.h>
 #include <libssh/misc.h>
+#include <libssh/pki_priv.h>
 
 static int setup(void **state)
 {
@@ -113,6 +114,54 @@ static void torture_options_set_hostkey(void **state) {
                          SSH_OPTIONS_HOSTKEYS,
                          "unknown-crap@example.com,more-crap@example.com");
     assert_false(rc == 0);
+}
+
+static void torture_options_set_pubkey_accepted_types(void **state) {
+    ssh_session session = *state;
+    int rc;
+    enum ssh_digest_e type;
+
+    /* Test known public key algorithms */
+    rc = ssh_options_set(session,
+                         SSH_OPTIONS_PUBLICKEY_ACCEPTED_TYPES,
+                         "ssh-ed25519,ecdsa-sha2-nistp384,ssh-rsa");
+    assert_true(rc == 0);
+    assert_string_equal(session->opts.pubkey_accepted_types,
+                        "ssh-ed25519,ecdsa-sha2-nistp384,ssh-rsa");
+
+    /* Test one unknown public key algorithms */
+    rc = ssh_options_set(session,
+                         SSH_OPTIONS_PUBLICKEY_ACCEPTED_TYPES,
+                         "ssh-ed25519,unknown-crap@example.com,ssh-rsa");
+    assert_true(rc == 0);
+    assert_string_equal(session->opts.pubkey_accepted_types,
+                        "ssh-ed25519,ssh-rsa");
+
+    /* Test all unknown public key algorithms */
+    rc = ssh_options_set(session,
+                         SSH_OPTIONS_PUBLICKEY_ACCEPTED_TYPES,
+                         "unknown-crap@example.com,more-crap@example.com");
+    assert_false(rc == 0);
+
+    /* Test that the option affects the algorithm selection for RSA keys */
+    /* simulate the SHA2 extension was negotiated */
+    session->extensions = SSH_EXT_SIG_RSA_SHA256;
+
+    /* previous configuration did not list the SHA2 extension algoritms, so
+     * it should not be used */
+    type = ssh_key_type_to_hash(session, SSH_KEYTYPE_RSA);
+    assert_int_equal(type, SSH_DIGEST_SHA1);
+
+    /* now, lets allow the signature from SHA2 extension and expect
+     * it to be used */
+    rc = ssh_options_set(session,
+                         SSH_OPTIONS_PUBLICKEY_ACCEPTED_TYPES,
+                         "rsa-sha2-256,ssh-rsa");
+    assert_true(rc == 0);
+    assert_string_equal(session->opts.pubkey_accepted_types,
+                        "rsa-sha2-256,ssh-rsa");
+    type = ssh_key_type_to_hash(session, SSH_KEYTYPE_RSA);
+    assert_int_equal(type, SSH_DIGEST_SHA256);
 }
 
 static void torture_options_set_macs(void **state) {
@@ -401,6 +450,7 @@ int torture_run_tests(void) {
         cmocka_unit_test_setup_teardown(torture_options_set_ciphers, setup, teardown),
         cmocka_unit_test_setup_teardown(torture_options_set_key_exchange, setup, teardown),
         cmocka_unit_test_setup_teardown(torture_options_set_hostkey, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_options_set_pubkey_accepted_types, setup, teardown),
         cmocka_unit_test_setup_teardown(torture_options_set_macs, setup, teardown),
         cmocka_unit_test_setup_teardown(torture_options_config_host, setup, teardown)
     };

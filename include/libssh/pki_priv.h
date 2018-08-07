@@ -47,6 +47,8 @@ int pki_key_ecdsa_nid_from_name(const char *name);
 const char *pki_key_ecdsa_nid_to_name(int nid);
 const char *ssh_key_signature_to_char(enum ssh_keytypes_e type,
                                       enum ssh_digest_e hash_type);
+enum ssh_digest_e ssh_key_type_to_hash(ssh_session session,
+                                       enum ssh_keytypes_e type);
 
 /* SSH Key Functions */
 ssh_key pki_key_dup(const ssh_key key, int demote);
