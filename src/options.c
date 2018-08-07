@@ -147,6 +147,14 @@ int ssh_options_copy(ssh_session src, ssh_session *dest) {
             return -1;
         }
     }
+
+    if (src->opts.pubkey_accepted_types != NULL) {
+        new->opts.pubkey_accepted_types = strdup(src->opts.pubkey_accepted_types);
+        if (new->opts.pubkey_accepted_types == NULL) {
+            ssh_free(new);
+            return -1;
+        }
+    }
     new->opts.fd                   = src->opts.fd;
     new->opts.port                 = src->opts.port;
     new->opts.timeout              = src->opts.timeout;
@@ -342,6 +350,11 @@ int ssh_options_set_algo(ssh_session session,
  *                Set the preferred server host key types (const char *,
  *                comma-separated list). ex:
  *                "ssh-rsa,ssh-dss,ecdh-sha2-nistp256"
+ *
+ *              - SSH_OPTIONS_PUBLICKEY_ACCEPTED_TYPES:
+ *                Set the preferred public key algorithms to be used for
+ *                authentication (const char *, comma-separated list). ex:
+ *                "ssh-rsa,rsa-sha2-256,ssh-dss,ecdh-sha2-nistp256"
  *
  *              - SSH_OPTIONS_COMPRESSION_C_S:
  *                Set the compression to use for client to server
@@ -741,6 +754,24 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
             } else {
                 if (ssh_options_set_algo(session, SSH_HOSTKEYS, v) < 0)
                     return -1;
+            }
+            break;
+        case SSH_OPTIONS_PUBLICKEY_ACCEPTED_TYPES:
+            v = value;
+            if (v == NULL || v[0] == '\0') {
+                ssh_set_error_invalid(session);
+                return -1;
+            } else {
+                p = ssh_keep_known_algos(SSH_HOSTKEYS, v);
+                if (p == NULL) {
+                    ssh_set_error(session, SSH_REQUEST_DENIED,
+                        "Setting method: no known public key algorithm (%s)",
+                         v);
+                    return -1;
+                }
+
+                SAFE_FREE(session->opts.pubkey_accepted_types);
+                session->opts.pubkey_accepted_types = p;
             }
             break;
         case SSH_OPTIONS_HMAC_C_S:
