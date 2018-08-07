@@ -72,6 +72,7 @@ enum ssh_config_opcode_e {
   SOC_KBDINTERACTIVEAUTHENTICATION,
   SOC_PASSWORDAUTHENTICATION,
   SOC_PUBKEYAUTHENTICATION,
+  SOC_PUBKEYACCEPTEDTYPES,
 
   SOC_END /* Keep this one last in the list */
 };
@@ -144,7 +145,7 @@ static struct ssh_config_keyword_table_s ssh_config_keyword_table[] = {
   { "preferredauthentications", SOC_UNSUPPORTED},
   { "proxyjump", SOC_UNSUPPORTED},
   { "proxyusefdpass", SOC_UNSUPPORTED},
-  { "pubkeyacceptedtypes", SOC_UNSUPPORTED},
+  { "pubkeyacceptedtypes", SOC_PUBKEYACCEPTEDTYPES},
   { "rekeylimit", SOC_UNSUPPORTED},
   { "remotecommand", SOC_UNSUPPORTED},
   { "revokedhostkeys", SOC_UNSUPPORTED},
@@ -590,6 +591,12 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
         p = ssh_config_get_str_tok(&s, NULL);
         if (p && *parsing) {
             ssh_options_set(session, SSH_OPTIONS_HOSTKEYS, p);
+        }
+        break;
+    case SOC_PUBKEYACCEPTEDTYPES:
+        p = ssh_config_get_str_tok(&s, NULL);
+        if (p && *parsing) {
+            ssh_options_set(session, SSH_OPTIONS_PUBLICKEY_ACCEPTED_TYPES, p);
         }
         break;
     case SOC_KEXALGORITHMS:
