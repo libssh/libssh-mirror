@@ -825,8 +825,10 @@ errout:
     ssh_signature_free(sig);
     return NULL;
 }
-ssh_signature pki_signature_from_blob(const ssh_key pubkey, const ssh_string
-        sig_blob, enum ssh_keytypes_e type)
+ssh_signature pki_signature_from_blob(const ssh_key pubkey,
+                                      const ssh_string sig_blob,
+                                      enum ssh_keytypes_e type,
+                                      enum ssh_digest_e hash_type)
 {
     ssh_signature sig = NULL;
     int rc;
@@ -837,7 +839,8 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey, const ssh_string
     }
 
     sig->type = type;
-    sig->type_c = ssh_key_type_to_char(type);
+    sig->hash_type = hash_type;
+    sig->type_c = ssh_key_signature_to_char(type, hash_type);
 
     switch(type) {
         case SSH_KEYTYPE_RSA:
@@ -930,10 +933,30 @@ int pki_signature_verify(ssh_session session, const ssh_signature sig, const
         ssh_key key, const unsigned char *hash, size_t hlen)
 {
     int rc;
+    mbedtls_md_type_t md = 0;
 
     switch (key->type) {
         case SSH_KEYTYPE_RSA:
-            rc = mbedtls_pk_verify(key->rsa, MBEDTLS_MD_SHA1, hash, hlen,
+            switch (sig->hash_type) {
+            case SSH_DIGEST_SHA1:
+            case SSH_DIGEST_AUTO:
+                md = MBEDTLS_MD_SHA1;
+                break;
+            case SSH_DIGEST_SHA256:
+                md = MBEDTLS_MD_SHA256;
+                break;
+            case SSH_DIGEST_SHA512:
+                md = MBEDTLS_MD_SHA512;
+                break;
+            default:
+                SSH_LOG(SSH_LOG_TRACE, "Unknown sig type %d", sig->hash_type);
+                ssh_set_error(session,
+                              SSH_FATAL,
+                              "Unexpected signature hash type %d during RSA verify",
+                              sig->hash_type);
+                return SSH_ERROR;
+            }
+            rc = mbedtls_pk_verify(key->rsa, md, hash, hlen,
                     ssh_string_data(sig->rsa_sig),
                     ssh_string_len(sig->rsa_sig));
             if (rc != 0) {

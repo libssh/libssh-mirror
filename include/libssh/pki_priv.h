@@ -45,6 +45,8 @@ int bcrypt_pbkdf(const char *pass,
 
 int pki_key_ecdsa_nid_from_name(const char *name);
 const char *pki_key_ecdsa_nid_to_name(int nid);
+const char *ssh_key_signature_to_char(enum ssh_keytypes_e type,
+                                      enum ssh_digest_e hash_type);
 
 /* SSH Key Functions */
 ssh_key pki_key_dup(const ssh_key key, int demote);
@@ -85,7 +87,8 @@ ssh_string pki_publickey_to_blob(const ssh_key key);
 ssh_string pki_signature_to_blob(const ssh_signature sign);
 ssh_signature pki_signature_from_blob(const ssh_key pubkey,
                                       const ssh_string sig_blob,
-                                      enum ssh_keytypes_e type);
+                                      enum ssh_keytypes_e type,
+                                      enum ssh_digest_e hash_type);
 int pki_signature_verify(ssh_session session,
                          const ssh_signature sig,
                          const ssh_key key,
