@@ -303,7 +303,7 @@ int ssh_key_algorithm_allowed(ssh_session session, const char *type)
  *
  * @return              A hash type to be used.
  */
-static enum ssh_digest_e ssh_key_type_to_hash(ssh_session session,
+enum ssh_digest_e ssh_key_type_to_hash(ssh_session session,
                                        enum ssh_keytypes_e type)
 {
     switch (type) {
