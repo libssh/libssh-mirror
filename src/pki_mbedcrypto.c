@@ -993,13 +993,32 @@ int pki_signature_verify(ssh_session session, const ssh_signature sig, const
     return SSH_OK;
 }
 
-static ssh_string rsa_do_sign(const unsigned char *digest, int dlen,
-        mbedtls_pk_context *privkey)
+static ssh_string rsa_do_sign_hash(const unsigned char *digest,
+                                   int dlen,
+                                   mbedtls_pk_context *privkey,
+                                   enum ssh_digest_e hash_type)
 {
     ssh_string sig_blob = NULL;
+    mbedtls_md_type_t md = 0;
     unsigned char *sig = NULL;
     size_t slen;
     int ok;
+
+    switch (hash_type) {
+    case SSH_DIGEST_SHA1:
+    case SSH_DIGEST_AUTO:
+        md = MBEDTLS_MD_SHA1;
+        break;
+    case SSH_DIGEST_SHA256:
+        md = MBEDTLS_MD_SHA256;
+        break;
+    case SSH_DIGEST_SHA512:
+        md = MBEDTLS_MD_SHA512;
+        break;
+    default:
+        SSH_LOG(SSH_LOG_WARN, "Incomplatible key algorithm");
+        return NULL;
+    }
 
     sig = malloc(mbedtls_pk_get_bitlen(privkey) / 8);
     if (sig == NULL) {
@@ -1007,7 +1026,7 @@ static ssh_string rsa_do_sign(const unsigned char *digest, int dlen,
     }
 
     ok = mbedtls_pk_sign(privkey,
-                         MBEDTLS_MD_SHA1,
+                         md,
                          digest,
                          dlen,
                          sig,
@@ -1034,11 +1053,19 @@ static ssh_string rsa_do_sign(const unsigned char *digest, int dlen,
 }
 
 
-ssh_signature pki_do_sign(const ssh_key privkey, const unsigned char *hash,
-        size_t hlen)
+ssh_signature pki_do_sign_hash(const ssh_key privkey,
+                               const unsigned char *hash,
+                               size_t hlen,
+                               enum ssh_digest_e hash_type)
 {
     ssh_signature sig = NULL;
     int rc;
+
+    /* Only RSA supports different signature algorithm types now */
+    if (privkey->type != SSH_KEYTYPE_RSA && hash_type != SSH_DIGEST_AUTO) {
+        SSH_LOG(SSH_LOG_WARN, "Incompatible signature algorithm passed");
+        return NULL;
+    }
 
     sig = ssh_signature_new();
     if (sig == NULL) {
@@ -1046,11 +1073,13 @@ ssh_signature pki_do_sign(const ssh_key privkey, const unsigned char *hash,
     }
 
     sig->type = privkey->type;
+    sig->hash_type = hash_type;
     sig->type_c = privkey->type_c;
 
     switch(privkey->type) {
         case SSH_KEYTYPE_RSA:
-            sig->rsa_sig = rsa_do_sign(hash, hlen, privkey->rsa);
+            sig->type_c = ssh_key_signature_to_char(privkey->type, hash_type);
+            sig->rsa_sig = rsa_do_sign_hash(hash, hlen, privkey->rsa, hash_type);
             if (sig->rsa_sig == NULL) {
                 ssh_signature_free(sig);
                 return NULL;
@@ -1113,7 +1142,7 @@ ssh_signature pki_do_sign_sessionid(const ssh_key key, const unsigned char
 
     switch (key->type) {
         case SSH_KEYTYPE_RSA:
-            sig->rsa_sig = rsa_do_sign(hash, hlen, key->rsa);
+            sig->rsa_sig = rsa_do_sign_hash(hash, hlen, key->rsa, SSH_DIGEST_AUTO);
             if (sig->rsa_sig == NULL) {
                 ssh_signature_free(sig);
                 return NULL;
