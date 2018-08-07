@@ -86,12 +86,12 @@
 
 #ifdef HAVE_ECDH
 #define ECDH "ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521,"
-#define HOSTKEYS "ssh-ed25519,ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,ssh-rsa,ssh-dss"
+#define HOSTKEYS "ssh-ed25519,ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,ssh-rsa,rsa-sha2-512,rsa-sha2-256,ssh-dss"
 #else
 #ifdef HAVE_DSA
-#define HOSTKEYS "ssh-ed25519,ssh-rsa,ssh-dss"
+#define HOSTKEYS "ssh-ed25519,ssh-rsa,rsa-sha2-512,rsa-sha2-256,ssh-dss"
 #else
-#define HOSTKEYS "ssh-ed25519,ssh-rsa"
+#define HOSTKEYS "ssh-ed25519,ssh-rsa,rsa-sha2-512,rsa-sha2-256"
 #endif
 #define ECDH ""
 #endif
