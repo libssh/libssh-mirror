@@ -1181,23 +1181,43 @@ fail:
  *
  * @param[in]  privkey   The private rsa key to use for signing.
  *
+ * @param[in]  hash_type The hash algorithm to use.
+ *
  * @return               A newly allocated rsa sig blob or NULL on error.
  */
-static ssh_string _RSA_do_sign(const unsigned char *digest,
-                               int dlen,
-                               RSA *privkey)
+static ssh_string _RSA_do_sign_hash(const unsigned char *digest,
+                                    int dlen,
+                                    RSA *privkey,
+                                    enum ssh_digest_e hash_type)
 {
     ssh_string sig_blob;
     unsigned char *sig;
     unsigned int slen;
     int ok;
+    int nid = 0;
+
+    switch (hash_type) {
+    case SSH_DIGEST_SHA1:
+    case SSH_DIGEST_AUTO:
+        nid = NID_sha1;
+        break;
+    case SSH_DIGEST_SHA256:
+        nid = NID_sha256;
+        break;
+    case SSH_DIGEST_SHA512:
+        nid = NID_sha512;
+        break;
+    default:
+        SSH_LOG(SSH_LOG_WARN, "Incomplatible hash type");
+        return NULL;
+    }
 
     sig = malloc(RSA_size(privkey));
     if (sig == NULL) {
         return NULL;
     }
 
-    ok = RSA_sign(NID_sha1, digest, dlen, sig, &slen, privkey);
+    ok = RSA_sign(nid, digest, dlen, sig, &slen, privkey);
     if (!ok) {
         SAFE_FREE(sig);
         return NULL;
@@ -1214,6 +1234,26 @@ static ssh_string _RSA_do_sign(const unsigned char *digest,
     SAFE_FREE(sig);
 
     return sig_blob;
+}
+
+/**
+ * @internal
+ *
+ * @brief Compute a digital signature.
+ *
+ * @param[in]  digest    The message digest.
+ *
+ * @param[in]  dlen      The length of the digest.
+ *
+ * @param[in]  privkey   The private rsa key to use for signing.
+ *
+ * @return               A newly allocated rsa sig blob or NULL on error.
+ */
+static ssh_string _RSA_do_sign(const unsigned char *digest,
+                                    int dlen,
+                                    RSA *privkey)
+{
+    return _RSA_do_sign_hash(digest, dlen, privkey, SSH_DIGEST_AUTO);
 }
 
 static ssh_string pki_dsa_signature_to_blob(const ssh_signature sig)
@@ -1686,11 +1726,19 @@ int pki_signature_verify(ssh_session session,
     return SSH_OK;
 }
 
-ssh_signature pki_do_sign(const ssh_key privkey,
-                          const unsigned char *hash,
-                          size_t hlen) {
+ssh_signature pki_do_sign_hash(const ssh_key privkey,
+                               const unsigned char *hash,
+                               size_t hlen,
+                               enum ssh_digest_e hash_type)
+{
     ssh_signature sig;
     int rc;
+
+    /* Only RSA supports different signature algorithm types now */
+    if (privkey->type != SSH_KEYTYPE_RSA && hash_type != SSH_DIGEST_AUTO) {
+        SSH_LOG(SSH_LOG_WARN, "Incompatible signature algorithm passed");
+        return NULL;
+    }
 
     sig = ssh_signature_new();
     if (sig == NULL) {
@@ -1698,6 +1746,7 @@ ssh_signature pki_do_sign(const ssh_key privkey,
     }
 
     sig->type = privkey->type;
+    sig->hash_type = hash_type;
     sig->type_c = privkey->type_c;
 
     switch(privkey->type) {
@@ -1720,7 +1769,8 @@ ssh_signature pki_do_sign(const ssh_key privkey,
             break;
         case SSH_KEYTYPE_RSA:
         case SSH_KEYTYPE_RSA1:
-            sig->rsa_sig = _RSA_do_sign(hash, hlen, privkey->rsa);
+            sig->type_c = ssh_key_signature_to_char(privkey->type, hash_type);
+            sig->rsa_sig = _RSA_do_sign_hash(hash, hlen, privkey->rsa, hash_type);
             if (sig->rsa_sig == NULL) {
                 ssh_signature_free(sig);
                 return NULL;
