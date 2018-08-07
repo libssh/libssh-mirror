@@ -221,7 +221,7 @@ int torture_terminate_process(const char *pidfile)
         kill(pid, SIGTERM);
 
         /* 10 ms */
-        usleep(10 * 000);
+        usleep(10 * 1000);
 
         rc = kill(pid, 0);
         if (rc != 0) {
