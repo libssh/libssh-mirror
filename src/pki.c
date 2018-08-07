@@ -272,6 +272,27 @@ static enum ssh_digest_e ssh_key_hash_from_name(const char *name)
     return SSH_DIGEST_AUTO;
 }
 /**
+ * @brief Checks the given key against the configured allowed
+ * public key algorithm types
+ *
+ * @param[in] session The SSH session
+ * @parma[in] type    The key algorithm to check
+ * @returns           1 if the key algorithm is allowed 0 otherwise
+ */
+int ssh_key_algorithm_allowed(ssh_session session, const char *type)
+{
+    const char *allowed_list;
+
+    allowed_list = session->opts.pubkey_accepted_types;
+    if (allowed_list == NULL) {
+        allowed_list = ssh_kex_get_default_methods(SSH_HOSTKEYS);
+    }
+
+    SSH_LOG(SSH_LOG_DEBUG, "Checking %s with list <%s>", type, allowed_list);
+    return ssh_match_group(allowed_list, type);
+}
+
+/**
  * @brief Convert a key type to a hash type. This is usually unambiguous
  * for all the key types, unless the SHA2 extension (RFC 8332) is
  * negotiated during key exchange.
@@ -285,15 +306,15 @@ static enum ssh_digest_e ssh_key_hash_from_name(const char *name)
 static enum ssh_digest_e ssh_key_type_to_hash(ssh_session session,
                                        enum ssh_keytypes_e type)
 {
-    /* TODO this should also reflect supported key types specified in
-     * configuration (ssh_config PubkeyAcceptedKeyTypes) */
     switch (type) {
     case SSH_KEYTYPE_RSA:
-        if (session->extensions & SSH_EXT_SIG_RSA_SHA512) {
+        if (ssh_key_algorithm_allowed(session, "rsa-sha2-512") &&
+            (session->extensions & SSH_EXT_SIG_RSA_SHA512)) {
             return SSH_DIGEST_SHA512;
         }
 
-        if (session->extensions & SSH_EXT_SIG_RSA_SHA256) {
+        if (ssh_key_algorithm_allowed(session, "rsa-sha2-256") &&
+            (session->extensions & SSH_EXT_SIG_RSA_SHA256)) {
             return SSH_DIGEST_SHA256;
         }
 

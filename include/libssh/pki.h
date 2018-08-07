@@ -138,4 +138,5 @@ ssh_string ssh_srv_pki_do_sign_sessionid(ssh_session session,
 ssh_public_key ssh_pki_convert_key_to_publickey(const ssh_key key);
 ssh_private_key ssh_pki_convert_key_to_privatekey(const ssh_key key);
 
+int ssh_key_algorithm_allowed(ssh_session session, const char *type);
 #endif /* PKI_H_ */
