@@ -478,8 +478,8 @@ static void torture_pki_ed25519_privkey_dup(void **state)
     dup = ssh_key_dup(key);
     assert_non_null(dup);
 
-    SAFE_FREE(key);
-    SAFE_FREE(dup);
+    ssh_key_free(key);
+    ssh_key_free(dup);
 }
 
 static void torture_pki_ed25519_pubkey_dup(void **state)
@@ -515,8 +515,8 @@ static void torture_pki_ed25519_pubkey_dup(void **state)
     assert_true(rc == 1);
 
     SAFE_FREE(pub_str);
-    SAFE_FREE(pubkey);
-    SAFE_FREE(dup);
+    ssh_key_free(pubkey);
+    ssh_key_free(dup);
 }
 
 int torture_run_tests(void) {
