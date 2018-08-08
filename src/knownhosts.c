@@ -850,6 +850,7 @@ ssh_session_get_known_hosts_entry(ssh_session session,
                                              session->opts.knownhosts,
                                              server_pubkey,
                                              pentry);
+    SAFE_FREE(host_port);
 
     return found;
 }
