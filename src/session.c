@@ -279,6 +279,7 @@ void ssh_free(ssh_session session) {
   SAFE_FREE(session->opts.host);
   SAFE_FREE(session->opts.sshdir);
   SAFE_FREE(session->opts.knownhosts);
+  SAFE_FREE(session->opts.global_knownhosts);
   SAFE_FREE(session->opts.ProxyCommand);
   SAFE_FREE(session->opts.gss_server_identity);
   SAFE_FREE(session->opts.gss_client_identity);
