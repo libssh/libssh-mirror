@@ -229,6 +229,15 @@ static void torture_knownhosts_read_file(void **state)
         type = ssh_key_type(entry->publickey);
         assert_int_equal(type, SSH_KEYTYPE_ED25519);
     }
+
+    it = ssh_list_get_iterator(entry_list);
+    for (;it != NULL; it = it->next) {
+        struct ssh_knownhosts_entry *entry = NULL;
+
+        entry = ssh_iterator_value(struct ssh_knownhosts_entry *, it);
+        SSH_KNOWNHOSTS_ENTRY_FREE(entry);
+    }
+    ssh_list_free(entry_list);
 }
 
 static void torture_knownhosts_host_exists(void **state)
