@@ -550,6 +550,7 @@ enum ssh_known_hosts_e ssh_session_has_known_hosts_entry(ssh_session session)
     rc = ssh_known_hosts_read_entries(host_port,
                                       session->opts.knownhosts,
                                       &entry_list);
+    SAFE_FREE(host_port);
     if (rc != 0) {
         return SSH_KNOWN_HOSTS_UNKNOWN;
     }
