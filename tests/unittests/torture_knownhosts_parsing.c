@@ -72,6 +72,7 @@ static int teardown_knownhosts_file(void **state)
     }
 
     unlink(tmp_file);
+    SAFE_FREE(tmp_file);
 
     return 0;
 }
