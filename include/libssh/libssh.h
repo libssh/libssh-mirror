@@ -444,7 +444,8 @@ LIBSSH_API int ssh_get_publickey(ssh_session session, ssh_key *key);
 
 enum ssh_publickey_hash_type {
     SSH_PUBLICKEY_HASH_SHA1,
-    SSH_PUBLICKEY_HASH_MD5
+    SSH_PUBLICKEY_HASH_MD5,
+    SSH_PUBLICKEY_HASH_SHA256
 };
 LIBSSH_API int ssh_get_publickey_hash(const ssh_key key,
                                       enum ssh_publickey_hash_type type,

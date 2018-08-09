@@ -1039,6 +1039,29 @@ int ssh_get_publickey_hash(const ssh_key key,
             *hlen = SHA_DIGEST_LEN;
         }
         break;
+    case SSH_PUBLICKEY_HASH_SHA256:
+        {
+            SHA256CTX ctx;
+
+            h = malloc(SHA256_DIGEST_LEN);
+            if (h == NULL) {
+                rc = -1;
+                goto out;
+            }
+
+            ctx = sha256_init();
+            if (ctx == NULL) {
+                free(h);
+                rc = -1;
+                goto out;
+            }
+
+            sha256_update(ctx, ssh_string_data(blob), ssh_string_len(blob));
+            sha256_final(h, ctx);
+
+            *hlen = SHA256_DIGEST_LEN;
+        }
+        break;
     case SSH_PUBLICKEY_HASH_MD5:
         {
             MD5CTX ctx;
