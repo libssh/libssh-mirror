@@ -564,6 +564,7 @@ LIBSSH_API int ssh_pki_export_pubkey_file(const ssh_key key,
 
 LIBSSH_API const char *ssh_pki_key_ecdsa_name(const ssh_key key);
 
+LIBSSH_API void ssh_print_hash(enum ssh_publickey_hash_type type, unsigned char *hash, size_t len);
 LIBSSH_API void ssh_print_hexa(const char *descr, const unsigned char *what, size_t len);
 LIBSSH_API int ssh_send_ignore (ssh_session session, const char *data);
 LIBSSH_API int ssh_send_debug (ssh_session session, const char *message, int always_display);
