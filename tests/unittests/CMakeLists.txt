@@ -32,6 +32,8 @@ target_compile_options(torture_isipaddr PRIVATE ${DEFAULT_C_COMPILE_FLAGS})
 add_cmocka_test(torture_knownhosts_parsing torture_knownhosts_parsing.c ${TORTURE_LIBRARY})
 target_compile_options(torture_knownhosts_parsing PRIVATE ${DEFAULT_C_COMPILE_FLAGS})
 
+add_cmocka_test(torture_hashes torture_hashes.c ${TORTURE_LIBRARY})
+target_compile_options(torture_hashes PRIVATE ${DEFAULT_C_COMPILE_FLAGS})
 
 if (CMAKE_USE_PTHREADS_INIT)
     add_cmocka_test(torture_rand torture_rand.c ${TORTURE_LIBRARY})
