@@ -267,25 +267,21 @@ int main(void) {
     return 0;
 }" HAVE_MSC_THREAD_LOCAL_STORAGE)
 
+###########################################################
+# For detecting attributes we need to treat warnings as
+# errors
+set(CMAKE_REQUIRED_FLAGS "-Werror")
+
 check_c_source_compiles("
 #define FALL_THROUGH __attribute__((fallthrough))
 
-enum direction_e {
-    UP = 0,
-    DOWN,
-};
-
 int main(void) {
-    enum direction_e key = UP;
-    int i = 10;
-    int j = 0;
+    int i = 2;
 
-    switch (key) {
-    case UP:
-        i = 5;
+    switch (i) {
+    case 0:
         FALL_THROUGH;
-    case DOWN:
-        j = i * 2;
+    case 1:
         break;
     default:
         break;
@@ -332,6 +328,8 @@ int main(void) {
     return 0;
 }" HAVE_COMPILER__FUNCTION__)
 
+# Stop treating warnings as errors
+unset(CMAKE_REQUIRED_FLAGS)
 
 check_c_source_compiles("
 #define ARRAY_LEN 16
