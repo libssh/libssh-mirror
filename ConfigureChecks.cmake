@@ -270,7 +270,9 @@ int main(void) {
 ###########################################################
 # For detecting attributes we need to treat warnings as
 # errors
-set(CMAKE_REQUIRED_FLAGS "-Werror")
+if (UNIX)
+    set(CMAKE_REQUIRED_FLAGS "-Werror")
+endif (UNIX)
 
 check_c_source_compiles("
 void test_constructor_attribute(void) __attribute__ ((constructor));
