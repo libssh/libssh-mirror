@@ -222,4 +222,27 @@ int ssh_finalize(void) {
     return _ssh_finalize(0);
 }
 
+#ifdef _WIN32
+
+#ifdef _MSC_VER
+/* Library constructor and destructor */
+BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
+{
+    int rc;
+
+    if (fdwReason == DLL_PROCESS_ATTACH) {
+        rc = ssh_init();
+    } else if (fdwReason == DLL_PROCESS_DETACH) {
+        rc = ssh_finalize();
+    }
+
+    if (rc != 0) {
+        return FALSE;
+    }
+    return TRUE;
+}
+#endif /* _MSC_VER */
+
+#endif /* _WIN32 */
+
 /** @} */
