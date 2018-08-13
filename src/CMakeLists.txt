@@ -106,12 +106,12 @@ set(LIBSSH_SHARED_LIBRARY
   CACHE INTERNAL "libssh shared library"
 )
 
-if (WITH_STATIC_LIB)
+if (BUILD_STATIC_LIB)
   set(LIBSSH_STATIC_LIBRARY
     ssh_static
     CACHE INTERNAL "libssh static library"
   )
-endif (WITH_STATIC_LIB)
+endif (BUILD_STATIC_LIB)
 
 set(libssh_SRCS
   agent.c
@@ -340,7 +340,7 @@ install(
   COMPONENT libraries
 )
 
-if (WITH_STATIC_LIB)
+if (BUILD_STATIC_LIB)
   add_library(${LIBSSH_STATIC_LIBRARY} STATIC ${libssh_SRCS})
 
   if (MSVC)
@@ -370,14 +370,14 @@ if (WITH_STATIC_LIB)
     )
   endif (WIN32)
 
-  install(
-    TARGETS
-      ${LIBSSH_STATIC_LIBRARY}
-    DESTINATION
-      ${LIB_INSTALL_DIR}/${OUTPUT_SUFFIX}
-    COMPONENT
-      libraries
-  )
-endif (WITH_STATIC_LIB)
+    if (WITH_STATIC_LIB)
+      install(TARGETS
+                ${LIBSSH_STATIC_LIBRARY}
+              DESTINATION
+                ${LIB_INSTALL_DIR}/${OUTPUT_SUFFIX}
+              COMPONENT
+                libraries)
+    endif (WITH_STATIC_LIB)
+endif (BUILD_STATIC_LIB)
 
 message(STATUS "Threads_FOUND=${Threads_FOUND}")
