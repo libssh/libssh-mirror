@@ -273,6 +273,30 @@ int main(void) {
 set(CMAKE_REQUIRED_FLAGS "-Werror")
 
 check_c_source_compiles("
+void test_constructor_attribute(void) __attribute__ ((constructor));
+
+void test_constructor_attribute(void)
+{
+    return;
+}
+
+int main(void) {
+    return 0;
+}" HAVE_CONSTRUCTOR_ATTRIBUTE)
+
+check_c_source_compiles("
+void test_destructor_attribute(void) __attribute__ ((destructor));
+
+void test_destructor_attribute(void)
+{
+    return;
+}
+
+int main(void) {
+    return 0;
+}" HAVE_DESTRUCTOR_ATTRIBUTE)
+
+check_c_source_compiles("
 #define FALL_THROUGH __attribute__((fallthrough))
 
 int main(void) {
