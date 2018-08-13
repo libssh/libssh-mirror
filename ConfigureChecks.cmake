@@ -334,9 +334,13 @@ int main(void) {
 
 
 check_c_source_compiles("
-void chacha_keysetup(struct chacha_ctx *x, const u_char *k, u_int kbits)
-    __attribute__((__bounded__(__minbytes__, 2, CHACHA_MINKEYLEN)));
-int main(void) { return 0; }" HAVE_GCC_BOUNDED_ATTRIBUTE)
+#define ARRAY_LEN 16
+void test_attr(const unsigned char *k)
+    __attribute__((__bounded__(__minbytes__, 2, 16)));
+
+int main(void) {
+    return 0;
+}" HAVE_GCC_BOUNDED_ATTRIBUTE)
 
 if (WITH_DEBUG_CRYPTO)
   set(DEBUG_CRYPTO 1)
