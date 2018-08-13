@@ -153,28 +153,28 @@ static int _ssh_finalize(unsigned destructor) {
 
     if (!destructor) {
         ssh_mutex_lock(&ssh_init_mutex);
-    }
 
-    if (_ssh_initialized == 1) {
-        _ssh_initialized = 0;
-
-        if (_ssh_init_ret < 0) {
+        if (_ssh_initialized > 1) {
+            _ssh_initialized--;
             goto _ret;
         }
 
-        ssh_dh_finalize();
-        ssh_crypto_finalize();
-        ssh_socket_cleanup();
-        /* It is important to finalize threading after CRYPTO because
-         * it still depends on it */
-        ssh_threads_finalize();
-
-    }
-    else {
-        if (_ssh_initialized > 0) {
-            _ssh_initialized--;
+        if (_ssh_initialized == 1) {
+            if (_ssh_init_ret < 0) {
+                goto _ret;
+            }
         }
     }
+
+    /* If the counter reaches zero or it is the destructor calling, finalize */
+    ssh_dh_finalize();
+    ssh_crypto_finalize();
+    ssh_socket_cleanup();
+    /* It is important to finalize threading after CRYPTO because
+     * it still depends on it */
+    ssh_threads_finalize();
+
+    _ssh_initialized = 0;
 
 _ret:
     if (!destructor) {
@@ -199,14 +199,6 @@ void libssh_destructor(void)
 
     if (rc < 0) {
         fprintf(stderr, "Error in libssh_destructor()\n");
-    }
-
-    /* Detect if ssh_init() was called without matching ssh_finalize() */
-    if (_ssh_initialized > 0) {
-        fprintf(stderr,
-                "Warning: ssh still initialized; probably ssh_init() "
-                "was called more than once (init count: %d)\n",
-                _ssh_initialized);
     }
 }
 
