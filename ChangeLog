@@ -1,6 +1,12 @@
 ChangeLog
 ==========
 
+version 0.8.1 (released 2018-08-13)
+  * Fixed version number in the header
+  * Fixed version number in pkg-config and cmake config
+  * Fixed library initialization
+  * Fixed attribute detection
+
 version 0.8.0 (released 2018-08-10)
   * Removed support for deprecated SSHv1 protocol
   * Added new connector API for clients
