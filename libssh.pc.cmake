@@ -1,6 +1,6 @@
-Name: ${APPLICATION_NAME}
+Name: ${PROJECT_NAME}
 Description: The SSH Library
-Version: ${APPLICATION_VERSION}
+Version: ${PROJECT_VERSION}
 Libs: -L${LIB_INSTALL_DIR} -lssh
 Cflags: -I${INCLUDE_INSTALL_DIR}
 
