@@ -32,8 +32,17 @@
 #include <winsock2.h>
 #endif
 
+#ifdef HAVE_CONSTRUCTOR_ATTRIBUTE
 #define CONSTRUCTOR_ATTRIBUTE __attribute__((constructor))
+#else
+#define CONSTRUCTOR_ATTRIBUTE
+#endif /* HAVE_CONSTRUCTOR_ATTRIBUTE */
+
+#ifdef HAVE_DESTRUCTOR_ATTRIBUTE
 #define DESTRUCTOR_ATTRIBUTE __attribute__((destructor))
+#else
+#define DESTRUCTOR_ATTRIBUTE
+#endif /* HAVE_DESTRUCTOR_ATTRIBUTE */
 
 /* Declare static mutex */
 static SSH_MUTEX ssh_init_mutex = SSH_MUTEX_STATIC_INIT;
