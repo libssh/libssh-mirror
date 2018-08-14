@@ -226,19 +226,27 @@ int ssh_finalize(void) {
 
 #ifdef _MSC_VER
 /* Library constructor and destructor */
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
+BOOL WINAPI DllMain(HINSTANCE hinstDLL,
+                    DWORD fdwReason,
+                    LPVOID lpvReserved)
 {
-    int rc;
+    int rc = 0;
 
-    if (fdwReason == DLL_PROCESS_ATTACH) {
-        rc = ssh_init();
-    } else if (fdwReason == DLL_PROCESS_DETACH) {
-        rc = ssh_finalize();
+    switch(fdwReason) {
+    case DLL_PROCESS_ATTACH:
+        rc = _ssh_init(1);
+        if (rc != 0) {
+            fprintf(stderr, "DllMain: ssh_init failed!");
+            return FALSE;
+        }
+        break;
+    case DLL_PROCESS_DETACH:
+        _ssh_finalize(1);
+        break;
+    default:
+        break;
     }
 
-    if (rc != 0) {
-        return FALSE;
-    }
     return TRUE;
 }
 #endif /* _MSC_VER */
