@@ -202,19 +202,30 @@
 #
 
 # Search for python which is required
-find_package(PythonInterp REQUIRED)
+if (ABIMap_FIND_REQURIED)
+    find_package(PythonInterp REQUIRED)
+else()
+    find_package(PythonInterp)
+endif()
 
-# Search for abimap tool used to generate the map files
-find_program(ABIMAP_EXECUTABLE NAMES abimap DOC "path to the abimap executable")
-mark_as_advanced(ABIMAP_EXECUTABLE)
 
-if (NOT ABIMAP_EXECUTABLE AND UNIX)
-    message(STATUS "Could not find `abimap` in PATH."
-                   " It can be found in PyPI as `abimap`"
-                   " (try `pip install abimap`)")
-else ()
-    set(ABIMAP_FOUND TRUE)
-endif ()
+if (PYTHONINTERP_FOUND)
+    # Search for abimap tool used to generate the map files
+    find_program(ABIMAP_EXECUTABLE NAMES abimap DOC "path to the abimap executable")
+    mark_as_advanced(ABIMAP_EXECUTABLE)
+
+    if (NOT ABIMAP_EXECUTABLE AND UNIX)
+        message(STATUS "Could not find `abimap` in PATH."
+                       " It can be found in PyPI as `abimap`"
+                       " (try `pip install abimap`)")
+    endif ()
+
+    include(FindPackageHandleStandardArgs)
+    find_package_handle_standard_args(ABIMap REQUIRED_VARS ABIMAP_EXECUTABLE)
+endif()
+
+
+if (ABIMAP_FOUND)
 
 # Define helper scripts
 set(_EXTRACT_SYMBOLS_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/ExtractSymbols.cmake)
@@ -392,3 +403,5 @@ function(generate_map_file _TARGET_NAME)
         )
     endif()
 endfunction()
+
+endif (ABIMAP_FOUND)
