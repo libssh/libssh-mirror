@@ -16,6 +16,7 @@ extern LIBSSH_THREAD int ssh_log_level;
 #define LIBSSH_TESTCONFIG6 "libssh_testconfig6.tmp"
 #define LIBSSH_TESTCONFIG7 "libssh_testconfig7.tmp"
 #define LIBSSH_TESTCONFIG8 "libssh_testconfig8.tmp"
+#define LIBSSH_TESTCONFIG9 "libssh_testconfig9.tmp"
 #define LIBSSH_TESTCONFIGGLOB "libssh_testc*[36].tmp"
 
 #define USERNAME "testuser"
@@ -90,6 +91,17 @@ static int setup_config_files(void **state)
                         "Host nopubkey\n"
                         "\tPubkeyAuthentication no\n");
 
+    /* unsupported options and corner cases */
+    torture_write_file(LIBSSH_TESTCONFIG9,
+                        "\n" /* empty line */
+                        "# comment line\n"
+                        "  # comment line not starting with hash\n"
+                        "UnknownConfigurationOption yes\n"
+                        "GSSAPIKexAlgorithms yes\n"
+                        "ControlMaster auto\n" /* SOC_NA */
+                        "VisualHostkey yes\n" /* SOC_UNSUPPORTED */
+                        "");
+
     session = ssh_new();
     *state = session;
 
@@ -106,6 +118,7 @@ static int teardown(void **state)
     unlink(LIBSSH_TESTCONFIG6);
     unlink(LIBSSH_TESTCONFIG7);
     unlink(LIBSSH_TESTCONFIG8);
+    unlink(LIBSSH_TESTCONFIG9);
 
     ssh_free(*state);
 
@@ -269,6 +282,21 @@ static void torture_config_auth_methods(void **state) {
     assert_true(session->opts.flags & SSH_OPT_FLAG_PUBKEY_AUTH);
 }
 
+/**
+ * @brief Verify the configuration parser does not choke on unknown
+ * or unsupported configuration options
+ */
+static void torture_config_unknown(void **state) {
+    ssh_session session = *state;
+    int ret = 0;
+
+    /* test corner cases */
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG9);
+    assert_true(ret == 0);
+    ret = ssh_config_parse_file(session, "/etc/ssh/ssh_config");
+    assert_true(ret == 0);
+}
+
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
@@ -285,6 +313,9 @@ int torture_run_tests(void) {
                                         setup_config_files,
                                         teardown),
         cmocka_unit_test_setup_teardown(torture_config_auth_methods,
+                                        setup_config_files,
+                                        teardown),
+        cmocka_unit_test_setup_teardown(torture_config_unknown,
                                         setup_config_files,
                                         teardown),
     };
