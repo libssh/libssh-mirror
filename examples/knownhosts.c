@@ -33,7 +33,6 @@ clients must be made or how a client should react.
 #endif
 
 int verify_knownhost(ssh_session session){
-  char *hexa;
   enum ssh_known_hosts_e state;
   char buf[10];
   unsigned char *hash = NULL;
@@ -47,7 +46,7 @@ int verify_knownhost(ssh_session session){
   }
 
   rc = ssh_get_publickey_hash(srv_pubkey,
-                              SSH_PUBLICKEY_HASH_SHA1,
+                              SSH_PUBLICKEY_HASH_SHA256,
                               &hash,
                               &hlen);
   ssh_key_free(srv_pubkey);
@@ -62,7 +61,7 @@ int verify_knownhost(ssh_session session){
       break; /* ok */
     case SSH_KNOWN_HOSTS_CHANGED:
       fprintf(stderr,"Host key for server changed : server's one is now :\n");
-      ssh_print_hexa("Public key hash",hash, hlen);
+      ssh_print_hash(SSH_PUBLICKEY_HASH_SHA256, hash, hlen);
       ssh_clean_pubkey_hash(&hash);
       fprintf(stderr,"For security reason, connection will be stopped\n");
       return -1;
@@ -78,10 +77,10 @@ int verify_knownhost(ssh_session session){
       /* fallback to SSH_SERVER_NOT_KNOWN behavior */
       FALL_THROUGH;
     case SSH_SERVER_NOT_KNOWN:
-      hexa = ssh_get_hexa(hash, hlen);
-      fprintf(stderr,"The server is unknown. Do you trust the host key ?\n");
-      fprintf(stderr, "Public key hash: %s\n", hexa);
-      ssh_string_free_char(hexa);
+      fprintf(stderr,
+              "The server is unknown. Do you trust the host key (yes/no)?\n");
+      ssh_print_hash(SSH_PUBLICKEY_HASH_SHA256, hash, hlen);
+
       if (fgets(buf, sizeof(buf), stdin) == NULL) {
 	    ssh_clean_pubkey_hash(&hash);
         return -1;
