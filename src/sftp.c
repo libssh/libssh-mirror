@@ -699,7 +699,7 @@ static int sftp_enqueue(sftp_session sftp, sftp_message msg) {
   }
 
   SSH_LOG(SSH_LOG_PACKET,
-      "Queued msg type %d id %d",
+      "Queued msg id %d type %d",
       msg->id, msg->packet_type);
 
   if(sftp->queue == NULL) {
