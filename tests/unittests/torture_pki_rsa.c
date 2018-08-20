@@ -100,8 +100,8 @@ static void torture_pki_rsa_import_privkey_base64_NULL_str(void **state)
 static void torture_pki_rsa_import_privkey_base64(void **state)
 {
     int rc;
-    char *key_str;
-    ssh_key key;
+    char *key_str = NULL;
+    ssh_key key = NULL;
     const char *passphrase = torture_get_testkey_passphrase();
     enum ssh_keytypes_e type;
 
@@ -129,8 +129,8 @@ static void torture_pki_rsa_import_privkey_base64(void **state)
 static void torture_pki_rsa_publickey_from_privatekey(void **state)
 {
     int rc;
-    ssh_key key;
-    ssh_key pubkey;
+    ssh_key key = NULL;
+    ssh_key pubkey = NULL;
     const char *passphrase = NULL;
 
     (void) state; /* unused */
@@ -161,9 +161,9 @@ static void torture_pki_rsa_copy_cert_to_privkey(void **state)
      */
     int rc;
     const char *passphrase = torture_get_testkey_passphrase();
-    ssh_key pubkey;
-    ssh_key privkey;
-    ssh_key cert;
+    ssh_key pubkey = NULL;
+    ssh_key privkey = NULL;
+    ssh_key cert = NULL;
 
     (void) state; /* unused */
 
@@ -209,7 +209,7 @@ static void torture_pki_rsa_copy_cert_to_privkey(void **state)
 
 static void torture_pki_rsa_import_cert_file(void **state) {
     int rc;
-    ssh_key cert;
+    ssh_key cert = NULL;
     enum ssh_keytypes_e type;
 
     (void) state; /* unused */
@@ -229,9 +229,9 @@ static void torture_pki_rsa_import_cert_file(void **state) {
 static void torture_pki_rsa_publickey_base64(void **state)
 {
     enum ssh_keytypes_e type;
-    char *b64_key, *key_buf, *p;
-    const char *q;
-    ssh_key key;
+    char *b64_key = NULL, *key_buf = NULL, *p = NULL;
+    const char *q = NULL;
+    ssh_key key = NULL;
     int rc;
 
     (void) state; /* unused */
@@ -265,8 +265,8 @@ static void torture_pki_rsa_publickey_base64(void **state)
 
 static void torture_pki_rsa_generate_pubkey_from_privkey(void **state) {
     char pubkey_generated[4096] = {0};
-    ssh_key privkey;
-    ssh_key pubkey;
+    ssh_key privkey = NULL;
+    ssh_key pubkey = NULL;
     int rc;
     int len;
 
@@ -305,11 +305,11 @@ static void torture_pki_rsa_generate_pubkey_from_privkey(void **state) {
 static void torture_pki_rsa_duplicate_key(void **state)
 {
     int rc;
-    char *b64_key;
-    char *b64_key_gen;
-    ssh_key pubkey;
-    ssh_key privkey;
-    ssh_key privkey_dup;
+    char *b64_key = NULL;
+    char *b64_key_gen = NULL;
+    ssh_key pubkey = NULL;
+    ssh_key privkey = NULL;
+    ssh_key privkey_dup = NULL;
 
     (void) state;
 
@@ -352,8 +352,8 @@ static void torture_pki_rsa_duplicate_key(void **state)
 static void torture_pki_rsa_generate_key(void **state)
 {
     int rc;
-    ssh_key key;
-    ssh_signature sign;
+    ssh_key key = NULL;
+    ssh_signature sign = NULL;
     ssh_session session=ssh_new();
     (void) state;
 
@@ -396,8 +396,8 @@ static void torture_pki_rsa_generate_key(void **state)
 #ifdef HAVE_LIBCRYPTO
 static void torture_pki_rsa_write_privkey(void **state)
 {
-    ssh_key origkey;
-    ssh_key privkey;
+    ssh_key origkey = NULL;
+    ssh_key privkey = NULL;
     int rc;
 
     (void) state; /* unused */
