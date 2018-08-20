@@ -29,6 +29,7 @@ set(pkd_libs
 )
 
 add_executable(pkd_hello ${pkd_hello_src})
+target_compile_options(pkd_hello PRIVATE ${DEFAULT_C_COMPILE_FLAGS})
 target_link_libraries(pkd_hello ${pkd_libs})
 
 #
