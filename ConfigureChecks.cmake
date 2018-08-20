@@ -271,7 +271,10 @@ int main(void) {
 # For detecting attributes we need to treat warnings as
 # errors
 if (UNIX)
-    set(CMAKE_REQUIRED_FLAGS "-Werror")
+    check_c_compiler_flag("-Werror" REQUIRED_FLAGS_WERROR)
+    if (REQUIRED_FLAGS_WERROR)
+        set(CMAKE_REQUIRED_FLAGS "-Werror")
+    endif()
 endif (UNIX)
 
 check_c_source_compiles("
