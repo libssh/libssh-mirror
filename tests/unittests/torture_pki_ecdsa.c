@@ -68,8 +68,8 @@ static int teardown(void **state)
 static void torture_pki_ecdsa_import_privkey_base64(void **state)
 {
     int rc;
-    char *key_str;
-    ssh_key key;
+    char *key_str = NULL;
+    ssh_key key = NULL;
     const char *passphrase = torture_get_testkey_passphrase();
 
     (void) state; /* unused */
@@ -90,9 +90,9 @@ static void torture_pki_ecdsa_import_privkey_base64(void **state)
 static void torture_pki_ecdsa_publickey_from_privatekey(void **state)
 {
     int rc;
-    char *key_str;
-    ssh_key key;
-    ssh_key pubkey;
+    char *key_str = NULL;
+    ssh_key key = NULL;
+    ssh_key pubkey = NULL;
     const char *passphrase = NULL;
 
     (void) state; /* unused */
@@ -114,9 +114,9 @@ static void torture_pki_ecdsa_publickey_from_privatekey(void **state)
 static void torture_pki_ecdsa_publickey_base64(void **state)
 {
     enum ssh_keytypes_e type;
-    char *b64_key, *key_buf, *p;
-    const char *q;
-    ssh_key key;
+    char *b64_key = NULL, *key_buf = NULL, *p = NULL;
+    const char *q = NULL;
+    ssh_key key = NULL;
     int rc;
 
     (void) state; /* unused */
@@ -152,8 +152,8 @@ static void torture_pki_ecdsa_generate_pubkey_from_privkey(void **state)
 {
     char pubkey_original[4096] = {0};
     char pubkey_generated[4096] = {0};
-    ssh_key privkey;
-    ssh_key pubkey;
+    ssh_key privkey = NULL;
+    ssh_key pubkey = NULL;
     int rc;
     int len;
 
@@ -194,11 +194,11 @@ static void torture_pki_ecdsa_generate_pubkey_from_privkey(void **state)
 static void torture_pki_ecdsa_duplicate_key(void **state)
 {
     int rc;
-    char *b64_key;
-    char *b64_key_gen;
-    ssh_key pubkey;
-    ssh_key privkey;
-    ssh_key privkey_dup;
+    char *b64_key = NULL;
+    char *b64_key_gen = NULL;
+    ssh_key pubkey = NULL;
+    ssh_key privkey = NULL;
+    ssh_key privkey_dup = NULL;
 
     (void) state;
 
@@ -245,9 +245,9 @@ static void torture_pki_ecdsa_duplicate_key(void **state)
  */
 static void torture_pki_ecdsa_duplicate_then_demote(void **state)
 {
-    ssh_key pubkey;
-    ssh_key privkey;
-    ssh_key privkey_dup;
+    ssh_key pubkey = NULL;
+    ssh_key privkey = NULL;
+    ssh_key privkey_dup = NULL;
     int rc;
 
     (void) state;
@@ -275,8 +275,8 @@ static void torture_pki_ecdsa_duplicate_then_demote(void **state)
 static void torture_pki_generate_key_ecdsa(void **state)
 {
     int rc;
-    ssh_key key;
-    ssh_signature sign;
+    ssh_key key = NULL;
+    ssh_signature sign = NULL;
     enum ssh_keytypes_e type = SSH_KEYTYPE_UNKNOWN;
     const char *type_char = NULL;
     const char *etype_char = NULL;
@@ -343,8 +343,8 @@ static void torture_pki_generate_key_ecdsa(void **state)
 #ifdef HAVE_LIBCRYPTO
 static void torture_pki_ecdsa_write_privkey(void **state)
 {
-    ssh_key origkey;
-    ssh_key privkey;
+    ssh_key origkey = NULL;
+    ssh_key privkey = NULL;
     int rc;
 
     (void) state; /* unused */
@@ -420,7 +420,7 @@ static void torture_pki_ecdsa_write_privkey(void **state)
 static void torture_pki_ecdsa_name(void **state, const char *expected_name)
 {
     int rc;
-    ssh_key key;
+    ssh_key key = NULL;
     const char *etype_char = NULL;
 
     (void) state; /* unused */
