@@ -84,7 +84,7 @@ endif (BSD OR SOLARIS OR OSX)
 
 # Disable symbol versioning in non UNIX platforms
 if (UNIX)
-    find_package(ABIMap)
+    find_package(ABIMap 0.3.1)
 else (UNIX)
     set(WITH_SYMBOL_VERSIONING OFF)
 endif (UNIX)
