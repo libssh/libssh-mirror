@@ -51,8 +51,8 @@ static int teardown(void **state) {
 static void torture_pki_ed25519_import_privkey_base64(void **state)
 {
     int rc;
-    char *key_str;
-    ssh_key key;
+    char *key_str = NULL;
+    ssh_key key = NULL;
     const char *passphrase = torture_get_testkey_passphrase();
     enum ssh_keytypes_e type;
 
@@ -81,8 +81,8 @@ static void torture_pki_ed25519_import_privkey_base64(void **state)
 static void torture_pki_ed25519_publickey_from_privatekey(void **state)
 {
     int rc;
-    ssh_key key;
-    ssh_key pubkey;
+    ssh_key key = NULL;
+    ssh_key pubkey = NULL;
     const char *passphrase = NULL;
 
     (void) state; /* unused */
@@ -107,9 +107,9 @@ static void torture_pki_ed25519_publickey_from_privatekey(void **state)
 static void torture_pki_ed25519_publickey_base64(void **state)
 {
     enum ssh_keytypes_e type;
-    char *b64_key, *key_buf, *p;
-    const char *q;
-    ssh_key key;
+    char *b64_key = NULL, *key_buf = NULL, *p = NULL;
+    const char *q = NULL;
+    ssh_key key = NULL;
     int rc;
 
     (void) state; /* unused */
@@ -144,8 +144,8 @@ static void torture_pki_ed25519_publickey_base64(void **state)
 static void torture_pki_ed25519_generate_pubkey_from_privkey(void **state)
 {
     char pubkey_generated[4096] = {0};
-    ssh_key privkey;
-    ssh_key pubkey;
+    ssh_key privkey = NULL;
+    ssh_key pubkey = NULL;
     int rc;
     int len;
 
@@ -184,8 +184,8 @@ static void torture_pki_ed25519_generate_pubkey_from_privkey(void **state)
 static void torture_pki_ed25519_generate_key(void **state)
 {
     int rc;
-    ssh_key key;
-    ssh_signature sign;
+    ssh_key key = NULL;
+    ssh_signature sign = NULL;
     enum ssh_keytypes_e type = SSH_KEYTYPE_UNKNOWN;
     const char *type_char = NULL;
     ssh_session session=ssh_new();
@@ -217,8 +217,8 @@ static void torture_pki_ed25519_generate_key(void **state)
 
 static void torture_pki_ed25519_write_privkey(void **state)
 {
-    ssh_key origkey;
-    ssh_key privkey;
+    ssh_key origkey = NULL;
+    ssh_key privkey = NULL;
     int rc;
 
     (void) state; /* unused */
@@ -320,9 +320,9 @@ static void torture_pki_ed25519_write_privkey(void **state)
 }
 
 static void torture_pki_ed25519_sign(void **state){
-    ssh_key privkey;
-    ssh_signature sig;
-    ssh_string blob;
+    ssh_key privkey = NULL;
+    ssh_signature sig = NULL;
+    ssh_string blob = NULL;
     int rc;
 
     (void)state;
@@ -357,11 +357,11 @@ static void torture_pki_ed25519_sign(void **state){
 }
 
 static void torture_pki_ed25519_verify(void **state){
-    ssh_key pubkey;
-    ssh_signature sig;
+    ssh_key pubkey = NULL;
+    ssh_signature sig = NULL;
     ssh_string blob = ssh_string_new(ED25519_SIG_LEN);
     char *pkey_ptr = strdup(strchr(torture_get_testkey_pub(SSH_KEYTYPE_ED25519,0), ' ') + 1);
-    char *ptr;
+    char *ptr = NULL;
     int rc;
     (void) state;
 
@@ -389,11 +389,11 @@ static void torture_pki_ed25519_verify(void **state){
 }
 
 static void torture_pki_ed25519_verify_bad(void **state){
-    ssh_key pubkey;
-    ssh_signature sig;
+    ssh_key pubkey = NULL;
+    ssh_signature sig = NULL;
     ssh_string blob = ssh_string_new(ED25519_SIG_LEN);
     char *pkey_ptr = strdup(strchr(torture_get_testkey_pub(SSH_KEYTYPE_ED25519,0), ' ') + 1);
-    char *ptr;
+    char *ptr = NULL;
     int rc;
     int i;
     (void) state;
