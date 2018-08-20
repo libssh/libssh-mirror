@@ -331,7 +331,7 @@ int ssh_agent_get_ident_count(struct ssh_session_struct *session) {
   ssh_buffer request = NULL;
   ssh_buffer reply = NULL;
   unsigned int type = 0;
-  uint8_t buf[4] = {0};
+  uint32_t buf[1] = {0};
   int rc;
 
   /* send message to the agent requesting the list of identities */
