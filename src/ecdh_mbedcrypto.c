@@ -79,9 +79,11 @@ int ssh_client_ecdh_init(ssh_session session)
         goto out;
     }
 
-    rc = mbedtls_ecp_gen_keypair(&grp, &session->next_crypto->ecdh_privkey->d,
-            &session->next_crypto->ecdh_privkey->Q, mbedtls_ctr_drbg_random,
-            &ssh_mbedtls_ctr_drbg);
+    rc = mbedtls_ecp_gen_keypair(&grp,
+                                 &session->next_crypto->ecdh_privkey->d,
+                                 &session->next_crypto->ecdh_privkey->Q,
+                                 mbedtls_ctr_drbg_random,
+                                 ssh_get_mbedtls_ctr_drbg_context());
 
     if (rc != 0) {
         rc = SSH_ERROR;
@@ -157,9 +159,12 @@ int ecdh_build_k(ssh_session session)
 
     mbedtls_mpi_init(session->next_crypto->k);
 
-    rc = mbedtls_ecdh_compute_shared(&grp, session->next_crypto->k, &pubkey,
-            &session->next_crypto->ecdh_privkey->d, mbedtls_ctr_drbg_random,
-            &ssh_mbedtls_ctr_drbg);
+    rc = mbedtls_ecdh_compute_shared(&grp,
+                                     session->next_crypto->k,
+                                     &pubkey,
+                                     &session->next_crypto->ecdh_privkey->d,
+                                     mbedtls_ctr_drbg_random,
+                                     ssh_get_mbedtls_ctr_drbg_context());
     if (rc != 0) {
         rc = SSH_ERROR;
         goto out;
@@ -213,9 +218,11 @@ int ssh_server_ecdh_init(ssh_session session, ssh_buffer packet)
         goto out;
     }
 
-    rc = mbedtls_ecp_gen_keypair(&grp, &session->next_crypto->ecdh_privkey->d,
-            &session->next_crypto->ecdh_privkey->Q, mbedtls_ctr_drbg_random,
-            &ssh_mbedtls_ctr_drbg);
+    rc = mbedtls_ecp_gen_keypair(&grp,
+                                 &session->next_crypto->ecdh_privkey->d,
+                                 &session->next_crypto->ecdh_privkey->Q,
+                                 mbedtls_ctr_drbg_random,
+                                 ssh_get_mbedtls_ctr_drbg_context());
     if (rc != 0) {
         rc = SSH_ERROR;
         goto out;

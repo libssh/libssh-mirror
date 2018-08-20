@@ -81,8 +81,10 @@ int ssh_mbedcry_rand(bignum rnd, int bits, int top, int bottom)
     }
 
     len = bits / 8 + 1;
-    rc = mbedtls_mpi_fill_random(rnd, len, mbedtls_ctr_drbg_random,
-            &ssh_mbedtls_ctr_drbg);
+    rc = mbedtls_mpi_fill_random(rnd,
+                                 len,
+                                 mbedtls_ctr_drbg_random,
+                                 ssh_get_mbedtls_ctr_drbg_context());
     if (rc != 0) {
         return 0;
     }

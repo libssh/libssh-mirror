@@ -101,8 +101,7 @@ int ssh_mbedcry_is_bit_set(bignum num, size_t pos);
         mbedtls_mpi_size(num))
 #define bignum_cmp(num1, num2) mbedtls_mpi_cmp_mpi(num1, num2)
 
-mbedtls_entropy_context ssh_mbedtls_entropy;
-mbedtls_ctr_drbg_context ssh_mbedtls_ctr_drbg;
+mbedtls_ctr_drbg_context *ssh_get_mbedtls_ctr_drbg_context(void);
 
 int ssh_mbedtls_random(void *where, int len, int strong);
 
