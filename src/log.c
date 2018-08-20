@@ -81,7 +81,7 @@ static void ssh_log_stderr(int verbosity,
                            const char *function,
                            const char *buffer)
 {
-    char date[64] = {0};
+    char date[128] = {0};
     int rc;
 
     rc = current_timestring(1, date, sizeof(date));
