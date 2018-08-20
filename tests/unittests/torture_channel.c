@@ -12,12 +12,14 @@
 
 static void torture_channel_select(void **state)
 {
-    fd_set readfds = {0};
+    fd_set readfds;
     int fd;
     int rc;
     int i;
 
     (void)state; /* unused */
+
+    ZERO_STRUCT(readfds);
 
     fd = open("/dev/null", 0);
     assert_true(fd > 2);
