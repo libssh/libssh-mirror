@@ -438,9 +438,9 @@ private:
 class Channel {
   friend class Session;
 public:
-  Channel(Session &session){
-    channel=ssh_channel_new(session.getCSession());
-    this->session=&session;
+  Channel(Session &ssh_session){
+    channel = ssh_channel_new(ssh_session.getCSession());
+    this->session = &ssh_session;
   }
   ~Channel(){
     ssh_channel_free(channel);
@@ -641,9 +641,9 @@ protected:
   ssh_channel channel;
 
 private:
-  Channel (Session &session, ssh_channel c_channel){
+  Channel (Session &ssh_session, ssh_channel c_channel){
     this->channel=c_channel;
-    this->session=&session;
+    this->session = &ssh_session;
   }
   /* No copy and no = operator */
   Channel(const Channel &);
