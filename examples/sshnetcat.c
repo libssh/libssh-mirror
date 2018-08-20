@@ -43,7 +43,8 @@ const char *port="22";
 char *pcap_file=NULL;
 #endif
 
-static void usage(){
+static void usage(void)
+{
   fprintf(stderr,"Usage : sshnetcat [user@]host forwarded_host forwarded_port\n");
   exit(1);
 }
