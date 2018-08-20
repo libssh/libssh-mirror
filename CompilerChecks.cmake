@@ -48,6 +48,12 @@ if (UNIX)
         list(APPEND SUPPORTED_COMPILER_FLAGS "-fstack-protector")
     endif()
     unset(CMAKE_REQUIRED_FLAGS)
+
+    if (PICKY_DEVELOPER)
+        add_c_compiler_flag("-Werror" SUPPORTED_COMPILER_FLAGS)
+        add_c_compiler_flag("-Wno-error=deprecated-declarations" SUPPORTED_COMPILER_FLAGS)
+        add_c_compiler_flag("-Wno-error=tautological-compare" SUPPORTED_COMPILER_FLAGS)
+    endif()
 endif()
 
 if (MSVC)

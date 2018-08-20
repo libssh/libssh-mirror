@@ -19,6 +19,8 @@ option(WITH_NACL "Build with libnacl (curve25519)" ON)
 option(WITH_SYMBOL_VERSIONING "Build with symbol versioning" ON)
 option(WITH_ABI_BREAK "Allow ABI break" OFF)
 option(FUZZ_TESTING "Build with fuzzer for the server" OFF)
+option(PICKY_DEVELOPER "Build with picky developer flags" OFF)
+
 if (WITH_ZLIB)
     set(WITH_LIBZ ON)
 else (WITH_ZLIB)
