@@ -235,8 +235,22 @@ if (PYTHONINTERP_FOUND)
                        " (try `pip install abimap`)")
     endif ()
 
+    if (ABIMAP_EXECUTABLE)
+        # Get the abimap version
+        execute_process(COMMAND ${ABIMAP_EXECUTABLE} version
+                        OUTPUT_VARIABLE ABIMAP_VERSION_STRING
+                        OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+        # If the version string starts with abimap-, strip it
+        if ("abimap" STRLESS_EQUAL ${ABIMAP_VERSION_STRING})
+            string(REGEX REPLACE "abimap-" "" ABIMAP_VERSION_STRING "${ABIMAP_VERSION_STRING}")
+        endif()
+    endif()
+
     include(FindPackageHandleStandardArgs)
-    find_package_handle_standard_args(ABIMap REQUIRED_VARS ABIMAP_EXECUTABLE)
+    find_package_handle_standard_args(ABIMap
+                                      REQUIRED_VARS ABIMAP_EXECUTABLE
+                                      VERSION_VAR ABIMAP_VERSION_STRING)
 endif()
 
 
