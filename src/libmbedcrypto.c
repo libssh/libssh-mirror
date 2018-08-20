@@ -30,6 +30,9 @@
 #ifdef HAVE_LIBMBEDCRYPTO
 #include <mbedtls/md.h>
 
+static mbedtls_entropy_context ssh_mbedtls_entropy;
+static mbedtls_ctr_drbg_context ssh_mbedtls_ctr_drbg;
+
 struct ssh_mac_ctx_struct {
     enum ssh_mac_e mac_type;
     mbedtls_md_context_t ctx;
@@ -997,6 +1000,11 @@ int ssh_mbedtls_random(void *where, int len, int strong)
     }
 
     return !rc;
+}
+
+mbedtls_ctr_drbg_context *ssh_get_mbedtls_ctr_drbg_context(void)
+{
+    return &ssh_mbedtls_ctr_drbg;
 }
 
 void ssh_crypto_finalize(void)

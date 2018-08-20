@@ -398,8 +398,11 @@ int pki_key_generate_rsa(ssh_key key, int parameter)
     }
 
     if (mbedtls_pk_can_do(key->rsa, MBEDTLS_PK_RSA)) {
-        rc = mbedtls_rsa_gen_key(mbedtls_pk_rsa(*key->rsa), mbedtls_ctr_drbg_random,
-                &ssh_mbedtls_ctr_drbg, parameter, 65537);
+        rc = mbedtls_rsa_gen_key(mbedtls_pk_rsa(*key->rsa),
+                                 mbedtls_ctr_drbg_random,
+                                 ssh_get_mbedtls_ctr_drbg_context(),
+                                 parameter,
+                                 65537);
         if (rc != 0) {
             mbedtls_pk_free(key->rsa);
             return SSH_ERROR;
@@ -980,8 +983,14 @@ static ssh_string rsa_do_sign(const unsigned char *digest, int dlen,
         return NULL;
     }
 
-    ok = mbedtls_pk_sign(privkey, MBEDTLS_MD_SHA1, digest, dlen, sig, &slen,
-            mbedtls_ctr_drbg_random, &ssh_mbedtls_ctr_drbg);
+    ok = mbedtls_pk_sign(privkey,
+                         MBEDTLS_MD_SHA1,
+                         digest,
+                         dlen,
+                         sig,
+                         &slen,
+                         mbedtls_ctr_drbg_random,
+                         ssh_get_mbedtls_ctr_drbg_context());
 
     if (ok != 0) {
         SAFE_FREE(sig);
@@ -1036,9 +1045,14 @@ ssh_signature pki_do_sign(const ssh_key privkey, const unsigned char *hash,
                 return NULL;
             }
 
-            rc = mbedtls_ecdsa_sign(&privkey->ecdsa->grp, sig->ecdsa_sig.r,
-                    sig->ecdsa_sig.s, &privkey->ecdsa->d, hash, hlen,
-                    mbedtls_ctr_drbg_random, &ssh_mbedtls_ctr_drbg);
+            rc = mbedtls_ecdsa_sign(&privkey->ecdsa->grp,
+                                    sig->ecdsa_sig.r,
+                                    sig->ecdsa_sig.s,
+                                    &privkey->ecdsa->d,
+                                    hash,
+                                    hlen,
+                                    mbedtls_ctr_drbg_random,
+                                    ssh_get_mbedtls_ctr_drbg_context());
             if (rc != 0) {
                 ssh_signature_free(sig);
                 return NULL;
@@ -1094,9 +1108,14 @@ ssh_signature pki_do_sign_sessionid(const ssh_key key, const unsigned char
                 return NULL;
             }
 
-            rc = mbedtls_ecdsa_sign(&key->ecdsa->grp, sig->ecdsa_sig.r,
-                    sig->ecdsa_sig.s, &key->ecdsa->d, hash, hlen,
-                    mbedtls_ctr_drbg_random, &ssh_mbedtls_ctr_drbg);
+            rc = mbedtls_ecdsa_sign(&key->ecdsa->grp,
+                                    sig->ecdsa_sig.r,
+                                    sig->ecdsa_sig.s,
+                                    &key->ecdsa->d,
+                                    hash,
+                                    hlen,
+                                    mbedtls_ctr_drbg_random,
+                                    ssh_get_mbedtls_ctr_drbg_context());
             if (rc != 0) {
                 ssh_signature_free(sig);
                 return NULL;
@@ -1247,8 +1266,10 @@ int pki_key_generate_ecdsa(ssh_key key, int parameter)
 
     mbedtls_ecdsa_init(key->ecdsa);
 
-    ok = mbedtls_ecdsa_genkey(key->ecdsa, pki_key_ecdsa_nid_to_mbed_gid(nid),
-            mbedtls_ctr_drbg_random, &ssh_mbedtls_ctr_drbg);
+    ok = mbedtls_ecdsa_genkey(key->ecdsa,
+                              pki_key_ecdsa_nid_to_mbed_gid(nid),
+                              mbedtls_ctr_drbg_random,
+                              ssh_get_mbedtls_ctr_drbg_context());
 
     if (ok != 0) {
         mbedtls_ecdsa_free(key->ecdsa);
