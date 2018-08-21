@@ -195,11 +195,20 @@ public:
     return ret;
   }
 
-  /** @brief Authenticate through the "keyboard-interactive" method.
-   * @param[in] The username to authenticate. You can specify NULL if ssh_option_set_username() has been used. You cannot try two different logins in a row.
-   * @param[in] Undocumented. Set it to NULL.
+  /**
+   * @brief Authenticate through the "keyboard-interactive" method.
+   *
+   * @param[in] username The username to authenticate. You can specify NULL if
+   *                     ssh_option_set_username() has been used. You cannot
+   *                     try two different logins in a row.
+   *
+   * @param[in] submethods Undocumented. Set it to NULL.
+   *
    * @throws SshException on error
-   * @returns SSH_AUTH_SUCCESS, SSH_AUTH_PARTIAL, SSH_AUTH_DENIED, SSH_AUTH_ERROR, SSH_AUTH_INFO, SSH_AUTH_AGAIN
+   *
+   * @returns SSH_AUTH_SUCCESS, SSH_AUTH_PARTIAL, SSH_AUTH_DENIED,
+   *          SSH_AUTH_ERROR, SSH_AUTH_INFO, SSH_AUTH_AGAIN
+   *
    * @see ssh_userauth_kbdint
    */
   int userauthKbdint(const char* username, const char* submethods){
@@ -216,15 +225,25 @@ public:
     return ssh_userauth_kbdint_getnprompts(c_session);
   }
 
-  /** @brief Set the answer for a question from a message block..
-   * @param[in] index The number of the ith prompt.
-   * @param[in] The answer to give to the server. The answer MUST be encoded UTF-8. It is up to the server how to interpret the value and validate it. However, if you read the answer in some other encoding, you MUST convert it to UTF-8.
+  /**
+   * @brief Set the answer for a question from a message block.
+   *
+   * @param[in] index The index number of the prompt.
+   * @param[in] answer The answer to give to the server. The answer MUST be
+   *                   encoded UTF-8. It is up to the server how to interpret
+   *                   the value and validate it. However, if you read the
+   *                   answer in some other encoding, you MUST convert it to
+   *                   UTF-8.
+   *
    * @throws SshException on error
+   *
    * @returns 0 on success, < 0 on error
+   *
    * @see ssh_userauth_kbdint_setanswer
    */
-  int userauthKbdintSetAnswer(unsigned int i, const char* answer){
-    int ret=ssh_userauth_kbdint_setanswer(c_session, i, answer);
+  int userauthKbdintSetAnswer(unsigned int index, const char *answer)
+  {
+    int ret = ssh_userauth_kbdint_setanswer(c_session, index, answer);
     ssh_throw(ret);
     return ret;
   }
