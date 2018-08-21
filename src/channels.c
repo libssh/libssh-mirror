@@ -2661,7 +2661,7 @@ int ssh_channel_read_timeout(ssh_channel channel,
                              void *dest,
                              uint32_t count,
                              int is_stderr,
-                             int timeout)
+                             int timeout_ms)
 {
   ssh_session session;
   ssh_buffer stdbuf;
@@ -2711,12 +2711,12 @@ int ssh_channel_read_timeout(ssh_channel channel,
   ctx.buffer = stdbuf;
   ctx.count = 1;
 
-  if (timeout < 0) {
-      timeout = SSH_TIMEOUT_DEFAULT;
+  if (timeout_ms < 0) {
+      timeout_ms = SSH_TIMEOUT_DEFAULT;
   }
 
   rc = ssh_handle_packets_termination(session,
-                                      timeout,
+                                      timeout_ms,
                                       ssh_channel_read_termination,
                                       &ctx);
   if (rc == SSH_ERROR){
