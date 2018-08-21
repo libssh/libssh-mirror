@@ -239,11 +239,39 @@ enum ssh_server_known_e {
 };
 
 enum ssh_known_hosts_e {
+    /**
+     * There had been an error checking the host.
+     */
     SSH_KNOWN_HOSTS_ERROR = -2,
+
+    /**
+     * The known host file does not exist. The host is thus unknown. File will
+     * be created if host key is accepted.
+     */
     SSH_KNOWN_HOSTS_NOT_FOUND = -1,
+
+    /**
+     * The server is unknown. User should confirm the public key hash is
+     * correct.
+     */
     SSH_KNOWN_HOSTS_UNKNOWN = 0,
+
+    /**
+     * The server is known and has not changed.
+     */
     SSH_KNOWN_HOSTS_OK,
+
+    /**
+     * The server key has changed. Either you are under attack or the
+     * administrator changed the key. You HAVE to warn the user about a
+     * possible attack.
+     */
     SSH_KNOWN_HOSTS_CHANGED,
+
+    /**
+     * The server gave use a key of a type while we had an other type recorded.
+     * It is a possible attack.
+     */
     SSH_KNOWN_HOSTS_OTHER,
 };
 
