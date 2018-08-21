@@ -154,6 +154,8 @@ static char **ssh_get_knownhost_line(FILE **file, const char *filename,
 }
 
 /**
+ * @internal
+ *
  * @brief Check the public key in the known host line matches the public key of
  * the currently connected server.
  *
@@ -206,6 +208,7 @@ static int check_public_key(ssh_session session, char **tokens) {
 }
 
 /**
+ * @internal
  * @brief Check if a hostname matches a openssh-style hashed known host.
  *
  * @param[in]  host     The host to check.
@@ -441,14 +444,8 @@ int ssh_is_server_known(ssh_session session) {
 }
 
 /**
- * @brief Output the current server as a known host line.
- *
- * This could be placed in a known hosts file after user confirmation.
- * The return value should be passed to free() after the caller is done with it.
- *
- * @param[in]  session  The ssh session to use.
- *
- * @return              string on success, NULL on error.
+ * @deprecated Please use ssh_session_export_known_hosts_entry()
+ * @brief This function is deprecated.
  */
 char * ssh_dump_knownhost(ssh_session session) {
     ssh_key server_pubkey = NULL;
@@ -516,14 +513,8 @@ char * ssh_dump_knownhost(ssh_session session) {
 }
 
 /**
- * @brief Write the current server as known in the known hosts file.
- *
- * This will create the known hosts file if it does not exist. You generaly use
- * it when ssh_is_server_known() answered SSH_SERVER_NOT_KNOWN.
- *
- * @param[in]  session  The ssh session to use.
- *
- * @return              SSH_OK on success, SSH_ERROR on error.
+ * @deprecated Please use ssh_session_update_known_hosts()
+ * @brief This function is deprecated
  */
 int ssh_write_knownhost(ssh_session session) {
     FILE *file;
