@@ -188,13 +188,13 @@ int ssh_gssapi_handle_userauth(ssh_session session, const char *user, uint32_t n
     gss_buffer_desc name_buf;
     gss_name_t server_name; /* local server fqdn */
     OM_uint32 maj_stat, min_stat;
-    unsigned int i;
+    size_t i;
     char *ptr;
     gss_OID_set supported; /* oids supported by server */
     gss_OID_set both_supported; /* oids supported by both client and server */
     gss_OID_set selected; /* oid selected for authentication */
     int present=0;
-    int oid_count=0;
+    size_t oid_count=0;
     struct gss_OID_desc_struct oid;
     int rc;
 
@@ -218,7 +218,7 @@ int ssh_gssapi_handle_userauth(ssh_session session, const char *user, uint32_t n
     maj_stat = gss_indicate_mechs(&min_stat, &supported);
     for (i=0; i < supported->count; ++i){
         ptr = ssh_get_hexa(supported->elements[i].elements, supported->elements[i].length);
-        SSH_LOG(SSH_LOG_DEBUG, "Supported mech %d: %s", i, ptr);
+        SSH_LOG(SSH_LOG_DEBUG, "Supported mech %zu: %s", i, ptr);
         free(ptr);
     }
 
@@ -291,7 +291,7 @@ int ssh_gssapi_handle_userauth(ssh_session session, const char *user, uint32_t n
         oid.length = len - 2;
         gss_test_oid_set_member(&min_stat,&oid,selected,&present);
         if(present){
-            SSH_LOG(SSH_LOG_PACKET, "Selected oid %d", i);
+            SSH_LOG(SSH_LOG_PACKET, "Selected oid %zu", i);
             break;
         }
     }
