@@ -57,7 +57,9 @@ static int session_setup(void **state)
 
     pwd = getpwnam("bob");
     assert_non_null(pwd);
-    setuid(pwd->pw_uid);
+
+    rc = setuid(pwd->pw_uid);
+    assert_return_code(rc, errno);
 
     s->ssh.session = ssh_new();
     assert_non_null(s->ssh.session);

@@ -7,6 +7,7 @@
 
 #include <sys/types.h>
 #include <pwd.h>
+#include <errno.h>
 
 static int sshd_setup(void **state)
 {
@@ -25,10 +26,13 @@ static int session_setup(void **state)
 {
     struct torture_state *s = *state;
     struct passwd *pwd;
+    int rc;
 
     pwd = getpwnam("bob");
     assert_non_null(pwd);
-    setuid(pwd->pw_uid);
+
+    rc = setuid(pwd->pw_uid);
+    assert_return_code(rc, errno);
 
     s->ssh.session = torture_ssh_session(TORTURE_SSH_SERVER,
                                          NULL,
