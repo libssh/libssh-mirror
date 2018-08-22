@@ -15,8 +15,8 @@
 # Redistribution and use is allowed according to the terms of the BSD license.
 # For details see the accompanying COPYING-CMAKE-SCRIPTS file.
 
-
-include_guard(GLOBAL)
+# Requires cmake 3.10
+#include_guard(GLOBAL)
 include(CheckCSourceCompiles)
 
 macro(CHECK_C_COMPILER_FLAG_SSP _FLAG _RESULT)
