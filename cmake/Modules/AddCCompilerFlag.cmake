@@ -1,3 +1,11 @@
+#
+# add_c_compiler_flag("-Werror" SUPPORTED_CFLAGS)
+#
+# Copyright (c) 2018      Andreas Schneider <asn@cryptomilk.org>
+#
+# Redistribution and use is allowed according to the terms of the BSD license.
+# For details see the accompanying COPYING-CMAKE-SCRIPTS file.
+
 include(CheckCCompilerFlag)
 
 macro(add_c_compiler_flag _COMPILER_FLAG _OUTPUT_VARIABLE)
