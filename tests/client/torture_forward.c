@@ -82,6 +82,9 @@ static void torture_ssh_forward(void **state)
     int dport;
     int bound_port;
     int rc;
+    int verbosity = SSH_LOG_TRACE;
+
+    ssh_options_set(session, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
 
     rc = ssh_channel_listen_forward(session, "127.0.0.21", 8080, &bound_port);
     assert_ssh_return_code(session, rc);
