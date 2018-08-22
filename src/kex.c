@@ -149,8 +149,8 @@ static const char *ssh_kex_descriptions[] = {
 /* tokenize will return a token of strings delimited by ",". the first element has to be freed */
 static char **tokenize(const char *chain){
     char **tokens;
-    int n=1;
-    int i=0;
+    size_t n=1;
+    size_t i=0;
     char *tmp;
     char *ptr;
 
@@ -187,8 +187,8 @@ static char **tokenize(const char *chain){
 /* TODO FIXME rewrite me! */
 char **ssh_space_tokenize(const char *chain){
     char **tokens;
-    int n=1;
-    int i=0;
+    size_t n=1;
+    size_t i=0;
     char *tmp;
     char *ptr;
 
