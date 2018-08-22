@@ -49,6 +49,14 @@ if (UNIX)
     endif()
     unset(CMAKE_REQUIRED_FLAGS)
 
+
+    if (CMAKE_BUILD_TYPE)
+        string(TOLOWER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE_LOWER)
+        if (CMAKE_BUILD_TYPE_LOWER MATCHES (release|relwithdebinfo|minsizerel))
+            add_c_compiler_flag("-Wp,-D_FORTIFY_SOURCE=2" SUPPORTED_COMPILER_FLAGS)
+        endif()
+    endif()
+
     if (PICKY_DEVELOPER)
         add_c_compiler_flag("-Werror" SUPPORTED_COMPILER_FLAGS)
         add_c_compiler_flag("-Wno-error=deprecated-declarations" SUPPORTED_COMPILER_FLAGS)
