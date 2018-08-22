@@ -215,6 +215,20 @@ tumbleweed/openssl_1.1.x/x86-64/release:
     paths:
       - obj/
 
+tumbleweed/docs:
+  image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$TUMBLEWEED_BUILD
+  script:
+  - mkdir -p obj && cd obj && cmake .. && make docs
+  tags:
+  - shared
+  except:
+  - tags
+  artifacts:
+    expire_in: 1 week
+    when: on_failure
+    paths:
+      - obj/
+
 tumbleweed/openssl_1.1.x/x86:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$TUMBLEWEED_BUILD
   script:
