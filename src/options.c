@@ -1095,10 +1095,11 @@ int ssh_options_getopt(ssh_session session, int *argcptr, char **argv)
     int current = 0;
     int saveoptind = optind; /* need to save 'em */
     int saveopterr = opterr;
+    int opt;
 
     opterr = 0; /* shut up getopt */
-    while(cont && ((i = getopt(argc, argv, "c:i:Cl:p:vb:rd12")) != -1)) {
-        switch(i) {
+    while((opt = getopt(argc, argv, "c:i:Cl:p:vb:rd12")) != -1) {
+        switch(opt) {
         case 'l':
             user = optarg;
             break;
@@ -1129,8 +1130,8 @@ int ssh_options_getopt(ssh_session session, int *argcptr, char **argv)
             break;
         default:
             {
-                char opt[3]="- ";
-                opt[1] = optopt;
+                char optv[3] = "- ";
+                optv[1] = optopt;
                 tmp = realloc(save, (current + 1) * sizeof(char*));
                 if (tmp == NULL) {
                     SAFE_FREE(save);
@@ -1138,7 +1139,7 @@ int ssh_options_getopt(ssh_session session, int *argcptr, char **argv)
                     return -1;
                 }
                 save = tmp;
-                save[current] = strdup(opt);
+                save[current] = strdup(optv);
                 if (save[current] == NULL) {
                     SAFE_FREE(save);
                     ssh_set_error_oom(session);
