@@ -62,6 +62,9 @@ if (UNIX)
         add_c_compiler_flag("-Wno-error=deprecated-declarations" SUPPORTED_COMPILER_FLAGS)
         add_c_compiler_flag("-Wno-error=tautological-compare" SUPPORTED_COMPILER_FLAGS)
     endif()
+
+    # Allow zero for a variadic macro argument
+    add_c_compiler_flag("-Wno-gnu-zero-variadic-macro-arguments" SUPPORTED_COMPILER_FLAGS)
 endif()
 
 if (MSVC)
@@ -75,11 +78,6 @@ endif()
 # "warning: 'BN_CTX_free' is deprecated: first deprecated in OS X 10.7 [-Wdeprecated-declarations]"
 if (OSX)
     add_c_compiler_flag("-Wno-deprecated-declarations" SUPPORTED_COMPILER_FLAGS)
-endif()
-
-if (BSD)
-    # Allow zero for a variadic macro argument
-    add_c_compiler_flag("-Wno-gnu-zero-variadic-macro-arguments" SUPPORTED_COMPILER_FLAGS)
 endif()
 
 set(DEFAULT_C_COMPILE_FLAGS ${SUPPORTED_COMPILER_FLAGS} CACHE INTERNAL "Default C Compiler Flags" FORCE)
