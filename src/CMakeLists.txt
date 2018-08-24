@@ -266,7 +266,7 @@ include_directories(
 # Set the path to the default map file
 set(MAP_PATH "${CMAKE_CURRENT_SOURCE_DIR}/${PROJECT_NAME}.map")
 
-if (WITH_SYMBOL_VERSIONING AND ABIMAP_FOUND)
+if (WITH_SYMBOL_VERSIONING AND HAVE_LD_VERSION_SCRIPT AND ABIMAP_FOUND)
     # Get the list of header files
     get_file_list("dev_header_list"
                   DIRECTORIES "${LIBSSH_PUBLIC_INCLUDE_DIRS}/libssh"
@@ -292,14 +292,14 @@ if (WITH_SYMBOL_VERSIONING AND ABIMAP_FOUND)
       ${libssh_SRCS}
       ${PROJECT_NAME}_dev.map
     )
-endif (WITH_SYMBOL_VERSIONING AND ABIMAP_FOUND)
+endif (WITH_SYMBOL_VERSIONING AND HAVE_LD_VERSION_SCRIPT AND ABIMAP_FOUND)
 
 add_library(${LIBSSH_SHARED_LIBRARY} SHARED ${libssh_SRCS})
 target_compile_options(${LIBSSH_SHARED_LIBRARY} PRIVATE ${DEFAULT_C_COMPILE_FLAGS})
 
 target_link_libraries(${LIBSSH_SHARED_LIBRARY} ${LIBSSH_LINK_LIBRARIES})
 
-if (WITH_SYMBOL_VERSIONING)
+if (WITH_SYMBOL_VERSIONING AND HAVE_LD_VERSION_SCRIPT)
     if (ABIMAP_FOUND)
         # Change path to devel map file
         set(MAP_PATH "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_dev.map")
@@ -308,7 +308,7 @@ if (WITH_SYMBOL_VERSIONING)
     set_target_properties(${LIBSSH_SHARED_LIBRARY}
                           PROPERTIES LINK_FLAGS
                           "-Wl,--version-script,\"${MAP_PATH}\"")
-endif (WITH_SYMBOL_VERSIONING)
+endif (WITH_SYMBOL_VERSIONING AND HAVE_LD_VERSION_SCRIPT)
 
 set_target_properties(
   ${LIBSSH_SHARED_LIBRARY}

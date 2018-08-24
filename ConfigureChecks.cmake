@@ -369,6 +369,20 @@ int main(void) {
 # Stop treating warnings as errors
 unset(CMAKE_REQUIRED_FLAGS)
 
+# Check for version script support
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/conftest.map" "VERS_1 {
+        global: sym;
+};
+VERS_2 {
+        global: sym;
+} VERS_1;
+")
+
+set(CMAKE_REQUIRED_FLAGS "-Wl,--version-script=\"${CMAKE_CURRENT_BINARY_DIR}/conftest.map\"")
+check_c_source_compiles("int main(void) { return 0; }" HAVE_LD_VERSION_SCRIPT)
+unset(CMAKE_REQUIRED_FLAGS)
+file(REMOVE "${CMAKE_CURRENT_BINARY_DIR}/conftest.map")
+
 if (WITH_DEBUG_CRYPTO)
   set(DEBUG_CRYPTO 1)
 endif (WITH_DEBUG_CRYPTO)
