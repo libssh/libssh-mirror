@@ -1092,7 +1092,7 @@ int ssh_options_getopt(ssh_session session, int *argcptr, char **argv)
     int usedss = 0;
     int compress = 0;
     int cont = 1;
-    int current = 0;
+    size_t current = 0;
     int saveoptind = optind; /* need to save 'em */
     int saveopterr = opterr;
     int opt;
