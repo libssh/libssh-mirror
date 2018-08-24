@@ -1228,7 +1228,9 @@ void ssh_kbdint_free(ssh_kbdint kbd) {
     n = kbd->nprompts;
     if (kbd->prompts) {
         for (i = 0; i < n; i++) {
-            explicit_bzero(kbd->prompts[i], strlen(kbd->prompts[i]));
+            if (kbd->prompts[i] != NULL) {
+                explicit_bzero(kbd->prompts[i], strlen(kbd->prompts[i]));
+            }
             SAFE_FREE(kbd->prompts[i]);
         }
         SAFE_FREE(kbd->prompts);
@@ -1237,7 +1239,9 @@ void ssh_kbdint_free(ssh_kbdint kbd) {
     n = kbd->nanswers;
     if (kbd->answers) {
         for (i = 0; i < n; i++) {
-            explicit_bzero(kbd->answers[i], strlen(kbd->answers[i]));
+            if (kbd->answers[i] != NULL) {
+                explicit_bzero(kbd->answers[i], strlen(kbd->answers[i]));
+            }
             SAFE_FREE(kbd->answers[i]);
         }
         SAFE_FREE(kbd->answers);
