@@ -303,7 +303,7 @@ sftp_packet sftp_packet_read(sftp_session sftp) {
   sftp_packet packet = NULL;
   uint32_t tmp;
   size_t size;
-  int r, s;
+  int r, s, is_eof;
 
   packet = calloc(1, sizeof(struct sftp_packet_struct));
   if (packet == NULL) {
@@ -330,8 +330,6 @@ sftp_packet sftp_packet_read(sftp_session sftp) {
     if (s < 0) {
         goto error;
     } else if (s == 0) {
-        int is_eof;
-
         is_eof = ssh_channel_is_eof(sftp->channel);
         if (is_eof) {
             goto error;
@@ -346,11 +344,17 @@ sftp_packet sftp_packet_read(sftp_session sftp) {
     goto error;
   }
 
-  r=ssh_channel_read(sftp->channel, buffer, 1, 0);
-  if (r <= 0) {
-    /* TODO: check if there are cases where an error needs to be set here */
-    goto error;
-  }
+  do {
+    r = ssh_channel_read(sftp->channel, buffer, 1, 0);
+    if (r < 0) {
+        goto error;
+    } else if (s == 0) {
+        is_eof = ssh_channel_is_eof(sftp->channel);
+        if (is_eof) {
+            goto error;
+        }
+    }
+  } while (r < 1);
   ssh_buffer_add_data(packet->payload, buffer, r);
   ssh_buffer_get_u8(packet->payload, &packet->type);
 
@@ -369,11 +373,16 @@ sftp_packet sftp_packet_read(sftp_session sftp) {
     r=ssh_channel_read(sftp->channel,buffer,
         sizeof(buffer)>size ? size:sizeof(buffer),0);
 
-    if(r <= 0) {
+    if (r < 0) {
       /* TODO: check if there are cases where an error needs to be set here */
       goto error;
-    }
-    if (ssh_buffer_add_data(packet->payload, buffer, r) == SSH_ERROR) {
+    } else if (r == 0) {
+      /* Retry the reading unless the remote was closed */
+      is_eof = ssh_channel_is_eof(sftp->channel);
+      if (is_eof) {
+          goto error;
+      }
+    } else if (ssh_buffer_add_data(packet->payload, buffer, r) == SSH_ERROR) {
       ssh_set_error_oom(sftp->session);
       goto error;
     }
