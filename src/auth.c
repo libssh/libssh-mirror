@@ -295,6 +295,8 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_success) {
       session->current_crypto->do_compress_in = 1;
   }
 
+    /* Reset errors by previous authentication methods. */
+    ssh_reset_error(session);
     session->auth.current_method = SSH_AUTH_METHOD_UNKNOWN;
   return SSH_PACKET_USED;
 }
