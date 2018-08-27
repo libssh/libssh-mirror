@@ -574,7 +574,7 @@ static int ssh_server_kex_termination(void *s){
 
 void ssh_set_auth_methods(ssh_session session, int auth_methods){
 	/* accept only methods in range */
-	session->auth_methods = auth_methods & 0x3f;
+    session->auth.supported_methods = auth_methods & 0x3f;
 }
 
 /* Do the banner and key exchange */
@@ -625,26 +625,26 @@ int ssh_auth_reply_default(ssh_session session,int partial) {
   int rc = SSH_ERROR;
 
 
-  if (session->auth_methods == 0) {
-    session->auth_methods = SSH_AUTH_METHOD_PUBLICKEY | SSH_AUTH_METHOD_PASSWORD;
+  if (session->auth.supported_methods == 0) {
+    session->auth.supported_methods = SSH_AUTH_METHOD_PUBLICKEY | SSH_AUTH_METHOD_PASSWORD;
   }
-  if (session->auth_methods & SSH_AUTH_METHOD_PUBLICKEY) {
+  if (session->auth.supported_methods & SSH_AUTH_METHOD_PUBLICKEY) {
     strncat(methods_c, "publickey,",
             sizeof(methods_c) - strlen(methods_c) - 1);
   }
-  if (session->auth_methods & SSH_AUTH_METHOD_GSSAPI_MIC){
+  if (session->auth.supported_methods & SSH_AUTH_METHOD_GSSAPI_MIC){
 	  strncat(methods_c,"gssapi-with-mic,",
 			  sizeof(methods_c) - strlen(methods_c) - 1);
   }
-  if (session->auth_methods & SSH_AUTH_METHOD_INTERACTIVE) {
+  if (session->auth.supported_methods & SSH_AUTH_METHOD_INTERACTIVE) {
     strncat(methods_c, "keyboard-interactive,",
             sizeof(methods_c) - strlen(methods_c) - 1);
   }
-  if (session->auth_methods & SSH_AUTH_METHOD_PASSWORD) {
+  if (session->auth.supported_methods & SSH_AUTH_METHOD_PASSWORD) {
     strncat(methods_c, "password,",
             sizeof(methods_c) - strlen(methods_c) - 1);
   }
-  if (session->auth_methods & SSH_AUTH_METHOD_HOSTBASED) {
+  if (session->auth.supported_methods & SSH_AUTH_METHOD_HOSTBASED) {
     strncat(methods_c, "hostbased,",
             sizeof(methods_c) - strlen(methods_c) - 1);
   }
@@ -887,7 +887,7 @@ int ssh_message_auth_set_methods(ssh_message msg, int methods) {
     return -1;
   }
 
-  msg->session->auth_methods = methods;
+  msg->session->auth.supported_methods = methods;
 
   return 0;
 }

@@ -128,11 +128,15 @@ struct ssh_session_struct {
     enum ssh_session_state_e session_state;
     int packet_state;
     enum ssh_dh_state_e dh_handshake_state;
-    enum ssh_auth_service_state_e auth_service_state;
-    enum ssh_auth_state_e auth_state;
     enum ssh_channel_request_state_e global_req_state;
     struct ssh_agent_state_struct *agent_state;
-    struct ssh_auth_auto_state_struct *auth_auto_state;
+
+    struct {
+        struct ssh_auth_auto_state_struct *auto_state;
+        enum ssh_auth_service_state_e service_state;
+        enum ssh_auth_state_e state;
+        uint32_t supported_methods;
+    } auth;
 
     /*
      * RFC 4253, 7.1: if the first_kex_packet_follows flag was set in
@@ -167,8 +171,8 @@ struct ssh_session_struct {
         /* The type of host key wanted by client */
         enum ssh_keytypes_e hostkey;
     } srv;
+
     /* auths accepted by server */
-    int auth_methods;
     struct ssh_list *ssh_message_list; /* list of delayed SSH messages */
     int (*ssh_message_callback)( struct ssh_session_struct *session, ssh_message msg, void *userdata);
     void *ssh_message_callback_data;
