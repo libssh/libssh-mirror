@@ -264,7 +264,7 @@ SSH_PACKET_CALLBACK(ssh_packet_service_accept){
 	(void)type;
 	(void)user;
 
-	session->auth_service_state=SSH_AUTH_SERVICE_ACCEPTED;
+    session->auth.service_state = SSH_AUTH_SERVICE_ACCEPTED;
 	SSH_LOG(SSH_LOG_PACKET,
 	      "Received SSH_MSG_SERVICE_ACCEPT");
 

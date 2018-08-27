@@ -60,11 +60,10 @@ ssh_session ssh_new(void) {
   char *id = NULL;
   int rc;
 
-  session = malloc(sizeof (struct ssh_session_struct));
+  session = calloc(1, sizeof (struct ssh_session_struct));
   if (session == NULL) {
     return NULL;
   }
-  ZERO_STRUCTP(session);
 
   session->next_crypto = crypto_new();
   if (session->next_crypto == NULL) {
@@ -87,7 +86,7 @@ ssh_session ssh_new(void) {
   }
 
   session->alive = 0;
-  session->auth_methods = 0;
+  session->auth.supported_methods = 0;
   ssh_set_blocking(session, 1);
   session->maxchannel = FIRST_CHANNEL;
 
@@ -268,7 +267,7 @@ void ssh_free(ssh_session session) {
 #endif
   session->agent_state = NULL;
 
-  SAFE_FREE(session->auth_auto_state);
+  SAFE_FREE(session->auth.auto_state);
   SAFE_FREE(session->serverbanner);
   SAFE_FREE(session->clientbanner);
   SAFE_FREE(session->banner);

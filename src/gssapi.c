@@ -598,7 +598,7 @@ static int ssh_gssapi_send_auth_mic(ssh_session session, ssh_string *oid_set, in
         }
     }
 
-    session->auth_state = SSH_AUTH_STATE_GSSAPI_REQUEST_SENT;
+    session->auth.state = SSH_AUTH_STATE_GSSAPI_REQUEST_SENT;
     return ssh_packet_send(session);
 fail:
     ssh_buffer_reinit(session->out_buffer);
@@ -797,7 +797,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_response){
     (void)user;
 
     SSH_LOG(SSH_LOG_PACKET, "Received SSH_USERAUTH_GSSAPI_RESPONSE");
-    if (session->auth_state != SSH_AUTH_STATE_GSSAPI_REQUEST_SENT){
+    if (session->auth.state != SSH_AUTH_STATE_GSSAPI_REQUEST_SENT){
         ssh_set_error(session, SSH_FATAL, "Invalid state in ssh_packet_userauth_gssapi_response");
         goto error;
     }
@@ -845,12 +845,12 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_response){
                         output_token.length,
                         (size_t)output_token.length, output_token.value);
         ssh_packet_send(session);
-        session->auth_state = SSH_AUTH_STATE_GSSAPI_TOKEN;
+        session->auth.state = SSH_AUTH_STATE_GSSAPI_TOKEN;
     }
     return SSH_PACKET_USED;
 
 error:
-    session->auth_state = SSH_AUTH_STATE_ERROR;
+    session->auth.state = SSH_AUTH_STATE_ERROR;
     ssh_gssapi_free(session);
     session->gssapi = NULL;
     return SSH_PACKET_USED;
@@ -907,7 +907,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_token_client){
     (void)type;
 
     SSH_LOG(SSH_LOG_PACKET,"Received SSH_MSG_USERAUTH_GSSAPI_TOKEN");
-    if (!session->gssapi || session->auth_state != SSH_AUTH_STATE_GSSAPI_TOKEN) {
+    if (!session->gssapi || session->auth.state != SSH_AUTH_STATE_GSSAPI_TOKEN) {
         ssh_set_error(session, SSH_FATAL,
                       "Received SSH_MSG_USERAUTH_GSSAPI_TOKEN in invalid state");
         goto error;
@@ -960,14 +960,14 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_token_client){
     }
 
     if (maj_stat == GSS_S_COMPLETE) {
-        session->auth_state = SSH_AUTH_STATE_NONE;
+        session->auth.state = SSH_AUTH_STATE_NONE;
         ssh_gssapi_send_mic(session);
     }
 
     return SSH_PACKET_USED;
 
 error:
-    session->auth_state = SSH_AUTH_STATE_ERROR;
+    session->auth.state = SSH_AUTH_STATE_ERROR;
     ssh_gssapi_free(session);
     session->gssapi = NULL;
     return SSH_PACKET_USED;

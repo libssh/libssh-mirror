@@ -295,7 +295,7 @@ static int dh_handshake(ssh_session session) {
 static int ssh_service_request_termination(void *s){
   ssh_session session = (ssh_session)s;
   if(session->session_state == SSH_SESSION_STATE_ERROR ||
-      session->auth_service_state != SSH_AUTH_SERVICE_SENT)
+      session->auth.service_state != SSH_AUTH_SERVICE_SENT)
     return 1;
   else
     return 0;
@@ -319,7 +319,7 @@ static int ssh_service_request_termination(void *s){
 int ssh_service_request(ssh_session session, const char *service) {
   int rc=SSH_ERROR;
 
-  if(session->auth_service_state != SSH_AUTH_SERVICE_NONE)
+  if(session->auth.service_state != SSH_AUTH_SERVICE_NONE)
     goto pending;
 
   rc = ssh_buffer_pack(session->out_buffer,
@@ -330,7 +330,7 @@ int ssh_service_request(ssh_session session, const char *service) {
       ssh_set_error_oom(session);
       return SSH_ERROR;
   }
-  session->auth_service_state=SSH_AUTH_SERVICE_SENT;
+  session->auth.service_state = SSH_AUTH_SERVICE_SENT;
   if (ssh_packet_send(session) == SSH_ERROR) {
     ssh_set_error(session, SSH_FATAL,
         "Sending SSH2_MSG_SERVICE_REQUEST failed.");
@@ -345,7 +345,7 @@ pending:
   if (rc == SSH_ERROR) {
       return SSH_ERROR;
   }
-  switch(session->auth_service_state){
+  switch(session->auth.service_state) {
   case SSH_AUTH_SERVICE_DENIED:
     ssh_set_error(session,SSH_FATAL,"ssh_auth_service request denied");
     break;
@@ -700,7 +700,7 @@ error:
   if (session->out_hashbuf) {
     ssh_buffer_reinit(session->out_hashbuf);
   }
-  session->auth_methods = 0;
+  session->auth.supported_methods = 0;
   SAFE_FREE(session->serverbanner);
   SAFE_FREE(session->clientbanner);
 
