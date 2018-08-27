@@ -37,7 +37,7 @@
 #
 #   generate_map_file(target_name
 #                     RELEASE_NAME_VERSION release_name
-#                     SYMBOLS symbols_file
+#                     SYMBOLS symbols_target
 #                     [CURRENT_MAP cur_map]
 #                     [FINAL]
 #                     [BREAK_ABI]
@@ -55,8 +55,9 @@
 #   added to the symbols in the format ``lib_name_1_2_3``.
 #
 # ``SYMBOLS``:
-#   Required, expects a file containing the list of symbols to be added to the
-#   symbol version script.
+#   Required, expects a target with the property ``LIST_FILE`` containing a path
+#   to a file containing the list of symbols to be added to the symbol version
+#   script.
 #
 # ``CURRENT_MAP``:
 #   Optional. If given, the new set of symbols will be checked against the
@@ -87,8 +88,13 @@
 #   find_package(ABIMap)
 #   generate_map_file("lib.map"
 #                     RELEASE_NAME_VERSION "lib_1_0_0"
-#                     SYMBOLS "symbol1;symbol2"
+#                     SYMBOLS symbols
 #                    )
+#
+# Where the target ``symbols`` has its property ``LIST_FILE`` set to the path to
+# a file containing::
+#
+#  ``symbol1;symbol2``
 #
 # This example would result in the symbol version script to be created in
 # ``${CMAKE_CURRENT_BINARY_DIR}/lib.map`` containing the provided symbols.
@@ -102,8 +108,8 @@
 #                  )
 #
 # ``target_name``:
-#   Required, expects the name of the target to be created. A file named after
-#   the string given in ``target_name`` will be created in
+#   Required, expects the name of the target to be created. A file named as
+#   ``${target_name}.list`` will be created in
 #   ``${CMAKE_CURRENT_BINARY_DIR}`` to receive the list of files found.
 #
 # ``DIRECTORIES``:
@@ -112,7 +118,7 @@
 #
 # ``FILES_PATTERN``:
 #   Required, expects a list of matching expressions to find the files to be
-#   considered.
+#   considered in the directories.
 #
 # ``COPY_TO``:
 #   Optional, expects a string containing the path to where the file containing
@@ -120,7 +126,9 @@
 #
 # This command searches the directories provided in ``DIRECTORIES`` for files
 # matching any of the patterns provided in ``FILES_PATTERNS``. The obtained list
-# is written to the path specified by ``output``.
+# is written to the path specified by ``output``. A target named ``target_name``
+# will be created and its property ``LIST_FILE`` will be set to contain
+# ``${CMAKE_CURRENT_BINARY_DIR}/${target_name}.list``
 #
 # Example:
 #
@@ -140,10 +148,13 @@
 #
 #   ``h1.h;h2.h``
 #
+# And the target ``target`` will have its property ``LIST_FILE`` set to contain
+# ``${CMAKE_CURRENT_BINARY_DIR}/target.list``
+#
 # ::
 #
 #   extract_symbols(target_name
-#                   HEADERS_LIST_FILE headers_list
+#                   HEADERS_LIST headers_list_target
 #                   [FILTER_PATTERN pattern]
 #                   [COPY_TO output]
 #                  )
@@ -153,9 +164,9 @@
 #   the string given in ``target_name`` will be created in
 #   ``${CMAKE_CURRENT_BINARY_DIR}`` to receive the list of symbols.
 #
-# ``HEADERS_LIST_FILE``:
-#   Required, expects a path to a file containing the list of header files to be
-#   parsed.
+# ``HEADERS_LIST``:
+#   Required, expects a target with the property ``LIST_FILE`` set, containing a
+#   file path. Such file must contain a list of files paths.
 #
 # ``FILTER_PATTERN``:
 #   Optional, expects a string. Only the lines containing the filter pattern
@@ -170,7 +181,9 @@
 # is provided, then only the lines containing the string given in ``pattern``
 # will be considered. It is recommended to provide a ``FILTER_PATTERN`` to mark
 # the lines containing exported function declaration, since this function is
-# experimental and can return wrong symbols when parsing the header files.
+# experimental and can return wrong symbols when parsing the header files. A
+# target named ``target_name`` will be created with the property ``LIST_FILE``
+# set to contain ``${CMAKE_CURRENT_BINARY_DIR}/${target_name}.list``.
 #
 # Example:
 #
@@ -178,11 +191,12 @@
 #
 #   find_package(ABIMap)
 #   extract_symbols("lib.symbols"
-#     HEADERS_LIST_FILE "headers_list"
+#     HEADERS_LIST "headers_target"
 #     FILTER_PATTERN "API_FUNCTION"
 #   )
 #
-# Where headers_list contains::
+# Where ``LIST_FILE`` property in ``headers_target`` points to a file
+# containing::
 #
 #   header1.h;header2.h
 #
@@ -196,7 +210,8 @@
 #
 #   int private_func2(int b);
 #
-# Will result in a file ``lib.symbols`` in ``${CMAKE_CURRENT_BINARY_DIR}`` containing::
+# Will result in a file ``lib.symbols.list`` in ``${CMAKE_CURRENT_BINARY_DIR}``
+# containing::
 #
 #   ``exported_func1;exported_func2``
 #
@@ -235,42 +250,41 @@ set(_GET_FILES_LIST_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/GetFilesList.cmake)
 function(get_file_list _TARGET_NAME)
 
     set(one_value_arguments
-      COPY_TO
+        COPY_TO
     )
 
     set(multi_value_arguments
-      DIRECTORIES
-      FILES_PATTERNS
+        DIRECTORIES
+        FILES_PATTERNS
     )
 
     cmake_parse_arguments(_get_files_list
-      ""
-      "${one_value_arguments}"
-      "${multi_value_arguments}"
-      ${ARGN}
+        ""
+        "${one_value_arguments}"
+        "${multi_value_arguments}"
+        ${ARGN}
     )
 
     # The DIRS argument is required
     if (NOT DEFINED _get_files_list_DIRECTORIES)
         message(FATAL_ERROR "No directories paths provided. Provide a list of"
-                            " directories paths containing header files."
-         )
-     endif()
+                            " directories paths containing header files.")
+    endif()
 
     # The FILES_PATTERNS argument is required
     if (NOT DEFINED _get_files_list_FILES_PATTERNS)
         message(FATAL_ERROR "No matching expressions provided. Provide a list"
-                            " of matching patterns for the header files."
-        )
+                            " of matching patterns for the header files.")
     endif()
 
-    get_filename_component(_get_files_list_OUTPUT_PATH
-      "${CMAKE_CURRENT_BINARY_DIR}/${_TARGET_NAME}"
-      ABSOLUTE
-    )
+    set(_FILES_LIST_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR}/${_TARGET_NAME}.list)
 
-    add_custom_command(
-        OUTPUT ${_TARGET_NAME}
+    get_filename_component(_get_files_list_OUTPUT_PATH
+                           "${_FILES_LIST_OUTPUT_PATH}"
+                           ABSOLUTE)
+
+    add_custom_target(
+        ${_TARGET_NAME} ALL
         COMMAND ${CMAKE_COMMAND}
           -DOUTPUT_PATH="${_get_files_list_OUTPUT_PATH}"
           -DDIRECTORIES="${_get_files_list_DIRECTORIES}"
@@ -280,58 +294,75 @@ function(get_file_list _TARGET_NAME)
           "Searching for files"
     )
 
+    set_target_properties(${_TARGET_NAME}
+        PROPERTIES LIST_FILE ${_FILES_LIST_OUTPUT_PATH}
+    )
+
     if (DEFINED _get_files_list_COPY_TO)
         # Copy the generated file back to the COPY_TO
-        add_custom_target(copy_headers_list_${TARGET_NAME} ALL
+        add_custom_target(copy_${TARGET_NAME} ALL
             COMMAND
-                ${CMAKE_COMMAND} -E copy_if_different ${_TARGET_NAME} ${_get_files_list_COPY_TO}
-            DEPENDS "${_TARGET_NAME}"
+              ${CMAKE_COMMAND} -E copy_if_different
+              ${_FILES_LIST_OUTPUT_PATH} ${_get_files_list_COPY_TO}
+            DEPENDS ${_TARGET_NAME}
             COMMENT "Copying ${_TARGET_NAME} to ${_get_files_list_COPY_TO}"
         )
     endif()
+
 endfunction()
 
 function(extract_symbols _TARGET_NAME)
 
     set(one_value_arguments
-      FILTER_PATTERN
-      HEADERS_LIST_FILE
-      COPY_TO
+        FILTER_PATTERN
+        HEADERS_LIST
+        COPY_TO
     )
 
     set(multi_value_arguments
     )
 
     cmake_parse_arguments(_extract_symbols
-      ""
-      "${one_value_arguments}"
-      "${multi_value_arguments}"
-      ${ARGN}
+        ""
+        "${one_value_arguments}"
+        "${multi_value_arguments}"
+        ${ARGN}
     )
 
     # The HEADERS_LIST_FILE argument is required
-    if (NOT DEFINED _extract_symbols_HEADERS_LIST_FILE)
-        message(FATAL_ERROR "No header files given. Provide a list of header"
-                            " files containing exported symbols."
-        )
+    if (NOT DEFINED _extract_symbols_HEADERS_LIST)
+        message(FATAL_ERROR "No target provided in HEADERS_LIST. Provide a"
+                            " target with the property LIST_FILE set as the"
+                            " path to the file containing the list of headers.")
     endif()
 
-    get_filename_component(_extract_symbols_OUTPUT_PATH
-      "${CMAKE_CURRENT_BINARY_DIR}/${_TARGET_NAME}"
-      ABSOLUTE
+    get_filename_component(_SYMBOLS_OUTPUT_PATH
+                           "${CMAKE_CURRENT_BINARY_DIR}/${_TARGET_NAME}.list"
+                           ABSOLUTE
     )
 
-    add_custom_target(${_TARGET_NAME}
-                      COMMAND ${CMAKE_COMMAND}
-                        -DOUTPUT_PATH="${_extract_symbols_OUTPUT_PATH}"
-                        -DHEADERS_LIST_FILE="${_extract_symbols_HEADERS_LIST_FILE}"
-                        -DFILTER_PATTERN=${_extract_symbols_FILTER_PATTERN}
-                        -P ${_EXTRACT_SYMBOLS_SCRIPT}
-                      DEPENDS ${_extract_symbols_HEADERS_LIST_FILE}
-                      COMMENT "Extracting symbols from headers")
+    get_target_property(_HEADERS_LIST_FILE
+        ${_extract_symbols_HEADERS_LIST}
+        LIST_FILE
+    )
+
+    add_custom_target(
+        ${_TARGET_NAME} ALL
+        COMMAND ${CMAKE_COMMAND}
+          -DOUTPUT_PATH="${_SYMBOLS_OUTPUT_PATH}"
+          -DHEADERS_LIST_FILE="${_HEADERS_LIST_FILE}"
+          -DFILTER_PATTERN=${_extract_symbols_FILTER_PATTERN}
+          -P ${_EXTRACT_SYMBOLS_SCRIPT}
+        DEPENDS ${_extract_symbols_HEADERS_LIST}
+        COMMENT "Extracting symbols from headers"
+    )
+
+    set_target_properties(${_TARGET_NAME}
+        PROPERTIES LIST_FILE ${_SYMBOLS_OUTPUT_PATH}
+    )
 
     if (DEFINED _extract_symbols_COPY_TO)
-        file(READ "${CMAKE_CURRENT_BINARY_DIR}/${_TARGET_NAME}" SYMBOL_CONTENT)
+        file(READ "${_SYMBOLS_OUTPUT_PATH}" SYMBOL_CONTENT)
         string(REPLACE ";" "\n" SYMBOL_CONTENT_NEW "${SYMBOL_CONTENT}")
         file(WRITE "${_extract_symbols_COPY_TO}" "${SYMBOL_CONTENT_NEW}")
     endif()
@@ -355,36 +386,42 @@ function(generate_map_file _TARGET_NAME)
     )
 
     cmake_parse_arguments(_generate_map_file
-      "${options}"
-      "${one_value_arguments}"
-      "${multi_value_arguments}"
-      ${ARGN}
+        "${options}"
+        "${one_value_arguments}"
+        "${multi_value_arguments}"
+        ${ARGN}
     )
 
     if (NOT DEFINED _generate_map_file_SYMBOLS)
-        message(FATAL_ERROR "No symbols file provided."
-        )
+        message(FATAL_ERROR "No target provided in SYMBOLS. Provide a target"
+                            " with the property LIST_FILE set as the path to"
+                            " the file containing the list of symbols.")
     endif()
 
     if (NOT DEFINED _generate_map_file_RELEASE_NAME_VERSION)
         message(FATAL_ERROR "Release name and version not provided."
-          " (e.g. libname_1_0_0"
-        )
+          " (e.g. libname_1_0_0)")
     endif()
 
-    # Set generated map file path
-    get_filename_component(_generate_map_file_OUTPUT_PATH
-      "${CMAKE_CURRENT_BINARY_DIR}/${_TARGET_NAME}"
-      ABSOLUTE
+
+    get_target_property(_SYMBOLS_FILE
+        ${_generate_map_file_SYMBOLS}
+        LIST_FILE
     )
 
-    add_custom_command(
-        OUTPUT ${_TARGET_NAME}
+    # Set generated map file path
+    get_filename_component(_MAP_OUTPUT_PATH
+                           "${CMAKE_CURRENT_BINARY_DIR}/${_TARGET_NAME}"
+                           ABSOLUTE
+    )
+
+    add_custom_target(
+        ${_TARGET_NAME} ALL
         COMMAND ${CMAKE_COMMAND}
           -DABIMAP_EXECUTABLE=${ABIMAP_EXECUTABLE}
-          -DSYMBOLS="${_generate_map_file_SYMBOLS}"
+          -DSYMBOLS="${_SYMBOLS_FILE}"
           -DCURRENT_MAP=${_generate_map_file_CURRENT_MAP}
-          -DOUTPUT_PATH="${_generate_map_file_OUTPUT_PATH}"
+          -DOUTPUT_PATH="${_MAP_OUTPUT_PATH}"
           -DFINAL=${_generate_map_file_FINAL}
           -DBREAK_ABI=${_generate_map_file_BREAK_ABI}
           -DRELEASE_NAME_VERSION=${_generate_map_file_RELEASE_NAME_VERSION}
@@ -393,13 +430,21 @@ function(generate_map_file _TARGET_NAME)
         COMMENT "Generating the map ${_TARGET_NAME}"
     )
 
+    # Add a custom command setting the map as OUTPUT to allow it to be added as
+    # a generated source
+    add_custom_command(
+        OUTPUT ${_MAP_OUTPUT_PATH}
+        DEPENDS ${_TARGET_NAME}
+    )
+
     if (DEFINED _generate_map_file_COPY_TO)
         # Copy the generated map back to the COPY_TO
-        add_custom_target(copy_map_${_TARGET_NAME} ALL
+        add_custom_target(copy_${_TARGET_NAME} ALL
             COMMAND
-                ${CMAKE_COMMAND} -E copy_if_different ${_TARGET_NAME} ${_generate_map_file_COPY_TO}
-            DEPENDS "${_TARGET_NAME}"
-            COMMENT "Copying ${_TARGET_NAME} to ${_generate_map_file_COPY_TO}"
+              ${CMAKE_COMMAND} -E copy_if_different ${_MAP_OUTPUT_PATH}
+              ${_generate_map_file_COPY_TO}
+            DEPENDS ${_TARGET_NAME}
+            COMMENT "Copying ${_MAP_OUTPUT_PATH} to ${_generate_map_file_COPY_TO}"
         )
     endif()
 endfunction()
