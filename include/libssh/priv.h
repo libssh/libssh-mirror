@@ -232,6 +232,7 @@ void _ssh_set_error_oom(void *error, const char *function);
     _ssh_set_error_invalid(error, __func__)
 void _ssh_set_error_invalid(void *error, const char *function);
 
+void ssh_reset_error(void *error);
 
 /* server.c */
 #ifdef WITH_SERVER
