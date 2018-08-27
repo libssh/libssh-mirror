@@ -91,6 +91,36 @@ static int ssh_auth_response_termination(void *user) {
     }
 }
 
+static const char *ssh_auth_get_current_method(ssh_session session)
+{
+    const char *method = "unknown";
+
+    switch (session->auth.current_method) {
+    case SSH_AUTH_METHOD_NONE:
+        method = "none";
+        break;
+    case SSH_AUTH_METHOD_PASSWORD:
+        method = "password";
+        break;
+    case SSH_AUTH_METHOD_PUBLICKEY:
+        method = "publickey";
+        break;
+    case SSH_AUTH_METHOD_HOSTBASED:
+        method = "hostbased";
+        break;
+    case SSH_AUTH_METHOD_INTERACTIVE:
+        method = "keyboard interactive";
+        break;
+    case SSH_AUTH_METHOD_GSSAPI_MIC:
+        method = "gssapi";
+        break;
+    default:
+        break;
+    }
+
+    return method;
+}
+
 /**
  * @internal
  * @brief Wait for a response of an authentication function.
@@ -181,6 +211,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_banner) {
  * This handles the complete or partial authentication failure.
  */
 SSH_PACKET_CALLBACK(ssh_packet_userauth_failure) {
+    const char *current_method = ssh_auth_get_current_method(session);
     char *auth_methods = NULL;
     uint8_t partial = 0;
     int rc;
@@ -198,16 +229,18 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_failure) {
     if (partial) {
         session->auth.state = SSH_AUTH_STATE_PARTIAL;
         SSH_LOG(SSH_LOG_INFO,
-                "Partial success. Authentication that can continue: %s",
+                "Partial success for '%s'. Authentication that can continue: %s",
+                current_method,
                 auth_methods);
     } else {
         session->auth.state = SSH_AUTH_STATE_FAILED;
-        SSH_LOG(SSH_LOG_INFO,
-                "Access denied. Authentication that can continue: %s",
-                auth_methods);
         ssh_set_error(session, SSH_REQUEST_DENIED,
-                "Access denied. Authentication that can continue: %s",
-                auth_methods);
+                      "Access denied for '%s'. Authentication that can continue: %s",
+                      current_method,
+                      auth_methods);
+        SSH_LOG(SSH_LOG_INFO,
+                "%s",
+                ssh_get_error(session));
 
     }
     session->auth.supported_methods = 0;
@@ -228,6 +261,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_failure) {
     }
 
 end:
+    session->auth.current_method = SSH_AUTH_METHOD_UNKNOWN;
     SAFE_FREE(auth_methods);
 
     return SSH_PACKET_USED;
@@ -261,6 +295,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_success) {
       session->current_crypto->do_compress_in = 1;
   }
 
+    session->auth.current_method = SSH_AUTH_METHOD_UNKNOWN;
   return SSH_PACKET_USED;
 }
 
@@ -378,6 +413,7 @@ int ssh_userauth_none(ssh_session session, const char *username) {
         goto fail;
     }
 
+    session->auth.current_method = SSH_AUTH_METHOD_NONE;
     session->auth.state = SSH_AUTH_STATE_NONE;
     session->pending_call_state = SSH_PENDING_CALL_AUTH_NONE;
     rc = ssh_packet_send(session);
@@ -485,6 +521,7 @@ int ssh_userauth_try_publickey(ssh_session session,
 
     ssh_string_free(pubkey_s);
 
+    session->auth.current_method = SSH_AUTH_METHOD_PUBLICKEY;
     session->auth.state = SSH_AUTH_STATE_NONE;
     session->pending_call_state = SSH_PENDING_CALL_AUTH_OFFER_PUBKEY;
     rc = ssh_packet_send(session);
@@ -605,6 +642,7 @@ int ssh_userauth_publickey(ssh_session session,
         goto fail;
     }
 
+    session->auth.current_method = SSH_AUTH_METHOD_PUBLICKEY;
     session->auth.state = SSH_AUTH_STATE_NONE;
     session->pending_call_state = SSH_PENDING_CALL_AUTH_PUBKEY;
     rc = ssh_packet_send(session);
@@ -690,6 +728,7 @@ static int ssh_userauth_agent_publickey(ssh_session session,
         goto fail;
     }
 
+    session->auth.current_method = SSH_AUTH_METHOD_PUBLICKEY;
     session->auth.state = SSH_AUTH_STATE_NONE;
     session->pending_call_state = SSH_PENDING_CALL_AUTH_AGENT;
     rc = ssh_packet_send(session);
@@ -1150,6 +1189,7 @@ int ssh_userauth_password(ssh_session session,
         goto fail;
     }
 
+    session->auth.current_method = SSH_AUTH_METHOD_PASSWORD;
     session->auth.state = SSH_AUTH_STATE_NONE;
     session->pending_call_state = SSH_PENDING_CALL_AUTH_PASSWORD;
     rc = ssh_packet_send(session);
@@ -1381,6 +1421,7 @@ static int ssh_userauth_kbdint_send(ssh_session session)
         }
     }
 
+    session->auth.current_method = SSH_AUTH_METHOD_INTERACTIVE;
     session->auth.state = SSH_AUTH_STATE_KBDINT_SENT;
     session->pending_call_state = SSH_PENDING_CALL_AUTH_KBDINT_SEND;
     ssh_kbdint_free(session->kbdint);
@@ -1794,6 +1835,8 @@ int ssh_userauth_gssapi(ssh_session session) {
         return SSH_AUTH_ERROR;
     }
     SSH_LOG(SSH_LOG_PROTOCOL, "Authenticating with gssapi-with-mic");
+
+    session->auth.current_method = SSH_AUTH_METHOD_GSSAPI_MIC;
     session->auth.state = SSH_AUTH_STATE_NONE;
     session->pending_call_state = SSH_PENDING_CALL_AUTH_GSSAPI_MIC;
     rc = ssh_gssapi_auth_mic(session);
