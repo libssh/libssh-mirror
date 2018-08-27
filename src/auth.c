@@ -1120,7 +1120,7 @@ int ssh_userauth_password(ssh_session session,
     switch(session->pending_call_state) {
         case SSH_PENDING_CALL_NONE:
             break;
-        case SSH_PENDING_CALL_AUTH_OFFER_PUBKEY:
+        case SSH_PENDING_CALL_AUTH_PASSWORD:
             goto pending;
         default:
             ssh_set_error(session,
@@ -1151,7 +1151,7 @@ int ssh_userauth_password(ssh_session session,
     }
 
     session->auth.state = SSH_AUTH_STATE_NONE;
-    session->pending_call_state = SSH_PENDING_CALL_AUTH_OFFER_PUBKEY;
+    session->pending_call_state = SSH_PENDING_CALL_AUTH_PASSWORD;
     rc = ssh_packet_send(session);
     if (rc == SSH_ERROR) {
         return SSH_AUTH_ERROR;
