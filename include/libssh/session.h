@@ -136,6 +136,7 @@ struct ssh_session_struct {
         enum ssh_auth_service_state_e service_state;
         enum ssh_auth_state_e state;
         uint32_t supported_methods;
+        uint32_t current_method;
     } auth;
 
     /*
