@@ -268,13 +268,13 @@ set(MAP_PATH "${CMAKE_CURRENT_SOURCE_DIR}/${PROJECT_NAME}.map")
 
 if (WITH_SYMBOL_VERSIONING AND HAVE_LD_VERSION_SCRIPT AND ABIMAP_FOUND)
     # Get the list of header files
-    get_file_list("dev_header_list"
+    get_file_list(dev_header_list
                   DIRECTORIES "${LIBSSH_PUBLIC_INCLUDE_DIRS}/libssh"
                   FILES_PATTERNS "*.h")
 
     # Extract the symbols marked as "LIBSSH_API" from the header files
     extract_symbols("${PROJECT_NAME}_dev.symbols"
-                    HEADERS_LIST_FILE "dev_header_list"
+                    HEADERS_LIST dev_header_list
                     FILTER_PATTERN "LIBSSH_API")
 
     if (WITH_ABI_BREAK)
