@@ -85,4 +85,8 @@ endforeach()
 
 list(REMOVE_DUPLICATES symbols)
 
-file(WRITE ${OUTPUT_PATH} "${symbols}")
+list(SORT symbols)
+
+string(REPLACE ";" "\n" symbols_list "${symbols}")
+
+file(WRITE ${OUTPUT_PATH} "${symbols_list}")
