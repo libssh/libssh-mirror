@@ -159,13 +159,13 @@ if (WITH_SYMBOL_VERSIONING AND ABIMAP_FOUND)
         message(STATUS "Library version bumped to ${LIBRARY_VERSION}: Updating ABI")
 
         # Get the list of header files
-        get_file_list("${PROJECT_NAME}_header_list"
+        get_file_list(${PROJECT_NAME}_header_list
                       DIRECTORIES "${CMAKE_SOURCE_DIR}/include/libssh"
                       FILES_PATTERNS "*.h")
 
         # Extract the symbols marked as "LIBSSH_API" from the header files
         extract_symbols(${PROJECT_NAME}.symbols
-                        HEADERS_LIST_FILE "${PROJECT_NAME}_header_list"
+                        HEADERS_LIST ${PROJECT_NAME}_header_list
                         FILTER_PATTERN "LIBSSH_API"
                         COPY_TO "${CMAKE_SOURCE_DIR}/src/ABI/${PROJECT_NAME}-${LIBRARY_VERSION}.symbols")
 
@@ -181,7 +181,7 @@ if (WITH_SYMBOL_VERSIONING AND ABIMAP_FOUND)
 
         # Generate the symbol version map file
         generate_map_file(${_SYMBOL_TARGET}
-                          SYMBOLS "${PROJECT_NAME}.symbols"
+                          SYMBOLS ${PROJECT_NAME}.symbols
                           RELEASE_NAME_VERSION ${PROJECT_NAME}_${LIBRARY_VERSION}
                           CURRENT_MAP ${MAP_PATH}
                           COPY_TO ${MAP_PATH}
