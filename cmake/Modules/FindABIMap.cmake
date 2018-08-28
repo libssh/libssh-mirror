@@ -94,7 +94,8 @@
 # Where the target ``symbols`` has its property ``LIST_FILE`` set to the path to
 # a file containing::
 #
-#  ``symbol1;symbol2``
+#  ``symbol1``
+#  ``symbol2``
 #
 # This example would result in the symbol version script to be created in
 # ``${CMAKE_CURRENT_BINARY_DIR}/lib.map`` containing the provided symbols.
@@ -213,7 +214,8 @@
 # Will result in a file ``lib.symbols.list`` in ``${CMAKE_CURRENT_BINARY_DIR}``
 # containing::
 #
-#   ``exported_func1;exported_func2``
+#   ``exported_func1``
+#   ``exported_func2``
 #
 
 # Search for python which is required
@@ -314,7 +316,7 @@ function(get_file_list _TARGET_NAME)
 
     if (DEFINED _get_files_list_COPY_TO)
         # Copy the generated file back to the COPY_TO
-        add_custom_target(copy_${TARGET_NAME} ALL
+        add_custom_target(copy_${_TARGET_NAME} ALL
             COMMAND
               ${CMAKE_COMMAND} -E copy_if_different
               ${_FILES_LIST_OUTPUT_PATH} ${_get_files_list_COPY_TO}
@@ -376,9 +378,14 @@ function(extract_symbols _TARGET_NAME)
     )
 
     if (DEFINED _extract_symbols_COPY_TO)
-        file(READ "${_SYMBOLS_OUTPUT_PATH}" SYMBOL_CONTENT)
-        string(REPLACE ";" "\n" SYMBOL_CONTENT_NEW "${SYMBOL_CONTENT}")
-        file(WRITE "${_extract_symbols_COPY_TO}" "${SYMBOL_CONTENT_NEW}")
+        # Copy the generated file back to the COPY_TO
+        add_custom_target(copy_${_TARGET_NAME} ALL
+            COMMAND
+              ${CMAKE_COMMAND} -E copy_if_different
+              ${_SYMBOLS_OUTPUT_PATH} ${_extract_symbols_COPY_TO}
+            DEPENDS "${_TARGET_NAME}"
+            COMMENT "Copying ${_TARGET_NAME} to ${_extract_symbols_COPY_TO}"
+        )
     endif()
 endfunction()
 
