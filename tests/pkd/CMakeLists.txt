@@ -38,7 +38,7 @@ target_link_libraries(pkd_hello ${pkd_libs})
 # specified with `-i` and may be helpful for chasing down bugs that
 # are not 100% reproducible.
 #
-add_test(pkd_hello_i1 ${CMAKE_CURRENT_BINARY_DIR}/pkd_hello -i1 -w /tmp/pkd_socket_wrapper_XXXXXX)
+add_test(pkd_hello_i1 ${CMAKE_CURRENT_BINARY_DIR}/pkd_hello -e -o -i1 -w /tmp/pkd_socket_wrapper_XXXXXX)
 
 #
 # Configure environment for cwrap socket wrapper.
