@@ -711,8 +711,8 @@ static int pkd_run_tests(void) {
         (pkd_dargs.opts.testmatch == NULL)) {
         rc = _cmocka_run_group_tests("all tests", all_tests, tindex, NULL, NULL);
     } else {
-        int i = 0;
-        int num_found = 0;
+        size_t i = 0;
+        size_t num_found = 0;
         const char *testname = pkd_dargs.opts.testname;
         const char *testmatch = pkd_dargs.opts.testmatch;
 
