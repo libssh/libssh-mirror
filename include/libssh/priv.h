@@ -43,6 +43,10 @@
 # endif
 #endif /* !defined(HAVE_STRTOULL) */
 
+#if !defined(HAVE_STRNDUP)
+char *strndup(const char *s, size_t n);
+#endif /* ! HAVE_STRNDUP */
+
 #ifdef HAVE_BYTESWAP_H
 #include <byteswap.h>
 #endif

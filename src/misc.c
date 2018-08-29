@@ -1028,6 +1028,27 @@ int ssh_match_group(const char *group, const char *object)
     return 0;
 }
 
+#if !defined(HAVE_STRNDUP)
+char *strndup(const char *s, size_t n)
+{
+    char *x = NULL;
+
+    if (n + 1 < n) {
+        return NULL;
+    }
+
+    x = malloc(n + 1);
+    if (x == NULL) {
+        return NULL;
+    }
+
+    memcpy(x, s, n);
+    x[n] = '\0';
+
+    return x;
+}
+#endif /* ! HAVE_STRNDUP */
+
 /** @} */
 
 /* vim: set ts=4 sw=4 et cindent: */

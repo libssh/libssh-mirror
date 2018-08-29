@@ -103,6 +103,9 @@
 /* Define to 1 if you have the `strncpy' function. */
 #cmakedefine HAVE_STRNCPY 1
 
+/* Define to 1 if you have the `strndup' function. */
+#cmakedefine HAVE_STRNDUP 1
+
 /* Define to 1 if you have the `cfmakeraw' function. */
 #cmakedefine HAVE_CFMAKERAW 1
 

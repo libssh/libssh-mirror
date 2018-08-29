@@ -115,6 +115,7 @@ endif (NOT WITH_GCRYPT)
 
 check_function_exists(isblank HAVE_ISBLANK)
 check_function_exists(strncpy HAVE_STRNCPY)
+check_function_exists(strndup HAVE_STRNDUP)
 check_function_exists(strtoull HAVE_STRTOULL)
 
 if (NOT WIN32)
