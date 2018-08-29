@@ -300,7 +300,7 @@ function(get_file_list _TARGET_NAME)
                            ABSOLUTE)
 
     add_custom_target(
-        ${_TARGET_NAME} ALL
+        ${_TARGET_NAME}_int ALL
         COMMAND ${CMAKE_COMMAND}
           -DOUTPUT_PATH="${_get_files_list_OUTPUT_PATH}"
           -DDIRECTORIES="${_get_files_list_DIRECTORIES}"
@@ -310,20 +310,24 @@ function(get_file_list _TARGET_NAME)
           "Searching for files"
     )
 
-    set_target_properties(${_TARGET_NAME}
-        PROPERTIES LIST_FILE ${_FILES_LIST_OUTPUT_PATH}
-    )
-
     if (DEFINED _get_files_list_COPY_TO)
         # Copy the generated file back to the COPY_TO
-        add_custom_target(copy_${_TARGET_NAME} ALL
+        add_custom_target(${_TARGET_NAME} ALL
             COMMAND
               ${CMAKE_COMMAND} -E copy_if_different
               ${_FILES_LIST_OUTPUT_PATH} ${_get_files_list_COPY_TO}
-            DEPENDS ${_TARGET_NAME}
+            DEPENDS ${_TARGET_NAME}_int
             COMMENT "Copying ${_TARGET_NAME} to ${_get_files_list_COPY_TO}"
         )
+    else()
+        add_custom_target(${_TARGET_NAME} ALL
+            DEPENDS ${_TARGET_NAME}_int
+        )
     endif()
+
+    set_target_properties(${_TARGET_NAME}
+        PROPERTIES LIST_FILE ${_FILES_LIST_OUTPUT_PATH}
+    )
 
 endfunction()
 
@@ -363,7 +367,7 @@ function(extract_symbols _TARGET_NAME)
     )
 
     add_custom_target(
-        ${_TARGET_NAME} ALL
+        ${_TARGET_NAME}_int ALL
         COMMAND ${CMAKE_COMMAND}
           -DOUTPUT_PATH="${_SYMBOLS_OUTPUT_PATH}"
           -DHEADERS_LIST_FILE="${_HEADERS_LIST_FILE}"
@@ -373,20 +377,25 @@ function(extract_symbols _TARGET_NAME)
         COMMENT "Extracting symbols from headers"
     )
 
+    if (DEFINED _extract_symbols_COPY_TO)
+        # Copy the generated file back to the COPY_TO
+        add_custom_target(${_TARGET_NAME} ALL
+            COMMAND
+              ${CMAKE_COMMAND} -E copy_if_different
+              ${_SYMBOLS_OUTPUT_PATH} ${_extract_symbols_COPY_TO}
+            DEPENDS ${_TARGET_NAME}_int
+            COMMENT "Copying ${_TARGET_NAME} to ${_extract_symbols_COPY_TO}"
+        )
+    else()
+        add_custom_target(${_TARGET_NAME} ALL
+            DEPENDS ${_TARGET_NAME}_int
+        )
+    endif()
+
     set_target_properties(${_TARGET_NAME}
         PROPERTIES LIST_FILE ${_SYMBOLS_OUTPUT_PATH}
     )
 
-    if (DEFINED _extract_symbols_COPY_TO)
-        # Copy the generated file back to the COPY_TO
-        add_custom_target(copy_${_TARGET_NAME} ALL
-            COMMAND
-              ${CMAKE_COMMAND} -E copy_if_different
-              ${_SYMBOLS_OUTPUT_PATH} ${_extract_symbols_COPY_TO}
-            DEPENDS "${_TARGET_NAME}"
-            COMMENT "Copying ${_TARGET_NAME} to ${_extract_symbols_COPY_TO}"
-        )
-    endif()
 endfunction()
 
 function(generate_map_file _TARGET_NAME)
@@ -437,7 +446,7 @@ function(generate_map_file _TARGET_NAME)
     )
 
     add_custom_target(
-        ${_TARGET_NAME} ALL
+        ${_TARGET_NAME}_int ALL
         COMMAND ${CMAKE_COMMAND}
           -DABIMAP_EXECUTABLE=${ABIMAP_EXECUTABLE}
           -DSYMBOLS="${_SYMBOLS_FILE}"
@@ -460,12 +469,16 @@ function(generate_map_file _TARGET_NAME)
 
     if (DEFINED _generate_map_file_COPY_TO)
         # Copy the generated map back to the COPY_TO
-        add_custom_target(copy_${_TARGET_NAME} ALL
+        add_custom_target(${_TARGET_NAME} ALL
             COMMAND
               ${CMAKE_COMMAND} -E copy_if_different ${_MAP_OUTPUT_PATH}
               ${_generate_map_file_COPY_TO}
-            DEPENDS ${_TARGET_NAME}
+            DEPENDS ${_TARGET_NAME}_int
             COMMENT "Copying ${_MAP_OUTPUT_PATH} to ${_generate_map_file_COPY_TO}"
+        )
+    else()
+        add_custom_target(${_TARGET_NAME} ALL
+            DEPENDS ${_TARGET_NAME}_int
         )
     endif()
 endfunction()
