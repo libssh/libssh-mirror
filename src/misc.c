@@ -1085,4 +1085,25 @@ void explicit_bzero(void *s, size_t n)
 }
 #endif /* !HAVE_EXPLICIT_BZERO */
 
+#if !defined(HAVE_STRNDUP)
+char *strndup(const char *s, size_t n)
+{
+    char *x = NULL;
+
+    if (n + 1 < n) {
+        return NULL;
+    }
+
+    x = malloc(n + 1);
+    if (x == NULL) {
+        return NULL;
+    }
+
+    memcpy(x, s, n);
+    x[n] = '\0';
+
+    return x;
+}
+#endif /* ! HAVE_STRNDUP */
+
 /** @} */
