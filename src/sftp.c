@@ -1146,7 +1146,6 @@ static char *sftp_parse_longname(const char *longname,
         enum sftp_longname_field_e longname_field) {
     const char *p, *q;
     size_t len, field = 0;
-    char *x;
 
     p = longname;
     /* Find the beginning of the field which is specified by sftp_longanme_field_e. */
@@ -1167,16 +1166,9 @@ static char *sftp_parse_longname(const char *longname,
         q++;
     }
 
-    /* There is no strndup on windows */
-    len = q - p + 1;
-    x = calloc(1, len);
-    if (x == NULL) {
-      return NULL;
-    }
+    len = q - p;
 
-    snprintf(x, len, "%s", p);
-
-    return x;
+    return strndup(p, len);
 }
 
 /* sftp version 0-3 code. It is different from the v4 */
