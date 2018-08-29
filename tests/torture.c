@@ -652,13 +652,6 @@ static void torture_setup_create_sshd_config(void **state)
     torture_write_file(ecdsa_hostkey,
                        torture_get_testkey(SSH_KEYTYPE_ECDSA, 521, 0));
 
-    snprintf(ed25519_hostkey,
-             sizeof(ed25519_hostkey),
-             "%s/sshd/ssh_host_ed25519_key",
-             s->socket_dir);
-    torture_write_file(ed25519_hostkey,
-                       torture_get_testkey(SSH_KEYTYPE_ED25519, 0, 0));
-
     snprintf(trusted_ca_pubkey,
              sizeof(trusted_ca_pubkey),
              "%s/sshd/user_ca.pub",
