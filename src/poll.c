@@ -1015,7 +1015,7 @@ int ssh_event_remove_connector(ssh_event event, ssh_connector connector){
  */
 void ssh_event_free(ssh_event event)
 {
-    int used, i;
+    size_t used, i;
     ssh_poll_handle p;
 
     if(event == NULL) {
