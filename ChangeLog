@@ -1,6 +1,16 @@
 ChangeLog
 ==========
 
+version 0.8.2 (released 2018-08-30)
+  * Added sha256 fingerprints for pubkeys
+  * Improved compiler flag detection
+  * Fixed race condition in reading sftp messages
+  * Fixed doxygen generation and added modern style
+  * Fixed library initialization on Windows
+  * Fixed __bounded__ attribute detection
+  * Fixed a bug in the options parser
+  * Fixed documentation for new knwon_hosts API
+
 version 0.8.1 (released 2018-08-13)
   * Fixed version number in the header
   * Fixed version number in pkg-config and cmake config

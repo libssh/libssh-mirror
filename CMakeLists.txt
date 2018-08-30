@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.3.0)
 cmake_policy(SET CMP0048 NEW)
 
-project(libssh VERSION 0.8.1 LANGUAGES C)
+project(libssh VERSION 0.8.2 LANGUAGES C)
 
 # global needed variable
 set(APPLICATION_NAME ${PROJECT_NAME})
