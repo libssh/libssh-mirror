@@ -2811,7 +2811,6 @@ int sftp_fsync(sftp_file file)
 {
     sftp_session sftp;
     sftp_message msg = NULL;
-    ssh_string ext;
     ssh_buffer buffer;
     uint32_t id;
     int rc;
@@ -2827,36 +2826,13 @@ int sftp_fsync(sftp_file file)
         return -1;
     }
 
-    ext = ssh_string_from_char("fsync@openssh.com");
-    if (ext == NULL) {
-        ssh_set_error_oom(sftp->session);
-        rc = -1;
-        goto done;
-    }
-
-    rc = ssh_buffer_allocate_size(buffer,
-                                        sizeof(uint32_t) * 3 +
-                                        ssh_string_len(ext) +
-                                        ssh_string_len(file->handle));
-    if (rc < 0) {
-        ssh_set_error_oom(sftp->session);
-        goto done;
-    }
-
     id = sftp_get_new_id(sftp);
-    rc = ssh_buffer_add_u32(buffer, htonl(id));
-    if (rc < 0) {
-        ssh_set_error_oom(sftp->session);
-        goto done;
-    }
 
-    rc = ssh_buffer_add_ssh_string(buffer, ext);
-    if (rc < 0) {
-        ssh_set_error_oom(sftp->session);
-        goto done;
-    }
-
-    rc = ssh_buffer_add_ssh_string(buffer, file->handle);
+    rc = ssh_buffer_pack(buffer,
+                         "dsS",
+                         id,
+                         "fsync@openssh.com",
+                         file->handle);
     if (rc < 0) {
         ssh_set_error_oom(sftp->session);
         goto done;
@@ -2923,7 +2899,6 @@ int sftp_fsync(sftp_file file)
     rc = -1;
 done:
     ssh_buffer_free(buffer);
-    ssh_string_free(ext);
 
     return rc;
 }
