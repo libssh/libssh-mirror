@@ -438,6 +438,9 @@ static void *pkd_main(void *args) {
         goto out;
     }
 
+    /* Ignore SIGPIPE */
+    signal(SIGPIPE, SIG_IGN);
+
     rc = pkd_init_libssh();
     if (rc != 0) {
         pkderr("pkd_init_libssh: %d\n", rc);
