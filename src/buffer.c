@@ -25,6 +25,7 @@
 
 #include <limits.h>
 #include <stdarg.h>
+#include <stdbool.h>
 
 #ifndef _WIN32
 #include <netinet/in.h>
@@ -54,24 +55,38 @@
  *
  * @param[in]  buf      The buffer to check.
  */
-static void buffer_verify(ssh_buffer buf){
-  int doabort=0;
-  if(buf->data == NULL)
-    return;
-  if(buf->used > buf->allocated){
-    fprintf(stderr,"Buffer error : allocated %u, used %u\n",buf->allocated, buf->used);
-    doabort=1;
-  }
-  if(buf->pos > buf->used){
-    fprintf(stderr,"Buffer error : position %u, used %u\n",buf->pos, buf->used);
-    doabort=1;
-  }
-  if(buf->pos > buf->allocated){
-      fprintf(stderr,"Buffer error : position %u, allocated %u\n",buf->pos, buf->allocated);
-      doabort=1;
-  }
-  if(doabort)
-    abort();
+static void buffer_verify(ssh_buffer buf)
+{
+    bool do_abort = false;
+
+    if (buf->data == NULL) {
+        return;
+    }
+
+    if (buf->used > buf->allocated) {
+        fprintf(stderr,
+                "BUFFER ERROR: allocated %u, used %u\n",
+                buf->allocated,
+                buf->used);
+        do_abort = true;
+    }
+    if (buf->pos > buf->used) {
+        fprintf(stderr,
+                "BUFFER ERROR: position %u, used %u\n",
+                buf->pos,
+                buf->used);
+        do_abort = true;
+    }
+    if (buf->pos > buf->allocated) {
+        fprintf(stderr,
+                "BUFFER ERROR: position %u, allocated %u\n",
+                buf->pos,
+                buf->allocated);
+        do_abort = true;
+    }
+    if (do_abort) {
+        abort();
+    }
 }
 
 #else
