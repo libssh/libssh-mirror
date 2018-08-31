@@ -866,7 +866,6 @@ sftp_dir sftp_opendir(sftp_session sftp, const char *path)
     sftp_file file = NULL;
     sftp_dir dir = NULL;
     sftp_status_message status;
-    ssh_string path_s;
     ssh_buffer payload;
     uint32_t id;
     int rc;
@@ -877,36 +876,23 @@ sftp_dir sftp_opendir(sftp_session sftp, const char *path)
         return NULL;
     }
 
-    path_s = ssh_string_from_char(path);
-    if (path_s == NULL) {
-        ssh_set_error_oom(sftp->session);
-        ssh_buffer_free(payload);
-        return NULL;
-    }
-
     id = sftp_get_new_id(sftp);
-    rc = ssh_buffer_allocate_size(payload,
-            sizeof(uint32_t) * 2 + ssh_string_len(path_s));
-    if (rc < 0) {
-        ssh_set_error_oom(sftp->session);
-        ssh_buffer_free(payload);
-        ssh_string_free(path_s);
-        return NULL;
-    }
-    if (ssh_buffer_add_u32(payload, htonl(id)) < 0 ||
-            ssh_buffer_add_ssh_string(payload, path_s) < 0) {
-        ssh_set_error_oom(sftp->session);
-        ssh_buffer_free(payload);
-        ssh_string_free(path_s);
-        return NULL;
-    }
-    ssh_string_free(path_s);
 
-    if (sftp_packet_write(sftp, SSH_FXP_OPENDIR, payload) < 0) {
+    rc = ssh_buffer_pack(payload,
+                         "ds",
+                         id,
+                         path);
+    if (rc != SSH_OK) {
+        ssh_set_error_oom(sftp->session);
         ssh_buffer_free(payload);
         return NULL;
     }
+
+    rc = sftp_packet_write(sftp, SSH_FXP_OPENDIR, payload);
     ssh_buffer_free(payload);
+    if (rc < 0) {
+        return NULL;
+    }
 
     while (msg == NULL) {
         if (sftp_read_and_dispatch(sftp) < 0) {
