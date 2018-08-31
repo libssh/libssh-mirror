@@ -24,20 +24,6 @@
 #include <stdarg.h>
 
 #include "libssh/libssh.h"
-/*
- * Describes a buffer state
- * [XXXXXXXXXXXXDATA PAYLOAD       XXXXXXXXXXXXXXXXXXXXXXXX]
- * ^            ^                  ^                       ^]
- * \_data points\_pos points here  \_used points here |    /
- *   here                                          Allocated
- */
-struct ssh_buffer_struct {
-    char *data;
-    uint32_t used;
-    uint32_t allocated;
-    uint32_t pos;
-    int secure;
-};
 
 #define SSH_BUFFER_PACK_END ((uint32_t) 0x4f65feb3)
 
