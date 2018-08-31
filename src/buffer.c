@@ -129,19 +129,23 @@ struct ssh_buffer_struct *ssh_buffer_new(void) {
  *
  * \param[in]  buffer   The buffer to free.
  */
-void ssh_buffer_free(struct ssh_buffer_struct *buffer) {
-  if (buffer == NULL) {
-    return;
-  }
-  buffer_verify(buffer);
+void ssh_buffer_free(struct ssh_buffer_struct *buffer)
+{
+    if (buffer == NULL) {
+        return;
+    }
+    buffer_verify(buffer);
 
-  if (buffer->data) {
-    /* burn the data */
-    explicit_bzero(buffer->data, buffer->allocated);
-    SAFE_FREE(buffer->data);
-  }
-  explicit_bzero(buffer, sizeof(struct ssh_buffer_struct));
-  SAFE_FREE(buffer);
+    if (buffer->secure && buffer->allocated > 0) {
+        /* burn the data */
+        explicit_bzero(buffer->data, buffer->allocated);
+        SAFE_FREE(buffer->data);
+
+        explicit_bzero(buffer, sizeof(struct ssh_buffer_struct));
+    } else {
+        SAFE_FREE(buffer->data);
+    }
+    SAFE_FREE(buffer);
 }
 
 /**
