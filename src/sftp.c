@@ -2410,7 +2410,6 @@ int sftp_setstat(sftp_session sftp, const char *file, sftp_attributes attr)
 {
     uint32_t id;
     ssh_buffer buffer;
-    ssh_string path;
     sftp_message msg = NULL;
     sftp_status_message status = NULL;
     int rc;
@@ -2421,39 +2420,30 @@ int sftp_setstat(sftp_session sftp, const char *file, sftp_attributes attr)
         return -1;
     }
 
-    path = ssh_string_from_char(file);
-    if (path == NULL) {
-        ssh_set_error_oom(sftp->session);
-        ssh_buffer_free(buffer);
-        return -1;
-    }
-
-    rc = ssh_buffer_allocate_size(buffer,
-            sizeof(uint32_t) * 2 +
-            ssh_string_len(path));
-    if (rc < 0) {
-        ssh_set_error_oom(sftp->session);
-        ssh_buffer_free(buffer);
-        ssh_string_free(path);
-        return -1;
-    }
-
     id = sftp_get_new_id(sftp);
-    if (ssh_buffer_add_u32(buffer, htonl(id)) < 0 ||
-            ssh_buffer_add_ssh_string(buffer, path) < 0 ||
-            buffer_add_attributes(buffer, attr) < 0) {
+
+    rc = ssh_buffer_pack(buffer,
+                         "ds",
+                         id,
+                         file);
+    if (rc != SSH_OK) {
         ssh_set_error_oom(sftp->session);
         ssh_buffer_free(buffer);
-        ssh_string_free(path);
         return -1;
     }
-    if (sftp_packet_write(sftp, SSH_FXP_SETSTAT, buffer) < 0) {
+
+    rc = buffer_add_attributes(buffer, attr);
+    if (rc != 0) {
+        ssh_set_error_oom(sftp->session);
         ssh_buffer_free(buffer);
-        ssh_string_free(path);
         return -1;
     }
+
+    rc = sftp_packet_write(sftp, SSH_FXP_SETSTAT, buffer);
     ssh_buffer_free(buffer);
-    ssh_string_free(path);
+    if (rc < 0) {
+        return -1;
+    }
 
     while (msg == NULL) {
         if (sftp_read_and_dispatch(sftp) < 0) {
