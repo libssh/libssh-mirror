@@ -1531,27 +1531,23 @@ static int sftp_handle_close(sftp_session sftp, ssh_string handle)
         return -1;
     }
 
-    rc = ssh_buffer_allocate_size(buffer,
-            sizeof(uint32_t) * 2 +
-            ssh_string_len(handle));
-    if (rc < 0) {
+    id = sftp_get_new_id(sftp);
+
+    rc = ssh_buffer_pack(buffer,
+                         "dS",
+                         id,
+                         handle);
+    if (rc != SSH_OK) {
         ssh_set_error_oom(sftp->session);
         ssh_buffer_free(buffer);
         return -1;
     }
 
-    id = sftp_get_new_id(sftp);
-    if (ssh_buffer_add_u32(buffer, htonl(id)) < 0 ||
-            ssh_buffer_add_ssh_string(buffer, handle) < 0) {
-        ssh_set_error_oom(sftp->session);
-        ssh_buffer_free(buffer);
-        return -1;
-    }
-    if (sftp_packet_write(sftp, SSH_FXP_CLOSE ,buffer) < 0) {
-        ssh_buffer_free(buffer);
-        return -1;
-    }
+    rc = sftp_packet_write(sftp, SSH_FXP_CLOSE, buffer);
     ssh_buffer_free(buffer);
+    if (rc < 0) {
+        return -1;
+    }
 
     while (msg == NULL) {
         if (sftp_read_and_dispatch(sftp) < 0) {
