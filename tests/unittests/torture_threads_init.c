@@ -88,8 +88,14 @@ int torture_run_tests(void)
         cmocka_unit_test(torture_ssh_init),
     };
 
+    /*
+     * If the library is statically linked, ssh_init() is not called
+     * automatically
+     */
+    ssh_init();
     torture_filter_tests(tests);
     rc = cmocka_run_group_tests(tests, NULL, NULL);
+    ssh_finalize();
 
     return rc;
 }
