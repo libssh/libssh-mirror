@@ -1627,7 +1627,6 @@ sftp_file sftp_open(sftp_session sftp,
     sftp_status_message status;
     struct sftp_attributes_struct attr;
     sftp_file handle;
-    ssh_string filename;
     ssh_buffer buffer;
     sftp_attributes stat_data;
     uint32_t sftp_flags = 0;
@@ -1637,13 +1636,6 @@ sftp_file sftp_open(sftp_session sftp,
     buffer = ssh_buffer_new();
     if (buffer == NULL) {
         ssh_set_error_oom(sftp->session);
-        return NULL;
-    }
-
-    filename = ssh_string_from_char(file);
-    if (filename == NULL) {
-        ssh_set_error_oom(sftp->session);
-        ssh_buffer_free(buffer);
         return NULL;
     }
 
@@ -1668,36 +1660,31 @@ sftp_file sftp_open(sftp_session sftp,
         sftp_flags |= SSH_FXF_APPEND;
     }
     SSH_LOG(SSH_LOG_PACKET,"Opening file %s with sftp flags %x",file,sftp_flags);
-    rc = ssh_buffer_allocate_size(buffer,
-            sizeof(uint32_t) * 4 +
-            ssh_string_len(filename));
+    id = sftp_get_new_id(sftp);
+
+    rc = ssh_buffer_pack(buffer,
+                         "dsd",
+                         id,
+                         file,
+                         sftp_flags);
+    if (rc != SSH_OK) {
+        ssh_set_error_oom(sftp->session);
+        ssh_buffer_free(buffer);
+        return NULL;
+    }
+
+    rc = buffer_add_attributes(buffer, &attr);
     if (rc < 0) {
         ssh_set_error_oom(sftp->session);
         ssh_buffer_free(buffer);
-        ssh_string_free(filename);
         return NULL;
     }
-    id = sftp_get_new_id(sftp);
-    if (ssh_buffer_add_u32(buffer, htonl(id)) < 0 ||
-            ssh_buffer_add_ssh_string(buffer, filename) < 0) {
-        ssh_set_error_oom(sftp->session);
-        ssh_buffer_free(buffer);
-        ssh_string_free(filename);
-        return NULL;
-    }
-    ssh_string_free(filename);
 
-    if (ssh_buffer_add_u32(buffer, htonl(sftp_flags)) < 0 ||
-            buffer_add_attributes(buffer, &attr) < 0) {
-        ssh_set_error_oom(sftp->session);
-        ssh_buffer_free(buffer);
-        return NULL;
-    }
-    if (sftp_packet_write(sftp, SSH_FXP_OPEN, buffer) < 0) {
-        ssh_buffer_free(buffer);
-        return NULL;
-    }
+    rc = sftp_packet_write(sftp, SSH_FXP_OPEN, buffer);
     ssh_buffer_free(buffer);
+    if (rc < 0) {
+        return NULL;
+    }
 
     while (msg == NULL) {
         if (sftp_read_and_dispatch(sftp) < 0) {
