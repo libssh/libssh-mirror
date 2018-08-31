@@ -1401,27 +1401,23 @@ sftp_attributes sftp_readdir(sftp_session sftp, sftp_dir dir)
             return NULL;
         }
 
-        rc = ssh_buffer_allocate_size(payload,
-                sizeof(uint32_t) * 2 +
-                ssh_string_len(dir->handle));
-        if (rc < 0) {
-            ssh_set_error_oom(sftp->session);
-            ssh_buffer_free(payload);
-            return NULL;
-        }
         id = sftp_get_new_id(sftp);
-        if (ssh_buffer_add_u32(payload, htonl(id)) < 0 ||
-                ssh_buffer_add_ssh_string(payload, dir->handle) < 0) {
+
+        rc = ssh_buffer_pack(payload,
+                             "dS",
+                             id,
+                             dir->handle);
+        if (rc != 0) {
             ssh_set_error_oom(sftp->session);
             ssh_buffer_free(payload);
             return NULL;
         }
 
-        if (sftp_packet_write(sftp, SSH_FXP_READDIR, payload) < 0) {
-            ssh_buffer_free(payload);
+        rc = sftp_packet_write(sftp, SSH_FXP_READDIR, payload);
+        ssh_buffer_free(payload);
+        if (rc < 0) {
             return NULL;
         }
-        ssh_buffer_free(payload);
 
         SSH_LOG(SSH_LOG_PACKET,
                 "Sent a ssh_fxp_readdir with id %d", id);
