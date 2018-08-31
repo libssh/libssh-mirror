@@ -20,7 +20,7 @@ the interesting functions as you go.
 The libssh library provides:
 
  - <strong>Key Exchange Methods</strong>: <i>curve25519-sha256, curve25519-sha256@libssh.org, ecdh-sha2-nistp256, ecdh-sha2-nistp384, ecdh-sha2-nistp521</i>, diffie-hellman-group1-sha1, diffie-hellman-group14-sha1
- - <strong>Hostkey Types</strong>: <i>ssh-ed25519, ecdsa-sha2-nistp256, ecdsa-sha2-nistp384, ecdsa-sha2-nistp521</i>, ssh-dss, ssh-rsa
+ - <strong>Public Key Algorithms</strong>: ssh-ed25519, ecdsa-sha2-nistp256, ecdsa-sha2-nistp384, ecdsa-sha2-nistp521, ssh-rsa, rsa-sha2-512, rsa-sha2-256,ssh-dss
  - <strong>Ciphers</strong>: <i>aes256-ctr, aes192-ctr, aes128-ctr</i>, aes256-cbc (rijndael-cbc@lysator.liu.se), aes192-cbc, aes128-cbc, 3des-cbc, blowfish-cbc, none
  - <strong>Compression Schemes</strong>: zlib, <i>zlib@openssh.com</i>, none
  - <strong>MAC hashes</strong>: hmac-sha1, hmac-sha2-256, hmac-sha2-384, hmac-sha2-512, hmac-md5, none
