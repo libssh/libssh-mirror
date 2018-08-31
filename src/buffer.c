@@ -46,10 +46,10 @@
  */
 struct ssh_buffer_struct {
     bool secure;
-    char *data;
-    uint32_t used;
-    uint32_t allocated;
-    uint32_t pos;
+    size_t used;
+    size_t allocated;
+    size_t pos;
+    uint8_t *data;
 };
 
 /**
@@ -80,21 +80,21 @@ static void buffer_verify(ssh_buffer buf)
 
     if (buf->used > buf->allocated) {
         fprintf(stderr,
-                "BUFFER ERROR: allocated %u, used %u\n",
+                "BUFFER ERROR: allocated %zu, used %zu\n",
                 buf->allocated,
                 buf->used);
         do_abort = true;
     }
     if (buf->pos > buf->used) {
         fprintf(stderr,
-                "BUFFER ERROR: position %u, used %u\n",
+                "BUFFER ERROR: position %zu, used %zu\n",
                 buf->pos,
                 buf->used);
         do_abort = true;
     }
     if (buf->pos > buf->allocated) {
         fprintf(stderr,
-                "BUFFER ERROR: position %u, allocated %u\n",
+                "BUFFER ERROR: position %zu, allocated %zu\n",
                 buf->pos,
                 buf->allocated);
         do_abort = true;
@@ -113,15 +113,29 @@ static void buffer_verify(ssh_buffer buf)
  *
  * @return A newly initialized SSH buffer, NULL on error.
  */
-struct ssh_buffer_struct *ssh_buffer_new(void) {
-  struct ssh_buffer_struct *buf =
-      calloc(1, sizeof(struct ssh_buffer_struct));
-  if (buf == NULL) {
-    return NULL;
-  }
+struct ssh_buffer_struct *ssh_buffer_new(void)
+{
+    struct ssh_buffer_struct *buf = NULL;
+    int rc;
 
-  buffer_verify(buf);
-  return buf;
+    buf = calloc(1, sizeof(struct ssh_buffer_struct));
+    if (buf == NULL) {
+        return NULL;
+    }
+
+    /*
+     * Always preallocate 64 bytes.
+     *
+     * -1 for ralloc_buffer magic.
+     */
+    rc = ssh_buffer_allocate_size(buf, 64 - 1);
+    if (rc != 0) {
+        SAFE_FREE(buf);
+        return NULL;
+    }
+    buffer_verify(buf);
+
+    return buf;
 }
 
 /**
@@ -161,9 +175,10 @@ void ssh_buffer_set_secure(ssh_buffer buffer)
     buffer->secure = true;
 }
 
-static int realloc_buffer(struct ssh_buffer_struct *buffer, size_t needed) {
+static int realloc_buffer(struct ssh_buffer_struct *buffer, size_t needed)
+{
     size_t smallest = 1;
-    char *new;
+    uint8_t *new = NULL;
 
     buffer_verify(buffer);
 
@@ -175,25 +190,24 @@ static int realloc_buffer(struct ssh_buffer_struct *buffer, size_t needed) {
         smallest <<= 1;
     }
     needed = smallest;
-    if (buffer->secure){
+
+    if (buffer->secure) {
         new = malloc(needed);
         if (new == NULL) {
             return -1;
         }
-        if (buffer->used > 0) {
-            memcpy(new, buffer->data,buffer->used);
-            explicit_bzero(buffer->data, buffer->used);
-            SAFE_FREE(buffer->data);
-        }
+        memcpy(new, buffer->data, buffer->used);
+        explicit_bzero(buffer->data, buffer->used);
+        SAFE_FREE(buffer->data);
     } else {
         new = realloc(buffer->data, needed);
         if (new == NULL) {
-            buffer->data = NULL;
             return -1;
         }
     }
     buffer->data = new;
     buffer->allocated = needed;
+
     buffer_verify(buffer);
     return 0;
 }
@@ -204,7 +218,7 @@ static int realloc_buffer(struct ssh_buffer_struct *buffer, size_t needed) {
  */
 static void buffer_shift(ssh_buffer buffer)
 {
-    uint32_t burn_pos = buffer->pos;
+    size_t burn_pos = buffer->pos;
 
     buffer_verify(buffer);
 
@@ -234,9 +248,14 @@ static void buffer_shift(ssh_buffer buffer)
  */
 int ssh_buffer_reinit(struct ssh_buffer_struct *buffer)
 {
+    if (buffer == NULL) {
+        return -1;
+    }
+
     buffer_verify(buffer);
-    if (buffer->used > 0) {
-        explicit_bzero(buffer->data, buffer->used);
+
+    if (buffer->secure && buffer->allocated > 0) {
+        explicit_bzero(buffer->data, buffer->allocated);
     }
     buffer->used = 0;
     buffer->pos = 0;
@@ -246,6 +265,7 @@ int ssh_buffer_reinit(struct ssh_buffer_struct *buffer)
             return -1;
         }
     }
+
     buffer_verify(buffer);
 
     return 0;
