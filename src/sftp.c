@@ -2734,8 +2734,6 @@ sftp_statvfs_t sftp_statvfs(sftp_session sftp, const char *path)
 {
     sftp_status_message status = NULL;
     sftp_message msg = NULL;
-    ssh_string pathstr;
-    ssh_string ext;
     ssh_buffer buffer;
     uint32_t id;
     int rc;
@@ -2757,52 +2755,24 @@ sftp_statvfs_t sftp_statvfs(sftp_session sftp, const char *path)
         return NULL;
     }
 
-    ext = ssh_string_from_char("statvfs@openssh.com");
-    if (ext == NULL) {
-        ssh_set_error_oom(sftp->session);
-        ssh_buffer_free(buffer);
-        return NULL;
-    }
-
-    pathstr = ssh_string_from_char(path);
-    if (pathstr == NULL) {
-        ssh_set_error_oom(sftp->session);
-        ssh_buffer_free(buffer);
-        ssh_string_free(ext);
-        return NULL;
-    }
-
-    rc = ssh_buffer_allocate_size(buffer,
-            sizeof(uint32_t) * 3 +
-            ssh_string_len(ext) +
-            ssh_string_len(pathstr));
-    if (rc < 0) {
-        ssh_set_error_oom(sftp->session);
-        ssh_buffer_free(buffer);
-        ssh_string_free(ext);
-        ssh_string_free(pathstr);
-        return NULL;
-    }
-
     id = sftp_get_new_id(sftp);
-    if (ssh_buffer_add_u32(buffer, htonl(id)) < 0 ||
-            ssh_buffer_add_ssh_string(buffer, ext) < 0 ||
-            ssh_buffer_add_ssh_string(buffer, pathstr) < 0) {
+
+    rc = ssh_buffer_pack(buffer,
+                         "dss",
+                         id,
+                         "statvfs@openssh.com",
+                         path);
+    if (rc != SSH_OK) {
         ssh_set_error_oom(sftp->session);
         ssh_buffer_free(buffer);
-        ssh_string_free(ext);
-        ssh_string_free(pathstr);
         return NULL;
     }
-    if (sftp_packet_write(sftp, SSH_FXP_EXTENDED, buffer) < 0) {
-        ssh_buffer_free(buffer);
-        ssh_string_free(ext);
-        ssh_string_free(pathstr);
-        return NULL;
-    }
+
+    rc = sftp_packet_write(sftp, SSH_FXP_EXTENDED, buffer);
     ssh_buffer_free(buffer);
-    ssh_string_free(ext);
-    ssh_string_free(pathstr);
+    if (rc < 0) {
+        return NULL;
+    }
 
     while (msg == NULL) {
         if (sftp_read_and_dispatch(sftp) < 0) {
