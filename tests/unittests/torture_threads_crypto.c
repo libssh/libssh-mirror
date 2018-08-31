@@ -175,7 +175,13 @@ int torture_run_tests(void)
         cmocka_unit_test(torture_crypto_aes256_cbc),
     };
 
+    /*
+     * If the library is statically linked, ssh_init() is not called
+     * automatically
+     */
+    ssh_init();
     rc = cmocka_run_group_tests(tests, NULL, NULL);
+    ssh_finalize();
 
     return rc;
 }
