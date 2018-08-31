@@ -2908,7 +2908,6 @@ sftp_statvfs_t sftp_fstatvfs(sftp_file file)
     sftp_status_message status = NULL;
     sftp_message msg = NULL;
     sftp_session sftp;
-    ssh_string ext;
     ssh_buffer buffer;
     uint32_t id;
     int rc;
@@ -2924,40 +2923,24 @@ sftp_statvfs_t sftp_fstatvfs(sftp_file file)
         return NULL;
     }
 
-    ext = ssh_string_from_char("fstatvfs@openssh.com");
-    if (ext == NULL) {
-        ssh_set_error_oom(sftp->session);
-        ssh_buffer_free(buffer);
-        return NULL;
-    }
+    id = sftp_get_new_id(sftp);
 
-    rc = ssh_buffer_allocate_size(buffer,
-            sizeof(uint32_t) * 3 +
-            ssh_string_len(ext) +
-            ssh_string_len(file->handle));
+    rc = ssh_buffer_pack(buffer,
+                         "dsS",
+                         id,
+                         "fstatvfs@openssh.com",
+                         file->handle);
     if (rc < 0) {
         ssh_set_error_oom(sftp->session);
         ssh_buffer_free(buffer);
-        ssh_string_free(ext);
         return NULL;
     }
 
-    id = sftp_get_new_id(sftp);
-    if (ssh_buffer_add_u32(buffer, htonl(id)) < 0 ||
-            ssh_buffer_add_ssh_string(buffer, ext) < 0 ||
-            ssh_buffer_add_ssh_string(buffer, file->handle) < 0) {
-        ssh_set_error_oom(sftp->session);
-        ssh_buffer_free(buffer);
-        ssh_string_free(ext);
-        return NULL;
-    }
-    if (sftp_packet_write(sftp, SSH_FXP_EXTENDED, buffer) < 0) {
-        ssh_buffer_free(buffer);
-        ssh_string_free(ext);
-        return NULL;
-    }
+    rc = sftp_packet_write(sftp, SSH_FXP_EXTENDED, buffer);
     ssh_buffer_free(buffer);
-    ssh_string_free(ext);
+    if (rc < 0) {
+        return NULL;
+    }
 
     while (msg == NULL) {
         if (sftp_read_and_dispatch(sftp) < 0) {
