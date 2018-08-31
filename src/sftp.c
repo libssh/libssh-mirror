@@ -2988,10 +2988,7 @@ char *sftp_canonicalize_path(sftp_session sftp, const char *path)
 {
     sftp_status_message status = NULL;
     sftp_message msg = NULL;
-    ssh_string name = NULL;
     ssh_buffer buffer;
-    char *cname;
-    uint32_t ignored;
     uint32_t id;
     int rc;
 
@@ -3034,20 +3031,21 @@ char *sftp_canonicalize_path(sftp_session sftp, const char *path)
     }
 
     if (msg->packet_type == SSH_FXP_NAME) {
-        /* we don't care about "count" */
-        ssh_buffer_get_u32(msg->payload, &ignored);
-        /* we only care about the file name string */
-        name = ssh_buffer_get_ssh_string(msg->payload);
+        uint32_t ignored = 0;
+        char *cname = NULL;
+
+        rc = ssh_buffer_unpack(msg->payload,
+                               "ds",
+                               ignored,
+                               cname);
         sftp_message_free(msg);
-        if (name == NULL) {
-            /* TODO: error message? */
+        if (rc != SSH_OK) {
+            ssh_set_error(sftp->session,
+                          SSH_ERROR,
+                          "Failed to parse canonicalized path");
             return NULL;
         }
-        cname = ssh_string_to_char(name);
-        ssh_string_free(name);
-        if (cname == NULL) {
-            ssh_set_error_oom(sftp->session);
-        }
+
         return cname;
     } else if (msg->packet_type == SSH_FXP_STATUS) { /* bad response (error) */
         status = parse_status_msg(msg);
