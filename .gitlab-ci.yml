@@ -97,26 +97,6 @@ fedora/undefined-sanitizer:
     paths:
       - obj/
 
-fedora/static-analysis:
-  image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$FEDORA_BUILD
-  script:
-  - export CCC_CC=clang
-  - export CCC_CXX=clang++
-  - mkdir -p obj && cd obj && scan-build cmake -DCMAKE_BUILD_TYPE=Debug
-    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON --DWITH_PCAP=ON
-    -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON
-    -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang .. &&
-    scan-build --status-bugs -o scan make -j$(nproc)
-  tags:
-  - shared
-  except:
-  - tags
-  artifacts:
-    expire_in: 1 week
-    when: on_failure
-    paths:
-      - obj/scan
-
 # That is a specific runner that we cannot enable universally.
 # We restrict it to builds under the $BUILD_IMAGES_PROJECT project.
 freebsd/x86-64:
