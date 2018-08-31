@@ -2616,10 +2616,7 @@ char *sftp_readlink(sftp_session sftp, const char *path)
 {
     sftp_status_message status = NULL;
     sftp_message msg = NULL;
-    ssh_string link_s;
     ssh_buffer buffer;
-    char *lnk;
-    uint32_t ignored;
     uint32_t id;
     int rc;
 
@@ -2667,17 +2664,20 @@ char *sftp_readlink(sftp_session sftp, const char *path)
     }
 
     if (msg->packet_type == SSH_FXP_NAME) {
-        /* we don't care about "count" */
-        ssh_buffer_get_u32(msg->payload, &ignored);
-        /* we only care about the file name string */
-        link_s = ssh_buffer_get_ssh_string(msg->payload);
+        uint32_t ignored = 0;
+        char *lnk = NULL;
+
+        rc = ssh_buffer_unpack(msg->payload,
+                               "ds",
+                               &ignored,
+                               lnk);
         sftp_message_free(msg);
-        if (link_s == NULL) {
-            /* TODO: what error to set here? */
+        if (rc != SSH_OK) {
+            ssh_set_error(sftp->session,
+                          SSH_ERROR,
+                          "Failed to retrieve link");
             return NULL;
         }
-        lnk = ssh_string_to_char(link_s);
-        ssh_string_free(link_s);
 
         return lnk;
     } else if (msg->packet_type == SSH_FXP_STATUS) { /* bad response (error) */
