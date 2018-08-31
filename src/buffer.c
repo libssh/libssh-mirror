@@ -182,22 +182,27 @@ static int realloc_buffer(struct ssh_buffer_struct *buffer, size_t needed) {
  * @brief shifts a buffer to remove unused data in the beginning
  * @param buffer SSH buffer
  */
-static void buffer_shift(ssh_buffer buffer){
-  uint32_t burn_pos = buffer->pos;
+static void buffer_shift(ssh_buffer buffer)
+{
+    uint32_t burn_pos = buffer->pos;
 
-  buffer_verify(buffer);
-  if(buffer->pos==0)
-    return;
-  memmove(buffer->data, buffer->data + buffer->pos, buffer->used - buffer->pos);
-  buffer->used -= buffer->pos;
-  buffer->pos=0;
+    buffer_verify(buffer);
 
-  if (buffer->secure){
-	  void *ptr = buffer->data + buffer->used;
-	  explicit_bzero(ptr, burn_pos);
-  }
+    if (buffer->pos == 0) {
+        return;
+    }
+    memmove(buffer->data,
+            buffer->data + buffer->pos,
+            buffer->used - buffer->pos);
+    buffer->used -= buffer->pos;
+    buffer->pos = 0;
 
-  buffer_verify(buffer);
+    if (buffer->secure) {
+        void *ptr = buffer->data + buffer->used;
+        explicit_bzero(ptr, burn_pos);
+    }
+
+    buffer_verify(buffer);
 }
 
 /**
