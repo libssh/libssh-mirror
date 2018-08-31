@@ -3157,27 +3157,23 @@ sftp_attributes sftp_fstat(sftp_file file)
         return NULL;
     }
 
-    rc = ssh_buffer_allocate_size(buffer,
-            sizeof(uint32_t) * 2 +
-            ssh_string_len(file->handle));
-    if (rc < 0) {
+    id = sftp_get_new_id(file->sftp);
+
+    rc = ssh_buffer_pack(buffer,
+                         "dS",
+                         id,
+                         file->handle);
+    if (rc != SSH_OK) {
         ssh_set_error_oom(file->sftp->session);
         ssh_buffer_free(buffer);
         return NULL;
     }
 
-    id = sftp_get_new_id(file->sftp);
-    if (ssh_buffer_add_u32(buffer, htonl(id)) < 0 ||
-            ssh_buffer_add_ssh_string(buffer, file->handle) < 0) {
-        ssh_set_error_oom(file->sftp->session);
-        ssh_buffer_free(buffer);
-        return NULL;
-    }
-    if (sftp_packet_write(file->sftp, SSH_FXP_FSTAT, buffer) < 0) {
-        ssh_buffer_free(buffer);
-        return NULL;
-    }
+    rc = sftp_packet_write(file->sftp, SSH_FXP_FSTAT, buffer);
     ssh_buffer_free(buffer);
+    if (rc < 0) {
+        return NULL;
+    }
 
     while (msg == NULL) {
         if (sftp_read_and_dispatch(file->sftp) < 0) {
