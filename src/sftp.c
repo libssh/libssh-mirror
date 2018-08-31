@@ -2234,7 +2234,6 @@ int sftp_mkdir(sftp_session sftp, const char *directory, mode_t mode)
     sftp_attributes errno_attr = NULL;
     struct sftp_attributes_struct attr;
     ssh_buffer buffer;
-    ssh_string path;
     uint32_t id;
     int rc;
 
@@ -2244,38 +2243,34 @@ int sftp_mkdir(sftp_session sftp, const char *directory, mode_t mode)
         return -1;
     }
 
-    path = ssh_string_from_char(directory);
-    if (path == NULL) {
-        ssh_set_error_oom(sftp->session);
-        ssh_buffer_free(buffer);
-        return -1;
-    }
-
     ZERO_STRUCT(attr);
     attr.permissions = mode;
     attr.flags = SSH_FILEXFER_ATTR_PERMISSIONS;
 
-    rc = ssh_buffer_allocate_size(buffer,
-            sizeof(uint32_t) * 2 +
-            ssh_string_len(path));
-    if (rc < 0) {
+    id = sftp_get_new_id(sftp);
+
+    rc = ssh_buffer_pack(buffer,
+                         "ds",
+                         id,
+                         directory);
+    if (rc != SSH_OK) {
         ssh_set_error_oom(sftp->session);
         ssh_buffer_free(buffer);
-        ssh_string_free(path);
         return -1;
     }
 
-    id = sftp_get_new_id(sftp);
-    if (ssh_buffer_add_u32(buffer, htonl(id)) < 0 ||
-            ssh_buffer_add_ssh_string(buffer, path) < 0 ||
-            buffer_add_attributes(buffer, &attr) < 0 ||
-            sftp_packet_write(sftp, SSH_FXP_MKDIR, buffer) < 0) {
+    rc = buffer_add_attributes(buffer, &attr);
+    if (rc < 0) {
+        ssh_set_error_oom(sftp->session);
         ssh_buffer_free(buffer);
-        ssh_string_free(path);
         return -1;
     }
+
+    rc = sftp_packet_write(sftp, SSH_FXP_MKDIR, buffer);
     ssh_buffer_free(buffer);
-    ssh_string_free(path);
+    if (rc < 0) {
+        return -1;
+    }
 
     while (msg == NULL) {
         if (sftp_read_and_dispatch(sftp) < 0) {
