@@ -37,6 +37,21 @@
 #include "libssh/misc.h"
 #include "libssh/bignum.h"
 
+/*
+ * Describes a buffer state
+ * [XXXXXXXXXXXXDATA PAYLOAD       XXXXXXXXXXXXXXXXXXXXXXXX]
+ * ^            ^                  ^                       ^]
+ * \_data points\_pos points here  \_used points here |    /
+ *   here                                          Allocated
+ */
+struct ssh_buffer_struct {
+    bool secure;
+    char *data;
+    uint32_t used;
+    uint32_t allocated;
+    uint32_t pos;
+};
+
 /**
  * @defgroup libssh_buffer The SSH buffer functions.
  * @ingroup libssh
@@ -137,8 +152,9 @@ void ssh_buffer_free(struct ssh_buffer_struct *buffer) {
  *
  * @param[in] buffer buffer to set secure.
  */
-void ssh_buffer_set_secure(ssh_buffer buffer){
-	buffer->secure = 1;
+void ssh_buffer_set_secure(ssh_buffer buffer)
+{
+    buffer->secure = true;
 }
 
 static int realloc_buffer(struct ssh_buffer_struct *buffer, size_t needed) {
