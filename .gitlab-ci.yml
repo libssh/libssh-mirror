@@ -177,10 +177,30 @@ fedora/mbedtls/x86-64:
     paths:
       - obj/
 
-tumbleweed/openssl_1.1.x/x86-64:
+tumbleweed/openssl_1.1.x/x86-64/gcc:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$TUMBLEWEED_BUILD
   script:
   - mkdir -p obj && cd obj && cmake -DCMAKE_BUILD_TYPE=Debug
+    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON --DWITH_PCAP=ON
+    -DKRB5_CONFIG=/usr/lib/mit/bin/krb5-config
+    -DPICKY_DEVELOPER=ON
+    -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON .. &&
+    make -j$(nproc) && ctest --output-on-failure
+  tags:
+  - shared
+  except:
+  - tags
+  artifacts:
+    expire_in: 1 week
+    when: on_failure
+    paths:
+      - obj/
+
+tumbleweed/openssl_1.1.x/x86-64/clang:
+  image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$TUMBLEWEED_BUILD
+  script:
+  - mkdir -p obj && cd obj && cmake -DCMAKE_BUILD_TYPE=Debug
+    -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
     -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON --DWITH_PCAP=ON
     -DKRB5_CONFIG=/usr/lib/mit/bin/krb5-config
     -DPICKY_DEVELOPER=ON
