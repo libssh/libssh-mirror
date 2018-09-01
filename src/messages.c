@@ -839,6 +839,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
 
         msg->auth_request.signature_state = SSH_PUBLICKEY_STATE_VALID;
     }
+    ssh_string_free(algo);
     goto end;
   }
 #ifdef WITH_GSSAPI
