@@ -1903,8 +1903,10 @@ ssh_string ssh_pki_do_sign(ssh_session session,
             SSH_LOG(SSH_LOG_TRACE, "Unknown hash algorithm for type: %d",
                     sig->type);
             ssh_string_free(session_id);
+            ssh_buffer_free(buf);
             return NULL;
         }
+        ssh_buffer_free(buf);
 
 #ifdef DEBUG_CRYPTO
         ssh_print_hexa("Hash being signed", hash, hlen);
