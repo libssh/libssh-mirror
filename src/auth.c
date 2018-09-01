@@ -729,6 +729,7 @@ static int ssh_userauth_agent_publickey(ssh_session session,
                       "The key algorithm '%s' is not allowed to be used by"
                       " PUBLICKEY_ACCEPTED_TYPES configuration option",
                       sig_type_c);
+        ssh_string_free(str);
         return SSH_AUTH_DENIED;
     }
 
@@ -742,11 +743,10 @@ static int ssh_userauth_agent_publickey(ssh_session session,
             sig_type_c, /* algo */
             str /* public key */
             );
+    ssh_string_free(str);
     if (rc < 0) {
         goto fail;
     }
-
-    ssh_string_free(str);
 
     /* sign the buffer with the private key */
     str = ssh_pki_do_sign_agent(session, session->out_buffer, pubkey);
