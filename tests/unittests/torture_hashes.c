@@ -57,6 +57,7 @@ static void torture_md5_hash(void **state)
     assert_true(rc == 0);
 
     hexa = ssh_get_hexa(hash, hlen);
+    ssh_string_free_char((char *)hash);
     assert_string_equal(hexa,
                         "50:15:a0:9b:92:bf:33:1c:01:c5:8c:fe:18:fa:ce:78");
 
@@ -75,6 +76,7 @@ static void torture_sha1_hash(void **state)
     assert_true(rc == 0);
 
     sha1 = ssh_get_b64_unpadded(hash, hlen);
+    ssh_string_free_char((char *)hash);
     assert_string_equal(sha1, "6wP+houujQmxLBiFugTcoeoODCM");
 
     ssh_string_free_char(sha1);
@@ -92,6 +94,7 @@ static void torture_sha256_hash(void **state)
     assert_true(rc == 0);
 
     sha256 = ssh_get_b64_unpadded(hash, hlen);
+    ssh_string_free_char((char *)hash);
     assert_string_equal(sha256, "jXstVLLe84fSDo1kEYGn6iumnPCSorhaiWxnJz8VTII");
 
     ssh_string_free_char(sha256);
