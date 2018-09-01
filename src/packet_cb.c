@@ -291,7 +291,13 @@ SSH_PACKET_CALLBACK(ssh_packet_ext_info)
         SSH_LOG(SSH_LOG_PACKET, "Failed to read number of extensions");
         return SSH_PACKET_USED;
     }
+
     nr_extensions = ntohl(nr_extensions);
+    if (nr_extensions > 128) {
+        SSH_LOG(SSH_LOG_PACKET, "Invalid number of extensions");
+        return SSH_PACKET_USED;
+    }
+
     SSH_LOG(SSH_LOG_PACKET, "Follows %u extensions", nr_extensions);
 
     for (i = 0; i < nr_extensions; i++) {
