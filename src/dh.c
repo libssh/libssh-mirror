@@ -1502,6 +1502,79 @@ char *ssh_get_hexa(const unsigned char *what, size_t len) {
 }
 
 /**
+ * @brief Get a hash as a human-readable hex- or base64-string.
+ *
+ * This gets an allocated fingerprint hash. It is a hex strings if the given
+ * hash is a md5 sum.  If it is a SHA sum, it will return an unpadded base64
+ * strings.  Either way, the output is prepended by the hash-type.
+ *
+ * @param  type         Which sort of hash is given.
+ *
+ * @param  hash         What should be converted to a base64 string.
+ *
+ * @param  len          Length of the buffer to convert.
+ *
+ * @return Returns the allocated fingerprint hash or NULL on error.
+ *
+ * @see ssh_string_free_char()
+ */
+char *ssh_get_fingerprint_hash(enum ssh_publickey_hash_type type,
+                               unsigned char *hash,
+                               size_t len)
+{
+    const char *prefix = "UNKNOWN";
+    char *fingerprint = NULL;
+    char *str = NULL;
+    size_t str_len;
+    int rc;
+
+    switch (type) {
+    case SSH_PUBLICKEY_HASH_SHA1:
+    case SSH_PUBLICKEY_HASH_SHA256:
+        fingerprint = ssh_get_b64_unpadded(hash, len);
+        break;
+    case SSH_PUBLICKEY_HASH_MD5:
+        fingerprint = ssh_get_hexa(hash, len);
+        break;
+    }
+    if (fingerprint == NULL) {
+        return NULL;
+    }
+
+    switch (type) {
+    case SSH_PUBLICKEY_HASH_MD5:
+        prefix = "MD5";
+        break;
+    case SSH_PUBLICKEY_HASH_SHA1:
+        prefix = "SHA1";
+        break;
+    case SSH_PUBLICKEY_HASH_SHA256:
+        prefix = "SHA256";
+        break;
+    }
+
+    str_len = strlen(prefix);
+    if (str_len + 1 + strlen(fingerprint) + 1 < str_len) {
+        SAFE_FREE(fingerprint);
+        return NULL;
+    }
+    str_len += 1 + strlen(fingerprint) + 1;
+
+    str = malloc(str_len);
+    if (str == NULL) {
+        SAFE_FREE(fingerprint);
+        return NULL;
+    }
+    rc = snprintf(str, str_len, "%s:%s", prefix, fingerprint);
+    SAFE_FREE(fingerprint);
+    if (rc < 0 || rc < (int)(str_len - 1)) {
+        SAFE_FREE(str);
+    }
+
+    return str;
+}
+
+/**
  * @brief Print a hash as a human-readable hex- or base64-string.
  *
  * This function prints hex strings if the given hash is a md5 sum.
