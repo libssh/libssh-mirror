@@ -757,12 +757,16 @@ LIBSSH_API void ssh_string_burn(ssh_string str);
 LIBSSH_API ssh_string ssh_string_copy(ssh_string str);
 LIBSSH_API void *ssh_string_data(ssh_string str);
 LIBSSH_API int ssh_string_fill(ssh_string str, const void *data, size_t len);
+#define SSH_STRING_FREE(x) \
+    do { if ((x) != NULL) { ssh_string_free(x); x = NULL; } } while(0)
 LIBSSH_API void ssh_string_free(ssh_string str);
 LIBSSH_API ssh_string ssh_string_from_char(const char *what);
 LIBSSH_API size_t ssh_string_len(ssh_string str);
 LIBSSH_API ssh_string ssh_string_new(size_t size);
 LIBSSH_API const char *ssh_string_get_char(ssh_string str);
 LIBSSH_API char *ssh_string_to_char(ssh_string str);
+#define SSH_STRING_FREE_CHAR(x) \
+    do { if ((x) != NULL) { ssh_string_free_char(x); x = NULL; } } while(0)
 LIBSSH_API void ssh_string_free_char(char *s);
 
 LIBSSH_API int ssh_getpass(const char *prompt, char *buf, size_t len, int echo,
