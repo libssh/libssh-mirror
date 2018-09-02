@@ -693,7 +693,8 @@ static int ssh_userauth_agent_publickey(ssh_session session,
                                         const char *username,
                                         ssh_key pubkey)
 {
-    ssh_string str = NULL;
+    ssh_string pubkey_s = NULL;
+    ssh_string sig_blob = NULL;
     const char *sig_type_c = NULL;
     int rc;
 
@@ -717,7 +718,7 @@ static int ssh_userauth_agent_publickey(ssh_session session,
     }
 
     /* public key */
-    rc = ssh_pki_export_pubkey_blob(pubkey, &str);
+    rc = ssh_pki_export_pubkey_blob(pubkey, &pubkey_s);
     if (rc < 0) {
         goto fail;
     }
@@ -729,7 +730,7 @@ static int ssh_userauth_agent_publickey(ssh_session session,
                       "The key algorithm '%s' is not allowed to be used by"
                       " PUBLICKEY_ACCEPTED_TYPES configuration option",
                       sig_type_c);
-        ssh_string_free(str);
+        SSH_STRING_FREE(pubkey_s);
         return SSH_AUTH_DENIED;
     }
 
@@ -741,22 +742,21 @@ static int ssh_userauth_agent_publickey(ssh_session session,
             "publickey",
             1, /* private key */
             sig_type_c, /* algo */
-            str /* public key */
+            pubkey_s /* public key */
             );
-    ssh_string_free(str);
+    SSH_STRING_FREE(pubkey_s);
     if (rc < 0) {
         goto fail;
     }
 
     /* sign the buffer with the private key */
-    str = ssh_pki_do_sign_agent(session, session->out_buffer, pubkey);
-    if (str == NULL) {
+    sig_blob = ssh_pki_do_sign_agent(session, session->out_buffer, pubkey);
+    if (sig_blob == NULL) {
         goto fail;
     }
 
-    rc = ssh_buffer_add_ssh_string(session->out_buffer, str);
-    ssh_string_free(str);
-    str = NULL;
+    rc = ssh_buffer_add_ssh_string(session->out_buffer, sig_blob);
+    SSH_STRING_FREE(sig_blob);
     if (rc < 0) {
         goto fail;
     }
@@ -779,7 +779,7 @@ pending:
 fail:
     ssh_set_error_oom(session);
     ssh_buffer_reinit(session->out_buffer);
-    ssh_string_free(str);
+    SSH_STRING_FREE(pubkey_s);
 
     return SSH_AUTH_ERROR;
 }
