@@ -249,6 +249,9 @@ static void buffer_shift(ssh_buffer buffer)
 /**
  * @brief Reinitialize a SSH buffer.
  *
+ * In case the buffer has exceeded 64K in size, the buffer will be reallocated
+ * to 64K.
+ *
  * @param[in]  buffer   The buffer to reinitialize.
  *
  * @return              0 on success, < 0 on error.
@@ -267,8 +270,13 @@ int ssh_buffer_reinit(struct ssh_buffer_struct *buffer)
     buffer->used = 0;
     buffer->pos = 0;
 
-    if (buffer->allocated > 127) {
-        if (realloc_buffer(buffer, 127) < 0) {
+    /* If the buffer is bigger then 64K, reset it to 64K */
+    if (buffer->allocated > 65536) {
+        int rc;
+
+        /* -1 for realloc_buffer magic */
+        rc = realloc_buffer(buffer, 65536 - 1);
+        if (rc != 0) {
             return -1;
         }
     }
