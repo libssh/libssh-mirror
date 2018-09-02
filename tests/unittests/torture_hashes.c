@@ -101,6 +101,30 @@ static void torture_sha256_hash(void **state)
 
 }
 
+static void torture_sha256_fingerprint(void **state)
+{
+    ssh_key pubkey = *state;
+    unsigned char *hash = NULL;
+    char *sha256 = NULL;
+    int rc = 0;
+    size_t hlen;
+
+    rc = ssh_get_publickey_hash(pubkey,
+                                SSH_PUBLICKEY_HASH_SHA256,
+                                &hash,
+                                &hlen);
+    assert_true(rc == 0);
+
+    sha256 = ssh_get_fingerprint_hash(SSH_PUBLICKEY_HASH_SHA256,
+                                      hash,
+                                      hlen);
+    ssh_string_free_char(discard_const(hash));
+    assert_string_equal(sha256,
+                        "SHA256:jXstVLLe84fSDo1kEYGn6iumnPCSorhaiWxnJz8VTII");
+
+    ssh_string_free_char(sha256);
+}
+
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
@@ -111,6 +135,9 @@ int torture_run_tests(void) {
                                         setup_rsa_key,
                                         teardown),
         cmocka_unit_test_setup_teardown(torture_sha256_hash,
+                                        setup_rsa_key,
+                                        teardown),
+        cmocka_unit_test_setup_teardown(torture_sha256_fingerprint,
                                         setup_rsa_key,
                                         teardown),
     };
