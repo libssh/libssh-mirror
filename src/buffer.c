@@ -52,6 +52,9 @@ struct ssh_buffer_struct {
     uint8_t *data;
 };
 
+/* Buffer size maximum is 256M */
+#define BUFFER_SIZE_MAX 0x10000000
+
 /**
  * @defgroup libssh_buffer The SSH buffer functions.
  * @ingroup libssh
@@ -190,6 +193,10 @@ static int realloc_buffer(struct ssh_buffer_struct *buffer, size_t needed)
         smallest <<= 1;
     }
     needed = smallest;
+
+    if (needed > BUFFER_SIZE_MAX) {
+        return -1;
+    }
 
     if (buffer->secure) {
         new = malloc(needed);
