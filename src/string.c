@@ -50,22 +50,23 @@
  *
  * @return               The newly allocated string, NULL on error.
  */
-struct ssh_string_struct *ssh_string_new(size_t size) {
-  struct ssh_string_struct *str = NULL;
+struct ssh_string_struct *ssh_string_new(size_t size)
+{
+    struct ssh_string_struct *str = NULL;
 
-  if (size > UINT_MAX - sizeof(struct ssh_string_struct)) {
-      return NULL;
-  }
+    if (size > UINT_MAX - sizeof(struct ssh_string_struct)) {
+        return NULL;
+    }
 
-  str = malloc(sizeof(struct ssh_string_struct) + size);
-  if (str == NULL) {
-    return NULL;
-  }
+    str = malloc(sizeof(struct ssh_string_struct) + size);
+    if (str == NULL) {
+        return NULL;
+    }
 
-  str->size = htonl(size);
-  str->data[0] = 0;
+    str->size = htonl(size);
+    str->data[0] = 0;
 
-  return str;
+    return str;
 }
 
 /**
