@@ -1589,35 +1589,18 @@ char *ssh_get_fingerprint_hash(enum ssh_publickey_hash_type type,
  */
 void ssh_print_hash(enum ssh_publickey_hash_type type,
                     unsigned char *hash,
-                    size_t len) {
-    const char *prefix = "UNKNOWN";
+                    size_t len)
+{
     char *fingerprint = NULL;
 
-    switch (type) {
-    case SSH_PUBLICKEY_HASH_SHA1:
-    case SSH_PUBLICKEY_HASH_SHA256:
-        fingerprint = ssh_get_b64_unpadded(hash, len);
-        break;
-    case SSH_PUBLICKEY_HASH_MD5:
-        fingerprint = ssh_get_hexa(hash, len);
-        break;
-    }
+    fingerprint = ssh_get_fingerprint_hash(type,
+                                           hash,
+                                           len);
     if (fingerprint == NULL) {
         return;
     }
 
-    switch (type) {
-    case SSH_PUBLICKEY_HASH_MD5:
-        prefix = "MD5";
-        break;
-    case SSH_PUBLICKEY_HASH_SHA1:
-        prefix = "SHA1";
-        break;
-    case SSH_PUBLICKEY_HASH_SHA256:
-        prefix = "SHA256";
-        break;
-    }
-    fprintf(stderr, "%s:%s\n", prefix, fingerprint);
+    fprintf(stderr, "%s\n", fingerprint);
 
     SAFE_FREE(fingerprint);
 }
