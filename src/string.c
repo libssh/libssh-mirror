@@ -34,6 +34,9 @@
 #include "libssh/priv.h"
 #include "libssh/string.h"
 
+/* String maximum size is 256M */
+#define STRING_SIZE_MAX 0x10000000
+
 /**
  * @defgroup libssh_string The SSH string functions
  * @ingroup libssh
@@ -54,7 +57,8 @@ struct ssh_string_struct *ssh_string_new(size_t size)
 {
     struct ssh_string_struct *str = NULL;
 
-    if (size > UINT_MAX - sizeof(struct ssh_string_struct)) {
+    if (size > STRING_SIZE_MAX) {
+        errno = EINVAL;
         return NULL;
     }
 
@@ -137,7 +141,7 @@ size_t ssh_string_len(struct ssh_string_struct *s) {
     }
 
     size = ntohl(s->size);
-    if (size > 0 && size < UINT_MAX) {
+    if (size > 0 && size <= STRING_SIZE_MAX) {
         return size;
     }
 
