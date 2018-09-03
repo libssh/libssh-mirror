@@ -76,44 +76,47 @@ static ssh_channel channel_from_msg(ssh_session session, ssh_buffer packet);
  *
  * @return              A pointer to a newly allocated channel, NULL on error.
  */
-ssh_channel ssh_channel_new(ssh_session session) {
-  ssh_channel channel = NULL;
+ssh_channel ssh_channel_new(ssh_session session)
+{
+    ssh_channel channel = NULL;
 
-  if(session == NULL) {
-      return NULL;
-  }
+    if (session == NULL) {
+        return NULL;
+    }
 
-  channel = malloc(sizeof(struct ssh_channel_struct));
-  if (channel == NULL) {
-    ssh_set_error_oom(session);
-    return NULL;
-  }
-  memset(channel,0,sizeof(struct ssh_channel_struct));
+    channel = malloc(sizeof(struct ssh_channel_struct));
+    if (channel == NULL) {
+        ssh_set_error_oom(session);
+        return NULL;
+    }
+    memset(channel,0,sizeof(struct ssh_channel_struct));
 
-  channel->stdout_buffer = ssh_buffer_new();
-  if (channel->stdout_buffer == NULL) {
-    ssh_set_error_oom(session);
-    SAFE_FREE(channel);
-    return NULL;
-  }
+    channel->stdout_buffer = ssh_buffer_new();
+    if (channel->stdout_buffer == NULL) {
+        ssh_set_error_oom(session);
+        SAFE_FREE(channel);
+        return NULL;
+    }
 
-  channel->stderr_buffer = ssh_buffer_new();
-  if (channel->stderr_buffer == NULL) {
-    ssh_set_error_oom(session);
-    ssh_buffer_free(channel->stdout_buffer);
-    SAFE_FREE(channel);
-    return NULL;
-  }
+    channel->stderr_buffer = ssh_buffer_new();
+    if (channel->stderr_buffer == NULL) {
+        ssh_set_error_oom(session);
+        ssh_buffer_free(channel->stdout_buffer);
+        SAFE_FREE(channel);
+        return NULL;
+    }
 
-  channel->session = session;
-  channel->exit_status = -1;
-  channel->flags = SSH_CHANNEL_FLAG_NOT_BOUND;
+    channel->session = session;
+    channel->exit_status = -1;
+    channel->flags = SSH_CHANNEL_FLAG_NOT_BOUND;
 
-  if(session->channels == NULL) {
-    session->channels = ssh_list_new();
-  }
-  ssh_list_prepend(session->channels, channel);
-  return channel;
+    if (session->channels == NULL) {
+        session->channels = ssh_list_new();
+    }
+
+    ssh_list_prepend(session->channels, channel);
+
+    return channel;
 }
 
 /**
