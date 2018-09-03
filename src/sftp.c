@@ -4,7 +4,7 @@
  * This file is part of the SSH Library
  *
  * Copyright (c) 2005-2008 by Aris Adamantiadis
- * Copyright (c) 2008-2009 by Andreas Schneider <asn@cryptomilk.org>
+ * Copyright (c) 2008-2018 by Andreas Schneider <asn@cryptomilk.org>
  *
  * The SSH Library is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -213,7 +213,6 @@ int sftp_server_init(sftp_session sftp){
         "Packet read of type %d instead of SSH_FXP_INIT",
         packet->type);
 
-    sftp_packet_free(packet);
     return -1;
   }
 
@@ -223,8 +222,6 @@ int sftp_server_init(sftp_session sftp){
   version = ntohl(version);
   SSH_LOG(SSH_LOG_PACKET, "Client version: %d", version);
   sftp->client_version = version;
-
-  sftp_packet_free(packet);
 
   reply = ssh_buffer_new();
   if (reply == NULL) {
@@ -316,21 +313,17 @@ int sftp_packet_write(sftp_session sftp, uint8_t type, ssh_buffer payload){
 sftp_packet sftp_packet_read(sftp_session sftp)
 {
     unsigned char buffer[MAX_BUF_SIZE];
-    sftp_packet packet = NULL;
+    sftp_packet packet = sftp->read_packet;
     uint32_t tmp;
     size_t size;
     int r, s, is_eof;
+    int rc;
 
-    packet = calloc(1, sizeof(struct sftp_packet_struct));
-    if (packet == NULL) {
-        ssh_set_error_oom(sftp->session);
-        return NULL;
-    }
     packet->sftp = sftp;
-    packet->payload = ssh_buffer_new();
-    if (packet->payload == NULL) {
+
+    rc = ssh_buffer_reinit(packet->payload);
+    if (rc != 0) {
         ssh_set_error_oom(sftp->session);
-        SAFE_FREE(packet);
         return NULL;
     }
 
@@ -372,6 +365,8 @@ sftp_packet sftp_packet_read(sftp_session sftp)
         }
     } while (r < 1);
     ssh_buffer_add_data(packet->payload, buffer, r);
+
+    packet->type = 0;
     ssh_buffer_get_u8(packet->payload, &packet->type);
 
     size = ntohl(tmp);
@@ -397,8 +392,6 @@ sftp_packet sftp_packet_read(sftp_session sftp)
         }
 
         if (r > 0) {
-            int rc;
-
             rc = ssh_buffer_add_data(packet->payload, buffer, r);
             if (rc != 0) {
                 ssh_set_error_oom(sftp->session);
@@ -417,8 +410,7 @@ sftp_packet sftp_packet_read(sftp_session sftp)
 
     return packet;
 error:
-    ssh_buffer_free(packet->payload);
-    SAFE_FREE(packet);
+    ssh_buffer_reinit(packet->payload);
     return NULL;
 }
 
@@ -521,7 +513,6 @@ static int sftp_read_and_dispatch(sftp_session sftp) {
   }
 
   msg = sftp_get_message(packet);
-  sftp_packet_free(packet);
   if (msg == NULL) {
     return -1;
   }
@@ -578,7 +569,6 @@ int sftp_init(sftp_session sftp) {
   if (packet->type != SSH_FXP_VERSION) {
     ssh_set_error(sftp->session, SSH_FATAL,
         "Received a %d messages instead of SSH_FXP_VERSION", packet->type);
-    sftp_packet_free(packet);
     return -1;
   }
 
@@ -629,8 +619,6 @@ int sftp_init(sftp_session sftp) {
 
     rc = ssh_buffer_unpack(packet->payload, "s", &ext_name);
   }
-
-  sftp_packet_free(packet);
 
   sftp->version = sftp->server_version = version;
 
