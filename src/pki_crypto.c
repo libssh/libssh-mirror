@@ -1230,7 +1230,7 @@ static ssh_string _RSA_do_sign_hash(const unsigned char *digest,
     }
 
     ssh_string_fill(sig_blob, sig, slen);
-    memset(sig, 'd', slen);
+    explicit_bzero(sig, slen);
     SAFE_FREE(sig);
 
     return sig_blob;
