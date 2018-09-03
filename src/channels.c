@@ -1024,8 +1024,6 @@ void ssh_channel_do_free(ssh_channel channel)
         ssh_list_free(channel->callbacks);
     }
 
-    /* debug trick to catch use after frees */
-    memset(channel, 'X', sizeof(struct ssh_channel_struct));
     SAFE_FREE(channel);
 }
 
