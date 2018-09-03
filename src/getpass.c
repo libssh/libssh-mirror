@@ -87,7 +87,7 @@ static int ssh_gets(const char *prompt, char *buf, size_t len, int verify) {
             fprintf(stdout, "\nVerifying, please re-enter. %s", prompt);
             fflush(stdout);
             if (! fgets(key_string, len, stdin)) {
-                memset(key_string, '\0', len);
+                explicit_bzero(key_string, len);
                 SAFE_FREE(key_string);
                 clearerr(stdin);
                 continue;
@@ -98,17 +98,17 @@ static int ssh_gets(const char *prompt, char *buf, size_t len, int verify) {
             fprintf(stdout, "\n");
             if (strcmp(buf, key_string)) {
                 printf("\n\07\07Mismatch - try again\n");
-                memset(key_string, '\0', len);
+                explicit_bzero(key_string, len);
                 SAFE_FREE(key_string);
                 fflush(stdout);
                 continue;
             }
-            memset(key_string, '\0', len);
+            explicit_bzero(key_string, len);
             SAFE_FREE(key_string);
         }
         ok = 1;
     }
-    memset(tmp, '\0', len);
+    explicit_bzero(tmp, len);
     free(tmp);
 
     return ok;
@@ -150,7 +150,7 @@ int ssh_getpass(const char *prompt,
     SetConsoleMode(h, mode);
 
     if (!ok) {
-        memset (buf, '\0', len);
+        explicit_bzero(buf, len);
         return -1;
     }
 
@@ -271,7 +271,7 @@ int ssh_getpass(const char *prompt,
     }
 
     if (!ok) {
-        memset (buf, '\0', len);
+        explicit_bzero(buf, len);
         return -1;
     }
 
