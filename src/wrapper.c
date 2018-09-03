@@ -148,7 +148,8 @@ struct ssh_crypto_struct *crypto_new(void) {
 
 void crypto_free(struct ssh_crypto_struct *crypto)
 {
-    int i;
+    size_t i;
+
     if (crypto == NULL) {
         return;
     }
