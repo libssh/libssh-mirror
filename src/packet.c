@@ -199,7 +199,9 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
                 return 0;
             }
 
-            memset(&session->in_packet, 0, sizeof(PACKET));
+            session->in_packet = (struct packet_struct) {
+                .type = 0,
+            };
 
             if (session->in_buffer) {
                 rc = ssh_buffer_reinit(session->in_buffer);
@@ -515,9 +517,11 @@ SSH_PACKET_CALLBACK(ssh_packet_unimplemented){
 /** @internal
  * @parse the "Type" header field of a packet and updates the session
  */
-int ssh_packet_parse_type(ssh_session session)
+int ssh_packet_parse_type(struct ssh_session_struct *session)
 {
-    memset(&session->in_packet, 0, sizeof(PACKET));
+    session->in_packet = (struct packet_struct) {
+        .type = 0,
+    };
 
     if (session->in_buffer == NULL) {
         return SSH_ERROR;
