@@ -418,7 +418,7 @@ SSH_PACKET_CALLBACK(ssh_packet_kexinit){
     int i, ok;
     int server_kex=session->server;
     ssh_string str = NULL;
-    char *strings[KEX_METHODS_SIZE];
+    char *strings[KEX_METHODS_SIZE] = {0};
     int rc = SSH_ERROR;
 
     uint8_t first_kex_packet_follows = 0;
@@ -427,7 +427,6 @@ SSH_PACKET_CALLBACK(ssh_packet_kexinit){
     (void)type;
     (void)user;
 
-    memset(strings, 0, sizeof(strings));
     if (session->session_state == SSH_SESSION_STATE_AUTHENTICATED){
         SSH_LOG(SSH_LOG_WARNING, "Other side initiating key re-exchange");
     } else if(session->session_state != SSH_SESSION_STATE_INITIAL_KEX){
