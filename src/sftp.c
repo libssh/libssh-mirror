@@ -92,52 +92,53 @@ static void sftp_ext_free(sftp_ext ext) {
   SAFE_FREE(ext);
 }
 
-sftp_session sftp_new(ssh_session session){
-  sftp_session sftp;
+sftp_session sftp_new(ssh_session session)
+{
+    sftp_session sftp;
 
-  if (session == NULL) {
-    return NULL;
-  }
+    if (session == NULL) {
+        return NULL;
+    }
 
-  sftp = calloc(1, sizeof(struct sftp_session_struct));
-  if (sftp == NULL) {
-    ssh_set_error_oom(session);
+    sftp = calloc(1, sizeof(struct sftp_session_struct));
+    if (sftp == NULL) {
+        ssh_set_error_oom(session);
 
-    return NULL;
-  }
+        return NULL;
+    }
 
-  sftp->ext = sftp_ext_new();
-  if (sftp->ext == NULL) {
-    ssh_set_error_oom(session);
-    SAFE_FREE(sftp);
+    sftp->ext = sftp_ext_new();
+    if (sftp->ext == NULL) {
+        ssh_set_error_oom(session);
+        SAFE_FREE(sftp);
 
-    return NULL;
-  }
+        return NULL;
+    }
 
-  sftp->session = session;
-  sftp->channel = ssh_channel_new(session);
-  if (sftp->channel == NULL) {
-    sftp_ext_free(sftp->ext);
-    SAFE_FREE(sftp);
+    sftp->session = session;
+    sftp->channel = ssh_channel_new(session);
+    if (sftp->channel == NULL) {
+        sftp_ext_free(sftp->ext);
+        SAFE_FREE(sftp);
 
-    return NULL;
-  }
+        return NULL;
+    }
 
-  if (ssh_channel_open_session(sftp->channel)) {
-    ssh_channel_free(sftp->channel);
-    sftp_ext_free(sftp->ext);
-    SAFE_FREE(sftp);
+    if (ssh_channel_open_session(sftp->channel)) {
+        ssh_channel_free(sftp->channel);
+        sftp_ext_free(sftp->ext);
+        SAFE_FREE(sftp);
 
-    return NULL;
-  }
+        return NULL;
+    }
 
-  if (ssh_channel_request_sftp(sftp->channel)) {
-    sftp_free(sftp);
+    if (ssh_channel_request_sftp(sftp->channel)) {
+        sftp_free(sftp);
 
-    return NULL;
-  }
+        return NULL;
+    }
 
-  return sftp;
+    return sftp;
 }
 
 sftp_session sftp_new_channel(ssh_session session, ssh_channel channel){
