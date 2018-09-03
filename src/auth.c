@@ -1545,7 +1545,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_request) {
         return SSH_PACKET_USED;
     }
 
-    session->kbdint->echo = malloc(nprompts);
+    session->kbdint->echo = calloc(nprompts, sizeof(unsigned char));
     if (session->kbdint->echo == NULL) {
         session->kbdint->nprompts = 0;
         ssh_set_error_oom(session);
@@ -1554,7 +1554,6 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_request) {
 
         return SSH_PACKET_USED;
     }
-    memset(session->kbdint->echo, 0, nprompts);
 
     for (i = 0; i < nprompts; i++) {
         rc = ssh_buffer_unpack(packet, "sb",
