@@ -84,6 +84,7 @@ struct sftp_session_struct {
     int errnum;
     void **handles;
     sftp_ext ext;
+    sftp_packet read_packet;
 };
 
 struct sftp_packet_struct {
