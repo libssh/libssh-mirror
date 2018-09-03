@@ -146,81 +146,78 @@ struct ssh_crypto_struct *crypto_new(void) {
   return crypto;
 }
 
-void crypto_free(struct ssh_crypto_struct *crypto){
-  int i;
-  if (crypto == NULL) {
-    return;
-  }
+void crypto_free(struct ssh_crypto_struct *crypto)
+{
+    int i;
+    if (crypto == NULL) {
+        return;
+    }
 
-  ssh_key_free(crypto->server_pubkey);
+    ssh_key_free(crypto->server_pubkey);
 
-  cipher_free(crypto->in_cipher);
-  cipher_free(crypto->out_cipher);
+    cipher_free(crypto->in_cipher);
+    cipher_free(crypto->out_cipher);
 
-  bignum_safe_free(crypto->e);
-  bignum_safe_free(crypto->f);
-  bignum_safe_free(crypto->x);
-  bignum_safe_free(crypto->y);
-  bignum_safe_free(crypto->k);
+    bignum_safe_free(crypto->e);
+    bignum_safe_free(crypto->f);
+    bignum_safe_free(crypto->x);
+    bignum_safe_free(crypto->y);
+    bignum_safe_free(crypto->k);
 #ifdef HAVE_ECDH
-  SAFE_FREE(crypto->ecdh_client_pubkey);
-  SAFE_FREE(crypto->ecdh_server_pubkey);
-  if(crypto->ecdh_privkey != NULL){
+    SAFE_FREE(crypto->ecdh_client_pubkey);
+    SAFE_FREE(crypto->ecdh_server_pubkey);
+    if(crypto->ecdh_privkey != NULL){
 #ifdef HAVE_OPENSSL_ECC
-    EC_KEY_free(crypto->ecdh_privkey);
+        EC_KEY_free(crypto->ecdh_privkey);
 #elif defined HAVE_GCRYPT_ECC
-    gcry_sexp_release(crypto->ecdh_privkey);
+        gcry_sexp_release(crypto->ecdh_privkey);
 #endif
-    crypto->ecdh_privkey = NULL;
-  }
+        crypto->ecdh_privkey = NULL;
+    }
 #endif
-  if(crypto->session_id != NULL){
-    memset(crypto->session_id, '\0', crypto->digest_len);
-    SAFE_FREE(crypto->session_id);
-  }
-  if(crypto->secret_hash != NULL){
-    memset(crypto->secret_hash, '\0', crypto->digest_len);
-    SAFE_FREE(crypto->secret_hash);
-  }
+    if (crypto->session_id != NULL) {
+        memset(crypto->session_id, '\0', crypto->digest_len);
+        SAFE_FREE(crypto->session_id);
+    }
+    if (crypto->secret_hash != NULL) {
+        memset(crypto->secret_hash, '\0', crypto->digest_len);
+        SAFE_FREE(crypto->secret_hash);
+    }
 #ifdef WITH_ZLIB
-  if (crypto->compress_out_ctx &&
-      (deflateEnd(crypto->compress_out_ctx) != 0)) {
-    inflateEnd(crypto->compress_out_ctx);
-  }
-  SAFE_FREE(crypto->compress_out_ctx);
+    if (crypto->compress_out_ctx &&
+        (deflateEnd(crypto->compress_out_ctx) != 0)) {
+        inflateEnd(crypto->compress_out_ctx);
+    }
+    SAFE_FREE(crypto->compress_out_ctx);
 
-  if (crypto->compress_in_ctx &&
-      (deflateEnd(crypto->compress_in_ctx) != 0)) {
-    inflateEnd(crypto->compress_in_ctx);
-  }
-  SAFE_FREE(crypto->compress_in_ctx);
+    if (crypto->compress_in_ctx &&
+        (deflateEnd(crypto->compress_in_ctx) != 0)) {
+        inflateEnd(crypto->compress_in_ctx);
+    }
+    SAFE_FREE(crypto->compress_in_ctx);
 #endif /* WITH_ZLIB */
-  if(crypto->encryptIV)
     SAFE_FREE(crypto->encryptIV);
-  if(crypto->decryptIV)
     SAFE_FREE(crypto->decryptIV);
-  if(crypto->encryptMAC)
     SAFE_FREE(crypto->encryptMAC);
-  if(crypto->decryptMAC)
     SAFE_FREE(crypto->decryptMAC);
-  if(crypto->encryptkey){
-    memset(crypto->encryptkey, 0, crypto->digest_len);
-    SAFE_FREE(crypto->encryptkey);
-  }
-  if(crypto->decryptkey){
-    memset(crypto->decryptkey, 0, crypto->digest_len);
-    SAFE_FREE(crypto->decryptkey);
-  }
+    if (crypto->encryptkey != NULL) {
+        memset(crypto->encryptkey, 0, crypto->digest_len);
+        SAFE_FREE(crypto->encryptkey);
+    }
+    if (crypto->decryptkey != NULL) {
+        memset(crypto->decryptkey, 0, crypto->digest_len);
+        SAFE_FREE(crypto->decryptkey);
+    }
 
-  for (i = 0; i < SSH_KEX_METHODS; i++) {
-      SAFE_FREE(crypto->client_kex.methods[i]);
-      SAFE_FREE(crypto->server_kex.methods[i]);
-      SAFE_FREE(crypto->kex_methods[i]);
-  }
+    for (i = 0; i < SSH_KEX_METHODS; i++) {
+        SAFE_FREE(crypto->client_kex.methods[i]);
+        SAFE_FREE(crypto->server_kex.methods[i]);
+        SAFE_FREE(crypto->kex_methods[i]);
+    }
 
-  explicit_bzero(crypto, sizeof(struct ssh_crypto_struct));
+    explicit_bzero(crypto, sizeof(struct ssh_crypto_struct));
 
-  SAFE_FREE(crypto);
+    SAFE_FREE(crypto);
 }
 
 static int crypt_set_algorithms2(ssh_session session){
