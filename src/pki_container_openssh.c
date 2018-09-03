@@ -133,11 +133,10 @@ static int pki_openssh_import_privkey_blob(ssh_buffer key_blob_buffer,
     return SSH_OK;
 fail:
     ssh_key_free(key);
-    if(privkey != NULL){
-        memset(ssh_string_data(privkey), 0, ssh_string_len(privkey));
-    }
-    SAFE_FREE(pubkey);
-    SAFE_FREE(privkey);
+
+    ssh_string_burn(privkey);
+    ssh_string_free(privkey);
+    ssh_string_free(pubkey);
 
     return SSH_ERROR;
 }
