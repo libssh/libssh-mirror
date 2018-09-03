@@ -1007,22 +1007,26 @@ void ssh_channel_free(ssh_channel channel) {
  * @brief Effectively free a channel, without caring about flags
  */
 
-void ssh_channel_do_free(ssh_channel channel){
-  struct ssh_iterator *it;
-  ssh_session session = channel->session;
-  it = ssh_list_find(session->channels, channel);
-  if(it != NULL){
-    ssh_list_remove(session->channels, it);
-  }
-  ssh_buffer_free(channel->stdout_buffer);
-  ssh_buffer_free(channel->stderr_buffer);
-  if (channel->callbacks != NULL){
-    ssh_list_free(channel->callbacks);
-  }
+void ssh_channel_do_free(ssh_channel channel)
+{
+    struct ssh_iterator *it = NULL;
+    ssh_session session = channel->session;
 
-  /* debug trick to catch use after frees */
-  memset(channel, 'X', sizeof(struct ssh_channel_struct));
-  SAFE_FREE(channel);
+    it = ssh_list_find(session->channels, channel);
+    if (it != NULL) {
+        ssh_list_remove(session->channels, it);
+    }
+
+    ssh_buffer_free(channel->stdout_buffer);
+    ssh_buffer_free(channel->stderr_buffer);
+
+    if (channel->callbacks != NULL) {
+        ssh_list_free(channel->callbacks);
+    }
+
+    /* debug trick to catch use after frees */
+    memset(channel, 'X', sizeof(struct ssh_channel_struct));
+    SAFE_FREE(channel);
 }
 
 /**
