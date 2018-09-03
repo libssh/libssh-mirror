@@ -49,11 +49,10 @@ static int ssh_gets(const char *prompt, char *buf, size_t len, int verify) {
     char *ptr = NULL;
     int ok = 0;
 
-    tmp = malloc(len);
+    tmp = calloc(1, len);
     if (tmp == NULL) {
         return 0;
     }
-    memset(tmp,'\0',len);
 
     /* read the password */
     while (!ok) {
@@ -80,11 +79,10 @@ static int ssh_gets(const char *prompt, char *buf, size_t len, int verify) {
         if (verify) {
             char *key_string;
 
-            key_string = malloc(len);
+            key_string = calloc(1, len);
             if (key_string == NULL) {
                 break;
             }
-	          memset(key_string, '\0', len);
 
             fprintf(stdout, "\nVerifying, please re-enter. %s", prompt);
             fflush(stdout);
