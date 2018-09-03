@@ -177,11 +177,11 @@ void crypto_free(struct ssh_crypto_struct *crypto)
     }
 #endif
     if (crypto->session_id != NULL) {
-        memset(crypto->session_id, '\0', crypto->digest_len);
+        explicit_bzero(crypto->session_id, crypto->digest_len);
         SAFE_FREE(crypto->session_id);
     }
     if (crypto->secret_hash != NULL) {
-        memset(crypto->secret_hash, '\0', crypto->digest_len);
+        explicit_bzero(crypto->secret_hash, crypto->digest_len);
         SAFE_FREE(crypto->secret_hash);
     }
 #ifdef WITH_ZLIB
@@ -202,11 +202,11 @@ void crypto_free(struct ssh_crypto_struct *crypto)
     SAFE_FREE(crypto->encryptMAC);
     SAFE_FREE(crypto->decryptMAC);
     if (crypto->encryptkey != NULL) {
-        memset(crypto->encryptkey, 0, crypto->digest_len);
+        explicit_bzero(crypto->encryptkey, crypto->digest_len);
         SAFE_FREE(crypto->encryptkey);
     }
     if (crypto->decryptkey != NULL) {
-        memset(crypto->decryptkey, 0, crypto->digest_len);
+        explicit_bzero(crypto->decryptkey, crypto->digest_len);
         SAFE_FREE(crypto->decryptkey);
     }
 
