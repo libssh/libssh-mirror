@@ -217,7 +217,7 @@ char *ssh_get_user_home_dir(void) {
   char *szPath = NULL;
   struct passwd pwd;
   struct passwd *pwdbuf;
-  char buf[NSS_BUFLEN_PASSWD];
+  char buf[NSS_BUFLEN_PASSWD] = {0};
   int rc;
 
   rc = getpwuid_r(getuid(), &pwd, buf, NSS_BUFLEN_PASSWD, &pwdbuf);
@@ -226,7 +226,6 @@ char *ssh_get_user_home_dir(void) {
       if (szPath == NULL) {
           return NULL;
       }
-      memset(buf, 0, sizeof(buf));
       snprintf(buf, sizeof(buf), "%s", szPath);
 
       return strdup(buf);
