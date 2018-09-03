@@ -84,12 +84,11 @@ ssh_channel ssh_channel_new(ssh_session session)
         return NULL;
     }
 
-    channel = malloc(sizeof(struct ssh_channel_struct));
+    channel = calloc(1, sizeof(struct ssh_channel_struct));
     if (channel == NULL) {
         ssh_set_error_oom(session);
         return NULL;
     }
-    memset(channel,0,sizeof(struct ssh_channel_struct));
 
     channel->stdout_buffer = ssh_buffer_new();
     if (channel->stdout_buffer == NULL) {
