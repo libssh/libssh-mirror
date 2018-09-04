@@ -42,6 +42,7 @@ static int setup_config_files(void **state)
     unlink(LIBSSH_TESTCONFIG6);
     unlink(LIBSSH_TESTCONFIG7);
     unlink(LIBSSH_TESTCONFIG8);
+    unlink(LIBSSH_TESTCONFIG9);
 
     torture_write_file(LIBSSH_TESTCONFIG1,
                        "User "USERNAME"\nInclude "LIBSSH_TESTCONFIG2"\n\n");
