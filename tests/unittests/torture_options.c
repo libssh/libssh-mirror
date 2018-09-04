@@ -15,7 +15,14 @@
 
 static int setup(void **state)
 {
-    ssh_session session = ssh_new();
+    ssh_session session;
+    int verbosity;
+
+    session = ssh_new();
+
+    verbosity = torture_libssh_verbosity();
+    ssh_options_set(session, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
+
     *state = session;
 
     return 0;

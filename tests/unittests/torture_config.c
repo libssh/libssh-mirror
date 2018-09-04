@@ -33,6 +33,7 @@ extern LIBSSH_THREAD int ssh_log_level;
 static int setup_config_files(void **state)
 {
     ssh_session session;
+    int verbosity;
 
     unlink(LIBSSH_TESTCONFIG1);
     unlink(LIBSSH_TESTCONFIG2);
@@ -106,6 +107,10 @@ static int setup_config_files(void **state)
                         "");
 
     session = ssh_new();
+
+    verbosity = torture_libssh_verbosity();
+    ssh_options_set(session, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
+
     *state = session;
 
     return 0;
