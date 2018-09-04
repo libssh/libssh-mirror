@@ -335,11 +335,10 @@ public:
    * @see ssh_get_issue_banner
    */
   std::string getIssueBanner(){
-    char *banner=ssh_get_issue_banner(c_session);
-    std::string ret;
-    if (banner)
-    {
-      ret= std::string(banner);
+    char *banner = ssh_get_issue_banner(c_session);
+    std::string ret = "";
+    if (banner != NULL) {
+      ret = std::string(banner);
       ::free(banner);
     }
     return ret;
