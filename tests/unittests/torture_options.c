@@ -359,7 +359,10 @@ static void torture_options_config_host(void **state) {
     /* create a new config file */
     config = fopen("test_config", "w");
     assert_non_null(config);
-    fputs("Host testhost1\nPort 42\nHost testhost2,testhost3\nPort 43\n", config);
+    fputs("Host testhost1\nPort 42\n"
+          "Host testhost2,testhost3\nPort 43\n"
+          "Host testhost4 testhost5\nPort 44\n",
+          config);
     fclose(config);
 
     ssh_options_set(session, SSH_OPTIONS_HOST, "testhost1");
@@ -376,6 +379,16 @@ static void torture_options_config_host(void **state) {
     ssh_options_set(session, SSH_OPTIONS_HOST, "testhost3");
     ssh_options_parse_config(session, "test_config");
     assert_int_equal(session->opts.port, 43);
+
+    ssh_options_set(session, SSH_OPTIONS_HOST, "testhost4");
+    ssh_options_parse_config(session, "test_config");
+    assert_int_equal(session->opts.port, 44);
+
+    session->opts.port = 0;
+
+    ssh_options_set(session, SSH_OPTIONS_HOST, "testhost5");
+    ssh_options_parse_config(session, "test_config");
+    assert_int_equal(session->opts.port, 44);
 
     unlink("test_config");
 }
