@@ -220,7 +220,6 @@ static void torture_config_new(void **state)
 {
     ssh_session session = *state;
     int ret = 0;
-    int verbosity = SSH_LOG_WARNING;
 
     ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG7);
     assert_true(ret == 0);
@@ -232,9 +231,6 @@ static void torture_config_new(void **state)
 
     assert_int_equal(ssh_get_log_level(), SSH_LOG_TRACE);
     assert_int_equal(session->common.log_verbosity, SSH_LOG_TRACE);
-
-    /* reset to something sane */
-    ssh_options_set(session, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
 }
 
 /**
