@@ -15,13 +15,18 @@ set(LIBSSH_CLIENT_TESTS
     torture_request_env)
 
 if (WITH_SFTP)
+    if (WITH_BENCHMARKS)
+        set(SFTP_BENCHMARK_TESTS
+            torture_sftp_benchmark)
+    endif()
     set(LIBSSH_CLIENT_TESTS
         ${LIBSSH_CLIENT_TESTS}
         torture_sftp_ext
         torture_sftp_canonicalize_path
         torture_sftp_dir
         torture_sftp_read
-        torture_sftp_fsync)
+        torture_sftp_fsync
+        ${SFTP_BENCHMARK_TESTS})
 endif (WITH_SFTP)
 
 foreach(_CLI_TEST ${LIBSSH_CLIENT_TESTS})
