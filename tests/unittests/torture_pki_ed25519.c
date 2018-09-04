@@ -110,6 +110,56 @@ static void torture_pki_ed25519_import_privkey_base64(void **state)
 
 }
 
+static void torture_pki_ed25519_import_export_privkey_base64(void **state)
+{
+    char *b64_key = NULL;
+    ssh_key key = NULL;
+    const char *passphrase = torture_get_testkey_passphrase();
+    enum ssh_keytypes_e type;
+    int rc;
+
+    (void) state; /* unused */
+
+    rc = ssh_pki_import_privkey_base64(torture_get_openssh_testkey(SSH_KEYTYPE_ED25519,
+                                                                   0,
+                                                                   false),
+                                       passphrase,
+                                       NULL,
+                                       NULL,
+                                       &key);
+    assert_return_code(rc, errno);
+
+    type = ssh_key_type(key);
+    assert_true(type == SSH_KEYTYPE_ED25519);
+
+    rc = ssh_key_is_private(key);
+    assert_true(rc == 1);
+
+    rc = ssh_pki_export_privkey_base64(key,
+                                       passphrase,
+                                       NULL,
+                                       NULL,
+                                       &b64_key);
+    assert_return_code(rc, errno);
+    ssh_key_free(key);
+
+    rc = ssh_pki_import_privkey_base64(b64_key,
+                                       passphrase,
+                                       NULL,
+                                       NULL,
+                                       &key);
+    assert_return_code(rc, errno);
+
+    type = ssh_key_type(key);
+    assert_true(type == SSH_KEYTYPE_ED25519);
+
+    rc = ssh_key_is_private(key);
+    assert_true(rc == 1);
+
+    SSH_STRING_FREE_CHAR(b64_key);
+    ssh_key_free(key);
+}
+
 static void torture_pki_ed25519_publickey_from_privatekey(void **state)
 {
     int rc;
@@ -565,7 +615,7 @@ static void torture_pki_ed25519_pubkey_dup(void **state)
 
 int torture_run_tests(void) {
     int rc;
-    const struct CMUnitTest tests[] = {
+    struct CMUnitTest tests[] = {
         cmocka_unit_test_setup_teardown(torture_pki_ed25519_import_pubkey_file,
                                         setup_ed25519_key,
                                         teardown),
@@ -573,6 +623,9 @@ int torture_run_tests(void) {
                                         setup_ed25519_key,
                                         teardown),
         cmocka_unit_test_setup_teardown(torture_pki_ed25519_import_privkey_base64,
+                                        setup_ed25519_key,
+                                        teardown),
+        cmocka_unit_test_setup_teardown(torture_pki_ed25519_import_export_privkey_base64,
                                         setup_ed25519_key,
                                         teardown),
         cmocka_unit_test_setup_teardown(torture_pki_ed25519_publickey_from_privatekey,
@@ -597,6 +650,7 @@ int torture_run_tests(void) {
     };
 
     ssh_init();
+    torture_filter_tests(tests);
     rc = cmocka_run_group_tests(tests, NULL, NULL);
     ssh_finalize();
     return rc;
