@@ -620,8 +620,8 @@ int ssh_pki_export_privkey_base64(const ssh_key privkey,
                                   void *auth_data,
                                   char **b64_key)
 {
-    ssh_string blob;
-    unsigned char *b64;
+    ssh_string blob = NULL;
+    char *b64 = NULL;
 
     if (privkey == NULL || !ssh_key_is_private(privkey)) {
         return SSH_ERROR;
@@ -642,18 +642,13 @@ int ssh_pki_export_privkey_base64(const ssh_key privkey,
         return SSH_ERROR;
     }
 
-
-    b64 = malloc(ssh_string_len(blob));
-    if(b64 == NULL){
-        ssh_string_free(blob);
+    b64 = strndup(ssh_string_data(blob), ssh_string_len(blob));
+    ssh_string_free(blob);
+    if (b64 == NULL) {
         return SSH_ERROR;
     }
 
-    memcpy(b64,ssh_string_data(blob),ssh_string_len(blob));
-
-    ssh_string_free(blob);
-
-    *b64_key = (char *)b64;
+    *b64_key = b64;
 
     return SSH_OK;
 }
