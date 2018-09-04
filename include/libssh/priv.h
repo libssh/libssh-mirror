@@ -262,6 +262,8 @@ int compress_buffer(ssh_session session,ssh_buffer buf);
 int decompress_buffer(ssh_session session,ssh_buffer buf, size_t maxlen);
 
 /* match.c */
+int match_pattern_list(const char *string, const char *pattern,
+    unsigned int len, int dolower);
 int match_hostname(const char *host, const char *pattern, unsigned int len);
 
 /* connector.c */

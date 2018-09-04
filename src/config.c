@@ -30,6 +30,7 @@
 #ifdef HAVE_GLOB_H
 # include <glob.h>
 #endif
+#include <stdbool.h>
 
 #include "libssh/priv.h"
 #include "libssh/session.h"
@@ -183,6 +184,32 @@ static struct ssh_config_keyword_table_s ssh_config_keyword_table[] = {
   { "tunneldevice", SOC_NA},
   { "xauthlocation", SOC_NA},
   { NULL, SOC_UNKNOWN }
+};
+
+enum ssh_config_match_e {
+    MATCH_UNKNOWN = -1,
+    MATCH_ALL,
+    MATCH_CANONICAL,
+    MATCH_EXEC,
+    MATCH_HOST,
+    MATCH_ORIGINALHOST,
+    MATCH_USER,
+    MATCH_LOCALUSER
+};
+
+struct ssh_config_match_keyword_table_s {
+    const char *name;
+    enum ssh_config_match_e opcode;
+};
+
+static struct ssh_config_match_keyword_table_s ssh_config_match_keyword_table[] = {
+    { "all", MATCH_ALL },
+    { "canonical", MATCH_CANONICAL },
+    { "exec", MATCH_EXEC },
+    { "host", MATCH_HOST },
+    { "originalhost", MATCH_ORIGINALHOST },
+    { "user", MATCH_USER },
+    { "localuser", MATCH_LOCALUSER },
 };
 
 static int ssh_config_parse_line(ssh_session session, const char *line,
@@ -351,6 +378,40 @@ static void local_parse_glob(ssh_session session,
 }
 #endif /* HAVE_GLOB */
 
+static enum ssh_config_match_e
+ssh_config_get_match_opcode(const char *keyword)
+{
+    size_t i;
+
+    for (i = 0; ssh_config_match_keyword_table[i].name != NULL; i++) {
+        if (strcasecmp(keyword, ssh_config_match_keyword_table[i].name) == 0) {
+            return ssh_config_match_keyword_table[i].opcode;
+        }
+    }
+
+    return MATCH_UNKNOWN;
+}
+
+static int
+ssh_config_match(char *value, const char *pattern, bool negate)
+{
+    int ok, result = 0;
+    char *lowervalue;
+
+    lowervalue = (value) ? ssh_lowercase(value) : NULL;
+    ok = match_pattern_list(lowervalue, pattern, strlen(pattern), 0);
+    if (ok <= 0 && negate == true) {
+        result = 1;
+    } else if (ok > 0 && negate == false) {
+        result = 1;
+    }
+    SSH_LOG(SSH_LOG_TRACE, "%s '%s' against pattern '%s'%s (ok=%d)",
+            result == 1 ? "Matched" : "Not matched", value, pattern,
+            negate == true ? " (negated)" : "", ok);
+    SAFE_FREE(lowervalue);
+    return result;
+}
+
 static int ssh_config_parse_line(ssh_session session, const char *line,
     unsigned int count, int *parsing, int seen[]) {
   enum ssh_config_opcode_e opcode;
@@ -384,7 +445,10 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
   }
 
   opcode = ssh_config_get_opcode(keyword);
-  if (*parsing == 1 && opcode != SOC_HOST && opcode != SOC_INCLUDE &&
+  if (*parsing == 1 &&
+      opcode != SOC_HOST &&
+      opcode != SOC_MATCH &&
+      opcode != SOC_INCLUDE &&
       opcode > SOC_UNSUPPORTED) { /* Ignore all unknown types here */
       if (seen[opcode] != 0) {
           SAFE_FREE(x);
@@ -405,6 +469,105 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
 #endif /* HAVE_GLOB */
       }
       break;
+
+    case SOC_MATCH: {
+        bool negate;
+        int result = 1, args = 0;
+        enum ssh_config_match_e opt;
+
+        *parsing = 0;
+        do {
+            p = ssh_config_get_str_tok(&s, NULL);
+            if (p == NULL || p[0] == '\0') {
+                break;
+            }
+            args++;
+            SSH_LOG(SSH_LOG_TRACE, "line %d: Processing Match keyword '%s'",
+                    count, p);
+
+            /* If the option is prefixed with ! the result should be negated */
+            negate = false;
+            if (p[0] == '!') {
+                negate = true;
+                p++;
+            }
+
+            opt = ssh_config_get_match_opcode(p);
+            switch (opt) {
+            case MATCH_ALL:
+                p = ssh_config_get_str_tok(&s, NULL);
+                if (args == 1 && (p == NULL || p[0] == '\0')) {
+                    /* The first argument and end of line */
+                    if (negate == true) {
+                        result = 0;
+                    }
+                    break;
+                }
+
+                ssh_set_error(session, SSH_FATAL,
+                              "line %d: ERROR - Match all can not be combined with "
+                              "other Match attributes", count);
+                SAFE_FREE(x);
+                return -1;
+
+            case MATCH_EXEC:
+            case MATCH_ORIGINALHOST:
+            case MATCH_LOCALUSER:
+                /* Skip one argument */
+                p = ssh_config_get_str_tok(&s, NULL);
+                args++;
+                FALL_THROUGH;
+            case MATCH_CANONICAL:
+                SSH_LOG(SSH_LOG_WARN, "line: %d: Unsupported Match keyword "
+                        "'%s', Ignoring\n", count, p);
+                result = 0;
+                break;
+
+            case MATCH_HOST:
+                /* Here we match only one argument */
+                p = ssh_config_get_str_tok(&s, NULL);
+                if (p == NULL || p[0] == '\0') {
+                    ssh_set_error(session, SSH_FATAL,
+                                  "line %d: ERROR - Match host keyword "
+                                  "requires argument", count);
+                    SAFE_FREE(x);
+                    return -1;
+                }
+                result &= ssh_config_match(session->opts.host, p, negate);
+                args++;
+                break;
+
+            case MATCH_USER:
+                /* Here we match only one argument */
+                p = ssh_config_get_str_tok(&s, NULL);
+                if (p == NULL || p[0] == '\0') {
+                    ssh_set_error(session, SSH_FATAL,
+                                  "line %d: ERROR - Match user keyword "
+                                  "requires argument", count);
+                    SAFE_FREE(x);
+                    return -1;
+                }
+                result &= ssh_config_match(session->opts.username, p, negate);
+                args++;
+                break;
+
+            case MATCH_UNKNOWN:
+            default:
+                ssh_set_error(session, SSH_FATAL,
+                              "ERROR - Unknown argument '%s' for Match keyword", p);
+                SAFE_FREE(x);
+                return -1;
+            }
+        } while (p != NULL && p[0] != '\0');
+        if (args < 1) {
+            ssh_set_error(session, SSH_FATAL,
+                          "ERROR - Match keyword requires an argument");
+            SAFE_FREE(x);
+            return -1;
+        }
+        *parsing = result;
+        break;
+    }
     case SOC_HOST: {
         int ok = 0, result = -1;
 
