@@ -406,7 +406,7 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
       }
       break;
     case SOC_HOST: {
-        int ok = 0;
+        int ok = 0, result = -1;
 
         *parsing = 0;
         lowerhost = (session->opts.host) ? ssh_lowercase(session->opts.host) : NULL;
@@ -415,14 +415,17 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
              p = ssh_config_get_str_tok(&s, NULL)) {
              if (ok >= 0) {
                ok = match_hostname(lowerhost, p, strlen(p));
-               if (ok < 0) {
-                   *parsing = 0;
-               } else if (ok > 0) {
-                   *parsing = 1;
+               if (result == -1 && ok < 0) {
+                   result = 0;
+               } else if (result == -1 && ok > 0) {
+                   result = 1;
                }
             }
         }
         SAFE_FREE(lowerhost);
+        if (result != -1) {
+            *parsing = result;
+        }
         break;
     }
     case SOC_HOSTNAME:
