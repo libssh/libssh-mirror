@@ -2635,7 +2635,11 @@ static int ssh_channel_read_termination(void *s){
  */
 int ssh_channel_read(ssh_channel channel, void *dest, uint32_t count, int is_stderr)
 {
-    return ssh_channel_read_timeout(channel, dest, count, is_stderr, -1);
+    return ssh_channel_read_timeout(channel,
+                                    dest,
+                                    count,
+                                    is_stderr,
+                                    SSH_TIMEOUT_DEFAULT);
 }
 
 /**
@@ -2716,7 +2720,7 @@ int ssh_channel_read_timeout(ssh_channel channel,
   ctx.count = 1;
 
   if (timeout_ms < 0) {
-      timeout_ms = SSH_TIMEOUT_DEFAULT;
+      timeout_ms = SSH_TIMEOUT_INFINITE;
   }
 
   rc = ssh_handle_packets_termination(session,
