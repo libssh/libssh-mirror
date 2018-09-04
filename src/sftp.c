@@ -3036,8 +3036,8 @@ char *sftp_canonicalize_path(sftp_session sftp, const char *path)
 
         rc = ssh_buffer_unpack(msg->payload,
                                "ds",
-                               ignored,
-                               cname);
+                               &ignored,
+                               &cname);
         sftp_message_free(msg);
         if (rc != SSH_OK) {
             ssh_set_error(sftp->session,
