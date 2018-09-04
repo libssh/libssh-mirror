@@ -2726,7 +2726,12 @@ int ssh_channel_read_timeout(ssh_channel channel,
   if (rc == SSH_ERROR){
     return rc;
   }
-  if (session->session_state == SSH_SESSION_STATE_ERROR){
+
+  /*
+   * If the channel is closed or in an error state, reading from it is an error
+   */
+  if (session->session_state == SSH_SESSION_STATE_ERROR ||
+      channel->state == SSH_CHANNEL_STATE_CLOSED) {
       return SSH_ERROR;
   }
   if (channel->remote_eof && ssh_buffer_get_len(stdbuf) == 0) {
