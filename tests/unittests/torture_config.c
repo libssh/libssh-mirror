@@ -17,6 +17,7 @@ extern LIBSSH_THREAD int ssh_log_level;
 #define LIBSSH_TESTCONFIG7 "libssh_testconfig7.tmp"
 #define LIBSSH_TESTCONFIG8 "libssh_testconfig8.tmp"
 #define LIBSSH_TESTCONFIG9 "libssh_testconfig9.tmp"
+#define LIBSSH_TESTCONFIG10 "libssh_testconfig10.tmp"
 #define LIBSSH_TESTCONFIGGLOB "libssh_testc*[36].tmp"
 
 #define USERNAME "testuser"
@@ -106,6 +107,22 @@ static int setup_config_files(void **state)
                         "VisualHostkey yes\n" /* SOC_UNSUPPORTED */
                         "");
 
+    /* Match keyword */
+    torture_write_file(LIBSSH_TESTCONFIG10,
+                       "Match host example\n"
+                       "\tHostName example.com\n"
+                       "Match host example1,example2\n"
+                       "\tHostName exampleN\n"
+                       "Match user guest\n"
+                       "\tHostName guest.com\n"
+                       "Match user tester host testhost\n"
+                       "\tHostName testhost.com\n"
+                       "Match !user tester host testhost\n"
+                       "\tHostName nonuser-testhost.com\n"
+                       "Match all\n"
+                       "\tHostName all-matched.com\n"
+                       "");
+
     session = ssh_new();
 
     verbosity = torture_libssh_verbosity();
@@ -127,6 +144,7 @@ static int teardown(void **state)
     unlink(LIBSSH_TESTCONFIG7);
     unlink(LIBSSH_TESTCONFIG8);
     unlink(LIBSSH_TESTCONFIG9);
+    unlink(LIBSSH_TESTCONFIG10);
 
     ssh_free(*state);
 
@@ -303,6 +321,61 @@ static void torture_config_unknown(void **state) {
     assert_true(ret == 0);
 }
 
+
+/**
+ * @brief Verify the configuration parser accepts Match keyword with
+ * full OpenSSH syntax.
+ */
+static void torture_config_match(void **state)
+{
+    ssh_session session = *state;
+    int ret = 0;
+
+    /* Without any settings we should get all-matched.com hostname */
+    ssh_options_set(session, SSH_OPTIONS_HOST, "unmatched");
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG10);
+    assert_true(ret == 0);
+    assert_string_equal(session->opts.host, "all-matched.com");
+
+    /* Hostname example does simple hostname matching */
+    ssh_options_set(session, SSH_OPTIONS_HOST, "example");
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG10);
+    assert_true(ret == 0);
+    assert_string_equal(session->opts.host, "example.com");
+
+    /* We can match also both hosts from a comma separated list */
+    ssh_options_set(session, SSH_OPTIONS_HOST, "example1");
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG10);
+    assert_true(ret == 0);
+    assert_string_equal(session->opts.host, "exampleN");
+
+    ssh_options_set(session, SSH_OPTIONS_HOST, "example2");
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG10);
+    assert_true(ret == 0);
+    assert_string_equal(session->opts.host, "exampleN");
+
+    /* We can match by user */
+    ssh_options_set(session, SSH_OPTIONS_USER, "guest");
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG10);
+    assert_true(ret == 0);
+    assert_string_equal(session->opts.host, "guest.com");
+
+    /* We can combine two options on a single line to match both of them */
+    ssh_options_set(session, SSH_OPTIONS_USER, "tester");
+    ssh_options_set(session, SSH_OPTIONS_HOST, "testhost");
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG10);
+    assert_true(ret == 0);
+    assert_string_equal(session->opts.host, "testhost.com");
+
+    /* We can also negate conditions */
+    ssh_options_set(session, SSH_OPTIONS_USER, "not-tester");
+    ssh_options_set(session, SSH_OPTIONS_HOST, "testhost");
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG10);
+    assert_true(ret == 0);
+    assert_string_equal(session->opts.host, "nonuser-testhost.com");
+
+}
+
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
@@ -322,6 +395,9 @@ int torture_run_tests(void) {
                                         setup_config_files,
                                         teardown),
         cmocka_unit_test_setup_teardown(torture_config_unknown,
+                                        setup_config_files,
+                                        teardown),
+        cmocka_unit_test_setup_teardown(torture_config_match,
                                         setup_config_files,
                                         teardown),
     };

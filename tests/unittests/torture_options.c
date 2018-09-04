@@ -400,6 +400,133 @@ static void torture_options_config_host(void **state) {
     unlink("test_config");
 }
 
+static void torture_options_config_match(void **state)
+{
+    ssh_session session = *state;
+    FILE *config = NULL;
+    int rv;
+
+    /* Required for options_parse_config() */
+    ssh_options_set(session, SSH_OPTIONS_HOST, "testhost1");
+
+    /* The Match keyword requires argument */
+    config = fopen("test_config", "w");
+    assert_non_null(config);
+    fputs("Match\n",
+          config);
+    fclose(config);
+
+    rv = ssh_options_parse_config(session, "test_config");
+    assert_ssh_return_code_equal(session, rv, SSH_ERROR);
+
+    /* The Match all keyword needs to be the only one (start) */
+    config = fopen("test_config", "w");
+    assert_non_null(config);
+    fputs("Match all host local\n",
+          config);
+    fclose(config);
+
+    rv = ssh_options_parse_config(session, "test_config");
+    assert_ssh_return_code_equal(session, rv, SSH_ERROR);
+
+    /* The Match all keyword needs to be the only one (end) */
+    config = fopen("test_config", "w");
+    assert_non_null(config);
+    fputs("Match host local all\n",
+          config);
+    fclose(config);
+
+    rv = ssh_options_parse_config(session, "test_config");
+    assert_ssh_return_code_equal(session, rv, SSH_ERROR);
+
+    /* The Match host keyword requires an argument */
+    config = fopen("test_config", "w");
+    assert_non_null(config);
+    fputs("Match host\n",
+          config);
+    fclose(config);
+
+    rv = ssh_options_parse_config(session, "test_config");
+    assert_ssh_return_code_equal(session, rv, SSH_ERROR);
+
+    /* The Match user keyword requires an argument */
+    config = fopen("test_config", "w");
+    assert_non_null(config);
+    fputs("Match user\n",
+          config);
+    fclose(config);
+
+    rv = ssh_options_parse_config(session, "test_config");
+    assert_ssh_return_code_equal(session, rv, SSH_ERROR);
+
+    /* The Match canonical keyword is ignored */
+    config = fopen("test_config", "w");
+    assert_non_null(config);
+    fputs("Match canonical\n"
+          "\tPort 33\n"
+          "Match all\n"
+          "\tPort 34\n",
+          config);
+    fclose(config);
+
+    rv = ssh_options_parse_config(session, "test_config");
+    assert_ssh_return_code_equal(session, rv, SSH_OK);
+    assert_int_equal(session->opts.port, 34);
+
+    session->opts.port = 0;
+
+    /* The Match originalhost keyword is ignored */
+    config = fopen("test_config", "w");
+    assert_non_null(config);
+    fputs("Match originalhost origin\n"
+          "\tPort 33\n"
+          "Match all\n"
+          "\tPort 34\n",
+          config);
+    fclose(config);
+
+    rv = ssh_options_parse_config(session, "test_config");
+    assert_ssh_return_code(session, rv);
+    assert_int_equal(session->opts.port, 34);
+
+    session->opts.port = 0;
+
+    /* The Match localuser keyword is ignored */
+    config = fopen("test_config", "w");
+    assert_non_null(config);
+    fputs("Match originalhost origin\n"
+          "\tPort 33\n"
+          "Match all\n"
+          "\tPort 34\n",
+          config);
+    fclose(config);
+
+    rv = ssh_options_parse_config(session, "test_config");
+    assert_ssh_return_code(session, rv);
+    assert_int_equal(session->opts.port, 34);
+
+    session->opts.port = 0;
+
+    /* The Match exec keyword is ignored */
+    config = fopen("test_config", "w");
+    assert_non_null(config);
+    fputs("Match exec /bin/true\n"
+          "\tPort 33\n"
+          "Match all\n"
+          "\tPort 34\n",
+          config);
+    fclose(config);
+
+    rv = ssh_options_parse_config(session, "test_config");
+    assert_ssh_return_code(session, rv);
+    assert_int_equal(session->opts.port, 34);
+
+    session->opts.port = 0;
+
+    unlink("test_config");
+}
+
+
 
 #ifdef WITH_SERVER
 /* sshbind options */
@@ -472,7 +599,9 @@ int torture_run_tests(void) {
         cmocka_unit_test_setup_teardown(torture_options_set_hostkey, setup, teardown),
         cmocka_unit_test_setup_teardown(torture_options_set_pubkey_accepted_types, setup, teardown),
         cmocka_unit_test_setup_teardown(torture_options_set_macs, setup, teardown),
-        cmocka_unit_test_setup_teardown(torture_options_config_host, setup, teardown)
+        cmocka_unit_test_setup_teardown(torture_options_config_host, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_options_config_match,
+                                        setup, teardown)
     };
 
 #ifdef WITH_SERVER
