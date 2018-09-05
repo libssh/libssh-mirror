@@ -23,6 +23,8 @@
 
 #include "config.h"
 
+#define LIBSSH_STATIC
+
 #include "torture.h"
 
 void _assert_ssh_return_code(ssh_session session,
