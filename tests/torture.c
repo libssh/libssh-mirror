@@ -577,7 +577,6 @@ static void torture_setup_create_sshd_config(void **state)
              "KbdInteractiveAuthentication yes\n"
              "PubkeyAuthentication yes\n"
              "\n"
-             "UsePrivilegeSeparation no\n"
              "StrictModes no\n"
              "\n"
              "UsePAM yes\n"
