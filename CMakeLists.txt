@@ -1,6 +1,14 @@
 cmake_minimum_required(VERSION 3.3.0)
 cmake_policy(SET CMP0048 NEW)
 
+# Specify search path for CMake modules to be loaded by include() 
+# and find_package()
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules")
+
+# Add defaults for cmake
+# Those need to be set before the project() call.
+include(DefineCMakeDefaults)
+
 project(libssh VERSION 0.8.90 LANGUAGES C)
 
 # global needed variable
@@ -17,12 +25,8 @@ set(LIBRARY_VERSION "4.6.0")
 set(LIBRARY_SOVERSION "4")
 
 # where to look first for cmake modules, before ${CMAKE_ROOT}/Modules/ is checked
-set(CMAKE_MODULE_PATH
-  ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules
-)
 
 # add definitions
-include(DefineCMakeDefaults)
 include(DefinePlatformDefaults)
 include(DefineInstallationPaths)
 include(DefineOptions.cmake)
