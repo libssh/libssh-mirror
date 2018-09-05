@@ -135,6 +135,7 @@ struct sftp_client_message_struct {
     ssh_string data; /* can be newpath of rename() */
     ssh_buffer complete_message; /* complete message in case of retransmission*/
     char *str_data; /* cstring version of data */
+    char *submessage; /* for extended messages */
 };
 
 struct sftp_request_queue_struct {
@@ -863,6 +864,7 @@ LIBSSH_API const char *sftp_client_message_get_filename(sftp_client_message msg)
 LIBSSH_API void sftp_client_message_set_filename(sftp_client_message msg, const char *newname);
 LIBSSH_API const char *sftp_client_message_get_data(sftp_client_message msg);
 LIBSSH_API uint32_t sftp_client_message_get_flags(sftp_client_message msg);
+LIBSSH_API const char *sftp_client_message_get_submessage(sftp_client_message msg);
 LIBSSH_API int sftp_send_client_message(sftp_session sftp, sftp_client_message msg);
 LIBSSH_API int sftp_reply_name(sftp_client_message msg, const char *name,
     sftp_attributes attr);
@@ -1012,6 +1014,7 @@ LIBSSH_API void sftp_handle_remove(sftp_session sftp, void *handle);
 #define SFTP_RENAME SSH_FXP_RENAME
 #define SFTP_READLINK SSH_FXP_READLINK
 #define SFTP_SYMLINK SSH_FXP_SYMLINK
+#define SFTP_EXTENDED SSH_FXP_EXTENDED
 
 /* openssh flags */
 #define SSH_FXE_STATVFS_ST_RDONLY 0x1 /* read-only */
