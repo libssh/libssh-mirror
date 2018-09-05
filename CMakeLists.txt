@@ -8,6 +8,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules")
 # Add defaults for cmake
 # Those need to be set before the project() call.
 include(DefineCMakeDefaults)
+include(DefineCompilerFlags)
 
 project(libssh VERSION 0.8.90 LANGUAGES C)
 
