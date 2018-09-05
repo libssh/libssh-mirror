@@ -222,6 +222,7 @@ int sftp_server_init(sftp_session sftp){
   sftp_packet packet = NULL;
   ssh_buffer reply = NULL;
   uint32_t version;
+  int rc;
 
   packet = sftp_packet_read(sftp);
   if (packet == NULL) {
@@ -249,7 +250,13 @@ int sftp_server_init(sftp_session sftp){
     return -1;
   }
 
-  if (ssh_buffer_add_u32(reply, ntohl(LIBSFTP_VERSION)) < 0) {
+  rc = ssh_buffer_pack(reply, "dssss",
+                      LIBSFTP_VERSION,
+                      "posix-rename@openssh.com",
+                      "1",
+                      "hardlink@openssh.com",
+                      "1");
+  if (rc != SSH_OK) {
     ssh_set_error_oom(session);
     ssh_buffer_free(reply);
     return -1;
