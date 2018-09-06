@@ -472,7 +472,8 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
 
     case SOC_MATCH: {
         bool negate;
-        int result = 1, args = 0;
+        int result = 1;
+        size_t args = 0;
         enum ssh_config_match_e opt;
 
         *parsing = 0;
@@ -559,7 +560,7 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
                 return -1;
             }
         } while (p != NULL && p[0] != '\0');
-        if (args < 1) {
+        if (args == 0) {
             ssh_set_error(session, SSH_FATAL,
                           "ERROR - Match keyword requires an argument");
             SAFE_FREE(x);
