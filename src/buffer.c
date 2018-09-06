@@ -1217,7 +1217,7 @@ int ssh_buffer_unpack_va(struct ssh_buffer_struct *buffer,
     }
 
     if (rc != SSH_ERROR){
-        /* Check if our canary is intact, if not somthing really bad happened */
+        /* Check if our canary is intact, if not something really bad happened */
         uint32_t canary = va_arg(ap, uint32_t);
         if (canary != SSH_BUFFER_PACK_END){
             if (argc == -1){
