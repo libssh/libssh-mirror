@@ -34,6 +34,25 @@ static int setup_rsa_key(void **state)
                        torture_get_testkey(SSH_KEYTYPE_RSA, 0, 1));
     torture_write_file(LIBSSH_RSA_TESTKEY ".pub",
                        torture_get_testkey_pub(SSH_KEYTYPE_RSA, 0));
+    torture_write_file(LIBSSH_RSA_TESTKEY "-cert.pub",
+                       torture_get_testkey_pub(SSH_KEYTYPE_RSA_CERT01, 0));
+
+    return 0;
+}
+
+static int setup_rsa_openssh_key(void **state)
+{
+    (void) state; /* unused */
+
+    unlink(LIBSSH_RSA_TESTKEY);
+    unlink(LIBSSH_RSA_TESTKEY_PASSPHRASE);
+    unlink(LIBSSH_RSA_TESTKEY ".pub");
+    unlink(LIBSSH_RSA_TESTKEY "-cert.pub");
+
+    torture_write_file(LIBSSH_RSA_TESTKEY,
+                       torture_get_openssh_testkey(SSH_KEYTYPE_RSA, 0, 0));
+    torture_write_file(LIBSSH_RSA_TESTKEY_PASSPHRASE,
+                       torture_get_openssh_testkey(SSH_KEYTYPE_RSA, 0, 1));
     torture_write_file(LIBSSH_RSA_TESTKEY ".pub",
                        torture_get_testkey_pub(SSH_KEYTYPE_RSA, 0));
     torture_write_file(LIBSSH_RSA_TESTKEY "-cert.pub",
@@ -568,6 +587,54 @@ static void torture_pki_rsa_import_privkey_base64_passphrase(void **state)
 #endif
 }
 
+static void
+torture_pki_rsa_import_openssh_privkey_base64_passphrase(void **state)
+{
+    int rc;
+    ssh_key key = NULL;
+    const char *passphrase = torture_get_testkey_passphrase();
+    const char *keystring = NULL;
+
+    (void) state; /* unused */
+
+    keystring = torture_get_openssh_testkey(SSH_KEYTYPE_RSA, 0, 1);
+    assert_true(keystring != NULL);
+
+    rc = ssh_pki_import_privkey_base64(keystring,
+                                       passphrase,
+                                       NULL,
+                                       NULL,
+                                       &key);
+    assert_return_code(rc, errno);
+
+    rc = ssh_key_is_private(key);
+    assert_true(rc == 1);
+
+    ssh_key_free(key);
+    key = NULL;
+
+    /* test if it returns -1 if passphrase is wrong */
+    rc = ssh_pki_import_privkey_base64(keystring,
+                                       "wrong passphrase !!",
+                                       NULL,
+                                       NULL,
+                                       &key);
+    assert_true(rc == -1);
+    ssh_key_free(key);
+    key = NULL;
+
+    /* test if it returns -1 if passphrase is NULL */
+    /* libcrypto asks for a passphrase, so skip this test */
+    rc = ssh_pki_import_privkey_base64(keystring,
+                                       NULL,
+                                       NULL,
+                                       NULL,
+                                       &key);
+    assert_true(rc == -1);
+    ssh_key_free(key);
+    key = NULL;
+}
+
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
@@ -583,10 +650,14 @@ int torture_run_tests(void) {
         cmocka_unit_test_setup_teardown(torture_pki_rsa_import_privkey_base64,
                                         setup_rsa_key,
                                         teardown),
+        cmocka_unit_test_setup_teardown(torture_pki_rsa_import_privkey_base64,
+                                        setup_rsa_openssh_key,
+                                        teardown),
         cmocka_unit_test_setup_teardown(torture_pki_rsa_publickey_from_privatekey,
                                         setup_rsa_key,
                                         teardown),
         cmocka_unit_test(torture_pki_rsa_import_privkey_base64_passphrase),
+        cmocka_unit_test(torture_pki_rsa_import_openssh_privkey_base64_passphrase),
         cmocka_unit_test_setup_teardown(torture_pki_rsa_copy_cert_to_privkey,
                                         setup_rsa_key,
                                         teardown),
