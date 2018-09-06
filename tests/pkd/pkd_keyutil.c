@@ -21,7 +21,7 @@
 void setup_rsa_key() {
     int rc = 0;
     if (access(LIBSSH_RSA_TESTKEY, F_OK) != 0) {
-        rc = system_checked(OPENSSH_KEYGEN " -m PEM -t rsa -q -N \"\" -f "
+        rc = system_checked(OPENSSH_KEYGEN " -t rsa -q -N \"\" -f "
                             LIBSSH_RSA_TESTKEY);
     }
     assert_int_equal(rc, 0);
@@ -40,7 +40,7 @@ void setup_ed25519_key() {
 void setup_dsa_key() {
     int rc = 0;
     if (access(LIBSSH_DSA_TESTKEY, F_OK) != 0) {
-        rc = system_checked(OPENSSH_KEYGEN " -m PEM -t dsa -q -N \"\" -f "
+        rc = system_checked(OPENSSH_KEYGEN " -t dsa -q -N \"\" -f "
                             LIBSSH_DSA_TESTKEY);
     }
     assert_int_equal(rc, 0);
@@ -51,17 +51,17 @@ void setup_ecdsa_keys() {
     int rc = 0;
 
     if (access(LIBSSH_ECDSA_256_TESTKEY, F_OK) != 0) {
-        rc = system_checked(OPENSSH_KEYGEN " -m PEM -t ecdsa -b 256 -q -N \"\" -f "
+        rc = system_checked(OPENSSH_KEYGEN " -t ecdsa -b 256 -q -N \"\" -f "
                             LIBSSH_ECDSA_256_TESTKEY);
         assert_int_equal(rc, 0);
     }
     if (access(LIBSSH_ECDSA_384_TESTKEY, F_OK) != 0) {
-        rc = system_checked(OPENSSH_KEYGEN " -m PEM -t ecdsa -b 384 -q -N \"\" -f "
+        rc = system_checked(OPENSSH_KEYGEN " -t ecdsa -b 384 -q -N \"\" -f "
                             LIBSSH_ECDSA_384_TESTKEY);
         assert_int_equal(rc, 0);
     }
     if (access(LIBSSH_ECDSA_521_TESTKEY, F_OK) != 0) {
-        rc = system_checked(OPENSSH_KEYGEN " -m PEM -t ecdsa -b 521 -q -N \"\" -f "
+        rc = system_checked(OPENSSH_KEYGEN " -t ecdsa -b 521 -q -N \"\" -f "
                             LIBSSH_ECDSA_521_TESTKEY);
         assert_int_equal(rc, 0);
     }
