@@ -629,7 +629,7 @@ static void torture_setup_create_sshd_config(void **state)
              "%s/sshd/ssh_host_ed25519_key",
              s->socket_dir);
     torture_write_file(ed25519_hostkey,
-                       torture_get_testkey(SSH_KEYTYPE_ED25519, 0, 0));
+                       torture_get_openssh_testkey(SSH_KEYTYPE_ED25519, 0, 0));
 
 #ifdef HAVE_DSA
     snprintf(dsa_hostkey,

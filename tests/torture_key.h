@@ -28,6 +28,12 @@
 
 #define TORTURE_TESTKEY_PASSWORD "libssh-rocks"
 
+/* Return the encrypted private key in a new OpenSSH format */
+const char *torture_get_openssh_testkey(enum ssh_keytypes_e type,
+                                        int ecdsa_bits,
+                                        bool with_passphrase);
+
+/* Return the private key in the legacy PEM format */
 const char *torture_get_testkey(enum ssh_keytypes_e type,
                                 int ecdsa_bits,
                                 bool with_passphrase);

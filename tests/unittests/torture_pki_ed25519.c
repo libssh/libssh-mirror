@@ -21,16 +21,18 @@ const uint8_t ref_signature[ED25519_SIG_LEN]=
 
 static int setup_ed25519_key(void **state)
 {
+    const char *keystring = NULL;
+
     (void) state; /* unused */
 
     unlink(LIBSSH_ED25519_TESTKEY);
     unlink(LIBSSH_ED25519_TESTKEY_PASSPHRASE);
     unlink(LIBSSH_ED25519_TESTKEY ".pub");
 
-    torture_write_file(LIBSSH_ED25519_TESTKEY,
-                       torture_get_testkey(SSH_KEYTYPE_ED25519, 0,0));
-    torture_write_file(LIBSSH_ED25519_TESTKEY_PASSPHRASE,
-                       torture_get_testkey(SSH_KEYTYPE_ED25519, 0,0));
+    keystring = torture_get_openssh_testkey(SSH_KEYTYPE_ED25519, 0, 0);
+    torture_write_file(LIBSSH_ED25519_TESTKEY, keystring);
+    keystring = torture_get_openssh_testkey(SSH_KEYTYPE_ED25519, 0, 1);
+    torture_write_file(LIBSSH_ED25519_TESTKEY_PASSPHRASE, keystring);
 
     torture_write_file(LIBSSH_ED25519_TESTKEY ".pub",
                        torture_get_testkey_pub(SSH_KEYTYPE_ED25519,0));
@@ -84,10 +86,12 @@ static void torture_pki_ed25519_publickey_from_privatekey(void **state)
     ssh_key key = NULL;
     ssh_key pubkey = NULL;
     const char *passphrase = NULL;
+    const char *keystring = NULL;
 
     (void) state; /* unused */
 
-    rc = ssh_pki_import_privkey_base64(torture_get_testkey(SSH_KEYTYPE_ED25519, 0, 0),
+    keystring = torture_get_openssh_testkey(SSH_KEYTYPE_ED25519, 0, 0);
+    rc = ssh_pki_import_privkey_base64(keystring,
                                        passphrase,
                                        NULL,
                                        NULL,
@@ -319,10 +323,12 @@ static void torture_pki_ed25519_write_privkey(void **state)
     ssh_key_free(privkey);
 }
 
-static void torture_pki_ed25519_sign(void **state){
+static void torture_pki_ed25519_sign(void **state)
+{
     ssh_key privkey = NULL;
     ssh_signature sig = NULL;
     ssh_string blob = NULL;
+    const char *keystring = NULL;
     int rc;
 
     (void)state;
@@ -330,9 +336,8 @@ static void torture_pki_ed25519_sign(void **state){
     sig = ssh_signature_new();
     assert_non_null(sig);
 
-    rc = ssh_pki_import_privkey_base64(torture_get_testkey(SSH_KEYTYPE_ED25519,
-                                                           0,
-                                                           0),
+    keystring = torture_get_openssh_testkey(SSH_KEYTYPE_ED25519, 0, 0);
+    rc = ssh_pki_import_privkey_base64(keystring,
                                        NULL,
                                        NULL,
                                        NULL,
@@ -429,11 +434,13 @@ static void torture_pki_ed25519_import_privkey_base64_passphrase(void **state)
     int rc;
     ssh_key key = NULL;
     const char *passphrase = torture_get_testkey_passphrase();
+    const char *testkey = NULL;
 
     (void) state; /* unused */
 
     /* same for ED25519 */
-    rc = ssh_pki_import_privkey_base64(torture_get_testkey(SSH_KEYTYPE_ED25519, 0, 1),
+    testkey = torture_get_openssh_testkey(SSH_KEYTYPE_ED25519, 0, 1);
+    rc = ssh_pki_import_privkey_base64(testkey,
                                        passphrase,
                                        NULL,
                                        NULL,
@@ -447,7 +454,7 @@ static void torture_pki_ed25519_import_privkey_base64_passphrase(void **state)
     key = NULL;
 
     /* test if it returns -1 if passphrase is wrong */
-    rc = ssh_pki_import_privkey_base64(torture_get_testkey(SSH_KEYTYPE_ED25519, 0, 1),
+    rc = ssh_pki_import_privkey_base64(testkey,
                                        "wrong passphrase !!",
                                        NULL,
                                        NULL,
@@ -461,11 +468,13 @@ static void torture_pki_ed25519_privkey_dup(void **state)
     const char *passphrase = torture_get_testkey_passphrase();
     ssh_key key = NULL;
     ssh_key dup = NULL;
+    const char *testkey = NULL;
     int rc;
 
     (void) state; /* unused */
 
-    rc = ssh_pki_import_privkey_base64(torture_get_testkey(SSH_KEYTYPE_ED25519, 0, 1),
+    testkey = torture_get_openssh_testkey(SSH_KEYTYPE_ED25519, 0, 1);
+    rc = ssh_pki_import_privkey_base64(testkey,
                                        passphrase,
                                        NULL,
                                        NULL,
