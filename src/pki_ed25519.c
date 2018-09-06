@@ -56,6 +56,28 @@ error:
     return SSH_ERROR;
 }
 
+int pki_privkey_build_ed25519(ssh_key key,
+                              ssh_string pubkey,
+                              ssh_string privkey)
+{
+    if (ssh_string_len(pubkey) != ED25519_PK_LEN ||
+            ssh_string_len(privkey) != ED25519_SK_LEN) {
+        SSH_LOG(SSH_LOG_WARN, "Invalid ed25519 key len");
+        return SSH_ERROR;
+    }
+    key->ed25519_privkey = malloc(ED25519_SK_LEN);
+    key->ed25519_pubkey = malloc(ED25519_PK_LEN);
+    if (key->ed25519_privkey == NULL || key->ed25519_pubkey == NULL) {
+        return SSH_ERROR;
+    }
+    memcpy(key->ed25519_privkey, ssh_string_data(privkey),
+           ED25519_SK_LEN);
+    memcpy(key->ed25519_pubkey, ssh_string_data(pubkey),
+           ED25519_PK_LEN);
+
+    return SSH_OK;
+}
+
 int pki_ed25519_sign(const ssh_key privkey,
                      ssh_signature sig,
                      const unsigned char *hash,

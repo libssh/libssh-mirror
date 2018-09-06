@@ -214,6 +214,64 @@ fail:
     return NULL;
 }
 
+int pki_privkey_build_rsa(ssh_key key,
+                          ssh_string n,
+                          ssh_string e,
+                          ssh_string d,
+                          ssh_string iqmp,
+                          ssh_string p,
+                          ssh_string q)
+{
+    mbedtls_rsa_context *rsa = NULL;
+    const mbedtls_pk_info_t *pk_info = NULL;
+    int rc;
+
+    key->rsa = malloc(sizeof(mbedtls_pk_context));
+    if (key->rsa == NULL) {
+        return SSH_ERROR;
+    }
+
+    mbedtls_pk_init(key->rsa);
+    pk_info = mbedtls_pk_info_from_type(MBEDTLS_PK_RSA);
+    mbedtls_pk_setup(key->rsa, pk_info);
+
+    rc = mbedtls_pk_can_do(key->rsa, MBEDTLS_PK_RSA);
+    if (rc == 0) {
+        goto fail;
+    }
+
+    rsa = mbedtls_pk_rsa(*key->rsa);
+    rc = mbedtls_rsa_import_raw(rsa,
+                                ssh_string_data(n), ssh_string_len(n),
+                                ssh_string_data(p), ssh_string_len(p),
+                                ssh_string_data(q), ssh_string_len(q),
+                                ssh_string_data(d), ssh_string_len(d),
+                                ssh_string_data(e), ssh_string_len(e));
+    if (rc != 0) {
+        SSH_LOG(SSH_LOG_WARN, "Failed to import private RSA key");
+        goto fail;
+    }
+
+    rc = mbedtls_rsa_complete(rsa);
+    if (rc != 0) {
+        SSH_LOG(SSH_LOG_WARN, "Failed to complete private RSA key");
+        goto fail;
+    }
+
+    rc = mbedtls_rsa_check_privkey(rsa);
+    if (rc != 0) {
+        SSH_LOG(SSH_LOG_WARN, "Inconsistent private RSA key");
+        goto fail;
+    }
+
+    return SSH_OK;
+
+fail:
+    mbedtls_pk_free(key->rsa);
+    SAFE_FREE(key->rsa);
+    return SSH_ERROR;
+}
+
 int pki_pubkey_build_rsa(ssh_key key, ssh_string e, ssh_string n)
 {
     mbedtls_rsa_context *rsa = NULL;
@@ -1243,6 +1301,73 @@ static mbedtls_ecp_group_id pki_key_ecdsa_nid_to_mbed_gid(int nid)
     return MBEDTLS_ECP_DP_NONE;
 }
 
+int pki_privkey_build_ecdsa(ssh_key key, int nid, ssh_string e, ssh_string exp)
+{
+    int rc;
+    mbedtls_ecp_keypair keypair;
+    mbedtls_ecp_group group;
+    mbedtls_ecp_point Q;
+
+    key->ecdsa_nid = nid;
+    key->type_c = pki_key_ecdsa_nid_to_name(nid);
+
+    key->ecdsa = malloc(sizeof(mbedtls_ecdsa_context));
+    if (key->ecdsa == NULL) {
+        return SSH_ERROR;
+    }
+
+    mbedtls_ecdsa_init(key->ecdsa);
+    mbedtls_ecp_keypair_init(&keypair);
+    mbedtls_ecp_group_init(&group);
+    mbedtls_ecp_point_init(&Q);
+
+    rc = mbedtls_ecp_group_load(&group,
+                                pki_key_ecdsa_nid_to_mbed_gid(nid));
+    if (rc != 0) {
+        goto fail;
+    }
+
+    rc = mbedtls_ecp_point_read_binary(&group, &Q, ssh_string_data(e),
+                                       ssh_string_len(e));
+    if (rc != 0) {
+        goto fail;
+    }
+
+    rc = mbedtls_ecp_copy(&keypair.Q, &Q);
+    if (rc != 0) {
+        goto fail;
+    }
+
+    rc = mbedtls_ecp_group_copy(&keypair.grp, &group);
+    if (rc != 0) {
+        goto fail;
+    }
+
+    rc = mbedtls_mpi_read_binary(&keypair.d, ssh_string_data(exp),
+                                 ssh_string_len(exp));
+    if (rc != 0) {
+        goto fail;
+    }
+
+    rc = mbedtls_ecdsa_from_keypair(key->ecdsa, &keypair);
+    if (rc != 0) {
+        goto fail;
+    }
+
+    mbedtls_ecp_point_free(&Q);
+    mbedtls_ecp_group_free(&group);
+    mbedtls_ecp_keypair_free(&keypair);
+    return SSH_OK;
+
+fail:
+    mbedtls_ecdsa_free(key->ecdsa);
+    mbedtls_ecp_point_free(&Q);
+    mbedtls_ecp_group_free(&group);
+    mbedtls_ecp_keypair_free(&keypair);
+    SAFE_FREE(key->ecdsa);
+    return SSH_ERROR;
+}
+
 int pki_pubkey_build_ecdsa(ssh_key key, int nid, ssh_string e)
 {
     int rc;
@@ -1345,6 +1470,18 @@ int pki_key_generate_ecdsa(ssh_key key, int parameter)
     }
 
     return SSH_OK;
+}
+
+int pki_privkey_build_dss(ssh_key key, ssh_string p, ssh_string q, ssh_string g,
+        ssh_string pubkey, ssh_string privkey)
+{
+    (void) key;
+    (void) p;
+    (void) q;
+    (void) g;
+    (void) pubkey;
+    (void) privkey;
+    return SSH_ERROR;
 }
 
 int pki_pubkey_build_dss(ssh_key key, ssh_string p, ssh_string q, ssh_string g,
