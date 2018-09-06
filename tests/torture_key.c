@@ -91,6 +91,70 @@ static const char torture_rsa_private_testkey_passphrase[] =
         "JSvUyxoaZUjQkT7iF94HsF+FVVJdI55UjgnMiZ0d5vKffWyTHYcYHkFYaSloAMWN\n"
         "-----END RSA PRIVATE KEY-----\n";
 
+static const char torture_rsa_private_openssh_testkey_passphrase[] =
+        "-----BEGIN OPENSSH PRIVATE KEY-----\n"
+        "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\n"
+        "FBRkf+Jj9eVXieT4PJKtWuvxNNrJVA==\n"
+        "-----END OPENSSH PRIVATE KEY-----\n";
+
+static const char torture_rsa_private_openssh_testkey[] =
+        "-----BEGIN OPENSSH PRIVATE KEY-----\n"
+        "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\n"
+        "-----END OPENSSH PRIVATE KEY-----\n";
+
+
 static const char torture_rsa_public_testkey[] =
         "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCsA5ERRaUFckApnmEAFjLGdFrIN"
         "k/Vsl4ts9Ur6enF6auEfJmCN1tjcAOi34lHJaO+WXbDYYj7duW3SP7H9lbCMwq79B"
@@ -161,6 +225,55 @@ static const char torture_dsa_private_testkey_passphrase[] =
         "wHBOL6HrOnD+gGs6DUFwzA==\n"
         "-----END DSA PRIVATE KEY-----\n";
 
+static const char torture_dsa_private_openssh_testkey_passphrase[] =
+        "-----BEGIN OPENSSH PRIVATE KEY-----\n"
+        "b3BlbnNzaC1rZXktdjEAAAAACmFlczI1Ni1jdHIAAAAGYmNyeXB0AAAAGAAAABBC\n"
+        "UZK61oXs3uKMs4l7G0cpAAAAEAAAAAEAAAGxAAAAB3NzaC1kc3MAAACBAJTK9U8S\n"
+        "SfdSdkOPMLNLNIelOW3OvQRz7WbP8kAKMcwEn0L9b8/C8ffKOR+gWGFES+hjsg+f\n"
+        "AC7ltzHDxOQhKrthE5DjT0+rDA+/LQ3cZSn/6QpLbrwEgn5Uo3nXddF/t4vV7hod\n"
+        "Qn5qX3HUnFOZzpPQYGrWXK74JNRTKHblo0MXAAAAFQCvOI9tBplPs3sI0MLCF7lW\n"
+        "+gvzxwAAAIBeG4hWwnFRAnmdZBEt/ujdcQZD4RxWYc7MwHXEKweNiekSGFyj6v8c\n"
+        "NlIPfWTMN4BlTJzPfVaoYvzJev45lEuoSwYLt3AQDM+JcO6XTMdyXTKIo+tGsuA0\n"
+        "kd4pxPol+UGeAruNBEhVSDcXfXTh9tVravBqeIuXgZIFk9cylR2eDwAAAIB4roDQ\n"
+        "Bfgf8AoSAJAb7y8OVvxt5cT7iqaRMQX2XgtW09Nu9RbUIVS7n2mw3iqZG0xnG3iv\n"
+        "1oL9gwNXMLlf+gLmsqU3788jaEZ9IhZ8VdgHAoHm6UWM7b2uADmhirI6dRZUVO+/\n"
+        "iMGUvDxa66OI4hDV055pbwQhtxupUatThyDzIgAAAeAtGFEW6JZTeSumizZJI4T2\n"
+        "Kha05Ze3juTeW+BMjqTcf77yAL2jvsljogCtu4+5CWWO4g+cr80vyVytji6IYTNM\n"
+        "MPn1qe6dHXnfmgtiegHXxrjr5v5/i1cvD32Bxffy+yjR9kbV9GJYF+K5pfYVpQBa\n"
+        "XVmq6AJUPd/yxKw6jRGZJi8GTcrKbCZAL+VYSPwc0veCrmGPjeeMCgYcEXPvhSui\n"
+        "P0JnG1Ap12FeK+61rIbZBAr7qbTGJi5Z5HlDlgon2tmMZOkIuL1Oytgut4MpmYjP\n"
+        "ph+qrzgwfSwOsjVIuHlb1L0phWRlgbT8lmysEE7McGKWiCOabxgl3NF9lClhDBb9\n"
+        "nzupkK1cg/4p17USYMOdeNhTmJ0DkQT+8UenfBOmzV7kamLlEYXJdDZBN//dZ8UR\n"
+        "KEzAzpaAVIyJQ+wvCUIh/VO8sJP+3q4XQUkv0QcIRlc0+r9qbW2Tqv3vajFcFtK6\n"
+        "nrTmIJVL0pG+z/93Ncpy5susD+JvhJ4yfl7Jet3jy4fWwm3qkLl0WsobJ7Om+GyH\n"
+        "DzHH9RgDk3XuUHS/fz+kTwmtyIH/Rq1jIt+s+T8iA9CzKSX6sBu2yfMo1w2/LbCx\n"
+        "Xy1rHS42TePw28m1cQuUfjqdOC3IBgQ1m3x2f1on7hk=\n"
+        "-----END OPENSSH PRIVATE KEY-----\n";
+
+static const char torture_dsa_private_openssh_testkey[] =
+        "-----BEGIN OPENSSH PRIVATE KEY-----\n"
+        "b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAABsQAAAAdz\n"
+        "c2gtZHNzAAAAgQCUyvVPEkn3UnZDjzCzSzSHpTltzr0Ec+1mz/JACjHMBJ9C/W/P\n"
+        "wvH3yjkfoFhhREvoY7IPnwAu5bcxw8TkISq7YROQ409PqwwPvy0N3GUp/+kKS268\n"
+        "BIJ+VKN513XRf7eL1e4aHUJ+al9x1JxTmc6T0GBq1lyu+CTUUyh25aNDFwAAABUA\n"
+        "rziPbQaZT7N7CNDCwhe5VvoL88cAAACAXhuIVsJxUQJ5nWQRLf7o3XEGQ+EcVmHO\n"
+        "zMB1xCsHjYnpEhhco+r/HDZSD31kzDeAZUycz31WqGL8yXr+OZRLqEsGC7dwEAzP\n"
+        "iXDul0zHcl0yiKPrRrLgNJHeKcT6JflBngK7jQRIVUg3F3104fbVa2rwaniLl4GS\n"
+        "BZPXMpUdng8AAACAeK6A0AX4H/AKEgCQG+8vDlb8beXE+4qmkTEF9l4LVtPTbvUW\n"
+        "1CFUu59psN4qmRtMZxt4r9aC/YMDVzC5X/oC5rKlN+/PI2hGfSIWfFXYBwKB5ulF\n"
+        "jO29rgA5oYqyOnUWVFTvv4jBlLw8WuujiOIQ1dOeaW8EIbcbqVGrU4cg8yIAAAHY\n"
+        "tbI937WyPd8AAAAHc3NoLWRzcwAAAIEAlMr1TxJJ91J2Q48ws0s0h6U5bc69BHPt\n"
+        "Zs/yQAoxzASfQv1vz8Lx98o5H6BYYURL6GOyD58ALuW3McPE5CEqu2ETkONPT6sM\n"
+        "D78tDdxlKf/pCktuvASCflSjedd10X+3i9XuGh1CfmpfcdScU5nOk9BgatZcrvgk\n"
+        "1FModuWjQxcAAAAVAK84j20GmU+zewjQwsIXuVb6C/PHAAAAgF4biFbCcVECeZ1k\n"
+        "ES3+6N1xBkPhHFZhzszAdcQrB42J6RIYXKPq/xw2Ug99ZMw3gGVMnM99Vqhi/Ml6\n"
+        "/jmUS6hLBgu3cBAMz4lw7pdMx3JdMoij60ay4DSR3inE+iX5QZ4Cu40ESFVINxd9\n"
+        "dOH21Wtq8Gp4i5eBkgWT1zKVHZ4PAAAAgHiugNAF+B/wChIAkBvvLw5W/G3lxPuK\n"
+        "ppExBfZeC1bT0271FtQhVLufabDeKpkbTGcbeK/Wgv2DA1cwuV/6AuaypTfvzyNo\n"
+        "Rn0iFnxV2AcCgebpRYztva4AOaGKsjp1FlRU77+IwZS8PFrro4jiENXTnmlvBCG3\n"
+        "G6lRq1OHIPMiAAAAFQCNR3fP4j87IO2086Db40C/jaMosgAAAAABAg==\n"
+        "-----END OPENSSH PRIVATE KEY-----\n";
+
 static const char torture_dsa_public_testkey[] =
         "ssh-dss AAAAB3NzaC1kc3MAAACBAJTK9U8SSfdSdkOPMLNLNIelOW3OvQRz7WbP8k"
         "AKMcwEn0L9b8/C8ffKOR+gWGFES+hjsg+fAC7ltzHDxOQhKrthE5DjT0+rDA+/LQ3c"
@@ -222,6 +335,29 @@ static const char torture_ecdsa256_private_testkey_passphrase[] =
         "8VZn2VJDaitLy8ARqA/lMGQfqHSa3EOqti9FzWG/P6s=\n"
         "-----END EC PRIVATE KEY-----\n";
 
+static const char torture_ecdsa256_private_openssh_testkey[] =
+        "-----BEGIN OPENSSH PRIVATE KEY-----\n"
+        "b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAaAAAABNl\n"
+        "Y2RzYS1zaGEyLW5pc3RwMjU2AAAACG5pc3RwMjU2AAAAQQTH7253zxDkZa0t37Iy\n"
+        "1hpqkLzmD7ZkuntW0UcDQRs0eoFRDGiH4iTz0yWvsBTFwU936QKj40TrKr+Y1Bwv\n"
+        "sTqJAAAAmOuDchHrg3IRAAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAy\n"
+        "NTYAAABBBMfvbnfPEORlrS3fsjLWGmqQvOYPtmS6e1bRRwNBGzR6gVEMaIfiJPPT\n"
+        "Ja+wFMXBT3fpAqPjROsqv5jUHC+xOokAAAAgEIN55hgC1fcSew/Stq3BWk1NoD/g\n"
+        "rU3pW8cyJRmVV2EAAAAA\n"
+        "-----END OPENSSH PRIVATE KEY-----\n";
+
+static const char torture_ecdsa256_private_openssh_testkey_pasphrase[] =
+        "-----BEGIN OPENSSH PRIVATE KEY-----\n"
+        "b3BlbnNzaC1rZXktdjEAAAAACmFlczI1Ni1jdHIAAAAGYmNyeXB0AAAAGAAAABA+\n"
+        "O0w3yPZF2q0FjVBhQjn2AAAAEAAAAAEAAABoAAAAE2VjZHNhLXNoYTItbmlzdHAy\n"
+        "NTYAAAAIbmlzdHAyNTYAAABBBMfvbnfPEORlrS3fsjLWGmqQvOYPtmS6e1bRRwNB\n"
+        "GzR6gVEMaIfiJPPTJa+wFMXBT3fpAqPjROsqv5jUHC+xOokAAACghvb4EX8M06UB\n"
+        "zigxOn9bg5cZkZ2yWY8jzxtOWH4YJXsuhON/jePDJuI2ro5u4iKFD1u2JLfcshdh\n"
+        "vKZyjixU9KdewykQQt/wFkrCfNUyCH8jFiQsAqhBfopRFyDJV9pmcUBL/3fJqwut\n"
+        "ZeBSfA7tXORp3xrwFI1tXiiUCM+/nhxiCsFaCJXeiM3tN+kFtwQ8kamINqwaC8Vj\n"
+        "lFLKHDfwJQ==\n"
+        "-----END OPENSSH PRIVATE KEY-----\n";
+
 static const char torture_ecdsa256_public_testkey[] =
         "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNT"
         "YAAABBBMfvbnfPEORlrS3fsjLWGmqQvOYPtmS6e1bRRwNBGzR6gVEMaIfiJPPTJa+w"
@@ -244,6 +380,31 @@ static const char torture_ecdsa384_private_testkey_passphrase[] =
         "2X1o29E6c0WsY9DKhSHKm/zzvZmL+ChZYqqh3sd1gp55aJsHNN4axiIu2YCbCavh\n"
         "8VZn2VJDaitLy8ARqA/lMGQfqHSa3EOqti9FzWG/P6s=\n"
         "-----END EC PRIVATE KEY-----\n";
+
+static const char torture_ecdsa384_private_openssh_testkey[] =
+        "-----BEGIN OPENSSH PRIVATE KEY-----\n"
+        "b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAiAAAABNl\n"
+        "Y2RzYS1zaGEyLW5pc3RwMzg0AAAACG5pc3RwMzg0AAAAYQRXc4BN6BrVo1QMi3+i\n"
+        "/B85Lu7SMuzBi+1PbJti8xz+Szgq64gaBGOK9o+WOdLAd/w7p7DJLdztJ0bYoyT4\n"
+        "V3B3ZqR9RyGq6mYCjkXlc5YbYHjueBbp0oeNXqsXHNAWQZoAAADIITfDfiE3w34A\n"
+        "AAATZWNkc2Etc2hhMi1uaXN0cDM4NAAAAAhuaXN0cDM4NAAAAGEEV3OATega1aNU\n"
+        "DIt/ovwfOS7u0jLswYvtT2ybYvMc/ks4KuuIGgRjivaPljnSwHf8O6ewyS3c7SdG\n"
+        "2KMk+Fdwd2akfUchqupmAo5F5XOWG2B47ngW6dKHjV6rFxzQFkGaAAAAMFjyMRrk\n"
+        "O1HLgBV5NaE8n9Mrbntt6GILe5p8SLpgDagc5GJupfnkQM3DPb0xPjSZBAAAAAA=\n"
+        "-----END OPENSSH PRIVATE KEY-----\n";
+
+static const char torture_ecdsa384_private_openssh_testkey_passphrase[] =
+        "-----BEGIN OPENSSH PRIVATE KEY-----\n"
+        "b3BlbnNzaC1rZXktdjEAAAAACmFlczI1Ni1jdHIAAAAGYmNyeXB0AAAAGAAAABB4N\n"
+        "dKGEoxFeg6dqiR2vTl6AAAAEAAAAAEAAACIAAAAE2VjZHNhLXNoYTItbmlzdHAzOD\n"
+        "QAAAAIbmlzdHAzODQAAABhBFdzgE3oGtWjVAyLf6L8Hzku7tIy7MGL7U9sm2LzHP5\n"
+        "LOCrriBoEY4r2j5Y50sB3/DunsMkt3O0nRtijJPhXcHdmpH1HIarqZgKOReVzlhtg\n"
+        "eO54FunSh41eqxcc0BZBmgAAANDOL7sWcylFf8SsjGVFvr36mpyUBpAJ/e7o4RbQg\n"
+        "H8FDu1IxscOfbLDoB3CV7UEIgG58nVsDamfL6rXV/tzWnPxYxi6jUHcKT1BugO/Jt\n"
+        "/ncelMeoAS6MAZhElaGKzU1cJMlMTV9ofmuKuAwllQULG7L8lwHs9whBK4JmWPaGL\n"
+        "pU3i9ZoT33/g6pcvA83vicCNqj7ggl6Vb9MeO/zGW1+oV2HC3WiLTqBsYxEJu4YCM\n"
+        "ewfx9pWeWaCllNy/F1rCBu3cxqzcge9hqIlNtpT7Dq3k\n"
+        "-----END OPENSSH PRIVATE KEY-----\n";
 
 static const char torture_ecdsa384_public_testkey[] =
         "ecdsa-sha2-nistp384 AAAAE2VjZHNhLXNoYTItbmlzdHAzODQAAAAIbmlzdHAzOD"
@@ -271,6 +432,36 @@ static const char torture_ecdsa521_private_testkey_passphrase[] =
         "qsiEdVKh7p+9Qto8jcVWzMh7ANMcIwmxQ4zbvnqypwgAgpMbamWqBZ9q4egsVZKd\n"
         "uRzL95L05ctOBGYNYqpPNIX3UdQU07kzwNC+yaHOb2s=\n"
         "-----END EC PRIVATE KEY-----\n";
+
+static const char torture_ecdsa521_private_openssh_testkey[] =
+        "-----BEGIN OPENSSH PRIVATE KEY-----\n"
+        "b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAArAAAABNl\n"
+        "Y2RzYS1zaGEyLW5pc3RwNTIxAAAACG5pc3RwNTIxAAAAhQQBzoPvbx1tpCQedI+3\n"
+        "O1pHAnDrcIGXXlzKQHhJde7BZ0060/MGKNRQsxNO8FdutryAvgBN311Ce7CfwpBS\n"
+        "HZP/P4EBGNY8qFwdwbHntelcISRrDMxhodRSdF14USY1GxtfKmx/SYkoBNTeHyDN\n"
+        "MyRuvHwMlMUcQiNcFKGzjgexJhWXdfIAAAEAt6sYz7erGM8AAAATZWNkc2Etc2hh\n"
+        "Mi1uaXN0cDUyMQAAAAhuaXN0cDUyMQAAAIUEAc6D728dbaQkHnSPtztaRwJw63CB\n"
+        "l15cykB4SXXuwWdNOtPzBijUULMTTvBXbra8gL4ATd9dQnuwn8KQUh2T/z+BARjW\n"
+        "PKhcHcGx57XpXCEkawzMYaHUUnRdeFEmNRsbXypsf0mJKATU3h8gzTMkbrx8DJTF\n"
+        "HEIjXBShs44HsSYVl3XyAAAAQgC83nSJ2SLoiBvEku1JteQKWx/Xt6THksgC7rrI\n"
+        "aTUmNzk+60f0sCCmGll0dgrZLmeIw+TtnG1E20VZflCKq+IdkQAAAAABAg==\n"
+        "-----END OPENSSH PRIVATE KEY-----\n";
+
+static const char torture_ecdsa521_private_openssh_testkey_passphrase[] =
+        "-----BEGIN OPENSSH PRIVATE KEY-----\n"
+        "b3BlbnNzaC1rZXktdjEAAAAACmFlczI1Ni1jdHIAAAAGYmNyeXB0AAAAGAAAABAj\n"
+        "9WBFa/piJcPFEE4CGZTKAAAAEAAAAAEAAACsAAAAE2VjZHNhLXNoYTItbmlzdHA1\n"
+        "MjEAAAAIbmlzdHA1MjEAAACFBAHOg+9vHW2kJB50j7c7WkcCcOtwgZdeXMpAeEl1\n"
+        "7sFnTTrT8wYo1FCzE07wV262vIC+AE3fXUJ7sJ/CkFIdk/8/gQEY1jyoXB3Bsee1\n"
+        "6VwhJGsMzGGh1FJ0XXhRJjUbG18qbH9JiSgE1N4fIM0zJG68fAyUxRxCI1wUobOO\n"
+        "B7EmFZd18gAAAQDLjaKp+DLEHFb98f5WnVFg6LgDN847sfeuPZVfVjeSAiIv016O\n"
+        "ld7DXb137B2xYVsuce6sHbypr10dJOvgMTLdzTl+crYNJL+8UufJP0rOIFaDenzQ\n"
+        "RW8wydwiQxwt1ZqtD8ASqFmadxngufJKZzPLGfjCbCz3uATKa2sXN66nRXRZJbVA\n"
+        "IlNYDY8ivAStNhfItUMqyM6PkYlKJECtJw7w7TYKpvts7t72JmtgqVjS45JI/YZ+\n"
+        "kitIG0YmG8rzL9d1vBB5m+MH/fnFz2uJqbQYCH9Ctc8HZodAVoTNDzXHU2mYF9PE\n"
+        "Z6+gi3jd+kOyUk3NifHcre9K6ie7LL33JayM\n"
+        "-----END OPENSSH PRIVATE KEY-----\n";
+
 
 static const char torture_ecdsa521_public_testkey[] =
         "ecdsa-sha2-nistp521 AAAAE2VjZHNhLXNoYTItbmlzdHA1MjEAAAAIbmlzdHA1Mj"
@@ -308,21 +499,34 @@ static const char torture_ed25519_public_testkey[] =
 static const char *torture_get_testkey_internal(enum ssh_keytypes_e type,
                                                 int bits,
                                                 bool with_passphrase,
-                                                int pubkey)
+                                                int pubkey,
+                                                int format)
 {
     switch (type) {
         case SSH_KEYTYPE_DSS:
             if (pubkey) {
                 return torture_dsa_public_testkey;
             } else if (with_passphrase) {
+                if (format == 1) {
+                    return torture_dsa_private_openssh_testkey_passphrase;
+                }
                 return torture_dsa_private_testkey_passphrase;
+            }
+            if (format == 1) {
+                return torture_dsa_private_openssh_testkey;
             }
             return torture_dsa_private_testkey;
         case SSH_KEYTYPE_RSA:
             if (pubkey) {
                 return torture_rsa_public_testkey;
             } else if (with_passphrase) {
+                if (format == 1) {
+                    return torture_rsa_private_openssh_testkey_passphrase;
+                }
                 return torture_rsa_private_testkey_passphrase;
+            }
+            if (format == 1) {
+                return torture_rsa_private_openssh_testkey;
             }
             return torture_rsa_private_testkey;
         case SSH_KEYTYPE_ECDSA:
@@ -330,14 +534,26 @@ static const char *torture_get_testkey_internal(enum ssh_keytypes_e type,
                 if (pubkey) {
                     return torture_ecdsa521_public_testkey;
                 } else if (with_passphrase) {
+                    if (format == 1) {
+                        return torture_ecdsa521_private_openssh_testkey_passphrase;
+                    }
                     return torture_ecdsa521_private_testkey_passphrase;
+                }
+                if (format == 1) {
+                    return torture_ecdsa521_private_openssh_testkey;
                 }
                 return torture_ecdsa521_private_testkey;
             } else if (bits == 384) {
                 if (pubkey) {
                     return torture_ecdsa384_public_testkey;
                 } else if (with_passphrase){
+                    if (format == 1) {
+                        return torture_ecdsa384_private_openssh_testkey_passphrase;
+                    }
                     return torture_ecdsa384_private_testkey_passphrase;
+                }
+                if (format == 1) {
+                    return torture_ecdsa384_private_openssh_testkey;
                 }
                 return torture_ecdsa384_private_testkey;
             }
@@ -345,16 +561,30 @@ static const char *torture_get_testkey_internal(enum ssh_keytypes_e type,
             if (pubkey) {
                 return torture_ecdsa256_public_testkey;
             } else if (with_passphrase){
+                if (format == 1) {
+                    return torture_ecdsa256_private_openssh_testkey_pasphrase;
+                }
                 return torture_ecdsa256_private_testkey_passphrase;
+            }
+            if (format == 1) {
+                return torture_ecdsa256_private_openssh_testkey;
             }
             return torture_ecdsa256_private_testkey;
         case SSH_KEYTYPE_ED25519:
             if (pubkey) {
                 return torture_ed25519_public_testkey;
             } else if (with_passphrase) {
-                return torture_ed25519_private_testkey_passphrase;
+                if (format == 1) {
+                    return torture_ed25519_private_testkey_passphrase;
+                }
+                /* ed25519 keys are not available in legacy PEM format */
+                return NULL;
             }
-            return torture_ed25519_private_testkey;
+            if (format == 1) {
+                return torture_ed25519_private_testkey;
+            }
+            /* ed25519 keys are not available in legacy PEM format */
+            return NULL;
         case SSH_KEYTYPE_DSS_CERT01:
             return torture_dsa_testkey_cert;
         case SSH_KEYTYPE_RSA_CERT01:
@@ -367,16 +597,25 @@ static const char *torture_get_testkey_internal(enum ssh_keytypes_e type,
     return NULL;
 }
 
+/* Return the encrypted private key in a new OpenSSH format */
+const char *torture_get_openssh_testkey(enum ssh_keytypes_e type,
+                                        int ecda_bits,
+                                        bool with_passphrase)
+{
+    return torture_get_testkey_internal(type, ecda_bits, with_passphrase, 0, 1);
+}
+
+/* Return the private key in the legacy PEM format */
 const char *torture_get_testkey(enum ssh_keytypes_e type,
                                 int ecda_bits,
                                 bool with_passphrase)
 {
-    return torture_get_testkey_internal(type, ecda_bits, with_passphrase, 0);
+    return torture_get_testkey_internal(type, ecda_bits, with_passphrase, 0, 0);
 }
 
 const char *torture_get_testkey_pub(enum ssh_keytypes_e type, int ecda_bits)
 {
-    return torture_get_testkey_internal(type, ecda_bits, 0, 1);
+    return torture_get_testkey_internal(type, ecda_bits, 0, 1, 0);
 }
 
 const char *torture_get_testkey_passphrase(void)
