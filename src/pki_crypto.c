@@ -172,6 +172,61 @@ static ssh_string make_ecpoint_string(const EC_GROUP *g,
     return s;
 }
 
+int pki_privkey_build_ecdsa(ssh_key key, int nid, ssh_string e, ssh_string exp)
+{
+    EC_POINT *p = NULL;
+    const EC_GROUP *g = NULL;
+    int ok;
+    BIGNUM *bexp = NULL;
+
+    key->ecdsa_nid = nid;
+    key->type_c = pki_key_ecdsa_nid_to_name(nid);
+
+    key->ecdsa = EC_KEY_new_by_curve_name(key->ecdsa_nid);
+    if (key->ecdsa == NULL) {
+        return -1;
+    }
+
+    g = EC_KEY_get0_group(key->ecdsa);
+
+    p = EC_POINT_new(g);
+    if (p == NULL) {
+        return -1;
+    }
+
+    ok = EC_POINT_oct2point(g,
+                            p,
+                            ssh_string_data(e),
+                            ssh_string_len(e),
+                            NULL);
+    if (!ok) {
+        EC_POINT_free(p);
+        return -1;
+    }
+
+    /* EC_KEY_set_public_key duplicates p */
+    ok = EC_KEY_set_public_key(key->ecdsa, p);
+    EC_POINT_free(p);
+    if (!ok) {
+        return -1;
+    }
+
+    bexp = ssh_make_string_bn(exp);
+    if (bexp == NULL) {
+        EC_KEY_free(key->ecdsa);
+        return -1;
+    }
+    /* EC_KEY_set_private_key duplicates exp */
+    ok = EC_KEY_set_private_key(key->ecdsa, bexp);
+    BN_free(bexp);
+    if (!ok) {
+        EC_KEY_free(key->ecdsa);
+        return -1;
+    }
+
+    return 0;
+}
+
 int pki_pubkey_build_ecdsa(ssh_key key, int nid, ssh_string e)
 {
     EC_POINT *p = NULL;
@@ -896,6 +951,49 @@ fail:
     return NULL;
 }
 
+int pki_privkey_build_dss(ssh_key key,
+                          ssh_string p,
+                          ssh_string q,
+                          ssh_string g,
+                          ssh_string pubkey,
+                          ssh_string privkey)
+{
+    int rc;
+    BIGNUM *bp, *bq, *bg, *bpub_key, *bpriv_key;
+
+    key->dsa = DSA_new();
+    if (key->dsa == NULL) {
+        return SSH_ERROR;
+    }
+
+    bp = ssh_make_string_bn(p);
+    bq = ssh_make_string_bn(q);
+    bg = ssh_make_string_bn(g);
+    bpub_key = ssh_make_string_bn(pubkey);
+    bpriv_key = ssh_make_string_bn(privkey);
+    if (bp == NULL || bq == NULL ||
+        bg == NULL || bpub_key == NULL) {
+        goto fail;
+    }
+
+    /* Memory management of bp, qq and bg is transfered to DSA object */
+    rc = DSA_set0_pqg(key->dsa, bp, bq, bg);
+    if (rc == 0) {
+        goto fail;
+    }
+
+    /* Memory management of bpub_key and bpriv_key is transfered to DSA object */
+    rc = DSA_set0_key(key->dsa, bpub_key, bpriv_key);
+    if (rc == 0) {
+        goto fail;
+    }
+
+    return SSH_OK;
+fail:
+    DSA_free(key->dsa);
+    return SSH_ERROR;
+}
+
 int pki_pubkey_build_dss(ssh_key key,
                          ssh_string p,
                          ssh_string q,
@@ -933,6 +1031,58 @@ int pki_pubkey_build_dss(ssh_key key,
     return SSH_OK;
 fail:
     DSA_free(key->dsa);
+    return SSH_ERROR;
+}
+
+int pki_privkey_build_rsa(ssh_key key,
+                          ssh_string n,
+                          ssh_string e,
+                          ssh_string d,
+                          ssh_string iqmp,
+                          ssh_string p,
+                          ssh_string q)
+{
+    int rc;
+    BIGNUM *be, *bn, *bd/*, *biqmp*/, *bp, *bq;
+
+    key->rsa = RSA_new();
+    if (key->rsa == NULL) {
+        return SSH_ERROR;
+    }
+
+    bn = ssh_make_string_bn(n);
+    be = ssh_make_string_bn(e);
+    bd = ssh_make_string_bn(d);
+    /*biqmp = ssh_make_string_bn(iqmp);*/
+    bp = ssh_make_string_bn(p);
+    bq = ssh_make_string_bn(q);
+    if (be == NULL || bn == NULL || bd == NULL ||
+        /*biqmp == NULL ||*/ bp == NULL || bq == NULL) {
+        goto fail;
+    }
+
+    /* Memory management of be, bn and bd is transfered to RSA object */
+    rc = RSA_set0_key(key->rsa, bn, be, bd);
+    if (rc == 0) {
+        goto fail;
+    }
+
+    /* Memory management of bp and bq is transfered to RSA object */
+    rc = RSA_set0_factors(key->rsa, bp, bq);
+    if (rc == 0) {
+        goto fail;
+    }
+
+    /* p, q, dmp1, dmq1 and iqmp may be NULL in private keys, but the RSA
+     * operations are much faster when these values are available.
+     * https://www.openssl.org/docs/man1.0.2/crypto/rsa.html
+     */
+    /* RSA_set0_crt_params(key->rsa, biqmp, NULL, NULL);
+    TODO calculate missing crt_params */
+
+    return SSH_OK;
+fail:
+    RSA_free(key->rsa);
     return SSH_ERROR;
 }
 

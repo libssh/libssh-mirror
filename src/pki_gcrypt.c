@@ -1030,6 +1030,27 @@ fail:
     return NULL;
 }
 
+int pki_privkey_build_dss(ssh_key key,
+                          ssh_string p,
+                          ssh_string q,
+                          ssh_string g,
+                          ssh_string pubkey,
+                          ssh_string privkey)
+{
+    gcry_sexp_build(&key->dsa, NULL,
+            "(private-key(dsa(p %b)(q %b)(g %b)(y %b)(x %b)))",
+            ssh_string_len(p), ssh_string_data(p),
+            ssh_string_len(q), ssh_string_data(q),
+            ssh_string_len(g), ssh_string_data(g),
+            ssh_string_len(pubkey), ssh_string_data(pubkey),
+            ssh_string_len(privkey), ssh_string_data(privkey));
+    if (key->dsa == NULL) {
+        return SSH_ERROR;
+    }
+
+    return SSH_OK;
+}
+
 int pki_pubkey_build_dss(ssh_key key,
                          ssh_string p,
                          ssh_string q,
@@ -1042,6 +1063,32 @@ int pki_pubkey_build_dss(ssh_key key,
             ssh_string_len(g), ssh_string_data(g),
             ssh_string_len(pubkey), ssh_string_data(pubkey));
     if (key->dsa == NULL) {
+        return SSH_ERROR;
+    }
+
+    return SSH_OK;
+}
+
+int pki_privkey_build_rsa(ssh_key key,
+                          ssh_string n,
+                          ssh_string e,
+                          ssh_string d,
+                          ssh_string iqmp,
+                          ssh_string p,
+                          ssh_string q)
+{
+    /* in gcrypt, there is no iqmp (inverse of q mod p) argument,
+     * but it is ipmq (inverse of p mod q) so we need to swap
+     * the p and q arguments */
+    gcry_sexp_build(&key->rsa, NULL,
+            "(private-key(rsa(n %b)(e %b)(d %b)(p %b)(q %b)(u %b)))",
+            ssh_string_len(n), ssh_string_data(n),
+            ssh_string_len(e), ssh_string_data(e),
+            ssh_string_len(d), ssh_string_data(d),
+            ssh_string_len(q), ssh_string_data(q),
+            ssh_string_len(p), ssh_string_data(p),
+            ssh_string_len(iqmp), ssh_string_data(iqmp));
+    if (key->rsa == NULL) {
         return SSH_ERROR;
     }
 
@@ -1063,6 +1110,25 @@ int pki_pubkey_build_rsa(ssh_key key,
 }
 
 #ifdef HAVE_GCRYPT_ECC
+int pki_privkey_build_ecdsa(ssh_key key, int nid, ssh_string e, ssh_string exp)
+{
+    gpg_error_t err;
+
+    key->ecdsa_nid = nid;
+    key->type_c = pki_key_ecdsa_nid_to_name(nid);
+
+    err = gcry_sexp_build(&key->ecdsa, NULL,
+                          "(private-key(ecdsa(curve %s)(d %b)(q %b)))",
+                          pki_key_ecdsa_nid_to_gcrypt_name(nid),
+                          ssh_string_len(exp), ssh_string_data(exp),
+                          ssh_string_len(e), ssh_string_data(e));
+    if (err) {
+        return SSH_ERROR;
+    }
+
+    return SSH_OK;
+}
+
 int pki_pubkey_build_ecdsa(ssh_key key, int nid, ssh_string e)
 {
     gpg_error_t err;

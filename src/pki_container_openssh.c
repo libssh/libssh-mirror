@@ -60,7 +60,6 @@ static int pki_openssh_import_privkey_blob(ssh_buffer key_blob_buffer,
     enum ssh_keytypes_e type;
     char *type_s = NULL;
     ssh_key key = NULL;
-    ssh_string pubkey = NULL, privkey = NULL;
     int rc;
 
     if (pkey == NULL) {
@@ -75,57 +74,14 @@ static int pki_openssh_import_privkey_blob(ssh_buffer key_blob_buffer,
 
     type = ssh_key_type_from_name(type_s);
     if (type == SSH_KEYTYPE_UNKNOWN) {
-        SSH_LOG(SSH_LOG_WARN, "Unknown key type found!");
+        SSH_LOG(SSH_LOG_WARN, "Unknown key type '%s' found!", type_s);
         return SSH_ERROR;
     }
     SAFE_FREE(type_s);
 
-    key = ssh_key_new();
-    if (key == NULL) {
-        SSH_LOG(SSH_LOG_WARN, "Out of memory");
-        return SSH_ERROR;
-    }
-
-    key->type = type;
-    key->type_c = ssh_key_type_to_char(type);
-    key->flags = SSH_KEY_FLAG_PRIVATE | SSH_KEY_FLAG_PUBLIC;
-
-    switch (type) {
-    case SSH_KEYTYPE_ED25519:
-        rc = ssh_buffer_unpack(key_blob_buffer, "SS", &pubkey, &privkey);
-        if (rc != SSH_OK){
-            SSH_LOG(SSH_LOG_WARN, "Unpack error");
-            goto fail;
-        }
-        if(ssh_string_len(pubkey) != ED25519_PK_LEN ||
-                ssh_string_len(privkey) != ED25519_SK_LEN){
-            SSH_LOG(SSH_LOG_WARN, "Invalid ed25519 key len");
-            goto fail;
-        }
-        key->ed25519_privkey = malloc(ED25519_SK_LEN);
-        key->ed25519_pubkey = malloc(ED25519_PK_LEN);
-        if(key->ed25519_privkey == NULL || key->ed25519_pubkey == NULL){
-            goto fail;
-        }
-        memcpy(key->ed25519_privkey, ssh_string_data(privkey), ED25519_SK_LEN);
-        memcpy(key->ed25519_pubkey, ssh_string_data(pubkey), ED25519_PK_LEN);
-        explicit_bzero(ssh_string_data(privkey), ED25519_SK_LEN);
-        SAFE_FREE(privkey);
-        SAFE_FREE(pubkey);
-        break;
-    case SSH_KEYTYPE_DSS_CERT01:
-    case SSH_KEYTYPE_DSS:
-        /* p,q,g,pub_key,priv_key */
-    case SSH_KEYTYPE_RSA_CERT01:
-    case SSH_KEYTYPE_RSA:
-        /* n,e,d,iqmp,p,q */
-    case SSH_KEYTYPE_ECDSA:
-        /* curve_name, group, privkey */
-        SSH_LOG(SSH_LOG_WARN, "Unsupported private key method %s", key->type_c);
-        goto fail;
-    case SSH_KEYTYPE_RSA1:
-    case SSH_KEYTYPE_UNKNOWN:
-        SSH_LOG(SSH_LOG_WARN, "Unknown private key protocol %s", key->type_c);
+    rc = pki_import_privkey_buffer(type, key_blob_buffer, &key);
+    if (rc != SSH_OK) {
+        SSH_LOG(SSH_LOG_WARN, "Failed to read key in OpenSSH format");
         goto fail;
     }
 
@@ -133,10 +89,6 @@ static int pki_openssh_import_privkey_blob(ssh_buffer key_blob_buffer,
     return SSH_OK;
 fail:
     ssh_key_free(key);
-
-    ssh_string_burn(privkey);
-    ssh_string_free(privkey);
-    ssh_string_free(pubkey);
 
     return SSH_ERROR;
 }

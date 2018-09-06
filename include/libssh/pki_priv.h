@@ -72,6 +72,9 @@ ssh_string pki_private_key_to_pem(const ssh_key key,
                                   const char *passphrase,
                                   ssh_auth_callback auth_fn,
                                   void *auth_data);
+int pki_import_privkey_buffer(enum ssh_keytypes_e type,
+                              ssh_buffer buffer,
+                              ssh_key *pkey);
 
 /* SSH Public Key Functions */
 int pki_pubkey_build_dss(ssh_key key,
@@ -83,6 +86,26 @@ int pki_pubkey_build_rsa(ssh_key key,
                          ssh_string e,
                          ssh_string n);
 int pki_pubkey_build_ecdsa(ssh_key key, int nid, ssh_string e);
+ssh_string pki_publickey_to_blob(const ssh_key key);
+
+/* SSH Private Key Functions */
+int pki_privkey_build_dss(ssh_key key,
+                          ssh_string p,
+                          ssh_string q,
+                          ssh_string g,
+                          ssh_string pubkey,
+                          ssh_string privkey);
+int pki_privkey_build_rsa(ssh_key key,
+                          ssh_string n,
+                          ssh_string e,
+                          ssh_string d,
+                          ssh_string iqmp,
+                          ssh_string p,
+                          ssh_string q);
+int pki_privkey_build_ecdsa(ssh_key key,
+                            int nid,
+                            ssh_string e,
+                            ssh_string exp);
 ssh_string pki_publickey_to_blob(const ssh_key key);
 
 /* SSH Signature Functions */
@@ -121,6 +144,9 @@ int pki_ed25519_key_dup(ssh_key new, const ssh_key key);
 int pki_ed25519_public_key_to_blob(ssh_buffer buffer, ssh_key key);
 ssh_string pki_ed25519_sig_to_blob(ssh_signature sig);
 int pki_ed25519_sig_from_blob(ssh_signature sig, ssh_string sig_blob);
+int pki_privkey_build_ed25519(ssh_key key,
+                              ssh_string pubkey,
+                              ssh_string privkey);
 
 /* PKI Container OpenSSH */
 ssh_key ssh_pki_openssh_privkey_import(const char *text_key,

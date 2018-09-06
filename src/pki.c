@@ -810,6 +810,179 @@ ssh_private_key ssh_pki_convert_key_to_privatekey(const ssh_key key) {
     return privkey;
 }
 
+int pki_import_privkey_buffer(enum ssh_keytypes_e type,
+                              ssh_buffer buffer,
+                              ssh_key *pkey)
+{
+    ssh_key key = NULL;
+    int rc;
+
+    key = ssh_key_new();
+    if (key == NULL) {
+        return SSH_ERROR;
+    }
+
+    key->type = type;
+    key->type_c = ssh_key_type_to_char(type);
+    key->flags = SSH_KEY_FLAG_PRIVATE | SSH_KEY_FLAG_PUBLIC;
+
+    switch (type) {
+        case SSH_KEYTYPE_DSS:
+            {
+                ssh_string p = NULL;
+                ssh_string q = NULL;
+                ssh_string g = NULL;
+                ssh_string pubkey = NULL;
+                ssh_string privkey = NULL;
+
+                rc = ssh_buffer_unpack(buffer, "SSSSS", &p, &q, &g,
+                                       &pubkey, &privkey);
+                if (rc != SSH_OK) {
+                    SSH_LOG(SSH_LOG_WARN, "Unpack error");
+                    goto fail;
+                }
+
+                rc = pki_privkey_build_dss(key, p, q, g, pubkey, privkey);
+#ifdef DEBUG_CRYPTO
+                ssh_print_hexa("p", ssh_string_data(p), ssh_string_len(p));
+                ssh_print_hexa("q", ssh_string_data(q), ssh_string_len(q));
+                ssh_print_hexa("g", ssh_string_data(g), ssh_string_len(g));
+                ssh_print_hexa("pubkey", ssh_string_data(pubkey),
+                               ssh_string_len(pubkey));
+                ssh_print_hexa("privkey", ssh_string_data(privkey),
+                               ssh_string_len(privkey));
+#endif
+                ssh_string_burn(p);
+                ssh_string_free(p);
+                ssh_string_burn(q);
+                ssh_string_free(q);
+                ssh_string_burn(g);
+                ssh_string_free(g);
+                ssh_string_burn(pubkey);
+                ssh_string_free(pubkey);
+                ssh_string_burn(privkey);
+                ssh_string_free(privkey);
+                if (rc == SSH_ERROR) {
+                    goto fail;
+                }
+            }
+            break;
+        case SSH_KEYTYPE_RSA:
+            {
+                ssh_string n = NULL;
+                ssh_string e = NULL;
+                ssh_string d = NULL;
+                ssh_string iqmp = NULL;
+                ssh_string p = NULL;
+                ssh_string q = NULL;
+
+                rc = ssh_buffer_unpack(buffer, "SSSSSS", &n, &e, &d,
+                                       &iqmp, &p, &q);
+                if (rc != SSH_OK) {
+                    SSH_LOG(SSH_LOG_WARN, "Unpack error");
+                    goto fail;
+                }
+
+                rc = pki_privkey_build_rsa(key, n, e, d, iqmp, p, q);
+#ifdef DEBUG_CRYPTO
+                ssh_print_hexa("n", ssh_string_data(n), ssh_string_len(n));
+                ssh_print_hexa("e", ssh_string_data(e), ssh_string_len(e));
+                ssh_print_hexa("d", ssh_string_data(d), ssh_string_len(d));
+                ssh_print_hexa("iqmp", ssh_string_data(iqmp),
+                               ssh_string_len(iqmp));
+                ssh_print_hexa("p", ssh_string_data(p), ssh_string_len(p));
+                ssh_print_hexa("q", ssh_string_data(q), ssh_string_len(q));
+#endif
+                ssh_string_burn(n);
+                ssh_string_free(n);
+                ssh_string_burn(e);
+                ssh_string_free(e);
+                ssh_string_burn(d);
+                ssh_string_free(d);
+                ssh_string_burn(iqmp);
+                ssh_string_free(iqmp);
+                ssh_string_burn(p);
+                ssh_string_free(p);
+                ssh_string_burn(q);
+                ssh_string_free(q);
+                if (rc == SSH_ERROR) {
+                    SSH_LOG(SSH_LOG_WARN, "Failed to build RSA private key");
+                    goto fail;
+                }
+            }
+            break;
+#ifdef HAVE_ECC
+        case SSH_KEYTYPE_ECDSA:
+            {
+                ssh_string e = NULL;
+                ssh_string exp = NULL;
+                ssh_string i = NULL;
+                int nid;
+
+                rc = ssh_buffer_unpack(buffer, "SSS", &i, &e, &exp);
+                if (rc != SSH_OK) {
+                    SSH_LOG(SSH_LOG_WARN, "Unpack error");
+                    goto fail;
+                }
+
+                nid = pki_key_ecdsa_nid_from_name(ssh_string_get_char(i));
+                ssh_string_free(i);
+                if (nid == -1) {
+                    goto fail;
+                }
+
+                rc = pki_privkey_build_ecdsa(key, nid, e, exp);
+                ssh_string_burn(e);
+                ssh_string_free(e);
+                ssh_string_burn(exp);
+                ssh_string_free(exp);
+                if (rc < 0) {
+                    SSH_LOG(SSH_LOG_WARN, "Failed to build ECDSA private key");
+                    goto fail;
+                }
+
+                /* Update key type */
+                key->type_c = ssh_pki_key_ecdsa_name(key);
+            }
+            break;
+#endif
+        case SSH_KEYTYPE_ED25519:
+            {
+                ssh_string pubkey = NULL, privkey = NULL;
+
+                rc = ssh_buffer_unpack(buffer, "SS", &pubkey, &privkey);
+                if (rc != SSH_OK){
+                    SSH_LOG(SSH_LOG_WARN, "Unpack error");
+                    goto fail;
+                }
+
+                rc = pki_privkey_build_ed25519(key, pubkey, privkey);
+                ssh_string_burn(privkey);
+                ssh_string_free(privkey);
+                ssh_string_free(pubkey);
+                if (rc != SSH_OK) {
+                    SSH_LOG(SSH_LOG_WARN, "Failed to build ed25519 key");
+                    goto fail;
+                }
+            }
+            break;
+        case SSH_KEYTYPE_DSS_CERT01:
+        case SSH_KEYTYPE_RSA_CERT01:
+        case SSH_KEYTYPE_RSA1:
+        case SSH_KEYTYPE_UNKNOWN:
+        default:
+            SSH_LOG(SSH_LOG_WARN, "Unknown private key type (%d)", type);
+            goto fail;
+    }
+
+    *pkey = key;
+    return SSH_OK;
+fail:
+    ssh_key_free(key);
+
+    return SSH_ERROR;
+}
+
 static int pki_import_pubkey_buffer(ssh_buffer buffer,
                                     enum ssh_keytypes_e type,
                                     ssh_key *pkey) {
