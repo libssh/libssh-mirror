@@ -62,6 +62,19 @@ static void sftp_message_free(sftp_message msg);
 static void sftp_set_error(sftp_session sftp, int errnum);
 static void status_msg_free(sftp_status_message status);
 
+static uint32_t sftp_get_u32(const void *vp)
+{
+    const uint8_t *p = (const uint8_t *)vp;
+    uint32_t v;
+
+    v  = (uint32_t)p[0] << 24;
+    v |= (uint32_t)p[1] << 16;
+    v |= (uint32_t)p[2] << 8;
+    v |= (uint32_t)p[3];
+
+    return v;
+}
+
 static sftp_ext sftp_ext_new(void) {
   sftp_ext ext;
 
@@ -314,8 +327,7 @@ sftp_packet sftp_packet_read(sftp_session sftp)
 {
     unsigned char buffer[MAX_BUF_SIZE];
     sftp_packet packet = sftp->read_packet;
-    uint32_t tmp;
-    size_t size;
+    uint32_t size;
     int r, s, is_eof;
     int rc;
 
@@ -327,11 +339,6 @@ sftp_packet sftp_packet_read(sftp_session sftp)
         return NULL;
     }
 
-    r = ssh_buffer_allocate_size(packet->payload, 4);
-    if (r < 0) {
-        ssh_set_error_oom(sftp->session);
-        goto error;
-    }
     r = 0;
     do {
         // read from channel until 4 bytes have been read or an error occurs
@@ -347,9 +354,10 @@ sftp_packet sftp_packet_read(sftp_session sftp)
             r += s;
         }
     } while (r < 4);
-    ssh_buffer_add_data(packet->payload, buffer, r);
-    if (ssh_buffer_get_u32(packet->payload, &tmp) != sizeof(uint32_t)) {
-        ssh_set_error(sftp->session, SSH_FATAL, "Short sftp packet!");
+
+    size = sftp_get_u32(buffer);
+    if (size == 0 || size > UINT32_MAX) {
+        ssh_set_error(sftp->session, SSH_FATAL, "Invalid sftp packet size!");
         goto error;
     }
 
@@ -369,10 +377,6 @@ sftp_packet sftp_packet_read(sftp_session sftp)
     packet->type = 0;
     ssh_buffer_get_u8(packet->payload, &packet->type);
 
-    size = ntohl(tmp);
-    if (size == 0 || size > UINT32_MAX) {
-        return packet;
-    }
     size--;
 
     r = ssh_buffer_allocate_size(packet->payload, size);
