@@ -50,6 +50,9 @@
 
 #ifdef WITH_SFTP
 
+/* Buffer size maximum is 256M */
+#define SFTP_PACKET_SIZE_MAX 0x10000000
+
 struct sftp_ext_struct {
   unsigned int count;
   char **name;
@@ -356,7 +359,7 @@ sftp_packet sftp_packet_read(sftp_session sftp)
     } while (r < 4);
 
     size = sftp_get_u32(buffer);
-    if (size == 0 || size > UINT32_MAX) {
+    if (size == 0 || size > SFTP_PACKET_SIZE_MAX) {
         ssh_set_error(sftp->session, SSH_FATAL, "Invalid sftp packet size!");
         goto error;
     }
@@ -384,12 +387,11 @@ sftp_packet sftp_packet_read(sftp_session sftp)
         ssh_set_error_oom(sftp->session);
         goto error;
     }
-    while (size > 0 && size < UINT_MAX) {
+    while (size > 0 && size < SFTP_PACKET_SIZE_MAX) {
         r = ssh_channel_read(sftp->channel,
                              buffer,
                              sizeof(buffer) > size ? size : sizeof(buffer),
                              0);
-
         if (r < 0) {
             /* TODO: check if there are cases where an error needs to be set here */
             goto error;
