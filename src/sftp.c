@@ -375,12 +375,11 @@ sftp_packet sftp_packet_read(sftp_session sftp)
             }
         }
     } while (r < 1);
-    ssh_buffer_add_data(packet->payload, buffer, r);
 
-    packet->type = 0;
-    ssh_buffer_get_u8(packet->payload, &packet->type);
+    packet->type = buffer[0];
 
-    size--;
+    /* Remove the packet type size */
+    size -= sizeof(uint8_t);
 
     r = ssh_buffer_allocate_size(packet->payload, size);
     if (r < 0) {
