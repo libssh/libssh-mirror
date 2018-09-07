@@ -35,6 +35,9 @@ target_compile_options(torture_knownhosts_parsing PRIVATE ${DEFAULT_C_COMPILE_FL
 add_cmocka_test(torture_hashes torture_hashes.c ${TEST_TARGET_LIBRARIES})
 target_compile_options(torture_hashes PRIVATE ${DEFAULT_C_COMPILE_FLAGS})
 
+add_cmocka_test(torture_packet_filter torture_packet_filter.c ${TORTURE_LIBRARY})
+target_compile_options(torture_packet_filter PRIVATE ${DEFAULT_C_COMPILE_FLAGS})
+
 if (CMAKE_USE_PTHREADS_INIT)
     add_cmocka_test(torture_rand torture_rand.c ${TEST_TARGET_LIBRARIES})
     target_compile_options(torture_rand PRIVATE ${DEFAULT_C_COMPILE_FLAGS})
