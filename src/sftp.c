@@ -394,16 +394,24 @@ sftp_packet sftp_packet_read(sftp_session sftp)
         if (r < 0) {
             /* TODO: check if there are cases where an error needs to be set here */
             goto error;
-        } else if (r == 0) {
+        }
+
+        if (r > 0) {
+            int rc;
+
+            rc = ssh_buffer_add_data(packet->payload, buffer, r);
+            if (rc != 0) {
+                ssh_set_error_oom(sftp->session);
+                goto error;
+            }
+        } else { /* r == 0 */
             /* Retry the reading unless the remote was closed */
             is_eof = ssh_channel_is_eof(sftp->channel);
             if (is_eof) {
                 goto error;
             }
-        } else if (ssh_buffer_add_data(packet->payload, buffer, r) == SSH_ERROR) {
-            ssh_set_error_oom(sftp->session);
-            goto error;
         }
+
         size -= r;
     }
 
