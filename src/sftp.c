@@ -477,7 +477,7 @@ static void sftp_message_free(sftp_message msg)
         return;
     }
 
-    ssh_buffer_free(msg->payload);
+    SSH_BUFFER_FREE(msg->payload);
     SAFE_FREE(msg);
 }
 
