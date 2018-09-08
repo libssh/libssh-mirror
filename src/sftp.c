@@ -339,10 +339,22 @@ sftp_packet sftp_packet_read(sftp_session sftp)
 
     packet->sftp = sftp;
 
-    rc = ssh_buffer_reinit(packet->payload);
-    if (rc != 0) {
-        ssh_set_error_oom(sftp->session);
-        return NULL;
+    /*
+     * If the packet has a payload, then just reinit the buffer, otherwise
+     * allocate a new one.
+     */
+    if (packet->payload != NULL) {
+        rc = ssh_buffer_reinit(packet->payload);
+        if (rc != 0) {
+            ssh_set_error_oom(sftp->session);
+            return NULL;
+        }
+    } else {
+        packet->payload = ssh_buffer_new();
+        if (packet->payload == NULL) {
+            ssh_set_error_oom(sftp->session);
+            return NULL;
+        }
     }
 
     nread = 0;
