@@ -795,6 +795,8 @@ LIBSSH_API const char* ssh_get_hmac_out(ssh_session session);
 
 LIBSSH_API ssh_buffer ssh_buffer_new(void);
 LIBSSH_API void ssh_buffer_free(ssh_buffer buffer);
+#define SSH_BUFFER_FREE(x) \
+    do { if ((x) != NULL) { ssh_buffer_free(x); x = NULL; } } while(0)
 LIBSSH_API int ssh_buffer_reinit(ssh_buffer buffer);
 LIBSSH_API int ssh_buffer_add_data(ssh_buffer buffer, const void *data, uint32_t len);
 LIBSSH_API uint32_t ssh_buffer_get_data(ssh_buffer buffer, void *data, uint32_t requestedlen);
