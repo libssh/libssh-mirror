@@ -451,26 +451,6 @@ int sftp_get_error(sftp_session sftp) {
   return sftp->errnum;
 }
 
-static sftp_message sftp_message_new(sftp_session sftp){
-  sftp_message msg = NULL;
-
-  msg = calloc(1, sizeof(struct sftp_message_struct));
-  if (msg == NULL) {
-    ssh_set_error_oom(sftp->session);
-    return NULL;
-  }
-
-  msg->payload = ssh_buffer_new();
-  if (msg->payload == NULL) {
-    ssh_set_error_oom(sftp->session);
-    SAFE_FREE(msg);
-    return NULL;
-  }
-  msg->sftp = sftp;
-
-  return msg;
-}
-
 static void sftp_message_free(sftp_message msg)
 {
     if (msg == NULL) {
@@ -503,15 +483,20 @@ static sftp_message sftp_get_message(sftp_packet packet)
         return NULL;
     }
 
-    msg = sftp_message_new(sftp);
+    msg = calloc(1, sizeof(struct sftp_message_struct));
     if (msg == NULL) {
+        ssh_set_error_oom(sftp->session);
         return NULL;
     }
 
     msg->sftp = packet->sftp;
     msg->packet_type = packet->type;
 
-    rc = ssh_buffer_unpack(packet->payload, "d", &msg->id);
+    /* Move the payload from the packet to the message */
+    msg->payload = packet->payload;
+    packet->payload = NULL;
+
+    rc = ssh_buffer_unpack(msg->payload, "d", &msg->id);
     if (rc != SSH_OK) {
         ssh_set_error(packet->sftp->session, SSH_FATAL,
                 "Invalid packet %d: no ID", packet->type);
@@ -523,13 +508,6 @@ static sftp_message sftp_get_message(sftp_packet packet)
             "Packet with id %d type %d",
             msg->id,
             msg->packet_type);
-
-    if (ssh_buffer_add_data(msg->payload, ssh_buffer_get(packet->payload),
-                ssh_buffer_get_len(packet->payload)) < 0) {
-        ssh_set_error_oom(sftp->session);
-        sftp_message_free(msg);
-        return NULL;
-    }
 
     return msg;
 }
