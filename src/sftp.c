@@ -26,6 +26,7 @@
 
 #include "config.h"
 
+#include <stdbool.h>
 #include <errno.h>
 #include <ctype.h>
 #include <fcntl.h>
@@ -332,7 +333,8 @@ sftp_packet sftp_packet_read(sftp_session sftp)
     uint8_t buffer[SFTP_BUFFER_SIZE_MAX];
     sftp_packet packet = sftp->read_packet;
     uint32_t size;
-    int nread, is_eof;
+    int nread;
+    bool is_eof;
     int rc;
 
     packet->sftp = sftp;
