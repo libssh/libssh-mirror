@@ -474,6 +474,22 @@ static sftp_message sftp_get_message(sftp_packet packet)
     sftp_message msg = NULL;
     int rc;
 
+    switch(packet->type) {
+    case SSH_FXP_STATUS:
+    case SSH_FXP_HANDLE:
+    case SSH_FXP_DATA:
+    case SSH_FXP_ATTRS:
+    case SSH_FXP_NAME:
+    case SSH_FXP_EXTENDED_REPLY:
+        break;
+    default:
+        ssh_set_error(packet->sftp->session,
+                      SSH_FATAL,
+                      "Unknown packet type %d",
+                      packet->type);
+        return NULL;
+    }
+
     msg = sftp_message_new(sftp);
     if (msg == NULL) {
         return NULL;
@@ -481,15 +497,6 @@ static sftp_message sftp_get_message(sftp_packet packet)
 
     msg->sftp = packet->sftp;
     msg->packet_type = packet->type;
-
-    if ((packet->type != SSH_FXP_STATUS) && (packet->type!=SSH_FXP_HANDLE) &&
-        (packet->type != SSH_FXP_DATA) && (packet->type != SSH_FXP_ATTRS) &&
-        (packet->type != SSH_FXP_NAME) && (packet->type != SSH_FXP_EXTENDED_REPLY)) {
-        ssh_set_error(packet->sftp->session, SSH_FATAL,
-                "Unknown packet type %d", packet->type);
-        sftp_message_free(msg);
-        return NULL;
-    }
 
     rc = ssh_buffer_unpack(packet->payload, "d", &msg->id);
     if (rc != SSH_OK) {
