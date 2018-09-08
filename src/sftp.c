@@ -52,6 +52,7 @@
 
 /* Buffer size maximum is 256M */
 #define SFTP_PACKET_SIZE_MAX 0x10000000
+#define SFTP_BUFFER_SIZE_MAX 16384
 
 struct sftp_ext_struct {
   unsigned int count;
@@ -328,7 +329,7 @@ int sftp_packet_write(sftp_session sftp, uint8_t type, ssh_buffer payload){
 
 sftp_packet sftp_packet_read(sftp_session sftp)
 {
-    unsigned char buffer[MAX_BUF_SIZE];
+    uint8_t buffer[SFTP_BUFFER_SIZE_MAX];
     sftp_packet packet = sftp->read_packet;
     uint32_t size;
     int r, s, is_eof;
