@@ -332,7 +332,7 @@ sftp_packet sftp_packet_read(sftp_session sftp)
     uint8_t buffer[SFTP_BUFFER_SIZE_MAX];
     sftp_packet packet = sftp->read_packet;
     uint32_t size;
-    int r, s, is_eof;
+    int nread, is_eof;
     int rc;
 
     packet->sftp = sftp;
@@ -343,10 +343,12 @@ sftp_packet sftp_packet_read(sftp_session sftp)
         return NULL;
     }
 
-    r = 0;
+    nread = 0;
     do {
+        int s;
+
         // read from channel until 4 bytes have been read or an error occurs
-        s = ssh_channel_read(sftp->channel, buffer + r, 4 - r, 0);
+        s = ssh_channel_read(sftp->channel, buffer + nread, 4 - nread, 0);
         if (s < 0) {
             goto error;
         } else if (s == 0) {
@@ -355,9 +357,9 @@ sftp_packet sftp_packet_read(sftp_session sftp)
                 goto error;
             }
         } else {
-            r += s;
+            nread += s;
         }
-    } while (r < 4);
+    } while (nread < 4);
 
     size = sftp_get_u32(buffer);
     if (size == 0 || size > SFTP_PACKET_SIZE_MAX) {
@@ -366,44 +368,44 @@ sftp_packet sftp_packet_read(sftp_session sftp)
     }
 
     do {
-        r = ssh_channel_read(sftp->channel, buffer, 1, 0);
-        if (r < 0) {
+        nread = ssh_channel_read(sftp->channel, buffer, 1, 0);
+        if (nread < 0) {
             goto error;
-        } else if (s == 0) {
+        } else if (nread == 0) {
             is_eof = ssh_channel_is_eof(sftp->channel);
             if (is_eof) {
                 goto error;
             }
         }
-    } while (r < 1);
+    } while (nread < 1);
 
     packet->type = buffer[0];
 
     /* Remove the packet type size */
     size -= sizeof(uint8_t);
 
-    r = ssh_buffer_allocate_size(packet->payload, size);
-    if (r < 0) {
+    nread = ssh_buffer_allocate_size(packet->payload, size);
+    if (nread < 0) {
         ssh_set_error_oom(sftp->session);
         goto error;
     }
     while (size > 0 && size < SFTP_PACKET_SIZE_MAX) {
-        r = ssh_channel_read(sftp->channel,
+        nread = ssh_channel_read(sftp->channel,
                              buffer,
                              sizeof(buffer) > size ? size : sizeof(buffer),
                              0);
-        if (r < 0) {
+        if (nread < 0) {
             /* TODO: check if there are cases where an error needs to be set here */
             goto error;
         }
 
-        if (r > 0) {
-            rc = ssh_buffer_add_data(packet->payload, buffer, r);
+        if (nread > 0) {
+            rc = ssh_buffer_add_data(packet->payload, buffer, nread);
             if (rc != 0) {
                 ssh_set_error_oom(sftp->session);
                 goto error;
             }
-        } else { /* r == 0 */
+        } else { /* nread == 0 */
             /* Retry the reading unless the remote was closed */
             is_eof = ssh_channel_is_eof(sftp->channel);
             if (is_eof) {
@@ -411,7 +413,7 @@ sftp_packet sftp_packet_read(sftp_session sftp)
             }
         }
 
-        size -= r;
+        size -= nread;
     }
 
     return packet;
