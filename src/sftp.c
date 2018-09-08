@@ -521,26 +521,28 @@ static sftp_message sftp_get_message(sftp_packet packet)
     return msg;
 }
 
-static int sftp_read_and_dispatch(sftp_session sftp) {
-  sftp_packet packet = NULL;
-  sftp_message msg = NULL;
+static int sftp_read_and_dispatch(sftp_session sftp)
+{
+    sftp_packet packet = NULL;
+    sftp_message msg = NULL;
 
-  packet = sftp_packet_read(sftp);
-  if (packet == NULL) {
-    return -1; /* something nasty happened reading the packet */
-  }
+    packet = sftp_packet_read(sftp);
+    if (packet == NULL) {
+        /* something nasty happened reading the packet */
+        return -1;
+    }
 
-  msg = sftp_get_message(packet);
-  if (msg == NULL) {
-    return -1;
-  }
+    msg = sftp_get_message(packet);
+    if (msg == NULL) {
+        return -1;
+    }
 
-  if (sftp_enqueue(sftp, msg) < 0) {
-    sftp_message_free(msg);
-    return -1;
-  }
+    if (sftp_enqueue(sftp, msg) < 0) {
+        sftp_message_free(msg);
+        return -1;
+    }
 
-  return 0;
+    return 0;
 }
 
 void sftp_packet_free(sftp_packet packet) {
