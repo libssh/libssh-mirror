@@ -471,13 +471,14 @@ static sftp_message sftp_message_new(sftp_session sftp){
   return msg;
 }
 
-static void sftp_message_free(sftp_message msg) {
-  if (msg == NULL) {
-    return;
-  }
+static void sftp_message_free(sftp_message msg)
+{
+    if (msg == NULL) {
+        return;
+    }
 
-  ssh_buffer_free(msg->payload);
-  SAFE_FREE(msg);
+    ssh_buffer_free(msg->payload);
+    SAFE_FREE(msg);
 }
 
 static sftp_message sftp_get_message(sftp_packet packet)
