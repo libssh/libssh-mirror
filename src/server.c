@@ -252,6 +252,7 @@ SSH_PACKET_CALLBACK(ssh_packet_kexdh_init){
   switch(session->next_crypto->kex_type){
       case SSH_KEX_DH_GROUP1_SHA1:
       case SSH_KEX_DH_GROUP14_SHA1:
+      case SSH_KEX_DH_GROUP16_SHA512:
         rc=ssh_server_kexdh_init(session, packet);
         break;
   #ifdef HAVE_ECDH

@@ -76,18 +76,18 @@ static void torture_options_set_key_exchange(void **state)
     /* Test known kexes */
     rc = ssh_options_set(session,
                          SSH_OPTIONS_KEY_EXCHANGE,
-                         "curve25519-sha256,curve25519-sha256@libssh.org,ecdh-sha2-nistp256,diffie-hellman-group14-sha1");
+                         "curve25519-sha256,curve25519-sha256@libssh.org,ecdh-sha2-nistp256,diffie-hellman-group16-sha512,diffie-hellman-group14-sha1");
     assert_true(rc == 0);
     assert_string_equal(session->opts.wanted_methods[SSH_KEX],
-                        "curve25519-sha256,curve25519-sha256@libssh.org,ecdh-sha2-nistp256,diffie-hellman-group14-sha1");
+                        "curve25519-sha256,curve25519-sha256@libssh.org,ecdh-sha2-nistp256,diffie-hellman-group16-sha512,diffie-hellman-group14-sha1");
 
     /* Test one unknown kex */
     rc = ssh_options_set(session,
                          SSH_OPTIONS_KEY_EXCHANGE,
-                         "curve25519-sha256,curve25519-sha256@libssh.org,unknown-crap@example.com,diffie-hellman-group14-sha1");
+                         "curve25519-sha256,curve25519-sha256@libssh.org,unknown-crap@example.com,diffie-hellman-group16-sha512,diffie-hellman-group14-sha1");
     assert_true(rc == 0);
     assert_string_equal(session->opts.wanted_methods[SSH_KEX],
-                        "curve25519-sha256,curve25519-sha256@libssh.org,diffie-hellman-group14-sha1");
+                        "curve25519-sha256,curve25519-sha256@libssh.org,diffie-hellman-group16-sha512,diffie-hellman-group14-sha1");
 
     /* Test all unknown kexes */
     rc = ssh_options_set(session,

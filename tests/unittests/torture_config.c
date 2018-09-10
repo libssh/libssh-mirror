@@ -23,7 +23,7 @@ extern LIBSSH_THREAD int ssh_log_level;
 #define USERNAME "testuser"
 #define PROXYCMD "ssh -q -W %h:%p gateway.example.com"
 #define ID_FILE "/etc/xxx"
-#define KEXALGORITHMS "ecdh-sha2-nistp521,diffie-hellman-group14-sha1"
+#define KEXALGORITHMS "ecdh-sha2-nistp521,diffie-hellman-group16-sha512,diffie-hellman-group14-sha1"
 #define HOSTKEYALGORITHMS "ssh-ed25519,ecdsa-sha2-nistp521,ssh-rsa"
 #define PUBKEYACCEPTEDTYPES "rsa-sha2-512,ssh-rsa,ecdsa-sha2-nistp521"
 #define MACS "hmac-sha1,hmac-sha2-256"
