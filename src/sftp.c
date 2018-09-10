@@ -267,7 +267,6 @@ void sftp_free(sftp_session sftp)
     SAFE_FREE(sftp->handles);
 
     sftp_ext_free(sftp->ext);
-    ZERO_STRUCTP(sftp);
 
     SAFE_FREE(sftp);
 }
