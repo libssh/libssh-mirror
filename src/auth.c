@@ -87,6 +87,7 @@ static int ssh_auth_response_termination(void *user) {
         case SSH_AUTH_STATE_GSSAPI_MIC_SENT:
         case SSH_AUTH_STATE_PUBKEY_AUTH_SENT:
         case SSH_AUTH_STATE_PUBKEY_OFFER_SENT:
+        case SSH_AUTH_STATE_PASSWORD_AUTH_SENT:
             return 0;
         default:
             return 1;
@@ -171,6 +172,7 @@ static int ssh_userauth_get_response(ssh_session session) {
         case SSH_AUTH_STATE_GSSAPI_MIC_SENT:
         case SSH_AUTH_STATE_PUBKEY_OFFER_SENT:
         case SSH_AUTH_STATE_PUBKEY_AUTH_SENT:
+        case SSH_AUTH_STATE_PASSWORD_AUTH_SENT:
         case SSH_AUTH_STATE_NONE:
             /* not reached */
             rc = SSH_AUTH_ERROR;
@@ -1268,7 +1270,7 @@ int ssh_userauth_password(ssh_session session,
     }
 
     session->auth.current_method = SSH_AUTH_METHOD_PASSWORD;
-    session->auth.state = SSH_AUTH_STATE_NONE;
+    session->auth.state = SSH_AUTH_STATE_PASSWORD_AUTH_SENT;
     session->pending_call_state = SSH_PENDING_CALL_AUTH_PASSWORD;
     rc = ssh_packet_send(session);
     if (rc == SSH_ERROR) {
