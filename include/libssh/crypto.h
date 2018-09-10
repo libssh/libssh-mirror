@@ -62,7 +62,9 @@ enum ssh_key_exchange_e {
   /* curve25519-sha256@libssh.org */
   SSH_KEX_CURVE25519_SHA256_LIBSSH_ORG,
   /* curve25519-sha256 */
-  SSH_KEX_CURVE25519_SHA256
+  SSH_KEX_CURVE25519_SHA256,
+  /* diffie-hellman-group16-sha512 */
+  SSH_KEX_DH_GROUP16_SHA512,
 };
 
 enum ssh_cipher_e {
