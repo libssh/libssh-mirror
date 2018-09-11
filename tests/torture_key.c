@@ -307,7 +307,7 @@ static const char torture_ed25519_public_testkey[] =
 
 static const char *torture_get_testkey_internal(enum ssh_keytypes_e type,
                                                 int bits,
-                                                int with_passphrase,
+                                                bool with_passphrase,
                                                 int pubkey)
 {
     switch (type) {
@@ -369,7 +369,7 @@ static const char *torture_get_testkey_internal(enum ssh_keytypes_e type,
 
 const char *torture_get_testkey(enum ssh_keytypes_e type,
                                 int ecda_bits,
-                                int with_passphrase)
+                                bool with_passphrase)
 {
     return torture_get_testkey_internal(type, ecda_bits, with_passphrase, 0);
 }
