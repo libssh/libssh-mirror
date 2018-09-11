@@ -24,11 +24,13 @@
 #ifndef _TORTURE_KEY_H
 #define _TORTURE_KEY_H
 
+#include <stdbool.h>
+
 #define TORTURE_TESTKEY_PASSWORD "libssh-rocks"
 
 const char *torture_get_testkey(enum ssh_keytypes_e type,
                                 int ecdsa_bits,
-                                int with_passphrase);
+                                bool with_passphrase);
 const char *torture_get_testkey_passphrase(void);
 
 const char *torture_get_testkey_pub(enum ssh_keytypes_e type, int ecdsa_bits);
