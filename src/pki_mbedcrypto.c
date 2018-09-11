@@ -229,25 +229,31 @@ int pki_pubkey_build_rsa(ssh_key key, ssh_string e, ssh_string n)
     pk_info = mbedtls_pk_info_from_type(MBEDTLS_PK_RSA);
     mbedtls_pk_setup(key->rsa, pk_info);
 
-    if (mbedtls_pk_can_do(key->rsa, MBEDTLS_PK_RSA)) {
-        rsa = mbedtls_pk_rsa(*key->rsa);
-        rc = mbedtls_mpi_read_binary(&rsa->N, ssh_string_data(n),
-                ssh_string_len(n));
-        if (rc != 0) {
-            return SSH_ERROR;
-        }
-        rc = mbedtls_mpi_read_binary(&rsa->E, ssh_string_data(e),
-                ssh_string_len(e));
-        if (rc != 0) {
-            return SSH_ERROR;
-        }
-
-        rsa->len = (mbedtls_mpi_bitlen(&rsa->N) + 7) >> 3;
-    } else {
-        return SSH_ERROR;
+    rc = mbedtls_pk_can_do(key->rsa, MBEDTLS_PK_RSA);
+    if (rc == 0) {
+        goto fail;
     }
 
+    rsa = mbedtls_pk_rsa(*key->rsa);
+    rc = mbedtls_mpi_read_binary(&rsa->N, ssh_string_data(n),
+                                 ssh_string_len(n));
+    if (rc != 0) {
+        goto fail;
+    }
+    rc = mbedtls_mpi_read_binary(&rsa->E, ssh_string_data(e),
+                                 ssh_string_len(e));
+    if (rc != 0) {
+        goto fail;
+    }
+
+    rsa->len = (mbedtls_mpi_bitlen(&rsa->N) + 7) >> 3;
+
     return SSH_OK;
+
+fail:
+    mbedtls_pk_free(key->rsa);
+    SAFE_FREE(key->rsa);
+    return SSH_ERROR;
 }
 
 ssh_key pki_key_dup(const ssh_key key, int demote)
