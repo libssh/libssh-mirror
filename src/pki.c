@@ -813,7 +813,7 @@ ssh_private_key ssh_pki_convert_key_to_privatekey(const ssh_key key) {
 static int pki_import_pubkey_buffer(ssh_buffer buffer,
                                     enum ssh_keytypes_e type,
                                     ssh_key *pkey) {
-    ssh_key key;
+    ssh_key key = NULL;
     int rc;
 
     key = ssh_key_new();
@@ -828,10 +828,10 @@ static int pki_import_pubkey_buffer(ssh_buffer buffer,
     switch (type) {
         case SSH_KEYTYPE_DSS:
             {
-                ssh_string p;
-                ssh_string q;
-                ssh_string g;
-                ssh_string pubkey;
+                ssh_string p = NULL;
+                ssh_string q = NULL;
+                ssh_string g = NULL;
+                ssh_string pubkey = NULL;
 
                 p = ssh_buffer_get_ssh_string(buffer);
                 if (p == NULL) {
@@ -886,8 +886,8 @@ static int pki_import_pubkey_buffer(ssh_buffer buffer,
             break;
         case SSH_KEYTYPE_RSA:
             {
-                ssh_string e;
-                ssh_string n;
+                ssh_string e = NULL;
+                ssh_string n = NULL;
 
                 e = ssh_buffer_get_ssh_string(buffer);
                 if (e == NULL) {
@@ -918,8 +918,8 @@ static int pki_import_pubkey_buffer(ssh_buffer buffer,
 #ifdef HAVE_ECC
         case SSH_KEYTYPE_ECDSA:
             {
-                ssh_string e;
-                ssh_string i;
+                ssh_string e = NULL;
+                ssh_string i = NULL;
                 int nid;
 
                 i = ssh_buffer_get_ssh_string(buffer);
@@ -1058,8 +1058,8 @@ fail:
 int ssh_pki_import_pubkey_base64(const char *b64_key,
                                  enum ssh_keytypes_e type,
                                  ssh_key *pkey) {
-    ssh_buffer buffer;
-    ssh_string type_s;
+    ssh_buffer buffer = NULL;
+    ssh_string type_s = NULL;
     int rc;
 
     if (b64_key == NULL || pkey == NULL) {
@@ -1106,7 +1106,7 @@ int ssh_pki_import_pubkey_base64(const char *b64_key,
  */
 int ssh_pki_import_pubkey_blob(const ssh_string key_blob,
                                ssh_key *pkey) {
-    ssh_buffer buffer;
+    ssh_buffer buffer = NULL;
     ssh_string type_s = NULL;
     enum ssh_keytypes_e type;
     int rc;
