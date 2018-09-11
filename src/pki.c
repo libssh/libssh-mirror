@@ -833,35 +833,9 @@ static int pki_import_pubkey_buffer(ssh_buffer buffer,
                 ssh_string g = NULL;
                 ssh_string pubkey = NULL;
 
-                p = ssh_buffer_get_ssh_string(buffer);
-                if (p == NULL) {
-                    goto fail;
-                }
-                q = ssh_buffer_get_ssh_string(buffer);
-                if (q == NULL) {
-                    ssh_string_burn(p);
-                    ssh_string_free(p);
-
-                    goto fail;
-                }
-                g = ssh_buffer_get_ssh_string(buffer);
-                if (g == NULL) {
-                    ssh_string_burn(p);
-                    ssh_string_free(p);
-                    ssh_string_burn(q);
-                    ssh_string_free(q);
-
-                    goto fail;
-                }
-                pubkey = ssh_buffer_get_ssh_string(buffer);
-                if (pubkey == NULL) {
-                    ssh_string_burn(p);
-                    ssh_string_free(p);
-                    ssh_string_burn(q);
-                    ssh_string_free(q);
-                    ssh_string_burn(g);
-                    ssh_string_free(g);
-
+                rc = ssh_buffer_unpack(buffer, "SSSS", &p, &q, &g, &pubkey);
+                if (rc != SSH_OK) {
+                    SSH_LOG(SSH_LOG_WARN, "Unpack error");
                     goto fail;
                 }
 
@@ -880,6 +854,7 @@ static int pki_import_pubkey_buffer(ssh_buffer buffer,
                 ssh_string_burn(pubkey);
                 ssh_string_free(pubkey);
                 if (rc == SSH_ERROR) {
+                    SSH_LOG(SSH_LOG_WARN, "Failed to build DSA public key");
                     goto fail;
                 }
             }
@@ -889,15 +864,9 @@ static int pki_import_pubkey_buffer(ssh_buffer buffer,
                 ssh_string e = NULL;
                 ssh_string n = NULL;
 
-                e = ssh_buffer_get_ssh_string(buffer);
-                if (e == NULL) {
-                    goto fail;
-                }
-                n = ssh_buffer_get_ssh_string(buffer);
-                if (n == NULL) {
-                    ssh_string_burn(e);
-                    ssh_string_free(e);
-
+                rc = ssh_buffer_unpack(buffer, "SS", &e, &n);
+                if (rc != SSH_OK) {
+                    SSH_LOG(SSH_LOG_WARN, "Unpack error");
                     goto fail;
                 }
 
@@ -911,6 +880,7 @@ static int pki_import_pubkey_buffer(ssh_buffer buffer,
                 ssh_string_burn(n);
                 ssh_string_free(n);
                 if (rc == SSH_ERROR) {
+                    SSH_LOG(SSH_LOG_WARN, "Failed to build RSA public key");
                     goto fail;
                 }
             }
@@ -922,19 +892,15 @@ static int pki_import_pubkey_buffer(ssh_buffer buffer,
                 ssh_string i = NULL;
                 int nid;
 
-                i = ssh_buffer_get_ssh_string(buffer);
-                if (i == NULL) {
+                rc = ssh_buffer_unpack(buffer, "SS", &i, &e);
+                if (rc != SSH_OK) {
+                    SSH_LOG(SSH_LOG_WARN, "Unpack error");
                     goto fail;
                 }
+
                 nid = pki_key_ecdsa_nid_from_name(ssh_string_get_char(i));
                 ssh_string_free(i);
                 if (nid == -1) {
-                    goto fail;
-                }
-
-
-                e = ssh_buffer_get_ssh_string(buffer);
-                if (e == NULL) {
                     goto fail;
                 }
 
@@ -942,6 +908,7 @@ static int pki_import_pubkey_buffer(ssh_buffer buffer,
                 ssh_string_burn(e);
                 ssh_string_free(e);
                 if (rc < 0) {
+                    SSH_LOG(SSH_LOG_WARN, "Failed to build ECDSA public key");
                     goto fail;
                 }
 
