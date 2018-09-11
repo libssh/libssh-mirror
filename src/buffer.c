@@ -758,32 +758,37 @@ int ssh_buffer_validate_length(struct ssh_buffer_struct *buffer, size_t len)
  *
  * @returns             The SSH String, NULL on error.
  */
-struct ssh_string_struct *ssh_buffer_get_ssh_string(struct ssh_buffer_struct *buffer) {
-  uint32_t stringlen;
-  uint32_t hostlen;
-  struct ssh_string_struct *str = NULL;
-  int rc;
+struct ssh_string_struct *
+ssh_buffer_get_ssh_string(struct ssh_buffer_struct *buffer)
+{
+    uint32_t stringlen;
+    uint32_t hostlen;
+    struct ssh_string_struct *str = NULL;
+    int rc;
 
-  if (ssh_buffer_get_u32(buffer, &stringlen) == 0) {
-    return NULL;
-  }
-  hostlen = ntohl(stringlen);
-  /* verify if there is enough space in buffer to get it */
-  rc = ssh_buffer_validate_length(buffer, hostlen);
-  if (rc != SSH_OK) {
-    return NULL; /* it is indeed */
-  }
-  str = ssh_string_new(hostlen);
-  if (str == NULL) {
-    return NULL;
-  }
-  if (ssh_buffer_get_data(buffer, ssh_string_data(str), hostlen) != hostlen) {
-    /* should never happen */
-    SAFE_FREE(str);
-    return NULL;
-  }
+    rc = ssh_buffer_get_u32(buffer, &stringlen);
+    if (rc == 0) {
+        return NULL;
+    }
+    hostlen = ntohl(stringlen);
+    /* verify if there is enough space in buffer to get it */
+    rc = ssh_buffer_validate_length(buffer, hostlen);
+    if (rc != SSH_OK) {
+      return NULL; /* it is indeed */
+    }
+    str = ssh_string_new(hostlen);
+    if (str == NULL) {
+        return NULL;
+    }
 
-  return str;
+    stringlen = ssh_buffer_get_data(buffer, ssh_string_data(str), hostlen);
+    if (stringlen != hostlen) {
+        /* should never happen */
+        SAFE_FREE(str);
+        return NULL;
+    }
+
+    return str;
 }
 
 /**
