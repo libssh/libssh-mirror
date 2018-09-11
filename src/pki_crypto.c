@@ -174,8 +174,8 @@ static ssh_string make_ecpoint_string(const EC_GROUP *g,
 
 int pki_pubkey_build_ecdsa(ssh_key key, int nid, ssh_string e)
 {
-    EC_POINT *p;
-    const EC_GROUP *g;
+    EC_POINT *p = NULL;
+    const EC_GROUP *g = NULL;
     int ok;
 
     key->ecdsa_nid = nid;
@@ -894,7 +894,7 @@ int pki_pubkey_build_dss(ssh_key key,
                          ssh_string g,
                          ssh_string pubkey) {
     int rc;
-    BIGNUM *bp, *bq, *bg, *bpub_key;
+    BIGNUM *bp = NULL, *bq = NULL, *bg = NULL, *bpub_key = NULL;
 
     key->dsa = DSA_new();
     if (key->dsa == NULL) {
@@ -930,7 +930,7 @@ int pki_pubkey_build_rsa(ssh_key key,
                          ssh_string e,
                          ssh_string n) {
     int rc;
-    BIGNUM *be, *bn;
+    BIGNUM *be = NULL, *bn = NULL;
 
     key->rsa = RSA_new();
     if (key->rsa == NULL) {
