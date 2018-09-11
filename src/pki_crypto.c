@@ -260,6 +260,7 @@ ssh_key pki_key_dup(const ssh_key key, int demote)
             goto fail;
         }
 
+        /* Memory management of np, nq and ng is transfered to DSA object */
         rc = DSA_set0_pqg(new->dsa, np, nq, ng);
         if (rc == 0) {
             BN_free(np);
@@ -274,6 +275,7 @@ ssh_key pki_key_dup(const ssh_key key, int demote)
             goto fail;
         }
 
+        /* Memory management of npubkey is transfered to DSA object */
         rc = DSA_set0_key(new->dsa, npub_key, NULL);
         if (rc == 0) {
             goto fail;
@@ -285,6 +287,7 @@ ssh_key pki_key_dup(const ssh_key key, int demote)
                 goto fail;
             }
 
+            /* Memory management of npriv_key is transfered to DSA object */
             rc = DSA_set0_key(new->dsa, NULL, npriv_key);
             if (rc == 0) {
                 goto fail;
@@ -321,6 +324,7 @@ ssh_key pki_key_dup(const ssh_key key, int demote)
             goto fail;
         }
 
+        /* Memory management of nn and ne is transfered to RSA object */
         rc = RSA_set0_key(new->rsa, nn, ne, NULL);
         if (rc == 0) {
             BN_free(nn);
@@ -338,6 +342,7 @@ ssh_key pki_key_dup(const ssh_key key, int demote)
                 goto fail;
             }
 
+            /* Memory management of nd is transfered to RSA object */
             rc = RSA_set0_key(new->rsa, NULL, NULL, nd);
             if (rc == 0) {
                 goto fail;
@@ -356,6 +361,7 @@ ssh_key pki_key_dup(const ssh_key key, int demote)
                     goto fail;
                 }
 
+                /* Memory management of np and nq is transfered to RSA object */
                 rc = RSA_set0_factors(new->rsa, np, nq);
                 if (rc == 0) {
                     BN_free(np);
@@ -376,6 +382,8 @@ ssh_key pki_key_dup(const ssh_key key, int demote)
                     goto fail;
                 }
 
+                /* Memory management of ndmp1, ndmq1 and niqmp is transfered
+                 * to RSA object */
                 rc =  RSA_set0_crt_params(new->rsa, ndmp1, ndmq1, niqmp);
                 if (rc == 0) {
                     BN_free(ndmp1);
@@ -910,11 +918,13 @@ int pki_pubkey_build_dss(ssh_key key,
         goto fail;
     }
 
+    /* Memory management of bp, bq and bg is transfered to DSA object */
     rc = DSA_set0_pqg(key->dsa, bp, bq, bg);
     if (rc == 0) {
         goto fail;
     }
 
+    /* Memory management of npub_key is transfered to DSA object */
     rc = DSA_set0_key(key->dsa, bpub_key, NULL);
     if (rc == 0) {
         goto fail;
@@ -943,6 +953,7 @@ int pki_pubkey_build_rsa(ssh_key key,
         goto fail;
     }
 
+    /* Memory management of bn and be is transfered to RSA object */
     rc = RSA_set0_key(key->rsa, bn, be, NULL);
     if (rc == 0) {
         goto fail;
@@ -1500,6 +1511,8 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
                 return NULL;
             }
 
+            /* Memory management of pr and ps is transfered to DSA signature
+             * object */
             rc = DSA_SIG_set0(sig->dsa_sig, pr, ps);
             if (rc == 0) {
                 ssh_signature_free(sig);
@@ -1578,6 +1591,8 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
                     return NULL;
                 }
 
+                /* Memory management of pr and ps is transfered to
+                 * ECDSA signature object */
                 rc = ECDSA_SIG_set0(sig->ecdsa_sig, pr, ps);
                 if (rc == 0) {
                     ssh_signature_free(sig);
