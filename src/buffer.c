@@ -1239,22 +1239,53 @@ int ssh_buffer_unpack_va(struct ssh_buffer_struct *buffer,
         for(p=format;p<last;++p){
             switch(*p){
             case 'b':
+                if (buffer->secure) {
+                    o.byte = va_arg(ap_copy, uint8_t *);
+                    explicit_bzero(o.byte, sizeof(uint8_t));
+                    break;
+                }
+                break;
             case 'w':
+                if (buffer->secure) {
+                    o.word = va_arg(ap_copy, uint16_t *);
+                    explicit_bzero(o.word, sizeof(uint16_t));
+                    break;
+                }
+                break;
             case 'd':
+                if (buffer->secure) {
+                    o.dword = va_arg(ap_copy, uint32_t *);
+                    explicit_bzero(o.dword, sizeof(uint32_t));
+                    break;
+                }
+                break;
             case 'q':
-                (void)va_arg(ap_copy, void *);
+                if (buffer->secure) {
+                    o.qword = va_arg(ap_copy, uint64_t *);
+                    explicit_bzero(o.qword, sizeof(uint64_t));
+                    break;
+                }
                 break;
             case 'S':
-                o.string=va_arg(ap_copy, ssh_string *);
+                o.string = va_arg(ap_copy, ssh_string *);
+                if (buffer->secure) {
+                    ssh_string_burn(*o.string);
+                }
                 SAFE_FREE(*o.string);
                 break;
             case 's':
-                o.cstring=va_arg(ap_copy, char **);
+                o.cstring = va_arg(ap_copy, char **);
+                if (buffer->secure) {
+                    explicit_bzero(*o.cstring, strlen(*o.cstring));
+                }
                 SAFE_FREE(*o.cstring);
                 break;
             case 'P':
-                (void)va_arg(ap_copy, size_t);
+                len = va_arg(ap_copy, size_t);
                 o.data = va_arg(ap_copy, void **);
+                if (buffer->secure) {
+                    explicit_bzero(*o.data, len);
+                }
                 SAFE_FREE(*o.data);
                 break;
             default:
