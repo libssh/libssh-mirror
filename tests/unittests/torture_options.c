@@ -250,8 +250,10 @@ static void torture_options_get_user(void **state) {
   char* user = NULL;
   int rc;
   rc = ssh_options_set(session, SSH_OPTIONS_USER, "magicaltrevor");
-  assert_true(rc == SSH_OK);
+  assert_int_equal(rc, SSH_OK);
   rc = ssh_options_get(session, SSH_OPTIONS_USER, &user);
+  assert_int_equal(rc, SSH_OK);
+  assert_non_null(user);
   assert_string_equal(user, "magicaltrevor");
   free(user);
 }
@@ -329,15 +331,17 @@ static void torture_options_get_identity(void **state) {
     rc = ssh_options_set(session, SSH_OPTIONS_ADD_IDENTITY, "identity1");
     assert_true(rc == 0);
     rc = ssh_options_get(session, SSH_OPTIONS_IDENTITY, &identity);
-    assert_true(rc == SSH_OK);
+    assert_int_equal(rc, SSH_OK);
+    assert_non_null(identity);
     assert_string_equal(identity, "identity1");
     SAFE_FREE(identity);
 
     rc = ssh_options_set(session, SSH_OPTIONS_IDENTITY, "identity2");
-    assert_true(rc == 0);
+    assert_int_equal(rc, SSH_OK);
     assert_string_equal(session->opts.identity->root->data, "identity2");
     rc = ssh_options_get(session, SSH_OPTIONS_IDENTITY, &identity);
-    assert_true(rc == SSH_OK);
+    assert_int_equal(rc, SSH_OK);
+    assert_non_null(identity);
     assert_string_equal(identity, "identity2");
     free(identity);
 }
@@ -562,19 +566,26 @@ static void torture_bind_options_import_key(void **state)
     base64_key = torture_get_testkey(SSH_KEYTYPE_RSA, 0, 0);
     rc = ssh_pki_import_privkey_base64(base64_key, NULL, NULL, NULL, &key);
     assert_int_equal(rc, SSH_OK);
+    assert_non_null(key);
 
     rc = ssh_bind_options_set(bind, SSH_BIND_OPTIONS_IMPORT_KEY, key);
     assert_int_equal(rc, 0);
 #ifdef HAVE_DSA
     /* set dsa key */
     base64_key = torture_get_testkey(SSH_KEYTYPE_DSS, 0, 0);
-    ssh_pki_import_privkey_base64(base64_key, NULL, NULL, NULL, &key);
+    rc = ssh_pki_import_privkey_base64(base64_key, NULL, NULL, NULL, &key);
+    assert_int_equal(rc, SSH_OK);
+    assert_non_null(key);
+
     rc = ssh_bind_options_set(bind, SSH_BIND_OPTIONS_IMPORT_KEY, key);
     assert_int_equal(rc, 0);
 #endif
     /* set ecdsa key */
     base64_key = torture_get_testkey(SSH_KEYTYPE_ECDSA, 512, 0);
-    ssh_pki_import_privkey_base64(base64_key, NULL, NULL, NULL, &key);
+    rc = ssh_pki_import_privkey_base64(base64_key, NULL, NULL, NULL, &key);
+    assert_int_equal(rc, SSH_OK);
+    assert_non_null(key);
+
     rc = ssh_bind_options_set(bind, SSH_BIND_OPTIONS_IMPORT_KEY, key);
     assert_int_equal(rc, 0);
 }
