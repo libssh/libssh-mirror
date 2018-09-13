@@ -149,6 +149,7 @@ static void torture_pki_dsa_write_privkey(void **state)
                                      NULL,
                                      &privkey);
     assert_true(rc == 0);
+    assert_non_null(privkey);
 
     rc = ssh_key_cmp(origkey, privkey, SSH_KEY_CMP_PRIVATE);
     assert_true(rc == 0);
@@ -163,6 +164,7 @@ static void torture_pki_dsa_write_privkey(void **state)
                                      NULL,
                                      &origkey);
     assert_true(rc == 0);
+    assert_non_null(origkey);
 
     unlink(LIBSSH_DSA_TESTKEY_PASSPHRASE);
     rc = ssh_pki_export_privkey_file(origkey,
@@ -256,6 +258,9 @@ static void torture_pki_dsa_import_privkey_base64_passphrase(void **state)
                                        &key);
     assert_true(rc == -1);
 
+    /* This free in unnecessary, but the static analyser does not know */
+    ssh_key_free(key);
+
 #ifndef HAVE_LIBCRYPTO
     /* test if it returns -1 if passphrase is NULL */
     /* libcrypto asks for a passphrase, so skip this test */
@@ -265,6 +270,9 @@ static void torture_pki_dsa_import_privkey_base64_passphrase(void **state)
                                        NULL,
                                        &key);
     assert_true(rc == -1);
+
+    /* This free in unnecessary, but the static analyser does not know */
+    ssh_key_free(key);
 #endif /* HAVE_LIBCRYPTO */
 }
 
@@ -491,6 +499,7 @@ static void torture_pki_dsa_duplicate_key(void **state)
 
     rc = ssh_pki_import_pubkey_file(LIBSSH_DSA_TESTKEY ".pub", &pubkey);
     assert_true(rc == 0);
+    assert_non_null(pubkey);
 
     rc = ssh_pki_export_pubkey_base64(pubkey, &b64_key);
     assert_true(rc == 0);
@@ -502,15 +511,19 @@ static void torture_pki_dsa_duplicate_key(void **state)
                                      NULL,
                                      &privkey);
     assert_true(rc == 0);
+    assert_non_null(privkey);
 
     privkey_dup = ssh_key_dup(privkey);
     assert_true(privkey_dup != NULL);
+    assert_non_null(privkey_dup);
 
     rc = ssh_pki_export_privkey_to_pubkey(privkey, &pubkey);
     assert_true(rc == SSH_OK);
+    assert_non_null(pubkey);
 
     rc = ssh_pki_export_pubkey_base64(pubkey, &b64_key_gen);
     assert_true(rc == 0);
+    assert_non_null(b64_key_gen);
 
     assert_string_equal(b64_key, b64_key_gen);
 
