@@ -70,6 +70,36 @@ static int teardown_dsa_key(void **state)
     return 0;
 }
 
+static void torture_pki_dsa_import_pubkey_file(void **state)
+{
+    ssh_key pubkey = NULL;
+    int rc;
+
+    (void)state;
+
+    /* The key doesn't have the hostname as comment after the key */
+    rc = ssh_pki_import_pubkey_file(LIBSSH_DSA_TESTKEY ".pub", &pubkey);
+    assert_return_code(rc, errno);
+    assert_non_null(pubkey);
+
+    ssh_key_free(pubkey);
+}
+
+static void torture_pki_dsa_import_pubkey_from_openssh_privkey(void **state)
+{
+    ssh_key pubkey = NULL;
+    int rc;
+
+    (void)state;
+
+    /* The key doesn't have the hostname as comment after the key */
+    rc = ssh_pki_import_pubkey_file(LIBSSH_DSA_TESTKEY_PASSPHRASE, &pubkey);
+    assert_return_code(rc, errno);
+    assert_non_null(pubkey);
+
+    ssh_key_free(pubkey);
+}
+
 static void torture_pki_dsa_import_privkey_base64(void **state)
 {
     int rc;
@@ -542,6 +572,12 @@ int torture_run_tests(void)
 {
     int rc;
     struct CMUnitTest tests[] = {
+        cmocka_unit_test_setup_teardown(torture_pki_dsa_import_pubkey_file,
+                                 setup_dsa_key,
+                                 teardown_dsa_key),
+        cmocka_unit_test_setup_teardown(torture_pki_dsa_import_pubkey_from_openssh_privkey,
+                                 setup_openssh_dsa_key,
+                                 teardown_dsa_key),
         cmocka_unit_test_setup_teardown(torture_pki_dsa_import_privkey_base64,
                                  setup_dsa_key,
                                  teardown_dsa_key),

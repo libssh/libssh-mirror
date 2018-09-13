@@ -87,6 +87,21 @@ static void torture_pki_rsa_import_pubkey_file(void **state)
     ssh_key_free(pubkey);
 }
 
+static void torture_pki_rsa_import_pubkey_from_openssh_privkey(void **state)
+{
+    ssh_key pubkey = NULL;
+    int rc;
+
+    (void)state;
+
+    /* The key doesn't have the hostname as comment after the key */
+    rc = ssh_pki_import_pubkey_file(LIBSSH_RSA_TESTKEY_PASSPHRASE, &pubkey);
+    assert_return_code(rc, errno);
+    assert_non_null(pubkey);
+
+    ssh_key_free(pubkey);
+}
+
 static void torture_pki_rsa_import_privkey_base64_NULL_key(void **state)
 {
     int rc;
@@ -640,6 +655,9 @@ int torture_run_tests(void) {
     struct CMUnitTest tests[] = {
         cmocka_unit_test_setup_teardown(torture_pki_rsa_import_pubkey_file,
                                         setup_rsa_key,
+                                        teardown),
+        cmocka_unit_test_setup_teardown(torture_pki_rsa_import_pubkey_from_openssh_privkey,
+                                        setup_rsa_openssh_key,
                                         teardown),
         cmocka_unit_test_setup_teardown(torture_pki_rsa_import_privkey_base64_NULL_key,
                                         setup_rsa_key,

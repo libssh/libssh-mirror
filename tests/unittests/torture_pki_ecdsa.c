@@ -109,6 +109,36 @@ static int teardown(void **state)
     return 0;
 }
 
+static void torture_pki_ecdsa_import_pubkey_file(void **state)
+{
+    ssh_key pubkey = NULL;
+    int rc;
+
+    (void)state;
+
+    /* The key doesn't have the hostname as comment after the key */
+    rc = ssh_pki_import_pubkey_file(LIBSSH_ECDSA_TESTKEY ".pub", &pubkey);
+    assert_return_code(rc, errno);
+    assert_non_null(pubkey);
+
+    ssh_key_free(pubkey);
+}
+
+static void torture_pki_ecdsa_import_pubkey_from_openssh_privkey(void **state)
+{
+    ssh_key pubkey = NULL;
+    int rc;
+
+    (void)state;
+
+    /* The key doesn't have the hostname as comment after the key */
+    rc = ssh_pki_import_pubkey_file(LIBSSH_ECDSA_TESTKEY_PASSPHRASE, &pubkey);
+    assert_return_code(rc, errno);
+    assert_non_null(pubkey);
+
+    ssh_key_free(pubkey);
+}
+
 static void torture_pki_ecdsa_import_privkey_base64(void **state)
 {
     int rc;
@@ -496,6 +526,24 @@ static void torture_pki_ecdsa_name521(void **state)
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
+        cmocka_unit_test_setup_teardown(torture_pki_ecdsa_import_pubkey_file,
+                                        setup_ecdsa_key_256,
+                                        teardown),
+        cmocka_unit_test_setup_teardown(torture_pki_ecdsa_import_pubkey_file,
+                                        setup_ecdsa_key_384,
+                                        teardown),
+        cmocka_unit_test_setup_teardown(torture_pki_ecdsa_import_pubkey_file,
+                                        setup_ecdsa_key_521,
+                                        teardown),
+        cmocka_unit_test_setup_teardown(torture_pki_ecdsa_import_pubkey_from_openssh_privkey,
+                                        setup_openssh_ecdsa_key_256,
+                                        teardown),
+        cmocka_unit_test_setup_teardown(torture_pki_ecdsa_import_pubkey_from_openssh_privkey,
+                                        setup_openssh_ecdsa_key_384,
+                                        teardown),
+        cmocka_unit_test_setup_teardown(torture_pki_ecdsa_import_pubkey_file,
+                                        setup_openssh_ecdsa_key_521,
+                                        teardown),
         cmocka_unit_test_setup_teardown(torture_pki_ecdsa_import_privkey_base64,
                                         setup_ecdsa_key_256,
                                         teardown),
