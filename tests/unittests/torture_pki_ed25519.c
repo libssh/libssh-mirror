@@ -50,6 +50,36 @@ static int teardown(void **state) {
     return 0;
 }
 
+static void torture_pki_ed25519_import_pubkey_file(void **state)
+{
+    ssh_key pubkey = NULL;
+    int rc;
+
+    (void)state;
+
+    /* The key doesn't have the hostname as comment after the key */
+    rc = ssh_pki_import_pubkey_file(LIBSSH_ED25519_TESTKEY ".pub", &pubkey);
+    assert_return_code(rc, errno);
+    assert_non_null(pubkey);
+
+    ssh_key_free(pubkey);
+}
+
+static void torture_pki_ed25519_import_pubkey_from_openssh_privkey(void **state)
+{
+    ssh_key pubkey = NULL;
+    int rc;
+
+    (void)state;
+
+    /* The key doesn't have the hostname as comment after the key */
+    rc = ssh_pki_import_pubkey_file(LIBSSH_ED25519_TESTKEY_PASSPHRASE, &pubkey);
+    assert_return_code(rc, errno);
+    assert_non_null(pubkey);
+
+    ssh_key_free(pubkey);
+}
+
 static void torture_pki_ed25519_import_privkey_base64(void **state)
 {
     int rc;
@@ -531,6 +561,12 @@ static void torture_pki_ed25519_pubkey_dup(void **state)
 int torture_run_tests(void) {
     int rc;
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test_setup_teardown(torture_pki_ed25519_import_pubkey_file,
+                                        setup_ed25519_key,
+                                        teardown),
+        cmocka_unit_test_setup_teardown(torture_pki_ed25519_import_pubkey_from_openssh_privkey,
+                                        setup_ed25519_key,
+                                        teardown),
         cmocka_unit_test_setup_teardown(torture_pki_ed25519_import_privkey_base64,
                                         setup_ed25519_key,
                                         teardown),
