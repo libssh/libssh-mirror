@@ -149,6 +149,7 @@ int pki_privkey_build_ed25519(ssh_key key,
                               ssh_string privkey);
 
 /* PKI Container OpenSSH */
+ssh_key ssh_pki_openssh_pubkey_import(const char *text_key);
 ssh_key ssh_pki_openssh_privkey_import(const char *text_key,
         const char *passphrase, ssh_auth_callback auth_fn, void *auth_data);
 ssh_string ssh_pki_openssh_privkey_export(const ssh_key privkey,
