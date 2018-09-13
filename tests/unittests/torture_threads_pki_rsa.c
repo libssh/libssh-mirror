@@ -274,12 +274,14 @@ static void *thread_pki_rsa_publickey_from_privatekey(void *threadid)
                                        NULL,
                                        &key);
     assert_true(rc == 0);
+    assert_non_null(key);
 
     ok = ssh_key_is_private(key);
     assert_true(ok);
 
     rc = ssh_pki_export_privkey_to_pubkey(key, &pubkey);
     assert_true(rc == SSH_OK);
+    assert_non_null(pubkey);
 
     ssh_key_free(key);
     ssh_key_free(pubkey);
