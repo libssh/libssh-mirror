@@ -1320,7 +1320,7 @@ int ssh_pki_import_pubkey_file(const char *filename, ssh_key *pkey)
     const char *q;
     FILE *file;
     off_t size;
-    int rc;
+    int rc, cmp;
 
     if (pkey == NULL || filename == NULL || *filename == '\0') {
         return SSH_ERROR;
@@ -1370,6 +1370,20 @@ int ssh_pki_import_pubkey_file(const char *filename, ssh_key *pkey)
     key_buf[size] = '\0';
     buflen = strlen(key_buf);
 
+    /* Test for new OpenSSH key format first */
+    cmp = strncmp(key_buf, OPENSSH_HEADER_BEGIN, strlen(OPENSSH_HEADER_BEGIN));
+    if (cmp == 0) {
+        *pkey = ssh_pki_openssh_pubkey_import(key_buf);
+        SAFE_FREE(key_buf);
+        if (*pkey == NULL) {
+            SSH_LOG(SSH_LOG_WARN, "Failed to import public key from OpenSSH"
+                                  " private key file");
+            return SSH_ERROR;
+        }
+        return SSH_OK;
+    }
+
+    /* This the old one-line public key format */
     q = p = key_buf;
     for (i = 0; i < buflen; i++) {
         if (isspace((int)p[i])) {
