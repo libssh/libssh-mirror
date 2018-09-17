@@ -347,7 +347,7 @@ static void local_parse_file(ssh_session session, const char *filename, int *par
   return;
 }
 
-#ifdef HAVE_GLOB
+#if defined(HAVE_GLOB) && defined(HAVE_GLOB_GL_FLAGS_MEMBER)
 static void local_parse_glob(ssh_session session,
                              const char *fileglob,
                              int *parsing,
@@ -376,7 +376,7 @@ static void local_parse_glob(ssh_session session,
 
     globfree(&globbuf);
 }
-#endif /* HAVE_GLOB */
+#endif /* HAVE_GLOB HAVE_GLOB_GL_FLAGS_MEMBER */
 
 static enum ssh_config_match_e
 ssh_config_get_match_opcode(const char *keyword)
