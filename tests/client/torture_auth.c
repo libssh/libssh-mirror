@@ -547,7 +547,8 @@ static void torture_auth_agent_cert_nonblocking(void **state) {
   torture_auth_agent_nonblocking(state);
 }
 
-static void torture_auth_pubkey_types(void **state) {
+static void torture_auth_pubkey_types(void **state)
+{
     struct torture_state *s = *state;
     ssh_session session = s->ssh.session;
     int rc;
@@ -583,7 +584,46 @@ static void torture_auth_pubkey_types(void **state) {
     assert_int_equal(rc, SSH_AUTH_SUCCESS);
 }
 
-static void torture_auth_pubkey_types_nonblocking(void **state) {
+static void torture_auth_pubkey_types_ecdsa(void **state)
+{
+    struct torture_state *s = *state;
+    ssh_session session = s->ssh.session;
+    int rc;
+
+    rc = ssh_options_set(session, SSH_OPTIONS_USER, TORTURE_SSH_USER_ALICE);
+    assert_ssh_return_code(session, rc);
+
+    rc = ssh_connect(session);
+    assert_ssh_return_code(session, rc);
+
+    rc = ssh_userauth_none(session,NULL);
+    /* This request should return a SSH_REQUEST_DENIED error */
+    if (rc == SSH_ERROR) {
+        assert_true(ssh_get_error_code(session) == SSH_REQUEST_DENIED);
+    }
+    rc = ssh_userauth_list(session, NULL);
+    assert_true(rc & SSH_AUTH_METHOD_PUBLICKEY);
+
+    /* We have only the 256b key -- whitelisting only larger should fail */
+    rc = ssh_options_set(session, SSH_OPTIONS_PUBLICKEY_ACCEPTED_TYPES,
+                         "ecdsa-sha2-nistp384");
+    assert_ssh_return_code(session, rc);
+
+    rc = ssh_userauth_publickey_auto(session, NULL, NULL);
+    assert_int_equal(rc, SSH_AUTH_DENIED);
+
+    /* Verify we can use also ECDSA keys with their various names */
+    rc = ssh_options_set(session, SSH_OPTIONS_PUBLICKEY_ACCEPTED_TYPES,
+                         "ecdsa-sha2-nistp256");
+    assert_ssh_return_code(session, rc);
+
+    rc = ssh_userauth_publickey_auto(session, NULL, NULL);
+    assert_int_equal(rc, SSH_AUTH_SUCCESS);
+
+}
+
+static void torture_auth_pubkey_types_nonblocking(void **state)
+{
     struct torture_state *s = *state;
     ssh_session session = s->ssh.session;
     int rc;
@@ -626,6 +666,54 @@ static void torture_auth_pubkey_types_nonblocking(void **state) {
         rc = ssh_userauth_publickey_auto(session, NULL, NULL);
     } while (rc == SSH_AUTH_AGAIN);
     assert_int_equal(rc, SSH_AUTH_SUCCESS);
+
+}
+
+static void torture_auth_pubkey_types_ecdsa_nonblocking(void **state)
+{
+    struct torture_state *s = *state;
+    ssh_session session = s->ssh.session;
+    int rc;
+
+    rc = ssh_options_set(session, SSH_OPTIONS_USER, TORTURE_SSH_USER_ALICE);
+    assert_ssh_return_code(session, rc);
+
+    rc = ssh_connect(session);
+    assert_ssh_return_code(session, rc);
+
+    ssh_set_blocking(session,0);
+    do {
+      rc = ssh_userauth_none(session, NULL);
+    } while (rc == SSH_AUTH_AGAIN);
+
+    /* This request should return a SSH_REQUEST_DENIED error */
+    if (rc == SSH_ERROR) {
+        assert_int_equal(ssh_get_error_code(session), SSH_REQUEST_DENIED);
+    }
+
+    rc = ssh_userauth_list(session, NULL);
+    assert_true(rc & SSH_AUTH_METHOD_PUBLICKEY);
+
+    /* We have only the 256b key -- whitelisting only larger should fail */
+    rc = ssh_options_set(session, SSH_OPTIONS_PUBLICKEY_ACCEPTED_TYPES,
+                         "ecdsa-sha2-nistp384");
+    assert_ssh_return_code(session, rc);
+
+    do {
+        rc = ssh_userauth_publickey_auto(session, NULL, NULL);
+    } while (rc == SSH_AUTH_AGAIN);
+    assert_int_equal(rc, SSH_AUTH_DENIED);
+
+    /* Verify we can use also ECDSA keys with their various names */
+    rc = ssh_options_set(session, SSH_OPTIONS_PUBLICKEY_ACCEPTED_TYPES,
+                         "ecdsa-sha2-nistp256");
+    assert_ssh_return_code(session, rc);
+
+    do {
+        rc = ssh_userauth_publickey_auto(session, NULL, NULL);
+    } while (rc == SSH_AUTH_AGAIN);
+    assert_int_equal(rc, SSH_AUTH_SUCCESS);
+
 }
 
 
@@ -675,6 +763,12 @@ int torture_run_tests(void) {
                                         pubkey_setup,
                                         session_teardown),
         cmocka_unit_test_setup_teardown(torture_auth_pubkey_types_nonblocking,
+                                        pubkey_setup,
+                                        session_teardown),
+        cmocka_unit_test_setup_teardown(torture_auth_pubkey_types_ecdsa,
+                                        pubkey_setup,
+                                        session_teardown),
+        cmocka_unit_test_setup_teardown(torture_auth_pubkey_types_ecdsa_nonblocking,
                                         pubkey_setup,
                                         session_teardown),
     };
