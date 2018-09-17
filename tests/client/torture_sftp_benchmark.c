@@ -72,7 +72,6 @@ static void torture_sftp_benchmark_write_read(void **state)
     };
     uint8_t buf_16k[MAX_XFER_BUF_SIZE];
     char local_path[1024] = {0};
-    char *remote_path = NULL;
     ssize_t bwritten, nread;
     size_t i;
     int rc;
@@ -81,10 +80,7 @@ static void torture_sftp_benchmark_write_read(void **state)
 
     snprintf(local_path, sizeof(local_path), "%s/128M.dat", t->testdir);
 
-    remote_path = sftp_canonicalize_path(sftp, local_path);
-    assert_non_null(remote_path);
-
-    file = sftp_open(sftp, remote_path, O_CREAT|O_WRONLY|O_TRUNC, 0644);
+    file = sftp_open(sftp, local_path, O_CREAT|O_WRONLY|O_TRUNC, 0644);
     assert_non_null(file);
 
     /* Write 128M */
@@ -100,7 +96,7 @@ static void torture_sftp_benchmark_write_read(void **state)
     rc = stat(local_path, &sb);
     assert_int_equal(sb.st_size, 0x8000000);
 
-    file = sftp_open(sftp, remote_path, O_RDONLY, 0);
+    file = sftp_open(sftp, local_path, O_RDONLY, 0);
     assert_non_null(file);
 
     for (;;) {
@@ -114,7 +110,6 @@ static void torture_sftp_benchmark_write_read(void **state)
     rc = sftp_close(file);
     assert_ssh_return_code(session, rc);
 
-    SSH_STRING_FREE_CHAR(remote_path);
     unlink(local_path);
 }
 
