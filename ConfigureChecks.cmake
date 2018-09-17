@@ -4,7 +4,7 @@ include(CheckSymbolExists)
 include(CheckFunctionExists)
 include(CheckLibraryExists)
 include(CheckTypeSize)
-include(CheckCXXSourceCompiles)
+include(CheckStructHasMember)
 include(TestBigEndian)
 
 set(PACKAGE ${PROJECT_NAME})
@@ -156,7 +156,8 @@ check_function_exists(explicit_bzero HAVE_EXPLICIT_BZERO)
 check_function_exists(memset_s HAVE_MEMSET_S)
 
 if (HAVE_GLOB_H)
-  check_function_exists(glob HAVE_GLOB)
+    check_struct_has_member(glob_t gl_flags glob.h HAVE_GLOB_GL_FLAGS_MEMBER)
+    check_function_exists(glob HAVE_GLOB)
 endif (HAVE_GLOB_H)
 
 if (NOT WIN32)
