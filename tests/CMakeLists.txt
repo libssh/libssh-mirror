@@ -31,6 +31,9 @@ add_library(${TORTURE_LIBRARY}
                 torture_pki.c
                 torture_cmocka.c)
 target_link_libraries(${TORTURE_LIBRARY} ${TORTURE_LINK_LIBRARIES})
+target_compile_options(${TORTURE_LIBRARY} PRIVATE
+                       -DSSH_PING_EXECUTABLE="${CMAKE_CURRENT_BINARY_DIR}/ssh_ping"
+)
 
 if (ARGP_LIBRARY)
     target_link_libraries(${TORTURE_LIBRARY}
@@ -86,6 +89,11 @@ if (CLIENT_TESTING)
         ${TEST_TARGET_LIBRARIES}
         chroot_wrapper
     )
+
+    # ssh_ping
+    add_executable(ssh_ping ssh_ping.c)
+    target_compile_options(ssh_ping PRIVATE ${DEFAULT_C_COMPILE_FLAGS})
+    target_link_libraries(ssh_ping ${LIBSSH_SHARED_LIBRARY})
 
     # homedir will be used in passwd
     set(HOMEDIR ${CMAKE_CURRENT_BINARY_DIR}/home)

@@ -42,6 +42,7 @@
 
 #include "torture.h"
 #include "torture_key.h"
+#include "libssh/misc.h"
 
 /* for pattern matching */
 #include "match.c"
@@ -696,6 +697,24 @@ static void torture_setup_create_sshd_config(void **state)
     torture_write_file(s->srv_config, sshd_config);
 }
 
+static int torture_wait_for_daemon(unsigned int seconds)
+{
+    struct ssh_timestamp start;
+    int rc;
+
+    ssh_timestamp_init(&start);
+
+    while (!ssh_timeout_elapsed(&start, seconds * 1000)) {
+        rc = system(SSH_PING_EXECUTABLE " " TORTURE_SSH_SERVER);
+        if (rc == 0) {
+            return 0;
+        }
+        /* Wait 200 ms before retrying */
+        usleep(200 * 1000);
+    }
+    return 1;
+}
+
 void torture_setup_sshd_server(void **state)
 {
     struct torture_state *s;
@@ -718,11 +737,12 @@ void torture_setup_sshd_server(void **state)
     rc = system(sshd_start_cmd);
     assert_return_code(rc, errno);
 
-    /* Give the process 500ms time to initialize and start */
-    usleep(500 * 1000);
-
     setenv("SOCKET_WRAPPER_DEFAULT_IFACE", "21", 1);
     unsetenv("PAM_WRAPPER");
+
+    /* Wait until the sshd is ready to accept connections */
+    rc = torture_wait_for_daemon(5);
+    assert_int_equal(rc, 0);
 }
 
 void torture_teardown_socket_dir(void **state)
