@@ -57,7 +57,7 @@ int main(int argc, char **argv)
         goto out;
     }
 
-    printf("%s", banner);
+    printf("OK: %s\n", banner);
     rc = 0;
 
 out:
