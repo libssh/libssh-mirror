@@ -2697,7 +2697,7 @@ char *sftp_readlink(sftp_session sftp, const char *path)
         rc = ssh_buffer_unpack(msg->payload,
                                "ds",
                                &ignored,
-                               lnk);
+                               &lnk);
         sftp_message_free(msg);
         if (rc != SSH_OK) {
             ssh_set_error(sftp->session,
