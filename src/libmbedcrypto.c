@@ -172,7 +172,7 @@ void evp_update(EVPCTX ctx, const void *data, unsigned long len)
 void evp_final(EVPCTX ctx, unsigned char *md, unsigned int *mdlen)
 {
     *mdlen = mbedtls_md_get_size(ctx->md_info);
-    mbedtls_md_hmac_finish(ctx, md);
+    mbedtls_md_finish(ctx, md);
     mbedtls_md_free(ctx);
     SAFE_FREE(ctx);
 }
