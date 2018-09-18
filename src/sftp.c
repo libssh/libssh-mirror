@@ -163,10 +163,12 @@ error:
     if (sftp->channel != NULL) {
         ssh_channel_free(sftp->channel);
     }
-    if (sftp->read_packet->payload != NULL) {
-        ssh_buffer_free(sftp->read_packet->payload);
+    if (sftp->read_packet != NULL) {
+        if (sftp->read_packet->payload != NULL) {
+            ssh_buffer_free(sftp->read_packet->payload);
+        }
+        SAFE_FREE(sftp->read_packet);
     }
-    SAFE_FREE(sftp->read_packet);
     SAFE_FREE(sftp);
     return NULL;
 }
