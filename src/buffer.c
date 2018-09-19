@@ -1109,7 +1109,8 @@ int ssh_buffer_unpack_va(struct ssh_buffer_struct *buffer,
         /* Invalid number of arguments passed */
         if (argc != -1 && count > argc) {
             va_end(ap_copy);
-            return SSH_ERROR;
+            rc = SSH_ERROR;
+            goto cleanup;
         }
 
         switch (*p) {
@@ -1221,6 +1222,7 @@ int ssh_buffer_unpack_va(struct ssh_buffer_struct *buffer,
         rc = SSH_ERROR;
     }
 
+cleanup:
     if (rc != SSH_ERROR){
         /* Check if our canary is intact, if not something really bad happened */
         uint32_t canary = va_arg(ap, uint32_t);
