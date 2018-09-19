@@ -96,6 +96,8 @@ enum ssh_auth_state_e {
   SSH_AUTH_STATE_PUBKEY_AUTH_SENT,
   /** We have sent a password expecting to be authenticated */
   SSH_AUTH_STATE_PASSWORD_AUTH_SENT,
+  /** We have sent a request without auth information (method 'none') */
+  SSH_AUTH_STATE_AUTH_NONE_SENT,
 };
 
 /** @internal

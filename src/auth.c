@@ -88,6 +88,7 @@ static int ssh_auth_response_termination(void *user){
     case SSH_AUTH_STATE_PUBKEY_AUTH_SENT:
     case SSH_AUTH_STATE_PUBKEY_OFFER_SENT:
     case SSH_AUTH_STATE_PASSWORD_AUTH_SENT:
+    case SSH_AUTH_STATE_AUTH_NONE_SENT:
       return 0;
     default:
       return 1;
@@ -143,6 +144,7 @@ static int ssh_userauth_get_response(ssh_session session) {
         case SSH_AUTH_STATE_PUBKEY_OFFER_SENT:
         case SSH_AUTH_STATE_PUBKEY_AUTH_SENT:
         case SSH_AUTH_STATE_PASSWORD_AUTH_SENT:
+        case SSH_AUTH_STATE_AUTH_NONE_SENT:
         case SSH_AUTH_STATE_NONE:
             /* not reached */
             rc = SSH_AUTH_ERROR;
@@ -401,7 +403,7 @@ int ssh_userauth_none(ssh_session session, const char *username) {
         goto fail;
     }
 
-    session->auth_state = SSH_AUTH_STATE_NONE;
+    session->auth_state = SSH_AUTH_STATE_AUTH_NONE_SENT;
     session->pending_call_state = SSH_PENDING_CALL_AUTH_NONE;
     rc = packet_send(session);
     if (rc == SSH_ERROR) {
