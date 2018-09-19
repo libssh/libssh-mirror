@@ -170,6 +170,15 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_open_conf){
       "Received a CHANNEL_OPEN_CONFIRMATION for channel %d:%d",
       channel->local_channel,
       channel->remote_channel);
+
+  if (channel->state != SSH_CHANNEL_STATE_OPENING) {
+      SSH_LOG(SSH_LOG_RARE,
+              "SSH2_MSG_CHANNEL_OPEN_CONFIRMATION received in incorrect "
+              "channel state %d",
+              channel->state);
+      goto error;
+  }
+
   SSH_LOG(SSH_LOG_PROTOCOL,
       "Remote window : %lu, maxpacket : %lu",
       (long unsigned int) channel->remote_window,
