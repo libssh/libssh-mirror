@@ -219,6 +219,14 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_open_fail){
       return SSH_PACKET_USED;
   }
 
+  if (channel->state != SSH_CHANNEL_STATE_OPENING) {
+      SSH_LOG(SSH_LOG_RARE,
+              "SSH2_MSG_CHANNEL_OPEN_FAILURE received in incorrect channel "
+              "state %d",
+              channel->state);
+      goto error;
+  }
+
   ssh_set_error(session, SSH_REQUEST_DENIED,
       "Channel opening failure: channel %u error (%lu) %s",
       channel->local_channel,
@@ -226,6 +234,9 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_open_fail){
       error);
   SAFE_FREE(error);
   channel->state=SSH_CHANNEL_STATE_OPEN_DENIED;
+
+error:
+  ssh_set_error(session, SSH_FATAL, "Invalid packet");
   return SSH_PACKET_USED;
 }
 
