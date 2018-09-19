@@ -943,8 +943,8 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_token_client){
         packet_send(session);
     }
     if(maj_stat == GSS_S_COMPLETE){
-        session->auth_state = SSH_AUTH_STATE_NONE;
         ssh_gssapi_send_mic(session);
+        session->auth_state = SSH_AUTH_STATE_GSSAPI_MIC_SENT;
     }
     return SSH_PACKET_USED;
 }
