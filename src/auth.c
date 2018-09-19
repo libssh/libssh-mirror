@@ -85,6 +85,8 @@ static int ssh_auth_response_termination(void *user){
     case SSH_AUTH_STATE_GSSAPI_REQUEST_SENT:
     case SSH_AUTH_STATE_GSSAPI_TOKEN:
     case SSH_AUTH_STATE_GSSAPI_MIC_SENT:
+    case SSH_AUTH_STATE_PUBKEY_AUTH_SENT:
+    case SSH_AUTH_STATE_PUBKEY_OFFER_SENT:
       return 0;
     default:
       return 1;
@@ -137,6 +139,8 @@ static int ssh_userauth_get_response(ssh_session session) {
         case SSH_AUTH_STATE_GSSAPI_REQUEST_SENT:
         case SSH_AUTH_STATE_GSSAPI_TOKEN:
         case SSH_AUTH_STATE_GSSAPI_MIC_SENT:
+        case SSH_AUTH_STATE_PUBKEY_OFFER_SENT:
+        case SSH_AUTH_STATE_PUBKEY_AUTH_SENT:
         case SSH_AUTH_STATE_NONE:
             /* not reached */
             rc = SSH_AUTH_ERROR;
@@ -275,21 +279,27 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_success){
 SSH_PACKET_CALLBACK(ssh_packet_userauth_pk_ok){
 	int rc;
 
-  SSH_LOG(SSH_LOG_TRACE, "Received SSH_USERAUTH_PK_OK/INFO_REQUEST/GSSAPI_RESPONSE");
+  SSH_LOG(SSH_LOG_TRACE,
+          "Received SSH_USERAUTH_PK_OK/INFO_REQUEST/GSSAPI_RESPONSE");
 
-  if(session->auth_state==SSH_AUTH_STATE_KBDINT_SENT){
+  if (session->auth_state == SSH_AUTH_STATE_KBDINT_SENT) {
     /* Assuming we are in keyboard-interactive context */
     SSH_LOG(SSH_LOG_TRACE,
-            "keyboard-interactive context, assuming SSH_USERAUTH_INFO_REQUEST");
-    rc=ssh_packet_userauth_info_request(session,type,packet,user);
+            "keyboard-interactive context, "
+            "assuming SSH_USERAUTH_INFO_REQUEST");
+    rc = ssh_packet_userauth_info_request(session, type, packet, user);
 #ifdef WITH_GSSAPI
-  } else if (session->auth_state == SSH_AUTH_STATE_GSSAPI_REQUEST_SENT){
+  } else if (session->auth_state == SSH_AUTH_STATE_GSSAPI_REQUEST_SENT) {
     rc = ssh_packet_userauth_gssapi_response(session, type, packet, user);
 #endif
+  } else if (session->auth_state == SSH_AUTH_STATE_PUBKEY_OFFER_SENT) {
+      session->auth_state = SSH_AUTH_STATE_PK_OK;
+      SSH_LOG(SSH_LOG_TRACE, "Assuming SSH_USERAUTH_PK_OK");
+      rc = SSH_PACKET_USED;
   } else {
-    session->auth_state=SSH_AUTH_STATE_PK_OK;
-    SSH_LOG(SSH_LOG_TRACE, "Assuming SSH_USERAUTH_PK_OK");
-    rc=SSH_PACKET_USED;
+      session->auth_state = SSH_AUTH_STATE_ERROR;
+      SSH_LOG(SSH_LOG_TRACE, "SSH_USERAUTH_PK_OK received in wrong state");
+      rc = SSH_PACKET_USED;
   }
 
   return rc;
@@ -501,7 +511,7 @@ int ssh_userauth_try_publickey(ssh_session session,
 
     ssh_string_free(pubkey_s);
 
-    session->auth_state = SSH_AUTH_STATE_NONE;
+    session->auth_state = SSH_AUTH_STATE_PUBKEY_OFFER_SENT;
     session->pending_call_state = SSH_PENDING_CALL_AUTH_OFFER_PUBKEY;
     rc = packet_send(session);
     if (rc == SSH_ERROR) {
@@ -622,7 +632,7 @@ int ssh_userauth_publickey(ssh_session session,
         goto fail;
     }
 
-    session->auth_state = SSH_AUTH_STATE_NONE;
+    session->auth_state = SSH_AUTH_STATE_PUBKEY_AUTH_SENT;
     session->pending_call_state = SSH_PENDING_CALL_AUTH_PUBKEY;
     rc = packet_send(session);
     if (rc == SSH_ERROR) {
@@ -706,7 +716,7 @@ static int ssh_userauth_agent_publickey(ssh_session session,
         goto fail;
     }
 
-    session->auth_state = SSH_AUTH_STATE_NONE;
+    session->auth_state = SSH_AUTH_STATE_PUBKEY_AUTH_SENT;
     session->pending_call_state = SSH_PENDING_CALL_AUTH_AGENT;
     rc = packet_send(session);
     if (rc == SSH_ERROR) {
