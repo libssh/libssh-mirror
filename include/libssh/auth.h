@@ -94,6 +94,8 @@ enum ssh_auth_state_e {
   SSH_AUTH_STATE_PUBKEY_OFFER_SENT,
   /** We have sent pubkey and signature expecting to be authenticated */
   SSH_AUTH_STATE_PUBKEY_AUTH_SENT,
+  /** We have sent a password expecting to be authenticated */
+  SSH_AUTH_STATE_PASSWORD_AUTH_SENT,
 };
 
 /** @internal
