@@ -43,6 +43,12 @@ enum ssh_packet_state_e {
   PACKET_STATE_PROCESSING
 };
 
+enum ssh_packet_filter_result_e {
+    SSH_PACKET_UNKNOWN,
+    SSH_PACKET_ALLOWED,
+    SSH_PACKET_DENIED
+};
+
 int packet_send(ssh_session session);
 
 #ifdef WITH_SSH1
