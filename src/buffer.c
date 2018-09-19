@@ -1239,29 +1239,29 @@ int ssh_buffer_unpack_va(struct ssh_buffer_struct *buffer,
         for(p=format;p<last;++p){
             switch(*p){
             case 'b':
+                o.byte = va_arg(ap_copy, uint8_t *);
                 if (buffer->secure) {
-                    o.byte = va_arg(ap_copy, uint8_t *);
                     explicit_bzero(o.byte, sizeof(uint8_t));
                     break;
                 }
                 break;
             case 'w':
+                o.word = va_arg(ap_copy, uint16_t *);
                 if (buffer->secure) {
-                    o.word = va_arg(ap_copy, uint16_t *);
                     explicit_bzero(o.word, sizeof(uint16_t));
                     break;
                 }
                 break;
             case 'd':
+                o.dword = va_arg(ap_copy, uint32_t *);
                 if (buffer->secure) {
-                    o.dword = va_arg(ap_copy, uint32_t *);
                     explicit_bzero(o.dword, sizeof(uint32_t));
                     break;
                 }
                 break;
             case 'q':
+                o.qword = va_arg(ap_copy, uint64_t *);
                 if (buffer->secure) {
-                    o.qword = va_arg(ap_copy, uint64_t *);
                     explicit_bzero(o.qword, sizeof(uint64_t));
                     break;
                 }
