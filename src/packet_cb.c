@@ -107,6 +107,7 @@ SSH_PACKET_CALLBACK(ssh_packet_dh_reply){
     case SSH_KEX_DH_GROUP1_SHA1:
     case SSH_KEX_DH_GROUP14_SHA1:
     case SSH_KEX_DH_GROUP16_SHA512:
+    case SSH_KEX_DH_GROUP18_SHA512:
       rc=ssh_client_dh_reply(session, packet);
       break;
 #ifdef HAVE_ECDH

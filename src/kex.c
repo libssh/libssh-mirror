@@ -98,7 +98,7 @@
 
 #define CHACHA20 "chacha20-poly1305@openssh.com,"
 
-#define KEY_EXCHANGE CURVE25519 ECDH "diffie-hellman-group16-sha512,diffie-hellman-group14-sha1,diffie-hellman-group1-sha1"
+#define KEY_EXCHANGE CURVE25519 ECDH "diffie-hellman-group16-sha512,diffie-hellman-group18-sha512,diffie-hellman-group14-sha1,diffie-hellman-group1-sha1"
 #define KEX_METHODS_SIZE 10
 
 /* RFC 8308 */
@@ -757,6 +757,8 @@ int ssh_kex_select_methods (ssh_session session){
       session->next_crypto->kex_type=SSH_KEX_DH_GROUP14_SHA1;
     } else if(strcmp(session->next_crypto->kex_methods[SSH_KEX], "diffie-hellman-group16-sha512") == 0){
       session->next_crypto->kex_type=SSH_KEX_DH_GROUP16_SHA512;
+    } else if(strcmp(session->next_crypto->kex_methods[SSH_KEX], "diffie-hellman-group18-sha512") == 0){
+      session->next_crypto->kex_type=SSH_KEX_DH_GROUP18_SHA512;
     } else if(strcmp(session->next_crypto->kex_methods[SSH_KEX], "ecdh-sha2-nistp256") == 0){
       session->next_crypto->kex_type=SSH_KEX_ECDH_SHA2_NISTP256;
     } else if(strcmp(session->next_crypto->kex_methods[SSH_KEX], "ecdh-sha2-nistp384") == 0){
