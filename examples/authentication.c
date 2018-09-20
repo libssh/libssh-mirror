@@ -24,7 +24,8 @@ clients must be made or how a client should react.
 #include <libssh/libssh.h>
 #include "examples_common.h"
 
-int authenticate_kbdint(ssh_session session, const char *password) {
+int authenticate_kbdint(ssh_session session, const char *password)
+{
     int err;
 
     err = ssh_userauth_kbdint(session, NULL, NULL);
@@ -99,78 +100,80 @@ int authenticate_kbdint(ssh_session session, const char *password) {
     return err;
 }
 
-static void error(ssh_session session){
-	fprintf(stderr,"Authentication failed: %s\n",ssh_get_error(session));
+static void error(ssh_session session)
+{
+    fprintf(stderr,"Authentication failed: %s\n",ssh_get_error(session));
 }
 
-int authenticate_console(ssh_session session){
-  int rc;
-  int method;
-  char password[128] = {0};
-  char *banner;
+int authenticate_console(ssh_session session)
+{
+    int rc;
+    int method;
+    char password[128] = {0};
+    char *banner;
 
-  // Try to authenticate
-  rc = ssh_userauth_none(session, NULL);
-  if (rc == SSH_AUTH_ERROR) {
-    error(session);
+    // Try to authenticate
+    rc = ssh_userauth_none(session, NULL);
+    if (rc == SSH_AUTH_ERROR) {
+        error(session);
+        return rc;
+    }
+
+    method = ssh_userauth_list(session, NULL);
+    while (rc != SSH_AUTH_SUCCESS) {
+        if (method & SSH_AUTH_METHOD_GSSAPI_MIC){
+            rc = ssh_userauth_gssapi(session);
+            if(rc == SSH_AUTH_ERROR) {
+                error(session);
+                return rc;
+            } else if (rc == SSH_AUTH_SUCCESS) {
+                break;
+            }
+        }
+        // Try to authenticate with public key first
+        if (method & SSH_AUTH_METHOD_PUBLICKEY) {
+            rc = ssh_userauth_publickey_auto(session, NULL, NULL);
+            if (rc == SSH_AUTH_ERROR) {
+                error(session);
+                return rc;
+            } else if (rc == SSH_AUTH_SUCCESS) {
+                break;
+            }
+        }
+
+        // Try to authenticate with keyboard interactive";
+        if (method & SSH_AUTH_METHOD_INTERACTIVE) {
+            rc = authenticate_kbdint(session, NULL);
+            if (rc == SSH_AUTH_ERROR) {
+                error(session);
+                return rc;
+            } else if (rc == SSH_AUTH_SUCCESS) {
+                break;
+            }
+        }
+
+        if (ssh_getpass("Password: ", password, sizeof(password), 0, 0) < 0) {
+            return SSH_AUTH_ERROR;
+        }
+
+        // Try to authenticate with password
+        if (method & SSH_AUTH_METHOD_PASSWORD) {
+            rc = ssh_userauth_password(session, NULL, password);
+            if (rc == SSH_AUTH_ERROR) {
+                error(session);
+                return rc;
+            } else if (rc == SSH_AUTH_SUCCESS) {
+                break;
+            }
+        }
+        memset(password, 0, sizeof(password));
+    }
+
+    banner = ssh_get_issue_banner(session);
+    if (banner) {
+        printf("%s\n",banner);
+        ssh_string_free_char(banner);
+    }
+
     return rc;
-  }
-
-  method = ssh_userauth_list(session, NULL);
-  while (rc != SSH_AUTH_SUCCESS) {
-	if (method & SSH_AUTH_METHOD_GSSAPI_MIC){
-		rc = ssh_userauth_gssapi(session);
-		if(rc == SSH_AUTH_ERROR) {
-			error(session);
-			return rc;
-		} else if (rc == SSH_AUTH_SUCCESS) {
-			break;
-		}
-	}
-    // Try to authenticate with public key first
-    if (method & SSH_AUTH_METHOD_PUBLICKEY) {
-      rc = ssh_userauth_publickey_auto(session, NULL, NULL);
-      if (rc == SSH_AUTH_ERROR) {
-          error(session);
-          return rc;
-      } else if (rc == SSH_AUTH_SUCCESS) {
-        break;
-      }
-    }
-
-    // Try to authenticate with keyboard interactive";
-    if (method & SSH_AUTH_METHOD_INTERACTIVE) {
-      rc = authenticate_kbdint(session, NULL);
-      if (rc == SSH_AUTH_ERROR) {
-      	error(session);
-        return rc;
-      } else if (rc == SSH_AUTH_SUCCESS) {
-        break;
-      }
-    }
-
-    if (ssh_getpass("Password: ", password, sizeof(password), 0, 0) < 0) {
-        return SSH_AUTH_ERROR;
-    }
-
-    // Try to authenticate with password
-    if (method & SSH_AUTH_METHOD_PASSWORD) {
-      rc = ssh_userauth_password(session, NULL, password);
-      if (rc == SSH_AUTH_ERROR) {
-      	error(session);
-        return rc;
-      } else if (rc == SSH_AUTH_SUCCESS) {
-        break;
-      }
-    }
-    memset(password, 0, sizeof(password));
-  }
-
-  banner = ssh_get_issue_banner(session);
-  if (banner) {
-    printf("%s\n",banner);
-    ssh_string_free_char(banner);
-  }
-
-  return rc;
 }
