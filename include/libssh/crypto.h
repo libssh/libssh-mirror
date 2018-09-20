@@ -65,6 +65,8 @@ enum ssh_key_exchange_e {
   SSH_KEX_CURVE25519_SHA256,
   /* diffie-hellman-group16-sha512 */
   SSH_KEX_DH_GROUP16_SHA512,
+  /* diffie-hellman-group18-sha512 */
+  SSH_KEX_DH_GROUP18_SHA512,
 };
 
 enum ssh_cipher_e {

@@ -344,6 +344,8 @@ const char* ssh_get_kex_algo(ssh_session session) {
             return "diffie-hellman-group14-sha1";
         case SSH_KEX_DH_GROUP16_SHA512:
             return "diffie-hellman-group16-sha512";
+        case SSH_KEX_DH_GROUP18_SHA512:
+            return "diffie-hellman-group18-sha512";
         case SSH_KEX_ECDH_SHA2_NISTP256:
             return "ecdh-sha2-nistp256";
         case SSH_KEX_ECDH_SHA2_NISTP384:
