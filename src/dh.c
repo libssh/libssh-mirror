@@ -890,19 +890,6 @@ int ssh_make_sessionid(ssh_session session) {
         sha1(ssh_buffer_get(buf), ssh_buffer_get_len(buf),
                                    session->next_crypto->secret_hash);
         break;
-    case SSH_KEX_DH_GROUP16_SHA512:
-    case SSH_KEX_DH_GROUP18_SHA512:
-        session->next_crypto->digest_len = SHA512_DIGEST_LENGTH;
-        session->next_crypto->mac_type = SSH_MAC_SHA512;
-        session->next_crypto->secret_hash = malloc(session->next_crypto->digest_len);
-        if (session->next_crypto->secret_hash == NULL) {
-            ssh_set_error_oom(session);
-            goto error;
-        }
-        sha512(ssh_buffer_get(buf),
-               ssh_buffer_get_len(buf),
-               session->next_crypto->secret_hash);
-        break;
     case SSH_KEX_ECDH_SHA2_NISTP256:
     case SSH_KEX_CURVE25519_SHA256:
     case SSH_KEX_CURVE25519_SHA256_LIBSSH_ORG:
@@ -927,6 +914,8 @@ int ssh_make_sessionid(ssh_session session) {
         sha384(ssh_buffer_get(buf), ssh_buffer_get_len(buf),
                                      session->next_crypto->secret_hash);
         break;
+    case SSH_KEX_DH_GROUP16_SHA512:
+    case SSH_KEX_DH_GROUP18_SHA512:
     case SSH_KEX_ECDH_SHA2_NISTP521:
         session->next_crypto->digest_len = SHA512_DIGEST_LENGTH;
         session->next_crypto->mac_type = SSH_MAC_SHA512;
@@ -935,8 +924,9 @@ int ssh_make_sessionid(ssh_session session) {
             ssh_set_error_oom(session);
             goto error;
         }
-        sha512(ssh_buffer_get(buf), ssh_buffer_get_len(buf),
-                                     session->next_crypto->secret_hash);
+        sha512(ssh_buffer_get(buf),
+               ssh_buffer_get_len(buf),
+               session->next_crypto->secret_hash);
         break;
     }
     /* During the first kex, secret hash and session ID are equal. However, after
