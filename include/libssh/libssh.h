@@ -79,7 +79,7 @@
 /* libssh version */
 #define LIBSSH_VERSION_MAJOR  0
 #define LIBSSH_VERSION_MINOR  8
-#define LIBSSH_VERSION_MICRO  2
+#define LIBSSH_VERSION_MICRO  3
 
 #define LIBSSH_VERSION_INT SSH_VERSION_INT(LIBSSH_VERSION_MAJOR, \
                                            LIBSSH_VERSION_MINOR, \

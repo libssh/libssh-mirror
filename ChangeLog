@@ -1,6 +1,21 @@
 ChangeLog
 ==========
 
+version 0.8.3 (released 2018-09-21)
+  * Added support for rsa-sha2
+  * Added support to parse private keys in openssh container format
+    (other than ed25519)
+  * Added support for diffie-hellman-group18-sha512 and
+    diffie-hellman-group16-sha512
+  * Added ssh_get_fingerprint_hash()
+  * Added ssh_pki_export_privkey_base64()
+  * Added support for Match keyword in config file
+  * Improved performance and reduced memory footprint for sftp
+  * Fixed ecdsa publickey auth
+  * Fixed reading a closed channel
+  * Added support to announce posix-rename@openssh.com and
+    hardlink@openssh.com in the sftp server
+
 version 0.8.2 (released 2018-08-30)
   * Added sha256 fingerprints for pubkeys
   * Improved compiler flag detection
