@@ -30,8 +30,11 @@ if (WITH_SFTP)
 endif (WITH_SFTP)
 
 foreach(_CLI_TEST ${LIBSSH_CLIENT_TESTS})
-    add_cmocka_test(${_CLI_TEST} ${_CLI_TEST}.c ${TORTURE_LIBRARY})
-    target_compile_options(${_CLI_TEST} PRIVATE ${DEFAULT_C_COMPILE_FLAGS})
+    add_cmocka_test(${_CLI_TEST}
+                    SOURCES ${_CLI_TEST}.c
+                    COMPILE_OPTIONS ${DEFAULT_C_COMPILE_FLAGS}
+                    LINK_LIBRARIES ${TORTURE_LIBRARY}
+    )
 
     if (OSX)
         set_property(
