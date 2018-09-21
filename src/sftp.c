@@ -211,10 +211,31 @@ sftp_session sftp_server_new(ssh_session session, ssh_channel chan){
     return NULL;
   }
 
+  sftp->read_packet = calloc(1, sizeof(struct sftp_packet_struct));
+  if (sftp->read_packet == NULL) {
+    goto error;
+  }
+
+  sftp->read_packet->payload = ssh_buffer_new();
+  if (sftp->read_packet->payload == NULL) {
+    goto error;
+  }
+
   sftp->session = session;
   sftp->channel = chan;
 
   return sftp;
+
+error:
+  ssh_set_error_oom(session);
+  if (sftp->read_packet != NULL) {
+    if (sftp->read_packet->payload != NULL) {
+      ssh_buffer_free(sftp->read_packet->payload);
+    }
+    SAFE_FREE(sftp->read_packet);
+  }
+  SAFE_FREE(sftp);
+  return NULL;
 }
 
 int sftp_server_init(sftp_session sftp){
