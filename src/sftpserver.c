@@ -232,8 +232,6 @@ sftp_client_message sftp_get_client_message(sftp_session sftp) {
       return NULL;
   }
 
-  sftp_packet_free(packet);
-
   return msg;
 }
 
