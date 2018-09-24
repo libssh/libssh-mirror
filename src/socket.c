@@ -670,67 +670,75 @@ int ssh_socket_write(ssh_socket s, const void *buffer, int len) {
  * \brief starts a nonblocking flush of the output buffer
  *
  */
-int ssh_socket_nonblocking_flush(ssh_socket s) {
-  ssh_session session = s->session;
-  uint32_t len;
-  int w;
+int ssh_socket_nonblocking_flush(ssh_socket s)
+{
+    ssh_session session = s->session;
+    uint32_t len;
+    int w;
 
-  if (!ssh_socket_is_open(s)) {
-    session->alive = 0;
-    if(s->callbacks && s->callbacks->exception){
-      s->callbacks->exception(
-          SSH_SOCKET_EXCEPTION_ERROR,
-          s->last_errno,s->callbacks->userdata);
-    }else{
-      ssh_set_error(session, SSH_FATAL,
-          "Writing packet: error on socket (or connection closed): %s",
-          strerror(s->last_errno));
+    if (!ssh_socket_is_open(s)) {
+        session->alive = 0;
+        if (s->callbacks && s->callbacks->exception) {
+            s->callbacks->exception(SSH_SOCKET_EXCEPTION_ERROR,
+                                    s->last_errno,
+                                    s->callbacks->userdata);
+        } else {
+            ssh_set_error(session,
+                          SSH_FATAL,
+                          "Writing packet: error on socket (or connection "
+                          "closed): %s",
+                          strerror(s->last_errno));
+        }
+
+        return SSH_ERROR;
     }
 
-    return SSH_ERROR;
-  }
+    len = ssh_buffer_get_len(s->out_buffer);
+    if (!s->write_wontblock && s->poll_out && len > 0) {
+        /* force the poll system to catch pollout events */
+        ssh_poll_add_events(s->poll_out, POLLOUT);
 
-  len = ssh_buffer_get_len(s->out_buffer);
-  if (!s->write_wontblock && s->poll_out && len > 0) {
-      /* force the poll system to catch pollout events */
-      ssh_poll_add_events(s->poll_out, POLLOUT);
-
-      return SSH_AGAIN;
-  }
-  if (s->write_wontblock && len > 0) {
-    w = ssh_socket_unbuffered_write(s, ssh_buffer_get(s->out_buffer), len);
-    if (w < 0) {
-      session->alive = 0;
-      ssh_socket_close(s);
-
-      if(s->callbacks && s->callbacks->exception){
-        s->callbacks->exception(
-                SSH_SOCKET_EXCEPTION_ERROR,
-                s->last_errno,s->callbacks->userdata);
-      }else{
-        ssh_set_error(session, SSH_FATAL,
-                "Writing packet: error on socket (or connection closed): %s",
-                strerror(s->last_errno));
-      }
-      return SSH_ERROR;
+        return SSH_AGAIN;
     }
-    ssh_buffer_pass_bytes(s->out_buffer, w);
-    if (s->session->socket_counter != NULL) {
-        s->session->socket_counter->out_bytes += w;
+
+    if (s->write_wontblock && len > 0) {
+        w = ssh_socket_unbuffered_write(s, ssh_buffer_get(s->out_buffer), len);
+        if (w < 0) {
+            session->alive = 0;
+            ssh_socket_close(s);
+
+            if (s->callbacks && s->callbacks->exception) {
+                s->callbacks->exception(SSH_SOCKET_EXCEPTION_ERROR,
+                                        s->last_errno,
+                                        s->callbacks->userdata);
+            } else {
+                ssh_set_error(session,
+                              SSH_FATAL,
+                              "Writing packet: error on socket (or connection "
+                              "closed): %s",
+                              strerror(s->last_errno));
+            }
+
+            return SSH_ERROR;
+        }
+
+        ssh_buffer_pass_bytes(s->out_buffer, w);
+        if (s->session->socket_counter != NULL) {
+            s->session->socket_counter->out_bytes += w;
+        }
     }
-  }
 
-  /* Is there some data pending? */
-  len = ssh_buffer_get_len(s->out_buffer);
-  if (s->poll_out && len > 0) {
-      /* force the poll system to catch pollout events */
-      ssh_poll_add_events(s->poll_out, POLLOUT);
+    /* Is there some data pending? */
+    len = ssh_buffer_get_len(s->out_buffer);
+    if (s->poll_out && len > 0) {
+        /* force the poll system to catch pollout events */
+        ssh_poll_add_events(s->poll_out, POLLOUT);
 
-      return SSH_AGAIN;
-  }
+        return SSH_AGAIN;
+    }
 
-  /* all data written */
-  return SSH_OK;
+    /* all data written */
+    return SSH_OK;
 }
 
 void ssh_socket_set_write_wontblock(ssh_socket s) {
