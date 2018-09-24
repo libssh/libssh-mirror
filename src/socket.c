@@ -93,7 +93,9 @@ struct ssh_socket_struct {
 
 static int sockets_initialized = 0;
 
-static int ssh_socket_unbuffered_read(ssh_socket s, void *buffer, uint32_t len);
+static ssize_t ssh_socket_unbuffered_read(ssh_socket s,
+                                          void *buffer,
+                                          uint32_t len);
 static int ssh_socket_unbuffered_write(ssh_socket s, const void *buffer,
 		uint32_t len);
 
@@ -223,7 +225,7 @@ int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p,
 {
     ssh_socket s = (ssh_socket)v_s;
     char buffer[MAX_BUF_SIZE];
-    int r;
+    ssize_t nread;
     int rc;
     int err = 0;
     socklen_t errlen = sizeof(err);
@@ -241,8 +243,8 @@ int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p,
         /* Check if we are in a connecting state */
         if (s->state == SSH_SOCKET_CONNECTING) {
             s->state = SSH_SOCKET_ERROR;
-            r = getsockopt(fd, SOL_SOCKET, SO_ERROR, (char *)&err, &errlen);
-            if (r < 0) {
+            rc = getsockopt(fd, SOL_SOCKET, SO_ERROR, (char *)&err, &errlen);
+            if (rc < 0) {
                 err = errno;
             }
             s->last_errno = err;
@@ -261,8 +263,8 @@ int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p,
     }
     if ((revents & POLLIN) && s->state == SSH_SOCKET_CONNECTED) {
         s->read_wontblock = 1;
-        r = ssh_socket_unbuffered_read(s, buffer, sizeof(buffer));
-        if (r < 0) {
+        nread = ssh_socket_unbuffered_read(s, buffer, sizeof(buffer));
+        if (nread < 0) {
             if (p != NULL) {
                 ssh_poll_remove_events(p, POLLIN);
             }
@@ -278,7 +280,7 @@ int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p,
                 return -2;
             }
         }
-        if (r == 0) {
+        if (nread == 0) {
             if (p != NULL) {
                 ssh_poll_remove_events(p, POLLIN);
             }
@@ -298,21 +300,22 @@ int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p,
         }
 
         if (s->session->socket_counter != NULL) {
-            s->session->socket_counter->in_bytes += r;
+            s->session->socket_counter->in_bytes += nread;
         }
 
         /* Bufferize the data and then call the callback */
-        rc = ssh_buffer_add_data(s->in_buffer, buffer, r);
+        rc = ssh_buffer_add_data(s->in_buffer, buffer, nread);
         if (rc < 0) {
             return -1;
         }
         if (s->callbacks != NULL && s->callbacks->data != NULL) {
             do {
-                r = s->callbacks->data(ssh_buffer_get(s->in_buffer),
+                nread = s->callbacks->data(ssh_buffer_get(s->in_buffer),
                                        ssh_buffer_get_len(s->in_buffer),
                                        s->callbacks->userdata);
-                ssh_buffer_pass_bytes(s->in_buffer, r);
-            } while ((r > 0) && (s->state == SSH_SOCKET_CONNECTED));
+                ssh_buffer_pass_bytes(s->in_buffer, nread);
+            } while ((nread > 0) && (s->state == SSH_SOCKET_CONNECTED));
+
             /* p may have been freed, so don't use it
              * anymore in this function */
             p = NULL;
@@ -549,9 +552,11 @@ int ssh_socket_is_open(ssh_socket s) {
 /** \internal
  * \brief read len bytes from socket into buffer
  */
-static int ssh_socket_unbuffered_read(ssh_socket s, void *buffer, uint32_t len)
+static ssize_t ssh_socket_unbuffered_read(ssh_socket s,
+                                          void *buffer,
+                                          uint32_t len)
 {
-    int rc = -1;
+    ssize_t rc = -1;
 
     if (s->data_except) {
         return -1;
