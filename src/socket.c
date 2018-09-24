@@ -216,13 +216,18 @@ void ssh_socket_set_callbacks(ssh_socket s, ssh_socket_callbacks callbacks){
  * @return              0 on success, < 0 when the poll object has been removed
  *                      from its poll context.
  */
-int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p, socket_t fd,
-                            int revents, void *v_s) {
+int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p,
+                            socket_t fd,
+                            int revents,
+                            void *v_s)
+{
     ssh_socket s = (ssh_socket)v_s;
     char buffer[MAX_BUF_SIZE];
     int r;
+    int rc;
     int err = 0;
     socklen_t errlen = sizeof(err);
+
     /* Do not do anything if this socket was already closed */
     if (!ssh_socket_is_open(s)) {
         return -1;
@@ -242,10 +247,12 @@ int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p, socket_t fd,
             }
             s->last_errno = err;
             ssh_socket_close(s);
-            if (s->callbacks && s->callbacks->connected) {
-                s->callbacks->connected(SSH_SOCKET_CONNECTED_ERROR, err,
+            if (s->callbacks != NULL && s->callbacks->connected != NULL) {
+                s->callbacks->connected(SSH_SOCKET_CONNECTED_ERROR,
+                                        err,
                                         s->callbacks->userdata);
             }
+
             return -1;
         }
         /* Then we are in a more standard kind of error */
@@ -259,9 +266,12 @@ int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p, socket_t fd,
             if (p != NULL) {
                 ssh_poll_remove_events(p, POLLIN);
             }
-            if (s->callbacks && s->callbacks->exception) {
+
+            if (s->callbacks != NULL && s->callbacks->exception != NULL) {
                 s->callbacks->exception(SSH_SOCKET_EXCEPTION_ERROR,
-                                        s->last_errno, s->callbacks->userdata);
+                                        s->last_errno,
+                                        s->callbacks->userdata);
+
                 /* p may have been freed, so don't use it
                  * anymore in this function */
                 p = NULL;
@@ -275,35 +285,37 @@ int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p, socket_t fd,
             if (p != NULL) {
                 ssh_poll_remove_events(p, POLLIN);
             }
-            if (s->callbacks && s->callbacks->exception) {
+            if (s->callbacks != NULL && s->callbacks->exception != NULL) {
                 s->callbacks->exception(SSH_SOCKET_EXCEPTION_EOF,
-                                        0, s->callbacks->userdata);
+                                        0,
+                                        s->callbacks->userdata);
+
                 /* p may have been freed, so don't use it
                  * anymore in this function */
                 p = NULL;
                 return -2;
             }
         }
-        if (r > 0) {
-            if (s->session->socket_counter != NULL) {
-                s->session->socket_counter->in_bytes += r;
-            }
-            /* Bufferize the data and then call the callback */
-            r = ssh_buffer_add_data(s->in_buffer, buffer, r);
-            if (r < 0) {
-                return -1;
-            }
-            if (s->callbacks && s->callbacks->data) {
-                do {
-                    r = s->callbacks->data(ssh_buffer_get(s->in_buffer),
-                                           ssh_buffer_get_len(s->in_buffer),
-                                           s->callbacks->userdata);
-                    ssh_buffer_pass_bytes(s->in_buffer, r);
-                } while ((r > 0) && (s->state == SSH_SOCKET_CONNECTED));
-                /* p may have been freed, so don't use it
-                 * anymore in this function */
-                p = NULL;
-            }
+
+        if (s->session->socket_counter != NULL) {
+            s->session->socket_counter->in_bytes += r;
+        }
+
+        /* Bufferize the data and then call the callback */
+        rc = ssh_buffer_add_data(s->in_buffer, buffer, r);
+        if (rc < 0) {
+            return -1;
+        }
+        if (s->callbacks != NULL && s->callbacks->data != NULL) {
+            do {
+                r = s->callbacks->data(ssh_buffer_get(s->in_buffer),
+                                       ssh_buffer_get_len(s->in_buffer),
+                                       s->callbacks->userdata);
+                ssh_buffer_pass_bytes(s->in_buffer, r);
+            } while ((r > 0) && (s->state == SSH_SOCKET_CONNECTED));
+            /* p may have been freed, so don't use it
+             * anymore in this function */
+            p = NULL;
         }
     }
 #ifdef _WIN32
@@ -311,6 +323,8 @@ int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p, socket_t fd,
 #else
     if (revents & POLLOUT) {
 #endif
+        uint32_t len;
+
         /* First, POLLOUT is a sign we may be connected */
         if (s->state == SSH_SOCKET_CONNECTING) {
             SSH_LOG(SSH_LOG_PACKET, "Received POLLOUT in connecting state");
@@ -318,26 +332,32 @@ int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p, socket_t fd,
             if (p != NULL) {
                 ssh_poll_set_events(p, POLLOUT | POLLIN);
             }
-            r = ssh_socket_set_blocking(ssh_socket_get_fd_in(s));
-            if (r < 0) {
+
+            rc = ssh_socket_set_blocking(ssh_socket_get_fd_in(s));
+            if (rc < 0) {
                 return -1;
             }
-            if (s->callbacks && s->callbacks->connected) {
-                s->callbacks->connected(SSH_SOCKET_CONNECTED_OK, 0,
+
+            if (s->callbacks != NULL && s->callbacks->connected != NULL) {
+                s->callbacks->connected(SSH_SOCKET_CONNECTED_OK,
+                                        0,
                                         s->callbacks->userdata);
             }
+
             return 0;
         }
+
         /* So, we can write data */
-        s->write_wontblock=1;
+        s->write_wontblock = 1;
         if (p != NULL) {
             ssh_poll_remove_events(p, POLLOUT);
         }
 
         /* If buffered data is pending, write it */
-        if (ssh_buffer_get_len(s->out_buffer) > 0) {
+        len = ssh_buffer_get_len(s->out_buffer);
+        if (len > 0) {
             ssh_socket_nonblocking_flush(s);
-        } else if (s->callbacks && s->callbacks->controlflow) {
+        } else if (s->callbacks != NULL && s->callbacks->controlflow != NULL) {
             /* Otherwise advertise the upper level that write can be done */
             SSH_LOG(SSH_LOG_TRACE,"sending control flow event");
             s->callbacks->controlflow(SSH_SOCKET_FLOW_WRITEWONTBLOCK,
@@ -345,8 +365,13 @@ int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p, socket_t fd,
         }
         /* TODO: Find a way to put back POLLOUT when buffering occurs */
     }
+
     /* Return -1 if one of the poll handlers disappeared */
-    return (s->poll_in == NULL || s->poll_out == NULL) ? -1 : 0;
+    if (s->poll_in == NULL || s->poll_out == NULL) {
+        return -1;
+    }
+
+    return 0;
 }
 
 /** @internal
