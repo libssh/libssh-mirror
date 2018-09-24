@@ -170,21 +170,21 @@ static void torture_config_from_file(void **state) {
     assert_non_null(v);
 
     assert_string_equal(v, PROXYCMD);
-    ssh_string_free_char(v);
+    SSH_STRING_FREE_CHAR(v);
 
     ret = ssh_options_get(session, SSH_OPTIONS_IDENTITY, &v);
     assert_true(ret == 0);
     assert_non_null(v);
 
     assert_string_equal(v, ID_FILE);
-    ssh_string_free_char(v);
+    SSH_STRING_FREE_CHAR(v);
 
     ret = ssh_options_get(session, SSH_OPTIONS_USER, &v);
     assert_true(ret == 0);
     assert_non_null(v);
 
     assert_string_equal(v, USERNAME);
-    ssh_string_free_char(v);
+    SSH_STRING_FREE_CHAR(v);
 
     assert_string_equal(session->opts.wanted_methods[SSH_KEX], KEXALGORITHMS);
 
@@ -223,14 +223,14 @@ static void torture_config_glob(void **state) {
     assert_non_null(v);
 
     assert_string_equal(v, PROXYCMD);
-    ssh_string_free_char(v);
+    SSH_STRING_FREE_CHAR(v);
 
     ret = ssh_options_get(session, SSH_OPTIONS_IDENTITY, &v);
     assert_true(ret == 0);
     assert_non_null(v);
 
     assert_string_equal(v, ID_FILE);
-    ssh_string_free_char(v);
+    SSH_STRING_FREE_CHAR(v);
 #endif /* HAVE_GLOB */
 }
 

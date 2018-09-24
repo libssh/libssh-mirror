@@ -48,81 +48,84 @@ static int teardown(void **state)
 static void torture_md5_hash(void **state)
 {
     ssh_key pubkey = *state;
-    unsigned char *hash = NULL;
+    char *hash = NULL;
     char *hexa = NULL;
     size_t hlen;
     int rc = 0;
 
-    rc = ssh_get_publickey_hash(pubkey, SSH_PUBLICKEY_HASH_MD5, &hash, &hlen);
+    rc = ssh_get_publickey_hash(pubkey, SSH_PUBLICKEY_HASH_MD5,
+                                (unsigned char **)&hash, &hlen);
     assert_true(rc == 0);
 
-    hexa = ssh_get_hexa(hash, hlen);
-    ssh_string_free_char((char *)hash);
+    hexa = ssh_get_hexa((unsigned char *)hash, hlen);
+    SSH_STRING_FREE_CHAR(hash);
     assert_string_equal(hexa,
                         "50:15:a0:9b:92:bf:33:1c:01:c5:8c:fe:18:fa:ce:78");
 
-    ssh_string_free_char(hexa);
+    SSH_STRING_FREE_CHAR(hexa);
 }
 
 static void torture_sha1_hash(void **state)
 {
     ssh_key pubkey = *state;
-    unsigned char *hash = NULL;
+    char *hash = NULL;
     char *sha1 = NULL;
     int rc = 0;
     size_t hlen;
 
-    rc = ssh_get_publickey_hash(pubkey, SSH_PUBLICKEY_HASH_SHA1, &hash, &hlen);
+    rc = ssh_get_publickey_hash(pubkey, SSH_PUBLICKEY_HASH_SHA1,
+                                (unsigned char **)&hash, &hlen);
     assert_true(rc == 0);
 
-    sha1 = ssh_get_b64_unpadded(hash, hlen);
-    ssh_string_free_char((char *)hash);
+    sha1 = ssh_get_b64_unpadded((unsigned char *)hash, hlen);
+    SSH_STRING_FREE_CHAR(hash);
     assert_string_equal(sha1, "6wP+houujQmxLBiFugTcoeoODCM");
 
-    ssh_string_free_char(sha1);
+    SSH_STRING_FREE_CHAR(sha1);
 }
 
 static void torture_sha256_hash(void **state)
 {
     ssh_key pubkey = *state;
-    unsigned char *hash = NULL;
+    char *hash = NULL;
     char *sha256 = NULL;
     int rc = 0;
     size_t hlen;
 
-    rc = ssh_get_publickey_hash(pubkey, SSH_PUBLICKEY_HASH_SHA256, &hash, &hlen);
+    rc = ssh_get_publickey_hash(pubkey, SSH_PUBLICKEY_HASH_SHA256,
+                                (unsigned char **)&hash, &hlen);
     assert_true(rc == 0);
 
-    sha256 = ssh_get_b64_unpadded(hash, hlen);
-    ssh_string_free_char((char *)hash);
+    sha256 = ssh_get_b64_unpadded((unsigned char *)hash, hlen);
+    SSH_STRING_FREE_CHAR(hash);
     assert_string_equal(sha256, "jXstVLLe84fSDo1kEYGn6iumnPCSorhaiWxnJz8VTII");
 
-    ssh_string_free_char(sha256);
+    SSH_STRING_FREE_CHAR(sha256);
 
 }
 
 static void torture_sha256_fingerprint(void **state)
 {
     ssh_key pubkey = *state;
-    unsigned char *hash = NULL;
+    char *hash = NULL;
     char *sha256 = NULL;
     int rc = 0;
     size_t hlen;
 
     rc = ssh_get_publickey_hash(pubkey,
                                 SSH_PUBLICKEY_HASH_SHA256,
-                                &hash,
+                                (unsigned char **)&hash,
                                 &hlen);
     assert_true(rc == 0);
 
     sha256 = ssh_get_fingerprint_hash(SSH_PUBLICKEY_HASH_SHA256,
-                                      hash,
+                                      (unsigned char *)hash,
                                       hlen);
-    ssh_string_free_char(discard_const(hash));
+    SSH_STRING_FREE_CHAR(hash);
     assert_string_equal(sha256,
                         "SHA256:jXstVLLe84fSDo1kEYGn6iumnPCSorhaiWxnJz8VTII");
 
-    ssh_string_free_char(sha256);
+    SSH_STRING_FREE_CHAR(sha256);
 }
 
 int torture_run_tests(void) {
