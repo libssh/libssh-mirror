@@ -41,7 +41,7 @@ static int setup_rsa_key(void **state)
 
 static int teardown(void **state)
 {
-    ssh_key_free(*state);
+    SSH_KEY_FREE(*state);
     return 0;
 }
 

@@ -143,7 +143,7 @@ static void *thread_pki_rsa_import_pubkey_file(void *threadid)
     assert_return_code(rc, errno);
     assert_non_null(pubkey);
 
-    ssh_key_free(pubkey);
+    SSH_KEY_FREE(pubkey);
 
     pthread_exit(NULL);
 }
@@ -201,7 +201,7 @@ static void *thread_pki_rsa_import_privkey_base64_NULL_str(void *threadid)
     rc = ssh_pki_import_privkey_base64(NULL, passphrase, NULL, NULL, &key);
     assert_true(rc == -1);
 
-    ssh_key_free(key);
+    SSH_KEY_FREE(key);
     pthread_exit(NULL);
 }
 
@@ -242,7 +242,7 @@ static void *thread_pki_rsa_import_privkey_base64(void *threadid)
     assert_true(ok);
 
     free(key_str);
-    ssh_key_free(key);
+    SSH_KEY_FREE(key);
 
     pthread_exit(NULL);
 }
@@ -283,8 +283,8 @@ static void *thread_pki_rsa_publickey_from_privatekey(void *threadid)
     assert_true(rc == SSH_OK);
     assert_non_null(pubkey);
 
-    ssh_key_free(key);
-    ssh_key_free(pubkey);
+    SSH_KEY_FREE(key);
+    SSH_KEY_FREE(pubkey);
     pthread_exit(NULL);
 }
 
@@ -349,9 +349,9 @@ static void *thread_pki_rsa_copy_cert_to_privkey(void *threadid)
     rc = ssh_pki_copy_cert_to_privkey(cert, privkey);
     assert_true(rc == SSH_ERROR);
 
-    ssh_key_free(cert);
-    ssh_key_free(privkey);
-    ssh_key_free(pubkey);
+    SSH_KEY_FREE(cert);
+    SSH_KEY_FREE(privkey);
+    SSH_KEY_FREE(pubkey);
     pthread_exit(NULL);
 }
 
@@ -383,7 +383,7 @@ static void *thread_pki_rsa_import_cert_file(void *threadid)
     rc = ssh_key_is_public(cert);
     assert_true(rc == 1);
 
-    ssh_key_free(cert);
+    SSH_KEY_FREE(cert);
     pthread_exit(NULL);
 }
 
@@ -432,7 +432,7 @@ static void *thread_pki_rsa_publickey_base64(void *threadid)
 
     free(b64_key);
     free(key_buf);
-    ssh_key_free(key);
+    SSH_KEY_FREE(key);
     pthread_exit(NULL);
 }
 
@@ -464,7 +464,7 @@ static void *thread_pki_rsa_duplicate_key(void *threadid)
 
     rc = ssh_pki_export_pubkey_base64(pubkey, &b64_key);
     assert_true(rc == 0);
-    ssh_key_free(pubkey);
+    SSH_KEY_FREE(pubkey);
 
     rc = ssh_pki_import_privkey_file(LIBSSH_RSA_TESTKEY,
                                      NULL,
@@ -489,9 +489,9 @@ static void *thread_pki_rsa_duplicate_key(void *threadid)
     cmp = ssh_key_cmp(privkey, privkey_dup, SSH_KEY_CMP_PRIVATE);
     assert_true(cmp == 0);
 
-    ssh_key_free(pubkey);
-    ssh_key_free(privkey);
-    ssh_key_free(privkey_dup);
+    SSH_KEY_FREE(pubkey);
+    SSH_KEY_FREE(privkey);
+    SSH_KEY_FREE(privkey_dup);
     SSH_STRING_FREE_CHAR(b64_key);
     SSH_STRING_FREE_CHAR(b64_key_gen);
     pthread_exit(NULL);
@@ -531,8 +531,7 @@ static void *thread_pki_rsa_generate_key(void *threadid)
     assert_ssh_return_code(session, rc);
 
     ssh_signature_free(sign);
-    ssh_key_free(key);
-    key = NULL;
+    SSH_KEY_FREE(key);
 
     rc = ssh_pki_generate(SSH_KEYTYPE_RSA, 2048, &key);
     assert_ssh_return_code(session, rc);
@@ -545,8 +544,7 @@ static void *thread_pki_rsa_generate_key(void *threadid)
     assert_ssh_return_code(session, rc);
 
     ssh_signature_free(sign);
-    ssh_key_free(key);
-    key = NULL;
+    SSH_KEY_FREE(key);
 
 
     rc = ssh_pki_generate(SSH_KEYTYPE_RSA, 4096, &key);
@@ -560,7 +558,7 @@ static void *thread_pki_rsa_generate_key(void *threadid)
     assert_true(rc == SSH_OK);
 
     ssh_signature_free(sign);
-    ssh_key_free(key);
+    SSH_KEY_FREE(key);
     key = NULL;
 
     ssh_free(session);
@@ -596,8 +594,7 @@ static void *thread_pki_rsa_import_privkey_base64_passphrase(void *threadid)
     rc = ssh_key_is_private(key);
     assert_true(rc == 1);
 
-    ssh_key_free(key);
-    key = NULL;
+    SSH_KEY_FREE(key);
 
     /* test if it returns -1 if passphrase is wrong */
     rc = ssh_pki_import_privkey_base64(torture_get_testkey(SSH_KEYTYPE_RSA, 0, 1),
@@ -606,8 +603,7 @@ static void *thread_pki_rsa_import_privkey_base64_passphrase(void *threadid)
                                        NULL,
                                        &key);
     assert_true(rc == -1);
-    ssh_key_free(key);
-    key = NULL;
+    SSH_KEY_FREE(key);
 
 #ifndef HAVE_LIBCRYPTO
     /* test if it returns -1 if passphrase is NULL */
@@ -618,8 +614,7 @@ static void *thread_pki_rsa_import_privkey_base64_passphrase(void *threadid)
                                        NULL,
                                        &key);
     assert_true(rc == -1);
-    ssh_key_free(key);
-    key = NULL;
+    SSH_KEY_FREE(key);
 #endif
     pthread_exit(NULL);
 }
