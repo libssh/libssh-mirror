@@ -441,7 +441,7 @@ static void torture_pki_ed25519_sign(void **state)
     /* ssh_print_hexa("signature", ssh_string_data(blob), ssh_string_len(blob)); */
     ssh_signature_free(sig);
     SSH_KEY_FREE(privkey);
-    ssh_string_free(blob);
+    SSH_STRING_FREE(blob);
 
 }
 
@@ -473,7 +473,7 @@ static void torture_pki_ed25519_verify(void **state){
     /* alter signature and expect false result */
 
     SSH_KEY_FREE(pubkey);
-    ssh_string_free(blob);
+    SSH_STRING_FREE(blob);
     free(pkey_ptr);
 }
 
@@ -509,7 +509,7 @@ static void torture_pki_ed25519_verify_bad(void **state){
 
     }
     SSH_KEY_FREE(pubkey);
-    ssh_string_free(blob);
+    SSH_STRING_FREE(blob);
     free(pkey_ptr);
 }
 
