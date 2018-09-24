@@ -630,6 +630,8 @@ typedef int (*ssh_auth_callback) (const char *prompt, char *buf, size_t len,
     int echo, int verify, void *userdata);
 
 LIBSSH_API ssh_key ssh_key_new(void);
+#define SSH_KEY_FREE(x) \
+    do { if ((x) != NULL) { ssh_key_free(x); x = NULL; } } while(0)
 LIBSSH_API void ssh_key_free (ssh_key key);
 LIBSSH_API enum ssh_keytypes_e ssh_key_type(const ssh_key key);
 LIBSSH_API const char *ssh_key_type_to_char(enum ssh_keytypes_e type);
