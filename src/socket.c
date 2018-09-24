@@ -589,13 +589,18 @@ static ssize_t ssh_socket_unbuffered_write(ssh_socket s,
                                            uint32_t len)
 {
     ssize_t w = -1;
+    int flags = 0;
+
+#ifdef MSG_NOSIGNAL
+    flags |= MSG_NOSIGNAL;
+#endif
 
     if (s->data_except) {
         return -1;
     }
 
     if (s->fd_is_socket) {
-        w = send(s->fd_out,buffer, len, 0);
+        w = send(s->fd_out, buffer, len, flags);
     } else {
         w = write(s->fd_out, buffer, len);
     }
