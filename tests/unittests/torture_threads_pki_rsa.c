@@ -492,8 +492,8 @@ static void *thread_pki_rsa_duplicate_key(void *threadid)
     ssh_key_free(pubkey);
     ssh_key_free(privkey);
     ssh_key_free(privkey_dup);
-    ssh_string_free_char(b64_key);
-    ssh_string_free_char(b64_key_gen);
+    SSH_STRING_FREE_CHAR(b64_key);
+    SSH_STRING_FREE_CHAR(b64_key_gen);
     pthread_exit(NULL);
 }
 
