@@ -96,8 +96,9 @@ static int sockets_initialized = 0;
 static ssize_t ssh_socket_unbuffered_read(ssh_socket s,
                                           void *buffer,
                                           uint32_t len);
-static int ssh_socket_unbuffered_write(ssh_socket s, const void *buffer,
-		uint32_t len);
+static ssize_t ssh_socket_unbuffered_write(ssh_socket s,
+                                           const void *buffer,
+                                           uint32_t len);
 
 /**
  * \internal
@@ -583,9 +584,11 @@ static ssize_t ssh_socket_unbuffered_read(ssh_socket s,
 /** \internal
  * \brief writes len bytes from buffer to socket
  */
-static int ssh_socket_unbuffered_write(ssh_socket s, const void *buffer,
-        uint32_t len) {
-    int w = -1;
+static ssize_t ssh_socket_unbuffered_write(ssh_socket s,
+                                           const void *buffer,
+                                           uint32_t len)
+{
+    ssize_t w = -1;
 
     if (s->data_except) {
         return -1;
@@ -674,7 +677,6 @@ int ssh_socket_nonblocking_flush(ssh_socket s)
 {
     ssh_session session = s->session;
     uint32_t len;
-    int w;
 
     if (!ssh_socket_is_open(s)) {
         session->alive = 0;
@@ -702,8 +704,12 @@ int ssh_socket_nonblocking_flush(ssh_socket s)
     }
 
     if (s->write_wontblock && len > 0) {
-        w = ssh_socket_unbuffered_write(s, ssh_buffer_get(s->out_buffer), len);
-        if (w < 0) {
+        ssize_t bwritten;
+
+        bwritten = ssh_socket_unbuffered_write(s,
+                                               ssh_buffer_get(s->out_buffer),
+                                               len);
+        if (bwritten < 0) {
             session->alive = 0;
             ssh_socket_close(s);
 
@@ -722,9 +728,9 @@ int ssh_socket_nonblocking_flush(ssh_socket s)
             return SSH_ERROR;
         }
 
-        ssh_buffer_pass_bytes(s->out_buffer, w);
+        ssh_buffer_pass_bytes(s->out_buffer, bwritten);
         if (s->session->socket_counter != NULL) {
-            s->session->socket_counter->out_bytes += w;
+            s->session->socket_counter->out_bytes += bwritten;
         }
     }
 
