@@ -524,28 +524,30 @@ int ssh_socket_is_open(ssh_socket s) {
 /** \internal
  * \brief read len bytes from socket into buffer
  */
-static int ssh_socket_unbuffered_read(ssh_socket s, void *buffer, uint32_t len) {
-  int rc = -1;
+static int ssh_socket_unbuffered_read(ssh_socket s, void *buffer, uint32_t len)
+{
+    int rc = -1;
 
-  if (s->data_except) {
-    return -1;
-  }
-  if(s->fd_is_socket)
-    rc = recv(s->fd_in,buffer, len, 0);
-  else
-    rc = read(s->fd_in,buffer, len);
+    if (s->data_except) {
+        return -1;
+    }
+    if (s->fd_is_socket) {
+        rc = recv(s->fd_in,buffer, len, 0);
+    } else {
+        rc = read(s->fd_in,buffer, len);
+    }
 #ifdef _WIN32
-  s->last_errno = WSAGetLastError();
+    s->last_errno = WSAGetLastError();
 #else
-  s->last_errno = errno;
+    s->last_errno = errno;
 #endif
-  s->read_wontblock = 0;
+    s->read_wontblock = 0;
 
-  if (rc < 0) {
-    s->data_except = 1;
-  }
+    if (rc < 0) {
+        s->data_except = 1;
+    }
 
-  return rc;
+    return rc;
 }
 
 /** \internal
