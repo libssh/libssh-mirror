@@ -121,7 +121,7 @@ static void torture_pki_ecdsa_import_pubkey_file(void **state)
     assert_return_code(rc, errno);
     assert_non_null(pubkey);
 
-    ssh_key_free(pubkey);
+    SSH_KEY_FREE(pubkey);
 }
 
 static void torture_pki_ecdsa_import_pubkey_from_openssh_privkey(void **state)
@@ -136,7 +136,7 @@ static void torture_pki_ecdsa_import_pubkey_from_openssh_privkey(void **state)
     assert_return_code(rc, errno);
     assert_non_null(pubkey);
 
-    ssh_key_free(pubkey);
+    SSH_KEY_FREE(pubkey);
 }
 
 static void torture_pki_ecdsa_import_privkey_base64(void **state)
@@ -158,7 +158,7 @@ static void torture_pki_ecdsa_import_privkey_base64(void **state)
     assert_true(rc == 1);
 
     free(key_str);
-    ssh_key_free(key);
+    SSH_KEY_FREE(key);
 }
 
 static void torture_pki_ecdsa_publickey_from_privatekey(void **state)
@@ -181,8 +181,8 @@ static void torture_pki_ecdsa_publickey_from_privatekey(void **state)
     assert_true(rc == SSH_OK);
 
     free(key_str);
-    ssh_key_free(key);
-    ssh_key_free(pubkey);
+    SSH_KEY_FREE(key);
+    SSH_KEY_FREE(pubkey);
 }
 
 static void torture_pki_ecdsa_publickey_base64(void **state)
@@ -219,7 +219,7 @@ static void torture_pki_ecdsa_publickey_base64(void **state)
 
     free(b64_key);
     free(key_buf);
-    ssh_key_free(key);
+    SSH_KEY_FREE(key);
 }
 
 static void torture_pki_ecdsa_generate_pubkey_from_privkey(void **state)
@@ -261,8 +261,8 @@ static void torture_pki_ecdsa_generate_pubkey_from_privkey(void **state)
     len = torture_pubkey_len(pubkey_original);
     assert_int_equal(strncmp(pubkey_original, pubkey_generated, len), 0);
 
-    ssh_key_free(privkey);
-    ssh_key_free(pubkey);
+    SSH_KEY_FREE(privkey);
+    SSH_KEY_FREE(pubkey);
 }
 
 static void torture_pki_ecdsa_duplicate_key(void **state)
@@ -281,7 +281,7 @@ static void torture_pki_ecdsa_duplicate_key(void **state)
 
     rc = ssh_pki_export_pubkey_base64(pubkey, &b64_key);
     assert_true(rc == 0);
-    ssh_key_free(pubkey);
+    SSH_KEY_FREE(pubkey);
 
     rc = ssh_pki_import_privkey_file(LIBSSH_ECDSA_TESTKEY,
                                      NULL,
@@ -307,9 +307,9 @@ static void torture_pki_ecdsa_duplicate_key(void **state)
     rc = ssh_key_cmp(privkey, privkey_dup, SSH_KEY_CMP_PRIVATE);
     assert_true(rc == 0);
 
-    ssh_key_free(pubkey);
-    ssh_key_free(privkey);
-    ssh_key_free(privkey_dup);
+    SSH_KEY_FREE(pubkey);
+    SSH_KEY_FREE(privkey);
+    SSH_KEY_FREE(privkey_dup);
     SSH_STRING_FREE_CHAR(b64_key);
     SSH_STRING_FREE_CHAR(b64_key_gen);
 }
@@ -342,9 +342,9 @@ static void torture_pki_ecdsa_duplicate_then_demote(void **state)
     assert_true(rc == 0);
     assert_int_equal(pubkey->ecdsa_nid, privkey->ecdsa_nid);
 
-    ssh_key_free(pubkey);
-    ssh_key_free(privkey);
-    ssh_key_free(privkey_dup);
+    SSH_KEY_FREE(pubkey);
+    SSH_KEY_FREE(privkey);
+    SSH_KEY_FREE(privkey_dup);
 }
 
 static void torture_pki_generate_key_ecdsa(void **state)
@@ -373,8 +373,7 @@ static void torture_pki_generate_key_ecdsa(void **state)
     assert_true(strcmp(etype_char, "ecdsa-sha2-nistp256") == 0);
 
     ssh_signature_free(sign);
-    ssh_key_free(key);
-    key=NULL;
+    SSH_KEY_FREE(key);
 
     rc = ssh_pki_generate(SSH_KEYTYPE_ECDSA, 384, &key);
     assert_true(rc == SSH_OK);
@@ -391,8 +390,7 @@ static void torture_pki_generate_key_ecdsa(void **state)
     assert_true(strcmp(etype_char, "ecdsa-sha2-nistp384") == 0);
 
     ssh_signature_free(sign);
-    ssh_key_free(key);
-    key=NULL;
+    SSH_KEY_FREE(key);
 
     rc = ssh_pki_generate(SSH_KEYTYPE_ECDSA, 512, &key);
     assert_true(rc == SSH_OK);
@@ -409,8 +407,7 @@ static void torture_pki_generate_key_ecdsa(void **state)
     assert_true(strcmp(etype_char, "ecdsa-sha2-nistp521") == 0);
 
     ssh_signature_free(sign);
-    ssh_key_free(key);
-    key=NULL;
+    SSH_KEY_FREE(key);
 
     ssh_free(session);
 }
@@ -451,8 +448,8 @@ static void torture_pki_ecdsa_write_privkey(void **state)
     rc = ssh_key_cmp(origkey, privkey, SSH_KEY_CMP_PRIVATE);
     assert_true(rc == 0);
 
-    ssh_key_free(origkey);
-    ssh_key_free(privkey);
+    SSH_KEY_FREE(origkey);
+    SSH_KEY_FREE(privkey);
 
     /* Test with passphrase */
     rc = ssh_pki_import_privkey_file(LIBSSH_ECDSA_TESTKEY_PASSPHRASE,
@@ -489,8 +486,8 @@ static void torture_pki_ecdsa_write_privkey(void **state)
     rc = ssh_key_cmp(origkey, privkey, SSH_KEY_CMP_PRIVATE);
     assert_true(rc == 0);
 
-    ssh_key_free(origkey);
-    ssh_key_free(privkey);
+    SSH_KEY_FREE(origkey);
+    SSH_KEY_FREE(privkey);
 }
 #endif /* HAVE_LIBCRYPTO */
 
@@ -508,7 +505,7 @@ static void torture_pki_ecdsa_name(void **state, const char *expected_name)
     etype_char =ssh_pki_key_ecdsa_name(key);
     assert_true(strcmp(etype_char, expected_name) == 0);
 
-    ssh_key_free(key);
+    SSH_KEY_FREE(key);
 }
 
 static void torture_pki_ecdsa_name256(void **state)

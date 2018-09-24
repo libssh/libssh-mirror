@@ -534,8 +534,8 @@ static void torture_auth_cert(void **state) {
     rc = ssh_userauth_publickey(session, NULL, privkey);
     assert_int_equal(rc, SSH_AUTH_SUCCESS);
 
-    ssh_key_free(privkey);
-    ssh_key_free(cert);
+    SSH_KEY_FREE(privkey);
+    SSH_KEY_FREE(cert);
 }
 
 static void torture_auth_agent_cert(void **state) {

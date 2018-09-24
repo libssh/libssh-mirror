@@ -560,7 +560,7 @@ static void torture_bind_options_import_key(void **state)
     /* set invalid key */
     rc = ssh_bind_options_set(bind, SSH_BIND_OPTIONS_IMPORT_KEY, key);
     assert_int_equal(rc, -1);
-    ssh_key_free(key);
+    SSH_KEY_FREE(key);
 
     /* set rsa key */
     base64_key = torture_get_testkey(SSH_KEYTYPE_RSA, 0, 0);
