@@ -584,32 +584,34 @@ static ssize_t ssh_socket_unbuffered_read(ssh_socket s,
  * \brief writes len bytes from buffer to socket
  */
 static int ssh_socket_unbuffered_write(ssh_socket s, const void *buffer,
-    uint32_t len) {
-  int w = -1;
+        uint32_t len) {
+    int w = -1;
 
-  if (s->data_except) {
-    return -1;
-  }
-  if (s->fd_is_socket)
-    w = send(s->fd_out,buffer, len, 0);
-  else
-    w = write(s->fd_out, buffer, len);
+    if (s->data_except) {
+        return -1;
+    }
+
+    if (s->fd_is_socket) {
+        w = send(s->fd_out,buffer, len, 0);
+    } else {
+        w = write(s->fd_out, buffer, len);
+    }
 #ifdef _WIN32
-  s->last_errno = WSAGetLastError();
+    s->last_errno = WSAGetLastError();
 #else
-  s->last_errno = errno;
+    s->last_errno = errno;
 #endif
-  s->write_wontblock = 0;
-  /* Reactive the POLLOUT detector in the poll multiplexer system */
-  if(s->poll_out){
-      SSH_LOG(SSH_LOG_PACKET, "Enabling POLLOUT for socket");
-  	ssh_poll_set_events(s->poll_out,ssh_poll_get_events(s->poll_out) | POLLOUT);
-  }
-  if (w < 0) {
-    s->data_except = 1;
-  }
+    s->write_wontblock = 0;
+    /* Reactive the POLLOUT detector in the poll multiplexer system */
+    if (s->poll_out) {
+        SSH_LOG(SSH_LOG_PACKET, "Enabling POLLOUT for socket");
+        ssh_poll_set_events(s->poll_out,ssh_poll_get_events(s->poll_out) | POLLOUT);
+    }
+    if (w < 0) {
+        s->data_except = 1;
+    }
 
-  return w;
+    return w;
 }
 
 /** \internal
