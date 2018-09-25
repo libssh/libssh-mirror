@@ -683,6 +683,10 @@ SSH_PACKET_CALLBACK(channel_rcv_request) {
 	if (strcmp(request,"exit-status") == 0) {
         SAFE_FREE(request);
         rc = ssh_buffer_unpack(packet, "d", &channel->exit_status);
+        if (rc != SSH_OK) {
+            SSH_LOG(SSH_LOG_PACKET, "Invalid exit-status packet");
+            return SSH_PACKET_USED;
+        }
         SSH_LOG(SSH_LOG_PACKET, "received exit-status %d", channel->exit_status);
 
         ssh_callbacks_execute_list(channel->callbacks,
