@@ -22,7 +22,7 @@ static int setup(void **state) {
 }
 
 static int teardown(void **state) {
-    ssh_buffer_free(*state);
+    SSH_BUFFER_FREE(*state);
 
     return 0;
 }
@@ -127,7 +127,7 @@ static void torture_ssh_buffer_get_ssh_string(void **state) {
           assert_null(str);
           SSH_STRING_FREE(str);
         }
-        ssh_buffer_free(buffer);
+        SSH_BUFFER_FREE(buffer);
       }
     }
   }
