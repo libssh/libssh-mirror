@@ -1106,6 +1106,9 @@ int ssh_channel_send_eof(ssh_channel channel)
         "Sent a EOF on client channel (%d:%d)",
         channel->local_channel,
         channel->remote_channel);
+    if (rc != SSH_OK) {
+        goto error;
+    }
 
     rc = ssh_channel_flush(channel);
     if (rc == SSH_ERROR) {
