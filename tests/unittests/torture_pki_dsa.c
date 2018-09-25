@@ -335,6 +335,9 @@ torture_pki_dsa_import_openssh_privkey_base64_passphrase(void **state)
                                        &key);
     assert_true(rc == -1);
 
+    /* This free is unnecessary, but the static analyser does not know */
+    SSH_KEY_FREE(key);
+
     /* test if it returns -1 if passphrase is NULL */
     rc = ssh_pki_import_privkey_base64(keystring,
                                        NULL,
@@ -342,6 +345,9 @@ torture_pki_dsa_import_openssh_privkey_base64_passphrase(void **state)
                                        NULL,
                                        &key);
     assert_true(rc == -1);
+
+    /* This free is unnecessary, but the static analyser does not know */
+    SSH_KEY_FREE(key);
 }
 
 
