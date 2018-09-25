@@ -180,7 +180,6 @@ int ssh_send_banner(ssh_session session, int server)
 
     if (server == 1) {
         if (session->opts.custombanner == NULL){
-            len = strlen(banner);
             session->serverbanner = strdup(banner);
             if (session->serverbanner == NULL) {
                 goto end;
