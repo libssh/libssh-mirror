@@ -83,6 +83,31 @@ static int opts(int argc, char **argv){
   return 0;
 }
 
+static void location_free(struct location *loc)
+{
+    if (loc) {
+        if (loc->path) {
+            free(loc->path);
+        }
+        loc->path = NULL;
+        if (loc->is_ssh) {
+            if (loc->host) {
+                free(loc->host);
+            }
+            loc->host = NULL;
+            if (loc->user) {
+                free(loc->user);
+            }
+            loc->user = NULL;
+            if (loc->host) {
+                free(loc->host);
+            }
+            loc->host = NULL;
+        }
+        free(loc);
+    }
+}
+
 static struct location *parse_location(char *loc){
   struct location *location;
   char *ptr;
@@ -114,6 +139,35 @@ static struct location *parse_location(char *loc){
   return location;
 }
 
+static void close_location(struct location *loc) {
+    int rc;
+
+    if (loc) {
+        if (loc->is_ssh) {
+            if (loc->scp) {
+                rc = ssh_scp_close(loc->scp);
+                if (rc == SSH_ERROR) {
+                    fprintf(stderr,
+                            "Error closing scp: %s\n",
+                            ssh_get_error(loc->session));
+                }
+                ssh_scp_free(loc->scp);
+                loc->scp = NULL;
+            }
+            if (loc->session) {
+                ssh_disconnect(loc->session);
+                ssh_free(loc->session);
+                loc->session = NULL;
+            }
+        } else {
+            if (loc->file) {
+                fclose(loc->file);
+                loc->file = NULL;
+            }
+        }
+    }
+}
+
 static int open_location(struct location *loc, int flag){
   if(loc->is_ssh && flag==WRITE){
     loc->session=connect_ssh(loc->host,loc->user,verbosity);
@@ -124,12 +178,18 @@ static int open_location(struct location *loc, int flag){
     loc->scp=ssh_scp_new(loc->session,SSH_SCP_WRITE,loc->path);
     if(!loc->scp){
       fprintf(stderr,"error : %s\n",ssh_get_error(loc->session));
+      ssh_disconnect(loc->session);
+      ssh_free(loc->session);
+      loc->session = NULL;
       return -1;
     }
     if(ssh_scp_init(loc->scp)==SSH_ERROR){
       fprintf(stderr,"error : %s\n",ssh_get_error(loc->session));
       ssh_scp_free(loc->scp);
       loc->scp = NULL;
+      ssh_disconnect(loc->session);
+      ssh_free(loc->session);
+      loc->session = NULL;
       return -1;
     }
     return 0;
@@ -142,12 +202,18 @@ static int open_location(struct location *loc, int flag){
     loc->scp=ssh_scp_new(loc->session,SSH_SCP_READ,loc->path);
     if(!loc->scp){
       fprintf(stderr,"error : %s\n",ssh_get_error(loc->session));
+      ssh_disconnect(loc->session);
+      ssh_free(loc->session);
+      loc->session = NULL;
       return -1;
     }
     if(ssh_scp_init(loc->scp)==SSH_ERROR){
       fprintf(stderr,"error : %s\n",ssh_get_error(loc->session));
       ssh_scp_free(loc->scp);
       loc->scp = NULL;
+      ssh_disconnect(loc->session);
+      ssh_free(loc->session);
+      loc->session = NULL;
       return -1;
     }
     return 0;
@@ -296,33 +362,36 @@ int main(int argc, char **argv){
   struct location *dest, *src;
   int i;
   int r;
-  if(opts(argc,argv)<0)
-    return EXIT_FAILURE;
+  if(opts(argc,argv)<0) {
+    r = EXIT_FAILURE;
+    goto end;
+  }
   dest=parse_location(destination);
-  if(open_location(dest,WRITE)<0)
-    return EXIT_FAILURE;
+  if(open_location(dest,WRITE)<0) {
+    location_free(dest);
+    r = EXIT_FAILURE;
+    goto end;
+  }
   for(i=0;i<nsources;++i){
     src=parse_location(sources[i]);
     if(open_location(src,READ)<0){
-      return EXIT_FAILURE;
+      location_free(src);
+      r = EXIT_FAILURE;
+      goto close_dest;
     }
     if(do_copy(src,dest,0) < 0){
+        close_location(src);
+        location_free(src);
     	break;
     }
+    close_location(src);
+    location_free(src);
   }
-  if (dest->is_ssh && dest->scp != NULL) {
-	  r=ssh_scp_close(dest->scp);
-	  if(r == SSH_ERROR){
-		  fprintf(stderr,"Error closing scp: %s\n",ssh_get_error(dest->session));
-		  ssh_scp_free(dest->scp);
-		  dest->scp=NULL;
-		  return -1;
-	  }
-  } else {
-	  fclose(dest->file);
-	  dest->file=NULL;
-  }
-  ssh_disconnect(dest->session);
-  ssh_finalize();
-  return 0;
+  r = 0;
+
+close_dest:
+  close_location(dest);
+  location_free(dest);
+end:
+  return r;
 }
