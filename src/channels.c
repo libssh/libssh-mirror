@@ -1080,43 +1080,44 @@ void ssh_channel_do_free(ssh_channel channel)
  * @see ssh_channel_free()
  * @see ssh_channel_is_eof()
  */
-int ssh_channel_send_eof(ssh_channel channel){
-  ssh_session session;
-  int rc = SSH_ERROR;
-  int err;
+int ssh_channel_send_eof(ssh_channel channel)
+{
+    ssh_session session;
+    int rc = SSH_ERROR;
+    int err;
 
-  if(channel == NULL) {
-      return rc;
-  }
+    if(channel == NULL) {
+        return rc;
+    }
 
-  session = channel->session;
+    session = channel->session;
 
-  err = ssh_buffer_pack(session->out_buffer,
-                        "bd",
-                        SSH2_MSG_CHANNEL_EOF,
-                        channel->remote_channel);
-  if (err != SSH_OK) {
-    ssh_set_error_oom(session);
-    goto error;
-  }
+    err = ssh_buffer_pack(session->out_buffer,
+                          "bd",
+                          SSH2_MSG_CHANNEL_EOF,
+                          channel->remote_channel);
+    if (err != SSH_OK) {
+        ssh_set_error_oom(session);
+        goto error;
+    }
 
-  rc = ssh_packet_send(session);
-  SSH_LOG(SSH_LOG_PACKET,
-      "Sent a EOF on client channel (%d:%d)",
-      channel->local_channel,
-      channel->remote_channel);
+    rc = ssh_packet_send(session);
+    SSH_LOG(SSH_LOG_PACKET,
+        "Sent a EOF on client channel (%d:%d)",
+        channel->local_channel,
+        channel->remote_channel);
 
-  rc = ssh_channel_flush(channel);
-  if(rc == SSH_ERROR)
-    goto error;
+    rc = ssh_channel_flush(channel);
+    if (rc == SSH_ERROR) {
+        goto error;
+    }
+    channel->local_eof = 1;
 
-  channel->local_eof = 1;
-
-  return rc;
+    return rc;
 error:
-  ssh_buffer_reinit(session->out_buffer);
+    ssh_buffer_reinit(session->out_buffer);
 
-  return rc;
+    return rc;
 }
 
 /**
