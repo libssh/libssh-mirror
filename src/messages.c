@@ -611,38 +611,45 @@ void ssh_message_free(ssh_message msg){
 
 #ifdef WITH_SERVER
 
-SSH_PACKET_CALLBACK(ssh_packet_service_request){
-  ssh_string service = NULL;
-  char *service_c = NULL;
-  ssh_message msg=NULL;
+SSH_PACKET_CALLBACK(ssh_packet_service_request)
+{
+    ssh_string service = NULL;
+    char *service_c = NULL;
+    ssh_message msg = NULL;
 
-  (void)type;
-  (void)user;
-  service = ssh_buffer_get_ssh_string(packet);
-  if (service == NULL) {
-    ssh_set_error(session, SSH_FATAL, "Invalid SSH_MSG_SERVICE_REQUEST packet");
-    goto error;
-  }
+    (void)type;
+    (void)user;
 
-  service_c = ssh_string_to_char(service);
-  if (service_c == NULL) {
-    goto error;
-  }
-  SSH_LOG(SSH_LOG_PACKET,
-        "Received a SERVICE_REQUEST for service %s", service_c);
-  msg=ssh_message_new(session);
-  if(!msg){
-    SAFE_FREE(service_c);
-    goto error;
-  }
-  msg->type=SSH_REQUEST_SERVICE;
-  msg->service_request.service=service_c;
+    service = ssh_buffer_get_ssh_string(packet);
+    if (service == NULL) {
+        ssh_set_error(session,
+                      SSH_FATAL,
+                      "Invalid SSH_MSG_SERVICE_REQUEST packet");
+        goto error;
+    }
+
+    service_c = ssh_string_to_char(service);
+    if (service_c == NULL) {
+        goto error;
+    }
+    SSH_LOG(SSH_LOG_PACKET,
+            "Received a SERVICE_REQUEST for service %s",
+            service_c);
+    msg = ssh_message_new(session);
+    if (msg == NULL) {
+        SAFE_FREE(service_c);
+        goto error;
+    }
+
+    msg->type=SSH_REQUEST_SERVICE;
+    msg->service_request.service=service_c;
 error:
-  ssh_string_free(service);
-  if(msg != NULL)
-    ssh_message_queue(session,msg);
+    ssh_string_free(service);
+    if (msg != NULL) {
+        ssh_message_queue(session, msg);
+    }
 
-  return SSH_PACKET_USED;
+    return SSH_PACKET_USED;
 }
 
 
