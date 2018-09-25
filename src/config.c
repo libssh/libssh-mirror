@@ -462,7 +462,7 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
 
       p = ssh_config_get_str_tok(&s, NULL);
       if (p && *parsing) {
-#ifdef HAVE_GLOB
+#if defined(HAVE_GLOB) && defined(HAVE_GLOB_GL_FLAGS_MEMBER)
         local_parse_glob(session, p, parsing, seen);
 #else
         local_parse_file(session, p, parsing, seen);
