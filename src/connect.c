@@ -220,7 +220,12 @@ static int ssh_connect_ai_timeout(ssh_session session, const char *host,
 static int set_tcp_nodelay(socket_t socket)
 {
     int opt = 1;
-    return setsockopt(socket, IPPROTO_TCP, TCP_NODELAY, &opt, sizeof(opt));
+
+    return setsockopt(socket,
+                      IPPROTO_TCP,
+                      TCP_NODELAY,
+                      (void *)&opt,
+                      sizeof(opt));
 }
 
 /**
