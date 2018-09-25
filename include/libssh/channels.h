@@ -92,7 +92,6 @@ SSH_PACKET_CALLBACK(channel_rcv_close);
 SSH_PACKET_CALLBACK(channel_rcv_request);
 SSH_PACKET_CALLBACK(channel_rcv_data);
 
-ssh_channel ssh_channel_new(ssh_session session);
 int channel_default_bufferize(ssh_channel channel, void *data, int len,
         int is_stderr);
 int ssh_channel_flush(ssh_channel channel);
