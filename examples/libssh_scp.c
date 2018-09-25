@@ -408,6 +408,11 @@ int main(int argc, char **argv) {
     }
 
     dest = parse_location(destination);
+    if (dest == NULL) {
+        r = EXIT_FAILURE;
+        goto end;
+    }
+
     if (open_location(dest, WRITE) < 0) {
         location_free(dest);
         r = EXIT_FAILURE;
@@ -416,6 +421,11 @@ int main(int argc, char **argv) {
 
     for (i = 0; i < nsources; ++i) {
         src = parse_location(sources[i]);
+        if (src == NULL) {
+            r = EXIT_FAILURE;
+            goto close_dest;
+        }
+
         if (open_location(src, READ) < 0) {
             location_free(src);
             r = EXIT_FAILURE;
