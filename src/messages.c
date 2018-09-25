@@ -613,41 +613,38 @@ void ssh_message_free(ssh_message msg){
 
 SSH_PACKET_CALLBACK(ssh_packet_service_request)
 {
-    ssh_string service = NULL;
     char *service_c = NULL;
     ssh_message msg = NULL;
+    int rc;
 
     (void)type;
     (void)user;
 
-    service = ssh_buffer_get_ssh_string(packet);
-    if (service == NULL) {
+    rc = ssh_buffer_unpack(packet,
+                           "s",
+                           &service_c);
+    if (rc != SSH_OK) {
         ssh_set_error(session,
                       SSH_FATAL,
                       "Invalid SSH_MSG_SERVICE_REQUEST packet");
         goto error;
     }
 
-    service_c = ssh_string_to_char(service);
-    if (service_c == NULL) {
-        goto error;
-    }
     SSH_LOG(SSH_LOG_PACKET,
             "Received a SERVICE_REQUEST for service %s",
             service_c);
+
     msg = ssh_message_new(session);
     if (msg == NULL) {
         SAFE_FREE(service_c);
         goto error;
     }
 
-    msg->type=SSH_REQUEST_SERVICE;
-    msg->service_request.service=service_c;
+    msg->type = SSH_REQUEST_SERVICE;
+    msg->service_request.service = service_c;
+
+    ssh_message_queue(session, msg);
 error:
-    ssh_string_free(service);
-    if (msg != NULL) {
-        ssh_message_queue(session, msg);
-    }
 
     return SSH_PACKET_USED;
 }
