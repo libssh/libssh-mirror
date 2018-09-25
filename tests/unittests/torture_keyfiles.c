@@ -119,11 +119,17 @@ static void torture_pubkey_from_file(void **state) {
     rc = ssh_try_publickey_from_file(session, LIBSSH_RSA_TESTKEY, &pubkey, &type);
     assert_true(rc == 1);
 
+    /* This free is unnecessary, but the static analyser does not know */
+    SSH_STRING_FREE(pubkey);
+
     /* test if it returns -1 if privkey doesn't exist */
     unlink(LIBSSH_RSA_TESTKEY);
 
     rc = ssh_try_publickey_from_file(session, LIBSSH_RSA_TESTKEY, &pubkey, &type);
     assert_true(rc == -1);
+
+    /* This free is unnecessary, but the static analyser does not know */
+    SSH_STRING_FREE(pubkey);
 }
 
 static int torture_read_one_line(const char *filename, char *buffer, size_t len) {
