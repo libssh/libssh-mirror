@@ -376,9 +376,11 @@ int crypt_set_algorithms_client(ssh_session session)
 #ifdef WITH_SERVER
 int crypt_set_algorithms_server(ssh_session session){
     const char *method = NULL;
-    int i = 0;
+    size_t i = 0;
     struct ssh_cipher_struct *ssh_ciphertab=ssh_get_ciphertab();
     struct ssh_hmac_struct   *ssh_hmactab=ssh_get_hmactab();
+    int cmp;
+
 
     if (session == NULL) {
         return SSH_ERROR;
@@ -392,8 +394,6 @@ int crypt_set_algorithms_server(ssh_session session){
     method = session->next_crypto->kex_methods[SSH_CRYPT_S_C];
 
     for (i = 0; ssh_ciphertab[i].name != NULL; i++) {
-        int cmp;
-
         cmp = strcmp(method, ssh_ciphertab[i].name);
         if (cmp == 0) {
           break;
@@ -412,7 +412,7 @@ int crypt_set_algorithms_server(ssh_session session){
         ssh_set_error_oom(session);
         return SSH_ERROR;
     }
-    i=0;
+
     if (session->next_crypto->out_cipher->aead_encrypt != NULL){
         /* this cipher has integrated MAC */
         if (session->next_crypto->out_cipher->ciphertype == SSH_AEAD_CHACHA20_POLY1305) {
@@ -427,8 +427,11 @@ int crypt_set_algorithms_server(ssh_session session){
     }
     /* HMAC algorithm selection */
 
-    while (ssh_hmactab[i].name && strcmp(method, ssh_hmactab[i].name)) {
-      i++;
+    for (i = 0; ssh_hmactab[i].name != NULL; i++) {
+        cmp = strcmp(method, ssh_hmactab[i].name);
+        if (cmp == 0) {
+            break;
+        }
     }
 
     if (ssh_hmactab[i].name == NULL) {
@@ -442,16 +445,13 @@ int crypt_set_algorithms_server(ssh_session session){
     session->next_crypto->out_hmac = ssh_hmactab[i].hmac_type;
 
     /* in */
-    i=0;
     method = session->next_crypto->kex_methods[SSH_CRYPT_C_S];
 
     for (i = 0; ssh_ciphertab[i].name; i++) {
-      int cmp;
-
-      cmp = strcmp(method, ssh_ciphertab[i].name);
-      if (cmp == 0) {
-        break;
-      }
+        cmp = strcmp(method, ssh_ciphertab[i].name);
+        if (cmp == 0) {
+            break;
+        }
     }
 
     if (ssh_ciphertab[i].name == NULL) {
@@ -466,7 +466,6 @@ int crypt_set_algorithms_server(ssh_session session){
         ssh_set_error_oom(session);
         return SSH_ERROR;
     }
-    i=0;
 
     if (session->next_crypto->in_cipher->aead_encrypt != NULL){
         /* this cipher has integrated MAC */
@@ -481,12 +480,10 @@ int crypt_set_algorithms_server(ssh_session session){
     }
 
     for (i = 0; ssh_hmactab[i].name != NULL; i++) {
-      int cmp;
-
-      cmp = strcmp(method, ssh_hmactab[i].name);
-      if (cmp == 0) {
-        break;
-      }
+        cmp = strcmp(method, ssh_hmactab[i].name);
+        if (cmp == 0) {
+            break;
+        }
     }
 
     if (ssh_hmactab[i].name == NULL) {
@@ -498,7 +495,6 @@ int crypt_set_algorithms_server(ssh_session session){
     SSH_LOG(SSH_LOG_PACKET, "Set HMAC input algorithm to %s", method);
 
     session->next_crypto->in_hmac = ssh_hmactab[i].hmac_type;
-    i=0;
 
     /* compression */
     method = session->next_crypto->kex_methods[SSH_COMP_C_S];
