@@ -346,7 +346,7 @@ tumbleweed/undefined-sanitizer:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$TUMBLEWEED_BUILD
   script:
   - mkdir -p obj && cd obj && cmake
-    -DCMAKE_C_FLAGS="-fsanitize=undefined -fsanitize=null -fsanitize=alignment -fno-sanitize-recover"
+    -DCMAKE_BUILD_TYPE=UndefinedSanitizer
     -DPICKY_DEVELOPER=ON
     -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON --DWITH_PCAP=ON
     -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON .. &&
