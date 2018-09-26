@@ -1062,6 +1062,9 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
                 packet_len - (lenfield_blocksize - sizeof(uint32_t));
             cleartext_packet = ssh_buffer_allocate(session->in_buffer,
                                                    packet_remaining);
+            if (cleartext_packet == NULL) {
+                goto error;
+            }
             if (session->current_crypto) {
                 /*
                  * Decrypt the rest of the packet (lenfield_blocksize bytes already
