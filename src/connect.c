@@ -488,6 +488,7 @@ int ssh_select(ssh_channel *channels, ssh_channel *outchannels, socket_t maxfd,
     ssh_event_add_session(event, channels[i]->session);
   }
 
+  ZERO_STRUCT(origfds);
   FD_ZERO(&origfds);
   for (fd = 0; fd < maxfd ; fd++) {
       if (FD_ISSET(fd, readfds)) {
