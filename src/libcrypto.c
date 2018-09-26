@@ -437,7 +437,6 @@ HMACCTX hmac_init(const void *key, int len, enum ssh_hmac_e type) {
       break;
     default:
       HMAC_CTX_free(ctx);
-      SAFE_FREE(ctx);
       ctx = NULL;
   }
 
