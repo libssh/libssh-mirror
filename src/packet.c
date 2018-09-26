@@ -1065,32 +1065,42 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
             if (cleartext_packet == NULL) {
                 goto error;
             }
-            if (session->current_crypto) {
-                /*
-                 * Decrypt the rest of the packet (lenfield_blocksize bytes already
-                 * have been decrypted)
-                 */
-                if (packet_remaining > 0) {
-                    rc = ssh_packet_decrypt(session,
-                                            cleartext_packet,
-                                            (uint8_t *)data,
-                                            lenfield_blocksize,
-                                            processed - lenfield_blocksize);
+
+            if (packet_second_block != NULL) {
+                if (session->current_crypto != NULL) {
+                    /*
+                     * Decrypt the rest of the packet (lenfield_blocksize bytes
+                     * already have been decrypted)
+                     */
+                    if (packet_remaining > 0) {
+                        rc = ssh_packet_decrypt(session,
+                                                cleartext_packet,
+                                                (uint8_t *)data,
+                                                lenfield_blocksize,
+                                                processed - lenfield_blocksize);
+                        if (rc < 0) {
+                            ssh_set_error(session,
+                                          SSH_FATAL,
+                                          "Decryption error");
+                            goto error;
+                        }
+                    }
+                    mac = packet_second_block + packet_remaining;
+
+                    rc = ssh_packet_hmac_verify(session,
+                                                session->in_buffer,
+                                                mac,
+                                                session->current_crypto->in_hmac);
                     if (rc < 0) {
-                        ssh_set_error(session, SSH_FATAL, "Decryption error");
+                        ssh_set_error(session, SSH_FATAL, "HMAC error");
                         goto error;
                     }
+                    processed += current_macsize;
+                } else {
+                    memcpy(cleartext_packet,
+                           packet_second_block,
+                           packet_remaining);
                 }
-                mac = packet_second_block + packet_remaining;
-
-                rc = ssh_packet_hmac_verify(session, session->in_buffer, mac, session->current_crypto->in_hmac);
-                if (rc < 0) {
-                    ssh_set_error(session, SSH_FATAL, "HMAC error");
-                    goto error;
-                }
-                processed += current_macsize;
-            } else {
-                memcpy(cleartext_packet, packet_second_block, packet_remaining);
             }
 
             /* skip the size field which has been processed before */
