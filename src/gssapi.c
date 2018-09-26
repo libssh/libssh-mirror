@@ -171,10 +171,10 @@ static void ssh_gssapi_log_error(int verb,
 
 out:
     if (msg_maj.value) {
-        dummy_maj = gss_release_buffer(&dummy_min, &msg_maj);
+        gss_release_buffer(&dummy_min, &msg_maj);
     }
     if (msg_min.value) {
-        dummy_maj = gss_release_buffer(&dummy_min, &msg_min);
+        gss_release_buffer(&dummy_min, &msg_min);
     }
 }
 
