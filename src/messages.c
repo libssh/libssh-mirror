@@ -232,6 +232,10 @@ static int ssh_execute_server_request(ssh_session session, ssh_message msg)
                                                     msg->channel_request.height,
                                                     msg->channel_request.pxwidth,
                                                     msg->channel_request.pxheight);
+                    if (rc != SSH_OK) {
+                        SSH_LOG(SSH_LOG_WARNING,
+                                "Failed to iterate callbacks for window change");
+                    }
                     return SSH_OK;
                 }
                 ssh_callbacks_iterate_end();
