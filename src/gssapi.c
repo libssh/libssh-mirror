@@ -216,6 +216,15 @@ int ssh_gssapi_handle_userauth(ssh_session session, const char *user, uint32_t n
     gss_create_empty_oid_set(&min_stat, &both_supported);
 
     maj_stat = gss_indicate_mechs(&min_stat, &supported);
+    if (maj_stat != GSS_S_COMPLETE) {
+        SSH_LOG(SSH_LOG_WARNING, "indicate mecks %d, %d", maj_stat, min_stat);
+        ssh_gssapi_log_error(SSH_LOG_WARNING,
+                             "indicate mechs",
+                             maj_stat,
+                             min_stat);
+        return SSH_ERROR;
+    }
+
     for (i=0; i < supported->count; ++i){
         ptr = ssh_get_hexa(supported->elements[i].elements, supported->elements[i].length);
         SSH_LOG(SSH_LOG_DEBUG, "Supported mech %zu: %s", i, ptr);
