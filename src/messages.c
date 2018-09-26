@@ -430,6 +430,13 @@ void ssh_message_queue(ssh_session session, ssh_message message){
         }
         if (session->ssh_message_list != NULL) {
             ssh_list_append(session->ssh_message_list, message);
+        } else {
+            /* If the message list couldn't be allocated, the message can't be
+             * enqueued */
+            ssh_message_reply_default(message);
+            ssh_set_error_oom(session);
+            ssh_message_free(message);
+            return;
         }
     }
 }
