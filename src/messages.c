@@ -155,6 +155,11 @@ static int ssh_execute_server_request(ssh_session session, ssh_message msg)
                         session->server_callbacks->userdata);
                 if (channel != NULL) {
                     rc = ssh_message_channel_request_open_reply_accept_channel(msg, channel);
+                    if (rc != SSH_OK) {
+                        SSH_LOG(SSH_LOG_WARNING,
+                                "Failed to send reply for accepting a channel "
+                                "open");
+                    }
                     return SSH_OK;
                 } else {
                     ssh_message_reply_default(msg);
