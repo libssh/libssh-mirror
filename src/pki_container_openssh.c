@@ -333,7 +333,6 @@ ssh_pki_openssh_import(const char *text_key,
 
     privkey_buffer = ssh_buffer_new();
     if (privkey_buffer == NULL) {
-        rc = SSH_ERROR;
         goto out;
     }
 
