@@ -313,6 +313,9 @@ ssh_pki_openssh_import(const char *text_key,
      */
     if (!private) {
         rc = ssh_pki_import_pubkey_blob(pubkey0, &key);
+        if (rc != SSH_OK) {
+            SSH_LOG(SSH_LOG_WARN, "Failed to import public key blob");
+        }
         /* in either case we clean up here */
         goto out;
     }
