@@ -90,6 +90,7 @@ static void select_loop(ssh_session session,ssh_channel channel){
 		do{
             int fd;
 
+            ZERO_STRUCT(fds);
 			FD_ZERO(&fds);
 			if(!eof)
 				FD_SET(0,&fds);
