@@ -154,16 +154,15 @@ fedora/mbedtls/x86_64:
 fedora/mingw64:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$MINGW_BUILD
   script:
-  - Xvfb :1 -screen 0 1024x768x16 -ac +extension GLX +render -noreset -nolisten tcp &
-  - export DISPLAY=:1
+  - export WINEPATH=/usr/x86_64-w64-mingw32/sys-root/mingw/bin
+  - export WINEDEBUG=-all
   - mkdir -p obj && cd obj && mingw64-cmake
     -DCMAKE_BUILD_TYPE=RelWithDebInfo
     -DPICKY_DEVELOPER=ON
     -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON --DWITH_PCAP=ON
     -DUNIT_TESTING=ON .. &&
-    make -j$(nproc)
-  - export WINEPATH=/usr/x86_64-w64-mingw32/sys-root/mingw/bin
-  - ctest --output-on-failure
+    make -j$(nproc) &&
+    ctest --output-on-failure
   tags:
   - shared
   except:
@@ -179,16 +178,15 @@ fedora/mingw64:
 fedora/mingw32:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$MINGW_BUILD
   script:
-  - Xvfb :1 -screen 0 1024x768x16 -ac +extension GLX +render -noreset -nolisten tcp &
-  - export DISPLAY=:1
+  - export WINEPATH=/usr/i686-w64-mingw32/sys-root/mingw/bin
+  - export WINEDEBUG=-all
   - mkdir -p obj && cd obj && mingw32-cmake
     -DCMAKE_BUILD_TYPE=RelWithDebInfo
     -DPICKY_DEVELOPER=ON
     -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON --DWITH_PCAP=ON
     -DUNIT_TESTING=ON .. &&
-    make -j$(nproc)
-  - export WINEPATH=/usr/i686-w64-mingw32/sys-root/mingw/bin
-  - ctest --output-on-failure
+    make -j$(nproc) &&
+    ctest --output-on-failure
   tags:
   - shared
   except:
