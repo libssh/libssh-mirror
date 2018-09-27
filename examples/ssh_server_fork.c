@@ -472,7 +472,8 @@ static int process_stderr(socket_t fd, int revents, void *userdata) {
 }
 
 static void handle_session(ssh_event event, ssh_session session) {
-    int n, rc;
+    int n;
+    int rc = 0;
 
     /* Structure for storing the pty size. */
     struct winsize wsize = {
