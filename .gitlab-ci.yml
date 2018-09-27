@@ -208,8 +208,9 @@ fedora/mingw32:
     -DCMAKE_CXX_COMPILER="$(which $host-g++)"
     -DCMAKE_BUILD_TYPE=RelWithDebInfo
     -DUNIT_TESTING=ON -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON
-    -DWITH_PCAP=ON .. && make -j$(nproc)
-  - ctest --output-on-failure -j$(nproc)
+    -DWITH_PCAP=ON .. &&
+    make -j$(nproc) &&
+    ctest --output-on-failure
   tags:
   - shared
   except:
