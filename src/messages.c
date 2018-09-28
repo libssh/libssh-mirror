@@ -411,45 +411,58 @@ static int ssh_execute_message_callback(ssh_session session, ssh_message msg) {
  */
 static void ssh_message_queue(ssh_session session, ssh_message message)
 {
-    if (message != NULL) {
 #ifdef WITH_SERVER
-	int ret;
-        /* probably not the best place to execute server callbacks, but still better
-         * than nothing.
-         */
-        ret = ssh_execute_server_callbacks(session, message);
-        if (ret == SSH_OK){
-            ssh_message_free(message);
-            return;
-        }
+    int ret;
+#endif
+
+    if (message == NULL) {
+        return;
+    }
+
+#ifdef WITH_SERVER
+    /* probably not the best place to execute server callbacks, but still better
+     * than nothing.
+     */
+    ret = ssh_execute_server_callbacks(session, message);
+    if (ret == SSH_OK) {
+        ssh_message_free(message);
+        return;
+    }
 #endif /* WITH_SERVER */
-        if(session->ssh_message_callback != NULL) {
-            ssh_execute_message_callback(session, message);
-            return;
-        }
-        if (session->server_callbacks != NULL){
-            /* if we have server callbacks, but nothing was executed, it means we are
-             * in non-synchronous mode, and we just don't care about the message we
-             * received. Just send a default response. Do not queue it.
-             */
-            ssh_message_reply_default(message);
-            ssh_message_free(message);
-            return;
-        }
-        if(session->ssh_message_list == NULL) {
-            session->ssh_message_list = ssh_list_new();
-        }
+
+    if (session->ssh_message_callback != NULL) {
+        /* This will transfer the message, do not free. */
+        ssh_execute_message_callback(session, message);
+        return;
+    }
+
+    if (session->server_callbacks != NULL) {
+        /* if we have server callbacks, but nothing was executed, it means we are
+         * in non-synchronous mode, and we just don't care about the message we
+         * received. Just send a default response. Do not queue it.
+         */
+        ssh_message_reply_default(message);
+        ssh_message_free(message);
+        return;
+    }
+
+    if (session->ssh_message_list == NULL) {
+        session->ssh_message_list = ssh_list_new();
         if (session->ssh_message_list != NULL) {
-            ssh_list_append(session->ssh_message_list, message);
-        } else {
-            /* If the message list couldn't be allocated, the message can't be
-             * enqueued */
+            /*
+             * If the message list couldn't be allocated, the message can't be
+             * enqueued
+             */
             ssh_message_reply_default(message);
             ssh_set_error_oom(session);
             ssh_message_free(message);
             return;
         }
     }
+
+    /* This will transfer the message, do not free. */
+    ssh_list_append(session->ssh_message_list, message);
+    return;
 }
 
 /**
