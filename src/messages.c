@@ -63,14 +63,15 @@
  * @{
  */
 
-static ssh_message ssh_message_new(ssh_session session){
-  ssh_message msg = malloc(sizeof(struct ssh_message_struct));
-  if (msg == NULL) {
-    return NULL;
-  }
-  ZERO_STRUCTP(msg);
-  msg->session = session;
-  return msg;
+static ssh_message ssh_message_new(ssh_session session)
+{
+    ssh_message msg = calloc(1, sizeof(struct ssh_message_struct));
+    if (msg == NULL) {
+        return NULL;
+    }
+    msg->session = session;
+
+    return msg;
 }
 
 #ifndef WITH_SERVER
