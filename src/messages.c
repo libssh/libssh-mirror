@@ -382,16 +382,16 @@ static int ssh_execute_message_callback(ssh_session session, ssh_message msg) {
                 session->ssh_message_callback_data);
         if(ret == 1) {
             ret = ssh_message_reply_default(msg);
-            ssh_message_free(msg);
+            SSH_MESSAGE_FREE(msg);
             if(ret != SSH_OK) {
                 return ret;
             }
         } else {
-            ssh_message_free(msg);
+            SSH_MESSAGE_FREE(msg);
         }
     } else {
         ret = ssh_message_reply_default(msg);
-        ssh_message_free(msg);
+        SSH_MESSAGE_FREE(msg);
         if(ret != SSH_OK) {
             return ret;
         }
@@ -425,7 +425,7 @@ static void ssh_message_queue(ssh_session session, ssh_message message)
      */
     ret = ssh_execute_server_callbacks(session, message);
     if (ret == SSH_OK) {
-        ssh_message_free(message);
+        SSH_MESSAGE_FREE(message);
         return;
     }
 #endif /* WITH_SERVER */
@@ -442,7 +442,7 @@ static void ssh_message_queue(ssh_session session, ssh_message message)
          * received. Just send a default response. Do not queue it.
          */
         ssh_message_reply_default(message);
-        ssh_message_free(message);
+        SSH_MESSAGE_FREE(message);
         return;
     }
 
@@ -455,7 +455,7 @@ static void ssh_message_queue(ssh_session session, ssh_message message)
              */
             ssh_message_reply_default(message);
             ssh_set_error_oom(session);
-            ssh_message_free(message);
+            SSH_MESSAGE_FREE(message);
             return;
         }
     }
@@ -930,7 +930,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
      /* bypass the message queue thing */
      SAFE_FREE(service);
      SAFE_FREE(method);
-     ssh_message_free(msg);
+     SSH_MESSAGE_FREE(msg);
 
      return SSH_PACKET_USED;
   }
@@ -943,7 +943,7 @@ error:
   SAFE_FREE(service);
   SAFE_FREE(method);
 
-  ssh_message_free(msg);
+  SSH_MESSAGE_FREE(msg);
 
   return SSH_PACKET_USED;
 end:
@@ -1086,7 +1086,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_response){
   return SSH_PACKET_USED;
 
 error:
-  ssh_message_free(msg);
+  SSH_MESSAGE_FREE(msg);
 
   return SSH_PACKET_USED;
 }
@@ -1185,8 +1185,7 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_open){
   goto end;
 
 error:
-  ssh_message_free(msg);
-  msg=NULL;
+  SSH_MESSAGE_FREE(msg);
 end:
   SAFE_FREE(type_c);
   if(msg != NULL)
@@ -1383,7 +1382,7 @@ end:
 
   return SSH_OK;
 error:
-  ssh_message_free(msg);
+  SSH_MESSAGE_FREE(msg);
 
   return SSH_ERROR;
 }
