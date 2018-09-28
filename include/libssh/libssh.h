@@ -596,6 +596,8 @@ SSH_DEPRECATED LIBSSH_API void ssh_log(ssh_session session,
 
 LIBSSH_API ssh_channel ssh_message_channel_request_open_reply_accept(ssh_message msg);
 LIBSSH_API int ssh_message_channel_request_reply_success(ssh_message msg);
+#define SSH_MESSAGE_FREE(x) \
+    do { if ((x) != NULL) { ssh_message_free(x); (x) = NULL; } } while(0)
 LIBSSH_API void ssh_message_free(ssh_message msg);
 LIBSSH_API ssh_message ssh_message_get(ssh_session session);
 LIBSSH_API int ssh_message_subtype(ssh_message msg);
