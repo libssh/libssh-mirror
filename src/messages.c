@@ -408,7 +408,8 @@ static int ssh_execute_message_callback(ssh_session session, ssh_message msg) {
  *
  * @param[in]  message  The message to add to the queue.
  */
-void ssh_message_queue(ssh_session session, ssh_message message){
+static void ssh_message_queue(ssh_session session, ssh_message message)
+{
     if (message != NULL) {
 #ifdef WITH_SERVER
 	int ret;
