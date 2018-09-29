@@ -4,6 +4,7 @@ include_directories(${OPENSSL_INCLUDE_DIR})
 
 set(LIBSSH_UNIT_TESTS
     torture_buffer
+    torture_bytearray
     torture_callbacks
     torture_crypto
     torture_init
