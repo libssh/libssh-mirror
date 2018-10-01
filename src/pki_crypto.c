@@ -1053,6 +1053,7 @@ int pki_privkey_build_rsa(ssh_key key,
     bn = ssh_make_string_bn(n);
     be = ssh_make_string_bn(e);
     bd = ssh_make_string_bn(d);
+    UNUSED(iqmp);
     /*biqmp = ssh_make_string_bn(iqmp);*/
     bp = ssh_make_string_bn(p);
     bq = ssh_make_string_bn(q);

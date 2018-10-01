@@ -302,6 +302,8 @@ int ssh_connector_remove_event(ssh_connector connector);
 void explicit_bzero(void *s, size_t n);
 #endif /* !HAVE_EXPLICIT_BZERO */
 
+#define UNUSED(x) (void)(x)
+
 /**
  * This is a hack to fix warnings. The idea is to use this everywhere that we
  * get the "discarding const" warning by the compiler. That doesn't actually
