@@ -108,7 +108,9 @@ static void *thread_crypto_aes256_cbc(void *threadid)
 {
     uint8_t output[sizeof(cleartext)] = {0};
     uint8_t iv[16] = {0};
-    struct ssh_cipher_struct cipher;
+    struct ssh_cipher_struct cipher = {
+        .name = NULL,
+    };
     int rc;
 
     /* Unused */
@@ -116,6 +118,14 @@ static void *thread_crypto_aes256_cbc(void *threadid)
 
     rc = get_cipher(&cipher, "aes256-cbc");
     assert_int_equal(rc, SSH_OK);
+    assert_non_null(cipher.set_encrypt_key);
+    assert_non_null(cipher.encrypt);
+
+    /* This is for dump static analizyer without modelling support */
+    if (cipher.set_encrypt_key == NULL ||
+        cipher.encrypt == NULL) {
+        return NULL;
+    }
 
     memcpy(iv, IV, sizeof(IV));
     cipher.set_encrypt_key(&cipher,
@@ -136,6 +146,14 @@ static void *thread_crypto_aes256_cbc(void *threadid)
 
     rc = get_cipher(&cipher, "aes256-cbc");
     assert_int_equal(rc, SSH_OK);
+    assert_non_null(cipher.set_encrypt_key);
+    assert_non_null(cipher.encrypt);
+
+    /* This is for dump static analizyer without modelling support */
+    if (cipher.set_encrypt_key == NULL ||
+        cipher.encrypt == NULL) {
+        return NULL;
+    }
 
     memcpy(iv, IV, sizeof(IV));
     cipher.set_decrypt_key(&cipher,
