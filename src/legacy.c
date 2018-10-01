@@ -545,6 +545,10 @@ ssh_string publickey_to_string(ssh_public_key pubkey) {
     ssh_string key_blob;
     int rc;
 
+    if (pubkey == NULL) {
+        return NULL;
+    }
+
     key = ssh_key_new();
     if (key == NULL) {
         return NULL;
