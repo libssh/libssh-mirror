@@ -55,7 +55,7 @@ struct ssh_crypto_struct test_crypto = {
     .out_cipher = &fake_out_cipher,
     .in_hmac = SSH_HMAC_SHA256,
     .out_hmac = SSH_HMAC_SHA256,
-    .mac_type = SSH_MAC_SHA256,
+    .digest_type = SSH_KDF_SHA256,
 };
 
 struct ssh_session_struct session = {

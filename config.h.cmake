@@ -115,6 +115,9 @@
 /* Define to 1 if you have the `EVP_CIPHER_CTX_new' function. */
 #cmakedefine HAVE_OPENSSL_EVP_CIPHER_CTX_NEW 1
 
+/* Define to 1 if you have the `EVP_KDF_CTX_new_id' function. */
+#cmakedefine HAVE_OPENSSL_EVP_KDF_CTX_NEW_ID 1
+
 /* Define to 1 if you have the `OPENSSL_ia32cap_loc' function. */
 #cmakedefine HAVE_OPENSSL_IA32CAP_LOC 1
 

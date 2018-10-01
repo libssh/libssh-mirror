@@ -37,10 +37,6 @@
 static mbedtls_entropy_context ssh_mbedtls_entropy;
 static mbedtls_ctr_drbg_context ssh_mbedtls_ctr_drbg;
 
-struct ssh_mac_ctx_struct {
-    enum ssh_mac_e mac_type;
-    mbedtls_md_context_t ctx;
-};
 static int libmbedcrypto_initialized = 0;
 
 void ssh_reseed(void)
@@ -386,66 +382,13 @@ void md5_final(unsigned char *md, MD5CTX c)
     SAFE_FREE(c);
 }
 
-ssh_mac_ctx ssh_mac_ctx_init(enum ssh_mac_e type)
+int ssh_kdf(struct ssh_crypto_struct *crypto,
+            unsigned char *key, size_t key_len,
+            int key_type, unsigned char *output,
+            size_t requested_len)
 {
-    ssh_mac_ctx ctx = malloc(sizeof (struct ssh_mac_ctx_struct));
-    const mbedtls_md_info_t *md_info;
-    int rc;
-    if (ctx == NULL) {
-        return NULL;
-    }
-
-    ctx->mac_type=type;
-    switch(type) {
-        case SSH_MAC_SHA1:
-            md_info = mbedtls_md_info_from_type(MBEDTLS_MD_SHA1);
-            break;
-        case SSH_MAC_SHA256:
-            md_info = mbedtls_md_info_from_type(MBEDTLS_MD_SHA256);
-            break;
-        case SSH_MAC_SHA384:
-            md_info = mbedtls_md_info_from_type(MBEDTLS_MD_SHA384);
-            break;
-        case SSH_MAC_SHA512:
-            md_info = mbedtls_md_info_from_type(MBEDTLS_MD_SHA512);
-            break;
-        default:
-            goto error;
-    }
-
-    if (md_info == NULL) {
-        goto error;
-    }
-
-    mbedtls_md_init(&ctx->ctx);
-
-    rc = mbedtls_md_setup(&ctx->ctx, md_info, 0);
-    if (rc != 0) {
-        goto error;
-    }
-
-    rc = mbedtls_md_starts(&ctx->ctx);
-    if (rc != 0) {
-        goto error;
-    }
-
-    return ctx;
-
-error:
-    SAFE_FREE(ctx);
-    return NULL;
-}
-
-void ssh_mac_update(ssh_mac_ctx ctx, const void *data, unsigned long len)
-{
-    mbedtls_md_update(&ctx->ctx, data, len);
-}
-
-void ssh_mac_final(unsigned char *md, ssh_mac_ctx ctx)
-{
-    mbedtls_md_finish(&ctx->ctx, md);
-    mbedtls_md_free(&ctx->ctx);
-    SAFE_FREE(ctx);
+    return sshkdf_derive_key(crypto, key, key_len,
+                             key_type, output, requested_len);
 }
 
 HMACCTX hmac_init(const void *key, int len, enum ssh_hmac_e type)

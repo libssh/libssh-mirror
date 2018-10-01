@@ -36,11 +36,6 @@
 #ifdef HAVE_LIBGCRYPT
 #include <gcrypt.h>
 
-struct ssh_mac_ctx_struct {
-  enum ssh_mac_e mac_type;
-  gcry_md_hd_t ctx;
-};
-
 static int libgcrypt_initialized = 0;
 
 static int alloc_key(struct ssh_cipher_struct *cipher) {
@@ -220,57 +215,13 @@ void md5_final(unsigned char *md, MD5CTX c) {
   gcry_md_close(c);
 }
 
-ssh_mac_ctx ssh_mac_ctx_init(enum ssh_mac_e type){
-  ssh_mac_ctx ctx = malloc(sizeof(struct ssh_mac_ctx_struct));
-  if (ctx == NULL) {
-    return NULL;
-  }
-
-  ctx->mac_type=type;
-  switch(type){
-    case SSH_MAC_SHA1:
-      gcry_md_open(&ctx->ctx, GCRY_MD_SHA1, 0);
-      break;
-    case SSH_MAC_SHA256:
-      gcry_md_open(&ctx->ctx, GCRY_MD_SHA256, 0);
-      break;
-    case SSH_MAC_SHA384:
-      gcry_md_open(&ctx->ctx, GCRY_MD_SHA384, 0);
-      break;
-    case SSH_MAC_SHA512:
-      gcry_md_open(&ctx->ctx, GCRY_MD_SHA512, 0);
-      break;
-    default:
-      SAFE_FREE(ctx);
-      return NULL;
-  }
-  return ctx;
-}
-
-void ssh_mac_update(ssh_mac_ctx ctx, const void *data, unsigned long len) {
-  gcry_md_write(ctx->ctx,data,len);
-}
-
-void ssh_mac_final(unsigned char *md, ssh_mac_ctx ctx) {
-  size_t len = 0;
-  switch(ctx->mac_type){
-    case SSH_MAC_SHA1:
-      len=SHA_DIGEST_LEN;
-      break;
-    case SSH_MAC_SHA256:
-      len=SHA256_DIGEST_LEN;
-      break;
-    case SSH_MAC_SHA384:
-      len=SHA384_DIGEST_LEN;
-      break;
-    case SSH_MAC_SHA512:
-      len=SHA512_DIGEST_LEN;
-      break;
-  }
-  gcry_md_final(ctx->ctx);
-  memcpy(md, gcry_md_read(ctx->ctx, 0), len);
-  gcry_md_close(ctx->ctx);
-  SAFE_FREE(ctx);
+int ssh_kdf(struct ssh_crypto_struct *crypto,
+            unsigned char *key, size_t key_len,
+            int key_type, unsigned char *output,
+            size_t requested_len)
+{
+    return sshkdf_derive_key(crypto, key, key_len,
+                             key_type, output, requested_len);
 }
 
 HMACCTX hmac_init(const void *key, int len, enum ssh_hmac_e type) {

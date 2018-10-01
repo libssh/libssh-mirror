@@ -130,6 +130,7 @@ set(libssh_SRCS
   error.c
   getpass.c
   init.c
+  kdf.c
   kex.c
   known_hosts.c
   knownhosts.c
