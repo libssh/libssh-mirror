@@ -276,19 +276,19 @@ int main(void) {
 ###########################################################
 # For detecting attributes we need to treat warnings as
 # errors
-if (UNIX)
+if (UNIX OR MINGW)
     # Get warnings for attributs
-    check_c_compiler_flag("-Wattributs" REQUIRED_FLAGS_WERROR)
+    check_c_compiler_flag("-Wattributes" REQUIRED_FLAGS_WERROR)
     if (REQUIRED_FLAGS_WERROR)
-        set(CMAKE_REQUIRED_FLAGS "-Wattributes")
+        string(APPEND CMAKE_REQUIRED_FLAGS "-Wattributes ")
     endif()
 
     # Turn warnings into errors
     check_c_compiler_flag("-Werror" REQUIRED_FLAGS_WERROR)
     if (REQUIRED_FLAGS_WERROR)
-        set(CMAKE_REQUIRED_FLAGS "-Werror")
+        string(APPEND CMAKE_REQUIRED_FLAGS "-Werror ")
     endif()
-endif (UNIX)
+endif ()
 
 check_c_source_compiles("
 void test_constructor_attribute(void) __attribute__ ((constructor));
