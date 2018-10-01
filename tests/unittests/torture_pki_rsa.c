@@ -277,15 +277,19 @@ static void torture_pki_rsa_publickey_base64(void **state)
     assert_true(key_buf != NULL);
 
     q = p = key_buf;
-    while (*p != ' ') p++;
-    *p = '\0';
+    while (p != NULL && *p != '\0' && *p != ' ') p++;
+    if (p != NULL) {
+        *p = '\0';
+    }
 
     type = ssh_key_type_from_name(q);
     assert_true(type == SSH_KEYTYPE_RSA);
 
     q = ++p;
-    while (*p != ' ') p++;
-    *p = '\0';
+    while (p != NULL && *p != '\0' && *p != ' ') p++;
+    if (p != NULL) {
+        *p = '\0';
+    }
 
     rc = ssh_pki_import_pubkey_base64(q, type, &key);
     assert_true(rc == 0);
