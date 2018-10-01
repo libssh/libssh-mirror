@@ -212,7 +212,7 @@ public:
    * @see ssh_userauth_kbdint
    */
   int userauthKbdint(const char* username, const char* submethods){
-    int ret=ssh_userauth_kbdint(c_session,NULL,NULL);
+    int ret = ssh_userauth_kbdint(c_session, username, submethods);
     ssh_throw(ret);
     return ret;
   }
