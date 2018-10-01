@@ -48,6 +48,7 @@
 #include "libssh/channels.h"
 #include "libssh/session.h"
 #include "libssh/misc.h"
+#include "libssh/bytearray.h"
 
 #ifdef WITH_SFTP
 
@@ -66,19 +67,6 @@ static int sftp_enqueue(sftp_session session, sftp_message msg);
 static void sftp_message_free(sftp_message msg);
 static void sftp_set_error(sftp_session sftp, int errnum);
 static void status_msg_free(sftp_status_message status);
-
-static uint32_t sftp_get_u32(const void *vp)
-{
-    const uint8_t *p = (const uint8_t *)vp;
-    uint32_t v;
-
-    v  = (uint32_t)p[0] << 24;
-    v |= (uint32_t)p[1] << 16;
-    v |= (uint32_t)p[2] << 8;
-    v |= (uint32_t)p[3];
-
-    return v;
-}
 
 static sftp_ext sftp_ext_new(void) {
   sftp_ext ext;
@@ -405,7 +393,7 @@ sftp_packet sftp_packet_read(sftp_session sftp)
         }
     } while (nread < 4);
 
-    size = sftp_get_u32(buffer);
+    size = PULL_BE_U32(buffer, 0);
     if (size == 0 || size > SFTP_PACKET_SIZE_MAX) {
         ssh_set_error(sftp->session, SSH_FATAL, "Invalid sftp packet size!");
         goto error;
