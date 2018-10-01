@@ -44,23 +44,23 @@ struct ssh_key_struct {
     int flags;
     const char *type_c; /* Don't free it ! it is static */
     int ecdsa_nid;
-#ifdef HAVE_LIBGCRYPT
+#if defined(HAVE_LIBGCRYPT)
     gcry_sexp_t dsa;
     gcry_sexp_t rsa;
     gcry_sexp_t ecdsa;
-#elif HAVE_LIBMBEDCRYPTO
+#elif defined(HAVE_LIBMBEDCRYPTO)
     mbedtls_pk_context *rsa;
     mbedtls_ecdsa_context *ecdsa;
     void *dsa;
-#elif HAVE_LIBCRYPTO
+#elif defined(HAVE_LIBCRYPTO)
     DSA *dsa;
     RSA *rsa;
-#ifdef HAVE_OPENSSL_ECC
+# if defined(HAVE_OPENSSL_ECC)
     EC_KEY *ecdsa;
-#else
+# else
     void *ecdsa;
-#endif /* HAVE_OPENSSL_EC_H */
-#endif
+# endif /* HAVE_OPENSSL_EC_H */
+#endif /* HAVE_LIBGCRYPT */
     ed25519_pubkey *ed25519_pubkey;
     ed25519_privkey *ed25519_privkey;
     void *cert;
@@ -71,11 +71,11 @@ struct ssh_signature_struct {
     enum ssh_keytypes_e type;
     enum ssh_digest_e hash_type;
     const char *type_c;
-#ifdef HAVE_LIBGCRYPT
+#if defined(HAVE_LIBGCRYPT)
     gcry_sexp_t dsa_sig;
     gcry_sexp_t rsa_sig;
     gcry_sexp_t ecdsa_sig;
-#elif defined HAVE_LIBCRYPTO
+#elif defined(HAVE_LIBCRYPTO)
     DSA_SIG *dsa_sig;
     ssh_string rsa_sig;
 # ifdef HAVE_OPENSSL_ECC
@@ -83,10 +83,10 @@ struct ssh_signature_struct {
 # else
     void *ecdsa_sig;
 # endif
-#elif defined HAVE_LIBMBEDCRYPTO
+#elif defined(HAVE_LIBMBEDCRYPTO)
     ssh_string rsa_sig;
     struct mbedtls_ecdsa_sig ecdsa_sig;
-#endif
+#endif /* HAVE_LIBGCRYPT */
     ed25519_signature *ed25519_sig;
 };
 
