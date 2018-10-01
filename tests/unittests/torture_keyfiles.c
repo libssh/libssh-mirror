@@ -104,7 +104,7 @@ static int teardown(void **state)
 
 static void torture_pubkey_from_file(void **state) {
     ssh_session session = *state;
-    ssh_string pubkey;
+    ssh_string pubkey = NULL;
     int type, rc;
 
     rc = ssh_try_publickey_from_file(session, LIBSSH_RSA_TESTKEY, &pubkey, &type);
