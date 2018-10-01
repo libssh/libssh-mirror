@@ -91,10 +91,13 @@ enum ssh_keytypes_e pki_privatekey_type_from_string(const char *privkey) {
  */
 const char *ssh_pki_key_ecdsa_name(const ssh_key key)
 {
+    if (key == NULL) {
+        return NULL;
+    }
+
 #ifdef HAVE_ECC /* FIXME Better ECC check needed */
     return pki_key_ecdsa_nid_to_name(key->ecdsa_nid);
 #else
-    (void) key; /* unused */
     return NULL;
 #endif
 }
