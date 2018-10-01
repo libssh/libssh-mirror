@@ -816,8 +816,8 @@ static int ssh_buffer_pack_allocate_va(struct ssh_buffer_struct *buffer,
     ssh_string string = NULL;
     char *cstring = NULL;
     size_t needed_size = 0;
-    size_t count;
     size_t len;
+    int count; /* int for size comparison with argc */
     int rc = SSH_OK;
 
     for (p = format, count = 0; *p != '\0'; p++, count++) {
@@ -934,7 +934,7 @@ int ssh_buffer_pack_va(struct ssh_buffer_struct *buffer,
     char *cstring;
     bignum b;
     size_t len;
-    int count;
+    int count; /* int for size comparison with argc */
 
     for (p = format, count = 0; *p != '\0'; p++, count++) {
         /* Invalid number of arguments passed */
@@ -1098,7 +1098,7 @@ int ssh_buffer_unpack_va(struct ssh_buffer_struct *buffer,
     } o;
     size_t len, rlen, max_len;
     va_list ap_copy;
-    int count;
+    int count; /* int for size comparison with argc */
 
     max_len = ssh_buffer_get_len(buffer);
 
