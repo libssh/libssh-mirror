@@ -2,7 +2,6 @@ project(clienttests C)
 
 add_cmocka_test(torture_auth torture_auth.c ${TORTURE_LIBRARY})
 add_cmocka_test(torture_connect torture_connect.c ${TORTURE_LIBRARY})
-add_cmocka_test(torture_proxycommand torture_proxycommand.c ${TORTURE_LIBRARY})
 add_cmocka_test(torture_session torture_session.c ${TORTURE_LIBRARY})
 if (WITH_SFTP)
     add_cmocka_test(torture_sftp_static torture_sftp_static.c ${TORTURE_LIBRARY})
@@ -12,7 +11,8 @@ set(LIBSSH_CLIENT_TESTS
     torture_algorithms
     torture_knownhosts
     torture_request_env
-    torture_forward)
+    torture_forward
+    torture_proxycommand)
 
 if (WITH_SFTP)
     set(LIBSSH_CLIENT_TESTS
