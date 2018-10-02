@@ -380,7 +380,7 @@ int torture_terminate_process(const char *pidfile)
         /* Make sure the daemon goes away! */
         kill(pid, SIGTERM);
 
-        usleep(200);
+        usleep(10 * 1000);
 
         rc = kill(pid, 0);
         if (rc != 0) {
@@ -872,7 +872,7 @@ void torture_setup_sshd_server(void **state)
     assert_return_code(rc, errno);
 
     /* Give the process some time to start */
-    usleep(1000);
+    usleep(100 * 1000);
 
     setenv("SOCKET_WRAPPER_DEFAULT_IFACE", "21", 1);
     unsetenv("PAM_WRAPPER");
