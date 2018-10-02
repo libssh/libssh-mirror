@@ -48,6 +48,8 @@
 
 #define TORTURE_SSH_SERVER "127.0.0.10"
 
+#define TORTURE_SSH_USER_ALICE "alice"
+
 #define TORTURE_TESTKEY_PASSWORD "libssh-rocks"
 
 /* Used by main to communicate with parse_opt. */
