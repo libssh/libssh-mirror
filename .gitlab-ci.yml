@@ -32,7 +32,7 @@ fedora/openssl_1.1.x/x86_64:
   - mkdir -p obj && cd obj && cmake
     -DCMAKE_BUILD_TYPE=RelWithDebInfo
     -DPICKY_DEVELOPER=ON
-    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON --DWITH_PCAP=ON
+    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
     -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON .. &&
     make -j$(nproc) && ctest --output-on-failure
   tags:
@@ -54,7 +54,7 @@ fedora/address-sanitizer:
   - mkdir -p obj && cd obj && cmake
     -DCMAKE_BUILD_TYPE=AddressSanitizer
     -DPICKY_DEVELOPER=ON
-    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON --DWITH_PCAP=ON
+    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
     -DUNIT_TESTING=ON .. &&
     make -j$(nproc) && ctest --output-on-failure
   tags:
@@ -72,7 +72,7 @@ fedora/undefined-sanitizer:
   script:
   - mkdir -p obj && cd obj && cmake
     -DCMAKE_C_FLAGS="-fsanitize=undefined -fsanitize=null -fsanitize=alignment -fno-sanitize-recover"
-    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON --DWITH_PCAP=ON
+    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
     -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON ..
     && make -j$(nproc) && ctest --output-on-failure
   tags:
@@ -93,7 +93,7 @@ freebsd/x86_64:
   - mkdir -p obj && cd obj && cmake
     -DCMAKE_BUILD_TYPE=RelWithDebInfo
     -DPICKY_DEVELOPER=ON
-    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON --DWITH_PCAP=ON
+    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
     -DUNIT_TESTING=ON .. &&
     make && ctest --output-on-failure
   tags:
@@ -115,7 +115,7 @@ fedora/libgcrypt/x86_64:
   - mkdir -p obj && cd obj && cmake
     -DCMAKE_BUILD_TYPE=RelWithDebInfo
     -DPICKY_DEVELOPER=ON
-    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON --DWITH_PCAP=ON
+    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
     -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON
     -DWITH_GCRYPT=ON .. &&
     make -j$(nproc) && ctest --output-on-failure
@@ -135,7 +135,7 @@ fedora/mbedtls/x86_64:
   - mkdir -p obj && cd obj && cmake
     -DCMAKE_BUILD_TYPE=RelWithDebInfo
     -DPICKY_DEVELOPER=ON
-    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON --DWITH_PCAP=ON
+    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
     -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON
     -DWITH_MBEDTLS=ON .. &&
     make -j$(nproc) && ctest --output-on-failure
@@ -159,7 +159,7 @@ fedora/mingw64:
   - mkdir -p obj && cd obj && mingw64-cmake
     -DCMAKE_BUILD_TYPE=RelWithDebInfo
     -DPICKY_DEVELOPER=ON
-    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON --DWITH_PCAP=ON
+    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
     -DUNIT_TESTING=ON .. &&
     make -j$(nproc) &&
     ctest --output-on-failure
@@ -183,7 +183,7 @@ fedora/mingw32:
   - mkdir -p obj && cd obj && mingw32-cmake
     -DCMAKE_BUILD_TYPE=RelWithDebInfo
     -DPICKY_DEVELOPER=ON
-    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON --DWITH_PCAP=ON
+    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
     -DUNIT_TESTING=ON .. &&
     make -j$(nproc) &&
     ctest --output-on-failure
@@ -230,7 +230,7 @@ tumbleweed/openssl_1.1.x/x86_64/gcc:
   - mkdir -p obj && cd obj && cmake
     -DCMAKE_BUILD_TYPE=RelWithDebInfo
     -DPICKY_DEVELOPER=ON
-    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON --DWITH_PCAP=ON
+    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
     -DKRB5_CONFIG=/usr/lib/mit/bin/krb5-config
     -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON .. &&
     make -j$(nproc) && ctest --output-on-failure
@@ -251,7 +251,7 @@ tumbleweed/openssl_1.1.x/x86/gcc:
     -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain-cross-m32.cmake
     -DCMAKE_BUILD_TYPE=RelWithDebInfo
     -DPICKY_DEVELOPER=ON
-    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON --DWITH_PCAP=ON
+    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
     -DUNIT_TESTING=ON .. &&
     make -j$(nproc) && ctest --output-on-failure
   tags:
@@ -271,7 +271,7 @@ tumbleweed/openssl_1.1.x/x86_64/gcc7:
     -DCMAKE_C_COMPILER=gcc-7 -DCMAKE_CXX_COMPILER=g++-7
     -DCMAKE_BUILD_TYPE=RelWithDebInfo
     -DPICKY_DEVELOPER=ON
-    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON --DWITH_PCAP=ON
+    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
     -DKRB5_CONFIG=/usr/lib/mit/bin/krb5-config
     -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON .. &&
     make -j$(nproc) && ctest --output-on-failure
@@ -293,7 +293,7 @@ tumbleweed/openssl_1.1.x/x86/gcc7:
     -DCMAKE_C_COMPILER=gcc-7 -DCMAKE_CXX_COMPILER=g++-7
     -DCMAKE_BUILD_TYPE=RelWithDebInfo
     -DPICKY_DEVELOPER=ON
-    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON --DWITH_PCAP=ON
+    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
     -DUNIT_TESTING=ON .. &&
     make -j$(nproc) && ctest --output-on-failure
   tags:
@@ -313,7 +313,7 @@ tumbleweed/openssl_1.1.x/x86_64/clang:
     -DCMAKE_BUILD_TYPE=RelWithDebInfo
     -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
     -DPICKY_DEVELOPER=ON
-    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON --DWITH_PCAP=ON
+    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
     -DKRB5_CONFIG=/usr/lib/mit/bin/krb5-config
     -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON .. &&
     make -j$(nproc) && ctest --output-on-failure
@@ -347,7 +347,7 @@ tumbleweed/undefined-sanitizer:
   - mkdir -p obj && cd obj && cmake
     -DCMAKE_BUILD_TYPE=UndefinedSanitizer
     -DPICKY_DEVELOPER=ON
-    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON --DWITH_PCAP=ON
+    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
     -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON .. &&
     make -j$(nproc) && ctest --output-on-failure
   tags:
@@ -369,7 +369,7 @@ tumbleweed/static-analysis:
     -DCMAKE_BUILD_TYPE=Debug
     -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
     -DPICKY_DEVELOPER=ON
-    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON --DWITH_PCAP=ON
+    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
     -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON .. &&
     scan-build --status-bugs -o scan make -j$(nproc)
   tags:
