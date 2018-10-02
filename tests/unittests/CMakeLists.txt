@@ -19,6 +19,7 @@ set(LIBSSH_UNIT_TESTS
     torture_temp_dir
     torture_temp_file
     torture_push_pop_dir
+    torture_session_keys
 )
 
 set(LIBSSH_THREAD_UNIT_TESTS
