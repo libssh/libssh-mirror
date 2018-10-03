@@ -168,9 +168,6 @@ void crypto_free(struct ssh_crypto_struct *crypto)
 
     ssh_key_free(crypto->server_pubkey);
 
-    cipher_free(crypto->in_cipher);
-    cipher_free(crypto->out_cipher);
-
     ssh_dh_cleanup(crypto);
     bignum_safe_free(crypto->k);
 #ifdef HAVE_ECDH
@@ -211,13 +208,16 @@ void crypto_free(struct ssh_crypto_struct *crypto)
     SAFE_FREE(crypto->encryptMAC);
     SAFE_FREE(crypto->decryptMAC);
     if (crypto->encryptkey != NULL) {
-        explicit_bzero(crypto->encryptkey, crypto->digest_len);
+        explicit_bzero(crypto->encryptkey, crypto->out_cipher->keysize / 8);
         SAFE_FREE(crypto->encryptkey);
     }
     if (crypto->decryptkey != NULL) {
-        explicit_bzero(crypto->decryptkey, crypto->digest_len);
+        explicit_bzero(crypto->decryptkey, crypto->in_cipher->keysize / 8);
         SAFE_FREE(crypto->decryptkey);
     }
+
+    cipher_free(crypto->in_cipher);
+    cipher_free(crypto->out_cipher);
 
     for (i = 0; i < SSH_KEX_METHODS; i++) {
         SAFE_FREE(crypto->client_kex.methods[i]);
