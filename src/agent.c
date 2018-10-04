@@ -331,7 +331,7 @@ int ssh_agent_get_ident_count(struct ssh_session_struct *session) {
   ssh_buffer request = NULL;
   ssh_buffer reply = NULL;
   unsigned int type = 0;
-  uint32_t buf[1] = {0};
+  uint32_t count = 0;
   int rc;
 
   /* send message to the agent requesting the list of identities */
@@ -386,8 +386,15 @@ int ssh_agent_get_ident_count(struct ssh_session_struct *session) {
       return -1;
   }
 
-  ssh_buffer_get_u32(reply, (uint32_t *) buf);
-  session->agent->count = agent_get_u32(buf);
+  rc = ssh_buffer_get_u32(reply, &count);
+  if (rc != 4) {
+      ssh_set_error(session,
+                    SSH_FATAL,
+                    "Failed to read count");
+      ssh_buffer_free(reply);
+      return -1;
+  }
+  session->agent->count = ntohl(count);
   SSH_LOG(SSH_LOG_DEBUG, "Agent count: %d",
       session->agent->count);
   if (session->agent->count > 1024) {
