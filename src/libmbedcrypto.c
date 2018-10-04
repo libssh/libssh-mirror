@@ -509,39 +509,68 @@ void hmac_final(HMACCTX c, unsigned char *hashmacbuf, unsigned int *len)
     SAFE_FREE(c);
 }
 
-static int cipher_set_encrypt_key(struct ssh_cipher_struct *cipher, void *key,
-        void *IV)
+static int
+cipher_init(struct ssh_cipher_struct *cipher,
+            mbedtls_operation_t operation,
+            void *key,
+            void *IV)
 {
-
     const mbedtls_cipher_info_t *cipher_info = NULL;
+    mbedtls_cipher_context_t *ctx;
     int rc;
 
-    mbedtls_cipher_init(&cipher->encrypt_ctx);
+    if (operation == MBEDTLS_ENCRYPT) {
+        ctx = &cipher->encrypt_ctx;
+    } else if (operation == MBEDTLS_DECRYPT) {
+        ctx = &cipher->decrypt_ctx;
+    } else {
+        SSH_LOG(SSH_LOG_WARNING, "unknown operation");
+        return 1;
+    }
+
+    mbedtls_cipher_init(ctx);
     cipher_info = mbedtls_cipher_info_from_type(cipher->type);
 
-    rc = mbedtls_cipher_setup(&cipher->encrypt_ctx, cipher_info);
+    rc = mbedtls_cipher_setup(ctx, cipher_info);
     if (rc != 0) {
         SSH_LOG(SSH_LOG_WARNING, "mbedtls_cipher_setup failed");
         goto error;
     }
 
-    rc = mbedtls_cipher_setkey(&cipher->encrypt_ctx, key,
+    rc = mbedtls_cipher_setkey(ctx, key,
                                cipher_info->key_bitlen,
-                               MBEDTLS_ENCRYPT);
+                               operation);
     if (rc != 0) {
         SSH_LOG(SSH_LOG_WARNING, "mbedtls_cipher_setkey failed");
         goto error;
     }
 
-    rc = mbedtls_cipher_set_iv(&cipher->encrypt_ctx, IV, cipher_info->iv_size);
-
+    rc = mbedtls_cipher_set_iv(ctx, IV, cipher_info->iv_size);
     if (rc != 0) {
         SSH_LOG(SSH_LOG_WARNING, "mbedtls_cipher_set_iv failed");
         goto error;
     }
 
-    rc = mbedtls_cipher_reset(&cipher->encrypt_ctx);
+    return 0;
+error:
+    mbedtls_cipher_free(ctx);
+    return 1;
+}
 
+static int
+cipher_set_encrypt_key(struct ssh_cipher_struct *cipher,
+                       void *key,
+                       void *IV)
+{
+    int rc;
+
+    rc = cipher_init(cipher, MBEDTLS_ENCRYPT, key, IV);
+    if (rc != 0) {
+        SSH_LOG(SSH_LOG_WARNING, "cipher_init failed");
+        goto error;
+    }
+
+    rc = mbedtls_cipher_reset(&cipher->encrypt_ctx);
     if (rc != 0) {
         SSH_LOG(SSH_LOG_WARNING, "mbedtls_cipher_reset failed");
         goto error;
@@ -549,38 +578,19 @@ static int cipher_set_encrypt_key(struct ssh_cipher_struct *cipher, void *key,
 
     return SSH_OK;
 error:
-    mbedtls_cipher_free(&cipher->encrypt_ctx);
     return SSH_ERROR;
 }
 
-static int cipher_set_encrypt_key_cbc(struct ssh_cipher_struct *cipher, void *key,
-        void *IV)
+static int
+cipher_set_encrypt_key_cbc(struct ssh_cipher_struct *cipher,
+                           void *key,
+                           void *IV)
 {
-
-    const mbedtls_cipher_info_t *cipher_info = NULL;
     int rc;
 
-    mbedtls_cipher_init(&cipher->encrypt_ctx);
-    cipher_info = mbedtls_cipher_info_from_type(cipher->type);
-
-    rc = mbedtls_cipher_setup(&cipher->encrypt_ctx, cipher_info);
+    rc = cipher_init(cipher, MBEDTLS_ENCRYPT, key, IV);
     if (rc != 0) {
-        SSH_LOG(SSH_LOG_WARNING, "mbedtls_cipher_setup failed");
-        goto error;
-    }
-
-    rc = mbedtls_cipher_setkey(&cipher->encrypt_ctx, key,
-                               cipher_info->key_bitlen,
-                               MBEDTLS_ENCRYPT);
-    if (rc != 0) {
-        SSH_LOG(SSH_LOG_WARNING, "mbedtls_cipher_setkey failed");
-        goto error;
-    }
-
-    rc = mbedtls_cipher_set_iv(&cipher->encrypt_ctx, IV, cipher_info->iv_size);
-
-    if (rc != 0) {
-        SSH_LOG(SSH_LOG_WARNING, "mbedtls_cipher_set_iv failed");
+        SSH_LOG(SSH_LOG_WARNING, "cipher_init failed");
         goto error;
     }
 
@@ -595,7 +605,6 @@ static int cipher_set_encrypt_key_cbc(struct ssh_cipher_struct *cipher, void *ke
     }
 
     rc = mbedtls_cipher_reset(&cipher->encrypt_ctx);
-
     if (rc != 0) {
         SSH_LOG(SSH_LOG_WARNING, "mbedtls_cipher_reset failed");
         goto error;
@@ -607,37 +616,20 @@ error:
     return SSH_ERROR;
 }
 
-static int cipher_set_decrypt_key(struct ssh_cipher_struct *cipher, void *key,
-        void *IV)
+static int
+cipher_set_decrypt_key(struct ssh_cipher_struct *cipher,
+                       void *key,
+                       void *IV)
 {
-    const mbedtls_cipher_info_t *cipher_info = NULL;
     int rc;
 
-    mbedtls_cipher_init(&cipher->decrypt_ctx);
-    cipher_info = mbedtls_cipher_info_from_type(cipher->type);
-
-    rc = mbedtls_cipher_setup(&cipher->decrypt_ctx, cipher_info);
+    rc = cipher_init(cipher, MBEDTLS_DECRYPT, key, IV);
     if (rc != 0) {
-        SSH_LOG(SSH_LOG_WARNING, "mbedtls_cipher_setkey failed");
-        goto error;
-    }
-
-    rc = mbedtls_cipher_setkey(&cipher->decrypt_ctx, key,
-                               cipher_info->key_bitlen,
-                               MBEDTLS_DECRYPT);
-    if (rc != 0) {
-        SSH_LOG(SSH_LOG_WARNING, "mbedtls_cipher_setkey failed");
-        goto error;
-    }
-
-    rc = mbedtls_cipher_set_iv(&cipher->decrypt_ctx, IV, cipher_info->iv_size);
-    if (rc != 0) {
-        SSH_LOG(SSH_LOG_WARNING, "mbedtls_cipher_set_iv failed");
+        SSH_LOG(SSH_LOG_WARNING, "cipher_init failed");
         goto error;
     }
 
     mbedtls_cipher_reset(&cipher->decrypt_ctx);
-
     if (rc != 0) {
         SSH_LOG(SSH_LOG_WARNING, "mbedtls_cipher_reset failed");
         goto error;
@@ -649,45 +641,27 @@ error:
     return SSH_ERROR;
 }
 
-static int cipher_set_decrypt_key_cbc(struct ssh_cipher_struct *cipher, void *key,
-        void *IV)
+static int
+cipher_set_decrypt_key_cbc(struct ssh_cipher_struct *cipher,
+                           void *key,
+                           void *IV)
 {
-    const mbedtls_cipher_info_t *cipher_info;
     int rc;
 
-    mbedtls_cipher_init(&cipher->decrypt_ctx);
-    cipher_info = mbedtls_cipher_info_from_type(cipher->type);
-
-    rc = mbedtls_cipher_setup(&cipher->decrypt_ctx, cipher_info);
+    rc = cipher_init(cipher, MBEDTLS_DECRYPT, key, IV);
     if (rc != 0) {
-        SSH_LOG(SSH_LOG_WARNING, "mbedtls_cipher_setkey failed");
-        goto error;
-    }
-
-    rc = mbedtls_cipher_setkey(&cipher->decrypt_ctx, key,
-                               cipher_info->key_bitlen,
-                               MBEDTLS_DECRYPT);
-    if (rc != 0) {
-        SSH_LOG(SSH_LOG_WARNING, "mbedtls_cipher_setkey failed");
-        goto error;
-    }
-
-    rc = mbedtls_cipher_set_iv(&cipher->decrypt_ctx, IV, cipher_info->iv_size);
-    if (rc != 0) {
-        SSH_LOG(SSH_LOG_WARNING, "mbedtls_cipher_set_iv failed");
+        SSH_LOG(SSH_LOG_WARNING, "cipher_init failed");
         goto error;
     }
 
     rc = mbedtls_cipher_set_padding_mode(&cipher->decrypt_ctx,
             MBEDTLS_PADDING_NONE);
-
     if (rc != 0) {
         SSH_LOG(SSH_LOG_WARNING, "mbedtls_cipher_set_padding_mode failed");
         goto error;
     }
 
     mbedtls_cipher_reset(&cipher->decrypt_ctx);
-
     if (rc != 0) {
         SSH_LOG(SSH_LOG_WARNING, "mbedtls_cipher_reset failed");
         goto error;
