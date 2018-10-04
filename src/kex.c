@@ -48,7 +48,13 @@
 
 #elif defined HAVE_LIBMBEDCRYPTO
 # define BLOWFISH "blowfish-cbc,"
-# define AES "aes256-ctr,aes192-ctr,aes128-ctr,aes256-cbc,aes192-cbc,aes128-cbc,"
+# ifdef MBEDTLS_GCM_C
+#  define GCM "aes256-gcm@openssh.com,aes128-gcm@openssh.com,"
+# else
+#  define GCM ""
+# endif /* MBEDTLS_GCM_C */
+# define AES GCM "aes256-ctr,aes192-ctr,aes128-ctr," \
+             "aes256-cbc,aes192-cbc,aes128-cbc,"
 # define DES "3des-cbc"
 # define DES_SUPPORTED "3des-cbc"
 

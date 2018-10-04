@@ -31,6 +31,7 @@
 #include "libssh/crypto.h"
 #include "libssh/wrapper.h"
 #include "libssh/string.h"
+#include "libssh/misc.h"
 
 #ifdef HAVE_LIBGCRYPT
 #include <gcrypt.h>
@@ -427,19 +428,6 @@ aes_aead_get_length(struct ssh_cipher_struct *cipher,
     memcpy(out, in, len);
 
     return SSH_OK;
-}
-
-/* Increment 64b integer in network byte order */
-static void
-uint64_inc(unsigned char *counter)
-{
-    int i;
-
-    for (i = 7; i >= 0; i--) {
-        counter[i]++;
-        if (counter[i])
-          return;
-    }
 }
 
 static void

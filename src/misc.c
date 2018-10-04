@@ -1105,4 +1105,17 @@ char *strndup(const char *s, size_t n)
 }
 #endif /* ! HAVE_STRNDUP */
 
+/* Increment 64b integer in network byte order */
+void
+uint64_inc(unsigned char *counter)
+{
+    int i;
+
+    for (i = 7; i >= 0; i--) {
+        counter[i]++;
+        if (counter[i])
+          return;
+    }
+}
+
 /** @} */

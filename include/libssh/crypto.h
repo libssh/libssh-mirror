@@ -29,6 +29,8 @@
 
 #ifdef HAVE_LIBGCRYPT
 #include <gcrypt.h>
+#elif defined(HAVE_LIBMBEDCRYPTO)
+#include <mbedtls/gcm.h>
 #endif
 #include "libssh/wrapper.h"
 
@@ -152,6 +154,10 @@ struct ssh_cipher_struct {
     mbedtls_cipher_context_t encrypt_ctx;
     mbedtls_cipher_context_t decrypt_ctx;
     mbedtls_cipher_type_t type;
+#ifdef MBEDTLS_GCM_C
+    mbedtls_gcm_context gcm_ctx;
+    unsigned char last_iv[AES_GCM_IVLEN];
+#endif /* MBEDTLS_GCM_C */
 #endif
     struct chacha20_poly1305_keysched *chacha20_schedule;
     unsigned int keysize; /* bytes of key used. != keylen */
