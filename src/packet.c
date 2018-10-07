@@ -47,6 +47,7 @@
 #include "libssh/kex.h"
 #include "libssh/auth.h"
 #include "libssh/gssapi.h"
+#include "libssh/bytearray.h"
 
 static ssh_packet_callback default_packet_handlers[]= {
   ssh_packet_disconnect_callback,          // SSH2_MSG_DISCONNECT                 1
@@ -564,10 +565,10 @@ static int packet_send2(ssh_session session)
          session->current_crypto->out_hmac : session->next_crypto->out_hmac);
     uint32_t currentlen = ssh_buffer_get_len(session->out_buffer);
     unsigned char *hmac = NULL;
-    uint8_t padstring[32] = { 0 };
-    uint8_t padding;
+    uint8_t padding_data[32] = { 0 };
+    uint8_t padding_size;
     uint32_t finallen, payloadsize, compsize;
-    ssh_buffer header_buffer = ssh_buffer_new();
+    uint8_t header[5] = {0};
     int rc = SSH_ERROR;
 
     payloadsize = currentlen;
@@ -583,42 +584,36 @@ static int packet_send2(ssh_session session)
     }
 #endif /* WITH_ZLIB */
     compsize = currentlen;
-    /* compressed payload + packet len (4) + padding len (1) */
+    /* compressed payload + packet len (4) + padding_size len (1) */
     /* totallen - lenfield_blocksize must be equal to 0 (mod blocksize) */
-    padding = (blocksize - ((blocksize - lenfield_blocksize + currentlen + 5) % blocksize));
-    if (padding < 4) {
-        padding += blocksize;
+    padding_size = (blocksize - ((blocksize - lenfield_blocksize + currentlen + 5) % blocksize));
+    if (padding_size < 4) {
+        padding_size += blocksize;
     }
 
     if (session->current_crypto != NULL) {
         int ok;
 
-        ok = ssh_get_random(padstring, padding, 0);
+        ok = ssh_get_random(padding_data, padding_size, 0);
         if (!ok) {
             ssh_set_error(session, SSH_FATAL, "PRNG error");
             goto error;
         }
     }
 
-    if (header_buffer == NULL) {
-        ssh_set_error_oom(session);
-        goto error;
-    }
+    finallen = currentlen + padding_size + 1;
 
-    finallen = currentlen + padding + 1;
-    rc = ssh_buffer_pack(header_buffer, "db", finallen, padding);
-    if (rc == SSH_ERROR){
-        goto error;
-    }
+    PUSH_BE_U32(header, 0, finallen);
+    PUSH_BE_U8(header, 4, padding_size);
 
     rc = ssh_buffer_prepend_data(session->out_buffer,
-                                 ssh_buffer_get(header_buffer),
-                                 ssh_buffer_get_len(header_buffer));
+                                 header,
+                                 sizeof(header));
     if (rc < 0) {
         goto error;
     }
 
-    rc = ssh_buffer_add_data(session->out_buffer, padstring, padding);
+    rc = ssh_buffer_add_data(session->out_buffer, padding_data, padding_size);
     if (rc < 0) {
         goto error;
     }
@@ -653,8 +648,8 @@ static int packet_send2(ssh_session session)
     }
 
     SSH_LOG(SSH_LOG_PACKET,
-            "packet: wrote [len=%d,padding=%hhd,comp=%d,payload=%d]",
-            finallen, padding, compsize, payloadsize);
+            "packet: wrote [len=%d,padding_size=%hhd,comp=%d,payload=%d]",
+            finallen, padding_size, compsize, payloadsize);
 
     rc = ssh_buffer_reinit(session->out_buffer);
     if (rc < 0) {
@@ -662,9 +657,6 @@ static int packet_send2(ssh_session session)
     }
 
 error:
-    if (header_buffer != NULL) {
-        ssh_buffer_free(header_buffer);
-    }
     return rc; /* SSH_OK, AGAIN or ERROR */
 }
 
