@@ -320,24 +320,30 @@ void sftp_free(sftp_session sftp)
 
 int sftp_packet_write(sftp_session sftp, uint8_t type, ssh_buffer payload)
 {
+    uint8_t header[5] = {0};
+    uint32_t payload_size;
     int size;
+    int rc;
 
-    if (ssh_buffer_prepend_data(payload, &type, sizeof(uint8_t)) < 0) {
+    /* Add size of type */
+    payload_size = ssh_buffer_get_len(payload) + sizeof(uint8_t);
+    PUSH_BE_U32(header, 0, payload_size);
+    PUSH_BE_U8(header, 4, type);
+
+    rc = ssh_buffer_prepend_data(payload, header, sizeof(header));
+    if (rc < 0) {
         ssh_set_error_oom(sftp->session);
         return -1;
     }
 
-    size = htonl(ssh_buffer_get_len(payload));
-    if (ssh_buffer_prepend_data(payload, &size, sizeof(uint32_t)) < 0) {
-        ssh_set_error_oom(sftp->session);
-        return -1;
-    }
-
-    size = ssh_channel_write(sftp->channel, ssh_buffer_get(payload),
-            ssh_buffer_get_len(payload));
+    size = ssh_channel_write(sftp->channel,
+                             ssh_buffer_get(payload),
+                             ssh_buffer_get_len(payload));
     if (size < 0) {
         return -1;
-    } else if((uint32_t) size != ssh_buffer_get_len(payload)) {
+    }
+
+    if ((uint32_t)size != ssh_buffer_get_len(payload)) {
         SSH_LOG(SSH_LOG_PACKET,
                 "Had to write %d bytes, wrote only %d",
                 ssh_buffer_get_len(payload),
