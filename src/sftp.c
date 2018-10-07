@@ -318,32 +318,33 @@ void sftp_free(sftp_session sftp)
     SAFE_FREE(sftp);
 }
 
-int sftp_packet_write(sftp_session sftp, uint8_t type, ssh_buffer payload){
-  int size;
+int sftp_packet_write(sftp_session sftp, uint8_t type, ssh_buffer payload)
+{
+    int size;
 
-  if (ssh_buffer_prepend_data(payload, &type, sizeof(uint8_t)) < 0) {
-    ssh_set_error_oom(sftp->session);
-    return -1;
-  }
+    if (ssh_buffer_prepend_data(payload, &type, sizeof(uint8_t)) < 0) {
+        ssh_set_error_oom(sftp->session);
+        return -1;
+    }
 
-  size = htonl(ssh_buffer_get_len(payload));
-  if (ssh_buffer_prepend_data(payload, &size, sizeof(uint32_t)) < 0) {
-    ssh_set_error_oom(sftp->session);
-    return -1;
-  }
+    size = htonl(ssh_buffer_get_len(payload));
+    if (ssh_buffer_prepend_data(payload, &size, sizeof(uint32_t)) < 0) {
+        ssh_set_error_oom(sftp->session);
+        return -1;
+    }
 
-  size = ssh_channel_write(sftp->channel, ssh_buffer_get(payload),
-      ssh_buffer_get_len(payload));
-  if (size < 0) {
-    return -1;
-  } else if((uint32_t) size != ssh_buffer_get_len(payload)) {
-    SSH_LOG(SSH_LOG_PACKET,
-        "Had to write %d bytes, wrote only %d",
-        ssh_buffer_get_len(payload),
-        size);
-  }
+    size = ssh_channel_write(sftp->channel, ssh_buffer_get(payload),
+            ssh_buffer_get_len(payload));
+    if (size < 0) {
+        return -1;
+    } else if((uint32_t) size != ssh_buffer_get_len(payload)) {
+        SSH_LOG(SSH_LOG_PACKET,
+                "Had to write %d bytes, wrote only %d",
+                ssh_buffer_get_len(payload),
+                size);
+    }
 
-  return size;
+    return size;
 }
 
 sftp_packet sftp_packet_read(sftp_session sftp)
