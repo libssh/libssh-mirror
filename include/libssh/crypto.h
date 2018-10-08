@@ -48,6 +48,9 @@
 
 #define DIGEST_MAX_LEN 64
 
+#define AES_GCM_TAGLEN 16
+#define AES_GCM_IVLEN  12
+
 enum ssh_key_exchange_e {
   /* diffie-hellman-group1-sha1 */
   SSH_KEX_DH_GROUP1_SHA1=1,
@@ -78,7 +81,10 @@ enum ssh_cipher_e {
     SSH_AES256_CBC,
     SSH_AES128_CTR,
     SSH_AES192_CTR,
-    SSH_AES256_CTR
+    SSH_AES256_CTR,
+    SSH_AEAD_AES128_GCM,
+    SSH_AEAD_AES256_GCM,
+    SSH_AEAD_CHACHA20_POLY1305
 };
 
 struct ssh_crypto_struct {

@@ -198,8 +198,9 @@ int ssh_packet_hmac_verify(ssh_session session,
   unsigned int len;
   uint32_t seq;
 
-  /* AEAD type have no mac checking */
-  if (type == SSH_HMAC_AEAD_POLY1305) {
+  /* AEAD types have no mac checking */
+  if (type == SSH_HMAC_AEAD_POLY1305 ||
+      type == SSH_HMAC_AEAD_GCM) {
       return SSH_OK;
   }
 

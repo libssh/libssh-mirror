@@ -192,6 +192,7 @@ static void chacha20_cleanup(struct ssh_cipher_struct *cipher) {
 }
 
 const struct ssh_cipher_struct chacha20poly1305_cipher = {
+    .ciphertype = SSH_AEAD_CHACHA20_POLY1305,
     .name = "chacha20-poly1305@openssh.com",
     .blocksize = 8,
     .lenfield_blocksize = 4,

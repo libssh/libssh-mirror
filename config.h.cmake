@@ -100,6 +100,9 @@
 /* Define to 1 if you have the `EVP_aes128_cbc' function. */
 #cmakedefine HAVE_OPENSSL_EVP_AES_CBC 1
 
+/* Define to 1 if you have the `EVP_aes128_gcm' function. */
+#cmakedefine HAVE_OPENSSL_EVP_AES_GCM 1
+
 /* Define to 1 if you have the `CRYPTO_THREADID_set_callback' function. */
 #cmakedefine HAVE_OPENSSL_CRYPTO_THREADID_SET_CALLBACK 1
 

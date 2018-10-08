@@ -47,7 +47,8 @@ enum ssh_hmac_e {
   SSH_HMAC_SHA384,
   SSH_HMAC_SHA512,
   SSH_HMAC_MD5,
-  SSH_HMAC_AEAD_POLY1305
+  SSH_HMAC_AEAD_POLY1305,
+  SSH_HMAC_AEAD_GCM
 };
 
 enum ssh_des_e {

@@ -492,6 +492,19 @@ static void evp_cipher_init(struct ssh_cipher_struct *cipher) {
         SSH_LOG(SSH_LOG_WARNING, "This cipher is not available in evp_cipher_init");
         break;
 #endif
+#ifdef HAVE_OPENSSL_EVP_AES_GCM
+    case SSH_AEAD_AES128_GCM:
+        cipher->cipher = EVP_aes_128_gcm();
+        break;
+    case SSH_AEAD_AES256_GCM:
+        cipher->cipher = EVP_aes_256_gcm();
+        break;
+#else
+    case SSH_AEAD_AES128_GCM:
+    case SSH_AEAD_AES256_GCM:
+        SSH_LOG(SSH_LOG_WARNING, "This cipher is not available in evp_cipher_init");
+        break;
+#endif /* HAVE_OPENSSL_EVP_AES_GCM */
     case SSH_3DES_CBC:
         cipher->cipher = EVP_des_ede3_cbc();
         break;
@@ -499,6 +512,9 @@ static void evp_cipher_init(struct ssh_cipher_struct *cipher) {
         cipher->cipher = EVP_bf_cbc();
         break;
         /* ciphers not using EVP */
+    case SSH_AEAD_CHACHA20_POLY1305:
+        SSH_LOG(SSH_LOG_WARNING, "The ChaCha cipher can not be handled here");
+        break;
     case SSH_NO_CIPHER:
         SSH_LOG(SSH_LOG_WARNING, "No valid ciphertype found");
         break;
@@ -518,6 +534,22 @@ static int evp_cipher_set_encrypt_key(struct ssh_cipher_struct *cipher,
         SSH_LOG(SSH_LOG_WARNING, "EVP_EncryptInit_ex failed");
         return SSH_ERROR;
     }
+
+#ifdef HAVE_OPENSSL_EVP_AES_GCM
+    /* For AES-GCM we need to set IV in specific way */
+    if (cipher->ciphertype == SSH_AEAD_AES128_GCM ||
+        cipher->ciphertype == SSH_AEAD_AES256_GCM) {
+        rc = EVP_CIPHER_CTX_ctrl(cipher->ctx,
+                                 EVP_CTRL_GCM_SET_IV_FIXED,
+                                 -1,
+                                 (u_char *)IV);
+        if (rc != 1) {
+            SSH_LOG(SSH_LOG_WARNING, "EVP_CTRL_GCM_SET_IV_FIXED failed");
+            return SSH_ERROR;
+        }
+    }
+#endif /* HAVE_OPENSSL_EVP_AES_GCM */
+
     EVP_CIPHER_CTX_set_padding(cipher->ctx, 0);
 
     return SSH_OK;
@@ -535,6 +567,22 @@ static int evp_cipher_set_decrypt_key(struct ssh_cipher_struct *cipher,
         SSH_LOG(SSH_LOG_WARNING, "EVP_DecryptInit_ex failed");
         return SSH_ERROR;
     }
+
+#ifdef HAVE_OPENSSL_EVP_AES_GCM
+    /* For AES-GCM we need to set IV in specific way */
+    if (cipher->ciphertype == SSH_AEAD_AES128_GCM ||
+        cipher->ciphertype == SSH_AEAD_AES256_GCM) {
+        rc = EVP_CIPHER_CTX_ctrl(cipher->ctx,
+                                 EVP_CTRL_GCM_SET_IV_FIXED,
+                                 -1,
+                                 (u_char *)IV);
+        if (rc != 1) {
+            SSH_LOG(SSH_LOG_WARNING, "EVP_CTRL_GCM_SET_IV_FIXED failed");
+            return SSH_ERROR;
+        }
+    }
+#endif /* HAVE_OPENSSL_EVP_AES_GCM */
+
     EVP_CIPHER_CTX_set_padding(cipher->ctx, 0);
 
     return SSH_OK;
@@ -642,6 +690,175 @@ static void aes_ctr_cleanup(struct ssh_cipher_struct *cipher){
 }
 
 #endif /* HAVE_OPENSSL_EVP_AES_CTR */
+
+#ifdef HAVE_OPENSSL_EVP_AES_GCM
+static int
+evp_cipher_aead_get_length(struct ssh_cipher_struct *cipher,
+                           void *in,
+                           uint8_t *out,
+                           size_t len,
+                           uint64_t seq)
+{
+    (void)seq;
+
+    /* The length is not encrypted: Copy it to the result buffer */
+    memcpy(out, in, len);
+
+    return SSH_OK;
+}
+
+static void
+evp_cipher_aead_encrypt(struct ssh_cipher_struct *cipher,
+                        void *in,
+                        void *out,
+                        size_t len,
+                        uint8_t *tag,
+                        uint64_t seq)
+{
+    size_t authlen, aadlen;
+    u_char lastiv[1];
+    int outlen = 0;
+    int rc;
+
+    (void) seq;
+
+    aadlen = cipher->lenfield_blocksize;
+    authlen = cipher->tag_size;
+
+    /* increment IV */
+    rc = EVP_CIPHER_CTX_ctrl(cipher->ctx,
+                             EVP_CTRL_GCM_IV_GEN,
+                             1,
+                             lastiv);
+    if (rc == 0) {
+        SSH_LOG(SSH_LOG_WARNING, "EVP_CTRL_GCM_IV_GEN failed");
+        return;
+    }
+
+    /* Pass over the authenticated data (not encrypted) */
+    rc = EVP_EncryptUpdate(cipher->ctx,
+                           NULL,
+                           &outlen,
+                           (unsigned char *)in,
+                           aadlen);
+    if (rc == 0 || outlen != aadlen) {
+        SSH_LOG(SSH_LOG_WARNING, "Failed to pass authenticated data");
+        return;
+    }
+    memcpy(out, in, aadlen);
+
+    /* Encrypt the rest of the data */
+    rc = EVP_EncryptUpdate(cipher->ctx,
+                           (unsigned char *)out + aadlen,
+                           &outlen,
+                           (unsigned char *)in + aadlen,
+                           len - aadlen);
+    if (rc != 1 || outlen != len - aadlen) {
+        SSH_LOG(SSH_LOG_WARNING, "EVP_EncryptUpdate failed");
+        return;
+    }
+
+    /* compute tag */
+    rc = EVP_EncryptFinal(cipher->ctx,
+                          NULL,
+                          &outlen);
+    if (rc < 0) {
+        SSH_LOG(SSH_LOG_WARNING, "EVP_EncryptFinal failed: Failed to create a tag");
+        return;
+    }
+
+    rc = EVP_CIPHER_CTX_ctrl(cipher->ctx,
+                             EVP_CTRL_GCM_GET_TAG,
+                             authlen,
+                             (unsigned char *)tag);
+    if (rc != 1) {
+        SSH_LOG(SSH_LOG_WARNING, "EVP_CTRL_GCM_GET_TAG failed");
+        return;
+    }
+}
+
+static int
+evp_cipher_aead_decrypt(struct ssh_cipher_struct *cipher,
+                        void *complete_packet,
+                        uint8_t *out,
+                        size_t encrypted_size,
+                        uint64_t seq)
+{
+    size_t authlen, aadlen;
+    u_char lastiv[1];
+    int outlen = 0;
+    int rc = 0;
+
+    (void)seq;
+
+    aadlen = cipher->lenfield_blocksize;
+    authlen = cipher->tag_size;
+
+    /* increment IV */
+    rc = EVP_CIPHER_CTX_ctrl(cipher->ctx,
+                             EVP_CTRL_GCM_IV_GEN,
+                             1,
+                             lastiv);
+    if (rc == 0) {
+        SSH_LOG(SSH_LOG_WARNING, "EVP_CTRL_GCM_IV_GEN failed");
+        return SSH_ERROR;
+    }
+
+    /* set tag for authentication */
+    rc = EVP_CIPHER_CTX_ctrl(cipher->ctx,
+                             EVP_CTRL_GCM_SET_TAG,
+                             authlen,
+                             (unsigned char *)complete_packet + aadlen + encrypted_size);
+    if (rc == 0) {
+        SSH_LOG(SSH_LOG_WARNING, "EVP_CTRL_GCM_SET_TAG failed");
+        return SSH_ERROR;
+    }
+
+    /* Pass over the authenticated data (not encrypted) */
+    rc = EVP_DecryptUpdate(cipher->ctx,
+                           NULL,
+                           &outlen,
+                           (unsigned char *)complete_packet,
+                           aadlen);
+    if (rc == 0) {
+        SSH_LOG(SSH_LOG_WARNING, "Failed to pass authenticated data");
+        return SSH_ERROR;
+    }
+    /* Do not copy the length to the target buffer, because it is already processed */
+    //memcpy(out, complete_packet, aadlen);
+
+    /* Decrypt the rest of the data */
+    rc = EVP_DecryptUpdate(cipher->ctx,
+                           (unsigned char *)out,
+                           &outlen,
+                           (unsigned char *)complete_packet + aadlen,
+                           encrypted_size /* already substracted aadlen*/);
+    if (rc != 1) {
+        SSH_LOG(SSH_LOG_WARNING, "EVP_DecryptUpdate failed");
+        return SSH_ERROR;
+    }
+
+    if (outlen != (int)encrypted_size) {
+        SSH_LOG(SSH_LOG_WARNING,
+                "EVP_DecryptUpdate: output size %d for %zd in",
+                outlen,
+                encrypted_size);
+        return SSH_ERROR;
+    }
+
+    /* verify tag */
+    rc = EVP_DecryptFinal(cipher->ctx,
+                          NULL,
+                          &outlen);
+    if (rc < 0) {
+        SSH_LOG(SSH_LOG_WARNING, "EVP_DecryptFinal failed: Failed authentication");
+        return SSH_ERROR;
+    }
+
+    return SSH_OK;
+}
+
+#endif /* HAVE_OPENSSL_EVP_AES_GCM */
 
 /*
  * The table of supported ciphers
@@ -766,6 +983,36 @@ static struct ssh_cipher_struct ssh_ciphertab[] = {
     .decrypt = evp_cipher_decrypt,
     .cleanup = evp_cipher_cleanup
   },
+#ifdef HAVE_OPENSSL_EVP_AES_GCM
+  {
+    .name = "aes128-gcm@openssh.com",
+    .blocksize = AES_BLOCK_SIZE,
+    .lenfield_blocksize = 4, /* not encrypted, but authenticated */
+    .ciphertype = SSH_AEAD_AES128_GCM,
+    .keysize = 128,
+    .tag_size = AES_GCM_TAGLEN,
+    .set_encrypt_key = evp_cipher_set_encrypt_key,
+    .set_decrypt_key = evp_cipher_set_decrypt_key,
+    .aead_encrypt = evp_cipher_aead_encrypt,
+    .aead_decrypt_length = evp_cipher_aead_get_length,
+    .aead_decrypt = evp_cipher_aead_decrypt,
+    .cleanup = evp_cipher_cleanup
+  },
+  {
+    .name = "aes256-gcm@openssh.com",
+    .blocksize = AES_BLOCK_SIZE,
+    .lenfield_blocksize = 4, /* not encrypted, but authenticated */
+    .ciphertype = SSH_AEAD_AES256_GCM,
+    .keysize = 256,
+    .tag_size = AES_GCM_TAGLEN,
+    .set_encrypt_key = evp_cipher_set_encrypt_key,
+    .set_decrypt_key = evp_cipher_set_decrypt_key,
+    .aead_encrypt = evp_cipher_aead_encrypt,
+    .aead_decrypt_length = evp_cipher_aead_get_length,
+    .aead_decrypt = evp_cipher_aead_decrypt,
+    .cleanup = evp_cipher_cleanup
+  },
+#endif /* HAVE_OPENSSL_EVP_AES_GCM */
 #endif /* HAS_AES */
 #ifdef HAS_DES
   {
