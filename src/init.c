@@ -224,7 +224,7 @@ int ssh_finalize(void) {
 
 #ifdef _WIN32
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(LIBSSH_STATIC)
 /* Library constructor and destructor */
 BOOL WINAPI DllMain(HINSTANCE hinstDLL,
                     DWORD fdwReason,
@@ -249,7 +249,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL,
 
     return TRUE;
 }
-#endif /* _MSC_VER */
+#endif /* _MSC_VER && !LIBSSH_STATIC */
 
 #endif /* _WIN32 */
 
