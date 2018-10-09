@@ -666,7 +666,7 @@ static struct ssh_cipher_struct ssh_ciphertab[] = {
 #ifdef HAVE_OPENSSL_EVP_AES_CTR
   {
     .name = "aes128-ctr",
-    .blocksize = 16,
+    .blocksize = AES_BLOCK_SIZE,
     .ciphertype = SSH_AES128_CTR,
     .keysize = 128,
     .set_encrypt_key = evp_cipher_set_encrypt_key,
@@ -677,7 +677,7 @@ static struct ssh_cipher_struct ssh_ciphertab[] = {
   },
   {
     .name = "aes192-ctr",
-    .blocksize = 16,
+    .blocksize = AES_BLOCK_SIZE,
     .ciphertype = SSH_AES192_CTR,
     .keysize = 192,
     .set_encrypt_key = evp_cipher_set_encrypt_key,
@@ -688,7 +688,7 @@ static struct ssh_cipher_struct ssh_ciphertab[] = {
   },
   {
     .name = "aes256-ctr",
-    .blocksize = 16,
+    .blocksize = AES_BLOCK_SIZE,
     .ciphertype = SSH_AES256_CTR,
     .keysize = 256,
     .set_encrypt_key = evp_cipher_set_encrypt_key,
@@ -700,7 +700,7 @@ static struct ssh_cipher_struct ssh_ciphertab[] = {
 #else /* HAVE_OPENSSL_EVP_AES_CTR */
   {
     .name = "aes128-ctr",
-    .blocksize = 16,
+    .blocksize = AES_BLOCK_SIZE,
     .ciphertype = SSH_AES128_CTR,
     .keysize = 128,
     .set_encrypt_key = aes_ctr_set_key,
@@ -711,7 +711,7 @@ static struct ssh_cipher_struct ssh_ciphertab[] = {
   },
   {
     .name = "aes192-ctr",
-    .blocksize = 16,
+    .blocksize = AES_BLOCK_SIZE,
     .ciphertype = SSH_AES192_CTR,
     .keysize = 192,
     .set_encrypt_key = aes_ctr_set_key,
@@ -722,7 +722,7 @@ static struct ssh_cipher_struct ssh_ciphertab[] = {
   },
   {
     .name = "aes256-ctr",
-    .blocksize = 16,
+    .blocksize = AES_BLOCK_SIZE,
     .ciphertype = SSH_AES256_CTR,
     .keysize = 256,
     .set_encrypt_key = aes_ctr_set_key,
@@ -735,7 +735,7 @@ static struct ssh_cipher_struct ssh_ciphertab[] = {
 #endif /* BROKEN_AES_CTR */
   {
     .name = "aes128-cbc",
-    .blocksize = 16,
+    .blocksize = AES_BLOCK_SIZE,
     .ciphertype = SSH_AES128_CBC,
     .keysize = 128,
     .set_encrypt_key = evp_cipher_set_encrypt_key,
@@ -746,7 +746,7 @@ static struct ssh_cipher_struct ssh_ciphertab[] = {
   },
   {
     .name = "aes192-cbc",
-    .blocksize = 16,
+    .blocksize = AES_BLOCK_SIZE,
     .ciphertype = SSH_AES192_CBC,
     .keysize = 192,
     .set_encrypt_key = evp_cipher_set_encrypt_key,
@@ -757,7 +757,7 @@ static struct ssh_cipher_struct ssh_ciphertab[] = {
   },
   {
     .name = "aes256-cbc",
-    .blocksize = 16,
+    .blocksize = AES_BLOCK_SIZE,
     .ciphertype = SSH_AES256_CBC,
     .keysize = 256,
     .set_encrypt_key = evp_cipher_set_encrypt_key,
