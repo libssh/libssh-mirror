@@ -10,8 +10,6 @@ Public domain.
 
 #include "libssh/chacha.h"
 
-typedef unsigned int uint32_t;
-
 typedef struct chacha_ctx chacha_ctx;
 
 #define U8C(v) (v##U)
