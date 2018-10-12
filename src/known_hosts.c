@@ -131,17 +131,13 @@ static char **ssh_get_knownhost_line(FILE **file, const char *filename,
       return NULL;
     }
 
-    if(!tokens[0] || !tokens[1] || !tokens[2]) {
+    if(tokens[0] == NULL || tokens[1] == NULL || tokens[2] == NULL) {
       /* it should have at least 3 tokens */
       tokens_free(tokens);
       continue;
     }
 
     *found_type = tokens[1];
-    if (tokens[3] || tokens[4]) {
-      tokens_free(tokens);
-      continue;
-    }
 
     return tokens;
   }
