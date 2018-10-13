@@ -543,6 +543,10 @@ SSH_DEPRECATED LIBSSH_API ssh_channel ssh_forward_accept(ssh_session session, in
 SSH_DEPRECATED LIBSSH_API int ssh_forward_cancel(ssh_session session, const char *address, int port);
 SSH_DEPRECATED LIBSSH_API int ssh_forward_listen(ssh_session session, const char *address, int port, int *bound_port);
 SSH_DEPRECATED LIBSSH_API int ssh_get_publickey(ssh_session session, ssh_key *key);
+SSH_DEPRECATED LIBSSH_API int ssh_write_knownhost(ssh_session session);
+SSH_DEPRECATED LIBSSH_API char *ssh_dump_knownhost(ssh_session session);
+SSH_DEPRECATED LIBSSH_API int ssh_is_server_known(ssh_session session);
+
 
 
 LIBSSH_API int ssh_get_random(void *where,int len,int strong);
@@ -552,7 +556,6 @@ LIBSSH_API int ssh_get_poll_flags(ssh_session session);
 LIBSSH_API int ssh_init(void);
 LIBSSH_API int ssh_is_blocking(ssh_session session);
 LIBSSH_API int ssh_is_connected(ssh_session session);
-LIBSSH_API int ssh_is_server_known(ssh_session session);
 
 /* KNOWN HOSTS */
 LIBSSH_API void ssh_knownhosts_entry_free(struct ssh_knownhosts_entry *entry);
@@ -760,8 +763,6 @@ LIBSSH_API int ssh_userauth_kbdint_setanswer(ssh_session session, unsigned int i
     const char *answer);
 LIBSSH_API int ssh_userauth_gssapi(ssh_session session);
 LIBSSH_API const char *ssh_version(int req_version);
-LIBSSH_API int ssh_write_knownhost(ssh_session session);
-LIBSSH_API char *ssh_dump_knownhost(ssh_session session);
 
 LIBSSH_API void ssh_string_burn(ssh_string str);
 LIBSSH_API ssh_string ssh_string_copy(ssh_string str);
