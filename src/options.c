@@ -1022,6 +1022,12 @@ int ssh_options_get_port(ssh_session session, unsigned int* port_target) {
  *                remote host. When not explicitly set, it will be read
  *                from the ~/.ssh/config file.
  *
+ *              - SSH_OPTIONS_GLOBAL_KNOWNHOSTS:
+ *                Get the path to the global known_hosts file being used.
+ *
+ *              - SSH_OPTIONS_KNOWNHOSTS:
+ *                Get the path to the known_hosts file being used.
+ *
  * @param  value The value to get into. As a char**, space will be
  *               allocated by the function for the value, it is
  *               your responsibility to free the memory using
@@ -1062,6 +1068,14 @@ int ssh_options_get(ssh_session session, enum ssh_options_e type, char** value)
         }
         case SSH_OPTIONS_PROXYCOMMAND: {
             src = session->opts.ProxyCommand;
+            break;
+        }
+        case SSH_OPTIONS_KNOWNHOSTS: {
+            src = session->opts.knownhosts;
+            break;
+        }
+        case SSH_OPTIONS_GLOBAL_KNOWNHOSTS: {
+            src = session->opts.global_knownhosts;
             break;
         }
         default:
