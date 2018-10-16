@@ -621,7 +621,7 @@ int ssh_session_export_known_hosts_entry(ssh_session session,
 
     if (session->current_crypto == NULL) {
         ssh_set_error(session, SSH_FATAL,
-                      "No current crypto context, please connnect first");
+                      "No current crypto context, please connect first");
         SAFE_FREE(host);
         return SSH_ERROR;
     }

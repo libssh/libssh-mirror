@@ -998,7 +998,7 @@ ssh_key pki_private_key_from_base64(const char *b64_key,
         case SSH_KEYTYPE_RSA1:
         case SSH_KEYTYPE_UNKNOWN:
         default:
-            SSH_LOG(SSH_LOG_WARN, "Unkown or invalid private key type %d", type);
+            SSH_LOG(SSH_LOG_WARN, "Unknown or invalid private key type %d", type);
             return NULL;
     }
 

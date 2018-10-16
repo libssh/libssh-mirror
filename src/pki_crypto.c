@@ -790,7 +790,7 @@ ssh_string pki_private_key_to_pem(const ssh_key key,
         case SSH_KEYTYPE_UNKNOWN:
         default:
             BIO_free(mem);
-            SSH_LOG(SSH_LOG_WARN, "Unkown or invalid private key type %d", key->type);
+            SSH_LOG(SSH_LOG_WARN, "Unknown or invalid private key type %d", key->type);
             return NULL;
     }
 
@@ -916,7 +916,7 @@ ssh_key pki_private_key_from_base64(const char *b64_key,
         case SSH_KEYTYPE_RSA_CERT01:
         case SSH_KEYTYPE_UNKNOWN:
             BIO_free(mem);
-            SSH_LOG(SSH_LOG_WARN, "Unkown or invalid private key type %d", type);
+            SSH_LOG(SSH_LOG_WARN, "Unknown or invalid private key type %d", type);
             return NULL;
     }
 
