@@ -94,7 +94,8 @@ int verify_knownhost(ssh_session session)
             return -1;
         }
         if(strncasecmp(buf,"yes",3)==0){
-            if (ssh_write_knownhost(session) < 0) {
+            rc = ssh_session_update_known_hosts(session);
+            if (rc != SSH_OK) {
                 ssh_clean_pubkey_hash(&hash);
                 fprintf(stderr, "error %s\n", strerror(errno));
                 return -1;
