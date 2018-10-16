@@ -164,6 +164,12 @@ set(libssh_SRCS
   chachapoly.c
 )
 
+if (DEFAULT_C_NO_DEPRECATION_FLAGS)
+    set_source_files_properties(known_hosts.c
+                                PROPERTIES
+                                    COMPILE_FLAGS ${DEFAULT_C_NO_DEPRECATION_FLAGS})
+endif()
+
 if (CMAKE_USE_PTHREADS_INIT)
     set(libssh_SRCS
         ${libssh_SRCS}

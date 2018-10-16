@@ -93,6 +93,8 @@ if (UNIX)
         add_c_compiler_flag("-Wno-error=tautological-compare" SUPPORTED_COMPILER_FLAGS)
     endif()
 
+    add_c_compiler_flag("-Wno-deprecated-declarations" DEPRECATION_COMPILER_FLAGS)
+
     # Unset CMAKE_REQUIRED_FLAGS
     unset(CMAKE_REQUIRED_FLAGS)
 endif()
@@ -112,3 +114,7 @@ endif()
 
 set(DEFAULT_C_COMPILE_FLAGS ${SUPPORTED_COMPILER_FLAGS} CACHE INTERNAL "Default C Compiler Flags" FORCE)
 set(DEFAULT_LINK_FLAGS ${SUPPORTED_LINKER_FLAGS} CACHE INTERNAL "Default C Linker Flags" FORCE)
+
+if (DEPRECATION_COMPILER_FLAGS)
+    set(DEFAULT_C_NO_DEPRECATION_FLAGS ${DEPRECATION_COMPILER_FLAGS} CACHE INTERNAL "Default no deprecation flags" FORCE)
+endif()

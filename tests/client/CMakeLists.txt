@@ -14,6 +14,11 @@ set(LIBSSH_CLIENT_TESTS
     torture_session
     torture_request_env)
 
+if (DEFAULT_C_NO_DEPRECATION_FLAGS)
+    set_source_files_properties(torture_knownhosts.c
+                                PROPERTIES
+                                    COMPILE_FLAGS ${DEFAULT_C_NO_DEPRECATION_FLAGS})
+endif()
 if (WITH_SFTP)
     if (WITH_BENCHMARKS)
         set(SFTP_BENCHMARK_TESTS
