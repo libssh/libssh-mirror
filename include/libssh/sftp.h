@@ -53,9 +53,14 @@ extern "C" {
   typedef uint32_t gid_t;
 #endif /* gid_t */
 #ifdef _MSC_VER
-#ifndef ssize_t
-  typedef _W64 SSIZE_T ssize_t;
-#endif /* ssize_t */
+
+# ifndef _SSIZE_T_DEFINED
+#  undef ssize_t
+#  include <BaseTsd.h>
+   typedef _W64 SSIZE_T ssize_t;
+#  define _SSIZE_T_DEFINED
+# endif /* _SSIZE_T_DEFINED */
+
 #endif /* _MSC_VER */
 #endif /* _WIN32 */
 

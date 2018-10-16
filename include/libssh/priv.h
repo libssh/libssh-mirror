@@ -29,6 +29,7 @@
 #ifndef _LIBSSH_PRIV_H
 #define _LIBSSH_PRIV_H
 
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -127,6 +128,13 @@ char *strndup(const char *s, size_t n);
 #    endif /* HAVE_VSNPRINTF */
 #   endif /* HAVE__VSNPRINTF */
 #  endif /* HAVE__VSNPRINTF_S */
+
+#  ifndef _SSIZE_T_DEFINED
+#   undef ssize_t
+#   include <BaseTsd.h>
+    typedef _W64 SSIZE_T ssize_t;
+#   define _SSIZE_T_DEFINED
+#  endif /* _SSIZE_T_DEFINED */
 
 # endif /* _MSC_VER */
 
