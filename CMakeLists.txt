@@ -10,7 +10,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules")
 include(DefineCMakeDefaults)
 include(DefineCompilerFlags)
 
-project(libssh VERSION 0.8.3 LANGUAGES C)
+project(libssh VERSION 0.8.4 LANGUAGES C)
 
 # global needed variable
 set(APPLICATION_NAME ${PROJECT_NAME})

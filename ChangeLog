@@ -1,6 +1,12 @@
 ChangeLog
 ==========
 
+version 0.8.4 (released 2018-10-16)
+  * Fixed CVE-2018-10933
+  * Fixed building without globbing support
+  * Fixed possible memory leaks
+  * Avoid SIGPIPE on sockets
+
 version 0.8.3 (released 2018-09-21)
   * Added support for rsa-sha2
   * Added support to parse private keys in openssh container format
