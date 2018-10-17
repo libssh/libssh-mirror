@@ -1039,6 +1039,7 @@ int ssh_message_auth_interactive_request(ssh_message msg, const char *name,
     msg->session->kbdint->prompts = NULL;
     msg->session->kbdint->echo = NULL;
   }
+  msg->session->auth.state = SSH_AUTH_STATE_INFO;
 
   return rc;
 }
