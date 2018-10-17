@@ -309,6 +309,7 @@ static enum ssh_packet_filter_result_e ssh_packet_incoming_filter(ssh_session se
             (session->dh_handshake_state != DH_STATE_FINISHED))
         {
             rc = SSH_PACKET_DENIED;
+            break;
         }
 
         rc = SSH_PACKET_ALLOWED;
