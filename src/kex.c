@@ -639,7 +639,7 @@ static char *ssh_client_select_hostkeys(ssh_session session)
     for (i = 0; preferred_hostkeys[i] != NULL; ++i) {
         for (it = ssh_list_get_iterator(algo_list);
              it != NULL;
-             it = ssh_list_get_iterator(algo_list)) {
+             it = it->next) {
             const char *algo = ssh_iterator_value(const char *, it);
             int cmp;
             int ok;
@@ -659,8 +659,6 @@ static char *ssh_client_select_hostkeys(ssh_session session)
                     needcomma = 1;
                 }
             }
-
-            ssh_list_remove(algo_list, it);
         }
     }
     ssh_list_free(algo_list);
