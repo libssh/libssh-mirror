@@ -606,7 +606,7 @@ void ssh_list_kex(struct ssh_kex_struct *kex) {
  * @returns a cstring containing a comma-separated list of hostkey methods.
  *          NULL if no method matches
  */
-static char *ssh_client_select_hostkeys(ssh_session session)
+char *ssh_client_select_hostkeys(ssh_session session)
 {
     char methods_buffer[128]={0};
     char tail_buffer[128]={0};

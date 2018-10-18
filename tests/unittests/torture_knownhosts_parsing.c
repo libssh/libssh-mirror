@@ -277,6 +277,33 @@ static void torture_knownhosts_host_exists(void **state)
     ssh_free(session);
 }
 
+static void
+torture_knownhosts_algorithms(void **state)
+{
+    const char *knownhosts_file = *state;
+    char *algo_list = NULL;
+    ssh_session session;
+    const char *expect = "ssh-ed25519,ssh-rsa,ecdsa-sha2-nistp521,"
+                         "ecdsa-sha2-nistp384,ecdsa-sha2-nistp256"
+#ifdef HAVE_DSA
+                         ",ssh-dss"
+#endif
+    ;
+
+    session = ssh_new();
+    assert_non_null(session);
+
+    ssh_options_set(session, SSH_OPTIONS_HOST, "localhost");
+    ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, knownhosts_file);
+
+    algo_list = ssh_client_select_hostkeys(session);
+    assert_non_null(algo_list);
+    assert_string_equal(algo_list, expect);
+    free(algo_list);
+
+    ssh_free(session);
+}
+
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
@@ -290,6 +317,9 @@ int torture_run_tests(void) {
                                         setup_knownhosts_file,
                                         teardown_knownhosts_file),
         cmocka_unit_test_setup_teardown(torture_knownhosts_host_exists,
+                                        setup_knownhosts_file,
+                                        teardown_knownhosts_file),
+        cmocka_unit_test_setup_teardown(torture_knownhosts_algorithms,
                                         setup_knownhosts_file,
                                         teardown_knownhosts_file),
     };
