@@ -42,18 +42,24 @@ static int setup_knownhosts_file(void **state)
 
     nwritten = fwrite(LOCALHOST_PATTERN_ED25519,
                       sizeof(char),
-                      sizeof(LOCALHOST_PATTERN_ED25519),
+                      strlen(LOCALHOST_PATTERN_ED25519),
                       fp);
-    if (nwritten != sizeof(LOCALHOST_PATTERN_ED25519)) {
+    if (nwritten != strlen(LOCALHOST_PATTERN_ED25519)) {
+        fclose(fp);
+        return -1;
+    }
+
+    nwritten = fwrite("\n", sizeof(char), 1, fp);
+    if (nwritten != 1) {
         fclose(fp);
         return -1;
     }
 
     nwritten = fwrite(LOCALHOST_RSA_LINE,
                       sizeof(char),
-                      sizeof(LOCALHOST_RSA_LINE),
+                      strlen(LOCALHOST_RSA_LINE),
                       fp);
-    if (nwritten != sizeof(LOCALHOST_RSA_LINE)) {
+    if (nwritten != strlen(LOCALHOST_RSA_LINE)) {
         fclose(fp);
         return -1;
     }
@@ -210,6 +216,8 @@ static void torture_knownhosts_read_file(void **state)
     const char *knownhosts_file = *state;
     struct ssh_list *entry_list = NULL;
     struct ssh_iterator *it = NULL;
+    struct ssh_knownhosts_entry *entry = NULL;
+    enum ssh_keytypes_e type;
     int rc;
 
     rc = ssh_known_hosts_read_entries("localhost",
@@ -219,22 +227,27 @@ static void torture_knownhosts_read_file(void **state)
     assert_non_null(entry_list);
     it = ssh_list_get_iterator(entry_list);
     assert_non_null(it);
-    for (;it != NULL; it = it->next) {
-        struct ssh_knownhosts_entry *entry = NULL;
-        enum ssh_keytypes_e type;
 
-        entry = ssh_iterator_value(struct ssh_knownhosts_entry *, it);
-        assert_non_null(entry);
+    /* First key in known hosts file is ED25519 */
+    entry = ssh_iterator_value(struct ssh_knownhosts_entry *, it);
+    assert_non_null(entry);
 
-        assert_string_equal(entry->hostname, "localhost");
-        type = ssh_key_type(entry->publickey);
-        assert_int_equal(type, SSH_KEYTYPE_ED25519);
-    }
+    assert_string_equal(entry->hostname, "localhost");
+    type = ssh_key_type(entry->publickey);
+    assert_int_equal(type, SSH_KEYTYPE_ED25519);
+
+    it = it->next;
+
+    /* Second key in known hosts file is RSA */
+    entry = ssh_iterator_value(struct ssh_knownhosts_entry *, it);
+    assert_non_null(entry);
+
+    assert_string_equal(entry->hostname, "localhost");
+    type = ssh_key_type(entry->publickey);
+    assert_int_equal(type, SSH_KEYTYPE_RSA);
 
     it = ssh_list_get_iterator(entry_list);
     for (;it != NULL; it = it->next) {
-        struct ssh_knownhosts_entry *entry = NULL;
-
         entry = ssh_iterator_value(struct ssh_knownhosts_entry *, it);
         SSH_KNOWNHOSTS_ENTRY_FREE(entry);
     }
