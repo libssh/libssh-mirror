@@ -167,6 +167,10 @@ static void torture_knownhosts_precheck(void **state)
             "127.0.0.10 %s\n",
             torture_get_testkey_pub(SSH_KEYTYPE_ED25519, 0));
 
+    fprintf(file,
+            "127.0.0.10 %s\n",
+            torture_get_testkey_pub(SSH_KEYTYPE_ECDSA, 521));
+
     fclose(file);
 
     rc = ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, known_hosts_file);
@@ -176,7 +180,7 @@ static void torture_knownhosts_precheck(void **state)
     assert_non_null(algo_list);
 
     algo_count = ssh_list_count(algo_list);
-    assert_int_equal(algo_count, 2);
+    assert_int_equal(algo_count, 3);
 
     it = ssh_list_get_iterator(algo_list);
     assert_non_null(it);
@@ -189,6 +193,13 @@ static void torture_knownhosts_precheck(void **state)
     assert_non_null(it);
     algo = ssh_iterator_value(const char *, it);
     assert_string_equal(algo, "ssh-ed25519");
+
+    ssh_list_remove(algo_list, it);
+
+    it = ssh_list_get_iterator(algo_list);
+    assert_non_null(it);
+    algo = ssh_iterator_value(const char *, it);
+    assert_string_equal(algo, "ecdsa-sha2-nistp521");
 
     ssh_list_free(algo_list);
 }
