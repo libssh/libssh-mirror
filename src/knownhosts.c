@@ -340,12 +340,10 @@ struct ssh_list *ssh_known_hosts_get_algorithms(ssh_session session)
          it != NULL;
          it = ssh_list_get_iterator(entry_list)) {
         struct ssh_knownhosts_entry *entry = NULL;
-        enum ssh_keytypes_e key_type;
         const char *algo = NULL;
 
         entry = ssh_iterator_value(struct ssh_knownhosts_entry *, it);
-        key_type = ssh_key_type(entry->publickey);
-        algo = ssh_key_type_to_char(key_type);
+        algo = entry->publickey->type_c;
 
         rc = ssh_list_append(list, algo);
         if (rc != SSH_OK) {
