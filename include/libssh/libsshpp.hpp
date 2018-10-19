@@ -407,7 +407,7 @@ public:
    * @see ssh_write_knownhost
    */
   int writeKnownhost(){
-    int ret = ssh_write_knownhost(c_session);
+    int ret = ssh_session_update_known_hosts(c_session);
     ssh_throw(ret);
     return ret;
   }
