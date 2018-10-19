@@ -265,6 +265,33 @@ static void torture_knownhosts_host_exists(void **state)
 
     ssh_options_set(session, SSH_OPTIONS_HOST, "localhost");
     ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, knownhosts_file);
+    /* This makes sure the system's known_hosts are not used */
+    ssh_options_set(session, SSH_OPTIONS_GLOBAL_KNOWNHOSTS, "/dev/null");
+
+    found = ssh_session_has_known_hosts_entry(session);
+    assert_int_equal(found, SSH_KNOWN_HOSTS_OK);
+    assert_true(found == SSH_KNOWN_HOSTS_OK);
+
+    ssh_options_set(session, SSH_OPTIONS_HOST, "wurstbrot");
+    found = ssh_session_has_known_hosts_entry(session);
+    assert_true(found == SSH_KNOWN_HOSTS_UNKNOWN);
+
+    ssh_free(session);
+}
+
+static void torture_knownhosts_host_exists_global(void **state)
+{
+    const char *knownhosts_file = *state;
+    enum ssh_known_hosts_e found;
+    ssh_session session;
+
+    session = ssh_new();
+    assert_non_null(session);
+
+    ssh_options_set(session, SSH_OPTIONS_HOST, "localhost");
+    /* This makes sure the user's known_hosts are not used */
+    ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, "/dev/null");
+    ssh_options_set(session, SSH_OPTIONS_GLOBAL_KNOWNHOSTS, knownhosts_file);
 
     found = ssh_session_has_known_hosts_entry(session);
     assert_int_equal(found, SSH_KNOWN_HOSTS_OK);
@@ -295,6 +322,37 @@ torture_knownhosts_algorithms(void **state)
 
     ssh_options_set(session, SSH_OPTIONS_HOST, "localhost");
     ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, knownhosts_file);
+    /* This makes sure the system's known_hosts are not used */
+    ssh_options_set(session, SSH_OPTIONS_GLOBAL_KNOWNHOSTS, "/dev/null");
+
+    algo_list = ssh_client_select_hostkeys(session);
+    assert_non_null(algo_list);
+    assert_string_equal(algo_list, expect);
+    free(algo_list);
+
+    ssh_free(session);
+}
+
+static void
+torture_knownhosts_algorithms_global(void **state)
+{
+    const char *knownhosts_file = *state;
+    char *algo_list = NULL;
+    ssh_session session;
+    const char *expect = "ssh-ed25519,ssh-rsa,ecdsa-sha2-nistp521,"
+                         "ecdsa-sha2-nistp384,ecdsa-sha2-nistp256"
+#ifdef HAVE_DSA
+                         ",ssh-dss"
+#endif
+    ;
+
+    session = ssh_new();
+    assert_non_null(session);
+
+    ssh_options_set(session, SSH_OPTIONS_HOST, "localhost");
+    /* This makes sure the current-user's known hosts are not used */
+    ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, "/dev/null");
+    ssh_options_set(session, SSH_OPTIONS_GLOBAL_KNOWNHOSTS, knownhosts_file);
 
     algo_list = ssh_client_select_hostkeys(session);
     assert_non_null(algo_list);
@@ -319,7 +377,13 @@ int torture_run_tests(void) {
         cmocka_unit_test_setup_teardown(torture_knownhosts_host_exists,
                                         setup_knownhosts_file,
                                         teardown_knownhosts_file),
+        cmocka_unit_test_setup_teardown(torture_knownhosts_host_exists_global,
+                                        setup_knownhosts_file,
+                                        teardown_knownhosts_file),
         cmocka_unit_test_setup_teardown(torture_knownhosts_algorithms,
+                                        setup_knownhosts_file,
+                                        teardown_knownhosts_file),
+        cmocka_unit_test_setup_teardown(torture_knownhosts_algorithms_global,
                                         setup_knownhosts_file,
                                         teardown_knownhosts_file),
     };
