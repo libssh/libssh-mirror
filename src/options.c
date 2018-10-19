@@ -1370,6 +1370,17 @@ int ssh_options_apply(ssh_session session) {
     free(session->opts.knownhosts);
     session->opts.knownhosts = tmp;
 
+    if (session->opts.global_knownhosts == NULL) {
+        tmp = strdup("/etc/ssh/ssh_known_hosts");
+    } else {
+        tmp = ssh_path_expand_escape(session, session->opts.global_knownhosts);
+    }
+    if (tmp == NULL) {
+        return -1;
+    }
+    free(session->opts.global_knownhosts);
+    session->opts.global_knownhosts = tmp;
+
     if (session->opts.ProxyCommand != NULL) {
         tmp = ssh_path_expand_escape(session, session->opts.ProxyCommand);
         if (tmp == NULL) {
