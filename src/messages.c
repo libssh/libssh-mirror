@@ -704,6 +704,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
   ssh_message msg = NULL;
   char *service = NULL;
   char *method = NULL;
+  int cmp;
   int rc;
 
   (void)user;
@@ -730,6 +731,13 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
       service, method,
       msg->auth_request.username);
 
+  cmp = strcmp(service, "ssh-connection");
+  if (cmp != 0) {
+      SSH_LOG(SSH_LOG_WARNING,
+              "Invalid service request: %s",
+              service);
+      goto end;
+  }
 
   if (strcmp(method, "none") == 0) {
     msg->auth_request.method = SSH_AUTH_METHOD_NONE;
