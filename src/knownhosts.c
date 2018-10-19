@@ -182,11 +182,16 @@ static int known_hosts_read_line(FILE *fp,
     return -1;
 }
 
+/* This method reads the known_hosts file referenced by the path
+ * in  filename  argument, and entries matching the  match  argument
+ * will be added to the list in  entries  argument.
+ * If the  entries  list is NULL, it will allocate a new list. Caller
+ * is responsible to free it even if an error occurs.
+ */
 static int ssh_known_hosts_read_entries(const char *match,
                                         const char *filename,
                                         struct ssh_list **entries)
 {
-    struct ssh_list *entry_list;
     char line[8192];
     size_t lineno = 0;
     size_t len = 0;
@@ -195,13 +200,18 @@ static int ssh_known_hosts_read_entries(const char *match,
 
     fp = fopen(filename, "r");
     if (fp == NULL) {
-        return SSH_ERROR;
+        SSH_LOG(SSH_LOG_WARN, "Failed to open the known_hosts file '%s': %s",
+                filename, strerror(errno));
+        /* The missing file is not an error here */
+        return SSH_OK;
     }
 
-    entry_list = ssh_list_new();
-    if (entry_list == NULL) {
-        fclose(fp);
-        return SSH_ERROR;
+    if (*entries == NULL) {
+        *entries = ssh_list_new();
+        if (*entries == NULL) {
+            fclose(fp);
+            return SSH_ERROR;
+        }
     }
 
     for (rc = known_hosts_read_line(fp, line, sizeof(line), &len, &lineno);
@@ -231,15 +241,12 @@ static int ssh_known_hosts_read_entries(const char *match,
         } else if (rc != SSH_OK) {
             goto error;
         }
-        ssh_list_append(entry_list, entry);
+        ssh_list_append(*entries, entry);
     }
-
-    *entries = entry_list;
 
     fclose(fp);
     return SSH_OK;
 error:
-    ssh_list_free(entry_list);
     fclose(fp);
     return SSH_ERROR;
 }
@@ -323,8 +330,23 @@ struct ssh_list *ssh_known_hosts_get_algorithms(ssh_session session)
     rc = ssh_known_hosts_read_entries(host_port,
                                       session->opts.knownhosts,
                                       &entry_list);
+    if (rc != 0) {
+        ssh_list_free(entry_list);
+        ssh_list_free(list);
+        return NULL;
+    }
+
+    rc = ssh_known_hosts_read_entries(host_port,
+                                      session->opts.global_knownhosts,
+                                      &entry_list);
     SAFE_FREE(host_port);
     if (rc != 0) {
+        ssh_list_free(entry_list);
+        ssh_list_free(list);
+        return NULL;
+    }
+
+    if (entry_list == NULL) {
         ssh_list_free(list);
         return NULL;
     }
@@ -554,8 +576,17 @@ enum ssh_known_hosts_e ssh_session_has_known_hosts_entry(ssh_session session)
     rc = ssh_known_hosts_read_entries(host_port,
                                       session->opts.knownhosts,
                                       &entry_list);
+    if (rc != 0) {
+        ssh_list_free(entry_list);
+        return SSH_KNOWN_HOSTS_UNKNOWN;
+    }
+
+    rc = ssh_known_hosts_read_entries(host_port,
+                                      session->opts.global_knownhosts,
+                                      &entry_list);
     SAFE_FREE(host_port);
     if (rc != 0) {
+        ssh_list_free(entry_list);
         return SSH_KNOWN_HOSTS_UNKNOWN;
     }
 
@@ -655,10 +686,11 @@ int ssh_session_export_known_hosts_entry(ssh_session session,
 }
 
 /**
- * @brief Add the current connected server to the known_hosts file.
+ * @brief Add the current connected server to the user known_hosts file.
  *
  * This adds the currently connected server to the known_hosts file by
- * appending a new line at the end.
+ * appending a new line at the end. The global known_hosts file is considered
+ * read-only so it is not touched by this function.
  *
  * @param[in]  session  The session to use to write the entry.
  *
@@ -745,6 +777,7 @@ ssh_known_hosts_check_server_key(const char *hosts_entry,
                                       filename,
                                       &entry_list);
     if (rc != 0) {
+        ssh_list_free(entry_list);
         return SSH_KNOWN_HOSTS_UNKNOWN;
     }
 
@@ -822,9 +855,7 @@ enum ssh_known_hosts_e
 ssh_session_get_known_hosts_entry(ssh_session session,
                                   struct ssh_knownhosts_entry **pentry)
 {
-    ssh_key server_pubkey = NULL;
-    char *host_port = NULL;
-    enum ssh_known_hosts_e found = SSH_KNOWN_HOSTS_UNKNOWN;
+    enum ssh_known_hosts_e old_rv, rv = SSH_KNOWN_HOSTS_UNKNOWN;
 
     if (session->opts.knownhosts == NULL) {
         if (ssh_options_apply(session) < 0) {
@@ -835,6 +866,65 @@ ssh_session_get_known_hosts_entry(ssh_session session,
             return SSH_KNOWN_HOSTS_NOT_FOUND;
         }
     }
+
+    rv = ssh_session_get_known_hosts_entry_file(session,
+                                                session->opts.knownhosts,
+                                                pentry);
+    if (rv == SSH_KNOWN_HOSTS_OK) {
+        /* We already found a match in the first file: return */
+        return rv;
+    }
+
+    old_rv = rv;
+    rv = ssh_session_get_known_hosts_entry_file(session,
+                                                session->opts.global_knownhosts,
+                                                pentry);
+
+    /* If we did not find any match at all:  we report the previous result */
+    if (rv == SSH_KNOWN_HOSTS_UNKNOWN) {
+        return old_rv;
+    }
+
+    /* We found some match: return it */
+    return rv;
+
+}
+
+/**
+ * @brief Get the known_hosts entry for the current connected session
+ *        from the given known_hosts file.
+ *
+ * @param[in]  session  The session to validate.
+ *
+ * @param[in]  filename The filename to parse.
+ *
+ * @param[in]  pentry   A pointer to store the allocated known hosts entry.
+ *
+ * @returns SSH_KNOWN_HOSTS_OK:        The server is known and has not changed.\n
+ *          SSH_KNOWN_HOSTS_CHANGED:   The server key has changed. Either you
+ *                                     are under attack or the administrator
+ *                                     changed the key. You HAVE to warn the
+ *                                     user about a possible attack.\n
+ *          SSH_KNOWN_HOSTS_OTHER:     The server gave use a key of a type while
+ *                                     we had an other type recorded. It is a
+ *                                     possible attack.\n
+ *          SSH_KNOWN_HOSTS_UNKNOWN:   The server is unknown. User should
+ *                                     confirm the public key hash is correct.\n
+ *          SSH_KNOWN_HOSTS_NOT_FOUND: The known host file does not exist. The
+ *                                     host is thus unknown. File will be
+ *                                     created if host key is accepted.\n
+ *          SSH_KNOWN_HOSTS_ERROR:     There had been an eror checking the host.
+ *
+ * @see ssh_knownhosts_entry_free()
+ */
+enum ssh_known_hosts_e
+ssh_session_get_known_hosts_entry_file(ssh_session session,
+                                       const char *filename,
+                                       struct ssh_knownhosts_entry **pentry)
+{
+    ssh_key server_pubkey = NULL;
+    char *host_port = NULL;
+    enum ssh_known_hosts_e found = SSH_KNOWN_HOSTS_UNKNOWN;
 
     server_pubkey = ssh_dh_get_current_server_publickey(session);
     if (server_pubkey == NULL) {
@@ -852,7 +942,7 @@ ssh_session_get_known_hosts_entry(ssh_session session,
     }
 
     found = ssh_known_hosts_check_server_key(host_port,
-                                             session->opts.knownhosts,
+                                             filename,
                                              server_pubkey,
                                              pentry);
     SAFE_FREE(host_port);

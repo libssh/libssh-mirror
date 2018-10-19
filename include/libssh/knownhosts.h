@@ -23,5 +23,9 @@
 #define SSH_KNOWNHOSTS_H_
 
 struct ssh_list *ssh_known_hosts_get_algorithms(ssh_session session);
+enum ssh_known_hosts_e
+ssh_session_get_known_hosts_entry_file(ssh_session session,
+                                       const char *filename,
+                                       struct ssh_knownhosts_entry **pentry);
 
 #endif /* SSH_KNOWNHOSTS_H_ */
