@@ -346,6 +346,76 @@ static void torture_options_get_identity(void **state) {
     free(identity);
 }
 
+static void torture_options_set_global_knownhosts(void **state)
+{
+    ssh_session session = *state;
+    int rc;
+
+    rc = ssh_options_set(session,
+                         SSH_OPTIONS_GLOBAL_KNOWNHOSTS,
+                         "/etc/libssh/known_hosts");
+    assert_ssh_return_code(session, rc);
+    assert_string_equal(session->opts.global_knownhosts,
+                        "/etc/libssh/known_hosts");
+}
+
+static void torture_options_get_global_knownhosts(void **state)
+{
+    ssh_session session = *state;
+    char *str = NULL;
+    int rc;
+
+    rc = ssh_options_set(session,
+                         SSH_OPTIONS_GLOBAL_KNOWNHOSTS,
+                         "/etc/libssh/known_hosts");
+    assert_ssh_return_code(session, rc);
+    assert_string_equal(session->opts.global_knownhosts,
+                        "/etc/libssh/known_hosts");
+
+
+    rc = ssh_options_get(session, SSH_OPTIONS_GLOBAL_KNOWNHOSTS, &str);
+    assert_ssh_return_code(session, rc);
+    assert_string_equal(session->opts.global_knownhosts,
+                        "/etc/libssh/known_hosts");
+
+    SSH_STRING_FREE_CHAR(str);
+}
+
+static void torture_options_set_knownhosts(void **state)
+{
+    ssh_session session = *state;
+    int rc;
+
+    rc = ssh_options_set(session,
+                         SSH_OPTIONS_KNOWNHOSTS,
+                         "/home/libssh/.ssh/known_hosts");
+    assert_ssh_return_code(session, rc);
+    assert_string_equal(session->opts.knownhosts,
+                        "/home/libssh/.ssh/known_hosts");
+}
+
+static void torture_options_get_knownhosts(void **state)
+{
+    ssh_session session = *state;
+    char *str = NULL;
+    int rc;
+
+    rc = ssh_options_set(session,
+                         SSH_OPTIONS_KNOWNHOSTS,
+                         "/home/libssh/.ssh/known_hosts");
+    assert_ssh_return_code(session, rc);
+    assert_string_equal(session->opts.knownhosts,
+                        "/home/libssh/.ssh/known_hosts");
+
+
+    rc = ssh_options_get(session, SSH_OPTIONS_KNOWNHOSTS, &str);
+    assert_ssh_return_code(session, rc);
+    assert_string_equal(session->opts.knownhosts,
+                        "/home/libssh/.ssh/known_hosts");
+
+    SSH_STRING_FREE_CHAR(str);
+}
+
 static void torture_options_proxycommand(void **state) {
     ssh_session session = *state;
     int rc;
@@ -604,6 +674,10 @@ int torture_run_tests(void) {
         cmocka_unit_test_setup_teardown(torture_options_get_user, setup, teardown),
         cmocka_unit_test_setup_teardown(torture_options_set_identity, setup, teardown),
         cmocka_unit_test_setup_teardown(torture_options_get_identity, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_options_set_global_knownhosts, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_options_get_global_knownhosts, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_options_set_knownhosts, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_options_get_knownhosts, setup, teardown),
         cmocka_unit_test_setup_teardown(torture_options_proxycommand, setup, teardown),
         cmocka_unit_test_setup_teardown(torture_options_set_ciphers, setup, teardown),
         cmocka_unit_test_setup_teardown(torture_options_set_key_exchange, setup, teardown),
