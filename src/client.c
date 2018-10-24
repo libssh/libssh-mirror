@@ -410,6 +410,14 @@ static void ssh_client_connection_callback(ssh_session session)
 
             ssh_packet_set_default_callbacks(session);
             session->session_state = SSH_SESSION_STATE_INITIAL_KEX;
+            rc = ssh_set_client_kex(session);
+            if (rc != SSH_OK) {
+                goto error;
+            }
+            rc = ssh_send_kex(session, 0);
+            if (rc < 0) {
+                goto error;
+            }
             set_status(session, 0.5f);
 
             break;
@@ -419,14 +427,19 @@ static void ssh_client_connection_callback(ssh_session session)
         case SSH_SESSION_STATE_KEXINIT_RECEIVED:
             set_status(session,0.6f);
             ssh_list_kex(&session->next_crypto->server_kex);
-            if (ssh_set_client_kex(session) < 0) {
-                goto error;
+            if (session->next_crypto->client_kex.methods[0] == NULL) {
+                /* in rekeying state if next_crypto client_kex is empty */
+                rc = ssh_set_client_kex(session);
+                if (rc != SSH_OK) {
+                    goto error;
+                }
+                rc = ssh_send_kex(session, 0);
+                if (rc < 0) {
+                    goto error;
+                }
             }
             if (ssh_kex_select_methods(session) == SSH_ERROR)
                 goto error;
-            if (ssh_send_kex(session, 0) < 0) {
-                goto error;
-            }
             set_status(session,0.8f);
             session->session_state=SSH_SESSION_STATE_DH;
             if (dh_handshake(session) == SSH_ERROR) {
