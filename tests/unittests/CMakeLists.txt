@@ -16,6 +16,7 @@ set(LIBSSH_UNIT_TESTS
     torture_knownhosts_parsing
     torture_hashes
     torture_packet_filter
+    torture_temp_dir
 )
 
 set(LIBSSH_THREAD_UNIT_TESTS

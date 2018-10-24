@@ -125,4 +125,6 @@ void torture_teardown_sshd_server(void **state);
  */
 int torture_run_tests(void);
 
+char *torture_make_temp_dir(const char *template);
+
 #endif /* _TORTURE_H */

@@ -788,6 +788,210 @@ void torture_teardown_sshd_server(void **state)
     torture_teardown_socket_dir(state);
 }
 
+char *torture_make_temp_dir(const char *template)
+{
+    char *new_dir = NULL;
+    char *template_copy = NULL;
+
+    if (template == NULL) {
+        goto end;
+    }
+
+    template_copy = strdup(template);
+    if (template_copy == NULL) {
+        goto end;
+    }
+
+    new_dir = mkdtemp(template_copy);
+    if (new_dir == NULL) {
+        free(template_copy);
+    }
+
+end:
+    return new_dir;
+}
+
+#else /* _WIN32 */
+
+char *torture_make_temp_dir(const char *template)
+{
+    DWORD rc = 0;
+    char tmp_dir_path[MAX_PATH];
+    char tmp_file_name[MAX_PATH];
+    char *prefix = NULL;
+    char *path = NULL;
+    char *prefix_end = NULL;
+    char *slash = NULL;
+
+    BOOL created;
+
+    if (template == NULL) {
+        goto end;
+    }
+
+    prefix = strdup(template);
+    if (prefix == NULL) {
+        goto end;
+    }
+
+    /* Replace slashes with backslashes */
+    slash = strchr(prefix, '/');
+    for (; slash != NULL; slash = strchr(prefix, '/')) {
+        *slash = '\\';
+    }
+
+    prefix_end = strstr(prefix, "XXXXXX");
+    if (prefix_end != NULL) {
+        *prefix_end = '\0';
+    }
+
+    rc = GetTempPathA(MAX_PATH, tmp_dir_path);
+    if ((rc > MAX_PATH) || (rc == 0)) {
+        goto free_prefix;
+    }
+
+    rc = GetTempFileNameA(tmp_dir_path, TEXT(prefix), 0, tmp_file_name);
+    if (rc == 0) {
+        goto free_prefix;
+    }
+
+    path = strdup(tmp_file_name);
+    if (path == NULL) {
+        goto free_prefix;
+    }
+
+    /* GetTempFileNameA() creates a temporary file; we need to remove it */
+    rc = DeleteFileA(path);
+    if (rc == 0) {
+        rc = -1;
+        SAFE_FREE(path);
+        goto free_prefix;
+    }
+
+    created = CreateDirectoryA(path, NULL);
+    if (!created) {
+        SAFE_FREE(path);
+    }
+
+free_prefix:
+    SAFE_FREE(prefix);
+end:
+    return path;
+}
+
+static int recursive_rm_dir_content(const char *path)
+{
+    WIN32_FIND_DATA file_data;
+    HANDLE file_handle;
+    DWORD attributes;
+
+    DWORD last_error = 0;
+
+    char file_path[MAX_PATH];
+
+    int rc = 0;
+    BOOL removed;
+
+    strcpy(file_path, path);
+    strcat(file_path, "\\*");
+
+    file_handle = FindFirstFile(file_path, &file_data);
+
+    if (file_handle == INVALID_HANDLE_VALUE) {
+        last_error = GetLastError();
+
+        /* Empty directory */
+        if (last_error == ERROR_FILE_NOT_FOUND) {
+            rc = 0;
+        }
+        else {
+            /*TODO print error message?*/
+            rc = last_error;
+        }
+        goto end;
+    }
+    else {
+        do {
+            rc = strcmp(file_data.cFileName, ".");
+            if (rc == 0) {
+                continue;
+            }
+
+            rc = strcmp(file_data.cFileName, "..");
+            if (rc == 0) {
+                continue;
+            }
+
+            /* Create full file path */
+            strcpy(file_path, path);
+            strcat(file_path, "\\");
+            strcat(file_path, file_data.cFileName);
+
+            attributes = GetFileAttributes(file_path);
+            if (attributes & FILE_ATTRIBUTE_DIRECTORY) {
+                rc = recursive_rm_dir_content((const char *)file_path);
+                if (rc != 0) {
+                    goto end;
+                }
+
+                removed = RemoveDirectoryA(file_path);
+
+                if (!removed) {
+                    last_error = GetLastError();
+
+                    /*TODO print error message?*/
+
+                    rc = last_error;
+                    goto end;
+                }
+            }
+            else {
+                rc = remove(file_path);
+                if (rc) {
+                    goto end;
+                }
+            }
+
+        } while(FindNextFile(file_handle, &file_data));
+
+        FindClose(file_handle);
+    }
+
+end:
+    return rc;
+}
+
+int torture_rmdirs(const char *path)
+{
+    int rc = 0;
+    BOOL removed;
+
+    rc = recursive_rm_dir_content(path);
+    if (rc) {
+        return rc;
+    }
+
+    removed = RemoveDirectoryA(path);
+    if (!removed) {
+        rc = -1;
+    }
+
+    return rc;
+}
+
+int torture_isdir(const char *path)
+{
+
+    DWORD attributes = 0;
+
+    attributes = GetFileAttributes(path);
+    if (attributes & FILE_ATTRIBUTE_DIRECTORY) {
+        return 1;
+    }
+
+    return 0;
+}
+
 #endif /* _WIN32 */
 
 int torture_libssh_verbosity(void){
