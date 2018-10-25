@@ -120,6 +120,7 @@ static int ssh_gssapi_send_response(ssh_session session, ssh_string oid){
         ssh_set_error_oom(session);
         return SSH_ERROR;
     }
+    session->auth.state = SSH_AUTH_STATE_GSSAPI_TOKEN;
 
     ssh_packet_send(session);
     SSH_LOG(SSH_LOG_PACKET,
