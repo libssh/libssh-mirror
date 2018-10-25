@@ -73,7 +73,7 @@ static size_t atomicio(struct ssh_agent_struct *agent, void *buf, size_t n, int 
 
   /* Using a socket ? */
   if (channel == NULL) {
-    fd = ssh_socket_get_fd_in(agent->sock);
+    fd = ssh_socket_get_fd(agent->sock);
     pfd.fd = fd;
     pfd.events = do_read ? POLLIN : POLLOUT;
 

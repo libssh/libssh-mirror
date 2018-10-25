@@ -104,8 +104,7 @@ static void torture_packet(const char *cipher,
 
     assert_non_null(session->out_buffer);
     ssh_buffer_add_data(session->out_buffer, test_data, payload_len);
-    session->socket->fd_out = sockets[0];
-    session->socket->fd_in = -2;
+    session->socket->fd = sockets[0];
     session->socket->write_wontblock = 1;
     rc = ssh_packet_send(session);
     assert_int_equal(rc, SSH_OK);
@@ -126,8 +125,7 @@ static void torture_packet(const char *cipher,
     }
     close(sockets[0]);
     close(sockets[1]);
-    session->socket->fd_in = SSH_INVALID_SOCKET;
-    session->socket->fd_out = SSH_INVALID_SOCKET;
+    session->socket->fd = SSH_INVALID_SOCKET;
     ssh_free(session);
 }
 

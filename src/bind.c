@@ -447,7 +447,7 @@ int ssh_bind_accept_fd(ssh_bind sshbind, ssh_session session, socket_t fd){
       return SSH_ERROR;
     }
     ssh_socket_set_fd(session->socket, fd);
-    ssh_socket_get_poll_handle_out(session->socket);
+    ssh_socket_get_poll_handle(session->socket);
 
     /* We must try to import any keys that could be imported in case
      * we are not using ssh_bind_listen (which is the other place

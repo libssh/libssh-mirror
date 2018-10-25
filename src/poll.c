@@ -533,19 +533,17 @@ int ssh_poll_ctx_add(ssh_poll_ctx ctx, ssh_poll_handle p) {
  *
  * @return              0 on success, < 0 on error
  */
-int ssh_poll_ctx_add_socket (ssh_poll_ctx ctx, ssh_socket s) {
-  ssh_poll_handle p_in, p_out;
-  int ret;
-  p_in=ssh_socket_get_poll_handle_in(s);
-  if(p_in==NULL)
-  	return -1;
-  ret = ssh_poll_ctx_add(ctx,p_in);
-  if(ret != 0)
+int ssh_poll_ctx_add_socket (ssh_poll_ctx ctx, ssh_socket s)
+{
+    ssh_poll_handle p;
+    int ret;
+
+    p = ssh_socket_get_poll_handle(s);
+    if (p == NULL) {
+        return -1;
+    }
+    ret = ssh_poll_ctx_add(ctx,p);
     return ret;
-  p_out=ssh_socket_get_poll_handle_out(s);
-  if(p_in != p_out)
-    ret = ssh_poll_ctx_add(ctx,p_out);
-  return ret;
 }
 
 

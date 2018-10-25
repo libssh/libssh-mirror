@@ -312,7 +312,7 @@ static int ssh_pcap_context_connect(ssh_pcap_context ctx){
 		return SSH_ERROR;
 	if(session->socket==NULL)
 		return SSH_ERROR;
-	fd=ssh_socket_get_fd_in(session->socket);
+	fd = ssh_socket_get_fd(session->socket);
 	/* TODO: adapt for windows */
 	if(fd<0)
 		return SSH_ERROR;
