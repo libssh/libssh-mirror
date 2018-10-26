@@ -9,6 +9,7 @@
 #include <sys/types.h>
 #include <pwd.h>
 #include <errno.h>
+#include <fcntl.h>
 
 static int sshd_setup(void **state)
 {
@@ -61,11 +62,16 @@ static void torture_options_set_proxycommand(void **state) {
     struct torture_state *s = *state;
     ssh_session session = s->ssh.session;
     int rc;
+    socket_t fd;
 
     rc = ssh_options_set(session, SSH_OPTIONS_PROXYCOMMAND, "nc 127.0.0.10 22");
     assert_int_equal(rc, 0);
     rc = ssh_connect(session);
     assert_ssh_return_code(session, rc);
+    fd = ssh_get_fd(session);
+    assert_true(fd != SSH_INVALID_SOCKET);
+    rc = fcntl(fd, F_GETFL);
+    assert_int_equal(rc & O_RDWR, O_RDWR);
 }
 
 static void torture_options_set_proxycommand_notexist(void **state) {
