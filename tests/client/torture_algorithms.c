@@ -421,6 +421,24 @@ static void torture_algorithms_dh_group1(void **state) {
     test_algorithm(s->ssh.session, "diffie-hellman-group1-sha1", NULL/*cipher*/, NULL/*hmac*/);
 }
 
+static void torture_algorithms_dh_group14(void **state) {
+    struct torture_state *s = *state;
+
+    test_algorithm(s->ssh.session, "diffie-hellman-group14-sha1", NULL/*cipher*/, NULL/*hmac*/);
+}
+
+static void torture_algorithms_dh_group16(void **state) {
+    struct torture_state *s = *state;
+
+    test_algorithm(s->ssh.session, "diffie-hellman-group16-sha512", NULL/*cipher*/, NULL/*hmac*/);
+}
+
+static void torture_algorithms_dh_group18(void **state) {
+    struct torture_state *s = *state;
+
+    test_algorithm(s->ssh.session, "diffie-hellman-group18-sha512", NULL/*cipher*/, NULL/*hmac*/);
+}
+
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
@@ -514,6 +532,15 @@ int torture_run_tests(void) {
                                         session_setup,
                                         session_teardown),
         cmocka_unit_test_setup_teardown(torture_algorithms_dh_group1,
+                                        session_setup,
+                                        session_teardown),
+        cmocka_unit_test_setup_teardown(torture_algorithms_dh_group14,
+                                        session_setup,
+                                        session_teardown),
+        cmocka_unit_test_setup_teardown(torture_algorithms_dh_group16,
+                                        session_setup,
+                                        session_teardown),
+        cmocka_unit_test_setup_teardown(torture_algorithms_dh_group18,
                                         session_setup,
                                         session_teardown),
 #if ((OPENSSH_VERSION_MAJOR == 7 && OPENSSH_VERSION_MINOR >= 3) || OPENSSH_VERSION_MAJOR > 7)
