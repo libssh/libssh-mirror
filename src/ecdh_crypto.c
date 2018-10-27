@@ -108,6 +108,10 @@ int ssh_client_ecdh_init(ssh_session session){
   session->next_crypto->ecdh_privkey = key;
   session->next_crypto->ecdh_client_pubkey = client_pubkey;
 
+  /* register the packet callbacks */
+  ssh_packet_set_callbacks(session, &ssh_ecdh_client_callbacks);
+  session->dh_handshake_state = DH_STATE_INIT_SENT;
+
   rc = ssh_packet_send(session);
 
   return rc;

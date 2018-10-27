@@ -39,6 +39,19 @@
 #include "libssh/pki.h"
 #include "libssh/bignum.h"
 
+static SSH_PACKET_CALLBACK(ssh_packet_client_curve25519_reply);
+
+static ssh_packet_callback dh_client_callbacks[] = {
+    ssh_packet_client_curve25519_reply
+};
+
+static struct ssh_packet_callbacks_struct ssh_curve25519_client_callbacks = {
+    .start = SSH2_MSG_KEX_ECDH_REPLY,
+    .n_callbacks = 1,
+    .callbacks = dh_client_callbacks,
+    .user = NULL
+};
+
 /** @internal
  * @brief Starts curve25519-sha256@libssh.org / curve25519-sha256 key exchange
  */
@@ -64,7 +77,8 @@ int ssh_client_curve25519_init(ssh_session session){
       ssh_set_error_oom(session);
       return SSH_ERROR;
   }
-
+  /* register the packet callbacks */
+  ssh_packet_set_callbacks(session, &ssh_curve25519_client_callbacks);
   rc = ssh_packet_send(session);
 
   return rc;
@@ -117,11 +131,15 @@ static int ssh_curve25519_build_k(ssh_session session) {
  * @brief parses a SSH_MSG_KEX_ECDH_REPLY packet and sends back
  * a SSH_MSG_NEWKEYS
  */
-int ssh_client_curve25519_reply(ssh_session session, ssh_buffer packet){
+static SSH_PACKET_CALLBACK(ssh_packet_client_curve25519_reply){
   ssh_string q_s_string = NULL;
   ssh_string pubkey_blob = NULL;
   ssh_string signature = NULL;
   int rc;
+  (void)type;
+  (void)user;
+
+  ssh_packet_remove_callbacks(session, &ssh_curve25519_client_callbacks);
 
   pubkey_blob = ssh_buffer_get_ssh_string(packet);
   if (pubkey_blob == NULL) {
@@ -171,10 +189,18 @@ int ssh_client_curve25519_reply(ssh_session session, ssh_buffer packet){
   }
 
   rc=ssh_packet_send(session);
+  if (rc == SSH_ERROR) {
+    goto error;
+  }
+
   SSH_LOG(SSH_LOG_PROTOCOL, "SSH_MSG_NEWKEYS sent");
-  return rc;
+  session->dh_handshake_state = DH_STATE_NEWKEYS_SENT;
+
+  return SSH_PACKET_USED;
+
 error:
-  return SSH_ERROR;
+  session->session_state=SSH_SESSION_STATE_ERROR;
+  return SSH_PACKET_USED;
 }
 
 #ifdef WITH_SERVER

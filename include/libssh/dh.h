@@ -43,7 +43,6 @@ int ssh_dh_import_next_pubkey_blob(ssh_session session, ssh_string pubkey_blob);
 
 int ssh_dh_build_k(ssh_session session);
 int ssh_client_dh_init(ssh_session session);
-int ssh_client_dh_reply(ssh_session session, ssh_buffer packet);
 
 ssh_key ssh_dh_get_current_server_publickey(ssh_session session);
 int ssh_dh_get_current_server_publickey_blob(ssh_session session,

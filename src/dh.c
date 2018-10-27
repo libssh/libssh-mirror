@@ -652,6 +652,19 @@ int ssh_dh_build_k(ssh_session session) {
   return 0;
 }
 
+static SSH_PACKET_CALLBACK(ssh_packet_client_dh_reply);
+
+static ssh_packet_callback dh_client_callbacks[]= {
+    ssh_packet_client_dh_reply
+};
+
+static struct ssh_packet_callbacks_struct ssh_dh_client_callbacks = {
+    .start = SSH2_MSG_KEXDH_REPLY,
+    .n_callbacks = 1,
+    .callbacks = dh_client_callbacks,
+    .user = NULL
+};
+
 /** @internal
  * @brief Starts diffie-hellman-group1 key exchange
  */
@@ -680,6 +693,9 @@ int ssh_client_dh_init(ssh_session session){
   ssh_string_free(e);
   e=NULL;
 
+  /* register the packet callbacks */
+  ssh_packet_set_callbacks(session, &ssh_dh_client_callbacks);
+
   rc = ssh_packet_send(session);
   return rc;
   error:
@@ -691,11 +707,15 @@ int ssh_client_dh_init(ssh_session session){
   return SSH_ERROR;
 }
 
-int ssh_client_dh_reply(ssh_session session, ssh_buffer packet){
+SSH_PACKET_CALLBACK(ssh_packet_client_dh_reply){
   ssh_string f;
   ssh_string pubkey_blob = NULL;
   ssh_string signature = NULL;
   int rc;
+  (void)type;
+  (void)user;
+
+  ssh_packet_remove_callbacks(session, &ssh_dh_client_callbacks);
 
   pubkey_blob = ssh_buffer_get_ssh_string(packet);
   if (pubkey_blob == NULL){
@@ -740,10 +760,16 @@ int ssh_client_dh_reply(ssh_session session, ssh_buffer packet){
   }
 
   rc=ssh_packet_send(session);
+  if (rc == SSH_ERROR) {
+    goto error;
+  }
+
   SSH_LOG(SSH_LOG_PROTOCOL, "SSH_MSG_NEWKEYS sent");
-  return rc;
+  session->dh_handshake_state = DH_STATE_NEWKEYS_SENT;
+  return SSH_PACKET_USED;
 error:
-  return SSH_ERROR;
+  session->session_state=SSH_SESSION_STATE_ERROR;
+  return SSH_PACKET_USED;
 }
 
 int ssh_make_sessionid(ssh_session session) {

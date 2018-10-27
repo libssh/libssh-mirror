@@ -74,7 +74,7 @@ static ssh_packet_callback default_packet_handlers[]= {
 #else
   NULL,
 #endif
-  ssh_packet_dh_reply,                     // SSH2_MSG_KEXDH_REPLY                31
+  NULL,                                    // SSH2_MSG_KEXDH_REPLY                31
                                            // SSH2_MSG_KEX_DH_GEX_GROUP           31
   NULL,                                    // SSH2_MSG_KEX_DH_GEX_INIT            32
   NULL,                                    // SSH2_MSG_KEX_DH_GEX_REPLY           33
