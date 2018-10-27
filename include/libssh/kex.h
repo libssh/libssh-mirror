@@ -48,5 +48,10 @@ const char *ssh_kex_get_description(uint32_t algo);
 char *ssh_client_select_hostkeys(ssh_session session);
 int ssh_send_rekex(ssh_session session);
 int server_set_kex(ssh_session session);
+int ssh_make_sessionid(ssh_session session);
+/* add data for the final cookie */
+int ssh_hashbufin_add_cookie(ssh_session session, unsigned char *cookie);
+int ssh_hashbufout_add_cookie(ssh_session session);
+int ssh_generate_session_keys(ssh_session session);
 
 #endif /* KEX_H_ */

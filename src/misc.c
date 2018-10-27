@@ -333,6 +333,63 @@ char *ssh_hostport(const char *host, int port){
 }
 
 /**
+ * @brief Convert a buffer into a colon separated hex string.
+ * The caller has to free the memory.
+ *
+ * @param  what         What should be converted to a hex string.
+ *
+ * @param  len          Length of the buffer to convert.
+ *
+ * @return              The hex string or NULL on error.
+ *
+ * @see ssh_string_free_char()
+ */
+char *ssh_get_hexa(const unsigned char *what, size_t len) {
+    const char h[] = "0123456789abcdef";
+    char *hexa;
+    size_t i;
+    size_t hlen = len * 3;
+
+    if (len > (UINT_MAX - 1) / 3) {
+        return NULL;
+    }
+
+    hexa = malloc(hlen + 1);
+    if (hexa == NULL) {
+        return NULL;
+    }
+
+    for (i = 0; i < len; i++) {
+        hexa[i * 3] = h[(what[i] >> 4) & 0xF];
+        hexa[i * 3 + 1] = h[what[i] & 0xF];
+        hexa[i * 3 + 2] = ':';
+    }
+    hexa[hlen - 1] = '\0';
+
+    return hexa;
+}
+
+/**
+ * @brief Print a buffer as colon separated hex string.
+ *
+ * @param  descr        Description printed in front of the hex string.
+ *
+ * @param  what         What should be converted to a hex string.
+ *
+ * @param  len          Length of the buffer to convert.
+ */
+void ssh_print_hexa(const char *descr, const unsigned char *what, size_t len) {
+    char *hexa = ssh_get_hexa(what, len);
+
+    if (hexa == NULL) {
+      return;
+    }
+    fprintf(stderr, "%s: %s\n", descr, hexa);
+
+    free(hexa);
+}
+
+/**
  * @brief Check if libssh is the required version or get the version
  * string.
  *

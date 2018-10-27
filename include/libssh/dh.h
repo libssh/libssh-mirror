@@ -51,12 +51,6 @@ ssh_key ssh_dh_get_next_server_publickey(ssh_session session);
 int ssh_dh_get_next_server_publickey_blob(ssh_session session,
                                           ssh_string *pubkey_blob);
 
-int ssh_make_sessionid(ssh_session session);
-/* add data for the final cookie */
-int ssh_hashbufin_add_cookie(ssh_session session, unsigned char *cookie);
-int ssh_hashbufout_add_cookie(ssh_session session);
-int ssh_generate_session_keys(ssh_session session);
-
 #ifdef WITH_SERVER
 void ssh_server_dh_init(ssh_session session);
 #endif /* WITH_SERVER */

@@ -38,6 +38,7 @@
 #include "libssh/misc.h"
 #include "libssh/buffer.h"
 #include "libssh/poll.h"
+#include "libssh/pki.h"
 
 #define FIRST_CHANNEL 42 // why not ? it helps to find bugs.
 
@@ -947,6 +948,239 @@ void ssh_set_counters(ssh_session session, ssh_counter scounter,
         session->socket_counter = scounter;
         session->raw_counter = rcounter;
     }
+}
+
+/**
+ * @deprecated Use ssh_get_publickey_hash()
+ */
+int ssh_get_pubkey_hash(ssh_session session, unsigned char **hash)
+{
+    ssh_key pubkey = NULL;
+    ssh_string pubkey_blob = NULL;
+    MD5CTX ctx;
+    unsigned char *h;
+    int rc;
+
+    if (session == NULL || hash == NULL) {
+        return SSH_ERROR;
+    }
+    *hash = NULL;
+    if (session->current_crypto == NULL ||
+        session->current_crypto->server_pubkey == NULL) {
+        ssh_set_error(session,SSH_FATAL,"No current cryptographic context");
+        return SSH_ERROR;
+    }
+
+    h = calloc(MD5_DIGEST_LEN, sizeof(unsigned char));
+    if (h == NULL) {
+        return SSH_ERROR;
+    }
+
+    ctx = md5_init();
+    if (ctx == NULL) {
+        SAFE_FREE(h);
+        return SSH_ERROR;
+    }
+
+    rc = ssh_get_server_publickey(session, &pubkey);
+    if (rc != SSH_OK) {
+        md5_final(h, ctx);
+        SAFE_FREE(h);
+        return SSH_ERROR;
+    }
+
+    rc = ssh_pki_export_pubkey_blob(pubkey, &pubkey_blob);
+    ssh_key_free(pubkey);
+    if (rc != SSH_OK) {
+        md5_final(h, ctx);
+        SAFE_FREE(h);
+        return SSH_ERROR;
+    }
+
+    md5_update(ctx, ssh_string_data(pubkey_blob), ssh_string_len(pubkey_blob));
+    ssh_string_free(pubkey_blob);
+    md5_final(h, ctx);
+
+    *hash = h;
+
+    return MD5_DIGEST_LEN;
+}
+
+/**
+ * @brief Deallocate the hash obtained by ssh_get_pubkey_hash.
+ *
+ * This is required under Microsoft platform as this library might use a 
+ * different C library than your software, hence a different heap.
+ *
+ * @param[in] hash      The buffer to deallocate.
+ *
+ * @see ssh_get_pubkey_hash()
+ */
+void ssh_clean_pubkey_hash(unsigned char **hash) {
+    SAFE_FREE(*hash);
+}
+
+/**
+ * @brief Get the server public key from a session.
+ *
+ * @param[in]  session  The session to get the key from.
+ *
+ * @param[out] key      A pointer to store the allocated key. You need to free
+ *                      the key.
+ *
+ * @return              SSH_OK on success, SSH_ERROR on errror.
+ *
+ * @see ssh_key_free()
+ */
+int ssh_get_server_publickey(ssh_session session, ssh_key *key)
+{
+    ssh_key pubkey = NULL;
+
+    if (session == NULL ||
+        session->current_crypto == NULL ||
+        session->current_crypto->server_pubkey == NULL) {
+        return SSH_ERROR;
+    }
+
+    pubkey = ssh_key_dup(session->current_crypto->server_pubkey);
+    if (pubkey == NULL) {
+        return SSH_ERROR;
+    }
+
+    *key = pubkey;
+    return SSH_OK;
+}
+
+/**
+ * @deprecated Use ssh_get_server_publickey()
+ */
+int ssh_get_publickey(ssh_session session, ssh_key *key)
+{
+    return ssh_get_server_publickey(session, key);
+}
+
+/**
+ * @brief Allocates a buffer with the hash of the public key.
+ *
+ * This function allows you to get a hash of the public key. You can then
+ * print this hash in a human-readable form to the user so that he is able to
+ * verify it. Use ssh_get_hexa() or ssh_print_hexa() to display it.
+ *
+ * @param[in]  key      The public key to create the hash for.
+ *
+ * @param[in]  type     The type of the hash you want.
+ *
+ * @param[in]  hash     A pointer to store the allocated buffer. It can be
+ *                      freed using ssh_clean_pubkey_hash().
+ *
+ * @param[in]  hlen     The length of the hash.
+ *
+ * @return 0 on success, -1 if an error occured.
+ *
+ * @warning It is very important that you verify at some moment that the hash
+ *          matches a known server. If you don't do it, cryptography wont help
+ *          you at making things secure.
+ *          OpenSSH uses SHA1 to print public key digests.
+ *
+ * @see ssh_session_update_known_hosts()
+ * @see ssh_get_hexa()
+ * @see ssh_print_hexa()
+ * @see ssh_clean_pubkey_hash()
+ */
+int ssh_get_publickey_hash(const ssh_key key,
+                           enum ssh_publickey_hash_type type,
+                           unsigned char **hash,
+                           size_t *hlen)
+{
+    ssh_string blob;
+    unsigned char *h;
+    int rc;
+
+    rc = ssh_pki_export_pubkey_blob(key, &blob);
+    if (rc < 0) {
+        return rc;
+    }
+
+    switch (type) {
+    case SSH_PUBLICKEY_HASH_SHA1:
+        {
+            SHACTX ctx;
+
+            h = malloc(SHA_DIGEST_LEN);
+            if (h == NULL) {
+                rc = -1;
+                goto out;
+            }
+
+            ctx = sha1_init();
+            if (ctx == NULL) {
+                free(h);
+                rc = -1;
+                goto out;
+            }
+
+            sha1_update(ctx, ssh_string_data(blob), ssh_string_len(blob));
+            sha1_final(h, ctx);
+
+            *hlen = SHA_DIGEST_LEN;
+        }
+        break;
+    case SSH_PUBLICKEY_HASH_SHA256:
+        {
+            SHA256CTX ctx;
+
+            h = malloc(SHA256_DIGEST_LEN);
+            if (h == NULL) {
+                rc = -1;
+                goto out;
+            }
+
+            ctx = sha256_init();
+            if (ctx == NULL) {
+                free(h);
+                rc = -1;
+                goto out;
+            }
+
+            sha256_update(ctx, ssh_string_data(blob), ssh_string_len(blob));
+            sha256_final(h, ctx);
+
+            *hlen = SHA256_DIGEST_LEN;
+        }
+        break;
+    case SSH_PUBLICKEY_HASH_MD5:
+        {
+            MD5CTX ctx;
+
+            h = malloc(MD5_DIGEST_LEN);
+            if (h == NULL) {
+                rc = -1;
+                goto out;
+            }
+
+            ctx = md5_init();
+            if (ctx == NULL) {
+                free(h);
+                rc = -1;
+                goto out;
+            }
+
+            md5_update(ctx, ssh_string_data(blob), ssh_string_len(blob));
+            md5_final(h, ctx);
+
+            *hlen = MD5_DIGEST_LEN;
+        }
+        break;
+    default:
+        rc = -1;
+        goto out;
+    }
+
+    *hash = h;
+    rc = 0;
+out:
+    ssh_string_free(blob);
+    return rc;
 }
 
 /** @} */
