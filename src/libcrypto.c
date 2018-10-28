@@ -1052,6 +1052,13 @@ int ssh_crypto_init(void)
     if (libcrypto_initialized) {
         return SSH_OK;
     }
+    if (SSLeay() != OPENSSL_VERSION_NUMBER){
+        SSH_LOG(SSH_LOG_WARNING, "libssh compiled with %s "
+            "headers, currently running with %s.",
+            OPENSSL_VERSION_TEXT,
+            SSLeay_version(SSLeay())
+        );
+    }
 
     OpenSSL_add_all_algorithms();
 
