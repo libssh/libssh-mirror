@@ -11,10 +11,10 @@ libssh may be used in multithreaded applications, but under several conditions :
  - If libssh is statically linked, threading must be initialized by calling
    ssh_init() before using any of libssh provided functions. This initialization
    must be done outside of any threading context. Don't forget to call
-   ssh_finalize() to avoid memory leak 
+   ssh_finalize() to avoid memory leak
  - At all times, you may use different sessions inside threads, make parallel
    connections, read/write on different sessions and so on. You *cannot* use a
-   single session (or channels for a single session) in several threads at the same 
+   single session (or channels for a single session) in several threads at the same
    time. This will most likely lead to internal state corruption. This limitation is
    being worked out and will maybe disappear later.
 
