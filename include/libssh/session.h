@@ -164,8 +164,6 @@ struct ssh_session_struct {
 
     struct ssh_list *channels; /* linked list of channels */
     int maxchannel;
-    int exec_channel_opened; /* version 1 only. more
-                                info in channels1.c */
     ssh_agent agent; /* ssh agent */
 
 /* keyb interactive data */
