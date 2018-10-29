@@ -1335,6 +1335,8 @@ int ssh_options_parse_config(ssh_session session, const char *filename) {
       r = ssh_config_parse_file(session, "/etc/ssh/ssh_config");
   }
 
+  /* Do not process the default configuration as part of connection again */
+  session->opts.config_processed = true;
 out:
   free(expanded_filename);
   return r;

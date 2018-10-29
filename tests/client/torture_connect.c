@@ -68,6 +68,7 @@ static int session_setup(void **state)
     assert_non_null(s->ssh.session);
 
     ssh_options_set(s->ssh.session, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
+    ssh_options_set(s->ssh.session, SSH_OPTIONS_HOST, BLACKHOLE);
 
     return 0;
 }

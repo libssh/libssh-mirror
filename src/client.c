@@ -526,6 +526,16 @@ int ssh_connect(ssh_session session) {
     return SSH_ERROR;
   }
 
+  /* If the system configuration files were not yet processed, do it now */
+  if (!session->opts.config_processed) {
+    ret = ssh_options_parse_config(session, NULL);
+    if (ret != 0) {
+      ssh_set_error(session, SSH_FATAL,
+                    "Failed to process system configuration files");
+      return SSH_ERROR;
+    }
+  }
+
   ret = ssh_options_apply(session);
   if (ret < 0) {
       ssh_set_error(session, SSH_FATAL, "Couldn't apply options");

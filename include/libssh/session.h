@@ -20,6 +20,8 @@
 
 #ifndef SESSION_H_
 #define SESSION_H_
+#include <stdbool.h>
+
 #include "libssh/priv.h"
 #include "libssh/kex.h"
 #include "libssh/packet.h"
@@ -217,6 +219,7 @@ struct ssh_session_struct {
         int gss_delegate_creds;
         int flags;
         int nodelay;
+        bool config_processed;
     } opts;
     /* counters */
     ssh_counter socket_counter;
