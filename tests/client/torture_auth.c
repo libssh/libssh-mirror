@@ -232,7 +232,7 @@ static void torture_auth_none_nonblocking(void **state) {
 
     /* This request should return a SSH_REQUEST_DENIED error */
     if (rc == SSH_ERROR) {
-        assert_true(ssh_get_error_code(session) == SSH_REQUEST_DENIED);
+        assert_int_equal(ssh_get_error_code(session), SSH_REQUEST_DENIED);
     }
 
     ssh_set_blocking(session,0);
@@ -241,7 +241,7 @@ static void torture_auth_none_nonblocking(void **state) {
         rc = ssh_userauth_none(session,NULL);
     } while (rc == SSH_AUTH_AGAIN);
     assert_int_equal(rc, SSH_AUTH_DENIED);
-    assert_true(ssh_get_error_code(session) == SSH_REQUEST_DENIED);
+    assert_int_equal(ssh_get_error_code(session), SSH_REQUEST_DENIED);
 
 }
 
@@ -260,7 +260,7 @@ static void torture_auth_autopubkey(void **state) {
     rc = ssh_userauth_none(session,NULL);
     /* This request should return a SSH_REQUEST_DENIED error */
     if (rc == SSH_ERROR) {
-        assert_true(ssh_get_error_code(session) == SSH_REQUEST_DENIED);
+        assert_int_equal(ssh_get_error_code(session), SSH_REQUEST_DENIED);
     }
     rc = ssh_userauth_list(session, NULL);
     assert_true(rc & SSH_AUTH_METHOD_PUBLICKEY);
@@ -313,7 +313,7 @@ static void torture_auth_kbdint(void **state) {
     rc = ssh_userauth_none(session,NULL);
     /* This request should return a SSH_REQUEST_DENIED error */
     if (rc == SSH_ERROR) {
-        assert_true(ssh_get_error_code(session) == SSH_REQUEST_DENIED);
+        assert_int_equal(ssh_get_error_code(session), SSH_REQUEST_DENIED);
     }
     rc = ssh_userauth_list(session, NULL);
     assert_true(rc & SSH_AUTH_METHOD_INTERACTIVE);
@@ -352,7 +352,7 @@ static void torture_auth_kbdint_nonblocking(void **state) {
 
     /* This request should return a SSH_REQUEST_DENIED error */
     if (rc == SSH_ERROR) {
-        assert_true(ssh_get_error_code(session) == SSH_REQUEST_DENIED);
+        assert_int_equal(ssh_get_error_code(session), SSH_REQUEST_DENIED);
     }
     rc = ssh_userauth_list(session, NULL);
     assert_true(rc & SSH_AUTH_METHOD_INTERACTIVE);
@@ -392,7 +392,7 @@ static void torture_auth_password(void **state) {
     rc = ssh_userauth_none(session, NULL);
     /* This request should return a SSH_REQUEST_DENIED error */
     if (rc == SSH_AUTH_ERROR) {
-        assert_true(ssh_get_error_code(session) == SSH_REQUEST_DENIED);
+        assert_int_equal(ssh_get_error_code(session), SSH_REQUEST_DENIED);
     }
     rc = ssh_userauth_list(session, NULL);
     assert_true(rc & SSH_AUTH_METHOD_PASSWORD);
@@ -419,7 +419,7 @@ static void torture_auth_password_nonblocking(void **state) {
 
     /* This request should return a SSH_REQUEST_DENIED error */
     if (rc == SSH_AUTH_ERROR) {
-        assert_true(ssh_get_error_code(session) == SSH_REQUEST_DENIED);
+        assert_int_equal(ssh_get_error_code(session), SSH_REQUEST_DENIED);
     }
 
     rc = ssh_userauth_list(session, NULL);
@@ -450,7 +450,7 @@ static void torture_auth_agent(void **state) {
     rc = ssh_userauth_none(session,NULL);
     /* This request should return a SSH_REQUEST_DENIED error */
     if (rc == SSH_ERROR) {
-        assert_true(ssh_get_error_code(session) == SSH_REQUEST_DENIED);
+        assert_int_equal(ssh_get_error_code(session), SSH_REQUEST_DENIED);
     }
     rc = ssh_userauth_list(session, NULL);
     assert_true(rc & SSH_AUTH_METHOD_PUBLICKEY);
@@ -477,7 +477,7 @@ static void torture_auth_agent_nonblocking(void **state) {
     rc = ssh_userauth_none(session,NULL);
     /* This request should return a SSH_REQUEST_DENIED error */
     if (rc == SSH_ERROR) {
-        assert_true(ssh_get_error_code(session) == SSH_REQUEST_DENIED);
+        assert_int_equal(ssh_get_error_code(session), SSH_REQUEST_DENIED);
     }
     rc = ssh_userauth_list(session, NULL);
     assert_true(rc & SSH_AUTH_METHOD_PUBLICKEY);
@@ -562,7 +562,7 @@ static void torture_auth_pubkey_types(void **state)
     rc = ssh_userauth_none(session, NULL);
     /* This request should return a SSH_REQUEST_DENIED error */
     if (rc == SSH_ERROR) {
-        assert_true(ssh_get_error_code(session) == SSH_REQUEST_DENIED);
+        assert_int_equal(ssh_get_error_code(session), SSH_REQUEST_DENIED);
     }
     rc = ssh_userauth_list(session, NULL);
     assert_true(rc & SSH_AUTH_METHOD_PUBLICKEY);
@@ -599,7 +599,7 @@ static void torture_auth_pubkey_types_ecdsa(void **state)
     rc = ssh_userauth_none(session, NULL);
     /* This request should return a SSH_REQUEST_DENIED error */
     if (rc == SSH_ERROR) {
-        assert_true(ssh_get_error_code(session) == SSH_REQUEST_DENIED);
+        assert_int_equal(ssh_get_error_code(session), SSH_REQUEST_DENIED);
     }
     rc = ssh_userauth_list(session, NULL);
     assert_true(rc & SSH_AUTH_METHOD_PUBLICKEY);
@@ -637,7 +637,7 @@ static void torture_auth_pubkey_types_ed25519(void **state)
     rc = ssh_userauth_none(session, NULL);
     /* This request should return a SSH_REQUEST_DENIED error */
     if (rc == SSH_ERROR) {
-        assert_true(ssh_get_error_code(session) == SSH_REQUEST_DENIED);
+        assert_int_equal(ssh_get_error_code(session), SSH_REQUEST_DENIED);
     }
     rc = ssh_userauth_list(session, NULL);
     assert_true(rc & SSH_AUTH_METHOD_PUBLICKEY);
