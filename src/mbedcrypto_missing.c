@@ -52,7 +52,7 @@ unsigned char *ssh_mbedcry_bn2num(bignum num, int radix)
     int rc;
 
     rc = mbedtls_mpi_write_string(num, radix, buf, 0, &olen);
-    if (rc != 0) {
+    if (rc != 0 && rc != MBEDTLS_ERR_MPI_BUFFER_TOO_SMALL) {
         return NULL;
     }
 
@@ -81,6 +81,12 @@ int ssh_mbedcry_rand(bignum rnd, int bits, int top, int bottom)
     }
 
     len = bits / 8 + 1;
+    /* FIXME weird bug: over 1024, fill_random function returns an error code
+     * MBEDTLS_ERR_MPI_BAD_INPUT_DATA   -0x0004
+     */
+    if (len > 1024){
+        len = 1024;
+    }
     rc = mbedtls_mpi_fill_random(rnd,
                                  len,
                                  mbedtls_ctr_drbg_random,
@@ -135,13 +141,17 @@ int ssh_mbedcry_rand_range(bignum dest, bignum max)
 {
     size_t bits;
     bignum rnd;
+    int rc;
 
     bits = bignum_num_bits(max) + 64;
     rnd = bignum_new();
     if (rnd == NULL){
         return 0;
     }
-    bignum_rand(rnd, bits);
+    rc = bignum_rand(rnd, bits);
+    if (rc != 1){
+        return rc;
+    }
     mbedtls_mpi_mod_mpi(dest, rnd, max);
     bignum_safe_free(rnd);
     return 1;
