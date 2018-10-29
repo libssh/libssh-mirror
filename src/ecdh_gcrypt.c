@@ -286,7 +286,7 @@ int ssh_server_ecdh_init(ssh_session session, ssh_buffer packet) {
     session->next_crypto->ecdh_client_pubkey = q_c_string;
 
     /* Build server's keypair */
-    err = gcry_sexp_build(&param, NULL, "(genkey(ecdh(curve %s)))",
+    err = gcry_sexp_build(&param, NULL, "(genkey(ecdh(curve %s) (flags transient-key)))",
                           curve);
     if (err) {
         goto out;
