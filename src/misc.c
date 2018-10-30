@@ -217,12 +217,12 @@ char *ssh_get_user_home_dir(void)
 {
     char *szPath = NULL;
     struct passwd pwd;
-    struct passwd *pwdbuf;
+    struct passwd *pwdbuf = NULL;
     char buf[NSS_BUFLEN_PASSWD] = {0};
     int rc;
 
     rc = getpwuid_r(getuid(), &pwd, buf, NSS_BUFLEN_PASSWD, &pwdbuf);
-    if (rc != 0) {
+    if (rc != 0 || pwdbuf == NULL ) {
         szPath = getenv("HOME");
         if (szPath == NULL) {
             return NULL;
@@ -250,13 +250,13 @@ int ssh_file_readaccess_ok(const char *file)
 char *ssh_get_local_username(void)
 {
     struct passwd pwd;
-    struct passwd *pwdbuf;
+    struct passwd *pwdbuf = NULL;
     char buf[NSS_BUFLEN_PASSWD];
     char *name;
     int rc;
 
     rc = getpwuid_r(getuid(), &pwd, buf, NSS_BUFLEN_PASSWD, &pwdbuf);
-    if (rc != 0) {
+    if (rc != 0 || pwdbuf == NULL) {
         return NULL;
     }
 
