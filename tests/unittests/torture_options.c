@@ -451,22 +451,26 @@ static void torture_options_config_host(void **state) {
 
     assert_int_equal(session->opts.port, 42);
 
+    SAFE_FREE(session->opts.options_seen);
     ssh_options_set(session, SSH_OPTIONS_HOST, "testhost2");
     ssh_options_parse_config(session, "test_config");
     assert_int_equal(session->opts.port, 43);
 
     session->opts.port = 0;
 
+    SAFE_FREE(session->opts.options_seen);
     ssh_options_set(session, SSH_OPTIONS_HOST, "testhost3");
     ssh_options_parse_config(session, "test_config");
     assert_int_equal(session->opts.port, 43);
 
+    SAFE_FREE(session->opts.options_seen);
     ssh_options_set(session, SSH_OPTIONS_HOST, "testhost4");
     ssh_options_parse_config(session, "test_config");
     assert_int_equal(session->opts.port, 44);
 
     session->opts.port = 0;
 
+    SAFE_FREE(session->opts.options_seen);
     ssh_options_set(session, SSH_OPTIONS_HOST, "testhost5");
     ssh_options_parse_config(session, "test_config");
     assert_int_equal(session->opts.port, 44);
@@ -494,6 +498,7 @@ static void torture_options_config_match(void **state)
     assert_ssh_return_code_equal(session, rv, SSH_ERROR);
 
     /* The Match all keyword needs to be the only one (start) */
+    SAFE_FREE(session->opts.options_seen);
     config = fopen("test_config", "w");
     assert_non_null(config);
     fputs("Match all host local\n",
@@ -504,6 +509,7 @@ static void torture_options_config_match(void **state)
     assert_ssh_return_code_equal(session, rv, SSH_ERROR);
 
     /* The Match all keyword needs to be the only one (end) */
+    SAFE_FREE(session->opts.options_seen);
     config = fopen("test_config", "w");
     assert_non_null(config);
     fputs("Match host local all\n",
@@ -514,6 +520,7 @@ static void torture_options_config_match(void **state)
     assert_ssh_return_code_equal(session, rv, SSH_ERROR);
 
     /* The Match host keyword requires an argument */
+    SAFE_FREE(session->opts.options_seen);
     config = fopen("test_config", "w");
     assert_non_null(config);
     fputs("Match host\n",
@@ -524,6 +531,7 @@ static void torture_options_config_match(void **state)
     assert_ssh_return_code_equal(session, rv, SSH_ERROR);
 
     /* The Match user keyword requires an argument */
+    SAFE_FREE(session->opts.options_seen);
     config = fopen("test_config", "w");
     assert_non_null(config);
     fputs("Match user\n",
@@ -534,6 +542,7 @@ static void torture_options_config_match(void **state)
     assert_ssh_return_code_equal(session, rv, SSH_ERROR);
 
     /* The Match canonical keyword is ignored */
+    SAFE_FREE(session->opts.options_seen);
     config = fopen("test_config", "w");
     assert_non_null(config);
     fputs("Match canonical\n"
@@ -550,6 +559,7 @@ static void torture_options_config_match(void **state)
     session->opts.port = 0;
 
     /* The Match originalhost keyword is ignored */
+    SAFE_FREE(session->opts.options_seen);
     config = fopen("test_config", "w");
     assert_non_null(config);
     fputs("Match originalhost origin\n"
@@ -566,6 +576,7 @@ static void torture_options_config_match(void **state)
     session->opts.port = 0;
 
     /* The Match localuser keyword is ignored */
+    SAFE_FREE(session->opts.options_seen);
     config = fopen("test_config", "w");
     assert_non_null(config);
     fputs("Match originalhost origin\n"
@@ -582,6 +593,7 @@ static void torture_options_config_match(void **state)
     session->opts.port = 0;
 
     /* The Match exec keyword is ignored */
+    SAFE_FREE(session->opts.options_seen);
     config = fopen("test_config", "w");
     assert_non_null(config);
     fputs("Match exec /bin/true\n"
