@@ -213,39 +213,42 @@ int ssh_is_ipaddr(const char *str) {
 #define NSS_BUFLEN_PASSWD 4096
 #endif /* NSS_BUFLEN_PASSWD */
 
-char *ssh_get_user_home_dir(void) {
-  char *szPath = NULL;
-  struct passwd pwd;
-  struct passwd *pwdbuf;
-  char buf[NSS_BUFLEN_PASSWD] = {0};
-  int rc;
+char *ssh_get_user_home_dir(void)
+{
+    char *szPath = NULL;
+    struct passwd pwd;
+    struct passwd *pwdbuf;
+    char buf[NSS_BUFLEN_PASSWD] = {0};
+    int rc;
 
-  rc = getpwuid_r(getuid(), &pwd, buf, NSS_BUFLEN_PASSWD, &pwdbuf);
-  if (rc != 0) {
-      szPath = getenv("HOME");
-      if (szPath == NULL) {
-          return NULL;
-      }
-      snprintf(buf, sizeof(buf), "%s", szPath);
+    rc = getpwuid_r(getuid(), &pwd, buf, NSS_BUFLEN_PASSWD, &pwdbuf);
+    if (rc != 0) {
+        szPath = getenv("HOME");
+        if (szPath == NULL) {
+            return NULL;
+        }
+        snprintf(buf, sizeof(buf), "%s", szPath);
 
-      return strdup(buf);
-  }
+        return strdup(buf);
+    }
 
-  szPath = strdup(pwd.pw_dir);
+    szPath = strdup(pwd.pw_dir);
 
-  return szPath;
+    return szPath;
 }
 
 /* we have read access on file */
-int ssh_file_readaccess_ok(const char *file) {
-  if (access(file, R_OK) < 0) {
-    return 0;
-  }
+int ssh_file_readaccess_ok(const char *file)
+{
+    if (access(file, R_OK) < 0) {
+        return 0;
+    }
 
-  return 1;
+    return 1;
 }
 
-char *ssh_get_local_username(void) {
+char *ssh_get_local_username(void)
+{
     struct passwd pwd;
     struct passwd *pwdbuf;
     char buf[NSS_BUFLEN_PASSWD];
