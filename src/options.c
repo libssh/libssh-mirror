@@ -421,6 +421,12 @@ int ssh_options_set_algo(ssh_session session,
  *                Set it to disable Nagle's Algorithm (TCP_NODELAY) on the
  *                session socket. (int, 0=false)
  *
+ *              - SSH_OPTIONS_PROCESS_CONFIG
+ *                Set it to false to disable automatic processing of per-user
+ *                and system-wide OpenSSH configuration files. LibSSH
+ *                automatically uses these configuration files unless
+ *                you provide it with this option or with different file (bool).
+ *
  * @param  value The value to set. This is a generic pointer and the
  *               datatype which is used should be set according to the
  *               type set.
@@ -952,6 +958,15 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
             } else {
                 int *x = (int *) value;
                 session->opts.nodelay = (*x & 0xff) > 0 ? 1 : 0;
+            }
+            break;
+        case SSH_OPTIONS_PROCESS_CONFIG:
+            if (value == NULL) {
+                ssh_set_error_invalid(session);
+                return -1;
+            } else {
+                bool *x = (bool *)value;
+                session->opts.config_processed = !(*x);
             }
             break;
         default:
