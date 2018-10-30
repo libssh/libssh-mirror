@@ -35,7 +35,7 @@ struct pkd_daemon_args {
         unsigned int iterations;
 
         struct {
-            const char *mkdtemp_str;
+            char *mkdtemp_str;
         } socket_wrapper;
     } opts;
 };

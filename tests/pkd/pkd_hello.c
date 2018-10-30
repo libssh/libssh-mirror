@@ -874,6 +874,8 @@ static int pkd_cleanup_socket_wrapper(void) {
         goto errrmdir;
     }
 
+    free(pkd_dargs.opts.socket_wrapper.mkdtemp_str);
+
     goto out;
 errrmdir:
 errrmfiles:
