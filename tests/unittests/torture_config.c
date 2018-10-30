@@ -284,7 +284,7 @@ static void torture_config_auth_methods(void **state) {
     assert_false(session->opts.flags & SSH_OPT_FLAG_PUBKEY_AUTH);
 
     /* no method should be left enabled */
-    assert_int_equal(session->opts.port, 0);
+    assert_int_equal(session->opts.flags, 0);
 
     /* gradually enable them again */
     ssh_options_set(session, SSH_OPTIONS_HOST, "gss");
