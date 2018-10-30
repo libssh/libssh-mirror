@@ -4,6 +4,7 @@ find_package(socket_wrapper)
 
 set(LIBSSH_CLIENT_TESTS
     torture_algorithms
+    torture_client_config
     torture_connect
     torture_hostkey
     torture_auth
