@@ -220,6 +220,7 @@ struct ssh_session_struct {
         int flags;
         int nodelay;
         bool config_processed;
+        uint8_t *options_seen;
     } opts;
     /* counters */
     ssh_counter socket_counter;
