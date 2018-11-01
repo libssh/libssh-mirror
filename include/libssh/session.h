@@ -222,6 +222,8 @@ struct ssh_session_struct {
         int nodelay;
         bool config_processed;
         uint8_t options_seen[SOC_MAX];
+        uint64_t rekey_data;
+        uint32_t rekey_time;
     } opts;
     /* counters */
     ssh_counter socket_counter;

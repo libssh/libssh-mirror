@@ -475,6 +475,16 @@ int ssh_options_set_algo(ssh_session session,
  *                automatically uses these configuration files unless
  *                you provide it with this option or with different file (bool).
  *
+ *              - SSH_OPTIONS_REKEY_DATA
+ *                Set the data limit that can be transferred with a single
+ *                key in bytes. RFC 4253 Section 9 recommends 1GB of data
+ *                (uint64_t, 0=off)
+ *
+ *              - SSH_OPTIONS_REKEY_TIME
+ *                Set the time limit for a session before intializing a rekey
+ *                in seconds. RFC 4253 Section 9 recommends one hour.
+ *                (uint32_t, 0=off)
+ *
  * @param  value The value to set. This is a generic pointer and the
  *               datatype which is used should be set according to the
  *               type set.
@@ -1010,6 +1020,30 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
             } else {
                 bool *x = (bool *)value;
                 session->opts.config_processed = !(*x);
+            }
+            break;
+        case SSH_OPTIONS_REKEY_DATA:
+            if (value == NULL) {
+                ssh_set_error_invalid(session);
+                return -1;
+            } else {
+                uint64_t *x = (uint64_t *)value;
+                session->opts.rekey_data = *x;
+            }
+            break;
+        case SSH_OPTIONS_REKEY_TIME:
+            if (value == NULL) {
+                ssh_set_error_invalid(session);
+                return -1;
+            } else {
+                uint32_t *x = (uint32_t *)value;
+                if ((*x * 1000) < *x) {
+                    ssh_set_error(session, SSH_REQUEST_DENIED,
+                                  "The provided value (%" PRIu32 ") for rekey"
+                                  " time is too large", *x);
+                    return -1;
+                }
+                session->opts.rekey_time = (*x) * 1000;
             }
             break;
         default:
