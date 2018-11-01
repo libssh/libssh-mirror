@@ -31,6 +31,7 @@
 # include <glob.h>
 #endif
 #include <stdbool.h>
+#include <limits.h>
 
 #include "libssh/config.h"
 #include "libssh/priv.h"
@@ -109,7 +110,7 @@ static struct ssh_config_keyword_table_s ssh_config_keyword_table[] = {
   { "proxyjump", SOC_PROXYJUMP},
   { "proxyusefdpass", SOC_UNSUPPORTED},
   { "pubkeyacceptedtypes", SOC_PUBKEYACCEPTEDTYPES},
-  { "rekeylimit", SOC_UNSUPPORTED},
+  { "rekeylimit", SOC_REKEYLIMIT},
   { "remotecommand", SOC_UNSUPPORTED},
   { "revokedhostkeys", SOC_UNSUPPORTED},
   { "rhostsrsaauthentication", SOC_UNSUPPORTED},
@@ -604,6 +605,7 @@ ssh_config_parse_line(ssh_session session,
   int i, rv;
   uint8_t *seen = session->opts.options_seen;
   long l;
+  long long ll;
 
   x = s = strdup(line);
   if (s == NULL) {
@@ -964,6 +966,141 @@ ssh_config_parse_line(ssh_session session,
         p = ssh_config_get_str_tok(&s, NULL);
         if (p && *parsing) {
             ssh_options_set(session, SSH_OPTIONS_KEY_EXCHANGE, p);
+        }
+        break;
+    case SOC_REKEYLIMIT:
+        /* Parse the data limit */
+        p = ssh_config_get_str_tok(&s, NULL);
+        if (p == NULL) {
+            break;
+        } else if (strcmp(p, "default") == 0) {
+            /* Default rekey limits enforced automaticaly */
+            ll = 0;
+        } else {
+            char *endp = NULL;
+            ll = strtoll(p, &endp, 10);
+            if (p == endp || ll < 0) {
+                /* No number or negative */
+                SSH_LOG(SSH_LOG_WARN, "Invalid argument to rekey limit");
+                break;
+            }
+            switch (*endp) {
+            case 'G':
+                if (ll > LLONG_MAX / 1024) {
+                    SSH_LOG(SSH_LOG_WARN, "Possible overflow of rekey limit");
+                    ll = -1;
+                    break;
+                }
+                ll = ll * 1024;
+                FALL_THROUGH;
+            case 'M':
+                if (ll > LLONG_MAX / 1024) {
+                    SSH_LOG(SSH_LOG_WARN, "Possible overflow of rekey limit");
+                    ll = -1;
+                    break;
+                }
+                ll = ll * 1024;
+                FALL_THROUGH;
+            case 'K':
+                if (ll > LLONG_MAX / 1024) {
+                    SSH_LOG(SSH_LOG_WARN, "Possible overflow of rekey limit");
+                    ll = -1;
+                    break;
+                }
+                ll = ll * 1024;
+                endp++;
+                FALL_THROUGH;
+            case '\0':
+                /* just the number */
+                break;
+            default:
+                /* Invalid suffix */
+                ll = -1;
+                break;
+            }
+            if (*endp != ' ' && *endp != '\0') {
+                SSH_LOG(SSH_LOG_WARN,
+                        "Invalid trailing characters after the rekey limit: %s",
+                        endp);
+                break;
+            }
+        }
+        if (ll > -1 && *parsing) {
+            uint64_t v = (uint64_t)ll;
+            ssh_options_set(session, SSH_OPTIONS_REKEY_DATA, &v);
+        }
+        /* Parse the time limit */
+        p = ssh_config_get_str_tok(&s, NULL);
+        if (p == NULL) {
+            break;
+        } else if (strcmp(p, "none") == 0) {
+            ll = 0;
+        } else {
+            char *endp = NULL;
+            ll = strtoll(p, &endp, 10);
+            if (p == endp || ll < 0) {
+                /* No number or negative */
+                SSH_LOG(SSH_LOG_WARN, "Invalid argument to rekey limit");
+                break;
+            }
+            switch (*endp) {
+            case 'w':
+            case 'W':
+                if (ll > LLONG_MAX / 7) {
+                    SSH_LOG(SSH_LOG_WARN, "Possible overflow of rekey limit");
+                    ll = -1;
+                    break;
+                }
+                ll = ll * 7;
+                FALL_THROUGH;
+            case 'd':
+            case 'D':
+                if (ll > LLONG_MAX / 24) {
+                    SSH_LOG(SSH_LOG_WARN, "Possible overflow of rekey limit");
+                    ll = -1;
+                    break;
+                }
+                ll = ll * 24;
+                FALL_THROUGH;
+            case 'h':
+            case 'H':
+                if (ll > LLONG_MAX / 60) {
+                    SSH_LOG(SSH_LOG_WARN, "Possible overflow of rekey limit");
+                    ll = -1;
+                    break;
+                }
+                ll = ll * 60;
+                FALL_THROUGH;
+            case 'm':
+            case 'M':
+                if (ll > LLONG_MAX / 60) {
+                    SSH_LOG(SSH_LOG_WARN, "Possible overflow of rekey limit");
+                    ll = -1;
+                    break;
+                }
+                ll = ll * 60;
+                FALL_THROUGH;
+            case 's':
+            case 'S':
+                endp++;
+                FALL_THROUGH;
+            case '\0':
+                /* just the number */
+                break;
+            default:
+                /* Invalid suffix */
+                ll = -1;
+                break;
+            }
+            if (*endp != '\0') {
+                SSH_LOG(SSH_LOG_WARN, "Invalid trailing characters after the"
+                        " rekey limit: %s", endp);
+                break;
+            }
+        }
+        if (ll > -1 && *parsing) {
+            uint32_t v = (uint32_t)ll;
+            ssh_options_set(session, SSH_OPTIONS_REKEY_TIME, &v);
         }
         break;
     case SOC_GSSAPIAUTHENTICATION:
