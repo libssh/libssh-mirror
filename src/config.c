@@ -844,6 +844,7 @@ int ssh_config_parse_file(ssh_session session, const char *filename)
   if (session->opts.options_seen == NULL) {
     seen = calloc(SOC_END - SOC_UNSUPPORTED, sizeof(uint8_t));
     if (seen == NULL) {
+      fclose(f);
       ssh_set_error_oom(session);
       return -1;
     }
