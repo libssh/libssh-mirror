@@ -19,6 +19,7 @@ extern LIBSSH_THREAD int ssh_log_level;
 #define LIBSSH_TESTCONFIG9 "libssh_testconfig9.tmp"
 #define LIBSSH_TESTCONFIG10 "libssh_testconfig10.tmp"
 #define LIBSSH_TESTCONFIG11 "libssh_testconfig11.tmp"
+#define LIBSSH_TESTCONFIG12 "libssh_testconfig12.tmp"
 #define LIBSSH_TESTCONFIGGLOB "libssh_testc*[36].tmp"
 
 #define USERNAME "testuser"
@@ -48,6 +49,7 @@ static int setup_config_files(void **state)
     unlink(LIBSSH_TESTCONFIG9);
     unlink(LIBSSH_TESTCONFIG10);
     unlink(LIBSSH_TESTCONFIG11);
+    unlink(LIBSSH_TESTCONFIG12);
 
     torture_write_file(LIBSSH_TESTCONFIG1,
                        "User "USERNAME"\nInclude "LIBSSH_TESTCONFIG2"\n\n");
@@ -153,6 +155,26 @@ static int setup_config_files(void **state)
                        "\tProxyJump [2620:52:0::fed]\n"
                        "");
 
+    /* RekeyLimit combinations */
+    torture_write_file(LIBSSH_TESTCONFIG12,
+                       "Host default\n"
+                       "\tRekeyLimit default none\n"
+                       "Host data1\n"
+                       "\tRekeyLimit 42G\n"
+                       "Host data2\n"
+                       "\tRekeyLimit 31M\n"
+                       "Host data3\n"
+                       "\tRekeyLimit 521K\n"
+                       "Host time1\n"
+                       "\tRekeyLimit default 3D\n"
+                       "Host time2\n"
+                       "\tRekeyLimit default 2h\n"
+                       "Host time3\n"
+                       "\tRekeyLimit default 160m\n"
+                       "Host time4\n"
+                       "\tRekeyLimit default 9600\n"
+                       "");
+
     session = ssh_new();
 
     verbosity = torture_libssh_verbosity();
@@ -176,6 +198,7 @@ static int teardown(void **state)
     unlink(LIBSSH_TESTCONFIG9);
     unlink(LIBSSH_TESTCONFIG10);
     unlink(LIBSSH_TESTCONFIG11);
+    unlink(LIBSSH_TESTCONFIG12);
 
     ssh_free(*state);
 
@@ -637,6 +660,80 @@ static void torture_config_proxyjump(void **state) {
     assert_ssh_return_code_equal(session, ret, SSH_ERROR);
 }
 
+/**
+ * @brief Verify the configuration parser handles all the possible
+ * versions of RekeyLimit configuration option.
+ */
+static void torture_config_rekey(void **state)
+{
+    ssh_session session = *state;
+    int ret = 0;
+
+    /* Default values */
+    ssh_options_set(session, SSH_OPTIONS_HOST, "default");
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG12);
+    assert_ssh_return_code(session, ret);
+    assert_int_equal(session->opts.rekey_data, 0);
+    assert_int_equal(session->opts.rekey_time, 0);
+
+    /* 42 GB */
+    torture_reset_config(session);
+    ssh_options_set(session, SSH_OPTIONS_HOST, "data1");
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG12);
+    assert_ssh_return_code(session, ret);
+    assert_int_equal(session->opts.rekey_data, (long long) 42 * 1024 * 1024 * 1024);
+    assert_int_equal(session->opts.rekey_time, 0);
+
+    /* 41 MB */
+    torture_reset_config(session);
+    ssh_options_set(session, SSH_OPTIONS_HOST, "data2");
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG12);
+    assert_ssh_return_code(session, ret);
+    assert_int_equal(session->opts.rekey_data, 31 * 1024 * 1024);
+    assert_int_equal(session->opts.rekey_time, 0);
+
+    /* 521 KB */
+    torture_reset_config(session);
+    ssh_options_set(session, SSH_OPTIONS_HOST, "data3");
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG12);
+    assert_ssh_return_code(session, ret);
+    assert_int_equal(session->opts.rekey_data, 521 * 1024);
+    assert_int_equal(session->opts.rekey_time, 0);
+
+    /* default 3D */
+    torture_reset_config(session);
+    ssh_options_set(session, SSH_OPTIONS_HOST, "time1");
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG12);
+    assert_ssh_return_code(session, ret);
+    assert_int_equal(session->opts.rekey_data, 0);
+    assert_int_equal(session->opts.rekey_time, 3 * 24 * 60 * 60 * 1000);
+
+    /* default 2h */
+    torture_reset_config(session);
+    ssh_options_set(session, SSH_OPTIONS_HOST, "time2");
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG12);
+    assert_ssh_return_code(session, ret);
+    assert_int_equal(session->opts.rekey_data, 0);
+    assert_int_equal(session->opts.rekey_time, 2 * 60 * 60 * 1000);
+
+    /* default 160m */
+    torture_reset_config(session);
+    ssh_options_set(session, SSH_OPTIONS_HOST, "time3");
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG12);
+    assert_ssh_return_code(session, ret);
+    assert_int_equal(session->opts.rekey_data, 0);
+    assert_int_equal(session->opts.rekey_time, 160 * 60 * 1000);
+
+    /* default 9600 [s] */
+    torture_reset_config(session);
+    ssh_options_set(session, SSH_OPTIONS_HOST, "time4");
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG12);
+    assert_ssh_return_code(session, ret);
+    assert_int_equal(session->opts.rekey_data, 0);
+    assert_int_equal(session->opts.rekey_time, 9600 * 1000);
+
+}
+
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
@@ -648,6 +745,7 @@ int torture_run_tests(void) {
         cmocka_unit_test(torture_config_unknown),
         cmocka_unit_test(torture_config_match),
         cmocka_unit_test(torture_config_proxyjump),
+        cmocka_unit_test(torture_config_rekey),
     };
 
 
