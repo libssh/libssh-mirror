@@ -99,7 +99,7 @@ static void torture_client_config_system(void **state)
      * of that in this test case.
      */
     ret = ssh_options_parse_config(s->ssh.session, NULL);
-    assert_return_code(s->ssh.session, ret);
+    assert_ssh_return_code(s->ssh.session, ret);
 
     assert_string_equal(s->ssh.session->opts.wanted_methods[SSH_CRYPT_C_S], CIPHERS);
     assert_string_equal(s->ssh.session->opts.wanted_methods[SSH_CRYPT_S_C], CIPHERS);
@@ -130,10 +130,10 @@ static void torture_client_config_emulate(void **state)
     filename = ssh_path_expand_tilde("~/.ssh/config");
     ret = ssh_options_parse_config(s->ssh.session, filename);
     free(filename);
-    assert_return_code(s->ssh.session, ret);
+    assert_ssh_return_code(s->ssh.session, ret);
 
     ret = ssh_options_parse_config(s->ssh.session, LIBSSH_SSH_CONFIG);
-    assert_return_code(s->ssh.session, ret);
+    assert_ssh_return_code(s->ssh.session, ret);
 
     assert_non_null(s->ssh.session->opts.wanted_methods[SSH_CRYPT_C_S]);
     assert_string_equal(s->ssh.session->opts.wanted_methods[SSH_CRYPT_C_S], CIPHERS);
@@ -154,7 +154,7 @@ static void torture_client_config_autoparse(void **state)
     assert_true(s->ssh.session->opts.options_seen == NULL);
 
     ret = ssh_connect(s->ssh.session);
-    assert_return_code(s->ssh.session, ret);
+    assert_ssh_return_code(s->ssh.session, ret);
 
     /* Make sure the configuration was processed and user modified */
     assert_string_equal(s->ssh.session->opts.username, TORTURE_CONFIG_USER);
@@ -172,10 +172,10 @@ static void torture_client_config_suppress(void **state)
     assert_true(s->ssh.session->opts.options_seen == NULL);
 
     ret = ssh_options_set(s->ssh.session, SSH_OPTIONS_PROCESS_CONFIG, &b);
-    assert_return_code(s->ssh.session, ret);
+    assert_ssh_return_code(s->ssh.session, ret);
 
     ret = ssh_connect(s->ssh.session);
-    assert_return_code(s->ssh.session, ret);
+    assert_ssh_return_code(s->ssh.session, ret);
 
     /* Make sure the configuration was not processed and user modified */
     assert_string_equal(s->ssh.session->opts.username, "bob");
