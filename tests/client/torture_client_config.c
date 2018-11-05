@@ -65,8 +65,12 @@ static int teardown(void **state)
     char *filename;
 
     filename = ssh_path_expand_tilde("~/.ssh/config");
-    unlink(filename);
-    free(filename);
+    if (filename != NULL) {
+        if (strlen(filename) > 0) {
+            unlink(filename);
+        }
+        SAFE_FREE(filename);
+    }
 
     unlink(LIBSSH_SSH_CONFIG);
 
