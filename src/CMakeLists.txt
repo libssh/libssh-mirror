@@ -126,6 +126,7 @@ set(libssh_SRCS
   connector.c
   curve25519.c
   dh.c
+  dh-gex.c
   ecdh.c
   error.c
   getpass.c

@@ -58,6 +58,9 @@ enum ssh_key_exchange_e {
   SSH_KEX_DH_GROUP1_SHA1=1,
   /* diffie-hellman-group14-sha1 */
   SSH_KEX_DH_GROUP14_SHA1,
+  /* diffie-hellman-group-exchange-sha1 */
+  SSH_KEX_DH_GEX_SHA1,
+  SSH_KEX_DH_GEX_SHA256,
   /* ecdh-sha2-nistp256 */
   SSH_KEX_ECDH_SHA2_NISTP256,
   /* ecdh-sha2-nistp384 */

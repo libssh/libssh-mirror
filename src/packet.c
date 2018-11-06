@@ -388,6 +388,7 @@ static enum ssh_packet_filter_result_e ssh_packet_incoming_filter(ssh_session se
          * States required:
          * - session_state == SSH_SESSION_STATE_DH
          * - dh_handshake_state == DH_STATE_INIT_SENT
+         *   or dh_handshake_state == DH_STATE_REQUEST_SENT (dh-gex)
          *
          * Transitions:
          * - session->dh_handhsake_state = DH_STATE_NEWKEYS_SENT
@@ -398,7 +399,8 @@ static enum ssh_packet_filter_result_e ssh_packet_incoming_filter(ssh_session se
             break;
         }
 
-        if (session->dh_handshake_state != DH_STATE_INIT_SENT) {
+        if (session->dh_handshake_state != DH_STATE_INIT_SENT &&
+            session->dh_handshake_state != DH_STATE_REQUEST_SENT) {
             rc = SSH_PACKET_DENIED;
             break;
         }
@@ -1273,6 +1275,10 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
                 ssh_packet_process(session, session->in_packet.type);
                 break;
             case SSH_PACKET_DENIED:
+                ssh_set_error(session,
+                              SSH_FATAL,
+                              "Packet filter: rejected packet (type %d)",
+                              session->in_packet.type);
                 goto error;
             case SSH_PACKET_UNKNOWN:
                 ssh_packet_send_unimplemented(session, session->recv_seq - 1);
