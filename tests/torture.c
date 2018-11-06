@@ -626,7 +626,8 @@ static void torture_setup_create_sshd_config(void **state, bool pam)
 # else /* OPENSSH_VERSION 7.0 - 7.5 */
              "Ciphers +3des-cbc,aes128-cbc,aes192-cbc,aes256-cbc\n"
 # endif /* OPENSSH_VERSION 7.0 - 7.6 */
-             "KexAlgorithms +diffie-hellman-group1-sha1"
+             "KexAlgorithms +diffie-hellman-group1-sha1,"
+             "diffie-hellman-group-exchange-sha1"
 #else /* OPENSSH_VERSION >= 6.7 */
              "Ciphers 3des-cbc,aes128-cbc,aes192-cbc,aes256-cbc,aes128-ctr,"
                      "aes192-ctr,aes256-ctr,aes128-gcm@openssh.com,"
