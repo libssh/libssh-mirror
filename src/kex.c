@@ -1475,6 +1475,7 @@ int ssh_generate_session_keys(ssh_session session)
 
     rc = 0;
 error:
+    ssh_string_burn(k_string);
     ssh_string_free(k_string);
 
     return rc;

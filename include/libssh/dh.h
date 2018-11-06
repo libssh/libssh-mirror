@@ -25,20 +25,9 @@
 
 #include "libssh/crypto.h"
 
-int ssh_dh_generate_e(ssh_session session);
-int ssh_dh_generate_f(ssh_session session);
-int ssh_dh_generate_x(ssh_session session);
-int ssh_dh_generate_y(ssh_session session);
-
 int ssh_dh_init(void);
 void ssh_dh_finalize(void);
 
-ssh_string ssh_dh_get_e(ssh_session session);
-ssh_string ssh_dh_get_f(ssh_session session);
-int ssh_dh_import_f(ssh_session session,ssh_string f_string);
-int ssh_dh_import_e(ssh_session session, ssh_string e_string);
-
-int ssh_dh_import_pubkey_blob(ssh_session session, ssh_string pubkey_blob);
 int ssh_dh_import_next_pubkey_blob(ssh_session session, ssh_string pubkey_blob);
 
 int ssh_dh_build_k(ssh_session session);
@@ -54,4 +43,9 @@ int ssh_dh_get_next_server_publickey_blob(ssh_session session,
 #ifdef WITH_SERVER
 void ssh_server_dh_init(ssh_session session);
 #endif /* WITH_SERVER */
+
+int ssh_dh_init_common(ssh_session session);
+void ssh_dh_cleanup(ssh_session session);
+int ssh_dh_generate_secret(ssh_session session, bignum dest);
+
 #endif /* DH_H_ */

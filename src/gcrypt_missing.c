@@ -106,13 +106,17 @@ int ssh_gcry_rand_range(bignum dest, bignum max)
 {
     size_t bits;
     bignum rnd;
+    int rc;
 
     bits = bignum_num_bits(max) + 64;
     rnd = bignum_new();
     if (rnd == NULL) {
         return 0;
     }
-    bignum_rand(rnd, bits);
+    rc = bignum_rand(rnd, bits);
+    if (rc != 1) {
+        return rc;
+    }
     gcry_mpi_mod(dest, rnd, max);
     bignum_safe_free(rnd);
     return 1;
