@@ -39,6 +39,9 @@ include(CompilerChecks.cmake)
 include(MacroEnsureOutOfSourceBuild)
 macro_ensure_out_of_source_build("${PROJECT_NAME} requires an out of source build. Please create a separate build directory and run 'cmake /path/to/${PROJECT_NAME} [options]' there.")
 
+# Copy library files to a lib sub-directory
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+
 # search for libraries
 if (WITH_ZLIB)
     find_package(ZLIB REQUIRED)
@@ -116,11 +119,22 @@ install(
 )
 endif (UNIX)
 
-# cmake config files
+# CMake config files
+include(CMakePackageConfigHelpers)
+
 set(LIBSSH_LIBRARY_NAME ${CMAKE_SHARED_LIBRARY_PREFIX}ssh${CMAKE_SHARED_LIBRARY_SUFFIX})
 
-configure_file(${PROJECT_NAME}-config.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake @ONLY)
-configure_file(${PROJECT_NAME}-config-version.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake @ONLY)
+# libssh-config-version.cmake
+write_basic_package_version_file(libssh-config-version.cmake
+                                 VERSION ${PROJECT_VERSION}
+                                 COMPATIBILITY SameMajorVersion)
+
+# libssh-config.cmake
+configure_package_config_file(${PROJECT_NAME}-config.cmake.in
+                              ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake
+                              INSTALL_DESTINATION ${CMAKE_INSTALL_DIR}/${PROJECT_NAME}
+                              PATH_VARS INCLUDE_INSTALL_DIR LIB_INSTALL_DIR)
+
 install(
     FILES
         ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake
@@ -130,10 +144,6 @@ install(
     COMPONENT
         devel
 )
-
-
-# in tree build settings
-configure_file(libssh-build-tree-settings.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/libssh-build-tree-settings.cmake @ONLY)
 
 if (WITH_EXAMPLES)
     add_subdirectory(examples)
