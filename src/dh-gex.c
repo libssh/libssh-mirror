@@ -85,7 +85,7 @@ int ssh_client_dhgex_init(ssh_session session)
     }
     return rc;
 error:
-    ssh_dh_cleanup(session);
+    ssh_dh_cleanup(session->next_crypto);
     return SSH_ERROR;
 }
 
@@ -201,7 +201,7 @@ error:
     if(!bignum_ctx_invalid(ctx)) {
         bignum_ctx_free(ctx);
     }
-    ssh_dh_cleanup(session);
+    ssh_dh_cleanup(session->next_crypto);
     session->session_state = SSH_SESSION_STATE_ERROR;
 
     return SSH_PACKET_USED;
@@ -252,7 +252,7 @@ static SSH_PACKET_CALLBACK(ssh_packet_client_dhgex_reply)
 
     return SSH_PACKET_USED;
 error:
-    ssh_dh_cleanup(session);
+    ssh_dh_cleanup(session->next_crypto);
     session->session_state = SSH_SESSION_STATE_ERROR;
 
     return SSH_PACKET_USED;

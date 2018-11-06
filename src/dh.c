@@ -357,8 +357,7 @@ int ssh_dh_init_common(ssh_session session){
     }
 }
 
-void ssh_dh_cleanup(ssh_session session){
-    struct ssh_crypto_struct *crypto=session->next_crypto;
+void ssh_dh_cleanup(struct ssh_crypto_struct *crypto){
     bignum_safe_free(crypto->x);
     bignum_safe_free(crypto->y);
     bignum_safe_free(crypto->e);
@@ -521,7 +520,7 @@ int ssh_client_dh_init(ssh_session session){
   rc = ssh_packet_send(session);
   return rc;
 error:
-  ssh_dh_cleanup(session);
+  ssh_dh_cleanup(session->next_crypto);
   return SSH_ERROR;
 }
 
@@ -566,7 +565,7 @@ SSH_PACKET_CALLBACK(ssh_packet_client_dh_reply){
   session->dh_handshake_state = DH_STATE_NEWKEYS_SENT;
   return SSH_PACKET_USED;
 error:
-  ssh_dh_cleanup(session);
+  ssh_dh_cleanup(session->next_crypto);
   session->session_state=SSH_SESSION_STATE_ERROR;
   return SSH_PACKET_USED;
 }
@@ -689,15 +688,14 @@ static SSH_PACKET_CALLBACK(ssh_packet_server_dh_init)
     }
     SSH_LOG(SSH_LOG_PACKET, "SSH_MSG_NEWKEYS sent");
     session->dh_handshake_state = DH_STATE_NEWKEYS_SENT;
-    ssh_dh_cleanup(session);
     return SSH_PACKET_USED;
 error:
-    ssh_dh_cleanup(session);
     if (!bignum_ctx_invalid(ctx)) {
         bignum_ctx_free(ctx);
     }
 
     session->session_state = SSH_SESSION_STATE_ERROR;
+    ssh_dh_cleanup(session->next_crypto);
     return SSH_PACKET_USED;
 }
 
