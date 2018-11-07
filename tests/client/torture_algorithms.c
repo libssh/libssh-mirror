@@ -90,9 +90,6 @@ static void test_algorithm(ssh_session session,
     };
     unsigned int i;
 
-    int verbosity = torture_libssh_verbosity();
-    ssh_options_set(session, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
-
     if (kex != NULL) {
         rc = ssh_options_set(session, SSH_OPTIONS_KEY_EXCHANGE, kex);
         assert_ssh_return_code(session, rc);
