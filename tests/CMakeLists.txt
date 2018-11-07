@@ -148,6 +148,7 @@ endif (WITH_BENCHMARKS)
 
 if (WITH_SERVER AND SERVER_TESTING)
     add_subdirectory(pkd)
+    add_subdirectory(server)
 endif (WITH_SERVER AND SERVER_TESTING)
 
 if (FUZZ_TESTING)
