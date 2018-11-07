@@ -428,9 +428,10 @@ out:
     return is_wrong;
 }
 
-SSH_PACKET_CALLBACK(ssh_packet_kexinit){
+SSH_PACKET_CALLBACK(ssh_packet_kexinit)
+{
     int i, ok;
-    int server_kex=session->server;
+    int server_kex = session->server;
     ssh_string str = NULL;
     char *strings[KEX_METHODS_SIZE] = {0};
     int rc = SSH_ERROR;
@@ -441,9 +442,9 @@ SSH_PACKET_CALLBACK(ssh_packet_kexinit){
     (void)type;
     (void)user;
 
-    if (session->session_state == SSH_SESSION_STATE_AUTHENTICATED){
+    if (session->session_state == SSH_SESSION_STATE_AUTHENTICATED) {
         SSH_LOG(SSH_LOG_WARNING, "Other side initiating key re-exchange");
-    } else if(session->session_state != SSH_SESSION_STATE_INITIAL_KEX){
+    } else if (session->session_state != SSH_SESSION_STATE_INITIAL_KEX) {
         ssh_set_error(session,SSH_FATAL,"SSH_KEXINIT received in wrong state");
         goto error;
     }

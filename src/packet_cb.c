@@ -250,10 +250,10 @@ SSH_PACKET_CALLBACK(ssh_packet_newkeys){
   }
   session->dh_handshake_state = DH_STATE_FINISHED;
   session->ssh_connection_callback(session);
-	return SSH_PACKET_USED;
+  return SSH_PACKET_USED;
 error:
-	session->session_state=SSH_SESSION_STATE_ERROR;
-	return SSH_PACKET_USED;
+  session->session_state = SSH_SESSION_STATE_ERROR;
+  return SSH_PACKET_USED;
 }
 
 /**

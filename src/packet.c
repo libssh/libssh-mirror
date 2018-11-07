@@ -953,8 +953,8 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
     size_t processed = 0; /* number of byte processed from the callback */
     enum ssh_packet_filter_result_e filter_result;
 
-    if(session->current_crypto != NULL) {
-      current_macsize = hmac_digest_len(session->current_crypto->in_hmac);
+    if (session->current_crypto != NULL) {
+        current_macsize = hmac_digest_len(session->current_crypto->in_hmac);
     }
     if (lenfield_blocksize == 0) {
         lenfield_blocksize = blocksize;

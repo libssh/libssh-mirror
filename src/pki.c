@@ -2206,8 +2206,9 @@ ssh_string ssh_srv_pki_do_sign_sessionid(ssh_session session,
     if (session == NULL || privkey == NULL || !ssh_key_is_private(privkey)) {
         return NULL;
     }
+
     crypto = session->next_crypto ? session->next_crypto :
-                                       session->current_crypto;
+                                    session->current_crypto;
 
     if (crypto->secret_hash == NULL){
         ssh_set_error(session,SSH_FATAL,"Missing secret_hash");
