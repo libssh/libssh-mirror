@@ -164,6 +164,11 @@ struct ssh_cipher_struct {
     struct chacha20_poly1305_keysched *chacha20_schedule;
     unsigned int keysize; /* bytes of key used. != keylen */
     size_t tag_size; /* overhead required for tag */
+    /* Counters for rekeying initialization */
+    uint32_t packets;
+    uint64_t blocks;
+    /* Rekeying limit for the cipher or manually enforced */
+    uint64_t max_blocks;
     /* sets the new key for immediate use */
     int (*set_encrypt_key)(struct ssh_cipher_struct *cipher, void *key, void *IV);
     int (*set_decrypt_key)(struct ssh_cipher_struct *cipher, void *key, void *IV);

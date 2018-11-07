@@ -1151,6 +1151,13 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
 #endif /* WITH_ZLIB */
             payloadsize = ssh_buffer_get_len(session->in_buffer);
             session->recv_seq++;
+            if (session->current_crypto != NULL) {
+                struct ssh_cipher_struct *cipher = NULL;
+
+                cipher = session->current_crypto->in_cipher;
+                cipher->packets++;
+                cipher->blocks += payloadsize / cipher->blocksize;
+            }
             if (session->raw_counter != NULL) {
                 session->raw_counter->in_bytes += payloadsize;
                 session->raw_counter->in_packets++;
@@ -1486,6 +1493,13 @@ static int packet_send2(ssh_session session)
 
     rc = ssh_packet_write(session);
     session->send_seq++;
+    if (session->current_crypto != NULL) {
+        struct ssh_cipher_struct *cipher = NULL;
+
+        cipher = session->current_crypto->out_cipher;
+        cipher->packets++;
+        cipher->blocks += payloadsize / cipher->blocksize;
+    }
     if (session->raw_counter != NULL) {
         session->raw_counter->out_bytes += payloadsize;
         session->raw_counter->out_packets++;
@@ -1503,7 +1517,6 @@ static int packet_send2(ssh_session session)
 error:
     return rc; /* SSH_OK, AGAIN or ERROR */
 }
-
 
 int ssh_packet_send(ssh_session session) {
     return packet_send2(session);

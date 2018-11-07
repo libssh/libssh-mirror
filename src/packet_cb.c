@@ -136,6 +136,33 @@ error:
   return SSH_PACKET_USED;
 }
 
+static void
+ssh_init_rekey_state(struct ssh_session_struct *session,
+                     struct ssh_cipher_struct *cipher)
+{
+    /* Reset the counters: should be NOOP */
+    cipher->packets = 0;
+    cipher->blocks = 0;
+
+    /* Default rekey limits for ciphers as specified in RFC4344, Section 3.2 */
+    if (cipher->blocksize >= 16) {
+        /* For larger block size (L bits) use maximum of 2**(L/4) blocks */
+        cipher->max_blocks = (uint64_t)1 << (cipher->blocksize*2);
+    } else {
+        /* For smaller blocks use limit of 1 GB as recommended in RFC4253 */
+        cipher->max_blocks = ((uint64_t)1 << 30) / cipher->blocksize;
+    }
+    /* If we have limit provided by user, use the smaller one */
+    if (session->opts.rekey_data != 0) {
+        cipher->max_blocks = MIN(cipher->max_blocks,
+                                 session->opts.rekey_data / cipher->blocksize);
+    }
+
+    SSH_LOG(SSH_LOG_PROTOCOL,
+            "Set rekey after %" PRIu64 " blocks",
+            cipher->max_blocks);
+}
+
 SSH_PACKET_CALLBACK(ssh_packet_newkeys){
   ssh_string sig_blob = NULL;
   ssh_signature sig = NULL;
@@ -233,6 +260,17 @@ SSH_PACKET_CALLBACK(ssh_packet_newkeys){
 
     /* FIXME later, include a function to change keys */
     session->current_crypto = session->next_crypto;
+
+    /* Initialize rekeying states */
+    ssh_init_rekey_state(session,
+                         session->current_crypto->out_cipher);
+    ssh_init_rekey_state(session,
+                         session->current_crypto->in_cipher);
+    if (session->opts.rekey_time != 0) {
+        ssh_timestamp_init(&session->last_rekey_time);
+        SSH_LOG(SSH_LOG_PROTOCOL, "Set rekey after %" PRIu32 " seconds",
+                session->opts.rekey_time/1000);
+    }
 
     session->next_crypto = crypto_new();
     if (session->next_crypto == NULL) {

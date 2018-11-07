@@ -30,6 +30,7 @@
 #include "libssh/channels.h"
 #include "libssh/poll.h"
 #include "libssh/config.h"
+#include "libssh/misc.h"
 
 /* These are the different states a SSH session can be into its life */
 enum ssh_session_state_e {
@@ -113,6 +114,7 @@ struct ssh_session_struct {
     int openssh;
     uint32_t send_seq;
     uint32_t recv_seq;
+    struct ssh_timestamp last_rekey_time;
 
     int connected;
     /* !=0 when the user got a session handle */
