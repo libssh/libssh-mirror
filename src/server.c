@@ -226,6 +226,7 @@ SSH_PACKET_CALLBACK(ssh_packet_kexdh_init){
 
     return SSH_PACKET_USED;
   }
+  SSH_LOG(SSH_LOG_DEBUG, "Calling next KEXDH handler");
   return SSH_PACKET_NOT_USED;
 }
 

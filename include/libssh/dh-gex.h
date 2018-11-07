@@ -23,11 +23,6 @@
 #ifndef SRC_DH_GEX_H_
 #define SRC_DH_GEX_H_
 
-/* Minimum, recommanded and maximum size of DH group */
-#define DH_PMIN 2048
-#define DH_PREQ 2048
-#define DH_PMAX 8192
-
 int ssh_client_dhgex_init(ssh_session session);
 
 #ifdef WITH_SERVER

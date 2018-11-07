@@ -37,6 +37,11 @@
 #include "libssh/buffer.h"
 #include "libssh/session.h"
 
+/* Minimum, recommanded and maximum size of DH group */
+#define DH_PMIN 2048
+#define DH_PREQ 2048
+#define DH_PMAX 8192
+
 static SSH_PACKET_CALLBACK(ssh_packet_client_dhgex_group);
 static SSH_PACKET_CALLBACK(ssh_packet_client_dhgex_reply);
 
@@ -65,13 +70,16 @@ int ssh_client_dhgex_init(ssh_session session)
         goto error;
     }
 
+    session->next_crypto->dh_pmin = DH_PMIN;
+    session->next_crypto->dh_pn = DH_PREQ;
+    session->next_crypto->dh_pmax = DH_PMAX;
     /* Minimum group size, preferred group size, maximum group size */
     rc = ssh_buffer_pack(session->out_buffer,
                          "bddd",
                          SSH2_MSG_KEX_DH_GEX_REQUEST,
-                         DH_PMIN,
-                         DH_PREQ,
-                         DH_PMAX);
+                         session->next_crypto->dh_pmin,
+                         session->next_crypto->dh_pn,
+                         session->next_crypto->dh_pmax);
     if (rc != SSH_OK) {
         goto error;
     }
@@ -99,6 +107,8 @@ SSH_PACKET_CALLBACK(ssh_packet_client_dhgex_group)
     int blen;
     bignum pmin1 = NULL, one = NULL;
     bignum_CTX ctx = bignum_ctx_new();
+    (void) type;
+    (void) user;
 
     SSH_LOG(SSH_LOG_PROTOCOL, "SSH_MSG_KEX_DH_GEX_GROUP received");
 
@@ -440,19 +450,12 @@ static int ssh_retrieve_dhgroup_file(FILE *moduli,
  * @param[out] g generator
  * @return SSH_OK on success, SSH_ERROR otherwise.
  */
-/* TODO Make this function static when only used in this file */
-int ssh_retrieve_dhgroup(uint32_t pmin,
-                         uint32_t pn,
-                         uint32_t pmax,
-                         size_t *size,
-                         bignum *p,
-                         bignum *g);
-int ssh_retrieve_dhgroup(uint32_t pmin,
-                         uint32_t pn,
-                         uint32_t pmax,
-                         size_t *size,
-                         bignum *p,
-                         bignum *g)
+static int ssh_retrieve_dhgroup(uint32_t pmin,
+                                uint32_t pn,
+                                uint32_t pmax,
+                                size_t *size,
+                                bignum *p,
+                                bignum *g)
 {
     FILE *moduli = NULL;
     char *generator = NULL;
@@ -501,6 +504,132 @@ error:
     SAFE_FREE(modulus);
 
     return SSH_ERROR;
+}
+
+static SSH_PACKET_CALLBACK(ssh_packet_server_dhgex_request);
+static SSH_PACKET_CALLBACK(ssh_packet_server_dhgex_init);
+
+static ssh_packet_callback dhgex_server_callbacks[]= {
+    NULL, /* SSH_MSG_KEX_DH_GEX_REQUEST_OLD */
+    NULL, /* SSH_MSG_KEX_DH_GEX_GROUP */
+    ssh_packet_server_dhgex_init,   /* SSH_MSG_KEX_DH_GEX_INIT */
+    NULL,                           /* SSH_MSG_KEX_DH_GEX_REPLY */
+    ssh_packet_server_dhgex_request /* SSH_MSG_GEX_DH_GEX_REQUEST */
+
+};
+
+static struct ssh_packet_callbacks_struct ssh_dhgex_server_callbacks = {
+    .start = SSH2_MSG_KEX_DH_GEX_REQUEST_OLD,
+    .n_callbacks = 5,
+    .callbacks = dhgex_server_callbacks,
+    .user = NULL
+};
+
+/** @internal
+ * @brief sets up the diffie-hellman-groupx kex callbacks
+ */
+void ssh_server_dhgex_init(ssh_session session){
+    /* register the packet callbacks */
+    ssh_packet_set_callbacks(session, &ssh_dhgex_server_callbacks);
+    ssh_dh_init_common(session);
+    session->dh_handshake_state = DH_STATE_INIT;
+}
+
+static SSH_PACKET_CALLBACK(ssh_packet_server_dhgex_request)
+{
+    uint32_t pmin, pn, pmax;
+    size_t size = 0;
+    int rc;
+
+    (void) type;
+    (void) user;
+
+    if (session->dh_handshake_state != DH_STATE_INIT) {
+        ssh_set_error(session,
+                      SSH_FATAL,
+                      "Received DH_GEX_REQUEST in invalid state");
+        goto error;
+    }
+
+    rc = ssh_dh_init_common(session);
+    if (rc != SSH_OK){
+        ssh_set_error_oom(session);
+        goto error;
+    }
+
+    /* Minimum group size, preferred group size, maximum group size */
+    rc = ssh_buffer_unpack(packet, "ddd", &pmin, &pn, &pmax);
+    if (rc != SSH_OK){
+        ssh_set_error_invalid(session);
+        goto error;
+    }
+    SSH_LOG(SSH_LOG_INFO, "dh-gex: DHGEX_REQUEST[%u:%u:%u]", pmin, pn, pmax);
+
+    if (pmin > pn || pn > pmax || pn > DH_PMAX || pmax < DH_PMIN) {
+        ssh_set_error(session,
+                      SSH_FATAL,
+                      "Invalid dh-gex arguments [%u:%u:%u]",
+                      pmin,
+                      pn,
+                      pmax);
+        goto error;
+    }
+    session->next_crypto->dh_pmin = pmin;
+    session->next_crypto->dh_pn = pn;
+    session->next_crypto->dh_pmax = pmax;
+
+    /* ensure safe parameters */
+    if (pmin < DH_PMIN) {
+        pmin = DH_PMIN;
+        if (pn < pmin) {
+            pn = pmin;
+        }
+    }
+    rc = ssh_retrieve_dhgroup(pmin,
+                              pn,
+                              pmax,
+                              &size,
+                              &session->next_crypto->p,
+                              &session->next_crypto->g);
+    if (rc == SSH_ERROR) {
+        ssh_set_error(session,
+                      SSH_FATAL,
+                      "Couldn't find DH group for [%u:%u:%u]",
+                      pmin,
+                      pn,
+                      pmax);
+        goto error;
+    }
+    session->next_crypto->dh_group_is_mutable = 1;
+    rc = ssh_buffer_pack(session->out_buffer,
+                         "bBB",
+                         SSH2_MSG_KEX_DH_GEX_GROUP,
+                         session->next_crypto->p,
+                         session->next_crypto->g);
+    if (rc != SSH_OK) {
+        ssh_set_error_invalid(session);
+        goto error;
+    }
+
+    session->dh_handshake_state = DH_STATE_GROUP_SENT;
+
+    rc = ssh_packet_send(session);
+error:
+
+    return SSH_PACKET_USED;
+}
+
+/** @internal
+ * @brief parse an incoming SSH_MSG_KEX_DH_GEX_INIT packet and complete
+ *        Diffie-Hellman key exchange
+ **/
+static SSH_PACKET_CALLBACK(ssh_packet_server_dhgex_init){
+    (void) type;
+    (void) user;
+    SSH_LOG(SSH_LOG_DEBUG, "Received SSH_MSG_KEX_DHGEX_INIT");
+    ssh_packet_remove_callbacks(session, &ssh_dhgex_server_callbacks);
+    ssh_server_dh_process_init(session, packet);
+    return SSH_PACKET_USED;
 }
 
 #endif /* WITH_SERVER */

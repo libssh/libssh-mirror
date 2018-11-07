@@ -1095,7 +1095,9 @@ int ssh_make_sessionid(ssh_session session)
     case SSH_KEX_DH_GEX_SHA256:
         rc = ssh_buffer_pack(buf,
                     "dddBBBB",
-                    DH_PMIN, DH_PREQ, DH_PMAX,
+                    session->next_crypto->dh_pmin,
+                    session->next_crypto->dh_pn,
+                    session->next_crypto->dh_pmax,
                     session->next_crypto->p,
                     session->next_crypto->g,
                     session->next_crypto->e,

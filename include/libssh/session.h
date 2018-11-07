@@ -49,6 +49,7 @@ enum ssh_session_state_e {
 
 enum ssh_dh_state_e {
   DH_STATE_INIT=0,
+  DH_STATE_GROUP_SENT,
   DH_STATE_REQUEST_SENT,
   DH_STATE_INIT_SENT,
   DH_STATE_NEWKEYS_SENT,

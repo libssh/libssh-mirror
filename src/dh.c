@@ -596,24 +596,21 @@ void ssh_server_dh_init(ssh_session session){
 }
 
 /** @internal
- * @brief processes a SSH_MSG_KEXDH_INIT or SSH_MSG_KEX_DH_GEX_INIT packet and send
+ * @brief processes a SSH_MSG_KEXDH_INIT or SSH_MSG_KEX_DH_GEX_INIT packet and sends
  * the appropriate SSH_MSG_KEXDH_REPLY or SSH_MSG_KEX_DH_GEX_REPLY
  */
-static SSH_PACKET_CALLBACK(ssh_packet_server_dh_init)
+int ssh_server_dh_process_init(ssh_session session, ssh_buffer packet)
 {
     ssh_key privkey = NULL;
     ssh_string sig_blob = NULL;
     ssh_string pubkey_blob = NULL;
     bignum_CTX ctx = bignum_ctx_new();
+    int packet_type;
     int rc;
-    (void)type;
-    (void)user;
 
     if (bignum_ctx_invalid(ctx)) {
         goto error;
     }
-    ssh_packet_remove_callbacks(session, &ssh_dh_server_callbacks);
-
     rc = ssh_buffer_unpack(packet, "B", &session->next_crypto->e);
     if (rc == SSH_ERROR) {
         ssh_set_error(session, SSH_FATAL, "No e number in client request");
@@ -658,6 +655,22 @@ static SSH_PACKET_CALLBACK(ssh_packet_server_dh_init)
         ssh_set_error(session, SSH_FATAL, "Could not sign the session id");
         goto error;
     }
+    switch (session->next_crypto->kex_type){
+    case SSH_KEX_DH_GROUP1_SHA1:
+    case SSH_KEX_DH_GROUP14_SHA1:
+    case SSH_KEX_DH_GROUP16_SHA512:
+    case SSH_KEX_DH_GROUP18_SHA512:
+        packet_type = SSH2_MSG_KEXDH_REPLY;
+        break;
+    case SSH_KEX_DH_GEX_SHA1:
+    case SSH_KEX_DH_GEX_SHA256:
+        packet_type = SSH2_MSG_KEX_DH_GEX_REPLY;
+        break;
+    default:
+        ssh_set_error(session, SSH_FATAL, "Invalid kex type");
+        goto error;
+    }
+   
     rc = ssh_dh_get_next_server_publickey_blob(session, &pubkey_blob);
     if (rc != SSH_OK){
         ssh_set_error_oom(session);
@@ -665,7 +678,7 @@ static SSH_PACKET_CALLBACK(ssh_packet_server_dh_init)
     }
     rc = ssh_buffer_pack(session->out_buffer,
                          "bSBS",
-                         SSH2_MSG_KEXDH_REPLY,
+                         packet_type,
                          pubkey_blob,
                          session->next_crypto->f,
                          sig_blob);
@@ -679,16 +692,19 @@ static SSH_PACKET_CALLBACK(ssh_packet_server_dh_init)
     if (rc == SSH_ERROR) {
         goto error;
     }
+    SSH_LOG(SSH_LOG_DEBUG, "Sent KEX_DH_[GEX]_REPLY");
+
     if (ssh_buffer_add_u8(session->out_buffer, SSH2_MSG_NEWKEYS) < 0) {
         ssh_buffer_reinit(session->out_buffer);
         goto error;
     }
+    session->dh_handshake_state=DH_STATE_NEWKEYS_SENT;
     if (ssh_packet_send(session) == SSH_ERROR) {
         goto error;
     }
     SSH_LOG(SSH_LOG_PACKET, "SSH_MSG_NEWKEYS sent");
-    session->dh_handshake_state = DH_STATE_NEWKEYS_SENT;
-    return SSH_PACKET_USED;
+
+    return SSH_OK;
 error:
     if (!bignum_ctx_invalid(ctx)) {
         bignum_ctx_free(ctx);
@@ -696,6 +712,19 @@ error:
 
     session->session_state = SSH_SESSION_STATE_ERROR;
     ssh_dh_cleanup(session->next_crypto);
+    return SSH_ERROR;
+}
+
+/** @internal
+ * @brief parse an incoming SSH_MSG_KEXDH_INIT packet and complete
+ *        Diffie-Hellman key exchange
+ **/
+static SSH_PACKET_CALLBACK(ssh_packet_server_dh_init){
+    (void)type;
+    (void)user;
+    SSH_LOG(SSH_LOG_DEBUG, "Received SSH_MSG_KEXDH_INIT");
+    ssh_packet_remove_callbacks(session, &ssh_dh_server_callbacks);
+    ssh_server_dh_process_init(session, packet);
     return SSH_PACKET_USED;
 }
 

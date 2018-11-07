@@ -98,6 +98,7 @@ struct ssh_crypto_struct {
     bignum e,f,x,k,y;
     bignum g, p;
     int dh_group_is_mutable; /* do free group parameters */
+    size_t dh_pmin; int dh_pn; int dh_pmax; /* preferred group parameters */
 #ifdef HAVE_ECDH
 #ifdef HAVE_OPENSSL_ECC
     EC_KEY *ecdh_privkey;

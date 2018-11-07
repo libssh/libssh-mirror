@@ -49,6 +49,7 @@
 #include "libssh/pki.h"
 #include "libssh/poly1305.h"
 #include "libssh/dh.h"
+#include "libssh/dh-gex.h"
 #include "libssh/ecdh.h"
 #include "libssh/curve25519.h"
 
@@ -537,6 +538,10 @@ int crypt_set_algorithms_server(ssh_session session){
     case SSH_KEX_DH_GROUP16_SHA512:
     case SSH_KEX_DH_GROUP18_SHA512:
       ssh_server_dh_init(session);
+      break;
+    case SSH_KEX_DH_GEX_SHA1:
+    case SSH_KEX_DH_GEX_SHA256:
+      ssh_server_dhgex_init(session);
       break;
 #ifdef HAVE_ECDH
     case SSH_KEX_ECDH_SHA2_NISTP256:
