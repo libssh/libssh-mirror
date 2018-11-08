@@ -883,6 +883,9 @@ ssh_session_get_known_hosts_entry(ssh_session session,
 
     /* If we did not find any match at all:  we report the previous result */
     if (rv == SSH_KNOWN_HOSTS_UNKNOWN) {
+        if (session->opts.StrictHostKeyChecking == 0) {
+            return SSH_KNOWN_HOSTS_OK;
+        }
         return old_rv;
     }
 
