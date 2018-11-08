@@ -516,7 +516,7 @@ int pki_key_generate_rsa(ssh_key key, int parameter){
 
 int pki_key_generate_dss(ssh_key key, int parameter){
     int rc;
-#if OPENSSL_VERSION_NUMBER > 0x10100000L
+#if OPENSSL_VERSION_NUMBER > 0x00908000L
     key->dsa = DSA_new();
     if (key->dsa == NULL) {
         return SSH_ERROR;

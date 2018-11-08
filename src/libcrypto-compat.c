@@ -10,8 +10,11 @@
 #include "config.h"
 
 #include <string.h>
-#include <openssl/engine.h>
 #include "libcrypto-compat.h"
+
+#ifndef OPENSSL_NO_ENGINE
+#include <openssl/engine.h>
+#endif
 
 static void *OPENSSL_zalloc(size_t num)
 {
