@@ -274,13 +274,14 @@ static enum ssh_digest_e ssh_key_hash_from_name(const char *name)
     /* we do not care for others now */
     return SSH_DIGEST_AUTO;
 }
+
 /**
  * @brief Checks the given key against the configured allowed
  * public key algorithm types
  *
  * @param[in] session The SSH session
- * @parma[in] type    The key algorithm to check
- * @returns           1 if the key algorithm is allowed 0 otherwise
+ * @param[in] type    The key algorithm to check
+ * @returns           1 if the key algorithm is allowed, 0 otherwise
  */
 int ssh_key_algorithm_allowed(ssh_session session, const char *type)
 {
