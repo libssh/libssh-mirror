@@ -116,6 +116,14 @@ void crypto_thread_finalize(void)
         return;
     }
 
+#ifdef HAVE_OPENSSL_CRYPTO_THREADID_SET_CALLBACK
+    CRYPTO_THREADID_set_callback(NULL);
+#else
+    CRYPTO_set_id_callback(NULL);
+#endif
+
+    CRYPTO_set_locking_callback(NULL);
+
     for (i = 0; i < n; ++i) {
             user_callbacks->mutex_destroy(&libcrypto_mutexes[i]);
     }
