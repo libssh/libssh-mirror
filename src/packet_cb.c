@@ -198,7 +198,7 @@ SSH_PACKET_CALLBACK(ssh_packet_newkeys){
                           "preference (%s)",
                           server_key->type_c,
                           session->opts.wanted_methods[SSH_HOSTKEYS]);
-            return -1;
+            goto error;
         }
     }
 
