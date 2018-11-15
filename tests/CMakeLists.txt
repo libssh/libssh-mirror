@@ -84,7 +84,7 @@ if (CLIENT_TESTING)
 
     # chroot_wrapper
     add_library(chroot_wrapper SHARED chroot_wrapper.c)
-    set(CHROOT_WRAPPER_LIBRARY ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}chroot_wrapper${CMAKE_SHARED_LIBRARY_SUFFIX})
+    set(CHROOT_WRAPPER_LIBRARY ${libssh_BINARY_DIR}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}chroot_wrapper${CMAKE_SHARED_LIBRARY_SUFFIX})
     set(TEST_TARGET_LIBRARIES
         ${TEST_TARGET_LIBRARIES}
         chroot_wrapper
