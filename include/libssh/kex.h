@@ -46,5 +46,7 @@ const char *ssh_kex_get_supported_method(uint32_t algo);
 const char *ssh_kex_get_default_methods(uint32_t algo);
 const char *ssh_kex_get_description(uint32_t algo);
 char *ssh_client_select_hostkeys(ssh_session session);
+int ssh_send_rekex(ssh_session session);
+int server_set_kex(ssh_session session);
 
 #endif /* KEX_H_ */

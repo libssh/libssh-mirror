@@ -135,6 +135,8 @@ struct ssh_session_struct {
     ssh_buffer in_buffer;
     PACKET in_packet;
     ssh_buffer out_buffer;
+    struct ssh_list *out_queue; /* This list is used for delaying packets
+                                   when rekeying is required */
 
     /* the states are used by the nonblocking stuff to remember */
     /* where it was before being interrupted */

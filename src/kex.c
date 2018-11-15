@@ -444,7 +444,7 @@ SSH_PACKET_CALLBACK(ssh_packet_kexinit)
     (void)user;
 
     if (session->session_state == SSH_SESSION_STATE_AUTHENTICATED) {
-        SSH_LOG(SSH_LOG_WARNING, "Other side initiating key re-exchange");
+        SSH_LOG(SSH_LOG_INFO, "Initiating key re-exchange");
     } else if (session->session_state != SSH_SESSION_STATE_INITIAL_KEX) {
         ssh_set_error(session,SSH_FATAL,"SSH_KEXINIT received in wrong state");
         goto error;
@@ -564,6 +564,7 @@ SSH_PACKET_CALLBACK(ssh_packet_kexinit)
         }
     }
 
+    /* Note, that his overwrites authenticated state in case of rekeying */
     session->session_state = SSH_SESSION_STATE_KEXINIT_RECEIVED;
     session->dh_handshake_state = DH_STATE_INIT;
     session->ssh_connection_callback(session);
@@ -880,6 +881,7 @@ int ssh_send_kex(ssh_session session, int server_kex) {
     return -1;
   }
 
+  SSH_LOG(SSH_LOG_PACKET, "SSH_MSG_KEXINIT sent");
   return 0;
 error:
   ssh_buffer_reinit(session->out_buffer);
@@ -887,6 +889,57 @@ error:
   ssh_string_free(str);
 
   return -1;
+}
+
+/*
+ * Key re-exchange (rekey) is triggered by this function.
+ * It can not be called again after the rekey is initialized!
+ */
+int ssh_send_rekex(ssh_session session)
+{
+    int rc;
+
+    if (session->dh_handshake_state != DH_STATE_FINISHED) {
+        /* Rekey/Key exchange is already in progress */
+        SSH_LOG(SSH_LOG_PACKET, "Attempting rekey in bad state");
+        return SSH_ERROR;
+    }
+
+    if (session->current_crypto == NULL) {
+        /* No current crypto used -- can not exchange it */
+        SSH_LOG(SSH_LOG_PACKET, "No crypto to rekey");
+        return SSH_ERROR;
+    }
+
+    if (session->client) {
+        rc = ssh_set_client_kex(session);
+        if (rc != SSH_OK) {
+            SSH_LOG(SSH_LOG_PACKET, "Failed to set client kex");
+            return rc;
+        }
+    } else {
+#ifdef WITH_SERVER
+        rc = server_set_kex(session);
+        if (rc == SSH_ERROR) {
+            SSH_LOG(SSH_LOG_PACKET, "Failed to set server kex");
+            return rc;
+        }
+#else
+        SSH_LOG(SSH_LOG_PACKET, "Invalid session state.");
+        return SSH_ERROR;
+#endif /* WITH_SERVER */
+    }
+
+    session->dh_handshake_state = DH_STATE_INIT;
+    rc = ssh_send_kex(session, session->server);
+    if (rc < 0) {
+        SSH_LOG(SSH_LOG_PACKET, "Failed to send kex");
+        return rc;
+    }
+
+    /* Reset the handshake state */
+    session->dh_handshake_state = DH_STATE_INIT_SENT;
+    return SSH_OK;
 }
 
 /* returns 1 if at least one of the name algos is in the default algorithms table */

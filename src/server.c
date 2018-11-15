@@ -82,7 +82,8 @@ static int dh_handshake_server(ssh_session session);
  * options that are currently set in the given ssh_session structure.
  */
 
-static int server_set_kex(ssh_session session) {
+int server_set_kex(ssh_session session)
+{
   struct ssh_kex_struct *server = &session->next_crypto->server_kex;
   int i, j, rc;
   const char *wanted;

@@ -954,6 +954,65 @@ ssh_packet_get_current_crypto(ssh_session session,
     return NULL;
 }
 
+#define MAX_PACKETS    (1UL<<31)
+
+static bool ssh_packet_need_rekey(ssh_session session,
+                                  const uint32_t payloadsize)
+{
+    struct ssh_crypto_struct *crypto = NULL;
+    struct ssh_cipher_struct *out_cipher = NULL, *in_cipher = NULL;
+    uint32_t next_blocks;
+
+    /* We can safely rekey only in authenticated state */
+    if ((session->flags & SSH_SESSION_FLAG_AUTHENTICATED) == 0) {
+        return false;
+    }
+
+    /* Do not rekey if the rekey/key-exchange is in progress */
+    if (session->dh_handshake_state != DH_STATE_FINISHED) {
+        return false;
+    }
+
+    crypto = ssh_packet_get_current_crypto(session, SSH_DIRECTION_BOTH);
+    if (crypto == NULL) {
+        return false;
+    }
+
+    out_cipher = crypto->out_cipher;
+    in_cipher = crypto->in_cipher;
+
+    /* Make sure we can send at least something for very small limits */
+    if ((out_cipher->packets == 0) && (in_cipher->packets == 0)) {
+        return false;
+    }
+
+    /* Time based rekeying */
+    if (session->opts.rekey_time != 0 &&
+        ssh_timeout_elapsed(&session->last_rekey_time,
+                            session->opts.rekey_time)) {
+        return true;
+    }
+
+    /* RFC4344, Section 3.1 Recommends rekeying after 2^31 packets in either
+     * direction to avoid possible information leakage through the MAC tag
+     */
+    if (out_cipher->packets > MAX_PACKETS ||
+        in_cipher->packets > MAX_PACKETS) {
+        return true;
+    }
+
+    /* Data-based rekeying:
+     *  * For outgoing packets we can still delay them
+     *  * Incoming packets need to be processed anyway, but we can
+     *    signalize our intention to rekey
+     */
+    next_blocks = payloadsize / out_cipher->blocksize;
+    return (out_cipher->max_blocks != 0 &&
+        out_cipher->blocks + next_blocks > out_cipher->max_blocks) ||
+        (in_cipher->max_blocks != 0 &&
+        in_cipher->blocks + next_blocks > in_cipher->max_blocks);
+}
+
 /* in nonblocking mode, socket_read will read as much as it can, and return */
 /* SSH_OK if it has read at least len bytes, otherwise, SSH_AGAIN. */
 /* in blocking mode, it will read at least len bytes and will block until it's ok. */
@@ -984,6 +1043,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
     size_t processed = 0; /* number of byte processed from the callback */
     enum ssh_packet_filter_result_e filter_result;
     struct ssh_crypto_struct *crypto = NULL;
+    bool ok;
 
     crypto = ssh_packet_get_current_crypto(session, SSH_DIRECTION_IN);
     if (crypto != NULL) {
@@ -1230,6 +1290,16 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
 
                 rc = ssh_packet_socket_callback(ptr, receivedlen - processed,user);
                 processed += rc;
+            }
+
+            ok = ssh_packet_need_rekey(session, 0);
+            if (ok) {
+                SSH_LOG(SSH_LOG_PACKET, "Incoming packet triggered rekey");
+                rc = ssh_send_rekex(session);
+                if (rc != SSH_OK) {
+                    SSH_LOG(SSH_LOG_PACKET, "Rekey failed: rc = %d", rc);
+                    return rc;
+                }
             }
 
             return processed;
@@ -1565,8 +1635,109 @@ error:
     return rc; /* SSH_OK, AGAIN or ERROR */
 }
 
-int ssh_packet_send(ssh_session session) {
-    return packet_send2(session);
+static bool
+ssh_packet_is_kex(unsigned char type)
+{
+    return type >= SSH2_MSG_DISCONNECT &&
+           type <= SSH2_MSG_KEX_DH_GEX_REQUEST &&
+           type != SSH2_MSG_SERVICE_REQUEST &&
+           type != SSH2_MSG_SERVICE_ACCEPT &&
+           type != SSH2_MSG_IGNORE &&
+           type != SSH2_MSG_EXT_INFO;
+}
+
+static bool
+ssh_packet_in_rekey(ssh_session session)
+{
+    /* We know we are rekeying if we are authenticated and the DH
+     * status is not finished
+     */
+    return (session->flags & SSH_SESSION_FLAG_AUTHENTICATED) &&
+           (session->dh_handshake_state != DH_STATE_FINISHED);
+}
+
+int ssh_packet_send(ssh_session session)
+{
+    uint32_t payloadsize;
+    uint8_t type, *payload;
+    bool need_rekey, in_rekey;
+    int rc;
+
+    payloadsize = ssh_buffer_get_len(session->out_buffer);
+    if (payloadsize < 1) {
+        return SSH_ERROR;
+    }
+
+    payload = (uint8_t *)ssh_buffer_get(session->out_buffer);
+    type = payload[0]; /* type is the first byte of the packet now */
+    need_rekey = ssh_packet_need_rekey(session, payloadsize);
+    in_rekey = ssh_packet_in_rekey(session);
+
+    /* The rekey is triggered here. After that, only the key exchange
+     * packets can be sent, until we send our NEWKEYS.
+     */
+    if (need_rekey || (in_rekey && !ssh_packet_is_kex(type))) {
+        if (need_rekey) {
+            SSH_LOG(SSH_LOG_PACKET, "Outgoing packet triggered rekey");
+        }
+        /* Queue the current packet -- we will send it after the rekey */
+        SSH_LOG(SSH_LOG_PACKET, "Queuing packet type %d", type);
+        rc = ssh_list_append(session->out_queue, session->out_buffer);
+        if (rc != SSH_OK) {
+            return SSH_ERROR;
+        }
+        session->out_buffer = ssh_buffer_new();
+        if (session->out_buffer == NULL) {
+            ssh_set_error_oom(session);
+            return SSH_ERROR;
+        }
+
+        if (need_rekey) {
+            /* Send the KEXINIT packet instead.
+             * This recursivelly calls the packet_send(), but it should
+             * not get into rekeying again.
+             * After that we need to handle the key exchange responses
+             * up to the point where we can send the rest of the queue.
+             */
+            return ssh_send_rekex(session);
+        }
+        return SSH_OK;
+    }
+
+    /* Send the packet normally */
+    rc = packet_send2(session);
+
+    /* We finished the key exchange so we can try to send our queue now */
+    if (rc == SSH_OK && type == SSH2_MSG_NEWKEYS) {
+        struct ssh_iterator *it;
+
+        for (it = ssh_list_get_iterator(session->out_queue);
+             it != NULL;
+             it = ssh_list_get_iterator(session->out_queue)) {
+            struct ssh_buffer_struct *next_buffer = NULL;
+
+            /* Peek only -- do not remove from queue yet */
+            next_buffer = (struct ssh_buffer_struct *)it->data;
+            payloadsize = ssh_buffer_get_len(next_buffer);
+            if (ssh_packet_need_rekey(session, payloadsize)) {
+                /* Sigh ... we still can not send this packet. Repeat. */
+                SSH_LOG(SSH_LOG_PACKET, "Queued packet triggered rekey");
+                return ssh_send_rekex(session);
+            }
+            ssh_buffer_free(session->out_buffer);
+            session->out_buffer = ssh_list_pop_head(struct ssh_buffer_struct *,
+                                                    session->out_queue);
+            payload = (uint8_t *)ssh_buffer_get(session->out_buffer);
+            type = payload[0];
+            SSH_LOG(SSH_LOG_PACKET, "Dequeue packet type %d", type);
+            rc = packet_send2(session);
+            if (rc != SSH_OK) {
+                return rc;
+            }
+        }
+    }
+
+    return rc;
 }
 
 static void

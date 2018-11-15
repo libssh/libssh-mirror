@@ -85,6 +85,11 @@ ssh_session ssh_new(void) {
     goto err;
   }
 
+  session->out_queue = ssh_list_new();
+  if (session->out_queue == NULL) {
+    goto err;
+  }
+
   session->alive = 0;
   session->auth.supported_methods = 0;
   ssh_set_blocking(session, 1);
@@ -166,9 +171,11 @@ err:
  * @see ssh_disconnect()
  * @see ssh_new()
  */
-void ssh_free(ssh_session session) {
+void ssh_free(ssh_session session)
+{
   int i;
-  struct ssh_iterator *it;
+  struct ssh_iterator *it = NULL;
+  struct ssh_buffer_struct *b = NULL;
 
   if (session == NULL) {
     return;
@@ -261,6 +268,12 @@ void ssh_free(ssh_session session) {
       }
       ssh_list_free(session->opts.identity);
   }
+
+    while ((b = ssh_list_pop_head(struct ssh_buffer_struct *,
+                                  session->out_queue)) != NULL) {
+        ssh_buffer_free(b);
+    }
+    ssh_list_free(session->out_queue);
 
 #ifndef _WIN32
   ssh_agent_state_free (session->agent_state);
