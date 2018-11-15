@@ -292,6 +292,7 @@ static enum ssh_packet_filter_result_e ssh_packet_incoming_filter(ssh_session se
          * - session_state == SSH_SESSION_STATE_AUTHENTICATED
          *   or session_state == SSH_SESSION_STATE_INITIAL_KEX
          * - dh_handshake_state == DH_STATE_INIT
+         *   or dh_handshake_state == DH_STATE_INIT_SENT (re-exchange)
          *   or dh_handshake_state == DH_STATE_FINISHED (re-exchange)
          *
          * Transitions:
@@ -310,6 +311,7 @@ static enum ssh_packet_filter_result_e ssh_packet_incoming_filter(ssh_session se
         }
 
         if ((session->dh_handshake_state != DH_STATE_INIT) &&
+            (session->dh_handshake_state != DH_STATE_INIT_SENT) &&
             (session->dh_handshake_state != DH_STATE_FINISHED))
         {
             rc = SSH_PACKET_DENIED;
