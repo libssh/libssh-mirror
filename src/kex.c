@@ -742,6 +742,11 @@ int ssh_set_client_kex(ssh_session session)
         }
     }
 
+    /* For rekeying, skip the extension negotiation */
+    if (session->session_state == SSH_SESSION_STATE_AUTHENTICATED) {
+        return SSH_OK;
+    }
+
     /* Here we append  ext-info-c  to the list of kex algorithms */
     kex = client->methods[SSH_KEX];
     len = strlen(kex);
