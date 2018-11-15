@@ -518,20 +518,22 @@ static void ssh_server_connection_callback(ssh_session session){
                     goto error;
                 }
 
+                /*
+                 * If the client supports extension negotiation, we will send
+                 * our supported extensions now. This is the first message after
+                 * sending NEWKEYS message and after turning on crypto.
+                 */
+                if (session->extensions &&
+                    session->session_state != SSH_SESSION_STATE_AUTHENTICATED) {
+                    ssh_server_send_extensions(session);
+                }
+
                 set_status(session,1.0f);
                 session->connected = 1;
                 session->session_state=SSH_SESSION_STATE_AUTHENTICATING;
                 if (session->flags & SSH_SESSION_FLAG_AUTHENTICATED)
                     session->session_state = SSH_SESSION_STATE_AUTHENTICATED;
 
-               /*
-                * If the client supports extension negotiation, we will send
-                * our supported extensions now. This is the first message after
-                * sending NEWKEYS message and after turning on crypto.
-                */
-               if (session->extensions) {
-                   ssh_server_send_extensions(session);
-               }
             }
             break;
         case SSH_SESSION_STATE_AUTHENTICATING:
