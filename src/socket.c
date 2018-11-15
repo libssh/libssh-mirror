@@ -277,9 +277,6 @@ int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p,
             if (p != NULL) {
                 ssh_poll_remove_events(p, POLLIN);
             }
-            if (p != NULL) {
-                ssh_poll_remove_events(p, POLLIN);
-            }
             if (s->callbacks != NULL && s->callbacks->exception != NULL) {
                 s->callbacks->exception(SSH_SOCKET_EXCEPTION_EOF,
                                         0,
