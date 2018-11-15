@@ -425,7 +425,7 @@ failed:
     }
     ssh_disconnect(t->ssh);
     ssh_free(t->ssh);
-	free(t);
+    free(t);
 
     return NULL;
 }
