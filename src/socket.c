@@ -236,7 +236,7 @@ int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p,
             (revents & POLLOUT) ? "POLLOUT ":"",
             (revents & POLLERR) ? "POLLERR":"",
             ssh_buffer_get_len(s->out_buffer));
-    if (revents & POLLERR || revents & POLLHUP) {
+    if ((revents & POLLERR) || (revents & POLLHUP)) {
         /* Check if we are in a connecting state */
         if (s->state == SSH_SOCKET_CONNECTING) {
             s->state = SSH_SOCKET_ERROR;
