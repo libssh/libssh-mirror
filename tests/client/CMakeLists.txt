@@ -8,6 +8,7 @@ set(LIBSSH_CLIENT_TESTS
     torture_connect
     torture_hostkey
     torture_auth
+    torture_rekey
     torture_forward
     torture_knownhosts
     torture_knownhosts_verify
