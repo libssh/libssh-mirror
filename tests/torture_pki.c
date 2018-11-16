@@ -1,3 +1,5 @@
+#include "config.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,6 +9,12 @@
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#elif (defined _WIN32) || (defined _WIN64)
+#include <io.h>
+#define read _read
+#define open _open
+#define write _write
+#define close _close
 #endif
 
 #include "torture_pki.h"
