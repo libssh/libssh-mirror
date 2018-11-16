@@ -450,12 +450,13 @@ void ssh_silent_disconnect(ssh_session session) {
  *
  * @param[in]  blocking Zero for nonblocking mode.
  */
-void ssh_set_blocking(ssh_session session, int blocking) {
-	if (session == NULL) {
-    return;
-  }
-  session->flags &= ~SSH_SESSION_FLAG_BLOCKING;
-  session->flags |= blocking ? SSH_SESSION_FLAG_BLOCKING : 0;
+void ssh_set_blocking(ssh_session session, int blocking)
+{
+    if (session == NULL) {
+        return;
+    }
+    session->flags &= ~SSH_SESSION_FLAG_BLOCKING;
+    session->flags |= blocking ? SSH_SESSION_FLAG_BLOCKING : 0;
 }
 
 /**
@@ -464,8 +465,9 @@ void ssh_set_blocking(ssh_session session, int blocking) {
  * @returns 0 if the session is nonblocking,
  * @returns 1 if the functions may block.
  */
-int ssh_is_blocking(ssh_session session){
-	return (session->flags&SSH_SESSION_FLAG_BLOCKING) ? 1 : 0;
+int ssh_is_blocking(ssh_session session)
+{
+    return (session->flags & SSH_SESSION_FLAG_BLOCKING) ? 1 : 0;
 }
 
 /* Waits until the output socket is empty */
