@@ -201,6 +201,24 @@ static void torture_packet_chacha20(void **state)
     }
 }
 
+static void torture_packet_aes128_gcm(void **state)
+{
+    int i;
+    (void)state; /* unused */
+    for (i=1;i<256;++i){
+        torture_packet("aes128-gcm@openssh.com","none",i);
+    }
+}
+
+static void torture_packet_aes256_gcm(void **state)
+{
+    int i;
+    (void)state; /* unused */
+    for (i=1;i<256;++i){
+        torture_packet("aes256-gcm@openssh.com","none",i);
+    }
+}
+
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
@@ -211,7 +229,9 @@ int torture_run_tests(void) {
         cmocka_unit_test(torture_packet_aes192_cbc),
         cmocka_unit_test(torture_packet_aes256_cbc),
         cmocka_unit_test(torture_packet_3des_cbc),
-        cmocka_unit_test(torture_packet_chacha20)
+        cmocka_unit_test(torture_packet_chacha20),
+        cmocka_unit_test(torture_packet_aes128_gcm),
+        cmocka_unit_test(torture_packet_aes256_gcm),
     };
 
     ssh_init();
