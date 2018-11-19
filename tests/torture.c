@@ -810,6 +810,38 @@ end:
     return new_dir;
 }
 
+char *torture_create_temp_file(const char *template)
+{
+    char *new_file = NULL;
+    FILE *fp = NULL;
+    mode_t mask;
+    int fd;
+
+    new_file = strdup(template);
+    if (new_file == NULL) {
+        goto end;
+    }
+
+    mask = umask(S_IRWXO | S_IRWXG);
+    fd = mkstemp(new_file);
+    umask(mask);
+    if (fd == -1) {
+        goto end;
+    }
+
+    fp = fdopen(fd, "w");
+    if (fp == NULL) {
+        SAFE_FREE(new_file);
+        close(fd);
+        goto end;
+    }
+
+    fclose(fp);
+
+end:
+    return new_file;
+}
+
 #else /* _WIN32 */
 
 char *torture_make_temp_dir(const char *template)
@@ -989,6 +1021,54 @@ int torture_isdir(const char *path)
     }
 
     return 0;
+}
+
+char *torture_create_temp_file(const char *template)
+{
+    DWORD rc = 0;
+    char tmp_dir_path[MAX_PATH];
+    char tmp_file_name[MAX_PATH];
+    char *prefix = NULL;
+    char *path = NULL;
+    char *prefix_end = NULL;
+    char *slash = NULL;
+
+    if (template == NULL) {
+        goto end;
+    }
+
+    prefix = strdup(template);
+    if (prefix == NULL) {
+        goto end;
+    }
+
+    /* Replace slashes with backslashes */
+    slash = strchr(prefix, '/');
+    for (; slash != NULL; slash = strchr(prefix, '/')) {
+        *slash = '\\';
+    }
+
+    prefix_end = strstr(prefix, "XXXXXX");
+    if (prefix_end != NULL) {
+        *prefix_end = '\0';
+    }
+
+    rc = GetTempPathA(MAX_PATH, tmp_dir_path);
+    if ((rc > MAX_PATH) || (rc == 0)) {
+        goto free_prefix;
+    }
+
+    rc = GetTempFileNameA(tmp_dir_path, TEXT(prefix), 0, tmp_file_name);
+    if (rc == 0) {
+        goto free_prefix;
+    }
+
+    path = strdup(tmp_file_name);
+
+free_prefix:
+    SAFE_FREE(prefix);
+end:
+    return path;
 }
 
 #endif /* _WIN32 */

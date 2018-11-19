@@ -17,6 +17,7 @@ set(LIBSSH_UNIT_TESTS
     torture_hashes
     torture_packet_filter
     torture_temp_dir
+    torture_temp_file
 )
 
 set(LIBSSH_THREAD_UNIT_TESTS
