@@ -1253,30 +1253,10 @@ int ssh_execute_message_callbacks(ssh_session session){
 
 int ssh_send_keepalive(ssh_session session)
 {
-  int rc;
+    /* Client denies the request, so the error code is not meaningful */
+    (void)ssh_global_request(session, "keepalive@openssh.com", NULL, 1);
 
-  rc = ssh_buffer_pack(session->out_buffer,
-                       "bsb",
-                       SSH2_MSG_GLOBAL_REQUEST,
-                       "keepalive@openssh.com",
-                       1);
-  if (rc != SSH_OK) {
-    goto err;
-  }
-
-  if (ssh_packet_send(session) == SSH_ERROR) {
-    goto err;
-  }
-
-  ssh_handle_packets(session, SSH_TIMEOUT_NONBLOCKING);
-
-  SSH_LOG(SSH_LOG_PACKET, "Sent a keepalive");
-  return SSH_OK;
-
-err:
-  ssh_set_error_oom(session);
-  ssh_buffer_reinit(session->out_buffer);
-  return SSH_ERROR;
+    return SSH_OK;
 }
 
 /** @} */

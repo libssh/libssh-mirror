@@ -98,5 +98,9 @@ int ssh_channel_flush(ssh_channel channel);
 uint32_t ssh_channel_new_id(ssh_session session);
 ssh_channel ssh_channel_from_local(ssh_session session, uint32_t id);
 void ssh_channel_do_free(ssh_channel channel);
+int ssh_global_request(ssh_session session,
+                       const char *request,
+                       ssh_buffer buffer,
+                       int reply);
 
 #endif /* CHANNELS_H_ */

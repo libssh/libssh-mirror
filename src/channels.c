@@ -2090,8 +2090,11 @@ static int ssh_global_request_termination(void *s){
  *                      SSH_AGAIN if in nonblocking mode and call has
  *                      to be done again.
  */
-static int global_request(ssh_session session, const char *request,
-    ssh_buffer buffer, int reply) {
+int ssh_global_request(ssh_session session,
+                       const char *request,
+                       ssh_buffer buffer,
+                       int reply)
+{
   int rc;
 
   switch (session->global_req_state) {
@@ -2222,7 +2225,7 @@ int ssh_channel_listen_forward(ssh_session session,
     goto error;
   }
 pending:
-  rc = global_request(session, "tcpip-forward", buffer, 1);
+  rc = ssh_global_request(session, "tcpip-forward", buffer, 1);
 
   /* TODO: FIXME no guarantee the last packet we received contains
    * that info */
@@ -2302,7 +2305,7 @@ int ssh_channel_cancel_forward(ssh_session session,
       goto error;
   }
 pending:
-  rc = global_request(session, "cancel-tcpip-forward", buffer, 1);
+  rc = ssh_global_request(session, "cancel-tcpip-forward", buffer, 1);
 
 error:
   ssh_buffer_free(buffer);
