@@ -1058,6 +1058,7 @@ char *torture_create_temp_file(const char *template)
         goto free_prefix;
     }
 
+    /* Remark: this function creates the file */
     rc = GetTempFileNameA(tmp_dir_path, TEXT(prefix), 0, tmp_file_name);
     if (rc == 0) {
         goto free_prefix;

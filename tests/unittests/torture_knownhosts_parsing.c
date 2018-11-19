@@ -31,37 +31,29 @@ static int setup_knownhosts_file(void **state)
     char *tmp_file = NULL;
     size_t nwritten;
     FILE *fp = NULL;
-    mode_t mask;
-    int fd;
+    int rc = 0;
 
-    tmp_file = strdup(TMP_FILE_NAME);
+    tmp_file = torture_create_temp_file(TMP_FILE_NAME);
     assert_non_null(tmp_file);
+
     *state = tmp_file;
 
-    mask = umask(S_IRWXO | S_IRWXG);
-    fd = mkstemp(tmp_file);
-    umask(mask);
-    assert_return_code(fd, errno);
-
-    fp = fdopen(fd, "w");
-    if (fp == NULL) {
-        close(fd);
-        return -1;
-    }
+    fp = fopen(tmp_file, "w");
+    assert_non_null(fp);
 
     nwritten = fwrite(LOCALHOST_PATTERN_ED25519,
                       sizeof(char),
                       strlen(LOCALHOST_PATTERN_ED25519),
                       fp);
     if (nwritten != strlen(LOCALHOST_PATTERN_ED25519)) {
-        fclose(fp);
-        return -1;
+        rc = -1;
+        goto close_fp;
     }
 
     nwritten = fwrite("\n", sizeof(char), 1, fp);
     if (nwritten != 1) {
-        fclose(fp);
-        return -1;
+        rc = -1;
+        goto close_fp;
     }
 
     nwritten = fwrite(LOCALHOST_RSA_LINE,
@@ -69,13 +61,14 @@ static int setup_knownhosts_file(void **state)
                       strlen(LOCALHOST_RSA_LINE),
                       fp);
     if (nwritten != strlen(LOCALHOST_RSA_LINE)) {
-        fclose(fp);
-        return -1;
+        rc = -1;
+        goto close_fp;
     }
 
+close_fp:
     fclose(fp);
 
-    return 0;
+    return rc;
 }
 
 static int teardown_knownhosts_file(void **state)

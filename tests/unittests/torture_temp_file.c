@@ -3,7 +3,7 @@
 #include "torture.h"
 #define LIBSSH_STATIC
 
-const char template[] = "/tmp/temp_file_XXXXXX";
+const char template[] = "temp_file_XXXXXX";
 
 static int setup(void **state)
 {
