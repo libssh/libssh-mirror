@@ -802,7 +802,7 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
         }
         break;
     case SOC_NA:
-      SSH_LOG(SSH_LOG_INFO, "Unapplicable option: %s, line: %d\n",
+      SSH_LOG(SSH_LOG_INFO, "Unapplicable option: %s, line: %d",
               keyword, count);
       break;
     case SOC_UNSUPPORTED:
@@ -810,7 +810,7 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
               keyword, count);
       break;
     case SOC_UNKNOWN:
-      SSH_LOG(SSH_LOG_WARN, "Unknown option: %s, line: %d\n",
+      SSH_LOG(SSH_LOG_WARN, "Unknown option: %s, line: %d",
               keyword, count);
       break;
     default:
