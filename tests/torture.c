@@ -500,11 +500,10 @@ void torture_setup_socket_dir(void **state)
     s = malloc(sizeof(struct torture_state));
     assert_non_null(s);
 
-    s->socket_dir = strdup(TORTURE_SOCKET_DIR);
+    s->socket_dir = torture_make_temp_dir(TORTURE_SOCKET_DIR);
     assert_non_null(s->socket_dir);
 
-    p = mkdtemp(s->socket_dir);
-    assert_non_null(p);
+    p = s->socket_dir;
 
     /* pcap file */
     len = strlen(p) + 1 + strlen(TORTURE_PCAP_FILE) + 1;
