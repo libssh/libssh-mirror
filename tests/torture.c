@@ -39,11 +39,13 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #elif (defined _WIN32) || (defined _WIN64)
+#include <direct.h>
 #include <io.h>
 #define read _read
 #define open _open
 #define write _write
 #define close _close
+#define chdir _chdir
 #endif
 
 #include "torture.h"
@@ -842,6 +844,28 @@ end:
     return new_file;
 }
 
+char *torture_get_current_working_dir(void)
+{
+
+    char *cwd = NULL;
+    char *result = NULL;
+
+    cwd = (char *)malloc(PATH_MAX + 1);
+    if (cwd == NULL) {
+        goto end;
+    }
+
+    result = getcwd(cwd, PATH_MAX);
+
+    if (result == NULL) {
+        SAFE_FREE(cwd);
+        goto end;
+    }
+
+end:
+    return cwd;
+}
+
 #else /* _WIN32 */
 
 char *torture_make_temp_dir(const char *template)
@@ -1072,7 +1096,43 @@ end:
     return path;
 }
 
+char *torture_get_current_working_dir(void)
+{
+    char *cwd = NULL;
+    char *result = NULL;
+
+    cwd = (char *)malloc(_MAX_PATH + 1);
+    if (cwd == NULL) {
+        goto end;
+    }
+
+    result = _getcwd(cwd, _MAX_PATH);
+
+    if (result == NULL) {
+        SAFE_FREE(cwd);
+        goto end;
+    }
+
+end:
+    return cwd;
+}
+
 #endif /* _WIN32 */
+
+int torture_change_dir(char *path)
+{
+    int rc = 0;
+
+    if (path == NULL) {
+        rc = -1;
+        goto end;
+    }
+
+    rc = chdir(path);
+
+end:
+    return rc;
+}
 
 int torture_libssh_verbosity(void){
   return verbosity;

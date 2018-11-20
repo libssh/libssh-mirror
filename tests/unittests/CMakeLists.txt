@@ -18,6 +18,7 @@ set(LIBSSH_UNIT_TESTS
     torture_packet_filter
     torture_temp_dir
     torture_temp_file
+    torture_push_pop_dir
 )
 
 set(LIBSSH_THREAD_UNIT_TESTS

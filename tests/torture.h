@@ -128,4 +128,7 @@ int torture_run_tests(void);
 char *torture_make_temp_dir(const char *template);
 char *torture_create_temp_file(const char *template);
 
+char *torture_get_current_working_dir(void);
+int torture_change_dir(char *path);
+
 #endif /* _TORTURE_H */
