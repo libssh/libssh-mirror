@@ -658,7 +658,7 @@ int ssh_handle_packets(ssh_session session, int timeout) {
  * @return              SSH_OK on success, SSH_ERROR otherwise.
  */
 int ssh_handle_packets_termination(ssh_session session,
-                                   int timeout,
+                                   long timeout,
                                    ssh_termination_function fct,
                                    void *user)
 {

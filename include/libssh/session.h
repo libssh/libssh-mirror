@@ -235,8 +235,10 @@ struct ssh_session_struct {
  */
 typedef int (*ssh_termination_function)(void *user);
 int ssh_handle_packets(ssh_session session, int timeout);
-int ssh_handle_packets_termination(ssh_session session, int timeout,
-    ssh_termination_function fct, void *user);
+int ssh_handle_packets_termination(ssh_session session,
+                                   long timeout,
+                                   ssh_termination_function fct,
+                                   void *user);
 void ssh_socket_exception_callback(int code, int errno_code, void *user);
 
 #endif /* SESSION_H_ */
