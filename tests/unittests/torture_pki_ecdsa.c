@@ -13,15 +13,39 @@
 #define LIBSSH_ECDSA_TESTKEY "libssh_testkey.id_ecdsa"
 #define LIBSSH_ECDSA_TESTKEY_PASSPHRASE "libssh_testkey_passphrase.id_ecdsa"
 
+const char template[] = "temp_dir_XXXXXX";
 const unsigned char ECDSA_HASH[] = "12345678901234567890";
+
+struct pki_st {
+    char *cwd;
+    char *temp_dir;
+};
 
 static int setup_ecdsa_key(void **state, int ecdsa_bits)
 {
-    (void) state; /* unused */
+    struct pki_st *test_state = NULL;
+    char *cwd = NULL;
+    char *tmp_dir = NULL;
+    int rc = 0;
 
-    unlink(LIBSSH_ECDSA_TESTKEY);
-    unlink(LIBSSH_ECDSA_TESTKEY_PASSPHRASE);
-    unlink(LIBSSH_ECDSA_TESTKEY ".pub");
+    test_state = (struct pki_st *)malloc(sizeof(struct pki_st));
+    assert_non_null(test_state);
+
+    cwd = torture_get_current_working_dir();
+    assert_non_null(cwd);
+
+    tmp_dir = torture_make_temp_dir(template);
+    assert_non_null(tmp_dir);
+
+    test_state->cwd = cwd;
+    test_state->temp_dir = tmp_dir;
+
+    *state = test_state;
+
+    rc = torture_change_dir(tmp_dir);
+    assert_int_equal(rc, 0);
+
+    printf("Changed directory to: %s\n", tmp_dir);
 
     torture_write_file(LIBSSH_ECDSA_TESTKEY,
                        torture_get_testkey(SSH_KEYTYPE_ECDSA, ecdsa_bits, 0));
@@ -35,13 +59,30 @@ static int setup_ecdsa_key(void **state, int ecdsa_bits)
 
 static int setup_openssh_ecdsa_key(void **state, int ecdsa_bits)
 {
+    struct pki_st *test_state = NULL;
+    char *cwd = NULL;
+    char *tmp_dir = NULL;
     const char *keystring = NULL;
+    int rc = 0;
 
-    (void) state; /* unused */
+    test_state = (struct pki_st *)malloc(sizeof(struct pki_st));
+    assert_non_null(test_state);
 
-    unlink(LIBSSH_ECDSA_TESTKEY);
-    unlink(LIBSSH_ECDSA_TESTKEY_PASSPHRASE);
-    unlink(LIBSSH_ECDSA_TESTKEY ".pub");
+    cwd = torture_get_current_working_dir();
+    assert_non_null(cwd);
+
+    tmp_dir = torture_make_temp_dir(template);
+    assert_non_null(tmp_dir);
+
+    test_state->cwd = cwd;
+    test_state->temp_dir = tmp_dir;
+
+    *state = test_state;
+
+    rc = torture_change_dir(tmp_dir);
+    assert_int_equal(rc, 0);
+
+    printf("Changed directory to: %s\n", tmp_dir);
 
     keystring = torture_get_openssh_testkey(SSH_KEYTYPE_ECDSA, ecdsa_bits, 0);
     torture_write_file(LIBSSH_ECDSA_TESTKEY,
@@ -98,13 +139,26 @@ static int setup_openssh_ecdsa_key_256(void **state)
     return 0;
 }
 
-static int teardown(void **state)
-{
-    (void) state; /* unused */
+static int teardown(void **state) {
 
-    unlink(LIBSSH_ECDSA_TESTKEY);
-    unlink(LIBSSH_ECDSA_TESTKEY_PASSPHRASE);
-    unlink(LIBSSH_ECDSA_TESTKEY ".pub");
+    struct pki_st *test_state = NULL;
+    int rc = 0;
+
+    test_state = *((struct pki_st **)state);
+
+    assert_non_null(test_state);
+    assert_non_null(test_state->cwd);
+    assert_non_null(test_state->temp_dir);
+
+    rc = torture_change_dir(test_state->cwd);
+    assert_int_equal(rc, 0);
+
+    rc = torture_rmdirs(test_state->temp_dir);
+    assert_int_equal(rc, 0);
+
+    SAFE_FREE(test_state->temp_dir);
+    SAFE_FREE(test_state->cwd);
+    SAFE_FREE(test_state);
 
     return 0;
 }
