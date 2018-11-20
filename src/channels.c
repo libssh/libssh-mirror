@@ -2751,7 +2751,7 @@ int ssh_channel_read_timeout(ssh_channel channel,
   ctx.buffer = stdbuf;
   ctx.count = 1;
 
-  if (timeout_ms < 0) {
+  if (timeout_ms < SSH_TIMEOUT_DEFAULT) {
       timeout_ms = SSH_TIMEOUT_INFINITE;
   }
 

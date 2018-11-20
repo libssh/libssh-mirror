@@ -645,11 +645,13 @@ int ssh_handle_packets(ssh_session session, int timeout) {
  * @param[in] session   The session handle to use.
  *
  * @param[in] timeout   Set an upper limit on the time for which this function
- *                      will block, in milliseconds. Specifying SSH_TIMEOUT_INFINITE
- *                      (-1) means an infinite timeout.
+ *                      will block, in milliseconds. Specifying
+ *                      SSH_TIMEOUT_INFINITE (-1) means an infinite timeout.
  *                      Specifying SSH_TIMEOUT_USER means to use the timeout
- *                      specified in options. 0 means poll will return immediately.
- *                      SSH_TIMEOUT_DEFAULT uses blocking parameters of the session.
+ *                      specified in options. 0 means poll will return
+ *                      immediately.
+ *                      SSH_TIMEOUT_DEFAULT uses the session timeout if set or
+ *                      uses blocking parameters of the session.
  *                      This parameter is passed to the poll() function.
  *
  * @param[in] fct       Termination function to be used to determine if it is
@@ -663,41 +665,45 @@ int ssh_handle_packets_termination(ssh_session session,
                                    void *user)
 {
     struct ssh_timestamp ts;
+    long timeout_ms = SSH_TIMEOUT_INFINITE;
+    long tm;
     int ret = SSH_OK;
-    int tm;
 
-    if (timeout == SSH_TIMEOUT_USER) {
+    /* If a timeout has been provided, use it */
+    if (timeout > 0) {
+        timeout_ms = timeout;
+    } else {
         if (ssh_is_blocking(session)) {
-            timeout = ssh_make_milliseconds(session->opts.timeout,
-                                            session->opts.timeout_usec);
+            if (timeout == SSH_TIMEOUT_USER || timeout == SSH_TIMEOUT_DEFAULT) {
+                if (session->opts.timeout > 0 ||
+                    session->opts.timeout_usec > 0) {
+                    timeout_ms =
+                        ssh_make_milliseconds(session->opts.timeout,
+                                              session->opts.timeout_usec);
+                }
+            }
         } else {
-            timeout = SSH_TIMEOUT_NONBLOCKING;
-        }
-    } else if (timeout == SSH_TIMEOUT_DEFAULT) {
-        if (ssh_is_blocking(session)) {
-            timeout = SSH_TIMEOUT_INFINITE;
-        } else {
-            timeout = SSH_TIMEOUT_NONBLOCKING;
+            timeout_ms = SSH_TIMEOUT_NONBLOCKING;
         }
     }
 
     /* avoid unnecessary syscall for the SSH_TIMEOUT_NONBLOCKING case */
-    if (timeout != SSH_TIMEOUT_NONBLOCKING) {
+    if (timeout_ms != SSH_TIMEOUT_NONBLOCKING) {
         ssh_timestamp_init(&ts);
     }
 
-    tm = timeout;
+    tm = timeout_ms;
     while(!fct(user)) {
         ret = ssh_handle_packets(session, tm);
         if (ret == SSH_ERROR) {
             break;
         }
-        if (ssh_timeout_elapsed(&ts,timeout)) {
+        if (ssh_timeout_elapsed(&ts, timeout_ms)) {
             ret = fct(user) ? SSH_OK : SSH_AGAIN;
             break;
         }
 
-        tm = ssh_timeout_update(&ts, timeout);
+        tm = ssh_timeout_update(&ts, timeout_ms);
     }
 
     return ret;
