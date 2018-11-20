@@ -22,12 +22,12 @@ optional:
 Note that these version numbers are version we know works correctly. If you
 build and run libssh successfully with an older version, please let us know.
 
-Windows binaries known to be working:
+For Windows use vcpkg:
 
-- http://www.slproweb.com/products/Win32OpenSSL.html
-- http://zlib.net/ -> zlib compiled DLL
+https://github.com/Microsoft/vcpkg
 
-We installed them in C:\Program Files
+which you can use to install openssl and zilib. libssh itself is also part of
+vcpkg!
 
 ## Building
 First, you need to configure the compilation, using CMake. Go inside the
