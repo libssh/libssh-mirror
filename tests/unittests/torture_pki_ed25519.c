@@ -12,6 +12,7 @@
 #define LIBSSH_ED25519_TESTKEY "libssh_testkey.id_ed25519"
 #define LIBSSH_ED25519_TESTKEY_PASSPHRASE "libssh_testkey_passphrase.id_ed25519"
 
+const char template[] = "temp_dir_XXXXXX";
 const unsigned char HASH[] = "12345678901234567890";
 const uint8_t ref_signature[ED25519_SIG_LEN]=
     "\xbb\x8d\x55\x9f\x06\x14\x39\x24\xb4\xe1\x5a\x57\x3d\x9d\xbe\x22"
@@ -19,15 +20,37 @@ const uint8_t ref_signature[ED25519_SIG_LEN]=
     "\x10\xa3\x18\x93\xdf\xa4\x96\x81\x11\x8e\x1e\x26\x14\x8a\x08\x1b"
     "\x01\x6a\x60\x59\x9c\x4a\x55\xa3\x16\x56\xf6\xc4\x50\x42\x7f\x03";
 
+struct pki_st {
+    char *cwd;
+    char *temp_dir;
+};
+
 static int setup_ed25519_key(void **state)
 {
     const char *keystring = NULL;
+    struct pki_st *test_state = NULL;
+    char *cwd = NULL;
+    char *tmp_dir = NULL;
+    int rc = 0;
 
-    (void) state; /* unused */
+    test_state = (struct pki_st *)malloc(sizeof(struct pki_st));
+    assert_non_null(test_state);
 
-    unlink(LIBSSH_ED25519_TESTKEY);
-    unlink(LIBSSH_ED25519_TESTKEY_PASSPHRASE);
-    unlink(LIBSSH_ED25519_TESTKEY ".pub");
+    cwd = torture_get_current_working_dir();
+    assert_non_null(cwd);
+
+    tmp_dir = torture_make_temp_dir(template);
+    assert_non_null(tmp_dir);
+
+    test_state->cwd = cwd;
+    test_state->temp_dir = tmp_dir;
+
+    *state = test_state;
+
+    rc = torture_change_dir(tmp_dir);
+    assert_int_equal(rc, 0);
+
+    printf("Changed directory to: %s\n", tmp_dir);
 
     keystring = torture_get_openssh_testkey(SSH_KEYTYPE_ED25519, 0, 0);
     torture_write_file(LIBSSH_ED25519_TESTKEY, keystring);
@@ -41,11 +64,24 @@ static int setup_ed25519_key(void **state)
 }
 
 static int teardown(void **state) {
-    (void) state; /* unused */
+    struct pki_st *test_state = NULL;
+    int rc = 0;
 
-    unlink(LIBSSH_ED25519_TESTKEY);
-    unlink(LIBSSH_ED25519_TESTKEY_PASSPHRASE);
-    unlink(LIBSSH_ED25519_TESTKEY ".pub");
+    test_state = *((struct pki_st **)state);
+
+    assert_non_null(test_state);
+    assert_non_null(test_state->cwd);
+    assert_non_null(test_state->temp_dir);
+
+    rc = torture_change_dir(test_state->cwd);
+    assert_int_equal(rc, 0);
+
+    rc = torture_rmdirs(test_state->temp_dir);
+    assert_int_equal(rc, 0);
+
+    SAFE_FREE(test_state->temp_dir);
+    SAFE_FREE(test_state->cwd);
+    SAFE_FREE(test_state);
 
     return 0;
 }
