@@ -58,7 +58,7 @@
 #define OLD_CRYPTO
 #endif
 
-#if (HAVE_VALGRIND_VALGRIND_H && HAVE_OPENSSL_IA32CAP_LOC)
+#if (defined(HAVE_VALGRIND_VALGRIND_H) && defined(HAVE_OPENSSL_IA32CAP_LOC))
 #include <valgrind/valgrind.h>
 #define CAN_DISABLE_AESNI
 #endif
