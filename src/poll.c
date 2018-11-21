@@ -591,59 +591,64 @@ void ssh_poll_ctx_remove(ssh_poll_ctx ctx, ssh_poll_handle p) {
  *          SSH_AGAIN   Timeout occured
  */
 
-int ssh_poll_ctx_dopoll(ssh_poll_ctx ctx, int timeout) {
-  int rc;
-  int i, used;
-  ssh_poll_handle p;
-  socket_t fd;
-  int revents;
-  struct ssh_timestamp ts;
+int ssh_poll_ctx_dopoll(ssh_poll_ctx ctx, int timeout)
+{
+    int rc;
+    int i, used;
+    ssh_poll_handle p;
+    socket_t fd;
+    int revents;
+    struct ssh_timestamp ts;
 
-  if (!ctx->polls_used)
-    return SSH_ERROR;
-
-  ssh_timestamp_init(&ts);
-  do {
-    int tm = ssh_timeout_update(&ts, timeout);
-    rc = ssh_poll(ctx->pollfds, ctx->polls_used, tm);
-  } while (rc == -1 && errno == EINTR);
-
-  if(rc < 0)
-    return SSH_ERROR;
-  if (rc == 0)
-    return SSH_AGAIN;
-  used = ctx->polls_used;
-  for (i = 0; i < used && rc > 0; ) {
-    if (!ctx->pollfds[i].revents || ctx->pollptrs[i]->lock) {
-      i++;
-    } else {
-      int ret;
-
-      p = ctx->pollptrs[i];
-      fd = ctx->pollfds[i].fd;
-      revents = ctx->pollfds[i].revents;
-      /* avoid having any event caught during callback */
-      ctx->pollfds[i].events = 0;
-      p->lock = 1;
-      if (p->cb && (ret = p->cb(p, fd, revents, p->cb_data)) < 0) {
-        if (ret == -2) {
-            return -1;
-        }
-        /* the poll was removed, reload the used counter and start again */
-        used = ctx->polls_used;
-        i=0;
-      } else {
-        ctx->pollfds[i].revents = 0;
-        ctx->pollfds[i].events = p->events;
-        p->lock = 0;
-        i++;
-      }
-
-      rc--;
+    if (ctx->polls_used == 0) {
+        return SSH_ERROR;
     }
-  }
 
-  return rc;
+    ssh_timestamp_init(&ts);
+    do {
+        int tm = ssh_timeout_update(&ts, timeout);
+        rc = ssh_poll(ctx->pollfds, ctx->polls_used, tm);
+    } while (rc == -1 && errno == EINTR);
+
+    if (rc < 0) {
+        return SSH_ERROR;
+    }
+    if (rc == 0) {
+        return SSH_AGAIN;
+    }
+
+    used = ctx->polls_used;
+    for (i = 0; i < used && rc > 0; ) {
+        if (!ctx->pollfds[i].revents || ctx->pollptrs[i]->lock) {
+            i++;
+        } else {
+            int ret;
+
+            p = ctx->pollptrs[i];
+            fd = ctx->pollfds[i].fd;
+            revents = ctx->pollfds[i].revents;
+            /* avoid having any event caught during callback */
+            ctx->pollfds[i].events = 0;
+            p->lock = 1;
+            if (p->cb && (ret = p->cb(p, fd, revents, p->cb_data)) < 0) {
+                if (ret == -2) {
+                    return -1;
+                }
+                /* the poll was removed, reload the used counter and start again */
+                used = ctx->polls_used;
+                i = 0;
+            } else {
+                ctx->pollfds[i].revents = 0;
+                ctx->pollfds[i].events = p->events;
+                p->lock = 0;
+                i++;
+            }
+
+            rc--;
+        }
+    }
+
+    return rc;
 }
 
 /**
