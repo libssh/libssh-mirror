@@ -187,6 +187,9 @@
 /* Define to 1 if you have the `SecureZeroMemory' function. */
 #cmakedefine HAVE_SECURE_ZERO_MEMORY 1
 
+/* Define to 1 if you have the `cmocka_set_test_filter' function. */
+#cmakedefine HAVE_CMOCKA_SET_TEST_FILTER 1
+
 /*************************** LIBRARIES ***************************/
 
 /* Define to 1 if you have the `crypto' library (-lcrypto). */
@@ -200,6 +203,9 @@
 
 /* Define to 1 if you have the `pthread' library (-lpthread). */
 #cmakedefine HAVE_PTHREAD 1
+
+/* Define to 1 if you have the `cmocka' library (-lcmocka). */
+#cmakedefine HAVE_CMOCKA 1
 
 /**************************** OPTIONS ****************************/
 

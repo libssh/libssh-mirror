@@ -261,6 +261,14 @@ if (CMAKE_USE_PTHREADS_INIT)
     set(HAVE_PTHREAD 1)
 endif (CMAKE_USE_PTHREADS_INIT)
 
+if (UNIT_TESTING)
+    if (CMOCKA_FOUND)
+        set(CMAKE_REQUIRED_LIBRARIES ${CMOCKA_LIBRARIES})
+        check_function_exists(cmocka_set_test_filter HAVE_CMOCKA_SET_TEST_FILTER)
+        unset(CMAKE_REQUIRED_LIBRARIES)
+    endif ()
+endif ()
+
 # OPTIONS
 check_c_source_compiles("
 __thread int tls;

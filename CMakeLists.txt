@@ -70,6 +70,10 @@ else (WITH_GCRYPT)
   endif (NOT OPENSSL_FOUND)
 endif(WITH_GCRYPT)
 
+if (UNIT_TESTING)
+    find_package(CMocka REQUIRED)
+endif ()
+
 # Find out if we have threading available
 set(CMAKE_THREAD_PREFER_PTHREADS ON)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
@@ -150,9 +154,8 @@ if (WITH_EXAMPLES)
 endif (WITH_EXAMPLES)
 
 if (UNIT_TESTING)
-  find_package(CMocka REQUIRED)
-  include(AddCMockaTest)
-  add_subdirectory(tests)
+    include(AddCMockaTest)
+    add_subdirectory(tests)
 endif (UNIT_TESTING)
 
 ### SOURCE PACKAGE

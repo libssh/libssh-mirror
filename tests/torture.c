@@ -50,9 +50,6 @@
 #include "torture_key.h"
 #include "libssh/misc.h"
 
-/* for pattern matching */
-#include "match.c"
-
 #define TORTURE_SSHD_SRV_IPV4 "127.0.0.10"
 /* socket wrapper IPv6 prefix  fd00::5357:5fxx */
 #define TORTURE_SSHD_SRV_IPV6 "fd00::5357:5f0a"
@@ -799,29 +796,10 @@ int torture_libssh_verbosity(void){
 
 void _torture_filter_tests(struct CMUnitTest *tests, size_t ntests)
 {
-    size_t i,j;
-    const char *name;
-    if (pattern == NULL){
-        return;
-    }
-    for (i=0; i < ntests; ++i){
-        name = tests[i].name;
-        /*printf("match(%s,%s)\n",name,pattern);*/
-        if (!match_pattern(name, pattern)){
-            for (j = i; j < ntests-1;++j){
-                tests[j]=tests[j+1];
-            }
-            tests[ntests-1].name = NULL;
-            tests[ntests-1].test_func = NULL;
-            ntests--;
-            --i;
-        }
-    }
-    if (ntests != 0){
-        printf("%d tests left\n",(int)ntests);
-    } else {
-        printf("No matching test left\n");
-    }
+    (void) tests;
+    (void) ntests;
+
+    return;
 }
 
 void torture_write_file(const char *filename, const char *data){
@@ -843,20 +821,24 @@ void torture_write_file(const char *filename, const char *data){
 
 
 int main(int argc, char **argv) {
-  struct argument_s arguments;
-  char *env = getenv("LIBSSH_VERBOSITY");
+    struct argument_s arguments;
+    char *env = getenv("LIBSSH_VERBOSITY");
 
-  arguments.verbose=0;
-  arguments.pattern=NULL;
-  torture_cmdline_parse(argc, argv, &arguments);
-  verbosity=arguments.verbose;
-  pattern=arguments.pattern;
+    arguments.verbose=0;
+    arguments.pattern=NULL;
+    torture_cmdline_parse(argc, argv, &arguments);
+    verbosity=arguments.verbose;
+    pattern=arguments.pattern;
 
-  if (verbosity == 0 && env != NULL && env[0] != '\0') {
-      if (env[0] > '0' && env[0] < '9') {
-          verbosity = atoi(env);
-      }
-  }
+    if (verbosity == 0 && env != NULL && env[0] != '\0') {
+        if (env[0] > '0' && env[0] < '9') {
+            verbosity = atoi(env);
+        }
+    }
 
-  return torture_run_tests();
+#if defined HAVE_CMOCKA_SET_TEST_FILTER
+    cmocka_set_test_filter(pattern);
+#endif
+
+    return torture_run_tests();
 }
