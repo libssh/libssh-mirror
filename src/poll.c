@@ -594,7 +594,7 @@ void ssh_poll_ctx_remove(ssh_poll_ctx ctx, ssh_poll_handle p) {
 int ssh_poll_ctx_dopoll(ssh_poll_ctx ctx, int timeout)
 {
     int rc;
-    int i, used;
+    size_t i, used;
     ssh_poll_handle p;
     socket_t fd;
     int revents;
