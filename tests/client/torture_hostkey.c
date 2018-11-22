@@ -163,7 +163,7 @@ static void torture_hostkey_ecdsa(void **state) {
 static void torture_hostkey_rsa_sha256(void **state) {
     struct torture_state *s = *state;
     ssh_session session = s->ssh.session;
-    char rsa[] = "rsa-sha2-256,ssh-rsa";
+    char rsa[] = "rsa-sha2-256";
 
     int rc;
 
@@ -182,7 +182,7 @@ static void torture_hostkey_rsa_sha256(void **state) {
 static void torture_hostkey_rsa_sha512(void **state) {
     struct torture_state *s = *state;
     ssh_session session = s->ssh.session;
-    char rsa[] = "rsa-sha2-512,ssh-rsa";
+    char rsa[] = "rsa-sha2-512";
 
     int rc;
 
