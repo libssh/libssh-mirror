@@ -2009,10 +2009,9 @@ int ssh_pki_signature_verify(ssh_session session,
  * the content of sigbuf */
 ssh_string ssh_pki_do_sign(ssh_session session,
                            ssh_buffer sigbuf,
-                           const ssh_key privkey) {
-    struct ssh_crypto_struct *crypto =
-        session->current_crypto ? session->current_crypto :
-                                  session->next_crypto;
+                           const ssh_key privkey)
+{
+    struct ssh_crypto_struct *crypto = NULL;
     ssh_signature sig = NULL;
     ssh_string sig_blob;
     ssh_string session_id;
@@ -2022,6 +2021,7 @@ ssh_string ssh_pki_do_sign(ssh_session session,
         return NULL;
     }
 
+    crypto = ssh_packet_get_current_crypto(session, SSH_DIRECTION_BOTH);
     session_id = ssh_string_new(crypto->digest_len);
     if (session_id == NULL) {
         return NULL;
@@ -2144,18 +2144,15 @@ ssh_string ssh_pki_do_sign(ssh_session session,
 #ifndef _WIN32
 ssh_string ssh_pki_do_sign_agent(ssh_session session,
                                  struct ssh_buffer_struct *buf,
-                                 const ssh_key pubkey) {
-    struct ssh_crypto_struct *crypto;
+                                 const ssh_key pubkey)
+{
+    struct ssh_crypto_struct *crypto = NULL;
     ssh_string session_id;
     ssh_string sig_blob;
     ssh_buffer sig_buf;
     int rc;
 
-    if (session->current_crypto) {
-        crypto = session->current_crypto;
-    } else {
-        crypto = session->next_crypto;
-    }
+    crypto = ssh_packet_get_current_crypto(session, SSH_DIRECTION_BOTH);
 
     /* prepend session identifier */
     session_id = ssh_string_new(crypto->digest_len);
@@ -2197,7 +2194,7 @@ ssh_string ssh_pki_do_sign_agent(ssh_session session,
 ssh_string ssh_srv_pki_do_sign_sessionid(ssh_session session,
                                          const ssh_key privkey)
 {
-    struct ssh_crypto_struct *crypto;
+    struct ssh_crypto_struct *crypto = NULL;
     ssh_signature sig = NULL;
     ssh_string sig_blob;
     int rc;

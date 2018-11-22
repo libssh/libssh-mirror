@@ -136,6 +136,7 @@ struct ssh_crypto_struct {
     char *kex_methods[SSH_KEX_METHODS];
     enum ssh_key_exchange_e kex_type;
     enum ssh_mac_e mac_type; /* Mac operations to use for key gen */
+    enum ssh_crypto_direction_e used; /* Is this crypto still used for either of directions? */
 };
 
 struct ssh_cipher_struct {

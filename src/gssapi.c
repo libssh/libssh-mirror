@@ -435,8 +435,10 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_token_server){
 
 #endif /* WITH_SERVER */
 
-static ssh_buffer ssh_gssapi_build_mic(ssh_session session){
-    ssh_buffer mic_buffer;
+static ssh_buffer ssh_gssapi_build_mic(ssh_session session)
+{
+    struct ssh_crypto_struct *crypto = NULL;
+    ssh_buffer mic_buffer = NULL;
     int rc;
 
     mic_buffer = ssh_buffer_new();
@@ -445,10 +447,11 @@ static ssh_buffer ssh_gssapi_build_mic(ssh_session session){
         return NULL;
     }
 
+    crypto = ssh_packet_get_current_crypto(session, SSH_DIRECTION_BOTH);
     rc = ssh_buffer_pack(mic_buffer,
                          "dPbsss",
-                         session->current_crypto->digest_len,
-                         (size_t)session->current_crypto->digest_len, session->current_crypto->session_id,
+                         crypto->digest_len,
+                         (size_t)crypto->digest_len, crypto->session_id,
                          SSH2_MSG_USERAUTH_REQUEST,
                          session->gssapi->user,
                          "ssh-connection",

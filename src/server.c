@@ -1048,6 +1048,7 @@ int ssh_message_auth_interactive_request(ssh_message msg, const char *name,
 
 int ssh_auth_reply_success(ssh_session session, int partial)
 {
+    struct ssh_crypto_struct *crypto = NULL;
     int r;
 
     if (session == NULL) {
@@ -1068,14 +1069,16 @@ int ssh_auth_reply_success(ssh_session session, int partial)
 
     r = ssh_packet_send(session);
 
-    if (session->current_crypto && session->current_crypto->delayed_compress_out) {
+    crypto = ssh_packet_get_current_crypto(session, SSH_DIRECTION_OUT);
+    if (crypto != NULL && crypto->delayed_compress_out) {
         SSH_LOG(SSH_LOG_PROTOCOL, "Enabling delayed compression OUT");
-        session->current_crypto->do_compress_out = 1;
+        crypto->do_compress_out = 1;
     }
 
-    if (session->current_crypto && session->current_crypto->delayed_compress_in) {
+    crypto = ssh_packet_get_current_crypto(session, SSH_DIRECTION_IN);
+    if (crypto != NULL && crypto->delayed_compress_in) {
         SSH_LOG(SSH_LOG_PROTOCOL, "Enabling delayed compression IN");
-        session->current_crypto->do_compress_in = 1;
+        crypto->do_compress_in = 1;
     }
     return r;
 }

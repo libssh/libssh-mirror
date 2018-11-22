@@ -683,12 +683,12 @@ static ssh_buffer ssh_msg_userauth_build_digest(ssh_session session,
                                                 const char *service,
                                                 ssh_string algo)
 {
-    struct ssh_crypto_struct *crypto =
-        session->current_crypto ? session->current_crypto :
-                                  session->next_crypto;
+    struct ssh_crypto_struct *crypto = NULL;
     ssh_buffer buffer;
     ssh_string str=NULL;
     int rc;
+
+    crypto = ssh_packet_get_current_crypto(session, SSH_DIRECTION_IN);
 
     buffer = ssh_buffer_new();
     if (buffer == NULL) {

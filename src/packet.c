@@ -927,6 +927,18 @@ end:
     return rc;
 }
 
+/* Returns current_crypto structure from the session.
+ * During key exchange (or rekey), after one of the sides
+ * sending NEWKEYS packet, this might return next_crypto for one
+ * of the directions that is ahead to send already queued packets
+ */
+struct ssh_crypto_struct *
+ssh_packet_get_current_crypto(ssh_session session,
+                              enum ssh_crypto_direction_e direction)
+{
+    return session->current_crypto;
+}
+
 /* in nonblocking mode, socket_read will read as much as it can, and return */
 /* SSH_OK if it has read at least len bytes, otherwise, SSH_AGAIN. */
 /* in blocking mode, it will read at least len bytes and will block until it's ok. */
@@ -941,11 +953,9 @@ end:
  */
 int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
 {
-    ssh_session session= (ssh_session) user;
-    unsigned int blocksize = (session->current_crypto ?
-                              session->current_crypto->in_cipher->blocksize : 8);
-    unsigned int lenfield_blocksize = (session->current_crypto ?
-                                  session->current_crypto->in_cipher->lenfield_blocksize : 8);
+    ssh_session session = (ssh_session)user;
+    unsigned int blocksize = 8;
+    unsigned int lenfield_blocksize = 8;
     size_t current_macsize = 0;
     uint8_t *ptr = NULL;
     int to_be_read;
@@ -958,10 +968,15 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
     uint8_t padding;
     size_t processed = 0; /* number of byte processed from the callback */
     enum ssh_packet_filter_result_e filter_result;
+    struct ssh_crypto_struct *crypto = NULL;
 
-    if (session->current_crypto != NULL) {
-        current_macsize = hmac_digest_len(session->current_crypto->in_hmac);
+    crypto = ssh_packet_get_current_crypto(session, SSH_DIRECTION_IN);
+    if (crypto != NULL) {
+        current_macsize = hmac_digest_len(crypto->in_hmac);
+        blocksize = crypto->in_cipher->blocksize;
+        lenfield_blocksize = crypto->in_cipher->lenfield_blocksize;
     }
+
     if (lenfield_blocksize == 0) {
         lenfield_blocksize = blocksize;
     }
@@ -1073,7 +1088,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
             }
 
             if (packet_second_block != NULL) {
-                if (session->current_crypto != NULL) {
+                if (crypto != NULL) {
                     /*
                      * Decrypt the rest of the packet (lenfield_blocksize bytes
                      * already have been decrypted)
@@ -1096,7 +1111,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
                     rc = ssh_packet_hmac_verify(session,
                                                 session->in_buffer,
                                                 mac,
-                                                session->current_crypto->in_hmac);
+                                                crypto->in_hmac);
                     if (rc < 0) {
                         ssh_set_error(session, SSH_FATAL, "HMAC error");
                         goto error;
@@ -1142,8 +1157,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
             compsize = ssh_buffer_get_len(session->in_buffer);
 
 #ifdef WITH_ZLIB
-            if (session->current_crypto
-                && session->current_crypto->do_compress_in
+            if (crypto && crypto->do_compress_in
                 && ssh_buffer_get_len(session->in_buffer) > 0) {
                 rc = decompress_buffer(session, session->in_buffer,MAX_PACKET_LEN);
                 if (rc < 0) {
@@ -1153,10 +1167,10 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
 #endif /* WITH_ZLIB */
             payloadsize = ssh_buffer_get_len(session->in_buffer);
             session->recv_seq++;
-            if (session->current_crypto != NULL) {
+            if (crypto != NULL) {
                 struct ssh_cipher_struct *cipher = NULL;
 
-                cipher = session->current_crypto->in_cipher;
+                cipher = crypto->in_cipher;
                 cipher->packets++;
                 cipher->blocks += payloadsize / cipher->blocksize;
             }
@@ -1407,16 +1421,11 @@ static int ssh_packet_write(ssh_session session) {
 
 static int packet_send2(ssh_session session)
 {
-    unsigned int blocksize =
-        (session->current_crypto ?
-         session->current_crypto->out_cipher->blocksize : 8);
-    unsigned int lenfield_blocksize =
-        (session->current_crypto ?
-         session->current_crypto->out_cipher->lenfield_blocksize : 0);
-    enum ssh_hmac_e hmac_type =
-        (session->current_crypto ?
-         session->current_crypto->out_hmac : session->next_crypto->out_hmac);
+    unsigned int blocksize = 8;
+    unsigned int lenfield_blocksize = 0;
+    enum ssh_hmac_e hmac_type;
     uint32_t currentlen = ssh_buffer_get_len(session->out_buffer);
+    struct ssh_crypto_struct *crypto = NULL;
     unsigned char *hmac = NULL;
     uint8_t padding_data[32] = { 0 };
     uint8_t padding_size;
@@ -1424,10 +1433,18 @@ static int packet_send2(ssh_session session)
     uint8_t header[5] = {0};
     int rc = SSH_ERROR;
 
+    crypto = ssh_packet_get_current_crypto(session, SSH_DIRECTION_OUT);
+    if (crypto) {
+        blocksize = crypto->out_cipher->blocksize;
+        lenfield_blocksize = crypto->out_cipher->lenfield_blocksize;
+        hmac_type = crypto->out_hmac;
+    } else {
+        hmac_type = session->next_crypto->out_hmac;
+    }
+
     payloadsize = currentlen;
 #ifdef WITH_ZLIB
-    if (session->current_crypto != NULL &&
-        session->current_crypto->do_compress_out &&
+    if (crypto != NULL && crypto->do_compress_out &&
         ssh_buffer_get_len(session->out_buffer) > 0) {
         rc = compress_buffer(session,session->out_buffer);
         if (rc < 0) {
@@ -1444,7 +1461,7 @@ static int packet_send2(ssh_session session)
         padding_size += blocksize;
     }
 
-    if (session->current_crypto != NULL) {
+    if (crypto != NULL) {
         int ok;
 
         ok = ssh_get_random(padding_data, padding_size, 0);
@@ -1495,10 +1512,10 @@ static int packet_send2(ssh_session session)
 
     rc = ssh_packet_write(session);
     session->send_seq++;
-    if (session->current_crypto != NULL) {
+    if (crypto != NULL) {
         struct ssh_cipher_struct *cipher = NULL;
 
-        cipher = session->current_crypto->out_cipher;
+        cipher = crypto->out_cipher;
         cipher->packets++;
         cipher->blocks += payloadsize / cipher->blocksize;
     }

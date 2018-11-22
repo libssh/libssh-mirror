@@ -61,6 +61,12 @@ struct ssh_hmac_struct {
   enum ssh_hmac_e hmac_type;
 };
 
+enum ssh_crypto_direction_e {
+    SSH_DIRECTION_IN = 1,
+    SSH_DIRECTION_OUT = 2,
+    SSH_DIRECTION_BOTH = 3,
+};
+
 struct ssh_cipher_struct;
 
 typedef struct ssh_mac_ctx_struct *ssh_mac_ctx;

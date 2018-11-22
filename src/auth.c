@@ -282,7 +282,10 @@ end:
  *
  * It is also used to communicate the new to the upper levels.
  */
-SSH_PACKET_CALLBACK(ssh_packet_userauth_success) {
+SSH_PACKET_CALLBACK(ssh_packet_userauth_success)
+{
+  struct ssh_crypto_struct *crypto = NULL;
+
   (void)packet;
   (void)type;
   (void)user;
@@ -294,13 +297,16 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_success) {
   session->session_state = SSH_SESSION_STATE_AUTHENTICATED;
   session->flags |= SSH_SESSION_FLAG_AUTHENTICATED;
 
-  if (session->current_crypto && session->current_crypto->delayed_compress_out) {
+  crypto = ssh_packet_get_current_crypto(session, SSH_DIRECTION_OUT);
+  if (crypto != NULL && crypto->delayed_compress_out) {
       SSH_LOG(SSH_LOG_DEBUG, "Enabling delayed compression OUT");
-      session->current_crypto->do_compress_out = 1;
+      crypto->do_compress_out = 1;
   }
-  if (session->current_crypto && session->current_crypto->delayed_compress_in) {
+
+  crypto = ssh_packet_get_current_crypto(session, SSH_DIRECTION_IN);
+  if (crypto != NULL && crypto->delayed_compress_in) {
       SSH_LOG(SSH_LOG_DEBUG, "Enabling delayed compression IN");
-      session->current_crypto->do_compress_in = 1;
+      crypto->do_compress_in = 1;
   }
 
     /* Reset errors by previous authentication methods. */

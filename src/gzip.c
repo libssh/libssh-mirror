@@ -55,8 +55,10 @@ static z_stream *initcompress(ssh_session session, int level) {
   return stream;
 }
 
-static ssh_buffer gzip_compress(ssh_session session,ssh_buffer source,int level){
-  z_stream *zout = session->current_crypto->compress_out_ctx;
+static ssh_buffer gzip_compress(ssh_session session, ssh_buffer source, int level)
+{
+  struct ssh_crypto_struct *crypto = NULL;
+  z_stream *zout = NULL;
   void *in_ptr = ssh_buffer_get(source);
   unsigned long in_size = ssh_buffer_get_len(source);
   ssh_buffer dest = NULL;
@@ -64,8 +66,10 @@ static ssh_buffer gzip_compress(ssh_session session,ssh_buffer source,int level)
   unsigned long len;
   int status;
 
-  if(zout == NULL) {
-    zout = session->current_crypto->compress_out_ctx = initcompress(session, level);
+  crypto = ssh_packet_get_current_crypto(session, SSH_DIRECTION_OUT);
+  zout = crypto->compress_out_ctx;
+  if (zout == NULL) {
+    zout = crypto->compress_out_ctx = initcompress(session, level);
     if (zout == NULL) {
       return NULL;
     }
@@ -143,8 +147,10 @@ static z_stream *initdecompress(ssh_session session) {
   return stream;
 }
 
-static ssh_buffer gzip_decompress(ssh_session session, ssh_buffer source, size_t maxlen) {
-  z_stream *zin = session->current_crypto->compress_in_ctx;
+static ssh_buffer gzip_decompress(ssh_session session, ssh_buffer source, size_t maxlen)
+{
+  struct ssh_crypto_struct *crypto = NULL;
+  z_stream *zin = NULL;
   void *in_ptr = ssh_buffer_get(source);
   unsigned long in_size = ssh_buffer_get_len(source);
   unsigned char out_buf[BLOCKSIZE] = {0};
@@ -152,8 +158,10 @@ static ssh_buffer gzip_decompress(ssh_session session, ssh_buffer source, size_t
   unsigned long len;
   int status;
 
+  crypto = ssh_packet_get_current_crypto(session, SSH_DIRECTION_IN);
+  zin = crypto->compress_in_ctx;
   if (zin == NULL) {
-    zin = session->current_crypto->compress_in_ctx = initdecompress(session);
+    zin = crypto->compress_in_ctx = initdecompress(session);
     if (zin == NULL) {
       return NULL;
     }
