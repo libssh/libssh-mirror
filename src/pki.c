@@ -1919,19 +1919,13 @@ int ssh_pki_import_signature_blob(const ssh_string sig_blob,
     return SSH_OK;
 }
 
-int ssh_pki_signature_verify_blob(ssh_session session,
-                                  ssh_string sig_blob,
-                                  const ssh_key key,
-                                  unsigned char *digest,
-                                  size_t dlen)
+int ssh_pki_signature_verify(ssh_session session,
+                             ssh_signature sig,
+                             const ssh_key key,
+                             unsigned char *digest,
+                             size_t dlen)
 {
-    ssh_signature sig;
     int rc;
-
-    rc = ssh_pki_import_signature_blob(sig_blob, key, &sig);
-    if (rc < 0) {
-        return SSH_ERROR;
-    }
 
     SSH_LOG(SSH_LOG_FUNCTIONS,
             "Going to verify a %s type signature",
@@ -1999,8 +1993,6 @@ int ssh_pki_signature_verify_blob(ssh_session session,
                                   hash,
                                   hlen);
     }
-
-    ssh_signature_free(sig);
 
     return rc;
 }

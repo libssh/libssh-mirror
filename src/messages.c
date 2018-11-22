@@ -730,6 +730,7 @@ static ssh_buffer ssh_msg_userauth_build_digest(ssh_session session,
  */
 SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
   ssh_message msg = NULL;
+  ssh_signature sig = NULL;
   char *service = NULL;
   char *method = NULL;
   int cmp;
@@ -863,13 +864,19 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
             goto error;
         }
 
-        rc = ssh_pki_signature_verify_blob(session,
-                                           sig_blob,
+        rc = ssh_pki_import_signature_blob(sig_blob,
                                            msg->auth_request.pubkey,
-                                           ssh_buffer_get(digest),
-                                           ssh_buffer_get_len(digest));
+                                           &sig);
+        if (rc == SSH_OK) {
+            rc = ssh_pki_signature_verify(session,
+                                          sig,
+                                          msg->auth_request.pubkey,
+                                          ssh_buffer_get(digest),
+                                          ssh_buffer_get_len(digest));
+        }
         ssh_string_free(sig_blob);
         ssh_buffer_free(digest);
+        ssh_signature_free(sig);
         if (rc < 0) {
             SSH_LOG(
                     SSH_LOG_PACKET,
