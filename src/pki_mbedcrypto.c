@@ -904,11 +904,12 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
 
     sig->type = type;
     sig->hash_type = hash_type;
-    sig->type_c = ssh_key_signature_to_char(type, hash_type);
+    sig->type_c = pubkey->type_c; /* for all types but RSA */
 
     switch(type) {
         case SSH_KEYTYPE_RSA:
             sig = pki_signature_from_rsa_blob(pubkey, sig_blob, sig);
+            sig->type_c = ssh_key_signature_to_char(type, hash_type);
             break;
         case SSH_KEYTYPE_ECDSA: {
             ssh_buffer b;
