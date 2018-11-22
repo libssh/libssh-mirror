@@ -1867,10 +1867,10 @@ int ssh_pki_import_signature_blob(const ssh_string sig_blob,
                                   const ssh_key pubkey,
                                   ssh_signature *psig)
 {
-    ssh_signature sig;
+    ssh_signature sig = NULL;
     enum ssh_keytypes_e type;
     enum ssh_digest_e hash_type;
-    ssh_string str;
+    ssh_string algorithm = NULL, blob = NULL;
     ssh_buffer buf;
     const char *alg = NULL;
     int rc;
@@ -1892,25 +1892,25 @@ int ssh_pki_import_signature_blob(const ssh_string sig_blob,
         return SSH_ERROR;
     }
 
-    str = ssh_buffer_get_ssh_string(buf);
-    if (str == NULL) {
+    algorithm = ssh_buffer_get_ssh_string(buf);
+    if (algorithm == NULL) {
         ssh_buffer_free(buf);
         return SSH_ERROR;
     }
 
-    alg = ssh_string_get_char(str);
+    alg = ssh_string_get_char(algorithm);
     type = ssh_key_type_from_signature_name(alg);
     hash_type = ssh_key_hash_from_name(alg);
-    ssh_string_free(str);
+    ssh_string_free(algorithm);
 
-    str = ssh_buffer_get_ssh_string(buf);
+    blob = ssh_buffer_get_ssh_string(buf);
     ssh_buffer_free(buf);
-    if (str == NULL) {
+    if (blob == NULL) {
         return SSH_ERROR;
     }
 
-    sig = pki_signature_from_blob(pubkey, str, type, hash_type);
-    ssh_string_free(str);
+    sig = pki_signature_from_blob(pubkey, blob, type, hash_type);
+    ssh_string_free(blob);
     if (sig == NULL) {
         return SSH_ERROR;
     }
