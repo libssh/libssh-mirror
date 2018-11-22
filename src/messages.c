@@ -873,7 +873,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
         if (rc < 0) {
             SSH_LOG(
                     SSH_LOG_PACKET,
-                    "Received an invalid  signature from peer");
+                    "Received an invalid signature from peer");
             msg->auth_request.signature_state = SSH_PUBLICKEY_STATE_WRONG;
             goto error;
         }
