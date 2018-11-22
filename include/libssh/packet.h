@@ -83,6 +83,8 @@ unsigned char *ssh_packet_encrypt(ssh_session session,
                                   unsigned int len);
 int ssh_packet_hmac_verify(ssh_session session,ssh_buffer buffer,
                            unsigned char *mac, enum ssh_hmac_e type);
+int ssh_packet_set_newkeys(ssh_session session,
+                           enum ssh_crypto_direction_e direction);
 struct ssh_crypto_struct *ssh_packet_get_current_crypto(ssh_session session,
         enum ssh_crypto_direction_e direction);
 

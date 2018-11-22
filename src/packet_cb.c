@@ -136,33 +136,6 @@ error:
   return SSH_PACKET_USED;
 }
 
-static void
-ssh_init_rekey_state(struct ssh_session_struct *session,
-                     struct ssh_cipher_struct *cipher)
-{
-    /* Reset the counters: should be NOOP */
-    cipher->packets = 0;
-    cipher->blocks = 0;
-
-    /* Default rekey limits for ciphers as specified in RFC4344, Section 3.2 */
-    if (cipher->blocksize >= 16) {
-        /* For larger block size (L bits) use maximum of 2**(L/4) blocks */
-        cipher->max_blocks = (uint64_t)1 << (cipher->blocksize*2);
-    } else {
-        /* For smaller blocks use limit of 1 GB as recommended in RFC4253 */
-        cipher->max_blocks = ((uint64_t)1 << 30) / cipher->blocksize;
-    }
-    /* If we have limit provided by user, use the smaller one */
-    if (session->opts.rekey_data != 0) {
-        cipher->max_blocks = MIN(cipher->max_blocks,
-                                 session->opts.rekey_data / cipher->blocksize);
-    }
-
-    SSH_LOG(SSH_LOG_PROTOCOL,
-            "Set rekey after %" PRIu64 " blocks",
-            cipher->max_blocks);
-}
-
 SSH_PACKET_CALLBACK(ssh_packet_newkeys){
   ssh_string sig_blob = NULL;
   ssh_signature sig = NULL;
@@ -188,23 +161,6 @@ SSH_PACKET_CALLBACK(ssh_packet_newkeys){
     ssh_key server_key;
 
     /* client */
-    rc = ssh_make_sessionid(session);
-    if (rc != SSH_OK) {
-      goto error;
-    }
-
-    /*
-     * Set the cryptographic functions for the next crypto
-     * (it is needed for ssh_generate_session_keys for key lengths)
-     */
-    rc = crypt_set_algorithms_client(session);
-    if (rc < 0) {
-        goto error;
-    }
-
-    if (ssh_generate_session_keys(session) < 0) {
-      goto error;
-    }
 
     /* Verify the host's signature. FIXME do it sooner */
     sig_blob = session->next_crypto->dh_server_signature;
@@ -249,48 +205,10 @@ SSH_PACKET_CALLBACK(ssh_packet_newkeys){
     }
     SSH_LOG(SSH_LOG_PROTOCOL,"Signature verified and valid");
 
-    /*
-     * Once we got SSH2_MSG_NEWKEYS we can switch next_crypto and
-     * current_crypto
-     */
-    if (session->current_crypto) {
-      crypto_free(session->current_crypto);
-      session->current_crypto=NULL;
-    }
-
-    /* FIXME later, include a function to change keys */
-    session->current_crypto = session->next_crypto;
-
-    /* Initialize rekeying states */
-    ssh_init_rekey_state(session,
-                         session->current_crypto->out_cipher);
-    ssh_init_rekey_state(session,
-                         session->current_crypto->in_cipher);
-    if (session->opts.rekey_time != 0) {
-        ssh_timestamp_init(&session->last_rekey_time);
-        SSH_LOG(SSH_LOG_PROTOCOL, "Set rekey after %" PRIu32 " seconds",
-                session->opts.rekey_time/1000);
-    }
-
-    session->next_crypto = crypto_new();
-    if (session->next_crypto == NULL) {
-      ssh_set_error_oom(session);
-      goto error;
-    }
-    session->next_crypto->session_id = malloc(session->current_crypto->digest_len);
-    if (session->next_crypto->session_id == NULL) {
-      ssh_set_error_oom(session);
-      goto error;
-    }
-    memcpy(session->next_crypto->session_id, session->current_crypto->session_id,
-            session->current_crypto->digest_len);
-    if (session->current_crypto->in_cipher->set_decrypt_key(session->current_crypto->in_cipher, session->current_crypto->decryptkey,
-        session->current_crypto->decryptIV) < 0) {
-      goto error;
-    }
-    if (session->current_crypto->out_cipher->set_encrypt_key(session->current_crypto->out_cipher, session->current_crypto->encryptkey,
-        session->current_crypto->encryptIV) < 0) {
-      goto error;
+    /* When receiving this packet, we switch on the incomming crypto. */
+    rc = ssh_packet_set_newkeys(session, SSH_DIRECTION_IN);
+    if (rc != SSH_OK) {
+        goto error;
     }
   }
   session->dh_handshake_state = DH_STATE_FINISHED;

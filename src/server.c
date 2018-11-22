@@ -484,37 +484,9 @@ static void ssh_server_connection_callback(ssh_session session){
             break;
         case SSH_SESSION_STATE_DH:
             if(session->dh_handshake_state==DH_STATE_FINISHED){
-                if (ssh_generate_session_keys(session) < 0) {
-                    goto error;
-                }
 
-                /*
-                 * Once we got SSH2_MSG_NEWKEYS we can switch next_crypto and
-                 * current_crypto
-                 */
-                if (session->current_crypto) {
-                    crypto_free(session->current_crypto);
-                }
-
-                /* FIXME TODO later, include a function to change keys */
-                session->current_crypto = session->next_crypto;
-                session->next_crypto = crypto_new();
-                if (session->next_crypto == NULL) {
-                    goto error;
-                }
-                session->next_crypto->session_id = malloc(session->current_crypto->digest_len);
-                if (session->next_crypto->session_id == NULL) {
-                    ssh_set_error_oom(session);
-                    goto error;
-                }
-                memcpy(session->next_crypto->session_id, session->current_crypto->session_id,
-                        session->current_crypto->digest_len);
-                if (session->current_crypto->in_cipher->set_decrypt_key(session->current_crypto->in_cipher, session->current_crypto->decryptkey,
-                            session->current_crypto->decryptIV) < 0) {
-                    goto error;
-                }
-                if (session->current_crypto->out_cipher->set_encrypt_key(session->current_crypto->out_cipher, session->current_crypto->encryptkey,
-                            session->current_crypto->encryptIV) < 0) {
+                rc = ssh_packet_set_newkeys(session, SSH_DIRECTION_IN);
+                if (rc != SSH_OK) {
                     goto error;
                 }
 

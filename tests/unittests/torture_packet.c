@@ -102,6 +102,7 @@ torture_packet(const char *cipher, const char *mac_type,
     rc = out_cipher->set_encrypt_key(out_cipher,
                                      session->current_crypto->encryptkey,
                                      session->current_crypto->encryptIV);
+    session->current_crypto->used = SSH_DIRECTION_BOTH;
     assert_int_equal(rc, SSH_OK);
 
     assert_non_null(session->out_buffer);

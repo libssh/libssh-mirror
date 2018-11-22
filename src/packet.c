@@ -48,6 +48,7 @@
 #include "libssh/auth.h"
 #include "libssh/gssapi.h"
 #include "libssh/bytearray.h"
+#include "libssh/dh.h"
 
 static ssh_packet_callback default_packet_handlers[]= {
   ssh_packet_disconnect_callback,          // SSH2_MSG_DISCONNECT                 1
@@ -936,7 +937,21 @@ struct ssh_crypto_struct *
 ssh_packet_get_current_crypto(ssh_session session,
                               enum ssh_crypto_direction_e direction)
 {
-    return session->current_crypto;
+    if (session == NULL) {
+        return NULL;
+    }
+
+    if (session->current_crypto != NULL &&
+        session->current_crypto->used & direction) {
+        return session->current_crypto;
+    }
+
+    if (session->next_crypto != NULL &&
+        session->next_crypto->used & direction) {
+        return session->next_crypto;
+    }
+
+    return NULL;
 }
 
 /* in nonblocking mode, socket_read will read as much as it can, and return */
@@ -1431,6 +1446,7 @@ static int packet_send2(ssh_session session)
     uint8_t padding_size;
     uint32_t finallen, payloadsize, compsize;
     uint8_t header[5] = {0};
+    uint8_t type, *payload;
     int rc = SSH_ERROR;
 
     crypto = ssh_packet_get_current_crypto(session, SSH_DIRECTION_OUT);
@@ -1441,6 +1457,9 @@ static int packet_send2(ssh_session session)
     } else {
         hmac_type = session->next_crypto->out_hmac;
     }
+
+    payload = (uint8_t *)ssh_buffer_get(session->out_buffer);
+    type = payload[0]; /* type is the first byte of the packet now */
 
     payloadsize = currentlen;
 #ifdef WITH_ZLIB
@@ -1531,12 +1550,159 @@ static int packet_send2(ssh_session session)
     rc = ssh_buffer_reinit(session->out_buffer);
     if (rc < 0) {
         rc = SSH_ERROR;
+        goto error;
     }
 
+    /* We sent the NEWKEYS so any further packet needs to be encrypted
+     * with the new keys. We can not switch both directions (need to decrypt
+     * peer NEWKEYS) and we do not want to wait for the peer NEWKEYS
+     * too, so we will switch only the OUT direction now.
+     */
+    if (type == SSH2_MSG_NEWKEYS) {
+        rc = ssh_packet_set_newkeys(session, SSH_DIRECTION_OUT);
+    }
 error:
     return rc; /* SSH_OK, AGAIN or ERROR */
 }
 
 int ssh_packet_send(ssh_session session) {
     return packet_send2(session);
+}
+
+static void
+ssh_init_rekey_state(struct ssh_session_struct *session,
+                     struct ssh_cipher_struct *cipher)
+{
+    /* Reset the counters: should be NOOP */
+    cipher->packets = 0;
+    cipher->blocks = 0;
+
+    /* Default rekey limits for ciphers as specified in RFC4344, Section 3.2 */
+    if (cipher->blocksize >= 16) {
+        /* For larger block size (L bits) use maximum of 2**(L/4) blocks */
+        cipher->max_blocks = (uint64_t)1 << (cipher->blocksize*2);
+    } else {
+        /* For smaller blocks use limit of 1 GB as recommended in RFC4253 */
+        cipher->max_blocks = ((uint64_t)1 << 30) / cipher->blocksize;
+    }
+    /* If we have limit provided by user, use the smaller one */
+    if (session->opts.rekey_data != 0) {
+        cipher->max_blocks = MIN(cipher->max_blocks,
+                                 session->opts.rekey_data / cipher->blocksize);
+    }
+
+    SSH_LOG(SSH_LOG_PROTOCOL,
+            "Set rekey after %" PRIu64 " blocks",
+            cipher->max_blocks);
+}
+
+/*
+ * Once we got SSH2_MSG_NEWKEYS we can switch next_crypto and
+ * current_crypto for our desired direction
+ */
+int
+ssh_packet_set_newkeys(ssh_session session,
+                       enum ssh_crypto_direction_e direction)
+{
+    int rc;
+
+    SSH_LOG(SSH_LOG_TRACE,
+            "called, direction =%s%s",
+            direction & SSH_DIRECTION_IN ? " IN " : "",
+            direction & SSH_DIRECTION_OUT ? " OUT " : "");
+
+    session->next_crypto->used |= direction;
+    if (session->current_crypto != NULL) {
+        if (session->current_crypto->used & direction) {
+            SSH_LOG(SSH_LOG_WARNING, "This direction isn't used anymore.");
+        }
+        /* Mark the current requested direction unused */
+        session->current_crypto->used &= ~direction;
+    }
+
+    /* Both sides switched: do the actual switch now */
+    if (session->next_crypto->used == SSH_DIRECTION_BOTH) {
+        size_t digest_len;
+
+        if (session->current_crypto != NULL) {
+            crypto_free(session->current_crypto);
+            session->current_crypto = NULL;
+        }
+
+        session->current_crypto = session->next_crypto;
+        session->current_crypto->used = SSH_DIRECTION_BOTH;
+
+        /* Initialize the next_crypto structure */
+        session->next_crypto = crypto_new();
+        if (session->next_crypto == NULL) {
+            ssh_set_error_oom(session);
+            return SSH_ERROR;
+        }
+
+        digest_len = session->current_crypto->digest_len;
+        session->next_crypto->session_id = malloc(digest_len);
+        if (session->next_crypto->session_id == NULL) {
+            ssh_set_error_oom(session);
+            return SSH_ERROR;
+        }
+
+        memcpy(session->next_crypto->session_id,
+               session->current_crypto->session_id,
+               digest_len);
+
+        return SSH_OK;
+    }
+
+    /* Initialize common structures so the next context can be used in
+     * either direction */
+    if (session->client) {
+        /* The server has this part already done */
+        rc = ssh_make_sessionid(session);
+        if (rc != SSH_OK) {
+            return SSH_ERROR;
+        }
+
+        /*
+         * Set the cryptographic functions for the next crypto
+         * (it is needed for ssh_generate_session_keys for key lengths)
+         */
+        rc = crypt_set_algorithms_client(session);
+        if (rc < 0) {
+            return SSH_ERROR;
+        }
+    }
+
+    if (ssh_generate_session_keys(session) < 0) {
+        return SSH_ERROR;
+    }
+
+    /* Initialize rekeying states */
+    ssh_init_rekey_state(session,
+                         session->next_crypto->out_cipher);
+    ssh_init_rekey_state(session,
+                         session->next_crypto->in_cipher);
+    if (session->opts.rekey_time != 0) {
+        ssh_timestamp_init(&session->last_rekey_time);
+        SSH_LOG(SSH_LOG_PROTOCOL, "Set rekey after %" PRIu32 " seconds",
+                session->opts.rekey_time/1000);
+    }
+
+    /* Initialize the encryption and decryption keys in next_crypto */
+    rc = session->next_crypto->in_cipher->set_decrypt_key(
+        session->next_crypto->in_cipher,
+        session->next_crypto->decryptkey,
+        session->next_crypto->decryptIV);
+    if (rc < 0) {
+        return SSH_ERROR;
+    }
+
+    rc = session->next_crypto->out_cipher->set_encrypt_key(
+        session->next_crypto->out_cipher,
+        session->next_crypto->encryptkey,
+        session->next_crypto->encryptIV);
+    if (rc < 0) {
+        return SSH_ERROR;
+    }
+
+    return SSH_OK;
 }
