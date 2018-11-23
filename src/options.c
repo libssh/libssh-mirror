@@ -611,12 +611,7 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
             v = value;
             SAFE_FREE(session->opts.knownhosts);
             if (v == NULL) {
-                session->opts.knownhosts = ssh_path_expand_escape(session,
-                                                             "%d/known_hosts");
-                if (session->opts.knownhosts == NULL) {
-                    ssh_set_error_oom(session);
-                    return -1;
-                }
+                /* The default value will be set by the ssh_options_apply() */
             } else if (v[0] == '\0') {
                 ssh_set_error_invalid(session);
                 return -1;
