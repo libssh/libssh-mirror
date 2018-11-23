@@ -263,6 +263,8 @@ static void torture_packet_filter_check_unfiltered(void **state)
     enum ssh_packet_filter_result_e rc;
     int in_unfiltered;
 
+    (void)state;
+
     session = ssh_new();
 
     for (msg_type = 1; msg_type <= MESSAGE_COUNT; msg_type++) {

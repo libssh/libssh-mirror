@@ -10,6 +10,8 @@ static void torture_pull_le_u8(void **state)
     uint8_t data[2] = {0};
     uint8_t result;
 
+    (void)state;
+
     result = PULL_LE_U8(data, 0);
     assert_int_equal(result, 0);
 
@@ -35,6 +37,8 @@ static void torture_pull_le_u16(void **state)
 {
     uint8_t data[2] = {0, 0};
     uint16_t result;
+
+    (void)state;
 
     result = PULL_LE_U16(data, 0);
     assert_int_equal(result, 0);
@@ -64,6 +68,8 @@ static void torture_pull_le_u32(void **state)
 {
     uint8_t data[4] = {0, 0, 0, 0};
     uint32_t result;
+
+    (void)state;
 
     result = PULL_LE_U32(data, 0);
     assert_int_equal(result, 0);
@@ -116,6 +122,8 @@ static void torture_push_le_u8(void **state)
     uint8_t data[4] = {0, 0, 0, 0};
     uint8_t data2[4] = {42, 42, 42, 42};
 
+    (void)state;
+
     PUSH_LE_U8(data, 0, 42);
     PUSH_LE_U8(data, 1, 42);
     PUSH_LE_U8(data, 2, 42);
@@ -128,6 +136,8 @@ static void torture_push_le_u16(void **state)
     uint8_t data[4] = {0, 0, 0, 0};
     uint8_t data2[4] = {0xa6, 0x7f, 0x2a, 0x00};
     uint16_t result;
+
+    (void)state;
 
     PUSH_LE_U16(data, 0, 32678);
     PUSH_LE_U16(data, 2, 42);
@@ -145,6 +155,8 @@ static void torture_push_le_u32(void **state)
     uint8_t data[8] = {0};
     uint8_t data2[8] = {0xa6, 0x7f, 0x00, 0x00, 0x2a, 0x00, 0x00, 0x00};
     uint32_t result;
+
+    (void)state;
 
     PUSH_LE_U32(data, 0, 32678);
     PUSH_LE_U32(data, 4, 42);
@@ -166,6 +178,8 @@ static void torture_push_le_u64(void **state)
     uint8_t data[16] = {0};
     uint64_t result;
 
+    (void)state;
+
     PUSH_LE_U64(data, 0, 32678);
 
     result = PULL_LE_U64(data, 0);
@@ -183,6 +197,8 @@ static void torture_pull_be_u8(void **state)
 {
     uint8_t data[2] = {0};
     uint8_t result;
+
+    (void)state;
 
     result = PULL_BE_U8(data, 0);
     assert_int_equal(result, 0);
@@ -209,6 +225,8 @@ static void torture_pull_be_u16(void **state)
 {
     uint8_t data[2] = {0, 0};
     uint16_t result;
+
+    (void)state;
 
     result = PULL_BE_U16(data, 0);
     assert_int_equal(result, 0);
@@ -238,6 +256,8 @@ static void torture_pull_be_u32(void **state)
 {
     uint8_t data[4] = {0, 0, 0, 0};
     uint32_t result;
+
+    (void)state;
 
     result = PULL_BE_U32(data, 0);
     assert_int_equal(result, 0);
@@ -290,6 +310,8 @@ static void torture_push_be_u8(void **state)
     uint8_t data[4] = {0, 0, 0, 0};
     uint8_t data2[4] = {42, 42, 42, 42};
 
+    (void)state;
+
     PUSH_BE_U8(data, 0, 42);
     PUSH_BE_U8(data, 1, 42);
     PUSH_BE_U8(data, 2, 42);
@@ -302,6 +324,8 @@ static void torture_push_be_u16(void **state)
     uint8_t data[4] = {0, 0, 0, 0};
     uint8_t data2[4] = {0x7f, 0xa6, 0x00, 0x2a};
     uint16_t result;
+
+    (void)state;
 
     PUSH_BE_U16(data, 0, 32678);
     PUSH_BE_U16(data, 2, 42);
@@ -319,6 +343,8 @@ static void torture_push_be_u32(void **state)
     uint8_t data[8] = {0};
     uint8_t data2[8] = {0x00, 0x00, 0x7f, 0xa6, 0x00, 0x00, 0x00, 0x2a};
     uint32_t result;
+
+    (void)state;
 
     PUSH_BE_U32(data, 0, 32678);
     PUSH_BE_U32(data, 4, 42);
@@ -339,6 +365,8 @@ static void torture_push_be_u64(void **state)
 {
     uint8_t data[16] = {0};
     uint64_t result;
+
+    (void)state;
 
     PUSH_BE_U64(data, 0, 32678);
 
