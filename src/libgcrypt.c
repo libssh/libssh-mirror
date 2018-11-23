@@ -422,6 +422,7 @@ aes_aead_get_length(struct ssh_cipher_struct *cipher,
                     size_t len,
                     uint64_t seq)
 {
+    (void)cipher;
     (void)seq;
 
     /* The length is not encrypted: Copy it to the result buffer */
