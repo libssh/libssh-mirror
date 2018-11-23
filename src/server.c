@@ -1046,34 +1046,38 @@ int ssh_message_auth_interactive_request(ssh_message msg, const char *name,
   return rc;
 }
 
-int ssh_auth_reply_success(ssh_session session, int partial) {
-  int r;
+int ssh_auth_reply_success(ssh_session session, int partial)
+{
+    int r;
 
-  if (session == NULL) {
-	  return SSH_ERROR;
-  }
+    if (session == NULL) {
+        return SSH_ERROR;
+    }
 
-  if (partial) {
-    return ssh_auth_reply_default(session, partial);
-  }
-  
-  session->session_state = SSH_SESSION_STATE_AUTHENTICATED;
-  session->flags |= SSH_SESSION_FLAG_AUTHENTICATED;
+    if (partial) {
+        return ssh_auth_reply_default(session, partial);
+    }
 
-  if (ssh_buffer_add_u8(session->out_buffer,SSH2_MSG_USERAUTH_SUCCESS) < 0) {
-    return SSH_ERROR;
-  }
+    session->session_state = SSH_SESSION_STATE_AUTHENTICATED;
+    session->flags |= SSH_SESSION_FLAG_AUTHENTICATED;
 
-  r = ssh_packet_send(session);
-  if(session->current_crypto && session->current_crypto->delayed_compress_out){
-      SSH_LOG(SSH_LOG_PROTOCOL,"Enabling delayed compression OUT");
-  	session->current_crypto->do_compress_out=1;
-  }
-  if(session->current_crypto && session->current_crypto->delayed_compress_in){
-      SSH_LOG(SSH_LOG_PROTOCOL,"Enabling delayed compression IN");
-  	session->current_crypto->do_compress_in=1;
-  }
-  return r;
+    r = ssh_buffer_add_u8(session->out_buffer,SSH2_MSG_USERAUTH_SUCCESS);
+    if (r < 0) {
+        return SSH_ERROR;
+    }
+
+    r = ssh_packet_send(session);
+
+    if (session->current_crypto && session->current_crypto->delayed_compress_out) {
+        SSH_LOG(SSH_LOG_PROTOCOL, "Enabling delayed compression OUT");
+        session->current_crypto->do_compress_out = 1;
+    }
+
+    if (session->current_crypto && session->current_crypto->delayed_compress_in) {
+        SSH_LOG(SSH_LOG_PROTOCOL, "Enabling delayed compression IN");
+        session->current_crypto->do_compress_in = 1;
+    }
+    return r;
 }
 
 int ssh_message_auth_reply_success(ssh_message msg, int partial) {
