@@ -1931,6 +1931,12 @@ int ssh_pki_signature_verify(ssh_session session,
             "Going to verify a %s type signature",
             sig->type_c);
 
+    if (key->type != sig->type) {
+        SSH_LOG(SSH_LOG_WARN,
+                "Can not verify %s signature with %s key",
+                sig->type_c, key->type_c);
+        return SSH_ERROR;
+    }
 
     if (key->type == SSH_KEYTYPE_ECDSA) {
 #if HAVE_ECC
