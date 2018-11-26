@@ -217,6 +217,7 @@ ssh_key_signature_to_char(enum ssh_keytypes_e type,
     case SSH_DIGEST_SHA512:
         return "rsa-sha2-512";
     case SSH_DIGEST_SHA1:
+    case SSH_DIGEST_AUTO:
         return "ssh-rsa";
     default:
         return NULL;
