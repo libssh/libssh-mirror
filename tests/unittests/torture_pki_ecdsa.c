@@ -451,7 +451,7 @@ static void torture_pki_generate_key_ecdsa(void **state)
     ssh_signature_free(sign);
     SSH_KEY_FREE(key);
 
-    rc = ssh_pki_generate(SSH_KEYTYPE_ECDSA, 512, &key);
+    rc = ssh_pki_generate(SSH_KEYTYPE_ECDSA, 521, &key);
     assert_true(rc == SSH_OK);
     assert_true(key != NULL);
     sign = pki_do_sign(key, ECDSA_HASH, 20);

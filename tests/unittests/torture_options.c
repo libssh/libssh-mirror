@@ -674,7 +674,7 @@ static void torture_bind_options_import_key(void **state)
     assert_int_equal(rc, 0);
 #endif
     /* set ecdsa key */
-    base64_key = torture_get_testkey(SSH_KEYTYPE_ECDSA, 512, 0);
+    base64_key = torture_get_testkey(SSH_KEYTYPE_ECDSA, 521, 0);
     rc = ssh_pki_import_privkey_base64(base64_key, NULL, NULL, NULL, &key);
     assert_int_equal(rc, SSH_OK);
     assert_non_null(key);

@@ -1439,7 +1439,7 @@ int pki_key_generate_ecdsa(ssh_key key, int parameter)
         case 384:
             nid = NID_mbedtls_nistp384;
             break;
-        case 512:
+        case 521:
             nid = NID_mbedtls_nistp521;
             break;
         case 256:
