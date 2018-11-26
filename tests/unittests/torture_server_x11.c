@@ -76,7 +76,7 @@ static void *client_thread(void *arg) {
     (void)arg;
 
     usleep(200);
-    session = torture_ssh_session("localhost",
+    session = torture_ssh_session(NULL, "localhost",
                                   &test_port,
                                   "foo", "bar");
     assert_non_null(session);

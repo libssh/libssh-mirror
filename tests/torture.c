@@ -244,7 +244,8 @@ int torture_terminate_process(const char *pidfile)
     return 0;
 }
 
-ssh_session torture_ssh_session(const char *host,
+ssh_session torture_ssh_session(struct torture_state *s,
+                                const char *host,
                                 const unsigned int *port,
                                 const char *user,
                                 const char *password) {
@@ -260,6 +261,12 @@ ssh_session torture_ssh_session(const char *host,
     if (session == NULL) {
         return NULL;
     }
+
+#ifdef WITH_PCAP
+    if (s != NULL && s->plain_pcap != NULL) {
+        ssh_set_pcap_file(session, s->plain_pcap);
+    }
+#endif /* WITH_PCAP */
 
     if (ssh_options_set(session, SSH_OPTIONS_HOST, host) < 0) {
         goto failed;
@@ -497,10 +504,22 @@ void torture_setup_socket_dir(void **state)
     struct torture_state *s;
     const char *p;
     size_t len;
-    char *env = getenv("TORTURE_GENERATE_PCAP");
+    char *env = NULL;
+    int rc;
 
-    s = malloc(sizeof(struct torture_state));
+    s = calloc(1, sizeof(struct torture_state));
     assert_non_null(s);
+
+#ifdef WITH_PCAP
+    env = getenv("TORTURE_PLAIN_PCAP_FILE");
+    if (env != NULL && env[0] != '\0') {
+        s->plain_pcap = ssh_pcap_file_new();
+        assert_non_null(s->plain_pcap);
+
+        rc = ssh_pcap_file_open(s->plain_pcap, env);
+        assert_int_equal(rc, SSH_OK);
+    }
+#endif /* WITH_PCAP */
 
     s->socket_dir = torture_make_temp_dir(TORTURE_SOCKET_DIR);
     assert_non_null(s->socket_dir);
@@ -533,6 +552,7 @@ void torture_setup_socket_dir(void **state)
 
     setenv("SOCKET_WRAPPER_DIR", p, 1);
     setenv("SOCKET_WRAPPER_DEFAULT_IFACE", "170", 1);
+    env = getenv("TORTURE_GENERATE_PCAP");
     if (env != NULL && env[0] == '1') {
         setenv("SOCKET_WRAPPER_PCAP_FILE", s->pcap_file, 1);
     }
@@ -781,6 +801,12 @@ void torture_teardown_socket_dir(void **state)
                     strerror(errno));
         }
     }
+#ifdef WITH_PCAP
+    if (s->plain_pcap != NULL) {
+        ssh_pcap_file_free(s->plain_pcap);
+    }
+    s->plain_pcap = NULL;
+#endif /* WITH_PCAP */
 
     free(s->srv_config);
     free(s->socket_dir);

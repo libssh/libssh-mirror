@@ -75,6 +75,9 @@ struct torture_state {
         ssh_session session;
         struct torture_sftp *tsftp;
     } ssh;
+#ifdef WITH_PCAP
+    ssh_pcap_file plain_pcap;
+#endif
 };
 
 #ifndef ZERO_STRUCT
@@ -93,7 +96,8 @@ int torture_terminate_process(const char *pidfile);
  */
 int torture_libssh_verbosity(void);
 
-ssh_session torture_ssh_session(const char *host,
+ssh_session torture_ssh_session(struct torture_state *s,
+                                const char *host,
                                 const unsigned int *port,
                                 const char *user,
                                 const char *password);
