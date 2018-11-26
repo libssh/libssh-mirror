@@ -2034,6 +2034,14 @@ int pki_signature_verify(ssh_session session,
     gcry_sexp_t sexp;
     gcry_error_t err;
 
+    if (key->type != sig->type) {
+        SSH_LOG(SSH_LOG_WARN,
+                "Can not verify %s signature with %s key",
+                sig->type_c,
+                key->type_c);
+        return SSH_ERROR;
+    }
+
     switch(key->type) {
         case SSH_KEYTYPE_DSS:
             /* That is to mark the number as positive */

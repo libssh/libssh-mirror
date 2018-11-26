@@ -1797,7 +1797,15 @@ int pki_signature_verify(ssh_session session,
     int rc;
     int nid;
 
-    switch(key->type) {
+    if (key->type != sig->type) {
+        SSH_LOG(SSH_LOG_WARN,
+                "Can not verify %s signature with %s key",
+                sig->type_c,
+                key->type_c);
+        return SSH_ERROR;
+    }
+
+    switch (key->type) {
         case SSH_KEYTYPE_DSS:
             rc = DSA_do_verify(hash,
                                hlen,

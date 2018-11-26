@@ -1008,6 +1008,14 @@ int pki_signature_verify(ssh_session session, const ssh_signature sig, const
     int rc;
     mbedtls_md_type_t md = 0;
 
+    if (key->type != sig->type) {
+        SSH_LOG(SSH_LOG_WARN,
+                "Can not verify %s signature with %s key",
+                sig->type_c,
+                key->type_c);
+        return SSH_ERROR;
+    }
+
     switch (key->type) {
         case SSH_KEYTYPE_RSA:
             switch (sig->hash_type) {
