@@ -2124,7 +2124,6 @@ int pki_signature_verify(ssh_session session,
             gcry_sexp_release(sexp);
             if (err) {
                 ssh_set_error(session, SSH_FATAL, "Invalid ECDSA signature");
-                abort();
                 if (gcry_err_code(err) != GPG_ERR_BAD_SIGNATURE) {
                     ssh_set_error(session,
                             SSH_FATAL,
