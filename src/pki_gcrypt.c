@@ -1848,6 +1848,14 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
     size_t rsalen;
     int rc;
 
+    if (type != pubkey->type) {
+        SSH_LOG(SSH_LOG_WARN,
+                "Incompatible public key provided (%d) expecting (%d)",
+                type,
+                pubkey->type);
+        return NULL;
+    }
+
     sig = ssh_signature_new();
     if (sig == NULL) {
         return NULL;
