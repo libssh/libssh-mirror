@@ -540,7 +540,7 @@ void torture_setup_socket_dir(void **state)
     *state = s;
 }
 
-static void torture_setup_create_sshd_config(void **state)
+static void torture_setup_create_sshd_config(void **state, bool pam)
 {
     struct torture_state *s = *state;
     char ed25519_hostkey[1024] = {0};
@@ -579,12 +579,11 @@ static void torture_setup_create_sshd_config(void **state)
              "Subsystem sftp %s -l DEBUG2\n"
              "\n"
              "PasswordAuthentication yes\n"
-             "KbdInteractiveAuthentication yes\n"
              "PubkeyAuthentication yes\n"
              "\n"
              "StrictModes no\n"
              "\n"
-             "UsePAM yes\n"
+             "%s" /* Here comes UsePam */
              "\n"
 #if (OPENSSH_VERSION_MAJOR == 6 && OPENSSH_VERSION_MINOR >= 7) || (OPENSSH_VERSION_MAJOR >= 7)
 # ifdef HAVE_DSA
@@ -618,10 +617,22 @@ static void torture_setup_create_sshd_config(void **state)
              "AcceptEnv LC_IDENTIFICATION LC_ALL LC_LIBSSH\n"
              "\n"
              "PidFile %s\n";
+    const char usepam_yes[] =
+             "UsePAM yes\n"
+             "KbdInteractiveAuthentication yes\n";
+    const char usepam_no[] =
+             "UsePAM no\n"
+             "KbdInteractiveAuthentication no\n";
     size_t sftp_sl_size = ARRAY_SIZE(sftp_server_locations);
-    const char *sftp_server;
+    const char *sftp_server, *usepam;
     size_t i;
     int rc;
+
+    if (pam) {
+        usepam = usepam_yes;
+    } else {
+        usepam = usepam_no;
+    }
 
     snprintf(sshd_path,
              sizeof(sshd_path),
@@ -688,6 +699,7 @@ static void torture_setup_create_sshd_config(void **state)
              ecdsa_hostkey,
              trusted_ca_pubkey,
              sftp_server,
+             usepam,
              s->srv_pidfile);
 #else /* HAVE_DSA */
     snprintf(sshd_config, sizeof(sshd_config),
@@ -697,6 +709,7 @@ static void torture_setup_create_sshd_config(void **state)
              ecdsa_hostkey,
              trusted_ca_pubkey,
              sftp_server,
+             usepam,
              s->srv_pidfile);
 #endif /* HAVE_DSA */
 
@@ -721,14 +734,14 @@ static int torture_wait_for_daemon(unsigned int seconds)
     return 1;
 }
 
-void torture_setup_sshd_server(void **state)
+void torture_setup_sshd_server(void **state, bool pam)
 {
     struct torture_state *s;
     char sshd_start_cmd[1024];
     int rc;
 
     torture_setup_socket_dir(state);
-    torture_setup_create_sshd_config(state);
+    torture_setup_create_sshd_config(state, pam);
 
     /* Set the default interface for the server */
     setenv("SOCKET_WRAPPER_DEFAULT_IFACE", "10", 1);

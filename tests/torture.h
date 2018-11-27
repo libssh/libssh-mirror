@@ -115,7 +115,7 @@ const char *torture_server_address(int domain);
 int torture_server_port(void);
 
 void torture_setup_socket_dir(void **state);
-void torture_setup_sshd_server(void **state);
+void torture_setup_sshd_server(void **state, bool pam);
 
 void torture_teardown_socket_dir(void **state);
 void torture_teardown_sshd_server(void **state);
