@@ -519,7 +519,7 @@ static void evp_cipher_init(struct ssh_cipher_struct *cipher) {
         break;
         /* ciphers not using EVP */
     case SSH_AEAD_CHACHA20_POLY1305:
-        SSH_LOG(SSH_LOG_WARNING, "The ChaCha cipher can not be handled here");
+        SSH_LOG(SSH_LOG_WARNING, "The ChaCha cipher cannot be handled here");
         break;
     case SSH_NO_CIPHER:
         SSH_LOG(SSH_LOG_WARNING, "No valid ciphertype found");

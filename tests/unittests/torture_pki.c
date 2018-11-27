@@ -210,7 +210,7 @@ static void torture_pki_verify_mismatch(void **state)
             assert_true(rc == SSH_OK);
             assert_true(verify_key != NULL);
 
-            /* Should gradefully fail, but not crash */
+            /* Should gracefully fail, but not crash */
             rc = pki_signature_verify(session,
                                       sign,
                                       verify_key,
@@ -240,7 +240,7 @@ static void torture_pki_verify_mismatch(void **state)
                 assert_string_equal(new_sig->type_c, key->type_c);
                 assert_string_equal(new_sig->type_c, signature_types[sig_type]);
 
-                /* The verificaiton should not work */
+                /* The verification should not work */
                 rc = pki_signature_verify(session,
                                           new_sig,
                                           verify_key,

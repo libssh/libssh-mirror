@@ -510,7 +510,7 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
                 }
 
                 ssh_set_error(session, SSH_FATAL,
-                              "line %d: ERROR - Match all can not be combined with "
+                              "line %d: ERROR - Match all cannot be combined with "
                               "other Match attributes", count);
                 SAFE_FREE(x);
                 return -1;
