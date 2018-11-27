@@ -1107,6 +1107,16 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
                 }
             }
 
+#ifdef WITH_PCAP
+            if (session->pcap_ctx != NULL) {
+                ssh_pcap_context_write(session->pcap_ctx,
+                                       SSH_PCAP_DIR_IN,
+                                       ssh_buffer_get(session->in_buffer),
+                                       ssh_buffer_get_len(session->in_buffer),
+                                       ssh_buffer_get_len(session->in_buffer));
+            }
+#endif
+
             /* skip the size field which has been processed before */
             ssh_buffer_pass_bytes(session->in_buffer, sizeof(uint32_t));
 
