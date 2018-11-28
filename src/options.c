@@ -477,8 +477,10 @@ int ssh_options_set_algo(ssh_session session,
  *
  *              - SSH_OPTIONS_REKEY_DATA
  *                Set the data limit that can be transferred with a single
- *                key in bytes. RFC 4253 Section 9 recommends 1GB of data
- *                (uint64_t, 0=off)
+ *                key in bytes. RFC 4253 Section 9 recommends 1GB of data, while
+ *                RFC 4344 provides more specific restrictions, that are applied
+ *                automatically. When specified, the lower value will be used.
+ *                (uint64_t, 0=default)
  *
  *              - SSH_OPTIONS_REKEY_TIME
  *                Set the time limit for a session before intializing a rekey
