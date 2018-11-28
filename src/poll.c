@@ -126,7 +126,23 @@ static poll_fn ssh_poll_emu;
 #include <unistd.h>
 #endif
 
-static bool bsd_socket_disconnected(int sock_err)
+static bool bsd_socket_not_connected(int sock_err)
+{
+    switch (sock_err) {
+#ifdef _WIN32
+    case WSAENOTCONN:
+#else
+    case ENOTCONN:
+#endif
+        return true;
+    default:
+        return false;
+    }
+
+    return false;
+}
+
+static bool bsd_socket_reset(int sock_err)
 {
     switch (sock_err) {
 #ifdef _WIN32
@@ -134,6 +150,8 @@ static bool bsd_socket_disconnected(int sock_err)
     case WSAECONNRESET:
     case WSAENETRESET:
     case WSAESHUTDOWN:
+    case WSAECONNREFUSED:
+    case WSAETIMEDOUT:
 #else
     case ECONNABORTED:
     case ECONNRESET:
@@ -146,6 +164,40 @@ static bool bsd_socket_disconnected(int sock_err)
     }
 
     return false;
+}
+
+static short bsd_socket_compute_revents(int fd, short events)
+{
+    int save_errno = errno;
+    int sock_errno = errno;
+    char data[64] = {0};
+    short revents = 0;
+    int ret;
+
+    /* support for POLLHUP */
+#ifdef _WIN32
+    WSASetLastError(0);
+#endif
+
+    ret = recv(fd, data, 64, MSG_PEEK);
+
+    errno = save_errno;
+
+#ifdef _WIN32
+    sock_errno = WSAGetLastError();
+    WSASetLastError(0);
+#endif
+
+    if (ret > 0 || bsd_socket_not_connected(sock_errno)) {
+        revents = (POLLIN | POLLRDNORM) & events;
+    } else if (ret == 0 || bsd_socket_reset(sock_errno)) {
+        errno = sock_errno;
+        revents = POLLHUP;
+    } else {
+        revents = POLLERR;
+    }
+
+    return revents;
 }
 
 /*
@@ -235,19 +287,8 @@ static int bsd_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout)
             fds[i].revents = 0;
 
             if (FD_ISSET(fds[i].fd, &readfds)) {
-                int save_errno = errno;
-                char data[64] = {0};
-                int ret;
-
-                /* support for POLLHUP */
-                ret = recv(fds[i].fd, data, 64, MSG_PEEK);
-                if ((ret == -1) && bsd_socket_disconnected(errno)) {
-                    fds[i].revents |= POLLHUP;
-                } else {
-                    fds[i].revents |= fds[i].events & (POLLIN | POLLRDNORM);
-                }
-
-                errno = save_errno;
+                fds[i].revents = bsd_socket_compute_revents(fds[i].fd,
+                                                            fds[i].events);
             }
             if (FD_ISSET(fds[i].fd, &writefds)) {
                 fds[i].revents |= fds[i].events & (POLLOUT | POLLWRNORM | POLLWRBAND);
