@@ -805,11 +805,11 @@ char *torture_make_temp_dir(const char *template)
 
     new_dir = mkdtemp(template_copy);
     if (new_dir == NULL) {
-        free(template_copy);
+        SAFE_FREE(template_copy);
     }
 
 end:
-    return new_dir;
+    return template_copy;
 }
 
 char *torture_create_temp_file(const char *template)
