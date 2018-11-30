@@ -770,7 +770,7 @@ evp_cipher_aead_encrypt(struct ssh_cipher_struct *cipher,
                            &outlen,
                            (unsigned char *)in + aadlen,
                            (int)len - aadlen);
-    if (rc != 1 || outlen != len - aadlen) {
+    if (rc != 1 || outlen != (int)len - aadlen) {
         SSH_LOG(SSH_LOG_WARNING, "EVP_EncryptUpdate failed");
         return;
     }
