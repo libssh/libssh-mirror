@@ -69,7 +69,7 @@ ssh_string ssh_make_bignum_string(bignum num) {
 
 bignum ssh_make_string_bn(ssh_string string){
   bignum bn = NULL;
-  unsigned int len = ssh_string_len(string);
+  size_t len = ssh_string_len(string);
 
 #ifdef DEBUG_CRYPTO
   fprintf(stderr, "Importing a %d bits, %d bytes object ...\n",
@@ -89,7 +89,7 @@ bignum ssh_make_string_bn(ssh_string string){
 }
 
 void ssh_make_string_bn_inplace(ssh_string string, bignum bnout) {
-  unsigned int len = ssh_string_len(string);
+  size_t len = ssh_string_len(string);
 #ifdef HAVE_LIBGCRYPT
   /* XXX: FIXME as needed for LIBGCRYPT ECDSA codepaths. */
   (void) len;
