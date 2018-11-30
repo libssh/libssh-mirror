@@ -55,7 +55,7 @@ static int run_on_threads(void *(*func)(void *))
     return rc;
 }
 
-static void *thread_ssh_init(void *threadid)
+static void *thread_ssh_init(UNUSED_PARAM(void *threadid))
 {
     int rc;
 
@@ -70,12 +70,9 @@ static void *thread_ssh_init(void *threadid)
     pthread_exit(NULL);
 }
 
-static void torture_ssh_init(void **state)
+static void torture_ssh_init(UNUSED_PARAM(void **state))
 {
     int rc;
-
-    /* Unused */
-    (void) state;
 
     rc = run_on_threads(thread_ssh_init);
     assert_int_equal(rc, 0);
