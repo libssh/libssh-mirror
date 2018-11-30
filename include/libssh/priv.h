@@ -302,8 +302,6 @@ int ssh_connector_remove_event(ssh_connector connector);
 void explicit_bzero(void *s, size_t n);
 #endif /* !HAVE_EXPLICIT_BZERO */
 
-#define UNUSED(x) (void)(x)
-
 /**
  * This is a hack to fix warnings. The idea is to use this everywhere that we
  * get the "discarding const" warning by the compiler. That doesn't actually
@@ -387,6 +385,22 @@ void explicit_bzero(void *s, size_t n);
 #  define FALL_THROUGH
 # endif /* HAVE_FALLTHROUGH_ATTRIBUTE */
 #endif /* FALL_THROUGH */
+
+#ifndef __unused__
+# ifdef HAVE_UNUSED_ATTRIBUTE
+#  define __unused__ __attribute__((unused))
+# else /* HAVE_UNUSED_ATTRIBUTE */
+#  define __unused__
+# endif /* HAVE_UNUSED_ATTRIBUTE */
+#endif /* __unused__ */
+
+#ifndef UNUSED_PARAM
+#define UNUSED_PARAM(param) param __unused__
+#endif /* UNUSED_PARAM */
+
+#ifndef UNUSED_VAR
+#define UNUSED_VAR(var) __unused__ var
+#endif /* UNUSED_VAR */
 
 void ssh_agent_state_free(void *data);
 
