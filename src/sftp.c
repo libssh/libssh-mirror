@@ -115,22 +115,26 @@ sftp_session sftp_new(ssh_session session)
 
     sftp->ext = sftp_ext_new();
     if (sftp->ext == NULL) {
+        ssh_set_error_oom(session);
         goto error;
     }
 
     sftp->read_packet = calloc(1, sizeof(struct sftp_packet_struct));
     if (sftp->read_packet == NULL) {
+        ssh_set_error_oom(session);
         goto error;
     }
 
     sftp->read_packet->payload = ssh_buffer_new();
     if (sftp->read_packet->payload == NULL) {
+        ssh_set_error_oom(session);
         goto error;
     }
 
     sftp->session = session;
     sftp->channel = ssh_channel_new(session);
     if (sftp->channel == NULL) {
+        ssh_set_error_oom(session);
         goto error;
     }
 
@@ -144,7 +148,6 @@ sftp_session sftp_new(ssh_session session)
 
     return sftp;
 error:
-    ssh_set_error_oom(session);
     if (sftp->ext != NULL) {
         sftp_ext_free(sftp->ext);
     }
