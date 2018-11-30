@@ -708,8 +708,10 @@ error:
     return SSH_ERROR;
 }
 
-static void cipher_encrypt(struct ssh_cipher_struct *cipher, void *in, void *out,
-        unsigned long len)
+static void cipher_encrypt(struct ssh_cipher_struct *cipher,
+                           void *in,
+                           void *out,
+                           size_t len)
 {
     size_t outlen = 0;
     size_t total_len = 0;
@@ -763,8 +765,10 @@ static void cipher_encrypt_cbc(struct ssh_cipher_struct *cipher, void *in, void 
 
 }
 
-static void cipher_decrypt(struct ssh_cipher_struct *cipher, void *in, void *out,
-        unsigned long len)
+static void cipher_decrypt(struct ssh_cipher_struct *cipher,
+                           void *in,
+                           void *out,
+                           size_t len)
 {
     size_t outlen = 0;
     int rc = 0;

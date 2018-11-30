@@ -405,14 +405,20 @@ static int aes_set_key(struct ssh_cipher_struct *cipher, void *key, void *IV) {
   return 0;
 }
 
-static void aes_encrypt(struct ssh_cipher_struct *cipher, void *in, void *out,
-    unsigned long len) {
-  gcry_cipher_encrypt(cipher->key[0], out, len, in, len);
+static void aes_encrypt(struct ssh_cipher_struct *cipher,
+                        void *in,
+                        void *out,
+                        size_t len)
+{
+    gcry_cipher_encrypt(cipher->key[0], out, len, in, len);
 }
 
-static void aes_decrypt(struct ssh_cipher_struct *cipher, void *in, void *out,
-    unsigned long len) {
-  gcry_cipher_decrypt(cipher->key[0], out, len, in, len);
+static void aes_decrypt(struct ssh_cipher_struct *cipher,
+                        void *in,
+                        void *out,
+                        size_t len)
+{
+    gcry_cipher_decrypt(cipher->key[0], out, len, in, len);
 }
 
 static int

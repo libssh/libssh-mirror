@@ -596,20 +596,25 @@ static int evp_cipher_set_decrypt_key(struct ssh_cipher_struct *cipher,
 
 /* EVP wrapper function for encrypt/decrypt */
 static void evp_cipher_encrypt(struct ssh_cipher_struct *cipher,
-                        void *in,
-                        void *out,
-                        unsigned long len) {
+                               void *in,
+                               void *out,
+                               size_t len)
+{
     int outlen = 0;
     int rc = 0;
 
-    rc = EVP_EncryptUpdate(cipher->ctx, (unsigned char *)out, &outlen, (unsigned char *)in, len);
+    rc = EVP_EncryptUpdate(cipher->ctx,
+                           (unsigned char *)out,
+                           &outlen,
+                           (unsigned char *)in,
+                           (int)len);
     if (rc != 1){
         SSH_LOG(SSH_LOG_WARNING, "EVP_EncryptUpdate failed");
         return;
     }
     if (outlen != (int)len){
         SSH_LOG(SSH_LOG_WARNING,
-                "EVP_EncryptUpdate: output size %d for %lu in",
+                "EVP_EncryptUpdate: output size %d for %zu in",
                 outlen,
                 len);
         return;
@@ -617,20 +622,25 @@ static void evp_cipher_encrypt(struct ssh_cipher_struct *cipher,
 }
 
 static void evp_cipher_decrypt(struct ssh_cipher_struct *cipher,
-                        void *in,
-                        void *out,
-                        unsigned long len) {
+                               void *in,
+                               void *out,
+                               size_t len)
+{
     int outlen = 0;
     int rc = 0;
 
-    rc = EVP_DecryptUpdate(cipher->ctx, (unsigned char *)out, &outlen, (unsigned char *)in, len);
+    rc = EVP_DecryptUpdate(cipher->ctx,
+                           (unsigned char *)out,
+                           &outlen,
+                           (unsigned char *)in,
+                           (int)len);
     if (rc != 1){
         SSH_LOG(SSH_LOG_WARNING, "EVP_DecryptUpdate failed");
         return;
     }
     if (outlen != (int)len){
         SSH_LOG(SSH_LOG_WARNING,
-                "EVP_DecryptUpdate: output size %d for %lu in",
+                "EVP_DecryptUpdate: output size %d for %zu in",
                 outlen,
                 len);
         return;
@@ -747,8 +757,8 @@ evp_cipher_aead_encrypt(struct ssh_cipher_struct *cipher,
                            NULL,
                            &outlen,
                            (unsigned char *)in,
-                           aadlen);
-    if (rc == 0 || outlen != aadlen) {
+                           (int)aadlen);
+    if (rc == 0 || outlen != (int)aadlen) {
         SSH_LOG(SSH_LOG_WARNING, "Failed to pass authenticated data");
         return;
     }
@@ -759,7 +769,7 @@ evp_cipher_aead_encrypt(struct ssh_cipher_struct *cipher,
                            (unsigned char *)out + aadlen,
                            &outlen,
                            (unsigned char *)in + aadlen,
-                           len - aadlen);
+                           (int)len - aadlen);
     if (rc != 1 || outlen != len - aadlen) {
         SSH_LOG(SSH_LOG_WARNING, "EVP_EncryptUpdate failed");
         return;
@@ -826,7 +836,7 @@ evp_cipher_aead_decrypt(struct ssh_cipher_struct *cipher,
                            NULL,
                            &outlen,
                            (unsigned char *)complete_packet,
-                           aadlen);
+                           (int)aadlen);
     if (rc == 0) {
         SSH_LOG(SSH_LOG_WARNING, "Failed to pass authenticated data");
         return SSH_ERROR;
