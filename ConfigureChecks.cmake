@@ -343,25 +343,27 @@ int main(void) {
     return 0;
 }" HAVE_FALLTHROUGH_ATTRIBUTE)
 
-check_c_source_compiles("
-#define __unused __attribute__((unused))
+if (NOT WIN32)
+    check_c_source_compiles("
+    #define __unused __attribute__((unused))
 
-static int do_nothing(int i __unused)
-{
-    return 0;
-}
-
-int main(void)
-{
-    int i;
-
-    i = do_nothing(5);
-    if (i > 5) {
-        return 1;
+    static int do_nothing(int i __unused)
+    {
+        return 0;
     }
 
-    return 0;
-}" HAVE_UNUSED_ATTRIBUTE)
+    int main(void)
+    {
+        int i;
+
+        i = do_nothing(5);
+        if (i > 5) {
+            return 1;
+        }
+
+        return 0;
+    }" HAVE_UNUSED_ATTRIBUTE)
+endif()
 
 check_c_source_compiles("
 #include <string.h>

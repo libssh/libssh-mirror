@@ -88,12 +88,12 @@ bignum ssh_make_string_bn(ssh_string string){
   return bn;
 }
 
-void ssh_make_string_bn_inplace(ssh_string string, bignum bnout) {
-  size_t len = ssh_string_len(string);
+void ssh_make_string_bn_inplace(ssh_string string,
+                                UNUSED_PARAM(bignum bnout))
+{
+  UNUSED_VAR(size_t len) = ssh_string_len(string);
 #ifdef HAVE_LIBGCRYPT
   /* XXX: FIXME as needed for LIBGCRYPT ECDSA codepaths. */
-  (void) len;
-  (void) bnout;
 #elif defined HAVE_LIBCRYPTO
   bignum_bin2bn(string->data, len, bnout);
 #elif defined HAVE_LIBMBEDCRYPTO
