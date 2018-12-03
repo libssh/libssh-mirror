@@ -75,6 +75,11 @@ static int setup_config_files(void **state)
                         "\tConnectTimeout 30\n"
                         "\tLogLevel DEBUG3\n"
                         "\tGlobalKnownHostsFile "GLOBAL_KNOWN_HOSTS"\n"
+                        "\tCompression yes\n"
+                        "\tStrictHostkeyChecking no\n"
+                        "\tGSSAPIDelegateCredentials yes\n"
+                        "\tGSSAPIServerIdentity example.com\n"
+                        "\tGSSAPIClientIdentity home.sweet\n"
                         "\tUserKnownHostsFile "USER_KNOWN_HOSTS"\n");
 
     /* authentication methods */
@@ -249,6 +254,14 @@ static void torture_config_new(void **state)
     assert_string_equal(session->opts.global_knownhosts, GLOBAL_KNOWN_HOSTS);
     assert_int_equal(session->opts.timeout, 30);
     assert_string_equal(session->opts.bindaddr, BIND_ADDRESS);
+    assert_string_equal(session->opts.wanted_methods[SSH_COMP_C_S],
+                        "zlib@openssh.com,zlib");
+    assert_string_equal(session->opts.wanted_methods[SSH_COMP_S_C],
+                        "zlib@openssh.com,zlib");
+    assert_int_equal(session->opts.StrictHostKeyChecking, 0);
+    assert_int_equal(session->opts.gss_delegate_creds, 1);
+    assert_string_equal(session->opts.gss_server_identity, "example.com");
+    assert_string_equal(session->opts.gss_client_identity, "home.sweet");
 
     assert_int_equal(ssh_get_log_level(), SSH_LOG_TRACE);
     assert_int_equal(session->common.log_verbosity, SSH_LOG_TRACE);
