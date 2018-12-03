@@ -402,33 +402,19 @@ static void torture_config_match(void **state)
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
-        cmocka_unit_test_setup_teardown(torture_config_from_file,
-                                        setup_config_files,
-                                        teardown),
-        cmocka_unit_test_setup_teardown(torture_config_double_ports,
-                                        setup_config_files,
-                                        teardown),
-        cmocka_unit_test_setup_teardown(torture_config_glob,
-                                        setup_config_files,
-                                        teardown),
-        cmocka_unit_test_setup_teardown(torture_config_new,
-                                        setup_config_files,
-                                        teardown),
-        cmocka_unit_test_setup_teardown(torture_config_auth_methods,
-                                        setup_config_files,
-                                        teardown),
-        cmocka_unit_test_setup_teardown(torture_config_unknown,
-                                        setup_config_files,
-                                        teardown),
-        cmocka_unit_test_setup_teardown(torture_config_match,
-                                        setup_config_files,
-                                        teardown),
+        cmocka_unit_test(torture_config_from_file),
+        cmocka_unit_test(torture_config_double_ports),
+        cmocka_unit_test(torture_config_glob),
+        cmocka_unit_test(torture_config_new),
+        cmocka_unit_test(torture_config_auth_methods),
+        cmocka_unit_test(torture_config_unknown),
+        cmocka_unit_test(torture_config_match),
     };
 
 
     ssh_init();
     torture_filter_tests(tests);
-    rc = cmocka_run_group_tests(tests, NULL, NULL);
+    rc = cmocka_run_group_tests(tests, setup_config_files, teardown);
     ssh_finalize();
     return rc;
 }
