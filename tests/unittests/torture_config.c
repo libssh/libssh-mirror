@@ -18,6 +18,7 @@ extern LIBSSH_THREAD int ssh_log_level;
 #define LIBSSH_TESTCONFIG8 "libssh_testconfig8.tmp"
 #define LIBSSH_TESTCONFIG9 "libssh_testconfig9.tmp"
 #define LIBSSH_TESTCONFIG10 "libssh_testconfig10.tmp"
+#define LIBSSH_TESTCONFIG11 "libssh_testconfig11.tmp"
 #define LIBSSH_TESTCONFIGGLOB "libssh_testc*[36].tmp"
 
 #define USERNAME "testuser"
@@ -45,6 +46,8 @@ static int setup_config_files(void **state)
     unlink(LIBSSH_TESTCONFIG7);
     unlink(LIBSSH_TESTCONFIG8);
     unlink(LIBSSH_TESTCONFIG9);
+    unlink(LIBSSH_TESTCONFIG10);
+    unlink(LIBSSH_TESTCONFIG11);
 
     torture_write_file(LIBSSH_TESTCONFIG1,
                        "User "USERNAME"\nInclude "LIBSSH_TESTCONFIG2"\n\n");
@@ -128,6 +131,28 @@ static int setup_config_files(void **state)
                        "\tHostName all-matched.com\n"
                        "");
 
+    /* ProxyJump */
+    torture_write_file(LIBSSH_TESTCONFIG11,
+                       "Host simple\n"
+                       "\tProxyJump jumpbox\n"
+                       "Host user\n"
+                       "\tProxyJump user@jumpbox\n"
+                       "Host port\n"
+                       "\tProxyJump jumpbox:2222\n"
+                       "Host two-step\n"
+                       "\tProxyJump u1@first:222,u2@second:33\n"
+                       "Host none\n"
+                       "\tProxyJump none\n"
+                       "Host only-command\n"
+                       "\tProxyCommand "PROXYCMD"\n"
+                       "\tProxyJump jumpbox\n"
+                       "Host only-jump\n"
+                       "\tProxyJump jumpbox\n"
+                       "\tProxyCommand "PROXYCMD"\n"
+                       "Host ipv6\n"
+                       "\tProxyJump [2620:52:0::fed]\n"
+                       "");
+
     session = ssh_new();
 
     verbosity = torture_libssh_verbosity();
@@ -150,6 +175,7 @@ static int teardown(void **state)
     unlink(LIBSSH_TESTCONFIG8);
     unlink(LIBSSH_TESTCONFIG9);
     unlink(LIBSSH_TESTCONFIG10);
+    unlink(LIBSSH_TESTCONFIG11);
 
     ssh_free(*state);
 
@@ -395,7 +421,215 @@ static void torture_config_match(void **state)
     ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG10);
     assert_true(ret == 0);
     assert_string_equal(session->opts.host, "nonuser-testhost.com");
+}
 
+/**
+ * @brief Verify we can parse ProxyJump configuration option
+ */
+static void torture_config_proxyjump(void **state) {
+    ssh_session session = *state;
+    int ret = 0;
+
+    /* Simplest version with just a hostname */
+    ssh_options_set(session, SSH_OPTIONS_HOST, "simple");
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG11);
+    assert_ssh_return_code(session, ret);
+    assert_string_equal(session->opts.ProxyCommand, "ssh -W [%h]:%p jumpbox");
+
+    /* With username */
+    torture_reset_config(session);
+    ssh_options_set(session, SSH_OPTIONS_HOST, "user");
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG11);
+    assert_ssh_return_code(session, ret);
+    assert_string_equal(session->opts.ProxyCommand,
+                        "ssh -l user -W [%h]:%p jumpbox");
+
+    /* With port */
+    torture_reset_config(session);
+    ssh_options_set(session, SSH_OPTIONS_HOST, "port");
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG11);
+    assert_ssh_return_code(session, ret);
+    assert_string_equal(session->opts.ProxyCommand,
+                        "ssh -p 2222 -W [%h]:%p jumpbox");
+
+    /* Two step jump */
+    torture_reset_config(session);
+    ssh_options_set(session, SSH_OPTIONS_HOST, "two-step");
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG11);
+    assert_ssh_return_code(session, ret);
+    assert_string_equal(session->opts.ProxyCommand,
+                        "ssh -l u1 -p 222 -J u2@second:33 -W [%h]:%p first");
+
+    /* none */
+    torture_reset_config(session);
+    ssh_options_set(session, SSH_OPTIONS_HOST, "none");
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG11);
+    assert_ssh_return_code(session, ret);
+    assert_true(session->opts.ProxyCommand == NULL);
+
+    /* If also ProxyCommand is specifed, the first is applied */
+    torture_reset_config(session);
+    ssh_options_set(session, SSH_OPTIONS_HOST, "only-command");
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG11);
+    assert_ssh_return_code(session, ret);
+    assert_string_equal(session->opts.ProxyCommand, PROXYCMD);
+
+    /* If also ProxyCommand is specifed, the first is applied */
+    torture_reset_config(session);
+    ssh_options_set(session, SSH_OPTIONS_HOST, "only-jump");
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG11);
+    assert_ssh_return_code(session, ret);
+    assert_string_equal(session->opts.ProxyCommand,
+                        "ssh -W [%h]:%p jumpbox");
+
+    /* IPv6 address */
+    torture_reset_config(session);
+    ssh_options_set(session, SSH_OPTIONS_HOST, "ipv6");
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG11);
+    assert_ssh_return_code(session, ret);
+    assert_string_equal(session->opts.ProxyCommand,
+                        "ssh -W [%h]:%p 2620:52:0::fed");
+
+    /* Try to create some invalid configurations */
+    /* Non-numeric port */
+    torture_write_file(LIBSSH_TESTCONFIG11,
+                       "Host bad-port\n"
+                       "\tProxyJump jumpbox:22bad22\n"
+                       "");
+    torture_reset_config(session);
+    ssh_options_set(session, SSH_OPTIONS_HOST, "bad-port");
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG11);
+    assert_ssh_return_code_equal(session, ret, SSH_ERROR);
+
+    /* Too many @ */
+    torture_write_file(LIBSSH_TESTCONFIG11,
+                       "Host bad-hostname\n"
+                       "\tProxyJump user@principal.com@jumpbox:22\n"
+                       "");
+    torture_reset_config(session);
+    ssh_options_set(session, SSH_OPTIONS_HOST, "bad-hostname");
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG11);
+    assert_ssh_return_code_equal(session, ret, SSH_ERROR);
+
+    /* Braces mismatch in hostname */
+    torture_write_file(LIBSSH_TESTCONFIG11,
+                       "Host mismatch\n"
+                       "\tProxyJump [::1\n"
+                       "");
+    torture_reset_config(session);
+    ssh_options_set(session, SSH_OPTIONS_HOST, "mismatch");
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG11);
+    assert_ssh_return_code_equal(session, ret, SSH_ERROR);
+
+    /* Bad host-port separator */
+    torture_write_file(LIBSSH_TESTCONFIG11,
+                       "Host beef\n"
+                       "\tProxyJump [dead::beef]::22\n"
+                       "");
+    torture_reset_config(session);
+    ssh_options_set(session, SSH_OPTIONS_HOST, "beef");
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG11);
+    assert_ssh_return_code_equal(session, ret, SSH_ERROR);
+
+    /* Missing hostname */
+    torture_write_file(LIBSSH_TESTCONFIG11,
+                       "Host no-host\n"
+                       "\tProxyJump user@:22\n"
+                       "");
+    torture_reset_config(session);
+    ssh_options_set(session, SSH_OPTIONS_HOST, "no-host");
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG11);
+    assert_ssh_return_code_equal(session, ret, SSH_ERROR);
+
+    /* Missing user */
+    torture_write_file(LIBSSH_TESTCONFIG11,
+                       "Host no-user\n"
+                       "\tProxyJump @host:22\n"
+                       "");
+    torture_reset_config(session);
+    ssh_options_set(session, SSH_OPTIONS_HOST, "no-user");
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG11);
+    assert_ssh_return_code_equal(session, ret, SSH_ERROR);
+
+    /* Missing port */
+    torture_write_file(LIBSSH_TESTCONFIG11,
+                       "Host no-port\n"
+                       "\tProxyJump host:\n"
+                       "");
+    torture_reset_config(session);
+    ssh_options_set(session, SSH_OPTIONS_HOST, "no-port");
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG11);
+    assert_ssh_return_code_equal(session, ret, SSH_ERROR);
+
+    /* Non-numeric port in second jump */
+    torture_write_file(LIBSSH_TESTCONFIG11,
+                       "Host bad-port-2\n"
+                       "\tProxyJump localhost,jumpbox:22bad22\n"
+                       "");
+    torture_reset_config(session);
+    ssh_options_set(session, SSH_OPTIONS_HOST, "bad-port-2");
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG11);
+    assert_ssh_return_code_equal(session, ret, SSH_ERROR);
+
+    /* Too many @ in second jump */
+    torture_write_file(LIBSSH_TESTCONFIG11,
+                       "Host bad-hostname\n"
+                       "\tProxyJump localhost,user@principal.com@jumpbox:22\n"
+                       "");
+    torture_reset_config(session);
+    ssh_options_set(session, SSH_OPTIONS_HOST, "bad-hostname");
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG11);
+    assert_ssh_return_code_equal(session, ret, SSH_ERROR);
+
+    /* Braces mismatch in second jump */
+    torture_write_file(LIBSSH_TESTCONFIG11,
+                       "Host mismatch\n"
+                       "\tProxyJump localhost,[::1:20\n"
+                       "");
+    torture_reset_config(session);
+    ssh_options_set(session, SSH_OPTIONS_HOST, "mismatch");
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG11);
+    assert_ssh_return_code_equal(session, ret, SSH_ERROR);
+
+    /* Bad host-port separator in second jump */
+    torture_write_file(LIBSSH_TESTCONFIG11,
+                       "Host beef\n"
+                       "\tProxyJump localhost,[dead::beef]::22\n"
+                       "");
+    torture_reset_config(session);
+    ssh_options_set(session, SSH_OPTIONS_HOST, "beef");
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG11);
+    assert_ssh_return_code_equal(session, ret, SSH_ERROR);
+
+    /* Missing hostname in second jump */
+    torture_write_file(LIBSSH_TESTCONFIG11,
+                       "Host no-host\n"
+                       "\tProxyJump localhost,user@:22\n"
+                       "");
+    torture_reset_config(session);
+    ssh_options_set(session, SSH_OPTIONS_HOST, "no-host");
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG11);
+    assert_ssh_return_code_equal(session, ret, SSH_ERROR);
+
+    /* Missing user in second jump */
+    torture_write_file(LIBSSH_TESTCONFIG11,
+                       "Host no-user\n"
+                       "\tProxyJump localhost,@host:22\n"
+                       "");
+    torture_reset_config(session);
+    ssh_options_set(session, SSH_OPTIONS_HOST, "no-user");
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG11);
+    assert_ssh_return_code_equal(session, ret, SSH_ERROR);
+
+    /* Missing port in second jump */
+    torture_write_file(LIBSSH_TESTCONFIG11,
+                       "Host no-port\n"
+                       "\tProxyJump localhost,host:\n"
+                       "");
+    torture_reset_config(session);
+    ssh_options_set(session, SSH_OPTIONS_HOST, "no-port");
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG11);
+    assert_ssh_return_code_equal(session, ret, SSH_ERROR);
 }
 
 int torture_run_tests(void) {
@@ -408,6 +642,7 @@ int torture_run_tests(void) {
         cmocka_unit_test(torture_config_auth_methods),
         cmocka_unit_test(torture_config_unknown),
         cmocka_unit_test(torture_config_match),
+        cmocka_unit_test(torture_config_proxyjump),
     };
 
 
