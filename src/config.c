@@ -106,7 +106,7 @@ static struct ssh_config_keyword_table_s ssh_config_keyword_table[] = {
   { "numberofpasswordprompts", SOC_UNSUPPORTED},
   { "pkcs11provider", SOC_UNSUPPORTED},
   { "preferredauthentications", SOC_UNSUPPORTED},
-  { "proxyjump", SOC_UNSUPPORTED},
+  { "proxyjump", SOC_PROXYJUMP},
   { "proxyusefdpass", SOC_UNSUPPORTED},
   { "pubkeyacceptedtypes", SOC_PUBKEYACCEPTEDTYPES},
   { "rekeylimit", SOC_UNSUPPORTED},
@@ -380,6 +380,215 @@ ssh_config_match(char *value, const char *pattern, bool negate)
     return result;
 }
 
+/* @brief Parse SSH URI in format [user@]host[:port] from the given string
+ *
+ * @param[in]   tok      String to parse
+ * @param[out]  username Pointer to the location, where the new username will
+ *                       be stored or NULL if we do not care about the result.
+ * @param[out]  hostname Pointer to the location, where the new hostname will
+ *                       be stored or NULL if we do not care about the result.
+ * @param[out]  port     Pointer to the location, where the new port will
+ *                       be stored or NULL if we do not care about the result.
+ *
+ * @returns     SSH_OK if the provided string is in format of SSH URI,
+ *              SSH_ERROR on failure
+ */
+static int
+ssh_config_parse_uri(const char *tok,
+                     char **username,
+                     char **hostname,
+                     char **port)
+{
+    char *endp = NULL;
+    long port_n;
+
+    /* Sanitize inputs */
+    if (username != NULL) {
+        *username = NULL;
+    }
+    if (hostname != NULL) {
+        *hostname = NULL;
+    }
+    if (port != NULL) {
+        *port = NULL;
+    }
+
+    /* Username part (optional) */
+    endp = strchr(tok, '@');
+    if (endp != NULL) {
+        /* Zero-length username is not valid */
+        if (tok == endp) {
+            goto error;
+        }
+        if (username != NULL) {
+            *username = strndup(tok, endp - tok);
+            if (*username == NULL) {
+                goto error;
+            }
+        }
+        tok = endp + 1;
+        /* If there is second @ character, this does not look like our URI */
+        endp = strchr(tok, '@');
+        if (endp != NULL) {
+            goto error;
+        }
+    }
+
+    /* Hostname */
+    if (*tok == '[') {
+        /* IPv6 address is enclosed with square brackets */
+        tok++;
+        endp = strchr(tok, ']');
+        if (endp == NULL) {
+            goto error;
+        }
+    } else {
+        /* Hostnames or aliases expand to the last colon or to the end */
+        endp = strrchr(tok, ':');
+        if (endp == NULL) {
+            endp = strchr(tok, '\0');
+        }
+    }
+    if (tok == endp) {
+        /* Zero-length hostnames are not valid */
+        goto error;
+    }
+    if (hostname != NULL) {
+        *hostname = strndup(tok, endp - tok);
+        if (*hostname == NULL) {
+            goto error;
+        }
+    }
+    /* Skip also the closing bracket */
+    if (*endp == ']') {
+        endp++;
+    }
+
+    /* Port (optional) */
+    if (*endp != '\0') {
+        char *port_end = NULL;
+
+        /* Verify the port is valid positive number */
+        port_n = strtol(endp + 1, &port_end, 10);
+        if (port_n < 1 || *port_end != '\0') {
+            SSH_LOG(SSH_LOG_WARN, "Failed to parse port number."
+                    " The value '%ld' is invalid or there are some"
+                    " trailing characters: '%s'", port_n, port_end);
+            goto error;
+        }
+        if (port != NULL) {
+            *port = strdup(endp + 1);
+            if (*port == NULL) {
+                goto error;
+            }
+        }
+    }
+
+    return SSH_OK;
+
+error:
+    if (username != NULL) {
+        SAFE_FREE(*username);
+    }
+    if (hostname != NULL) {
+        SAFE_FREE(*hostname);
+    }
+    if (port != NULL) {
+        SAFE_FREE(*port);
+    }
+    return SSH_ERROR;
+}
+
+/* @brief: Parse the ProxyJump configuration line and if parsing,
+ * stores the result in the configuration option
+ */
+static int
+ssh_config_parse_proxy_jump(ssh_session session, const char *s, bool do_parsing)
+{
+    char *c = NULL, *cp = NULL, *endp = NULL;
+    char *username = NULL;
+    char *hostname = NULL;
+    char *port = NULL;
+    char *next = NULL;
+    int cmp, rv = SSH_ERROR;
+    bool parse_entry = do_parsing;
+
+    /* Special value none disables the proxy */
+    cmp = strcasecmp(s, "none");
+    if (cmp == 0 && do_parsing) {
+        ssh_options_set(session, SSH_OPTIONS_PROXYCOMMAND, s);
+        return SSH_OK;
+    }
+
+    /* This is comma-separated list of [user@]host[:port] entries */
+    c = strdup(s);
+    if (c == NULL) {
+        ssh_set_error_oom(session);
+        return SSH_ERROR;
+    }
+
+    cp = c;
+    do {
+        endp = strchr(cp, ',');
+        if (endp != NULL) {
+            /* Split out the token */
+            *endp = '\0';
+        }
+        if (parse_entry) {
+            /* We actually care only about the first item */
+            rv = ssh_config_parse_uri(cp, &username, &hostname, &port);
+            /* The rest of the list needs to be passed on */
+            if (endp != NULL) {
+                next = strdup(endp + 1);
+                if (next == NULL) {
+                    ssh_set_error_oom(session);
+                    rv = SSH_ERROR;
+                }
+            }
+        } else {
+            /* The rest is just sanity-checked to avoid failures later */
+            rv = ssh_config_parse_uri(cp, NULL, NULL, NULL);
+        }
+        if (rv != SSH_OK) {
+            goto out;
+        }
+        parse_entry = 0;
+        if (endp != NULL) {
+            cp = endp + 1;
+        } else {
+            cp = NULL; /* end */
+        }
+    } while (cp != NULL);
+
+    if (hostname != NULL && do_parsing) {
+        char com[512] = {0};
+
+        rv = snprintf(com, sizeof(com), "ssh%s%s%s%s%s%s -W [%%h]:%%p %s",
+                      username ? " -l " : "",
+                      username ? username : "",
+                      port ? " -p " : "",
+                      port ? port : "",
+                      next ? " -J " : "",
+                      next ? next : "",
+                      hostname);
+        if (rv < 0 || rv >= (int)sizeof(com)) {
+            SSH_LOG(SSH_LOG_WARN, "Too long ProxyJump configuration line");
+            rv = SSH_ERROR;
+            goto out;
+        }
+        ssh_options_set(session, SSH_OPTIONS_PROXYCOMMAND, com);
+    }
+    rv = SSH_OK;
+
+out:
+    SAFE_FREE(username);
+    SAFE_FREE(hostname);
+    SAFE_FREE(port);
+    SAFE_FREE(next);
+    SAFE_FREE(c);
+    return rv;
+}
+
 static int
 ssh_config_parse_line(ssh_session session,
                       const char *line,
@@ -392,7 +601,7 @@ ssh_config_parse_line(ssh_session session,
   char *keyword;
   char *lowerhost;
   size_t len;
-  int i;
+  int i, rv;
   uint8_t *seen = session->opts.options_seen;
   long l;
 
@@ -669,10 +878,21 @@ ssh_config_parse_line(ssh_session session,
       break;
     case SOC_PROXYCOMMAND:
       p = ssh_config_get_cmd(&s);
-      if (p && *parsing) {
+      /* We share the seen value with the ProxyJump */
+      if (p && *parsing && !seen[SOC_PROXYJUMP]) {
         ssh_options_set(session, SSH_OPTIONS_PROXYCOMMAND, p);
       }
       break;
+    case SOC_PROXYJUMP:
+        p = ssh_config_get_str_tok(&s, NULL);
+        /* We share the seen value with the ProxyCommand */
+        rv = ssh_config_parse_proxy_jump(session, p,
+                                         (*parsing && !seen[SOC_PROXYCOMMAND]));
+        if (rv != SSH_OK) {
+            SAFE_FREE(x);
+            return -1;
+        }
+        break;
     case SOC_GSSAPISERVERIDENTITY:
       p = ssh_config_get_str_tok(&s, NULL);
       if (p && *parsing) {
