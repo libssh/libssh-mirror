@@ -396,6 +396,10 @@ sftp_packet sftp_packet_read(sftp_session sftp)
         } else if (s == 0) {
             is_eof = ssh_channel_is_eof(sftp->channel);
             if (is_eof) {
+                ssh_set_error(sftp->session,
+                              SSH_FATAL,
+                              "Received EOF while reading sftp packet size");
+                sftp_set_error(sftp, SSH_FX_EOF);
                 goto error;
             }
         } else {
@@ -416,6 +420,10 @@ sftp_packet sftp_packet_read(sftp_session sftp)
         } else if (nread == 0) {
             is_eof = ssh_channel_is_eof(sftp->channel);
             if (is_eof) {
+                ssh_set_error(sftp->session,
+                              SSH_FATAL,
+                              "Received EOF while reading sftp packet type");
+                sftp_set_error(sftp, SSH_FX_EOF);
                 goto error;
             }
         }
@@ -451,6 +459,10 @@ sftp_packet sftp_packet_read(sftp_session sftp)
             /* Retry the reading unless the remote was closed */
             is_eof = ssh_channel_is_eof(sftp->channel);
             if (is_eof) {
+                ssh_set_error(sftp->session,
+                              SSH_REQUEST_DENIED,
+                              "Received EOF while reading sftp packet");
+                sftp_set_error(sftp, SSH_FX_EOF);
                 goto error;
             }
         }
