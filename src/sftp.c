@@ -958,6 +958,10 @@ sftp_dir sftp_opendir(sftp_session sftp, const char *path)
     uint32_t id;
     int rc;
 
+    if (sftp == NULL) {
+        return NULL;
+    }
+
     payload = ssh_buffer_new();
     if (payload == NULL) {
         ssh_set_error_oom(sftp->session);
