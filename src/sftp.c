@@ -3239,6 +3239,10 @@ static sftp_attributes sftp_xstat(sftp_session sftp,
     uint32_t id;
     int rc;
 
+    if (sftp == NULL) {
+        return NULL;
+    }
+
     if (path == NULL) {
         ssh_set_error_invalid(sftp->session);
         sftp_set_error(sftp, SSH_FX_FAILURE);
