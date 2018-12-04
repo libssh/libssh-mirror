@@ -3323,6 +3323,10 @@ sftp_attributes sftp_fstat(sftp_file file)
     uint32_t id;
     int rc;
 
+    if (file == NULL) {
+        return NULL;
+    }
+
     buffer = ssh_buffer_new();
     if (buffer == NULL) {
         ssh_set_error_oom(file->sftp->session);
