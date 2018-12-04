@@ -61,8 +61,11 @@
  *
  * @see ssh_session_connect()
  */
-int ssh_options_copy(ssh_session src, ssh_session *dest) {
+int ssh_options_copy(ssh_session src, ssh_session *dest)
+{
     ssh_session new;
+    struct ssh_iterator *it = NULL;
+    char *id = NULL;
     int i;
 
     if (src == NULL || dest == NULL) {
@@ -90,10 +93,24 @@ int ssh_options_copy(ssh_session src, ssh_session *dest) {
         }
     }
 
+    if (src->opts.bindaddr != NULL) {
+        new->opts.bindaddr = strdup(src->opts.bindaddr);
+        if (new->opts.bindaddr == NULL) {
+            ssh_free(new);
+            return -1;
+        }
+    }
+
+    /* Remove the default identities */
+    for (id = ssh_list_pop_head(char *, new->opts.identity);
+         id != NULL;
+         id = ssh_list_pop_head(char *, new->opts.identity)) {
+        SAFE_FREE(id);
+    }
+    /* Copy the new identities from the source list */
     if (src->opts.identity != NULL) {
         it = ssh_list_get_iterator(src->opts.identity);
         while (it) {
-            char *id;
             int rc;
 
             id = strdup((char *) it->data);
@@ -128,6 +145,14 @@ int ssh_options_copy(ssh_session src, ssh_session *dest) {
         }
     }
 
+    if (src->opts.global_knownhosts != NULL) {
+        new->opts.global_knownhosts = strdup(src->opts.global_knownhosts);
+        if (new->opts.global_knownhosts == NULL) {
+            ssh_free(new);
+            return -1;
+        }
+    }
+
     for (i = 0; i < 10; i++) {
         if (src->opts.wanted_methods[i] != NULL) {
             new->opts.wanted_methods[i] = strdup(src->opts.wanted_methods[i]);
@@ -153,13 +178,38 @@ int ssh_options_copy(ssh_session src, ssh_session *dest) {
             return -1;
         }
     }
-    new->opts.fd                   = src->opts.fd;
-    new->opts.port                 = src->opts.port;
-    new->opts.timeout              = src->opts.timeout;
-    new->opts.timeout_usec         = src->opts.timeout_usec;
-    new->opts.compressionlevel     = src->opts.compressionlevel;
-    new->common.log_verbosity      = src->common.log_verbosity;
-    new->common.callbacks          = src->common.callbacks;
+
+    if (src->opts.gss_server_identity != NULL) {
+        new->opts.gss_server_identity = strdup(src->opts.gss_server_identity);
+        if (new->opts.gss_server_identity == NULL) {
+            ssh_free(new);
+            return -1;
+        }
+    }
+
+    if (src->opts.gss_client_identity != NULL) {
+        new->opts.gss_client_identity = strdup(src->opts.gss_client_identity);
+        if (new->opts.gss_client_identity == NULL) {
+            ssh_free(new);
+            return -1;
+        }
+    }
+
+    memcpy(new->opts.options_seen, src->opts.options_seen,
+           sizeof(new->opts.options_seen));
+
+    new->opts.fd                    = src->opts.fd;
+    new->opts.port                  = src->opts.port;
+    new->opts.timeout               = src->opts.timeout;
+    new->opts.timeout_usec          = src->opts.timeout_usec;
+    new->opts.compressionlevel      = src->opts.compressionlevel;
+    new->opts.StrictHostKeyChecking = src->opts.StrictHostKeyChecking;
+    new->opts.gss_delegate_creds    = src->opts.gss_delegate_creds;
+    new->opts.flags                 = src->opts.flags;
+    new->opts.nodelay               = src->opts.nodelay;
+    new->opts.config_processed      = src->opts.config_processed;
+    new->common.log_verbosity       = src->common.log_verbosity;
+    new->common.callbacks           = src->common.callbacks;
 
     *dest = new;
 
