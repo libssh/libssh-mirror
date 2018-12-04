@@ -623,6 +623,114 @@ static void torture_options_config_match(void **state)
     unlink("test_config");
 }
 
+static void torture_options_copy(void **state)
+{
+    ssh_session session = *state, new = NULL;
+    struct ssh_iterator *it = NULL, *it2 = NULL;
+    FILE *config = NULL;
+    int i, level = 9;
+    int rv;
+
+    /* Required for options_parse_config() */
+    ssh_options_set(session, SSH_OPTIONS_HOST, "example");
+
+    /* Impossible to set through the configuration */
+    rv = ssh_options_set(session, SSH_OPTIONS_COMPRESSION_LEVEL, &level);
+    assert_ssh_return_code(session, rv);
+    level = 1;
+    rv = ssh_options_set(session, SSH_OPTIONS_NODELAY, &level);
+    assert_ssh_return_code(session, rv);
+
+    /* The Match keyword requires argument */
+    config = fopen("test_config", "w");
+    assert_non_null(config);
+    fputs("IdentityFile ~/.ssh/id_ecdsa\n"
+          "User tester\n"
+          "Hostname example.com\n"
+          "BindAddress 127.0.0.2\n"
+          "GlobalKnownHostsFile /etc/ssh/known_hosts2\n"
+          "UserKnownHostsFile ~/.ssh/known_hosts2\n"
+          "KexAlgorithms curve25519-sha256\n"
+          "Ciphers aes256-ctr\n"
+          "MACs hmac-sha2-256\n"
+          "HostKeyAlgorithms ssh-ed25519\n"
+          "Compression yes\n"
+          "PubkeyAcceptedTypes ssh-ed25519\n"
+          "ProxyCommand nc 127.0.0.10 22\n"
+          /* ops.custombanner */
+          "ConnectTimeout 42\n"
+          "Port 222\n"
+          "StrictHostKeyChecking no\n"
+          "GSSAPIServerIdentity my.example.com\n"
+          "GSSAPIClientIdentity home.sweet\n"
+          "GSSAPIDelegateCredentials yes\n"
+          "PubkeyAuthentication yes\n" /* sets flags */
+          "GSSAPIAuthentication no\n" /* sets flags */
+          "",
+          config);
+    fclose(config);
+
+    rv = ssh_options_parse_config(session, "test_config");
+    assert_ssh_return_code(session, rv);
+
+    rv = ssh_options_copy(session, &new);
+    assert_ssh_return_code(session, rv);
+    assert_non_null(new);
+
+    /* Check the identities match */
+    it = ssh_list_get_iterator(session->opts.identity);
+    assert_non_null(it);
+    it2 = ssh_list_get_iterator(new->opts.identity);
+    assert_non_null(it2);
+    while (it != NULL && it2 != NULL) {
+        assert_string_equal(it->data, it2->data);
+        it = it->next;
+        it2 = it2->next;
+    }
+    assert_null(it);
+    assert_null(it2);
+
+    assert_string_equal(session->opts.username, new->opts.username);
+    assert_string_equal(session->opts.host, new->opts.host);
+    assert_string_equal(session->opts.bindaddr, new->opts.bindaddr);
+    assert_string_equal(session->opts.sshdir, new->opts.sshdir);
+    assert_string_equal(session->opts.knownhosts, new->opts.knownhosts);
+    assert_string_equal(session->opts.global_knownhosts,
+                        new->opts.global_knownhosts);
+    for (i = 0; i < 10; i++) {
+        if (session->opts.wanted_methods[i] == NULL) {
+            assert_null(new->opts.wanted_methods[i]);
+        } else {
+            assert_string_equal(session->opts.wanted_methods[i],
+                                new->opts.wanted_methods[i]);
+        }
+    }
+    assert_string_equal(session->opts.pubkey_accepted_types,
+                        new->opts.pubkey_accepted_types);
+    assert_string_equal(session->opts.ProxyCommand, new->opts.ProxyCommand);
+    /* TODO custombanner */
+    assert_int_equal(session->opts.timeout, new->opts.timeout);
+    assert_int_equal(session->opts.timeout_usec, new->opts.timeout_usec);
+    assert_int_equal(session->opts.port, new->opts.port);
+    assert_int_equal(session->opts.StrictHostKeyChecking,
+                     new->opts.StrictHostKeyChecking);
+    assert_int_equal(session->opts.compressionlevel,
+                     new->opts.compressionlevel);
+    assert_string_equal(session->opts.gss_server_identity,
+                        new->opts.gss_server_identity);
+    assert_string_equal(session->opts.gss_client_identity,
+                        new->opts.gss_client_identity);
+    assert_int_equal(session->opts.gss_delegate_creds,
+                     new->opts.gss_delegate_creds);
+    assert_int_equal(session->opts.flags, new->opts.flags);
+    assert_int_equal(session->opts.nodelay, new->opts.nodelay);
+    assert_true(session->opts.config_processed == new->opts.config_processed);
+    assert_memory_equal(session->opts.options_seen, new->opts.options_seen,
+                        sizeof(session->opts.options_seen));
+
+    ssh_free(new);
+}
+
 
 
 #ifdef WITH_SERVER
@@ -707,6 +815,7 @@ int torture_run_tests(void) {
         cmocka_unit_test_setup_teardown(torture_options_set_hostkey, setup, teardown),
         cmocka_unit_test_setup_teardown(torture_options_set_pubkey_accepted_types, setup, teardown),
         cmocka_unit_test_setup_teardown(torture_options_set_macs, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_options_copy, setup, teardown),
         cmocka_unit_test_setup_teardown(torture_options_config_host, setup, teardown),
         cmocka_unit_test_setup_teardown(torture_options_config_match,
                                         setup, teardown)
