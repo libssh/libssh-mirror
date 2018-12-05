@@ -825,43 +825,51 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
   return 0;
 }
 
-/* ssh_config_parse_file */
+/* @brief Parse configuration file and set the options to the given session
+ *
+ * @params[in] session   The ssh session
+ * @params[in] filename  The path to the ssh configuration file
+ *
+ * @returns    0 on successful parsing the configuration file, -1 on error
+ */
 int ssh_config_parse_file(ssh_session session, const char *filename)
 {
-  char line[MAX_LINE_SIZE] = {0};
-  unsigned int count = 0;
-  FILE *f;
-  int parsing;
-  uint8_t *seen = NULL;
+    char line[MAX_LINE_SIZE] = {0};
+    unsigned int count = 0;
+    FILE *f;
+    int parsing, rv;
+    uint8_t *seen = NULL;
 
-  if ((f = fopen(filename, "r")) == NULL) {
+    f = fopen(filename, "r");
+    if (f == NULL) {
+        return 0;
+    }
+
+    SSH_LOG(SSH_LOG_PACKET, "Reading configuration data from %s", filename);
+
+    /* Preserve the seen array among invocations throughout the session */
+    if (session->opts.options_seen == NULL) {
+        seen = calloc(SOC_END - SOC_UNSUPPORTED, sizeof(uint8_t));
+        if (seen == NULL) {
+            fclose(f);
+            ssh_set_error_oom(session);
+            return -1;
+        }
+        session->opts.options_seen = seen;
+    } else {
+        seen = session->opts.options_seen;
+    }
+
+    parsing = 1;
+    while (fgets(line, sizeof(line), f)) {
+        count++;
+        rv = ssh_config_parse_line(session, line, count, &parsing, seen);
+        if (rv < 0) {
+            fclose(f);
+            return -1;
+        }
+    }
+
+    fclose(f);
     return 0;
-  }
-
-  SSH_LOG(SSH_LOG_PACKET, "Reading configuration data from %s", filename);
-
-  /* Preserve the seen array among invocations throughout the session */
-  if (session->opts.options_seen == NULL) {
-    seen = calloc(SOC_END - SOC_UNSUPPORTED, sizeof(uint8_t));
-    if (seen == NULL) {
-      fclose(f);
-      ssh_set_error_oom(session);
-      return -1;
-    }
-    session->opts.options_seen = seen;
-  } else {
-    seen = session->opts.options_seen;
-  }
-
-  parsing = 1;
-  while (fgets(line, sizeof(line), f)) {
-    count++;
-    if (ssh_config_parse_line(session, line, count, &parsing, seen) < 0) {
-      fclose(f);
-      return -1;
-    }
-  }
-
-  fclose(f);
-  return 0;
 }
