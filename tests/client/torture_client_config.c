@@ -92,8 +92,6 @@ static void torture_client_config_system(void **state)
     struct torture_state *s = *state;
     int ret = 0;
 
-    assert_true(s->ssh.session->opts.options_seen == NULL);
-
     /* The first tests assumes there is system-wide configuration file
      * setting Ciphers to some non-default value. We do not have any control
      * of that in this test case.
@@ -120,8 +118,6 @@ static void torture_client_config_emulate(void **state)
     struct torture_state *s = *state;
     char *filename = NULL;
     int ret = 0;
-
-    assert_true(s->ssh.session->opts.options_seen == NULL);
 
     /* The first tests assumes there is system-wide configuration file
      * setting Ciphers to some non-default value. We do not have any control
@@ -151,8 +147,6 @@ static void torture_client_config_autoparse(void **state)
     struct torture_state *s = *state;
     int ret = 0;
 
-    assert_true(s->ssh.session->opts.options_seen == NULL);
-
     ret = ssh_connect(s->ssh.session);
     assert_ssh_return_code(s->ssh.session, ret);
 
@@ -168,8 +162,6 @@ static void torture_client_config_suppress(void **state)
     struct torture_state *s = *state;
     bool b = false;
     int ret = 0;
-
-    assert_true(s->ssh.session->opts.options_seen == NULL);
 
     ret = ssh_options_set(s->ssh.session, SSH_OPTIONS_PROCESS_CONFIG, &b);
     assert_ssh_return_code(s->ssh.session, ret);

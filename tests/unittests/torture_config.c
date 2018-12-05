@@ -156,7 +156,6 @@ static int teardown(void **state)
     return 0;
 }
 
-
 /**
  * @brief tests ssh_config_parse_file with Include directives
  */
@@ -300,7 +299,7 @@ static void torture_config_auth_methods(void **state) {
     assert_int_equal(session->opts.flags, 0);
 
     /* gradually enable them again */
-    SAFE_FREE(session->opts.options_seen);
+    torture_reset_config(session);
     ssh_options_set(session, SSH_OPTIONS_HOST, "gss");
     ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG8);
     assert_true(ret == 0);
@@ -355,34 +354,34 @@ static void torture_config_match(void **state)
     assert_string_equal(session->opts.host, "all-matched.com");
 
     /* Hostname example does simple hostname matching */
-    SAFE_FREE(session->opts.options_seen);
+    torture_reset_config(session);
     ssh_options_set(session, SSH_OPTIONS_HOST, "example");
     ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG10);
     assert_true(ret == 0);
     assert_string_equal(session->opts.host, "example.com");
 
     /* We can match also both hosts from a comma separated list */
-    SAFE_FREE(session->opts.options_seen);
+    torture_reset_config(session);
     ssh_options_set(session, SSH_OPTIONS_HOST, "example1");
     ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG10);
     assert_true(ret == 0);
     assert_string_equal(session->opts.host, "exampleN");
 
-    SAFE_FREE(session->opts.options_seen);
+    torture_reset_config(session);
     ssh_options_set(session, SSH_OPTIONS_HOST, "example2");
     ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG10);
     assert_true(ret == 0);
     assert_string_equal(session->opts.host, "exampleN");
 
     /* We can match by user */
-    SAFE_FREE(session->opts.options_seen);
+    torture_reset_config(session);
     ssh_options_set(session, SSH_OPTIONS_USER, "guest");
     ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG10);
     assert_true(ret == 0);
     assert_string_equal(session->opts.host, "guest.com");
 
     /* We can combine two options on a single line to match both of them */
-    SAFE_FREE(session->opts.options_seen);
+    torture_reset_config(session);
     ssh_options_set(session, SSH_OPTIONS_USER, "tester");
     ssh_options_set(session, SSH_OPTIONS_HOST, "testhost");
     ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG10);
@@ -390,7 +389,7 @@ static void torture_config_match(void **state)
     assert_string_equal(session->opts.host, "testhost.com");
 
     /* We can also negate conditions */
-    SAFE_FREE(session->opts.options_seen);
+    torture_reset_config(session);
     ssh_options_set(session, SSH_OPTIONS_USER, "not-tester");
     ssh_options_set(session, SSH_OPTIONS_HOST, "testhost");
     ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG10);

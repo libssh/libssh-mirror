@@ -32,51 +32,13 @@
 #endif
 #include <stdbool.h>
 
+#include "libssh/config.h"
 #include "libssh/priv.h"
 #include "libssh/session.h"
 #include "libssh/misc.h"
 #include "libssh/options.h"
 
 #define MAX_LINE_SIZE 1024
-
-enum ssh_config_opcode_e {
-  /* Unknown opcode */
-  SOC_UNKNOWN = -3,
-  /* Known and not applicable to libssh */
-  SOC_NA = -2,
-  /* Known but not supported by current libssh version */
-  SOC_UNSUPPORTED = -1,
-  SOC_HOST,
-  SOC_MATCH,
-  SOC_HOSTNAME,
-  SOC_PORT,
-  SOC_USERNAME,
-  SOC_IDENTITY,
-  SOC_CIPHERS,
-  SOC_MACS,
-  SOC_COMPRESSION,
-  SOC_TIMEOUT,
-  SOC_PROTOCOL,
-  SOC_STRICTHOSTKEYCHECK,
-  SOC_KNOWNHOSTS,
-  SOC_PROXYCOMMAND,
-  SOC_GSSAPISERVERIDENTITY,
-  SOC_GSSAPICLIENTIDENTITY,
-  SOC_GSSAPIDELEGATECREDENTIALS,
-  SOC_INCLUDE,
-  SOC_BINDADDRESS,
-  SOC_GLOBALKNOWNHOSTSFILE,
-  SOC_LOGLEVEL,
-  SOC_HOSTKEYALGORITHMS,
-  SOC_KEXALGORITHMS,
-  SOC_GSSAPIAUTHENTICATION,
-  SOC_KBDINTERACTIVEAUTHENTICATION,
-  SOC_PASSWORDAUTHENTICATION,
-  SOC_PUBKEYAUTHENTICATION,
-  SOC_PUBKEYACCEPTEDTYPES,
-
-  SOC_END /* Keep this one last in the list */
-};
 
 struct ssh_config_keyword_table_s {
   const char *name;
@@ -213,7 +175,7 @@ static struct ssh_config_match_keyword_table_s ssh_config_match_keyword_table[] 
 };
 
 static int ssh_config_parse_line(ssh_session session, const char *line,
-    unsigned int count, int *parsing, uint8_t *seen);
+    unsigned int count, int *parsing);
 
 static enum ssh_config_opcode_e ssh_config_get_opcode(char *keyword) {
   int i;
@@ -326,8 +288,7 @@ static int ssh_config_get_yesno(char **str, int notfound) {
 static void
 local_parse_file(ssh_session session,
                  const char *filename,
-                 int *parsing,
-                 uint8_t *seen)
+                 int *parsing)
 {
     FILE *f;
     char line[MAX_LINE_SIZE] = {0};
@@ -344,7 +305,7 @@ local_parse_file(ssh_session session,
     SSH_LOG(SSH_LOG_PACKET, "Reading additional configuration data from %s", filename);
     while (fgets(line, sizeof(line), f)) {
         count++;
-        rv = ssh_config_parse_line(session, line, count, parsing, seen);
+        rv = ssh_config_parse_line(session, line, count, parsing);
         if (rv < 0) {
             fclose(f);
             return;
@@ -358,8 +319,7 @@ local_parse_file(ssh_session session,
 #if defined(HAVE_GLOB) && defined(HAVE_GLOB_GL_FLAGS_MEMBER)
 static void local_parse_glob(ssh_session session,
                              const char *fileglob,
-                             int *parsing,
-                             uint8_t *seen)
+                             int *parsing)
 {
     glob_t globbuf = {
         .gl_flags = 0,
@@ -379,7 +339,7 @@ static void local_parse_glob(ssh_session session,
     }
 
     for (i = 0; i < globbuf.gl_pathc; i++) {
-        local_parse_file(session, globbuf.gl_pathv[i], parsing, seen);
+        local_parse_file(session, globbuf.gl_pathv[i], parsing);
     }
 
     globfree(&globbuf);
@@ -420,8 +380,11 @@ ssh_config_match(char *value, const char *pattern, bool negate)
     return result;
 }
 
-static int ssh_config_parse_line(ssh_session session, const char *line,
-    unsigned int count, int *parsing, uint8_t *seen)
+static int
+ssh_config_parse_line(ssh_session session,
+                      const char *line,
+                      unsigned int count,
+                      int *parsing)
 {
   enum ssh_config_opcode_e opcode;
   const char *p;
@@ -430,6 +393,7 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
   char *lowerhost;
   size_t len;
   int i;
+  uint8_t *seen = session->opts.options_seen;
   long l;
 
   x = s = strdup(line);
@@ -473,9 +437,9 @@ static int ssh_config_parse_line(ssh_session session, const char *line,
       p = ssh_config_get_str_tok(&s, NULL);
       if (p && *parsing) {
 #if defined(HAVE_GLOB) && defined(HAVE_GLOB_GL_FLAGS_MEMBER)
-        local_parse_glob(session, p, parsing, seen);
+        local_parse_glob(session, p, parsing);
 #else
-        local_parse_file(session, p, parsing, seen);
+        local_parse_file(session, p, parsing);
 #endif /* HAVE_GLOB */
       }
       break;
@@ -844,7 +808,6 @@ int ssh_config_parse_file(ssh_session session, const char *filename)
     unsigned int count = 0;
     FILE *f;
     int parsing, rv;
-    uint8_t *seen = NULL;
 
     f = fopen(filename, "r");
     if (f == NULL) {
@@ -853,23 +816,10 @@ int ssh_config_parse_file(ssh_session session, const char *filename)
 
     SSH_LOG(SSH_LOG_PACKET, "Reading configuration data from %s", filename);
 
-    /* Preserve the seen array among invocations throughout the session */
-    if (session->opts.options_seen == NULL) {
-        seen = calloc(SOC_END - SOC_UNSUPPORTED, sizeof(uint8_t));
-        if (seen == NULL) {
-            fclose(f);
-            ssh_set_error_oom(session);
-            return -1;
-        }
-        session->opts.options_seen = seen;
-    } else {
-        seen = session->opts.options_seen;
-    }
-
     parsing = 1;
     while (fgets(line, sizeof(line), f)) {
         count++;
-        rv = ssh_config_parse_line(session, line, count, &parsing, seen);
+        rv = ssh_config_parse_line(session, line, count, &parsing);
         if (rv < 0) {
             fclose(f);
             return -1;

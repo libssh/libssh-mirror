@@ -1163,6 +1163,10 @@ void torture_write_file(const char *filename, const char *data){
     close(fd);
 }
 
+void torture_reset_config(ssh_session session)
+{
+    memset(session->opts.options_seen, 0, sizeof(session->opts.options_seen));
+}
 
 int main(int argc, char **argv) {
     struct argument_s arguments;

@@ -29,6 +29,7 @@
 #include "libssh/auth.h"
 #include "libssh/channels.h"
 #include "libssh/poll.h"
+#include "libssh/config.h"
 
 /* These are the different states a SSH session can be into its life */
 enum ssh_session_state_e {
@@ -220,7 +221,7 @@ struct ssh_session_struct {
         int flags;
         int nodelay;
         bool config_processed;
-        uint8_t *options_seen;
+        uint8_t options_seen[SOC_MAX];
     } opts;
     /* counters */
     ssh_counter socket_counter;
