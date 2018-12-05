@@ -323,30 +323,36 @@ static int ssh_config_get_yesno(char **str, int notfound) {
   return notfound;
 }
 
-static void local_parse_file(ssh_session session, const char *filename,
-                             int *parsing, uint8_t *seen)
+static void
+local_parse_file(ssh_session session,
+                 const char *filename,
+                 int *parsing,
+                 uint8_t *seen)
 {
-  FILE *f;
-  char line[MAX_LINE_SIZE] = {0};
-  unsigned int count = 0;
+    FILE *f;
+    char line[MAX_LINE_SIZE] = {0};
+    unsigned int count = 0;
+    int rv;
 
-  if ((f = fopen(filename, "r")) == NULL) {
-    SSH_LOG(SSH_LOG_RARE, "Cannot find file %s to load",
-            filename);
-    return;
-  }
-
-  SSH_LOG(SSH_LOG_PACKET, "Reading additional configuration data from %s", filename);
-  while (fgets(line, sizeof(line), f)) {
-    count++;
-    if (ssh_config_parse_line(session, line, count, parsing, seen) < 0) {
-       fclose(f);
-       return;
+    f = fopen(filename, "r");
+    if (f == NULL) {
+        SSH_LOG(SSH_LOG_RARE, "Cannot find file %s to load",
+                filename);
+        return;
     }
-  }
 
-  fclose(f);
-  return;
+    SSH_LOG(SSH_LOG_PACKET, "Reading additional configuration data from %s", filename);
+    while (fgets(line, sizeof(line), f)) {
+        count++;
+        rv = ssh_config_parse_line(session, line, count, parsing, seen);
+        if (rv < 0) {
+            fclose(f);
+            return;
+        }
+    }
+
+    fclose(f);
+    return;
 }
 
 #if defined(HAVE_GLOB) && defined(HAVE_GLOB_GL_FLAGS_MEMBER)
