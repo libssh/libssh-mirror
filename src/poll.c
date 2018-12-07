@@ -170,8 +170,11 @@ static int bsd_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout)
         return -1;
     }
 
+    ZERO_STRUCT(readfds);
     FD_ZERO(&readfds);
+    ZERO_STRUCT(writefds);
     FD_ZERO(&writefds);
+    ZERO_STRUCT(exceptfds);
     FD_ZERO(&exceptfds);
 
     /* compute fd_sets and find largest descriptor */
