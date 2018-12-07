@@ -264,13 +264,17 @@ static enum ssh_packet_filter_result_e ssh_packet_incoming_filter(ssh_session se
         /*
          * States required:
          * - session_state == SSH_SESSION_STATE_AUTHENTICATING
+         *   or session->session_state == SSH_SESSION_STATE_AUTHENTICATED
+         *   (re-exchange)
          * - dh_handshake_state == DH_STATE_FINISHED
          *
          * Transitions:
          * - None
          * */
 
-        if (session->session_state != SSH_SESSION_STATE_AUTHENTICATING) {
+        if ((session->session_state != SSH_SESSION_STATE_AUTHENTICATING) &&
+            (session->session_state != SSH_SESSION_STATE_AUTHENTICATED))
+        {
             rc = SSH_PACKET_DENIED;
             break;
         }

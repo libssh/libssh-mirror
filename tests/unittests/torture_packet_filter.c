@@ -464,6 +464,36 @@ static void torture_packet_filter_check_auth_success(void **state)
     assert_int_equal(rc, 0);
 }
 
+static void torture_packet_filter_check_msg_ext_info(void **state)
+{
+    int rc;
+
+    global_state accepted[] = {
+        {
+            .flags = (COMPARE_SESSION_STATE |
+                    COMPARE_DH_STATE),
+            .session = SSH_SESSION_STATE_AUTHENTICATING,
+            .dh = DH_STATE_FINISHED,
+        },
+        {
+            .flags = (COMPARE_SESSION_STATE |
+                    COMPARE_DH_STATE),
+            .session = SSH_SESSION_STATE_AUTHENTICATED,
+            .dh = DH_STATE_FINISHED,
+        },
+    };
+
+    int accepted_count = 2;
+
+    /* Unused */
+    (void) state;
+
+    rc = check_message_in_all_states(accepted, accepted_count,
+            SSH2_MSG_EXT_INFO);
+
+    assert_int_equal(rc, 0);
+}
+
 static void torture_packet_filter_check_channel_open(void **state)
 {
     int rc;
@@ -494,6 +524,7 @@ int torture_run_tests(void)
         cmocka_unit_test(torture_packet_filter_check_auth_success),
         cmocka_unit_test(torture_packet_filter_check_channel_open),
         cmocka_unit_test(torture_packet_filter_check_unfiltered),
+        cmocka_unit_test(torture_packet_filter_check_msg_ext_info)
     };
 
     ssh_init();
