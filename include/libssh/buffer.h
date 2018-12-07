@@ -40,11 +40,11 @@ void *ssh_buffer_allocate(struct ssh_buffer_struct *buffer, uint32_t len);
 int ssh_buffer_allocate_size(struct ssh_buffer_struct *buffer, uint32_t len);
 int ssh_buffer_pack_va(struct ssh_buffer_struct *buffer,
                        const char *format,
-                       int argc,
+                       size_t argc,
                        va_list ap);
 int _ssh_buffer_pack(struct ssh_buffer_struct *buffer,
                      const char *format,
-                     int argc,
+                     size_t argc,
                      ...);
 #define ssh_buffer_pack(buffer, format, ...) \
     _ssh_buffer_pack((buffer), (format), __VA_NARG__(__VA_ARGS__), __VA_ARGS__, SSH_BUFFER_PACK_END)
