@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <time.h>
+#include <stdbool.h>
 
 #ifndef _WIN32
 #include <netinet/in.h>
@@ -1012,8 +1013,29 @@ void ssh_channel_free(ssh_channel channel)
     }
 
     session = channel->session;
-    if (session->alive && channel->state == SSH_CHANNEL_STATE_OPEN) {
-        ssh_channel_close(channel);
+    if (session->alive) {
+        bool send_close = false;
+
+        switch (channel->state) {
+        case SSH_CHANNEL_STATE_OPEN:
+            send_close = true;
+            break;
+        case SSH_CHANNEL_STATE_CLOSED:
+            if (channel->flags & SSH_CHANNEL_FLAG_CLOSED_REMOTE) {
+                send_close = true;
+            }
+            if (channel->flags & SSH_CHANNEL_FLAG_CLOSED_LOCAL) {
+                send_close = false;
+            }
+            break;
+        default:
+            send_close = false;
+            break;
+        }
+
+        if (send_close) {
+            ssh_channel_close(channel);
+        }
     }
     channel->flags |= SSH_CHANNEL_FLAG_FREED_LOCAL;
 
