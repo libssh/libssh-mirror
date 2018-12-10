@@ -279,10 +279,15 @@ static void torture_config_new(void **state)
     assert_string_equal(session->opts.global_knownhosts, GLOBAL_KNOWN_HOSTS);
     assert_int_equal(session->opts.timeout, 30);
     assert_string_equal(session->opts.bindaddr, BIND_ADDRESS);
+#ifdef WITH_ZLIB
     assert_string_equal(session->opts.wanted_methods[SSH_COMP_C_S],
                         "zlib@openssh.com,zlib");
     assert_string_equal(session->opts.wanted_methods[SSH_COMP_S_C],
                         "zlib@openssh.com,zlib");
+#else
+    assert_null(session->opts.wanted_methods[SSH_COMP_C_S]);
+    assert_null(session->opts.wanted_methods[SSH_COMP_S_C]);
+#endif /* WITH_ZLIB */
     assert_int_equal(session->opts.StrictHostKeyChecking, 0);
     assert_int_equal(session->opts.gss_delegate_creds, 1);
     assert_string_equal(session->opts.gss_server_identity, "example.com");
