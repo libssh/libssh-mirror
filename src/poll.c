@@ -172,14 +172,19 @@ static short bsd_socket_compute_revents(int fd, short events)
     int sock_errno = errno;
     char data[64] = {0};
     short revents = 0;
+    int flags = MSG_PEEK;
     int ret;
+
+#ifdef MSG_NOSIGNAL
+    flags |= MSG_NOSIGNAL;
+#endif
 
     /* support for POLLHUP */
 #ifdef _WIN32
     WSASetLastError(0);
 #endif
 
-    ret = recv(fd, data, 64, MSG_PEEK);
+    ret = recv(fd, data, 64, flags);
 
     errno = save_errno;
 
