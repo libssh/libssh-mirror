@@ -1003,28 +1003,29 @@ error:
  *
  * @warning Any data unread on this channel will be lost.
  */
-void ssh_channel_free(ssh_channel channel) {
-  ssh_session session;
+void ssh_channel_free(ssh_channel channel)
+{
+    ssh_session session;
 
-  if (channel == NULL) {
-    return;
-  }
+    if (channel == NULL) {
+        return;
+    }
 
-  session = channel->session;
-  if (session->alive && channel->state == SSH_CHANNEL_STATE_OPEN) {
-    ssh_channel_close(channel);
-  }
-  channel->flags |= SSH_CHANNEL_FLAG_FREED_LOCAL;
+    session = channel->session;
+    if (session->alive && channel->state == SSH_CHANNEL_STATE_OPEN) {
+        ssh_channel_close(channel);
+    }
+    channel->flags |= SSH_CHANNEL_FLAG_FREED_LOCAL;
 
-  /* The idea behind the flags is the following : it is well possible
-   * that a client closes a channel that stills exists on the server side.
-   * We definitively close the channel when we receive a close message *and*
-   * the user closed it.
-   */
-  if((channel->flags & SSH_CHANNEL_FLAG_CLOSED_REMOTE)
-      || (channel->flags & SSH_CHANNEL_FLAG_NOT_BOUND)){
-    ssh_channel_do_free(channel);
-  }
+    /* The idea behind the flags is the following : it is well possible
+     * that a client closes a channel that stills exists on the server side.
+     * We definitively close the channel when we receive a close message *and*
+     * the user closed it.
+     */
+    if ((channel->flags & SSH_CHANNEL_FLAG_CLOSED_REMOTE) ||
+        (channel->flags & SSH_CHANNEL_FLAG_NOT_BOUND)) {
+        ssh_channel_do_free(channel);
+    }
 }
 
 /**
