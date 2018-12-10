@@ -286,6 +286,10 @@ static int bsd_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout)
     if (rc < 0) {
         return -1;
     }
+    /* A timeout occured */
+    if (rc == 0) {
+        return 0;
+    }
 
     for (rc = 0, i = 0; i < nfds; i++) {
         if (fds[i].fd >= 0) {
@@ -303,7 +307,7 @@ static int bsd_poll(ssh_pollfd_t *fds, nfds_t nfds, int timeout)
                 fds[i].revents |= fds[i].events & (POLLPRI | POLLRDBAND);
             }
 
-            if (fds[i].revents & ~POLLHUP) {
+            if (fds[i].revents != 0) {
                 rc++;
             }
         } else {
