@@ -1172,6 +1172,7 @@ int ssh_channel_close(ssh_channel channel)
 
     if (rc == SSH_OK) {
         channel->state = SSH_CHANNEL_STATE_CLOSED;
+        channel->flags |= SSH_CHANNEL_FLAG_CLOSED_LOCAL;
     }
 
     rc = ssh_channel_flush(channel);

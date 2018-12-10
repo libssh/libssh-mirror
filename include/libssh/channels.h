@@ -48,11 +48,16 @@ enum ssh_channel_state_e {
 };
 
 /* The channel has been closed by the remote side */
-#define SSH_CHANNEL_FLAG_CLOSED_REMOTE 0x1
+#define SSH_CHANNEL_FLAG_CLOSED_REMOTE 0x0001
+
+/* The channel has been closed locally */
+#define SSH_CHANNEL_FLAG_CLOSED_LOCAL 0x0002
+
 /* The channel has been freed by the calling program */
-#define SSH_CHANNEL_FLAG_FREED_LOCAL 0x2
+#define SSH_CHANNEL_FLAG_FREED_LOCAL 0x0004
+
 /* the channel has not yet been bound to a remote one */
-#define SSH_CHANNEL_FLAG_NOT_BOUND 0x4
+#define SSH_CHANNEL_FLAG_NOT_BOUND 0x0008
 
 struct ssh_channel_struct {
     ssh_session session; /* SSH_SESSION pointer */
