@@ -74,7 +74,7 @@ int ssh_options_copy(ssh_session src, ssh_session *dest) {
         return -1;
     }
 
-    if (src->opts.username) {
+    if (src->opts.username != NULL) {
         new->opts.username = strdup(src->opts.username);
         if (new->opts.username == NULL) {
             ssh_free(new);
@@ -82,7 +82,7 @@ int ssh_options_copy(ssh_session src, ssh_session *dest) {
         }
     }
 
-    if (src->opts.host) {
+    if (src->opts.host != NULL) {
         new->opts.host = strdup(src->opts.host);
         if (new->opts.host == NULL) {
             ssh_free(new);
@@ -90,9 +90,7 @@ int ssh_options_copy(ssh_session src, ssh_session *dest) {
         }
     }
 
-    if (src->opts.identity) {
-        struct ssh_iterator *it;
-
+    if (src->opts.identity != NULL) {
         it = ssh_list_get_iterator(src->opts.identity);
         while (it) {
             char *id;
@@ -114,7 +112,7 @@ int ssh_options_copy(ssh_session src, ssh_session *dest) {
         }
     }
 
-    if (src->opts.sshdir) {
+    if (src->opts.sshdir != NULL) {
         new->opts.sshdir = strdup(src->opts.sshdir);
         if (new->opts.sshdir == NULL) {
             ssh_free(new);
@@ -122,7 +120,7 @@ int ssh_options_copy(ssh_session src, ssh_session *dest) {
         }
     }
 
-    if (src->opts.knownhosts) {
+    if (src->opts.knownhosts != NULL) {
         new->opts.knownhosts = strdup(src->opts.knownhosts);
         if (new->opts.knownhosts == NULL) {
             ssh_free(new);
@@ -131,7 +129,7 @@ int ssh_options_copy(ssh_session src, ssh_session *dest) {
     }
 
     for (i = 0; i < 10; i++) {
-        if (src->opts.wanted_methods[i]) {
+        if (src->opts.wanted_methods[i] != NULL) {
             new->opts.wanted_methods[i] = strdup(src->opts.wanted_methods[i]);
             if (new->opts.wanted_methods[i] == NULL) {
                 ssh_free(new);
@@ -140,7 +138,7 @@ int ssh_options_copy(ssh_session src, ssh_session *dest) {
         }
     }
 
-    if (src->opts.ProxyCommand) {
+    if (src->opts.ProxyCommand != NULL) {
         new->opts.ProxyCommand = strdup(src->opts.ProxyCommand);
         if (new->opts.ProxyCommand == NULL) {
             ssh_free(new);
