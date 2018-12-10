@@ -58,13 +58,20 @@ static int session_teardown(void **state)
     return 0;
 }
 
-static void torture_options_set_proxycommand(void **state) {
+static void torture_options_set_proxycommand(void **state)
+{
     struct torture_state *s = *state;
     ssh_session session = s->ssh.session;
+    const char *address = torture_server_address(AF_INET);
+    int port = torture_server_port();
+    char command[255] = {0};
     int rc;
     socket_t fd;
 
-    rc = ssh_options_set(session, SSH_OPTIONS_PROXYCOMMAND, "nc 127.0.0.10 22");
+    rc = snprintf(command, sizeof(command), "nc %s %d", address, port);
+    assert_true((size_t)rc < sizeof(command));
+
+    rc = ssh_options_set(session, SSH_OPTIONS_PROXYCOMMAND, command);
     assert_int_equal(rc, 0);
     rc = ssh_connect(session);
     assert_ssh_return_code(session, rc);
