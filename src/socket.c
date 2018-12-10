@@ -244,8 +244,11 @@ int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p,
             if (rc < 0) {
                 err = errno;
             }
-            s->last_errno = err;
             ssh_socket_close(s);
+            /* Overwrite ssh_socket_close() error with the real socket error */
+            s->last_errno = err;
+            errno = err;
+
             if (s->callbacks != NULL && s->callbacks->connected != NULL) {
                 s->callbacks->connected(SSH_SOCKET_CONNECTED_ERROR,
                                         err,
