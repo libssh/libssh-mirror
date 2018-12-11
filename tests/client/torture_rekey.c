@@ -355,6 +355,134 @@ static void torture_rekey_time(void **state)
     ssh_disconnect(s->ssh.session);
 }
 
+/* We lower the rekey limits manually and check that the rekey
+ * really happens when sending data
+ */
+static void torture_rekey_server_send(void **state)
+{
+    struct torture_state *s = *state;
+    int rc;
+    char data[256];
+    unsigned int i;
+    struct ssh_crypto_struct *c = NULL;
+    unsigned char *secret_hash = NULL;
+    const char *sshd_config = "RekeyLimit 2K none";
+
+    torture_update_sshd_config(state, sshd_config);
+
+    rc = ssh_connect(s->ssh.session);
+    assert_ssh_return_code(s->ssh.session, rc);
+
+    /* Copy the initial secret hash = session_id so we know we changed keys later */
+    c = s->ssh.session->current_crypto;
+    secret_hash = malloc(c->digest_len);
+    assert_non_null(secret_hash);
+    memcpy(secret_hash, c->secret_hash, c->digest_len);
+
+    /* OpenSSH can not rekey before authentication so authenticate here */
+    rc = ssh_userauth_none(s->ssh.session, NULL);
+    /* This request should return a SSH_REQUEST_DENIED error */
+    if (rc == SSH_ERROR) {
+        assert_int_equal(ssh_get_error_code(s->ssh.session), SSH_REQUEST_DENIED);
+    }
+    rc = ssh_userauth_list(s->ssh.session, NULL);
+    assert_true(rc & SSH_AUTH_METHOD_PUBLICKEY);
+
+    rc = ssh_userauth_publickey_auto(s->ssh.session, NULL, NULL);
+    assert_int_equal(rc, SSH_AUTH_SUCCESS);
+
+    /* send ignore packets of up to 1KB to trigger rekey */
+    memset(data, 0, sizeof(data));
+    memset(data, 'A', 128);
+    for (i = 0; i < 20; i++) {
+        ssh_send_ignore(s->ssh.session, data);
+        ssh_handle_packets(s->ssh.session, 50);
+    }
+
+    /* Check that the secret hash is different than initially */
+    c = s->ssh.session->current_crypto;
+    assert_memory_not_equal(secret_hash, c->secret_hash, c->digest_len);
+    free(secret_hash);
+
+    ssh_disconnect(s->ssh.session);
+}
+
+#ifdef WITH_SFTP
+static void torture_rekey_server_recv(void **state)
+{
+    struct torture_state *s = *state;
+    int rc;
+    struct ssh_crypto_struct *c = NULL;
+    unsigned char *secret_hash = NULL;
+    const char *sshd_config = "RekeyLimit 2K none";
+    char libssh_tmp_file[] = "/tmp/libssh_sftp_test_XXXXXX";
+    char buf[MAX_XFER_BUF_SIZE];
+    ssize_t bytesread;
+    ssize_t byteswritten;
+    int fd;
+    sftp_file file;
+    mode_t mask;
+
+    torture_update_sshd_config(state, sshd_config);
+
+    rc = ssh_connect(s->ssh.session);
+    assert_ssh_return_code(s->ssh.session, rc);
+
+    /* Copy the initial secret hash = session_id so we know we changed keys later */
+    c = s->ssh.session->current_crypto;
+    secret_hash = malloc(c->digest_len);
+    assert_non_null(secret_hash);
+    memcpy(secret_hash, c->secret_hash, c->digest_len);
+
+    /* OpenSSH can not rekey before authentication so authenticate here */
+    rc = ssh_userauth_none(s->ssh.session, NULL);
+    /* This request should return a SSH_REQUEST_DENIED error */
+    if (rc == SSH_ERROR) {
+        assert_int_equal(ssh_get_error_code(s->ssh.session), SSH_REQUEST_DENIED);
+    }
+    rc = ssh_userauth_list(s->ssh.session, NULL);
+    assert_true(rc & SSH_AUTH_METHOD_PUBLICKEY);
+
+    rc = ssh_userauth_publickey_auto(s->ssh.session, NULL, NULL);
+    assert_int_equal(rc, SSH_AUTH_SUCCESS);
+
+    /* Initialize SFTP session */
+    s->ssh.tsftp = torture_sftp_session(s->ssh.session);
+    assert_non_null(s->ssh.tsftp);
+
+    /* Download a file */
+    file = sftp_open(s->ssh.tsftp->sftp, "/usr/bin/ssh", O_RDONLY, 0);
+    assert_non_null(file);
+
+    mask = umask(S_IRWXO | S_IRWXG);
+    fd = mkstemp(libssh_tmp_file);
+    umask(mask);
+    unlink(libssh_tmp_file);
+
+    for (;;) {
+        bytesread = sftp_read(file, buf, MAX_XFER_BUF_SIZE);
+        if (bytesread == 0) {
+                break; /* EOF */
+        }
+        assert_false(bytesread < 0);
+
+        byteswritten = write(fd, buf, bytesread);
+        assert_int_equal(byteswritten, bytesread);
+    }
+
+    close(fd);
+
+    /* Check that the secret hash is different than initially */
+    c = s->ssh.session->current_crypto;
+    assert_memory_not_equal(secret_hash, c->secret_hash, c->digest_len);
+    free(secret_hash);
+
+    torture_sftp_close(s->ssh.tsftp);
+    ssh_disconnect(s->ssh.session);
+}
+#endif /* WITH_SFTP */
+
+
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
@@ -372,6 +500,16 @@ int torture_run_tests(void) {
         cmocka_unit_test_setup_teardown(torture_rekey_send,
                                         session_setup,
                                         session_teardown),
+        /* Note, that this modifies the sshd_config */
+        cmocka_unit_test_setup_teardown(torture_rekey_server_send,
+                                        session_setup,
+                                        session_teardown),
+#ifdef WITH_SFTP
+        cmocka_unit_test_setup_teardown(torture_rekey_server_recv,
+                                        session_setup,
+                                        session_teardown),
+#endif /* WITH_SFTP */
+        /* TODO verify the two rekey are possible and the states are not broken after rekey */
     };
 
     ssh_init();
