@@ -71,6 +71,8 @@ struct torture_state {
     char *pcap_file;
     char *srv_pidfile;
     char *srv_config;
+    bool srv_pam;
+    char *srv_additional_config;
     struct {
         ssh_session session;
         struct torture_sftp *tsftp;
@@ -123,6 +125,8 @@ void torture_setup_sshd_server(void **state, bool pam);
 
 void torture_teardown_socket_dir(void **state);
 void torture_teardown_sshd_server(void **state);
+
+int torture_update_sshd_config(void **state, const char *config);
 
 void torture_reset_config(ssh_session session);
 

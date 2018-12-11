@@ -191,17 +191,14 @@ int torture_isdir(const char *path) {
     return 0;
 }
 
-int torture_terminate_process(const char *pidfile)
+static pid_t
+torture_read_pidfile(const char *pidfile)
 {
     char buf[8] = {0};
     long int tmp;
     ssize_t rc;
-    pid_t pid;
     int fd;
-    int is_running = 1;
-    int count;
 
-    /* read the pidfile */
     fd = open(pidfile, O_RDONLY);
     if (fd < 0) {
         return -1;
@@ -220,7 +217,19 @@ int torture_terminate_process(const char *pidfile)
         return -1;
     }
 
-    pid = (pid_t)(tmp & 0xFFFF);
+    return (pid_t)(tmp & 0xFFFF);
+}
+
+int torture_terminate_process(const char *pidfile)
+{
+    ssize_t rc;
+    pid_t pid;
+    int is_running = 1;
+    int count;
+
+    /* read the pidfile */
+    pid = torture_read_pidfile(pidfile);
+    assert_int_not_equal(pid, -1);
 
     for (count = 0; count < 10; count++) {
         /* Make sure the daemon goes away! */
@@ -572,6 +581,7 @@ static void torture_setup_create_sshd_config(void **state, bool pam)
     char trusted_ca_pubkey[1024];
     char sshd_config[2048];
     char sshd_path[1024];
+    const char *additional_config = NULL;
     struct stat sb;
     const char *sftp_server_locations[] = {
         "/usr/lib/ssh/sftp-server",
@@ -636,7 +646,8 @@ static void torture_setup_create_sshd_config(void **state, bool pam)
              "AcceptEnv LC_PAPER LC_NAME LC_ADDRESS LC_TELEPHONE LC_MEASUREMENT\n"
              "AcceptEnv LC_IDENTIFICATION LC_ALL LC_LIBSSH\n"
              "\n"
-             "PidFile %s\n";
+             "PidFile %s\n"
+             "%s\n"; /* The space for test-specific options */
     const char usepam_yes[] =
              "UsePAM yes\n"
              "KbdInteractiveAuthentication yes\n";
@@ -646,57 +657,74 @@ static void torture_setup_create_sshd_config(void **state, bool pam)
     size_t sftp_sl_size = ARRAY_SIZE(sftp_server_locations);
     const char *sftp_server, *usepam;
     size_t i;
+    bool written = false;
     int rc;
 
+    s->srv_pam = pam;
     if (pam) {
         usepam = usepam_yes;
     } else {
         usepam = usepam_no;
     }
 
+    assert_non_null(s->socket_dir);
+
     snprintf(sshd_path,
              sizeof(sshd_path),
              "%s/sshd",
              s->socket_dir);
 
-    rc = mkdir(sshd_path, 0755);
-    assert_return_code(rc, errno);
+    rc = lstat(sshd_path, &sb);
+    if (rc == 0 ) { /* The directory is already in place */
+        written = true;
+    }
+
+    if (!written) {
+        rc = mkdir(sshd_path, 0755);
+        assert_return_code(rc, errno);
+    }
 
     snprintf(ed25519_hostkey,
              sizeof(ed25519_hostkey),
              "%s/sshd/ssh_host_ed25519_key",
              s->socket_dir);
-    torture_write_file(ed25519_hostkey,
-                       torture_get_openssh_testkey(SSH_KEYTYPE_ED25519, 0, 0));
 
 #ifdef HAVE_DSA
     snprintf(dsa_hostkey,
              sizeof(dsa_hostkey),
              "%s/sshd/ssh_host_dsa_key",
              s->socket_dir);
-    torture_write_file(dsa_hostkey, torture_get_testkey(SSH_KEYTYPE_DSS, 0, 0));
 #endif /* HAVE_DSA */
 
     snprintf(rsa_hostkey,
              sizeof(rsa_hostkey),
              "%s/sshd/ssh_host_rsa_key",
              s->socket_dir);
-    torture_write_file(rsa_hostkey, torture_get_testkey(SSH_KEYTYPE_RSA, 0, 0));
 
     snprintf(ecdsa_hostkey,
              sizeof(ecdsa_hostkey),
              "%s/sshd/ssh_host_ecdsa_key",
              s->socket_dir);
-    torture_write_file(ecdsa_hostkey,
-                       torture_get_testkey(SSH_KEYTYPE_ECDSA, 521, 0));
 
     snprintf(trusted_ca_pubkey,
              sizeof(trusted_ca_pubkey),
              "%s/sshd/user_ca.pub",
              s->socket_dir);
-    torture_write_file(trusted_ca_pubkey, torture_rsa_certauth_pub);
 
-    assert_non_null(s->socket_dir);
+    if (!written) {
+        torture_write_file(ed25519_hostkey,
+                           torture_get_openssh_testkey(SSH_KEYTYPE_ED25519,
+                                                       0, 0));
+#ifdef HAVE_DSA
+        torture_write_file(dsa_hostkey,
+                           torture_get_testkey(SSH_KEYTYPE_DSS, 0, 0));
+#endif /* HAVE_DSA */
+        torture_write_file(rsa_hostkey,
+                           torture_get_testkey(SSH_KEYTYPE_RSA, 0, 0));
+        torture_write_file(ecdsa_hostkey,
+                           torture_get_testkey(SSH_KEYTYPE_ECDSA, 521, 0));
+        torture_write_file(trusted_ca_pubkey, torture_rsa_certauth_pub);
+    }
 
     sftp_server = getenv("TORTURE_SFTP_SERVER");
     if (sftp_server == NULL) {
@@ -710,6 +738,8 @@ static void torture_setup_create_sshd_config(void **state, bool pam)
     }
     assert_non_null(sftp_server);
 
+    additional_config = (s->srv_additional_config != NULL ?
+                         s->srv_additional_config : "");
 #ifdef HAVE_DSA
     snprintf(sshd_config, sizeof(sshd_config),
              config_string,
@@ -720,7 +750,8 @@ static void torture_setup_create_sshd_config(void **state, bool pam)
              trusted_ca_pubkey,
              sftp_server,
              usepam,
-             s->srv_pidfile);
+             s->srv_pidfile,
+             additional_config);
 #else /* HAVE_DSA */
     snprintf(sshd_config, sizeof(sshd_config),
              config_string,
@@ -730,7 +761,8 @@ static void torture_setup_create_sshd_config(void **state, bool pam)
              trusted_ca_pubkey,
              sftp_server,
              usepam,
-             s->srv_pidfile);
+             s->srv_pidfile,
+             additional_config);
 #endif /* HAVE_DSA */
 
     torture_write_file(s->srv_config, sshd_config);
@@ -812,8 +844,65 @@ void torture_teardown_socket_dir(void **state)
     free(s->socket_dir);
     free(s->pcap_file);
     free(s->srv_pidfile);
+    free(s->srv_additional_config);
     free(s);
 }
+
+static int
+torture_reload_sshd_server(void **state)
+{
+    struct torture_state *s = *state;
+    pid_t pid;
+    int rc;
+
+    /* read the pidfile */
+    pid = torture_read_pidfile(s->srv_pidfile);
+    assert_int_not_equal(pid, -1);
+
+    kill(pid, SIGHUP);
+
+    /* 10 ms */
+    usleep(10 * 1000);
+
+    rc = kill(pid, 0);
+    if (rc != 0) {
+        fprintf(stderr,
+                "ERROR: SSHD process %u died during reload!\n", pid);
+        return SSH_ERROR;
+    }
+
+    /* Wait until the sshd is ready to accept connections */
+    rc = torture_wait_for_daemon(5);
+    assert_int_equal(rc, 0);
+    return SSH_OK;
+}
+
+/* @brief: Updates SSHD server configuration with more options and
+ *         reloads the server to apply them.
+ * Note, that this still uses the default configuration options specified
+ * in this file and overwrites options previously specified by this function.
+ */
+int
+torture_update_sshd_config(void **state, const char *config)
+{
+    struct torture_state *s = *state;
+    int rc;
+
+    /* Store the configuration in internal structure */
+    SAFE_FREE(s->srv_additional_config);
+    s->srv_additional_config = strdup(config);
+    assert_non_null(s->srv_additional_config);
+
+    /* Rewrite the configuration file */
+    torture_setup_create_sshd_config(state, s->srv_pam);
+
+    /* Reload the server */
+    rc = torture_reload_sshd_server(state);
+    assert_int_equal(rc, SSH_OK);
+
+    return SSH_OK;
+}
+
 
 void torture_teardown_sshd_server(void **state)
 {
