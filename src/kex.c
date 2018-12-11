@@ -745,7 +745,7 @@ int ssh_set_client_kex(ssh_session session)
     }
 
     /* For rekeying, skip the extension negotiation */
-    if (session->session_state == SSH_SESSION_STATE_AUTHENTICATED) {
+    if (session->flags & SSH_SESSION_FLAG_AUTHENTICATED) {
         return SSH_OK;
     }
 
