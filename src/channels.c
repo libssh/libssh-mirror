@@ -1168,6 +1168,11 @@ int ssh_channel_close(ssh_channel channel)
         return SSH_ERROR;
     }
 
+    /* If the channel close has already been sent we're done here. */
+    if (channel->flags & SSH_CHANNEL_FLAG_CLOSED_LOCAL) {
+        return SSH_OK;
+    }
+
     session = channel->session;
 
     if (channel->local_eof == 0) {
