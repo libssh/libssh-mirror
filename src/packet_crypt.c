@@ -33,7 +33,6 @@
 #endif
 
 #ifdef OPENSSL_CRYPTO
-#include <openssl/blowfish.h>
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
 #endif

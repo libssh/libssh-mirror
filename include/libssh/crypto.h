@@ -76,7 +76,9 @@ enum ssh_key_exchange_e {
 
 enum ssh_cipher_e {
     SSH_NO_CIPHER=0,
+#ifdef WITH_BLOWFISH_CIPHER
     SSH_BLOWFISH_CBC,
+#endif /* WITH_BLOWFISH_CIPHER */
     SSH_3DES_CBC,
     SSH_AES128_CBC,
     SSH_AES192_CBC,

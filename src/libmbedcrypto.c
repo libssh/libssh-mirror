@@ -951,6 +951,7 @@ static void cipher_cleanup(struct ssh_cipher_struct *cipher)
 }
 
 static struct ssh_cipher_struct ssh_ciphertab[] = {
+#ifdef WITH_BLOWFISH_CIPHER
     {
         .name = "blowfish-cbc",
         .blocksize = 8,
@@ -962,6 +963,7 @@ static struct ssh_cipher_struct ssh_ciphertab[] = {
         .decrypt = cipher_decrypt_cbc,
         .cleanup = cipher_cleanup
     },
+#endif /* WITH_BLOWFISH_CIPHER */
     {
         .name = "aes128-ctr",
         .blocksize = 16,

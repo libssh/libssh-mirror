@@ -89,8 +89,10 @@ if (OPENSSL_FOUND)
         message(FATAL_ERROR "Could not detect openssl/aes.h")
     endif()
 
-    set(CMAKE_REQUIRED_INCLUDES ${OPENSSL_INCLUDE_DIR})
-    check_include_file(openssl/blowfish.h HAVE_OPENSSL_BLOWFISH_H)
+    if (WITH_BLOWFISH_CIPHER)
+        set(CMAKE_REQUIRED_INCLUDES ${OPENSSL_INCLUDE_DIR})
+        check_include_file(openssl/blowfish.h HAVE_OPENSSL_BLOWFISH_H)
+    endif()
 
     set(CMAKE_REQUIRED_INCLUDES ${OPENSSL_INCLUDE_DIR})
     check_include_file(openssl/ecdh.h HAVE_OPENSSL_ECDH_H)

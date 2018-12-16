@@ -269,6 +269,7 @@ static void torture_algorithms_3des_cbc_hmac_sha2_512(void **state) {
     test_algorithm(s->ssh.session, NULL/*kex*/, "3des-cbc", "hmac-sha2-512");
 }
 
+#ifdef WITH_BLOWFISH_CIPHER
 #if ((OPENSSH_VERSION_MAJOR == 7 && OPENSSH_VERSION_MINOR < 6) || OPENSSH_VERSION_MAJOR <= 6)
 static void torture_algorithms_blowfish_cbc_hmac_sha1(void **state) {
     struct torture_state *s = *state;
@@ -288,6 +289,7 @@ static void torture_algorithms_blowfish_cbc_hmac_sha2_512(void **state) {
     test_algorithm(s->ssh.session, NULL/*kex*/, "blowfish-cbc", "hmac-sha2-512");
 }
 #endif
+#endif /* WITH_BLOWFISH_CIPHER */
 
 static void torture_algorithms_chacha20_poly1305(void **state)
 {
@@ -508,6 +510,7 @@ int torture_run_tests(void) {
         cmocka_unit_test_setup_teardown(torture_algorithms_3des_cbc_hmac_sha2_512,
                                         session_setup,
                                         session_teardown),
+#ifdef WITH_BLOWFISH_CIPHER
 #if ((OPENSSH_VERSION_MAJOR == 7 && OPENSSH_VERSION_MINOR < 6) || OPENSSH_VERSION_MAJOR <= 6)
         cmocka_unit_test_setup_teardown(torture_algorithms_blowfish_cbc_hmac_sha1,
                                         session_setup,
@@ -519,6 +522,7 @@ int torture_run_tests(void) {
                                         session_setup,
                                         session_teardown),
 #endif
+#endif /* WITH_BLOWFISH_CIPHER */
         cmocka_unit_test_setup_teardown(torture_algorithms_chacha20_poly1305,
                                         session_setup,
                                         session_teardown),
