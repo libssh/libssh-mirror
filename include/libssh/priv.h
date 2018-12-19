@@ -78,6 +78,10 @@ char *strndup(const char *s, size_t n);
 #  endif /* __WORDSIZE */
 # endif /* PRIu64 */
 
+# ifndef PRIu32
+#  define PRIu32 "u"
+# endif /* PRIu32 */
+
 # ifdef _MSC_VER
 #  include <stdio.h>
 #  include <stdarg.h> /* va_copy define check */
