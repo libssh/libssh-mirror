@@ -230,15 +230,20 @@ static void torture_pki_verify_mismatch(void **state)
             new_sig = pki_signature_from_blob(verify_key,
                                               blob,
                                               sig_type,
-                                              SSH_DIGEST_SHA1);
+                                              import_sig->hash_type);
             if (sig_type != key_type) {
                 assert_true(new_sig == NULL);
             } else {
                 /* Importing with the same key type should work */
                 assert_true(new_sig != NULL);
                 assert_int_equal(new_sig->type, key->type);
-                assert_string_equal(new_sig->type_c, key->type_c);
-                assert_string_equal(new_sig->type_c, signature_types[sig_type]);
+                if (key_type == SSH_KEYTYPE_RSA) {
+                   assert_string_equal(key->type_c, "ssh-rsa");
+                   assert_string_equal(new_sig->type_c, hash_signatures[new_sig->hash_type]);
+                } else {
+                   assert_string_equal(new_sig->type_c, key->type_c);
+                   assert_string_equal(new_sig->type_c, signature_types[sig_type]);
+                }
 
                 /* The verification should not work */
                 rc = pki_signature_verify(session,
