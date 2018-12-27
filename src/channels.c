@@ -996,6 +996,88 @@ error:
   return rc;
 }
 
+/**
+ * @brief Open a TCP/IP - UNIX domain socket forwarding channel.
+ *
+ * @param[in]  channel  An allocated channel.
+ *
+ * @param[in]  remotepath   The UNIX socket path on the remote machine
+ *
+ * @param[in]  sourcehost   The numeric IP address of the machine from where the
+ *                          connection request originates. This is mostly for
+ *                          logging purposes.
+ *
+ * @param[in]  localport    The port on the host from where the connection
+ *                          originated. This is mostly for logging purposes.
+ *
+ * @return              SSH_OK on success,
+ *                      SSH_ERROR if an error occurred,
+ *                      SSH_AGAIN if in nonblocking mode and call has
+ *                      to be done again.
+ *
+ * @warning This function does not bind the local port and does not
+ *          automatically forward the content of a socket to the channel.
+ *          You still have to use channel_read and channel_write for this.
+ * @warning Requires support of OpenSSH for UNIX domain socket forwarding.
+  */
+int ssh_channel_open_forward_unix(ssh_channel channel,
+                                  const char *remotepath,
+                                  const char *sourcehost,
+                                  int localport)
+{
+    ssh_session session = NULL;
+    ssh_buffer payload = NULL;
+    ssh_string str = NULL;
+    int rc = SSH_ERROR;
+    int version;
+
+    if (channel == NULL) {
+        return rc;
+    }
+
+    session = channel->session;
+
+    version = ssh_get_openssh_version(session);
+    if (version == 0) {
+        ssh_set_error(session,
+                      SSH_REQUEST_DENIED,
+                      "We're not connected to an OpenSSH server!");
+        return SSH_ERROR;
+    }
+
+    if (remotepath == NULL || sourcehost == NULL) {
+        ssh_set_error_invalid(session);
+        return rc;
+    }
+
+    payload = ssh_buffer_new();
+    if (payload == NULL) {
+        ssh_set_error_oom(session);
+        goto error;
+    }
+
+    rc = ssh_buffer_pack(payload,
+                         "ssd",
+                         remotepath,
+                         sourcehost,
+                         localport);
+    if (rc != SSH_OK) {
+        ssh_set_error_oom(session);
+        goto error;
+    }
+
+    rc = channel_open(channel,
+                      "direct-streamlocal@openssh.com",
+                      CHANNEL_INITIAL_WINDOW,
+                      CHANNEL_MAX_PACKET,
+                      payload);
+
+error:
+    ssh_buffer_free(payload);
+    ssh_string_free(str);
+
+    return rc;
+}
 
 /**
  * @brief Close and free a channel.

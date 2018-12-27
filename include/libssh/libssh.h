@@ -454,6 +454,8 @@ LIBSSH_API ssh_channel ssh_channel_new(ssh_session session);
 LIBSSH_API int ssh_channel_open_auth_agent(ssh_channel channel);
 LIBSSH_API int ssh_channel_open_forward(ssh_channel channel, const char *remotehost,
     int remoteport, const char *sourcehost, int localport);
+LIBSSH_API int ssh_channel_open_forward_unix(ssh_channel channel, const char *remotepath,
+    const char *sourcehost, int localport);
 LIBSSH_API int ssh_channel_open_session(ssh_channel channel);
 LIBSSH_API int ssh_channel_open_x11(ssh_channel channel, const char *orig_addr, int orig_port);
 LIBSSH_API int ssh_channel_poll(ssh_channel channel, int is_stderr);
