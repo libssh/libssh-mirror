@@ -100,9 +100,10 @@ static void sftp_ext_free(sftp_ext ext) {
 
 sftp_session sftp_new(ssh_session session)
 {
-    sftp_session sftp;
+    sftp_session sftp = NULL;
 
     if (session == NULL) {
+        ssh_set_error_invalid(session);
         return NULL;
     }
 
