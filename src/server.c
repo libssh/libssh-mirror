@@ -496,7 +496,7 @@ static void ssh_server_connection_callback(ssh_session session){
                  * our supported extensions now. This is the first message after
                  * sending NEWKEYS message and after turning on crypto.
                  */
-                if (session->extensions &&
+                if (session->extensions & SSH_EXT_NEGOTIATION &&
                     session->session_state != SSH_SESSION_STATE_AUTHENTICATED) {
                     ssh_server_send_extensions(session);
                 }

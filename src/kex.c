@@ -541,13 +541,29 @@ SSH_PACKET_CALLBACK(ssh_packet_kexinit)
         ok = ssh_match_group(session->next_crypto->client_kex.methods[SSH_KEX],
                              KEX_EXTENSION_CLIENT);
         if (ok) {
+            const char *hostkeys = NULL;
+
+            /* The client supports extension negotiation */
+            session->extensions |= SSH_EXT_NEGOTIATION;
             /*
-             * Enable all the supported extensions and when the time comes
-             * (after NEWKEYS) send them to the client.
+             * RFC 8332 Section 3.1: Use for Server Authentication
+             * Check what algorithms were provided in the SSH_HOSTKEYS list
+             * by the client and enable the respective extensions to provide
+             * correct signature in the next packet if RSA is negotiated
              */
+            hostkeys = session->next_crypto->client_kex.methods[SSH_HOSTKEYS];
+            ok = ssh_match_group(hostkeys, "rsa-sha2-512");
+            if (ok) {
+                session->extensions |= SSH_EXT_SIG_RSA_SHA512;
+            }
+            ok = ssh_match_group(hostkeys, "rsa-sha2-256");
+            if (ok) {
+                session->extensions |= SSH_EXT_SIG_RSA_SHA256;
+            }
             SSH_LOG(SSH_LOG_DEBUG, "The client supports extension "
-                    "negotiation: enabling all extensions");
-            session->extensions = SSH_EXT_ALL;
+                    "negotiation. Enabled signature algorithms: %s%s",
+                    session->extensions & SSH_EXT_SIG_RSA_SHA256 ? "SHA256" : "",
+                    session->extensions & SSH_EXT_SIG_RSA_SHA512 ? " SHA512" : "");
         }
 
         /*
