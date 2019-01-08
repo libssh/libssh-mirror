@@ -38,6 +38,7 @@
 #include "libssh/curve25519.h"
 #include "libssh/knownhosts.h"
 #include "libssh/misc.h"
+#include "libssh/pki.h"
 
 #ifdef WITH_BLOWFISH_CIPHER
 # if defined(HAVE_OPENSSL_BLOWFISH_H) || defined(HAVE_LIBGCRYPT) || defined(HAVE_LIBMBEDCRYPTO)
@@ -635,6 +636,8 @@ char *ssh_client_select_hostkeys(ssh_session session)
         "ecdsa-sha2-nistp521",
         "ecdsa-sha2-nistp384",
         "ecdsa-sha2-nistp256",
+        "rsa-sha2-512",
+        "rsa-sha2-256",
         "ssh-rsa",
 #ifdef HAVE_DSA
         "ssh-dss",
@@ -660,29 +663,30 @@ char *ssh_client_select_hostkeys(ssh_session session)
 
     for (i = 0; preferred_hostkeys[i] != NULL; ++i) {
         bool found = false;
+        /* This is a signature type: We list also the SHA2 extensions */
+        enum ssh_keytypes_e base_preferred =
+            ssh_key_type_from_signature_name(preferred_hostkeys[i]);
 
         for (it = ssh_list_get_iterator(algo_list);
              it != NULL;
              it = it->next) {
             const char *algo = ssh_iterator_value(const char *, it);
-            int cmp;
-            int ok;
+            /* This is always key type so we do not have to care for the
+             * SHA2 extension */
+            enum ssh_keytypes_e base_algo = ssh_key_type_from_name(algo);
 
-            cmp = strcmp(preferred_hostkeys[i], algo);
-            if (cmp == 0) {
-                ok = ssh_verify_existing_algo(SSH_HOSTKEYS, algo);
-                if (ok) {
-                    if (needcomma) {
-                        strncat(methods_buffer,
-                                ",",
-                                sizeof(methods_buffer) - strlen(methods_buffer) - 1);
-                    }
+            if (base_preferred == base_algo) {
+                /* Matching the keys already verified it is a known type */
+                if (needcomma) {
                     strncat(methods_buffer,
-                            algo,
+                            ",",
                             sizeof(methods_buffer) - strlen(methods_buffer) - 1);
-                    needcomma = 1;
-                    found = true;
                 }
+                strncat(methods_buffer,
+                        preferred_hostkeys[i],
+                        sizeof(methods_buffer) - strlen(methods_buffer) - 1);
+                needcomma = 1;
+                found = true;
             }
         }
         /* Collect the rest of the algorithms in other buffer, that will
@@ -744,10 +748,10 @@ int ssh_set_client_kex(ssh_session session)
 
     memset(client->methods, 0, KEX_METHODS_SIZE * sizeof(char **));
     /* first check if we have specific host key methods */
-    if(session->opts.wanted_methods[SSH_HOSTKEYS] == NULL){
+    if (session->opts.wanted_methods[SSH_HOSTKEYS] == NULL) {
     	/* Only if no override */
     	session->opts.wanted_methods[SSH_HOSTKEYS] =
-    			ssh_client_select_hostkeys(session);
+            ssh_client_select_hostkeys(session);
     }
 
     for (i = 0; i < KEX_METHODS_SIZE; i++) {

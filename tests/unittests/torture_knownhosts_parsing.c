@@ -312,8 +312,9 @@ torture_knownhosts_algorithms(void **state)
     const char *knownhosts_file = *state;
     char *algo_list = NULL;
     ssh_session session;
-    const char *expect = "ssh-ed25519,ssh-rsa,ecdsa-sha2-nistp521,"
-                         "ecdsa-sha2-nistp384,ecdsa-sha2-nistp256"
+    const char *expect = "ssh-ed25519,rsa-sha2-512,rsa-sha2-256,ssh-rsa,"
+                         "ecdsa-sha2-nistp521,ecdsa-sha2-nistp384,"
+                         "ecdsa-sha2-nistp256"
 #ifdef HAVE_DSA
                          ",ssh-dss"
 #endif
@@ -341,8 +342,9 @@ torture_knownhosts_algorithms_global(void **state)
     const char *knownhosts_file = *state;
     char *algo_list = NULL;
     ssh_session session;
-    const char *expect = "ssh-ed25519,ssh-rsa,ecdsa-sha2-nistp521,"
-                         "ecdsa-sha2-nistp384,ecdsa-sha2-nistp256"
+    const char *expect = "ssh-ed25519,rsa-sha2-512,rsa-sha2-256,ssh-rsa,"
+                         "ecdsa-sha2-nistp521,ecdsa-sha2-nistp384,"
+                         "ecdsa-sha2-nistp256"
 #ifdef HAVE_DSA
                          ",ssh-dss"
 #endif
