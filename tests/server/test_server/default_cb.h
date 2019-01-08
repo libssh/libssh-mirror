@@ -162,7 +162,15 @@ int channel_write_wontblock_cb(ssh_session session,
 
 ssh_channel channel_new_session_cb(ssh_session session, void *userdata);
 
+/* The caller is responsible to set the userdata to be provided to the callback
+ * The caller is responsible to free the allocated structure
+ * */
 struct ssh_server_callbacks_struct *get_default_server_cb(void);
+
+/* The caller is responsible to set the userdata to be provided to the callback
+ * The caller is responsible to free the allocated structure
+ * */
+struct ssh_channel_callbacks_struct *get_default_channel_cb(void);
 
 void default_handle_session_cb(ssh_event event, ssh_session session,
         struct server_state_st *state);
