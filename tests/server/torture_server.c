@@ -39,9 +39,15 @@
 #include "test_server.h"
 #include "default_cb.h"
 
+#define TORTURE_KNOWN_HOSTS_FILE "libssh_torture_knownhosts"
+
+const char template[] = "temp_dir_XXXXXX";
+
 struct test_server_st {
     struct torture_state *state;
     struct server_state_st *ss;
+    char *cwd;
+    char *temp_dir;
 };
 
 static int setup_default_server(void **state)
@@ -245,10 +251,21 @@ static int session_setup(void **state)
     struct torture_state *s;
     int verbosity = torture_libssh_verbosity();
     struct passwd *pwd;
+    char *cwd = NULL;
+    char *tmp_dir = NULL;
     bool b = false;
     int rc;
 
     assert_non_null(tss);
+
+    cwd = torture_get_current_working_dir();
+    assert_non_null(cwd);
+
+    tmp_dir = torture_make_temp_dir(template);
+    assert_non_null(tmp_dir);
+
+    tss->cwd = cwd;
+    tss->temp_dir = tmp_dir;
 
     s = tss->state;
     assert_non_null(s);
@@ -277,6 +294,7 @@ static int session_teardown(void **state)
 {
     struct test_server_st *tss = *state;
     struct torture_state *s;
+    int rc = 0;
 
     assert_non_null(tss);
 
@@ -285,6 +303,15 @@ static int session_teardown(void **state)
 
     ssh_disconnect(s->ssh.session);
     ssh_free(s->ssh.session);
+
+    rc = torture_change_dir(tss->cwd);
+    assert_int_equal(rc, 0);
+
+    rc = torture_rmdirs(tss->temp_dir);
+    assert_int_equal(rc, 0);
+
+    SAFE_FREE(tss->temp_dir);
+    SAFE_FREE(tss->cwd);
 
     return 0;
 }
@@ -326,10 +353,63 @@ static void torture_server_auth_password(void **state)
     assert_int_equal(rc, SSH_AUTH_SUCCESS);
 }
 
+static void torture_server_hostkey_mismatch(void **state)
+{
+    struct test_server_st *tss = *state;
+    struct torture_state *s = NULL;
+    ssh_session session = NULL;
+    char known_hosts_file[1024] = {0};
+    FILE *file = NULL;
+    enum ssh_known_hosts_e found;
+    int rc;
+
+    assert_non_null(tss);
+
+    s = tss->state;
+    assert_non_null(s);
+
+    session = s->ssh.session;
+    assert_non_null(session);
+
+    /* Store the testkey in the knownhosts file */
+    snprintf(known_hosts_file,
+             sizeof(known_hosts_file),
+             "%s/%s",
+             s->socket_dir,
+             TORTURE_KNOWN_HOSTS_FILE);
+
+    file = fopen(known_hosts_file, "w");
+    assert_non_null(file);
+    fprintf(file,
+            "127.0.0.10 %s\n",
+            torture_get_testkey_pub(SSH_KEYTYPE_RSA, 0));
+    fclose(file);
+
+    rc = ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, known_hosts_file);
+    assert_ssh_return_code(session, rc);
+    /* Using the default user for the server */
+    rc = ssh_options_set(session, SSH_OPTIONS_USER, SSHD_DEFAULT_USER);
+    assert_return_code(session, rc);
+
+    /* Configure the client to offer only ssh-rsa hostkey algorithm */
+    rc = ssh_options_set(session, SSH_OPTIONS_HOSTKEYS, "ssh-rsa");
+    assert_return_code(session, rc);
+
+    rc = ssh_connect(session);
+    assert_return_code(session, rc);
+
+    /* Make sure we can verify the signature */
+    found = ssh_session_is_known_server(session);
+    assert_int_equal(found, SSH_KNOWN_HOSTS_OK);
+}
+
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
         cmocka_unit_test_setup_teardown(torture_server_auth_password,
+                                        session_setup,
+                                        session_teardown),
+        cmocka_unit_test_setup_teardown(torture_server_hostkey_mismatch,
                                         session_setup,
                                         session_teardown),
     };
