@@ -80,7 +80,7 @@ static int setup_default_server(void **state)
 
     assert_non_null(state);
 
-    tss = (struct test_server_st*)malloc(sizeof(struct test_server_st));
+    tss = (struct test_server_st*)calloc(1, sizeof(struct test_server_st));
     assert_non_null(tss);
 
     torture_setup_socket_dir((void **)&s);
@@ -139,7 +139,7 @@ static int setup_default_server(void **state)
     assert_non_null(sftp_server);
 
     /* Create default server state */
-    ss = (struct server_state_st *)malloc(sizeof(struct server_state_st));
+    ss = (struct server_state_st *)calloc(1, sizeof(struct server_state_st));
     assert_non_null(ss);
 
     ss->address = strdup("127.0.0.10");
