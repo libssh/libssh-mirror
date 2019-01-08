@@ -64,6 +64,10 @@ struct channel_data_st {
     ssh_event event;
     /* Terminal size struct. */
     struct winsize *winsize;
+    /* This pointer will hold the server state for default callbacks */
+    void *server_state;
+    /* This pointer is useful to set data for custom callbacks */
+    void *extra_data;
 };
 
 /* A userdata struct for session. */
@@ -77,6 +81,10 @@ struct session_data_st {
 #ifdef WITH_PCAP
     ssh_pcap_file pcap;
 #endif
+    /* This pointer will hold the server state for default callbacks */
+    void *server_state;
+    /* This pointer is useful to set data for custom callbacks */
+    void *extra_data;
 };
 
 int auth_password_cb(ssh_session session, const char *user,
