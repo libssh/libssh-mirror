@@ -1274,6 +1274,10 @@ int ssh_get_server_publickey(ssh_session session, ssh_key *key)
 
 ssh_key ssh_dh_get_current_server_publickey(ssh_session session)
 {
+    if (session->current_crypto == NULL) {
+        return NULL;
+    }
+
     return session->current_crypto->server_pubkey;
 }
 
