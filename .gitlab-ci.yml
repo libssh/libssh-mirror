@@ -272,7 +272,7 @@ fedora/mingw32:
     paths:
       - obj/
 
-Debian.cross.mips-linux-gnu:
+.Debian.cross.mips-linux-gnu:
   <<: *Debian_cross_template
 
 tumbleweed/openssl_1.1.x/x86_64/gcc:
