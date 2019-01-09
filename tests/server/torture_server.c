@@ -316,6 +316,36 @@ static int session_teardown(void **state)
     return 0;
 }
 
+static void torture_server_auth_none(void **state)
+{
+    struct test_server_st *tss = *state;
+    struct torture_state *s = NULL;
+    ssh_session session = NULL;
+    int rc;
+
+    assert_non_null(tss);
+
+    s = tss->state;
+    assert_non_null(s);
+
+    session = s->ssh.session;
+    assert_non_null(session);
+
+    rc = ssh_options_set(session, SSH_OPTIONS_USER, TORTURE_SSH_USER_BOB);
+    assert_int_equal(rc, SSH_OK);
+
+    rc = ssh_connect(session);
+    assert_int_equal(rc, SSH_OK);
+
+    rc = ssh_userauth_none(session, NULL);
+    assert_int_equal(rc, SSH_AUTH_DENIED);
+
+    /* This request should return a SSH_REQUEST_DENIED error */
+    if (rc == SSH_ERROR) {
+        assert_int_equal(ssh_get_error_code(session), SSH_REQUEST_DENIED);
+    }
+}
+
 static void torture_server_auth_password(void **state)
 {
     struct test_server_st *tss = *state;
@@ -440,6 +470,9 @@ static void torture_server_hostkey_mismatch(void **state)
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
+        cmocka_unit_test_setup_teardown(torture_server_auth_none,
+                                        session_setup,
+                                        session_teardown),
         cmocka_unit_test_setup_teardown(torture_server_auth_password,
                                         session_setup,
                                         session_teardown),
