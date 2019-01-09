@@ -175,7 +175,7 @@ static int setup_default_server(void **state)
 
     ss->verbosity = torture_libssh_verbosity();
 
-    ss->auth_methods = SSH_AUTH_METHOD_PASSWORD;
+    ss->auth_methods = SSH_AUTH_METHOD_PASSWORD | SSH_AUTH_METHOD_PUBLICKEY;
 
 #ifdef WITH_PCAP
     ss->with_pcap = 1;
@@ -331,7 +331,7 @@ static void torture_server_auth_password(void **state)
     session = s->ssh.session;
     assert_non_null(session);
 
-    /* TODO: implement proper pam authentication function */
+    /* TODO: implement proper pam authentication in callback */
     /* Using the default user for the server */
     rc = ssh_options_set(session, SSH_OPTIONS_USER, SSHD_DEFAULT_USER);
     assert_int_equal(rc, SSH_OK);
@@ -347,9 +347,43 @@ static void torture_server_auth_password(void **state)
     rc = ssh_userauth_list(session, NULL);
     assert_true(rc & SSH_AUTH_METHOD_PASSWORD);
 
-    /* TODO: implement proper pam authentication function */
+    /* TODO: implement proper pam authentication in callback */
     /* Using the default password for the server */
     rc = ssh_userauth_password(session, NULL, SSHD_DEFAULT_PASSWORD);
+    assert_int_equal(rc, SSH_AUTH_SUCCESS);
+}
+
+static void torture_server_auth_pubkey(void **state)
+{
+    struct test_server_st *tss = *state;
+    struct torture_state *s;
+    ssh_session session;
+    int rc;
+
+    assert_non_null(tss);
+
+    s = tss->state;
+    assert_non_null(s);
+
+    session = s->ssh.session;
+    assert_non_null(session);
+
+    /* Authenticate as alice with bob his pubkey */
+    rc = ssh_options_set(session, SSH_OPTIONS_USER, TORTURE_SSH_USER_ALICE);
+    assert_int_equal(rc, SSH_OK);
+
+    rc = ssh_connect(session);
+    assert_int_equal(rc, SSH_OK);
+
+    rc = ssh_userauth_none(session,NULL);
+    /* This request should return a SSH_REQUEST_DENIED error */
+    if (rc == SSH_ERROR) {
+        assert_int_equal(ssh_get_error_code(session), SSH_REQUEST_DENIED);
+    }
+    rc = ssh_userauth_list(session, NULL);
+    assert_true(rc & SSH_AUTH_METHOD_PUBLICKEY);
+
+    rc = ssh_userauth_publickey_auto(session, NULL, NULL);
     assert_int_equal(rc, SSH_AUTH_SUCCESS);
 }
 
@@ -407,6 +441,9 @@ int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
         cmocka_unit_test_setup_teardown(torture_server_auth_password,
+                                        session_setup,
+                                        session_teardown),
+        cmocka_unit_test_setup_teardown(torture_server_auth_pubkey,
                                         session_setup,
                                         session_teardown),
         cmocka_unit_test_setup_teardown(torture_server_hostkey_mismatch,

@@ -51,6 +51,45 @@
 #include <util.h>
 #endif
 
+int auth_pubkey_cb(UNUSED_PARAM(ssh_session session),
+                   const char *user,
+                   UNUSED_PARAM(struct ssh_key_struct *pubkey),
+                   char signature_state,
+                   void *userdata)
+{
+    struct session_data_st *sdata;
+
+    sdata = (struct session_data_st *)userdata;
+    if (sdata == NULL) {
+        fprintf(stderr, "Error: NULL userdata\n");
+        goto null_userdata;
+    }
+
+    printf("Public key authentication of user %s\n", user);
+
+    switch(signature_state) {
+    case SSH_PUBLICKEY_STATE_NONE:
+    case SSH_PUBLICKEY_STATE_VALID:
+        break;
+    default:
+        goto denied;
+    }
+
+    /* TODO */
+    /* Check wheter the user and public key are in authorized keys list */
+
+    /* Authenticated */
+    printf("Authenticated\n");
+    sdata->authenticated = 1;
+    sdata->auth_attempts = 0;
+    return SSH_AUTH_SUCCESS;
+
+denied:
+    sdata->auth_attempts++;
+null_userdata:
+    return SSH_AUTH_DENIED;
+}
+
 /* TODO implement proper pam authentication cb */
 int auth_password_cb(UNUSED_PARAM(ssh_session session),
                      const char *user,
@@ -79,7 +118,7 @@ int auth_password_cb(UNUSED_PARAM(ssh_session session),
         goto denied;
     }
 
-    printf("Password authentication\n");
+    printf("Password authentication of user %s\n", user);
 
     known_user = !(strcmp(user, sdata->username));
     valid_password = !(strcmp(password, sdata->password));
@@ -705,6 +744,7 @@ struct ssh_server_callbacks_struct *get_default_server_cb(void)
     }
 
     cb->auth_password_function = auth_password_cb;
+    cb->auth_pubkey_function = auth_pubkey_cb;
     cb->channel_open_request_session_function = channel_new_session_cb;
 #if WITH_GSSAPI
     cb->auth_gssapi_mic_function = auth_gssapi_mic_cb;
@@ -834,7 +874,9 @@ void default_handle_session_cb(ssh_event event,
     if (state->auth_methods) {
         ssh_set_auth_methods(session, state->auth_methods);
     } else {
-        ssh_set_auth_methods(session, SSH_AUTH_METHOD_PASSWORD);
+        ssh_set_auth_methods(session,
+                SSH_AUTH_METHOD_PASSWORD |
+                SSH_AUTH_METHOD_PUBLICKEY);
     }
 
     ssh_event_add_session(event, session);
