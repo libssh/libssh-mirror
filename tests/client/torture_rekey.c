@@ -195,44 +195,13 @@ static void torture_rekey_send(void **state)
 }
 
 #ifdef WITH_SFTP
-#define MAX_XFER_BUF_SIZE 16384
-
-/* To trigger rekey by receiving data, the easiest thing is probably to
- * use sftp
- */
-static void torture_rekey_recv(void **state)
+static void session_setup_sftp(void **state)
 {
     struct torture_state *s = *state;
     int rc;
-    long long bytes = 2048; /* 2KB */
-    struct ssh_crypto_struct *c = NULL;
-    unsigned char *secret_hash = NULL;
-
-    char libssh_tmp_file[] = "/tmp/libssh_sftp_test_XXXXXX";
-    char buf[MAX_XFER_BUF_SIZE];
-    ssize_t bytesread;
-    ssize_t byteswritten;
-    int fd;
-    sftp_file file;
-    mode_t mask;
-
-    rc = ssh_options_set(s->ssh.session, SSH_OPTIONS_REKEY_DATA, &bytes);
-    assert_ssh_return_code(s->ssh.session, rc);
 
     rc = ssh_connect(s->ssh.session);
     assert_ssh_return_code(s->ssh.session, rc);
-
-    /* The blocks limit is set correctly */
-    c = s->ssh.session->current_crypto;
-    assert_int_equal(c->in_cipher->max_blocks, bytes / c->in_cipher->blocksize);
-    assert_int_equal(c->out_cipher->max_blocks, bytes / c->out_cipher->blocksize);
-    /* We should have less encrypted packets than transfered (first are not encrypted) */
-    assert_true(c->out_cipher->packets < s->ssh.session->send_seq);
-    assert_true(c->in_cipher->packets < s->ssh.session->recv_seq);
-    /* Copy the initial secret hash = session_id so we know we changed keys later */
-    secret_hash = malloc(c->digest_len);
-    assert_non_null(secret_hash);
-    memcpy(secret_hash, c->secret_hash, c->digest_len);
 
     /* OpenSSH can not rekey before authentication so authenticate here */
     rc = ssh_userauth_none(s->ssh.session, NULL);
@@ -249,6 +218,55 @@ static void torture_rekey_recv(void **state)
     /* Initialize SFTP session */
     s->ssh.tsftp = torture_sftp_session(s->ssh.session);
     assert_non_null(s->ssh.tsftp);
+}
+
+long long bytes = 2048; /* 2KB */
+
+static int session_setup_sftp_client(void **state)
+{
+    struct torture_state *s = *state;
+    int rc;
+
+    session_setup(state);
+
+    rc = ssh_options_set(s->ssh.session, SSH_OPTIONS_REKEY_DATA, &bytes);
+    assert_ssh_return_code(s->ssh.session, rc);
+
+    session_setup_sftp(state);
+
+    return 0;
+}
+
+#define MAX_XFER_BUF_SIZE 16384
+
+/* To trigger rekey by receiving data, the easiest thing is probably to
+ * use sftp
+ */
+static void torture_rekey_recv(void **state)
+{
+    struct torture_state *s = *state;
+    struct ssh_crypto_struct *c = NULL;
+    unsigned char *secret_hash = NULL;
+
+    char libssh_tmp_file[] = "/tmp/libssh_sftp_test_XXXXXX";
+    char buf[MAX_XFER_BUF_SIZE];
+    ssize_t bytesread;
+    ssize_t byteswritten;
+    int fd;
+    sftp_file file;
+    mode_t mask;
+
+    /* The blocks limit is set correctly */
+    c = s->ssh.session->current_crypto;
+    assert_int_equal(c->in_cipher->max_blocks, bytes / c->in_cipher->blocksize);
+    assert_int_equal(c->out_cipher->max_blocks, bytes / c->out_cipher->blocksize);
+    /* We should have less encrypted packets than transfered (first are not encrypted) */
+    assert_true(c->out_cipher->packets < s->ssh.session->send_seq);
+    assert_true(c->in_cipher->packets < s->ssh.session->recv_seq);
+    /* Copy the initial secret hash = session_id so we know we changed keys later */
+    secret_hash = malloc(c->digest_len);
+    assert_non_null(secret_hash);
+    memcpy(secret_hash, c->secret_hash, c->digest_len);
 
     /* Download a file */
     file = sftp_open(s->ssh.tsftp->sftp, "/usr/bin/ssh", O_RDONLY, 0);
@@ -408,13 +426,24 @@ static void torture_rekey_server_send(void **state)
 }
 
 #ifdef WITH_SFTP
+static int session_setup_sftp_server(void **state)
+{
+    const char *sshd_config = "RekeyLimit 2K none";
+
+    session_setup(state);
+
+    torture_update_sshd_config(state, sshd_config);
+
+    session_setup_sftp(state);
+
+    return 0;
+}
+
 static void torture_rekey_server_recv(void **state)
 {
     struct torture_state *s = *state;
-    int rc;
     struct ssh_crypto_struct *c = NULL;
     unsigned char *secret_hash = NULL;
-    const char *sshd_config = "RekeyLimit 2K none";
     char libssh_tmp_file[] = "/tmp/libssh_sftp_test_XXXXXX";
     char buf[MAX_XFER_BUF_SIZE];
     ssize_t bytesread;
@@ -423,32 +452,11 @@ static void torture_rekey_server_recv(void **state)
     sftp_file file;
     mode_t mask;
 
-    torture_update_sshd_config(state, sshd_config);
-
-    rc = ssh_connect(s->ssh.session);
-    assert_ssh_return_code(s->ssh.session, rc);
-
     /* Copy the initial secret hash = session_id so we know we changed keys later */
     c = s->ssh.session->current_crypto;
     secret_hash = malloc(c->digest_len);
     assert_non_null(secret_hash);
     memcpy(secret_hash, c->secret_hash, c->digest_len);
-
-    /* OpenSSH can not rekey before authentication so authenticate here */
-    rc = ssh_userauth_none(s->ssh.session, NULL);
-    /* This request should return a SSH_REQUEST_DENIED error */
-    if (rc == SSH_ERROR) {
-        assert_int_equal(ssh_get_error_code(s->ssh.session), SSH_REQUEST_DENIED);
-    }
-    rc = ssh_userauth_list(s->ssh.session, NULL);
-    assert_true(rc & SSH_AUTH_METHOD_PUBLICKEY);
-
-    rc = ssh_userauth_publickey_auto(s->ssh.session, NULL, NULL);
-    assert_int_equal(rc, SSH_AUTH_SUCCESS);
-
-    /* Initialize SFTP session */
-    s->ssh.tsftp = torture_sftp_session(s->ssh.session);
-    assert_non_null(s->ssh.tsftp);
 
     /* Download a file */
     file = sftp_open(s->ssh.tsftp->sftp, "/usr/bin/ssh", O_RDONLY, 0);
@@ -494,7 +502,7 @@ int torture_run_tests(void) {
                                         session_teardown),
 #ifdef WITH_SFTP
         cmocka_unit_test_setup_teardown(torture_rekey_recv,
-                                        session_setup,
+                                        session_setup_sftp_client,
                                         session_teardown),
 #endif /* WITH_SFTP */
         cmocka_unit_test_setup_teardown(torture_rekey_send,
@@ -506,7 +514,7 @@ int torture_run_tests(void) {
                                         session_teardown),
 #ifdef WITH_SFTP
         cmocka_unit_test_setup_teardown(torture_rekey_server_recv,
-                                        session_setup,
+                                        session_setup_sftp_server,
                                         session_teardown),
 #endif /* WITH_SFTP */
         /* TODO verify the two rekey are possible and the states are not broken after rekey */
