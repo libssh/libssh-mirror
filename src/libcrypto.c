@@ -54,10 +54,6 @@
 #include <openssl/des.h>
 #endif
 
-#if (OPENSSL_VERSION_NUMBER<0x00907000L)
-#define OLD_CRYPTO
-#endif
-
 #if (defined(HAVE_VALGRIND_VALGRIND_H) && defined(HAVE_OPENSSL_IA32CAP_LOC))
 #include <valgrind/valgrind.h>
 #define CAN_DISABLE_AESNI
@@ -421,9 +417,6 @@ HMACCTX hmac_init(const void *key, int len, enum ssh_hmac_e type) {
     return NULL;
   }
 
-#ifndef OLD_CRYPTO
-  HMAC_CTX_reset(ctx); // openssl 0.9.7 requires it.
-#endif
 
   switch(type) {
     case SSH_HMAC_SHA1:
@@ -456,14 +449,14 @@ void hmac_update(HMACCTX ctx, const void *data, unsigned long len) {
 void hmac_final(HMACCTX ctx, unsigned char *hashmacbuf, unsigned int *len) {
   HMAC_Final(ctx,hashmacbuf,len);
 
-#ifndef OLD_CRYPTO
+#if OPENSSL_VERSION_NUMBER > 0x10100000L
   HMAC_CTX_free(ctx);
   ctx = NULL;
 #else
   HMAC_cleanup(ctx);
-#endif
-
   SAFE_FREE(ctx);
+  ctx = NULL;
+#endif
 }
 
 static void evp_cipher_init(struct ssh_cipher_struct *cipher) {
