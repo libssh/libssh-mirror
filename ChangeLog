@@ -1,6 +1,13 @@
 ChangeLog
 ==========
 
+version 0.9.0 (released 2019-02-xx)
+  * Added support for AES-GCM
+  * Added improved rekeying support
+  * Added performance improvements
+  * Disabled blowfish support by default
+  * Fixed several ssh config parsing issues
+
 version 0.8.0 (released 2018-08-10)
   * Removed support for deprecated SSHv1 protocol
   * Added new connector API for clients
