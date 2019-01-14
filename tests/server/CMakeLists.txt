@@ -8,6 +8,7 @@ add_subdirectory(test_server)
 
 set(LIBSSH_SERVER_TESTS
     torture_server
+    torture_server_auth_kbdint
 )
 
 include_directories(
