@@ -345,11 +345,18 @@ static int ssh_bind_poll_callback(ssh_poll_handle sshpoll,
  */
 ssh_poll_handle ssh_bind_get_poll(ssh_bind sshbind)
 {
+    short events = POLLIN;
+
     if (sshbind->poll) {
         return sshbind->poll;
     }
+
+#ifdef POLLRDHUP
+    events |= POLLRDHUP;
+#endif /* POLLRDHUP */
+
     sshbind->poll = ssh_poll_new(sshbind->bindfd,
-                                 POLLIN,
+                                 events,
                                  ssh_bind_poll_callback,
                                  sshbind);
 

@@ -300,7 +300,10 @@ if (WITH_SYMBOL_VERSIONING AND HAVE_LD_VERSION_SCRIPT AND ABIMAP_FOUND)
 endif (WITH_SYMBOL_VERSIONING AND HAVE_LD_VERSION_SCRIPT AND ABIMAP_FOUND)
 
 add_library(${LIBSSH_SHARED_LIBRARY} SHARED ${libssh_SRCS})
-target_compile_options(${LIBSSH_SHARED_LIBRARY} PRIVATE ${DEFAULT_C_COMPILE_FLAGS})
+target_compile_options(${LIBSSH_SHARED_LIBRARY}
+                       PRIVATE
+                           ${DEFAULT_C_COMPILE_FLAGS}
+                           -D_GNU_SOURCE)
 
 target_link_libraries(${LIBSSH_SHARED_LIBRARY} ${LIBSSH_LINK_LIBRARIES})
 
@@ -348,7 +351,10 @@ install(
 
 if (BUILD_STATIC_LIB)
   add_library(${LIBSSH_STATIC_LIBRARY} STATIC ${libssh_SRCS})
-  target_compile_options(${LIBSSH_STATIC_LIBRARY} PRIVATE ${DEFAULT_C_COMPILE_FLAGS})
+  target_compile_options(${LIBSSH_STATIC_LIBRARY}
+                         PRIVATE
+                            ${DEFAULT_C_COMPILE_FLAGS}
+                            -D_GNU_SOURCE)
 
   if (MSVC)
     set(OUTPUT_SUFFIX static)
