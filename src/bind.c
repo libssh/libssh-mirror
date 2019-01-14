@@ -343,12 +343,17 @@ static int ssh_bind_poll_callback(ssh_poll_handle sshpoll,
  * @param sshbind the ssh_bind object
  * @returns a ssh_poll handle suitable for operation
  */
-ssh_poll_handle ssh_bind_get_poll(ssh_bind sshbind){
-  if(sshbind->poll)
+ssh_poll_handle ssh_bind_get_poll(ssh_bind sshbind)
+{
+    if (sshbind->poll) {
+        return sshbind->poll;
+    }
+    sshbind->poll = ssh_poll_new(sshbind->bindfd,
+                                 POLLIN,
+                                 ssh_bind_poll_callback,
+                                 sshbind);
+
     return sshbind->poll;
-  sshbind->poll=ssh_poll_new(sshbind->bindfd,POLLIN,
-      ssh_bind_poll_callback,sshbind);
-  return sshbind->poll;
 }
 
 void ssh_bind_set_blocking(ssh_bind sshbind, int blocking) {
