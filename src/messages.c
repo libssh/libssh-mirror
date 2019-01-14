@@ -448,7 +448,7 @@ static void ssh_message_queue(ssh_session session, ssh_message message)
 
     if (session->ssh_message_list == NULL) {
         session->ssh_message_list = ssh_list_new();
-        if (session->ssh_message_list != NULL) {
+        if (session->ssh_message_list == NULL) {
             /*
              * If the message list couldn't be allocated, the message can't be
              * enqueued
