@@ -485,9 +485,17 @@ static struct ssh_iterator *ssh_iterator_new(const void *data){
 }
 
 int ssh_list_append(struct ssh_list *list,const void *data){
-  struct ssh_iterator *iterator=ssh_iterator_new(data);
-  if(!iterator)
-    return SSH_ERROR;
+  struct ssh_iterator *iterator = NULL;
+
+  if (list == NULL) {
+      return SSH_ERROR;
+  }
+
+  iterator = ssh_iterator_new(data);
+  if (iterator == NULL) {
+      return SSH_ERROR;
+  }
+
   if(!list->end){
     /* list is empty */
     list->root=list->end=iterator;
@@ -500,8 +508,13 @@ int ssh_list_append(struct ssh_list *list,const void *data){
 }
 
 int ssh_list_prepend(struct ssh_list *list, const void *data){
-  struct ssh_iterator *it = ssh_iterator_new(data);
+  struct ssh_iterator *it = NULL;
 
+  if (list == NULL) {
+      return SSH_ERROR;
+  }
+
+  it = ssh_iterator_new(data);
   if (it == NULL) {
     return SSH_ERROR;
   }
@@ -520,6 +533,11 @@ int ssh_list_prepend(struct ssh_list *list, const void *data){
 
 void ssh_list_remove(struct ssh_list *list, struct ssh_iterator *iterator){
   struct ssh_iterator *ptr,*prev;
+
+  if (list == NULL) {
+      return;
+  }
+
   prev=NULL;
   ptr=list->root;
   while(ptr && ptr != iterator){
@@ -554,10 +572,17 @@ void ssh_list_remove(struct ssh_list *list, struct ssh_iterator *iterator){
  *                      if the list is empty.
  */
 const void *_ssh_list_pop_head(struct ssh_list *list){
-  struct ssh_iterator *iterator=list->root;
-  const void *data;
-  if(!list->root)
-    return NULL;
+  struct ssh_iterator *iterator = NULL;
+  const void *data = NULL;
+
+  if (list == NULL) {
+      return NULL;
+  }
+
+  iterator = list->root;
+  if (iterator == NULL) {
+      return NULL;
+  }
   data=iterator->data;
   list->root=iterator->next;
   if(list->end==iterator)
