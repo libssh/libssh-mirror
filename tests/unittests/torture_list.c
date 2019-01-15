@@ -13,9 +13,9 @@ static void torture_ssh_list_new(void **state) {
 
     xlist = ssh_list_new();
 
-    assert_true(xlist != NULL);
-    assert_true(xlist->root == NULL);
-    assert_true(xlist->end == NULL);
+    assert_non_null(xlist);
+    assert_null(xlist->root);
+    assert_null(xlist->end);
 
     assert_int_equal(ssh_list_count(xlist), 0);
 
@@ -29,7 +29,7 @@ static void torture_ssh_list_append(void **state) {
     (void) state;
 
     xlist = ssh_list_new();
-    assert_true(xlist != NULL);
+    assert_non_null(xlist);
 
     rc = ssh_list_append(xlist, "item1");
     assert_true(rc == 0);
@@ -60,7 +60,7 @@ static void torture_ssh_list_prepend(void **state) {
     (void) state;
 
     xlist = ssh_list_new();
-    assert_true(xlist != NULL);
+    assert_non_null(xlist);
 
     rc = ssh_list_prepend(xlist, "item1");
     assert_true(rc == 0);

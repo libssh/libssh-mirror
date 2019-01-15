@@ -186,7 +186,7 @@ static void test_ssh_channel_request_x11(void **state) {
     assert_return_code(rc, errno);
 
     server = ssh_new();
-    assert_true(server != NULL);
+    assert_non_null(server);
 
     rc = ssh_bind_accept(sshbind, server);
     assert_int_equal(rc, SSH_OK);
@@ -198,7 +198,7 @@ static void test_ssh_channel_request_x11(void **state) {
     assert_int_equal(rc, SSH_OK);
 
     event = ssh_event_new();
-    assert_true(event != NULL);
+    assert_non_null(event);
 
     ssh_event_add_session(event, server);
 

@@ -402,7 +402,7 @@ static void torture_options_set_knownhosts(void **state)
     /* ssh_options_apply() should set the path to correct value */
     rc = ssh_options_apply(session);
     assert_ssh_return_code(session, rc);
-    assert_true(session->opts.knownhosts != NULL);
+    assert_non_null(session->opts.knownhosts);
 }
 
 static void torture_options_get_knownhosts(void **state)

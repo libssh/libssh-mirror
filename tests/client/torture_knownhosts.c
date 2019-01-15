@@ -126,12 +126,12 @@ static void torture_knownhosts_port(void **state) {
     assert_int_equal(rc, SSH_OK);
 
     file = fopen(known_hosts_file, "r");
-    assert_true(file != NULL);
+    assert_non_null(file);
     p = fgets(buffer, sizeof(buffer), file);
     assert_false(p == NULL);
     fclose(file);
     buffer[sizeof(buffer) - 1] = '\0';
-    assert_true(strstr(buffer,"[127.0.0.10]:1234 ") != NULL);
+    assert_non_null(strstr(buffer,"[127.0.0.10]:1234 "));
 
     ssh_disconnect(session);
     ssh_free(session);
@@ -291,7 +291,7 @@ static void torture_knownhosts_conflict(void **state) {
     assert_int_equal(rc, SSH_OK);
 
     file = fopen(known_hosts_file, "w");
-    assert_true(file != NULL);
+    assert_non_null(file);
     fprintf(file, "127.0.0.10 ssh-rsa %s\n", BADRSA);
     fprintf(file, "127.0.0.10 ssh-ed25519 %s\n", BADED25519);
     fclose(file);

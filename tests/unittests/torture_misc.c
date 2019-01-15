@@ -58,11 +58,11 @@ static void torture_basename(void **state) {
     (void) state;
 
     path=ssh_basename(TORTURE_TEST_DIR "/test");
-    assert_true(path != NULL);
+    assert_non_null(path);
     assert_string_equal(path, "test");
     SAFE_FREE(path);
     path=ssh_basename(TORTURE_TEST_DIR "/test/");
-    assert_true(path != NULL);
+    assert_non_null(path);
     assert_string_equal(path, "test");
     SAFE_FREE(path);
 }
@@ -73,11 +73,11 @@ static void torture_dirname(void **state) {
     (void) state;
 
     path=ssh_dirname(TORTURE_TEST_DIR "/test");
-    assert_true(path != NULL);
+    assert_non_null(path);
     assert_string_equal(path, TORTURE_TEST_DIR );
     SAFE_FREE(path);
     path=ssh_dirname(TORTURE_TEST_DIR "/test/");
-    assert_true(path != NULL);
+    assert_non_null(path);
     assert_string_equal(path, TORTURE_TEST_DIR);
     SAFE_FREE(path);
 }

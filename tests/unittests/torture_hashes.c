@@ -17,7 +17,7 @@ static int setup_rsa_key(void **state)
     const char *q;
 
     b64_key = strdup(torture_get_testkey_pub(SSH_KEYTYPE_RSA, 0));
-    assert_true(b64_key != NULL);
+    assert_non_null(b64_key);
 
     q = p = b64_key;
     while (p != NULL && *p != '\0' && *p != ' ') p++;

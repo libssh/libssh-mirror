@@ -203,7 +203,7 @@ static void torture_pki_ecdsa_import_privkey_base64(void **state)
     (void) state; /* unused */
 
     key_str = torture_pki_read_file(LIBSSH_ECDSA_TESTKEY);
-    assert_true(key_str != NULL);
+    assert_non_null(key_str);
 
     rc = ssh_pki_import_privkey_base64(key_str, passphrase, NULL, NULL, &key);
     assert_true(rc == 0);
@@ -226,7 +226,7 @@ static void torture_pki_ecdsa_publickey_from_privatekey(void **state)
     (void) state; /* unused */
 
     key_str = torture_pki_read_file(LIBSSH_ECDSA_TESTKEY);
-    assert_true(key_str != NULL);
+    assert_non_null(key_str);
 
     rc = ssh_pki_import_privkey_base64(key_str, passphrase, NULL, NULL, &key);
     assert_true(rc == 0);
@@ -250,7 +250,7 @@ static void torture_pki_ecdsa_publickey_base64(void **state)
     (void) state; /* unused */
 
     key_buf = torture_pki_read_file(LIBSSH_ECDSA_TESTKEY ".pub");
-    assert_true(key_buf != NULL);
+    assert_non_null(key_buf);
 
     q = p = key_buf;
     while (p != NULL && *p != '\0' && *p != ' ') p++;
@@ -419,9 +419,9 @@ static void torture_pki_generate_key_ecdsa(void **state)
 
     rc = ssh_pki_generate(SSH_KEYTYPE_ECDSA, 256, &key);
     assert_true(rc == SSH_OK);
-    assert_true(key != NULL);
+    assert_non_null(key);
     sign = pki_do_sign(key, ECDSA_HASH, 20);
-    assert_true(sign != NULL);
+    assert_non_null(sign);
     rc = pki_signature_verify(session,sign,key,ECDSA_HASH,20);
     assert_true(rc == SSH_OK);
     type = ssh_key_type(key);
@@ -436,9 +436,9 @@ static void torture_pki_generate_key_ecdsa(void **state)
 
     rc = ssh_pki_generate(SSH_KEYTYPE_ECDSA, 384, &key);
     assert_true(rc == SSH_OK);
-    assert_true(key != NULL);
+    assert_non_null(key);
     sign = pki_do_sign(key, ECDSA_HASH, 20);
-    assert_true(sign != NULL);
+    assert_non_null(sign);
     rc = pki_signature_verify(session,sign,key,ECDSA_HASH,20);
     assert_true(rc == SSH_OK);
     type = ssh_key_type(key);
@@ -453,9 +453,9 @@ static void torture_pki_generate_key_ecdsa(void **state)
 
     rc = ssh_pki_generate(SSH_KEYTYPE_ECDSA, 521, &key);
     assert_true(rc == SSH_OK);
-    assert_true(key != NULL);
+    assert_non_null(key);
     sign = pki_do_sign(key, ECDSA_HASH, 20);
-    assert_true(sign != NULL);
+    assert_non_null(sign);
     rc = pki_signature_verify(session,sign,key,ECDSA_HASH,20);
     assert_true(rc == SSH_OK);
     type = ssh_key_type(key);

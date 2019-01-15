@@ -380,14 +380,14 @@ static void *thread_ssh_buffer_get_format(void *threadid) {
     assert_true(d == 0xbadc0de);
     assert_true(q == 0x13243546acbdcedf);
 
-    assert_true(s != NULL);
+    assert_non_null(s);
     assert_int_equal(ssh_string_len(s), 6);
     assert_memory_equal(ssh_string_data(s), "libssh", 6);
 
-    assert_true(s1 != NULL);
+    assert_non_null(s1);
     assert_string_equal(s1, "rocks");
 
-    assert_true(s2 != NULL);
+    assert_non_null(s2);
     assert_memory_equal(s2, "So much", 7);
 
     len = ssh_buffer_get_len(buffer);
@@ -453,9 +453,9 @@ static void *thread_ssh_buffer_get_format_error(void *threadid)
                            &b);
     assert_int_equal(rc, SSH_ERROR);
 
-    assert_true(s == NULL);
-    assert_true(s1 == NULL);
-    assert_true(s2 == NULL);
+    assert_null(s);
+    assert_null(s1);
+    assert_null(s2);
 
     /* Teardown */
     SSH_BUFFER_FREE(buffer);

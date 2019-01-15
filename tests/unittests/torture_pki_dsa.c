@@ -335,7 +335,7 @@ torture_pki_dsa_import_openssh_privkey_base64_passphrase(void **state)
     (void) state; /* unused */
 
     keystring = torture_get_openssh_testkey(SSH_KEYTYPE_DSS, 0, 1);
-    assert_true(keystring != NULL);
+    assert_non_null(keystring);
 
     rc = ssh_pki_import_privkey_base64(keystring,
                                        passphrase,
@@ -460,7 +460,7 @@ static void torture_pki_dsa_publickey_base64(void **state)
     (void) state; /* unused */
 
     key_buf = strdup(torture_get_testkey_pub(SSH_KEYTYPE_DSS, 0));
-    assert_true(key_buf != NULL);
+    assert_non_null(key_buf);
 
     keylen = strlen(key_buf);
 
@@ -566,7 +566,6 @@ static void torture_pki_dsa_duplicate_key(void **state)
     assert_non_null(privkey);
 
     privkey_dup = ssh_key_dup(privkey);
-    assert_true(privkey_dup != NULL);
     assert_non_null(privkey_dup);
 
     rc = ssh_pki_export_privkey_to_pubkey(privkey, &pubkey);
@@ -599,9 +598,9 @@ static void torture_pki_dsa_generate_key(void **state)
 
     rc = ssh_pki_generate(SSH_KEYTYPE_DSS, 1024, &key);
     assert_true(rc == SSH_OK);
-    assert_true(key != NULL);
+    assert_non_null(key);
     sign = pki_do_sign(key, DSA_HASH, 20);
-    assert_true(sign != NULL);
+    assert_non_null(sign);
     rc = pki_signature_verify(session,sign,key,DSA_HASH,20);
     assert_true(rc == SSH_OK);
     ssh_signature_free(sign);
@@ -609,9 +608,9 @@ static void torture_pki_dsa_generate_key(void **state)
 
     rc = ssh_pki_generate(SSH_KEYTYPE_DSS, 2048, &key);
     assert_true(rc == SSH_OK);
-    assert_true(key != NULL);
+    assert_non_null(key);
     sign = pki_do_sign(key, DSA_HASH, 20);
-    assert_true(sign != NULL);
+    assert_non_null(sign);
     rc = pki_signature_verify(session,sign,key,DSA_HASH,20);
     assert_true(rc == SSH_OK);
     ssh_signature_free(sign);
@@ -619,9 +618,9 @@ static void torture_pki_dsa_generate_key(void **state)
 
     rc = ssh_pki_generate(SSH_KEYTYPE_DSS, 3072, &key);
     assert_true(rc == SSH_OK);
-    assert_true(key != NULL);
+    assert_non_null(key);
     sign = pki_do_sign(key, DSA_HASH, 20);
-    assert_true(sign != NULL);
+    assert_non_null(sign);
     rc = pki_signature_verify(session,sign,key,DSA_HASH,20);
     assert_true(rc == SSH_OK);
     ssh_signature_free(sign);
