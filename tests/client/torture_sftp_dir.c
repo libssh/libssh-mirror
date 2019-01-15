@@ -66,7 +66,7 @@ static void torture_sftp_mkdir(void **state) {
     char tmpdir[128] = {0};
     int rc;
 
-    assert_false(t == NULL);
+    assert_non_null(t);
 
     snprintf(tmpdir, sizeof(tmpdir) - 1, "%s/mkdir_test", t->testdir);
 

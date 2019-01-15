@@ -128,7 +128,7 @@ static void torture_knownhosts_port(void **state) {
     file = fopen(known_hosts_file, "r");
     assert_non_null(file);
     p = fgets(buffer, sizeof(buffer), file);
-    assert_false(p == NULL);
+    assert_non_null(p);
     fclose(file);
     buffer[sizeof(buffer) - 1] = '\0';
     assert_non_null(strstr(buffer,"[127.0.0.10]:1234 "));

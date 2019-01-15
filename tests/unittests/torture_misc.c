@@ -44,7 +44,7 @@ static void torture_get_user_home_dir(void **state) {
     (void) state;
 
     user = ssh_get_user_home_dir();
-    assert_false(user == NULL);
+    assert_non_null(user);
 #ifndef _WIN32
     assert_string_equal(user, pwd->pw_dir);
 #endif /* _WIN32 */
@@ -109,7 +109,7 @@ static void torture_path_expand_tilde_win(void **state) {
     (void) state;
 
     d = ssh_path_expand_tilde("~\\.ssh");
-    assert_false(d == NULL);
+    assert_non_null(d);
     print_message("Expanded path: %s\n", d);
     free(d);
 
