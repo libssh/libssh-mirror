@@ -200,6 +200,7 @@ static void torture_pki_rsa_import_privkey_base64(void **state)
 
     rc = ssh_pki_import_privkey_base64(key_str, passphrase, NULL, NULL, &key);
     assert_true(rc == 0);
+    assert_non_null(key);
 
     type = ssh_key_type(key);
     assert_true(type == SSH_KEYTYPE_RSA);
@@ -229,12 +230,14 @@ static void torture_pki_rsa_publickey_from_privatekey(void **state)
                                        NULL,
                                        &key);
     assert_true(rc == 0);
+    assert_non_null(key);
 
     rc = ssh_key_is_private(key);
     assert_true(rc == 1);
 
     rc = ssh_pki_export_privkey_to_pubkey(key, &pubkey);
     assert_true(rc == SSH_OK);
+    assert_non_null(pubkey);
 
     SSH_KEY_FREE(key);
     SSH_KEY_FREE(pubkey);
@@ -257,9 +260,11 @@ static void torture_pki_rsa_copy_cert_to_privkey(void **state)
 
     rc = ssh_pki_import_cert_file(LIBSSH_RSA_TESTKEY "-cert.pub", &cert);
     assert_true(rc == SSH_OK);
+    assert_non_null(cert);
 
     rc = ssh_pki_import_pubkey_file(LIBSSH_RSA_TESTKEY ".pub", &pubkey);
     assert_true(rc == SSH_OK);
+    assert_non_null(pubkey);
 
     rc = ssh_pki_import_privkey_base64(torture_get_testkey(SSH_KEYTYPE_RSA, 0, 0),
                                        passphrase,
@@ -267,6 +272,7 @@ static void torture_pki_rsa_copy_cert_to_privkey(void **state)
                                        NULL,
                                        &privkey);
     assert_true(rc == SSH_OK);
+    assert_non_null(privkey);
 
     /* Basic sanity. */
     rc = ssh_pki_copy_cert_to_privkey(NULL, privkey);
@@ -283,8 +289,10 @@ static void torture_pki_rsa_copy_cert_to_privkey(void **state)
     /* Copying the cert to non-cert keys should work fine. */
     rc = ssh_pki_copy_cert_to_privkey(cert, pubkey);
     assert_true(rc == SSH_OK);
+    assert_non_null(pubkey->cert);
     rc = ssh_pki_copy_cert_to_privkey(cert, privkey);
     assert_true(rc == SSH_OK);
+    assert_non_null(privkey->cert);
 
     /* The private key's cert is already set, another copy should fail. */
     rc = ssh_pki_copy_cert_to_privkey(cert, privkey);
@@ -304,6 +312,7 @@ static void torture_pki_rsa_import_cert_file(void **state) {
 
     rc = ssh_pki_import_cert_file(LIBSSH_RSA_TESTKEY "-cert.pub", &cert);
     assert_true(rc == 0);
+    assert_non_null(cert);
 
     type = ssh_key_type(cert);
     assert_true(type == SSH_KEYTYPE_RSA_CERT01);
@@ -344,9 +353,11 @@ static void torture_pki_rsa_publickey_base64(void **state)
 
     rc = ssh_pki_import_pubkey_base64(q, type, &key);
     assert_true(rc == 0);
+    assert_non_null(key);
 
     rc = ssh_pki_export_pubkey_base64(key, &b64_key);
     assert_true(rc == 0);
+    assert_non_null(b64_key);
 
     assert_string_equal(q, b64_key);
 
@@ -373,9 +384,11 @@ static void torture_pki_rsa_generate_pubkey_from_privkey(void **state) {
                                      NULL,
                                      &privkey);
     assert_true(rc == 0);
+    assert_non_null(privkey);
 
     rc = ssh_pki_export_privkey_to_pubkey(privkey, &pubkey);
     assert_true(rc == SSH_OK);
+    assert_non_null(pubkey);
 
     rc = ssh_pki_export_pubkey_file(pubkey, LIBSSH_RSA_TESTKEY ".pub");
     assert_true(rc == 0);
@@ -412,6 +425,7 @@ static void torture_pki_rsa_duplicate_key(void **state)
     rc = ssh_pki_export_pubkey_base64(pubkey, &b64_key);
     assert_true(rc == 0);
     SSH_KEY_FREE(pubkey);
+    assert_non_null(b64_key);
 
     rc = ssh_pki_import_privkey_file(LIBSSH_RSA_TESTKEY,
                                      NULL,
@@ -600,6 +614,7 @@ static void torture_pki_rsa_write_privkey(void **state)
                                      NULL,
                                      &privkey);
     assert_true(rc == SSH_ERROR);
+    assert_null(privkey);
 
     rc = ssh_pki_import_privkey_file(LIBSSH_RSA_TESTKEY_PASSPHRASE,
                                      torture_get_testkey_passphrase(),
@@ -632,6 +647,7 @@ static void torture_pki_rsa_import_privkey_base64_passphrase(void **state)
                                        NULL,
                                        &key);
     assert_return_code(rc, errno);
+    assert_non_null(key);
 
     rc = ssh_key_is_private(key);
     assert_true(rc == 1);
@@ -679,6 +695,7 @@ torture_pki_rsa_import_openssh_privkey_base64_passphrase(void **state)
                                        NULL,
                                        &key);
     assert_return_code(rc, errno);
+    assert_non_null(key);
 
     rc = ssh_key_is_private(key);
     assert_true(rc == 1);

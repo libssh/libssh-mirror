@@ -197,11 +197,15 @@ static void *thread_pki_rsa_import_privkey_base64_NULL_key(void *threadid)
 {
     int rc;
     const char *passphrase = torture_get_testkey_passphrase();
+    const char *testkey;
 
     (void) threadid; /* unused */
 
+    testkey = torture_get_testkey(SSH_KEYTYPE_RSA, 0, 0);
+    assert_non_null(testkey);
+
     /* test if it returns -1 if key is NULL */
-    rc = ssh_pki_import_privkey_base64(torture_get_testkey(SSH_KEYTYPE_RSA, 0, 0),
+    rc = ssh_pki_import_privkey_base64(testkey,
                                        passphrase,
                                        NULL,
                                        NULL,
@@ -294,6 +298,7 @@ static void torture_pki_rsa_import_privkey_base64(void **state)
 static void *thread_pki_rsa_publickey_from_privatekey(void *threadid)
 {
     const char *passphrase = NULL;
+    const char *testkey;
     ssh_key pubkey = NULL;
     ssh_key key = NULL;
     int rc;
@@ -301,7 +306,8 @@ static void *thread_pki_rsa_publickey_from_privatekey(void *threadid)
 
     (void) threadid; /* unused */
 
-    rc = ssh_pki_import_privkey_base64(torture_get_testkey(SSH_KEYTYPE_RSA, 0, 0),
+    testkey = torture_get_testkey(SSH_KEYTYPE_RSA, 0, 0);
+    rc = ssh_pki_import_privkey_base64(testkey,
                                        passphrase,
                                        NULL,
                                        NULL,
@@ -340,6 +346,7 @@ static void *thread_pki_rsa_copy_cert_to_privkey(void *threadid)
      * all supported key types.
      */
     const char *passphrase = torture_get_testkey_passphrase();
+    const char *testkey = NULL;
     ssh_key pubkey = NULL;
     ssh_key privkey = NULL;
     ssh_key cert = NULL;
@@ -349,16 +356,22 @@ static void *thread_pki_rsa_copy_cert_to_privkey(void *threadid)
 
     rc = ssh_pki_import_cert_file(LIBSSH_RSA_TESTKEY "-cert.pub", &cert);
     assert_true(rc == SSH_OK);
+    assert_non_null(cert);
 
     rc = ssh_pki_import_pubkey_file(LIBSSH_RSA_TESTKEY ".pub", &pubkey);
     assert_true(rc == SSH_OK);
+    assert_non_null(pubkey);
 
-    rc = ssh_pki_import_privkey_base64(torture_get_testkey(SSH_KEYTYPE_RSA, 0, 0),
+    testkey = torture_get_testkey(SSH_KEYTYPE_RSA, 0, 0);
+    assert_non_null(testkey);
+
+    rc = ssh_pki_import_privkey_base64(testkey,
                                        passphrase,
                                        NULL,
                                        NULL,
                                        &privkey);
     assert_true(rc == SSH_OK);
+    assert_non_null(privkey);
 
     /* Basic sanity. */
     rc = ssh_pki_copy_cert_to_privkey(NULL, privkey);
@@ -368,7 +381,6 @@ static void *thread_pki_rsa_copy_cert_to_privkey(void *threadid)
     assert_true(rc == SSH_ERROR);
 
     /* A public key doesn't have a cert, copy should fail. */
-    assert_true(pubkey->cert == NULL);
     rc = ssh_pki_copy_cert_to_privkey(pubkey, privkey);
     assert_true(rc == SSH_ERROR);
 
@@ -409,6 +421,7 @@ static void *thread_pki_rsa_import_cert_file(void *threadid)
 
     rc = ssh_pki_import_cert_file(LIBSSH_RSA_TESTKEY "-cert.pub", &cert);
     assert_true(rc == 0);
+    assert_non_null(cert);
 
     type = ssh_key_type(cert);
     assert_true(type == SSH_KEYTYPE_RSA_CERT01);
@@ -457,9 +470,11 @@ static void *thread_pki_rsa_publickey_base64(void *threadid)
 
     rc = ssh_pki_import_pubkey_base64(q, type, &key);
     assert_true(rc == 0);
+    assert_non_null(key);
 
     rc = ssh_pki_export_pubkey_base64(key, &b64_key);
     assert_true(rc == 0);
+    assert_non_null(b64_key);
 
     assert_string_equal(q, b64_key);
 
@@ -494,10 +509,12 @@ static void *thread_pki_rsa_duplicate_key(void *threadid)
 
     rc = ssh_pki_import_pubkey_file(LIBSSH_RSA_TESTKEY ".pub", &pubkey);
     assert_true(rc == 0);
+    assert_non_null(pubkey);
 
     rc = ssh_pki_export_pubkey_base64(pubkey, &b64_key);
     assert_true(rc == 0);
     SSH_KEY_FREE(pubkey);
+    assert_non_null(b64_key);
 
     rc = ssh_pki_import_privkey_file(LIBSSH_RSA_TESTKEY,
                                      NULL,
@@ -505,6 +522,7 @@ static void *thread_pki_rsa_duplicate_key(void *threadid)
                                      NULL,
                                      &privkey);
     assert_true(rc == 0);
+    assert_non_null(privkey);
 
     privkey_dup = ssh_key_dup(privkey);
     assert_non_null(privkey_dup);
@@ -614,10 +632,14 @@ static void *thread_pki_rsa_import_privkey_base64_passphrase(void *threadid)
     int rc;
     ssh_key key = NULL;
     const char *passphrase = torture_get_testkey_passphrase();
+    const char *testkey;
 
     (void) threadid; /* unused */
 
-    rc = ssh_pki_import_privkey_base64(torture_get_testkey(SSH_KEYTYPE_RSA, 0, 1),
+    testkey = torture_get_testkey(SSH_KEYTYPE_RSA, 0, 1);
+    assert_non_null(testkey);
+
+    rc = ssh_pki_import_privkey_base64(testkey,
                                        passphrase,
                                        NULL,
                                        NULL,
@@ -630,7 +652,7 @@ static void *thread_pki_rsa_import_privkey_base64_passphrase(void *threadid)
     SSH_KEY_FREE(key);
 
     /* test if it returns -1 if passphrase is wrong */
-    rc = ssh_pki_import_privkey_base64(torture_get_testkey(SSH_KEYTYPE_RSA, 0, 1),
+    rc = ssh_pki_import_privkey_base64(testkey,
                                        "wrong passphrase !!",
                                        NULL,
                                        NULL,
@@ -641,7 +663,7 @@ static void *thread_pki_rsa_import_privkey_base64_passphrase(void *threadid)
 #ifndef HAVE_LIBCRYPTO
     /* test if it returns -1 if passphrase is NULL */
     /* libcrypto asks for a passphrase, so skip this test */
-    rc = ssh_pki_import_privkey_base64(torture_get_testkey(SSH_KEYTYPE_RSA, 0, 1),
+    rc = ssh_pki_import_privkey_base64(testkey,
                                        NULL,
                                        NULL,
                                        NULL,

@@ -131,6 +131,7 @@ static void torture_pki_ed25519_import_privkey_base64(void **state)
 
     rc = ssh_pki_import_privkey_base64(key_str, passphrase, NULL, NULL, &key);
     assert_true(rc == 0);
+    assert_non_null(key);
 
     type = ssh_key_type(key);
     assert_true(type == SSH_KEYTYPE_ED25519);
@@ -164,6 +165,7 @@ static void torture_pki_ed25519_import_export_privkey_base64(void **state)
                                        NULL,
                                        &key);
     assert_return_code(rc, errno);
+    assert_non_null(key);
 
     type = ssh_key_type(key);
     assert_true(type == SSH_KEYTYPE_ED25519);
@@ -177,6 +179,7 @@ static void torture_pki_ed25519_import_export_privkey_base64(void **state)
                                        NULL,
                                        &b64_key);
     assert_return_code(rc, errno);
+    assert_non_null(b64_key);
     SSH_KEY_FREE(key);
 
     rc = ssh_pki_import_privkey_base64(b64_key,
@@ -185,6 +188,7 @@ static void torture_pki_ed25519_import_export_privkey_base64(void **state)
                                        NULL,
                                        &key);
     assert_return_code(rc, errno);
+    assert_non_null(key);
 
     type = ssh_key_type(key);
     assert_true(type == SSH_KEYTYPE_ED25519);
@@ -213,12 +217,14 @@ static void torture_pki_ed25519_publickey_from_privatekey(void **state)
                                        NULL,
                                        &key);
     assert_true(rc == 0);
+    assert_non_null(key);
 
     rc = ssh_key_is_private(key);
     assert_true(rc == 1);
 
     rc = ssh_pki_export_privkey_to_pubkey(key, &pubkey);
     assert_true(rc == SSH_OK);
+    assert_non_null(pubkey);
 
     SSH_KEY_FREE(key);
     SSH_KEY_FREE(pubkey);
@@ -254,9 +260,11 @@ static void torture_pki_ed25519_publickey_base64(void **state)
 
     rc = ssh_pki_import_pubkey_base64(q, type, &key);
     assert_true(rc == 0);
+    assert_non_null(key);
 
     rc = ssh_pki_export_pubkey_base64(key, &b64_key);
     assert_true(rc == 0);
+    assert_non_null(b64_key);
 
     assert_string_equal(q, b64_key);
 
@@ -287,6 +295,7 @@ static void torture_pki_ed25519_generate_pubkey_from_privkey(void **state)
 
     rc = ssh_pki_export_privkey_to_pubkey(privkey, &pubkey);
     assert_true(rc == SSH_OK);
+    assert_non_null(pubkey);
 
     rc = ssh_pki_export_pubkey_file(pubkey, LIBSSH_ED25519_TESTKEY ".pub");
     assert_true(rc == 0);
@@ -501,6 +510,7 @@ static void torture_pki_ed25519_verify(void **state){
     }
     rc = ssh_pki_import_pubkey_base64(pkey_ptr, SSH_KEYTYPE_ED25519, &pubkey);
     assert_true(rc == SSH_OK);
+    assert_non_null(pubkey);
 
     ssh_string_fill(blob, ref_signature, ED25519_SIG_LEN);
     sig = pki_signature_from_blob(pubkey, blob, SSH_KEYTYPE_ED25519, SSH_DIGEST_AUTO);
@@ -534,6 +544,7 @@ static void torture_pki_ed25519_verify_bad(void **state){
     }
     rc = ssh_pki_import_pubkey_base64(pkey_ptr, SSH_KEYTYPE_ED25519, &pubkey);
     assert_true(rc == SSH_OK);
+    assert_non_null(pubkey);
 
     /* alter signature and expect false result */
 
@@ -570,6 +581,7 @@ static void torture_pki_ed25519_import_privkey_base64_passphrase(void **state)
                                        NULL,
                                        &key);
     assert_true(rc == 0);
+    assert_non_null(key);
 
     rc = ssh_key_is_private(key);
     assert_true(rc == 1);
@@ -603,6 +615,7 @@ static void torture_pki_ed25519_privkey_dup(void **state)
                                        NULL,
                                        &key);
     assert_true(rc == 0);
+    assert_non_null(key);
 
     rc = ssh_key_is_private(key);
     assert_true(rc == 1);
@@ -636,6 +649,7 @@ static void torture_pki_ed25519_pubkey_dup(void **state)
                                       SSH_KEYTYPE_ED25519,
                                       &pubkey);
     assert_true(rc == 0);
+    assert_non_null(pubkey);
 
     rc = ssh_key_is_public(pubkey);
     assert_true(rc == 1);
