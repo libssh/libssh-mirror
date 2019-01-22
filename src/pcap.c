@@ -306,7 +306,12 @@ void ssh_pcap_context_set_file(ssh_pcap_context ctx, ssh_pcap_file pcap){
 static int ssh_pcap_context_connect(ssh_pcap_context ctx)
 {
     ssh_session session=ctx->session;
-    struct sockaddr_in local, remote;
+    struct sockaddr_in local = {
+        .sin_family = AF_UNSPEC,
+    };
+    struct sockaddr_in remote = {
+        .sin_family = AF_UNSPEC,
+    };
     socket_t fd;
     socklen_t len;
     int rc;
