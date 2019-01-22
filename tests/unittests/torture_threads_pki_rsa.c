@@ -402,7 +402,7 @@ static void torture_pki_rsa_copy_cert_to_privkey(void **state)
 static void *thread_pki_rsa_import_cert_file(void *threadid)
 {
     int rc;
-    ssh_key cert;
+    ssh_key cert = NULL;
     enum ssh_keytypes_e type;
 
     (void) threadid; /* unused */
@@ -434,8 +434,8 @@ static void torture_pki_rsa_import_cert_file(void **state)
 static void *thread_pki_rsa_publickey_base64(void *threadid)
 {
     enum ssh_keytypes_e type;
-    char *b64_key, *key_buf, *p;
-    const char *q;
+    char *b64_key = NULL, *key_buf = NULL, *p = NULL;
+    const char *q = NULL;
     ssh_key key;
     int rc;
 
@@ -482,11 +482,11 @@ static void torture_pki_rsa_publickey_base64(void **state)
 
 static void *thread_pki_rsa_duplicate_key(void *threadid)
 {
-    char *b64_key;
-    char *b64_key_gen;
-    ssh_key pubkey;
-    ssh_key privkey;
-    ssh_key privkey_dup;
+    char *b64_key = NULL;
+    char *b64_key_gen = NULL;
+    ssh_key pubkey = NULL;
+    ssh_key privkey = NULL;
+    ssh_key privkey_dup = NULL;
     int cmp;
     int rc;
 
