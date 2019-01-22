@@ -303,40 +303,63 @@ void ssh_pcap_context_set_file(ssh_pcap_context ctx, ssh_pcap_file pcap){
 /** @internal
  * @brief sets the IP and port parameters in the connection
  */
-static int ssh_pcap_context_connect(ssh_pcap_context ctx){
-	ssh_session session=ctx->session;
-	struct sockaddr_in local, remote;
-	socket_t fd;
-	socklen_t len;
-	if(session==NULL)
-		return SSH_ERROR;
-	if(session->socket==NULL)
-		return SSH_ERROR;
-	fd = ssh_socket_get_fd(session->socket);
-	/* TODO: adapt for windows */
-	if(fd<0)
-		return SSH_ERROR;
-	len=sizeof(local);
-	if(getsockname(fd,(struct sockaddr *)&local,&len)<0){
-		ssh_set_error(session,SSH_REQUEST_DENIED,"Getting local IP address: %s",strerror(errno));
-		return SSH_ERROR;
-	}
-	len=sizeof(remote);
-	if(getpeername(fd,(struct sockaddr *)&remote,&len)<0){
-		ssh_set_error(session,SSH_REQUEST_DENIED,"Getting remote IP address: %s",strerror(errno));
-		return SSH_ERROR;
-	}
-	if(local.sin_family != AF_INET){
-		ssh_set_error(session,SSH_REQUEST_DENIED,"Only IPv4 supported for pcap logging");
-		return SSH_ERROR;
-	}
-	memcpy(&ctx->ipsource,&local.sin_addr,sizeof(ctx->ipsource));
-	memcpy(&ctx->ipdest,&remote.sin_addr,sizeof(ctx->ipdest));
-	memcpy(&ctx->portsource,&local.sin_port,sizeof(ctx->portsource));
-	memcpy(&ctx->portdest,&remote.sin_port,sizeof(ctx->portdest));
+static int ssh_pcap_context_connect(ssh_pcap_context ctx)
+{
+    ssh_session session=ctx->session;
+    struct sockaddr_in local, remote;
+    socket_t fd;
+    socklen_t len;
+    int rc;
 
-	ctx->connected=1;
-	return SSH_OK;
+    if (session == NULL) {
+        return SSH_ERROR;
+    }
+
+    if (session->socket == NULL) {
+        return SSH_ERROR;
+    }
+
+    fd = ssh_socket_get_fd(session->socket);
+
+    /* TODO: adapt for windows */
+    if (fd < 0) {
+        return SSH_ERROR;
+    }
+
+    len = sizeof(local);
+    rc = getsockname(fd, (struct sockaddr *)&local, &len);
+    if (rc < 0) {
+        ssh_set_error(session,
+                      SSH_REQUEST_DENIED,
+                      "Getting local IP address: %s",
+                      strerror(errno));
+        return SSH_ERROR;
+    }
+
+    len = sizeof(remote);
+    rc = getpeername(fd, (struct sockaddr *)&remote, &len);
+    if (rc < 0) {
+        ssh_set_error(session,
+                      SSH_REQUEST_DENIED,
+                      "Getting remote IP address: %s",
+                      strerror(errno));
+        return SSH_ERROR;
+    }
+
+    if (local.sin_family != AF_INET) {
+        ssh_set_error(session,
+                      SSH_REQUEST_DENIED,
+                      "Only IPv4 supported for pcap logging");
+        return SSH_ERROR;
+    }
+
+    memcpy(&ctx->ipsource, &local.sin_addr, sizeof(ctx->ipsource));
+    memcpy(&ctx->ipdest, &remote.sin_addr, sizeof(ctx->ipdest));
+    memcpy(&ctx->portsource, &local.sin_port, sizeof(ctx->portsource));
+    memcpy(&ctx->portdest, &remote.sin_port, sizeof(ctx->portdest));
+
+    ctx->connected = 1;
+    return SSH_OK;
 }
 
 #define IPHDR_LEN 20
