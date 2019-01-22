@@ -1082,11 +1082,11 @@ int _ssh_buffer_pack(struct ssh_buffer_struct *buffer,
  */
 int ssh_buffer_unpack_va(struct ssh_buffer_struct *buffer,
                          const char *format,
-                         int argc,
+                         size_t argc,
                          va_list ap)
 {
     int rc = SSH_ERROR;
-    const char *p, *last;
+    const char *p = format, *last;
     union {
         uint8_t *byte;
         uint16_t *word;
@@ -1100,16 +1100,21 @@ int ssh_buffer_unpack_va(struct ssh_buffer_struct *buffer,
     size_t len, rlen, max_len;
     ssh_string tmp_string = NULL;
     va_list ap_copy;
-    int count; /* int for size comparison with argc */
+    size_t count;
 
     max_len = ssh_buffer_get_len(buffer);
 
     /* copy the argument list in case a rollback is needed */
     va_copy(ap_copy, ap);
 
-    for (p = format, count = 0; *p != '\0'; p++, count++) {
+    if (argc > 256) {
+        rc = SSH_ERROR;
+        goto cleanup;
+    }
+
+    for (count = 0; *p != '\0'; p++, count++) {
         /* Invalid number of arguments passed */
-        if (argc != -1 && count > argc) {
+        if (count > argc) {
             rc = SSH_ERROR;
             goto cleanup;
         }
@@ -1232,7 +1237,7 @@ int ssh_buffer_unpack_va(struct ssh_buffer_struct *buffer,
         }
     }
 
-    if (argc != -1 && argc != count) {
+    if (argc != count) {
         rc = SSH_ERROR;
     }
 
@@ -1241,11 +1246,7 @@ cleanup:
         /* Check if our canary is intact, if not something really bad happened */
         uint32_t canary = va_arg(ap, uint32_t);
         if (canary != SSH_BUFFER_PACK_END){
-            if (argc == -1){
-                rc = SSH_ERROR;
-            } else {
-                abort();
-            }
+            abort();
         }
     }
 
@@ -1340,7 +1341,7 @@ cleanup:
  */
 int _ssh_buffer_unpack(struct ssh_buffer_struct *buffer,
                        const char *format,
-                       int argc,
+                       size_t argc,
                        ...)
 {
     va_list ap;
