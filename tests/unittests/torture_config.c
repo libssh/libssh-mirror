@@ -131,6 +131,11 @@ static int setup_config_files(void **state)
                        "\tHostName nonuser-testhost.com\n"
                        "Match all\n"
                        "\tHostName all-matched.com\n"
+                       /* Unsupported options */
+                       "Match originalhost example\n"
+                       "\tHostName original-example.com\n"
+                       "Match localuser guest\n"
+                       "\tHostName local-guest.com\n"
                        "");
 
     /* ProxyJump */
@@ -449,6 +454,101 @@ static void torture_config_match(void **state)
     ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG10);
     assert_ssh_return_code(session, ret);
     assert_string_equal(session->opts.host, "nonuser-testhost.com");
+
+    /* Match final is not completely supported, but should do quite much the
+     * same as "match all". The trailing "all" is not mandatory. */
+    torture_write_file(LIBSSH_TESTCONFIG10,
+                       "Match final all\n"
+                       "\tHostName final-all.com\n"
+                       "");
+    torture_reset_config(session);
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG10);
+    assert_ssh_return_code(session, ret);
+    assert_string_equal(session->opts.host, "final-all.com");
+
+    torture_write_file(LIBSSH_TESTCONFIG10,
+                       "Match final\n"
+                       "\tHostName final.com\n"
+                       "");
+    torture_reset_config(session);
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG10);
+    assert_ssh_return_code(session, ret);
+    assert_string_equal(session->opts.host, "final.com");
+
+    /* Match canonical is not completely supported, but should do quite much the
+     * same as "match all". The trailing "all" is not mandatory. */
+    torture_write_file(LIBSSH_TESTCONFIG10,
+                       "Match canonical all\n"
+                       "\tHostName canonical-all.com\n"
+                       "");
+    torture_reset_config(session);
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG10);
+    assert_ssh_return_code(session, ret);
+    assert_string_equal(session->opts.host, "canonical-all.com");
+
+    torture_write_file(LIBSSH_TESTCONFIG10,
+                       "Match canonical all\n"
+                       "\tHostName canonical.com\n"
+                       "");
+    torture_reset_config(session);
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG10);
+    assert_ssh_return_code(session, ret);
+    assert_string_equal(session->opts.host, "canonical.com");
+
+    /* Try to create some invalid configurations */
+    /* Missing argument to Match*/
+    torture_write_file(LIBSSH_TESTCONFIG10,
+                       "Match\n"
+                       "\tHost missing.com\n"
+                       "");
+    torture_reset_config(session);
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG10);
+    assert_ssh_return_code_equal(session, ret, SSH_ERROR);
+
+    /* Missing argument to unsupported option originalhost */
+    torture_write_file(LIBSSH_TESTCONFIG10,
+                       "Match originalhost\n"
+                       "\tHost originalhost.com\n"
+                       "");
+    torture_reset_config(session);
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG10);
+    assert_ssh_return_code_equal(session, ret, SSH_ERROR);
+
+    /* Missing argument to unsupported option localuser */
+    torture_write_file(LIBSSH_TESTCONFIG10,
+                       "Match localuser\n"
+                       "\tUser localuser2\n"
+                       "");
+    torture_reset_config(session);
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG10);
+    assert_ssh_return_code_equal(session, ret, SSH_ERROR);
+
+    /* Missing argument to option user*/
+    torture_write_file(LIBSSH_TESTCONFIG10,
+                       "Match user\n"
+                       "\tUser user2\n"
+                       "");
+    torture_reset_config(session);
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG10);
+    assert_ssh_return_code_equal(session, ret, SSH_ERROR);
+
+    /* Missing argument to option host */
+    torture_write_file(LIBSSH_TESTCONFIG10,
+                       "Match host\n"
+                       "\tUser host2\n"
+                       "");
+    torture_reset_config(session);
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG10);
+    assert_ssh_return_code_equal(session, ret, SSH_ERROR);
+
+    /* Missing argument to unsupported option exec */
+    torture_write_file(LIBSSH_TESTCONFIG10,
+                       "Match exec\n"
+                       "\tUser exec\n"
+                       "");
+    torture_reset_config(session);
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG10);
+    assert_ssh_return_code_equal(session, ret, SSH_ERROR);
 }
 
 /**

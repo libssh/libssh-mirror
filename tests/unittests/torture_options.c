@@ -552,7 +552,7 @@ static void torture_options_config_match(void **state)
     rv = ssh_options_parse_config(session, "test_config");
     assert_ssh_return_code_equal(session, rv, SSH_ERROR);
 
-    /* The Match canonical keyword is ignored */
+    /* The Match canonical keyword is the same as match all */
     torture_reset_config(session);
     config = fopen("test_config", "w");
     assert_non_null(config);
@@ -565,7 +565,7 @@ static void torture_options_config_match(void **state)
 
     rv = ssh_options_parse_config(session, "test_config");
     assert_ssh_return_code_equal(session, rv, SSH_OK);
-    assert_int_equal(session->opts.port, 34);
+    assert_int_equal(session->opts.port, 33);
 
     session->opts.port = 0;
 
