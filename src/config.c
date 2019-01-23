@@ -152,6 +152,7 @@ static struct ssh_config_keyword_table_s ssh_config_keyword_table[] = {
 enum ssh_config_match_e {
     MATCH_UNKNOWN = -1,
     MATCH_ALL,
+    MATCH_FINAL,
     MATCH_CANONICAL,
     MATCH_EXEC,
     MATCH_HOST,
@@ -168,6 +169,7 @@ struct ssh_config_match_keyword_table_s {
 static struct ssh_config_match_keyword_table_s ssh_config_match_keyword_table[] = {
     { "all", MATCH_ALL },
     { "canonical", MATCH_CANONICAL },
+    { "final", MATCH_FINAL },
     { "exec", MATCH_EXEC },
     { "host", MATCH_HOST },
     { "originalhost", MATCH_ORIGINALHOST },
@@ -682,8 +684,10 @@ ssh_config_parse_line(ssh_session session,
             switch (opt) {
             case MATCH_ALL:
                 p = ssh_config_get_str_tok(&s, NULL);
-                if (args == 1 && (p == NULL || p[0] == '\0')) {
-                    /* The first argument and end of line */
+                if (args <= 2 && (p == NULL || p[0] == '\0')) {
+                    /* The first or second, but last argument. The "all" keyword
+                     * can be prefixed with either "final" or "canonical"
+                     * keywords which do not have any effect here. */
                     if (negate == true) {
                         result = 0;
                     }
@@ -695,6 +699,16 @@ ssh_config_parse_line(ssh_session session,
                               "other Match attributes", count);
                 SAFE_FREE(x);
                 return -1;
+
+            case MATCH_FINAL:
+            case MATCH_CANONICAL:
+                SSH_LOG(SSH_LOG_WARN,
+                        "line %d: Unsupported Match keyword '%s', skipping\n",
+                        count,
+                        p);
+                /* Not set any result here -- the result is dependent on the
+                 * following matches after this keyword */
+                break;
 
             case MATCH_EXEC:
             case MATCH_ORIGINALHOST:
@@ -708,9 +722,6 @@ ssh_config_parse_line(ssh_session session,
                     return -1;
                 }
                 args++;
-                FALL_THROUGH;
-            case MATCH_CANONICAL:
-                /* These do not need any argument */
                 SSH_LOG(SSH_LOG_WARN,
                         "line %d: Unsupported Match keyword '%s', ignoring\n",
                         count,
