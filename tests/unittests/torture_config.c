@@ -404,34 +404,34 @@ static void torture_config_match(void **state)
     /* Without any settings we should get all-matched.com hostname */
     ssh_options_set(session, SSH_OPTIONS_HOST, "unmatched");
     ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG10);
-    assert_true(ret == 0);
+    assert_ssh_return_code(session, ret);
     assert_string_equal(session->opts.host, "all-matched.com");
 
     /* Hostname example does simple hostname matching */
     torture_reset_config(session);
     ssh_options_set(session, SSH_OPTIONS_HOST, "example");
     ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG10);
-    assert_true(ret == 0);
+    assert_ssh_return_code(session, ret);
     assert_string_equal(session->opts.host, "example.com");
 
     /* We can match also both hosts from a comma separated list */
     torture_reset_config(session);
     ssh_options_set(session, SSH_OPTIONS_HOST, "example1");
     ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG10);
-    assert_true(ret == 0);
+    assert_ssh_return_code(session, ret);
     assert_string_equal(session->opts.host, "exampleN");
 
     torture_reset_config(session);
     ssh_options_set(session, SSH_OPTIONS_HOST, "example2");
     ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG10);
-    assert_true(ret == 0);
+    assert_ssh_return_code(session, ret);
     assert_string_equal(session->opts.host, "exampleN");
 
     /* We can match by user */
     torture_reset_config(session);
     ssh_options_set(session, SSH_OPTIONS_USER, "guest");
     ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG10);
-    assert_true(ret == 0);
+    assert_ssh_return_code(session, ret);
     assert_string_equal(session->opts.host, "guest.com");
 
     /* We can combine two options on a single line to match both of them */
@@ -439,7 +439,7 @@ static void torture_config_match(void **state)
     ssh_options_set(session, SSH_OPTIONS_USER, "tester");
     ssh_options_set(session, SSH_OPTIONS_HOST, "testhost");
     ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG10);
-    assert_true(ret == 0);
+    assert_ssh_return_code(session, ret);
     assert_string_equal(session->opts.host, "testhost.com");
 
     /* We can also negate conditions */
@@ -447,7 +447,7 @@ static void torture_config_match(void **state)
     ssh_options_set(session, SSH_OPTIONS_USER, "not-tester");
     ssh_options_set(session, SSH_OPTIONS_HOST, "testhost");
     ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG10);
-    assert_true(ret == 0);
+    assert_ssh_return_code(session, ret);
     assert_string_equal(session->opts.host, "nonuser-testhost.com");
 }
 
