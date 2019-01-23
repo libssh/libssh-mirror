@@ -597,10 +597,10 @@ ssh_config_parse_line(ssh_session session,
                       int *parsing)
 {
   enum ssh_config_opcode_e opcode;
-  const char *p;
-  char *s, *x;
-  char *keyword;
-  char *lowerhost;
+  const char *p = NULL, *p2 = NULL;
+  char *s = NULL, *x = NULL;
+  char *keyword = NULL;
+  char *lowerhost = NULL;
   size_t len;
   int i, rv;
   uint8_t *seen = session->opts.options_seen;
@@ -663,7 +663,7 @@ ssh_config_parse_line(ssh_session session,
 
         *parsing = 0;
         do {
-            p = ssh_config_get_str_tok(&s, NULL);
+            p = p2 = ssh_config_get_str_tok(&s, NULL);
             if (p == NULL || p[0] == '\0') {
                 break;
             }
@@ -701,11 +701,20 @@ ssh_config_parse_line(ssh_session session,
             case MATCH_LOCALUSER:
                 /* Skip one argument */
                 p = ssh_config_get_str_tok(&s, NULL);
+                if (p == NULL || p[0] == '\0') {
+                    SSH_LOG(SSH_LOG_WARN, "line %d: Match keyword "
+                            "'%s' requires argument\n", count, p2);
+                    SAFE_FREE(x);
+                    return -1;
+                }
                 args++;
                 FALL_THROUGH;
             case MATCH_CANONICAL:
-                SSH_LOG(SSH_LOG_WARN, "line: %d: Unsupported Match keyword "
-                        "'%s', Ignoring\n", count, p);
+                /* These do not need any argument */
+                SSH_LOG(SSH_LOG_WARN,
+                        "line %d: Unsupported Match keyword '%s', ignoring\n",
+                        count,
+                        p2);
                 result = 0;
                 break;
 
