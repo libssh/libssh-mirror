@@ -61,24 +61,25 @@ ssh_string ssh_make_bignum_string(bignum num) {
   return ptr;
 }
 
-bignum ssh_make_string_bn(ssh_string string){
-  bignum bn = NULL;
-  size_t len = ssh_string_len(string);
+bignum ssh_make_string_bn(ssh_string string)
+{
+    bignum bn = NULL;
+    size_t len = ssh_string_len(string);
 
 #ifdef DEBUG_CRYPTO
-  fprintf(stderr, "Importing a %d bits, %d bytes object ...\n",
-      len * 8, len);
+    fprintf(stderr, "Importing a %zu bits, %zu bytes object ...\n",
+            len * 8, len);
 #endif /* DEBUG_CRYPTO */
 
 #if defined HAVE_LIBMBEDCRYPTO
-  bn = bignum_new();
-  bignum_bin2bn(string->data, len, bn);
+    bn = bignum_new();
+    bignum_bin2bn(string->data, len, bn);
 #else
-  // FIXME
-  bignum_bin2bn(string->data, len, &bn);
+    // FIXME
+    bignum_bin2bn(string->data, len, &bn);
 #endif
 
-  return bn;
+    return bn;
 }
 
 /* prints the bignum on stderr */
