@@ -1106,7 +1106,7 @@ int ssh_get_publickey_hash(const ssh_key key,
         {
             SHACTX ctx;
 
-            h = malloc(SHA_DIGEST_LEN);
+            h = calloc(1, SHA_DIGEST_LEN);
             if (h == NULL) {
                 rc = -1;
                 goto out;
@@ -1129,7 +1129,7 @@ int ssh_get_publickey_hash(const ssh_key key,
         {
             SHA256CTX ctx;
 
-            h = malloc(SHA256_DIGEST_LEN);
+            h = calloc(1, SHA256_DIGEST_LEN);
             if (h == NULL) {
                 rc = -1;
                 goto out;
@@ -1152,7 +1152,7 @@ int ssh_get_publickey_hash(const ssh_key key,
         {
             MD5CTX ctx;
 
-            h = malloc(MD5_DIGEST_LEN);
+            h = calloc(1, MD5_DIGEST_LEN);
             if (h == NULL) {
                 rc = -1;
                 goto out;
