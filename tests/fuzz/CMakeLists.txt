@@ -2,6 +2,10 @@ project(fuzzing CXX)
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     add_executable(ssh_server_fuzzer ssh_server_fuzzer.cpp)
+    target_link_libraries(ssh_server_fuzzer
+                          PRIVATE
+                              ${LIBSSH_STATIC_LIBRARY}
+                              ${LIBSSH_LINK_LIBRARIES})
     set_target_properties(ssh_server_fuzzer
         PROPERTIES
             COMPILE_FLAGS "-fsanitize=fuzzer"
