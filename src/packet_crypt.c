@@ -150,7 +150,7 @@ unsigned char *ssh_packet_encrypt(ssh_session session, void *data, uint32_t len)
                     " on at least one blocksize (received %d)", len);
       return NULL;
   }
-  out = malloc(len);
+  out = calloc(1, len);
   if (out == NULL) {
     return NULL;
   }
