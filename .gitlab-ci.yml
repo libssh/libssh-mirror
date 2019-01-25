@@ -87,6 +87,28 @@ fedora/address-sanitizer:
     paths:
       - obj/
 
+# This is disabled as it report OpenSSL issues
+# It also has ethe same issues with cwrap as AddressSanitizer
+.fedora/memory-sanitizer:
+  image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$FEDORA_BUILD
+  script:
+  - mkdir -p obj && cd obj && cmake
+    -DCMAKE_BUILD_TYPE=MemorySanitizer
+    -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+    -DPICKY_DEVELOPER=ON
+    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
+    -DUNIT_TESTING=ON ..
+    && make -j$(nproc) && ctest --output-on-failure
+  tags:
+  - shared
+  except:
+  - tags
+  artifacts:
+    expire_in: 1 week
+    when: on_failure
+    paths:
+      - obj/
+
 fedora/undefined-sanitizer:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$FEDORA_BUILD
   script:
