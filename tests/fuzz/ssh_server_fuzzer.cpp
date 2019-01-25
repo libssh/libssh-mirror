@@ -20,11 +20,13 @@
 #include <fcntl.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdio.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
 #define LIBSSH_STATIC 1
 #include <libssh/libssh.h>
+#include <libssh/callbacks.h>
 #include <libssh/server.h>
 
 static const char kRSAPrivateKeyPEM[] =
@@ -56,37 +58,131 @@ static const char kRSAPrivateKeyPEM[] =
     "pOqNt/VMBPjJ/ysHJqmLfQK9A35JV6Cmdphe+OIl28bcKhAOz8Dw\n"
     "-----END RSA PRIVATE KEY-----\n";
 
+/* A userdata struct for session. */
+struct session_data_struct {
+    /* Pointer to the channel the session will allocate. */
+    ssh_channel channel;
+    size_t auth_attempts;
+    bool authenticated;
+};
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
-    int socket_fds[2];
-    int res = socketpair(AF_UNIX, SOCK_STREAM, 0, socket_fds);
-    assert(res >= 0);
-    ssize_t send_res = send(socket_fds[1], data, size, 0);
-    assert(send_res == size);
-    res = shutdown(socket_fds[1], SHUT_WR);
-    assert(res == 0);
+static int auth_none(ssh_session session, const char *user, void *userdata)
+{
+    struct session_data_struct *sdata =
+        (struct session_data_struct *)userdata;
 
-    int fd = open("/tmp/libssh_fuzzer_private_key", O_WRONLY | O_CREAT, S_IRWXU);
-    assert(fd >= 0);
-    ssize_t write_res = write(fd, kRSAPrivateKeyPEM, strlen(kRSAPrivateKeyPEM));
-    assert(write_res == strlen(kRSAPrivateKeyPEM));
-    close(fd);
+    (void)session;
 
+    if (sdata->auth_attempts > 0) {
+        sdata->authenticated = true;
+    }
+    sdata->auth_attempts++;
+
+    if (!sdata->authenticated) {
+        return SSH_AUTH_PARTIAL;
+    }
+
+    return SSH_AUTH_SUCCESS;
+}
+
+static ssh_channel channel_open(ssh_session session, void *userdata)
+{
+    struct session_data_struct *sdata =
+        (struct session_data_struct *)userdata;
+
+    sdata->channel = ssh_channel_new(session);
+
+    return sdata->channel;
+}
+
+static int write_rsa_hostkey(const char *rsakey_path)
+{
+    FILE *fp = NULL;
+    size_t nwritten;
+
+    fp = fopen(rsakey_path, "wb");
+    if (fp == NULL) {
+        return -1;
+    }
+
+    nwritten = fwrite(kRSAPrivateKeyPEM, 1, strlen(kRSAPrivateKeyPEM), fp);
+    fclose(fp);
+
+    if (nwritten != strlen(kRSAPrivateKeyPEM)) {
+        return -1;
+    }
+
+    return 0;
+}
+
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
+{
+    int socket_fds[2] = {-1, -1};
+    ssize_t nwritten;
+    int rc;
+
+    /* Our struct holding information about the session. */
+    struct session_data_struct sdata = {
+        .channel       = NULL,
+        .auth_attempts = 0,
+        .authenticated = false,
+    };
+
+    struct ssh_server_callbacks_struct server_cb = {
+        .userdata = &sdata,
+        .auth_none_function = auth_none,
+        .channel_open_request_session_function = channel_open,
+    };
+
+    /* Write SSH RSA host key to disk */
+    rc = write_rsa_hostkey("/tmp/libssh_fuzzer_private_key");
+    assert(rc == 0);
+
+    /* Set up the socket to send data */
+    rc = socketpair(AF_UNIX, SOCK_STREAM, 0, socket_fds);
+    assert(rc == 0);
+
+    nwritten = send(socket_fds[1], data, size, 0);
+    assert(nwritten == size);
+
+    rc = shutdown(socket_fds[1], SHUT_WR);
+    assert(rc == 0);
+
+    /* Set up the libssh server */
     ssh_bind sshbind = ssh_bind_new();
+    assert(sshbind != NULL);
+
     ssh_session session = ssh_new();
+    assert(session != NULL);
 
-    ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_RSAKEY, "/tmp/libssh_fuzzer_private_key");
+    ssh_bind_options_set(sshbind,
+                         SSH_BIND_OPTIONS_RSAKEY,
+                         "/tmp/libssh_fuzzer_private_key");
 
-    res = ssh_bind_accept_fd(sshbind, session, socket_fds[0]);
-    assert(res == SSH_OK);
+    ssh_set_auth_methods(session, SSH_AUTH_METHOD_NONE);
+
+    ssh_callbacks_init(&server_cb);
+
+    rc = ssh_bind_accept_fd(sshbind, session, socket_fds[0]);
+    assert(rc == SSH_OK);
+
+    ssh_event event = ssh_event_new();
+    assert(event != NULL);
 
     if (ssh_handle_key_exchange(session) == SSH_OK) {
-        while (true) {
-            ssh_message message = ssh_message_get(session);
-            if (!message) {
+        ssh_event_add_session(event, session);
+
+        size_t n = 0;
+        while(sdata.authenticated == false || sdata.channel == NULL) {
+            if (sdata.auth_attempts >= 3 || n >= 100) {
                 break;
             }
-            ssh_message_free(message);
+
+            if (ssh_event_dopoll(event, 100) == SSH_ERROR) {
+                break;
+            }
+
+            n++;
         }
     }
 
