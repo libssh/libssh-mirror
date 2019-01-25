@@ -376,7 +376,8 @@ int ssh_dh_import_next_pubkey_blob(ssh_session session, ssh_string pubkey_blob)
 }
 
 #ifdef DEBUG_CRYPTO
-static void ssh_dh_debug(ssh_session session){
+static void ssh_dh_debug(ssh_session session)
+{
     ssh_print_bignum("p", session->next_crypto->p);
     ssh_print_bignum("g", session->next_crypto->g);
     ssh_print_bignum("x", session->next_crypto->x);
@@ -441,28 +442,35 @@ error:
     return SSH_ERROR;
 }
 
-int ssh_dh_build_k(ssh_session session) {
-  int rc;
-  bignum_CTX ctx = bignum_ctx_new();
-  if (bignum_ctx_invalid(ctx)) {
-    return -1;
-  }
+int ssh_dh_build_k(ssh_session session)
+{
+    int rc;
+    bignum_CTX ctx = bignum_ctx_new();
+    if (bignum_ctx_invalid(ctx)) {
+        return -1;
+    }
 
-  /* the server and clients don't use the same numbers */
-  if (session->client) {
-    rc = bignum_mod_exp(session->next_crypto->k, session->next_crypto->f,
-        session->next_crypto->x, session->next_crypto->p, ctx);
-  } else {
-    rc = bignum_mod_exp(session->next_crypto->k, session->next_crypto->e,
-        session->next_crypto->y, session->next_crypto->p, ctx);
-  }
+    /* the server and clients don't use the same numbers */
+    if (session->client) {
+        rc = bignum_mod_exp(session->next_crypto->k,
+                            session->next_crypto->f,
+                            session->next_crypto->x,
+                            session->next_crypto->p,
+                            ctx);
+    } else {
+        rc = bignum_mod_exp(session->next_crypto->k,
+                            session->next_crypto->e,
+                            session->next_crypto->y,
+                            session->next_crypto->p,
+                            ctx);
+    }
 
-  bignum_ctx_free(ctx);
-  ssh_dh_debug();
-  if (rc != 1) {
-    return SSH_ERROR;
-  }
-  return SSH_OK;
+    bignum_ctx_free(ctx);
+    ssh_dh_debug(session);
+    if (rc != 1) {
+        return SSH_ERROR;
+    }
+    return SSH_OK;
 }
 
 static SSH_PACKET_CALLBACK(ssh_packet_client_dh_reply);
