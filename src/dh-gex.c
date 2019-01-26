@@ -614,6 +614,9 @@ static SSH_PACKET_CALLBACK(ssh_packet_server_dhgex_request)
     session->dh_handshake_state = DH_STATE_GROUP_SENT;
 
     rc = ssh_packet_send(session);
+    if (rc == SSH_ERROR) {
+        goto error;
+    }
 error:
 
     return SSH_PACKET_USED;
