@@ -729,7 +729,8 @@ evp_cipher_aead_encrypt(struct ssh_cipher_struct *cipher,
 {
     size_t authlen, aadlen;
     u_char lastiv[1];
-    int outlen = 0;
+    int tmplen = 0;
+    size_t outlen;
     int rc;
 
     (void) seq;
@@ -750,10 +751,11 @@ evp_cipher_aead_encrypt(struct ssh_cipher_struct *cipher,
     /* Pass over the authenticated data (not encrypted) */
     rc = EVP_EncryptUpdate(cipher->ctx,
                            NULL,
-                           &outlen,
+                           &tmplen,
                            (unsigned char *)in,
                            (int)aadlen);
-    if (rc == 0 || outlen != (int)aadlen) {
+    outlen = tmplen;
+    if (rc == 0 || outlen != aadlen) {
         SSH_LOG(SSH_LOG_WARNING, "Failed to pass authenticated data");
         return;
     }
@@ -762,9 +764,10 @@ evp_cipher_aead_encrypt(struct ssh_cipher_struct *cipher,
     /* Encrypt the rest of the data */
     rc = EVP_EncryptUpdate(cipher->ctx,
                            (unsigned char *)out + aadlen,
-                           &outlen,
+                           &tmplen,
                            (unsigned char *)in + aadlen,
                            (int)len - aadlen);
+    outlen = tmplen;
     if (rc != 1 || outlen != (int)len - aadlen) {
         SSH_LOG(SSH_LOG_WARNING, "EVP_EncryptUpdate failed");
         return;
@@ -773,7 +776,7 @@ evp_cipher_aead_encrypt(struct ssh_cipher_struct *cipher,
     /* compute tag */
     rc = EVP_EncryptFinal(cipher->ctx,
                           NULL,
-                          &outlen);
+                          &tmplen);
     if (rc < 0) {
         SSH_LOG(SSH_LOG_WARNING, "EVP_EncryptFinal failed: Failed to create a tag");
         return;
