@@ -1606,6 +1606,9 @@ static int packet_send2(ssh_session session)
     }
 
     rc = ssh_packet_write(session);
+    if (rc == SSH_ERROR) {
+        goto error;
+    }
     session->send_seq++;
     if (crypto != NULL) {
         struct ssh_cipher_struct *cipher = NULL;
