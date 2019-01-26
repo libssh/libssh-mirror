@@ -2114,7 +2114,7 @@ ssh_string ssh_pki_do_sign(ssh_session session,
             break;
         default:
             SSH_LOG(SSH_LOG_TRACE, "Unknown hash algorithm for type: %d",
-                    sig->type);
+                    hash_type);
             ssh_string_free(session_id);
             ssh_buffer_free(buf);
             return NULL;
@@ -2266,7 +2266,7 @@ ssh_string ssh_srv_pki_do_sign_sessionid(ssh_session session,
             hlen = SHA_DIGEST_LEN;
             break;
         default:
-            SSH_LOG(SSH_LOG_TRACE, "Unknown sig->type: %d", sig->type);
+            SSH_LOG(SSH_LOG_TRACE, "Unknown sig->type: %d", hash_type);
             return NULL;
         }
 
