@@ -350,37 +350,6 @@ int ssh_options_set_algo(ssh_session session,
  *                \n
  *                See the corresponding numbers in libssh.h.
  *
- *              - SSH_OPTIONS_AUTH_CALLBACK:
- *                Set a callback to use your own authentication function
- *                (function pointer).
- *
- *              - SSH_OPTIONS_AUTH_USERDATA:
- *                Set the user data passed to the authentication
- *                function (generic pointer).
- *
- *              - SSH_OPTIONS_LOG_CALLBACK:
- *                Set a callback to use your own logging function
- *                (function pointer).
- *
- *              - SSH_OPTIONS_LOG_USERDATA:
- *                Set the user data passed to the logging function
- *                (generic pointer).
- *
- *              - SSH_OPTIONS_STATUS_CALLBACK:
- *                Set a callback to show connection status in realtime
- *                (function pointer).\n
- *                \n
- *                @code
- *                fn(void *arg, float status)
- *                @endcode
- *                \n
- *                During ssh_connect(), libssh will call the callback
- *                with status from 0.0 to 1.0.
- *
- *              - SSH_OPTIONS_STATUS_ARG:
- *                Set the status argument which should be passed to the
- *                status callback (generic pointer).
- *
  *              - SSH_OPTIONS_CIPHERS_C_S:
  *                Set the symmetric cipher client to server (const char *,
  *                comma-separated list).
