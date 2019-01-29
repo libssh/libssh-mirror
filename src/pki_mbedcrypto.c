@@ -917,6 +917,9 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
     switch(type) {
         case SSH_KEYTYPE_RSA:
             sig = pki_signature_from_rsa_blob(pubkey, sig_blob, sig);
+            if (sig == NULL) {
+                return NULL;
+            }
             sig->type_c = ssh_key_signature_to_char(type, hash_type);
             break;
         case SSH_KEYTYPE_ECDSA: {
