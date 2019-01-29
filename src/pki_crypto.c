@@ -1657,6 +1657,7 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
 
             s = ssh_string_new(20);
             if (s == NULL) {
+                bignum_safe_free(pr);
                 ssh_signature_free(sig);
                 return NULL;
             }
@@ -1665,6 +1666,7 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
             ps = ssh_make_string_bn(s);
             ssh_string_free(s);
             if (ps == NULL) {
+                bignum_safe_free(pr);
                 ssh_signature_free(sig);
                 return NULL;
             }
@@ -1673,6 +1675,8 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
              * object */
             rc = DSA_SIG_set0(sig->dsa_sig, pr, ps);
             if (rc == 0) {
+                bignum_safe_free(ps);
+                bignum_safe_free(pr);
                 ssh_signature_free(sig);
                 return NULL;
             }
@@ -1737,6 +1741,7 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
                 rlen = ssh_buffer_get_len(b);
                 ssh_buffer_free(b);
                 if (s == NULL) {
+                    bignum_safe_free(pr);
                     ssh_signature_free(sig);
                     return NULL;
                 }
@@ -1749,6 +1754,7 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
                 ssh_string_burn(s);
                 ssh_string_free(s);
                 if (ps == NULL) {
+                    bignum_safe_free(pr);
                     ssh_signature_free(sig);
                     return NULL;
                 }
@@ -1757,6 +1763,8 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
                  * ECDSA signature object */
                 rc = ECDSA_SIG_set0(sig->ecdsa_sig, pr, ps);
                 if (rc == 0) {
+                    bignum_safe_free(ps);
+                    bignum_safe_free(pr);
                     ssh_signature_free(sig);
                     return NULL;
                 }
