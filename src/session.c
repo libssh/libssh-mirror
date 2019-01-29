@@ -684,7 +684,7 @@ int ssh_handle_packets_termination(ssh_session session,
     int ret = SSH_OK;
 
     /* If a timeout has been provided, use it */
-    if (timeout > 0) {
+    if (timeout >= 0) {
         timeout_ms = timeout;
     } else {
         if (ssh_is_blocking(session)) {
