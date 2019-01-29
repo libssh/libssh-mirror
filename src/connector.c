@@ -641,14 +641,12 @@ int ssh_connector_remove_event(ssh_connector connector) {
         session = ssh_channel_get_session(connector->in_channel);
 
         ssh_event_remove_session(connector->event, session);
-        connector->in_channel = NULL;
     }
 
     if (connector->out_channel != NULL) {
         session = ssh_channel_get_session(connector->out_channel);
 
         ssh_event_remove_session(connector->event, session);
-        connector->out_channel = NULL;
     }
     connector->event = NULL;
 
