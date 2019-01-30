@@ -552,12 +552,6 @@ static SSH_PACKET_CALLBACK(ssh_packet_server_dhgex_request)
         goto error;
     }
 
-    rc = ssh_dh_init_common(session);
-    if (rc != SSH_OK){
-        ssh_set_error_oom(session);
-        goto error;
-    }
-
     /* Minimum group size, preferred group size, maximum group size */
     rc = ssh_buffer_unpack(packet, "ddd", &pmin, &pn, &pmax);
     if (rc != SSH_OK){
