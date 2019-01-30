@@ -350,6 +350,9 @@ int ssh_dh_init_common(ssh_session session){
         break;
     }
     if (crypto->x == NULL || crypto->y == NULL || crypto->k == NULL){
+        bignum_safe_free(crypto->k);
+        bignum_safe_free(crypto->y);
+        bignum_safe_free(crypto->x);
         ssh_set_error_oom(session);
         return SSH_ERROR;
     } else {
