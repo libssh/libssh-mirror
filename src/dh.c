@@ -690,7 +690,8 @@ int ssh_server_dh_process_init(ssh_session session, ssh_buffer packet)
                          pubkey_blob,
                          session->next_crypto->f,
                          sig_blob);
-    ssh_string_free(sig_blob);
+    SSH_STRING_FREE(sig_blob);
+    SSH_STRING_FREE(pubkey_blob);
     if(rc != SSH_OK) {
         ssh_set_error_oom(session);
         ssh_buffer_reinit(session->out_buffer);
@@ -717,6 +718,8 @@ error:
     if (!bignum_ctx_invalid(ctx)) {
         bignum_ctx_free(ctx);
     }
+    SSH_STRING_FREE(sig_blob);
+    SSH_STRING_FREE(pubkey_blob);
 
     session->session_state = SSH_SESSION_STATE_ERROR;
     ssh_dh_cleanup(session->next_crypto);
