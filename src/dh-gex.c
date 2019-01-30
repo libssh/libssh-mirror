@@ -481,6 +481,7 @@ static int ssh_retrieve_dhgroup(uint32_t pmin,
                                    size,
                                    &generator,
                                    &modulus);
+    fclose(moduli);
     if (rc == SSH_ERROR || *size == 0) {
         goto error;
     }
