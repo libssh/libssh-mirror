@@ -264,7 +264,7 @@ static int pkd_exec_hello(int fd, struct pkd_daemon_args *args) {
     } else if (type == PKD_ECDSA) {
         opts = SSH_BIND_OPTIONS_ECDSAKEY;
     } else {
-        pkderr("unknown kex algorithm: %d\n", type);
+        pkderr("unknown hostkey type: %d\n", type);
         rc = -1;
         goto outclose;
     }
