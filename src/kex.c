@@ -114,15 +114,20 @@
 #define ECDH ""
 #endif
 
+#define GEX_SHA256 "diffie-hellman-group-exchange-sha256,"
+#define GEX_SHA1 "diffie-hellman-group-exchange-sha1,"
+
 #define CHACHA20 "chacha20-poly1305@openssh.com,"
 
 #define KEY_EXCHANGE \
     CURVE25519 \
     ECDH \
     "diffie-hellman-group18-sha512,diffie-hellman-group16-sha512," \
-    "diffie-hellman-group-exchange-sha256," \
-    "diffie-hellman-group14-sha1,diffie-hellman-group1-sha1," \
-    "diffie-hellman-group-exchange-sha1"
+    GEX_SHA256 \
+    "diffie-hellman-group14-sha1,diffie-hellman-group1-sha1"
+#define KEY_EXCHANGE_SUPPORTED \
+    GEX_SHA1 \
+    KEY_EXCHANGE
 #define KEX_METHODS_SIZE 10
 
 /* RFC 8308 */
@@ -145,7 +150,7 @@ static const char *default_methods[] = {
 
 /* NOTE: This is a fixed API and the index is defined by ssh_kex_types_e */
 static const char *supported_methods[] = {
-  KEY_EXCHANGE,
+  KEY_EXCHANGE_SUPPORTED,
   PUBLIC_KEY_ALGORITHMS,
   CHACHA20 AES BLOWFISH DES_SUPPORTED,
   CHACHA20 AES BLOWFISH DES_SUPPORTED,

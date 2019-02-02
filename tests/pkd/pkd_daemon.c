@@ -7,6 +7,8 @@
  * (c) 2014 Jon Simons
  */
 
+#include "config.h"
+
 #include <errno.h>
 #include <netinet/in.h>
 #include <pthread.h>
@@ -20,6 +22,7 @@
 #include <libssh/callbacks.h>
 #include <libssh/libssh.h>
 #include <libssh/server.h>
+#include <libssh/kex.h>
 
 #include "pkd_daemon.h"
 
@@ -231,7 +234,8 @@ static struct ssh_server_callbacks_struct pkd_server_cb = {
     .channel_open_request_session_function = pkd_channel_openreq_cb,
 };
 
-static int pkd_exec_hello(int fd, struct pkd_daemon_args *args) {
+static int pkd_exec_hello(int fd, struct pkd_daemon_args *args)
+{
     int rc = -1;
     ssh_bind b = NULL;
     ssh_session s = NULL;
@@ -242,6 +246,9 @@ static int pkd_exec_hello(int fd, struct pkd_daemon_args *args) {
     int level = args->opts.libssh_log_level;
     enum pkd_hostkey_type_e type = args->type;
     const char *hostkeypath = args->hostkeypath;
+    const char *default_kex = NULL;
+    char *all_kex = NULL;
+    size_t kex_len = 0;
 
     pkd_state.eof_received = 0;
     pkd_state.close_received  = 0;
@@ -278,6 +285,23 @@ static int pkd_exec_hello(int fd, struct pkd_daemon_args *args) {
     rc = ssh_bind_options_set(b, SSH_BIND_OPTIONS_LOG_VERBOSITY, &level);
     if (rc != 0) {
         pkderr("ssh_bind_options_set log verbosity: %s\n", ssh_get_error(b));
+        goto outclose;
+    }
+
+    /* Add methods not enabled by default */
+#define GEX_SHA1 "diffie-hellman-group-exchange-sha1"
+    default_kex = ssh_kex_get_default_methods(SSH_KEX);
+    kex_len = strlen(default_kex) + strlen(GEX_SHA1) + 2;
+    all_kex = malloc(kex_len);
+    if (all_kex == NULL) {
+        pkderr("Failed to alloc more memory.\n");
+        goto outclose;
+    }
+    snprintf(all_kex, kex_len, "%s," GEX_SHA1, default_kex);
+    rc = ssh_bind_options_set(b, SSH_BIND_OPTIONS_KEY_EXCHANGE, all_kex);
+    free(all_kex);
+    if (rc != 0) {
+        pkderr("ssh_bind_options_set kex methods: %s\n", ssh_get_error(b));
         goto outclose;
     }
 
