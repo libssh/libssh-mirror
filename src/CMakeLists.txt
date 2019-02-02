@@ -126,7 +126,6 @@ set(libssh_SRCS
   connector.c
   curve25519.c
   dh.c
-  dh-gex.c
   ecdh.c
   error.c
   getpass.c
@@ -242,6 +241,13 @@ if (WITH_SERVER)
     bind.c
   )
 endif (WITH_SERVER)
+
+if (WITH_GEX)
+  set(libssh_SRCS
+    ${libssh_SRCS}
+    dh-gex.c
+  )
+endif (WITH_GEX)
 
 if (WITH_ZLIB)
   set(libssh_SRCS

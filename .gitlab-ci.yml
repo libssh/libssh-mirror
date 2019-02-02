@@ -54,7 +54,7 @@ fedora/openssl_1.1.x/x86_64/minimal:
     -DCMAKE_BUILD_TYPE=RelWithDebInfo
     -DPICKY_DEVELOPER=ON
     -DWITH_SFTP=OFF -DWITH_SERVER=OFF -DWITH_ZLIB=OFF -DWITH_PCAP=OFF
-    -DUNIT_TESTING=ON -DCLIENT_TESTING=ON .. &&
+    -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DWITH_GEX=OFF .. &&
     make -j$(nproc) && ctest --output-on-failure
   tags:
   - shared

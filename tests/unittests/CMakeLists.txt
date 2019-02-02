@@ -42,7 +42,7 @@ if (UNIX AND NOT WIN32)
         torture_channel
     )
 
-    if (WITH_SERVER)
+    if (WITH_SERVER AND WITH_GEX)
         set(LIBSSH_UNIT_TESTS
             ${LIBSSH_UNIT_TESTS}
             torture_moduli)

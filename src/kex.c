@@ -31,7 +31,9 @@
 #include "libssh/priv.h"
 #include "libssh/buffer.h"
 #include "libssh/dh.h"
+#ifdef WITH_GEX
 #include "libssh/dh-gex.h"
+#endif /* WITH_GEX */
 #include "libssh/kex.h"
 #include "libssh/session.h"
 #include "libssh/ssh2.h"
@@ -114,8 +116,13 @@
 #define ECDH ""
 #endif
 
+#ifdef WITH_GEX
 #define GEX_SHA256 "diffie-hellman-group-exchange-sha256,"
 #define GEX_SHA1 "diffie-hellman-group-exchange-sha1,"
+#else
+#define GEX_SHA256
+#define GEX_SHA1
+#endif /* WITH_GEX */
 
 #define CHACHA20 "chacha20-poly1305@openssh.com,"
 
@@ -838,10 +845,12 @@ int ssh_kex_select_methods (ssh_session session){
       session->next_crypto->kex_type=SSH_KEX_DH_GROUP16_SHA512;
     } else if(strcmp(session->next_crypto->kex_methods[SSH_KEX], "diffie-hellman-group18-sha512") == 0){
       session->next_crypto->kex_type=SSH_KEX_DH_GROUP18_SHA512;
+#ifdef WITH_GEX
     } else if(strcmp(session->next_crypto->kex_methods[SSH_KEX], "diffie-hellman-group-exchange-sha1") == 0){
       session->next_crypto->kex_type=SSH_KEX_DH_GEX_SHA1;
     } else if(strcmp(session->next_crypto->kex_methods[SSH_KEX], "diffie-hellman-group-exchange-sha256") == 0){
         session->next_crypto->kex_type=SSH_KEX_DH_GEX_SHA256;
+#endif /* WITH_GEX */
     } else if(strcmp(session->next_crypto->kex_methods[SSH_KEX], "ecdh-sha2-nistp256") == 0){
       session->next_crypto->kex_type=SSH_KEX_ECDH_SHA2_NISTP256;
     } else if(strcmp(session->next_crypto->kex_methods[SSH_KEX], "ecdh-sha2-nistp384") == 0){
@@ -1096,6 +1105,7 @@ int ssh_make_sessionid(ssh_session session)
             goto error;
         }
         break;
+#ifdef WITH_GEX
     case SSH_KEX_DH_GEX_SHA1:
     case SSH_KEX_DH_GEX_SHA256:
         rc = ssh_buffer_pack(buf,
@@ -1111,6 +1121,7 @@ int ssh_make_sessionid(ssh_session session)
             goto error;
         }
         break;
+#endif /* WITH_GEX */
 #ifdef HAVE_ECDH
     case SSH_KEX_ECDH_SHA2_NISTP256:
     case SSH_KEX_ECDH_SHA2_NISTP384:
@@ -1157,7 +1168,9 @@ int ssh_make_sessionid(ssh_session session)
     switch (session->next_crypto->kex_type) {
     case SSH_KEX_DH_GROUP1_SHA1:
     case SSH_KEX_DH_GROUP14_SHA1:
+#ifdef WITH_GEX
     case SSH_KEX_DH_GEX_SHA1:
+#endif /* WITH_GEX */
         session->next_crypto->digest_len = SHA_DIGEST_LENGTH;
         session->next_crypto->mac_type = SSH_MAC_SHA1;
         session->next_crypto->secret_hash = malloc(session->next_crypto->digest_len);
@@ -1171,7 +1184,9 @@ int ssh_make_sessionid(ssh_session session)
     case SSH_KEX_ECDH_SHA2_NISTP256:
     case SSH_KEX_CURVE25519_SHA256:
     case SSH_KEX_CURVE25519_SHA256_LIBSSH_ORG:
+#ifdef WITH_GEX
     case SSH_KEX_DH_GEX_SHA256:
+#endif /* WITH_GEX */
         session->next_crypto->digest_len = SHA256_DIGEST_LENGTH;
         session->next_crypto->mac_type = SSH_MAC_SHA256;
         session->next_crypto->secret_hash = malloc(session->next_crypto->digest_len);

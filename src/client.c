@@ -38,7 +38,9 @@
 #include "libssh/socket.h"
 #include "libssh/session.h"
 #include "libssh/dh.h"
+#ifdef WITH_GEX
 #include "libssh/dh-gex.h"
+#endif /* WITH_GEX */
 #include "libssh/ecdh.h"
 #include "libssh/threads.h"
 #include "libssh/misc.h"
@@ -254,10 +256,12 @@ static int dh_handshake(ssh_session session) {
         case SSH_KEX_DH_GROUP18_SHA512:
           rc = ssh_client_dh_init(session);
           break;
+#ifdef WITH_GEX
         case SSH_KEX_DH_GEX_SHA1:
         case SSH_KEX_DH_GEX_SHA256:
           rc = ssh_client_dhgex_init(session);
           break;
+#endif /* WITH_GEX */
 #ifdef HAVE_ECDH
         case SSH_KEX_ECDH_SHA2_NISTP256:
         case SSH_KEX_ECDH_SHA2_NISTP384:

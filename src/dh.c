@@ -673,10 +673,12 @@ int ssh_server_dh_process_init(ssh_session session, ssh_buffer packet)
     case SSH_KEX_DH_GROUP18_SHA512:
         packet_type = SSH2_MSG_KEXDH_REPLY;
         break;
+#ifdef WITH_GEX
     case SSH_KEX_DH_GEX_SHA1:
     case SSH_KEX_DH_GEX_SHA256:
         packet_type = SSH2_MSG_KEX_DH_GEX_REPLY;
         break;
+#endif /* WITH_GEX */
     default:
         ssh_set_error(session, SSH_FATAL, "Invalid kex type");
         goto error;
