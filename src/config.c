@@ -490,7 +490,7 @@ ssh_config_parse_line(ssh_session session,
 
             case MATCH_FINAL:
             case MATCH_CANONICAL:
-                SSH_LOG(SSH_LOG_WARN,
+                SSH_LOG(SSH_LOG_INFO,
                         "line %d: Unsupported Match keyword '%s', skipping",
                         count,
                         p);
@@ -526,7 +526,7 @@ ssh_config_parse_line(ssh_session session,
                     return -1;
                 }
                 args++;
-                SSH_LOG(SSH_LOG_WARN,
+                SSH_LOG(SSH_LOG_INFO,
                         "line %d: Unsupported Match keyword '%s', ignoring",
                         count,
                         p2);
@@ -961,11 +961,11 @@ ssh_config_parse_line(ssh_session session,
               keyword, count);
       break;
     case SOC_UNSUPPORTED:
-      SSH_LOG(SSH_LOG_RARE, "Unsupported option: %s, line: %d",
+      SSH_LOG(SSH_LOG_INFO, "Unsupported option: %s, line: %d",
               keyword, count);
       break;
     case SOC_UNKNOWN:
-      SSH_LOG(SSH_LOG_WARN, "Unknown option: %s, line: %d",
+      SSH_LOG(SSH_LOG_INFO, "Unknown option: %s, line: %d",
               keyword, count);
       break;
     default:
