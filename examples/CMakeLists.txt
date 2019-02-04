@@ -70,6 +70,10 @@ add_executable(senddata senddata.c ${examples_SRCS})
 target_compile_options(senddata PRIVATE ${DEFAULT_C_COMPILE_FLAGS})
 target_link_libraries(senddata ${LIBSSH_SHARED_LIBRARY})
 
+add_executable(keygen keygen.c)
+target_compile_options(keygen PRIVATE ${DEFAULT_C_COMPILE_FLAGS})
+target_link_libraries(keygen ${LIBSSH_SHARED_LIBRARY})
+
 add_executable(libsshpp libsshpp.cpp)
 target_link_libraries(libsshpp ${LIBSSH_SHARED_LIBRARY})
 
