@@ -258,6 +258,9 @@ static int session_setup(void **state)
 
     assert_non_null(tss);
 
+    /* Make sure we do not test the agent */
+    unsetenv("SSH_AUTH_SOCK");
+
     cwd = torture_get_current_working_dir();
     assert_non_null(cwd);
 
