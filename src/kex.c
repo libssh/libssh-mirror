@@ -456,6 +456,7 @@ SSH_PACKET_CALLBACK(ssh_packet_kexinit)
     int server_kex = session->server;
     ssh_string str = NULL;
     char *strings[KEX_METHODS_SIZE] = {0};
+    char *rsa_sig_ext = NULL;
     int rc = SSH_ERROR;
 
     uint8_t first_kex_packet_follows = 0;
@@ -581,6 +582,29 @@ SSH_PACKET_CALLBACK(ssh_packet_kexinit)
             if (ok) {
                 session->extensions |= SSH_EXT_SIG_RSA_SHA256;
             }
+
+            /*
+             * Ensure that the client preference is honored for the case
+             * both signature types are enabled.
+             */
+            if ((session->extensions & SSH_EXT_SIG_RSA_SHA256) &&
+                (session->extensions & SSH_EXT_SIG_RSA_SHA512)) {
+                session->extensions &= ~(SSH_EXT_SIG_RSA_SHA256 | SSH_EXT_SIG_RSA_SHA512);
+                rsa_sig_ext = ssh_find_matching("rsa-sha2-512,rsa-sha2-256",
+                                                session->next_crypto->client_kex.methods[SSH_HOSTKEYS]);
+                if (rsa_sig_ext == NULL) {
+                    goto error; /* should never happen */
+                } else if (strcmp(rsa_sig_ext, "rsa-sha2-512") == 0) {
+                    session->extensions |= SSH_EXT_SIG_RSA_SHA512;
+                } else if (strcmp(rsa_sig_ext, "rsa-sha2-256") == 0) {
+                    session->extensions |= SSH_EXT_SIG_RSA_SHA256;
+                } else {
+                    SAFE_FREE(rsa_sig_ext);
+                    goto error; /* should never happen */
+                }
+                SAFE_FREE(rsa_sig_ext);
+            }
+
             SSH_LOG(SSH_LOG_DEBUG, "The client supports extension "
                     "negotiation. Enabled signature algorithms: %s%s",
                     session->extensions & SSH_EXT_SIG_RSA_SHA256 ? "SHA256" : "",
