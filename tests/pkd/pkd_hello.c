@@ -516,6 +516,12 @@ static int torture_pkd_setup_ecdsa_521(void **state) {
     f(client, ecdsa_521_hmac_sha2_512,  maccmd("hmac-sha2-512"),  setup_ecdsa_521,  teardown)
 #endif
 
+#define PKDTESTS_HOSTKEY_OPENSSHONLY(f, client, hkcmd) \
+    f(client, rsa_sha2_256,     hkcmd("rsa-sha2-256"),               setup_rsa,    teardown) \
+    f(client, rsa_sha2_512,     hkcmd("rsa-sha2-512"),               setup_rsa,    teardown) \
+    f(client, rsa_sha2_256_512, hkcmd("rsa-sha2-256,rsa-sha2-512"),  setup_rsa,    teardown) \
+    f(client, rsa_sha2_512_256, hkcmd("rsa-sha2-512,rsa-sha2-256"),  setup_rsa,    teardown)
+
 static void torture_pkd_client_noop(void **state) {
     struct pkd_state *pstate = (struct pkd_state *) (*state);
     (void) pstate;
@@ -583,6 +589,7 @@ PKDTESTS_CIPHER(emit_keytest, openssh_rsa, OPENSSH_CIPHER_CMD)
 PKDTESTS_CIPHER_OPENSSHONLY(emit_keytest, openssh_rsa, OPENSSH_CIPHER_CMD)
 PKDTESTS_MAC(emit_keytest, openssh_rsa, OPENSSH_MAC_CMD)
 PKDTESTS_MAC_OPENSSHONLY(emit_keytest, openssh_rsa, OPENSSH_MAC_CMD)
+PKDTESTS_HOSTKEY_OPENSSHONLY(emit_keytest, openssh_rsa, OPENSSH_HOSTKEY_CMD)
 #undef CLIENT_ID_FILE
 
 #define CLIENT_ID_FILE OPENSSH_ECDSA256_TESTKEY
@@ -659,6 +666,7 @@ struct {
     PKDTESTS_CIPHER_OPENSSHONLY(emit_testmap, openssh_rsa, OPENSSH_CIPHER_CMD)
     PKDTESTS_MAC(emit_testmap, openssh_rsa, OPENSSH_MAC_CMD)
     PKDTESTS_MAC_OPENSSHONLY(emit_testmap, openssh_rsa, OPENSSH_MAC_CMD)
+    PKDTESTS_HOSTKEY_OPENSSHONLY(emit_testmap, openssh_rsa, OPENSSH_HOSTKEY_CMD)
 
     PKDTESTS_DEFAULT(emit_testmap, openssh_e256, OPENSSH_CMD)
     PKDTESTS_DEFAULT_OPENSSHONLY(emit_testmap, openssh_e256, OPENSSH_CMD)

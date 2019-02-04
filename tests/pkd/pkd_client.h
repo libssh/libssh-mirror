@@ -46,12 +46,12 @@
   OPENSSH_PKACCEPTED_ECDSA      \
   OPENSSH_PKACCEPTED_DSA
 
-#define OPENSSH_CMD_START \
+#define OPENSSH_CMD_START(hostkey_algos) \
     OPENSSH_BINARY " "                  \
     "-o UserKnownHostsFile=/dev/null "  \
     "-o StrictHostKeyChecking=no "      \
     "-F /dev/null "                     \
-    OPENSSH_HOSTKEY_ALGOS " "           \
+    hostkey_algos " "                   \
     OPENSSH_PKACCEPTED_TYPES " "        \
     "-i " CLIENT_ID_FILE " "            \
     "1> %s.out "                        \
@@ -61,16 +61,19 @@
 #define OPENSSH_CMD_END "-p 1234 localhost ls"
 
 #define OPENSSH_CMD \
-    OPENSSH_CMD_START OPENSSH_CMD_END
+    OPENSSH_CMD_START(OPENSSH_HOSTKEY_ALGOS) OPENSSH_CMD_END
 
 #define OPENSSH_KEX_CMD(kexalgo) \
-    OPENSSH_CMD_START "-o KexAlgorithms=" kexalgo " " OPENSSH_CMD_END
+    OPENSSH_CMD_START(OPENSSH_HOSTKEY_ALGOS) "-o KexAlgorithms=" kexalgo " " OPENSSH_CMD_END
 
 #define OPENSSH_CIPHER_CMD(ciphers) \
-    OPENSSH_CMD_START "-c " ciphers " " OPENSSH_CMD_END
+    OPENSSH_CMD_START(OPENSSH_HOSTKEY_ALGOS) "-c " ciphers " " OPENSSH_CMD_END
 
 #define OPENSSH_MAC_CMD(macs) \
-    OPENSSH_CMD_START "-o MACs=" macs " " OPENSSH_CMD_END
+    OPENSSH_CMD_START(OPENSSH_HOSTKEY_ALGOS) "-o MACs=" macs " " OPENSSH_CMD_END
+
+#define OPENSSH_HOSTKEY_CMD(hostkeyalgo) \
+    OPENSSH_CMD_START("-o HostKeyAlgorithms=" hostkeyalgo " ") OPENSSH_CMD_END
 
 
 /* Dropbear */
