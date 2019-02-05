@@ -53,6 +53,10 @@ if (UNIX AND NOT WIN32)
             add_executable(proxy proxy.c)
             target_compile_options(proxy PRIVATE ${DEFAULT_C_COMPILE_FLAGS})
             target_link_libraries(proxy ${LIBSSH_SHARED_LIBRARY} ${ARGP_LIBRARY})
+
+            add_executable(sshd_direct-tcpip sshd_direct-tcpip.c)
+            target_compile_options(sshd_direct-tcpip PRIVATE ${DEFAULT_C_COMPILE_FLAGS})
+            target_link_libraries(sshd_direct-tcpip ${LIBSSH_SHARED_LIBRARY} ${ARGP_LIBRARY})
         endif (WITH_GSSAPI AND GSSAPI_FOUND)
 
         add_executable(samplesshd-kbdint samplesshd-kbdint.c)
