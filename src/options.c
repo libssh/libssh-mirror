@@ -1501,6 +1501,26 @@ static int ssh_bind_set_key(ssh_bind sshbind, char **key_loc,
     return 0;
 }
 
+static int ssh_bind_set_algo(ssh_bind sshbind,
+                             enum ssh_kex_types_e algo,
+                             const char *list)
+{
+    char *p = NULL;
+
+    p = ssh_keep_known_algos(algo, list);
+    if (p == NULL) {
+        ssh_set_error(sshbind, SSH_REQUEST_DENIED,
+                      "Setting method: no algorithm for method \"%s\" (%s)",
+                      ssh_kex_get_description(algo), list);
+        return -1;
+    }
+
+    SAFE_FREE(sshbind->wanted_methods[algo]);
+    sshbind->wanted_methods[algo] = p;
+
+    return 0;
+}
+
 /**
  * @brief Set options for an SSH server bind.
  *
@@ -1565,6 +1585,28 @@ static int ssh_bind_set_key(ssh_bind sshbind, char **key_loc,
  *                      - SSH_BIND_OPTIONS_IMPORT_KEY:
  *                        Set the Private Key for the server directly (ssh_key)
  *
+ *                      - SSH_BIND_OPTIONS_CIPHERS_C_S:
+ *                        Set the symmetric cipher client to server (const char *,
+ *                        comma-separated list).
+ *
+ *                      - SSH_BIND_OPTIONS_CIPHERS_S_C:
+ *                        Set the symmetric cipher server to client (const char *,
+ *                        comma-separated list).
+ *
+ *                      - SSH_BIND_OPTIONS_KEY_EXCHANGE:
+ *                        Set the key exchange method to be used (const char *,
+ *                        comma-separated list). ex:
+ *                        "ecdh-sha2-nistp256,diffie-hellman-group14-sha1"
+ *
+ *                      - SSH_BIND_OPTIONS_HMAC_C_S:
+ *                        Set the Message Authentication Code algorithm client
+ *                        to server (const char *, comma-separated list).
+ *
+ *                      - SSH_BIND_OPTIONS_HMAC_S_C:
+ *                        Set the Message Authentication Code algorithm server
+ *                        to client (const char *, comma-separated list).
+ *
+ *
  * @param  value        The value to set. This is a generic pointer and the
  *                      datatype which should be used is described at the
  *                      corresponding value of type above.
@@ -1572,8 +1614,10 @@ static int ssh_bind_set_key(ssh_bind sshbind, char **key_loc,
  * @return              0 on success, < 0 on error, invalid option, or parameter.
  */
 int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
-    const void *value) {
+    const void *value)
+{
   char *p, *q;
+  const char *v;
   int i, rc;
 
   if (sshbind == NULL) {
@@ -1795,6 +1839,58 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
         }
       }
       break;
+    case SSH_BIND_OPTIONS_CIPHERS_C_S:
+        v = value;
+        if (v == NULL || v[0] == '\0') {
+            ssh_set_error_invalid(sshbind);
+            return -1;
+        } else {
+            if (ssh_bind_set_algo(sshbind, SSH_CRYPT_C_S, v) < 0)
+                return -1;
+        }
+        break;
+    case SSH_BIND_OPTIONS_CIPHERS_S_C:
+        v = value;
+        if (v == NULL || v[0] == '\0') {
+            ssh_set_error_invalid(sshbind);
+            return -1;
+        } else {
+            if (ssh_bind_set_algo(sshbind, SSH_CRYPT_S_C, v) < 0)
+                return -1;
+        }
+        break;
+    case SSH_BIND_OPTIONS_KEY_EXCHANGE:
+        v = value;
+        if (v == NULL || v[0] == '\0') {
+            ssh_set_error_invalid(sshbind);
+            return -1;
+        } else {
+            rc = ssh_bind_set_algo(sshbind, SSH_KEX, v);
+            if (rc < 0) {
+                return -1;
+            }
+        }
+        break;
+    case SSH_BIND_OPTIONS_HMAC_C_S:
+        v = value;
+        if (v == NULL || v[0] == '\0') {
+            ssh_set_error_invalid(sshbind);
+            return -1;
+        } else {
+            if (ssh_bind_set_algo(sshbind, SSH_MAC_C_S, v) < 0)
+                return -1;
+        }
+        break;
+     case SSH_BIND_OPTIONS_HMAC_S_C:
+        v = value;
+        if (v == NULL || v[0] == '\0') {
+            ssh_set_error_invalid(sshbind);
+            return -1;
+        } else {
+            if (ssh_bind_set_algo(sshbind, SSH_MAC_S_C, v) < 0)
+                return -1;
+        }
+        break;
     default:
       ssh_set_error(sshbind, SSH_REQUEST_DENIED, "Unknown ssh option %d", type);
       return -1;
