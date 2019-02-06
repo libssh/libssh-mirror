@@ -363,6 +363,14 @@ int ssh_options_set_algo(ssh_session session,
  *                comma-separated list). ex:
  *                "ecdh-sha2-nistp256,diffie-hellman-group14-sha1,diffie-hellman-group1-sha1"
  *
+ *              - SSH_OPTIONS_HMAC_C_S:
+ *                Set the Message Authentication Code algorithm client to server
+ *                (const char *, comma-separated list).
+ *
+ *              - SSH_OPTIONS_HMAC_S_C:
+ *                Set the Message Authentication Code algorithm server to client
+ *                (const char *, comma-separated list).
+ *
  *              - SSH_OPTIONS_HOSTKEYS:
  *                Set the preferred server host key types (const char *,
  *                comma-separated list). ex:
