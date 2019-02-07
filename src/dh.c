@@ -900,6 +900,9 @@ char *ssh_get_fingerprint_hash(enum ssh_publickey_hash_type type,
  * @param  hash         What should be converted to a base64 string.
  *
  * @param  len          Length of the buffer to convert.
+ *
+ * @see ssh_get_publickey_hash()
+ * @see ssh_get_fingerprint_hash()
  */
 void ssh_print_hash(enum ssh_publickey_hash_type type,
                     unsigned char *hash,
