@@ -549,6 +549,7 @@ SSH_DEPRECATED LIBSSH_API int ssh_get_publickey(ssh_session session, ssh_key *ke
 SSH_DEPRECATED LIBSSH_API int ssh_write_knownhost(ssh_session session);
 SSH_DEPRECATED LIBSSH_API char *ssh_dump_knownhost(ssh_session session);
 SSH_DEPRECATED LIBSSH_API int ssh_is_server_known(ssh_session session);
+SSH_DEPRECATED LIBSSH_API void ssh_print_hexa(const char *descr, const unsigned char *what, size_t len);
 
 
 
@@ -701,7 +702,6 @@ LIBSSH_API char *ssh_get_fingerprint_hash(enum ssh_publickey_hash_type type,
                                           unsigned char *hash,
                                           size_t len);
 LIBSSH_API void ssh_print_hash(enum ssh_publickey_hash_type type, unsigned char *hash, size_t len);
-LIBSSH_API void ssh_print_hexa(const char *descr, const unsigned char *what, size_t len);
 LIBSSH_API int ssh_send_ignore (ssh_session session, const char *data);
 LIBSSH_API int ssh_send_debug (ssh_session session, const char *message, int always_display);
 LIBSSH_API void ssh_gssapi_set_creds(ssh_session session, const ssh_gssapi_creds creds);

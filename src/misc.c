@@ -370,13 +370,7 @@ char *ssh_get_hexa(const unsigned char *what, size_t len) {
 }
 
 /**
- * @brief Print a buffer as colon separated hex string.
- *
- * @param  descr        Description printed in front of the hex string.
- *
- * @param  what         What should be converted to a hex string.
- *
- * @param  len          Length of the buffer to convert.
+ * @deprecated          Please use ssh_print_hash() instead
  */
 void ssh_print_hexa(const char *descr, const unsigned char *what, size_t len) {
     char *hexa = ssh_get_hexa(what, len);
