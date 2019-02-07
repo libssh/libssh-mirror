@@ -233,6 +233,12 @@ static int ssh_known_hosts_read_entries(const char *match,
             continue;
         }
 
+        /* Skip lines starting with markers (@cert-authority, @revoked):
+         * we do not completely support them anyway */
+        if (p[0] == '@') {
+            continue;
+        }
+
         rc = ssh_known_hosts_parse_line(match,
                                         line,
                                         &entry);
