@@ -23,6 +23,8 @@
 #define LOCALHOST_PORT_ED25519 "[localhost]:2222 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIA7M22fXD7OiS7kGMXP+OoIjCa+J+5sq8SgAZfIOmDgM"
 #define LOCALHOST_PATTERN_ED25519 "local* ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIA7M22fXD7OiS7kGMXP+OoIjCa+J+5sq8SgAZfIOmDgM"
 #define LOCALHOST_HASHED_ED25519 "|1|ayWjmTf9mYgj7PuQNVOa7Lqkj5s=|hkbEh8FN6IkLo6t6GQGuBwamgsM= ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIA7M22fXD7OiS7kGMXP+OoIjCa+J+5sq8SgAZfIOmDgM"
+#define LOCALHOST_PORT_WILDCARD "[localhost]:* ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIA7M22fXD7OiS7kGMXP+OoIjCa+J+5sq8SgAZfIOmDgM"
+#define LOCALHOST_STANDARD_PORT "[localhost]:22 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIA7M22fXD7OiS7kGMXP+OoIjCa+J+5sq8SgAZfIOmDgM"
 
 #define TMP_FILE_NAME "/tmp/known_hosts_XXXXXX"
 
@@ -168,6 +170,46 @@ static void torture_knownhosts_parse_line_port_ed25519(void **state) {
     assert_int_equal(rc, SSH_OK);
 
     assert_string_equal(entry->hostname, "[localhost]:2222");
+    assert_non_null(entry->unparsed);
+    assert_non_null(entry->publickey);
+    assert_int_equal(ssh_key_type(entry->publickey), SSH_KEYTYPE_ED25519);
+
+    SSH_KNOWNHOSTS_ENTRY_FREE(entry);
+}
+
+static void torture_knownhosts_parse_line_port_wildcard(void **state)
+{
+    struct ssh_knownhosts_entry *entry = NULL;
+    int rc;
+
+    (void) state;
+
+    rc = ssh_known_hosts_parse_line("localhost",
+                                    LOCALHOST_PORT_WILDCARD,
+                                    &entry);
+    assert_int_equal(rc, SSH_OK);
+
+    assert_string_equal(entry->hostname, "localhost");
+    assert_non_null(entry->unparsed);
+    assert_non_null(entry->publickey);
+    assert_int_equal(ssh_key_type(entry->publickey), SSH_KEYTYPE_ED25519);
+
+    SSH_KNOWNHOSTS_ENTRY_FREE(entry);
+}
+
+static void torture_knownhosts_parse_line_standard_port(void **state)
+{
+    struct ssh_knownhosts_entry *entry = NULL;
+    int rc;
+
+    (void) state;
+
+    rc = ssh_known_hosts_parse_line("localhost",
+                                    LOCALHOST_STANDARD_PORT,
+                                    &entry);
+    assert_int_equal(rc, SSH_OK);
+
+    assert_string_equal(entry->hostname, "localhost");
     assert_non_null(entry->unparsed);
     assert_non_null(entry->publickey);
     assert_int_equal(ssh_key_type(entry->publickey), SSH_KEYTYPE_ED25519);
@@ -375,6 +417,8 @@ int torture_run_tests(void) {
         cmocka_unit_test(torture_knownhosts_parse_line_ecdsa),
         cmocka_unit_test(torture_knownhosts_parse_line_default_ed25519),
         cmocka_unit_test(torture_knownhosts_parse_line_port_ed25519),
+        cmocka_unit_test(torture_knownhosts_parse_line_port_wildcard),
+        cmocka_unit_test(torture_knownhosts_parse_line_standard_port),
         cmocka_unit_test(torture_knownhosts_parse_line_pattern_ed25519),
         cmocka_unit_test(torture_knownhosts_parse_line_hashed_ed25519),
         cmocka_unit_test_setup_teardown(torture_knownhosts_read_file,

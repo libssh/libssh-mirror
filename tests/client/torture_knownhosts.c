@@ -24,6 +24,7 @@
 #define LIBSSH_STATIC
 
 #include "torture.h"
+#include "torture_key.h"
 
 #include <sys/types.h>
 #include <pwd.h>
@@ -146,6 +147,72 @@ static void torture_knownhosts_port(void **state) {
     assert_int_equal(rc, SSH_OK);
 
     session->opts.port = 1234;
+    rc = ssh_is_server_known(session);
+    assert_int_equal(rc, SSH_SERVER_KNOWN_OK);
+}
+
+static void torture_knownhosts_wildcard(void **state)
+{
+    struct torture_state *s = *state;
+    ssh_session session = s->ssh.session;
+    char known_hosts_file[1024];
+    const char *key = NULL;
+    FILE *file;
+    int rc;
+
+    snprintf(known_hosts_file,
+             sizeof(known_hosts_file),
+             "%s/%s",
+             s->socket_dir,
+             TORTURE_KNOWN_HOSTS_FILE);
+
+    file = fopen(known_hosts_file, "w");
+    assert_non_null(file);
+    key = torture_get_testkey_pub(SSH_KEYTYPE_RSA);
+    fprintf(file, "[127.0.0.10]:* %s\n", key);
+    fclose(file);
+
+    rc = ssh_options_set(session, SSH_OPTIONS_HOST, TORTURE_SSH_SERVER);
+    assert_ssh_return_code(session, rc);
+    rc = ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, known_hosts_file);
+    assert_ssh_return_code(session, rc);
+
+    rc = ssh_connect(session);
+    assert_ssh_return_code(session, rc);
+
+    rc = ssh_is_server_known(session);
+    assert_int_equal(rc, SSH_SERVER_KNOWN_OK);
+}
+
+static void torture_knownhosts_standard_port(void **state)
+{
+    struct torture_state *s = *state;
+    ssh_session session = s->ssh.session;
+    char known_hosts_file[1024];
+    const char *key = NULL;
+    FILE *file;
+    int rc;
+
+    snprintf(known_hosts_file,
+             sizeof(known_hosts_file),
+             "%s/%s",
+             s->socket_dir,
+             TORTURE_KNOWN_HOSTS_FILE);
+
+    file = fopen(known_hosts_file, "w");
+    assert_non_null(file);
+    key = torture_get_testkey_pub(SSH_KEYTYPE_RSA);
+    fprintf(file, "[127.0.0.10]:22 %s\n", key);
+    fclose(file);
+
+    rc = ssh_options_set(session, SSH_OPTIONS_HOST, TORTURE_SSH_SERVER);
+    assert_ssh_return_code(session, rc);
+    rc = ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, known_hosts_file);
+    assert_ssh_return_code(session, rc);
+
+    rc = ssh_connect(session);
+    assert_ssh_return_code(session, rc);
+
     rc = ssh_is_server_known(session);
     assert_int_equal(rc, SSH_SERVER_KNOWN_OK);
 }
@@ -366,6 +433,12 @@ static void torture_knownhosts_no_hostkeychecking(void **state)
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
+        cmocka_unit_test_setup_teardown(torture_knownhosts_wildcard,
+                                        session_setup,
+                                        session_teardown),
+        cmocka_unit_test_setup_teardown(torture_knownhosts_standard_port,
+                                        session_setup,
+                                        session_teardown),
         cmocka_unit_test_setup_teardown(torture_knownhosts_port,
                                         session_setup,
                                         session_teardown),
