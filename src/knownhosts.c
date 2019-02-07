@@ -440,8 +440,8 @@ int ssh_known_hosts_parse_line(const char *hostname,
     }
 
     if (hostname != NULL) {
-        char *match_pattern = NULL;
-        char *q;
+        char *host_port = NULL;
+        char *q = NULL;
 
         /* Hashed */
         if (p[0] == '|') {
@@ -453,13 +453,30 @@ int ssh_known_hosts_parse_line(const char *hostname,
              q = strtok(NULL, ",")) {
             int cmp;
 
-            cmp = match_hostname(hostname, q, strlen(q));
+            if (q[0] == '[' && hostname[0] != '[') {
+                /* Corner case: We have standard port so we do not have
+                 * hostname in square braces. But the patern is enclosed
+                 * in braces with, possibly standard or wildcard, port.
+                 * We need to test against [host]:port pair here.
+                 */
+                if (host_port == NULL) {
+                    host_port = ssh_hostport(hostname, 22);
+                    if (host_port == NULL) {
+                        rc = SSH_ERROR;
+                        goto out;
+                    }
+                }
+
+                cmp = match_hostname(host_port, q, strlen(q));
+            } else {
+                cmp = match_hostname(hostname, q, strlen(q));
+            }
             if (cmp == 1) {
                 match = 1;
                 break;
             }
         }
-        SAFE_FREE(match_pattern);
+        free(host_port);
 
         if (match == 0) {
             rc = SSH_AGAIN;
