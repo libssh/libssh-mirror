@@ -29,10 +29,10 @@ if (UNIX AND NOT WIN32)
     add_executable(test_server ${server_SRCS})
     target_compile_options(test_server PRIVATE ${DEFAULT_C_COMPILE_FLAGS})
     target_link_libraries(test_server
+                          testserver
                           ${LIBSSH_SHARED_LIBRARY}
                           ${ARGP_LIBRARY}
-                          util
-                          testserver)
+                          util)
 endif ()
 
 endif (WITH_SERVER AND UNIX AND NOT WIN32)
