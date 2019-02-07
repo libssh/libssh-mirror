@@ -11,9 +11,10 @@ In order to build libssh, you need to install several components:
 - [openssl](http://www.openssl.org) >= 0.9.8
 or
 - [gcrypt](http://www.gnu.org/directory/Security/libgcrypt.html) >= 1.4
+- [libz](http://www.zlib.net) >= 1.2
 
 optional:
-- [libz](http://www.zlib.net) >= 1.2
+- [cmocka](https://cmocka.org/) >= 1.1.0
 - [socket_wrapper](https://cwrap.org/) >= 1.1.5
 - [nss_wrapper](https://cwrap.org/) >= 1.1.2
 - [uid_wrapper](https://cwrap.org/) >= 1.2.0
@@ -26,7 +27,7 @@ For Windows use vcpkg:
 
 https://github.com/Microsoft/vcpkg
 
-which you can use to install openssl and zilib. libssh itself is also part of
+which you can use to install openssl and zlib. libssh itself is also part of
 vcpkg!
 
 ## Building
