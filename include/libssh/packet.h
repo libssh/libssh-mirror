@@ -81,7 +81,7 @@ int ssh_packet_decrypt(ssh_session session, uint8_t *destination, uint8_t *sourc
 unsigned char *ssh_packet_encrypt(ssh_session session,
                                   void *packet,
                                   unsigned int len);
-int ssh_packet_hmac_verify(ssh_session session,ssh_buffer buffer,
+int ssh_packet_hmac_verify(ssh_session session, const void *data, size_t len,
                            unsigned char *mac, enum ssh_hmac_e type);
 int ssh_packet_set_newkeys(ssh_session session,
                            enum ssh_crypto_direction_e direction);

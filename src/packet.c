@@ -1186,7 +1186,8 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
                     mac = packet_second_block + packet_remaining;
 
                     rc = ssh_packet_hmac_verify(session,
-                                                session->in_buffer,
+                                                ssh_buffer_get(session->in_buffer),
+                                                ssh_buffer_get_len(session->in_buffer),
                                                 mac,
                                                 crypto->in_hmac);
                     if (rc < 0) {

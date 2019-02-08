@@ -205,21 +205,23 @@ static int secure_memcmp(const void *s1, const void *s2, size_t n)
  * @brief Verify the hmac of a packet
  *
  * @param  session      The session to use.
- * @param  buffer       The buffer to verify the hmac from.
+ * @param  data         The pointer to the data to verify the hmac from.
+ * @param  len          The length of the given data.
  * @param  mac          The mac to compare with the hmac.
  *
  * @return              0 if hmac and mac are equal, < 0 if not or an error
  *                      occurred.
  */
 int ssh_packet_hmac_verify(ssh_session session,
-                           ssh_buffer buffer,
+                           const void *data,
+                           size_t len,
                            uint8_t *mac,
                            enum ssh_hmac_e type)
 {
   struct ssh_crypto_struct *crypto = NULL;
   unsigned char hmacbuf[DIGEST_MAX_LEN] = {0};
   HMACCTX ctx;
-  unsigned int len;
+  unsigned int hmaclen;
   uint32_t seq;
 
   /* AEAD types have no mac checking */
@@ -237,15 +239,15 @@ int ssh_packet_hmac_verify(ssh_session session,
   seq = htonl(session->recv_seq);
 
   hmac_update(ctx, (unsigned char *) &seq, sizeof(uint32_t));
-  hmac_update(ctx, ssh_buffer_get(buffer), ssh_buffer_get_len(buffer));
-  hmac_final(ctx, hmacbuf, &len);
+  hmac_update(ctx, data, len);
+  hmac_final(ctx, hmacbuf, &hmaclen);
 
 #ifdef DEBUG_CRYPTO
-  ssh_print_hexa("received mac",mac,len);
-  ssh_print_hexa("Computed mac",hmacbuf,len);
+  ssh_print_hexa("received mac",mac,hmaclen);
+  ssh_print_hexa("Computed mac",hmacbuf,hmaclen);
   ssh_print_hexa("seq",(unsigned char *)&seq,sizeof(uint32_t));
 #endif
-  if (secure_memcmp(mac, hmacbuf, len) == 0) {
+  if (secure_memcmp(mac, hmacbuf, hmaclen) == 0) {
     return 0;
   }
 
