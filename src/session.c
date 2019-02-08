@@ -419,7 +419,7 @@ const char* ssh_get_cipher_out(ssh_session session) {
 const char* ssh_get_hmac_in(ssh_session session) {
     if ((session != NULL) &&
         (session->current_crypto != NULL)) {
-        return ssh_hmac_type_to_string(session->current_crypto->in_hmac);
+        return ssh_hmac_type_to_string(session->current_crypto->in_hmac, session->current_crypto->in_hmac_etm);
     }
     return NULL;
 }
@@ -434,7 +434,7 @@ const char* ssh_get_hmac_in(ssh_session session) {
 const char* ssh_get_hmac_out(ssh_session session) {
     if ((session != NULL) &&
         (session->current_crypto != NULL)) {
-        return ssh_hmac_type_to_string(session->current_crypto->out_hmac);
+        return ssh_hmac_type_to_string(session->current_crypto->out_hmac, session->current_crypto->out_hmac_etm);
     }
     return NULL;
 }

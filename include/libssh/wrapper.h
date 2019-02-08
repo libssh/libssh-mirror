@@ -21,6 +21,8 @@
 #ifndef WRAPPER_H_
 #define WRAPPER_H_
 
+#include <stdbool.h>
+
 #include "config.h"
 #include "libssh/libssh.h"
 #include "libssh/libcrypto.h"
@@ -58,6 +60,7 @@ enum ssh_des_e {
 struct ssh_hmac_struct {
   const char* name;
   enum ssh_hmac_e hmac_type;
+  bool etm;
 };
 
 enum ssh_crypto_direction_e {
@@ -119,6 +122,6 @@ void ssh_crypto_finalize(void);
 void ssh_cipher_clear(struct ssh_cipher_struct *cipher);
 struct ssh_hmac_struct *ssh_get_hmactab(void);
 struct ssh_cipher_struct *ssh_get_ciphertab(void);
-const char *ssh_hmac_type_to_string(enum ssh_hmac_e hmac_type);
+const char *ssh_hmac_type_to_string(enum ssh_hmac_e hmac_type, bool etm);
 
 #endif /* WRAPPER_H_ */
