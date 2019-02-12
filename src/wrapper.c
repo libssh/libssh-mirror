@@ -56,13 +56,17 @@
 #include "libssh/curve25519.h"
 
 static struct ssh_hmac_struct ssh_hmac_tab[] = {
-  { "hmac-sha1",     SSH_HMAC_SHA1,          false },
-  { "hmac-sha2-256", SSH_HMAC_SHA256,        false },
-  { "hmac-sha2-512", SSH_HMAC_SHA512,        false },
-  { "hmac-md5",      SSH_HMAC_MD5,           false },
-  { "aead-poly1305", SSH_HMAC_AEAD_POLY1305, false },
-  { "aead-gcm",      SSH_HMAC_AEAD_GCM,      false },
-  { NULL,            0,                      false }
+  { "hmac-sha1",                     SSH_HMAC_SHA1,          false },
+  { "hmac-sha2-256",                 SSH_HMAC_SHA256,        false },
+  { "hmac-sha2-512",                 SSH_HMAC_SHA512,        false },
+  { "hmac-md5",                      SSH_HMAC_MD5,           false },
+  { "aead-poly1305",                 SSH_HMAC_AEAD_POLY1305, false },
+  { "aead-gcm",                      SSH_HMAC_AEAD_GCM,      false },
+  { "hmac-sha1-etm@openssh.com",     SSH_HMAC_SHA1,          true  },
+  { "hmac-sha2-256-etm@openssh.com", SSH_HMAC_SHA256,        true  },
+  { "hmac-sha2-512-etm@openssh.com", SSH_HMAC_SHA512,        true  },
+  { "hmac-md5-etm@openssh.com",      SSH_HMAC_MD5,           true  },
+  { NULL,                            0,                      false }
 };
 
 struct ssh_hmac_struct *ssh_get_hmactab(void) {

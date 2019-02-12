@@ -184,15 +184,15 @@ static void torture_options_set_macs(void **state) {
     /* Test multiple known MACs */
     rc = ssh_options_set(session,
                          SSH_OPTIONS_HMAC_S_C,
-                         "hmac-sha1,hmac-sha2-256");
+                         "hmac-sha1-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha1,hmac-sha2-256");
     assert_true(rc == 0);
     assert_string_equal(session->opts.wanted_methods[SSH_MAC_S_C],
-                        "hmac-sha1,hmac-sha2-256");
+                        "hmac-sha1-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha1,hmac-sha2-256");
 
     /* Test unknown MACs */
-    rc = ssh_options_set(session, SSH_OPTIONS_HMAC_S_C, "unknown-crap@example.com,hmac-sha1,unknown@example.com");
+    rc = ssh_options_set(session, SSH_OPTIONS_HMAC_S_C, "unknown-crap@example.com,hmac-sha1-etm@openssh.com,unknown@example.com");
     assert_true(rc == 0);
-    assert_string_equal(session->opts.wanted_methods[SSH_MAC_S_C], "hmac-sha1");
+    assert_string_equal(session->opts.wanted_methods[SSH_MAC_S_C], "hmac-sha1-etm@openssh.com");
 
     /* Test all unknown MACs */
     rc = ssh_options_set(session, SSH_OPTIONS_HMAC_S_C, "unknown-crap@example.com");
