@@ -1243,43 +1243,73 @@ static int pki_import_cert_buffer(ssh_buffer buffer,
                                   enum ssh_keytypes_e type,
                                   ssh_key *pkey) {
     ssh_buffer cert;
-    ssh_string type_s;
-    ssh_key key;
+    ssh_string tmp_s;
+    const char *type_c;
+    ssh_key key = NULL;
     int rc;
-
-    key = ssh_key_new();
-    if (key == NULL) {
-        return SSH_ERROR;
-    }
-    cert = ssh_buffer_new();
-    if (cert == NULL) {
-        ssh_key_free(key);
-        return SSH_ERROR;
-    }
-
-    key->type = type;
-    key->type_c = ssh_key_type_to_char(type);
-    key->flags = SSH_KEY_FLAG_PUBLIC;
 
     /*
      * The cert blob starts with the key type as an ssh_string, but this
      * string has been read out of the buffer to identify the key type.
      * Simply add it again as first element before copying the rest.
      */
-    type_s = ssh_string_from_char(key->type_c);
-    if (type_s == NULL) {
+    cert = ssh_buffer_new();
+    if (cert == NULL) {
         goto fail;
     }
-    rc = ssh_buffer_add_ssh_string(cert, type_s);
-    ssh_string_free(type_s);
+    type_c = ssh_key_type_to_char(type);
+    tmp_s = ssh_string_from_char(type_c);
+    if (tmp_s == NULL) {
+        goto fail;
+    }
+    rc = ssh_buffer_add_ssh_string(cert, tmp_s);
+    SSH_STRING_FREE(tmp_s);
     if (rc != 0) {
         goto fail;
     }
-
     rc = ssh_buffer_add_buffer(cert, buffer);
     if (rc != 0) {
         goto fail;
     }
+
+    /*
+     * After the key type, comes an ssh_string nonce. Just after this comes the
+     * cert public key, which can be parsed out of the buffer.
+     */
+    tmp_s = ssh_buffer_get_ssh_string(buffer);
+    if (tmp_s == NULL) {
+        goto fail;
+    }
+    SSH_STRING_FREE(tmp_s);
+
+    switch (type) {
+        case SSH_KEYTYPE_DSS_CERT01:
+            rc = pki_import_pubkey_buffer(buffer, SSH_KEYTYPE_DSS, &key);
+            break;
+        case SSH_KEYTYPE_RSA_CERT01:
+            rc = pki_import_pubkey_buffer(buffer, SSH_KEYTYPE_RSA, &key);
+            break;
+        case SSH_KEYTYPE_ECDSA_P256_CERT01:
+            rc = pki_import_pubkey_buffer(buffer, SSH_KEYTYPE_ECDSA_P256, &key);
+            break;
+        case SSH_KEYTYPE_ECDSA_P384_CERT01:
+            rc = pki_import_pubkey_buffer(buffer, SSH_KEYTYPE_ECDSA_P384, &key);
+            break;
+        case SSH_KEYTYPE_ECDSA_P521_CERT01:
+            rc = pki_import_pubkey_buffer(buffer, SSH_KEYTYPE_ECDSA_P521, &key);
+            break;
+        case SSH_KEYTYPE_ED25519_CERT01:
+            rc = pki_import_pubkey_buffer(buffer, SSH_KEYTYPE_ED25519, &key);
+            break;
+        default:
+            key = ssh_key_new();
+    }
+    if (rc != 0 || key == NULL) {
+        goto fail;
+    }
+
+    key->type = type;
+    key->type_c = type_c;
     key->cert = (void*) cert;
 
     *pkey = key;
