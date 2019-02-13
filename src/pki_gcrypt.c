@@ -1909,7 +1909,7 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
     size_t rsalen;
     int rc;
 
-    if (type != pubkey->type) {
+    if (ssh_key_type_plain(pubkey->type) != type) {
         SSH_LOG(SSH_LOG_WARN,
                 "Incompatible public key provided (%d) expecting (%d)",
                 type,
@@ -2096,7 +2096,7 @@ int pki_signature_verify(ssh_session session,
     gcry_sexp_t sexp;
     gcry_error_t err;
 
-    if (key->type != sig->type) {
+    if (ssh_key_type_plain(key->type) != sig->type) {
         SSH_LOG(SSH_LOG_WARN,
                 "Can not verify %s signature with %s key",
                 sig->type_c,
@@ -2106,6 +2106,7 @@ int pki_signature_verify(ssh_session session,
 
     switch(key->type) {
         case SSH_KEYTYPE_DSS:
+        case SSH_KEYTYPE_DSS_CERT01:
             /* That is to mark the number as positive */
             if(hash[0] >= 0x80) {
                 memcpy(ghash + 1, hash, hlen);
@@ -2135,6 +2136,7 @@ int pki_signature_verify(ssh_session session,
             }
             break;
         case SSH_KEYTYPE_RSA:
+        case SSH_KEYTYPE_RSA_CERT01:
             switch (sig->hash_type) {
             case SSH_DIGEST_SHA256:
                 hash_type = "sha256";
@@ -2179,6 +2181,7 @@ int pki_signature_verify(ssh_session session,
             }
             break;
         case SSH_KEYTYPE_ED25519:
+        case SSH_KEYTYPE_ED25519_CERT01:
 		err = pki_ed25519_verify(key, sig, hash, hlen);
 		if (err != SSH_OK){
 			ssh_set_error(session, SSH_FATAL, "ed25519 signature verification error");
@@ -2188,6 +2191,9 @@ int pki_signature_verify(ssh_session session,
         case SSH_KEYTYPE_ECDSA_P256:
         case SSH_KEYTYPE_ECDSA_P384:
         case SSH_KEYTYPE_ECDSA_P521:
+        case SSH_KEYTYPE_ECDSA_P256_CERT01:
+        case SSH_KEYTYPE_ECDSA_P384_CERT01:
+        case SSH_KEYTYPE_ECDSA_P521_CERT01:
 #ifdef HAVE_GCRYPT_ECC
             err = gcry_sexp_build(&sexp,
                                   NULL,

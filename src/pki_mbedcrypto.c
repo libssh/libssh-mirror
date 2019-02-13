@@ -912,7 +912,7 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
     ssh_signature sig = NULL;
     int rc;
 
-    if (type != pubkey->type) {
+    if (ssh_key_type_plain(pubkey->type) != type) {
         SSH_LOG(SSH_LOG_WARN,
                 "Incompatible public key provided (%d) expecting (%d)",
                 type,
@@ -1027,7 +1027,7 @@ int pki_signature_verify(ssh_session session, const ssh_signature sig, const
     int rc;
     mbedtls_md_type_t md = 0;
 
-    if (key->type != sig->type) {
+    if (ssh_key_type_plain(key->type) != sig->type) {
         SSH_LOG(SSH_LOG_WARN,
                 "Can not verify %s signature with %s key",
                 sig->type_c,
@@ -1037,6 +1037,7 @@ int pki_signature_verify(ssh_session session, const ssh_signature sig, const
 
     switch (key->type) {
         case SSH_KEYTYPE_RSA:
+        case SSH_KEYTYPE_RSA_CERT01:
             switch (sig->hash_type) {
             case SSH_DIGEST_SHA1:
             case SSH_DIGEST_AUTO:
@@ -1069,6 +1070,9 @@ int pki_signature_verify(ssh_session session, const ssh_signature sig, const
         case SSH_KEYTYPE_ECDSA_P256:
         case SSH_KEYTYPE_ECDSA_P384:
         case SSH_KEYTYPE_ECDSA_P521:
+        case SSH_KEYTYPE_ECDSA_P256_CERT01:
+        case SSH_KEYTYPE_ECDSA_P384_CERT01:
+        case SSH_KEYTYPE_ECDSA_P521_CERT01:
             rc = mbedtls_ecdsa_verify(&key->ecdsa->grp, hash, hlen,
                     &key->ecdsa->Q, sig->ecdsa_sig.r, sig->ecdsa_sig.s);
             if (rc != 0) {
@@ -1080,6 +1084,7 @@ int pki_signature_verify(ssh_session session, const ssh_signature sig, const
             }
             break;
         case SSH_KEYTYPE_ED25519:
+        case SSH_KEYTYPE_ED25519_CERT01:
             rc = pki_ed25519_verify(key, sig, hash, hlen);
             if (rc != SSH_OK) {
                 ssh_set_error(session, SSH_FATAL,

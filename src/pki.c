@@ -444,6 +444,32 @@ enum ssh_keytypes_e ssh_key_type_from_name(const char *name) {
 }
 
 /**
+ * @brief Get the pubic key type corresponding to a certificate type.
+ *
+ * @param[in] type   The certificate or public key type.
+ *
+ * @return           The matching public key type.
+ */
+enum ssh_keytypes_e ssh_key_type_plain(enum ssh_keytypes_e type) {
+    switch (type) {
+        case SSH_KEYTYPE_DSS_CERT01:
+            return SSH_KEYTYPE_DSS;
+        case SSH_KEYTYPE_RSA_CERT01:
+            return SSH_KEYTYPE_RSA;
+        case SSH_KEYTYPE_ECDSA_P256_CERT01:
+            return SSH_KEYTYPE_ECDSA_P256;
+        case SSH_KEYTYPE_ECDSA_P384_CERT01:
+            return SSH_KEYTYPE_ECDSA_P384;
+        case SSH_KEYTYPE_ECDSA_P521_CERT01:
+            return SSH_KEYTYPE_ECDSA_P521;
+        case SSH_KEYTYPE_ED25519_CERT01:
+            return SSH_KEYTYPE_ED25519;
+        default:
+            return type;
+    }
+}
+
+/**
  * @brief Check if the key has/is a public key.
  *
  * @param[in] k         The key to check.
@@ -2025,19 +2051,20 @@ int ssh_pki_signature_verify(ssh_session session,
                              size_t dlen)
 {
     int rc;
+    enum ssh_keytypes_e key_type = ssh_key_type_plain(key->type);
 
     SSH_LOG(SSH_LOG_FUNCTIONS,
             "Going to verify a %s type signature",
             sig->type_c);
 
-    if (key->type != sig->type) {
+    if (key_type != sig->type) {
         SSH_LOG(SSH_LOG_WARN,
                 "Can not verify %s signature with %s key",
                 sig->type_c, key->type_c);
         return SSH_ERROR;
     }
 
-    if (is_ecdsa_key_type(key->type)) {
+    if (is_ecdsa_key_type(key_type)) {
 #if HAVE_ECC
         unsigned char ehash[EVP_DIGEST_LEN] = {0};
         uint32_t elen;
@@ -2055,7 +2082,7 @@ int ssh_pki_signature_verify(ssh_session session,
                                   ehash,
                                   elen);
 #endif
-    } else if (key->type == SSH_KEYTYPE_ED25519) {
+    } else if (key_type == SSH_KEYTYPE_ED25519) {
         rc = pki_signature_verify(session, sig, key, digest, dlen);
     } else {
         unsigned char hash[SHA512_DIGEST_LEN] = {0};
@@ -2085,7 +2112,7 @@ int ssh_pki_signature_verify(ssh_session session,
             return SSH_ERROR;
         }
 #ifdef DEBUG_CRYPTO
-        ssh_print_hexa(key->type == SSH_KEYTYPE_DSS
+        ssh_print_hexa(key_type == SSH_KEYTYPE_DSS
                        ? "Hash to be verified with DSA"
                        : "Hash to be verified with RSA",
                        hash,
