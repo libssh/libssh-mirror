@@ -651,6 +651,37 @@ static void torture_pki_dsa_generate_key(void **state)
     ssh_free(session);
 }
 
+static void torture_pki_dsa_cert_verify(void **state)
+{
+    int rc;
+    ssh_key privkey = NULL, cert = NULL;
+    ssh_signature sign = NULL;
+    ssh_session session=ssh_new();
+    (void) state;
+
+    rc = ssh_pki_import_privkey_file(LIBSSH_DSA_TESTKEY,
+                                     NULL,
+                                     NULL,
+                                     NULL,
+                                     &privkey);
+    assert_true(rc == 0);
+    assert_non_null(privkey);
+
+    rc = ssh_pki_import_cert_file(LIBSSH_DSA_TESTKEY "-cert.pub", &cert);
+    assert_true(rc == 0);
+    assert_non_null(cert);
+
+    sign = pki_do_sign(privkey, DSA_HASH, 20);
+    assert_non_null(sign);
+    rc = pki_signature_verify(session, sign, cert, DSA_HASH, 20);
+    assert_true(rc == SSH_OK);
+    ssh_signature_free(sign);
+    SSH_KEY_FREE(privkey);
+    SSH_KEY_FREE(cert);
+
+    ssh_free(session);
+}
+
 int torture_run_tests(void)
 {
     int rc;
@@ -695,6 +726,9 @@ int torture_run_tests(void)
                                  setup_dsa_key,
                                  teardown),
         cmocka_unit_test(torture_pki_dsa_generate_key),
+        cmocka_unit_test_setup_teardown(torture_pki_dsa_cert_verify,
+                                 setup_dsa_key,
+                                 teardown),
     };
 
     ssh_init();

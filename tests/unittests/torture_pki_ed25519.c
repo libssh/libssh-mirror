@@ -369,6 +369,37 @@ static void torture_pki_ed25519_generate_key(void **state)
     ssh_free(session);
 }
 
+static void torture_pki_ed25519_cert_verify(void **state)
+{
+    int rc;
+    ssh_key privkey = NULL, cert = NULL;
+    ssh_signature sign = NULL;
+    ssh_session session=ssh_new();
+    (void) state;
+
+    rc = ssh_pki_import_privkey_file(LIBSSH_ED25519_TESTKEY,
+                                     NULL,
+                                     NULL,
+                                     NULL,
+                                     &privkey);
+    assert_true(rc == 0);
+    assert_non_null(privkey);
+
+    rc = ssh_pki_import_cert_file(LIBSSH_ED25519_TESTKEY "-cert.pub", &cert);
+    assert_true(rc == 0);
+    assert_non_null(cert);
+
+    sign = pki_do_sign(privkey, HASH, 20);
+    assert_non_null(sign);
+    rc = pki_signature_verify(session, sign, cert, HASH, 20);
+    assert_true(rc == SSH_OK);
+    ssh_signature_free(sign);
+    SSH_KEY_FREE(privkey);
+    SSH_KEY_FREE(cert);
+
+    ssh_free(session);
+}
+
 static void torture_pki_ed25519_write_privkey(void **state)
 {
     ssh_key origkey = NULL;
@@ -715,6 +746,9 @@ int torture_run_tests(void) {
                                         setup_ed25519_key,
                                         teardown),
         cmocka_unit_test(torture_pki_ed25519_generate_key),
+        cmocka_unit_test_setup_teardown(torture_pki_ed25519_cert_verify,
+                                        setup_ed25519_key,
+                                        teardown),
         cmocka_unit_test_setup_teardown(torture_pki_ed25519_write_privkey,
                                         setup_ed25519_key,
                                         teardown),

@@ -579,6 +579,37 @@ static void torture_pki_generate_key_ecdsa(void **state)
     ssh_free(session);
 }
 
+static void torture_pki_ecdsa_cert_verify(void **state)
+{
+    int rc;
+    ssh_key privkey = NULL, cert = NULL;
+    ssh_signature sign = NULL;
+    ssh_session session=ssh_new();
+    (void) state;
+
+    rc = ssh_pki_import_privkey_file(LIBSSH_ECDSA_TESTKEY,
+                                     NULL,
+                                     NULL,
+                                     NULL,
+                                     &privkey);
+    assert_true(rc == 0);
+    assert_non_null(privkey);
+
+    rc = ssh_pki_import_cert_file(LIBSSH_ECDSA_TESTKEY "-cert.pub", &cert);
+    assert_true(rc == 0);
+    assert_non_null(cert);
+
+    sign = pki_do_sign(privkey, ECDSA_HASH, 20);
+    assert_non_null(sign);
+    rc = pki_signature_verify(session, sign, cert, ECDSA_HASH, 20);
+    assert_true(rc == SSH_OK);
+    ssh_signature_free(sign);
+    SSH_KEY_FREE(privkey);
+    SSH_KEY_FREE(cert);
+
+    ssh_free(session);
+}
+
 #ifdef HAVE_LIBCRYPTO
 static void torture_pki_ecdsa_write_privkey(void **state)
 {
@@ -788,6 +819,15 @@ int torture_run_tests(void) {
                                         setup_ecdsa_key_521,
                                         teardown),
         cmocka_unit_test(torture_pki_generate_key_ecdsa),
+        cmocka_unit_test_setup_teardown(torture_pki_ecdsa_cert_verify,
+                                        setup_ecdsa_key_256,
+                                        teardown),
+        cmocka_unit_test_setup_teardown(torture_pki_ecdsa_cert_verify,
+                                        setup_ecdsa_key_384,
+                                        teardown),
+        cmocka_unit_test_setup_teardown(torture_pki_ecdsa_cert_verify,
+                                        setup_ecdsa_key_521,
+                                        teardown),
 #ifdef HAVE_LIBCRYPTO
         cmocka_unit_test_setup_teardown(torture_pki_ecdsa_write_privkey,
                                         setup_ecdsa_key_256,
