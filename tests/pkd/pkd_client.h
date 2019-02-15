@@ -70,7 +70,7 @@
     OPENSSH_CMD_START(OPENSSH_HOSTKEY_ALGOS) "-c " ciphers " " OPENSSH_CMD_END
 
 #define OPENSSH_MAC_CMD(macs) \
-    OPENSSH_CMD_START(OPENSSH_HOSTKEY_ALGOS) "-o MACs=" macs " " OPENSSH_CMD_END
+    OPENSSH_CMD_START(OPENSSH_HOSTKEY_ALGOS) "-c aes128-ctr,aes192-ctr,aes256-ctr,aes256-cbc,aes192-cbc,aes128-cbc -o MACs=" macs " " OPENSSH_CMD_END
 
 #define OPENSSH_HOSTKEY_CMD(hostkeyalgo) \
     OPENSSH_CMD_START("-o HostKeyAlgorithms=" hostkeyalgo " ") OPENSSH_CMD_END
