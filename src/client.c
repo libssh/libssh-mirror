@@ -279,10 +279,7 @@ static int dh_handshake(ssh_session session) {
           rc = SSH_ERROR;
       }
 
-      if (rc == SSH_ERROR) {
-          return SSH_ERROR;
-      }
-
+      break;
     case DH_STATE_INIT_SENT:
     	/* wait until ssh_packet_dh_reply is called */
     	break;
