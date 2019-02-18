@@ -381,18 +381,6 @@ int main(void)
 
 check_c_source_compiles("
 #include <stdio.h>
-#define __VA_NARG__(...) (__VA_NARG_(_0, ## __VA_ARGS__, __RSEQ_N()) - 1)
-#define __VA_NARG_(...) __VA_ARG_N(__VA_ARGS__)
-#define __VA_ARG_N( _1, _2, _3, _4, _5, _6, _7, _8, _9,_10,N,...) N
-#define __RSEQ_N() 10, 9,  8,  7,  6,  5,  4,  3,  2,  1,  0
-#define myprintf(format, ...) printf((format), __VA_NARG__(__VA_ARGS__), __VA_ARGS__)
-int main(void) {
-    myprintf(\"%d %d %d %d\",1,2,3);
-    return 0;
-}" HAVE_GCC_NARG_MACRO)
-
-check_c_source_compiles("
-#include <stdio.h>
 int main(void) {
     printf(\"%s\", __func__);
     return 0;

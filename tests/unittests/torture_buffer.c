@@ -245,10 +245,8 @@ static void torture_buffer_pack_badformat(void **state){
 
     /* with additional format */
     rc = ssh_buffer_pack(buffer, "bb", b);
-#ifdef HAVE_GCC_NARG_MACRO
-    /* We can only detect errors if we have support for NARG macros */
+    /* check that we detect the missing parameter */
     assert_int_equal(rc, SSH_ERROR);
-#endif
 
     /* unpack with missing format */
     ssh_buffer_reinit(buffer);

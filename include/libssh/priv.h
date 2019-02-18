@@ -328,7 +328,6 @@ void explicit_bzero(void *s, size_t n);
 /**
  * Get the argument cound of variadic arguments
  */
-#ifdef HAVE_GCC_NARG_MACRO
 /*
  * Since MSVC 2010 there is a bug in passing __VA_ARGS__ to subsequent
  * macros as a single token, which results in:
@@ -338,7 +337,7 @@ void explicit_bzero(void *s, size_t n);
 #define VA_APPLY_VARIADIC_MACRO(macro, tuple) macro tuple
 
 #define __VA_NARG__(...) \
-        (__VA_NARG_(_0, ## __VA_ARGS__, __RSEQ_N()) - 1)
+        (__VA_NARG_(__VA_ARGS__, __RSEQ_N()))
 #define __VA_NARG_(...) \
         VA_APPLY_VARIADIC_MACRO(__VA_ARG_N, (__VA_ARGS__))
 #define __VA_ARG_N( \
@@ -357,10 +356,6 @@ void explicit_bzero(void *s, size_t n);
         29, 28, 27, 26, 25, 24, 23, 22, 21, 20, \
         19, 18, 17, 16, 15, 14, 13, 12, 11, 10, \
          9,  8,  7,  6,  5,  4,  3,  2,  1,  0
-#else
-/* clang does not support the above construction */
-#define __VA_NARG__(...) (-1)
-#endif
 
 #define CLOSE_SOCKET(s) do { if ((s) != SSH_INVALID_SOCKET) { _XCLOSESOCKET(s); (s) = SSH_INVALID_SOCKET;} } while(0)
 
