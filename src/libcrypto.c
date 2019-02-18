@@ -543,7 +543,7 @@ static int evp_cipher_set_encrypt_key(struct ssh_cipher_struct *cipher,
         rc = EVP_CIPHER_CTX_ctrl(cipher->ctx,
                                  EVP_CTRL_GCM_SET_IV_FIXED,
                                  -1,
-                                 (u_char *)IV);
+                                 (uint8_t *)IV);
         if (rc != 1) {
             SSH_LOG(SSH_LOG_WARNING, "EVP_CTRL_GCM_SET_IV_FIXED failed");
             return SSH_ERROR;
@@ -576,7 +576,7 @@ static int evp_cipher_set_decrypt_key(struct ssh_cipher_struct *cipher,
         rc = EVP_CIPHER_CTX_ctrl(cipher->ctx,
                                  EVP_CTRL_GCM_SET_IV_FIXED,
                                  -1,
-                                 (u_char *)IV);
+                                 (uint8_t *)IV);
         if (rc != 1) {
             SSH_LOG(SSH_LOG_WARNING, "EVP_CTRL_GCM_SET_IV_FIXED failed");
             return SSH_ERROR;
@@ -728,7 +728,7 @@ evp_cipher_aead_encrypt(struct ssh_cipher_struct *cipher,
                         uint64_t seq)
 {
     size_t authlen, aadlen;
-    u_char lastiv[1];
+    uint8_t lastiv[1];
     int tmplen = 0;
     size_t outlen;
     int rc;
@@ -800,7 +800,7 @@ evp_cipher_aead_decrypt(struct ssh_cipher_struct *cipher,
                         uint64_t seq)
 {
     size_t authlen, aadlen;
-    u_char lastiv[1];
+    uint8_t lastiv[1];
     int outlen = 0;
     int rc = 0;
 
