@@ -838,7 +838,7 @@ int ssh_socket_connect_proxycommand(ssh_socket s, const char *command){
     return SSH_ERROR;
   }
 
-  rc = socketpair(PF_LOCAL, SOCK_STREAM, 0, pair);
+  rc = socketpair(PF_UNIX, SOCK_STREAM, 0, pair);
   if (rc < 0) {
       return SSH_ERROR;
   }
