@@ -178,7 +178,9 @@ static ssh_channel new_session_channel(ssh_session session, void *userdata) {
     return NULL;
 }
 
-static void stack_socket_close(ssh_session session, struct event_fd_data_struct *event_fd_data) {
+static void stack_socket_close(UNUSED_PARAM(ssh_session session),
+                               struct event_fd_data_struct *event_fd_data)
+{
     if (event_fd_data->stacked != 1) {
         _ssh_log(SSH_LOG_FUNCTIONS, "=== stack_socket_close", "Closing fd = %d sockets_cnt = %d", *event_fd_data->p_fd, sockets_cnt);
         event_fd_data->stacked = 1;
@@ -237,7 +239,13 @@ static void my_channel_exit_status_function(ssh_session session, ssh_channel cha
     _ssh_log(SSH_LOG_PROTOCOL, "=== my_channel_exit_status_function", "Got exit status %d on channel %d:%d fd = %d.", exit_status, channel->local_channel, channel->remote_channel, *event_fd_data->p_fd);
 }
 
-static int my_channel_data_function(ssh_session session, ssh_channel channel, void *data, uint32_t len, int is_stderr, void *userdata) {
+static int my_channel_data_function(ssh_session session,
+                                    ssh_channel channel,
+                                    void *data,
+                                    uint32_t len,
+                                    UNUSED_PARAM(int is_stderr),
+                                    void *userdata)
+{
     int i = 0;
     struct event_fd_data_struct *event_fd_data = (struct event_fd_data_struct *)userdata;
 
@@ -259,7 +267,10 @@ static int my_channel_data_function(ssh_session session, ssh_channel channel, vo
     return i;
 }
 
-static int my_fd_data_function(socket_t fd, int revents, void *userdata) {
+static int my_fd_data_function(UNUSED_PARAM(socket_t fd),
+                               int revents,
+                               void *userdata)
+{
     struct event_fd_data_struct *event_fd_data = (struct event_fd_data_struct *)userdata;
     ssh_channel channel = event_fd_data->channel;
     ssh_session session;
