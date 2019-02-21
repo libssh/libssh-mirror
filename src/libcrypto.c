@@ -425,9 +425,6 @@ HMACCTX hmac_init(const void *key, int len, enum ssh_hmac_e type) {
     case SSH_HMAC_SHA256:
       HMAC_Init_ex(ctx, key, len, EVP_sha256(), NULL);
       break;
-    case SSH_HMAC_SHA384:
-      HMAC_Init_ex(ctx, key, len, EVP_sha384(), NULL);
-      break;
     case SSH_HMAC_SHA512:
       HMAC_Init_ex(ctx, key, len, EVP_sha512(), NULL);
       break;

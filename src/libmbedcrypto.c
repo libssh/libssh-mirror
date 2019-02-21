@@ -466,9 +466,6 @@ HMACCTX hmac_init(const void *key, int len, enum ssh_hmac_e type)
         case SSH_HMAC_SHA256:
             md_info = mbedtls_md_info_from_type(MBEDTLS_MD_SHA256);
             break;
-        case SSH_HMAC_SHA384:
-            md_info = mbedtls_md_info_from_type(MBEDTLS_MD_SHA384);
-            break;
         case SSH_HMAC_SHA512:
             md_info = mbedtls_md_info_from_type(MBEDTLS_MD_SHA512);
             break;

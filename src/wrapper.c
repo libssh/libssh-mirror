@@ -58,7 +58,6 @@
 static struct ssh_hmac_struct ssh_hmac_tab[] = {
   { "hmac-sha1",     SSH_HMAC_SHA1 },
   { "hmac-sha2-256", SSH_HMAC_SHA256 },
-  { "hmac-sha2-384", SSH_HMAC_SHA384 },
   { "hmac-sha2-512", SSH_HMAC_SHA512 },
   { "hmac-md5",      SSH_HMAC_MD5 },
   { "aead-poly1305", SSH_HMAC_AEAD_POLY1305 },
@@ -76,8 +75,6 @@ size_t hmac_digest_len(enum ssh_hmac_e type) {
       return SHA_DIGEST_LEN;
     case SSH_HMAC_SHA256:
       return SHA256_DIGEST_LEN;
-    case SSH_HMAC_SHA384:
-      return SHA384_DIGEST_LEN;
     case SSH_HMAC_SHA512:
       return SHA512_DIGEST_LEN;
     case SSH_HMAC_MD5:

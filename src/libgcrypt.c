@@ -283,9 +283,6 @@ HMACCTX hmac_init(const void *key, int len, enum ssh_hmac_e type) {
     case SSH_HMAC_SHA256:
       gcry_md_open(&c, GCRY_MD_SHA256, GCRY_MD_FLAG_HMAC);
       break;
-    case SSH_HMAC_SHA384:
-      gcry_md_open(&c, GCRY_MD_SHA384, GCRY_MD_FLAG_HMAC);
-      break;
     case SSH_HMAC_SHA512:
       gcry_md_open(&c, GCRY_MD_SHA512, GCRY_MD_FLAG_HMAC);
       break;

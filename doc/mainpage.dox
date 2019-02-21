@@ -23,7 +23,7 @@ The libssh library provides:
  - <strong>Public Key Algorithms</strong>: ssh-ed25519, ecdsa-sha2-nistp256, ecdsa-sha2-nistp384, ecdsa-sha2-nistp521, ssh-rsa, rsa-sha2-512, rsa-sha2-256,ssh-dss
  - <strong>Ciphers</strong>: <i>aes256-ctr, aes192-ctr, aes128-ctr</i>, aes256-cbc (rijndael-cbc@lysator.liu.se), aes192-cbc, aes128-cbc, 3des-cbc, blowfish-cbc, none
  - <strong>Compression Schemes</strong>: zlib, <i>zlib@openssh.com</i>, none
- - <strong>MAC hashes</strong>: hmac-sha1, hmac-sha2-256, hmac-sha2-384, hmac-sha2-512, hmac-md5, none
+ - <strong>MAC hashes</strong>: hmac-sha1, hmac-sha2-256, hmac-sha2-512, hmac-md5, none
  - <strong>Authentication</strong>: none, password, public-key, keyboard-interactive, <i>gssapi-with-mic</i>
  - <strong>Channels</strong>: shell, exec (incl. SCP wrapper), direct-tcpip, subsystem, <i>auth-agent-req@openssh.com</i>
  - <strong>Global Requests</strong>: tcpip-forward, forwarded-tcpip
