@@ -389,7 +389,7 @@ static int privatekey_dek_header(const char *header, unsigned int header_len,
         while(p[len] == '\n' || p[len] == '\r') /* skip empty lines */  \
             len++;                                                      \
         if(p[len] == '\0')    /* EOL */                                 \
-            len = -1;                                                   \
+            eol = true;                                                 \
         else                  /* calculate length */                    \
             for(p += len, len = 0; p[len] && p[len] != '\n'             \
                                           && p[len] != '\r'; len++);    \
@@ -409,7 +409,8 @@ static ssh_buffer privatekey_string_to_buffer(const char *pkey, int type,
     unsigned int iv_len = 0;
     int algo = 0;
     int mode = 0;
-    int len;
+    bool eol = false;
+    size_t len;
 
     buffer = ssh_buffer_new();
     if (buffer == NULL) {
@@ -441,25 +442,38 @@ static ssh_buffer privatekey_string_to_buffer(const char *pkey, int type,
     len = 0;
     get_next_line(p, len);
 
-    while(len > 0 && strncmp(p, header_begin, header_begin_size)) {
+    while(!eol && strncmp(p, header_begin, header_begin_size)) {
         /* skip line */
         get_next_line(p, len);
     }
-    if(len < 0) {
-        /* no header found */
+    if (eol) {
+        ssh_buffer_free(buffer);
         return NULL;
     }
+
     /* skip header line */
     get_next_line(p, len);
+    if (eol) {
+        ssh_buffer_free(buffer);
+        return NULL;
+    }
 
     if (len > 11 && strncmp("Proc-Type: 4,ENCRYPTED", p, 11) == 0) {
         /* skip line */
         get_next_line(p, len);
+        if (eol) {
+            ssh_buffer_free(buffer);
+            return NULL;
+        }
 
         if (len > 10 && strncmp("DEK-Info: ", p, 10) == 0) {
             p += 10;
             len = 0;
             get_next_line(p, len);
+            if (eol) {
+                ssh_buffer_free(buffer);
+                return NULL;
+            }
             if (privatekey_dek_header(p, len, &algo, &mode, &key_len,
                         &iv, &iv_len) < 0) {
                 ssh_buffer_free(buffer);
@@ -482,7 +496,7 @@ static ssh_buffer privatekey_string_to_buffer(const char *pkey, int type,
     }
 
     get_next_line(p, len);
-    while(len > 0 && strncmp(p, header_end, header_end_size) != 0) {
+    while(!eol && strncmp(p, header_end, header_end_size) != 0) {
         if (ssh_buffer_add_data(buffer, p, len) < 0) {
             ssh_buffer_free(buffer);
             SAFE_FREE(iv);
@@ -491,7 +505,7 @@ static ssh_buffer privatekey_string_to_buffer(const char *pkey, int type,
         get_next_line(p, len);
     }
 
-    if (len == -1 || strncmp(p, header_end, header_end_size) != 0) {
+    if (eol || strncmp(p, header_end, header_end_size) != 0) {
         ssh_buffer_free(buffer);
         SAFE_FREE(iv);
         return NULL;
