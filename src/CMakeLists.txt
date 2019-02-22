@@ -163,6 +163,7 @@ set(libssh_SRCS
   external/poly1305.c
   external/sc25519.c
   chachapoly.c
+  config_parser.c
 )
 
 if (DEFAULT_C_NO_DEPRECATION_FLAGS)
