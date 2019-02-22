@@ -13,6 +13,17 @@
 #include <libssh/misc.h>
 #include <libssh/pki_priv.h>
 #include <libssh/options.h>
+#ifdef WITH_SERVER
+#include <libssh/bind.h>
+#endif
+#ifdef HAVE_DSA
+#define LIBSSH_DSA_TESTKEY        "libssh_testkey.id_dsa"
+#endif
+#define LIBSSH_RSA_TESTKEY        "libssh_testkey.id_rsa"
+#define LIBSSH_ED25519_TESTKEY    "libssh_testkey.id_ed25519"
+#ifdef HAVE_ECC
+#define LIBSSH_ECDSA_521_TESTKEY  "libssh_testkey.id_ecdsa521"
+#endif
 
 static int setup(void **state)
 {
@@ -731,29 +742,118 @@ static void torture_options_copy(void **state)
     ssh_free(new);
 }
 
-
-
 #ifdef WITH_SERVER
+const char template[] = "temp_dir_XXXXXX";
+
+struct bind_st {
+    char *cwd;
+    char *temp_dir;
+    ssh_bind bind;
+};
+
+static int setup_key_files(void **state)
+{
+    struct bind_st *test_state = NULL;
+    char *cwd = NULL;
+    char *tmp_dir = NULL;
+    int rc = 0;
+
+    test_state = (struct bind_st *)malloc(sizeof(struct bind_st));
+    assert_non_null(test_state);
+
+    cwd = torture_get_current_working_dir();
+    assert_non_null(cwd);
+
+    tmp_dir = torture_make_temp_dir(template);
+    assert_non_null(tmp_dir);
+
+    test_state->cwd = cwd;
+    test_state->temp_dir = tmp_dir;
+
+    *state = test_state;
+
+    rc = torture_change_dir(tmp_dir);
+    assert_int_equal(rc, 0);
+
+    printf("Changed directory to: %s\n", tmp_dir);
+
+    /* For ed25519 the test keys are not available in legacy PEM format. Using
+     * the new OpenSSH format for all algorithms */
+    torture_write_file(LIBSSH_RSA_TESTKEY,
+                       torture_get_openssh_testkey(SSH_KEYTYPE_RSA, 0, 0));
+
+    torture_write_file(LIBSSH_ED25519_TESTKEY,
+                       torture_get_openssh_testkey(SSH_KEYTYPE_ED25519, 0, 0));
+#ifdef HAVE_ECC
+    torture_write_file(LIBSSH_ECDSA_521_TESTKEY,
+                       torture_get_openssh_testkey(SSH_KEYTYPE_ECDSA, 521, 0));
+#endif
+#ifdef HAVE_DSA
+    torture_write_file(LIBSSH_DSA_TESTKEY,
+                       torture_get_openssh_testkey(SSH_KEYTYPE_DSS, 0, 0));
+#endif
+    return 0;
+}
+
+
 /* sshbind options */
 static int sshbind_setup(void **state)
 {
-    ssh_bind bind = ssh_bind_new();
-    *state = bind;
+    int rc;
+    struct bind_st *test_state = NULL;
+
+    rc = setup_key_files((void **)&test_state);
+    assert_int_equal(rc, 0);
+    assert_non_null(test_state);
+
+    test_state->bind = ssh_bind_new();
+    assert_non_null(test_state->bind);
+
+    *state = test_state;
+
     return 0;
 }
 
 static int sshbind_teardown(void **state)
 {
-    ssh_bind_free(*state);
+    struct bind_st *test_state = NULL;
+    int rc;
+
+    assert_non_null(state);
+    test_state = *((struct bind_st **)state);
+
+    assert_non_null(test_state);
+    assert_non_null(test_state->cwd);
+    assert_non_null(test_state->temp_dir);
+    assert_non_null(test_state->bind);
+
+    rc = torture_change_dir(test_state->cwd);
+    assert_int_equal(rc, 0);
+
+    rc = torture_rmdirs(test_state->temp_dir);
+    assert_int_equal(rc, 0);
+
+    SAFE_FREE(test_state->temp_dir);
+    SAFE_FREE(test_state->cwd);
+    ssh_bind_free(test_state->bind);
+    SAFE_FREE(test_state);
+
     return 0;
 }
 
 static void torture_bind_options_import_key(void **state)
 {
-    ssh_bind bind = *state;
+    struct bind_st *test_state;
+    ssh_bind bind;
     int rc;
     const char *base64_key;
     ssh_key key = ssh_key_new();
+
+    assert_non_null(state);
+    test_state = *((struct bind_st **)state);
+    assert_non_null(test_state);
+    assert_non_null(test_state->bind);
+    bind = test_state->bind;
 
     /* set null */
     rc = ssh_bind_options_set(bind, SSH_BIND_OPTIONS_IMPORT_KEY, NULL);
@@ -781,6 +881,7 @@ static void torture_bind_options_import_key(void **state)
     rc = ssh_bind_options_set(bind, SSH_BIND_OPTIONS_IMPORT_KEY, key);
     assert_int_equal(rc, 0);
 #endif
+#ifdef HAVE_ECC
     /* set ecdsa key */
     base64_key = torture_get_testkey(SSH_KEYTYPE_ECDSA, 521, 0);
     rc = ssh_pki_import_privkey_base64(base64_key, NULL, NULL, NULL, &key);
@@ -789,7 +890,410 @@ static void torture_bind_options_import_key(void **state)
 
     rc = ssh_bind_options_set(bind, SSH_BIND_OPTIONS_IMPORT_KEY, key);
     assert_int_equal(rc, 0);
+#endif
 }
+
+static void torture_bind_options_hostkey(void **state)
+{
+    struct bind_st *test_state;
+    ssh_bind bind;
+    int rc;
+
+    assert_non_null(state);
+    test_state = *((struct bind_st **)state);
+    assert_non_null(test_state);
+    assert_non_null(test_state->bind);
+    bind = test_state->bind;
+
+    /* Test RSA key */
+    rc = ssh_bind_options_set(bind,
+                              SSH_BIND_OPTIONS_HOSTKEY,
+                              LIBSSH_RSA_TESTKEY);
+    assert_int_equal(rc, 0);
+    assert_non_null(bind->rsakey);
+    assert_string_equal(bind->rsakey, LIBSSH_RSA_TESTKEY);
+
+    /* Test ED25519 key */
+    rc = ssh_bind_options_set(bind,
+                              SSH_BIND_OPTIONS_HOSTKEY,
+                              LIBSSH_ED25519_TESTKEY);
+    assert_int_equal(rc, 0);
+    assert_non_null(bind->ed25519key);
+    assert_string_equal(bind->ed25519key, LIBSSH_ED25519_TESTKEY);
+
+#ifdef HAVE_ECC
+    /* Test ECDSA key */
+    rc = ssh_bind_options_set(bind,
+                              SSH_BIND_OPTIONS_HOSTKEY,
+                              LIBSSH_ECDSA_521_TESTKEY);
+    assert_int_equal(rc, 0);
+    assert_non_null(bind->ecdsakey);
+    assert_string_equal(bind->ecdsakey, LIBSSH_ECDSA_521_TESTKEY);
+#endif
+#ifdef HAVE_DSA
+    /* Test DSA key */
+    rc = ssh_bind_options_set(bind,
+                              SSH_BIND_OPTIONS_HOSTKEY,
+                              LIBSSH_DSA_TESTKEY);
+    assert_int_equal(rc, 0);
+    assert_non_null(bind->dsakey);
+    assert_string_equal(bind->dsakey, LIBSSH_DSA_TESTKEY);
+#endif
+}
+
+static void torture_bind_options_bindaddr(void **state)
+{
+    struct bind_st *test_state;
+    ssh_bind bind;
+    int rc;
+
+    const char *address = "127.0.0.1";
+
+    assert_non_null(state);
+    test_state = *((struct bind_st **)state);
+    assert_non_null(test_state);
+    assert_non_null(test_state->bind);
+    bind = test_state->bind;
+
+    rc = ssh_bind_options_set(bind, SSH_BIND_OPTIONS_BINDADDR, address);
+    assert_int_equal(rc, 0);
+    assert_non_null(bind->bindaddr);
+    assert_string_equal(bind->bindaddr, address);
+}
+
+static void torture_bind_options_bindport(void **state)
+{
+    struct bind_st *test_state;
+    ssh_bind bind;
+    unsigned int given_port = 1234;
+    int rc;
+
+    assert_non_null(state);
+    test_state = *((struct bind_st **)state);
+    assert_non_null(test_state);
+    assert_non_null(test_state->bind);
+    bind = test_state->bind;
+
+    rc = ssh_bind_options_set(bind, SSH_BIND_OPTIONS_BINDPORT, &given_port);
+    assert_int_equal(rc, 0);
+    assert_int_equal(bind->bindport, 1234);
+}
+
+static void torture_bind_options_bindport_str(void **state)
+{
+    struct bind_st *test_state;
+    ssh_bind bind;
+    int rc;
+
+    assert_non_null(state);
+    test_state = *((struct bind_st **)state);
+    assert_non_null(test_state);
+    assert_non_null(test_state->bind);
+    bind = test_state->bind;
+
+    rc = ssh_bind_options_set(bind, SSH_BIND_OPTIONS_BINDPORT_STR, "23");
+    assert_int_equal(rc, 0);
+    assert_int_equal(bind->bindport, 23);
+}
+
+static void torture_bind_options_log_verbosity(void **state)
+{
+    struct bind_st *test_state;
+    ssh_bind bind;
+    int verbosity = SSH_LOG_PACKET;
+    int previous_level, new_level;
+    int rc;
+
+    assert_non_null(state);
+    test_state = *((struct bind_st **)state);
+    assert_non_null(test_state);
+    assert_non_null(test_state->bind);
+    bind = test_state->bind;
+
+    previous_level = ssh_get_log_level();
+
+    rc = ssh_bind_options_set(bind, SSH_BIND_OPTIONS_LOG_VERBOSITY, &verbosity);
+    assert_int_equal(rc, 0);
+
+    new_level = ssh_get_log_level();
+    assert_int_equal(new_level, verbosity);
+
+    rc = ssh_set_log_level(previous_level);
+    assert_int_equal(rc, SSH_OK);
+}
+
+static void torture_bind_options_log_verbosity_str(void **state)
+{
+    struct bind_st *test_state;
+    ssh_bind bind;
+    int rc;
+    int previous_level, new_level;
+
+    assert_non_null(state);
+    test_state = *((struct bind_st **)state);
+    assert_non_null(test_state);
+    assert_non_null(test_state->bind);
+    bind = test_state->bind;
+
+    previous_level = ssh_get_log_level();
+
+    rc = ssh_bind_options_set(bind, SSH_BIND_OPTIONS_LOG_VERBOSITY_STR, "3");
+    assert_int_equal(rc, 0);
+
+    new_level = ssh_get_log_level();
+    assert_int_equal(new_level, SSH_LOG_PACKET);
+
+    rc = ssh_set_log_level(previous_level);
+    assert_int_equal(rc, SSH_OK);
+}
+
+#ifdef HAVE_DSA
+static void torture_bind_options_dsakey(void **state)
+{
+    struct bind_st *test_state;
+    ssh_bind bind;
+    int rc;
+
+    assert_non_null(state);
+    test_state = *((struct bind_st **)state);
+    assert_non_null(test_state);
+    assert_non_null(test_state->bind);
+    bind = test_state->bind;
+
+    rc = ssh_bind_options_set(bind,
+                              SSH_BIND_OPTIONS_DSAKEY,
+                              LIBSSH_DSA_TESTKEY);
+    assert_int_equal(rc, 0);
+    assert_non_null(bind->dsakey);
+    assert_string_equal(bind->dsakey, LIBSSH_DSA_TESTKEY);
+}
+#endif
+
+static void torture_bind_options_rsakey(void **state)
+{
+    struct bind_st *test_state;
+    ssh_bind bind;
+    int rc;
+
+    assert_non_null(state);
+    test_state = *((struct bind_st **)state);
+    assert_non_null(test_state);
+    assert_non_null(test_state->bind);
+    bind = test_state->bind;
+
+    rc = ssh_bind_options_set(bind,
+                              SSH_BIND_OPTIONS_RSAKEY,
+                              LIBSSH_RSA_TESTKEY);
+    assert_int_equal(rc, 0);
+    assert_non_null(bind->rsakey);
+    assert_string_equal(bind->rsakey, LIBSSH_RSA_TESTKEY);
+}
+
+#ifdef HAVE_ECC
+static void torture_bind_options_ecdsakey(void **state)
+{
+    struct bind_st *test_state;
+    ssh_bind bind;
+    int rc;
+
+    assert_non_null(state);
+    test_state = *((struct bind_st **)state);
+    assert_non_null(test_state);
+    assert_non_null(test_state->bind);
+    bind = test_state->bind;
+
+    rc = ssh_bind_options_set(bind,
+                              SSH_BIND_OPTIONS_ECDSAKEY,
+                              LIBSSH_ECDSA_521_TESTKEY);
+    assert_int_equal(rc, 0);
+    assert_non_null(bind->ecdsakey);
+    assert_string_equal(bind->ecdsakey, LIBSSH_ECDSA_521_TESTKEY);
+}
+#endif
+
+static void torture_bind_options_banner(void **state)
+{
+    struct bind_st *test_state;
+    ssh_bind bind;
+    const char *banner = "This is the new banner";
+    int rc;
+
+    assert_non_null(state);
+    test_state = *((struct bind_st **)state);
+    assert_non_null(test_state);
+    assert_non_null(test_state->bind);
+    bind = test_state->bind;
+
+    rc = ssh_bind_options_set(bind,
+                              SSH_BIND_OPTIONS_BANNER,
+                              banner);
+    assert_int_equal(rc, 0);
+    assert_non_null(bind->banner);
+    assert_string_equal(bind->banner, banner);
+}
+
+static void torture_bind_options_set_ciphers(void **state)
+{
+    struct bind_st *test_state;
+    ssh_bind bind;
+    int rc;
+
+    assert_non_null(state);
+    test_state = *((struct bind_st **)state);
+    assert_non_null(test_state);
+    assert_non_null(test_state->bind);
+    bind = test_state->bind;
+    assert_non_null(bind->wanted_methods);
+
+    /* Test known ciphers */
+    rc = ssh_bind_options_set(bind, SSH_BIND_OPTIONS_CIPHERS_C_S,
+                              "aes128-ctr,aes192-ctr,aes256-ctr");
+    assert_int_equal(rc, 0);
+    assert_non_null(bind->wanted_methods[SSH_CRYPT_C_S]);
+    assert_string_equal(bind->wanted_methods[SSH_CRYPT_C_S],
+                        "aes128-ctr,aes192-ctr,aes256-ctr");
+
+    /* Test one unknown cipher */
+    rc = ssh_bind_options_set(bind, SSH_BIND_OPTIONS_CIPHERS_C_S,
+                         "aes128-ctr,unknown-crap@example.com,aes192-ctr,aes256-ctr");
+    assert_int_equal(rc, 0);
+    assert_non_null(bind->wanted_methods[SSH_CRYPT_C_S]);
+    assert_string_equal(bind->wanted_methods[SSH_CRYPT_C_S],
+                        "aes128-ctr,aes192-ctr,aes256-ctr");
+
+    /* Test all unknown ciphers */
+    rc = ssh_bind_options_set(bind, SSH_BIND_OPTIONS_CIPHERS_C_S,
+                         "unknown-crap@example.com,more-crap@example.com");
+    assert_int_not_equal(rc, 0);
+
+    /* Test known ciphers */
+    rc = ssh_bind_options_set(bind, SSH_BIND_OPTIONS_CIPHERS_S_C,
+                              "aes128-ctr,aes192-ctr,aes256-ctr");
+    assert_int_equal(rc, 0);
+    assert_non_null(bind->wanted_methods[SSH_CRYPT_S_C]);
+    assert_string_equal(bind->wanted_methods[SSH_CRYPT_S_C],
+                        "aes128-ctr,aes192-ctr,aes256-ctr");
+
+    /* Test one unknown cipher */
+    rc = ssh_bind_options_set(bind, SSH_BIND_OPTIONS_CIPHERS_S_C,
+                         "aes128-ctr,unknown-crap@example.com,aes192-ctr,aes256-ctr");
+    assert_int_equal(rc, 0);
+    assert_non_null(bind->wanted_methods[SSH_CRYPT_S_C]);
+    assert_string_equal(bind->wanted_methods[SSH_CRYPT_S_C],
+                        "aes128-ctr,aes192-ctr,aes256-ctr");
+
+    /* Test all unknown ciphers */
+    rc = ssh_bind_options_set(bind, SSH_BIND_OPTIONS_CIPHERS_S_C,
+                         "unknown-crap@example.com,more-crap@example.com");
+    assert_int_not_equal(rc, 0);
+}
+
+static void torture_bind_options_set_key_exchange(void **state)
+{
+    struct bind_st *test_state;
+    ssh_bind bind;
+    int rc;
+
+    assert_non_null(state);
+    test_state = *((struct bind_st **)state);
+    assert_non_null(test_state);
+    assert_non_null(test_state->bind);
+    bind = test_state->bind;
+    assert_non_null(bind->wanted_methods);
+
+    /* Test known kexes */
+    rc = ssh_bind_options_set(bind,
+                              SSH_BIND_OPTIONS_KEY_EXCHANGE,
+                              "curve25519-sha256,curve25519-sha256@libssh.org,ecdh-sha2-nistp256,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512,diffie-hellman-group14-sha1");
+    assert_int_equal(rc, 0);
+    assert_non_null(bind->wanted_methods[SSH_KEX]);
+    assert_string_equal(bind->wanted_methods[SSH_KEX],
+                        "curve25519-sha256,curve25519-sha256@libssh.org,ecdh-sha2-nistp256,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512,diffie-hellman-group14-sha1");
+
+    /* Test one unknown kex */
+    rc = ssh_bind_options_set(bind,
+                              SSH_BIND_OPTIONS_KEY_EXCHANGE,
+                              "curve25519-sha256,curve25519-sha256@libssh.org,unknown-crap@example.com,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512,diffie-hellman-group14-sha1");
+    assert_int_equal(rc, 0);
+    assert_non_null(bind->wanted_methods[SSH_KEX]);
+    assert_string_equal(bind->wanted_methods[SSH_KEX],
+                        "curve25519-sha256,curve25519-sha256@libssh.org,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512,diffie-hellman-group14-sha1");
+
+    /* Test all unknown kexes */
+    rc = ssh_bind_options_set(bind,
+                              SSH_BIND_OPTIONS_KEY_EXCHANGE,
+                              "unknown-crap@example.com,more-crap@example.com");
+    assert_int_not_equal(rc, 0);
+}
+
+static void torture_bind_options_set_macs(void **state)
+{
+    struct bind_st *test_state;
+    ssh_bind bind;
+    int rc;
+
+    assert_non_null(state);
+    test_state = *((struct bind_st **)state);
+    assert_non_null(test_state);
+    assert_non_null(test_state->bind);
+    bind = test_state->bind;
+    assert_non_null(bind->wanted_methods);
+
+    /* Test known MACs */
+    rc = ssh_bind_options_set(bind, SSH_BIND_OPTIONS_HMAC_S_C, "hmac-sha1");
+    assert_int_equal(rc, 0);
+    assert_non_null(bind->wanted_methods[SSH_MAC_S_C]);
+    assert_string_equal(bind->wanted_methods[SSH_MAC_S_C], "hmac-sha1");
+
+    /* Test multiple known MACs */
+    rc = ssh_bind_options_set(bind,
+                              SSH_BIND_OPTIONS_HMAC_S_C,
+                              "hmac-sha1,hmac-sha2-256");
+    assert_int_equal(rc, 0);
+    assert_non_null(bind->wanted_methods[SSH_MAC_S_C]);
+    assert_string_equal(bind->wanted_methods[SSH_MAC_S_C],
+                        "hmac-sha1,hmac-sha2-256");
+
+    /* Test unknown MACs */
+    rc = ssh_bind_options_set(bind,
+                              SSH_BIND_OPTIONS_HMAC_S_C,
+                              "unknown-crap@example.com,hmac-sha1,unknown@example.com");
+    assert_int_equal(rc, 0);
+    assert_non_null(bind->wanted_methods[SSH_MAC_S_C]);
+    assert_string_equal(bind->wanted_methods[SSH_MAC_S_C], "hmac-sha1");
+
+    /* Test all unknown MACs */
+    rc = ssh_bind_options_set(bind, SSH_BIND_OPTIONS_HMAC_S_C, "unknown-crap@example.com");
+    assert_int_not_equal(rc, 0);
+
+    /* Test known MACs */
+    rc = ssh_bind_options_set(bind, SSH_BIND_OPTIONS_HMAC_C_S, "hmac-sha1");
+    assert_int_equal(rc, 0);
+    assert_non_null(bind->wanted_methods[SSH_MAC_C_S]);
+    assert_string_equal(bind->wanted_methods[SSH_MAC_C_S], "hmac-sha1");
+
+    /* Test multiple known MACs */
+    rc = ssh_bind_options_set(bind,
+                              SSH_BIND_OPTIONS_HMAC_C_S,
+                              "hmac-sha1,hmac-sha2-256");
+    assert_int_equal(rc, 0);
+    assert_non_null(bind->wanted_methods[SSH_MAC_C_S]);
+    assert_string_equal(bind->wanted_methods[SSH_MAC_C_S],
+                        "hmac-sha1,hmac-sha2-256");
+
+    /* Test unknown MACs */
+    rc = ssh_bind_options_set(bind,
+                              SSH_BIND_OPTIONS_HMAC_C_S,
+                              "unknown-crap@example.com,hmac-sha1,unknown@example.com");
+    assert_int_equal(rc, 0);
+    assert_non_null(bind->wanted_methods[SSH_MAC_C_S]);
+    assert_string_equal(bind->wanted_methods[SSH_MAC_C_S], "hmac-sha1");
+
+    /* Test all unknown MACs */
+    rc = ssh_bind_options_set(bind, SSH_BIND_OPTIONS_HMAC_C_S, "unknown-crap@example.com");
+    assert_int_not_equal(rc, 0);
+}
+
 #endif /* WITH_SERVER */
 
 
@@ -823,7 +1327,38 @@ int torture_run_tests(void) {
 
 #ifdef WITH_SERVER
     struct CMUnitTest sshbind_tests[] = {
-        cmocka_unit_test_setup_teardown(torture_bind_options_import_key, sshbind_setup, sshbind_teardown),
+        cmocka_unit_test_setup_teardown(torture_bind_options_import_key,
+                sshbind_setup, sshbind_teardown),
+        cmocka_unit_test_setup_teardown(torture_bind_options_hostkey,
+                sshbind_setup, sshbind_teardown),
+        cmocka_unit_test_setup_teardown(torture_bind_options_bindaddr,
+                sshbind_setup, sshbind_teardown),
+        cmocka_unit_test_setup_teardown(torture_bind_options_bindport,
+                sshbind_setup, sshbind_teardown),
+        cmocka_unit_test_setup_teardown(torture_bind_options_bindport_str,
+                sshbind_setup, sshbind_teardown),
+        cmocka_unit_test_setup_teardown(torture_bind_options_log_verbosity,
+                sshbind_setup, sshbind_teardown),
+        cmocka_unit_test_setup_teardown(torture_bind_options_log_verbosity_str,
+                sshbind_setup, sshbind_teardown),
+#ifdef HAVE_DSA
+        cmocka_unit_test_setup_teardown(torture_bind_options_dsakey,
+                sshbind_setup, sshbind_teardown),
+#endif
+        cmocka_unit_test_setup_teardown(torture_bind_options_rsakey,
+                sshbind_setup, sshbind_teardown),
+#ifdef HAVE_ECC
+        cmocka_unit_test_setup_teardown(torture_bind_options_ecdsakey,
+                sshbind_setup, sshbind_teardown),
+#endif
+        cmocka_unit_test_setup_teardown(torture_bind_options_banner,
+                sshbind_setup, sshbind_teardown),
+        cmocka_unit_test_setup_teardown(torture_bind_options_set_ciphers,
+                sshbind_setup, sshbind_teardown),
+        cmocka_unit_test_setup_teardown(torture_bind_options_set_key_exchange,
+                sshbind_setup, sshbind_teardown),
+        cmocka_unit_test_setup_teardown(torture_bind_options_set_macs,
+                sshbind_setup, sshbind_teardown),
     };
 #endif /* WITH_SERVER */
 
