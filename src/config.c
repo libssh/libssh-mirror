@@ -175,6 +175,7 @@ static struct ssh_config_match_keyword_table_s ssh_config_match_keyword_table[] 
     { "originalhost", MATCH_ORIGINALHOST },
     { "user", MATCH_USER },
     { "localuser", MATCH_LOCALUSER },
+    { NULL, MATCH_UNKNOWN },
 };
 
 static int ssh_config_parse_line(ssh_session session, const char *line,
