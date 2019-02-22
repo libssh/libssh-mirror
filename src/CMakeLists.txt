@@ -241,6 +241,7 @@ if (WITH_SERVER)
     ${libssh_SRCS}
     server.c
     bind.c
+    bind_config.c
   )
 endif (WITH_SERVER)
 
