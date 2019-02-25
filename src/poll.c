@@ -952,6 +952,7 @@ int ssh_event_add_connector(ssh_event event, ssh_connector connector){
  *                      the poll() function.
  * @returns SSH_OK      on success.
  *          SSH_ERROR   Error happened during the poll.
+ *          SSH_AGAIN   Timeout occured
  */
 int ssh_event_dopoll(ssh_event event, int timeout) {
     int rc;
