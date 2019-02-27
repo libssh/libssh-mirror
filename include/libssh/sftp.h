@@ -818,7 +818,9 @@ LIBSSH_API int sftp_fsync(sftp_file file);
  *
  * @param path          The path to be canonicalized.
  *
- * @return              The canonicalize path, NULL on error.
+ * @return              A pointer to the newly allocated canonicalized path,
+ *                      NULL on error. The caller needs to free the memory
+ *                      using ssh_string_free_char().
  */
 LIBSSH_API char *sftp_canonicalize_path(sftp_session sftp, const char *path);
 
