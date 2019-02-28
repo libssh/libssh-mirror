@@ -59,6 +59,8 @@ static int setup_ed25519_key(void **state)
 
     torture_write_file(LIBSSH_ED25519_TESTKEY ".pub",
                        torture_get_testkey_pub(SSH_KEYTYPE_ED25519));
+    torture_write_file(LIBSSH_ED25519_TESTKEY "-cert.pub",
+                       torture_get_testkey_pub(SSH_KEYTYPE_ED25519_CERT01));
 
     return 0;
 }
@@ -227,6 +229,27 @@ static void torture_pki_ed25519_publickey_from_privatekey(void **state)
 
     SSH_KEY_FREE(key);
     SSH_KEY_FREE(pubkey);
+}
+
+static void torture_pki_ed25519_import_cert_file(void **state)
+{
+    int rc;
+    ssh_key cert = NULL;
+    enum ssh_keytypes_e type;
+
+    (void) state; /* unused */
+
+    rc = ssh_pki_import_cert_file(LIBSSH_ED25519_TESTKEY "-cert.pub", &cert);
+    assert_true(rc == 0);
+    assert_non_null(cert);
+
+    type = ssh_key_type(cert);
+    assert_true(type == SSH_KEYTYPE_ED25519_CERT01);
+
+    rc = ssh_key_is_public(cert);
+    assert_true(rc == 1);
+
+    SSH_KEY_FREE(cert);
 }
 
 static void torture_pki_ed25519_publickey_base64(void **state)
@@ -680,6 +703,9 @@ int torture_run_tests(void) {
                                         setup_ed25519_key,
                                         teardown),
         cmocka_unit_test_setup_teardown(torture_pki_ed25519_publickey_from_privatekey,
+                                        setup_ed25519_key,
+                                        teardown),
+        cmocka_unit_test_setup_teardown(torture_pki_ed25519_import_cert_file,
                                         setup_ed25519_key,
                                         teardown),
         cmocka_unit_test_setup_teardown(torture_pki_ed25519_publickey_base64,

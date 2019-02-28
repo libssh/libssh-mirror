@@ -66,7 +66,8 @@ static int setup_ecdsa_key(void **state, int ecdsa_bits)
                        torture_get_testkey(test_state->type, 1));
     torture_write_file(LIBSSH_ECDSA_TESTKEY ".pub",
                        torture_get_testkey_pub(test_state->type));
-
+    torture_write_file(LIBSSH_ECDSA_TESTKEY "-cert.pub",
+                       torture_get_testkey_pub(test_state->type+3));
     return 0;
 }
 
@@ -116,7 +117,8 @@ static int setup_openssh_ecdsa_key(void **state, int ecdsa_bits)
     torture_write_file(LIBSSH_ECDSA_TESTKEY_PASSPHRASE, keystring);
     torture_write_file(LIBSSH_ECDSA_TESTKEY ".pub",
                        torture_get_testkey_pub(test_state->type));
-
+    torture_write_file(LIBSSH_ECDSA_TESTKEY "-cert.pub",
+                       torture_get_testkey_pub(test_state->type+3));
     return 0;
 }
 
@@ -263,6 +265,26 @@ static void torture_pki_ecdsa_publickey_from_privatekey(void **state)
     free(key_str);
     SSH_KEY_FREE(key);
     SSH_KEY_FREE(pubkey);
+}
+
+static void torture_pki_ecdsa_import_cert_file(void **state)
+{
+    int rc;
+    ssh_key cert = NULL;
+    enum ssh_keytypes_e type;
+    struct pki_st *test_state = *((struct pki_st **)state);
+
+    rc = ssh_pki_import_cert_file(LIBSSH_ECDSA_TESTKEY "-cert.pub", &cert);
+    assert_true(rc == 0);
+    assert_non_null(cert);
+
+    type = ssh_key_type(cert);
+    assert_true(type == test_state->type+3);
+
+    rc = ssh_key_is_public(cert);
+    assert_true(rc == 1);
+
+    SSH_KEY_FREE(cert);
 }
 
 static void torture_pki_ecdsa_publickey_base64(void **state)
@@ -718,6 +740,15 @@ int torture_run_tests(void) {
                                         setup_ecdsa_key_384,
                                         teardown),
         cmocka_unit_test_setup_teardown(torture_pki_ecdsa_publickey_from_privatekey,
+                                        setup_ecdsa_key_521,
+                                        teardown),
+        cmocka_unit_test_setup_teardown(torture_pki_ecdsa_import_cert_file,
+                                        setup_ecdsa_key_256,
+                                        teardown),
+        cmocka_unit_test_setup_teardown(torture_pki_ecdsa_import_cert_file,
+                                        setup_ecdsa_key_384,
+                                        teardown),
+        cmocka_unit_test_setup_teardown(torture_pki_ecdsa_import_cert_file,
                                         setup_ecdsa_key_521,
                                         teardown),
         cmocka_unit_test_setup_teardown(torture_pki_ecdsa_duplicate_then_demote,

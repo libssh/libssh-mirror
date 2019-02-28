@@ -363,6 +363,21 @@ static const char torture_ecdsa256_public_testkey[] =
         "YAAABBBMfvbnfPEORlrS3fsjLWGmqQvOYPtmS6e1bRRwNBGzR6gVEMaIfiJPPTJa+w"
         "FMXBT3fpAqPjROsqv5jUHC+xOok= aris@kalix86\n";
 
+static const char torture_ecdsa256_testkey_cert[] =
+        "ecdsa-sha2-nistp256-cert-v01@openssh.com AAAAKGVjZHNhLXNoYTItbmlzd"
+        "HAyNTYtY2VydC12MDFAb3BlbnNzaC5jb20AAAAgHvXWcdSrQeZL2/Z68V8ntbL7rDo"
+        "Qwrsc+ps6HbMGZrkAAAAIbmlzdHAyNTYAAABBBMfvbnfPEORlrS3fsjLWGmqQvOYPt"
+        "mS6e1bRRwNBGzR6gVEMaIfiJPPTJa+wFMXBT3fpAqPjROsqv5jUHC+xOokAAAAAAAA"
+        "AAAAAAAEAAAAHbXlpZGVudAAAAAAAAAAAAAAAAP//////////AAAAAAAAAIIAAAAVc"
+        "GVybWl0LVgxMS1mb3J3YXJkaW5nAAAAAAAAABdwZXJtaXQtYWdlbnQtZm9yd2FyZGl"
+        "uZwAAAAAAAAAWcGVybWl0LXBvcnQtZm9yd2FyZGluZwAAAAAAAAAKcGVybWl0LXB0e"
+        "QAAAAAAAAAOcGVybWl0LXVzZXItcmMAAAAAAAAAAAAAAGgAAAATZWNkc2Etc2hhMi1"
+        "uaXN0cDI1NgAAAAhuaXN0cDI1NgAAAEEEx+9ud88Q5GWtLd+yMtYaapC85g+2ZLp7V"
+        "tFHA0EbNHqBUQxoh+Ik89Mlr7AUxcFPd+kCo+NE6yq/mNQcL7E6iQAAAGQAAAATZWN"
+        "kc2Etc2hhMi1uaXN0cDI1NgAAAEkAAAAhALDSBnmFF59tgTKDQ4meTJEI7/BP2Zgf1"
+        "AKg1H3kIijQAAAAIFYrqSg6GI03ohXqUVsZ3lCB/XIism2aV5Vz2bg1d9zo "
+        "./ec256.pub";
+
 static const char torture_ecdsa384_private_testkey[] =
         "-----BEGIN EC PRIVATE KEY-----\n"
         "MIGkAgEBBDBY8jEa5DtRy4AVeTWhPJ/TK257behiC3uafEi6YA2oHORibqX55EDN\n"
@@ -411,6 +426,23 @@ static const char torture_ecdsa384_public_testkey[] =
         "QAAABhBFdzgE3oGtWjVAyLf6L8Hzku7tIy7MGL7U9sm2LzHP5LOCrriBoEY4r2j5Y5"
         "0sB3/DunsMkt3O0nRtijJPhXcHdmpH1HIarqZgKOReVzlhtgeO54FunSh41eqxcc0B"
         "ZBmg== aris@kalix86";
+
+static const char torture_ecdsa384_testkey_cert[] =
+        "ecdsa-sha2-nistp384-cert-v01@openssh.com AAAAKGVjZHNhLXNoYTItbmlzd"
+        "HAzODQtY2VydC12MDFAb3BlbnNzaC5jb20AAAAgvggfi3v98HjOiqVi1O5aPy7JvMd"
+        "rTZe68GZ0qCaAN5MAAAAIbmlzdHAzODQAAABhBFdzgE3oGtWjVAyLf6L8Hzku7tIy7"
+        "MGL7U9sm2LzHP5LOCrriBoEY4r2j5Y50sB3/DunsMkt3O0nRtijJPhXcHdmpH1HIar"
+        "qZgKOReVzlhtgeO54FunSh41eqxcc0BZBmgAAAAAAAAAAAAAAAQAAAAdteWlkZW50A"
+        "AAAAAAAAAAAAAAA//////////8AAAAAAAAAggAAABVwZXJtaXQtWDExLWZvcndhcmR"
+        "pbmcAAAAAAAAAF3Blcm1pdC1hZ2VudC1mb3J3YXJkaW5nAAAAAAAAABZwZXJtaXQtc"
+        "G9ydC1mb3J3YXJkaW5nAAAAAAAAAApwZXJtaXQtcHR5AAAAAAAAAA5wZXJtaXQtdXN"
+        "lci1yYwAAAAAAAAAAAAAAiAAAABNlY2RzYS1zaGEyLW5pc3RwMzg0AAAACG5pc3RwM"
+        "zg0AAAAYQRXc4BN6BrVo1QMi3+i/B85Lu7SMuzBi+1PbJti8xz+Szgq64gaBGOK9o+"
+        "WOdLAd/w7p7DJLdztJ0bYoyT4V3B3ZqR9RyGq6mYCjkXlc5YbYHjueBbp0oeNXqsXH"
+        "NAWQZoAAACEAAAAE2VjZHNhLXNoYTItbmlzdHAzODQAAABpAAAAMQD5f0pF6U6eeBO"
+        "PrOV7Y3w5NuTzvuyDAq0kTv6VYNMp83TYpIJw16+tMAplOSzPTvwAAAAwWD9StvMEP"
+        "b+SDH2G5qqkMk+F5IaHI9fev8zcFzzdOlilLc/+CFM0NKMAFtOrrhv0 "
+        "./ec384.pub";
 
 static const char torture_ecdsa521_private_testkey[] =
         "-----BEGIN EC PRIVATE KEY-----\n"
@@ -469,6 +501,25 @@ static const char torture_ecdsa521_public_testkey[] =
         "V262vIC+AE3fXUJ7sJ/CkFIdk/8/gQEY1jyoXB3Bsee16VwhJGsMzGGh1FJ0XXhRJj"
         "UbG18qbH9JiSgE1N4fIM0zJG68fAyUxRxCI1wUobOOB7EmFZd18g== aris@kalix86";
 
+static const char torture_ecdsa521_testkey_cert[] =
+        "ecdsa-sha2-nistp521-cert-v01@openssh.com AAAAKGVjZHNhLXNoYTItbmlzd"
+        "HA1MjEtY2VydC12MDFAb3BlbnNzaC5jb20AAAAggFIwlsx63C++kmCBDF4O14fvu5j"
+        "Icsm8uMbMp0smOVwAAAAIbmlzdHA1MjEAAACFBAHOg+9vHW2kJB50j7c7WkcCcOtwg"
+        "ZdeXMpAeEl17sFnTTrT8wYo1FCzE07wV262vIC+AE3fXUJ7sJ/CkFIdk/8/gQEY1jy"
+        "oXB3Bsee16VwhJGsMzGGh1FJ0XXhRJjUbG18qbH9JiSgE1N4fIM0zJG68fAyUxRxCI"
+        "1wUobOOB7EmFZd18gAAAAAAAAAAAAAAAQAAAAdteWlkZW50AAAAAAAAAAAAAAAA///"
+        "///////8AAAAAAAAAggAAABVwZXJtaXQtWDExLWZvcndhcmRpbmcAAAAAAAAAF3Blc"
+        "m1pdC1hZ2VudC1mb3J3YXJkaW5nAAAAAAAAABZwZXJtaXQtcG9ydC1mb3J3YXJkaW5"
+        "nAAAAAAAAAApwZXJtaXQtcHR5AAAAAAAAAA5wZXJtaXQtdXNlci1yYwAAAAAAAAAAA"
+        "AAArAAAABNlY2RzYS1zaGEyLW5pc3RwNTIxAAAACG5pc3RwNTIxAAAAhQQBzoPvbx1"
+        "tpCQedI+3O1pHAnDrcIGXXlzKQHhJde7BZ0060/MGKNRQsxNO8FdutryAvgBN311Ce"
+        "7CfwpBSHZP/P4EBGNY8qFwdwbHntelcISRrDMxhodRSdF14USY1GxtfKmx/SYkoBNT"
+        "eHyDNMyRuvHwMlMUcQiNcFKGzjgexJhWXdfIAAACnAAAAE2VjZHNhLXNoYTItbmlzd"
+        "HA1MjEAAACMAAAAQgCJzTxw/hz2qE8Qkd4XW9Qn7fPxML6Ebtttg9C18AguyGyE6Nk"
+        "YH1NcToYxwQxrgzDXowXYm9eCbq9JEvaXDEtIfAAAAEIBk06LmKAYR2HDwwt4f5wVI"
+        "PKJ0pHVLZEx3FMZI3SfwS9mVm+oojLkZ2hr8X0xn28zbN045d8daB7BB1mHMGNT+YA"
+        "= ./ec521.pub";
+
 /****************************************************************************
  * ED25519 KEYS
  ****************************************************************************/
@@ -495,6 +546,18 @@ static const char torture_ed25519_private_testkey_passphrase[] =
 static const char torture_ed25519_public_testkey[] =
         "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBWWnxuCYiOyvMYLtkgoEyEKlLV+klM+"
         "BU6Nh3PmAiqX aris@kalix86";
+
+static const char torture_ed25519_testkey_cert[] =
+        "ssh-ed25519-cert-v01@openssh.com AAAAIHNzaC1lZDI1NTE5LWNlcnQtdjAxQ"
+        "G9wZW5zc2guY29tAAAAILrR4sPB+b6BRId/OkQha9nWwoACXqUTILz1TrmG4R9CAAA"
+        "AIBWWnxuCYiOyvMYLtkgoEyEKlLV+klM+BU6Nh3PmAiqXAAAAAAAAAAAAAAABAAAAB"
+        "215aWRlbnQAAAAAAAAAAAAAAAD//////////wAAAAAAAACCAAAAFXBlcm1pdC1YMTE"
+        "tZm9yd2FyZGluZwAAAAAAAAAXcGVybWl0LWFnZW50LWZvcndhcmRpbmcAAAAAAAAAF"
+        "nBlcm1pdC1wb3J0LWZvcndhcmRpbmcAAAAAAAAACnBlcm1pdC1wdHkAAAAAAAAADnB"
+        "lcm1pdC11c2VyLXJjAAAAAAAAAAAAAAAzAAAAC3NzaC1lZDI1NTE5AAAAIBWWnxuCY"
+        "iOyvMYLtkgoEyEKlLV+klM+BU6Nh3PmAiqXAAAAUwAAAAtzc2gtZWQyNTUxOQAAAEB"
+        "d8AogGWM6njfejbazFVyfnjNiWqatx6IV3Nnqc3LjCiPY19fqIPe2YJSzytHwLTD5X"
+        "IjD2bJpq2ZfjQwXpO0J ./ed.pub";
 
 static const char *torture_get_testkey_internal(enum ssh_keytypes_e type,
                                                 bool with_passphrase,
@@ -586,6 +649,14 @@ static const char *torture_get_testkey_internal(enum ssh_keytypes_e type,
             return torture_dsa_testkey_cert;
         case SSH_KEYTYPE_RSA_CERT01:
             return torture_rsa_testkey_cert;
+        case SSH_KEYTYPE_ECDSA_P256_CERT01:
+            return torture_ecdsa256_testkey_cert;
+        case SSH_KEYTYPE_ECDSA_P384_CERT01:
+            return torture_ecdsa384_testkey_cert;
+        case SSH_KEYTYPE_ECDSA_P521_CERT01:
+            return torture_ecdsa521_testkey_cert;
+        case SSH_KEYTYPE_ED25519_CERT01:
+            return torture_ed25519_testkey_cert;
         case SSH_KEYTYPE_RSA1:
         case SSH_KEYTYPE_ECDSA:
         case SSH_KEYTYPE_UNKNOWN:
