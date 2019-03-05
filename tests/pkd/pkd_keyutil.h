@@ -41,6 +41,7 @@ void cleanup_ecdsa_keys(void);
 #define OPENSSH_ECDSA384_TESTKEY  "openssh_testkey.id_ecdsa384"
 #define OPENSSH_ECDSA521_TESTKEY  "openssh_testkey.id_ecdsa521"
 #define OPENSSH_ED25519_TESTKEY   "openssh_testkey.id_ed25519"
+#define OPENSSH_CA_TESTKEY        "libssh_testkey.ca"
 
 #define DROPBEAR_RSA_TESTKEY      "dropbear_testkey.id_rsa"
 
@@ -49,5 +50,16 @@ void cleanup_openssh_client_keys(void);
 
 void setup_dropbear_client_rsa_key(void);
 void cleanup_dropbear_client_rsa_key(void);
+
+#define cleanup_file(name) do {\
+    if (access((name), F_OK) != -1) {\
+        unlink((name));\
+    }} while (0)
+
+#define cleanup_key(name) do {\
+        cleanup_file((name));\
+        cleanup_file((name ".pub"));\
+        cleanup_file((name "-cert.pub"));\
+    } while (0)
 
 #endif /* __PKD_KEYUTIL_H__ */

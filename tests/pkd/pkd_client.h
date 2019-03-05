@@ -16,11 +16,11 @@
 #define OPENSSH_KEYGEN "ssh-keygen"
 
 #define OPENSSH_HOSTKEY_ALGOS_DEFAULT "ssh-ed25519,rsa-sha2-512,rsa-sha2-256,ssh-rsa"
-#define OPENSSH_PKACCEPTED_DEFAULT    "ssh-ed25519,rsa-sha2-512,rsa-sha2-256,ssh-rsa"
+#define OPENSSH_PKACCEPTED_DEFAULT    "ssh-ed25519,rsa-sha2-512,rsa-sha2-256,ssh-rsa,ssh-rsa-cert-v01@openssh.com,ssh-ed25519-cert-v01@openssh.com"
 
 #if       HAVE_ECC
 #define OPENSSH_HOSTKEY_ALGOS_ECDSA   ",ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521"
-#define OPENSSH_PKACCEPTED_ECDSA      ",ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521"
+#define OPENSSH_PKACCEPTED_ECDSA      ",ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,ecdsa-sha2-nistp256-cert-v01@openssh.com,ecdsa-sha2-nistp384-cert-v01@openssh.com,ecdsa-sha2-nistp521-cert-v01@openssh.com"
 #else  /* HAVE_ECC */
 #define OPENSSH_HOSTKEY_ALGOS_ECDSA   ""
 #define OPENSSH_PKACCEPTED_ECDSA      ""
@@ -28,7 +28,7 @@
 
 #if       HAVE_DSA
 #define OPENSSH_HOSTKEY_ALGOS_DSA     ",ssh-dss"
-#define OPENSSH_PKACCEPTED_DSA        ",ssh-dss"
+#define OPENSSH_PKACCEPTED_DSA        ",ssh-dss,ssh-dss-cert-v01@openssh.com"
 #else  /* HAVE_DSA */
 #define OPENSSH_HOSTKEY_ALGOS_DSA     ""
 #define OPENSSH_PKACCEPTED_DSA        ""
@@ -75,6 +75,8 @@
 #define OPENSSH_HOSTKEY_CMD(hostkeyalgo) \
     OPENSSH_CMD_START("-o HostKeyAlgorithms=" hostkeyalgo " ") OPENSSH_CMD_END
 
+#define OPENSSH_CERT_CMD \
+    OPENSSH_CMD_START(OPENSSH_HOSTKEY_ALGOS) "-o CertificateFile=" CLIENT_ID_FILE "-cert.pub " OPENSSH_CMD_END
 
 /* Dropbear */
 

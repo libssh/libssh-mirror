@@ -603,6 +603,7 @@ static void torture_pkd_runtest(const char *testname,
 #ifdef HAVE_DSA
 #define CLIENT_ID_FILE OPENSSH_DSA_TESTKEY
 PKDTESTS_DEFAULT(emit_keytest, openssh_dsa, OPENSSH_CMD)
+PKDTESTS_DEFAULT(emit_keytest, openssh_cert_dsa, OPENSSH_CERT_CMD)
 PKDTESTS_DEFAULT_OPENSSHONLY(emit_keytest, openssh_dsa, OPENSSH_CMD)
 PKDTESTS_KEX(emit_keytest, openssh_dsa, OPENSSH_KEX_CMD)
 PKDTESTS_KEX_OPENSSHONLY(emit_keytest, openssh_dsa, OPENSSH_KEX_CMD)
@@ -615,6 +616,7 @@ PKDTESTS_MAC_OPENSSHONLY(emit_keytest, openssh_dsa, OPENSSH_MAC_CMD)
 
 #define CLIENT_ID_FILE OPENSSH_RSA_TESTKEY
 PKDTESTS_DEFAULT(emit_keytest, openssh_rsa, OPENSSH_CMD)
+PKDTESTS_DEFAULT(emit_keytest, openssh_cert_rsa, OPENSSH_CERT_CMD)
 PKDTESTS_DEFAULT_OPENSSHONLY(emit_keytest, openssh_rsa, OPENSSH_CMD)
 PKDTESTS_KEX(emit_keytest, openssh_rsa, OPENSSH_KEX_CMD)
 PKDTESTS_KEX_OPENSSHONLY(emit_keytest, openssh_rsa, OPENSSH_KEX_CMD)
@@ -627,6 +629,7 @@ PKDTESTS_HOSTKEY_OPENSSHONLY(emit_keytest, openssh_rsa, OPENSSH_HOSTKEY_CMD)
 
 #define CLIENT_ID_FILE OPENSSH_ECDSA256_TESTKEY
 PKDTESTS_DEFAULT(emit_keytest, openssh_e256, OPENSSH_CMD)
+PKDTESTS_DEFAULT(emit_keytest, openssh_cert_e256, OPENSSH_CERT_CMD)
 PKDTESTS_DEFAULT_OPENSSHONLY(emit_keytest, openssh_e256, OPENSSH_CMD)
 PKDTESTS_KEX(emit_keytest, openssh_e256, OPENSSH_KEX_CMD)
 PKDTESTS_KEX_OPENSSHONLY(emit_keytest, openssh_e256, OPENSSH_KEX_CMD)
@@ -642,6 +645,7 @@ PKDTESTS_MAC_OPENSSHONLY(emit_keytest, openssh_e256, OPENSSH_MAC_CMD)
 
 #define CLIENT_ID_FILE OPENSSH_ED25519_TESTKEY
 PKDTESTS_DEFAULT(emit_keytest, openssh_ed, OPENSSH_CMD)
+PKDTESTS_DEFAULT(emit_keytest, openssh_cert_ed, OPENSSH_CERT_CMD)
 PKDTESTS_DEFAULT_OPENSSHONLY(emit_keytest, openssh_ed, OPENSSH_CMD)
 PKDTESTS_KEX(emit_keytest, openssh_ed, OPENSSH_KEX_CMD)
 PKDTESTS_KEX_OPENSSHONLY(emit_keytest, openssh_ed, OPENSSH_KEX_CMD)
@@ -682,6 +686,7 @@ struct {
     /* OpenSSH */
 #ifdef HAVE_DSA
     PKDTESTS_DEFAULT(emit_testmap, openssh_dsa, OPENSSH_CMD)
+    PKDTESTS_DEFAULT(emit_testmap, openssh_cert_dsa, OPENSSH_CERT_CMD)
     PKDTESTS_DEFAULT_OPENSSHONLY(emit_testmap, openssh_dsa, OPENSSH_CMD)
     PKDTESTS_KEX(emit_testmap, openssh_dsa, OPENSSH_KEX_CMD)
     PKDTESTS_KEX_OPENSSHONLY(emit_testmap, openssh_dsa, OPENSSH_KEX_CMD)
@@ -692,6 +697,7 @@ struct {
 #endif
 
     PKDTESTS_DEFAULT(emit_testmap, openssh_rsa, OPENSSH_CMD)
+    PKDTESTS_DEFAULT(emit_testmap, openssh_cert_rsa, OPENSSH_CERT_CMD)
     PKDTESTS_DEFAULT_OPENSSHONLY(emit_testmap, openssh_rsa, OPENSSH_CMD)
     PKDTESTS_KEX(emit_testmap, openssh_rsa, OPENSSH_KEX_CMD)
     PKDTESTS_KEX_OPENSSHONLY(emit_testmap, openssh_rsa, OPENSSH_KEX_CMD)
@@ -702,6 +708,7 @@ struct {
     PKDTESTS_HOSTKEY_OPENSSHONLY(emit_testmap, openssh_rsa, OPENSSH_HOSTKEY_CMD)
 
     PKDTESTS_DEFAULT(emit_testmap, openssh_e256, OPENSSH_CMD)
+    PKDTESTS_DEFAULT(emit_testmap, openssh_cert_e256, OPENSSH_CERT_CMD)
     PKDTESTS_DEFAULT_OPENSSHONLY(emit_testmap, openssh_e256, OPENSSH_CMD)
     PKDTESTS_KEX(emit_testmap, openssh_e256, OPENSSH_KEX_CMD)
     PKDTESTS_KEX_OPENSSHONLY(emit_testmap, openssh_e256, OPENSSH_KEX_CMD)
@@ -711,6 +718,7 @@ struct {
     PKDTESTS_MAC_OPENSSHONLY(emit_testmap, openssh_e256, OPENSSH_MAC_CMD)
 
     PKDTESTS_DEFAULT(emit_testmap, openssh_ed, OPENSSH_CMD)
+    PKDTESTS_DEFAULT(emit_testmap, openssh_cert_ed, OPENSSH_CERT_CMD)
     PKDTESTS_DEFAULT_OPENSSHONLY(emit_testmap, openssh_ed, OPENSSH_CMD)
     PKDTESTS_KEX(emit_testmap, openssh_ed, OPENSSH_KEX_CMD)
     PKDTESTS_KEX_OPENSSHONLY(emit_testmap, openssh_ed, OPENSSH_KEX_CMD)
@@ -742,6 +750,7 @@ static int pkd_run_tests(void) {
     const struct CMUnitTest openssh_tests[] = {
 #ifdef HAVE_DSA
         PKDTESTS_DEFAULT(emit_unit_test_comma, openssh_dsa, OPENSSH_CMD)
+        PKDTESTS_DEFAULT(emit_unit_test_comma, openssh_cert_dsa, OPENSSH_CERT_CMD)
         PKDTESTS_DEFAULT_OPENSSHONLY(emit_unit_test_comma, openssh_dsa, OPENSSH_CMD)
         PKDTESTS_KEX(emit_unit_test_comma, openssh_dsa, OPENSSH_KEX_CMD)
         PKDTESTS_CIPHER(emit_unit_test_comma, openssh_dsa, OPENSSH_CIPHER_CMD)
@@ -751,6 +760,7 @@ static int pkd_run_tests(void) {
 #endif
 
         PKDTESTS_DEFAULT(emit_unit_test_comma, openssh_rsa, OPENSSH_CMD)
+        PKDTESTS_DEFAULT(emit_unit_test_comma, openssh_cert_rsa, OPENSSH_CERT_CMD)
         PKDTESTS_DEFAULT_OPENSSHONLY(emit_unit_test_comma, openssh_rsa, OPENSSH_CMD)
         PKDTESTS_KEX(emit_unit_test_comma, openssh_rsa, OPENSSH_KEX_CMD)
         PKDTESTS_CIPHER(emit_unit_test_comma, openssh_rsa, OPENSSH_CIPHER_CMD)
@@ -759,6 +769,7 @@ static int pkd_run_tests(void) {
         PKDTESTS_MAC_OPENSSHONLY(emit_unit_test_comma, openssh_rsa, OPENSSH_MAC_CMD)
 
         PKDTESTS_DEFAULT(emit_unit_test_comma, openssh_e256, OPENSSH_CMD)
+        PKDTESTS_DEFAULT(emit_unit_test_comma, openssh_cert_e256, OPENSSH_CERT_CMD)
         PKDTESTS_DEFAULT_OPENSSHONLY(emit_unit_test_comma, openssh_e256, OPENSSH_CMD)
         PKDTESTS_KEX(emit_unit_test_comma, openssh_e256, OPENSSH_KEX_CMD)
         PKDTESTS_CIPHER(emit_unit_test_comma, openssh_e256, OPENSSH_CIPHER_CMD)
@@ -767,6 +778,7 @@ static int pkd_run_tests(void) {
         PKDTESTS_MAC_OPENSSHONLY(emit_unit_test_comma, openssh_e256, OPENSSH_MAC_CMD)
 
         PKDTESTS_DEFAULT(emit_unit_test_comma, openssh_ed, OPENSSH_CMD)
+        PKDTESTS_DEFAULT(emit_unit_test_comma, openssh_cert_ed, OPENSSH_CERT_CMD)
         PKDTESTS_DEFAULT_OPENSSHONLY(emit_unit_test_comma, openssh_ed, OPENSSH_CMD)
         PKDTESTS_KEX(emit_unit_test_comma, openssh_ed, OPENSSH_KEX_CMD)
         PKDTESTS_CIPHER(emit_unit_test_comma, openssh_ed, OPENSSH_CIPHER_CMD)
