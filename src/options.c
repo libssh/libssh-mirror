@@ -1602,6 +1602,11 @@ static int ssh_bind_set_algo(ssh_bind sshbind,
  *                        Set the Message Authentication Code algorithm server
  *                        to client (const char *, comma-separated list).
  *
+ *                      - SSH_BIND_OPTIONS_CONFIG_DIR:
+ *                        Set the directory (const char *, format string)
+ *                        to be used when the "%d" scape is used when providing
+ *                        paths of configuration files to
+ *                        ssh_bind_options_parse_config().
  *
  * @param  value        The value to set. This is a generic pointer and the
  *                      datatype which should be used is described at the
@@ -1887,6 +1892,22 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
                 return -1;
         }
         break;
+    case SSH_BIND_OPTIONS_CONFIG_DIR:
+        v = value;
+        SAFE_FREE(sshbind->config_dir);
+        if (v == NULL) {
+            break;
+        } else if (v[0] == '\0') {
+            ssh_set_error_invalid(sshbind);
+            return -1;
+        } else {
+            sshbind->config_dir = ssh_path_expand_tilde(v);
+            if (sshbind->config_dir == NULL) {
+                ssh_set_error_oom(sshbind);
+                return -1;
+            }
+        }
+        break;
     default:
       ssh_set_error(sshbind, SSH_REQUEST_DENIED, "Unknown ssh option %d", type);
       return -1;
@@ -1894,6 +1915,80 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
   }
 
   return 0;
+}
+
+static char *ssh_bind_options_expand_escape(ssh_bind sshbind, const char *s)
+{
+    char buf[MAX_BUF_SIZE];
+    char *r, *x = NULL;
+    const char *p;
+    size_t i, l;
+
+    r = ssh_path_expand_tilde(s);
+    if (r == NULL) {
+        ssh_set_error_oom(sshbind);
+        return NULL;
+    }
+
+    if (strlen(r) > MAX_BUF_SIZE) {
+        ssh_set_error(sshbind, SSH_FATAL, "string to expand too long");
+        free(r);
+        return NULL;
+    }
+
+    p = r;
+    buf[0] = '\0';
+
+    for (i = 0; *p != '\0'; p++) {
+        if (*p != '%') {
+            buf[i] = *p;
+            i++;
+            if (i >= MAX_BUF_SIZE) {
+                free(r);
+                return NULL;
+            }
+            buf[i] = '\0';
+            continue;
+        }
+
+        p++;
+        if (*p == '\0') {
+            break;
+        }
+
+        switch (*p) {
+            case 'd':
+                x = strdup(sshbind->config_dir);
+                break;
+            default:
+                ssh_set_error(sshbind, SSH_FATAL,
+                        "Wrong escape sequence detected");
+                free(r);
+                return NULL;
+        }
+
+        if (x == NULL) {
+            ssh_set_error_oom(sshbind);
+            free(r);
+            return NULL;
+        }
+
+        i += strlen(x);
+        if (i >= MAX_BUF_SIZE) {
+            ssh_set_error(sshbind, SSH_FATAL,
+                    "String too long");
+            free(x);
+            free(r);
+            return NULL;
+        }
+        l = strlen(buf);
+        strncpy(buf + l, x, sizeof(buf) - l - 1);
+        buf[i] = '\0';
+        SAFE_FREE(x);
+    }
+
+    free(r);
+    return strdup(buf);
 }
 
 /**
@@ -1914,6 +2009,7 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
 int ssh_bind_options_parse_config(ssh_bind sshbind, const char *filename)
 {
     int rc = 0;
+    char *expanded_filename;
 
     if (sshbind == NULL) {
         return -1;
@@ -1931,8 +2027,14 @@ int ssh_bind_options_parse_config(ssh_bind sshbind, const char *filename)
     }
 
     if (filename != NULL) {
+        expanded_filename = ssh_bind_options_expand_escape(sshbind, filename);
+        if (expanded_filename == NULL) {
+            return -1;
+        }
+
         /* Apply the user provided configuration */
-        rc = ssh_bind_config_parse_file(sshbind, filename);
+        rc = ssh_bind_config_parse_file(sshbind, expanded_filename);
+        free(expanded_filename);
     }
 
     return rc;

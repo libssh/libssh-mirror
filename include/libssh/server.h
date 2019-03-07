@@ -51,7 +51,8 @@ enum ssh_bind_options_e {
   SSH_BIND_OPTIONS_CIPHERS_C_S,
   SSH_BIND_OPTIONS_CIPHERS_S_C,
   SSH_BIND_OPTIONS_HMAC_C_S,
-  SSH_BIND_OPTIONS_HMAC_S_C
+  SSH_BIND_OPTIONS_HMAC_S_C,
+  SSH_BIND_OPTIONS_CONFIG_DIR,
 };
 
 typedef struct ssh_bind_struct* ssh_bind;

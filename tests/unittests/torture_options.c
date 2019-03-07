@@ -1301,6 +1301,7 @@ static void torture_bind_options_parse_config(void **state)
 {
     struct bind_st *test_state;
     ssh_bind bind;
+    char *cwd = NULL;
     int rc;
 
     assert_non_null(state);
@@ -1309,10 +1310,52 @@ static void torture_bind_options_parse_config(void **state)
     assert_non_null(test_state->bind);
     bind = test_state->bind;
 
-    rc = ssh_bind_options_parse_config(bind, LIBSSH_CUSTOM_BIND_CONFIG_FILE);
+    cwd = torture_get_current_working_dir();
+    assert_non_null(cwd);
+
+    rc = ssh_bind_options_set(bind,
+                              SSH_BIND_OPTIONS_CONFIG_DIR,
+                              (const char *)cwd);
+    assert_int_equal(rc, 0);
+    assert_non_null(bind->config_dir);
+    assert_string_equal(bind->config_dir, cwd);
+
+    rc = ssh_bind_options_parse_config(bind, "%d/"LIBSSH_CUSTOM_BIND_CONFIG_FILE);
     assert_int_equal(rc, 0);
     assert_int_equal(bind->bindport, 42);
+
+    SAFE_FREE(cwd);
 }
+
+static void torture_bind_options_config_dir(void **state)
+{
+    struct bind_st *test_state;
+    ssh_bind bind;
+    const char *new_dir = "/new/dir/";
+    const char *replacement_dir = "/replacement/dir/";
+    int rc;
+
+    assert_non_null(state);
+    test_state = *((struct bind_st **)state);
+    assert_non_null(test_state);
+    assert_non_null(test_state->bind);
+    bind = test_state->bind;
+
+    rc = ssh_bind_options_set(bind,
+                              SSH_BIND_OPTIONS_CONFIG_DIR,
+                              new_dir);
+    assert_int_equal(rc, 0);
+    assert_non_null(bind->config_dir);
+    assert_string_equal(bind->config_dir, new_dir);
+
+    rc = ssh_bind_options_set(bind,
+                              SSH_BIND_OPTIONS_CONFIG_DIR,
+                              replacement_dir);
+    assert_int_equal(rc, 0);
+    assert_non_null(bind->config_dir);
+    assert_string_equal(bind->config_dir, replacement_dir);
+}
+
 
 #endif /* WITH_SERVER */
 
@@ -1380,6 +1423,8 @@ int torture_run_tests(void) {
         cmocka_unit_test_setup_teardown(torture_bind_options_set_macs,
                 sshbind_setup, sshbind_teardown),
         cmocka_unit_test_setup_teardown(torture_bind_options_parse_config,
+                sshbind_setup, sshbind_teardown),
+        cmocka_unit_test_setup_teardown(torture_bind_options_config_dir,
                 sshbind_setup, sshbind_teardown),
     };
 #endif /* WITH_SERVER */

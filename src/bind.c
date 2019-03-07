@@ -393,6 +393,7 @@ void ssh_bind_free(ssh_bind sshbind){
   /* options */
   SAFE_FREE(sshbind->banner);
   SAFE_FREE(sshbind->bindaddr);
+  SAFE_FREE(sshbind->config_dir);
 
   SAFE_FREE(sshbind->dsakey);
   SAFE_FREE(sshbind->rsakey);
