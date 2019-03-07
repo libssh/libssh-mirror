@@ -63,7 +63,7 @@ int authenticate_pubkey(ssh_session session)
 {
   int rc;
 
-  rc = ssh_userauth_publickey_auto(session, NULL);
+  rc = ssh_userauth_publickey_auto(session, NULL, NULL);
 
   if (rc == SSH_AUTH_ERROR)
   {
