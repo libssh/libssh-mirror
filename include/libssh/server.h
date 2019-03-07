@@ -90,6 +90,9 @@ LIBSSH_API ssh_bind ssh_bind_new(void);
 LIBSSH_API int ssh_bind_options_set(ssh_bind sshbind,
     enum ssh_bind_options_e type, const void *value);
 
+LIBSSH_API int ssh_bind_options_parse_config(ssh_bind sshbind,
+    const char *filename);
+
 /**
  * @brief Start listening to the socket.
  *

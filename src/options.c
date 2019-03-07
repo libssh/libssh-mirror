@@ -39,6 +39,7 @@
 #ifdef WITH_SERVER
 #include "libssh/server.h"
 #include "libssh/bind.h"
+#include "libssh/bind_config.h"
 #endif
 
 /**
@@ -1894,6 +1895,49 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
 
   return 0;
 }
+
+/**
+ * @brief Parse a ssh bind options configuration file.
+ *
+ * This parses the options file and set them to the ssh_bind handle provided. If
+ * an option was previously set, it is overridden. If the global configuration
+ * hasn't been processed yet, it is processed prior to the provided file.
+ *
+ * @param  sshbind      SSH bind handle
+ *
+ * @param  filename     The options file to use; if NULL only the global
+ *                      configuration is parsed and applied (if it haven't been
+ *                      processed before).
+ *
+ * @return 0 on success, < 0 on error.
+ */
+int ssh_bind_options_parse_config(ssh_bind sshbind, const char *filename)
+{
+    int rc = 0;
+
+    if (sshbind == NULL) {
+        return -1;
+    }
+
+    /* If the global default configuration hasn't been processed yet, process it
+     * before the provided configuration. */
+    if (!(sshbind->config_processed)) {
+        rc = ssh_bind_config_parse_file(sshbind,
+                                        "/etc/ssh/libssh_server_config");
+        if (rc != 0) {
+            return rc;
+        }
+        sshbind->config_processed = true;
+    }
+
+    if (filename != NULL) {
+        /* Apply the user provided configuration */
+        rc = ssh_bind_config_parse_file(sshbind, filename);
+    }
+
+    return rc;
+}
+
 #endif
 
 /** @} */

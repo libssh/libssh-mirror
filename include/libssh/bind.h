@@ -46,6 +46,7 @@ struct ssh_bind_struct {
   unsigned int bindport;
   int blocking;
   int toaccept;
+  bool config_processed;
 };
 
 struct ssh_poll_handle_struct *ssh_bind_get_poll(struct ssh_bind_struct

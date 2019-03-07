@@ -15,6 +15,7 @@
 #include <libssh/options.h>
 #ifdef WITH_SERVER
 #include <libssh/bind.h>
+#define LIBSSH_CUSTOM_BIND_CONFIG_FILE "my_bind_config"
 #endif
 #ifdef HAVE_DSA
 #define LIBSSH_DSA_TESTKEY        "libssh_testkey.id_dsa"
@@ -751,7 +752,7 @@ struct bind_st {
     ssh_bind bind;
 };
 
-static int setup_key_files(void **state)
+static int ssh_bind_setup_files(void **state)
 {
     struct bind_st *test_state = NULL;
     char *cwd = NULL;
@@ -792,6 +793,8 @@ static int setup_key_files(void **state)
     torture_write_file(LIBSSH_DSA_TESTKEY,
                        torture_get_openssh_testkey(SSH_KEYTYPE_DSS, 0, 0));
 #endif
+    torture_write_file(LIBSSH_CUSTOM_BIND_CONFIG_FILE,
+                       "Port 42\n");
     return 0;
 }
 
@@ -802,7 +805,7 @@ static int sshbind_setup(void **state)
     int rc;
     struct bind_st *test_state = NULL;
 
-    rc = setup_key_files((void **)&test_state);
+    rc = ssh_bind_setup_files((void **)&test_state);
     assert_int_equal(rc, 0);
     assert_non_null(test_state);
 
@@ -1294,6 +1297,23 @@ static void torture_bind_options_set_macs(void **state)
     assert_int_not_equal(rc, 0);
 }
 
+static void torture_bind_options_parse_config(void **state)
+{
+    struct bind_st *test_state;
+    ssh_bind bind;
+    int rc;
+
+    assert_non_null(state);
+    test_state = *((struct bind_st **)state);
+    assert_non_null(test_state);
+    assert_non_null(test_state->bind);
+    bind = test_state->bind;
+
+    rc = ssh_bind_options_parse_config(bind, LIBSSH_CUSTOM_BIND_CONFIG_FILE);
+    assert_int_equal(rc, 0);
+    assert_int_equal(bind->bindport, 42);
+}
+
 #endif /* WITH_SERVER */
 
 
@@ -1358,6 +1378,8 @@ int torture_run_tests(void) {
         cmocka_unit_test_setup_teardown(torture_bind_options_set_key_exchange,
                 sshbind_setup, sshbind_teardown),
         cmocka_unit_test_setup_teardown(torture_bind_options_set_macs,
+                sshbind_setup, sshbind_teardown),
+        cmocka_unit_test_setup_teardown(torture_bind_options_parse_config,
                 sshbind_setup, sshbind_teardown),
     };
 #endif /* WITH_SERVER */
