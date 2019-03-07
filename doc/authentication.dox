@@ -281,7 +281,7 @@ pass, ssh_userauth_none() might answer SSH_AUTH_SUCCESS.
 The following example shows how to perform "none" authentication:
 
 @code
-int authenticate_kbdint(ssh_session session)
+int authenticate_none(ssh_session session)
 {
   int rc;
 
