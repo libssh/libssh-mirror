@@ -332,23 +332,18 @@ int ssh_options_set_algo(ssh_session session,
  *                The verbosity of the messages. Every log smaller or
  *                equal to verbosity will be shown.
  *                - SSH_LOG_NOLOG: No logging
- *                - SSH_LOG_RARE: Rare conditions or warnings
- *                - SSH_LOG_ENTRY: API-accessible entrypoints
- *                - SSH_LOG_PACKET: Packet id and size
- *                - SSH_LOG_FUNCTIONS: Function entering and leaving
+ *                - SSH_LOG_WARNING: Only warnings
+ *                - SSH_LOG_PROTOCOL: High level protocol information
+ *                - SSH_LOG_PACKET: Lower level protocol infomations, packet level
+ *                - SSH_LOG_FUNCTIONS: Every function path
  *
  *              - SSH_OPTIONS_LOG_VERBOSITY_STR:
- *                Set the session logging verbosity (const char *).\n
- *                \n
- *                The verbosity of the messages. Every log smaller or
- *                equal to verbosity will be shown.
- *                - SSH_LOG_NOLOG: No logging
- *                - SSH_LOG_RARE: Rare conditions or warnings
- *                - SSH_LOG_ENTRY: API-accessible entrypoints
- *                - SSH_LOG_PACKET: Packet id and size
- *                - SSH_LOG_FUNCTIONS: Function entering and leaving
- *                \n
- *                See the corresponding numbers in libssh.h.
+ *                Set the session logging verbosity via a
+ *                string that will be converted to a numerical
+ *                value (e.g. "3") and interpreted according
+ *                to the values of
+ *                SSH_OPTIONS_LOG_VERBOSITY above (const
+ *                char *).
  *
  *              - SSH_OPTIONS_CIPHERS_C_S:
  *                Set the symmetric cipher client to server (const char *,
