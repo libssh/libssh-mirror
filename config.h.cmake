@@ -12,6 +12,9 @@
 #cmakedefine BINARYDIR "${BINARYDIR}"
 #cmakedefine SOURCEDIR "${SOURCEDIR}"
 
+/* Global bind configuration file path */
+#cmakedefine GLOBAL_BIND_CONFIG "${GLOBAL_BIND_CONFIG}"
+
 /************************** HEADER FILES *************************/
 
 /* Define to 1 if you have the <argp.h> header file. */

@@ -49,3 +49,7 @@ endif (WITH_NACL)
 if (WITH_ABI_BREAK)
   set(WITH_SYMBOL_VERSIONING ON)
 endif (WITH_ABI_BREAK)
+
+if (NOT GLOBAL_BIND_CONFIG)
+  set(GLOBAL_BIND_CONFIG "/etc/ssh/libssh_server_config")
+endif (NOT GLOBAL_BIND_CONFIG)

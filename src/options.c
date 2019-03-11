@@ -2018,8 +2018,7 @@ int ssh_bind_options_parse_config(ssh_bind sshbind, const char *filename)
     /* If the global default configuration hasn't been processed yet, process it
      * before the provided configuration. */
     if (!(sshbind->config_processed)) {
-        rc = ssh_bind_config_parse_file(sshbind,
-                                        "/etc/ssh/libssh_server_config");
+        rc = ssh_bind_config_parse_file(sshbind, GLOBAL_BIND_CONFIG);
         if (rc != 0) {
             return rc;
         }
