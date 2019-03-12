@@ -71,13 +71,7 @@ bignum ssh_make_string_bn(ssh_string string)
             len * 8, len);
 #endif /* DEBUG_CRYPTO */
 
-#if defined HAVE_LIBMBEDCRYPTO
-    bn = bignum_new();
-    bignum_bin2bn(string->data, len, bn);
-#else
-    // FIXME
     bignum_bin2bn(string->data, len, &bn);
-#endif
 
     return bn;
 }

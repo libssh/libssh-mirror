@@ -247,20 +247,6 @@ int ssh_dh_init(void)
         goto error;
     }
 
-#if defined(HAVE_LIBMBEDCRYPTO)
-    /* FIXME */
-    p_group1 = bignum_new();
-    bignum_bin2bn(p_group1_value, P_GROUP1_LEN, p_group1);
-
-    p_group14 = bignum_new();
-    bignum_bin2bn(p_group14_value, P_GROUP14_LEN, p_group14);
-
-    p_group16 = bignum_new();
-    bignum_bin2bn(p_group16_value, P_GROUP16_LEN, p_group16);
-
-    p_group18 = bignum_new();
-    bignum_bin2bn(p_group18_value, P_GROUP18_LEN, p_group18);
-#else
     bignum_bin2bn(p_group1_value, P_GROUP1_LEN, &p_group1);
     if (p_group1 == NULL) {
         goto error;
@@ -277,8 +263,6 @@ int ssh_dh_init(void)
     if (p_group18 == NULL) {
         goto error;
     }
-
-#endif
 
     dh_crypto_initialized = 1;
 
