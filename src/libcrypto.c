@@ -43,6 +43,7 @@
 #include <openssl/hmac.h>
 #include <openssl/opensslv.h>
 #include <openssl/rand.h>
+
 #include "libcrypto-compat.h"
 
 #ifdef HAVE_OPENSSL_AES_H
@@ -63,6 +64,10 @@
 
 #ifdef HAVE_OPENSSL_EVP_KDF_CTX_NEW_ID
 #include <openssl/kdf.h>
+#endif
+
+#ifdef HAVE_OPENSSL_CRYPTO_CTR128_ENCRYPT
+#include <openssl/modes.h>
 #endif
 
 #include "libssh/crypto.h"
