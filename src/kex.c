@@ -1123,8 +1123,8 @@ int ssh_make_sessionid(ssh_session session)
     case SSH_KEX_DH_GROUP18_SHA512:
         rc = ssh_buffer_pack(buf,
                              "BB",
-                             session->next_crypto->e,
-                             session->next_crypto->f);
+                             session->next_crypto->dh_ctx->client.pub_key,
+                             session->next_crypto->dh_ctx->server.pub_key);
         if (rc != SSH_OK) {
             goto error;
         }
@@ -1137,10 +1137,10 @@ int ssh_make_sessionid(ssh_session session)
                     session->next_crypto->dh_pmin,
                     session->next_crypto->dh_pn,
                     session->next_crypto->dh_pmax,
-                    session->next_crypto->p,
-                    session->next_crypto->g,
-                    session->next_crypto->e,
-                    session->next_crypto->f);
+                    session->next_crypto->dh_ctx->modulus,
+                    session->next_crypto->dh_ctx->generator,
+                    session->next_crypto->dh_ctx->client.pub_key,
+                    session->next_crypto->dh_ctx->server.pub_key);
         if (rc != SSH_OK) {
             goto error;
         }
@@ -1180,7 +1180,7 @@ int ssh_make_sessionid(ssh_session session)
         break;
 #endif
     }
-    rc = ssh_buffer_pack(buf, "B", session->next_crypto->k);
+    rc = ssh_buffer_pack(buf, "B", session->next_crypto->shared_secret);
     if (rc != SSH_OK) {
         goto error;
     }
@@ -1365,7 +1365,7 @@ int ssh_generate_session_keys(ssh_session session)
     size_t intkey_srv_to_cli_len = 0;
     int rc = -1;
 
-    k_string = ssh_make_bignum_string(crypto->k);
+    k_string = ssh_make_bignum_string(crypto->shared_secret);
     if (k_string == NULL) {
         ssh_set_error_oom(session);
         goto error;

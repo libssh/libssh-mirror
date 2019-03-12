@@ -154,16 +154,16 @@ int ecdh_build_k(ssh_session session)
         goto out;
     }
 
-    session->next_crypto->k = malloc(sizeof(mbedtls_mpi));
-    if (session->next_crypto->k == NULL) {
+    session->next_crypto->shared_secret = malloc(sizeof(mbedtls_mpi));
+    if (session->next_crypto->shared_secret == NULL) {
         rc = SSH_ERROR;
         goto out;
     }
 
-    mbedtls_mpi_init(session->next_crypto->k);
+    mbedtls_mpi_init(session->next_crypto->shared_secret);
 
     rc = mbedtls_ecdh_compute_shared(&grp,
-                                     session->next_crypto->k,
+                                     session->next_crypto->shared_secret,
                                      &pubkey,
                                      &session->next_crypto->ecdh_privkey->d,
                                      mbedtls_ctr_drbg_random,

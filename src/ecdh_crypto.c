@@ -170,9 +170,9 @@ int ecdh_build_k(ssh_session session) {
       return -1;
   }
 
-  bignum_bin2bn(buffer, len, &session->next_crypto->k);
+  bignum_bin2bn(buffer, len, &session->next_crypto->shared_secret);
   free(buffer);
-  if (session->next_crypto->k == NULL) {
+  if (session->next_crypto->shared_secret == NULL) {
       EC_KEY_free(session->next_crypto->ecdh_privkey);
       session->next_crypto->ecdh_privkey = NULL;
       return -1;
@@ -185,7 +185,7 @@ int ecdh_build_k(ssh_session session) {
                    session->next_crypto->server_kex.cookie, 16);
     ssh_print_hexa("Session client cookie",
                    session->next_crypto->client_kex.cookie, 16);
-    ssh_print_bignum("Shared secret key", session->next_crypto->k);
+    ssh_print_bignum("Shared secret key", session->next_crypto->shared_secret);
 #endif
 
   return 0;

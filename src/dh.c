@@ -294,65 +294,120 @@ void ssh_dh_finalize(void)
     dh_crypto_initialized = 0;
 }
 
+static void ssh_dh_free_dh_keypair(struct dh_keypair *keypair)
+{
+    bignum_safe_free(keypair->priv_key);
+    bignum_safe_free(keypair->pub_key);
+}
+
+static int ssh_dh_init_dh_keypair(struct dh_keypair *keypair)
+{
+    int rc;
+
+    keypair->priv_key = bignum_new();
+    if (keypair->priv_key == NULL) {
+        rc = SSH_ERROR;
+        goto done;
+    }
+    keypair->pub_key = bignum_new();
+    if (keypair->pub_key == NULL) {
+        rc = SSH_ERROR;
+        goto done;
+    }
+
+    rc = SSH_OK;
+done:
+    if (rc != SSH_OK) {
+        ssh_dh_free_dh_keypair(keypair);
+    }
+    return rc;
+}
+
 /**
  * @internal
  * @brief allocate and initialize ephemeral values used in dh kex
  */
-int ssh_dh_init_common(ssh_session session){
-    struct ssh_crypto_struct *crypto=session->next_crypto;
-    crypto->x = bignum_new();
-    crypto->y = bignum_new();
-    crypto->e = NULL;
-    crypto->f = NULL;
-    crypto->k = bignum_new();
-    crypto->g = NULL;
-    crypto->p = NULL;
-    crypto->dh_group_is_mutable = 0;
-    switch(session->next_crypto->kex_type) {
-      case SSH_KEX_DH_GROUP1_SHA1:
-        session->next_crypto->p = p_group1;
-        session->next_crypto->g = g;
-        session->next_crypto->dh_group_is_mutable = 0;
-        break;
-      case SSH_KEX_DH_GROUP14_SHA1:
-        session->next_crypto->p = p_group14;
-        session->next_crypto->g = g;
-        session->next_crypto->dh_group_is_mutable = 0;
-        break;
-      case SSH_KEX_DH_GROUP16_SHA512:
-        session->next_crypto->p = p_group16;
-        session->next_crypto->g = g;
-        session->next_crypto->dh_group_is_mutable = 0;
-        break;
-      case SSH_KEX_DH_GROUP18_SHA512:
-        session->next_crypto->p = p_group18;
-        session->next_crypto->g = g;
-        session->next_crypto->dh_group_is_mutable = 0;
-        break;
-      default:
-        /* fall through */
-        break;
-    }
-    if (crypto->x == NULL || crypto->y == NULL || crypto->k == NULL){
-        bignum_safe_free(crypto->k);
-        bignum_safe_free(crypto->y);
-        bignum_safe_free(crypto->x);
-        ssh_set_error_oom(session);
+int ssh_dh_init_common(ssh_session session)
+{
+    struct ssh_crypto_struct *crypto = session->next_crypto;
+    struct dh_ctx *ctx = NULL;
+    int rc;
+
+    ctx = calloc(1, sizeof(*ctx));
+    if (ctx == NULL) {
         return SSH_ERROR;
-    } else {
-        return SSH_OK;
     }
+
+    switch (crypto->kex_type) {
+    case SSH_KEX_DH_GROUP1_SHA1:
+        ctx->generator = g;
+        ctx->modulus = p_group1;
+        break;
+    case SSH_KEX_DH_GROUP14_SHA1:
+        ctx->generator = g;
+        ctx->modulus = p_group14;
+        break;
+    case SSH_KEX_DH_GROUP16_SHA512:
+        ctx->generator = g;
+        ctx->modulus = p_group16;
+        break;
+    case SSH_KEX_DH_GROUP18_SHA512:
+        ctx->generator = g;
+        ctx->modulus = p_group18;
+        break;
+    default:
+        break;
+    }
+
+    rc = ssh_dh_init_dh_keypair(&ctx->client);
+    if (rc != SSH_OK) {
+        goto done;
+    }
+
+    rc = ssh_dh_init_dh_keypair(&ctx->server);
+    if (rc != SSH_OK) {
+        goto done;
+    }
+
+    crypto->shared_secret = bignum_new();
+    if (crypto->shared_secret == NULL) {
+        goto done;
+    }
+
+    crypto->dh_ctx = ctx;
+    rc = SSH_OK;
+done:
+    if (rc != SSH_OK) {
+        ssh_dh_free_dh_keypair(&ctx->client);
+        ssh_dh_free_dh_keypair(&ctx->server);
+        free(ctx);
+        ssh_set_error_oom(session);
+    }
+    return rc;
 }
 
-void ssh_dh_cleanup(struct ssh_crypto_struct *crypto){
-    bignum_safe_free(crypto->x);
-    bignum_safe_free(crypto->y);
-    bignum_safe_free(crypto->e);
-    bignum_safe_free(crypto->f);
-    if (crypto->dh_group_is_mutable){
-        bignum_safe_free(crypto->p);
-        bignum_safe_free(crypto->g);
+void ssh_dh_cleanup(struct ssh_crypto_struct *crypto)
+{
+    struct dh_ctx *ctx = crypto->dh_ctx;
+
+    if (ctx == NULL) {
+        return;
     }
+
+    ssh_dh_free_dh_keypair(&ctx->client);
+    ssh_dh_free_dh_keypair(&ctx->server);
+
+    if ((ctx->modulus != p_group1) &&
+        (ctx->modulus != p_group14) &&
+        (ctx->modulus != p_group16) &&
+        (ctx->modulus != p_group18)) {
+        bignum_safe_free(ctx->modulus);
+    }
+    if (ctx->generator != g) {
+        bignum_safe_free(ctx->generator);
+    }
+    free(ctx);
+    crypto->dh_ctx = NULL;
 }
 
 int ssh_dh_import_next_pubkey_blob(ssh_session session, ssh_string pubkey_blob)
@@ -365,18 +420,18 @@ int ssh_dh_import_next_pubkey_blob(ssh_session session, ssh_string pubkey_blob)
 #ifdef DEBUG_CRYPTO
 static void ssh_dh_debug(ssh_session session)
 {
-    ssh_print_bignum("p", session->next_crypto->p);
-    ssh_print_bignum("g", session->next_crypto->g);
-    ssh_print_bignum("x", session->next_crypto->x);
-    ssh_print_bignum("y", session->next_crypto->y);
-    ssh_print_bignum("e", session->next_crypto->e);
-    ssh_print_bignum("f", session->next_crypto->f);
+    ssh_print_bignum("p", session->next_crypto->dh_ctx->modulus);
+    ssh_print_bignum("g", session->next_crypto->dh_ctx->generator);
+    ssh_print_bignum("x", session->next_crypto->dh_ctx->client.priv_key);
+    ssh_print_bignum("y", session->next_crypto->dh_ctx->server.priv_key);
+    ssh_print_bignum("e", session->next_crypto->dh_ctx->client.pub_key);
+    ssh_print_bignum("f", session->next_crypto->dh_ctx->server.pub_key);
  
     ssh_print_hexa("Session server cookie",
                    session->next_crypto->server_kex.cookie, 16);
     ssh_print_hexa("Session client cookie",
                    session->next_crypto->client_kex.cookie, 16);
-    ssh_print_bignum("k", session->next_crypto->k);
+    ssh_print_bignum("k", session->next_crypto->shared_secret);
 }
 #else
 #define ssh_dh_debug(session)
@@ -404,7 +459,7 @@ int ssh_dh_generate_secret(ssh_session session, bignum dest)
     if (tmp == NULL) {
         goto error;
     }
-    p_bits = bignum_num_bits(session->next_crypto->p);
+    p_bits = bignum_num_bits(session->next_crypto->dh_ctx->modulus);
     /* we need at most DH_SECURITY_BITS */
     bits = MIN(DH_SECURITY_BITS * 2, p_bits);
     /* ensure we're not too close of p so rnd()%p stays uniform */
@@ -415,7 +470,7 @@ int ssh_dh_generate_secret(ssh_session session, bignum dest)
     if (rc != 1) {
         goto error;
     }
-    rc = bignum_mod(dest, tmp, session->next_crypto->p, ctx);
+    rc = bignum_mod(dest, tmp, session->next_crypto->dh_ctx->modulus, ctx);
     if (rc != 1) {
         goto error;
     }
@@ -439,16 +494,16 @@ int ssh_dh_build_k(ssh_session session)
 
     /* the server and clients don't use the same numbers */
     if (session->client) {
-        rc = bignum_mod_exp(session->next_crypto->k,
-                            session->next_crypto->f,
-                            session->next_crypto->x,
-                            session->next_crypto->p,
+        rc = bignum_mod_exp(session->next_crypto->shared_secret,
+                            session->next_crypto->dh_ctx->server.pub_key,
+                            session->next_crypto->dh_ctx->client.priv_key,
+                            session->next_crypto->dh_ctx->modulus,
                             ctx);
     } else {
-        rc = bignum_mod_exp(session->next_crypto->k,
-                            session->next_crypto->e,
-                            session->next_crypto->y,
-                            session->next_crypto->p,
+        rc = bignum_mod_exp(session->next_crypto->shared_secret,
+                            session->next_crypto->dh_ctx->client.pub_key,
+                            session->next_crypto->dh_ctx->server.priv_key,
+                            session->next_crypto->dh_ctx->modulus,
                             ctx);
     }
 
@@ -488,22 +543,18 @@ int ssh_client_dh_init(ssh_session session){
     goto error;
   }
 
-  rc = ssh_dh_generate_secret(session, session->next_crypto->x);
+  rc = ssh_dh_generate_secret(session, session->next_crypto->dh_ctx->client.priv_key);
   if (rc == SSH_ERROR){
       goto error;
   }
-  session->next_crypto->e = bignum_new();
-  if (session->next_crypto->e == NULL){
-      goto error;
-  }
-  rc = bignum_mod_exp(session->next_crypto->e, session->next_crypto->g, session->next_crypto->x,
-      session->next_crypto->p, ctx);
+  rc = bignum_mod_exp(session->next_crypto->dh_ctx->client.pub_key, session->next_crypto->dh_ctx->generator, session->next_crypto->dh_ctx->client.priv_key,
+      session->next_crypto->dh_ctx->modulus, ctx);
 
   bignum_ctx_free(ctx);
   if (rc != 1) {
     goto error;
   }
-  rc = ssh_buffer_pack(session->out_buffer, "bB", SSH2_MSG_KEXDH_INIT, session->next_crypto->e);
+  rc = ssh_buffer_pack(session->out_buffer, "bB", SSH2_MSG_KEXDH_INIT, session->next_crypto->dh_ctx->client.pub_key);
   if (rc != SSH_OK) {
     goto error;
   }
@@ -529,7 +580,7 @@ SSH_PACKET_CALLBACK(ssh_packet_client_dh_reply){
 
   ssh_packet_remove_callbacks(session, &ssh_dh_client_callbacks);
 
-  rc = ssh_buffer_unpack(packet, "SBS", &pubkey_blob, &crypto->f,
+  rc = ssh_buffer_unpack(packet, "SBS", &pubkey_blob, &crypto->dh_ctx->server.pub_key,
           &crypto->dh_server_signature);
   if (rc == SSH_ERROR) {
       goto error;
@@ -606,25 +657,21 @@ int ssh_server_dh_process_init(ssh_session session, ssh_buffer packet)
     if (bignum_ctx_invalid(ctx)) {
         goto error;
     }
-    rc = ssh_buffer_unpack(packet, "B", &session->next_crypto->e);
+    rc = ssh_buffer_unpack(packet, "B", &session->next_crypto->dh_ctx->client.pub_key);
     if (rc == SSH_ERROR) {
         ssh_set_error(session, SSH_FATAL, "No e number in client request");
         goto error;
     }
 
-    rc = ssh_dh_generate_secret(session, session->next_crypto->y);
+    rc = ssh_dh_generate_secret(session, session->next_crypto->dh_ctx->server.priv_key);
     if (rc == SSH_ERROR){
         goto error;
     }
 
-    session->next_crypto->f = bignum_new();
-    if (session->next_crypto->f == NULL){
-        goto error;
-    }
-    rc = bignum_mod_exp(session->next_crypto->f,
-                        session->next_crypto->g,
-                        session->next_crypto->y,
-                        session->next_crypto->p, ctx);
+    rc = bignum_mod_exp(session->next_crypto->dh_ctx->server.pub_key,
+                        session->next_crypto->dh_ctx->generator,
+                        session->next_crypto->dh_ctx->server.priv_key,
+                        session->next_crypto->dh_ctx->modulus, ctx);
     bignum_ctx_free(ctx);
     ctx = NULL;
     if (rc != 1) {
@@ -677,7 +724,7 @@ int ssh_server_dh_process_init(ssh_session session, ssh_buffer packet)
                          "bSBS",
                          packet_type,
                          pubkey_blob,
-                         session->next_crypto->f,
+                         session->next_crypto->dh_ctx->server.pub_key,
                          sig_blob);
     SSH_STRING_FREE(sig_blob);
     SSH_STRING_FREE(pubkey_blob);

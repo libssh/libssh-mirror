@@ -69,7 +69,7 @@ static void torture_session_keys(UNUSED_PARAM(void **state))
 
     k_string = ssh_string_new(32);
     ssh_string_fill(k_string, key, 32);
-    test_crypto.k = ssh_make_string_bn(k_string);
+    test_crypto.shared_secret = ssh_make_string_bn(k_string);
 
     rc = ssh_generate_session_keys(&session);
     assert_int_equal(rc, 0);

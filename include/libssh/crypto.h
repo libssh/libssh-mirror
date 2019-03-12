@@ -45,6 +45,7 @@
 #ifdef HAVE_OPENSSL_ECDH_H
 #include <openssl/ecdh.h>
 #endif
+#include "libssh/dh.h"
 #include "libssh/ecdh.h"
 #include "libssh/kex.h"
 #include "libssh/curve25519.h"
@@ -98,10 +99,11 @@ enum ssh_cipher_e {
     SSH_AEAD_CHACHA20_POLY1305
 };
 
+struct dh_ctx;
+
 struct ssh_crypto_struct {
-    bignum e,f,x,k,y;
-    bignum g, p;
-    int dh_group_is_mutable; /* do free group parameters */
+    bignum shared_secret;
+    struct dh_ctx *dh_ctx;
 #ifdef WITH_GEX
     size_t dh_pmin; int dh_pn; int dh_pmax; /* preferred group parameters */
 #endif /* WITH_GEX */

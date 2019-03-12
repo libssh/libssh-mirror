@@ -128,11 +128,10 @@ SSH_PACKET_CALLBACK(ssh_packet_client_dhgex_group)
         ssh_set_error_oom(session);
         goto error;
     }
-    session->next_crypto->dh_group_is_mutable = 1;
     rc = ssh_buffer_unpack(packet,
                            "BB",
-                           &session->next_crypto->p,
-                           &session->next_crypto->g);
+                           &session->next_crypto->dh_ctx->modulus,
+                           &session->next_crypto->dh_ctx->generator);
     if (rc != SSH_OK) {
         ssh_set_error(session, SSH_FATAL, "Invalid DH_GEX_GROUP packet");
         goto error;
@@ -142,7 +141,7 @@ SSH_PACKET_CALLBACK(ssh_packet_client_dhgex_group)
     if (rc != 1) {
         goto error;
     }
-    blen = bignum_num_bits(session->next_crypto->p);
+    blen = bignum_num_bits(session->next_crypto->dh_ctx->modulus);
     if (blen < DH_PMIN || blen > DH_PMAX) {
         ssh_set_error(session,
                 SSH_FATAL,
@@ -152,36 +151,31 @@ SSH_PACKET_CALLBACK(ssh_packet_client_dhgex_group)
                 DH_PMAX);
         goto error;
     }
-    if (bignum_cmp(session->next_crypto->p, one) <= 0) {
+    if (bignum_cmp(session->next_crypto->dh_ctx->modulus, one) <= 0) {
         /* p must be positive and preferably bigger than one */
         ssh_set_error(session, SSH_FATAL, "Invalid dh group parameter p");
     }
-    if (!bignum_is_bit_set(session->next_crypto->p, 0)) {
+    if (!bignum_is_bit_set(session->next_crypto->dh_ctx->modulus, 0)) {
         /* p must be a prime and therefore not divisible by 2 */
         ssh_set_error(session, SSH_FATAL, "Invalid dh group parameter p");
         goto error;
     }
-    bignum_sub(pmin1, session->next_crypto->p, one);
-    if (bignum_cmp(session->next_crypto->g, one) <= 0 ||
-        bignum_cmp(session->next_crypto->g, pmin1) > 0) {
+    bignum_sub(pmin1, session->next_crypto->dh_ctx->modulus, one);
+    if (bignum_cmp(session->next_crypto->dh_ctx->generator, one) <= 0 ||
+        bignum_cmp(session->next_crypto->dh_ctx->generator, pmin1) > 0) {
         /* generator must be at least 2 and smaller than p-1*/
         ssh_set_error(session, SSH_FATAL, "Invalid dh group parameter g");
         goto error;
     }
     /* compute and send DH public parameter */
-    rc = ssh_dh_generate_secret(session, session->next_crypto->x);
+    rc = ssh_dh_generate_secret(session, session->next_crypto->dh_ctx->client.priv_key);
     if (rc == SSH_ERROR) {
         goto error;
     }
-    session->next_crypto->e = bignum_new();
-    if (session->next_crypto->e == NULL) {
-        ssh_set_error_oom(session);
-        goto error;
-    }
-    rc = bignum_mod_exp(session->next_crypto->e,
-                        session->next_crypto->g,
-                        session->next_crypto->x,
-                        session->next_crypto->p,
+    rc = bignum_mod_exp(session->next_crypto->dh_ctx->client.pub_key,
+                        session->next_crypto->dh_ctx->generator,
+                        session->next_crypto->dh_ctx->client.priv_key,
+                        session->next_crypto->dh_ctx->modulus,
                         ctx);
     if (rc != 1) {
         goto error;
@@ -193,7 +187,7 @@ SSH_PACKET_CALLBACK(ssh_packet_client_dhgex_group)
     rc = ssh_buffer_pack(session->out_buffer,
                          "bB",
                          SSH2_MSG_KEX_DH_GEX_INIT,
-                         session->next_crypto->e);
+                         session->next_crypto->dh_ctx->client.pub_key);
     if (rc != SSH_OK) {
         goto error;
     }
@@ -229,7 +223,7 @@ static SSH_PACKET_CALLBACK(ssh_packet_client_dhgex_reply)
     ssh_packet_remove_callbacks(session, &ssh_dhgex_client_callbacks);
     rc = ssh_buffer_unpack(packet,
                            "SBS",
-                           &pubkey_blob, &crypto->f,
+                           &pubkey_blob, &crypto->dh_ctx->server.pub_key,
                            &crypto->dh_server_signature);
 
     if (rc == SSH_ERROR) {
@@ -584,8 +578,8 @@ static SSH_PACKET_CALLBACK(ssh_packet_server_dhgex_request)
                               pn,
                               pmax,
                               &size,
-                              &session->next_crypto->p,
-                              &session->next_crypto->g);
+                              &session->next_crypto->dh_ctx->modulus,
+                              &session->next_crypto->dh_ctx->generator);
     if (rc == SSH_ERROR) {
         ssh_set_error(session,
                       SSH_FATAL,
@@ -595,12 +589,11 @@ static SSH_PACKET_CALLBACK(ssh_packet_server_dhgex_request)
                       pmax);
         goto error;
     }
-    session->next_crypto->dh_group_is_mutable = 1;
     rc = ssh_buffer_pack(session->out_buffer,
                          "bBB",
                          SSH2_MSG_KEX_DH_GEX_GROUP,
-                         session->next_crypto->p,
-                         session->next_crypto->g);
+                         session->next_crypto->dh_ctx->modulus,
+                         session->next_crypto->dh_ctx->generator);
     if (rc != SSH_OK) {
         ssh_set_error_invalid(session);
         goto error;

@@ -25,6 +25,18 @@
 
 #include "libssh/crypto.h"
 
+struct dh_keypair {
+    bignum priv_key;
+    bignum pub_key;
+};
+
+struct dh_ctx {
+    struct dh_keypair client;
+    struct dh_keypair server;
+    bignum generator;
+    bignum modulus;
+};
+
 int ssh_dh_init(void);
 void ssh_dh_finalize(void);
 

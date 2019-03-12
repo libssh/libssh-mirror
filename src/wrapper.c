@@ -169,7 +169,7 @@ void crypto_free(struct ssh_crypto_struct *crypto)
     ssh_key_free(crypto->server_pubkey);
 
     ssh_dh_cleanup(crypto);
-    bignum_safe_free(crypto->k);
+    bignum_safe_free(crypto->shared_secret);
 #ifdef HAVE_ECDH
     SAFE_FREE(crypto->ecdh_client_pubkey);
     SAFE_FREE(crypto->ecdh_server_pubkey);

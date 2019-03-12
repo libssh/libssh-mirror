@@ -198,8 +198,9 @@ int ecdh_build_k(ssh_session session)
         goto out;
     }
 
-    session->next_crypto->k = gcry_mpi_new(0);
-    gcry_mpi_point_snatch_get(session->next_crypto->k, NULL, NULL, point);
+    session->next_crypto->shared_secret = gcry_mpi_new(0);
+    gcry_mpi_point_snatch_get(session->next_crypto->shared_secret,
+                              NULL, NULL, point);
 #else
     s = ssh_sexp_extract_mpi(result, "s", GCRYMPI_FMT_USG, GCRYMPI_FMT_USG);
     if (s == NULL) {
@@ -224,7 +225,7 @@ int ecdh_build_k(ssh_session session)
         goto out;
     }
 
-    err = gcry_mpi_scan(&session->next_crypto->k,
+    err = gcry_mpi_scan(&session->next_crypto->shared_secret,
                         GCRYMPI_FMT_USG,
                         (const char *)ssh_string_data(s) + 1,
                         k_len / 2,
@@ -245,7 +246,7 @@ int ecdh_build_k(ssh_session session)
                    session->next_crypto->server_kex.cookie, 16);
     ssh_print_hexa("Session client cookie",
                    session->next_crypto->client_kex.cookie, 16);
-    ssh_print_bignum("Shared secret key", session->next_crypto->k);
+    ssh_print_bignum("Shared secret key", session->next_crypto->shared_secret);
 #endif
 
  out:
