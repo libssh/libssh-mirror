@@ -104,6 +104,12 @@ enum ssh_keytypes_e ssh_key_type_from_signature_name(const char *name);
 #define is_ecdsa_key_type(t) \
     ((t) >= SSH_KEYTYPE_ECDSA_P256 && (t) <= SSH_KEYTYPE_ECDSA_P521)
 
+#define is_cert_type(kt)\
+      ((kt) == SSH_KEYTYPE_DSS_CERT01 ||\
+       (kt) == SSH_KEYTYPE_RSA_CERT01 ||\
+      ((kt) >= SSH_KEYTYPE_ECDSA_P256_CERT01 &&\
+       (kt) <= SSH_KEYTYPE_ED25519_CERT01))
+
 /* SSH Signature Functions */
 ssh_signature ssh_signature_new(void);
 void ssh_signature_free(ssh_signature sign);

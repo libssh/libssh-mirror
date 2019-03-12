@@ -781,7 +781,7 @@ static int ssh_bind_setup_files(void **state)
     /* For ed25519 the test keys are not available in legacy PEM format. Using
      * the new OpenSSH format for all algorithms */
     torture_write_file(LIBSSH_RSA_TESTKEY,
-                       torture_get_openssh_testkey(SSH_KEYTYPE_RSA 0));
+                       torture_get_openssh_testkey(SSH_KEYTYPE_RSA, 0));
 
     torture_write_file(LIBSSH_ED25519_TESTKEY,
                        torture_get_openssh_testkey(SSH_KEYTYPE_ED25519, 0));

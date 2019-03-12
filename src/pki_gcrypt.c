@@ -1526,6 +1526,10 @@ int pki_key_compare(const ssh_key k1,
         case SSH_KEYTYPE_DSS_CERT01:
         case SSH_KEYTYPE_RSA_CERT01:
         case SSH_KEYTYPE_ECDSA:
+        case SSH_KEYTYPE_ECDSA_P256_CERT01:
+        case SSH_KEYTYPE_ECDSA_P384_CERT01:
+        case SSH_KEYTYPE_ECDSA_P521_CERT01:
+        case SSH_KEYTYPE_ED25519_CERT01:
         case SSH_KEYTYPE_RSA1:
         case SSH_KEYTYPE_UNKNOWN:
             return 1;
