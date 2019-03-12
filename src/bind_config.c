@@ -42,9 +42,14 @@
 
 #define MAX_LINE_SIZE 1024
 
+/* Flags used for the parser state */
+#define PARSING     1
+#define IN_MATCH    (1<<1)
+
 struct ssh_bind_config_keyword_table_s {
   const char *name;
   enum ssh_bind_config_opcode_e opcode;
+  bool allowed_in_match;
 };
 
 static struct ssh_bind_config_keyword_table_s
@@ -67,7 +72,8 @@ ssh_bind_config_keyword_table[] = {
     },
     {
         .name   = "loglevel",
-        .opcode = BIND_CFG_LOGLEVEL
+        .opcode = BIND_CFG_LOGLEVEL,
+        .allowed_in_match = true,
     },
     {
         .name   = "ciphers",
@@ -82,17 +88,83 @@ ssh_bind_config_keyword_table[] = {
         .opcode = BIND_CFG_KEXALGORITHMS
     },
     {
+        .name   = "match",
+        .opcode = BIND_CFG_MATCH,
+        .allowed_in_match = true
+    },
+    {
         .opcode = BIND_CFG_UNKNOWN,
     }
 };
 
+enum ssh_bind_config_match_e {
+    BIND_MATCH_UNKNOWN = -1,
+    BIND_MATCH_ALL,
+    BIND_MATCH_USER,
+    BIND_MATCH_GROUP,
+    BIND_MATCH_HOST,
+    BIND_MATCH_LOCALADDRESS,
+    BIND_MATCH_LOCALPORT,
+    BIND_MATCH_RDOMAIN,
+    BIND_MATCH_ADDRESS,
+};
+
+struct ssh_bind_config_match_keyword_table_s {
+    const char *name;
+    enum ssh_bind_config_match_e opcode;
+};
+
+static struct ssh_bind_config_match_keyword_table_s
+ssh_bind_config_match_keyword_table[] = {
+    {
+        .name   = "all",
+        .opcode = BIND_MATCH_ALL
+    },
+    {
+        .name   = "user",
+        .opcode = BIND_MATCH_USER
+    },
+    {
+        .name   = "group",
+        .opcode = BIND_MATCH_GROUP
+    },
+    {
+        .name   = "host",
+        .opcode = BIND_MATCH_HOST
+    },
+    {
+        .name   = "localaddress",
+        .opcode = BIND_MATCH_LOCALADDRESS
+    },
+    {
+        .name   = "localport",
+        .opcode = BIND_MATCH_LOCALPORT
+    },
+    {
+        .name   = "rdomain",
+        .opcode = BIND_MATCH_RDOMAIN
+    },
+    {
+        .name   = "address",
+        .opcode = BIND_MATCH_ADDRESS
+    },
+    {
+        .opcode = BIND_MATCH_UNKNOWN
+    },
+};
+
 static enum ssh_bind_config_opcode_e
-ssh_bind_config_get_opcode(char *keyword)
+ssh_bind_config_get_opcode(char *keyword, uint32_t *parser_flags)
 {
     int i;
 
     for (i = 0; ssh_bind_config_keyword_table[i].name != NULL; i++) {
         if (strcasecmp(keyword, ssh_bind_config_keyword_table[i].name) == 0) {
+            if ((*parser_flags & IN_MATCH) &&
+                !(ssh_bind_config_keyword_table[i].allowed_in_match))
+            {
+                return BIND_CFG_NOT_ALLOWED_IN_MATCH;
+            }
             return ssh_bind_config_keyword_table[i].opcode;
         }
     }
@@ -171,6 +243,19 @@ static void local_parse_glob(ssh_bind bind,
 }
 #endif /* HAVE_GLOB HAVE_GLOB_GL_FLAGS_MEMBER */
 
+static enum ssh_bind_config_match_e
+ssh_bind_config_get_match_opcode(const char *keyword)
+{
+    size_t i;
+
+    for (i = 0; ssh_bind_config_match_keyword_table[i].name != NULL; i++) {
+        if (strcasecmp(keyword, ssh_bind_config_match_keyword_table[i].name) == 0) {
+            return ssh_bind_config_match_keyword_table[i].opcode;
+        }
+    }
+
+    return BIND_MATCH_UNKNOWN;
+}
 
 static int
 ssh_bind_config_parse_line(ssh_bind bind,
@@ -215,10 +300,11 @@ ssh_bind_config_parse_line(ssh_bind bind,
         return 0;
     }
 
-    opcode = ssh_bind_config_get_opcode(keyword);
-    if (*parser_flags == 1 &&
+    opcode = ssh_bind_config_get_opcode(keyword, parser_flags);
+    if ((*parser_flags & PARSING) &&
             opcode != BIND_CFG_HOSTKEY &&
             opcode != BIND_CFG_INCLUDE &&
+            opcode != BIND_CFG_MATCH &&
             opcode > BIND_CFG_UNSUPPORTED) { /* Ignore all unknown types here */
         /* Skip all the options that were already applied */
         if (seen[opcode] != 0) {
@@ -231,7 +317,7 @@ ssh_bind_config_parse_line(ssh_bind bind,
     switch (opcode) {
     case BIND_CFG_INCLUDE:
         p = ssh_config_get_str_tok(&s, NULL);
-        if (p && *parser_flags) {
+        if (p && (*parser_flags & PARSING)) {
 #if defined(HAVE_GLOB) && defined(HAVE_GLOB_GL_FLAGS_MEMBER)
             local_parse_glob(bind, p, parser_flags, seen);
 #else
@@ -242,39 +328,39 @@ ssh_bind_config_parse_line(ssh_bind bind,
 
     case BIND_CFG_HOSTKEY:
         p = ssh_config_get_str_tok(&s, NULL);
-        if (p && *parser_flags) {
+        if (p && (*parser_flags & PARSING)) {
             ssh_bind_options_set(bind, SSH_BIND_OPTIONS_HOSTKEY, p);
         }
         break;
     case BIND_CFG_LISTENADDRESS:
         p = ssh_config_get_str_tok(&s, NULL);
-        if (p && *parser_flags) {
+        if (p && (*parser_flags & PARSING)) {
             ssh_bind_options_set(bind, SSH_BIND_OPTIONS_BINDADDR, p);
         }
         break;
     case BIND_CFG_PORT:
         p = ssh_config_get_str_tok(&s, NULL);
-        if (p && *parser_flags) {
+        if (p && (*parser_flags & PARSING)) {
             ssh_bind_options_set(bind, SSH_BIND_OPTIONS_BINDPORT_STR, p);
         }
         break;
     case BIND_CFG_CIPHERS:
         p = ssh_config_get_str_tok(&s, NULL);
-        if (p && *parser_flags) {
+        if (p && (*parser_flags & PARSING)) {
             ssh_bind_options_set(bind, SSH_BIND_OPTIONS_CIPHERS_C_S, p);
             ssh_bind_options_set(bind, SSH_BIND_OPTIONS_CIPHERS_S_C, p);
         }
         break;
     case BIND_CFG_MACS:
         p = ssh_config_get_str_tok(&s, NULL);
-        if (p && *parser_flags) {
+        if (p && (*parser_flags & PARSING)) {
             ssh_bind_options_set(bind, SSH_BIND_OPTIONS_HMAC_C_S, p);
             ssh_bind_options_set(bind, SSH_BIND_OPTIONS_HMAC_S_C, p);
         }
         break;
     case BIND_CFG_LOGLEVEL:
         p = ssh_config_get_str_tok(&s, NULL);
-        if (p && *parser_flags) {
+        if (p && (*parser_flags & PARSING)) {
             int value = -1;
 
             if (strcasecmp(p, "quiet") == 0) {
@@ -300,9 +386,112 @@ ssh_bind_config_parse_line(ssh_bind bind,
         break;
     case BIND_CFG_KEXALGORITHMS:
         p = ssh_config_get_str_tok(&s, NULL);
-        if (p && *parser_flags) {
+        if (p && (*parser_flags & PARSING)) {
             ssh_bind_options_set(bind, SSH_BIND_OPTIONS_KEY_EXCHANGE, p);
         }
+        break;
+    case BIND_CFG_MATCH: {
+        bool negate;
+        int result = PARSING;
+        size_t args = 0;
+        enum ssh_bind_config_match_e opt;
+        const char *p2 = NULL;
+
+        /* The options set in Match blocks should be applied when a connection
+         * is accepted, and not right away when parsing the file (as it is
+         * currently done). This means the configuration files should be parsed
+         * again or the options set in the Match blocks should be stored and
+         * applied as necessary. */
+
+        /* If this is the first Match block, erase the seen table to allow
+         * options to be overridden. Erasing the seen table was the easiest way
+         * to allow overriding an option, but only for the first occurrence of
+         * an option in a Match block. This is sufficient for the current
+         * implementation which supports only the 'All' criterion, meaning the
+         * options can be applied right away. */
+        if (!(*parser_flags & IN_MATCH)) {
+            memset(seen, 0x00, BIND_CFG_MAX * sizeof(uint8_t));
+        }
+
+        /* In this line the PARSING bit is cleared from the flags */
+        *parser_flags = IN_MATCH;
+        do {
+            p = p2 = ssh_config_get_str_tok(&s, NULL);
+            if (p == NULL || p[0] == '\0') {
+                break;
+            }
+            args++;
+            SSH_LOG(SSH_LOG_TRACE, "line %d: Processing Match keyword '%s'",
+                    count, p);
+
+            /* If the option is prefixed with ! the result should be negated */
+            negate = false;
+            if (p[0] == '!') {
+                negate = true;
+                p++;
+            }
+
+            opt = ssh_bind_config_get_match_opcode(p);
+            switch (opt) {
+            case BIND_MATCH_ALL:
+                p = ssh_config_get_str_tok(&s, NULL);
+                if ((args == 1) && (p == NULL || p[0] == '\0')) {
+                    /* The "all" keyword does not accept arguments or modifiers
+                     */
+                    if (negate == true) {
+                        result = 0;
+                    }
+                    break;
+                }
+                ssh_set_error(bind, SSH_FATAL,
+                              "line %d: ERROR - Match all cannot be combined with "
+                              "other Match attributes", count);
+                SAFE_FREE(x);
+                return -1;
+            case BIND_MATCH_USER:
+            case BIND_MATCH_GROUP:
+            case BIND_MATCH_HOST:
+            case BIND_MATCH_LOCALADDRESS:
+            case BIND_MATCH_LOCALPORT:
+            case BIND_MATCH_RDOMAIN:
+            case BIND_MATCH_ADDRESS:
+                /* Only "All" is supported for now */
+                /* Skip one argument */
+                p = ssh_config_get_str_tok(&s, NULL);
+                if (p == NULL || p[0] == '\0') {
+                    SSH_LOG(SSH_LOG_WARN, "line %d: Match keyword "
+                            "'%s' requires argument\n", count, p2);
+                    SAFE_FREE(x);
+                    return -1;
+                }
+                args++;
+                SSH_LOG(SSH_LOG_WARN,
+                        "line %d: Unsupported Match keyword '%s', ignoring\n",
+                        count,
+                        p2);
+                result = 0;
+                break;
+            case BIND_MATCH_UNKNOWN:
+            default:
+                ssh_set_error(bind, SSH_FATAL,
+                              "ERROR - Unknown argument '%s' for Match keyword", p);
+                SAFE_FREE(x);
+                return -1;
+            }
+        } while (p != NULL && p[0] != '\0');
+        if (args == 0) {
+            ssh_set_error(bind, SSH_FATAL,
+                          "ERROR - Match keyword requires an argument");
+            SAFE_FREE(x);
+            return -1;
+        }
+        /* This line only sets the PARSING flag if all checks passed */
+        *parser_flags |= result;
+        break;
+    }
+    case BIND_CFG_NOT_ALLOWED_IN_MATCH:
+        SSH_LOG(SSH_LOG_WARN, "Option not allowed in Match block: %s, line: %d",
+                keyword, count);
         break;
     case BIND_CFG_UNKNOWN:
         SSH_LOG(SSH_LOG_WARN, "Unknown option: %s, line: %d",
@@ -349,7 +538,7 @@ int ssh_bind_config_parse_file(ssh_bind bind, const char *filename)
 
     SSH_LOG(SSH_LOG_PACKET, "Reading configuration data from %s", filename);
 
-    parser_flags = 1;
+    parser_flags = PARSING;
     while (fgets(line, sizeof(line), f)) {
         count++;
         rv = ssh_bind_config_parse_line(bind, line, count, &parser_flags, seen);

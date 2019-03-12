@@ -29,6 +29,8 @@
 #include "libssh/server.h"
 
 enum ssh_bind_config_opcode_e {
+    /* Known but not allowed in Match block */
+    BIND_CFG_NOT_ALLOWED_IN_MATCH = -4,
     /* Unknown opcode */
     BIND_CFG_UNKNOWN = -3,
     /* Known and not applicable to libssh */
@@ -43,6 +45,7 @@ enum ssh_bind_config_opcode_e {
     BIND_CFG_CIPHERS,
     BIND_CFG_MACS,
     BIND_CFG_KEXALGORITHMS,
+    BIND_CFG_MATCH,
 
     BIND_CFG_MAX /* Keep this one last in the list */
 };
