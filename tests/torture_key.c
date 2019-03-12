@@ -497,7 +497,6 @@ static const char torture_ed25519_public_testkey[] =
         "BU6Nh3PmAiqX aris@kalix86";
 
 static const char *torture_get_testkey_internal(enum ssh_keytypes_e type,
-                                                int bits,
                                                 bool with_passphrase,
                                                 int pubkey,
                                                 int format)
@@ -529,35 +528,33 @@ static const char *torture_get_testkey_internal(enum ssh_keytypes_e type,
                 return torture_rsa_private_openssh_testkey;
             }
             return torture_rsa_private_testkey;
-        case SSH_KEYTYPE_ECDSA:
-            if (bits == 521) {
-                if (pubkey) {
-                    return torture_ecdsa521_public_testkey;
-                } else if (with_passphrase) {
-                    if (format == 1) {
-                        return torture_ecdsa521_private_openssh_testkey_passphrase;
-                    }
-                    return torture_ecdsa521_private_testkey_passphrase;
-                }
+        case SSH_KEYTYPE_ECDSA_P521:
+            if (pubkey) {
+                return torture_ecdsa521_public_testkey;
+            } else if (with_passphrase) {
                 if (format == 1) {
-                    return torture_ecdsa521_private_openssh_testkey;
+                    return torture_ecdsa521_private_openssh_testkey_passphrase;
                 }
-                return torture_ecdsa521_private_testkey;
-            } else if (bits == 384) {
-                if (pubkey) {
-                    return torture_ecdsa384_public_testkey;
-                } else if (with_passphrase){
-                    if (format == 1) {
-                        return torture_ecdsa384_private_openssh_testkey_passphrase;
-                    }
-                    return torture_ecdsa384_private_testkey_passphrase;
-                }
-                if (format == 1) {
-                    return torture_ecdsa384_private_openssh_testkey;
-                }
-                return torture_ecdsa384_private_testkey;
+                return torture_ecdsa521_private_testkey_passphrase;
             }
-
+            if (format == 1) {
+                return torture_ecdsa521_private_openssh_testkey;
+            }
+            return torture_ecdsa521_private_testkey;
+        case SSH_KEYTYPE_ECDSA_P384:
+            if (pubkey) {
+                return torture_ecdsa384_public_testkey;
+            } else if (with_passphrase){
+                if (format == 1) {
+                    return torture_ecdsa384_private_openssh_testkey_passphrase;
+                }
+                return torture_ecdsa384_private_testkey_passphrase;
+            }
+            if (format == 1) {
+                return torture_ecdsa384_private_openssh_testkey;
+            }
+            return torture_ecdsa384_private_testkey;
+        case SSH_KEYTYPE_ECDSA_P256:
             if (pubkey) {
                 return torture_ecdsa256_public_testkey;
             } else if (with_passphrase){
@@ -590,6 +587,7 @@ static const char *torture_get_testkey_internal(enum ssh_keytypes_e type,
         case SSH_KEYTYPE_RSA_CERT01:
             return torture_rsa_testkey_cert;
         case SSH_KEYTYPE_RSA1:
+        case SSH_KEYTYPE_ECDSA:
         case SSH_KEYTYPE_UNKNOWN:
             return NULL;
     }
@@ -599,23 +597,21 @@ static const char *torture_get_testkey_internal(enum ssh_keytypes_e type,
 
 /* Return the encrypted private key in a new OpenSSH format */
 const char *torture_get_openssh_testkey(enum ssh_keytypes_e type,
-                                        int ecda_bits,
                                         bool with_passphrase)
 {
-    return torture_get_testkey_internal(type, ecda_bits, with_passphrase, 0, 1);
+    return torture_get_testkey_internal(type, with_passphrase, 0, 1);
 }
 
 /* Return the private key in the legacy PEM format */
 const char *torture_get_testkey(enum ssh_keytypes_e type,
-                                int ecda_bits,
                                 bool with_passphrase)
 {
-    return torture_get_testkey_internal(type, ecda_bits, with_passphrase, 0, 0);
+    return torture_get_testkey_internal(type, with_passphrase, 0, 0);
 }
 
-const char *torture_get_testkey_pub(enum ssh_keytypes_e type, int ecda_bits)
+const char *torture_get_testkey_pub(enum ssh_keytypes_e type)
 {
-    return torture_get_testkey_internal(type, ecda_bits, 0, 1, 0);
+    return torture_get_testkey_internal(type, 0, 1, 0);
 }
 
 const char *torture_get_testkey_passphrase(void)

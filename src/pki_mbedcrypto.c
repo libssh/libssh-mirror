@@ -61,6 +61,24 @@ static int pki_key_ecdsa_to_nid(mbedtls_ecdsa_context *ecdsa)
     return -1;
 }
 
+static enum ssh_keytypes_e pki_key_ecdsa_to_key_type(mbedtls_ecdsa_context *ecdsa)
+{
+    static int nid;
+
+    nid = pki_key_ecdsa_to_nid(ecdsa);
+
+    switch (nid) {
+        case NID_mbedtls_nistp256:
+            return SSH_KEYTYPE_ECDSA_P256;
+        case NID_mbedtls_nistp384:
+            return SSH_KEYTYPE_ECDSA_P384;
+        case NID_mbedtls_nistp521:
+            return SSH_KEYTYPE_ECDSA_P521;
+        default:
+            return SSH_KEYTYPE_UNKNOWN;
+    }
+}
+
 ssh_key pki_private_key_from_base64(const char *b64_key, const char *passphrase,
         ssh_auth_callback auth_fn, void *auth_data)
 {
@@ -121,7 +139,9 @@ ssh_key pki_private_key_from_base64(const char *b64_key, const char *passphrase,
                 goto fail;
             }
             break;
-        case SSH_KEYTYPE_ECDSA:
+        case SSH_KEYTYPE_ECDSA_P256:
+        case SSH_KEYTYPE_ECDSA_P384:
+        case SSH_KEYTYPE_ECDSA_P521:
             ecdsa = malloc(sizeof(mbedtls_pk_context));
             if (ecdsa == NULL) {
                 return NULL;
@@ -173,10 +193,6 @@ ssh_key pki_private_key_from_base64(const char *b64_key, const char *passphrase,
         goto fail;
     }
 
-    key->type = type;
-    key->type_c = ssh_key_type_to_char(type);
-    key->flags = SSH_KEY_FLAG_PRIVATE | SSH_KEY_FLAG_PUBLIC;
-    key->rsa = rsa;
     if (ecdsa != NULL) {
         mbedtls_ecp_keypair *keypair = mbedtls_pk_ec(*ecdsa);
 
@@ -189,16 +205,27 @@ ssh_key pki_private_key_from_base64(const char *b64_key, const char *passphrase,
         mbedtls_ecdsa_from_keypair(key->ecdsa, keypair);
         mbedtls_pk_free(ecdsa);
         SAFE_FREE(ecdsa);
+
+        key->ecdsa_nid = pki_key_ecdsa_to_nid(key->ecdsa);
+
+        /* pki_privatekey_type_from_string always returns P256 for ECDSA
+        * keys, so we need to figure out the correct type here */
+        type = pki_key_ecdsa_to_key_type(key->ecdsa);
+        if (type == SSH_KEYTYPE_UNKNOWN) {
+            SSH_LOG(SSH_LOG_WARN, "Invalid private key.");
+            goto fail;
+        }
     } else {
         key->ecdsa = NULL;
     }
+
+    key->type = type;
+    key->type_c = ssh_key_type_to_char(type);
+    key->flags = SSH_KEY_FLAG_PRIVATE | SSH_KEY_FLAG_PUBLIC;
+    key->rsa = rsa;
     key->ed25519_privkey = ed25519;
     rsa = NULL;
     ecdsa = NULL;
-    if (key->type == SSH_KEYTYPE_ECDSA) {
-        key->ecdsa_nid = pki_key_ecdsa_to_nid(key->ecdsa);
-        key->type_c = pki_key_ecdsa_nid_to_name(key->ecdsa_nid);
-    }
 
     return key;
 fail:
@@ -401,7 +428,9 @@ ssh_key pki_key_dup(const ssh_key key, int demote)
 
             break;
         }
-        case SSH_KEYTYPE_ECDSA:
+        case SSH_KEYTYPE_ECDSA_P256:
+        case SSH_KEYTYPE_ECDSA_P384:
+        case SSH_KEYTYPE_ECDSA_P521:
             new->ecdsa_nid = key->ecdsa_nid;
 
             new->ecdsa = malloc(sizeof(mbedtls_ecdsa_context));
@@ -511,7 +540,9 @@ int pki_key_compare(const ssh_key k1, const ssh_key k2, enum ssh_keycmp_e what)
             }
             break;
         }
-        case SSH_KEYTYPE_ECDSA: {
+        case SSH_KEYTYPE_ECDSA_P256:
+        case SSH_KEYTYPE_ECDSA_P384:
+        case SSH_KEYTYPE_ECDSA_P521: {
             mbedtls_ecp_keypair *ecdsa1 = k1->ecdsa;
             mbedtls_ecp_keypair *ecdsa2 = k2->ecdsa;
 
@@ -678,27 +709,9 @@ ssh_string pki_publickey_to_blob(const ssh_key key)
 
             break;
         }
-        case SSH_KEYTYPE_ECDSA:
-            rc = ssh_buffer_reinit(buffer);
-            if (rc < 0) {
-                ssh_buffer_free(buffer);
-                return NULL;
-            }
-
-            type_s =
-                ssh_string_from_char(pki_key_ecdsa_nid_to_name(key->ecdsa_nid));
-            if (type_s == NULL) {
-                ssh_buffer_free(buffer);
-                return NULL;
-            }
-
-            rc = ssh_buffer_add_ssh_string(buffer, type_s);
-            ssh_string_free(type_s);
-            if (rc < 0) {
-                ssh_buffer_free(buffer);
-                return NULL;
-            }
-
+        case SSH_KEYTYPE_ECDSA_P256:
+        case SSH_KEYTYPE_ECDSA_P384:
+        case SSH_KEYTYPE_ECDSA_P521:
             type_s =
                 ssh_string_from_char(pki_key_ecdsa_nid_to_char(key->ecdsa_nid));
             if (type_s == NULL) {
@@ -773,7 +786,9 @@ ssh_string pki_signature_to_blob(const ssh_signature sig)
         case SSH_KEYTYPE_RSA:
             sig_blob = ssh_string_copy(sig->rsa_sig);
             break;
-        case SSH_KEYTYPE_ECDSA: {
+        case SSH_KEYTYPE_ECDSA_P256:
+        case SSH_KEYTYPE_ECDSA_P384:
+        case SSH_KEYTYPE_ECDSA_P521: {
             ssh_string r;
             ssh_string s;
             ssh_buffer b;
@@ -911,8 +926,8 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
     }
 
     sig->type = type;
+    sig->type_c = ssh_key_signature_to_char(type, hash_type);
     sig->hash_type = hash_type;
-    sig->type_c = pubkey->type_c; /* for all types but RSA */
 
     switch(type) {
         case SSH_KEYTYPE_RSA:
@@ -920,9 +935,10 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
             if (sig == NULL) {
                 return NULL;
             }
-            sig->type_c = ssh_key_signature_to_char(type, hash_type);
             break;
-        case SSH_KEYTYPE_ECDSA: {
+        case SSH_KEYTYPE_ECDSA_P256:
+        case SSH_KEYTYPE_ECDSA_P384:
+        case SSH_KEYTYPE_ECDSA_P521: {
             ssh_buffer b;
             ssh_string r;
             ssh_string s;
@@ -1050,7 +1066,9 @@ int pki_signature_verify(ssh_session session, const ssh_signature sig, const
                 return SSH_ERROR;
             }
             break;
-        case SSH_KEYTYPE_ECDSA:
+        case SSH_KEYTYPE_ECDSA_P256:
+        case SSH_KEYTYPE_ECDSA_P384:
+        case SSH_KEYTYPE_ECDSA_P521:
             rc = mbedtls_ecdsa_verify(&key->ecdsa->grp, hash, hlen,
                     &key->ecdsa->Q, sig->ecdsa_sig.r, sig->ecdsa_sig.s);
             if (rc != 0) {
@@ -1157,19 +1175,20 @@ ssh_signature pki_do_sign_hash(const ssh_key privkey,
     }
 
     sig->type = privkey->type;
+    sig->type_c = ssh_key_signature_to_char(privkey->type, hash_type);
     sig->hash_type = hash_type;
-    sig->type_c = privkey->type_c;
 
     switch(privkey->type) {
         case SSH_KEYTYPE_RSA:
-            sig->type_c = ssh_key_signature_to_char(privkey->type, hash_type);
             sig->rsa_sig = rsa_do_sign_hash(hash, hlen, privkey->rsa, hash_type);
             if (sig->rsa_sig == NULL) {
                 ssh_signature_free(sig);
                 return NULL;
             }
             break;
-         case SSH_KEYTYPE_ECDSA:
+        case SSH_KEYTYPE_ECDSA_P256:
+        case SSH_KEYTYPE_ECDSA_P384:
+        case SSH_KEYTYPE_ECDSA_P521:
             sig->ecdsa_sig.r = bignum_new();
             if (sig->ecdsa_sig.r == NULL) {
                 return NULL;
@@ -1231,18 +1250,19 @@ ssh_signature pki_do_sign_sessionid_hash(const ssh_key key,
     }
 
     sig->type = key->type;
-    sig->type_c = key->type_c;
+    sig->type_c = ssh_key_signature_to_char(key->type, hash_type);
 
     switch (key->type) {
         case SSH_KEYTYPE_RSA:
-            sig->type_c = ssh_key_signature_to_char(key->type, hash_type);
             sig->rsa_sig = rsa_do_sign_hash(hash, hlen, key->rsa, hash_type);
             if (sig->rsa_sig == NULL) {
                 ssh_signature_free(sig);
                 return NULL;
             }
             break;
-        case SSH_KEYTYPE_ECDSA:
+        case SSH_KEYTYPE_ECDSA_P256:
+        case SSH_KEYTYPE_ECDSA_P384:
+        case SSH_KEYTYPE_ECDSA_P521:
             sig->ecdsa_sig.r = bignum_new();
             if (sig->ecdsa_sig.r == NULL) {
                 return NULL;
@@ -1452,25 +1472,23 @@ fail:
 
 int pki_key_generate_ecdsa(ssh_key key, int parameter)
 {
-    int nid;
     int ok;
 
     switch (parameter) {
         case 384:
-            nid = NID_mbedtls_nistp384;
+            key->ecdsa_nid = NID_mbedtls_nistp384;
+            key->type = SSH_KEYTYPE_ECDSA_P384;
             break;
         case 521:
-            nid = NID_mbedtls_nistp521;
+            key->ecdsa_nid = NID_mbedtls_nistp521;
+            key->type = SSH_KEYTYPE_ECDSA_P521;
             break;
         case 256:
         default:
-            nid = NID_mbedtls_nistp256;
+            key->ecdsa_nid = NID_mbedtls_nistp256;
+            key->type = SSH_KEYTYPE_ECDSA_P256;
             break;
     }
-
-    key->ecdsa_nid = nid;
-    key->type = SSH_KEYTYPE_ECDSA;
-    key->type_c = pki_key_ecdsa_nid_to_name(nid);
 
     key->ecdsa = malloc(sizeof(mbedtls_ecdsa_context));
     if (key->ecdsa == NULL) {
@@ -1480,7 +1498,7 @@ int pki_key_generate_ecdsa(ssh_key key, int parameter)
     mbedtls_ecdsa_init(key->ecdsa);
 
     ok = mbedtls_ecdsa_genkey(key->ecdsa,
-                              pki_key_ecdsa_nid_to_mbed_gid(nid),
+                              pki_key_ecdsa_nid_to_mbed_gid(key->ecdsa_nid),
                               mbedtls_ctr_drbg_random,
                               ssh_get_mbedtls_ctr_drbg_context());
 

@@ -92,6 +92,24 @@ static int pki_key_ecdsa_to_nid(EC_KEY *k)
     return -1;
 }
 
+static enum ssh_keytypes_e pki_key_ecdsa_to_key_type(EC_KEY *k)
+{
+    static int nid;
+
+    nid = pki_key_ecdsa_to_nid(k);
+
+    switch (nid) {
+        case NID_X9_62_prime256v1:
+            return SSH_KEYTYPE_ECDSA_P256;
+        case NID_secp384r1:
+            return SSH_KEYTYPE_ECDSA_P384;
+        case NID_secp521r1:
+            return SSH_KEYTYPE_ECDSA_P521;
+        default:
+            return SSH_KEYTYPE_UNKNOWN;
+    }
+}
+
 const char *pki_key_ecdsa_nid_to_name(int nid)
 {
     switch (nid) {
@@ -451,7 +469,9 @@ ssh_key pki_key_dup(const ssh_key key, int demote)
 
         break;
     }
-    case SSH_KEYTYPE_ECDSA:
+    case SSH_KEYTYPE_ECDSA_P256:
+    case SSH_KEYTYPE_ECDSA_P384:
+    case SSH_KEYTYPE_ECDSA_P521:
 #ifdef HAVE_OPENSSL_ECC
         new->ecdsa_nid = key->ecdsa_nid;
 
@@ -551,26 +571,24 @@ int pki_key_generate_dss(ssh_key key, int parameter){
 
 #ifdef HAVE_OPENSSL_ECC
 int pki_key_generate_ecdsa(ssh_key key, int parameter) {
-    int nid;
     int ok;
 
     switch (parameter) {
         case 384:
-            nid = NID_secp384r1;
+            key->ecdsa_nid = NID_secp384r1;
+            key->type = SSH_KEYTYPE_ECDSA_P384;
             break;
         case 521:
-            nid = NID_secp521r1;
+            key->ecdsa_nid = NID_secp521r1;
+            key->type = SSH_KEYTYPE_ECDSA_P521;
             break;
         case 256:
         default:
-            nid = NID_X9_62_prime256v1;
+            key->ecdsa_nid = NID_X9_62_prime256v1;
+            key->type = SSH_KEYTYPE_ECDSA_P256;
     }
 
-    key->ecdsa_nid = nid;
-    key->type = SSH_KEYTYPE_ECDSA;
-    key->type_c = pki_key_ecdsa_nid_to_name(nid);
-
-    key->ecdsa = EC_KEY_new_by_curve_name(nid);
+    key->ecdsa = EC_KEY_new_by_curve_name(key->ecdsa_nid);
     if (key->ecdsa == NULL) {
         return SSH_ERROR;
     }
@@ -650,7 +668,9 @@ int pki_key_compare(const ssh_key k1,
             }
             break;
         }
-        case SSH_KEYTYPE_ECDSA:
+        case SSH_KEYTYPE_ECDSA_P256:
+        case SSH_KEYTYPE_ECDSA_P384:
+        case SSH_KEYTYPE_ECDSA_P521:
 #ifdef HAVE_OPENSSL_ECC
             {
                 const EC_POINT *p1 = EC_KEY_get0_public_key(k1->ecdsa);
@@ -756,7 +776,9 @@ ssh_string pki_private_key_to_pem(const ssh_key key,
             }
             break;
 #ifdef HAVE_ECC
-        case SSH_KEYTYPE_ECDSA:
+        case SSH_KEYTYPE_ECDSA_P256:
+        case SSH_KEYTYPE_ECDSA_P384:
+        case SSH_KEYTYPE_ECDSA_P521:
             if (passphrase == NULL) {
                 struct pem_get_password_struct pgp = { auth_fn, auth_data };
 
@@ -818,7 +840,7 @@ ssh_key pki_private_key_from_base64(const char *b64_key,
     DSA *dsa = NULL;
     RSA *rsa = NULL;
     ed25519_privkey *ed25519 = NULL;
-    ssh_key key;
+    ssh_key key = NULL;
     enum ssh_keytypes_e type;
 #ifdef HAVE_OPENSSL_ECC
     EC_KEY *ecdsa = NULL;
@@ -884,7 +906,9 @@ ssh_key pki_private_key_from_base64(const char *b64_key,
             }
 
             break;
-        case SSH_KEYTYPE_ECDSA:
+        case SSH_KEYTYPE_ECDSA_P256:
+        case SSH_KEYTYPE_ECDSA_P384:
+        case SSH_KEYTYPE_ECDSA_P521:
 #ifdef HAVE_OPENSSL_ECC
             if (passphrase == NULL) {
                 if (auth_fn) {
@@ -908,12 +932,21 @@ ssh_key pki_private_key_from_base64(const char *b64_key,
                 return NULL;
             }
 
+            /* pki_privatekey_type_from_string always returns P256 for ECDSA
+             * keys, so we need to figure out the correct type here */
+            type = pki_key_ecdsa_to_key_type(ecdsa);
+            if (type == SSH_KEYTYPE_UNKNOWN) {
+                SSH_LOG(SSH_LOG_WARN, "Invalid private key.");
+                goto fail;
+            }
+
             break;
 #endif
         case SSH_KEYTYPE_ED25519:
             /* Cannot open ed25519 keys with libcrypto */
         case SSH_KEYTYPE_DSS_CERT01:
         case SSH_KEYTYPE_RSA_CERT01:
+        case SSH_KEYTYPE_ECDSA:
         case SSH_KEYTYPE_UNKNOWN:
             BIO_free(mem);
             SSH_LOG(SSH_LOG_WARN, "Unknown or invalid private key type %d", type);
@@ -933,9 +966,8 @@ ssh_key pki_private_key_from_base64(const char *b64_key,
     key->ecdsa = ecdsa;
     key->ed25519_privkey = ed25519;
 #ifdef HAVE_OPENSSL_ECC
-    if (key->type == SSH_KEYTYPE_ECDSA) {
+    if (is_ecdsa_key_type(key->type)) {
         key->ecdsa_nid = pki_key_ecdsa_to_nid(key->ecdsa);
-        key->type_c = pki_key_ecdsa_nid_to_name(key->ecdsa_nid);
     }
 #endif
 
@@ -1237,27 +1269,10 @@ ssh_string pki_publickey_to_blob(const ssh_key key)
 
             break;
         }
-        case SSH_KEYTYPE_ECDSA:
+        case SSH_KEYTYPE_ECDSA_P256:
+        case SSH_KEYTYPE_ECDSA_P384:
+        case SSH_KEYTYPE_ECDSA_P521:
 #ifdef HAVE_OPENSSL_ECC
-            rc = ssh_buffer_reinit(buffer);
-            if (rc < 0) {
-                ssh_buffer_free(buffer);
-                return NULL;
-            }
-
-            type_s = ssh_string_from_char(pki_key_ecdsa_nid_to_name(key->ecdsa_nid));
-            if (type_s == NULL) {
-                ssh_buffer_free(buffer);
-                return NULL;
-            }
-
-            rc = ssh_buffer_add_ssh_string(buffer, type_s);
-            ssh_string_free(type_s);
-            if (rc < 0) {
-                ssh_buffer_free(buffer);
-                return NULL;
-            }
-
             type_s = ssh_string_from_char(pki_key_ecdsa_nid_to_char(key->ecdsa_nid));
             if (type_s == NULL) {
                 ssh_buffer_free(buffer);
@@ -1461,7 +1476,9 @@ ssh_string pki_signature_to_blob(const ssh_signature sig)
         case SSH_KEYTYPE_RSA1:
             sig_blob = ssh_string_copy(sig->rsa_sig);
             break;
-        case SSH_KEYTYPE_ECDSA:
+        case SSH_KEYTYPE_ECDSA_P256:
+        case SSH_KEYTYPE_ECDSA_P384:
+        case SSH_KEYTYPE_ECDSA_P521:
 #ifdef HAVE_OPENSSL_ECC
         {
             ssh_string r;
@@ -1614,8 +1631,8 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
     }
 
     sig->type = type;
+    sig->type_c = ssh_key_signature_to_char(type, hash_type);
     sig->hash_type = hash_type;
-    sig->type_c = pubkey->type_c; /* for all types but RSA */
 
     len = ssh_string_len(sig_blob);
 
@@ -1688,9 +1705,10 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
             if (sig == NULL) {
                 return NULL;
             }
-            sig->type_c = ssh_key_signature_to_char(type, hash_type);
             break;
-        case SSH_KEYTYPE_ECDSA:
+        case SSH_KEYTYPE_ECDSA_P256:
+        case SSH_KEYTYPE_ECDSA_P384:
+        case SSH_KEYTYPE_ECDSA_P521:
 #ifdef HAVE_OPENSSL_ECC
             sig->ecdsa_sig = ECDSA_SIG_new();
             if (sig->ecdsa_sig == NULL) {
@@ -1874,7 +1892,9 @@ int pki_signature_verify(ssh_session session,
                 return SSH_ERROR;
             }
             break;
-        case SSH_KEYTYPE_ECDSA:
+        case SSH_KEYTYPE_ECDSA_P256:
+        case SSH_KEYTYPE_ECDSA_P384:
+        case SSH_KEYTYPE_ECDSA_P521:
 #ifdef HAVE_OPENSSL_ECC
             rc = ECDSA_do_verify(hash,
                                  hlen,
@@ -1919,8 +1939,8 @@ ssh_signature pki_do_sign_hash(const ssh_key privkey,
     }
 
     sig->type = privkey->type;
+    sig->type_c = ssh_key_signature_to_char(privkey->type, hash_type);
     sig->hash_type = hash_type;
-    sig->type_c = privkey->type_c;
 
     switch(privkey->type) {
         case SSH_KEYTYPE_DSS:
@@ -1942,7 +1962,6 @@ ssh_signature pki_do_sign_hash(const ssh_key privkey,
             break;
         case SSH_KEYTYPE_RSA:
         case SSH_KEYTYPE_RSA1:
-            sig->type_c = ssh_key_signature_to_char(privkey->type, hash_type);
             sig->rsa_sig = _RSA_do_sign_hash(hash, hlen, privkey->rsa, hash_type);
             if (sig->rsa_sig == NULL) {
                 ssh_signature_free(sig);
@@ -1950,7 +1969,9 @@ ssh_signature pki_do_sign_hash(const ssh_key privkey,
             }
             sig->dsa_sig = NULL;
             break;
-        case SSH_KEYTYPE_ECDSA:
+        case SSH_KEYTYPE_ECDSA_P256:
+        case SSH_KEYTYPE_ECDSA_P384:
+        case SSH_KEYTYPE_ECDSA_P521:
 #ifdef HAVE_OPENSSL_ECC
             sig->ecdsa_sig = ECDSA_do_sign(hash, hlen, privkey->ecdsa);
             if (sig->ecdsa_sig == NULL) {
@@ -2005,7 +2026,7 @@ ssh_signature pki_do_sign_sessionid_hash(const ssh_key key,
     }
 
     sig->type = key->type;
-    sig->type_c = key->type_c;
+    sig->type_c = ssh_key_signature_to_char(key->type, hash_type);
 
     switch(key->type) {
         case SSH_KEYTYPE_DSS:
@@ -2017,14 +2038,15 @@ ssh_signature pki_do_sign_sessionid_hash(const ssh_key key,
             break;
         case SSH_KEYTYPE_RSA:
         case SSH_KEYTYPE_RSA1:
-            sig->type_c = ssh_key_signature_to_char(key->type, hash_type);
             sig->rsa_sig = _RSA_do_sign_hash(hash, hlen, key->rsa, hash_type);
             if (sig->rsa_sig == NULL) {
                 ssh_signature_free(sig);
                 return NULL;
             }
             break;
-        case SSH_KEYTYPE_ECDSA:
+        case SSH_KEYTYPE_ECDSA_P256:
+        case SSH_KEYTYPE_ECDSA_P384:
+        case SSH_KEYTYPE_ECDSA_P521:
 #ifdef HAVE_OPENSSL_ECC
             sig->ecdsa_sig = ECDSA_do_sign(hash, hlen, key->ecdsa);
             if (sig->ecdsa_sig == NULL) {

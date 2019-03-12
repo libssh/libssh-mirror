@@ -132,7 +132,7 @@ static void torture_knownhosts_parse_line_ecdsa(void **state) {
     assert_string_equal(entry->hostname, "localhost");
     assert_non_null(entry->unparsed);
     assert_non_null(entry->publickey);
-    assert_int_equal(ssh_key_type(entry->publickey), SSH_KEYTYPE_ECDSA);
+    assert_int_equal(ssh_key_type(entry->publickey), SSH_KEYTYPE_ECDSA_P256);
 
     SSH_KNOWNHOSTS_ENTRY_FREE(entry);
 }

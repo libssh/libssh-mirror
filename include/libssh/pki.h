@@ -101,6 +101,9 @@ ssh_key_get_signature_algorithm(ssh_session session,
                                 enum ssh_keytypes_e type);
 enum ssh_keytypes_e ssh_key_type_from_signature_name(const char *name);
 
+#define is_ecdsa_key_type(t) \
+    ((t) >= SSH_KEYTYPE_ECDSA_P256 && (t) <= SSH_KEYTYPE_ECDSA_P521)
+
 /* SSH Signature Functions */
 ssh_signature ssh_signature_new(void);
 void ssh_signature_free(ssh_signature sign);

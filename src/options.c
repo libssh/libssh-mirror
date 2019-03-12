@@ -1653,7 +1653,9 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
                       "without DSA support");
 #endif
               break;
-          case SSH_KEYTYPE_ECDSA:
+          case SSH_KEYTYPE_ECDSA_P256:
+          case SSH_KEYTYPE_ECDSA_P384:
+          case SSH_KEYTYPE_ECDSA_P521:
 #ifdef HAVE_ECC
               bind_key_loc = &sshbind->ecdsa;
               bind_key_path_loc = &sshbind->ecdsakey;
@@ -1715,7 +1717,9 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
                                   "without DSA support");
 #endif
                     break;
-                case SSH_KEYTYPE_ECDSA:
+                case SSH_KEYTYPE_ECDSA_P256:
+                case SSH_KEYTYPE_ECDSA_P384:
+                case SSH_KEYTYPE_ECDSA_P521:
 #ifdef HAVE_ECC
                     bind_key_loc = &sshbind->ecdsa;
 #else

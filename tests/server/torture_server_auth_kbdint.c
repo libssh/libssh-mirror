@@ -551,7 +551,7 @@ static int setup_kbdint_server(void **state)
              "%s/sshd/ssh_host_ed25519_key",
              s->socket_dir);
     torture_write_file(ed25519_hostkey,
-                       torture_get_openssh_testkey(SSH_KEYTYPE_ED25519, 0, 0));
+                       torture_get_openssh_testkey(SSH_KEYTYPE_ED25519, 0));
 
     /* Create the server state */
     ss = (struct server_state_st *)calloc(1, sizeof(struct server_state_st));

@@ -373,7 +373,9 @@ ssh_bind torture_ssh_bind(const char *addr,
         case SSH_KEYTYPE_RSA:
             opts = SSH_BIND_OPTIONS_RSAKEY;
             break;
-        case SSH_KEYTYPE_ECDSA:
+        case SSH_KEYTYPE_ECDSA_P256:
+        case SSH_KEYTYPE_ECDSA_P384:
+        case SSH_KEYTYPE_ECDSA_P521:
             opts = SSH_BIND_OPTIONS_ECDSAKEY;
             break;
         default:
@@ -714,16 +716,15 @@ static void torture_setup_create_sshd_config(void **state, bool pam)
 
     if (!written) {
         torture_write_file(ed25519_hostkey,
-                           torture_get_openssh_testkey(SSH_KEYTYPE_ED25519,
-                                                       0, 0));
+                           torture_get_openssh_testkey(SSH_KEYTYPE_ED25519, 0));
 #ifdef HAVE_DSA
         torture_write_file(dsa_hostkey,
-                           torture_get_testkey(SSH_KEYTYPE_DSS, 0, 0));
+                           torture_get_testkey(SSH_KEYTYPE_DSS, 0));
 #endif /* HAVE_DSA */
         torture_write_file(rsa_hostkey,
-                           torture_get_testkey(SSH_KEYTYPE_RSA, 0, 0));
+                           torture_get_testkey(SSH_KEYTYPE_RSA, 0));
         torture_write_file(ecdsa_hostkey,
-                           torture_get_testkey(SSH_KEYTYPE_ECDSA, 521, 0));
+                           torture_get_testkey(SSH_KEYTYPE_ECDSA_P521, 0));
         torture_write_file(trusted_ca_pubkey, torture_rsa_certauth_pub);
     }
 

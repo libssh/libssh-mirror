@@ -781,17 +781,17 @@ static int ssh_bind_setup_files(void **state)
     /* For ed25519 the test keys are not available in legacy PEM format. Using
      * the new OpenSSH format for all algorithms */
     torture_write_file(LIBSSH_RSA_TESTKEY,
-                       torture_get_openssh_testkey(SSH_KEYTYPE_RSA, 0, 0));
+                       torture_get_openssh_testkey(SSH_KEYTYPE_RSA 0));
 
     torture_write_file(LIBSSH_ED25519_TESTKEY,
-                       torture_get_openssh_testkey(SSH_KEYTYPE_ED25519, 0, 0));
+                       torture_get_openssh_testkey(SSH_KEYTYPE_ED25519, 0));
 #ifdef HAVE_ECC
     torture_write_file(LIBSSH_ECDSA_521_TESTKEY,
-                       torture_get_openssh_testkey(SSH_KEYTYPE_ECDSA, 521, 0));
+                       torture_get_openssh_testkey(SSH_KEYTYPE_ECDSA_P521, 0));
 #endif
 #ifdef HAVE_DSA
     torture_write_file(LIBSSH_DSA_TESTKEY,
-                       torture_get_openssh_testkey(SSH_KEYTYPE_DSS, 0, 0));
+                       torture_get_openssh_testkey(SSH_KEYTYPE_DSS, 0));
 #endif
     torture_write_file(LIBSSH_CUSTOM_BIND_CONFIG_FILE,
                        "Port 42\n");
@@ -867,7 +867,7 @@ static void torture_bind_options_import_key(void **state)
     SSH_KEY_FREE(key);
 
     /* set rsa key */
-    base64_key = torture_get_testkey(SSH_KEYTYPE_RSA, 0, 0);
+    base64_key = torture_get_testkey(SSH_KEYTYPE_RSA, 0);
     rc = ssh_pki_import_privkey_base64(base64_key, NULL, NULL, NULL, &key);
     assert_int_equal(rc, SSH_OK);
     assert_non_null(key);
@@ -876,7 +876,7 @@ static void torture_bind_options_import_key(void **state)
     assert_int_equal(rc, 0);
 #ifdef HAVE_DSA
     /* set dsa key */
-    base64_key = torture_get_testkey(SSH_KEYTYPE_DSS, 0, 0);
+    base64_key = torture_get_testkey(SSH_KEYTYPE_DSS, 0);
     rc = ssh_pki_import_privkey_base64(base64_key, NULL, NULL, NULL, &key);
     assert_int_equal(rc, SSH_OK);
     assert_non_null(key);
@@ -886,7 +886,7 @@ static void torture_bind_options_import_key(void **state)
 #endif
 #ifdef HAVE_ECC
     /* set ecdsa key */
-    base64_key = torture_get_testkey(SSH_KEYTYPE_ECDSA, 521, 0);
+    base64_key = torture_get_testkey(SSH_KEYTYPE_ECDSA_P521, 0);
     rc = ssh_pki_import_privkey_base64(base64_key, NULL, NULL, NULL, &key);
     assert_int_equal(rc, SSH_OK);
     assert_non_null(key);

@@ -242,7 +242,9 @@ int ssh_get_key_params(ssh_session session, ssh_key *privkey){
       case SSH_KEYTYPE_RSA:
         *privkey = session->srv.rsa_key;
         break;
-      case SSH_KEYTYPE_ECDSA:
+      case SSH_KEYTYPE_ECDSA_P256:
+      case SSH_KEYTYPE_ECDSA_P384:
+      case SSH_KEYTYPE_ECDSA_P521:
         *privkey = session->srv.ecdsa_key;
         break;
       case SSH_KEYTYPE_ED25519:

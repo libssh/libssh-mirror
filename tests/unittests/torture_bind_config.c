@@ -140,17 +140,17 @@ static int setup_config_files(void **state)
     /* For ed25519 the test keys are not available in legacy PEM format. Using
      * the new OpenSSH format for all algorithms */
     torture_write_file(LIBSSH_RSA_TESTKEY,
-                       torture_get_openssh_testkey(SSH_KEYTYPE_RSA, 0, 0));
+                       torture_get_openssh_testkey(SSH_KEYTYPE_RSA, 0));
 
     torture_write_file(LIBSSH_ED25519_TESTKEY,
-                       torture_get_openssh_testkey(SSH_KEYTYPE_ED25519, 0, 0));
+                       torture_get_openssh_testkey(SSH_KEYTYPE_ED25519, 0));
 #ifdef HAVE_ECC
     torture_write_file(LIBSSH_ECDSA_521_TESTKEY,
-                       torture_get_openssh_testkey(SSH_KEYTYPE_ECDSA, 521, 0));
+                       torture_get_openssh_testkey(SSH_KEYTYPE_ECDSA_P521, 0));
 #endif
 #ifdef HAVE_DSA
     torture_write_file(LIBSSH_DSA_TESTKEY,
-                       torture_get_openssh_testkey(SSH_KEYTYPE_DSS, 0, 0));
+                       torture_get_openssh_testkey(SSH_KEYTYPE_DSS, 0));
 #endif
 
     torture_write_file(LIBSSH_TEST_BIND_CONFIG_LISTENADDRESS,

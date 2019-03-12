@@ -161,15 +161,15 @@ static void torture_knownhosts_precheck(void **state)
     assert_non_null(file);
     fprintf(file,
             "127.0.0.10 %s\n",
-            torture_get_testkey_pub(SSH_KEYTYPE_RSA, 0));
+            torture_get_testkey_pub(SSH_KEYTYPE_RSA));
 
     fprintf(file,
             "127.0.0.10 %s\n",
-            torture_get_testkey_pub(SSH_KEYTYPE_ED25519, 0));
+            torture_get_testkey_pub(SSH_KEYTYPE_ED25519));
 
     fprintf(file,
             "127.0.0.10 %s\n",
-            torture_get_testkey_pub(SSH_KEYTYPE_ECDSA, 521));
+            torture_get_testkey_pub(SSH_KEYTYPE_ECDSA_P521));
 
     fclose(file);
 
@@ -229,7 +229,7 @@ static void torture_knownhosts_other(void **state)
     assert_non_null(file);
     fprintf(file,
             "127.0.0.10 %s\n",
-            torture_get_testkey_pub(SSH_KEYTYPE_RSA, 0));
+            torture_get_testkey_pub(SSH_KEYTYPE_RSA));
     fclose(file);
 
     rc = ssh_connect(session);

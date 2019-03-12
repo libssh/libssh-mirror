@@ -57,16 +57,25 @@ struct key_attrs {
 };
 
 struct key_attrs key_attrs_list[] = {
-    {0, 0, "", 0, 0, ""},                                          /* UNKNOWN */
+    {0, 0, "", 0, 0, ""},                                        /* UNKNOWN */
 #ifdef HAVE_DSA
-    {1, 1, "ssh-dss", 1024, 20, "ssh-dss" },                       /* DSS */
+    {1, 1, "ssh-dss", 1024, 20, "ssh-dss" },                     /* DSS */
 #else
-    {0, 0, "", 0, 0, ""},                                          /* DSS */
+    {0, 0, "", 0, 0, ""},                                        /* DSS */
 #endif
-    {1, 1, "ssh-rsa", 2048, 20, "ssh-rsa"},                        /* RSA */
-    {0, 0, "", 0, 0, ""},                                          /* RSA1 */
-    {1, 1, "ecdsa-sha2-nistp521", 521, 64, "ecdsa-sha2-nistp521"}, /* ECDSA */
-    {1, 1, "ssh-ed25519", 0, 33, "ssh-ed25519"},                   /* ED25519 */
+    {1, 1, "ssh-rsa", 2048, 20, "ssh-rsa"},                      /* RSA */
+    {0, 0, "", 0, 0, ""},                                        /* RSA1 */
+    {0, 0, "", 0, 0, ""},                                        /* ECDSA */
+    {1, 1, "ssh-ed25519", 0, 33, "ssh-ed25519"},                 /* ED25519 */
+#ifdef HAVE_DSA
+    {0, 0, "", 0, 0, ""},                                        /* DSS CERT */
+#else
+    {0, 0, "", 0, 0, ""},                                        /* DSS CERT */
+#endif
+    {0, 0, "", 0, 0, ""},                                        /* RSA CERT */
+    {1, 1, "ecdsa-sha2-nistp256", 0, 64, "ecdsa-sha2-nistp256"}, /* ECDSA P256 */
+    {1, 1, "ecdsa-sha2-nistp384", 0, 64, "ecdsa-sha2-nistp384"}, /* ECDSA P384 */
+    {1, 1, "ecdsa-sha2-nistp521", 0, 64, "ecdsa-sha2-nistp521"}, /* ECDSA P521 */
 };
 
 /* Maps to enum ssh_digest_e */

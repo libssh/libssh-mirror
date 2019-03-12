@@ -109,28 +109,28 @@ static int setup_default_server(void **state)
              "%s/sshd/ssh_host_ed25519_key",
              s->socket_dir);
     torture_write_file(ed25519_hostkey,
-                       torture_get_openssh_testkey(SSH_KEYTYPE_ED25519, 0, 0));
+                       torture_get_openssh_testkey(SSH_KEYTYPE_ED25519, 0));
 
 #ifdef HAVE_DSA
     snprintf(dsa_hostkey,
              sizeof(dsa_hostkey),
              "%s/sshd/ssh_host_dsa_key",
              s->socket_dir);
-    torture_write_file(dsa_hostkey, torture_get_testkey(SSH_KEYTYPE_DSS, 0, 0));
+    torture_write_file(dsa_hostkey, torture_get_testkey(SSH_KEYTYPE_DSS, 0));
 #endif /* HAVE_DSA */
 
     snprintf(rsa_hostkey,
              sizeof(rsa_hostkey),
              "%s/sshd/ssh_host_rsa_key",
              s->socket_dir);
-    torture_write_file(rsa_hostkey, torture_get_testkey(SSH_KEYTYPE_RSA, 0, 0));
+    torture_write_file(rsa_hostkey, torture_get_testkey(SSH_KEYTYPE_RSA, 0));
 
     snprintf(ecdsa_hostkey,
              sizeof(ecdsa_hostkey),
              "%s/sshd/ssh_host_ecdsa_key",
              s->socket_dir);
     torture_write_file(ecdsa_hostkey,
-                       torture_get_testkey(SSH_KEYTYPE_ECDSA, 521, 0));
+                       torture_get_testkey(SSH_KEYTYPE_ECDSA_P521, 0));
 
     sftp_server = getenv("TORTURE_SFTP_SERVER");
     if (sftp_server == NULL) {
@@ -449,7 +449,7 @@ static void torture_server_hostkey_mismatch(void **state)
     assert_non_null(file);
     fprintf(file,
             "127.0.0.10 %s\n",
-            torture_get_testkey_pub(SSH_KEYTYPE_RSA, 0));
+            torture_get_testkey_pub(SSH_KEYTYPE_RSA));
     fclose(file);
 
     rc = ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, known_hosts_file);

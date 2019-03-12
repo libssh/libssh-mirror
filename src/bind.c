@@ -176,7 +176,7 @@ static int ssh_bind_import_keys(ssh_bind sshbind) {
           return SSH_ERROR;
       }
 
-      if (ssh_key_type(sshbind->ecdsa) != SSH_KEYTYPE_ECDSA) {
+      if (!is_ecdsa_key_type(ssh_key_type(sshbind->ecdsa))) {
           ssh_set_error(sshbind, SSH_FATAL,
                   "The ECDSA host key has the wrong type");
           ssh_key_free(sshbind->ecdsa);

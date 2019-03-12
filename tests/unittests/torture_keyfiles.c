@@ -19,9 +19,9 @@ static int setup_rsa_key(void **state)
     unlink(LIBSSH_RSA_TESTKEY ".pub");
 
     torture_write_file(LIBSSH_RSA_TESTKEY,
-                       torture_get_testkey(SSH_KEYTYPE_RSA, 0, 0));
+                       torture_get_testkey(SSH_KEYTYPE_RSA, 0));
     torture_write_file(LIBSSH_RSA_TESTKEY ".pub",
-                       torture_get_testkey_pub(SSH_KEYTYPE_RSA, 0));
+                       torture_get_testkey_pub(SSH_KEYTYPE_RSA));
 
     session = ssh_new();
     *state = session;
@@ -38,9 +38,9 @@ static int setup_dsa_key(void **state)
     unlink(LIBSSH_DSA_TESTKEY ".pub");
 
     torture_write_file(LIBSSH_DSA_TESTKEY,
-                       torture_get_testkey(SSH_KEYTYPE_DSS, 0, 0));
+                       torture_get_testkey(SSH_KEYTYPE_DSS, 0));
     torture_write_file(LIBSSH_DSA_TESTKEY ".pub",
-                       torture_get_testkey_pub(SSH_KEYTYPE_DSS, 0));
+                       torture_get_testkey_pub(SSH_KEYTYPE_DSS));
 
     session = ssh_new();
     *state = session;
@@ -70,15 +70,15 @@ static int setup_both_keys_passphrase(void **state)
     ssh_session session;
 
     torture_write_file(LIBSSH_RSA_TESTKEY,
-                       torture_get_testkey(SSH_KEYTYPE_RSA, 0, 1));
+                       torture_get_testkey(SSH_KEYTYPE_RSA, 1));
     torture_write_file(LIBSSH_RSA_TESTKEY ".pub",
-                       torture_get_testkey_pub(SSH_KEYTYPE_RSA, 0));
+                       torture_get_testkey_pub(SSH_KEYTYPE_RSA));
 
 #ifdef HAVE_DSA
     torture_write_file(LIBSSH_DSA_TESTKEY,
-                       torture_get_testkey(SSH_KEYTYPE_DSS, 0, 1));
+                       torture_get_testkey(SSH_KEYTYPE_DSS, 1));
     torture_write_file(LIBSSH_DSA_TESTKEY ".pub",
-                       torture_get_testkey_pub(SSH_KEYTYPE_DSS, 0));
+                       torture_get_testkey_pub(SSH_KEYTYPE_DSS));
 #endif
 
     session = ssh_new();

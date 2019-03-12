@@ -515,26 +515,13 @@ int ssh_userauth_try_publickey(ssh_session session,
             return SSH_ERROR;
     }
 
-    switch (pubkey->type) {
-    case SSH_KEYTYPE_UNKNOWN:
-        ssh_set_error(session,
-                      SSH_REQUEST_DENIED,
+    /* Check if the given public key algorithm is allowed */
+    sig_type_c = ssh_key_get_signature_algorithm(session, pubkey->type);
+    if (sig_type_c == NULL) {
+        ssh_set_error(session, SSH_REQUEST_DENIED,
                       "Invalid key type (unknown)");
         return SSH_AUTH_DENIED;
-    case SSH_KEYTYPE_ECDSA:
-        sig_type_c = ssh_pki_key_ecdsa_name(pubkey);
-        break;
-    case SSH_KEYTYPE_DSS:
-    case SSH_KEYTYPE_RSA:
-    case SSH_KEYTYPE_RSA1:
-    case SSH_KEYTYPE_ED25519:
-    case SSH_KEYTYPE_DSS_CERT01:
-    case SSH_KEYTYPE_RSA_CERT01:
-        sig_type_c = ssh_key_get_signature_algorithm(session, pubkey->type);
-        break;
     }
-
-    /* Check if the given public key algorithm is allowed */
     if (!ssh_key_algorithm_allowed(session, sig_type_c)) {
         ssh_set_error(session, SSH_REQUEST_DENIED,
                       "The key algorithm '%s' is not allowed to be used by"
@@ -651,26 +638,13 @@ int ssh_userauth_publickey(ssh_session session,
     /* Cert auth requires presenting the cert type name (*-cert@openssh.com) */
     key_type = privkey->cert != NULL ? privkey->cert_type : privkey->type;
 
-    switch (key_type) {
-    case SSH_KEYTYPE_UNKNOWN:
-        ssh_set_error(session,
-                      SSH_REQUEST_DENIED,
+    /* Check if the given public key algorithm is allowed */
+    sig_type_c = ssh_key_get_signature_algorithm(session, key_type);
+    if (sig_type_c == NULL) {
+        ssh_set_error(session, SSH_REQUEST_DENIED,
                       "Invalid key type (unknown)");
         return SSH_AUTH_DENIED;
-    case SSH_KEYTYPE_ECDSA:
-        sig_type_c = ssh_pki_key_ecdsa_name(privkey);
-        break;
-    case SSH_KEYTYPE_DSS:
-    case SSH_KEYTYPE_RSA:
-    case SSH_KEYTYPE_RSA1:
-    case SSH_KEYTYPE_ED25519:
-    case SSH_KEYTYPE_DSS_CERT01:
-    case SSH_KEYTYPE_RSA_CERT01:
-        sig_type_c = ssh_key_get_signature_algorithm(session, key_type);
-        break;
     }
-
-    /* Check if the given public key algorithm is allowed */
     if (!ssh_key_algorithm_allowed(session, sig_type_c)) {
         ssh_set_error(session, SSH_REQUEST_DENIED,
                       "The key algorithm '%s' is not allowed to be used by"
@@ -777,9 +751,14 @@ static int ssh_userauth_agent_publickey(ssh_session session,
     if (rc < 0) {
         goto fail;
     }
-    sig_type_c = ssh_key_get_signature_algorithm(session, pubkey->type);
 
     /* Check if the given public key algorithm is allowed */
+    sig_type_c = ssh_key_get_signature_algorithm(session, pubkey->type);
+    if (sig_type_c == NULL) {
+        ssh_set_error(session, SSH_REQUEST_DENIED,
+                      "Invalid key type (unknown)");
+        return SSH_AUTH_DENIED;
+    }
     if (!ssh_key_algorithm_allowed(session, sig_type_c)) {
         ssh_set_error(session, SSH_REQUEST_DENIED,
                       "The key algorithm '%s' is not allowed to be used by"

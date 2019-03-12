@@ -373,13 +373,7 @@ int ssh_is_server_known(ssh_session session) {
     }
     if (match) {
       ssh_key pubkey = ssh_dh_get_current_server_publickey(session);
-      const char *pubkey_type = NULL;
-
-      if (ssh_key_type(pubkey) == SSH_KEYTYPE_ECDSA) {
-          pubkey_type = ssh_pki_key_ecdsa_name(pubkey);
-      } else {
-        pubkey_type = ssh_key_type_to_char(ssh_key_type(pubkey));
-      }
+      const char *pubkey_type = ssh_key_type_to_char(ssh_key_type(pubkey));
 
       /* We got a match. Now check the key type */
       if (strcmp(pubkey_type, type) != 0) {

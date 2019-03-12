@@ -98,13 +98,13 @@ static int setup_rsa_key(void **state)
     printf("Changed directory to: %s\n", tmp_dir);
 
     torture_write_file(LIBSSH_RSA_TESTKEY,
-                       torture_get_testkey(SSH_KEYTYPE_RSA, 0, 0));
+                       torture_get_testkey(SSH_KEYTYPE_RSA, 0));
     torture_write_file(LIBSSH_RSA_TESTKEY_PASSPHRASE,
-                       torture_get_testkey(SSH_KEYTYPE_RSA, 0, 1));
+                       torture_get_testkey(SSH_KEYTYPE_RSA, 1));
     torture_write_file(LIBSSH_RSA_TESTKEY ".pub",
-                       torture_get_testkey_pub(SSH_KEYTYPE_RSA, 0));
+                       torture_get_testkey_pub(SSH_KEYTYPE_RSA));
     torture_write_file(LIBSSH_RSA_TESTKEY "-cert.pub",
-                       torture_get_testkey_pub(SSH_KEYTYPE_RSA_CERT01, 0));
+                       torture_get_testkey_pub(SSH_KEYTYPE_RSA_CERT01));
 
     return 0;
 }
@@ -201,7 +201,7 @@ static void *thread_pki_rsa_import_privkey_base64_NULL_key(void *threadid)
 
     (void) threadid; /* unused */
 
-    testkey = torture_get_testkey(SSH_KEYTYPE_RSA, 0, 0);
+    testkey = torture_get_testkey(SSH_KEYTYPE_RSA, 0);
     assert_non_null(testkey);
 
     /* test if it returns -1 if key is NULL */
@@ -306,7 +306,7 @@ static void *thread_pki_rsa_publickey_from_privatekey(void *threadid)
 
     (void) threadid; /* unused */
 
-    testkey = torture_get_testkey(SSH_KEYTYPE_RSA, 0, 0);
+    testkey = torture_get_testkey(SSH_KEYTYPE_RSA, 0);
     rc = ssh_pki_import_privkey_base64(testkey,
                                        passphrase,
                                        NULL,
@@ -362,7 +362,7 @@ static void *thread_pki_rsa_copy_cert_to_privkey(void *threadid)
     assert_true(rc == SSH_OK);
     assert_non_null(pubkey);
 
-    testkey = torture_get_testkey(SSH_KEYTYPE_RSA, 0, 0);
+    testkey = torture_get_testkey(SSH_KEYTYPE_RSA, 0);
     assert_non_null(testkey);
 
     rc = ssh_pki_import_privkey_base64(testkey,
@@ -454,7 +454,7 @@ static void *thread_pki_rsa_publickey_base64(void *threadid)
 
     (void) threadid; /* unused */
 
-    key_buf = strdup(torture_get_testkey_pub(SSH_KEYTYPE_RSA, 0));
+    key_buf = strdup(torture_get_testkey_pub(SSH_KEYTYPE_RSA));
     assert_non_null(key_buf);
 
     q = p = key_buf;
@@ -636,7 +636,7 @@ static void *thread_pki_rsa_import_privkey_base64_passphrase(void *threadid)
 
     (void) threadid; /* unused */
 
-    testkey = torture_get_testkey(SSH_KEYTYPE_RSA, 0, 1);
+    testkey = torture_get_testkey(SSH_KEYTYPE_RSA, 1);
     assert_non_null(testkey);
 
     rc = ssh_pki_import_privkey_base64(testkey,
