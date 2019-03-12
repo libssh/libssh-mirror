@@ -431,6 +431,9 @@ int show_remote_processes(ssh_session session)
 }
 @endcode
 
+Each ssh_channel_request_exec() needs to be run on freshly created
+and connected (with ssh_channel_open_session()) channel.
+
 @see @ref opening_shell
 @see @ref remote_command
 @see @ref sftp_subsystem
