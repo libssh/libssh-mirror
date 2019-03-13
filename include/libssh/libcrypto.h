@@ -64,6 +64,7 @@ typedef void *EVPCTX;
 #define BROKEN_AES_CTR
 #endif
 typedef BIGNUM*  bignum;
+typedef const BIGNUM* const_bignum;
 typedef BN_CTX* bignum_CTX;
 
 #define bignum_new() BN_new()

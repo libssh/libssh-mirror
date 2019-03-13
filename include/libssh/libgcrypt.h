@@ -50,6 +50,7 @@ typedef gcry_md_hd_t EVPCTX;
 #define EVP_DIGEST_LEN EVP_MAX_MD_SIZE
 
 typedef gcry_mpi_t bignum;
+typedef const struct gcry_mpi *const_bignum;
 typedef void* bignum_CTX;
 
 /* Constants for curves.  */

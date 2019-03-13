@@ -1047,6 +1047,10 @@ int ssh_make_sessionid(ssh_session session)
     ssh_buffer client_hash = NULL;
     ssh_buffer buf = NULL;
     ssh_string server_pubkey_blob = NULL;
+    const_bignum client_pubkey, server_pubkey;
+#ifdef WITH_GEX
+    const_bignum modulus, generator;
+#endif
     int rc = SSH_ERROR;
 
     buf = ssh_buffer_new();
@@ -1121,10 +1125,20 @@ int ssh_make_sessionid(ssh_session session)
     case SSH_KEX_DH_GROUP14_SHA1:
     case SSH_KEX_DH_GROUP16_SHA512:
     case SSH_KEX_DH_GROUP18_SHA512:
+        rc = ssh_dh_keypair_get_keys(session->next_crypto->dh_ctx,
+                                     DH_CLIENT_KEYPAIR, NULL, &client_pubkey);
+        if (rc != SSH_OK) {
+            goto error;
+        }
+        rc = ssh_dh_keypair_get_keys(session->next_crypto->dh_ctx,
+                                     DH_SERVER_KEYPAIR, NULL, &server_pubkey);
+        if (rc != SSH_OK) {
+            goto error;
+        }
         rc = ssh_buffer_pack(buf,
                              "BB",
-                             session->next_crypto->dh_ctx->client.pub_key,
-                             session->next_crypto->dh_ctx->server.pub_key);
+                             client_pubkey,
+                             server_pubkey);
         if (rc != SSH_OK) {
             goto error;
         }
@@ -1132,15 +1146,30 @@ int ssh_make_sessionid(ssh_session session)
 #ifdef WITH_GEX
     case SSH_KEX_DH_GEX_SHA1:
     case SSH_KEX_DH_GEX_SHA256:
+        rc = ssh_dh_keypair_get_keys(session->next_crypto->dh_ctx,
+                                     DH_CLIENT_KEYPAIR, NULL, &client_pubkey);
+        if (rc != SSH_OK) {
+            goto error;
+        }
+        rc = ssh_dh_keypair_get_keys(session->next_crypto->dh_ctx,
+                                     DH_SERVER_KEYPAIR, NULL, &server_pubkey);
+        if (rc != SSH_OK) {
+            goto error;
+        }
+        rc = ssh_dh_get_parameters(session->next_crypto->dh_ctx,
+                                   &modulus, &generator);
+        if (rc != SSH_OK) {
+            goto error;
+        }
         rc = ssh_buffer_pack(buf,
                     "dddBBBB",
                     session->next_crypto->dh_pmin,
                     session->next_crypto->dh_pn,
                     session->next_crypto->dh_pmax,
-                    session->next_crypto->dh_ctx->modulus,
-                    session->next_crypto->dh_ctx->generator,
-                    session->next_crypto->dh_ctx->client.pub_key,
-                    session->next_crypto->dh_ctx->server.pub_key);
+                    modulus,
+                    generator,
+                    client_pubkey,
+                    server_pubkey);
         if (rc != SSH_OK) {
             goto error;
         }

@@ -60,6 +60,7 @@ typedef mbedtls_md_context_t *EVPCTX;
 #define EVP_DIGEST_LEN EVP_MAX_MD_SIZE
 
 typedef mbedtls_mpi *bignum;
+typedef const mbedtls_mpi *const_bignum;
 typedef void* bignum_CTX;
 
 /* Constants for curves */
