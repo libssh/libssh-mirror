@@ -37,6 +37,8 @@ extern LIBSSH_THREAD int ssh_log_level;
 
 #define LOGLEVEL "verbose"
 #define LOGLEVEL2 "fatal"
+#define LOGLEVEL3 "DEBUG1"
+#define LOGLEVEL4 "DEBUG2"
 #define LISTEN_ADDRESS "::1"
 #define LISTEN_ADDRESS2 "::2"
 #define KEXALGORITHMS "ecdh-sha2-nistp521,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512,diffie-hellman-group14-sha1"
@@ -92,6 +94,14 @@ extern LIBSSH_THREAD int ssh_log_level;
 #define LIBSSH_TEST_BIND_CONFIG_INCLUDE "libssh_test_bind_config_include"
 #define LIBSSH_TEST_BIND_CONFIG_INCLUDE_RECURSIVE "libssh_test_bind_config_include_recursive"
 #define LIBSSH_TEST_BIND_CONFIG_CORNER_CASES "libssh_test_bind_config_corner_cases"
+
+#define LIBSSH_TEST_BIND_CONFIG_MATCH_ALL "libssh_test_bind_config_match_all"
+#define LIBSSH_TEST_BIND_CONFIG_MATCH_TWICE "libssh_test_bind_config_match_twice"
+#define LIBSSH_TEST_BIND_CONFIG_MATCH_UNSUPPORTED "libssh_test_bind_config_match_unsupported"
+#define LIBSSH_TEST_BIND_CONFIG_MATCH_NOT_ALLOWED "libssh_test_bind_config_match_not_allowed"
+#define LIBSSH_TEST_BIND_CONFIG_MATCH_CORNER_CASES "libssh_test_bind_config_match_corner_cases"
+#define LIBSSH_TEST_BIND_CONFIG_MATCH_INVALID "libssh_test_bind_config_match_invalid"
+#define LIBSSH_TEST_BIND_CONFIG_MATCH_INVALID2 "libssh_test_bind_config_match_invalid2"
 
 const char template[] = "temp_dir_XXXXXX";
 
@@ -248,6 +258,66 @@ static int setup_config_files(void **state)
                        "  # comment line not starting with hash\n"
                        "UnknownConfigurationOption yes\n"
                        "Ciphers "CIPHERS"\n");
+
+    torture_write_file(LIBSSH_TEST_BIND_CONFIG_MATCH_ALL,
+                       "Include "LIBSSH_TEST_BIND_CONFIG_FULL"\n"
+                       "Match All\n"
+                       "\tLogLevel "LOGLEVEL2"\n");
+    torture_write_file(LIBSSH_TEST_BIND_CONFIG_MATCH_TWICE,
+                       "Include "LIBSSH_TEST_BIND_CONFIG_FULL"\n"
+                       "Match All\n"
+                       "\tLogLevel "LOGLEVEL2"\n"
+                       "Match All\n"
+                       "\tLogLevel "LOGLEVEL3"\n");
+    torture_write_file(LIBSSH_TEST_BIND_CONFIG_MATCH_UNSUPPORTED,
+                       "Include "LIBSSH_TEST_BIND_CONFIG_FULL"\n"
+                       "Match User alice\n"
+                       "\tLogLevel "LOGLEVEL2"\n"
+                       "Match Group sftp_users\n"
+                       "\tLogLevel "LOGLEVEL2"\n"
+                       "Match Host 192.168.0.*\n"
+                       "\tLogLevel "LOGLEVEL2"\n"
+                       "Match LocalAddress 172.30.1.5\n"
+                       "\tLogLevel "LOGLEVEL2"\n"
+                       "Match LocalPort 42\n"
+                       "\tLogLevel "LOGLEVEL2"\n"
+                       "Match Rdomain 4\n"
+                       "\tLogLevel "LOGLEVEL2"\n"
+                       "Match Address 10.0.0.10\n"
+                       "\tLogLevel "LOGLEVEL2"\n");
+    torture_write_file(LIBSSH_TEST_BIND_CONFIG_MATCH_NOT_ALLOWED,
+                       "Include "LIBSSH_TEST_BIND_CONFIG_FULL"\n"
+                       "Match All\n"
+                       "\tListenAddress "LISTEN_ADDRESS2"\n"
+                       "\tPort 456\n"
+                       "\tHostKey "LIBSSH_RSA_TESTKEY"\n"
+                       "\tCiphers "CIPHERS2"\n"
+                       "\tMACs "MACS2"\n"
+                       "\tKexAlgorithms "KEXALGORITHMS2"\n");
+    torture_write_file(LIBSSH_TEST_BIND_CONFIG_MATCH_CORNER_CASES,
+                       "Include "LIBSSH_TEST_BIND_CONFIG_FULL"\n"
+                       "Match User alice\n"
+                       "\tLogLevel "LOGLEVEL2"\n"
+                       "Match All\n"
+                       "\tLogLevel "LOGLEVEL3"\n"
+                       "Match All\n"
+                       "\tLogLevel "LOGLEVEL"\n");
+    torture_write_file(LIBSSH_TEST_BIND_CONFIG_MATCH_INVALID,
+                       "Include "LIBSSH_TEST_BIND_CONFIG_FULL"\n"
+                       "Match User alice All\n"
+                       "\tLogLevel "LOGLEVEL2"\n"
+                       "Match All\n"
+                       "\tLogLevel "LOGLEVEL3"\n"
+                       "Match All\n"
+                       "\tLogLevel "LOGLEVEL4"\n");
+    torture_write_file(LIBSSH_TEST_BIND_CONFIG_MATCH_INVALID2,
+                       "Include "LIBSSH_TEST_BIND_CONFIG_FULL"\n"
+                       "Match All User alice\n"
+                       "\tLogLevel "LOGLEVEL2"\n"
+                       "Match All\n"
+                       "\tLogLevel "LOGLEVEL3"\n"
+                       "Match All\n"
+                       "\tLogLevel "LOGLEVEL4"\n");
 
     return 0;
 }
@@ -765,6 +835,163 @@ static void torture_bind_config_corner_cases(void **state)
     assert_string_equal(bind->wanted_methods[SSH_CRYPT_S_C], CIPHERS);
 }
 
+static void torture_bind_config_match_all(void **state)
+{
+    struct bind_st *test_state;
+    ssh_bind bind;
+    int rc;
+    int previous_level, new_level;
+
+    assert_non_null(state);
+    test_state = *((struct bind_st **)state);
+    assert_non_null(test_state);
+    assert_non_null(test_state->bind);
+    bind = test_state->bind;
+
+    previous_level = ssh_get_log_level();
+
+    rc = ssh_bind_config_parse_file(bind,
+            LIBSSH_TEST_BIND_CONFIG_MATCH_ALL);
+    assert_int_equal(rc, 0);
+
+    new_level = ssh_get_log_level();
+    assert_int_equal(new_level, 1);
+
+    rc = ssh_set_log_level(previous_level);
+    assert_int_equal(rc, SSH_OK);
+}
+
+static void torture_bind_config_match_twice(void **state)
+{
+    struct bind_st *test_state;
+    ssh_bind bind;
+    int rc;
+    int previous_level, new_level;
+
+    assert_non_null(state);
+    test_state = *((struct bind_st **)state);
+    assert_non_null(test_state);
+    assert_non_null(test_state->bind);
+    bind = test_state->bind;
+
+    previous_level = ssh_get_log_level();
+
+    rc = ssh_bind_config_parse_file(bind,
+            LIBSSH_TEST_BIND_CONFIG_MATCH_TWICE);
+    assert_int_equal(rc, 0);
+
+    new_level = ssh_get_log_level();
+    assert_int_equal(new_level, 1);
+
+    rc = ssh_set_log_level(previous_level);
+    assert_int_equal(rc, SSH_OK);
+}
+
+static void torture_bind_config_match_unsupported(void **state)
+{
+    struct bind_st *test_state;
+    ssh_bind bind;
+    int rc;
+    int previous_level;
+
+    assert_non_null(state);
+    test_state = *((struct bind_st **)state);
+    assert_non_null(test_state);
+    assert_non_null(test_state->bind);
+    bind = test_state->bind;
+
+    previous_level = ssh_get_log_level();
+
+    rc = ssh_bind_config_parse_file(bind,
+            LIBSSH_TEST_BIND_CONFIG_MATCH_UNSUPPORTED);
+    assert_int_equal(rc, 0);
+
+    rc = assert_full_bind_config(state);
+    assert_int_equal(rc, 0);
+
+    rc = ssh_set_log_level(previous_level);
+    assert_int_equal(rc, SSH_OK);
+}
+
+static void torture_bind_config_match_not_allowed(void **state)
+{
+    struct bind_st *test_state;
+    ssh_bind bind;
+    int rc;
+    int previous_level;
+
+    assert_non_null(state);
+    test_state = *((struct bind_st **)state);
+    assert_non_null(test_state);
+    assert_non_null(test_state->bind);
+    bind = test_state->bind;
+
+    previous_level = ssh_get_log_level();
+
+    rc = ssh_bind_config_parse_file(bind,
+            LIBSSH_TEST_BIND_CONFIG_MATCH_NOT_ALLOWED);
+    assert_int_equal(rc, 0);
+
+    rc = assert_full_bind_config(state);
+    assert_int_equal(rc, 0);
+
+    rc = ssh_set_log_level(previous_level);
+    assert_int_equal(rc, SSH_OK);
+}
+
+static void torture_bind_config_match_corner_cases(void **state)
+{
+    struct bind_st *test_state;
+    ssh_bind bind;
+    int rc;
+    int previous_level, new_level;
+
+    assert_non_null(state);
+    test_state = *((struct bind_st **)state);
+    assert_non_null(test_state);
+    assert_non_null(test_state->bind);
+    bind = test_state->bind;
+
+    previous_level = ssh_get_log_level();
+
+    rc = ssh_bind_config_parse_file(bind,
+            LIBSSH_TEST_BIND_CONFIG_MATCH_CORNER_CASES);
+    assert_int_equal(rc, 0);
+
+    new_level = ssh_get_log_level();
+    assert_int_equal(new_level, 3);
+
+    rc = ssh_set_log_level(previous_level);
+    assert_int_equal(rc, SSH_OK);
+}
+
+static void torture_bind_config_match_invalid(void **state)
+{
+    struct bind_st *test_state;
+    ssh_bind bind;
+    int rc;
+    int previous_level;
+
+    assert_non_null(state);
+    test_state = *((struct bind_st **)state);
+    assert_non_null(test_state);
+    assert_non_null(test_state->bind);
+    bind = test_state->bind;
+
+    previous_level = ssh_get_log_level();
+
+    rc = ssh_bind_config_parse_file(bind,
+            LIBSSH_TEST_BIND_CONFIG_MATCH_INVALID);
+    assert_int_equal(rc, -1);
+
+    rc = ssh_bind_config_parse_file(bind,
+            LIBSSH_TEST_BIND_CONFIG_MATCH_INVALID2);
+    assert_int_equal(rc, -1);
+
+    rc = ssh_set_log_level(previous_level);
+    assert_int_equal(rc, SSH_OK);
+}
+
 int torture_run_tests(void)
 {
     int rc;
@@ -794,6 +1021,18 @@ int torture_run_tests(void)
         cmocka_unit_test_setup_teardown(torture_bind_config_include_recursive,
                 sshbind_setup, sshbind_teardown),
         cmocka_unit_test_setup_teardown(torture_bind_config_corner_cases,
+                sshbind_setup, sshbind_teardown),
+        cmocka_unit_test_setup_teardown(torture_bind_config_match_all,
+                sshbind_setup, sshbind_teardown),
+        cmocka_unit_test_setup_teardown(torture_bind_config_match_twice,
+                sshbind_setup, sshbind_teardown),
+        cmocka_unit_test_setup_teardown(torture_bind_config_match_unsupported,
+                sshbind_setup, sshbind_teardown),
+        cmocka_unit_test_setup_teardown(torture_bind_config_match_not_allowed,
+                sshbind_setup, sshbind_teardown),
+        cmocka_unit_test_setup_teardown(torture_bind_config_match_corner_cases,
+                sshbind_setup, sshbind_teardown),
+        cmocka_unit_test_setup_teardown(torture_bind_config_match_invalid,
                 sshbind_setup, sshbind_teardown),
     };
 
