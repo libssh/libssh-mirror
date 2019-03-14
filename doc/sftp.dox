@@ -61,7 +61,7 @@ int sftp_helloworld(ssh_session session)
   rc = sftp_init(sftp);
   if (rc != SSH_OK)
   {
-    fprintf(stderr, "Error initializing SFTP session: %s.\n",
+    fprintf(stderr, "Error initializing SFTP session: code %d.\n",
             sftp_get_error(sftp));
     sftp_free(sftp);
     return rc;
