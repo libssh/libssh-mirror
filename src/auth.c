@@ -1277,6 +1277,9 @@ int ssh_userauth_password(ssh_session session,
         goto fail;
     }
 
+    /* Set the buffer as secure to be explicitly zeroed when freed */
+    ssh_buffer_set_secure(session->out_buffer);
+
     session->auth.current_method = SSH_AUTH_METHOD_PASSWORD;
     session->auth.state = SSH_AUTH_STATE_PASSWORD_AUTH_SENT;
     session->pending_call_state = SSH_PENDING_CALL_AUTH_PASSWORD;
