@@ -218,7 +218,7 @@ else (WITH_GCRYPT)
         pki_crypto.c
         ecdh_crypto.c
         libcrypto.c
-        dh_key.c
+        dh_crypto.c
        )
     if(OPENSSL_VERSION VERSION_LESS "1.1.0")
         set(libssh_SRCS ${libssh_SRCS} libcrypto-compat.c)
