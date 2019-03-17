@@ -49,7 +49,6 @@ static unsigned char p_group1_value[] = {
         0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 #define P_GROUP1_LEN 128	/* Size in bytes of the p number */
 
-
 static unsigned char p_group14_value[] = {
         0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xC9, 0x0F, 0xDA, 0xA2,
         0x21, 0x68, 0xC2, 0x34, 0xC4, 0xC6, 0x62, 0x8B, 0x80, 0xDC, 0x1C, 0xD1,
@@ -212,31 +211,13 @@ static unsigned char p_group18_value[] = {
     0xFF, 0xFF, 0xFF, 0xFF};
 
 #define P_GROUP18_LEN 1024 /* Size in bytes of the p number for group 18 */
-/*
- * How many bits of security we want for fast DH. DH private key size must be
- * twice that size.
- */
-#define DH_SECURITY_BITS 512
 
-static unsigned long g_int = 2 ;	/* G is defined as 2 by the ssh2 standards */
-static bignum g;
-static bignum p_group1;
-static bignum p_group14;
-static bignum p_group16;
-static bignum p_group18;
+bignum ssh_dh_generator;
+bignum ssh_dh_group1;
+bignum ssh_dh_group14;
+bignum ssh_dh_group16;
+bignum ssh_dh_group18;
 static int dh_crypto_initialized;
-
-struct dh_keypair {
-    bignum priv_key;
-    bignum pub_key;
-};
-
-struct dh_ctx {
-    /* 0 is client, 1 is server */
-    struct dh_keypair keypair[2];
-    bignum generator;
-    bignum modulus;
-};
 
 /**
  * @internal
@@ -245,45 +226,42 @@ struct dh_ctx {
  */
 int ssh_dh_init(void)
 {
+    unsigned long g_int = 2 ;	/* G is defined as 2 by the ssh2 standards */
     int rc;
     if (dh_crypto_initialized) {
         return SSH_OK;
     }
+    dh_crypto_initialized = 1;
 
-    g = bignum_new();
-    if (g == NULL) {
+    ssh_dh_generator = bignum_new();
+    if (ssh_dh_generator == NULL) {
         goto error;
     }
-    rc = bignum_set_word(g, g_int);
+    rc = bignum_set_word(ssh_dh_generator, g_int);
     if (rc != 1) {
         goto error;
     }
 
-    bignum_bin2bn(p_group1_value, P_GROUP1_LEN, &p_group1);
-    if (p_group1 == NULL) {
+    bignum_bin2bn(p_group1_value, P_GROUP1_LEN, &ssh_dh_group1);
+    if (ssh_dh_group1 == NULL) {
         goto error;
     }
-    bignum_bin2bn(p_group14_value, P_GROUP14_LEN, &p_group14);
-    if (p_group14 == NULL) {
+    bignum_bin2bn(p_group14_value, P_GROUP14_LEN, &ssh_dh_group14);
+    if (ssh_dh_group14 == NULL) {
         goto error;
     }
-    bignum_bin2bn(p_group16_value, P_GROUP16_LEN, &p_group16);
-    if (p_group16 == NULL) {
+    bignum_bin2bn(p_group16_value, P_GROUP16_LEN, &ssh_dh_group16);
+    if (ssh_dh_group16 == NULL) {
         goto error;
     }
-    bignum_bin2bn(p_group18_value, P_GROUP18_LEN, &p_group18);
-    if (p_group18 == NULL) {
+    bignum_bin2bn(p_group18_value, P_GROUP18_LEN, &ssh_dh_group18);
+    if (ssh_dh_group18 == NULL) {
         goto error;
     }
-
-    dh_crypto_initialized = 1;
 
     return 0;
 error:
-    bignum_safe_free(g);
-    bignum_safe_free(p_group1);
-    bignum_safe_free(p_group14);
-    bignum_safe_free(p_group16);
+    ssh_dh_finalize();
     return SSH_ERROR;
 }
 
@@ -297,216 +275,13 @@ void ssh_dh_finalize(void)
         return;
     }
 
-    bignum_safe_free(g);
-    bignum_safe_free(p_group1);
-    bignum_safe_free(p_group14);
-    bignum_safe_free(p_group16);
-    bignum_safe_free(p_group18);
+    bignum_safe_free(ssh_dh_generator);
+    bignum_safe_free(ssh_dh_group1);
+    bignum_safe_free(ssh_dh_group14);
+    bignum_safe_free(ssh_dh_group16);
+    bignum_safe_free(ssh_dh_group18);
 
     dh_crypto_initialized = 0;
-}
-
-static void ssh_dh_free_modulus(struct dh_ctx *ctx)
-{
-    if ((ctx->modulus != p_group1) &&
-        (ctx->modulus != p_group14) &&
-        (ctx->modulus != p_group16) &&
-        (ctx->modulus != p_group18)) {
-        bignum_safe_free(ctx->modulus);
-    }
-    ctx->modulus = NULL;
-}
-
-static void ssh_dh_free_generator(struct dh_ctx *ctx)
-{
-    if (ctx->generator != g) {
-        bignum_safe_free(ctx->generator);
-    }
-}
-
-static void ssh_dh_free_dh_keypair(struct dh_keypair *keypair)
-{
-    bignum_safe_free(keypair->priv_key);
-    bignum_safe_free(keypair->pub_key);
-}
-
-static int ssh_dh_init_dh_keypair(struct dh_keypair *keypair)
-{
-    int rc;
-
-    keypair->priv_key = bignum_new();
-    if (keypair->priv_key == NULL) {
-        rc = SSH_ERROR;
-        goto done;
-    }
-    keypair->pub_key = bignum_new();
-    if (keypair->pub_key == NULL) {
-        rc = SSH_ERROR;
-        goto done;
-    }
-
-    rc = SSH_OK;
-done:
-    if (rc != SSH_OK) {
-        ssh_dh_free_dh_keypair(keypair);
-    }
-    return rc;
-}
-
-int ssh_dh_keypair_get_keys(struct dh_ctx *ctx, int peer,
-                            const_bignum *priv, const_bignum *pub)
-{
-    if (((peer != DH_CLIENT_KEYPAIR) && (peer != DH_SERVER_KEYPAIR)) ||
-        ((priv == NULL) && (pub == NULL)) || (ctx == NULL)) {
-        return SSH_ERROR;
-    }
-
-    if (priv) {
-        /* check that we have something in it */
-        if (bignum_num_bits(ctx->keypair[peer].priv_key)) {
-            *priv = ctx->keypair[peer].priv_key;
-        } else {
-            return SSH_ERROR;
-        }
-    }
-
-    if (pub) {
-        /* check that we have something in it */
-        if (bignum_num_bits(ctx->keypair[peer].pub_key)) {
-            *pub = ctx->keypair[peer].pub_key;
-        } else {
-            return SSH_ERROR;
-        }
-    }
-
-    return SSH_OK;
-}
-
-int ssh_dh_keypair_set_keys(struct dh_ctx *ctx, int peer,
-                            bignum priv, bignum pub)
-{
-    if (((peer != DH_CLIENT_KEYPAIR) && (peer != DH_SERVER_KEYPAIR)) ||
-        ((priv == NULL) && (pub == NULL)) || (ctx == NULL)) {
-        return SSH_ERROR;
-    }
-
-    if (priv) {
-        bignum_safe_free(ctx->keypair[peer].priv_key);
-        ctx->keypair[peer].priv_key = priv;
-    }
-    if (pub) {
-        bignum_safe_free(ctx->keypair[peer].pub_key);
-        ctx->keypair[peer].pub_key = pub;
-    }
-    return SSH_OK;
-}
-
-int ssh_dh_get_parameters(struct dh_ctx *ctx,
-                          const_bignum *modulus, const_bignum *generator)
-{
-    if (ctx == NULL) {
-        return SSH_ERROR;
-    }
-    if (modulus) {
-        *modulus = ctx->modulus;
-    }
-    if (generator) {
-        *generator = ctx->generator;
-    }
-
-    return SSH_OK;
-}
-
-int ssh_dh_set_parameters(struct dh_ctx *ctx,
-                          bignum modulus, bignum generator)
-{
-    int rc;
-
-    if ((ctx == NULL) || ((modulus == NULL) && (generator == NULL))) {
-        return SSH_ERROR;
-    }
-    /* when setting modulus or generator,
-     * make sure to invalidate existing keys */
-    ssh_dh_free_dh_keypair(&ctx->keypair[DH_CLIENT_KEYPAIR]);
-    ssh_dh_free_dh_keypair(&ctx->keypair[DH_SERVER_KEYPAIR]);
-
-    rc = ssh_dh_init_dh_keypair(&ctx->keypair[DH_CLIENT_KEYPAIR]);
-    if (rc != SSH_OK) {
-        goto done;
-    }
-    rc = ssh_dh_init_dh_keypair(&ctx->keypair[DH_SERVER_KEYPAIR]);
-    if (rc != SSH_OK) {
-        goto done;
-    }
-
-    if (modulus) {
-        ssh_dh_free_modulus(ctx);
-        ctx->modulus = modulus;
-    }
-    if (generator) {
-        ssh_dh_free_generator(ctx);
-        ctx->generator = generator;
-    }
-
-done:
-    return rc;
-}
-
-/**
- * @internal
- * @brief allocate and initialize ephemeral values used in dh kex
- */
-int ssh_dh_init_common(struct ssh_crypto_struct *crypto)
-{
-    struct dh_ctx *ctx = NULL;
-    int rc;
-
-    ctx = calloc(1, sizeof(*ctx));
-    if (ctx == NULL) {
-        return SSH_ERROR;
-    }
-
-    switch (crypto->kex_type) {
-    case SSH_KEX_DH_GROUP1_SHA1:
-        rc = ssh_dh_set_parameters(ctx, p_group1, g);
-        break;
-    case SSH_KEX_DH_GROUP14_SHA1:
-        rc = ssh_dh_set_parameters(ctx, p_group14, g);
-        break;
-    case SSH_KEX_DH_GROUP16_SHA512:
-        rc = ssh_dh_set_parameters(ctx, p_group16, g);
-        break;
-    case SSH_KEX_DH_GROUP18_SHA512:
-        rc = ssh_dh_set_parameters(ctx, p_group18, g);
-        break;
-    default:
-        rc = SSH_OK;
-        break;
-    }
-
-    crypto->dh_ctx = ctx;
-
-    if (rc != SSH_OK) {
-        ssh_dh_cleanup(crypto);
-    }
-    return rc;
-}
-
-void ssh_dh_cleanup(struct ssh_crypto_struct *crypto)
-{
-    struct dh_ctx *ctx = crypto->dh_ctx;
-
-    if (ctx == NULL) {
-        return;
-    }
-
-    ssh_dh_free_dh_keypair(&ctx->keypair[DH_CLIENT_KEYPAIR]);
-    ssh_dh_free_dh_keypair(&ctx->keypair[DH_SERVER_KEYPAIR]);
-
-    ssh_dh_free_modulus(ctx);
-    ssh_dh_free_generator(ctx);
-    free(ctx);
-    crypto->dh_ctx = NULL;
 }
 
 int ssh_dh_import_next_pubkey_blob(ssh_session session, ssh_string pubkey_blob)
@@ -514,120 +289,6 @@ int ssh_dh_import_next_pubkey_blob(ssh_session session, ssh_string pubkey_blob)
     return ssh_pki_import_pubkey_blob(pubkey_blob,
                                       &session->next_crypto->server_pubkey);
 
-}
-
-#ifdef DEBUG_CRYPTO
-static void ssh_dh_debug(ssh_session session)
-{
-    struct ssh_crypto_struct *crypto = session->next_crypto;
-    const_bignum x, y, e, f;
-    ssh_dh_keypair_get_keys(crypto->dh_ctx, DH_CLIENT_KEYPAIR, &x, &e);
-    ssh_dh_keypair_get_keys(crypto->dh_ctx, DH_SERVER_KEYPAIR, &y, &f);
-    ssh_print_bignum("p", crypto->dh_ctx->modulus);
-    ssh_print_bignum("g", crypto->dh_ctx->generator);
-    ssh_print_bignum("x", x);
-    ssh_print_bignum("y", y);
-    ssh_print_bignum("e", e);
-    ssh_print_bignum("f", f);
- 
-    ssh_print_hexa("Session server cookie",
-                   session->next_crypto->server_kex.cookie, 16);
-    ssh_print_hexa("Session client cookie",
-                   session->next_crypto->client_kex.cookie, 16);
-    ssh_print_bignum("k", session->next_crypto->shared_secret);
-}
-#else
-#define ssh_dh_debug(session)
-#endif
-
-/** @internal
- * @brief generates a secret DH parameter of at least DH_SECURITY_BITS
- *        security as well as the corresponding public key.
- * @param[out] parms a dh_kex paramters structure with preallocated bignum
- *             where to store the parameters
- * @return SSH_OK on success, SSH_ERROR on error
- */
-int ssh_dh_keypair_gen_keys(struct dh_ctx *dh_ctx, int peer)
-{
-    bignum tmp = NULL;
-    bignum_CTX ctx = NULL;
-    int rc = 0;
-    int bits = 0;
-    int p_bits = 0;
-
-    ctx = bignum_ctx_new();
-    if (bignum_ctx_invalid(ctx)){
-        goto error;
-    }
-    tmp = bignum_new();
-    if (tmp == NULL) {
-        goto error;
-    }
-    p_bits = bignum_num_bits(dh_ctx->modulus);
-    /* we need at most DH_SECURITY_BITS */
-    bits = MIN(DH_SECURITY_BITS * 2, p_bits);
-    /* ensure we're not too close of p so rnd()%p stays uniform */
-    if (bits <= p_bits && bits + 64 > p_bits) {
-        bits += 64;
-    }
-    rc = bignum_rand(tmp, bits);
-    if (rc != 1) {
-        goto error;
-    }
-    rc = bignum_mod(dh_ctx->keypair[peer].priv_key, tmp, dh_ctx->modulus, ctx);
-    if (rc != 1) {
-        goto error;
-    }
-    /* Now compute the corresponding public key */
-    rc = bignum_mod_exp(dh_ctx->keypair[peer].pub_key, dh_ctx->generator,
-                        dh_ctx->keypair[peer].priv_key, dh_ctx->modulus, ctx);
-    if (rc != 1) {
-        goto error;
-    }
-    bignum_safe_free(tmp);
-    bignum_ctx_free(ctx);
-    return SSH_OK;
-error:
-    bignum_safe_free(tmp);
-    bignum_ctx_free(ctx);
-    return SSH_ERROR;
-}
-
-/** @internal
- * @brief generates a shared secret between the local peer and the remote peer
- * @param[in] local peer identifier
- * @param[in] remote peer identifier
- * @param[out] dest a preallocated bignum where to store parameter
- * @return SSH_OK on success, SSH_ERROR on error
- */
-int ssh_dh_compute_shared_secret(struct dh_ctx *dh_ctx, int local, int remote,
-                                 bignum *dest)
-{
-    int rc;
-    bignum_CTX ctx = bignum_ctx_new();
-    if (bignum_ctx_invalid(ctx)) {
-        return -1;
-    }
-
-    if (*dest == NULL) {
-        *dest = bignum_new();
-        if (*dest == NULL) {
-            rc = 0;
-            goto done;
-        }
-    }
-
-    rc = bignum_mod_exp(*dest, dh_ctx->keypair[remote].pub_key,
-                        dh_ctx->keypair[local].priv_key,
-                        dh_ctx->modulus, ctx);
-
-done:
-    bignum_ctx_free(ctx);
-    ssh_dh_debug(session);
-    if (rc != 1) {
-        return SSH_ERROR;
-    }
-    return SSH_OK;
 }
 
 static SSH_PACKET_CALLBACK(ssh_packet_client_dh_reply);
