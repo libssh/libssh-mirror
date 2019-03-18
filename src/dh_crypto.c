@@ -29,6 +29,7 @@
 
 #include "openssl/crypto.h"
 #include "openssl/dh.h"
+#include "libcrypto-compat.h"
 
 extern bignum ssh_dh_generator;
 extern bignum ssh_dh_group1;
