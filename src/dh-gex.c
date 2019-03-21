@@ -479,7 +479,7 @@ static int ssh_retrieve_dhgroup(uint32_t pmin,
         SSH_LOG(SSH_LOG_WARNING,
                 "Unable to open moduli file: %s",
                 strerror(errno));
-        return SSH_ERROR;
+        return ssh_fallback_group(pmax, p, g);
     }
 
     *size = 0;

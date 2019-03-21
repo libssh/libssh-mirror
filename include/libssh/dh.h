@@ -67,5 +67,6 @@ int ssh_client_dh_init(ssh_session session);
 void ssh_server_dh_init(ssh_session session);
 #endif /* WITH_SERVER */
 int ssh_server_dh_process_init(ssh_session session, ssh_buffer packet);
+int ssh_fallback_group(uint32_t pmax, bignum *p, bignum *g);
 
 #endif /* DH_H_ */

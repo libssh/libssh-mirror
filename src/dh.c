@@ -555,6 +555,33 @@ static SSH_PACKET_CALLBACK(ssh_packet_server_dh_init){
     return SSH_PACKET_USED;
 }
 
+/** @internal
+ * @brief Choose a fallback group for the DH Group exchange if the
+ * moduli file is not readable
+ * @param[in] pmax maximum requestsd group size
+ * @param[out] modulus
+ * @param[out] generator
+ * @returns SSH_OK on success, SSH_ERROR otherwise
+ */
+int ssh_fallback_group(uint32_t pmax,
+                       bignum *modulus,
+                       bignum *generator)
+{
+    *modulus = NULL;
+    *generator = NULL;
+
+    if (pmax < 3072) {
+        *modulus = ssh_dh_group14;
+    } else if (pmax < 6144) {
+        *modulus = ssh_dh_group16;
+    } else {
+        *modulus = ssh_dh_group18;
+    }
+    *generator = ssh_dh_generator;
+
+    return SSH_OK;
+}
+
 #endif /* WITH_SERVER */
 
 /**
