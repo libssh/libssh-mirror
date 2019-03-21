@@ -102,6 +102,8 @@ ssh_string ssh_sexp_extract_mpi(const gcry_sexp_t sexp,
                                 enum gcry_mpi_format informat,
                                 enum gcry_mpi_format outformat);
 
+#define ssh_fips_mode() false
+
 #endif /* HAVE_LIBGCRYPT */
 
 #endif /* LIBGCRYPT_H_ */

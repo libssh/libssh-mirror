@@ -126,5 +126,7 @@ int ssh_mbedtls_random(void *where, int len, int strong);
 ssh_string make_ecpoint_string(const mbedtls_ecp_group *g, const
         mbedtls_ecp_point *p);
 
+#define ssh_fips_mode() false
+
 #endif /* HAVE_LIBMBEDCRYPTO */
 #endif /* LIBMBEDCRYPTO_H_ */
