@@ -68,5 +68,6 @@ void ssh_server_dh_init(ssh_session session);
 #endif /* WITH_SERVER */
 int ssh_server_dh_process_init(ssh_session session, ssh_buffer packet);
 int ssh_fallback_group(uint32_t pmax, bignum *p, bignum *g);
+bool ssh_dh_is_known_group(bignum modulus, bignum generator);
 
 #endif /* DH_H_ */

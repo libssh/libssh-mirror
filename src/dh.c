@@ -590,6 +590,33 @@ int ssh_fallback_group(uint32_t pmax,
  * @{
  */
 
+bool ssh_dh_is_known_group(bignum modulus, bignum generator)
+{
+    int cmp, bits;
+    bignum m = NULL;
+
+    bits = bignum_num_bits(modulus);
+    if (bits < 3072) {
+        m = ssh_dh_group14;
+    } else if (bits < 6144) {
+        m = ssh_dh_group16;
+    } else {
+        m = ssh_dh_group18;
+    }
+
+    cmp = bignum_cmp(m, modulus);
+    if (cmp != 0) {
+        return false;
+    }
+
+    cmp = bignum_cmp(ssh_dh_generator, generator);
+    if (cmp != 0) {
+        return false;
+    }
+
+    SSH_LOG(SSH_LOG_TRACE, "The received primes in FIPS are known");
+    return true;
+}
 
 ssh_key ssh_dh_get_current_server_publickey(ssh_session session)
 {

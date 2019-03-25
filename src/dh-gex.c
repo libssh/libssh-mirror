@@ -139,6 +139,13 @@ SSH_PACKET_CALLBACK(ssh_packet_client_dhgex_group)
         goto error;
     }
     /* basic checks */
+    if (ssh_fips_mode() &&
+        !ssh_dh_is_known_group(modulus, generator)) {
+        ssh_set_error(session,
+                      SSH_FATAL,
+                      "The received DH group is not FIPS approved");
+        goto error;
+    }
     rc = bignum_set_word(one, 1);
     if (rc != 1) {
         goto error;
@@ -473,6 +480,13 @@ static int ssh_retrieve_dhgroup(uint32_t pmin,
     char *generator = NULL;
     char *modulus = NULL;
     int rc;
+
+    /* In FIPS mode, we can not negotiate arbitrary primes,
+     * but just the approved ones */
+    if (ssh_fips_mode()) {
+        SSH_LOG(SSH_LOG_TRACE, "In FIPS mode, using built-in primes");
+        return ssh_fallback_group(pmax, p, g);
+    }
 
     moduli = fopen(MODULI_FILE, "r");
     if (moduli == NULL) {
