@@ -329,7 +329,7 @@ static void local_parse_glob(ssh_session session,
         .gl_flags = 0,
     };
     int rt;
-    u_int i;
+    size_t i;
 
     rt = glob(fileglob, GLOB_TILDE, NULL, &globbuf);
     if (rt == GLOB_NOMATCH) {
