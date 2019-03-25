@@ -49,7 +49,9 @@ static int session_setup(void **state) {
     struct torture_state *s = *state;
     int verbosity = torture_libssh_verbosity();
     struct passwd *pwd;
+    bool false_v = false;
     int rc;
+
     pwd = getpwnam("bob");
     assert_non_null(pwd);
 
@@ -61,6 +63,9 @@ static int session_setup(void **state) {
 
     ssh_options_set(s->ssh.session, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
     ssh_options_set(s->ssh.session, SSH_OPTIONS_HOST, TORTURE_SSH_SERVER);
+    /* Prevent parsing configuration files that can introduce different
+     * algorithms then we want to test */
+    ssh_options_set(s->ssh.session, SSH_OPTIONS_PROCESS_CONFIG, &false_v);
 
     return 0;
 }
