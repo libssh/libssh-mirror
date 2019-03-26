@@ -95,7 +95,7 @@ fail:
 }
 
 /**
- * @brief decrypts an encrypted ed25519 private key blob
+ * @brief decrypts an encrypted private key blob in OpenSSH format.
  *
  */
 static int pki_private_key_decrypt(ssh_string blob,
