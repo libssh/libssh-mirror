@@ -1083,8 +1083,8 @@ int ssh_timeout_elapsed(struct ssh_timestamp *ts, int timeout) {
                   * session->timeout, session->timeout_usec.
                   */
             SSH_LOG(SSH_LOG_WARN, "ssh_timeout_elapsed called with -2. this needs to "
-                            "be fixed. please set a breakpoint on %s:%d and "
-                            "fix the caller\n", __FILE__, __LINE__);
+                            "be fixed. please set a breakpoint on misc.c:%d and "
+                            "fix the caller\n", __LINE__);
             return 0;
         case -1: /* -1 means infinite timeout */
             return 0;
