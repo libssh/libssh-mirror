@@ -267,8 +267,13 @@ static void ssh_connector_fd_in_cb(ssh_connector connector)
 
         if (connector->out_channel != NULL) {
             if (r == 0) {
-                rc = ssh_channel_send_eof(connector->out_channel);
-                (void)rc; /* TODO Handle rc? */
+                SSH_LOG(SSH_LOG_TRACE, "input fd %d is EOF", connector->in_fd);
+                if (connector->out_channel->local_eof == 0) {
+                    rc = ssh_channel_send_eof(connector->out_channel);
+                    (void)rc; /* TODO Handle rc? */
+                }
+                connector->in_available = 1; /* Don't poll on it */
+                return;
             } else if (r> 0) {
                 /* loop around ssh_channel_write in case our window reduced due to a race */
                 while (total != r){
@@ -289,7 +294,7 @@ static void ssh_connector_fd_in_cb(ssh_connector connector)
             }
         } else if (connector->out_fd != SSH_INVALID_SOCKET) {
             if (r == 0){
-                close (connector->out_fd);
+                close(connector->out_fd);
                 connector->out_fd = SSH_INVALID_SOCKET;
             } else {
                 /*
