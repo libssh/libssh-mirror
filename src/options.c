@@ -249,7 +249,7 @@ int ssh_options_set_algo(ssh_session session,
  *                The hostname or ip address to connect to (const char *).
  *
  *              - SSH_OPTIONS_PORT:
- *                The port to connect to (unsigned int).
+ *                The port to connect to (unsigned int *).
  *
  *              - SSH_OPTIONS_PORT_STR:
  *                The port to connect to (const char *).
