@@ -2242,12 +2242,6 @@ ssh_signature pki_do_sign_hash(const ssh_key privkey,
     gcry_sexp_t sexp;
     gcry_error_t err;
 
-    /* Only RSA supports different signature algorithm types now */
-    if (privkey->type != SSH_KEYTYPE_RSA && hash_type != SSH_DIGEST_AUTO) {
-        SSH_LOG(SSH_LOG_WARN, "Incompatible signature algorithm passed");
-        return NULL;
-    }
-
     sig = ssh_signature_new();
     if (sig == NULL) {
         return NULL;
