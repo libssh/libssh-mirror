@@ -1195,6 +1195,11 @@ int ssh_channel_send_eof(ssh_channel channel)
         return rc;
     }
 
+    /* If the EOF has already been sent we're done here. */
+    if (channel->local_eof != 0) {
+        return SSH_OK;
+    }
+
     session = channel->session;
 
     err = ssh_buffer_pack(session->out_buffer,
@@ -1257,10 +1262,7 @@ int ssh_channel_close(ssh_channel channel)
 
     session = channel->session;
 
-    if (channel->local_eof == 0) {
-        rc = ssh_channel_send_eof(channel);
-    }
-
+    rc = ssh_channel_send_eof(channel);
     if (rc != SSH_OK) {
         return rc;
     }
