@@ -33,7 +33,8 @@ enum ssh_digest_e {
     SSH_DIGEST_AUTO=0,
     SSH_DIGEST_SHA1=1,
     SSH_DIGEST_SHA256,
-    SSH_DIGEST_SHA512
+    SSH_DIGEST_SHA384,
+    SSH_DIGEST_SHA512,
 };
 
 enum ssh_kdf_digest {

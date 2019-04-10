@@ -147,6 +147,7 @@ const char *hash_signatures[] = {
     "", /* Not used here */
     "ssh-rsa",
     "rsa-sha2-256",
+    "", /* Not used; there is no rsa-sha2-384 */
     "rsa-sha2-512",
 };
 
@@ -155,6 +156,7 @@ int hash_lengths[] = {
     0, /* Not used here */
     20,
     32,
+    48, /* Not used; there is no rsa-sha2-384 */
     64,
 };
 
@@ -194,6 +196,11 @@ static void torture_pki_verify_mismatch(void **state)
              hash++) {
             hash_length = ((hash == SSH_DIGEST_AUTO) ?
                               skey_attrs.sig_length : hash_lengths[hash]);
+
+            /* SHA384 is used only internaly for ECDSA. Skip it. */
+            if (hash == SSH_DIGEST_SHA384) {
+                continue;
+            }
 
             SSH_LOG(SSH_LOG_TRACE, "Creating signature %d with hash %d",
                     sig_type, hash);
