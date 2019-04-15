@@ -200,6 +200,9 @@ SSH_PACKET_CALLBACK(ssh_packet_client_dhgex_group)
     session->dh_handshake_state = DH_STATE_INIT_SENT;
 
     rc = ssh_packet_send(session);
+    if (rc == SSH_ERROR) {
+        goto error;
+    }
 
     bignum_safe_free(one);
     bignum_safe_free(pmin1);
