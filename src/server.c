@@ -895,15 +895,21 @@ int ssh_auth_reply_success(ssh_session session, int partial)
         return ssh_auth_reply_default(session, partial);
     }
 
-    session->session_state = SSH_SESSION_STATE_AUTHENTICATED;
-    session->flags |= SSH_SESSION_FLAG_AUTHENTICATED;
-
     r = ssh_buffer_add_u8(session->out_buffer,SSH2_MSG_USERAUTH_SUCCESS);
     if (r < 0) {
         return SSH_ERROR;
     }
 
     r = ssh_packet_send(session);
+
+    /*
+     * Consider the session as having been authenticated only after sending
+     * the USERAUTH_SUCCESS message.  Setting these flags after ssh_packet_send
+     * ensures that a rekey is not triggered prematurely, causing the message
+     * to be queued.
+     */
+    session->session_state = SSH_SESSION_STATE_AUTHENTICATED;
+    session->flags |= SSH_SESSION_FLAG_AUTHENTICATED;
 
     crypto = ssh_packet_get_current_crypto(session, SSH_DIRECTION_OUT);
     if (crypto != NULL && crypto->delayed_compress_out) {
