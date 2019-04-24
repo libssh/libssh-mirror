@@ -361,7 +361,22 @@ static void ssh_server_connection_callback(ssh_session session){
                  */
                 if (session->extensions & SSH_EXT_NEGOTIATION &&
                     session->session_state != SSH_SESSION_STATE_AUTHENTICATED) {
-                    ssh_server_send_extensions(session);
+
+                    /*
+                     * Only send an SSH_MSG_EXT_INFO message the first time the client
+                     * undergoes NEWKEYS.  It is unexpected for this message to be sent
+                     * upon rekey, and may cause clients to log error messages.
+                     *
+                     * The session_state can not be used for this purpose because it is
+                     * re-set to SSH_SESSION_STATE_KEXINIT_RECEIVED during rekey.  So,
+                     * use the connected flag which transitions from non-zero below.
+                     *
+                     * See also:
+                     * - https://bugzilla.mindrot.org/show_bug.cgi?id=2929
+                     */
+                    if (session->connected == 0) {
+                        ssh_server_send_extensions(session);
+                    }
                 }
 
                 set_status(session,1.0f);
