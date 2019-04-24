@@ -64,6 +64,8 @@ static struct argp_option options[] = {
       "Run in socket-wrapper mode using the given mkdtemp directory template", 0 },
     { "stdout", 'o', NULL, 0,
       "Emit pkd stdout messages", 0 },
+    { "rekey", 'r', "limit", 0,
+      "Set the given rekey data limit, in bytes, using SSH_OPTIONS_REKEY_DATA", 0 },
     { "test", 't', "testname", 0,
       "Run tests matching the given testname", 0 },
     { "verbose", 'v', NULL, 0,
@@ -95,6 +97,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
         break;
     case 'o':
         pkd_dargs.opts.log_stdout = 1;
+        break;
+    case 'r':
+        pkd_dargs.rekey_data_limit = atoi(arg);
         break;
     case 't':
         pkd_dargs.opts.testname = arg;

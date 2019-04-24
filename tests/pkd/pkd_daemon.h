@@ -28,6 +28,8 @@ struct pkd_daemon_args {
         size_t len;
     } payload;
 
+    uint64_t rekey_data_limit;
+
     struct {
         int list;
 

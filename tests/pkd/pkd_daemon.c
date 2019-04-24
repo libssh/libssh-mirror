@@ -249,6 +249,7 @@ static int pkd_exec_hello(int fd, struct pkd_daemon_args *args)
     const char *default_kex = NULL;
     char *all_kex = NULL;
     size_t kex_len = 0;
+    const uint64_t rekey_data_limit = args->rekey_data_limit;
 
     pkd_state.eof_received = 0;
     pkd_state.close_received  = 0;
@@ -308,6 +309,12 @@ static int pkd_exec_hello(int fd, struct pkd_daemon_args *args)
     s = ssh_new();
     if (s == NULL) {
         pkderr("ssh_new\n");
+        goto outclose;
+    }
+
+    rc = ssh_options_set(s, SSH_OPTIONS_REKEY_DATA, &rekey_data_limit);
+    if (rc != 0) {
+        pkderr("ssh_options_set rekey data: %s\n", ssh_get_error(s));
         goto outclose;
     }
 
