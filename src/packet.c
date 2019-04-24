@@ -961,6 +961,7 @@ ssh_packet_get_current_crypto(ssh_session session,
 static bool ssh_packet_need_rekey(ssh_session session,
                                   const uint32_t payloadsize)
 {
+    bool data_rekey_needed = false;
     struct ssh_crypto_struct *crypto = NULL;
     struct ssh_cipher_struct *out_cipher = NULL, *in_cipher = NULL;
     uint32_t next_blocks;
@@ -1009,10 +1010,18 @@ static bool ssh_packet_need_rekey(ssh_session session,
      *    signalize our intention to rekey
      */
     next_blocks = payloadsize / out_cipher->blocksize;
-    return (out_cipher->max_blocks != 0 &&
-        out_cipher->blocks + next_blocks > out_cipher->max_blocks) ||
-        (in_cipher->max_blocks != 0 &&
-        in_cipher->blocks + next_blocks > in_cipher->max_blocks);
+    data_rekey_needed = (out_cipher->max_blocks != 0 &&
+                         out_cipher->blocks + next_blocks > out_cipher->max_blocks) ||
+                         (in_cipher->max_blocks != 0 &&
+                         in_cipher->blocks + next_blocks > in_cipher->max_blocks);
+
+    SSH_LOG(SSH_LOG_PACKET,
+            "packet: [data_rekey_needed=%d, out_blocks=%" PRIu64 ", in_blocks=%" PRIu64,
+            data_rekey_needed,
+            out_cipher->blocks + next_blocks,
+            in_cipher->blocks + next_blocks);
+
+    return data_rekey_needed;
 }
 
 /* in nonblocking mode, socket_read will read as much as it can, and return */
