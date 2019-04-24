@@ -2314,8 +2314,14 @@ ssh_string ssh_srv_pki_do_sign_sessionid(ssh_session session,
                                          const ssh_key privkey)
 {
     struct ssh_crypto_struct *crypto = NULL;
+
     ssh_signature sig = NULL;
-    ssh_string sig_blob;
+    ssh_string sig_blob = NULL;
+
+    ssh_buffer sign_input = NULL;
+
+    enum ssh_digest_e hash_type;
+
     int rc;
 
     if (session == NULL || privkey == NULL || !ssh_key_is_private(privkey)) {
@@ -2330,81 +2336,80 @@ ssh_string ssh_srv_pki_do_sign_sessionid(ssh_session session,
         return NULL;
     }
 
-    if (is_ecdsa_key_type(privkey->type)) {
-#ifdef HAVE_ECC
-        unsigned char ehash[EVP_DIGEST_LEN] = {0};
-        uint32_t elen;
+    /* Get the hash type from the key type */
+    hash_type = ssh_key_type_to_hash(session, privkey->type);
 
-        evp(privkey->ecdsa_nid, crypto->secret_hash, crypto->digest_len,
-            ehash, &elen);
+    /* Fill the input */
+    sign_input = ssh_buffer_new();
+    if (sign_input == NULL) {
+        goto end;
+    }
+    ssh_buffer_set_secure(sign_input);
 
-#ifdef DEBUG_CRYPTO
-        ssh_print_hexa("Hash being signed", ehash, elen);
-#endif
+    rc = ssh_buffer_pack(sign_input,
+                         "P",
+                         crypto->digest_len,
+                         crypto->secret_hash);
+    if (rc != SSH_OK) {
+        goto end;
+    }
 
-        sig = pki_do_sign_sessionid(privkey, ehash, elen);
-        if (sig == NULL) {
-            return NULL;
-        }
-#endif
-    } else if (privkey->type == SSH_KEYTYPE_ED25519) {
-        sig = ssh_signature_new();
-        if (sig == NULL){
-            return NULL;
-        }
-
-        sig->type = privkey->type;
-        sig->type_c = privkey->type_c;
-
-        rc = pki_ed25519_sign(privkey,
-                              sig,
-                              crypto->secret_hash,
-                              crypto->digest_len);
-        if (rc != SSH_OK){
-            ssh_signature_free(sig);
-            sig = NULL;
-        }
+    /* Generate the signature */
+    if (privkey->type == SSH_KEYTYPE_ED25519){
+        sig = pki_do_sign(privkey,
+                          ssh_buffer_get(sign_input),
+                          ssh_buffer_get_len(sign_input));
     } else {
         unsigned char hash[SHA512_DIGEST_LEN] = {0};
         uint32_t hlen = 0;
-        enum ssh_digest_e hash_type;
-
-        hash_type = ssh_key_type_to_hash(session, privkey->type);
         switch (hash_type) {
         case SSH_DIGEST_SHA256:
-            sha256(crypto->secret_hash, crypto->digest_len, hash);
+            sha256(ssh_buffer_get(sign_input), ssh_buffer_get_len(sign_input),
+                   hash);
             hlen = SHA256_DIGEST_LEN;
             break;
+        case SSH_DIGEST_SHA384:
+            sha384(ssh_buffer_get(sign_input), ssh_buffer_get_len(sign_input),
+                   hash);
+            hlen = SHA384_DIGEST_LEN;
+            break;
         case SSH_DIGEST_SHA512:
-            sha512(crypto->secret_hash, crypto->digest_len, hash);
+            sha512(ssh_buffer_get(sign_input), ssh_buffer_get_len(sign_input),
+                   hash);
             hlen = SHA512_DIGEST_LEN;
             break;
         case SSH_DIGEST_SHA1:
         case SSH_DIGEST_AUTO:
-            sha1(crypto->secret_hash, crypto->digest_len, hash);
+            sha1(ssh_buffer_get(sign_input), ssh_buffer_get_len(sign_input),
+                 hash);
             hlen = SHA_DIGEST_LEN;
             break;
         default:
-            SSH_LOG(SSH_LOG_TRACE, "Unknown sig->type: %d", hash_type);
-            return NULL;
+            SSH_LOG(SSH_LOG_TRACE, "Unknown hash algorithm for type: %d",
+                    hash_type);
+            goto end;
         }
+        sig = pki_do_sign_hash(privkey, hash, hlen, hash_type);
+    }
 
+    if (sig == NULL) {
+        goto end;
+    }
 
 #ifdef DEBUG_CRYPTO
-        ssh_print_hexa("Hash being signed", hash, hlen);
+        SSH_LOG(SSH_LOG_TRACE, "Generated signature for %s and hash_type = %d",
+                privkey->type_c, hash_type);
 #endif
 
-        sig = pki_do_sign_sessionid_hash(privkey, hash, hlen, hash_type);
-        if (sig == NULL) {
-            return NULL;
-        }
+    /* Convert the signature to blob */
+    rc = ssh_pki_export_signature_blob(sig, &sig_blob);
+    if (rc < 0) {
+        sig_blob = NULL;
     }
 
-    rc = ssh_pki_export_signature_blob(sig, &sig_blob);
+end:
     ssh_signature_free(sig);
-    if (rc < 0) {
-        return NULL;
-    }
+    ssh_buffer_free(sign_input);
 
     return sig_blob;
 }
