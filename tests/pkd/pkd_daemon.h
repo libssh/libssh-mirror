@@ -24,6 +24,11 @@ struct pkd_daemon_args {
     const char *hostkeypath;
 
     struct {
+        const uint8_t *buf;
+        size_t len;
+    } payload;
+
+    struct {
         int list;
 
         int log_stdout;

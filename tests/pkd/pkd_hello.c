@@ -22,6 +22,12 @@
 #define DEFAULT_ITERATIONS 10
 static struct pkd_daemon_args pkd_dargs;
 
+static uint8_t default_payload_buf[] = {
+    'h', 'e', 'l', 'l', 'o', '\n',
+};
+
+static size_t default_payload_len = sizeof(default_payload_buf);
+
 #ifdef HAVE_ARGP_H
 #include <argp.h>
 #define PROGNAME "pkd_hello"
@@ -956,6 +962,9 @@ int main(int argc, char **argv) {
     int exit_code = -1;
 
     unsetenv("SSH_AUTH_SOCK");
+
+    pkd_dargs.payload.buf = default_payload_buf;
+    pkd_dargs.payload.len = default_payload_len;
 
     rc = ssh_init();
     if (rc != 0) {

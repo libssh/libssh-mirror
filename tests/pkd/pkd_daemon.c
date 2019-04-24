@@ -368,9 +368,9 @@ static int pkd_exec_hello(int fd, struct pkd_daemon_args *args)
         goto out;
     }
 
-    rc = ssh_channel_write(c, "hello\n", 6); /* XXX: customizable payloads */
-    if (rc != 6) {
-        pkderr("ssh_channel_write partial (%d)\n", rc);
+    rc = ssh_channel_write(c, args->payload.buf, args->payload.len);
+    if (rc != args->payload.len) {
+        pkderr("ssh_channel_write partial (%d != %zd)\n", rc, args->payload.len);
     }
 
     rc = ssh_channel_request_send_exit_status(c, 0);
