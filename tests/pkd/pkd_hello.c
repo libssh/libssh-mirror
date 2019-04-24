@@ -50,6 +50,8 @@ static char doc[] = \
 ;
 
 static struct argp_option options[] = {
+    { "buffer", 'b', "string", 0,
+      "Use the given string for test buffer payload contents", 0 },
     { "stderr", 'e', NULL, 0,
       "Emit pkd stderr messages", 0 },
     { "list", 'l', NULL, 0,
@@ -75,6 +77,10 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
     (void) state;
 
     switch(key) {
+    case 'b':
+        pkd_dargs.payload.buf = (uint8_t *) arg;
+        pkd_dargs.payload.len = strlen(arg);
+        break;
     case 'e':
         pkd_dargs.opts.log_stderr = 1;
         break;
