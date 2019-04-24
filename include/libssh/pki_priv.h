@@ -127,12 +127,6 @@ ssh_signature pki_do_sign_hash(const ssh_key privkey,
                                const unsigned char *hash,
                                size_t hlen,
                                enum ssh_digest_e hash_type);
-#define pki_do_sign_sessionid(key, hash, hlen) \
-    pki_do_sign_sessionid_hash(key, hash, hlen, SSH_DIGEST_AUTO)
-ssh_signature pki_do_sign_sessionid_hash(const ssh_key key,
-                                        const unsigned char *hash,
-                                        size_t hlen,
-                                        enum ssh_digest_e hash_type);
 int pki_ed25519_sign(const ssh_key privkey, ssh_signature sig,
         const unsigned char *hash, size_t hlen);
 int pki_ed25519_verify(const ssh_key pubkey, ssh_signature sig,
