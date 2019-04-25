@@ -1472,6 +1472,59 @@ static ssh_string pki_dsa_signature_to_blob(const ssh_signature sig)
     return sig_blob;
 }
 
+static ssh_string pki_ecdsa_signature_to_blob(const ssh_signature sig)
+{
+    ssh_string r;
+    ssh_string s;
+
+    ssh_buffer buf = NULL;
+    ssh_string sig_blob = NULL;
+
+    const BIGNUM *pr, *ps;
+
+    int rc;
+
+    buf = ssh_buffer_new();
+    if (buf == NULL) {
+        goto error;
+    }
+
+    ECDSA_SIG_get0(sig->ecdsa_sig, &pr, &ps);
+    r = ssh_make_bignum_string((BIGNUM *)pr);
+    if (r == NULL) {
+        goto error;
+    }
+    rc = ssh_buffer_add_ssh_string(buf, r);
+    ssh_string_free(r);
+    if (rc < 0) {
+        goto error;
+    }
+
+    s = ssh_make_bignum_string((BIGNUM *)ps);
+    if (s == NULL) {
+        goto error;
+    }
+    rc = ssh_buffer_add_ssh_string(buf, s);
+    ssh_string_free(s);
+    if (rc < 0) {
+        goto error;
+    }
+
+    sig_blob = ssh_string_new(ssh_buffer_get_len(buf));
+    if (sig_blob == NULL) {
+        goto error;
+    }
+
+    ssh_string_fill(sig_blob, ssh_buffer_get(buf), ssh_buffer_get_len(buf));
+    ssh_buffer_free(buf);
+
+    return sig_blob;
+
+error:
+    ssh_buffer_free(buf);
+    return NULL;
+}
+
 ssh_string pki_signature_to_blob(const ssh_signature sig)
 {
     ssh_string sig_blob = NULL;
@@ -1488,53 +1541,8 @@ ssh_string pki_signature_to_blob(const ssh_signature sig)
         case SSH_KEYTYPE_ECDSA_P384:
         case SSH_KEYTYPE_ECDSA_P521:
 #ifdef HAVE_OPENSSL_ECC
-        {
-            ssh_string r;
-            ssh_string s;
-            ssh_buffer b;
-            int rc;
-            const BIGNUM *pr, *ps;
-
-            b = ssh_buffer_new();
-            if (b == NULL) {
-                return NULL;
-            }
-
-            ECDSA_SIG_get0(sig->ecdsa_sig, &pr, &ps);
-            r = ssh_make_bignum_string((BIGNUM *)pr);
-            if (r == NULL) {
-                ssh_buffer_free(b);
-                return NULL;
-            }
-            rc = ssh_buffer_add_ssh_string(b, r);
-            ssh_string_free(r);
-            if (rc < 0) {
-                ssh_buffer_free(b);
-                return NULL;
-            }
-
-            s = ssh_make_bignum_string((BIGNUM *)ps);
-            if (s == NULL) {
-                ssh_buffer_free(b);
-                return NULL;
-            }
-            rc = ssh_buffer_add_ssh_string(b, s);
-            ssh_string_free(s);
-            if (rc < 0) {
-                ssh_buffer_free(b);
-                return NULL;
-            }
-
-            sig_blob = ssh_string_new(ssh_buffer_get_len(b));
-            if (sig_blob == NULL) {
-                ssh_buffer_free(b);
-                return NULL;
-            }
-
-            ssh_string_fill(sig_blob, ssh_buffer_get(b), ssh_buffer_get_len(b));
-            ssh_buffer_free(b);
+            sig_blob = pki_ecdsa_signature_to_blob(sig);
             break;
-        }
 #endif
         case SSH_KEYTYPE_ED25519:
             sig_blob = pki_ed25519_sig_to_blob(sig);
