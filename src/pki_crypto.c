@@ -1548,9 +1548,9 @@ ssh_string pki_signature_to_blob(const ssh_signature sig)
     return sig_blob;
 }
 
-static ssh_signature pki_signature_from_rsa_blob(const ssh_key pubkey,
-                                                 const ssh_string sig_blob,
-                                                 ssh_signature sig)
+static int pki_signature_from_rsa_blob(const ssh_key pubkey,
+                                       const ssh_string sig_blob,
+                                       ssh_signature sig)
 {
     uint32_t pad_len = 0;
     char *blob_orig;
@@ -1606,11 +1606,10 @@ static ssh_signature pki_signature_from_rsa_blob(const ssh_key pubkey,
         sig->rsa_sig = sig_blob_padded;
     }
 
-    return sig;
+    return SSH_OK;
 
 errout:
-    ssh_signature_free(sig);
-    return NULL;
+    return SSH_ERROR;
 }
 
 ssh_signature pki_signature_from_blob(const ssh_key pubkey,
@@ -1709,8 +1708,9 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
             break;
         case SSH_KEYTYPE_RSA:
         case SSH_KEYTYPE_RSA1:
-            sig = pki_signature_from_rsa_blob(pubkey, sig_blob, sig);
-            if (sig == NULL) {
+            rc = pki_signature_from_rsa_blob(pubkey, sig_blob, sig);
+            if (rc != SSH_OK) {
+                ssh_signature_free(sig);
                 return NULL;
             }
             break;
