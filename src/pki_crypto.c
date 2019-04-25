@@ -1277,6 +1277,12 @@ ssh_string pki_publickey_to_blob(const ssh_key key)
 
             break;
         }
+        case SSH_KEYTYPE_ED25519:
+            rc = pki_ed25519_public_key_to_blob(buffer, key);
+            if (rc == SSH_ERROR){
+                goto fail;
+            }
+            break;
         case SSH_KEYTYPE_ECDSA_P256:
         case SSH_KEYTYPE_ECDSA_P384:
         case SSH_KEYTYPE_ECDSA_P521:
@@ -1312,12 +1318,6 @@ ssh_string pki_publickey_to_blob(const ssh_key key)
 
             break;
 #endif
-        case SSH_KEYTYPE_ED25519:
-            rc = pki_ed25519_public_key_to_blob(buffer, key);
-            if (rc == SSH_ERROR){
-                goto fail;
-            }
-            break;
         case SSH_KEYTYPE_UNKNOWN:
         default:
             goto fail;
@@ -1537,6 +1537,9 @@ ssh_string pki_signature_to_blob(const ssh_signature sig)
         case SSH_KEYTYPE_RSA1:
             sig_blob = ssh_string_copy(sig->rsa_sig);
             break;
+        case SSH_KEYTYPE_ED25519:
+            sig_blob = pki_ed25519_sig_to_blob(sig);
+            break;
         case SSH_KEYTYPE_ECDSA_P256:
         case SSH_KEYTYPE_ECDSA_P384:
         case SSH_KEYTYPE_ECDSA_P521:
@@ -1544,9 +1547,6 @@ ssh_string pki_signature_to_blob(const ssh_signature sig)
             sig_blob = pki_ecdsa_signature_to_blob(sig);
             break;
 #endif
-        case SSH_KEYTYPE_ED25519:
-            sig_blob = pki_ed25519_sig_to_blob(sig);
-            break;
         default:
         case SSH_KEYTYPE_UNKNOWN:
             SSH_LOG(SSH_LOG_WARN, "Unknown signature key type: %s", sig->type_c);
@@ -1821,6 +1821,12 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
                 goto error;
             }
             break;
+        case SSH_KEYTYPE_ED25519:
+            rc = pki_ed25519_sig_from_blob(sig, sig_blob);
+            if (rc != SSH_OK){
+                goto error;
+            }
+            break;
         case SSH_KEYTYPE_ECDSA_P256:
         case SSH_KEYTYPE_ECDSA_P384:
         case SSH_KEYTYPE_ECDSA_P521:
@@ -1834,12 +1840,6 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
             }
             break;
 #endif
-        case SSH_KEYTYPE_ED25519:
-            rc = pki_ed25519_sig_from_blob(sig, sig_blob);
-            if (rc != SSH_OK){
-                goto error;
-            }
-            break;
         default:
         case SSH_KEYTYPE_UNKNOWN:
             SSH_LOG(SSH_LOG_WARN, "Unknown signature type");
@@ -2006,6 +2006,13 @@ ssh_signature pki_do_sign_hash(const ssh_key privkey,
             }
             sig->dsa_sig = NULL;
             break;
+        case SSH_KEYTYPE_ED25519:
+            rc = pki_ed25519_sign(privkey, sig, hash, hlen);
+            if (rc != SSH_OK){
+                ssh_signature_free(sig);
+                return NULL;
+            }
+            break;
         case SSH_KEYTYPE_ECDSA_P256:
         case SSH_KEYTYPE_ECDSA_P384:
         case SSH_KEYTYPE_ECDSA_P521:
@@ -2027,13 +2034,6 @@ ssh_signature pki_do_sign_hash(const ssh_key privkey,
 
             break;
 #endif /* HAVE_OPENSSL_ECC */
-        case SSH_KEYTYPE_ED25519:
-            rc = pki_ed25519_sign(privkey, sig, hash, hlen);
-            if (rc != SSH_OK){
-                ssh_signature_free(sig);
-                return NULL;
-            }
-            break;
         case SSH_KEYTYPE_UNKNOWN:
         default:
             ssh_signature_free(sig);
