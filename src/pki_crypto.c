@@ -1612,17 +1612,175 @@ errout:
     return SSH_ERROR;
 }
 
+static int pki_signature_from_dsa_blob(UNUSED_PARAM(const ssh_key pubkey),
+                                       const ssh_string sig_blob,
+                                       ssh_signature sig)
+{
+    BIGNUM *pr = NULL, *ps = NULL;
+
+    ssh_string r;
+    ssh_string s;
+
+    size_t len;
+
+    int rc;
+
+    len = ssh_string_len(sig_blob);
+
+    /* 40 is the dual signature blob len. */
+    if (len != 40) {
+        SSH_LOG(SSH_LOG_WARN,
+                "Signature has wrong size: %lu",
+                (unsigned long)len);
+        goto error;
+    }
+
+#ifdef DEBUG_CRYPTO
+    ssh_print_hexa("r", ssh_string_data(sig_blob), 20);
+    ssh_print_hexa("s", (unsigned char *)ssh_string_data(sig_blob) + 20, 20);
+#endif
+
+    sig->dsa_sig = DSA_SIG_new();
+    if (sig->dsa_sig == NULL) {
+        goto error;
+    }
+
+    r = ssh_string_new(20);
+    if (r == NULL) {
+        goto error;
+    }
+    ssh_string_fill(r, ssh_string_data(sig_blob), 20);
+
+    pr = ssh_make_string_bn(r);
+    ssh_string_free(r);
+    if (pr == NULL) {
+        goto error;
+    }
+
+    s = ssh_string_new(20);
+    if (s == NULL) {
+        goto error;
+    }
+    ssh_string_fill(s, (char *)ssh_string_data(sig_blob) + 20, 20);
+
+    ps = ssh_make_string_bn(s);
+    ssh_string_free(s);
+    if (ps == NULL) {
+        goto error;
+    }
+
+    /* Memory management of pr and ps is transferred to DSA signature
+     * object */
+    rc = DSA_SIG_set0(sig->dsa_sig, pr, ps);
+    if (rc == 0) {
+        goto error;
+    }
+
+    return SSH_OK;
+
+error:
+    bignum_safe_free(ps);
+    bignum_safe_free(pr);
+    return SSH_ERROR;
+}
+
+static int pki_signature_from_ecdsa_blob(UNUSED_PARAM(const ssh_key pubkey),
+                                         const ssh_string sig_blob,
+                                         ssh_signature sig)
+{
+    ssh_string r;
+    ssh_string s;
+
+    BIGNUM *pr = NULL, *ps = NULL;
+
+    ssh_buffer buf;
+    uint32_t rlen;
+
+    int rc;
+
+    sig->ecdsa_sig = ECDSA_SIG_new();
+    if (sig->ecdsa_sig == NULL) {
+        return SSH_ERROR;
+    }
+
+    /* build ecdsa signature */
+    buf = ssh_buffer_new();
+    if (buf == NULL) {
+        return SSH_ERROR;
+    }
+
+    rc = ssh_buffer_add_data(buf,
+                             ssh_string_data(sig_blob),
+                             ssh_string_len(sig_blob));
+    if (rc < 0) {
+        goto error;
+    }
+
+    r = ssh_buffer_get_ssh_string(buf);
+    if (r == NULL) {
+        goto error;
+    }
+
+#ifdef DEBUG_CRYPTO
+    ssh_print_hexa("r", ssh_string_data(r), ssh_string_len(r));
+#endif
+
+    pr = ssh_make_string_bn(r);
+    ssh_string_burn(r);
+    ssh_string_free(r);
+    if (pr == NULL) {
+        goto error;
+    }
+
+    s = ssh_buffer_get_ssh_string(buf);
+    rlen = ssh_buffer_get_len(buf);
+    ssh_buffer_free(buf);
+    if (s == NULL) {
+        goto error;
+    }
+
+#ifdef DEBUG_CRYPTO
+    ssh_print_hexa("s", ssh_string_data(s), ssh_string_len(s));
+#endif
+
+    ps = ssh_make_string_bn(s);
+    ssh_string_burn(s);
+    ssh_string_free(s);
+    if (ps == NULL) {
+        goto error;
+    }
+
+    /* Memory management of pr and ps is transferred to
+     * ECDSA signature object */
+    rc = ECDSA_SIG_set0(sig->ecdsa_sig, pr, ps);
+    if (rc == 0) {
+        goto error;
+    }
+
+    if (rlen != 0) {
+        SSH_LOG(SSH_LOG_WARN,
+                "Signature has remaining bytes in inner "
+                "sigblob: %lu",
+                (unsigned long)rlen);
+        goto error;
+    }
+
+    return SSH_OK;
+
+error:
+    ssh_buffer_free(buf);
+    bignum_safe_free(ps);
+    bignum_safe_free(pr);
+    return SSH_ERROR;
+}
+
 ssh_signature pki_signature_from_blob(const ssh_key pubkey,
                                       const ssh_string sig_blob,
                                       enum ssh_keytypes_e type,
                                       enum ssh_digest_e hash_type)
 {
     ssh_signature sig;
-    ssh_string r;
-    ssh_string s;
-    size_t len;
     int rc;
-    BIGNUM *pr = NULL, *ps = NULL;
 
     if (ssh_key_type_plain(pubkey->type) != type) {
         SSH_LOG(SSH_LOG_WARN,
@@ -1641,187 +1799,50 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
     sig->type_c = ssh_key_signature_to_char(type, hash_type);
     sig->hash_type = hash_type;
 
-    len = ssh_string_len(sig_blob);
-
     switch(type) {
         case SSH_KEYTYPE_DSS:
-            /* 40 is the dual signature blob len. */
-            if (len != 40) {
-                SSH_LOG(SSH_LOG_WARN,
-                        "Signature has wrong size: %lu",
-                        (unsigned long)len);
-                ssh_signature_free(sig);
-                return NULL;
+            rc = pki_signature_from_dsa_blob(pubkey, sig_blob, sig);
+            if (rc != SSH_OK) {
+                goto error;
             }
-
-#ifdef DEBUG_CRYPTO
-            ssh_print_hexa("r", ssh_string_data(sig_blob), 20);
-            ssh_print_hexa("s", (unsigned char *)ssh_string_data(sig_blob) + 20, 20);
-#endif
-
-            sig->dsa_sig = DSA_SIG_new();
-            if (sig->dsa_sig == NULL) {
-                ssh_signature_free(sig);
-                return NULL;
-            }
-
-            r = ssh_string_new(20);
-            if (r == NULL) {
-                ssh_signature_free(sig);
-                return NULL;
-            }
-            ssh_string_fill(r, ssh_string_data(sig_blob), 20);
-
-            pr = ssh_make_string_bn(r);
-            ssh_string_free(r);
-            if (pr == NULL) {
-                ssh_signature_free(sig);
-                return NULL;
-            }
-
-            s = ssh_string_new(20);
-            if (s == NULL) {
-                bignum_safe_free(pr);
-                ssh_signature_free(sig);
-                return NULL;
-            }
-            ssh_string_fill(s, (char *)ssh_string_data(sig_blob) + 20, 20);
-
-            ps = ssh_make_string_bn(s);
-            ssh_string_free(s);
-            if (ps == NULL) {
-                bignum_safe_free(pr);
-                ssh_signature_free(sig);
-                return NULL;
-            }
-
-            /* Memory management of pr and ps is transfered to DSA signature
-             * object */
-            rc = DSA_SIG_set0(sig->dsa_sig, pr, ps);
-            if (rc == 0) {
-                bignum_safe_free(ps);
-                bignum_safe_free(pr);
-                ssh_signature_free(sig);
-                return NULL;
-            }
-
             break;
         case SSH_KEYTYPE_RSA:
         case SSH_KEYTYPE_RSA1:
             rc = pki_signature_from_rsa_blob(pubkey, sig_blob, sig);
             if (rc != SSH_OK) {
-                ssh_signature_free(sig);
-                return NULL;
+                goto error;
             }
             break;
         case SSH_KEYTYPE_ECDSA_P256:
         case SSH_KEYTYPE_ECDSA_P384:
         case SSH_KEYTYPE_ECDSA_P521:
+        case SSH_KEYTYPE_ECDSA_P256_CERT01:
+        case SSH_KEYTYPE_ECDSA_P384_CERT01:
+        case SSH_KEYTYPE_ECDSA_P521_CERT01:
 #ifdef HAVE_OPENSSL_ECC
-            sig->ecdsa_sig = ECDSA_SIG_new();
-            if (sig->ecdsa_sig == NULL) {
-                ssh_signature_free(sig);
-                return NULL;
+            rc = pki_signature_from_ecdsa_blob(pubkey, sig_blob, sig);
+            if (rc != SSH_OK) {
+                goto error;
             }
-
-            { /* build ecdsa siganature */
-                ssh_buffer b;
-                uint32_t rlen;
-
-                b = ssh_buffer_new();
-                if (b == NULL) {
-                    ssh_signature_free(sig);
-                    return NULL;
-                }
-
-                rc = ssh_buffer_add_data(b,
-                                         ssh_string_data(sig_blob),
-                                         ssh_string_len(sig_blob));
-                if (rc < 0) {
-                    ssh_buffer_free(b);
-                    ssh_signature_free(sig);
-                    return NULL;
-                }
-
-                r = ssh_buffer_get_ssh_string(b);
-                if (r == NULL) {
-                    ssh_buffer_free(b);
-                    ssh_signature_free(sig);
-                    return NULL;
-                }
-
-#ifdef DEBUG_CRYPTO
-                ssh_print_hexa("r", ssh_string_data(r), ssh_string_len(r));
-#endif
-
-                pr = ssh_make_string_bn(r);
-                ssh_string_burn(r);
-                ssh_string_free(r);
-                if (pr == NULL) {
-                    ssh_buffer_free(b);
-                    ssh_signature_free(sig);
-                    return NULL;
-                }
-
-                s = ssh_buffer_get_ssh_string(b);
-                rlen = ssh_buffer_get_len(b);
-                ssh_buffer_free(b);
-                if (s == NULL) {
-                    bignum_safe_free(pr);
-                    ssh_signature_free(sig);
-                    return NULL;
-                }
-
-#ifdef DEBUG_CRYPTO
-                ssh_print_hexa("s", ssh_string_data(s), ssh_string_len(s));
-#endif
-
-                ps = ssh_make_string_bn(s);
-                ssh_string_burn(s);
-                ssh_string_free(s);
-                if (ps == NULL) {
-                    bignum_safe_free(pr);
-                    ssh_signature_free(sig);
-                    return NULL;
-                }
-
-                /* Memory management of pr and ps is transfered to
-                 * ECDSA signature object */
-                rc = ECDSA_SIG_set0(sig->ecdsa_sig, pr, ps);
-                if (rc == 0) {
-                    bignum_safe_free(ps);
-                    bignum_safe_free(pr);
-                    ssh_signature_free(sig);
-                    return NULL;
-                }
-
-                if (rlen != 0) {
-                    SSH_LOG(SSH_LOG_WARN,
-                            "Signature has remaining bytes in inner "
-                            "sigblob: %lu",
-                            (unsigned long)rlen);
-                    ssh_signature_free(sig);
-                    return NULL;
-                }
-            }
-
             break;
 #endif
         case SSH_KEYTYPE_ED25519:
             rc = pki_ed25519_sig_from_blob(sig, sig_blob);
-            if (rc == SSH_ERROR){
-                ssh_signature_free(sig);
-                return NULL;
+            if (rc != SSH_OK){
+                goto error;
             }
             break;
         default:
         case SSH_KEYTYPE_UNKNOWN:
             SSH_LOG(SSH_LOG_WARN, "Unknown signature type");
-            ssh_signature_free(sig);
-            return NULL;
+            goto error;
     }
 
     return sig;
+
+error:
+    ssh_signature_free(sig);
+    return NULL;
 }
 
 int pki_signature_verify(ssh_session session,
