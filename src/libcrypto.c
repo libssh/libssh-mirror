@@ -1094,7 +1094,9 @@ int ssh_crypto_init(void)
         OPENSSL_ia32cap &= ~(1LL << 57);
     }
 #endif
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
     OpenSSL_add_all_algorithms();
+#endif
 
     for (i = 0; ssh_ciphertab[i].name != NULL; i++) {
         int cmp;
@@ -1123,8 +1125,10 @@ void ssh_crypto_finalize(void)
         return;
     }
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
     EVP_cleanup();
     CRYPTO_cleanup_all_ex_data();
+#endif
 
     libcrypto_initialized = 0;
 }
