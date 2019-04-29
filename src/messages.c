@@ -1218,6 +1218,17 @@ end:
   return SSH_PACKET_USED;
 }
 
+/**
+ * @internal
+ *
+ * @brief This function accepts a channel open request for the specified channel.
+ *
+ * @param[in]  msg      The message.
+ *
+ * @param[in]  chan     The channel the request is made on.
+ *
+ * @returns             SSH_OK on success, SSH_ERROR if an error occured.
+ */
 int ssh_message_channel_request_open_reply_accept_channel(ssh_message msg, ssh_channel chan) {
     ssh_session session;
     int rc;
@@ -1258,7 +1269,17 @@ int ssh_message_channel_request_open_reply_accept_channel(ssh_message msg, ssh_c
     return rc;
 }
 
-
+/**
+ * @internal
+ *
+ * @brief This function accepts a channel open request.
+ *
+ * @param[in]  msg      The message.
+ *
+ * @returns a valid ssh_channel handle if the request is to be allowed
+ *
+ * @returns NULL in case of error
+ */
 ssh_channel ssh_message_channel_request_open_reply_accept(ssh_message msg) {
 	ssh_channel chan;
 	int rc;
