@@ -81,22 +81,22 @@ void md5_final(unsigned char *md,MD5CTX c);
 SHACTX sha1_init(void);
 void sha1_update(SHACTX c, const void *data, unsigned long len);
 void sha1_final(unsigned char *md,SHACTX c);
-void sha1(unsigned char *digest,int len,unsigned char *hash);
+void sha1(const unsigned char *digest,int len,unsigned char *hash);
 
 SHA256CTX sha256_init(void);
 void sha256_update(SHA256CTX c, const void *data, unsigned long len);
 void sha256_final(unsigned char *md,SHA256CTX c);
-void sha256(unsigned char *digest, int len, unsigned char *hash);
+void sha256(const unsigned char *digest, int len, unsigned char *hash);
 
 SHA384CTX sha384_init(void);
 void sha384_update(SHA384CTX c, const void *data, unsigned long len);
 void sha384_final(unsigned char *md,SHA384CTX c);
-void sha384(unsigned char *digest, int len, unsigned char *hash);
+void sha384(const unsigned char *digest, int len, unsigned char *hash);
 
 SHA512CTX sha512_init(void);
 void sha512_update(SHA512CTX c, const void *data, unsigned long len);
 void sha512_final(unsigned char *md,SHA512CTX c);
-void sha512(unsigned char *digest, int len, unsigned char *hash);
+void sha512(const unsigned char *digest, int len, unsigned char *hash);
 
 void evp(int nid, unsigned char *digest, int len, unsigned char *hash, unsigned int *hlen);
 EVPCTX evp_init(int nid);

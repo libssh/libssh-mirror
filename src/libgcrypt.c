@@ -78,7 +78,7 @@ void sha1_final(unsigned char *md, SHACTX c) {
   gcry_md_close(c);
 }
 
-void sha1(unsigned char *digest, int len, unsigned char *hash) {
+void sha1(const unsigned char *digest, int len, unsigned char *hash) {
   gcry_md_hash_buffer(GCRY_MD_SHA1, hash, digest, len);
 }
 
@@ -152,7 +152,7 @@ void sha256_final(unsigned char *md, SHACTX c) {
   gcry_md_close(c);
 }
 
-void sha256(unsigned char *digest, int len, unsigned char *hash){
+void sha256(const unsigned char *digest, int len, unsigned char *hash){
   gcry_md_hash_buffer(GCRY_MD_SHA256, hash, digest, len);
 }
 
@@ -173,7 +173,7 @@ void sha384_final(unsigned char *md, SHACTX c) {
   gcry_md_close(c);
 }
 
-void sha384(unsigned char *digest, int len, unsigned char *hash) {
+void sha384(const unsigned char *digest, int len, unsigned char *hash) {
   gcry_md_hash_buffer(GCRY_MD_SHA384, hash, digest, len);
 }
 
@@ -194,7 +194,7 @@ void sha512_final(unsigned char *md, SHACTX c) {
   gcry_md_close(c);
 }
 
-void sha512(unsigned char *digest, int len, unsigned char *hash) {
+void sha512(const unsigned char *digest, int len, unsigned char *hash) {
   gcry_md_hash_buffer(GCRY_MD_SHA512, hash, digest, len);
 }
 

@@ -139,7 +139,7 @@ void sha1_final(unsigned char *md, SHACTX c)
     EVP_MD_CTX_destroy(c);
 }
 
-void sha1(unsigned char *digest, int len, unsigned char *hash)
+void sha1(const unsigned char *digest, int len, unsigned char *hash)
 {
     SHACTX c = sha1_init();
     if (c != NULL) {
@@ -231,7 +231,7 @@ void sha256_final(unsigned char *md, SHA256CTX c)
     EVP_MD_CTX_destroy(c);
 }
 
-void sha256(unsigned char *digest, int len, unsigned char *hash)
+void sha256(const unsigned char *digest, int len, unsigned char *hash)
 {
     SHA256CTX c = sha256_init();
     if (c != NULL) {
@@ -269,7 +269,7 @@ void sha384_final(unsigned char *md, SHA384CTX c)
     EVP_MD_CTX_destroy(c);
 }
 
-void sha384(unsigned char *digest, int len, unsigned char *hash)
+void sha384(const unsigned char *digest, int len, unsigned char *hash)
 {
     SHA384CTX c = sha384_init();
     if (c != NULL) {
@@ -307,7 +307,7 @@ void sha512_final(unsigned char *md, SHA512CTX c)
     EVP_MD_CTX_destroy(c);
 }
 
-void sha512(unsigned char *digest, int len, unsigned char *hash)
+void sha512(const unsigned char *digest, int len, unsigned char *hash)
 {
     SHA512CTX c = sha512_init();
     if (c != NULL) {

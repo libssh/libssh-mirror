@@ -94,7 +94,7 @@ void sha1_final(unsigned char *md, SHACTX c)
     SAFE_FREE(c);
 }
 
-void sha1(unsigned char *digest, int len, unsigned char *hash)
+void sha1(const unsigned char *digest, int len, unsigned char *hash)
 {
     const mbedtls_md_info_t *md_info =
         mbedtls_md_info_from_type(MBEDTLS_MD_SHA1);
@@ -222,7 +222,7 @@ void sha256_final(unsigned char *md, SHA256CTX c)
     SAFE_FREE(c);
 }
 
-void sha256(unsigned char *digest, int len, unsigned char *hash)
+void sha256(const unsigned char *digest, int len, unsigned char *hash)
 {
     const mbedtls_md_info_t *md_info =
         mbedtls_md_info_from_type(MBEDTLS_MD_SHA256);
@@ -276,7 +276,7 @@ void sha384_final(unsigned char *md, SHA384CTX c)
     SAFE_FREE(c);
 }
 
-void sha384(unsigned char *digest, int len, unsigned char *hash)
+void sha384(const unsigned char *digest, int len, unsigned char *hash)
 {
     const mbedtls_md_info_t *md_info =
         mbedtls_md_info_from_type(MBEDTLS_MD_SHA384);
@@ -329,7 +329,7 @@ void sha512_final(unsigned char *md, SHA512CTX c)
     SAFE_FREE(c);
 }
 
-void sha512(unsigned char *digest, int len, unsigned char *hash)
+void sha512(const unsigned char *digest, int len, unsigned char *hash)
 {
     const mbedtls_md_info_t *md_info =
         mbedtls_md_info_from_type(MBEDTLS_MD_SHA512);
