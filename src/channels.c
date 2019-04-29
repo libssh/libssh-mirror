@@ -85,6 +85,11 @@ ssh_channel ssh_channel_new(ssh_session session)
         return NULL;
     }
 
+    /* Check if we have an authenticated session */
+    if (!(session->flags & SSH_SESSION_FLAG_AUTHENTICATED)) {
+        return NULL;
+    }
+
     channel = calloc(1, sizeof(struct ssh_channel_struct));
     if (channel == NULL) {
         ssh_set_error_oom(session);
