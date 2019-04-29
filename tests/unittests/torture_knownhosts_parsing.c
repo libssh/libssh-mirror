@@ -256,6 +256,7 @@ static void torture_knownhosts_read_file(void **state)
     ssh_list_free(entry_list);
 }
 
+#ifndef _WIN32 /* There is no /dev/null on Windows */
 static void torture_knownhosts_host_exists(void **state)
 {
     const char *knownhosts_file = *state;
@@ -365,6 +366,7 @@ torture_knownhosts_algorithms_global(void **state)
 
     ssh_free(session);
 }
+#endif
 
 int torture_run_tests(void) {
     int rc;
@@ -378,6 +380,7 @@ int torture_run_tests(void) {
         cmocka_unit_test_setup_teardown(torture_knownhosts_read_file,
                                         setup_knownhosts_file,
                                         teardown_knownhosts_file),
+#ifndef _WIN32
         cmocka_unit_test_setup_teardown(torture_knownhosts_host_exists,
                                         setup_knownhosts_file,
                                         teardown_knownhosts_file),
@@ -390,6 +393,7 @@ int torture_run_tests(void) {
         cmocka_unit_test_setup_teardown(torture_knownhosts_algorithms_global,
                                         setup_knownhosts_file,
                                         teardown_knownhosts_file),
+#endif
     };
 
     ssh_init();
