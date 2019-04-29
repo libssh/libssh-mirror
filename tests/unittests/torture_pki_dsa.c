@@ -621,7 +621,7 @@ static void torture_pki_dsa_generate_key(void **state)
     rc = ssh_pki_generate(SSH_KEYTYPE_DSS, 1024, &key);
     assert_true(rc == SSH_OK);
     assert_non_null(key);
-    sign = pki_do_sign(key, DSA_HASH, 20);
+    sign = pki_do_sign(key, DSA_HASH, 20, SSH_DIGEST_AUTO);
     assert_non_null(sign);
     rc = pki_signature_verify(session,sign,key,DSA_HASH,20);
     assert_true(rc == SSH_OK);
@@ -631,7 +631,7 @@ static void torture_pki_dsa_generate_key(void **state)
     rc = ssh_pki_generate(SSH_KEYTYPE_DSS, 2048, &key);
     assert_true(rc == SSH_OK);
     assert_non_null(key);
-    sign = pki_do_sign(key, DSA_HASH, 20);
+    sign = pki_do_sign(key, DSA_HASH, 20, SSH_DIGEST_AUTO);
     assert_non_null(sign);
     rc = pki_signature_verify(session,sign,key,DSA_HASH,20);
     assert_true(rc == SSH_OK);
@@ -641,7 +641,7 @@ static void torture_pki_dsa_generate_key(void **state)
     rc = ssh_pki_generate(SSH_KEYTYPE_DSS, 3072, &key);
     assert_true(rc == SSH_OK);
     assert_non_null(key);
-    sign = pki_do_sign(key, DSA_HASH, 20);
+    sign = pki_do_sign(key, DSA_HASH, 20, SSH_DIGEST_AUTO);
     assert_non_null(sign);
     rc = pki_signature_verify(session,sign,key,DSA_HASH,20);
     assert_true(rc == SSH_OK);
@@ -671,7 +671,7 @@ static void torture_pki_dsa_cert_verify(void **state)
     assert_true(rc == 0);
     assert_non_null(cert);
 
-    sign = pki_do_sign(privkey, DSA_HASH, 20);
+    sign = pki_do_sign(privkey, DSA_HASH, 20, SSH_DIGEST_AUTO);
     assert_non_null(sign);
     rc = pki_signature_verify(session, sign, cert, DSA_HASH, 20);
     assert_true(rc == SSH_OK);

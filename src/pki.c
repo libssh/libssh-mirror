@@ -2064,11 +2064,17 @@ int ssh_pki_import_signature_blob(const ssh_string sig_blob,
 int ssh_pki_signature_verify(ssh_session session,
                              ssh_signature sig,
                              const ssh_key key,
-                             unsigned char *digest,
-                             size_t dlen)
+                             unsigned char *input,
+                             size_t input_len)
 {
     int rc;
     enum ssh_keytypes_e key_type = ssh_key_type_plain(key->type);
+
+    if (session == NULL || sig == NULL || key == NULL || input == NULL) {
+        SSH_LOG(SSH_LOG_TRACE, "Bad parameter provided to "
+                               "ssh_pki_signature_verify()");
+        return SSH_ERROR;
+    }
 
     SSH_LOG(SSH_LOG_FUNCTIONS,
             "Going to verify a %s type signature",
@@ -2081,69 +2087,59 @@ int ssh_pki_signature_verify(ssh_session session,
         return SSH_ERROR;
     }
 
-    if (is_ecdsa_key_type(key_type)) {
-#if HAVE_ECC
-        unsigned char ehash[EVP_DIGEST_LEN] = {0};
-        uint32_t elen;
-
-        evp(key->ecdsa_nid, digest, dlen, ehash, &elen);
-
-#ifdef DEBUG_CRYPTO
-        ssh_print_hexa("Hash to be verified with ecdsa",
-                       ehash, elen);
-#endif
-
-        rc = pki_signature_verify(session,
-                                  sig,
-                                  key,
-                                  ehash,
-                                  elen);
-#endif
-    } else if (key_type == SSH_KEYTYPE_ED25519) {
-        rc = pki_signature_verify(session, sig, key, digest, dlen);
-    } else {
-        unsigned char hash[SHA512_DIGEST_LEN] = {0};
-        uint32_t hlen = 0;
-
-        if (sig->type != SSH_KEYTYPE_RSA && sig->hash_type != SSH_DIGEST_AUTO) {
-            SSH_LOG(SSH_LOG_TRACE, "Only RSA keys support non-SHA1 hashes.");
-            return SSH_ERROR;
-        }
-
-        switch (sig->hash_type) {
-        case SSH_DIGEST_SHA256:
-            sha256(digest, dlen, hash);
-            hlen = SHA256_DIGEST_LEN;
-            break;
-        case SSH_DIGEST_SHA512:
-            sha512(digest, dlen, hash);
-            hlen = SHA512_DIGEST_LEN;
-            break;
-        case SSH_DIGEST_SHA1:
-        case SSH_DIGEST_AUTO:
-            sha1(digest, dlen, hash);
-            hlen = SHA_DIGEST_LEN;
-            break;
-        default:
-            SSH_LOG(SSH_LOG_TRACE, "Unknown sig->hash_type: %d", sig->hash_type);
-            return SSH_ERROR;
-        }
-#ifdef DEBUG_CRYPTO
-        ssh_print_hexa(key_type == SSH_KEYTYPE_DSS
-                       ? "Hash to be verified with DSA"
-                       : "Hash to be verified with RSA",
-                       hash,
-                       hlen);
-#endif
-
-        rc = pki_signature_verify(session,
-                                  sig,
-                                  key,
-                                  hash,
-                                  hlen);
-    }
+    rc = pki_signature_verify(session, sig, key, input, input_len);
 
     return rc;
+}
+
+ssh_signature pki_do_sign(const ssh_key privkey,
+                          const unsigned char *input,
+                          size_t input_len,
+                          enum ssh_digest_e hash_type)
+{
+    unsigned char hash[SHA512_DIGEST_LEN] = {0};
+    uint32_t hlen = 0;
+
+    if (privkey == NULL || input == NULL) {
+        SSH_LOG(SSH_LOG_TRACE, "Bad parameter provided to "
+                               "pki_do_sign()");
+        return NULL;
+    }
+
+    if (privkey->type == SSH_KEYTYPE_ED25519 ||
+        privkey->type == SSH_KEYTYPE_ED25519_CERT01)
+    {
+        return pki_do_sign_hash(privkey, input, input_len, SSH_DIGEST_AUTO);
+    }
+
+    switch (hash_type) {
+    case SSH_DIGEST_SHA256:
+        sha256(input, input_len, hash);
+        hlen = SHA256_DIGEST_LEN;
+        break;
+    case SSH_DIGEST_SHA384:
+        sha384(input, input_len, hash);
+        hlen = SHA384_DIGEST_LEN;
+        break;
+    case SSH_DIGEST_SHA512:
+        sha512(input, input_len, hash);
+        hlen = SHA512_DIGEST_LEN;
+        break;
+    case SSH_DIGEST_AUTO:
+    case SSH_DIGEST_SHA1:
+        sha1(input, input_len, hash);
+        hlen = SHA_DIGEST_LEN;
+        break;
+    default:
+        SSH_LOG(SSH_LOG_TRACE, "Unknown hash algorithm for type: %d",
+                hash_type);
+        goto error;
+    }
+
+    return pki_do_sign_hash(privkey, hash, hlen, hash_type);
+
+error:
+    return NULL;
 }
 
 /*
@@ -2151,7 +2147,8 @@ int ssh_pki_signature_verify(ssh_session session,
  * the content of sigbuf */
 ssh_string ssh_pki_do_sign(ssh_session session,
                            ssh_buffer sigbuf,
-                           const ssh_key privkey)
+                           const ssh_key privkey,
+                           enum ssh_digest_e hash_type)
 {
     struct ssh_crypto_struct *crypto = NULL;
 
@@ -2161,11 +2158,13 @@ ssh_string ssh_pki_do_sign(ssh_session session,
     ssh_string session_id = NULL;
     ssh_buffer sign_input = NULL;
 
-    enum ssh_digest_e hash_type;
-
     int rc;
 
-    if (privkey == NULL || !ssh_key_is_private(privkey)) {
+    if (session == NULL || sigbuf == NULL || privkey == NULL ||
+        !ssh_key_is_private(privkey))
+    {
+        SSH_LOG(SSH_LOG_TRACE, "Bad parameter provided to "
+                               "ssh_pki_do_sign()");
         return NULL;
     }
 
@@ -2180,9 +2179,6 @@ ssh_string ssh_pki_do_sign(ssh_session session,
         return NULL;
     }
     ssh_string_fill(session_id, crypto->session_id, crypto->digest_len);
-
-    /* Get the hash type from the key type */
-    hash_type = ssh_key_type_to_hash(session, privkey->type);
 
     /* Fill the input */
     sign_input = ssh_buffer_new();
@@ -2200,51 +2196,13 @@ ssh_string ssh_pki_do_sign(ssh_session session,
     }
 
     /* Generate the signature */
-    if (privkey->type == SSH_KEYTYPE_ED25519){
-        sig = pki_do_sign(privkey,
-                          ssh_buffer_get(sign_input),
-                          ssh_buffer_get_len(sign_input));
-    } else {
-        unsigned char hash[SHA512_DIGEST_LEN] = {0};
-        uint32_t hlen = 0;
-        switch (hash_type) {
-        case SSH_DIGEST_SHA256:
-            sha256(ssh_buffer_get(sign_input), ssh_buffer_get_len(sign_input),
-                   hash);
-            hlen = SHA256_DIGEST_LEN;
-            break;
-        case SSH_DIGEST_SHA384:
-            sha384(ssh_buffer_get(sign_input), ssh_buffer_get_len(sign_input),
-                   hash);
-            hlen = SHA384_DIGEST_LEN;
-            break;
-        case SSH_DIGEST_SHA512:
-            sha512(ssh_buffer_get(sign_input), ssh_buffer_get_len(sign_input),
-                   hash);
-            hlen = SHA512_DIGEST_LEN;
-            break;
-        case SSH_DIGEST_SHA1:
-        case SSH_DIGEST_AUTO:
-            sha1(ssh_buffer_get(sign_input), ssh_buffer_get_len(sign_input),
-                 hash);
-            hlen = SHA_DIGEST_LEN;
-            break;
-        default:
-            SSH_LOG(SSH_LOG_TRACE, "Unknown hash algorithm for type: %d",
-                    hash_type);
-            goto end;
-        }
-        sig = pki_do_sign_hash(privkey, hash, hlen, hash_type);
-    }
-
+    sig = pki_do_sign(privkey,
+            ssh_buffer_get(sign_input),
+            ssh_buffer_get_len(sign_input),
+            hash_type);
     if (sig == NULL) {
         goto end;
     }
-
-#ifdef DEBUG_CRYPTO
-        SSH_LOG(SSH_LOG_TRACE, "Generated signature for %s and hash_type = %d",
-                privkey->type_c, hash_type);
-#endif
 
     /* Convert the signature to blob */
     rc = ssh_pki_export_signature_blob(sig, &sig_blob);
@@ -2355,51 +2313,13 @@ ssh_string ssh_srv_pki_do_sign_sessionid(ssh_session session,
     }
 
     /* Generate the signature */
-    if (privkey->type == SSH_KEYTYPE_ED25519){
-        sig = pki_do_sign(privkey,
-                          ssh_buffer_get(sign_input),
-                          ssh_buffer_get_len(sign_input));
-    } else {
-        unsigned char hash[SHA512_DIGEST_LEN] = {0};
-        uint32_t hlen = 0;
-        switch (hash_type) {
-        case SSH_DIGEST_SHA256:
-            sha256(ssh_buffer_get(sign_input), ssh_buffer_get_len(sign_input),
-                   hash);
-            hlen = SHA256_DIGEST_LEN;
-            break;
-        case SSH_DIGEST_SHA384:
-            sha384(ssh_buffer_get(sign_input), ssh_buffer_get_len(sign_input),
-                   hash);
-            hlen = SHA384_DIGEST_LEN;
-            break;
-        case SSH_DIGEST_SHA512:
-            sha512(ssh_buffer_get(sign_input), ssh_buffer_get_len(sign_input),
-                   hash);
-            hlen = SHA512_DIGEST_LEN;
-            break;
-        case SSH_DIGEST_SHA1:
-        case SSH_DIGEST_AUTO:
-            sha1(ssh_buffer_get(sign_input), ssh_buffer_get_len(sign_input),
-                 hash);
-            hlen = SHA_DIGEST_LEN;
-            break;
-        default:
-            SSH_LOG(SSH_LOG_TRACE, "Unknown hash algorithm for type: %d",
-                    hash_type);
-            goto end;
-        }
-        sig = pki_do_sign_hash(privkey, hash, hlen, hash_type);
-    }
-
+    sig = pki_do_sign(privkey,
+            ssh_buffer_get(sign_input),
+            ssh_buffer_get_len(sign_input),
+            hash_type);
     if (sig == NULL) {
         goto end;
     }
-
-#ifdef DEBUG_CRYPTO
-        SSH_LOG(SSH_LOG_TRACE, "Generated signature for %s and hash_type = %d",
-                privkey->type_c, hash_type);
-#endif
 
     /* Convert the signature to blob */
     rc = ssh_pki_export_signature_blob(sig, &sig_blob);

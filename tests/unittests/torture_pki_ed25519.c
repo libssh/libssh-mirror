@@ -349,7 +349,7 @@ static void torture_pki_ed25519_generate_key(void **state)
     rc = ssh_pki_generate(SSH_KEYTYPE_ED25519, 256, &key);
     assert_true(rc == SSH_OK);
     assert_non_null(key);
-    sign = pki_do_sign(key, HASH, 20);
+    sign = pki_do_sign(key, HASH, 20, SSH_DIGEST_AUTO);
     assert_non_null(sign);
     rc = pki_signature_verify(session,sign,key,HASH,20);
     assert_true(rc == SSH_OK);
@@ -389,7 +389,7 @@ static void torture_pki_ed25519_cert_verify(void **state)
     assert_true(rc == 0);
     assert_non_null(cert);
 
-    sign = pki_do_sign(privkey, HASH, 20);
+    sign = pki_do_sign(privkey, HASH, 20, SSH_DIGEST_AUTO);
     assert_non_null(sign);
     rc = pki_signature_verify(session, sign, cert, HASH, 20);
     assert_true(rc == SSH_OK);

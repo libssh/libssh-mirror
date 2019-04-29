@@ -575,7 +575,7 @@ static void *thread_pki_rsa_generate_key(void *threadid)
     assert_ssh_return_code(session, rc);
     assert_non_null(key);
 
-    sign = pki_do_sign(key, RSA_HASH, 20);
+    sign = pki_do_sign(key, RSA_HASH, 20, SSH_DIGEST_SHA256);
     assert_non_null(sign);
 
     rc = pki_signature_verify(session,sign,key,RSA_HASH,20);
@@ -588,7 +588,7 @@ static void *thread_pki_rsa_generate_key(void *threadid)
     assert_ssh_return_code(session, rc);
     assert_non_null(key);
 
-    sign = pki_do_sign(key, RSA_HASH, 20);
+    sign = pki_do_sign(key, RSA_HASH, 20, SSH_DIGEST_SHA256);
     assert_non_null(sign);
 
     rc = pki_signature_verify(session,sign,key,RSA_HASH,20);
@@ -602,7 +602,7 @@ static void *thread_pki_rsa_generate_key(void *threadid)
     assert_true(rc == SSH_OK);
     assert_non_null(key);
 
-    sign = pki_do_sign(key, RSA_HASH, 20);
+    sign = pki_do_sign(key, RSA_HASH, 20, SSH_DIGEST_SHA256);
     assert_non_null(sign);
 
     rc = pki_signature_verify(session,sign,key,RSA_HASH,20);

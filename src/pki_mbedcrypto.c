@@ -1022,10 +1022,13 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
 }
 
 int pki_signature_verify(ssh_session session, const ssh_signature sig, const
-        ssh_key key, const unsigned char *hash, size_t hlen)
+        ssh_key key, const unsigned char *input, size_t input_len)
 {
     int rc;
     mbedtls_md_type_t md = 0;
+
+    unsigned char hash[SHA512_DIGEST_LEN] = {0};
+    uint32_t hlen = 0;
 
     if (ssh_key_type_plain(key->type) != sig->type) {
         SSH_LOG(SSH_LOG_WARN,
@@ -1035,28 +1038,52 @@ int pki_signature_verify(ssh_session session, const ssh_signature sig, const
         return SSH_ERROR;
     }
 
+    /* For ed25519 keys, verify using the input directly */
+    if (key->type == SSH_KEYTYPE_ED25519 ||
+        key->type == SSH_KEYTYPE_ED25519_CERT01)
+    {
+        rc = pki_ed25519_verify(key, sig, input, input_len);
+        if (rc != SSH_OK){
+            ssh_set_error(session,
+                    SSH_FATAL,
+                    "ed25519 signature verification error");
+            return SSH_ERROR;
+        }
+
+        return SSH_OK;
+    }
+
+    /* For the other key types, calculate the hash and verify the signature */
+    switch (sig->hash_type) {
+    case SSH_DIGEST_SHA256:
+        sha256(input, input_len, hash);
+        hlen = SHA256_DIGEST_LEN;
+        md = MBEDTLS_MD_SHA256;
+        break;
+    case SSH_DIGEST_SHA384:
+        sha384(input, input_len, hash);
+        hlen = SHA384_DIGEST_LEN;
+        md = MBEDTLS_MD_SHA384;
+        break;
+    case SSH_DIGEST_SHA512:
+        sha512(input, input_len, hash);
+        hlen = SHA512_DIGEST_LEN;
+        md = MBEDTLS_MD_SHA512;
+        break;
+    case SSH_DIGEST_AUTO:
+    case SSH_DIGEST_SHA1:
+        sha1(input, input_len, hash);
+        hlen = SHA_DIGEST_LEN;
+        md = MBEDTLS_MD_SHA1;
+        break;
+    default:
+        SSH_LOG(SSH_LOG_TRACE, "Unknown sig->hash_type: %d", sig->hash_type);
+        return SSH_ERROR;
+    }
+
     switch (key->type) {
         case SSH_KEYTYPE_RSA:
         case SSH_KEYTYPE_RSA_CERT01:
-            switch (sig->hash_type) {
-            case SSH_DIGEST_SHA1:
-            case SSH_DIGEST_AUTO:
-                md = MBEDTLS_MD_SHA1;
-                break;
-            case SSH_DIGEST_SHA256:
-                md = MBEDTLS_MD_SHA256;
-                break;
-            case SSH_DIGEST_SHA512:
-                md = MBEDTLS_MD_SHA512;
-                break;
-            default:
-                SSH_LOG(SSH_LOG_TRACE, "Unknown sig type %d", sig->hash_type);
-                ssh_set_error(session,
-                              SSH_FATAL,
-                              "Unexpected signature hash type %d during RSA verify",
-                              sig->hash_type);
-                return SSH_ERROR;
-            }
             rc = mbedtls_pk_verify(key->rsa, md, hash, hlen,
                     ssh_string_data(sig->rsa_sig),
                     ssh_string_len(sig->rsa_sig));
@@ -1078,18 +1105,9 @@ int pki_signature_verify(ssh_session session, const ssh_signature sig, const
             if (rc != 0) {
                 char error_buf[100];
                 mbedtls_strerror(rc, error_buf, 100);
-                ssh_set_error(session, SSH_FATAL, "RSA error: %s", error_buf);
+                ssh_set_error(session, SSH_FATAL, "ECDSA error: %s", error_buf);
                 return SSH_ERROR;
 
-            }
-            break;
-        case SSH_KEYTYPE_ED25519:
-        case SSH_KEYTYPE_ED25519_CERT01:
-            rc = pki_ed25519_verify(key, sig, hash, hlen);
-            if (rc != SSH_OK) {
-                ssh_set_error(session, SSH_FATAL,
-                        "ed25519 signature verification error");
-                return SSH_ERROR;
             }
             break;
         default:

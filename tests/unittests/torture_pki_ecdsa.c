@@ -474,7 +474,7 @@ static void torture_pki_generate_key_ecdsa(void **state)
     rc = ssh_pki_generate(SSH_KEYTYPE_ECDSA_P256, 0, &key);
     assert_true(rc == SSH_OK);
     assert_non_null(key);
-    sign = pki_do_sign(key, ECDSA_HASH, 20);
+    sign = pki_do_sign(key, ECDSA_HASH, 20, SSH_DIGEST_SHA256);
     assert_non_null(sign);
     rc = pki_signature_verify(session,sign,key,ECDSA_HASH,20);
     assert_true(rc == SSH_OK);
@@ -492,7 +492,7 @@ static void torture_pki_generate_key_ecdsa(void **state)
     rc = ssh_pki_generate(SSH_KEYTYPE_ECDSA, 256, &key);
     assert_true(rc == SSH_OK);
     assert_non_null(key);
-    sign = pki_do_sign(key, ECDSA_HASH, 20);
+    sign = pki_do_sign(key, ECDSA_HASH, 20, SSH_DIGEST_SHA256);
     assert_non_null(sign);
     rc = pki_signature_verify(session,sign,key,ECDSA_HASH,20);
     assert_true(rc == SSH_OK);
@@ -509,7 +509,7 @@ static void torture_pki_generate_key_ecdsa(void **state)
     rc = ssh_pki_generate(SSH_KEYTYPE_ECDSA_P384, 0, &key);
     assert_true(rc == SSH_OK);
     assert_non_null(key);
-    sign = pki_do_sign(key, ECDSA_HASH, 20);
+    sign = pki_do_sign(key, ECDSA_HASH, 20, SSH_DIGEST_SHA384);
     assert_non_null(sign);
     rc = pki_signature_verify(session,sign,key,ECDSA_HASH,20);
     assert_true(rc == SSH_OK);
@@ -527,7 +527,7 @@ static void torture_pki_generate_key_ecdsa(void **state)
     rc = ssh_pki_generate(SSH_KEYTYPE_ECDSA, 384, &key);
     assert_true(rc == SSH_OK);
     assert_non_null(key);
-    sign = pki_do_sign(key, ECDSA_HASH, 20);
+    sign = pki_do_sign(key, ECDSA_HASH, 20, SSH_DIGEST_SHA384);
     assert_non_null(sign);
     rc = pki_signature_verify(session,sign,key,ECDSA_HASH,20);
     assert_true(rc == SSH_OK);
@@ -544,7 +544,7 @@ static void torture_pki_generate_key_ecdsa(void **state)
     rc = ssh_pki_generate(SSH_KEYTYPE_ECDSA_P521, 0, &key);
     assert_true(rc == SSH_OK);
     assert_non_null(key);
-    sign = pki_do_sign(key, ECDSA_HASH, 20);
+    sign = pki_do_sign(key, ECDSA_HASH, 20, SSH_DIGEST_SHA512);
     assert_non_null(sign);
     rc = pki_signature_verify(session,sign,key,ECDSA_HASH,20);
     assert_true(rc == SSH_OK);
@@ -562,7 +562,7 @@ static void torture_pki_generate_key_ecdsa(void **state)
     rc = ssh_pki_generate(SSH_KEYTYPE_ECDSA, 521, &key);
     assert_true(rc == SSH_OK);
     assert_non_null(key);
-    sign = pki_do_sign(key, ECDSA_HASH, 20);
+    sign = pki_do_sign(key, ECDSA_HASH, 20, SSH_DIGEST_SHA512);
     assert_non_null(sign);
     rc = pki_signature_verify(session,sign,key,ECDSA_HASH,20);
     assert_true(rc == SSH_OK);
@@ -599,7 +599,7 @@ static void torture_pki_ecdsa_cert_verify(void **state)
     assert_true(rc == 0);
     assert_non_null(cert);
 
-    sign = pki_do_sign(privkey, ECDSA_HASH, 20);
+    sign = pki_do_sign(privkey, ECDSA_HASH, 20, SSH_DIGEST_SHA256);
     assert_non_null(sign);
     rc = pki_signature_verify(session, sign, cert, ECDSA_HASH, 20);
     assert_true(rc == SSH_OK);

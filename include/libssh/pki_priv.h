@@ -117,12 +117,14 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
 int pki_signature_verify(ssh_session session,
                          const ssh_signature sig,
                          const ssh_key key,
-                         const unsigned char *hash,
-                         size_t hlen);
+                         const unsigned char *input,
+                         size_t input_len);
 
 /* SSH Signing Functions */
-#define pki_do_sign(key, hash, hlen) \
-    pki_do_sign_hash(key, hash, hlen, SSH_DIGEST_AUTO)
+ssh_signature pki_do_sign(const ssh_key privkey,
+                          const unsigned char *input,
+                          size_t input_len,
+                          enum ssh_digest_e hash_type);
 ssh_signature pki_do_sign_hash(const ssh_key privkey,
                                const unsigned char *hash,
                                size_t hlen,

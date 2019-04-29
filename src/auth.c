@@ -613,6 +613,7 @@ int ssh_userauth_publickey(ssh_session session,
     int rc;
     const char *sig_type_c = NULL;
     enum ssh_keytypes_e key_type;
+    enum ssh_digest_e hash_type;
 
     if (session == NULL) {
         return SSH_AUTH_ERROR;
@@ -681,8 +682,11 @@ int ssh_userauth_publickey(ssh_session session,
     }
     ssh_string_free(str);
 
+    /* Get the hash type to be used in the signature based on the key type */
+    hash_type = ssh_key_type_to_hash(session, privkey->type);
+
     /* sign the buffer with the private key */
-    str = ssh_pki_do_sign(session, session->out_buffer, privkey);
+    str = ssh_pki_do_sign(session, session->out_buffer, privkey, hash_type);
     if (str == NULL) {
         goto fail;
     }

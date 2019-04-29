@@ -206,7 +206,7 @@ static void torture_pki_verify_mismatch(void **state)
                     sig_type, hash);
 
             /* Create a valid signature using this key */
-            sign = pki_do_sign_hash(key, HASH, hash_length, hash);
+            sign = pki_do_sign(key, HASH, hash_length, hash);
             assert_non_null(sign);
             assert_int_equal(sign->type, key->type);
             if (hash == SSH_DIGEST_AUTO) {
