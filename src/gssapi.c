@@ -328,7 +328,10 @@ static char *ssh_gssapi_name_to_char(gss_name_t name){
                          "converting name",
                          maj_stat,
                          min_stat);
-    ptr=malloc(buffer.length + 1);
+    ptr = malloc(buffer.length + 1);
+    if (ptr == NULL) {
+        return NULL;
+    }
     memcpy(ptr, buffer.value, buffer.length);
     ptr[buffer.length] = '\0';
     gss_release_buffer(&min_stat, &buffer);
@@ -794,6 +797,10 @@ static gss_OID ssh_gssapi_oid_from_string(ssh_string oid_s){
         return NULL;
     }
     ret->elements = malloc(len - 2);
+    if (ret->elements == NULL) {
+        SAFE_FREE(ret);
+        return NULL;
+    }
     memcpy(ret->elements, &data[2], len-2);
     ret->length = len-2;
 
