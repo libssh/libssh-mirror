@@ -376,7 +376,7 @@ static int pkd_exec_hello(int fd, struct pkd_daemon_args *args)
     }
 
     rc = ssh_channel_write(c, args->payload.buf, args->payload.len);
-    if (rc != args->payload.len) {
+    if (rc != (int)args->payload.len) {
         pkderr("ssh_channel_write partial (%d != %zd)\n", rc, args->payload.len);
     }
 
