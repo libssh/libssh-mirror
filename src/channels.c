@@ -1150,13 +1150,15 @@ void ssh_channel_do_free(ssh_channel channel)
         ssh_list_remove(session->channels, it);
     }
 
-    ssh_buffer_free(channel->stdout_buffer);
-    ssh_buffer_free(channel->stderr_buffer);
+    SSH_BUFFER_FREE(channel->stdout_buffer);
+    SSH_BUFFER_FREE(channel->stderr_buffer);
 
     if (channel->callbacks != NULL) {
         ssh_list_free(channel->callbacks);
+        channel->callbacks = NULL;
     }
 
+    channel->session = NULL;
     SAFE_FREE(channel);
 }
 
@@ -1194,7 +1196,7 @@ int ssh_channel_send_eof(ssh_channel channel)
     int rc = SSH_ERROR;
     int err;
 
-    if(channel == NULL) {
+    if (channel == NULL || channel->session == NULL) {
         return rc;
     }
 
