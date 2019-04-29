@@ -269,6 +269,8 @@ static int ssh_channel_open_termination(void *c){
  * @param[in]  maxpacket The maximum packet size allowed (like MTU).
  *
  * @param[in]  payload   The buffer containing additional payload for the query.
+ *
+ * @return             SSH_OK if successful; SSH_ERROR otherwise.
  */
 static int channel_open(ssh_channel channel, const char *type, int window,
     int maxpacket, ssh_buffer payload) {
@@ -364,6 +366,7 @@ ssh_channel ssh_channel_from_local(ssh_session session, uint32_t id) {
  * @param session SSH session
  * @param channel SSH channel
  * @param minimumsize The minimum acceptable size for the new window.
+ * @return            SSH_OK if successful; SSH_ERROR otherwise.
  */
 static int grow_window(ssh_session session, ssh_channel channel, int minimumsize) {
   uint32_t new_window = minimumsize > WINDOWBASE ? minimumsize : WINDOWBASE;
@@ -419,7 +422,7 @@ error:
  * @param[in]  packet   The buffer to parse packet from. The read pointer will
  *                      be moved after the call.
  *
- * @returns             The related ssh_channel, or NULL if the channel is
+ * @return              The related ssh_channel, or NULL if the channel is
  *                      unknown or the packet is invalid.
  */
 static ssh_channel channel_from_msg(ssh_session session, ssh_buffer packet) {
@@ -1329,9 +1332,9 @@ static int ssh_waitsession_unblocked(void *s){
  * @brief Flushes a channel (and its session) until the output buffer
  *        is empty, or timeout elapsed.
  * @param channel SSH channel
- * @returns SSH_OK On success,
- *          SSH_ERROR on error
- *          SSH_AGAIN Timeout elapsed (or in nonblocking mode)
+ * @return  SSH_OK On success,
+ *          SSH_ERROR On error.
+ *          SSH_AGAIN Timeout elapsed (or in nonblocking mode).
  */
 int ssh_channel_flush(ssh_channel channel){
   return ssh_blocking_flush(channel->session, SSH_TIMEOUT_DEFAULT);
@@ -3103,8 +3106,8 @@ static int ssh_channel_exit_status_termination(void *c){
  *
  * @param[in]  channel  The channel to get the status from.
  *
- * @returns             The exit status, -1 if no exit status has been returned
- *                      (yet).
+ * @return              The exit status, -1 if no exit status has been returned
+ *                      (yet), or SSH_ERROR on error.
  * @warning             This function may block until a timeout (or never)
  *                      if the other side is not willing to close the channel.
  *
@@ -3214,7 +3217,7 @@ static int count_ptrs(ssh_channel *ptrs) {
  *
  * @return             SSH_OK on a successful operation, SSH_EINTR if the
  *                     select(2) syscall was interrupted, then relaunch the
- *                     function.
+ *                     function, or SSH_ERROR on error.
  */
 int ssh_channel_select(ssh_channel *readchans, ssh_channel *writechans,
     ssh_channel *exceptchans, struct timeval * timeout) {
