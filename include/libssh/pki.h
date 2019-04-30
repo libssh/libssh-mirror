@@ -88,6 +88,7 @@ struct ssh_signature_struct {
     struct mbedtls_ecdsa_sig ecdsa_sig;
 #endif /* HAVE_LIBGCRYPT */
     ed25519_signature *ed25519_sig;
+    ssh_string raw_sig;
 };
 
 typedef struct ssh_signature_struct *ssh_signature;

@@ -629,6 +629,9 @@ void ssh_signature_free(ssh_signature sig)
             break;
     }
 
+    /* Explicitly zero the signature content before free */
+    ssh_string_burn(sig->raw_sig);
+    ssh_string_free(sig->raw_sig);
     SAFE_FREE(sig);
 }
 
