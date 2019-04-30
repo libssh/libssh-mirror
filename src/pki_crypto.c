@@ -1498,29 +1498,37 @@ error:
 
 static ssh_string pki_ecdsa_signature_to_blob(const ssh_signature sig)
 {
-    ssh_string r;
-    ssh_string s;
+    ssh_string r = NULL;
+    ssh_string s = NULL;
 
     ssh_buffer buf = NULL;
     ssh_string sig_blob = NULL;
 
-    const BIGNUM *pr, *ps;
+    const BIGNUM *pr = NULL, *ps = NULL;
+
+    const unsigned char *raw_sig_data = ssh_string_data(sig->raw_sig);
+    size_t raw_sig_len = ssh_string_len(sig->raw_sig);
+
+    ECDSA_SIG *ecdsa_sig;
 
     int rc;
 
-    buf = ssh_buffer_new();
-    if (buf == NULL) {
+    if (sig == NULL || sig->raw_sig == NULL || raw_sig_data == NULL) {
+        return NULL;
+    }
+
+    ecdsa_sig = d2i_ECDSA_SIG(NULL, &raw_sig_data, raw_sig_len);
+    if (ecdsa_sig == NULL) {
+        return NULL;
+    }
+
+    ECDSA_SIG_get0(ecdsa_sig, &pr, &ps);
+    if (pr == NULL || ps == NULL) {
         goto error;
     }
 
-    ECDSA_SIG_get0(sig->ecdsa_sig, &pr, &ps);
     r = ssh_make_bignum_string((BIGNUM *)pr);
     if (r == NULL) {
-        goto error;
-    }
-    rc = ssh_buffer_add_ssh_string(buf, r);
-    ssh_string_free(r);
-    if (rc < 0) {
         goto error;
     }
 
@@ -1528,8 +1536,18 @@ static ssh_string pki_ecdsa_signature_to_blob(const ssh_signature sig)
     if (s == NULL) {
         goto error;
     }
+
+    buf = ssh_buffer_new();
+    if (buf == NULL) {
+        goto error;
+    }
+
+    rc = ssh_buffer_add_ssh_string(buf, r);
+    if (rc < 0) {
+        goto error;
+    }
+
     rc = ssh_buffer_add_ssh_string(buf, s);
-    ssh_string_free(s);
     if (rc < 0) {
         goto error;
     }
@@ -1540,11 +1558,18 @@ static ssh_string pki_ecdsa_signature_to_blob(const ssh_signature sig)
     }
 
     ssh_string_fill(sig_blob, ssh_buffer_get(buf), ssh_buffer_get_len(buf));
+
+    ssh_string_free(r);
+    ssh_string_free(s);
+    ECDSA_SIG_free(ecdsa_sig);
     ssh_buffer_free(buf);
 
     return sig_blob;
 
 error:
+    ssh_string_free(r);
+    ssh_string_free(s);
+    ECDSA_SIG_free(ecdsa_sig);
     ssh_buffer_free(buf);
     return NULL;
 }
@@ -1751,20 +1776,19 @@ static int pki_signature_from_ecdsa_blob(UNUSED_PARAM(const ssh_key pubkey),
                                          const ssh_string sig_blob,
                                          ssh_signature sig)
 {
+    ECDSA_SIG *ecdsa_sig = NULL;
+    BIGNUM *pr = NULL, *ps = NULL;
+
     ssh_string r;
     ssh_string s;
 
-    BIGNUM *pr = NULL, *ps = NULL;
-
-    ssh_buffer buf;
+    ssh_buffer buf = NULL;
     uint32_t rlen;
 
-    int rc;
+    unsigned char *raw_sig_data = NULL;
+    size_t raw_sig_len = 0;
 
-    sig->ecdsa_sig = ECDSA_SIG_new();
-    if (sig->ecdsa_sig == NULL) {
-        return SSH_ERROR;
-    }
+    int rc;
 
     /* build ecdsa signature */
     buf = ssh_buffer_new();
@@ -1802,6 +1826,16 @@ static int pki_signature_from_ecdsa_blob(UNUSED_PARAM(const ssh_key pubkey),
         goto error;
     }
 
+    if (rlen != 0) {
+        ssh_string_burn(s);
+        ssh_string_free(s);
+        SSH_LOG(SSH_LOG_WARN,
+                "Signature has remaining bytes in inner "
+                "sigblob: %lu",
+                (unsigned long)rlen);
+        goto error;
+    }
+
 #ifdef DEBUG_CRYPTO
     ssh_print_hexa("s", ssh_string_data(s), ssh_string_len(s));
 #endif
@@ -1813,27 +1847,51 @@ static int pki_signature_from_ecdsa_blob(UNUSED_PARAM(const ssh_key pubkey),
         goto error;
     }
 
+    ecdsa_sig = ECDSA_SIG_new();
+    if (ecdsa_sig == NULL) {
+        goto error;
+    }
+
     /* Memory management of pr and ps is transferred to
      * ECDSA signature object */
-    rc = ECDSA_SIG_set0(sig->ecdsa_sig, pr, ps);
+    rc = ECDSA_SIG_set0(ecdsa_sig, pr, ps);
     if (rc == 0) {
         goto error;
     }
+    pr = NULL;
+    ps = NULL;
 
-    if (rlen != 0) {
-        SSH_LOG(SSH_LOG_WARN,
-                "Signature has remaining bytes in inner "
-                "sigblob: %lu",
-                (unsigned long)rlen);
+    rc = i2d_ECDSA_SIG(ecdsa_sig, &raw_sig_data);
+    if (rc < 0) {
+        goto error;
+    }
+    raw_sig_len = rc;
+
+    sig->raw_sig = ssh_string_new(raw_sig_len);
+    if (sig->raw_sig == NULL) {
+        explicit_bzero(raw_sig_data, raw_sig_len);
         goto error;
     }
 
+    rc = ssh_string_fill(sig->raw_sig, raw_sig_data, raw_sig_len);
+    if (rc < 0) {
+        explicit_bzero(raw_sig_data, raw_sig_len);
+        goto error;
+    }
+
+    explicit_bzero(raw_sig_data, raw_sig_len);
+    SAFE_FREE(raw_sig_data);
+    ECDSA_SIG_free(ecdsa_sig);
     return SSH_OK;
 
 error:
     ssh_buffer_free(buf);
     bignum_safe_free(ps);
     bignum_safe_free(pr);
+    SAFE_FREE(raw_sig_data);
+    if (ecdsa_sig != NULL) {
+        ECDSA_SIG_free(ecdsa_sig);
+    }
     return SSH_ERROR;
 }
 
@@ -2037,17 +2095,34 @@ int pki_signature_verify(ssh_session session,
         case SSH_KEYTYPE_ECDSA_P384_CERT01:
         case SSH_KEYTYPE_ECDSA_P521_CERT01:
 #ifdef HAVE_OPENSSL_ECC
+        {
+            ECDSA_SIG *ecdsa_sig;
+
+            if (raw_sig_data == NULL) {
+                SSH_LOG(SSH_LOG_WARN,
+                        "NULL raw signature found in provided signature");
+                return SSH_ERROR;
+            }
+
+            ecdsa_sig = d2i_ECDSA_SIG(NULL, &raw_sig_data, raw_sig_len);
+            if (ecdsa_sig == NULL) {
+                return SSH_ERROR;
+            }
+
             rc = ECDSA_do_verify(hash,
                                  hlen,
-                                 sig->ecdsa_sig,
+                                 ecdsa_sig,
                                  key->ecdsa);
             if (rc <= 0) {
+                ECDSA_SIG_free(ecdsa_sig);
                 ssh_set_error(session,
                               SSH_FATAL,
                               "ECDSA error: %s",
                               ERR_error_string(ERR_get_error(), NULL));
                 return SSH_ERROR;
             }
+            ECDSA_SIG_free(ecdsa_sig);
+        }
             break;
 #endif
         case SSH_KEYTYPE_UNKNOWN:
@@ -2141,21 +2216,44 @@ ssh_signature pki_do_sign_hash(const ssh_key privkey,
         case SSH_KEYTYPE_ECDSA_P384:
         case SSH_KEYTYPE_ECDSA_P521:
 #ifdef HAVE_OPENSSL_ECC
-            sig->ecdsa_sig = ECDSA_do_sign(hash, hlen, privkey->ecdsa);
-            if (sig->ecdsa_sig == NULL) {
+        {
+            ECDSA_SIG *ecdsa_sig;
+            ecdsa_sig = ECDSA_do_sign(hash, hlen, privkey->ecdsa);
+            if (ecdsa_sig == NULL) {
                 ssh_signature_free(sig);
                 return NULL;
             }
 
+            rc = i2d_ECDSA_SIG(ecdsa_sig, &raw_sig_data);
+            if (rc < 0) {
+                ECDSA_SIG_free(ecdsa_sig);
+                ssh_signature_free(sig);
+                return NULL;
+            }
+            raw_sig_len = rc;
+
+            sig->raw_sig = ssh_string_new(raw_sig_len);
+            if (sig->raw_sig == NULL) {
+                ECDSA_SIG_free(ecdsa_sig);
+                ssh_signature_free(sig);
+                explicit_bzero(raw_sig_data, raw_sig_len);
+                SAFE_FREE(raw_sig_data);
+                return NULL;
+            }
+
+            ssh_string_fill(sig->raw_sig, raw_sig_data, raw_sig_len);
 # ifdef DEBUG_CRYPTO
             {
                 const BIGNUM *pr, *ps;
-                ECDSA_SIG_get0(sig->ecdsa_sig, &pr, &ps);
+                ECDSA_SIG_get0(ecdsa_sig, &pr, &ps);
                 ssh_print_bignum("r", (BIGNUM *) pr);
                 ssh_print_bignum("s", (BIGNUM *) ps);
             }
 # endif /* DEBUG_CRYPTO */
-
+            ECDSA_SIG_free(ecdsa_sig);
+            explicit_bzero(raw_sig_data, raw_sig_len);
+            SAFE_FREE(raw_sig_data);
+        }
             break;
 #endif /* HAVE_OPENSSL_ECC */
         case SSH_KEYTYPE_UNKNOWN:
