@@ -594,21 +594,26 @@ enum ssh_known_hosts_e ssh_session_has_known_hosts_entry(ssh_session session)
         return SSH_KNOWN_HOSTS_ERROR;
     }
 
-    rc = ssh_known_hosts_read_entries(host_port,
-                                      session->opts.knownhosts,
-                                      &entry_list);
-    if (rc != 0) {
-        ssh_list_free(entry_list);
-        return SSH_KNOWN_HOSTS_UNKNOWN;
+    if (session->opts.knownhosts != NULL) {
+        rc = ssh_known_hosts_read_entries(host_port,
+                                          session->opts.knownhosts,
+                                          &entry_list);
+        if (rc != 0) {
+            SAFE_FREE(host_port);
+            ssh_list_free(entry_list);
+            return SSH_KNOWN_HOSTS_UNKNOWN;
+        }
     }
 
-    rc = ssh_known_hosts_read_entries(host_port,
-                                      session->opts.global_knownhosts,
-                                      &entry_list);
-    SAFE_FREE(host_port);
-    if (rc != 0) {
-        ssh_list_free(entry_list);
-        return SSH_KNOWN_HOSTS_UNKNOWN;
+    if (session->opts.global_knownhosts != NULL) {
+        rc = ssh_known_hosts_read_entries(host_port,
+                                          session->opts.global_knownhosts,
+                                          &entry_list);
+        SAFE_FREE(host_port);
+        if (rc != 0) {
+            ssh_list_free(entry_list);
+            return SSH_KNOWN_HOSTS_UNKNOWN;
+        }
     }
 
     if (ssh_list_count(entry_list) == 0) {
