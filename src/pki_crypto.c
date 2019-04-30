@@ -1535,7 +1535,7 @@ ssh_string pki_signature_to_blob(const ssh_signature sig)
             break;
         case SSH_KEYTYPE_RSA:
         case SSH_KEYTYPE_RSA1:
-            sig_blob = ssh_string_copy(sig->rsa_sig);
+            sig_blob = ssh_string_copy(sig->raw_sig);
             break;
         case SSH_KEYTYPE_ED25519:
             sig_blob = pki_ed25519_sig_to_blob(sig);
@@ -1588,7 +1588,7 @@ static int pki_signature_from_rsa_blob(const ssh_key pubkey,
 #endif
 
     if (len == rsalen) {
-        sig->rsa_sig = ssh_string_copy(sig_blob);
+        sig->raw_sig = ssh_string_copy(sig_blob);
     } else {
         /* pad the blob to the expected rsalen size */
         SSH_LOG(SSH_LOG_DEBUG,
@@ -1611,7 +1611,7 @@ static int pki_signature_from_rsa_blob(const ssh_key pubkey,
         /* fill the rest with the actual signature blob */
         memcpy(blob_padded_data + pad_len, blob_orig, len);
 
-        sig->rsa_sig = sig_blob_padded;
+        sig->raw_sig = sig_blob_padded;
     }
 
     return SSH_OK;
@@ -1865,6 +1865,9 @@ int pki_signature_verify(ssh_session session,
     unsigned char hash[SHA512_DIGEST_LEN] = {0};
     uint32_t hlen = 0;
 
+    const unsigned char *raw_sig_data = ssh_string_data(sig->raw_sig);
+    size_t raw_sig_len = ssh_string_len(sig->raw_sig);
+
     if (ssh_key_type_plain(key->type) != sig->type) {
         SSH_LOG(SSH_LOG_WARN,
                 "Can not verify %s signature with %s key",
@@ -1934,11 +1937,17 @@ int pki_signature_verify(ssh_session session,
         case SSH_KEYTYPE_RSA:
         case SSH_KEYTYPE_RSA1:
         case SSH_KEYTYPE_RSA_CERT01:
+            if (raw_sig_data == NULL) {
+                SSH_LOG(SSH_LOG_WARN,
+                        "NULL raw signature found in provided signature");
+                return SSH_ERROR;
+            }
+
             rc = RSA_verify(nid,
                             hash,
                             hlen,
-                            ssh_string_data(sig->rsa_sig),
-                            ssh_string_len(sig->rsa_sig),
+                            raw_sig_data,
+                            raw_sig_len,
                             key->rsa);
             if (rc <= 0) {
                 SSH_LOG(SSH_LOG_TRACE, "RSA verify failed");
@@ -2016,8 +2025,8 @@ ssh_signature pki_do_sign_hash(const ssh_key privkey,
             break;
         case SSH_KEYTYPE_RSA:
         case SSH_KEYTYPE_RSA1:
-            sig->rsa_sig = _RSA_do_sign_hash(hash, hlen, privkey->rsa, hash_type);
-            if (sig->rsa_sig == NULL) {
+            sig->raw_sig = _RSA_do_sign_hash(hash, hlen, privkey->rsa, hash_type);
+            if (sig->raw_sig == NULL) {
                 ssh_signature_free(sig);
                 return NULL;
             }
