@@ -757,6 +757,7 @@ static int ssh_userauth_agent_publickey(ssh_session session,
     if (sig_type_c == NULL) {
         ssh_set_error(session, SSH_REQUEST_DENIED,
                       "Invalid key type (unknown)");
+        SSH_STRING_FREE(pubkey_s);
         return SSH_AUTH_DENIED;
     }
     if (!ssh_key_algorithm_allowed(session, sig_type_c)) {
