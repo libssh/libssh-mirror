@@ -73,10 +73,10 @@ int ssh_dh_keypair_set_keys(struct dh_ctx *ctx, int peer,
     }
 
     if (priv) {
-        priv_key = BN_dup(priv);
+        priv_key = priv;
     }
     if (pub) {
-        pub_key = BN_dup(pub);
+        pub_key = pub;
     }
     (void)DH_set0_key(ctx->keypair[peer], pub_key, priv_key);
 
