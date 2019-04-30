@@ -180,6 +180,7 @@ void ssh_dh_cleanup(struct ssh_crypto_struct *crypto)
     if (crypto->dh_ctx != NULL) {
         DH_free(crypto->dh_ctx->keypair[0]);
         DH_free(crypto->dh_ctx->keypair[1]);
+        free(crypto->dh_ctx);
         crypto->dh_ctx = NULL;
     }
 }
