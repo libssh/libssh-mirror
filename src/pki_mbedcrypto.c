@@ -1246,6 +1246,160 @@ ssh_signature pki_do_sign_hash(const ssh_key privkey,
     return sig;
 }
 
+/**
+ * @internal
+ *
+ * @brief Sign the given input data. The digest of to be signed is calculated
+ * internally as necessary.
+ *
+ * @param[in]   privkey     The private key to be used for signing.
+ * @param[in]   hash_type   The digest algorithm to be used.
+ * @param[in]   input       The data to be signed.
+ * @param[in]   input_len   The length of the data to be signed.
+ *
+ * @return  a newly allocated ssh_signature or NULL on error.
+ */
+ssh_signature pki_sign_data(const ssh_key privkey,
+                            enum ssh_digest_e hash_type,
+                            const unsigned char *input,
+                            size_t input_len)
+{
+    unsigned char hash[SHA512_DIGEST_LEN] = {0};
+    uint32_t hlen = 0;
+
+    if (privkey == NULL || !ssh_key_is_private(privkey) || input == NULL) {
+        SSH_LOG(SSH_LOG_TRACE, "Bad parameter provided to "
+                               "pki_sign_data()");
+        return NULL;
+    }
+
+    switch (hash_type) {
+    case SSH_DIGEST_SHA256:
+        sha256(input, input_len, hash);
+        hlen = SHA256_DIGEST_LEN;
+        break;
+    case SSH_DIGEST_SHA384:
+        sha384(input, input_len, hash);
+        hlen = SHA384_DIGEST_LEN;
+        break;
+    case SSH_DIGEST_SHA512:
+        sha512(input, input_len, hash);
+        hlen = SHA512_DIGEST_LEN;
+        break;
+    case SSH_DIGEST_AUTO:
+    case SSH_DIGEST_SHA1:
+        sha1(input, input_len, hash);
+        hlen = SHA_DIGEST_LEN;
+        break;
+    default:
+        SSH_LOG(SSH_LOG_TRACE, "Unknown hash algorithm for type: %d",
+                hash_type);
+        return NULL;
+    }
+
+    return pki_do_sign_hash(privkey, hash, hlen, hash_type);
+}
+
+/**
+ * @internal
+ *
+ * @brief Verify the signature of a given input. The digest of the input is
+ * calculated internally as necessary.
+ *
+ * @param[in]   signature   The signature to be verified.
+ * @param[in]   pubkey      The public key used to verify the signature.
+ * @param[in]   input       The signed data.
+ * @param[in]   input_len   The length of the signed data.
+ *
+ * @return  SSH_OK if the signature is valid; SSH_ERROR otherwise.
+ */
+int pki_verify_data_signature(ssh_signature signature,
+                              const ssh_key pubkey,
+                              const unsigned char *input,
+                              size_t input_len)
+{
+
+    unsigned char hash[SHA512_DIGEST_LEN] = {0};
+    uint32_t hlen = 0;
+
+    mbedtls_md_type_t md = 0;
+
+    int rc;
+
+    if (pubkey == NULL || ssh_key_is_private(pubkey) || input == NULL ||
+        signature == NULL)
+    {
+        SSH_LOG(SSH_LOG_TRACE, "Bad parameter provided to "
+                               "pki_verify_data_signature()");
+        return SSH_ERROR;
+    }
+
+    switch (signature->hash_type) {
+    case SSH_DIGEST_SHA256:
+        sha256(input, input_len, hash);
+        hlen = SHA256_DIGEST_LEN;
+        md = MBEDTLS_MD_SHA256;
+        break;
+    case SSH_DIGEST_SHA384:
+        sha384(input, input_len, hash);
+        hlen = SHA384_DIGEST_LEN;
+        md = MBEDTLS_MD_SHA384;
+        break;
+    case SSH_DIGEST_SHA512:
+        sha512(input, input_len, hash);
+        hlen = SHA512_DIGEST_LEN;
+        md = MBEDTLS_MD_SHA512;
+        break;
+    case SSH_DIGEST_AUTO:
+    case SSH_DIGEST_SHA1:
+        sha1(input, input_len, hash);
+        hlen = SHA_DIGEST_LEN;
+        md = MBEDTLS_MD_SHA1;
+        break;
+    default:
+        SSH_LOG(SSH_LOG_TRACE, "Unknown sig->hash_type: %d",
+                signature->hash_type);
+        return SSH_ERROR;
+    }
+
+    switch (pubkey->type) {
+        case SSH_KEYTYPE_RSA:
+        case SSH_KEYTYPE_RSA_CERT01:
+            rc = mbedtls_pk_verify(pubkey->rsa, md, hash, hlen,
+                    ssh_string_data(signature->rsa_sig),
+                    ssh_string_len(signature->rsa_sig));
+            if (rc != 0) {
+                char error_buf[100];
+                mbedtls_strerror(rc, error_buf, 100);
+                SSH_LOG(SSH_LOG_TRACE, "RSA error: %s", error_buf);
+                return SSH_ERROR;
+            }
+            break;
+        case SSH_KEYTYPE_ECDSA_P256:
+        case SSH_KEYTYPE_ECDSA_P384:
+        case SSH_KEYTYPE_ECDSA_P521:
+        case SSH_KEYTYPE_ECDSA_P256_CERT01:
+        case SSH_KEYTYPE_ECDSA_P384_CERT01:
+        case SSH_KEYTYPE_ECDSA_P521_CERT01:
+            rc = mbedtls_ecdsa_verify(&pubkey->ecdsa->grp, hash, hlen,
+                    &pubkey->ecdsa->Q, signature->ecdsa_sig.r,
+                    signature->ecdsa_sig.s);
+            if (rc != 0) {
+                char error_buf[100];
+                mbedtls_strerror(rc, error_buf, 100);
+                SSH_LOG(SSH_LOG_TRACE, "ECDSA error: %s", error_buf);
+                return SSH_ERROR;
+
+            }
+            break;
+        default:
+            SSH_LOG(SSH_LOG_TRACE, "Unknown public key type");
+            return SSH_ERROR;
+    }
+
+    return SSH_OK;
+}
+
 const char *pki_key_ecdsa_nid_to_name(int nid)
 {
     switch (nid) {

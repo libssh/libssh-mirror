@@ -610,8 +610,7 @@ static void torture_pki_ecdsa_cert_verify(void **state)
     ssh_free(session);
 }
 
-#ifdef HAVE_LIBCRYPTO
-
+#if defined(HAVE_LIBCRYPTO) || defined(HAVE_LIBMBEDCRYPTO)
 static int test_sign_verify_data(ssh_key key,
                                  enum ssh_digest_e hash_type,
                                  const unsigned char *input,
@@ -671,7 +670,8 @@ static void torture_pki_sign_data_ecdsa(void **state)
     /* Cleanup */
     SSH_KEY_FREE(key);
 }
-
+#endif
+#ifdef HAVE_LIBCRYPTO
 static void torture_pki_ecdsa_write_privkey(void **state)
 {
     ssh_key origkey = NULL;
@@ -899,8 +899,10 @@ int torture_run_tests(void) {
         cmocka_unit_test_setup_teardown(torture_pki_ecdsa_write_privkey,
                                         setup_ecdsa_key_521,
                                         teardown),
-        cmocka_unit_test(torture_pki_sign_data_ecdsa),
 #endif /* HAVE_LIBCRYPTO */
+#if defined(HAVE_LIBCRYPTO) || defined(HAVE_LIBMBEDCRYPTO)
+        cmocka_unit_test(torture_pki_sign_data_ecdsa),
+#endif
         cmocka_unit_test_setup_teardown(torture_pki_ecdsa_name256,
                                         setup_ecdsa_key_256,
                                         teardown),
