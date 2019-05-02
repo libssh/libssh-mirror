@@ -673,7 +673,7 @@ static void torture_pki_dsa_duplicate_key(void **state)
 static void torture_pki_dsa_generate_key(void **state)
 {
     int rc;
-    ssh_key key = NULL;
+    ssh_key key = NULL, pubkey = NULL;
     ssh_signature sign = NULL;
     ssh_session session=ssh_new();
     (void) state;
@@ -681,32 +681,44 @@ static void torture_pki_dsa_generate_key(void **state)
     rc = ssh_pki_generate(SSH_KEYTYPE_DSS, 1024, &key);
     assert_true(rc == SSH_OK);
     assert_non_null(key);
+    rc = ssh_pki_export_privkey_to_pubkey(key, &pubkey);
+    assert_int_equal(rc, SSH_OK);
+    assert_non_null(pubkey);
     sign = pki_do_sign(key, DSA_HASH, 20, SSH_DIGEST_AUTO);
     assert_non_null(sign);
-    rc = pki_signature_verify(session,sign,key,DSA_HASH,20);
+    rc = pki_signature_verify(session, sign, pubkey, DSA_HASH, 20);
     assert_true(rc == SSH_OK);
     ssh_signature_free(sign);
     SSH_KEY_FREE(key);
+    SSH_KEY_FREE(pubkey);
 
     rc = ssh_pki_generate(SSH_KEYTYPE_DSS, 2048, &key);
     assert_true(rc == SSH_OK);
     assert_non_null(key);
+    rc = ssh_pki_export_privkey_to_pubkey(key, &pubkey);
+    assert_int_equal(rc, SSH_OK);
+    assert_non_null(pubkey);
     sign = pki_do_sign(key, DSA_HASH, 20, SSH_DIGEST_AUTO);
     assert_non_null(sign);
-    rc = pki_signature_verify(session,sign,key,DSA_HASH,20);
+    rc = pki_signature_verify(session, sign, pubkey, DSA_HASH, 20);
     assert_true(rc == SSH_OK);
     ssh_signature_free(sign);
     SSH_KEY_FREE(key);
+    SSH_KEY_FREE(pubkey);
 
     rc = ssh_pki_generate(SSH_KEYTYPE_DSS, 3072, &key);
     assert_true(rc == SSH_OK);
     assert_non_null(key);
+    rc = ssh_pki_export_privkey_to_pubkey(key, &pubkey);
+    assert_int_equal(rc, SSH_OK);
+    assert_non_null(pubkey);
     sign = pki_do_sign(key, DSA_HASH, 20, SSH_DIGEST_AUTO);
     assert_non_null(sign);
-    rc = pki_signature_verify(session,sign,key,DSA_HASH,20);
+    rc = pki_signature_verify(session, sign, pubkey, DSA_HASH, 20);
     assert_true(rc == SSH_OK);
     ssh_signature_free(sign);
     SSH_KEY_FREE(key);
+    SSH_KEY_FREE(pubkey);
 
     ssh_free(session);
 }

@@ -165,7 +165,7 @@ static void torture_pki_verify_mismatch(void **state)
 {
     int rc;
     int verbosity = torture_libssh_verbosity();
-    ssh_key key = NULL, verify_key = NULL;
+    ssh_key key = NULL, verify_key = NULL, pubkey = NULL, verify_pubkey = NULL;
     ssh_signature sign = NULL, import_sig = NULL, new_sig = NULL;
     ssh_string blob;
     ssh_session session = ssh_new();
@@ -190,6 +190,9 @@ static void torture_pki_verify_mismatch(void **state)
         assert_non_null(key);
         assert_int_equal(key->type, sig_type);
         assert_string_equal(key->type_c, skey_attrs.type_c);
+        rc = ssh_pki_export_privkey_to_pubkey(key, &pubkey);
+        assert_int_equal(rc, SSH_OK);
+        assert_non_null(pubkey);
 
         for (hash = SSH_DIGEST_AUTO;
              hash <= SSH_DIGEST_SHA512;
@@ -238,7 +241,7 @@ static void torture_pki_verify_mismatch(void **state)
             /* Internal API: Should work */
             rc = pki_signature_verify(session,
                                       import_sig,
-                                      key,
+                                      pubkey,
                                       HASH,
                                       hash_length);
             assert_true(rc == SSH_OK);
@@ -256,17 +259,21 @@ static void torture_pki_verify_mismatch(void **state)
                 if (is_cert_type(key_type)) {
                     torture_write_file("libssh_testkey-cert.pub",
                        torture_get_testkey_pub(key_type));
-                    rc = ssh_pki_import_cert_file("libssh_testkey-cert.pub", &verify_key);
+                    rc = ssh_pki_import_cert_file("libssh_testkey-cert.pub", &verify_pubkey);
+                    verify_key = NULL;
                 } else {
                     rc = ssh_pki_generate(key_type, vkey_attrs.size_arg, &verify_key);
+                    assert_int_equal(rc, SSH_OK);
+                    assert_non_null(verify_key);
+                    rc = ssh_pki_export_privkey_to_pubkey(verify_key, &verify_pubkey);
                 }
-                assert_true(rc == SSH_OK);
-                assert_non_null(verify_key);
+                assert_int_equal(rc, SSH_OK);
+                assert_non_null(verify_pubkey);
 
                 /* Should gracefully fail, but not crash */
                 rc = pki_signature_verify(session,
                                           sign,
-                                          verify_key,
+                                          verify_pubkey,
                                           HASH,
                                           hash_length);
                 assert_true(rc != SSH_OK);
@@ -274,13 +281,13 @@ static void torture_pki_verify_mismatch(void **state)
                 /* Try the same with the imported signature */
                 rc = pki_signature_verify(session,
                                           import_sig,
-                                          verify_key,
+                                          verify_pubkey,
                                           HASH,
                                           hash_length);
                 assert_true(rc != SSH_OK);
 
                 /* Try to import the signature blob with different key */
-                new_sig = pki_signature_from_blob(verify_key,
+                new_sig = pki_signature_from_blob(verify_pubkey,
                                                   blob,
                                                   sig_type,
                                                   import_sig->hash_type);
@@ -298,7 +305,7 @@ static void torture_pki_verify_mismatch(void **state)
                     /* The verification should not work */
                     rc = pki_signature_verify(session,
                                               new_sig,
-                                              verify_key,
+                                              verify_pubkey,
                                               HASH,
                                               hash_length);
                     assert_true(rc != SSH_OK);
@@ -308,6 +315,7 @@ static void torture_pki_verify_mismatch(void **state)
                     assert_null(new_sig);
                 }
                 SSH_KEY_FREE(verify_key);
+                SSH_KEY_FREE(verify_pubkey);
             }
 
             ssh_string_free(blob);
@@ -321,6 +329,7 @@ static void torture_pki_verify_mismatch(void **state)
         }
 
         SSH_KEY_FREE(key);
+        SSH_KEY_FREE(pubkey);
         key = NULL;
     }
 

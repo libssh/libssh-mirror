@@ -562,7 +562,7 @@ static void torture_pki_rsa_duplicate_key(void **state)
 static void *thread_pki_rsa_generate_key(void *threadid)
 {
     int rc;
-    ssh_key key = NULL;
+    ssh_key key = NULL, pubkey = NULL;
     ssh_signature sign = NULL;
     ssh_session session = NULL;
 
@@ -575,42 +575,55 @@ static void *thread_pki_rsa_generate_key(void *threadid)
     assert_ssh_return_code(session, rc);
     assert_non_null(key);
 
+    rc = ssh_pki_export_privkey_to_pubkey(key, &pubkey);
+    assert_int_equal(rc, SSH_OK);
+    assert_non_null(pubkey);
+
     sign = pki_do_sign(key, RSA_HASH, 20, SSH_DIGEST_SHA256);
     assert_non_null(sign);
 
-    rc = pki_signature_verify(session,sign,key,RSA_HASH,20);
+    rc = pki_signature_verify(session, sign, pubkey, RSA_HASH, 20);
     assert_ssh_return_code(session, rc);
 
     ssh_signature_free(sign);
     SSH_KEY_FREE(key);
+    SSH_KEY_FREE(pubkey);
 
     rc = ssh_pki_generate(SSH_KEYTYPE_RSA, 2048, &key);
     assert_ssh_return_code(session, rc);
     assert_non_null(key);
 
+    rc = ssh_pki_export_privkey_to_pubkey(key, &pubkey);
+    assert_int_equal(rc, SSH_OK);
+    assert_non_null(pubkey);
+
     sign = pki_do_sign(key, RSA_HASH, 20, SSH_DIGEST_SHA256);
     assert_non_null(sign);
 
-    rc = pki_signature_verify(session,sign,key,RSA_HASH,20);
+    rc = pki_signature_verify(session, sign, pubkey, RSA_HASH, 20);
     assert_ssh_return_code(session, rc);
 
     ssh_signature_free(sign);
     SSH_KEY_FREE(key);
-
+    SSH_KEY_FREE(pubkey);
 
     rc = ssh_pki_generate(SSH_KEYTYPE_RSA, 4096, &key);
     assert_true(rc == SSH_OK);
     assert_non_null(key);
 
+    rc = ssh_pki_export_privkey_to_pubkey(key, &pubkey);
+    assert_int_equal(rc, SSH_OK);
+    assert_non_null(pubkey);
+
     sign = pki_do_sign(key, RSA_HASH, 20, SSH_DIGEST_SHA256);
     assert_non_null(sign);
 
-    rc = pki_signature_verify(session,sign,key,RSA_HASH,20);
+    rc = pki_signature_verify(session, sign, pubkey, RSA_HASH, 20);
     assert_true(rc == SSH_OK);
 
     ssh_signature_free(sign);
     SSH_KEY_FREE(key);
-    key = NULL;
+    SSH_KEY_FREE(pubkey);
 
     ssh_free(session);
     pthread_exit(NULL);

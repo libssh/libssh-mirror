@@ -461,7 +461,7 @@ static void torture_pki_rsa_duplicate_key(void **state)
 static void torture_pki_rsa_generate_key(void **state)
 {
     int rc;
-    ssh_key key = NULL;
+    ssh_key key = NULL, pubkey = NULL;
     ssh_signature sign = NULL;
     ssh_session session=ssh_new();
     (void) state;
@@ -469,35 +469,50 @@ static void torture_pki_rsa_generate_key(void **state)
     rc = ssh_pki_generate(SSH_KEYTYPE_RSA, 1024, &key);
     assert_true(rc == SSH_OK);
     assert_non_null(key);
+    rc = ssh_pki_export_privkey_to_pubkey(key, &pubkey);
+    assert_int_equal(rc, SSH_OK);
+    assert_non_null(pubkey);
     sign = pki_do_sign(key, RSA_HASH, 20, SSH_DIGEST_SHA256);
     assert_non_null(sign);
-    rc = pki_signature_verify(session,sign,key,RSA_HASH,20);
+    rc = pki_signature_verify(session, sign, pubkey, RSA_HASH, 20);
     assert_true(rc == SSH_OK);
     ssh_signature_free(sign);
     SSH_KEY_FREE(key);
-    key=NULL;
+    SSH_KEY_FREE(pubkey);
+    key = NULL;
+    pubkey = NULL;
 
     rc = ssh_pki_generate(SSH_KEYTYPE_RSA, 2048, &key);
     assert_true(rc == SSH_OK);
     assert_non_null(key);
+    rc = ssh_pki_export_privkey_to_pubkey(key, &pubkey);
+    assert_int_equal(rc, SSH_OK);
+    assert_non_null(pubkey);
     sign = pki_do_sign(key, RSA_HASH, 20, SSH_DIGEST_SHA256);
     assert_non_null(sign);
-    rc = pki_signature_verify(session,sign,key,RSA_HASH,20);
+    rc = pki_signature_verify(session, sign, pubkey, RSA_HASH, 20);
     assert_true(rc == SSH_OK);
     ssh_signature_free(sign);
     SSH_KEY_FREE(key);
-    key=NULL;
+    SSH_KEY_FREE(pubkey);
+    key = NULL;
+    pubkey = NULL;
 
     rc = ssh_pki_generate(SSH_KEYTYPE_RSA, 4096, &key);
     assert_true(rc == SSH_OK);
     assert_non_null(key);
+    rc = ssh_pki_export_privkey_to_pubkey(key, &pubkey);
+    assert_int_equal(rc, SSH_OK);
+    assert_non_null(pubkey);
     sign = pki_do_sign(key, RSA_HASH, 20, SSH_DIGEST_SHA256);
     assert_non_null(sign);
-    rc = pki_signature_verify(session,sign,key,RSA_HASH,20);
+    rc = pki_signature_verify(session, sign, pubkey, RSA_HASH, 20);
     assert_true(rc == SSH_OK);
     ssh_signature_free(sign);
     SSH_KEY_FREE(key);
-    key=NULL;
+    SSH_KEY_FREE(pubkey);
+    key = NULL;
+    pubkey = NULL;
 
     ssh_free(session);
 }
@@ -505,7 +520,7 @@ static void torture_pki_rsa_generate_key(void **state)
 static void torture_pki_rsa_sha2(void **state)
 {
     int rc;
-    ssh_key key = NULL, cert = NULL;
+    ssh_key key = NULL, cert = NULL, pubkey = NULL;
     ssh_signature sign;
     ssh_session session=ssh_new();
     (void) state;
@@ -521,10 +536,15 @@ static void torture_pki_rsa_sha2(void **state)
     assert_true(rc == SSH_OK);
     assert_non_null(cert);
 
+    /* Get the public key to verify signature */
+    rc = ssh_pki_export_privkey_to_pubkey(key, &pubkey);
+    assert_int_equal(rc, SSH_OK);
+    assert_non_null(pubkey);
+
     /* Sign using automatic digest */
     sign = pki_do_sign(key, RSA_HASH, 20, SSH_DIGEST_AUTO);
     assert_non_null(sign);
-    rc = pki_signature_verify(session, sign, key, RSA_HASH, 20);
+    rc = pki_signature_verify(session, sign, pubkey, RSA_HASH, 20);
     assert_ssh_return_code(session, rc);
     rc = pki_signature_verify(session, sign, cert, RSA_HASH, 20);
     assert_ssh_return_code(session, rc);
@@ -533,7 +553,7 @@ static void torture_pki_rsa_sha2(void **state)
     /* Sign using old SHA1 digest */
     sign = pki_do_sign(key, RSA_HASH, 20, SSH_DIGEST_SHA1);
     assert_non_null(sign);
-    rc = pki_signature_verify(session, sign, key, RSA_HASH, 20);
+    rc = pki_signature_verify(session, sign, pubkey, RSA_HASH, 20);
     assert_ssh_return_code(session, rc);
     rc = pki_signature_verify(session, sign, cert, RSA_HASH, 20);
     assert_ssh_return_code(session, rc);
@@ -542,7 +562,7 @@ static void torture_pki_rsa_sha2(void **state)
     /* Sign using new SHA256 digest */
     sign = pki_do_sign(key, SHA256_HASH, 32, SSH_DIGEST_SHA256);
     assert_non_null(sign);
-    rc = pki_signature_verify(session, sign, key, SHA256_HASH, 32);
+    rc = pki_signature_verify(session, sign, pubkey, SHA256_HASH, 32);
     assert_ssh_return_code(session, rc);
     rc = pki_signature_verify(session, sign, cert, SHA256_HASH, 32);
     assert_ssh_return_code(session, rc);
@@ -551,7 +571,7 @@ static void torture_pki_rsa_sha2(void **state)
     /* Sign using rsa-sha2-512 algorithm */
     sign = pki_do_sign(key, SHA512_HASH, 64, SSH_DIGEST_SHA512);
     assert_non_null(sign);
-    rc = pki_signature_verify(session, sign, key, SHA512_HASH, 64);
+    rc = pki_signature_verify(session, sign, pubkey, SHA512_HASH, 64);
     assert_ssh_return_code(session, rc);
     rc = pki_signature_verify(session, sign, cert, SHA512_HASH, 64);
     assert_ssh_return_code(session, rc);
@@ -559,6 +579,7 @@ static void torture_pki_rsa_sha2(void **state)
 
     /* Cleanup */
     SSH_KEY_FREE(key);
+    SSH_KEY_FREE(pubkey);
     SSH_KEY_FREE(cert);
     ssh_free(session);
 }
