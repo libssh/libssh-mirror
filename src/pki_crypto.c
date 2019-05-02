@@ -2135,6 +2135,312 @@ int pki_signature_verify(ssh_session session,
     return SSH_OK;
 }
 
+static const EVP_MD *pki_digest_to_md(enum ssh_digest_e hash_type)
+{
+    const EVP_MD *md = NULL;
+
+    switch (hash_type) {
+    case SSH_DIGEST_SHA256:
+        md = EVP_sha256();
+        break;
+    case SSH_DIGEST_SHA384:
+        md = EVP_sha384();
+        break;
+    case SSH_DIGEST_SHA512:
+        md = EVP_sha512();
+        break;
+    case SSH_DIGEST_SHA1:
+    case SSH_DIGEST_AUTO:
+        md = EVP_sha1();
+        break;
+    default:
+        SSH_LOG(SSH_LOG_TRACE, "Unknown hash algorithm for type: %d",
+                hash_type);
+        return NULL;
+    }
+
+    return md;
+}
+
+static EVP_PKEY *pki_key_to_pkey(ssh_key key)
+{
+    EVP_PKEY *pkey = NULL;
+
+    pkey = EVP_PKEY_new();
+    if (pkey == NULL) {
+        SSH_LOG(SSH_LOG_TRACE, "Out of memory");
+        return NULL;
+    }
+
+    switch(key->type) {
+    case SSH_KEYTYPE_DSS:
+    case SSH_KEYTYPE_DSS_CERT01:
+        if (key->dsa == NULL) {
+            SSH_LOG(SSH_LOG_TRACE, "NULL key->dsa");
+            goto error;
+        }
+        EVP_PKEY_set1_DSA(pkey, key->dsa);
+        break;
+    case SSH_KEYTYPE_RSA:
+    case SSH_KEYTYPE_RSA1:
+    case SSH_KEYTYPE_RSA_CERT01:
+        if (key->rsa == NULL) {
+            SSH_LOG(SSH_LOG_TRACE, "NULL key->rsa");
+            goto error;
+        }
+        EVP_PKEY_set1_RSA(pkey, key->rsa);
+        break;
+    case SSH_KEYTYPE_ECDSA_P256:
+    case SSH_KEYTYPE_ECDSA_P384:
+    case SSH_KEYTYPE_ECDSA_P521:
+    case SSH_KEYTYPE_ECDSA_P256_CERT01:
+    case SSH_KEYTYPE_ECDSA_P384_CERT01:
+    case SSH_KEYTYPE_ECDSA_P521_CERT01:
+# if defined(HAVE_OPENSSL_ECC)
+        if (key->ecdsa == NULL) {
+            SSH_LOG(SSH_LOG_TRACE, "NULL key->ecdsa");
+            goto error;
+        }
+        EVP_PKEY_set1_EC_KEY(pkey, key->ecdsa);
+        break;
+# endif
+    case SSH_KEYTYPE_ED25519:
+        /* Not supported yet. This type requires the use of EVP_DigestSign*()
+         * API and ECX keys. There is no EVP_set1_ECX_KEY() or equivalent yet. */
+    case SSH_KEYTYPE_UNKNOWN:
+    default:
+        SSH_LOG(SSH_LOG_TRACE, "Unknown private key algorithm for type: %d",
+                key->type);
+        goto error;
+    }
+
+    return pkey;
+
+error:
+    EVP_PKEY_free(pkey);
+    return NULL;
+}
+
+/**
+ * @internal
+ *
+ * @brief Sign the given input data. The digest of to be signed is calculated
+ * internally as necessary.
+ *
+ * @param[in]   privkey     The private key to be used for signing.
+ * @param[in]   hash_type   The digest algorithm to be used.
+ * @param[in]   input       The data to be signed.
+ * @param[in]   input_len   The length of the data to be signed.
+ *
+ * @return  a newly allocated ssh_signature or NULL on error.
+ */
+ssh_signature pki_sign_data(const ssh_key privkey,
+                            enum ssh_digest_e hash_type,
+                            const unsigned char *input,
+                            size_t input_len)
+{
+    const EVP_MD *md = NULL;
+    EVP_MD_CTX *ctx = NULL;
+    EVP_PKEY *pkey = NULL;
+
+    unsigned char *raw_sig_data = NULL;
+    unsigned int raw_sig_len;
+
+    ssh_signature sig = NULL;
+
+    int rc;
+
+    if (privkey == NULL || !ssh_key_is_private(privkey) || input == NULL) {
+        SSH_LOG(SSH_LOG_TRACE, "Bad parameter provided to "
+                               "pki_sign_data()");
+        return NULL;
+    }
+
+    /* Set hash algorithm to be used */
+    md = pki_digest_to_md(hash_type);
+    if (md == NULL) {
+        return NULL;
+    }
+
+    /* Setup private key EVP_PKEY */
+    pkey = pki_key_to_pkey(privkey);
+    if (pkey == NULL) {
+        return NULL;
+    }
+
+    /* Allocate buffer for signature */
+    raw_sig_len = EVP_PKEY_size(pkey);
+    raw_sig_data = (unsigned char *)malloc(raw_sig_len);
+    if (raw_sig_data == NULL) {
+        SSH_LOG(SSH_LOG_TRACE, "Out of memory");
+        goto out;
+    }
+
+    /* Create the context */
+    ctx = EVP_MD_CTX_create();
+    if (ctx == NULL) {
+        SSH_LOG(SSH_LOG_TRACE, "Out of memory");
+        goto out;
+    }
+
+    /* Sign the data */
+    rc = EVP_SignInit_ex(ctx, md, NULL);
+    if (!rc){
+        SSH_LOG(SSH_LOG_TRACE, "EVP_SignInit() failed");
+        goto out;
+    }
+
+    rc = EVP_SignUpdate(ctx, input, input_len);
+    if (!rc) {
+        SSH_LOG(SSH_LOG_TRACE, "EVP_SignUpdate() failed");
+        goto out;
+    }
+
+    rc = EVP_SignFinal(ctx, raw_sig_data, &raw_sig_len, pkey);
+    if (!rc) {
+        SSH_LOG(SSH_LOG_TRACE, "EVP_SignFinal() failed");
+        goto out;
+    }
+
+#ifdef DEBUG_CRYPTO
+        ssh_print_hexa("Generated signature", raw_sig_data, raw_sig_len);
+#endif
+
+    /* Allocate and fill output signature */
+    sig = ssh_signature_new();
+    if (sig == NULL) {
+        goto out;
+    }
+
+    sig->raw_sig = ssh_string_new(raw_sig_len);
+    if (sig->raw_sig == NULL) {
+        ssh_signature_free(sig);
+        sig = NULL;
+        goto out;
+    }
+
+    rc = ssh_string_fill(sig->raw_sig, raw_sig_data, raw_sig_len);
+    if (rc < 0) {
+        ssh_signature_free(sig);
+        sig = NULL;
+        goto out;
+    }
+
+    sig->type = privkey->type;
+    sig->hash_type = hash_type;
+    sig->type_c = ssh_key_signature_to_char(privkey->type, hash_type);
+
+out:
+    if (ctx != NULL) {
+        EVP_MD_CTX_free(ctx);
+    }
+    if (raw_sig_data != NULL) {
+        explicit_bzero(raw_sig_data, raw_sig_len);
+    }
+    SAFE_FREE(raw_sig_data);
+    if (pkey != NULL) {
+        EVP_PKEY_free(pkey);
+    }
+    return sig;
+}
+
+/**
+ * @internal
+ *
+ * @brief Verify the signature of a given input. The digest of the input is
+ * calculated internally as necessary.
+ *
+ * @param[in]   signature   The signature to be verified.
+ * @param[in]   pubkey      The public key used to verify the signature.
+ * @param[in]   input       The signed data.
+ * @param[in]   input_len   The length of the signed data.
+ *
+ * @return  SSH_OK if the signature is valid; SSH_ERROR otherwise.
+ */
+int pki_verify_data_signature(ssh_signature signature,
+                              const ssh_key pubkey,
+                              const unsigned char *input,
+                              size_t input_len)
+{
+    const EVP_MD *md = NULL;
+    EVP_MD_CTX *ctx = NULL;
+    EVP_PKEY *pkey = NULL;
+
+    unsigned char *raw_sig_data = NULL;
+    unsigned int raw_sig_len;
+
+    int rc = SSH_ERROR;
+    int evp_rc;
+
+    if (pubkey == NULL || ssh_key_is_private(pubkey) || input == NULL ||
+        signature == NULL || signature->raw_sig == NULL)
+    {
+        SSH_LOG(SSH_LOG_TRACE, "Bad parameter provided to "
+                               "pki_verify_data_signature()");
+        return SSH_ERROR;
+    }
+
+    /* Get the signature to be verified */
+    raw_sig_data = ssh_string_data(signature->raw_sig);
+    raw_sig_len = ssh_string_len(signature->raw_sig);
+    if (raw_sig_data == NULL) {
+        return SSH_ERROR;
+    }
+
+    /* Set hash algorithm to be used */
+    md = pki_digest_to_md(signature->hash_type);
+    if (md == NULL) {
+        return SSH_ERROR;
+    }
+
+    /* Setup public key EVP_PKEY */
+    pkey = pki_key_to_pkey(pubkey);
+    if (pkey == NULL) {
+        return SSH_ERROR;
+    }
+
+    /* Create the context */
+    ctx = EVP_MD_CTX_create();
+    if (ctx == NULL) {
+        SSH_LOG(SSH_LOG_TRACE, "Out of memory");
+        goto out;
+    }
+
+    /* Verify the signature */
+    evp_rc = EVP_VerifyInit_ex(ctx, md, NULL);
+    if (!evp_rc){
+        SSH_LOG(SSH_LOG_TRACE, "EVP_SignInit() failed");
+        goto out;
+    }
+
+    evp_rc = EVP_VerifyUpdate(ctx, input, input_len);
+    if (!evp_rc) {
+        SSH_LOG(SSH_LOG_TRACE, "EVP_SignUpdate() failed");
+        goto out;
+    }
+
+    evp_rc = EVP_VerifyFinal(ctx, raw_sig_data, raw_sig_len, pkey);
+    if (evp_rc < 0) {
+        SSH_LOG(SSH_LOG_TRACE, "EVP_SignFinal() failed");
+        rc = SSH_ERROR;
+    } else if (evp_rc == 0) {
+        SSH_LOG(SSH_LOG_TRACE, "Signature invalid");
+        rc = SSH_ERROR;
+    } else if (evp_rc == 1) {
+        SSH_LOG(SSH_LOG_TRACE, "Signature valid");
+        rc = SSH_OK;
+    }
+
+out:
+    if (ctx != NULL) {
+        EVP_MD_CTX_free(ctx);
+    }
+    if (pkey != NULL) {
+        EVP_PKEY_free(pkey);
+    }
+    return rc;
+}
+
 ssh_signature pki_do_sign_hash(const ssh_key privkey,
                                const unsigned char *hash,
                                size_t hlen,

@@ -611,6 +611,67 @@ static void torture_pki_ecdsa_cert_verify(void **state)
 }
 
 #ifdef HAVE_LIBCRYPTO
+
+static int test_sign_verify_data(ssh_key key,
+                                 enum ssh_digest_e hash_type,
+                                 const unsigned char *input,
+                                 size_t input_len)
+{
+    ssh_signature sig;
+    ssh_key pubkey = NULL;
+    int rc;
+
+    /* Get the public key to verify signature */
+    rc = ssh_pki_export_privkey_to_pubkey(key, &pubkey);
+    assert_int_equal(rc, SSH_OK);
+    assert_non_null(pubkey);
+
+    /* Sign the buffer */
+    sig = pki_sign_data(key, hash_type, input, input_len);
+    assert_non_null(sig);
+
+    /* Verify signature */
+    rc = pki_verify_data_signature(sig, pubkey, input, input_len);
+    assert_int_equal(rc, SSH_OK);
+
+    ssh_signature_free(sig);
+    SSH_KEY_FREE(pubkey);
+
+    return rc;
+}
+
+static void torture_pki_sign_data_ecdsa(void **state)
+{
+    int rc;
+    ssh_key key = NULL;
+
+    (void) state;
+
+    /* Setup */
+    rc = ssh_pki_generate(SSH_KEYTYPE_ECDSA, 256, &key);
+    assert_int_equal(rc, SSH_OK);
+    assert_non_null(key);
+
+    /* Test using automatic digest */
+    rc = test_sign_verify_data(key, SSH_DIGEST_AUTO, ECDSA_HASH, 20);
+    assert_int_equal(rc, SSH_OK);
+
+    /* Test using SHA1 */
+    rc = test_sign_verify_data(key, SSH_DIGEST_SHA1, ECDSA_HASH, 20);
+    assert_int_equal(rc, SSH_OK);
+
+    /* Test using SHA256 */
+    rc = test_sign_verify_data(key, SSH_DIGEST_SHA256, ECDSA_HASH, 20);
+    assert_int_equal(rc, SSH_OK);
+
+    /* Test using SHA512 */
+    rc = test_sign_verify_data(key, SSH_DIGEST_SHA512, ECDSA_HASH, 20);
+    assert_int_equal(rc, SSH_OK);
+
+    /* Cleanup */
+    SSH_KEY_FREE(key);
+}
+
 static void torture_pki_ecdsa_write_privkey(void **state)
 {
     ssh_key origkey = NULL;
@@ -838,6 +899,7 @@ int torture_run_tests(void) {
         cmocka_unit_test_setup_teardown(torture_pki_ecdsa_write_privkey,
                                         setup_ecdsa_key_521,
                                         teardown),
+        cmocka_unit_test(torture_pki_sign_data_ecdsa),
 #endif /* HAVE_LIBCRYPTO */
         cmocka_unit_test_setup_teardown(torture_pki_ecdsa_name256,
                                         setup_ecdsa_key_256,

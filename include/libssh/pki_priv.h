@@ -109,6 +109,14 @@ int pki_privkey_build_ecdsa(ssh_key key,
 ssh_string pki_publickey_to_blob(const ssh_key key);
 
 /* SSH Signature Functions */
+ssh_signature pki_sign_data(const ssh_key privkey,
+                            enum ssh_digest_e hash_type,
+                            const unsigned char *input,
+                            size_t input_len);
+int pki_verify_data_signature(ssh_signature signature,
+                              const ssh_key pubkey,
+                              const unsigned char *input,
+                              size_t input_len);
 ssh_string pki_signature_to_blob(const ssh_signature sign);
 ssh_signature pki_signature_from_blob(const ssh_key pubkey,
                                       const ssh_string sig_blob,
