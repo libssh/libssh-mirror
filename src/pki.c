@@ -589,15 +589,11 @@ void ssh_signature_free(ssh_signature sig)
         case SSH_KEYTYPE_DSS:
 #ifdef HAVE_LIBGCRYPT
             gcry_sexp_release(sig->dsa_sig);
-#elif defined HAVE_LIBCRYPTO
-            DSA_SIG_free(sig->dsa_sig);
 #endif
             break;
         case SSH_KEYTYPE_RSA:
 #ifdef HAVE_LIBGCRYPT
             gcry_sexp_release(sig->rsa_sig);
-#elif defined HAVE_LIBCRYPTO
-            SAFE_FREE(sig->rsa_sig);
 #elif defined HAVE_LIBMBEDCRYPTO
             SAFE_FREE(sig->rsa_sig);
 #endif
@@ -607,8 +603,6 @@ void ssh_signature_free(ssh_signature sig)
         case SSH_KEYTYPE_ECDSA_P521:
 #ifdef HAVE_GCRYPT_ECC
             gcry_sexp_release(sig->ecdsa_sig);
-#elif defined(HAVE_LIBCRYPTO) && defined(HAVE_OPENSSL_ECC)
-            ECDSA_SIG_free(sig->ecdsa_sig);
 #elif defined HAVE_LIBMBEDCRYPTO
             bignum_safe_free(sig->ecdsa_sig.r);
             bignum_safe_free(sig->ecdsa_sig.s);

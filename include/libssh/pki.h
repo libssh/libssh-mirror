@@ -75,14 +75,6 @@ struct ssh_signature_struct {
     gcry_sexp_t dsa_sig;
     gcry_sexp_t rsa_sig;
     gcry_sexp_t ecdsa_sig;
-#elif defined(HAVE_LIBCRYPTO)
-    DSA_SIG *dsa_sig;
-    ssh_string rsa_sig;
-# ifdef HAVE_OPENSSL_ECC
-    ECDSA_SIG *ecdsa_sig;
-# else
-    void *ecdsa_sig;
-# endif
 #elif defined(HAVE_LIBMBEDCRYPTO)
     ssh_string rsa_sig;
     struct mbedtls_ecdsa_sig ecdsa_sig;

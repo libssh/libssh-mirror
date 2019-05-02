@@ -1354,72 +1354,6 @@ fail:
     return NULL;
 }
 
-/**
- * @internal
- *
- * @brief Compute a digital signature.
- *
- * @param[in]  digest    The message digest.
- *
- * @param[in]  dlen      The length of the digest.
- *
- * @param[in]  privkey   The private rsa key to use for signing.
- *
- * @param[in]  hash_type The hash algorithm to use.
- *
- * @return               A newly allocated rsa sig blob or NULL on error.
- */
-static ssh_string _RSA_do_sign_hash(const unsigned char *digest,
-                                    int dlen,
-                                    RSA *privkey,
-                                    enum ssh_digest_e hash_type)
-{
-    ssh_string sig_blob;
-    unsigned char *sig;
-    unsigned int slen;
-    int ok;
-    int nid = 0;
-
-    switch (hash_type) {
-    case SSH_DIGEST_SHA1:
-    case SSH_DIGEST_AUTO:
-        nid = NID_sha1;
-        break;
-    case SSH_DIGEST_SHA256:
-        nid = NID_sha256;
-        break;
-    case SSH_DIGEST_SHA512:
-        nid = NID_sha512;
-        break;
-    default:
-        SSH_LOG(SSH_LOG_WARN, "Incomplatible hash type");
-        return NULL;
-    }
-
-    sig = malloc(RSA_size(privkey));
-    if (sig == NULL) {
-        return NULL;
-    }
-
-    ok = RSA_sign(nid, digest, dlen, sig, &slen, privkey);
-    if (!ok) {
-        SAFE_FREE(sig);
-        return NULL;
-    }
-
-    sig_blob = ssh_string_new(slen);
-    if (sig_blob == NULL) {
-        SAFE_FREE(sig);
-        return NULL;
-    }
-
-    ssh_string_fill(sig_blob, sig, slen);
-    explicit_bzero(sig, slen);
-    SAFE_FREE(sig);
-
-    return sig_blob;
-}
-
 static ssh_string pki_dsa_signature_to_blob(const ssh_signature sig)
 {
     char buffer[40] = { 0 };
@@ -2319,11 +2253,8 @@ ssh_signature pki_do_sign_hash(const ssh_key privkey,
                                size_t hlen,
                                enum ssh_digest_e hash_type)
 {
-    ssh_signature sig;
+    ssh_signature sig = NULL;
     int rc;
-
-    unsigned char *raw_sig_data = NULL;
-    size_t raw_sig_len;
 
     sig = ssh_signature_new();
     if (sig == NULL) {
@@ -2335,118 +2266,18 @@ ssh_signature pki_do_sign_hash(const ssh_key privkey,
     sig->hash_type = hash_type;
 
     switch(privkey->type) {
-        case SSH_KEYTYPE_DSS:
-        {
-            DSA_SIG *dsa;
-            dsa = DSA_do_sign(hash, hlen, privkey->dsa);
-            if (dsa == NULL) {
-                ssh_signature_free(sig);
-                return NULL;
-            }
-
-            rc = i2d_DSA_SIG(dsa, &raw_sig_data);
-            if (rc < 0) {
-                DSA_SIG_free(dsa);
-                ssh_signature_free(sig);
-                return NULL;
-            }
-            raw_sig_len = rc;
-
-            sig->raw_sig = ssh_string_new(raw_sig_len);
-            if (sig->raw_sig == NULL) {
-                DSA_SIG_free(dsa);
-                ssh_signature_free(sig);
-                explicit_bzero(raw_sig_data, raw_sig_len);
-                SAFE_FREE(raw_sig_data);
-                return NULL;
-            }
-
-            ssh_string_fill(sig->raw_sig, raw_sig_data, raw_sig_len);
-#ifdef DEBUG_CRYPTO
-            {
-                const BIGNUM *pr, *ps;
-                DSA_SIG_get0(dsa, &pr, &ps);
-                ssh_print_bignum("r", (BIGNUM *) pr);
-                ssh_print_bignum("s", (BIGNUM *) ps);
-            }
-#endif
-            DSA_SIG_free(dsa);
-            explicit_bzero(raw_sig_data, raw_sig_len);
-            SAFE_FREE(raw_sig_data);
-        }
-            break;
-        case SSH_KEYTYPE_RSA:
-        case SSH_KEYTYPE_RSA1:
-            sig->raw_sig = _RSA_do_sign_hash(hash, hlen, privkey->rsa, hash_type);
-            if (sig->raw_sig == NULL) {
-                ssh_signature_free(sig);
-                return NULL;
-            }
-            sig->dsa_sig = NULL;
-            break;
         case SSH_KEYTYPE_ED25519:
             rc = pki_ed25519_sign(privkey, sig, hash, hlen);
-            if (rc != SSH_OK){
+            if (rc != SSH_OK) {
                 ssh_signature_free(sig);
                 return NULL;
             }
             break;
-        case SSH_KEYTYPE_ECDSA_P256:
-        case SSH_KEYTYPE_ECDSA_P384:
-        case SSH_KEYTYPE_ECDSA_P521:
-#ifdef HAVE_OPENSSL_ECC
-        {
-            ECDSA_SIG *ecdsa_sig;
-            ecdsa_sig = ECDSA_do_sign(hash, hlen, privkey->ecdsa);
-            if (ecdsa_sig == NULL) {
-                ssh_signature_free(sig);
-                return NULL;
-            }
-
-            rc = i2d_ECDSA_SIG(ecdsa_sig, &raw_sig_data);
-            if (rc < 0) {
-                ECDSA_SIG_free(ecdsa_sig);
-                ssh_signature_free(sig);
-                return NULL;
-            }
-            raw_sig_len = rc;
-
-            sig->raw_sig = ssh_string_new(raw_sig_len);
-            if (sig->raw_sig == NULL) {
-                ECDSA_SIG_free(ecdsa_sig);
-                ssh_signature_free(sig);
-                explicit_bzero(raw_sig_data, raw_sig_len);
-                SAFE_FREE(raw_sig_data);
-                return NULL;
-            }
-
-            ssh_string_fill(sig->raw_sig, raw_sig_data, raw_sig_len);
-# ifdef DEBUG_CRYPTO
-            {
-                const BIGNUM *pr, *ps;
-                ECDSA_SIG_get0(ecdsa_sig, &pr, &ps);
-                ssh_print_bignum("r", (BIGNUM *) pr);
-                ssh_print_bignum("s", (BIGNUM *) ps);
-            }
-# endif /* DEBUG_CRYPTO */
-            ECDSA_SIG_free(ecdsa_sig);
-            explicit_bzero(raw_sig_data, raw_sig_len);
-            SAFE_FREE(raw_sig_data);
-        }
-            break;
-#endif /* HAVE_OPENSSL_ECC */
-        case SSH_KEYTYPE_UNKNOWN:
         default:
             ssh_signature_free(sig);
             return NULL;
     }
 
-#ifdef DEBUG_CRYPTO
-        SSH_LOG(SSH_LOG_TRACE, "Generated signature for %s and hash_type = %d",
-                privkey->type_c, hash_type);
-#endif
-
     return sig;
 }
-
 #endif /* _PKI_CRYPTO_H */
