@@ -2112,9 +2112,6 @@ ssh_signature pki_do_sign(const ssh_key privkey,
                           size_t input_len,
                           enum ssh_digest_e hash_type)
 {
-    unsigned char hash[SHA512_DIGEST_LEN] = {0};
-    uint32_t hlen = 0;
-
     if (privkey == NULL || input == NULL) {
         SSH_LOG(SSH_LOG_TRACE, "Bad parameter provided to "
                                "pki_do_sign()");
@@ -2127,34 +2124,7 @@ ssh_signature pki_do_sign(const ssh_key privkey,
         return pki_do_sign_hash(privkey, input, input_len, SSH_DIGEST_AUTO);
     }
 
-    switch (hash_type) {
-    case SSH_DIGEST_SHA256:
-        sha256(input, input_len, hash);
-        hlen = SHA256_DIGEST_LEN;
-        break;
-    case SSH_DIGEST_SHA384:
-        sha384(input, input_len, hash);
-        hlen = SHA384_DIGEST_LEN;
-        break;
-    case SSH_DIGEST_SHA512:
-        sha512(input, input_len, hash);
-        hlen = SHA512_DIGEST_LEN;
-        break;
-    case SSH_DIGEST_AUTO:
-    case SSH_DIGEST_SHA1:
-        sha1(input, input_len, hash);
-        hlen = SHA_DIGEST_LEN;
-        break;
-    default:
-        SSH_LOG(SSH_LOG_TRACE, "Unknown hash algorithm for type: %d",
-                hash_type);
-        goto error;
-    }
-
-    return pki_do_sign_hash(privkey, hash, hlen, hash_type);
-
-error:
-    return NULL;
+    return pki_sign_data(privkey, hash_type, input, input_len);
 }
 
 /*

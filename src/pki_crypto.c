@@ -1973,13 +1973,12 @@ int pki_signature_verify(ssh_session session,
                          size_t input_len)
 {
     int rc;
-    int nid;
 
-    unsigned char hash[SHA512_DIGEST_LEN] = {0};
-    uint32_t hlen = 0;
-
-    const unsigned char *raw_sig_data = ssh_string_data(sig->raw_sig);
-    size_t raw_sig_len = ssh_string_len(sig->raw_sig);
+    if (session == NULL || sig == NULL || key == NULL || input == NULL) {
+        SSH_LOG(SSH_LOG_TRACE, "Bad parameter provided to "
+                               "pki_signature_verify()");
+        return SSH_ERROR;
+    }
 
     if (ssh_key_type_plain(key->type) != sig->type) {
         SSH_LOG(SSH_LOG_WARN,
@@ -1994,142 +1993,16 @@ int pki_signature_verify(ssh_session session,
         key->type == SSH_KEYTYPE_ED25519_CERT01)
     {
         rc = pki_ed25519_verify(key, sig, input, input_len);
-        if (rc != SSH_OK){
-            ssh_set_error(session,
-                    SSH_FATAL,
-                    "ed25519 signature verification error");
-            return SSH_ERROR;
-        }
-
-        return SSH_OK;
+    } else {
+        /* For the other key types, calculate the hash and verify the signature */
+        rc = pki_verify_data_signature(sig, key, input, input_len);
     }
 
-    /* For the other key types, calculate the hash and verify the signature */
-    switch (sig->hash_type) {
-    case SSH_DIGEST_SHA256:
-        sha256(input, input_len, hash);
-        hlen = SHA256_DIGEST_LEN;
-        nid = NID_sha256;
-        break;
-    case SSH_DIGEST_SHA384:
-        sha384(input, input_len, hash);
-        hlen = SHA384_DIGEST_LEN;
-        nid = NID_sha384;
-        break;
-    case SSH_DIGEST_SHA512:
-        sha512(input, input_len, hash);
-        hlen = SHA512_DIGEST_LEN;
-        nid = NID_sha512;
-        break;
-    case SSH_DIGEST_AUTO:
-    case SSH_DIGEST_SHA1:
-        sha1(input, input_len, hash);
-        hlen = SHA_DIGEST_LEN;
-        nid = NID_sha1;
-        break;
-    default:
-        SSH_LOG(SSH_LOG_TRACE, "Unknown sig->hash_type: %d", sig->hash_type);
+    if (rc != SSH_OK){
+        ssh_set_error(session,
+                      SSH_FATAL,
+                      "Signature verification error");
         return SSH_ERROR;
-    }
-
-    switch (key->type) {
-        case SSH_KEYTYPE_DSS:
-        case SSH_KEYTYPE_DSS_CERT01:
-        {
-            DSA_SIG *dsa_sig;
-
-            if (raw_sig_data == NULL) {
-                SSH_LOG(SSH_LOG_WARN,
-                        "NULL raw signature found in provided signature");
-                return SSH_ERROR;
-            }
-
-            dsa_sig = d2i_DSA_SIG(NULL, &raw_sig_data, raw_sig_len);
-            if (dsa_sig == NULL) {
-                return SSH_ERROR;
-            }
-
-            rc = DSA_do_verify(hash,
-                               hlen,
-                               dsa_sig,
-                               key->dsa);
-            if (rc <= 0) {
-                DSA_SIG_free(dsa_sig);
-                ssh_set_error(session,
-                              SSH_FATAL,
-                              "DSA error: %s",
-                              ERR_error_string(ERR_get_error(), NULL));
-                return SSH_ERROR;
-            }
-            DSA_SIG_free(dsa_sig);
-        }
-            break;
-        case SSH_KEYTYPE_RSA:
-        case SSH_KEYTYPE_RSA1:
-        case SSH_KEYTYPE_RSA_CERT01:
-            if (raw_sig_data == NULL) {
-                SSH_LOG(SSH_LOG_WARN,
-                        "NULL raw signature found in provided signature");
-                return SSH_ERROR;
-            }
-
-            rc = RSA_verify(nid,
-                            hash,
-                            hlen,
-                            raw_sig_data,
-                            raw_sig_len,
-                            key->rsa);
-            if (rc <= 0) {
-                SSH_LOG(SSH_LOG_TRACE, "RSA verify failed");
-                ssh_set_error(session,
-                              SSH_FATAL,
-                              "RSA error: %s",
-                              ERR_error_string(ERR_get_error(), NULL));
-                return SSH_ERROR;
-            }
-            break;
-        case SSH_KEYTYPE_ECDSA_P256:
-        case SSH_KEYTYPE_ECDSA_P384:
-        case SSH_KEYTYPE_ECDSA_P521:
-        case SSH_KEYTYPE_ECDSA_P256_CERT01:
-        case SSH_KEYTYPE_ECDSA_P384_CERT01:
-        case SSH_KEYTYPE_ECDSA_P521_CERT01:
-#ifdef HAVE_OPENSSL_ECC
-        {
-            ECDSA_SIG *ecdsa_sig;
-
-            if (raw_sig_data == NULL) {
-                SSH_LOG(SSH_LOG_WARN,
-                        "NULL raw signature found in provided signature");
-                return SSH_ERROR;
-            }
-
-            ecdsa_sig = d2i_ECDSA_SIG(NULL, &raw_sig_data, raw_sig_len);
-            if (ecdsa_sig == NULL) {
-                return SSH_ERROR;
-            }
-
-            rc = ECDSA_do_verify(hash,
-                                 hlen,
-                                 ecdsa_sig,
-                                 key->ecdsa);
-            if (rc <= 0) {
-                ECDSA_SIG_free(ecdsa_sig);
-                ssh_set_error(session,
-                              SSH_FATAL,
-                              "ECDSA error: %s",
-                              ERR_error_string(ERR_get_error(), NULL));
-                return SSH_ERROR;
-            }
-            ECDSA_SIG_free(ecdsa_sig);
-        }
-            break;
-#endif
-        case SSH_KEYTYPE_UNKNOWN:
-        default:
-            SSH_LOG(SSH_LOG_TRACE, "Unknown key type");
-            ssh_set_error(session, SSH_FATAL, "Unknown public key type");
-            return SSH_ERROR;
     }
 
     return SSH_OK;

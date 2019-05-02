@@ -2091,15 +2091,13 @@ int pki_signature_verify(ssh_session session,
                          const unsigned char *input,
                          size_t input_len)
 {
-    const char *hash_type = NULL;
-    gcry_sexp_t sexp;
-    gcry_error_t err;
-
-    unsigned char ghash[SHA512_DIGEST_LEN + 1] = {0};
-    unsigned char *hash = ghash + 1;
-    uint32_t hlen = 0;
-
     int rc;
+
+    if (session == NULL || sig == NULL || key == NULL || input == NULL) {
+        SSH_LOG(SSH_LOG_TRACE, "Bad parameter provided to "
+                               "pki_signature_verify()");
+        return SSH_ERROR;
+    }
 
     if (ssh_key_type_plain(key->type) != sig->type) {
         SSH_LOG(SSH_LOG_WARN,
@@ -2114,137 +2112,16 @@ int pki_signature_verify(ssh_session session,
         key->type == SSH_KEYTYPE_ED25519_CERT01)
     {
         rc = pki_ed25519_verify(key, sig, input, input_len);
-        if (rc != SSH_OK){
-            ssh_set_error(session,
-                    SSH_FATAL,
-                    "ed25519 signature verification error");
-            return SSH_ERROR;
-        }
-
-        return SSH_OK;
+    } else {
+        /* For the other key types, calculate the hash and verify the signature */
+        rc = pki_verify_data_signature(sig, key, input, input_len);
     }
 
-    /* For the other key types, calculate the hash and verify the signature */
-    switch (sig->hash_type) {
-    case SSH_DIGEST_SHA256:
-        sha256(input, input_len, hash);
-        hlen = SHA256_DIGEST_LEN;
-        hash_type = "sha256";
-        break;
-    case SSH_DIGEST_SHA384:
-        sha384(input, input_len, hash);
-        hlen = SHA384_DIGEST_LEN;
-        hash_type = "sha384";
-        break;
-    case SSH_DIGEST_SHA512:
-        sha512(input, input_len, hash);
-        hlen = SHA512_DIGEST_LEN;
-        hash_type = "sha512";
-        break;
-    case SSH_DIGEST_AUTO:
-    case SSH_DIGEST_SHA1:
-        sha1(input, input_len, hash);
-        hlen = SHA_DIGEST_LEN;
-        hash_type = "sha1";
-        break;
-    default:
-        SSH_LOG(SSH_LOG_TRACE, "Unknown sig->hash_type: %d", sig->hash_type);
+    if (rc != SSH_OK){
+        ssh_set_error(session,
+                      SSH_FATAL,
+                      "Signature verification error");
         return SSH_ERROR;
-    }
-
-    switch(key->type) {
-        case SSH_KEYTYPE_DSS:
-        case SSH_KEYTYPE_DSS_CERT01:
-            /* That is to mark the number as positive */
-            if(hash[0] >= 0x80) {
-                hash = ghash;
-                hlen += 1;
-            }
-
-            err = gcry_sexp_build(&sexp, NULL, "%b", hlen, hash);
-            if (err) {
-                ssh_set_error(session,
-                              SSH_FATAL,
-                              "DSA hash error: %s", gcry_strerror(err));
-                return SSH_ERROR;
-            }
-            err = gcry_pk_verify(sig->dsa_sig, sexp, key->dsa);
-            gcry_sexp_release(sexp);
-            if (err) {
-                ssh_set_error(session, SSH_FATAL, "Invalid DSA signature");
-                if (gcry_err_code(err) != GPG_ERR_BAD_SIGNATURE) {
-                    ssh_set_error(session,
-                                  SSH_FATAL,
-                                  "DSA verify error: %s",
-                                  gcry_strerror(err));
-                }
-                return SSH_ERROR;
-            }
-            break;
-        case SSH_KEYTYPE_RSA:
-        case SSH_KEYTYPE_RSA_CERT01:
-            err = gcry_sexp_build(&sexp,
-                                  NULL,
-                                  "(data(flags pkcs1)(hash %s %b))",
-                                  hash_type, hlen, hash);
-            if (err) {
-                ssh_set_error(session,
-                              SSH_FATAL,
-                              "RSA hash error: %s",
-                              gcry_strerror(err));
-                return SSH_ERROR;
-            }
-            err = gcry_pk_verify(sig->rsa_sig, sexp, key->rsa);
-            gcry_sexp_release(sexp);
-            if (err) {
-                ssh_set_error(session, SSH_FATAL, "Invalid RSA signature");
-                if (gcry_err_code(err) != GPG_ERR_BAD_SIGNATURE) {
-                    ssh_set_error(session,
-                            SSH_FATAL,
-                            "RSA verify error: %s",
-                            gcry_strerror(err));
-                }
-                return SSH_ERROR;
-            }
-            break;
-        case SSH_KEYTYPE_ECDSA_P256:
-        case SSH_KEYTYPE_ECDSA_P384:
-        case SSH_KEYTYPE_ECDSA_P521:
-        case SSH_KEYTYPE_ECDSA_P256_CERT01:
-        case SSH_KEYTYPE_ECDSA_P384_CERT01:
-        case SSH_KEYTYPE_ECDSA_P521_CERT01:
-#ifdef HAVE_GCRYPT_ECC
-            err = gcry_sexp_build(&sexp,
-                                  NULL,
-                                  "(data(flags raw)(value %b))",
-                                  hlen,
-                                  hash);
-            if (err) {
-                ssh_set_error(session,
-                              SSH_FATAL,
-                              "ECDSA hash error: %s",
-                              gcry_strerror(err));
-                return SSH_ERROR;
-            }
-            err = gcry_pk_verify(sig->ecdsa_sig, sexp, key->ecdsa);
-            gcry_sexp_release(sexp);
-            if (err) {
-                ssh_set_error(session, SSH_FATAL, "Invalid ECDSA signature");
-                if (gcry_err_code(err) != GPG_ERR_BAD_SIGNATURE) {
-                    ssh_set_error(session,
-                            SSH_FATAL,
-                            "ECDSA verify error: %s",
-                            gcry_strerror(err));
-                }
-                return SSH_ERROR;
-            }
-            break;
-#endif
-        case SSH_KEYTYPE_RSA1:
-        case SSH_KEYTYPE_UNKNOWN:
-        default:
-            ssh_set_error(session, SSH_FATAL, "Unknown public key type");
-            return SSH_ERROR;
     }
 
     return SSH_OK;
