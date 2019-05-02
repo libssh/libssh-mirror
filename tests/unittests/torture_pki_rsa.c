@@ -563,7 +563,6 @@ static void torture_pki_rsa_sha2(void **state)
     ssh_free(session);
 }
 
-#if defined(HAVE_LIBCRYPTO) || defined(HAVE_LIBMBEDCRYPTO)
 static int test_sign_verify_data(ssh_key key,
                                  enum ssh_digest_e hash_type,
                                  const unsigned char *input,
@@ -623,7 +622,7 @@ static void torture_pki_sign_data_rsa(void **state)
     /* Cleanup */
     SSH_KEY_FREE(key);
 }
-#endif
+
 #ifdef HAVE_LIBCRYPTO
 static void torture_pki_rsa_write_privkey(void **state)
 {
@@ -843,9 +842,7 @@ int torture_run_tests(void) {
                                         setup_rsa_key,
                                         teardown),
 #endif /* HAVE_LIBCRYPTO */
-#if defined(HAVE_LIBCRYPTO) || defined(HAVE_LIBMBEDCRYPTO)
         cmocka_unit_test(torture_pki_sign_data_rsa),
-#endif
         cmocka_unit_test_setup_teardown(torture_pki_rsa_sha2,
                                         setup_rsa_key,
                                         teardown),

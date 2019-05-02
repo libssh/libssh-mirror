@@ -168,7 +168,6 @@ static void torture_pki_dsa_import_privkey_base64(void **state)
     SSH_KEY_FREE(key);
 }
 
-#if defined(HAVE_LIBCRYPTO) || defined(HAVE_LIBMBEDCRYPTO)
 static int test_sign_verify_data(ssh_key key,
                                  enum ssh_digest_e hash_type,
                                  const unsigned char *input,
@@ -228,7 +227,7 @@ static void torture_pki_sign_data_dsa(void **state)
     /* Cleanup */
     SSH_KEY_FREE(key);
 }
-#endif
+
 #ifdef HAVE_LIBCRYPTO
 static void torture_pki_dsa_write_privkey(void **state)
 {
@@ -770,9 +769,7 @@ int torture_run_tests(void)
                                  setup_dsa_key,
                                  teardown),
 #endif
-#if defined(HAVE_LIBCRYPTO) || defined(HAVE_LIBMBEDCRYPTO)
         cmocka_unit_test(torture_pki_sign_data_dsa),
-#endif
         cmocka_unit_test(torture_pki_dsa_import_privkey_base64_passphrase),
         cmocka_unit_test(torture_pki_dsa_import_openssh_privkey_base64_passphrase),
 

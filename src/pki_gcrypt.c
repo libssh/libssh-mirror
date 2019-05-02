@@ -2364,4 +2364,211 @@ ssh_signature pki_do_sign_hash(const ssh_key privkey,
     return sig;
 }
 
+/**
+ * @internal
+ *
+ * @brief Sign the given input data. The digest of to be signed is calculated
+ * internally as necessary.
+ *
+ * @param[in]   privkey     The private key to be used for signing.
+ * @param[in]   hash_type   The digest algorithm to be used.
+ * @param[in]   input       The data to be signed.
+ * @param[in]   input_len   The length of the data to be signed.
+ *
+ * @return  a newly allocated ssh_signature or NULL on error.
+ */
+ssh_signature pki_sign_data(const ssh_key privkey,
+                            enum ssh_digest_e hash_type,
+                            const unsigned char *input,
+                            size_t input_len)
+{
+    unsigned char hash[SHA512_DIGEST_LEN] = {0};
+    uint32_t hlen = 0;
+
+    if (privkey == NULL || !ssh_key_is_private(privkey) || input == NULL) {
+        SSH_LOG(SSH_LOG_TRACE, "Bad parameter provided to "
+                               "pki_sign_data()");
+        return NULL;
+    }
+
+    switch (hash_type) {
+    case SSH_DIGEST_SHA256:
+        sha256(input, input_len, hash);
+        hlen = SHA256_DIGEST_LEN;
+        break;
+    case SSH_DIGEST_SHA384:
+        sha384(input, input_len, hash);
+        hlen = SHA384_DIGEST_LEN;
+        break;
+    case SSH_DIGEST_SHA512:
+        sha512(input, input_len, hash);
+        hlen = SHA512_DIGEST_LEN;
+        break;
+    case SSH_DIGEST_AUTO:
+    case SSH_DIGEST_SHA1:
+        sha1(input, input_len, hash);
+        hlen = SHA_DIGEST_LEN;
+        break;
+    default:
+        SSH_LOG(SSH_LOG_TRACE, "Unknown hash algorithm for type: %d",
+                hash_type);
+        return NULL;
+    }
+
+    return pki_do_sign_hash(privkey, hash, hlen, hash_type);
+}
+
+/**
+ * @internal
+ *
+ * @brief Verify the signature of a given input. The digest of the input is
+ * calculated internally as necessary.
+ *
+ * @param[in]   signature   The signature to be verified.
+ * @param[in]   pubkey      The public key used to verify the signature.
+ * @param[in]   input       The signed data.
+ * @param[in]   input_len   The length of the signed data.
+ *
+ * @return  SSH_OK if the signature is valid; SSH_ERROR otherwise.
+ */
+int pki_verify_data_signature(ssh_signature signature,
+                              const ssh_key pubkey,
+                              const unsigned char *input,
+                              size_t input_len)
+{
+    const char *hash_type = NULL;
+    gcry_sexp_t sexp;
+    gcry_error_t err;
+
+    unsigned char ghash[SHA512_DIGEST_LEN + 1] = {0};
+    unsigned char *hash = ghash + 1;
+    uint32_t hlen = 0;
+
+    if (pubkey == NULL || ssh_key_is_private(pubkey) || input == NULL ||
+        signature == NULL)
+    {
+        SSH_LOG(SSH_LOG_TRACE, "Bad parameter provided to "
+                               "pki_verify_data_signature()");
+        return SSH_ERROR;
+    }
+
+    switch (signature->hash_type) {
+    case SSH_DIGEST_SHA256:
+        sha256(input, input_len, hash);
+        hlen = SHA256_DIGEST_LEN;
+        hash_type = "sha256";
+        break;
+    case SSH_DIGEST_SHA384:
+        sha384(input, input_len, hash);
+        hlen = SHA384_DIGEST_LEN;
+        hash_type = "sha384";
+        break;
+    case SSH_DIGEST_SHA512:
+        sha512(input, input_len, hash);
+        hlen = SHA512_DIGEST_LEN;
+        hash_type = "sha512";
+        break;
+    case SSH_DIGEST_AUTO:
+    case SSH_DIGEST_SHA1:
+        sha1(input, input_len, hash);
+        hlen = SHA_DIGEST_LEN;
+        hash_type = "sha1";
+        break;
+    default:
+        SSH_LOG(SSH_LOG_TRACE, "Unknown sig->hash_type: %d", signature->hash_type);
+        return SSH_ERROR;
+    }
+
+    switch(pubkey->type) {
+        case SSH_KEYTYPE_DSS:
+        case SSH_KEYTYPE_DSS_CERT01:
+            /* That is to mark the number as positive */
+            if(hash[0] >= 0x80) {
+                hash = ghash;
+                hlen += 1;
+            }
+
+            err = gcry_sexp_build(&sexp, NULL, "%b", hlen, hash);
+            if (err) {
+                SSH_LOG(SSH_LOG_TRACE,
+                        "DSA hash error: %s", gcry_strerror(err));
+                return SSH_ERROR;
+            }
+            err = gcry_pk_verify(signature->dsa_sig, sexp, pubkey->dsa);
+            gcry_sexp_release(sexp);
+            if (err) {
+                SSH_LOG(SSH_LOG_TRACE, "Invalid DSA signature");
+                if (gcry_err_code(err) != GPG_ERR_BAD_SIGNATURE) {
+                    SSH_LOG(SSH_LOG_TRACE,
+                            "DSA verify error: %s",
+                            gcry_strerror(err));
+                }
+                return SSH_ERROR;
+            }
+            break;
+        case SSH_KEYTYPE_RSA:
+        case SSH_KEYTYPE_RSA_CERT01:
+            err = gcry_sexp_build(&sexp,
+                                  NULL,
+                                  "(data(flags pkcs1)(hash %s %b))",
+                                  hash_type, hlen, hash);
+            if (err) {
+                SSH_LOG(SSH_LOG_TRACE,
+                              "RSA hash error: %s",
+                              gcry_strerror(err));
+                return SSH_ERROR;
+            }
+            err = gcry_pk_verify(signature->rsa_sig, sexp, pubkey->rsa);
+            gcry_sexp_release(sexp);
+            if (err) {
+                SSH_LOG(SSH_LOG_TRACE, "Invalid RSA signature");
+                if (gcry_err_code(err) != GPG_ERR_BAD_SIGNATURE) {
+                    SSH_LOG(SSH_LOG_TRACE,
+                            "RSA verify error: %s",
+                            gcry_strerror(err));
+                }
+                return SSH_ERROR;
+            }
+            break;
+        case SSH_KEYTYPE_ECDSA_P256:
+        case SSH_KEYTYPE_ECDSA_P384:
+        case SSH_KEYTYPE_ECDSA_P521:
+        case SSH_KEYTYPE_ECDSA_P256_CERT01:
+        case SSH_KEYTYPE_ECDSA_P384_CERT01:
+        case SSH_KEYTYPE_ECDSA_P521_CERT01:
+#ifdef HAVE_GCRYPT_ECC
+            err = gcry_sexp_build(&sexp,
+                                  NULL,
+                                  "(data(flags raw)(value %b))",
+                                  hlen,
+                                  hash);
+            if (err) {
+                SSH_LOG(SSH_LOG_TRACE,
+                        "ECDSA hash error: %s",
+                        gcry_strerror(err));
+                return SSH_ERROR;
+            }
+            err = gcry_pk_verify(signature->ecdsa_sig, sexp, pubkey->ecdsa);
+            gcry_sexp_release(sexp);
+            if (err) {
+                SSH_LOG(SSH_LOG_TRACE, "Invalid ECDSA signature");
+                if (gcry_err_code(err) != GPG_ERR_BAD_SIGNATURE) {
+                    SSH_LOG(SSH_LOG_TRACE,
+                            "ECDSA verify error: %s",
+                            gcry_strerror(err));
+                }
+                return SSH_ERROR;
+            }
+            break;
+#endif
+        case SSH_KEYTYPE_RSA1:
+        case SSH_KEYTYPE_UNKNOWN:
+        default:
+            SSH_LOG(SSH_LOG_TRACE, "Unknown public key type");
+            return SSH_ERROR;
+    }
+
+    return SSH_OK;
+}
+
 #endif /* HAVE_LIBGCRYPT */
