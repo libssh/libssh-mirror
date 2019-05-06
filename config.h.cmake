@@ -15,6 +15,9 @@
 /* Global bind configuration file path */
 #cmakedefine GLOBAL_BIND_CONFIG "${GLOBAL_BIND_CONFIG}"
 
+/* Global client configuration file path */
+#cmakedefine GLOBAL_CLIENT_CONFIG "${GLOBAL_CLIENT_CONFIG}"
+
 /************************** HEADER FILES *************************/
 
 /* Define to 1 if you have the <argp.h> header file. */

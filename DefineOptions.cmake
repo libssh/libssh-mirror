@@ -53,3 +53,7 @@ endif (WITH_ABI_BREAK)
 if (NOT GLOBAL_BIND_CONFIG)
   set(GLOBAL_BIND_CONFIG "/etc/ssh/libssh_server_config")
 endif (NOT GLOBAL_BIND_CONFIG)
+
+if (NOT GLOBAL_CLIENT_CONFIG)
+  set(GLOBAL_CLIENT_CONFIG "/etc/ssh/ssh_config")
+endif (NOT GLOBAL_CLIENT_CONFIG)

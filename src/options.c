@@ -1399,7 +1399,7 @@ int ssh_options_parse_config(ssh_session session, const char *filename) {
       goto out;
   }
   if (filename == NULL) {
-      r = ssh_config_parse_file(session, "/etc/ssh/ssh_config");
+      r = ssh_config_parse_file(session, GLOBAL_CLIENT_CONFIG);
   }
 
   /* Do not process the default configuration as part of connection again */

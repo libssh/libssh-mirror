@@ -394,6 +394,8 @@ static void torture_config_unknown(void **state) {
     assert_true(ret == 0);
     ret = ssh_config_parse_file(session, "/etc/ssh/ssh_config");
     assert_true(ret == 0);
+    ret = ssh_config_parse_file(session, GLOBAL_CLIENT_CONFIG);
+    assert_true(ret == 0);
 }
 
 
