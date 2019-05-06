@@ -286,6 +286,8 @@ static enum ssh_digest_e ssh_key_hash_from_name(const char *name)
 
     if (strcmp(name, "ssh-rsa") == 0) {
         return SSH_DIGEST_SHA1;
+    } else if (strcmp(name, "ssh-dss") == 0) {
+        return SSH_DIGEST_SHA1;
     } else if (strcmp(name, "rsa-sha2-256") == 0) {
         return SSH_DIGEST_SHA256;
     } else if (strcmp(name, "rsa-sha2-512") == 0) {
@@ -299,6 +301,8 @@ static enum ssh_digest_e ssh_key_hash_from_name(const char *name)
     } else if (strcmp(name, "ssh-ed25519") == 0) {
         return SSH_DIGEST_AUTO;
     }
+
+    SSH_LOG(SSH_LOG_WARN, "Unknown signature name %s", name);
 
     /* TODO we should rather fail */
     return SSH_DIGEST_AUTO;
@@ -340,6 +344,8 @@ enum ssh_digest_e ssh_key_type_to_hash(ssh_session session,
                                        enum ssh_keytypes_e type)
 {
     switch (type) {
+    case SSH_KEYTYPE_DSS:
+        return SSH_DIGEST_SHA1;
     case SSH_KEYTYPE_RSA:
         if (ssh_key_algorithm_allowed(session, "rsa-sha2-512") &&
             (session->extensions & SSH_EXT_SIG_RSA_SHA512)) {
@@ -363,9 +369,15 @@ enum ssh_digest_e ssh_key_type_to_hash(ssh_session session,
     case SSH_KEYTYPE_ECDSA_P521_CERT01:
     case SSH_KEYTYPE_ECDSA_P521:
         return SSH_DIGEST_SHA512;
-    default:
-        /* Other key types use the default value (not used) */
+    case SSH_KEYTYPE_ED25519_CERT01:
+    case SSH_KEYTYPE_ED25519:
         return SSH_DIGEST_AUTO;
+    case SSH_KEYTYPE_RSA1:
+    case SSH_KEYTYPE_ECDSA:
+    case SSH_KEYTYPE_UNKNOWN:
+    default:
+        SSH_LOG(SSH_LOG_WARN, "Digest algorithm to be used with key type %u "
+                "is not defined", type);
     }
 
     /* We should never reach this */
