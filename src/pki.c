@@ -344,8 +344,10 @@ enum ssh_digest_e ssh_key_type_to_hash(ssh_session session,
                                        enum ssh_keytypes_e type)
 {
     switch (type) {
+    case SSH_KEYTYPE_DSS_CERT01:
     case SSH_KEYTYPE_DSS:
         return SSH_DIGEST_SHA1;
+    case SSH_KEYTYPE_RSA_CERT01:
     case SSH_KEYTYPE_RSA:
         if (ssh_key_algorithm_allowed(session, "rsa-sha2-512") &&
             (session->extensions & SSH_EXT_SIG_RSA_SHA512)) {
@@ -2070,6 +2072,79 @@ int ssh_pki_import_signature_blob(const ssh_string sig_blob,
     return SSH_OK;
 }
 
+/**
+ * @internal
+ *
+ * @brief Check if the provided key can be used with the provided hash type for
+ * data signing or signature verification.
+ *
+ * @param[in]   key         The key to be checked.
+ * @param[in]   hash_type   The digest algorithm to be checked.
+ *
+ * @return  SSH_OK if compatible; SSH_ERROR otherwise
+ */
+int pki_key_check_hash_compatible(ssh_key key,
+                                  enum ssh_digest_e hash_type)
+{
+    if (key == NULL) {
+        SSH_LOG(SSH_LOG_TRACE, "Null pointer provided as key to "
+                               "pki_key_check_hash_compatible()");
+        return SSH_ERROR;
+    }
+
+    switch(key->type) {
+    case SSH_KEYTYPE_DSS_CERT01:
+    case SSH_KEYTYPE_DSS:
+        if (hash_type == SSH_DIGEST_SHA1) {
+            return SSH_OK;
+        }
+        break;
+    case SSH_KEYTYPE_RSA_CERT01:
+    case SSH_KEYTYPE_RSA:
+        if (hash_type == SSH_DIGEST_SHA1 ||
+            hash_type == SSH_DIGEST_SHA256 ||
+            hash_type == SSH_DIGEST_SHA512)
+        {
+            return SSH_OK;
+        }
+        break;
+    case SSH_KEYTYPE_ECDSA_P256_CERT01:
+    case SSH_KEYTYPE_ECDSA_P256:
+        if (hash_type == SSH_DIGEST_SHA256) {
+            return SSH_OK;
+        }
+        break;
+    case SSH_KEYTYPE_ECDSA_P384_CERT01:
+    case SSH_KEYTYPE_ECDSA_P384:
+        if (hash_type == SSH_DIGEST_SHA384) {
+            return SSH_OK;
+        }
+        break;
+    case SSH_KEYTYPE_ECDSA_P521_CERT01:
+    case SSH_KEYTYPE_ECDSA_P521:
+        if (hash_type == SSH_DIGEST_SHA512) {
+            return SSH_OK;
+        }
+        break;
+    case SSH_KEYTYPE_ED25519_CERT01:
+    case SSH_KEYTYPE_ED25519:
+        if (hash_type == SSH_DIGEST_AUTO) {
+            return SSH_OK;
+        }
+        break;
+    case SSH_KEYTYPE_RSA1:
+    case SSH_KEYTYPE_ECDSA:
+    case SSH_KEYTYPE_UNKNOWN:
+        SSH_LOG(SSH_LOG_WARN, "Unknown key type %d", key->type);
+        return SSH_ERROR;
+    }
+
+    SSH_LOG(SSH_LOG_WARN, "Key type %d incompatible with hash type  %d",
+            key->type, hash_type);
+
+    return SSH_ERROR;
+}
+
 int ssh_pki_signature_verify(ssh_session session,
                              ssh_signature sig,
                              const ssh_key key,
@@ -2096,6 +2171,12 @@ int ssh_pki_signature_verify(ssh_session session,
         return SSH_ERROR;
     }
 
+    /* Check if public key and hash type are compatible */
+    rc = pki_key_check_hash_compatible(key, sig->hash_type);
+    if (rc != SSH_OK) {
+        return SSH_ERROR;
+    }
+
     rc = pki_signature_verify(session, sig, key, input, input_len);
 
     return rc;
@@ -2106,9 +2187,17 @@ ssh_signature pki_do_sign(const ssh_key privkey,
                           size_t input_len,
                           enum ssh_digest_e hash_type)
 {
+    int rc;
+
     if (privkey == NULL || input == NULL) {
         SSH_LOG(SSH_LOG_TRACE, "Bad parameter provided to "
                                "pki_do_sign()");
+        return NULL;
+    }
+
+    /* Check if public key and hash type are compatible */
+    rc = pki_key_check_hash_compatible(privkey, hash_type);
+    if (rc != SSH_OK) {
         return NULL;
     }
 

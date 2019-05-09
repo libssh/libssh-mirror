@@ -583,9 +583,13 @@ int pki_key_generate_ecdsa(ssh_key key, int parameter) {
             key->type = SSH_KEYTYPE_ECDSA_P521;
             break;
         case 256:
-        default:
             key->ecdsa_nid = NID_X9_62_prime256v1;
             key->type = SSH_KEYTYPE_ECDSA_P256;
+            break;
+        default:
+            SSH_LOG(SSH_LOG_WARN, "Invalid parameter %d for ECDSA key "
+                    "generation", parameter);
+            return SSH_ERROR;
     }
 
     key->ecdsa = EC_KEY_new_by_curve_name(key->ecdsa_nid);
@@ -1922,6 +1926,12 @@ int pki_signature_verify(ssh_session session,
         return SSH_ERROR;
     }
 
+    /* Check if public key and hash type are compatible */
+    rc = pki_key_check_hash_compatible(key, sig->hash_type);
+    if (rc != SSH_OK) {
+        return SSH_ERROR;
+    }
+
     /* For ed25519 keys, verify using the input directly */
     if (key->type == SSH_KEYTYPE_ED25519 ||
         key->type == SSH_KEYTYPE_ED25519_CERT01)
@@ -1957,9 +1967,9 @@ static const EVP_MD *pki_digest_to_md(enum ssh_digest_e hash_type)
         md = EVP_sha512();
         break;
     case SSH_DIGEST_SHA1:
-    case SSH_DIGEST_AUTO:
         md = EVP_sha1();
         break;
+    case SSH_DIGEST_AUTO:
     default:
         SSH_LOG(SSH_LOG_TRACE, "Unknown hash algorithm for type: %d",
                 hash_type);
@@ -2060,6 +2070,12 @@ ssh_signature pki_sign_data(const ssh_key privkey,
     if (privkey == NULL || !ssh_key_is_private(privkey) || input == NULL) {
         SSH_LOG(SSH_LOG_TRACE, "Bad parameter provided to "
                                "pki_sign_data()");
+        return NULL;
+    }
+
+    /* Check if public key and hash type are compatible */
+    rc = pki_key_check_hash_compatible(privkey, hash_type);
+    if (rc != SSH_OK) {
         return NULL;
     }
 
@@ -2184,6 +2200,12 @@ int pki_verify_data_signature(ssh_signature signature,
     {
         SSH_LOG(SSH_LOG_TRACE, "Bad parameter provided to "
                                "pki_verify_data_signature()");
+        return SSH_ERROR;
+    }
+
+    /* Check if public key and hash type are compatible */
+    rc = pki_key_check_hash_compatible(pubkey, signature->hash_type);
+    if (rc != SSH_OK) {
         return SSH_ERROR;
     }
 

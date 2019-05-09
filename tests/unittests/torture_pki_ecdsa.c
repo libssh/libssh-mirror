@@ -14,7 +14,7 @@
 #define LIBSSH_ECDSA_TESTKEY_PASSPHRASE "libssh_testkey_passphrase.id_ecdsa"
 
 const char template[] = "temp_dir_XXXXXX";
-const unsigned char ECDSA_HASH[] = "12345678901234567890";
+const unsigned char INPUT[] = "12345678901234567890";
 
 struct pki_st {
     char *cwd;
@@ -477,9 +477,9 @@ static void torture_pki_generate_key_ecdsa(void **state)
     rc = ssh_pki_export_privkey_to_pubkey(key, &pubkey);
     assert_int_equal(rc, SSH_OK);
     assert_non_null(pubkey);
-    sign = pki_do_sign(key, ECDSA_HASH, 20, SSH_DIGEST_SHA256);
+    sign = pki_do_sign(key, INPUT, sizeof(INPUT), SSH_DIGEST_SHA256);
     assert_non_null(sign);
-    rc = pki_signature_verify(session, sign, pubkey, ECDSA_HASH, 20);
+    rc = pki_signature_verify(session, sign, pubkey, INPUT, sizeof(INPUT));
     assert_true(rc == SSH_OK);
     type = ssh_key_type(key);
     assert_true(type == SSH_KEYTYPE_ECDSA_P256);
@@ -499,9 +499,9 @@ static void torture_pki_generate_key_ecdsa(void **state)
     rc = ssh_pki_export_privkey_to_pubkey(key, &pubkey);
     assert_int_equal(rc, SSH_OK);
     assert_non_null(pubkey);
-    sign = pki_do_sign(key, ECDSA_HASH, 20, SSH_DIGEST_SHA256);
+    sign = pki_do_sign(key, INPUT, sizeof(INPUT), SSH_DIGEST_SHA256);
     assert_non_null(sign);
-    rc = pki_signature_verify(session, sign, pubkey, ECDSA_HASH, 20);
+    rc = pki_signature_verify(session, sign, pubkey, INPUT, sizeof(INPUT));
     assert_true(rc == SSH_OK);
     type = ssh_key_type(key);
     assert_true(type == SSH_KEYTYPE_ECDSA_P256);
@@ -520,9 +520,9 @@ static void torture_pki_generate_key_ecdsa(void **state)
     rc = ssh_pki_export_privkey_to_pubkey(key, &pubkey);
     assert_int_equal(rc, SSH_OK);
     assert_non_null(pubkey);
-    sign = pki_do_sign(key, ECDSA_HASH, 20, SSH_DIGEST_SHA384);
+    sign = pki_do_sign(key, INPUT, sizeof(INPUT), SSH_DIGEST_SHA384);
     assert_non_null(sign);
-    rc = pki_signature_verify(session, sign, pubkey, ECDSA_HASH, 20);
+    rc = pki_signature_verify(session, sign, pubkey, INPUT, sizeof(INPUT));
     assert_true(rc == SSH_OK);
     type = ssh_key_type(key);
     assert_true(type == SSH_KEYTYPE_ECDSA_P384);
@@ -542,9 +542,9 @@ static void torture_pki_generate_key_ecdsa(void **state)
     rc = ssh_pki_export_privkey_to_pubkey(key, &pubkey);
     assert_int_equal(rc, SSH_OK);
     assert_non_null(pubkey);
-    sign = pki_do_sign(key, ECDSA_HASH, 20, SSH_DIGEST_SHA384);
+    sign = pki_do_sign(key, INPUT, sizeof(INPUT), SSH_DIGEST_SHA384);
     assert_non_null(sign);
-    rc = pki_signature_verify(session, sign, pubkey, ECDSA_HASH, 20);
+    rc = pki_signature_verify(session, sign, pubkey, INPUT, sizeof(INPUT));
     assert_true(rc == SSH_OK);
     type = ssh_key_type(key);
     assert_true(type == SSH_KEYTYPE_ECDSA_P384);
@@ -563,9 +563,9 @@ static void torture_pki_generate_key_ecdsa(void **state)
     rc = ssh_pki_export_privkey_to_pubkey(key, &pubkey);
     assert_int_equal(rc, SSH_OK);
     assert_non_null(pubkey);
-    sign = pki_do_sign(key, ECDSA_HASH, 20, SSH_DIGEST_SHA512);
+    sign = pki_do_sign(key, INPUT, sizeof(INPUT), SSH_DIGEST_SHA512);
     assert_non_null(sign);
-    rc = pki_signature_verify(session, sign, pubkey, ECDSA_HASH, 20);
+    rc = pki_signature_verify(session, sign, pubkey, INPUT, sizeof(INPUT));
     assert_true(rc == SSH_OK);
     type = ssh_key_type(key);
     assert_true(type == SSH_KEYTYPE_ECDSA_P521);
@@ -585,9 +585,9 @@ static void torture_pki_generate_key_ecdsa(void **state)
     rc = ssh_pki_export_privkey_to_pubkey(key, &pubkey);
     assert_int_equal(rc, SSH_OK);
     assert_non_null(pubkey);
-    sign = pki_do_sign(key, ECDSA_HASH, 20, SSH_DIGEST_SHA512);
+    sign = pki_do_sign(key, INPUT, sizeof(INPUT), SSH_DIGEST_SHA512);
     assert_non_null(sign);
-    rc = pki_signature_verify(session, sign, pubkey, ECDSA_HASH, 20);
+    rc = pki_signature_verify(session, sign, pubkey, INPUT, sizeof(INPUT));
     assert_true(rc == SSH_OK);
     type = ssh_key_type(key);
     assert_true(type == SSH_KEYTYPE_ECDSA_P521);
@@ -609,6 +609,7 @@ static void torture_pki_ecdsa_cert_verify(void **state)
     ssh_key privkey = NULL, cert = NULL;
     ssh_signature sign = NULL;
     ssh_session session=ssh_new();
+    enum ssh_digest_e hash_type;
     (void) state;
 
     rc = ssh_pki_import_privkey_file(LIBSSH_ECDSA_TESTKEY,
@@ -623,9 +624,12 @@ static void torture_pki_ecdsa_cert_verify(void **state)
     assert_true(rc == 0);
     assert_non_null(cert);
 
-    sign = pki_do_sign(privkey, ECDSA_HASH, 20, SSH_DIGEST_SHA256);
+    /* Get the hash type to be used in the signature based on the key type */
+    hash_type = ssh_key_type_to_hash(session, privkey->type);
+
+    sign = pki_do_sign(privkey, INPUT, sizeof(INPUT), hash_type);
     assert_non_null(sign);
-    rc = pki_signature_verify(session, sign, cert, ECDSA_HASH, 20);
+    rc = pki_signature_verify(session, sign, cert, INPUT, sizeof(INPUT));
     assert_true(rc == SSH_OK);
     ssh_signature_free(sign);
     SSH_KEY_FREE(privkey);
@@ -674,23 +678,80 @@ static void torture_pki_sign_data_ecdsa(void **state)
     assert_int_equal(rc, SSH_OK);
     assert_non_null(key);
 
-    /* Test using automatic digest */
-    rc = test_sign_verify_data(key, SSH_DIGEST_AUTO, ECDSA_HASH, 20);
-    assert_int_equal(rc, SSH_OK);
-
-    /* Test using SHA1 */
-    rc = test_sign_verify_data(key, SSH_DIGEST_SHA1, ECDSA_HASH, 20);
-    assert_int_equal(rc, SSH_OK);
-
     /* Test using SHA256 */
-    rc = test_sign_verify_data(key, SSH_DIGEST_SHA256, ECDSA_HASH, 20);
-    assert_int_equal(rc, SSH_OK);
-
-    /* Test using SHA512 */
-    rc = test_sign_verify_data(key, SSH_DIGEST_SHA512, ECDSA_HASH, 20);
+    rc = test_sign_verify_data(key, SSH_DIGEST_SHA256, INPUT, sizeof(INPUT));
     assert_int_equal(rc, SSH_OK);
 
     /* Cleanup */
+    SSH_KEY_FREE(key);
+}
+
+static void torture_pki_fail_sign_with_incompatible_hash(void **state)
+{
+    int rc;
+    ssh_key key = NULL;
+    ssh_key pubkey = NULL;
+    ssh_signature sig, bad_sig;
+
+    (void) state;
+
+    /* Setup */
+    rc = ssh_pki_generate(SSH_KEYTYPE_ECDSA_P256, 256, &key);
+    assert_int_equal(rc, SSH_OK);
+    assert_non_null(key);
+
+    /* Get the public key to verify signature */
+    rc = ssh_pki_export_privkey_to_pubkey(key, &pubkey);
+    assert_int_equal(rc, SSH_OK);
+    assert_non_null(pubkey);
+
+    /* Sign the buffer */
+    sig = pki_sign_data(key, SSH_DIGEST_SHA256, INPUT, sizeof(INPUT));
+    assert_non_null(sig);
+
+    /* Verify signature */
+    rc = pki_verify_data_signature(sig, pubkey, INPUT, sizeof(INPUT));
+    assert_int_equal(rc, SSH_OK);
+
+    /* Test if signature fails with SSH_DIGEST_AUTO */
+    bad_sig = pki_sign_data(key, SSH_DIGEST_AUTO, INPUT, sizeof(INPUT));
+    assert_null(bad_sig);
+
+    /* Test if verification fails with SSH_DIGEST_AUTO */
+    sig->hash_type = SSH_DIGEST_AUTO;
+    rc = pki_verify_data_signature(sig, pubkey, INPUT, sizeof(INPUT));
+    assert_int_not_equal(rc, SSH_OK);
+
+    /* Test if signature fails with SSH_DIGEST_SHA1 */
+    bad_sig = pki_sign_data(key, SSH_DIGEST_SHA1, INPUT, sizeof(INPUT));
+    assert_null(bad_sig);
+
+    /* Test if verification fails with SSH_DIGEST_SHA1 */
+    sig->hash_type = SSH_DIGEST_SHA1;
+    rc = pki_verify_data_signature(sig, pubkey, INPUT, sizeof(INPUT));
+    assert_int_not_equal(rc, SSH_OK);
+
+    /* Test if signature fails with SSH_DIGEST_SHA384 */
+    bad_sig = pki_sign_data(key, SSH_DIGEST_SHA384, INPUT, sizeof(INPUT));
+    assert_null(bad_sig);
+
+    /* Test if verification fails with SSH_DIGEST_SHA384 */
+    sig->hash_type = SSH_DIGEST_SHA384;
+    rc = pki_verify_data_signature(sig, pubkey, INPUT, sizeof(INPUT));
+    assert_int_not_equal(rc, SSH_OK);
+
+    /* Test if signature fails with SSH_DIGEST_SHA512 */
+    bad_sig = pki_sign_data(key, SSH_DIGEST_SHA512, INPUT, sizeof(INPUT));
+    assert_null(bad_sig);
+
+    /* Test if verification fails with SSH_DIGEST_SHA512 */
+    sig->hash_type = SSH_DIGEST_SHA512;
+    rc = pki_verify_data_signature(sig, pubkey, INPUT, sizeof(INPUT));
+    assert_int_not_equal(rc, SSH_OK);
+
+    /* Cleanup */
+    ssh_signature_free(sig);
+    SSH_KEY_FREE(pubkey);
     SSH_KEY_FREE(key);
 }
 
@@ -924,6 +985,7 @@ int torture_run_tests(void) {
                                         teardown),
 #endif /* HAVE_LIBCRYPTO */
         cmocka_unit_test(torture_pki_sign_data_ecdsa),
+        cmocka_unit_test(torture_pki_fail_sign_with_incompatible_hash),
         cmocka_unit_test_setup_teardown(torture_pki_ecdsa_name256,
                                         setup_ecdsa_key_256,
                                         teardown),

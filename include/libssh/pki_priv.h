@@ -61,6 +61,8 @@ int pki_key_compare(const ssh_key k1,
                     const ssh_key k2,
                     enum ssh_keycmp_e what);
 
+int pki_key_check_hash_compatible(ssh_key key,
+                                  enum ssh_digest_e hash_type);
 /* SSH Private Key Functions */
 enum ssh_keytypes_e pki_privatekey_type_from_string(const char *privkey);
 ssh_key pki_private_key_from_base64(const char *b64_key,

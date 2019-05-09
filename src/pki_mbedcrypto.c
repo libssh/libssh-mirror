@@ -1040,6 +1040,12 @@ int pki_signature_verify(ssh_session session, const ssh_signature sig, const
         return SSH_ERROR;
     }
 
+    /* Check if public key and hash type are compatible */
+    rc = pki_key_check_hash_compatible(key, sig->hash_type);
+    if (rc != SSH_OK) {
+        return SSH_ERROR;
+    }
+
     /* For ed25519 keys, verify using the input directly */
     if (key->type == SSH_KEYTYPE_ED25519 ||
         key->type == SSH_KEYTYPE_ED25519_CERT01)
@@ -1073,7 +1079,6 @@ static ssh_string rsa_do_sign_hash(const unsigned char *digest,
 
     switch (hash_type) {
     case SSH_DIGEST_SHA1:
-    case SSH_DIGEST_AUTO:
         md = MBEDTLS_MD_SHA1;
         break;
     case SSH_DIGEST_SHA256:
@@ -1082,8 +1087,9 @@ static ssh_string rsa_do_sign_hash(const unsigned char *digest,
     case SSH_DIGEST_SHA512:
         md = MBEDTLS_MD_SHA512;
         break;
+    case SSH_DIGEST_AUTO:
     default:
-        SSH_LOG(SSH_LOG_WARN, "Incomplatible key algorithm");
+        SSH_LOG(SSH_LOG_WARN, "Incompatible key algorithm");
         return NULL;
     }
 
@@ -1208,10 +1214,17 @@ ssh_signature pki_sign_data(const ssh_key privkey,
 {
     unsigned char hash[SHA512_DIGEST_LEN] = {0};
     uint32_t hlen = 0;
+    int rc;
 
     if (privkey == NULL || !ssh_key_is_private(privkey) || input == NULL) {
         SSH_LOG(SSH_LOG_TRACE, "Bad parameter provided to "
                                "pki_sign_data()");
+        return NULL;
+    }
+
+    /* Check if public key and hash type are compatible */
+    rc = pki_key_check_hash_compatible(privkey, hash_type);
+    if (rc != SSH_OK) {
         return NULL;
     }
 
@@ -1228,11 +1241,11 @@ ssh_signature pki_sign_data(const ssh_key privkey,
         sha512(input, input_len, hash);
         hlen = SHA512_DIGEST_LEN;
         break;
-    case SSH_DIGEST_AUTO:
     case SSH_DIGEST_SHA1:
         sha1(input, input_len, hash);
         hlen = SHA_DIGEST_LEN;
         break;
+    case SSH_DIGEST_AUTO:
     default:
         SSH_LOG(SSH_LOG_TRACE, "Unknown hash algorithm for type: %d",
                 hash_type);
@@ -1276,6 +1289,12 @@ int pki_verify_data_signature(ssh_signature signature,
         return SSH_ERROR;
     }
 
+    /* Check if public key and hash type are compatible */
+    rc = pki_key_check_hash_compatible(pubkey, signature->hash_type);
+    if (rc != SSH_OK) {
+        return SSH_ERROR;
+    }
+
     switch (signature->hash_type) {
     case SSH_DIGEST_SHA256:
         sha256(input, input_len, hash);
@@ -1292,12 +1311,12 @@ int pki_verify_data_signature(ssh_signature signature,
         hlen = SHA512_DIGEST_LEN;
         md = MBEDTLS_MD_SHA512;
         break;
-    case SSH_DIGEST_AUTO:
     case SSH_DIGEST_SHA1:
         sha1(input, input_len, hash);
         hlen = SHA_DIGEST_LEN;
         md = MBEDTLS_MD_SHA1;
         break;
+    case SSH_DIGEST_AUTO:
     default:
         SSH_LOG(SSH_LOG_TRACE, "Unknown sig->hash_type: %d",
                 signature->hash_type);

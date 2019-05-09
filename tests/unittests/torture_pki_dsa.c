@@ -15,7 +15,7 @@
 #define LIBSSH_DSA_TESTKEY_PASSPHRASE "libssh_testkey_passphrase.id_dsa"
 
 const char template[] = "temp_dir_XXXXXX";
-const unsigned char DSA_HASH[] = "12345678901234567890";
+const unsigned char INPUT[] = "12345678901234567890";
 
 struct pki_st {
     char *cwd;
@@ -208,23 +208,80 @@ static void torture_pki_sign_data_dsa(void **state)
     assert_int_equal(rc, SSH_OK);
     assert_non_null(key);
 
-    /* Test using automatic digest */
-    rc = test_sign_verify_data(key, SSH_DIGEST_AUTO, DSA_HASH, 20);
-    assert_int_equal(rc, SSH_OK);
-
     /* Test using SHA1 */
-    rc = test_sign_verify_data(key, SSH_DIGEST_SHA1, DSA_HASH, 20);
-    assert_int_equal(rc, SSH_OK);
-
-    /* Test using SHA256 */
-    rc = test_sign_verify_data(key, SSH_DIGEST_SHA256, DSA_HASH, 20);
-    assert_int_equal(rc, SSH_OK);
-
-    /* Test using SHA512 */
-    rc = test_sign_verify_data(key, SSH_DIGEST_SHA512, DSA_HASH, 20);
+    rc = test_sign_verify_data(key, SSH_DIGEST_SHA1, INPUT, sizeof(INPUT));
     assert_int_equal(rc, SSH_OK);
 
     /* Cleanup */
+    SSH_KEY_FREE(key);
+}
+
+static void torture_pki_fail_sign_with_incompatible_hash(void **state)
+{
+    int rc;
+    ssh_key key = NULL;
+    ssh_key pubkey = NULL;
+    ssh_signature sig, bad_sig;
+
+    (void) state;
+
+    /* Setup */
+    rc = ssh_pki_generate(SSH_KEYTYPE_DSS, 2048, &key);
+    assert_int_equal(rc, SSH_OK);
+    assert_non_null(key);
+
+    /* Get the public key to verify signature */
+    rc = ssh_pki_export_privkey_to_pubkey(key, &pubkey);
+    assert_int_equal(rc, SSH_OK);
+    assert_non_null(pubkey);
+
+    /* Sign the buffer */
+    sig = pki_sign_data(key, SSH_DIGEST_SHA1, INPUT, sizeof(INPUT));
+    assert_non_null(sig);
+
+    /* Verify signature */
+    rc = pki_verify_data_signature(sig, pubkey, INPUT, sizeof(INPUT));
+    assert_int_equal(rc, SSH_OK);
+
+    /* Test if signature fails with SSH_DIGEST_AUTO */
+    bad_sig = pki_sign_data(key, SSH_DIGEST_AUTO, INPUT, sizeof(INPUT));
+    assert_null(bad_sig);
+
+    /* Test if verification fails with SSH_DIGEST_AUTO */
+    sig->hash_type = SSH_DIGEST_AUTO;
+    rc = pki_verify_data_signature(sig, pubkey, INPUT, sizeof(INPUT));
+    assert_int_not_equal(rc, SSH_OK);
+
+    /* Test if signature fails with SSH_DIGEST_SHA256 */
+    bad_sig = pki_sign_data(key, SSH_DIGEST_SHA256, INPUT, sizeof(INPUT));
+    assert_null(bad_sig);
+
+    /* Test if verification fails with SSH_DIGEST_SHA256 */
+    sig->hash_type = SSH_DIGEST_SHA256;
+    rc = pki_verify_data_signature(sig, pubkey, INPUT, sizeof(INPUT));
+    assert_int_not_equal(rc, SSH_OK);
+
+    /* Test if signature fails with SSH_DIGEST_SHA384 */
+    bad_sig = pki_sign_data(key, SSH_DIGEST_SHA384, INPUT, sizeof(INPUT));
+    assert_null(bad_sig);
+
+    /* Test if verification fails with SSH_DIGEST_SHA384 */
+    sig->hash_type = SSH_DIGEST_SHA384;
+    rc = pki_verify_data_signature(sig, pubkey, INPUT, sizeof(INPUT));
+    assert_int_not_equal(rc, SSH_OK);
+
+    /* Test if signature fails with SSH_DIGEST_SHA512 */
+    bad_sig = pki_sign_data(key, SSH_DIGEST_SHA512, INPUT, sizeof(INPUT));
+    assert_null(bad_sig);
+
+    /* Test if verification fails with SSH_DIGEST_SHA512 */
+    sig->hash_type = SSH_DIGEST_SHA512;
+    rc = pki_verify_data_signature(sig, pubkey, INPUT, sizeof(INPUT));
+    assert_int_not_equal(rc, SSH_OK);
+
+    /* Cleanup */
+    ssh_signature_free(sig);
+    SSH_KEY_FREE(pubkey);
     SSH_KEY_FREE(key);
 }
 
@@ -684,9 +741,9 @@ static void torture_pki_dsa_generate_key(void **state)
     rc = ssh_pki_export_privkey_to_pubkey(key, &pubkey);
     assert_int_equal(rc, SSH_OK);
     assert_non_null(pubkey);
-    sign = pki_do_sign(key, DSA_HASH, 20, SSH_DIGEST_AUTO);
+    sign = pki_do_sign(key, INPUT, sizeof(INPUT), SSH_DIGEST_SHA1);
     assert_non_null(sign);
-    rc = pki_signature_verify(session, sign, pubkey, DSA_HASH, 20);
+    rc = pki_signature_verify(session, sign, pubkey, INPUT, sizeof(INPUT));
     assert_true(rc == SSH_OK);
     ssh_signature_free(sign);
     SSH_KEY_FREE(key);
@@ -698,9 +755,9 @@ static void torture_pki_dsa_generate_key(void **state)
     rc = ssh_pki_export_privkey_to_pubkey(key, &pubkey);
     assert_int_equal(rc, SSH_OK);
     assert_non_null(pubkey);
-    sign = pki_do_sign(key, DSA_HASH, 20, SSH_DIGEST_AUTO);
+    sign = pki_do_sign(key, INPUT, sizeof(INPUT), SSH_DIGEST_SHA1);
     assert_non_null(sign);
-    rc = pki_signature_verify(session, sign, pubkey, DSA_HASH, 20);
+    rc = pki_signature_verify(session, sign, pubkey, INPUT, sizeof(INPUT));
     assert_true(rc == SSH_OK);
     ssh_signature_free(sign);
     SSH_KEY_FREE(key);
@@ -712,9 +769,9 @@ static void torture_pki_dsa_generate_key(void **state)
     rc = ssh_pki_export_privkey_to_pubkey(key, &pubkey);
     assert_int_equal(rc, SSH_OK);
     assert_non_null(pubkey);
-    sign = pki_do_sign(key, DSA_HASH, 20, SSH_DIGEST_AUTO);
+    sign = pki_do_sign(key, INPUT, sizeof(INPUT), SSH_DIGEST_SHA1);
     assert_non_null(sign);
-    rc = pki_signature_verify(session, sign, pubkey, DSA_HASH, 20);
+    rc = pki_signature_verify(session, sign, pubkey, INPUT, sizeof(INPUT));
     assert_true(rc == SSH_OK);
     ssh_signature_free(sign);
     SSH_KEY_FREE(key);
@@ -743,9 +800,9 @@ static void torture_pki_dsa_cert_verify(void **state)
     assert_true(rc == 0);
     assert_non_null(cert);
 
-    sign = pki_do_sign(privkey, DSA_HASH, 20, SSH_DIGEST_AUTO);
+    sign = pki_do_sign(privkey, INPUT, sizeof(INPUT), SSH_DIGEST_SHA1);
     assert_non_null(sign);
-    rc = pki_signature_verify(session, sign, cert, DSA_HASH, 20);
+    rc = pki_signature_verify(session, sign, cert, INPUT, sizeof(INPUT));
     assert_true(rc == SSH_OK);
     ssh_signature_free(sign);
     SSH_KEY_FREE(privkey);
@@ -782,6 +839,7 @@ int torture_run_tests(void)
                                  teardown),
 #endif
         cmocka_unit_test(torture_pki_sign_data_dsa),
+        cmocka_unit_test(torture_pki_fail_sign_with_incompatible_hash),
         cmocka_unit_test(torture_pki_dsa_import_privkey_base64_passphrase),
         cmocka_unit_test(torture_pki_dsa_import_openssh_privkey_base64_passphrase),
 
