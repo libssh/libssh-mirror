@@ -21,6 +21,7 @@ extern LIBSSH_THREAD int ssh_log_level;
 #define LIBSSH_TESTCONFIG11 "libssh_testconfig11.tmp"
 #define LIBSSH_TESTCONFIG12 "libssh_testconfig12.tmp"
 #define LIBSSH_TESTCONFIGGLOB "libssh_testc*[36].tmp"
+#define LIBSSH_TEST_PUBKEYACCEPTEDKEYTYPES "libssh_test_PubkeyAcceptedKeyTypes.tmp"
 
 #define USERNAME "testuser"
 #define PROXYCMD "ssh -q -W %h:%p gateway.example.com"
@@ -50,6 +51,7 @@ static int setup_config_files(void **state)
     unlink(LIBSSH_TESTCONFIG10);
     unlink(LIBSSH_TESTCONFIG11);
     unlink(LIBSSH_TESTCONFIG12);
+    unlink(LIBSSH_TEST_PUBKEYACCEPTEDKEYTYPES);
 
     torture_write_file(LIBSSH_TESTCONFIG1,
                        "User "USERNAME"\nInclude "LIBSSH_TESTCONFIG2"\n\n");
@@ -180,6 +182,9 @@ static int setup_config_files(void **state)
                        "\tRekeyLimit default 9600\n"
                        "");
 
+    torture_write_file(LIBSSH_TEST_PUBKEYACCEPTEDKEYTYPES,
+                       "PubkeyAcceptedKeyTypes "PUBKEYACCEPTEDTYPES"\n");
+
     session = ssh_new();
 
     verbosity = torture_libssh_verbosity();
@@ -204,6 +209,7 @@ static int teardown(void **state)
     unlink(LIBSSH_TESTCONFIG10);
     unlink(LIBSSH_TESTCONFIG11);
     unlink(LIBSSH_TESTCONFIG12);
+    unlink(LIBSSH_TEST_PUBKEYACCEPTEDKEYTYPES);
 
     ssh_free(*state);
 
@@ -836,6 +842,19 @@ static void torture_config_rekey(void **state)
 
 }
 
+/**
+ * @brief test ssh_config_parse_file with PubkeyAcceptedKeyTypes
+ */
+static void torture_config_pubkeyacceptedkeytypes(void **state)
+{
+    ssh_session session = *state;
+    int rc;
+
+    rc = ssh_config_parse_file(session, LIBSSH_TEST_PUBKEYACCEPTEDKEYTYPES);
+    assert_int_equal(rc, SSH_OK);
+    assert_string_equal(session->opts.pubkey_accepted_types, PUBKEYACCEPTEDTYPES);
+}
+
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
@@ -848,6 +867,7 @@ int torture_run_tests(void) {
         cmocka_unit_test(torture_config_match),
         cmocka_unit_test(torture_config_proxyjump),
         cmocka_unit_test(torture_config_rekey),
+        cmocka_unit_test(torture_config_pubkeyacceptedkeytypes),
     };
 
 

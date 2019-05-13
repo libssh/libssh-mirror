@@ -147,6 +147,7 @@ static struct ssh_config_keyword_table_s ssh_config_keyword_table[] = {
   { "tunnel", SOC_NA},
   { "tunneldevice", SOC_NA},
   { "xauthlocation", SOC_NA},
+  { "pubkeyacceptedkeytypes", SOC_PUBKEYACCEPTEDTYPES},
   { NULL, SOC_UNKNOWN }
 };
 
