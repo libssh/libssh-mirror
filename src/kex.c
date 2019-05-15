@@ -186,92 +186,6 @@ static const char *ssh_kex_descriptions[] = {
   NULL
 };
 
-/* tokenize will return a token of strings delimited by ",". the first element has to be freed */
-static char **tokenize(const char *chain){
-    char **tokens;
-    size_t n=1;
-    size_t i=0;
-    char *tmp;
-    char *ptr;
-
-    tmp = strdup(chain);
-    if (tmp == NULL) {
-      return NULL;
-    }
-    ptr = tmp;
-    while(*ptr){
-        if(*ptr==','){
-            n++;
-            *ptr=0;
-        }
-        ptr++;
-    }
-    /* now n contains the number of tokens, the first possibly empty if the list was empty too e.g. "" */
-    tokens = calloc(n + 1, sizeof(char *)); /* +1 for the null */
-    if (tokens == NULL) {
-      SAFE_FREE(tmp);
-      return NULL;
-    }
-    ptr=tmp;
-    for(i=0;i<n;i++){
-        tokens[i]=ptr;
-        while(*ptr)
-            ptr++; // find a zero
-        ptr++; // then go one step further
-    }
-    tokens[i]=NULL;
-    return tokens;
-}
-
-/* same as tokenize(), but with spaces instead of ',' */
-/* TODO FIXME rewrite me! */
-char **ssh_space_tokenize(const char *chain){
-    char **tokens;
-    size_t n=1;
-    size_t i=0;
-    char *tmp;
-    char *ptr;
-
-    tmp = strdup(chain);
-    if (tmp == NULL) {
-      return NULL;
-    }
-    ptr = tmp;
-
-    while(*ptr==' ')
-        ++ptr; /* skip initial spaces */
-    while(*ptr){
-        if(*ptr==' '){
-            n++; /* count one token per word */
-            *ptr=0;
-            while(*(ptr+1)==' '){ /* don't count if the tokens have more than 2 spaces */
-                *(ptr++)=0;
-            }
-        }
-        ptr++;
-    }
-    /* now n contains the number of tokens, the first possibly empty if the list was empty too e.g. "" */
-    tokens = calloc(n + 1, sizeof(char *)); /* +1 for the null */
-    if (tokens == NULL) {
-      SAFE_FREE(tmp);
-      return NULL;
-    }
-    ptr=tmp; /* we don't pass the initial spaces because the "tmp" pointer is needed by the caller */
-                    /* function to free the tokens. */
-    for(i=0;i<n;i++){
-        tokens[i]=ptr;
-        if(i!=n-1){
-            while(*ptr)
-                ptr++; // find a zero
-            while(!*(ptr+1))
-                ++ptr; /* if the zero is followed by other zeros, go through them */
-            ptr++; // then go one step further
-        }
-    }
-    tokens[i]=NULL;
-    return tokens;
-}
-
 const char *ssh_kex_get_default_methods(uint32_t algo)
 {
     if (algo >= KEX_METHODS_SIZE) {
@@ -306,37 +220,33 @@ const char *ssh_kex_get_description(uint32_t algo) {
  */
 static int cmp_first_kex_algo(const char *client_str,
                               const char *server_str) {
+    size_t client_kex_len;
+    size_t server_kex_len;
+
+    char *colon;
+
     int is_wrong = 1;
-    char **server_str_tokens = NULL;
-    char **client_str_tokens = NULL;
 
-    if ((client_str == NULL) || (server_str == NULL)) {
-        goto out;
+    colon = strchr(client_str, ',');
+    if (colon == NULL) {
+        client_kex_len = strlen(client_str);
+    } else {
+        client_kex_len = colon - client_str;
     }
 
-    client_str_tokens = tokenize(client_str);
-
-    if (client_str_tokens == NULL) {
-        goto out;
+    colon = strchr(server_str, ',');
+    if (colon == NULL) {
+        server_kex_len = strlen(server_str);
+    } else {
+        server_kex_len = colon - server_str;
     }
 
-    if (client_str_tokens[0] == NULL) {
-        goto freeout;
+    if (client_kex_len != server_kex_len) {
+        return is_wrong;
     }
 
-    server_str_tokens = tokenize(server_str);
-    if (server_str_tokens == NULL) {
-        goto freeout;
-    }
+    is_wrong = (strncmp(client_str, server_str, client_kex_len) != 0);
 
-    is_wrong = (strcmp(client_str_tokens[0], server_str_tokens[0]) != 0);
-
-    SAFE_FREE(server_str_tokens[0]);
-    SAFE_FREE(server_str_tokens);
-freeout:
-    SAFE_FREE(client_str_tokens[0]);
-    SAFE_FREE(client_str_tokens);
-out:
     return is_wrong;
 }
 
