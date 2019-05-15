@@ -1608,6 +1608,10 @@ static int ssh_bind_set_algo(ssh_bind sshbind,
  *                        paths of configuration files to
  *                        ssh_bind_options_parse_config().
  *
+ *                      - SSH_BIND_OPTIONS_PUBKEY_ACCEPTED_KEY_TYPES:
+ *                        Set the public key algorithm accepted by the server
+ *                        (const char *, comma-separated list).
+ *
  * @param  value        The value to set. This is a generic pointer and the
  *                      datatype which should be used is described at the
  *                      corresponding value of type above.
@@ -1910,6 +1914,24 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
                 ssh_set_error_oom(sshbind);
                 return -1;
             }
+        }
+        break;
+    case SSH_BIND_OPTIONS_PUBKEY_ACCEPTED_KEY_TYPES:
+        v = value;
+        if (v == NULL || v[0] == '\0') {
+            ssh_set_error_invalid(sshbind);
+            return -1;
+        } else {
+            p = ssh_keep_known_algos(SSH_HOSTKEYS, v);
+            if (p == NULL) {
+                ssh_set_error(sshbind, SSH_REQUEST_DENIED,
+                    "Setting method: no known public key algorithm (%s)",
+                     v);
+                return -1;
+            }
+
+            SAFE_FREE(sshbind->pubkey_accepted_key_types);
+            sshbind->pubkey_accepted_key_types = p;
         }
         break;
     default:

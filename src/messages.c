@@ -868,11 +868,28 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
                                            msg->auth_request.pubkey,
                                            &sig);
         if (rc == SSH_OK) {
-            rc = ssh_pki_signature_verify(session,
-                                          sig,
-                                          msg->auth_request.pubkey,
-                                          ssh_buffer_get(digest),
-                                          ssh_buffer_get_len(digest));
+            /* Check if the signature from client matches server preferences */
+            if (session->opts.pubkey_accepted_types) {
+                if (!ssh_match_group(session->opts.pubkey_accepted_types,
+                            sig->type_c))
+                {
+                    ssh_set_error(session,
+                            SSH_FATAL,
+                            "Public key from client (%s) doesn't match server "
+                            "preference (%s)",
+                            sig->type_c,
+                            session->opts.pubkey_accepted_types);
+                    rc = SSH_ERROR;
+                }
+            }
+
+            if (rc == SSH_OK) {
+                rc = ssh_pki_signature_verify(session,
+                                              sig,
+                                              msg->auth_request.pubkey,
+                                              ssh_buffer_get(digest),
+                                              ssh_buffer_get_len(digest));
+            }
         }
         ssh_string_free(sig_blob);
         ssh_buffer_free(digest);

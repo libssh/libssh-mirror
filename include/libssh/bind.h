@@ -48,6 +48,7 @@ struct ssh_bind_struct {
   int toaccept;
   bool config_processed;
   char *config_dir;
+  char *pubkey_accepted_key_types;
 };
 
 struct ssh_poll_handle_struct *ssh_bind_get_poll(struct ssh_bind_struct

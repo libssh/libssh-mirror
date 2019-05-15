@@ -180,11 +180,14 @@ static int ssh_server_send_extensions(ssh_session session) {
     const char *hostkey_algorithms;
 
     SSH_LOG(SSH_LOG_PACKET, "Sending SSH_MSG_EXT_INFO");
-    /*
-     * We can list here all the default hostkey methods, since
-     * they already contain the SHA2 extension algorithms
-     */
-    hostkey_algorithms = ssh_kex_get_default_methods(SSH_HOSTKEYS);
+
+    if (session->opts.pubkey_accepted_types) {
+        hostkey_algorithms = session->opts.pubkey_accepted_types;
+    } else {
+        /* There are no restrictions to the accepted public keys */
+        hostkey_algorithms = ssh_kex_get_default_methods(SSH_HOSTKEYS);
+    }
+
     rc = ssh_buffer_pack(session->out_buffer,
                          "bdss",
                          SSH2_MSG_EXT_INFO,

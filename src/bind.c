@@ -38,6 +38,7 @@
 #include "libssh/buffer.h"
 #include "libssh/socket.h"
 #include "libssh/session.h"
+#include "libssh/token.h"
 
 /**
  * @addtogroup libssh_server
@@ -402,6 +403,7 @@ void ssh_bind_free(ssh_bind sshbind){
   SAFE_FREE(sshbind->banner);
   SAFE_FREE(sshbind->bindaddr);
   SAFE_FREE(sshbind->config_dir);
+  SAFE_FREE(sshbind->pubkey_accepted_key_types);
 
   SAFE_FREE(sshbind->dsakey);
   SAFE_FREE(sshbind->rsakey);
@@ -454,6 +456,29 @@ int ssh_bind_accept_fd(ssh_bind sshbind, ssh_session session, socket_t fd){
       if (session->opts.bindaddr == NULL) {
         return SSH_ERROR;
       }
+    }
+
+    if (sshbind->pubkey_accepted_key_types != NULL) {
+        if (session->opts.pubkey_accepted_types == NULL) {
+            session->opts.pubkey_accepted_types = strdup(sshbind->pubkey_accepted_key_types);
+            if (session->opts.pubkey_accepted_types == NULL) {
+                ssh_set_error_oom(sshbind);
+                return SSH_ERROR;
+            }
+        } else {
+            char *p;
+            /* If something was set to the session prior to calling this
+             * function, keep only what is allowed by the options set in
+             * sshbind */
+            p = ssh_find_all_matching(sshbind->pubkey_accepted_key_types,
+                                      session->opts.pubkey_accepted_types);
+            if (p == NULL) {
+                return SSH_ERROR;
+            }
+
+            SAFE_FREE(session->opts.pubkey_accepted_types);
+            session->opts.pubkey_accepted_types = p;
+        }
     }
 
     session->common.log_verbosity = sshbind->common.log_verbosity;

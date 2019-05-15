@@ -1358,6 +1358,60 @@ static void torture_bind_options_config_dir(void **state)
     assert_string_equal(bind->config_dir, replacement_dir);
 }
 
+static void torture_bind_options_set_pubkey_accepted_key_types(void **state)
+{
+    struct bind_st *test_state;
+    ssh_bind bind;
+    int rc;
+
+    assert_non_null(state);
+    test_state = *((struct bind_st **)state);
+    assert_non_null(test_state);
+    assert_non_null(test_state->bind);
+    bind = test_state->bind;
+
+    /* Test known Pubkey Types */
+    rc = ssh_bind_options_set(bind, SSH_BIND_OPTIONS_PUBKEY_ACCEPTED_KEY_TYPES,
+        "ssh-ed25519,ecdsa-sha2-nistp384,ssh-rsa");
+    assert_int_equal(rc, 0);
+    assert_non_null(bind->pubkey_accepted_key_types);
+    assert_string_equal(bind->pubkey_accepted_key_types,
+        "ssh-ed25519,ecdsa-sha2-nistp384,ssh-rsa");
+
+    SAFE_FREE(bind->pubkey_accepted_key_types);
+
+    /* Test with some unknown type */
+    rc = ssh_bind_options_set(bind, SSH_BIND_OPTIONS_PUBKEY_ACCEPTED_KEY_TYPES,
+        "ssh-ed25519,ecdsa-sha2-nistp384,unknown-type,ssh-rsa");
+    assert_int_equal(rc, 0);
+    assert_non_null(bind->pubkey_accepted_key_types);
+    assert_string_equal(bind->pubkey_accepted_key_types,
+        "ssh-ed25519,ecdsa-sha2-nistp384,ssh-rsa");
+
+    SAFE_FREE(bind->pubkey_accepted_key_types);
+
+    /* Test with only unknown type */
+    rc = ssh_bind_options_set(bind, SSH_BIND_OPTIONS_PUBKEY_ACCEPTED_KEY_TYPES,
+        "unknown-type");
+    assert_int_equal(rc, -1);
+    assert_null(bind->pubkey_accepted_key_types);
+
+    /* Test with something set and then try unknown type */
+    rc = ssh_bind_options_set(bind, SSH_BIND_OPTIONS_PUBKEY_ACCEPTED_KEY_TYPES,
+        "ssh-ed25519,ecdsa-sha2-nistp384,ssh-rsa");
+    assert_int_equal(rc, 0);
+    assert_non_null(bind->pubkey_accepted_key_types);
+    assert_string_equal(bind->pubkey_accepted_key_types,
+        "ssh-ed25519,ecdsa-sha2-nistp384,ssh-rsa");
+    rc = ssh_bind_options_set(bind, SSH_BIND_OPTIONS_PUBKEY_ACCEPTED_KEY_TYPES,
+        "unknown-type");
+    assert_int_equal(rc, -1);
+
+    /* Check that nothing changed */
+    assert_non_null(bind->pubkey_accepted_key_types);
+    assert_string_equal(bind->pubkey_accepted_key_types,
+        "ssh-ed25519,ecdsa-sha2-nistp384,ssh-rsa");
+}
 
 #endif /* WITH_SERVER */
 
@@ -1387,7 +1441,7 @@ int torture_run_tests(void) {
         cmocka_unit_test_setup_teardown(torture_options_copy, setup, teardown),
         cmocka_unit_test_setup_teardown(torture_options_config_host, setup, teardown),
         cmocka_unit_test_setup_teardown(torture_options_config_match,
-                                        setup, teardown)
+                                        setup, teardown),
     };
 
 #ifdef WITH_SERVER
@@ -1428,6 +1482,8 @@ int torture_run_tests(void) {
                 sshbind_setup, sshbind_teardown),
         cmocka_unit_test_setup_teardown(torture_bind_options_config_dir,
                 sshbind_setup, sshbind_teardown),
+        cmocka_unit_test_setup_teardown(torture_bind_options_set_pubkey_accepted_key_types,
+                                        sshbind_setup, sshbind_teardown),
     };
 #endif /* WITH_SERVER */
 
