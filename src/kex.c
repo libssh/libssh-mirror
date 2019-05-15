@@ -43,6 +43,7 @@
 #include "libssh/misc.h"
 #include "libssh/pki.h"
 #include "libssh/bignum.h"
+#include "libssh/token.h"
 
 #ifdef WITH_BLOWFISH_CIPHER
 # if defined(HAVE_OPENSSL_BLOWFISH_H) || defined(HAVE_LIBGCRYPT) || defined(HAVE_LIBMBEDCRYPTO)
@@ -294,117 +295,6 @@ const char *ssh_kex_get_description(uint32_t algo) {
   }
 
   return ssh_kex_descriptions[algo];
-}
-
-/* find_matching gets 2 parameters : a list of available objects (available_d), separated by colons,*/
-/* and a list of preferred objects (preferred_d) */
-/* it will return a strduped pointer on the first preferred object found in the available objects list */
-
-char *ssh_find_matching(const char *available_d, const char *preferred_d){
-    char ** tok_available, **tok_preferred;
-    int i_avail, i_pref;
-    char *ret;
-
-    if ((available_d == NULL) || (preferred_d == NULL)) {
-      return NULL; /* don't deal with null args */
-    }
-
-    tok_available = tokenize(available_d);
-    if (tok_available == NULL) {
-      return NULL;
-    }
-
-    tok_preferred = tokenize(preferred_d);
-    if (tok_preferred == NULL) {
-      SAFE_FREE(tok_available[0]);
-      SAFE_FREE(tok_available);
-      return NULL;
-    }
-
-    for(i_pref=0; tok_preferred[i_pref] ; ++i_pref){
-      for(i_avail=0; tok_available[i_avail]; ++i_avail){
-        if(strcmp(tok_available[i_avail],tok_preferred[i_pref]) == 0){
-          /* match */
-          ret=strdup(tok_available[i_avail]);
-          /* free the tokens */
-          SAFE_FREE(tok_available[0]);
-          SAFE_FREE(tok_preferred[0]);
-          SAFE_FREE(tok_available);
-          SAFE_FREE(tok_preferred);
-          return ret;
-        }
-      }
-    }
-    SAFE_FREE(tok_available[0]);
-    SAFE_FREE(tok_preferred[0]);
-    SAFE_FREE(tok_available);
-    SAFE_FREE(tok_preferred);
-    return NULL;
-}
-
-static char *ssh_find_all_matching(const char *available_d,
-                                   const char *preferred_d)
-{
-    char **tok_available, **tok_preferred;
-    int i_avail, i_pref;
-    char *ret;
-    unsigned max, len, pos = 0;
-
-    if ((available_d == NULL) || (preferred_d == NULL)) {
-        return NULL; /* don't deal with null args */
-    }
-
-    max = MAX(strlen(available_d), strlen(preferred_d));
-
-    ret = malloc(max+1);
-    if (ret == NULL) {
-      return NULL;
-    }
-    ret[0] = 0;
-
-    tok_available = tokenize(available_d);
-    if (tok_available == NULL) {
-        SAFE_FREE(ret);
-        return NULL;
-    }
-
-    tok_preferred = tokenize(preferred_d);
-    if (tok_preferred == NULL) {
-        SAFE_FREE(ret);
-        SAFE_FREE(tok_available[0]);
-        SAFE_FREE(tok_available);
-        return NULL;
-    }
-
-    for (i_pref = 0; tok_preferred[i_pref] ; ++i_pref) {
-        for (i_avail = 0; tok_available[i_avail]; ++i_avail) {
-            int cmp = strcmp(tok_available[i_avail],tok_preferred[i_pref]);
-            if (cmp == 0) {
-                /* match */
-                if (pos != 0) {
-                    ret[pos] = ',';
-                    pos++;
-                }
-
-                len = strlen(tok_available[i_avail]);
-                memcpy(&ret[pos], tok_available[i_avail], len);
-                pos += len;
-                ret[pos] = '\0';
-            }
-        }
-    }
-
-    if (ret[0] == '\0') {
-        SAFE_FREE(ret);
-        ret = NULL;
-    }
-
-    SAFE_FREE(tok_available[0]);
-    SAFE_FREE(tok_preferred[0]);
-    SAFE_FREE(tok_available);
-    SAFE_FREE(tok_preferred);
-
-    return ret;
 }
 
 /**
