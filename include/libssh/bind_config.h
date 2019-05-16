@@ -46,6 +46,7 @@ enum ssh_bind_config_opcode_e {
     BIND_CFG_MACS,
     BIND_CFG_KEXALGORITHMS,
     BIND_CFG_MATCH,
+    BIND_CFG_PUBKEY_ACCEPTED_KEY_TYPES,
 
     BIND_CFG_MAX /* Keep this one last in the list */
 };

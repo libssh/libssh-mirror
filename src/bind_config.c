@@ -93,6 +93,11 @@ ssh_bind_config_keyword_table[] = {
         .allowed_in_match = true
     },
     {
+        .name   = "pubkeyacceptedkeytypes",
+        .opcode = BIND_CFG_PUBKEY_ACCEPTED_KEY_TYPES,
+        .allowed_in_match = true
+    },
+    {
         .opcode = BIND_CFG_UNKNOWN,
     }
 };
@@ -489,6 +494,13 @@ ssh_bind_config_parse_line(ssh_bind bind,
         *parser_flags |= result;
         break;
     }
+    case BIND_CFG_PUBKEY_ACCEPTED_KEY_TYPES:
+        p = ssh_config_get_str_tok(&s, NULL);
+        if (p && (*parser_flags & PARSING)) {
+            ssh_bind_options_set(bind,
+                                 SSH_BIND_OPTIONS_PUBKEY_ACCEPTED_KEY_TYPES, p);
+        }
+        break;
     case BIND_CFG_NOT_ALLOWED_IN_MATCH:
         SSH_LOG(SSH_LOG_WARN, "Option not allowed in Match block: %s, line: %d",
                 keyword, count);

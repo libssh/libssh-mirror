@@ -48,6 +48,7 @@ extern LIBSSH_THREAD int ssh_log_level;
 #define HOSTKEYALGORITHMS "ssh-ed25519,ecdsa-sha2-nistp521,ssh-rsa"
 #define HOSTKEYALGORITHMS2 "ssh-rsa"
 #define PUBKEYACCEPTEDTYPES "rsa-sha2-512,ssh-rsa,ecdsa-sha2-nistp521"
+#define PUBKEYACCEPTEDTYPES_UNKNOWN "rsa-sha2-512,ssh-rsa,unknown,ecdsa-sha2-nistp521"
 #define PUBKEYACCEPTEDTYPES2 "ssh-rsa"
 #define MACS "hmac-sha1,hmac-sha2-256,hmac-sha2-512,hmac-sha1-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com"
 #define MACS2 "hmac-sha1"
@@ -102,6 +103,12 @@ extern LIBSSH_THREAD int ssh_log_level;
 #define LIBSSH_TEST_BIND_CONFIG_MATCH_CORNER_CASES "libssh_test_bind_config_match_corner_cases"
 #define LIBSSH_TEST_BIND_CONFIG_MATCH_INVALID "libssh_test_bind_config_match_invalid"
 #define LIBSSH_TEST_BIND_CONFIG_MATCH_INVALID2 "libssh_test_bind_config_match_invalid2"
+
+#define LIBSSH_TEST_BIND_CONFIG_PUBKEY_ACCEPTED "libssh_test_bind_config_pubkey"
+#define LIBSSH_TEST_BIND_CONFIG_PUBKEY_ACCEPTED2 "libssh_test_bind_config_pubkey2"
+#define LIBSSH_TEST_BIND_CONFIG_PUBKEY_ACCEPTED_TWICE "libssh_test_bind_config_pubkey_twice"
+#define LIBSSH_TEST_BIND_CONFIG_PUBKEY_ACCEPTED_TWICE_REC "libssh_test_bind_config_pubkey_twice_rec"
+#define LIBSSH_TEST_BIND_CONFIG_PUBKEY_ACCEPTED_UNKNOWN "libssh_test_bind_config_pubkey_unknown"
 
 const char template[] = "temp_dir_XXXXXX";
 
@@ -319,6 +326,18 @@ static int setup_config_files(void **state)
                        "Match All\n"
                        "\tLogLevel "LOGLEVEL4"\n");
 
+    torture_write_file(LIBSSH_TEST_BIND_CONFIG_PUBKEY_ACCEPTED,
+                       "PubkeyAcceptedKeyTypes "PUBKEYACCEPTEDTYPES"\n");
+    torture_write_file(LIBSSH_TEST_BIND_CONFIG_PUBKEY_ACCEPTED2,
+                       "PubkeyAcceptedKeyTypes "PUBKEYACCEPTEDTYPES2"\n");
+    torture_write_file(LIBSSH_TEST_BIND_CONFIG_PUBKEY_ACCEPTED_TWICE,
+                       "PubkeyAcceptedKeyTypes "PUBKEYACCEPTEDTYPES"\n"
+                       "PubkeyAcceptedKeyTypes "PUBKEYACCEPTEDTYPES2"\n");
+    torture_write_file(LIBSSH_TEST_BIND_CONFIG_PUBKEY_ACCEPTED_TWICE_REC,
+                       "PubkeyAcceptedKeyTypes "PUBKEYACCEPTEDTYPES2"\n"
+                       "Include "LIBSSH_TEST_BIND_CONFIG_KEXALGORITHMS"\n");
+    torture_write_file(LIBSSH_TEST_BIND_CONFIG_PUBKEY_ACCEPTED_UNKNOWN,
+                       "PubkeyAcceptedKeyTypes "PUBKEYACCEPTEDTYPES_UNKNOWN"\n");
     return 0;
 }
 
@@ -692,6 +711,49 @@ static void torture_bind_config_kexalgorithms(void **state)
 
 }
 
+static void torture_bind_config_pubkey_accepted(void **state)
+{
+    struct bind_st *test_state;
+    ssh_bind bind;
+    int rc;
+
+    assert_non_null(state);
+    test_state = *((struct bind_st **)state);
+    assert_non_null(test_state);
+    assert_non_null(test_state->bind);
+    bind = test_state->bind;
+
+    rc = ssh_bind_config_parse_file(bind,
+            LIBSSH_TEST_BIND_CONFIG_PUBKEY_ACCEPTED);
+    assert_int_equal(rc, 0);
+    assert_non_null(bind->pubkey_accepted_key_types);
+    assert_string_equal(bind->pubkey_accepted_key_types, PUBKEYACCEPTEDTYPES);
+
+    rc = ssh_bind_config_parse_file(bind,
+            LIBSSH_TEST_BIND_CONFIG_PUBKEY_ACCEPTED2);
+    assert_int_equal(rc, 0);
+    assert_non_null(bind->pubkey_accepted_key_types);
+    assert_string_equal(bind->pubkey_accepted_key_types, PUBKEYACCEPTEDTYPES2);
+
+    rc = ssh_bind_config_parse_file(bind,
+            LIBSSH_TEST_BIND_CONFIG_PUBKEY_ACCEPTED_TWICE);
+    assert_int_equal(rc, 0);
+    assert_non_null(bind->pubkey_accepted_key_types);
+    assert_string_equal(bind->pubkey_accepted_key_types, PUBKEYACCEPTEDTYPES);
+
+    rc = ssh_bind_config_parse_file(bind,
+            LIBSSH_TEST_BIND_CONFIG_PUBKEY_ACCEPTED_TWICE_REC);
+    assert_int_equal(rc, 0);
+    assert_non_null(bind->pubkey_accepted_key_types);
+    assert_string_equal(bind->pubkey_accepted_key_types, PUBKEYACCEPTEDTYPES2);
+
+    rc = ssh_bind_config_parse_file(bind,
+            LIBSSH_TEST_BIND_CONFIG_PUBKEY_ACCEPTED_UNKNOWN);
+    assert_int_equal(rc, 0);
+    assert_non_null(bind->pubkey_accepted_key_types);
+    assert_string_equal(bind->pubkey_accepted_key_types, PUBKEYACCEPTEDTYPES);
+}
+
 static int assert_full_bind_config(void **state)
 {
     struct bind_st *test_state;
@@ -1033,6 +1095,8 @@ int torture_run_tests(void)
         cmocka_unit_test_setup_teardown(torture_bind_config_match_corner_cases,
                 sshbind_setup, sshbind_teardown),
         cmocka_unit_test_setup_teardown(torture_bind_config_match_invalid,
+                sshbind_setup, sshbind_teardown),
+        cmocka_unit_test_setup_teardown(torture_bind_config_pubkey_accepted,
                 sshbind_setup, sshbind_teardown),
     };
 
