@@ -320,9 +320,24 @@ int ssh_key_algorithm_allowed(ssh_session session, const char *type)
 {
     const char *allowed_list;
 
-    allowed_list = session->opts.pubkey_accepted_types;
-    if (allowed_list == NULL) {
-        allowed_list = ssh_kex_get_default_methods(SSH_HOSTKEYS);
+    if (session->client) {
+        allowed_list = session->opts.pubkey_accepted_types;
+        if (allowed_list == NULL) {
+            allowed_list = ssh_kex_get_default_methods(SSH_HOSTKEYS);
+        }
+    }
+#ifdef WITH_SERVER
+    else if (session->server) {
+        allowed_list = session->opts.wanted_methods[SSH_HOSTKEYS];
+        if (allowed_list == NULL) {
+            SSH_LOG(SSH_LOG_WARN, "Session invalid: no host key available");
+            return 0;
+        }
+    }
+#endif
+    else {
+        SSH_LOG(SSH_LOG_WARN, "Session invalid: not set as client nor server");
+        return 0;
     }
 
     SSH_LOG(SSH_LOG_DEBUG, "Checking %s with list <%s>", type, allowed_list);

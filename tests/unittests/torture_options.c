@@ -36,6 +36,8 @@ static int setup(void **state)
     verbosity = torture_libssh_verbosity();
     ssh_options_set(session, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
 
+    session->client = 1;
+
     *state = session;
 
     return 0;
