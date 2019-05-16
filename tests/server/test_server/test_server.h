@@ -50,6 +50,9 @@ struct server_state_st {
     char *expected_username;
     char *expected_password;
 
+    char *config_file;
+    bool parse_global_config;
+
     /* State */
     int  max_tries;
     int  error;

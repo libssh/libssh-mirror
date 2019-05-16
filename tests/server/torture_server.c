@@ -191,6 +191,9 @@ static int setup_default_server(void **state)
     ss->handle_session = default_handle_session_cb;
     assert_non_null(ss->handle_session);
 
+    /* Do not use global configuration */
+    ss->parse_global_config = false;
+
     /* Start the server using the default values */
     pid = fork_run_server(ss);
     if (pid < 0) {

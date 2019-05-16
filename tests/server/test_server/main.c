@@ -58,6 +58,9 @@ struct arguments_st {
 
     char *username;
     char *password;
+
+    char *config_file;
+    bool with_global_config;
 };
 
 static void free_arguments(struct arguments_st *arguments)
@@ -81,6 +84,7 @@ static void free_arguments(struct arguments_st *arguments)
 
     SAFE_FREE(arguments->username);
     SAFE_FREE(arguments->password);
+    SAFE_FREE(arguments->config_file);
 
 end:
     return;
@@ -167,6 +171,11 @@ static void print_server_state(struct server_state_st *state)
                 state->expected_username? state->expected_username: "NULL");
         printf("password = %s\n",
                 state->expected_password? state->expected_password: "NULL");
+        printf("=================================================\n");
+        printf("with_global_config = %s\n",
+                state->parse_global_config? "TRUE": "FALSE");
+        printf("config_file = %s\n",
+                state->config_file? state->config_file: "NULL");
         printf("=================================================\n");
     }
 }
@@ -290,9 +299,17 @@ static int init_server_state(struct server_state_st *state,
         }
     }
 
+    state->parse_global_config = arguments->with_global_config;
+
+    if (arguments->config_file) {
+        state->config_file = arguments->config_file;
+        arguments->config_file = NULL;
+    }
+
     /* TODO make configurable */
     state->max_tries = 3;
     state->error = 0;
+
 
     if (state) {
         print_server_state(state);
@@ -416,6 +433,22 @@ static struct argp_option options[] = {
         .doc   = "Use PCAP.",
         .group = 0
     },
+    {
+        .name  = "without-global-config",
+        .key   = 'g',
+        .arg   = NULL,
+        .flags = 0,
+        .doc   = "Do not use system-wide configuration file.",
+        .group = 0
+    },
+    {
+        .name  = "config",
+        .key   = 'C',
+        .arg   = "CONFIG_FILE",
+        .flags = 0,
+        .doc   = "Use this server configuration file.",
+        .group = 0
+    },
     { .name = NULL }
 };
 
@@ -518,6 +551,17 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
     case 'w':
         arguments->with_pcap = true;
         break;
+    case 'g':
+        arguments->with_global_config = false;
+        break;
+    case 'C':
+        arguments->config_file = strdup(arg);
+        if (arguments->config_file == NULL) {
+            fprintf(stderr, "Out of memory\n");
+            rc = ENOMEM;
+            goto end;
+        }
+        break;
     case ARGP_KEY_ARG:
         if (state->arg_num >= 1) {
             /* Too many arguments. */
@@ -557,6 +601,7 @@ int main(UNUSED_PARAM(int argc), UNUSED_PARAM(char **argv))
 
     struct arguments_st arguments = {
         .address = NULL,
+        .with_global_config = true,
     };
     struct server_state_st state = {
         .address = NULL,

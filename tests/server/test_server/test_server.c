@@ -55,6 +55,7 @@ void free_server_state(struct server_state_st *state)
 
     SAFE_FREE(state->expected_username);
     SAFE_FREE(state->expected_password);
+    SAFE_FREE(state->config_file);
 
 end:
     return;
@@ -116,6 +117,22 @@ int run_server(struct server_state_st *state)
             fprintf(stderr,
                     "Error setting verbosity level: %s\n",
                     ssh_get_error(sshbind));
+            goto free_sshbind;
+        }
+    }
+
+    if (!state->parse_global_config) {
+        rc = ssh_bind_options_set(sshbind,
+                                  SSH_BIND_OPTIONS_PROCESS_CONFIG,
+                                  &(state->parse_global_config));
+        if (rc != 0) {
+            goto free_sshbind;
+        }
+    }
+
+    if (state->config_file) {
+        rc = ssh_bind_options_parse_config(sshbind, state->config_file);
+        if (rc != 0) {
             goto free_sshbind;
         }
     }
