@@ -1608,6 +1608,13 @@ static int ssh_bind_set_algo(ssh_bind sshbind,
  *                        paths of configuration files to
  *                        ssh_bind_options_parse_config().
  *
+ *                      - SSH_BIND_OPTIONS_PROCESS_CONFIG
+ *                        Set it to false to disable automatic processing of
+ *                        system-wide configuration files. LibSSH automatically
+ *                        uses these configuration files otherwise. This
+ *                        option will only have effect if set before any call
+ *                        to ssh_bind_options_parse_config() (bool).
+ *
  *                      - SSH_BIND_OPTIONS_PUBKEY_ACCEPTED_KEY_TYPES:
  *                        Set the public key algorithm accepted by the server
  *                        (const char *, comma-separated list).
@@ -1953,6 +1960,15 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
             if (rc < 0) {
                 return -1;
             }
+        }
+        break;
+    case SSH_BIND_OPTIONS_PROCESS_CONFIG:
+        if (value == NULL) {
+            ssh_set_error_invalid(sshbind);
+            return -1;
+        } else {
+            bool *x = (bool *)value;
+            sshbind->config_processed = !(*x);
         }
         break;
     default:

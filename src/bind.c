@@ -132,7 +132,6 @@ static socket_t bind_socket(ssh_bind sshbind, const char *hostname,
 
 ssh_bind ssh_bind_new(void) {
     ssh_bind ptr;
-    int rc;
 
     ptr = calloc(1, sizeof(struct ssh_bind_struct));
     if (ptr == NULL) {
@@ -141,13 +140,6 @@ ssh_bind ssh_bind_new(void) {
     ptr->bindfd = SSH_INVALID_SOCKET;
     ptr->bindport = 22;
     ptr->common.log_verbosity = 0;
-
-    /* Apply global bind configurations */
-    rc = ssh_bind_options_parse_config(ptr, NULL);
-    if (rc != 0) {
-        ssh_bind_free(ptr);
-        ptr = NULL;
-    }
 
     return ptr;
 }
@@ -431,14 +423,25 @@ void ssh_bind_free(ssh_bind sshbind){
 int ssh_bind_accept_fd(ssh_bind sshbind, ssh_session session, socket_t fd){
     int i, rc;
 
+    if (sshbind == NULL) {
+        return SSH_ERROR;
+    }
+
     if (session == NULL){
         ssh_set_error(sshbind, SSH_FATAL,"session is null");
         return SSH_ERROR;
     }
 
+    /* Apply global bind configurations, if it hasn't been applied before */
+    rc = ssh_bind_options_parse_config(sshbind, NULL);
+    if (rc != 0) {
+        ssh_set_error(sshbind, SSH_FATAL,"Could not parse global config");
+        return SSH_ERROR;
+    }
+
     session->server = 1;
 
-    /* copy options */
+    /* Copy options from bind to session */
     for (i = 0; i < 10; i++) {
       if (sshbind->wanted_methods[i]) {
         session->opts.wanted_methods[i] = strdup(sshbind->wanted_methods[i]);
