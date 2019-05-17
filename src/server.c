@@ -59,6 +59,7 @@
 #include "libssh/messages.h"
 #include "libssh/options.h"
 #include "libssh/curve25519.h"
+#include "libssh/token.h"
 
 #define set_status(session, status) do {\
         if (session->common.callbacks && session->common.callbacks->connect_status_function) \
@@ -82,82 +83,99 @@
 
 int server_set_kex(ssh_session session)
 {
-  struct ssh_kex_struct *server = &session->next_crypto->server_kex;
-  int i, j, rc;
-  const char *wanted;
-  char hostkeys[128] = {0};
-  enum ssh_keytypes_e keytype;
-  size_t len;
-  int ok;
+    struct ssh_kex_struct *server = &session->next_crypto->server_kex;
+    int i, j, rc;
+    const char *wanted, *allowed;
+    char *kept;
+    char hostkeys[128] = {0};
+    enum ssh_keytypes_e keytype;
+    size_t len;
+    int ok;
 
-  ZERO_STRUCTP(server);
+    ZERO_STRUCTP(server);
 
-  ok = ssh_get_random(server->cookie, 16, 0);
-  if (!ok) {
-      ssh_set_error(session, SSH_FATAL, "PRNG error");
-      return -1;
-  }
+    ok = ssh_get_random(server->cookie, 16, 0);
+    if (!ok) {
+        ssh_set_error(session, SSH_FATAL, "PRNG error");
+        return -1;
+    }
 
-  if (session->srv.ed25519_key != NULL) {
-      snprintf(hostkeys,
-               sizeof(hostkeys),
-               "%s",
-               ssh_key_type_to_char(ssh_key_type(session->srv.ed25519_key)));
-  }
+    if (session->srv.ed25519_key != NULL) {
+        snprintf(hostkeys,
+                 sizeof(hostkeys),
+                 "%s",
+                 ssh_key_type_to_char(ssh_key_type(session->srv.ed25519_key)));
+    }
 #ifdef HAVE_ECC
-  if (session->srv.ecdsa_key != NULL) {
-	  len = strlen(hostkeys);
-      snprintf(hostkeys + len, sizeof(hostkeys) - len,
-               ",%s", session->srv.ecdsa_key->type_c);
-  }
+    if (session->srv.ecdsa_key != NULL) {
+        len = strlen(hostkeys);
+        snprintf(hostkeys + len, sizeof(hostkeys) - len,
+                 ",%s", session->srv.ecdsa_key->type_c);
+    }
 #endif
 #ifdef HAVE_DSA
-  if (session->srv.dsa_key != NULL) {
-      len = strlen(hostkeys);
-      keytype = ssh_key_type(session->srv.dsa_key);
+    if (session->srv.dsa_key != NULL) {
+        len = strlen(hostkeys);
+        keytype = ssh_key_type(session->srv.dsa_key);
 
-      snprintf(hostkeys + len, sizeof(hostkeys) - len,
-               ",%s", ssh_key_type_to_char(keytype));
-  }
+        snprintf(hostkeys + len, sizeof(hostkeys) - len,
+                 ",%s", ssh_key_type_to_char(keytype));
+    }
 #endif
-  if (session->srv.rsa_key != NULL) {
-      /* We support also the SHA2 variants */
-      len = strlen(hostkeys);
-      snprintf(hostkeys + len, sizeof(hostkeys) - len,
-               ",rsa-sha2-512,rsa-sha2-256");
+    if (session->srv.rsa_key != NULL) {
+        /* We support also the SHA2 variants */
+        len = strlen(hostkeys);
+        snprintf(hostkeys + len, sizeof(hostkeys) - len,
+                 ",rsa-sha2-512,rsa-sha2-256");
 
-      len = strlen(hostkeys);
-      keytype = ssh_key_type(session->srv.rsa_key);
+        len = strlen(hostkeys);
+        keytype = ssh_key_type(session->srv.rsa_key);
 
-      snprintf(hostkeys + len, sizeof(hostkeys) - len,
-               ",%s", ssh_key_type_to_char(keytype));
-  }
-
-  if (strlen(hostkeys) == 0) {
-      return -1;
-  }
-
-  rc = ssh_options_set_algo(session,
-                            SSH_HOSTKEYS,
-                            hostkeys[0] == ',' ? hostkeys + 1 : hostkeys);
-  if (rc < 0) {
-      return -1;
-  }
-
-  for (i = 0; i < 10; i++) {
-    if ((wanted = session->opts.wanted_methods[i]) == NULL) {
-      wanted = ssh_kex_get_supported_method(i);
+        snprintf(hostkeys + len, sizeof(hostkeys) - len,
+                 ",%s", ssh_key_type_to_char(keytype));
     }
-    server->methods[i] = strdup(wanted);
-    if (server->methods[i] == NULL) {
-      for (j = 0; j < i; j++) {
-        SAFE_FREE(server->methods[j]);
-      }
-      return -1;
-    }
-  }
 
-  return 0;
+    if (strlen(hostkeys) == 0) {
+        return -1;
+    }
+
+    if (session->opts.wanted_methods[SSH_HOSTKEYS]) {
+        allowed = session->opts.wanted_methods[SSH_HOSTKEYS];
+    } else {
+        allowed = ssh_kex_get_supported_method(SSH_HOSTKEYS);
+    }
+
+    /* It is expected for the list of allowed hostkeys to be ordered by
+     * preference */
+    kept = ssh_find_all_matching(hostkeys[0] == ',' ? hostkeys + 1 : hostkeys,
+                                 allowed);
+    if (kept == NULL) {
+        /* Nothing was allowed */
+        return -1;
+    }
+
+    rc = ssh_options_set_algo(session,
+                              SSH_HOSTKEYS,
+                              kept);
+    SAFE_FREE(kept);
+    if (rc < 0) {
+        return -1;
+    }
+
+    for (i = 0; i < 10; i++) {
+        if ((wanted = session->opts.wanted_methods[i]) == NULL) {
+            wanted = ssh_kex_get_supported_method(i);
+        }
+        server->methods[i] = strdup(wanted);
+        if (server->methods[i] == NULL) {
+            for (j = 0; j < i; j++) {
+                SAFE_FREE(server->methods[j]);
+            }
+            return -1;
+        }
+    }
+
+    return 0;
 }
 
 int ssh_server_init_kex(ssh_session session) {

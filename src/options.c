@@ -1612,6 +1612,15 @@ static int ssh_bind_set_algo(ssh_bind sshbind,
  *                        Set the public key algorithm accepted by the server
  *                        (const char *, comma-separated list).
  *
+ *                      - SSH_BIND_OPTIONS_HOSTKEY_ALGORITHMS:
+ *                        Set the list of allowed hostkey signatures algorithms
+ *                        to offer to the client, ordered by preference. This
+ *                        list is used as a filter when creating the list of
+ *                        algorithms to offer to the client: first the list of
+ *                        possible algorithms is created from the list of keys
+ *                        set and then filtered against this list.
+ *                        (const char *, comma-separated list).
+ *
  * @param  value        The value to set. This is a generic pointer and the
  *                      datatype which should be used is described at the
  *                      corresponding value of type above.
@@ -1932,6 +1941,18 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
 
             SAFE_FREE(sshbind->pubkey_accepted_key_types);
             sshbind->pubkey_accepted_key_types = p;
+        }
+        break;
+    case SSH_BIND_OPTIONS_HOSTKEY_ALGORITHMS:
+        v = value;
+        if (v == NULL || v[0] == '\0') {
+            ssh_set_error_invalid(sshbind);
+            return -1;
+        } else {
+            rc = ssh_bind_set_algo(sshbind, SSH_HOSTKEYS, v);
+            if (rc < 0) {
+                return -1;
+            }
         }
         break;
     default:

@@ -54,6 +54,7 @@ enum ssh_bind_options_e {
   SSH_BIND_OPTIONS_HMAC_S_C,
   SSH_BIND_OPTIONS_CONFIG_DIR,
   SSH_BIND_OPTIONS_PUBKEY_ACCEPTED_KEY_TYPES,
+  SSH_BIND_OPTIONS_HOSTKEY_ALGORITHMS,
 };
 
 typedef struct ssh_bind_struct* ssh_bind;
