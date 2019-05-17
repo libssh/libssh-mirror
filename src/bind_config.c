@@ -98,6 +98,11 @@ ssh_bind_config_keyword_table[] = {
         .allowed_in_match = true
     },
     {
+        .name   = "hostkeyalgorithms",
+        .opcode = BIND_CFG_HOSTKEY_ALGORITHMS,
+        .allowed_in_match = true
+    },
+    {
         .opcode = BIND_CFG_UNKNOWN,
     }
 };
@@ -499,6 +504,13 @@ ssh_bind_config_parse_line(ssh_bind bind,
         if (p && (*parser_flags & PARSING)) {
             ssh_bind_options_set(bind,
                                  SSH_BIND_OPTIONS_PUBKEY_ACCEPTED_KEY_TYPES, p);
+        }
+        break;
+    case BIND_CFG_HOSTKEY_ALGORITHMS:
+        p = ssh_config_get_str_tok(&s, NULL);
+        if (p && (*parser_flags & PARSING)) {
+            ssh_bind_options_set(bind,
+                                 SSH_BIND_OPTIONS_HOSTKEY_ALGORITHMS, p);
         }
         break;
     case BIND_CFG_NOT_ALLOWED_IN_MATCH:

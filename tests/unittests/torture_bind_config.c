@@ -46,6 +46,7 @@ extern LIBSSH_THREAD int ssh_log_level;
 #define CIPHERS "aes128-ctr,aes192-ctr,aes256-ctr"
 #define CIPHERS2 "aes256-ctr"
 #define HOSTKEYALGORITHMS "ssh-ed25519,ecdsa-sha2-nistp521,ssh-rsa"
+#define HOSTKEYALGORITHMS_UNKNOWN "ssh-ed25519,ecdsa-sha2-nistp521,unknown,ssh-rsa"
 #define HOSTKEYALGORITHMS2 "ssh-rsa"
 #define PUBKEYACCEPTEDTYPES "rsa-sha2-512,ssh-rsa,ecdsa-sha2-nistp521"
 #define PUBKEYACCEPTEDTYPES_UNKNOWN "rsa-sha2-512,ssh-rsa,unknown,ecdsa-sha2-nistp521"
@@ -109,6 +110,12 @@ extern LIBSSH_THREAD int ssh_log_level;
 #define LIBSSH_TEST_BIND_CONFIG_PUBKEY_ACCEPTED_TWICE "libssh_test_bind_config_pubkey_twice"
 #define LIBSSH_TEST_BIND_CONFIG_PUBKEY_ACCEPTED_TWICE_REC "libssh_test_bind_config_pubkey_twice_rec"
 #define LIBSSH_TEST_BIND_CONFIG_PUBKEY_ACCEPTED_UNKNOWN "libssh_test_bind_config_pubkey_unknown"
+
+#define LIBSSH_TEST_BIND_CONFIG_HOSTKEY_ALGORITHMS "libssh_test_bind_config_hostkey_alg"
+#define LIBSSH_TEST_BIND_CONFIG_HOSTKEY_ALGORITHMS2 "libssh_test_bind_config_hostkey_alg2"
+#define LIBSSH_TEST_BIND_CONFIG_HOSTKEY_ALGORITHMS_TWICE "libssh_test_bind_config_hostkey_alg_twice"
+#define LIBSSH_TEST_BIND_CONFIG_HOSTKEY_ALGORITHMS_TWICE_REC "libssh_test_bind_config_hostkey_alg_twice_rec"
+#define LIBSSH_TEST_BIND_CONFIG_HOSTKEY_ALGORITHMS_UNKNOWN "libssh_test_bind_config_hostkey_alg_unknown"
 
 const char template[] = "temp_dir_XXXXXX";
 
@@ -338,6 +345,19 @@ static int setup_config_files(void **state)
                        "Include "LIBSSH_TEST_BIND_CONFIG_KEXALGORITHMS"\n");
     torture_write_file(LIBSSH_TEST_BIND_CONFIG_PUBKEY_ACCEPTED_UNKNOWN,
                        "PubkeyAcceptedKeyTypes "PUBKEYACCEPTEDTYPES_UNKNOWN"\n");
+
+    torture_write_file(LIBSSH_TEST_BIND_CONFIG_HOSTKEY_ALGORITHMS,
+                       "HostKeyAlgorithms "HOSTKEYALGORITHMS"\n");
+    torture_write_file(LIBSSH_TEST_BIND_CONFIG_HOSTKEY_ALGORITHMS2,
+                       "HostKeyAlgorithms "HOSTKEYALGORITHMS2"\n");
+    torture_write_file(LIBSSH_TEST_BIND_CONFIG_HOSTKEY_ALGORITHMS_TWICE,
+                       "HostKeyAlgorithms "HOSTKEYALGORITHMS"\n"
+                       "HostKeyAlgorithms "HOSTKEYALGORITHMS2"\n");
+    torture_write_file(LIBSSH_TEST_BIND_CONFIG_HOSTKEY_ALGORITHMS_TWICE_REC,
+                       "HostKeyAlgorithms "HOSTKEYALGORITHMS2"\n"
+                       "Include "LIBSSH_TEST_BIND_CONFIG_KEXALGORITHMS"\n");
+    torture_write_file(LIBSSH_TEST_BIND_CONFIG_HOSTKEY_ALGORITHMS_UNKNOWN,
+                       "HostKeyAlgorithms "HOSTKEYALGORITHMS_UNKNOWN"\n");
     return 0;
 }
 
@@ -754,6 +774,49 @@ static void torture_bind_config_pubkey_accepted(void **state)
     assert_string_equal(bind->pubkey_accepted_key_types, PUBKEYACCEPTEDTYPES);
 }
 
+static void torture_bind_config_hostkey_algorithms(void **state)
+{
+    struct bind_st *test_state;
+    ssh_bind bind;
+    int rc;
+
+    assert_non_null(state);
+    test_state = *((struct bind_st **)state);
+    assert_non_null(test_state);
+    assert_non_null(test_state->bind);
+    bind = test_state->bind;
+
+    rc = ssh_bind_config_parse_file(bind,
+            LIBSSH_TEST_BIND_CONFIG_HOSTKEY_ALGORITHMS);
+    assert_int_equal(rc, 0);
+    assert_non_null(bind->wanted_methods[SSH_HOSTKEYS]);
+    assert_string_equal(bind->wanted_methods[SSH_HOSTKEYS], HOSTKEYALGORITHMS);
+
+    rc = ssh_bind_config_parse_file(bind,
+            LIBSSH_TEST_BIND_CONFIG_HOSTKEY_ALGORITHMS2);
+    assert_int_equal(rc, 0);
+    assert_non_null(bind->wanted_methods[SSH_HOSTKEYS]);
+    assert_string_equal(bind->wanted_methods[SSH_HOSTKEYS], HOSTKEYALGORITHMS2);
+
+    rc = ssh_bind_config_parse_file(bind,
+            LIBSSH_TEST_BIND_CONFIG_HOSTKEY_ALGORITHMS_TWICE);
+    assert_int_equal(rc, 0);
+    assert_non_null(bind->wanted_methods[SSH_HOSTKEYS]);
+    assert_string_equal(bind->wanted_methods[SSH_HOSTKEYS], HOSTKEYALGORITHMS);
+
+    rc = ssh_bind_config_parse_file(bind,
+            LIBSSH_TEST_BIND_CONFIG_HOSTKEY_ALGORITHMS_TWICE_REC);
+    assert_int_equal(rc, 0);
+    assert_non_null(bind->wanted_methods[SSH_HOSTKEYS]);
+    assert_string_equal(bind->wanted_methods[SSH_HOSTKEYS], HOSTKEYALGORITHMS2);
+
+    rc = ssh_bind_config_parse_file(bind,
+            LIBSSH_TEST_BIND_CONFIG_HOSTKEY_ALGORITHMS_UNKNOWN);
+    assert_int_equal(rc, 0);
+    assert_non_null(bind->wanted_methods[SSH_HOSTKEYS]);
+    assert_string_equal(bind->wanted_methods[SSH_HOSTKEYS], HOSTKEYALGORITHMS);
+}
+
 static int assert_full_bind_config(void **state)
 {
     struct bind_st *test_state;
@@ -1097,6 +1160,8 @@ int torture_run_tests(void)
         cmocka_unit_test_setup_teardown(torture_bind_config_match_invalid,
                 sshbind_setup, sshbind_teardown),
         cmocka_unit_test_setup_teardown(torture_bind_config_pubkey_accepted,
+                sshbind_setup, sshbind_teardown),
+        cmocka_unit_test_setup_teardown(torture_bind_config_hostkey_algorithms,
                 sshbind_setup, sshbind_teardown),
     };
 
