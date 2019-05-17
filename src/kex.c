@@ -107,12 +107,12 @@
 
 #ifdef HAVE_ECDH
 #define ECDH "ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521,"
-#define PUBLIC_KEY_ALGORITHMS "ssh-ed25519,ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,ssh-rsa,rsa-sha2-512,rsa-sha2-256,ssh-dss"
+#define PUBLIC_KEY_ALGORITHMS "ssh-ed25519,ecdsa-sha2-nistp521,ecdsa-sha2-nistp384,ecdsa-sha2-nistp256,rsa-sha2-512,rsa-sha2-256,ssh-rsa,ssh-dss"
 #else
 #ifdef HAVE_DSA
-#define PUBLIC_KEY_ALGORITHMS "ssh-ed25519,ssh-rsa,rsa-sha2-512,rsa-sha2-256,ssh-dss"
+#define PUBLIC_KEY_ALGORITHMS "ssh-ed25519,rsa-sha2-512,rsa-sha2-256,ssh-rsa,ssh-dss"
 #else
-#define PUBLIC_KEY_ALGORITHMS "ssh-ed25519,ssh-rsa,rsa-sha2-512,rsa-sha2-256"
+#define PUBLIC_KEY_ALGORITHMS "ssh-ed25519,rsa-sha2-512,rsa-sha2-256,ssh-rsa"
 #endif
 #define ECDH ""
 #endif
