@@ -634,6 +634,12 @@ static SSH_PACKET_CALLBACK(ssh_packet_server_dhgex_request)
                          SSH2_MSG_KEX_DH_GEX_GROUP,
                          modulus,
                          generator);
+
+#ifdef HAVE_LIBCRYPTO
+        bignum_safe_free(generator);
+        bignum_safe_free(modulus);
+#endif
+
     if (rc != SSH_OK) {
         ssh_set_error_invalid(session);
         goto error;
