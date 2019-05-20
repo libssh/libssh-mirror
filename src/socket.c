@@ -142,7 +142,7 @@ void ssh_socket_cleanup(void) {
 ssh_socket ssh_socket_new(ssh_session session) {
   ssh_socket s;
 
-  s = malloc(sizeof(struct ssh_socket_struct));
+  s = calloc(1, sizeof(struct ssh_socket_struct));
   if (s == NULL) {
     ssh_set_error_oom(session);
     return NULL;
