@@ -145,7 +145,7 @@ fedora/csbuild:
 
   - csbuild
     --build-dir=obj-csbuild
-    --prep-cmd="cmake -DCMAKE_BUILD_TYPE=Debug -DPICKY_DEVELOPER=ON -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON -DFUZZ_TESTING=ON @SRCDIR@"
+    --prep-cmd="rm -rf CMakeFiles CMakeCache.txt && cmake -DCMAKE_BUILD_TYPE=Debug -DPICKY_DEVELOPER=ON -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON -DFUZZ_TESTING=ON @SRCDIR@"
     --build-cmd "make clean && make -j$(nproc)"
     --git-commit-range $CI_COMMIT_RANGE
     --color
