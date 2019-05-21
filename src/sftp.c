@@ -2365,7 +2365,6 @@ int sftp_rmdir(sftp_session sftp, const char *directory) {
       case SSH_FX_OK:
         status_msg_free(status);
         return 0;
-        break;
       default:
         break;
     }
@@ -2464,7 +2463,6 @@ int sftp_mkdir(sftp_session sftp, const char *directory, mode_t mode)
             case SSH_FX_OK:
                 status_msg_free(status);
                 return 0;
-                break;
             default:
                 break;
         }
