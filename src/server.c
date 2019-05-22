@@ -142,7 +142,7 @@ int server_set_kex(ssh_session session)
     if (session->opts.wanted_methods[SSH_HOSTKEYS]) {
         allowed = session->opts.wanted_methods[SSH_HOSTKEYS];
     } else {
-        allowed = ssh_kex_get_supported_method(SSH_HOSTKEYS);
+        allowed = ssh_kex_get_default_methods(SSH_HOSTKEYS);
     }
 
     /* It is expected for the list of allowed hostkeys to be ordered by
@@ -164,7 +164,7 @@ int server_set_kex(ssh_session session)
 
     for (i = 0; i < 10; i++) {
         if ((wanted = session->opts.wanted_methods[i]) == NULL) {
-            wanted = ssh_kex_get_supported_method(i);
+            wanted = ssh_kex_get_default_methods(i);
         }
         server->methods[i] = strdup(wanted);
         if (server->methods[i] == NULL) {

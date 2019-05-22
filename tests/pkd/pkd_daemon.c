@@ -249,6 +249,7 @@ static int pkd_exec_hello(int fd, struct pkd_daemon_args *args)
     const char *default_kex = NULL;
     char *all_kex = NULL;
     size_t kex_len = 0;
+    const char *all_ciphers = NULL;
     const uint64_t rekey_data_limit = args->rekey_data_limit;
 
     pkd_state.eof_received = 0;
@@ -303,6 +304,21 @@ static int pkd_exec_hello(int fd, struct pkd_daemon_args *args)
     free(all_kex);
     if (rc != 0) {
         pkderr("ssh_bind_options_set kex methods: %s\n", ssh_get_error(b));
+        goto outclose;
+    }
+
+    /* Enable all supported ciphers */
+    all_ciphers = ssh_kex_get_supported_method(SSH_CRYPT_C_S);
+    rc = ssh_bind_options_set(b, SSH_BIND_OPTIONS_CIPHERS_C_S, all_ciphers);
+    if (rc != 0) {
+        pkderr("ssh_bind_options_set Ciphers C-S: %s\n", ssh_get_error(b));
+        goto outclose;
+    }
+
+    all_ciphers = ssh_kex_get_supported_method(SSH_CRYPT_S_C);
+    rc = ssh_bind_options_set(b, SSH_BIND_OPTIONS_CIPHERS_S_C, all_ciphers);
+    if (rc != 0) {
+        pkderr("ssh_bind_options_set Ciphers S-C: %s\n", ssh_get_error(b));
         goto outclose;
     }
 
