@@ -323,7 +323,11 @@ int ssh_key_algorithm_allowed(ssh_session session, const char *type)
     if (session->client) {
         allowed_list = session->opts.pubkey_accepted_types;
         if (allowed_list == NULL) {
-            allowed_list = ssh_kex_get_default_methods(SSH_HOSTKEYS);
+            if (ssh_fips_mode()) {
+                allowed_list = ssh_kex_get_fips_methods(SSH_HOSTKEYS);
+            } else {
+                allowed_list = ssh_kex_get_default_methods(SSH_HOSTKEYS);
+            }
         }
     }
 #ifdef WITH_SERVER
@@ -2111,13 +2115,26 @@ int pki_key_check_hash_compatible(ssh_key key,
     case SSH_KEYTYPE_DSS_CERT01:
     case SSH_KEYTYPE_DSS:
         if (hash_type == SSH_DIGEST_SHA1) {
-            return SSH_OK;
+            if (ssh_fips_mode()) {
+                SSH_LOG(SSH_LOG_WARN, "SHA1 is not allowed in FIPS mode");
+                return SSH_ERROR;
+            } else {
+                return SSH_OK;
+            }
         }
         break;
     case SSH_KEYTYPE_RSA_CERT01:
     case SSH_KEYTYPE_RSA:
-        if (hash_type == SSH_DIGEST_SHA1 ||
-            hash_type == SSH_DIGEST_SHA256 ||
+        if (hash_type == SSH_DIGEST_SHA1) {
+            if (ssh_fips_mode()) {
+                SSH_LOG(SSH_LOG_WARN, "SHA1 is not allowed in FIPS mode");
+                return SSH_ERROR;
+            } else {
+                return SSH_OK;
+            }
+        }
+
+        if (hash_type == SSH_DIGEST_SHA256 ||
             hash_type == SSH_DIGEST_SHA512)
         {
             return SSH_OK;

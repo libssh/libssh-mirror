@@ -136,10 +136,54 @@
 #define KEY_EXCHANGE_SUPPORTED \
     GEX_SHA1 \
     KEY_EXCHANGE
+
 #define KEX_METHODS_SIZE 10
 
 /* RFC 8308 */
 #define KEX_EXTENSION_CLIENT "ext-info-c"
+
+/* Allowed algorithms in FIPS mode */
+#define FIPS_ALLOWED_CIPHERS "aes256-gcm@openssh.com,"\
+                             "aes256-ctr,"\
+                             "aes256-cbc,"\
+                             "aes128-gcm@openssh.com,"\
+                             "aes128-ctr,"\
+                             "aes128-cbc"
+
+#define FIPS_ALLOWED_PUBLIC_KEY_ALGORITHMS "ecdsa-sha2-nistp521,"\
+                                           "ecdsa-sha2-nistp384,"\
+                                           "ecdsa-sha2-nistp256,"\
+                                           "rsa-sha2-512,"\
+                                           "rsa-sha2-256"
+
+#define FIPS_ALLOWED_KEX "ecdh-sha2-nistp256,"\
+                         "ecdh-sha2-nistp384,"\
+                         "ecdh-sha2-nistp521,"\
+                         "diffie-hellman-group-exchange-sha256,"\
+                         "diffie-hellman-group16-sha512,"\
+                         "diffie-hellman-group18-sha512"
+
+#define FIPS_ALLOWED_MACS "hmac-sha2-256-etm@openssh.com,"\
+                          "hmac-sha1-etm@openssh.com,"\
+                          "hmac-sha2-512-etm@openssh.com,"\
+                          "hmac-sha2-256,"\
+                          "hmac-sha1,"\
+                          "hmac-sha2-512"
+
+/* NOTE: This is a fixed API and the index is defined by ssh_kex_types_e */
+static const char *fips_methods[] = {
+    FIPS_ALLOWED_KEX,
+    FIPS_ALLOWED_PUBLIC_KEY_ALGORITHMS,
+    FIPS_ALLOWED_CIPHERS,
+    FIPS_ALLOWED_CIPHERS,
+    FIPS_ALLOWED_MACS,
+    FIPS_ALLOWED_MACS,
+    ZLIB,
+    ZLIB,
+    "",
+    "",
+    NULL
+};
 
 /* NOTE: This is a fixed API and the index is defined by ssh_kex_types_e */
 static const char *default_methods[] = {
@@ -209,6 +253,14 @@ const char *ssh_kex_get_description(uint32_t algo) {
   }
 
   return ssh_kex_descriptions[algo];
+}
+
+const char *ssh_kex_get_fips_methods(uint32_t algo) {
+  if (algo >= KEX_METHODS_SIZE) {
+    return NULL;
+  }
+
+  return fips_methods[algo];
 }
 
 /**
@@ -600,8 +652,13 @@ int ssh_set_client_kex(ssh_session session)
 
     for (i = 0; i < KEX_METHODS_SIZE; i++) {
         wanted = session->opts.wanted_methods[i];
-        if (wanted == NULL)
-            wanted = default_methods[i];
+        if (wanted == NULL) {
+            if (ssh_fips_mode()) {
+                wanted = fips_methods[i];
+            } else {
+                wanted = default_methods[i];
+            }
+        }
         client->methods[i] = strdup(wanted);
         if (client->methods[i] == NULL) {
             ssh_set_error_oom(session);
@@ -821,6 +878,27 @@ char *ssh_keep_known_algos(enum ssh_kex_types_e algo, const char *list)
     }
 
     return ssh_find_all_matching(supported_methods[algo], list);
+}
+
+/**
+ * @internal
+ *
+ * @brief Return a new allocated string containing only the FIPS allowed
+ * algorithms from the list.
+ *
+ * @param[in] algo  The type of the methods to filter
+ * @param[in] list  The list to be filtered
+ *
+ * @return A new allocated list containing only the FIPS allowed algorithms from
+ * the list; NULL in case of error.
+ */
+char *ssh_keep_fips_algos(enum ssh_kex_types_e algo, const char *list)
+{
+    if (algo > SSH_LANG_S_C) {
+        return NULL;
+    }
+
+    return ssh_find_all_matching(fips_methods[algo], list);
 }
 
 int ssh_make_sessionid(ssh_session session)

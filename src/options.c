@@ -223,10 +223,15 @@ int ssh_options_set_algo(ssh_session session,
 {
     char *p = NULL;
 
-    p = ssh_keep_known_algos(algo, list);
+    if (ssh_fips_mode()) {
+        p = ssh_keep_fips_algos(algo, list);
+    } else {
+        p = ssh_keep_known_algos(algo, list);
+    }
+
     if (p == NULL) {
         ssh_set_error(session, SSH_REQUEST_DENIED,
-                "Setting method: no algorithm for method \"%s\" (%s)",
+                "Setting method: no allowed algorithm for method \"%s\" (%s)",
                 ssh_kex_get_description(algo), list);
         return -1;
     }
@@ -796,7 +801,11 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
                 ssh_set_error_invalid(session);
                 return -1;
             } else {
-                p = ssh_keep_known_algos(SSH_HOSTKEYS, v);
+                if (ssh_fips_mode()) {
+                    p = ssh_keep_fips_algos(SSH_HOSTKEYS, v);
+                } else {
+                    p = ssh_keep_known_algos(SSH_HOSTKEYS, v);
+                }
                 if (p == NULL) {
                     ssh_set_error(session, SSH_REQUEST_DENIED,
                         "Setting method: no known public key algorithm (%s)",
@@ -1503,7 +1512,11 @@ static int ssh_bind_set_algo(ssh_bind sshbind,
 {
     char *p = NULL;
 
-    p = ssh_keep_known_algos(algo, list);
+    if (ssh_fips_mode()) {
+        p = ssh_keep_fips_algos(algo, list);
+    } else {
+        p = ssh_keep_known_algos(algo, list);
+    }
     if (p == NULL) {
         ssh_set_error(sshbind, SSH_REQUEST_DENIED,
                       "Setting method: no algorithm for method \"%s\" (%s)",
@@ -1938,7 +1951,11 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
             ssh_set_error_invalid(sshbind);
             return -1;
         } else {
-            p = ssh_keep_known_algos(SSH_HOSTKEYS, v);
+            if (ssh_fips_mode()) {
+                p = ssh_keep_fips_algos(SSH_HOSTKEYS, v);
+            } else {
+                p = ssh_keep_known_algos(SSH_HOSTKEYS, v);
+            }
             if (p == NULL) {
                 ssh_set_error(sshbind, SSH_REQUEST_DENIED,
                     "Setting method: no known public key algorithm (%s)",
