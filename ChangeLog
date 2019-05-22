@@ -7,6 +7,13 @@ version 0.9.0 (released 2019-02-xx)
   * Added performance improvements
   * Disabled blowfish support by default
   * Fixed several ssh config parsing issues
+  * Added support for DH Group Exchange KEX
+  * Added support for Encrypt-then-MAC mode
+  * Added support for parsing server side configuration file
+  * Added support for ECDSA/Ed25519 certificates
+  * Improved known_hosts parsing
+  * Improved documentation
+  * Improved OpenSSL API usage for KEX, DH, and signatures
 
 version 0.8.0 (released 2018-08-10)
   * Removed support for deprecated SSHv1 protocol
