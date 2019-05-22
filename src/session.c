@@ -964,6 +964,17 @@ int ssh_get_pubkey_hash(ssh_session session, unsigned char **hash)
     if (session == NULL || hash == NULL) {
         return SSH_ERROR;
     }
+
+    /* In FIPS mode, we cannot use MD5 */
+    if (ssh_fips_mode()) {
+        ssh_set_error(session,
+                      SSH_FATAL,
+                      "In FIPS mode MD5 is not allowed."
+                      "Try ssh_get_publickey_hash() with"
+                      "SSH_PUBLICKEY_HASH_SHA256");
+        return SSH_ERROR;
+    }
+
     *hash = NULL;
     if (session->current_crypto == NULL ||
         session->current_crypto->server_pubkey == NULL) {
@@ -1064,7 +1075,7 @@ int ssh_get_publickey(ssh_session session, ssh_key *key)
  *
  * This function allows you to get a hash of the public key. You can then
  * print this hash in a human-readable form to the user so that he is able to
- * verify it. Use ssh_get_hexa() or ssh_print_hexa() to display it.
+ * verify it. Use ssh_get_hexa() or ssh_print_hash() to display it.
  *
  * @param[in]  key      The public key to create the hash for.
  *
@@ -1084,7 +1095,7 @@ int ssh_get_publickey(ssh_session session, ssh_key *key)
  *
  * @see ssh_session_update_known_hosts()
  * @see ssh_get_hexa()
- * @see ssh_print_hexa()
+ * @see ssh_print_hash()
  * @see ssh_clean_pubkey_hash()
  */
 int ssh_get_publickey_hash(const ssh_key key,
@@ -1151,6 +1162,14 @@ int ssh_get_publickey_hash(const ssh_key key,
     case SSH_PUBLICKEY_HASH_MD5:
         {
             MD5CTX ctx;
+
+            /* In FIPS mode, we cannot use MD5 */
+            if (ssh_fips_mode()) {
+                SSH_LOG(SSH_LOG_WARN, "In FIPS mode MD5 is not allowed."
+                                      "Try using SSH_PUBLICKEY_HASH_SHA256");
+                rc = SSH_ERROR;
+                goto out;
+            }
 
             h = calloc(1, MD5_DIGEST_LEN);
             if (h == NULL) {

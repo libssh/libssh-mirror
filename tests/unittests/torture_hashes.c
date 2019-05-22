@@ -59,14 +59,19 @@ static void torture_md5_hash(void **state)
 
     rc = ssh_get_publickey_hash(pubkey, SSH_PUBLICKEY_HASH_MD5,
                                 (unsigned char **)&hash, &hlen);
-    assert_true(rc == 0);
+    if (ssh_fips_mode()) {
+        /* When in FIPS mode, expect the call to fail */
+        assert_int_equal(rc, SSH_ERROR);
+    } else {
+        assert_int_equal(rc, SSH_OK);
 
-    hexa = ssh_get_hexa((unsigned char *)hash, hlen);
-    SSH_STRING_FREE_CHAR(hash);
-    assert_string_equal(hexa,
-                        "50:15:a0:9b:92:bf:33:1c:01:c5:8c:fe:18:fa:ce:78");
+        hexa = ssh_get_hexa((unsigned char *)hash, hlen);
+        SSH_STRING_FREE_CHAR(hash);
+        assert_string_equal(hexa,
+                            "50:15:a0:9b:92:bf:33:1c:01:c5:8c:fe:18:fa:ce:78");
 
-    SSH_STRING_FREE_CHAR(hexa);
+        SSH_STRING_FREE_CHAR(hexa);
+    }
 }
 
 static void torture_sha1_hash(void **state)
