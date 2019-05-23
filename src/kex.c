@@ -812,23 +812,6 @@ int ssh_send_rekex(ssh_session session)
     return SSH_OK;
 }
 
-/* returns 1 if at least one of the name algos is in the default algorithms table */
-int ssh_verify_existing_algo(enum ssh_kex_types_e algo, const char *name)
-{
-    char *ptr;
-
-    if (algo > SSH_LANG_S_C) {
-        return -1;
-    }
-
-    ptr=ssh_find_matching(supported_methods[algo],name);
-    if(ptr){
-        free(ptr);
-        return 1;
-    }
-    return 0;
-}
-
 /* returns a copy of the provided list if everything is supported,
  * otherwise a new list of the supported algorithms */
 char *ssh_keep_known_algos(enum ssh_kex_types_e algo, const char *list)
