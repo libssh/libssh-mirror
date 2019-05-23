@@ -719,9 +719,10 @@ ssh_string pki_private_key_to_pem(const ssh_key key,
                                   ssh_auth_callback auth_fn,
                                   void *auth_data)
 {
-    ssh_string blob;
-    BUF_MEM *buf;
-    BIO *mem;
+    ssh_string blob = NULL;
+    BUF_MEM *buf = NULL;
+    BIO *mem = NULL;
+    EVP_PKEY *pkey = NULL;
     int rc;
 
     mem = BIO_new(BIO_s_mem());
@@ -729,88 +730,29 @@ ssh_string pki_private_key_to_pem(const ssh_key key,
         return NULL;
     }
 
+    pkey = EVP_PKEY_new();
+    if (pkey == NULL) {
+        goto err;
+    }
+
     switch (key->type) {
         case SSH_KEYTYPE_DSS:
-            if (passphrase == NULL) {
-                struct pem_get_password_struct pgp = { auth_fn, auth_data };
-
-                rc = PEM_write_bio_DSAPrivateKey(mem,
-                                                 key->dsa,
-                                                 NULL, /* cipher */
-                                                 NULL, /* kstr */
-                                                 0, /* klen */
-                                                 pem_get_password,
-                                                 &pgp);
-            } else {
-                rc = PEM_write_bio_DSAPrivateKey(mem,
-                                                 key->dsa,
-                                                 EVP_aes_128_cbc(),
-                                                 NULL, /* kstr */
-                                                 0, /* klen */
-                                                 NULL, /* auth_fn */
-                                                 (void*) passphrase);
-            }
-            if (rc != 1) {
-                goto err;
-            }
+            rc = EVP_PKEY_set1_DSA(pkey, key->dsa);
             break;
         case SSH_KEYTYPE_RSA:
         case SSH_KEYTYPE_RSA1:
-            if (passphrase == NULL) {
-                struct pem_get_password_struct pgp = { auth_fn, auth_data };
-
-                rc = PEM_write_bio_RSAPrivateKey(mem,
-                                                 key->rsa,
-                                                 NULL, /* cipher */
-                                                 NULL, /* kstr */
-                                                 0, /* klen */
-                                                 pem_get_password,
-                                                 &pgp);
-            } else {
-                rc = PEM_write_bio_RSAPrivateKey(mem,
-                                                 key->rsa,
-                                                 EVP_aes_128_cbc(),
-                                                 NULL, /* kstr */
-                                                 0, /* klen */
-                                                 NULL, /* auth_fn */
-                                                 (void*) passphrase);
-            }
-            if (rc != 1) {
-                goto err;
-            }
+            rc = EVP_PKEY_set1_RSA(pkey, key->rsa);
             break;
 #ifdef HAVE_ECC
         case SSH_KEYTYPE_ECDSA_P256:
         case SSH_KEYTYPE_ECDSA_P384:
         case SSH_KEYTYPE_ECDSA_P521:
-            if (passphrase == NULL) {
-                struct pem_get_password_struct pgp = { auth_fn, auth_data };
-
-                rc = PEM_write_bio_ECPrivateKey(mem,
-                                                key->ecdsa,
-                                                NULL, /* cipher */
-                                                NULL, /* kstr */
-                                                0, /* klen */
-                                                pem_get_password,
-                                                &pgp);
-            } else {
-                rc = PEM_write_bio_ECPrivateKey(mem,
-                                                key->ecdsa,
-                                                EVP_aes_128_cbc(),
-                                                NULL, /* kstr */
-                                                0, /* klen */
-                                                NULL, /* auth_fn */
-                                                (void*) passphrase);
-            }
-            if (rc != 1) {
-                goto err;
-            }
+            rc = EVP_PKEY_set1_EC_KEY(pkey, key->ecdsa);
             break;
 #endif
         case SSH_KEYTYPE_ED25519:
-            BIO_free(mem);
             SSH_LOG(SSH_LOG_WARN, "PEM output not supported for key type ssh-ed25519");
-            return NULL;
+            goto err;
         case SSH_KEYTYPE_DSS_CERT01:
         case SSH_KEYTYPE_RSA_CERT01:
         case SSH_KEYTYPE_ECDSA_P256_CERT01:
@@ -819,9 +761,38 @@ ssh_string pki_private_key_to_pem(const ssh_key key,
         case SSH_KEYTYPE_ED25519_CERT01:
         case SSH_KEYTYPE_UNKNOWN:
         default:
-            BIO_free(mem);
             SSH_LOG(SSH_LOG_WARN, "Unknown or invalid private key type %d", key->type);
-            return NULL;
+            goto err;
+    }
+    if (rc != 1) {
+        SSH_LOG(SSH_LOG_WARN, "Failed to initialize EVP_PKEY structure");
+        goto err;
+    }
+
+    if (passphrase == NULL) {
+        struct pem_get_password_struct pgp = { auth_fn, auth_data };
+
+        rc = PEM_write_bio_PrivateKey(mem,
+                                      pkey,
+                                      NULL, /* cipher */
+                                      NULL, /* kstr */
+                                      0, /* klen */
+                                      pem_get_password,
+                                      &pgp);
+    } else {
+        rc = PEM_write_bio_PrivateKey(mem,
+                                      pkey,
+                                      EVP_aes_128_cbc(),
+                                      NULL, /* kstr */
+                                      0, /* klen */
+                                      NULL, /* auth_fn */
+                                      (void*) passphrase);
+    }
+    EVP_PKEY_free(pkey);
+    pkey = NULL;
+
+    if (rc != 1) {
+        goto err;
     }
 
     BIO_get_mem_ptr(mem, &buf);
@@ -835,7 +806,9 @@ ssh_string pki_private_key_to_pem(const ssh_key key,
     BIO_free(mem);
 
     return blob;
+
 err:
+    EVP_PKEY_free(pkey);
     BIO_free(mem);
     return NULL;
 }
