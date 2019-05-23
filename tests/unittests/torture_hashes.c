@@ -57,6 +57,10 @@ static void torture_md5_hash(void **state)
     size_t hlen;
     int rc = 0;
 
+    if (ssh_fips_mode()) {
+        skip();
+    }
+
     rc = ssh_get_publickey_hash(pubkey, SSH_PUBLICKEY_HASH_MD5,
                                 (unsigned char **)&hash, &hlen);
     if (ssh_fips_mode()) {
