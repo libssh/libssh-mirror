@@ -288,7 +288,7 @@ int sftp_server_init(sftp_session sftp){
   }
   ssh_buffer_free(reply);
 
-  SSH_LOG(SSH_LOG_RARE, "Server version sent");
+  SSH_LOG(SSH_LOG_PROTOCOL, "Server version sent");
 
   if (version > LIBSFTP_VERSION) {
     sftp->version = LIBSFTP_VERSION;
@@ -678,7 +678,7 @@ int sftp_init(sftp_session sftp) {
       sftp_set_error(sftp, SSH_FX_FAILURE);
       return -1;
   }
-  SSH_LOG(SSH_LOG_RARE,
+  SSH_LOG(SSH_LOG_PROTOCOL,
       "SFTP server version %d",
       version);
   rc = ssh_buffer_unpack(packet->payload, "s", &ext_name);
@@ -691,7 +691,7 @@ int sftp_init(sftp_session sftp) {
       break;
     }
 
-    SSH_LOG(SSH_LOG_RARE,
+    SSH_LOG(SSH_LOG_PROTOCOL,
         "SFTP server extension: %s, version: %s",
         ext_name, ext_data);
 
@@ -1324,7 +1324,7 @@ static sftp_attributes sftp_parse_attr_3(sftp_session sftp, ssh_buffer buf,
         if (rc != SSH_OK){
             goto error;
         }
-        SSH_LOG(SSH_LOG_RARE, "Name: %s", attr->name);
+        SSH_LOG(SSH_LOG_PROTOCOL, "Name: %s", attr->name);
 
         /* Set owner and group if we talk to openssh and have the longname */
         if (ssh_get_openssh_version(sftp->session)) {
@@ -1344,7 +1344,7 @@ static sftp_attributes sftp_parse_attr_3(sftp_session sftp, ssh_buffer buf,
     if (rc != SSH_OK){
         goto error;
     }
-    SSH_LOG(SSH_LOG_RARE,
+    SSH_LOG(SSH_LOG_PROTOCOL,
             "Flags: %.8lx\n", (long unsigned int) attr->flags);
 
     if (attr->flags & SSH_FILEXFER_ATTR_SIZE) {
@@ -1352,7 +1352,7 @@ static sftp_attributes sftp_parse_attr_3(sftp_session sftp, ssh_buffer buf,
         if(rc != SSH_OK) {
             goto error;
         }
-        SSH_LOG(SSH_LOG_RARE,
+        SSH_LOG(SSH_LOG_PROTOCOL,
                 "Size: %llu\n",
                 (long long unsigned int) attr->size);
     }
@@ -1613,7 +1613,7 @@ sftp_attributes sftp_readdir(sftp_session sftp, sftp_dir dir)
         return NULL;
     }
 
-    SSH_LOG(SSH_LOG_RARE, "Count is %d", dir->count);
+    SSH_LOG(SSH_LOG_PROTOCOL, "Count is %d", dir->count);
 
     attr = sftp_parse_attr(sftp, dir->buffer, 1);
     if (attr == NULL) {

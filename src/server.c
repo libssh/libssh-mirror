@@ -336,7 +336,7 @@ static void ssh_server_connection_callback(ssh_session session){
                 goto error;
             }
             set_status(session, 0.4f);
-            SSH_LOG(SSH_LOG_RARE,
+            SSH_LOG(SSH_LOG_PROTOCOL,
                     "SSH client banner: %s", session->clientbanner);
 
             /* Here we analyze the different protocols the server allows. */
