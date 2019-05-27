@@ -409,15 +409,32 @@ struct ssh_list *ssh_known_hosts_get_algorithms(ssh_session session)
     for (it = ssh_list_get_iterator(entry_list);
          it != NULL;
          it = ssh_list_get_iterator(entry_list)) {
+        struct ssh_iterator *it2 = NULL;
         struct ssh_knownhosts_entry *entry = NULL;
         const char *algo = NULL;
+        bool present = false;
 
         entry = ssh_iterator_value(struct ssh_knownhosts_entry *, it);
         algo = entry->publickey->type_c;
 
-        rc = ssh_list_append(list, algo);
-        if (rc != SSH_OK) {
-            list_error = 1;
+        /* Check for duplicates */
+        for (it2 = ssh_list_get_iterator(list);
+             it2 != NULL;
+             it2 = it2->next) {
+            char *alg2 = ssh_iterator_value(char *, it2);
+            int cmp = strcmp(alg2, algo);
+            if (cmp == 0) {
+                present = true;
+                break;
+            }
+        }
+
+        /* Add to the new list only if it is unique */
+        if (!present) {
+            rc = ssh_list_append(list, algo);
+            if (rc != SSH_OK) {
+               list_error = 1;
+            }
         }
 
         ssh_knownhosts_entry_free(entry);
