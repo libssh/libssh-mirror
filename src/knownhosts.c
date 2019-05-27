@@ -182,6 +182,29 @@ static int known_hosts_read_line(FILE *fp,
     return -1;
 }
 
+static int
+ssh_known_hosts_entries_compare(struct ssh_knownhosts_entry *k1,
+                                struct ssh_knownhosts_entry *k2)
+{
+    int cmp;
+
+    if (k1 == NULL || k2 == NULL) {
+        return 1;
+    }
+
+    cmp = strcmp(k1->hostname, k2->hostname);
+    if (cmp != 0) {
+        return cmp;
+    }
+
+    cmp = ssh_key_cmp(k1->publickey, k2->publickey, SSH_KEY_CMP_PUBLIC);
+    if (cmp != 0) {
+        return cmp;
+    }
+
+    return 0;
+}
+
 /* This method reads the known_hosts file referenced by the path
  * in  filename  argument, and entries matching the  match  argument
  * will be added to the list in  entries  argument.
@@ -218,7 +241,8 @@ static int ssh_known_hosts_read_entries(const char *match,
          rc == 0;
          rc = known_hosts_read_line(fp, line, sizeof(line), &len, &lineno)) {
         struct ssh_knownhosts_entry *entry = NULL;
-        char *p;
+        struct ssh_iterator *it = NULL;
+        char *p = NULL;
 
         if (line[len] != '\n') {
             len = strcspn(line, "\n");
@@ -247,7 +271,24 @@ static int ssh_known_hosts_read_entries(const char *match,
         } else if (rc != SSH_OK) {
             goto error;
         }
-        ssh_list_append(*entries, entry);
+
+        /* Check for duplicates */
+        for (it = ssh_list_get_iterator(*entries);
+             it != NULL;
+             it = it->next) {
+            struct ssh_knownhosts_entry *entry2;
+            int cmp;
+            entry2 = ssh_iterator_value(struct ssh_knownhosts_entry *, it);
+            cmp = ssh_known_hosts_entries_compare(entry, entry2);
+            if (cmp == 0) {
+                ssh_knownhosts_entry_free(entry);
+                entry = NULL;
+                break;
+            }
+        }
+        if (entry != NULL) {
+            ssh_list_append(*entries, entry);
+        }
     }
 
     fclose(fp);
