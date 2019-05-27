@@ -73,6 +73,75 @@ close_fp:
     return rc;
 }
 
+static int setup_knownhosts_file_duplicate(void **state)
+{
+    char *tmp_file = NULL;
+    size_t nwritten;
+    FILE *fp = NULL;
+    int rc = 0;
+
+    tmp_file = torture_create_temp_file(TMP_FILE_NAME);
+    assert_non_null(tmp_file);
+
+    *state = tmp_file;
+
+    fp = fopen(tmp_file, "w");
+    assert_non_null(fp);
+
+    /* ed25519 key */
+    nwritten = fwrite(LOCALHOST_PATTERN_ED25519,
+                      sizeof(char),
+                      strlen(LOCALHOST_PATTERN_ED25519),
+                      fp);
+    if (nwritten != strlen(LOCALHOST_PATTERN_ED25519)) {
+        rc = -1;
+        goto close_fp;
+    }
+
+    nwritten = fwrite("\n", sizeof(char), 1, fp);
+    if (nwritten != 1) {
+        rc = -1;
+        goto close_fp;
+    }
+
+    /* RSA key */
+    nwritten = fwrite(LOCALHOST_RSA_LINE,
+                      sizeof(char),
+                      strlen(LOCALHOST_RSA_LINE),
+                      fp);
+    if (nwritten != strlen(LOCALHOST_RSA_LINE)) {
+        rc = -1;
+        goto close_fp;
+    }
+
+    nwritten = fwrite("\n", sizeof(char), 1, fp);
+    if (nwritten != 1) {
+        rc = -1;
+        goto close_fp;
+    }
+
+    /* ed25519 key again */
+    nwritten = fwrite(LOCALHOST_PATTERN_ED25519,
+                      sizeof(char),
+                      strlen(LOCALHOST_PATTERN_ED25519),
+                      fp);
+    if (nwritten != strlen(LOCALHOST_PATTERN_ED25519)) {
+        rc = -1;
+        goto close_fp;
+    }
+
+    nwritten = fwrite("\n", sizeof(char), 1, fp);
+    if (nwritten != 1) {
+        rc = -1;
+        goto close_fp;
+    }
+
+close_fp:
+    fclose(fp);
+
+    return rc;
+}
+
 static int teardown_knownhosts_file(void **state)
 {
     char *tmp_file = *state;
@@ -279,6 +348,7 @@ static void torture_knownhosts_read_file(void **state)
     assert_string_equal(entry->hostname, "localhost");
     type = ssh_key_type(entry->publickey);
     assert_int_equal(type, SSH_KEYTYPE_ED25519);
+    assert_non_null(it->next);
 
     it = it->next;
 
@@ -289,6 +359,7 @@ static void torture_knownhosts_read_file(void **state)
     assert_string_equal(entry->hostname, "localhost");
     type = ssh_key_type(entry->publickey);
     assert_int_equal(type, SSH_KEYTYPE_RSA);
+    assert_null(it->next);
 
     it = ssh_list_get_iterator(entry_list);
     for (;it != NULL; it = it->next) {
@@ -423,6 +494,9 @@ int torture_run_tests(void) {
         cmocka_unit_test(torture_knownhosts_parse_line_hashed_ed25519),
         cmocka_unit_test_setup_teardown(torture_knownhosts_read_file,
                                         setup_knownhosts_file,
+                                        teardown_knownhosts_file),
+        cmocka_unit_test_setup_teardown(torture_knownhosts_read_file,
+                                        setup_knownhosts_file_duplicate,
                                         teardown_knownhosts_file),
 #ifndef _WIN32
         cmocka_unit_test_setup_teardown(torture_knownhosts_host_exists,
