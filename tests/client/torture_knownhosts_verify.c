@@ -204,6 +204,57 @@ static void torture_knownhosts_precheck(void **state)
     ssh_list_free(algo_list);
 }
 
+static void torture_knownhosts_duplicate(void **state)
+{
+    struct torture_state *s = *state;
+    ssh_session session = s->ssh.session;
+    struct ssh_list *algo_list = NULL;
+    struct ssh_iterator *it = NULL;
+    size_t algo_count;
+    const char *algo = NULL;
+    char known_hosts_file[1024] = {0};
+    FILE *file;
+    int rc;
+
+    snprintf(known_hosts_file,
+             sizeof(known_hosts_file),
+             "%s/%s",
+             s->socket_dir,
+             TORTURE_KNOWN_HOSTS_FILE);
+
+    file = fopen(known_hosts_file, "w");
+    assert_non_null(file);
+    fprintf(file,
+            "127.0.0.10 %s\n",
+            torture_get_testkey_pub(SSH_KEYTYPE_RSA));
+
+    fprintf(file,
+            "127.0.0.10 %s\n",
+            torture_get_testkey_pub(SSH_KEYTYPE_RSA));
+
+    fprintf(file,
+            "127.0.0.10 %s\n",
+            torture_get_testkey_pub(SSH_KEYTYPE_RSA));
+
+    fclose(file);
+
+    rc = ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, known_hosts_file);
+    assert_ssh_return_code(session, rc);
+
+    algo_list = ssh_known_hosts_get_algorithms(session);
+    assert_non_null(algo_list);
+
+    algo_count = ssh_list_count(algo_list);
+    assert_int_equal(algo_count, 1);
+
+    it = ssh_list_get_iterator(algo_list);
+    assert_non_null(it);
+    algo = ssh_iterator_value(const char *, it);
+    assert_string_equal(algo, "ssh-rsa");
+
+    ssh_list_free(algo_list);
+}
+
 static void torture_knownhosts_other(void **state)
 {
     struct torture_state *s = *state;
@@ -382,6 +433,9 @@ int torture_run_tests(void) {
                                         session_setup,
                                         session_teardown),
         cmocka_unit_test_setup_teardown(torture_knownhosts_conflict,
+                                        session_setup,
+                                        session_teardown),
+        cmocka_unit_test_setup_teardown(torture_knownhosts_duplicate,
                                         session_setup,
                                         session_teardown),
     };
