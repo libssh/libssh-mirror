@@ -1370,14 +1370,19 @@ static ssh_string pki_dsa_signature_to_blob(const ssh_signature sig)
     ssh_string s = NULL;
     int s_len, s_offset_in, s_offset_out;
 
-    const unsigned char *raw_sig_data = ssh_string_data(sig->raw_sig);
-    size_t raw_sig_len = ssh_string_len(sig->raw_sig);
+    const unsigned char *raw_sig_data = NULL;
+    size_t raw_sig_len;
 
     DSA_SIG *dsa_sig;
 
-    if (sig == NULL || sig->raw_sig == NULL || raw_sig_data == NULL) {
+    if (sig == NULL || sig->raw_sig == NULL) {
         return NULL;
     }
+    raw_sig_data = ssh_string_data(sig->raw_sig);
+    if (raw_sig_data == NULL) {
+        return NULL;
+    }
+    raw_sig_len = ssh_string_len(sig->raw_sig);
 
     dsa_sig = d2i_DSA_SIG(NULL, &raw_sig_data, raw_sig_len);
     if (dsa_sig == NULL) {
@@ -1444,16 +1449,21 @@ static ssh_string pki_ecdsa_signature_to_blob(const ssh_signature sig)
 
     const BIGNUM *pr = NULL, *ps = NULL;
 
-    const unsigned char *raw_sig_data = ssh_string_data(sig->raw_sig);
-    size_t raw_sig_len = ssh_string_len(sig->raw_sig);
+    const unsigned char *raw_sig_data = NULL;
+    size_t raw_sig_len;
 
     ECDSA_SIG *ecdsa_sig;
 
     int rc;
 
-    if (sig == NULL || sig->raw_sig == NULL || raw_sig_data == NULL) {
+    if (sig == NULL || sig->raw_sig == NULL) {
         return NULL;
     }
+    raw_sig_data = ssh_string_data(sig->raw_sig);
+    if (raw_sig_data == NULL) {
+        return NULL;
+    }
+    raw_sig_len = ssh_string_len(sig->raw_sig);
 
     ecdsa_sig = d2i_ECDSA_SIG(NULL, &raw_sig_data, raw_sig_len);
     if (ecdsa_sig == NULL) {
