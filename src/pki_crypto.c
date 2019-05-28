@@ -1769,7 +1769,7 @@ static int pki_signature_from_ecdsa_blob(UNUSED_PARAM(const ssh_key pubkey),
 
     s = ssh_buffer_get_ssh_string(buf);
     rlen = ssh_buffer_get_len(buf);
-    ssh_buffer_free(buf);
+    SSH_BUFFER_FREE(buf);
     if (s == NULL) {
         goto error;
     }
@@ -1833,7 +1833,7 @@ static int pki_signature_from_ecdsa_blob(UNUSED_PARAM(const ssh_key pubkey),
     return SSH_OK;
 
 error:
-    ssh_buffer_free(buf);
+    SSH_BUFFER_FREE(buf);
     bignum_safe_free(ps);
     bignum_safe_free(pr);
     SAFE_FREE(raw_sig_data);
