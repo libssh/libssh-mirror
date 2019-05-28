@@ -2152,13 +2152,14 @@ int ssh_pki_signature_verify(ssh_session session,
                              size_t input_len)
 {
     int rc;
-    enum ssh_keytypes_e key_type = ssh_key_type_plain(key->type);
+    enum ssh_keytypes_e key_type;
 
     if (session == NULL || sig == NULL || key == NULL || input == NULL) {
         SSH_LOG(SSH_LOG_TRACE, "Bad parameter provided to "
                                "ssh_pki_signature_verify()");
         return SSH_ERROR;
     }
+    key_type = ssh_key_type_plain(key->type);
 
     SSH_LOG(SSH_LOG_FUNCTIONS,
             "Going to verify a %s type signature",
