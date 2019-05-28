@@ -67,6 +67,9 @@ static ssh_buffer gzip_compress(ssh_session session, ssh_buffer source, int leve
   int status;
 
   crypto = ssh_packet_get_current_crypto(session, SSH_DIRECTION_OUT);
+  if (crypto == NULL) {
+      return NULL;
+  }
   zout = crypto->compress_out_ctx;
   if (zout == NULL) {
     zout = crypto->compress_out_ctx = initcompress(session, level);
