@@ -132,25 +132,26 @@ static void torture_pubkey_from_file(void **state) {
     SSH_STRING_FREE(pubkey);
 }
 
-static int torture_read_one_line(const char *filename, char *buffer, size_t len) {
-  FILE *fp;
-  size_t rc;
+static int torture_read_one_line(const char *filename, char *buffer, size_t len)
+{
+    FILE *fp;
+    size_t nmemb;
 
-  fp = fopen(filename, "r");
-  if (fp == NULL) {
-    return -1;
-  }
+    fp = fopen(filename, "r");
+    if (fp == NULL) {
+        return -1;
+    }
 
-  rc = fread(buffer, len, 1, fp);
-  if (rc != 0 || ferror(fp)) {
+    nmemb = fread(buffer, len - 2, 1, fp);
+    if (nmemb != 0 || ferror(fp)) {
+        fclose(fp);
+        return -1;
+    }
+    buffer[len - 1] = '\0';
+
     fclose(fp);
-    return -1;
-  }
-  buffer[len - 1] = '\0';
 
-  fclose(fp);
-
-  return 0;
+    return 0;
 }
 
 static void torture_pubkey_generate_from_privkey(void **state) {
