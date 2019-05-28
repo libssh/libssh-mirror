@@ -380,6 +380,7 @@ static int open_tcp_socket(ssh_message msg) {
 
     host = gethostbyname(dest_hostname);
     if (host == NULL) {
+        close(forwardsock);
         _ssh_log(SSH_LOG_WARNING, "=== open_tcp_socket", "ERROR, no such host: %s", dest_hostname);
         return -1;
     }
@@ -390,6 +391,7 @@ static int open_tcp_socket(ssh_message msg) {
     sin.sin_port = htons(dest_port);
 
     if (connect(forwardsock, (struct sockaddr *)&sin, sizeof(sin)) < 0) {
+        close(forwardsock);
         _ssh_log(SSH_LOG_WARNING, "=== open_tcp_socket", "ERROR connecting: %s", strerror(errno));
         return -1;
     }
