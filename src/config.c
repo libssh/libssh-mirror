@@ -695,6 +695,10 @@ ssh_config_parse_line(ssh_session session,
       break;
     case SOC_PROXYJUMP:
         p = ssh_config_get_str_tok(&s, NULL);
+        if (p == NULL) {
+            SAFE_FREE(x);
+            return -1;
+        }
         /* We share the seen value with the ProxyCommand */
         rv = ssh_config_parse_proxy_jump(session, p,
                                          (*parsing && !seen[SOC_PROXYCOMMAND]));
