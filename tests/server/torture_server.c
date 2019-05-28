@@ -283,9 +283,9 @@ static int session_setup(void **state)
     assert_non_null(s->ssh.session);
 
     rc = ssh_options_set(s->ssh.session, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
-    assert_return_code(s->ssh.session, rc);
+    assert_ssh_return_code(s->ssh.session, rc);
     rc = ssh_options_set(s->ssh.session, SSH_OPTIONS_HOST, TORTURE_SSH_SERVER);
-    assert_return_code(s->ssh.session, rc);
+    assert_ssh_return_code(s->ssh.session, rc);
     /* Make sure no other configuration options from system will get used */
     rc = ssh_options_set(s->ssh.session, SSH_OPTIONS_PROCESS_CONFIG, &b);
     assert_ssh_return_code(s->ssh.session, rc);
@@ -456,14 +456,14 @@ static void torture_server_hostkey_mismatch(void **state)
     assert_ssh_return_code(session, rc);
     /* Using the default user for the server */
     rc = ssh_options_set(session, SSH_OPTIONS_USER, SSHD_DEFAULT_USER);
-    assert_return_code(session, rc);
+    assert_ssh_return_code(session, rc);
 
     /* Configure the client to offer only ssh-rsa hostkey algorithm */
     rc = ssh_options_set(session, SSH_OPTIONS_HOSTKEYS, "ssh-rsa");
-    assert_return_code(session, rc);
+    assert_ssh_return_code(session, rc);
 
     rc = ssh_connect(session);
-    assert_return_code(session, rc);
+    assert_ssh_return_code(session, rc);
 
     /* Make sure we can verify the signature */
     found = ssh_session_is_known_server(session);
