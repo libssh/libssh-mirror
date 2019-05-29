@@ -419,16 +419,11 @@ static int try_config_content(void **state, const char *config_content,
     return 0;
 }
 
-static void torture_server_config_hostkey(void **state)
+static char *hostkey_files[6] = {0};
+
+static size_t setup_hostkey_files(struct test_server_st *tss)
 {
-    struct test_server_st *tss = *state;
-    char *hostkey_files[6];
-    size_t i, num_hostkey_files = 5;
-    char config_content[4096];
-
-    int rc;
-
-    assert_non_null(tss);
+    size_t num_hostkey_files = 5;
 
     hostkey_files[0] = tss->ed25519_hostkey;
     hostkey_files[1] = tss->rsa_hostkey;
@@ -440,7 +435,25 @@ static void torture_server_config_hostkey(void **state)
     num_hostkey_files = 6;
 #endif
 
+    return num_hostkey_files;
+}
+
+static void torture_server_config_hostkey(void **state)
+{
+    struct test_server_st *tss = *state;
+    size_t i, num_hostkey_files;
+    char config_content[4096];
+
+    int rc;
+
+    assert_non_null(tss);
+
+    num_hostkey_files = setup_hostkey_files(tss);
+
     for (i = 0; i < num_hostkey_files; i++) {
+        if (ssh_fips_mode() && (i == 0 || i == 5)) {
+            continue;
+        }
         snprintf(config_content,
                 sizeof(config_content),
                 "HostKey %s\n",
@@ -457,7 +470,6 @@ static void torture_server_config_hostkey(void **state)
 static void torture_server_config_ciphers(void **state)
 {
     struct test_server_st *tss = *state;
-    char *hostkey_files[6];
     size_t i, j, num_hostkey_files = 1;
     char config_content[4096];
 
@@ -469,18 +481,7 @@ static void torture_server_config_ciphers(void **state)
 
     assert_non_null(tss);
 
-    hostkey_files[0] = tss->ed25519_hostkey;
-#ifdef TEST_ALL_CRYPTO_COMBINATIONS
-    hostkey_files[1] = tss->rsa_hostkey;
-    hostkey_files[2] = tss->ecdsa_256_hostkey;
-    hostkey_files[3] = tss->ecdsa_384_hostkey;
-    hostkey_files[4] = tss->ecdsa_521_hostkey;
-    num_hostkey_files = 5;
-#ifdef HAVE_DSA
-    hostkey_files[5] = tss->dsa_hostkey;
-    num_hostkey_files = 6;
-#endif
-#endif
+    num_hostkey_files = setup_hostkey_files(tss);
 
     ciphers = ssh_kex_get_default_methods(SSH_CRYPT_S_C);
     assert_non_null(ciphers);
@@ -489,6 +490,14 @@ static void torture_server_config_ciphers(void **state)
     assert_non_null(tokens);
 
     for (i = 0; i < num_hostkey_files; i++) {
+        if (ssh_fips_mode() && (i == 0 || i == 5)) {
+            continue;
+        }
+#ifndef TEST_ALL_CRYPTO_COMBINATIONS
+        if (i > 1) {
+            continue;
+        }
+#endif
         /* Try setting all default algorithms */
         snprintf(config_content,
                  sizeof(config_content),
@@ -525,7 +534,6 @@ static void torture_server_config_ciphers(void **state)
 static void torture_server_config_macs(void **state)
 {
     struct test_server_st *tss = *state;
-    char *hostkey_files[6];
     size_t i, j, num_hostkey_files = 1;
     char config_content[4096];
 
@@ -537,18 +545,7 @@ static void torture_server_config_macs(void **state)
 
     assert_non_null(tss);
 
-    hostkey_files[0] = tss->ed25519_hostkey;
-#ifdef TEST_ALL_CRYPTO_COMBINATIONS
-    hostkey_files[1] = tss->rsa_hostkey;
-    hostkey_files[2] = tss->ecdsa_256_hostkey;
-    hostkey_files[3] = tss->ecdsa_384_hostkey;
-    hostkey_files[4] = tss->ecdsa_521_hostkey;
-    num_hostkey_files = 5;
-#ifdef HAVE_DSA
-    hostkey_files[5] = tss->dsa_hostkey;
-    num_hostkey_files = 6;
-#endif
-#endif
+    num_hostkey_files = setup_hostkey_files(tss);
 
     macs = ssh_kex_get_default_methods(SSH_MAC_S_C);
     assert_non_null(macs);
@@ -557,6 +554,14 @@ static void torture_server_config_macs(void **state)
     assert_non_null(tokens);
 
     for (i = 0; i < num_hostkey_files; i++) {
+        if (ssh_fips_mode() && (i == 0 || i == 5)) {
+            continue;
+        }
+#ifndef TEST_ALL_CRYPTO_COMBINATIONS
+        if (i > 1) {
+            continue;
+        }
+#endif
         /* Try setting all default algorithms */
         snprintf(config_content,
                  sizeof(config_content),
@@ -593,7 +598,6 @@ static void torture_server_config_macs(void **state)
 static void torture_server_config_kex(void **state)
 {
     struct test_server_st *tss = *state;
-    char *hostkey_files[6];
     size_t i, j, num_hostkey_files = 1;
     char config_content[4096];
 
@@ -605,18 +609,7 @@ static void torture_server_config_kex(void **state)
 
     assert_non_null(tss);
 
-    hostkey_files[0] = tss->ed25519_hostkey;
-#ifdef TEST_ALL_CRYPTO_COMBINATIONS
-    hostkey_files[1] = tss->rsa_hostkey;
-    hostkey_files[2] = tss->ecdsa_256_hostkey;
-    hostkey_files[3] = tss->ecdsa_384_hostkey;
-    hostkey_files[4] = tss->ecdsa_521_hostkey;
-    num_hostkey_files = 5;
-#ifdef HAVE_DSA
-    hostkey_files[5] = tss->dsa_hostkey;
-    num_hostkey_files = 6;
-#endif
-#endif
+    num_hostkey_files = setup_hostkey_files(tss);
 
     kex = ssh_kex_get_default_methods(SSH_KEX);
     assert_non_null(kex);
@@ -625,6 +618,14 @@ static void torture_server_config_kex(void **state)
     assert_non_null(tokens);
 
     for (i = 0; i < num_hostkey_files; i++) {
+        if (ssh_fips_mode() && (i == 0 || i == 5)) {
+            continue;
+        }
+#ifndef TEST_ALL_CRYPTO_COMBINATIONS
+        if (i > 1) {
+            continue;
+        }
+#endif
         /* Try setting all default algorithms */
         snprintf(config_content,
                  sizeof(config_content),
@@ -661,7 +662,6 @@ static void torture_server_config_kex(void **state)
 static void torture_server_config_hostkey_algorithms(void **state)
 {
     struct test_server_st *tss = *state;
-    char *hostkey_files[6];
     size_t i, num_hostkey_files = 5;
     char config_content[4096];
 
@@ -671,20 +671,15 @@ static void torture_server_config_hostkey_algorithms(void **state)
 
     assert_non_null(tss);
 
-    hostkey_files[0] = tss->ed25519_hostkey;
-    hostkey_files[1] = tss->rsa_hostkey;
-    hostkey_files[2] = tss->ecdsa_256_hostkey;
-    hostkey_files[3] = tss->ecdsa_384_hostkey;
-    hostkey_files[4] = tss->ecdsa_521_hostkey;
-#ifdef HAVE_DSA
-    hostkey_files[5] = tss->dsa_hostkey;
-    num_hostkey_files = 6;
-#endif
+    num_hostkey_files = setup_hostkey_files(tss);
 
     allowed = ssh_kex_get_default_methods(SSH_HOSTKEYS);
     assert_non_null(allowed);
 
     for (i = 0; i < num_hostkey_files; i++) {
+        if (ssh_fips_mode() && (i == 0 || i == 5)) {
+            continue;
+        }
         /* Should work with all allowed */
         snprintf(config_content,
                  sizeof(config_content),
@@ -700,29 +695,31 @@ static void torture_server_config_hostkey_algorithms(void **state)
 
     /* Should work with matching hostkey and allowed algorithm */
 
-    /* ed25519 */
-    snprintf(config_content,
-            sizeof(config_content),
-            "HostKey %s\nHostkeyAlgorithms %s\n",
-            tss->ed25519_hostkey, "ssh-ed25519");
+    if (!ssh_fips_mode()) {
+        /* ed25519 */
+        snprintf(config_content,
+                sizeof(config_content),
+                "HostKey %s\nHostkeyAlgorithms %s\n",
+                tss->ed25519_hostkey, "ssh-ed25519");
 
-    rc = try_config_content(state, config_content, true);
-    assert_int_equal(rc, 0);
+        rc = try_config_content(state, config_content, true);
+        assert_int_equal(rc, 0);
 
-    rc = try_config_content(state, config_content, false);
-    assert_int_equal(rc, 0);
+        rc = try_config_content(state, config_content, false);
+        assert_int_equal(rc, 0);
 
-    /* ssh-rsa */
-    snprintf(config_content,
-            sizeof(config_content),
-            "HostKey %s\nHostkeyAlgorithms %s\n",
-            tss->rsa_hostkey, "ssh-rsa");
+        /* ssh-rsa */
+        snprintf(config_content,
+                sizeof(config_content),
+                "HostKey %s\nHostkeyAlgorithms %s\n",
+                tss->rsa_hostkey, "ssh-rsa");
 
-    rc = try_config_content(state, config_content, true);
-    assert_int_equal(rc, 0);
+        rc = try_config_content(state, config_content, true);
+        assert_int_equal(rc, 0);
 
-    rc = try_config_content(state, config_content, false);
-    assert_int_equal(rc, 0);
+        rc = try_config_content(state, config_content, false);
+        assert_int_equal(rc, 0);
+    }
 
     /* rsa-sha2-256 */
     snprintf(config_content,
@@ -785,17 +782,19 @@ static void torture_server_config_hostkey_algorithms(void **state)
     assert_int_equal(rc, 0);
 
 #ifdef HAVE_DSA
-    /* ecdsa-sha2-nistp256 */
-    snprintf(config_content,
-            sizeof(config_content),
-            "HostKey %s\nHostkeyAlgorithms %s\n",
-            tss->dsa_hostkey, "ssh-dss");
+    if (!ssh_fips_mode()) {
+        /* ssh-dss */
+        snprintf(config_content,
+                sizeof(config_content),
+                "HostKey %s\nHostkeyAlgorithms %s\n",
+                tss->dsa_hostkey, "ssh-dss");
 
-    rc = try_config_content(state, config_content, true);
-    assert_int_equal(rc, 0);
+        rc = try_config_content(state, config_content, true);
+        assert_int_equal(rc, 0);
 
-    rc = try_config_content(state, config_content, false);
-    assert_int_equal(rc, 0);
+        rc = try_config_content(state, config_content, false);
+        assert_int_equal(rc, 0);
+    }
 #endif
 }
 
