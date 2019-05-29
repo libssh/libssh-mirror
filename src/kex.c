@@ -264,12 +264,13 @@ const char *ssh_kex_get_default_methods(uint32_t algo)
     return default_methods[algo];
 }
 
-const char *ssh_kex_get_supported_method(uint32_t algo) {
-  if (algo >= KEX_METHODS_SIZE) {
-    return NULL;
-  }
+const char *ssh_kex_get_supported_method(uint32_t algo)
+{
+    if (algo >= KEX_METHODS_SIZE) {
+        return NULL;
+    }
 
-  return supported_methods[algo];
+    return supported_methods[algo];
 }
 
 const char *ssh_kex_get_description(uint32_t algo) {
