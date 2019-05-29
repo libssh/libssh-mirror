@@ -367,9 +367,9 @@ static int try_config_content(void **state, const char *config_content,
              tss->temp_dir);
 
     if (parse_global) {
-        printf("Using system-wide configuration\n");
+        fprintf(stderr, "Using system-wide configuration\n");
     }
-    printf("Trying content: \n\n%s\n", config_content);
+    fprintf(stderr, "Trying content: \n\n%s\n", config_content);
 
     torture_write_file(config_file, config_content);
 
