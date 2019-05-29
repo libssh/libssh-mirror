@@ -96,7 +96,11 @@ static void cleanup_pcap(struct session_data_st *sdata)
         return;
     }
 
-    ssh_pcap_file_free(sdata->pcap);
+    /* Do not free the pcap data context here since its ownership was
+     * transfered to the session object, which will take care of its cleanup.
+     * Morover it is still in use so we can very simply crash by freeing
+     * it here.
+     */
     sdata->pcap = NULL;
 }
 #endif
