@@ -520,7 +520,7 @@ static int setup_kbdint_server(void **state)
     struct server_state_st *ss;
     struct test_server_st *tss;
 
-    char ed25519_hostkey[1024] = {0};
+    char rsa_hostkey[1024] = {0};
 
     char sshd_path[1024];
 
@@ -550,12 +550,12 @@ static int setup_kbdint_server(void **state)
     rc = mkdir(sshd_path, 0755);
     assert_return_code(rc, errno);
 
-    snprintf(ed25519_hostkey,
-             sizeof(ed25519_hostkey),
-             "%s/sshd/ssh_host_ed25519_key",
+    snprintf(rsa_hostkey,
+             sizeof(rsa_hostkey),
+             "%s/sshd/ssh_host_rsa_key",
              s->socket_dir);
-    torture_write_file(ed25519_hostkey,
-                       torture_get_openssh_testkey(SSH_KEYTYPE_ED25519, 0));
+    torture_write_file(rsa_hostkey,
+                       torture_get_openssh_testkey(SSH_KEYTYPE_RSA, 0));
 
     /* Create the server state */
     ss = (struct server_state_st *)calloc(1, sizeof(struct server_state_st));
@@ -566,8 +566,8 @@ static int setup_kbdint_server(void **state)
 
     ss->port = 22;
 
-    ss->host_key = strdup(ed25519_hostkey);
-    assert_non_null(ed25519_hostkey);
+    ss->host_key = strdup(rsa_hostkey);
+    assert_non_null(rsa_hostkey);
 
     ss->verbosity = torture_libssh_verbosity();
 
@@ -699,10 +699,10 @@ static void torture_server_auth_kbdint(void **state)
     assert_non_null(session);
 
     rc = ssh_options_set(session, SSH_OPTIONS_USER, TORTURE_SSH_USER_BOB);
-    assert_int_equal(rc, SSH_OK);
+    assert_ssh_return_code(session, rc);
 
     rc = ssh_connect(session);
-    assert_int_equal(rc, SSH_OK);
+    assert_ssh_return_code(session, rc);
 
     rc = ssh_userauth_none(session,NULL);
     /* This request should return a SSH_REQUEST_DENIED error */
