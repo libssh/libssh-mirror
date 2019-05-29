@@ -536,7 +536,7 @@ ssh_string ssh_agent_sign_data(ssh_session session,
     }
 
     /* Add Flags: SHA2 extension (RFC 8332) if negotiated */
-    if (pubkey->type == SSH_KEYTYPE_RSA) {
+    if (ssh_key_type_plain(pubkey->type) == SSH_KEYTYPE_RSA) {
         if (session->extensions & SSH_EXT_SIG_RSA_SHA512) {
             flags |= SSH_AGENT_RSA_SHA2_512;
         } else if (session->extensions & SSH_EXT_SIG_RSA_SHA256) {
