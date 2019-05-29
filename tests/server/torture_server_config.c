@@ -389,10 +389,10 @@ static int try_config_content(void **state, const char *config_content,
 
     /* Authenticate as alice with bob */
     rc = ssh_options_set(session, SSH_OPTIONS_USER, TORTURE_SSH_USER_ALICE);
-    assert_int_equal(rc, SSH_OK);
+    assert_ssh_return_code(session, rc);
 
     rc = ssh_connect(session);
-    assert_int_equal(rc, SSH_OK);
+    assert_ssh_return_code(session, rc);
 
     rc = ssh_userauth_none(session,NULL);
     /* This request should return a SSH_REQUEST_DENIED error */
