@@ -107,10 +107,18 @@ static void torture_rekey_default(void **state)
     int rc;
     struct ssh_crypto_struct *c = NULL;
 
-    /* Define preferred ciphers: (out) C->S has 8B block, (in) S->C has 16B block */
-    rc = ssh_options_set(s->ssh.session, SSH_OPTIONS_CIPHERS_C_S,
-                         "chacha20-poly1305@openssh.com");
+    /* Define preferred ciphers: */
+    if (ssh_fips_mode()) {
+        /* We do not have any FIPS allowed cipher with different block size */
+        rc = ssh_options_set(s->ssh.session, SSH_OPTIONS_CIPHERS_C_S,
+                             "aes128-gcm@openssh.com");
+    } else {
+        /* (out) C->S has 8B block */
+        rc = ssh_options_set(s->ssh.session, SSH_OPTIONS_CIPHERS_C_S,
+                             "chacha20-poly1305@openssh.com");
+    }
     assert_ssh_return_code(s->ssh.session, rc);
+    /* (in) S->C has 16B block */
     rc = ssh_options_set(s->ssh.session, SSH_OPTIONS_CIPHERS_S_C,
                          "aes128-cbc");
     assert_ssh_return_code(s->ssh.session, rc);
@@ -123,9 +131,15 @@ static void torture_rekey_default(void **state)
     /* For S->C (in) we have 16B block => 2**(L/4) blocks */
     assert_int_equal(c->in_cipher->max_blocks,
                      (uint64_t)1 << (2 * c->in_cipher->blocksize));
-    /* The C->S (out) we have 8B block => 1 GB limit */
-    assert_int_equal(c->out_cipher->max_blocks,
-                     ((uint64_t)1 << 30) / c->out_cipher->blocksize);
+    if (ssh_fips_mode()) {
+        /* We do not have any FIPS allowed cipher with different block size */
+        assert_int_equal(c->in_cipher->max_blocks,
+                         (uint64_t)1 << (2 * c->in_cipher->blocksize));
+    } else {
+        /* The C->S (out) we have 8B block => 1 GB limit */
+        assert_int_equal(c->out_cipher->max_blocks,
+                         ((uint64_t)1 << 30) / c->out_cipher->blocksize);
+    }
 
     ssh_disconnect(s->ssh.session);
 }
