@@ -213,20 +213,35 @@ const char *
 ssh_key_signature_to_char(enum ssh_keytypes_e type,
                           enum ssh_digest_e hash_type)
 {
-    if (type != SSH_KEYTYPE_RSA) {
-        return ssh_key_type_to_char(type);
-    }
-
-    switch (hash_type) {
-    case SSH_DIGEST_SHA256:
-        return "rsa-sha2-256";
-    case SSH_DIGEST_SHA512:
-        return "rsa-sha2-512";
-    case SSH_DIGEST_SHA1:
-    case SSH_DIGEST_AUTO:
-        return "ssh-rsa";
+    switch (type) {
+    case SSH_KEYTYPE_RSA:
+        switch (hash_type) {
+        case SSH_DIGEST_SHA256:
+            return "rsa-sha2-256";
+        case SSH_DIGEST_SHA512:
+            return "rsa-sha2-512";
+        case SSH_DIGEST_SHA1:
+        case SSH_DIGEST_AUTO:
+            return "ssh-rsa";
+        default:
+            return NULL;
+        }
+        break;
+    case SSH_KEYTYPE_RSA_CERT01:
+        switch (hash_type) {
+        case SSH_DIGEST_SHA256:
+            return "rsa-sha2-256-cert-v01@openssh.com";
+        case SSH_DIGEST_SHA512:
+            return "rsa-sha2-512-cert-v01@openssh.com";
+        case SSH_DIGEST_SHA1:
+        case SSH_DIGEST_AUTO:
+            return "ssh-rsa-cert-v01@openssh.com";
+        default:
+            return NULL;
+        }
+        break;
     default:
-        return NULL;
+        return ssh_key_type_to_char(type);
     }
 
     /* We should never reach this */
