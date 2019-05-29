@@ -33,7 +33,7 @@
 
 #define TORTURE_KNOWN_HOSTS_FILE "libssh_torture_knownhosts"
 
-#define BAD_ED25519 "AAAAC3NzaC1lZDI1NTE5AAAAIE74wHmKKkrxpW/dZ69pKPlMoWG9VvWfrNnUkWRQqaDa"
+#define BAD_RSA "AAAAB3NzaC1yc2EAAAADAQABAAABAQDXvXuawzaArEwkLIXTz/EWywLOCtqQL3P9yKkrhz6AplXP2PhOh5pyxa1VfGKe453jNeYBJ0ROto3BshXgZXbo86oLXTkbe0gO5xi3r5WjXxjOFvRRTLot5fPLNDOv9+TnsPmkNn0iIeyPnfrcPIyjWt5zSWUfkNC8oNHxsiSshjpbJvTXSDipukpUy41d7jg4uWGuonMTF7yu7HfuHqq7lhb0WlwSpfbqAbfYARBddcdcARyhix4RMWZZqVY20H3Vsjq8bjKC+NJXFce1PRg+qcOWQdlXEei4dkzAvHvfQRx1TjzkrBZ6B6thmZtyeb9IsiB0tg2g0JN2VTAGkxqp"
 
 static int sshd_group_setup(void **state)
 {
@@ -273,7 +273,7 @@ static void torture_knownhosts_other(void **state)
     rc = ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, known_hosts_file);
     assert_ssh_return_code(session, rc);
 
-    rc = ssh_options_set(session, SSH_OPTIONS_HOSTKEYS, "ssh-ed25519");
+    rc = ssh_options_set(session, SSH_OPTIONS_HOSTKEYS, "ecdsa-sha2-nistp521");
     assert_ssh_return_code(session, rc);
 
     file = fopen(known_hosts_file, "w");
@@ -307,7 +307,7 @@ static void torture_knownhosts_unknown(void **state)
     rc = ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, known_hosts_file);
     assert_ssh_return_code(session, rc);
 
-    rc = ssh_options_set(session, SSH_OPTIONS_HOSTKEYS, "ssh-ed25519");
+    rc = ssh_options_set(session, SSH_OPTIONS_HOSTKEYS, "ecdsa-sha2-nistp521");
     assert_ssh_return_code(session, rc);
 
     rc = ssh_connect(session);
@@ -368,14 +368,14 @@ static void torture_knownhosts_conflict(void **state)
     assert_non_null(file);
     fprintf(file,
             "127.0.0.10 %s %s\n",
-            "ssh-ed25519",
-            BAD_ED25519);
+            "ssh-rsa",
+            BAD_RSA);
     fclose(file);
 
     rc = ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, known_hosts_file);
     assert_ssh_return_code(session, rc);
 
-    rc = ssh_options_set(session, SSH_OPTIONS_HOSTKEYS, "ssh-ed25519");
+    rc = ssh_options_set(session, SSH_OPTIONS_HOSTKEYS, "rsa-sha2-256");
     assert_ssh_return_code(session, rc);
 
     rc = ssh_connect(session);
@@ -402,7 +402,7 @@ static void torture_knownhosts_conflict(void **state)
     rc = ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, known_hosts_file);
     assert_ssh_return_code(session, rc);
 
-    rc = ssh_options_set(session, SSH_OPTIONS_HOSTKEYS, "ssh-ed25519");
+    rc = ssh_options_set(session, SSH_OPTIONS_HOSTKEYS, "rsa-sha2-256");
     assert_ssh_return_code(session, rc);
 
     rc = ssh_connect(session);
