@@ -673,11 +673,22 @@ static void torture_auth_pubkey_types_ed25519(void **state)
 {
     struct torture_state *s = *state;
     ssh_session session = s->ssh.session;
+    char bob_ssh_key[1024];
+    ssh_key privkey = NULL;
+    struct passwd *pwd;
     int rc;
 
     if (ssh_fips_mode()) {
         skip();
     }
+
+    pwd = getpwnam("bob");
+    assert_non_null(pwd);
+
+    snprintf(bob_ssh_key,
+             sizeof(bob_ssh_key),
+             "%s/.ssh/id_ed25519",
+             pwd->pw_dir);
 
     rc = ssh_options_set(session, SSH_OPTIONS_USER, TORTURE_SSH_USER_ALICE);
     assert_ssh_return_code(session, rc);
@@ -693,12 +704,16 @@ static void torture_auth_pubkey_types_ed25519(void **state)
     rc = ssh_userauth_list(session, NULL);
     assert_true(rc & SSH_AUTH_METHOD_PUBLICKEY);
 
+    /* Import the ED25519 private key */
+    rc = ssh_pki_import_privkey_file(bob_ssh_key, NULL, NULL, NULL, &privkey);
+    assert_int_equal(rc, SSH_OK);
+
     /* Enable only RSA keys -- authentication should fail */
     rc = ssh_options_set(session, SSH_OPTIONS_PUBLICKEY_ACCEPTED_TYPES,
                          "ssh-rsa");
     assert_ssh_return_code(session, rc);
 
-    rc = ssh_userauth_publickey_auto(session, NULL, NULL);
+    rc = ssh_userauth_publickey(session, NULL, privkey);
     assert_int_equal(rc, SSH_AUTH_DENIED);
 
     /* Verify we can use also ed25519 keys */
@@ -706,9 +721,10 @@ static void torture_auth_pubkey_types_ed25519(void **state)
                          "ssh-ed25519");
     assert_ssh_return_code(session, rc);
 
-    rc = ssh_userauth_publickey_auto(session, NULL, NULL);
+    rc = ssh_userauth_publickey(session, NULL, privkey);
     assert_int_equal(rc, SSH_AUTH_SUCCESS);
 
+    SSH_KEY_FREE(privkey);
 }
 
 static void torture_auth_pubkey_types_nonblocking(void **state)
@@ -809,11 +825,22 @@ static void torture_auth_pubkey_types_ed25519_nonblocking(void **state)
 {
     struct torture_state *s = *state;
     ssh_session session = s->ssh.session;
+    char bob_ssh_key[1024];
+    ssh_key privkey = NULL;
+    struct passwd *pwd;
     int rc;
 
     if (ssh_fips_mode()) {
         skip();
     }
+
+    pwd = getpwnam("bob");
+    assert_non_null(pwd);
+
+    snprintf(bob_ssh_key,
+             sizeof(bob_ssh_key),
+             "%s/.ssh/id_ed25519",
+             pwd->pw_dir);
 
     rc = ssh_options_set(session, SSH_OPTIONS_USER, TORTURE_SSH_USER_ALICE);
     assert_ssh_return_code(session, rc);
@@ -834,13 +861,17 @@ static void torture_auth_pubkey_types_ed25519_nonblocking(void **state)
     rc = ssh_userauth_list(session, NULL);
     assert_true(rc & SSH_AUTH_METHOD_PUBLICKEY);
 
+    /* Import the ED25519 private key */
+    rc = ssh_pki_import_privkey_file(bob_ssh_key, NULL, NULL, NULL, &privkey);
+    assert_int_equal(rc, SSH_OK);
+
     /* Enable only RSA keys -- authentication should fail */
     rc = ssh_options_set(session, SSH_OPTIONS_PUBLICKEY_ACCEPTED_TYPES,
                          "ssh-rsa");
     assert_ssh_return_code(session, rc);
 
     do {
-        rc = ssh_userauth_publickey_auto(session, NULL, NULL);
+        rc = ssh_userauth_publickey(session, NULL, privkey);
     } while (rc == SSH_AUTH_AGAIN);
     assert_int_equal(rc, SSH_AUTH_DENIED);
 
@@ -850,7 +881,7 @@ static void torture_auth_pubkey_types_ed25519_nonblocking(void **state)
     assert_ssh_return_code(session, rc);
 
     do {
-        rc = ssh_userauth_publickey_auto(session, NULL, NULL);
+        rc = ssh_userauth_publickey(session, NULL, privkey);
     } while (rc == SSH_AUTH_AGAIN);
     assert_int_equal(rc, SSH_AUTH_SUCCESS);
 
