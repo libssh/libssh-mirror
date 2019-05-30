@@ -682,6 +682,7 @@ static void torture_pki_dsa_duplicate_key(void **state)
     char *b64_key = NULL;
     char *b64_key_gen = NULL;
     ssh_key pubkey = NULL;
+    ssh_key pubkey_dup = NULL;
     ssh_key privkey = NULL;
     ssh_key privkey_dup = NULL;
 
@@ -694,8 +695,6 @@ static void torture_pki_dsa_duplicate_key(void **state)
     rc = ssh_pki_export_pubkey_base64(pubkey, &b64_key);
     assert_true(rc == 0);
     assert_non_null(b64_key);
-    SSH_KEY_FREE(pubkey);
-
     rc = ssh_pki_import_privkey_file(LIBSSH_DSA_TESTKEY,
                                      NULL,
                                      NULL,
@@ -707,11 +706,11 @@ static void torture_pki_dsa_duplicate_key(void **state)
     privkey_dup = ssh_key_dup(privkey);
     assert_non_null(privkey_dup);
 
-    rc = ssh_pki_export_privkey_to_pubkey(privkey, &pubkey);
+    rc = ssh_pki_export_privkey_to_pubkey(privkey, &pubkey_dup);
     assert_true(rc == SSH_OK);
-    assert_non_null(pubkey);
+    assert_non_null(pubkey_dup);
 
-    rc = ssh_pki_export_pubkey_base64(pubkey, &b64_key_gen);
+    rc = ssh_pki_export_pubkey_base64(pubkey_dup, &b64_key_gen);
     assert_true(rc == 0);
     assert_non_null(b64_key_gen);
 
@@ -720,7 +719,12 @@ static void torture_pki_dsa_duplicate_key(void **state)
     rc = ssh_key_cmp(privkey, privkey_dup, SSH_KEY_CMP_PRIVATE);
     assert_true(rc == 0);
 
+    rc = ssh_key_cmp(pubkey, pubkey_dup, SSH_KEY_CMP_PUBLIC);
+    assert_true(rc == 0);
+
     SSH_KEY_FREE(pubkey);
+    SSH_KEY_FREE(pubkey_dup);
+
     SSH_KEY_FREE(privkey);
     SSH_KEY_FREE(privkey_dup);
     SSH_STRING_FREE_CHAR(b64_key);
