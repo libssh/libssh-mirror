@@ -1518,8 +1518,10 @@ int pki_key_compare(const ssh_key k1,
                 return 1;
             }
 
-            if (_bignum_cmp(k1->ecdsa, k2->ecdsa, "d") != 0) {
-                return 1;
+            if (what == SSH_KEY_CMP_PRIVATE) {
+                if (_bignum_cmp(k1->ecdsa, k2->ecdsa, "d") != 0) {
+                    return 1;
+                }
             }
             break;
 #endif
