@@ -461,8 +461,8 @@ static void torture_server_hostkey_mismatch(void **state)
     rc = ssh_options_set(session, SSH_OPTIONS_USER, SSHD_DEFAULT_USER);
     assert_ssh_return_code(session, rc);
 
-    /* Configure the client to offer only ssh-rsa hostkey algorithm */
-    rc = ssh_options_set(session, SSH_OPTIONS_HOSTKEYS, "ssh-rsa");
+    /* Configure the client to offer only rsa-sha2-256 hostkey algorithm */
+    rc = ssh_options_set(session, SSH_OPTIONS_HOSTKEYS, "rsa-sha2-256");
     assert_ssh_return_code(session, rc);
 
     rc = ssh_connect(session);
