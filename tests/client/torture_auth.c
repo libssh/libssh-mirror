@@ -693,9 +693,9 @@ static void torture_auth_pubkey_types_ed25519(void **state)
     rc = ssh_userauth_list(session, NULL);
     assert_true(rc & SSH_AUTH_METHOD_PUBLICKEY);
 
-    /* Enable only DSA keys -- authentication should fail */
+    /* Enable only RSA keys -- authentication should fail */
     rc = ssh_options_set(session, SSH_OPTIONS_PUBLICKEY_ACCEPTED_TYPES,
-                         "ssh-dss");
+                         "ssh-rsa");
     assert_ssh_return_code(session, rc);
 
     rc = ssh_userauth_publickey_auto(session, NULL, NULL);
@@ -834,9 +834,9 @@ static void torture_auth_pubkey_types_ed25519_nonblocking(void **state)
     rc = ssh_userauth_list(session, NULL);
     assert_true(rc & SSH_AUTH_METHOD_PUBLICKEY);
 
-    /* Enable only DSA keys -- authentication should fail */
+    /* Enable only RSA keys -- authentication should fail */
     rc = ssh_options_set(session, SSH_OPTIONS_PUBLICKEY_ACCEPTED_TYPES,
-                         "ssh-dss");
+                         "ssh-rsa");
     assert_ssh_return_code(session, rc);
 
     do {
