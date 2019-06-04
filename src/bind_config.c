@@ -280,6 +280,8 @@ ssh_bind_config_parse_line(ssh_bind bind,
     char *keyword = NULL;
     size_t len;
 
+    int rc = 0;
+
     if (bind == NULL) {
         return -1;
     }
@@ -339,33 +341,72 @@ ssh_bind_config_parse_line(ssh_bind bind,
     case BIND_CFG_HOSTKEY:
         p = ssh_config_get_str_tok(&s, NULL);
         if (p && (*parser_flags & PARSING)) {
-            ssh_bind_options_set(bind, SSH_BIND_OPTIONS_HOSTKEY, p);
+            rc = ssh_bind_options_set(bind, SSH_BIND_OPTIONS_HOSTKEY, p);
+            if (rc != 0) {
+                SSH_LOG(SSH_LOG_WARN,
+                        "line %d: Failed to set Hostkey value '%s'",
+                        count, p);
+            }
         }
         break;
     case BIND_CFG_LISTENADDRESS:
         p = ssh_config_get_str_tok(&s, NULL);
         if (p && (*parser_flags & PARSING)) {
-            ssh_bind_options_set(bind, SSH_BIND_OPTIONS_BINDADDR, p);
+            rc = ssh_bind_options_set(bind, SSH_BIND_OPTIONS_BINDADDR, p);
+            if (rc != 0) {
+                SSH_LOG(SSH_LOG_WARN,
+                        "line %d: Failed to set ListenAddress value '%s'",
+                        count, p);
+            }
         }
         break;
     case BIND_CFG_PORT:
         p = ssh_config_get_str_tok(&s, NULL);
         if (p && (*parser_flags & PARSING)) {
-            ssh_bind_options_set(bind, SSH_BIND_OPTIONS_BINDPORT_STR, p);
+            rc = ssh_bind_options_set(bind, SSH_BIND_OPTIONS_BINDPORT_STR, p);
+            if (rc != 0) {
+                SSH_LOG(SSH_LOG_WARN,
+                        "line %d: Failed to set Port value '%s'",
+                        count, p);
+            }
         }
         break;
     case BIND_CFG_CIPHERS:
         p = ssh_config_get_str_tok(&s, NULL);
         if (p && (*parser_flags & PARSING)) {
-            ssh_bind_options_set(bind, SSH_BIND_OPTIONS_CIPHERS_C_S, p);
-            ssh_bind_options_set(bind, SSH_BIND_OPTIONS_CIPHERS_S_C, p);
+            rc = ssh_bind_options_set(bind, SSH_BIND_OPTIONS_CIPHERS_C_S, p);
+            if (rc != 0) {
+                SSH_LOG(SSH_LOG_WARN,
+                        "line %d: Failed to set C->S Ciphers value '%s'",
+                        count, p);
+                break;
+            }
+
+            rc = ssh_bind_options_set(bind, SSH_BIND_OPTIONS_CIPHERS_S_C, p);
+            if (rc != 0) {
+                SSH_LOG(SSH_LOG_WARN,
+                        "line %d: Failed to set S->C Ciphers value '%s'",
+                        count, p);
+            }
         }
         break;
     case BIND_CFG_MACS:
         p = ssh_config_get_str_tok(&s, NULL);
         if (p && (*parser_flags & PARSING)) {
-            ssh_bind_options_set(bind, SSH_BIND_OPTIONS_HMAC_C_S, p);
-            ssh_bind_options_set(bind, SSH_BIND_OPTIONS_HMAC_S_C, p);
+            rc = ssh_bind_options_set(bind, SSH_BIND_OPTIONS_HMAC_C_S, p);
+            if (rc != 0) {
+                SSH_LOG(SSH_LOG_WARN,
+                        "line %d: Failed to set C->S MAC value '%s'",
+                        count, p);
+                break;
+            }
+
+            rc = ssh_bind_options_set(bind, SSH_BIND_OPTIONS_HMAC_S_C, p);
+            if (rc != 0) {
+                SSH_LOG(SSH_LOG_WARN,
+                        "line %d: Failed to set S->C MAC value '%s'",
+                        count, p);
+            }
         }
         break;
     case BIND_CFG_LOGLEVEL:
@@ -389,15 +430,25 @@ ssh_bind_config_parse_line(ssh_bind bind,
                 value = SSH_LOG_TRACE;
             }
             if (value != -1) {
-                ssh_bind_options_set(bind, SSH_BIND_OPTIONS_LOG_VERBOSITY,
+                rc = ssh_bind_options_set(bind, SSH_BIND_OPTIONS_LOG_VERBOSITY,
                         &value);
+                if (rc != 0) {
+                    SSH_LOG(SSH_LOG_WARN,
+                            "line %d: Failed to set LogLevel value '%s'",
+                            count, p);
+                }
             }
         }
         break;
     case BIND_CFG_KEXALGORITHMS:
         p = ssh_config_get_str_tok(&s, NULL);
         if (p && (*parser_flags & PARSING)) {
-            ssh_bind_options_set(bind, SSH_BIND_OPTIONS_KEY_EXCHANGE, p);
+            rc = ssh_bind_options_set(bind, SSH_BIND_OPTIONS_KEY_EXCHANGE, p);
+            if (rc != 0) {
+                SSH_LOG(SSH_LOG_WARN,
+                        "line %d: Failed to set KexAlgorithms value '%s'",
+                        count, p);
+            }
         }
         break;
     case BIND_CFG_MATCH: {
@@ -502,15 +553,25 @@ ssh_bind_config_parse_line(ssh_bind bind,
     case BIND_CFG_PUBKEY_ACCEPTED_KEY_TYPES:
         p = ssh_config_get_str_tok(&s, NULL);
         if (p && (*parser_flags & PARSING)) {
-            ssh_bind_options_set(bind,
+            rc = ssh_bind_options_set(bind,
                                  SSH_BIND_OPTIONS_PUBKEY_ACCEPTED_KEY_TYPES, p);
+            if (rc != 0) {
+                SSH_LOG(SSH_LOG_WARN,
+                        "line %d: Failed to set PubKeyAcceptedKeyTypes value '%s'",
+                        count, p);
+            }
         }
         break;
     case BIND_CFG_HOSTKEY_ALGORITHMS:
         p = ssh_config_get_str_tok(&s, NULL);
         if (p && (*parser_flags & PARSING)) {
-            ssh_bind_options_set(bind,
+            rc = ssh_bind_options_set(bind,
                                  SSH_BIND_OPTIONS_HOSTKEY_ALGORITHMS, p);
+            if (rc != 0) {
+                SSH_LOG(SSH_LOG_WARN,
+                        "line %d: Failed to set HostkeyAlgorithms value '%s'",
+                        count, p);
+            }
         }
         break;
     case BIND_CFG_NOT_ALLOWED_IN_MATCH:
@@ -538,7 +599,7 @@ ssh_bind_config_parse_line(ssh_bind bind,
     }
 
     SAFE_FREE(x);
-    return 0;
+    return rc;
 }
 
 int ssh_bind_config_parse_file(ssh_bind bind, const char *filename)
