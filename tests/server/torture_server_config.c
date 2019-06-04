@@ -799,6 +799,28 @@ static void torture_server_config_hostkey_algorithms(void **state)
 #endif
 }
 
+static void torture_server_config_unknown(void **state)
+{
+    struct test_server_st *tss = *state;
+    char config_content[4096];
+
+    int rc;
+
+    assert_non_null(tss);
+    assert_non_null(tss->rsa_hostkey);
+
+    snprintf(config_content,
+            sizeof(config_content),
+            "HostKey %s\nUnknownOption unknown-value1,unknown-value2\n",
+            tss->rsa_hostkey);
+
+    rc = try_config_content(state, config_content, true);
+    assert_int_equal(rc, 0);
+
+    rc = try_config_content(state, config_content, false);
+    assert_int_equal(rc, 0);
+}
+
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
@@ -811,6 +833,8 @@ int torture_run_tests(void) {
         cmocka_unit_test_setup_teardown(torture_server_config_kex,
                                         setup_temp_dir, teardown_temp_dir),
         cmocka_unit_test_setup_teardown(torture_server_config_hostkey_algorithms,
+                                        setup_temp_dir, teardown_temp_dir),
+        cmocka_unit_test_setup_teardown(torture_server_config_unknown,
                                         setup_temp_dir, teardown_temp_dir),
     };
 
