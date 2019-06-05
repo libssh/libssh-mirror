@@ -543,14 +543,16 @@ static void torture_pki_rsa_sha2(void **state)
     assert_int_equal(rc, SSH_OK);
     assert_non_null(pubkey);
 
-    /* Sign using old SHA1 digest */
-    sign = pki_do_sign(key, INPUT, sizeof(INPUT), SSH_DIGEST_SHA1);
-    assert_non_null(sign);
-    rc = pki_signature_verify(session, sign, pubkey, INPUT, sizeof(INPUT));
-    assert_ssh_return_code(session, rc);
-    rc = pki_signature_verify(session, sign, cert, INPUT, sizeof(INPUT));
-    assert_ssh_return_code(session, rc);
-    ssh_signature_free(sign);
+    if (!ssh_fips_mode()) {
+        /* Sign using old SHA1 digest */
+        sign = pki_do_sign(key, INPUT, sizeof(INPUT), SSH_DIGEST_SHA1);
+        assert_non_null(sign);
+        rc = pki_signature_verify(session, sign, pubkey, INPUT, sizeof(INPUT));
+        assert_ssh_return_code(session, rc);
+        rc = pki_signature_verify(session, sign, cert, INPUT, sizeof(INPUT));
+        assert_ssh_return_code(session, rc);
+        ssh_signature_free(sign);
+    }
 
     /* Sign using new SHA256 digest */
     sign = pki_do_sign(key, INPUT, sizeof(INPUT), SSH_DIGEST_SHA256);
@@ -625,9 +627,11 @@ static void torture_pki_sign_data_rsa(void **state)
     assert_int_equal(rc, SSH_OK);
     assert_non_null(key);
 
-    /* Test using SHA1 */
-    rc = test_sign_verify_data(key, SSH_DIGEST_SHA1, INPUT, sizeof(INPUT));
-    assert_int_equal(rc, SSH_OK);
+    if (!ssh_fips_mode()) {
+        /* Test using SHA1 */
+        rc = test_sign_verify_data(key, SSH_DIGEST_SHA1, INPUT, sizeof(INPUT));
+        assert_int_equal(rc, SSH_OK);
+    }
 
     /* Test using SHA256 */
     rc = test_sign_verify_data(key, SSH_DIGEST_SHA256, INPUT, sizeof(INPUT));
@@ -661,7 +665,7 @@ static void torture_pki_fail_sign_with_incompatible_hash(void **state)
     assert_non_null(pubkey);
 
     /* Sign the buffer */
-    sig = pki_sign_data(key, SSH_DIGEST_SHA1, INPUT, sizeof(INPUT));
+    sig = pki_sign_data(key, SSH_DIGEST_SHA256, INPUT, sizeof(INPUT));
     assert_non_null(sig);
 
     /* Verify signature */
