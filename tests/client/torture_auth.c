@@ -616,7 +616,7 @@ static void torture_auth_pubkey_types(void **state)
 
     /* Disable RSA key types for authentication */
     rc = ssh_options_set(session, SSH_OPTIONS_PUBLICKEY_ACCEPTED_TYPES,
-                         "ssh-dss");
+                         "ecdsa-sha2-nistp384");
     assert_ssh_return_code(session, rc);
 
     rc = ssh_userauth_publickey_auto(session, NULL, NULL);
@@ -674,6 +674,10 @@ static void torture_auth_pubkey_types_ed25519(void **state)
     struct torture_state *s = *state;
     ssh_session session = s->ssh.session;
     int rc;
+
+    if (ssh_fips_mode()) {
+        skip();
+    }
 
     rc = ssh_options_set(session, SSH_OPTIONS_USER, TORTURE_SSH_USER_ALICE);
     assert_ssh_return_code(session, rc);
@@ -734,7 +738,7 @@ static void torture_auth_pubkey_types_nonblocking(void **state)
 
     /* Disable RSA key types for authentication */
     rc = ssh_options_set(session, SSH_OPTIONS_PUBLICKEY_ACCEPTED_TYPES,
-                         "ssh-dss");
+                         "ecdsa-sha2-nistp521");
     assert_ssh_return_code(session, rc);
 
     do {
@@ -806,6 +810,10 @@ static void torture_auth_pubkey_types_ed25519_nonblocking(void **state)
     struct torture_state *s = *state;
     ssh_session session = s->ssh.session;
     int rc;
+
+    if (ssh_fips_mode()) {
+        skip();
+    }
 
     rc = ssh_options_set(session, SSH_OPTIONS_USER, TORTURE_SSH_USER_ALICE);
     assert_ssh_return_code(session, rc);
