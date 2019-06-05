@@ -815,6 +815,11 @@ static void torture_pki_dsa_cert_verify(void **state)
     ssh_free(session);
 }
 
+static void torture_pki_dsa_skip(UNUSED_PARAM(void **state))
+{
+    skip();
+}
+
 int torture_run_tests(void)
 {
     int rc;
@@ -865,10 +870,17 @@ int torture_run_tests(void)
                                  setup_dsa_key,
                                  teardown),
     };
+    struct CMUnitTest skip_tests[] = {
+        cmocka_unit_test(torture_pki_dsa_skip)
+    };
 
     ssh_init();
-    torture_filter_tests(tests);
-    rc = cmocka_run_group_tests(tests, NULL, NULL);
+    if (ssh_fips_mode()) {
+        rc = cmocka_run_group_tests(skip_tests, NULL, NULL);
+    } else {
+        torture_filter_tests(tests);
+        rc = cmocka_run_group_tests(tests, NULL, NULL);
+    }
     ssh_finalize();
     return rc;
 }
