@@ -34,6 +34,8 @@ extern LIBSSH_THREAD int ssh_log_level;
 #define GLOBAL_KNOWN_HOSTS "/etc/ssh/my_ssh_known_hosts"
 #define BIND_ADDRESS "::1"
 
+
+
 static int setup_config_files(void **state)
 {
     ssh_session session;
@@ -222,7 +224,8 @@ static int teardown(void **state)
 static void torture_config_from_file(void **state) {
     ssh_session session = *state;
     int ret;
-    char *v;
+    char *v = NULL;
+    char *fips_algos = NULL;
 
     ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG1);
     assert_true(ret == 0);
@@ -250,14 +253,39 @@ static void torture_config_from_file(void **state) {
     assert_string_equal(v, USERNAME);
     SSH_STRING_FREE_CHAR(v);
 
-    assert_string_equal(session->opts.wanted_methods[SSH_KEX], KEXALGORITHMS);
-
-    assert_string_equal(session->opts.wanted_methods[SSH_HOSTKEYS], HOSTKEYALGORITHMS);
-
-    assert_string_equal(session->opts.pubkey_accepted_types, PUBKEYACCEPTEDTYPES);
-
-    assert_string_equal(session->opts.wanted_methods[SSH_MAC_C_S], MACS);
-    assert_string_equal(session->opts.wanted_methods[SSH_MAC_S_C], MACS);
+    if (ssh_fips_mode()) {
+        fips_algos = ssh_keep_fips_algos(SSH_KEX, KEXALGORITHMS);
+        assert_non_null(fips_algos);
+        assert_string_equal(session->opts.wanted_methods[SSH_KEX], fips_algos);
+        SAFE_FREE(fips_algos);
+        fips_algos = ssh_keep_fips_algos(SSH_HOSTKEYS, HOSTKEYALGORITHMS);
+        assert_non_null(fips_algos);
+        assert_string_equal(session->opts.wanted_methods[SSH_HOSTKEYS], fips_algos);
+        SAFE_FREE(fips_algos);
+        fips_algos = ssh_keep_fips_algos(SSH_HOSTKEYS, PUBKEYACCEPTEDTYPES);
+        assert_non_null(fips_algos);
+        assert_string_equal(session->opts.pubkey_accepted_types, fips_algos);
+        SAFE_FREE(fips_algos);
+        fips_algos = ssh_keep_fips_algos(SSH_MAC_C_S, MACS);
+        assert_non_null(fips_algos);
+        assert_string_equal(session->opts.wanted_methods[SSH_MAC_C_S], fips_algos);
+        SAFE_FREE(fips_algos);
+        fips_algos = ssh_keep_fips_algos(SSH_MAC_S_C, MACS);
+        assert_non_null(fips_algos);
+        assert_string_equal(session->opts.wanted_methods[SSH_MAC_S_C], fips_algos);
+        SAFE_FREE(fips_algos);
+    } else {
+        assert_non_null(session->opts.wanted_methods[SSH_KEX]);
+        assert_string_equal(session->opts.wanted_methods[SSH_KEX], KEXALGORITHMS);
+        assert_non_null(session->opts.wanted_methods[SSH_HOSTKEYS]);
+        assert_string_equal(session->opts.wanted_methods[SSH_HOSTKEYS], HOSTKEYALGORITHMS);
+        assert_non_null(session->opts.pubkey_accepted_types);
+        assert_string_equal(session->opts.pubkey_accepted_types, PUBKEYACCEPTEDTYPES);
+        assert_non_null(session->opts.wanted_methods[SSH_MAC_S_C]);
+        assert_string_equal(session->opts.wanted_methods[SSH_MAC_C_S], MACS);
+        assert_non_null(session->opts.wanted_methods[SSH_MAC_S_C]);
+        assert_string_equal(session->opts.wanted_methods[SSH_MAC_S_C], MACS);
+    }
 }
 
 /**
@@ -849,10 +877,19 @@ static void torture_config_pubkeyacceptedkeytypes(void **state)
 {
     ssh_session session = *state;
     int rc;
+    char *fips_algos;
 
     rc = ssh_config_parse_file(session, LIBSSH_TEST_PUBKEYACCEPTEDKEYTYPES);
     assert_int_equal(rc, SSH_OK);
-    assert_string_equal(session->opts.pubkey_accepted_types, PUBKEYACCEPTEDTYPES);
+
+    if (ssh_fips_mode()) {
+        fips_algos = ssh_keep_fips_algos(SSH_HOSTKEYS, PUBKEYACCEPTEDTYPES);
+        assert_non_null(fips_algos);
+        assert_string_equal(session->opts.pubkey_accepted_types, fips_algos);
+        SAFE_FREE(fips_algos);
+    } else {
+        assert_string_equal(session->opts.pubkey_accepted_types, PUBKEYACCEPTEDTYPES);
+    }
 }
 
 int torture_run_tests(void) {
