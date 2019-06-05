@@ -92,6 +92,13 @@ static void torture_client_config_system(void **state)
     struct torture_state *s = *state;
     int ret = 0;
 
+    char *fips_ciphers = NULL;
+
+    if (ssh_fips_mode()) {
+        fips_ciphers = ssh_keep_fips_algos(SSH_CRYPT_C_S, CIPHERS);
+        assert_non_null(fips_ciphers);
+    }
+
     /* The first tests assumes there is system-wide configuration file
      * setting Ciphers to some non-default value. We do not have any control
      * of that in this test case.
@@ -99,11 +106,24 @@ static void torture_client_config_system(void **state)
     ret = ssh_options_parse_config(s->ssh.session, NULL);
     assert_ssh_return_code(s->ssh.session, ret);
 
-    assert_string_equal(s->ssh.session->opts.wanted_methods[SSH_CRYPT_C_S], CIPHERS);
-    assert_string_equal(s->ssh.session->opts.wanted_methods[SSH_CRYPT_S_C], CIPHERS);
+    assert_non_null(s->ssh.session->opts.wanted_methods[SSH_CRYPT_C_S]);
+    assert_non_null(s->ssh.session->opts.wanted_methods[SSH_CRYPT_S_C]);
+    if (ssh_fips_mode()) {
+        assert_string_equal(s->ssh.session->opts.wanted_methods[SSH_CRYPT_C_S],
+                            fips_ciphers);
+        assert_string_equal(s->ssh.session->opts.wanted_methods[SSH_CRYPT_S_C],
+                            fips_ciphers);
+    } else {
+        assert_string_equal(s->ssh.session->opts.wanted_methods[SSH_CRYPT_C_S],
+                            CIPHERS);
+        assert_string_equal(s->ssh.session->opts.wanted_methods[SSH_CRYPT_S_C],
+                            CIPHERS);
+    }
 
     /* Make sure the configuration was processed and user modified */
     assert_string_equal(s->ssh.session->opts.username, TORTURE_CONFIG_USER);
+
+    SAFE_FREE(fips_ciphers);
 }
 
 /* This tests makes sure that parsing both system-wide and per-user
@@ -119,6 +139,13 @@ static void torture_client_config_emulate(void **state)
     char *filename = NULL;
     int ret = 0;
 
+    char *fips_ciphers = NULL;
+
+    if (ssh_fips_mode()) {
+        fips_ciphers = ssh_keep_fips_algos(SSH_CRYPT_C_S, CIPHERS);
+        assert_non_null(fips_ciphers);
+    }
+
     /* The first tests assumes there is system-wide configuration file
      * setting Ciphers to some non-default value. We do not have any control
      * of that in this test case
@@ -132,12 +159,22 @@ static void torture_client_config_emulate(void **state)
     assert_ssh_return_code(s->ssh.session, ret);
 
     assert_non_null(s->ssh.session->opts.wanted_methods[SSH_CRYPT_C_S]);
-    assert_string_equal(s->ssh.session->opts.wanted_methods[SSH_CRYPT_C_S], CIPHERS);
     assert_non_null(s->ssh.session->opts.wanted_methods[SSH_CRYPT_S_C]);
-    assert_string_equal(s->ssh.session->opts.wanted_methods[SSH_CRYPT_S_C], CIPHERS);
-
+    if (ssh_fips_mode()) {
+        assert_string_equal(s->ssh.session->opts.wanted_methods[SSH_CRYPT_C_S],
+                            fips_ciphers);
+        assert_string_equal(s->ssh.session->opts.wanted_methods[SSH_CRYPT_S_C],
+                            fips_ciphers);
+    } else {
+        assert_string_equal(s->ssh.session->opts.wanted_methods[SSH_CRYPT_C_S],
+                            CIPHERS);
+        assert_string_equal(s->ssh.session->opts.wanted_methods[SSH_CRYPT_S_C],
+                            CIPHERS);
+    }
     /* Make sure the configuration was processed and user modified */
     assert_string_equal(s->ssh.session->opts.username, TORTURE_CONFIG_USER);
+
+    SAFE_FREE(fips_ciphers);
 }
 
 /* This verifies that configuration files are parsed by default.
