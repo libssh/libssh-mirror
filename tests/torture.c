@@ -598,12 +598,12 @@ static void torture_setup_create_sshd_config(void **state, bool pam)
     const char config_string[]=
              "Port 22\n"
              "ListenAddress 127.0.0.10\n"
-             "HostKey %s\n"
+             "%s %s\n"
 #ifdef HAVE_DSA
-             "HostKey %s\n"
+             "%s %s\n"
 #endif /* HAVE_DSA */
-             "HostKey %s\n"
-             "HostKey %s\n"
+             "%s %s\n"
+             "%s %s\n"
              "\n"
              "TrustedUserCAKeys %s\n"
              "\n"
@@ -650,6 +650,54 @@ static void torture_setup_create_sshd_config(void **state, bool pam)
              "AcceptEnv LC_IDENTIFICATION LC_ALL LC_LIBSSH\n"
              "\n"
              "PidFile %s\n"
+             "%s\n"; /* The space for test-specific options */
+    /* FIPS config */
+    const char fips_config_string[]=
+             "Port 22\n"
+             "ListenAddress 127.0.0.10\n"
+             "%s %s\n" /* HostKey */
+             "%s %s\n" /* HostKey */
+             "\n"
+             "TrustedUserCAKeys %s\n" /* Trusted CA */
+             "\n"
+             "LogLevel DEBUG3\n"
+             "Subsystem sftp %s -l DEBUG2\n" /* SFTP server */
+             "\n"
+             "PasswordAuthentication yes\n"
+             "PubkeyAuthentication yes\n"
+             "\n"
+             "StrictModes no\n"
+             "\n"
+             "%s" /* UsePam */
+             "\n"
+             "Ciphers "
+                "aes256-gcm@openssh.com,aes256-ctr,aes256-cbc,"
+                "aes128-gcm@openssh.com,aes128-ctr,aes128-cbc"
+             "\n"
+             "MACs "
+                "hmac-sha2-256-etm@openssh.com,hmac-sha1-etm@openssh.com,"
+                "hmac-sha2-512-etm@openssh.com,hmac-sha2-256,"
+                "hmac-sha1,hmac-sha2-512"
+             "\n"
+             "GSSAPIKeyExchange no\n"
+             "KexAlgorithms "
+                "ecdh-sha2-nistp256,ecdh-sha2-nistp384,"
+                "ecdh-sha2-nistp521,diffie-hellman-group-exchange-sha256,"
+                "diffie-hellman-group14-sha256,diffie-hellman-group16-sha512,"
+                "diffie-hellman-group18-sha512"
+             "\n"
+             "PubkeyAcceptedKeyTypes "
+                "rsa-sha2-256,rsa-sha2-256-cert-v01@openssh.com,"
+                "ecdsa-sha2-nistp256,ecdsa-sha2-nistp256-cert-v01@openssh.com,"
+                "ecdsa-sha2-nistp384,ecdsa-sha2-nistp384-cert-v01@openssh.com,"
+                "rsa-sha2-512,rsa-sha2-512-cert-v01@openssh.com,"
+                "ecdsa-sha2-nistp521,ecdsa-sha2-nistp521-cert-v01@openssh.com"
+             "\n"
+             "AcceptEnv LANG LC_CTYPE LC_NUMERIC LC_TIME LC_COLLATE LC_MONETARY LC_MESSAGES\n"
+             "AcceptEnv LC_PAPER LC_NAME LC_ADDRESS LC_TELEPHONE LC_MEASUREMENT\n"
+             "AcceptEnv LC_IDENTIFICATION LC_ALL LC_LIBSSH\n"
+             "\n"
+             "PidFile %s\n" /* PID file */
              "%s\n"; /* The space for test-specific options */
     const char usepam_yes[] =
              "UsePAM yes\n"
@@ -742,30 +790,32 @@ static void torture_setup_create_sshd_config(void **state, bool pam)
 
     additional_config = (s->srv_additional_config != NULL ?
                          s->srv_additional_config : "");
+
+    if (ssh_fips_mode()) {
+        snprintf(sshd_config, sizeof(sshd_config),
+                fips_config_string,
+                "HostKey", rsa_hostkey,
+                "HostKey", ecdsa_hostkey,
+                trusted_ca_pubkey,
+                sftp_server,
+                usepam,
+                s->srv_pidfile,
+                additional_config);
+    } else {
+        snprintf(sshd_config, sizeof(sshd_config),
+                config_string,
+                "HostKey", ed25519_hostkey,
 #ifdef HAVE_DSA
-    snprintf(sshd_config, sizeof(sshd_config),
-             config_string,
-             ed25519_hostkey,
-             dsa_hostkey,
-             rsa_hostkey,
-             ecdsa_hostkey,
-             trusted_ca_pubkey,
-             sftp_server,
-             usepam,
-             s->srv_pidfile,
-             additional_config);
-#else /* HAVE_DSA */
-    snprintf(sshd_config, sizeof(sshd_config),
-             config_string,
-             ed25519_hostkey,
-             rsa_hostkey,
-             ecdsa_hostkey,
-             trusted_ca_pubkey,
-             sftp_server,
-             usepam,
-             s->srv_pidfile,
-             additional_config);
+                "HostKey", dsa_hostkey,
 #endif /* HAVE_DSA */
+                "HostKey", rsa_hostkey,
+                "HostKey", ecdsa_hostkey,
+                trusted_ca_pubkey,
+                sftp_server,
+                usepam,
+                s->srv_pidfile,
+                additional_config);
+    }
 
     torture_write_file(s->srv_config, sshd_config);
 }
