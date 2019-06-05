@@ -273,6 +273,16 @@ static void torture_pki_verify_mismatch(void **state)
              hash <= SSH_DIGEST_SHA512;
              hash++)
         {
+            if (ssh_fips_mode()) {
+                if (sig_type == SSH_KEYTYPE_DSS ||
+                    sig_type == SSH_KEYTYPE_ED25519 ||
+                    hash == SSH_DIGEST_SHA1)
+                {
+                    /* In FIPS mode, skip unsupported algorithms */
+                    continue;
+                }
+            }
+
             skey_attrs = key_attrs_list[sig_type][hash];
 
             if (!skey_attrs.sign) {
@@ -332,6 +342,15 @@ static void torture_pki_verify_mismatch(void **state)
                  key_type <= SSH_KEYTYPE_ED25519_CERT01;
                  key_type++)
             {
+                if (ssh_fips_mode()) {
+                    if (key_type == SSH_KEYTYPE_DSS ||
+                        key_type == SSH_KEYTYPE_ED25519)
+                    {
+                        /* In FIPS mode, skip unsupported algorithms */
+                        continue;
+                    }
+                }
+
                 vkey_attrs = key_attrs_list[key_type][hash];
                 if (!vkey_attrs.verify) {
                     continue;
