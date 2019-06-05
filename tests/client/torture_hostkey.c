@@ -88,6 +88,10 @@ static void torture_hostkey_rsa(void **state) {
 
     int rc;
 
+    if (ssh_fips_mode()) {
+        skip();
+    }
+
     rc = ssh_options_set(session, SSH_OPTIONS_HOSTKEYS, &rsa);
     assert_ssh_return_code(session, rc);
 
@@ -106,6 +110,10 @@ static void torture_hostkey_ed25519(void **state) {
     char ed[] = "ssh-ed25519";
 
     int rc;
+
+    if (ssh_fips_mode()) {
+        skip();
+    }
 
     rc = ssh_options_set(session, SSH_OPTIONS_HOSTKEYS, &ed);
     assert_ssh_return_code(session, rc);
@@ -126,6 +134,10 @@ static void torture_hostkey_dss(void **state) {
     char rsa[] = "ssh-dss";
 
     int rc;
+
+    if (ssh_fips_mode()) {
+        skip();
+    }
 
     rc = ssh_options_set(session, SSH_OPTIONS_HOSTKEYS, &rsa);
     assert_ssh_return_code(session, rc);
