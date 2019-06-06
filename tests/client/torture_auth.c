@@ -543,13 +543,55 @@ static void torture_auth_cert(void **state) {
     SSH_KEY_FREE(cert);
 }
 
-static void torture_auth_agent_cert(void **state) {
-  /* Setup loads a different key, tests are exactly the same. */
-  torture_auth_agent(state);
+static void torture_auth_agent_cert(void **state)
+{
+    struct torture_state *s = *state;
+    ssh_session session = s->ssh.session;
+    int rc;
+
+    /* Skip this test if in FIPS mode.
+     *
+     * OpenSSH agent has a bug which makes it to not use SHA2 in signatures when
+     * using certificates. It always uses SHA1.
+     *
+     * This should be removed as soon as OpenSSH agent bug is fixed.
+     * (see https://gitlab.com/libssh/libssh-mirror/merge_requests/34) */
+    if (ssh_fips_mode()) {
+        skip();
+    } else {
+        /* After the bug is solved, this also should be removed */
+        rc = ssh_options_set(session, SSH_OPTIONS_PUBLICKEY_ACCEPTED_TYPES,
+                             "ssh-rsa-cert-v01@openssh.com");
+        assert_int_equal(rc, SSH_OK);
+    }
+
+    /* Setup loads a different key, tests are exactly the same. */
+    torture_auth_agent(state);
 }
 
-static void torture_auth_agent_cert_nonblocking(void **state) {
-  torture_auth_agent_nonblocking(state);
+static void torture_auth_agent_cert_nonblocking(void **state)
+{
+    struct torture_state *s = *state;
+    ssh_session session = s->ssh.session;
+    int rc;
+
+    /* Skip this test if in FIPS mode.
+     *
+     * OpenSSH agent has a bug which makes it to not use SHA2 in signatures when
+     * using certificates. It always uses SHA1.
+     *
+     * This should be removed as soon as OpenSSH agent bug is fixed.
+     * (see https://gitlab.com/libssh/libssh-mirror/merge_requests/34) */
+    if (ssh_fips_mode()) {
+        skip();
+    } else {
+        /* After the bug is solved, this also should be removed */
+        rc = ssh_options_set(session, SSH_OPTIONS_PUBLICKEY_ACCEPTED_TYPES,
+                             "ssh-rsa-cert-v01@openssh.com");
+        assert_int_equal(rc, SSH_OK);
+    }
+
+    torture_auth_agent_nonblocking(state);
 }
 
 static void torture_auth_pubkey_types(void **state)
