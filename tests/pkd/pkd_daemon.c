@@ -24,6 +24,7 @@
 #include <libssh/server.h>
 #include <libssh/kex.h>
 
+#include "torture.h" // for ssh_fips_mode()
 #include "pkd_daemon.h"
 
 #include <setjmp.h> // for cmocka
@@ -290,36 +291,38 @@ static int pkd_exec_hello(int fd, struct pkd_daemon_args *args)
         goto outclose;
     }
 
-    /* Add methods not enabled by default */
+    if (!ssh_fips_mode()) {
+        /* Add methods not enabled by default */
 #define GEX_SHA1 "diffie-hellman-group-exchange-sha1"
-    default_kex = ssh_kex_get_default_methods(SSH_KEX);
-    kex_len = strlen(default_kex) + strlen(GEX_SHA1) + 2;
-    all_kex = malloc(kex_len);
-    if (all_kex == NULL) {
-        pkderr("Failed to alloc more memory.\n");
-        goto outclose;
-    }
-    snprintf(all_kex, kex_len, "%s," GEX_SHA1, default_kex);
-    rc = ssh_bind_options_set(b, SSH_BIND_OPTIONS_KEY_EXCHANGE, all_kex);
-    free(all_kex);
-    if (rc != 0) {
-        pkderr("ssh_bind_options_set kex methods: %s\n", ssh_get_error(b));
-        goto outclose;
-    }
+        default_kex = ssh_kex_get_default_methods(SSH_KEX);
+        kex_len = strlen(default_kex) + strlen(GEX_SHA1) + 2;
+        all_kex = malloc(kex_len);
+        if (all_kex == NULL) {
+            pkderr("Failed to alloc more memory.\n");
+            goto outclose;
+        }
+        snprintf(all_kex, kex_len, "%s," GEX_SHA1, default_kex);
+        rc = ssh_bind_options_set(b, SSH_BIND_OPTIONS_KEY_EXCHANGE, all_kex);
+        free(all_kex);
+        if (rc != 0) {
+            pkderr("ssh_bind_options_set kex methods: %s\n", ssh_get_error(b));
+            goto outclose;
+        }
 
-    /* Enable all supported ciphers */
-    all_ciphers = ssh_kex_get_supported_method(SSH_CRYPT_C_S);
-    rc = ssh_bind_options_set(b, SSH_BIND_OPTIONS_CIPHERS_C_S, all_ciphers);
-    if (rc != 0) {
-        pkderr("ssh_bind_options_set Ciphers C-S: %s\n", ssh_get_error(b));
-        goto outclose;
-    }
+        /* Enable all supported ciphers */
+        all_ciphers = ssh_kex_get_supported_method(SSH_CRYPT_C_S);
+        rc = ssh_bind_options_set(b, SSH_BIND_OPTIONS_CIPHERS_C_S, all_ciphers);
+        if (rc != 0) {
+            pkderr("ssh_bind_options_set Ciphers C-S: %s\n", ssh_get_error(b));
+            goto outclose;
+        }
 
-    all_ciphers = ssh_kex_get_supported_method(SSH_CRYPT_S_C);
-    rc = ssh_bind_options_set(b, SSH_BIND_OPTIONS_CIPHERS_S_C, all_ciphers);
-    if (rc != 0) {
-        pkderr("ssh_bind_options_set Ciphers S-C: %s\n", ssh_get_error(b));
-        goto outclose;
+        all_ciphers = ssh_kex_get_supported_method(SSH_CRYPT_S_C);
+        rc = ssh_bind_options_set(b, SSH_BIND_OPTIONS_CIPHERS_S_C, all_ciphers);
+        if (rc != 0) {
+            pkderr("ssh_bind_options_set Ciphers S-C: %s\n", ssh_get_error(b));
+            goto outclose;
+        }
     }
 
     s = ssh_new();
