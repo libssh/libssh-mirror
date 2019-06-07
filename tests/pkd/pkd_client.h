@@ -78,6 +78,9 @@
 #define OPENSSH_CERT_CMD \
     OPENSSH_CMD_START(OPENSSH_HOSTKEY_ALGOS) "-o CertificateFile=" CLIENT_ID_FILE "-cert.pub " OPENSSH_CMD_END
 
+#define OPENSSH_SHA256_CERT_CMD \
+    OPENSSH_CMD_START(OPENSSH_HOSTKEY_ALGOS) "-o CertificateFile=" CLIENT_ID_FILE "-sha256-cert.pub " OPENSSH_CMD_END
+
 /* Dropbear */
 
 #define DROPBEAR_BINARY "dbclient"

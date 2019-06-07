@@ -629,6 +629,7 @@ PKDTESTS_MAC_OPENSSHONLY(emit_keytest, openssh_dsa, OPENSSH_MAC_CMD)
 #define CLIENT_ID_FILE OPENSSH_RSA_TESTKEY
 PKDTESTS_DEFAULT(emit_keytest, openssh_rsa, OPENSSH_CMD)
 PKDTESTS_DEFAULT(emit_keytest, openssh_cert_rsa, OPENSSH_CERT_CMD)
+PKDTESTS_DEFAULT(emit_keytest, openssh_sha256_cert_rsa, OPENSSH_SHA256_CERT_CMD)
 PKDTESTS_DEFAULT_OPENSSHONLY(emit_keytest, openssh_rsa, OPENSSH_CMD)
 PKDTESTS_KEX(emit_keytest, openssh_rsa, OPENSSH_KEX_CMD)
 PKDTESTS_KEX_OPENSSHONLY(emit_keytest, openssh_rsa, OPENSSH_KEX_CMD)
@@ -710,6 +711,7 @@ struct {
 
     PKDTESTS_DEFAULT(emit_testmap, openssh_rsa, OPENSSH_CMD)
     PKDTESTS_DEFAULT(emit_testmap, openssh_cert_rsa, OPENSSH_CERT_CMD)
+    PKDTESTS_DEFAULT(emit_testmap, openssh_sha256_cert_rsa, OPENSSH_SHA256_CERT_CMD)
     PKDTESTS_DEFAULT_OPENSSHONLY(emit_testmap, openssh_rsa, OPENSSH_CMD)
     PKDTESTS_KEX(emit_testmap, openssh_rsa, OPENSSH_KEX_CMD)
     PKDTESTS_KEX_OPENSSHONLY(emit_testmap, openssh_rsa, OPENSSH_KEX_CMD)
@@ -773,6 +775,8 @@ static int pkd_run_tests(void) {
 
         PKDTESTS_DEFAULT(emit_unit_test_comma, openssh_rsa, OPENSSH_CMD)
         PKDTESTS_DEFAULT(emit_unit_test_comma, openssh_cert_rsa, OPENSSH_CERT_CMD)
+        PKDTESTS_DEFAULT_FIPS(emit_unit_test_comma, openssh_sha256_cert_rsa,
+                              OPENSSH_SHA256_CERT_CMD)
         PKDTESTS_DEFAULT_OPENSSHONLY(emit_unit_test_comma, openssh_rsa, OPENSSH_CMD)
         PKDTESTS_KEX(emit_unit_test_comma, openssh_rsa, OPENSSH_KEX_CMD)
         PKDTESTS_CIPHER(emit_unit_test_comma, openssh_rsa, OPENSSH_CIPHER_CMD)
@@ -807,7 +811,8 @@ static int pkd_run_tests(void) {
 
     const struct CMUnitTest openssh_fips_tests[] = {
         PKDTESTS_DEFAULT_FIPS(emit_unit_test_comma, openssh_rsa, OPENSSH_CMD)
-        PKDTESTS_DEFAULT_FIPS(emit_unit_test_comma, openssh_cert_rsa, OPENSSH_CERT_CMD)
+        PKDTESTS_DEFAULT_FIPS(emit_unit_test_comma, openssh_sha256_cert_rsa,
+                              OPENSSH_SHA256_CERT_CMD)
         PKDTESTS_KEX_FIPS(emit_unit_test_comma, openssh_rsa, OPENSSH_KEX_CMD)
         PKDTESTS_CIPHER_FIPS(emit_unit_test_comma, openssh_rsa, OPENSSH_CIPHER_CMD)
         PKDTESTS_CIPHER_OPENSSHONLY_FIPS(emit_unit_test_comma, openssh_rsa, OPENSSH_CIPHER_CMD)

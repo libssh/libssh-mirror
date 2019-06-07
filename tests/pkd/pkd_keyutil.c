@@ -112,6 +112,13 @@ void setup_openssh_client_keys() {
     }
     assert_int_equal(rc, 0);
 
+    if (access(OPENSSH_RSA_TESTKEY "-sha256-cert.pub", F_OK) != 0) {
+        rc = system_checked(OPENSSH_KEYGEN " -I ident -t rsa-sha2-256 "
+                            "-s " OPENSSH_CA_TESTKEY " "
+                            OPENSSH_RSA_TESTKEY ".pub 2>/dev/null");
+    }
+    assert_int_equal(rc, 0);
+
     if (access(OPENSSH_ECDSA256_TESTKEY, F_OK) != 0) {
         rc = system_checked(OPENSSH_KEYGEN " -t ecdsa -b 256 -q -N \"\" -f "
                             OPENSSH_ECDSA256_TESTKEY);
@@ -180,6 +187,7 @@ void setup_openssh_client_keys() {
 void cleanup_openssh_client_keys() {
     cleanup_key(OPENSSH_CA_TESTKEY);
     cleanup_key(OPENSSH_RSA_TESTKEY);
+    cleanup_file(OPENSSH_RSA_TESTKEY "-sha256-cert.pub");
     cleanup_key(OPENSSH_ECDSA256_TESTKEY);
     cleanup_key(OPENSSH_ECDSA384_TESTKEY);
     cleanup_key(OPENSSH_ECDSA521_TESTKEY);
