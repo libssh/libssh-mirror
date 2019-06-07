@@ -118,6 +118,14 @@ int ssh_mbedcry_hex2bn(bignum *dest, char *data);
         mbedtls_mpi_size(num))
 #define bignum_cmp(num1, num2) mbedtls_mpi_cmp_mpi(num1, num2)
 #define bignum_rshift1(dest, src) mbedtls_mpi_copy(dest, src), mbedtls_mpi_shift_r(dest, 1)
+#define bignum_dup(orig, dest) do { \
+    if (*(dest) == NULL) { \
+        *(dest) = bignum_new(); \
+    } \
+    if (*(dest) != NULL) { \
+        mbedtls_mpi_copy(orig, *(dest)); \
+    } \
+    } while(0)
 
 mbedtls_ctr_drbg_context *ssh_get_mbedtls_ctr_drbg_context(void);
 

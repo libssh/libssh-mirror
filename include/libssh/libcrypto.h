@@ -102,6 +102,14 @@ typedef BN_CTX* bignum_CTX;
 #define bignum_bn2bin(num,len, ptr) BN_bn2bin(num, ptr)
 #define bignum_cmp(num1,num2) BN_cmp(num1,num2)
 #define bignum_rshift1(dest, src) BN_rshift1(dest, src)
+#define bignum_dup(orig, dest) do { \
+        if (*(dest) == NULL) { \
+            *(dest) = BN_dup(orig); \
+        } else { \
+            BN_copy(*(dest), orig); \
+        } \
+    } while(0)
+
 
 /* Returns true if the OpenSSL is operating in FIPS mode */
 #define ssh_fips_mode() (FIPS_mode() != 0)

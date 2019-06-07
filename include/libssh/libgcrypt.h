@@ -92,6 +92,13 @@ int ssh_gcry_rand_range(bignum rnd, bignum max);
 #define bignum_sub(dst, a, b) gcry_mpi_sub(dst, a, b)
 #define bignum_mod(dst, a, b, ctx) 1,gcry_mpi_mod(dst, a, b)
 #define bignum_rand_range(rnd, max) ssh_gcry_rand_range(rnd, max);
+#define bignum_dup(orig, dest) do { \
+        if (*(dest) == NULL) { \
+            *(dest) = gcry_mpi_copy(orig); \
+        } else { \
+            gcry_mpi_set(*(dest), orig); \
+        } \
+    } while(0)
 /* Helper functions for data conversions.  */
 
 /* Extract an MPI from the given s-expression SEXP named NAME which is
