@@ -83,13 +83,6 @@ static int setup_files(void **state)
     rc = mkdir(sshd_path, 0755);
     assert_return_code(rc, errno);
 
-    snprintf(tss->ed25519_hostkey,
-             sizeof(tss->ed25519_hostkey),
-             "%s/sshd/ssh_host_ed25519_key",
-             s->socket_dir);
-    torture_write_file(tss->ed25519_hostkey,
-                       torture_get_openssh_testkey(SSH_KEYTYPE_ED25519, 0));
-
     snprintf(tss->rsa_hostkey,
              sizeof(tss->rsa_hostkey),
              "%s/sshd/ssh_host_rsa_key",
@@ -117,13 +110,23 @@ static int setup_files(void **state)
     torture_write_file(tss->ecdsa_256_hostkey,
                        torture_get_testkey(SSH_KEYTYPE_ECDSA_P256, 0));
 
+    if (!ssh_fips_mode()) {
+        snprintf(tss->ed25519_hostkey,
+                 sizeof(tss->ed25519_hostkey),
+                 "%s/sshd/ssh_host_ed25519_key",
+                 s->socket_dir);
+        torture_write_file(tss->ed25519_hostkey,
+                           torture_get_openssh_testkey(SSH_KEYTYPE_ED25519, 0));
+
 #ifdef HAVE_DSA
-    snprintf(tss->dsa_hostkey,
-             sizeof(tss->dsa_hostkey),
-             "%s/sshd/ssh_host_dsa_key",
-             s->socket_dir);
-    torture_write_file(tss->dsa_hostkey, torture_get_testkey(SSH_KEYTYPE_DSS, 0));
+        snprintf(tss->dsa_hostkey,
+                 sizeof(tss->dsa_hostkey),
+                 "%s/sshd/ssh_host_dsa_key",
+                 s->socket_dir);
+        torture_write_file(tss->dsa_hostkey,
+                           torture_get_testkey(SSH_KEYTYPE_DSS, 0));
 #endif /* HAVE_DSA */
+    }
 
     tss->state = s;
     *state = tss;
@@ -423,18 +426,30 @@ static char *hostkey_files[6] = {0};
 
 static size_t setup_hostkey_files(struct test_server_st *tss)
 {
-    size_t num_hostkey_files = 5;
+    size_t num_hostkey_files = 1;
 
-    hostkey_files[0] = tss->ed25519_hostkey;
-    hostkey_files[1] = tss->rsa_hostkey;
-    hostkey_files[2] = tss->ecdsa_256_hostkey;
-    hostkey_files[3] = tss->ecdsa_384_hostkey;
-    hostkey_files[4] = tss->ecdsa_521_hostkey;
-#ifdef HAVE_DSA
-    hostkey_files[5] = tss->dsa_hostkey;
-    num_hostkey_files = 6;
+    hostkey_files[0] = tss->rsa_hostkey;
+
+#ifndef TEST_ALL_CRYPTO_COMBINATIONS
+    goto end;
 #endif
 
+    hostkey_files[1] = tss->ecdsa_256_hostkey;
+    hostkey_files[2] = tss->ecdsa_384_hostkey;
+    hostkey_files[3] = tss->ecdsa_521_hostkey;
+
+    num_hostkey_files = 4;
+
+    if (!ssh_fips_mode()) {
+        hostkey_files[4] = tss->ed25519_hostkey;
+        num_hostkey_files++;
+#ifdef HAVE_DSA
+        hostkey_files[5] = tss->dsa_hostkey;
+        num_hostkey_files++;
+#endif
+    }
+
+end:
     return num_hostkey_files;
 }
 
@@ -451,9 +466,6 @@ static void torture_server_config_hostkey(void **state)
     num_hostkey_files = setup_hostkey_files(tss);
 
     for (i = 0; i < num_hostkey_files; i++) {
-        if (ssh_fips_mode() && (i == 0 || i == 5)) {
-            continue;
-        }
         snprintf(config_content,
                 sizeof(config_content),
                 "HostKey %s\n",
@@ -483,21 +495,18 @@ static void torture_server_config_ciphers(void **state)
 
     num_hostkey_files = setup_hostkey_files(tss);
 
-    ciphers = ssh_kex_get_default_methods(SSH_CRYPT_S_C);
-    assert_non_null(ciphers);
+    if (ssh_fips_mode()) {
+        ciphers = ssh_kex_get_fips_methods(SSH_CRYPT_S_C);
+        assert_non_null(ciphers);
+    } else {
+        ciphers = ssh_kex_get_default_methods(SSH_CRYPT_S_C);
+        assert_non_null(ciphers);
+    }
 
     tokens = ssh_tokenize(ciphers, ',');
     assert_non_null(tokens);
 
     for (i = 0; i < num_hostkey_files; i++) {
-        if (ssh_fips_mode() && (i == 0 || i == 5)) {
-            continue;
-        }
-#ifndef TEST_ALL_CRYPTO_COMBINATIONS
-        if (i > 1) {
-            continue;
-        }
-#endif
         /* Try setting all default algorithms */
         snprintf(config_content,
                  sizeof(config_content),
@@ -547,21 +556,18 @@ static void torture_server_config_macs(void **state)
 
     num_hostkey_files = setup_hostkey_files(tss);
 
-    macs = ssh_kex_get_default_methods(SSH_MAC_S_C);
-    assert_non_null(macs);
+    if (ssh_fips_mode()) {
+        macs = ssh_kex_get_fips_methods(SSH_MAC_S_C);
+        assert_non_null(macs);
+    } else {
+        macs = ssh_kex_get_default_methods(SSH_MAC_S_C);
+        assert_non_null(macs);
+    }
 
     tokens = ssh_tokenize(macs, ',');
     assert_non_null(tokens);
 
     for (i = 0; i < num_hostkey_files; i++) {
-        if (ssh_fips_mode() && (i == 0 || i == 5)) {
-            continue;
-        }
-#ifndef TEST_ALL_CRYPTO_COMBINATIONS
-        if (i > 1) {
-            continue;
-        }
-#endif
         /* Try setting all default algorithms */
         snprintf(config_content,
                  sizeof(config_content),
@@ -611,21 +617,18 @@ static void torture_server_config_kex(void **state)
 
     num_hostkey_files = setup_hostkey_files(tss);
 
-    kex = ssh_kex_get_default_methods(SSH_KEX);
-    assert_non_null(kex);
+    if (ssh_fips_mode()) {
+        kex = ssh_kex_get_fips_methods(SSH_KEX);
+        assert_non_null(kex);
+    } else {
+        kex = ssh_kex_get_default_methods(SSH_KEX);
+        assert_non_null(kex);
+    }
 
     tokens = ssh_tokenize(kex, ',');
     assert_non_null(tokens);
 
     for (i = 0; i < num_hostkey_files; i++) {
-        if (ssh_fips_mode() && (i == 0 || i == 5)) {
-            continue;
-        }
-#ifndef TEST_ALL_CRYPTO_COMBINATIONS
-        if (i > 1) {
-            continue;
-        }
-#endif
         /* Try setting all default algorithms */
         snprintf(config_content,
                  sizeof(config_content),
@@ -673,13 +676,15 @@ static void torture_server_config_hostkey_algorithms(void **state)
 
     num_hostkey_files = setup_hostkey_files(tss);
 
-    allowed = ssh_kex_get_default_methods(SSH_HOSTKEYS);
-    assert_non_null(allowed);
+    if (ssh_fips_mode()) {
+        allowed = ssh_kex_get_fips_methods(SSH_HOSTKEYS);
+        assert_non_null(allowed);
+    } else {
+        allowed = ssh_kex_get_default_methods(SSH_HOSTKEYS);
+        assert_non_null(allowed);
+    }
 
     for (i = 0; i < num_hostkey_files; i++) {
-        if (ssh_fips_mode() && (i == 0 || i == 5)) {
-            continue;
-        }
         /* Should work with all allowed */
         snprintf(config_content,
                  sizeof(config_content),
