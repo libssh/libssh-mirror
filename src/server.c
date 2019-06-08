@@ -211,8 +211,12 @@ static int ssh_server_send_extensions(ssh_session session) {
     if (session->opts.pubkey_accepted_types) {
         hostkey_algorithms = session->opts.pubkey_accepted_types;
     } else {
-        /* There are no restrictions to the accepted public keys */
-        hostkey_algorithms = ssh_kex_get_default_methods(SSH_HOSTKEYS);
+        if (ssh_fips_mode()) {
+            hostkey_algorithms = ssh_kex_get_fips_methods(SSH_HOSTKEYS);
+        } else {
+            /* There are no restrictions to the accepted public keys */
+            hostkey_algorithms = ssh_kex_get_default_methods(SSH_HOSTKEYS);
+        }
     }
 
     rc = ssh_buffer_pack(session->out_buffer,
