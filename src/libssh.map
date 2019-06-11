@@ -431,3 +431,13 @@ LIBSSH_4_7_0    # Released
         ssh_get_fingerprint_hash;
         ssh_pki_export_privkey_base64;
 } LIBSSH_4_6_0;
+
+LIBSSH_4_8_0    # Released
+{
+    global:
+        sftp_server_free;
+        ssh_bind_options_parse_config;
+        ssh_channel_open_forward_unix;
+        ssh_message_channel_request_open_reply_accept_channel;
+} LIBSSH_4_7_0;
+
