@@ -775,12 +775,14 @@ int ssh_session_update_known_hosts(ssh_session session)
     } else {
         rc = 0;
     }
-    SAFE_FREE(dir);
+
     if (rc != 0) {
         ssh_set_error(session, SSH_FATAL,
                       "Cannot create %s directory.", dir);
+        SAFE_FREE(dir);
         return SSH_ERROR;
     }
+    SAFE_FREE(dir);
 
     fp = fopen(session->opts.knownhosts, "a");
     if (fp == NULL) {
