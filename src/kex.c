@@ -454,11 +454,29 @@ SSH_PACKET_CALLBACK(ssh_packet_kexinit)
             hostkeys = session->next_crypto->client_kex.methods[SSH_HOSTKEYS];
             ok = ssh_match_group(hostkeys, "rsa-sha2-512");
             if (ok) {
-                session->extensions |= SSH_EXT_SIG_RSA_SHA512;
+                /* Check if rsa-sha2-512 is allowed by config */
+                if (session->opts.wanted_methods[SSH_HOSTKEYS] != NULL) {
+                    char *is_allowed =
+                        ssh_find_matching(session->opts.wanted_methods[SSH_HOSTKEYS],
+                                          "rsa-sha2-512");
+                    if (is_allowed != NULL) {
+                        session->extensions |= SSH_EXT_SIG_RSA_SHA512;
+                    }
+                    SAFE_FREE(is_allowed);
+                }
             }
             ok = ssh_match_group(hostkeys, "rsa-sha2-256");
             if (ok) {
-                session->extensions |= SSH_EXT_SIG_RSA_SHA256;
+                /* Check if rsa-sha2-256 is allowed by config */
+                if (session->opts.wanted_methods[SSH_HOSTKEYS] != NULL) {
+                    char *is_allowed =
+                        ssh_find_matching(session->opts.wanted_methods[SSH_HOSTKEYS],
+                                          "rsa-sha2-256");
+                    if (is_allowed != NULL) {
+                        session->extensions |= SSH_EXT_SIG_RSA_SHA256;
+                    }
+                    SAFE_FREE(is_allowed);
+                }
             }
 
             /*
