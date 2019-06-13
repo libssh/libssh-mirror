@@ -1091,7 +1091,7 @@ int ssh_get_publickey(ssh_session session, ssh_key *key)
  * @warning It is very important that you verify at some moment that the hash
  *          matches a known server. If you don't do it, cryptography wont help
  *          you at making things secure.
- *          OpenSSH uses SHA1 to print public key digests.
+ *          OpenSSH uses SHA256 to print public key digests.
  *
  * @see ssh_session_update_known_hosts()
  * @see ssh_get_hexa()
