@@ -43,7 +43,8 @@ static int bin_exists(const char *binary) {
 static int is_openssh_client_new_enough(void) {
     int rc = -1;
     FILE *fp = NULL;
-    char version[1024] = { 0 };
+    char version_buff[1024] = { 0 };
+    char *version;
 
     static int version_ok = 0;
     unsigned long int major = 0;
@@ -59,10 +60,13 @@ static int is_openssh_client_new_enough(void) {
         goto done;
     }
 
-    if (fgets(&version[0], sizeof(version), fp) == NULL) {
-        fprintf(stderr, "failed to get OpenSSH client version string\n");
-        goto errfgets;
-    }
+    do {
+        if (fgets(&version_buff[0], sizeof(version_buff), fp) == NULL) {
+            fprintf(stderr, "failed to get OpenSSH client version string\n");
+            goto errfgets;
+        }
+        version = strstr(version_buff, "OpenSSH");
+    } while(version == NULL);
 
     /* "OpenSSH_<major>.<minor><SP>..." */
     if (strlen(version) < 11) {
