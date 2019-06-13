@@ -300,16 +300,16 @@ static void torture_config_double_ports(void **state) {
 static void torture_config_glob(void **state) {
     ssh_session session = *state;
     int ret;
-#ifdef HAVE_GLOB
+#if defined(HAVE_GLOB) && defined(HAVE_GLOB_GL_FLAGS_MEMBER)
     char *v;
-#endif
+#endif /* HAVE_GLOB && HAVE_GLOB_GL_FLAGS_MEMBER */
 
     ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG5);
     assert_true(ret == 0); /* non-existing files should not error */
 
     /* Test the variable presence */
 
-#ifdef HAVE_GLOB
+#if defined(HAVE_GLOB) && defined(HAVE_GLOB_GL_FLAGS_MEMBER)
     ret = ssh_options_get(session, SSH_OPTIONS_PROXYCOMMAND, &v);
     assert_true(ret == 0);
     assert_non_null(v);
@@ -323,7 +323,7 @@ static void torture_config_glob(void **state) {
 
     assert_string_equal(v, ID_FILE);
     SSH_STRING_FREE_CHAR(v);
-#endif /* HAVE_GLOB */
+#endif /* HAVE_GLOB && HAVE_GLOB_GL_FLAGS_MEMBER */
 }
 
 /**
