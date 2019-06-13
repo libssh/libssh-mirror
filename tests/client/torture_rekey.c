@@ -327,7 +327,7 @@ static void torture_rekey_time(void **state)
     int rc;
     char data[256];
     unsigned int i;
-    long long time = 3; /* 3 seconds */
+    uint32_t time = 3; /* 3 seconds */
     struct ssh_crypto_struct *c = NULL;
     unsigned char *secret_hash = NULL;
 
