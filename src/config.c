@@ -499,6 +499,22 @@ ssh_config_parse_line(ssh_session session,
                 break;
 
             case MATCH_EXEC:
+                /* Skip to the end of line as unsupported */
+                p = ssh_config_get_cmd(&s);
+                if (p == NULL || p[0] == '\0') {
+                    SSH_LOG(SSH_LOG_WARN, "line %d: Match keyword "
+                            "'%s' requires argument", count, p2);
+                    SAFE_FREE(x);
+                    return -1;
+                }
+                args++;
+                SSH_LOG(SSH_LOG_WARN,
+                        "line %d: Unsupported Match keyword '%s', ignoring",
+                        count,
+                        p2);
+                result = 0;
+                break;
+
             case MATCH_ORIGINALHOST:
             case MATCH_LOCALUSER:
                 /* Skip one argument */
