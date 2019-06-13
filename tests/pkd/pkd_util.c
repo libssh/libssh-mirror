@@ -45,9 +45,13 @@ static int is_openssh_client_new_enough(void) {
     FILE *fp = NULL;
     char version[1024] = { 0 };
 
-    int version_ok = 0;
+    static int version_ok = 0;
     unsigned long int major = 0;
     char *tmp = NULL;
+
+    if (version_ok) {
+        return version_ok;
+    }
 
     fp = popen("ssh -V 2>&1", "r");
     if (fp == NULL) {
