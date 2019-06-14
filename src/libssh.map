@@ -441,3 +441,9 @@ LIBSSH_4_8_0    # Released
         ssh_message_channel_request_open_reply_accept_channel;
 } LIBSSH_4_7_0;
 
+LIBSSH_4_8_1    # Released
+{
+    global:
+        ssh_session_get_known_hosts_entry;
+        ssh_threads_get_default;
+} LIBSSH_4_8_0;
