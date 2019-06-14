@@ -194,8 +194,13 @@ SSH_PACKET_CALLBACK(ssh_packet_client_dhgex_group)
     if (rc == SSH_ERROR) {
         goto error;
     }
+
     rc = ssh_dh_keypair_get_keys(session->next_crypto->dh_ctx,
                                  DH_CLIENT_KEYPAIR, NULL, &pubkey);
+    if (rc != SSH_OK) {
+        goto error;
+    }
+
     rc = ssh_buffer_pack(session->out_buffer,
                          "bB",
                          SSH2_MSG_KEX_DH_GEX_INIT,
