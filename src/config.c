@@ -395,7 +395,7 @@ ssh_config_parse_line(ssh_session session,
   int i, rv;
   uint8_t *seen = session->opts.options_seen;
   long l;
-  long long ll;
+  int64_t ll;
 
   x = s = strdup(line);
   if (s == NULL) {
