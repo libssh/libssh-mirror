@@ -159,8 +159,8 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_open_conf){
   channel=ssh_channel_from_local(session,channelid);
   if(channel==NULL){
     ssh_set_error(session, SSH_FATAL,
-        "Unknown channel id %lu",
-        (long unsigned int) channelid);
+        "Unknown channel id %"PRIu32,
+        (uint32_t) channelid);
     /* TODO: Set error marking in channel object */
 
     return SSH_PACKET_USED;
@@ -187,9 +187,9 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_open_conf){
   }
 
   SSH_LOG(SSH_LOG_PROTOCOL,
-      "Remote window : %lu, maxpacket : %lu",
-      (long unsigned int) channel->remote_window,
-      (long unsigned int) channel->remote_maxpacket);
+      "Remote window : %"PRIu32", maxpacket : %"PRIu32,
+      (uint32_t) channel->remote_window,
+      (uint32_t) channel->remote_maxpacket);
 
   channel->state = SSH_CHANNEL_STATE_OPEN;
   channel->flags &= ~SSH_CHANNEL_FLAG_NOT_BOUND;
@@ -235,9 +235,9 @@ SSH_PACKET_CALLBACK(ssh_packet_channel_open_fail){
   }
 
   ssh_set_error(session, SSH_REQUEST_DENIED,
-      "Channel opening failure: channel %u error (%lu) %s",
+      "Channel opening failure: channel %u error (%"PRIu32") %s",
       channel->local_channel,
-      (long unsigned int) code,
+      (uint32_t) code,
       error);
   SAFE_FREE(error);
   channel->state=SSH_CHANNEL_STATE_OPEN_DENIED;
@@ -445,8 +445,8 @@ static ssh_channel channel_from_msg(ssh_session session, ssh_buffer packet) {
   channel = ssh_channel_from_local(session, chan);
   if (channel == NULL) {
     ssh_set_error(session, SSH_FATAL,
-        "Server specified invalid channel %lu",
-        (long unsigned int) chan);
+        "Server specified invalid channel %"PRIu32,
+        (uint32_t) chan);
   }
 
   return channel;
