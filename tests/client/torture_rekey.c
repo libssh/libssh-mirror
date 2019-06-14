@@ -153,7 +153,7 @@ static void torture_rekey_send(void **state)
     int rc;
     char data[256];
     unsigned int i;
-    long long bytes = 2048; /* 2KB (more than the authentication phase) */
+    uint64_t bytes = 2048; /* 2KB (more than the authentication phase) */
     struct ssh_crypto_struct *c = NULL;
     unsigned char *secret_hash = NULL;
 
@@ -234,7 +234,7 @@ static void session_setup_sftp(void **state)
     assert_non_null(s->ssh.tsftp);
 }
 
-long long bytes = 2048; /* 2KB */
+uint64_t bytes = 2048; /* 2KB */
 
 static int session_setup_sftp_client(void **state)
 {
