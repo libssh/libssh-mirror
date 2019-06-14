@@ -82,6 +82,18 @@ char *strndup(const char *s, size_t n);
 #  define PRIu32 "u"
 # endif /* PRIu32 */
 
+# ifndef PRIx64
+#  if __WORDSIZE == 64
+#   define PRIx64 "lx"
+#  else
+#   define PRIx64 "llx"
+#  endif /* __WORDSIZE */
+# endif /* PRIx64 */
+
+# ifndef PRIx32
+#  define PRIx32 "x"
+# endif /* PRIx32 */
+
 # ifdef _MSC_VER
 #  include <stdio.h>
 #  include <stdarg.h> /* va_copy define check */
