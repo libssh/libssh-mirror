@@ -588,9 +588,8 @@ LIBSSH_API int ssh_session_export_known_hosts_entry(ssh_session session,
                                                     char **pentry_string);
 LIBSSH_API int ssh_session_update_known_hosts(ssh_session session);
 
-LIBSSH_API enum ssh_known_hosts_e
-ssh_session_get_known_hosts_entry(ssh_session session,
-                                  struct ssh_knownhosts_entry **pentry);
+LIBSSH_API enum ssh_known_hosts_e ssh_session_get_known_hosts_entry(ssh_session session,
+        struct ssh_knownhosts_entry **pentry);
 LIBSSH_API enum ssh_known_hosts_e ssh_session_is_known_server(ssh_session session);
 
 /* LOGGING */
