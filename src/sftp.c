@@ -1345,7 +1345,7 @@ static sftp_attributes sftp_parse_attr_3(sftp_session sftp, ssh_buffer buf,
         goto error;
     }
     SSH_LOG(SSH_LOG_PROTOCOL,
-            "Flags: %.8lx\n", (long unsigned int) attr->flags);
+            "Flags: %.8"PRIx32"\n", (uint32_t) attr->flags);
 
     if (attr->flags & SSH_FILEXFER_ATTR_SIZE) {
         rc = ssh_buffer_unpack(buf, "q", &attr->size);
@@ -1353,8 +1353,8 @@ static sftp_attributes sftp_parse_attr_3(sftp_session sftp, ssh_buffer buf,
             goto error;
         }
         SSH_LOG(SSH_LOG_PROTOCOL,
-                "Size: %llu\n",
-                (long long unsigned int) attr->size);
+                "Size: %"PRIu64"\n",
+                (uint64_t) attr->size);
     }
 
     if (attr->flags & SSH_FILEXFER_ATTR_UIDGID) {
