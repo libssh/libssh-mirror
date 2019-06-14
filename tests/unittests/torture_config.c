@@ -817,7 +817,7 @@ static void torture_config_rekey(void **state)
     ssh_options_set(session, SSH_OPTIONS_HOST, "data1");
     ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG12);
     assert_ssh_return_code(session, ret);
-    assert_int_equal(session->opts.rekey_data, (long long) 42 * 1024 * 1024 * 1024);
+    assert_int_equal(session->opts.rekey_data, (uint64_t) 42 * 1024 * 1024 * 1024);
     assert_int_equal(session->opts.rekey_time, 0);
 
     /* 41 MB */
