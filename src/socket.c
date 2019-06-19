@@ -839,11 +839,18 @@ void
 ssh_execute_command(const char *command, socket_t in, socket_t out)
 {
     const char *args[] = {"/bin/sh", "-c", command, NULL};
+    /* Prepare /dev/null socket for the stderr redirection */
+    int devnull = open("/dev/null", O_WRONLY);
+    if (devnull == -1) {
+        SSH_LOG(SSH_LOG_WARNING, "Failed to open stderr");
+        exit(1);
+    }
 
-    /* redirect in and out to stdin, stdout and stderr */
+    /* redirect in and out to stdin, stdout */
     dup2(in, 0);
     dup2(out, 1);
-    dup2(out, 2);
+    /* Ignore anything on the stderr */
+    dup2(devnull, STDERR_FILENO);
     close(in);
     close(out);
     execv(args[0], (char * const *)args);
