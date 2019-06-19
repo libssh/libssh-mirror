@@ -66,20 +66,20 @@
 
 enum ssh_keytypes_e pki_privatekey_type_from_string(const char *privkey)
 {
-    int cmp;
+    char *start = NULL;
 
-    cmp = strncmp(privkey, DSA_HEADER_BEGIN, strlen(DSA_HEADER_BEGIN));
-    if (cmp == 0) {
+    start = strstr(privkey, DSA_HEADER_BEGIN);
+    if (start != NULL) {
         return SSH_KEYTYPE_DSS;
     }
 
-    cmp = strncmp(privkey, RSA_HEADER_BEGIN, strlen(RSA_HEADER_BEGIN));
-    if (cmp == 0) {
+    start = strstr(privkey, RSA_HEADER_BEGIN);
+    if (start != NULL) {
         return SSH_KEYTYPE_RSA;
     }
 
-    cmp = strncmp(privkey, ECDSA_HEADER_BEGIN, strlen(ECDSA_HEADER_BEGIN));
-    if (cmp == 0) {
+    start = strstr(privkey, ECDSA_HEADER_BEGIN);
+    if (start != 0) {
         /* We don't know what the curve is at this point, so we don't actually
          * know the type. We figure out the actual curve and fix things up in
          * pki_private_key_from_base64 */
