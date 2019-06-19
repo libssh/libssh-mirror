@@ -168,6 +168,37 @@ static void torture_pki_dsa_import_privkey_base64(void **state)
     SSH_KEY_FREE(key);
 }
 
+static void torture_pki_dsa_import_privkey_base64_comment(void **state)
+{
+    int rc, file_str_len;
+    ssh_key key = NULL;
+    const char *passphrase = torture_get_testkey_passphrase();
+    const char *comment_str = "#this is line-comment\n#this is another\n";
+    const char *key_str = NULL;
+    char *file_str = NULL;
+
+    (void) state; /* unused */
+
+    key_str = torture_get_testkey(SSH_KEYTYPE_DSS, 0);
+    assert_non_null(key_str);
+
+    file_str_len = strlen(comment_str) + strlen(key_str) + 1;
+    file_str = malloc(file_str_len);
+    assert_non_null(file_str);
+    rc = snprintf(file_str, file_str_len, "%s%s", comment_str, key_str);
+    assert_int_equal(rc, file_str_len - 1);
+
+    rc = ssh_pki_import_privkey_base64(file_str,
+                                       passphrase,
+                                       NULL,
+                                       NULL,
+                                       &key);
+    assert_true(rc == 0);
+
+    free(file_str);
+    SSH_KEY_FREE(key);
+}
+
 static int test_sign_verify_data(ssh_key key,
                                  enum ssh_digest_e hash_type,
                                  const unsigned char *input,
@@ -831,6 +862,9 @@ int torture_run_tests(void)
                                  setup_openssh_dsa_key,
                                  teardown),
         cmocka_unit_test_setup_teardown(torture_pki_dsa_import_privkey_base64,
+                                 setup_dsa_key,
+                                 teardown),
+        cmocka_unit_test_setup_teardown(torture_pki_dsa_import_privkey_base64_comment,
                                  setup_dsa_key,
                                  teardown),
         cmocka_unit_test_setup_teardown(torture_pki_dsa_import_privkey_base64,
