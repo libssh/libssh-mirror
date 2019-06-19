@@ -197,6 +197,7 @@ static void sizechanged(void)
 static void select_loop(ssh_session session,ssh_channel channel)
 {
     ssh_connector connector_in, connector_out, connector_err;
+    int rc;
 
     ssh_event event = ssh_event_new();
 
@@ -222,7 +223,11 @@ static void select_loop(ssh_session session,ssh_channel channel)
         if (signal_delayed) {
             sizechanged();
         }
-        ssh_event_dopoll(event, 60000);
+        rc = ssh_event_dopoll(event, 60000);
+        if (rc == SSH_ERROR) {
+            fprintf(stderr, "Error in ssh_event_dopoll()\n");
+            break;
+        }
     }
     ssh_event_remove_connector(event, connector_in);
     ssh_event_remove_connector(event, connector_out);
