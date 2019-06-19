@@ -115,6 +115,28 @@ static void torture_options_set_proxycommand_ssh(void **state)
     assert_int_equal(rc & O_RDWR, O_RDWR);
 }
 
+static void torture_options_set_proxycommand_ssh_stderr(void **state)
+{
+    struct torture_state *s = *state;
+    ssh_session session = s->ssh.session;
+    const char *address = torture_server_address(AF_INET);
+    char command[255] = {0};
+    int rc;
+    socket_t fd;
+
+    rc = snprintf(command, sizeof(command), "ssh -vvv -W [%%h]:%%p alice@%s", address);
+    assert_true((size_t)rc < sizeof(command));
+
+    rc = ssh_options_set(session, SSH_OPTIONS_PROXYCOMMAND, command);
+    assert_int_equal(rc, 0);
+    rc = ssh_connect(session);
+    assert_ssh_return_code(session, rc);
+    fd = ssh_get_fd(session);
+    assert_true(fd != SSH_INVALID_SOCKET);
+    rc = fcntl(fd, F_GETFL);
+    assert_int_equal(rc & O_RDWR, O_RDWR);
+}
+
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
@@ -125,6 +147,9 @@ int torture_run_tests(void) {
                                         session_setup,
                                         session_teardown),
         cmocka_unit_test_setup_teardown(torture_options_set_proxycommand_ssh,
+                                        session_setup,
+                                        session_teardown),
+        cmocka_unit_test_setup_teardown(torture_options_set_proxycommand_ssh_stderr,
                                         session_setup,
                                         session_teardown),
     };
