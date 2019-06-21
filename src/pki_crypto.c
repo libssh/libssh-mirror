@@ -529,7 +529,7 @@ int pki_key_generate_rsa(ssh_key key, int parameter){
 
 	BN_free(e);
 
-	if (rc == -1 || key->rsa == NULL)
+	if (rc <= 0 || key->rsa == NULL)
 		return SSH_ERROR;
 	return SSH_OK;
 }
