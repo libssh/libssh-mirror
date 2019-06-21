@@ -506,21 +506,23 @@ static void torture_pki_rsa_generate_key(void **state)
     ssh_session session=ssh_new();
     (void) state;
 
-    rc = ssh_pki_generate(SSH_KEYTYPE_RSA, 1024, &key);
-    assert_true(rc == SSH_OK);
-    assert_non_null(key);
-    rc = ssh_pki_export_privkey_to_pubkey(key, &pubkey);
-    assert_int_equal(rc, SSH_OK);
-    assert_non_null(pubkey);
-    sign = pki_do_sign(key, INPUT, sizeof(INPUT), SSH_DIGEST_SHA256);
-    assert_non_null(sign);
-    rc = pki_signature_verify(session, sign, pubkey, INPUT, sizeof(INPUT));
-    assert_true(rc == SSH_OK);
-    ssh_signature_free(sign);
-    SSH_KEY_FREE(key);
-    SSH_KEY_FREE(pubkey);
-    key = NULL;
-    pubkey = NULL;
+    if (!ssh_fips_mode()) {
+        rc = ssh_pki_generate(SSH_KEYTYPE_RSA, 1024, &key);
+        assert_true(rc == SSH_OK);
+        assert_non_null(key);
+        rc = ssh_pki_export_privkey_to_pubkey(key, &pubkey);
+        assert_int_equal(rc, SSH_OK);
+        assert_non_null(pubkey);
+        sign = pki_do_sign(key, INPUT, sizeof(INPUT), SSH_DIGEST_SHA256);
+        assert_non_null(sign);
+        rc = pki_signature_verify(session, sign, pubkey, INPUT, sizeof(INPUT));
+        assert_true(rc == SSH_OK);
+        ssh_signature_free(sign);
+        SSH_KEY_FREE(key);
+        SSH_KEY_FREE(pubkey);
+        key = NULL;
+        pubkey = NULL;
+    }
 
     rc = ssh_pki_generate(SSH_KEYTYPE_RSA, 2048, &key);
     assert_true(rc == SSH_OK);
