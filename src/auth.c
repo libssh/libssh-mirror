@@ -69,7 +69,7 @@ static int ssh_userauth_request_service(ssh_session session) {
     int rc;
 
     rc = ssh_service_request(session, "ssh-userauth");
-    if (rc != SSH_OK) {
+    if ((rc != SSH_OK) && (rc != SSH_AGAIN)) {
         SSH_LOG(SSH_LOG_WARN,
                 "Failed to request \"ssh-userauth\" service");
     }
