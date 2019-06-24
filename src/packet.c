@@ -1438,37 +1438,50 @@ void ssh_packet_set_default_callbacks(ssh_session session){
  * @brief dispatch the call of packet handlers callbacks for a received packet
  * @param type type of packet
  */
-void ssh_packet_process(ssh_session session, uint8_t type){
-	struct ssh_iterator *i;
-	int r=SSH_PACKET_NOT_USED;
-	ssh_packet_callbacks cb;
+void ssh_packet_process(ssh_session session, uint8_t type)
+{
+    struct ssh_iterator *i = NULL;
+    int rc = SSH_PACKET_NOT_USED;
+    ssh_packet_callbacks cb;
 
-	SSH_LOG(SSH_LOG_PACKET, "Dispatching handler for packet type %d",type);
-	if(session->packet_callbacks == NULL){
-		SSH_LOG(SSH_LOG_RARE,"Packet callback is not initialized !");
+    SSH_LOG(SSH_LOG_PACKET, "Dispatching handler for packet type %d", type);
+    if (session->packet_callbacks == NULL) {
+        SSH_LOG(SSH_LOG_RARE, "Packet callback is not initialized !");
+        return;
+    }
 
-		return;
-	}
-	i=ssh_list_get_iterator(session->packet_callbacks);
-	while(i != NULL){
-		cb=ssh_iterator_value(ssh_packet_callbacks,i);
-		i=i->next;
-		if(!cb)
-			continue;
-		if(cb->start > type)
-			continue;
-		if(cb->start + cb->n_callbacks <= type)
-			continue;
-		if(cb->callbacks[type - cb->start]==NULL)
-			continue;
-		r=cb->callbacks[type - cb->start](session,type,session->in_buffer,cb->user);
-		if(r==SSH_PACKET_USED)
-			break;
-	}
-	if(r==SSH_PACKET_NOT_USED){
-		SSH_LOG(SSH_LOG_RARE,"Couldn't do anything with packet type %d",type);
-		ssh_packet_send_unimplemented(session, session->recv_seq-1);
-	}
+    i = ssh_list_get_iterator(session->packet_callbacks);
+    while (i != NULL) {
+        cb = ssh_iterator_value(ssh_packet_callbacks, i);
+        i = i->next;
+
+        if (!cb) {
+            continue;
+        }
+
+        if (cb->start > type) {
+            continue;
+        }
+
+        if (cb->start + cb->n_callbacks <= type) {
+            continue;
+        }
+
+        if (cb->callbacks[type - cb->start] == NULL) {
+            continue;
+        }
+
+        rc = cb->callbacks[type - cb->start](session, type, session->in_buffer,
+                                             cb->user);
+        if (rc == SSH_PACKET_USED) {
+            break;
+        }
+    }
+
+    if (rc == SSH_PACKET_NOT_USED) {
+        SSH_LOG(SSH_LOG_RARE, "Couldn't do anything with packet type %d", type);
+        ssh_packet_send_unimplemented(session, session->recv_seq - 1);
+    }
 }
 
 /** @internal
