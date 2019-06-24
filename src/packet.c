@@ -1480,7 +1480,11 @@ void ssh_packet_process(ssh_session session, uint8_t type)
 
     if (rc == SSH_PACKET_NOT_USED) {
         SSH_LOG(SSH_LOG_RARE, "Couldn't do anything with packet type %d", type);
-        ssh_packet_send_unimplemented(session, session->recv_seq - 1);
+        rc = ssh_packet_send_unimplemented(session, session->recv_seq - 1);
+        if (rc != SSH_OK) {
+            SSH_LOG(SSH_LOG_RARE, "Failed to send unimplemented: %s",
+                    ssh_get_error(session));
+        }
     }
 }
 
