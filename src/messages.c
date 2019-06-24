@@ -1546,18 +1546,41 @@ SSH_PACKET_CALLBACK(ssh_packet_global_request){
             ssh_message_global_request_reply_success(msg, 0);
         }
     } else {
-        SSH_LOG(SSH_LOG_PROTOCOL, "UNKNOWN SSH_MSG_GLOBAL_REQUEST %s %d", request, want_reply);
-        rc = SSH_PACKET_NOT_USED;
+        SSH_LOG(SSH_LOG_PROTOCOL, "UNKNOWN SSH_MSG_GLOBAL_REQUEST %s, "
+                "want_reply = %d", request, want_reply);
+        goto reply_with_failure;
     }
 
     SAFE_FREE(msg);
     SAFE_FREE(request);
     return rc;
+
+reply_with_failure:
+    /* Only report the failure if requested */
+    if (want_reply) {
+        r = ssh_buffer_add_u8(session->out_buffer,
+                SSH2_MSG_REQUEST_FAILURE);
+        if (r < 0) {
+            ssh_set_error_oom(session);
+            goto error;
+        }
+
+        r = ssh_packet_send(session);
+        if (r != SSH_OK) {
+            goto error;
+        }
+    } else {
+        SSH_LOG(SSH_LOG_PACKET,
+                "The requester doesn't want to know the request failed!");
+    }
+
+    /* Consume the message to avoid sending UNIMPLEMENTED later */
+    rc = SSH_PACKET_USED;
 error:
     SAFE_FREE(msg);
     SAFE_FREE(request);
     SSH_LOG(SSH_LOG_WARNING, "Invalid SSH_MSG_GLOBAL_REQUEST packet");
-    return SSH_PACKET_NOT_USED;
+    return rc;
 }
 
 #endif /* WITH_SERVER */
