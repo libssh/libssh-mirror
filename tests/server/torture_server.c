@@ -473,6 +473,50 @@ static void torture_server_hostkey_mismatch(void **state)
     assert_int_equal(found, SSH_KNOWN_HOSTS_OK);
 }
 
+static void torture_server_unknown_global_request(void **state)
+{
+    struct test_server_st *tss = *state;
+    struct torture_state *s = NULL;
+    ssh_session session = NULL;
+    ssh_channel channel;
+    int rc;
+
+    assert_non_null(tss);
+
+    s = tss->state;
+    assert_non_null(s);
+
+    session = s->ssh.session;
+    assert_non_null(session);
+
+    rc = ssh_options_set(session, SSH_OPTIONS_USER, SSHD_DEFAULT_USER);
+    assert_int_equal(rc, SSH_OK);
+
+    rc = ssh_connect(session);
+    assert_int_equal(rc, SSH_OK);
+
+    /* Using the default password for the server */
+    rc = ssh_userauth_password(session, NULL, SSHD_DEFAULT_PASSWORD);
+    assert_int_equal(rc, SSH_AUTH_SUCCESS);
+
+    /* Request asking for reply */
+    rc = ssh_global_request(session, "unknown-request-00@test.com", NULL, 1);
+    assert_ssh_return_code_equal(session, rc, SSH_ERROR);
+
+    /* Request and don't ask for reply */
+    rc = ssh_global_request(session, "another-bad-req-00@test.com", NULL, 0);
+    assert_ssh_return_code(session, rc);
+
+    /* Open channel to make sure the session is still working */
+    channel = ssh_channel_new(session);
+    assert_non_null(channel);
+
+    rc = ssh_channel_open_session(channel);
+    assert_ssh_return_code(session, rc);
+
+    ssh_channel_close(channel);
+}
+
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
@@ -486,6 +530,9 @@ int torture_run_tests(void) {
                                         session_setup,
                                         session_teardown),
         cmocka_unit_test_setup_teardown(torture_server_hostkey_mismatch,
+                                        session_setup,
+                                        session_teardown),
+        cmocka_unit_test_setup_teardown(torture_server_unknown_global_request,
                                         session_setup,
                                         session_teardown),
     };
