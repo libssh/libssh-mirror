@@ -14,7 +14,8 @@ set(LIBSSH_CLIENT_TESTS
     torture_knownhosts_verify
     torture_proxycommand
     torture_session
-    torture_request_env)
+    torture_request_env
+    torture_client_global_requests)
 
 if (DEFAULT_C_NO_DEPRECATION_FLAGS)
     set_source_files_properties(torture_knownhosts.c
