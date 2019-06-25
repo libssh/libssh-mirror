@@ -388,6 +388,19 @@ enum ssh_digest_e ssh_key_type_to_hash(ssh_session session,
     case SSH_KEYTYPE_DSS:
         return SSH_DIGEST_SHA1;
     case SSH_KEYTYPE_RSA_CERT01:
+        /* If we are talking to an old OpenSSH version which does not support
+         * SHA2 in certificates */
+        if ((session->openssh > 0) &&
+            (session->openssh < SSH_VERSION_INT(7, 2, 0)))
+        {
+            SSH_LOG(SSH_LOG_DEBUG,
+                    "We are talking to an old OpenSSH (%x); "
+                    "returning SSH_DIGEST_SHA1",
+                    session->openssh);
+
+            return SSH_DIGEST_SHA1;
+        }
+        FALL_THROUGH;
     case SSH_KEYTYPE_RSA:
         if (ssh_key_algorithm_allowed(session, "rsa-sha2-512") &&
             (session->extensions & SSH_EXT_SIG_RSA_SHA512)) {
@@ -440,6 +453,21 @@ ssh_key_get_signature_algorithm(ssh_session session,
                                 enum ssh_keytypes_e type)
 {
     enum ssh_digest_e hash_type;
+
+    if (type == SSH_KEYTYPE_RSA_CERT01) {
+        /* If we are talking to an old OpenSSH version which does not support
+         * rsa-sha2-{256,512}-cert-v01@openssh.com */
+        if ((session->openssh > 0) &&
+            (session->openssh < SSH_VERSION_INT(7, 8, 0)))
+        {
+            SSH_LOG(SSH_LOG_DEBUG,
+                    "We are talking to an old OpenSSH (%x); "
+                    "using old cert format",
+                    session->openssh);
+
+            return "ssh-rsa-cert-v01@openssh.com";
+        }
+    }
 
     hash_type = ssh_key_type_to_hash(session, type);
 
