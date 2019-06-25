@@ -6,7 +6,7 @@ variables:
   MINGW_BUILD: buildenv-mingw
   DEBIAN_CROSS_BUILD: buildenv-debian-cross
 
-# torture_auth fails on centos7 docker images, so we don't use -DCLIENT_TESTING=ON
+# pkd tests fail on CentOS7 docker images, so we don't use -DSERVER_TESTING=ON
 centos7/openssl_1.0.x/x86_64:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$CENTOS7_BUILD
   script:
@@ -14,7 +14,7 @@ centos7/openssl_1.0.x/x86_64:
     -DCMAKE_BUILD_TYPE=RelWithDebInfo
     -DPICKY_DEVELOPER=ON
     -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
-    -DUNIT_TESTING=ON .. &&
+    -DUNIT_TESTING=ON -DCLIENT_TESTING=ON .. &&
     make -j$(nproc) && ctest --output-on-failure
   tags:
   - shared
