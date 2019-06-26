@@ -272,8 +272,6 @@ int ssh_auth_reply_success(ssh_session session, int partial);
 int ssh_send_banner(ssh_session session, int is_server);
 
 /* connect.c */
-socket_t ssh_connect_host(ssh_session session, const char *host,const char
-        *bind_addr, int port, long timeout, long usec);
 socket_t ssh_connect_host_nonblocking(ssh_session session, const char *host,
 		const char *bind_addr, int port);
 
