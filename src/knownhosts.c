@@ -638,14 +638,15 @@ enum ssh_known_hosts_e ssh_session_has_known_hosts_entry(ssh_session session)
     struct ssh_list *entry_list = NULL;
     struct ssh_iterator *it = NULL;
     char *host_port = NULL;
-    bool ok;
+    bool global_known_hosts_found = false;
+    bool known_hosts_found = false;
     int rc;
 
     if (session->opts.knownhosts == NULL) {
         if (ssh_options_apply(session) < 0) {
             ssh_set_error(session,
                           SSH_REQUEST_DENIED,
-                          "Can't find a known_hosts file");
+                          "Cannot find a known_hosts file");
 
             return SSH_KNOWN_HOSTS_NOT_FOUND;
         }
@@ -653,21 +654,36 @@ enum ssh_known_hosts_e ssh_session_has_known_hosts_entry(ssh_session session)
 
     if (session->opts.knownhosts == NULL &&
         session->opts.global_knownhosts == NULL) {
+            ssh_set_error(session,
+                          SSH_REQUEST_DENIED,
+                          "No path set for a known_hosts file");
+
             return SSH_KNOWN_HOSTS_NOT_FOUND;
     }
 
     if (session->opts.knownhosts != NULL) {
-        ok = ssh_file_readaccess_ok(session->opts.knownhosts);
-        if (!ok) {
-            return SSH_KNOWN_HOSTS_NOT_FOUND;
+        known_hosts_found = ssh_file_readaccess_ok(session->opts.knownhosts);
+        if (!known_hosts_found) {
+            SSH_LOG(SSH_LOG_WARN, "Cannot access file %s",
+                    session->opts.knownhosts);
         }
     }
 
     if (session->opts.global_knownhosts != NULL) {
-        ok = ssh_file_readaccess_ok(session->opts.global_knownhosts);
-        if (!ok) {
-            return SSH_KNOWN_HOSTS_NOT_FOUND;
+        global_known_hosts_found =
+                ssh_file_readaccess_ok(session->opts.global_knownhosts);
+        if (!global_known_hosts_found) {
+            SSH_LOG(SSH_LOG_WARN, "Cannot access file %s",
+                    session->opts.global_knownhosts);
         }
+    }
+
+    if ((!known_hosts_found) && (!global_known_hosts_found)) {
+        ssh_set_error(session,
+                      SSH_REQUEST_DENIED,
+                      "Cannot find a known_hosts file");
+
+        return SSH_KNOWN_HOSTS_NOT_FOUND;
     }
 
     host_port = ssh_session_get_host_port(session);
@@ -682,7 +698,7 @@ enum ssh_known_hosts_e ssh_session_has_known_hosts_entry(ssh_session session)
         if (rc != 0) {
             SAFE_FREE(host_port);
             ssh_list_free(entry_list);
-            return SSH_KNOWN_HOSTS_UNKNOWN;
+            return SSH_KNOWN_HOSTS_ERROR;
         }
     }
 
@@ -693,7 +709,7 @@ enum ssh_known_hosts_e ssh_session_has_known_hosts_entry(ssh_session session)
         SAFE_FREE(host_port);
         if (rc != 0) {
             ssh_list_free(entry_list);
-            return SSH_KNOWN_HOSTS_UNKNOWN;
+            return SSH_KNOWN_HOSTS_ERROR;
         }
     }
 
