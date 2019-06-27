@@ -381,8 +381,17 @@ static void torture_knownhosts_host_exists(void **state)
 
     ssh_options_set(session, SSH_OPTIONS_HOST, "localhost");
     ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, knownhosts_file);
+
     /* This makes sure the system's known_hosts are not used */
     ssh_options_set(session, SSH_OPTIONS_GLOBAL_KNOWNHOSTS, "/dev/null");
+
+    found = ssh_session_has_known_hosts_entry(session);
+    assert_int_equal(found, SSH_KNOWN_HOSTS_OK);
+    assert_true(found == SSH_KNOWN_HOSTS_OK);
+
+    /* This makes sure the check will not fail when the system's known_hosts is
+     * not accessible*/
+    ssh_options_set(session, SSH_OPTIONS_GLOBAL_KNOWNHOSTS, "./unaccessible");
 
     found = ssh_session_has_known_hosts_entry(session);
     assert_int_equal(found, SSH_KNOWN_HOSTS_OK);
