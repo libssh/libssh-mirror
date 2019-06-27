@@ -306,7 +306,7 @@ static char *ssh_session_get_host_port(ssh_session session)
     if (session->opts.host == NULL) {
         ssh_set_error(session,
                       SSH_FATAL,
-                      "Can't verify server inn known hosts if the host we "
+                      "Can't verify server in known hosts if the host we "
                       "should connect to has not been set");
 
         return NULL;
