@@ -146,6 +146,126 @@ static void torture_tokens_sanity(UNUSED_PARAM(void **state))
     tokenize_compare_expected(",", single_colon, 1);
 }
 
+static void torture_remove_duplicate(UNUSED_PARAM(void **state))
+{
+
+    const char *simple[] = {"a,a,b,b,c,c",
+                            "a,b,c,a,b,c",
+                            "a,b,c,c,b,a",
+                            "a,a,,b,b,,c,c",
+                            ",a,a,b,b,c,c",
+                            "a,a,b,b,c,c,"};
+    const char *empty[] = {"",
+                           ",,,,,,,,,",
+                           NULL};
+    char *ret = NULL;
+    int i;
+
+    for (i = 0; i < 6; i++) {
+        ret = ssh_remove_duplicates(simple[i]);
+        assert_non_null(ret);
+        assert_string_equal("a,b,c", ret);
+        printf("simple[%d] resulted in '%s'\n", i, ret);
+        SAFE_FREE(ret);
+    }
+
+    for (i = 0; i < 3; i++) {
+        ret = ssh_remove_duplicates(empty[i]);
+        if (ret != NULL) {
+            printf("empty[%d] resulted in '%s'\n", i, ret);
+        }
+        assert_null(ret);
+    }
+
+    ret = ssh_remove_duplicates("a");
+    assert_non_null(ret);
+    assert_string_equal("a", ret);
+    SAFE_FREE(ret);
+}
+
+static void torture_append_without_duplicate(UNUSED_PARAM(void **state))
+{
+    const char *s1[] = {"a,a,b,b,c,c",
+                        "a,b,c,a,b,c",
+                        "a,b,c,c,b,a",
+                        "a,a,,b,b,,c,c",
+                        ",a,a,b,b,c,c",
+                        "a,a,b,b,c,c,"};
+    const char *s2[] = {"a,a,b,b,c,c,d,d",
+                        "a,b,c,d,a,b,c,d",
+                        "a,b,c,d,d,c,b,a",
+                        "a,a,,b,b,,c,c,,d,d",
+                        ",a,a,b,b,c,c,d,d",
+                        "a,a,b,b,c,c,d,d,",
+                        "d"};
+    const char *empty[] = {"",
+                           ",,,,,,,,,",
+                           NULL,
+                           NULL};
+    char *ret = NULL;
+    int i, j;
+
+    ret = ssh_append_without_duplicates("a", "a");
+    assert_non_null(ret);
+    assert_string_equal("a", ret);
+    SAFE_FREE(ret);
+
+    ret = ssh_append_without_duplicates("a", "b");
+    assert_non_null(ret);
+    assert_string_equal("a,b", ret);
+    SAFE_FREE(ret);
+
+    ret = ssh_append_without_duplicates("a", NULL);
+    assert_non_null(ret);
+    assert_string_equal("a", ret);
+    SAFE_FREE(ret);
+
+    ret = ssh_append_without_duplicates(NULL, "b");
+    assert_non_null(ret);
+    assert_string_equal("b", ret);
+    SAFE_FREE(ret);
+
+    for (i = 0; i < 6; i++) {
+        for (j = 0; j < 7; j++) {
+            ret = ssh_append_without_duplicates(s1[i], s2[j]);
+            assert_non_null(ret);
+            printf("s1[%d] + s2[%d] resulted in '%s'\n", i, j, ret);
+            assert_string_equal("a,b,c,d", ret);
+            SAFE_FREE(ret);
+        }
+    }
+
+    for (i = 0; i < 6; i++) {
+        for (j = 0; j < 3; j++) {
+            ret = ssh_append_without_duplicates(s1[i], empty[j]);
+            assert_non_null(ret);
+            printf("s1[%d] + empty[%d] resulted in '%s'\n", i, j, ret);
+            assert_string_equal("a,b,c", ret);
+            SAFE_FREE(ret);
+        }
+    }
+
+    for (i = 0; i < 3; i++) {
+        for (j = 0; j < 6; j++) {
+            ret = ssh_append_without_duplicates(empty[i], s1[j]);
+            assert_non_null(ret);
+            printf("empty[%d] + s1[%d] resulted in '%s'\n", i, j, ret);
+            assert_string_equal("a,b,c", ret);
+            SAFE_FREE(ret);
+        }
+    }
+    for (i = 0; i < 4; i++) {
+        for (j = 0; j < 4; j++) {
+            ret = ssh_append_without_duplicates(empty[i], empty[j]);
+            if (ret != NULL) {
+                printf("empty[%d] + empty[%d] resulted in '%s'\n", i, j, ret);
+            }
+            assert_null(ret);
+        }
+    }
+}
+
+
 int torture_run_tests(void)
 {
     int rc;
@@ -153,6 +273,8 @@ int torture_run_tests(void)
         cmocka_unit_test(torture_tokens_sanity),
         cmocka_unit_test(torture_find_matching),
         cmocka_unit_test(torture_find_all_matching),
+        cmocka_unit_test(torture_remove_duplicate),
+        cmocka_unit_test(torture_append_without_duplicate),
     };
 
     ssh_init();

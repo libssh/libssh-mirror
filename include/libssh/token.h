@@ -38,7 +38,11 @@ void ssh_tokens_free(struct ssh_tokens_st *tokens);
 char *ssh_find_matching(const char *available_d,
                         const char *preferred_d);
 
-
 char *ssh_find_all_matching(const char *available_d,
                             const char *preferred_d);
+
+char *ssh_remove_duplicates(const char *list);
+
+char *ssh_append_without_duplicates(const char *list,
+                                    const char *appended_list);
 #endif /* TOKEN_H_ */

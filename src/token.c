@@ -26,6 +26,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include "libssh/priv.h"
 #include "libssh/token.h"
@@ -175,7 +176,7 @@ char *ssh_find_matching(const char *available_list,
 
     for (i = 0; p_tok->tokens[i]; i++) {
         for (j = 0; a_tok->tokens[j]; j++) {
-            if (strcmp(a_tok->tokens[j], p_tok->tokens[i]) == 0){
+            if (strcmp(a_tok->tokens[j], p_tok->tokens[i]) == 0) {
                 ret = strdup(a_tok->tokens[j]);
                 goto out;
             }
@@ -258,5 +259,154 @@ char *ssh_find_all_matching(const char *available_list,
 out:
     ssh_tokens_free(a_tok);
     ssh_tokens_free(p_tok);
+    return ret;
+}
+
+/**
+ * @internal
+ *
+ * @brief Given a string containing a list of elements, remove all duplicates
+ * and return in a newly allocated string.
+ *
+ * @param[in] list  The list to be freed of duplicates
+ *
+ * @return  A newly allocated copy of the string free of duplicates; NULL in
+ * case of error.
+ */
+char *ssh_remove_duplicates(const char *list)
+{
+    struct ssh_tokens_st *tok = NULL;
+
+    size_t i, j, num_tokens, max_len;
+    char *ret = NULL;
+    bool *should_copy = NULL, need_comma = false;
+
+    if (list == NULL) {
+        return NULL;
+    }
+
+    /* The maximum number of tokens is the size of the list */
+    max_len = strlen(list);
+    if (max_len == 0) {
+        return NULL;
+    }
+
+    /* Add space for ending '\0' */
+    max_len++;
+
+    tok = ssh_tokenize(list, ',');
+    if ((tok == NULL) || (tok->tokens == NULL) || (tok->tokens[0] == NULL)) {
+        goto out;
+    }
+
+    should_copy = calloc(1, max_len);
+    if (should_copy == NULL) {
+        goto out;
+    }
+
+    if (strlen(tok->tokens[0]) > 0) {
+        should_copy[0] = true;
+    }
+
+    for (i = 1; tok->tokens[i]; i++) {
+        for (j = 0; j < i; j++) {
+            if (strcmp(tok->tokens[i], tok->tokens[j]) == 0) {
+                /* Found a duplicate; do not copy */
+                should_copy[i] = false;
+                break;
+            }
+        }
+
+        /* No matching token before */
+        if (j == i) {
+            /* Only copy if it is not an empty string */
+            if (strlen(tok->tokens[i]) > 0) {
+                should_copy[i] = true;
+            } else {
+                should_copy[i] = false;
+            }
+        }
+    }
+
+    num_tokens = i;
+
+    ret = calloc(1, max_len);
+    if (ret == NULL) {
+        goto out;
+    }
+
+    for (i = 0; i < num_tokens; i++) {
+        if (should_copy[i]) {
+            if (need_comma) {
+                strncat(ret, ",", (max_len - strlen(ret) - 1));
+            }
+            strncat(ret, tok->tokens[i], (max_len - strlen(ret) - 1));
+            need_comma = true;
+        }
+    }
+
+    /* If no comma is needed, nothing was copied */
+    if (!need_comma) {
+        SAFE_FREE(ret);
+    }
+
+out:
+    SAFE_FREE(should_copy);
+    ssh_tokens_free(tok);
+    return ret;
+}
+
+/**
+ * @internal
+ *
+ * @brief Given two strings containing lists of tokens, return a newly
+ * allocated string containing all the elements of the first list appended with
+ * all the elements of the second list, without duplicates. The order of the
+ * elements will be preserved.
+ *
+ * @param[in] list             The first list
+ * @param[in] appended_list    The list to be appended
+ *
+ * @return  A newly allocated copy list containing all the elements of the
+ * kept_list appended with the elements of the appended_list without duplicates;
+ * NULL in case of error.
+ */
+char *ssh_append_without_duplicates(const char *list,
+                                    const char *appended_list)
+{
+    size_t concat_len = 0;
+    char *ret = NULL, *concat = NULL;
+
+    if (list != NULL) {
+        concat_len = strlen(list);
+    }
+
+    if (appended_list != NULL) {
+        concat_len += strlen(appended_list);
+    }
+
+    if (concat_len == 0) {
+        return NULL;
+    }
+
+    /* Add room for ending '\0' and for middle ',' */
+    concat_len += 2;
+    concat = calloc(1, concat_len);
+    if (concat == NULL) {
+        return NULL;
+    }
+
+    if (list != NULL) {
+        strcpy(concat, list);
+        strncat(concat, ",", concat_len - strlen(concat) - 1);
+    }
+    if (appended_list != NULL) {
+        strncat(concat, appended_list, concat_len - strlen(concat) - 1);
+    }
+
+    ret = ssh_remove_duplicates(concat);
+
+    SAFE_FREE(concat);
+
     return ret;
 }
