@@ -384,22 +384,19 @@ static void torture_knownhosts_host_exists(void **state)
 
     /* This makes sure the system's known_hosts are not used */
     ssh_options_set(session, SSH_OPTIONS_GLOBAL_KNOWNHOSTS, "/dev/null");
-
     found = ssh_session_has_known_hosts_entry(session);
     assert_int_equal(found, SSH_KNOWN_HOSTS_OK);
-    assert_true(found == SSH_KNOWN_HOSTS_OK);
 
     /* This makes sure the check will not fail when the system's known_hosts is
      * not accessible*/
     ssh_options_set(session, SSH_OPTIONS_GLOBAL_KNOWNHOSTS, "./unaccessible");
-
     found = ssh_session_has_known_hosts_entry(session);
     assert_int_equal(found, SSH_KNOWN_HOSTS_OK);
-    assert_true(found == SSH_KNOWN_HOSTS_OK);
 
+    /* This makes sure the check will fail for an unknown host */
     ssh_options_set(session, SSH_OPTIONS_HOST, "wurstbrot");
     found = ssh_session_has_known_hosts_entry(session);
-    assert_true(found == SSH_KNOWN_HOSTS_UNKNOWN);
+    assert_int_equal(found, SSH_KNOWN_HOSTS_UNKNOWN);
 
     ssh_free(session);
 }
@@ -414,17 +411,23 @@ static void torture_knownhosts_host_exists_global(void **state)
     assert_non_null(session);
 
     ssh_options_set(session, SSH_OPTIONS_HOST, "localhost");
-    /* This makes sure the user's known_hosts are not used */
-    ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, "/dev/null");
     ssh_options_set(session, SSH_OPTIONS_GLOBAL_KNOWNHOSTS, knownhosts_file);
 
+    /* This makes sure the user's known_hosts are not used */
+    ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, "/dev/null");
     found = ssh_session_has_known_hosts_entry(session);
     assert_int_equal(found, SSH_KNOWN_HOSTS_OK);
-    assert_true(found == SSH_KNOWN_HOSTS_OK);
 
+    /* This makes sure the check will not fail when the user's known_hosts is
+     * not accessible*/
+    ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, "./unaccessible");
+    found = ssh_session_has_known_hosts_entry(session);
+    assert_int_equal(found, SSH_KNOWN_HOSTS_OK);
+
+    /* This makes sure the check will fail for an unknown host */
     ssh_options_set(session, SSH_OPTIONS_HOST, "wurstbrot");
     found = ssh_session_has_known_hosts_entry(session);
-    assert_true(found == SSH_KNOWN_HOSTS_UNKNOWN);
+    assert_int_equal(found, SSH_KNOWN_HOSTS_UNKNOWN);
 
     ssh_free(session);
 }
