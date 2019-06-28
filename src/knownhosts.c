@@ -691,7 +691,7 @@ enum ssh_known_hosts_e ssh_session_has_known_hosts_entry(ssh_session session)
         return SSH_KNOWN_HOSTS_ERROR;
     }
 
-    if (session->opts.knownhosts != NULL) {
+    if (known_hosts_found) {
         rc = ssh_known_hosts_read_entries(host_port,
                                           session->opts.knownhosts,
                                           &entry_list);
@@ -702,7 +702,7 @@ enum ssh_known_hosts_e ssh_session_has_known_hosts_entry(ssh_session session)
         }
     }
 
-    if (session->opts.global_knownhosts != NULL) {
+    if (global_known_hosts_found) {
         rc = ssh_known_hosts_read_entries(host_port,
                                           session->opts.global_knownhosts,
                                           &entry_list);
