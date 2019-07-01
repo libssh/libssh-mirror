@@ -299,7 +299,7 @@ ssh_pki_openssh_import(const char *text_key,
         goto out;
     }
     SSH_LOG(SSH_LOG_INFO,
-            "Opening OpenSSH private key: ciphername: %s, kdf: %s, nkeys: %d\n",
+            "Opening OpenSSH private key: ciphername: %s, kdf: %s, nkeys: %d",
             ciphername,
             kdfname,
             nkeys);
