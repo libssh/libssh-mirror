@@ -233,7 +233,7 @@ ssh_pki_openssh_import(const char *text_key,
                        void *auth_data,
                        bool private)
 {
-    const char *ptr=text_key;
+    const char *ptr = text_key;
     const char *end;
     char *base64;
     int cmp;
@@ -250,7 +250,7 @@ ssh_pki_openssh_import(const char *text_key,
     uint8_t padding;
 
     cmp = strncmp(ptr, OPENSSH_HEADER_BEGIN, strlen(OPENSSH_HEADER_BEGIN));
-    if (cmp != 0){
+    if (cmp != 0) {
         SSH_LOG(SSH_LOG_WARN, "Not an OpenSSH private key (no header)");
         goto out;
     }
@@ -259,15 +259,15 @@ ssh_pki_openssh_import(const char *text_key,
         ptr++;
     }
     end = strstr(ptr, OPENSSH_HEADER_END);
-    if (end == NULL){
+    if (end == NULL) {
         SSH_LOG(SSH_LOG_WARN, "Not an OpenSSH private key (no footer)");
         goto out;
     }
     base64 = malloc(end - ptr + 1);
-    if (base64 == NULL){
+    if (base64 == NULL) {
         goto out;
     }
-    for (i = 0; ptr < end; ptr++){
+    for (i = 0; ptr < end; ptr++) {
         if (!isspace((int)ptr[0])) {
             base64[i] = ptr[0];
             i++;
@@ -276,7 +276,7 @@ ssh_pki_openssh_import(const char *text_key,
     base64[i] = '\0';
     buffer = base64_to_bin(base64);
     SAFE_FREE(base64);
-    if (buffer == NULL){
+    if (buffer == NULL) {
         SSH_LOG(SSH_LOG_WARN, "Not an OpenSSH private key (base64 error)");
         goto out;
     }
@@ -289,12 +289,12 @@ ssh_pki_openssh_import(const char *text_key,
                            &nkeys,
                            &pubkey0,
                            &privkeys);
-    if (rc == SSH_ERROR){
+    if (rc == SSH_ERROR) {
         SSH_LOG(SSH_LOG_WARN, "Not an OpenSSH private key (unpack error)");
         goto out;
     }
     cmp = strncmp(magic, OPENSSH_AUTH_MAGIC, strlen(OPENSSH_AUTH_MAGIC));
-    if (cmp != 0){
+    if (cmp != 0) {
         SSH_LOG(SSH_LOG_WARN, "Not an OpenSSH private key (bad magic)");
         goto out;
     }
@@ -303,7 +303,7 @@ ssh_pki_openssh_import(const char *text_key,
             ciphername,
             kdfname,
             nkeys);
-    if (nkeys != 1){
+    if (nkeys != 1) {
         SSH_LOG(SSH_LOG_WARN, "Opening OpenSSH private key: only 1 key supported (%d available)", nkeys);
         goto out;
     }
@@ -327,7 +327,7 @@ ssh_pki_openssh_import(const char *text_key,
                                  kdfoptions,
                                  auth_fn,
                                  auth_data);
-    if (rc == SSH_ERROR){
+    if (rc == SSH_ERROR) {
         goto out;
     }
 
@@ -342,20 +342,20 @@ ssh_pki_openssh_import(const char *text_key,
                         ssh_string_len(privkeys));
 
     rc = ssh_buffer_unpack(privkey_buffer, "dd", &checkint1, &checkint2);
-    if (rc == SSH_ERROR || checkint1 != checkint2){
+    if (rc == SSH_ERROR || checkint1 != checkint2) {
         SSH_LOG(SSH_LOG_WARN, "OpenSSH private key unpack error (correct password?)");
         goto out;
     }
     rc = pki_openssh_import_privkey_blob(privkey_buffer, &key);
-    if (rc == SSH_ERROR){
+    if (rc == SSH_ERROR) {
         goto out;
     }
     comment = ssh_buffer_get_ssh_string(privkey_buffer);
     SAFE_FREE(comment);
     /* verify that the remaining data is correct padding */
-    for (i=1; ssh_buffer_get_len(privkey_buffer) > 0; ++i){
+    for (i = 1; ssh_buffer_get_len(privkey_buffer) > 0; ++i) {
         ssh_buffer_get_u8(privkey_buffer, &padding);
-        if (padding != i){
+        if (padding != i) {
             ssh_key_free(key);
             key = NULL;
             SSH_LOG(SSH_LOG_WARN, "Invalid padding");
