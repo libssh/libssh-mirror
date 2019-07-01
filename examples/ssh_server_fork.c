@@ -70,6 +70,8 @@ static void set_default_keys(ssh_bind sshbind,
         ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_ECDSAKEY,
                              KEYS_FOLDER "ssh_host_ecdsa_key");
     }
+    ssh_bind_options_set(sshbind, SSH_BIND_OPTIONS_HOSTKEY,
+                         KEYS_FOLDER "ssh_host_ed25519_key");
 }
 #define DEF_STR_SIZE 1024
 char authorizedkeys[DEF_STR_SIZE] = {0};
