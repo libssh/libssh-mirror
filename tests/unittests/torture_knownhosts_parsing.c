@@ -28,6 +28,8 @@
 
 #define TMP_FILE_NAME "/tmp/known_hosts_XXXXXX"
 
+const char template[] = "temp_dir_XXXXXX";
+
 static int setup_knownhosts_file(void **state)
 {
     char *tmp_file = NULL;
@@ -394,6 +396,115 @@ static void torture_knownhosts_get_algorithms_names(void **state)
     ssh_free(session);
 }
 
+static void torture_knownhosts_algorithms_wanted(void **state)
+{
+    const char *knownhosts_file = *state;
+    char *algo_list = NULL;
+    ssh_session session;
+    bool process_config = false;
+    const char *wanted = "ecdsa-sha2-nistp384,ecdsa-sha2-nistp256,"
+                         "rsa-sha2-256,ecdsa-sha2-nistp521";
+    const char *expect = "rsa-sha2-256,ecdsa-sha2-nistp384,"
+                         "ecdsa-sha2-nistp256,ecdsa-sha2-nistp521";
+    int verbose = 4;
+
+    session = ssh_new();
+    assert_non_null(session);
+
+    ssh_options_set(session, SSH_OPTIONS_LOG_VERBOSITY, &verbose);
+
+    /* This makes sure the global configuration file is not processed */
+    ssh_options_set(session, SSH_OPTIONS_PROCESS_CONFIG, &process_config);
+
+    /* Set the wanted list of hostkeys, ordered by preference */
+    ssh_options_set(session, SSH_OPTIONS_HOSTKEYS, wanted);
+
+    ssh_options_set(session, SSH_OPTIONS_HOST, "localhost");
+    ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, knownhosts_file);
+
+    algo_list = ssh_client_select_hostkeys(session);
+    assert_non_null(algo_list);
+    assert_string_equal(algo_list, expect);
+    free(algo_list);
+
+    ssh_free(session);
+}
+
+static void torture_knownhosts_algorithms_negative(UNUSED_PARAM(void **state))
+{
+    const char *wanted = NULL;
+    const char *expect = NULL;
+
+    char *algo_list = NULL;
+
+    char *cwd = NULL;
+    char *tmp_dir = NULL;
+
+    bool process_config = false;
+    int verbose = 4;
+    int rc = 0;
+
+    ssh_session session;
+    /* Create temporary directory */
+    cwd = torture_get_current_working_dir();
+    assert_non_null(cwd);
+
+    tmp_dir = torture_make_temp_dir(template);
+    assert_non_null(tmp_dir);
+
+    rc = torture_change_dir(tmp_dir);
+    assert_int_equal(rc, 0);
+
+    session = ssh_new();
+    assert_non_null(session);
+
+    ssh_options_set(session, SSH_OPTIONS_LOG_VERBOSITY, &verbose);
+    ssh_options_set(session, SSH_OPTIONS_PROCESS_CONFIG, &process_config);
+    ssh_options_set(session, SSH_OPTIONS_HOST, "localhost");
+
+    /* Test with unknown key type in known_hosts */
+    wanted = "rsa-sha2-256";
+    ssh_options_set(session, SSH_OPTIONS_HOSTKEYS, wanted);
+    torture_write_file("unknown_key_type", "localhost unknown AAAABBBBCCCC");
+    ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, "unknown_key_type");
+    algo_list = ssh_client_select_hostkeys(session);
+    assert_non_null(algo_list);
+    assert_string_equal(algo_list, wanted);
+    SAFE_FREE(algo_list);
+
+    /* Test with unsupported, but existing types */
+    wanted = "rsa-sha2-256-cert-v01@openssh.com,"
+             "rsa-sha2-512-cert-v01@openssh.com";
+    ssh_options_set(session, SSH_OPTIONS_HOSTKEYS, wanted);
+    algo_list = ssh_client_select_hostkeys(session);
+    assert_null(algo_list);
+
+    /* In FIPS mode, test filtering keys not allowed */
+    if (ssh_fips_mode()) {
+        wanted = "ssh-ed25519,rsa-sha2-256,ssh-rsa";
+        expect = "rsa-sha2-256";
+        ssh_options_set(session, SSH_OPTIONS_HOSTKEYS, wanted);
+        torture_write_file("no_fips", LOCALHOST_DEFAULT_ED25519);
+        ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, "no_fips");
+        algo_list = ssh_client_select_hostkeys(session);
+        assert_non_null(algo_list);
+        assert_string_equal(algo_list, expect);
+        SAFE_FREE(algo_list);
+    }
+
+    ssh_free(session);
+
+    /* Teardown */
+    rc = torture_change_dir(cwd);
+    assert_int_equal(rc, 0);
+
+    rc = torture_rmdirs(tmp_dir);
+    assert_int_equal(rc, 0);
+
+    SAFE_FREE(tmp_dir);
+    SAFE_FREE(cwd);
+}
+
 #ifndef _WIN32 /* There is no /dev/null on Windows */
 static void torture_knownhosts_host_exists(void **state)
 {
@@ -457,12 +568,12 @@ static void torture_knownhosts_host_exists_global(void **state)
     ssh_free(session);
 }
 
-static void
-torture_knownhosts_algorithms(void **state)
+static void torture_knownhosts_algorithms(void **state)
 {
     const char *knownhosts_file = *state;
     char *algo_list = NULL;
     ssh_session session;
+    bool process_config = false;
     const char *expect = "ssh-ed25519,rsa-sha2-512,rsa-sha2-256,ssh-rsa,"
                          "ecdsa-sha2-nistp521,ecdsa-sha2-nistp384,"
                          "ecdsa-sha2-nistp256"
@@ -470,9 +581,14 @@ torture_knownhosts_algorithms(void **state)
                          ",ssh-dss"
 #endif
     ;
+    const char *expect_fips = "rsa-sha2-512,rsa-sha2-256,ecdsa-sha2-nistp521,"
+                              "ecdsa-sha2-nistp384,ecdsa-sha2-nistp256";
 
     session = ssh_new();
     assert_non_null(session);
+
+    /* This makes sure the global configuration file is not processed */
+    ssh_options_set(session, SSH_OPTIONS_PROCESS_CONFIG, &process_config);
 
     ssh_options_set(session, SSH_OPTIONS_HOST, "localhost");
     ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, knownhosts_file);
@@ -481,18 +597,22 @@ torture_knownhosts_algorithms(void **state)
 
     algo_list = ssh_client_select_hostkeys(session);
     assert_non_null(algo_list);
-    assert_string_equal(algo_list, expect);
+    if (ssh_fips_mode()) {
+        assert_string_equal(algo_list, expect_fips);
+    } else {
+        assert_string_equal(algo_list, expect);
+    }
     free(algo_list);
 
     ssh_free(session);
 }
 
-static void
-torture_knownhosts_algorithms_global(void **state)
+static void torture_knownhosts_algorithms_global(void **state)
 {
     const char *knownhosts_file = *state;
     char *algo_list = NULL;
     ssh_session session;
+    bool process_config = false;
     const char *expect = "ssh-ed25519,rsa-sha2-512,rsa-sha2-256,ssh-rsa,"
                          "ecdsa-sha2-nistp521,ecdsa-sha2-nistp384,"
                          "ecdsa-sha2-nistp256"
@@ -500,9 +620,14 @@ torture_knownhosts_algorithms_global(void **state)
                          ",ssh-dss"
 #endif
     ;
+    const char *expect_fips = "rsa-sha2-512,rsa-sha2-256,ecdsa-sha2-nistp521,"
+                              "ecdsa-sha2-nistp384,ecdsa-sha2-nistp256";
 
     session = ssh_new();
     assert_non_null(session);
+
+    /* This makes sure the global configuration file is not processed */
+    ssh_options_set(session, SSH_OPTIONS_PROCESS_CONFIG, &process_config);
 
     ssh_options_set(session, SSH_OPTIONS_HOST, "localhost");
     /* This makes sure the current-user's known hosts are not used */
@@ -511,12 +636,17 @@ torture_knownhosts_algorithms_global(void **state)
 
     algo_list = ssh_client_select_hostkeys(session);
     assert_non_null(algo_list);
-    assert_string_equal(algo_list, expect);
+    if (ssh_fips_mode()) {
+        assert_string_equal(algo_list, expect_fips);
+    } else {
+        assert_string_equal(algo_list, expect);
+    }
     free(algo_list);
 
     ssh_free(session);
 }
-#endif
+
+#endif /* _WIN32 There is no /dev/null on Windows */
 
 int torture_run_tests(void) {
     int rc;
@@ -538,6 +668,10 @@ int torture_run_tests(void) {
         cmocka_unit_test_setup_teardown(torture_knownhosts_get_algorithms_names,
                                         setup_knownhosts_file,
                                         teardown_knownhosts_file),
+        cmocka_unit_test_setup_teardown(torture_knownhosts_algorithms_wanted,
+                                        setup_knownhosts_file,
+                                        teardown_knownhosts_file),
+        cmocka_unit_test(torture_knownhosts_algorithms_negative),
 #ifndef _WIN32
         cmocka_unit_test_setup_teardown(torture_knownhosts_host_exists,
                                         setup_knownhosts_file,
