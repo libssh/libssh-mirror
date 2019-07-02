@@ -706,12 +706,14 @@ enum ssh_known_hosts_e ssh_session_has_known_hosts_entry(ssh_session session)
         rc = ssh_known_hosts_read_entries(host_port,
                                           session->opts.global_knownhosts,
                                           &entry_list);
-        SAFE_FREE(host_port);
         if (rc != 0) {
+            SAFE_FREE(host_port);
             ssh_list_free(entry_list);
             return SSH_KNOWN_HOSTS_ERROR;
         }
     }
+
+    SAFE_FREE(host_port);
 
     if (ssh_list_count(entry_list) == 0) {
         ssh_list_free(entry_list);
