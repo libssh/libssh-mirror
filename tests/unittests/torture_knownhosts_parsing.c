@@ -369,6 +369,31 @@ static void torture_knownhosts_read_file(void **state)
     ssh_list_free(entry_list);
 }
 
+static void torture_knownhosts_get_algorithms_names(void **state)
+{
+    const char *knownhosts_file = *state;
+    ssh_session session;
+    const char *expect = "ssh-ed25519,rsa-sha2-512,rsa-sha2-256,ssh-rsa";
+    char *names = NULL;
+    bool process_config = false;
+
+    session = ssh_new();
+    assert_non_null(session);
+
+    /* This makes sure the global configuration file is not processed */
+    ssh_options_set(session, SSH_OPTIONS_PROCESS_CONFIG, &process_config);
+
+    ssh_options_set(session, SSH_OPTIONS_HOST, "localhost");
+    ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, knownhosts_file);
+
+    names = ssh_known_hosts_get_algorithms_names(session);
+    assert_non_null(names);
+    assert_string_equal(names, expect);
+
+    SAFE_FREE(names);
+    ssh_free(session);
+}
+
 #ifndef _WIN32 /* There is no /dev/null on Windows */
 static void torture_knownhosts_host_exists(void **state)
 {
@@ -509,6 +534,9 @@ int torture_run_tests(void) {
                                         teardown_knownhosts_file),
         cmocka_unit_test_setup_teardown(torture_knownhosts_read_file,
                                         setup_knownhosts_file_duplicate,
+                                        teardown_knownhosts_file),
+        cmocka_unit_test_setup_teardown(torture_knownhosts_get_algorithms_names,
+                                        setup_knownhosts_file,
                                         teardown_knownhosts_file),
 #ifndef _WIN32
         cmocka_unit_test_setup_teardown(torture_knownhosts_host_exists,
