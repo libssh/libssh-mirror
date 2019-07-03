@@ -4,10 +4,6 @@
 /* Version number of package */
 #cmakedefine VERSION "${PROJECT_VERSION}"
 
-#cmakedefine LOCALEDIR "${LOCALE_INSTALL_DIR}"
-#cmakedefine DATADIR "${DATADIR}"
-#cmakedefine LIBDIR "${LIBDIR}"
-#cmakedefine PLUGINDIR "${PLUGINDIR}"
 #cmakedefine SYSCONFDIR "${SYSCONFDIR}"
 #cmakedefine BINARYDIR "${BINARYDIR}"
 #cmakedefine SOURCEDIR "${SOURCEDIR}"

@@ -29,9 +29,9 @@ set(LIBRARY_SOVERSION "4")
 
 # add definitions
 include(DefinePlatformDefaults)
-include(DefineInstallationPaths)
 include(DefineOptions.cmake)
 include(CPackConfig.cmake)
+include(GNUInstallDirs)
 
 include(CompilerChecks.cmake)
 
@@ -117,7 +117,7 @@ install(
   FILES
     ${CMAKE_CURRENT_BINARY_DIR}/libssh.pc
   DESTINATION
-    ${LIB_INSTALL_DIR}/pkgconfig
+    ${CMAKE_INSTALL_LIBDIR}/pkgconfig
   COMPONENT
     pkgconfig
 )
@@ -136,18 +136,17 @@ write_basic_package_version_file(libssh-config-version.cmake
 # libssh-config.cmake
 configure_package_config_file(${PROJECT_NAME}-config.cmake.in
                               ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake
-                              INSTALL_DESTINATION ${CMAKE_INSTALL_DIR}/${PROJECT_NAME}
-                              PATH_VARS INCLUDE_INSTALL_DIR LIB_INSTALL_DIR)
+                              INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+                              PATH_VARS CMAKE_INSTALL_FULL_INCLUDEDIR CMAKE_INSTALL_FULL_LIBDIR)
 
 install(
     FILES
         ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake
         ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake
     DESTINATION
-        ${CMAKE_INSTALL_DIR}/${PROJECT_NAME}
+        ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
     COMPONENT
-        devel
-)
+        devel)
 
 if (WITH_EXAMPLES)
     add_subdirectory(examples)
