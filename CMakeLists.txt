@@ -133,15 +133,8 @@ write_basic_package_version_file(libssh-config-version.cmake
                                  VERSION ${PROJECT_VERSION}
                                  COMPATIBILITY SameMajorVersion)
 
-# libssh-config.cmake
-configure_package_config_file(${PROJECT_NAME}-config.cmake.in
-                              ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake
-                              INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
-                              PATH_VARS CMAKE_INSTALL_FULL_INCLUDEDIR CMAKE_INSTALL_FULL_LIBDIR)
-
 install(
     FILES
-        ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake
         ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake
     DESTINATION
         ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
