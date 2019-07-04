@@ -73,7 +73,9 @@ int run_server(struct server_state_st *state)
     ssh_bind sshbind = NULL;
     ssh_event event = NULL;
 
-    struct sigaction sa = {0};
+    struct sigaction sa = {
+        .sa_flags = 0
+    };
 
     int rc;
 
