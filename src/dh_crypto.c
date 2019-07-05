@@ -96,12 +96,14 @@ int ssh_dh_get_parameters(struct dh_ctx *ctx,
 int ssh_dh_set_parameters(struct dh_ctx *ctx,
                           const bignum modulus, const bignum generator)
 {
+    size_t i;
     int rc;
 
     if ((ctx == NULL) || (modulus == NULL) || (generator == NULL)) {
         return SSH_ERROR;
     }
-    for (int i = 0; i < 2; i++) {
+
+    for (i = 0; i < 2; i++) {
         bignum p = NULL;
         bignum g = NULL;
 
