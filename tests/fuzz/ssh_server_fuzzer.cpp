@@ -186,6 +186,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
         }
     }
 
+    ssh_event_free(event);
+
     close(socket_fds[0]);
     close(socket_fds[1]);
 
