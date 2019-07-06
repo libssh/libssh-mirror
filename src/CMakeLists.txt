@@ -319,7 +319,8 @@ target_compile_options(${LIBSSH_SHARED_LIBRARY}
                            ${DEFAULT_C_COMPILE_FLAGS}
                            -D_GNU_SOURCE)
 
-target_link_libraries(${LIBSSH_SHARED_LIBRARY} ${LIBSSH_LINK_LIBRARIES})
+target_link_libraries(${LIBSSH_SHARED_LIBRARY}
+                      PRIVATE ${LIBSSH_LINK_LIBRARIES})
 
 if (WITH_SYMBOL_VERSIONING AND HAVE_LD_VERSION_SCRIPT)
     if (ABIMAP_FOUND)
@@ -370,6 +371,9 @@ if (BUILD_STATIC_LIB)
                          PRIVATE
                             ${DEFAULT_C_COMPILE_FLAGS}
                             -D_GNU_SOURCE)
+
+  target_link_libraries(${LIBSSH_STATIC_LIBRARY}
+                        PUBLIC ${LIBSSH_LINK_LIBRARIES})
 
   if (MSVC)
     set(OUTPUT_SUFFIX static)
