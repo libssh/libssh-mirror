@@ -9,4 +9,7 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         PROPERTIES
             COMPILE_FLAGS "-fsanitize=fuzzer"
             LINK_FLAGS "-fsanitize=fuzzer")
+
+    # Run the fuzzer to make sure it works
+    add_test(ssh_server_fuzzer ${CMAKE_CURRENT_BINARY_DIR}/ssh_server_fuzzer -runs=1)
 endif()
