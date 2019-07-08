@@ -239,7 +239,6 @@ static void select_loop(ssh_session session,ssh_channel channel)
     ssh_connector_free(connector_err);
 
     ssh_event_free(event);
-    ssh_channel_free(channel);
 }
 
 static void shell(ssh_session session)
@@ -247,7 +246,11 @@ static void shell(ssh_session session)
     ssh_channel channel;
     struct termios terminal_local;
     int interactive=isatty(0);
+
     channel = ssh_channel_new(session);
+    if (channel == NULL) {
+        return;
+    }
 
     if (interactive) {
         tcgetattr(0, &terminal_local);
@@ -256,6 +259,7 @@ static void shell(ssh_session session)
 
     if (ssh_channel_open_session(channel)) {
         printf("Error opening channel : %s\n", ssh_get_error(session));
+        ssh_channel_free(channel);
         return;
     }
     chan = channel;
@@ -266,6 +270,7 @@ static void shell(ssh_session session)
 
     if (ssh_channel_request_shell(channel)) {
         printf("Requesting shell : %s\n", ssh_get_error(session));
+        ssh_channel_free(channel);
         return;
     }
 
@@ -279,6 +284,7 @@ static void shell(ssh_session session)
     if (interactive) {
         do_cleanup(0);
     }
+    ssh_channel_free(channel);
 }
 
 static void batch_shell(ssh_session session)
@@ -295,12 +301,18 @@ static void batch_shell(ssh_session session)
     }
 
     channel = ssh_channel_new(session);
+    if (channel == NULL) {
+        return;
+    }
+
     ssh_channel_open_session(channel);
     if (ssh_channel_request_exec(channel, buffer)) {
         printf("Error executing '%s' : %s\n", buffer, ssh_get_error(session));
+        ssh_channel_free(channel);
         return;
     }
     select_loop(session, channel);
+    ssh_channel_free(channel);
 }
 
 static int client(ssh_session session)
