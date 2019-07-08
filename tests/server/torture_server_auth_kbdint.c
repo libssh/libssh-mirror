@@ -657,9 +657,9 @@ static int session_setup(void **state)
     assert_non_null(s->ssh.session);
 
     rc = ssh_options_set(s->ssh.session, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
-    assert_return_code(s->ssh.session, rc);
+    assert_ssh_return_code(s->ssh.session, rc);
     rc = ssh_options_set(s->ssh.session, SSH_OPTIONS_HOST, TORTURE_SSH_SERVER);
-    assert_return_code(s->ssh.session, rc);
+    assert_ssh_return_code(s->ssh.session, rc);
     /* Make sure no other configuration options from system will get used */
     rc = ssh_options_set(s->ssh.session, SSH_OPTIONS_PROCESS_CONFIG, &b);
     assert_ssh_return_code(s->ssh.session, rc);
