@@ -1,16 +1,17 @@
-/* client.c */
+/* ssh_client.c */
+
 /*
-Copyright 2003-2009 Aris Adamantiadis
-
-This file is part of the SSH Library
-
-You are free to copy this file, modify it in any way, consider it being public
-domain. This does not apply to the rest of the library though, but it is
-allowed to cut-and-paste working code from this file to any license of
-program.
-The goal is to show the API in action. It's not a reference on how terminal
-clients must be made or how a client should react.
-*/
+ * Copyright 2003-2015 Aris Adamantiadis
+ *
+ * This file is part of the SSH Library
+ *
+ * You are free to copy this file, modify it in any way, consider it being public
+ * domain. This does not apply to the rest of the library though, but it is
+ * allowed to cut-and-paste working code from this file to any license of
+ * program.
+ * The goal is to show the API in action. It's not a reference on how terminal
+ * clients must be made or how a client should react.
+ */
 
 #include "config.h"
 #include <stdio.h>
