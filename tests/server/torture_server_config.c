@@ -430,10 +430,7 @@ static size_t setup_hostkey_files(struct test_server_st *tss)
 
     hostkey_files[0] = tss->rsa_hostkey;
 
-#ifndef TEST_ALL_CRYPTO_COMBINATIONS
-    goto end;
-#endif
-
+#ifdef TEST_ALL_CRYPTO_COMBINATIONS
     hostkey_files[1] = tss->ecdsa_256_hostkey;
     hostkey_files[2] = tss->ecdsa_384_hostkey;
     hostkey_files[3] = tss->ecdsa_521_hostkey;
@@ -448,8 +445,8 @@ static size_t setup_hostkey_files(struct test_server_st *tss)
         num_hostkey_files++;
 #endif
     }
+#endif /* TEST_ALL_CRYPTO_COMBINATIONS */
 
-end:
     return num_hostkey_files;
 }
 
