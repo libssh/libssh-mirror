@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-#include "config.h"
-
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,16 +21,19 @@
 
 #define LIBSSH_STATIC 1
 #include <libssh/libssh.h>
-#include <libssh/priv.h>
 #include <libssh/callbacks.h>
 
-static int auth_callback(UNUSED_PARAM(const char *prompt),
+static int auth_callback(const char *prompt,
                          char *buf,
                          size_t len,
-                         UNUSED_PARAM(int echo),
+                         int echo,
                          int verify,
-                         UNUSED_PARAM(void *userdata))
+                         void *userdata)
 {
+    (void)prompt;   /* unused */
+    (void)echo;     /* unused */
+    (void)userdata; /* unused */
+
     snprintf(buf, len, "secret");
 
     return 0;
