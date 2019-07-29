@@ -547,7 +547,7 @@ void ssh_list_kex(struct ssh_kex_struct *kex) {
   int i = 0;
 
 #ifdef DEBUG_CRYPTO
-  ssh_print_hexa("session cookie", kex->cookie, 16);
+  ssh_log_hexdump("session cookie", kex->cookie, 16);
 #endif
 
   for(i = 0; i < SSH_KEX_METHODS; i++) {
@@ -1119,7 +1119,7 @@ int ssh_make_sessionid(ssh_session session)
     }
 
 #ifdef DEBUG_CRYPTO
-    ssh_print_hexa("hash buffer", ssh_buffer_get(buf), ssh_buffer_get_len(buf));
+    ssh_log_hexdump("hash buffer", ssh_buffer_get(buf), ssh_buffer_get_len(buf));
 #endif
 
     switch (session->next_crypto->kex_type) {
@@ -1195,8 +1195,8 @@ int ssh_make_sessionid(ssh_session session)
     }
 #ifdef DEBUG_CRYPTO
     printf("Session hash: \n");
-    ssh_print_hexa("secret hash", session->next_crypto->secret_hash, session->next_crypto->digest_len);
-    ssh_print_hexa("session id", session->next_crypto->session_id, session->next_crypto->digest_len);
+    ssh_log_hexdump("secret hash", session->next_crypto->secret_hash, session->next_crypto->digest_len);
+    ssh_log_hexdump("session id", session->next_crypto->session_id, session->next_crypto->digest_len);
 #endif
 
     rc = SSH_OK;
@@ -1383,15 +1383,15 @@ int ssh_generate_session_keys(ssh_session session)
     }
 
 #ifdef DEBUG_CRYPTO
-    ssh_print_hexa("Client to Server IV", IV_cli_to_srv, IV_len);
-    ssh_print_hexa("Server to Client IV", IV_srv_to_cli, IV_len);
-    ssh_print_hexa("Client to Server Encryption Key", enckey_cli_to_srv,
+    ssh_log_hexdump("Client to Server IV", IV_cli_to_srv, IV_len);
+    ssh_log_hexdump("Server to Client IV", IV_srv_to_cli, IV_len);
+    ssh_log_hexdump("Client to Server Encryption Key", enckey_cli_to_srv,
                    enckey_cli_to_srv_len);
-    ssh_print_hexa("Server to Client Encryption Key", enckey_srv_to_cli,
+    ssh_log_hexdump("Server to Client Encryption Key", enckey_srv_to_cli,
                    enckey_srv_to_cli_len);
-    ssh_print_hexa("Client to Server Integrity Key", intkey_cli_to_srv,
+    ssh_log_hexdump("Client to Server Integrity Key", intkey_cli_to_srv,
                    intkey_cli_to_srv_len);
-    ssh_print_hexa("Server to Client Integrity Key", intkey_srv_to_cli,
+    ssh_log_hexdump("Server to Client Integrity Key", intkey_srv_to_cli,
                    intkey_srv_to_cli_len);
 #endif
 

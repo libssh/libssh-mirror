@@ -1945,7 +1945,7 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
             SSH_LOG(SSH_LOG_DEBUG,
                     "DSA signature len: %lu",
                     (unsigned long)len);
-            ssh_print_hexa("DSA signature", ssh_string_data(sig_blob), len);
+            ssh_log_hexdump("DSA signature", ssh_string_data(sig_blob), len);
 #endif
 
             err = gcry_sexp_build(&sig->dsa_sig,
@@ -1980,7 +1980,7 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
 
 #ifdef DEBUG_CRYPTO
             SSH_LOG(SSH_LOG_DEBUG, "RSA signature len: %lu", (unsigned long)len);
-            ssh_print_hexa("RSA signature", ssh_string_data(sig_blob), len);
+            ssh_log_hexdump("RSA signature", ssh_string_data(sig_blob), len);
 #endif
 
             err = gcry_sexp_build(&sig->rsa_sig,
@@ -2055,8 +2055,8 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
                 }
 
 #ifdef DEBUG_CRYPTO
-                ssh_print_hexa("r", ssh_string_data(r), ssh_string_len(r));
-                ssh_print_hexa("s", ssh_string_data(s), ssh_string_len(s));
+                ssh_log_hexdump("r", ssh_string_data(r), ssh_string_len(r));
+                ssh_log_hexdump("s", ssh_string_data(s), ssh_string_len(s));
 #endif
 
                 err = gcry_sexp_build(&sig->ecdsa_sig,

@@ -1064,12 +1064,12 @@ int pki_import_privkey_buffer(enum ssh_keytypes_e type,
 
                 rc = pki_privkey_build_dss(key, p, q, g, pubkey, privkey);
 #ifdef DEBUG_CRYPTO
-                ssh_print_hexa("p", ssh_string_data(p), ssh_string_len(p));
-                ssh_print_hexa("q", ssh_string_data(q), ssh_string_len(q));
-                ssh_print_hexa("g", ssh_string_data(g), ssh_string_len(g));
-                ssh_print_hexa("pubkey", ssh_string_data(pubkey),
+                ssh_log_hexdump("p", ssh_string_data(p), ssh_string_len(p));
+                ssh_log_hexdump("q", ssh_string_data(q), ssh_string_len(q));
+                ssh_log_hexdump("g", ssh_string_data(g), ssh_string_len(g));
+                ssh_log_hexdump("pubkey", ssh_string_data(pubkey),
                                ssh_string_len(pubkey));
-                ssh_print_hexa("privkey", ssh_string_data(privkey),
+                ssh_log_hexdump("privkey", ssh_string_data(privkey),
                                ssh_string_len(privkey));
 #endif
                 ssh_string_burn(p);
@@ -1105,13 +1105,13 @@ int pki_import_privkey_buffer(enum ssh_keytypes_e type,
 
                 rc = pki_privkey_build_rsa(key, n, e, d, iqmp, p, q);
 #ifdef DEBUG_CRYPTO
-                ssh_print_hexa("n", ssh_string_data(n), ssh_string_len(n));
-                ssh_print_hexa("e", ssh_string_data(e), ssh_string_len(e));
-                ssh_print_hexa("d", ssh_string_data(d), ssh_string_len(d));
-                ssh_print_hexa("iqmp", ssh_string_data(iqmp),
+                ssh_log_hexdump("n", ssh_string_data(n), ssh_string_len(n));
+                ssh_log_hexdump("e", ssh_string_data(e), ssh_string_len(e));
+                ssh_log_hexdump("d", ssh_string_data(d), ssh_string_len(d));
+                ssh_log_hexdump("iqmp", ssh_string_data(iqmp),
                                ssh_string_len(iqmp));
-                ssh_print_hexa("p", ssh_string_data(p), ssh_string_len(p));
-                ssh_print_hexa("q", ssh_string_data(q), ssh_string_len(q));
+                ssh_log_hexdump("p", ssh_string_data(p), ssh_string_len(p));
+                ssh_log_hexdump("q", ssh_string_data(q), ssh_string_len(q));
 #endif
                 ssh_string_burn(n);
                 ssh_string_free(n);
@@ -1237,9 +1237,9 @@ static int pki_import_pubkey_buffer(ssh_buffer buffer,
 
                 rc = pki_pubkey_build_dss(key, p, q, g, pubkey);
 #ifdef DEBUG_CRYPTO
-                ssh_print_hexa("p", ssh_string_data(p), ssh_string_len(p));
-                ssh_print_hexa("q", ssh_string_data(q), ssh_string_len(q));
-                ssh_print_hexa("g", ssh_string_data(g), ssh_string_len(g));
+                ssh_log_hexdump("p", ssh_string_data(p), ssh_string_len(p));
+                ssh_log_hexdump("q", ssh_string_data(q), ssh_string_len(q));
+                ssh_log_hexdump("g", ssh_string_data(g), ssh_string_len(g));
 #endif
                 ssh_string_burn(p);
                 ssh_string_free(p);
@@ -1268,8 +1268,8 @@ static int pki_import_pubkey_buffer(ssh_buffer buffer,
 
                 rc = pki_pubkey_build_rsa(key, e, n);
 #ifdef DEBUG_CRYPTO
-                ssh_print_hexa("e", ssh_string_data(e), ssh_string_len(e));
-                ssh_print_hexa("n", ssh_string_data(n), ssh_string_len(n));
+                ssh_log_hexdump("e", ssh_string_data(e), ssh_string_len(e));
+                ssh_log_hexdump("n", ssh_string_data(n), ssh_string_len(n));
 #endif
                 ssh_string_burn(e);
                 ssh_string_free(e);

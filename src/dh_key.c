@@ -277,9 +277,9 @@ static void ssh_dh_debug(ssh_session session)
     ssh_print_bignum("e", e);
     ssh_print_bignum("f", f);
 
-    ssh_print_hexa("Session server cookie",
+    ssh_log_hexdump("Session server cookie",
                    session->next_crypto->server_kex.cookie, 16);
-    ssh_print_hexa("Session client cookie",
+    ssh_log_hexdump("Session client cookie",
                    session->next_crypto->client_kex.cookie, 16);
     ssh_print_bignum("k", session->next_crypto->shared_secret);
 }

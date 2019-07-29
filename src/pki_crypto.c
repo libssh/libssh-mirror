@@ -1519,7 +1519,7 @@ static int pki_signature_from_rsa_blob(const ssh_key pubkey,
 
 #ifdef DEBUG_CRYPTO
     SSH_LOG(SSH_LOG_WARN, "RSA signature len: %lu", (unsigned long)len);
-    ssh_print_hexa("RSA signature", ssh_string_data(sig_blob), len);
+    ssh_log_hexdump("RSA signature", ssh_string_data(sig_blob), len);
 #endif
 
     if (len == rsalen) {
@@ -1583,8 +1583,8 @@ static int pki_signature_from_dsa_blob(UNUSED_PARAM(const ssh_key pubkey),
     }
 
 #ifdef DEBUG_CRYPTO
-    ssh_print_hexa("r", ssh_string_data(sig_blob), 20);
-    ssh_print_hexa("s", (unsigned char *)ssh_string_data(sig_blob) + 20, 20);
+    ssh_log_hexdump("r", ssh_string_data(sig_blob), 20);
+    ssh_log_hexdump("s", (unsigned char *)ssh_string_data(sig_blob) + 20, 20);
 #endif
 
     r = ssh_string_new(20);
@@ -1695,7 +1695,7 @@ static int pki_signature_from_ecdsa_blob(UNUSED_PARAM(const ssh_key pubkey),
     }
 
 #ifdef DEBUG_CRYPTO
-    ssh_print_hexa("r", ssh_string_data(r), ssh_string_len(r));
+    ssh_log_hexdump("r", ssh_string_data(r), ssh_string_len(r));
 #endif
 
     pr = ssh_make_string_bn(r);
@@ -1723,7 +1723,7 @@ static int pki_signature_from_ecdsa_blob(UNUSED_PARAM(const ssh_key pubkey),
     }
 
 #ifdef DEBUG_CRYPTO
-    ssh_print_hexa("s", ssh_string_data(s), ssh_string_len(s));
+    ssh_log_hexdump("s", ssh_string_data(s), ssh_string_len(s));
 #endif
 
     ps = ssh_make_string_bn(s);
@@ -2074,7 +2074,7 @@ ssh_signature pki_sign_data(const ssh_key privkey,
     }
 
 #ifdef DEBUG_CRYPTO
-        ssh_print_hexa("Generated signature", raw_sig_data, raw_sig_len);
+        ssh_log_hexdump("Generated signature", raw_sig_data, raw_sig_len);
 #endif
 
     /* Allocate and fill output signature */
