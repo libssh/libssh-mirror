@@ -272,6 +272,38 @@ static void torture_pki_ecdsa_import_privkey_base64_comment(void **state)
     SSH_KEY_FREE(key);
 }
 
+static void torture_pki_ecdsa_import_privkey_base64_whitespace(void **state)
+{
+    int rc, file_str_len;
+    const char *whitespace_str = "      \n\t\t\t\t\t\n\n\n\n\n";
+    char *key_str = NULL, *file_str = NULL;
+    ssh_key key = NULL;
+    const char *passphrase = torture_get_testkey_passphrase();
+
+    (void) state; /* unused */
+
+    key_str = torture_pki_read_file(LIBSSH_ECDSA_TESTKEY);
+    assert_non_null(key_str);
+
+    file_str_len = strlen(whitespace_str) + strlen(key_str) + 1;
+    file_str = malloc(file_str_len);
+    assert_non_null(file_str);
+    rc = snprintf(file_str, file_str_len, "%s%s", whitespace_str, key_str);
+    assert_int_equal(rc, file_str_len - 1);
+
+    rc = ssh_pki_import_privkey_base64(file_str, passphrase, NULL, NULL, &key);
+    assert_true(rc == 0);
+    assert_non_null(key);
+
+    rc = ssh_key_is_private(key);
+    assert_true(rc == 1);
+
+    free(key_str);
+    free(file_str);
+    SSH_KEY_FREE(key);
+}
+
+
 static void torture_pki_ecdsa_publickey_from_privatekey(void **state)
 {
     int rc;
@@ -942,6 +974,15 @@ int torture_run_tests(void) {
                                         setup_ecdsa_key_384,
                                         teardown),
         cmocka_unit_test_setup_teardown(torture_pki_ecdsa_import_privkey_base64_comment,
+                                        setup_ecdsa_key_521,
+                                        teardown),
+        cmocka_unit_test_setup_teardown(torture_pki_ecdsa_import_privkey_base64_whitespace,
+                                        setup_ecdsa_key_521,
+                                        teardown),
+        cmocka_unit_test_setup_teardown(torture_pki_ecdsa_import_privkey_base64_whitespace,
+                                        setup_ecdsa_key_521,
+                                        teardown),
+        cmocka_unit_test_setup_teardown(torture_pki_ecdsa_import_privkey_base64_whitespace,
                                         setup_ecdsa_key_521,
                                         teardown),
         cmocka_unit_test_setup_teardown(torture_pki_ecdsa_import_privkey_base64,
