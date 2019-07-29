@@ -83,4 +83,5 @@ int ssh_match_group(const char *group, const char *object);
 
 void uint64_inc(unsigned char *counter);
 
+void ssh_log_hexdump(const char *descr, const unsigned char *what, size_t len);
 #endif /* MISC_H_ */
