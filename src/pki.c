@@ -724,7 +724,7 @@ int ssh_pki_import_privkey_base64(const char *b64_key,
                                   ssh_key *pkey)
 {
     ssh_key key;
-    int cmp;
+    char *openssh_header = NULL;
 
     if (b64_key == NULL || pkey == NULL) {
         return SSH_ERROR;
@@ -739,9 +739,9 @@ int ssh_pki_import_privkey_base64(const char *b64_key,
             passphrase ? "true" : "false");
 
     /* Test for OpenSSH key format first */
-    cmp = strncmp(b64_key, OPENSSH_HEADER_BEGIN, strlen(OPENSSH_HEADER_BEGIN));
-    if (cmp == 0) {
-        key = ssh_pki_openssh_privkey_import(b64_key,
+    openssh_header = strstr(b64_key, OPENSSH_HEADER_BEGIN);
+    if (openssh_header != NULL) {
+        key = ssh_pki_openssh_privkey_import(openssh_header,
                                              passphrase,
                                              auth_fn,
                                              auth_data);
