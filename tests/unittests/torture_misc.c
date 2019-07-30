@@ -192,6 +192,18 @@ static void torture_path_expand_known_hosts(void **state) {
     free(tmp);
 }
 
+static void torture_path_expand_percent(void **state) {
+    ssh_session session = *state;
+    char *tmp;
+
+    session->opts.sshdir = strdup("/home/guru/.ssh");
+
+    tmp = ssh_path_expand_escape(session, "%d/config%%1");
+    assert_non_null(tmp);
+    assert_string_equal(tmp, "/home/guru/.ssh/config%1");
+    free(tmp);
+}
+
 static void torture_timeout_elapsed(void **state){
     struct ssh_timestamp ts;
     (void) state;
@@ -365,6 +377,7 @@ int torture_run_tests(void) {
 #endif
         cmocka_unit_test_setup_teardown(torture_path_expand_escape, setup, teardown),
         cmocka_unit_test_setup_teardown(torture_path_expand_known_hosts, setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_path_expand_percent, setup, teardown),
         cmocka_unit_test(torture_timeout_elapsed),
         cmocka_unit_test(torture_timeout_update),
         cmocka_unit_test(torture_ssh_analyze_banner),
