@@ -950,16 +950,81 @@ char *ssh_basename (const char *path) {
  *
  * @return              0 on success, < 0 on error with errno set.
  */
-int ssh_mkdir(const char *pathname, mode_t mode) {
-  int r;
-
+int ssh_mkdir(const char *pathname, mode_t mode)
+{
+    int r;
 #ifdef _WIN32
-  r = _mkdir(pathname);
+    r = _mkdir(pathname);
 #else
-  r = mkdir(pathname, mode);
+    r = mkdir(pathname, mode);
 #endif
 
-  return r;
+    return r;
+}
+
+/**
+ * @brief Attempts to create a directory with the given pathname. The missing
+ * directories in the given pathname are created recursively.
+ *
+ * @param[in]  pathname The path name to create the directory.
+ *
+ * @param[in]  mode     The permissions to use.
+ *
+ * @return              0 on success, < 0 on error with errno set.
+ *
+ * @note mode is ignored on Windows systems.
+ */
+int ssh_mkdirs(const char *pathname, mode_t mode)
+{
+    int rc = 0;
+    char *parent = NULL;
+
+    if (pathname == NULL ||
+        pathname[0] == '\0' ||
+        !strcmp(pathname, "/") ||
+        !strcmp(pathname, "."))
+    {
+        errno = EINVAL;
+        return -1;
+    }
+
+    errno = 0;
+
+#ifdef _WIN32
+    rc = _mkdir(pathname);
+#else
+    rc = mkdir(pathname, mode);
+#endif
+
+    if (rc < 0) {
+        /* If a directory was missing, try to create the parent */
+        if (errno == ENOENT) {
+            parent = ssh_dirname(pathname);
+            if (parent == NULL) {
+                errno = ENOMEM;
+                return -1;
+            }
+
+            rc = ssh_mkdirs(parent, mode);
+            if (rc < 0) {
+                /* We could not create the parent */
+                SAFE_FREE(parent);
+                return -1;
+            }
+
+            SAFE_FREE(parent);
+
+            /* Try again */
+            errno = 0;
+#ifdef _WIN32
+            rc = _mkdir(pathname);
+#else
+            rc = mkdir(pathname, mode);
+#endif
+        }
+    }
+
+    return rc;
 }
 
 /**

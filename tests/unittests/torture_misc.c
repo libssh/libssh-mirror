@@ -409,6 +409,98 @@ static void torture_ssh_dir_writeable(UNUSED_PARAM(void **state))
     SAFE_FREE(tmp_dir);
 }
 
+static void torture_ssh_mkdirs(UNUSED_PARAM(void **state))
+{
+    char *tmp_dir = NULL;
+    char *cwd = NULL;
+    char buffer[256];
+
+    ssize_t count = 0;
+
+    int rc;
+
+    /* Get current working directory */
+    cwd = torture_get_current_working_dir();
+    assert_non_null(cwd);
+
+    /* Create a base disposable directory */
+    tmp_dir = torture_make_temp_dir(template);
+    assert_non_null(tmp_dir);
+
+    /* Create a single directory */
+    count = snprintf(buffer, sizeof(buffer), "%s/a", tmp_dir);
+    assert_return_code(count, errno);
+
+    rc = ssh_mkdirs(buffer, 0700);
+    assert_return_code(rc, errno);
+
+    rc = ssh_dir_writeable(buffer);
+    assert_int_equal(rc, 1);
+
+    /* Create directories recursively */
+    count = snprintf(buffer, sizeof(buffer), "%s/b/c/d", tmp_dir);
+    assert_return_code(count, errno);
+
+    rc = ssh_mkdirs(buffer, 0700);
+    assert_return_code(rc, errno);
+
+    rc = ssh_dir_writeable(buffer);
+    assert_int_equal(rc, 1);
+
+    /* Change directory */
+    rc = torture_change_dir(tmp_dir);
+    assert_return_code(rc, errno);
+
+    /* Create single local directory */
+    rc = ssh_mkdirs("e", 0700);
+    assert_return_code(rc, errno);
+
+    rc = ssh_dir_writeable("e");
+    assert_int_equal(rc, 1);
+
+    /* Create local directories recursively */
+    rc = ssh_mkdirs("f/g/h", 0700);
+    assert_return_code(rc, errno);
+
+    rc = ssh_dir_writeable("f/g/h");
+    assert_int_equal(rc, 1);
+
+    /* Negative test for creating "." directory */
+    rc = ssh_mkdirs(".", 0700);
+    assert_int_equal(rc, -1);
+    assert_int_equal(errno, EINVAL);
+
+    /* Negative test for creating "/" directory */
+    rc = ssh_mkdirs("/", 0700);
+    assert_int_equal(rc, -1);
+    assert_int_equal(errno, EINVAL);
+
+    /* Negative test for creating "" directory */
+    rc = ssh_mkdirs("", 0700);
+    assert_int_equal(rc, -1);
+    assert_int_equal(errno, EINVAL);
+
+    /* Negative test for creating NULL directory */
+    rc = ssh_mkdirs(NULL, 0700);
+    assert_int_equal(rc, -1);
+    assert_int_equal(errno, EINVAL);
+
+    /* Negative test for creating existing directory */
+    rc = ssh_mkdirs("a", 0700);
+    assert_int_equal(rc, -1);
+    assert_int_equal(errno, EEXIST);
+
+    /* Return to original directory */
+    rc = torture_change_dir(cwd);
+    assert_return_code(rc, errno);
+
+    /* Cleanup */
+    torture_rmdirs(tmp_dir);
+
+    SAFE_FREE(tmp_dir);
+    SAFE_FREE(cwd);
+}
+
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
@@ -428,6 +520,7 @@ int torture_run_tests(void) {
         cmocka_unit_test(torture_timeout_update),
         cmocka_unit_test(torture_ssh_analyze_banner),
         cmocka_unit_test(torture_ssh_dir_writeable),
+        cmocka_unit_test(torture_ssh_mkdirs),
     };
 
     ssh_init();
