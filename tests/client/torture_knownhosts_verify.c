@@ -35,6 +35,8 @@
 
 #define BAD_RSA "AAAAB3NzaC1yc2EAAAADAQABAAABAQDXvXuawzaArEwkLIXTz/EWywLOCtqQL3P9yKkrhz6AplXP2PhOh5pyxa1VfGKe453jNeYBJ0ROto3BshXgZXbo86oLXTkbe0gO5xi3r5WjXxjOFvRRTLot5fPLNDOv9+TnsPmkNn0iIeyPnfrcPIyjWt5zSWUfkNC8oNHxsiSshjpbJvTXSDipukpUy41d7jg4uWGuonMTF7yu7HfuHqq7lhb0WlwSpfbqAbfYARBddcdcARyhix4RMWZZqVY20H3Vsjq8bjKC+NJXFce1PRg+qcOWQdlXEei4dkzAvHvfQRx1TjzkrBZ6B6thmZtyeb9IsiB0tg2g0JN2VTAGkxqp"
 
+const char template[] = "temp_dir_XXXXXX";
+
 static int sshd_group_setup(void **state)
 {
     torture_setup_sshd_server(state, false);
@@ -414,6 +416,43 @@ static void torture_knownhosts_conflict(void **state)
     /* session will be freed by session_teardown() */
 }
 
+static void torture_knownhosts_new_file(void **state)
+{
+    struct torture_state *s = *state;
+    ssh_session session = s->ssh.session;
+    enum ssh_known_hosts_e found;
+    int rc;
+
+    char new_known_hosts[256];
+    char *tmp_dir = NULL;
+    ssize_t count = 0;
+
+    /* Create a disposable directory */
+    tmp_dir = torture_make_temp_dir(template);
+    assert_non_null(tmp_dir);
+
+    count = snprintf(new_known_hosts, sizeof(new_known_hosts),
+                     "%s/a/b/c/d/known_hosts", tmp_dir);
+    assert_return_code(count, errno);
+
+    rc = ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, new_known_hosts);
+    assert_ssh_return_code(session, rc);
+
+    rc = ssh_connect(session);
+    assert_ssh_return_code(session, rc);
+
+    rc = ssh_session_update_known_hosts(session);
+    assert_ssh_return_code(session, rc);
+
+    found = ssh_session_is_known_server(session);
+    assert_int_equal(found, SSH_KNOWN_HOSTS_OK);
+
+    /* Cleanup */
+    torture_rmdirs(tmp_dir);
+
+    SAFE_FREE(tmp_dir);
+}
+
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
@@ -436,6 +475,9 @@ int torture_run_tests(void) {
                                         session_setup,
                                         session_teardown),
         cmocka_unit_test_setup_teardown(torture_knownhosts_duplicate,
+                                        session_setup,
+                                        session_teardown),
+        cmocka_unit_test_setup_teardown(torture_knownhosts_new_file,
                                         session_setup,
                                         session_teardown),
     };

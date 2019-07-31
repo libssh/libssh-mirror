@@ -496,6 +496,7 @@ int ssh_write_knownhost(ssh_session session) {
     FILE *file;
     char *buffer;
     char *dir;
+    int rc;
 
     if (session->opts.knownhosts == NULL) {
         if (ssh_options_apply(session) < 0) {
@@ -504,29 +505,41 @@ int ssh_write_knownhost(ssh_session session) {
         }
     }
 
-    /* Check if directory exists and create it if not */
-    dir = ssh_dirname(session->opts.knownhosts);
-    if (dir == NULL) {
-        ssh_set_error(session, SSH_FATAL, "%s", strerror(errno));
-        return SSH_ERROR;
-    }
-
-    if (!ssh_file_readaccess_ok(dir)) {
-        if (ssh_mkdir(dir, 0700) < 0) {
-            ssh_set_error(session, SSH_FATAL,
-                    "Cannot create %s directory.", dir);
-            SAFE_FREE(dir);
-            return SSH_ERROR;
-        }
-    }
-    SAFE_FREE(dir);
-
+    errno = 0;
     file = fopen(session->opts.knownhosts, "a");
     if (file == NULL) {
-        ssh_set_error(session, SSH_FATAL,
-                "Couldn't open known_hosts file %s for appending: %s",
-                session->opts.knownhosts, strerror(errno));
-        return SSH_ERROR;
+        if (errno == ENOENT) {
+            dir = ssh_dirname(session->opts.knownhosts);
+            if (dir == NULL) {
+                ssh_set_error(session, SSH_FATAL, "%s", strerror(errno));
+                return SSH_ERROR;
+            }
+
+            rc = ssh_mkdirs(dir, 0700);
+            if (rc < 0) {
+                ssh_set_error(session, SSH_FATAL,
+                              "Cannot create %s directory: %s",
+                              dir, strerror(errno));
+                SAFE_FREE(dir);
+                return SSH_ERROR;
+            }
+            SAFE_FREE(dir);
+
+            errno = 0;
+            file = fopen(session->opts.knownhosts, "a");
+            if (file == NULL) {
+                ssh_set_error(session, SSH_FATAL,
+                              "Couldn't open known_hosts file %s"
+                              " for appending: %s",
+                              session->opts.knownhosts, strerror(errno));
+                return SSH_ERROR;
+            }
+        } else {
+            ssh_set_error(session, SSH_FATAL,
+                          "Couldn't open known_hosts file %s for appending: %s",
+                          session->opts.knownhosts, strerror(errno));
+            return SSH_ERROR;
+        }
     }
 
     buffer = ssh_dump_knownhost(session);
