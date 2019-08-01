@@ -1964,6 +1964,18 @@ error:
   return rc;
 }
 
+/**
+ * @brief Request sftp subsystem on the channel
+ *
+ * @param[in]  channel The channel to request the sftp subsystem.
+ *
+ * @return              SSH_OK on success,
+ *                      SSH_ERROR if an error occurred,
+ *                      SSH_AGAIN if in nonblocking mode and call has
+ *                      to be done again.
+ *
+ * @note You should use sftp_new() which does this for you.
+ */
 int ssh_channel_request_sftp( ssh_channel channel){
     if(channel == NULL) {
         return SSH_ERROR;
