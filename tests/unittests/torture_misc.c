@@ -19,6 +19,7 @@
 
 #define TORTURE_TEST_DIR "/usr/local/bin/truc/much/.."
 
+const char template[] = "temp_dir_XXXXXX";
 
 static int setup(void **state)
 {
@@ -363,6 +364,51 @@ static void torture_ssh_analyze_banner(void **state) {
     ssh_free(session);
 }
 
+static void torture_ssh_dir_writeable(UNUSED_PARAM(void **state))
+{
+    char *tmp_dir = NULL;
+    int rc = 0;
+    FILE *file = NULL;
+    char buffer[256];
+
+    tmp_dir = torture_make_temp_dir(template);
+    assert_non_null(tmp_dir);
+
+    rc = ssh_dir_writeable(tmp_dir);
+    assert_int_equal(rc, 1);
+
+    /* Create a file */
+    snprintf(buffer, sizeof(buffer), "%s/a", tmp_dir);
+
+    file = fopen(buffer, "w");
+    assert_non_null(file);
+
+    fprintf(file, "Hello world!\n");
+    fclose(file);
+
+    /* Negative test for checking a normal file */
+    rc = ssh_dir_writeable(buffer);
+    assert_int_equal(rc, 0);
+
+    /* Negative test for non existent file */
+    snprintf(buffer, sizeof(buffer), "%s/b", tmp_dir);
+    rc = ssh_dir_writeable(buffer);
+    assert_int_equal(rc, 0);
+
+#ifndef _WIN32
+    /* Negative test for directory without write permission */
+    rc = ssh_mkdir(buffer, 0400);
+    assert_return_code(rc, errno);
+
+    rc = ssh_dir_writeable(buffer);
+    assert_int_equal(rc, 0);
+#endif
+
+    torture_rmdirs(tmp_dir);
+
+    SAFE_FREE(tmp_dir);
+}
+
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
@@ -381,6 +427,7 @@ int torture_run_tests(void) {
         cmocka_unit_test(torture_timeout_elapsed),
         cmocka_unit_test(torture_timeout_update),
         cmocka_unit_test(torture_ssh_analyze_banner),
+        cmocka_unit_test(torture_ssh_dir_writeable),
     };
 
     ssh_init();

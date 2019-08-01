@@ -26,6 +26,7 @@
 char *ssh_get_user_home_dir(void);
 char *ssh_get_local_username(void);
 int ssh_file_readaccess_ok(const char *file);
+int ssh_dir_writeable(const char *path);
 
 char *ssh_path_expand_tilde(const char *d);
 char *ssh_path_expand_escape(ssh_session session, const char *s);

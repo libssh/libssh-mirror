@@ -130,6 +130,31 @@ int ssh_file_readaccess_ok(const char *file) {
   return 1;
 }
 
+/**
+ * @brief Check if the given path is an existing directory and that is
+ * accessible for writing.
+ *
+ * @param[in] path Path to the directory to be checked
+ *
+ * @return Return 1 if the directory exists and is accessible; 0 otherwise
+ * */
+int ssh_dir_writeable(const char *path)
+{
+    struct _stat buffer;
+    int rc;
+
+    rc = _stat(path, &buffer);
+    if (rc < 0) {
+        return 0;
+    }
+
+    if ((buffer.st_mode & _S_IFDIR) && (buffer.st_mode & _S_IWRITE)) {
+        return 1;
+    }
+
+    return 0;
+}
+
 #define SSH_USEC_IN_SEC         1000000LL
 #define SSH_SECONDS_SINCE_1601  11644473600LL
 
@@ -245,6 +270,31 @@ int ssh_file_readaccess_ok(const char *file)
     }
 
     return 1;
+}
+
+/**
+ * @brief Check if the given path is an existing directory and that is
+ * accessible for writing.
+ *
+ * @param[in] path Path to the directory to be checked
+ *
+ * @return Return 1 if the directory exists and is accessible; 0 otherwise
+ * */
+int ssh_dir_writeable(const char *path)
+{
+    struct stat buffer;
+    int rc;
+
+    rc = stat(path, &buffer);
+    if (rc < 0) {
+        return 0;
+    }
+
+    if (S_ISDIR(buffer.st_mode) && (buffer.st_mode & S_IWRITE)) {
+        return 1;
+    }
+
+    return 0;
 }
 
 char *ssh_get_local_username(void)
