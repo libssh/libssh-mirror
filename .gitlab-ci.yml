@@ -35,6 +35,7 @@ fedora/openssl_1.1.x/x86_64:
     -DPICKY_DEVELOPER=ON
     -DWITH_BLOWFISH_CIPHER=ON
     -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
+    -DWITH_DEBUG_CRYPTO=ON
     -DWITH_DEBUG_PACKET=ON -DWITH_DEBUG_CALLTRACE=ON
     -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON .. &&
     make -j$(nproc) && ctest --output-on-failure && make install
@@ -217,7 +218,7 @@ fedora/libgcrypt/x86_64:
     -DPICKY_DEVELOPER=ON
     -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
     -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON
-    -DWITH_GCRYPT=ON .. &&
+    -DWITH_GCRYPT=ON -DWITH_DEBUG_CRYPTO=ON .. &&
     make -j$(nproc) && ctest --output-on-failure
   tags:
   - shared
@@ -237,7 +238,7 @@ fedora/mbedtls/x86_64:
     -DPICKY_DEVELOPER=ON
     -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
     -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON
-    -DWITH_MBEDTLS=ON .. &&
+    -DWITH_MBEDTLS=ON -DWITH_DEBUG_CRYPTO=ON .. &&
     make -j$(nproc) && ctest --output-on-failure
   tags:
   - shared
