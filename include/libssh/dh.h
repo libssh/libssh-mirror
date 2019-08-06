@@ -48,6 +48,8 @@ int ssh_dh_keypair_set_keys(struct dh_ctx *ctx, int peer,
 int ssh_dh_compute_shared_secret(struct dh_ctx *ctx, int local, int remote,
                                  bignum *dest);
 
+void ssh_dh_debug_crypto(struct ssh_crypto_struct *c);
+
 /* common functions */
 int ssh_dh_init(void);
 void ssh_dh_finalize(void);

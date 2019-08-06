@@ -267,6 +267,7 @@ static SSH_PACKET_CALLBACK(ssh_packet_client_dhgex_reply)
     rc = ssh_dh_compute_shared_secret(session->next_crypto->dh_ctx,
                                       DH_CLIENT_KEYPAIR, DH_SERVER_KEYPAIR,
                                       &session->next_crypto->shared_secret);
+    ssh_dh_debug_crypto(session->next_crypto);
     if (rc == SSH_ERROR) {
         ssh_set_error(session, SSH_FATAL, "Could not generate shared secret");
         goto error;

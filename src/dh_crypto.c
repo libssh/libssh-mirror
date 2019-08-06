@@ -41,6 +41,27 @@ struct dh_ctx {
     DH *keypair[2];
 };
 
+void ssh_dh_debug_crypto(struct ssh_crypto_struct *c)
+{
+#ifdef DEBUG_CRYPTO
+    const_bignum x = NULL, y = NULL, e = NULL, f = NULL;
+
+    ssh_dh_keypair_get_keys(c->dh_ctx, DH_CLIENT_KEYPAIR, &x, &e);
+    ssh_dh_keypair_get_keys(c->dh_ctx, DH_SERVER_KEYPAIR, &y, &f);
+    ssh_print_bignum("x", x);
+    ssh_print_bignum("y", y);
+    ssh_print_bignum("e", e);
+    ssh_print_bignum("f", f);
+
+    ssh_log_hexdump("Session server cookie", c->server_kex.cookie, 16);
+    ssh_log_hexdump("Session client cookie", c->client_kex.cookie, 16);
+    ssh_print_bignum("k", c->shared_secret);
+
+#else
+    (void)c; /* UNUSED_PARAM */
+#endif
+}
+
 int ssh_dh_keypair_get_keys(struct dh_ctx *ctx, int peer,
                             const_bignum *priv, const_bignum *pub)
 {

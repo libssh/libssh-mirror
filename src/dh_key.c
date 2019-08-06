@@ -60,6 +60,28 @@ struct dh_ctx {
     bignum modulus;
 };
 
+void ssh_dh_debug_crypto(struct ssh_crypto_struct *c)
+{
+#ifdef DEBUG_CRYPTO
+    const_bignum x = NULL, y = NULL, e = NULL, f = NULL;
+
+    ssh_dh_keypair_get_keys(c->dh_ctx, DH_CLIENT_KEYPAIR, &x, &e);
+    ssh_dh_keypair_get_keys(c->dh_ctx, DH_SERVER_KEYPAIR, &y, &f);
+    ssh_print_bignum("p", c->dh_ctx->modulus);
+    ssh_print_bignum("g", c->dh_ctx->generator);
+    ssh_print_bignum("x", x);
+    ssh_print_bignum("y", y);
+    ssh_print_bignum("e", e);
+    ssh_print_bignum("f", f);
+
+    ssh_log_hexdump("Session server cookie", c->server_kex.cookie, 16);
+    ssh_log_hexdump("Session client cookie", c->client_kex.cookie, 16);
+    ssh_print_bignum("k", c->shared_secret);
+#else
+    (void)c; /* UNUSED_PARAM */
+#endif
+}
+
 static void ssh_dh_free_modulus(struct dh_ctx *ctx)
 {
     if ((ctx->modulus != ssh_dh_group1) &&
@@ -263,30 +285,6 @@ void ssh_dh_cleanup(struct ssh_crypto_struct *crypto)
     crypto->dh_ctx = NULL;
 }
 
-#ifdef DEBUG_CRYPTO
-static void ssh_dh_debug(ssh_session session)
-{
-    struct ssh_crypto_struct *crypto = session->next_crypto;
-    const_bignum x, y, e, f;
-    ssh_dh_keypair_get_keys(crypto->dh_ctx, DH_CLIENT_KEYPAIR, &x, &e);
-    ssh_dh_keypair_get_keys(crypto->dh_ctx, DH_SERVER_KEYPAIR, &y, &f);
-    ssh_print_bignum("p", crypto->dh_ctx->modulus);
-    ssh_print_bignum("g", crypto->dh_ctx->generator);
-    ssh_print_bignum("x", x);
-    ssh_print_bignum("y", y);
-    ssh_print_bignum("e", e);
-    ssh_print_bignum("f", f);
-
-    ssh_log_hexdump("Session server cookie",
-                   session->next_crypto->server_kex.cookie, 16);
-    ssh_log_hexdump("Session client cookie",
-                   session->next_crypto->client_kex.cookie, 16);
-    ssh_print_bignum("k", session->next_crypto->shared_secret);
-}
-#else
-#define ssh_dh_debug(session)
-#endif
-
 /** @internal
  * @brief generates a secret DH parameter of at least DH_SECURITY_BITS
  *        security as well as the corresponding public key.
@@ -370,7 +368,6 @@ int ssh_dh_compute_shared_secret(struct dh_ctx *dh_ctx, int local, int remote,
 
 done:
     bignum_ctx_free(ctx);
-    ssh_dh_debug(session);
     if (rc != 1) {
         return SSH_ERROR;
     }
