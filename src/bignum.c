@@ -77,7 +77,7 @@ bignum ssh_make_string_bn(ssh_string string)
 }
 
 /* prints the bignum on stderr */
-void ssh_print_bignum(const char *name, const bignum num)
+void ssh_print_bignum(const char *name, const_bignum num)
 {
     unsigned char *hex = NULL;
     if (num != NULL) {

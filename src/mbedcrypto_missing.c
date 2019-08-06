@@ -45,7 +45,7 @@ void ssh_mbedcry_bn_free(bignum bn)
     SAFE_FREE(bn);
 }
 
-unsigned char *ssh_mbedcry_bn2num(bignum num, int radix)
+unsigned char *ssh_mbedcry_bn2num(const_bignum num, int radix)
 {
     char *buf = NULL;
     size_t olen;

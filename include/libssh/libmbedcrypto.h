@@ -75,7 +75,7 @@ struct mbedtls_ecdsa_sig {
 
 bignum ssh_mbedcry_bn_new(void);
 void ssh_mbedcry_bn_free(bignum num);
-unsigned char *ssh_mbedcry_bn2num(bignum num, int radix);
+unsigned char *ssh_mbedcry_bn2num(const_bignum num, int radix);
 int ssh_mbedcry_rand(bignum rnd, int bits, int top, int bottom);
 int ssh_mbedcry_is_bit_set(bignum num, size_t pos);
 int ssh_mbedcry_rand_range(bignum dest, bignum max);
