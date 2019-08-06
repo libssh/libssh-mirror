@@ -32,6 +32,7 @@
 #include "libssh/pki_priv.h"
 #include "libssh/buffer.h"
 #include "libssh/bignum.h"
+#include "libssh/misc.h"
 
 #define MAX_PASSPHRASE_SIZE 1024
 #define MAX_KEY_SIZE 32
