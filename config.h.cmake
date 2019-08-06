@@ -97,6 +97,9 @@
 /* Define to 1 if you have gl_flags as a glob_t sturct member */
 #cmakedefine HAVE_GLOB_GL_FLAGS_MEMBER 1
 
+/* Define to 1 if you have OpenSSL with Ed25519 support */
+#cmakedefine HAVE_OPENSSL_ED25519 1
+
 /*************************** FUNCTIONS ***************************/
 
 /* Define to 1 if you have the `EVP_aes128_ctr' function. */
