@@ -2009,7 +2009,7 @@ ssh_signature pki_sign_data(const ssh_key privkey,
     EVP_PKEY *pkey = NULL;
 
     unsigned char *raw_sig_data = NULL;
-    unsigned int raw_sig_len;
+    size_t raw_sig_len;
 
     ssh_signature sig = NULL;
 
@@ -2055,23 +2055,39 @@ ssh_signature pki_sign_data(const ssh_key privkey,
     }
 
     /* Sign the data */
-    rc = EVP_SignInit_ex(ctx, md, NULL);
-    if (!rc){
-        SSH_LOG(SSH_LOG_TRACE, "EVP_SignInit() failed");
+    rc = EVP_DigestSignInit(ctx, NULL, md, NULL, pkey);
+    if (rc != 1){
+        SSH_LOG(SSH_LOG_TRACE,
+                "EVP_DigestSignInit() failed: %s",
+                ERR_error_string(ERR_get_error(), NULL));
         goto out;
     }
 
-    rc = EVP_SignUpdate(ctx, input, input_len);
-    if (!rc) {
-        SSH_LOG(SSH_LOG_TRACE, "EVP_SignUpdate() failed");
+#ifdef HAVE_OPENSSL_EVP_DIGESTSIGN
+    rc = EVP_DigestSign(ctx, raw_sig_data, &raw_sig_len, input, input_len);
+    if (rc != 1) {
+        SSH_LOG(SSH_LOG_TRACE,
+                "EVP_DigestSign() failed: %s",
+                ERR_error_string(ERR_get_error(), NULL));
+        goto out;
+    }
+#else
+    rc = EVP_DigestSignUpdate(ctx, input, input_len);
+    if (rc != 1) {
+        SSH_LOG(SSH_LOG_TRACE,
+                "EVP_DigestSignUpdate() failed: %s",
+                ERR_error_string(ERR_get_error(), NULL));
         goto out;
     }
 
-    rc = EVP_SignFinal(ctx, raw_sig_data, &raw_sig_len, pkey);
-    if (!rc) {
-        SSH_LOG(SSH_LOG_TRACE, "EVP_SignFinal() failed");
+    rc = EVP_DigestSignFinal(ctx, raw_sig_data, &raw_sig_len);
+    if (rc != 1) {
+        SSH_LOG(SSH_LOG_TRACE,
+                "EVP_DigestSignFinal() failed: %s",
+                ERR_error_string(ERR_get_error(), NULL));
         goto out;
     }
+#endif
 
 #ifdef DEBUG_CRYPTO
         ssh_log_hexdump("Generated signature", raw_sig_data, raw_sig_len);
@@ -2179,33 +2195,42 @@ int pki_verify_data_signature(ssh_signature signature,
     /* Create the context */
     ctx = EVP_MD_CTX_create();
     if (ctx == NULL) {
-        SSH_LOG(SSH_LOG_TRACE, "Out of memory");
+        SSH_LOG(SSH_LOG_TRACE,
+                "Failed to create EVP_MD_CTX: %s",
+                ERR_error_string(ERR_get_error(), NULL));
         goto out;
     }
 
     /* Verify the signature */
-    evp_rc = EVP_VerifyInit_ex(ctx, md, NULL);
-    if (!evp_rc){
-        SSH_LOG(SSH_LOG_TRACE, "EVP_SignInit() failed");
+    evp_rc = EVP_DigestVerifyInit(ctx, NULL, md, NULL, pkey);
+    if (evp_rc != 1){
+        SSH_LOG(SSH_LOG_TRACE,
+                "EVP_DigestVerifyInit() failed: %s",
+                ERR_error_string(ERR_get_error(), NULL));
         goto out;
     }
 
-    evp_rc = EVP_VerifyUpdate(ctx, input, input_len);
-    if (!evp_rc) {
-        SSH_LOG(SSH_LOG_TRACE, "EVP_SignUpdate() failed");
+#ifdef HAVE_OPENSSL_EVP_DIGESTVERIFY
+    evp_rc = EVP_DigestVerify(ctx, raw_sig_data, raw_sig_len, input, input_len);
+#else
+    evp_rc = EVP_DigestVerifyUpdate(ctx, input, input_len);
+    if (evp_rc != 1) {
+        SSH_LOG(SSH_LOG_TRACE,
+                "EVP_DigestVerifyUpdate() failed: %s",
+                ERR_error_string(ERR_get_error(), NULL));
         goto out;
     }
 
-    evp_rc = EVP_VerifyFinal(ctx, raw_sig_data, raw_sig_len, pkey);
-    if (evp_rc < 0) {
-        SSH_LOG(SSH_LOG_TRACE, "EVP_SignFinal() failed");
-        rc = SSH_ERROR;
-    } else if (evp_rc == 0) {
-        SSH_LOG(SSH_LOG_TRACE, "Signature invalid");
-        rc = SSH_ERROR;
-    } else if (evp_rc == 1) {
+    evp_rc = EVP_DigestVerifyFinal(ctx, raw_sig_data, raw_sig_len);
+#endif
+    if (evp_rc == 1) {
         SSH_LOG(SSH_LOG_TRACE, "Signature valid");
         rc = SSH_OK;
+    } else {
+        SSH_LOG(SSH_LOG_TRACE,
+                "Signature invalid: %s",
+                ERR_error_string(ERR_get_error(), NULL));
+        rc = SSH_ERROR;
     }
 
 out:
