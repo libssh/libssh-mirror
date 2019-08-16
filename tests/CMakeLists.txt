@@ -159,6 +159,17 @@ if (CLIENT_TESTING OR SERVER_TESTING)
         execute_process(COMMAND ${ID_EXECUTABLE} -u OUTPUT_VARIABLE LOCAL_UID OUTPUT_STRIP_TRAILING_WHITESPACE)
     endif()
 
+    find_program(TIMEOUT_EXECUTABLE
+                 NAME
+                    timeout
+                 PATHS
+                    /bin
+                    /usr/bin
+                    /usr/local/bin)
+    if (TIMEOUT_EXECUTABLE)
+        set(WITH_TIMEOUT "1")
+    endif()
+
     # chroot_wrapper
     add_library(chroot_wrapper SHARED chroot_wrapper.c)
     set(CHROOT_WRAPPER_LIBRARY ${libssh_BINARY_DIR}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}chroot_wrapper${CMAKE_SHARED_LIBRARY_SUFFIX})

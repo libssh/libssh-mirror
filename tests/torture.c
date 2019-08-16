@@ -51,6 +51,7 @@
 #include "torture.h"
 #include "torture_key.h"
 #include "libssh/misc.h"
+#include "libssh/token.h"
 
 #define TORTURE_SSHD_SRV_IPV4 "127.0.0.10"
 /* socket wrapper IPv6 prefix  fd00::5357:5fxx */
@@ -592,6 +593,112 @@ void torture_setup_socket_dir(void **state)
     *state = s;
 }
 
+/**
+ * @brief Create a libssh server configuration file
+ *
+ * It is expected the socket directory to be already created before by calling
+ * torture_setup_socket_dir().  The created configuration file will be stored in
+ * the socket directory and the srv_config pointer in the state will be
+ * initialized.
+ *
+ * @param[in] state A pointer to a pointer to an initialized torture_state
+ *                  structure
+ */
+void torture_setup_create_libssh_config(void **state)
+{
+    struct torture_state *s = *state;
+    char ed25519_hostkey[1024] = {0};
+#ifdef HAVE_DSA
+    char dsa_hostkey[1024];
+#endif /* HAVE_DSA */
+    char rsa_hostkey[1024];
+    char ecdsa_hostkey[1024];
+    char sshd_config[2048];
+    char sshd_path[1024];
+    const char *additional_config = NULL;
+    struct stat sb;
+    const char config_string[]=
+             "LogLevel DEBUG3\n"
+             "Port 22\n"
+             "ListenAddress 127.0.0.10\n"
+             "%s %s\n"
+             "%s %s\n"
+             "%s %s\n"
+#ifdef HAVE_DSA
+             "%s %s\n"
+#endif /* HAVE_DSA */
+             "%s\n"; /* The space for test-specific options */
+    bool written = false;
+    int rc;
+
+    assert_non_null(s->socket_dir);
+
+    snprintf(sshd_path,
+             sizeof(sshd_path),
+             "%s/sshd",
+             s->socket_dir);
+
+    rc = lstat(sshd_path, &sb);
+    if (rc == 0 ) { /* The directory is already in place */
+        written = true;
+    }
+
+    if (!written) {
+        rc = mkdir(sshd_path, 0755);
+        assert_return_code(rc, errno);
+    }
+
+    snprintf(ed25519_hostkey,
+             sizeof(ed25519_hostkey),
+             "%s/sshd/ssh_host_ed25519_key",
+             s->socket_dir);
+
+    snprintf(rsa_hostkey,
+             sizeof(rsa_hostkey),
+             "%s/sshd/ssh_host_rsa_key",
+             s->socket_dir);
+
+    snprintf(ecdsa_hostkey,
+             sizeof(ecdsa_hostkey),
+             "%s/sshd/ssh_host_ecdsa_key",
+             s->socket_dir);
+
+#ifdef HAVE_DSA
+    snprintf(dsa_hostkey,
+             sizeof(dsa_hostkey),
+             "%s/sshd/ssh_host_dsa_key",
+             s->socket_dir);
+#endif /* HAVE_DSA */
+
+    if (!written) {
+        torture_write_file(ed25519_hostkey,
+                           torture_get_openssh_testkey(SSH_KEYTYPE_ED25519, 0));
+        torture_write_file(rsa_hostkey,
+                           torture_get_testkey(SSH_KEYTYPE_RSA, 0));
+        torture_write_file(ecdsa_hostkey,
+                           torture_get_testkey(SSH_KEYTYPE_ECDSA_P521, 0));
+#ifdef HAVE_DSA
+        torture_write_file(dsa_hostkey,
+                           torture_get_testkey(SSH_KEYTYPE_DSS, 0));
+#endif /* HAVE_DSA */
+    }
+
+    additional_config = (s->srv_additional_config != NULL ?
+                         s->srv_additional_config : "");
+
+    snprintf(sshd_config, sizeof(sshd_config),
+            config_string,
+            "HostKey", ed25519_hostkey,
+            "HostKey", rsa_hostkey,
+            "HostKey", ecdsa_hostkey,
+#ifdef HAVE_DSA
+            "HostKey", dsa_hostkey,
+#endif /* HAVE_DSA */
+            additional_config);
+
+    torture_write_file(s->srv_config, sshd_config);
+}
+
 static void torture_setup_create_sshd_config(void **state, bool pam)
 {
     struct torture_state *s = *state;
@@ -831,6 +938,130 @@ static int torture_wait_for_daemon(unsigned int seconds)
         usleep(200 * 1000);
     }
     return 1;
+}
+
+/**
+ * @brief Run a libssh based server under timeout.
+ *
+ * It is expected that the socket directory and libssh configuration file were
+ * already created before by calling torture_setup_socket_dir() and
+ * torture_setup_create_libssh_config() (or alternatively setup the state with
+ * the correct values).
+ *
+ * @param[in] state The content of the address pointed by this variable must be
+ *                  a pointer to an initialized instance of torture_state
+ *                  structure; it can be obtained by calling
+ *                  torture_setup_socket_dir() and
+ *                  torture_setup_create_libssh_config().
+ * @param[in] server_path  The path to the server executable.
+ *
+ * @note This function will use the state->srv_additional_config field as
+ * additional command line option used when starting the server instead of extra
+ * configuration file options.
+ * */
+void torture_setup_libssh_server(void **state, const char *server_path)
+{
+    struct torture_state *s;
+    char start_cmd[1024];
+    char timeout_cmd[512];
+    char env[1024];
+    char extra_options[1024];
+    int rc;
+    char *ld_preload = NULL;
+    const char *force_fips = NULL;
+
+    struct ssh_tokens_st *env_tokens;
+    struct ssh_tokens_st *arg_tokens;
+
+    pid_t pid;
+    ssize_t printed;
+
+    s = *state;
+
+    /* Get all the wrapper libraries to be pre-loaded */
+    ld_preload = getenv("LD_PRELOAD");
+
+    if (s->srv_additional_config != NULL) {
+        printed = snprintf(extra_options, sizeof(extra_options), " %s ",
+                           s->srv_additional_config);
+        if (printed < 0) {
+            fail_msg("Failed to print additional config!");
+        }
+    } else {
+        printed = snprintf(extra_options, sizeof(extra_options), " ");
+        if (printed < 0) {
+            fail_msg("Failed to print empty additional config!");
+        }
+    }
+
+    if (ssh_fips_mode()) {
+        force_fips = "OPENSSL_FORCE_FIPS_MODE=1 ";
+    } else {
+        force_fips = "";
+    }
+
+    /* Write the environment setting */
+    printed = snprintf(env, sizeof(env),
+                       "SOCKET_WRAPPER_DIR=%s "
+                       "SOCKET_WRAPPER_DEFAULT_IFACE=10 "
+                       "LD_PRELOAD=%s "
+                       "%s",
+                       s->socket_dir, ld_preload, force_fips);
+    if (printed < 0) {
+        fail_msg("Failed to print env!");
+    }
+
+#ifdef WITH_TIMEOUT
+    snprintf(timeout_cmd, sizeof(timeout_cmd),
+             "%s %s ", TIMEOUT_EXECUTABLE, "5m");
+#else
+    timeout_cmd[0] = '\0';
+#endif
+
+    /* Write the start command */
+    printed = snprintf(start_cmd, sizeof(start_cmd),
+                       "%s"
+                       "%s -f%s -v4 -p22 -i%s -C%s%s%s",
+                       timeout_cmd,
+                       server_path, s->pcap_file, s->srv_pidfile,
+                       s->srv_config, extra_options, TORTURE_SSH_SERVER);
+    if (printed < 0) {
+        fail_msg("Failed to print start command!");
+    }
+
+    pid = fork();
+    switch(pid) {
+    case 0:
+        env_tokens = ssh_tokenize(env, ' ');
+        if (env_tokens == NULL || env_tokens->tokens == NULL) {
+            fail_msg("Failed to tokenize env!");
+        }
+
+        arg_tokens = ssh_tokenize(start_cmd, ' ');
+        if (arg_tokens == NULL || arg_tokens->tokens == NULL) {
+            ssh_tokens_free(env_tokens);
+            fail_msg("Failed to tokenize args!");
+        }
+
+        rc = execve(arg_tokens->tokens[0], (char **)arg_tokens->tokens,
+                    (char **)env_tokens->tokens);
+
+        /* execve returns only in case of error */
+        ssh_tokens_free(env_tokens);
+        ssh_tokens_free(arg_tokens);
+        fail_msg("Error in execve: %s", strerror(errno));
+    case -1:
+        fail_msg("Failed to fork!");
+    default:
+        /* The parent continues the execution of the tests */
+        setenv("SOCKET_WRAPPER_DEFAULT_IFACE", "21", 1);
+        unsetenv("PAM_WRAPPER");
+
+        /* Wait until the server is ready to accept connections */
+        rc = torture_wait_for_daemon(15);
+        assert_int_equal(rc, 0);
+        break;
+    }
 }
 
 static int torture_start_sshd_server(void **state)

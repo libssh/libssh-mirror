@@ -134,6 +134,10 @@ int torture_update_sshd_config(void **state, const char *config);
 
 void torture_reset_config(ssh_session session);
 
+void torture_setup_create_libssh_config(void **state);
+
+void torture_setup_libssh_server(void **state, const char *server_path);
+
 /*
  * This function must be defined in every unit test file.
  */
