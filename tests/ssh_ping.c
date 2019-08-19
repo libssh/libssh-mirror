@@ -16,6 +16,7 @@ clients must be made or how a client should react.
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <libssh/libssh.h>
 
 int main(int argc, char **argv)
@@ -23,6 +24,8 @@ int main(int argc, char **argv)
     const char *banner = NULL;
     ssh_session session = NULL;
     int rc = 1;
+
+    bool process_config = false;
 
     if (argc < 1 || argv[1] == NULL) {
         fprintf(stderr, "Error: Need an argument (hostname)\n");
@@ -41,6 +44,12 @@ int main(int argc, char **argv)
 
     /* The automatic username is not available under uid wrapper */
     rc = ssh_options_set(session, SSH_OPTIONS_USER, "ping");
+    if (rc < 0) {
+        goto out;
+    }
+
+    /* Ignore system-wide configurations when simply trying to reach host */
+    rc = ssh_options_set(session, SSH_OPTIONS_PROCESS_CONFIG, &process_config);
     if (rc < 0) {
         goto out;
     }
