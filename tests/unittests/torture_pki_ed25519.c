@@ -417,7 +417,7 @@ static void torture_pki_ed25519_generate_pubkey_from_privkey(void **state)
 static void torture_pki_ed25519_generate_key(void **state)
 {
     int rc;
-    ssh_key key = NULL;
+    ssh_key key = NULL, pubkey = NULL;
     ssh_signature sign = NULL;
     enum ssh_keytypes_e type = SSH_KEYTYPE_UNKNOWN;
     const char *type_char = NULL;
@@ -427,9 +427,12 @@ static void torture_pki_ed25519_generate_key(void **state)
     rc = ssh_pki_generate(SSH_KEYTYPE_ED25519, 256, &key);
     assert_true(rc == SSH_OK);
     assert_non_null(key);
+    rc = ssh_pki_export_privkey_to_pubkey(key, &pubkey);
+    assert_int_equal(rc, SSH_OK);
+    assert_non_null(pubkey);
     sign = pki_do_sign(key, HASH, 20, SSH_DIGEST_AUTO);
     assert_non_null(sign);
-    rc = pki_signature_verify(session,sign,key,HASH,20);
+    rc = pki_signature_verify(session, sign, pubkey, HASH, 20);
     assert_true(rc == SSH_OK);
     type = ssh_key_type(key);
     assert_true(type == SSH_KEYTYPE_ED25519);
@@ -438,11 +441,12 @@ static void torture_pki_ed25519_generate_key(void **state)
 
     /* try an invalid signature */
     (*sign->ed25519_sig)[3]^= 0xff;
-    rc = pki_signature_verify(session,sign,key,HASH,20);
+    rc = pki_signature_verify(session, sign, pubkey, HASH, 20);
     assert_true(rc == SSH_ERROR);
 
     ssh_signature_free(sign);
     SSH_KEY_FREE(key);
+    SSH_KEY_FREE(pubkey);
 
     ssh_free(session);
 }
