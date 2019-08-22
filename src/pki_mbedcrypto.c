@@ -1047,16 +1047,7 @@ int pki_signature_verify(ssh_session session, const ssh_signature sig, const
         return SSH_ERROR;
     }
 
-    /* For ed25519 keys, verify using the input directly */
-    if (key->type == SSH_KEYTYPE_ED25519 ||
-        key->type == SSH_KEYTYPE_ED25519_CERT01)
-    {
-        rc = pki_ed25519_verify(key, sig, input, input_len);
-    } else {
-        /* For the other key types, calculate the hash and verify the signature */
-        rc = pki_verify_data_signature(sig, key, input, input_len);
-    }
-
+    rc = pki_verify_data_signature(sig, key, input, input_len);
     if (rc != SSH_OK){
         ssh_set_error(session,
                       SSH_FATAL,
@@ -1214,6 +1205,7 @@ ssh_signature pki_sign_data(const ssh_key privkey,
                             size_t input_len)
 {
     unsigned char hash[SHA512_DIGEST_LEN] = {0};
+    const unsigned char *sign_input = NULL;
     uint32_t hlen = 0;
     int rc;
 
@@ -1233,27 +1225,38 @@ ssh_signature pki_sign_data(const ssh_key privkey,
     case SSH_DIGEST_SHA256:
         sha256(input, input_len, hash);
         hlen = SHA256_DIGEST_LEN;
+        sign_input = hash;
         break;
     case SSH_DIGEST_SHA384:
         sha384(input, input_len, hash);
         hlen = SHA384_DIGEST_LEN;
+        sign_input = hash;
         break;
     case SSH_DIGEST_SHA512:
         sha512(input, input_len, hash);
         hlen = SHA512_DIGEST_LEN;
+        sign_input = hash;
         break;
     case SSH_DIGEST_SHA1:
         sha1(input, input_len, hash);
         hlen = SHA_DIGEST_LEN;
+        sign_input = hash;
         break;
     case SSH_DIGEST_AUTO:
+        if (privkey->type == SSH_KEYTYPE_ED25519) {
+            /* SSH_DIGEST_AUTO should only be used with ed25519 */
+            sign_input = input;
+            hlen = input_len;
+            break;
+        }
+        FALL_THROUGH;
     default:
         SSH_LOG(SSH_LOG_TRACE, "Unknown hash algorithm for type: %d",
                 hash_type);
         return NULL;
     }
 
-    return pki_do_sign_hash(privkey, hash, hlen, hash_type);
+    return pki_do_sign_hash(privkey, sign_input, hlen, hash_type);
 }
 
 /**
@@ -1276,6 +1279,7 @@ int pki_verify_data_signature(ssh_signature signature,
 {
 
     unsigned char hash[SHA512_DIGEST_LEN] = {0};
+    const unsigned char *verify_input = NULL;
     uint32_t hlen = 0;
 
     mbedtls_md_type_t md = 0;
@@ -1301,23 +1305,35 @@ int pki_verify_data_signature(ssh_signature signature,
         sha256(input, input_len, hash);
         hlen = SHA256_DIGEST_LEN;
         md = MBEDTLS_MD_SHA256;
+        verify_input = hash;
         break;
     case SSH_DIGEST_SHA384:
         sha384(input, input_len, hash);
         hlen = SHA384_DIGEST_LEN;
         md = MBEDTLS_MD_SHA384;
+        verify_input = hash;
         break;
     case SSH_DIGEST_SHA512:
         sha512(input, input_len, hash);
         hlen = SHA512_DIGEST_LEN;
         md = MBEDTLS_MD_SHA512;
+        verify_input = hash;
         break;
     case SSH_DIGEST_SHA1:
         sha1(input, input_len, hash);
         hlen = SHA_DIGEST_LEN;
         md = MBEDTLS_MD_SHA1;
+        verify_input = hash;
         break;
     case SSH_DIGEST_AUTO:
+        if (pubkey->type == SSH_KEYTYPE_ED25519 ||
+            pubkey->type == SSH_KEYTYPE_ED25519_CERT01)
+        {
+            verify_input = input;
+            hlen = input_len;
+            break;
+        }
+        FALL_THROUGH;
     default:
         SSH_LOG(SSH_LOG_TRACE, "Unknown sig->hash_type: %d",
                 signature->hash_type);
@@ -1352,6 +1368,14 @@ int pki_verify_data_signature(ssh_signature signature,
                 SSH_LOG(SSH_LOG_TRACE, "ECDSA error: %s", error_buf);
                 return SSH_ERROR;
 
+            }
+            break;
+        case SSH_KEYTYPE_ED25519:
+        case SSH_KEYTYPE_ED25519_CERT01:
+            rc = pki_ed25519_verify(pubkey, signature, verify_input, hlen);
+            if (rc != SSH_OK) {
+                SSH_LOG(SSH_LOG_TRACE, "ED25519 error: Signature invalid");
+                return SSH_ERROR;
             }
             break;
         default:
