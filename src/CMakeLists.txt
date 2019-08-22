@@ -146,7 +146,6 @@ set(libssh_SRCS
   pcap.c
   pki.c
   pki_container_openssh.c
-  pki_ed25519.c
   poll.c
   session.c
   scp.c
@@ -202,6 +201,7 @@ if (WITH_GCRYPT)
         pki_gcrypt.c
         ecdh_gcrypt.c
         dh_key.c
+        pki_ed25519.c
        )
 elseif (WITH_MBEDTLS)
     set(libssh_SRCS
@@ -212,6 +212,7 @@ elseif (WITH_MBEDTLS)
         pki_mbedcrypto.c
         ecdh_mbedcrypto.c
         dh_key.c
+        pki_ed25519.c
        )
 else (WITH_GCRYPT)
     set(libssh_SRCS
@@ -222,6 +223,12 @@ else (WITH_GCRYPT)
         libcrypto.c
         dh_crypto.c
        )
+    if (NOT HAVE_OPENSSL_ED25519)
+        set(libssh_SRCS
+            ${libssh_SRCS}
+            pki_ed25519.c
+           )
+    endif (NOT HAVE_OPENSSL_ED25519)
     if(OPENSSL_VERSION VERSION_LESS "1.1.0")
         set(libssh_SRCS ${libssh_SRCS} libcrypto-compat.c)
     endif()

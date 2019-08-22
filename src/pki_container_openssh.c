@@ -415,12 +415,13 @@ static int pki_openssh_export_privkey_blob(const ssh_key privkey,
         return SSH_ERROR;
     }
     rc = ssh_buffer_pack(buffer,
-                         "sdPdP",
+                         "sdPdPP",
                          privkey->type_c,
-                         (uint32_t)ED25519_PK_LEN,
-                         (size_t)ED25519_PK_LEN, privkey->ed25519_pubkey,
-                         (uint32_t)ED25519_SK_LEN,
-                         (size_t)ED25519_SK_LEN, privkey->ed25519_privkey);
+                         (uint32_t)ED25519_KEY_LEN,
+                         (size_t)ED25519_KEY_LEN, privkey->ed25519_pubkey,
+                         (uint32_t)(2 * ED25519_KEY_LEN),
+                         (size_t)ED25519_KEY_LEN, privkey->ed25519_privkey,
+                         (size_t)ED25519_KEY_LEN, privkey->ed25519_pubkey);
     return rc;
 }
 

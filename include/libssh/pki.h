@@ -30,7 +30,15 @@
 #endif
 
 #include "libssh/crypto.h"
+#ifdef HAVE_OPENSSL_ED25519
+/* If using OpenSSL implementation, define the signature lenght which would be
+ * defined in libssh/ed25519.h otherwise */
+#define ED25519_SIG_LEN 64
+#else
 #include "libssh/ed25519.h"
+#endif
+/* This definition is used for both OpenSSL and internal implementations */
+#define ED25519_KEY_LEN 32
 
 #define MAX_PUBKEY_SIZE 0x100000 /* 1M */
 #define MAX_PRIVKEY_SIZE 0x400000 /* 4M */
@@ -61,8 +69,13 @@ struct ssh_key_struct {
     void *ecdsa;
 # endif /* HAVE_OPENSSL_EC_H */
 #endif /* HAVE_LIBGCRYPT */
+#ifdef HAVE_OPENSSL_ED25519
+    uint8_t *ed25519_pubkey;
+    uint8_t *ed25519_privkey;
+#else
     ed25519_pubkey *ed25519_pubkey;
     ed25519_privkey *ed25519_privkey;
+#endif
     void *cert;
     enum ssh_keytypes_e cert_type;
 };
@@ -79,7 +92,9 @@ struct ssh_signature_struct {
     ssh_string rsa_sig;
     struct mbedtls_ecdsa_sig ecdsa_sig;
 #endif /* HAVE_LIBGCRYPT */
+#ifndef HAVE_OPENSSL_ED25519
     ed25519_signature *ed25519_sig;
+#endif
     ssh_string raw_sig;
 };
 

@@ -31,27 +31,40 @@ int pki_privkey_build_ed25519(ssh_key key,
                               ssh_string pubkey,
                               ssh_string privkey)
 {
-    if (ssh_string_len(pubkey) != ED25519_PK_LEN ||
-        ssh_string_len(privkey) != ED25519_SK_LEN)
+    if (ssh_string_len(pubkey) != ED25519_KEY_LEN ||
+        ssh_string_len(privkey) != (2 * ED25519_KEY_LEN))
     {
         SSH_LOG(SSH_LOG_WARN, "Invalid ed25519 key len");
         return SSH_ERROR;
     }
 
-    key->ed25519_privkey = malloc(2 * ED25519_SK_LEN);
+#ifdef HAVE_OPENSSL_ED25519
+    /* In OpenSSL implementation, the private key is the original private seed,
+     * without the public key. */
+    key->ed25519_privkey = malloc(ED25519_KEY_LEN);
+#else
+    /* In the internal implementation, the private key is the concatenation of
+     * the private seed with the public key. */
+    key->ed25519_privkey = malloc(2 * ED25519_KEY_LEN);
+#endif
     if (key->ed25519_privkey == NULL) {
         goto error;
     }
 
-    key->ed25519_pubkey = malloc(ED25519_PK_LEN);
+    key->ed25519_pubkey = malloc(ED25519_KEY_LEN);
     if (key->ed25519_pubkey == NULL) {
         goto error;
     }
 
+#ifdef HAVE_OPENSSL_ED25519
     memcpy(key->ed25519_privkey, ssh_string_data(privkey),
-           ED25519_SK_LEN);
+           ED25519_KEY_LEN);
+#else
+    memcpy(key->ed25519_privkey, ssh_string_data(privkey),
+           2 * ED25519_KEY_LEN);
+#endif
     memcpy(key->ed25519_pubkey, ssh_string_data(pubkey),
-           ED25519_PK_LEN);
+           ED25519_KEY_LEN);
 
     return SSH_OK;
 
@@ -86,7 +99,16 @@ int pki_ed25519_key_cmp(const ssh_key k1,
         if (k1->ed25519_privkey == NULL || k2->ed25519_privkey == NULL) {
             return 1;
         }
-        cmp = memcmp(k1->ed25519_privkey, k2->ed25519_privkey, ED25519_SK_LEN);
+#ifdef HAVE_OPENSSL_ED25519
+        /* In OpenSSL implementation, the private key is the original private
+         * seed, without the public key. */
+        cmp = memcmp(k1->ed25519_privkey, k2->ed25519_privkey, ED25519_KEY_LEN);
+#else
+        /* In the internal implementation, the private key is the concatenation
+         * of the private seed with the public key. */
+        cmp = memcmp(k1->ed25519_privkey, k2->ed25519_privkey,
+                     2 * ED25519_KEY_LEN);
+#endif
         if (cmp != 0) {
             return 1;
         }
@@ -95,7 +117,7 @@ int pki_ed25519_key_cmp(const ssh_key k1,
         if (k1->ed25519_pubkey == NULL || k2->ed25519_pubkey == NULL) {
             return 1;
         }
-        cmp = memcmp(k1->ed25519_pubkey, k2->ed25519_pubkey, ED25519_PK_LEN);
+        cmp = memcmp(k1->ed25519_pubkey, k2->ed25519_pubkey, ED25519_KEY_LEN);
         if (cmp != 0) {
             return 1;
         }
@@ -122,20 +144,32 @@ int pki_ed25519_key_dup(ssh_key new, const ssh_key key)
     }
 
     if (key->ed25519_privkey != NULL) {
-        new->ed25519_privkey = malloc(ED25519_SK_LEN);
+#ifdef HAVE_OPENSSL_ED25519
+        /* In OpenSSL implementation, the private key is the original private
+         * seed, without the public key. */
+        new->ed25519_privkey = malloc(ED25519_KEY_LEN);
+#else
+        /* In the internal implementation, the private key is the concatenation
+         * of the private seed with the public key. */
+        new->ed25519_privkey = malloc(2 * ED25519_KEY_LEN);
+#endif
         if (new->ed25519_privkey == NULL) {
             return SSH_ERROR;
         }
-        memcpy(new->ed25519_privkey, key->ed25519_privkey, ED25519_SK_LEN);
+#ifdef HAVE_OPENSSL_ED25519
+        memcpy(new->ed25519_privkey, key->ed25519_privkey, ED25519_KEY_LEN);
+#else
+        memcpy(new->ed25519_privkey, key->ed25519_privkey, 2 * ED25519_KEY_LEN);
+#endif
     }
 
     if (key->ed25519_pubkey != NULL) {
-        new->ed25519_pubkey = malloc(ED25519_PK_LEN);
+        new->ed25519_pubkey = malloc(ED25519_KEY_LEN);
         if (new->ed25519_pubkey == NULL) {
             SAFE_FREE(new->ed25519_privkey);
             return SSH_ERROR;
         }
-        memcpy(new->ed25519_pubkey, key->ed25519_pubkey, ED25519_PK_LEN);
+        memcpy(new->ed25519_pubkey, key->ed25519_pubkey, ED25519_KEY_LEN);
     }
 
     return SSH_OK;
@@ -162,8 +196,8 @@ int pki_ed25519_public_key_to_blob(ssh_buffer buffer, ssh_key key)
 
     rc = ssh_buffer_pack(buffer,
                          "dP",
-                         (uint32_t)ED25519_PK_LEN,
-                         (size_t)ED25519_PK_LEN, key->ed25519_pubkey);
+                         (uint32_t)ED25519_KEY_LEN,
+                         (size_t)ED25519_KEY_LEN, key->ed25519_pubkey);
 
     return rc;
 }
@@ -181,16 +215,31 @@ ssh_string pki_ed25519_signature_to_blob(ssh_signature sig)
 {
     ssh_string sig_blob;
 
+#ifdef HAVE_OPENSSL_ED25519
+    /* When using the OpenSSL implementation, the signature is stored in raw_sig
+     * which is shared by all algorithms.*/
+    if (sig->raw_sig == NULL) {
+        return NULL;
+    }
+#else
+    /* When using the internal implementation, the signature is stored in an
+     * algorithm specific field. */
     if (sig->ed25519_sig == NULL) {
         return NULL;
     }
+#endif
 
     sig_blob = ssh_string_new(ED25519_SIG_LEN);
     if (sig_blob == NULL) {
         return NULL;
     }
 
+#ifdef HAVE_OPENSSL_ED25519
+    ssh_string_fill(sig_blob, ssh_string_data(sig->raw_sig),
+                    ssh_string_len(sig->raw_sig));
+#else
     ssh_string_fill(sig_blob, sig->ed25519_sig, ED25519_SIG_LEN);
+#endif
 
     return sig_blob;
 }
@@ -216,11 +265,15 @@ int pki_signature_from_ed25519_blob(ssh_signature sig, ssh_string sig_blob)
         return SSH_ERROR;
     }
 
+#ifdef HAVE_OPENSSL_ED25519
+    sig->raw_sig = ssh_string_copy(sig_blob);
+#else
     sig->ed25519_sig = malloc(ED25519_SIG_LEN);
     if (sig->ed25519_sig == NULL){
         return SSH_ERROR;
     }
     memcpy(sig->ed25519_sig, ssh_string_data(sig_blob), ED25519_SIG_LEN);
+#endif
 
     return SSH_OK;
 }
