@@ -124,11 +124,6 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
                                       const ssh_string sig_blob,
                                       enum ssh_keytypes_e type,
                                       enum ssh_digest_e hash_type);
-int pki_signature_verify(ssh_session session,
-                         const ssh_signature sig,
-                         const ssh_key key,
-                         const unsigned char *input,
-                         size_t input_len);
 
 /* SSH Signing Functions */
 ssh_signature pki_do_sign(const ssh_key privkey,

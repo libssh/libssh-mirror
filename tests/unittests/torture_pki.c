@@ -331,7 +331,7 @@ static void torture_pki_verify_mismatch(void **state)
             assert_int_equal(import_sig->type, key->type);
             assert_string_equal(import_sig->type_c, skey_attrs.sig_type_c);
 
-            rc = pki_signature_verify(session,
+            rc = ssh_pki_signature_verify(session,
                                       import_sig,
                                       pubkey,
                                       INPUT,
@@ -374,7 +374,7 @@ static void torture_pki_verify_mismatch(void **state)
                 assert_non_null(verify_pubkey);
 
                 /* Should gracefully fail, but not crash */
-                rc = pki_signature_verify(session,
+                rc = ssh_pki_signature_verify(session,
                                           sign,
                                           verify_pubkey,
                                           INPUT,
@@ -382,7 +382,7 @@ static void torture_pki_verify_mismatch(void **state)
                 assert_true(rc != SSH_OK);
 
                 /* Try the same with the imported signature */
-                rc = pki_signature_verify(session,
+                rc = ssh_pki_signature_verify(session,
                                           import_sig,
                                           verify_pubkey,
                                           INPUT,
@@ -401,7 +401,7 @@ static void torture_pki_verify_mismatch(void **state)
                     assert_string_equal(new_sig->type_c, skey_attrs.sig_type_c);
 
                     /* The verification should not work */
-                    rc = pki_signature_verify(session,
+                    rc = ssh_pki_signature_verify(session,
                                               new_sig,
                                               verify_pubkey,
                                               INPUT,

@@ -809,7 +809,7 @@ static void torture_pki_dsa_generate_key(void **state)
     assert_non_null(pubkey);
     sign = pki_do_sign(key, INPUT, sizeof(INPUT), SSH_DIGEST_SHA1);
     assert_non_null(sign);
-    rc = pki_signature_verify(session, sign, pubkey, INPUT, sizeof(INPUT));
+    rc = ssh_pki_signature_verify(session, sign, pubkey, INPUT, sizeof(INPUT));
     assert_true(rc == SSH_OK);
     ssh_signature_free(sign);
     SSH_KEY_FREE(key);
@@ -823,7 +823,7 @@ static void torture_pki_dsa_generate_key(void **state)
     assert_non_null(pubkey);
     sign = pki_do_sign(key, INPUT, sizeof(INPUT), SSH_DIGEST_SHA1);
     assert_non_null(sign);
-    rc = pki_signature_verify(session, sign, pubkey, INPUT, sizeof(INPUT));
+    rc = ssh_pki_signature_verify(session, sign, pubkey, INPUT, sizeof(INPUT));
     assert_true(rc == SSH_OK);
     ssh_signature_free(sign);
     SSH_KEY_FREE(key);
@@ -837,7 +837,7 @@ static void torture_pki_dsa_generate_key(void **state)
     assert_non_null(pubkey);
     sign = pki_do_sign(key, INPUT, sizeof(INPUT), SSH_DIGEST_SHA1);
     assert_non_null(sign);
-    rc = pki_signature_verify(session, sign, pubkey, INPUT, sizeof(INPUT));
+    rc = ssh_pki_signature_verify(session, sign, pubkey, INPUT, sizeof(INPUT));
     assert_true(rc == SSH_OK);
     ssh_signature_free(sign);
     SSH_KEY_FREE(key);
@@ -868,7 +868,7 @@ static void torture_pki_dsa_cert_verify(void **state)
 
     sign = pki_do_sign(privkey, INPUT, sizeof(INPUT), SSH_DIGEST_SHA1);
     assert_non_null(sign);
-    rc = pki_signature_verify(session, sign, cert, INPUT, sizeof(INPUT));
+    rc = ssh_pki_signature_verify(session, sign, cert, INPUT, sizeof(INPUT));
     assert_true(rc == SSH_OK);
     ssh_signature_free(sign);
     SSH_KEY_FREE(privkey);

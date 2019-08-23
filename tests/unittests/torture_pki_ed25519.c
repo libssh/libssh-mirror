@@ -440,7 +440,7 @@ static void torture_pki_ed25519_generate_key(void **state)
     assert_non_null(pubkey);
     sign = pki_do_sign(key, HASH, 20, SSH_DIGEST_AUTO);
     assert_non_null(sign);
-    rc = pki_signature_verify(session, sign, pubkey, HASH, 20);
+    rc = ssh_pki_signature_verify(session, sign, pubkey, HASH, 20);
     assert_true(rc == SSH_OK);
     type = ssh_key_type(key);
     assert_true(type == SSH_KEYTYPE_ED25519);
@@ -455,7 +455,7 @@ static void torture_pki_ed25519_generate_key(void **state)
 #endif
     assert_non_null(raw_sig_data);
     (raw_sig_data)[3]^= 0xff;
-    rc = pki_signature_verify(session, sign, pubkey, HASH, 20);
+    rc = ssh_pki_signature_verify(session, sign, pubkey, HASH, 20);
     assert_true(rc == SSH_ERROR);
 
     ssh_signature_free(sign);
@@ -494,7 +494,7 @@ static void torture_pki_ed25519_cert_verify(void **state)
 
     sign = pki_do_sign(privkey, HASH, 20, SSH_DIGEST_AUTO);
     assert_non_null(sign);
-    rc = pki_signature_verify(session, sign, cert, HASH, 20);
+    rc = ssh_pki_signature_verify(session, sign, cert, HASH, 20);
     assert_true(rc == SSH_OK);
     ssh_signature_free(sign);
     SSH_KEY_FREE(privkey);
@@ -683,7 +683,7 @@ static void torture_pki_ed25519_verify(void **state){
     sig = pki_signature_from_blob(pubkey, blob, SSH_KEYTYPE_ED25519, SSH_DIGEST_AUTO);
     assert_non_null(sig);
 
-    rc = pki_signature_verify(session, sig, pubkey, HASH, sizeof(HASH));
+    rc = ssh_pki_signature_verify(session, sig, pubkey, HASH, sizeof(HASH));
     assert_true(rc == SSH_OK);
 
     /* Alter signature and expect verification error */
@@ -694,7 +694,7 @@ static void torture_pki_ed25519_verify(void **state){
 #endif
     assert_non_null(raw_sig_data);
     (raw_sig_data)[3]^= 0xff;
-    rc = pki_signature_verify(session, sig, pubkey, HASH, sizeof(HASH));
+    rc = ssh_pki_signature_verify(session, sig, pubkey, HASH, sizeof(HASH));
     assert_true(rc == SSH_ERROR);
 
     ssh_signature_free(sig);
@@ -741,7 +741,7 @@ static void torture_pki_ed25519_verify_bad(void **state){
         sig = pki_signature_from_blob(pubkey, blob, SSH_KEYTYPE_ED25519, SSH_DIGEST_AUTO);
         assert_non_null(sig);
 
-        rc = pki_signature_verify(session, sig, pubkey, HASH, sizeof(HASH));
+        rc = ssh_pki_signature_verify(session, sig, pubkey, HASH, sizeof(HASH));
         assert_true(rc == SSH_ERROR);
         ssh_signature_free(sig);
 

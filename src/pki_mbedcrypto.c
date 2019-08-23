@@ -1022,42 +1022,6 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
     return sig;
 }
 
-int pki_signature_verify(ssh_session session, const ssh_signature sig, const
-        ssh_key key, const unsigned char *input, size_t input_len)
-{
-    int rc;
-
-    if (session == NULL || sig == NULL || key == NULL || input == NULL) {
-        SSH_LOG(SSH_LOG_TRACE, "Bad parameter provided to "
-                               "pki_signature_verify()");
-        return SSH_ERROR;
-    }
-
-    if (ssh_key_type_plain(key->type) != sig->type) {
-        SSH_LOG(SSH_LOG_WARN,
-                "Can not verify %s signature with %s key",
-                sig->type_c,
-                key->type_c);
-        return SSH_ERROR;
-    }
-
-    /* Check if public key and hash type are compatible */
-    rc = pki_key_check_hash_compatible(key, sig->hash_type);
-    if (rc != SSH_OK) {
-        return SSH_ERROR;
-    }
-
-    rc = pki_verify_data_signature(sig, key, input, input_len);
-    if (rc != SSH_OK){
-        ssh_set_error(session,
-                      SSH_FATAL,
-                      "Signature verification error");
-        return SSH_ERROR;
-    }
-
-    return SSH_OK;
-}
-
 static ssh_string rsa_do_sign_hash(const unsigned char *digest,
                                    int dlen,
                                    mbedtls_pk_context *privkey,

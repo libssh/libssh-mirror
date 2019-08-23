@@ -133,7 +133,7 @@ int ssh_pki_import_signature_blob(const ssh_string sig_blob,
 int ssh_pki_signature_verify(ssh_session session,
                              ssh_signature sig,
                              const ssh_key key,
-                             unsigned char *digest,
+                             const unsigned char *digest,
                              size_t dlen);
 
 /* SSH Public Key Functions */

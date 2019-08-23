@@ -2239,7 +2239,7 @@ int pki_key_check_hash_compatible(ssh_key key,
 int ssh_pki_signature_verify(ssh_session session,
                              ssh_signature sig,
                              const ssh_key key,
-                             unsigned char *input,
+                             const unsigned char *input,
                              size_t input_len)
 {
     int rc;
