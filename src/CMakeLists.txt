@@ -156,11 +156,7 @@ set(libssh_SRCS
   external/bcrypt_pbkdf.c
   external/blowfish.c
   external/chacha.c
-  external/ed25519.c
-  external/fe25519.c
-  external/ge25519.c
   external/poly1305.c
-  external/sc25519.c
   chachapoly.c
   config_parser.c
   token.c
@@ -202,6 +198,10 @@ if (WITH_GCRYPT)
         ecdh_gcrypt.c
         dh_key.c
         pki_ed25519.c
+        external/ed25519.c
+        external/fe25519.c
+        external/ge25519.c
+        external/sc25519.c
        )
 elseif (WITH_MBEDTLS)
     set(libssh_SRCS
@@ -213,6 +213,10 @@ elseif (WITH_MBEDTLS)
         ecdh_mbedcrypto.c
         dh_key.c
         pki_ed25519.c
+        external/ed25519.c
+        external/fe25519.c
+        external/ge25519.c
+        external/sc25519.c
        )
 else (WITH_GCRYPT)
     set(libssh_SRCS
@@ -227,6 +231,10 @@ else (WITH_GCRYPT)
         set(libssh_SRCS
             ${libssh_SRCS}
             pki_ed25519.c
+            external/ed25519.c
+            external/fe25519.c
+            external/ge25519.c
+            external/sc25519.c
            )
     endif (NOT HAVE_OPENSSL_ED25519)
     if(OPENSSL_VERSION VERSION_LESS "1.1.0")
@@ -279,10 +287,12 @@ if (WITH_GSSAPI AND GSSAPI_FOUND)
 endif (WITH_GSSAPI AND GSSAPI_FOUND)
 
 if (NOT WITH_NACL)
-  set(libssh_SRCS
-    ${libssh_SRCS}
-    external/curve25519_ref.c
-  )
+    if (NOT HAVE_OPENSSL_ED25519)
+        set(libssh_SRCS
+            ${libssh_SRCS}
+            external/curve25519_ref.c
+           )
+    endif (NOT HAVE_OPENSSL_ED25519)
 endif (NOT WITH_NACL)
 
 include_directories(
