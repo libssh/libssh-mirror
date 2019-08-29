@@ -100,6 +100,9 @@
 /* Define to 1 if you have OpenSSL with Ed25519 support */
 #cmakedefine HAVE_OPENSSL_ED25519 1
 
+/* Define to 1 if you have OpenSSL with X25519 support */
+#cmakedefine HAVE_OPENSSL_X25519 1
+
 /*************************** FUNCTIONS ***************************/
 
 /* Define to 1 if you have the `EVP_aes128_ctr' function. */
