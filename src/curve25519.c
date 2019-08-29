@@ -39,6 +39,10 @@
 #include "libssh/pki.h"
 #include "libssh/bignum.h"
 
+#ifdef HAVE_OPENSSL_X25519
+#include <openssl/err.h>
+#endif
+
 static SSH_PACKET_CALLBACK(ssh_packet_client_curve25519_reply);
 
 static ssh_packet_callback dh_client_callbacks[] = {
@@ -52,53 +56,216 @@ static struct ssh_packet_callbacks_struct ssh_curve25519_client_callbacks = {
     .user = NULL
 };
 
+static int ssh_curve25519_init(ssh_session session)
+{
+    int rc;
+#ifdef HAVE_OPENSSL_X25519
+    EVP_PKEY_CTX *pctx = NULL;
+    EVP_PKEY *pkey = NULL;
+    size_t pubkey_len = CURVE25519_PUBKEY_SIZE;
+    size_t pkey_len = CURVE25519_PRIVKEY_SIZE;
+
+    pctx = EVP_PKEY_CTX_new_id(EVP_PKEY_X25519, NULL);
+    if (pctx == NULL) {
+        SSH_LOG(SSH_LOG_TRACE,
+                "Failed to initialize X25519 context: %s",
+                ERR_error_string(ERR_get_error(), NULL));
+        return SSH_ERROR;
+    }
+
+    rc = EVP_PKEY_keygen_init(pctx);
+    if (rc != 1) {
+        SSH_LOG(SSH_LOG_TRACE,
+                "Failed to initialize X25519 keygen: %s",
+                ERR_error_string(ERR_get_error(), NULL));
+        EVP_PKEY_CTX_free(pctx);
+        return SSH_ERROR;
+    }
+
+    rc = EVP_PKEY_keygen(pctx, &pkey);
+    EVP_PKEY_CTX_free(pctx);
+    if (rc != 1) {
+        SSH_LOG(SSH_LOG_TRACE,
+                "Failed to generate X25519 keys: %s",
+                ERR_error_string(ERR_get_error(), NULL));
+        return SSH_ERROR;
+    }
+
+    if (session->server) {
+        rc = EVP_PKEY_get_raw_public_key(pkey,
+                                         session->next_crypto->curve25519_server_pubkey,
+                                         &pubkey_len);
+    } else {
+        rc = EVP_PKEY_get_raw_public_key(pkey,
+                                         session->next_crypto->curve25519_client_pubkey,
+                                         &pubkey_len);
+    }
+
+    if (rc != 1) {
+        SSH_LOG(SSH_LOG_TRACE,
+                "Failed to get X25519 raw public key: %s",
+                ERR_error_string(ERR_get_error(), NULL));
+        EVP_PKEY_free(pkey);
+        return SSH_ERROR;
+    }
+
+    rc = EVP_PKEY_get_raw_private_key(pkey,
+                                      session->next_crypto->curve25519_privkey,
+                                      &pkey_len);
+    if (rc != 1) {
+        SSH_LOG(SSH_LOG_TRACE,
+                "Failed to get X25519 raw private key: %s",
+                ERR_error_string(ERR_get_error(), NULL));
+        EVP_PKEY_free(pkey);
+        return SSH_ERROR;
+    }
+
+    EVP_PKEY_free(pkey);
+#else
+    rc = ssh_get_random(session->next_crypto->curve25519_privkey,
+                        CURVE25519_PRIVKEY_SIZE, 1);
+    if (rc != 1) {
+        ssh_set_error(session, SSH_FATAL, "PRNG error");
+        return SSH_ERROR;
+    }
+
+    if (session->server) {
+        crypto_scalarmult_base(session->next_crypto->curve25519_server_pubkey,
+                               session->next_crypto->curve25519_privkey);
+    } else {
+        crypto_scalarmult_base(session->next_crypto->curve25519_client_pubkey,
+                               session->next_crypto->curve25519_privkey);
+    }
+#endif /* HAVE_OPENSSL_X25519 */
+
+    return SSH_OK;
+}
+
 /** @internal
  * @brief Starts curve25519-sha256@libssh.org / curve25519-sha256 key exchange
  */
-int ssh_client_curve25519_init(ssh_session session){
-  int rc;
-  int ok;
+int ssh_client_curve25519_init(ssh_session session)
+{
+    int rc;
 
-  ok = ssh_get_random(session->next_crypto->curve25519_privkey, CURVE25519_PRIVKEY_SIZE, 1);
-  if (!ok) {
-	  ssh_set_error(session, SSH_FATAL, "PRNG error");
-	  return SSH_ERROR;
-  }
+    rc = ssh_curve25519_init(session);
+    if (rc != SSH_OK) {
+        return rc;
+    }
 
-  crypto_scalarmult_base(session->next_crypto->curve25519_client_pubkey,
-		  session->next_crypto->curve25519_privkey);
+    rc = ssh_buffer_pack(session->out_buffer,
+                         "bdP",
+                         SSH2_MSG_KEX_ECDH_INIT,
+                         CURVE25519_PUBKEY_SIZE,
+                         (size_t)CURVE25519_PUBKEY_SIZE,
+                         session->next_crypto->curve25519_client_pubkey);
+    if (rc != SSH_OK) {
+        ssh_set_error_oom(session);
+        return SSH_ERROR;
+    }
 
-  rc = ssh_buffer_pack(session->out_buffer,
-                       "bdP",
-                       SSH2_MSG_KEX_ECDH_INIT,
-                       CURVE25519_PUBKEY_SIZE,
-                       (size_t)CURVE25519_PUBKEY_SIZE, session->next_crypto->curve25519_client_pubkey);
-  if (rc != SSH_OK) {
-      ssh_set_error_oom(session);
-      return SSH_ERROR;
-  }
-  /* register the packet callbacks */
-  ssh_packet_set_callbacks(session, &ssh_curve25519_client_callbacks);
-  session->dh_handshake_state = DH_STATE_INIT_SENT;
-  rc = ssh_packet_send(session);
+    /* register the packet callbacks */
+    ssh_packet_set_callbacks(session, &ssh_curve25519_client_callbacks);
+    session->dh_handshake_state = DH_STATE_INIT_SENT;
+    rc = ssh_packet_send(session);
 
-  return rc;
+    return rc;
 }
 
-static int ssh_curve25519_build_k(ssh_session session) {
-  ssh_curve25519_pubkey k;
+static int ssh_curve25519_build_k(ssh_session session)
+{
+    ssh_curve25519_pubkey k;
 
-  if (session->server)
-	  crypto_scalarmult(k, session->next_crypto->curve25519_privkey,
-			  session->next_crypto->curve25519_client_pubkey);
-  else
-	  crypto_scalarmult(k, session->next_crypto->curve25519_privkey,
-			  session->next_crypto->curve25519_server_pubkey);
+#ifdef HAVE_OPENSSL_X25519
+    EVP_PKEY_CTX *pctx = NULL;
+    EVP_PKEY *pkey = NULL, *pubkey = NULL;
+    size_t shared_key_len;
+    int rc;
 
-  bignum_bin2bn(k, CURVE25519_PUBKEY_SIZE, &session->next_crypto->shared_secret);
-  if (session->next_crypto->shared_secret == NULL) {
-    return SSH_ERROR;
-  }
+    pkey = EVP_PKEY_new_raw_private_key(EVP_PKEY_X25519, NULL,
+                                        session->next_crypto->curve25519_privkey,
+                                        CURVE25519_PRIVKEY_SIZE);
+    if (pkey == NULL) {
+        SSH_LOG(SSH_LOG_TRACE,
+                "Failed to create X25519 EVP_PKEY: %s",
+                ERR_error_string(ERR_get_error(), NULL));
+        return SSH_ERROR;
+    }
+
+    pctx = EVP_PKEY_CTX_new(pkey, NULL);
+    if (pctx == NULL) {
+        SSH_LOG(SSH_LOG_TRACE,
+                "Failed to initialize X25519 context: %s",
+                ERR_error_string(ERR_get_error(), NULL));
+        EVP_PKEY_free(pkey);
+        return SSH_ERROR;
+    }
+
+    rc = EVP_PKEY_derive_init(pctx);
+    if (rc != 1) {
+        SSH_LOG(SSH_LOG_TRACE,
+                "Failed to initialize X25519 key derivation: %s",
+                ERR_error_string(ERR_get_error(), NULL));
+        EVP_PKEY_free(pkey);
+        EVP_PKEY_CTX_free(pctx);
+        return SSH_ERROR;
+    }
+
+    if (session->server) {
+        pubkey = EVP_PKEY_new_raw_public_key(EVP_PKEY_X25519, NULL,
+                                             session->next_crypto->curve25519_client_pubkey,
+                                             CURVE25519_PUBKEY_SIZE);
+    } else {
+        pubkey = EVP_PKEY_new_raw_public_key(EVP_PKEY_X25519, NULL,
+                                             session->next_crypto->curve25519_server_pubkey,
+                                             CURVE25519_PUBKEY_SIZE);
+    }
+    if (pubkey == NULL) {
+        SSH_LOG(SSH_LOG_TRACE,
+                "Failed to create X25519 public key EVP_PKEY: %s",
+                ERR_error_string(ERR_get_error(), NULL));
+        EVP_PKEY_free(pkey);
+        EVP_PKEY_CTX_free(pctx);
+        return SSH_ERROR;
+    }
+
+    rc = EVP_PKEY_derive_set_peer(pctx, pubkey);
+    if (rc != 1) {
+        SSH_LOG(SSH_LOG_TRACE,
+                "Failed to set peer X25519 public key: %s",
+                ERR_error_string(ERR_get_error(), NULL));
+        EVP_PKEY_free(pkey);
+        EVP_PKEY_free(pubkey);
+        EVP_PKEY_CTX_free(pctx);
+        return SSH_ERROR;
+    }
+
+    rc = EVP_PKEY_derive(pctx,
+                         k,
+                         &shared_key_len);
+    if (rc != 1) {
+        SSH_LOG(SSH_LOG_TRACE,
+                "Failed to derive X25519 shared secret: %s",
+                ERR_error_string(ERR_get_error(), NULL));
+        EVP_PKEY_free(pkey);
+        EVP_PKEY_free(pubkey);
+        EVP_PKEY_CTX_free(pctx);
+        return SSH_ERROR;
+    }
+#else
+    if (session->server) {
+        crypto_scalarmult(k, session->next_crypto->curve25519_privkey,
+                          session->next_crypto->curve25519_client_pubkey);
+    } else {
+        crypto_scalarmult(k, session->next_crypto->curve25519_privkey,
+                          session->next_crypto->curve25519_server_pubkey);
+    }
+#endif /* HAVE_OPENSSL_X25519 */
+
+    bignum_bin2bn(k, CURVE25519_PUBKEY_SIZE, &session->next_crypto->shared_secret);
+    if (session->next_crypto->shared_secret == NULL) {
+        return SSH_ERROR;
+    }
 
 #ifdef DEBUG_CRYPTO
     ssh_log_hexdump("Session server cookie",
@@ -222,7 +389,6 @@ static SSH_PACKET_CALLBACK(ssh_packet_server_curve25519_init){
     /* SSH host keys (rsa,dsa,ecdsa) */
     ssh_key privkey;
     ssh_string sig_blob = NULL;
-    int ok;
     int rc;
     (void)type;
     (void)user;
@@ -245,18 +411,15 @@ static SSH_PACKET_CALLBACK(ssh_packet_server_curve25519_init){
     }
 
     memcpy(session->next_crypto->curve25519_client_pubkey,
-    		ssh_string_data(q_c_string), CURVE25519_PUBKEY_SIZE);
+           ssh_string_data(q_c_string), CURVE25519_PUBKEY_SIZE);
     ssh_string_free(q_c_string);
     /* Build server's keypair */
 
-    ok = ssh_get_random(session->next_crypto->curve25519_privkey, CURVE25519_PRIVKEY_SIZE, 1);
-    if (!ok) {
-        ssh_set_error(session, SSH_FATAL, "PRNG error");
+    rc = ssh_curve25519_init(session);
+    if (rc != SSH_OK) {
+        ssh_set_error(session, SSH_FATAL, "Failed to generate curve25519 keys");
         goto error;
     }
-
-    crypto_scalarmult_base(session->next_crypto->curve25519_server_pubkey,
-  		  session->next_crypto->curve25519_privkey);
 
     rc = ssh_buffer_add_u8(session->out_buffer, SSH2_MSG_KEX_ECDH_REPLY);
     if (rc < 0) {
