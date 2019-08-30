@@ -643,13 +643,130 @@ static void torture_pki_ed25519_sign(void **state)
     assert_non_null(blob);
 
     assert_int_equal(ssh_string_len(blob), sizeof(ref_signature));
-    assert_memory_equal(ssh_string_data(blob), ref_signature, sizeof(ref_signature));
-    /* ssh_print_hexa("signature", ssh_string_data(blob), ssh_string_len(blob)); */
+    assert_memory_equal(ssh_string_data(blob), ref_signature,
+                        sizeof(ref_signature));
+
     ssh_signature_free(sig);
     SSH_KEY_FREE(privkey);
     SSH_STRING_FREE(blob);
 
 }
+
+static void torture_pki_ed25519_sign_openssh_privkey_passphrase(void **state)
+{
+    ssh_key privkey = NULL;
+    ssh_signature sig = NULL;
+    ssh_string blob = NULL;
+    const char *keystring = NULL;
+    int rc;
+
+    /* Skip test if in FIPS mode */
+    if (ssh_fips_mode()) {
+        skip();
+    }
+
+    (void)state;
+
+    keystring = torture_get_openssh_testkey(SSH_KEYTYPE_ED25519, 1);
+    rc = ssh_pki_import_privkey_base64(keystring,
+                                       torture_get_testkey_passphrase(),
+                                       NULL,
+                                       NULL,
+                                       &privkey);
+    assert_true(rc == SSH_OK);
+    assert_non_null(privkey);
+
+    sig = pki_do_sign(privkey, HASH, sizeof(HASH), SSH_DIGEST_AUTO);
+    assert_non_null(sig);
+
+    blob = pki_signature_to_blob(sig);
+    assert_non_null(blob);
+    assert_int_equal(ssh_string_len(blob), sizeof(ref_signature));
+    assert_memory_equal(ssh_string_data(blob), ref_signature,
+                        sizeof(ref_signature));
+
+    ssh_signature_free(sig);
+    SSH_KEY_FREE(privkey);
+    SSH_STRING_FREE(blob);
+}
+
+#ifdef HAVE_OPENSSL_ED25519
+static void torture_pki_ed25519_sign_pkcs8_privkey(void **state)
+{
+    ssh_key privkey = NULL;
+    ssh_signature sig = NULL;
+    ssh_string blob = NULL;
+    const char *keystring = NULL;
+    int rc;
+
+    /* Skip test if in FIPS mode */
+    if (ssh_fips_mode()) {
+        skip();
+    }
+
+    (void)state;
+
+    keystring = torture_get_testkey(SSH_KEYTYPE_ED25519, 0);
+    rc = ssh_pki_import_privkey_base64(keystring,
+                                       NULL,
+                                       NULL,
+                                       NULL,
+                                       &privkey);
+    assert_true(rc == SSH_OK);
+    assert_non_null(privkey);
+
+    sig = pki_do_sign(privkey, HASH, sizeof(HASH), SSH_DIGEST_AUTO);
+    assert_non_null(sig);
+
+    blob = pki_signature_to_blob(sig);
+    assert_non_null(blob);
+    assert_int_equal(ssh_string_len(blob), sizeof(ref_signature));
+    assert_memory_equal(ssh_string_data(blob), ref_signature,
+                        sizeof(ref_signature));
+
+    ssh_signature_free(sig);
+    SSH_KEY_FREE(privkey);
+    SSH_STRING_FREE(blob);
+}
+
+static void torture_pki_ed25519_sign_pkcs8_privkey_passphrase(void **state)
+{
+    ssh_key privkey = NULL;
+    ssh_signature sig = NULL;
+    ssh_string blob = NULL;
+    const char *keystring = NULL;
+    int rc;
+
+    /* Skip test if in FIPS mode */
+    if (ssh_fips_mode()) {
+        skip();
+    }
+
+    (void)state;
+
+    keystring = torture_get_testkey(SSH_KEYTYPE_ED25519, 1);
+    rc = ssh_pki_import_privkey_base64(keystring,
+                                       torture_get_testkey_passphrase(),
+                                       NULL,
+                                       NULL,
+                                       &privkey);
+    assert_true(rc == SSH_OK);
+    assert_non_null(privkey);
+
+    sig = pki_do_sign(privkey, HASH, sizeof(HASH), SSH_DIGEST_AUTO);
+    assert_non_null(sig);
+
+    blob = pki_signature_to_blob(sig);
+    assert_non_null(blob);
+    assert_int_equal(ssh_string_len(blob), sizeof(ref_signature));
+    assert_memory_equal(ssh_string_data(blob), ref_signature,
+                        sizeof(ref_signature));
+
+    ssh_signature_free(sig);
+    SSH_KEY_FREE(privkey);
+    SSH_STRING_FREE(blob);
+}
+#endif /* HAVE_OPENSSL_ED25519 */
 
 static void torture_pki_ed25519_verify(void **state){
     ssh_key pubkey = NULL;
@@ -895,6 +1012,11 @@ int torture_run_tests(void) {
                                         teardown),
         cmocka_unit_test(torture_pki_ed25519_import_privkey_base64_passphrase),
         cmocka_unit_test(torture_pki_ed25519_sign),
+        cmocka_unit_test(torture_pki_ed25519_sign_openssh_privkey_passphrase),
+#ifdef HAVE_OPENSSL_ED25519
+        cmocka_unit_test(torture_pki_ed25519_sign_pkcs8_privkey),
+        cmocka_unit_test(torture_pki_ed25519_sign_pkcs8_privkey_passphrase),
+#endif
         cmocka_unit_test(torture_pki_ed25519_verify),
         cmocka_unit_test(torture_pki_ed25519_verify_bad),
         cmocka_unit_test(torture_pki_ed25519_privkey_dup),

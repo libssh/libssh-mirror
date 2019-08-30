@@ -730,29 +730,58 @@ ssh_string pki_private_key_to_pem(const ssh_key key,
         return NULL;
     }
 
-    pkey = EVP_PKEY_new();
-    if (pkey == NULL) {
-        goto err;
-    }
-
     switch (key->type) {
         case SSH_KEYTYPE_DSS:
+            pkey = EVP_PKEY_new();
+            if (pkey == NULL) {
+                goto err;
+            }
+
             rc = EVP_PKEY_set1_DSA(pkey, key->dsa);
             break;
         case SSH_KEYTYPE_RSA:
         case SSH_KEYTYPE_RSA1:
+            pkey = EVP_PKEY_new();
+            if (pkey == NULL) {
+                goto err;
+            }
+
             rc = EVP_PKEY_set1_RSA(pkey, key->rsa);
             break;
 #ifdef HAVE_ECC
         case SSH_KEYTYPE_ECDSA_P256:
         case SSH_KEYTYPE_ECDSA_P384:
         case SSH_KEYTYPE_ECDSA_P521:
+            pkey = EVP_PKEY_new();
+            if (pkey == NULL) {
+                goto err;
+            }
+
             rc = EVP_PKEY_set1_EC_KEY(pkey, key->ecdsa);
             break;
 #endif
         case SSH_KEYTYPE_ED25519:
+#ifdef HAVE_OPENSSL_ED25519
+            /* In OpenSSL, the input is the private key seed only, which means
+             * the first half of the SSH private key (the second half is the
+             * public key) */
+            pkey = EVP_PKEY_new_raw_private_key(EVP_PKEY_ED25519, NULL,
+                    (const uint8_t *)key->ed25519_privkey,
+                    ED25519_KEY_LEN);
+            if (pkey == NULL) {
+                SSH_LOG(SSH_LOG_TRACE,
+                        "Failed to create ed25519 EVP_PKEY: %s",
+                        ERR_error_string(ERR_get_error(), NULL));
+                goto err;
+            }
+
+            /* Mark the operation as successful as for the other key types */
+            rc = 1;
+            break;
+#else
             SSH_LOG(SSH_LOG_WARN, "PEM output not supported for key type ssh-ed25519");
             goto err;
+#endif
         case SSH_KEYTYPE_DSS_CERT01:
         case SSH_KEYTYPE_RSA_CERT01:
         case SSH_KEYTYPE_ECDSA_P256_CERT01:
@@ -865,7 +894,7 @@ ssh_key pki_private_key_from_base64(const char *b64_key,
             SSH_LOG(SSH_LOG_WARN,
                     "Parsing private key: %s",
                     ERR_error_string(ERR_get_error(),NULL));
-            return NULL;
+            goto fail;
         }
         type = SSH_KEYTYPE_DSS;
         break;
@@ -875,7 +904,7 @@ ssh_key pki_private_key_from_base64(const char *b64_key,
             SSH_LOG(SSH_LOG_WARN,
                     "Parsing private key: %s",
                     ERR_error_string(ERR_get_error(),NULL));
-            return NULL;
+            goto fail;
         }
         type = SSH_KEYTYPE_RSA;
         break;
@@ -886,7 +915,7 @@ ssh_key pki_private_key_from_base64(const char *b64_key,
             SSH_LOG(SSH_LOG_WARN,
                     "Parsing private key: %s",
                     ERR_error_string(ERR_get_error(), NULL));
-            return NULL;
+            goto fail;
         }
 
         /* pki_privatekey_type_from_string always returns P256 for ECDSA
@@ -898,6 +927,43 @@ ssh_key pki_private_key_from_base64(const char *b64_key,
         }
 
         break;
+#endif
+#ifdef HAVE_OPENSSL_ED25519
+    case EVP_PKEY_ED25519:
+    {
+        size_t key_len;
+        int evp_rc = 0;
+
+        /* Get the key length */
+        evp_rc = EVP_PKEY_get_raw_private_key(pkey, NULL, &key_len);
+        if (evp_rc != 1) {
+            SSH_LOG(SSH_LOG_TRACE,
+                    "Failed to get ed25519 raw private key length:  %s",
+                    ERR_error_string(ERR_get_error(), NULL));
+            goto fail;
+        }
+
+        if (key_len != ED25519_KEY_LEN) {
+            goto fail;
+        }
+
+        ed25519 = malloc(key_len);
+        if (ed25519 == NULL) {
+            SSH_LOG(SSH_LOG_WARN, "Out of memory");
+            goto fail;
+        }
+
+        evp_rc = EVP_PKEY_get_raw_private_key(pkey, (uint8_t *)ed25519,
+                                              &key_len);
+        if (evp_rc != 1) {
+            SSH_LOG(SSH_LOG_TRACE,
+                    "Failed to get ed25519 raw private key:  %s",
+                    ERR_error_string(ERR_get_error(), NULL));
+            goto fail;
+        }
+        type = SSH_KEYTYPE_ED25519;
+    }
+    break;
 #endif
     default:
         EVP_PKEY_free(pkey);
@@ -927,13 +993,16 @@ ssh_key pki_private_key_from_base64(const char *b64_key,
 
     return key;
 fail:
+    EVP_PKEY_free(pkey);
     ssh_key_free(key);
     DSA_free(dsa);
     RSA_free(rsa);
 #ifdef HAVE_OPENSSL_ECC
     EC_KEY_free(ecdsa);
 #endif
-
+#ifdef HAVE_OPENSSL_ED25519
+    SAFE_FREE(ed25519);
+#endif
     return NULL;
 }
 

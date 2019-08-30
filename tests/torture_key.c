@@ -602,7 +602,12 @@ static const char torture_ecdsa521_testkey_cert[] =
  * ED25519 KEYS
  ****************************************************************************/
 
-static const char torture_ed25519_private_testkey[] =
+static const char torture_ed25519_private_pkcs8_testkey[] =
+        "-----BEGIN PRIVATE KEY-----\n"
+        "MC4CAQAwBQYDK2VwBCIEIGBhcqLe61tkqVjIHKEzwB3oINasSHWGbIWXQWcLPmGN\n"
+        "-----END PRIVATE KEY-----\n";
+
+static const char torture_ed25519_private_openssh_testkey[] =
         "-----BEGIN OPENSSH PRIVATE KEY-----\n"
         "b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW\n"
         "QyNTUxOQAAACAVlp8bgmIjsrzGC7ZIKBMhCpS1fpJTPgVOjYdz5gIqlwAAAJBzsDN1c7Az\n"
@@ -611,15 +616,23 @@ static const char torture_ed25519_private_testkey[] =
         "lLV+klM+BU6Nh3PmAiqXAAAADGFyaXNAa2FsaXg4NgE=\n"
         "-----END OPENSSH PRIVATE KEY-----\n";
 
-static const char torture_ed25519_private_testkey_passphrase[] =
+static const char torture_ed25519_private_openssh_testkey_passphrase[] =
         "-----BEGIN OPENSSH PRIVATE KEY-----\n"
-        "b3BlbnNzaC1rZXktdjEAAAAACmFlczI1Ni1jYmMAAAAGYmNyeXB0AAAAGAAAABB3FWpQcE\n"
-        "KHKq6PcjkxjmKzAAAAEAAAAAEAAAAzAAAAC3NzaC1lZDI1NTE5AAAAIOGFVuOyZBL0T+NR\n"
-        "C7qEV9qr6QiGhz2XSXrxuQoU84FgAAAAkBlOVfS5U7FxtBEtxfxQhZjrZAj2z9d4OfGRPl\n"
-        "ZfCnAJNEM3BZ3XCabsujhMkqEs9eptRfj41X6NA8aSFs5JYT+JFVfg470FKtpyUmAibMIo\n"
-        "JzI41zAncFd1x7bAgO5HBDe3xNsV159D+sXRkWB9Tzk0l4F8SZvInheIS7VSbqH7t1+yDB\n"
-        "Y3GsmYTDstmicanQ==\n"
+        "b3BlbnNzaC1rZXktdjEAAAAACmFlczEyOC1jYmMAAAAGYmNyeXB0AAAAGAAAABDYuz+a8i\n"
+        "nb/BgGjQjQtvkUAAAAEAAAAAEAAAAzAAAAC3NzaC1lZDI1NTE5AAAAIBWWnxuCYiOyvMYL\n"
+        "tkgoEyEKlLV+klM+BU6Nh3PmAiqXAAAAkOBxqvzvPSns3TbhjkCayvANI66100OELnpDOm\n"
+        "JBGgXr5q846NkAovH3pmJ4O7qzPLTQ/cm0+959VUODRhM1i96qBg5MTNtV33lf5Y57Klzu\n"
+        "JegbiexcqkHIzriH42K0XSOEpfW8f/rTH7ffjbE/7l8HRNwf7AmcnxLx/d8J8FTBr+8aU7\n"
+        "qMU3xAJ4ixnwhYFg==\n"
         "-----END OPENSSH PRIVATE KEY-----\n";
+
+static const char torture_ed25519_private_pkcs8_testkey_passphrase[] =
+        "-----BEGIN ENCRYPTED PRIVATE KEY-----\n"
+        "MIGbMFcGCSqGSIb3DQEFDTBKMCkGCSqGSIb3DQEFDDAcBAie1RBk/ub+EwICCAAw\n"
+        "DAYIKoZIhvcNAgkFADAdBglghkgBZQMEAQIEECRLkPChQx/sZPYLdNJhxMUEQFLj\n"
+        "7nelAdOx3WXIBbCOfOqg3aAn8C5cXPtIQ+fiui1V8wlXXV8RBiuDCC97ScLs91D5\n"
+        "qQhQtw0vgfnq1um/izg=\n"
+        "-----END ENCRYPTED PRIVATE KEY-----\n";
 
 static const char torture_ed25519_public_testkey[] =
         "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBWWnxuCYiOyvMYLtkgoEyEKlLV+klM+"
@@ -733,16 +746,19 @@ static const char *torture_get_testkey_internal(enum ssh_keytypes_e type,
                 return torture_ed25519_public_testkey;
             } else if (with_passphrase) {
                 if (format == 1) {
-                    return torture_ed25519_private_testkey_passphrase;
+                    return torture_ed25519_private_openssh_testkey_passphrase;
+                }
+                if (format == 2) {
+                    return torture_ed25519_private_pkcs8_testkey_passphrase;
                 }
                 /* ed25519 keys are not available in legacy PEM format */
                 return NULL;
             }
             if (format == 1) {
-                return torture_ed25519_private_testkey;
+                return torture_ed25519_private_openssh_testkey;
             }
             /* ed25519 keys are not available in legacy PEM format */
-            return NULL;
+            return torture_ed25519_private_pkcs8_testkey;
         case SSH_KEYTYPE_DSS_CERT01:
             return torture_dsa_testkey_cert;
         case SSH_KEYTYPE_RSA_CERT01:
