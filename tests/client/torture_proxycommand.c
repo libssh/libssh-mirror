@@ -7,6 +7,7 @@
 #include "libssh/priv.h"
 
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <pwd.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -65,10 +66,17 @@ static void torture_options_set_proxycommand(void **state)
     const char *address = torture_server_address(AF_INET);
     int port = torture_server_port();
     char command[255] = {0};
+    struct stat sb;
     int rc;
     socket_t fd;
 
-    rc = snprintf(command, sizeof(command), "nc %s %d", address, port);
+    rc = stat("/bin/nc", &sb);
+    if (rc != 0 || (sb.st_mode & S_IXOTH) == 0) {
+        SSH_LOG(SSH_LOG_WARNING, "Could not find /bin/nc: Skipping the test");
+        skip();
+    }
+
+    rc = snprintf(command, sizeof(command), "/bin/nc %s %d", address, port);
     assert_true((size_t)rc < sizeof(command));
 
     rc = ssh_options_set(session, SSH_OPTIONS_PROXYCOMMAND, command);
