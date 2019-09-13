@@ -201,13 +201,18 @@ struct sftp_statvfs_struct {
 };
 
 /**
- * @brief Start a new sftp session.
+ * @brief Creates a new sftp session.
+ *
+ * This function creates a new sftp session and allocates a new sftp channel
+ * with the server inside of the provided ssh session. This function call is
+ * usually followed by the sftp_init(), which initializes SFTP protocol itself.
  *
  * @param session       The ssh session to use.
  *
  * @return              A new sftp session or NULL on error.
  *
  * @see sftp_free()
+ * @see sftp_init()
  */
 LIBSSH_API sftp_session sftp_new(ssh_session session);
 
@@ -232,7 +237,10 @@ LIBSSH_API sftp_session sftp_new_channel(ssh_session session, ssh_channel channe
 LIBSSH_API void sftp_free(sftp_session sftp);
 
 /**
- * @brief Initialize the sftp session with the server.
+ * @brief Initialize the sftp protocol with the server.
+ *
+ * This function involves the SFTP protocol initialization (as described
+ * in the SFTP specification), including the version and extensions negotiation.
  *
  * @param sftp          The sftp session to initialize.
  *
