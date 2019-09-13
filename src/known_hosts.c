@@ -405,8 +405,12 @@ int ssh_is_server_known(ssh_session session)
 
     if ((ret == SSH_SERVER_NOT_KNOWN) &&
             (session->opts.StrictHostKeyChecking == 0)) {
-        ssh_write_knownhost(session);
-        ret = SSH_SERVER_KNOWN_OK;
+        int rv = ssh_session_update_known_hosts(session);
+        if (rv != SSH_OK) {
+            ret = SSH_SERVER_ERROR;
+        } else {
+            ret = SSH_SERVER_KNOWN_OK;
+        }
     }
 
     SAFE_FREE(host);
@@ -492,9 +496,10 @@ char * ssh_dump_knownhost(ssh_session session) {
  * @deprecated Please use ssh_session_update_known_hosts()
  * @brief This function is deprecated
  */
-int ssh_write_knownhost(ssh_session session) {
+int ssh_write_knownhost(ssh_session session)
+{
     FILE *file;
-    char *buffer;
+    char *buffer = NULL;
     char *dir;
     int rc;
 
@@ -542,8 +547,8 @@ int ssh_write_knownhost(ssh_session session) {
         }
     }
 
-    buffer = ssh_dump_knownhost(session);
-    if (buffer == NULL) {
+    rc = ssh_session_export_known_hosts_entry(session, &buffer);
+    if (rc != SSH_OK) {
         fclose(file);
         return SSH_ERROR;
     }
