@@ -404,7 +404,7 @@ static void torture_server_auth_pubkey(void **state)
     session = s->ssh.session;
     assert_non_null(session);
 
-    /* Authenticate as alice with bob his pubkey */
+    /* Authenticate as alice with bob's pubkey */
     rc = ssh_options_set(session, SSH_OPTIONS_USER, TORTURE_SSH_USER_ALICE);
     assert_int_equal(rc, SSH_OK);
 

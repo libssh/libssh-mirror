@@ -72,7 +72,7 @@ static int session_setup(void **state)
     ssh_options_set(s->ssh.session, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
     ssh_options_set(s->ssh.session, SSH_OPTIONS_HOST, TORTURE_SSH_SERVER);
 
-    /* Authenticate as alice with bob his pubkey */
+    /* Authenticate as alice with bob's pubkey */
     rc = ssh_options_set(s->ssh.session, SSH_OPTIONS_USER, TORTURE_SSH_USER_ALICE);
     assert_int_equal(rc, SSH_OK);
 
