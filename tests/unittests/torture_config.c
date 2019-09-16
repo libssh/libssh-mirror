@@ -5,6 +5,7 @@
 #include "torture.h"
 #include "libssh/options.h"
 #include "libssh/session.h"
+#include "libssh/config_parser.h"
 
 extern LIBSSH_THREAD int ssh_log_level;
 
@@ -907,6 +908,128 @@ static void torture_config_pubkeyacceptedkeytypes(void **state)
     }
 }
 
+/* ssh_config_get_cmd() does three things:
+ *  * Strips leading whitespace
+ *  * Terminate the characted on the end of next quotes-enclosed string
+ *  * Terminate on the end of line
+ */
+static void torture_config_parser_get_cmd(void **state)
+{
+    char *p = NULL, *tok = NULL;
+    char data[256];
+
+    (void) state;
+
+    /* Ignore leading whitespace */
+    strncpy(data, "  \t\t  string\n", sizeof(data));
+    p = data;
+    tok = ssh_config_get_cmd(&p);
+    assert_string_equal(tok, "string");
+    assert_int_equal(*p, '\0');
+
+    /* but keeps the trailing whitespace */
+    strncpy(data, "string  \t\t  \n", sizeof(data));
+    p = data;
+    tok = ssh_config_get_cmd(&p);
+    assert_string_equal(tok, "string  \t\t  ");
+    assert_int_equal(*p, '\0');
+
+    /* should drop the quotes and split them into separate arguments */
+    strncpy(data, "\"multi string\" something\n", sizeof(data));
+    p = data;
+    tok = ssh_config_get_cmd(&p);
+    assert_string_equal(tok, "multi string");
+    assert_int_equal(*p, ' ');
+    tok = ssh_config_get_cmd(&p);
+    assert_string_equal(tok, "something");
+    assert_int_equal(*p, '\0');
+
+    /* But it does not split tokens by whitespace if they are not quoted, which is weird */
+    strncpy(data, "multi string something\n", sizeof(data));
+    p = data;
+    tok = ssh_config_get_cmd(&p);
+    assert_string_equal(tok, "multi string something");
+    assert_int_equal(*p, '\0');
+}
+
+/* ssh_config_get_token() should behave as expected
+ *  * Strip leading whitespace
+ *  * Return first token separated by whitespace or equal sign, respecting quotes!
+ */
+static void torture_config_parser_get_token(void **state)
+{
+    char *p = NULL, *tok = NULL;
+    char data[256];
+
+    (void) state;
+
+    /* Ignore leading whitespace (from get_cmd() already */
+    strncpy(data, "  \t\t  string\n", sizeof(data));
+    p = data;
+    tok = ssh_config_get_token(&p);
+    assert_string_equal(tok, "string");
+    assert_int_equal(*p, '\0');
+
+    /* drops trailing whitespace */
+    strncpy(data, "string  \t\t  \n", sizeof(data));
+    p = data;
+    tok = ssh_config_get_token(&p);
+    assert_string_equal(tok, "string");
+    assert_int_equal(*p, ' ');
+    tok = ssh_config_get_token(&p);
+    assert_string_equal(tok, "\0");
+    assert_int_equal(*p, '\0');
+
+    /* Correctly handles tokens in quotes */
+    strncpy(data, "\"multi string\" something\n", sizeof(data));
+    p = data;
+    tok = ssh_config_get_token(&p);
+    assert_string_equal(tok, "multi string");
+    assert_int_equal(*p, ' ');
+    tok = ssh_config_get_token(&p);
+    assert_string_equal(tok, "something");
+    assert_int_equal(*p, '\0');
+
+    /* Consistently splits unquoted strings */
+    strncpy(data, "multi string something\n", sizeof(data));
+    p = data;
+    tok = ssh_config_get_token(&p);
+    assert_string_equal(tok, "multi");
+    assert_int_equal(*p, 's');
+    tok = ssh_config_get_token(&p);
+    assert_string_equal(tok, "string");
+    assert_int_equal(*p, 's');
+    tok = ssh_config_get_token(&p);
+    assert_string_equal(tok, "something");
+    assert_int_equal(*p, '\0');
+
+    /* It is made to parse also option=value pairs as well */
+    strncpy(data, "  key=value  \n", sizeof(data));
+    p = data;
+    tok = ssh_config_get_token(&p);
+    assert_string_equal(tok, "key");
+    assert_int_equal(*p, 'v');
+    tok = ssh_config_get_token(&p);
+    assert_string_equal(tok, "value");
+    assert_int_equal(*p, ' ');
+    tok = ssh_config_get_token(&p);
+    assert_string_equal(tok, "\0");
+    assert_int_equal(*p, '\0');
+
+    /* correctly parses even key=value pairs with either one in quotes */
+    strncpy(data, "  key=\"value with spaces\" \n", sizeof(data));
+    p = data;
+    tok = ssh_config_get_token(&p);
+    assert_string_equal(tok, "key");
+    assert_int_equal(*p, '\"');
+    tok = ssh_config_get_token(&p);
+    assert_string_equal(tok, "value with spaces");
+    assert_int_equal(*p, ' ');
+    tok = ssh_config_get_token(&p);
+    assert_string_equal(tok, "\0");
+    assert_int_equal(*p, '\0');
+}
+
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
@@ -920,6 +1043,8 @@ int torture_run_tests(void) {
         cmocka_unit_test(torture_config_proxyjump),
         cmocka_unit_test(torture_config_rekey),
         cmocka_unit_test(torture_config_pubkeyacceptedkeytypes),
+        cmocka_unit_test(torture_config_parser_get_cmd),
+        cmocka_unit_test(torture_config_parser_get_token),
     };
 
 
