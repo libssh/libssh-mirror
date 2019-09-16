@@ -274,10 +274,8 @@ static int
 ssh_config_match(char *value, const char *pattern, bool negate)
 {
     int ok, result = 0;
-    char *lowervalue;
 
-    lowervalue = (value) ? ssh_lowercase(value) : NULL;
-    ok = match_pattern_list(lowervalue, pattern, strlen(pattern), 0);
+    ok = match_pattern_list(value, pattern, strlen(pattern), 0);
     if (ok <= 0 && negate == true) {
         result = 1;
     } else if (ok > 0 && negate == false) {
@@ -286,7 +284,6 @@ ssh_config_match(char *value, const char *pattern, bool negate)
     SSH_LOG(SSH_LOG_TRACE, "%s '%s' against pattern '%s'%s (ok=%d)",
             result == 1 ? "Matched" : "Not matched", value, pattern,
             negate == true ? " (negated)" : "", ok);
-    SAFE_FREE(lowervalue);
     return result;
 }
 
