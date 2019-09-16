@@ -6,6 +6,7 @@
 #define _POSIX_PTHREAD_SEMANTICS
 # include <pwd.h>
 #endif
+#include <sys/stat.h>
 
 #include "torture.h"
 #include "torture_key.h"
@@ -732,11 +733,42 @@ static void torture_options_config_match(void **state)
 
     session->opts.port = 0;
 
-    /* Commands containing whitespace characters must be quoted. */
+    unlink("test_config");
+}
+
+static void torture_options_config_match_multi(void **state)
+{
+    ssh_session session = *state;
+    FILE *config = NULL;
+    struct stat sb;
+    int rv;
+
+    /* Required for options_parse_config() */
+    ssh_options_set(session, SSH_OPTIONS_HOST, "testhost1");
+
+    /* Exec is not executed when it can not be matched */
     torture_reset_config(session);
     config = fopen("test_config", "w");
     assert_non_null(config);
-    fputs("Match exec \"/bin/true 1\"\n"
+    fputs("Match host wronghost exec \"touch test_config_wrong\"\n"
+          "\tPort 33\n"
+          "Match all\n"
+          "\tPort 34\n",
+          config);
+    fclose(config);
+
+    rv = ssh_options_parse_config(session, "test_config");
+    assert_ssh_return_code(session, rv);
+    assert_int_equal(session->opts.port, 34);
+    assert_int_equal(stat("test_config_wrong", &sb), -1);
+
+    session->opts.port = 0;
+
+    /* After matching exec, other conditions can be used */
+    torture_reset_config(session);
+    config = fopen("test_config", "w");
+    assert_non_null(config);
+    fputs("Match exec true host testhost1\n"
           "\tPort 33\n"
           "Match all\n"
           "\tPort 34\n",
@@ -752,7 +784,20 @@ static void torture_options_config_match(void **state)
     assert_int_equal(session->opts.port, 33);
 #endif
 
-    session->opts.port = 0;
+    /* After matching exec, other conditions can be used */
+    torture_reset_config(session);
+    config = fopen("test_config", "w");
+    assert_non_null(config);
+    fputs("Match exec true host otherhost\n"
+          "\tPort 33\n"
+          "Match all\n"
+          "\tPort 34\n",
+          config);
+    fclose(config);
+
+    rv = ssh_options_parse_config(session, "test_config");
+    assert_ssh_return_code(session, rv);
+    assert_int_equal(session->opts.port, 34);
 
     unlink("test_config");
 }
@@ -1651,6 +1696,8 @@ int torture_run_tests(void) {
         cmocka_unit_test_setup_teardown(torture_options_copy, setup, teardown),
         cmocka_unit_test_setup_teardown(torture_options_config_host, setup, teardown),
         cmocka_unit_test_setup_teardown(torture_options_config_match,
+                                        setup, teardown),
+        cmocka_unit_test_setup_teardown(torture_options_config_match_multi,
                                         setup, teardown),
     };
 
