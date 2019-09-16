@@ -547,6 +547,48 @@ static void torture_config_match(void **state)
     assert_ssh_return_code(session, ret);
     assert_string_equal(session->opts.host, "otherhost");
 
+    torture_write_file(LIBSSH_TESTCONFIG10,
+                       "Match exec /bin/true\n"
+                       "\tHostName execed-true.com\n"
+                       "");
+    torture_reset_config(session);
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG10);
+    assert_ssh_return_code(session, ret);
+#ifdef _WIN32
+    /* The match exec is not supported on windows at this moment */
+    assert_string_equal(session->opts.host, "otherhost");
+#else
+    assert_string_equal(session->opts.host, "execed-true.com");
+#endif
+
+    torture_write_file(LIBSSH_TESTCONFIG10,
+                       "Match !exec /bin/false\n"
+                       "\tHostName execed-false.com\n"
+                       "");
+    torture_reset_config(session);
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG10);
+    assert_ssh_return_code(session, ret);
+#ifdef _WIN32
+    /* The match exec is not supported on windows at this moment */
+    assert_string_equal(session->opts.host, "otherhost");
+#else
+    assert_string_equal(session->opts.host, "execed-false.com");
+#endif
+
+    torture_write_file(LIBSSH_TESTCONFIG10,
+                       "Match exec \"test -f /bin/true\"\n"
+                       "\tHostName execed-arguments.com\n"
+                       "");
+    torture_reset_config(session);
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG10);
+    assert_ssh_return_code(session, ret);
+#ifdef _WIN32
+    /* The match exec is not supported on windows at this moment */
+    assert_string_equal(session->opts.host, "otherhost");
+#else
+    assert_string_equal(session->opts.host, "execed-arguments.com");
+#endif
+
     /* Try to create some invalid configurations */
     /* Missing argument to Match*/
     torture_write_file(LIBSSH_TESTCONFIG10,
@@ -593,7 +635,7 @@ static void torture_config_match(void **state)
     ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG10);
     assert_ssh_return_code_equal(session, ret, SSH_ERROR);
 
-    /* Missing argument to unsupported option exec */
+    /* Missing argument to option exec */
     torture_write_file(LIBSSH_TESTCONFIG10,
                        "Match exec\n"
                        "\tUser exec\n"

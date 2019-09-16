@@ -688,7 +688,7 @@ static void torture_options_config_match(void **state)
 
     session->opts.port = 0;
 
-    /* The Match exec keyword is ignored */
+    /* The Match exec keyword */
     torture_reset_config(session);
     config = fopen("test_config", "w");
     assert_non_null(config);
@@ -701,24 +701,12 @@ static void torture_options_config_match(void **state)
 
     rv = ssh_options_parse_config(session, "test_config");
     assert_ssh_return_code(session, rv);
+#ifdef _WIN32
+    /* The match exec is not supported on windows at this moment */
     assert_int_equal(session->opts.port, 34);
-
-    session->opts.port = 0;
-
-    /* The Match exec keyword can accept more arguments */
-    torture_reset_config(session);
-    config = fopen("test_config", "w");
-    assert_non_null(config);
-    fputs("Match exec /bin/true 1 \n"
-          "\tPort 33\n"
-          "Match all\n"
-          "\tPort 34\n",
-          config);
-    fclose(config);
-
-    rv = ssh_options_parse_config(session, "test_config");
-    assert_ssh_return_code(session, rv);
-    assert_int_equal(session->opts.port, 34);
+#else
+    assert_int_equal(session->opts.port, 33);
+#endif
 
     session->opts.port = 0;
 
@@ -735,7 +723,34 @@ static void torture_options_config_match(void **state)
 
     rv = ssh_options_parse_config(session, "test_config");
     assert_ssh_return_code(session, rv);
+#ifdef _WIN32
+    /* The match exec is not supported on windows at this moment */
     assert_int_equal(session->opts.port, 34);
+#else
+    assert_int_equal(session->opts.port, 33);
+#endif
+
+    session->opts.port = 0;
+
+    /* Commands containing whitespace characters must be quoted. */
+    torture_reset_config(session);
+    config = fopen("test_config", "w");
+    assert_non_null(config);
+    fputs("Match exec \"/bin/true 1\"\n"
+          "\tPort 33\n"
+          "Match all\n"
+          "\tPort 34\n",
+          config);
+    fclose(config);
+
+    rv = ssh_options_parse_config(session, "test_config");
+    assert_ssh_return_code(session, rv);
+#ifdef _WIN32
+    /* The match exec is not supported on windows at this moment */
+    assert_int_equal(session->opts.port, 34);
+#else
+    assert_int_equal(session->opts.port, 33);
+#endif
 
     session->opts.port = 0;
 
