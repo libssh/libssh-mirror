@@ -440,6 +440,8 @@ static void torture_config_unknown(void **state) {
 static void torture_config_match(void **state)
 {
     ssh_session session = *state;
+    char *localuser = NULL;
+    char config[1024];
     int ret = 0;
 
     /* Without any settings we should get all-matched.com hostname */
@@ -531,6 +533,19 @@ static void torture_config_match(void **state)
     assert_ssh_return_code(session, ret);
     assert_string_equal(session->opts.host, "canonical.com");
 
+    localuser = ssh_get_local_username();
+    assert_non_null(localuser);
+    snprintf(config, sizeof(config),
+             "Match localuser %s\n"
+             "\tHostName otherhost\n"
+             "", localuser);
+    free(localuser);
+    torture_write_file(LIBSSH_TESTCONFIG10, config);
+    torture_reset_config(session);
+    ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG10);
+    assert_ssh_return_code(session, ret);
+    assert_string_equal(session->opts.host, "otherhost");
+
     /* Try to create some invalid configurations */
     /* Missing argument to Match*/
     torture_write_file(LIBSSH_TESTCONFIG10,
@@ -550,7 +565,7 @@ static void torture_config_match(void **state)
     ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG10);
     assert_ssh_return_code_equal(session, ret, SSH_ERROR);
 
-    /* Missing argument to unsupported option localuser */
+    /* Missing argument to option localuser */
     torture_write_file(LIBSSH_TESTCONFIG10,
                        "Match localuser\n"
                        "\tUser localuser2\n"
@@ -559,7 +574,7 @@ static void torture_config_match(void **state)
     ret = ssh_config_parse_file(session, LIBSSH_TESTCONFIG10);
     assert_ssh_return_code_equal(session, ret, SSH_ERROR);
 
-    /* Missing argument to option user*/
+    /* Missing argument to option user */
     torture_write_file(LIBSSH_TESTCONFIG10,
                        "Match user\n"
                        "\tUser user2\n"

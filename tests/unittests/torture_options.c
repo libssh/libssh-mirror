@@ -571,6 +571,7 @@ static void torture_options_config_host(void **state) {
 static void torture_options_config_match(void **state)
 {
     ssh_session session = *state;
+    char *localuser = NULL;
     FILE *config = NULL;
     int rv;
 
@@ -665,11 +666,16 @@ static void torture_options_config_match(void **state)
 
     session->opts.port = 0;
 
-    /* The Match localuser keyword is ignored */
+    /* The Match localuser keyword */
     torture_reset_config(session);
     config = fopen("test_config", "w");
     assert_non_null(config);
-    fputs("Match originalhost origin\n"
+    fputs("Match localuser ", config);
+    localuser = ssh_get_local_username();
+    assert_non_null(localuser);
+    fputs(localuser, config);
+    free(localuser);
+    fputs("\n"
           "\tPort 33\n"
           "Match all\n"
           "\tPort 34\n",
@@ -678,7 +684,7 @@ static void torture_options_config_match(void **state)
 
     rv = ssh_options_parse_config(session, "test_config");
     assert_ssh_return_code(session, rv);
-    assert_int_equal(session->opts.port, 34);
+    assert_int_equal(session->opts.port, 33);
 
     session->opts.port = 0;
 
