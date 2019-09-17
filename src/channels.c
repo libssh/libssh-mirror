@@ -277,74 +277,84 @@ static int ssh_channel_open_termination(void *c){
  *
  * @return             SSH_OK if successful; SSH_ERROR otherwise.
  */
-static int channel_open(ssh_channel channel, const char *type, int window,
-    int maxpacket, ssh_buffer payload) {
-  ssh_session session = channel->session;
-  int err=SSH_ERROR;
-  int rc;
+static int
+channel_open(ssh_channel channel,
+             const char *type,
+             int window,
+             int maxpacket,
+             ssh_buffer payload)
+{
+    ssh_session session = channel->session;
+    int err = SSH_ERROR;
+    int rc;
 
-  switch(channel->state){
-  case SSH_CHANNEL_STATE_NOT_OPEN:
-    break;
-  case SSH_CHANNEL_STATE_OPENING:
-    goto pending;
-  case SSH_CHANNEL_STATE_OPEN:
-  case SSH_CHANNEL_STATE_CLOSED:
-  case SSH_CHANNEL_STATE_OPEN_DENIED:
-    goto end;
-  default:
-    ssh_set_error(session,SSH_FATAL,"Bad state in channel_open: %d",channel->state);
-  }
-  channel->local_channel = ssh_channel_new_id(session);
-  channel->local_maxpacket = maxpacket;
-  channel->local_window = window;
-
-  SSH_LOG(SSH_LOG_PROTOCOL,
-      "Creating a channel %d with %d window and %d max packet",
-      channel->local_channel, window, maxpacket);
-
-  rc = ssh_buffer_pack(session->out_buffer,
-                       "bsddd",
-                       SSH2_MSG_CHANNEL_OPEN,
-                       type,
-                       channel->local_channel,
-                       channel->local_window,
-                       channel->local_maxpacket);
-  if (rc != SSH_OK){
-    ssh_set_error_oom(session);
-    return err;
-  }
-
-  if (payload != NULL) {
-    if (ssh_buffer_add_buffer(session->out_buffer, payload) < 0) {
-      ssh_set_error_oom(session);
-
-      return err;
+    switch (channel->state) {
+    case SSH_CHANNEL_STATE_NOT_OPEN:
+        break;
+    case SSH_CHANNEL_STATE_OPENING:
+        goto pending;
+    case SSH_CHANNEL_STATE_OPEN:
+    case SSH_CHANNEL_STATE_CLOSED:
+    case SSH_CHANNEL_STATE_OPEN_DENIED:
+        goto end;
+    default:
+        ssh_set_error(session, SSH_FATAL, "Bad state in channel_open: %d",
+                      channel->state);
     }
-  }
-  channel->state = SSH_CHANNEL_STATE_OPENING;
-  if (ssh_packet_send(session) == SSH_ERROR) {
+
+    channel->local_channel = ssh_channel_new_id(session);
+    channel->local_maxpacket = maxpacket;
+    channel->local_window = window;
+
+    SSH_LOG(SSH_LOG_PROTOCOL,
+            "Creating a channel %d with %d window and %d max packet",
+            channel->local_channel, window, maxpacket);
+
+    rc = ssh_buffer_pack(session->out_buffer,
+                         "bsddd",
+                         SSH2_MSG_CHANNEL_OPEN,
+                         type,
+                         channel->local_channel,
+                         channel->local_window,
+                         channel->local_maxpacket);
+    if (rc != SSH_OK) {
+        ssh_set_error_oom(session);
+        return err;
+    }
+
+    if (payload != NULL) {
+        if (ssh_buffer_add_buffer(session->out_buffer, payload) < 0) {
+            ssh_set_error_oom(session);
+
+            return err;
+        }
+    }
+    channel->state = SSH_CHANNEL_STATE_OPENING;
+    if (ssh_packet_send(session) == SSH_ERROR) {
+        return err;
+    }
+
+    SSH_LOG(SSH_LOG_PACKET,
+            "Sent a SSH_MSG_CHANNEL_OPEN type %s for channel %d",
+            type, channel->local_channel);
+
+pending:
+    /* wait until channel is opened by server */
+    err = ssh_handle_packets_termination(session,
+                                         SSH_TIMEOUT_DEFAULT,
+                                         ssh_channel_open_termination,
+                                         channel);
+
+    if (session->session_state == SSH_SESSION_STATE_ERROR) {
+        err = SSH_ERROR;
+    }
+
+end:
+    if (channel->state == SSH_CHANNEL_STATE_OPEN) {
+        err = SSH_OK;
+    }
 
     return err;
-  }
-
-  SSH_LOG(SSH_LOG_PACKET,
-      "Sent a SSH_MSG_CHANNEL_OPEN type %s for channel %d",
-      type, channel->local_channel);
-pending:
-  /* wait until channel is opened by server */
-  err = ssh_handle_packets_termination(session,
-                                       SSH_TIMEOUT_DEFAULT,
-                                       ssh_channel_open_termination,
-                                       channel);
-
-  if (session->session_state == SSH_SESSION_STATE_ERROR)
-    err = SSH_ERROR;
-end:
-  if(channel->state == SSH_CHANNEL_STATE_OPEN)
-    err=SSH_OK;
-
-  return err;
 }
 
 /* return channel with corresponding local id, or NULL if not found */
