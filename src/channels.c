@@ -350,8 +350,13 @@ pending:
     }
 
 end:
+    /* This needs to pass the SSH_AGAIN from the above,
+     * but needs to catch failed channel states */
     if (channel->state == SSH_CHANNEL_STATE_OPEN) {
         err = SSH_OK;
+    } else if (err != SSH_AGAIN) {
+        /* Messages were handled correctly, but he channel state is invalid */
+        err = SSH_ERROR;
     }
 
     return err;
