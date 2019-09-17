@@ -2513,12 +2513,12 @@ error:
  *
  * Example:
 @code
-   rc = channel_request_exec(channel, "ps aux");
+   rc = ssh_channel_request_exec(channel, "ps aux");
    if (rc > 0) {
        return -1;
    }
 
-   while ((rc = channel_read(channel, buffer, sizeof(buffer), 0)) > 0) {
+   while ((rc = ssh_channel_read(channel, buffer, sizeof(buffer), 0)) > 0) {
        if (fwrite(buffer, 1, rc, stdout) != (unsigned int) rc) {
            return -1;
        }
