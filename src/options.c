@@ -1472,6 +1472,13 @@ int ssh_options_apply(ssh_session session) {
          it != NULL;
          it = it->next) {
         char *id = (char *) it->data;
+        if (strncmp(id, "pkcs11:", 6) == 0) {
+            /* PKCS#11 URIs are using percent-encoding so we can not mix
+             * it with ssh expansion of ssh escape characters.
+             * Skip these identities now, before we will have PKCS#11 support
+             */
+             continue;
+        }
         tmp = ssh_path_expand_escape(session, id);
         if (tmp == NULL) {
             return -1;
