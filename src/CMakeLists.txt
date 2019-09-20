@@ -165,6 +165,7 @@ set(libssh_SRCS
   chachapoly.c
   config_parser.c
   token.c
+  pki_ed25519_common.c
 )
 
 if (DEFAULT_C_NO_DEPRECATION_FLAGS)

@@ -837,7 +837,7 @@ ssh_string pki_signature_to_blob(const ssh_signature sig)
             break;
         }
         case SSH_KEYTYPE_ED25519:
-            sig_blob = pki_ed25519_sig_to_blob(sig);
+            sig_blob = pki_ed25519_signature_to_blob(sig);
             break;
         default:
             SSH_LOG(SSH_LOG_WARN, "Unknown signature key type: %s",
@@ -1008,7 +1008,7 @@ ssh_signature pki_signature_from_blob(const ssh_key pubkey,
             break;
         }
         case SSH_KEYTYPE_ED25519:
-            rc = pki_ed25519_sig_from_blob(sig, sig_blob);
+            rc = pki_signature_from_ed25519_blob(sig, sig_blob);
             if (rc == SSH_ERROR) {
                 ssh_signature_free(sig);
                 return NULL;
