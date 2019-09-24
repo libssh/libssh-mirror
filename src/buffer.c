@@ -1155,7 +1155,6 @@ int ssh_buffer_unpack_va(struct ssh_buffer_struct *buffer,
             *o.bignum = NULL;
             tmp_string = ssh_buffer_get_ssh_string(buffer);
             if (tmp_string == NULL) {
-                rc = SSH_ERROR;
                 break;
             }
             *o.bignum = ssh_make_string_bn(tmp_string);
@@ -1174,14 +1173,12 @@ int ssh_buffer_unpack_va(struct ssh_buffer_struct *buffer,
 
             o.cstring = va_arg(ap, char **);
             *o.cstring = NULL;
-            rc = ssh_buffer_get_u32(buffer, &u32len);
-            if (rc != 4){
-                rc = SSH_ERROR;
+            rlen = ssh_buffer_get_u32(buffer, &u32len);
+            if (rlen != 4){
                 break;
             }
             len = ntohl(u32len);
             if (len > max_len - 1) {
-                rc = SSH_ERROR;
                 break;
             }
 
@@ -1237,7 +1234,6 @@ int ssh_buffer_unpack_va(struct ssh_buffer_struct *buffer,
             break;
         default:
             SSH_LOG(SSH_LOG_WARN, "Invalid buffer format %c", *p);
-            rc = SSH_ERROR;
         }
         if (rc != SSH_OK) {
             break;
