@@ -33,7 +33,7 @@
 #include "session.c"
 #include "known_hosts.c"
 
-#define TORTURE_KNOWN_HOSTS_FILE "libssh_torture_knownhosts"
+#define TMP_FILE_TEMPLATE "known_hosts_XXXXXX"
 
 #define BADRSA "AAAAB3NzaC1yc2EAAAADAQABAAABAQChm5" \
                "a6Av65O8cKtx5YXOnui3wJnYE6A6J/I4kZSAibbn14Jcl+34VJQwv96f25AxNmo" \
@@ -62,6 +62,7 @@ static int session_setup(void **state)
     struct torture_state *s = *state;
     int verbosity = torture_libssh_verbosity();
     struct passwd *pwd;
+    bool process_config = false;
     int rc;
 
     pwd = getpwnam("bob");
@@ -74,8 +75,9 @@ static int session_setup(void **state)
     assert_non_null(s->ssh.session);
 
     ssh_options_set(s->ssh.session, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
+    ssh_options_set(s->ssh.session, SSH_OPTIONS_PROCESS_CONFIG,
+                    &process_config);
     ssh_options_set(s->ssh.session, SSH_OPTIONS_HOST, TORTURE_SSH_SERVER);
-
     ssh_options_set(s->ssh.session, SSH_OPTIONS_USER, TORTURE_SSH_USER_ALICE);
 
     return 0;
@@ -84,18 +86,9 @@ static int session_setup(void **state)
 static int session_teardown(void **state)
 {
     struct torture_state *s = *state;
-    char known_hosts_file[1024];
-
-    snprintf(known_hosts_file,
-             sizeof(known_hosts_file),
-             "%s/%s",
-             s->socket_dir,
-             TORTURE_KNOWN_HOSTS_FILE);
 
     ssh_disconnect(s->ssh.session);
     ssh_free(s->ssh.session);
-
-    unlink(known_hosts_file);
 
     return 0;
 }
@@ -104,17 +97,21 @@ static int session_teardown(void **state)
 static void torture_knownhosts_port(void **state) {
     struct torture_state *s = *state;
     ssh_session session = s->ssh.session;
-    char known_hosts_file[1024];
+    char tmp_file[1024] = {0};
+    char *known_hosts_file = NULL;
     char buffer[200];
     char *p;
     FILE *file;
     int rc;
 
-    snprintf(known_hosts_file,
-             sizeof(known_hosts_file),
+    snprintf(tmp_file,
+             sizeof(tmp_file),
              "%s/%s",
              s->socket_dir,
-             TORTURE_KNOWN_HOSTS_FILE);
+             TMP_FILE_TEMPLATE);
+
+    known_hosts_file = torture_create_temp_file(tmp_file);
+    assert_non_null(known_hosts_file);
 
     rc = ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, known_hosts_file);
     assert_ssh_return_code(session, rc);
@@ -142,6 +139,7 @@ static void torture_knownhosts_port(void **state) {
 
     ssh_options_set(session, SSH_OPTIONS_HOST, TORTURE_SSH_SERVER);
     ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, known_hosts_file);
+    free(known_hosts_file);
 
     rc = ssh_connect(session);
     assert_ssh_return_code(session, rc);
@@ -155,16 +153,20 @@ static void torture_knownhosts_wildcard(void **state)
 {
     struct torture_state *s = *state;
     ssh_session session = s->ssh.session;
-    char known_hosts_file[1024];
+    char tmp_file[1024] = {0};
+    char *known_hosts_file = NULL;
     const char *key = NULL;
     FILE *file;
     int rc;
 
-    snprintf(known_hosts_file,
-             sizeof(known_hosts_file),
+    snprintf(tmp_file,
+             sizeof(tmp_file),
              "%s/%s",
              s->socket_dir,
-             TORTURE_KNOWN_HOSTS_FILE);
+             TMP_FILE_TEMPLATE);
+
+    known_hosts_file = torture_create_temp_file(tmp_file);
+    assert_non_null(known_hosts_file);
 
     file = fopen(known_hosts_file, "w");
     assert_non_null(file);
@@ -176,6 +178,7 @@ static void torture_knownhosts_wildcard(void **state)
     assert_ssh_return_code(session, rc);
     rc = ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, known_hosts_file);
     assert_ssh_return_code(session, rc);
+    free(known_hosts_file);
 
     rc = ssh_connect(session);
     assert_ssh_return_code(session, rc);
@@ -188,16 +191,20 @@ static void torture_knownhosts_standard_port(void **state)
 {
     struct torture_state *s = *state;
     ssh_session session = s->ssh.session;
-    char known_hosts_file[1024];
+    char tmp_file[1024] = {0};
+    char *known_hosts_file = NULL;
     const char *key = NULL;
     FILE *file;
     int rc;
 
-    snprintf(known_hosts_file,
-             sizeof(known_hosts_file),
+    snprintf(tmp_file,
+             sizeof(tmp_file),
              "%s/%s",
              s->socket_dir,
-             TORTURE_KNOWN_HOSTS_FILE);
+             TMP_FILE_TEMPLATE);
+
+    known_hosts_file = torture_create_temp_file(tmp_file);
+    assert_non_null(known_hosts_file);
 
     file = fopen(known_hosts_file, "w");
     assert_non_null(file);
@@ -209,6 +216,7 @@ static void torture_knownhosts_standard_port(void **state)
     assert_ssh_return_code(session, rc);
     rc = ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, known_hosts_file);
     assert_ssh_return_code(session, rc);
+    free(known_hosts_file);
 
     rc = ssh_connect(session);
     assert_ssh_return_code(session, rc);
@@ -220,15 +228,19 @@ static void torture_knownhosts_standard_port(void **state)
 static void torture_knownhosts_fail(void **state) {
     struct torture_state *s = *state;
     ssh_session session = s->ssh.session;
-    char known_hosts_file[1024];
+    char tmp_file[1024] = {0};
+    char *known_hosts_file = NULL;
     FILE *file;
     int rc;
 
-    snprintf(known_hosts_file,
-             sizeof(known_hosts_file),
+    snprintf(tmp_file,
+             sizeof(tmp_file),
              "%s/%s",
              s->socket_dir,
-             TORTURE_KNOWN_HOSTS_FILE);
+             TMP_FILE_TEMPLATE);
+
+    known_hosts_file = torture_create_temp_file(tmp_file);
+    assert_non_null(known_hosts_file);
 
     rc = ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, known_hosts_file);
     assert_ssh_return_code(session, rc);
@@ -238,6 +250,7 @@ static void torture_knownhosts_fail(void **state) {
 
     file = fopen(known_hosts_file, "w");
     assert_non_null(file);
+    free(known_hosts_file);
 
     fprintf(file, "127.0.0.10 ssh-rsa %s\n", BADRSA);
     fclose(file);
@@ -252,15 +265,19 @@ static void torture_knownhosts_fail(void **state) {
 static void torture_knownhosts_other(void **state) {
     struct torture_state *s = *state;
     ssh_session session = s->ssh.session;
-    char known_hosts_file[1024];
+    char tmp_file[1024] = {0};
+    char *known_hosts_file = NULL;
     FILE *file;
     int rc;
 
-    snprintf(known_hosts_file,
-             sizeof(known_hosts_file),
+    snprintf(tmp_file,
+             sizeof(tmp_file),
              "%s/%s",
              s->socket_dir,
-             TORTURE_KNOWN_HOSTS_FILE);
+             TMP_FILE_TEMPLATE);
+
+    known_hosts_file = torture_create_temp_file(tmp_file);
+    assert_non_null(known_hosts_file);
 
     rc = ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, known_hosts_file);
     assert_ssh_return_code(session, rc);
@@ -270,6 +287,8 @@ static void torture_knownhosts_other(void **state) {
 
     file = fopen(known_hosts_file, "w");
     assert_non_null(file);
+    free(known_hosts_file);
+
     fprintf(file, "127.0.0.10 ssh-rsa %s\n", BADRSA);
     fclose(file);
 
@@ -283,14 +302,18 @@ static void torture_knownhosts_other(void **state) {
 static void torture_knownhosts_other_auto(void **state) {
     struct torture_state *s = *state;
     ssh_session session = s->ssh.session;
-    char known_hosts_file[1024];
+    char tmp_file[1024] = {0};
+    char *known_hosts_file = NULL;
     int rc;
 
-    snprintf(known_hosts_file,
-             sizeof(known_hosts_file),
+    snprintf(tmp_file,
+             sizeof(tmp_file),
              "%s/%s",
              s->socket_dir,
-             TORTURE_KNOWN_HOSTS_FILE);
+             TMP_FILE_TEMPLATE);
+
+    known_hosts_file = torture_create_temp_file(tmp_file);
+    assert_non_null(known_hosts_file);
 
     rc = ssh_options_set(session, SSH_OPTIONS_HOST, TORTURE_SSH_SERVER);
     assert_ssh_return_code(session, rc);
@@ -333,20 +356,25 @@ static void torture_knownhosts_other_auto(void **state) {
     assert_int_equal(rc, SSH_SERVER_KNOWN_OK);
 
     /* session will be freed by session_teardown() */
+    free(known_hosts_file);
 }
 
 static void torture_knownhosts_conflict(void **state) {
     struct torture_state *s = *state;
     ssh_session session = s->ssh.session;
-    char known_hosts_file[1024];
+    char tmp_file[1024] = {0};
+    char *known_hosts_file = NULL;
     FILE *file;
     int rc;
 
-    snprintf(known_hosts_file,
-             sizeof(known_hosts_file),
+    snprintf(tmp_file,
+             sizeof(tmp_file),
              "%s/%s",
              s->socket_dir,
-             TORTURE_KNOWN_HOSTS_FILE);
+             TMP_FILE_TEMPLATE);
+
+    known_hosts_file = torture_create_temp_file(tmp_file);
+    assert_non_null(known_hosts_file);
 
     rc = ssh_options_set(session, SSH_OPTIONS_HOST, TORTURE_SSH_SERVER);
     assert_ssh_return_code(session, rc);
@@ -393,6 +421,7 @@ static void torture_knownhosts_conflict(void **state) {
     assert_int_equal(rc, SSH_SERVER_KNOWN_OK);
 
     /* session will be freed by session_teardown() */
+    free(known_hosts_file);
 }
 
 static void torture_knownhosts_no_hostkeychecking(void **state)
@@ -400,19 +429,24 @@ static void torture_knownhosts_no_hostkeychecking(void **state)
 
     struct torture_state *s = *state;
     ssh_session session = s->ssh.session;
-    char known_hosts_file[1024] = {0};
+    char tmp_file[1024] = {0};
+    char *known_hosts_file = NULL;
     enum ssh_known_hosts_e found;
     int strict_host_key_checking = 0;
     int rc;
 
-    snprintf(known_hosts_file,
-             sizeof(known_hosts_file),
+    snprintf(tmp_file,
+             sizeof(tmp_file),
              "%s/%s",
              s->socket_dir,
-             TORTURE_KNOWN_HOSTS_FILE);
+             TMP_FILE_TEMPLATE);
+
+    known_hosts_file = torture_create_temp_file(tmp_file);
+    assert_non_null(known_hosts_file);
 
     rc = ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, known_hosts_file);
     assert_ssh_return_code(session, rc);
+    free(known_hosts_file);
 
     rc = ssh_options_set(session, SSH_OPTIONS_HOSTKEYS, "ecdsa-sha2-nistp521");
     assert_ssh_return_code(session, rc);
