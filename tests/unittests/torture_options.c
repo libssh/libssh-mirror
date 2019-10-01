@@ -693,7 +693,7 @@ static void torture_options_config_match(void **state)
     torture_reset_config(session);
     config = fopen("test_config", "w");
     assert_non_null(config);
-    fputs("Match exec /bin/true\n"
+    fputs("Match exec true\n"
           "\tPort 33\n"
           "Match all\n"
           "\tPort 34\n",
@@ -715,7 +715,7 @@ static void torture_options_config_match(void **state)
     torture_reset_config(session);
     config = fopen("test_config", "w");
     assert_non_null(config);
-    fputs("Match exec \"/bin/true 1\"\n"
+    fputs("Match exec \"true 1\"\n"
           "\tPort 33\n"
           "Match all\n"
           "\tPort 34\n",

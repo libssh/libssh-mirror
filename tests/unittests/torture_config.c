@@ -548,7 +548,7 @@ static void torture_config_match(void **state)
     assert_string_equal(session->opts.host, "otherhost");
 
     torture_write_file(LIBSSH_TESTCONFIG10,
-                       "Match exec /bin/true\n"
+                       "Match exec true\n"
                        "\tHostName execed-true.com\n"
                        "");
     torture_reset_config(session);
@@ -562,7 +562,7 @@ static void torture_config_match(void **state)
 #endif
 
     torture_write_file(LIBSSH_TESTCONFIG10,
-                       "Match !exec /bin/false\n"
+                       "Match !exec false\n"
                        "\tHostName execed-false.com\n"
                        "");
     torture_reset_config(session);
@@ -576,7 +576,7 @@ static void torture_config_match(void **state)
 #endif
 
     torture_write_file(LIBSSH_TESTCONFIG10,
-                       "Match exec \"test -f /bin/true\"\n"
+                       "Match exec \"test 1 -eq 1\"\n"
                        "\tHostName execed-arguments.com\n"
                        "");
     torture_reset_config(session);
