@@ -1946,6 +1946,8 @@ ssh_packet_set_newkeys(ssh_session session,
         session->next_crypto->decryptkey,
         session->next_crypto->decryptIV);
     if (rc < 0) {
+        /* On error, make sure it is not used */
+        session->next_crypto->used = 0;
         return SSH_ERROR;
     }
 
@@ -1954,6 +1956,8 @@ ssh_packet_set_newkeys(ssh_session session,
         session->next_crypto->encryptkey,
         session->next_crypto->encryptIV);
     if (rc < 0) {
+        /* On error, make sure it is not used */
+        session->next_crypto->used = 0;
         return SSH_ERROR;
     }
 
