@@ -103,6 +103,7 @@ static void torture_knownhosts_port(void **state) {
     char *p;
     FILE *file;
     int rc;
+    bool process_config = false;
 
     snprintf(tmp_file,
              sizeof(tmp_file),
@@ -137,6 +138,7 @@ static void torture_knownhosts_port(void **state) {
     /* Now, connect back to the ssh server and verify the known host line */
     s->ssh.session = session = ssh_new();
 
+    ssh_options_set(session, SSH_OPTIONS_PROCESS_CONFIG, &process_config);
     ssh_options_set(session, SSH_OPTIONS_HOST, TORTURE_SSH_SERVER);
     ssh_options_set(session, SSH_OPTIONS_KNOWNHOSTS, known_hosts_file);
     free(known_hosts_file);
