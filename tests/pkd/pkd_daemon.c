@@ -252,6 +252,7 @@ static int pkd_exec_hello(int fd, struct pkd_daemon_args *args)
     size_t kex_len = 0;
     const char *all_ciphers = NULL;
     const uint64_t rekey_data_limit = args->rekey_data_limit;
+    bool process_config = false;
 
     pkd_state.eof_received = 0;
     pkd_state.close_received  = 0;
@@ -288,6 +289,13 @@ static int pkd_exec_hello(int fd, struct pkd_daemon_args *args)
     rc = ssh_bind_options_set(b, SSH_BIND_OPTIONS_LOG_VERBOSITY, &level);
     if (rc != 0) {
         pkderr("ssh_bind_options_set log verbosity: %s\n", ssh_get_error(b));
+        goto outclose;
+    }
+
+    rc = ssh_bind_options_set(b, SSH_BIND_OPTIONS_PROCESS_CONFIG,
+                              &process_config);
+    if (rc != 0) {
+        pkderr("ssh_bind_options_set process config: %s\n", ssh_get_error(b));
         goto outclose;
     }
 
