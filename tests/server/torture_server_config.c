@@ -468,9 +468,6 @@ static void torture_server_config_hostkey(void **state)
                 "HostKey %s\n",
                 hostkey_files[i]);
 
-        rc = try_config_content(state, config_content, true);
-        assert_int_equal(rc, 0);
-
         rc = try_config_content(state, config_content, false);
         assert_int_equal(rc, 0);
     }
@@ -510,9 +507,6 @@ static void torture_server_config_ciphers(void **state)
                  "HostKey %s\nCiphers %s\n",
                  hostkey_files[i], ciphers);
 
-        rc = try_config_content(state, config_content, true);
-        assert_int_equal(rc, 0);
-
         rc = try_config_content(state, config_content, false);
         assert_int_equal(rc, 0);
 
@@ -523,9 +517,6 @@ static void torture_server_config_ciphers(void **state)
                     sizeof(config_content),
                     "HostKey %s\nCiphers %s\n",
                     hostkey_files[i], tokens->tokens[j]);
-
-            rc = try_config_content(state, config_content, true);
-            assert_int_equal(rc, 0);
 
             rc = try_config_content(state, config_content, false);
             assert_int_equal(rc, 0);
@@ -571,9 +562,6 @@ static void torture_server_config_macs(void **state)
                  "HostKey %s\nMACs %s\n",
                  hostkey_files[i], macs);
 
-        rc = try_config_content(state, config_content, true);
-        assert_int_equal(rc, 0);
-
         rc = try_config_content(state, config_content, false);
         assert_int_equal(rc, 0);
 
@@ -584,9 +572,6 @@ static void torture_server_config_macs(void **state)
                     sizeof(config_content),
                     "HostKey %s\nMACs %s\n",
                     hostkey_files[i], tokens->tokens[j]);
-
-            rc = try_config_content(state, config_content, true);
-            assert_int_equal(rc, 0);
 
             rc = try_config_content(state, config_content, false);
             assert_int_equal(rc, 0);
@@ -632,9 +617,6 @@ static void torture_server_config_kex(void **state)
                  "HostKey %s\nKexAlgorithms %s\n",
                  hostkey_files[i], kex);
 
-        rc = try_config_content(state, config_content, true);
-        assert_int_equal(rc, 0);
-
         rc = try_config_content(state, config_content, false);
         assert_int_equal(rc, 0);
 
@@ -645,9 +627,6 @@ static void torture_server_config_kex(void **state)
                     sizeof(config_content),
                     "HostKey %s\nKexAlgorithms %s\n",
                     hostkey_files[i], tokens->tokens[j]);
-
-            rc = try_config_content(state, config_content, true);
-            assert_int_equal(rc, 0);
 
             rc = try_config_content(state, config_content, false);
             assert_int_equal(rc, 0);
@@ -688,9 +667,6 @@ static void torture_server_config_hostkey_algorithms(void **state)
                  "HostKey %s\nHostKeyAlgorithms %s\n",
                  hostkey_files[i], allowed);
 
-        rc = try_config_content(state, config_content, true);
-        assert_int_equal(rc, 0);
-
         rc = try_config_content(state, config_content, false);
         assert_int_equal(rc, 0);
     }
@@ -704,9 +680,6 @@ static void torture_server_config_hostkey_algorithms(void **state)
                 "HostKey %s\nHostkeyAlgorithms %s\n",
                 tss->ed25519_hostkey, "ssh-ed25519");
 
-        rc = try_config_content(state, config_content, true);
-        assert_int_equal(rc, 0);
-
         rc = try_config_content(state, config_content, false);
         assert_int_equal(rc, 0);
 
@@ -715,9 +688,6 @@ static void torture_server_config_hostkey_algorithms(void **state)
                 sizeof(config_content),
                 "HostKey %s\nHostkeyAlgorithms %s\n",
                 tss->rsa_hostkey, "ssh-rsa");
-
-        rc = try_config_content(state, config_content, true);
-        assert_int_equal(rc, 0);
 
         rc = try_config_content(state, config_content, false);
         assert_int_equal(rc, 0);
@@ -729,9 +699,6 @@ static void torture_server_config_hostkey_algorithms(void **state)
             "HostKey %s\nHostkeyAlgorithms %s\n",
             tss->rsa_hostkey, "rsa-sha2-256");
 
-    rc = try_config_content(state, config_content, true);
-    assert_int_equal(rc, 0);
-
     rc = try_config_content(state, config_content, false);
     assert_int_equal(rc, 0);
 
@@ -740,9 +707,6 @@ static void torture_server_config_hostkey_algorithms(void **state)
             sizeof(config_content),
             "HostKey %s\nHostkeyAlgorithms %s\n",
             tss->rsa_hostkey, "rsa-sha2-512");
-
-    rc = try_config_content(state, config_content, true);
-    assert_int_equal(rc, 0);
 
     rc = try_config_content(state, config_content, false);
     assert_int_equal(rc, 0);
@@ -753,9 +717,6 @@ static void torture_server_config_hostkey_algorithms(void **state)
             "HostKey %s\nHostkeyAlgorithms %s\n",
             tss->ecdsa_256_hostkey, "ecdsa-sha2-nistp256");
 
-    rc = try_config_content(state, config_content, true);
-    assert_int_equal(rc, 0);
-
     rc = try_config_content(state, config_content, false);
     assert_int_equal(rc, 0);
 
@@ -765,9 +726,6 @@ static void torture_server_config_hostkey_algorithms(void **state)
             "HostKey %s\nHostkeyAlgorithms %s\n",
             tss->ecdsa_384_hostkey, "ecdsa-sha2-nistp384");
 
-    rc = try_config_content(state, config_content, true);
-    assert_int_equal(rc, 0);
-
     rc = try_config_content(state, config_content, false);
     assert_int_equal(rc, 0);
 
@@ -776,9 +734,6 @@ static void torture_server_config_hostkey_algorithms(void **state)
             sizeof(config_content),
             "HostKey %s\nHostkeyAlgorithms %s\n",
             tss->ecdsa_521_hostkey, "ecdsa-sha2-nistp521");
-
-    rc = try_config_content(state, config_content, true);
-    assert_int_equal(rc, 0);
 
     rc = try_config_content(state, config_content, false);
     assert_int_equal(rc, 0);
@@ -790,9 +745,6 @@ static void torture_server_config_hostkey_algorithms(void **state)
                 sizeof(config_content),
                 "HostKey %s\nHostkeyAlgorithms %s\n",
                 tss->dsa_hostkey, "ssh-dss");
-
-        rc = try_config_content(state, config_content, true);
-        assert_int_equal(rc, 0);
 
         rc = try_config_content(state, config_content, false);
         assert_int_equal(rc, 0);
@@ -814,9 +766,6 @@ static void torture_server_config_unknown(void **state)
             sizeof(config_content),
             "HostKey %s\nUnknownOption unknown-value1,unknown-value2\n",
             tss->rsa_hostkey);
-
-    rc = try_config_content(state, config_content, true);
-    assert_int_equal(rc, 0);
 
     rc = try_config_content(state, config_content, false);
     assert_int_equal(rc, 0);
