@@ -22,7 +22,7 @@
  */
 
 #include "config.h"
-
+#include "tests_config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -605,6 +605,7 @@ static void torture_setup_create_sshd_config(void **state, bool pam)
         "/usr/lib/openssh/sftp-server",     /* Debian */
     };
 #ifndef OPENSSH_VERSION_MAJOR
+#warning "OPENSSH_VERSION_MAJOR undefined, using default"
 #define OPENSSH_VERSION_MAJOR 7U
 #define OPENSSH_VERSION_MINOR 0U
 #endif /* OPENSSH_VERSION_MAJOR */
