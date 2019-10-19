@@ -588,7 +588,7 @@ static void torture_setup_create_sshd_config(void **state, bool pam)
     char rsa_hostkey[1024];
     char ecdsa_hostkey[1024];
     char trusted_ca_pubkey[1024];
-    char sshd_config[2048];
+    char sshd_config[4096];
     char sshd_path[1024];
     const char *additional_config = NULL;
     struct stat sb;
