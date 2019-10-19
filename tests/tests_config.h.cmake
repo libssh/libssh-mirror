@@ -65,3 +65,4 @@
 /* Available programs */
 
 #cmakedefine NC_EXECUTABLE "${NC_EXECUTABLE}"
+#cmakedefine SSHD_EXECUTABLE "${SSHD_EXECUTABLE}"

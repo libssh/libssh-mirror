@@ -104,23 +104,23 @@ if (SSH_EXECUTABLE)
 
 endif()
 
+find_program(SSHD_EXECUTABLE
+             NAME
+                sshd
+             PATHS
+                /sbin
+                /usr/sbin
+                /usr/local/sbin)
+
 if (CLIENT_TESTING OR SERVER_TESTING)
     find_package(socket_wrapper 1.1.5 REQUIRED)
     find_package(nss_wrapper 1.1.2 REQUIRED)
     find_package(uid_wrapper 1.2.0 REQUIRED)
     find_package(pam_wrapper 1.0.1 REQUIRED)
 
-    find_program(SSHD_EXECUTABLE
-                 NAME
-                    sshd
-                 PATHS
-                    /sbin
-                    /usr/sbin
-                    /usr/local/sbin)
     if (NOT SSHD_EXECUTABLE)
         message(SEND_ERROR "Could not find sshd which is required for client testing")
     endif()
-
     find_program(NC_EXECUTABLE
                  NAME
                     nc
