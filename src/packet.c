@@ -939,18 +939,38 @@ struct ssh_crypto_struct *
 ssh_packet_get_current_crypto(ssh_session session,
                               enum ssh_crypto_direction_e direction)
 {
+    struct ssh_crypto_struct *crypto = NULL;
+
     if (session == NULL) {
         return NULL;
     }
 
     if (session->current_crypto != NULL &&
         session->current_crypto->used & direction) {
-        return session->current_crypto;
+        crypto = session->current_crypto;
+    } else if (session->next_crypto != NULL &&
+               session->next_crypto->used & direction) {
+        crypto = session->next_crypto;
+    } else {
+        return NULL;
     }
 
-    if (session->next_crypto != NULL &&
-        session->next_crypto->used & direction) {
-        return session->next_crypto;
+    switch (direction) {
+    case SSH_DIRECTION_IN:
+        if (crypto->in_cipher != NULL) {
+            return crypto;
+        }
+        break;
+    case SSH_DIRECTION_OUT:
+        if (crypto->out_cipher != NULL) {
+            return crypto;
+        }
+        break;
+    case SSH_DIRECTION_BOTH:
+        if (crypto->in_cipher != NULL &&
+            crypto->out_cipher != NULL) {
+            return crypto;
+        }
     }
 
     return NULL;
