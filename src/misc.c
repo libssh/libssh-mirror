@@ -1508,4 +1508,188 @@ uint64_inc(unsigned char *counter)
     }
 }
 
+/**
+ * @internal
+ *
+ * @brief Quote file name to be used on shell.
+ *
+ * Try to put the given file name between single quotes. There are special
+ * cases:
+ *
+ * - When the '\'' char is found in the file name, it is double quoted
+ *   - example:
+ *     input: a'b
+ *     output: 'a'"'"'b'
+ * - When the '!' char is found in the file name, it is replaced by an unquoted
+ *   verbatim char "\!"
+ *   - example:
+ *     input: a!b
+ *     output 'a'\!'b'
+ *
+ * @param[in]   file_name  File name string to be quoted before used on shell
+ * @param[out]  buf       Buffer to receive the final quoted file name.  Must
+ *                        have room for the final quoted string.  The maximum
+ *                        output length would be (3 * strlen(file_name) + 1)
+ *                        since in the worst case each character would be
+ *                        replaced by 3 characters, plus the terminating '\0'.
+ * @param[in]   buf_len   The size of the provided output buffer
+ *
+ * @returns SSH_ERROR on error; length of the resulting string not counting the
+ * string terminator '\0'
+ * */
+int ssh_quote_file_name(const char *file_name, char *buf, size_t buf_len)
+{
+    const char *src = NULL;
+    char *dst = NULL;
+    size_t required_buf_len;
+
+    enum ssh_quote_state_e state = NO_QUOTE;
+
+    if (file_name == NULL || buf == NULL || buf_len == 0) {
+        SSH_LOG(SSH_LOG_WARNING, "Invalid parameter");
+        return SSH_ERROR;
+    }
+
+    /* Only allow file names smaller than 32kb. */
+    if (strlen(file_name) > 32 * 1024) {
+        SSH_LOG(SSH_LOG_WARNING, "File name too long");
+        return SSH_ERROR;
+    }
+
+    /* Paranoia check */
+    required_buf_len = (size_t)3 * strlen(file_name) + 1;
+    if (required_buf_len > buf_len) {
+        SSH_LOG(SSH_LOG_WARNING, "Buffer too small");
+        return SSH_ERROR;
+    }
+
+    src = file_name;
+    dst = buf;
+
+    while ((*src != '\0')) {
+        switch (*src) {
+
+        /* The '\'' char is double quoted */
+
+        case '\'':
+            switch (state) {
+            case NO_QUOTE:
+                /* Start a new double quoted string. The '\'' char will be
+                 * copied to the beginning of it at the end of the loop. */
+                *dst++ = '"';
+                break;
+            case SINGLE_QUOTE:
+                /* Close the current single quoted string and start a new double
+                 * quoted string. The '\'' char will be copied to the beginning
+                 * of it at the end of the loop. */
+                *dst++ = '\'';
+                *dst++ = '"';
+                break;
+            case DOUBLE_QUOTE:
+                /* If already in the double quoted string, keep copying the
+                 * sequence of chars. */
+                break;
+            default:
+                /* Should never be reached */
+                goto error;
+            }
+
+            /* When the '\'' char is found, the resulting state will be
+             * DOUBLE_QUOTE in any case*/
+            state = DOUBLE_QUOTE;
+            break;
+
+        /* The '!' char is replaced by unquoted "\!" */
+
+        case '!':
+            switch (state) {
+            case NO_QUOTE:
+                /* The '!' char is interpreted in some shells (e.g. CSH) even
+                 * when is quoted with single quotes.  Replace it with unquoted
+                 * "\!" which is correctly interpreted as the '!' character. */
+                *dst++ = '\\';
+                break;
+            case SINGLE_QUOTE:
+                /* Close the current quoted string and replace '!' for unquoted
+                 * "\!" */
+                *dst++ = '\'';
+                *dst++ = '\\';
+                break;
+            case DOUBLE_QUOTE:
+                /* Close current quoted string and replace  "!" for unquoted
+                 * "\!" */
+                *dst++ = '"';
+                *dst++ = '\\';
+                break;
+            default:
+                /* Should never be reached */
+                goto error;
+            }
+
+            /* When the '!' char is found, the resulting state will be NO_QUOTE
+             * in any case*/
+            state = NO_QUOTE;
+            break;
+
+        /* Ordinary chars are single quoted */
+
+        default:
+            switch (state) {
+            case NO_QUOTE:
+                /* Start a new single quoted string */
+                *dst++ = '\'';
+                break;
+            case SINGLE_QUOTE:
+                /* If already in the single quoted string, keep copying the
+                 * sequence of chars. */
+                break;
+            case DOUBLE_QUOTE:
+                /* Close current double quoted string and start a new single
+                 * quoted string. */
+                *dst++ = '"';
+                *dst++ = '\'';
+                break;
+            default:
+                /* Should never be reached */
+                goto error;
+            }
+
+            /* When an ordinary char is found, the resulting state will be
+             * SINGLE_QUOTE in any case*/
+            state = SINGLE_QUOTE;
+            break;
+        }
+
+        /* Copy the current char to output */
+        *dst++ = *src++;
+    }
+
+    /* Close the quoted string when necessary */
+
+    switch (state) {
+    case NO_QUOTE:
+        /* No open string */
+        break;
+    case SINGLE_QUOTE:
+        /* Close current single quoted string */
+        *dst++ = '\'';
+        break;
+    case DOUBLE_QUOTE:
+        /* Close current double quoted string */
+        *dst++ = '"';
+        break;
+    default:
+        /* Should never be reached */
+        goto error;
+    }
+
+    /* Put the string terminator */
+    *dst = '\0';
+
+    return dst - buf;
+
+error:
+    return SSH_ERROR;
+}
+
 /** @} */
