@@ -1884,6 +1884,10 @@ ssh_packet_set_newkeys(ssh_session session,
             direction & SSH_DIRECTION_IN ? " IN " : "",
             direction & SSH_DIRECTION_OUT ? " OUT " : "");
 
+    if (session->next_crypto == NULL) {
+        return SSH_ERROR;
+    }
+
     session->next_crypto->used |= direction;
     if (session->current_crypto != NULL) {
         if (session->current_crypto->used & direction) {
@@ -1946,6 +1950,11 @@ ssh_packet_set_newkeys(ssh_session session,
     }
 
     if (ssh_generate_session_keys(session) < 0) {
+        return SSH_ERROR;
+    }
+
+    if (session->next_crypto->in_cipher == NULL ||
+        session->next_crypto->out_cipher == NULL) {
         return SSH_ERROR;
     }
 
