@@ -205,6 +205,11 @@ endif (WITH_SYMBOL_VERSIONING AND ABIMAP_FOUND)
 
 add_custom_target(dist COMMAND ${CMAKE_MAKE_PROGRAM} package_source DEPENDS ${_SYMBOL_TARGET})
 
+# Link compile database for clangd
+execute_process(COMMAND cmake -E create_symlink
+                "${CMAKE_BINARY_DIR}/compile_commands.json"
+                "${CMAKE_SOURCE_DIR}/compile_commands.json")
+
 message(STATUS "********************************************")
 message(STATUS "********** ${PROJECT_NAME} build options : **********")
 
