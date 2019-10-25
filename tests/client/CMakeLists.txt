@@ -17,11 +17,19 @@ set(LIBSSH_CLIENT_TESTS
     torture_request_env
     torture_client_global_requests)
 
+find_program(SCP_EXECUTABLE NAMES scp)
+if (SCP_EXECUTABLE)
+    set(LIBSSH_CLIENT_TESTS
+        ${LIBSSH_CLIENT_TESTS}
+        torture_scp)
+endif()
+
 if (DEFAULT_C_NO_DEPRECATION_FLAGS)
     set_source_files_properties(torture_knownhosts.c
                                 PROPERTIES
                                     COMPILE_FLAGS ${DEFAULT_C_NO_DEPRECATION_FLAGS})
 endif()
+
 if (WITH_SFTP)
     if (WITH_BENCHMARKS)
         set(SFTP_BENCHMARK_TESTS
