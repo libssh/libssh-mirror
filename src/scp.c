@@ -113,7 +113,6 @@ int ssh_scp_init(ssh_scp scp)
 {
     int rc;
     char execbuffer[1024] = {0};
-    uint8_t code;
 
     if (scp == NULL) {
         return SSH_ERROR;
@@ -157,19 +156,8 @@ int ssh_scp_init(ssh_scp scp)
     }
 
     if (scp->mode == SSH_SCP_WRITE) {
-        rc = ssh_channel_read(scp->channel, &code, 1, 0);
-        if (rc <= 0) {
-            ssh_set_error(scp->session, SSH_FATAL,
-                          "Error reading status code: %s",
-                          ssh_get_error(scp->session));
-            scp->state = SSH_SCP_ERROR;
-            return SSH_ERROR;
-        }
-
-        if (code != 0) {
-            ssh_set_error(scp->session, SSH_FATAL,
-                          "scp status code %ud not valid", code);
-            scp->state = SSH_SCP_ERROR;
+        rc = ssh_scp_response(scp, NULL);
+        if (rc != 0) {
             return SSH_ERROR;
         }
     } else {
@@ -277,7 +265,6 @@ int ssh_scp_push_directory(ssh_scp scp, const char *dirname, int mode)
 {
     char buffer[1024] = {0};
     int rc;
-    uint8_t code;
     char *dir = NULL;
     char *perms = NULL;
 
@@ -303,19 +290,8 @@ int ssh_scp_push_directory(ssh_scp scp, const char *dirname, int mode)
         return SSH_ERROR;
     }
 
-    rc = ssh_channel_read(scp->channel, &code, 1, 0);
-    if (rc <= 0) {
-        ssh_set_error(scp->session, SSH_FATAL,
-                      "Error reading status code: %s",
-                      ssh_get_error(scp->session));
-        scp->state = SSH_SCP_ERROR;
-        return SSH_ERROR;
-    }
-
-    if (code != 0) {
-        ssh_set_error(scp->session, SSH_FATAL, "scp status code %ud not valid",
-                      code);
-        scp->state = SSH_SCP_ERROR;
+    rc = ssh_scp_response(scp, NULL);
+    if (rc != 0) {
         return SSH_ERROR;
     }
 
@@ -334,7 +310,6 @@ int ssh_scp_leave_directory(ssh_scp scp)
 {
     char buffer[] = "E\n";
     int rc;
-    uint8_t code;
 
     if (scp == NULL) {
         return SSH_ERROR;
@@ -352,18 +327,8 @@ int ssh_scp_leave_directory(ssh_scp scp)
         return SSH_ERROR;
     }
 
-    rc = ssh_channel_read(scp->channel, &code, 1, 0);
-    if (rc <= 0) {
-        ssh_set_error(scp->session, SSH_FATAL, "Error reading status code: %s",
-                      ssh_get_error(scp->session));
-        scp->state = SSH_SCP_ERROR;
-        return SSH_ERROR;
-    }
-
-    if (code != 0) {
-        ssh_set_error(scp->session, SSH_FATAL, "scp status code %ud not valid",
-                      code);
-        scp->state = SSH_SCP_ERROR;
+    rc = ssh_scp_response(scp, NULL);
+    if (rc != 0) {
         return SSH_ERROR;
     }
 
@@ -395,7 +360,6 @@ int ssh_scp_push_file64(ssh_scp scp, const char *filename, uint64_t size,
     int rc;
     char *file = NULL;
     char *perms = NULL;
-    uint8_t code;
 
     if (scp == NULL) {
         return SSH_ERROR;
@@ -422,19 +386,8 @@ int ssh_scp_push_file64(ssh_scp scp, const char *filename, uint64_t size,
         return SSH_ERROR;
     }
 
-    rc = ssh_channel_read(scp->channel, &code, 1, 0);
-    if (rc <= 0) {
-        ssh_set_error(scp->session, SSH_FATAL,
-                      "Error reading status code: %s",
-                      ssh_get_error(scp->session));
-        scp->state = SSH_SCP_ERROR;
-        return SSH_ERROR;
-    }
-
-    if (code != 0) {
-        ssh_set_error(scp->session, SSH_FATAL,
-                      "scp status code %ud not valid", code);
-        scp->state = SSH_SCP_ERROR;
+    rc = ssh_scp_response(scp, NULL);
+    if (rc != 0) {
         return SSH_ERROR;
     }
 
@@ -498,7 +451,7 @@ int ssh_scp_response(ssh_scp scp, char **response)
 
     if (code > 2) {
         ssh_set_error(scp->session, SSH_FATAL,
-                      "SCP: invalid status code %ud received", code);
+                      "SCP: invalid status code %u received", code);
         scp->state = SSH_SCP_ERROR;
         return SSH_ERROR;
     }
@@ -585,14 +538,8 @@ int ssh_scp_write(ssh_scp scp, const void *buffer, size_t len)
      * and handle */
     rc = ssh_channel_poll(scp->channel, 0);
     if (rc > 0) {
-        rc = ssh_channel_read(scp->channel, &code, 1, 0);
-        if (rc == SSH_ERROR) {
-            return SSH_ERROR;
-        }
-
-        if (code == 1 || code == 2) {
-            ssh_set_error(scp->session, SSH_REQUEST_DENIED,
-                          "SCP: Error: status code %i received", code);
+        rc = ssh_scp_response(scp, NULL);
+        if (rc != 0) {
             return SSH_ERROR;
         }
     }
