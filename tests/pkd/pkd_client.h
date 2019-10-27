@@ -13,7 +13,7 @@
 
 /* OpenSSH */
 
-#define OPENSSH_BINARY "ssh"
+#define OPENSSH_BINARY SSH_EXECUTABLE
 #define OPENSSH_KEYGEN "ssh-keygen"
 
 #define OPENSSH_HOSTKEY_ALGOS \
