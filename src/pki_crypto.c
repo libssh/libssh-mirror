@@ -1190,7 +1190,7 @@ ssh_string pki_publickey_to_blob(const ssh_key key)
     if (key->cert != NULL) {
         rc = ssh_buffer_add_buffer(buffer, key->cert);
         if (rc < 0) {
-            ssh_buffer_free(buffer);
+            SSH_BUFFER_FREE(buffer);
             return NULL;
         }
         goto makestring;
@@ -1198,14 +1198,14 @@ ssh_string pki_publickey_to_blob(const ssh_key key)
 
     type_s = ssh_string_from_char(key->type_c);
     if (type_s == NULL) {
-        ssh_buffer_free(buffer);
+        SSH_BUFFER_FREE(buffer);
         return NULL;
     }
 
     rc = ssh_buffer_add_ssh_string(buffer, type_s);
     SSH_STRING_FREE(type_s);
     if (rc < 0) {
-        ssh_buffer_free(buffer);
+        SSH_BUFFER_FREE(buffer);
         return NULL;
     }
 
@@ -1304,21 +1304,21 @@ ssh_string pki_publickey_to_blob(const ssh_key key)
 #ifdef HAVE_OPENSSL_ECC
             type_s = ssh_string_from_char(pki_key_ecdsa_nid_to_char(key->ecdsa_nid));
             if (type_s == NULL) {
-                ssh_buffer_free(buffer);
+                SSH_BUFFER_FREE(buffer);
                 return NULL;
             }
 
             rc = ssh_buffer_add_ssh_string(buffer, type_s);
             SSH_STRING_FREE(type_s);
             if (rc < 0) {
-                ssh_buffer_free(buffer);
+                SSH_BUFFER_FREE(buffer);
                 return NULL;
             }
 
             e = make_ecpoint_string(EC_KEY_get0_group(key->ecdsa),
                                     EC_KEY_get0_public_key(key->ecdsa));
             if (e == NULL) {
-                ssh_buffer_free(buffer);
+                SSH_BUFFER_FREE(buffer);
                 return NULL;
             }
 
@@ -1348,11 +1348,11 @@ makestring:
     if (rc < 0) {
         goto fail;
     }
-    ssh_buffer_free(buffer);
+    SSH_BUFFER_FREE(buffer);
 
     return str;
 fail:
-    ssh_buffer_free(buffer);
+    SSH_BUFFER_FREE(buffer);
     ssh_string_burn(str);
     SSH_STRING_FREE(str);
     ssh_string_burn(e);
@@ -1521,7 +1521,7 @@ static ssh_string pki_ecdsa_signature_to_blob(const ssh_signature sig)
     SSH_STRING_FREE(r);
     SSH_STRING_FREE(s);
     ECDSA_SIG_free(ecdsa_sig);
-    ssh_buffer_free(buf);
+    SSH_BUFFER_FREE(buf);
 
     return sig_blob;
 
@@ -1529,7 +1529,7 @@ error:
     SSH_STRING_FREE(r);
     SSH_STRING_FREE(s);
     ECDSA_SIG_free(ecdsa_sig);
-    ssh_buffer_free(buf);
+    SSH_BUFFER_FREE(buf);
     return NULL;
 }
 
