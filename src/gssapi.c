@@ -208,7 +208,7 @@ int ssh_gssapi_handle_userauth(ssh_session session, const char *user, uint32_t n
                 return SSH_ERROR;
             session->gssapi->state = SSH_GSSAPI_STATE_RCV_TOKEN;
             rc = ssh_gssapi_send_response(session, oid_s);
-            ssh_string_free(oid_s);
+            SSH_STRING_FREE(oid_s);
             return rc;
         } else {
             return ssh_auth_reply_default(session,0);
@@ -392,7 +392,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_token_server){
                 return SSH_PACKET_USED;
             }
             ssh_packet_send(session);
-            ssh_string_free(out_token);
+            SSH_STRING_FREE(out_token);
         } else {
             session->gssapi->state = SSH_GSSAPI_STATE_RCV_MIC;
         }
@@ -411,7 +411,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_token_server){
                          "accepting token",
                          maj_stat,
                          min_stat);
-    ssh_string_free(token);
+    SSH_STRING_FREE(token);
     if (client_name != GSS_C_NO_NAME){
         session->gssapi->client_name = client_name;
         session->gssapi->canonic_user = ssh_gssapi_name_to_char(client_name);
@@ -560,7 +560,7 @@ end:
         ssh_buffer_free(mic_buffer);
     }
     if (mic_token != NULL) {
-        ssh_string_free(mic_token);
+        SSH_STRING_FREE(mic_token);
     }
 
     return SSH_PACKET_USED;
@@ -787,7 +787,7 @@ int ssh_gssapi_auth_mic(ssh_session session){
 
 out:
     for (i = 0; i < n_oids; i++) {
-        ssh_string_free(oids[i]);
+        SSH_STRING_FREE(oids[i]);
     }
     free(oids);
     if (rc != SSH_ERROR) {
@@ -854,7 +854,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_response){
         goto error;
     }
     session->gssapi->client.oid = ssh_gssapi_oid_from_string(oid_s);
-    ssh_string_free(oid_s);
+    SSH_STRING_FREE(oid_s);
     if (!session->gssapi->client.oid) {
         ssh_set_error(session, SSH_FATAL, "Invalid OID");
         goto error;
@@ -984,7 +984,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_gssapi_token_client){
                          "accepting token",
                          maj_stat,
                          min_stat);
-    ssh_string_free(token);
+    SSH_STRING_FREE(token);
     if (GSS_ERROR(maj_stat)){
         ssh_gssapi_log_error(SSH_LOG_PROTOCOL,
                              "Gssapi error",
