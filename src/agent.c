@@ -425,7 +425,7 @@ ssh_key ssh_agent_get_next_ident(struct ssh_session_struct *session,
     /* get the comment */
     tmp = ssh_buffer_get_ssh_string(session->agent->ident);
     if (tmp == NULL) {
-        ssh_string_free(blob);
+        SSH_STRING_FREE(blob);
 
         return NULL;
     }
@@ -433,12 +433,12 @@ ssh_key ssh_agent_get_next_ident(struct ssh_session_struct *session,
     if (comment) {
         *comment = ssh_string_to_char(tmp);
     } else {
-        ssh_string_free(blob);
-        ssh_string_free(tmp);
+        SSH_STRING_FREE(blob);
+        SSH_STRING_FREE(tmp);
 
         return NULL;
     }
-    ssh_string_free(tmp);
+    SSH_STRING_FREE(tmp);
 
     /* get key from blob */
     rc = ssh_pki_import_pubkey_blob(blob, &key);
@@ -446,7 +446,7 @@ ssh_key ssh_agent_get_next_ident(struct ssh_session_struct *session,
         /* Try again as a cert. */
         rc = ssh_pki_import_cert_blob(blob, &key);
     }
-    ssh_string_free(blob);
+    SSH_STRING_FREE(blob);
     if (rc == SSH_ERROR) {
         return NULL;
     }
@@ -519,7 +519,7 @@ ssh_string ssh_agent_sign_data(ssh_session session,
 
     /* adds len + blob */
     rc = ssh_buffer_add_ssh_string(request, key_blob);
-    ssh_string_free(key_blob);
+    SSH_STRING_FREE(key_blob);
     if (rc < 0) {
         ssh_buffer_free(request);
         return NULL;
