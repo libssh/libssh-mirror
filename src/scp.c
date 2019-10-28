@@ -428,7 +428,16 @@ int ssh_scp_push_file64(ssh_scp scp, const char *filename, uint64_t size,
     }
 
     file = ssh_basename(filename);
+    if (file == NULL) {
+        ssh_set_error_oom(scp->session);
+        return SSH_ERROR;
+    }
     perms = ssh_scp_string_mode(mode);
+    if (perms == NULL) {
+        SAFE_FREE(file);
+        ssh_set_error_oom(scp->session);
+        return SSH_ERROR;
+    }
     SSH_LOG(SSH_LOG_PROTOCOL,
             "SCP pushing file %s, size %" PRIu64 " with permissions '%s'",
             file, size, perms);
