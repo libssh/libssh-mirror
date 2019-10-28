@@ -1025,7 +1025,7 @@ int ssh_get_pubkey_hash(ssh_session session, unsigned char **hash)
     }
 
     md5_update(ctx, ssh_string_data(pubkey_blob), ssh_string_len(pubkey_blob));
-    ssh_string_free(pubkey_blob);
+    SSH_STRING_FREE(pubkey_blob);
     md5_final(h, ctx);
 
     *hash = h;
@@ -1214,7 +1214,7 @@ int ssh_get_publickey_hash(const ssh_key key,
     *hash = h;
     rc = 0;
 out:
-    ssh_string_free(blob);
+    SSH_STRING_FREE(blob);
     return rc;
 }
 
