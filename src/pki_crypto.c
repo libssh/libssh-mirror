@@ -183,7 +183,7 @@ static ssh_string make_ecpoint_string(const EC_GROUP *g,
                              ssh_string_len(s),
                              NULL);
     if (len != ssh_string_len(s)) {
-        ssh_string_free(s);
+        SSH_STRING_FREE(s);
         return NULL;
     }
 
@@ -1203,7 +1203,7 @@ ssh_string pki_publickey_to_blob(const ssh_key key)
     }
 
     rc = ssh_buffer_add_ssh_string(buffer, type_s);
-    ssh_string_free(type_s);
+    SSH_STRING_FREE(type_s);
     if (rc < 0) {
         ssh_buffer_free(buffer);
         return NULL;
@@ -1248,16 +1248,16 @@ ssh_string pki_publickey_to_blob(const ssh_key key)
             }
 
             ssh_string_burn(p);
-            ssh_string_free(p);
+            SSH_STRING_FREE(p);
             p = NULL;
             ssh_string_burn(g);
-            ssh_string_free(g);
+            SSH_STRING_FREE(g);
             g = NULL;
             ssh_string_burn(q);
-            ssh_string_free(q);
+            SSH_STRING_FREE(q);
             q = NULL;
             ssh_string_burn(n);
-            ssh_string_free(n);
+            SSH_STRING_FREE(n);
             n = NULL;
 
             break;
@@ -1284,10 +1284,10 @@ ssh_string pki_publickey_to_blob(const ssh_key key)
             }
 
             ssh_string_burn(e);
-            ssh_string_free(e);
+            SSH_STRING_FREE(e);
             e = NULL;
             ssh_string_burn(n);
-            ssh_string_free(n);
+            SSH_STRING_FREE(n);
             n = NULL;
 
             break;
@@ -1309,7 +1309,7 @@ ssh_string pki_publickey_to_blob(const ssh_key key)
             }
 
             rc = ssh_buffer_add_ssh_string(buffer, type_s);
-            ssh_string_free(type_s);
+            SSH_STRING_FREE(type_s);
             if (rc < 0) {
                 ssh_buffer_free(buffer);
                 return NULL;
@@ -1328,7 +1328,7 @@ ssh_string pki_publickey_to_blob(const ssh_key key)
             }
 
             ssh_string_burn(e);
-            ssh_string_free(e);
+            SSH_STRING_FREE(e);
             e = NULL;
 
             break;
@@ -1354,17 +1354,17 @@ makestring:
 fail:
     ssh_buffer_free(buffer);
     ssh_string_burn(str);
-    ssh_string_free(str);
+    SSH_STRING_FREE(str);
     ssh_string_burn(e);
-    ssh_string_free(e);
+    SSH_STRING_FREE(e);
     ssh_string_burn(p);
-    ssh_string_free(p);
+    SSH_STRING_FREE(p);
     ssh_string_burn(g);
-    ssh_string_free(g);
+    SSH_STRING_FREE(g);
     ssh_string_burn(q);
-    ssh_string_free(q);
+    SSH_STRING_FREE(q);
     ssh_string_burn(n);
-    ssh_string_free(n);
+    SSH_STRING_FREE(n);
 
     return NULL;
 }
@@ -1431,8 +1431,8 @@ static ssh_string pki_dsa_signature_to_blob(const ssh_signature sig)
            s_len - s_offset_in);
 
     DSA_SIG_free(dsa_sig);
-    ssh_string_free(r);
-    ssh_string_free(s);
+    SSH_STRING_FREE(r);
+    SSH_STRING_FREE(s);
 
     sig_blob = ssh_string_new(40);
     if (sig_blob == NULL) {
@@ -1445,8 +1445,8 @@ static ssh_string pki_dsa_signature_to_blob(const ssh_signature sig)
 
 error:
     DSA_SIG_free(dsa_sig);
-    ssh_string_free(r);
-    ssh_string_free(s);
+    SSH_STRING_FREE(r);
+    SSH_STRING_FREE(s);
     return NULL;
 }
 
@@ -1518,16 +1518,16 @@ static ssh_string pki_ecdsa_signature_to_blob(const ssh_signature sig)
 
     ssh_string_fill(sig_blob, ssh_buffer_get(buf), ssh_buffer_get_len(buf));
 
-    ssh_string_free(r);
-    ssh_string_free(s);
+    SSH_STRING_FREE(r);
+    SSH_STRING_FREE(s);
     ECDSA_SIG_free(ecdsa_sig);
     ssh_buffer_free(buf);
 
     return sig_blob;
 
 error:
-    ssh_string_free(r);
-    ssh_string_free(s);
+    SSH_STRING_FREE(r);
+    SSH_STRING_FREE(s);
     ECDSA_SIG_free(ecdsa_sig);
     ssh_buffer_free(buf);
     return NULL;
@@ -1673,7 +1673,7 @@ static int pki_signature_from_dsa_blob(UNUSED_PARAM(const ssh_key pubkey),
 
     pr = ssh_make_string_bn(r);
     ssh_string_burn(r);
-    ssh_string_free(r);
+    SSH_STRING_FREE(r);
     if (pr == NULL) {
         goto error;
     }
@@ -1686,7 +1686,7 @@ static int pki_signature_from_dsa_blob(UNUSED_PARAM(const ssh_key pubkey),
 
     ps = ssh_make_string_bn(s);
     ssh_string_burn(s);
-    ssh_string_free(s);
+    SSH_STRING_FREE(s);
     if (ps == NULL) {
         goto error;
     }
@@ -1794,7 +1794,7 @@ static int pki_signature_from_ecdsa_blob(UNUSED_PARAM(const ssh_key pubkey),
 
     pr = ssh_make_string_bn(r);
     ssh_string_burn(r);
-    ssh_string_free(r);
+    SSH_STRING_FREE(r);
     if (pr == NULL) {
         goto error;
     }
@@ -1808,7 +1808,7 @@ static int pki_signature_from_ecdsa_blob(UNUSED_PARAM(const ssh_key pubkey),
 
     if (rlen != 0) {
         ssh_string_burn(s);
-        ssh_string_free(s);
+        SSH_STRING_FREE(s);
         SSH_LOG(SSH_LOG_WARN,
                 "Signature has remaining bytes in inner "
                 "sigblob: %lu",
@@ -1822,7 +1822,7 @@ static int pki_signature_from_ecdsa_blob(UNUSED_PARAM(const ssh_key pubkey),
 
     ps = ssh_make_string_bn(s);
     ssh_string_burn(s);
-    ssh_string_free(s);
+    SSH_STRING_FREE(s);
     if (ps == NULL) {
         goto error;
     }
