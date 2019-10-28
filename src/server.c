@@ -168,13 +168,20 @@ int server_set_kex(ssh_session session)
 
     for (i = 0; i < SSH_KEX_METHODS; i++) {
         wanted = session->opts.wanted_methods[i];
-        if (wanted  == NULL) {
+        if (wanted == NULL) {
             if (ssh_fips_mode()) {
                 wanted = ssh_kex_get_fips_methods(i);
             } else {
                 wanted = ssh_kex_get_default_methods(i);
             }
         }
+        if (wanted == NULL) {
+            for (j = 0; j < i; j++) {
+                SAFE_FREE(server->methods[j]);
+            }
+            return -1;
+        }
+
         server->methods[i] = strdup(wanted);
         if (server->methods[i] == NULL) {
             for (j = 0; j < i; j++) {
