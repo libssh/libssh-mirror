@@ -61,7 +61,7 @@ SSH_PACKET_CALLBACK(ssh_packet_disconnect_callback){
   error_s = ssh_buffer_get_ssh_string(packet);
   if (error_s != NULL) {
     error = ssh_string_to_char(error_s);
-    ssh_string_free(error_s);
+    SSH_STRING_FREE(error_s);
   }
   SSH_LOG(SSH_LOG_PACKET, "Received SSH_MSG_DISCONNECT %d:%s",
                           code, error != NULL ? error : "no error");
@@ -153,9 +153,8 @@ SSH_PACKET_CALLBACK(ssh_packet_newkeys){
                                   session->next_crypto->secret_hash,
                                   session->next_crypto->digest_len);
     ssh_string_burn(sig_blob);
-    ssh_string_free(sig_blob);
+    SSH_STRING_FREE(sig_blob);
     ssh_signature_free(sig);
-    sig_blob = NULL;
     if (rc == SSH_ERROR) {
       goto error;
     }
