@@ -750,7 +750,7 @@ int ssh_gssapi_auth_mic(ssh_session session){
     }
 
     n_oids = selected->count;
-    SSH_LOG(SSH_LOG_PROTOCOL, "Sending %d oids", n_oids);
+    SSH_LOG(SSH_LOG_PROTOCOL, "Sending %zu oids", n_oids);
 
     oids = calloc(n_oids, sizeof(ssh_string));
     if (oids == NULL) {
@@ -763,7 +763,7 @@ int ssh_gssapi_auth_mic(ssh_session session){
         if (oids[i] == NULL) {
             ssh_set_error_oom(session);
             rc = SSH_ERROR;
-            goto out:
+            goto out;
         }
         ((unsigned char *)oids[i]->data)[0] = SSH_OID_TAG;
         ((unsigned char *)oids[i]->data)[1] = selected->elements[i].length;
@@ -785,13 +785,13 @@ out:
     return SSH_AUTH_ERROR;
 }
 
-static gss_OID ssh_gssapi_oid_from_string(ssh_string oid_s){
-    gss_OID ret;
+static gss_OID ssh_gssapi_oid_from_string(ssh_string oid_s)
+{
+    gss_OID ret = NULL;
     unsigned char *data = ssh_string_data(oid_s);
     size_t len = ssh_string_len(oid_s);
 
-    ret = malloc(sizeof(gss_OID_desc));
-    if (ret == NULL) {
+    if (data == NULL) {
         return NULL;
     }
 
@@ -799,10 +799,17 @@ static gss_OID ssh_gssapi_oid_from_string(ssh_string oid_s){
         SAFE_FREE(ret);
         return NULL;
     }
+
     if (data[0] != SSH_OID_TAG || data[1] != len - 2) {
         SAFE_FREE(ret);
         return NULL;
     }
+
+    ret = malloc(sizeof(gss_OID_desc));
+    if (ret == NULL) {
+        return NULL;
+    }
+
     ret->elements = malloc(len - 2);
     if (ret->elements == NULL) {
         SAFE_FREE(ret);
