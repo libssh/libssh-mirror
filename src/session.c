@@ -228,15 +228,15 @@ void ssh_free(ssh_session session)
       ssh_poll_ctx_free(session->default_poll_ctx);
   }
 
-  ssh_buffer_free(session->in_buffer);
-  ssh_buffer_free(session->out_buffer);
+  SSH_BUFFER_FREE(session->in_buffer);
+  SSH_BUFFER_FREE(session->out_buffer);
   session->in_buffer = session->out_buffer = NULL;
 
   if (session->in_hashbuf != NULL) {
-      ssh_buffer_free(session->in_hashbuf);
+      SSH_BUFFER_FREE(session->in_hashbuf);
   }
   if (session->out_hashbuf != NULL) {
-      ssh_buffer_free(session->out_hashbuf);
+      SSH_BUFFER_FREE(session->out_hashbuf);
   }
 
   crypto_free(session->current_crypto);
@@ -288,7 +288,7 @@ void ssh_free(ssh_session session)
 
     while ((b = ssh_list_pop_head(struct ssh_buffer_struct *,
                                   session->out_queue)) != NULL) {
-        ssh_buffer_free(b);
+        SSH_BUFFER_FREE(b);
     }
     ssh_list_free(session->out_queue);
 
