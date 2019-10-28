@@ -103,6 +103,9 @@ int ssh_packet_decrypt(ssh_session session,
     }
 
     crypto = ssh_packet_get_current_crypto(session, SSH_DIRECTION_IN);
+    if (crypto == NULL) {
+        return SSH_ERROR;
+    }
     cipher = crypto->in_cipher;
 
     if (encrypted_size % cipher->blocksize != 0) {
