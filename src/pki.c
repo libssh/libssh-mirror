@@ -174,7 +174,7 @@ void ssh_key_clean (ssh_key key){
     }
     SAFE_FREE(key->ed25519_pubkey);
     if (key->cert != NULL) {
-        ssh_buffer_free(key->cert);
+        SSH_BUFFER_FREE(key->cert);
     }
     key->cert_type = SSH_KEYTYPE_UNKNOWN;
     key->flags=SSH_KEY_FLAG_EMPTY;
@@ -1449,7 +1449,7 @@ static int pki_import_cert_buffer(ssh_buffer buffer,
 
 fail:
     ssh_key_free(key);
-    ssh_buffer_free(cert);
+    SSH_BUFFER_FREE(cert);
     return SSH_ERROR;
 }
 
@@ -1485,7 +1485,7 @@ int ssh_pki_import_pubkey_base64(const char *b64_key,
 
     type_s = ssh_buffer_get_ssh_string(buffer);
     if (type_s == NULL) {
-        ssh_buffer_free(buffer);
+        SSH_BUFFER_FREE(buffer);
         return SSH_ERROR;
     }
     SSH_STRING_FREE(type_s);
@@ -1495,7 +1495,7 @@ int ssh_pki_import_pubkey_base64(const char *b64_key,
     } else {
         rc = pki_import_pubkey_buffer(buffer, type, pkey);
     }
-    ssh_buffer_free(buffer);
+    SSH_BUFFER_FREE(buffer);
 
     return rc;
 }
@@ -1558,11 +1558,11 @@ int ssh_pki_import_pubkey_blob(const ssh_string key_blob,
         rc = pki_import_pubkey_buffer(buffer, type, pkey);
     }
 
-    ssh_buffer_free(buffer);
+    SSH_BUFFER_FREE(buffer);
 
     return rc;
 fail:
-    ssh_buffer_free(buffer);
+    SSH_BUFFER_FREE(buffer);
     SSH_STRING_FREE(type_s);
 
     return SSH_ERROR;
@@ -2029,7 +2029,7 @@ int ssh_pki_copy_cert_to_privkey(const ssh_key certkey, ssh_key privkey) {
 
   rc = ssh_buffer_add_buffer(cert_buffer, certkey->cert);
   if (rc != 0) {
-      ssh_buffer_free(cert_buffer);
+      SSH_BUFFER_FREE(cert_buffer);
       return SSH_ERROR;
   }
 
@@ -2056,38 +2056,38 @@ int ssh_pki_export_signature_blob(const ssh_signature sig,
 
     str = ssh_string_from_char(sig->type_c);
     if (str == NULL) {
-        ssh_buffer_free(buf);
+        SSH_BUFFER_FREE(buf);
         return SSH_ERROR;
     }
 
     rc = ssh_buffer_add_ssh_string(buf, str);
     SSH_STRING_FREE(str);
     if (rc < 0) {
-        ssh_buffer_free(buf);
+        SSH_BUFFER_FREE(buf);
         return SSH_ERROR;
     }
 
     str = pki_signature_to_blob(sig);
     if (str == NULL) {
-        ssh_buffer_free(buf);
+        SSH_BUFFER_FREE(buf);
         return SSH_ERROR;
     }
 
     rc = ssh_buffer_add_ssh_string(buf, str);
     SSH_STRING_FREE(str);
     if (rc < 0) {
-        ssh_buffer_free(buf);
+        SSH_BUFFER_FREE(buf);
         return SSH_ERROR;
     }
 
     str = ssh_string_new(ssh_buffer_get_len(buf));
     if (str == NULL) {
-        ssh_buffer_free(buf);
+        SSH_BUFFER_FREE(buf);
         return SSH_ERROR;
     }
 
     ssh_string_fill(str, ssh_buffer_get(buf), ssh_buffer_get_len(buf));
-    ssh_buffer_free(buf);
+    SSH_BUFFER_FREE(buf);
 
     *sig_blob = str;
 
@@ -2119,13 +2119,13 @@ int ssh_pki_import_signature_blob(const ssh_string sig_blob,
                              ssh_string_data(sig_blob),
                              ssh_string_len(sig_blob));
     if (rc < 0) {
-        ssh_buffer_free(buf);
+        SSH_BUFFER_FREE(buf);
         return SSH_ERROR;
     }
 
     algorithm = ssh_buffer_get_ssh_string(buf);
     if (algorithm == NULL) {
-        ssh_buffer_free(buf);
+        SSH_BUFFER_FREE(buf);
         return SSH_ERROR;
     }
 
@@ -2135,7 +2135,7 @@ int ssh_pki_import_signature_blob(const ssh_string sig_blob,
     SSH_STRING_FREE(algorithm);
 
     blob = ssh_buffer_get_ssh_string(buf);
-    ssh_buffer_free(buf);
+    SSH_BUFFER_FREE(buf);
     if (blob == NULL) {
         return SSH_ERROR;
     }
@@ -2366,7 +2366,7 @@ ssh_string ssh_pki_do_sign(ssh_session session,
 
 end:
     ssh_signature_free(sig);
-    ssh_buffer_free(sign_input);
+    SSH_BUFFER_FREE(sign_input);
     SSH_STRING_FREE(session_id);
 
     return sig_blob;
@@ -2404,21 +2404,21 @@ ssh_string ssh_pki_do_sign_agent(ssh_session session,
     rc = ssh_buffer_add_ssh_string(sig_buf, session_id);
     if (rc < 0) {
         SSH_STRING_FREE(session_id);
-        ssh_buffer_free(sig_buf);
+        SSH_BUFFER_FREE(sig_buf);
         return NULL;
     }
     SSH_STRING_FREE(session_id);
 
     /* append out buffer */
     if (ssh_buffer_add_buffer(sig_buf, buf) < 0) {
-        ssh_buffer_free(sig_buf);
+        SSH_BUFFER_FREE(sig_buf);
         return NULL;
     }
 
     /* create signature */
     sig_blob = ssh_agent_sign_data(session, pubkey, sig_buf);
 
-    ssh_buffer_free(sig_buf);
+    SSH_BUFFER_FREE(sig_buf);
 
     return sig_blob;
 }
@@ -2482,7 +2482,7 @@ ssh_string ssh_srv_pki_do_sign_sessionid(ssh_session session,
 
 end:
     ssh_signature_free(sig);
-    ssh_buffer_free(sign_input);
+    SSH_BUFFER_FREE(sign_input);
 
     return sig_blob;
 }
