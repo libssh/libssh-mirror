@@ -2384,6 +2384,9 @@ ssh_string ssh_pki_do_sign_agent(ssh_session session,
     int rc;
 
     crypto = ssh_packet_get_current_crypto(session, SSH_DIRECTION_BOTH);
+    if (crypto == NULL) {
+        return NULL;
+    }
 
     /* prepend session identifier */
     session_id = ssh_string_new(crypto->digest_len);
