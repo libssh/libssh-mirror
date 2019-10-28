@@ -162,6 +162,10 @@ static ssh_buffer gzip_decompress(ssh_session session, ssh_buffer source, size_t
   int status;
 
   crypto = ssh_packet_get_current_crypto(session, SSH_DIRECTION_IN);
+  if (crypto == NULL) {
+      return NULL;
+  }
+
   zin = crypto->compress_in_ctx;
   if (zin == NULL) {
     zin = crypto->compress_in_ctx = initdecompress(session);
