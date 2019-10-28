@@ -1573,7 +1573,7 @@ ssh_string pki_publickey_to_blob(const ssh_key key)
     }
 
     rc = ssh_buffer_add_ssh_string(buffer, type_s);
-    ssh_string_free(type_s);
+    SSH_STRING_FREE(type_s);
     if (rc < 0) {
         ssh_buffer_free(buffer);
         return NULL;
@@ -1631,13 +1631,13 @@ ssh_string pki_publickey_to_blob(const ssh_key key)
             }
 
             ssh_string_burn(p);
-            ssh_string_free(p);
+            SSH_STRING_FREE(p);
             ssh_string_burn(g);
-            ssh_string_free(g);
+            SSH_STRING_FREE(g);
             ssh_string_burn(q);
-            ssh_string_free(q);
+            SSH_STRING_FREE(q);
             ssh_string_burn(n);
-            ssh_string_free(n);
+            SSH_STRING_FREE(n);
 
             break;
         case SSH_KEYTYPE_RSA:
@@ -1667,9 +1667,9 @@ ssh_string pki_publickey_to_blob(const ssh_key key)
             }
 
             ssh_string_burn(e);
-            ssh_string_free(e);
+            SSH_STRING_FREE(e);
             ssh_string_burn(n);
-            ssh_string_free(n);
+            SSH_STRING_FREE(n);
 
             break;
         case SSH_KEYTYPE_ED25519:
@@ -1690,7 +1690,7 @@ ssh_string pki_publickey_to_blob(const ssh_key key)
             }
 
             rc = ssh_buffer_add_ssh_string(buffer, type_s);
-            ssh_string_free(type_s);
+            SSH_STRING_FREE(type_s);
             if (rc < 0) {
                 ssh_buffer_free(buffer);
                 return NULL;
@@ -1709,7 +1709,7 @@ ssh_string pki_publickey_to_blob(const ssh_key key)
             }
 
             ssh_string_burn(e);
-            ssh_string_free(e);
+            SSH_STRING_FREE(e);
             e = NULL;
             break;
 #endif
@@ -1735,17 +1735,17 @@ makestring:
 fail:
     ssh_buffer_free(buffer);
     ssh_string_burn(str);
-    ssh_string_free(str);
+    SSH_STRING_FREE(str);
     ssh_string_burn(e);
-    ssh_string_free(e);
+    SSH_STRING_FREE(e);
     ssh_string_burn(p);
-    ssh_string_free(p);
+    SSH_STRING_FREE(p);
     ssh_string_burn(g);
-    ssh_string_free(g);
+    SSH_STRING_FREE(g);
     ssh_string_burn(q);
-    ssh_string_free(q);
+    SSH_STRING_FREE(q);
     ssh_string_burn(n);
-    ssh_string_free(n);
+    SSH_STRING_FREE(n);
 
     return NULL;
 }
