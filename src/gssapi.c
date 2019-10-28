@@ -473,7 +473,7 @@ static ssh_buffer ssh_gssapi_build_mic(ssh_session session)
                          "gssapi-with-mic");
     if (rc != SSH_OK) {
         ssh_set_error_oom(session);
-        ssh_buffer_free(mic_buffer);
+        SSH_BUFFER_FREE(mic_buffer);
         return NULL;
     }
 
@@ -557,7 +557,7 @@ error:
 end:
     ssh_gssapi_free(session);
     if (mic_buffer != NULL) {
-        ssh_buffer_free(mic_buffer);
+        SSH_BUFFER_FREE(mic_buffer);
     }
     if (mic_token != NULL) {
         SSH_STRING_FREE(mic_token);
@@ -922,7 +922,7 @@ static int ssh_gssapi_send_mic(ssh_session session){
     maj_stat = gss_get_mic(&min_stat,session->gssapi->ctx, GSS_C_QOP_DEFAULT,
                            &mic_buf, &mic_token_buf);
     if (GSS_ERROR(maj_stat)){
-        ssh_buffer_free(mic_buffer);
+        SSH_BUFFER_FREE(mic_buffer);
         ssh_gssapi_log_error(SSH_LOG_PROTOCOL,
                              "generating MIC",
                              maj_stat,
@@ -936,7 +936,7 @@ static int ssh_gssapi_send_mic(ssh_session session){
                          mic_token_buf.length,
                          (size_t)mic_token_buf.length, mic_token_buf.value);
     if (rc != SSH_OK) {
-        ssh_buffer_free(mic_buffer);
+        SSH_BUFFER_FREE(mic_buffer);
         ssh_set_error_oom(session);
         return SSH_ERROR;
     }
