@@ -299,7 +299,7 @@ static SSH_PACKET_CALLBACK(ssh_packet_client_curve25519_reply){
   }
 
   rc = ssh_dh_import_next_pubkey_blob(session, pubkey_blob);
-  ssh_string_free(pubkey_blob);
+  SSH_STRING_FREE(pubkey_blob);
   if (rc != 0) {
       ssh_set_error(session,
                     SSH_FATAL,
@@ -315,11 +315,11 @@ static SSH_PACKET_CALLBACK(ssh_packet_client_curve25519_reply){
   if (ssh_string_len(q_s_string) != CURVE25519_PUBKEY_SIZE){
 	  ssh_set_error(session, SSH_FATAL, "Incorrect size for server Curve25519 public key: %d",
 			  (int)ssh_string_len(q_s_string));
-	  ssh_string_free(q_s_string);
+	  SSH_STRING_FREE(q_s_string);
 	  goto error;
   }
   memcpy(session->next_crypto->curve25519_server_pubkey, ssh_string_data(q_s_string), CURVE25519_PUBKEY_SIZE);
-  ssh_string_free(q_s_string);
+  SSH_STRING_FREE(q_s_string);
 
   signature = ssh_buffer_get_ssh_string(packet);
   if (signature == NULL) {
@@ -407,13 +407,13 @@ static SSH_PACKET_CALLBACK(ssh_packet_server_curve25519_init){
                       SSH_FATAL,
                       "Incorrect size for server Curve25519 public key: %zu",
                       ssh_string_len(q_c_string));
-        ssh_string_free(q_c_string);
+        SSH_STRING_FREE(q_c_string);
         goto error;
     }
 
     memcpy(session->next_crypto->curve25519_client_pubkey,
            ssh_string_data(q_c_string), CURVE25519_PUBKEY_SIZE);
-    ssh_string_free(q_c_string);
+    SSH_STRING_FREE(q_c_string);
     /* Build server's keypair */
 
     rc = ssh_curve25519_init(session);
@@ -456,7 +456,7 @@ static SSH_PACKET_CALLBACK(ssh_packet_server_curve25519_init){
     /* add host's public key */
     rc = ssh_buffer_add_ssh_string(session->out_buffer,
                                    server_pubkey_blob);
-    ssh_string_free(server_pubkey_blob);
+    SSH_STRING_FREE(server_pubkey_blob);
     if (rc < 0) {
         ssh_set_error_oom(session);
         goto error;
@@ -473,7 +473,7 @@ static SSH_PACKET_CALLBACK(ssh_packet_server_curve25519_init){
                     CURVE25519_PUBKEY_SIZE);
 
     rc = ssh_buffer_add_ssh_string(session->out_buffer, q_s_string);
-    ssh_string_free(q_s_string);
+    SSH_STRING_FREE(q_s_string);
     if (rc < 0) {
         ssh_set_error_oom(session);
         goto error;
@@ -486,7 +486,7 @@ static SSH_PACKET_CALLBACK(ssh_packet_server_curve25519_init){
     }
 
     rc = ssh_buffer_add_ssh_string(session->out_buffer, sig_blob);
-    ssh_string_free(sig_blob);
+    SSH_STRING_FREE(sig_blob);
     if (rc < 0) {
         ssh_set_error_oom(session);
         goto error;
