@@ -1855,6 +1855,9 @@ sftp_file sftp_open(sftp_session sftp,
             return NULL;
         case SSH_FXP_HANDLE:
             handle = parse_handle_msg(msg);
+            if (handle == NULL) {
+                return NULL;
+            }
             sftp_message_free(msg);
             if ((flags & O_APPEND) == O_APPEND) {
                 stat_data = sftp_stat(sftp, file);
