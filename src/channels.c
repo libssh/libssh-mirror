@@ -560,7 +560,7 @@ SSH_PACKET_CALLBACK(channel_rcv_data){
 
   if (channel_default_bufferize(channel, ssh_string_data(str), len,
         is_stderr) < 0) {
-    ssh_string_free(str);
+    SSH_STRING_FREE(str);
 
     return SSH_PACKET_USED;
   }
@@ -576,7 +576,7 @@ SSH_PACKET_CALLBACK(channel_rcv_data){
       channel->local_window,
       channel->remote_window);
 
-  ssh_string_free(str);
+  SSH_STRING_FREE(str);
 
   if (is_stderr) {
       buf = channel->stderr_buffer;
@@ -1025,7 +1025,7 @@ int ssh_channel_open_forward(ssh_channel channel, const char *remotehost,
 
 error:
   ssh_buffer_free(payload);
-  ssh_string_free(str);
+  SSH_STRING_FREE(str);
 
   return rc;
 }
@@ -1108,7 +1108,7 @@ int ssh_channel_open_forward_unix(ssh_channel channel,
 
 error:
     ssh_buffer_free(payload);
-    ssh_string_free(str);
+    SSH_STRING_FREE(str);
 
     return rc;
 }
