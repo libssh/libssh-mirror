@@ -1200,9 +1200,9 @@ int ssh_make_sessionid(ssh_session session)
 
     rc = SSH_OK;
 error:
-    ssh_buffer_free(buf);
-    ssh_buffer_free(client_hash);
-    ssh_buffer_free(server_hash);
+    SSH_BUFFER_FREE(buf);
+    SSH_BUFFER_FREE(client_hash);
+    SSH_BUFFER_FREE(server_hash);
 
     session->in_hashbuf = NULL;
     session->out_hashbuf = NULL;
