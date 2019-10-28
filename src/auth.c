@@ -205,7 +205,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_banner) {
         SSH_LOG(SSH_LOG_DEBUG,
                 "Received SSH_USERAUTH_BANNER packet");
         if (session->banner != NULL)
-            ssh_string_free(session->banner);
+            SSH_STRING_FREE(session->banner);
         session->banner = banner;
     }
 
@@ -558,7 +558,7 @@ int ssh_userauth_try_publickey(ssh_session session,
         goto fail;
     }
 
-    ssh_string_free(pubkey_s);
+    SSH_STRING_FREE(pubkey_s);
 
     session->auth.current_method = SSH_AUTH_METHOD_PUBLICKEY;
     session->auth.state = SSH_AUTH_STATE_PUBKEY_OFFER_SENT;
@@ -576,7 +576,7 @@ pending:
 
     return rc;
 fail:
-    ssh_string_free(pubkey_s);
+    SSH_STRING_FREE(pubkey_s);
     ssh_set_error_oom(session);
     ssh_buffer_reinit(session->out_buffer);
 
@@ -681,7 +681,7 @@ int ssh_userauth_publickey(ssh_session session,
     if (rc < 0) {
         goto fail;
     }
-    ssh_string_free(str);
+    SSH_STRING_FREE(str);
 
     /* Get the hash type to be used in the signature based on the key type */
     hash_type = ssh_key_type_to_hash(session, privkey->type);
@@ -693,7 +693,7 @@ int ssh_userauth_publickey(ssh_session session,
     }
 
     rc = ssh_buffer_add_ssh_string(session->out_buffer, str);
-    ssh_string_free(str);
+    SSH_STRING_FREE(str);
     str = NULL;
     if (rc < 0) {
         goto fail;
@@ -715,7 +715,7 @@ pending:
 
     return rc;
 fail:
-    ssh_string_free(str);
+    SSH_STRING_FREE(str);
     ssh_set_error_oom(session);
     ssh_buffer_reinit(session->out_buffer);
 
@@ -841,7 +841,7 @@ void ssh_agent_state_free(void *data) {
     struct ssh_agent_state_struct *state = data;
 
     if (state) {
-        ssh_string_free_char(state->comment);
+        SSH_STRING_FREE_CHAR(state->comment);
         ssh_key_free(state->pubkey);
         free (state);
     }
@@ -919,7 +919,7 @@ int ssh_userauth_agent(ssh_session session,
             } else if (rc != SSH_AUTH_SUCCESS) {
                 SSH_LOG(SSH_LOG_DEBUG,
                         "Public key of %s refused by server", state->comment);
-                ssh_string_free_char(state->comment);
+                SSH_STRING_FREE_CHAR(state->comment);
                 state->comment = NULL;
                 ssh_key_free(state->pubkey);
                 state->pubkey = ssh_agent_get_next_ident(session, &state->comment);
@@ -935,7 +935,7 @@ int ssh_userauth_agent(ssh_session session,
             rc = ssh_userauth_agent_publickey(session, username, state->pubkey);
             if (rc == SSH_AUTH_AGAIN)
                 return rc;
-            ssh_string_free_char(state->comment);
+            SSH_STRING_FREE_CHAR(state->comment);
             state->comment = NULL;
             if (rc == SSH_AUTH_ERROR || rc == SSH_AUTH_PARTIAL) {
                 ssh_agent_state_free (session->agent_state);
@@ -1558,7 +1558,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_info_request) {
             );
 
     /* We don't care about tmp */
-    ssh_string_free(tmp);
+    SSH_STRING_FREE(tmp);
 
     if (rc != SSH_OK) {
         ssh_set_error(session, SSH_FATAL, "Invalid USERAUTH_INFO_REQUEST msg");
