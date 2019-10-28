@@ -700,11 +700,11 @@ end:
  *                            later.
  */
 int ssh_gssapi_auth_mic(ssh_session session){
-    int i;
+    size_t i;
     gss_OID_set selected; /* oid selected for authentication */
-    ssh_string *oids;
+    ssh_string *oids = NULL;
     int rc;
-    int n_oids = 0;
+    size_t n_oids = 0;
     OM_uint32 maj_stat, min_stat;
     char name_buf[256];
     gss_buffer_desc hostname;
@@ -760,6 +760,11 @@ int ssh_gssapi_auth_mic(ssh_session session){
 
     for (i=0; i<n_oids; ++i){
         oids[i] = ssh_string_new(selected->elements[i].length + 2);
+        if (oids[i] == NULL) {
+            ssh_set_error_oom(session);
+            rc = SSH_ERROR;
+            goto out:
+        }
         ((unsigned char *)oids[i]->data)[0] = SSH_OID_TAG;
         ((unsigned char *)oids[i]->data)[1] = selected->elements[i].length;
         memcpy((unsigned char *)oids[i]->data + 2, selected->elements[i].elements,
@@ -767,6 +772,8 @@ int ssh_gssapi_auth_mic(ssh_session session){
     }
 
     rc = ssh_gssapi_send_auth_mic(session, oids, n_oids);
+
+out:
     for (i = 0; i < n_oids; i++) {
         ssh_string_free(oids[i]);
     }
