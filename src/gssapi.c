@@ -444,13 +444,17 @@ static ssh_buffer ssh_gssapi_build_mic(ssh_session session)
     ssh_buffer mic_buffer = NULL;
     int rc;
 
+    crypto = ssh_packet_get_current_crypto(session, SSH_DIRECTION_BOTH);
+    if (crypto == NULL) {
+        return NULL;
+    }
+
     mic_buffer = ssh_buffer_new();
     if (mic_buffer == NULL) {
         ssh_set_error_oom(session);
         return NULL;
     }
 
-    crypto = ssh_packet_get_current_crypto(session, SSH_DIRECTION_BOTH);
     rc = ssh_buffer_pack(mic_buffer,
                          "dPbsss",
                          crypto->digest_len,
