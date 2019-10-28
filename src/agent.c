@@ -196,7 +196,7 @@ void ssh_agent_close(struct ssh_agent_struct *agent) {
 void ssh_agent_free(ssh_agent agent) {
   if (agent) {
     if (agent->ident) {
-      ssh_buffer_free(agent->ident);
+      SSH_BUFFER_FREE(agent->ident);
     }
     if (agent->sock) {
       ssh_agent_close(agent);
@@ -323,30 +323,30 @@ uint32_t ssh_agent_get_ident_count(struct ssh_session_struct *session)
     }
     if (ssh_buffer_add_u8(request, SSH2_AGENTC_REQUEST_IDENTITIES) < 0) {
         ssh_set_error_oom(session);
-        ssh_buffer_free(request);
+        SSH_BUFFER_FREE(request);
         return 0;
     }
 
     reply = ssh_buffer_new();
     if (reply == NULL) {
-        ssh_buffer_free(request);
+        SSH_BUFFER_FREE(request);
         ssh_set_error(session, SSH_FATAL, "Not enough space");
         return 0;
     }
 
     if (agent_talk(session, request, reply) < 0) {
-        ssh_buffer_free(request);
-        ssh_buffer_free(reply);
+        SSH_BUFFER_FREE(request);
+        SSH_BUFFER_FREE(reply);
         return 0;
     }
-    ssh_buffer_free(request);
+    SSH_BUFFER_FREE(request);
 
     /* get message type and verify the answer */
     rc = ssh_buffer_get_u8(reply, (uint8_t *) &type);
     if (rc != sizeof(uint8_t)) {
         ssh_set_error(session, SSH_FATAL,
                 "Bad authentication reply size: %d", rc);
-        ssh_buffer_free(reply);
+        SSH_BUFFER_FREE(reply);
         return 0;
     }
 #ifdef WORDS_BIGENDIAN
@@ -358,12 +358,12 @@ uint32_t ssh_agent_get_ident_count(struct ssh_session_struct *session)
             type, SSH2_AGENT_IDENTITIES_ANSWER);
 
     if (agent_failed(type)) {
-        ssh_buffer_free(reply);
+        SSH_BUFFER_FREE(reply);
         return 0;
     } else if (type != SSH2_AGENT_IDENTITIES_ANSWER) {
         ssh_set_error(session, SSH_FATAL,
                 "Bad authentication reply message type: %u", type);
-        ssh_buffer_free(reply);
+        SSH_BUFFER_FREE(reply);
         return 0;
     }
 
@@ -372,7 +372,7 @@ uint32_t ssh_agent_get_ident_count(struct ssh_session_struct *session)
         ssh_set_error(session,
                 SSH_FATAL,
                 "Failed to read count");
-        ssh_buffer_free(reply);
+        SSH_BUFFER_FREE(reply);
         return 0;
     }
     session->agent->count = ntohl(count);
@@ -382,7 +382,7 @@ uint32_t ssh_agent_get_ident_count(struct ssh_session_struct *session)
         ssh_set_error(session, SSH_FATAL,
                 "Too many identities in authentication reply: %d",
                 session->agent->count);
-        ssh_buffer_free(reply);
+        SSH_BUFFER_FREE(reply);
         return 0;
     }
 
@@ -492,13 +492,13 @@ ssh_string ssh_agent_sign_data(ssh_session session,
 
     /* create request */
     if (ssh_buffer_add_u8(request, SSH2_AGENTC_SIGN_REQUEST) < 0) {
-        ssh_buffer_free(request);
+        SSH_BUFFER_FREE(request);
         return NULL;
     }
 
     rc = ssh_pki_export_pubkey_blob(pubkey, &key_blob);
     if (rc < 0) {
-        ssh_buffer_free(request);
+        SSH_BUFFER_FREE(request);
         return NULL;
     }
 
@@ -513,7 +513,7 @@ ssh_string ssh_agent_sign_data(ssh_session session,
                                   sizeof(uint32_t) * 2 +
                                   ssh_string_len(key_blob));
     if (rc < 0) {
-        ssh_buffer_free(request);
+        SSH_BUFFER_FREE(request);
         return NULL;
     }
 
@@ -521,18 +521,18 @@ ssh_string ssh_agent_sign_data(ssh_session session,
     rc = ssh_buffer_add_ssh_string(request, key_blob);
     SSH_STRING_FREE(key_blob);
     if (rc < 0) {
-        ssh_buffer_free(request);
+        SSH_BUFFER_FREE(request);
         return NULL;
     }
 
     /* Add data */
     dlen = ssh_buffer_get_len(data);
     if (ssh_buffer_add_u32(request, htonl(dlen)) < 0) {
-        ssh_buffer_free(request);
+        SSH_BUFFER_FREE(request);
         return NULL;
     }
     if (ssh_buffer_add_data(request, ssh_buffer_get(data), dlen) < 0) {
-        ssh_buffer_free(request);
+        SSH_BUFFER_FREE(request);
         return NULL;
     }
 
@@ -545,27 +545,27 @@ ssh_string ssh_agent_sign_data(ssh_session session,
         }
     }
     if (ssh_buffer_add_u32(request, htonl(flags)) < 0) {
-        ssh_buffer_free(request);
+        SSH_BUFFER_FREE(request);
         return NULL;
     }
 
     reply = ssh_buffer_new();
     if (reply == NULL) {
-        ssh_buffer_free(request);
+        SSH_BUFFER_FREE(request);
         return NULL;
     }
 
     /* send the request */
     if (agent_talk(session, request, reply) < 0) {
-        ssh_buffer_free(request);
-        ssh_buffer_free(reply);
+        SSH_BUFFER_FREE(request);
+        SSH_BUFFER_FREE(reply);
         return NULL;
     }
-    ssh_buffer_free(request);
+    SSH_BUFFER_FREE(request);
 
     /* check if reply is valid */
     if (ssh_buffer_get_u8(reply, (uint8_t *) &type) != sizeof(uint8_t)) {
-        ssh_buffer_free(reply);
+        SSH_BUFFER_FREE(reply);
         return NULL;
     }
 #ifdef WORDS_BIGENDIAN
@@ -574,19 +574,19 @@ ssh_string ssh_agent_sign_data(ssh_session session,
 
     if (agent_failed(type)) {
         SSH_LOG(SSH_LOG_WARN, "Agent reports failure in signing the key");
-        ssh_buffer_free(reply);
+        SSH_BUFFER_FREE(reply);
         return NULL;
     } else if (type != SSH2_AGENT_SIGN_RESPONSE) {
         ssh_set_error(session,
                       SSH_FATAL,
                       "Bad authentication response: %u",
                       type);
-        ssh_buffer_free(reply);
+        SSH_BUFFER_FREE(reply);
         return NULL;
     }
 
     sig_blob = ssh_buffer_get_ssh_string(reply);
-    ssh_buffer_free(reply);
+    SSH_BUFFER_FREE(reply);
 
     return sig_blob;
 }
