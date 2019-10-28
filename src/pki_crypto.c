@@ -1614,6 +1614,10 @@ static int pki_signature_from_rsa_blob(const ssh_key pubkey,
         blob_padded_data = (char *) ssh_string_data(sig_blob_padded);
         blob_orig = (char *) ssh_string_data(sig_blob);
 
+        if (blob_padded_data == NULL || blob_orig == NULL) {
+            goto errout;
+        }
+
         /* front-pad the buffer with zeroes */
         explicit_bzero(blob_padded_data, pad_len);
         /* fill the rest with the actual signature blob */
