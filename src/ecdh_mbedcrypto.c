@@ -113,7 +113,7 @@ int ssh_client_ecdh_init(ssh_session session)
 
 out:
     mbedtls_ecp_group_free(&grp);
-    ssh_string_free(client_pubkey);
+    SSH_STRING_FREE(client_pubkey);
 
     return rc;
 }
@@ -274,7 +274,7 @@ SSH_PACKET_CALLBACK(ssh_packet_server_ecdh_init){
     rc = ssh_dh_get_next_server_publickey_blob(session, &pubkey_blob);
     if (rc != SSH_OK) {
         ssh_set_error(session, SSH_FATAL, "Could not export server public key");
-        ssh_string_free(sig_blob);
+        SSH_STRING_FREE(sig_blob);
         goto out;
     }
 
@@ -284,8 +284,8 @@ SSH_PACKET_CALLBACK(ssh_packet_server_ecdh_init){
                          q_s_string, /* ecdh public key */
                          sig_blob); /* signature blob */
 
-    ssh_string_free(sig_blob);
-    ssh_string_free(pubkey_blob);
+    SSH_STRING_FREE(sig_blob);
+    SSH_STRING_FREE(pubkey_blob);
 
     if (rc != SSH_OK) {
         ssh_set_error_oom(session);
