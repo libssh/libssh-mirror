@@ -106,7 +106,7 @@ ssh_channel ssh_channel_new(ssh_session session)
     channel->stderr_buffer = ssh_buffer_new();
     if (channel->stderr_buffer == NULL) {
         ssh_set_error_oom(session);
-        ssh_buffer_free(channel->stdout_buffer);
+        SSH_BUFFER_FREE(channel->stdout_buffer);
         SAFE_FREE(channel);
         return NULL;
     }
@@ -877,7 +877,7 @@ int channel_default_bufferize(ssh_channel channel,
 
     if (ssh_buffer_add_data(channel->stdout_buffer, data, len) < 0) {
       ssh_set_error_oom(session);
-      ssh_buffer_free(channel->stdout_buffer);
+      SSH_BUFFER_FREE(channel->stdout_buffer);
       channel->stdout_buffer = NULL;
       return -1;
     }
@@ -893,7 +893,7 @@ int channel_default_bufferize(ssh_channel channel,
 
     if (ssh_buffer_add_data(channel->stderr_buffer, data, len) < 0) {
       ssh_set_error_oom(session);
-      ssh_buffer_free(channel->stderr_buffer);
+      SSH_BUFFER_FREE(channel->stderr_buffer);
       channel->stderr_buffer = NULL;
       return -1;
     }
@@ -1024,7 +1024,7 @@ int ssh_channel_open_forward(ssh_channel channel, const char *remotehost,
                     payload);
 
 error:
-  ssh_buffer_free(payload);
+  SSH_BUFFER_FREE(payload);
   SSH_STRING_FREE(str);
 
   return rc;
@@ -1107,7 +1107,7 @@ int ssh_channel_open_forward_unix(ssh_channel channel,
                       payload);
 
 error:
-    ssh_buffer_free(payload);
+    SSH_BUFFER_FREE(payload);
     SSH_STRING_FREE(str);
 
     return rc;
@@ -1841,7 +1841,7 @@ int ssh_channel_request_pty_size(ssh_channel channel, const char *terminal,
 pending:
   rc = channel_request(channel, "pty-req", buffer, 1);
 error:
-  ssh_buffer_free(buffer);
+  SSH_BUFFER_FREE(buffer);
 
   return rc;
 }
@@ -1901,7 +1901,7 @@ int ssh_channel_change_pty_size(ssh_channel channel, int cols, int rows) {
 
   rc = channel_request(channel, "window-change", buffer, 0);
 error:
-  ssh_buffer_free(buffer);
+  SSH_BUFFER_FREE(buffer);
 
   return rc;
 }
@@ -1970,7 +1970,7 @@ int ssh_channel_request_subsystem(ssh_channel channel, const char *subsys) {
 pending:
   rc = channel_request(channel, "subsystem", buffer, 1);
 error:
-  ssh_buffer_free(buffer);
+  SSH_BUFFER_FREE(buffer);
 
   return rc;
 }
@@ -2086,7 +2086,7 @@ pending:
   rc = channel_request(channel, "x11-req", buffer, 1);
 
 error:
-  ssh_buffer_free(buffer);
+  SSH_BUFFER_FREE(buffer);
   return rc;
 }
 
@@ -2399,7 +2399,7 @@ pending:
   }
 
 error:
-  ssh_buffer_free(buffer);
+  SSH_BUFFER_FREE(buffer);
   return rc;
 }
 
@@ -2471,7 +2471,7 @@ pending:
   rc = ssh_global_request(session, "cancel-tcpip-forward", buffer, 1);
 
 error:
-  ssh_buffer_free(buffer);
+  SSH_BUFFER_FREE(buffer);
   return rc;
 }
 
@@ -2529,7 +2529,7 @@ int ssh_channel_request_env(ssh_channel channel, const char *name, const char *v
 pending:
   rc = channel_request(channel, "env", buffer,1);
 error:
-  ssh_buffer_free(buffer);
+  SSH_BUFFER_FREE(buffer);
 
   return rc;
 }
@@ -2598,7 +2598,7 @@ int ssh_channel_request_exec(ssh_channel channel, const char *cmd) {
 pending:
   rc = channel_request(channel, "exec", buffer, 1);
 error:
-  ssh_buffer_free(buffer);
+  SSH_BUFFER_FREE(buffer);
   return rc;
 }
 
@@ -2661,7 +2661,7 @@ int ssh_channel_request_send_signal(ssh_channel channel, const char *sig) {
 
   rc = channel_request(channel, "signal", buffer, 0);
 error:
-  ssh_buffer_free(buffer);
+  SSH_BUFFER_FREE(buffer);
   return rc;
 }
 
@@ -2704,7 +2704,7 @@ int ssh_channel_request_send_break(ssh_channel channel, uint32_t length) {
     rc = channel_request(channel, "break", buffer, 0);
 
 error:
-    ssh_buffer_free(buffer);
+    SSH_BUFFER_FREE(buffer);
     return rc;
 }
 
@@ -3501,7 +3501,7 @@ pending:
                     payload);
 
 error:
-  ssh_buffer_free(payload);
+  SSH_BUFFER_FREE(payload);
 
   return rc;
 }
@@ -3563,7 +3563,7 @@ pending:
                     payload);
 
 error:
-  ssh_buffer_free(payload);
+  SSH_BUFFER_FREE(payload);
 
   return rc;
 }
@@ -3604,7 +3604,7 @@ int ssh_channel_request_send_exit_status(ssh_channel channel, int exit_status) {
 
   rc = channel_request(channel, "exit-status", buffer, 0);
 error:
-  ssh_buffer_free(buffer);
+  SSH_BUFFER_FREE(buffer);
   return rc;
 }
 
@@ -3659,7 +3659,7 @@ int ssh_channel_request_send_exit_signal(ssh_channel channel, const char *sig,
 
   rc = channel_request(channel, "exit-signal", buffer, 0);
 error:
-  ssh_buffer_free(buffer);
+  SSH_BUFFER_FREE(buffer);
   return rc;
 }
 
