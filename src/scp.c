@@ -335,7 +335,18 @@ int ssh_scp_push_directory(ssh_scp scp, const char *dirname, int mode)
     }
 
     dir = ssh_basename(dirname);
+    if (dir == NULL) {
+        ssh_set_error_oom(scp->session);
+        return SSH_ERROR;
+    }
+
     perms = ssh_scp_string_mode(mode);
+    if (perms == NULL) {
+        SAFE_FREE(dir);
+        ssh_set_error_oom(scp->session);
+        return SSH_ERROR;
+    }
+
     snprintf(buffer, sizeof(buffer), "D%s 0 %s\n", perms, dir);
     SAFE_FREE(dir);
     SAFE_FREE(perms);
