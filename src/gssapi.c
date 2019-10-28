@@ -297,6 +297,10 @@ int ssh_gssapi_handle_userauth(ssh_session session, const char *user, uint32_t n
     for (i=0 ; i< n_oid ; ++i){
         unsigned char *oid_s = (unsigned char *) ssh_string_data(oids[i]);
         size_t len = ssh_string_len(oids[i]);
+
+        if (oid_s == NULL) {
+            continue;
+        }
         if(len < 2 || oid_s[0] != SSH_OID_TAG || ((size_t)oid_s[1]) != len - 2){
             SSH_LOG(SSH_LOG_WARNING,"GSSAPI: received invalid OID");
             continue;
