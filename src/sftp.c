@@ -1123,7 +1123,7 @@ static sftp_attributes sftp_parse_attr_4(sftp_session sftp, ssh_buffer buf,
         break;
       }
       attr->owner = ssh_string_to_char(owner);
-      ssh_string_free(owner);
+      SSH_STRING_FREE(owner);
       if (attr->owner == NULL) {
         break;
       }
@@ -1133,7 +1133,7 @@ static sftp_attributes sftp_parse_attr_4(sftp_session sftp, ssh_buffer buf,
         break;
       }
       attr->group = ssh_string_to_char(group);
-      ssh_string_free(group);
+      SSH_STRING_FREE(group);
       if (attr->group == NULL) {
         break;
       }
@@ -1237,9 +1237,9 @@ static sftp_attributes sftp_parse_attr_4(sftp_session sftp, ssh_buffer buf,
 
   if (ok == 0) {
     /* break issued somewhere */
-    ssh_string_free(attr->acl);
-    ssh_string_free(attr->extended_type);
-    ssh_string_free(attr->extended_data);
+    SSH_STRING_FREE(attr->acl);
+    SSH_STRING_FREE(attr->extended_type);
+    SSH_STRING_FREE(attr->extended_data);
     SAFE_FREE(attr->owner);
     SAFE_FREE(attr->group);
     SAFE_FREE(attr);
@@ -1437,8 +1437,8 @@ static sftp_attributes sftp_parse_attr_3(sftp_session sftp, ssh_buffer buf,
     return attr;
 
     error:
-    ssh_string_free(attr->extended_type);
-    ssh_string_free(attr->extended_data);
+    SSH_STRING_FREE(attr->extended_type);
+    SSH_STRING_FREE(attr->extended_data);
     SAFE_FREE(attr->name);
     SAFE_FREE(attr->longname);
     SAFE_FREE(attr->owner);
@@ -1646,9 +1646,9 @@ void sftp_attributes_free(sftp_attributes file){
     return;
   }
 
-  ssh_string_free(file->acl);
-  ssh_string_free(file->extended_data);
-  ssh_string_free(file->extended_type);
+  SSH_STRING_FREE(file->acl);
+  SSH_STRING_FREE(file->extended_data);
+  SSH_STRING_FREE(file->extended_type);
 
   SAFE_FREE(file->name);
   SAFE_FREE(file->longname);
@@ -1737,7 +1737,7 @@ int sftp_close(sftp_file file){
   SAFE_FREE(file->name);
   if (file->handle){
     err = sftp_handle_close(file->sftp,file->handle);
-    ssh_string_free(file->handle);
+    SSH_STRING_FREE(file->handle);
   }
   /* FIXME: check server response and implement errno */
   SAFE_FREE(file);
@@ -1752,7 +1752,7 @@ int sftp_closedir(sftp_dir dir){
   SAFE_FREE(dir->name);
   if (dir->handle) {
     err = sftp_handle_close(dir->sftp, dir->handle);
-    ssh_string_free(dir->handle);
+    SSH_STRING_FREE(dir->handle);
   }
   /* FIXME: check server response and implement errno */
   ssh_buffer_free(dir->buffer);
@@ -1984,12 +1984,12 @@ ssize_t sftp_read(sftp_file handle, void *buf, size_t count) {
             "Received a too big DATA packet from sftp server: "
             "%" PRIdS " and asked for %" PRIdS,
             datalen, count);
-        ssh_string_free(datastring);
+        SSH_STRING_FREE(datastring);
         return -1;
       }
       handle->offset += (uint64_t)datalen;
       memcpy(buf, ssh_string_data(datastring), datalen);
-      ssh_string_free(datastring);
+      SSH_STRING_FREE(datastring);
       return datalen;
     default:
       ssh_set_error(sftp->session, SSH_FATAL,
@@ -2106,14 +2106,14 @@ int sftp_async_read(sftp_file file, void *data, uint32_t size, uint32_t id){
             "Received a too big DATA packet from sftp server: "
             "%" PRIdS " and asked for %u",
             ssh_string_len(datastring), size);
-        ssh_string_free(datastring);
+        SSH_STRING_FREE(datastring);
         return SSH_ERROR;
       }
       len = ssh_string_len(datastring);
       /* Update the offset with the correct value */
       file->offset = file->offset - (size - len);
       memcpy(data, ssh_string_data(datastring), len);
-      ssh_string_free(datastring);
+      SSH_STRING_FREE(datastring);
       return len;
     default:
       ssh_set_error(sftp->session,SSH_FATAL,"Received message %d during read!",msg->packet_type);
