@@ -392,7 +392,7 @@ SSH_PACKET_CALLBACK(ssh_packet_kexinit)
             ssh_set_error_oom(session);
             goto error;
         }
-        ssh_string_free(str);
+        SSH_STRING_FREE(str);
         str = NULL;
     }
 
@@ -527,7 +527,7 @@ SSH_PACKET_CALLBACK(ssh_packet_kexinit)
     return SSH_PACKET_USED;
 
 error:
-    ssh_string_free(str);
+    SSH_STRING_FREE(str);
     for (i = 0; i < SSH_KEX_METHODS; i++) {
         if (server_kex) {
             session->next_crypto->client_kex.methods[i] = NULL;
@@ -834,7 +834,7 @@ int ssh_send_kex(ssh_session session, int server_kex) {
     if (ssh_buffer_add_ssh_string(session->out_buffer, str) < 0) {
       goto error;
     }
-    ssh_string_free(str);
+    SSH_STRING_FREE(str);
     str = NULL;
   }
 
@@ -855,7 +855,7 @@ int ssh_send_kex(ssh_session session, int server_kex) {
 error:
   ssh_buffer_reinit(session->out_buffer);
   ssh_buffer_reinit(session->out_hashbuf);
-  ssh_string_free(str);
+  SSH_STRING_FREE(str);
 
   return -1;
 }
@@ -1018,7 +1018,7 @@ int ssh_make_sessionid(ssh_session session)
                          ssh_buffer_get_len(server_hash),
                          ssh_buffer_get(server_hash),
                          server_pubkey_blob);
-    ssh_string_free(server_pubkey_blob);
+    SSH_STRING_FREE(server_pubkey_blob);
     if(rc != SSH_OK){
         goto error;
     }
@@ -1207,7 +1207,7 @@ error:
     session->in_hashbuf = NULL;
     session->out_hashbuf = NULL;
 
-    ssh_string_free(num);
+    SSH_STRING_FREE(num);
 
     return rc;
 }
@@ -1397,7 +1397,7 @@ int ssh_generate_session_keys(ssh_session session)
     rc = 0;
 error:
     ssh_string_burn(k_string);
-    ssh_string_free(k_string);
+    SSH_STRING_FREE(k_string);
     if (rc != 0) {
         free(IV_cli_to_srv);
         free(IV_srv_to_cli);
