@@ -38,6 +38,7 @@
 #include "config.h"
 
 #include <ctype.h>
+#include <stdbool.h>
 #include <sys/types.h>
 
 #include "libssh/priv.h"
@@ -46,7 +47,9 @@
  * Returns true if the given string matches the pattern (which may contain ?
  * and * as wildcards), and zero if it does not match.
  */
-static int match_pattern(const char *s, const char *pattern) {
+static int match_pattern(const char *s, const char *pattern)
+{
+  bool had_asterisk = false;
   if (s == NULL || pattern == NULL) {
     return 0;
   }
@@ -57,16 +60,19 @@ static int match_pattern(const char *s, const char *pattern) {
         return (*s == '\0');
     }
 
-    if (*pattern == '*') {
+    while (*pattern == '*') {
       /* Skip the asterisk. */
+      had_asterisk = true;
       pattern++;
+    }
 
+    if (had_asterisk) {
       /* If at end of pattern, accept immediately. */
       if (!*pattern)
         return 1;
 
       /* If next character in pattern is known, optimize. */
-      if (*pattern != '?' && *pattern != '*') {
+      if (*pattern != '?') {
         /*
          * Look instances of the next character in
          * pattern, and try to match starting from
