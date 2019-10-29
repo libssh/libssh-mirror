@@ -6,6 +6,7 @@
 #include "libssh/options.h"
 #include "libssh/session.h"
 #include "libssh/config_parser.h"
+#include "match.c"
 
 extern LIBSSH_THREAD int ssh_log_level;
 
@@ -1072,6 +1073,89 @@ static void torture_config_parser_get_token(void **state)
     assert_int_equal(*p, '\0');
 }
 
+/* match_pattern() sanity tests
+ */
+static void torture_config_match_pattern(void **state)
+{
+    int rv = 0;
+
+    (void) state;
+
+    /* Simple test "a" matches "a" */
+    rv = match_pattern("a", "a", MAX_MATCH_RECURSION);
+    assert_int_equal(rv, 1);
+
+    /* Simple test "a" does not match "b" */
+    rv = match_pattern("a", "b", MAX_MATCH_RECURSION);
+    assert_int_equal(rv, 0);
+
+    /* NULL arguments are correctly handled */
+    rv = match_pattern("a", NULL, MAX_MATCH_RECURSION);
+    assert_int_equal(rv, 0);
+    rv = match_pattern(NULL, "a", MAX_MATCH_RECURSION);
+    assert_int_equal(rv, 0);
+
+    /* Simple wildcard ? is handled in pattern */
+    rv = match_pattern("a", "?", MAX_MATCH_RECURSION);
+    assert_int_equal(rv, 1);
+    rv = match_pattern("aa", "?", MAX_MATCH_RECURSION);
+    assert_int_equal(rv, 0);
+    rv = match_pattern("?", "a", MAX_MATCH_RECURSION); /* Wildcard in search string */
+    assert_int_equal(rv, 0);
+    rv = match_pattern("?", "?", MAX_MATCH_RECURSION);
+    assert_int_equal(rv, 1);
+
+    /* Simple wildcard * is handled in pattern */
+    rv = match_pattern("a", "*", MAX_MATCH_RECURSION);
+    assert_int_equal(rv, 1);
+    rv = match_pattern("aa", "*", MAX_MATCH_RECURSION);
+    assert_int_equal(rv, 1);
+    rv = match_pattern("*", "a", MAX_MATCH_RECURSION); /* Wildcard in search string */
+    assert_int_equal(rv, 0);
+    rv = match_pattern("*", "*", MAX_MATCH_RECURSION);
+    assert_int_equal(rv, 1);
+
+    /* More complicated patterns */
+    rv = match_pattern("a", "*a", MAX_MATCH_RECURSION);
+    assert_int_equal(rv, 1);
+    rv = match_pattern("a", "a*", MAX_MATCH_RECURSION);
+    assert_int_equal(rv, 1);
+    rv = match_pattern("abababc", "*abc", MAX_MATCH_RECURSION);
+    assert_int_equal(rv, 1);
+    rv = match_pattern("ababababca", "*abc", MAX_MATCH_RECURSION);
+    assert_int_equal(rv, 0);
+    rv = match_pattern("ababababca", "*abc*", MAX_MATCH_RECURSION);
+    assert_int_equal(rv, 1);
+
+    /* Multiple wildcards in row */
+    rv = match_pattern("aa", "??", MAX_MATCH_RECURSION);
+    assert_int_equal(rv, 1);
+    rv = match_pattern("bba", "??a", MAX_MATCH_RECURSION);
+    assert_int_equal(rv, 1);
+    rv = match_pattern("aaa", "**a", MAX_MATCH_RECURSION);
+    assert_int_equal(rv, 1);
+    rv = match_pattern("bbb", "**a", MAX_MATCH_RECURSION);
+    assert_int_equal(rv, 0);
+
+    /* Consecutive asterisks do not make sense and do not need to recurse */
+    rv = match_pattern("hostname", "**********pattern", 5);
+    assert_int_equal(rv, 0);
+    rv = match_pattern("hostname", "pattern**********", 5);
+    assert_int_equal(rv, 0);
+    rv = match_pattern("pattern", "***********pattern", 5);
+    assert_int_equal(rv, 1);
+    rv = match_pattern("pattern", "pattern***********", 5);
+    assert_int_equal(rv, 1);
+
+    /* Limit the maximum recursion */
+    rv = match_pattern("hostname", "*p*a*t*t*e*r*n*", 5);
+    assert_int_equal(rv, 0);
+    rv = match_pattern("pattern", "*p*a*t*t*e*r*n*", 5); /* Too much recursion */
+    assert_int_equal(rv, 0);
+
+}
+
+
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
@@ -1087,6 +1171,7 @@ int torture_run_tests(void) {
         cmocka_unit_test(torture_config_pubkeyacceptedkeytypes),
         cmocka_unit_test(torture_config_parser_get_cmd),
         cmocka_unit_test(torture_config_parser_get_token),
+        cmocka_unit_test(torture_config_match_pattern),
     };
 
 
