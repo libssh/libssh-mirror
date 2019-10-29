@@ -521,6 +521,11 @@ ssh_config_parse_line(ssh_session session,
   long l;
   int64_t ll;
 
+  /* Ignore empty lines */
+  if (line == NULL || *line == '\0') {
+    return 0;
+  }
+
   x = s = strdup(line);
   if (s == NULL) {
     ssh_set_error_oom(session);
