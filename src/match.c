@@ -43,14 +43,16 @@
 
 #include "libssh/priv.h"
 
+#define MAX_MATCH_RECURSION 32
+
 /*
  * Returns true if the given string matches the pattern (which may contain ?
  * and * as wildcards), and zero if it does not match.
  */
-static int match_pattern(const char *s, const char *pattern)
+static int match_pattern(const char *s, const char *pattern, size_t limit)
 {
   bool had_asterisk = false;
-  if (s == NULL || pattern == NULL) {
+  if (s == NULL || pattern == NULL || limit <= 0) {
     return 0;
   }
 
@@ -79,7 +81,7 @@ static int match_pattern(const char *s, const char *pattern)
          * those.
          */
         for (; *s; s++)
-          if (*s == *pattern && match_pattern(s + 1, pattern + 1)) {
+          if (*s == *pattern && match_pattern(s + 1, pattern + 1, limit - 1)) {
             return 1;
           }
         /* Failed. */
@@ -90,7 +92,7 @@ static int match_pattern(const char *s, const char *pattern)
        * match at each position.
        */
       for (; *s; s++) {
-        if (match_pattern(s, pattern)) {
+        if (match_pattern(s, pattern, limit - 1)) {
           return 1;
         }
       }
@@ -167,7 +169,7 @@ int match_pattern_list(const char *string, const char *pattern,
     sub[subi] = '\0';
 
     /* Try to match the subpattern against the string. */
-    if (match_pattern(string, sub)) {
+    if (match_pattern(string, sub, MAX_MATCH_RECURSION)) {
       if (negated) {
         return -1;        /* Negative */
       } else {
