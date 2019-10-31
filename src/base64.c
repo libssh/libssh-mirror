@@ -29,7 +29,8 @@
 #include "libssh/priv.h"
 #include "libssh/buffer.h"
 
-static char alphabet[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+static
+const uint8_t alphabet[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                          "abcdefghijklmnopqrstuvwxyz"
                          "0123456789+/";
 
@@ -171,15 +172,15 @@ error:
   return NULL;
 }
 
-#define BLOCK(letter, n) do {ptr = strchr(alphabet, source[n]); \
+#define BLOCK(letter, n) do {ptr = strchr((const char *)alphabet, source[n]); \
                              if(!ptr) return -1; \
-                             i = ptr - alphabet; \
+                             i = ptr - (const char *)alphabet; \
                              SET_##letter(*block, i); \
                          } while(0)
 
 /* Returns 0 if ok, -1 if not (ie invalid char into the stuff) */
 static int to_block4(unsigned long *block, const char *source, int num) {
-  char *ptr;
+  const char *ptr = NULL;
   unsigned int i;
 
   *block = 0;
@@ -234,9 +235,9 @@ static int get_equals(char *string) {
 }
 
 /* thanks sysk for debugging my mess :) */
-static void _bin_to_base64(unsigned char *dest,
-                           const unsigned char source[3],
-                           int len)
+static void _bin_to_base64(uint8_t *dest,
+                           const uint8_t source[3],
+                           size_t len)
 {
 #define BITS(n) ((1 << (n)) - 1)
     switch (len) {
