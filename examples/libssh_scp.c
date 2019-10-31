@@ -257,14 +257,15 @@ static int open_location(struct location *loc, int flag) {
  * @param recursive Copy also directories
  */
 static int do_copy(struct location *src, struct location *dest, int recursive) {
-    int size;
+    size_t size;
     socket_t fd;
     struct stat s;
     int w, r;
     char buffer[16384];
-    int total = 0;
-    int mode;
+    size_t total = 0;
+    mode_t mode;
     char *filename = NULL;
+
     /* recursive mode doesn't work yet */
     (void)recursive;
     /* Get the file name and size*/
@@ -394,7 +395,7 @@ static int do_copy(struct location *src, struct location *dest, int recursive) {
     } while(total < size);
 
     ssh_string_free_char(filename);
-    printf("wrote %d bytes\n", total);
+    printf("wrote %zu bytes\n", total);
     return 0;
 }
 
