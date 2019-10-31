@@ -223,7 +223,7 @@ int sc25519_lt_vartime(const sc25519 *x, const sc25519 *y)
 
 void sc25519_add(sc25519 *r, const sc25519 *x, const sc25519 *y)
 {
-    int i, carry;
+    uint32_t i, carry;
 
     for (i = 0; i < 32; i++) {
         r->v[i] = x->v[i] + y->v[i];
