@@ -58,7 +58,7 @@
 #define SFTP_BUFFER_SIZE_MAX 16384
 
 struct sftp_ext_struct {
-  unsigned int count;
+  uint32_t count;
   char **name;
   char **data;
 };
@@ -685,7 +685,7 @@ int sftp_init(sftp_session sftp) {
       version);
   rc = ssh_buffer_unpack(packet->payload, "s", &ext_name);
   while (rc == SSH_OK) {
-    int count = sftp->ext->count;
+    uint32_t count = sftp->ext->count;
     char **tmp;
 
     rc = ssh_buffer_unpack(packet->payload, "s", &ext_data);
