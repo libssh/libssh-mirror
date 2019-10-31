@@ -108,8 +108,8 @@ static int pki_private_key_decrypt(ssh_string blob,
 {
     struct ssh_cipher_struct *ciphers = ssh_get_ciphertab();
     struct ssh_cipher_struct cipher;
-    uint8_t key_material[128];
-    char passphrase_buffer[128];
+    uint8_t key_material[128] = {0};
+    char passphrase_buffer[128] = {0};
     size_t key_material_len;
     ssh_buffer buffer;
     ssh_string salt;
