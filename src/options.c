@@ -1805,12 +1805,12 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
         return -1;
       } else {
         int *x = (int *) value;
-        sshbind->bindport = *x & 0xffff;
+        sshbind->bindport = *x & 0xffffU;
       }
       break;
     case SSH_BIND_OPTIONS_BINDPORT_STR:
       if (value == NULL) {
-        sshbind->bindport = 22 & 0xffff;
+        sshbind->bindport = 22 & 0xffffU;
       } else {
         q = strdup(value);
         if (q == NULL) {
@@ -1823,7 +1823,7 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
         }
         SAFE_FREE(q);
 
-        sshbind->bindport = i & 0xffff;
+        sshbind->bindport = i & 0xffffU;
       }
       break;
     case SSH_BIND_OPTIONS_LOG_VERBOSITY:
@@ -1832,7 +1832,7 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
         return -1;
       } else {
         int *x = (int *) value;
-        ssh_set_log_level(*x & 0xffff);
+        ssh_set_log_level(*x & 0xffffU);
       }
       break;
     case SSH_BIND_OPTIONS_LOG_VERBOSITY_STR:
@@ -1850,7 +1850,7 @@ int ssh_bind_options_set(ssh_bind sshbind, enum ssh_bind_options_e type,
         }
         SAFE_FREE(q);
 
-        ssh_set_log_level(i & 0xffff);
+        ssh_set_log_level(i & 0xffffU);
       }
       break;
     case SSH_BIND_OPTIONS_DSAKEY:
