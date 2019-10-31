@@ -334,6 +334,7 @@ SSH_PACKET_CALLBACK(ssh_packet_kexinit)
     char *strings[SSH_KEX_METHODS] = {0};
     char *rsa_sig_ext = NULL;
     int rc = SSH_ERROR;
+    size_t len;
 
     uint8_t first_kex_packet_follows = 0;
     uint32_t kexinit_reserved = 0;
@@ -349,26 +350,26 @@ SSH_PACKET_CALLBACK(ssh_packet_kexinit)
     }
 
     if (server_kex) {
-        rc = ssh_buffer_get_data(packet,session->next_crypto->client_kex.cookie, 16);
-        if (rc != 16) {
+        len = ssh_buffer_get_data(packet,session->next_crypto->client_kex.cookie, 16);
+        if (len != 16) {
             ssh_set_error(session, SSH_FATAL, "ssh_packet_kexinit: no cookie in packet");
             goto error;
         }
 
-        rc = ssh_hashbufin_add_cookie(session, session->next_crypto->client_kex.cookie);
-        if (rc < 0) {
+        len = ssh_hashbufin_add_cookie(session, session->next_crypto->client_kex.cookie);
+        if (len < 0) {
             ssh_set_error(session, SSH_FATAL, "ssh_packet_kexinit: adding cookie failed");
             goto error;
         }
     } else {
-        rc = ssh_buffer_get_data(packet,session->next_crypto->server_kex.cookie, 16);
-        if (rc != 16) {
+        len = ssh_buffer_get_data(packet,session->next_crypto->server_kex.cookie, 16);
+        if (len != 16) {
             ssh_set_error(session, SSH_FATAL, "ssh_packet_kexinit: no cookie in packet");
             goto error;
         }
 
-        rc = ssh_hashbufin_add_cookie(session, session->next_crypto->server_kex.cookie);
-        if (rc < 0) {
+        len = ssh_hashbufin_add_cookie(session, session->next_crypto->server_kex.cookie);
+        if (len < 0) {
             ssh_set_error(session, SSH_FATAL, "ssh_packet_kexinit: adding cookie failed");
             goto error;
         }
