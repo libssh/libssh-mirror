@@ -253,7 +253,7 @@ void sc25519_sub_nored(sc25519 *r, const sc25519 *x, const sc25519 *y)
 
 void sc25519_mul(sc25519 *r, const sc25519 *x, const sc25519 *y)
 {
-    int i,j,carry;
+    uint32_t i,j,carry;
     uint32_t t[64];
 
     for (i = 0; i < 64; i++) {
