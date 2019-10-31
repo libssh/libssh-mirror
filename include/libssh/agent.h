@@ -104,7 +104,7 @@ void ssh_agent_free(struct ssh_agent_struct *agent);
  */
 int ssh_agent_is_running(struct ssh_session_struct *session);
 
-int ssh_agent_get_ident_count(struct ssh_session_struct *session);
+uint32_t ssh_agent_get_ident_count(struct ssh_session_struct *session);
 
 ssh_key ssh_agent_get_next_ident(struct ssh_session_struct *session,
                                  char **comment);

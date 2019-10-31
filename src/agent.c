@@ -307,7 +307,7 @@ static int agent_talk(struct ssh_session_struct *session,
   return 0;
 }
 
-int ssh_agent_get_ident_count(struct ssh_session_struct *session)
+uint32_t ssh_agent_get_ident_count(struct ssh_session_struct *session)
 {
     ssh_buffer request = NULL;
     ssh_buffer reply = NULL;
@@ -319,19 +319,19 @@ int ssh_agent_get_ident_count(struct ssh_session_struct *session)
     request = ssh_buffer_new();
     if (request == NULL) {
         ssh_set_error_oom(session);
-        return -1;
+        return 0;
     }
     if (ssh_buffer_add_u8(request, SSH2_AGENTC_REQUEST_IDENTITIES) < 0) {
         ssh_set_error_oom(session);
         ssh_buffer_free(request);
-        return -1;
+        return 0;
     }
 
     reply = ssh_buffer_new();
     if (reply == NULL) {
         ssh_buffer_free(request);
         ssh_set_error(session, SSH_FATAL, "Not enough space");
-        return -1;
+        return 0;
     }
 
     if (agent_talk(session, request, reply) < 0) {
@@ -347,7 +347,7 @@ int ssh_agent_get_ident_count(struct ssh_session_struct *session)
         ssh_set_error(session, SSH_FATAL,
                 "Bad authentication reply size: %d", rc);
         ssh_buffer_free(reply);
-        return -1;
+        return 0;
     }
 #ifdef WORDS_BIGENDIAN
     type = bswap_32(type);
@@ -364,7 +364,7 @@ int ssh_agent_get_ident_count(struct ssh_session_struct *session)
         ssh_set_error(session, SSH_FATAL,
                 "Bad authentication reply message type: %u", type);
         ssh_buffer_free(reply);
-        return -1;
+        return 0;
     }
 
     rc = ssh_buffer_get_u32(reply, &count);
@@ -373,7 +373,7 @@ int ssh_agent_get_ident_count(struct ssh_session_struct *session)
                 SSH_FATAL,
                 "Failed to read count");
         ssh_buffer_free(reply);
-        return -1;
+        return 0;
     }
     session->agent->count = ntohl(count);
     SSH_LOG(SSH_LOG_DEBUG, "Agent count: %d",
@@ -383,7 +383,7 @@ int ssh_agent_get_ident_count(struct ssh_session_struct *session)
                 "Too many identities in authentication reply: %d",
                 session->agent->count);
         ssh_buffer_free(reply);
-        return -1;
+        return 0;
     }
 
     if (session->agent->ident) {
