@@ -3082,6 +3082,7 @@ int ssh_channel_poll_timeout(ssh_channel channel, int timeout, int is_stderr)
     ssh_session session;
     ssh_buffer stdbuf;
     struct ssh_channel_read_termination_struct ctx;
+    size_t len;
     int rc;
 
     if(channel == NULL) {
@@ -3106,8 +3107,8 @@ int ssh_channel_poll_timeout(ssh_channel channel, int timeout, int is_stderr)
         rc = SSH_ERROR;
         goto out;
     }
-    rc = ssh_buffer_get_len(stdbuf);
-    if(rc > 0) {
+    len = ssh_buffer_get_len(stdbuf);
+    if (len > 0) {
         goto out;
     }
     if (channel->remote_eof) {
