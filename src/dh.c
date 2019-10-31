@@ -696,13 +696,16 @@ static char *ssh_get_b64_unpadded(const unsigned char *hash, size_t len)
 /**
  * @brief Get a hash as a human-readable hex- or base64-string.
  *
- * This gets an allocated fingerprint hash. It is a hex strings if the given
- * hash is a md5 sum.  If it is a SHA sum, it will return an unpadded base64
- * strings.  Either way, the output is prepended by the hash-type.
+ * This gets an allocated fingerprint hash.  If it is a SHA sum, it will
+ * return an unpadded base64 strings.  If it is a MD5 sum, it will return hex
+ * string. Either way, the output is prepended by the hash-type.
  *
- * @param  type         Which sort of hash is given.
+ * @warning Do NOT use MD5 or SHA1! Those hash functions are being deprecated.
  *
- * @param  hash         What should be converted to a base64 string.
+ * @param  type         Which sort of hash is given, use
+ *                      SSH_PUBLICKEY_HASH_SHA256 or better.
+ *
+ * @param  hash         The hash to be converted to fingerprint.
  *
  * @param  len          Length of the buffer to convert.
  *
@@ -769,13 +772,13 @@ char *ssh_get_fingerprint_hash(enum ssh_publickey_hash_type type,
 /**
  * @brief Print a hash as a human-readable hex- or base64-string.
  *
- * This function prints hex strings if the given hash is a md5 sum.
- * But prints unpadded base64 strings for sha sums.
- * Either way, the output is prepended by the hash-type.
+ * This prints an unpadded base64 strings for SHA sums and hex strings for MD5
+ * sum.  Either way, the output is prepended by the hash-type.
  *
- * @param  type         Which sort of hash is given.
+ * @param  type         Which sort of hash is given. Use
+ *                      SSH_PUBLICKEY_HASH_SHA256 or better.
  *
- * @param  hash         What should be converted to a base64 string.
+ * @param  hash         The hash to be converted to fingerprint.
  *
  * @param  len          Length of the buffer to convert.
  *
