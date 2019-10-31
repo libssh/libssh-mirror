@@ -1782,7 +1782,7 @@ const char *ssh_userauth_kbdint_getprompt(ssh_session session, unsigned int i,
     }
 
     if (echo) {
-        *echo = session->kbdint->echo[i];
+        *echo = (char)session->kbdint->echo[i];
     }
 
     return session->kbdint->prompts[i];
