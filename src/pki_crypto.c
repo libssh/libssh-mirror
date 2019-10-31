@@ -2148,7 +2148,7 @@ ssh_signature pki_sign_data(const ssh_key privkey,
     }
 
     /* Allocate buffer for signature */
-    raw_sig_len = EVP_PKEY_size(pkey);
+    raw_sig_len = (size_t)EVP_PKEY_size(pkey);
     raw_sig_data = (unsigned char *)malloc(raw_sig_len);
     if (raw_sig_data == NULL) {
         SSH_LOG(SSH_LOG_TRACE, "Out of memory");
