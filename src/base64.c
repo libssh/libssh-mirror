@@ -270,11 +270,11 @@ static void _bin_to_base64(uint8_t *dest,
  *
  * @returns the converted string
  */
-unsigned char *bin_to_base64(const unsigned char *source, int len)
+uint8_t *bin_to_base64(const uint8_t *source, size_t len)
 {
-    unsigned char *base64;
-    unsigned char *ptr;
-    int flen = len + (3 - (len % 3)); /* round to upper 3 multiple */
+    uint8_t *base64 = NULL;
+    uint8_t *ptr = NULL;
+    size_t flen = len + (3 - (len % 3)); /* round to upper 3 multiple */
     flen = (4 * flen) / 3 + 1;
 
     base64 = malloc(flen);
@@ -286,6 +286,9 @@ unsigned char *bin_to_base64(const unsigned char *source, int len)
     while(len > 0){
         _bin_to_base64(ptr, source, len > 3 ? 3 : len);
         ptr += 4;
+        if (len < 3) {
+            break;
+        }
         source += 3;
         len -= 3;
     }
