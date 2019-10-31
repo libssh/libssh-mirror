@@ -531,7 +531,7 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
                     return -1;
                 }
 
-                session->opts.port = *x & 0xffff;
+                session->opts.port = *x & 0xffffU;
             }
             break;
         case SSH_OPTIONS_PORT_STR:
@@ -555,7 +555,7 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
                     return -1;
                 }
 
-                session->opts.port = i & 0xffff;
+                session->opts.port = i & 0xffffU;
             }
             break;
         case SSH_OPTIONS_FD:
@@ -693,7 +693,7 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
                     return -1;
                 }
 
-                session->opts.timeout = *x & 0xffffffff;
+                session->opts.timeout = *x & 0xffffffffU;
             }
             break;
         case SSH_OPTIONS_TIMEOUT_USEC:
@@ -707,7 +707,7 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
                     return -1;
                 }
 
-                session->opts.timeout_usec = *x & 0xffffffff;
+                session->opts.timeout_usec = *x & 0xffffffffU;
             }
             break;
         case SSH_OPTIONS_SSH1:
@@ -725,8 +725,8 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
                     return -1;
                 }
 
-                session->common.log_verbosity = *x & 0xffff;
-                ssh_set_log_level(*x & 0xffff);
+                session->common.log_verbosity = *x & 0xffffU;
+                ssh_set_log_level(*x & 0xffffU);
             }
             break;
         case SSH_OPTIONS_LOG_VERBOSITY_STR:
@@ -751,8 +751,8 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
                     return -1;
                 }
 
-                session->common.log_verbosity = i & 0xffff;
-                ssh_set_log_level(i & 0xffff);
+                session->common.log_verbosity = i & 0xffffU;
+                ssh_set_log_level(i & 0xffffU);
             }
             break;
         case SSH_OPTIONS_CIPHERS_C_S:
