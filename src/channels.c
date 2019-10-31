@@ -3077,38 +3077,45 @@ int ssh_channel_poll(ssh_channel channel, int is_stderr){
  *
  * @see ssh_channel_is_eof()
  */
-int ssh_channel_poll_timeout(ssh_channel channel, int timeout, int is_stderr){
-  ssh_session session;
-  ssh_buffer stdbuf;
-  struct ssh_channel_read_termination_struct ctx;
-  int rc;
+int ssh_channel_poll_timeout(ssh_channel channel, int timeout, int is_stderr)
+{
+    ssh_session session;
+    ssh_buffer stdbuf;
+    struct ssh_channel_read_termination_struct ctx;
+    int rc;
 
-  if(channel == NULL) {
-      return SSH_ERROR;
-  }
+    if(channel == NULL) {
+        return SSH_ERROR;
+    }
 
-  session = channel->session;
-  stdbuf = channel->stdout_buffer;
+    session = channel->session;
+    stdbuf = channel->stdout_buffer;
 
-  if (is_stderr) {
-    stdbuf = channel->stderr_buffer;
-  }
-  ctx.buffer = stdbuf;
-  ctx.channel = channel;
-  ctx.count = 1;
-  rc = ssh_handle_packets_termination(channel->session, timeout,
-      ssh_channel_read_termination, &ctx);
-  if(rc ==SSH_ERROR || session->session_state == SSH_SESSION_STATE_ERROR){
-    rc = SSH_ERROR;
-    goto end;
-  }
-  rc = ssh_buffer_get_len(stdbuf);
-  if(rc > 0)
-    goto end;
-  if (channel->remote_eof)
-    rc = SSH_EOF;
-end:
-  return rc;
+    if (is_stderr) {
+        stdbuf = channel->stderr_buffer;
+    }
+    ctx.buffer = stdbuf;
+    ctx.channel = channel;
+    ctx.count = 1;
+    rc = ssh_handle_packets_termination(channel->session,
+                                        timeout,
+                                        ssh_channel_read_termination,
+                                        &ctx);
+    if (rc == SSH_ERROR ||
+       session->session_state == SSH_SESSION_STATE_ERROR) {
+        rc = SSH_ERROR;
+        goto out;
+    }
+    rc = ssh_buffer_get_len(stdbuf);
+    if(rc > 0) {
+        goto out;
+    }
+    if (channel->remote_eof) {
+        rc = SSH_EOF;
+    }
+
+out:
+    return rc;
 }
 
 /**
