@@ -699,7 +699,7 @@ static ssh_buffer ssh_msg_userauth_build_digest(ssh_session session,
     }
     rc = ssh_pki_export_pubkey_blob(msg->auth_request.pubkey, &str);
     if (rc < 0) {
-        ssh_buffer_free(buffer);
+        SSH_BUFFER_FREE(buffer);
         return NULL;
     }
 
@@ -718,7 +718,7 @@ static ssh_buffer ssh_msg_userauth_build_digest(ssh_session session,
     SSH_STRING_FREE(str);
     if (rc != SSH_OK) {
         ssh_set_error_oom(session);
-        ssh_buffer_free(buffer);
+        SSH_BUFFER_FREE(buffer);
         return NULL;
     }
 
@@ -895,7 +895,7 @@ SSH_PACKET_CALLBACK(ssh_packet_userauth_request){
             }
         }
         SSH_STRING_FREE(sig_blob);
-        ssh_buffer_free(digest);
+        SSH_BUFFER_FREE(digest);
         ssh_signature_free(sig);
         if (rc < 0) {
             SSH_LOG(
