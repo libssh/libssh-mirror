@@ -388,6 +388,7 @@ static SSH_PACKET_CALLBACK(ssh_packet_server_curve25519_init){
 
     /* SSH host keys (rsa,dsa,ecdsa) */
     ssh_key privkey;
+    enum ssh_digest_e digest = SSH_DIGEST_AUTO;
     ssh_string sig_blob = NULL;
     int rc;
     (void)type;
@@ -435,7 +436,7 @@ static SSH_PACKET_CALLBACK(ssh_packet_server_curve25519_init){
     }
 
     /* privkey is not allocated */
-    rc = ssh_get_key_params(session, &privkey);
+    rc = ssh_get_key_params(session, &privkey, &digest);
     if (rc == SSH_ERROR) {
         goto error;
     }
@@ -478,7 +479,7 @@ static SSH_PACKET_CALLBACK(ssh_packet_server_curve25519_init){
         goto error;
     }
     /* add signature blob */
-    sig_blob = ssh_srv_pki_do_sign_sessionid(session, privkey);
+    sig_blob = ssh_srv_pki_do_sign_sessionid(session, privkey, digest);
     if (sig_blob == NULL) {
         ssh_set_error(session, SSH_FATAL, "Could not sign the session id");
         goto error;

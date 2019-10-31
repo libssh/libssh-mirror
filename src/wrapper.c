@@ -539,6 +539,7 @@ int crypt_set_algorithms_server(ssh_session session){
 
     method = session->next_crypto->kex_methods[SSH_HOSTKEYS];
     session->srv.hostkey = ssh_key_type_from_signature_name(method);
+    session->srv.hostkey_digest = ssh_key_hash_from_name(method);
 
     /* setup DH key exchange type */
     switch (session->next_crypto->kex_type) {

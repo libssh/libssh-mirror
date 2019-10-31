@@ -305,7 +305,7 @@ const char *ssh_key_type_to_char(enum ssh_keytypes_e type) {
   return NULL;
 }
 
-static enum ssh_digest_e ssh_key_hash_from_name(const char *name)
+enum ssh_digest_e ssh_key_hash_from_name(const char *name)
 {
     if (name == NULL) {
         /* TODO we should rather fail */
@@ -2423,7 +2423,8 @@ ssh_string ssh_pki_do_sign_agent(ssh_session session,
 
 #ifdef WITH_SERVER
 ssh_string ssh_srv_pki_do_sign_sessionid(ssh_session session,
-                                         const ssh_key privkey)
+                                         const ssh_key privkey,
+                                         const enum ssh_digest_e digest)
 {
     struct ssh_crypto_struct *crypto = NULL;
 
@@ -2431,8 +2432,6 @@ ssh_string ssh_srv_pki_do_sign_sessionid(ssh_session session,
     ssh_string sig_blob = NULL;
 
     ssh_buffer sign_input = NULL;
-
-    enum ssh_digest_e hash_type;
 
     int rc;
 
@@ -2447,9 +2446,6 @@ ssh_string ssh_srv_pki_do_sign_sessionid(ssh_session session,
         ssh_set_error(session,SSH_FATAL,"Missing secret_hash");
         return NULL;
     }
-
-    /* Get the hash type from the key type */
-    hash_type = ssh_key_type_to_hash(session, privkey->type);
 
     /* Fill the input */
     sign_input = ssh_buffer_new();
@@ -2470,7 +2466,7 @@ ssh_string ssh_srv_pki_do_sign_sessionid(ssh_session session,
     sig = pki_do_sign(privkey,
             ssh_buffer_get(sign_input),
             ssh_buffer_get_len(sign_input),
-            hash_type);
+            digest);
     if (sig == NULL) {
         goto end;
     }

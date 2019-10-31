@@ -221,7 +221,17 @@ int gettimeofday(struct timeval *__p, void *__t);
 struct ssh_common_struct;
 struct ssh_kex_struct;
 
-int ssh_get_key_params(ssh_session session, ssh_key *privkey);
+enum ssh_digest_e {
+    SSH_DIGEST_AUTO=0,
+    SSH_DIGEST_SHA1=1,
+    SSH_DIGEST_SHA256,
+    SSH_DIGEST_SHA384,
+    SSH_DIGEST_SHA512,
+};
+
+int ssh_get_key_params(ssh_session session,
+                       ssh_key *privkey,
+                       enum ssh_digest_e *digest);
 
 /* LOGGING */
 void ssh_log_function(int verbosity,

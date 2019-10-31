@@ -111,6 +111,7 @@ enum ssh_keytypes_e ssh_key_type_from_signature_name(const char *name);
 enum ssh_keytypes_e ssh_key_type_plain(enum ssh_keytypes_e type);
 enum ssh_digest_e ssh_key_type_to_hash(ssh_session session,
                                        enum ssh_keytypes_e type);
+enum ssh_digest_e ssh_key_hash_from_name(const char *name);
 
 #define is_ecdsa_key_type(t) \
     ((t) >= SSH_KEYTYPE_ECDSA_P256 && (t) <= SSH_KEYTYPE_ECDSA_P521)
@@ -153,7 +154,8 @@ ssh_string ssh_pki_do_sign_agent(ssh_session session,
                                  struct ssh_buffer_struct *buf,
                                  const ssh_key pubkey);
 ssh_string ssh_srv_pki_do_sign_sessionid(ssh_session session,
-                                         const ssh_key privkey);
+                                         const ssh_key privkey,
+                                         const enum ssh_digest_e digest);
 
 /* Temporary functions, to be removed after migration to ssh_key */
 ssh_public_key ssh_pki_convert_key_to_publickey(const ssh_key key);

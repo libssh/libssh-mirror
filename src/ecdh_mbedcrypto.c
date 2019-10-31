@@ -188,6 +188,7 @@ SSH_PACKET_CALLBACK(ssh_packet_server_ecdh_init){
     ssh_string q_s_string = NULL;
     mbedtls_ecp_group grp;
     ssh_key privkey = NULL;
+    enum ssh_digest_e digest = SSH_DIGEST_AUTO;
     ssh_string sig_blob = NULL;
     ssh_string pubkey_blob = NULL;
     int rc;
@@ -250,7 +251,7 @@ SSH_PACKET_CALLBACK(ssh_packet_server_ecdh_init){
     }
 
     /* privkey is not allocated */
-    rc = ssh_get_key_params(session, &privkey);
+    rc = ssh_get_key_params(session, &privkey, &digest);
     if (rc == SSH_ERROR) {
         rc = SSH_ERROR;
         goto out;
@@ -263,7 +264,7 @@ SSH_PACKET_CALLBACK(ssh_packet_server_ecdh_init){
         goto out;
     }
 
-    sig_blob = ssh_srv_pki_do_sign_sessionid(session, privkey);
+    sig_blob = ssh_srv_pki_do_sign_sessionid(session, privkey, digest);
     if (sig_blob == NULL) {
         ssh_set_error(session, SSH_FATAL, "Could not sign the session id");
         rc = SSH_ERROR;

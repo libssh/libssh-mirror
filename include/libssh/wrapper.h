@@ -29,14 +29,6 @@
 #include "libssh/libgcrypt.h"
 #include "libssh/libmbedcrypto.h"
 
-enum ssh_digest_e {
-    SSH_DIGEST_AUTO=0,
-    SSH_DIGEST_SHA1=1,
-    SSH_DIGEST_SHA256,
-    SSH_DIGEST_SHA384,
-    SSH_DIGEST_SHA512,
-};
-
 enum ssh_kdf_digest {
     SSH_KDF_SHA1=1,
     SSH_KDF_SHA256,

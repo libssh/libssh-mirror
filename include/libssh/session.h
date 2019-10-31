@@ -188,6 +188,7 @@ struct ssh_session_struct {
         ssh_key ed25519_key;
         /* The type of host key wanted by client */
         enum ssh_keytypes_e hostkey;
+        enum ssh_digest_e hostkey_digest;
     } srv;
 
     /* auths accepted by server */
