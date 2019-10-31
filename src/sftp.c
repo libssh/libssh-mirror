@@ -263,7 +263,7 @@ int sftp_server_init(sftp_session sftp){
   ssh_buffer_get_u32(packet->payload, &version);
   version = ntohl(version);
   SSH_LOG(SSH_LOG_PACKET, "Client version: %d", version);
-  sftp->client_version = version;
+  sftp->client_version = (int)version;
 
   reply = ssh_buffer_new();
   if (reply == NULL) {
@@ -294,7 +294,7 @@ int sftp_server_init(sftp_session sftp){
   if (version > LIBSFTP_VERSION) {
     sftp->version = LIBSFTP_VERSION;
   } else {
-    sftp->version=version;
+    sftp->version = (int)version;
   }
 
   return 0;
@@ -725,7 +725,7 @@ int sftp_init(sftp_session sftp) {
     rc = ssh_buffer_unpack(packet->payload, "s", &ext_name);
   }
 
-  sftp->version = sftp->server_version = version;
+  sftp->version = sftp->server_version = (int)version;
 
 
   return 0;
