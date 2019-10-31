@@ -820,12 +820,17 @@ int ssh_message_auth_kbdint_is_response(ssh_message msg) {
   return msg->auth_request.kbdint_response != 0;
 }
 
+/* FIXME: methods should be unsigned */
 int ssh_message_auth_set_methods(ssh_message msg, int methods) {
   if (msg == NULL || msg->session == NULL) {
     return -1;
   }
 
-  msg->session->auth.supported_methods = methods;
+  if (methods < 0) {
+      return -1;
+  }
+
+  msg->session->auth.supported_methods = (uint32_t)methods;
 
   return 0;
 }
