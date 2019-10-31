@@ -284,8 +284,8 @@ static int ssh_channel_open_termination(void *c){
 static int
 channel_open(ssh_channel channel,
              const char *type,
-             int window,
-             int maxpacket,
+             uint32_t window,
+             uint32_t maxpacket,
              ssh_buffer payload)
 {
     ssh_session session = channel->session;
