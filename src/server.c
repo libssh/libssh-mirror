@@ -510,9 +510,11 @@ static int ssh_server_kex_termination(void *s){
     return 1;
 }
 
-void ssh_set_auth_methods(ssh_session session, int auth_methods){
-	/* accept only methods in range */
-    session->auth.supported_methods = auth_methods & 0x3f;
+/* FIXME: auth_methods should be unsigned */
+void ssh_set_auth_methods(ssh_session session, int auth_methods)
+{
+    /* accept only methods in range */
+    session->auth.supported_methods = (uint32_t)auth_methods & 0x3fU;
 }
 
 /* Do the banner and key exchange */
