@@ -440,9 +440,9 @@ static int pki_private_key_encrypt(ssh_buffer privkey_buffer,
 {
     struct ssh_cipher_struct *ciphers = ssh_get_ciphertab();
     struct ssh_cipher_struct cipher;
-    uint8_t key_material[128];
+    uint8_t key_material[128] = {0};
     size_t key_material_len;
-    char passphrase_buffer[128];
+    char passphrase_buffer[128] = {0};
     int rc;
     int i;
     int cmp;
