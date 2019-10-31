@@ -718,7 +718,7 @@ int ssh_gssapi_auth_mic(ssh_session session){
     int rc;
     size_t n_oids = 0;
     OM_uint32 maj_stat, min_stat;
-    char name_buf[256];
+    char name_buf[256] = {0};
     gss_buffer_desc hostname;
     const char *gss_host = session->opts.host;
 
