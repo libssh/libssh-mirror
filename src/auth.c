@@ -1333,7 +1333,7 @@ ssh_kbdint ssh_kbdint_new(void) {
 
 
 void ssh_kbdint_free(ssh_kbdint kbd) {
-    int i, n;
+    size_t i, n;
 
     if (kbd == NULL) {
         return;
