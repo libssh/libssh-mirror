@@ -483,7 +483,7 @@ int sftp_reply_data(sftp_client_message msg, const void *data, int len) {
 ssh_string sftp_handle_alloc(sftp_session sftp, void *info) {
   ssh_string ret;
   uint32_t val;
-  int i;
+  uint32_t i;
 
   if (sftp->handles == NULL) {
     sftp->handles = calloc(SFTP_HANDLES, sizeof(void *));
