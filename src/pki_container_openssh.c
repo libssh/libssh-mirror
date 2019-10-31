@@ -701,7 +701,7 @@ ssh_string ssh_pki_openssh_privkey_export(const ssh_key privkey,
     str_len = ssh_buffer_get_len(buffer);
     len = ssh_buffer_get_data(buffer, ssh_string_data(str), str_len);
     if (str_len != len) {
-        ssh_string_free(str);
+        SSH_STRING_FREE(str);
         str = NULL;
     }
 
