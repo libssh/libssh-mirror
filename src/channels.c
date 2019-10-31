@@ -2979,7 +2979,7 @@ int ssh_channel_read_nonblocking(ssh_channel channel,
                                  int is_stderr)
 {
     ssh_session session;
-    int to_read;
+    ssize_t to_read;
     int rc;
     int blocking;
 
@@ -3003,12 +3003,12 @@ int ssh_channel_read_nonblocking(ssh_channel channel,
         return to_read; /* may be an error code */
     }
 
-    if (to_read > (int)count) {
-        to_read = (int)count;
+    if ((size_t)to_read > count) {
+        to_read = (ssize_t)count;
     }
     blocking = ssh_is_blocking(session);
     ssh_set_blocking(session, 0);
-    rc = ssh_channel_read(channel, dest, to_read, is_stderr);
+    rc = ssh_channel_read(channel, dest, (uint32_t)to_read, is_stderr);
     ssh_set_blocking(session,blocking);
 
     return rc;
