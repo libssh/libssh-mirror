@@ -1059,8 +1059,8 @@ static bool ssh_packet_need_rekey(ssh_session session,
 int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
 {
     ssh_session session = (ssh_session)user;
-    unsigned int blocksize = 8;
-    unsigned int lenfield_blocksize = 8;
+    uint32_t blocksize = 8;
+    uint32_t lenfield_blocksize = 8;
     size_t current_macsize = 0;
     uint8_t *ptr = NULL;
     int to_be_read;
@@ -1075,7 +1075,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
     enum ssh_packet_filter_result_e filter_result;
     struct ssh_crypto_struct *crypto = NULL;
     bool etm = false;
-    int etm_packet_offset = 0;
+    uint32_t etm_packet_offset = 0;
     bool ok;
 
     crypto = ssh_packet_get_current_crypto(session, SSH_DIRECTION_IN);
