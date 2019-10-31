@@ -1899,7 +1899,7 @@ ssize_t sftp_read(sftp_file handle, void *buf, size_t count) {
   ssh_string datastring;
   size_t datalen;
   ssh_buffer buffer;
-  int id;
+  uint32_t id;
   int rc;
 
   if (handle->eof) {
