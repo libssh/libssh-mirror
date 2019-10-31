@@ -392,7 +392,10 @@ ssh_channel ssh_channel_from_local(ssh_session session, uint32_t id) {
  * @param minimumsize The minimum acceptable size for the new window.
  * @return            SSH_OK if successful; SSH_ERROR otherwise.
  */
-static int grow_window(ssh_session session, ssh_channel channel, int minimumsize) {
+static int grow_window(ssh_session session,
+                       ssh_channel channel,
+                       uint32_t minimumsize)
+{
   uint32_t new_window = minimumsize > WINDOWBASE ? minimumsize : WINDOWBASE;
   int rc;
 
