@@ -111,8 +111,8 @@ static int pki_private_key_decrypt(ssh_string blob,
     uint8_t key_material[128] = {0};
     char passphrase_buffer[128] = {0};
     size_t key_material_len;
-    ssh_buffer buffer;
-    ssh_string salt;
+    ssh_buffer buffer = NULL;
+    ssh_string salt = NULL;
     uint32_t rounds;
     int cmp;
     int rc;
