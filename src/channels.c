@@ -844,8 +844,10 @@ SSH_PACKET_CALLBACK(channel_rcv_request) {
  *
  * FIXME is the window changed?
  */
-int channel_default_bufferize(ssh_channel channel, void *data, int len,
-    int is_stderr) {
+int channel_default_bufferize(ssh_channel channel,
+                              void *data, size_t len,
+                              bool is_stderr)
+{
   ssh_session session;
 
   if(channel == NULL) {
@@ -860,8 +862,10 @@ int channel_default_bufferize(ssh_channel channel, void *data, int len,
   }
 
   SSH_LOG(SSH_LOG_PACKET,
-      "placing %d bytes into channel buffer (stderr=%d)", len, is_stderr);
-  if (is_stderr == 0) {
+          "placing %zu bytes into channel buffer (%s)",
+          len,
+          is_stderr ? "stderr" : "stdout");
+  if (!is_stderr) {
     /* stdout */
     if (channel->stdout_buffer == NULL) {
       channel->stdout_buffer = ssh_buffer_new();
