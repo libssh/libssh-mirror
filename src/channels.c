@@ -2973,42 +2973,45 @@ int ssh_channel_read_timeout(ssh_channel channel,
  *
  * @see ssh_channel_is_eof()
  */
-int ssh_channel_read_nonblocking(ssh_channel channel, void *dest, uint32_t count,
-    int is_stderr) {
-  ssh_session session;
-  int to_read;
-  int rc;
-  int blocking;
+int ssh_channel_read_nonblocking(ssh_channel channel,
+                                 void *dest,
+                                 uint32_t count,
+                                 int is_stderr)
+{
+    ssh_session session;
+    int to_read;
+    int rc;
+    int blocking;
 
-  if(channel == NULL) {
-      return SSH_ERROR;
-  }
-  if(dest == NULL) {
-      ssh_set_error_invalid(channel->session);
-      return SSH_ERROR;
-  }
+    if(channel == NULL) {
+        return SSH_ERROR;
+    }
+    if(dest == NULL) {
+        ssh_set_error_invalid(channel->session);
+        return SSH_ERROR;
+    }
 
-  session = channel->session;
+    session = channel->session;
 
-  to_read = ssh_channel_poll(channel, is_stderr);
+    to_read = ssh_channel_poll(channel, is_stderr);
 
-  if (to_read <= 0) {
-      if (session->session_state == SSH_SESSION_STATE_ERROR){
-          return SSH_ERROR;
-      }
+    if (to_read <= 0) {
+        if (session->session_state == SSH_SESSION_STATE_ERROR){
+            return SSH_ERROR;
+        }
 
-      return to_read; /* may be an error code */
-  }
+        return to_read; /* may be an error code */
+    }
 
-  if (to_read > (int)count) {
-    to_read = (int)count;
-  }
-  blocking = ssh_is_blocking(session);
-  ssh_set_blocking(session, 0);
-  rc = ssh_channel_read(channel, dest, to_read, is_stderr);
-  ssh_set_blocking(session,blocking);
+    if (to_read > (int)count) {
+        to_read = (int)count;
+    }
+    blocking = ssh_is_blocking(session);
+    ssh_set_blocking(session, 0);
+    rc = ssh_channel_read(channel, dest, to_read, is_stderr);
+    ssh_set_blocking(session,blocking);
 
-  return rc;
+    return rc;
 }
 
 /**
