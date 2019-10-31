@@ -773,7 +773,7 @@ const char *sftp_extensions_get_data(sftp_session sftp, unsigned int idx) {
 
 int sftp_extension_supported(sftp_session sftp, const char *name,
     const char *data) {
-  int i, n;
+  size_t i, n;
 
   if (sftp == NULL || name == NULL || data == NULL) {
     return 0;
