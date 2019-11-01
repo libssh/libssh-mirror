@@ -179,15 +179,46 @@ It was later modified and expanded by the following RFCs.
     Protocol
  - <a href="http://tools.ietf.org/html/rfc4432" target="_blank">RFC 4432</a>,
     RSA Key Exchange for the Secure Shell (SSH) Transport Layer Protocol
- - <a href="http://tools.ietf.org/html/rfc4462" target="_blank">RFC 4462</a>,
+    (not implemented in libssh)
+ - <a href="https://tools.ietf.org/html/rfc4462" target="_blank">RFC 4462</a>,
     Generic Security Service Application Program Interface (GSS-API)
     Authentication and Key Exchange for the Secure Shell (SSH) Protocol
- - <a href="http://tools.ietf.org/html/rfc4716" target="_blank">RFC 4716</a>,
+    (only the authentication implemented in libssh)
+ - <a href="https://tools.ietf.org/html/rfc4716" target="_blank">RFC 4716</a>,
     The Secure Shell (SSH) Public Key File Format
- - <a href="http://tools.ietf.org/html/rfc5647" target="_blank">RFC 5647</a>,
+    (not implemented in libssh)
+ - <a href="https://tools.ietf.org/html/rfc5647" target="_blank">RFC 5647</a>,
     AES Galois Counter Mode for the Secure Shell Transport Layer Protocol
- - <a href="http://tools.ietf.org/html/rfc5656" target="_blank">RFC 5656</a>,
+    (the algorithm negotiation implemented according to openssh.com)
+ - <a href="https://tools.ietf.org/html/rfc5656" target="_blank">RFC 5656</a>,
     Elliptic Curve Algorithm Integration in the Secure Shell Transport Layer
+ - <a href="https://tools.ietf.org/html/rfc6594" target="_blank">RFC 6594</a>,
+    Use of the SHA-256 Algorithm with RSA, DSA, and ECDSA in SSHFP Resource Records
+    (not implemented in libssh)
+ - <a href="https://tools.ietf.org/html/rfc6668" target="_blank">RFC 6668</a>,
+    SHA-2 Data Integrity Verification for the Secure Shell (SSH) Transport Layer Protocol
+ - <a href="https://tools.ietf.org/html/rfc7479" target="_blank">RFC 7479</a>,
+    Using Ed25519 in SSHFP Resource Records
+    (not implemented in libssh)
+ - <a href="https://tools.ietf.org/html/rfc8160" target="_blank">RFC 8160</a>,
+    IUTF8 Terminal Mode in Secure Shell (SSH)
+    (not handled in libssh)
+ - <a href="https://tools.ietf.org/html/rfc8270" target="_blank">RFC 8270</a>,
+    Increase the Secure Shell Minimum Recommended Diffie-Hellman Modulus Size to 2048 Bits
+ - <a href="https://tools.ietf.org/html/rfc8308" target="_blank">RFC 8308</a>,
+    Extension Negotiation in the Secure Shell (SSH) Protocol
+    (only the "server-sig-algs" extension implemented)
+ - <a href="https://tools.ietf.org/html/rfc8332" target="_blank">RFC 8332</a>,
+    Use of RSA Keys with SHA-256 and SHA-512 in the Secure Shell (SSH) Protocol
+
+There are also drafts that are being currently developed and followed.
+
+ - <a href="https://tools.ietf.org/html/draft-ietf-curdle-ssh-kex-sha2-10" target="_blank">draft-ietf-curdle-ssh-kex-sha2-10</a>
+    Key Exchange (KEX) Method Updates and Recommendations for Secure Shell (SSH)
+ - <a href="https://tools.ietf.org/html/draft-miller-ssh-agent-03" target="_blank">draft-miller-ssh-agent-03</a>
+    SSH Agent Protocol
+ - <a href="https://tools.ietf.org/html/draft-ietf-curdle-ssh-curves-12" target="_blank">draft-ietf-curdle-ssh-curves-12</a>
+    Secure Shell (SSH) Key Exchange Method using Curve25519 and Curve448
 
 Interesting cryptography documents:
 
@@ -205,20 +236,16 @@ do the same in libssh.
 
 @subsection main-rfc-extensions Secure Shell Extensions
 
-The libssh project has an extension to support Curve25519 which is also supported by
-the OpenSSH project.
-
- - <a href="http://git.libssh.org/projects/libssh.git/tree/doc/curve25519-sha256@libssh.org.txt" target="_blank">curve25519-sha256@libssh.org</a>,
-   Curve25519-SHA256 for ECDH KEX
-
 The OpenSSH project has defined some extensions to the protocol. We support some of
 them like the statvfs calls in SFTP or the ssh-agent.
 
  - <a href="http://api.libssh.org/rfc/PROTOCOL" target="_blank">
     OpenSSH's deviations and extensions</a>
- - <a href="http://api.libssh.org/rfc/PROTOCOL.agent" target="_blank">
-    OpenSSH's ssh-agent</a>
  - <a href="http://api.libssh.org/rfc/PROTOCOL.certkeys" target="_blank">
     OpenSSH's pubkey certificate authentication</a>
+ - <a href="http://api.libssh.org/rfc/PROTOCOL.chacha20poly1305" target="_blank">
+    chacha20-poly1305@openssh.com authenticated encryption mode</a>
+ - <a href="http://api.libssh.org/rfc/PROTOCOL.key" target="_blank">
+    OpenSSH private key format (openssh-key-v1)</a>
 
 */
