@@ -213,7 +213,7 @@ struct ssh_session_struct {
         char *sshdir;
         char *knownhosts;
         char *global_knownhosts;
-        char *wanted_methods[10];
+        char *wanted_methods[SSH_KEX_METHODS];
         char *pubkey_accepted_types;
         char *ProxyCommand;
         char *custombanner;

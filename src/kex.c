@@ -159,8 +159,6 @@
     GEX_SHA1 \
     KEY_EXCHANGE
 
-#define KEX_METHODS_SIZE 10
-
 /* RFC 8308 */
 #define KEX_EXTENSION_CLIENT "ext-info-c"
 
@@ -257,7 +255,7 @@ static const char *ssh_kex_descriptions[] = {
 
 const char *ssh_kex_get_default_methods(uint32_t algo)
 {
-    if (algo >= KEX_METHODS_SIZE) {
+    if (algo >= SSH_KEX_METHODS) {
         return NULL;
     }
 
@@ -266,7 +264,7 @@ const char *ssh_kex_get_default_methods(uint32_t algo)
 
 const char *ssh_kex_get_supported_method(uint32_t algo)
 {
-    if (algo >= KEX_METHODS_SIZE) {
+    if (algo >= SSH_KEX_METHODS) {
         return NULL;
     }
 
@@ -274,7 +272,7 @@ const char *ssh_kex_get_supported_method(uint32_t algo)
 }
 
 const char *ssh_kex_get_description(uint32_t algo) {
-  if (algo >= KEX_METHODS_SIZE) {
+  if (algo >= SSH_KEX_METHODS) {
     return NULL;
   }
 
@@ -282,7 +280,7 @@ const char *ssh_kex_get_description(uint32_t algo) {
 }
 
 const char *ssh_kex_get_fips_methods(uint32_t algo) {
-  if (algo >= KEX_METHODS_SIZE) {
+  if (algo >= SSH_KEX_METHODS) {
     return NULL;
   }
 
@@ -333,7 +331,7 @@ SSH_PACKET_CALLBACK(ssh_packet_kexinit)
     int i, ok;
     int server_kex = session->server;
     ssh_string str = NULL;
-    char *strings[KEX_METHODS_SIZE] = {0};
+    char *strings[SSH_KEX_METHODS] = {0};
     char *rsa_sig_ext = NULL;
     int rc = SSH_ERROR;
 
@@ -376,7 +374,7 @@ SSH_PACKET_CALLBACK(ssh_packet_kexinit)
         }
     }
 
-    for (i = 0; i < KEX_METHODS_SIZE; i++) {
+    for (i = 0; i < SSH_KEX_METHODS; i++) {
         str = ssh_buffer_get_ssh_string(packet);
         if (str == NULL) {
           goto error;
@@ -677,11 +675,11 @@ int ssh_set_client_kex(ssh_session session)
         return SSH_ERROR;
     }
 
-    memset(client->methods, 0, KEX_METHODS_SIZE * sizeof(char **));
+    memset(client->methods, 0, SSH_KEX_METHODS * sizeof(char **));
 
     /* Set the list of allowed algorithms in order of preference, if it hadn't
      * been set yet. */
-    for (i = 0; i < KEX_METHODS_SIZE; i++) {
+    for (i = 0; i < SSH_KEX_METHODS; i++) {
         if (i == SSH_HOSTKEYS) {
             /* Set the hostkeys in the following order:
              * - First: keys present in known_hosts files ordered by preference
@@ -750,7 +748,7 @@ int ssh_kex_select_methods (ssh_session session){
         ext_start[0] = '\0';
     }
 
-    for (i = 0; i < KEX_METHODS_SIZE; i++) {
+    for (i = 0; i < SSH_KEX_METHODS; i++) {
         session->next_crypto->kex_methods[i]=ssh_find_matching(server->methods[i],client->methods[i]);
         if(session->next_crypto->kex_methods[i] == NULL && i < SSH_LANG_C_S){
             ssh_set_error(session,SSH_FATAL,"kex error : no match for method %s: server [%s], client [%s]",
@@ -823,7 +821,7 @@ int ssh_send_kex(ssh_session session, int server_kex) {
 
   ssh_list_kex(kex);
 
-  for (i = 0; i < KEX_METHODS_SIZE; i++) {
+  for (i = 0; i < SSH_KEX_METHODS; i++) {
     str = ssh_string_from_char(kex->methods[i]);
     if (str == NULL) {
       goto error;

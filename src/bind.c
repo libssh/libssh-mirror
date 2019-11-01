@@ -411,7 +411,7 @@ void ssh_bind_free(ssh_bind sshbind){
   ssh_key_free(sshbind->ed25519);
   sshbind->ed25519 = NULL;
 
-  for (i = 0; i < 10; i++) {
+  for (i = 0; i < SSH_KEX_METHODS; i++) {
     if (sshbind->wanted_methods[i]) {
       SAFE_FREE(sshbind->wanted_methods[i]);
     }
@@ -442,7 +442,7 @@ int ssh_bind_accept_fd(ssh_bind sshbind, ssh_session session, socket_t fd){
     session->server = 1;
 
     /* Copy options from bind to session */
-    for (i = 0; i < 10; i++) {
+    for (i = 0; i < SSH_KEX_METHODS; i++) {
       if (sshbind->wanted_methods[i]) {
         session->opts.wanted_methods[i] = strdup(sshbind->wanted_methods[i]);
         if (session->opts.wanted_methods[i] == NULL) {

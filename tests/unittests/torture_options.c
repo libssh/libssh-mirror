@@ -876,7 +876,7 @@ static void torture_options_copy(void **state)
     assert_string_equal(session->opts.knownhosts, new->opts.knownhosts);
     assert_string_equal(session->opts.global_knownhosts,
                         new->opts.global_knownhosts);
-    for (i = 0; i < 10; i++) {
+    for (i = 0; i < SSH_KEX_METHODS; i++) {
         if (session->opts.wanted_methods[i] == NULL) {
             assert_null(new->opts.wanted_methods[i]);
         } else {

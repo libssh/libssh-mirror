@@ -314,7 +314,7 @@ void ssh_free(ssh_session session)
   SAFE_FREE(session->opts.gss_client_identity);
   SAFE_FREE(session->opts.pubkey_accepted_types);
 
-  for (i = 0; i < 10; i++) {
+  for (i = 0; i < SSH_KEX_METHODS; i++) {
       if (session->opts.wanted_methods[i]) {
           SAFE_FREE(session->opts.wanted_methods[i]);
       }

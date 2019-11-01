@@ -166,7 +166,7 @@ int server_set_kex(ssh_session session)
         return -1;
     }
 
-    for (i = 0; i < 10; i++) {
+    for (i = 0; i < SSH_KEX_METHODS; i++) {
         wanted = session->opts.wanted_methods[i];
         if (wanted  == NULL) {
             if (ssh_fips_mode()) {
@@ -195,7 +195,7 @@ int ssh_server_init_kex(ssh_session session) {
     }
 
     /* free any currently-set methods: server_set_kex will allocate new ones */
-    for (i = 0; i < 10 /* SSH_KEX_METHODS */; i++) {
+    for (i = 0; i < SSH_KEX_METHODS; i++) {
         SAFE_FREE(session->next_crypto->server_kex.methods[i]);
     }
 
