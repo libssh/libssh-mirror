@@ -23,7 +23,7 @@ if (WIN32)
         set(CPACK_GENERATOR "${CPACK_GENERATOR};NSIS")
         set(CPACK_NSIS_DISPLAY_NAME "The SSH Library")
         set(CPACK_NSIS_COMPRESSOR "/SOLID zlib")
-        set(CPACK_NSIS_MENU_LINKS "http://www.libssh.org/" "libssh homepage")
+        set(CPACK_NSIS_MENU_LINKS "https://www.libssh.org/" "libssh homepage")
     endif (NSIS_MAKE)
 endif (WIN32)
 

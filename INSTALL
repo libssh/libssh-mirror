@@ -7,11 +7,11 @@
 In order to build libssh, you need to install several components:
 
 - A C compiler
-- [CMake](http://www.cmake.org) >= 2.6.0.
-- [openssl](http://www.openssl.org) >= 0.9.8
+- [CMake](https://www.cmake.org) >= 2.6.0.
+- [openssl](https://www.openssl.org) >= 0.9.8
 or
-- [gcrypt](http://www.gnu.org/directory/Security/libgcrypt.html) >= 1.4
-- [libz](http://www.zlib.net) >= 1.2
+- [gcrypt](https://www.gnu.org/directory/Security/libgcrypt.html) >= 1.4
+- [libz](https://www.zlib.net) >= 1.2
 
 optional:
 - [cmocka](https://cmocka.org/) >= 1.1.0
@@ -117,4 +117,4 @@ This document is written using [Markdown][] syntax, making it possible to
 provide usable information in both plain text and HTML format. Whenever
 modifying this document please use [Markdown][] syntax.
 
-[markdown]: http://www.daringfireball.net/projects/markdown
+[markdown]: https://www.daringfireball.net/projects/markdown
