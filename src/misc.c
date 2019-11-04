@@ -1692,4 +1692,47 @@ error:
     return SSH_ERROR;
 }
 
+/**
+ * @internal
+ *
+ * @brief Given a string, encode existing newlines as the string "\\n"
+ *
+ * @param[in]  string   Input string
+ * @param[out] buf      Output buffer. This buffer must be at least (2 *
+ *                      strlen(string)) + 1 long.  In the worst case,
+ *                      each character can be encoded as 2 characters plus the
+ *                      terminating '\0'.
+ * @param[in]  buf_len  Size of the provided output buffer
+ *
+ * @returns SSH_ERROR on error; length of the resulting string not counting the
+ * terminating '\0' otherwise
+ */
+int ssh_newline_vis(const char *string, char *buf, size_t buf_len)
+{
+    const char *in = NULL;
+    char *out = NULL;
+
+    if (string == NULL || buf == NULL || buf_len == 0) {
+        return SSH_ERROR;
+    }
+
+    if ((2 * strlen(string) + 1) > buf_len) {
+        SSH_LOG(SSH_LOG_WARNING, "Buffer too small");
+        return SSH_ERROR;
+    }
+
+    out = buf;
+    for (in = string; *in != '\0'; in++) {
+        if (*in == '\n') {
+            *out++ = '\\';
+            *out++ = 'n';
+        } else {
+            *out++ = *in;
+        }
+    }
+    *out = '\0';
+
+    return out - buf;
+}
+
 /** @} */

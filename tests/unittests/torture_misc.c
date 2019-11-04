@@ -637,6 +637,24 @@ static void torture_ssh_quote_file_name(UNUSED_PARAM(void **state))
     assert_int_equal(rc, SSH_ERROR);
 }
 
+static void torture_ssh_newline_vis(UNUSED_PARAM(void **state))
+{
+    int rc;
+    char buffer[1024];
+
+    rc = ssh_newline_vis("\n", buffer, 1024);
+    assert_int_equal(rc, 2);
+    assert_string_equal(buffer, "\\n");
+
+    rc = ssh_newline_vis("\n\n\n\n", buffer, 1024);
+    assert_int_equal(rc, 8);
+    assert_string_equal(buffer, "\\n\\n\\n\\n");
+
+    rc = ssh_newline_vis("a\nb\n", buffer, 1024);
+    assert_int_equal(rc, 6);
+    assert_string_equal(buffer, "a\\nb\\n");
+}
+
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
@@ -656,6 +674,7 @@ int torture_run_tests(void) {
         cmocka_unit_test(torture_timeout_update),
         cmocka_unit_test(torture_ssh_analyze_banner),
         cmocka_unit_test(torture_ssh_dir_writeable),
+        cmocka_unit_test(torture_ssh_newline_vis),
         cmocka_unit_test(torture_ssh_mkdirs),
         cmocka_unit_test(torture_ssh_quote_file_name),
     };

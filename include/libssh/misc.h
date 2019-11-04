@@ -95,5 +95,6 @@ void ssh_log_hexdump(const char *descr, const unsigned char *what, size_t len);
 int ssh_mkdirs(const char *pathname, mode_t mode);
 
 int ssh_quote_file_name(const char *file_name, char *buf, size_t buf_len);
+int ssh_newline_vis(const char *string, char *buf, size_t buf_len);
 
 #endif /* MISC_H_ */
