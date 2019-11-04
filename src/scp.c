@@ -323,6 +323,8 @@ int ssh_scp_push_directory(ssh_scp scp, const char *dirname, int mode)
     int rc;
     char *dir = NULL;
     char *perms = NULL;
+    char *vis_encoded = NULL;
+    size_t vis_encoded_len;
 
     if (scp == NULL) {
         return SSH_ERROR;
@@ -340,16 +342,40 @@ int ssh_scp_push_directory(ssh_scp scp, const char *dirname, int mode)
         return SSH_ERROR;
     }
 
-    perms = ssh_scp_string_mode(mode);
-    if (perms == NULL) {
-        SAFE_FREE(dir);
-        ssh_set_error_oom(scp->session);
-        return SSH_ERROR;
+    vis_encoded_len = (2 * strlen(dir)) + 1;
+    vis_encoded = (char *)calloc(1, vis_encoded_len);
+    if (vis_encoded == NULL) {
+        ssh_set_error(scp->session, SSH_FATAL,
+                      "Failed to allocate buffer to vis encode directory name");
+        goto error;
     }
 
-    snprintf(buffer, sizeof(buffer), "D%s 0 %s\n", perms, dir);
+    rc = ssh_newline_vis(dir, vis_encoded, vis_encoded_len);
+    if (rc <= 0) {
+        ssh_set_error(scp->session, SSH_FATAL,
+                      "Failed to vis encode directory name");
+        goto error;
+    }
+
+    perms = ssh_scp_string_mode(mode);
+    if (perms == NULL) {
+        ssh_set_error(scp->session, SSH_FATAL,
+                      "Failed to get directory permission string");
+        goto error;
+    }
+
+    SSH_LOG(SSH_LOG_PROTOCOL,
+            "SCP pushing directory %s with permissions '%s'",
+            vis_encoded, perms);
+
+    /* Use vis encoded directory name */
+    snprintf(buffer, sizeof(buffer),
+             "D%s 0 %s\n",
+             perms, vis_encoded);
+
     SAFE_FREE(dir);
     SAFE_FREE(perms);
+    SAFE_FREE(vis_encoded);
 
     rc = ssh_channel_write(scp->channel, buffer, strlen(buffer));
     if (rc == SSH_ERROR) {
@@ -363,6 +389,13 @@ int ssh_scp_push_directory(ssh_scp scp, const char *dirname, int mode)
     }
 
     return SSH_OK;
+
+error:
+    SAFE_FREE(dir);
+    SAFE_FREE(perms);
+    SAFE_FREE(vis_encoded);
+
+    return SSH_ERROR;
 }
 
 /**
@@ -427,6 +460,8 @@ int ssh_scp_push_file64(ssh_scp scp, const char *filename, uint64_t size,
     int rc;
     char *file = NULL;
     char *perms = NULL;
+    char *vis_encoded = NULL;
+    size_t vis_encoded_len;
 
     if (scp == NULL) {
         return SSH_ERROR;
@@ -443,18 +478,41 @@ int ssh_scp_push_file64(ssh_scp scp, const char *filename, uint64_t size,
         ssh_set_error_oom(scp->session);
         return SSH_ERROR;
     }
+
+    vis_encoded_len = (2 * strlen(file)) + 1;
+    vis_encoded = (char *)calloc(1, vis_encoded_len);
+    if (vis_encoded == NULL) {
+        ssh_set_error(scp->session, SSH_FATAL,
+                      "Failed to allocate buffer to vis encode file name");
+        goto error;
+    }
+
+    rc = ssh_newline_vis(file, vis_encoded, vis_encoded_len);
+    if (rc <= 0) {
+        ssh_set_error(scp->session, SSH_FATAL,
+                      "Failed to vis encode file name");
+        goto error;
+    }
+
     perms = ssh_scp_string_mode(mode);
     if (perms == NULL) {
-        SAFE_FREE(file);
-        ssh_set_error_oom(scp->session);
-        return SSH_ERROR;
+        ssh_set_error(scp->session, SSH_FATAL,
+                      "Failed to get file permission string");
+        goto error;
     }
+
     SSH_LOG(SSH_LOG_PROTOCOL,
             "SCP pushing file %s, size %" PRIu64 " with permissions '%s'",
-            file, size, perms);
-    snprintf(buffer, sizeof(buffer), "C%s %" PRIu64 " %s\n", perms, size, file);
+            vis_encoded, size, perms);
+
+    /* Use vis encoded file name */
+    snprintf(buffer, sizeof(buffer),
+             "C%s %" PRIu64 " %s\n",
+             perms, size, vis_encoded);
+
     SAFE_FREE(file);
     SAFE_FREE(perms);
+    SAFE_FREE(vis_encoded);
 
     rc = ssh_channel_write(scp->channel, buffer, strlen(buffer));
     if (rc == SSH_ERROR) {
@@ -472,6 +530,13 @@ int ssh_scp_push_file64(ssh_scp scp, const char *filename, uint64_t size,
     scp->state = SSH_SCP_WRITE_WRITING;
 
     return SSH_OK;
+
+error:
+    SAFE_FREE(file);
+    SAFE_FREE(perms);
+    SAFE_FREE(vis_encoded);
+
+    return SSH_ERROR;
 }
 
 /**
