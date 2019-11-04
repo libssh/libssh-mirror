@@ -469,6 +469,74 @@ static void torture_scp_download_recursive(void **state)
     ssh_scp_free(scp);
 }
 
+static void torture_scp_upload_newline(void **state)
+{
+    struct scp_st *ts = NULL;
+    struct torture_state *s = NULL;
+
+    ssh_session session = NULL;
+    ssh_scp scp = NULL;
+
+    FILE *file = NULL;
+
+    char buf[1024];
+
+    int rc;
+
+    assert_non_null(state);
+    ts = *state;
+
+    assert_non_null(ts->s);
+    s = ts->s;
+
+    session = s->ssh.session;
+    assert_non_null(session);
+
+    assert_non_null(ts->tmp_dir_basename);
+    assert_non_null(ts->tmp_dir);
+
+    /* Upload recursively trying to inject protocol messages */
+
+    /* When writing the file_name must be the directory name */
+    scp = ssh_scp_new(session, SSH_SCP_WRITE | SSH_SCP_RECURSIVE,
+                      ts->tmp_dir_basename);
+    assert_non_null(scp);
+
+    rc = ssh_scp_init(scp);
+    assert_ssh_return_code(session, rc);
+
+    /* Push directory where the new file will be copied */
+    rc = ssh_scp_push_directory(scp, "test_inject", 0755);
+    assert_ssh_return_code(session, rc);
+
+    /* Try to push file with injected protocol messages */
+    rc = ssh_scp_push_file(scp, "original\nreplacedC0777 8 injected", 8, 0644);
+    assert_ssh_return_code(session, rc);
+
+    rc = ssh_scp_write(scp, "original", 8);
+    assert_ssh_return_code(session, rc);
+
+    /* Leave the directory */
+    rc = ssh_scp_leave_directory(scp);
+    assert_ssh_return_code(session, rc);
+
+    /* Cleanup */
+    ssh_scp_close(scp);
+    ssh_scp_free(scp);
+
+    /* Open the file and check content */
+    snprintf(buf, BUF_SIZE, "%s/test_inject/"
+             "original\\nreplacedC0777 8 injected",
+             ts->tmp_dir);
+    file = fopen(buf, "r");
+    assert_non_null(file);
+
+    fgets(buf, 1024, file);
+    assert_string_equal(buf, "original");
+
+    fclose(file);
+}
+
 int torture_run_tests(void)
 {
     int rc;
@@ -484,7 +552,10 @@ int torture_run_tests(void)
                                         session_teardown),
         cmocka_unit_test_setup_teardown(torture_scp_download_recursive,
                                         session_setup,
-                                        session_teardown)
+                                        session_teardown),
+        cmocka_unit_test_setup_teardown(torture_scp_upload_newline,
+                                        session_setup,
+                                        session_teardown),
     };
 
     ssh_init();
