@@ -3245,8 +3245,9 @@ static int channel_protocol_select(ssh_channel *rchans, ssh_channel *wchans,
 }
 
 /* Just count number of pointers in the array */
-static int count_ptrs(ssh_channel *ptrs) {
-  int c;
+static size_t count_ptrs(ssh_channel *ptrs)
+{
+  size_t c;
   for (c = 0; ptrs[c] != NULL; c++)
     ;
 
