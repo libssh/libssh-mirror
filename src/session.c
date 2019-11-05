@@ -56,50 +56,51 @@
  *
  * @returns             A new ssh_session pointer, NULL on error.
  */
-ssh_session ssh_new(void) {
-  ssh_session session;
-  char *id = NULL;
-  int rc;
+ssh_session ssh_new(void)
+{
+    ssh_session session;
+    char *id = NULL;
+    int rc;
 
-  session = calloc(1, sizeof (struct ssh_session_struct));
-  if (session == NULL) {
-    return NULL;
-  }
+    session = calloc(1, sizeof (struct ssh_session_struct));
+    if (session == NULL) {
+        return NULL;
+    }
 
-  session->next_crypto = crypto_new();
-  if (session->next_crypto == NULL) {
-    goto err;
-  }
+    session->next_crypto = crypto_new();
+    if (session->next_crypto == NULL) {
+        goto err;
+    }
 
-  session->socket = ssh_socket_new(session);
-  if (session->socket == NULL) {
-    goto err;
-  }
+    session->socket = ssh_socket_new(session);
+    if (session->socket == NULL) {
+        goto err;
+    }
 
-  session->out_buffer = ssh_buffer_new();
-  if (session->out_buffer == NULL) {
-    goto err;
-  }
+    session->out_buffer = ssh_buffer_new();
+    if (session->out_buffer == NULL) {
+        goto err;
+    }
 
-  session->in_buffer=ssh_buffer_new();
-  if (session->in_buffer == NULL) {
-    goto err;
-  }
+    session->in_buffer = ssh_buffer_new();
+    if (session->in_buffer == NULL) {
+        goto err;
+    }
 
-  session->out_queue = ssh_list_new();
-  if (session->out_queue == NULL) {
-    goto err;
-  }
+    session->out_queue = ssh_list_new();
+    if (session->out_queue == NULL) {
+        goto err;
+    }
 
-  session->alive = 0;
-  session->auth.supported_methods = 0;
-  ssh_set_blocking(session, 1);
-  session->maxchannel = FIRST_CHANNEL;
+    session->alive = 0;
+    session->auth.supported_methods = 0;
+    ssh_set_blocking(session, 1);
+    session->maxchannel = FIRST_CHANNEL;
 
 #ifndef _WIN32
     session->agent = ssh_agent_new(session);
     if (session->agent == NULL) {
-      goto err;
+        goto err;
     }
 #endif /* _WIN32 */
 
@@ -107,52 +108,57 @@ ssh_session ssh_new(void) {
     session->opts.StrictHostKeyChecking = 1;
     session->opts.port = 0;
     session->opts.fd = -1;
-    session->opts.compressionlevel=7;
+    session->opts.compressionlevel = 7;
     session->opts.nodelay = 0;
-    session->opts.flags = SSH_OPT_FLAG_PASSWORD_AUTH | SSH_OPT_FLAG_PUBKEY_AUTH |
-            SSH_OPT_FLAG_KBDINT_AUTH | SSH_OPT_FLAG_GSSAPI_AUTH;
+
+    session->opts.flags = SSH_OPT_FLAG_PASSWORD_AUTH |
+                          SSH_OPT_FLAG_PUBKEY_AUTH |
+                          SSH_OPT_FLAG_KBDINT_AUTH |
+                          SSH_OPT_FLAG_GSSAPI_AUTH;
+
     session->opts.identity = ssh_list_new();
     if (session->opts.identity == NULL) {
-      goto err;
+        goto err;
     }
 
     id = strdup("%d/id_ed25519");
     if (id == NULL) {
-      goto err;
+        goto err;
     }
+
     rc = ssh_list_append(session->opts.identity, id);
     if (rc == SSH_ERROR) {
-      goto err;
+        goto err;
     }
 
 #ifdef HAVE_ECC
     id = strdup("%d/id_ecdsa");
     if (id == NULL) {
-      goto err;
+        goto err;
     }
     rc = ssh_list_append(session->opts.identity, id);
     if (rc == SSH_ERROR) {
-      goto err;
+        goto err;
     }
 #endif
 
     id = strdup("%d/id_rsa");
     if (id == NULL) {
-      goto err;
+        goto err;
     }
     rc = ssh_list_append(session->opts.identity, id);
     if (rc == SSH_ERROR) {
-      goto err;
+        goto err;
     }
 
 #ifdef HAVE_DSA
     id = strdup("%d/id_dsa");
     if (id == NULL) {
-      goto err;
+        goto err;
     }
     rc = ssh_list_append(session->opts.identity, id);
     if (rc == SSH_ERROR) {
-      goto err;
+        goto err;
     }
 #endif
 
