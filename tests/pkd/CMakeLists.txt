@@ -21,7 +21,6 @@ set(pkd_hello_src
 set(pkd_libs
     ${CMOCKA_LIBRARY}
     ${LIBSSH_STATIC_LIBRARY}
-    ${LIBSSH_LINK_LIBRARIES}
     ${ARGP_LIBRARIES}
     pthread
 )
