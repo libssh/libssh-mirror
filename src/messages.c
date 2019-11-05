@@ -71,6 +71,9 @@ static ssh_message ssh_message_new(ssh_session session)
     }
     msg->session = session;
 
+    /* Set states explicitly */
+    msg->auth_request.signature_state = SSH_PUBLICKEY_STATE_NONE;
+
     return msg;
 }
 
