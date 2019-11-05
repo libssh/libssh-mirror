@@ -129,8 +129,8 @@ static int match_hashed_hostname(const char *host, const char *hashed_host)
 
 error:
     free(hashed);
-    ssh_buffer_free(salt);
-    ssh_buffer_free(hash);
+    SSH_BUFFER_FREE(salt);
+    SSH_BUFFER_FREE(hash);
 
     return match;
 }
