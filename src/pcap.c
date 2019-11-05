@@ -193,7 +193,7 @@ int ssh_pcap_file_write_packet(ssh_pcap_file pcap, ssh_buffer packet, uint32_t o
     }
 	err=ssh_pcap_file_write(pcap,header);
 error:
-	ssh_buffer_free(header);
+	SSH_BUFFER_FREE(header);
 	return err;
 }
 
@@ -255,7 +255,7 @@ int ssh_pcap_file_open(ssh_pcap_file pcap, const char *filename){
     }
 	err=ssh_pcap_file_write(pcap,header);
 error:
-	ssh_buffer_free(header);
+	SSH_BUFFER_FREE(header);
 	return err;
 }
 
@@ -500,7 +500,7 @@ int ssh_pcap_context_write(ssh_pcap_context ctx,
     rc = ssh_pcap_file_write_packet(ctx->file, ip, origlen + TCPIPHDR_LEN);
 
 error:
-    ssh_buffer_free(ip);
+    SSH_BUFFER_FREE(ip);
     return rc;
 }
 
