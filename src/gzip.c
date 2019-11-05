@@ -90,14 +90,14 @@ static ssh_buffer gzip_compress(ssh_session session, ssh_buffer source, int leve
     zout->avail_out = BLOCKSIZE;
     status = deflate(zout, Z_PARTIAL_FLUSH);
     if (status != Z_OK) {
-      ssh_buffer_free(dest);
+      SSH_BUFFER_FREE(dest);
       ssh_set_error(session, SSH_FATAL,
           "status %d deflating zlib packet", status);
       return NULL;
     }
     len = BLOCKSIZE - zout->avail_out;
     if (ssh_buffer_add_data(dest, out_buf, len) < 0) {
-      ssh_buffer_free(dest);
+      SSH_BUFFER_FREE(dest);
       return NULL;
     }
     zout->next_out = out_buf;
@@ -115,16 +115,16 @@ int compress_buffer(ssh_session session, ssh_buffer buf) {
   }
 
   if (ssh_buffer_reinit(buf) < 0) {
-    ssh_buffer_free(dest);
+    SSH_BUFFER_FREE(dest);
     return -1;
   }
 
   if (ssh_buffer_add_data(buf, ssh_buffer_get(dest), ssh_buffer_get_len(dest)) < 0) {
-    ssh_buffer_free(dest);
+    SSH_BUFFER_FREE(dest);
     return -1;
   }
 
-  ssh_buffer_free(dest);
+  SSH_BUFFER_FREE(dest);
   return 0;
 }
 
@@ -189,18 +189,18 @@ static ssh_buffer gzip_decompress(ssh_session session, ssh_buffer source, size_t
     if (status != Z_OK && status != Z_BUF_ERROR) {
       ssh_set_error(session, SSH_FATAL,
           "status %d inflating zlib packet", status);
-      ssh_buffer_free(dest);
+      SSH_BUFFER_FREE(dest);
       return NULL;
     }
 
     len = BLOCKSIZE - zin->avail_out;
     if (ssh_buffer_add_data(dest,out_buf,len) < 0) {
-      ssh_buffer_free(dest);
+      SSH_BUFFER_FREE(dest);
       return NULL;
     }
     if (ssh_buffer_get_len(dest) > maxlen){
       /* Size of packet exceeded, avoid a denial of service attack */
-      ssh_buffer_free(dest);
+      SSH_BUFFER_FREE(dest);
       return NULL;
     }
     zin->next_out = out_buf;
@@ -218,15 +218,15 @@ int decompress_buffer(ssh_session session,ssh_buffer buf, size_t maxlen){
   }
 
   if (ssh_buffer_reinit(buf) < 0) {
-    ssh_buffer_free(dest);
+    SSH_BUFFER_FREE(dest);
     return -1;
   }
 
   if (ssh_buffer_add_data(buf, ssh_buffer_get(dest), ssh_buffer_get_len(dest)) < 0) {
-    ssh_buffer_free(dest);
+    SSH_BUFFER_FREE(dest);
     return -1;
   }
 
-  ssh_buffer_free(dest);
+  SSH_BUFFER_FREE(dest);
   return 0;
 }
