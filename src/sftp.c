@@ -2159,7 +2159,7 @@ ssize_t sftp_write(sftp_file file, const void *buf, size_t count) {
   ssh_buffer_free(buffer);
   if (len < 0) {
     return -1;
-  } else  if (len != packetlen) {
+  } else  if ((size_t)len != packetlen) {
     SSH_LOG(SSH_LOG_PACKET,
         "Could not write as much data as expected");
   }
