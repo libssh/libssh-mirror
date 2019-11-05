@@ -162,6 +162,16 @@ ssh_session ssh_new(void)
     }
 #endif
 
+    /* Explicitly initialize states */
+    session->session_state = SSH_SESSION_STATE_NONE;
+    session->pending_call_state = SSH_PENDING_CALL_NONE;
+    session->packet_state = PACKET_STATE_INIT;
+    session->dh_handshake_state = DH_STATE_INIT;
+    session->global_req_state = SSH_CHANNEL_REQ_STATE_NONE;
+
+    session->auth.state = SSH_AUTH_STATE_NONE;
+    session->auth.service_state = SSH_AUTH_SERVICE_NONE;
+
     return session;
 
 err:
