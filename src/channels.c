@@ -121,6 +121,10 @@ ssh_channel ssh_channel_new(ssh_session session)
 
     ssh_list_prepend(session->channels, channel);
 
+    /* Set states explicitly */
+    channel->state = SSH_CHANNEL_STATE_NOT_OPEN;
+    channel->request_state = SSH_CHANNEL_REQ_STATE_NONE;
+
     return channel;
 }
 
