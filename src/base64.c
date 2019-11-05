@@ -168,7 +168,7 @@ ssh_buffer base64_to_bin(const char *source) {
 
 error:
   SAFE_FREE(base64);
-  ssh_buffer_free(buffer);
+  SSH_BUFFER_FREE(buffer);
   return NULL;
 }
 
