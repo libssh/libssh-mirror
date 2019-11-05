@@ -88,11 +88,6 @@ if (WITH_NACL AND NACL_FOUND)
   )
 endif (WITH_NACL AND NACL_FOUND)
 
-set(LIBSSH_LINK_LIBRARIES
-  ${LIBSSH_LINK_LIBRARIES}
-  CACHE INTERNAL "libssh link libraries"
-)
-
 set(LIBSSH_SHARED_LIBRARY
   ssh_shared
   CACHE INTERNAL "libssh shared library"
