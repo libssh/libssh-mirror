@@ -295,11 +295,6 @@ if (NOT WITH_NACL)
     endif (NOT HAVE_OPENSSL_ED25519)
 endif (NOT WITH_NACL)
 
-include_directories(
-  ${LIBSSH_PUBLIC_INCLUDE_DIRS}
-  ${LIBSSH_PRIVATE_INCLUDE_DIRS}
-)
-
 # Set the path to the default map file
 set(MAP_PATH "${CMAKE_CURRENT_SOURCE_DIR}/${PROJECT_NAME}.map")
 
@@ -336,6 +331,8 @@ target_compile_options(${LIBSSH_SHARED_LIBRARY}
                        PRIVATE
                            ${DEFAULT_C_COMPILE_FLAGS}
                            -D_GNU_SOURCE)
+target_include_directories(${LIBSSH_SHARED_LIBRARY}
+                           PRIVATE ${LIBSSH_PUBLIC_INCLUDE_DIRS} ${LIBSSH_PRIVATE_INCLUDE_DIRS})
 
 target_link_libraries(${LIBSSH_SHARED_LIBRARY}
                       PRIVATE ${LIBSSH_LINK_LIBRARIES})
@@ -390,6 +387,8 @@ if (BUILD_STATIC_LIB)
                             ${DEFAULT_C_COMPILE_FLAGS}
                             -D_GNU_SOURCE)
 
+  target_include_directories(${LIBSSH_STATIC_LIBRARY}
+                             PRIVATE ${LIBSSH_PUBLIC_INCLUDE_DIRS} ${LIBSSH_PRIVATE_INCLUDE_DIRS})
   target_link_libraries(${LIBSSH_STATIC_LIBRARY}
                         PUBLIC ${LIBSSH_LINK_LIBRARIES})
 
