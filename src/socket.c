@@ -162,7 +162,7 @@ ssh_socket ssh_socket_new(ssh_session session)
     s->out_buffer=ssh_buffer_new();
     if (s->out_buffer == NULL) {
         ssh_set_error_oom(session);
-        ssh_buffer_free(s->in_buffer);
+        SSH_BUFFER_FREE(s->in_buffer);
         SAFE_FREE(s);
         return NULL;
     }
@@ -393,8 +393,8 @@ void ssh_socket_free(ssh_socket s)
         return;
     }
     ssh_socket_close(s);
-    ssh_buffer_free(s->in_buffer);
-    ssh_buffer_free(s->out_buffer);
+    SSH_BUFFER_FREE(s->in_buffer);
+    SSH_BUFFER_FREE(s->out_buffer);
     SAFE_FREE(s);
 }
 
