@@ -63,6 +63,9 @@ void ssh_socket_set_callbacks(ssh_socket s, ssh_socket_callbacks callbacks);
 int ssh_socket_pollcallback(struct ssh_poll_handle_struct *p, socket_t fd, int revents, void *v_s);
 struct ssh_poll_handle_struct * ssh_socket_get_poll_handle(ssh_socket s);
 
-int ssh_socket_connect(ssh_socket s, const char *host, int port, const char *bind_addr);
+int ssh_socket_connect(ssh_socket s,
+                       const char *host,
+                       uint16_t port,
+                       const char *bind_addr);
 
 #endif /* SOCKET_H_ */
