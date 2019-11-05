@@ -1031,6 +1031,9 @@ int ssh_userauth_publickey_auto(ssh_session session,
             ssh_set_error_oom(session);
             return SSH_AUTH_ERROR;
         }
+
+        /* Set state explicitly */
+        session->auth.auto_state->state = SSH_AUTH_AUTO_STATE_NONE;
     }
     state = session->auth.auto_state;
     if (state->state == SSH_AUTH_AUTO_STATE_NONE) {
