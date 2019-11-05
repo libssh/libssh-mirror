@@ -28,7 +28,7 @@ struct ssh_auth_request {
     int method;
     char *password;
     struct ssh_key_struct *pubkey;
-    char signature_state;
+    enum ssh_publickey_state_e signature_state;
     char kbdint_response;
 };
 
