@@ -1826,7 +1826,7 @@ int ssh_packet_send(ssh_session session)
                 SSH_LOG(SSH_LOG_PACKET, "Queued packet triggered rekey");
                 return ssh_send_rekex(session);
             }
-            ssh_buffer_free(session->out_buffer);
+            SSH_BUFFER_FREE(session->out_buffer);
             session->out_buffer = ssh_list_pop_head(struct ssh_buffer_struct *,
                                                     session->out_queue);
             payload = (uint8_t *)ssh_buffer_get(session->out_buffer);
