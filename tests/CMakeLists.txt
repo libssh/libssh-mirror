@@ -43,7 +43,7 @@ set(TEST_TARGET_LIBRARIES
 
 add_subdirectory(unittests)
 
-if (CLIENT_TESTING)
+if (CLIENT_TESTING OR SERVER_TESTING)
     find_package(socket_wrapper 1.1.5 REQUIRED)
     find_package(nss_wrapper 1.1.2 REQUIRED)
     find_package(uid_wrapper 1.2.0 REQUIRED)
@@ -135,18 +135,20 @@ if (CLIENT_TESTING)
     file(COPY keys/certauth/id_rsa-cert.pub DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/home/bob/.ssh_cert/ FILE_PERMISSIONS OWNER_READ OWNER_WRITE)
 
     message(STATUS "TORTURE_ENVIRONMENT=${TORTURE_ENVIRONMENT}")
-
-    add_subdirectory(client)
-endif (CLIENT_TESTING)
+endif ()
 
 if (WITH_BENCHMARKS)
     add_subdirectory(benchmarks)
-endif (WITH_BENCHMARKS)
+endif ()
+
+if (CLIENT_TESTING)
+    add_subdirectory(client)
+endif ()
 
 if (WITH_SERVER AND SERVER_TESTING)
     add_subdirectory(pkd)
     add_subdirectory(server)
-endif (WITH_SERVER AND SERVER_TESTING)
+endif ()
 
 if (FUZZ_TESTING)
     add_subdirectory(fuzz)
