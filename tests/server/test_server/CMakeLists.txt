@@ -30,7 +30,7 @@ if (UNIX AND NOT WIN32)
     target_compile_options(test_server PRIVATE ${DEFAULT_C_COMPILE_FLAGS})
     target_link_libraries(test_server
                           testserver
-                          ${LIBSSH_SHARED_LIBRARY}
+                          ssh::ssh
                           ${ARGP_LIBRARY}
                           util)
 endif ()

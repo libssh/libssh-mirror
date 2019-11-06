@@ -88,11 +88,6 @@ if (WITH_NACL AND NACL_FOUND)
   )
 endif (WITH_NACL AND NACL_FOUND)
 
-set(LIBSSH_SHARED_LIBRARY
-  ssh_shared
-  CACHE INTERNAL "libssh shared library"
-)
-
 if (BUILD_STATIC_LIB)
   set(LIBSSH_STATIC_LIBRARY
     ssh_static
@@ -314,16 +309,20 @@ if (WITH_SYMBOL_VERSIONING AND HAVE_LD_VERSION_SCRIPT AND ABIMAP_FOUND)
     )
 endif (WITH_SYMBOL_VERSIONING AND HAVE_LD_VERSION_SCRIPT AND ABIMAP_FOUND)
 
-add_library(${LIBSSH_SHARED_LIBRARY} SHARED ${libssh_SRCS})
-target_compile_options(${LIBSSH_SHARED_LIBRARY}
+# This gets built as a static library, if -DBUILD_SHARED_LIBS=OFF is passed to
+# cmake.
+add_library(ssh ${libssh_SRCS})
+target_compile_options(ssh
                        PRIVATE
                            ${DEFAULT_C_COMPILE_FLAGS}
                            -D_GNU_SOURCE)
-target_include_directories(${LIBSSH_SHARED_LIBRARY}
+target_include_directories(ssh
                            PRIVATE ${LIBSSH_PUBLIC_INCLUDE_DIRS} ${LIBSSH_PRIVATE_INCLUDE_DIRS})
 
-target_link_libraries(${LIBSSH_SHARED_LIBRARY}
+target_link_libraries(ssh
                       PRIVATE ${LIBSSH_LINK_LIBRARIES})
+
+add_library(ssh::ssh ALIAS ssh)
 
 if (WITH_SYMBOL_VERSIONING AND HAVE_LD_VERSION_SCRIPT)
     if (ABIMAP_FOUND)
@@ -331,34 +330,31 @@ if (WITH_SYMBOL_VERSIONING AND HAVE_LD_VERSION_SCRIPT)
         set(MAP_PATH "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_dev.map")
     endif (ABIMAP_FOUND)
 
-    set_target_properties(${LIBSSH_SHARED_LIBRARY}
+    set_target_properties(ssh
                           PROPERTIES LINK_FLAGS
                           "-Wl,--version-script,\"${MAP_PATH}\"")
 endif (WITH_SYMBOL_VERSIONING AND HAVE_LD_VERSION_SCRIPT)
 
-set_target_properties(
-  ${LIBSSH_SHARED_LIBRARY}
+set_target_properties(ssh
     PROPERTIES
       VERSION
         ${LIBRARY_VERSION}
       SOVERSION
         ${LIBRARY_SOVERSION}
-      OUTPUT_NAME
-        ssh
       DEFINE_SYMBOL
         LIBSSH_EXPORTS
 )
 
 if (WITH_VISIBILITY_HIDDEN)
-  set_target_properties(${LIBSSH_SHARED_LIBRARY} PROPERTIES COMPILE_FLAGS "-fvisibility=hidden")
+  set_target_properties(ssh PROPERTIES COMPILE_FLAGS "-fvisibility=hidden")
 endif (WITH_VISIBILITY_HIDDEN)
 
 if (MINGW)
-    set_target_properties(${LIBSSH_SHARED_LIBRARY} PROPERTIES LINK_FLAGS "-Wl,--enable-stdcall-fixup")
+    set_target_properties(ssh PROPERTIES LINK_FLAGS "-Wl,--enable-stdcall-fixup")
 endif ()
 
 
-install(TARGETS ${LIBSSH_SHARED_LIBRARY}
+install(TARGETS ssh
         EXPORT libssh-config
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
