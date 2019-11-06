@@ -20,7 +20,7 @@ set(pkd_hello_src
 
 set(pkd_libs
     ${CMOCKA_LIBRARY}
-    ${LIBSSH_STATIC_LIBRARY}
+    ssh::static
     ${ARGP_LIBRARIES}
     pthread
 )

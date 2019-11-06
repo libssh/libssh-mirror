@@ -365,16 +365,20 @@ install(EXPORT libssh-config
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
 
 if (BUILD_STATIC_LIB)
-  add_library(${LIBSSH_STATIC_LIBRARY} STATIC ${libssh_SRCS})
-  target_compile_options(${LIBSSH_STATIC_LIBRARY}
+  add_library(ssh-static STATIC ${libssh_SRCS})
+  target_compile_options(ssh-static
                          PRIVATE
                             ${DEFAULT_C_COMPILE_FLAGS}
                             -D_GNU_SOURCE)
 
-  target_include_directories(${LIBSSH_STATIC_LIBRARY}
-                             PRIVATE ${LIBSSH_PUBLIC_INCLUDE_DIRS} ${LIBSSH_PRIVATE_INCLUDE_DIRS})
-  target_link_libraries(${LIBSSH_STATIC_LIBRARY}
+  target_include_directories(ssh-static
+                             PUBLIC
+                                 $<BUILD_INTERFACE:${libssh_SOURCE_DIR}/include>
+                                 $<INSTALL_INTERFACE:include>
+                             PRIVATE ${LIBSSH_PRIVATE_INCLUDE_DIRS})
+  target_link_libraries(ssh-static
                         PUBLIC ${LIBSSH_LINK_LIBRARIES})
+  add_library(ssh::static ALIAS ssh-static)
 
   if (MSVC)
     set(OUTPUT_SUFFIX static)
@@ -382,7 +386,7 @@ if (BUILD_STATIC_LIB)
     set(OUTPUT_SUFFIX )
   endif (MSVC)
   set_target_properties(
-    ${LIBSSH_STATIC_LIBRARY}
+    ssh-static
       PROPERTIES
         VERSION
           ${LIBRARY_VERSION}
@@ -396,7 +400,7 @@ if (BUILD_STATIC_LIB)
 
   if (WIN32)
     set_target_properties(
-      ${LIBSSH_STATIC_LIBRARY}
+      ssh-static
         PROPERTIES
           COMPILE_FLAGS
             "-DLIBSSH_STATIC"
