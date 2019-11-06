@@ -1,7 +1,4 @@
-set(LIBSSH_PUBLIC_INCLUDE_DIRS
-  ${libssh_SOURCE_DIR}/include
-  CACHE INTERNAL "libssh public include directories"
-)
+set(LIBSSH_PUBLIC_INCLUDE_DIRS ${libssh_SOURCE_DIR}/include)
 
 set(LIBSSH_PRIVATE_INCLUDE_DIRS
   ${libssh_BINARY_DIR}
@@ -317,7 +314,10 @@ target_compile_options(ssh
                            ${DEFAULT_C_COMPILE_FLAGS}
                            -D_GNU_SOURCE)
 target_include_directories(ssh
-                           PRIVATE ${LIBSSH_PUBLIC_INCLUDE_DIRS} ${LIBSSH_PRIVATE_INCLUDE_DIRS})
+                           PUBLIC
+                               $<BUILD_INTERFACE:${libssh_SOURCE_DIR}/include>
+                               $<INSTALL_INTERFACE:include>
+                           PRIVATE ${LIBSSH_PRIVATE_INCLUDE_DIRS})
 
 target_link_libraries(ssh
                       PRIVATE ${LIBSSH_LINK_LIBRARIES})

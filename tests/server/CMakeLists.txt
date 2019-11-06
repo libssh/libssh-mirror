@@ -12,11 +12,9 @@ set(LIBSSH_SERVER_TESTS
     torture_server_config
 )
 
-include_directories(
-  ${LIBSSH_PUBLIC_INCLUDE_DIRS}
-  ${CMAKE_BINARY_DIR}
-  test_server
-)
+include_directories(${libssh_SOURCE_DIR}/include
+                    ${libssh_BINARY_DIR}
+                    test_server)
 
 if (ARGP_INCLUDE_DIR)
     include_directories(${ARGP_INCLUDE_DIR})

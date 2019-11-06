@@ -4,9 +4,7 @@ set(benchmarks_SRCS
   bench_scp.c bench_sftp bench_raw.c benchmarks.c latency.c
 )
 
-include_directories(
-  ${LIBSSH_PUBLIC_INCLUDE_DIRS}
-)
+include_directories(${libssh_BINARY_DIR})
 
 add_executable(benchmarks ${benchmarks_SRCS})
 

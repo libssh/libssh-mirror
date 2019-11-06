@@ -6,15 +6,12 @@ endif (BSD OR SOLARIS OR OSX)
 
 set(TORTURE_LIBRARY torture)
 
-include_directories(
-  ${LIBSSH_PUBLIC_INCLUDE_DIRS}
-  ${OPENSSL_INCLUDE_DIR}
-  ${CMOCKA_INCLUDE_DIR}
-  ${ZLIB_INCLUDE_DIR}
-  ${CMAKE_BINARY_DIR}
-  ${CMAKE_SOURCE_DIR}/src
-  ${CMAKE_CURRENT_SOURCE_DIR}
-)
+include_directories(${OPENSSL_INCLUDE_DIR}
+                    ${CMOCKA_INCLUDE_DIR}
+                    ${ZLIB_INCLUDE_DIR}
+                    ${libssh_BINARY_DIR}
+                    ${libssh_SOURCE_DIR}/src
+                    ${CMAKE_CURRENT_SOURCE_DIR})
 
 set(TORTURE_LINK_LIBRARIES
     ${CMOCKA_LIBRARY}
