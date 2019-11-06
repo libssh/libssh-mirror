@@ -406,15 +406,6 @@ if (BUILD_STATIC_LIB)
             "-DLIBSSH_STATIC"
     )
   endif (WIN32)
-
-    if (WITH_STATIC_LIB)
-      install(TARGETS
-                ${LIBSSH_STATIC_LIBRARY}
-              DESTINATION
-                  ${CMAKE_INSTALL_LIBDIR}/${OUTPUT_SUFFIX}
-              COMPONENT
-                libraries)
-    endif (WITH_STATIC_LIB)
 endif (BUILD_STATIC_LIB)
 
 message(STATUS "Threads_FOUND=${Threads_FOUND}")
