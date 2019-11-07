@@ -38,10 +38,6 @@ if (UNIX AND NOT WIN32)
     target_compile_options(ssh-client PRIVATE ${DEFAULT_C_COMPILE_FLAGS})
     target_link_libraries(ssh-client ${LIBSSH_SHARED_LIBRARY})
 
-    add_executable(keygen2 keygen2.c ${examples_SRCS})
-    target_compile_options(keygen2 PRIVATE ${DEFAULT_C_COMPILE_FLAGS})
-    target_link_libraries(keygen2 ${LIBSSH_SHARED_LIBRARY})
-
     if (WITH_SERVER AND (ARGP_LIBRARY OR HAVE_ARGP_H))
         if (HAVE_LIBUTIL)
             add_executable(ssh_server_fork ssh_server_fork.c)
@@ -66,6 +62,10 @@ if (UNIX AND NOT WIN32)
         add_executable(samplesshd-kbdint samplesshd-kbdint.c)
         target_compile_options(samplesshd-kbdint PRIVATE ${DEFAULT_C_COMPILE_FLAGS})
         target_link_libraries(samplesshd-kbdint ${LIBSSH_SHARED_LIBRARY} ${ARGP_LIBRARY})
+
+        add_executable(keygen2 keygen2.c ${examples_SRCS})
+        target_compile_options(keygen2 PRIVATE ${DEFAULT_C_COMPILE_FLAGS})
+        target_link_libraries(keygen2 ${LIBSSH_SHARED_LIBRARY})
 
     endif()
 endif (UNIX AND NOT WIN32)
