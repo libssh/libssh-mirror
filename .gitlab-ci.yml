@@ -155,6 +155,8 @@ fedora/undefined-sanitizer:
       - obj/
 
 fedora/csbuild:
+  variables:
+      GIT_DEPTH: "100"
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$FEDORA_BUILD
   script:
   - |
