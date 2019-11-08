@@ -23,7 +23,6 @@ clients must be made or how a client should react.
 #include <libssh/libssh.h>
 #include <libssh/server.h>
 #include <libssh/callbacks.h>
-#include <libssh/channels.h>
 
 #ifdef HAVE_ARGP_H
 #include <argp.h>
@@ -33,6 +32,20 @@ clients must be made or how a client should react.
 #include <string.h>
 #include <stdio.h>
 #include <poll.h>
+
+#define SAFE_FREE(x) do { if ((x) != NULL) {free(x); x=NULL;} } while(0)
+
+#ifndef __unused__
+# ifdef HAVE_UNUSED_ATTRIBUTE
+#  define __unused__ __attribute__((unused))
+# else /* HAVE_UNUSED_ATTRIBUTE */
+#  define __unused__
+# endif /* HAVE_UNUSED_ATTRIBUTE */
+#endif /* __unused__ */
+
+#ifndef UNUSED_PARAM
+#define UNUSED_PARAM(param) param __unused__
+#endif /* UNUSED_PARAM */
 
 #ifndef KEYS_FOLDER
 #ifdef _WIN32
@@ -218,7 +231,9 @@ static void my_channel_close_function(ssh_session session, ssh_channel channel, 
     struct event_fd_data_struct *event_fd_data = (struct event_fd_data_struct *)userdata;
     (void)session;
 
-    _ssh_log(SSH_LOG_PROTOCOL, "=== my_channel_close_function", "Channel %d:%d closed by remote. State=%d", channel->local_channel, channel->remote_channel, channel->state);
+    _ssh_log(SSH_LOG_PROTOCOL,
+             "=== my_channel_close_function",
+             "Channel closed by remote.");
 
     stack_socket_close(session, event_fd_data);
 }
@@ -227,7 +242,10 @@ static void my_channel_eof_function(ssh_session session, ssh_channel channel, vo
     struct event_fd_data_struct *event_fd_data = (struct event_fd_data_struct *)userdata;
     (void)session;
 
-    _ssh_log(SSH_LOG_PROTOCOL, "=== my_channel_eof_function", "Got EOF on channel %d:%d. Shuting down write on socket (fd = %d).", channel->local_channel, channel->remote_channel, *event_fd_data->p_fd);
+    _ssh_log(SSH_LOG_PROTOCOL,
+             "=== my_channel_eof_function",
+             "Got EOF on channel. Shuting down write on socket (fd = %d).",
+             *event_fd_data->p_fd);
 
     stack_socket_close(session, event_fd_data);
 }
@@ -236,7 +254,10 @@ static void my_channel_exit_status_function(ssh_session session, ssh_channel cha
     struct event_fd_data_struct *event_fd_data = (struct event_fd_data_struct *)userdata;
     (void)session;
 
-    _ssh_log(SSH_LOG_PROTOCOL, "=== my_channel_exit_status_function", "Got exit status %d on channel %d:%d fd = %d.", exit_status, channel->local_channel, channel->remote_channel, *event_fd_data->p_fd);
+    _ssh_log(SSH_LOG_PROTOCOL,
+             "=== my_channel_exit_status_function",
+             "Got exit status %d on channel fd = %d.",
+             exit_status, *event_fd_data->p_fd);
 }
 
 static int my_channel_data_function(ssh_session session,
@@ -253,7 +274,11 @@ static int my_channel_data_function(ssh_session session,
         fprintf(stderr, "Why we're here? Stacked = %d\n", event_fd_data->stacked);
     }
 
-    _ssh_log(SSH_LOG_PROTOCOL, "=== my_channel_data_function", "%d bytes waiting on channel %d:%d for reading. Fd = %d",len, channel->local_channel, channel->remote_channel, *event_fd_data->p_fd);
+    _ssh_log(SSH_LOG_PROTOCOL,
+             "=== my_channel_data_function",
+             "%d bytes waiting on channel for reading. Fd = %d",
+             len,
+             *event_fd_data->p_fd);
     if (len > 0) {
         i = send(*event_fd_data->p_fd, data, len, 0);
     }
@@ -313,8 +338,10 @@ static int my_fd_data_function(UNUSED_PARAM(socket_t fd),
     blocking = ssh_is_blocking(session);
     ssh_set_blocking(session, 0);
 
-    _ssh_log(SSH_LOG_FUNCTIONS, "=== my_fd_data_function", "Trying to read from tcp socket fd = %d... (Channel %d:%d state=%d)",
-                        *event_fd_data->p_fd, channel->local_channel, channel->remote_channel, channel->state);
+    _ssh_log(SSH_LOG_FUNCTIONS,
+             "=== my_fd_data_function",
+             "Trying to read from tcp socket fd = %d",
+             *event_fd_data->p_fd);
 #ifdef _WIN32
     struct sockaddr from;
     int fromlen = sizeof(from);
