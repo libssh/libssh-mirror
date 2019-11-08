@@ -870,13 +870,6 @@ LIBSSH_API int sftp_server_init(sftp_session sftp);
 LIBSSH_API void sftp_server_free(sftp_session sftp);
 #endif  /* WITH_SERVER */
 
-/* this is not a public interface */
-#define SFTP_HANDLES 256
-sftp_packet sftp_packet_read(sftp_session sftp);
-int sftp_packet_write(sftp_session sftp,uint8_t type, ssh_buffer payload);
-void sftp_packet_free(sftp_packet packet);
-int buffer_add_attributes(ssh_buffer buffer, sftp_attributes attr);
-sftp_attributes sftp_parse_attr(sftp_session session, ssh_buffer buf,int expectname);
 /* sftpserver.c */
 
 LIBSSH_API sftp_client_message sftp_get_client_message(sftp_session sftp);

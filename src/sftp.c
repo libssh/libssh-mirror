@@ -44,6 +44,7 @@
 #include "libssh/priv.h"
 #include "libssh/ssh2.h"
 #include "libssh/sftp.h"
+#include "libssh/sftp_priv.h"
 #include "libssh/buffer.h"
 #include "libssh/channels.h"
 #include "libssh/session.h"
@@ -623,7 +624,8 @@ static int sftp_read_and_dispatch(sftp_session sftp)
     return 0;
 }
 
-void sftp_packet_free(sftp_packet packet) {
+void sftp_packet_free(sftp_packet packet)
+{
   if (packet == NULL) {
     return;
   }
@@ -1448,8 +1450,8 @@ static sftp_attributes sftp_parse_attr_3(sftp_session sftp, ssh_buffer buf,
     return NULL;
 }
 
-/* FIXME is this really needed as a public function? */
-int buffer_add_attributes(ssh_buffer buffer, sftp_attributes attr) {
+int buffer_add_attributes(ssh_buffer buffer, sftp_attributes attr)
+{
   uint32_t flags = (attr ? attr->flags : 0);
   int rc;
 
@@ -1494,8 +1496,10 @@ int buffer_add_attributes(ssh_buffer buffer, sftp_attributes attr) {
 }
 
 
-sftp_attributes sftp_parse_attr(sftp_session session, ssh_buffer buf,
-    int expectname) {
+sftp_attributes sftp_parse_attr(sftp_session session,
+                                ssh_buffer buf,
+                                int expectname)
+{
   switch(session->version) {
     case 4:
       return sftp_parse_attr_4(session, buf, expectname);

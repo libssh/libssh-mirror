@@ -32,10 +32,13 @@
 
 #include "libssh/libssh.h"
 #include "libssh/sftp.h"
+#include "libssh/sftp_priv.h"
 #include "libssh/ssh2.h"
 #include "libssh/priv.h"
 #include "libssh/buffer.h"
 #include "libssh/misc.h"
+
+#define SFTP_HANDLES 256
 
 sftp_client_message sftp_get_client_message(sftp_session sftp) {
   ssh_session session = sftp->session;
