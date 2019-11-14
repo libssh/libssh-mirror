@@ -322,6 +322,10 @@ target_include_directories(ssh
 target_link_libraries(ssh
                       PRIVATE ${LIBSSH_LINK_LIBRARIES})
 
+if (WIN32 AND NOT BUILD_SHARED_LIBS)
+    set_target_properties(ssh PROPERTIES COMPILE_FLAGS "-DLIBSSH_STATIC")
+endif ()
+
 add_library(ssh::ssh ALIAS ssh)
 
 if (WITH_SYMBOL_VERSIONING AND HAVE_LD_VERSION_SCRIPT)
