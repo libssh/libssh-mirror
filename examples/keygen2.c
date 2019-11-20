@@ -324,8 +324,8 @@ int main(int argc, char *argv[])
     if (rc < 0) {
         if (errno == EEXIST) {
             printf("File \"%s\" exists. Overwrite it? (y|n) ", arguments.file);
-            scanf("%1023s", overwrite);
-            if (tolower(overwrite[0]) == 'y') {
+            rc = scanf("%1023s", overwrite);
+            if (rc > 0 && tolower(overwrite[0]) == 'y') {
                 rc = open(arguments.file, O_WRONLY);
                 if (rc > 0) {
                     close(rc);
@@ -395,8 +395,8 @@ int main(int argc, char *argv[])
     if (rc < 0) {
         if (errno == EEXIST) {
             printf("File \"%s\" exists. Overwrite it? (y|n) ", pubkey_file);
-            scanf("%1023s", overwrite);
-            if (tolower(overwrite[0]) == 'y') {
+            rc = scanf("%1023s", overwrite);
+            if (rc > 0 && tolower(overwrite[0]) == 'y') {
                 rc = open(pubkey_file, O_WRONLY);
                 if (rc > 0) {
                     close(rc);
