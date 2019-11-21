@@ -1,6 +1,7 @@
 variables:
   BUILD_IMAGES_PROJECT: libssh/build-images
   FEDORA_BUILD: buildenv-fedora
+  UBUNTU_BUILD: buildenv-ubuntu
   CENTOS7_BUILD: buildenv-centos7
   TUMBLEWEED_BUILD: buildenv-tumbleweed
   MINGW_BUILD: buildenv-mingw
@@ -186,6 +187,29 @@ fedora/csbuild:
     when: on_failure
     paths:
       - obj-csbuild/
+
+ubuntu/openssl_1.1.x/x86_64:
+  image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$UBUNTU_BUILD
+  script:
+  - mkdir -p obj && cd obj && cmake
+    -DCMAKE_INSTALL_PREFIX=/tmp/local
+    -DCMAKE_BUILD_TYPE=RelWithDebInfo
+    -DPICKY_DEVELOPER=ON
+    -DWITH_BLOWFISH_CIPHER=ON
+    -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
+    -DWITH_DEBUG_CRYPTO=ON
+    -DWITH_DEBUG_PACKET=ON -DWITH_DEBUG_CALLTRACE=ON
+    -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON .. &&
+    make -j$(nproc) && ctest --output-on-failure && make install
+  tags:
+  - shared
+  except:
+  - tags
+  artifacts:
+    expire_in: 1 week
+    when: on_failure
+    paths:
+      - obj/
 
 # That is a specific runner that we cannot enable universally.
 # We restrict it to builds under the $BUILD_IMAGES_PROJECT project.
