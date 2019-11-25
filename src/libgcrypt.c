@@ -302,10 +302,12 @@ static int blowfish_set_key(struct ssh_cipher_struct *cipher, void *key, void *I
       return -1;
     }
     if (gcry_cipher_setkey(cipher->key[0], key, 16)) {
+      gcry_cipher_close(cipher->key[0]);
       SAFE_FREE(cipher->key);
       return -1;
     }
     if (gcry_cipher_setiv(cipher->key[0], IV, 8)) {
+      gcry_cipher_close(cipher->key[0]);
       SAFE_FREE(cipher->key);
       return -1;
     }
@@ -359,12 +361,13 @@ static int aes_set_key(struct ssh_cipher_struct *cipher, void *key, void *IV) {
         break;
     }
     if (gcry_cipher_setkey(cipher->key[0], key, cipher->keysize / 8)) {
+      gcry_cipher_close(cipher->key[0]);
       SAFE_FREE(cipher->key);
       return -1;
     }
     if(mode == GCRY_CIPHER_MODE_CBC){
       if (gcry_cipher_setiv(cipher->key[0], IV, 16)) {
-
+        gcry_cipher_close(cipher->key[0]);
         SAFE_FREE(cipher->key);
         return -1;
       }
@@ -375,6 +378,7 @@ static int aes_set_key(struct ssh_cipher_struct *cipher, void *key, void *IV) {
       memcpy(cipher->last_iv, IV, AES_GCM_IVLEN);
     } else {
       if(gcry_cipher_setctr(cipher->key[0],IV,16)){
+        gcry_cipher_close(cipher->key[0]);
         SAFE_FREE(cipher->key);
         return -1;
       }
@@ -565,10 +569,12 @@ static int des3_set_key(struct ssh_cipher_struct *cipher, void *key, void *IV) {
       return -1;
     }
     if (gcry_cipher_setkey(cipher->key[0], key, 24)) {
+      gcry_cipher_close(cipher->key[0]);
       SAFE_FREE(cipher->key);
       return -1;
     }
     if (gcry_cipher_setiv(cipher->key[0], IV, 8)) {
+      gcry_cipher_close(cipher->key[0]);
       SAFE_FREE(cipher->key);
       return -1;
     }
