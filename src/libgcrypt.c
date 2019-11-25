@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include "libssh/priv.h"
 #include "libssh/session.h"
@@ -35,6 +36,34 @@
 
 #ifdef HAVE_LIBGCRYPT
 #include <gcrypt.h>
+
+#ifdef HAVE_GCRYPT_CHACHA_POLY
+
+#define CHACHA20_BLOCKSIZE 64
+#define CHACHA20_KEYLEN 32
+
+#define POLY1305_TAGLEN 16
+#define POLY1305_KEYLEN 32
+
+struct chacha20_poly1305_keysched {
+    bool initialized;
+    /* cipher handle used for encrypting the packets */
+    gcry_cipher_hd_t main_hd;
+    /* cipher handle used for encrypting the length field */
+    gcry_cipher_hd_t header_hd;
+    /* mac handle used for authenticating the packets */
+    gcry_mac_hd_t mac_hd;
+};
+
+#pragma pack(push, 1)
+struct ssh_packet_header {
+    uint32_t length;
+    uint8_t payload[];
+};
+#pragma pack(pop)
+
+static const uint8_t zero_block[CHACHA20_BLOCKSIZE] = {0};
+#endif /* HAVE_GCRYPT_CHACHA_POLY */
 
 static int libgcrypt_initialized = 0;
 
@@ -558,6 +587,300 @@ static void des3_decrypt(struct ssh_cipher_struct *cipher, void *in,
   gcry_cipher_decrypt(cipher->key[0], out, len, in, len);
 }
 
+#ifdef HAVE_GCRYPT_CHACHA_POLY
+static void chacha20_cleanup(struct ssh_cipher_struct *cipher)
+{
+    struct chacha20_poly1305_keysched *ctx = NULL;
+
+    if (cipher->chacha20_schedule == NULL) {
+        return;
+    }
+
+    ctx = cipher->chacha20_schedule;
+
+    if (ctx->initialized) {
+        gcry_cipher_close(ctx->main_hd);
+        gcry_cipher_close(ctx->header_hd);
+        gcry_mac_close(ctx->mac_hd);
+        ctx->initialized = false;
+    }
+
+    SAFE_FREE(cipher->chacha20_schedule);
+}
+
+static int chacha20_set_encrypt_key(struct ssh_cipher_struct *cipher,
+                                    void *key,
+                                    UNUSED_PARAM(void *IV))
+{
+    struct chacha20_poly1305_keysched *ctx = NULL;
+    uint8_t *u8key = key;
+    gpg_error_t err;
+
+    if (cipher->chacha20_schedule == NULL) {
+        ctx = calloc(1, sizeof(*ctx));
+        if (ctx == NULL) {
+            return -1;
+        }
+        cipher->chacha20_schedule = ctx;
+    } else {
+        ctx = cipher->chacha20_schedule;
+    }
+
+    if (!ctx->initialized) {
+        /* Open cipher/mac handles. */
+        err = gcry_cipher_open(&ctx->main_hd, GCRY_CIPHER_CHACHA20,
+                               GCRY_CIPHER_MODE_STREAM, 0);
+        if (err != 0) {
+            SSH_LOG(SSH_LOG_WARNING, "gcry_cipher_open failed: %s",
+                    gpg_strerror(err));
+            SAFE_FREE(cipher->chacha20_schedule);
+            return -1;
+        }
+        err = gcry_cipher_open(&ctx->header_hd, GCRY_CIPHER_CHACHA20,
+                               GCRY_CIPHER_MODE_STREAM, 0);
+        if (err != 0) {
+            SSH_LOG(SSH_LOG_WARNING, "gcry_cipher_open failed: %s",
+                    gpg_strerror(err));
+            gcry_cipher_close(ctx->main_hd);
+            SAFE_FREE(cipher->chacha20_schedule);
+            return -1;
+        }
+        err = gcry_mac_open(&ctx->mac_hd, GCRY_MAC_POLY1305, 0, NULL);
+        if (err != 0) {
+            SSH_LOG(SSH_LOG_WARNING, "gcry_mac_open failed: %s",
+                    gpg_strerror(err));
+            gcry_cipher_close(ctx->main_hd);
+            gcry_cipher_close(ctx->header_hd);
+            SAFE_FREE(cipher->chacha20_schedule);
+            return -1;
+        }
+
+        ctx->initialized = true;
+    }
+
+    err = gcry_cipher_setkey(ctx->main_hd, u8key, CHACHA20_KEYLEN);
+    if (err != 0) {
+        SSH_LOG(SSH_LOG_WARNING, "gcry_cipher_setkey failed: %s",
+                gpg_strerror(err));
+        chacha20_cleanup(cipher);
+        return -1;
+    }
+
+    err = gcry_cipher_setkey(ctx->header_hd, u8key + CHACHA20_KEYLEN,
+                             CHACHA20_KEYLEN);
+    if (err != 0) {
+        SSH_LOG(SSH_LOG_WARNING, "gcry_cipher_setkey failed: %s",
+                gpg_strerror(err));
+        chacha20_cleanup(cipher);
+        return -1;
+    }
+
+    return 0;
+}
+
+static void chacha20_poly1305_aead_encrypt(struct ssh_cipher_struct *cipher,
+                                           void *in,
+                                           void *out,
+                                           size_t len,
+                                           uint8_t *tag,
+                                           uint64_t seq)
+{
+    struct ssh_packet_header *in_packet = in, *out_packet = out;
+    struct chacha20_poly1305_keysched *ctx = cipher->chacha20_schedule;
+    uint8_t poly_key[CHACHA20_BLOCKSIZE];
+    size_t taglen = POLY1305_TAGLEN;
+    gpg_error_t err;
+
+    seq = htonll(seq);
+
+    /* step 1, prepare the poly1305 key */
+    err = gcry_cipher_setiv(ctx->main_hd, (uint8_t *)&seq, sizeof(seq));
+    if (err != 0) {
+        SSH_LOG(SSH_LOG_WARNING, "gcry_cipher_setiv failed: %s",
+                gpg_strerror(err));
+        goto out;
+    }
+    /* Output full ChaCha block so that counter increases by one for
+     * payload encryption step. */
+    err = gcry_cipher_encrypt(ctx->main_hd,
+                              poly_key,
+                              sizeof(poly_key),
+                              zero_block,
+                              sizeof(zero_block));
+    if (err != 0) {
+        SSH_LOG(SSH_LOG_WARNING, "gcry_cipher_encrypt failed: %s",
+                gpg_strerror(err));
+        goto out;
+    }
+    err = gcry_mac_setkey(ctx->mac_hd, poly_key, POLY1305_KEYLEN);
+    if (err != 0) {
+        SSH_LOG(SSH_LOG_WARNING, "gcry_mac_setkey failed: %s",
+                gpg_strerror(err));
+        goto out;
+    }
+
+    /* step 2, encrypt length field */
+    err = gcry_cipher_setiv(ctx->header_hd, (uint8_t *)&seq, sizeof(seq));
+    if (err != 0) {
+        SSH_LOG(SSH_LOG_WARNING, "gcry_cipher_setiv failed: %s",
+                gpg_strerror(err));
+        goto out;
+    }
+    err = gcry_cipher_encrypt(ctx->header_hd,
+                              (uint8_t *)&out_packet->length,
+                              sizeof(uint32_t),
+                              (uint8_t *)&in_packet->length,
+                              sizeof(uint32_t));
+    if (err != 0) {
+        SSH_LOG(SSH_LOG_WARNING, "gcry_cipher_encrypt failed: %s",
+                gpg_strerror(err));
+        goto out;
+    }
+
+    /* step 3, encrypt packet payload (main_hd counter == 1) */
+    err = gcry_cipher_encrypt(ctx->main_hd,
+                              out_packet->payload,
+                              len - sizeof(uint32_t),
+                              in_packet->payload,
+                              len - sizeof(uint32_t));
+    if (err != 0) {
+        SSH_LOG(SSH_LOG_WARNING, "gcry_cipher_encrypt failed: %s",
+                gpg_strerror(err));
+        goto out;
+    }
+
+    /* step 4, compute the MAC */
+    err = gcry_mac_write(ctx->mac_hd, (uint8_t *)out_packet, len);
+    if (err != 0) {
+        SSH_LOG(SSH_LOG_WARNING, "gcry_mac_write failed: %s",
+                gpg_strerror(err));
+        goto out;
+    }
+    err = gcry_mac_read(ctx->mac_hd, tag, &taglen);
+    if (err != 0) {
+        SSH_LOG(SSH_LOG_WARNING, "gcry_mac_read failed: %s",
+                gpg_strerror(err));
+        goto out;
+    }
+
+out:
+    explicit_bzero(poly_key, sizeof(poly_key));
+}
+
+static int chacha20_poly1305_aead_decrypt_length(
+        struct ssh_cipher_struct *cipher,
+        void *in,
+        uint8_t *out,
+        size_t len,
+        uint64_t seq)
+{
+    struct chacha20_poly1305_keysched *ctx = cipher->chacha20_schedule;
+    gpg_error_t err;
+
+    if (len < sizeof(uint32_t)) {
+        return SSH_ERROR;
+    }
+    seq = htonll(seq);
+
+    err = gcry_cipher_setiv(ctx->header_hd, (uint8_t *)&seq, sizeof(seq));
+    if (err != 0) {
+        SSH_LOG(SSH_LOG_WARNING, "gcry_cipher_setiv failed: %s",
+                gpg_strerror(err));
+        return SSH_ERROR;
+    }
+    err = gcry_cipher_decrypt(ctx->header_hd,
+                              out,
+                              sizeof(uint32_t),
+                              in,
+                              sizeof(uint32_t));
+    if (err != 0) {
+        SSH_LOG(SSH_LOG_WARNING, "gcry_cipher_decrypt failed: %s",
+                gpg_strerror(err));
+        return SSH_ERROR;
+    }
+
+    return SSH_OK;
+}
+
+static int chacha20_poly1305_aead_decrypt(struct ssh_cipher_struct *cipher,
+                                          void *complete_packet,
+                                          uint8_t *out,
+                                          size_t encrypted_size,
+                                          uint64_t seq)
+{
+    struct chacha20_poly1305_keysched *ctx = cipher->chacha20_schedule;
+    uint8_t *mac = (uint8_t *)complete_packet + sizeof(uint32_t) +
+                   encrypted_size;
+    uint8_t poly_key[CHACHA20_BLOCKSIZE];
+    int ret = SSH_ERROR;
+    gpg_error_t err;
+
+    seq = htonll(seq);
+
+    /* step 1, prepare the poly1305 key */
+    err = gcry_cipher_setiv(ctx->main_hd, (uint8_t *)&seq, sizeof(seq));
+    if (err != 0) {
+        SSH_LOG(SSH_LOG_WARNING, "gcry_cipher_setiv failed: %s",
+                gpg_strerror(err));
+        goto out;
+    }
+    /* Output full ChaCha block so that counter increases by one for
+     * decryption step. */
+    err = gcry_cipher_encrypt(ctx->main_hd,
+                              poly_key,
+                              sizeof(poly_key),
+                              zero_block,
+                              sizeof(zero_block));
+    if (err != 0) {
+        SSH_LOG(SSH_LOG_WARNING, "gcry_cipher_encrypt failed: %s",
+                gpg_strerror(err));
+        goto out;
+    }
+    err = gcry_mac_setkey(ctx->mac_hd, poly_key, POLY1305_KEYLEN);
+    if (err != 0) {
+        SSH_LOG(SSH_LOG_WARNING, "gcry_mac_setkey failed: %s",
+                gpg_strerror(err));
+        goto out;
+    }
+
+    /* step 2, check MAC */
+    err = gcry_mac_write(ctx->mac_hd, (uint8_t *)complete_packet,
+                         encrypted_size + sizeof(uint32_t));
+    if (err != 0) {
+        SSH_LOG(SSH_LOG_WARNING, "gcry_mac_write failed: %s",
+                gpg_strerror(err));
+        goto out;
+    }
+    err = gcry_mac_verify(ctx->mac_hd, mac, POLY1305_TAGLEN);
+    if (gpg_err_code(err) == GPG_ERR_CHECKSUM) {
+        SSH_LOG(SSH_LOG_PACKET, "poly1305 verify error");
+        goto out;
+    } else if (err != 0) {
+        SSH_LOG(SSH_LOG_WARNING, "gcry_mac_verify failed: %s",
+                gpg_strerror(err));
+        goto out;
+    }
+
+    /* step 3, decrypt packet payload (main_hd counter == 1) */
+    err = gcry_cipher_decrypt(ctx->main_hd,
+                              out,
+                              encrypted_size,
+                              (uint8_t *)complete_packet + sizeof(uint32_t),
+                              encrypted_size);
+    if (err != 0) {
+        SSH_LOG(SSH_LOG_WARNING, "gcry_cipher_decrypt failed: %s",
+                gpg_strerror(err));
+        goto out;
+    }
+
+    ret = SSH_OK;
+
+out:
+    explicit_bzero(poly_key, sizeof(poly_key));
+    return ret;
+}
+#endif /* HAVE_GCRYPT_CHACHA_POLY */
+
 /* the table of supported ciphers */
 static struct ssh_cipher_struct ssh_ciphertab[] = {
 #ifdef WITH_BLOWFISH_CIPHER
@@ -679,7 +1002,23 @@ static struct ssh_cipher_struct ssh_ciphertab[] = {
     .decrypt     = des3_decrypt
   },
   {
+#ifdef HAVE_GCRYPT_CHACHA_POLY
+    .ciphertype      = SSH_AEAD_CHACHA20_POLY1305,
+    .name            = "chacha20-poly1305@openssh.com",
+    .blocksize       = 8,
+    .lenfield_blocksize = 4,
+    .keylen          = sizeof(struct chacha20_poly1305_keysched),
+    .keysize         = 2 * CHACHA20_KEYLEN * 8,
+    .tag_size        = POLY1305_TAGLEN,
+    .set_encrypt_key = chacha20_set_encrypt_key,
+    .set_decrypt_key = chacha20_set_encrypt_key,
+    .aead_encrypt    = chacha20_poly1305_aead_encrypt,
+    .aead_decrypt_length = chacha20_poly1305_aead_decrypt_length,
+    .aead_decrypt    = chacha20_poly1305_aead_decrypt,
+    .cleanup         = chacha20_cleanup
+#else
     .name = "chacha20-poly1305@openssh.com"
+#endif
   },
   {
     .name            = NULL,
@@ -757,7 +1096,7 @@ fail:
  */
 int ssh_crypto_init(void)
 {
-    size_t i;
+    UNUSED_VAR(size_t i);
 
     if (libgcrypt_initialized) {
         return SSH_OK;
@@ -776,6 +1115,7 @@ int ssh_crypto_init(void)
     /* Re-enable warning */
     gcry_control (GCRYCTL_RESUME_SECMEM_WARN);
 
+#ifndef HAVE_GCRYPT_CHACHA_POLY
     for (i = 0; ssh_ciphertab[i].name != NULL; i++) {
         int cmp;
         cmp = strcmp(ssh_ciphertab[i].name, "chacha20-poly1305@openssh.com");
@@ -786,6 +1126,7 @@ int ssh_crypto_init(void)
             break;
         }
     }
+#endif
 
     libgcrypt_initialized = 1;
 
