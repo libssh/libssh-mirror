@@ -80,6 +80,12 @@ ssh_scp ssh_scp_new(ssh_session session, int mode, const char *location)
         goto error;
     }
 
+    if (strlen(location) > 32 * 1024) {
+        ssh_set_error(session, SSH_FATAL,
+                      "Location path is too long");
+        goto error;
+    }
+
     scp->location = strdup(location);
     if (scp->location == NULL) {
         ssh_set_error(session, SSH_FATAL,
