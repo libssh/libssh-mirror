@@ -467,6 +467,17 @@ if (WITH_GSSAPI AND NOT GSSAPI_FOUND)
     set(WITH_GSSAPI 0)
 endif (WITH_GSSAPI AND NOT GSSAPI_FOUND)
 
+if (WITH_PKCS11_URI)
+    if (WITH_GCRYPT)
+        message(FATAL_ERROR "PKCS #11 is not supported for gcrypt.")
+        set(WITH_PKCS11_URI 0)
+    endif()
+    if (WITH_WITH_MBEDTLS)
+        message(FATAL_ERROR "PKCS #11 is not supported for mbedcrypto")
+        set(WITH_PKCS11_URI 0)
+    endif()
+endif()
+
 # ENDIAN
 if (NOT WIN32)
     test_big_endian(WORDS_BIGENDIAN)
