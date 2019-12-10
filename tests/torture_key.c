@@ -197,6 +197,18 @@ static const char torture_rsa_public_testkey[] =
         "QMRjUBThzmDXWeHMfMGL2ow63kPOtlCkPiPSADYs4ekeGg52DVm4esZ "
         "aris@aris-air\n";
 
+static const char torture_rsa_public_testkey_pem[] =
+        "-----BEGIN PUBLIC KEY-----\n"
+        "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArAOREUWlBXJAKZ5hABYy\n"
+        "xnRayDZP1bJeLbPVK+npxemrhHyZgjdbY3ADot+JRyWjvll2w2GI+3blt0j+x/ZW\n"
+        "wjMKu/QYcycYp5HL01goxOxuusZbi+KiHRGB6z0EMdXM7U82U7lA/j//HyZppyDj\n"
+        "UDniWabXQJge8ksGXGTiFeAJ/687uV+JJcjGPxAGFQxzyjitf/FrL9S0WGKZbyqe\n"
+        "GDzyeBZ1NLIuaiOORyLGSW4duHLDN78EmsJnwqg2gJQmRSaD4BNZMjtbfiFcSL9U\n"
+        "w4XQFTsWugUDEY1AU4c5g11nhzHzBi9qMOt5DzrZQpD4j0gA2LOHpHhoOdg1ZuHr\n"
+        "GQIDAQAB\n"
+        "-----END PUBLIC KEY-----\n";
+
+
 static const char torture_rsa_testkey_cert[] =
         "ssh-rsa-cert-v01@openssh.com AAAAHHNzaC1yc2EtY2VydC12MDFAb3BlbnNz"
         "aC5jb20AAAAgL77S/SgY969FbEtNBsbLvvtGFgnEHaPb+V7ajwuf+R0AAAADAQABA"
@@ -419,6 +431,12 @@ static const char torture_ecdsa256_public_testkey[] =
         "YAAABBBMfvbnfPEORlrS3fsjLWGmqQvOYPtmS6e1bRRwNBGzR6gVEMaIfiJPPTJa+w"
         "FMXBT3fpAqPjROsqv5jUHC+xOok= aris@kalix86\n";
 
+static const char torture_ecdsa256_public_testkey_pem[] =
+        "-----BEGIN PUBLIC KEY-----\n"
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEx+9ud88Q5GWtLd+yMtYaapC85g+2\n"
+        "ZLp7VtFHA0EbNHqBUQxoh+Ik89Mlr7AUxcFPd+kCo+NE6yq/mNQcL7E6iQ==\n"
+        "-----END PUBLIC KEY-----\n";
+
 static const char torture_ecdsa256_testkey_cert[] =
         "ecdsa-sha2-nistp256-cert-v01@openssh.com AAAAKGVjZHNhLXNoYTItbmlzd"
         "HAyNTYtY2VydC12MDFAb3BlbnNzaC5jb20AAAAgHvXWcdSrQeZL2/Z68V8ntbL7rDo"
@@ -492,6 +510,13 @@ static const char torture_ecdsa384_public_testkey[] =
         "QAAABhBFdzgE3oGtWjVAyLf6L8Hzku7tIy7MGL7U9sm2LzHP5LOCrriBoEY4r2j5Y5"
         "0sB3/DunsMkt3O0nRtijJPhXcHdmpH1HIarqZgKOReVzlhtgeO54FunSh41eqxcc0B"
         "ZBmg== aris@kalix86";
+
+static const char torture_ecdsa384_public_testkey_pem[] =
+        "-----BEGIN PUBLIC KEY-----\n"
+        "MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEV3OATega1aNUDIt/ovwfOS7u0jLswYvt\n"
+        "T2ybYvMc/ks4KuuIGgRjivaPljnSwHf8O6ewyS3c7SdG2KMk+Fdwd2akfUchqupm\n"
+        "Ao5F5XOWG2B47ngW6dKHjV6rFxzQFkGa\n"
+        "-----END PUBLIC KEY-----\n";
 
 static const char torture_ecdsa384_testkey_cert[] =
         "ecdsa-sha2-nistp384-cert-v01@openssh.com AAAAKGVjZHNhLXNoYTItbmlzd"
@@ -578,6 +603,14 @@ static const char torture_ecdsa521_public_testkey[] =
         "EAAACFBAHOg+9vHW2kJB50j7c7WkcCcOtwgZdeXMpAeEl17sFnTTrT8wYo1FCzE07w"
         "V262vIC+AE3fXUJ7sJ/CkFIdk/8/gQEY1jyoXB3Bsee16VwhJGsMzGGh1FJ0XXhRJj"
         "UbG18qbH9JiSgE1N4fIM0zJG68fAyUxRxCI1wUobOOB7EmFZd18g== aris@kalix86";
+
+static const char torture_ecdsa521_public_testkey_pem[] =
+        "-----BEGIN PUBLIC KEY-----\n"
+        "MIGbMBAGByqGSM49AgEGBSuBBAAjA4GGAAQBzoPvbx1tpCQedI+3O1pHAnDrcIGX\n"
+        "XlzKQHhJde7BZ0060/MGKNRQsxNO8FdutryAvgBN311Ce7CfwpBSHZP/P4EBGNY8\n"
+        "qFwdwbHntelcISRrDMxhodRSdF14USY1GxtfKmx/SYkoBNTeHyDNMyRuvHwMlMUc\n"
+        "QiNcFKGzjgexJhWXdfI=\n"
+        "-----END PUBLIC KEY-----\n";
 
 static const char torture_ecdsa521_testkey_cert[] =
         "ecdsa-sha2-nistp521-cert-v01@openssh.com AAAAKGVjZHNhLXNoYTItbmlzd"
@@ -675,7 +708,11 @@ static const char *torture_get_testkey_internal(enum ssh_keytypes_e type,
             return torture_dsa_private_testkey;
         case SSH_KEYTYPE_RSA:
             if (pubkey) {
-                return torture_rsa_public_testkey;
+                if (format == 1) {
+                    return torture_rsa_public_testkey_pem;
+                } else {
+                    return torture_rsa_public_testkey;
+                }
             } else if (with_passphrase) {
                 if (format == 1) {
                     return torture_rsa_private_openssh_testkey_passphrase;
@@ -692,7 +729,11 @@ static const char *torture_get_testkey_internal(enum ssh_keytypes_e type,
             return torture_rsa_private_testkey;
         case SSH_KEYTYPE_ECDSA_P521:
             if (pubkey) {
-                return torture_ecdsa521_public_testkey;
+                if (format == 1) {
+                    return torture_ecdsa521_public_testkey_pem;
+                } else {
+                    return torture_ecdsa521_public_testkey;
+                }
             } else if (with_passphrase) {
                 if (format == 1) {
                     return torture_ecdsa521_private_openssh_testkey_passphrase;
@@ -709,7 +750,11 @@ static const char *torture_get_testkey_internal(enum ssh_keytypes_e type,
             return torture_ecdsa521_private_testkey;
         case SSH_KEYTYPE_ECDSA_P384:
             if (pubkey) {
-                return torture_ecdsa384_public_testkey;
+                if (format == 1) {
+                    return torture_ecdsa384_public_testkey_pem;
+                } else {
+                    return torture_ecdsa384_public_testkey;
+                }
             } else if (with_passphrase){
                 if (format == 1) {
                     return torture_ecdsa384_private_openssh_testkey_passphrase;
@@ -726,7 +771,11 @@ static const char *torture_get_testkey_internal(enum ssh_keytypes_e type,
             return torture_ecdsa384_private_testkey;
         case SSH_KEYTYPE_ECDSA_P256:
             if (pubkey) {
-                return torture_ecdsa256_public_testkey;
+                if (format == 1) {
+                    return torture_ecdsa256_public_testkey_pem;
+                } else {
+                    return torture_ecdsa256_public_testkey;
+                }
             } else if (with_passphrase){
                 if (format == 1) {
                     return torture_ecdsa256_private_openssh_testkey_pasphrase;
@@ -801,6 +850,11 @@ const char *torture_get_testkey(enum ssh_keytypes_e type,
 const char *torture_get_testkey_pub(enum ssh_keytypes_e type)
 {
     return torture_get_testkey_internal(type, 0, 1, 0);
+}
+
+const char *torture_get_testkey_pub_pem(enum ssh_keytypes_e type)
+{
+    return torture_get_testkey_internal(type, 0, 1, 1);
 }
 
 const char *torture_get_testkey_passphrase(void)
