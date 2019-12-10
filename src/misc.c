@@ -1735,4 +1735,55 @@ int ssh_newline_vis(const char *string, char *buf, size_t buf_len)
     return out - buf;
 }
 
+/**
+ * @internal
+ *
+ * @brief Replaces the last 6 characters of a string from 'X' to 6 random hexdigits.
+ *
+ * @param[in]  template   Any input string with last 6 characters as 'X'.
+ * @returns -1 as error when the last 6 characters of the input to be replaced are not 'X'
+ * 0 otherwise.
+ */
+int ssh_tmpname(char *template)
+{
+    char *tmp = NULL;
+    size_t i = 0;
+
+    if (template == NULL) {
+        goto err;
+    }
+
+    tmp = template + strlen(template) - 6;
+    if (tmp < template) {
+        goto err;
+    }
+
+    for (i = 0; i < 6; i++) {
+        if (tmp[i] != 'X') {
+            SSH_LOG(SSH_LOG_WARNING,
+                    "Invalid input. Last six characters of the input must be \'X\'");
+            goto err;
+        }
+    }
+
+    srand(time(NULL));
+
+    for (i = 0; i < 6; ++i) {
+#ifdef _WIN32
+        /* in win32 MAX_RAND is 32767, thus we can not shift that far,
+         * otherwise the last three chars are 0 */
+        int hexdigit = (rand() >> (i * 2)) & 0x1f;
+#else
+        int hexdigit = (rand() >> (i * 5)) & 0x1f;
+#endif
+        tmp[i] = hexdigit > 9 ? hexdigit + 'a' - 10 : hexdigit + '0';
+    }
+
+    return 0;
+
+err:
+    errno = EINVAL;
+    return -1;
+}
+
 /** @} */
