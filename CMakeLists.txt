@@ -83,6 +83,13 @@ if (WITH_GSSAPI)
     find_package(GSSAPI)
 endif (WITH_GSSAPI)
 
+if (WITH_PKCS11_URI)
+    find_package(softhsm)
+    if (NOT SOFTHSM_FOUND)
+        message(SEND_ERROR "Could not find softhsm module!")
+     endif (NOT SOFTHSM_FOUND)
+endif (WITH_PKCS11_URI)
+
 if (WITH_NACL)
     find_package(NaCl)
     if (NOT NACL_FOUND)
