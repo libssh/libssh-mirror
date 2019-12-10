@@ -60,6 +60,13 @@ if (CLIENT_TESTING OR SERVER_TESTING)
         message(SEND_ERROR "Could not find sshd which is required for client testing")
     endif()
 
+    if (WITH_PKCS11_URI)
+        find_package(softhsm)
+        if (NOT SOFTHSM_FOUND)
+            message(SEND_ERROR "Could not find softhsm module!")
+        endif (NOT SOFTHSM_FOUND)
+    endif (WITH_PKCS11_URI)
+
     find_program(SSH_EXECUTABLE NAMES ssh)
     if (SSH_EXECUTABLE)
         execute_process(COMMAND ${SSH_EXECUTABLE} -V ERROR_VARIABLE OPENSSH_VERSION_STR)
@@ -121,6 +128,7 @@ if (CLIENT_TESTING OR SERVER_TESTING)
 
     # Allow to auth with bob his public keys on alice account
     configure_file(keys/id_rsa.pub ${CMAKE_CURRENT_BINARY_DIR}/home/alice/.ssh/authorized_keys @ONLY)
+
     # append ECDSA public key
     file(READ keys/id_ecdsa.pub CONTENTS)
     file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/home/alice/.ssh/authorized_keys "${CONTENTS}")
@@ -129,10 +137,26 @@ if (CLIENT_TESTING OR SERVER_TESTING)
     file(READ keys/id_ed25519.pub CONTENTS)
     file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/home/alice/.ssh/authorized_keys "${CONTENTS}")
 
+    # Allow to auth with bob his public keys on charlie account
+    configure_file(keys/pkcs11/id_pkcs11_rsa_openssh.pub ${CMAKE_CURRENT_BINARY_DIR}/home/charlie/.ssh/authorized_keys @ONLY)
+
+    # append ECDSA public key
+    file(READ keys/pkcs11/id_pkcs11_ecdsa_256_openssh.pub CONTENTS)
+    file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/home/charlie/.ssh/authorized_keys "${CONTENTS}")
+
+    file(READ keys/pkcs11/id_pkcs11_ecdsa_384_openssh.pub CONTENTS)
+    file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/home/charlie/.ssh/authorized_keys "${CONTENTS}")
+
+    file(READ keys/pkcs11/id_pkcs11_ecdsa_521_openssh.pub CONTENTS)
+    file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/home/charlie/.ssh/authorized_keys "${CONTENTS}")
+
     # Copy the signed key to an alternative directory in bob's homedir.
     file(COPY keys/certauth/id_rsa DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/home/bob/.ssh_cert/ FILE_PERMISSIONS OWNER_READ OWNER_WRITE)
     file(COPY keys/certauth/id_rsa.pub DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/home/bob/.ssh_cert/ FILE_PERMISSIONS OWNER_READ OWNER_WRITE)
     file(COPY keys/certauth/id_rsa-cert.pub DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/home/bob/.ssh_cert/ FILE_PERMISSIONS OWNER_READ OWNER_WRITE)
+
+    #Copy the script to setup PKCS11 tokens
+    file(COPY pkcs11/setup-softhsm-tokens.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/pkcs11 FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE)
 
     message(STATUS "TORTURE_ENVIRONMENT=${TORTURE_ENVIRONMENT}")
 endif ()
