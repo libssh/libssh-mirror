@@ -123,6 +123,7 @@ int torture_server_port(void);
 
 void torture_setup_socket_dir(void **state);
 void torture_setup_sshd_server(void **state, bool pam);
+void torture_setup_tokens(const char *temp_dir, const char *filename, const char object_name[]);
 
 void torture_teardown_socket_dir(void **state);
 void torture_teardown_sshd_server(void **state);

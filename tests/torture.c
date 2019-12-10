@@ -881,6 +881,24 @@ void torture_setup_sshd_server(void **state, bool pam)
     assert_int_equal(rc, 0);
 }
 
+void torture_setup_tokens(const char *temp_dir,
+                          const char *filename,
+                          const char object_name[])
+{
+    char token_setup_start_cmd[1024] = {0};
+    int rc;
+
+    snprintf(token_setup_start_cmd, sizeof(token_setup_start_cmd),
+             "%s/tests/pkcs11/setup-softhsm-tokens.sh %s %s %s",
+             BINARYDIR,
+             temp_dir,
+             filename, object_name);
+
+    rc = system(token_setup_start_cmd);
+    assert_return_code(rc, errno);
+}
+
+    /* Set the default interface for the server */
 void torture_teardown_socket_dir(void **state)
 {
     struct torture_state *s = *state;
