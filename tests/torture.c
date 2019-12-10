@@ -898,7 +898,6 @@ void torture_setup_tokens(const char *temp_dir,
     assert_return_code(rc, errno);
 }
 
-    /* Set the default interface for the server */
 void torture_teardown_socket_dir(void **state)
 {
     struct torture_state *s = *state;

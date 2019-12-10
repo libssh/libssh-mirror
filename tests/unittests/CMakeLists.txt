@@ -64,6 +64,14 @@ if (UNIX AND NOT WIN32)
         )
     endif()
 
+    if (WITH_PKCS11_URI)
+        set(LIBSSH_UNIT_TESTS
+            ${LIBSSH_UNIT_TESTS}
+            torture_pki_rsa_uri
+            torture_pki_ecdsa_uri
+        )
+    endif()
+
     if (HAVE_ECC)
         set(LIBSSH_UNIT_TESTS
             ${LIBSSH_UNIT_TESTS}
