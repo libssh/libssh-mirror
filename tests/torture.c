@@ -196,6 +196,7 @@ torture_read_pidfile(const char *pidfile)
 {
     char buf[8] = {0};
     long int tmp;
+    pid_t ret;
     ssize_t rc;
     int fd;
 
@@ -213,11 +214,16 @@ torture_read_pidfile(const char *pidfile)
     buf[sizeof(buf) - 1] = '\0';
 
     tmp = strtol(buf, NULL, 10);
-    if (tmp == 0 || tmp > 0xFFFF || errno == ERANGE) {
+    if (tmp == 0 || errno == ERANGE) {
+        return -1;
+    }
+    ret = (pid_t)tmp;
+    /* Check if we are out of pid_t range on this system */
+    if ((long)ret != tmp) {
         return -1;
     }
 
-    return (pid_t)(tmp & 0xFFFF);
+    return ret;
 }
 
 int torture_terminate_process(const char *pidfile)
