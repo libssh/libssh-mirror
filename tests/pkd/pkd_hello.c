@@ -1006,7 +1006,6 @@ int main(int argc, char **argv) {
 
     rc = ssh_init();
     if (rc != 0) {
-        rc = SSH_ERROR;
         goto out;
     }
 
