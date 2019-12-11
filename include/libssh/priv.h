@@ -405,20 +405,20 @@ void explicit_bzero(void *s, size_t n);
 # endif /* HAVE_FALLTHROUGH_ATTRIBUTE */
 #endif /* FALL_THROUGH */
 
-#ifndef __unused__
+#ifndef __attr_unused__
 # ifdef HAVE_UNUSED_ATTRIBUTE
-#  define __unused__ __attribute__((unused))
+#  define __attr_unused__ __attribute__((unused))
 # else /* HAVE_UNUSED_ATTRIBUTE */
-#  define __unused__
+#  define __attr_unused__
 # endif /* HAVE_UNUSED_ATTRIBUTE */
-#endif /* __unused__ */
+#endif /* __attr_unused__ */
 
 #ifndef UNUSED_PARAM
-#define UNUSED_PARAM(param) param __unused__
+#define UNUSED_PARAM(param) param __attr_unused__
 #endif /* UNUSED_PARAM */
 
 #ifndef UNUSED_VAR
-#define UNUSED_VAR(var) __unused__ var
+#define UNUSED_VAR(var) __attr_unused__ var
 #endif /* UNUSED_VAR */
 
 void ssh_agent_state_free(void *data);
