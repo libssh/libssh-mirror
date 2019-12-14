@@ -179,7 +179,7 @@ static int ssh_curve25519_build_k(ssh_session session)
 #ifdef HAVE_OPENSSL_X25519
     EVP_PKEY_CTX *pctx = NULL;
     EVP_PKEY *pkey = NULL, *pubkey = NULL;
-    size_t shared_key_len;
+    size_t shared_key_len = sizeof(k);
     int rc;
 
     pkey = EVP_PKEY_new_raw_private_key(EVP_PKEY_X25519, NULL,
@@ -240,9 +240,7 @@ static int ssh_curve25519_build_k(ssh_session session)
         return SSH_ERROR;
     }
 
-    rc = EVP_PKEY_derive(pctx,
-                         k,
-                         &shared_key_len);
+    rc = EVP_PKEY_derive(pctx, k, &shared_key_len);
     if (rc != 1) {
         SSH_LOG(SSH_LOG_TRACE,
                 "Failed to derive X25519 shared secret: %s",
