@@ -121,7 +121,9 @@ static void torture_options_set_proxycommand_ssh(void **state)
     int rc;
     socket_t fd;
 
-    rc = snprintf(command, sizeof(command), "ssh -W [%%h]:%%p alice@%s", address);
+    rc = snprintf(command, sizeof(command),
+                  "ssh -oStrictHostKeyChecking=no -W [%%h]:%%p alice@%s",
+                  address);
     assert_true((size_t)rc < sizeof(command));
 
     rc = ssh_options_set(session, SSH_OPTIONS_PROXYCOMMAND, command);
@@ -143,7 +145,10 @@ static void torture_options_set_proxycommand_ssh_stderr(void **state)
     int rc;
     socket_t fd;
 
-    rc = snprintf(command, sizeof(command), "ssh -vvv -W [%%h]:%%p alice@%s", address);
+    /* The -vvv switches produce the desired output on the standard error */
+    rc = snprintf(command, sizeof(command),
+                  "ssh -vvv -oStrictHostKeyChecking=no -W [%%h]:%%p alice@%s",
+                  address);
     assert_true((size_t)rc < sizeof(command));
 
     rc = ssh_options_set(session, SSH_OPTIONS_PROXYCOMMAND, command);
