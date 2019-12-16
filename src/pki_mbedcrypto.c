@@ -246,7 +246,7 @@ int pki_privkey_build_rsa(ssh_key key,
                           ssh_string n,
                           ssh_string e,
                           ssh_string d,
-                          ssh_string iqmp,
+                          UNUSED_PARAM(ssh_string iqmp),
                           ssh_string p,
                           ssh_string q)
 {
