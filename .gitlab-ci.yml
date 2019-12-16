@@ -213,6 +213,27 @@ fedora/csbuild/openssl_1.1.x:
     --color
     --print-current --print-fixed
 
+fedora/csbuild/libgcrypt:
+  extends: .csbuild
+  script:
+  - csbuild
+    --build-dir=obj-csbuild
+    --build-cmd "rm -rf CMakeFiles CMakeCache.txt && cmake -DCMAKE_BUILD_TYPE=Debug -DPICKY_DEVELOPER=ON -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON -DFUZZ_TESTING=ON -DWITH_GCRYPT=ON @SRCDIR@ && make clean && make -j$(nproc)"
+    --git-commit-range $CI_COMMIT_RANGE
+    --color
+    --print-current --print-fixed
+
+fedora/csbuild/mbedtls:
+  extends: .csbuild
+  script:
+  - csbuild
+    --build-dir=obj-csbuild
+    --build-cmd "rm -rf CMakeFiles CMakeCache.txt && cmake -DCMAKE_BUILD_TYPE=Debug -DPICKY_DEVELOPER=ON -DUNIT_TESTING=ON -DCLIENT_TESTING=ON -DSERVER_TESTING=ON -DFUZZ_TESTING=ON -DWITH_MBEDTLS=ON @SRCDIR@ && make clean && make -j$(nproc)"
+    --git-commit-range $CI_COMMIT_RANGE
+    --color
+    --print-current --print-fixed
+
+
 
 
 ###############################################################################
