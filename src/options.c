@@ -968,7 +968,6 @@ int ssh_options_set(ssh_session session, enum ssh_options_e type,
         case SSH_OPTIONS_PUBKEY_AUTH:
         case SSH_OPTIONS_KBDINT_AUTH:
         case SSH_OPTIONS_GSSAPI_AUTH:
-            u = 0;
             if (value == NULL) {
                 ssh_set_error_invalid(session);
                 return -1;
