@@ -104,6 +104,9 @@ int ssh_mbedcry_rand(bignum rnd, int bits, int top, int bottom)
 
     if (top == 0) {
         rc = mbedtls_mpi_set_bit(rnd, bits - 1, 0);
+        if (rc != 0) {
+            return 0;
+        }
     }
 
     if (top == 1) {
