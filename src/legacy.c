@@ -353,7 +353,7 @@ void publickey_free(ssh_public_key key) {
     case SSH_KEYTYPE_DSS:
 #ifdef HAVE_LIBGCRYPT
       gcry_sexp_release(key->dsa_pub);
-#elif HAVE_LIBCRYPTO
+#elif defined HAVE_LIBCRYPTO
       DSA_free(key->dsa_pub);
 #endif
       break;
