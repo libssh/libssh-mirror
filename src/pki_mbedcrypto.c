@@ -113,7 +113,7 @@ ssh_key pki_private_key_from_base64(const char *b64_key, const char *passphrase,
                     valid = auth_fn("Passphrase for private key:", (char *) tmp,
                             MAX_PASSPHRASE_SIZE, 0, 0, auth_data);
                     if (valid < 0) {
-                        return NULL;
+                        goto fail;
                     }
                     /* TODO fix signedness and strlen */
                     valid = mbedtls_pk_parse_key(rsa,
@@ -155,7 +155,7 @@ ssh_key pki_private_key_from_base64(const char *b64_key, const char *passphrase,
                     valid = auth_fn("Passphrase for private key:", (char *) tmp,
                             MAX_PASSPHRASE_SIZE, 0, 0, auth_data);
                     if (valid < 0) {
-                        return NULL;
+                        goto fail;
                     }
                     valid = mbedtls_pk_parse_key(ecdsa,
                             (const unsigned char *) b64_key,
