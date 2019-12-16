@@ -149,7 +149,8 @@ int ssh_mbedcry_rand_range(bignum dest, bignum max)
         return 0;
     }
     rc = bignum_rand(rnd, bits);
-    if (rc != 1){
+    if (rc != 1) {
+        bignum_safe_free(rnd);
         return rc;
     }
     mbedtls_mpi_mod_mpi(dest, rnd, max);
