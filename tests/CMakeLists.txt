@@ -64,7 +64,13 @@ if (SSH_EXECUTABLE)
         execute_process(COMMAND ${SSH_EXECUTABLE} -Q kex OUTPUT_VARIABLE OPENSSH_KEX)
         execute_process(COMMAND ${SSH_EXECUTABLE} -Q key OUTPUT_VARIABLE OPENSSH_KEYS)
         execute_process(COMMAND ${SSH_EXECUTABLE} -Q sig OUTPUT_VARIABLE OPENSSH_SIGS ERROR_QUIET)
+
+        # We need both of them, but lets get rid of duplicate items presented in both lists
+        # to avoid processing too long arguments in pkd
         set(OPENSSH_KEYS "${OPENSSH_KEYS}${OPENSSH_SIGS}")
+        string(REPLACE "\n" ";" OPENSSH_KEYS "${OPENSSH_KEYS}")
+        list(REMOVE_DUPLICATES OPENSSH_KEYS)
+        string(REPLACE ";" "\n" OPENSSH_KEYS "${OPENSSH_KEYS}")
     endif()
 
     set(SSH_ALGORITHMS
