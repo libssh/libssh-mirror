@@ -822,6 +822,10 @@ static const char *torture_get_testkey_internal(enum ssh_keytypes_e type,
             return torture_ed25519_testkey_cert;
         case SSH_KEYTYPE_RSA1:
         case SSH_KEYTYPE_ECDSA:
+        case SSH_KEYTYPE_SK_ECDSA:
+        case SSH_KEYTYPE_SK_ECDSA_CERT01:
+        case SSH_KEYTYPE_SK_ED25519:
+        case SSH_KEYTYPE_SK_ED25519_CERT01:
         case SSH_KEYTYPE_UNKNOWN:
             return NULL;
     }

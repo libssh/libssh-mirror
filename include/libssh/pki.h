@@ -21,6 +21,7 @@
 #ifndef PKI_H_
 #define PKI_H_
 
+#include <stdint.h>
 #include "libssh/priv.h"
 #ifdef HAVE_OPENSSL_EC_H
 #include <openssl/ec.h>
@@ -80,6 +81,7 @@ struct ssh_key_struct {
     ed25519_pubkey *ed25519_pubkey;
     ed25519_privkey *ed25519_privkey;
 #endif
+    ssh_string sk_application;
     void *cert;
     enum ssh_keytypes_e cert_type;
 };
@@ -100,6 +102,10 @@ struct ssh_signature_struct {
     ed25519_signature *ed25519_sig;
 #endif
     ssh_string raw_sig;
+
+    /* Security Key specific additions */
+    uint8_t sk_flags;
+    uint32_t sk_counter;
 };
 
 typedef struct ssh_signature_struct *ssh_signature;
