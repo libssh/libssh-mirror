@@ -938,6 +938,8 @@ ssh_string pki_private_key_to_pem(const ssh_key key,
     (void) auth_fn;
     (void) auth_data;
 
+    SSH_LOG(SSH_LOG_WARN, "PEM export not supported by gcrypt backend!");
+
     return NULL;
 }
 
