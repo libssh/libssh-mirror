@@ -1055,12 +1055,28 @@ int ssh_userauth_publickey_auto(ssh_session session,
     while (state->it != NULL) {
         const char *privkey_file = state->it->data;
         char pubkey_file[1024] = {0};
+
         if (state->state == SSH_AUTH_AUTO_STATE_PUBKEY) {
             SSH_LOG(SSH_LOG_DEBUG,
                     "Trying to authenticate with %s", privkey_file);
             state->privkey = NULL;
             state->pubkey = NULL;
-            snprintf(pubkey_file, sizeof(pubkey_file), "%s.pub", privkey_file);
+
+            if (ssh_pki_is_uri(privkey_file)) {
+                char *pub_uri_from_priv = NULL;
+                SSH_LOG(SSH_LOG_INFO,
+                        "Authenticating with PKCS #11 URI.");
+                pub_uri_from_priv = ssh_pki_export_pub_uri_from_priv_uri(privkey_file);
+                if (pub_uri_from_priv == NULL) {
+                    return SSH_ERROR;
+                } else {
+                    snprintf(pubkey_file, sizeof(pubkey_file), "%s",
+                             pub_uri_from_priv);
+                    SAFE_FREE(pub_uri_from_priv);
+                }
+            } else {
+                snprintf(pubkey_file, sizeof(pubkey_file), "%s.pub", privkey_file);
+            }
 
             rc = ssh_pki_import_pubkey_file(pubkey_file, &state->pubkey);
             if (rc == SSH_ERROR) {

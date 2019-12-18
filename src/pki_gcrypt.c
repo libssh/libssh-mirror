@@ -2457,4 +2457,13 @@ int pki_verify_data_signature(ssh_signature signature,
     return SSH_OK;
 }
 
+int pki_uri_import(const char *uri_name, ssh_key *key, enum ssh_key_e key_type)
+{
+    (void) uri_name;
+    (void) key;
+    (void) key_type;
+    SSH_LOG(SSH_LOG_WARN,
+            "gcrypt does not support PKCS #11");
+    return SSH_ERROR;
+}
 #endif /* HAVE_LIBGCRYPT */

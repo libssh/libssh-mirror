@@ -4,6 +4,7 @@
  *
  * Copyright (c) 2010 by Aris Adamantiadis
  * Copyright (c) 2011-2013 Andreas Schneider <asn@cryptomilk.org>
+ * Copyright (c) 2019      Sahana Prasad     <sahana@redhat.com>
  *
  * The SSH Library is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -864,6 +865,13 @@ int ssh_pki_import_privkey_file(const char *filename,
         return SSH_ERROR;
     }
 
+#ifdef WITH_PKCS11_URI
+    if (ssh_pki_is_uri(filename)) {
+        rc = pki_uri_import(filename, pkey, SSH_KEY_PRIVATE);
+        return rc;
+    }
+#endif
+
     file = fopen(filename, "rb");
     if (file == NULL) {
         SSH_LOG(SSH_LOG_WARN,
@@ -1638,6 +1646,13 @@ int ssh_pki_import_pubkey_file(const char *filename, ssh_key *pkey)
     if (pkey == NULL || filename == NULL || *filename == '\0') {
         return SSH_ERROR;
     }
+
+#ifdef WITH_PKCS11_URI
+    if (ssh_pki_is_uri(filename)) {
+        rc = pki_uri_import(filename, pkey, SSH_KEY_PUBLIC);
+        return rc;
+    }
+#endif
 
     file = fopen(filename, "rb");
     if (file == NULL) {

@@ -28,7 +28,9 @@
 #ifdef HAVE_OPENSSL_ECDSA_H
 #include <openssl/ecdsa.h>
 #endif
-
+#ifdef HAVE_LIBCRYPTO
+#include <openssl/evp.h>
+#endif
 #include "libssh/crypto.h"
 #ifdef HAVE_OPENSSL_ED25519
 /* If using OpenSSL implementation, define the signature lenght which would be
@@ -46,6 +48,7 @@
 #define SSH_KEY_FLAG_EMPTY   0x0
 #define SSH_KEY_FLAG_PUBLIC  0x0001
 #define SSH_KEY_FLAG_PRIVATE 0x0002
+#define SSH_KEY_FLAG_PKCS11_URI 0x0004
 
 struct ssh_key_struct {
     enum ssh_keytypes_e type;
@@ -63,6 +66,7 @@ struct ssh_key_struct {
 #elif defined(HAVE_LIBCRYPTO)
     DSA *dsa;
     RSA *rsa;
+    EVP_PKEY *key; /* Saving the OpenSSL context here to save time while converting*/
 # if defined(HAVE_OPENSSL_ECC)
     EC_KEY *ecdsa;
 # else
