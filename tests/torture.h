@@ -53,6 +53,7 @@
 #define TORTURE_SSH_USER_BOB_PASSWORD "secret"
 
 #define TORTURE_SSH_USER_ALICE "alice"
+#define TORTURE_SSH_USER_CHARLIE "charlie"
 
 /* Used by main to communicate with parse_opt. */
 struct argument_s {
