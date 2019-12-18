@@ -64,6 +64,8 @@
 #include "libssh/misc.h"
 #include "libssh/agent.h"
 
+#define PKCS11_URI "pkcs11:"
+
 enum ssh_keytypes_e pki_privatekey_type_from_string(const char *privkey)
 {
     char *start = NULL;
@@ -1566,6 +1568,47 @@ fail:
     SSH_STRING_FREE(type_s);
 
     return SSH_ERROR;
+}
+
+/**
+ *@brief Detect if the pathname in cmp is a PKCS #11 URI.
+ *
+ * @param[in] cmp The path to the public/private key
+ *                     or a private/public PKCS #11 URI.
+ *
+ * @returns true if filename is a URI starting with "pkcs11:"
+ *          false otherwise.
+ */
+bool ssh_pki_is_uri(const char *cmp)
+{
+    int rc;
+
+    rc = strncmp(cmp, PKCS11_URI, strlen(PKCS11_URI));
+    if (rc == 0) {
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ *@brief export a Public PKCS #11 URI from a Private PKCS #11 URI
+ *       by replacing "type=private" to "type=public".
+ *       TODO: Improve the parser
+ *
+ * @param[in] priv_uri Private PKCS #11 URI.
+ *
+ * @returns pointer to the public PKCS #11 URI
+ */
+char *ssh_pki_export_pub_uri_from_priv_uri(const char *priv_uri)
+{
+    char *pub_uri_temp = strdup(priv_uri);
+
+    pub_uri_temp = ssh_strreplace(pub_uri_temp,
+                                  "type=private",
+                                  "type=public");
+
+    return pub_uri_temp;
 }
 
 /**

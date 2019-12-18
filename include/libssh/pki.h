@@ -162,4 +162,9 @@ ssh_public_key ssh_pki_convert_key_to_publickey(const ssh_key key);
 ssh_private_key ssh_pki_convert_key_to_privatekey(const ssh_key key);
 
 int ssh_key_algorithm_allowed(ssh_session session, const char *type);
+
+/* PKCS11 URI function to check if filename is a path or a PKCS11 URI */
+bool ssh_pki_is_uri(const char *filename);
+char *ssh_pki_export_pub_uri_from_priv_uri(const char *priv_uri);
+
 #endif /* PKI_H_ */
