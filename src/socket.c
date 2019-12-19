@@ -873,7 +873,7 @@ ssh_execute_command(const char *command, socket_t in, socket_t out)
     /* Prepare /dev/null socket for the stderr redirection */
     int devnull = open("/dev/null", O_WRONLY);
     if (devnull == -1) {
-        SSH_LOG(SSH_LOG_WARNING, "Failed to open stderr");
+        SSH_LOG(SSH_LOG_WARNING, "Failed to open /dev/null");
         exit(1);
     }
 
