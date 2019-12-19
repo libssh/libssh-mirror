@@ -869,13 +869,25 @@ int ssh_socket_connect(ssh_socket s,
 void
 ssh_execute_command(const char *command, socket_t in, socket_t out)
 {
-    const char *args[] = {"/bin/sh", "-c", command, NULL};
+    const char *shell = NULL;
+    const char *args[] = {NULL/*shell*/, "-c", command, NULL};
+    int devnull;
+
     /* Prepare /dev/null socket for the stderr redirection */
-    int devnull = open("/dev/null", O_WRONLY);
+    devnull = open("/dev/null", O_WRONLY);
     if (devnull == -1) {
         SSH_LOG(SSH_LOG_WARNING, "Failed to open /dev/null");
         exit(1);
     }
+
+    /* By default, use the current users shell */
+    shell = getenv("SHELL");
+    if (shell == NULL || shell[0] == '\0') {
+        /* Fall back to bash. There are issues with dash or
+         * whatever people tend to link to /bin/sh */
+        shell = "/bin/bash";
+    }
+    args[0] = shell;
 
     /* redirect in and out to stdin, stdout */
     dup2(in, 0);
