@@ -81,6 +81,7 @@ struct torture_state {
 #ifdef WITH_PCAP
     ssh_pcap_file plain_pcap;
 #endif
+    void *private_data;
 };
 
 #ifndef ZERO_STRUCT
