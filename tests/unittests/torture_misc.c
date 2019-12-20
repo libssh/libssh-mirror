@@ -655,6 +655,55 @@ static void torture_ssh_newline_vis(UNUSED_PARAM(void **state))
     assert_string_equal(buffer, "a\\nb\\n");
 }
 
+static void torture_ssh_strreplace(void **state)
+{
+    char test_string1[] = "this;is;a;test";
+    char test_string2[] = "test;is;a;this";
+    char test_string3[] = "this;test;is;a";
+    char *replaced_string = NULL;
+
+    (void) state;
+
+    /* pattern and replacement are of the same size */
+    replaced_string = ssh_strreplace(test_string1, "test", "kiwi");
+    assert_string_equal(replaced_string, "this;is;a;kiwi");
+    free(replaced_string);
+
+    replaced_string = ssh_strreplace(test_string2, "test", "kiwi");
+    assert_string_equal(replaced_string, "kiwi;is;a;this");
+    free(replaced_string);
+
+    replaced_string = ssh_strreplace(test_string3, "test", "kiwi");
+    assert_string_equal(replaced_string, "this;kiwi;is;a");
+    free(replaced_string);
+
+    /* replacement is greater than pattern */
+    replaced_string = ssh_strreplace(test_string1, "test", "an;apple");
+    assert_string_equal(replaced_string, "this;is;a;an;apple");
+    free(replaced_string);
+
+    replaced_string = ssh_strreplace(test_string2, "test", "an;apple");
+    assert_string_equal(replaced_string, "an;apple;is;a;this");
+    free(replaced_string);
+
+    replaced_string = ssh_strreplace(test_string3, "test", "an;apple");
+    assert_string_equal(replaced_string, "this;an;apple;is;a");
+    free(replaced_string);
+
+    /* replacement is less than pattern */
+    replaced_string = ssh_strreplace(test_string1, "test", "an");
+    assert_string_equal(replaced_string, "this;is;a;an");
+    free(replaced_string);
+
+    replaced_string = ssh_strreplace(test_string2, "test", "an");
+    assert_string_equal(replaced_string, "an;is;a;this");
+    free(replaced_string);
+
+    replaced_string = ssh_strreplace(test_string3, "test", "an");
+    assert_string_equal(replaced_string, "this;an;is;a");
+    free(replaced_string);
+}
+
 int torture_run_tests(void) {
     int rc;
     struct CMUnitTest tests[] = {
@@ -677,6 +726,7 @@ int torture_run_tests(void) {
         cmocka_unit_test(torture_ssh_newline_vis),
         cmocka_unit_test(torture_ssh_mkdirs),
         cmocka_unit_test(torture_ssh_quote_file_name),
+        cmocka_unit_test(torture_ssh_strreplace),
     };
 
     ssh_init();
