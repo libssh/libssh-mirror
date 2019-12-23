@@ -1,6 +1,10 @@
 ChangeLog
 ==========
 
+version 0.10.0 (released 2020-xx-xx)
+  * Support for Smart Cards
+  * Support for chacha20-poly1305@openssh.com with libgcrypt
+
 version 0.9.0 (released 2019-02-xx)
   * Added support for AES-GCM
   * Added improved rekeying support
