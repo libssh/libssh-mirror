@@ -366,6 +366,8 @@ freebsd/x86_64:
     -DPICKY_DEVELOPER=ON
     -DWITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON
     -DUNIT_TESTING=ON ..
+  script:
+  - make && ctest --output-on-failure
   tags:
   - freebsd
   only:
