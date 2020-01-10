@@ -231,7 +231,6 @@ static void torture_pki_ecdsa_publickey_from_privatekey_uri_521(void **state)
     torture_pki_ecdsa_publickey_from_privatekey_uri(state, PRIV_URI_FMT_521, "ecdsa521");
 }
 
-
 static void torture_ecdsa_sign_verify_uri(void **state, const char *uri, enum ssh_digest_e dig_type)
 {
     int rc;
@@ -483,7 +482,6 @@ int torture_run_tests(void) {
 
         /** Expect fail on these negative test cases **/
         cmocka_unit_test(torture_pki_ecdsa_import_pubkey_uri_invalid_configurations),
-
     };
 
     ssh_session session = ssh_new();
