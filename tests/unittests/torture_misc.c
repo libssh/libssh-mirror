@@ -702,6 +702,25 @@ static void torture_ssh_strreplace(void **state)
     replaced_string = ssh_strreplace(test_string3, "test", "an");
     assert_string_equal(replaced_string, "this;an;is;a");
     free(replaced_string);
+
+    /* pattern not found in teststring */
+    replaced_string = ssh_strreplace(test_string1, "banana", "an");
+    assert_string_equal(replaced_string, test_string1);
+    free(replaced_string);
+
+    /* pattern is NULL */
+    replaced_string = ssh_strreplace(test_string1, NULL , "an");
+    assert_string_equal(replaced_string, test_string1);
+    free(replaced_string);
+
+    /* replacement is NULL */
+    replaced_string = ssh_strreplace(test_string1, "test", NULL);
+    assert_string_equal(replaced_string, test_string1);
+    free(replaced_string);
+
+    /* src is NULL */
+    replaced_string = ssh_strreplace(NULL, "test", "kiwi");
+    assert_null(replaced_string);
 }
 
 int torture_run_tests(void) {
