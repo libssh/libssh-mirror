@@ -191,9 +191,6 @@ static void torture_auth_autopubkey(void **state, const char *obj_name, const ch
     rc = ssh_options_set(session, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
     assert_int_equal(rc, SSH_OK);
 
-    //rc = ssh_options_set(session, SSH_OPTIONS_SSH_DIR, "pkcs11");
-    //assert_int_equal(rc, SSH_OK);
-
     snprintf(priv_uri, sizeof(priv_uri), "pkcs11:token=%s;object=%s;type=private?pin-value=%s",
             obj_name, obj_name, pin);
 
