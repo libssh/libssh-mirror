@@ -60,7 +60,7 @@ uint32_t ssh_packet_decrypt_len(ssh_session session,
     crypto = ssh_packet_get_current_crypto(session, SSH_DIRECTION_IN);
     if (crypto != NULL) {
         if (crypto->in_cipher->aead_decrypt_length != NULL) {
-            crypto->in_cipher->aead_decrypt_length(
+            rc = crypto->in_cipher->aead_decrypt_length(
                     crypto->in_cipher, source, destination,
                     crypto->in_cipher->lenfield_blocksize,
                     session->recv_seq);
@@ -71,9 +71,9 @@ uint32_t ssh_packet_decrypt_len(ssh_session session,
                     source,
                     0,
                     crypto->in_cipher->blocksize);
-            if (rc < 0) {
-                return 0;
-            }
+        }
+        if (rc < 0) {
+            return 0;
         }
     } else {
         memcpy(destination, source, 8);
