@@ -33,6 +33,10 @@
 #include "libssh/crypto.h"
 #include "libssh/wrapper.h"
 #include "libssh/libcrypto.h"
+#if defined(HAVE_OPENSSL_EVP_CHACHA20) && defined(HAVE_OPENSSL_EVP_POLY1305)
+#include "libssh/bytearray.h"
+#include "libssh/chacha20-poly1305-common.h"
+#endif
 
 #ifdef HAVE_LIBCRYPTO
 
@@ -888,6 +892,386 @@ evp_cipher_aead_decrypt(struct ssh_cipher_struct *cipher,
 
 #endif /* HAVE_OPENSSL_EVP_AES_GCM */
 
+#if defined(HAVE_OPENSSL_EVP_CHACHA20) && defined(HAVE_OPENSSL_EVP_POLY1305)
+
+struct chacha20_poly1305_keysched {
+    /* cipher handle used for encrypting the packets */
+    EVP_CIPHER_CTX *main_evp;
+    /* cipher handle used for encrypting the length field */
+    EVP_CIPHER_CTX *header_evp;
+    /* mac handle used for authenticating the packets */
+    EVP_PKEY_CTX *pctx;
+    /* Poly1305 key */
+    EVP_PKEY *key;
+    /* MD context for digesting data in poly1305 */
+    EVP_MD_CTX *mctx;
+};
+
+static void
+chacha20_poly1305_cleanup(struct ssh_cipher_struct *cipher)
+{
+    struct chacha20_poly1305_keysched *ctx = NULL;
+
+    if (cipher->chacha20_schedule == NULL) {
+        return;
+    }
+
+    ctx = cipher->chacha20_schedule;
+
+    EVP_CIPHER_CTX_free(ctx->main_evp);
+    ctx->main_evp  = NULL;
+    EVP_CIPHER_CTX_free(ctx->header_evp);
+    ctx->header_evp = NULL;
+    /* ctx->pctx is freed as part of MD context */
+    EVP_PKEY_free(ctx->key);
+    ctx->key = NULL;
+    EVP_MD_CTX_free(ctx->mctx);
+    ctx->mctx = NULL;
+
+    SAFE_FREE(cipher->chacha20_schedule);
+}
+
+static int
+chacha20_poly1305_set_key(struct ssh_cipher_struct *cipher,
+                          void *key,
+                          UNUSED_PARAM(void *IV))
+{
+    struct chacha20_poly1305_keysched *ctx = NULL;
+    uint8_t *u8key = key;
+    int ret = SSH_ERROR, rv;
+
+    if (cipher->chacha20_schedule == NULL) {
+        ctx = calloc(1, sizeof(*ctx));
+        if (ctx == NULL) {
+            return -1;
+        }
+        cipher->chacha20_schedule = ctx;
+    } else {
+        ctx = cipher->chacha20_schedule;
+    }
+
+    /* ChaCha20 initialization */
+    /* K2 uses the first half of the key */
+    ctx->main_evp = EVP_CIPHER_CTX_new();
+    if (ctx->main_evp == NULL) {
+        SSH_LOG(SSH_LOG_WARNING, "EVP_CIPHER_CTX_new failed");
+        goto out;
+    }
+    rv = EVP_EncryptInit_ex(ctx->main_evp, EVP_chacha20(), NULL, u8key, NULL);
+    if (rv != 1) {
+        SSH_LOG(SSH_LOG_WARNING, "EVP_CipherInit failed");
+        goto out;
+    }
+    /* K1 uses the second half of the key */
+    ctx->header_evp = EVP_CIPHER_CTX_new();
+    if (ctx->header_evp == NULL) {
+        SSH_LOG(SSH_LOG_WARNING, "EVP_CIPHER_CTX_new failed");
+        goto out;
+    }
+    ret = EVP_EncryptInit_ex(ctx->header_evp, EVP_chacha20(), NULL,
+                             u8key + CHACHA20_KEYLEN, NULL);
+    if (ret != 1) {
+        SSH_LOG(SSH_LOG_WARNING, "EVP_CipherInit failed");
+        goto out;
+    }
+
+    /* The Poly1305 key initialization is delayed to the time we know
+     * the actual key for packet so we do not need to create a bogus keys
+     */
+    ctx->mctx = EVP_MD_CTX_new();
+    if (ctx->mctx == NULL) {
+        SSH_LOG(SSH_LOG_WARNING, "EVP_MD_CTX_new failed");
+        return SSH_ERROR;
+    }
+
+    ret = SSH_OK;
+out:
+    if (ret != SSH_OK) {
+        chacha20_poly1305_cleanup(cipher);
+    }
+    return ret;
+}
+
+static const uint8_t zero_block[CHACHA20_BLOCKSIZE] = {0};
+
+static int
+chacha20_poly1305_set_iv(struct ssh_cipher_struct *cipher,
+                         uint64_t seq,
+                         int do_encrypt)
+{
+    struct chacha20_poly1305_keysched *ctx = cipher->chacha20_schedule;
+    uint8_t seqbuf[16] = {0};
+    int ret;
+
+    /* Prepare the IV for OpenSSL -- it needs to be 128 b long. First 32 b is
+     * counter the rest is nonce. The memory is initialized to zeros
+     * (counter starts from 0) and we set the sequence number in the second half
+     */
+    PUSH_BE_U64(seqbuf, 8, seq);
+#ifdef DEBUG_CRYPTO
+    ssh_log_hexdump("seqbuf (chacha20 IV)", seqbuf, sizeof(seqbuf));
+#endif /* DEBUG_CRYPTO */
+
+    ret = EVP_CipherInit_ex(ctx->header_evp, NULL, NULL, NULL, seqbuf, do_encrypt);
+    if (ret != 1) {
+        SSH_LOG(SSH_LOG_WARNING, "EVP_CipherInit_ex(header_evp) failed");
+        return SSH_ERROR;
+    }
+
+    ret = EVP_CipherInit_ex(ctx->main_evp, NULL, NULL, NULL, seqbuf, do_encrypt);
+    if (ret != 1) {
+        SSH_LOG(SSH_LOG_WARNING, "EVP_CipherInit_ex(main_evp) failed");
+        return SSH_ERROR;
+    }
+
+    return SSH_OK;
+}
+
+static int
+chacha20_poly1305_packet_setup(struct ssh_cipher_struct *cipher,
+                               uint64_t seq,
+                               int do_encrypt)
+{
+    struct chacha20_poly1305_keysched *ctx = cipher->chacha20_schedule;
+    uint8_t poly_key[CHACHA20_BLOCKSIZE];
+    int ret = SSH_ERROR, len, rv;
+
+    /* The initialization for decrypt was already done with the length block */
+    if (do_encrypt) {
+        rv = chacha20_poly1305_set_iv(cipher, seq, do_encrypt);
+        if (rv != SSH_OK) {
+            return SSH_ERROR;
+        }
+    }
+
+    /* Output full ChaCha block so that counter increases by one for
+     * next step. */
+    rv = EVP_CipherUpdate(ctx->main_evp, poly_key, &len,
+                           (unsigned char *)zero_block, sizeof(zero_block));
+    if (rv != 1 || len != CHACHA20_BLOCKSIZE) {
+        SSH_LOG(SSH_LOG_WARNING, "EVP_EncryptUpdate failed");
+        goto out;
+    }
+#ifdef DEBUG_CRYPTO
+    ssh_log_hexdump("poly_key", poly_key, POLY1305_KEYLEN);
+#endif /* DEBUG_CRYPTO */
+
+    /* Set the Poly1305 key */
+    if (ctx->key == NULL) {
+        /* Poly1305 Initialization needs to know the actual key */
+        ctx->key = EVP_PKEY_new_mac_key(EVP_PKEY_POLY1305, NULL,
+                                        poly_key, POLY1305_KEYLEN);
+        if (ctx->key == NULL) {
+            SSH_LOG(SSH_LOG_WARNING, "EVP_PKEY_new_mac_key failed");
+            goto out;
+        }
+        rv = EVP_DigestSignInit(ctx->mctx, &ctx->pctx, NULL, NULL, ctx->key);
+        if (rv != 1) {
+            SSH_LOG(SSH_LOG_WARNING, "EVP_DigestSignInit failed");
+            goto out;
+        }
+    } else {
+        /* Updating the key is easier but less obvious */
+        rv = EVP_PKEY_CTX_ctrl(ctx->pctx, -1, EVP_PKEY_OP_SIGNCTX,
+                                EVP_PKEY_CTRL_SET_MAC_KEY,
+                                POLY1305_KEYLEN, (void *)poly_key);
+        if (rv <= 0) {
+            SSH_LOG(SSH_LOG_WARNING, "EVP_PKEY_CTX_ctrl failed");
+            goto out;
+        }
+    }
+
+    ret = SSH_OK;
+out:
+    explicit_bzero(poly_key, sizeof(poly_key));
+    return ret;
+}
+
+static int
+chacha20_poly1305_aead_decrypt_length(struct ssh_cipher_struct *cipher,
+                                      void *in,
+                                      uint8_t *out,
+                                      size_t len,
+                                      uint64_t seq)
+{
+    struct chacha20_poly1305_keysched *ctx = cipher->chacha20_schedule;
+    int rv, outlen;
+
+    if (len < sizeof(uint32_t)) {
+        return SSH_ERROR;
+    }
+
+#ifdef DEBUG_CRYPTO
+    ssh_log_hexdump("encrypted length", (uint8_t *)in, sizeof(uint32_t));
+#endif /* DEBUG_CRYPTO */
+
+    /* Set IV for the header EVP */
+    rv = chacha20_poly1305_set_iv(cipher, seq, 0);
+    if (rv != SSH_OK) {
+        return SSH_ERROR;
+    }
+
+    rv = EVP_CipherUpdate(ctx->header_evp, out, &outlen, in, len);
+    if (rv != 1 || outlen != sizeof(uint32_t)) {
+        SSH_LOG(SSH_LOG_WARNING, "EVP_CipherUpdate failed");
+        return SSH_ERROR;
+    }
+
+#ifdef DEBUG_CRYPTO
+    ssh_log_hexdump("deciphered length", out, sizeof(uint32_t));
+#endif /* DEBUG_CRYPTO */
+
+    rv = EVP_CipherFinal_ex(ctx->header_evp, out + outlen, &outlen);
+    if (rv != 1 || outlen != 0) {
+        SSH_LOG(SSH_LOG_WARNING, "EVP_CipherFinal_ex failed");
+        return SSH_ERROR;
+    }
+
+    return SSH_OK;
+}
+
+static int
+chacha20_poly1305_aead_decrypt(struct ssh_cipher_struct *cipher,
+                               void *complete_packet,
+                               uint8_t *out,
+                               size_t encrypted_size,
+                               uint64_t seq)
+{
+    struct chacha20_poly1305_keysched *ctx = cipher->chacha20_schedule;
+    uint8_t *mac = (uint8_t *)complete_packet + sizeof(uint32_t) +
+                   encrypted_size;
+    uint8_t tag[POLY1305_TAGLEN] = {0};
+    int ret = SSH_ERROR;
+    int rv, cmp, len = 0;
+    size_t taglen = POLY1305_TAGLEN;
+
+    /* Prepare the Poly1305 key */
+    rv = chacha20_poly1305_packet_setup(cipher, seq, 0);
+    if (rv != SSH_OK) {
+        SSH_LOG(SSH_LOG_WARNING, "Failed to setup packet");
+        goto out;
+    }
+
+#ifdef DEBUG_CRYPTO
+    ssh_log_hexdump("received mac", mac, POLY1305_TAGLEN);
+#endif /* DEBUG_CRYPTO */
+
+    /* Calculate MAC of received data */
+    rv = EVP_DigestSignUpdate(ctx->mctx, complete_packet,
+                              encrypted_size + sizeof(uint32_t));
+    if (rv != 1) {
+        SSH_LOG(SSH_LOG_WARNING, "EVP_DigestSignUpdate failed");
+        goto out;
+    }
+
+    rv = EVP_DigestSignFinal(ctx->mctx, tag, &taglen);
+    if (rv != 1) {
+        SSH_LOG(SSH_LOG_WARNING, "poly1305 verify error");
+        goto out;
+    }
+
+#ifdef DEBUG_CRYPTO
+    ssh_log_hexdump("calculated mac", tag, POLY1305_TAGLEN);
+#endif /* DEBUG_CRYPTO */
+
+    /* Verify the calculated MAC matches the attached MAC */
+    cmp = memcmp(tag, mac, POLY1305_TAGLEN);
+    if (cmp != 0) {
+        /* mac error */
+        SSH_LOG(SSH_LOG_PACKET, "poly1305 verify error");
+        return SSH_ERROR;
+    }
+
+    /* Decrypt the message */
+    rv = EVP_CipherUpdate(ctx->main_evp, out, &len,
+                          (uint8_t *)complete_packet + sizeof(uint32_t),
+                          encrypted_size);
+    if (rv != 1) {
+        SSH_LOG(SSH_LOG_WARNING, "EVP_CipherUpdate failed");
+        goto out;
+    }
+
+    rv = EVP_CipherFinal_ex(ctx->main_evp, out + len, &len);
+    if (rv != 1 || len != 0) {
+        SSH_LOG(SSH_LOG_WARNING, "EVP_CipherFinal_ex failed");
+        goto out;
+    }
+
+    ret = SSH_OK;
+out:
+    return ret;
+}
+
+static void
+chacha20_poly1305_aead_encrypt(struct ssh_cipher_struct *cipher,
+                               void *in,
+                               void *out,
+                               size_t len,
+                               uint8_t *tag,
+                               uint64_t seq)
+{
+    struct ssh_packet_header *in_packet = in, *out_packet = out;
+    struct chacha20_poly1305_keysched *ctx = cipher->chacha20_schedule;
+    size_t taglen = POLY1305_TAGLEN;
+    int ret, outlen = 0;
+
+    /* Prepare the Poly1305 key */
+    ret = chacha20_poly1305_packet_setup(cipher, seq, 1);
+    if (ret != SSH_OK) {
+        SSH_LOG(SSH_LOG_WARNING, "Failed to setup packet");
+        return;
+    }
+
+#ifdef DEBUG_CRYPTO
+    ssh_log_hexdump("plaintext length",
+                    (unsigned char *)&in_packet->length, sizeof(uint32_t));
+#endif /* DEBUG_CRYPTO */
+    /* step 2, encrypt length field */
+    ret = EVP_CipherUpdate(ctx->header_evp,
+                           (unsigned char *)&out_packet->length,
+                           &outlen,
+                           (unsigned char *)&in_packet->length,
+                           sizeof(uint32_t));
+    if (ret != 1 || outlen != sizeof(uint32_t)) {
+        SSH_LOG(SSH_LOG_WARNING, "EVP_CipherUpdate failed");
+        return;
+    }
+#ifdef DEBUG_CRYPTO
+    ssh_log_hexdump("encrypted length",
+                    (unsigned char *)&out_packet->length, outlen);
+#endif /* DEBUG_CRYPTO */
+    ret = EVP_CipherFinal_ex(ctx->header_evp, (uint8_t *)out + outlen, &outlen);
+    if (ret != 1 || outlen != 0) {
+        SSH_LOG(SSH_LOG_PACKET, "EVP_EncryptFinal_ex failed");
+        return;
+    }
+
+    /* step 3, encrypt packet payload (main_evp counter == 1) */
+    /* We already did encrypt one block so the counter should be in the correct position */
+    ret = EVP_CipherUpdate(ctx->main_evp,
+                           out_packet->payload,
+                           &outlen,
+                           in_packet->payload,
+                           len - sizeof(uint32_t));
+    if (ret != 1) {
+        SSH_LOG(SSH_LOG_WARNING, "EVP_CipherUpdate failed");
+        return;
+    }
+
+    /* step 4, compute the MAC */
+    ret = EVP_DigestSignUpdate(ctx->mctx, out_packet, len);
+    if (ret <= 0) {
+        SSH_LOG(SSH_LOG_WARNING, "EVP_DigestSignUpdate failed");
+        return;
+    }
+    ret = EVP_DigestSignFinal(ctx->mctx, tag, &taglen);
+    if (ret <= 0) {
+        SSH_LOG(SSH_LOG_WARNING, "EVP_DigestSignFinal failed");
+        return;
+    }
+}
+#endif /* defined(HAVE_OPENSSL_EVP_CHACHA20) && defined(HAVE_OPENSSL_EVP_POLY1305) */
+
 /*
  * The table of supported ciphers
  */
@@ -1058,7 +1442,23 @@ static struct ssh_cipher_struct ssh_ciphertab[] = {
   },
 #endif /* HAS_DES */
   {
+#if defined(HAVE_OPENSSL_EVP_CHACHA20) && defined(HAVE_OPENSSL_EVP_POLY1305)
+    .ciphertype = SSH_AEAD_CHACHA20_POLY1305,
+    .name = "chacha20-poly1305@openssh.com",
+    .blocksize = CHACHA20_BLOCKSIZE/8,
+    .lenfield_blocksize = 4,
+    .keylen = sizeof(struct chacha20_poly1305_keysched),
+    .keysize = 2 * CHACHA20_KEYLEN * 8,
+    .tag_size = POLY1305_TAGLEN,
+    .set_encrypt_key = chacha20_poly1305_set_key,
+    .set_decrypt_key = chacha20_poly1305_set_key,
+    .aead_encrypt = chacha20_poly1305_aead_encrypt,
+    .aead_decrypt_length = chacha20_poly1305_aead_decrypt_length,
+    .aead_decrypt = chacha20_poly1305_aead_decrypt,
+    .cleanup = chacha20_poly1305_cleanup
+#else
     .name = "chacha20-poly1305@openssh.com"
+#endif /* defined(HAVE_OPENSSL_EVP_CHACHA20) && defined(HAVE_OPENSSL_EVP_POLY1305) */
   },
   {
     .name = NULL
@@ -1076,7 +1476,7 @@ struct ssh_cipher_struct *ssh_get_ciphertab(void)
  */
 int ssh_crypto_init(void)
 {
-    size_t i;
+    UNUSED_VAR(size_t i);
 
     if (libcrypto_initialized) {
         return SSH_OK;
@@ -1103,6 +1503,7 @@ int ssh_crypto_init(void)
     OpenSSL_add_all_algorithms();
 #endif
 
+#if !defined(HAVE_OPENSSL_EVP_CHACHA20) || !defined(HAVE_OPENSSL_EVP_POLY1305)
     for (i = 0; ssh_ciphertab[i].name != NULL; i++) {
         int cmp;
 
@@ -1114,6 +1515,7 @@ int ssh_crypto_init(void)
             break;
         }
     }
+#endif /* !defined(HAVE_OPENSSL_EVP_CHACHA20) || !defined(HAVE_OPENSSL_EVP_POLY1305) */
 
     libcrypto_initialized = 1;
 

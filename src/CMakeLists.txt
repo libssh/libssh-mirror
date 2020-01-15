@@ -214,9 +214,6 @@ else (WITH_GCRYPT)
         ecdh_crypto.c
         libcrypto.c
         dh_crypto.c
-        external/chacha.c
-        external/poly1305.c
-        chachapoly.c
        )
     if (NOT HAVE_OPENSSL_ED25519)
         set(libssh_SRCS
@@ -228,6 +225,14 @@ else (WITH_GCRYPT)
             external/sc25519.c
            )
     endif (NOT HAVE_OPENSSL_ED25519)
+    if (NOT (HAVE_OPENSSL_EVP_CHACHA20 AND HAVE_OPENSSL_EVP_POLY1305))
+        set(libssh_SRCS
+            ${libssh_SRCS}
+            external/chacha.c
+            external/poly1305.c
+            chachapoly.c
+        )
+    endif (NOT (HAVE_OPENSSL_EVP_CHACHA20 AND HAVE_OPENSSL_EVP_POLY1305))
     if(OPENSSL_VERSION VERSION_LESS "1.1.0")
         set(libssh_SRCS ${libssh_SRCS} libcrypto-compat.c)
     endif()
