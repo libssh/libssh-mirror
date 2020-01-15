@@ -156,6 +156,11 @@ static void torture_crypto_chacha20poly1305(void **state)
     int rc;
     (void)state;
 
+    /* Chacha20-poly1305 is not FIPS-allowed cipher */
+    if (ssh_fips_mode()) {
+        skip();
+    }
+
     assert_int_equal(sizeof(output), sizeof(chacha20poly1305_encrypted));
 
     in_length = htonl(sizeof(chacha20poly1305_cleartext));
@@ -214,6 +219,11 @@ static void torture_crypto_chacha20poly1305_bad_packet_length(void **state)
     int rc;
     (void)state;
 
+    /* Chacha20-poly1305 is not FIPS-allowed cipher */
+    if (ssh_fips_mode()) {
+        skip();
+    }
+
     /* Test corrupted packet length */
     memcpy(encrypted_bad, chacha20poly1305_encrypted, sizeof(encrypted_bad));
     encrypted_bad[1] ^= 1;
@@ -245,6 +255,11 @@ static void torture_crypto_chacha20poly1305_bad_data(void **state)
     int rc;
     (void)state;
 
+    /* Chacha20-poly1305 is not FIPS-allowed cipher */
+    if (ssh_fips_mode()) {
+        skip();
+    }
+
     /* Test corrupted data */
     memcpy(encrypted_bad, chacha20poly1305_encrypted, sizeof(encrypted_bad));
     encrypted_bad[100] ^= 1;
@@ -275,6 +290,11 @@ static void torture_crypto_chacha20poly1305_bad_tag(void **state)
     struct ssh_cipher_struct cipher = {0};
     int rc;
     (void)state;
+
+    /* Chacha20-poly1305 is not FIPS-allowed cipher */
+    if (ssh_fips_mode()) {
+        skip();
+    }
 
     /* Test corrupted tag */
     assert_int_equal(sizeof(encrypted_bad), sizeof(chacha20poly1305_encrypted));

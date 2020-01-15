@@ -260,6 +260,12 @@ static void torture_packet_chacha20(void **state)
 {
     int i;
     (void)state; /* unused */
+
+    /* Chacha20-poly1305 is not FIPS-allowed cipher */
+    if (ssh_fips_mode()) {
+        skip();
+    }
+
     for (i=1;i<256;++i){
         torture_packet("chacha20-poly1305@openssh.com", "none", "none", i);
     }
