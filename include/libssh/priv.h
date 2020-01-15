@@ -65,11 +65,6 @@ char *strndup(const char *s, size_t n);
 
 #ifdef _WIN32
 
-/* Imitate define of inttypes.h */
-# ifndef PRIdS
-#  define PRIdS "Id"
-# endif
-
 # ifndef PRIu64
 #  if __WORDSIZE == 64
 #   define PRIu64 "lu"
@@ -162,7 +157,6 @@ int gettimeofday(struct timeval *__p, void *__t);
 #else /* _WIN32 */
 
 #include <unistd.h>
-#define PRIdS "zd"
 
 #define _XCLOSESOCKET close
 
