@@ -1352,7 +1352,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
             if (processed < receivedlen) {
                 /* Handle a potential packet left in socket buffer */
                 SSH_LOG(SSH_LOG_PACKET,
-                        "Processing %" PRIdS " bytes left in socket buffer",
+                        "Processing %zu bytes left in socket buffer",
                         receivedlen-processed);
 
                 ptr = ((uint8_t*)data) + processed;
@@ -1384,7 +1384,7 @@ int ssh_packet_socket_callback(const void *data, size_t receivedlen, void *user)
 
 error:
     session->session_state= SSH_SESSION_STATE_ERROR;
-    SSH_LOG(SSH_LOG_PACKET,"Packet: processed %" PRIdS " bytes", processed);
+    SSH_LOG(SSH_LOG_PACKET,"Packet: processed %zu bytes", processed);
     return processed;
 }
 

@@ -112,7 +112,7 @@ int ssh_packet_decrypt(ssh_session session,
         ssh_set_error(session,
                       SSH_FATAL,
                       "Cryptographic functions must be used on multiple of "
-                      "blocksize (received %" PRIdS ")",
+                      "blocksize (received %zu)",
                       encrypted_size);
         return SSH_ERROR;
     }
