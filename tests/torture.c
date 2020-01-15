@@ -928,7 +928,7 @@ torture_reload_sshd_server(void **state)
     }
 
     /* Wait until the sshd is ready to accept connections */
-    rc = torture_wait_for_daemon(5);
+    rc = torture_wait_for_daemon(10);
     assert_int_equal(rc, 0);
     return SSH_OK;
 }
