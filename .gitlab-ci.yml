@@ -378,6 +378,8 @@ freebsd/x86_64:
 #                           Visual Studio builds                              #
 ###############################################################################
 .vs:
+  variables:
+    ErrorActionPreference: STOP
   script:
   - cmake --build .
   - ctest --output-on-failure
@@ -401,7 +403,7 @@ visualstudio/x86_64:
   extends: .vs
   before_script:
   - $env:VCPKG_DEFAULT_TRIPLET="x64-windows"
-  - cd obj
+  - mkdir -p obj; if ($?) {cd obj}; if (! $?) {exit 1}
   - cmake
       -A x64
       -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_TOOLCHAIN_FILE"
@@ -413,7 +415,7 @@ visualstudio/x86:
   extends: .vs
   before_script:
   - $env:VCPKG_DEFAULT_TRIPLET="x86-windows"
-  - cd obj
+  - mkdir -p obj; if ($?) {cd obj}; if (! $?) {exit 1}
   - cmake
       -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_TOOLCHAIN_FILE"
       -DPICKY_DEVELOPER=ON
