@@ -544,7 +544,7 @@ SSH_PACKET_CALLBACK(channel_rcv_data){
   len = ssh_string_len(str);
 
   SSH_LOG(SSH_LOG_PACKET,
-      "Channel receiving %" PRIdS " bytes data in %d (local win=%d remote win=%d)",
+      "Channel receiving %zu bytes data in %d (local win=%d remote win=%d)",
       len,
       is_stderr,
       channel->local_window,
@@ -553,7 +553,7 @@ SSH_PACKET_CALLBACK(channel_rcv_data){
   /* What shall we do in this case? Let's accept it anyway */
   if (len > channel->local_window) {
     SSH_LOG(SSH_LOG_RARE,
-        "Data packet too big for our window(%" PRIdS " vs %d)",
+        "Data packet too big for our window(%zu vs %d)",
         len,
         channel->local_window);
   }
