@@ -85,6 +85,13 @@ if (WITH_NACL AND NACL_FOUND)
   )
 endif (WITH_NACL AND NACL_FOUND)
 
+if (MINGW AND Threads_FOUND)
+  set(LIBSSH_LINK_LIBRARIES
+    ${LIBSSH_LINK_LIBRARIES}
+    Threads::Threads
+  )
+endif()
+
 if (BUILD_STATIC_LIB)
   set(LIBSSH_STATIC_LIBRARY
     ssh_static
